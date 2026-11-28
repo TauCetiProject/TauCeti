@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Star.Projection.Pair
 public import TauCeti.Analysis.CStarAlgebra.Unitary.Polar
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
-import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
+import TauCeti.Analysis.CStarAlgebra.SelfAdjointSpectrumInterval
 import TauCeti.Analysis.Normed.Ring.Units
 import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar.Continuity
 
@@ -16,8 +16,9 @@ import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar.Cont
 # Unitary conjugacy of nearby projections in a C⋆-algebra
 
 To show that homotopy, Murray–von Neumann, and unitary equivalence coincide on nearby projections
-and `K₀` classes are locally constant along inductive limits, Kato's `TauCeti.intertwiner p q`
-polar-normalizes to `u = hp.projectionConjugacyUnitary hq h` for `‖p - q‖ < 1`, with
+(so sufficiently close projections represent the same `K₀` class in a fixed algebra, an ingredient
+in proving inductive-limit continuity of `K₀`), Kato's `TauCeti.intertwiner p q` polar-normalizes
+to `u = hp.projectionConjugacyUnitary hq h` for `‖p - q‖ < 1`, with
 `(u : A) * p * star (u : A) = q`, `Joined 1 u`, `‖(u : A) - 1‖ ≤ √2 * ‖p - q‖`, closed unital
 `𝕜'`-`⋆`-subalgebra preservation, and scalar part `1` in `Unitization ℂ A`.
 

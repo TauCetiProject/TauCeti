@@ -114,7 +114,8 @@ theorem norm_mul_mul_sub_le {R : Type*} [NonUnitalSeminormedRing R] (p₁ a₁ x
     norm_mul_sub_le_left x p₂ a₂ x
   nlinarith [norm_nonneg p₂]
 
-/-- Displacement bound for orthogonal compression by a contraction `‖p‖ ≤ 1`:
+/-- Displacement bound for `(1 - p) x (1 - p)` (orthogonal compression when `p` is a star
+projection) for any contraction `‖p‖ ≤ 1`:
 `‖(x - p * x - x * p + p * x * p) - x‖ ≤ 2 * ‖p * x‖ + ‖x * p‖`. -/
 theorem norm_sub_sub_add_sub_le_of_norm_le_one {R : Type*} [NonUnitalSeminormedRing R] {p : R}
     (hp : ‖p‖ ≤ 1) (x : R) :

@@ -20,19 +20,27 @@ import Mathlib.Data.Matrix.Basis
 /-!
 # Systems of matrix units in a star ring
 
-Multi-block **systems of matrix units** `e : ∀ r : κ, n r → n r → R` parameterize `⋆`-homomorphisms
-(and embeddings when each nonempty block has `e r i i ≠ 0`) from `⨁ᵣ M_{n(r)}(ℂ)` into a C⋆-algebra,
-governing AF algebras and operator K-theory. Partial-isometry families with block-constant initial
-projections and pairwise-orthogonal final projections generate matrix units `v r i * star (v r j)`,
-and over a characteristic-zero field `𝕜`, `z = matrixUnitIntertwiner 𝕜 e f` satisfies
-`f r i j * z = z * e r i j` with `z = 1` when `e = f`.
+When `κ` and each `n r` are finite, multi-block **systems of matrix units**
+`e : ∀ r : κ, n r → n r → R` parameterize nonunital `⋆`-homomorphisms
+`(∀ r : κ, Matrix (n r) (n r) 𝕜) →⋆ₙₐ[𝕜] R` (blocks with `e r i i = 0` may vanish, and the map
+is injective over a field `𝕜` iff every nonempty block has `e r i i ≠ 0`), while unital systems
+(`matrixUnitSupport e = 1`, `TauCeti.IsUnitalMatrixUnitSystem`) parameterize unital
+`⋆`-homomorphisms `(∀ r : κ, Matrix (n r) (n r) 𝕜) →⋆ₐ[𝕜] R`, governing AF algebras and operator
+K-theory. Partial-isometry families with block-constant initial projections and pairwise-orthogonal
+final projections generate matrix units `v r i * star (v r j)`, and over a characteristic-zero field
+`𝕜`, `z = matrixUnitIntertwiner 𝕜 e f` satisfies `f r i j * z = z * e r i j` with `z = 1` when
+`e = f`.
 
 ## Main results
 
 * `TauCeti.IsMatrixUnitSystem`, `TauCeti.IsUnitalMatrixUnitSystem`, `TauCeti.matrixUnitSupport`,
   `TauCeti.matrixUnitBlockSupport`, `TauCeti.matrixUnitIntertwiner`,
   `TauCeti.IsMatrixUnitSystem.of_partialIsometry`,
+  `TauCeti.isMatrixUnitSystem_piSingle_matrixSingle`,
   `TauCeti.isUnitalMatrixUnitSystem_piSingle_matrixSingle`,
+  `NonUnitalStarAlgHom.isMatrixUnitSystem`, `StarAlgHom.isUnitalMatrixUnitSystem`,
+  `NonUnitalStarAlgHom.nonUnitalStarAlgHom_isMatrixUnitSystem`,
+  `StarAlgHom.starAlgHom_isUnitalMatrixUnitSystem`,
   `TauCeti.IsMatrixUnitSystem.nonUnitalStarAlgHom`, `TauCeti.IsUnitalMatrixUnitSystem.starAlgHom`,
   `TauCeti.IsMatrixUnitSystem.toSubmodule_range_nonUnitalStarAlgHom`,
   `TauCeti.IsUnitalMatrixUnitSystem.toSubmodule_range_starAlgHom`,
@@ -243,21 +251,37 @@ theorem isCompleteOrthogonalProjectionFamily [StarRing R] (he : IsUnitalMatrixUn
 end IsUnitalMatrixUnitSystem
 
 /-- Standard multi-block matrix units `(r, i, j) ↦ Pi.single r (Matrix.single i j 1)` in
-`∀ r : κ, Matrix (n r) (n r) R` form a unital system of matrix units. -/
-theorem isUnitalMatrixUnitSystem_piSingle_matrixSingle (R : Type*) [Semiring R] [StarRing R]
-    [DecidableEq κ] [∀ r, DecidableEq (n r)] [Fintype κ] :
-    IsUnitalMatrixUnitSystem (fun r (i j : n r) ↦ Pi.single r (Matrix.single i j (1 : R)) :
+`∀ r : κ, Matrix (n r) (n r) R` form a system of matrix units. -/
+theorem isMatrixUnitSystem_piSingle_matrixSingle (R : Type*) [Semiring R] [StarRing R]
+    [DecidableEq κ] [∀ r, DecidableEq (n r)] :
+    IsMatrixUnitSystem (fun r (i j : n r) ↦ Pi.single r (Matrix.single i j (1 : R)) :
       ∀ r : κ, n r → n r → ∀ s : κ, Matrix (n s) (n s) R) where
   star_eq _ _ _ := by simp [Pi.star_single, Matrix.star_eq_conjTranspose]
   mul_same _ _ _ _ := by rw [← Pi.single_mul, Matrix.single_mul_single_same, mul_one]
   mul_eq_zero_of_ne _ _ {_ _} _ hjk := by simp [← Pi.single_mul, hjk]
   mul_eq_zero_of_block_ne hrs _ _ _ _ := by simp [← Pi.single_mul_left, Pi.single_eq_of_ne hrs]
+
+/-- Standard multi-block matrix units `(r, i, j) ↦ Pi.single r (Matrix.single i j 1)` in
+`∀ r : κ, Matrix (n r) (n r) R` form a unital system of matrix units. -/
+theorem isUnitalMatrixUnitSystem_piSingle_matrixSingle (R : Type*) [Semiring R] [StarRing R]
+    [DecidableEq κ] [∀ r, DecidableEq (n r)] [Fintype κ] :
+    IsUnitalMatrixUnitSystem (fun r (i j : n r) ↦ Pi.single r (Matrix.single i j (1 : R)) :
+      ∀ r : κ, n r → n r → ∀ s : κ, Matrix (n s) (n s) R) where
+  toIsMatrixUnitSystem := isMatrixUnitSystem_piSingle_matrixSingle R
   support_eq_one := by
     funext s; simp only [matrixUnitSupport_def, Pi.one_apply, Finset.sum_apply,
       ← AddMonoidHom.single_apply (f := fun r ↦ Matrix (n r) (n r) R), ← map_sum,
       Matrix.sum_single_one]; simp [AddMonoidHom.single_apply]
 
 section HomExtension
+
+/-- Evaluating a nonunital `𝕜`-`⋆`-algebra homomorphism out of `(∀ r : κ, Matrix (n r) (n r) 𝕜)`
+on the standard matrix units yields a system of matrix units. -/
+theorem _root_.NonUnitalStarAlgHom.isMatrixUnitSystem {𝕜 : Type*} [CommSemiring 𝕜] [StarRing 𝕜]
+    [NonUnitalSemiring R] [StarRing R] [Module 𝕜 R] [DecidableEq κ] [∀ r, DecidableEq (n r)]
+    (φ : (∀ r : κ, Matrix (n r) (n r) 𝕜) →⋆ₙₐ[𝕜] R) :
+    IsMatrixUnitSystem (fun r (i j : n r) ↦ φ (Pi.single r (Matrix.single i j 1))) :=
+  (isMatrixUnitSystem_piSingle_matrixSingle 𝕜).map φ
 
 /-- Two nonunital `𝕜`-`⋆`-algebra homomorphisms from `∀ r : κ, Matrix (n r) (n r) 𝕜` agreeing on
 all standard matrix units `Pi.single r (Matrix.single i j 1)` are equal. -/
@@ -298,8 +322,8 @@ variable [Fintype κ]
 
 namespace IsMatrixUnitSystem
 
-/-- Nonunital `𝕜`-`⋆`-algebra homomorphism `∀ r : κ, Matrix (n r) (n r) 𝕜 →⋆ₙₐ[𝕜] R` induced by a
-system of matrix units `e`, sending `Pi.single r (Matrix.single i j 1)` to `e r i j`. -/
+/-- Nonunital `𝕜`-`⋆`-algebra homomorphism `(∀ r : κ, Matrix (n r) (n r) 𝕜) →⋆ₙₐ[𝕜] R` induced by
+a system of matrix units `e`, sending `Pi.single r (Matrix.single i j 1)` to `e r i j`. -/
 def nonUnitalStarAlgHom [NonUnitalSemiring R] [StarRing R] {e : ∀ r : κ, n r → n r → R}
     (he : IsMatrixUnitSystem e) (𝕜 : Type*) [CommSemiring 𝕜] [StarRing 𝕜]
     [Module 𝕜 R] [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R] [StarModule 𝕜 R] :
@@ -437,8 +461,26 @@ theorem injective_nonUnitalStarAlgHom {𝕜 : Type*} [Field 𝕜] [StarRing 𝕜
   (he.injective_nonUnitalStarAlgHom_iff).mpr hne
 end IsMatrixUnitSystem
 
+/-- Reconstructing a nonunital `𝕜`-`⋆`-algebra homomorphism from its induced matrix-unit system
+recovers `φ`. -/
+@[simp] theorem _root_.NonUnitalStarAlgHom.nonUnitalStarAlgHom_isMatrixUnitSystem {𝕜 : Type*}
+    [CommSemiring 𝕜] [StarRing 𝕜] [NonUnitalSemiring R] [StarRing R] [Module 𝕜 R]
+    [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R] [StarModule 𝕜 R]
+    [DecidableEq κ] [∀ r, DecidableEq (n r)]
+    (φ : (∀ r : κ, Matrix (n r) (n r) 𝕜) →⋆ₙₐ[𝕜] R) :
+    φ.isMatrixUnitSystem.nonUnitalStarAlgHom 𝕜 = φ :=
+  (φ.isMatrixUnitSystem.eq_nonUnitalStarAlgHom_iff.mpr fun _ _ _ ↦ rfl).symm
+
+/-- Evaluating a unital `𝕜`-`⋆`-algebra homomorphism out of `(∀ r : κ, Matrix (n r) (n r) 𝕜)` on
+the standard matrix units yields a unital system of matrix units. -/
+theorem _root_.StarAlgHom.isUnitalMatrixUnitSystem {𝕜 : Type*} [CommSemiring 𝕜] [StarRing 𝕜]
+    [Semiring R] [StarRing R] [Algebra 𝕜 R] [DecidableEq κ] [∀ r, DecidableEq (n r)]
+    (φ : (∀ r : κ, Matrix (n r) (n r) 𝕜) →⋆ₐ[𝕜] R) :
+    IsUnitalMatrixUnitSystem (fun r (i j : n r) ↦ φ (Pi.single r (Matrix.single i j 1))) :=
+  (isUnitalMatrixUnitSystem_piSingle_matrixSingle 𝕜).map φ
+
 namespace IsUnitalMatrixUnitSystem
-/-- Unital `𝕜`-`⋆`-algebra homomorphism `∀ r : κ, Matrix (n r) (n r) 𝕜 →⋆ₐ[𝕜] R` induced by a
+/-- Unital `𝕜`-`⋆`-algebra homomorphism `(∀ r : κ, Matrix (n r) (n r) 𝕜) →⋆ₐ[𝕜] R` induced by a
 unital system of matrix units `e`. -/
 def starAlgHom [Semiring R] [StarRing R] [∀ r, DecidableEq (n r)] {e : ∀ r : κ, n r → n r → R}
     (he : IsUnitalMatrixUnitSystem e) (𝕜 : Type*) [CommSemiring 𝕜] [StarRing 𝕜]
@@ -521,6 +563,15 @@ theorem injective_starAlgHom {𝕜 : Type*} [Field 𝕜] [StarRing 𝕜] [Semiri
     Function.Injective (he.starAlgHom 𝕜) :=
   (he.injective_starAlgHom_iff).mpr hne
 end IsUnitalMatrixUnitSystem
+
+/-- Reconstructing a unital `𝕜`-`⋆`-algebra homomorphism from its induced unital matrix-unit
+system recovers `φ`. -/
+@[simp] theorem _root_.StarAlgHom.starAlgHom_isUnitalMatrixUnitSystem {𝕜 : Type*}
+    [CommSemiring 𝕜] [StarRing 𝕜] [Semiring R] [StarRing R] [Algebra 𝕜 R] [StarModule 𝕜 R]
+    [DecidableEq κ] [∀ r, DecidableEq (n r)]
+    (φ : (∀ r : κ, Matrix (n r) (n r) 𝕜) →⋆ₐ[𝕜] R) :
+    φ.isUnitalMatrixUnitSystem.starAlgHom 𝕜 = φ :=
+  (φ.isUnitalMatrixUnitSystem.eq_starAlgHom_iff.mpr fun _ _ _ ↦ rfl).symm
 end
 end HomExtension
 

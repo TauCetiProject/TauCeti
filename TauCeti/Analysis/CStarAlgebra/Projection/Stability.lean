@@ -8,11 +8,9 @@ module
 public import Mathlib.Algebra.Star.Orthogonal
 public import TauCeti.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RoundProjection
-import Mathlib.Algebra.Star.NonUnitalSubalgebra
 import TauCeti.Algebra.Star.Projection.Family
 import TauCeti.Analysis.Normed.Algebra.Star
 import TauCeti.Data.Fin.Tuple.Basic
-import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
 
 /-!
 # Norm stability of projections and finite orthogonal projection families in C⋆-algebras

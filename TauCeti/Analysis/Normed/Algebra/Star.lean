@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.CharP.Invertible
 public import Mathlib.Algebra.Order.Star.Basic
-public import Mathlib.Algebra.Star.Module
 public import Mathlib.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.Normed.Ring.Basic
 import Mathlib.Algebra.Order.Star.Projection

@@ -8,20 +8,20 @@ module
 public import TauCeti.Algebra.Star.MatrixUnits
 public import TauCeti.Analysis.CStarAlgebra.PartialIsometry
 public import TauCeti.Analysis.CStarAlgebra.Projection.Stability
-import Mathlib.Algebra.Star.NonUnitalSubalgebra
 import TauCeti.Analysis.Normed.Algebra.Star
-import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
 
 /-!
 # Norm stability of matrix units in C⋆-algebras
 
-Finite multi-block systems of matrix units (`TauCeti.IsMatrixUnitSystem`) parameterize
-`⋆`-homomorphisms from `⨁ᵣ M_{n r}(ℂ)` into a C⋆-algebra `A`. Both non-unital and unital finite
-matrix-unit systems are **uniformly norm-stable** across all C⋆-algebras: for every `ε > 0` and
-finite index family `n : κ → Type*`, there exists `δ > 0` depending only on `ε` and `n`, uniformly
-across all C⋆-algebras `A` and closed non-unital `𝕜'`-`⋆`-subalgebras `s` (for any scalar monoid
-`𝕜'` over `ℝ`), such that every `δ`-approximate system in `s` lies entrywise within `ε` of an
-exact system in `s` (and unital when `‖matrixUnitSupport x - 1‖ < δ`).
+Finite multi-block systems of matrix units (`TauCeti.IsMatrixUnitSystem`) parameterize nonunital
+`⋆`-homomorphisms `(∀ r : κ, Matrix (n r) (n r) ℂ) →⋆ₙₐ[ℂ] A` into a C⋆-algebra `A`, while
+unital systems (`TauCeti.IsUnitalMatrixUnitSystem`) parameterize unital `⋆`-homomorphisms when `A`
+is unital. Both non-unital and unital finite matrix-unit systems are **uniformly norm-stable**
+across all C⋆-algebras: for every `ε > 0` and finite index family `n : κ → Type*`, there exists
+`δ > 0` depending only on `ε` and `n`, uniformly across all C⋆-algebras `A` and closed non-unital
+`𝕜'`-`⋆`-subalgebras `s` (for any scalar monoid `𝕜'` over `ℝ`), such that every `δ`-approximate
+system in `s` lies entrywise within `ε` of an exact system in `s` (and unital when `A` is unital
+and `‖matrixUnitSupport x - 1‖ < δ`).
 
 ## Main results
 

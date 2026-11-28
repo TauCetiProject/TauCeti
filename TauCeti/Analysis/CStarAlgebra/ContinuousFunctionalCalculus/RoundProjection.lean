@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
 public import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
-import Mathlib.Algebra.Star.NonUnitalSubalgebra
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import TauCeti.Analysis.CStarAlgebra.Basic
@@ -42,7 +40,7 @@ the junk value `0`.
 * `TauCeti.continuousOn_roundProjection_indicator`,
   `IsSelfAdjoint.continuousOn_roundProjection_indicator_quasispectrum`: continuity of the indicator
   of `[1/2, ∞)` on the (quasi)spectrum of an almost-projection.
-* `IsSelfAdjoint.norm_sub_roundProjection_le`, `TauCeti.norm_sub_roundProjection_le`,
+* `IsSelfAdjoint.norm_sub_roundProjection_le`,
   `TauCeti.norm_one_sub_roundProjection_mul_le`,
   `TauCeti.norm_one_sub_roundProjection_mul_mul_one_sub_le`,
   `TauCeti.roundProjection_ne_zero`: `‖h - Q‖ ≤ 2δ`, `‖(1 - Q)h‖ ≤ 2δ`,
@@ -359,12 +357,6 @@ theorem roundProjection_eq_cfc (h : A) :
         cfc_apply_of_not_continuousOn _ hc]
   · rw [roundProjection_def, cfcₙ_apply_of_not_predicate _ hh, cfc_apply_of_not_predicate _ hh]
 
-/-- **Rounding an almost-projection.** If `h` is self-adjoint with `‖h - h²‖ ≤ δ < 1/4`, then its
-rounding `χ_{[1/2, ∞)}(h)` is within `2δ` of `h`. -/
-theorem norm_sub_roundProjection_le (hh : IsSelfAdjoint h) (hδ : ‖h - h ^ 2‖ ≤ δ)
-    (hδ4 : δ < 1 / 4) : ‖h - roundProjection h‖ ≤ 2 * δ :=
-  hh.norm_sub_roundProjection_le (by rwa [← sq, norm_sub_rev]) hδ4
-
 /-- If `h` is self-adjoint with `‖h - h²‖ ≤ δ < 1/4`, then `h` is within `2δ` of `0` off its
 rounding: `‖(1 - χ_{[1/2, ∞)}(h)) h‖ ≤ 2δ`. -/
 theorem norm_one_sub_roundProjection_mul_le (hh : IsSelfAdjoint h) (hδ : ‖h - h ^ 2‖ ≤ δ)
@@ -374,7 +366,7 @@ theorem norm_one_sub_roundProjection_mul_le (hh : IsSelfAdjoint h) (hδ : ‖h -
     simp [mul_sub, sub_mul, hQ.isIdempotentElem.eq]
   rw [he]
   exact (norm_mul_le_of_norm_le_one_left hQ.one_sub.norm_le _).trans
-    (norm_sub_roundProjection_le hh hδ hδ4)
+    (hh.norm_sub_roundProjection_le (by rwa [← sq, norm_sub_rev]) hδ4)
 
 /-- If `h` is self-adjoint with `‖h - h²‖ ≤ δ < 1/4`, then the compression of `h` off its rounding
 is small: `‖(1 - χ_{[1/2, ∞)}(h)) h (1 - χ_{[1/2, ∞)}(h))‖ ≤ 2δ`. -/
@@ -389,7 +381,7 @@ theorem norm_one_sub_roundProjection_mul_mul_one_sub_le (hh : IsSelfAdjoint h)
 theorem roundProjection_ne_zero (hh : IsSelfAdjoint h) (hδ : ‖h - h ^ 2‖ ≤ δ)
     (hδ4 : δ < 1 / 4) (hlt : 2 * δ < ‖h‖) : roundProjection h ≠ 0 := by
   intro h0
-  have := norm_sub_roundProjection_le hh hδ hδ4
+  have := hh.norm_sub_roundProjection_le (by rwa [← sq, norm_sub_rev]) hδ4
   rw [h0, sub_zero] at this
   linarith
 

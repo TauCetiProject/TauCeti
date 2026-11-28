@@ -141,7 +141,7 @@ theorem norm_compress_map_mul_sub_le [DecidableEq n] {Q : CStarMatrix n n ℂ}
 
 /-- **Rounding `φ(1)` to a projection.** For a completely positive contraction `φ : A → M_k` on a
 unital C⋆-algebra with `δ = ‖φ(1) - φ(1)²‖ < 1/4`, the rounding `Q = χ_{[1/2, ∞)}(φ(1))` is a
-projection with `‖φ(1) - Q‖ ≤ 2δ` (`TauCeti.norm_sub_roundProjection_le`), and the compression
+projection with `‖φ(1) - Q‖ ≤ 2δ` (`IsSelfAdjoint.norm_sub_roundProjection_le`), and the compression
 `QφQ` satisfies
 `‖Qφ(ab)Q - Qφ(a)Q·Qφ(b)Q‖ ≤ ‖φ(ab) - φ(a)φ(b)‖ + 2δ‖a‖‖b‖`. -/
 theorem norm_roundProjection_compress_map_mul_sub_le [DecidableEq n]
@@ -203,7 +203,7 @@ theorem exists_renormalized_compress [DecidableEq n] {δ : ℝ} (hδ : ‖φ 1 -
   have hQ : IsStarProjection Q := isStarProjection_roundProjection (φ 1)
   have hδ0 : 0 ≤ δ := (norm_nonneg _).trans hδ
   have hδ4 : δ < 1 / 4 := by linarith
-  have hhQ := norm_sub_roundProjection_le hsa hδ hδ4
+  have hhQ := hsa.norm_sub_roundProjection_le (by rwa [← sq, norm_sub_rev]) hδ4
   obtain ⟨g, hgsa, hgQ, hgkg, hg1⟩ := hQ.exists_isSelfAdjoint_mul_compress_mul_eq hsa
     (commute_roundProjection (φ 1)) hhQ (by linarith)
   have hg : ‖g‖ ≤ 1 + 2 * δ := (norm_le_norm_add_norm_sub' g 1).trans
