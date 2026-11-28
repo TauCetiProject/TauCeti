@@ -22,8 +22,8 @@ import TauCeti.Algebra.Star.Rosati.Matrix.Trace
 import TauCeti.Algebra.Star.Rosati.SquareRoot
 import TauCeti.Algebra.Star.SelfAdjoint
 import TauCeti.Algebra.Star.SelfAdjoint.LinearMap
-import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 import TauCeti.LinearAlgebra.Matrix.Hermitian.Quaternion
+import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 
 /-!
 # Positive involutions on simple real matrix algebras
@@ -171,65 +171,6 @@ private theorem exists_starAlgEquiv_trivial_star {D : Type*} [DivisionRing D] [A
 
 end SharedNormalization
 
-section RealFactor
-
-private theorem not_pos_of_skewSymmetric_real {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n]
-    (u : (Matrix n n ℝ)ˣ) (hskew : (u : Matrix n n ℝ)ᴴ = -u)
-    (hpos : ∀ X : Matrix n n ℝ, X ≠ 0 →
-      0 < ((LinearMap.id : ℝ →ₗ[ℝ] ℝ).comp (Matrix.traceLinearMap n ℝ ℝ))
-        (X * (u : Matrix n n ℝ) * Xᴴ * (↑u⁻¹ : Matrix n n ℝ))) : False := by
-  let v₀ : n → ℝ := Pi.single (Classical.arbitrary n) 1
-  have hv₀ : v₀ ≠ 0 := fun h ↦ by simpa [v₀] using congrFun h (Classical.arbitrary n)
-  have hposX := hpos (Matrix.vecMulVec v₀ (star v₀)) (by simp [hv₀])
-  have hsa := Matrix.star_dotProduct_mulVec_self_of_skewHermitian hskew v₀
-  rw [star_trivial] at hsa
-  have hdot0 : star v₀ ⬝ᵥ ((u : Matrix n n ℝ) *ᵥ v₀) = 0 := by linarith
-  rw [LinearMap.comp_traceLinearMap_vecMulVec_mul_mul_conjTranspose_mul mul_comm,
-    hdot0, mul_zero, map_zero] at hposX
-  exact lt_irrefl 0 hposX
-
-end RealFactor
-
-section QuaternionFactor
-
-private theorem not_pos_of_skewHermitian_quaternion {n : Type*} [Fintype n] [DecidableEq n]
-    [Nonempty n] (u : (Matrix n n ℍ[ℝ])ˣ) (hskew : (u : Matrix n n ℍ[ℝ])ᴴ = -u)
-    (hpos : ∀ X : Matrix n n ℍ[ℝ], X ≠ 0 →
-      0 < ((QuaternionAlgebra.reₗ (-1) 0 (-1)).comp (Matrix.traceLinearMap n ℝ ℍ[ℝ]))
-        (X * (u : Matrix n n ℍ[ℝ]) * Xᴴ * (↑u⁻¹ : Matrix n n ℍ[ℝ]))) : False := by
-  set Uinv : Matrix n n ℍ[ℝ] := (↑u⁻¹ : Matrix n n ℍ[ℝ])
-  have huinv_skew : Uinvᴴ = -Uinv := by
-    have h := congrArg (fun M ↦ M * (-Uinv)) (congrArg Matrix.conjTranspose u.mul_inv)
-    rw [Matrix.conjTranspose_mul, hskew, Matrix.conjTranspose_one] at h
-    simpa [Uinv, mul_assoc] using h
-  let i₀ : n := Classical.arbitrary n; let v₀ : n → ℍ[ℝ] := Pi.single i₀ 1
-  have hv₀ : v₀ ≠ 0 := fun h ↦ by simpa [v₀] using congrFun h i₀
-  set r : ℍ[ℝ] := star v₀ ⬝ᵥ (Uinv *ᵥ v₀)
-  set s : ℍ[ℝ] := star v₀ ⬝ᵥ ((u : Matrix n n ℍ[ℝ]) *ᵥ v₀)
-  have hpos0 : 0 < (r * s).re := by
-    have h := hpos (Matrix.vecMulVec v₀ (star v₀)) (by simp [hv₀])
-    rwa [LinearMap.comp_traceLinearMap_vecMulVec_mul_mul_conjTranspose_mul
-      (rePart := QuaternionAlgebra.reₗ (-1) 0 (-1)) Quaternion.re_mul_comm
-      (u : Matrix n n ℍ[ℝ]) Uinv v₀ v₀] at h
-  obtain ⟨q, hq0, _, hqconj⟩ := Quaternion.exists_pure_star_mul_mul_eq_neg_normSq_smul r
-    (Matrix.re_star_dotProduct_mulVec_self_eq_zero_of_skewHermitian huinv_skew v₀)
-  let v₁ : n → ℍ[ℝ] := fun i ↦ v₀ i * q
-  have hv₁ : v₁ ≠ 0 := fun h ↦ by have := congrFun h i₀; simp [v₁, v₀, hq0] at this
-  have hpos1 : 0 < (-(Quaternion.normSq q • r) * s).re := by
-    have hv₁_quad : star v₁ ⬝ᵥ (Uinv *ᵥ v₁) = star q * r * q := by
-      simp only [dotProduct, Matrix.mulVec, v₁, r, Pi.star_apply, star_mul, Finset.mul_sum,
-        Finset.sum_mul, mul_assoc]
-    have h := hpos (Matrix.vecMulVec v₁ (star v₀)) (by simp [hv₁, hv₀])
-    rwa [LinearMap.comp_traceLinearMap_vecMulVec_mul_mul_conjTranspose_mul
-        (rePart := QuaternionAlgebra.reₗ (-1) 0 (-1)) Quaternion.re_mul_comm
-        (u : Matrix n n ℍ[ℝ]) Uinv v₁ v₀,
-      hv₁_quad, hqconj] at h
-  have hnq : 0 < Quaternion.normSq q := lt_of_not_ge fun h ↦ hq0 (Quaternion.normSq_le_zero.mp h)
-  simp only [neg_mul, QuaternionAlgebra.re_neg, smul_mul_assoc, QuaternionAlgebra.re_smul,
-    smul_eq_mul] at hpos1; nlinarith
-
-end QuaternionFactor
-
 end TauCeti
 
 namespace AlgEquiv
@@ -248,7 +189,10 @@ theorem exists_starAlgEquiv_matrix_real {A : Type*} [Ring A] [Algebra ℝ A] [St
   obtain ⟨e, he⟩ := exists_starAlgEquiv_trivial_star (LinearMap.id : ℝ →ₗ[ℝ] ℝ) mul_comm
     (fun a ha ↦ by simpa using mul_self_pos.mpr ha) (fun _ _ ↦ rfl)
     (fun τ _ a ↦ by simpa [mul_comm] using τ.map_smul a (1 : ℝ))
-    not_pos_of_skewSymmetric_real φ t hcyclic hpos
+    (fun u hskew hpos' ↦
+      Matrix.not_forall_trace_mul_mul_conjTranspose_mul_pos_of_conjTranspose_eq_neg hskew
+        (↑u⁻¹ : Matrix n n ℝ) (by simpa using hpos'))
+    φ t hcyclic hpos
   exact ⟨e, fun s ↦ by simpa using he s⟩
 
 /-- Given an `ℝ`-algebra isomorphism `φ : A ≃ₐ[ℝ] Matrix n n ℂ` (not assumed to preserve `star`)
@@ -317,7 +261,10 @@ theorem exists_starAlgEquiv_matrix_quaternion {A : Type*} [Ring A] [Algebra ℝ 
     Quaternion.re_mul_comm (fun _ ha ↦ Quaternion.re_mul_star_pos ha)
     (fun _ ha ↦ Quaternion.star_eq_self.mp ha)
     LinearMap.apply_eq_map_one_mul_re_of_cyclic_quaternion
-    not_pos_of_skewHermitian_quaternion φ t hcyclic hpos
+    (fun u hskew hpos' ↦
+      Matrix.not_forall_re_trace_mul_mul_conjTranspose_mul_pos_of_skewHermitian hskew
+        (↑u⁻¹ : Matrix n n ℍ[ℝ]) (by simpa using hpos'))
+    φ t hcyclic hpos
   exact ⟨e, fun s ↦ by simpa using he s⟩
 
 end AlgEquiv

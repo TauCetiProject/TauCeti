@@ -23,6 +23,9 @@ back to that of `B` (`star x * A * x = B`) carries Gram matrices for `B` to Gram
   such as `ℂ`, has `Xᴴ = Xᵀ`.
 * `Matrix.conjTranspose_mul_mul_mul_of_star_mul_mul_eq`: if `star x * A * x = B`, then
   `(x F)ᴴ A (x F) = Fᴴ B F`.
+* `Matrix.star_dotProduct_mulVec_self_of_skewHermitian`,
+  `Matrix.dotProduct_mulVec_self_eq_zero_of_skewHermitian`: quadratic forms of skew-Hermitian
+  matrices are skew-adjoint, and vanish when `star` is trivial and addition is torsion-free.
 -/
 
 public section
@@ -77,5 +80,16 @@ theorem star_dotProduct_mulVec_self_of_skewHermitian {n R : Type*} [Fintype n] [
     [StarRing R] {M : Matrix n n R} (hM : Mᴴ = -M) (v : n → R) :
     star (star v ⬝ᵥ (M *ᵥ v)) = -(star v ⬝ᵥ (M *ᵥ v)) := by
   rw [star_dotProduct_mulVec_self, hM, neg_mulVec, dotProduct_neg]
+
+/-- For a skew-Hermitian matrix `Mᴴ = -M` over a ring with trivial star and torsion-free
+addition, the quadratic form `v ⬝ᵥ (M *ᵥ v)` vanishes. -/
+theorem dotProduct_mulVec_self_eq_zero_of_skewHermitian {n R : Type*} [Fintype n] [Ring R]
+    [StarRing R] [TrivialStar R] [IsAddTorsionFree R] {M : Matrix n n R} (hM : Mᴴ = -M)
+    (v : n → R) : v ⬝ᵥ (M *ᵥ v) = 0 := by
+  have h := star_dotProduct_mulVec_self_of_skewHermitian hM v
+  have hv : star v = v := funext fun _ ↦ star_trivial _
+  rw [hv, star_trivial, eq_neg_iff_add_eq_zero, ← two_nsmul] at h
+  exact eq_of_nsmul_eq_nsmul_of_addCommute (by decide) (AddCommute.all _ _)
+    (h.trans (nsmul_zero 2).symm)
 
 end Matrix

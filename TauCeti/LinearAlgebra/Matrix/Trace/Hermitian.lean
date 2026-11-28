@@ -7,13 +7,18 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
+import TauCeti.LinearAlgebra.Matrix.ConjTranspose
+import TauCeti.LinearAlgebra.Matrix.Trace.Comp
 
 /-!
 # Trace of a Hermitian square
 
 The trace of the square of a Hermitian complex matrix is the sum of its squared entry norms. The
 trace of the product of a Hermitian and a skew-Hermitian matrix is purely imaginary
-(`Matrix.IsHermitian.re_trace_mul_eq_zero_of_conjTranspose_eq_neg`).
+(`Matrix.IsHermitian.re_trace_mul_eq_zero_of_conjTranspose_eq_neg`). Over a commutative ring with
+trivial star and torsion-free addition, `(X * A * Xᴴ * B).trace` vanishes on symmetric rank-one
+matrices `X = vecMulVec v v` whenever `Aᴴ = -A`, so it cannot be everywhere positive on nonzero `X`
+(`Matrix.not_forall_trace_mul_mul_conjTranspose_mul_pos_of_conjTranspose_eq_neg`).
 -/
 
 public section
@@ -39,5 +44,46 @@ theorem IsHermitian.re_trace_mul_eq_zero_of_conjTranspose_eq_neg {𝕜 ι : Type
   have := congrArg RCLike.re h
   simp only [RCLike.star_def, RCLike.conj_re, map_neg] at this
   linarith
+
+/-- For a skew-Hermitian matrix `Aᴴ = -A` over a commutative ring with trivial star and
+torsion-free addition, and any matrix `B` and vector `v`,
+`(vecMulVec v v * A * (vecMulVec v v)ᴴ * B).trace = 0`. -/
+theorem trace_vecMulVec_mul_mul_conjTranspose_mul_eq_zero_of_conjTranspose_eq_neg
+    {n R : Type*} [Fintype n] [CommRing R] [StarRing R] [TrivialStar R] [IsAddTorsionFree R]
+    {A : Matrix n n R} (hA : Aᴴ = -A) (B : Matrix n n R) (v : n → R) :
+    (vecMulVec v v * A * (vecMulVec v v)ᴴ * B).trace = 0 := by
+  have h := LinearMap.comp_traceLinearMap_vecMulVec_mul_mul_conjTranspose_mul
+    (rePart := (LinearMap.id : R →ₗ[R] R)) mul_comm A B v v
+  simp only [star_trivial, LinearMap.id_comp, Matrix.traceLinearMap_apply] at h
+  rw [h, dotProduct_mulVec_self_eq_zero_of_skewHermitian hA v, mul_zero, LinearMap.id_apply]
+
+/-- For a skew-Hermitian matrix `Aᴴ = -A` on a nonempty finite index type over a nontrivial
+commutative ring with trivial star and torsion-free addition, and any matrix `B`, there exists a
+nonzero matrix `X` with `(X * A * Xᴴ * B).trace = 0`. -/
+theorem exists_ne_zero_trace_mul_mul_conjTranspose_mul_eq_zero_of_conjTranspose_eq_neg
+    {n R : Type*} [Fintype n] [Nonempty n] [CommRing R] [Nontrivial R] [StarRing R]
+    [TrivialStar R] [IsAddTorsionFree R] {A : Matrix n n R} (hA : Aᴴ = -A)
+    (B : Matrix n n R) :
+    ∃ X : Matrix n n R, X ≠ 0 ∧ (X * A * Xᴴ * B).trace = 0 := by
+  let i₀ : n := Classical.arbitrary n
+  let v : n → R := fun _ ↦ 1
+  refine ⟨vecMulVec v v,
+    fun h ↦ by simpa [v, vecMulVec_apply] using congrFun (congrFun h i₀) i₀,
+    trace_vecMulVec_mul_mul_conjTranspose_mul_eq_zero_of_conjTranspose_eq_neg hA B v⟩
+
+/-- For a skew-Hermitian matrix `Aᴴ = -A` on a nonempty finite index type over a nontrivial
+preordered commutative ring with trivial star and torsion-free addition, and any matrix `B`,
+`(X * A * Xᴴ * B).trace` cannot be strictly positive on all nonzero matrices `X`. -/
+theorem not_forall_trace_mul_mul_conjTranspose_mul_pos_of_conjTranspose_eq_neg
+    {n R : Type*} [Fintype n] [Nonempty n] [CommRing R] [Nontrivial R] [Preorder R]
+    [StarRing R] [TrivialStar R] [IsAddTorsionFree R] {A : Matrix n n R} (hA : Aᴴ = -A)
+    (B : Matrix n n R) :
+    ¬ ∀ X : Matrix n n R, X ≠ 0 → 0 < (X * A * Xᴴ * B).trace := by
+  intro h
+  obtain ⟨X, hX, h0⟩ :=
+    exists_ne_zero_trace_mul_mul_conjTranspose_mul_eq_zero_of_conjTranspose_eq_neg hA B
+  have hpos := h X hX
+  rw [h0] at hpos
+  exact lt_irrefl 0 hpos
 
 end Matrix
