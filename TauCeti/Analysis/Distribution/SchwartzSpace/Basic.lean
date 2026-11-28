@@ -52,6 +52,9 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_iteratedFDeriv_comp_left`,
   `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
+* `SchwartzMap.seminorm_eq_seminorm`: the Schwartz seminorms do not depend on the scalar field.
+* `SchwartzMap.seminorm_postcompCLM_linearIsometry`: postcomposition with a linear isometry
+  preserves the Schwartz seminorms.
 * `SchwartzMap.norm_toLp_sq`: the squared `L²` norm of `f` is `∫ ‖f x‖²`.
 * `SchwartzMap.conjnegCLM`: the continuous conjugate-linear reversed-conjugation involution,
   with exact reflected-support, compact-support and near-origin cutoff laws.
@@ -341,12 +344,39 @@ variable {𝕜 E F G : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace 𝕜 G]
 
+/-- The Schwartz seminorms do not depend on the scalar field: over any field, `p_{k,n}(f)` is the
+best constant `c` with `‖x‖ ^ k * ‖iteratedFDeriv ℝ n f x‖ ≤ c`. -/
+theorem seminorm_eq_seminorm (𝕜₁ 𝕜₂ : Type*) [NormedField 𝕜₁] [NormedSpace 𝕜₁ F]
+    [SMulCommClass ℝ 𝕜₁ F] [NormedField 𝕜₂] [NormedSpace 𝕜₂ F] [SMulCommClass ℝ 𝕜₂ F]
+    (k n : ℕ) (f : 𝓢(E, F)) :
+    SchwartzMap.seminorm 𝕜₁ k n f = SchwartzMap.seminorm 𝕜₂ k n f := by
+  rw [seminorm_apply, seminorm_apply]
+
 /-- As a function, the postcomposition of a Schwartz function `f` with a continuous linear map
 `L` is the composite `L ∘ f`. -/
 @[simp]
 theorem coe_postcompCLM (f : 𝓢(E, F)) (L : F →L[𝕜] G) : ⇑(f.postcompCLM L) = L ∘ f := by
   ext x
   rw [postcompCLM_apply, Function.comp_apply]
+
+/-- **Postcomposition with a linear isometry preserves the Schwartz seminorms.** The iterated
+derivatives of `L ∘ f` are those of `f` followed by `L`, with the same norms. -/
+theorem seminorm_postcompCLM_linearIsometry (L : F →ₗᵢ[𝕜] G) (f : 𝓢(E, F)) (k n : ℕ) :
+    SchwartzMap.seminorm 𝕜 k n (f.postcompCLM L.toContinuousLinearMap) =
+      SchwartzMap.seminorm 𝕜 k n f := by
+  -- The derivatives are real derivatives, so view `L` as a real-linear isometry.
+  let Lℝ : F →ₗᵢ[ℝ] G := ⟨L.toLinearMap.restrictScalars ℝ, fun x ↦ by
+    rw [LinearMap.coe_restrictScalars, LinearIsometry.coe_toLinearMap, L.norm_map]⟩
+  -- `Lℝ` and `L` have the same underlying function.
+  have hcoe : ⇑(f.postcompCLM L.toContinuousLinearMap) = Lℝ ∘ f := by
+    ext x
+    simp [Lℝ]
+  have h (x : E) :
+      ‖iteratedFDeriv ℝ n (f.postcompCLM L.toContinuousLinearMap) x‖ =
+        ‖iteratedFDeriv ℝ n f x‖ := by
+    rw [hcoe]
+    exact Lℝ.norm_iteratedFDeriv_comp_left (f.smooth ⊤).contDiffAt (mod_cast le_top)
+  simp only [seminorm_apply, h]
 
 end Postcomp
 

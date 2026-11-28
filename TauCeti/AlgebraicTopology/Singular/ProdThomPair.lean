@@ -82,11 +82,11 @@ The isomorphism is built from a choice of such a step for each proper subspace o
   `b` (`TauCeti.complZeroPairPointHom_comp_singularHomologyMap_prodThomPairFiberMap`).
 * `TauCeti.isLocalOrientation_complZeroPairPointHom_one`: with integral coefficients the point
   class of `1` is a local orientation of `(F, F ∖ {0})`.
-* `TauCeti.span_complZeroPairPointHom_one`,
-  `TauCeti.exists_eq_units_smul_complZeroPairPointHom_one`: with coefficients in a commutative
-  ring `K`, the point class of `1` generates `Hᵣ(F, F ∖ {0}; K)`, and every generator is a unit
-  multiple of it; `TauCeti.eq_complZeroPairPointHom_one`: it is the only generator when `1` is
-  the only unit of `K`.
+* `TauCeti.complZeroPairPointCoord`: the coordinate of a fibre class relative to the point
+  class of `1`, which generates `Hᵣ(F, F ∖ {0}; K)` (`TauCeti.span_complZeroPairPointHom_one`).
+  Over a Dedekind-finite ring, a class generates precisely when its coordinate is a unit
+  (`TauCeti.isUnit_complZeroPairPointCoord_iff`), giving its expression as a unit multiple of
+  the point class (`TauCeti.exists_eq_units_smul_complZeroPairPointHom_one`).
 * `TauCeti.singularHomologyMap_prodThomPairFiberMap_eq_of_joined`: fibre inclusions over points
   joined by a path agree on `Hᵣ`.
 * `TauCeti.singularHomology_prodThomPair_hom_ext`: morphisms out of
@@ -691,21 +691,52 @@ theorem span_complZeroPairPointHom_one [Ring K] :
     Submodule.span K {complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K)} = ⊤ :=
   (ModuleCat.span_singleton_apply_eq_top_iff _).2 Ideal.span_singleton_one
 
-variable [CommRing K]
+section Coordinate
+
+variable {F K} [Ring K]
+  (γ : ((TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology
+    (ModuleCat.of K K) (finrank ℝ F) : ModuleCat.{w} K))
+
+/-- The linear coordinate on `Hᵣ(F, F ∖ {0}; K)` relative to the point class of `1`. -/
+def complZeroPairPointCoord :
+    ((TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology
+      (ModuleCat.of K K) (finrank ℝ F) : ModuleCat.{w} K) →ₗ[K] K :=
+  (asIso (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl)).inv.hom
+
+/-- The point-class map sends a scalar to the class with that coordinate. -/
+@[simp]
+theorem complZeroPairPointCoord_pointHom (a : K) :
+    complZeroPairPointCoord
+      (no_index (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl a)) = a :=
+  IsIso.hom_inv_id_apply (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl) a
+
+/-- Multiplying the point class of `1` by the coordinate of `γ` recovers `γ`. -/
+@[simp]
+theorem complZeroPairPointCoord_smul_pointHom_one :
+    complZeroPairPointCoord γ • complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl 1 =
+      γ := by
+  rw [← map_smul, smul_eq_mul, mul_one]
+  exact IsIso.inv_hom_id_apply _ γ
+
+/-- A class of the fibre pair generates its rank-degree homology exactly when its coordinate
+relative to the point class is a unit. -/
+theorem isUnit_complZeroPairPointCoord_iff [IsDedekindFiniteMonoid K] :
+    IsUnit (complZeroPairPointCoord γ) ↔ Submodule.span K {γ} = ⊤ := by
+  let e := (asIso (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl)).symm.toLinearEquiv
+  exact e.span_singleton_eq_top_iff_isUnit.symm
+
+end Coordinate
 
 /-- Every generator of `Hᵣ(F, F ∖ {0}; K) ≅ K` is a unit multiple of the point class of `1`. -/
-theorem exists_eq_units_smul_complZeroPairPointHom_one {x : ((TopPair.ofSubset
-    (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology (ModuleCat.of K K) (finrank ℝ F) :
-      ModuleCat.{w} K)} (hx : Submodule.span K {x} = ⊤) :
+theorem exists_eq_units_smul_complZeroPairPointHom_one [Ring K] [IsDedekindFiniteMonoid K]
+    {x : ((TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology
+      (ModuleCat.of K K) (finrank ℝ F) : ModuleCat.{w} K)} (hx : Submodule.span K {x} = ⊤) :
     ∃ u : Kˣ,
       x = (u : K) • complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K) := by
-  let φ := (singularHomologyComplSingletonFinrankIso (ModuleCat.of K K)
-    (OpenPartialHomeomorph.refl F) (Set.mem_univ 0)).toLinearEquiv
-  have hx' := φ.span_singleton_eq_top_iff_isUnit.1 hx
-  have hg := φ.span_singleton_eq_top_iff_isUnit.1 (span_complZeroPairPointHom_one F K)
-  refine ⟨hx'.unit * hg.unit⁻¹, φ.injective ?_⟩
-  rw [map_smul, smul_eq_mul, Units.val_mul, mul_assoc, IsUnit.val_inv_mul, mul_one,
-    IsUnit.unit_spec]
+  have hu := (isUnit_complZeroPairPointCoord_iff x).2 hx
+  exact ⟨hu.unit, by rw [hu.unit_spec, complZeroPairPointCoord_smul_pointHom_one]⟩
+
+variable [CommRing K]
 
 /-- With coefficients in a ring whose only unit is `1`, the point class of `1` is the only
 generator of `Hᵣ(F, F ∖ {0}; K) ≅ K`. -/

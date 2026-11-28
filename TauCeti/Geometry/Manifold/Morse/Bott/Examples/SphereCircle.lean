@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.SphereCircle
+import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit.NormalOrientation
 public import TauCeti.Geometry.Manifold.Morse.Bott.MappingTorus.NegativeOrientation
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
@@ -51,8 +52,9 @@ determinant `-1` (for `E = ℝ³`, `diag(1, -1)` in the coordinates `x, y`). On 
 `T_u S² × T_{-1} S¹` of the circle, `τ` also reverses the circle factor, so it acts with
 determinant `+1` (for `E = ℝ³`, `diag(1, -1, -1)`), as it must since the mapping torus and the
 circle are oriented. So the orientation local system that twists the homology across the level of
-`(N, π)` is that of the negative plane bundle, not that of the whole normal bundle; the
-orientability of the whole normal bundle is background here and is not formalized.
+`(N, π)` is that of the negative plane bundle, not that of the whole normal bundle, which is
+orientable along every critical circle
+(`TauCeti.nonempty_vectorBundleOrientation_normalSpace_sphereCircleCriticalCircle`).
 
 ## Main definitions
 
@@ -77,6 +79,8 @@ orientability of the whole normal bundle is background here and is not formalize
   `2`, `1` and `0` along the four critical circles.
 * `TauCeti.isEmpty_vectorBundleOrientation_negativeNormalSpace_sphereCircleCriticalCircle`:
   the negative normal bundle of the circle `(N, π)` is not orientable.
+* `TauCeti.nonempty_vectorBundleOrientation_normalSpace_sphereCircleCriticalCircle`: the whole
+  normal bundle of every critical circle is orientable.
 
 ## References
 
@@ -438,5 +442,38 @@ theorem isEmpty_vectorBundleOrientation_negativeNormalSpace_sphereCircleCritical
     (criticalHessian_sphereCircleHeight_inl_neg p ε)
 
 end NegativeNormal
+
+/-! ### The whole normal bundle of a critical circle -/
+
+section Normal
+
+variable (hn : (∞ : ℕ∞ω) ≠ 0)
+
+/-- **The whole normal bundle of each critical circle is orientable.** Let `x` be a critical point
+of `TauCeti.sphereCircleHeight u ε`, with critical circle `C = {[t, x]}`. Then the normal bundle of
+`C`, of rank three, is orientable. Going once around `C`, its fibre comes back through the
+differential of `τ` at `x`, of positive determinant (for `E = ℝ³`, `diag(1, -1, -1)`), since both
+factors of `τ` reverse the orientation of their spheres.
+
+For `x = (u, -1)` this is the circle `(N, π)`, whose negative normal plane bundle is not orientable
+(`TauCeti.isEmpty_vectorBundleOrientation_negativeNormalSpace_sphereCircleCriticalCircle`): the
+orientation local system of the negative normal bundle differs from that of the whole normal
+bundle. -/
+theorem nonempty_vectorBundleOrientation_normalSpace_sphereCircleCriticalCircle
+    (hv : v ≠ 0) (huv : ⟪v, (u : E)⟫_ℝ = 0) {ε : ℝ} (hε : ε ≠ 0)
+    (x : criticalPoints ((𝓡 2).prod (𝓡 1)) (sphereCircleHeight u ε))
+    {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
+    (hdim : finrank ℝ P = finrank ℝ (ℝ × (EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 1))) -
+      finrank ℝ ℝ) :
+    letI := (sphereCircleCriticalCircle huv hε x).normalSpaceFiberBundle hn hdim
+    letI := (sphereCircleCriticalCircle huv hε x).normalSpaceVectorBundle hn hdim
+    Nonempty (VectorBundleOrientation P
+      (fun s ↦ (sphereCircleCriticalCircle huv hε x).isImmersion.NormalSpace s hn) (Fin 3)) :=
+  SmoothMappingTorus.nonempty_vectorBundleOrientation_normalSpace_of_det_pos hn
+    (sphereCircleCriticalCircle_coe huv hε x) hdim (by simp)
+    (det_mfderiv_sphereCircleReflection_pos hv
+      (isFixedPt_sphereCircleReflection_of_mem_criticalPoints huv hε x.property))
+
+end Normal
 
 end TauCeti

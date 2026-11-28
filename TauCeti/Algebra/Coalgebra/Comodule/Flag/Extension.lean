@@ -111,25 +111,15 @@ variable [Field k]
 variable [AddCommGroup C] [Module k C] [Coalgebra k C]
 variable [AddCommGroup M] [Module k M] [Comodule k C M]
 
-/-- The tautological linear equivalence between a subcomodule and the subtype of its exposed
-underlying submodule. -/
-private def toSubmoduleEquiv (N : Subcomodule k C M) : N ≃ₗ[k] N.toSubmodule where
-  toFun x := ⟨x, x.property⟩
-  invFun x := ⟨x, x.property⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-
 /-- A basis of a subcomodule, regarded as a basis of its exposed underlying submodule. -/
 private def toSubmoduleBasis (N : Subcomodule k C M) (bN : Basis (Fin m) k N) :
     Basis (Fin m) k N.toSubmodule :=
-  bN.map (toSubmoduleEquiv N)
+  bN.map N.toSubmoduleEquiv
 
 @[simp]
 private theorem toSubmoduleBasis_apply (N : Subcomodule k C M) (bN : Basis (Fin m) k N)
     (i : Fin m) : ((toSubmoduleBasis N bN i : N.toSubmodule) : M) = bN i := by
-  rfl
+  simp [toSubmoduleBasis]
 
 /-- The basis of a comodule obtained by putting a basis of a subcomodule before chosen lifts of a
 basis of the quotient. The construction is Mathlib's `Module.Basis.sumQuot`, reindexed by the
@@ -159,12 +149,9 @@ coordinates in the given subcomodule basis. -/
 theorem extensionBasis_repr_castAdd (N : Subcomodule k C M) (bN : Basis (Fin m) k N)
     (bQ : Basis (Fin n) k (M ⧸ N.toSubmodule)) (x : N) (i : Fin m) :
     (extensionBasis N bN bQ).repr x (Fin.castAdd n i) = bN.repr x i := by
-  -- `N` and the subtype of `N.toSubmodule` have different wrappers, so expose the tautological
-  -- equivalence before applying the module-level coordinate theorem.
-  change ((extensionBasis N bN bQ).repr
-    ((toSubmoduleEquiv N x : N.toSubmodule) : M)) (Fin.castAdd n i) = bN.repr x i
-  rw [extensionBasis, TauCeti.extensionBasis_repr_castAdd]
-  rfl
+  rw [← Subcomodule.coe_toSubmoduleEquiv_apply, extensionBasis,
+    TauCeti.extensionBasis_repr_castAdd, toSubmoduleBasis, Module.Basis.map_repr,
+    LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply]
 
 /-- The second-block coordinates in `extensionBasis` are the coordinates of the quotient class. -/
 @[simp]

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.DyadicSymbol
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Lp.Reindex
+import TauCeti.Analysis.SpecificLimits.DyadicSum
 
 /-!
 # Reconstruction from pieces with spectra in dyadic annuli
@@ -65,15 +66,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 
 namespace TauCeti.BesovSpace
 
-/-- `2^{j(s-1)} x ≤ 2^{-j} y` when `2^{js} x ≤ y`. -/
-private theorem rpow_sub_one_mul_le {s x y : ℝ} (j : ℕ) (h : 2 ^ (s * j) * x ≤ y) :
-    (2 : ℝ) ^ ((s - 1) * j) * x ≤ (1 / 2) ^ j * y := by
-  have h2 : (2 : ℝ) ^ ((s - 1) * j) = (1 / 2) ^ j * 2 ^ (s * j) := by
-    rw [sub_mul, one_mul, Real.rpow_sub two_pos, Real.rpow_natCast, div_pow, one_pow]
-    ring
-  rw [h2, mul_assoc]
-  exact mul_le_mul_of_nonneg_left h (by positivity)
-
 /-- **Convergence of a series of annular pieces.** If `uⱼ ∈ Lᵖ` has spectrum in the dyadic
 annulus of radii `2^j a` and `2^j b` and `2^{js} ‖uⱼ‖_p` is bounded by an `ℓ^q` sequence, then
 `∑ⱼ uⱼ` converges in the tempered distributions: the series `∑ⱼ J^{s-1} uⱼ` converges absolutely
@@ -89,22 +81,16 @@ private theorem exists_hasSum_of_annulus (s : ℝ) {a : ℝ} (ha : 0 < a) (b : �
     exists_besselPotential_eq_and_norm_le_of_isVanishingOn (E := E) (F := F) (s - 1) ha b
   choose g hg hgC using fun j ↦ hJ j (u j) (hb j) (ha' j)
   have hq : q ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
-  have hbound (j : ℕ) : ‖g j‖ ≤ C * ‖w‖ * (1 / 2) ^ j := by
-    calc ‖g j‖ ≤ C * (2 ^ ((s - 1) * j) * ‖u j‖) := (hgC j).trans_eq (mul_assoc _ _ _)
-      _ ≤ C * ((1 / 2) ^ j * w j) := mul_le_mul_of_nonneg_left (rpow_sub_one_mul_le j (huw j)) hC
-      _ ≤ C * ((1 / 2) ^ j * ‖w‖) := by
-        gcongr
-        exact (Real.le_norm_self _).trans (lp.norm_apply_le_norm hq w j)
-      _ = C * ‖w‖ * (1 / 2) ^ j := by ring
-  have hsum : Summable fun j ↦ ‖g j‖ :=
-    (summable_geometric_two.mul_left (C * ‖w‖)).of_nonneg_of_le (fun _ ↦ norm_nonneg _) hbound
+  obtain ⟨G, hG, -⟩ := exists_hasSum_and_norm_le_of_two_rpow_mul_le (t := fun j ↦ (j : ℝ)) hC
+    (fun _ ↦ le_rfl)
+    (fun j ↦ (huw j).trans ((Real.le_norm_self _).trans (lp.norm_apply_le_norm hq w j))) hgC
   -- `uⱼ = J^{1-s} gⱼ`, and `J^{1-s}` is continuous from `Lᵖ` to the tempered distributions.
   set T := besselPotential E F (1 - s) ∘L Lp.toTemperedDistributionCLM F volume p
   have hT (j : ℕ) : T (g j) = u j := by
     rw [ContinuousLinearMap.comp_apply, Lp.toTemperedDistributionCLM_apply, ← hg j,
       besselPotential_besselPotential_apply, show s - 1 + (1 - s) = 0 by ring,
       besselPotential_zero, ContinuousLinearMap.id_apply]
-  exact ⟨_, by simpa only [Function.comp_def, hT] using hsum.of_norm.hasSum.map T T.continuous⟩
+  exact ⟨_, by simpa only [Function.comp_def, hT] using hG.map T T.continuous⟩
 
 variable (φ : ContDiffBump (0 : E))
 

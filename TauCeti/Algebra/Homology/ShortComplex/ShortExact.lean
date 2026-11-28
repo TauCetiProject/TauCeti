@@ -62,6 +62,11 @@ simultaneously.
   only needs to be exact with an epimorphic second map.
 * `CategoryTheory.ShortComplex.ShortExact.of_outerIso`: replacing the outer terms of a short
   exact sequence by isomorphic objects preserves short exactness.
+* `CategoryTheory.Functor.cokernelMapFToMapX₃`: for a functor `G` and a short complex
+  `X ⟶ I ⟶ Q`, the morphism `coker (G X ⟶ G I) ⟶ G Q`, with
+  `CategoryTheory.Functor.shortExact_cokernelMapFToMapX₃` the short exactness of
+  `0 ⟶ coker (G X ⟶ G I) ⟶ G Q ⟶ coker (G I ⟶ G Q) ⟶ 0` when `G` is left exact and `X ⟶ I ⟶ Q`
+  is short exact.
 -/
 
 public section
@@ -401,3 +406,54 @@ lemma exact_of_eq_epi_comp_of_eq_comp_mono {X₁ A₁ X₂ A₂ X₃ : C} {f : X
     (S₂ := ShortComplex.mk (e ≫ i) (g' ≫ m) zero) { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := m }).1 h₁
 
 end CategoryTheory.ShortComplex
+
+namespace CategoryTheory.Functor
+
+open Limits
+
+section CokernelComparison
+
+variable {C D : Type*} [Category* C] [Category* D] [Abelian C] [Abelian D] (G : C ⥤ D)
+  [G.Additive] [PreservesFiniteLimits G] {S : ShortComplex C} (hS : S.ShortExact)
+
+variable (S) in
+/-- For a short complex `X ⟶ I ⟶ Q`, the morphism `coker (G X ⟶ G I) ⟶ G Q` induced by
+`G I ⟶ G Q`. -/
+noncomputable def cokernelMapFToMapX₃ : cokernel (G.map S.f) ⟶ G.obj S.X₃ :=
+  cokernel.desc _ (G.map S.g) (by rw [← G.map_comp, S.zero, G.map_zero])
+
+omit [PreservesFiniteLimits G] in
+/-- `coker (G X ⟶ G I) ⟶ G Q` restricts to `G I ⟶ G Q` along the projection. -/
+@[reassoc (attr := simp)]
+lemma π_cokernelMapFToMapX₃ :
+    cokernel.π (G.map S.f) ≫ G.cokernelMapFToMapX₃ S = G.map S.g :=
+  cokernel.π_desc _ _ _
+
+variable (S) in
+omit [PreservesFiniteLimits G] in
+/-- `coker (G X ⟶ G I) ⟶ G Q ⟶ coker (G I ⟶ G Q)` is zero. -/
+@[reassoc (attr := simp)]
+lemma cokernelMapFToMapX₃_comp_π :
+    G.cokernelMapFToMapX₃ S ≫ cokernel.π (G.map S.g) = 0 := by
+  rw [← cancel_epi (cokernel.π (G.map S.f)), π_cokernelMapFToMapX₃_assoc]
+  simp
+
+include hS in
+/-- For a left exact functor `G` and a short exact sequence `0 ⟶ X ⟶ I ⟶ Q ⟶ 0`, the sequence
+`0 ⟶ coker (G X ⟶ G I) ⟶ G Q ⟶ coker (G I ⟶ G Q) ⟶ 0` is short exact. -/
+lemma shortExact_cokernelMapFToMapX₃ :
+    (ShortComplex.mk (G.cokernelMapFToMapX₃ S) (cokernel.π (G.map S.g))
+      (G.cokernelMapFToMapX₃_comp_π S)).ShortExact := by
+  refine { exact := ?_, mono_f := ?_, epi_g := inferInstanceAs (Epi (cokernel.π _)) }
+  · -- It has the same image as `G I ⟶ G Q`, through the epimorphism `G I ⟶ coker (G X ⟶ G I)`.
+    let φ : ShortComplex.mk (G.map S.g) (cokernel.π (G.map S.g)) (cokernel.condition _) ⟶
+        ShortComplex.mk (G.cokernelMapFToMapX₃ S) (cokernel.π (G.map S.g))
+          (G.cokernelMapFToMapX₃_comp_π S) :=
+      { τ₁ := cokernel.π (G.map S.f), τ₂ := 𝟙 _, τ₃ := 𝟙 _ }
+    exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).1
+      (ShortComplex.cokernelSequence_exact _)
+  · exact (hS.exact.map_of_mono_of_preservesKernel G hS.mono_f inferInstance).mono_cokernelDesc
+
+end CokernelComparison
+
+end CategoryTheory.Functor

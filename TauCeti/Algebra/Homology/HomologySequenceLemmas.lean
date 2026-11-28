@@ -22,7 +22,8 @@ outer terms, as for the short exact sequences associated with maps of mapping co
 the degreewise statements for the left map `φ.τ₁`, which are the dimension-shifting steps that
 compare the homology of a kernel with that of a cokernel one degree lower. For a single short
 exact sequence, it characterizes when either of its maps is a quasi-isomorphism by acyclicity of
-the opposite outer term.
+the opposite outer term, and, when every degree has a successor and a predecessor, the acyclicity
+of its middle term by the invertibility of its connecting maps.
 
 Let `S : A ⟶ X ⟶ Q` be a short exact sequence of complexes and `b : X ⟶ Y` a quasi-isomorphism
 such that the composite `A ⟶ X ⟶ Y` is an epimorphism, with kernel `K` presented by a second short
@@ -65,6 +66,9 @@ variable, such as for the cup product in Tate cohomology.
   `CategoryTheory.ShortComplex.ShortExact.quasiIso_g_iff`: in a short exact sequence of
   complexes, the first map is a quasi-isomorphism if and only if the third term is acyclic, and
   the second map is one if and only if the first term is acyclic.
+* `CategoryTheory.ShortComplex.ShortExact.acyclic_X₂_iff_forall_isIso_δ`: when every degree has a
+  successor and a predecessor, the middle term is acyclic if and only if every connecting map is
+  an isomorphism.
 * `CategoryTheory.ShortComplex.ShortExact.exists_cycles_lift_δ`: the connecting map of a short
   exact sequence of complexes, computed on all cycles at once through a pullback lift.
 * `CategoryTheory.ShortComplex.ShortExact.liftδIso`,
@@ -269,6 +273,32 @@ lemma quasiIso_g_iff : _root_.QuasiIso S.g ↔ S.X₁.Acyclic := by
     · have := hS.epi_g
       exact epi_homologyMap_of_epi_of_not_rel S.g i hi
   exact isIso_of_mono_of_epi _
+
+end CategoryTheory.ShortComplex.ShortExact
+
+/-! ### Short exact sequences with an acyclic middle term -/
+
+namespace CategoryTheory.ShortComplex.ShortExact
+
+variable {S : ShortComplex (HomologicalComplex C c)} (hS : S.ShortExact)
+
+/-- In a short exact sequence of complexes in which every degree has a successor and a
+predecessor, such as cochain complexes indexed by `ℤ`, the middle term is acyclic if and only if
+every connecting map is an isomorphism. -/
+lemma acyclic_X₂_iff_forall_isIso_δ (hsucc : ∀ i, ∃ j, c.Rel i j)
+    (hpred : ∀ j, ∃ i, c.Rel i j) :
+    S.X₂.Acyclic ↔ ∀ i j (hij : c.Rel i j), IsIso (hS.δ i j hij) := by
+  refine ⟨fun h i j hij ↦ hS.isIso_δ i j hij (h i).isZero_homology (h j).isZero_homology,
+    fun h i ↦ ?_⟩
+  obtain ⟨k, hki⟩ := hpred i
+  obtain ⟨j, hij⟩ := hsucc i
+  have := h k i hki
+  have := h i j hij
+  -- The connecting map into degree `i` is onto, so `H(S.f)` vanishes in degree `i`; the one out
+  -- of degree `i` is injective, so `H(S.g)` vanishes there; exactness at `H(S.X₂)` concludes.
+  rw [HomologicalComplex.exactAt_iff_isZero_homology]
+  exact (hS.homology_exact₂ i).isZero_X₂ ((hS.homology_exact₁ k i hki).epi_f_iff.1 inferInstance)
+    ((hS.homology_exact₃ i j hij).mono_g_iff.1 inferInstance)
 
 end CategoryTheory.ShortComplex.ShortExact
 
