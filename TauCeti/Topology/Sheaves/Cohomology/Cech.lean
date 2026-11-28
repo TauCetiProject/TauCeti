@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Sheaves.Cech.Resolution
-public import TauCeti.Topology.Sheaves.Cohomology.Godement
+public import TauCeti.Topology.Sheaves.Cohomology.Godement.Basic
 
 /-!
 # Čech cohomology computes derived global sections on compact Hausdorff spaces

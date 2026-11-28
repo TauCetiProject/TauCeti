@@ -14,7 +14,10 @@ public import TauCeti.Topology.Sheaves.Godement.Total
 For a bounded-below complex of module sheaves, the totalized Godement resolution computes
 derived global sections. The comparison `TauCeti.Topology.rightDerivedΓPlusIsoGodementTotalAt`
 uses the augmentation and the derived sections unit on the flasque total and is natural for
-maps of complexes at a common lower bound.
+maps of complexes whose terms vanish below a common chosen bound `b`. Boundedness of
+cohomology alone does not suffice: without this condition the total resolves the stupid
+truncation at `b`. The unit is invertible by
+`CategoryTheory.Sheaf.isIso_rightDerivedFunctorPlusUnit_app_Γ_of_isFlasque`.
 -/
 
 public section
@@ -40,7 +43,7 @@ private lemma isIso_Q_map_toGodementTotalAtPlus [K.obj.IsStrictlyGE b] :
     IsIso ((DerivedCategory.Plus.Q (C := Sh)).map (toGodementTotalAtPlus _ _ b K)) := by
   apply Localization.inverts _ (CochainComplex.Plus.quasiIso Sh)
   exact (CochainComplex.Plus.quasiIso_iff _ _).2
-    (quasiIso_toGodementTotalAtPlus_hom _ _ b K)
+    (quasiIso_toGodementTotalAtPlus_hom _ _ b K (fun _ ↦ inferInstance))
 
 variable [HasDerivedCategory (ModuleCat.{u} R)]
 
@@ -55,7 +58,9 @@ private lemma isIso_rightDerivedFunctorPlusUnit_godementTotalAt :
 variable [K.obj.IsStrictlyGE b]
 
 /-- The global sections of the bounded-below Godement total compute the native derived global
-sections of a complex of module sheaves. The isomorphism is induced by the augmentation and
+sections of a complex of module sheaves whose terms vanish below the chosen bound `b`.
+Without this termwise bound, the total resolves the stupid truncation at `b` instead.
+The isomorphism is induced by the augmentation and
 the derived sections unit on the flasque total. -/
 def rightDerivedΓPlusIsoGodementTotalAt :
     (QΓ).obj K ≅ (ΓQ).obj ((G b).obj K.obj) := by

@@ -19,10 +19,13 @@ differential plus the internal differential multiplied by `(-1) ^ p` in resoluti
 For an integer-graded complex vanishing below `b`, reindex from `b` before totalizing. Each
 diagonal is finite, and the total is a complex of flasque sheaves with the same lower bound.
 The augmentation is a quasi-isomorphism whenever the canonical morphism from each sheaf to
-its Godement sheaf is monic, as it is for sheaves of modules.
+its Godement sheaf is monic, as it is for sheaves of modules. More generally, it suffices
+that each coaugmented row is a quasi-isomorphism.
 
 The construction follows the Stacks Project, Lemma 20.30.2 (tag 0FKT), using the successive
-cokernel model of the Godement resolution.
+cokernel model `TauCeti.Topology.godementResolution` for each row. The theorem
+`HomologicalComplex₂.quasiIso_totalCoaugmentation` turns their exactness into the
+quasi-isomorphism of the total augmentation.
 
 ## Main definitions
 
@@ -62,17 +65,54 @@ lemma godementBicomplex_row (K : CochainComplex (X.Sheaf C) ℕ) (q : ℕ) :
 abbrev godementTotal : CochainComplex (X.Sheaf C) ℕ ⥤ CochainComplex (X.Sheaf C) ℕ :=
   godementBicomplex C X ⋙ totalFunctor _ _ _ _
 
+/-- On the summand in bidegree `(p, q)`, the total differential is the Godement
+differential plus `(-1)^p` times the internal differential. -/
+-- The functor abbreviations in these formulas are not simp normal forms.
+@[reassoc]
+lemma ι_godementTotal_d (K : CochainComplex (X.Sheaf C) ℕ) (p q : ℕ) :
+    ((godementBicomplex C X).obj K).ιTotal (.up ℕ) p q (p + q) rfl ≫
+        ((godementTotal C X).obj K).d (p + q) (p + q + 1) =
+      ((godementResolution C X).obj (K.X q)).d p (p + 1) ≫
+        ((godementBicomplex C X).obj K).ιTotal (.up ℕ) (p + 1) q (p + q + 1)
+          (by simp [add_assoc, add_comm, add_left_comm]) +
+      (-1 : ℤˣ) ^ p •
+        (((godementResolution C X).map (K.d q (q + 1))).f p ≫
+          ((godementBicomplex C X).obj K).ιTotal (.up ℕ) p (q + 1) (p + q + 1)
+            (by simp [add_assoc])) := by
+  dsimp only [godementTotal, Functor.comp_obj, totalFunctor]
+  rw [total_d, Preadditive.comp_add, ι_D₁, ι_D₂,
+    d₁_eq _ _ (ComplexShape.up_mk p (p + 1) rfl) q (p + q + 1)
+      (by simp [add_assoc, add_comm, add_left_comm]),
+    d₂_eq _ _ p (ComplexShape.up_mk q (q + 1) rfl) (p + q + 1)
+      (by simp [add_assoc])]
+  simp
+
+/-- The map of Godement totals acts on a summand by the corresponding degree of the
+Godement resolution map. -/
+@[reassoc]
+lemma ι_godementTotal_map {K L : CochainComplex (X.Sheaf C) ℕ} (f : K ⟶ L) (p q : ℕ) :
+    ((godementBicomplex C X).obj K).ιTotal (.up ℕ) p q (p + q) rfl ≫
+        ((godementTotal C X).map f).f (p + q) =
+      ((godementResolution C X).map (f.f q)).f p ≫
+        ((godementBicomplex C X).obj L).ιTotal (.up ℕ) p q (p + q) rfl := by
+  exact ιTotal_map _ _ ((godementBicomplex C X).map f) (.up ℕ) p q (p + q) rfl
+
 variable {C X}
 
 private def toGodementColumn (K : CochainComplex (X.Sheaf C) ℕ) :
-    K ⟶ ((godementBicomplex C X).obj K).X 0 where
-  f q := (toGodement C X).app (K.X q)
-  comm' q q' _ := ((toGodement C X).naturality (K.d q q')).symm
+    K ⟶ ((godementBicomplex C X).obj K).X 0 :=
+  ((Functor.mapHomologicalComplexIdIso (X.Sheaf C) (.up ℕ)).inv ≫
+    (toGodement C X).mapHomologicalComplex (.up ℕ)).app K
 
 private lemma toGodementColumn_comp_d (K : CochainComplex (X.Sheaf C) ℕ) :
     toGodementColumn K ≫ ((godementBicomplex C X).obj K).d 0 1 = 0 := by
   ext1 q
-  exact (toGodement C X).app_comp_resolution_obj_d_zero_one (K.X q)
+  dsimp only [godementBicomplex, godementResolution, Functor.comp_obj,
+    HomologicalComplex₂.flipFunctor, HomologicalComplex₂.flip, Functor.mapHomologicalComplex]
+  simpa only [comp_f, zero_f, toGodementColumn, NatTrans.comp_app, comp_f,
+    Functor.mapHomologicalComplexIdIso_inv_app_f, NatTrans.mapHomologicalComplex_app_f,
+    Category.id_comp] using
+      (toGodement C X).app_comp_resolution_obj_d_zero_one (K.X q)
 
 variable (C X)
 
@@ -82,16 +122,12 @@ def toGodementTotal : 𝟭 (CochainComplex (X.Sheaf C) ℕ) ⟶ godementTotal C 
   app K := ((godementBicomplex C X).obj K).totalCoaugmentation
     (toGodementColumn K) (toGodementColumn_comp_d K)
   naturality K L f := by
-    -- Write the two composite functors in their native total-complex form.
-    change f ≫ _ = _ ≫ total.map ((godementBicomplex C X).map f) (.up ℕ)
+    dsimp only [godementTotal, Functor.comp_obj, Functor.id_obj, Functor.id_map,
+      Functor.comp_map, totalFunctor]
     rw [comp_totalCoaugmentation, totalCoaugmentation_total_map]
     congr 1
-    apply HomologicalComplex.hom_ext
-    intro q
-    simp only [comp_f, toGodementColumn, Functor.comp_map, flipFunctor_map_f_f,
-      Functor.mapHomologicalComplex_map_f, NatTrans.resolution_map_f,
-      NatTrans.cosyzygyFunctor_zero_map]
-    exact (toGodement C X).naturality (f.f q)
+    exact ((Functor.mapHomologicalComplexIdIso (X.Sheaf C) (.up ℕ)).inv ≫
+      (toGodement C X).mapHomologicalComplex (.up ℕ)).naturality f
 
 /-- In each degree the augmentation is the map to the Godement sheaf followed by the inclusion
 of the resolution-degree-zero summand. -/
@@ -101,7 +137,17 @@ lemma toGodementTotal_app_f (K : CochainComplex (X.Sheaf C) ℕ) (q : ℕ) :
       (toGodement C X).app (K.X q) ≫
         ((godementBicomplex C X).obj K).ιTotal (.up ℕ) 0 q q (zero_add q) := by
   rw [toGodementTotal, totalCoaugmentation_f]
-  rfl
+  congr 1
+  simp [toGodementColumn]
+
+/-- A term of the Godement total is the coproduct of its finite diagonal of Godement terms. -/
+def godementTotalXIsoCoproduct (K : CochainComplex (X.Sheaf C) ℕ) (n : ℕ) :
+    ((godementTotal C X).obj K).X n ≅
+      ∐ (((godementBicomplex C X).obj K).toGradedObject.mapObjFun
+        (ComplexShape.π (.up ℕ) (.up ℕ) (.up ℕ)) n) :=
+  IsColimit.coconePointUniqueUpToIso
+    (((godementBicomplex C X).obj K).toGradedObject.isColimitCofanMapObj _ n)
+    (coproductIsCoproduct _)
 
 /-- Each term of a totalized Godement resolution is flasque. Its degree `n` term is a finite
 coproduct of Godement terms with indices `p + q = n`. -/
@@ -114,13 +160,13 @@ instance isFlasque_godementTotal_obj_X (K : CochainComplex (X.Sheaf C) ℕ) (n :
   have (i : I) : (F i).IsFlasque :=
     isFlasque_godementResolution_obj_X C X (K.X i.val.2) i.val.1
   exact @TopCat.Presheaf.IsFlasque.of_iso _ _ _ _ _
-    ((sheafToPresheaf _ C).mapIso ((biproduct.isoProduct F).symm ≪≫ biproduct.isoCoproduct F))
+    ((sheafToPresheaf _ C).mapIso
+      (biproductIso F ≪≫ (godementTotalXIsoCoproduct C X K n).symm))
     (TopCat.Sheaf.isFlasque_piObj F)
 
-/-- The augmentation into the Godement total is a quasi-isomorphism when the canonical map
-from each sheaf to its Godement sheaf is monic. -/
-lemma quasiIso_toGodementTotal_app [∀ F : X.Sheaf C, Mono ((toGodement C X).app F)]
-    (K : CochainComplex (X.Sheaf C) ℕ) :
+/-- Exact coaugmented Godement rows make the total augmentation a quasi-isomorphism. -/
+lemma quasiIso_toGodementTotal_app (K : CochainComplex (X.Sheaf C) ℕ)
+    (hrows : ∀ q, QuasiIso ((toGodementResolution C X).app (K.X q))) :
     QuasiIso ((toGodementTotal C X).app K) := by
   apply quasiIso_totalCoaugmentation
   intro q
@@ -130,7 +176,7 @@ lemma quasiIso_toGodementTotal_app [∀ F : X.Sheaf C, Mono ((toGodement C X).ap
     apply from_single_hom_ext
     simp [toGodementColumn]
   rw [h]
-  infer_instance
+  exact hrows q
 
 section BoundedBelow
 
@@ -139,32 +185,28 @@ variable (b : ℤ)
 /-- The totalized Godement resolution starting in degree `b`. The input is restricted to
 degrees at least `b`, resolved using the first-quadrant total, then placed back in the original
 integer grading. In degree `n ≥ b` the summands have indices `p + q = n`, where `p ≥ 0` is
-the Godement degree and `q ≥ b` is the original degree. -/
+the Godement degree and `q ≥ b` is the original degree. Use
+`HomologicalComplex.extendXIso` on the first-quadrant total of the restricted complex
+to identify terms; `HomologicalComplex.extendMap_f` and `HomologicalComplex.extend_d_eq`
+transport maps and differentials through these identifications. -/
 abbrev godementTotalAt : CochainComplex (X.Sheaf C) ℤ ⥤ CochainComplex (X.Sheaf C) ℤ :=
   (ComplexShape.embeddingUpIntGE b).restrictionFunctor _ ⋙ godementTotal C X ⋙
     (ComplexShape.embeddingUpIntGE b).extendFunctor _
 
-/-- In degree `n = b + q`, the Godement total at bound `b` is the degree `q` term of the
-first-quadrant Godement total of the restricted complex. -/
-def godementTotalAtXIso (K : CochainComplex (X.Sheaf C) ℤ) {q : ℕ} {n : ℤ}
-    (h : (ComplexShape.embeddingUpIntGE b).f q = n) :
-    ((godementTotalAt C X b).obj K).X n ≅
-      ((godementTotal C X).obj (K.restriction (ComplexShape.embeddingUpIntGE b))).X q :=
-  extendXIso _ _ h
-
 /-- The natural augmentation from the stupid truncation in degrees at least `b` into the
 totalized Godement resolution at the same bound. -/
 def toGodementTotalAt :
-    (ComplexShape.embeddingUpIntGE b).stupidTruncFunctor (X.Sheaf C) ⟶ godementTotalAt C X b where
-  app K := extendMap ((toGodementTotal C X).app (K.restriction (ComplexShape.embeddingUpIntGE b)))
-    (ComplexShape.embeddingUpIntGE b)
-  naturality K L f := by
-    let e := ComplexShape.embeddingUpIntGE b
-    -- The truncation map is restriction followed by extension.
-    change extendMap (restrictionMap f e) e ≫ _ =
-      _ ≫ extendMap ((godementTotal C X).map (restrictionMap f e)) e
-    rw [← extendMap_comp, ← extendMap_comp]
-    exact congrArg (extendMap · e) ((toGodementTotal C X).naturality (restrictionMap f e))
+    (ComplexShape.embeddingUpIntGE b).stupidTruncFunctor (X.Sheaf C) ⟶ godementTotalAt C X b :=
+  Functor.whiskerLeft ((ComplexShape.embeddingUpIntGE b).restrictionFunctor _)
+    (Functor.whiskerRight (toGodementTotal C X)
+      ((ComplexShape.embeddingUpIntGE b).extendFunctor _))
+
+/-- The integer-graded augmentation is extension of the first-quadrant augmentation. -/
+lemma toGodementTotalAt_app (K : CochainComplex (X.Sheaf C) ℤ) :
+    (toGodementTotalAt C X b).app K =
+      extendMap ((toGodementTotal C X).app
+        (K.restriction (ComplexShape.embeddingUpIntGE b))) (ComplexShape.embeddingUpIntGE b) :=
+  (rfl)
 
 /-- At degree `b + q`, the truncation augmentation is the map to the Godement sheaf followed
 by inclusion of the resolution-degree-zero summand, under the degreewise isomorphisms. -/
@@ -175,10 +217,11 @@ lemma toGodementTotalAt_app_f (K : CochainComplex (X.Sheaf C) ℤ) (q : ℕ) :
       (K.stupidTruncXIso e (ComplexShape.embeddingUpIntGE_f b q)).hom ≫
         (toGodement C X).app (K.X (b + q)) ≫
         ((godementBicomplex C X).obj (K.restriction e)).ιTotal (.up ℕ) 0 q q (zero_add q) ≫
-        (godementTotalAtXIso C X b K (ComplexShape.embeddingUpIntGE_f b q)).inv := by
+        (((godementTotal C X).obj (K.restriction e)).extendXIso e
+          (ComplexShape.embeddingUpIntGE_f b q)).inv := by
   dsimp only
-  rw [toGodementTotalAt, extendMap_f _ _ (ComplexShape.embeddingUpIntGE_f b q),
-    toGodementTotal_app_f, stupidTruncXIso_rfl, godementTotalAtXIso]
+  rw [toGodementTotalAt_app, extendMap_f _ _ (ComplexShape.embeddingUpIntGE_f b q),
+    toGodementTotal_app_f, stupidTruncXIso_rfl]
   exact congrArg (_ ≫ ·) (Category.assoc _ _ _)
 
 /-- The Godement total vanishes below its starting degree. -/
@@ -196,7 +239,8 @@ instance isFlasque_godementTotalAt_obj_X (K : CochainComplex (X.Sheaf C) ℤ) (n
   by_cases hn : ∃ q, e.f q = n
   · obtain ⟨q, hq⟩ := hn
     exact @TopCat.Presheaf.IsFlasque.of_iso _ _ _ _ _
-      ((sheafToPresheaf _ C).mapIso (godementTotalAtXIso C X b K hq).symm)
+      ((sheafToPresheaf _ C).mapIso
+        (((godementTotal C X).obj (K.restriction e)).extendXIso e hq).symm)
       (isFlasque_godementTotal_obj_X C X (K.restriction e) q)
   · have hz := isZero_extend_X ((godementTotal C X).obj (K.restriction e)) e n
       (fun q hq ↦ hn ⟨q, hq⟩)
@@ -205,16 +249,17 @@ instance isFlasque_godementTotalAt_obj_X (K : CochainComplex (X.Sheaf C) ℤ) (n
     exact ⟨fun _ ↦ (hF.obj _).epi _⟩
 
 /-- The augmentation of the truncated complex into the Godement total is a quasi-isomorphism
-when the canonical map from each sheaf to its Godement sheaf is monic.
+when the coaugmented Godement rows of its restriction are quasi-isomorphisms.
 For a complex already vanishing below `b`, `HomologicalComplex.ιStupidTrunc` identifies the
 source with the original complex. -/
-lemma quasiIso_toGodementTotalAt_app [∀ F : X.Sheaf C, Mono ((toGodement C X).app F)]
-    (K : CochainComplex (X.Sheaf C) ℤ) :
+lemma quasiIso_toGodementTotalAt_app (K : CochainComplex (X.Sheaf C) ℤ)
+    (hrows : ∀ q, QuasiIso ((toGodementResolution C X).app
+      ((K.restriction (ComplexShape.embeddingUpIntGE b)).X q))) :
     QuasiIso ((toGodementTotalAt C X b).app K) := by
   let e := ComplexShape.embeddingUpIntGE b
-  -- The augmentation is obtained by extension of the first-quadrant augmentation.
-  change QuasiIso (extendMap ((toGodementTotal C X).app (K.restriction e)) e)
-  exact (quasiIso_extendMap_iff _ _).2 (quasiIso_toGodementTotal_app C X (K.restriction e))
+  rw [toGodementTotalAt_app]
+  exact (quasiIso_extendMap_iff _ _).2
+    (quasiIso_toGodementTotal_app C X (K.restriction e) hrows)
 
 /-- The totalized Godement resolution at a fixed bound takes values in the category of
 bounded-below complexes. -/
@@ -245,22 +290,22 @@ lemma toGodementTotalAtPlus_naturality {K L : CochainComplex.Plus (X.Sheaf C)}
       toGodementTotalAtPlus C X b K ≫ (godementTotalAtPlus C X b).map f.hom := by
   let e := ComplexShape.embeddingUpIntGE b
   apply ObjectProperty.hom_ext
-  -- Compare the underlying maps after cancelling the truncation isomorphism.
-  change f.hom ≫ inv (L.obj.ιStupidTrunc e) ≫ (toGodementTotalAt C X b).app L.obj =
-    (inv (K.obj.ιStupidTrunc e) ≫ (toGodementTotalAt C X b).app K.obj) ≫
-      (godementTotalAt C X b).map f.hom
+  simp only [ObjectProperty.FullSubcategory.comp_hom]
+  dsimp only [godementTotalAtPlus, ObjectProperty.lift, ObjectProperty.homMk]
   apply (cancel_epi (K.obj.ιStupidTrunc e)).1
-  rw [← ιStupidTrunc_naturality_assoc f.hom e]
-  simpa only [Category.assoc, IsIso.hom_inv_id_assoc,
-    ComplexShape.Embedding.stupidTruncFunctor_obj, ComplexShape.Embedding.stupidTruncFunctor_map]
-    using (toGodementTotalAt C X b).naturality f.hom
+  rw [← ιStupidTrunc_naturality_assoc f.hom e,
+    ιStupidTrunc_comp_toGodementTotalAtPlus_hom,
+    ιStupidTrunc_comp_toGodementTotalAtPlus_hom_assoc]
+  exact (toGodementTotalAt C X b).naturality f.hom
 
-/-- If the canonical map from each sheaf to its Godement sheaf is monic, the augmentation
-from the original bounded-below complex to its Godement total is a quasi-isomorphism. -/
-lemma quasiIso_toGodementTotalAtPlus_hom [∀ F : X.Sheaf C, Mono ((toGodement C X).app F)]
-    (K : CochainComplex.Plus (X.Sheaf C))
-    [K.obj.IsStrictlyGE b] : QuasiIso (toGodementTotalAtPlus C X b K).hom := by
-  have := quasiIso_toGodementTotalAt_app C X b K.obj
+/-- Exact coaugmented Godement rows make the augmentation from the original complex,
+whose terms vanish below `b`, to its Godement total a quasi-isomorphism. -/
+lemma quasiIso_toGodementTotalAtPlus_hom (K : CochainComplex.Plus (X.Sheaf C))
+    [K.obj.IsStrictlyGE b]
+    (hrows : ∀ q, QuasiIso ((toGodementResolution C X).app
+      ((K.obj.restriction (ComplexShape.embeddingUpIntGE b)).X q))) :
+    QuasiIso (toGodementTotalAtPlus C X b K).hom := by
+  have := quasiIso_toGodementTotalAt_app C X b K.obj hrows
   rw [← quasiIso_iff_comp_left (K.obj.ιStupidTrunc (ComplexShape.embeddingUpIntGE b))]
   simpa only [ιStupidTrunc_comp_toGodementTotalAtPlus_hom] using this
 
