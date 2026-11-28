@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Padics.RingHoms
 public import TauCeti.NumberTheory.Padics.UnitsCharacter.Basic
-public import TauCeti.NumberTheory.Padics.WeightSpace.Basic
 
 /-!
 # Coefficient-valued continuous characters of `ℚ_pˣ`
@@ -17,7 +16,7 @@ is a continuous homomorphism `δ : ℚ_[p]ˣ →ₜ* Λˣ` (`TauCeti.PadicUnitsC
 
 Using `TauCeti.padicUnitsCharacterEquiv p Λˣ`, when `Λ` is a commutative topological monoid with
 continuous multiplication, `TauCeti.PadicUnitsCharacter p Λ` decomposes as
-`Λˣ × TauCeti.WeightSpace p Λ` via `δ ↦ (δ(p), δ|_{ℤ_pˣ})`.
+`Λˣ × (ℤ_[p]ˣ →ₜ* Λˣ)` via `δ ↦ (δ(p), δ|_{ℤ_pˣ})`.
 
 This file also constructs additional canonical characters of `ℚ_[p]ˣ` complementing
 `TauCeti.padicUnitPart` and `TauCeti.unramifiedCharacter`:
@@ -30,8 +29,6 @@ This file also constructs additional canonical characters of `ℚ_[p]ˣ` complem
 ## Main definitions
 
 * `TauCeti.PadicUnitsCharacter`: the type `ℚ_[p]ˣ →ₜ* Λˣ` of continuous `Λ`-valued characters.
-* `TauCeti.PadicUnitsCharacter.toWeight`: restriction to `ℤ_[p]ˣ` as a weight in
-  `TauCeti.WeightSpace p Λ`.
 * `TauCeti.padicModPCyclotomicCharacter`, `TauCeti.padicAlgebraMapCharacter`: the mod-`p`
   cyclotomic character `ω` and the algebra-map character `x ↦ x`.
 
@@ -60,54 +57,6 @@ instance makes `PadicUnitsCharacter p Λ` a commutative group under pointwise mu
 abbrev PadicUnitsCharacter (Λ : Type*) [Monoid Λ] [TopologicalSpace Λ] : Type _ :=
   ℚ_[p]ˣ →ₜ* Λˣ
 
-namespace PadicUnitsCharacter
-
-variable {p}
-
-section Monoid
-
-variable {Λ : Type*} [Monoid Λ] [TopologicalSpace Λ]
-
-/-- The restriction of a continuous character of `ℚ_[p]ˣ` to `ℤ_[p]ˣ`, viewed as a weight in
-`TauCeti.WeightSpace p Λ`. -/
-def toWeight (δ : PadicUnitsCharacter p Λ) : WeightSpace p Λ :=
-  δ.comp (padicIntUnitsInclusion p)
-
-/-- Evaluating `δ.toWeight` at `u : ℤ_[p]ˣ` evaluates `δ` at `u` viewed in `ℚ_[p]ˣ`. -/
-@[simp]
-theorem toWeight_apply (δ : PadicUnitsCharacter p Λ) (u : ℤ_[p]ˣ) :
-    δ.toWeight u = δ (padicIntUnitsInclusion p u) :=
-  (rfl)
-
-/-- Restriction to `ℤ_[p]ˣ` sends the trivial character to the trivial weight. -/
-@[simp]
-theorem toWeight_one : (1 : PadicUnitsCharacter p Λ).toWeight = 1 := by
-  ext1 u
-  rfl
-
-end Monoid
-
-section CommMonoid
-
-variable {Λ : Type*} [CommMonoid Λ] [TopologicalSpace Λ] [ContinuousMul Λ]
-
-/-- Restriction to `ℤ_[p]ˣ` preserves products of characters. -/
-@[simp]
-theorem toWeight_mul (δ₁ δ₂ : PadicUnitsCharacter p Λ) :
-    (δ₁ * δ₂).toWeight = δ₁.toWeight * δ₂.toWeight := by
-  ext1 u
-  rfl
-
-/-- Restriction to `ℤ_[p]ˣ` preserves inverses of characters. -/
-@[simp]
-theorem toWeight_inv (δ : PadicUnitsCharacter p Λ) : δ⁻¹.toWeight = δ.toWeight⁻¹ := by
-  ext1 u
-  rfl
-
-end CommMonoid
-
-end PadicUnitsCharacter
-
 end CharacterGroup
 
 section CanonicalCharacters
@@ -132,12 +81,13 @@ theorem padicModPCyclotomicCharacter_padicPrimeUnit :
 theorem coe_padicModPCyclotomicCharacter_apply (x : ℚ_[p]ˣ) :
     (padicModPCyclotomicCharacter p x : ZMod p) = PadicInt.toZMod (padicUnitPart p x : ℤ_[p]) := by
   simp [padicModPCyclotomicCharacter]
+  rfl
 
 /-- On `u ∈ ℤ_[p]ˣ`, `ω(u) = u mod p`. -/
 theorem coe_padicModPCyclotomicCharacter_padicIntUnitsInclusion (u : ℤ_[p]ˣ) :
     (padicModPCyclotomicCharacter p (padicIntUnitsInclusion p u) : ZMod p) =
       PadicInt.toZMod (u : ℤ_[p]) := by
-  simp [padicModPCyclotomicCharacter]
+  rw [coe_padicModPCyclotomicCharacter_apply, padicUnitPart_padicIntUnitsInclusion]
 
 /-- The canonical character `x ↦ algebraMap ℚ_[p] R x` into a topological `ℚ_[p]`-algebra `R`
 whose structure map is continuous. -/
@@ -151,12 +101,14 @@ theorem coe_padicAlgebraMapCharacter_apply {R : Type*} [Semiring R] [Topological
     [Algebra ℚ_[p] R] (h : Continuous (algebraMap ℚ_[p] R)) (x : ℚ_[p]ˣ) :
     (padicAlgebraMapCharacter p R h x : R) = algebraMap ℚ_[p] R (x : ℚ_[p]) := by
   simp [padicAlgebraMapCharacter]
+  rfl
 
 /-- `padicAlgebraMapCharacter p R h` sends `p` to `(p : R)`. -/
 theorem coe_padicAlgebraMapCharacter_padicPrimeUnit {R : Type*} [Semiring R] [TopologicalSpace R]
     [Algebra ℚ_[p] R] (h : Continuous (algebraMap ℚ_[p] R)) :
     (padicAlgebraMapCharacter p R h (padicPrimeUnit p) : R) = (p : R) := by
-  simp [padicAlgebraMapCharacter]
+  rw [coe_padicAlgebraMapCharacter_apply]
+  simp
 
 end CanonicalCharacters
 

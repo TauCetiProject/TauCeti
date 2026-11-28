@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Reciprocity
+public import TauCeti.NumberTheory.GaloisRepresentation.Unramified.WeilCharacter
 public import TauCeti.NumberTheory.LocalField.Unramified.Character
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
@@ -19,9 +20,10 @@ group. When the target `G` is a commutative `T1` topological group with continuo
 this yields a group isomorphism `(Kˣ →ₜ* G) ≃* (W_K →ₜ* G)`
 (`TauCeti.ClassFieldTheory.localWeilCharacterEquiv K G`), with inverse
 `ContinuousMonoidHom.ofWeilCharacter`. For unramified characters `μ_a`,
-`μ_a.toWeilCharacter w = a ^ (-deg w)` (`ContinuousMonoidHom.toWeilCharacter_unramifiedCharacter`),
-so any continuous Galois extension is trivial on inertia and evaluates to `a` on geometric Frobenius
-lifts (`a⁻¹` on arithmetic Frobenius lifts).
+`μ_a.toWeilCharacter = GaloisRep.weilUnramifiedCharacter K a⁻¹`
+(`ContinuousMonoidHom.toWeilCharacter_unramifiedCharacter`), so any continuous Galois extension is
+trivial on inertia and evaluates to `a` on geometric Frobenius lifts (`a⁻¹` on arithmetic Frobenius
+lifts).
 
 Because `W_K` is dense in `G_K`, any continuous extension of a Weil character to `G_K` into a
 Hausdorff target is unique (`TauCeti.ClassFieldTheory.galoisCharacter_eq_of_weilToAbsolute_eq`),
@@ -123,11 +125,13 @@ section Group
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
 
-/-- Transport of an unramified character `μ_a : Kˣ →ₜ* G` to `W_K` evaluates to `a ^ (-deg w)`. -/
+/-- Transport of an unramified character `μ_a : Kˣ →ₜ* G` to `W_K` is the unramified Weil
+character `GaloisRep.weilUnramifiedCharacter K a⁻¹` (`w ↦ a ^ (-deg w)`). -/
 @[simp]
-theorem toWeilCharacter_unramifiedCharacter (a : G) (w : WeilGroup K) :
-    (unramifiedCharacter K a).toWeilCharacter w = a ^ (-(weilDegree K w).toAdd) := by
-  rw [toWeilCharacter_apply, unramifiedCharacter_apply]
+theorem toWeilCharacter_unramifiedCharacter (a : G) :
+    (unramifiedCharacter K a).toWeilCharacter = GaloisRep.weilUnramifiedCharacter K a⁻¹ := by
+  ext1 w
+  rw [toWeilCharacter_apply, unramifiedCharacter_apply, GaloisRep.weilUnramifiedCharacter_apply]
   have hnv : (normalizedValuation K ((localWeilGeometricArtinEquiv K).symm
       (QuotientGroup.mk w : TopologicalAbelianization (WeilGroup K))))⁻¹ =
       weilDegreeAbelianization K (QuotientGroup.mk w) := by
@@ -137,7 +141,7 @@ theorem toWeilCharacter_unramifiedCharacter (a : G) (w : WeilGroup K) :
       (QuotientGroup.mk w : TopologicalAbelianization (WeilGroup K))) =
       (weilDegree K w)⁻¹ := by
     rw [inv_eq_iff_eq_inv.mp hnv, weilDegreeAbelianization_mk]
-  rw [hnv', toAdd_inv]
+  rw [hnv', toAdd_inv, zpow_neg, inv_zpow]
 
 end Group
 
@@ -367,7 +371,8 @@ theorem inertiaSubgroup_le_ker_of_extends_unramifiedCharacter {a : G}
   intro σ hσ
   have h := hχ (inertiaToWeil K ⟨σ, hσ⟩)
   rw [weilToAbsolute_inertiaToWeil, ContinuousMonoidHom.toWeilCharacter_unramifiedCharacter,
-    weilDegree_inertiaToWeil, toAdd_one, neg_zero, zpow_zero] at h
+    GaloisRep.weilUnramifiedCharacter_apply_of_mem_inertiaSubgroup a⁻¹
+      (by rwa [weilToAbsolute_inertiaToWeil])] at h
   exact h
 
 /-- **Unramified character check (geometric Frobenius).** Any continuous Galois character extending
@@ -379,16 +384,14 @@ theorem apply_eq_of_extends_unramifiedCharacter_of_isArithFrobeniusLift_inv {a :
       χ (weilToAbsolute K w) = (unramifiedCharacter K a).toWeilCharacter w)
     {σ : Field.absoluteGaloisGroup K} (hσ : IsArithFrobeniusLift K σ⁻¹) :
     χ σ = a := by
-  let w₀ : WeilGroup K :=
-    (weilGroupEquivLocalWeilGroup K).symm ⟨σ⁻¹, hσ.mem_localWeilGroup⟩
-  have hw₀ : weilToAbsolute K w₀ = σ⁻¹ :=
-    weilToAbsolute_weilGroupEquivLocalWeilGroup_symm K _
-  have hdeg : weilDegree K w₀ = .ofAdd 1 :=
-    weilDegree_eq_ofAdd_one_iff.mpr (by rwa [hw₀])
-  have hw : weilToAbsolute K w₀⁻¹ = σ := by
-    rw [map_inv, hw₀, inv_inv]
-  rw [← hw, hχ w₀⁻¹, ContinuousMonoidHom.toWeilCharacter_unramifiedCharacter, map_inv, hdeg,
-    toAdd_inv, toAdd_ofAdd, neg_neg, zpow_one]
+  have hmem : σ ∈ (weilToAbsolute K).range := by
+    rw [range_weilToAbsolute, ← inv_inv σ]
+    exact (localWeilGroup K).inv_mem hσ.mem_localWeilGroup
+  obtain ⟨w, hw⟩ := hmem
+  have hinv := GaloisRep.weilUnramifiedCharacter_apply_of_isArithFrobeniusLift a⁻¹ (w := w⁻¹)
+    (by simpa [hw] using hσ)
+  rw [map_inv, inv_eq_iff_eq_inv, inv_inv] at hinv
+  rw [← hw, hχ w, ContinuousMonoidHom.toWeilCharacter_unramifiedCharacter, hinv]
 
 /-- **Unramified character check (arithmetic Frobenius).** Any continuous Galois character extending
 `(unramifiedCharacter K a).toWeilCharacter` evaluates to `a⁻¹` on every arithmetic Frobenius lift

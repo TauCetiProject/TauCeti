@@ -108,8 +108,8 @@ all of `ℤ_[p]ˣ` into units of valuation `1`. -/
 @[simp]
 theorem PadicUnitsCharacter.valuation_apply_padicIntUnitsInclusion_eq_one
     (δ : PadicUnitsCharacter p L) (u : ℤ_[p]ˣ) :
-    valuation L (δ (padicIntUnitsInclusion p u) : L) = 1 := by
-  simpa [PadicUnitsCharacter.toWeight_apply] using δ.toWeight.valuation_apply_eq_one u
+    valuation L (δ (padicIntUnitsInclusion p u) : L) = 1 :=
+  (δ.comp (padicIntUnitsInclusion p)).valuation_apply_eq_one u
 
 /-- `δ : ℚ_[p]ˣ →ₜ* Lˣ` is unitary if and only if every value `δ(x)` has valuation `1` in `L`. -/
 theorem PadicUnitsCharacter.isUnitary_iff_forall_valuation_eq_one (δ : PadicUnitsCharacter p L) :
