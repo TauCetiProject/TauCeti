@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NewtonPolygon.GaussNorm
 public import TauCeti.NumberTheory.NewtonPolygon.Mul
 public import TauCeti.RingTheory.PowerSeries.Entire.Basic
+import TauCeti.NumberTheory.NewtonPolygon.Radius
 
 /-!
 # Newton polygons of products of restricted and entire series
@@ -106,20 +107,9 @@ theorem IsEntire.newtonPolygon_mul (hf : f.IsEntire) (hg : g.IsEntire) :
 
 /-- The Newton polygon of a nonzero entire series has a finite face of every real slope. -/
 theorem IsEntire.exists_isFiniteFace_newtonPolygon (hf : f.IsEntire) (hf0 : f ≠ 0) (σ : ℝ) :
-    ∃ l u : ℕ, IsFiniteFace (f.newtonPolygon v) σ l u := by
-  -- The coefficient heights touch a supporting line of slope `σ` and lie above one of slope
-  -- `σ + 1`; both lines lie below the Newton polygon, and the contact persists.
-  obtain ⟨c, i, hc, hi⟩ := exists_isSupportingLine_mem_supportingFace_of_isRestricted f v hb hv
-    (hf.isRestricted (b ^ σ)) hf0
-  obtain ⟨c', -, hc', -⟩ := exists_isSupportingLine_mem_supportingFace_of_isRestricted f v hb hv
-    (hf.isRestricted (b ^ (σ + 1))) hf0
-  have henv := isLowerConvexEnvelope_newtonPolygon hc.isAdmissible
-  have hσ : IsSupportingLine (f.newtonPolygon v) σ c := isSupportingLine_iff_forall.mpr <|
-    henv.greatest (isConvexSeq_affine c σ) (isSupportingLine_iff_forall.mp hc)
-  have hσ' : IsSupportingLine (f.newtonPolygon v) (σ + 1) c' := isSupportingLine_iff_forall.mpr <|
-    henv.greatest (isConvexSeq_affine c' (σ + 1)) (isSupportingLine_iff_forall.mp hc')
-  exact (f.isConvexSeq_newtonPolygon v).exists_isFiniteFace_of_finite_supportingFace hσ
-    (hσ'.finite_supportingFace (lt_add_one σ) c) ⟨i, henv.supportingFace_subset hc hi⟩
+    ∃ l u : ℕ, IsFiniteFace (f.newtonPolygon v) σ l u :=
+  (exists_isFiniteFace_newtonPolygon_iff_lt_radius f v hb hv hf0).mpr
+    (radius_eq_top_iff.mpr hf ▸ eNorm_lt_top)
 
 /-- **Local finiteness of slopes.** Only finitely many finite unit edges of the Newton polygon
 of an entire series have slope at most a given real number. -/

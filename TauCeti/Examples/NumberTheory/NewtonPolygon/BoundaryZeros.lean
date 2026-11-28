@@ -8,36 +8,47 @@ module
 public import Mathlib.NumberTheory.Padics.Complex
 public import TauCeti.Analysis.Convex.Sequence.Asymptotic
 public import TauCeti.Analysis.Convex.Sequence.Face
-public import TauCeti.NumberTheory.NewtonPolygon.Basic
+public import TauCeti.NumberTheory.NewtonPolygon.Multiplicity
 public import TauCeti.NumberTheory.Padics.LogGauge
+public import TauCeti.RingTheory.PowerSeries.Radius
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.ZeroCount
+import TauCeti.NumberTheory.NewtonPolygon.Radius
 
 /-!
 # Boundary zeros are not determined by the Newton polygon
 
-At a radius on the boundary of convergence, the Newton polygon of a power series can end in an
-infinite ray, while the zeros of the series on that boundary are counted by its first and last
-active coefficients. This file compares two power series over `ℚ_[p]`, with respect to the real
-`p`-adic additive valuation `TauCeti.padicRealValuation p` normalised by `v(p) = 1`:
+Inside the disc of convergence (`‖b ^ σ‖ₑ < f.radius`), the Newton polygon of a nonzero series has
+a finite face of slope `σ` (`PowerSeries.exists_isFiniteFace_newtonPolygon_iff_lt_radius`), and its
+endpoints determine the exact closed-disc, open-disc, and sphere zero counts
+(`PowerSeries.card_zeroMultiset_eq_toNat_order_add_ncard_unitSlope_le_of_lt_radius`,
+`PowerSeries.card_filter_zeroMultiset_norm_lt_eq_toNat_order_add_ncard_unitSlope_lt_of_lt_radius`,
+`PowerSeries.newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq_of_lt_radius`).
+
+At a radius on the boundary of convergence (`‖b ^ σ‖ₑ = f.radius`), the Newton polygon of a power
+series can end in an infinite ray, while the zeros of the series on that boundary are counted by
+its first and last active coefficients. This file compares two power series over `ℚ_[p]`, with
+respect to the real `p`-adic additive valuation `TauCeti.padicRealValuation p` normalised by
+`v(p) = 1`:
 
 ```text
-ceilSqrtSeries p    = 1 +     ∑_{n ≥ 1} p ^ ⌈√n⌉ Xⁿ,
+ceilSqrtSeries p     = 1 +     ∑_{n ≥ 1} p ^ ⌈√n⌉ Xⁿ,
 boundaryZeroSeries p = 1 + X + ∑_{n ≥ 2} p ^ ⌈√n⌉ Xⁿ.
 ```
 
-Both have coefficient heights `≥ 0`, equal to `0` at `n = 0` and of sublinear growth, so both
-have the same Newton polygon: the identically zero height sequence, an infinite horizontal ray
-from `(0, 0)` with every unit edge of slope `0`. In particular neither polygon has a finite face
-of slope `0`, so the polygon assigns no finite multiplicity to the boundary slope.
+Both have exact radius of convergence `1`, and both have coefficient heights `≥ 0`, equal to `0` at
+`n = 0` and of sublinear growth, so both have the same Newton polygon: the identically zero height
+sequence, an infinite horizontal ray from `(0, 0)` with every unit edge of slope `0`. In particular
+neither polygon has a finite face of slope `0` and both have `newtonSlopeMultiplicity = 0` at `0`.
 
 Both series are nevertheless restricted at the unit radius, where their coefficient norms tend to
 `0`, and their Gauss norm there is `1`. At this radius the first and last active indices are
 `l = u = 0` for `ceilSqrtSeries p`, but `l = 0` and `u = 1` for `boundaryZeroSeries p`.
-Consequently, in every complete normed field extension `L` of `ℚ_[p]`, for instance `ℂ_[p]`:
+Consequently, in every complete normed field extension `L` of `ℚ_[p]`, for instance `ℚ_[p]` itself
+or `ℂ_[p]`:
 
 * `ceilSqrtSeries p` has no zeros in the closed unit disc of `L`;
-* `boundaryZeroSeries p` has exactly one zero in that disc, counted with multiplicity, and it lies
-  on the unit sphere.
+* `boundaryZeroSeries p` has a unique zero in that closed unit disc (counted with or without
+  multiplicity), and it lies on the unit sphere `‖x‖ = 1`.
 
 So two series with the same Newton polygon can have different numbers of zeros on the boundary
 of their disc of convergence. Zero counts at a boundary radius must be read from the active
@@ -48,19 +59,27 @@ indices, not from the shape of the polygon.
 * `TauCeti.NewtonPolygonBoundaryZeroExample.newtonPolygon_ceilSqrtSeries` and
   `TauCeti.NewtonPolygonBoundaryZeroExample.newtonPolygon_boundaryZeroSeries`: both Newton
   polygons are the horizontal ray `0`.
-* `TauCeti.NewtonPolygonBoundaryZeroExample.not_isFiniteFace_newtonPolygon_ceilSqrtSeries`: the
-  polygon has no finite face of slope `0`.
+* `TauCeti.NewtonPolygonBoundaryZeroExample.radius_ceilSqrtSeries` and
+  `TauCeti.NewtonPolygonBoundaryZeroExample.radius_boundaryZeroSeries`: both series have exact
+  radius of convergence `1`.
+* `TauCeti.NewtonPolygonBoundaryZeroExample.not_isFiniteFace_newtonPolygon_ceilSqrtSeries`,
+  `TauCeti.NewtonPolygonBoundaryZeroExample.not_isFiniteFace_newtonPolygon_boundaryZeroSeries`,
+  `TauCeti.NewtonPolygonBoundaryZeroExample.newtonSlopeMultiplicity_ceilSqrtSeries_zero`, and
+  `TauCeti.NewtonPolygonBoundaryZeroExample.newtonSlopeMultiplicity_boundaryZeroSeries_zero`:
+  neither polygon has a finite face of slope `0`, and both have `newtonSlopeMultiplicity = 0` at
+  slope `0`.
 * `TauCeti.NewtonPolygonBoundaryZeroExample.isDistinguished_ceilSqrtSeries` and
   `TauCeti.NewtonPolygonBoundaryZeroExample.isLowestDominant_ceilSqrtSeries`: `l = u = 0` at the
   unit radius.
 * `TauCeti.NewtonPolygonBoundaryZeroExample.isDistinguished_boundaryZeroSeries` and
   `TauCeti.NewtonPolygonBoundaryZeroExample.isLowestDominant_boundaryZeroSeries`: `u = 1` and
   `l = 0` at the unit radius.
-* `TauCeti.NewtonPolygonBoundaryZeroExample.zeroMultiset_ceilSqrtSeries`: no zeros in the closed
-  unit disc.
-* `TauCeti.NewtonPolygonBoundaryZeroExample.card_filter_zeroMultiset_norm_eq_boundaryZeroSeries`
-  and `TauCeti.NewtonPolygonBoundaryZeroExample.exists_zeroMultiset_boundaryZeroSeries_eq`:
-  exactly one zero, on the unit sphere.
+* `TauCeti.NewtonPolygonBoundaryZeroExample.zeroMultiset_ceilSqrtSeries` and
+  `setOf_norm_le_one_and_evalAt_ceilSqrtSeries_eq_zero_eq_empty`: no zeros in the closed unit disc.
+* `TauCeti.NewtonPolygonBoundaryZeroExample.card_filter_zeroMultiset_norm_eq_boundaryZeroSeries`,
+  `TauCeti.NewtonPolygonBoundaryZeroExample.exists_zeroMultiset_boundaryZeroSeries_eq`, and
+  `existsUnique_norm_le_one_and_evalAt_boundaryZeroSeries_eq_zero`: a unique zero in the closed
+  unit disc, lying on the unit sphere.
 
 ## References
 
@@ -69,6 +88,8 @@ indices, not from the shape of the polygon.
   coefficient indices and vertices of the polygon at the boundary of convergence.
 * N. Koblitz, *p-adic Numbers, p-adic Analysis, and Zeta-Functions*, second edition,
   Graduate Texts in Mathematics 58, Springer, 1984, Chapter IV §4.
+* S. Bosch, U. Güntzer and R. Remmert, *Non-Archimedean Analysis*, Grundlehren 261, Springer,
+  1984, §5.2.2.
 -/
 
 public section
@@ -182,19 +203,49 @@ theorem newtonPolygon_ceilSqrtSeries :
       exact WithTop.coe_nonneg.mpr (Nat.cast_nonneg _)
   rw [newtonPolygon_def, ← h.eq_lowerConvexEnvelope]
 
+private theorem radius_eq_one_of_newtonPolygon_eq_zero {f : ℚ_[p]⟦X⟧}
+    (hres : f.IsRestricted 1) (hinf : {n | coeff n f ≠ 0}.Infinite)
+    (hnp : f.newtonPolygon (padicRealValuation p) = 0) :
+    f.radius = 1 := by
+  have hp1 : (1 : ℝ) < p := Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt
+  have hadm : IsAdmissible fun n ↦ padicRealValuation p (coeff n f) :=
+    (f.isAdmissible_addValuation_coeff_iff_exists_isRestricted (padicRealValuation p) hp1
+      fun _ hx ↦ norm_eq_rpow_neg_padicRealValuation hx).mpr ⟨1, zero_lt_one, hres⟩
+  have : Nonempty (finiteEdges (0 : ℕ → WithTop ℝ)) := ⟨⟨0, by simp⟩⟩
+  have hslope : (⨆ i : finiteEdges (0 : ℕ → WithTop ℝ),
+      (unitSlope (0 : ℕ → WithTop ℝ) i : EReal)) = 0 := by
+    simp [unitSlope_def]
+  rw [f.radius_eq_exp_iSup_unitSlope_newtonPolygon (padicRealValuation p) hp1
+    (fun _ hx ↦ norm_eq_rpow_neg_padicRealValuation hx) hadm hinf, hnp, hslope, zero_mul,
+    EReal.exp_zero]
+
+/-- `ceilSqrtSeries p` has exact radius of convergence `1`. -/
+@[simp]
+theorem radius_ceilSqrtSeries : (ceilSqrtSeries p).radius = 1 := by
+  refine radius_eq_one_of_newtonPolygon_eq_zero isRestricted_one_ceilSqrtSeries
+    (Set.infinite_univ.mono fun n _ ↦ ?_) newtonPolygon_ceilSqrtSeries
+  have hp0 : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  simp [hp0]
+
 /-- The horizontal Newton polygon of `ceilSqrtSeries p` has no finite face of slope `0`: every
 line of slope `0` supporting it touches it nowhere or everywhere. So the polygon does not record
 how many zeros the series has on the unit sphere. -/
 theorem not_isFiniteFace_newtonPolygon_ceilSqrtSeries (l u : ℕ) :
     ¬IsFiniteFace ((ceilSqrtSeries p).newtonPolygon (padicRealValuation p)) 0 l u := by
-  rw [newtonPolygon_ceilSqrtSeries]
   intro h
-  obtain ⟨hlu, c, -, hface⟩ := isFiniteFace_iff.mp h
-  have hl : l ∈ supportingFace (0 : ℕ → WithTop ℝ) 0 c := hface ▸ ⟨le_rfl, hlu⟩
-  have hu : u + 1 ∈ supportingFace (0 : ℕ → WithTop ℝ) 0 c := by
-    simpa using hl
-  rw [hface] at hu
-  exact absurd hu.2 (by omega)
+  have hlt := (ceilSqrtSeries p).lt_radius_of_isFiniteFace_newtonPolygon (padicRealValuation p)
+    (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)
+    (fun _ hx ↦ norm_eq_rpow_neg_padicRealValuation hx) h
+  simp at hlt
+
+/-- The slope multiplicity at `0` of `ceilSqrtSeries p` is the `Set.ncard` junk value `0`, because
+infinitely many unit edges have slope `0`. -/
+@[simp]
+theorem newtonSlopeMultiplicity_ceilSqrtSeries_zero :
+    (ceilSqrtSeries p).newtonSlopeMultiplicity (padicRealValuation p) 0 = 0 := by
+  rw [newtonSlopeMultiplicity_def, newtonPolygon_ceilSqrtSeries]
+  refine Set.Infinite.ncard (Set.infinite_univ.mono fun n _ ↦ ?_)
+  simp [unitSlope_def]
 
 variable {L : Type*} [NormedField L] [NormedAlgebra ℚ_[p] L] [CompleteSpace L]
 
@@ -204,6 +255,15 @@ variable {L : Type*} [NormedField L] [NormedAlgebra ℚ_[p] L] [CompleteSpace L]
 theorem zeroMultiset_ceilSqrtSeries : (ceilSqrtSeries p).zeroMultiset 1 L = 0 :=
   Multiset.card_eq_zero.mp <| Nat.le_zero.mp <|
     isDistinguished_ceilSqrtSeries.card_zeroMultiset_le one_pos isRestricted_one_ceilSqrtSeries
+
+/-- `ceilSqrtSeries p` has empty zero set in the closed unit disc `‖x‖ ≤ 1` of every complete
+normed field extension `L` of `ℚ_[p]`. -/
+theorem setOf_norm_le_one_and_evalAt_ceilSqrtSeries_eq_zero_eq_empty :
+    {x : L | ‖x‖ ≤ 1 ∧ (ceilSqrtSeries p).evalAt x = 0} = ∅ := by
+  classical
+  rw [isRestricted_one_ceilSqrtSeries.setOf_norm_le_and_evalAt_eq_zero_eq_toFinset_zeroMultiset
+    one_pos isDistinguished_ceilSqrtSeries.ne_zero, zeroMultiset_ceilSqrtSeries]
+  simp
 
 /-! ### The series with one boundary zero -/
 
@@ -301,6 +361,30 @@ theorem newtonPolygon_boundaryZeroSeries_eq_newtonPolygon_ceilSqrtSeries :
       (ceilSqrtSeries p).newtonPolygon (padicRealValuation p) := by
   rw [newtonPolygon_boundaryZeroSeries, newtonPolygon_ceilSqrtSeries]
 
+/-- `boundaryZeroSeries p` has exact radius of convergence `1`. -/
+@[simp]
+theorem radius_boundaryZeroSeries : (boundaryZeroSeries p).radius = 1 := by
+  refine radius_eq_one_of_newtonPolygon_eq_zero isRestricted_one_boundaryZeroSeries
+    (Set.infinite_univ.mono fun n _ ↦ ?_) newtonPolygon_boundaryZeroSeries
+  have hp0 : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  rcases eq_or_ne n 1 with rfl | hn
+  · simp
+  · simp [hn, hp0]
+
+/-- The horizontal Newton polygon of `boundaryZeroSeries p` likewise has no finite face of slope
+`0`. -/
+theorem not_isFiniteFace_newtonPolygon_boundaryZeroSeries (l u : ℕ) :
+    ¬IsFiniteFace ((boundaryZeroSeries p).newtonPolygon (padicRealValuation p)) 0 l u := by
+  rw [newtonPolygon_boundaryZeroSeries_eq_newtonPolygon_ceilSqrtSeries]
+  exact not_isFiniteFace_newtonPolygon_ceilSqrtSeries l u
+
+/-- The slope multiplicity at `0` of `boundaryZeroSeries p` is likewise `0`. -/
+@[simp]
+theorem newtonSlopeMultiplicity_boundaryZeroSeries_zero :
+    (boundaryZeroSeries p).newtonSlopeMultiplicity (padicRealValuation p) 0 = 0 := by
+  rw [newtonSlopeMultiplicity_def, newtonPolygon_boundaryZeroSeries_eq_newtonPolygon_ceilSqrtSeries,
+    ← newtonSlopeMultiplicity_def, newtonSlopeMultiplicity_ceilSqrtSeries_zero]
+
 omit [CompleteSpace L] in
 /-- The preparation polynomial of `boundaryZeroSeries p` at the unit radius is linear, so it
 splits over every extension. -/
@@ -319,9 +403,9 @@ private theorem exists_isUnit_isMonicOfDegree_one_mul_eq_boundaryZeroSeries :
 at most `1`, counted with multiplicity. -/
 theorem card_zeroMultiset_boundaryZeroSeries :
     ((boundaryZeroSeries p).zeroMultiset 1 L).card = 1 := by
-  obtain ⟨e, P, he, hP, hf, hs⟩ :=
+  obtain ⟨e, P, he, -, hf, hs⟩ :=
     exists_isUnit_isMonicOfDegree_one_mul_eq_boundaryZeroSeries (p := p) (L := L)
-  exact isDistinguished_boundaryZeroSeries.card_zeroMultiset_eq_of_splits one_pos he hP hf hs
+  exact isDistinguished_boundaryZeroSeries.card_zeroMultiset_eq_of_isUnit_mul one_pos he hf hs
 
 /-- **No zeros in the open unit disc.** In every complete normed field extension `L` of `ℚ_[p]`,
 the series `1 + X + ∑_{n ≥ 2} p ^ ⌈√n⌉ Xⁿ` has no zeros of norm less than `1`. -/
@@ -336,10 +420,10 @@ counted with multiplicity, although its Newton polygon is the same horizontal ra
 `ceilSqrtSeries p`, which has none. -/
 theorem card_filter_zeroMultiset_norm_eq_boundaryZeroSeries :
     (((boundaryZeroSeries p).zeroMultiset 1 L).filter (‖·‖ = 1)).card = 1 := by
-  obtain ⟨e, P, he, hP, hf, hs⟩ :=
+  obtain ⟨e, P, he, -, hf, hs⟩ :=
     exists_isUnit_isMonicOfDegree_one_mul_eq_boundaryZeroSeries (p := p) (L := L)
-  exact card_filter_zeroMultiset_norm_eq_eq_of_splits isDistinguished_boundaryZeroSeries
-    isLowestDominant_boundaryZeroSeries one_pos he hP hf hs
+  exact card_filter_zeroMultiset_norm_eq_eq_of_isUnit_mul isDistinguished_boundaryZeroSeries
+    isLowestDominant_boundaryZeroSeries one_pos he hf hs
 
 /-- In every complete normed field extension `L` of `ℚ_[p]`, the zeros of
 `1 + X + ∑_{n ≥ 2} p ^ ⌈√n⌉ Xⁿ` in the closed unit disc consist of a single simple zero, of
@@ -352,12 +436,43 @@ theorem exists_zeroMultiset_boundaryZeroSeries_eq :
   have h := card_filter_zeroMultiset_norm_lt_boundaryZeroSeries (p := p) (L := L)
   simp [hα, Multiset.filter_singleton, hlt] at h
 
-/-! ### Over `ℂ_[p]` -/
+/-- Every zero of `boundaryZeroSeries p` in the closed unit disc `‖x‖ ≤ 1` of `L` lies on the unit
+sphere `‖x‖ = 1`. -/
+theorem norm_eq_one_of_norm_le_one_of_evalAt_boundaryZeroSeries_eq_zero {x : L}
+    (hx : ‖x‖ ≤ 1) (h0 : (boundaryZeroSeries p).evalAt x = 0) : ‖x‖ = 1 := by
+  obtain ⟨α, hα1, hZ⟩ := exists_zeroMultiset_boundaryZeroSeries_eq (p := p) (L := L)
+  have hmem : x ∈ (boundaryZeroSeries p).zeroMultiset 1 L :=
+    (isRestricted_one_boundaryZeroSeries.mem_zeroMultiset_iff one_pos
+      isDistinguished_boundaryZeroSeries.ne_zero).mpr ⟨hx, by simpa using h0⟩
+  rw [hZ, Multiset.mem_singleton] at hmem
+  exact hmem ▸ hα1
+
+/-- `boundaryZeroSeries p` has a unique zero in the closed unit disc `‖x‖ ≤ 1` of every complete
+normed field extension `L` of `ℚ_[p]`. -/
+theorem existsUnique_norm_le_one_and_evalAt_boundaryZeroSeries_eq_zero :
+    ∃! x : L, ‖x‖ ≤ 1 ∧ (boundaryZeroSeries p).evalAt x = 0 := by
+  classical
+  obtain ⟨α, -, hZ⟩ := exists_zeroMultiset_boundaryZeroSeries_eq (p := p) (L := L)
+  have hset : {x : L | ‖x‖ ≤ 1 ∧ (boundaryZeroSeries p).evalAt x = 0} = {α} := by
+    simpa [hZ] using
+      (isRestricted_one_boundaryZeroSeries (p := p)
+        ).setOf_norm_le_and_evalAt_eq_zero_eq_toFinset_zeroMultiset
+        (L := L) one_pos (isDistinguished_boundaryZeroSeries (p := p)).ne_zero
+  refine ⟨α, ?_, fun y hy ↦ ?_⟩
+  · have : α ∈ ({α} : Set L) := Set.mem_singleton α
+    rwa [← hset] at this
+  · have : y ∈ {x : L | ‖x‖ ≤ 1 ∧ (boundaryZeroSeries p).evalAt x = 0} := hy
+    simpa [hset] using this
+
+/-! ### Over `ℂ_[p]` and `ℚ_[p]` -/
 
 example : (ceilSqrtSeries p).zeroMultiset 1 ℂ_[p] = 0 :=
   zeroMultiset_ceilSqrtSeries
 
 example : (((boundaryZeroSeries p).zeroMultiset 1 ℂ_[p]).filter (‖·‖ = 1)).card = 1 :=
   card_filter_zeroMultiset_norm_eq_boundaryZeroSeries
+
+example : ∃! x : ℚ_[p], ‖x‖ ≤ 1 ∧ (boundaryZeroSeries p).evalAt x = 0 :=
+  existsUnique_norm_le_one_and_evalAt_boundaryZeroSeries_eq_zero (p := p)
 
 end TauCeti.NewtonPolygonBoundaryZeroExample

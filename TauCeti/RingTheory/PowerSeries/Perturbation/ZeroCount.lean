@@ -14,33 +14,40 @@ public import TauCeti.RingTheory.PowerSeries.Weierstrass.ZeroCount
 Let `f` and `g` be power series over an ultrametric normed field `K`, both restricted at a radius
 `r > 0`, with `‖f - g‖_r < ‖f‖_r`. Such a perturbation preserves the Gauss norm and the first and
 last indices attaining it, the lowest dominant degree `l` and the distinguished degree `d`
-(`TauCeti.PowerSeries.isLowestDominant_iff_of_gaussNorm_sub_lt` and
-`TauCeti.PowerSeries.isDistinguished_iff_of_gaussNorm_sub_lt`). In a complete normed field
-extension `L` over which the disc polynomials split, the zeros of a series counted with
-multiplicity number `d` in the closed disc `‖x‖ ≤ r`, `l` in the open disc `‖x‖ < r` and `d - l`
-on the sphere `‖x‖ = r` (`TauCeti.PowerSeries.IsDistinguished.card_zeroMultiset_eq_of_splits`
-and its companions). Hence `f` and `g` have the same number of zeros in each of these three
-regions, counted with multiplicity.
+(`TauCeti.PowerSeries.exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt`). In a
+complete normed field extension `L` over which prepared or normalised disc polynomial factors of `f`
+and `g` split, the zeros of each series counted with multiplicity number `d` in the closed disc
+`‖x‖ ≤ r`, `l` in the open disc `‖x‖ < r` and `d - l` on the sphere `‖x‖ = r`
+(`TauCeti.PowerSeries.IsDistinguished.card_zeroMultiset_eq_of_isUnit_mul` and its companions).
+Hence `f` and `g` have the same number of zeros in each of these three regions, counted with
+multiplicity.
 
 The zeros themselves move under the perturbation: `X` and `X - c` with `0 < ‖c‖ < r` each have
 one zero in the open disc of radius `r`, at different points. Only the counts are stable.
 
-Without a splitting hypothesis on the disc polynomials, both series are prepared over a complete
-`K`, and the counts agree in every algebraically closed complete extension `L`, for instance `ℂ_p`
-over `ℚ_p`. The strict inequality is necessary: `1` and `1 - X / a` with `‖a‖ = r` differ by a
-series of Gauss norm `1 = ‖1‖_r`, and the second has a zero on the sphere while the first has none.
+Without any preparation data or completeness assumption on `K`, both series can be prepared after
+mapping into `L`, so the counts agree in every algebraically closed complete extension `L`, for
+instance `ℂ_p` over `ℚ_p`. The strict inequality is necessary: `1` and `1 - X / a` with
+`‖a‖ = r` differ by a series of Gauss norm `1 = ‖1‖_r`, and the second has a zero on the sphere
+while the first has none.
 
 ## Main results
 
-* `TauCeti.PowerSeries.card_zeroMultiset_eq_of_gaussNorm_sub_lt_of_splits`,
-  `TauCeti.PowerSeries.card_filter_zeroMultiset_norm_lt_eq_of_gaussNorm_sub_lt_of_splits` and
-  `TauCeti.PowerSeries.card_filter_zeroMultiset_norm_eq_eq_of_gaussNorm_sub_lt_of_splits`: a
+* `TauCeti.PowerSeries.card_zeroMultiset_eq_of_gaussNorm_sub_lt_of_isUnit_mul`,
+  `TauCeti.PowerSeries.card_filter_zeroMultiset_norm_lt_eq_of_gaussNorm_sub_lt_of_isUnit_mul` and
+  `TauCeti.PowerSeries.card_filter_zeroMultiset_norm_eq_eq_of_gaussNorm_sub_lt_of_isUnit_mul`: a
   Gauss-small perturbation preserves the numbers of zeros in the closed disc, the open disc and
-  on the sphere, in an extension where both disc polynomials split.
+  on the sphere, in any complete extension over which prepared polynomial factors split (with
+  `IsDiscPreparation` versions
+  `TauCeti.PowerSeries.IsDiscPreparation.card_zeroMultiset_eq_of_gaussNorm_sub_lt`,
+  `TauCeti.PowerSeries.IsDiscPreparation.card_filter_zeroMultiset_norm_lt_eq_of_gaussNorm_sub_lt`,
+  and
+  `TauCeti.PowerSeries.IsDiscPreparation.card_filter_zeroMultiset_norm_eq_eq_of_gaussNorm_sub_lt`).
 * `TauCeti.PowerSeries.card_zeroMultiset_eq_of_gaussNorm_sub_lt`,
   `TauCeti.PowerSeries.card_filter_zeroMultiset_norm_lt_eq_of_gaussNorm_sub_lt` and
-  `TauCeti.PowerSeries.card_filter_zeroMultiset_norm_eq_eq_of_gaussNorm_sub_lt`: the same over a
-  complete `K`, in every algebraically closed complete extension.
+  `TauCeti.PowerSeries.card_filter_zeroMultiset_norm_eq_eq_of_gaussNorm_sub_lt`: nonarchimedean
+  Rouché theorems over any ultrametric normed field `K` in every algebraically closed complete
+  extension `L`.
 
 ## References
 
@@ -57,124 +64,171 @@ open _root_.PowerSeries
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K]
   {L : Type*} [NormedField L] [NormedAlgebra K L] [CompleteSpace L]
-  {f g : PowerSeries K} {r : ℝ} {d : ℕ}
+  {f g : PowerSeries K} {r : ℝ}
 
-section Splits
+section IsUnitMul
 
 variable {e e' : PowerSeries.IsRestricted.subring (R := K) r} {P Q : Polynomial K}
 
+/-- A power series of the form `e * P` with `e` restricted at `r` and `P` a polynomial is
+restricted at `r`. -/
+private theorem isRestricted_of_coe_mul_eq (hf : (e : PowerSeries K) * P = f) :
+    f.IsRestricted r := by
+  rw [← hf]
+  exact e.property.mul (isRestricted_polynomial P)
+
 /-- **Closed-disc zero counts are stable, split case.** Let `f = e * P` and `g = e' * Q` over an
 ultrametric normed field, with `e` and `e'` units of the ring of series restricted at `r > 0` and
-`P`, `Q` monic of the distinguished degree `d` of `f` at `r`. If `‖f - g‖_r < ‖f‖_r`, then in
-any complete normed field extension over which `P` and `Q` split, `f` and `g` have the same
-number of zeros in the closed disc of radius `r`, counted with multiplicity. -/
-theorem card_zeroMultiset_eq_of_gaussNorm_sub_lt_of_splits (hr : 0 < r)
-    (hd : IsDistinguished r d f) (h : (f - g).gaussNorm norm r < f.gaussNorm norm r)
-    (he : IsUnit e) (hP : P.IsMonicOfDegree d) (hf : (e : PowerSeries K) * P = f)
-    (hsP : (P.map (algebraMap K L)).Splits)
-    (he' : IsUnit e') (hQ : Q.IsMonicOfDegree d) (hg : (e' : PowerSeries K) * Q = g)
-    (hsQ : (Q.map (algebraMap K L)).Splits) :
+`P`, `Q` polynomials splitting over a complete normed field extension `L`. If `‖f - g‖_r < ‖f‖_r`,
+then `f` and `g` have the same number of zeros in the closed disc `‖x‖ ≤ r` of `L`, counted with
+multiplicity. -/
+theorem card_zeroMultiset_eq_of_gaussNorm_sub_lt_of_isUnit_mul (hr : 0 < r)
+    (he : IsUnit e) (hf : (e : PowerSeries K) * P = f) (hsP : (P.map (algebraMap K L)).Splits)
+    (he' : IsUnit e') (hg : (e' : PowerSeries K) * Q = g) (hsQ : (Q.map (algebraMap K L)).Splits)
+    (h : (f - g).gaussNorm norm r < f.gaussNorm norm r) :
     (f.zeroMultiset r L).card = (g.zeroMultiset r L).card := by
-  have hd' := (isDistinguished_iff_of_gaussNorm_sub_lt hr.le hd.hasGaussNorm
-    (hasGaussNorm_of_isRestricted (hg ▸ e'.property.mul (isRestricted_polynomial Q))) h).mp hd
-  rw [hd.card_zeroMultiset_eq_of_splits hr he hP hf hsP,
-    hd'.card_zeroMultiset_eq_of_splits hr he' hQ hg hsQ]
+  obtain ⟨_, _, hd, hdg, _, _⟩ :=
+    exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le
+      (isRestricted_of_coe_mul_eq hf)
+      (hasGaussNorm_of_isRestricted (isRestricted_of_coe_mul_eq hg)) h
+  rw [hd.card_zeroMultiset_eq_of_isUnit_mul hr he hf hsP,
+    hdg.card_zeroMultiset_eq_of_isUnit_mul hr he' hg hsQ]
 
-/-- **Open-disc zero counts are stable, split case.** Let `f = e * P` and `g = e' * Q` over an
-ultrametric normed field, with `e` and `e'` units of the ring of series restricted at `r > 0` and
-`P`, `Q` monic of the distinguished degree `d` of `f` at `r`. If `‖f - g‖_r < ‖f‖_r`, then in
-any complete normed field extension over which `P` and `Q` split, `f` and `g` have the same
-number of zeros in the open disc of radius `r`, counted with multiplicity. -/
-theorem card_filter_zeroMultiset_norm_lt_eq_of_gaussNorm_sub_lt_of_splits (hr : 0 < r)
-    (hd : IsDistinguished r d f) (h : (f - g).gaussNorm norm r < f.gaussNorm norm r)
-    (he : IsUnit e) (hP : P.IsMonicOfDegree d) (hf : (e : PowerSeries K) * P = f)
-    (hsP : (P.map (algebraMap K L)).Splits)
-    (he' : IsUnit e') (hQ : Q.IsMonicOfDegree d) (hg : (e' : PowerSeries K) * Q = g)
-    (hsQ : (Q.map (algebraMap K L)).Splits) :
+/-- **Open-disc zero counts are stable, split case.** Under the hypotheses of
+`TauCeti.PowerSeries.card_zeroMultiset_eq_of_gaussNorm_sub_lt_of_isUnit_mul`, `f` and `g` have the
+same number of zeros in the open disc `‖x‖ < r` of `L`, counted with multiplicity. -/
+theorem card_filter_zeroMultiset_norm_lt_eq_of_gaussNorm_sub_lt_of_isUnit_mul (hr : 0 < r)
+    (he : IsUnit e) (hf : (e : PowerSeries K) * P = f) (hsP : (P.map (algebraMap K L)).Splits)
+    (he' : IsUnit e') (hg : (e' : PowerSeries K) * Q = g) (hsQ : (Q.map (algebraMap K L)).Splits)
+    (h : (f - g).gaussNorm norm r < f.gaussNorm norm r) :
     ((f.zeroMultiset r L).filter (‖·‖ < r)).card =
       ((g.zeroMultiset r L).filter (‖·‖ < r)).card := by
-  have hfn := hd.hasGaussNorm
-  have hgn := hasGaussNorm_of_isRestricted (hg ▸ e'.property.mul (isRestricted_polynomial Q))
-  have hd' := (isDistinguished_iff_of_gaussNorm_sub_lt hr.le hfn hgn h).mp hd
-  obtain ⟨l, hl⟩ := exists_isLowestDominant hr (hf ▸ e.property.mul (isRestricted_polynomial P))
-    hd.ne_zero
-  have hl' := (isLowestDominant_iff_of_gaussNorm_sub_lt hr.le hfn hgn h).mp hl
-  rw [hl.card_filter_zeroMultiset_norm_lt_eq_of_splits hd hr he hP hf hsP,
-    hl'.card_filter_zeroMultiset_norm_lt_eq_of_splits hd' hr he' hQ hg hsQ]
+  obtain ⟨_, _, _, _, hl, hlg⟩ :=
+    exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le
+      (isRestricted_of_coe_mul_eq hf)
+      (hasGaussNorm_of_isRestricted (isRestricted_of_coe_mul_eq hg)) h
+  rw [hl.card_filter_zeroMultiset_norm_lt_eq_of_isUnit_mul hr he hf hsP,
+    hlg.card_filter_zeroMultiset_norm_lt_eq_of_isUnit_mul hr he' hg hsQ]
 
-/-- **Sphere zero counts are stable, split case.** Let `f = e * P` and `g = e' * Q` over an
-ultrametric normed field, with `e` and `e'` units of the ring of series restricted at `r > 0` and
-`P`, `Q` monic of the distinguished degree `d` of `f` at `r`. If `‖f - g‖_r < ‖f‖_r`, then in
-any complete normed field extension over which `P` and `Q` split, `f` and `g` have the same
-number of zeros `x` with `‖x‖ = r`, counted with multiplicity. -/
-theorem card_filter_zeroMultiset_norm_eq_eq_of_gaussNorm_sub_lt_of_splits (hr : 0 < r)
-    (hd : IsDistinguished r d f) (h : (f - g).gaussNorm norm r < f.gaussNorm norm r)
-    (he : IsUnit e) (hP : P.IsMonicOfDegree d) (hf : (e : PowerSeries K) * P = f)
-    (hsP : (P.map (algebraMap K L)).Splits)
-    (he' : IsUnit e') (hQ : Q.IsMonicOfDegree d) (hg : (e' : PowerSeries K) * Q = g)
-    (hsQ : (Q.map (algebraMap K L)).Splits) :
+/-- **Sphere zero counts are stable, split case.** Under the hypotheses of
+`TauCeti.PowerSeries.card_zeroMultiset_eq_of_gaussNorm_sub_lt_of_isUnit_mul`, `f` and `g` have the
+same number of zeros on the sphere `‖x‖ = r` of `L`, counted with multiplicity. -/
+theorem card_filter_zeroMultiset_norm_eq_eq_of_gaussNorm_sub_lt_of_isUnit_mul (hr : 0 < r)
+    (he : IsUnit e) (hf : (e : PowerSeries K) * P = f) (hsP : (P.map (algebraMap K L)).Splits)
+    (he' : IsUnit e') (hg : (e' : PowerSeries K) * Q = g) (hsQ : (Q.map (algebraMap K L)).Splits)
+    (h : (f - g).gaussNorm norm r < f.gaussNorm norm r) :
     ((f.zeroMultiset r L).filter (‖·‖ = r)).card =
       ((g.zeroMultiset r L).filter (‖·‖ = r)).card := by
-  have hfn := hd.hasGaussNorm
-  have hgn := hasGaussNorm_of_isRestricted (hg ▸ e'.property.mul (isRestricted_polynomial Q))
-  have hd' := (isDistinguished_iff_of_gaussNorm_sub_lt hr.le hfn hgn h).mp hd
-  obtain ⟨l, hl⟩ := exists_isLowestDominant hr (hf ▸ e.property.mul (isRestricted_polynomial P))
-    hd.ne_zero
-  have hl' := (isLowestDominant_iff_of_gaussNorm_sub_lt hr.le hfn hgn h).mp hl
-  rw [card_filter_zeroMultiset_norm_eq_eq_of_splits hd hl hr he hP hf hsP,
-    card_filter_zeroMultiset_norm_eq_eq_of_splits hd' hl' hr he' hQ hg hsQ]
+  obtain ⟨_, _, hd, hdg, hl, hlg⟩ :=
+    exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le
+      (isRestricted_of_coe_mul_eq hf)
+      (hasGaussNorm_of_isRestricted (isRestricted_of_coe_mul_eq hg)) h
+  rw [card_filter_zeroMultiset_norm_eq_eq_of_isUnit_mul hd hl hr he hf hsP,
+    card_filter_zeroMultiset_norm_eq_eq_of_isUnit_mul hdg hlg hr he' hg hsQ]
 
-end Splits
+end IsUnitMul
+
+namespace IsDiscPreparation
+
+variable {d dg : ℕ} {P Q : Polynomial K} {U V : PowerSeries K}
+
+/-- A power series admitting a normalised disc preparation at `r` is restricted at `r`. -/
+private theorem isRestricted_series (hfP : IsDiscPreparation r d f P U) :
+    f.IsRestricted r := by
+  rw [hfP.eq_mul]
+  exact (isRestricted_polynomial P).mul hfP.isRestricted
+
+/-- **Perturbation invariance of closed-disc zero counts for split disc polynomials.** If `f` and
+`g` admit normalised disc preparations at `r > 0` whose polynomial factors both split over `L`, and
+`‖f - g‖_r < ‖f‖_r`, then `f` and `g` have the same closed-disc zero count in `L`. -/
+theorem card_zeroMultiset_eq_of_gaussNorm_sub_lt
+    (hfP : IsDiscPreparation r d f P U) (hgQ : IsDiscPreparation r dg g Q V)
+    (hr : 0 < r) (hsP : (P.map (algebraMap K L)).Splits) (hsQ : (Q.map (algebraMap K L)).Splits)
+    (h : (f - g).gaussNorm norm r < f.gaussNorm norm r) :
+    (f.zeroMultiset r L).card = (g.zeroMultiset r L).card := by
+  obtain ⟨_, _, hd, hdg, _, _⟩ :=
+    exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le
+      hfP.isRestricted_series hgQ.isDistinguished.hasGaussNorm h
+  rw [hfP.card_zeroMultiset_eq_of_splits hr hsP, hgQ.card_zeroMultiset_eq_of_splits hr hsQ,
+    hfP.isDistinguished.unique hd, hdg.unique hgQ.isDistinguished]
+
+/-- **Perturbation invariance of open-disc zero counts for split disc polynomials.** Under the
+hypotheses of `TauCeti.PowerSeries.IsDiscPreparation.card_zeroMultiset_eq_of_gaussNorm_sub_lt`, `f`
+and `g` have the same open-disc zero count in `L`. -/
+theorem card_filter_zeroMultiset_norm_lt_eq_of_gaussNorm_sub_lt
+    (hfP : IsDiscPreparation r d f P U) (hgQ : IsDiscPreparation r dg g Q V)
+    (hr : 0 < r) (hsP : (P.map (algebraMap K L)).Splits) (hsQ : (Q.map (algebraMap K L)).Splits)
+    (h : (f - g).gaussNorm norm r < f.gaussNorm norm r) :
+    ((f.zeroMultiset r L).filter (‖·‖ < r)).card =
+      ((g.zeroMultiset r L).filter (‖·‖ < r)).card := by
+  obtain ⟨_, _, _, _, hl, hlg⟩ :=
+    exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le
+      hfP.isRestricted_series hgQ.isDistinguished.hasGaussNorm h
+  rw [hfP.card_filter_zeroMultiset_norm_lt_eq_of_splits hl hr hsP,
+    hgQ.card_filter_zeroMultiset_norm_lt_eq_of_splits hlg hr hsQ]
+
+/-- **Perturbation invariance of sphere zero counts for split disc polynomials.** Under the
+hypotheses of `TauCeti.PowerSeries.IsDiscPreparation.card_zeroMultiset_eq_of_gaussNorm_sub_lt`, `f`
+and `g` have the same sphere zero count in `L`. -/
+theorem card_filter_zeroMultiset_norm_eq_eq_of_gaussNorm_sub_lt
+    (hfP : IsDiscPreparation r d f P U) (hgQ : IsDiscPreparation r dg g Q V)
+    (hr : 0 < r) (hsP : (P.map (algebraMap K L)).Splits) (hsQ : (Q.map (algebraMap K L)).Splits)
+    (h : (f - g).gaussNorm norm r < f.gaussNorm norm r) :
+    ((f.zeroMultiset r L).filter (‖·‖ = r)).card =
+      ((g.zeroMultiset r L).filter (‖·‖ = r)).card := by
+  obtain ⟨_, _, hd, hdg, hl, hlg⟩ :=
+    exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le
+      hfP.isRestricted_series hgQ.isDistinguished.hasGaussNorm h
+  rw [hfP.card_filter_zeroMultiset_norm_eq_eq_of_splits hl hr hsP,
+    hgQ.card_filter_zeroMultiset_norm_eq_eq_of_splits hlg hr hsQ,
+    hfP.isDistinguished.unique hd, hdg.unique hgQ.isDistinguished]
+
+end IsDiscPreparation
 
 section IsAlgClosed
 
-variable [CompleteSpace K] [IsAlgClosed L]
+variable [IsAlgClosed L]
 
-/-- **Closed-disc zero counts are stable.** Let `f` and `g` be power series over a complete
+/-- **Nonarchimedean Rouché theorem on the closed disc.** Let `f` and `g` be power series over an
 ultrametric normed field, restricted at `r > 0`, with `‖f - g‖_r < ‖f‖_r`. In any algebraically
-closed complete normed field extension, `f` and `g` have the same number of zeros in the closed
-disc of radius `r`, counted with multiplicity. -/
+closed complete normed field extension `L`, `f` and `g` have the same number of zeros in the closed
+disc `‖x‖ ≤ r`, counted with multiplicity. -/
 theorem card_zeroMultiset_eq_of_gaussNorm_sub_lt (hr : 0 < r) (hfr : f.IsRestricted r)
     (hgr : g.IsRestricted r) (h : (f - g).gaussNorm norm r < f.gaussNorm norm r) :
     (f.zeroMultiset r L).card = (g.zeroMultiset r L).card := by
-  have hfn : f.HasGaussNorm norm r := hasGaussNorm_of_isRestricted hfr
-  have hgn : g.HasGaussNorm norm r := hasGaussNorm_of_isRestricted hgr
-  obtain ⟨d, hd⟩ := exists_isDistinguished hr hfr (ne_zero_of_gaussNorm_sub_lt h)
-  have hd' := (isDistinguished_iff_of_gaussNorm_sub_lt hr.le hfn hgn h).mp hd
-  rw [hd.card_zeroMultiset_eq hr hfr, hd'.card_zeroMultiset_eq hr hgr]
+  obtain ⟨_, _, hd, hdg, _, _⟩ :=
+    exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le hfr
+      (hasGaussNorm_of_isRestricted hgr) h
+  rw [hd.card_zeroMultiset_eq hr hfr, hdg.card_zeroMultiset_eq hr hgr]
 
-/-- **Open-disc zero counts are stable.** Let `f` and `g` be power series over a complete
+/-- **Nonarchimedean Rouché theorem on the open disc.** Let `f` and `g` be power series over an
 ultrametric normed field, restricted at `r > 0`, with `‖f - g‖_r < ‖f‖_r`. In any algebraically
-closed complete normed field extension, `f` and `g` have the same number of zeros in the open
-disc of radius `r`, counted with multiplicity. -/
+closed complete normed field extension `L`, `f` and `g` have the same number of zeros in the open
+disc `‖x‖ < r`, counted with multiplicity. -/
 theorem card_filter_zeroMultiset_norm_lt_eq_of_gaussNorm_sub_lt (hr : 0 < r)
     (hfr : f.IsRestricted r) (hgr : g.IsRestricted r)
     (h : (f - g).gaussNorm norm r < f.gaussNorm norm r) :
     ((f.zeroMultiset r L).filter (‖·‖ < r)).card =
       ((g.zeroMultiset r L).filter (‖·‖ < r)).card := by
-  have hfn : f.HasGaussNorm norm r := hasGaussNorm_of_isRestricted hfr
-  have hgn : g.HasGaussNorm norm r := hasGaussNorm_of_isRestricted hgr
-  obtain ⟨l, hl⟩ := exists_isLowestDominant hr hfr (ne_zero_of_gaussNorm_sub_lt h)
-  have hl' := (isLowestDominant_iff_of_gaussNorm_sub_lt hr.le hfn hgn h).mp hl
-  rw [hl.card_filter_zeroMultiset_norm_lt_eq hr hfr, hl'.card_filter_zeroMultiset_norm_lt_eq hr hgr]
+  obtain ⟨_, _, _, _, hl, hlg⟩ :=
+    exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le hfr
+      (hasGaussNorm_of_isRestricted hgr) h
+  rw [hl.card_filter_zeroMultiset_norm_lt_eq hr hfr, hlg.card_filter_zeroMultiset_norm_lt_eq hr hgr]
 
-/-- **Sphere zero counts are stable.** Let `f` and `g` be power series over a complete ultrametric
-normed field, restricted at `r > 0`, with `‖f - g‖_r < ‖f‖_r`. In any algebraically closed
-complete normed field extension, `f` and `g` have the same number of zeros `x` with `‖x‖ = r`,
-counted with multiplicity. -/
+/-- **Nonarchimedean Rouché theorem on the sphere.** Let `f` and `g` be power series over an
+ultrametric normed field, restricted at `r > 0`, with `‖f - g‖_r < ‖f‖_r`. In any algebraically
+closed complete normed field extension `L`, `f` and `g` have the same number of zeros `x` with
+`‖x‖ = r`, counted with multiplicity. -/
 theorem card_filter_zeroMultiset_norm_eq_eq_of_gaussNorm_sub_lt (hr : 0 < r)
     (hfr : f.IsRestricted r) (hgr : g.IsRestricted r)
     (h : (f - g).gaussNorm norm r < f.gaussNorm norm r) :
     ((f.zeroMultiset r L).filter (‖·‖ = r)).card =
       ((g.zeroMultiset r L).filter (‖·‖ = r)).card := by
-  have hf0 := ne_zero_of_gaussNorm_sub_lt h
-  have hfn : f.HasGaussNorm norm r := hasGaussNorm_of_isRestricted hfr
-  have hgn : g.HasGaussNorm norm r := hasGaussNorm_of_isRestricted hgr
-  obtain ⟨d, hd⟩ := exists_isDistinguished hr hfr hf0
-  obtain ⟨l, hl⟩ := exists_isLowestDominant hr hfr hf0
+  obtain ⟨_, _, hd, hdg, hl, hlg⟩ :=
+    exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le hfr
+      (hasGaussNorm_of_isRestricted hgr) h
   rw [card_filter_zeroMultiset_norm_eq_eq hd hl hr hfr,
-    card_filter_zeroMultiset_norm_eq_eq ((isDistinguished_iff_of_gaussNorm_sub_lt hr.le hfn hgn
-      h).mp hd) ((isLowestDominant_iff_of_gaussNorm_sub_lt hr.le hfn hgn h).mp hl) hr hgr]
+    card_filter_zeroMultiset_norm_eq_eq hdg hlg hr hgr]
 
 end IsAlgClosed
 

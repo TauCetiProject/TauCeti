@@ -46,6 +46,8 @@ an algebra homomorphism; it gives the comparisons used in Weierstrass division a
   over a nontrivial normed ring, `∑ Xⁿ` is not restricted at the radius `1`.
 * `PowerSeries.IsRestricted.rescale` and `PowerSeries.IsRestricted.rescale_of_le`: if `f(X)` is
   restricted at `‖a‖ * c` (or at `r ≥ ‖a‖ * c` with `0 ≤ c`), then `f(aX)` is restricted at `c`.
+* `PowerSeries.IsRestricted.map_algebraMap`: mapping the coefficients of a restricted series along
+  `algebraMap` into an algebra with bounded scalar multiplication preserves restrictedness.
 * `TauCeti.PowerSeries.coe_algebraMap_isRestrictedSubring` and
   `TauCeti.PowerSeries.coe_smul_isRestrictedSubring`: scalar maps and scalar multiplication agree
   with those on the ambient formal series.
@@ -285,6 +287,14 @@ theorem IsRestricted.subring_abs (c : ℝ) :
   Subring.ext fun f ↦ by simp only [IsRestricted.mem_subring, isRestricted_abs_iff]
 
 end Subring
+
+/-- Mapping the coefficients of a restricted power series along `algebraMap R S` into an `R`-algebra
+with bounded scalar multiplication preserves restrictedness at every radius. -/
+theorem IsRestricted.map_algebraMap {R S : Type*} [NormedCommRing R] [NormedRing S]
+    [Algebra R S] [IsBoundedSMul R S] {c : ℝ} {f : PowerSeries R} (hf : f.IsRestricted c) :
+    (PowerSeries.map (algebraMap R S) f).IsRestricted c :=
+  MvPowerSeries.isRestricted_map _ (algebraMap R S) (C := ‖(1 : S)‖)
+    (fun a ↦ by rw [Algebra.algebraMap_eq_smul_one, mul_comm]; exact norm_smul_le a (1 : S)) hf
 
 /-- The weighted coefficient norms of a restricted series are summable at every strictly
 smaller radius. No completeness or ultrametric hypothesis is needed. -/

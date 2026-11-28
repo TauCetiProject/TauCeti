@@ -60,6 +60,8 @@ Taking `r = s` gives uniqueness of the normalised preparation.
 * `TauCeti.PowerSeries.IsDiscPreparation.gaussNorm_sub_one_le_div` and
   `TauCeti.PowerSeries.IsDiscPreparation.gaussNorm_sub_le_mul_div`: on a smaller positive
   disc, `‖U - 1‖_s ≤ s / r` and `‖f - P‖_s ≤ ‖f‖_s * (s / r)`.
+* `TauCeti.PowerSeries.IsDiscPreparation.map`: a norm-preserving ring homomorphism between normed
+  fields transports a normalised disc preparation.
 * `TauCeti.PowerSeries.tendsto_gaussNorm_sub_of_isDiscPreparation`: disc polynomials at
   radii tending to infinity converge to the series in each fixed positive-radius Gauss norm.
 * `TauCeti.PowerSeries.IsDiscPreparation.order_eq` and
@@ -213,6 +215,27 @@ theorem order_eq (h : IsDiscPreparation r d f P U) : f.order = (P : PowerSeries 
     by_contra hne
     simpa [h.constantCoeff_eq_one] using order_ne_zero_iff_constCoeff_eq_zero.mp hne
   rw [h.eq_mul, order_mul, hU, add_zero]
+
+omit [IsUltrametricDist K] in
+/-- A norm-preserving ring homomorphism between normed fields transports a normalised disc
+preparation. -/
+theorem map {L : Type*} [NormedField L] (h : IsDiscPreparation r d f P U) (φ : K →+* L)
+    (hφ : ∀ a, ‖φ a‖ = ‖a‖) :
+    IsDiscPreparation r d (_root_.PowerSeries.map φ f) (P.map φ) (_root_.PowerSeries.map φ U) where
+  isDistinguished := h.isDistinguished.map φ hφ
+  natDegree_eq := (Polynomial.natDegree_map_eq_of_injective φ.injective P).trans h.natDegree_eq
+  coeff_zero_eq_one := by rw [Polynomial.coeff_map, h.coeff_zero_eq_one, map_one]
+  isRestricted := MvPowerSeries.isRestricted_map _ φ (C := 1) (fun a ↦ by rw [hφ, one_mul])
+    h.isRestricted
+  constantCoeff_eq_one := by
+    rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply,
+      h.constantCoeff_eq_one, map_one]
+  gaussNorm_sub_one_lt := by
+    have h1 : _root_.PowerSeries.map φ U - 1 = _root_.PowerSeries.map φ (U - 1) := by
+      rw [map_sub, map_one]
+    rw [h1, (U - 1).gaussNorm_map_of_norm_eq φ hφ r]
+    exact h.gaussNorm_sub_one_lt
+  eq_mul := by rw [h.eq_mul, map_mul, Polynomial.polynomial_map_coe]
 
 /-- **The zeros in the closed disc.** In a complete normed field extension `L` of a
 nonarchimedean field `K`, a point `x` with `‖x‖ ≤ r` is a zero of `f` exactly when it is a root of
