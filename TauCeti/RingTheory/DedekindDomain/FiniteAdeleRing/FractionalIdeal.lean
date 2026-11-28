@@ -13,6 +13,10 @@ public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.IntegralIdeal
 For a nonzero fractional ideal `I`, its finite adelic extension `finiteAdelicIdeal I` is the
 module `I Ô` over the integral finite adeles. It is defined independently of a generator.
 Any finite idele representing `I` gives its usual local divisibility criterion.
+
+The module `I Ô` is open and closed in the finite adele ring, it is the closure of the diagonal
+image of `I`, and by strong approximation `K + I Ô` is the whole finite adele ring
+(`IsDedekindDomain.FiniteAdeleRing.exists_sub_algebraMap_mem_finiteAdelicIdeal`).
 -/
 
 public section
@@ -85,19 +89,45 @@ theorem mul_mem_finiteAdelicIdeal {I J : (FractionalIdeal R⁰ K)ˣ} {x y : 𝔸
   simp only [mul_inv_rev, Units.val_mul]
   ring
 
+/-- The adelic extension of a fractional ideal is the preimage of the integral finite adeles under
+multiplication by the inverse of any finite idele representing the ideal. -/
+private theorem coe_finiteAdelicIdeal_eq_preimage {I : (FractionalIdeal R⁰ K)ˣ} (t : 𝔸ᶠ[R, K]ˣ)
+    (ht : toFractionalIdeal t = I) :
+    (finiteAdelicIdeal I : Set 𝔸ᶠ[R, K]) =
+      (fun x : 𝔸ᶠ[R, K] ↦ (↑t⁻¹ : 𝔸ᶠ[R, K]) * x) ⁻¹' (integralAdeles R K : Set 𝔸ᶠ[R, K]) :=
+  Set.ext fun _ ↦ mem_finiteAdelicIdeal_iff t ht
+
+/-- The adelic extension `I Ô` of a fractional ideal is open in the finite adele ring. -/
+theorem isOpen_finiteAdelicIdeal (I : (FractionalIdeal R⁰ K)ˣ) :
+    IsOpen (finiteAdelicIdeal I : Set 𝔸ᶠ[R, K]) := by
+  obtain ⟨t, ht⟩ := toFractionalIdeal_surjective I
+  rw [coe_finiteAdelicIdeal_eq_preimage t ht]
+  exact (isOpen_integralAdeles R K).preimage (continuous_const.mul continuous_id)
+
+/-- The adelic extension `I Ô` of a fractional ideal is closed in the finite adele ring. -/
+theorem isClosed_finiteAdelicIdeal (I : (FractionalIdeal R⁰ K)ˣ) :
+    IsClosed (finiteAdelicIdeal I : Set 𝔸ᶠ[R, K]) := by
+  obtain ⟨t, ht⟩ := toFractionalIdeal_surjective I
+  rw [coe_finiteAdelicIdeal_eq_preimage t ht]
+  exact (isClosed_integralAdeles R K).preimage (continuous_const.mul continuous_id)
+
+/-- **Strong approximation modulo an adelic ideal**: `K + I Ô` is the whole finite adele ring, that
+is, every finite adele differs from the diagonal image of some `x ∈ K` by an element of `I Ô`. -/
+theorem exists_sub_algebraMap_mem_finiteAdelicIdeal (I : (FractionalIdeal R⁰ K)ˣ)
+    (a : 𝔸ᶠ[R, K]) : ∃ x : K, a - algebraMap K 𝔸ᶠ[R, K] x ∈ finiteAdelicIdeal I := by
+  have hopen : IsOpen ((fun y : 𝔸ᶠ[R, K] ↦ a - y) ⁻¹' (finiteAdelicIdeal I : Set 𝔸ᶠ[R, K])) :=
+    (isOpen_finiteAdelicIdeal I).preimage (continuous_const.sub continuous_id)
+  have ha : a ∈ (fun y : 𝔸ᶠ[R, K] ↦ a - y) ⁻¹' (finiteAdelicIdeal I : Set 𝔸ᶠ[R, K]) := by
+    rw [Set.mem_preimage, sub_self, SetLike.mem_coe]
+    exact zero_mem _
+  exact (denseRange_algebraMap R K).exists_mem_open hopen ⟨a, ha⟩
+
 /-- The finite adelic extension of a fractional ideal is the closure of its diagonal image. -/
 theorem closure_image_algebraMap_fractionalIdeal (I : (FractionalIdeal R⁰ K)ˣ) :
     closure ((algebraMap K 𝔸ᶠ[R, K]) '' (↑(I : FractionalIdeal R⁰ K) : Set K)) =
       (finiteAdelicIdeal I : Set 𝔸ᶠ[R, K]) := by
-  obtain ⟨t, ht⟩ := toFractionalIdeal_surjective I
-  have hpreimage : (finiteAdelicIdeal I : Set 𝔸ᶠ[R, K]) =
-      (fun x : 𝔸ᶠ[R, K] ↦ (↑t⁻¹ : 𝔸ᶠ[R, K]) * x) ⁻¹'
-        (integralAdeles R K : Set 𝔸ᶠ[R, K]) :=
-    Set.ext fun _ ↦ mem_finiteAdelicIdeal_iff t ht
-  have hopen := hpreimage ▸ (isOpen_integralAdeles R K).preimage
-    (continuous_const.mul continuous_id)
-  have hclosed := hpreimage ▸ (isClosed_integralAdeles R K).preimage
-    (continuous_const.mul continuous_id)
+  have hopen := isOpen_finiteAdelicIdeal I
+  have hclosed := isClosed_finiteAdelicIdeal I
   have hideal : (↑(I : FractionalIdeal R⁰ K) : Set K) =
       (algebraMap K 𝔸ᶠ[R, K]) ⁻¹' (finiteAdelicIdeal I : Set 𝔸ᶠ[R, K]) :=
     Set.ext fun a ↦ (algebraMap_mem_finiteAdelicIdeal_iff I a).symm

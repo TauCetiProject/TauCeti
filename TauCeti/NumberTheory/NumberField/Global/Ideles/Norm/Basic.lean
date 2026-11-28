@@ -59,6 +59,8 @@ class group.
 * `TauCeti.GlobalNumberFields.ideleNorm_ideleNormSection`: the section is right inverse to the
   idele norm.
 * `TauCeti.GlobalNumberFields.ideleNorm_surjective`: every positive real number is an idele norm.
+* `TauCeti.GlobalNumberFields.coe_ideleNorm_eq_mixedEmbedding_norm_mul`: the idele norm is the
+  mixed norm of the infinite part times the product of the norms of the finite coordinates.
 * `TauCeti.GlobalNumberFields.mixedEmbedding_norm_eq_ideleNorm`: for an idele whose finite part is
   an everywhere-integral unit, its idele norm equals the mixed norm of its infinite part.
 
@@ -348,6 +350,18 @@ theorem coe_ideleNorm (x : IdeleGroup (𝓞 K) K) :
         ∏ᶠ v : HeightOneSpectrum (𝓞 K), ‖(v.ideleFiniteCoord x : v.adicCompletion K)‖ :=
   Real.coe_toNNReal _ (ideleNormAux_nonneg x)
 
+/-- The idele norm is the mixed norm `|N_{K ⊗ ℝ/ℝ}(z_∞)|` of the infinite part, read in the mixed
+space, times the product of the norms of the finite coordinates. -/
+theorem coe_ideleNorm_eq_mixedEmbedding_norm_mul (z : IdeleGroup (𝓞 K) K) :
+    ((ideleNorm z : ℝ≥0) : ℝ) =
+      mixedEmbedding.norm (InfiniteAdeleRing.ringEquiv_mixedSpace K (z : AdeleRing (𝓞 K) K).1) *
+        ∏ᶠ v : HeightOneSpectrum (𝓞 K), ‖(v.ideleFiniteCoord z : v.adicCompletion K)‖ := by
+  rw [InfiniteAdeleRing.ringEquiv_mixedSpace_apply,
+    InfiniteAdeleRing.mixedEmbedding_norm_ringEquiv_mixedSpace,
+    InfiniteAdeleRing.norm_def]
+  simp only [coe_ideleNorm, completionNormalizedAbsValue_apply,
+    InfinitePlace.coe_ideleInfiniteCoord]
+
 /-- For an idele whose finite part is an everywhere-integral unit, the idele norm is the mixed norm
 of its infinite part. -/
 theorem mixedEmbedding_norm_eq_ideleNorm {z : IdeleGroup (𝓞 K) K}
@@ -359,11 +373,7 @@ theorem mixedEmbedding_norm_eq_ideleNorm {z : IdeleGroup (𝓞 K) K}
     have hv := FiniteAdeleRing.mem_integralUnits_iff.mp hz v
     rw [IdeleGroup.coe_toFiniteIdele] at hv
     rw [HeightOneSpectrum.coe_ideleFiniteCoord, FinitePlace.norm_def, hv, map_one, NNReal.coe_one]
-  rw [InfiniteAdeleRing.ringEquiv_mixedSpace_apply,
-    InfiniteAdeleRing.mixedEmbedding_norm_ringEquiv_mixedSpace,
-    InfiniteAdeleRing.norm_def]
-  simp only [coe_ideleNorm, finprod_congr hfin, finprod_one, mul_one,
-    completionNormalizedAbsValue_apply, InfinitePlace.coe_ideleInfiniteCoord]
+  rw [coe_ideleNorm_eq_mixedEmbedding_norm_mul, finprod_congr hfin, finprod_one, mul_one]
 
 /-- **The product formula on ideles**: the idele norm of a principal idele is `1`. -/
 @[simp]

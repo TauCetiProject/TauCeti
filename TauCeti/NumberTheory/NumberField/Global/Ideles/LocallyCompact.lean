@@ -17,14 +17,16 @@ public import TauCeti.NumberTheory.NumberField.Global.Ideles.Basic
 The idele group has the topology induced by `x ↦ (x, x⁻¹)`, so it inherits local compactness as
 the unit group of the locally compact adele ring.
 
-The diagonal subgroup of principal ideles is closed. Indeed, its underlying adeles are exactly
-the units lying in the closed diagonal copy of the number field. Consequently the idele class
-group is both locally compact and Hausdorff.
+The diagonal subgroup of principal ideles is closed and discrete. Indeed, its underlying adeles
+are exactly the units lying in the closed and discrete diagonal copy of the number field.
+Consequently the idele class group is both locally compact and Hausdorff.
 
 ## Main results
 
 * `NumberField.IdeleGroup.instLocallyCompactSpace`: the idele group is locally compact.
 * `NumberField.IdeleGroup.isClosed_principalSubgroup`: the principal ideles form a closed subgroup.
+* `NumberField.IdeleGroup.discreteTopology_principalSubgroup`: the principal ideles form a discrete
+  subgroup.
 * `NumberField.IdeleClassGroup.instLocallyCompactSpace` and
   `NumberField.IdeleClassGroup.instT3Space`: the idele class group is locally compact, Hausdorff,
   and regular.
@@ -72,6 +74,18 @@ theorem isClosed_principalSubgroup :
     Set.ext fun x ↦ mem_principalSubgroup_iff (𝓞 K) K x
   rw [hset]
   exact (TauCeti.GlobalNumberFields.isClosed_principalSubgroup K).preimage Units.continuous_val
+
+/-- The principal ideles form a discrete subgroup of the idele group: their underlying adeles lie
+in the discrete diagonal copy of the number field, and the inclusion of the ideles into the adeles
+is continuous. -/
+instance discreteTopology_principalSubgroup :
+    DiscreteTopology (principalSubgroup (𝓞 K) K) := by
+  let f : principalSubgroup (𝓞 K) K → AdeleRing.principalSubgroup (𝓞 K) K := fun x ↦
+    ⟨((x : IdeleGroup (𝓞 K) K) : AdeleRing (𝓞 K) K),
+      (mem_principalSubgroup_iff (𝓞 K) K x).1 x.property⟩
+  exact .of_continuous_injective (f := f)
+    ((Units.continuous_val.comp continuous_subtypeVal).subtype_mk _)
+    fun x y h ↦ Subtype.ext (Units.ext (congrArg Subtype.val h))
 
 end IdeleGroup
 
