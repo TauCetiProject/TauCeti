@@ -53,6 +53,8 @@ applies it to the staircase threshold at `q * (2 * t + 1)` vertices:
   applications and open problems*, arXiv:2311.06706v3, Section 3.
 * J. Beasley, *The Permutation Coboundary Constant of the Complete Complex Is k/3 for Every k≥4*,
   version 7, Proposition 10.
+* D. N. Kozlov, *The first Cheeger constant of a simplex*, arXiv:1610.07136v2,
+  Definition 3.2 and §3.1 (staircase graphs).
 -/
 
 public section
