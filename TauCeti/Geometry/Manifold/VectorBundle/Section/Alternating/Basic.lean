@@ -14,8 +14,7 @@ public import TauCeti.LinearAlgebra.Alternating.RestrictScalars
 public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 import Mathlib.Analysis.Normed.Module.Alternating.Curry
-import Mathlib.Geometry.Manifold.BumpFunction
-import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.LinearAlgebra.Alternating.Curry
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -333,9 +332,12 @@ theorem curryLeft_curryLeft_eq_neg {k : ℕ}
     (φ : Cₛ^n⟮I; F [⋀^Fin (k + 2)]→L[𝕜] G, fun x ↦ V x [⋀^Fin (k + 2)]→L[𝕜] G⟯)
     (a b : Cₛ^n⟮I; F, V⟯) :
     (φ.curryLeft a).curryLeft b = -(φ.curryLeft b).curryLeft a := by
-  have h := φ.curryLeft_same (a + b)
-  simp only [curryLeft_add_right, curryLeft_add_left, curryLeft_same, zero_add, add_zero] at h
-  exact eq_neg_of_add_eq_zero_right h
+  ext x v
+  simpa only [curryLeft_apply, ContinuousAlternatingMap.coe_neg, ContMDiffSection.coe_neg,
+    Pi.neg_apply, ContinuousAlternatingMap.neg_apply, neg_apply,
+    ← ContinuousAlternatingMap.coe_toAlternatingMap,
+    ContinuousAlternatingMap.toAlternatingMap_curryLeftTopological] using
+    congrArg (· v) (AlternatingMap.curryLeft_curryLeft_eq_neg (φ x).toAlternatingMap (a x) (b x))
 
 /-- `ContMDiffSection.curryLeft` commutes with `LinearEquiv.cast` across successor degree
 equalities. -/
@@ -422,40 +424,29 @@ theorem alternatingMap_apply_eq_of_eval_eq {ι : Type*} [Finite ι]
     {s t : ι → Cₛ^∞⟮I; F, V⟯} {x : M} (hst : ∀ i, s i x = t i x) : Φ s x = Φ t x := by
   classical
   cases nonempty_fintype ι
-  suffices ∀ (q : Finset ι) (s' : ι → Cₛ^∞⟮I; F, V⟯),
-      (∀ i ∈ q, s' i x = t i x) → (∀ i ∉ q, s' i = t i) → Φ s' x = Φ t x from
-    this Finset.univ s (fun i _ ↦ hst i) (fun _ h ↦ (h (Finset.mem_univ _)).elim)
-  intro q
-  induction q using Finset.induction_on with
-  | empty => exact fun s' _ hout ↦ congrArg (Φ · x) (funext fun i ↦ hout i (Finset.notMem_empty i))
-  | @insert j q hj ih =>
-    intro s' hin hout
-    let s'' := Function.update s' j (t j)
-    have hdiff : s' = Function.update s'' j (t j + (s' j - t j)) := by
-      ext k; by_cases hk : k = j <;> simp [s'', hk]
-    have hzero : Φ (Function.update s'' j (s' j - t j)) x = 0 :=
-      alternatingMap_update_apply_eq_zero_of_apply_eq_zero Φ s'' j
-        (by simp [hin j (Finset.mem_insert_self j q)])
-    rw [hdiff, Φ.map_update_add, ContMDiffMap.coe_add, Pi.add_apply, hzero, add_zero]
-    simp only [s'', Function.update_idem]
-    refine ih s'' (fun i hi ↦ ?_) (fun i hi ↦ ?_)
-    · simpa [s'', ne_of_mem_of_not_mem hi hj] using hin i (Finset.mem_insert_of_mem hi)
-    · rcases eq_or_ne i j with rfl | hij
-      · simp [s'']
-      · simpa [s'', hij] using hout i fun hmem ↦ hi ((Finset.mem_insert.1 hmem).resolve_left hij)
+  have hadd : Φ s x = ∑ q : Finset ι, Φ (q.piecewise (s - t) t) x := by
+    have h := congrArg (· x) (Φ.map_add_univ (s - t) t)
+    simpa only [sub_add_cancel, ContMDiffMap.coe_sum, Finset.sum_apply] using h
+  rw [hadd, Finset.sum_eq_single_of_mem ∅ (Finset.mem_univ ∅)]
+  · simp
+  · intro q _ hq
+    obtain ⟨i, hi⟩ := Finset.ne_empty_iff_nonempty.1 hq
+    have hupd : q.piecewise (s - t) t = Function.update (q.piecewise (s - t) t) i (s i - t i) := by
+      rw [eq_comm, Function.update_eq_self_iff, Finset.piecewise_eq_of_mem _ _ _ hi, Pi.sub_apply]
+    rw [hupd]
+    exact alternatingMap_update_apply_eq_zero_of_apply_eq_zero Φ _ i (by simp [hst i])
 
-omit [FiniteDimensional ℝ F] in
-private def evalRightInv (x : M) : V x →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯ :=
-  Classical.choose ((evalLinearMap I F ∞ V x).exists_rightInverse_of_surjective
-    (LinearMap.range_eq_top.2 (evalLinearMap_surjective (I := I) (F := F) (V := V) ∞ x)))
-
-omit [FiniteDimensional ℝ F] in
-private theorem evalRightInv_apply (x : M) (v : V x) :
-    evalRightInv (I := I) (F := F) x v x = v := by
-  simpa only [evalRightInv, LinearMap.comp_apply, evalLinearMap_apply, LinearMap.id_apply] using
-    LinearMap.congr_fun (Classical.choose_spec
-      ((evalLinearMap I F ∞ V x).exists_rightInverse_of_surjective
-        (LinearMap.range_eq_top.2 (evalLinearMap_surjective (I := I) (F := F) (V := V) ∞ x)))) v
+private def contMDiffExtendSection (x : M) : V x →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯ where
+  toFun v :=
+    ⟨FiberBundle.contMDiffExtendₗ I F V x v, by
+      simpa only [FiberBundle.contMDiffExtendₗ_apply] using
+        FiberBundle.contMDiff_contMDiffExtend (n := ∞) I F v⟩
+  map_add' v w := by
+    ext y
+    exact congrFun ((FiberBundle.contMDiffExtendₗ I F V x).map_add v w) y
+  map_smul' c v := by
+    ext y
+    exact congrFun ((FiberBundle.contMDiffExtendₗ I F V x).map_smul c v) y
 
 private def fiberAlternatingOfSections {ι' : Type*} [Finite ι']
     (Φ : Cₛ^∞⟮I; F, V⟯ [⋀^ι']→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯) (x : M) :
@@ -464,7 +455,7 @@ private def fiberAlternatingOfSections {ι' : Type*} [Finite ι']
   let βx : F [⋀^ι']→ₗ[ℝ] ℝ :=
     ((ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ).toLinearMap.compAlternatingMap
       (Φ.restrictScalars ℝ)).compLinearMap
-      ((evalRightInv (I := I) (F := F) x).comp (ex.symmL ℝ x).toLinearMap)
+      ((contMDiffExtendSection (I := I) (F := F) x).comp (ex.symmL ℝ x).toLinearMap)
   (AlternatingMap.toContinuousAlternatingMap βx).compContinuousLinearMap
     (ex.continuousLinearMapAt ℝ x)
 
@@ -478,8 +469,11 @@ private theorem fiberAlternatingOfSections_eval {ι' : Type*} [Finite ι']
     LinearMap.compAlternatingMap_apply, AlgHom.toLinearMap_apply, ContMDiffMap.evalAlgHom_apply,
     AlternatingMap.restrictScalars_apply]
   refine alternatingMap_apply_eq_of_eval_eq Φ fun i ↦ ?_
-  simp only [Function.comp_apply, LinearMap.comp_apply, ContinuousLinearMap.coe_coe]
-  rw [evalRightInv_apply, (trivializationAt F V x).symmL_continuousLinearMapAt hx]
+  simp only [Function.comp_apply, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+    contMDiffExtendSection, LinearMap.coe_mk, AddHom.coe_mk, ContMDiffSection.coeFn_mk,
+    FiberBundle.contMDiffExtendₗ_apply]
+  rw [FiberBundle.contMDiffExtend_apply_self,
+    (trivializationAt F V x).symmL_continuousLinearMapAt hx]
 
 section Fintype
 
@@ -494,18 +488,23 @@ def ofSectionAlternatingMap
   contMDiff_toFun x₀ := by
     rw [contMDiffAt_section_iff]
     let e := trivializationAt F V x₀
-    have hmem : e.baseSet ∈ 𝓝 x₀ := e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F V x₀)
+    have hx₀ : x₀ ∈ e.baseSet := mem_baseSet_trivializationAt F V x₀
+    have hmem : e.baseSet ∈ 𝓝 x₀ := e.open_baseSet.mem_nhds hx₀
     refine (TauCeti.contMDiffAt_continuousAlternatingMap_apply (𝕜 := ℝ)).2 fun v ↦ ?_
-    obtain ⟨ρ, -, hρ⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x₀).mem_iff.mp hmem
     let s (i : ι) : Cₛ^∞⟮I; F, V⟯ :=
-      ⟨(ρ : M → ℝ) • fun y ↦ e.symm y (v i),
-        ρ.contMDiff.contMDiffOn.smul_section_of_tsupport e.open_baseSet hρ
-          (TauCeti.Manifold.contMDiffOn_symm_baseSet (v i))⟩
+      contMDiffExtendSection (I := I) (F := F) x₀ (e.symmL ℝ x₀ (v i))
     refine (Φ s).contMDiff.contMDiffAt.congr_of_eventuallyEq ?_
-    filter_upwards [ρ.eventuallyEq_one, hmem] with y hρy hy
+    have hev : ∀ᶠ y in 𝓝 x₀, ∀ i : ι,
+        FiberBundle.contMDiffExtend I F (e.symmL ℝ x₀ (v i)) y =
+          FiberBundle.extend F (e.symmL ℝ x₀ (v i)) y :=
+      Filter.eventually_all.2 fun i ↦
+        FiberBundle.eventually_contMDiffExtend_eq_extend I F (e.symmL ℝ x₀ (v i))
+    filter_upwards [hev, hmem] with y hy_ext hy
     have hs : e.symmL ℝ y ∘ v = (s · y) := funext fun i ↦ by
-      rw [Function.comp_apply, ContMDiffSection.coeFn_mk, Pi.smul_apply', hρy, Pi.one_apply,
-        one_smul, e.symmL_apply hy]
+      rw [Function.comp_apply, e.symmL_apply hy]
+      dsimp [s, contMDiffExtendSection]
+      rw [FiberBundle.contMDiffExtendₗ_apply, hy_ext i, FiberBundle.extend,
+        e.symmL_apply hx₀, e.apply_mk_symm hx₀]
     rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
       ContinuousAlternatingMap.compContinuousLinearMap_apply, hs, fiberAlternatingOfSections_eval]
 

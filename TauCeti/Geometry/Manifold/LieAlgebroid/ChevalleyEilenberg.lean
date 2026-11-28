@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Lie.Cohomology.LieRinehart
+public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Section
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Tangent
@@ -28,7 +29,8 @@ equivalence yields the Lie derivative `A.lieDeriv` and Chevalley–Eilenberg dif
 `A.extDeriv`, satisfying the invariant Chevalley–Eilenberg formula, `d_A ∘ d_A = 0`, Cartan
 calculus with `ContMDiffSection.curryLeft`, and graded Leibniz rules for `ContMDiffSection.wedge`.
 For `LieAlgebroid.tangent I M`, `A.extDeriv` agrees with the de Rham exterior derivative
-`mextDeriv`, and `ContMDiffSection.wedge` agrees with `SmoothForm.wedge`.
+`mextDeriv`, `ContMDiffSection.wedge` agrees with `SmoothForm.wedge`, and
+`tangentCochainComplexIso` identifies `(tangent I M).cochainComplex` with `deRhamComplex I M`.
 
 ## Main definitions
 
@@ -37,6 +39,8 @@ For `LieAlgebroid.tangent I M`, `A.extDeriv` agrees with the de Rham exterior de
 * `TauCeti.LieAlgebroid.lieDeriv`, `extDeriv`, `cochainComplex`, `cochainComplexXIso`,
   `cohomology`: Lie derivative, Chevalley–Eilenberg differential, cochain complex in `ModuleCat ℝ`,
   canonical degreewise carrier isomorphism, and cohomology `H^k(A)`.
+* `TauCeti.LieAlgebroid.tangentCochainComplexIso`: cochain-complex isomorphism identifying
+  `(tangent I M).cochainComplex` with `TauCeti.deRhamComplex I M`.
 
 ## Main results
 
@@ -44,8 +48,9 @@ For `LieAlgebroid.tangent I M`, `A.extDeriv` agrees with the de Rham exterior de
   formula on sections and `d_A ∘ d_A = 0`.
 * `TauCeti.LieAlgebroid.curryLeft_extDeriv_succ`, `lieDeriv_wedge`, `extDeriv_wedge`: Cartan's
   homotopy formula and graded Leibniz rules for `ContMDiffSection.wedge`.
-* `TauCeti.LieAlgebroid.tangent_extDeriv_apply`, `contMDiffSectionEquiv_symm_tangent_extDeriv`:
-  comparison of `(tangent I M).extDeriv` with `mextDeriv` via
+* `TauCeti.LieAlgebroid.tangent_extDeriv_apply`, `contMDiffSectionEquiv_symm_tangent_extDeriv`,
+  `tangentCochainComplexIso_hom_f`: comparison of `(tangent I M).extDeriv` and
+  `(tangent I M).cochainComplex` with `mextDeriv` and `TauCeti.deRhamComplex` via
   `TauCeti.SmoothForm.contMDiffSectionEquiv` (with `SmoothForm.contMDiffSectionEquiv_symm_wedge`
   for `ContMDiffSection.wedge` and `SmoothForm.wedge`).
 
@@ -282,14 +287,18 @@ theorem evalSection_extDeriv_one (φ : A.Cochain 1) (a b : Cₛ^∞⟮I; F, V⟯
     (A.extDeriv 1 φ).evalSection ![a, b] =
       A.anchorDeriv a (φ.evalSection ![b]) - A.anchorDeriv b (φ.evalSection ![a]) -
         φ.evalSection ![A.bracket a b] := by
-  rw [A.evalSection_extDeriv_succ (k := 0) φ ![a, b], Fin.sum_univ_two, Fin.sum_univ_one]
-  have hIci : Finset.Ici (0 : Fin 1) = {0} := by ext j; fin_cases j; simp
-  have h₀ : removeNth (0 : Fin 2) ![a, b] = ![b] := by funext i; fin_cases i; rfl
-  have h₁ : removeNth (1 : Fin 2) ![a, b] = ![a] := by funext i; fin_cases i; rfl
-  rw [hIci, Finset.sum_singleton]
-  simp only [val_zero, val_one, castSucc_zero, succ_zero_eq_one,
-    Matrix.cons_val_zero, Matrix.cons_val_one, h₀, h₁]
-  abel
+  have hcomp₂ : A.sectionsEquiv.symm ∘ ![a, b] =
+      ![A.sectionsEquiv.symm a, A.sectionsEquiv.symm b] :=
+    funext fun i ↦ by fin_cases i <;> rfl
+  have hcomp₁ (c : Cₛ^∞⟮I; F, V⟯) :
+      A.sectionsEquiv ∘ ![A.sectionsEquiv.symm c] = ![c] :=
+    funext fun i ↦ by simp [Subsingleton.elim i 0]
+  rw [A.evalSection_eq_cochainSectionsEquiv, cochainSectionsEquiv_extDeriv, hcomp₂,
+    ← AlternatingMap.restrictScalars_apply ℝ, LieRinehartAlgebra.restrictScalars_extDeriv,
+    ← LieModule.Cohomology.twoCochainEquiv_apply (R := ℝ),
+    LieModule.Cohomology.twoCochainEquiv_d_one, LieModule.Cohomology.d₁₂_apply_apply]
+  simp only [LieModule.Cohomology.oneCochainEquiv_apply, AlternatingMap.restrictScalars_apply,
+    lie_sectionsEquiv_symm, ← sectionsEquiv_symm_bracket, cochainSectionsEquiv_apply, hcomp₁]
 
 /-- Scalar Leibniz rule for `d_A` evaluated on smooth sections. -/
 theorem evalSection_extDeriv_smul {k : ℕ} (f : C^∞⟮I, M; ℝ⟯) (φ : A.Cochain k)
@@ -381,23 +390,12 @@ theorem lieDeriv_smul_right {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I
     (A.extDeriv (k + 1) φ).curryLeft a = A.lieDeriv a φ - A.extDeriv k (φ.curryLeft a) :=
   (A.cochainSectionsEquiv (k + 1)).injective (by simp)
 
-/-- **Cartan's magic formula** `L_a φ = ι_a (d_A φ) + d_A (ι_a φ)` in positive degree. -/
-theorem lieDeriv_succ_eq_curryLeft_extDeriv_add {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯)
-    (φ : A.Cochain (k + 1)) :
-    A.lieDeriv a φ = (A.extDeriv (k + 1) φ).curryLeft a + A.extDeriv k (φ.curryLeft a) := by
-  rw [A.curryLeft_extDeriv_succ]; abel
-
 /-- Cartan's commutator identity `ι_b (L_a φ) = L_a (ι_b φ) - ι_{[a, b]} φ`. -/
 theorem curryLeft_lieDeriv {k : ℕ} (a b : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain (k + 1)) :
     (A.lieDeriv a φ).curryLeft b =
       A.lieDeriv a (φ.curryLeft b) - φ.curryLeft (A.bracket a b) :=
   (A.cochainSectionsEquiv k).injective <| by
     simp [LieRinehartAlgebra.curryLeft_lieDeriv]
-
-/-- Cartan's commutator identity `[L_a, ι_b] = ι_{[a, b]}`. -/
-theorem lieDeriv_curryLeft_sub {k : ℕ} (a b : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain (k + 1)) :
-    A.lieDeriv a (φ.curryLeft b) - (A.lieDeriv a φ).curryLeft b =
-      φ.curryLeft (A.bracket a b) := by rw [A.curryLeft_lieDeriv]; abel
 
 /-- The Lie derivative is a representation of smooth sections: `[L_a, L_b] = L_{[a, b]}`. -/
 theorem lieDeriv_lieDeriv_sub {k : ℕ} (a b : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain k) :
@@ -406,7 +404,8 @@ theorem lieDeriv_lieDeriv_sub {k : ℕ} (a b : Cₛ^∞⟮I; F, V⟯) (φ : A.Co
   (A.cochainSectionsEquiv k).injective <| by
     simp [LieRinehartAlgebra.lieDeriv_lieDeriv_sub]
 
-/-- Naturality of the Chevalley–Eilenberg differential: `L_a (d_A φ) = d_A (L_a φ)`. -/
+/-- The Chevalley–Eilenberg differential commutes with the Lie derivative along a section:
+`L_a (d_A φ) = d_A (L_a φ)`. -/
 @[simp] theorem lieDeriv_extDeriv (k : ℕ) (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain k) :
     A.lieDeriv a (A.extDeriv k φ) = A.extDeriv k (A.lieDeriv a φ) :=
   (A.cochainSectionsEquiv (k + 1)).injective (by simp)
@@ -418,12 +417,15 @@ theorem lieDeriv_lieDeriv_sub {k : ℕ} (a b : Cₛ^∞⟮I; F, V⟯) (φ : A.Co
 theorem lieDeriv_wedge {k l : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain k) (ψ : A.Cochain l) :
     A.lieDeriv a (φ.wedge ψ) = (A.lieDeriv a φ).wedge ψ + φ.wedge (A.lieDeriv a ψ) := by
   refine ContMDiffSection.ext_evalSection fun s ↦ ?_
+  let D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ :=
+    { toFun := A.anchorDeriv a
+      map_add' := A.anchorDeriv_add_right a
+      map_smul' := A.anchorDeriv_const_smul_right a }
+  have hD : ∀ f, A.anchorDeriv a f = D f := fun _ ↦ rfl
   simp only [A.evalSection_lieDeriv, ContMDiffSection.evalSection_add,
-    ContMDiffSection.evalSection_wedge, A.anchorDeriv_const_smul_right]
-  conv_lhs =>
-    rw [← A.lie_sectionsEquiv_symm a]
-    simp only [lie_sum, Units.smul_def, lie_zsmul, LieRinehartRing.leibniz_mul_right]
-  simp only [A.lie_sectionsEquiv_symm, smul_eq_mul, ← Finset.smul_sum]
+    ContMDiffSection.evalSection_wedge, A.anchorDeriv_const_smul_right, hD, map_sum,
+    Units.smul_def, map_zsmul]
+  simp only [← hD, A.anchorDeriv_mul_right, ← Finset.smul_sum]
   rw [Finset.sum_comm]
   simp_rw [← Finset.smul_sum, A.sum_update_evalSection_wedge]
   simp only [← smul_sub, ← smul_add, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
@@ -666,6 +668,51 @@ theorem tangent_extDeriv_apply (k : ℕ) (φ : (tangent I M).Cochain k) (x : M) 
   simp only [SmoothForm.toContMDiffSection_apply, SmoothForm.contMDiffSectionEquiv_symm_apply,
     mextDerivₗ_apply, hη]
   exact DFunLike.congr_fun (tangent_extDeriv_apply k φ x) w
+
+variable (I M) in
+/-- `SmoothForm.contMDiffSectionEquiv.symm` assembles into an isomorphism of cochain complexes
+identifying `(tangent I M).cochainComplex` with `TauCeti.deRhamComplex I M`. -/
+def tangentCochainComplexIso :
+    (tangent I M).cochainComplex ≅ deRhamComplex I M :=
+  HomologicalComplex.Hom.isoOfComponents
+    (fun k ↦ (tangent I M).cochainComplexXIso k ≪≫
+      (SmoothForm.contMDiffSectionEquiv (I := I) (M := M) (k := k)).symm.toModuleIso ≪≫
+      (deRhamComplexXIso I (M := M) k).symm) <| by
+    rintro k _ rfl
+    have hcomm :
+        (SmoothForm.contMDiffSectionEquiv (I := I) (M := M) (k := k)).symm.toModuleIso.hom ≫
+            ModuleCat.ofHom (mextDerivₗ I (F := ℝ) k) =
+          ModuleCat.ofHom ((tangent I M).extDeriv k) ≫
+            (SmoothForm.contMDiffSectionEquiv (I := I) (M := M)
+              (k := k + 1)).symm.toModuleIso.hom := by
+      ext φ : 2
+      exact (contMDiffSectionEquiv_symm_tangent_extDeriv k φ).symm
+    rw [(Iso.eq_comp_inv _).mpr (deRhamComplex_d I (M := M) k),
+      (Iso.eq_comp_inv _).mpr ((tangent I M).cochainComplex_d k)]
+    simp only [Iso.trans_hom, Iso.symm_hom, Category.assoc, Iso.inv_hom_id_assoc,
+      reassoc_of% hcomm]
+
+/-- In each degree `k`, `(tangentCochainComplexIso I M).hom.f k` agrees with
+`SmoothForm.contMDiffSectionEquiv.symm` under the canonical object identifications
+`cochainComplexXIso` and `deRhamComplexXIso`. -/
+@[reassoc]
+theorem tangentCochainComplexIso_hom_f (k : ℕ) :
+    (tangentCochainComplexIso I M).hom.f k ≫ (deRhamComplexXIso I (M := M) k).hom =
+      ((tangent I M).cochainComplexXIso k).hom ≫
+        ModuleCat.ofHom
+          (SmoothForm.contMDiffSectionEquiv (I := I) (M := M) (k := k)).symm.toLinearMap := by
+  simp [tangentCochainComplexIso]
+
+/-- In each degree `k`, `(tangentCochainComplexIso I M).inv.f k` agrees with
+`SmoothForm.contMDiffSectionEquiv` under the canonical object identifications
+`deRhamComplexXIso` and `cochainComplexXIso`. -/
+@[reassoc]
+theorem tangentCochainComplexIso_inv_f (k : ℕ) :
+    (tangentCochainComplexIso I M).inv.f k ≫ ((tangent I M).cochainComplexXIso k).hom =
+      (deRhamComplexXIso I (M := M) k).hom ≫
+        ModuleCat.ofHom
+          (SmoothForm.contMDiffSectionEquiv (I := I) (M := M) (k := k)).toLinearMap := by
+  simp [tangentCochainComplexIso]
 
 end T2
 

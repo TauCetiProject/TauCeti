@@ -18,15 +18,18 @@ structure on `L` makes `A` a Lie module over `L`, so the Lie derivative `⁅x, �
 `TauCeti.LieModule.Cohomology.d R L A n` act on `L [⋀^Fin n]→ₗ[R] A`.
 
 The Leibniz rules of `LieRinehartRing` cancel the non-tensorial derivative terms whenever the input
-cochain `ω : L [⋀^Fin n]→ₗ[A] A` is `A`-multilinear, yielding `A`-multilinear operators `lieDeriv`
-and `extDeriv`. Because scalar restriction is injective and intertwines `curryLeft`, `lieDeriv`, and
-`extDeriv`, Cartan's homotopy formula, the commutator identities, naturality, and `d ∘ d = 0`
-transfer directly from `TauCeti.LieModule.Cohomology`.
+cochain `ω : L [⋀^Fin n]→ₗ[A] A` is `A`-multilinear, yielding `R`-linear operators `lieDeriv`
+and `extDeriv` that preserve `A`-multilinearity in the cochain slots. Because scalar restriction is
+injective and intertwines `curryLeft`, `lieDeriv`, and `extDeriv`, Cartan's homotopy formula, the
+commutator identities, commutation with Lie derivatives, and `d ∘ d = 0` transfer directly from
+`TauCeti.LieModule.Cohomology`.
 
 ## Main definitions
 
-* `TauCeti.LieRinehartAlgebra.lieDeriv`: the `A`-multilinear Lie derivative along `x : L`.
-* `TauCeti.LieRinehartAlgebra.extDeriv`: the `A`-multilinear Chevalley–Eilenberg differential.
+* `TauCeti.LieRinehartAlgebra.lieDeriv`: the Lie derivative along `x : L`, as an `R`-linear
+  endomorphism of `A`-multilinear cochains.
+* `TauCeti.LieRinehartAlgebra.extDeriv`: the Chevalley–Eilenberg differential on `A`-multilinear
+  cochains, as an `R`-linear map.
 
 ## Main results
 

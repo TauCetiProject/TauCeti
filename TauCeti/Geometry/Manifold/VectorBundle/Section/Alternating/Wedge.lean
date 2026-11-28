@@ -201,6 +201,28 @@ theorem wedge_apply_zero_left
   ContinuousAlternatingMap.pairedWedge_apply_zero_right (ContinuousLinearMap.mul ℝ ℝ)
     (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (φ x) (ψ x) v
 
+/-- Wedging on the left with a degree-zero section is scalar multiplication by the corresponding
+smooth function under `alternatingIsEmptyEquiv`, transported across `0 + l = l`. -/
+theorem wedge_eq_smul_of_zero_left
+    (φ : Cₛ^n⟮I; F [⋀^Fin 0]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin 0]→L[ℝ] ℝ⟯)
+    (ψ : Cₛ^n⟮I; F [⋀^Fin l]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin l]→L[ℝ] ℝ⟯) :
+    φ.wedge ψ = LinearEquiv.cast (R := ℝ)
+      (M := fun r : ℕ ↦ Cₛ^n⟮I; F [⋀^Fin r]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin r]→L[ℝ] ℝ⟯)
+      (Nat.zero_add l).symm (alternatingIsEmptyEquiv I F n V (Fin 0) φ • ψ) := by
+  ext x v
+  rw [cast_alternating_apply, wedge_apply_zero_left, smul_apply,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul, alternatingIsEmptyEquiv_apply]
+
+/-- Wedging on the right with a degree-zero section is scalar multiplication by the corresponding
+smooth function under `alternatingIsEmptyEquiv`. -/
+theorem wedge_eq_smul_of_zero_right
+    (φ : Cₛ^n⟮I; F [⋀^Fin k]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin k]→L[ℝ] ℝ⟯)
+    (ψ : Cₛ^n⟮I; F [⋀^Fin 0]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin 0]→L[ℝ] ℝ⟯) :
+    φ.wedge ψ = alternatingIsEmptyEquiv I F n V (Fin 0) ψ • φ := by
+  ext x v
+  rw [wedge_apply_zero_right, smul_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
+    alternatingIsEmptyEquiv_apply, mul_comm]
+
 theorem wedge_apply_one_one
     (φ ψ : Cₛ^n⟮I; F [⋀^Fin 1]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin 1]→L[ℝ] ℝ⟯)
     (x : M) (v w : V x) :
