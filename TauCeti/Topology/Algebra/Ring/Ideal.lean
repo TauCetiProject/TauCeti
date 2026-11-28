@@ -78,6 +78,8 @@ a point; it is not a further hypothesis of the theorem but a consequence for its
   structure comes along with it and needs no transport of its own.
 * `IsOpenQuotientMap.isTopologicalRing`: the target of an open quotient ring homomorphism out of a
   topological ring is a topological ring.
+* `Ideal.closure_le_ker_of_continuous`: the closure of an ideal contained in the kernel of a
+  continuous homomorphism into a `T₁` space stays in the kernel.
 * `Ideal.closure_mul_le`, `Ideal.closure_pow_le`, `Ideal.closure_bot`, `Ideal.closure_pow_eq_bot`:
   products and powers of topological closures of ideals lie inside the closures of products and
   powers, so in a `T₁` topological ring the closure of a nilpotent ideal has the same nilpotency
@@ -308,6 +310,19 @@ theorem IsOpenQuotientMap.isTopologicalRing {F R B : Type*} [NonUnitalNonAssocRi
   exact {}
 
 end OpenQuotient
+
+section Closure
+
+/-- If a continuous ring homomorphism into a `T₁` space vanishes on an ideal `I`, then its kernel
+contains `I.closure`. -/
+theorem Ideal.closure_le_ker_of_continuous {R S : Type*} [Ring R] [TopologicalSpace R]
+    [IsTopologicalRing R] [Semiring S] [TopologicalSpace S] [T1Space S]
+    {I : Ideal R} {φ : R →+* S} (hφ : Continuous φ) (hI : I ≤ RingHom.ker φ) :
+    I.closure ≤ RingHom.ker φ := by
+  rw [← SetLike.coe_subset_coe, Ideal.coe_closure]
+  exact closure_minimal (SetLike.coe_subset_coe.mpr hI) (RingHom.isClosed_ker hφ)
+
+end Closure
 
 section ClosureMul
 

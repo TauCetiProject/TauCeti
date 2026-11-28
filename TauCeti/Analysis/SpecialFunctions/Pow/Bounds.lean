@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Analysis.SpecialFunctions.Log.Base
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.MeanInequalitiesPow
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+import TauCeti.Algebra.Order.Floor.Semifield
 
 /-!
 # Elementary bounds on real powers
@@ -89,6 +93,11 @@ length `(2 ^ ε - 2 ^ (-ε)) X` of the window `(2 ^ (-ε) X, 2 ^ ε X)` on which
 For a natural number `n ≤ x` and every real exponent `p`, `n ^ p ≤ max 1 (x ^ p)`. This bounds
 all the weights `n ^ p` of a partial sum `∑_{n ≤ x}` at once, whatever the sign of `p`.
 
+For `x ≥ 0`, `a > 0`, and either `x ≥ 1` or `⌊y⌋₊ < a`, the sum of roots `x ^ (1 / k)` over
+`a ≤ k ≤ ⌊y⌋₊` is bounded by `(y + 1 - a)⁺ * x ^ (1 / a)`: the roots are nonincreasing in `k`
+for `x ≥ 1`, while for `⌊y⌋₊ < a` the sum is empty. In particular, taking `y = Real.logb b x`
+with `1 < b` satisfies `⌊y⌋₊ = 0 < a` automatically when `0 ≤ x < 1`.
+
 For `0 ≤ x` and `0 < ε ≤ 1`, `log (x + 1) ≤ x ^ ε / ε`. Unlike Mathlib's `Real.log_le_rpow_div`
 for `log x`, the shifted logarithm is dominated by the power of `x` itself, so a coefficient bound
 `log (n + 1)` becomes a power bound `n ^ ε / ε` at every `n ≥ 0`. Applying `Real.log_le_rpow_div`
@@ -101,6 +110,15 @@ both for `0 ≤ log x` and for the case `p = 0`, where the statement reduces to 
 * `Real.abs_rpow_sub_one_le`: `|x ^ y - 1| ≤ 2 |log x · y|` for `0 < x` and `|log x · y| ≤ 1`.
 * `Real.rpow_le_rpow_add_rpow_of_mem_Icc`: `u ^ p ≤ u ^ p₁ + u ^ p₂` for `0 < u` and
   `p ∈ Set.Icc p₁ p₂`.
+* `Real.rpow_add_one_le_rpow_mul`: `x ^ (s + 1) ≤ X ^ s * x` for `0 < X ≤ x` and `s ≤ 0`.
+* `Real.rpow_neg_div_pow`: `(b ^ (-(p : ℝ) / q)) ^ q = 1 / b ^ p` for `b ≥ 0` and `q ≠ 0`.
+* `Real.rpow_neg_div_lt_iff` and `Real.lt_rpow_neg_div_iff`: `b ^ (-p / q) < u ↔ 1 < u ^ q * b ^ p`
+  and `u < b ^ (-p / q) ↔ u ^ q * b ^ p < 1` for `b > 0`, `u ≥ 0`, and `q ≠ 0`.
+* `Real.sum_Icc_floor_rpow_one_div_le`:
+  `∑ k ∈ Finset.Icc a ⌊y⌋₊, x ^ ((1 : ℝ) / k) ≤ max (y + 1 - a) 0 * x ^ ((1 : ℝ) / a)` for
+  `x ≥ 0`, `a > 0`, and either `1 ≤ x` or `⌊y⌋₊ < a`.
+* `Real.sum_Icc_floor_logb_rpow_one_div_le`: logarithmic-cutoff specialization of
+  `Real.sum_Icc_floor_rpow_one_div_le` at `y = Real.logb b x` for `1 < b` and `0 ≤ x`.
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
 * `Real.pow_mul_sqrt_le_rpow_div_two`: `q ^ n √q ≤ q ^ (M / 2)` for `1 ≤ q` and `2n < M`.
 * `Real.rpow_neg_le_mul_rpow_neg`: `y ^ (-q) ≤ a ^ q x ^ (-q)` for `0 < x ≤ a y`, `a ≥ 0` and
@@ -163,6 +181,31 @@ theorem rpow_le_rpow_add_rpow_of_mem_Icc {u p p₁ p₂ : ℝ} (hu : 0 < u) (hp 
   rcases le_total u 1 with hu1 | hu1
   · exact le_add_of_le_of_nonneg (rpow_le_rpow_of_exponent_ge hu hu1 hp.1) (by positivity)
   · exact le_add_of_nonneg_of_le (by positivity) (rpow_le_rpow_of_exponent_le hu1 hp.2)
+
+/-- For `0 < X ≤ x` and `s ≤ 0`, `x ^ (s + 1) ≤ X ^ s * x`. -/
+theorem rpow_add_one_le_rpow_mul {X x s : ℝ} (hX : 0 < X) (hXx : X ≤ x) (hs : s ≤ 0) :
+    x ^ (s + 1) ≤ X ^ s * x :=
+  calc x ^ (s + 1) = x ^ s * x := rpow_add_one (hX.trans_le hXx).ne' s
+    _ ≤ X ^ s * x :=
+      mul_le_mul_of_nonneg_right (rpow_le_rpow_of_nonpos hX hXx hs) (hX.le.trans hXx)
+
+/-- For `b ≥ 0` and `q ≠ 0`, `(b ^ (-(p : ℝ) / q)) ^ q = 1 / b ^ p`. -/
+theorem rpow_neg_div_pow {b : ℝ} {p q : ℕ} (hb : 0 ≤ b) (hq : q ≠ 0) :
+    (b ^ (-(p : ℝ) / q)) ^ q = 1 / b ^ p := by
+  rw [← rpow_mul_natCast hb, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hq),
+    rpow_neg hb, rpow_natCast, one_div]
+
+/-- For `b > 0`, `u ≥ 0`, and `q ≠ 0`, `b ^ (-p / q) < u` if and only if `1 < u ^ q * b ^ p`. -/
+theorem rpow_neg_div_lt_iff {b u : ℝ} {p q : ℕ} (hb : 0 < b) (hu : 0 ≤ u) (hq : q ≠ 0) :
+    b ^ (-(p : ℝ) / q) < u ↔ 1 < u ^ q * b ^ p := by
+  rw [← pow_lt_pow_iff_left₀ (by positivity) hu hq, rpow_neg_div_pow hb.le hq,
+    div_lt_iff₀ (pow_pos hb p)]
+
+/-- For `b > 0`, `u ≥ 0`, and `q ≠ 0`, `u < b ^ (-p / q)` if and only if `u ^ q * b ^ p < 1`. -/
+theorem lt_rpow_neg_div_iff {b u : ℝ} {p q : ℕ} (hb : 0 < b) (hu : 0 ≤ u) (hq : q ≠ 0) :
+    u < b ^ (-(p : ℝ) / q) ↔ u ^ q * b ^ p < 1 := by
+  rw [← pow_lt_pow_iff_left₀ hu (by positivity) hq, rpow_neg_div_pow hb.le hq,
+    lt_div_iff₀ (pow_pos hb p)]
 
 /-- If `2 ≤ y` and `1 ≤ s`, then `y ^ (-s) ≤ 1 / 2`. -/
 theorem rpow_neg_le_half {y s : ℝ} (hy : 2 ≤ y) (hs : 1 ≤ s) : y ^ (-s) ≤ 1 / 2 :=
@@ -454,6 +497,36 @@ theorem natCast_rpow_le_max_one_rpow {n : ℕ} {x : ℝ} (hnx : (n : ℝ) ≤ x)
     · simpa using zero_rpow_le_one p
     · exact rpow_le_one_of_one_le_of_nonpos (by exact_mod_cast hn) h
   · exact (rpow_le_rpow (by positivity) hnx h).trans (le_max_right _ _)
+
+/-- For `x ≥ 0`, `a > 0`, and any real cutoff `y` with `1 ≤ x` or `⌊y⌋₊ < a`, the roots
+`x ^ (1 / k)` over `a ≤ k ≤ ⌊y⌋₊` sum to at most `(y + 1 - a)⁺ * x ^ (1 / a)`. -/
+theorem sum_Icc_floor_rpow_one_div_le {x : ℝ} (hx : 0 ≤ x) {a : ℕ} (ha : 0 < a) (y : ℝ)
+    (hxy : 1 ≤ x ∨ ⌊y⌋₊ < a) :
+    ∑ k ∈ Finset.Icc a ⌊y⌋₊, x ^ ((1 : ℝ) / k) ≤
+      max (y + 1 - a) 0 * x ^ ((1 : ℝ) / a) := by
+  rcases hxy with hx1 | hy
+  · rcases lt_or_ge y 0 with hy0 | hy0
+    · rw [Nat.floor_of_nonpos hy0.le, Finset.Icc_eq_empty (by omega), Finset.sum_empty]
+      positivity
+    · exact TauCeti.sum_Icc_floor_le_max_mul hy0 (rpow_nonneg hx _) a
+        fun k hk ↦ rpow_le_rpow_of_exponent_le hx1
+          (one_div_le_one_div_of_le (by exact_mod_cast ha)
+            (by exact_mod_cast (Finset.mem_Icc.mp hk).1))
+  · rw [Finset.Icc_eq_empty (by omega), Finset.sum_empty]
+    exact mul_nonneg (le_max_right _ _) (rpow_nonneg hx _)
+
+/-- For `1 < b`, `0 ≤ x`, and `a > 0`, the roots `x ^ (1 / k)` over `a ≤ k ≤ ⌊logb b x⌋₊`
+sum to at most `(logb b x + 1 - a)⁺ * x ^ (1 / a)`. -/
+theorem sum_Icc_floor_logb_rpow_one_div_le {b x : ℝ} (hb : 1 < b) (hx : 0 ≤ x) {a : ℕ}
+    (ha : 0 < a) :
+    ∑ k ∈ Finset.Icc a ⌊logb b x⌋₊, x ^ ((1 : ℝ) / k) ≤
+      max (logb b x + 1 - a) 0 * x ^ ((1 : ℝ) / a) := by
+  refine sum_Icc_floor_rpow_one_div_le hx ha (logb b x) ?_
+  rcases lt_or_ge x 1 with hx1 | hx1
+  · refine Or.inr ?_
+    rw [Nat.floor_of_nonpos (logb_nonpos hb hx hx1.le)]
+    exact ha
+  · exact Or.inl hx1
 
 /-- For `0 ≤ x` and `0 < ε ≤ 1`, `log (x + 1) ≤ x ^ ε / ε`. -/
 theorem log_add_one_le_rpow_div {x ε : ℝ} (hx : 0 ≤ x) (hε : 0 < ε) (hε₁ : ε ≤ 1) :

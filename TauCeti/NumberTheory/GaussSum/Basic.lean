@@ -57,6 +57,9 @@ then reindexing the Gauss sum by the Frobenius gives `g(χ ^ p, ψ) = g(χ, ψ)`
   of products of one-variable factors `ψ(±xᵢ) χᵢ(xᵢ)` is a product of Gauss sums.
 * `MulChar.gaussSum_mulShift_eq_zero_of_mul_sub_one_eq_zero`: the Gauss sum against a shift
   `x ↦ ψ (b * x)` vanishes if `b * (u - 1) = 0` for a unit `u` with `χ u ≠ 1`.
+* `MulChar.gaussSum_mulShift_eq_inv_mul_gaussSum`: `g(χ, x ↦ ψ (b * x)) = χ⁻¹ b * g(χ, ψ)` for
+  every `b` when the characters take values in an integral domain and `χ` is primitive, that is,
+  nontrivial on some unit `1 + c * a` for each `a ≠ 0`.
 * `MulChar.sum_gaussSum_mulShift`: the sum over all shift parameters factors as
   `(∑ x, χ x) * ∑ a, ψ a`.
 * `MulChar.gaussSum_mulShift_eq_ite`: over a finite field the usual shift formula extends
@@ -277,6 +280,28 @@ theorem gaussSum_mulShift_eq_zero_of_mul_sub_one_eq_zero {R : Type*} [CommRing R
   rw [AddChar.mulShift_mulShift, hb] at h
   by_contra hne
   exact hu ((mul_eq_right₀ hne).mp h)
+
+/-- **Shifted Gauss sums of a primitive character.** Let `χ` be a multiplicative character of
+the finite ring `R`, with values in an integral domain `R'`, that is primitive in the sense that
+for every `a ≠ 0` some unit `1 + c * a` has `χ (1 + c * a) ≠ 1`, and `ψ` an additive character
+of `R` with values in `R'`. Then `g(χ, x ↦ ψ (b * x)) = χ⁻¹ b * g(χ, ψ)` for every `b`: for a unit
+`b` this is `gaussSum_mulShift_eq`, and for a nonunit `b` both sides vanish. This is the
+hypothesis of `TauCeti.norm_gaussSum_of_forall_mulShift`; for Dirichlet characters it is
+Mathlib's `gaussSum_mulShift_of_isPrimitive`. -/
+theorem gaussSum_mulShift_eq_inv_mul_gaussSum {R : Type*} [CommRing R] [Fintype R]
+    {R' : Type*} [CommRing R'] [IsDomain R'] {χ : MulChar R R'}
+    (hχ : ∀ a : R, a ≠ 0 → ∃ c : R, IsUnit (1 + c * a) ∧ χ (1 + c * a) ≠ 1)
+    (ψ : AddChar R R') (b : R) : gaussSum χ (ψ.mulShift b) = χ⁻¹ b * gaussSum χ ψ := by
+  by_cases hb : IsUnit b
+  · simpa using gaussSum_mulShift_eq χ ψ hb.unit
+  · -- a nonunit of a finite ring is a zero divisor
+    obtain ⟨a, hba, ha⟩ : ∃ a : R, b * a = 0 ∧ a ≠ 0 := by
+      by_contra! h
+      exact hb (isLeftRegular_iff_right_eq_zero_of_mul.mpr h).isUnit_of_finite
+    obtain ⟨c, hc, hχc⟩ := hχ a ha
+    rw [χ⁻¹.map_nonunit hb, zero_mul]
+    refine gaussSum_mulShift_eq_zero_of_mul_sub_one_eq_zero χ ψ (u := hc.unit) ?_ (by simpa)
+    rw [hc.unit_spec, add_sub_cancel_left, mul_left_comm, hba, mul_zero]
 
 /-- Pushing a multiplicative and an additive character along a ring homomorphism `f` of the
 coefficients pushes their Gauss sum along `f`: `g(f ∘ χ, f ∘ ψ) = f (g(χ, ψ))`. This is the

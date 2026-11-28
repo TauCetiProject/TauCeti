@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
 public import TauCeti.RingTheory.DiscreteValuationRing.RamificationGroup
 public import TauCeti.RingTheory.Invariant.Basic
+public import TauCeti.RingTheory.LocalRing.FixedPoints.Basic
 import TauCeti.NumberTheory.LocalField.Units.Decomposition
 import TauCeti.RingTheory.LocalRing.RamificationGroup.UnitFiltration
 import TauCeti.RingTheory.Valuation.ValuativeRel.Action
@@ -239,7 +240,7 @@ theorem smul_teichmullerLift_of_mem_ramificationGroup_zero
 `TauCeti.FixedPoints.isLocalRing_subalgebra`, is a base ring for the uniformizer criterion
 `TauCeti.IsLocalRing.mem_ramificationGroup_natCast_iff_smul_sub_mem` and the graded embeddings of
 `TauCeti.RingTheory.LocalRing.RamificationGroup.Graded`. -/
-instance isSeparable_residueField_fixedPoints_subalgebra :
+instance instIsSeparableResidueFieldFixedPointsSubalgebra :
     Algebra.IsSeparable (ResidueField (FixedPoints.subalgebra ℤ 𝒪[L] G)) 𝓀[L] := by
   have : Finite (ResidueField (FixedPoints.subalgebra ℤ 𝒪[L] G)) :=
     Finite.of_injective _ (algebraMap _ 𝓀[L]).injective

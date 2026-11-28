@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Prod
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
 /-!
 # Spin groups of an orthogonal sum
@@ -46,9 +47,10 @@ this gives the block subgroup `(Spin(p) × Spin(q)) / ⟨(-1, -1)⟩` of `Spin(p
   to products of quadratic isometries and isometric equivalences.
 * `CliffordAlgebra.spinGroupEquiv_uniqueProd_spinGroupProd`,
   `CliffordAlgebra.spinGroupEquiv_prodUnique_spinGroupProd`,
-  `CliffordAlgebra.spinGroupEquiv_prodAssoc_spinGroupProd`, and
-  `CliffordAlgebra.spinGroupEquiv_prodComm_spinGroupProd`: left- and right-unit, associativity,
-  and symmetry coherences of `spinGroupProd`.
+  `CliffordAlgebra.spinGroupEquiv_prodAssoc_spinGroupProd`,
+  `CliffordAlgebra.spinGroupEquiv_prodComm_spinGroupProd`, and
+  `CliffordAlgebra.spinGroupEquiv_prodProdProdComm_spinGroupProd`: left- and right-unit,
+  associativity, symmetry, and middle-block exchange coherences of `spinGroupProd`.
 * `CliffordAlgebra.spinVectorAction_spinGroupProd`: it acts on the orthogonal sum componentwise.
 * `CliffordAlgebra.spinToOrthogonal_spinGroupProd` and
   `CliffordAlgebra.spinToSpecialOrthogonal_spinGroupProd`: its projections to the orthogonal and
@@ -60,6 +62,8 @@ this gives the block subgroup `(Spin(p) × Spin(q)) / ⟨(-1, -1)⟩` of `Spin(p
   `Spin(Q) → SO(Q)` doubles to `1` in `Spin(Q ⊕ Q)`.
 * `CliffordAlgebra.normal_zpowers_negOne_negOne`: `(-1, -1)` is central, so the subgroup it
   generates is normal and its quotient is a group.
+* `CliffordAlgebra.not_exists_spinLift_prod_one`: the one-block inclusion `A ↦ A ⊕ 1` has no Spin
+  lift when `Q` has an orthogonal pair `u, w` with `Q u * Q w = 1`.
 
 ## References
 
@@ -237,6 +241,34 @@ theorem spinGroupEquiv_prodComm_spinGroupProd (x : spinGroup Q₁ × spinGroup Q
     Isometry.spinGroupMap_spinGroupMap, h₁, h₂, Prod.snd_swap, Prod.fst_swap,
     (commute_spinGroupMap_inl_spinGroupMap_inr Q₂ Q₁ x.2 x.1).symm.eq]
 
+-- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
+/-- **Middle-block exchange coherence for `spinGroupProd`**: transporting the product of two
+`spinGroupProd` elements along `IsometryEquiv.prodProdProdComm` swaps the middle two Spin factors,
+with no sign because Spin elements have even Clifford parity. -/
+theorem spinGroupEquiv_prodProdProdComm_spinGroupProd {M₃ M₄ : Type*}
+    [AddCommGroup M₃] [Module R M₃] [AddCommGroup M₄] [Module R M₄]
+    (Q₃ : QuadraticForm R M₃) (Q₄ : QuadraticForm R M₄)
+    (x₁ : spinGroup Q₁) (x₂ : spinGroup Q₂) (x₃ : spinGroup Q₃) (x₄ : spinGroup Q₄) :
+    (IsometryEquiv.prodProdProdComm Q₁ Q₂ Q₃ Q₄).spinGroupEquiv
+        (spinGroupProd (Q₁.prod Q₂) (Q₃.prod Q₄)
+          (spinGroupProd Q₁ Q₂ (x₁, x₂), spinGroupProd Q₃ Q₄ (x₃, x₄))) =
+      spinGroupProd (Q₁.prod Q₃) (Q₂.prod Q₄)
+        (spinGroupProd Q₁ Q₃ (x₁, x₃), spinGroupProd Q₂ Q₄ (x₂, x₄)) := by
+  have hcomm : Commute
+      (((Isometry.inr (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inl Q₂ Q₄)).spinGroupMap x₂)
+      (((Isometry.inl (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inr Q₁ Q₃)).spinGroupMap x₃) := by
+    simpa only [← Isometry.spinGroupMap_spinGroupMap] using
+      (commute_spinGroupMap_inl_spinGroupMap_inr (Q₁.prod Q₃) (Q₂.prod Q₄)
+        ((Isometry.inr Q₁ Q₃).spinGroupMap x₃)
+        ((Isometry.inl Q₂ Q₄).spinGroupMap x₂)).symm
+  simp only [IsometryEquiv.spinGroupEquiv_apply, spinGroupProd_apply, map_mul,
+    Isometry.spinGroupMap_spinGroupMap, IsometryEquiv.prodProdProdComm_comp_inl_comp_inl,
+    IsometryEquiv.prodProdProdComm_comp_inl_comp_inr,
+    IsometryEquiv.prodProdProdComm_comp_inr_comp_inl,
+    IsometryEquiv.prodProdProdComm_comp_inr_comp_inr, mul_assoc]
+  congr 1
+  rw [← mul_assoc, hcomm.eq, mul_assoc]
+
 variable [Invertible (2 : R)]
 
 /-- **`spinGroupProd` acts componentwise**: `(x, y)` acts on the orthogonal sum by `x` on the first
@@ -377,5 +409,51 @@ theorem ker_spinGroupProd (hQ₁ : Q₁.Nondegenerate) (hQ₂ : Q₂.Nondegenera
     · exact one_mem _
     · exact Subgroup.mem_zpowers _
   · exact (mem_ker_spinGroupProd_iff hQ₁ hQ₂ _).mpr (Or.inr rfl)
+
+section Obstruction
+
+open TauCeti.QuadraticMap
+
+variable {K M M₂ : Type*} [Field K] [Invertible (2 : K)]
+  [AddCommGroup M] [Module K M] [FiniteDimensional K M]
+  [AddCommGroup M₂] [Module K M₂] [FiniteDimensional K M₂]
+  {Q : QuadraticForm K M} {Q₂ : QuadraticForm K M₂}
+
+/-- **The one-block inclusion `A ↦ A ⊕ 1` has no Spin lift.** If `Q` has an orthogonal pair `u, w`
+with `Q u * Q w = 1`, no homomorphism `SO(Q) →* Spin(Q ⊕ Q₂)` lifts `A ↦ A ⊕ 1`: the Spin
+element `ι u ι w` squares to `-1` and its image `A` squares to `1`, while every lift of `A ⊕ 1` is
+`±(ι u ι w)` and squares to `-1`. -/
+theorem not_exists_spinLift_prod_one (hQ : Q.Nondegenerate) (hQ₂ : Q₂.Nondegenerate)
+    {u w : M} (huw : Q.IsOrtho u w) (h : Q u * Q w = 1) :
+    ¬∃ s : specialOrthogonalGroup Q →* spinGroup (Q.prod Q₂),
+      ∀ A, spinToSpecialOrthogonal (Q.prod Q₂) (s A) = specialOrthogonalGroupProd Q Q₂ (A, 1) := by
+  rintro ⟨s, hs⟩
+  have hQ0 : Q ≠ 0 := by rintro rfl; simp at h
+  have : Nontrivial M := ⟨⟨u, 0, by rintro rfl; simp at h⟩⟩
+  let x : spinGroup Q := ⟨ι Q u * ι Q w, ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one u w h⟩
+  have hx : x * x = spinGroup.negOne Q hQ0 :=
+    Subtype.ext <| by simp [x, ι_mul_ι_mul_self_of_isOrtho huw, h]
+  have hA : spinToSpecialOrthogonal Q x * spinToSpecialOrthogonal Q x = 1 := by
+    rw [← map_mul, hx, spinGroup.spinToSpecialOrthogonal_negOne]
+  have hy : spinToSpecialOrthogonal (Q.prod Q₂) (s (spinToSpecialOrthogonal Q x)) =
+      spinToSpecialOrthogonal (Q.prod Q₂) (spinGroupProd Q Q₂ (x, 1)) := by
+    rw [hs, spinToSpecialOrthogonal_spinGroupProd, map_one]
+  have hyy : spinGroupProd Q Q₂ (x, 1) * spinGroupProd Q Q₂ (x, 1) =
+      spinGroupProd Q Q₂ (spinGroup.negOne Q hQ0, 1) := by
+    rw [← map_mul, Prod.mk_mul_mk, hx, one_mul]
+  have hsA : s (spinToSpecialOrthogonal Q x) * s (spinToSpecialOrthogonal Q x) = 1 := by
+    rw [← map_mul, hA, map_one]
+  rcases eq_or_eq_negOne_mul_of_spinToSpecialOrthogonal_eq (Q.prod Q₂) (hQ.prod hQ₂) _ _ hy
+    with h' | h'
+  · rw [h', hyy, spinGroupProd_negOne_one] at hsA
+    exact spinGroup.negOne_ne_one _ _ hsA
+  · have hc : Commute (spinGroupProd Q Q₂ (x, 1))
+        (spinGroup.negOne (Q.prod Q₂) (hQ.prod hQ₂).ne_zero) :=
+      (spinGroup.negOne_mul_comm _ _ _).symm
+    rw [h', hc.mul_mul_mul_comm, spinGroup.negOne_mul_self, one_mul, hyy,
+      spinGroupProd_negOne_one] at hsA
+    exact spinGroup.negOne_ne_one _ _ hsA
+
+end Obstruction
 
 end CliffordAlgebra

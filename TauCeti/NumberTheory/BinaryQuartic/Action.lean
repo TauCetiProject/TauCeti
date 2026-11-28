@@ -336,6 +336,19 @@ def twistedSMul (g : GL (Fin 2) R) (f : BinaryQuartic R) : BinaryQuartic R :=
 theorem twistedSMul_def (g : GL (Fin 2) R) (f : BinaryQuartic R) :
     twistedSMul g f = ((GeneralLinearGroup.det g)⁻¹ : Rˣ).val ^ 2 • (g • f) := (rfl)
 
+/-- Base change of coefficients commutes with twisted substitution. -/
+@[simp] theorem twistedSMul_comp {S : Type*} [CommRing S] (f : BinaryQuartic R) (φ : R →+* S)
+    (g : GL (Fin 2) R) :
+    twistedSMul (GeneralLinearGroup.map φ g) (φ ∘ f) = φ ∘ twistedSMul g f := by
+  simp only [twistedSMul_def]
+  funext i
+  have hdet : ((GeneralLinearGroup.det (GeneralLinearGroup.map φ g))⁻¹ : Sˣ).val =
+      φ ((GeneralLinearGroup.det g)⁻¹ : Rˣ).val := by
+    simp only [GeneralLinearGroup.map_det, Units.coe_map_inv, MonoidHom.coe_ofClass]
+  simp only [Pi.smul_apply, smul_eq_mul, Function.comp_apply, map_mul, map_pow, hdet]
+  exact congrArg (fun x ↦ φ ((GeneralLinearGroup.det g)⁻¹ : Rˣ).val ^ 2 * x)
+    (congrFun (smul_comp f φ g) i)
+
 /-- The identity fixes a quartic under twisted substitution. -/
 @[simp] theorem twistedSMul_one (f : BinaryQuartic R) : twistedSMul 1 f = f := by
   simp [twistedSMul_def]

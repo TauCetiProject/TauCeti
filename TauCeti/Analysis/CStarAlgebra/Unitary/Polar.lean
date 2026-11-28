@@ -8,14 +8,14 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Connected.PathConnected
-public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
+public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar.Basic
 
 /-!
 # Invertible elements are joined to their polar unitaries
 
 For an invertible element `x` of a unital C⋆-algebra `A`, `Units.polarUnitary x` is the unitary
 factor `u` of the polar decomposition `x = u |x|`, `|x| = √(x⋆x)`
-(`TauCeti/Analysis/SpecialFunctions/ContinuousFunctionalCalculus/Polar.lean`). This file shows
+(`TauCeti/Analysis/SpecialFunctions/ContinuousFunctionalCalculus/Polar/Basic.lean`). This file shows
 that `u` is joined to `x` by a path of invertible elements (`Units.joined_polarUnitary`):
 `t ↦ u ((1 - t)|x| + t)` stays invertible, since `(1 - t)|x| + t` is strictly positive for
 `t ∈ [0, 1]`. This straight-line path has the same endpoints as the polar deformation

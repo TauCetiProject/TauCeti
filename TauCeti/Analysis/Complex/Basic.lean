@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Ring.Semireal.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Complex.Trigonometric
 public import TauCeti.Analysis.RCLike.Basic
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Complex conjugation: invariant discs, symmetric norms and unit-norm quotients
@@ -60,7 +61,9 @@ by itself; at `z = r`, Lean's totalized inverse gives value one.
 
 Two integers whose images in `ℂ` are at distance less than `1` are equal, and on any compact
 subset of `ℂ` avoiding the nonpositive integers `-ℕ`, the shifted norms `‖(n : ℂ) + c‖` have a
-positive uniform lower bound (`IsCompact.exists_pos_le_norm_natCast_add`).
+positive uniform lower bound (`IsCompact.exists_pos_le_norm_natCast_add`). Moreover, the natural
+numbers embedded in `ℂ` form a closed set (`Complex.isClosed_range_natCast`), and negating
+`x + y * I` reflects both real coordinates (`Complex.neg_ofReal_add_mul_I`).
 
 The oriented area `Im (conj ω₁ ω₂)` of the parallelogram spanned by `ω₁`, `ω₂` satisfies
 `2 i Im (conj ω₁ ω₂) = ω₂ conj ω₁ - ω₁ conj ω₂` (`TauCeti.two_mul_I_mul_im_conj_mul`).
@@ -113,11 +116,20 @@ Any point `w` on the boundary of the square `[-ε, ε] × [-ε, ε]` satisfies `
 
 A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
 
+A negation-invariant subset `S ⊆ ℂ` disjoint from the real axis decomposes as the disjoint union
+of two copies of its upper-half-plane part `{ρ ∈ S | 0 < ρ.im}`
+(`Complex.upperHalfSumEquivOfNegInvariant`).
+
 There is no ring homomorphism from `ℂ` to a semireal semiring, such as `ℝ` or any linearly
 ordered ring (`Complex.instIsEmptyRingHom`).
 
 An `n`-th root (`n ≠ 0`) of a complex number `w` with `w * conj w = 1` has its inverse as
 conjugate (`Complex.conj_eq_inv_of_pow_eq`).
+
+Around any `w₀ : ℂ` whose real part avoids a closed real set `s` (in particular `-σ - ℕ`), an
+open disc `Metric.ball w₀ δ` keeps `w.re ∉ s` and preserves which side of `w.re` each `y ∈ s`
+lies on (`Complex.exists_ball_re_notMem_and_lt_iff`,
+`Complex.exists_ball_re_add_ne_neg_natCast_and_lt_iff`).
 -/
 
 public section
@@ -369,6 +381,13 @@ namespace Complex
 
 open ComplexConjugate
 
+/-- The imaginary part of a quotient is the imaginary part of the conjugate product divided
+by the squared norm of the denominator. -/
+theorem div_im_eq_im_mul_conj_div_normSq (z w : ℂ) :
+    (z / w).im = (z * conj w).im / normSq w := by
+  simp only [div_im, mul_im, conj_re, conj_im, mul_neg]
+  ring
+
 /-- The real part of `exp (θ * I) ^ j` is `cos (j θ)`: the real part of de Moivre's formula. -/
 @[simp]
 theorem re_exp_ofReal_mul_I_pow (θ : ℝ) (j : ℕ) : (exp (θ * I) ^ j).re = Real.cos (j * θ) := by
@@ -459,6 +478,27 @@ theorem norm_mul_add_div_natCast_le (M : ℕ) (a b : ℂ) {z : ℂ} {C : ℝ} (h
   rw [norm_div, Complex.norm_natCast]
   exact (div_nat_le_self_of_nonneg (norm_nonneg _) M).trans
     (norm_add_le_of_le (norm_mul_le_of_le le_rfl hz) le_rfl)
+
+/-- The natural numbers embedded in `ℂ` form a closed set, complementing Mathlib's
+`Complex.isClosed_range_intCast`. -/
+theorem isClosed_range_natCast : IsClosed (Set.range ((↑) : ℕ → ℂ)) := by
+  have h : Set.range ((↑) : ℕ → ℂ) = Set.range ((↑) : ℤ → ℂ) ∩ {z : ℂ | 0 ≤ z.re} := by
+    ext z
+    constructor
+    · rintro ⟨n, rfl⟩
+      exact ⟨⟨n, by simp⟩, by simp⟩
+    · rintro ⟨⟨k, rfl⟩, hk⟩
+      have hk' : 0 ≤ k := by simpa using hk
+      lift k to ℕ using hk'
+      exact ⟨k, by simp⟩
+  rw [h]
+  exact isClosed_range_intCast.inter (isClosed_le continuous_const continuous_re)
+
+/-- Negating a complex number written as `x + y * I` reflects both real coordinates:
+`-(x + y * I) = (-x : ℝ) + (-y : ℝ) * I`. -/
+theorem neg_ofReal_add_mul_I (x y : ℝ) :
+    -((x : ℂ) + (y : ℂ) * I) = ((-x : ℝ) : ℂ) + ((-y : ℝ) : ℂ) * I := by
+  rw [ofReal_neg, ofReal_neg, neg_add, neg_mul]
 
 /-- If `s + β` never vanishes for natural numbers `s ≥ 1`, then `‖s + β‖` is bounded below by a
 positive multiple of `s` for all `s ≥ 1`. -/
@@ -625,6 +665,42 @@ theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + �
     rw [h0, abs_neg] at h
     exact h.false
 
+/-- A negation-invariant subset `S ⊆ ℂ` disjoint from the real axis decomposes as the disjoint
+union of two copies of its upper-half-plane part `{ρ ∈ S | 0 < ρ.im}`, sending `Sum.inl ρ ↦ ρ`
+and `Sum.inr ρ ↦ -ρ`. -/
+noncomputable def upperHalfSumEquivOfNegInvariant {S : Set ℂ} (hneg : ∀ {ρ}, ρ ∈ S → -ρ ∈ S)
+    (him : ∀ {ρ}, ρ ∈ S → ρ.im ≠ 0) :
+    {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im} ⊕ {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im} ≃ S :=
+  letI := Classical.propDecidable
+  let P : Set S := {ρ : S | 0 < (ρ : ℂ).im}
+  let ePos : {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im} ≃ P :=
+    (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ S) (fun ρ : ℂ ↦ 0 < ρ.im)).symm
+  let eNegS : S ≃ S :=
+    Equiv.subtypeEquiv (Equiv.neg ℂ) fun _ ↦ ⟨fun h ↦ hneg h, fun h ↦ by simpa using hneg h⟩
+  let eComp : P ≃ (Pᶜ : Set S) :=
+    Equiv.subtypeEquiv eNegS fun ρ ↦ by
+      have him_neg : ((eNegS ρ : S) : ℂ).im = -(ρ : ℂ).im := by
+        simp [eNegS]
+      simp only [P, Set.mem_compl_iff, Set.mem_ofPred_eq, him_neg, Left.neg_pos_iff, not_lt]
+      exact ⟨fun h ↦ h.le, fun h ↦ lt_of_le_of_ne h (Ne.symm (him ρ.property))⟩
+  (Equiv.sumCongr ePos (ePos.trans eComp)).trans (Equiv.Set.sumCompl P)
+
+/-- On the left summand, `Complex.upperHalfSumEquivOfNegInvariant` acts as the inclusion
+into `ℂ`. -/
+@[simp]
+theorem coe_upperHalfSumEquivOfNegInvariant_inl {S : Set ℂ} (hneg : ∀ {ρ}, ρ ∈ S → -ρ ∈ S)
+    (him : ∀ {ρ}, ρ ∈ S → ρ.im ≠ 0) (ρ : {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im}) :
+    ((upperHalfSumEquivOfNegInvariant hneg him (Sum.inl ρ) : S) : ℂ) = ρ := by
+  simp [upperHalfSumEquivOfNegInvariant, Equiv.subtypeSubtypeEquivSubtypeInter]
+
+/-- On the right summand, `Complex.upperHalfSumEquivOfNegInvariant` acts as negation
+into `ℂ`. -/
+@[simp]
+theorem coe_upperHalfSumEquivOfNegInvariant_inr {S : Set ℂ} (hneg : ∀ {ρ}, ρ ∈ S → -ρ ∈ S)
+    (him : ∀ {ρ}, ρ ∈ S → ρ.im ≠ 0) (ρ : {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im}) :
+    ((upperHalfSumEquivOfNegInvariant hneg him (Sum.inr ρ) : S) : ℂ) = -ρ := by
+  simp [upperHalfSumEquivOfNegInvariant, Equiv.subtypeSubtypeEquivSubtypeInter]
+
 /-- Any point `w` on the boundary of the square `[-ε, ε] × [-ε, ε]` satisfies
 `ε ≤ ‖w‖ ≤ 2 * ε`. -/
 theorem norm_bounds_of_abs_re_le_of_abs_im_le (w : ℂ) (ε : ℝ) (hre : |w.re| ≤ ε)
@@ -651,6 +727,38 @@ theorem conj_eq_inv_of_pow_eq {z w : ℂ} {n : ℕ} (hn : n ≠ 0) (hz : z ^ n =
   have hz' : ‖z‖ = 1 :=
     (pow_eq_one_iff_of_nonneg (norm_nonneg z) hn).mp (by rw [← norm_pow, hz, hw'])
   exact (inv_eq_conj hz').symm
+
+/-- Around any `w₀ : ℂ` whose real part avoids a closed set `s : Set ℝ`, there is an open disc
+`Metric.ball w₀ δ` (`0 < δ`) on which `w.re ∉ s` and every `y ∈ s` lies on the same side of
+`w.re` as of `w₀.re` (`y < w₀.re ↔ y < w.re`). -/
+theorem exists_ball_re_notMem_and_lt_iff (w₀ : ℂ) {s : Set ℝ} (hs : IsClosed s)
+    (hw₀ : w₀.re ∉ s) :
+    ∃ δ : ℝ, 0 < δ ∧ ∀ w ∈ Metric.ball w₀ δ,
+      w.re ∉ s ∧ ∀ y ∈ s, y < w₀.re ↔ y < w.re := by
+  obtain ⟨a, b, ⟨ha, hb⟩, h⟩ := hs.exists_Ioo_disjoint_and_lt_iff hw₀
+  refine ⟨min (w₀.re - a) (b - w₀.re), lt_min (sub_pos.2 ha) (sub_pos.2 hb), fun w hw => ?_⟩
+  have hre : |w.re - w₀.re| < min (w₀.re - a) (b - w₀.re) :=
+    (abs_re_le_norm (w - w₀)).trans_lt (mem_ball_iff_norm.1 hw)
+  exact h w.re ⟨by linarith [(abs_lt.1 hre).1, min_le_left (w₀.re - a) (b - w₀.re)],
+    by linarith [(abs_lt.1 hre).2, min_le_right (w₀.re - a) (b - w₀.re)]⟩
+
+/-- Around any `w₀ : ℂ` with `∀ k : ℕ, w₀.re + σ ≠ -k`, there is an open disc `Metric.ball w₀ δ`
+(`0 < δ`) on which `∀ k : ℕ, w.re + σ ≠ -k` and every `-w - k` lies on the same side of the
+vertical line `Re s = σ` as `-w₀ - k` (`(-w₀ - k).re < σ ↔ (-w - k).re < σ`). -/
+theorem exists_ball_re_add_ne_neg_natCast_and_lt_iff (w₀ : ℂ) {σ : ℝ}
+    (hw₀ : ∀ k : ℕ, w₀.re + σ ≠ -k) :
+    ∃ δ : ℝ, 0 < δ ∧ ∀ w ∈ Metric.ball w₀ δ,
+      (∀ k : ℕ, w.re + σ ≠ -k) ∧
+        ∀ k : ℕ, (-w₀ - k).re < σ ↔ (-w - k).re < σ := by
+  have hcl : IsClosed ((fun x : ℝ => -(x + σ)) ⁻¹' Set.range ((↑) : ℕ → ℝ)) :=
+    Nat.isClosedEmbedding_coe_real.isClosed_range.preimage
+      (continuous_neg.comp (continuous_id.add continuous_const))
+  obtain ⟨δ, hδ, hav⟩ := exists_ball_re_notMem_and_lt_iff w₀ hcl
+    (by rintro ⟨k, hk⟩; exact hw₀ k (by linarith))
+  refine ⟨δ, hδ, fun w hw => ⟨fun k hk => (hav w hw).1 ⟨k, by linarith⟩, fun k => ?_⟩⟩
+  have h := (hav w hw).2 (-(k : ℝ) - σ) ⟨k, by ring⟩
+  simp only [sub_re, neg_re, natCast_re]
+  exact ⟨fun _ => by linarith [h.1 (by linarith)], fun _ => by linarith [h.2 (by linarith)]⟩
 
 end Complex
 

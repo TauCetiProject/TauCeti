@@ -251,30 +251,21 @@ theorem map_topologicalAbelianizationEquivMaximalAbelianExtension_artinMap_unitF
       (fun u : ↥(unitFiltration K n) ↦
         AlgEquiv.restrictNormalHom M.toIntermediateField (φ u.val)) ⁻¹'
           {AlgEquiv.restrictNormalHom M.toIntermediateField τ}
-    have hcl (M : FiniteGaloisIntermediateField K Kab) : IsClosed (T M) := by
-      have : DiscreteTopology (M.toIntermediateField ≃ₐ[K] M.toIntermediateField) :=
-        Finite.instDiscreteTopology
-      exact (isClosed_discrete _).preimage
-        ((InfiniteGalois.restrictNormalHom_continuous M.toIntermediateField).comp
-          (hφ_cont.comp continuous_subtypeVal))
+    have hcl (M : FiniteGaloisIntermediateField K Kab) : IsClosed (T M) :=
+      isClosed_singleton.preimage ((InfiniteGalois.restrictNormalHom_continuous
+        M.toIntermediateField).comp (hφ_cont.comp continuous_subtypeVal))
     have hne (M : FiniteGaloisIntermediateField K Kab) : (T M).Nonempty := by
       obtain ⟨u, hu, hu_eq⟩ := exists_mem_unitFiltration_restrictNormalHom_eq K n M
         (Subgroup.mem_iInf.1 hτ M)
       exact ⟨⟨u, hu⟩, hu_eq⟩
-    have hres_le {M N : FiniteGaloisIntermediateField K Kab} (hMN : M ≤ N) : T N ⊆ T M := by
-      intro u hu
+    have hanti : Antitone T := by
+      intro M N hMN u hu
       have hle := (FiniteGaloisIntermediateField.le_iff M N).1 hMN
-      have hval : N.toIntermediateField.val.comp (inclusion hle) = M.toIntermediateField.val :=
-        AlgHom.ext fun _ ↦ rfl
       simpa only [T, Set.mem_preimage, Set.mem_singleton_iff,
-        ← IntermediateField.restrictNormalHom_val M.toIntermediateField, ← hval,
-        ← AlgHom.restrictNormalHom_restrictNormalHom,
-        IntermediateField.restrictNormalHom_val N.toIntermediateField] using
+        IntermediateField.restrictNormalHom_inclusion] using
         congrArg (inclusion hle).restrictNormalHom (Set.mem_singleton_iff.1 hu)
-    have hdir : Directed (· ⊇ ·) T := fun M₁ M₂ ↦
-      ⟨M₁ ⊔ M₂, hres_le le_sup_left, hres_le le_sup_right⟩
-    obtain ⟨u, hu⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed T hdir hne
-      (fun M ↦ (hcl M).isCompact) hcl
+    obtain ⟨u, hu⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed T
+      hanti.directed_ge hne (fun M ↦ (hcl M).isCompact) hcl
     refine ⟨u.val, u.property, AlgEquiv.ext fun y ↦ ?_⟩
     let M : FiniteGaloisIntermediateField K Kab := FiniteGaloisIntermediateField.adjoin K {y}
     have hy : y ∈ M.toIntermediateField :=
