@@ -354,14 +354,9 @@ theorem ReLUNetComputes.affineComb {n L : ℕ} {d₁ d₂ : Fin (L + 2) → ℕ}
   let g₁ := reluNetComputes_iff_reluNetRealizes.mp hf₁
   let g₂ := reluNetComputes_iff_reluNetRealizes.mp hf₂
   let A : (Fin 2 → ℝ) →ᴬ[ℝ] ℝ :=
-    { toFun := fun y => a * y 0 + b * y 1 + c
-      linear :=
-        { toFun := fun y => a * y 0 + b * y 1
-          map_add' := fun y z => by simp only [Pi.add_apply]; ring
-          map_smul' := fun r y => by
-            simp only [Pi.smul_apply, smul_eq_mul, RingHom.id_apply]; ring }
-      map_vadd' := fun v y => by simp [vadd_eq_add]; ring
-      cont := by fun_prop }
+    a • (ContinuousLinearMap.proj (R := ℝ) 0).toContinuousAffineMap +
+      b • (ContinuousLinearMap.proj (R := ℝ) 1).toContinuousAffineMap +
+      ContinuousAffineMap.const ℝ _ c
   have hcomp :=
     ReLUNetComputes.comp (g₁.finAppend g₂) (ReLUNetComputes.of_continuousAffineMap A)
   have heq : (A ∘ fun x => Fin.append (fun _ : Fin 1 => f₁ x) (fun _ : Fin 1 => f₂ x)) =
@@ -371,7 +366,7 @@ theorem ReLUNetComputes.affineComb {n L : ℕ} {d₁ d₂ : Fin (L + 2) → ℕ}
       Fin.append_left _ _ 0
     have h1 : Fin.append (fun _ : Fin 1 => f₁ x) (fun _ : Fin 1 => f₂ x) 1 = f₂ x :=
       Fin.append_right _ _ 0
-    simp [A, h0, h1]
+    simp [A, h0, h1, smul_eq_mul]
   rw [heq] at hcomp
   refine hcomp.of_width_eq ?_
   ext i

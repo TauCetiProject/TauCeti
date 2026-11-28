@@ -109,9 +109,8 @@ theorem IsPiecewiseAffineOn.sup {f g : E → ℝ} (hf : IsPiecewiseAffineOn f V)
 theorem IsPiecewiseAffineOn.inf {f g : E → ℝ} (hf : IsPiecewiseAffineOn f V)
     (hg : IsPiecewiseAffineOn g V) : IsPiecewiseAffineOn (f ⊓ g) V := by
   have hinf : f ⊓ g = -((-f) ⊔ (-g)) := by
-    funext x
-    simp only [Pi.inf_apply, Pi.neg_apply, Pi.sup_apply]
-    rcases le_total (f x) (g x) with h | h <;> simp [h]
+    ext x
+    simp [max_neg_neg]
   rw [hinf]
   exact (hf.neg.sup hg.neg).neg
 
@@ -128,17 +127,9 @@ theorem IsPiecewiseAffineOn.abs {f : E → ℝ} (hf : IsPiecewiseAffineOn f V) :
 theorem IsPiecewiseAffineOn.finset_sup'_apply {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
     {φ : ι → E → ℝ} (hφ : ∀ i ∈ s, IsPiecewiseAffineOn (φ i) V) :
     IsPiecewiseAffineOn (fun x => s.sup' hs (fun i => φ i x)) V := by
-  induction hs using Finset.Nonempty.cons_induction with
-  | singleton a =>
-    simpa only [Finset.sup'_singleton] using hφ a (Finset.mem_singleton_self a)
-  | cons a s has hs ih =>
-    have hfun : (fun x => (Finset.cons a s has).sup' (Finset.cons_nonempty has) (fun i => φ i x)) =
-        φ a ⊔ (fun x => s.sup' hs (fun i => φ i x)) := by
-      funext x
-      exact Finset.sup'_cons (f := fun i => φ i x) hs
-    rw [hfun]
-    exact (hφ a (Finset.mem_cons_self a s)).sup
-      (ih fun i hi => hφ i (Finset.mem_cons_of_mem hi))
+  simpa only [← Finset.sup'_apply] using
+    Finset.sup'_induction (p := fun g => IsPiecewiseAffineOn g V) hs φ
+      (fun _ ha _ hb => ha.sup hb) hφ
 
 /-- A finite pointwise minimum of real-valued piecewise-affine maps is piecewise affine. -/
 theorem IsPiecewiseAffineOn.finset_inf'_apply {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
@@ -146,14 +137,11 @@ theorem IsPiecewiseAffineOn.finset_inf'_apply {ι : Type*} (s : Finset ι) (hs :
     IsPiecewiseAffineOn (fun x => s.inf' hs (fun i => φ i x)) V := by
   have hneg : (fun x => s.inf' hs (fun i => φ i x)) =
       -(fun x => s.sup' hs (fun i => (-φ i) x)) := by
-    funext x
-    dsimp only [Pi.neg_apply]
-    apply le_antisymm
-    · refine le_neg.mp (Finset.sup'_le hs _ fun i hi => ?_)
-      simp only [neg_le_neg_iff]
-      exact Finset.inf'_le (fun j => φ j x) hi
-    · refine Finset.le_inf' hs _ fun i hi => neg_le.mp ?_
-      exact Finset.le_sup' (fun k => -φ k x) hi
+    ext x
+    have h := congrArg OrderDual.ofDual (map_finset_inf' (OrderIso.neg ℝ) hs (fun i => φ i x))
+    rw [Finset.ofDual_inf'] at h
+    simp only [Function.comp_def, OrderIso.neg_apply, OrderDual.ofDual_toDual] at h
+    exact neg_eq_iff_eq_neg.mp h
   rw [hneg]
   exact (IsPiecewiseAffineOn.finset_sup'_apply s hs fun i hi => (hφ i hi).neg).neg
 
