@@ -7,6 +7,8 @@ module
 
 public import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 public import TauCeti.RingTheory.RamificationInertia.Unramified
+import Mathlib.NumberTheory.RamificationInertia.Unramified
+import Mathlib.RingTheory.DedekindDomain.Factorization
 
 /-!
 # Unramified primes in finite invariant extensions
@@ -75,3 +77,39 @@ theorem isUnramifiedIn_iff_forall_inertia_eq_bot (p : Ideal R) [p.IsMaximal] :
     exact (isUnramifiedAt_iff_inertia_eq_bot_of_isMaximal (G := G) P).mpr (h P ⟨hP, hPp⟩)
 
 end Ideal
+
+/-- An unramified maximal ideal extends to a radical ideal in an integral extension
+with Dedekind target. -/
+theorem Algebra.IsUnramifiedIn.isRadical_map {R S : Type*} [CommRing R] [IsDomain R]
+    [CommRing S] [IsDedekindDomain S] [Algebra R S] [Module.IsTorsionFree R S]
+    [Algebra.IsIntegral R S] [EssFiniteType R S] {P : Ideal R} [P.IsMaximal]
+    (h : Algebra.IsUnramifiedIn S P) :
+    (P.map (algebraMap R S)).IsRadical := by
+  classical
+  rcases eq_or_ne P ⊥ with rfl | hP
+  · rw [Ideal.map_bot, ← Ideal.radical_eq_iff, Ideal.radical_bot_of_isReduced]
+  rw [Ideal.map_algebraMap_eq_finsetProd_pow hP]
+  -- Each prime occurs once; distinct primes in this product are comaximal.
+  have heq : (∏ Q ∈ P.primesOver S, Q ^ Q.ramificationIdx R) =
+      ⨅ Q ∈ (P.primesOver S).toFinset, Q := calc
+    _ = ∏ Q ∈ (P.primesOver S).toFinset, Q := by
+      apply Finset.prod_congr rfl
+      intro Q hQ
+      obtain ⟨hQp, hQo⟩ := Set.mem_toFinset.mp hQ
+      have : Q.IsPrime := hQp
+      have : Q.LiesOver P := hQo
+      have : Algebra.IsUnramifiedAt R Q := h Q hQp hQo
+      rw [Ideal.ramificationIdx_eq_one_of_isUnramifiedAt, pow_one]
+    _ = ⨅ Q ∈ (P.primesOver S).toFinset, Q := by
+      apply Ideal.prod_eq_iInf_of_pairwise_isCoprime
+      intro Q hQ Q' hQ' hne
+      have := (Set.mem_toFinset.mp hQ).1
+      have := (Set.mem_toFinset.mp hQ).2
+      have := (Set.mem_toFinset.mp hQ').1
+      have := (Set.mem_toFinset.mp hQ').2
+      have := Ideal.IsMaximal.of_liesOver_isMaximal Q P
+      have := Ideal.IsMaximal.of_liesOver_isMaximal Q' P
+      exact Ideal.isCoprime_of_isMaximal hne
+  rw [heq]
+  refine Ideal.isRadical_iInf _ fun Q ↦ Ideal.isRadical_iInf _ fun hQ ↦ ?_
+  exact (Set.mem_toFinset.mp hQ).1.isRadical
