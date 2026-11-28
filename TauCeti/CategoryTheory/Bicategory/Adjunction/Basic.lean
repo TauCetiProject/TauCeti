@@ -8,7 +8,10 @@ module
 public import Mathlib.CategoryTheory.Bicategory.Adjunction.Basic
 
 /-!
-# Inverses and composites of adjoint equivalences in a bicategory
+# Adjunctions and adjoint equivalences in a bicategory
+
+The composite unit and counit of two specified adjunctions are expressed with explicit
+associators and unitors by `Adjunction.compUnit_eq` and `Adjunction.compCounit_eq`.
 
 An adjoint equivalence `a ≌ b` in a bicategory (Mathlib's `Bicategory.Equivalence`) has an
 inverse `e.symm : b ≌ a`, exchanging the two `1`-morphisms and inverting the counit and unit, and
@@ -37,6 +40,28 @@ namespace CategoryTheory.Bicategory
 universe w v u
 
 variable {B : Type u} [Bicategory.{w, v} B] {a b c : B}
+
+namespace Adjunction
+
+variable {f₁ : a ⟶ b} {g₁ : b ⟶ a} {f₂ : b ⟶ c} {g₂ : c ⟶ b}
+
+/-- The unit of a composite adjunction, with all coherence maps explicit. -/
+lemma compUnit_eq (adj₁ : f₁ ⊣ g₁) (adj₂ : f₂ ⊣ g₂) :
+    Adjunction.compUnit adj₁ adj₂ =
+      adj₁.unit ≫ (ρ_ f₁).inv ▷ g₁ ≫ (f₁ ◁ adj₂.unit) ▷ g₁ ≫
+        (α_ f₁ f₂ g₂).inv ▷ g₁ ≫ (α_ (f₁ ≫ f₂) g₂ g₁).hom := by
+  dsimp only [Adjunction.compUnit]
+  bicategory
+
+/-- The counit of a composite adjunction, with all coherence maps explicit. -/
+lemma compCounit_eq (adj₁ : f₁ ⊣ g₁) (adj₂ : f₂ ⊣ g₂) :
+    Adjunction.compCounit adj₁ adj₂ =
+      (α_ (g₂ ≫ g₁) f₁ f₂).inv ≫ (α_ g₂ g₁ f₁).hom ▷ f₂ ≫
+        (g₂ ◁ adj₁.counit) ▷ f₂ ≫ (ρ_ g₂).hom ▷ f₂ ≫ adj₂.counit := by
+  dsimp only [Adjunction.compCounit]
+  bicategory
+
+end Adjunction
 
 /-- Adjointifying a counit which already satisfies the left triangle identity with `η` does not
 change it. -/

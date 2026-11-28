@@ -194,14 +194,13 @@ lemma comp_evalComp_inv (p : Path a b) (q : Path b c) (r : Path c d) :
         eqToHom (congrArg eval (comp_assoc p q r)).symm :=
   Iso.inv_ext (by simp [comp_evalComp_hom])
 
-/-- Splitting a three-arrow path after its first arrow evaluates to the associator. -/
+/-- Splitting a nonempty path followed by two arrows evaluates to the associator. -/
 @[simp]
-lemma evalComp_toPath_cons (f : a ⟶ b) (g : b ⟶ c) (h : c ⟶ d) :
-    evalComp f.toPath (g.toPath.cons h) = α_ f g h := by
+lemma evalComp_cons_toPath_cons {e : B} (p : Path a b) (f : b ⟶ c) (g : c ⟶ d)
+    (h : d ⟶ e) :
+    evalComp (p.cons f) (g.toPath.cons h) = α_ (p.cons f).eval g h := by
   apply Iso.ext
-  simp only [evalComp_cons, evalComp_toPath, Iso.trans_hom, whiskerLeftIso_hom, Iso.symm_hom]
-  dsimp only [Quiver.Hom.toPath, eval_cons_nil, comp_cons, comp_nil]
-  simp
+  simp [evalComp_cons, evalCons_nil, Quiver.Hom.toPath]
 
 /-- Left whiskering of a `2`-morphism between evaluations by a path, conjugated by the
 comparisons `Quiver.Path.evalComp`. -/
@@ -320,5 +319,16 @@ lemma whiskerRightEval_whiskerLeftEval (p : Path a b) {q q' : Path b c}
   simp only [whiskerLeftEval, whiskerRightEval, comp_evalComp_hom, comp_evalComp_inv,
     Category.assoc, comp_whiskerRight, inv_hom_whiskerRight_assoc, whiskerLeft_comp]
   bicategory
+
+/-- Whiskering on both sides, with a singleton on the right, evaluates through the
+concatenation comparisons before and after the middle 2-cell. -/
+lemma whiskerRightEval_whiskerLeftEval_toPath (p : Path a b) {q q' : Path b c}
+    (θ : q.eval ⟶ q'.eval) (f : c ⟶ d) :
+    whiskerRightEval (p.whiskerLeftEval θ) f.toPath =
+      (evalCons (p.comp q) f).hom ≫ (evalComp p q).hom ▷ f ≫
+        (p.eval ◁ θ) ▷ f ≫ (evalComp p q').inv ▷ f ≫
+          (evalCons (p.comp q') f).inv := by
+  simp [whiskerRightEval_def, whiskerLeftEval_def, evalComp_toPath,
+    comp_whiskerRight, Category.assoc]
 
 end Quiver.Path
