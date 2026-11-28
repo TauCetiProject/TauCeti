@@ -47,7 +47,7 @@ exponent of a vector of norm at most `x` is bounded.
   `TauCeti.BeurlingPrimeSystem.finite_setOf_integerNorm_le`: the sets counted by `π_P(x)` and
   `N_P(x)` are finite.
 * `TauCeti.BeurlingPrimeSystem.primeCount_le_integerCount`: `π_P(x) ≤ N_P(x)`.
-* `TauCeti.BeurlingPrimeSystem.integerCount_of_lt`: `N_P(x) = 1` for `1 ≤ x < p 0`.
+* `TauCeti.BeurlingPrimeSystem.integerCount_eq_one_of_lt`: `N_P(x) = 1` for `1 ≤ x < p 0`.
 * `TauCeti.BeurlingPrimeSystem.primeCount_ofPrimes`,
   `TauCeti.BeurlingPrimeSystem.integerCount_ofPrimes`: for the system `ofPrimes` of the ordinary
   primes, `π_P(x) = π(⌊x⌋₊)` and `N_P(x) = ⌊x⌋₊`.
@@ -140,6 +140,10 @@ theorem p_pow_le_integerNorm (a : ℕ →₀ ℕ) (j : ℕ) : P.p j ^ a j ≤ P.
   rw [P.integerNorm_eq_pow_mul_erase a j]
   exact le_mul_of_one_le_right (pow_pos (P.p_pos j) _).le (P.one_le_integerNorm _)
 
+/-- A generalized prime occurring in a generalized integer is at most its norm. -/
+theorem p_le_integerNorm {a : ℕ →₀ ℕ} {j : ℕ} (h : a j ≠ 0) : P.p j ≤ P.integerNorm a :=
+  (le_self_pow₀ (P.one_lt j).le h).trans (P.p_pow_le_integerNorm a j)
+
 /-- Only finitely many generalized integers have norm at most `x`: their exponent vectors are
 supported on the finitely many indices `j` with `p j ≤ x`, and every exponent `k` satisfies
 `p 0 ^ k ≤ x`. -/
@@ -152,9 +156,7 @@ theorem finite_setOf_integerNorm_le (x : ℝ) : {a | P.integerNorm a ≤ x}.Fini
   refine ⟨fun j hj ↦ ?_, fun j _ ↦ ?_⟩
   · rw [Finset.mem_range]
     by_contra h
-    have h1 : a j ≠ 0 := Finsupp.mem_support_iff.1 hj
-    have h2 : P.p j ≤ P.p j ^ a j := le_self_pow₀ (P.one_lt j).le h1
-    linarith [hle j, hJ j (not_lt.1 h)]
+    linarith [(P.p_le_integerNorm (Finsupp.mem_support_iff.1 hj)).trans ha, hJ j (not_lt.1 h)]
   · rw [Finset.mem_range]
     by_contra h
     have h1 : P.p 0 ^ n ≤ P.p j ^ a j :=
@@ -201,27 +203,26 @@ theorem integerCount_mono : Monotone P.integerCount := fun x y hxy ↦ by
   exact Set.ncard_le_ncard (fun a ha ↦ le_trans ha hxy) (P.finite_setOf_integerNorm_le y)
 
 /-- There are no generalized primes below `p 0`. -/
-theorem primeCount_of_lt {x : ℝ} (hx : x < P.p 0) : P.primeCount x = 0 := by
+theorem primeCount_eq_zero_of_lt {x : ℝ} (hx : x < P.p 0) : P.primeCount x = 0 := by
   rw [primeCount_eq_ncard, Set.ncard_eq_zero (P.finite_setOf_p_le x),
     Set.eq_empty_iff_forall_notMem]
   exact fun j hj ↦ (hx.trans_le (P.mono (Nat.zero_le j))).not_ge hj
 
 /-- There are no generalized integers of norm less than `1`. -/
-theorem integerCount_of_lt_one {x : ℝ} (hx : x < 1) : P.integerCount x = 0 := by
+theorem integerCount_eq_zero_of_lt_one {x : ℝ} (hx : x < 1) : P.integerCount x = 0 := by
   rw [integerCount_eq_ncard, Set.ncard_eq_zero (P.finite_setOf_integerNorm_le x),
     Set.eq_empty_iff_forall_notMem]
   exact fun a ha ↦ (hx.trans_le (P.one_le_integerNorm a)).not_ge ha
 
 /-- Below the first generalized prime the only generalized integer is the unit. -/
-theorem integerCount_of_lt {x : ℝ} (h1 : 1 ≤ x) (hx : x < P.p 0) : P.integerCount x = 1 := by
+theorem integerCount_eq_one_of_lt {x : ℝ} (h1 : 1 ≤ x) (hx : x < P.p 0) : P.integerCount x = 1 := by
   have hset : {a | P.integerNorm a ≤ x} = {0} := by
     ext a
     rw [Set.mem_ofPred_eq, Set.mem_singleton_iff]
     refine ⟨fun ha ↦ ?_, fun ha ↦ by rw [ha, integerNorm_zero]; exact h1⟩
     by_contra h0
     obtain ⟨j, hj⟩ := Finsupp.ne_iff.1 h0
-    have h2 : P.p j ≤ P.p j ^ a j := le_self_pow₀ (P.one_lt j).le hj
-    linarith [P.p_pow_le_integerNorm a j, P.mono (Nat.zero_le j)]
+    linarith [P.p_le_integerNorm hj, P.mono (Nat.zero_le j)]
   rw [integerCount_eq_ncard, hset, Set.ncard_singleton]
 
 /-- Each generalized prime is a generalized integer: `π_P(x) ≤ N_P(x)`. -/
@@ -300,21 +301,22 @@ theorem integerCount_ofPrimes (x : ℝ) : ofPrimes.integerCount x = ⌊x⌋₊ :
       have hsupp : (↑n.factorization.support : Set ℕ) ⊆ Set.range (Nat.nth Nat.Prime) := by
         intro q hq
         exact ⟨Nat.count Nat.Prime q, Nat.nth_count (Nat.prime_of_mem_primeFactors hq)⟩
-      refine ⟨n.factorization.comapDomain (Nat.nth Nat.Prime) hinj.injOn, ?_, ?_⟩
-      · rw [Set.mem_ofPred_eq, integerNorm_ofPrimes, Finsupp.mapDomain_comapDomain _ hinj _ hsupp,
-          Nat.prod_factorization_pow_eq_self hn0]
-        exact (Nat.le_floor_iff' hn0).1 hnx
-      · rw [Finsupp.mapDomain_comapDomain _ hinj _ hsupp, Nat.prod_factorization_pow_eq_self hn0]
+      have hback : ((n.factorization.comapDomain (Nat.nth Nat.Prime) hinj.injOn).mapDomain
+          (Nat.nth Nat.Prime)).prod (· ^ ·) = n := by
+        rw [Finsupp.mapDomain_comapDomain _ hinj _ hsupp, Nat.prod_factorization_pow_eq_self hn0]
+      refine ⟨n.factorization.comapDomain (Nat.nth Nat.Prime) hinj.injOn, ?_, hback⟩
+      rw [Set.mem_ofPred_eq, integerNorm_ofPrimes, hback]
+      exact (Nat.le_floor_iff' hn0).1 hnx
   rw [integerCount_eq_ncard, ← Set.ncard_image_of_injective _ hφ, himage, Set.ncard_coe_finset,
     Nat.card_Icc, Nat.add_sub_cancel]
 
 /-! ### Examples -/
 
-example : P.integerCount 0 = 0 := P.integerCount_of_lt_one zero_lt_one
+example : P.integerCount 0 = 0 := P.integerCount_eq_zero_of_lt_one zero_lt_one
 
-example : P.primeCount 0 = 0 := P.primeCount_of_lt (P.p_pos 0)
+example : P.primeCount 0 = 0 := P.primeCount_eq_zero_of_lt (P.p_pos 0)
 
-example : P.integerCount 1 = 1 := P.integerCount_of_lt le_rfl (P.one_lt 0)
+example : P.integerCount 1 = 1 := P.integerCount_eq_one_of_lt le_rfl (P.one_lt 0)
 
 /-- Two indices with the same generalized prime `2` are counted twice by `π_P`. -/
 example (h0 : P.p 0 = 2) (h1 : P.p 1 = 2) (h2 : 2 < P.p 2) : P.primeCount 2 = 2 := by
@@ -329,8 +331,7 @@ example (h0 : P.p 0 = 2) (h1 : P.p 1 = 2) (h2 : 2 < P.p 2) : P.primeCount 2 = 2 
     · rcases hj with rfl | rfl
       · exact h0.le
       · exact h1.le
-  rw [primeCount_eq_ncard, hset, Set.ncard_coe_finset]
-  rfl
+  rw [primeCount_eq_ncard, hset, Set.ncard_coe_finset, Finset.card_pair zero_ne_one]
 
 /-- With `p 0 = p 1 = 2 < p 2` there are three generalized integers of norm at most `2`: the unit
 and the two generalized primes equal to `2`, which are different generalized integers. -/
@@ -344,7 +345,7 @@ example (h0 : P.p 0 = 2) (h1 : P.p 1 = 2) (h2 : 2 < P.p 2) : P.integerCount 2 = 
     · -- Exponents at indices `j ≥ 2` vanish; those at `0` and `1` add up to at most `1`.
       have hbig : ∀ j, 2 ≤ j → a j = 0 := fun j hj ↦ by
         by_contra h
-        linarith [le_self_pow₀ (P.one_lt j).le h, P.p_pow_le_integerNorm a j, P.mono hj]
+        linarith [P.p_le_integerNorm h, P.mono hj]
       have hsmall : a 0 + a 1 ≤ 1 := by
         have h := P.integerNorm_eq_pow_mul_erase a 0
         have h' := P.p_pow_le_integerNorm (a.erase 0) 1
@@ -354,20 +355,16 @@ example (h0 : P.p 0 = 2) (h1 : P.p 1 = 2) (h2 : 2 < P.p 2) : P.integerCount 2 = 
           rw [pow_add, pow_one]
           nlinarith [pow_pos (zero_lt_two' ℝ) (a 0)]
         exact (pow_le_pow_iff_right₀ one_lt_two).1 hpow
+      have hrepr : a = Finsupp.single 0 (a 0) + Finsupp.single 1 (a 1) := by
+        ext j
+        rcases Nat.lt_or_ge j 2 with hj | hj
+        · interval_cases j <;> simp
+        · have hj0 : j ≠ 0 := by omega
+          have hj1 : j ≠ 1 := by omega
+          simp [hbig j hj, hj0, hj1]
       have hcases : (a 0 = 0 ∧ a 1 = 0) ∨ (a 0 = 1 ∧ a 1 = 0) ∨ (a 0 = 0 ∧ a 1 = 1) := by omega
-      rcases hcases with ⟨ha0, ha1⟩ | ⟨ha0, ha1⟩ | ⟨ha0, ha1⟩
-      · refine Or.inl (Finsupp.ext fun j ↦ ?_)
-        rcases Nat.lt_or_ge j 2 with hj | hj
-        · interval_cases j <;> simp [ha0, ha1]
-        · simp [hbig j hj]
-      · refine Or.inr (Or.inl (Finsupp.ext fun j ↦ ?_))
-        rcases Nat.lt_or_ge j 2 with hj | hj
-        · interval_cases j <;> simp [ha0, ha1]
-        · rw [hbig j hj, Finsupp.single_eq_of_ne (by omega)]
-      · refine Or.inr (Or.inr (Finsupp.ext fun j ↦ ?_))
-        rcases Nat.lt_or_ge j 2 with hj | hj
-        · interval_cases j <;> simp [ha0, ha1]
-        · rw [hbig j hj, Finsupp.single_eq_of_ne (by omega)]
+      rw [hrepr]
+      rcases hcases with ⟨ha0, ha1⟩ | ⟨ha0, ha1⟩ | ⟨ha0, ha1⟩ <;> simp [ha0, ha1]
     · rcases ha with rfl | rfl | rfl
       · rw [integerNorm_zero]
         exact one_le_two
