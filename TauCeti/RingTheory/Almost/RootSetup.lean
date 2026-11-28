@@ -38,9 +38,9 @@ multiplication map `m ⊗[V] m → m` is bijective.
 * `TauCeti.Almost.BasicSetup.ofCompatibleRoots_shift`: dropping finitely many roots does not
   change the setup.
 * `TauCeti.Almost.BasicSetup.ofCompatibleRoots_eq_iff`: root setups agree exactly when the
-  two chains of principal ideals are mutually cofinal, by the root ideal membership criterion.
+  two chains of principal ideals are mutually cofinal.
 * `TauCeti.Almost.BasicSetup.baseChange_ofCompatibleRoots`: scalar extension sends a root setup
-  to the setup of the images of its roots, by `Ideal.map_span`.
+  to the setup of the images of its roots.
 * `TauCeti.Almost.BasicSetup.flat_ofCompatibleRoots_ideal` and
   `TauCeti.Almost.BasicSetup.ofCompatibleRoots_tildeToIdeal_bijective`: if `ϖ 0` is a
   nonzerodivisor, then `m` is flat and `m~ → m` is bijective.
