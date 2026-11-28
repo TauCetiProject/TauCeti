@@ -136,13 +136,9 @@ theorem mulTSupport_uncurry_flip {X Y M : Type*} [TopologicalSpace X] [Topologic
     (K : X → Y → M) :
     mulTSupport (Function.uncurry (_root_.flip K)) =
       Prod.swap ⁻¹' mulTSupport (Function.uncurry K) := by
-  have hsup : Function.mulSupport (Function.uncurry (_root_.flip K)) =
-      Prod.swap ⁻¹' Function.mulSupport (Function.uncurry K) := by
-    ext ⟨y, x⟩
-    simp [Function.mem_mulSupport, _root_.flip]
-  rw [mulTSupport, mulTSupport, hsup]
-  simpa only [Homeomorph.coe_prodComm] using
-    ((Homeomorph.prodComm Y X).preimage_closure (Function.mulSupport (Function.uncurry K))).symm
+  simpa only [Homeomorph.coe_prodComm, Function.comp_def, Function.uncurry_def, _root_.flip,
+    Prod.fst_swap, Prod.snd_swap] using
+    mulTSupport_comp_eq_preimage (Function.uncurry K) (Homeomorph.prodComm Y X)
 
 open scoped Topology in
 /-- A set `s` is disjoint from the topological multiplicative support of `f` exactly when `f` is
