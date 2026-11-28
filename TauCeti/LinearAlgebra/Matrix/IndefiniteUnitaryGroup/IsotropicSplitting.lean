@@ -558,6 +558,14 @@ theorem shear_mul_shear {X Y : Matrix p p R} (hX : Xᴴ = -X) (hY : Yᴴ = -Y) :
   simp only [Subgroup.coe_mul, Units.val_mul, val_shear]
   simp [Matrix.mul_add, Matrix.add_mul, Matrix.mul_assoc, add_assoc]
 
+/-- The inverse of the shear by `X` is the shear by `-X`. -/
+@[simp]
+theorem shear_inv {X : Matrix p p R} (hX : Xᴴ = -X) :
+    (D.shear X hX)⁻¹ = D.shear (-X) (by rw [conjTranspose_neg, hX]) := by
+  refine inv_eq_of_mul_eq_one_right ?_
+  rw [shear_mul_shear]
+  exact unitaryGroupOf.ext (by simp)
+
 /-! The shears of the swapped splitting are the shears along the frame `l`. -/
 
 /-- A shear along the frame `l` (a shear of the swapped splitting) fixes `l`. -/

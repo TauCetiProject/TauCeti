@@ -103,18 +103,19 @@ namespace Matrix
 /-- **The kernel shrinks**: let `β, δ` satisfy the isotropy relation `βᴴ δ + δᴴ β = 0`, and let
 `w` be in the kernel of `δ` with `(β w)ᵢ ≠ 0`. Replacing the `i`-th row of `δ` by `c` times the
 `i`-th row of `β`, for `c ≠ 0`, gives a matrix whose kernel is strictly contained in that of `δ`. -/
-theorem ker_mulVecLin_row_replacement_lt {K p : Type*} [CommRing K] [IsDomain K] [StarRing K]
-    [Fintype p] [DecidableEq p] {β δ : Matrix p p K} (hiso : βᴴ * δ + δᴴ * β = 0) {w : p → K}
+theorem ker_mulVecLin_row_replacement_lt {K p q : Type*} [CommRing K] [IsDomain K] [StarRing K]
+    [Fintype p] [DecidableEq p] [Fintype q] {β δ : Matrix p q K} (hiso : βᴴ * δ + δᴴ * β = 0)
+    {w : q → K}
     (hw : δ *ᵥ w = 0) {i : p} (hi : (β *ᵥ w) i ≠ 0) {c : K} (hc : c ≠ 0) :
     LinearMap.ker ((1 - single i i (1 : K)) * δ + c • single i i (1 : K) * β).mulVecLin <
       LinearMap.ker δ.mulVecLin := by
   -- The isotropy relation, tested on `w` and a vector `v`.
-  have hiso_v (v : p → K) : star (β *ᵥ w) ⬝ᵥ (δ *ᵥ v) + star (δ *ᵥ w) ⬝ᵥ (β *ᵥ v) = 0 := by
+  have hiso_v (v : q → K) : star (β *ᵥ w) ⬝ᵥ (δ *ᵥ v) + star (δ *ᵥ w) ⬝ᵥ (β *ᵥ v) = 0 := by
     have h := congrArg (fun M ↦ star w ⬝ᵥ (M *ᵥ v)) hiso
     simp only [Matrix.add_mulVec, ← Matrix.mulVec_mulVec, dotProduct_add, dotProduct_mulVec,
       ← star_mulVec, Matrix.zero_mulVec, dotProduct_zero] at h
     rwa [← dotProduct_mulVec, ← dotProduct_mulVec] at h
-  have hmulVec (v : p → K) : ((1 - single i i (1 : K)) * δ + c • single i i (1 : K) * β) *ᵥ v =
+  have hmulVec (v : q → K) : ((1 - single i i (1 : K)) * δ + c • single i i (1 : K) * β) *ᵥ v =
       δ *ᵥ v - Function.update (0 : p → K) i ((δ *ᵥ v) i) +
         Function.update (0 : p → K) i (c * (β *ᵥ v) i) := by
     simp [Matrix.add_mulVec, Matrix.sub_mulVec, ← Matrix.mulVec_mulVec, single_mulVec]
