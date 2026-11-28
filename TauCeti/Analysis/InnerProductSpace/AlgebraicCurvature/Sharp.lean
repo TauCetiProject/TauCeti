@@ -111,12 +111,12 @@ theorem bivectorSharp_add_self (R S : Module.End ℝ (⋀[ℝ]^2 V)) :
   simp only [map_add, LinearMap.add_apply, bivectorSharp_comm S R, two_smul]
   abel
 
-/-- Every rank-one operator `ξ ↦ ⟪α, ξ⟫ • α` on `⋀[ℝ]^2 V` has vanishing `#`-square. -/
+/-- Every rank-one operator `ξ ↦ ⟪β, ξ⟫ • α` on `⋀[ℝ]^2 V` has vanishing `#`-square. -/
 @[simp]
-theorem bivectorSharp_rankOne_self (α : ⋀[ℝ]^2 V) :
-    bivectorSharp (InnerProductSpace.rankOne ℝ α α).toLinearMap
-        (InnerProductSpace.rankOne ℝ α α).toLinearMap = 0 := by
-  have hmap : map 2 (InnerProductSpace.rankOne ℝ α α).toLinearMap = 0 :=
+theorem bivectorSharp_rankOne_self (α β : ⋀[ℝ]^2 V) :
+    bivectorSharp (InnerProductSpace.rankOne ℝ α β).toLinearMap
+        (InnerProductSpace.rankOne ℝ α β).toLinearMap = 0 := by
+  have hmap : map 2 (InnerProductSpace.rankOne ℝ α β).toLinearMap = 0 :=
     linearMap_ext_inner_ιMulti_two fun X Y Z W ↦ by
       rw [map_apply_ιMulti_two, inner_ιMulti_two]
       simp only [ContinuousLinearMap.coe_coe, InnerProductSpace.rankOne_apply,
