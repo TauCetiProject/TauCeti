@@ -135,36 +135,28 @@ private lemma widen_twistedConj {t : m → Kˣ}
     (hk : ∀ j : ℤ, 0 ≤ j → j ≤ b → twistedConj t g σ k ∈ conjI1 t j) :
     ∃ k' : I1 K m, ∀ j : ℤ, 0 ≤ j → j ≤ b + 1 → twistedConj t g σ k' ∈ conjI1 t j := by
   have hx0 : twistedConj t g σ k ∈ I1 K m := by simpa using hk 0 le_rfl (by omega)
-  obtain ⟨u, hu_ut, -, -, -, -, -, hI1⟩ :=
-    exists_eq_mul_diagGL_mul_permutationGL_mul_and_isLowerTriangular (valSubring K)
-      (twistedConj t g σ k)
-  obtain ⟨hu, hl_lt⟩ := hI1 hx0
-  have hutri : (u : Matrix m m K).IsUpperTriangular :=
-    (UpperUnitriangularGroup.mem_iff.mp hu_ut).isUpperTriangular
-  have hu_conj : (diagGL t)⁻¹ * (u⁻¹ * twistedConj t g σ k) * diagGL t ∈ I1 K m :=
-    diagGL_inv_mul_mul_mem_map_iwahoriOne_of_isLowerTriangular (valSubring K) htA
-      ((I1 K m).mul_mem ((I1 K m).inv_mem hu) hx0) hl_lt
-  obtain ⟨z, hz⟩ := hσ_surj (u⁻¹ * twistedConj t g σ k)
+  obtain ⟨u, l, hcl, hu_conj, hl_conj⟩ := (valSubring K).exists_map_iwahoriOne_split hx0
+  have hl_eq : l = u⁻¹ * twistedConj t g σ k := (inv_mul_eq_iff_eq_mul.mpr hcl).symm
+  have hl_low : (diagGL t)⁻¹ * l * diagGL t ∈ I1 K m := hl_conj t htA
+  obtain ⟨z, hz⟩ := hσ_surj l
   have hu_mem (j : ℕ) : u ∈ conjI1 t j := by
     have htpow : Monotone fun i : m ↦ (valSubring K).valuation ((t ^ j) i : K) := fun _ _ hle ↦ by
       simpa [Pi.pow_apply, Units.val_pow_eq_pow_val, map_pow] using pow_le_pow_left' (htA hle) j
-    have hres :=
-      diagGL_mul_mul_inv_mem_map_iwahoriOne_of_isUpperTriangular (valSubring K) htpow hu hutri
     rw [conjI1_mem_iff]
-    simpa [zpow_natCast] using hres
+    simpa [zpow_natCast] using hu_conj (t ^ j) htpow
   have hz_mem (j : ℕ) (hj : j ≤ b + 1) : z ∈ conjI1 t (j - 1) := by
     rw [← map_mem_conjI1_iff hσ, hz]
     cases j with
-    | zero => simpa [conjI1_mem_iff] using hu_conj
+    | zero => simpa [conjI1_mem_iff] using hl_low
     | succ j =>
-      rw [Nat.cast_succ, add_sub_cancel_right]
+      rw [Nat.cast_succ, add_sub_cancel_right, hl_eq]
       exact (conjI1 t j).mul_mem ((conjI1 t j).inv_mem (hu_mem j)) (hk j (by omega) (by omega))
   let z' : I1 K m := ⟨z, by simpa using hz_mem 1 (by omega)⟩
   refine ⟨k * z'⁻¹, fun j hj₀ hj ↦ ?_⟩
   lift j to ℕ using hj₀
   have hmul : twistedConj t g σ (k * z'⁻¹) = ((diagGL t)⁻¹ * z * diagGL t) * u := by
     simp only [twistedConj, z', Subgroup.coe_mul, Subgroup.coe_inv, _root_.mul_inv_rev,
-      MonoidHom.map_mul, MonoidHom.map_inv, hz]
+      MonoidHom.map_mul, MonoidHom.map_inv, hz, hl_eq]
     group
   rw [hmul]
   have hz' : (diagGL t)⁻¹ * z * diagGL t ∈ conjI1 t j := by
