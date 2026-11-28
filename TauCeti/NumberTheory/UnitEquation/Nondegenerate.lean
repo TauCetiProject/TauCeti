@@ -34,6 +34,8 @@ elementary manipulations used to reduce general solutions to nondegenerate ones:
 * `TauCeti.IsNondegenerateSolution α x`: `∑ αᵢ xᵢ = 1` and no nonempty subsum vanishes;
 * `TauCeti.IsNondegenerateHomogeneousSolution α x`: `∑ αᵢ xᵢ = 0` and no proper nonempty
   subsum vanishes;
+* `TauCeti.isNondegenerateSolution_mul_iff`, `TauCeti.isNondegenerateHomogeneousSolution_mul_iff`:
+  factors of the coefficients may be moved to the unknowns;
 * `TauCeti.exists_sum_eq_zero_and_isNondegenerateSolution_compl`: every solution of
   `∑ αᵢ xᵢ = 1` restricts to a nondegenerate solution on the complement of a vanishing subsum;
 * `TauCeti.isNondegenerateHomogeneousSolution_option_iff`: dehomogenization, adjoining the term
@@ -146,6 +148,15 @@ theorem restrict [DecidableEq ι] {I : Finset ι} (h : ∑ i, α i * x i = 1)
     simpa [sum_map] using hJ _ hJne.map hdisj
 
 end Semiring
+
+/-- Moving factors `cᵢ` from the coefficients to the unknowns: `x` is a nondegenerate solution of
+`∑ αᵢ cᵢ xᵢ = 1` exactly when `c x` is one of `∑ αᵢ yᵢ = 1`, since the terms
+`(αᵢ cᵢ) xᵢ = αᵢ (cᵢ xᵢ)` agree. -/
+theorem _root_.TauCeti.isNondegenerateSolution_mul_iff [Semiring R] {α c x : ι → R} :
+    IsNondegenerateSolution (α * c) x ↔ IsNondegenerateSolution α (c * x) := by
+  have h (i : ι) : (α * c) i * x i = α i * (c * x) i := by
+    simp only [Pi.mul_apply, mul_assoc]
+  simp only [isNondegenerateSolution_iff, h]
 
 /-- With a single unknown, `α x = 1` is a nondegenerate solution. -/
 theorem _root_.TauCeti.isNondegenerateSolution_of_subsingleton [Semiring R] [Nontrivial R]
@@ -268,6 +279,16 @@ theorem isNondegenerateHomogeneousSolution_smul_iff [CommSemiring R] [NoZeroDivi
   have hsum : ∀ I : Finset ι, ∑ i ∈ I, α i * (c • x) i = c * ∑ i ∈ I, α i * x i := fun I ↦ by
     simp [mul_sum, mul_left_comm]
   simp only [isNondegenerateHomogeneousSolution_iff, hsum, mul_eq_zero, hc, false_or, ne_eq]
+
+/-- Moving factors `cᵢ` from the coefficients to the unknowns: `x` is a nondegenerate solution of
+`∑ αᵢ cᵢ xᵢ = 0` exactly when `c x` is one of `∑ αᵢ yᵢ = 0`, since the terms
+`(αᵢ cᵢ) xᵢ = αᵢ (cᵢ xᵢ)` agree. -/
+theorem isNondegenerateHomogeneousSolution_mul_iff [Semiring R] {α c x : ι → R} :
+    IsNondegenerateHomogeneousSolution (α * c) x ↔
+      IsNondegenerateHomogeneousSolution α (c * x) := by
+  have h (i : ι) : (α * c) i * x i = α i * (c * x) i := by
+    simp only [Pi.mul_apply, mul_assoc]
+  simp only [isNondegenerateHomogeneousSolution_iff, h]
 
 namespace IsNondegenerateHomogeneousSolution
 
