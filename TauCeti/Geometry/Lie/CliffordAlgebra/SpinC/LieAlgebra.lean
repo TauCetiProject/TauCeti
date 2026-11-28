@@ -36,7 +36,7 @@ splitting preserves Lie brackets via `⁅(X, a), (X', a')⁆ = (⁅X, X'⁆, 0)`
 * `CliffordAlgebra.spinCGroup.realSpinProdCircleLieEquiv`: the Lie-algebra isomorphism
   `Lie(Spin(n)) × Lie(Circle) ≃ₗ⁅ℝ⁆ Lie(Spinᶜ(n))`.
 * `CliffordAlgebra.spinCGroup.realSpinLieEquivDetKer`: the Lie-algebra isomorphism from
-  `Lie(Spin(n))` onto `lieWeightKerLieSubalgebra (detContinuousMonoidHom _ hQ)`.
+  `Lie(Spin(n))` onto the kernel Lie ideal of `(detContinuousMonoidHom _ hQ).lieMap`.
 * `CliffordAlgebra.spinCGroup.realSpinProdDetLinearEquiv`: the Spin–determinant splitting
   `Lie(Spin(n)) × ℝ ≃ₗ[ℝ] Lie(Spinᶜ(n))`.
 * `CliffordAlgebra.spinCGroup.realQuadraticProdDetLinearEquiv`: the same splitting in quadratic
@@ -147,24 +147,38 @@ theorem lieWeight_detContinuousMonoidHom_lieMap_ofSpinContinuousMonoidHom (X : �
     ContinuousMonoidHom.lieWeight_one, LinearMap.zero_apply, LinearMap.comp_apply,
     LieHom.coe_toLinearMap] using h.symm
 
-/-- **Exactness at `Lie(Spinᶜ(n))`**: the image of `ofSpin_*` is precisely the Lie subalgebra on
-which the determinant differential vanishes. -/
+local notation "δ" =>
+  ContinuousMonoidHom.lieMap (I := IC) (I' := 𝓡 1) (detContinuousMonoidHom _ hQ)
+
+private theorem toSubmodule_ker_detLieMap :
+    (δ).ker.toLieSubalgebra.toSubmodule = LinearMap.ker d := by
+  have hd : d = circleLieAlgebraEquiv.toLinearMap ∘ₗ (δ).toLinearMap :=
+    LinearMap.ext (ContinuousMonoidHom.lieWeight_apply _)
+  rw [LieIdeal.toLieSubalgebra_toSubmodule, LieHom.ker_toSubmodule, hd]
+  exact (LinearMap.ker_comp_of_ker_eq_bot (δ).toLinearMap
+    (LinearEquiv.ker circleLieAlgebraEquiv)).symm
+
+/-- **Exactness at `Lie(Spinᶜ(n))`**: the image of `ofSpin_*` is precisely the kernel of the
+determinant Lie differential. -/
 @[simp]
 theorem range_lieMap_ofSpinContinuousMonoidHom :
-    (ιS).range =
-      ContinuousMonoidHom.lieWeightKerLieSubalgebra (I := IC) (detContinuousMonoidHom _ hQ) := by
+    (ιS).range = (δ).ker.toLieSubalgebra := by
   ext Y
-  rw [LieHom.mem_range, ContinuousMonoidHom.mem_lieWeightKerLieSubalgebra]
+  rw [LieHom.mem_range, LieIdeal.mem_toLieSubalgebra, LieHom.mem_ker]
   constructor
   · rintro ⟨X, rfl⟩
-    exact lieWeight_detContinuousMonoidHom_lieMap_ofSpinContinuousMonoidHom n hQ X
+    refine circleLieAlgebraEquiv.injective ?_
+    rw [← ContinuousMonoidHom.lieWeight_apply,
+      lieWeight_detContinuousMonoidHom_lieMap_ofSpinContinuousMonoidHom, map_zero]
   · intro hY
+    have hYd : d Y = 0 := by
+      rw [ContinuousMonoidHom.lieWeight_apply, hY, map_zero]
     let p := (realSpinProdCircleLieEquiv n hQ).symm Y
     have hp : ιS p.1 + ιC p.2 = Y := by
       rw [← realSpinProdCircleLieEquiv_apply, (realSpinProdCircleLieEquiv n hQ).apply_symm_apply]
     have hd : 2 * circleLieAlgebraEquiv p.2 = 0 := by
       have hsum : d (ιS p.1) + d (ιC p.2) = 0 := by
-        rw [← map_add, hp, hY]
+        rw [← map_add, hp, hYd]
       simpa only [lieWeight_detContinuousMonoidHom_lieMap_ofSpinContinuousMonoidHom,
         lieWeight_detContinuousMonoidHom_lieMap_ofCircleContinuousMonoidHom, zero_add] using hsum
     have hp2 : p.2 = 0 := circleLieAlgebraEquiv.injective <|
@@ -175,13 +189,12 @@ theorem range_lieMap_ofSpinContinuousMonoidHom :
 theorem range_lieMap_ofSpinContinuousMonoidHom_toLinearMap :
     LinearMap.range (ιS).toLinearMap = LinearMap.ker d :=
   (congrArg LieSubalgebra.toSubmodule (range_lieMap_ofSpinContinuousMonoidHom n hQ)).trans
-    (ContinuousMonoidHom.lieWeightKerLieSubalgebra_toSubmodule _)
+    (toSubmodule_ker_detLieMap n hQ)
 
 /-- The Spin inclusion identifies `Lie(Spin(n))` as a Lie algebra with the kernel of the
 determinant differential. -/
-def realSpinLieEquivDetKer :
-    𝔰 ≃ₗ⁅ℝ⁆ ContinuousMonoidHom.lieWeightKerLieSubalgebra (I := IC) (detContinuousMonoidHom _ hQ) :=
-  (LieEquiv.ofInjective ιS (lieMap_ofSpinContinuousMonoidHom_injective n hQ)).trans
+def realSpinLieEquivDetKer : 𝔰 ≃ₗ⁅ℝ⁆ (δ).ker.toLieSubalgebra :=
+  ((ιS).equivRangeOfInjective (lieMap_ofSpinContinuousMonoidHom_injective n hQ)).trans
     (LieEquiv.ofEq _ _ (congrArg SetLike.coe (range_lieMap_ofSpinContinuousMonoidHom n hQ)))
 
 /-- Coercing `realSpinLieEquivDetKer` to `Lie(Spinᶜ(n))` recovers `ofSpin_*`. -/
@@ -192,7 +205,7 @@ theorem coe_realSpinLieEquivDetKer_apply (X : 𝔰) : (realSpinLieEquivDetKer n 
 /-- Applying `ofSpin_*` to the inverse equivalence recovers the ambient kernel element. -/
 @[simp]
 theorem lieMap_ofSpinContinuousMonoidHom_realSpinLieEquivDetKer_symm_apply
-    (Y : ContinuousMonoidHom.lieWeightKerLieSubalgebra (I := IC) (detContinuousMonoidHom _ hQ)) :
+    (Y : (δ).ker.toLieSubalgebra) :
     ιS ((realSpinLieEquivDetKer n hQ).symm Y) = (Y : 𝔤) :=
   congrArg Subtype.val ((realSpinLieEquivDetKer n hQ).apply_symm_apply Y)
 
@@ -202,8 +215,7 @@ the second factor via `realDetLieLift`. -/
 def realSpinProdDetLinearEquiv : (𝔰 × ℝ) ≃ₗ[ℝ] 𝔤 :=
   (LinearEquiv.prodCongr
     ((realSpinLieEquivDetKer n hQ).toLinearEquiv.trans
-      (LinearEquiv.ofEq _ (LinearMap.ker d)
-        (ContinuousMonoidHom.lieWeightKerLieSubalgebra_toSubmodule _)))
+      (LinearEquiv.ofEq _ (LinearMap.ker d) (toSubmodule_ker_detLieMap n hQ)))
     (LinearEquiv.refl ℝ ℝ)).trans (realDetLieLinearEquiv n hQ)
 
 /-- Reconstruction adds the Spin Lie-algebra image to the half-speed central determinant lift. -/

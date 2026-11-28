@@ -32,12 +32,17 @@ this equivalence to smooth homomorphisms out of `Spin(3)`.
 
 * `TauCeti.CliffordAlgebra.realSpinContMDiffMonoidMorphismUnitsRange`: the isomorphism of compact
   `Spin(n)` with its range in the Clifford units, as a smooth homomorphism.
+* `TauCeti.CliffordAlgebra.realSpinToSpecialOrthogonalLieEquiv`: the Lie-algebra isomorphism
+  `Lie(Spin(n)) ≃ₗ⁅ℝ⁆ Lie(SO(n))` from native compact `Spin(n)` to the closed `SO(n)`
+  matrix-units carrier.
 * `TauCeti.CliffordAlgebra.realSpinLieEquivSo`: the Lie algebra of compact `Spin(n)` is `so(n)`.
 
 ## Main results
 
 * `TauCeti.CliffordAlgebra.realSpinLieEquivSo_apply`: it is the differential of the projection
   `Spin(n) → SO(n)`.
+* `TauCeti.CliffordAlgebra.realSpinLieEquivQuadratic_eq_matrixSoEquivQuadratic_realSpinLieEquivSo`:
+  compatibility of the quadratic-Clifford and skew-matrix Lie coordinates on native `Spin(n)`.
 
 ## References
 
@@ -57,6 +62,14 @@ open _root_.CliffordAlgebra TauCeti.Lie
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance] Matrix.linftyOpTopologicalSpace
+
+local notation "SpecialOrthogonalUnitsRange(" n ")" =>
+  MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
+    (realCliffordForm n 0 : QuadraticForm ℝ (Fin n → ℝ)))
+
+local notation "SpecialOrthogonalLieModel(" n ")" =>
+  LieSubalgebra.toSubmodule (TauCeti.Lie.lieSubalgebraOfSubgroup
+    (I := 𝓘(ℝ, Matrix (Fin n) (Fin n) ℝ)) (SpecialOrthogonalUnitsRange(n)))
 
 /-- The isomorphism `TauCeti.CliffordAlgebra.realCliffordSpinContinuousMulEquivUnitsRange` of
 compact `Spin(n)` with its range in the Clifford units, as a smooth homomorphism: it is the
@@ -86,16 +99,36 @@ theorem isLocalDiffeomorph_realSpinContMDiffMonoidMorphismUnitsRange (n : ℕ) :
   funext s
   exact (realSpinDiffeomorphUnitsRange_apply n s).symm
 
+/-- The Lie-algebra isomorphism `Lie(Spin(n)) ≃ₗ⁅ℝ⁆ Lie(SO(n))` from native compact Spin to the
+closed `SO(n)` matrix-units carrier. -/
+def realSpinToSpecialOrthogonalLieEquiv (n : ℕ) :
+    LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0)) ≃ₗ⁅ℝ⁆
+      LeftInvariantDerivation 𝓘(ℝ, SpecialOrthogonalLieModel(n))
+        (SpecialOrthogonalUnitsRange(n)) :=
+  (realSpinLieEquivUnitsRange n).trans (realCliffordSpinToSpecialOrthogonalRangeLieEquiv n)
+
+/-- Evaluation of `realSpinToSpecialOrthogonalLieEquiv`. -/
+@[simp]
+theorem realSpinToSpecialOrthogonalLieEquiv_apply (n : ℕ)
+    (X : LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0))) :
+    realSpinToSpecialOrthogonalLieEquiv n X =
+      realCliffordSpinToSpecialOrthogonalRangeLieEquiv n (realSpinLieEquivUnitsRange n X) :=
+  (rfl)
+
 /-- **The Lie algebra of compact `Spin(n)` is `so(n)`.** The differential of the projection
 `Spin(n) → SO(n)`, in skew-symmetric-matrix coordinates
 (`TauCeti.CliffordAlgebra.realSpinLieEquivSo_apply`). -/
 def realSpinLieEquivSo (n : ℕ) :
     LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0)) ≃ₗ⁅ℝ⁆
       LieAlgebra.Orthogonal.so (Fin n) ℝ :=
-  ((lieEquivOfIsLocalDiffeomorphAt (realSpinContMDiffMonoidMorphismUnitsRange n)
-      (isLocalDiffeomorph_realSpinContMDiffMonoidMorphismUnitsRange n 1)).trans
-    (realCliffordSpinToSpecialOrthogonalRangeLieEquiv n)).trans
-    (realCliffordSpecialOrthogonalLieEquivSo n)
+  (realSpinToSpecialOrthogonalLieEquiv n).trans (realCliffordSpecialOrthogonalLieEquivSo n)
+
+/-- `realSpinLieEquivSo` factors as `realSpinToSpecialOrthogonalLieEquiv` followed by
+`realCliffordSpecialOrthogonalLieEquivSo`. -/
+theorem realSpinLieEquivSo_eq (n : ℕ) :
+    realSpinLieEquivSo n =
+      (realSpinToSpecialOrthogonalLieEquiv n).trans (realCliffordSpecialOrthogonalLieEquivSo n) :=
+  (rfl)
 
 /-- `TauCeti.CliffordAlgebra.realSpinLieEquivSo` is the Lie map of the projection of compact
 `Spin(n)` onto the range of `SO(n)` in the matrix units, read in skew-symmetric-matrix
@@ -105,6 +138,28 @@ theorem realSpinLieEquivSo_apply (n : ℕ)
     realSpinLieEquivSo n X = realCliffordSpecialOrthogonalLieEquivSo n
       (lieMap ((realCliffordSpinToSpecialOrthogonalSmoothRange n).comp
         (realSpinContMDiffMonoidMorphismUnitsRange n)) X) := by
-  simp [realSpinLieEquivSo, lieMap_comp, realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap]
+  have hm :
+      ((realCliffordSpinContinuousMulEquivUnitsRange n :
+          spinGroup (realCliffordForm n 0) →ₜ*
+            MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0)))
+        |>.toContMDiffMonoidMorphism 𝓘(ℝ, realSpinLieModel n) 𝓘(ℝ, realSpinLieModel n)) =
+        realSpinContMDiffMonoidMorphismUnitsRange n :=
+    DFunLike.coe_injective (ContinuousMonoidHom.coe_toContMDiffMonoidMorphism _)
+  simp [realSpinLieEquivSo, lieMap_comp, realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap,
+    ContinuousMonoidHom.lieMap_def, hm]
+
+/-- Compatibility of the quadratic-Clifford and skew-matrix Lie coordinates on native compact
+`Spin(n)`. -/
+theorem realSpinLieEquivQuadratic_eq_matrixSoEquivQuadratic_realSpinLieEquivSo (n : ℕ)
+    (X : LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0))) :
+    realSpinLieEquivQuadratic n X =
+      matrixSoEquivQuadratic (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0)
+        (realCliffordFormZeroIsometryWeightedSumSquares n) (realSpinLieEquivSo n X) := by
+  apply (matrixSoEquivQuadratic (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0)
+    (realCliffordFormZeroIsometryWeightedSumSquares n)).symm.injective
+  simp only [LieEquiv.coe_toLieHom]
+  rw [LieEquiv.symm_apply_apply, ← LieEquiv.coe_toLieHom,
+    ← realCliffordSpinToSpecialOrthogonalCoordinateLieHom_eq_symm_matrixSoEquivQuadratic]
+  simp [realSpinLieEquivSo]
 
 end TauCeti.CliffordAlgebra

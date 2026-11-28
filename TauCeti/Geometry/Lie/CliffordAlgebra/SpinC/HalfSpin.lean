@@ -218,17 +218,13 @@ theorem unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realDetLieLi
 
 /-- Restricting the smooth `Spinᶜ(4)` half-spin units homomorphism to `Spin(4)` along `ofSpin`
 agrees with `realHalfSpinSmoothHom` transported via
-`realCliffordSpinContinuousMulEquivUnitsRange`. -/
+`realSpinContMDiffMonoidMorphismUnitsRange`. -/
 theorem realSpinCHalfSpinUnitsSmoothHom_comp_ofSpin :
     (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε).comp
         ((spinCGroup.ofSpinContinuousMonoidHom _ hpos).toContMDiffMonoidMorphism
           𝓘(ℝ, realSpinLieModel 4) IC) =
       (realHalfSpinSmoothHom o hQ b ρ ε).comp
-        ((realCliffordSpinContinuousMulEquivUnitsRange 4 :
-          spinGroup (realCliffordForm 4 0) →ₜ*
-            MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm 4 0)))
-          |>.toContMDiffMonoidMorphism
-            𝓘(ℝ, realSpinLieModel 4) 𝓘(ℝ, realSpinLieModel 4)) := by
+        (realSpinContMDiffMonoidMorphismUnitsRange 4) := by
   apply DFunLike.coe_injective
   funext s
   apply Units.ext
@@ -250,23 +246,30 @@ theorem unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_lieMap_ofSpi
   let ψ := realHalfSpinSmoothHom o hQ b ρ ε
   let f := spinCGroup.ofSpinContinuousMonoidHom (realCliffordForm 4 0) hpos
   -- Factor through the restricted smooth representation `φ ∘ ofSpin` on `Spin(4)`, which agrees
-  -- with `ψ` transported along `realCliffordSpinContinuousMulEquivUnitsRange`.
+  -- with `ψ` transported along `realSpinContMDiffMonoidMorphismUnitsRange`.
   have hlie :
       lieMap φ (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f X) =
         lieMap ψ (realSpinLieEquivUnitsRange 4 X) := by
+    have hm :
+        ((realCliffordSpinContinuousMulEquivUnitsRange 4 :
+            spinGroup (realCliffordForm 4 0) →ₜ*
+              MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm 4 0)))
+          |>.toContMDiffMonoidMorphism IS IS) =
+          realSpinContMDiffMonoidMorphismUnitsRange 4 := by
+      apply DFunLike.coe_injective
+      rw [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism,
+        coe_realSpinContMDiffMonoidMorphismUnitsRange]
+      rfl
     calc
       lieMap φ (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f X)
         = lieMap (φ.comp (f.toContMDiffMonoidMorphism IS IC)) X := by
           rw [ContinuousMonoidHom.lieMap_def, ← LieHom.comp_apply, ← lieMap_comp]
-      _ = lieMap (ψ.comp ((realCliffordSpinContinuousMulEquivUnitsRange 4 :
-            spinGroup (realCliffordForm 4 0) →ₜ*
-              MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm 4 0)))
-            |>.toContMDiffMonoidMorphism IS IS)) X := by
+      _ = lieMap (ψ.comp (realSpinContMDiffMonoidMorphismUnitsRange 4)) X := by
           rw [realSpinCHalfSpinUnitsSmoothHom_comp_ofSpin]
       _ = lieMap ψ (realSpinLieEquivUnitsRange 4 X) := by
-          symm
-          simp only [IS, realSpinLieEquivUnitsRange_apply, ContinuousMonoidHom.lieMap_def,
-            lieMap_comp, LieHom.comp_apply]
+          rw [lieMap_comp, LieHom.comp_apply]
+          congr 1
+          simp only [IS, realSpinLieEquivUnitsRange_apply, ContinuousMonoidHom.lieMap_def, hm]
   rw [hlie, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply (R := S →L[ℂ] S),
     unitsLieAlgebraLieEquiv_lieMap_realHalfSpinSmoothHom]
   simp only [realSpinLieEquivQuadratic_apply, realQuadraticLieSubalgebraEvenIncl_apply]
@@ -308,7 +311,8 @@ framed even Clifford action of the lifted quadratic Clifford coordinate of `A �
 @[simp↓ high]
 theorem unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realSoProdDetLinearEquiv
     (p : LieAlgebra.Orthogonal.so (Fin 4) ℝ × ℝ) :
-    let q := (realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv 4).symm p.1
+    let q := matrixSoEquivQuadratic (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0)
+      (realCliffordFormZeroIsometryWeightedSumSquares 4) p.1
     unitsLieAlgebraEquiv
         (lieMap (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε)
           (spinCGroup.realSoProdDetLinearEquiv 4 hpos p)) =
@@ -338,8 +342,20 @@ theorem
   let Q₀ := QuadraticMap.weightedSumSquares ℝ (1 : Fin 4 → ℝ)
   let _ := bivectorLieRing Q₀
   let _ := bivectorLieAlgebra Q₀
-  rw [unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realSoProdDetLinearEquiv,
-    realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv_symm_eq_bivector]
+  rw [unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realSoProdDetLinearEquiv]
+  have hq :
+      matrixSoEquivQuadratic (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0)
+          (realCliffordFormZeroIsometryWeightedSumSquares 4) p.1 =
+        bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm 4 0)
+          ((bivectorEquivSo 4 ℝ).symm p.1) := by
+    apply (matrixSoEquivQuadratic (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0)
+      (realCliffordFormZeroIsometryWeightedSumSquares 4)).symm.injective
+    simp only [LieEquiv.coe_toLieHom]
+    rw [LieEquiv.symm_apply_apply, ← LieEquiv.coe_toLieHom,
+      ← realCliffordSpinToSpecialOrthogonalCoordinateLieHom_eq_symm_matrixSoEquivQuadratic,
+      realCliffordSpinToSpecialOrthogonalCoordinateLieHom_eq_bivectorEquivSo,
+      LieEquiv.apply_symm_apply]
+  rw [hq]
 
 end DeterminantDerivative
 
