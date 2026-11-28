@@ -22,8 +22,8 @@ filtration, stopping `I` at a stopping time `σ` gives a continuous Itô integra
 `H · 1_{[0, σ]}` (`TauCeti.Probability.IsItoIntegral.stoppedProcess`), without path continuity of
 `W` or moment bounds. As a consequence, `stoppedProcess I σ` is indistinguishable from any Itô
 integral of `H · 1_{[0, σ]}` (`TauCeti.Probability.IsItoIntegral.stoppedProcess_indist`), and for
-stopping times `σ ≤ τ`, `stoppedProcess I τ - stoppedProcess I σ` is an Itô integral of
-`H · 1_{(σ, τ]}` (`TauCeti.Probability.IsItoIntegral.ite_Ioc`).
+stopping times `σ` and `τ`, `stoppedProcess I τ - stoppedProcess I (σ ⊓ τ)` is an Itô integral
+of `H · 1_{(σ, τ]}` (`TauCeti.Probability.IsItoIntegral.ite_Ioc`).
 
 ## Main results
 
@@ -31,7 +31,7 @@ stopping times `σ ≤ τ`, `stoppedProcess I τ - stoppedProcess I σ` is an It
   `TauCeti.Probability.IsItoIntegral.stoppedProcess_indist`: stopping a continuous Itô integral at a
   stopping time `σ` integrates `H · 1_{[0, σ]}`.
 * `TauCeti.Probability.IsItoIntegral.ite_Ioc`: restricting an integrand to `(σ, τ]` for stopping
-  times `σ ≤ τ` integrates to `stoppedProcess I τ - stoppedProcess I σ`.
+  times `σ` and `τ` integrates to `stoppedProcess I τ - stoppedProcess I (σ ⊓ τ)`.
 
 ## References
 
@@ -200,28 +200,11 @@ theorem stoppedProcess_indist (hW : IsFilteredPreBrownianReal ℱ W P)
     MeasureTheory.stoppedProcess I σ ≡ᵐ[P] J :=
   isItoIntegral_unique hW (hI.stoppedProcess hW hσ) hJ
 
-/-- **Stochastic-interval restriction for the continuous Brownian Itô integral**: for stopping
-times `σ ≤ τ`, restricting `H` to `(σ, τ]` yields an Itô integral equal to
-`stoppedProcess I τ - stoppedProcess I σ`, without path continuity of `W` or moment bounds. -/
+/-- **Stochastic-interval restriction for the continuous Brownian Itô integral**: for arbitrary
+stopping times `σ` and `τ`, restricting `H` to `(σ, τ]` yields an Itô integral equal to
+`stoppedProcess I τ - stoppedProcess I (σ ⊓ τ)`, without requiring `σ ≤ τ`, path continuity of
+`W`, or moment bounds. -/
 theorem ite_Ioc (hW : IsFilteredPreBrownianReal ℱ W P)
-    {σ τ : Ω → WithTop ℝ≥0} (hσ : IsStoppingTime ℱ σ) (hτ : IsStoppingTime ℱ τ)
-    (hστ : σ ≤ τ) (hI : IsItoIntegral ℱ P W H I) :
-    IsItoIntegral ℱ P W (fun t ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
-      (MeasureTheory.stoppedProcess I τ - MeasureTheory.stoppedProcess I σ) := by
-  have heq : (fun (t : ℝ≥0) ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) =
-      fun (t : ℝ≥0) ω ↦ (if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) -
-        if (t : WithTop ℝ≥0) ≤ σ ω then H t ω else 0 := by
-    ext t ω
-    have hle := hστ ω
-    split_ifs <;> simp_all <;> grind
-  rw [heq]
-  exact (hI.stoppedProcess hW hτ).sub (hI.stoppedProcess hW hσ)
-
-/-- **Unordered stochastic-interval restriction for the continuous Brownian Itô integral**: for
-arbitrary stopping times `σ` and `τ`, restricting `H` to `(σ, τ]` yields an Itô integral equal to
-`stoppedProcess I τ - stoppedProcess I (σ ⊓ τ)`, without requiring `σ ≤ τ` or path continuity of
-`W`. -/
-theorem ite_Ioc_inf (hW : IsFilteredPreBrownianReal ℱ W P)
     {σ τ : Ω → WithTop ℝ≥0} (hσ : IsStoppingTime ℱ σ) (hτ : IsStoppingTime ℱ τ)
     (hI : IsItoIntegral ℱ P W H I) :
     IsItoIntegral ℱ P W (fun t ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
@@ -244,11 +227,7 @@ theorem stoppedProcess_indist_of_ae_eq (hW : IsFilteredPreBrownianReal ℱ W P)
       Function.uncurry (fun s : ℝ≥0 ↦ fun ω ↦ if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0) =ᵐ[
         (timeMeasure t).prod P]
       Function.uncurry (fun s : ℝ≥0 ↦ fun ω ↦ if (s : WithTop ℝ≥0) ≤ σ ω then K s ω else 0)) :
-    MeasureTheory.stoppedProcess I σ ≡ᵐ[P] MeasureTheory.stoppedProcess J σ := by
-  let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  exact isItoIntegral_unique hW
-    ((hI.stoppedProcess hW hσ).congr_integrand
-      (hJ.locallyBrownianIntegrable.ite_le hσ).isStronglyPredictable hHK)
-    (hJ.stoppedProcess hW hσ)
+    MeasureTheory.stoppedProcess I σ ≡ᵐ[P] MeasureTheory.stoppedProcess J σ :=
+  (hI.stoppedProcess hW hσ).indist_of_ae_eq hW hHK (hJ.stoppedProcess hW hσ)
 
 end TauCeti.Probability.IsItoIntegral

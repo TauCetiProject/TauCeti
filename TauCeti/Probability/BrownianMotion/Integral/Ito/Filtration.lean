@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
 public import TauCeti.Probability.BrownianMotion.UsualFiltration
+import TauCeti.Probability.Process.Filtration.Completion
 
 /-!
 # Usual-augmentation invariance of the Brownian Itô integral
@@ -49,9 +50,7 @@ theorem IsItoIntegral.mono_completion (hI : IsItoIntegral ℱ P W H I)
       (fun t (ω : NullMeasurableSpace Ω P) ↦ H t ω)
       (fun t (ω : NullMeasurableSpace Ω P) ↦ I t ω) where
   isStronglyPredictable := hI.isStronglyPredictable.mono
-    (measurableSpace_le_predictable_of_measurableSet
-      (fun _ hA ↦ measurableSet_predictable_singleton_bot_prod (hFG ⊥ _ hA))
-      (fun i _ hA ↦ measurableSet_predictable_Ioi_prod (i := i) (hFG i _ hA)))
+    (Filtration.predictable_mono (ℱ := ℱ.monoAmbient le_eventuallyMeasurableSpace) (𝒢 := 𝒢) hFG)
   ae_continuous := hI.ae_continuous.filter_mono P.ae_completion.le
   exists_approx t := by
     obtain ⟨n, τ, a, hτ, ha, hen, hg⟩ := hI.exists_approx t

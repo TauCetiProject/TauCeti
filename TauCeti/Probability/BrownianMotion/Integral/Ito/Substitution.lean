@@ -22,7 +22,9 @@ elementary integral of `K` against `I` is an Itô integral of `K H` against `W`:
 The heights of `K` need not be bounded or integrable, and `H` need only have an Itô integral;
 no moment condition is imposed. The case of a single interval is the **multiplier rule**
 (`TauCeti.Probability.IsItoIntegral.mul_sub_min`): for `s ≤ u` and `ξ` measurable at time `s`,
-the process `ξ (I_{u ∧ t} - I_{s ∧ t})` is an Itô integral of `1_{(s,u]} ξ H`.
+the process `ξ (I_{u ∧ t} - I_{s ∧ t})` is an Itô integral of `1_{(s,u]} ξ H`, which extends to
+the post-`s` multiplier rule `TauCeti.Probability.IsItoIntegral.indicator_Ioi_mul` (with
+`TauCeti.Probability.IsItoIntegral.indicator_Ioi` as the unit-multiplier special case).
 
 The proof multiplies the simple approximants of `H` by `K` on common grids
 (`TauCeti.Finance.exists_simpleHolding_simpleGains_eq_mul`). Their square errors are multiplied
@@ -147,46 +149,29 @@ theorem IsItoIntegral.indicator_Ioi_mul (hW : IsFilteredPreBrownianReal ℱ W P)
     convert hI.isStronglyPredictable.indicator_Ioi_mul hξ using 2 with r ω
     by_cases hr : s < r <;> simp [hr]
   refine ⟨hpred, hI.ae_continuous.mono fun _ hω ↦ by fun_prop, fun t ↦ ?_⟩
-  by_cases hst : s ≤ t
-  · obtain ⟨n, τ, b, hτ, hb, he, hg⟩ := (hI.mul_sub_min hW hst hξ).exists_approx t
-    refine ⟨n, τ, b, hτ, hb, fun ε hε ↦ (he ε hε).congr fun k ↦ ?_, by
-      simpa only [min_self] using hg⟩
-    refine congrArg (P ·) (Set.ext fun ω ↦ by
-      simp only [Set.mem_ofPred_eq]
-      rw [show (∫⁻ r, ‖Finance.simpleHolding (τ k) (n k) (b k) r ω -
-          (Ioc s t).indicator (fun _ ↦ ξ ω) r * H r ω‖ₑ ^ 2 ∂timeMeasure t) =
-          ∫⁻ r, ‖Finance.simpleHolding (τ k) (n k) (b k) r ω -
-            (Ioi s).indicator (fun _ ↦ ξ ω) r * H r ω‖ₑ ^ 2 ∂timeMeasure t from
-        lintegral_congr_ae ((ae_mem_Ioc_timeMeasure t).mono fun r hr ↦ by
-          by_cases hrs : s < r <;> simp [hrs, hr.2])])
-  · have hts : t ≤ s := (not_le.mp hst).le
-    refine ⟨fun _ ↦ 0, fun _ _ ↦ 0, fun _ _ _ ↦ 0, fun _ _ _ _ _ _ ↦ le_rfl,
-      fun _ _ hj ↦ (Nat.not_lt_zero _ hj).elim, fun ε hε ↦ ?_, ?_⟩
-    · refine (tendsto_const_nhds (x := 0)).congr fun k ↦ ?_
-      have hzero (ω : Ω) : ∫⁻ r, ‖Finance.simpleHolding (fun _ ↦ 0) 0 (fun _ _ ↦ 0) r ω -
-          (Ioi s).indicator (fun _ ↦ ξ ω) r * H r ω‖ₑ ^ 2 ∂timeMeasure t = 0 := by
-        refine (lintegral_eq_zero_iff' ?_).mpr ?_
-        · have hm : Measurable fun r ↦ ‖Finance.simpleHolding (fun _ ↦ 0) 0 (fun _ _ ↦ 0) r ω -
-              (Ioi s).indicator (fun _ ↦ ξ ω) r * H r ω‖ₑ ^ 2 :=
-            ((((Finance.isStronglyPredictable_simpleHolding (ℱ := ℱ)
-              (τ := fun _ ↦ 0) (n := 0) (a := fun _ _ ↦ 0)
-              (fun _ hj ↦ (Nat.not_lt_zero _ hj).elim)).sub hpred).mono
-                ℱ.predictable_le_prod).measurable.comp
-                (measurable_id.prodMk measurable_const)).eNorm.pow_const 2
-          exact hm.aemeasurable
-        · filter_upwards [ae_mem_Ioc_timeMeasure t] with r hr
-          have hnot : ¬ s < r := (hr.2.trans hts).not_gt
-          simp [Finance.simpleHolding_def, hnot]
-      simp [hzero, hε.ne']
-    · intro ε hε
-      simp [min_eq_right hts, Finance.simpleGains_def, hε.ne']
+  obtain ⟨n, τ, b, hτ, hb, he, hg⟩ := (hI.mul_sub_min hW (le_max_left s t) hξ).exists_approx t
+  refine ⟨n, τ, b, hτ, hb, fun ε hε ↦ (he ε hε).congr fun k ↦ congrArg (P ·) (Set.ext fun ω ↦ by
+    simp only [Set.mem_ofPred_eq]
+    have h_ae : (Ioi s).indicator (fun _ ↦ ξ ω) =ᵐ[timeMeasure t]
+        (Ioc s (max s t)).indicator (fun _ ↦ ξ ω) :=
+      ae_mono (timeMeasure_mono (le_max_right s t))
+        (indicator_Ioi_ae_eq_indicator_Ioc_timeMeasure _ s (max s t))
+    rw [show (∫⁻ r, ‖Finance.simpleHolding (τ k) (n k) (b k) r ω -
+        (Ioc s (max s t)).indicator (fun _ ↦ ξ ω) r * H r ω‖ₑ ^ 2 ∂timeMeasure t) =
+        ∫⁻ r, ‖Finance.simpleHolding (τ k) (n k) (b k) r ω -
+          (Ioi s).indicator (fun _ ↦ ξ ω) r * H r ω‖ₑ ^ 2 ∂timeMeasure t from
+      lintegral_congr_ae (h_ae.mono fun r hr ↦ by dsimp only; rw [← hr])]),
+    by simpa only [min_eq_right (le_max_right s t)] using hg⟩
 
-/-- Indistinguishability form of `IsItoIntegral.indicator_Ioi_mul`. -/
-theorem IsItoIntegral.indist_mul_sub_of_indicator_Ioi_mul
-    (hW : IsFilteredPreBrownianReal ℱ W P) (hI : IsItoIntegral ℱ P W H I)
-    (s : ℝ≥0) {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) {J : ℝ≥0 → Ω → ℝ}
-    (hJ : IsItoIntegral ℱ P W (fun t ω ↦ (Ioi s).indicator (fun _ ↦ ξ ω) t * H t ω) J) :
-    J ≡ᵐ[P] fun t ω ↦ ξ ω * (I t ω - I (min s t) ω) :=
-  isItoIntegral_unique hW hJ (hI.indicator_Ioi_mul hW s hξ)
+/-- Restricting an integrand to `(u, ∞)` yields the post-`u` Itô integral
+`t ↦ I t - I (min u t)`, without assuming path continuity of `W`. -/
+theorem IsItoIntegral.indicator_Ioi (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) (u : ℝ≥0) :
+    IsItoIntegral ℱ P W (fun t ω ↦ (Ioi u).indicator (H · ω) t)
+      (fun t ω ↦ I t ω - I (min u t) ω) := by
+  convert hI.indicator_Ioi_mul hW u (ξ := fun _ ↦ 1) stronglyMeasurable_const using 1 <;>
+    ext t ω
+  · by_cases ht : u < t <;> simp [ht]
+  · simp
 
 end TauCeti.Probability
