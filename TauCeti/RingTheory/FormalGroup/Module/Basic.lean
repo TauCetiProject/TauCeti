@@ -227,6 +227,16 @@ theorem comp_assoc {K : FormalGroup R} {ρ''' : FormalModule A K} (h : Hom ρ'' 
 
 end Hom
 
+/-- The scalar action as an endomorphism of the formal module. -/
+def actHom (a : A) : Hom ρ ρ where
+  toFormalGroupHom := ρ.act a
+  comp_act := ρ.act_comp_act_comm a
+
+/-- The endomorphism given by a scalar has the original action series. -/
+@[simp]
+theorem actHom_toPowerSeries (a : A) :
+    (ρ.actHom a).toPowerSeries = (ρ.act a).toPowerSeries := (rfl)
+
 /-! ### Restriction of scalars -/
 
 section RestrictScalars

@@ -209,6 +209,20 @@ term of `[p]_F(T)` has degree `p ^ h` (see `FormalGroup.height_eq_natCast_iff`).
 noncomputable def height (p : ℕ) : ℕ∞ :=
   if F.nsmulSeries p = 0 then ⊤ else Nat.log p (F.nsmulSeries p).order.toNat
 
+/-- Ordinary height is the base-`p` logarithm of the order of the multiplication series,
+with infinite order mapped to infinite height. -/
+theorem height_eq_log_order_nsmulSeries (p : ℕ) :
+    F.height p = ENat.map (Nat.log p) (F.nsmulSeries p).order := by
+  classical
+  rw [height]
+  -- `ENat.map` returns `WithTop ℕ` here, with top and natural casts definitionally as in `ℕ∞`.
+  split_ifs with hz
+  · rw [hz, PowerSeries.order_zero]
+    exact (ENat.map_top _).symm
+  · obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.mp (PowerSeries.order_eq_top.not.mpr hz)
+    rw [← hn, ENat.toNat_natCast]
+    exact (ENat.map_natCast _ _).symm
+
 /-- A formal group law has infinite height exactly when multiplication by `p` is zero. -/
 @[simp]
 theorem height_eq_top_iff : F.height p = ⊤ ↔ F.nsmulSeries p = 0 := by
