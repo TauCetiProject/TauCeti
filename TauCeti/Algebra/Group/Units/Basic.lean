@@ -31,6 +31,8 @@ ambient monoid. The nonnegative half is `TauCeti.mul_pow_mul_eq_pow_succ_mul_pow
 * `Units.val_inv_mul_mul_mul_eq_one`: if `(a : M) = z`, then `(l * a)⁻¹ * l * z = 1`.
 * `Units.val_inv_mul_mul_inv_mul_eq_one`: if `(a : M) = z` and `l ^ 2 * z = b`, then
   `(l * a)⁻¹ * l⁻¹ * b = 1`.
+* `Units.zpow_mul_eq_conj_mul_zpow`: left multiplication by `x ^ m` rewrites as right
+  multiplication after conjugating by `x ^ m`.
 * `IsUnit.mul_zpow_neg_natCast_succ_mul`: negative product powers give inverse monomials.
 -/
 
@@ -84,6 +86,14 @@ theorem val_inv_mul_mul_inv_mul_eq_one {M : Type*} [Monoid M] (a l : Mˣ) {z b :
     simp [sq, mul_assoc]
   simpa only [ha, hl, Units.val_mul, Units.val_pow_eq_pow_val, Units.val_one] using
     congrArg Units.val h
+
+/-- Left multiplication by `x ^ m` rewrites as right multiplication after conjugating by
+`x ^ m`. -/
+theorem zpow_mul_eq_conj_mul_zpow {M : Type*} [Monoid M] (x : Mˣ) (m : ℤ) (c : M) :
+    ((x ^ m : Mˣ) : M) * c =
+      (((x ^ m : Mˣ) : M) * c * ((x ^ (-m) : Mˣ) : M)) * ((x ^ m : Mˣ) : M) := by
+  rw [mul_assoc (((x ^ m : Mˣ) : M) * c), ← Units.val_mul, zpow_neg, inv_mul_cancel,
+    Units.val_one, mul_one]
 
 end Units
 

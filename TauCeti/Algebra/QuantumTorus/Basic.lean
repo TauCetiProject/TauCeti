@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.MonoidAlgebra.Twisted.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+import Mathlib.Tactic.Ring
+import TauCeti.Algebra.Algebra.Units.Basic
 
 /-!
 # Based quantum tori
@@ -208,6 +210,16 @@ theorem monomialUnit_mul (a b : L) :
         monomialUnit u Λ (a + b) :=
   Units.ext <| by simp [Algebra.smul_def, -map_zpow]
 
+/-- Pushing normalized monomial units along an `R`-algebra homomorphism preserves the `(u, Λ)`
+multiplication law. -/
+theorem map_monomialUnit_mul {B : Type*} [Semiring B] [Algebra R B]
+    (χ : QuantumTorus R L u Λ →ₐ[R] B) (a b : L) :
+    Units.map χ.toMonoidHom (monomialUnit u Λ a) * Units.map χ.toMonoidHom (monomialUnit u Λ b) =
+      Units.map (algebraMap R B) (u ^ (Λ a b)) *
+        Units.map χ.toMonoidHom (monomialUnit u Λ (a + b)) := by
+  rw [← map_mul, monomialUnit_mul, map_mul]
+  exact congrArg (· * _) (Units.ext <| χ.commutes _)
+
 /-- Normalized monomials are units in their based quantum torus. -/
 @[simp]
 theorem isUnit_monomial (a : L) : IsUnit (monomial u Λ a) :=
@@ -232,16 +244,87 @@ theorem algHom_ext_of_basis {B : Type*} [Semiring B] [Algebra R B]
     rintro _ ⟨i, rfl⟩
     exact h i
 
+/-- Integer powers of a normalized monomial unit, including the quadratic diagonal correction. -/
+theorem monomialUnit_zpow_eq_map_mul (a : L) (n : ℤ) :
+    monomialUnit u Λ a ^ n =
+      Units.map (algebraMap R (QuantumTorus R L u Λ)) (u ^ (n * (n - 1) / 2 * Λ a a)) *
+        monomialUnit u Λ (n • a) := by
+  have hq (m : ℤ) : (m + 1) * m / 2 = m * (m - 1) / 2 + m := by
+    rw [(by ring : (m + 1) * m = m * (m - 1) + m * 2),
+      Int.add_mul_ediv_right _ _ (by decide : (2 : ℤ) ≠ 0)]
+  induction n using Int.induction_on with
+  | zero => simp
+  | succ k ih =>
+    rw [zpow_add_one, ih, mul_assoc, monomialUnit_mul, Units.map_algebraMap_mul_map_algebraMap,
+      ← zpow_add, add_zsmul, one_zsmul, map_zsmul, LinearMap.smul_apply, smul_eq_mul,
+      add_sub_cancel_right, hq (k : ℤ), add_mul]
+  | pred k ih =>
+    have hq' : (-(k : ℤ) - 1) * (-(k : ℤ) - 1 - 1) / 2 =
+        -(k : ℤ) * (-(k : ℤ) - 1) / 2 + 1 + (k : ℤ) := by
+      have h0 := hq (-(k : ℤ) - 1)
+      rw [sub_add_cancel] at h0
+      omega
+    rw [zpow_sub_one, ih, monomialUnit_inv_eq_map_mul,
+      Units.map_algebraMap_mul_mul_map_algebraMap_mul, monomialUnit_mul,
+      Units.map_algebraMap_mul_map_algebraMap, ← zpow_add, ← zpow_add, sub_zsmul, one_zsmul,
+      map_zsmul, map_neg, LinearMap.smul_apply, smul_eq_mul, hq', ← sub_eq_add_neg]
+    congr 3
+    ring
+
+/-- Pushing integer powers of normalized monomial units along an `R`-algebra homomorphism preserves
+the quadratic diagonal correction. -/
+theorem map_monomialUnit_zpow {B : Type*} [Semiring B] [Algebra R B]
+    (χ : QuantumTorus R L u Λ →ₐ[R] B) (a : L) (n : ℤ) :
+    Units.map χ.toMonoidHom (monomialUnit u Λ a) ^ n =
+      Units.map (algebraMap R B) (u ^ (n * (n - 1) / 2 * Λ a a)) *
+        Units.map χ.toMonoidHom (monomialUnit u Λ (n • a)) := by
+  rw [← map_zpow, monomialUnit_zpow_eq_map_mul, map_mul]
+  exact congrArg (· * _) (Units.ext <| χ.commutes _)
+
+/-- When `Λ a a = 0`, integer multiples of `a` correspond to integer powers of `monomialUnit u Λ a`
+without requiring `Λ` to be globally alternating. -/
+theorem monomialUnit_zsmul_of_self_eq_zero {a : L} (ha : Λ a a = 0) (n : ℤ) :
+    monomialUnit u Λ (n • a) = monomialUnit u Λ a ^ n := by
+  rw [monomialUnit_zpow_eq_map_mul, ha, mul_zero, zpow_zero, map_one, one_mul]
+
+/-- Two quantum-torus algebra maps `χ'` and `χ` agreeing on all generators `monomial (single i 1)`
+away from `k` (for forms agreeing off `k`) agree on every monomial `monomial a` with `a k = 0`. -/
+theorem algHom_monomial_eq_of_apply_eq_zero {I B : Type*} [Semiring B] [Algebra R B]
+    {Λ Λ' : LinearMap.BilinForm ℤ (I →₀ ℤ)} {k : I}
+    {χ : QuantumTorus R (I →₀ ℤ) u Λ →ₐ[R] B}
+    {χ' : QuantumTorus R (I →₀ ℤ) u Λ' →ₐ[R] B}
+    (h_off : ∀ i ≠ k, χ' (monomial u Λ' (Finsupp.single i 1)) =
+      χ (monomial u Λ (Finsupp.single i 1)))
+    (hoff : ∀ a b : I →₀ ℤ, a k = 0 → b k = 0 → Λ' a b = Λ a b)
+    {a : I →₀ ℤ} (ha : a k = 0) :
+    χ' (monomial u Λ' a) = χ (monomial u Λ a) := by
+  classical
+  suffices Units.map χ'.toMonoidHom (monomialUnit u Λ' a) =
+      Units.map χ.toMonoidHom (monomialUnit u Λ a) by
+    simpa using congrArg (Units.val : Bˣ → B) this
+  induction a using Finsupp.induction with
+  | zero => ext; simp
+  | single_add i n f hif hn ih =>
+    have hik : i ≠ k := by rintro rfl; simp [Finsupp.notMem_support_iff.mp hif, hn] at ha
+    have hfk : f k = 0 := by simpa [Finsupp.add_apply, Finsupp.single_eq_of_ne hik.symm] using ha
+    have hsingle : Units.map χ'.toMonoidHom (monomialUnit u Λ' (Finsupp.single i n)) =
+        Units.map χ.toMonoidHom (monomialUnit u Λ (Finsupp.single i n)) := by
+      have hpow : Units.map χ'.toMonoidHom (monomialUnit u Λ' (Finsupp.single i 1)) ^ n =
+          Units.map χ.toMonoidHom (monomialUnit u Λ (Finsupp.single i 1)) ^ n :=
+        congrArg (· ^ n) (Units.ext <| by simpa using h_off i hik)
+      rw [map_monomialUnit_zpow, map_monomialUnit_zpow, Finsupp.smul_single_one,
+        hoff _ _ (Finsupp.single_eq_of_ne hik.symm) (Finsupp.single_eq_of_ne hik.symm)] at hpow
+      exact mul_left_cancel hpow
+    have hmul₁ := map_monomialUnit_mul χ' (Finsupp.single i n) f
+    rw [hoff _ _ (Finsupp.single_eq_of_ne hik.symm) hfk] at hmul₁
+    exact mul_left_cancel
+      (hmul₁.symm.trans (by rw [hsingle, ih hfk, map_monomialUnit_mul χ (Finsupp.single i n) f]))
+
 /-- For alternating forms, integer powers of a monomial unit simplify to monomial units. -/
 @[simp]
 theorem monomialUnit_zpow (hΛ : Λ.IsAlt) (a : L) (n : ℤ) :
-    monomialUnit u Λ a ^ n = monomialUnit u Λ (n • a) := by
-  let f : Multiplicative ℤ →* (QuantumTorus R L u Λ)ˣ :=
-    { toFun := fun m ↦ monomialUnit u Λ (m.toAdd • a)
-      map_one' := by simp
-      map_mul' := fun m n ↦ by
-        simp [add_zsmul, monomialUnit_mul, hΛ.self_eq_zero] }
-  simpa [f] using (f.map_zpow (Multiplicative.ofAdd (1 : ℤ)) n).symm
+    monomialUnit u Λ a ^ n = monomialUnit u Λ (n • a) :=
+  (monomialUnit_zsmul_of_self_eq_zero (hΛ.self_eq_zero a) n).symm
 
 /-- For alternating forms, powers of a monomial unit simplify to monomial units. -/
 @[simp]

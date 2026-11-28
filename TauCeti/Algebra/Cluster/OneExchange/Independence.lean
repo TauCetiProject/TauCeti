@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.Submonoid.MulAction
+public import TauCeti.Algebra.Ring.Action.ConjAct
 public import TauCeti.LinearAlgebra.LinearIndependent.Powers
 public import Mathlib.Algebra.Ring.Subsemiring.Basic
 import Mathlib.Tactic.Group
@@ -35,6 +36,8 @@ uniqueness for all integer powers.
 -/
 
 public section
+
+open scoped Pointwise
 
 namespace TauCeti
 
@@ -81,10 +84,35 @@ theorem exchangeProduct_succ' (x E : G) (n : ℕ) :
   unfold exchangeProduct
   group
 
+/-- Length-`2` ordered exchange product: `exchangeProduct x E 2 = E * (x⁻¹ * E * x)`. -/
+theorem exchangeProduct_two (x E : G) : exchangeProduct x E 2 = E * (x⁻¹ * E * x) := by
+  rw [exchangeProduct_succ, exchangeProduct_one]
+  simp [mul_assoc]
+
+/-- Twisted cocycle law for `exchangeProduct` under addition of lengths. -/
+theorem exchangeProduct_add (x E : G) (s t : ℕ) :
+    exchangeProduct x E (s + t) =
+      exchangeProduct x E s * ((x ^ s)⁻¹ * exchangeProduct x E t * x ^ s) := by
+  simp only [exchangeProduct_def, pow_add]
+  group
+
 /-- Powers of an exchange have the ordered coefficient `exchangeProduct`. -/
 theorem mul_inv_pow_eq_exchangeProduct_mul_inv_pow (x E : G) (n : ℕ) :
     (E * x⁻¹) ^ n = exchangeProduct x E n * x⁻¹ ^ n := by
   unfold exchangeProduct
+  group
+
+/-- Nonnegative integer powers of `E * x⁻¹` factor on the left through `exchangeProduct x E r`. -/
+theorem mul_inv_zpow_natCast_eq_exchangeProduct_mul_zpow_neg (x E : G) (r : ℕ) :
+    (E * x⁻¹) ^ (r : ℤ) = exchangeProduct x E r * x ^ (-(r : ℤ)) := by
+  rw [zpow_natCast, mul_inv_pow_eq_exchangeProduct_mul_inv_pow, zpow_neg, zpow_natCast, inv_pow]
+
+/-- Shifting `(E * x⁻¹) ^ (k - N)` on the right by `exchangeProduct x E N` yields
+`exchangeProduct x E k * x ^ (N - k)`. -/
+theorem mul_inv_zpow_sub_mul_exchangeProduct (x E : G) (k N : ℕ) :
+    (E * x⁻¹) ^ ((k : ℤ) - (N : ℤ)) * exchangeProduct x E N =
+      exchangeProduct x E k * x ^ ((N : ℤ) - (k : ℤ)) := by
+  rw [exchangeProduct_def, exchangeProduct_def]
   group
 
 /-- If `E` commutes with `x`, ordered exchange products are ordinary powers of `E`. -/
@@ -124,6 +152,18 @@ theorem exchangeProduct_mem
   | succ n ih => simpa only [exchangeProduct_succ', Units.val_mul] using mul_mem hE (hx _ ih)
 
 end TauCeti
+
+namespace Subsemiring
+
+/-- When `x` normalizes a subsemiring `C` under `ConjAct` and `(E : B) ∈ C`, every ordered exchange
+product lies in `C`. -/
+theorem coe_exchangeProduct_mem {B : Type*} [Semiring B] {C : Subsemiring B} {x E : Bˣ}
+    (hx : ConjAct.toConjAct x • C = C) (hEC : (E : B) ∈ C) (r : ℕ) :
+    ((TauCeti.exchangeProduct x E r : Bˣ) : B) ∈ C :=
+  TauCeti.exchangeProduct_mem C x E
+    (fun _ hc ↦ by simpa [zpow_neg_one] using conj_zpow_mem hx (-1) hc) hEC r
+
+end Subsemiring
 
 namespace TauCeti
 

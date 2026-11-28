@@ -26,11 +26,13 @@ agreeing with `Λ` on the other coordinates, the monomials
 form a based chart for `Λ'` (`BasedChart.exchange`). It keeps every monomial in the other
 coordinates and has `y` as its `k`th coordinate.
 
-The one-exchange data are public as well: `C` is `BasedChart.offAlgebra`, Laurent expansions in
-`x` have unique left coefficients in `C` (`BasedChart.linearIndependent_zpow_coordinate`), and
-every unit quasi-commuting with the monomials of `C` normalizes `C`
-(`BasedChart.inv_mul_mul_mem_offAlgebra_iff`). This applies to `x` and, by
-`BasedChart.mul_monomial_mul_monomial_eq_smul_mul`, to the exchange element `E = y * x`.
+The one-exchange data are public as well: `C` is `BasedChart.offAlgebra` with `R`-basis
+`BasedChart.offBasis`, Laurent expansions in `x` have unique left coefficients in `C`
+(`BasedChart.linearIndependent_zpow_coordinate`), and every unit quasi-commuting with the
+monomials of `C` normalizes `C` (`BasedChart.inv_mul_mul_mem_offAlgebra_iff`). This applies to
+`x` and, by `BasedChart.mul_monomial_mul_monomial_eq_smul_mul`, to the exchange element
+`E = y * x`. Consequently, quantum-torus algebra maps related by one-step exchange transfer
+injectivity (`QuantumTorus.exists_basedChart_of_exchange`, `QuantumTorus.injective_of_exchange`).
 
 The multiplication rule comes from the quasi-commutation of `y` with the other coordinates.
 Faithfulness of the new chart is the substance: the independence of all monomials of `M` makes
@@ -242,6 +244,29 @@ private theorem span_range_offMonomial (M : BasedChart u Λ B) (k : I) :
   obtain ⟨w, hw, hwz⟩ := hz
   exact Subtype.ext hwz ▸ hw
 
+/-- The `R`-basis of `M.offAlgebra k` formed by the normalized monomials with `a k = 0`. -/
+noncomputable def offBasis (M : BasedChart u Λ B) (k : I) :
+    Module.Basis {a : I →₀ ℤ // a k = 0} R (M.offAlgebra k) :=
+  Module.Basis.mk (M.linearIndependent_offMonomial k) (M.span_range_offMonomial k).ge
+
+@[simp]
+theorem coe_offBasis (M : BasedChart u Λ B) (k : I) (a : {a : I →₀ ℤ // a k = 0}) :
+    ((M.offBasis k a : M.offAlgebra k) : B) = M.monomial a.val := by
+  simp [offBasis, offMonomial]
+
+/-- `M.offAlgebra k` lies inside the range of chart evaluation `M.eval`. -/
+theorem offAlgebra_le_range_eval (M : BasedChart u Λ B) (k : I) :
+    M.offAlgebra k ≤ M.eval.range := fun _ hb ↦
+  (Submodule.span_le (p := M.eval.range.toSubmodule)).mpr
+    (by rintro _ ⟨a, rfl⟩; exact ⟨QuantumTorus.monomial u Λ a.val, M.eval_monomial a.val⟩)
+    ((M.mem_offAlgebra k).mp hb)
+
+/-- Every standard coordinate away from `k` belongs to `M.offAlgebra k`. -/
+theorem coordinate_mem_offAlgebra_of_ne (M : BasedChart u Λ B) {i k : I} (hik : i ≠ k) :
+    (M.coordinate Finsupp.basisSingleOne i : B) ∈ M.offAlgebra k := by
+  rw [coordinate_def, Finsupp.coe_basisSingleOne]
+  exact M.monomial_mem_offAlgebra (Finsupp.single_eq_of_ne hik.symm)
+
 /-- Independence of all monomials makes the integer powers of the `k`th coordinate independent
 with left coefficients in the span `C` of the other monomials: Laurent expansions in the `k`th
 coordinate have unique left coefficients in `C`. -/
@@ -334,4 +359,95 @@ theorem exchange_monomial_single_self :
     (M.exchange hΛ hΛ' k y hoff hcomm hyx).monomial (Finsupp.single k 1) = y := by
   simp [exchange_monomial]
 
+@[simp]
+theorem coordinate_exchange_same :
+    (M.exchange hΛ hΛ' k y hoff hcomm hyx).coordinate Finsupp.basisSingleOne k = y := by
+  simp [coordinate_def]
+
+@[simp]
+theorem coordinate_exchange_of_ne {i : I} (hik : i ≠ k) :
+    (M.exchange hΛ hΛ' k y hoff hcomm hyx).coordinate Finsupp.basisSingleOne i =
+      M.coordinate Finsupp.basisSingleOne i := by
+  rw [coordinate_def, coordinate_def, Finsupp.coe_basisSingleOne,
+    M.exchange_monomial_of_apply_eq_zero hΛ hΛ' k y hoff hcomm hyx
+      (Finsupp.single_eq_of_ne hik.symm)]
+
+/-- Exchanging coordinate `k` preserves the complementary subalgebra `M.offAlgebra k`. -/
+@[simp]
+theorem offAlgebra_exchange :
+    (M.exchange hΛ hΛ' k y hoff hcomm hyx).offAlgebra k = M.offAlgebra k := by
+  ext b
+  simp only [mem_offAlgebra]
+  have hrng : (fun a : {a : I →₀ ℤ // a k = 0} ↦
+      ((M.exchange hΛ hΛ' k y hoff hcomm hyx).monomial a : B)) =
+      fun a : {a : I →₀ ℤ // a k = 0} ↦ (M.monomial a : B) := by
+    funext a
+    exact congrArg Units.val (M.exchange_monomial_of_apply_eq_zero hΛ hΛ' k y hoff hcomm hyx
+      a.property)
+  rw [hrng]
+
 end TauCeti.BasedChart
+
+namespace TauCeti.QuantumTorus
+
+variable {R B I : Type*} [CommSemiring R] [Semiring B] [Algebra R B]
+  {u : Rˣ} {Λ Λ' : LinearMap.BilinForm ℤ (I →₀ ℤ)}
+
+/-- Given an injective torus map `χ : QuantumTorus R (I →₀ ℤ) u Λ →ₐ[R] B` and a map
+`χ' : QuantumTorus R (I →₀ ℤ) u Λ' →ₐ[R] B` agreeing off `k` with
+`χ' (X_k) * χ (X_k) ∈ (BasedChart.ofInjective χ hχ).offAlgebra k`, `χ'` arises as `eval` of a
+one-step `BasedChart.exchange` of `BasedChart.ofInjective χ hχ`. -/
+theorem exists_basedChart_of_exchange
+    (hΛ : Λ.IsAlt) (hΛ' : Λ'.IsAlt) {k : I}
+    {χ : QuantumTorus R (I →₀ ℤ) u Λ →ₐ[R] B} (hχ : Function.Injective χ)
+    {χ' : QuantumTorus R (I →₀ ℤ) u Λ' →ₐ[R] B}
+    (h_off : ∀ i ≠ k, χ' (monomial u Λ' (Finsupp.single i 1)) =
+      χ (monomial u Λ (Finsupp.single i 1)))
+    (hoff : ∀ a b, a k = 0 → b k = 0 → Λ' a b = Λ a b)
+    (h_exch : χ' (monomial u Λ' (Finsupp.single k 1)) * χ (monomial u Λ (Finsupp.single k 1)) ∈
+      (BasedChart.ofInjective χ hχ).offAlgebra k) :
+    ∃ (y : Bˣ)
+      (hcomm : ∀ a, a k = 0 → (y : B) * (BasedChart.ofInjective χ hχ).monomial a =
+        ((u ^ (2 * Λ' (Finsupp.single k 1) a) : Rˣ) : R) •
+          (((BasedChart.ofInjective χ hχ).monomial a : B) * y))
+      (hyx : (y : B) * (BasedChart.ofInjective χ hχ).monomial (Finsupp.single k 1) ∈
+        Submodule.span R (Set.range fun a : {a : I →₀ ℤ // a k = 0} ↦
+          ((BasedChart.ofInjective χ hχ).monomial a : B))),
+      ((BasedChart.ofInjective χ hχ).exchange hΛ hΛ' k y hoff hcomm hyx).eval = χ' := by
+  let c := BasedChart.ofInjective χ hχ
+  let y : Bˣ := Units.map χ' (monomialUnit u Λ' (Finsupp.single k 1))
+  have hyx : (y : B) * c.monomial (Finsupp.single k 1) ∈
+      Submodule.span R (Set.range fun a : {a : I →₀ ℤ // a k = 0} ↦ (c.monomial a : B)) := by
+    simpa [y, c, BasedChart.mem_offAlgebra] using h_exch
+  have hcomm (a : I →₀ ℤ) (ha : a k = 0) :
+      (y : B) * c.monomial a =
+        ((u ^ (2 * Λ' (Finsupp.single k 1) a) : Rˣ) : R) • ((c.monomial a : B) * y) := by
+    have hmap := congrArg χ'
+      (monomial_mul_monomial_eq_smul_mul (R := R) (u := u) hΛ' (Finsupp.single k 1) a)
+    rw [map_mul, map_smul, map_mul,
+      algHom_monomial_eq_of_apply_eq_zero h_off hoff ha] at hmap
+    simpa [y, c] using hmap
+  refine ⟨y, hcomm, hyx, algHom_ext_of_basis Finsupp.basisSingleOne fun i ↦ ?_⟩
+  rcases eq_or_ne k i with rfl | hik
+  · simp [y]
+  · rw [Finsupp.coe_basisSingleOne, BasedChart.eval_monomial,
+      c.exchange_monomial_of_apply_eq_zero hΛ hΛ' k y hoff hcomm hyx
+        (Finsupp.single_eq_of_ne hik)]
+    simpa [c] using (h_off i hik.symm).symm
+
+/-- **Transfer of quantum-torus map injectivity under one-step exchange**: if `χ` is injective and
+`χ'` agrees with `χ` off `k` with `χ' (X_k) * χ (X_k) ∈ offAlgebra k`, then `χ'` is injective. -/
+theorem injective_of_exchange
+    (hΛ : Λ.IsAlt) (hΛ' : Λ'.IsAlt) {k : I}
+    {χ : QuantumTorus R (I →₀ ℤ) u Λ →ₐ[R] B} (hχ : Function.Injective χ)
+    {χ' : QuantumTorus R (I →₀ ℤ) u Λ' →ₐ[R] B}
+    (h_off : ∀ i ≠ k, χ' (monomial u Λ' (Finsupp.single i 1)) =
+      χ (monomial u Λ (Finsupp.single i 1)))
+    (hoff : ∀ a b, a k = 0 → b k = 0 → Λ' a b = Λ a b)
+    (h_exch : χ' (monomial u Λ' (Finsupp.single k 1)) * χ (monomial u Λ (Finsupp.single k 1)) ∈
+      (BasedChart.ofInjective χ hχ).offAlgebra k) :
+    Function.Injective χ' := by
+  obtain ⟨_, _, _, hχ'_eq⟩ := exists_basedChart_of_exchange hΛ hΛ' hχ h_off hoff h_exch
+  exact hχ'_eq ▸ BasedChart.eval_injective _
+
+end TauCeti.QuantumTorus

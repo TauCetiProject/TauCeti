@@ -43,6 +43,8 @@ covers every ring of odd characteristic.
   `Matrix.ofStrictUpper_add`: the entry formula and preservation of zero, negation, and addition.
 * `Matrix.ofStrictUpper_apply_of_gt`: lower entries are the negatives of the supplied upper
   entries.
+* `Matrix.strictUpper` and `Matrix.updateSkew`: extract the strict upper triangle of a square
+  matrix and replace row and column `k` skew-symmetrically with zero diagonal.
 * `Matrix.natCard_transpose_eq_neg`: when doubling is injective at zero, the `Nat.card` of such
   matrices with entries in an additive subgroup `I` is `(Nat.card I) ^ (k.choose 2)`, for an
   index type of cardinality `k`; for finite `I` this is the number of such matrices.
@@ -288,5 +290,48 @@ theorem natCard_transpose_eq_neg [Fintype n] [AddCommGroup S] (I : AddSubgroup S
       right_inv := fun _ => rfl }
   rw [← hpairs, ← Nat.card_fun]
   exact Nat.card_congr (e.trans (skewStrictUpperAddEquiv h2I).toEquiv)
+
+/-- The strictly upper-triangular part of a square matrix with respect to `<` on `n`. -/
+def strictUpper [LT n] [DecidableLT n] [Zero S] (M : Matrix n n S) : Matrix n n S :=
+  of fun i j ↦ if i < j then M i j else 0
+
+/-- Entries of `M.strictUpper`: `M i j` above the diagonal and `0` elsewhere. -/
+@[simp]
+theorem strictUpper_apply [LT n] [DecidableLT n] [Zero S] (M : Matrix n n S) (i j : n) :
+    M.strictUpper i j = if i < j then M i j else 0 := by
+  simp [strictUpper]
+
+section UpdateSkew
+
+variable [DecidableEq n] [Zero S] [Neg S] (M : Matrix n n S) (k : n) (ℓ : n → S)
+
+/-- Replace row and column `k` skew-symmetrically with `(k, k)`-entry `0`, off-diagonal row
+entries `ℓ j`, and off-diagonal column entries `-ℓ i`. -/
+def updateSkew : Matrix n n S :=
+  of fun i j ↦ if i = k then (if j = k then 0 else ℓ j) else if j = k then -ℓ i else M i j
+
+/-- The `(k, k)` diagonal entry of `M.updateSkew k ℓ` vanishes. -/
+@[simp]
+theorem updateSkew_apply_same : M.updateSkew k ℓ k k = 0 := by
+  simp [updateSkew]
+
+/-- Off-diagonal entries in row `k` of `M.updateSkew k ℓ` equal `ℓ j`. -/
+@[simp]
+theorem updateSkew_apply_left_of_ne {j : n} (hj : j ≠ k) : M.updateSkew k ℓ k j = ℓ j := by
+  simp [updateSkew, hj]
+
+/-- Off-diagonal entries in column `k` of `M.updateSkew k ℓ` equal `-ℓ i`. -/
+@[simp]
+theorem updateSkew_apply_right_of_ne {i : n} (hi : i ≠ k) :
+    M.updateSkew k ℓ i k = -ℓ i := by
+  simp [updateSkew, hi]
+
+/-- Entries away from row and column `k` are unchanged by `M.updateSkew k ℓ`. -/
+@[simp]
+theorem updateSkew_apply_of_ne {i j : n} (hi : i ≠ k) (hj : j ≠ k) :
+    M.updateSkew k ℓ i j = M i j := by
+  simp [updateSkew, hi, hj]
+
+end UpdateSkew
 
 end Matrix

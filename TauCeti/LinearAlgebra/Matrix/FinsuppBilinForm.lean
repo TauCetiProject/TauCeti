@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Reflection
+public import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
 import Mathlib.Tactic.Ring
 
 /-!
@@ -16,7 +17,7 @@ Mathlib's `Matrix.toBilin'` reads a square matrix over a finite index type as a 
 `n → R`. For an arbitrary index set `I`, a matrix `A : Matrix I I R` over a commutative semiring
 still defines the bilinear form `∑ᵢⱼ xᵢ A i j yⱼ` on the free module `I →₀ R`, whose Gram matrix in
 the standard basis is `A`. This is the form used, for example, to pair the simple roots of a
-Coxeter system with infinite rank.
+Coxeter system with infinite rank, and to twist the exponent lattice of a based quantum torus.
 
 Evaluating `LinearMap.BilinForm.toMatrixAux` on the standard basis `i ↦ Finsupp.single i 1`
 recovers `A` without finiteness or decidability hypotheses on `I`, upgrading
@@ -47,6 +48,13 @@ is symmetric and `A i i = 2`.
   `Matrix.toBilin` when `I` is finite.
 * `Matrix.finsuppBilinForm_preReflection_single_linearCombination`: when `A` is symmetric and
   `A i i = 2`, the `i`-th pre-reflection preserves `A.finsuppBilinForm`.
+* `Matrix.isAlt_finsuppBilinForm_iff`: over a commutative ring, alternation is skew-symmetry
+  together with a zero diagonal, for an arbitrary index set.
+* `Matrix.finsuppBilinForm_eq_strictUpper_sub_flip`: an alternating form decomposes into its
+  strictly upper-triangular part minus its flip.
+* `Matrix.isAlt_finsuppBilinForm_updateSkew` and `Matrix.eq_of_isAlt_finsuppBilinForm_of_eq_off`:
+  skew-symmetric row/column replacement preserves alternation, and an alternating matrix is
+  determined by its restriction off `k` together with its `k`-th row off `k`.
 -/
 
 public section
@@ -55,7 +63,7 @@ namespace Matrix
 
 section CommSemiring
 
-variable {I R S : Type*} [CommSemiring R] [CommSemiring S] (A B : Matrix I I R)
+variable {I J R S : Type*} [CommSemiring R] [CommSemiring S] (A B : Matrix I I R)
 
 /-- **The bilinear form of a matrix** on the free module `I →₀ R`, the form `∑ᵢⱼ xᵢ A i j yⱼ`
 whose Gram matrix in the standard basis is `A`. -/
@@ -165,6 +173,12 @@ theorem finsuppBilinFormLinearEquiv_symm_apply (Φ : LinearMap.BilinForm R (I �
 theorem finsuppBilinForm_transpose : (Aᵀ).finsuppBilinForm = A.finsuppBilinForm.flip :=
   Finsupp.lhom_ext fun _ _ ↦ Finsupp.lhom_ext fun _ _ ↦ by simp [mul_left_comm]
 
+/-- Transposing `A` swaps the two arguments of `A.finsuppBilinForm`. -/
+theorem finsuppBilinForm_transpose_apply (x y : I →₀ R) :
+    Aᵀ.finsuppBilinForm x y = A.finsuppBilinForm y x := by
+  rw [finsuppBilinForm_transpose]
+  simp
+
 /-- Pairing with a basis vector `b • eⱼ` on the right evaluates the `j`-th column functional
 `x ↦ b * ∑ᵢ xᵢ A i j`. -/
 theorem finsuppBilinForm_single_right (x : I →₀ R) (j : I) (b : R) :
@@ -174,6 +188,24 @@ theorem finsuppBilinForm_single_right (x : I →₀ R) (j : I) (b : R) :
       _ = (Aᵀ).finsuppBilinForm (Finsupp.single j b) x := by rw [finsuppBilinForm_transpose]
       _ = b * Finsupp.linearCombination R (Aᵀ j) x := by
         rw [finsuppBilinForm_single_left, LinearMap.smul_apply, smul_eq_mul]
+
+/-- Pulling back a matrix along `f : J → I` pulls back `Matrix.finsuppBilinForm` along
+`Finsupp.mapDomain f`. -/
+@[simp]
+theorem finsuppBilinForm_submatrix (f : J → I) (x y : J →₀ R) :
+    (A.submatrix f f).finsuppBilinForm x y =
+      A.finsuppBilinForm (x.mapDomain f) (y.mapDomain f) := by
+  rw [finsuppBilinForm, finsuppBilinForm, Finsupp.linearCombination_mapDomain]
+  have h : (fun i ↦ Finsupp.linearCombination R (A.submatrix f f i)) =
+      fun i ↦ (Finsupp.linearCombination R (A (f i))).comp (Finsupp.lmapDomain R R f) := by
+    ext; simp
+  simp [Function.comp_def, h, Finsupp.linearCombination_apply]
+
+/-- Reindexing a matrix along `e : I ≃ J` pulls back `Matrix.finsuppBilinForm` along `e.symm`. -/
+theorem finsuppBilinForm_reindex (e : I ≃ J) (x y : J →₀ R) :
+    (A.reindex e e).finsuppBilinForm x y =
+      A.finsuppBilinForm (x.mapDomain e.symm) (y.mapDomain e.symm) :=
+  A.finsuppBilinForm_submatrix e.symm x y
 
 /-- **`A.finsuppBilinForm` is symmetric if and only if `A` is symmetric.** -/
 @[simp]
@@ -232,6 +264,38 @@ theorem finsuppBilinForm_repr_eq_toBilin {M : Type*} [AddCommMonoid M] [Module R
     A.finsuppBilinForm (b.repr x) (b.repr y) = Matrix.toBilin b A x y := by
   rw [finsuppBilinForm_apply_eq_toBilin', Matrix.toBilin'_apply, Matrix.toBilin_apply]
 
+/-- Every diagonal entry of a matrix whose `finsuppBilinForm` is alternating vanishes. -/
+theorem apply_self_eq_zero_of_isAlt_finsuppBilinForm {A : Matrix I I R}
+    (hA : A.finsuppBilinForm.IsAlt) (i : I) : A i i = 0 := by
+  simpa [finsuppBilinForm_single_single] using hA.self_eq_zero (Finsupp.single i 1)
+
+/-- For finite `I`, `A.finsuppBilinForm` is alternating if and only if `A.toBilin'` is. -/
+theorem isAlt_finsuppBilinForm_iff_isAlt_toBilin' [Fintype I] [DecidableEq I] :
+    A.finsuppBilinForm.IsAlt ↔ A.toBilin'.IsAlt :=
+  ⟨fun h x ↦ by
+      simpa [finsuppBilinForm_apply_eq_toBilin'] using h (Finsupp.equivFunOnFinite.symm x),
+    fun h x ↦ (A.finsuppBilinForm_apply_eq_toBilin' x x).trans (h x)⟩
+
+/-- Pairing `r • eᵢ` on the left with `x` under `A.strictUpper` agrees with `A.finsuppBilinForm`
+whenever every index in `x.support` is strictly greater than `i`. -/
+theorem finsuppBilinForm_strictUpper_single_left_of_lt [LT I] [DecidableLT I] {i : I} (r : R)
+    {x : I →₀ R} (hx : ∀ j ∈ x.support, i < j) :
+    A.strictUpper.finsuppBilinForm (Finsupp.single i r) x =
+      A.finsuppBilinForm (Finsupp.single i r) x := by
+  rw [finsuppBilinForm_apply, Finsupp.sum_single_index (by simp),
+    finsuppBilinForm_apply, Finsupp.sum_single_index (by simp)]
+  exact Finset.sum_congr rfl fun j hj ↦ by simp [hx j hj]
+
+/-- Pairing `x` with `r • eᵢ` on the right under `A.strictUpper` vanishes whenever every index in
+`x.support` is at least `i`. -/
+theorem finsuppBilinForm_strictUpper_single_right_eq_zero [Preorder I] [DecidableLT I] {i : I}
+    (r : R) {x : I →₀ R} (hx : ∀ j ∈ x.support, i ≤ j) :
+    A.strictUpper.finsuppBilinForm x (Finsupp.single i r) = 0 := by
+  rw [finsuppBilinForm_apply, Finsupp.sum]
+  exact Finset.sum_eq_zero fun j hj ↦ by
+    rw [Finsupp.sum_single_index (by simp)]
+    simp [(hx j hj).not_gt]
+
 end CommSemiring
 
 section CommRing
@@ -279,6 +343,118 @@ theorem finsuppBilinForm_preReflection_single_linearCombination {A : Matrix I I 
   simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul,
     finsuppBilinForm_single_single, one_mul, hii, (hA.finsuppBilinForm).eq (Finsupp.single i 1) x]
   ring
+
+/-- If `A.finsuppBilinForm` is alternating, `A` is skew-symmetric entrywise (`-A i j = A j i`). -/
+theorem neg_apply_eq_of_isAlt_finsuppBilinForm {A : Matrix I I R}
+    (hA : A.finsuppBilinForm.IsAlt) (i j : I) : -A i j = A j i := by
+  simpa [finsuppBilinForm_single_single] using hA.neg_eq (Finsupp.single i 1) (Finsupp.single j 1)
+
+/-- Over a commutative ring and an arbitrary index type, `A.finsuppBilinForm` is alternating if and
+only if `A` is skew-symmetric (`Aᵀ = -A`) and has zero diagonal. -/
+theorem isAlt_finsuppBilinForm_iff (A : Matrix I I R) :
+    A.finsuppBilinForm.IsAlt ↔ Aᵀ = -A ∧ ∀ i, A i i = 0 := by
+  refine ⟨fun h ↦ ⟨Matrix.ext fun i j ↦ (neg_apply_eq_of_isAlt_finsuppBilinForm h i j).symm,
+    apply_self_eq_zero_of_isAlt_finsuppBilinForm h⟩, fun ⟨ht, hd⟩ x ↦ ?_⟩
+  classical
+  simp only [finsuppBilinForm_apply, Finsupp.sum]
+  simp_rw [← Finset.sum_coe_sort x.support, ← Fintype.sum_prod_type']
+  refine Finset.sum_ninvolution Prod.swap
+    (fun p ↦ by
+      have hp : A p.2 p.1 = -A p.1 p.2 := by simpa using congr_fun (congr_fun ht p.1) p.2
+      simp only [Prod.fst_swap, Prod.snd_swap, hp]; ring)
+    (fun ⟨_, _⟩ hf he ↦ by cases congrArg Prod.fst he; exact hf (by simp [hd]))
+    (fun _ ↦ Finset.mem_univ _) (fun _ ↦ Prod.swap_swap _)
+
+/-- A matrix whose `finsuppBilinForm` is alternating equals `A.strictUpper - A.strictUpperᵀ`. -/
+theorem strictUpper_sub_transpose_of_isAlt [LinearOrder I] {A : Matrix I I R}
+    (hA : A.finsuppBilinForm.IsAlt) : A.strictUpper - A.strictUpperᵀ = A :=
+  Matrix.ext fun i j ↦ by
+    rw [Matrix.sub_apply, Matrix.transpose_apply, strictUpper_apply, strictUpper_apply]
+    rcases lt_trichotomy i j with hij | rfl | hji
+    · simp [hij, asymm hij]
+    · simp [apply_self_eq_zero_of_isAlt_finsuppBilinForm hA]
+    · simp [hji, asymm hji, neg_apply_eq_of_isAlt_finsuppBilinForm hA]
+
+/-- Over a linearly ordered index type, an alternating `finsuppBilinForm` decomposes as the form of
+`A.strictUpper` minus its argument-swapped flip, used to normalize ordered coordinate products. -/
+theorem finsuppBilinForm_eq_strictUpper_sub_flip [LinearOrder I] {A : Matrix I I R}
+    (hA : A.finsuppBilinForm.IsAlt) (x y : I →₀ R) :
+    A.finsuppBilinForm x y =
+      A.strictUpper.finsuppBilinForm x y - A.strictUpper.finsuppBilinForm y x := by
+  conv_lhs => rw [← strictUpper_sub_transpose_of_isAlt hA]
+  simp
+
+/-- Replacing row and column `k` skew-symmetrically via `Matrix.updateSkew` preserves alternation of
+`Matrix.finsuppBilinForm`. -/
+theorem isAlt_finsuppBilinForm_updateSkew [DecidableEq I] {A : Matrix I I R}
+    (hA : A.finsuppBilinForm.IsAlt) (k : I) (ℓ : I → R) :
+    (A.updateSkew k ℓ).finsuppBilinForm.IsAlt := by
+  rw [isAlt_finsuppBilinForm_iff] at hA ⊢
+  refine ⟨Matrix.ext fun i j ↦ ?_, fun i ↦ ?_⟩
+  · rw [Matrix.transpose_apply, Matrix.neg_apply]
+    rcases eq_or_ne k i with rfl | hi <;> rcases eq_or_ne k j with rfl | hj
+    · simp
+    · simp [hj.symm]
+    · simp [hi.symm]
+    · rw [updateSkew_apply_of_ne _ _ _ hj.symm hi.symm,
+        updateSkew_apply_of_ne _ _ _ hi.symm hj.symm]
+      exact congr_fun (congr_fun hA.1 i) j
+  · rcases eq_or_ne k i with rfl | hi
+    · simp
+    · simp [hi.symm, hA.2 i]
+
+/-- On vectors vanishing at `k`, `(A.updateSkew k ℓ).finsuppBilinForm` agrees with
+`A.finsuppBilinForm`. -/
+theorem finsuppBilinForm_updateSkew_of_apply_eq_zero [DecidableEq I] (A : Matrix I I R) (k : I)
+    (ℓ : I → R) {x y : I →₀ R} (hx : x k = 0) (hy : y k = 0) :
+    (A.updateSkew k ℓ).finsuppBilinForm x y = A.finsuppBilinForm x y := by
+  rw [finsuppBilinForm_apply, finsuppBilinForm_apply]
+  refine Finsupp.sum_congr fun i hi ↦ Finsupp.sum_congr fun j hj ↦ ?_
+  rw [updateSkew_apply_of_ne A k ℓ (by rintro rfl; exact Finsupp.mem_support_iff.mp hi hx)
+    (by rintro rfl; exact Finsupp.mem_support_iff.mp hj hy)]
+
+/-- Pairing `r • eₖ` on the left with a vector `y` vanishing at `k` under `A.updateSkew k ℓ`
+evaluates `r * ∑ⱼ ℓ j * yⱼ`. -/
+theorem finsuppBilinForm_updateSkew_single_left [DecidableEq I] (A : Matrix I I R) (k : I)
+    (ℓ : I → R) (r : R) {y : I →₀ R} (hy : y k = 0) :
+    (A.updateSkew k ℓ).finsuppBilinForm (Finsupp.single k r) y =
+      r * Finsupp.linearCombination R ℓ y := by
+  rw [finsuppBilinForm_single_left, LinearMap.smul_apply, smul_eq_mul,
+    Finsupp.linearCombination_apply, Finsupp.linearCombination_apply]
+  refine congrArg (r * ·) (Finsupp.sum_congr fun j hj ↦ ?_)
+  rw [updateSkew_apply_left_of_ne A k ℓ (by rintro rfl; exact Finsupp.mem_support_iff.mp hj hy)]
+
+/-- Pairing `eₖ` on the left with `y` (`y k = 0`) under `A.updateSkew k (fun j ↦ φ (single j 1))`
+recovers `φ y` for any linear functional `φ : (I →₀ R) →ₗ[R] R`. -/
+theorem finsuppBilinForm_updateSkew_single_one_left [DecidableEq I] (A : Matrix I I R) (k : I)
+    (φ : (I →₀ R) →ₗ[R] R) {y : I →₀ R} (hy : y k = 0) :
+    (A.updateSkew k fun j ↦ φ (Finsupp.single j 1)).finsuppBilinForm (Finsupp.single k 1) y =
+      φ y := by
+  rw [finsuppBilinForm_updateSkew_single_left A k _ 1 hy, one_mul]
+  exact LinearMap.congr_fun (Finsupp.lhom_ext' fun _ ↦ LinearMap.ext_ring <| by simp) y
+
+/-- Two matrices with alternating `finsuppBilinForm` are equal as soon as their forms agree on
+vectors vanishing at `k` and on pairs `(eₖ, y)` with `y k = 0`. -/
+theorem eq_of_isAlt_finsuppBilinForm_of_eq_off {A₁ A₂ : Matrix I I R} {k : I}
+    (h₁ : A₁.finsuppBilinForm.IsAlt) (h₂ : A₂.finsuppBilinForm.IsAlt)
+    (h_off : ∀ x y, x k = 0 → y k = 0 → A₁.finsuppBilinForm x y = A₂.finsuppBilinForm x y)
+    (h_row : ∀ y, y k = 0 →
+      A₁.finsuppBilinForm (Finsupp.single k 1) y = A₂.finsuppBilinForm (Finsupp.single k 1) y) :
+    A₁ = A₂ := by
+  classical
+  refine Matrix.ext fun i j ↦ ?_
+  rcases eq_or_ne k i with rfl | hi <;> rcases eq_or_ne k j with rfl | hj
+  · rw [apply_self_eq_zero_of_isAlt_finsuppBilinForm h₁,
+      apply_self_eq_zero_of_isAlt_finsuppBilinForm h₂]
+  · simpa [finsuppBilinForm_single_single] using
+      h_row (Finsupp.single j 1) (Finsupp.single_eq_of_ne hj)
+  · rw [← neg_apply_eq_of_isAlt_finsuppBilinForm h₁ k i,
+      ← neg_apply_eq_of_isAlt_finsuppBilinForm h₂ k i]
+    exact congrArg Neg.neg <| by
+      simpa [finsuppBilinForm_single_single] using
+        h_row (Finsupp.single i 1) (Finsupp.single_eq_of_ne hi)
+  · simpa [finsuppBilinForm_single_single] using h_off (Finsupp.single i 1) (Finsupp.single j 1)
+      (Finsupp.single_eq_of_ne hi) (Finsupp.single_eq_of_ne hj)
 
 end CommRing
 
