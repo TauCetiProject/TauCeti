@@ -549,6 +549,16 @@ theorem eval_pi_succ (n : ℕ) (R : List ℕ → Prop) (xs : List ℕ) :
     Eval (.pi (n + 1)) R xs ↔ ∀ y, Eval (.sigma n) R (y :: xs) := by
   rw [Eval]
 
+/-- Evaluating `sigma 0` peels off an existential quantifier over `Eval .zero`. -/
+theorem eval_sigma_zero_iff_exists_eval_zero (R : List ℕ → Prop) (xs : List ℕ) :
+    Eval (.sigma 0) R xs ↔ ∃ y, Eval .zero R (y :: xs) := by
+  simp
+
+/-- Evaluating `pi 0` peels off a universal quantifier over `Eval .zero`. -/
+theorem eval_pi_zero_iff_forall_eval_zero (R : List ℕ → Prop) (xs : List ℕ) :
+    Eval (.pi 0) R xs ↔ ∀ y, Eval .zero R (y :: xs) := by
+  simp
+
 -- Simultaneous depth induction for `sigma n` and `pi n`, avoiding repeated mutual inductions.
 private theorem eval_sigma_pi_induction (P : QuantifierPrefix → Prop)
     (hs0 : P (.sigma 0)) (hp0 : P (.pi 0))

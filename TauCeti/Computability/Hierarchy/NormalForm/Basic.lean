@@ -279,10 +279,10 @@ private theorem computableIn_fin_bool_iff_exists_code {Z : Set ℕ} {k : ℕ}
       (Primrec.encode.comp
         (Primrec.list_ofFn fun i =>
           Primrec.fin_app.comp Primrec.id (Primrec.const i))).computableIn
-    refine ((Code.recursiveIn_eval Z.oracle c).comp henc).of_eq fun n => ?_
-    cases @decode (Fin k → ℕ) Primcodable.toEncodable n with
-    | none => simp only [Part.coe_none, Part.bind_none]; exact Part.bind_none _
-    | some x => simp [Part.eq_some_iff.2 (hc x)]
+    have heval : Nat.RecursiveIn {Z.oracle} (fun m => Code.eval Z.oracle c m) :=
+      Code.recursiveIn_eval Z.oracle c
+    refine (heval.comp henc).of_eq fun n => ?_
+    simp [Part.bind_eq_bind, Part.bind_assoc, fun x => Part.eq_some_iff.2 (hc x)]
 
 -- Soundness for a quantifier-free matrix on `Fin k → ℕ`.
 private theorem isSigma_zero_matrix {Z : Set ℕ} {k : ℕ} {c : Code}
@@ -336,8 +336,7 @@ private theorem isClass_eval_of_valid {Z : Set ℕ} {p : QuantifierPrefix} {k : 
   | sigma_zero =>
     exact isClass_eval_step exists_congr
       (fun hS => QuantifierPrefix.addExists_zero ▸ hS.exists_nat)
-      (fun R xs => (QuantifierPrefix.eval_sigma_zero R xs).trans
-        (exists_congr fun _ => (QuantifierPrefix.eval_zero _ _).symm)) <|
+      QuantifierPrefix.eval_sigma_zero_iff_exists_eval_zero <|
       isClass_zero_eval fun l hl =>
         hc l (by
           simp only [QuantifierPrefix.depth_sigma, QuantifierPrefix.depth_zero] at hl ⊢
@@ -345,8 +344,7 @@ private theorem isClass_eval_of_valid {Z : Set ℕ} {p : QuantifierPrefix} {k : 
   | pi_zero =>
     exact isClass_eval_step forall_congr'
       (fun hS => QuantifierPrefix.addForall_zero ▸ hS.forall_nat)
-      (fun R xs => (QuantifierPrefix.eval_pi_zero R xs).trans
-        (forall_congr' fun _ => (QuantifierPrefix.eval_zero _ _).symm)) <|
+      QuantifierPrefix.eval_pi_zero_iff_forall_eval_zero <|
       isClass_zero_eval fun l hl =>
         hc l (by
           simp only [QuantifierPrefix.depth_pi, QuantifierPrefix.depth_zero] at hl ⊢
@@ -428,15 +426,15 @@ private theorem exists_code_of_isClass {Z : Set ℕ} {p : QuantifierPrefix} {k :
   | zero => exact exists_code_of_isClass_zero hP
   | sigma_zero =>
     obtain ⟨_, hq, heq⟩ := isSigma_succ_iff.1 (QuantifierPrefix.isClass_sigma.1 hP)
-    exact exists_code_step exists_congr (by simp only [QuantifierPrefix.depth_sigma,
-      QuantifierPrefix.depth_zero]) (fun R xs => (QuantifierPrefix.eval_sigma_zero R xs).trans
-      (exists_congr fun _ => (QuantifierPrefix.eval_zero _ _).symm))
+    exact exists_code_step exists_congr
+      (by simp only [QuantifierPrefix.depth_sigma, QuantifierPrefix.depth_zero])
+      QuantifierPrefix.eval_sigma_zero_iff_exists_eval_zero
       (QuantifierPrefix.isClass_zero.2 (isPi_zero_iff.1 hq)) heq exists_code_of_isClass_zero
   | pi_zero =>
     obtain ⟨_, hq, heq⟩ := isPi_succ_iff.1 (QuantifierPrefix.isClass_pi.1 hP)
-    exact exists_code_step forall_congr' (by simp only [QuantifierPrefix.depth_pi,
-      QuantifierPrefix.depth_zero]) (fun R xs => (QuantifierPrefix.eval_pi_zero R xs).trans
-      (forall_congr' fun _ => (QuantifierPrefix.eval_zero _ _).symm))
+    exact exists_code_step forall_congr'
+      (by simp only [QuantifierPrefix.depth_pi, QuantifierPrefix.depth_zero])
+      QuantifierPrefix.eval_pi_zero_iff_forall_eval_zero
       (QuantifierPrefix.isClass_zero.2 hq) heq exists_code_of_isClass_zero
   | sigma_succ n ih =>
     obtain ⟨_, hq, heq⟩ := isSigma_succ_iff.1 (QuantifierPrefix.isClass_sigma.1 hP)
