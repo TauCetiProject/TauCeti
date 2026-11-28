@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CongruenceLevel
+import TauCeti.Data.Fin.VecNotation
 import TauCeti.LinearAlgebra.Unimodular.Card
 import TauCeti.RingTheory.StableRange.Commutative
 

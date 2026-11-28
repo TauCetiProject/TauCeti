@@ -22,6 +22,8 @@ all of which a construction transporting a group of matrices along a change of s
 
 ## Main results
 
+* `Matrix.GeneralLinearGroup.map_eq_unitsMap`: change of scalars is induced by the entrywise
+  ring hom on matrices.
 * `Matrix.GeneralLinearGroup.map_injective`: entrywise application of an injective ring hom is
   injective on general linear groups.
 * `Matrix.GeneralLinearGroup.map_neg`: change of scalars commutes with negation.
@@ -43,6 +45,13 @@ all of which a construction transporting a group of matrices along a change of s
 public section
 
 namespace Matrix.GeneralLinearGroup
+
+/-- Scalar change on the general linear group is the map on units induced by entrywise
+scalar change on matrices. -/
+theorem map_eq_unitsMap {A B n : Type*} [CommRing A] [CommRing B]
+    [Fintype n] [DecidableEq n] (f : A →+* B) :
+    GeneralLinearGroup.map (n := n) f = Units.map (f.mapMatrix (m := n)).toMonoidHom :=
+  (rfl)
 
 variable {n R S : Type*} [DecidableEq n] [Fintype n] [CommRing R] [CommRing S]
 

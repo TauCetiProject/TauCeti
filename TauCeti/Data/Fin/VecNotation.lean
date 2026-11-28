@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.Pi
 public import Mathlib.Data.Fin.VecNotation
 import Mathlib.Data.Fin.Tuple.Reflection
 
 /-!
-# Postcomposing a pair with a function
+# Operations on vector pairs
 
 Postcomposing the pair `![a₀, a₁]` with a function `f` applies `f` to both entries
 (`Matrix.comp_vec2`), in the style of `Matrix.smul_vec2` and `Matrix.vec2_add`. This is the form in
@@ -19,6 +20,8 @@ a form on a factor is pulled back to a product.
 ## Main results
 
 * `Matrix.comp_vec2`: `f ∘ ![a₀, a₁] = ![f a₀, f a₁]`.
+* `TauCeti.eq_of_smul_vecCons_one_eq`: rows of the form `![x, 1]` have unique first coordinates
+  up to scalar rescaling.
 -/
 
 public section
@@ -30,3 +33,11 @@ theorem comp_vec2 {α β : Type*} (f : α → β) (a₀ a₁ : α) : f ∘ ![a�
   (FinVec.map_eq f ![a₀, a₁]).symm
 
 end Matrix
+
+/-- Two rows of the form `![x, 1]` have the same first coordinate if one is a scalar multiple
+of the other. -/
+theorem TauCeti.eq_of_smul_vecCons_one_eq {R : Type*} [Monoid R] {x y : R} {a : R}
+    (h : a • (![x, 1] : Fin 2 → R) = ![y, 1]) : x = y := by
+  have ha : a = 1 := by
+    simpa [Pi.smul_apply, smul_eq_mul] using congrFun h 1
+  simpa [ha] using congrFun h 0

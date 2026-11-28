@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.QuotientRing
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.LinearAlgebra.Unimodular
+import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Counting unimodular vectors over products of rings
