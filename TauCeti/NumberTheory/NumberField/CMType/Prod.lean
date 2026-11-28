@@ -47,6 +47,15 @@ namespace TauCeti.CMType
 
 variable {E₁ E₂ : Type*} [CommRing E₁] [CommRing E₂]
 
+/-- If conjugation commutes with the action on the complex embeddings of both factors, it also
+commutes with the action on the embeddings of their product. -/
+instance instStarCompCommuteProd [StarCompCommute E₁] [StarCompCommute E₂] :
+    StarCompCommute (E₁ × E₂) where
+  star_comp σ φ := by
+    rcases φ.exists_eq_comp_fst_or_snd with ⟨ψ, rfl⟩ | ⟨ψ, rfl⟩ <;>
+      rw [← RingHom.comp_assoc, RingHom.star_comp_right (σ.comp ψ),
+        StarCompCommute.star_comp, RingHom.star_comp_right, RingHom.comp_assoc]
+
 /-! ### The product type -/
 
 /-- **The product CM type on `E₁ × E₂`** of `Φ₁` and `Φ₂`: the embeddings `φ₁ ∘ fst` with
