@@ -10,11 +10,10 @@ import Mathlib.Analysis.Analytic.Constructions
 import TauCeti.Algebra.Order.Ring.Abs
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
-import TauCeti.Analysis.Complex.UniformLimit
+import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
 import TauCeti.Analysis.Contour.Residue.Theorem
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
-import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Topology.MetricSpace.SeparatedBalls
 
 /-!
@@ -36,10 +35,9 @@ reciprocal Gamma zeros can lower their order or cancel the pole):
   `{(a, b, c, z) | a ∉ -ℕ ∧ b ∉ -ℕ ∧ -z ∈ Complex.slitPlane}`.
 
 Locally around `(a₀, b₀, c₀, z₀)`, fixing `σ < 0` avoiding `-Re a₀ - ℕ` and `-Re b₀ - ℕ`, joint
-holomorphy of the vertical integral follows from compact-segment holomorphy, uniform Stirling decay,
-uniform limits of holomorphic maps (`TendstoUniformlyOn.differentiableOn`), and
-`DifferentiableOn.analyticAt_of_finiteDimensional`; joint holomorphy of the finite residue sum
-follows by rewriting it via
+holomorphy of the vertical integral follows from `TauCeti.analyticOnNhd_integral_of_dominated`,
+combining uniform Stirling decay on the vertical tails with a uniform bound on the compact
+central segment; joint holomorphy of the finite residue sum follows by rewriting it via
 `TauCeti.Contour.classicalResidueTheorem_circle_of_meromorphicOrderAt_neg` as a sum of Cauchy
 circle integrals around isolating circles.
 
@@ -169,133 +167,6 @@ theorem mellinBarnesIntegral_of_neg_re_lt {a b : ℂ} (c : ℂ) {z : ℂ} {σ : 
       (fun k _ => by linarith [k.cast_nonneg (α := ℝ)]) hz,
     hypergeometricMellinBarnes_eq_integral a b c z ha.le hb.le]
 
-private theorem analyticAt_truncated_vertical_mellinBarnes {p : ℂ × ℂ × ℂ × ℂ} {σ : ℝ}
-    (hσ : ∀ m : ℕ, σ ≠ m) (ha : ∀ k : ℕ, p.1.re + σ ≠ -k) (hb : ∀ k : ℕ, p.2.1.re + σ ≠ -k)
-    (hz : -p.2.2.2 ∈ slitPlane) (n : ℕ) :
-    AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ × ℂ =>
-      ∫ y : ℝ in (-(n : ℝ))..(n : ℝ),
-        hypergeometricMellinBarnesIntegrand q.1 q.2.1 q.2.2.1 q.2.2.2 (σ + y * I)) p := by
-  have hn_le : -(n : ℝ) ≤ (n : ℝ) := by linarith [n.cast_nonneg (α := ℝ)]
-  let γ : ℝ → ℂ := fun y => (σ : ℂ) + (projIcc (-(n : ℝ)) n hn_le y : ℝ) * I
-  let K : Set ℂ := (fun y : ℝ => (σ : ℂ) + y * I) '' Icc (-(n : ℝ)) n
-  have hγ : Continuous γ :=
-    continuous_const.add ((continuous_ofReal.comp
-      (continuous_subtypeVal.comp continuous_projIcc)).mul continuous_const)
-  have hkernel : ∀ t ∈ K, AnalyticAt ℂ
-      (fun x : (ℂ × ℂ × ℂ × ℂ) × ℂ =>
-        hypergeometricMellinBarnesIntegrand x.1.1 x.1.2.1 x.1.2.2.1 x.1.2.2.2 x.2)
-      (p, t) := by
-    rintro _ ⟨y, _, rfl⟩
-    exact analyticAt_hypergeometricMellinBarnesIntegrand_uncurry_vertical ha hb hσ hz y
-  refine (TauCeti.analyticAt_integral_smul (isCompact_Icc.image (by fun_prop)) hγ
-    (fun y => ⟨_, (projIcc (-(n : ℝ)) n hn_le y).property, rfl⟩) hkernel
-    (integrable_const (1 : ℂ) : Integrable _ (volume.restrict (Ioc (-(n : ℝ)) n)))).congr
-    (Eventually.of_forall fun q => ?_)
-  dsimp only
-  rw [intervalIntegral.integral_of_le hn_le]
-  refine integral_congr_ae ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioc] with y hy
-  simp only [one_smul, γ, projIcc_of_mem hn_le (Ioc_subset_Icc_self hy)]
-
-private theorem tendstoUniformlyOn_truncated_vertical_mellinBarnes {p₀ : ℂ × ℂ × ℂ × ℂ}
-    {σ δ₀ δ₁ ρ : ℝ} (hσ : ∀ m : ℕ, σ ≠ m) (hδ₀_le : δ₀ ≤ 1 / 2) (hδ₁_le : δ₁ ≤ 1 / 2)
-    (hav₀ : ∀ w ∈ ball p₀.1 δ₀, ∀ k : ℕ, w.re + σ ≠ -k)
-    (hav₁ : ∀ w ∈ ball p₀.2.1 δ₁, ∀ k : ℕ, w.re + σ ≠ -k)
-    (hz₀ : -p₀.2.2.2 ∈ slitPlane)
-    (hz_sub : ∀ z ∈ ball p₀.2.2.2 ρ, -z ∈ slitPlane ∧
-      ‖p₀.2.2.2‖ / 2 ≤ ‖z‖ ∧ ‖z‖ ≤ 2 * ‖p₀.2.2.2‖ ∧
-        |(-z).arg| ≤ π - 2 * ((π - |(-p₀.2.2.2).arg|) / 4)) :
-    TendstoUniformlyOn
-      (fun (n : ℕ) (p : ℂ × ℂ × ℂ × ℂ) =>
-        ∫ y : ℝ in (-(n : ℝ))..(n : ℝ),
-          hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I))
-      (fun p : ℂ × ℂ × ℂ × ℂ =>
-        ∫ y : ℝ, hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I)) atTop
-      (ball p₀.1 δ₀ ×ˢ ball p₀.2.1 δ₁ ×ˢ ball p₀.2.2.1 1 ×ˢ ball p₀.2.2.2 ρ) := by
-  -- Fix a common parameter radius `R` and slit-plane sector margin `δ` on the product box.
-  let δ : ℝ := (π - |(-p₀.2.2.2).arg|) / 4
-  have hδ : 0 < δ := by dsimp [δ]; linarith [abs_arg_lt_pi_of_mem_slitPlane hz₀]
-  have hr₁ : 0 < ‖p₀.2.2.2‖ / 2 :=
-    half_pos (norm_pos_iff.2 (neg_ne_zero.1 (slitPlane_ne_zero hz₀)))
-  let R : ℝ := max (max (‖p₀.1‖ + 1) (‖p₀.2.1‖ + 1)) (max (‖p₀.2.2.1‖ + 1) |σ|)
-  have hR_box : ∀ p ∈ ball p₀.1 δ₀ ×ˢ ball p₀.2.1 δ₁ ×ˢ ball p₀.2.2.1 1 ×ˢ ball p₀.2.2.2 ρ,
-      ‖p.1‖ ≤ R ∧ ‖p.2.1‖ ≤ R ∧ ‖p.2.2.1‖ ≤ R ∧ |σ| ≤ R := by
-    have hR₁ : ‖p₀.1‖ + 1 ≤ R := by simp [R]
-    have hR₂ : ‖p₀.2.1‖ + 1 ≤ R := by simp [R]
-    have hR₃ : ‖p₀.2.2.1‖ + 1 ≤ R := by simp [R]
-    have hRσ : |σ| ≤ R := by simp [R]
-    intro p hp
-    exact ⟨(norm_le_norm_add_const_of_dist_le
-        ((mem_ball.1 hp.1).le.trans (hδ₀_le.trans (by norm_num)))).trans hR₁,
-      (norm_le_norm_add_const_of_dist_le
-        ((mem_ball.1 hp.2.1).le.trans (hδ₁_le.trans (by norm_num)))).trans hR₂,
-      (norm_le_norm_add_const_of_dist_le (mem_ball.1 hp.2.2.1).le).trans hR₃, hRσ⟩
-  obtain ⟨B, Y₀, _, _, hdom, htail⟩ := exists_norm_hypergeometricMellinBarnesIntegrand_vertical_le
-    (R := R) (r₂ := 2 * ‖p₀.2.2.2‖) hr₁ hδ
-  have hcov : AECover (volume : Measure ℝ) atTop (fun n : ℕ => Ioc (-(n : ℝ)) n) :=
-    aecover_Ioc (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)
-      tendsto_natCast_atTop_atTop
-  -- Dominate the truncation tail `(-n, n)ᶜ` uniformly across the product box.
-  have heq :
-      (fun (n : ℕ) (p : ℂ × ℂ × ℂ × ℂ) =>
-        ∫ y : ℝ in (-(n : ℝ))..(n : ℝ),
-          hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I)) =
-      fun (n : ℕ) (p : ℂ × ℂ × ℂ × ℂ) =>
-        ∫ y in Ioc (-(n : ℝ)) n,
-          hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I) := by
-    ext n p
-    exact intervalIntegral.integral_of_le (by linarith [n.cast_nonneg (α := ℝ)])
-  rw [heq]
-  refine hcov.tendstoUniformlyOn_setIntegral
-    (fun p hp => integrable_hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1
-      (hz_sub p.2.2.2 hp.2.2.2).1 (hav₀ p.1 hp.1) (hav₁ p.2.1 hp.2.1) hσ)
-    hdom ?_
-  filter_upwards [eventually_ge_atTop (⌈Y₀⌉₊ + 1)] with n hn_Y p hp
-  filter_upwards [ae_restrict_mem measurableSet_Ioc.compl] with y hy
-  have hyY : Y₀ ≤ |y| := by
-    have hYN : Y₀ ≤ n := (Nat.le_ceil Y₀).trans
-      (by exact_mod_cast (Nat.le_add_right _ 1).trans hn_Y)
-    rw [mem_compl_iff, mem_Ioc, not_and_or] at hy
-    rcases hy with h1 | h2
-    · linarith [not_lt.1 h1, neg_le_abs y]
-    · linarith [not_le.1 h2, le_abs_self y]
-  obtain ⟨hp1R, hp2R, hp3R, hσR⟩ := hR_box p hp
-  have hzb := hz_sub p.2.2.2 hp.2.2.2
-  exact htail p.1 p.2.1 p.2.2.1 p.2.2.2 σ y hp1R hp2R hp3R hzb.2.1 hzb.2.2.1 hzb.2.2.2 hσR hyY
-
-private theorem analyticAt_vertical_mellinBarnes {p₀ : ℂ × ℂ × ℂ × ℂ} {σ : ℝ}
-    (hσ : ∀ m : ℕ, σ ≠ m) (ha₀ : ∀ k : ℕ, p₀.1.re + σ ≠ -k)
-    (hb₀ : ∀ k : ℕ, p₀.2.1.re + σ ≠ -k) (hz₀ : -p₀.2.2.2 ∈ slitPlane) :
-    AnalyticAt ℂ (fun p : ℂ × ℂ × ℂ × ℂ =>
-      ∫ y : ℝ, hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I)) p₀ := by
-  obtain ⟨δ₀', hδ₀', hav₀'⟩ := exists_ball_re_add_ne_neg_natCast_and_lt_iff p₀.1 ha₀
-  obtain ⟨δ₁', hδ₁', hav₁'⟩ := exists_ball_re_add_ne_neg_natCast_and_lt_iff p₀.2.1 hb₀
-  let δ₀ : ℝ := min δ₀' (1 / 2)
-  let δ₁ : ℝ := min δ₁' (1 / 2)
-  have hδ₀ : 0 < δ₀ := lt_min hδ₀' (by norm_num)
-  have hδ₁ : 0 < δ₁ := lt_min hδ₁' (by norm_num)
-  have hav₀ (w : ℂ) (hw : w ∈ ball p₀.1 δ₀) := (hav₀' w (ball_subset_ball (min_le_left _ _) hw)).1
-  have hav₁ (w : ℂ) (hw : w ∈ ball p₀.2.1 δ₁) := (hav₁' w (ball_subset_ball (min_le_left _ _) hw)).1
-  let θ : ℝ := π - 2 * ((π - |(-p₀.2.2.2).arg|) / 4)
-  obtain ⟨ρ, hρ, hsub⟩ := exists_ball_slitPlane_norm_arg_le (θ := θ) hz₀
-    (by simp only [θ]; linarith [abs_arg_lt_pi_of_mem_slitPlane hz₀])
-  have hz_sub (z : ℂ) (hz : z ∈ ball p₀.2.2.2 ρ) :
-      -z ∈ slitPlane ∧ ‖p₀.2.2.2‖ / 2 ≤ ‖z‖ ∧ ‖z‖ ≤ 2 * ‖p₀.2.2.2‖ ∧ |(-z).arg| ≤ θ := by
-    simpa only [norm_neg] using hsub (-z) (by simpa [mem_ball, dist_neg_neg] using hz)
-  let U : Set (ℂ × ℂ × ℂ × ℂ) :=
-    ball p₀.1 δ₀ ×ˢ ball p₀.2.1 δ₁ ×ˢ ball p₀.2.2.1 1 ×ˢ ball p₀.2.2.2 ρ
-  have hU_open : IsOpen U := isOpen_ball.prod (isOpen_ball.prod (isOpen_ball.prod isOpen_ball))
-  have hp₀U : p₀ ∈ U :=
-    ⟨mem_ball_self hδ₀, mem_ball_self hδ₁, mem_ball_self zero_lt_one, mem_ball_self hρ⟩
-  have hunif := tendstoUniformlyOn_truncated_vertical_mellinBarnes hσ (min_le_right _ _)
-    (min_le_right _ _) hav₀ hav₁ hz₀ hz_sub
-  have hF_an (n : ℕ) (p : ℂ × ℂ × ℂ × ℂ) (hp : p ∈ U) :=
-    analyticAt_truncated_vertical_mellinBarnes hσ (hav₀ p.1 hp.1)
-      (hav₁ p.2.1 hp.2.1) (hz_sub p.2.2.2 hp.2.2.2).1 n
-  exact (hunif.differentiableOn
-    (Eventually.of_forall fun n p hp => (hF_an n p hp).differentiableAt.differentiableWithinAt)
-    hU_open).analyticAt_of_finiteDimensional (hU_open.mem_nhds hp₀U)
-
 /-- **Joint four-variable holomorphy of the vertical-line Mellin–Barnes integral.** For any
 abscissa `σ : ℝ` avoiding `ℕ`, the vertical-line integral
 `p ↦ ∫ y : ℝ, hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I)` is
@@ -305,8 +176,118 @@ theorem analyticOnNhd_integral_hypergeometricMellinBarnesIntegrand {σ : ℝ} (h
     AnalyticOnNhd ℂ (fun p : ℂ × ℂ × ℂ × ℂ =>
       ∫ y : ℝ, hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I))
       {p | (∀ k : ℕ, p.1.re + σ ≠ -k) ∧ (∀ k : ℕ, p.2.1.re + σ ≠ -k) ∧
-        -p.2.2.2 ∈ slitPlane} :=
-  fun _ ⟨ha₀, hb₀, hz₀⟩ => analyticAt_vertical_mellinBarnes hσ ha₀ hb₀ hz₀
+        -p.2.2.2 ∈ slitPlane} := by
+  let S : Set (ℂ × ℂ × ℂ × ℂ) :=
+    {p | (∀ k : ℕ, p.1.re + σ ≠ -k) ∧ (∀ k : ℕ, p.2.1.re + σ ≠ -k) ∧ -p.2.2.2 ∈ slitPlane}
+  have hS_open : IsOpen S := by
+    have hcl : IsClosed ((fun x : ℝ => -(x + σ)) ⁻¹' range ((↑) : ℕ → ℝ)) :=
+      Nat.isClosedEmbedding_coe_real.isClosed_range.preimage
+        (continuous_neg.comp (continuous_id.add continuous_const))
+    have h_av (f : ℂ × ℂ × ℂ × ℂ → ℂ) (hf : Continuous f) :
+        IsOpen {p | ∀ k : ℕ, (f p).re + σ ≠ -k} := by
+      have : {p | ∀ k : ℕ, (f p).re + σ ≠ -k} =
+          (fun p => (f p).re) ⁻¹' ((fun x : ℝ => -(x + σ)) ⁻¹' range ((↑) : ℕ → ℝ))ᶜ := by
+        ext p
+        simp only [mem_ofPred_eq, mem_preimage, mem_compl_iff, mem_range, not_exists]
+        exact ⟨fun h k hk => h k (by linarith), fun h k hk => h k (by linarith)⟩
+      rw [this]
+      exact hcl.isOpen_compl.preimage (continuous_re.comp hf)
+    exact (h_av (fun p => p.1) (by fun_prop)).inter
+      ((h_av (fun p => p.2.1) (by fun_prop)).inter
+        (isOpen_slitPlane.preimage (by fun_prop : Continuous fun p : ℂ × ℂ × ℂ × ℂ => -p.2.2.2)))
+  refine TauCeti.analyticOnNhd_integral_of_dominated hS_open ?_ ?_ ?_
+  · rintro p ⟨ha, hb, hz⟩
+    exact (integrable_hypergeometricMellinBarnesIntegrand p.1 p.2.1 p.2.2.1 hz ha hb
+      hσ).aestronglyMeasurable
+  · rintro p₀ ⟨ha₀, hb₀, hz₀⟩
+    obtain ⟨δ₀', hδ₀', hav₀'⟩ := exists_ball_re_add_ne_neg_natCast_and_lt_iff p₀.1 ha₀
+    obtain ⟨δ₁', hδ₁', hav₁'⟩ := exists_ball_re_add_ne_neg_natCast_and_lt_iff p₀.2.1 hb₀
+    let δ₀ : ℝ := min δ₀' (1 / 2)
+    let δ₁ : ℝ := min δ₁' (1 / 2)
+    have hδ₀ : 0 < δ₀ := lt_min hδ₀' (by norm_num)
+    have hδ₁ : 0 < δ₁ := lt_min hδ₁' (by norm_num)
+    let δ : ℝ := (π - |(-p₀.2.2.2).arg|) / 4
+    have hδ : 0 < δ := by dsimp [δ]; linarith [abs_arg_lt_pi_of_mem_slitPlane hz₀]
+    let θ : ℝ := π - 2 * δ
+    obtain ⟨ρ, hρ, hsub⟩ := exists_ball_slitPlane_norm_arg_le (θ := θ) hz₀
+      (by simp only [θ, δ]; linarith [abs_arg_lt_pi_of_mem_slitPlane hz₀])
+    have hr₁ : 0 < ‖p₀.2.2.2‖ / 2 :=
+      half_pos (norm_pos_iff.2 (neg_ne_zero.1 (slitPlane_ne_zero hz₀)))
+    let R : ℝ := max (max (‖p₀.1‖ + 1) (‖p₀.2.1‖ + 1)) (max (‖p₀.2.2.1‖ + 1) |σ|)
+    obtain ⟨B, Y₀, hB, _, hdom, htail⟩ :=
+      exists_norm_hypergeometricMellinBarnesIntegrand_vertical_le
+        (R := R) (r₂ := 2 * ‖p₀.2.2.2‖) hr₁ hδ
+    let U : Set (ℂ × ℂ × ℂ × ℂ) :=
+      closedBall p₀.1 (δ₀ / 2) ×ˢ closedBall p₀.2.1 (δ₁ / 2) ×ˢ
+        closedBall p₀.2.2.1 (1 / 2) ×ˢ closedBall p₀.2.2.2 (ρ / 2)
+    have hU_nhds : U ∈ 𝓝 p₀ :=
+      prod_mem_nhds (closedBall_mem_nhds _ (half_pos hδ₀))
+        (prod_mem_nhds (closedBall_mem_nhds _ (half_pos hδ₁))
+          (prod_mem_nhds (closedBall_mem_nhds _ (by norm_num))
+            (closedBall_mem_nhds _ (half_pos hρ))))
+    have hU_sub : ∀ q ∈ U,
+        (∀ k : ℕ, q.1.re + σ ≠ -k) ∧ (∀ k : ℕ, q.2.1.re + σ ≠ -k) ∧
+        -q.2.2.2 ∈ slitPlane ∧ ‖p₀.2.2.2‖ / 2 ≤ ‖q.2.2.2‖ ∧ ‖q.2.2.2‖ ≤ 2 * ‖p₀.2.2.2‖ ∧
+        |(-q.2.2.2).arg| ≤ θ ∧ ‖q.1‖ ≤ R ∧ ‖q.2.1‖ ≤ R ∧ ‖q.2.2.1‖ ≤ R ∧ |σ| ≤ R := by
+      intro q hq
+      have hq1 : q.1 ∈ ball p₀.1 δ₀' :=
+        ball_subset_ball (min_le_left _ _) (closedBall_subset_ball (half_lt_self hδ₀) hq.1)
+      have hq2 : q.2.1 ∈ ball p₀.2.1 δ₁' :=
+        ball_subset_ball (min_le_left _ _) (closedBall_subset_ball (half_lt_self hδ₁) hq.2.1)
+      have hq4 : -q.2.2.2 ∈ ball (-p₀.2.2.2) ρ := by
+        simpa [mem_ball, dist_neg_neg] using closedBall_subset_ball (half_lt_self hρ) hq.2.2.2
+      obtain ⟨hzq, hzr1, hzr2, harg⟩ := hsub (-q.2.2.2) hq4
+      simp only [norm_neg] at hzr1 hzr2
+      have hq1_le : ‖q.1‖ ≤ ‖p₀.1‖ + 1 := norm_le_norm_add_const_of_dist_le <|
+        (mem_closedBall.1 hq.1).trans
+          ((half_le_self hδ₀.le).trans ((min_le_right _ _).trans (by norm_num)))
+      have hq2_le : ‖q.2.1‖ ≤ ‖p₀.2.1‖ + 1 := norm_le_norm_add_const_of_dist_le <|
+        (mem_closedBall.1 hq.2.1).trans
+          ((half_le_self hδ₁.le).trans ((min_le_right _ _).trans (by norm_num)))
+      have hq3_le : ‖q.2.2.1‖ ≤ ‖p₀.2.2.1‖ + 1 := norm_le_norm_add_const_of_dist_le <|
+        (mem_closedBall.1 hq.2.2.1).trans (by norm_num)
+      exact ⟨(hav₀' q.1 hq1).1, (hav₁' q.2.1 hq2).1, hzq, hzr1, hzr2, harg,
+        hq1_le.trans (by simp [R]), hq2_le.trans (by simp [R]), hq3_le.trans (by simp [R]),
+        by simp [R]⟩
+    have hK_compact : IsCompact (U ×ˢ Icc (-Y₀) Y₀) :=
+      ((isCompact_closedBall _ _).prod ((isCompact_closedBall _ _).prod
+        ((isCompact_closedBall _ _).prod (isCompact_closedBall _ _)))).prod isCompact_Icc
+    have hK_cont : ContinuousOn
+        (fun x : (ℂ × ℂ × ℂ × ℂ) × ℝ =>
+          hypergeometricMellinBarnesIntegrand x.1.1 x.1.2.1 x.1.2.2.1 x.1.2.2.2 (σ + x.2 * I))
+        (U ×ˢ Icc (-Y₀) Y₀) := by
+      refine continuousOn_of_forall_continuousAt fun ⟨q, y⟩ ⟨hq, _⟩ => ?_
+      have hqs := hU_sub q hq
+      have han := analyticAt_hypergeometricMellinBarnesIntegrand_uncurry_vertical
+        hqs.1 hqs.2.1 hσ hqs.2.2.1 y
+      exact han.continuousAt.comp_of_eq
+        (f := fun x : (ℂ × ℂ × ℂ × ℂ) × ℝ => (x.1, (σ : ℂ) + x.2 * I)) (by fun_prop) rfl
+    obtain ⟨C, hC⟩ := hK_compact.exists_bound_of_continuousOn hK_cont
+    let bound : ℝ → ℝ := fun y =>
+      Set.indicator (Icc (-Y₀) Y₀) (fun _ => max C 0) y + B * Real.exp (-δ * |y|)
+    have hbound_int : Integrable bound volume :=
+      ((integrableOn_const (hs := isCompact_Icc.measure_lt_top.ne)).integrable_indicator
+        measurableSet_Icc).add hdom
+    refine ⟨U, hU_nhds, bound, hbound_int, Eventually.of_forall fun y q hq => ?_⟩
+    by_cases hy : |y| ≤ Y₀
+    · have hyI : y ∈ Icc (-Y₀) Y₀ := abs_le.1 hy
+      have hCy := hC (q, y) ⟨hq, hyI⟩
+      have hpos : 0 ≤ B * Real.exp (-δ * |y|) := mul_nonneg hB (Real.exp_pos _).le
+      dsimp only [bound]
+      rw [Set.indicator_of_mem hyI]
+      linarith [le_max_left C 0]
+    · have hqs := hU_sub q hq
+      have hty := htail q.1 q.2.1 q.2.2.1 q.2.2.2 σ y
+        hqs.2.2.2.2.2.2.1 hqs.2.2.2.2.2.2.2.1 hqs.2.2.2.2.2.2.2.2.1
+        hqs.2.2.2.1 hqs.2.2.2.2.1 hqs.2.2.2.2.2.1 hqs.2.2.2.2.2.2.2.2.2 (le_of_not_ge hy)
+      have hind_nonneg : 0 ≤ Set.indicator (Icc (-Y₀) Y₀) (fun _ => max C 0) y :=
+        Set.indicator_nonneg (fun _ _ => le_max_right C 0) _
+      dsimp only [bound]
+      linarith
+  · refine Eventually.of_forall fun y p hp => ?_
+    exact ((analyticAt_hypergeometricMellinBarnesIntegrand_uncurry_vertical
+      hp.1 hp.2.1 hσ hp.2.2 y).comp_of_eq (analyticAt_id.prod analyticAt_const)
+      rfl).differentiableAt.differentiableWithinAt
 
 private theorem exists_isolating_radius_gammaPolesRightOf_union {a₀ b₀ : ℂ} (σ : ℝ)
     (ha₀ : ∀ k : ℕ, a₀ ≠ -k) (hb₀ : ∀ k : ℕ, b₀ ≠ -k) :
@@ -484,8 +465,8 @@ theorem analyticOnNhd_hypergeometricMellinBarnes {σ : ℝ} (hσ : σ < 0) :
   rintro p₀ ⟨ha₀, hb₀, ha₀_σ, hb₀_σ, hz₀⟩
   simp_rw [hypergeometricMellinBarnes_def]
   exact ((analyticAt_const (v := (2 * π : ℂ)⁻¹)).mul
-    (analyticAt_vertical_mellinBarnes (fun m _ => by linarith [m.cast_nonneg (α := ℝ)])
-      ha₀_σ hb₀_σ hz₀)).add
+    (analyticOnNhd_integral_hypergeometricMellinBarnesIntegrand
+      (fun m _ => by linarith [m.cast_nonneg (α := ℝ)]) p₀ ⟨ha₀_σ, hb₀_σ, hz₀⟩)).add
     (analyticAt_residueSum_hypergeometricMellinBarnes ha₀ hb₀ ha₀_σ hb₀_σ hz₀)
 
 /-- **Joint four-variable holomorphy of the separating-contour Mellin–Barnes integral.** On

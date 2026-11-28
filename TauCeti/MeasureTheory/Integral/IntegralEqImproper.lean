@@ -54,11 +54,7 @@ converge to its integral over the strip as `a i → -∞` and `b i → ∞`
 
 If nonnegative functions `f` and `g` satisfy `∫_{φ i} f ≤ ∫_{φ i} g + e i` along an exhaustion `φ`
 with errors `e i → 0`, and `g` is integrable, then `f` is integrable with `∫ f ≤ ∫ g`
-(`MeasureTheory.AECover.integrable_and_integral_le_of_setIntegral_le_add`). Along any countably
-generated exhaustion, the integral of a Bochner-integrable function over the complements `(φ i)ᶜ`
-tends to `0` (`MeasureTheory.AECover.tendsto_setIntegral_compl_zero`), and a family of integrable
-functions uniformly dominated on `(φ i)ᶜ` by a common integrable function converges uniformly on
-`φ i` (`MeasureTheory.AECover.tendstoUniformlyOn_setIntegral`). For the truncations
+(`MeasureTheory.AECover.integrable_and_integral_le_of_setIntegral_le_add`). For the truncations
 `[-n, n] × T` of a strip `ℝ × T` this is
 `TauCeti.integrableOn_univ_prod_and_setIntegral_le_of_setIntegral_Icc_prod_le_add`.
 
@@ -287,16 +283,15 @@ end Ray
 
 namespace MeasureTheory.AECover
 
-variable {α ι : Type*} [MeasurableSpace α] {μ : Measure α} {l : Filter ι}
+variable {α ι : Type*} [MeasurableSpace α] {μ : Measure α} {l : Filter ι} [l.NeBot]
   [l.IsCountablyGenerated] {φ : ι → Set α}
 
 /-- **Integral bounds from an exhaustion.** Let `φ` cover `μ`-almost everything along `l`, and
 let `f` and `g` be almost everywhere nonnegative, with `g` integrable and `f` integrable on each
 `φ i`. If eventually `∫_{φ i} f ≤ ∫_{φ i} g + e i` with errors `e i → 0`, then `f` is integrable
 and `∫ f ≤ ∫ g`. -/
-theorem integrable_and_integral_le_of_setIntegral_le_add [l.NeBot] (hφ : AECover μ l φ)
-    {f g : α → ℝ} {e : ι → ℝ} (hf : 0 ≤ᵐ[μ] f) (hg : 0 ≤ᵐ[μ] g)
-    (hfi : ∀ i, IntegrableOn f (φ i) μ)
+theorem integrable_and_integral_le_of_setIntegral_le_add (hφ : AECover μ l φ) {f g : α → ℝ}
+    {e : ι → ℝ} (hf : 0 ≤ᵐ[μ] f) (hg : 0 ≤ᵐ[μ] g) (hfi : ∀ i, IntegrableOn f (φ i) μ)
     (hgi : Integrable g μ) (he : Tendsto e l (𝓝 0))
     (hle : ∀ᶠ i in l, ∫ x in φ i, f x ∂μ ≤ ∫ x in φ i, g x ∂μ + e i) :
     Integrable f μ ∧ ∫ x, f x ∂μ ≤ ∫ x, g x ∂μ := by
@@ -306,35 +301,6 @@ theorem integrable_and_integral_le_of_setIntegral_le_add [l.NeBot] (hφ : AECove
     exact hi.trans (add_le_add (setIntegral_le_integral hgi hg) hei.le)
   refine ⟨hfint, le_of_tendsto_of_tendsto (hφ.integral_tendsto_of_countably_generated hfint) ?_ hle⟩
   simpa using (hφ.integral_tendsto_of_countably_generated hgi).add he
-
-/-- Along a countably generated exhaustion `φ` covering `μ`-almost everything, the integral of a
-Bochner-integrable function over the complements `(φ i)ᶜ` tends to `0`. -/
-theorem tendsto_setIntegral_compl_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (hφ : AECover μ l φ) {f : α → E} (hf : Integrable f μ) :
-    Tendsto (fun i => ∫ x in (φ i)ᶜ, f x ∂μ) l (𝓝 0) := by
-  have hsub : (fun i => ∫ x in (φ i)ᶜ, f x ∂μ) =
-      fun i => (∫ x, f x ∂μ) - ∫ x in φ i, f x ∂μ := by
-    ext i
-    rw [eq_sub_iff_add_eq', integral_add_compl (hφ.measurableSet i) hf]
-  rw [hsub, ← sub_self (∫ x, f x ∂μ)]
-  exact tendsto_const_nhds.sub (hφ.integral_tendsto_of_countably_generated hf)
-
-/-- Along a countably generated exhaustion `φ`, if `F p` is integrable for each `p ∈ s` and
-eventually along `l` all `F p` (`p ∈ s`) are dominated on `(φ i)ᶜ` by a common integrable
-function `dom`, then `p ↦ ∫ x in φ i, F p x ∂μ` converges uniformly on `s` to
-`p ↦ ∫ x, F p x ∂μ`. -/
-theorem tendstoUniformlyOn_setIntegral {β E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (hφ : AECover μ l φ) {F : β → α → E} {s : Set β} {dom : α → ℝ}
-    (hF : ∀ p ∈ s, Integrable (F p) μ) (hdom : Integrable dom μ)
-    (hle : ∀ᶠ i in l, ∀ p ∈ s, ∀ᵐ x ∂μ.restrict (φ i)ᶜ, ‖F p x‖ ≤ dom x) :
-    TendstoUniformlyOn (fun i p => ∫ x in φ i, F p x ∂μ) (fun p => ∫ x, F p x ∂μ) l s := by
-  rw [Metric.tendstoUniformlyOn_iff]
-  intro ε hε
-  filter_upwards [(hφ.tendsto_setIntegral_compl_zero hdom).eventually (gt_mem_nhds hε), hle]
-    with i hi_eps hi_le p hp
-  rw [dist_eq_norm, ← integral_add_compl (hφ.measurableSet i) (hF p hp), add_sub_cancel_left]
-  exact (norm_integral_le_integral_norm _).trans_lt
-    ((integral_mono_ae (hF p hp).norm.integrableOn hdom.integrableOn (hi_le p hp)).trans_lt hi_eps)
 
 end MeasureTheory.AECover
 

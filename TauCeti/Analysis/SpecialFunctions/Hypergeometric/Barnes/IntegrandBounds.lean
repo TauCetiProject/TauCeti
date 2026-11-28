@@ -16,28 +16,20 @@ import TauCeti.MeasureTheory.Integral.Exp.Decay
 # Analyticity and uniform vertical Stirling bounds for the Mellin–Barnes integrand
 
 This module extends `TauCeti.Analysis.SpecialFunctions.Hypergeometric.Barnes.Contour` with:
-* monotonicity of `Complex.gammaPolesRightOf` in the abscissa `σ`;
-* the `b`-family residue formula
-  `Complex.residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast_right` at the second
-  left-family pole `t = -b - k`, obtained by symmetry from
-  `Complex.residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast`;
 * `AnalyticAt` and joint five-variable holomorphy of `Complex.hypergeometricMellinBarnesIntegrand`
   in `(a, b, c, z, t)` away from the pole families `-a - ℕ`, `-b - ℕ`, `ℕ` and the branch cut
   `-z ∉ Complex.slitPlane`;
 * uniform vertical-strip exponential decay bounds
   `Complex.exists_norm_hypergeometricMellinBarnesIntegrand_vertical_le` on bounded parameter balls
-  and compact sectorial subsets of `-z ∈ Complex.slitPlane`, supporting locally uniform truncation
-  and joint four-variable holomorphy in `Barnes/Analyticity.lean`.
+  and compact sectorial subsets of `-z ∈ Complex.slitPlane`, supporting dominated parametric
+  holomorphy and joint four-variable holomorphy in `Barnes/Analyticity.lean`.
 
 ## Main results
 
-* `Complex.gammaPolesRightOf_antitone`: `gammaPolesRightOf a` is antitone in `σ`.
 * `Complex.analyticAt_hypergeometricMellinBarnesIntegrand`,
   `Complex.analyticAt_hypergeometricMellinBarnesIntegrand_uncurry`,
   `Complex.analyticAt_hypergeometricMellinBarnesIntegrand_uncurry_vertical`: single-variable and
   joint five-variable analyticity of `hypergeometricMellinBarnesIntegrand`.
-* `Complex.residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast_right`: closed-form
-  candidate-pole residue at `t = -b - k` by parameter symmetry.
 * `Complex.exists_norm_hypergeometricMellinBarnesIntegrand_vertical_le`: uniform vertical decay
   bound on parameter balls and slit-plane sectors.
 
@@ -54,27 +46,6 @@ open Complex Filter MeasureTheory Metric Set
 open scoped Nat Real Topology
 
 namespace Complex
-
-/-! ### Pole combinatorics and `b`-family residue -/
-
-/-- `gammaPolesRightOf a` is antitone in the abscissa `σ`: shifting `σ` to the left only adds
-poles of `t ↦ Γ(a + t)` to the right of `Re t = σ`. -/
-theorem gammaPolesRightOf_antitone (a : ℂ) : Antitone (gammaPolesRightOf a) :=
-  fun _ _ h s hs => by
-    rw [mem_gammaPolesRightOf] at hs ⊢
-    exact ⟨h.trans_lt hs.1, hs.2⟩
-
-/-- Residue evaluation of `hypergeometricMellinBarnesIntegrand a b c z` at the candidate
-left-family pole `t = -b - k` when `-b - k` avoids both `-a - ℕ` and `ℕ`. Note that the
-reciprocal Gamma factor `(Γ(c - b - k))⁻¹` vanishes when `c - b - k ∈ -ℕ`, which cancels the pole
-of `Γ(b + t)` and makes the singularity removable (with residue `0`). -/
-theorem residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast_right (c : ℂ) {a b z : ℂ}
-    (k : ℕ) (hb : ∀ m : ℕ, b + k ≠ -m) (hba : ∀ m : ℕ, a - b - k ≠ -m) :
-    TauCeti.Contour.residue (hypergeometricMellinBarnesIntegrand a b c z) (-b - k) =
-      (-1) ^ k / k ! * (Gamma (a - b - k) * Gamma (b + k) * (Gamma (c - b - k))⁻¹ *
-        (-z) ^ (-b - k)) := by
-  rw [hypergeometricMellinBarnesIntegrand_comm]
-  exact residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast c k hb hba
 
 /-! ### Single-variable and joint analyticity of the Mellin–Barnes integrand -/
 

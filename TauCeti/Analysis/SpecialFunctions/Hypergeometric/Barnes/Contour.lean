@@ -50,9 +50,12 @@ poles. This file defines that value and proves that it does not depend on the li
 * `Complex.hypergeometricMellinBarnes_eq`: for `-z ∈ slitPlane`, the value does not depend on
   the line `Re t = σ`, among lines with `σ < 0` that avoid the poles of `Γ(a + t) Γ(b + t)`.
   This holds for all complex `a`, `b`, `c`.
+* `Complex.gammaPolesRightOf_antitone`: `gammaPolesRightOf a` is antitone in `σ`.
 * `Complex.residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast`: the residue at a simple
   pole `t = -a - k` that is not a pole of `Γ(b + t)` or of `Γ(-t)`, which is
   `(-1)^k / k! · Γ(b - a - k) Γ(a + k) Γ(c - a - k)⁻¹ (-z)^(-a - k)`.
+* `Complex.residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast_right`: the corresponding
+  residue at `t = -b - k`, obtained by symmetry.
 
 ## Implementation notes
 
@@ -134,6 +137,13 @@ theorem mem_gammaPolesRightOf {a t : ℂ} {σ : ℝ} :
 theorem gammaPolesRightOf_eq_empty_iff {a : ℂ} {σ : ℝ} :
     gammaPolesRightOf a σ = ∅ ↔ -a.re ≤ σ := by
   simp [gammaPolesRightOf, Nat.ceil_eq_zero]
+
+/-- `gammaPolesRightOf a` is antitone in the abscissa `σ`: shifting `σ` to the left only adds
+poles of `t ↦ Γ(a + t)` to the right of `Re t = σ`. -/
+theorem gammaPolesRightOf_antitone (a : ℂ) : Antitone (gammaPolesRightOf a) :=
+  fun _ _ h s hs ↦ by
+    rw [mem_gammaPolesRightOf] at hs ⊢
+    exact ⟨h.trans_lt hs.1, hs.2⟩
 
 /-- The poles of `t ↦ Γ(a + t) Γ(b + t)` to the right of the line `Re t = σ`. -/
 theorem mem_gammaPolesRightOf_union {a b t : ℂ} {σ : ℝ} :
@@ -385,5 +395,17 @@ theorem residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast (c : ℂ) {a
   simp only [G]
   rw [show b + (-(k : ℂ) - a) = b - a - k by ring, show -(-(k : ℂ) - a) = a + k by ring,
     show c + (-(k : ℂ) - a) = c - a - k by ring, show -(k : ℂ) - a = -a - k by ring]
+
+/-- Residue evaluation of `hypergeometricMellinBarnesIntegrand a b c z` at the candidate
+left-family pole `t = -b - k` when `-b - k` avoids both `-a - ℕ` and `ℕ`. Note that the
+reciprocal Gamma factor `(Γ(c - b - k))⁻¹` vanishes when `c - b - k ∈ -ℕ`, which cancels the pole
+of `Γ(b + t)` and makes the singularity removable (with residue `0`). -/
+theorem residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast_right (c : ℂ) {a b z : ℂ}
+    (k : ℕ) (hb : ∀ m : ℕ, b + k ≠ -m) (hba : ∀ m : ℕ, a - b - k ≠ -m) :
+    TauCeti.Contour.residue (hypergeometricMellinBarnesIntegrand a b c z) (-b - k) =
+      (-1) ^ k / k ! * (Gamma (a - b - k) * Gamma (b + k) * (Gamma (c - b - k))⁻¹ *
+        (-z) ^ (-b - k)) := by
+  rw [hypergeometricMellinBarnesIntegrand_comm]
+  exact residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast c k hb hba
 
 end Complex
