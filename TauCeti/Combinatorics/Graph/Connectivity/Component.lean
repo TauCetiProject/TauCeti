@@ -372,36 +372,33 @@ theorem ConnectedComponent.eq_connectedComponentOf {C : G.ConnectedComponent} {x
     (hx : x ∈ V(C.val)) : C = G.connectedComponentOf x (C.property.le.vertexSet_mono hx) :=
   eq_of_mem_of_mem hx (mem_vertexSet_connectedComponentOf_self _)
 
+/-- The component of an actual vertex is the ambient graph induced on the vertices reachable
+from it. -/
+theorem connectedComponentOf_eq_induce_reachable {x : α} (hx : x ∈ V(G)) :
+    (G.connectedComponentOf x hx).val = G.induce {y | G.Reachable x y} := by
+  have hC : V((G.connectedComponentOf x hx).val) = {y | G.Reachable x y} := by
+    ext y
+    exact mem_vertexSet_connectedComponentOf_iff hx
+  exact congrArg (fun S ↦ G.induce S) hC
+
 /-! ### Isolated vertices -/
 
-/-- The connected component of an isolated actual vertex is the graph induced on that vertex.
-In particular, the component retains every loop at the vertex. -/
+/-- The connected component of an actual vertex isolated in the underlying simple graph is the
+graph induced on that vertex. In particular, the component retains every loop at the vertex. -/
+@[simp]
 theorem connectedComponentOf_eq_induce_singleton_of_isIsolated {x : α} (hx : x ∈ V(G))
     (hxi : G.toSimpleGraph.IsIsolated ⟨x, hx⟩) :
     (G.connectedComponentOf x hx).val = G.induce {x} := by
-  have hC : V((G.connectedComponentOf x hx).val) = {x} := by
-    ext y
-    rw [mem_vertexSet_connectedComponentOf_iff hx, Set.mem_singleton_iff,
-      reachable_iff_eq_of_isIsolated hx hxi]
-    exact eq_comm
-  apply le_antisymm
-  · refine ⟨hC.le, fun e y z he ↦ ?_⟩
-    exact ⟨(G.connectedComponentOf x hx).property.le.isLink_mono he,
-      hC ▸ he.left_mem, hC ▸ he.right_mem⟩
-  · exact (G.connectedComponentOf x hx).property.isInducedSubgraph.le_of_le_subset
-      (G.induce_le (Set.singleton_subset_iff.mpr hx)) (hC.symm.subset)
-
-/-- The subgraph induced on an isolated actual vertex is a connected component of the ambient
-graph, including when the vertex carries loops. -/
-theorem isConnectedComponentOf_induce_singleton_of_isIsolated {x : α} (hx : x ∈ V(G))
-    (hxi : G.toSimpleGraph.IsIsolated ⟨x, hx⟩) :
-    (G.induce {x}).IsConnectedComponentOf G := by
-  rw [← connectedComponentOf_eq_induce_singleton_of_isIsolated hx hxi]
-  exact (G.connectedComponentOf x hx).property
+  rw [connectedComponentOf_eq_induce_reachable hx]
+  congr 1
+  ext y
+  rw [Set.mem_ofPred_eq, Set.mem_singleton_iff, reachable_iff_eq_of_isIsolated hx hxi]
+  exact eq_comm
 
 /-- For an actual vertex, the induced singleton is a connected component exactly when the vertex
-is isolated in the simplification. Loops are retained by the induced subgraph and ignored by the
-isolation predicate. -/
+is isolated in the underlying simple graph. Loops are retained by the induced subgraph and ignored
+by the isolation predicate. -/
+@[simp]
 theorem isConnectedComponentOf_induce_singleton_iff_isIsolated {x : α} (hx : x ∈ V(G)) :
     (G.induce {x}).IsConnectedComponentOf G ↔
       G.toSimpleGraph.IsIsolated ⟨x, hx⟩ := by
@@ -410,9 +407,13 @@ theorem isConnectedComponentOf_induce_singleton_iff_isIsolated {x : α} (hx : x 
     rw [Graph.toSimpleGraph_adj] at hxy
     obtain ⟨hne, e, he⟩ := hxy
     have hy : (y : α) ∈ V(G.induce {x}) :=
-      hC.isClosedSubgraph.mem_vertexSet_of_reachable (by simp) he.reachable
-    exact hne (Subtype.ext (by simpa using hy)).symm
-  · exact isConnectedComponentOf_induce_singleton_of_isIsolated hx
+      hC.isClosedSubgraph.mem_vertexSet_of_reachable
+        (by simp only [vertexSet_induce, Set.mem_singleton_iff]) he.reachable
+    exact hne (Subtype.ext
+      (by simpa only [vertexSet_induce, Set.mem_singleton_iff] using hy)).symm
+  · intro hxi
+    rw [← connectedComponentOf_eq_induce_singleton_of_isIsolated hx hxi]
+    exact (G.connectedComponentOf x hx).property
 
 /-- A subgraph is a connected component exactly when it is induced on a component of the
 underlying simple graph. -/

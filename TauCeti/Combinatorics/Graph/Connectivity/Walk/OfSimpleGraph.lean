@@ -430,8 +430,10 @@ theorem toSimpleGraph_reachable_iff {u v : V(G)} :
   rintro ⟨p⟩
   exact p.liftToGraph.reachable u.property
 
-/-- An actual vertex isolated in the simplification is reachable only from itself. Loops at the
-vertex do not affect this conclusion. -/
+/-- An actual vertex isolated in the simplification is reachable only from itself. The proof
+applies Mathlib's `SimpleGraph.Walk.nil_of_isIsolated_of_mem_support` to a walk in the
+simplification. Loops at the vertex do not affect this conclusion. -/
+@[simp]
 theorem reachable_iff_eq_of_isIsolated {x y : α} (hx : x ∈ V(G))
     (hxi : G.toSimpleGraph.IsIsolated ⟨x, hx⟩) : G.Reachable x y ↔ x = y := by
   constructor
