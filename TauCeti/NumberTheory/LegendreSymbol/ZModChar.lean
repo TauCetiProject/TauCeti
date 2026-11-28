@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
-import TauCeti.Algebra.Ring.Int.Parity
 import TauCeti.Data.ZMod.Divisibility
 
 /-!
@@ -24,7 +23,7 @@ zeros of `χ₈`, and the formula `χ₈ a = (-1) ^ ((a² - 1) / 8)` for odd int
 * `ZMod.χ₄_two_mul_add_one`: `χ₄ (2 v + 1) = (-1) ^ v`.
 * `ZMod.χ₄_natCast_eq_neg_of_dvd_add`, `ZMod.χ₈_natCast_eq_of_dvd_add`: the same statements for
   natural numbers `b`, `b'` with `4 ∣ b + b'`, respectively `8 ∣ b + b'`.
-* `ZMod.χ₄_natCast_mul_self`, `ZMod.χ₄_intCast_sq`: `χ₄ a ^ 2 = 1` for odd `a`.
+* `ZMod.χ₄_intCast_sq`, `ZMod.χ₄_natCast_mul_self`: `χ₄ a ^ 2 = 1` for odd `a`.
 * `ZMod.int_mul_χ₄_modEq_one`: sign-normalizing an odd integer gives `1` modulo `4`.
 * `ZMod.χ₈_intCast_eq_zero_iff`: `χ₈ a = 0` exactly when `a` is even.
 * `ZMod.χ₈_intCast_eq_negOnePow`: `χ₈ a = (-1) ^ ((a² - 1) / 8)` for odd `a`.
@@ -57,17 +56,20 @@ theorem χ₄_two_mul_add_one (v : ℕ) : χ₄ ((2 * v + 1 : ℕ) : ZMod 4) = (
   rw [χ₄_eq_neg_one_pow (Nat.odd_iff.mp (odd_two_mul_add_one v)),
     show (2 * v + 1) / 2 = v by omega]
 
-/-- For odd `a`, `χ₄ a * χ₄ a = 1`. -/
-theorem χ₄_natCast_mul_self {a : ℕ} (ha : Odd a) : χ₄ a * χ₄ a = 1 := by
-  rcases Nat.odd_mod_four_iff.mp (Nat.odd_iff.mp ha) with h | h
-  · rw [χ₄_nat_one_mod_four h, one_mul]
-  · rw [χ₄_nat_three_mod_four h, neg_one_mul, neg_neg]
-
 /-- For odd `a : ℤ`, `χ₄ a ^ 2 = 1`. -/
 theorem χ₄_intCast_sq {a : ℤ} (ha : Odd a) : χ₄ a ^ 2 = 1 := by
-  rcases Int.odd_emod_four_eq ha with h | h
-  · rw [χ₄_int_one_mod_four h, one_pow]
-  · rw [χ₄_int_three_mod_four h, neg_one_sq]
+  have ha_sq : (a : ZMod 4) * (a : ZMod 4) = 1 := by
+    obtain ⟨k, rfl⟩ := ha
+    push_cast
+    calc ((2 : ZMod 4) * k + 1) * (2 * k + 1)
+        = ((4 : ℕ) : ZMod 4) * (k ^ 2 + k) + 1 := by push_cast; ring
+      _ = 1 := by rw [ZMod.natCast_self, zero_mul, zero_add]
+  have hu : IsUnit (a : ZMod 4) := ⟨⟨a, a, ha_sq, ha_sq⟩, rfl⟩
+  rw [← χ₄.pow_apply' two_ne_zero, isQuadratic_χ₄.sq_eq_one, MulChar.one_apply hu]
+
+/-- For odd `a`, `χ₄ a * χ₄ a = 1`. -/
+theorem χ₄_natCast_mul_self {a : ℕ} (ha : Odd a) : χ₄ a * χ₄ a = 1 := by
+  simpa [pow_two] using χ₄_intCast_sq ha.natCast
 
 /-- Multiplying an odd integer by its `χ₄` value gives its unique sign choice congruent to
 `1` modulo `4`. -/

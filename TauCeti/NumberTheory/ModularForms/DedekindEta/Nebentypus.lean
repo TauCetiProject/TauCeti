@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.DedekindEta.Kronecker
-public import TauCeti.NumberTheory.ModularForms.DedekindEta.Quotient
+public import TauCeti.NumberTheory.ModularForms.DedekindEta.Quotient.Kronecker
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 import TauCeti.Algebra.BigOperators.ZPow
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
@@ -200,7 +199,7 @@ private theorem etaQuotientMultiplier_eq_symb_of_odd {N : ℕ} {r : ℕ → ℤ}
       3 * t * γ 1 1) + A * (γ 0 1 * γ 1 1)), ?_⟩
     rw [hA, hB, hk, hv]
     ring
-  rw [etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_nonneg_of_odd r hγ ht ht0 ⟨v, hv⟩,
+  rw [etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_odd r hγ ht ⟨v, hv⟩,
     e24_congr hsum, e24_mul, e24_twelve_mul_eq_χ₄, prod_kroneckerSym_div_left hk γ ht ht0, symb,
     kroneckerSym_neg_one_left_of_odd ⟨v, hv⟩, hv, mul_comm]
 
@@ -226,12 +225,12 @@ private theorem etaQuotientMultiplier_eq_symb_of_even {N : ℕ} {r : ℕ → ℤ
   have hε (δ : ℕ) (hδ : δ ∈ N.divisors) : etaMultiplier
       (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) =
       (kroneckerSym (γ 1 1) ((N / δ : ℕ) * t) : ℂ) * e24 (O δ) := by
-    obtain ⟨h00, h01, h10, h11⟩ := conjScaleGamma0_apply_of_eq (Nat.dvd_of_mem_divisors hδ) hγ ht
+    have h10 := conjScaleGamma0_apply_one_zero_of_eq (Nat.dvd_of_mem_divisors hδ) hγ ht
     have hm : Odd (N / δ) := hNo.of_dvd_nat (Nat.div_dvd_of_dvd (Nat.dvd_of_mem_divisors hδ))
     rw [etaMultiplier_eq_kroneckerSym_mul_of_c_pos_of_odd_c _
       (by rw [h10]; exact mul_pos (by exact_mod_cast hm.pos) ht_pos)
-      (by rw [h10]; exact Int.odd_mul.mpr ⟨(Int.odd_natCast _).mpr hm, hto⟩), h00, h01, h10, h11,
-      e24_def]
+      (by rw [h10]; exact Int.odd_mul.mpr ⟨(Int.odd_natCast _).mpr hm, hto⟩), h10, e24_def]
+    simp [O, mul_comm (δ : ℤ)]
   -- The exponents sum to a multiple of `24`.
   have hsum : ∑ δ ∈ N.divisors, r δ * O δ ≡ 0 [ZMOD 24] := by
     refine Int.modEq_zero_iff_dvd.mpr ⟨B * ((γ 0 0 + γ 1 1) * t - γ 0 1 * γ 1 1 * N * t ^ 2 -

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.OrderAtInfty
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Cusp.Width
-public import TauCeti.NumberTheory.ModularForms.DedekindEta.Kronecker
 public import TauCeti.NumberTheory.ModularForms.DedekindEta.ScaledTransformation
 import TauCeti.Algebra.BigOperators.ZPow
 import TauCeti.Analysis.Complex.Sqrt
@@ -103,10 +102,9 @@ Newman, Gordon–Hughes and Ligozat, whose cusp conditions are the orders above.
 * `TauCeti.ModularForm.etaQuotientMultiplier_negOne`,
   `TauCeti.ModularForm.etaQuotientMultiplier_T_zpow`: the multiplier at `-1` is
   `(-i) ^ {∑_δ r_δ}`, and at `Tⁿ` it is the factor of the translation law.
-* `TauCeti.ModularForm.etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_nonneg_of_odd`,
-  `TauCeti.ModularForm.etaQuotientMultiplier_eq_I_zpow_mul_of_c_neg`: evaluating the multiplier
-  for `c ≥ 0` and odd `d` in terms of Kronecker symbols and `e24`, and passing from `c < 0` to
-  `-γ`.
+* `TauCeti.ModularForm.etaQuotientMultiplier_eq_prod`,
+  `TauCeti.ModularForm.etaQuotientMultiplier_eq_I_zpow_mul_of_c_neg`: factoring the multiplier
+  across conjugate factors `γ_δ`, and passing from `c < 0` to `-γ`.
 * `TauCeti.ModularForm.etaQuotientMultiplier_eq_of_etaQuotient_smul_eq`: the multiplier is
   determined by the transformation law at a single point; `etaQuotientMultiplier_ne_zero` and
   `norm_etaQuotientMultiplier` record that it is a unit of norm one.
@@ -722,47 +720,6 @@ theorem etaQuotientMultiplier_eq_prod {N : ℕ} (r : ℕ → ℤ) {γ : SL(2, �
   rw [etaQuotientMultiplier_def, ← Finset.prod_attach N.divisors (fun δ ↦ F δ ^ r δ)]
   exact Finset.prod_congr rfl fun δ _ ↦ by rw [hF δ δ.property]
 
-/-- Regrouping the even-`c` eta-multiplier exponent sum over `δ ∈ N.divisors` when `c = N * t`
-into multiples of `∑ δ ∈ N.divisors, (N / δ) * r δ`, `∑ δ ∈ N.divisors, δ * r δ`, and
-`∑ δ ∈ N.divisors, r δ`. -/
-theorem sum_mul_evenExp (N : ℕ) (r : ℕ → ℤ) (a b d t : ℤ) :
-    ∑ δ ∈ N.divisors, r δ * evenExp a (b * δ) ((N / δ : ℕ) * t) d =
-      (∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) *
-        ((a + d) * t - b * d * N * t ^ 2 - 3 * t * d) +
-        (∑ δ ∈ N.divisors, (δ : ℤ) * r δ) * (b * d) +
-        (∑ δ ∈ N.divisors, r δ) * (3 * d - 3) := by
-  rw [Finset.sum_mul, Finset.sum_mul, Finset.sum_mul, ← Finset.sum_add_distrib,
-    ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun δ hδ ↦ ?_
-  have hmul : (δ : ℤ) * (N / δ : ℕ) = N := by
-    exact_mod_cast Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors hδ)
-  simp only [evenExp]
-  linear_combination (-(r δ * b * d * (N / δ : ℕ) * t ^ 2)) * hmul
-
-/-- Evaluating the eta-quotient multiplier when `γ 1 0 = N * t` with `0 ≤ t` and odd `γ 1 1`:
-each factor `ε(γ_δ)` is given by the even-`c` Kronecker form, factoring the multiplier into the
-product of `(kroneckerSym ((N / δ : ℕ) * t) (γ 1 1)) ^ r δ` and `e24` of the regrouped exponent
-sum. -/
-theorem etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_nonneg_of_odd {N : ℕ}
-    (r : ℕ → ℤ) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) {t : ℤ} (ht : γ 1 0 = N * t)
-    (ht0 : 0 ≤ t) (hdo : Odd (γ 1 1)) :
-    etaQuotientMultiplier N r ⟨γ, hγ⟩ =
-      (∏ δ ∈ N.divisors, (kroneckerSym ((N / δ : ℕ) * t) (γ 1 1) : ℂ) ^ r δ) *
-        e24 ((∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) *
-            ((γ 0 0 + γ 1 1) * t - γ 0 1 * γ 1 1 * N * t ^ 2 - 3 * t * γ 1 1) +
-          (∑ δ ∈ N.divisors, (δ : ℤ) * r δ) * (γ 0 1 * γ 1 1) +
-          (∑ δ ∈ N.divisors, r δ) * (3 * γ 1 1 - 3)) := by
-  have hε (δ : ℕ) (hδ : δ ∈ N.divisors) :
-      etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) =
-        (kroneckerSym ((N / δ : ℕ) * t) (γ 1 1) : ℂ) *
-          e24 (evenExp (γ 0 0) (γ 0 1 * δ) ((N / δ : ℕ) * t) (γ 1 1)) := by
-    obtain ⟨h00, h01, h10, h11⟩ :=
-      conjScaleGamma0_apply_of_eq (Nat.dvd_of_mem_divisors hδ) hγ ht
-    rw [etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d _
-      (by rw [h10]; exact mul_nonneg (Int.natCast_nonneg _) ht0) (by rw [h11]; exact hdo),
-      h00, h01, h10, h11, e24_def, evenExp]
-  rw [etaQuotientMultiplier_eq_prod r hγ hε, prod_mul_e24_zpow, sum_mul_evenExp]
-
 /-- When `(γ : SL(2, ℤ)) 1 0 < 0`, negating `γ` makes the lower-left entry of every conjugate
 `γ_δ` positive, and `etaQuotientMultiplier N r γ` equals `I ^ (∑ δ ∈ N.divisors, r δ)` times
 `etaQuotientMultiplier N r (Gamma0.negOne N * γ)`. -/
@@ -785,10 +742,9 @@ theorem etaQuotientMultiplier_eq_I_zpow_mul_of_c_neg (N : ℕ) (r : ℕ → ℤ)
       dvd_trans (Int.natCast_dvd_natCast.mpr (Nat.dvd_of_mem_divisors δ.property)) hNc
     have hneg_c_pos : 0 < (conjScaleGamma0 (Nat.dvd_of_mem_divisors δ.property)
         ⟨-(γ : SL(2, ℤ)), hneg_mem⟩) 1 0 := by
-      rw [conjScaleGamma0_apply_one_zero,
-        show ((⟨-(γ : SL(2, ℤ)), hneg_mem⟩ : Gamma0 N) : SL(2, ℤ)) 1 0 = -((γ : SL(2, ℤ)) 1 0) from
-          rfl]
-      exact Int.ediv_pos_of_pos_of_dvd (by simpa using hc) hδ_pos.le (dvd_neg.mpr hδ_dvd)
+      simp only [coe_conjScaleGamma0, Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply,
+        Matrix.of_apply, Matrix.cons_val_one, Matrix.cons_val_zero]
+      exact Int.ediv_pos_of_pos_of_dvd (neg_pos.mpr hc) hδ_pos.le (dvd_neg.mpr hδ_dvd)
     rw [← neg_neg (conjScaleGamma0 (Nat.dvd_of_mem_divisors δ.property) γ),
       ← conjScaleGamma0_neg _ γ hneg_mem,
       etaMultiplier_neg_of_c_pos _ hneg_c_pos, mul_zpow]

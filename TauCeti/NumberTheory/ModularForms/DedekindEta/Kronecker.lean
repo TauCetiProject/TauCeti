@@ -52,7 +52,8 @@ checked modulo `8` and modulo `3` by evaluation.
   homomorphism laws `e24_zero`, `e24_add`, `e24_mul`, `prod_mul_e24_zpow`, its nonvanishing
   `e24_ne_zero`, its periodicity `e24_congr`, and its values `e24_six`, `e24_neg_six`,
   `e24_twelve_mul`, `e24_twelve_mul_eq_χ₄` at multiples of `6` and `12`.
-* `TauCeti.ModularForm.evenExp`: the polynomial exponent in the even-`c` Kronecker form.
+* `TauCeti.ModularForm.etaMultiplierExpEvenC`: the polynomial exponent in the even-`c` Kronecker
+  form.
 
 ## Main results
 
@@ -60,8 +61,8 @@ checked modulo `8` and modulo `3` by evaluation.
   for odd `c > 0`.
 * `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_of_even_c`: the Kronecker form for even
   `c`.
-* `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d`: the even-`c` form
-  holds for every `c ≥ 0` when `d` is odd.
+* `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_of_odd_d`: the even-`c` form holds for
+  every `γ ∈ SL(2, ℤ)` when `d` is odd.
 
 ## References
 
@@ -156,10 +157,12 @@ private theorem e24_neg_three : e24 (-3) = cexp (-(π * I / 4)) := by
   ring
 
 /-- `e(6 / 24) = I`. -/
+@[simp]
 theorem e24_six : e24 6 = I := by
   rw [e24, show 2 * π * I * ((6 : ℤ) : ℂ) / 24 = π / 2 * I by push_cast; ring, exp_pi_div_two_mul_I]
 
 /-- `e(-6 / 24) = -I`. -/
+@[simp]
 theorem e24_neg_six : e24 (-6) = -I := by
   rw [e24_congr (show (-6 : ℤ) ≡ 12 * (1 : ℕ) + 6 [ZMOD 24] by decide), e24_add, e24_twelve_mul,
     e24_six, pow_one, neg_one_mul]
@@ -172,16 +175,21 @@ private def oddExp {R : Type*} [CommRing R] (a b c d : R) : R :=
 
 /-- The exponent of the Kronecker form for even `c`:
 `(a + d) * c - b * d * (c ^ 2 - 1) + 3 * d - 3 - 3 * c * d`. -/
-@[expose] def evenExp {R : Type*} [CommRing R] (a b c d : R) : R :=
+def etaMultiplierExpEvenC {R : Type*} [CommRing R] (a b c d : R) : R :=
   (a + d) * c - b * d * (c ^ 2 - 1) + 3 * d - 3 - 3 * c * d
+
+/-- Defining formula for `etaMultiplierExpEvenC`. -/
+theorem etaMultiplierExpEvenC_def {R : Type*} [CommRing R] (a b c d : R) :
+    etaMultiplierExpEvenC a b c d = (a + d) * c - b * d * (c ^ 2 - 1) + 3 * d - 3 - 3 * c * d :=
+  (rfl)
 
 private theorem intCast_oddExp {R : Type*} [CommRing R] (a b c d : ℤ) :
     ((oddExp a b c d : ℤ) : R) = oddExp (a : R) b c d := by
   simp [oddExp]
 
-private theorem intCast_evenExp {R : Type*} [CommRing R] (a b c d : ℤ) :
-    ((evenExp a b c d : ℤ) : R) = evenExp (a : R) b c d := by
-  simp [evenExp]
+private theorem intCast_etaMultiplierExpEvenC {R : Type*} [CommRing R] (a b c d : ℤ) :
+    ((etaMultiplierExpEvenC a b c d : ℤ) : R) = etaMultiplierExpEvenC (a : R) b c d := by
+  simp [etaMultiplierExpEvenC]
 
 private theorem modEq_twentyFour {x y : ℤ} (h8 : (x : ZMod 8) = y) (h3 : (x : ZMod 3) = y) :
     x ≡ y [ZMOD 24] := by
@@ -229,19 +237,20 @@ private theorem oddExp_neg_inversion_modEq {a b u w : ℤ}
   · decide_zmod 3 hdet a b u w
 
 /-- The inversion step for even `c` and `d > 0`. -/
-private theorem evenExp_inversion_modEq {a b m v : ℤ}
+private theorem etaMultiplierExpEvenC_inversion_modEq {a b m v : ℤ}
     (hdet : a * (2 * v + 1) - b * (2 * m) = 1) :
     3 + 12 * v + oddExp b (-a) (2 * v + 1) (-(2 * m)) ≡
-      evenExp a b (2 * m) (2 * v + 1) [ZMOD 24] := by
-  refine modEq_twentyFour ?_ ?_ <;> push_cast [intCast_oddExp, intCast_evenExp]
+      etaMultiplierExpEvenC a b (2 * m) (2 * v + 1) [ZMOD 24] := by
+  refine modEq_twentyFour ?_ ?_ <;> push_cast [intCast_oddExp, intCast_etaMultiplierExpEvenC]
   · decide_zmod 8 hdet a b m v
   · decide_zmod 3 hdet a b m v
 
 /-- The inversion step for even `c` and `d < 0`. -/
-private theorem evenExp_neg_inversion_modEq {a b m w : ℤ}
+private theorem etaMultiplierExpEvenC_neg_inversion_modEq {a b m w : ℤ}
     (hdet : a * -(2 * w + 1) - b * (2 * m) = 1) :
-    -3 + oddExp (-b) a (2 * w + 1) (2 * m) ≡ evenExp a b (2 * m) (-(2 * w + 1)) [ZMOD 24] := by
-  refine modEq_twentyFour ?_ ?_ <;> push_cast [intCast_oddExp, intCast_evenExp]
+    -3 + oddExp (-b) a (2 * w + 1) (2 * m) ≡
+      etaMultiplierExpEvenC a b (2 * m) (-(2 * w + 1)) [ZMOD 24] := by
+  refine modEq_twentyFour ?_ ?_ <;> push_cast [intCast_oddExp, intCast_etaMultiplierExpEvenC]
   · decide_zmod 8 hdet a b m w
   · decide_zmod 3 hdet a b m w
 
@@ -316,7 +325,7 @@ private theorem kroneckerOdd_neg_inversion {a b c d : ℤ} (hdet : a * d - b * c
 private theorem kroneckerEven_inversion {a b c d : ℤ} (hdet : a * d - b * c = 1) (hc : 0 < c)
     (hd : 0 < d) (hce : Even c) (hdo : Odd d) :
     e24 3 * ((kroneckerSym (-c) d : ℂ) * e24 (oddExp b (-a) d (-c))) =
-      kroneckerSym c d * e24 (evenExp a b c d) := by
+      kroneckerSym c d * e24 (etaMultiplierExpEvenC a b c d) := by
   lift d to ℕ using hd.le
   have hdo' : Odd d := (Int.odd_natCast d).mp hdo
   rw [kroneckerSym_eq_jacobiSym _ hdo', kroneckerSym_eq_jacobiSym _ hdo', jacobiSym.neg _ hdo']
@@ -325,7 +334,7 @@ private theorem kroneckerEven_inversion {a b c d : ℤ} (hdet : a * d - b * c = 
   rw [ZMod.χ₄_two_mul_add_one, ← two_mul]
   rw [← two_mul] at hdet
   push_cast at hdet ⊢
-  have key := e24_congr (evenExp_inversion_modEq hdet)
+  have key := e24_congr (etaMultiplierExpEvenC_inversion_modEq hdet)
   simp only [e24_add] at key
   rw [← e24_twelve_mul]
   linear_combination (jacobiSym (2 * m) (2 * v + 1) : ℂ) * key
@@ -334,7 +343,7 @@ private theorem kroneckerEven_inversion {a b c d : ℤ} (hdet : a * d - b * c = 
 private theorem kroneckerEven_neg_inversion {a b c d : ℤ} (hdet : a * d - b * c = 1) (hc : 0 < c)
     (hd : d < 0) (hce : Even c) (hdo : Odd d) :
     e24 (-3) * ((kroneckerSym c (-d) : ℂ) * e24 (oddExp (-b) a (-d) c)) =
-      kroneckerSym c d * e24 (evenExp a b c d) := by
+      kroneckerSym c d * e24 (etaMultiplierExpEvenC a b c d) := by
   have hsym : kroneckerSym c (-d) = kroneckerSym c d := by
     rw [kroneckerSym_of_odd _ hdo.neg, kroneckerSym_of_odd _ hdo, Int.natAbs_neg]
     simp [hc.not_gt]
@@ -344,7 +353,7 @@ private theorem kroneckerEven_neg_inversion {a b c d : ℤ} (hdet : a * d - b * 
   obtain ⟨m, rfl⟩ := hce
   rw [neg_neg, ← two_mul]
   rw [← two_mul] at hdet
-  have key := e24_congr (evenExp_neg_inversion_modEq hdet)
+  have key := e24_congr (etaMultiplierExpEvenC_neg_inversion_modEq hdet)
   simp only [e24_add] at key
   linear_combination (kroneckerSym (2 * m) (-(2 * w + 1)) : ℂ) * key
 
@@ -367,11 +376,11 @@ private theorem χ₄_natAbs_mul_e24 {d : ℤ} (hdo : Odd d) :
 /-- Negation for `c < 0` and odd `d`: the even-`c` Kronecker form at `-γ = (-a -b; -c -d)`, times
 `i`, is the even-`c` Kronecker form at `γ`. -/
 private theorem kroneckerEven_neg {a b c d : ℤ} (hc : c < 0) (hdo : Odd d) :
-    I * ((kroneckerSym (-c) (-d) : ℂ) * e24 (evenExp (-a) (-b) (-c) (-d))) =
-      kroneckerSym c d * e24 (evenExp a b c d) := by
-  have hexp :
-      e24 6 * e24 (evenExp (-a) (-b) (-c) (-d)) = e24 (6 - 6 * d) * e24 (evenExp a b c d) := by
-    simp only [← e24_add, evenExp]
+    I * ((kroneckerSym (-c) (-d) : ℂ) * e24 (etaMultiplierExpEvenC (-a) (-b) (-c) (-d))) =
+      kroneckerSym c d * e24 (etaMultiplierExpEvenC a b c d) := by
+  have hexp : e24 6 * e24 (etaMultiplierExpEvenC (-a) (-b) (-c) (-d)) =
+      e24 (6 - 6 * d) * e24 (etaMultiplierExpEvenC a b c d) := by
+    simp only [← e24_add, etaMultiplierExpEvenC]
     congr 1
     ring
   -- Both symbols are `J(± c | |d|)`; the sign of `(c / d)` records whether `d < 0`.
@@ -476,7 +485,8 @@ private theorem etaMultiplier_eq_kroneckerOdd (γ : SL(2, ℤ)) (hc : 0 < γ 1 0
 private theorem etaMultiplier_eq_kroneckerEven_of_pos (γ : SL(2, ℤ)) (hc : 0 < γ 1 0)
     (heven : Even (γ 1 0)) :
     etaMultiplier γ =
-      kroneckerSym (γ 1 0) (γ 1 1) * e24 (evenExp (γ 0 0) (γ 0 1) (γ 1 0) (γ 1 1)) := by
+      kroneckerSym (γ 1 0) (γ 1 1) *
+        e24 (etaMultiplierExpEvenC (γ 0 0) (γ 0 1) (γ 1 0) (γ 1 1)) := by
   have hdet := γ.fin_two_mul_sub_mul_eq_one
   have hdo := γ.odd_apply_one_of_even_apply_zero heven
   rcases Int.lt_or_gt_of_odd hdo with hneg | hpos
@@ -493,7 +503,8 @@ private theorem etaMultiplier_eq_kroneckerEven_of_pos (γ : SL(2, ℤ)) (hc : 0 
 
 private theorem etaMultiplier_eq_kroneckerEven (γ : SL(2, ℤ)) (heven : Even (γ 1 0)) :
     etaMultiplier γ =
-      kroneckerSym (γ 1 0) (γ 1 1) * e24 (evenExp (γ 0 0) (γ 0 1) (γ 1 0) (γ 1 1)) := by
+      kroneckerSym (γ 1 0) (γ 1 1) *
+        e24 (etaMultiplierExpEvenC (γ 0 0) (γ 0 1) (γ 1 0) (γ 1 1)) := by
   rcases lt_trichotomy (γ 1 0) 0 with hneg | hzero | hpos
   · -- `c < 0`: pass to `-γ`, with `ε(γ) = i ε(-γ)`.
     have hpos : 0 < (-γ) 1 0 := by
@@ -512,7 +523,7 @@ private theorem etaMultiplier_eq_kroneckerEven (γ : SL(2, ℤ)) (heven : Even (
     · rw [etaMultiplier_of_c_eq_zero_of_d_pos γ hzero (by omega), hzero, hd,
         kroneckerSym_one_right, Int.cast_one, one_mul, e24]
       congr 1
-      simp only [evenExp]
+      simp only [etaMultiplierExpEvenC]
       push_cast
       ring
     · rw [etaMultiplier_of_c_eq_zero_of_d_neg γ hzero (by omega), hzero, hd,
@@ -520,7 +531,7 @@ private theorem etaMultiplier_eq_kroneckerEven (γ : SL(2, ℤ)) (heven : Even (
         ← e24_neg_six]
       simp only [e24, ← Complex.exp_add]
       congr 1
-      simp only [evenExp]
+      simp only [etaMultiplierExpEvenC]
       push_cast
       ring
   · exact etaMultiplier_eq_kroneckerEven_of_pos γ hpos heven
@@ -532,15 +543,16 @@ differ by `(-1) ^ ((c - 1) (d - 1) / 4)` (quadratic reciprocity), and the expone
 `3 (c - 1) (d - 1)`. -/
 private theorem kroneckerOdd_eq_kroneckerEven (a b : ℤ) {c : ℕ} {d : ℤ} (hc : Odd c)
     (hd : Odd d) :
-    (kroneckerSym d c : ℂ) * e24 (oddExp a b c d) = kroneckerSym c d * e24 (evenExp a b c d) := by
+    (kroneckerSym d c : ℂ) * e24 (oddExp a b c d) =
+      kroneckerSym c d * e24 (etaMultiplierExpEvenC a b c d) := by
   rw [kroneckerSym_quadratic_reciprocity hc, kroneckerSym_neg_one_left_of_odd hd]
   obtain ⟨u, rfl⟩ := hc
   obtain ⟨v, rfl⟩ := hd
   have hexp : e24 (oddExp a b ((2 * u + 1 : ℕ) : ℤ) (2 * v + 1)) =
-      e24 (evenExp a b ((2 * u + 1 : ℕ) : ℤ) (2 * v + 1)) * e24 (u * (12 * v)) := by
+      e24 (etaMultiplierExpEvenC a b ((2 * u + 1 : ℕ) : ℤ) (2 * v + 1)) * e24 (u * (12 * v)) := by
     rw [← e24_add]
     congr 1
-    simp only [oddExp, evenExp]
+    simp only [oddExp, etaMultiplierExpEvenC]
     push_cast
     ring
   rw [hexp, e24_mul, e24_twelve_mul_eq_χ₄, zpow_natCast, show (2 * u + 1) / 2 = u by omega]
@@ -569,23 +581,33 @@ theorem etaMultiplier_eq_kroneckerSym_mul_of_even_c (γ : SL(2, ℤ)) (heven : E
     etaMultiplier γ = kroneckerSym (γ 1 0) (γ 1 1) *
       cexp (2 * π * I * (((γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * γ 1 1 * (γ 1 0 ^ 2 - 1) +
         3 * γ 1 1 - 3 - 3 * γ 1 0 * γ 1 1 : ℤ) : ℂ) / 24) := by
-  rw [etaMultiplier_eq_kroneckerEven γ heven, e24, evenExp]
+  rw [etaMultiplier_eq_kroneckerEven γ heven, e24, etaMultiplierExpEvenC]
 
 /-- **The Kronecker form of the eta multiplier, odd `d`**: for `γ = (a b; c d) ∈ SL(2, ℤ)` with
-`c ≥ 0` and `d` odd, the even-`c` formula
-`ε(γ) = (c / d) · e(((a + d) c - b d (c² - 1) + 3 d - 3 - 3 c d) / 24)` holds also when `c` is
-odd. For `c > 0` odd it is the odd-`c` formula rewritten by quadratic reciprocity. -/
-theorem etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d (γ : SL(2, ℤ))
-    (hc : 0 ≤ γ 1 0) (hd : Odd (γ 1 1)) :
+`d` odd (for every `c : ℤ`, regardless of sign or parity),
+`ε(γ) = (c / d) · e24 (etaMultiplierExpEvenC a b c d)`. -/
+theorem etaMultiplier_eq_kroneckerSym_mul_of_odd_d (γ : SL(2, ℤ)) (hd : Odd (γ 1 1)) :
     etaMultiplier γ = kroneckerSym (γ 1 0) (γ 1 1) *
-      cexp (2 * π * I * (((γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * γ 1 1 * (γ 1 0 ^ 2 - 1) +
-        3 * γ 1 1 - 3 - 3 * γ 1 0 * γ 1 1 : ℤ) : ℂ) / 24) := by
+      e24 (etaMultiplierExpEvenC (γ 0 0) (γ 0 1) (γ 1 0) (γ 1 1)) := by
   rcases Int.even_or_odd (γ 1 0) with he | ho
-  · exact etaMultiplier_eq_kroneckerSym_mul_of_even_c γ he
-  have hpos : 0 < γ 1 0 := lt_of_le_of_ne hc fun h ↦ Int.not_odd_zero (h ▸ ho)
-  obtain ⟨n, hn⟩ := Int.eq_ofNat_of_zero_le hc
-  have hno : Odd n := (Int.odd_natCast n).mp (hn ▸ ho)
-  rw [etaMultiplier_eq_kroneckerOdd γ hpos ho, hn, kroneckerOdd_eq_kroneckerEven _ _ hno hd, e24,
-    evenExp]
+  · exact etaMultiplier_eq_kroneckerEven γ he
+  rcases lt_or_gt_of_ne (fun (h : γ 1 0 = 0) ↦ Int.not_odd_zero (h ▸ ho)) with hneg | hpos
+  · have hc_pos : 0 < (-γ) 1 0 := by
+      simpa only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, Left.neg_pos_iff]
+        using hneg
+    have hodd : Odd ((-γ) 1 0) := by
+      simpa only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, odd_neg] using ho
+    have hdo' : Odd ((-γ) 1 1) := by
+      simpa only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, odd_neg] using hd
+    obtain ⟨n, hn⟩ := Int.eq_ofNat_of_zero_le hc_pos.le
+    have hno : Odd n := (Int.odd_natCast n).mp (hn ▸ hodd)
+    have h := etaMultiplier_neg_of_c_pos (-γ) hc_pos
+    rw [neg_neg] at h
+    rw [h, etaMultiplier_eq_kroneckerOdd (-γ) hc_pos hodd, hn,
+      kroneckerOdd_eq_kroneckerEven _ _ hno hdo', ← hn]
+    simpa only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply] using kroneckerEven_neg hneg hd
+  · obtain ⟨n, hn⟩ := Int.eq_ofNat_of_zero_le hpos.le
+    have hno : Odd n := (Int.odd_natCast n).mp (hn ▸ ho)
+    rw [etaMultiplier_eq_kroneckerOdd γ hpos ho, hn, kroneckerOdd_eq_kroneckerEven _ _ hno hd, ← hn]
 
 end TauCeti.ModularForm

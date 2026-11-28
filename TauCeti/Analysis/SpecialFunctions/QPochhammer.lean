@@ -366,12 +366,9 @@ theorem qTheta_mul_left {q : 𝕜} (hq : ‖q‖ < 1) (hq₀ : q ≠ 0) {w : �
 
 /-- For `‖q‖ < 1` the product `∏_{n ≥ 0} (1 - q^{2n+1} w)` over the odd powers of `q` converges. -/
 theorem multipliable_one_sub_pow_odd_mul {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
-    Multipliable fun n : ℕ ↦ 1 - q ^ (2 * n + 1) * w := by
-  refine multipliable_one_sub_of_summable ?_
-  exact ((summable_geometric_of_lt_one (norm_nonneg _) (norm_pow_lt_one hq two_ne_zero)).mul_right
-    (‖q‖ * ‖w‖)).congr fun n ↦ by
-      simp only [norm_mul, norm_pow]
-      ring
+    Multipliable fun n : ℕ ↦ 1 - q ^ (2 * n + 1) * w :=
+  multipliable_one_sub_of_summable
+    ((summable_norm_pow_succ_mul hq w).comp_injective (mul_right_injective₀ (a := 2) two_ne_zero))
 
 /-- For `‖q‖ < 1` the product `∏_{n ≥ 0} (1 - q^{2n+1})` over the odd powers of `q` converges. -/
 theorem multipliable_one_sub_pow_odd {q : 𝕜} (hq : ‖q‖ < 1) :

@@ -25,8 +25,8 @@ product, deduces nonvanishing, and expresses `θ(2 τ)` as the eta quotient
 
 * `TauCeti.jacobiTheta_eq_tprod`: on `0 < τ.im`,
   `jacobiTheta τ = (∏' n, (1 + e^{π i (2n+1) τ})) ^ 2 * ∏' n, (1 - e^{2π i (n+1) τ})`.
-* `TauCeti.jacobiTheta_ne_zero`, `TauCeti.jacobiTheta_two_mul_ne_zero`: `jacobiTheta τ ≠ 0`
-  whenever `0 < τ.im`, and `jacobiTheta (2 * (z : ℂ)) ≠ 0` for `z : ℍ`.
+* `TauCeti.jacobiTheta_ne_zero`, `TauCeti.jacobiTheta_natCast_mul_ne_zero`: `jacobiTheta τ ≠ 0`
+  whenever `0 < τ.im`, and `jacobiTheta (m * (z : ℂ)) ≠ 0` for `m ≠ 0` and `z : ℍ`.
 * `TauCeti.jacobiTheta_two_mul_eq_eta_pow_div`:
   `jacobiTheta (2 * τ) = η (2 * τ) ^ 5 / (η τ ^ 2 * η (4 * τ) ^ 2)` on `0 < τ.im`.
 
@@ -68,9 +68,10 @@ theorem jacobiTheta_ne_zero {τ : ℂ} (hτ : 0 < τ.im) : jacobiTheta τ ≠ 0 
     tprod_one_sub_pow_ne_zero (UpperHalfPlane.norm_exp_two_pi_I_lt_one ⟨τ, hτ⟩)
   exact mul_ne_zero (pow_ne_zero 2 h1) h2
 
-/-- `jacobiTheta (2 * (z : ℂ))` never vanishes on the upper half-plane. -/
-theorem jacobiTheta_two_mul_ne_zero (z : ℍ) : jacobiTheta (2 * (z : ℂ)) ≠ 0 :=
-  jacobiTheta_ne_zero (by simpa using mul_pos two_pos z.im_pos)
+/-- `jacobiTheta (m * (z : ℂ))` never vanishes on the upper half-plane for `m ≠ 0`. -/
+theorem jacobiTheta_natCast_mul_ne_zero (m : ℕ) [NeZero m] (z : ℍ) :
+    jacobiTheta (m * (z : ℂ)) ≠ 0 :=
+  jacobiTheta_ne_zero (by simpa using mul_pos (Nat.cast_pos.mpr (NeZero.pos m)) z.im_pos)
 
 /-- **Eta-quotient identity for `jacobiTheta (2 * τ)`**: on `0 < τ.im`,
 `jacobiTheta (2 * τ) = η (2 * τ) ^ 5 / (η τ ^ 2 * η (4 * τ) ^ 2)`. -/
