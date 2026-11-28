@@ -9,7 +9,8 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Basic
 public import TauCeti.Analysis.Sobolev.Mollification.TestField
 public import TauCeti.Analysis.Sobolev.Leibniz
 public import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
-public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 
 /-!
 # Weak divergence tested against Sobolev functions
@@ -25,15 +26,13 @@ functions `ψ` with weak derivative `Dψ`, where the pairing `⟪u, ∇ψ⟫` re
 * `TauCeti.HasWeakDivergenceOn.integral_apply_eq_neg_integral_mul`: on the whole space the
   support condition is replaced by integrability of `Dψ (u)`, `ψ g` and `ψ u`.
 
-Along the way, `TauCeti.HasWeakFDerivOn.ae_eq_zero_of_notMem_tsupport` records that a weak
-derivative vanishes almost everywhere off the support of the function.
-
 The first statement mollifies `ψ` into test functions
 (`TauCeti.HasWeakFDerivOn.exists_seq_testFunction_convolution_normed`) and passes to the limit in
-both pairings by Hölder's inequality. The second multiplies `ψ` by the expanding cutoffs
-`χ (x / (n + 1))`, whose gradients are `O(1 / n)`, and passes to the limit by dominated
-convergence. Integration by parts against products of Sobolev fields, such as the antisymmetry of
-the convective form `∫ ⟪(u · ∇) v, w⟫` for divergence-free `u`, rests on the second statement.
+both pairings by Hölder's inequality. The second multiplies `ψ` by the expanding cutoffs of
+`TauCeti.exists_expanding_cutoff`, whose gradients are `O(1 / n)`, and passes to the limit by
+dominated convergence. Integration by parts against products of Sobolev fields, such as the
+antisymmetry of the convective form `∫ ⟪(u · ∇) v, w⟫` for divergence-free `u`, rests on the
+second statement.
 
 ## References
 
@@ -51,17 +50,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
   {Ω : Opens E} {u : E → E} {g : E → ℝ} {ψ : E → ℝ} {Dψ : E → E →L[ℝ] ℝ}
   {s s' t t' : ℝ≥0∞}
-
-omit [μ.IsAddHaarMeasure] in
-/-- **A weak derivative vanishes off the support.** If `Dv` is a weak derivative of `v` on `Ω`,
-then `Dv x = 0` for almost every `x ∈ Ω` outside the support of `v`. This is the
-direction-free form of `TauCeti.HasWeakFDerivOn.ae_apply_eq_zero_of_notMem_tsupport`. -/
-theorem HasWeakFDerivOn.ae_eq_zero_of_notMem_tsupport {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {v : E → F} {Dv : E → E →L[ℝ] F} (hv : HasWeakFDerivOn μ Ω v Dv) :
-    ∀ᵐ x ∂μ.restrict Ω, x ∉ tsupport v → Dv x = 0 := by
-  let b := Module.finBasis ℝ E
-  filter_upwards [ae_all_iff.2 fun i ↦ hv.ae_apply_eq_zero_of_notMem_tsupport (b i)] with x hx hxv
-  exact ContinuousLinearMap.coe_injective (b.ext fun i ↦ by simp [hx i hxv])
 
 /-- **Weak divergence against a compactly supported Sobolev function.** Let `u` have weak
 divergence `g` on `Ω`, and let `ψ` have a weak derivative `Dψ` on `Ω`, with support in a compact
@@ -124,49 +112,6 @@ theorem HasWeakDivergenceOn.setIntegral_apply_eq_neg_integral_mul_of_hasCompactS
   exact tendsto_nhds_unique hL (hR.neg.congr fun n ↦
     (hu.integral_inner_gradient_eq_neg_integral_mul (φ n)).symm)
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- Expanding cutoffs: smooth compactly supported functions `χ n` with `|χ n| ≤ 1`, tending to `1`
-pointwise, whose derivatives are uniformly bounded by `C n → 0`. -/
-private theorem exists_expanding_cutoff :
-    ∃ (χ : ℕ → E → ℝ) (C : ℕ → ℝ), Tendsto C atTop (𝓝 0) ∧
-      (∀ n, ContDiff ℝ ∞ (χ n) ∧ HasCompactSupport (χ n) ∧
-        ∀ x, ‖χ n x‖ ≤ 1 ∧ ‖fderiv ℝ (χ n) x‖ ≤ C n) ∧
-      ∀ x, Tendsto (fun n ↦ χ n x) atTop (𝓝 1) := by
-  let χ : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
-  obtain ⟨B, hB⟩ : ∃ B, ∀ x, ‖fderiv ℝ χ x‖ ≤ B :=
-    ((χ.contDiff (n := 1)).continuous_fderiv one_ne_zero).bounded_above_of_compact_support
-      (χ.hasCompactSupport.fderiv (𝕜 := ℝ))
-  let c : ℕ → ℝ := fun n ↦ 1 / ((n : ℝ) + 1)
-  have hc0 (n : ℕ) : 0 < c n := by positivity
-  have hc : Tendsto c atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
-  refine ⟨fun n x ↦ χ (c n • x), fun n ↦ B * c n, by simpa using hc.const_mul B,
-    fun n ↦ ⟨χ.contDiff.comp (contDiff_const_smul _), χ.hasCompactSupport.comp_smul (hc0 n).ne',
-      fun x ↦ ⟨?_, ?_⟩⟩, fun x ↦ ?_⟩
-  · rw [Real.norm_of_nonneg χ.nonneg]
-    exact χ.le_one
-  · have hd : HasFDerivAt (fun y ↦ χ (c n • y)) ((fderiv ℝ χ (c n • x)).comp
-        (c n • ContinuousLinearMap.id ℝ E)) x :=
-      ((χ.contDiff (n := 1)).differentiable one_ne_zero _).hasFDerivAt.comp x
-        ((hasFDerivAt_id x).const_smul (c n))
-    rw [hd.fderiv]
-    refine (ContinuousLinearMap.opNorm_comp_le _ _).trans (mul_le_mul (hB _) ?_ (norm_nonneg _)
-      ((norm_nonneg _).trans (hB 0)))
-    rw [norm_smul, Real.norm_of_nonneg (hc0 n).le]
-    exact mul_le_of_le_one_right (hc0 n).le ContinuousLinearMap.norm_id_le
-  · have h0 : Tendsto (fun n ↦ c n • x) atTop (𝓝 0) := by
-      simpa using (hc.smul_const x : Tendsto (fun n ↦ c n • x) atTop (𝓝 ((0 : ℝ) • x)))
-    rw [← χ.one_of_mem_closedBall (Metric.mem_closedBall_self zero_le_one)]
-    exact (χ.continuous.tendsto 0).comp h0
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
-/-- A function vanishing off the support of a compactly supported `χ`, and in `Lᵖ` there, is in
-`Lᵖ`. -/
-private theorem memLp_of_support_subset_tsupport {X : Type*} [NormedAddCommGroup X] {p : ℝ≥0∞}
-    {χ : E → ℝ} {f : E → X} (hf : MemLp f p (μ.restrict (tsupport χ)))
-    (hfχ : ∀ x ∉ tsupport χ, f x = 0) : MemLp f p μ := by
-  rw [← indicator_eq_self.2 fun x hx ↦ by_contra fun h ↦ hx (hfχ x h)]
-  exact (memLp_indicator_iff_restrict (isClosed_tsupport χ).measurableSet.nullMeasurableSet).2 hf
-
 /-- The whole-space identity localized by a cutoff: for a smooth compactly supported `χ` with
 `|χ| ≤ 1` and `‖Dχ‖ ≤ C`, `∫ χ Dψ (u) + ∫ Dχ (u) ψ = -∫ χ ψ g`. -/
 private theorem HasWeakDivergenceOn.integral_mul_apply_add_integral_fderiv_apply_mul
@@ -182,15 +127,17 @@ private theorem HasWeakDivergenceOn.integral_mul_apply_add_integral_fderiv_apply
     ∫ x, χ x * Dψ x (u x) ∂μ + ∫ x, fderiv ℝ χ x (u x) * ψ x ∂μ =
       -∫ x, χ x * (ψ x * g x) ∂μ := by
   have hKc : IsCompact (tsupport χ) := hχc
+  have hKm : NullMeasurableSet (tsupport χ) μ :=
+    (isClosed_tsupport χ).measurableSet.nullMeasurableSet
   have : IsFiniteMeasure (μ.restrict (tsupport χ)) :=
     isFiniteMeasure_restrict.2 hKc.measure_lt_top.ne
   have hoff (x : E) (hx : x ∉ tsupport χ) : χ x = 0 ∧ fderiv ℝ χ x = 0 :=
     ⟨image_eq_zero_of_notMem_tsupport hx, fderiv_of_notMem_tsupport ℝ hx⟩
   -- `χ ψ ∈ Lᵗ` and its weak derivative `χ Dψ + Dχ ⊗ ψ` is in `Lˢ`.
   have hψχ : MemLp (fun x ↦ χ x • ψ x) t μ := by
-    refine memLp_of_support_subset_tsupport ((hψt _ hKc).of_le
+    refine MemLp.of_restrict_of_support_subset hKm ((hψt _ hKc).of_le
       (hχ.continuous.aestronglyMeasurable.smul (hψt _ hKc).aestronglyMeasurable)
-      (.of_forall fun x ↦ ?_)) fun x hx ↦ by simp [(hoff x hx).1]
+      (.of_forall fun x ↦ ?_)) fun x hx ↦ by_contra fun h ↦ hx (by simp [(hoff x h).1])
     rw [norm_smul]
     exact mul_le_of_le_one_left (norm_nonneg _) (hχ1 x)
   have hDψχ : MemLp (fun x ↦ χ x • Dψ x + (fderiv ℝ χ x).smulRight (ψ x)) s
@@ -211,8 +158,8 @@ private theorem HasWeakDivergenceOn.integral_mul_apply_add_integral_fderiv_apply
           (hχ.continuous_fderiv (by simp)).aestronglyMeasurable
       · rw [ContinuousLinearMap.norm_smulRight_apply]
         exact mul_le_mul_of_nonneg_right (hdχ x) (norm_nonneg _)
-    exact memLp_of_support_subset_tsupport (h₁.add h₂) fun x hx ↦ by
-      simp [(hoff x hx).1, (hoff x hx).2]
+    exact MemLp.of_restrict_of_support_subset hKm (h₁.add h₂) fun x hx ↦ by_contra fun h ↦
+      hx (by simp [(hoff x h).1, (hoff x h).2])
   have h := hu.setIntegral_apply_eq_neg_integral_mul_of_hasCompactSupport
     (hψ.contDiff_smul hχ) hχc.smul_right (by simp) hψχ hDψχ
     (fun K hK _ ↦ huK K hK) (fun K hK _ ↦ hgK K hK)

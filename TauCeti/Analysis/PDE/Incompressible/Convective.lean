@@ -58,8 +58,8 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   {u : E → E} {g : E → ℝ} {v w : E → F} {V W : E → E →L[ℝ] F}
 
 private theorem inv_four_add_inv_four : (4 : ℝ≥0∞)⁻¹ + 4⁻¹ = 2⁻¹ := by
-  rw [← two_mul, show (4 : ℝ≥0∞) = 2 * 2 by norm_num, ENNReal.mul_inv (by simp) (by simp),
-    ← mul_assoc, ENNReal.mul_inv_cancel (by simp) (by simp), one_mul]
+  rw [← ENNReal.toReal_eq_toReal_iff' (by simp) (by simp), ENNReal.toReal_add (by simp) (by simp)]
+  norm_num
 
 /-- **The convective form against a divergence.** Let `u` have weak divergence `g` on the whole
 space, and let `v, w` have weak derivatives `V, W`. If `u, v, w ∈ L⁴`, `v ∈ L²` and
@@ -78,9 +78,10 @@ theorem HasWeakDivergenceOn.integral_inner_apply_add_integral_inner_apply
   have : ENNReal.HolderTriple 4 4 2 := ⟨by rw [inv_four_add_inv_four]⟩
   have : r.HolderConjugate 4 := ⟨by
     rw [inv_inv, inv_one, add_assoc, inv_four_add_inv_four, ENNReal.inv_two_add_inv_two]⟩
-  have h24 : (2 : ℝ≥0∞)⁻¹ + 4⁻¹ ≤ 1 :=
-    (add_le_add le_rfl (ENNReal.inv_le_inv.2 (show (2 : ℝ≥0∞) ≤ 4 by norm_num))).trans_eq
-      ENNReal.inv_two_add_inv_two
+  have h24 : (2 : ℝ≥0∞)⁻¹ + 4⁻¹ ≤ 1 := by
+    rw [← ENNReal.inv_two_add_inv_two]
+    gcongr
+    norm_num
   have : Fact ((1 : ℝ≥0∞) ≤ 2) := ⟨by norm_num⟩
   have : Fact ((1 : ℝ≥0∞) ≤ 4) := ⟨by norm_num⟩
   let B : F →L[ℝ] F →L[ℝ] ℝ := innerSL ℝ
@@ -149,17 +150,21 @@ theorem IsSolenoidalOn.integral_inner_apply_self_eq_zero (hu : IsSolenoidalOn μ
     hv4 hV (MemLp.zero' (ε := ℝ))
 
 /-- **The divergence form of the convective term.** For a divergence-free field `u ∈ L⁴` on the
-whole space and a field `v ∈ L² ∩ L⁴` with weak derivative `V ∈ L²`, the convective term
+whole space and a field `v ∈ L⁴` with weak derivative `V ∈ L²`, the convective term
 `(u · ∇) v` is the divergence of `v ⊗ u` in the sense of distributions: for every test field `φ`,
 `∫ ⟪(u · ∇) v, φ⟫ = -∫ ⟪v, Dφ (u)⟫`. -/
-theorem IsSolenoidalOn.integral_inner_apply_eq_neg_integral_inner_fderiv_apply [CompleteSpace F]
+theorem IsSolenoidalOn.integral_inner_apply_eq_neg_integral_inner_fderiv_apply
     (hu : IsSolenoidalOn μ ⊤ u) (hv : HasWeakFDerivOn μ ⊤ v V) (hu4 : MemLp u 4 μ)
-    (hv2 : MemLp v 2 μ) (hv4 : MemLp v 4 μ) (hV : MemLp V 2 μ) (φ : 𝓓((⊤ : Opens E), F)) :
-    ∫ x, ⟪V x (u x), φ x⟫_ℝ ∂μ = -∫ x, ⟪v x, fderiv ℝ φ x (u x)⟫_ℝ ∂μ :=
-  hu.integral_inner_apply_eq_neg_integral_inner_apply hv
-    ((φ.contDiff.of_le (by simp)).contDiffOn.hasWeakFDerivOn_fderiv) hu4 hv2 hv4
-    (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport) hV
+    (hv4 : MemLp v 4 μ) (hV : MemLp V 2 μ) (φ : 𝓓((⊤ : Opens E), F)) :
+    ∫ x, ⟪V x (u x), φ x⟫_ℝ ∂μ = -∫ x, ⟪v x, fderiv ℝ φ x (u x)⟫_ℝ ∂μ := by
+  have := hv.completeSpace
+  have h := hu.integral_inner_apply_eq_neg_integral_inner_apply
+    ((φ.contDiff.of_le (by simp)).contDiffOn.hasWeakFDerivOn_fderiv) hv hu4
+    (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport)
+    (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport) hv4
     ((φ.contDiff.continuous_fderiv (by simp)).memLp_of_hasCompactSupport
-      (φ.hasCompactSupport.fderiv (𝕜 := ℝ)))
+      (φ.hasCompactSupport.fderiv (𝕜 := ℝ))) hV
+  simp only [real_inner_comm] at h ⊢
+  linarith
 
 end TauCeti
