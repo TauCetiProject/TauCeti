@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
-public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.MapHomologicalComplex
-public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coefficients
 
 /-!
 # Changing the category of coefficients of singular homology
@@ -32,6 +31,9 @@ with coefficients in `M` regarded as an `R`-module. Along `ℤ →+* ℤ/2` this
 reduced modulo two with mod-two chains; see
 `TauCeti.AlgebraicTopology.Singular.Coefficients.ModTwo`.
 Extension of scalars is another example of the chain-level statement, since it preserves colimits.
+When exact (e.g. flat ring maps), it also commutes with singular homology, feeding scalar extension
+of local homology, module orientations, and fundamental classes (see
+`TauCeti.AlgebraicTopology.Singular.Coefficients.Relative` for relative singular homology).
 
 ## Main declarations
 
@@ -41,6 +43,7 @@ Extension of scalars is another example of the chain-level statement, since it p
   naturally in `X`.
 * `CategoryTheory.Functor.isZero_singularHomologyFunctor_iff`: when `F` is also faithful,
   `Hₙ(X; F R) = 0` if and only if `Hₙ(X; R) = 0`.
+* `RingHom.singularHomologyExtendScalarsIso`: `S ⊗[R] Hₖ(M; R) ≅ Hₖ(M; S)` for exact `f : R →+* S`.
 -/
 
 public section
@@ -80,11 +83,7 @@ naturally in the space. Its component at `X` is the comparison of the homology o
 with the image of the homology, followed by the map induced by `F (C(X; R)) ≅ C(X; F R)`. -/
 def singularHomologyFunctorObjCompIso (n : ℕ) :
     (singularHomologyFunctor C n).obj R ⋙ F ≅ (singularHomologyFunctor D n).obj (F.obj R) :=
-  -- Mathlib's `singularHomologyFunctor` is by definition singular chains followed by homology
-  Functor.isoWhiskerLeft ((singularChainComplexFunctor C).obj R)
-      (F.mapHomologicalComplexCompHomologyFunctorIso (.down ℕ) n).symm ≪≫
-    Functor.isoWhiskerRight (singularChainComplexFunctorObjCompMapIso F R)
-      (HomologicalComplex.homologyFunctor D (.down ℕ) n)
+  Functor.isoWhiskerLeft TopCat.toSSet (SSet.homologyFunctorObjCompIso F R n)
 
 /-- The component at a space `X` of `F (Hₙ(X; R)) ≅ Hₙ(X; F R)` is the comparison of the image of
 the homology with the homology of the image complex, followed by the map induced by
@@ -95,18 +94,15 @@ lemma singularHomologyFunctorObjCompIso_hom_app (n : ℕ) (X : TopCat.{w}) :
           (((singularChainComplexFunctor C).obj R).obj X) ≫
         HomologicalComplex.homologyMap ((singularChainComplexFunctorObjCompMapIso F R).hom.app X)
           n :=
-  (rfl)
+  SSet.homologyFunctorObjCompIso_hom_app F R n (TopCat.toSSet.obj X)
 
-/-- The inverse of `F (Hₙ(X; R)) ≅ Hₙ(X; F R)` at a space `X` is the map induced by
-`C(X; F R) ≅ F (C(X; R))`, followed by the comparison of the homology of the image complex with
-the image of the homology. -/
+/-- The inverse component at a space `X` of `F (Hₙ(X; R)) ≅ Hₙ(X; F R)`. -/
 lemma singularHomologyFunctorObjCompIso_inv_app (n : ℕ) (X : TopCat.{w}) :
     (singularHomologyFunctorObjCompIso F R n).inv.app X =
-      HomologicalComplex.homologyMap ((singularChainComplexFunctorObjCompMapIso F R).inv.app X)
-          n ≫
+      HomologicalComplex.homologyMap ((singularChainComplexFunctorObjCompMapIso F R).inv.app X) n ≫
         (F.mapHomologicalComplexCompHomologyFunctorIso (.down ℕ) n).hom.app
           (((singularChainComplexFunctor C).obj R).obj X) :=
-  (rfl)
+  SSet.homologyFunctorObjCompIso_inv_app F R n (TopCat.toSSet.obj X)
 
 /-- For a faithful additive functor `F : C ⥤ D` preserving coproducts and homology,
 `Hₙ(X; F R) = 0` if and only if `Hₙ(X; R) = 0`. -/
@@ -117,3 +113,35 @@ lemma isZero_singularHomologyFunctor_iff [F.Faithful] (n : ℕ) (X : TopCat.{w})
     IsZero.iff_id_eq_zero, IsZero.iff_id_eq_zero, Functor.comp_obj, ← F.map_id, F.map_eq_zero_iff]
 
 end CategoryTheory.Functor
+
+namespace RingHom
+open ModuleCat (extendScalars of)
+open CategoryTheory.Functor.Monoidal (εIso)
+open TopCat (toSSet ofHom)
+open SSet (homologyMap homologyObjIso homologyIsoOfCoefficientsIso)
+variable {R S : Type w} [CommRing R] [CommRing S] (f : R →+* S)
+  [PreservesFiniteLimits (extendScalars.{w} f)]
+section
+variable (M : Type w) [TopologicalSpace M] (k : ℕ)
+/-- **Extension of scalars commutes with singular homology** along exact `f : R →+* S`. -/
+def singularHomologyExtendScalarsIso :
+    (extendScalars.{w} f).obj ((toSSet.obj (TopCat.of M)).homology (of R R) k) ≅
+      (toSSet.obj (TopCat.of M)).homology (of S S) k :=
+  (f.simplicialHomologyFunctorExtendScalarsIso k).app (toSSet.obj (TopCat.of M))
+@[elementwise nosimp]
+lemma singularHomologyExtendScalarsIso_hom : (f.singularHomologyExtendScalarsIso M k).hom =
+    (homologyObjIso (extendScalars.{w} f) (of R R) (toSSet.obj (TopCat.of M)) k).hom ≫
+      (homologyIsoOfCoefficientsIso (εIso _).symm (toSSet.obj (TopCat.of M)) k).hom :=
+  f.simplicialHomologyFunctorExtendScalarsIso_hom_app _ k
+lemma singularHomologyExtendScalarsIso_inv : (f.singularHomologyExtendScalarsIso M k).inv =
+    (homologyIsoOfCoefficientsIso (εIso _).symm (toSSet.obj (TopCat.of M)) k).inv ≫
+      (homologyObjIso (extendScalars.{w} f) (of R R) (toSSet.obj (TopCat.of M)) k).inv :=
+  f.simplicialHomologyFunctorExtendScalarsIso_inv_app _ k
+end
+@[reassoc] lemma map_homologyMap_comp_singularHomologyExtendScalarsIso_hom {M N : Type w}
+    [TopologicalSpace M] [TopologicalSpace N] (g : C(M, N)) (k : ℕ) :
+    (extendScalars.{w} f).map (homologyMap (toSSet.map (ofHom g)) (of R R) k) ≫
+        (f.singularHomologyExtendScalarsIso N k).hom = (f.singularHomologyExtendScalarsIso M k).hom
+          ≫ homologyMap (toSSet.map (ofHom g)) (of S S) k :=
+  (f.simplicialHomologyFunctorExtendScalarsIso k).hom.naturality (toSSet.map (ofHom g))
+end RingHom

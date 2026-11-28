@@ -111,9 +111,11 @@ lemma localHomologyMap_localOrientationEquiv_symm (hj : IsOpenEmbedding j) (x : 
     (z : LocalOrientation N (j x) d) (h : j ⁻¹' {j x} ⊆ {x}) :
     localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) ⟨j, hj.continuous⟩ h d
       ((hj.localOrientationEquiv x d).symm z).val = z.val := by
-  have h' := (localHomologyIsoOfIsOpenEmbedding (A := ModuleCat.{w} ℤ)
-    (ModuleCat.of ℤ (ULift.{w} ℤ)) hj x d).inv_hom_id_apply z.val
-  rwa [localHomologyIsoOfIsOpenEmbedding_hom, ← coe_localOrientationEquiv_symm] at h'
+  rw [coe_localOrientationEquiv_symm,
+    ← ModuleLocalOrientation.coe_equivLocalOrientation_symm (j x) d z,
+    ← hj.coe_moduleLocalOrientationEquiv_symm]
+  exact hj.localHomologyMap_moduleLocalOrientationEquiv_symm (ModuleCat.of ℤ (ULift.{w} ℤ)) x
+    ((ModuleLocalOrientation.equivLocalOrientation N (j x) d).symm z) h
 
 /-- The correspondence of local orientations commutes with reversal. -/
 @[simp]
@@ -175,43 +177,38 @@ variable {M N P E : Type w} [TopologicalSpace M] [T2Space M] [TopologicalSpace N
 at `x` is the one corresponding to the local orientation of `o` at `j x` under the excision
 isomorphism induced by `j`. -/
 def comap (o : HomologicalOrientation N E d) (hj : IsOpenEmbedding j) :
-    HomologicalOrientation M E d where
-  toFun x := (hj.localOrientationEquiv x d).symm (o (j x))
-  localOrientationTransport_toFun' {x y} f := by
-    apply (hj.localOrientationEquiv y.as d).injective
-    rw [Equiv.apply_symm_apply]
-    apply Subtype.ext
-    -- Elementwise, `j` intertwines the transports of `M` and of `N`.
-    have h : (localHomologyIsoOfIsOpenEmbedding (A := ModuleCat.{w} ℤ)
-        (ModuleCat.of ℤ (ULift.{w} ℤ)) hj y.as d).hom
-        (localHomologyTransport (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) M E d f
-          ((hj.localOrientationEquiv x.as d).symm (o (j x.as))).val) =
-        localHomologyTransport (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) N E d
-          ((FundamentalGroupoid.map ⟨j, hj.continuous⟩).map f) ((localHomologyIsoOfIsOpenEmbedding
-            (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) hj x.as d).hom
-            ((hj.localOrientationEquiv x.as d).symm (o (j x.as))).val) :=
-      (ConcreteCategory.comp_apply _ _ _).symm.trans
-        ((ConcreteCategory.congr_hom
-          (localHomologyTransport_comp_localHomologyIsoOfIsOpenEmbedding_hom
-            (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) (E := E) hj d f) _).trans
-          (ConcreteCategory.comp_apply _ _ _))
-    rw [IsOpenEmbedding.coe_localOrientationEquiv, coe_localOrientationTransport, h,
-      ← IsOpenEmbedding.coe_localOrientationEquiv, Equiv.apply_symm_apply]
-    exact (coe_localOrientationTransport N E d _ _).symm.trans
-      (congrArg Subtype.val (o.localOrientationTransport_apply
-        ((FundamentalGroupoid.map ⟨j, hj.continuous⟩).map f)))
+    HomologicalOrientation M E d :=
+  ModuleOrientation.equivHomologicalOrientation
+    ((ModuleOrientation.equivHomologicalOrientation.symm o).comap hj)
+
+lemma _root_.TauCeti.ModuleOrientation.equivHomologicalOrientation_comap
+    (o : ModuleOrientation (ModuleCat.of ℤ (ULift.{w} ℤ)) N E d) (hj : IsOpenEmbedding j) :
+    ModuleOrientation.equivHomologicalOrientation (o.comap hj) =
+      (ModuleOrientation.equivHomologicalOrientation o).comap hj := by
+  rw [comap, Equiv.symm_apply_apply]
+
+@[simp]
+lemma _root_.TauCeti.ModuleOrientation.equivHomologicalOrientation_symm_comap
+    (o : HomologicalOrientation N E d) (hj : IsOpenEmbedding j) :
+    ModuleOrientation.equivHomologicalOrientation.symm (o.comap hj) =
+      (ModuleOrientation.equivHomologicalOrientation.symm o).comap hj :=
+  ModuleOrientation.equivHomologicalOrientation.symm_apply_apply _
 
 lemma comap_apply (o : HomologicalOrientation N E d) (hj : IsOpenEmbedding j) (x : M) :
     o.comap hj x = (hj.localOrientationEquiv x d).symm (o (j x)) :=
-  (rfl)
+  Subtype.ext <| by
+    rw [comap, ModuleOrientation.coe_equivHomologicalOrientation_apply,
+      ModuleOrientation.comap_apply, hj.coe_moduleLocalOrientationEquiv_symm,
+      ModuleOrientation.coe_equivHomologicalOrientation_symm_apply,
+      IsOpenEmbedding.coe_localOrientationEquiv_symm]
 
 /-- The local orientation of the pullback at `x` corresponds to the local orientation of `o` at
 `j x`. -/
 @[simp]
 lemma localOrientationEquiv_comap_apply (o : HomologicalOrientation N E d)
     (hj : IsOpenEmbedding j) (x : M) :
-    hj.localOrientationEquiv x d (o.comap hj x) = o (j x) :=
-  Equiv.apply_symm_apply _ _
+    hj.localOrientationEquiv x d (o.comap hj x) = o (j x) := by
+  rw [comap_apply, Equiv.apply_symm_apply]
 
 /-- The pullback depends only on the open embedding as a function, not on the proof that it is
 one. -/
@@ -224,28 +221,19 @@ lemma comap_congr (o : HomologicalOrientation N E d) {j' : M → N} (hj : IsOpen
 @[simp]
 lemma comap_neg (o : HomologicalOrientation N E d) (hj : IsOpenEmbedding j) :
     (-o).comap hj = -o.comap hj := by
-  ext x : 1
-  apply (hj.localOrientationEquiv x d).injective
-  rw [localOrientationEquiv_comap_apply, neg_apply, neg_apply,
-    IsOpenEmbedding.localOrientationEquiv_neg, localOrientationEquiv_comap_apply]
+  rw [comap, comap, ModuleOrientation.equivHomologicalOrientation_symm_neg,
+    ModuleOrientation.comap_neg, ModuleOrientation.equivHomologicalOrientation_neg]
 
 /-- Pulling back along the identity does not change an orientation. -/
 @[simp]
 lemma comap_id (o : HomologicalOrientation M E d) : o.comap IsOpenEmbedding.id = o := by
-  ext x : 1
-  apply (IsOpenEmbedding.localOrientationEquiv IsOpenEmbedding.id x d).injective
-  rw [localOrientationEquiv_comap_apply, IsOpenEmbedding.localOrientationEquiv_id]
-  rfl
+  rw [comap, ModuleOrientation.comap_id, Equiv.apply_symm_apply]
 
 /-- **Pulling back is functorial**: pulling back along `j` an orientation pulled back along `j'`
 is pulling back along `j' ∘ j`. -/
 lemma comap_comap (o : HomologicalOrientation P E d) {j' : N → P} (hj' : IsOpenEmbedding j')
     (hj : IsOpenEmbedding j) : (o.comap hj').comap hj = o.comap (hj'.comp hj) := by
-  ext x : 1
-  apply ((hj'.comp hj).localOrientationEquiv x d).injective
-  rw [localOrientationEquiv_comap_apply, ← IsOpenEmbedding.localOrientationEquiv_trans hj hj',
-    Equiv.trans_apply, localOrientationEquiv_comap_apply, localOrientationEquiv_comap_apply]
-  rfl
+  rw [comap, comap, comap, Equiv.symm_apply_apply, ModuleOrientation.comap_comap]
 
 /-- Pulling back along `j'` and then along `j` is pulling back along any open embedding `k` equal to
 `j' ∘ j`, for instance the inclusion of an open subset of an open subset. -/

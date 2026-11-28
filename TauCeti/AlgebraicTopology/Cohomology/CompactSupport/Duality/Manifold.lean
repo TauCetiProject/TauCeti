@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality.MayerVietoris
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Euclidean.Duality
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Manifold
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass.Integral
 
 import TauCeti.CategoryTheory.Linear.Int
 

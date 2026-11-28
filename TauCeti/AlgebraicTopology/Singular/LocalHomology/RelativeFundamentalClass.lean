@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Deformation
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
-import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Module.Basic
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.AlgebraicTopology.Singular.Triple
 

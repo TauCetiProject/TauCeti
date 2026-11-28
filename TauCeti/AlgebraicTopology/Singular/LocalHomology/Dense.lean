@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass.Manifold
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Section
+import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
 # Top-dimensional classes are determined on a dense set

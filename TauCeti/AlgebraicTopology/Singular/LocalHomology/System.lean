@@ -39,8 +39,9 @@ compatibility with composition characterizes the transport
 * `TauCeti.singularHomologyToLocalHomology`: with module coefficients, the map
   `Hₖ(M; N) → Hₖ(M, M ∖ {x}; N)` from singular homology to the local homology at `x`, the map of
   the long exact sequence of the pair `(M, M ∖ {x})`
-  (`TauCeti.singularHomologyToLocalHomology_eq_singularHomologyπ`), vanishing on classes pushed
-  forward from subsets avoiding `x`
+  (`TauCeti.singularHomologyToLocalHomology_eq_singularHomologyπ`), invariant under transport
+  (`TauCeti.localHomologyTransport_singularHomologyToLocalHomology_path`) and vanishing on
+  classes pushed forward from subsets avoiding `x`
   (`TauCeti.singularHomologyToLocalHomology_map_subtypeVal_eq_zero_of_notMem`). For `x ∈ S` it
   factors through the local homology along `S`
   (`TauCeti.singularHomologyToLocalHomology_eq_localHomologyRestriction`).
@@ -954,16 +955,57 @@ theorem localHomologyRestriction_univ_comp_localHomologyTransport (k : ℕ)
       mul {c d e f} hf {g} hg := by
         rw [Set.mem_ofPred_eq, localHomologyTransport_comp, ← Category.assoc, hf, hg] }
   -- It contains the classes of paths inside the domains of patches, so it is everything.
-  have hS : S = ⊤ := by
-    rw [eq_top_iff, ← FundamentalGroupoid.iSup_im_map_subtypeVal_eq_top
-      (U := Patch.domain (M := M) (E := E)) Patch.exists_domain_mem_nhds]
-    refine iSup_le fun P ↦ ?_
-    rw [Subgroupoid.im, Subgroupoid.map_le_iff_le_comap]
-    rintro ⟨⟨a⟩, ⟨b⟩, g⟩ -
-    induction g using Path.Homotopic.Quotient.ind with | mk γ =>
-    exact hpatch P (γ.map continuous_subtypeVal) fun s ↦ (γ s).property
+  have hS : S = ⊤ := FundamentalGroupoid.subgroupoid_eq_top_of_path_mem
+    Patch.exists_domain_mem_nhds S fun P _ _ γ hγ ↦ hpatch P γ hγ
   have hf : f ∈ S.arrows x y := hS ▸ trivial
   exact hf
+
+/-- Any family `α` commuting with restriction automatically commutes with path transport. -/
+theorem map_localHomologyTransport_comp_of_restriction {B : Type*} [Category* B]
+    [HasCoproducts.{w} B] [Abelian B] (F : A ⥤ B) (R' : B) (k : ℕ)
+    (α : ∀ S : Set M, F.obj (localHomology R S k) ⟶ localHomology R' S k)
+    (hα : ∀ {S T : Set M} (h : S ⊆ T),
+      F.map (localHomologyRestriction R h k) ≫ α S = α T ≫ localHomologyRestriction R' h k)
+    {x y : FundamentalGroupoid M} (f : x ⟶ y) :
+    F.map (localHomologyTransport R M E k f) ≫ α {y.as} =
+      α {x.as} ≫ localHomologyTransport R' M E k f := by
+  have hpatch (P : Patch M E) {a b : M} (γ : Path a b) (hγ : ∀ s, γ s ∈ P.domain) :
+      F.map (localHomologyTransport R M E k (Path.Homotopic.Quotient.mk γ :
+        FundamentalGroupoid.mk a ⟶ FundamentalGroupoid.mk b)) ≫ α {b} =
+        α {a} ≫ localHomologyTransport R' M E k (Path.Homotopic.Quotient.mk γ :
+          FundamentalGroupoid.mk a ⟶ FundamentalGroupoid.mk b) := by
+    have ha := γ.source ▸ hγ 0; have hb := γ.target ▸ hγ 1
+    have := P.isIso_localHomologyRestriction R ha k
+    have hαa := (congrArg (· ≫ (P.iso R' ha k).inv) (hα (P.singleton_subset_closedImage ha))).trans
+      (by rw [Category.assoc, ← P.iso_hom R' ha, Iso.hom_inv_id, Category.comp_id])
+    rw [P.localHomologyTransport_mk R γ hγ k, P.localHomologyTransport_mk R' γ hγ k,
+      ← cancel_epi (F.map (P.iso R ha k).hom), ← F.map_comp_assoc, Iso.hom_inv_id_assoc,
+      P.iso_hom R hb, hα (P.singleton_subset_closedImage hb), P.iso_hom R ha, reassoc_of% hαa,
+      P.iso_hom R' hb]
+  let S : Subgroupoid (FundamentalGroupoid M) :=
+    { arrows c d := {g | F.map (localHomologyTransport R M E k g) ≫ α {d.as} =
+        α {c.as} ≫ localHomologyTransport R' M E k g}
+      inv {c d g} hg := by
+        rw [Set.mem_ofPred_eq] at hg ⊢
+        simpa [Category.assoc, ← F.map_comp_assoc, ← localHomologyTransport_comp] using congrArg
+          (F.map (localHomologyTransport R M E k (Groupoid.inv g)) ≫ · ≫
+            localHomologyTransport R' M E k (Groupoid.inv g)) hg.symm
+      mul {c d e g₁} hg₁ {g₂} hg₂ := by
+        rw [Set.mem_ofPred_eq] at hg₁ hg₂ ⊢
+        rw [localHomologyTransport_comp, localHomologyTransport_comp, F.map_comp, Category.assoc,
+          hg₂, reassoc_of% hg₁] }
+  have hS : S = ⊤ := FundamentalGroupoid.subgroupoid_eq_top_of_path_mem
+    Patch.exists_domain_mem_nhds S fun P _ _ γ hγ ↦ hpatch P γ hγ
+  exact show f ∈ S.arrows x y from hS ▸ trivial
+
+/-- Local homology images of any global class `μ ∈ Hₖ(M; N)` are invariant under path transport. -/
+@[simp] theorem localHomologyTransport_singularHomologyToLocalHomology_path {Λ : Type*} [Ring Λ]
+    {N : ModuleCat.{w} Λ} {k : ℕ} {x y : FundamentalGroupoid M} (g : x ⟶ y)
+    (μ : ↑((TopCat.toSSet.obj (TopCat.of M)).homology N k)) :
+    localHomologyTransport N M E k g (singularHomologyToLocalHomology N x.as k μ) =
+      singularHomologyToLocalHomology N y.as k μ := by
+  rw [singularHomologyToLocalHomology_apply, singularHomologyToLocalHomology_apply,
+    ← comp_apply, localHomologyRestriction_univ_comp_localHomologyTransport]
 
 end Chart
 

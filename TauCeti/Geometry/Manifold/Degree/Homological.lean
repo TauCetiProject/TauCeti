@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smoot
 public import TauCeti.Geometry.Manifold.Degree.Boundaryless
 public import TauCeti.Geometry.Manifold.Degree.Global
 public import TauCeti.Geometry.Manifold.RegularValue.Fibre
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass.Integral
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
 import TauCeti.Geometry.Manifold.ModelTransport.RegularValue

@@ -23,6 +23,8 @@ transferred to arbitrary model-space universes.
 ## Main definitions and results
 
 * `ChartedSpace.ofFinrankEq`: rechart `M` from `E` to `E'` when `finrank 𝕜 E = finrank 𝕜 E'`.
+* `ChartedSpace.uliftFin`: rechart `M` to `ULift.{w} (Fin n) → 𝕜` when `finrank 𝕜 E = n`.
+* `TauCeti.finrank_ulift_fin_arrow`: `Module.finrank 𝕜 (ULift.{w} (Fin n) → 𝕜) = n`.
 * `ChartedSpace.chartAt_ofFinrankEq` and `ChartedSpace.atlas_ofFinrankEq`: the preferred charts and
   atlas of `ChartedSpace.ofFinrankEq`.
 -/
@@ -33,7 +35,20 @@ noncomputable section
 
 open scoped Manifold
 
+namespace TauCeti
+
+universe w
+
+/-- The `𝕜`-dimension of the universe-lifted coordinate space `ULift.{w} (Fin n) → 𝕜` is `n`. -/
+theorem finrank_ulift_fin_arrow (𝕜 : Type*) [Ring 𝕜] [StrongRankCondition 𝕜] (n : ℕ) :
+    Module.finrank 𝕜 (ULift.{w} (Fin n) → 𝕜) = n := by
+  simp
+
+end TauCeti
+
 namespace ChartedSpace
+
+universe w
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {E : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E]
@@ -47,6 +62,14 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 def ofFinrankEq (M : Type*) [TopologicalSpace M] [ChartedSpace E M]
     (h : Module.finrank 𝕜 E = Module.finrank 𝕜 E') : ChartedSpace E' M :=
   (ContinuousLinearEquiv.ofFinrankEq h).toHomeomorph.chartedSpaceComp M
+
+/-- Transfer a `ChartedSpace E M` structure to `ULift.{w} (Fin n) → 𝕜` when
+`Module.finrank 𝕜 E = n`. -/
+@[instance_reducible]
+def uliftFin (M : Type*) [TopologicalSpace M] [ChartedSpace E M] {n : ℕ}
+    (hn : Module.finrank 𝕜 E = n) :
+    ChartedSpace (ULift.{w} (Fin n) → 𝕜) M :=
+  ofFinrankEq (𝕜 := 𝕜) (E := E) M (hn.trans (TauCeti.finrank_ulift_fin_arrow 𝕜 n).symm)
 
 /-- The preferred chart at `x` in `ChartedSpace.ofFinrankEq M h` is `chartAt E x` postcomposed with
 `ContinuousLinearEquiv.ofFinrankEq h`. -/
