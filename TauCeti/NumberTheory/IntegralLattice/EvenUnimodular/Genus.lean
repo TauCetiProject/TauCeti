@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.EvenUnimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Plus
-public import TauCeti.NumberTheory.IntegralLattice.Genus
+public import TauCeti.NumberTheory.IntegralLattice.Genus.Basic
 import TauCeti.LinearAlgebra.IntegralLattice.PosDef.RepresentationNumber
 import TauCeti.NumberTheory.IntegralLattice.UnimodularGenus
 

@@ -383,6 +383,57 @@ theorem apply_symm_apply (f : Isometry A B) (x : B) : f (f.symm x) = x :=
 theorem trans_apply (f : Isometry A B) (g : Isometry B C) (x : A) : (f.trans g) x = g (f x) :=
   f.toAddEquiv.trans_apply g.toAddEquiv x
 
+/-- The identity isometry between two equal finite bilinear modules. -/
+def ofEq {A' : FiniteBilinearModule.{u}} (h : A = A') : Isometry A A' :=
+  h ▸ refl A
+
+/-- The identity isometry between equal finite bilinear modules is the cast of carriers. -/
+theorem ofEq_apply {A' : FiniteBilinearModule.{u}} (h : A = A') (x : A) :
+    ofEq h x = cast (congrArg (fun C : FiniteBilinearModule.{u} ↦ (C : Type u)) h) x := by
+  subst h
+  rfl
+
+/-- The identity isometry of a reflexive equality is the identity. -/
+@[simp]
+theorem ofEq_rfl : ofEq (rfl : A = A) = refl A :=
+  (rfl)
+
+/-- Composing two identity isometries of equal finite bilinear modules gives the identity isometry
+of the composite equality. -/
+@[simp]
+theorem ofEq_trans {A₁ A₂ A₃ : FiniteBilinearModule.{u}} (h₁ : A₁ = A₂) (h₂ : A₂ = A₃) :
+    (ofEq h₁).trans (ofEq h₂) = ofEq (h₁.trans h₂) := by
+  subst h₁ h₂
+  -- `ofEq rfl` is `refl`, whose self-composition is itself.
+  rfl
+
+/-- Applying two identity isometries of equal finite bilinear modules in succession agrees with
+applying the composite identity isometry. -/
+@[simp]
+theorem ofEq_ofEq {A₁ A₂ A₃ : FiniteBilinearModule.{u}} (h₁ : A₁ = A₂) (h₂ : A₂ = A₃) (x : A₁) :
+    ofEq h₂ (ofEq h₁ x) = ofEq (h₁.trans h₂) x := by
+  subst h₁ h₂
+  -- `ofEq rfl` is `refl`, which acts as the identity function.
+  rfl
+
+/-- The inverse of the identity isometry along an equality is the identity isometry along the
+symmetric equality. -/
+@[simp]
+theorem symm_ofEq {A' : FiniteBilinearModule.{u}} (h : A = A') :
+    (ofEq h).symm = ofEq h.symm := by
+  subst h
+  -- The inverse of `refl` is definitionally itself.
+  rfl
+
+/-- Identifying the modules of a dependent family at equal indices with the same target module
+produces the same element. -/
+theorem ofEq_apply_eq {ι : Sort*} {F : ι → FiniteBilinearModule.{u}} (w : ∀ i, F i)
+    {a b : ι} (hab : a = b) {C : FiniteBilinearModule.{u}} (ha : F a = C) (hb : F b = C) :
+    ofEq ha (w a) = ofEq hb (w b) := by
+  subst hab
+  -- `ha` and `hb` now have the same source and target, so they coincide by proof irrelevance.
+  rfl
+
 /-- Forgetting the identity isometry gives the identity morphism. -/
 @[simp]
 theorem refl_toHom (A : FiniteBilinearModule) : (refl A).toHom = Hom.id A := by
@@ -462,6 +513,11 @@ abbrev restrict (H : AddSubgroup A) : FiniteBilinearModule where
 /-- The restricted pairing pairs elements of the subgroup as elements of the whole module. -/
 theorem restrict_pairing (H : AddSubgroup A) (x y : H) :
     (restrict A H).pairing x y = A.pairing x.val y.val := (rfl)
+
+/-- The cardinality of a restricted finite bilinear module is the cardinality of the subgroup. -/
+@[simp]
+theorem natCard_restrict (H : AddSubgroup A) : Nat.card (A.restrict H) = Nat.card H :=
+  (rfl)
 
 /-- The inclusion of a restricted finite bilinear module into the original module. -/
 def restrictHom (H : AddSubgroup A) : Hom (restrict A H) A where

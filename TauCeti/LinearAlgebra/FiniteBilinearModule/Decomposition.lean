@@ -206,7 +206,7 @@ end FiniteQuadraticModule
 
 namespace FiniteBilinearModule
 
-open FiniteQuadraticModule (oddCyclic dyadicCyclic dyadicU dyadicV pi)
+open FiniteQuadraticModule (oddCyclic dyadicCyclic dyadicU dyadicV)
 
 /-- **Nikulin's generator decomposition for symmetric pairings.** A nondegenerate finite bilinear
 module is isometric to an orthogonal sum of the pairings of Nikulin's generators: the pairings
@@ -219,10 +219,11 @@ theorem exists_isometry_prod_pi_generators (A : FiniteBilinearModule.{u})
     ∃ (a : ℕ) (m : Fin a → ℕ) (hm : ∀ i, Odd (m i)) (θ : Fin a → ℤ)
       (b : ℕ) (k : Fin b → ℕ) (η : Fin b → ℤ) (c : ℕ) (ku : Fin c → ℕ) (d : ℕ) (kv : Fin d → ℕ),
       (∀ i, IsPrimePow (m i) ∧ IsCoprime (m i : ℤ) (θ i)) ∧ (∀ i, Odd (η i)) ∧
-        Nonempty (Isometry ((pi fun i ↦ oddCyclic (m i) (hm i) (θ i)).prod
-          ((pi fun i ↦ dyadicCyclic (k i + 1) (η i)).prod
-            ((pi fun i ↦ dyadicU (ku i + 1)).prod
-              (pi fun i ↦ dyadicV (kv i + 1))))).toFiniteBilinearModule A) := by
+        Nonempty (Isometry ((FiniteQuadraticModule.pi fun i ↦ oddCyclic (m i) (hm i) (θ i)).prod
+          ((FiniteQuadraticModule.pi fun i ↦ dyadicCyclic (k i + 1) (η i)).prod
+            ((FiniteQuadraticModule.pi fun i ↦ dyadicU (ku i + 1)).prod
+              (FiniteQuadraticModule.pi fun i ↦
+                dyadicV (kv i + 1))))).toFiniteBilinearModule A) := by
   -- Decompose a quadratic refinement of `A`; its bilinear module is `A` itself.
   obtain ⟨Q, rfl⟩ := FiniteQuadraticModule.toFiniteBilinearModule_surjective A
   obtain ⟨a, m, hm, θ, b, k, η, c, ku, d, kv, hmθ, hη, ⟨f⟩⟩ :=
@@ -239,9 +240,9 @@ theorem exists_isometry_prod_pi_dyadic_of_natCard_eq_two_pow (A : FiniteBilinear
     (hA : A.IsNondegenerate) {N : ℕ} (hN : Nat.card A = 2 ^ N) :
     ∃ (b : ℕ) (k : Fin b → ℕ) (η : Fin b → ℤ) (c : ℕ) (ku : Fin c → ℕ) (d : ℕ) (kv : Fin d → ℕ),
       (∀ i, Odd (η i)) ∧
-        Nonempty (Isometry ((pi fun i ↦ dyadicCyclic (k i + 1) (η i)).prod
-          ((pi fun i ↦ dyadicU (ku i + 1)).prod
-            (pi fun i ↦ dyadicV (kv i + 1)))).toFiniteBilinearModule A) := by
+        Nonempty (Isometry ((FiniteQuadraticModule.pi fun i ↦ dyadicCyclic (k i + 1) (η i)).prod
+          ((FiniteQuadraticModule.pi fun i ↦ dyadicU (ku i + 1)).prod
+            (FiniteQuadraticModule.pi fun i ↦ dyadicV (kv i + 1)))).toFiniteBilinearModule A) := by
   obtain ⟨Q, rfl⟩ := FiniteQuadraticModule.toFiniteBilinearModule_surjective A
   obtain ⟨b, k, η, c, ku, d, kv, hη, ⟨f⟩⟩ :=
     Q.exists_isometry_prod_pi_dyadic_of_natCard_eq_two_pow hA hN

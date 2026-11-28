@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Padics.UnitLocus
+public import TauCeti.NumberTheory.Padics.Unit.Locus
 public import TauCeti.NumberTheory.Padics.Measure.Clopen.Basic
 public import TauCeti.NumberTheory.Padics.Measure.PhiPsi
 

@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Fintype.Fiber
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Henselian
 import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Group.Units.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Odd.LocalRing
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
@@ -53,6 +55,8 @@ has such a basis, so this reads the local isometry class off diagonal Jordan dat
   isometric Jordan constituents at every index.
 * `LinearMap.BilinForm.IsJordanSplitting.equivalent_iff_forall_equivalent_restrict`: forms are
   isometric exactly when their Jordan constituents are.
+* `LinearMap.BilinForm.iIsOrtho.equivalent_iff_forall_occCount_eq_and_isSquare`: diagonal Jordan
+  forms are classified by the multiplicity and unit-product square class at every scale `m`.
 * `LinearMap.BilinForm.iIsOrtho.equivalent_of_card_eq_of_isSquare_prod_mul_prod`: forms with
   orthogonal bases of self-pairings `u i * π ^ k i` are isometric when, for every exponent, the
   numbers of basis vectors and the square classes of the products of their units agree.
@@ -239,6 +243,65 @@ theorem iIsOrtho.equivalent_of_card_eq_of_isSquare_prod_mul_prod (h2 : IsUnit (2
         ← prod_subtype _ (fun _ ↦ mem_filter_univ _) v]
       exact hsq m)
   exact ⟨⟨f.toLinearEquiv, fun x y ↦ by simp⟩⟩
+
+omit [HenselianLocalRing R] [Finite (IsLocalRing.ResidueField R)] in
+/-- If `π ^ m • U` is the restriction of `B` to the `m`-th exponent fiber of an orthogonal basis
+with self-pairings `u i * π ^ k i`, then the Gram determinant of `U` in the spanned fiber basis is
+the product of the units `u i` over that fiber. -/
+private theorem iIsOrtho.det_toMatrix_span_of_smul_eq (hb : B.iIsOrtho b)
+    (hbu : ∀ i, B (b i) (b i) = u i * π ^ k i) {m : ℕ} [DecidableEq {i // k i = m}]
+    (hπm : IsLeftRegular (π ^ m))
+    {U : BilinForm R (Submodule.span R (Set.range fun i : {i // k i = m} ↦ b i.val))}
+    (hU : π ^ m • U = B.restrict _) :
+    (U.toMatrix (Basis.span (b.linearIndependent.comp (Subtype.val : {i // k i = m} → ι)
+      Subtype.val_injective))).det = ((∏ i : {i // k i = m}, u i.val : Rˣ) : R) := by
+  rw [hb.toMatrix_span_of_smul_eq Subtype.val_injective hπm
+    (fun i ↦ by rw [hbu i.val, i.property, mul_comm]) hU, Matrix.det_diagonal, Units.coe_prod]
+
+/-- **Diagonal Jordan classification at odd residue characteristic.** Over a Henselian local domain
+with finite residue field and two invertible, two forms with orthogonal bases of diagonal entries
+`u i * π ^ k i` and `v j * π ^ l j` (for units `u i`, `v j` and a nonzero non-unit `π`) are
+isometric if and only if, at every scale `m`, the fiber multiplicities agree and the product of the
+fiber units is a square. -/
+theorem iIsOrtho.equivalent_iff_forall_occCount_eq_and_isSquare [IsDomain R]
+    {B' : BilinForm R N} {c : Basis κ R N}
+    (hb : B.iIsOrtho b) (hc : B'.iIsOrtho c) (h2 : IsUnit (2 : R)) (hπ : π ≠ 0) (hπ' : ¬IsUnit π)
+    {v : κ → Rˣ} {l : κ → ℕ}
+    (hbu : ∀ i, B (b i) (b i) = u i * π ^ k i)
+    (hcv : ∀ j, B' (c j) (c j) = v j * π ^ l j) :
+    B.Equivalent B' ↔ ∀ m : ℕ, Function.occCount k m = Function.occCount l m ∧
+      IsSquare ((∏ i : {i // k i = m}, u i.val) * ∏ j : {j // l j = m}, v j.val) := by
+  classical
+  refine ⟨fun hBB' m ↦ ?_, fun h ↦ hb.equivalent_of_card_eq_of_isSquare_prod_mul_prod h2 hc hbu hcv
+    (fun m ↦ by simpa only [Function.occCount_eq_card_filter] using (h m).1)
+    (fun m ↦ by
+      rw [prod_subtype (univ.filter (k · = m)) (fun _ ↦ mem_filter_univ _) u,
+        prod_subtype (univ.filter (l · = m)) (fun _ ↦ mem_filter_univ _) v]
+      exact (h m).2)⟩
+  have : Module.Free R M := .of_basis b; have : Module.Finite R M := .of_basis b
+  have hS := hb.isJordanSplitting_span hπ hbu
+  have hS' := hc.isJordanSplitting_span hπ hcv
+  obtain ⟨e⟩ := hS.equivalent_restrict_of_equivalent hS' hb.isSymm h2 hπ hπ' hBB' m
+  have hlib : LinearIndependent R (fun i : {i // k i = m} ↦ b i.val) :=
+    b.linearIndependent.comp _ Subtype.val_injective
+  have hlic : LinearIndependent R (fun j : {j // l j = m} ↦ c j.val) :=
+    c.linearIndependent.comp _ Subtype.val_injective
+  let bm := Basis.span hlib; let cm := Basis.span hlic
+  have hcard : Fintype.card {i // k i = m} = Fintype.card {j // l j = m} := by
+    rw [← Module.finrank_eq_card_basis bm, ← Module.finrank_eq_card_basis cm,
+      e.toLinearEquiv.finrank_eq]
+  refine ⟨by simpa only [Function.occCount_def, Nat.card_eq_fintype_card] using hcard, ?_⟩
+  -- Divide out `π ^ m` on the `m`-th Jordan constituents and compare their diagonal determinants.
+  obtain ⟨UB, hUB, -⟩ := isModular_def.mp (hS.isModular m)
+  obtain ⟨UC, hUC, -⟩ := isModular_def.mp (hS'.isModular m)
+  have hπm : IsRegular (π ^ m) := IsRegular.of_ne_zero (pow_ne_zero m hπ)
+  have heq : (B.restrict _).Equivalent (B'.restrict _) := ⟨e⟩
+  rw [← hUB, ← hUC] at heq
+  have hUeq : UB.Equivalent UC := (equivalent_smul_iff hπm).mp heq
+  have hdet := hUeq.isSquare_det_mul_det bm (cm.reindex (Fintype.equivOfCardEq hcard.symm))
+  simpa only [bm, cm, det_toMatrix_reindex, hb.det_toMatrix_span_of_smul_eq hbu hπm.left hUB,
+    hc.det_toMatrix_span_of_smul_eq hcv hπm.left hUC, ← Units.val_mul,
+    Units.isSquare_coe_iff] using hdet
 
 end OrthogonalBasis
 

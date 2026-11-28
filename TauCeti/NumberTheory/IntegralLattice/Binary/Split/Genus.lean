@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.IntegralLattice.Binary.Split.Class
-public import TauCeti.NumberTheory.IntegralLattice.Genus
+public import TauCeti.NumberTheory.IntegralLattice.Genus.Basic
 import TauCeti.NumberTheory.IntegralLattice.Binary.Genus
 import TauCeti.Data.ZMod.SquareMultiple
 import TauCeti.LinearAlgebra.BilinearForm.Isometry

@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Algebra.AddCircle
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Group
+public import TauCeti.LinearAlgebra.IntegralLattice.Gram
+import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 
 /-!
 # Discriminant bilinear modules of integral lattices
@@ -37,6 +39,8 @@ The pairing `b_L` is `B(x, y) mod ℤ`; the even-lattice refinement
   discriminant pairing.
 * `TauCeti.IntegralLattice.Isometry.discriminantBilinearIsometry`: functoriality under lattice
   isometry.
+* `TauCeti.IntegralLattice.discriminant_eq_of_isometry_discriminantBilinearModule`: isometric
+  discriminant bilinear modules come from lattices of equal discriminant.
 
 ## References
 
@@ -262,6 +266,18 @@ theorem discriminantBilinearIsometry_trans (e : Isometry L M) (f : Isometry M N)
   rfl
 
 end Isometry
+
+/-- **Isometric discriminant bilinear modules come from lattices of equal discriminant.** -/
+theorem discriminant_eq_of_isometry_discriminantBilinearModule
+    {W : Type v} [AddCommGroup W] [Module ℚ W] {L : IntegralLattice V} {M : IntegralLattice W}
+    [L.IsNondegenerate] [M.IsNondegenerate]
+    (e : FiniteBilinearModule.Isometry
+      L.discriminantBilinearModule M.discriminantBilinearModule) :
+    L.discriminant = M.discriminant := by
+  have hcard : Nat.card L.DiscriminantGroup = Nat.card M.DiscriminantGroup :=
+    Nat.card_congr e.toAddEquiv.toEquiv
+  rw [L.natCard_discriminantGroup, M.natCard_discriminantGroup] at hcard
+  exact hcard
 
 end IntegralLattice
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.IntegralLattice.Genus
+public import TauCeti.NumberTheory.IntegralLattice.Genus.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Class
 public import Mathlib.SetTheory.Cardinal.Finite
 import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Classes

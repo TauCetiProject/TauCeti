@@ -28,6 +28,10 @@ perfect summand orthogonally after localization.
 
 ## Main results
 
+* `TauCeti.IntegralLattice.isUnit_determinant_iff_not_dvd_discriminant` and
+  `TauCeti.IntegralLattice.isUnit_determinant_two_iff_odd_discriminant`: the signed determinant of
+  `L` is a unit in `ℤ_p` exactly when `p` does not divide `L.discriminant` (at `p = 2`, when
+  `L.discriminant` is odd).
 * `TauCeti.IntegralLattice.isPerfPair_localIntegralForm_of_isUnit_determinant`: the localized
   integral form is a perfect pairing when the determinant is a unit at `p`.
 * `TauCeti.IntegralLattice.exists_binary_isPerfPair_isCompl_orthogonal_localIntegralForm`: a
@@ -55,6 +59,19 @@ open Module
 namespace TauCeti.IntegralLattice
 
 variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
+
+/-- The signed determinant of an integral lattice is a unit in `ℤ_[p]` if and only if `p` does not
+divide the lattice discriminant. -/
+theorem isUnit_determinant_iff_not_dvd_discriminant (L : IntegralLattice V) (p : ℕ)
+    [Fact p.Prime] :
+    IsUnit (L.determinant : ℤ_[p]) ↔ ¬ p ∣ L.discriminant := by
+  rw [PadicInt.isUnit_intCast_iff, discriminant_def, Int.natCast_dvd]
+
+/-- The signed determinant of an integral lattice is a unit in `ℤ_[2]` if and only if the lattice
+discriminant is odd. -/
+theorem isUnit_determinant_two_iff_odd_discriminant (L : IntegralLattice V) :
+    IsUnit (L.determinant : ℤ_[2]) ↔ Odd L.discriminant := by
+  rw [L.isUnit_determinant_iff_not_dvd_discriminant 2, ← Nat.not_even_iff_odd, even_iff_two_dvd]
 
 /-- **A lattice whose determinant is a unit at `p` has a unimodular localization.** The localized
 integral form is then a perfect pairing on `ℤ_p ⊗[ℤ] L`. -/

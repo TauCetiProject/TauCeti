@@ -109,6 +109,8 @@ dyadic constituent of type II between constituents of type II
   at its own scale.
 * `LinearMap.BilinForm.IsJordanSplitting.exists_basis_restrict_biSup_Iic`: the constituents of
   index at most `j` have a Gram matrix `G` and a symmetric `H` with `G * H = π ^ j • 1`.
+* `LinearMap.BilinForm.iIsOrtho.isJordanSplitting_span`: an orthogonal basis with diagonal entries
+  `u i * π ^ k i` spans a Jordan splitting indexed by valuation scale.
 
 ## References
 
@@ -311,6 +313,42 @@ theorem isJordanSplitting_reverse {N : ℕ → Submodule R M} {π : R} (hN : Dir
       exact isModular_of_subsingleton
 
 end Modular
+
+/-- An orthogonal basis whose self-pairings have the form `u i * π ^ k i` for units `u i` and a
+nonzero `π` spans a Jordan splitting indexed by the exponent fibers `k ⁻¹' {m}`. -/
+theorem iIsOrtho.isJordanSplitting_span {R M ι : Type*} [CommRing R] [IsDomain R]
+    [AddCommGroup M] [Module R M] [Finite ι] {B : BilinForm R M} {b : Basis ι R M}
+    (hb : B.iIsOrtho b) {u : ι → Rˣ} {k : ι → ℕ} {π : R} (hπ : π ≠ 0)
+    (hbu : ∀ i, B (b i) (b i) = u i * π ^ k i) :
+    B.IsJordanSplitting π fun m ↦ Submodule.span R (Set.range fun i : {i // k i = m} ↦ b i.val) :=
+  by
+  classical
+  let _ := Fintype.ofFinite ι
+  let S (m : ℕ) : Submodule R M := Submodule.span R (Set.range fun i : {i // k i = m} ↦ b i.val)
+  have horth : ∀ m n, m ≠ n → ∀ x ∈ S m, ∀ y ∈ S n, B x y = 0 := by
+    intro m n hmn x hx y hy
+    refine B.apply_eq_zero_of_mem_span ?_ hx hy
+    rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩
+    exact hb fun hij ↦ hmn (i.property.symm.trans ((congrArg k hij).trans j.property))
+  have hmod : ∀ m, (B.restrict (S m)).IsModular (π ^ m) := by
+    intro m
+    refine isModular_restrict_span_range (pow_mem (mem_nonZeroDivisors_of_ne_zero hπ) m)
+      (G := Matrix.diagonal fun i : {i // k i = m} ↦ (u i.val : R)) (fun i j ↦ ?_) ?_
+    · by_cases hij : i = j
+      · subst hij
+        rw [Matrix.diagonal_apply_eq, hbu i.val, i.property, mul_comm]
+      · rw [Matrix.diagonal_apply_ne _ hij, mul_zero]
+        exact hb (Subtype.coe_ne_coe.mpr hij)
+    · rw [Matrix.det_diagonal, ← Units.coe_prod]
+      exact Units.isUnit _
+  have htop : iSup S = ⊤ := by
+    rw [eq_top_iff, ← b.span_eq, Submodule.span_le]
+    rintro _ ⟨i, rfl⟩
+    exact Submodule.mem_iSup_of_mem (k i) (Submodule.subset_span ⟨⟨i, rfl⟩, rfl⟩)
+  exact ⟨(DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top S).mpr
+    ⟨B.iSupIndep_of_restrict_separatingRight horth fun m ↦
+      ((hmod m).nondegenerate (pow_mem (mem_nonZeroDivisors_of_ne_zero hπ) m)).2, htop⟩,
+    horth, hmod⟩
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
 

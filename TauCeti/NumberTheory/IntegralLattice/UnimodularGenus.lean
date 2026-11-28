@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
-public import TauCeti.NumberTheory.IntegralLattice.Genus
+public import TauCeti.NumberTheory.IntegralLattice.Genus.Basic
 import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.VanDerBlij
 import TauCeti.NumberTheory.IntegralLattice.Dyadic.Unimodular
 
@@ -69,8 +69,8 @@ theorem sameGenus_iff_of_isUnimodular (hLu : L.IsUnimodular) (hMu : M.IsUnimodul
     Finset.mem_singleton] at hp
   subst hp
   -- By van der Blij's theorem both oddities are the common signature modulo `8`.
-  obtain ⟨w, hw⟩ := hLu.exists_isCharacteristicVector
-  obtain ⟨w', hw'⟩ := hMu.exists_isCharacteristicVector
+  obtain ⟨w, hw⟩ := L.exists_isCharacteristicVector
+  obtain ⟨w', hw'⟩ := M.exists_isCharacteristicVector
   have hLw := L.vanDerBlij hLu hw
   have hMw := M.vanDerBlij hMu hw'
   rw [hpos, hneg] at hLw

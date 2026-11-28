@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 import Mathlib.Algebra.Regular.Pi
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.LinearAlgebra.Matrix.DotProduct
+import TauCeti.Data.Fintype.Fiber
 import TauCeti.LinearAlgebra.Pi
 import TauCeti.Logic.Equiv.Set
 
@@ -26,6 +27,8 @@ of squares.
 * `QuadraticForm.isometryEquivWeightedSumSquaresReindex` and
   `QuadraticForm.equivalent_weightedSumSquares_of_comp_eq`: reindexing the weights along an
   equivalence of index types gives an isometric diagonal form.
+* `TauCeti.equivalent_weightedSumSquares_mul_of_forall_fiber`: fiberwise equivalences of unscaled
+  diagonal forms assemble into an equivalence of fiber-scaled diagonal forms.
 * `TauCeti.isometryEquivWeightedSumSquaresOfPair` and
   `TauCeti.equivalent_weightedSumSquares_of_pair`: a binary isometry (equivalence) extends across
   fixed coordinates, by `LinearEquiv.piExtendOfInjective` along the pair.
@@ -230,6 +233,62 @@ theorem _root_.QuadraticForm.equivalent_weightedSumSquares_of_comp_eq
   exact ⟨(QuadraticForm.isometryEquivWeightedSumSquaresReindex w e).symm⟩
 
 end Reindex
+
+omit [Fintype ι] [Fintype κ] in
+/-- Fiberwise linear equivalences along `k` and `l` assemble into a linear equivalence
+`(ι → R) ≃ₗ[R] (κ → R)`. -/
+private def fiberLinearEquiv {S : Type*} (k : ι → S) (l : κ → S)
+    (e : ∀ m : S, ({i : ι // k i = m} → R) ≃ₗ[R] ({j : κ // l j = m} → R)) :
+    (ι → R) ≃ₗ[R] (κ → R) :=
+  (LinearEquiv.funCongrLeft R R (Equiv.sigmaFiberEquiv k)).trans <|
+    (LinearEquiv.piCurry R fun (m : S) (_ : {i : ι // k i = m}) => R).trans <|
+      (LinearEquiv.piCongrRight e).trans <|
+        (LinearEquiv.piCurry R fun (m : S) (_ : {j : κ // l j = m}) => R).symm.trans
+          (LinearEquiv.funCongrLeft R R (Equiv.sigmaFiberEquiv l).symm)
+
+omit [Fintype ι] [Fintype κ] in
+/-- Evaluating `fiberLinearEquiv` at `j : κ` applies the `l j`-fiber equivalence to the `l j`-fiber
+of the input vector. -/
+private theorem fiberLinearEquiv_apply {S : Type*} (k : ι → S) (l : κ → S)
+    (e : ∀ m : S, ({i : ι // k i = m} → R) ≃ₗ[R] ({j : κ // l j = m} → R))
+    (x : ι → R) (j : κ) :
+    fiberLinearEquiv k l e x j = e (l j) (fun i => x i.val) ⟨j, rfl⟩ :=
+  rfl
+
+/-- Fiberwise equivalences of unscaled diagonal forms assemble into an equivalence of the scaled
+diagonal forms `∑ uᵢ s(kᵢ) xᵢ²` and `∑ vⱼ s(lⱼ) yⱼ²`. -/
+theorem equivalent_weightedSumSquares_mul_of_forall_fiber {S : Type*} [DecidableEq S]
+    (k : ι → S) (l : κ → S) (u : ι → R) (v : κ → R) (s : S → R)
+    (h : ∀ m : S,
+      (QuadraticMap.weightedSumSquares R (fun i : {i : ι // k i = m} => u i.val)).Equivalent
+        (QuadraticMap.weightedSumSquares R (fun j : {j : κ // l j = m} => v j.val))) :
+    (QuadraticMap.weightedSumSquares R (fun i => u i * s (k i))).Equivalent
+      (QuadraticMap.weightedSumSquares R (fun j => v j * s (l j))) := by
+  let e m := (h m).some
+  let E := fiberLinearEquiv k l fun m => (e m).toLinearEquiv
+  refine ⟨{ toLinearEquiv := E, map_app' := fun x => ?_ }⟩
+  let T : Finset S := Finset.univ.image k ∪ Finset.univ.image l
+  simp only [QuadraticMap.weightedSumSquares_apply, smul_eq_mul]
+  rw [← Function.sum_fiber_subtype l (T := T) (by simp [T]),
+    ← Function.sum_fiber_subtype k (T := T) (by simp [T])]
+  refine Finset.sum_congr rfl fun m _ => ?_
+  have hmap := (e m).map_app (fun i => x i.val)
+  simp only [QuadraticMap.weightedSumSquares_apply, smul_eq_mul] at hmap
+  calc ∑ j : {j : κ // l j = m},
+          (v j.val * s (l j.val)) * (E x j.val * E x j.val)
+      = s m * ∑ j : {j : κ // l j = m},
+          v j.val * (e m (fun i => x i.val) j * e m (fun i => x i.val) j) := by
+        rw [Finset.mul_sum]
+        refine Finset.sum_congr rfl fun ⟨j, hj⟩ _ => ?_
+        subst hj
+        rw [fiberLinearEquiv_apply, IsometryEquiv.coe_toLinearEquiv, mul_comm (v j) (s (l j)),
+          mul_assoc]
+    _ = s m * ∑ i : {i : ι // k i = m}, u i.val * (x i.val * x i.val) := by
+        rw [hmap]
+    _ = ∑ i : {i : ι // k i = m}, (u i.val * s (k i.val)) * (x i.val * x i.val) := by
+        rw [Finset.mul_sum]
+        refine Finset.sum_congr rfl fun i _ => ?_
+        rw [i.property, mul_comm (u i.val) (s m), mul_assoc]
 
 /-- A diagonal form with unit weights is the diagonal form with the underlying scalar weights. -/
 theorem _root_.QuadraticMap.weightedSumSquares_units (w : ι → Rˣ) :

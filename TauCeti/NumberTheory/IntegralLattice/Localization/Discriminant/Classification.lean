@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.IntegralLattice.Genus.Discriminant.Basic
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Form
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular
 import Mathlib.NumberTheory.LegendreSymbol.Basic
 import TauCeti.Data.Fintype.Fiber
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Bilinear
+import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.NumberTheory.IntegralLattice.Diagonalization
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Diagonal

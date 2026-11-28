@@ -8,8 +8,13 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
+public import Mathlib.RingTheory.Finiteness.Defs
+import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Matrix.Symmetric
+import TauCeti.RingTheory.Ideal.Quotient.Defs
 public import TauCeti.LinearAlgebra.BilinearForm.Prod
 
 /-!
@@ -19,13 +24,15 @@ Let `B` be a symmetric bilinear form over a commutative ring `R`. A vector `w` i
 *characteristic* for `B` when `B w x ≡ B x x` modulo `2` for every `x`.
 
 Suppose that `c ^ 2 ≡ c` modulo `2` for every `c : R`, as for `ℤ` and `ℤ_[2]`. Then
-`x ↦ B x x` is linear modulo `2`, so a perfect symmetric form on a free module has a
-characteristic vector. Any two characteristic vectors differ by twice a vector, and therefore
-their self-pairings agree modulo `8`. If `b` is an orthogonal basis, then `∑ i, b i` is
-characteristic, and its self-pairing is the trace `∑ i, B (b i) (b i)` of the diagonal Gram matrix.
-Consequently that trace modulo `8` is an isometry invariant of a perfect symmetric form with an
-orthogonal basis. Over `ℤ_[2]` these are the odd unimodular forms, and the invariant is their
-*oddity*, one of the entries of the Conway–Sloane `2`-adic symbol.
+`x ↦ B x x` is linear modulo `2`, so a symmetric form on a free module has a characteristic vector
+whenever either the form is perfect (`LinearMap.BilinForm.IsSymm.exists_isCharacteristic`) or the
+module is finite (`LinearMap.BilinForm.IsSymm.exists_isCharacteristic_of_finite`). For a perfect
+form, any two characteristic vectors differ by twice a vector, and therefore their self-pairings
+agree modulo `8`. If `b` is an orthogonal basis, then `∑ i, b i` is characteristic, and its
+self-pairing is the trace `∑ i, B (b i) (b i)` of the diagonal Gram matrix. Consequently that trace
+modulo `8` is an isometry invariant of a perfect symmetric form with an orthogonal basis. Over
+`ℤ_[2]` these are the odd unimodular forms, and the invariant is their *oddity*, one of the entries
+of the Conway–Sloane `2`-adic symbol.
 
 ## Main definitions
 
@@ -35,6 +42,8 @@ orthogonal basis. Over `ℤ_[2]` these are the odd unimodular forms, and the inv
 
 * `LinearMap.BilinForm.IsSymm.exists_isCharacteristic`: a perfect symmetric form on a free module
   has a characteristic vector.
+* `LinearMap.BilinForm.IsSymm.exists_isCharacteristic_of_finite`: any symmetric form on a finite
+  free module has a characteristic vector, without assuming perfection.
 * `LinearMap.BilinForm.Equivalent.forall_two_dvd_apply_self_iff`: isometric forms are even
   together.
 * `LinearMap.BilinForm.IsCharacteristic.isCharacteristic_iff_exists_eq_add_two_smul`: the
@@ -181,6 +190,38 @@ theorem IsSymm.exists_isCharacteristic [Free R M] [B.IsPerfPair] (hB : B.IsSymm)
   let φ : Dual R M := b.constr R fun i ↦ B (b i) (b i)
   refine ⟨B.toPerfPair.symm φ, (hB.isCharacteristic_iff_forall_basis h2 b).2 fun i ↦ ?_⟩
   simp [φ]
+
+/-- **Existence of characteristic vectors on finite free modules.** If `c ^ 2 ≡ c` modulo `2` for
+every `c : R`, then every symmetric bilinear form on a finite free `R`-module has a characteristic
+vector, without assuming perfection. -/
+theorem IsSymm.exists_isCharacteristic_of_finite [Free R M] [Module.Finite R M]
+    (hB : B.IsSymm) (h2 : ∀ c : R, (2 : R) ∣ c ^ 2 - c) : ∃ w, B.IsCharacteristic w := by
+  let _ := Module.Free.ChooseBasisIndex.fintype R M
+  let b := Free.chooseBasis R M
+  let I : Ideal R := Ideal.span {(2 : R)}
+  let _ : BooleanRing (R ⧸ I) :=
+    Ideal.Quotient.booleanRing I fun c ↦ by
+      simpa [sq] using Ideal.mem_span_singleton.mpr (h2 c)
+  let A : Matrix (Free.ChooseBasisIndex R M) (Free.ChooseBasisIndex R M) (R ⧸ I) :=
+    Matrix.of fun i j ↦ Ideal.Quotient.mk I (B (b i) (b j))
+  have hA : A.IsSymm :=
+    Matrix.IsSymm.ext fun i j ↦ congrArg (Ideal.Quotient.mk I) (hB.eq (b j) (b i))
+  obtain ⟨u, hu⟩ := hA.exists_mulVec_eq_diag
+  choose c hc using fun i ↦ Ideal.Quotient.mk_surjective (u i)
+  let w : M := ∑ i, c i • b i
+  refine ⟨w, (hB.isCharacteristic_iff_forall_basis h2 b).2 fun j ↦ ?_⟩
+  rw [← Ideal.mem_span_singleton, ← Ideal.Quotient.eq]
+  have hj : Ideal.Quotient.mk I (∑ i, c i * B (b i) (b j)) =
+      Ideal.Quotient.mk I (B (b j) (b j)) := by
+    have h := congrFun hu j
+    simp only [Matrix.mulVec, dotProduct, Matrix.diag_apply, A, Matrix.of_apply, ← hc, ← map_mul,
+      ← map_sum] at h
+    refine (congrArg (Ideal.Quotient.mk I) (Finset.sum_congr rfl fun i _ ↦ ?_)).trans h
+    rw [mul_comm, hB.eq (b i) (b j)]
+  have hwj : B w (b j) = ∑ i, c i * B (b i) (b j) := by
+    simp only [w, map_sum, LinearMap.sum_apply, map_smul, LinearMap.smul_apply, smul_eq_mul]
+  rw [hwj]
+  exact hj
 
 /-- **Two characteristic vectors differ by twice a vector** when the form is perfect and the
 module is free. -/
