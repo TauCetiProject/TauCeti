@@ -138,6 +138,9 @@ for set and probability integrals.
 * `exists_mem_sub_div_lt_of_sub_lt_integral`: if `f ≤ M` on a probability space has integral
   within `δ` of `M`, then every set `B` of positive mass contains a point where `f` exceeds
   `M - δ / μ B`.
+* `TauCeti.aestronglyMeasurable_of_integrableOn_sub_pow_smul`: recovers
+  `AEStronglyMeasurable f (μ.restrict (Set.Ioi y))` from integrability of
+  `t ↦ (t - y) ^ m • f t` on `(y, ∞)`.
 
 ## Uniformly bounded centers
 
@@ -1300,5 +1303,16 @@ theorem sqrt_integral_sq_le_of_ae_abs_sub_le {α : Type*} [MeasurableSpace α] {
           Real.sqrt_sq hW]
 
 end MeasureTheory
+
+/-- Recover `AEStronglyMeasurable f` on `(y, ∞)` from integrability of `(t - y) ^ m • f t`
+with respect to any measure `μ : Measure ℝ`. -/
+theorem aestronglyMeasurable_of_integrableOn_sub_pow_smul {E : Type*} [SeminormedAddCommGroup E]
+    [MulAction ℝ E] [ContinuousSMul ℝ E] {μ : Measure ℝ} {f : ℝ → E} {y : ℝ} {m : ℕ}
+    (hf : IntegrableOn (fun t : ℝ ↦ (t - y) ^ m • f t) (Set.Ioi y) μ) :
+    AEStronglyMeasurable f (μ.restrict (Set.Ioi y)) :=
+  (aestronglyMeasurable_fun_smul_iff₀
+    (by fun_prop : Continuous fun t : ℝ ↦ (t - y) ^ m).aestronglyMeasurable
+    (by filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : y < t)
+        exact pow_ne_zero _ (sub_pos.mpr ht).ne')).mp hf.aestronglyMeasurable
 
 end TauCeti

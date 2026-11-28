@@ -22,6 +22,10 @@ in `P`, and conversely any `W : P.Over ⊤ U.left` composes with `U.hom` to an o
 `P.Over ⊤ X` over `U`. Thus the slice category `CategoryTheory.Over U` is equivalent to
 `P.Over ⊤ U.left` (`CategoryTheory.MorphismProperty.Over.iteratedSliceEquiv`), matching
 `CategoryTheory.Over.iteratedSliceEquiv` on unrestricted slice categories.
+
+On underlying objects, the base change functor `CategoryTheory.MorphismProperty.Over.pullback`
+acts on morphisms by `CategoryTheory.Limits.pullback.map`
+(`CategoryTheory.MorphismProperty.Over.pullback_map_left_eq_pullback_map`).
 -/
 
 public section
@@ -172,6 +176,28 @@ lemma iteratedSliceForwardCompMapIso_inv_app_left (V : CategoryTheory.Over U) :
     ((iteratedSliceForwardCompMapIso U).inv.app V).left = 𝟙 V.left.left := (rfl)
 
 end Equiv
+
+section Pullback
+
+open Limits
+
+variable {C : Type*} [Category* C] (P Q : MorphismProperty C) {X Y : C} (f : X ⟶ Y)
+  [P.HasPullbacksAlong f] [P.IsStableUnderBaseChangeAlong f] [Q.IsMultiplicative]
+  [Q.IsStableUnderBaseChange]
+
+/-- On underlying objects, `(Over.pullback P Q f).map g` is `pullback.map` along `g.left` and
+`𝟙 X`. -/
+lemma pullback_map_left_eq_pullback_map {V W : P.Over Q Y} (g : V ⟶ W) :
+    ((Over.pullback P Q f).map g).left =
+      pullback.map V.hom f W.hom f g.left (𝟙 X) (𝟙 Y) (by simp) (by simp) := by
+  rw [pullback_map_left]
+  -- `simp` does not rewrite the left projections with `pullback.lift_fst` and `pullback.lift_snd`
+  -- here, so they are applied by `exact`.
+  apply pullback.hom_ext
+  · exact (pullback.lift_fst _ _ _).trans (by simp)
+  · exact (pullback.lift_snd _ _ _).trans (by simp)
+
+end Pullback
 
 end Over
 

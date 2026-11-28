@@ -20,8 +20,9 @@ A point of `[0, n)` in an ordered ring with a floor operation is the sum of an i
 `Fin n` and a remainder in `[0, 1)`. This describes, for example, time along one of the
 finitely many edges in a polygonal boundary parametrization. In the same way, a `1`-periodic
 function is determined by its values on `[0, 1)`: it takes the same value at `t` and at the
-fractional part of `t`. The integers in `[a, y)` number `max (y - a) 0` up to one, and for
-`N ≠ 0` only finitely many points `q` of a closed interval have `N q` an integer.
+fractional part of `t`. The integers in `[a, y)` number `max (y - a) 0` up to one, a closed
+interval `[a, b]` with `a ≤ b + 1` contains at most `b - a + 1` integers, and for `N ≠ 0` only
+finitely many points `q` of a closed interval have `N q` an integer.
 
 For a step `δ > 0` in a linearly ordered field with an integer floor, the multiples of `δ` cut
 the line into the closed intervals `[δ m, δ (m + 1)]` with `m ∈ ℤ`. Every point `x` lies in the
@@ -43,8 +44,11 @@ only finitely many rounded families have entries in `[-R, R]`.
 * `Int.fract_natCast_sub_mul_of_le`, `Int.fract_natCast_sub_mul_of_lt`,
   `Int.fract_natCast_add_mul_of_lt`, `Int.fract_natCast_add_mul_of_le`: the fractional part of
   the natural multiple `(j - i) * a` or `(i + j) * a`, in terms of those of `i * a` and `j * a`.
+* `TauCeti.fst_add_neg_floor_mem`: translating `p` by `-⌊p.1⌋` in the first coordinate moves
+  that coordinate into `[0, 1]`.
 * `Nat.cast_lt_iff_le_ceil_sub_one`: `(n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1` for natural `n`.
 * `TauCeti.abs_card_Ico_ceil_sub_le`: `|#[a, ⌈y⌉) - max (y - a) 0| ≤ 1` for an integer `a`.
+* `TauCeti.card_Icc_ceil_floor_le`: `#[⌈a⌉, ⌊b⌋] ≤ b - a + 1` for `a ≤ b + 1`.
 * `TauCeti.finite_setOf_mem_Icc_natCast_mul_eq_intCast`: for `N ≠ 0`, the points `q` of
   `[a, b]` with `N q` an integer form a finite set.
 * `TauCeti.fract_inv_two`: `{1/2} = 1/2`.
@@ -137,6 +141,15 @@ theorem _root_.Int.fract_natCast_add_mul_of_le {R : Type*} [Ring R] [LinearOrder
     Int.fract (↑(i + j) * a) = Int.fract (i * a) + Int.fract (j * a) - 1 := by
   rw [Nat.cast_add, add_mul, Int.fract_add_eq_add_sub_one_iff.2 h]
 
+/-- Translating a pair `p` by `-⌊p.1⌋` in the first coordinate moves that coordinate into
+`[0, 1]`, since it becomes the fractional part of `p.1`. This brings a point of `R × M` into the
+fundamental domain `[0, 1] × M` of the translations `(x, y) ↦ (x + k, y)`, `k ∈ ℤ`. -/
+theorem fst_add_neg_floor_mem {R M : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+    [FloorRing R] [AddZeroClass M] (p : R × M) :
+    (p + (((-⌊p.1⌋ : ℤ) : R), 0)).1 ∈ Set.Icc (0 : R) 1 := by
+  simp only [Prod.fst_add, Int.cast_neg, ← sub_eq_add_neg, Int.self_sub_floor]
+  exact ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩
+
 /-- In an ordered ring with a natural ceiling, a natural number lies strictly below `a` exactly
 when it is at most `⌈a⌉₊ - 1`. This turns a strict cutoff into an inclusive one. -/
 theorem _root_.Nat.cast_lt_iff_le_ceil_sub_one {R : Type*} [Ring R] [LinearOrder R]
@@ -157,6 +170,15 @@ theorem abs_card_Ico_ceil_sub_le {R : Type*} [Ring R] [LinearOrder R] [IsStrictO
       abs_le]
     exact ⟨(neg_nonpos.2 zero_le_one).trans (sub_nonneg.2 (Int.le_ceil y)),
       (sub_lt_iff_lt_add'.2 (Int.ceil_lt_add_one y)).le⟩
+
+/-- The closed interval `[a, b]` contains at most `b - a + 1` integers, for `a ≤ b + 1`. -/
+theorem card_Icc_ceil_floor_le {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+    [FloorRing R] {a b : R} (hab : a ≤ b + 1) :
+    ((Finset.Icc ⌈a⌉ ⌊b⌋).card : R) ≤ b - a + 1 := by
+  rw [Int.card_Icc, ← Int.cast_natCast]
+  push_cast [Int.toNat_eq_max, sub_add_eq_add_sub]
+  exact max_le (sub_le_sub ((add_le_add_iff_right 1).2 (Int.floor_le b)) (Int.le_ceil a))
+    (sub_nonneg.2 hab)
 
 /-- In an ordered ring with an integer floor, the points `q` of `[a, b]` with `N q` an integer
 for a fixed `N ≠ 0` form a finite set. In a field these are the points of `[a, b]` in

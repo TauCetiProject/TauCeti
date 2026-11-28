@@ -873,6 +873,17 @@ theorem IsCompact.exists_sum_cutoffPullback_eq_one {K : Set M} (hK : IsCompact K
 namespace TauCeti
 
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- If the chart cutoffs `χᵢ`, read on `M` as `χᵢ ∘ eᵢ` extended by `0`, have locally finite
+supports, then only finitely many of them are nonzero at a given point. -/
+theorem finite_support_cutoffPullback {ι : Type*} {e : ι → OpenPartialHomeomorph M E}
+    (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+    {χ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ)}
+    (hS : LocallyFinite fun i ↦ (e i).symm '' tsupport (χ i)) (x : M) :
+    (Function.support fun i ↦ (e i).cutoffPullback (he i) (χ i) 1 x).Finite :=
+  (hS.point_finite x).subset fun i hi ↦
+    ((e i).tsupport_cutoffPullback_one (he i) (χ i)).subset (subset_tsupport _ hi)
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- **Chart cutoffs summing to one force compactness.** If finitely many cutoffs `ψᵢ` in charts
 `eᵢ`, read on `M` as `ψᵢ ∘ eᵢ` extended by `0`, add up to `1` at every point, then `M` is compact:
 it is covered by the compact sets `eᵢ⁻¹(supp ψᵢ)`. -/
