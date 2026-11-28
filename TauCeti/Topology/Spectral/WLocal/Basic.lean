@@ -47,6 +47,10 @@ Topologically, two conditions govern these covers:
 * `TauCeti.IsWLocalSpace.closedPointsHomeomorphConnectedComponents`: the canonical homeomorphism
   from `closedPoints X` to `ConnectedComponents X` for a w-local space.
 
+* `TauCeti.IsWLocalSpace.closedPoint`: the spectral retraction onto `closedPoints X` sending
+  each point to the closed point of its connected component.
+* `TauCeti.IsWLocalMap`: spectral maps preserving closed points.
+
 ## Main results
 
 * `TauCeti.openCoversSplit_iff_isLocallyConstant`, `TauCeti.openCoversSplit_iff_iUnion`,
@@ -71,6 +75,14 @@ Topologically, two conditions govern these covers:
 * `TauCeti.IsWLocalSpace.isHomeomorph_connectedComponentsMk`: in a w-local space, `closedPoints X`
   maps homeomorphically onto `ConnectedComponents X`.
 
+* `TauCeti.IsWLocalSpace.specializes_closedPoint`: every point specializes to its selected
+  closed point.
+* `TauCeti.IsWLocalSpace.continuous_closedPoint`,
+  `TauCeti.IsWLocalSpace.isSpectralMap_closedPoint`: the closed-point retraction is continuous
+  and spectral.
+* `TauCeti.isWLocalMap_id`, `TauCeti.IsWLocalMap.comp`: w-local maps contain identities and
+  are closed under composition.
+
 ## References
 
 * P. Scholze, *Étale cohomology of diamonds*, arXiv:1709.07343, §7, Definition 7.1, Lemma 7.2, and
@@ -83,7 +95,7 @@ public section
 
 open Function Set Topology TopologicalSpace
 
-universe u v
+universe u v w
 
 namespace TauCeti
 
@@ -431,5 +443,83 @@ theorem IsWLocalSpace.closedPointsHomeomorphConnectedComponents_symm_mk_mem {X :
     (hX.closedPointsHomeomorphConnectedComponents.symm (ConnectedComponents.mk x) : X) ∈
       connectedComponent x :=
   ConnectedComponents.coe_eq_coe'.1 (hX.mk_closedPointsHomeomorphConnectedComponents_symm _)
+
+/-- The unique closed point of the connected component containing `x`. -/
+noncomputable def IsWLocalSpace.closedPoint {X : Type u} [TopologicalSpace X]
+    (hX : IsWLocalSpace X) (x : X) : closedPoints X :=
+  hX.closedPointsHomeomorphConnectedComponents.symm (ConnectedComponents.mk x)
+
+/-- The selected closed point has the same connected component as the original point. -/
+@[simp]
+theorem IsWLocalSpace.mk_closedPoint {X : Type u} [TopologicalSpace X]
+    (hX : IsWLocalSpace X) (x : X) :
+    ConnectedComponents.mk (hX.closedPoint x : X) = ConnectedComponents.mk x :=
+  hX.mk_closedPointsHomeomorphConnectedComponents_symm _
+
+/-- The selected closed point belongs to the connected component of the original point. -/
+theorem IsWLocalSpace.closedPoint_mem_connectedComponent {X : Type u} [TopologicalSpace X]
+    (hX : IsWLocalSpace X) (x : X) :
+    (hX.closedPoint x : X) ∈ connectedComponent x :=
+  ConnectedComponents.coe_eq_coe'.1 (hX.mk_closedPoint x)
+
+/-- A closed point is the selected one exactly when it belongs to the same component. -/
+theorem IsWLocalSpace.closedPoint_eq_iff {X : Type u} [TopologicalSpace X]
+    (hX : IsWLocalSpace X) (x : X) (c : closedPoints X) :
+    hX.closedPoint x = c ↔ (c : X) ∈ connectedComponent x := by
+  constructor
+  · rintro rfl
+    exact hX.closedPoint_mem_connectedComponent x
+  · intro hc
+    apply hX.closedPointsHomeomorphConnectedComponents.injective
+    simpa only [closedPointsHomeomorphConnectedComponents_apply, mk_closedPoint] using
+      (ConnectedComponents.coe_eq_coe'.2 hc).symm
+
+/-- Choosing the closed point of a component is continuous on a w-local space. -/
+theorem IsWLocalSpace.continuous_closedPoint {X : Type u} [TopologicalSpace X]
+    (hX : IsWLocalSpace X) : Continuous hX.closedPoint :=
+  hX.closedPointsHomeomorphConnectedComponents.symm.continuous.comp
+    ConnectedComponents.continuous_coe
+
+/-- Choosing the closed point is spectral when the source is w-local. -/
+theorem IsWLocalSpace.isSpectralMap_closedPoint {X : Type u} [TopologicalSpace X]
+    (hX : IsWLocalSpace X) : IsSpectralMap hX.closedPoint := by
+  have := hX.spectralSpace
+  exact hX.closedPointsHomeomorphConnectedComponents.symm.isProperMap.isSpectralMap.comp
+    ConnectedComponents.isSpectralMap_coe
+
+/-- Choosing the closed point fixes every closed point. -/
+@[simp]
+theorem IsWLocalSpace.closedPoint_coe {X : Type u} [TopologicalSpace X]
+    (hX : IsWLocalSpace X) (x : closedPoints X) : hX.closedPoint x = x :=
+  hX.closedPointsHomeomorphConnectedComponents_symm_mk x
+
+/-- Every point of a w-local space specializes to the selected closed point. -/
+theorem IsWLocalSpace.specializes_closedPoint {X : Type u} [TopologicalSpace X]
+    (hX : IsWLocalSpace X) (x : X) : x ⤳ (hX.closedPoint x : X) := by
+  have := hX.spectralSpace
+  obtain ⟨y, hy, hyc⟩ := (isClosed_closure (s := ({x} : Set X))).exists_closed_singleton
+    ⟨x, subset_closure (mem_singleton x)⟩
+  have hxy := specializes_iff_mem_closure.2 hy
+  have hcomp := hxy.mem_closed isClosed_connectedComponent mem_connectedComponent
+  have heq := hX.openCoversSplit.eq_of_mem_connectedComponent
+    ((connectedComponent_eq hcomp) ▸ hX.closedPointsHomeomorphConnectedComponents_symm_mk_mem x)
+    (hX.closedPoint x).property hyc
+  exact heq.symm ▸ hxy
+
+/-- A w-local map is a spectral map carrying closed points to closed points. -/
+structure IsWLocalMap {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
+    (f : X → Y) : Prop extends IsSpectralMap f where
+  /-- Closed points are preserved. -/
+  map_closedPoints : MapsTo f (closedPoints X) (closedPoints Y)
+
+/-- The identity is w-local. -/
+theorem isWLocalMap_id {X : Type u} [TopologicalSpace X] : IsWLocalMap (id : X → X) :=
+  ⟨isSpectralMap_id, fun _ hx ↦ hx⟩
+
+/-- Composites of w-local maps are w-local. -/
+theorem IsWLocalMap.comp {X : Type u} {Y : Type v} {Z : Type w}
+    [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z] {f : X → Y} {g : Y → Z}
+    (hg : IsWLocalMap g) (hf : IsWLocalMap f) : IsWLocalMap (g ∘ f) :=
+  ⟨hg.toIsSpectralMap.comp hf.toIsSpectralMap, hg.map_closedPoints.comp hf.map_closedPoints⟩
 
 end TauCeti
