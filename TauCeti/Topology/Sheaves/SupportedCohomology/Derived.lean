@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.DerivedCategory.RightDerivedFunctor.Homology.Plus
+public import TauCeti.CategoryTheory.Abelian.RightDerived.Evaluation
 public import TauCeti.Topology.Sheaves.SupportedCohomology.Sections
 public import TauCeti.CategoryTheory.Abelian.Injective.Ext
-public import TauCeti.CategoryTheory.Abelian.RightDerived
 
 /-!
 # Derived supported sections and supported Ext groups
@@ -19,7 +20,9 @@ with the existing supported cohomology groups `Extⁿ(Q_S(W),F)`, naturally in `
 Thus supported Ext groups and derived supported sections are two computations of
 the same functor, rather than unrelated cohomology carriers. The comparison also
 commutes with restriction to smaller opens: right deriving supported-section
-restriction gives the existing restriction in `supportedModuleHPresheaf`.
+restriction gives the existing restriction in `supportedModuleHPresheaf`. The openwise
+comparisons assemble into an isomorphism of presheaves and identify the bounded below derived
+computation on each open.
 
 The construction uses `Closeds.supportedFreeModuleSheafHomEquiv` for the
 representation, `NatIso.rightDerived` for its transport, and
@@ -35,7 +38,7 @@ public section
 
 open CategoryTheory Limits Opposite TopologicalSpace
 
-universe u
+universe u w w'
 
 namespace CategoryTheory.Sheaf
 
@@ -151,6 +154,104 @@ lemma rightDerivedSupportedSubmoduleSectionsIso_hom_restrict {W' W : Opens X}
     rightDerivedSupportedSubmoduleSectionsIso_hom_comp_assoc]
   exact rightDerivedLinearCoyonedaIsoExt_hom_naturality_left R _
     ((S.supportedFreeModuleSheafFunctor R).map i) n
+
+section Presheaf
+
+local notation "J" => Opens.grothendieckTopology X
+local notation "A" => ModuleCat R
+local notation "P" => supportedSubmoduleFunctor (R := R) S ⋙ sheafToPresheaf J A
+local notation "ev" => evaluation (Opens X)ᵒᵖ A
+
+/-- The presheaf-valued right derived functors of supported sections agree with the
+supported Ext presheaves. On each open, the isomorphism evaluates the derived presheaf
+and identifies the result with the derived supported sections before comparing with Ext. -/
+def rightDerivedSupportedSubmodulePresheafIso (n : ℕ) :
+    (P).rightDerived n ≅ supportedModuleHPresheafFunctor (R := R) S n :=
+  NatIso.ofComponents (fun F ↦ NatIso.ofComponents
+    (fun W ↦ ((P).rightDerivedEvaluationIso n W).app F ≪≫
+      (NatIso.rightDerived (supportedSubmoduleSectionsIsoEvaluation (R := R) S W).symm n).app F ≪≫
+      (rightDerivedSupportedSubmoduleSectionsIso (R := R) S W.unop n).app F)
+    (fun i ↦ by
+      have he := congrArg (fun τ ↦ τ.app F)
+        ((P).rightDerivedEvaluationIso_hom_naturality n i)
+      have hs := congrArg (fun τ ↦ (τ.rightDerived n).app F)
+        (supportedSubmoduleSectionsIsoEvaluation_inv_naturality (R := R) S i)
+      have hr := congrArg (fun τ ↦ τ.app F)
+        (rightDerivedSupportedSubmoduleSectionsIso_hom_restrict (R := R) S i.unop n)
+      simp only [NatTrans.rightDerived_comp, NatTrans.comp_app] at hs
+      simp only [NatTrans.comp_app, Functor.whiskerLeft_app, evaluation_map_app,
+        Quiver.Hom.op_unop] at he hr
+      simp only [Iso.trans_hom, Iso.app_hom, NatIso.rightDerived_hom, Iso.symm_hom, Category.assoc]
+      rw [reassoc_of% he, reassoc_of% hs, hr]))
+    (fun f ↦ by
+      apply NatTrans.ext
+      funext W
+      simp only [NatTrans.comp_app, NatIso.ofComponents_hom_app, Iso.trans_hom, Iso.app_hom,
+        Category.assoc]
+      have he := ((P).rightDerivedEvaluationIso n W).hom.naturality f
+      have hs := (NatIso.rightDerived
+        (supportedSubmoduleSectionsIsoEvaluation (R := R) S W).symm n).hom.naturality f
+      have hr := (rightDerivedSupportedSubmoduleSectionsIso (R := R) S W.unop n).hom.naturality f
+      simp only [Functor.comp_map, evaluation_obj_map] at he hr
+      rw [reassoc_of% he, reassoc_of% hs, hr])
+
+/-- The presheaf comparison on an open is evaluation, transport to the derived supported
+sections on that open, and the Ext comparison. -/
+@[simp]
+lemma rightDerivedSupportedSubmodulePresheafIso_hom_app_app (n : ℕ) (F : Sheaf J A)
+    (W : (Opens X)ᵒᵖ) :
+    ((rightDerivedSupportedSubmodulePresheafIso S n).hom.app F).app W =
+      ((P).rightDerivedEvaluationIso n W).hom.app F ≫
+        (NatIso.rightDerived (supportedSubmoduleSectionsIsoEvaluation S W).symm n).hom.app F ≫
+        (rightDerivedSupportedSubmoduleSectionsIso S W.unop n).hom.app F :=
+  (rfl)
+
+section BoundedBelow
+
+open DerivedCategory
+
+variable [HasDerivedCategory.{w} (Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))]
+variable [HasDerivedCategory.{w'} (ModuleCat.{u} R)]
+
+/-- On a sheaf in degree zero, the bounded below derived functor of supported sections on
+an open has cohomology equal to the supported Ext groups on that open. -/
+def rightDerivedFunctorPlusSupportedSubmoduleSectionsHomologyIso (W : Opens X) (n : ℕ) :
+    Plus.singleFunctor (Sheaf J (ModuleCat.{u} R)) 0 ⋙
+        (supportedSubmoduleSectionsFunctor (R := R) S W).rightDerivedFunctorPlus ⋙
+        Plus.homologyFunctor (ModuleCat.{u} R) n ≅
+      supportedModuleHPresheafFunctor (R := R) S n ⋙ (ev).obj (op W) :=
+  (supportedSubmoduleSectionsFunctor (R := R) S W).rightDerivedFunctorPlusHomologyIso n ≪≫
+    rightDerivedSupportedSubmoduleSectionsIso S W n
+
+/-- The bounded below comparison on an open is the classical supported Ext comparison
+after identifying the bounded below cohomology with the classical derived functors. -/
+@[reassoc]
+lemma rightDerivedFunctorPlusSupportedSubmoduleSectionsHomologyIso_hom (W : Opens X) (n : ℕ) :
+    (rightDerivedFunctorPlusSupportedSubmoduleSectionsHomologyIso (R := R) S W n).hom =
+      ((supportedSubmoduleSectionsFunctor (R := R) S W).rightDerivedFunctorPlusHomologyIso n).hom ≫
+        (rightDerivedSupportedSubmoduleSectionsIso S W n).hom :=
+  (rfl)
+
+/-- The bounded below supported-section comparison intertwines derived restriction on
+supported sections with restriction on supported Ext. -/
+@[reassoc]
+lemma rightDerivedFunctorPlusSupportedSubmoduleSectionsHomologyIso_hom_restrict
+    {W' W : Opens X} (i : W' ⟶ W) (n : ℕ) :
+    Functor.whiskerLeft (Plus.singleFunctor (Sheaf J (ModuleCat.{u} R)) 0)
+      (Functor.whiskerRight
+        (supportedSubmoduleSectionsRestrict (R := R) S i).rightDerivedFunctorPlus
+        (Plus.homologyFunctor (ModuleCat.{u} R) n)) ≫
+      (rightDerivedFunctorPlusSupportedSubmoduleSectionsHomologyIso S W' n).hom =
+    (rightDerivedFunctorPlusSupportedSubmoduleSectionsHomologyIso S W n).hom ≫
+      Functor.whiskerLeft (supportedModuleHPresheafFunctor S n) ((ev).map i.op) := by
+  rw [rightDerivedFunctorPlusSupportedSubmoduleSectionsHomologyIso_hom,
+    rightDerivedFunctorPlusSupportedSubmoduleSectionsHomologyIso_hom, ← Category.assoc,
+    Functor.rightDerivedFunctorPlusHomologyIso_hom_naturality, Category.assoc,
+    rightDerivedSupportedSubmoduleSectionsIso_hom_restrict, ← Category.assoc]
+
+end BoundedBelow
+
+end Presheaf
 
 end
 

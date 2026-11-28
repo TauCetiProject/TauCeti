@@ -52,6 +52,7 @@ such as Leray's acyclicity theorem.
 The composition comparison is computed on arbitrary chosen resolutions by
 `Functor.rightDerivedCompIso_app_injectiveResolution`. Its special case with the identity as the
 outer functor, `RⁿF ≅ H' ⋙ RⁿF''` for `F ≅ H' ⋙ F''`, is `Functor.rightDerivedPrecompIso`.
+The case of exact postcomposition, `RⁿF ⋙ G ≅ Rⁿ(F ⋙ G)`, is `Functor.rightDerivedPostcompIso`.
 -/
 
 public section
@@ -513,4 +514,67 @@ theorem rightDerivedPrecompIso_app_hom (F'' : C' ⥤ D) [F''.Additive]
   ext j
   simp
 end Component
+
+section Postcomp
+
+variable {D' : Type*} [Category* D'] [Abelian D']
+  (F : C ⥤ D) [F.Additive] (G : D ⥤ D') [G.Additive] [G.PreservesHomology]
+
+/-- Right deriving an additive functor commutes with postcomposition by an exact functor. -/
+noncomputable def rightDerivedPostcompIso (n : ℕ) :
+    F.rightDerived n ⋙ G ≅ (F ⋙ G).rightDerived n :=
+  rightDerivedCompIso F G (𝟭 C) (F ⋙ G) (Functor.leftUnitor _).symm n ≪≫
+    Functor.leftUnitor _
+
+/-- On an injective resolution the postcomposition comparison is the inverse of the
+comparison expressing preservation of homology. -/
+@[reassoc]
+lemma rightDerivedPostcompIso_hom_app_injectiveResolution {X : C}
+    (I : InjectiveResolution X) (n : ℕ) :
+    (F.rightDerivedPostcompIso G n).hom.app X =
+      G.map (I.isoRightDerivedObj F n).hom ≫
+        (G.mapHomologicalComplexCompHomologyFunctorIso _ n).inv.app
+          ((F.mapHomologicalComplex _).obj I.cocomplex) ≫
+        (I.isoRightDerivedObj (F ⋙ G) n).inv := by
+  let E := F ⋙ G
+  let c := ComplexShape.up ℕ
+  let J := (𝟭 C).mapInjectiveResolution I
+  let e : J.cocomplex ≅ I.cocomplex :=
+    (Functor.mapHomologicalComplexIdIso C c).app I.cocomplex
+  let H := HomologicalComplex.homologyFunctor D' c n
+  have hcomp :
+      ((Functor.mapHomologicalComplexCompIso (Functor.leftUnitor E).symm c).app I.cocomplex ≪≫
+        ((Functor.mapHomologicalComplexCompIso (Iso.refl (𝟭 C ⋙ E)) c).app I.cocomplex).symm).hom =
+        (E.mapHomologicalComplex c).map e.inv := by
+    ext k
+    simp only [Functor.comp_obj, Functor.mapHomologicalComplex_obj_X, Functor.id_obj,
+      Iso.trans_hom, Iso.app_hom, Iso.symm_hom, Iso.app_inv, HomologicalComplex.comp_f,
+      Functor.mapHomologicalComplexCompIso_hom_app_f, Functor.leftUnitor_inv_app,
+      Functor.mapHomologicalComplexCompIso_inv_app_f, Iso.refl_inv, NatTrans.id_app,
+      Category.comp_id, Functor.mapHomologicalComplex_map_f]
+    exact (E.map_id _).symm.trans
+      (congrArg E.map (Functor.mapHomologicalComplexIdIso_inv_app_f C c I.cocomplex k).symm)
+  have haug : J.ι.f 0 ≫ e.hom.f 0 = 𝟙 X ≫ I.ι.f 0 := by
+    calc
+      _ = (𝟭 C).map (I.ι.f 0) ≫ 𝟙 (I.cocomplex.X 0) :=
+        congrArg₂ (· ≫ ·) (Functor.mapInjectiveResolution_ι_f_zero (𝟭 C) I)
+          (Functor.mapHomologicalComplexIdIso_hom_app_f C c I.cocomplex 0)
+      _ = _ := (Category.comp_id _).trans (Category.id_comp _).symm
+  have hres := J.isoRightDerivedObj_inv_naturality (𝟙 X) I e.hom haug E n
+  rw [Functor.map_id, Category.comp_id] at hres
+  rw [← Iso.app_hom]
+  rw [rightDerivedPostcompIso, NatIso.trans_app,
+    rightDerivedCompIso_app_injectiveResolution F G (𝟭 C) E _ I]
+  simp only [Iso.trans_hom, Iso.app_hom, Functor.leftUnitor_hom_app, Functor.mapIso_hom,
+    Iso.symm_hom, Iso.app_inv]
+  refine (Category.comp_id _).trans (congrArg (_ ≫ ·) (congrArg (_ ≫ ·) ?_))
+  calc
+    _ = H.map ((E.mapHomologicalComplex c).map e.inv) ≫ (J.isoRightDerivedObj E n).inv :=
+      congrArg (fun f ↦ H.map f ≫ (J.isoRightDerivedObj E n).inv) hcomp
+    _ = _ := by
+      rw [hres, ← Functor.comp_map, ← Functor.map_comp_assoc, Iso.inv_hom_id,
+        Functor.map_id, Category.id_comp]
+
+end Postcomp
+
 end CategoryTheory.Functor
