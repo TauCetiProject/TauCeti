@@ -51,7 +51,7 @@ and the residue field is infinite. A linear combination with field coefficients 
 integral evaluation point where its value under the multiplicative valuation is the maximum of the
 scalar coefficient values. For an empty family that maximum is `0`. The same point can be chosen
 where `g` takes a unit value, provided `g` has nonzero reduction. -/
-theorem exists_eval_sum_valuation_eq_sup {K Γ σ ι : Type*} [Field K]
+theorem exists_isUnit_eval_and_map_sum_mul_eval_eq_sup {K Γ σ ι : Type*} [Field K]
     [LinearOrderedCommGroupWithZero Γ] [Fintype ι] (v : Valuation K Γ)
     [Infinite (ResidueField v.valuationSubring)]
     (P : ι → MvPolynomial σ v.valuationSubring)
