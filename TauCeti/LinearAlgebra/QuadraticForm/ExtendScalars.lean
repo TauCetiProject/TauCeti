@@ -17,7 +17,10 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Binary
 public import TauCeti.LinearAlgebra.QuadraticForm.MvPolynomial
 public import TauCeti.LinearAlgebra.TensorProduct.Pi
 import Mathlib.LinearAlgebra.QuadraticForm.Basis
+import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
+import TauCeti.RingTheory.TensorProduct.IsBaseChange
 import TauCeti.Algebra.Algebra.Pi
+import TauCeti.LinearAlgebra.QuadraticForm.Basic
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.QuadraticForm.FreeBaseChange
 import TauCeti.LinearAlgebra.QuadraticForm.Isometry
@@ -54,8 +57,8 @@ derived from this characterization. Anisotropy is not preserved in general: the 
 
 ## Main results
 
-* `QuadraticMap.ext_algebraMap_comp`: a quadratic map on `ι → L` is determined by its values on
-  vectors with coordinates in `K`.
+* `QuadraticMap.ext_algebraMap_comp`: when `ι` is finite, a quadratic map on `ι → L` is determined
+  by its values on vectors obtained by applying `algebraMap K L` coordinatewise.
 * `QuadraticForm.extendScalars_toQuadraticMap`: the extension of `x ↦ B x x` is read off the Gram
   matrix of `B` mapped into `L`, for every bilinear form `B`.
 * `QuadraticForm.extendScalars_apply`, `QuadraticForm.toMvPolynomial_extendScalars`: the
@@ -114,26 +117,15 @@ open QuadraticMap
 
 namespace QuadraticMap
 
-variable {K L N ι : Type*} [CommRing K] [CommRing L] [Algebra K L]
-variable [AddCommGroup N] [Module L N] [Finite ι]
+variable {K L N ι : Type*} [CommSemiring K] [CommSemiring L] [Algebra K L]
+variable [AddCancelCommMonoid N] [Module L N] [Finite ι]
 
-/-- A quadratic map on `ι → L` is determined by its values on vectors with coordinates in
-`K`. -/
+/-- When `ι` is finite, a quadratic map on `ι → L` is determined by its values on the vectors
+obtained from `ι → K` by applying `algebraMap K L` coordinatewise. -/
 theorem ext_algebraMap_comp ⦃Q₁ Q₂ : QuadraticMap L (ι → L) N⦄
-    (h : ∀ v : ι → K, Q₁ (algebraMap K L ∘ v) = Q₂ (algebraMap K L ∘ v)) : Q₁ = Q₂ := by
-  classical
-  have := Fintype.ofFinite ι
-  -- `baseChange_ext` needs `N` as a `K`-module; restrict its scalars along `K → L`.
-  let : Module K N := Module.compHom N (algebraMap K L)
-  have : IsScalarTower K L N := IsScalarTower.of_compHom K L N
-  have hcomp : Q₁.comp (TensorProduct.piScalarRight K L L ι).toLinearMap =
-      Q₂.comp (TensorProduct.piScalarRight K L L ι).toLinearMap :=
-    baseChange_ext fun v ↦ by
-      rw [comp_apply, comp_apply, LinearEquiv.coe_toLinearMap,
-        TensorProduct.piScalarRight_one_tmul]
-      exact h v
-  ext x
-  simpa using DFunLike.congr_fun hcomp ((TensorProduct.piScalarRight K L L ι).symm x)
+    (h : ∀ v : ι → K, Q₁ (algebraMap K L ∘ v) = Q₂ (algebraMap K L ∘ v)) : Q₁ = Q₂ :=
+  ext_of_span_range_eq_top ((Algebra.linearMap K L).compLeft ι)
+    ((IsBaseChange.linearMap K L).finitePow ι).span_range_eq_top h
 
 end QuadraticMap
 

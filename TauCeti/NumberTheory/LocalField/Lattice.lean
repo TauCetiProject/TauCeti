@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.Topology.Algebra.Module.Compact
 public import TauCeti.Algebra.Module.Lattice
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
+public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.Topology.Algebra.Group.LocallyConstant
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
@@ -41,7 +42,8 @@ topological commutative ring.
 
 ## Main results
 
-* `Module.Basis.isOpen_span_range`: the `𝒪[E]`-span of a finite `E`-basis is open.
+* `Module.Basis.coe_span_range`, `Module.Basis.isOpen_span_range`: the `𝒪[E]`-span of a finite
+  `E`-basis is the preimage of `univ.pi fun _ => 𝒪[E]` under `b.equivFun`, and is open.
 * `Submodule.IsFullLattice.isOpen`, `Submodule.IsFullLattice.isClosed`,
   `Submodule.IsFullLattice.isCompact`: a lattice is open, closed and compact.
 * `Submodule.exists_isFullLattice_superset_of_isCompact`,
@@ -57,6 +59,8 @@ topological commutative ring.
   the endomorphisms mapping a lattice into itself form a compact open subset of `Module.End E V`.
 * `Submodule.IsFullLattice.isOpen_stabilizer`, `Submodule.IsFullLattice.isCompact_stabilizer`: the
   stabilizer of a lattice in `V ≃ₗ[E] V` is open and compact.
+* `Submodule.IsFullLattice.normalizedAbsoluteValue_det_eq_one_of_mem_stabilizer`: every element of
+  the stabilizer `GL(L)` has determinant of normalized absolute value `1`.
 * `Module.Basis.stabilizerContinuousMulEquivGL`: in an `R`-basis of a full lattice over a subring
   `R` of a topological ring, such as `𝒪[E]`, the stabilizer of the lattice is `GL_n(R)` as a
   topological group.
@@ -73,6 +77,22 @@ open scoped Pointwise
 
 namespace Submodule
 
+section Algebraic
+
+variable {E V : Type*} [Field E] [ValuativeRel E]
+  [AddCommGroup V] [Module E V] [Module 𝒪[E] V] [IsScalarTower 𝒪[E] E V]
+
+/-- The `𝒪[E]`-span of a finite `E`-basis `b` of `V` is the set of vectors whose `b`-coordinates
+all lie in the valuation ring `𝒪[E]`. -/
+theorem _root_.Module.Basis.coe_span_range {ι : Type*} [Finite ι] (b : Basis ι E V) :
+    (span 𝒪[E] (range b) : Set V) = b.equivFun ⁻¹' univ.pi fun _ => (𝒪[E] : Set E) := by
+  ext x
+  simp only [SetLike.mem_coe, Basis.mem_span_iff_repr_mem, mem_preimage, mem_univ_pi,
+    Basis.equivFun_apply]
+  exact forall_congr' fun _ => ⟨fun ⟨a, h⟩ => h ▸ a.property, fun h => ⟨⟨_, h⟩, rfl⟩⟩
+
+end Algebraic
+
 section ValuativeTopology
 
 variable {E V : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E] [IsValuativeTopology E]
@@ -83,15 +103,9 @@ variable {E V : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E] [IsValuat
 coordinates all lie in the open subring `𝒪[E]`. -/
 theorem _root_.Module.Basis.isOpen_span_range {ι : Type*} [Finite ι] (b : Basis ι E V) :
     IsOpen (span 𝒪[E] (range b) : Set V) := by
-  have h : (span 𝒪[E] (range b) : Set V) =
-      TauCeti.ModuleTopology.equivFunHomeomorph b ⁻¹' univ.pi fun _ => (𝒪[E] : Set E) := by
-    ext x
-    simp only [SetLike.mem_coe, Basis.mem_span_iff_repr_mem, mem_preimage, mem_univ_pi,
-      TauCeti.ModuleTopology.equivFunHomeomorph_apply, Basis.equivFun_apply]
-    exact forall_congr' fun i => ⟨fun ⟨a, h⟩ => h ▸ a.property, fun h => ⟨⟨_, h⟩, rfl⟩⟩
-  rw [h]
+  rw [b.coe_span_range]
   exact (isOpen_set_pi finite_univ fun _ _ => Valuation.isOpen_integer).preimage
-    (TauCeti.ModuleTopology.equivFunHomeomorph b).continuous
+    (IsModuleTopology.continuous_of_linearMap b.equivFun.toLinearMap)
 
 variable (L : Submodule 𝒪[E] V) [IsFullLattice E L]
 
@@ -357,6 +371,26 @@ theorem IsFullLattice.isCompact_stabilizer :
     simp [T, e, LinearEquiv.smul_def, ← TauCeti.coe_generalLinearContinuousMulEquiv_apply]
   rw [h]
   exact (Submonoid.units_isCompact (IsFullLattice.isCompact_setOf_mapsTo L)).image e.continuous
+
+omit [TopologicalSpace V] [IsModuleTopology E V] in
+/-- **Lattice-stabilizer elements have unit determinant.** Any `T ∈ GL(L)` has `|det T|_E = 1`. -/
+theorem IsFullLattice.normalizedAbsoluteValue_det_eq_one_of_mem_stabilizer {T : V ≃ₗ[E] V}
+    (hT : T ∈ MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V)) :
+    TauCeti.normalizedAbsoluteValue E (LinearMap.det (T : V →ₗ[E] V)) = 1 := by
+  have hmap : L.map ((T.restrictScalars 𝒪[E] : V ≃ₗ[𝒪[E]] V) : V →ₗ[𝒪[E]] V) = L := by
+    apply SetLike.coe_injective
+    rw [Submodule.map_coe]
+    simpa [LinearEquiv.smul_def] using Set.image_smul.trans (MulAction.mem_stabilizer_iff.mp hT)
+  let g : L ≃ₗ[𝒪[E]] L := (T.restrictScalars 𝒪[E]).ofSubmodules L L hmap
+  have : Module.Finite 𝒪[E] L := IsLattice.finite E L
+  have : Module.Free 𝒪[E] L := IsLattice.free E L
+  have hdet : LinearMap.det (T : V →ₗ[E] V) =
+      algebraMap 𝒪[E] E (LinearMap.det (g : L →ₗ[𝒪[E]] L)) :=
+    LinearMap.det_eq_algebraMap_det_of_isFullLattice (T : V →ₗ[E] V) (g : L →ₗ[𝒪[E]] L) fun x ↦
+      (T.restrictScalars 𝒪[E]).ofSubmodules_apply hmap x
+  obtain ⟨u, hu⟩ := g.isUnit_det'
+  rw [hdet, ← hu]
+  exact TauCeti.normalizedAbsoluteValue_coe_unit u
 
 omit L [IsFullLattice E L] in
 /-- **Every neighbourhood of `0` contains a lattice.** -/

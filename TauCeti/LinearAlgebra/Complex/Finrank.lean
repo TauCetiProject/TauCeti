@@ -26,7 +26,8 @@ space with a complex basis of size `k` has real dimension `2 * k`
 map has real dimension twice its complex dimension
 (`LinearMap.finrank_range_restrictScalars_eq_two_mul`), also when transported to a real-linear
 map along real isomorphisms (`LinearMap.finrank_range_eq_two_mul_of_comp_eq`), and its cokernel
-has even real dimension (`LinearMap.even_finrank_quotient_range_restrictScalars`).
+has even real dimension (`LinearMap.even_finrank_quotient_range_restrictScalars`). It also records
+`Complex.one_lt_rank_real_complex : 1 < Module.rank ℝ ℂ`.
 -/
 
 public section
@@ -118,3 +119,8 @@ theorem finrank_range_eq_two_mul_of_comp_eq [AddCommGroup V'] [Module ℝ V'] [A
     LinearEquiv.finrank_map_eq, finrank_range_restrictScalars_eq_two_mul]
 
 end LinearMap
+
+/-- The complex plane has real dimension strictly greater than one (`rank ℝ ℂ = 2`). -/
+theorem _root_.Complex.one_lt_rank_real_complex : 1 < Module.rank ℝ ℂ := by
+  rw [Complex.rank_real_complex]
+  exact Nat.one_lt_ofNat

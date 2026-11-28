@@ -45,7 +45,8 @@ not be preserved by `G_(k+1)`, and the classification is the orbit statement abo
 That every point of `Sym ℂ m` is the divisor of a vortex of `A_m^k` needs, beyond Taubes's
 existence theorem for smooth framed vortices (`TauCeti.Vortex.framedVortexDivisor_surjective`),
 a smooth framed gauge moving each smooth framed vortex into `A_m^k`. This is
-`TauCeti.Vortex.exists_framedGaugeGroup_smul_mem_framedFieldSpace`, which gives
+`TauCeti.Vortex.exists_framedGaugeGroup_smul_mem_framedFieldSpace` in
+`TauCeti/Analysis/PDE/Vortex/FramedGauge/Moduli.lean`, which gives
 `TauCeti.Vortex.sobolevVortexDivisor_surjective` and the identification
 `TauCeti.Vortex.sobolevVortexModuliEquiv` of the Sobolev moduli with `Sym ℂ m`.
 
@@ -123,6 +124,7 @@ variable (f m) in
 def sobolevVortices (k : ℕ) : Set (framedFieldSpace f m k) :=
   {x | ContDiff ℝ 2 (x : ℂ → EuclideanSpace ℝ (Fin 4)) ∧ ∀ z, equation x z = 0}
 
+/-- Membership in `sobolevVortices f m k`: `C²` regularity and vanishing of `equation`. -/
 @[simp]
 theorem mem_sobolevVortices {k : ℕ} {x : framedFieldSpace f m k} :
     x ∈ sobolevVortices f m k ↔
@@ -224,6 +226,7 @@ def sobolevVortexSubMulAction {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) :
   carrier := sobolevVortices f m k
   smul_mem' u _ hx := smul_mem_sobolevVortices hk u hx
 
+/-- Membership in `sobolevVortexSubMulAction` reduces to membership in `sobolevVortices`. -/
 @[simp]
 theorem mem_sobolevVortexSubMulAction {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
     {x : framedFieldSpace f m k} :
