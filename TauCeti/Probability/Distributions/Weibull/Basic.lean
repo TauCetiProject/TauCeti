@@ -13,6 +13,7 @@ public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.MeasureTheory.Integral.Gamma
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
+import TauCeti.Probability.HasLaw
 
 /-!
 # The Weibull distribution
@@ -47,6 +48,8 @@ antiderivative `-exp (-(x / lam) ^ k)` of the density.
   real-power moment criterion and value;
 * `integral_pow_weibullMeasure` specializes the formula to natural moments;
 * `integral_id_weibullMeasure` and `variance_id_weibullMeasure` give the mean and variance;
+* the corresponding declarations in `ProbabilityTheory.HasLaw` transfer the carrier and moment
+  results to random variables with a Weibull law;
 * `weibullMeasure_one_eq_expMeasure` identifies shape-one Weibull laws with exponential laws;
 * `measurable_weibullMeasure` makes the family available for kernel constructions.
 
@@ -428,7 +431,7 @@ theorem integral_weibullPDFReal_Ioi (hk : 0 < k) (hlam : 0 < lam) (hx : 0 < x) :
 
 /-! ### Density interface and cumulative distribution function -/
 
-variable {Omega : Type*} [MeasurableSpace Omega] {P : Measure Omega} {X : Omega → ℝ}
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
 /-- A random variable with a Weibull law has a Lebesgue density. -/
 theorem hasPDF_of_hasLaw_weibullMeasure (hX : HasLaw X (weibullMeasure k lam) P) :
@@ -580,3 +583,59 @@ theorem measurable_weibullMeasure :
 end Probability
 
 end TauCeti
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+
+variable {Omega : Type*} [MeasurableSpace Omega] {P : Measure Omega} {X : Omega → ℝ}
+  {k lam q : ℝ}
+
+/-- A random variable with a Weibull law is almost surely positive. This remains true for invalid
+parameters, where the totalized law is the zero measure. -/
+theorem ae_pos_weibullMeasure (hX : HasLaw X (weibullMeasure k lam) P) :
+    ∀ᵐ ω ∂P, 0 < X ω :=
+  hX.ae (TauCeti.Probability.ae_pos_weibullMeasure k lam)
+
+/-- A real power of a Weibull random variable is integrable exactly above the negative shape. -/
+theorem integrable_rpow_weibullMeasure_iff (hX : HasLaw X (weibullMeasure k lam) P)
+    (hk : 0 < k) (hlam : 0 < lam) (q : ℝ) :
+    Integrable (fun ω ↦ X ω ^ q) P ↔ -k < q := by
+  simpa only [Function.comp_def] using
+    (integrable_comp_iff hX (f := fun x : ℝ ↦ x ^ q) (by fun_prop)).trans
+      (TauCeti.Probability.integrable_rpow_weibullMeasure_iff hk hlam q)
+
+/-- The real-power moment of a Weibull random variable on its exact integrability domain. -/
+theorem integral_rpow_weibullMeasure (hX : HasLaw X (weibullMeasure k lam) P)
+    (hk : 0 < k) (hlam : 0 < lam) (hq : -k < q) :
+    ∫ ω, X ω ^ q ∂P = lam ^ q * Real.Gamma (1 + q / k) := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ x ^ q), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_rpow_weibullMeasure hk hlam hq]
+
+/-- Every natural power of a Weibull random variable is integrable. This includes invalid
+parameters, where the totalized Weibull measure is zero. -/
+theorem integrable_pow_weibullMeasure (hX : HasLaw X (weibullMeasure k lam) P) (n : ℕ) :
+    Integrable (fun ω ↦ X ω ^ n) P :=
+  hX.integrable_fun_comp (TauCeti.Probability.integrable_pow_weibullMeasure k lam n)
+
+/-- The natural raw moments of a Weibull random variable. -/
+theorem integral_pow_weibullMeasure (hX : HasLaw X (weibullMeasure k lam) P)
+    (hk : 0 < k) (hlam : 0 < lam) (n : ℕ) :
+    ∫ ω, X ω ^ n ∂P = lam ^ n * Real.Gamma (1 + (n : ℝ) / k) := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ x ^ n), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_pow_weibullMeasure hk hlam]
+
+/-- The expectation of a Weibull random variable. -/
+theorem integral_weibullMeasure (hX : HasLaw X (weibullMeasure k lam) P)
+    (hk : 0 < k) (hlam : 0 < lam) :
+    ∫ ω, X ω ∂P = lam * Real.Gamma (1 + 1 / k) := by
+  rw [hX.integral_eq, TauCeti.Probability.integral_id_weibullMeasure hk hlam]
+
+/-- The variance of a Weibull random variable. -/
+theorem variance_weibullMeasure (hX : HasLaw X (weibullMeasure k lam) P)
+    (hk : 0 < k) (hlam : 0 < lam) :
+    variance X P =
+      lam ^ 2 * (Real.Gamma (1 + 2 / k) - Real.Gamma (1 + 1 / k) ^ 2) := by
+  rw [hX.variance_eq, TauCeti.Probability.variance_id_weibullMeasure hk hlam]
+
+end ProbabilityTheory.HasLaw
