@@ -22,6 +22,9 @@ constant `n * ε`. The bounds include matrices with empty row or column types.
 * `Matrix.norm_toEuclideanLin_le_of_entry_le`: rectangular entrywise-to-action bound.
 * `Matrix.norm_toEuclideanLin_le_of_entry_le_square`: square finite-index specialization.
 * `Matrix.l2_opNorm_le_of_norm_apply_le`: operator norm comparison under entrywise domination.
+* `Matrix.l2_opNorm_le_sqrt_mul_mul_sqrt_of_norm_apply_le`: entries of norm at most `c` give
+  operator norm at most `√(card m) * c * √(card n)`; for a square matrix this is `n * c`
+  (`Matrix.l2_opNorm_le_card_mul_of_norm_apply_le`).
 * `Matrix.l2_opNorm_le_sqrt_mul_of_row_col_sum_le`: the finite Schur test.
 
 ## Source
@@ -166,6 +169,27 @@ theorem l2_opNorm_le_of_norm_apply_le (A : Matrix m n 𝕜) (B : Matrix m n ℝ)
   exact hnorm.trans (by
     rw [← hy]
     exact B.l2_opNorm_mulVec y)
+
+/-- A matrix with entries of norm at most `c` has Euclidean operator norm at most
+`√(card m) * c * √(card n)`. -/
+theorem l2_opNorm_le_sqrt_mul_mul_sqrt_of_norm_apply_le {A : Matrix m n 𝕜} {c : ℝ}
+    (hA : ∀ i j, ‖A i j‖ ≤ c) :
+    ‖A‖ ≤ Real.sqrt (Fintype.card m) * c * Real.sqrt (Fintype.card n) := by
+  rcases isEmpty_or_nonempty m with hm | ⟨⟨i⟩⟩
+  · simp [Subsingleton.elim A 0]
+  rcases isEmpty_or_nonempty n with hn | ⟨⟨j⟩⟩
+  · simp [Subsingleton.elim A 0]
+  have hc : 0 ≤ c := (norm_nonneg _).trans (hA i j)
+  rw [l2_opNorm_def]
+  exact ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦
+    norm_toEuclideanLin_le_of_entry_le hA x
+
+/-- A square matrix with entries of norm at most `c` has Euclidean operator norm at most
+`card n * c`. -/
+theorem l2_opNorm_le_card_mul_of_norm_apply_le {A : Matrix n n 𝕜} {c : ℝ}
+    (hA : ∀ i j, ‖A i j‖ ≤ c) : ‖A‖ ≤ Fintype.card n * c := by
+  have h := l2_opNorm_le_sqrt_mul_mul_sqrt_of_norm_apply_le hA
+  rwa [mul_right_comm, Real.mul_self_sqrt (Nat.cast_nonneg _)] at h
 
 omit [Fintype m] in
 /-- Weighted Cauchy–Schwarz bounds the squared magnitude of a matrix-vector coordinate by the

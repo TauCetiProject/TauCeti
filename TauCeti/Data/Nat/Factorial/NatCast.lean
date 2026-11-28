@@ -8,10 +8,13 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Algebra.GroupWithZero.Divisibility
 public import Mathlib.Algebra.GroupWithZero.Units.Basic
+public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Nat.Cast.Basic
 public import Mathlib.Data.Nat.Factorial.Basic
+import Mathlib.Algebra.Order.GroupWithZero.Basic
 import Mathlib.Data.Int.Cast.Basic
+import Mathlib.Data.Nat.Cast.Order.Basic
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Nat.Factorial.NatCast
 
@@ -24,9 +27,12 @@ integers `0, …, d` are distinct in it, since their differences are positive an
 When `n !` is a unit in a ring, the alternating sum of the products of the inverse
 factorials `1 / (i ! (n - i)!)` over `i ≤ n` vanishes for `n ≠ 0`, being `(1 - 1) ^ n / n !`.
 
+In an ordered semiring, `n ! ≤ M ^ n` whenever `n ≤ M`, since `n ! ≤ n ^ n`.
+
 ## Main results
 
 * `Nat.cast_factorial_eq_zero_of_le`: `(m : R) = 0` with `0 < m ≤ k` gives `(k ! : R) = 0`.
+* `Nat.cast_factorial_le_pow_of_le`: `(n ! : R) ≤ M ^ n` when `(n : R) ≤ M`.
 * `TauCeti.injective_natCast_fin_of_factorial_ne_zero`: if `d !` is nonzero in a ring, the
   integers `0, …, d` are distinct in it.
 * `TauCeti.sum_range_neg_one_pow_mul_ringInverse_factorial`: if `n !` is a unit,
@@ -44,6 +50,13 @@ theorem cast_factorial_eq_zero_of_le {m k : ℕ} (hm : 0 < m) (hmR : (m : R) = 0
     (k.factorial : R) = 0 := by
   simpa only [hmR, zero_dvd_iff] using
     (Nat.cast_dvd_cast (Nat.dvd_factorial hm hk) : (m : R) ∣ (k.factorial : R))
+
+/-- In an ordered semiring, `n ! ≤ M ^ n` whenever `n ≤ M`. -/
+theorem cast_factorial_le_pow_of_le [PartialOrder R] [IsOrderedRing R] {n : ℕ} {M : R}
+    (hn : (n : R) ≤ M) : (n.factorial : R) ≤ M ^ n :=
+  calc (n.factorial : R) ≤ (n : R) ^ n :=
+        (Nat.mono_cast (Nat.factorial_le_pow n)).trans_eq (Nat.cast_pow n n)
+    _ ≤ M ^ n := pow_le_pow_left₀ (Nat.cast_nonneg _) hn n
 
 end Nat
 
