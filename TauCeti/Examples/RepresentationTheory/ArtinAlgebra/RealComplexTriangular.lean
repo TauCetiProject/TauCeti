@@ -212,6 +212,8 @@ private theorem not_isSplitMono_inclusion : ¬ IsSplitMono inclusion := by
   have hcol : corner • (((0, 1) : ℂ × ℂ) : secondColumn) = ((1, 0) : ℂ × ℂ) :=
     (second_smul corner (0, 1)).trans (by simp [corner, id])
   have hr := ConcreteCategory.congr_hom (IsSplitMono.id (f := inclusion)) (1 : ℝ)
+  -- `congr_hom` states the split-mono identity under `ConcreteCategory.hom`. Restate it as an
+  -- equation of values at `1`, which the `ModuleCat` application lemmas below rewrite.
   change (inclusion ≫ r) (1 : ℝ) = (𝟙 firstColumn) (1 : ℝ) at hr
   rw [ModuleCat.comp_apply, ModuleCat.id_apply, inclusion_hom_apply, Complex.ofReal_one] at hr
   have he : r ((1, 0) : ℂ × ℂ) = (1 : ℝ) := hr
@@ -230,9 +232,13 @@ private def toFirst {M : ModuleCat T} (φ : M →ₗ[ℝ] ℝ)
         have hm : e₁ * entries r z s =
             algebraMap ℝ T r * e₁ + corner * entries 0 0 z := by
           rw [TrivSqZeroExt.algebraMap_eq_inl', Prod.algebraMap_apply]
+          -- After the two rewrites `algebraMap ℝ T r` is the diagonal matrix `entries r 0 r`, but
+          -- only up to unfolding `TrivSqZeroExt.inl`; state it in that form for `mul_entries`.
           change e₁ * entries r z s = entries r 0 (r : ℂ) * e₁ + corner * entries 0 0 z
           unfold e₁ corner
           rw [mul_entries, mul_entries, mul_entries]
+          -- Read the right-hand side in the coordinate type `(ℝ × ℂ) × ℂ`, where addition is
+          -- componentwise; `simp` does not unfold `T` to its coordinates by itself.
           change _ = (_ : (ℝ × ℂ) × ℂ) + _
           simp [id]
         -- Restore the triangular type of the matrix after destructuring the coordinates.
@@ -297,11 +303,16 @@ private theorem scaleSecond_eq (f : secondColumn ⟶ secondColumn) :
 private theorem scaleSecond_generator (c : ℂ) : scaleSecond c ((0, 1) : ℂ × ℂ) = (0, c) :=
   (scaleSecond_apply _ _).trans (by simp)
 
+-- In each field below, `End.ext (secondColumn_ext _)` leaves an equation between the values of two
+-- endomorphisms on the generator `(0, 1)`, written through the bundled coercions of `End`. The
+-- first `change` of each field names those two values. Rewriting cannot do this, because the ring
+-- operations of `End` are wrappers around operations on `ModuleCat` morphisms.
 private def scaleSecondAlgHom : ℂ →ₐ[ℝ] End secondColumn where
   toFun c := End.of (scaleSecond c)
   map_zero' := End.ext (secondColumn_ext (by
     change scaleSecond 0 (0, 1) = (0 : End secondColumn).asHom (0, 1)
     rw [scaleSecond_generator, End.zero_asHom]
+    -- `End.asHom 0` is the zero morphism by definition.
     change _ = (0 : secondColumn ⟶ secondColumn).hom (0, 1)
     rw [ModuleCat.hom_zero, LinearMap.zero_apply]
     rfl))
@@ -312,6 +323,7 @@ private def scaleSecondAlgHom : ℂ →ₐ[ℝ] End secondColumn where
     change scaleSecond (c + d) (0, 1) =
       (End.of (scaleSecond c) + End.of (scaleSecond d)).asHom (0, 1)
     rw [End.add_asHom]
+    -- `End.asHom` of a sum of `End.of`s is the sum of the morphisms by definition.
     change _ = (scaleSecond c + scaleSecond d).hom (0, 1)
     rw [ModuleCat.hom_add, LinearMap.add_apply]
     rw [scaleSecond_generator, scaleSecond_generator, scaleSecond_generator]
@@ -320,6 +332,7 @@ private def scaleSecondAlgHom : ℂ →ₐ[ℝ] End secondColumn where
     change scaleSecond (c * d) (0, 1) =
       (End.of (scaleSecond c) * End.of (scaleSecond d)).asHom (0, 1)
     rw [End.mul_asHom, ModuleCat.comp_apply]
+    -- Application of a composite of `ModuleCat` morphisms is iterated application by definition.
     change scaleSecond (c * d) (0, 1) = scaleSecond c (scaleSecond d (0, 1))
     rw [scaleSecond_generator, scaleSecond_generator, scaleSecond_apply, mul_zero]))
   commutes' r := End.ext (secondColumn_ext (by
@@ -360,12 +373,15 @@ public theorem isAlmostSplit_sequence :
   have hc₁ : c = 1 := by
     rw [← he] at hb
     have ha := ConcreteCategory.congr_hom hb (1 : ℝ)
+    -- As above: restate the `congr_hom` equation as an equation of values at `1`.
     change (inclusion ≫ scaleSecond c) (1 : ℝ) = inclusion (1 : ℝ) at ha
     rw [ModuleCat.comp_apply, inclusion_hom_apply, Complex.ofReal_one, scaleSecond_apply] at ha
     simpa only [mul_one] using congrArg Prod.fst ha
   have hb₁ : b = 𝟙 secondColumn := by
     rw [← he, hc₁]
     have h := congrArg End.asHom secondColumnEndEquiv.map_one
+    -- `secondColumnEndEquiv 1` is `End.of (scaleSecond 1)` by the definition of the equivalence;
+    -- `rw` does not unfold the bundled equivalence.
     change scaleSecond 1 = (1 : End secondColumn).asHom at h
     rwa [End.one_asHom] at h
   exact hb₁.symm ▸ inferInstanceAs (IsIso (𝟙 secondColumn))
@@ -455,6 +471,8 @@ counts the same middle summand as the first entry of the incoming map to the mid
   have h := isAlmostSplit_sequence.irreducibleMorphismValuation_X₁_eq_swap ℝ
     (fun _ : Unit => secondColumn) (biproductUniqueIso (fun _ : Unit => secondColumn)).symm
     secondColumn
+  -- The first and third terms of `cokernelSequence inclusion` are `firstColumn` and `cokernel
+  -- inclusion` by definition. Restate `h` with those names for the rewrites below.
   change irreducibleMorphismValuation ℝ firstColumn secondColumn =
     (irreducibleMorphismValuation ℝ secondColumn (cokernel inclusion)).swap at h
   rw [← Prod.swap_swap (irreducibleMorphismValuation ℝ secondColumn (cokernel inclusion)), ← h,

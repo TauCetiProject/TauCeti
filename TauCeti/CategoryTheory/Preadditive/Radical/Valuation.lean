@@ -242,6 +242,8 @@ theorem irreducibleMorphismValuation_congr {X X' Y Y' : C} (e : X ≅ X') (e' : 
     intro r m
     obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective r
     obtain ⟨f, rfl⟩ := irreducibleMorphismMk_surjective m
+    -- `rank_eq_of_equiv_equiv` states semilinearity for the additive equivalence `i`. Restate it
+    -- for `irreducibleMorphismSpaceCongr`, to which the `simp` lemmas below apply.
     change irreducibleMorphismSpaceCongr k e e' (_ • _) =
       _ • irreducibleMorphismSpaceCongr k e e' _
     simp only [RingEquiv.quotientJacobsonCongr_mk,
@@ -256,6 +258,7 @@ theorem irreducibleMorphismValuation_congr {X X' Y Y' : C} (e : X ≅ X') (e' : 
     intro r m
     obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective r
     obtain ⟨f, rfl⟩ := irreducibleMorphismMk_surjective m
+    -- As in the first component: restate semilinearity for `irreducibleMorphismSpaceCongr`.
     change irreducibleMorphismSpaceCongr k e e' (_ • _) =
       _ • irreducibleMorphismSpaceCongr k e e' _
     simp only [RingEquiv.quotientJacobsonCongr_mk,
@@ -264,6 +267,8 @@ theorem irreducibleMorphismValuation_congr {X X' Y Y' : C} (e : X ≅ X') (e' : 
     apply congrArg (irreducibleMorphismMk k X' Y')
     apply Subtype.ext
     simp only [coe_jacobsonRadicalPrecomp]
+    -- `d` is `RingEquiv.op e.endRingEquiv`, so `d a` unfolds to `op (e.endRingEquiv a.unop)`; state
+    -- the composite with the endomorphism of `X'` so that `simp` can reassociate it.
     change _ = (e.endRingEquiv a.unop).asHom ≫ _
     simp [Category.assoc]
 
