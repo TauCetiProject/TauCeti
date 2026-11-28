@@ -99,8 +99,13 @@ private def homotopyTopDomination {j : N → M} (hj : ContMDiff J I ∞ j)
     (((topCatHomotopyOfContMDiff (hj.comp hr) (contMDiff_id (I := I)) hΦ hΦ₀
       hΦ₁).toSSet.chainComplexMap R).trans
       (Homotopy.ofEq (by
-        rw [show (⟨id, (contMDiff_id (I := I) (n := ∞)).continuous⟩ : C(M, M)) =
-          ContinuousMap.id M from rfl, TopCat.ofHom_id, CategoryTheory.Functor.map_id]
+        -- `topCatHomotopyOfContMDiff` bundles `id` with `(contMDiff_id ...).continuous`, which
+        -- equals `ContinuousMap.id M` by extensionality.
+        have hid : (⟨id, (contMDiff_id (I := I) (n := ∞)).continuous⟩ : C(M, M)) =
+            ContinuousMap.id M :=
+          ContinuousMap.ext fun _ ↦ by
+            simp only [ContinuousMap.coe_mk, id_eq, ContinuousMap.id_apply]
+        rw [hid, TopCat.ofHom_id, CategoryTheory.Functor.map_id]
         exact ((SSet.chainComplexFunctor C).obj R).map_id _)))
 
 /-- **Transfer of smooth-chain homotopy equivalences along a smooth domination.** Given smooth maps

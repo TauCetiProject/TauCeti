@@ -125,12 +125,15 @@ private theorem iCycles_cyclesMap_circleLoopSimplex :
           (ModuleCat.of ℤ ℤ)).moduleCatCyclesMk _ 0 (ChainComplex.next_nat_succ 0)
             d_ιChainComplex_circleLoopSimplex)) =
       simplexChain circleLoopSimplex.val (1 : ℤ) := by
+  -- `(singularChains ℤ).obj (.of Circle)` unfolds through `singularChains` and
+  -- `AlgebraicTopology.singularChainComplexFunctor` to
+  -- `(TopCat.toSSet.obj (TopCat.of Circle)).chainComplex (ModuleCat.of ℤ ℤ)`; `rw` does not
+  -- unfold it, so `change` aligns `iCycles` with the codomain of `SSet.chainComplexMap` for
+  -- `moduleCat_iCycles_cyclesMap_apply`.
   change (((TopCat.toSSet.obj (TopCat.of Circle)).chainComplex (ModuleCat.of ℤ ℤ)).iCycles 1).hom
       _ = _
   rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply,
-    HomologicalComplex.iCycles_moduleCatCyclesMk, ← ConcreteCategory.comp_apply,
-    SSet.ι_chainComplexMap_f]
-  rfl
+    HomologicalComplex.iCycles_moduleCatCyclesMk, chainComplexMap_ι_f_ιChainComplex]
 
 /-- On `Circle`, the inclusion of smooth singular chains into continuous singular chains is nonzero
 on `H₁(Circle; ℤ)`: the class of `circleLoopSimplex` has period `2π ≠ 0` under
