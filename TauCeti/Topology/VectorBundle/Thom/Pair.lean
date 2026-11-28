@@ -81,6 +81,29 @@ theorem thomPairModelFiberIso_inv_fst_apply {F' : Type*} [TopologicalSpace (Tota
   exact (TopPair.ofSubsetMap_fst_apply (X := TopCat.of (TotalSpace F E))
     (B := zeroSectionCompl F E) _ _ p).trans (totalSpaceModelFiberHomeomorph_symm_apply h_ind p)
 
+variable {F E} in
+@[simp]
+theorem thomPairModelFiberIso_hom_snd_apply {F' : Type*} [TopologicalSpace (TotalSpace F' E)]
+    (h_ind : Topology.IsInducing fun p : TotalSpace F' E ↦ TotalSpace.mk' F p.proj p.snd)
+    (p : zeroSectionCompl F' E) :
+    (TopPair.Hom.snd (thomPairModelFiberIso h_ind).hom p).val =
+      TotalSpace.mk' F p.val.proj p.val.snd := by
+  simp only [thomPairModelFiberIso, TopPair.ofSubsetIso_hom]
+  exact (TopPair.ofSubsetMap_snd_apply (X := TopCat.of (TotalSpace F' E))
+    (B := zeroSectionCompl F' E) _ _ p).trans (totalSpaceModelFiberHomeomorph_apply h_ind p.val)
+
+variable {F E} in
+@[simp]
+theorem thomPairModelFiberIso_inv_snd_apply {F' : Type*} [TopologicalSpace (TotalSpace F' E)]
+    (h_ind : Topology.IsInducing fun p : TotalSpace F' E ↦ TotalSpace.mk' F p.proj p.snd)
+    (p : zeroSectionCompl F E) :
+    (TopPair.Hom.snd (thomPairModelFiberIso h_ind).inv p).val =
+      TotalSpace.mk' F' p.val.proj p.val.snd := by
+  simp only [thomPairModelFiberIso, TopPair.ofSubsetIso_inv]
+  exact (TopPair.ofSubsetMap_snd_apply (X := TopCat.of (TotalSpace F E))
+    (B := zeroSectionCompl F E) _ _ p).trans
+    (totalSpaceModelFiberHomeomorph_symm_apply h_ind p.val)
+
 /-- The Thom pair `(E|_W, E₀|_W)` of the restriction of a bundle to a subset `W` of its base: the
 vectors over `W`, relative to the nonzero ones, as subspaces of the total space. -/
 abbrev thomPairOver (W : Set B) : TopPair.{w} :=
@@ -191,6 +214,12 @@ theorem thomPairMapOfNeZero_fst_apply (f : C(X, TotalSpace F E)) {S : Set X}
 theorem thomPairMapOfNeZero_fst (f : C(X, TotalSpace F E)) {S : Set X}
     (h : ∀ x ∉ S, (f x).snd ≠ 0) : TopPair.Hom.fst (thomPairMapOfNeZero f h) = TopCat.ofHom f :=
   TopPair.ofSubsetMap_fst _ _
+
+@[simp]
+theorem thomPairMapOfNeZero_snd_apply (f : C(X, TotalSpace F E)) {S : Set X}
+    (h : ∀ x ∉ S, (f x).snd ≠ 0) (x : ↥(Sᶜ : Set X)) :
+    (TopPair.Hom.snd (thomPairMapOfNeZero f h) x).val = f x.val :=
+  TopPair.ofSubsetMap_snd_apply (X := TopCat.of X) _ _ x
 
 /-- Precomposing `thomPairMapOfNeZero f` with the map of pairs induced by a continuous map `g`
 gives `thomPairMapOfNeZero` of any map equal to `f ∘ g`. -/

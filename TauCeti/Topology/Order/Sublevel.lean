@@ -429,6 +429,7 @@ theorem bandPairInclusion_fst_apply {X : Type*} [TopologicalSpace X] {β : Type*
   congrArg Subtype.val
     (TopPair.ofInclusionMap_fst_apply (X := TopCat.of X) (Y := TopCat.of X) _ _ x)
 
+@[simp]
 theorem bandPairInclusion_snd_apply {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β]
     (f : X → β) {a b : β} (hab : a ≤ b) (x : f ⁻¹' {a}) :
     (TopPair.Hom.snd (bandPairInclusion f hab) x).val = x.val :=
