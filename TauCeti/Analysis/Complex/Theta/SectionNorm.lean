@@ -20,7 +20,7 @@ when `τ.im ≠ 0`, this is `TauCeti.thetaMetric_add_mul_norm_sq`; when `τ.im =
 
 ## Main results
 
-* `TauCeti.thetaMetric_mul_norm_sq_add_int_add_int_mul_tau`: unconditional lattice invariance of
+* `TauCeti.thetaMetric_add_mul_norm_sq_of_mem_thetaSections`: unconditional lattice invariance of
   the pointwise Hermitian norm squared on `thetaSections`.
 
 ## References
@@ -37,7 +37,7 @@ namespace TauCeti
 
 /-- For every theta section `s`, the pointwise Hermitian norm squared `thetaMetric k τ z * ‖s z‖²`
 is doubly periodic on the lattice `ℤ + τℤ`, unconditionally in `τ`. -/
-theorem thetaMetric_mul_norm_sq_add_int_add_int_mul_tau {k : ℕ} {τ : ℂ}
+theorem thetaMetric_add_mul_norm_sq_of_mem_thetaSections {k : ℕ} {τ : ℂ}
     {α β : ℝ} {s : ℂ → ℂ} (hs : s ∈ thetaSections k τ α β) (m n : ℤ) (z : ℂ) :
     thetaMetric k τ (z + m + n * τ) * ‖s (z + m + n * τ)‖ ^ 2 =
       thetaMetric k τ z * ‖s z‖ ^ 2 := by

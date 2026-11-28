@@ -24,8 +24,8 @@ The cocycle law `e_(λ + μ)(z) = e_λ(z + μ) e_μ(z)` (`TauCeti.thetaFactor_ad
 and the quotient is the theta line of level `k` and characteristics `(α, β)` on the torus
 `ℂ / (ℤ + τℤ)`. The law uses that `k` is an integer: for an arbitrary real level `k : ℝ`, the two
 ways of composing the `1`- and `τ`-translations differ by `exp (-2πik)`
-(`TauCeti.exp_thetaAutomorphy_commutator`), so they commute if and only if `k` is an integer
-(`TauCeti.exp_thetaAutomorphy_commutator_eq_iff_exists_intCast_eq`). Shifting `(α, β)` by integers
+(`TauCeti.exp_mul_exp_comm_eq_exp_neg_mul`), so they commute if and only if `k` is an integer
+(`TauCeti.exp_mul_exp_comm_iff_exists_intCast_eq`). Shifting `(α, β)` by integers
 leaves `thetaFactor` invariant (`TauCeti.thetaFactor_add_int`), and tensor product of theta lines
 adds levels and characteristics (`TauCeti.thetaFactor_mul_thetaFactor`).
 
@@ -39,8 +39,8 @@ adds levels and characteristics (`TauCeti.thetaFactor_mul_thetaFactor`).
 * `TauCeti.thetaFactor_add_int`: shifting characteristics by integers leaves `thetaFactor`
   unchanged.
 * `TauCeti.thetaFactor_mul_thetaFactor`: multiplying factors adds levels and characteristics.
-* `TauCeti.exp_thetaAutomorphy_commutator` and
-  `TauCeti.exp_thetaAutomorphy_commutator_eq_iff_exists_intCast_eq`: integrality obstruction at
+* `TauCeti.exp_mul_exp_comm_eq_exp_neg_mul` and
+  `TauCeti.exp_mul_exp_comm_iff_exists_intCast_eq`: integrality obstruction at
   real level.
 * `TauCeti.forall_add_eq_thetaFactor_mul_iff`: the lattice automorphy law is equivalent to the
   two generator laws.
@@ -154,7 +154,7 @@ theorem logDeriv_thetaFactor (m n : ℤ) (z : ℂ) :
 
 /-- For an arbitrary real level `k : ℝ`, composing the `z ↦ z + 1` and `z ↦ z + τ` automorphy
 factors in the two orders differs by the constant phase `exp (-2πik)`. -/
-theorem exp_thetaAutomorphy_commutator (k : ℝ) (τ : ℂ) (α β : ℝ) (z : ℂ) :
+theorem exp_mul_exp_comm_eq_exp_neg_mul (k : ℝ) (τ : ℂ) (α β : ℝ) (z : ℂ) :
     cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * (z + 1)) * cexp (2 * π * I * α) =
       cexp (-2 * π * I * k) *
         (cexp (2 * π * I * α) * cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z)) := by
@@ -165,12 +165,12 @@ theorem exp_thetaAutomorphy_commutator (k : ℝ) (τ : ℂ) (α β : ℝ) (z : �
 /-- **Integrality obstruction for the torus automorphy factor.** The `z ↦ z + 1` and `z ↦ z + τ`
 generator factors at real level `k : ℝ` satisfy the abelian compatibility relation if and only if
 `k` is an integer. -/
-theorem exp_thetaAutomorphy_commutator_eq_iff_exists_intCast_eq (k : ℝ) (τ : ℂ) (α β : ℝ)
+theorem exp_mul_exp_comm_iff_exists_intCast_eq (k : ℝ) (τ : ℂ) (α β : ℝ)
     (z : ℂ) :
     cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * (z + 1)) * cexp (2 * π * I * α) =
         cexp (2 * π * I * α) * cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) ↔
       ∃ n : ℤ, (n : ℝ) = k := by
-  rw [exp_thetaAutomorphy_commutator]
+  rw [exp_mul_exp_comm_eq_exp_neg_mul]
   have hne :
       cexp (2 * π * I * α) * cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) ≠ 0 :=
     mul_ne_zero (Complex.exp_ne_zero _) (Complex.exp_ne_zero _)

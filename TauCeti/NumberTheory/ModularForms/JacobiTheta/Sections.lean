@@ -113,7 +113,7 @@ theorem characteristicTheta_mem_thetaSections (k : ℕ) (τ : ℂ) (α β : ℝ)
 /-- At level `k = 1`, zero characteristics, and `r = 0`, `characteristicTheta` reduces to
 `jacobiTheta₂`. -/
 @[simp]
-theorem characteristicTheta_one_zero (τ z : ℂ) :
+theorem characteristicTheta_one_eq_jacobiTheta₂ (τ z : ℂ) :
     characteristicTheta 1 τ 0 0 0 z = jacobiTheta₂ z τ := by
   simp [characteristicTheta_apply]
 
@@ -138,7 +138,7 @@ theorem characteristicTheta_undef {k : ℕ} {τ : ℂ} (h : k = 0 ∨ τ.im ≤ 
 
 /-- Shifting the characteristic index `r` by the level `k` multiplies `characteristicTheta` by a
 nonzero scalar depending only on `(k, τ, α, β, r)`. -/
-theorem characteristicTheta_index_add_level (k : ℕ) (τ : ℂ) (α β : ℝ) (r : ℤ) (z : ℂ) :
+theorem characteristicTheta_add_natCast (k : ℕ) (τ : ℂ) (α β : ℝ) (r : ℤ) (z : ℂ) :
     characteristicTheta k τ α β (r + k) z =
       cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * (r + α) * τ) *
         characteristicTheta k τ α β r z := by
@@ -156,7 +156,7 @@ theorem characteristicTheta_index_add_level (k : ℕ) (τ : ℂ) (α β : ℝ) (
 theorem jacobiTheta₂_mem_thetaSections (τ : ℂ) :
     (fun z => jacobiTheta₂ z τ) ∈ thetaSections 1 τ 0 0 := by
   have hfun : (fun z => jacobiTheta₂ z τ) = characteristicTheta 1 τ 0 0 0 :=
-    funext fun z => (characteristicTheta_one_zero τ z).symm
+    funext fun z => (characteristicTheta_one_eq_jacobiTheta₂ τ z).symm
   rw [hfun]
   exact characteristicTheta_mem_thetaSections 1 τ 0 0 0
 
