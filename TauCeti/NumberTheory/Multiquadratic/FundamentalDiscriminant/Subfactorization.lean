@@ -43,8 +43,6 @@ conclusion is stated as `u ⊆ s`.
 
 ## Main results
 
-* `TauCeti.Multiquadratic.IsPrimeDiscriminant.mod_four_eq_one`: an odd prime discriminant is
-  `1` modulo `4`.
 * `TauCeti.Multiquadratic.exists_mod_four_eq_one_four_mul_eq`: splitting the even factor off a
   prime-discriminant factorization of `fundamentalDiscriminant a` writes `4 * a = E * m` with
   `m ≡ 1 (mod 4)`.
@@ -57,25 +55,6 @@ conclusion is stated as `u ⊆ s`.
 public section
 
 namespace TauCeti.Multiquadratic
-
-/-- A prime discriminant other than `-4`, `8`, `-8` is congruent to `1` modulo `4`: it is the
-odd prime discriminant `p*`. -/
-theorem IsPrimeDiscriminant.mod_four_eq_one {P : ℤ} (hP : IsPrimeDiscriminant P)
-    (hne : ¬ IsEvenPrimeDiscriminant P) : P % 4 = 1 := by
-  rcases isPrimeDiscriminant_iff.mp hP with hev | ⟨_p, _hp, hodd, rfl⟩
-  · exact absurd hev hne
-  · exact oddPrimeDiscriminant_mod_four_eq_one_iff.mpr hodd
-
-/-- A product of odd prime discriminants is congruent to `1` modulo `4`. -/
-theorem prod_primeDiscriminant_mod_four_eq_one {s : Finset ℤ}
-    (hs : ∀ P ∈ s, IsPrimeDiscriminant P) (hne : ∀ P ∈ s, ¬ IsEvenPrimeDiscriminant P) :
-    (∏ P ∈ s, P) % 4 = 1 :=
-  Finset.prod_induction _ (fun x => x % 4 = 1)
-    (fun x y hx hy => by
-      have h := Int.mul_emod x y 4
-      rw [hx, hy] at h
-      simpa using h)
-    (by norm_num) fun P hP => (hs P hP).mod_four_eq_one (hne P hP)
 
 /-- **Splitting off the even prime discriminant.** If the prime discriminants in `u` have product
 `fundamentalDiscriminant a` and at most one of them is even, then an even member `E` of `u`
@@ -91,9 +70,7 @@ theorem exists_mod_four_eq_one_four_mul_eq {a E : ℤ} {u : Finset ℤ}
   have hsplit : E * ∏ P ∈ u.erase E, P = fundamentalDiscriminant a := by
     rw [Finset.mul_prod_erase u (fun P => P) hE]; exact huprod
   refine ⟨∏ P ∈ u.erase E, P, ?_, ?_⟩
-  · refine prod_primeDiscriminant_mod_four_eq_one
-      (fun P hP => hu P (Finset.mem_of_mem_erase hP)) fun P hP hPev => ?_
-    exact Finset.ne_of_mem_erase hP (hue P (Finset.mem_of_mem_erase hP) E hE hPev hEeven)
+  · exact prod_erase_primeDiscriminant_mod_four_eq_one hu hue hE hEeven
   · have h2 : (2 : ℤ) ∣ fundamentalDiscriminant a :=
       hsplit ▸ (two_dvd_evenPrimeDiscriminant hEeven).mul_right _
     have hmod : a % 4 ≠ 1 := fun h =>

@@ -38,6 +38,11 @@ generate the same quadratic field `ℚ(√D)`.
 
 * `TauCeti.Multiquadratic.IsPrimeDiscriminant`: the union of the even prime discriminants and
   odd prime discriminants.
+* `TauCeti.Multiquadratic.IsPrimeDiscriminant.mod_four_eq_one` and
+  `TauCeti.Multiquadratic.prod_primeDiscriminant_mod_four_eq_one`: odd prime discriminants
+  and their products are `1` modulo `4`.
+* `TauCeti.Multiquadratic.prod_erase_primeDiscriminant_mod_four_eq_one`: erasing the unique
+  even member leaves a product congruent to `1` modulo `4`.
 * `TauCeti.Multiquadratic.primeDiscriminantRadicand`: the associated squarefree integer
   radicand.
 * `TauCeti.Multiquadratic.dvd_primeDiscriminant_iff_dvd_radicand`: away from `2`, an integer
@@ -98,6 +103,37 @@ theorem IsEvenPrimeDiscriminant.isPrimeDiscriminant {D : ℤ} (hD : IsEvenPrimeD
 theorem isPrimeDiscriminant_oddPrimeDiscriminant {p : ℕ} (hp : p.Prime) (hodd : Odd p) :
     IsPrimeDiscriminant (oddPrimeDiscriminant p) :=
   Or.inr ⟨p, hp, hodd, rfl⟩
+
+/-- A prime discriminant other than `-4`, `8`, `-8` is congruent to `1` modulo `4`: it is the
+odd prime discriminant `p*`. -/
+theorem IsPrimeDiscriminant.mod_four_eq_one {P : ℤ} (hP : IsPrimeDiscriminant P)
+    (hne : ¬ IsEvenPrimeDiscriminant P) : P % 4 = 1 := by
+  rcases isPrimeDiscriminant_iff.mp hP with hev | ⟨_p, _hp, hodd, rfl⟩
+  · exact absurd hev hne
+  · exact oddPrimeDiscriminant_mod_four_eq_one_iff.mpr hodd
+
+/-- A product of odd prime discriminants is congruent to `1` modulo `4`. -/
+theorem prod_primeDiscriminant_mod_four_eq_one {s : Finset ℤ}
+    (hs : ∀ P ∈ s, IsPrimeDiscriminant P) (hne : ∀ P ∈ s, ¬ IsEvenPrimeDiscriminant P) :
+    (∏ P ∈ s, P) % 4 = 1 :=
+  Finset.prod_induction _ (fun x => x % 4 = 1)
+    (fun x y hx hy => by
+      have h := Int.mul_emod x y 4
+      rw [hx, hy] at h
+      simpa using h)
+    (by norm_num) fun P hP => (hs P hP).mod_four_eq_one (hne P hP)
+
+/-- Erasing the unique even member of a finite set of prime discriminants leaves a product
+congruent to `1` modulo `4`. -/
+theorem prod_erase_primeDiscriminant_mod_four_eq_one {s : Finset ℤ}
+    (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
+    (heven : ∀ P ∈ s, ∀ Q ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q)
+    {P : ℤ} (hP : P ∈ s) (hPeven : IsEvenPrimeDiscriminant P) :
+    (∏ Q ∈ s.erase P, Q) % 4 = 1 :=
+  prod_primeDiscriminant_mod_four_eq_one
+    (fun Q hQ => hs Q (Finset.mem_of_mem_erase hQ))
+    (fun Q hQ hQeven => Finset.ne_of_mem_erase hQ
+      (heven Q (Finset.mem_of_mem_erase hQ) P hP hQeven hPeven))
 
 /-- The absolute value of a prime discriminant is greater than one. -/
 theorem IsPrimeDiscriminant.one_lt_natAbs {D : ℤ} (hD : IsPrimeDiscriminant D) :

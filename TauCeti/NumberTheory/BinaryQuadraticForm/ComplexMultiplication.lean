@@ -553,7 +553,7 @@ theorem lattice_periodPair_cmPointOfIndex {D : ℤ} (hD0 : D < 0)
     (cmPointOfIndex D hD0 f).periodPair.lattice =
       Subalgebra.toSubmodule (QuadraticOrder.complexOrder ((f : ℤ) ^ 2 * D)
         (mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hD0.le)
-        (QuadraticOrder.sq_mul_emod_four_eq_zero_or_one hD f)) := by
+        (Int.sq_mul_emod_four_eq_zero_or_one hD f)) := by
   ext z
   rw [PeriodPair.mem_lattice, Subalgebra.mem_toSubmodule,
     QuadraticOrder.mem_complexOrder_sq_mul_iff hD0.le hD f]
@@ -570,7 +570,7 @@ theorem leftOrder_lattice_periodPair_cmPointOfIndex {D : ℤ} (hD0 : D < 0)
     (cmPointOfIndex D hD0 f).periodPair.lattice.leftOrder =
       QuadraticOrder.complexOrder ((f : ℤ) ^ 2 * D)
         (mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hD0.le)
-        (QuadraticOrder.sq_mul_emod_four_eq_zero_or_one hD f) := by
+        (Int.sq_mul_emod_four_eq_zero_or_one hD f) := by
   rw [lattice_periodPair_cmPointOfIndex hD0 hD f, Subalgebra.leftOrder_toSubmodule]
 
 /-- `UpperHalfPlane.quadraticOrder` at `cmPointOfIndex D hD0 f` agrees with
@@ -580,7 +580,7 @@ theorem quadraticOrder_cmPointOfIndex {D : ℤ} (hD0 : D < 0) (hD : D % 4 = 0 �
     (cmPointOfIndex D hD0 f).quadraticOrder (cmPointOfIndex_quadratic hD0 hD f) =
       QuadraticOrder.complexOrder ((f : ℤ) ^ 2 * D)
         (mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hD0.le)
-        (QuadraticOrder.sq_mul_emod_four_eq_zero_or_one hD f) := by
+        (Int.sq_mul_emod_four_eq_zero_or_one hD f) := by
   rw [← UpperHalfPlane.leftOrder_lattice_periodPair_eq_quadraticOrder]
   exact leftOrder_lattice_periodPair_cmPointOfIndex hD0 hD f
 

@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Discriminant.Stickelberger
 public import TauCeti.NumberTheory.NumberField.Global.Orders.IntAddMulOrder
 public import TauCeti.NumberTheory.NumberField.Quadratic.ComplexEmbedding
 public import TauCeti.NumberTheory.QuadraticOrder.Basic
+public import TauCeti.Data.Int.DivMod
 import TauCeti.Algebra.QuadraticAlgebra.Star
 import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.OrderOfConductor
 
@@ -259,7 +260,7 @@ image of the order `ℤ + f 𝓞 K` of conductor `f` when `D` is a negative fund
 theorem mem_complexOrder_sq_mul_iff {D : ℤ} (hD0 : D ≤ 0) (hD : D % 4 = 0 ∨ D % 4 = 1) (f : ℕ)
     {z : ℂ} :
     z ∈ complexOrder ((f : ℤ) ^ 2 * D) (mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hD0)
-        (sq_mul_emod_four_eq_zero_or_one hD f) ↔
+        (Int.sq_mul_emod_four_eq_zero_or_one hD f) ↔
       ∃ m k : ℤ, z = m + k * ((f : ℂ) * complexGenerator D) := by
   rw [mem_complexOrder_iff, complexGenerator_sq_mul D f]
   set q : ℤ := (((f : ℤ) ^ 2 - f) * D) / 2
@@ -270,7 +271,7 @@ theorem mem_complexOrder_sq_mul_iff {D : ℤ} (hD0 : D ≤ 0) (hD : D % 4 = 0 �
 `ℤ`-algebra by `f · complexGenerator D`. -/
 theorem complexOrder_sq_mul_eq_adjoin {D : ℤ} (hD0 : D ≤ 0) (hD : D % 4 = 0 ∨ D % 4 = 1) (f : ℕ) :
     complexOrder ((f : ℤ) ^ 2 * D) (mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hD0)
-        (sq_mul_emod_four_eq_zero_or_one hD f) =
+        (Int.sq_mul_emod_four_eq_zero_or_one hD f) =
       Algebra.adjoin ℤ {(f : ℂ) * complexGenerator D} := by
   refine le_antisymm ?_ ?_
   · rw [complexOrder_eq_adjoin, Algebra.adjoin_le_iff, Set.singleton_subset_iff,
@@ -290,14 +291,14 @@ theorem map_toSubalgebra_intAddMulOrder_eq_complexOrder {K : Type*} [Field K] [N
     ((GlobalNumberFields.intAddMulOrder K f).toSubalgebra).map φ.toIntAlgHom =
       complexOrder ((f : ℤ) ^ 2 * NumberField.discr K)
         (mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hD0)
-        (sq_mul_emod_four_eq_zero_or_one
+        (Int.sq_mul_emod_four_eq_zero_or_one
           (TauCeti.NumberField.discr_emod_four_eq_zero_or_one K) f) := by
   set D := (f : ℤ) ^ 2 * NumberField.discr K
   have hDlt : D < 0 := mul_neg_of_pos_of_neg
     (sq_pos_of_pos (Nat.cast_pos.mpr (NeZero.pos f)))
     (lt_of_le_of_ne hD0 (NumberField.discr_ne_zero K))
   have : Fact (¬ IsSquare D) := ⟨fun ⟨r, hr⟩ ↦ by nlinarith [sq_nonneg r]⟩
-  have hD4 := sq_mul_emod_four_eq_zero_or_one
+  have hD4 := Int.sq_mul_emod_four_eq_zero_or_one
     (TauCeti.NumberField.discr_emod_four_eq_zero_or_one K) f
   obtain ⟨δ, hδ⟩ := Multiquadratic.exists_sq_eq_discr hK
   have hfδ : ((f : K) * δ) ^ 2 = (D : K) := by rw [mul_pow, hδ]; push_cast [D]; ring

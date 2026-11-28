@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.EuclideanDomain.Int
+import Mathlib.RingTheory.Int.Basic
 import Mathlib.FieldTheory.Finite.Basic
 import TauCeti.Data.ZMod.OrderOf
 public import Mathlib.Data.Nat.Totient
@@ -24,6 +25,8 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   `TauCeti/NumberTheory/HeckeRing/GL2/Gamma0/`, which need the `Int.gcd` form of the unit
   condition carried by membership of `Δ₀(N)`, and `Int.exists_nonneg_lt_and_dvd_mul_sub` in
   `TauCeti/Data/Int/LinearCongruence.lean`, which needs the other direction.
+* `ZMod.isUnit_intCast_natAbs_iff_isCoprime`: an integer is a unit modulo the absolute
+  value of an integer exactly when those integers are coprime.
 * `ZMod.isUnit_intCast_two_pow_of_odd` — an odd integer is a unit modulo every power
   of two, including the trivial modulus at exponent zero.
 * `ZMod.natAbs_cast` — the absolute value of the integer cast of a residue is its `ZMod.val`, at
@@ -108,6 +111,14 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
 public section
 
 variable {d : ℕ}
+
+/-- An integer is a unit modulo the absolute value of `d` exactly when it is coprime to `d`.
+This includes negative and zero moduli. -/
+theorem ZMod.isUnit_intCast_natAbs_iff_isCoprime (n d : ℤ) :
+    IsUnit (n : ZMod d.natAbs) ↔ IsCoprime n d := by
+  rw [ZMod.isUnit_intCast_iff_isCoprime, isCoprime_comm]
+  simp only [Int.isCoprime_iff_nat_coprime, Int.natAbs_natCast]
+
 
 /-- **An integer is a unit mod `d` exactly when it is coprime to `d`.** The `Int.gcd` form is
 what consumers of `Nat.Coprime` want; `ZMod.isUnit_intCast_iff_isCoprime` states the same
