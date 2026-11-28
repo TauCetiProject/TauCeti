@@ -97,7 +97,9 @@ bound times the volume of the ball
 
 On a finite-dimensional real normed space, for a constant `C` depending only on the space, every
 ball of radius `r` has a cutoff that is one on it and zero beyond radius `2 r`, with derivative of
-norm at most `C r⁻¹` (`TauCeti.exists_cutoff_fderiv_bound`). For a cutoff `χ` equal to one on the
+norm at most `C r⁻¹` (`TauCeti.exists_cutoff_fderiv_bound`); on the balls of radius `n + 1` these
+form smooth compactly supported cutoffs tending to one pointwise with derivatives of norm
+`O(1 / n)` (`TauCeti.exists_expanding_cutoff`). For a cutoff `χ` equal to one on the
 closed ball of radius `R` and zero beyond radius `2 R`, with `‖Dχ‖ ≤ A` everywhere, and data `u`
 with `‖x‖ ‖u x‖ ≤ M` for `R ≤ ‖x‖ ≤ 2 R` and `0 ≤ M`, the product `‖Dχ x‖ ‖u x‖` is at most
 `A (M / R)` on the closed ball of radius `2 R` and vanishes outside it
@@ -1093,6 +1095,29 @@ theorem exists_cutoff_fderiv_bound :
     rw [fderiv_of_notMem_tsupport, ContinuousLinearMap.zero_comp]
     rw [β.tsupport_eq, mem_closedBall, dist_zero_right, hnorm, not_le, lt_inv_mul_iff₀' hr]
     exact hx
+
+open Filter in
+/-- **Expanding cutoffs.** There are smooth compactly supported functions `χ n : E → ℝ` with
+`|χ n| ≤ 1`, tending to `1` pointwise as `n → ∞`, whose derivatives are bounded by constants
+`C n → 0`: the cutoffs of `TauCeti.exists_cutoff_fderiv_bound` about the origin of radius `n + 1`,
+with `C n = C / (n + 1)`. -/
+theorem exists_expanding_cutoff :
+    ∃ (χ : ℕ → E → ℝ) (C : ℕ → ℝ), Tendsto C atTop (𝓝 0) ∧
+      (∀ n, ContDiff ℝ ∞ (χ n) ∧ HasCompactSupport (χ n) ∧
+        ∀ x, ‖χ n x‖ ≤ 1 ∧ ‖fderiv ℝ (χ n) x‖ ≤ C n) ∧
+      ∀ x, Tendsto (fun n ↦ χ n x) atTop (𝓝 1) := by
+  obtain ⟨C, -, hcut⟩ := exists_cutoff_fderiv_bound (E := E)
+  choose χ χ' hχ hχ01 hχ1 hχ0 hd hdC _ _ using fun n : ℕ ↦ hcut 0 ((n : ℝ) + 1) (by positivity)
+  refine ⟨χ, fun n ↦ C * ((n : ℝ) + 1)⁻¹,
+    by simpa using tendsto_one_div_add_atTop_nhds_zero_nat.const_mul C, fun n ↦ ⟨hχ n ⊤,
+      .intro (isCompact_closedBall 0 (2 * ((n : ℝ) + 1))) fun x hx ↦ hχ0 n x (not_le.1 hx),
+      fun x ↦ ⟨?_, (hd n x).fderiv ▸ hdC n x⟩⟩, fun x ↦ tendsto_const_nhds.congr' ?_⟩
+  · rw [Real.norm_of_nonneg (hχ01 n x).1]
+    exact (hχ01 n x).2
+  · filter_upwards [eventually_ge_atTop ⌈‖x‖⌉₊] with n hn
+    refine (hχ1 n x ?_).symm
+    rw [mem_closedBall, dist_zero_right]
+    linarith [Nat.le_ceil ‖x‖, (Nat.cast_le (α := ℝ)).2 hn]
 
 end ScaledCutoff
 
