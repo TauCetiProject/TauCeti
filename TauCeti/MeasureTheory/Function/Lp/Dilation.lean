@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
 # Dilation scaling of the `Lᵖ` seminorm
@@ -39,6 +40,8 @@ needs a continuous extended norm.
 
 ## Main declarations
 
+* `ContinuousLinearEquiv.abs_det_smulLeft_inv_rpow`: determinant power simplification for
+  `ContinuousLinearEquiv.smulLeft`.
 * `MeasureTheory.Measure.eLpNorm_comp_inv_smul`: `‖u (r⁻¹ • ·)‖_p = |r| ^ (n / p) * ‖u‖_p`, and
   `MeasureTheory.Measure.eLpNorm_comp_inv_smul_restrict_smul`, the same law for the `Lᵖ` seminorms
   on `r • s` and on `s`.
@@ -63,12 +66,32 @@ needs a continuous extended norm.
   `MeasureTheory.Lp.norm_compContinuousLinearEquivAddRestrict`: restricted additive Haar `Lᵖ`
   precomposition along an invertible affine map `x ↦ B x + b`, its `MapsTo` norm bound, and its
   exact norm identity on preimages.
-* `MeasureTheory.Lp.norm_le_mul_abs_det_inv_rpow_of_ae_le`,
-  `MeasureTheory.Lp.norm_eq_mul_abs_det_inv_rpow_of_ae_eq`: affine `Lᵖ` norm comparison and exact
-  identity on arbitrary sets.
+* `MeasureTheory.Lp.norm_le_mul_addHaarScalarFactor_rpow_of_ae_le`,
+  `MeasureTheory.Lp.norm_le_mul_abs_det_inv_rpow_of_ae_le`: affine `Lᵖ` norm comparison for
+  `MapsTo` pairs `(s, t)`.
+* `MeasureTheory.Lp.norm_eq_mul_addHaarScalarFactor_rpow_of_ae_eq`,
+  `MeasureTheory.Lp.norm_eq_mul_abs_det_inv_rpow_of_ae_eq`: exact affine `Lᵖ` norm identity on
+  full affine preimages `s = (fun x ↦ B x + b) ⁻¹' t` of arbitrary target sets `t`.
 -/
 
 public section
+
+namespace ContinuousLinearEquiv
+
+open scoped ENNReal
+
+/-- For `r ≠ 0`, `|det (smulLeft (Units.mk0 r hr))|⁻¹ ^ (1 / p).toReal` simplifies to
+`|r|⁻¹ ^ (dim E / p.toReal)`. -/
+theorem abs_det_smulLeft_inv_rpow (E : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {r : ℝ} (hr : r ≠ 0) (p : ℝ≥0∞) :
+    |LinearMap.det ((ContinuousLinearEquiv.smulLeft (Units.mk0 r hr) : E ≃L[ℝ] E) :
+      E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal =
+      |r|⁻¹ ^ ((Module.finrank ℝ E : ℝ) / p.toReal) := by
+  rw [ContinuousLinearEquiv.det_smulLeft, Units.val_mk0, abs_pow, ← inv_pow,
+    ← Real.rpow_natCast |r|⁻¹, ← Real.rpow_mul (by positivity), one_div,
+    ENNReal.toReal_inv, div_eq_mul_inv]
+
+end ContinuousLinearEquiv
 
 namespace MeasureTheory.Measure
 
@@ -164,19 +187,14 @@ theorem eLpNorm_comp_smul_restrict_preimage (u : E → G) {c : ℝ} (hc : c ≠ 
     (s : Set E) :
     eLpNorm (fun x => u (c • x)) p (μ.restrict ((c • ·) ⁻¹' s)) =
       ENNReal.ofReal (|c| ^ ((finrank ℝ E : ℝ) / p.toReal))⁻¹ * eLpNorm u p (μ.restrict s) := by
-  -- Scaling by `c` as a linear automorphism, whose determinant is `c ^ n`.
+  -- Scaling by `c` as a linear automorphism.
   let e : E ≃L[ℝ] E := ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)
   have he : ⇑e = (c • ·) := by ext; simp [e]
-  have hlin : (e : E →ₗ[ℝ] E) = c • LinearMap.id := by ext; simp [e]
-  have hdet : LinearMap.det (e : E →ₗ[ℝ] E) = c ^ finrank ℝ E := by
-    rw [hlin, LinearMap.det_smul, LinearMap.det_id, mul_one]
-  -- The Jacobian factor: `|c ^ n|⁻¹ ^ (1 / p) = (|c| ^ (n / p))⁻¹`.
-  have hfac : ENNReal.ofReal |(c ^ finrank ℝ E)⁻¹| ^ (1 / p).toReal =
+  have hfac : ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal =
       ENNReal.ofReal (|c| ^ ((finrank ℝ E : ℝ) / p.toReal))⁻¹ := by
-    rw [ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) ENNReal.toReal_nonneg, abs_inv, abs_pow,
-      Real.inv_rpow (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul (abs_nonneg c)]
-    simp [div_eq_mul_inv]
-  simpa only [Function.comp_def, he, hdet, hfac] using
+    rw [ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) ENNReal.toReal_nonneg, abs_inv,
+      ContinuousLinearEquiv.abs_det_smulLeft_inv_rpow E hc p, Real.inv_rpow (abs_nonneg c)]
+  simpa only [Function.comp_def, he, hfac] using
     eLpNorm_comp_continuousLinearEquiv_restrict_preimage μ u e p (s := s)
 
 variable {μ} in
@@ -332,7 +350,84 @@ namespace MeasureTheory.Lp
 
 open scoped ENNReal
 
-/-- **Affine `Lᵖ` norm comparison on arbitrary sets.** If `f ∈ Lᵖ(μ.restrict s)` and
+private theorem toReal_mul_rpow_eLpNorm {H : Type*} [NormedAddCommGroup H] {α : Type*}
+    [MeasurableSpace α] {ν : Measure α} {p : ℝ≥0∞} {c a : ℝ≥0∞} (hc : c ≠ ⊤) (ha : a ≠ ⊤)
+    (g : Lp H p ν) :
+    c * (a ^ (1 / p).toReal * eLpNorm g p ν) ≠ ⊤ ∧
+      (c * (a ^ (1 / p).toReal * eLpNorm g p ν)).toReal =
+        c.toReal * a.toReal ^ (1 / p).toReal * ‖g‖ := by
+  refine ⟨ENNReal.mul_ne_top hc (ENNReal.mul_ne_top
+    (ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg ha) (Lp.eLpNorm_ne_top g)), ?_⟩
+  rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ← Lp.norm_def, ← mul_assoc]
+
+/-- **Two-space affine `Lᵖ` norm comparison on `MapsTo` pairs.** If `f ∈ Lᵖ(μ.restrict s)` and
+`g ∈ Lᵖ(ν.restrict t)` satisfy `‖f x‖ ≤ M * ‖g (B x + b)‖` for `μ.restrict s`-a.e. `x`, where
+`x ↦ B x + b` maps `s` into `t` for `B : E' ≃L[ℝ] F` and `0 ≤ M`, then
+`‖f‖ ≤ M * (Measure.addHaarScalarFactor (μ.map B) ν : ℝ) ^ (1 / p).toReal * ‖g‖` (where
+`(1 / p).toReal = 0`, hence factor `1`, at `p = 0` and `p = ∞`). -/
+theorem norm_le_mul_addHaarScalarFactor_rpow_of_ae_le {E' F G H : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [MeasurableSpace E'] [BorelSpace E']
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [LocallyCompactSpace F]
+    [SecondCountableTopology F] [MeasurableSpace F] [BorelSpace F]
+    {μ : Measure E'} [μ.IsAddHaarMeasure] {ν : Measure F} [ν.IsAddHaarMeasure]
+    {p : ℝ≥0∞} {s : Set E'} {t : Set F} [NormedAddCommGroup G] [NormedAddCommGroup H]
+    (f : Lp G p (μ.restrict s)) (B : E' ≃L[ℝ] F) (b : F)
+    (hst : Set.MapsTo (fun x ↦ B x + b) s t) {g : Lp H p (ν.restrict t)} {M : ℝ} (hM : 0 ≤ M)
+    (hpt : ∀ᵐ x ∂μ.restrict s, ‖f x‖ ≤ M * ‖g (B x + b)‖) :
+    ‖f‖ ≤ M * (Measure.addHaarScalarFactor (μ.map B) ν : ℝ) ^ (1 / p).toReal * ‖g‖ := by
+  have he : eLpNorm f p (μ.restrict s) ≤ ENNReal.ofReal M *
+      ((Measure.addHaarScalarFactor (μ.map B) ν : ℝ≥0∞) ^ (1 / p).toReal *
+        eLpNorm g p (ν.restrict t)) :=
+    (eLpNorm_le_mul_eLpNorm_of_ae_le_mul (Lp.aestronglyMeasurable _) hpt p).trans <|
+      mul_le_mul_of_nonneg_left
+        (eLpNorm_comp_le_of_map_le_smul
+          (B.continuous.add (continuous_const (y := b))).measurable.aemeasurable
+          (Measure.map_restrict_continuousLinearEquiv_add_le_smul_restrict μ ν B b hst) p)
+        zero_le
+  obtain ⟨hfin, htoReal⟩ := toReal_mul_rpow_eLpNorm (c := ENNReal.ofReal M)
+    (a := Measure.addHaarScalarFactor (μ.map B) ν) ENNReal.ofReal_ne_top ENNReal.coe_ne_top g
+  have hle := ENNReal.toReal_mono hfin he
+  rw [← Lp.norm_def, htoReal, ENNReal.toReal_ofReal hM, ENNReal.coe_toReal] at hle
+  exact hle
+
+/-- **Two-space exact affine `Lᵖ` norm identity on preimages.** If `f ∈ Lᵖ(μ.restrict s)` and
+`g ∈ Lᵖ(ν.restrict t)` satisfy `f =ᵐ c • g (B · + b)` on `s = (fun x ↦ B x + b) ⁻¹' t` for
+`B : E' ≃L[ℝ] F` and scalar `c`, then
+`‖f‖ = ‖c‖ * (Measure.addHaarScalarFactor (μ.map B) ν : ℝ) ^ (1 / p).toReal * ‖g‖` (where
+`(1 / p).toReal = 0`, hence factor `1`, at `p = 0` and `p = ∞`). -/
+theorem norm_eq_mul_addHaarScalarFactor_rpow_of_ae_eq {E' F G 𝕜 : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [MeasurableSpace E'] [BorelSpace E']
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [LocallyCompactSpace F]
+    [SecondCountableTopology F] [MeasurableSpace F] [BorelSpace F]
+    {μ : Measure E'} [μ.IsAddHaarMeasure] {ν : Measure F} [ν.IsAddHaarMeasure]
+    {p : ℝ≥0∞} {s : Set E'} {t : Set F}
+    [NormedAddCommGroup G] [NormedDivisionRing 𝕜] [Module 𝕜 G] [NormSMulClass 𝕜 G]
+    (f : Lp G p (μ.restrict s)) (B : E' ≃L[ℝ] F) (b : F)
+    (hst : s = (fun x ↦ B x + b) ⁻¹' t) {g : Lp G p (ν.restrict t)} (c : 𝕜)
+    (hpt : (f : E' → G) =ᵐ[μ.restrict s] fun x ↦ c • g (B x + b)) :
+    ‖f‖ = ‖c‖ * (Measure.addHaarScalarFactor (μ.map B) ν : ℝ) ^ (1 / p).toReal * ‖g‖ := by
+  have : LocallyCompactSpace E' := B.toHomeomorph.isOpenEmbedding.locallyCompactSpace
+  have : SecondCountableTopology E' := B.toHomeomorph.isInducing.secondCountableTopology
+  have : (μ.map B).IsAddHaarMeasure := B.isAddHaarMeasure_map μ
+  have hC₀ : (Measure.addHaarScalarFactor (μ.map B) ν : ℝ≥0∞) ≠ 0 :=
+    ENNReal.coe_ne_zero.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure (μ.map B) ν).ne'
+  have he : MeasurableEmbedding (fun x ↦ B x + b) :=
+    (B.toHomeomorph.trans (Homeomorph.addRight b)).measurableEmbedding
+  have hmap : (μ.restrict s).map (fun x ↦ B x + b) =
+      (Measure.addHaarScalarFactor (μ.map B) ν : ℝ≥0∞) • ν.restrict t :=
+    hst ▸ Measure.map_restrict_preimage_continuousLinearEquiv_add_eq_smul_restrict μ ν B b t
+  have hg : eLpNorm (fun x ↦ g (B x + b)) p (μ.restrict s) =
+      (Measure.addHaarScalarFactor (μ.map B) ν : ℝ≥0∞) ^ (1 / p).toReal *
+        eLpNorm g p (ν.restrict t) := by
+    change eLpNorm (g ∘ fun x ↦ B x + b) p (μ.restrict s) = _
+    rw [← he.eLpNorm_map_measure, hmap, eLpNorm_smul_measure_of_ne_zero hC₀, smul_eq_mul]
+  obtain ⟨_, htoReal⟩ := toReal_mul_rpow_eLpNorm (c := ‖c‖ₑ)
+    (a := Measure.addHaarScalarFactor (μ.map B) ν) (by simp) ENNReal.coe_ne_top g
+  have hsmul : (fun x ↦ c • g (B x + b)) = c • fun x ↦ g (B x + b) := rfl
+  rw [Lp.norm_def, eLpNorm_congr_ae hpt, hsmul, eLpNorm_const_smul, hg, htoReal, toReal_eNorm,
+    ENNReal.coe_toReal]
+
+/-- **Affine `Lᵖ` norm comparison on `MapsTo` pairs.** If `f ∈ Lᵖ(μ.restrict s)` and
 `g ∈ Lᵖ(μ.restrict t)` satisfy `‖f x‖ ≤ M * ‖g (B x + b)‖` for `μ.restrict s`-a.e. `x`, where
 `x ↦ B x + b` maps `s` into `t` for a linear automorphism `B : E ≃L[ℝ] E` and `0 ≤ M`, then
 `‖f‖ ≤ M * |det B|⁻¹ ^ (1 / p).toReal * ‖g‖` (where `(1 / p).toReal = 0`, hence factor `1`, at
@@ -345,22 +440,8 @@ theorem norm_le_mul_abs_det_inv_rpow_of_ae_le {E G H : Type*} [NormedAddCommGrou
     (hst : Set.MapsTo (fun x ↦ B x + b) s t) {g : Lp H p (μ.restrict t)} {M : ℝ} (hM : 0 ≤ M)
     (hpt : ∀ᵐ x ∂μ.restrict s, ‖f x‖ ≤ M * ‖g (B x + b)‖) :
     ‖f‖ ≤ M * |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal * ‖g‖ := by
-  have he : eLpNorm f p (μ.restrict s) ≤ ENNReal.ofReal M *
-      (ENNReal.ofReal |(LinearMap.det (B : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
-        eLpNorm g p (μ.restrict t)) :=
-    (eLpNorm_le_mul_eLpNorm_of_ae_le_mul (Lp.aestronglyMeasurable _) hpt p).trans <|
-      mul_le_mul_of_nonneg_left ((eLpNorm_mono_measure _
-        (Measure.restrict_mono hst.subset_preimage le_rfl)).trans_eq
-        (Measure.eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage μ _ B b p)) zero_le
-  have hfin : ENNReal.ofReal M *
-      (ENNReal.ofReal |(LinearMap.det (B : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
-        eLpNorm g p (μ.restrict t)) ≠ ⊤ :=
-    ENNReal.mul_ne_top ENNReal.ofReal_ne_top <| ENNReal.mul_ne_top
-      (ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg ENNReal.ofReal_ne_top)
-      (Lp.eLpNorm_ne_top _)
-  have hle := ENNReal.toReal_mono hfin he
-  rwa [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal hM, ← ENNReal.toReal_rpow,
-    ENNReal.toReal_ofReal (abs_nonneg _), abs_inv, ← Lp.norm_def, ← Lp.norm_def, ← mul_assoc] at hle
+  simpa only [Measure.addHaarScalarFactor_map_continuousLinearEquiv μ B] using
+    norm_le_mul_addHaarScalarFactor_rpow_of_ae_le (μ := μ) (ν := μ) f B b hst hM hpt
 
 /-- **Exact affine `Lᵖ` norm identity on preimages.** If `f ∈ Lᵖ(μ.restrict s)` and
 `g ∈ Lᵖ(μ.restrict t)` satisfy `f =ᵐ c • g (B · + b)` on `s = (fun x ↦ B x + b) ⁻¹' t` for a
@@ -375,12 +456,8 @@ theorem norm_eq_mul_abs_det_inv_rpow_of_ae_eq {E G 𝕜 : Type*} [NormedAddCommG
     (hst : s = (fun x ↦ B x + b) ⁻¹' t) {g : Lp G p (μ.restrict t)} (c : 𝕜)
     (hpt : (f : E → G) =ᵐ[μ.restrict s] fun x ↦ c • g (B x + b)) :
     ‖f‖ = ‖c‖ * |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal * ‖g‖ := by
-  rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae hpt]
-  have hsmul : (fun x ↦ c • g (B x + b)) = c • fun x ↦ g (B x + b) := rfl
-  rw [hsmul, eLpNorm_const_smul, hst,
-    Measure.eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage μ _ B b p,
-    ENNReal.toReal_mul, ENNReal.toReal_mul, toReal_eNorm, ← ENNReal.toReal_rpow,
-    ENNReal.toReal_ofReal (abs_nonneg _), abs_inv, ← mul_assoc]
+  simpa only [Measure.addHaarScalarFactor_map_continuousLinearEquiv μ B] using
+    norm_eq_mul_addHaarScalarFactor_rpow_of_ae_eq (μ := μ) (ν := μ) f B b hst c hpt
 
 section Affine
 

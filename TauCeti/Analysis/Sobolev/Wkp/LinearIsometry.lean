@@ -135,19 +135,21 @@ theorem compAffineL_apply_eq_compLinearIsometryEquiv {μ : Measure E} [μ.IsAddH
 
 /-- The inverse of the transport along `e` is the transport along `e⁻¹`. -/
 theorem compLinearIsometryEquiv_symm (he : MeasurePreserving e μ ν)
-    (hUW : (U : Set E) = e ⁻¹' W) (he' : MeasurePreserving e.symm ν μ)
-    (hWU : (W : Set E') = e.symm ⁻¹' U) (k : ℕ) :
-    (compLinearIsometryEquiv (p := p) he hUW k).symm = compLinearIsometryEquiv he' hWU k := by
-  refine LinearIsometryEquiv.ext fun u ↦ (compLinearIsometryEquiv he hUW k).injective ?_
-  rw [LinearIsometryEquiv.apply_symm_apply, compLinearIsometryEquiv_apply]
-  refine Eq.symm <| (compAffineEquiv_eq_iff μ _ 0 (hUW_affine hUW) k _ _).2 ?_
-  filter_upwards [(measurePreserving_restrict he hUW).quasiMeasurePreserving.ae
-    (value_compAffineEquiv_ae ν e.symm.toContinuousLinearEquiv 0 (hUW_affine hWU) k u)]
-    with x hx
-  rw [compLinearIsometryEquiv_apply]
-  simpa using hx.symm
+    (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) :
+    (compLinearIsometryEquiv (p := p) he hUW k).symm =
+      compLinearIsometryEquiv (e := e.symm)
+        (⟨e.symm.continuous.measurable,
+          by simpa using (he.symm e.toHomeomorph.toMeasurableEquiv).map_eq⟩ :
+          MeasurePreserving e.symm ν μ)
+        (by ext y; simp [hUW]) k := by
+  refine LinearIsometryEquiv.ext fun u ↦ ?_
+  change (compAffineEquiv μ e.toContinuousLinearEquiv 0 (hUW_affine hUW) k).symm u = _
+  rw [compAffineEquiv_symm, compLinearIsometryEquiv_apply, compAffineEquiv_eq_iff]
+  filter_upwards [value_compAffineEquiv_ae ν e.symm.toContinuousLinearEquiv 0
+      (by ext y; simp [hUW]) k u] with y hy
+  simpa using hy
 
-/-- The value of `u ∘ e` is the value of `u` composed with `e`. -/
+/-- The value of `u ∘ e` is the value of `u` composed with `e`, almost everywhere on `U`. -/
 theorem value_compLinearIsometryEquiv_ae (he : MeasurePreserving e μ ν)
     (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) (u : Wkp ν W p k) :
     value k (compLinearIsometryEquiv he hUW k u) =ᵐ[μ.restrict U] fun x => value k u (e x) := by
@@ -155,9 +157,10 @@ theorem value_compLinearIsometryEquiv_ae (he : MeasurePreserving e μ ν)
   simpa only [add_zero, LinearIsometryEquiv.coe_toContinuousLinearEquiv] using
     value_compAffineEquiv_ae μ e.toContinuousLinearEquiv 0 (hUW_affine hUW) k u
 
-/-- **The chain rule for the highest derivative.** The weak derivative of order `k + 1` of `u ∘ e`
-at `x` is that of `u` at `e x`, pulled back by `e` in every slot; at order two it is
-`e† ∘ D²u(e x) ∘ e` (`LinearIsometryEquiv.iteratedGradientCongr_symm_succ_apply`). -/
+/-- **The chain rule for the highest derivative.** Almost everywhere on `U`, the weak derivative
+of order `k + 1` of `u ∘ e` at `x` is that of `u` at `e x`, pulled back by `e` in every slot; at
+order two it is `e† ∘ D²u(e x) ∘ e` almost everywhere on `U`
+(`LinearIsometryEquiv.iteratedGradientCongr_symm_succ_apply`). -/
 theorem iteratedGradient_compLinearIsometryEquiv_ae (he : MeasurePreserving e μ ν)
     (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) (u : Wkp ν W p (k + 1)) :
     iteratedGradient k (compLinearIsometryEquiv he hUW (k + 1) u) =ᵐ[μ.restrict U]
@@ -179,9 +182,10 @@ theorem lowerOrder_compLinearIsometryEquiv (he : MeasurePreserving e μ ν)
 
 /-- The transport of a test function `φ` on `W` is the test function `φ ∘ e` on `U`. -/
 theorem compLinearIsometryEquiv_ofTestFunctionₗ (he : MeasurePreserving e μ ν)
-    (hUW : (U : Set E) = e ⁻¹' W) (hWU : MapsTo e.symm W U) (k : ℕ) (φ : 𝓓(W, ℝ)) :
+    (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) (φ : 𝓓(W, ℝ)) :
     compLinearIsometryEquiv he hUW k (ofTestFunctionₗ (mu := ν) (p := p) k φ) =
-      ofTestFunctionₗ k (e.symm.toContinuousLinearEquiv.transportTestFunction ℝ hWU φ) := by
+      ofTestFunctionₗ k (e.symm.toContinuousLinearEquiv.transportTestFunction ℝ
+        (fun y hy ↦ by simp [hUW, hy]) φ) := by
   rw [compLinearIsometryEquiv_apply]
   refine (compAffineEquiv_ofTestFunctionₗ (ν := ν) (p := p) μ e.toContinuousLinearEquiv 0
     (hUW_affine hUW) k φ).trans (congrArg (ofTestFunctionₗ k) ?_)

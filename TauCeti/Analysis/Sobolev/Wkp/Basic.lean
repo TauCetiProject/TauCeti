@@ -955,11 +955,16 @@ theorem hasWeakFDerivOn_iteratedGradient_toOrderL {j k : ℕ} (h : j + 2 ≤ k)
   rw [← lowerOrder_toOrderL h u]
   exact hasWeakFDerivOn_iteratedGradient j (toOrderL h u)
 
-/-- **Inductive `W^{k,p}` norm bound along a quasi-measure-preserving map.** If a family of maps
-`T k : W^{k,p}(W) → W^{k,p}(Ω)` commutes with `lowerOrder`, scales the order-zero norm by `C`,
-scales `Lᵖ` jet norms by `C * M` along `Φ` at order one, and scales the highest weak derivatives by
-`C * M ^ (k + 2)` (with `0 ≤ C` and `1 ≤ M`), then `‖T k u‖ ≤ C * M ^ k * ‖u‖` for every order
-`k`. -/
+/-- **Inductive `W^{k,p}` norm bound along a quasi-measure-preserving map.** Suppose a family of
+maps `T k : W^{k,p}(W) → W^{k,p}(Ω)` commutes with `lowerOrder`, with `0 ≤ C` and `1 ≤ M`, and
+satisfies:
+* at order zero, the norm upper bound `‖T 0 u‖ ≤ C * ‖u‖`;
+* at order one, a.e. pointwise upper bounds by `M` on the value and first weak gradient of `T 1 u`
+  relative to `u ∘ Φ`, together with an `Lᵖ` jet norm comparison giving `‖f‖ ≤ C * M * ‖g‖` from
+  `‖f x‖ ≤ M * ‖g (Φ x)‖` a.e.;
+* at orders `k + 2`, the highest weak-derivative norm upper bound
+  `‖iteratedGradient (k + 1) (T (k + 2) u)‖ ≤ C * M ^ (k + 2) * ‖iteratedGradient (k + 1) u‖`.
+Then `‖T k u‖ ≤ C * M ^ k * ‖u‖` for every order `k`. -/
 theorem norm_le_mul_pow_of_ae_le {E' : Type*} [MeasurableSpace E'] [NormedAddCommGroup E']
     [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E'] [BorelSpace E']
     {ν : Measure E'} [ν.IsAddHaarMeasure] {W : Opens E'}

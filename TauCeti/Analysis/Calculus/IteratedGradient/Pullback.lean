@@ -191,14 +191,16 @@ theorem fullContractL_iteratedGradientPullback (B : E →L[ℝ] E') (j : ℕ) (h
     (G : TauCeti.IteratedGradient E' j) :
     TauCeti.IteratedGradient.fullContractL j h (B.iteratedGradientPullback j G) =
       TauCeti.IteratedGradient.fullContractL j (B h) G := by
-  induction j with
-  | zero =>
-      simp only [TauCeti.IteratedGradient.fullContractL_zero, iteratedGradientPullback_zero,
-        innerSL_apply_apply, adjoint_inner_right]
-  | succ j ih =>
-      rw [TauCeti.IteratedGradient.fullContractL_succ, TauCeti.IteratedGradient.fullContractL_succ,
-        comp_apply, comp_apply, apply_apply, apply_apply,
-        iteratedGradientPullback_succ_apply_apply, ih]
+  suffices ∀ (m : ℕ), m = 0 + j → ∀ (G : TauCeti.IteratedGradient E' m),
+      TauCeti.IteratedGradient.fullContractL m h (B.iteratedGradientPullback m G) =
+        TauCeti.IteratedGradient.fullContractL m (B h) G from
+    this j (Nat.zero_add j).symm G
+  rintro _ rfl G
+  rw [TauCeti.IteratedGradient.fullContractL_add_eq_fullContractL_contractL,
+    TauCeti.IteratedGradient.fullContractL_add_eq_fullContractL_contractL,
+    contractL_iteratedGradientPullback]
+  simp only [TauCeti.IteratedGradient.fullContractL_zero, iteratedGradientPullback_zero,
+    innerSL_apply_apply, adjoint_inner_right]
 
 end ContinuousLinearMap
 

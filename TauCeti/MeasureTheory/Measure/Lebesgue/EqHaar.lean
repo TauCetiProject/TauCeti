@@ -23,8 +23,10 @@ An affine map of a finite-dimensional real normed space multiplies every additiv
 by the absolute value of the determinant of its linear part on images
 (`MeasureTheory.Measure.addHaar_image_affineMap`,
 `MeasureTheory.Measure.addHaar_image_affineEquiv`) and by the reciprocal factor on preimages when
-its linear part has nonzero determinant (`MeasureTheory.Measure.addHaar_preimage_affineMap`),
-the affine forms of Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap` and
+its linear part has nonzero determinant (`MeasureTheory.Measure.addHaar_preimage_affineMap`,
+`MeasureTheory.Measure.addHaar_eq_abs_det_mul_addHaar_preimage_affineMap`,
+`MeasureTheory.Measure.abs_det_eq_toReal_addHaar_div_preimage_affineMap`), the affine forms of
+Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap` and
 `MeasureTheory.Measure.addHaar_preimage_linearMap`. Between possibly distinct real normed spaces,
 an invertible affine map `x ↦ B x + b` pushes forward `μ.restrict ((fun x ↦ B x + b) ⁻¹' t)` to
 `addHaarScalarFactor (μ.map B) ν • ν.restrict t`
@@ -184,6 +186,28 @@ theorem addHaar_preimage_affineMap (f : F →ᵃ[ℝ] F) (hf : LinearMap.det f.l
     simpa [mem_preimage] using congrArg (· ∈ s) (f.map_vadd 0 x)
   rw [hpre, addHaar_preimage_linearMap μ hf, measure_preimage_add_right]
 
+/-- For every set `s` (including `∅` and sets of infinite measure) and affine map `f` whose linear
+part has nonzero determinant, the Haar measure of `s` equals `|det f.linear|` times the Haar
+measure of its preimage `f ⁻¹' s`. -/
+theorem addHaar_eq_abs_det_mul_addHaar_preimage_affineMap (f : F →ᵃ[ℝ] F)
+    (hf : LinearMap.det f.linear ≠ 0) (s : Set F) :
+    μ s = ENNReal.ofReal |LinearMap.det f.linear| * μ (f ⁻¹' s) := by
+  rw [addHaar_preimage_affineMap μ f hf, ← mul_assoc, ← ENNReal.ofReal_mul (abs_nonneg _),
+    ← abs_mul, mul_inv_cancel₀ hf, abs_one, ENNReal.ofReal_one, one_mul]
+
+/-- When the preimage `f ⁻¹' s` under an affine map `f` whose linear part has nonzero determinant
+has positive finite Haar measure, `|det f.linear|` equals the volume ratio
+`(μ s).toReal / (μ (f ⁻¹' s)).toReal`. -/
+theorem abs_det_eq_toReal_addHaar_div_preimage_affineMap (f : F →ᵃ[ℝ] F)
+    (hf : LinearMap.det f.linear ≠ 0) {s : Set F}
+    (hs₀ : μ (f ⁻¹' s) ≠ 0) (hstop : μ (f ⁻¹' s) ≠ ∞) :
+    |LinearMap.det f.linear| = (μ s).toReal / (μ (f ⁻¹' s)).toReal := by
+  have hpos : 0 < (μ (f ⁻¹' s)).toReal := ENNReal.toReal_pos hs₀ hstop
+  have hmul : (μ s).toReal = |LinearMap.det f.linear| * (μ (f ⁻¹' s)).toReal := by
+    conv_lhs => rw [addHaar_eq_abs_det_mul_addHaar_preimage_affineMap μ f hf s]
+    rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (abs_nonneg _)]
+  rw [hmul, mul_div_cancel_right₀ _ hpos.ne']
+
 /-- The affine dilation `y ↦ x + r • y` with `r ≠ 0` is quasi-measure-preserving for an additive
 Haar measure, so preimages under it of null-measurable sets are null-measurable. -/
 theorem quasiMeasurePreserving_add_smul (x : F) {r : ℝ} (hr : r ≠ 0) :
@@ -318,6 +342,57 @@ theorem quasiMeasurePreserving_continuousLinearEquiv_add_restrict (μ : Measure 
     {s : Set E} {t : Set E'} (hst : MapsTo (fun x ↦ B x + b) s t) :
     QuasiMeasurePreserving (fun x ↦ B x + b) (μ.restrict s) (ν.restrict t) :=
   (quasiMeasurePreserving_continuousLinearEquiv_add μ ν B b).restrict hst
+
+/-- The Haar pushforward factor along `B.symm` from `ν` to `μ` is the reciprocal of the Haar
+pushforward factor along `B` from `μ` to `ν`. -/
+theorem addHaarScalarFactor_map_continuousLinearEquiv_symm [LocallyCompactSpace E]
+    [SecondCountableTopology E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    (ν : Measure E') [ν.IsAddHaarMeasure] (B : E ≃L[ℝ] E') :
+    addHaarScalarFactor (ν.map B.symm) μ = (addHaarScalarFactor (μ.map B) ν)⁻¹ := by
+  have hB : (μ.map B).IsAddHaarMeasure := B.isAddHaarMeasure_map μ
+  have hB' : (ν.map B.symm).IsAddHaarMeasure := B.symm.isAddHaarMeasure_map ν
+  have h1 : μ.map B = (addHaarScalarFactor (μ.map B) ν : ℝ≥0∞) • ν := by
+    simpa using map_continuousLinearEquiv_add_eq_smul μ ν B 0
+  have h2 : ν.map B.symm = (addHaarScalarFactor (ν.map B.symm) μ : ℝ≥0∞) • μ := by
+    simpa using map_continuousLinearEquiv_add_eq_smul ν μ B.symm 0
+  have hmap : μ =
+      ((addHaarScalarFactor (μ.map B) ν * addHaarScalarFactor (ν.map B.symm) μ : _) :
+        ℝ≥0∞) • μ := by
+    have h1' := congrArg (Measure.map B.symm) h1
+    rw [map_map B.symm.continuous.measurable B.continuous.measurable,
+      show (B.symm ∘ B : E → E) = id from funext B.symm_apply_apply, map_id,
+      Measure.map_smul, h2, smul_smul, ← ENNReal.coe_mul] at h1'
+    · exact h1'
+    · exact B.symm.continuous.measurable.aemeasurable
+  obtain ⟨⟨f, hf_cont⟩, hf_comp, hf_nonneg, hf_zero⟩ := exists_continuous_nonneg_pos (0 : E)
+  have hint_pos : ∫ x, f x ∂μ ≠ 0 :=
+    (hf_cont.integral_pos_of_hasCompactSupport_nonneg_ne_zero hf_comp hf_nonneg hf_zero).ne'
+  have hint := congrArg (∫ x, f x ∂·) hmap
+  simp only [integral_smul_measure, ENNReal.coe_toReal, smul_eq_mul, NNReal.coe_mul] at hint
+  have hmul : (addHaarScalarFactor (μ.map B) ν : ℝ) *
+      (addHaarScalarFactor (ν.map B.symm) μ : ℝ) = 1 :=
+    mul_left_cancel₀ hint_pos (by nlinarith)
+  exact NNReal.coe_injective (by
+    rw [NNReal.coe_inv]
+    exact eq_inv_of_mul_eq_one_right hmul)
+
+/-- On the same finite-dimensional real normed space, the Haar pushforward factor along a linear
+automorphism `B` with respect to `μ` is `|det B|⁻¹`. -/
+theorem addHaarScalarFactor_map_continuousLinearEquiv [FiniteDimensional ℝ E]
+    (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E) :
+    (addHaarScalarFactor (μ.map B) μ : ℝ) = |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ := by
+  have hB : (μ.map B).IsAddHaarMeasure := B.isAddHaarMeasure_map μ
+  have hdet : LinearMap.det (B : E →ₗ[ℝ] E) ≠ 0 :=
+    (LinearEquiv.isUnit_det' B.toLinearEquiv).ne_zero
+  have h1 : μ.map B = (addHaarScalarFactor (μ.map B) μ : ℝ≥0∞) • μ := by
+    simpa using map_continuousLinearEquiv_add_eq_smul μ μ B 0
+  have h2 : μ.map B = ENNReal.ofReal |(LinearMap.det (B : E →ₗ[ℝ] E))⁻¹| • μ := by
+    simpa using map_linearMap_addHaar_eq_smul_addHaar μ hdet
+  have h := congrArg (· (Metric.ball (0 : E) 1)) (h1.symm.trans h2)
+  simp only [smul_apply, smul_eq_mul] at h
+  have hfac := (ENNReal.mul_left_inj (Metric.measure_ball_pos μ 0 one_pos).ne'
+    measure_ball_lt_top.ne).1 h
+  simpa [ENNReal.toReal_ofReal (abs_nonneg _), abs_inv] using congrArg ENNReal.toReal hfac
 
 end AffinePushforward
 
