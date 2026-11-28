@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Khovanov.Complex
 public import TauCeti.KnotTheory.Khovanov.Resolution.EulerCharacteristic
-public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
+import TauCeti.Algebra.Homology.ModuleCat.Noetherian
 
 /-!
 # Quantum-component Khovanov cohomology
@@ -93,10 +93,8 @@ instance (i j : ℤ) : Module.Finite R ((D.khovanovComplex hD R j).X i) := by
 /-- Over a Noetherian coefficient ring Khovanov cohomology is finitely generated.
 This includes integral finite generation and finite-dimensionality over fields. -/
 instance [IsNoetherianRing R] (i j : ℤ) :
-    Module.Finite R (D.khovanovHomology hD R i j) := by
-  let : Module.Finite R ((D.khovanovComplex hD R j).sc i).X₂ :=
-    inferInstanceAs (Module.Finite R ((D.khovanovComplex hD R j).X i))
-  exact ((D.khovanovComplex hD R j).sc i).finite_homology
+    Module.Finite R (D.khovanovHomology hD R i j) :=
+  inferInstanceAs (Module.Finite R ((D.khovanovComplex hD R j).homology i))
 
 /-- Khovanov cohomology vanishes outside the normalized cochain interval `[-n₋, n₊]`. -/
 theorem isZero_khovanovHomology_of_cochain_notMem_Icc {i : ℤ}

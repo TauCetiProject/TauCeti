@@ -63,6 +63,8 @@ the homology of a space exhausted by subspaces whose successive relative homolog
   injective.
 * `ModuleCat.free_of_isColimit`: a colimit of a sequence of injections with free cokernels,
   starting at a free module, is free.
+* `ModuleCat.finite_cokernel`: the cokernel of a morphism with finitely generated codomain is
+  finitely generated.
 
 ## References
 
@@ -182,6 +184,12 @@ end TauCeti
 namespace ModuleCat
 
 open CategoryTheory Limits DirectSum
+
+/-- The cokernel of a morphism in `ModuleCat R` with finitely generated codomain is finitely
+generated. -/
+instance finite_cokernel {R : Type u} [Ring R] {M N : ModuleCat.{v} R} (f : M ⟶ N)
+    [Module.Finite R N] : Module.Finite R ↑(cokernel f) :=
+  Module.Finite.of_surjective (cokernel.π f).hom ((ModuleCat.epi_iff_surjective _).1 inferInstance)
 
 variable {R : Type u} [Ring R] (F : ℕ ⥤ ModuleCat.{v} R)
 

@@ -7,17 +7,27 @@ module
 
 public import Mathlib.Algebra.Homology.SpectralObject.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-
+public import Mathlib.RingTheory.Finiteness.Defs
+public import TauCeti.Algebra.Homology.SpectralObject.Abutment
 import Mathlib.Algebra.Homology.SpectralObject.Page
+import TauCeti.Algebra.Category.FGModuleCat.Basic
+import TauCeti.Algebra.Category.FGModuleCat.Exact
 
 /-!
-# Spectral objects of modules indexed by a preorder, on elements
+# Spectral objects of modules: elementwise exactness and abutment finiteness
 
 Let `X` be a spectral object in `ModuleCat R` indexed by a preorder `ι`. Morphisms in
 `ComposableArrows ι 1` are unique, so the maps `H^n(f) ⟶ H^n(g)` compose to the map induced by any
 morphism `f ⟶ g` (`CategoryTheory.Abelian.SpectralObject.H_map_map_apply`). This file records this
 and the exactness axioms `exact₁`, `exact₂`, `exact₃` and the naturality of `δ` of `X` on
 elements, for the arrows `i ≤ j ≤ k` of `ι`.
+
+For a spectral object `X` in `ModuleCat R` indexed by `EInt`, each step
+`0 ⟶ F_q H^m ⟶ F_{q+1} H^m ⟶ cokernel (X.abutmentFiltrationMap q m) ⟶ 0` of the abutment filtration
+is short exact (`TauCeti.cokernelSequence_shortExact`).
+Inducting across a finite filtration `a ≤ q < b` therefore passes finite generation from the
+starting stage `F_a H^m` and the graded pieces to `F_b H^m` and, when `F_a H^m = 0` and
+`F_b H^m ≅ H^m`, to the abutment.
 
 ## Main results
 
@@ -30,13 +40,27 @@ elements, for the arrows `i ≤ j ≤ k` of `ι`.
 * `CategoryTheory.Abelian.SpectralObject.mem_range_of_H_map_δ_eq_zero`: if the image of `δ x` in
   `H^{n+1}(a ≤ t)` vanishes, for `x ∈ H^n(b ≤ u)`, then the image of `x` in `H^n(t ≤ u)` comes from
   `H^n(a ≤ u)`.
+* `CategoryTheory.Abelian.SpectralObject.finite_abutmentFiltration_of_finite_cokernel` and
+  `CategoryTheory.Abelian.SpectralObject.finite_abutment_of_finite_cokernel`: over any ring `R`,
+  finite generation of the graded pieces on `Finset.Ico a b` implies finite generation of
+  `X.abutmentFiltration b m` (from a finitely generated starting stage `F_a H^m` with `a ≤ b`) and
+  of `X.abutment m` (from `IsZero (F_a H^m)` and exhaustiveness at `b`).
+
+## References
+
+* Jean-Pierre Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54
+  (1951), 425--505, Chapter II, Section 4.
+* John McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
+  Theorem 2.6 and Exercise 1.1.
 -/
 
 public section
 
-open CategoryTheory ComposableArrows
-
 namespace CategoryTheory.Abelian.SpectralObject
+
+section Preorder
+
+open CategoryTheory ComposableArrows
 
 universe v
 
@@ -133,5 +157,39 @@ lemma mem_range_of_H_map_δ_eq_zero {n : ℤ} {i₀ a b t u : ι} (h₀a : i₀ 
     Subsingleton.elim _ _
   rw [X.H_map_map_apply _ _ (twoδ₁Toδ₀' b t t hbt le_rfl ≫ twoδ₂Toδ₁' t t u le_rfl htu),
     Functor.map_comp, ConcreteCategory.comp_apply, hz, map_zero, add_zero]
+
+end Preorder
+
+section EInt
+
+open CategoryTheory Limits Module
+
+universe u v
+
+variable {R : Type u} [Ring R] (X : SpectralObject (ModuleCat.{v} R) EInt)
+
+/-- Over any ring, if `F_a H^m` and every graded piece `F_{q+1} H^m / F_q H^m` for `a ≤ q < b` are
+finitely generated, then `F_b H^m` is finitely generated for any `a ≤ b`. -/
+theorem finite_abutmentFiltration_of_finite_cokernel {a b m : ℤ} (hab : a ≤ b)
+    [Module.Finite R (X.abutmentFiltration a m)]
+    (hfin : ∀ q ∈ Finset.Ico a b, Module.Finite R ↑(cokernel (X.abutmentFiltrationMap q m))) :
+    Module.Finite R (X.abutmentFiltration b m) :=
+  (ModuleCat.isFG_iff _).mp <|
+    X.prop_abutmentFiltration_of_prop_cokernel (ModuleCat.isFG R) hab
+      ((ModuleCat.isFG_iff _).mpr inferInstance)
+      fun q hq ↦ (ModuleCat.isFG_iff _).mpr (hfin q hq)
+
+/-- Over any ring, if the filtration of `X.abutment m` starts at `0` at `a`, reaches the whole
+abutment at `b`, and has finitely generated graded pieces for `a ≤ q < b`, then `X.abutment m` is
+finitely generated. -/
+theorem finite_abutment_of_finite_cokernel {a b m : ℤ}
+    (ha : IsZero (X.abutmentFiltration a m)) [IsIso (X.abutmentFiltrationι b m)]
+    (hfin : ∀ q ∈ Finset.Ico a b, Module.Finite R ↑(cokernel (X.abutmentFiltrationMap q m))) :
+    Module.Finite R (X.abutment m) :=
+  (ModuleCat.isFG_iff _).mp <|
+    X.prop_abutment_of_prop_cokernel (ModuleCat.isFG R) ha
+      fun q hq ↦ (ModuleCat.isFG_iff _).mpr (hfin q hq)
+
+end EInt
 
 end CategoryTheory.Abelian.SpectralObject

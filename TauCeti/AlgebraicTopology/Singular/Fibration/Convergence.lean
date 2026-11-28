@@ -48,8 +48,9 @@ fibration, read in the indexing of `TauCeti.preimageSkeleton`: a Serre fibration
   425–505, Chapter II.
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
   Theorem 2.6 and Section 5.1.
-* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 5.1 (the Serre spectral sequence).
+* A. Hatcher,
+  [*Spectral Sequences in Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/SSAT/SSch1.pdf),
+  Chapter 1, Section 1.1.
 -/
 
 public section

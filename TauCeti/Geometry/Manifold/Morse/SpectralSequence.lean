@@ -449,14 +449,8 @@ theorem finrank_singularHomology_eq_sum_finrank_filteredSpaceSpectralSequence_pa
   have hX₀ : ((fun b ↦ {x | f x ≤ b}) ∘ a) q₀ = ∅ :=
     eq_empty_of_forall_notMem fun x hx ↦ (hq₀ x).not_ge hx
   have hX := (sublevel_mono f).comp ha
-  by_cases hq : q₀ ≤ q₁
-  · exact hX.finrank_singularHomology_eq_sum_finrank_filteredSpaceSpectralSequence_page_X V hq
-      hX₀ (eq_univ_of_forall hq₁) n hr hrq
-  -- Otherwise `a q₁ ≤ a q₀ < f ≤ a q₁`, so `M` is empty and the filtration is `M` from `q₀` on.
-  rw [Finset.Ico_eq_empty_of_le (not_le.1 hq).le, Finset.sum_empty,
-    hX.finrank_singularHomology_eq_sum_finrank_filteredSpaceSpectralSequence_page_X V le_rfl hX₀
-      (eq_univ_of_forall fun x ↦ (hq₁ x).trans (ha (not_le.1 hq).le)) n hr (by lia),
-    Finset.Ico_self, Finset.sum_empty]
+  exact hX.finrank_singularHomology_eq_sum_finrank_filteredSpaceSpectralSequence_page_X V
+    hX₀ (eq_univ_of_forall hq₁) n hr hrq
 
 /-! ### Degeneration in the lacunary case -/
 

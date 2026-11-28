@@ -43,8 +43,8 @@ When `D` is planar with `c` link components, the quantum-grading parity theorem
   `E(D) = -(-1) ^ c * ((-1) ^ c_A * E(D_A) + (-1) ^ c_B * E(D_B))`
   (`TauCeti.OrientedPDCode.enhancedStateEulerSum_eq_of_toPDCode_resolveCrossing`).
 
-Over every Noetherian commutative ring `R` satisfying rank-nullity—and in particular over `ℤ` and
-`ℚ`—the graded Euler characteristic `χ_q Kh(D; R)` has a nonzero coefficient in some quantum degree
+Over every commutative ring `R` satisfying rank-nullity—and in particular over `ℤ` and `ℚ`—the
+graded Euler characteristic `χ_q Kh(D; R)` has a nonzero coefficient in some quantum degree
 `j ≡ c (mod 2)` (`TauCeti.OrientedPDCode.exists_coeff_khovanovEulerChar_ne_zero` in
 `TauCeti.KnotTheory.Khovanov.EulerCharacteristic`), so `Khⁱʲ(D; R)` is nonzero in at least one
 parity-compatible bidegree `(i, j)` with `i ∈ [-n₋, n₊]` and `j ≡ c (mod 2)` for every planar
@@ -214,11 +214,11 @@ theorem eval₂_neg_one_jonesPolynomial (D : OrientedPDCode n) (hD : D.toPDCode.
 section Homology
 
 variable (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
-variable (R : Type u) [CommRing R] [IsNoetherianRing R] [HasRankNullity.{u} R]
+variable (R : Type u) [CommRing R] [HasRankNullity.{u} R]
 
 /-- **Khovanov homology has positive rank in at least one parity-compatible bidegree `(i, j)`**
 with `i ∈ [-n₋, n₊]` and `j ≡ D.componentCount (mod 2)`, for every planar oriented diagram
-(including the empty diagram) over any Noetherian commutative ring `R` satisfying rank-nullity. -/
+(including the empty diagram) over any commutative ring `R` satisfying rank-nullity. -/
 theorem exists_finrank_khovanovHomology_pos :
     ∃ i ∈ Finset.Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount,
       ∃ j : ℤ, j % 2 = (D.componentCount : ℤ) % 2 ∧
@@ -230,8 +230,8 @@ theorem exists_finrank_khovanovHomology_pos :
   simp [hz]
 
 /-- **Nonvanishing of Khovanov homology**: for every planar oriented diagram (including the empty
-diagram) over any Noetherian commutative ring `R` satisfying rank-nullity, `Khⁱʲ(D; R)` is nonzero
-in at least one parity-compatible bidegree `(i, j)` with `i ∈ [-n₋, n₊]` and
+diagram) over any commutative ring `R` satisfying rank-nullity, `Khⁱʲ(D; R)` is nonzero in at
+least one parity-compatible bidegree `(i, j)` with `i ∈ [-n₋, n₊]` and
 `j ≡ D.componentCount (mod 2)`. -/
 theorem exists_not_isZero_khovanovHomology :
     ∃ i ∈ Finset.Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount,

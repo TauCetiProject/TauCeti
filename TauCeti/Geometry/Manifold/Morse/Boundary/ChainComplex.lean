@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Homology.EulerCharacteristic.MorseInequalities
 public import TauCeti.Geometry.Manifold.Morse.EulerCharacteristic
 public import Mathlib.Algebra.Field.ZMod
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
+import TauCeti.Algebra.Homology.ModuleCat.Noetherian
 
 /-!
 # The mod-two Morse chain complex of a compact manifold
@@ -245,8 +246,8 @@ theorem isZero_morseComplex_X_of_finrank_lt {n : ℕ} (hn : finrank ℝ E < n) :
 /-- The mod-two Morse homology is finite-dimensional. -/
 instance finite_homology_morseComplex (n : ℕ) :
     Module.Finite (ZMod 2) ((h.morseComplex hf).homology n) :=
-  have : Module.Finite (ZMod 2) ((h.morseComplex hf).sc n).X₂ := h.finite_morseComplex_X hf n
-  ((h.morseComplex hf).sc n).finite_homology
+  have := h.finite_morseComplex_X hf n
+  inferInstance
 
 /-- **The weak Morse inequality for Morse homology.** The mod-two Morse homology in degree `n` has
 dimension at most the number of critical points of index `n`. -/
@@ -308,9 +309,11 @@ characteristic: it is the signed count `∑ᵢ (-1)ⁱ cᵢ` of critical points.
 theorem homologyEulerChar_morseComplex :
     (h.morseComplex hf).homologyEulerChar =
       ∑ i ∈ Finset.range (finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount 𝓘(ℝ, E) f i).toNat := by
-  rw [← ChainComplex.eulerChar_eq_homologyEulerChar _
-      (Filter.eventually_atTop.2 ⟨finrank ℝ E + 1, fun _ hn ↦
-        h.isZero_morseComplex_X_of_finrank_lt hf hn⟩),
+  rw [← HomologicalComplex.eulerChar_eq_homologyEulerChar _
+      (Filter.eventually_cofinite.mp (by
+        rw [Nat.cofinite_eq_atTop]
+        exact Filter.eventually_atTop.2 ⟨finrank ℝ E + 1, fun _ hn ↦
+          h.isZero_morseComplex_X_of_finrank_lt hf hn⟩)),
     h.eulerChar_morseComplex hf]
 
 /-- For a compact boundaryless manifold `M` of finite CW type, the Euler characteristic of the

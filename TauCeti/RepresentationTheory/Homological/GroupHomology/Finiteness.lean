@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
-public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Transfer.Basic
+import TauCeti.Algebra.Homology.ModuleCat.Noetherian
 
 /-!
 # Finiteness of the homology of a finite group
@@ -45,10 +45,9 @@ namespace groupHomology
 a noetherian ring is a finitely generated module in every degree. -/
 instance moduleFinite {k G : Type u} [CommRing k] [IsNoetherianRing k] [Group G] [Finite G]
     (A : Rep k G) [Module.Finite k A] (n : ℕ) : Module.Finite k (groupHomology A n) :=
-  -- The `n`-chains `Gⁿ →₀ A` are the middle term of the short complex computing `Hₙ(G, A)`.
-  have : IsNoetherian k ((inhomogeneousChains A).sc n).X₂ :=
+  have : IsNoetherian k ((inhomogeneousChains A).X n) :=
     inferInstanceAs (IsNoetherian k ((Fin n → G) →₀ A))
-  ((inhomogeneousChains A).sc n).finite_homology
+  inferInstanceAs (Module.Finite k ((inhomogeneousChains A).homology n))
 
 /-- The positive-degree homology of a finite group with coefficients in a finitely generated
 integral representation is finite. In particular `Hₙ₊₁(G, ℤ)` with trivial coefficients is finite;

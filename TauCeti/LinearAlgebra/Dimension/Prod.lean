@@ -9,35 +9,46 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dimension.RankNullity
 public import Mathlib.LinearAlgebra.Dual.Defs
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.LinearAlgebra.Pi
+import Mathlib.LinearAlgebra.Prod
+import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
-# The dimension of a product of modules
+# Dimensions of products of modules
 
-Mathlib's `Module.finrank_prod` computes the dimension of `M × M'` for finite free modules. For
-`M × M` no finiteness is needed: if `M` is not finite then neither is `M × M`, and both
-dimensions are `0` by convention. So `finrank (M × M) = 2 * finrank M` for every free module `M`
-over a semiring with the strong rank condition (`Module.finrank_prod_self`).
+Mathlib's `Module.finrank_prod` and `Module.finrank_pi_fintype` compute the `finrank` of binary
+and finite dependent products of finite free modules. This file records six results:
 
-A free module of positive dimension is finite, so the dimensions of factors of dimensions
-`m + 1` and `n + 1` add without a separate finiteness hypothesis
-(`Module.finrank_prod_eq_succ`). The sum is written `d + 1` together with a proof of
-`(m + 1) + (n + 1) = d + 1`, the form used for products of local orientations. Dimensions cancel:
-a finite module `M` isomorphic to `M × M'` forces `finrank M' = 0`
-(`LinearEquiv.finrank_eq_zero_of_self_prod`).
-
-For a finite-dimensional vector space `V` over a field `K`, the space `V × V^* × K`, the linear
-model of the one-jet space of `V`, has dimension `2 * finrank K V + 1`
-(`Module.finrank_prod_dual_prod_self`).
-
-Without freeness, rank is still additive on products over any ring with the rank-nullity
-property, for instance any domain: the first projection `M × N → M` is onto with kernel `N`
-(`Module.rank_prod_of_hasRankNullity`). For modules of finite rank this gives the same formula
-for `finrank` (`Module.finrank_prod_of_hasRankNullity`).
+* For the square `M × M` of a free module over a semiring with the strong rank condition, no
+  finiteness is needed: if `M` is not finite then neither is `M × M`, and both dimensions are `0`
+  by convention (`Module.finrank_prod_self`).
+* A free module of positive dimension is finite, so the dimensions of factors of dimensions
+  `m + 1` and `n + 1` add without a separate finiteness hypothesis
+  (`Module.finrank_prod_eq_succ`). The sum is written `d + 1` together with a proof of
+  `(m + 1) + (n + 1) = d + 1`, the form used for products of local orientations.
+* Dimensions cancel: a finite module `M` isomorphic to `M × M'` forces `finrank M' = 0`
+  (`LinearEquiv.finrank_eq_zero_of_self_prod`).
+* Without freeness, rank is still additive on products over any ring with the rank-nullity
+  property, for instance any commutative domain: the first projection `M × N → M` is onto with
+  kernel `N` (`Module.rank_prod_of_hasRankNullity`). For modules of finite rank this gives the same
+  formula for `finrank` (`Module.finrank_prod_of_hasRankNullity`).
+* Over a ring satisfying rank--nullity (`HasRankNullity`), the `finrank` of a finite dependent
+  product of modules of finite rank (`Module.rank R (M i) < Cardinal.aleph0`) is the sum of
+  their `finrank`s (`Module.finrank_pi_fintype_of_hasRankNullity`), covering
+  non-finitely-generated modules of finite rank (such as `ℚ` over `ℤ`) as well as finitely
+  generated modules with torsion (such as finite abelian groups).
+* For a finite-dimensional vector space `V` over a field `K`, the space `V × V^* × K`, the linear
+  model of the one-jet space of `V`, has dimension `2 * finrank K V + 1`
+  (`Module.finrank_prod_dual_prod_self`).
 -/
 
 public section
 
+universe u v w
+
 namespace Module
+
+section Free
 
 variable (R M : Type*) [Semiring R] [StrongRankCondition R] [AddCommMonoid M] [Module R M]
   [Module.Free R M]
@@ -70,16 +81,9 @@ theorem _root_.LinearEquiv.finrank_eq_zero_of_self_prod [Module.Finite R M] (e :
   rw [Module.finrank_prod] at h
   omega
 
-/-- The dimension of `V × V^* × K` is `2 * finrank K V + 1` for a finite-dimensional vector space
-`V` over a field `K`. -/
-theorem finrank_prod_dual_prod_self (K V : Type*) [Field K] [AddCommGroup V] [Module K V]
-    [Module.Finite K V] : finrank K (V × Dual K V × K) = 2 * finrank K V + 1 := by
-  rw [Module.finrank_prod, Module.finrank_prod, Subspace.dual_finrank_eq, finrank_self]
-  omega
+end Free
 
 section RankNullity
-
-universe u
 
 variable {R : Type*} [Ring R] (M N : Type u) [AddCommGroup M] [Module R M] [AddCommGroup N]
   [Module R N] [HasRankNullity.{u} R]
@@ -100,5 +104,47 @@ theorem finrank_prod_of_hasRankNullity (hM : Module.rank R M < Cardinal.aleph0)
   simp only [finrank, rank_prod_of_hasRankNullity, Cardinal.toNat_add hM hN]
 
 end RankNullity
+
+section HasRankNullity
+
+/-- Over a ring satisfying rank--nullity, the `finrank` of a finite dependent product of modules
+of finite rank (`Module.rank R (M i) < Cardinal.aleph0`) is the sum of their `finrank`s (without
+assuming freeness, finite generation, or the strong rank condition). The index type `ι` may lie
+in any universe `w`; only `HasRankNullity.{v} R` is required in the universe `v` of the modules
+`M i`. -/
+theorem finrank_pi_fintype_of_hasRankNullity {R : Type u} {ι : Type w} [Fintype ι]
+    {M : ι → Type v} [Ring R] [HasRankNullity.{v} R]
+    [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)]
+    (hM : ∀ i, Module.rank R (M i) < Cardinal.aleph0) :
+    finrank R (∀ i, M i) = ∑ i, finrank R (M i) := by
+  suffices hfin : ∀ (n : ℕ) (N : Fin n → Type v) [∀ i, AddCommGroup (N i)] [∀ i, Module R (N i)],
+      (∀ i, Module.rank R (N i) < Cardinal.aleph0) →
+      Module.rank R (∀ i, N i) < Cardinal.aleph0 ∧ finrank R (∀ i, N i) = ∑ i, finrank R (N i) by
+    let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
+    rw [(LinearEquiv.piCongrLeft R M e).symm.finrank_eq,
+      (hfin (Fintype.card ι) (fun j ↦ M (e j)) fun j ↦ hM (e j)).2]
+    exact Fintype.sum_equiv e _ _ fun _ ↦ rfl
+  intro n
+  induction n with
+  | zero =>
+    intro N _ _ _
+    exact ⟨by simp [Cardinal.aleph0_pos], by simp [finrank_zero_of_subsingleton]⟩
+  | succ n ih =>
+    intro N _ _ hN
+    obtain ⟨hrank, hsum⟩ := ih (fun i ↦ N i.succ) fun i ↦ hN i.succ
+    refine ⟨?_, ?_⟩
+    · rw [(Fin.consLinearEquiv R N).symm.rank_eq, rank_prod_of_hasRankNullity]
+      exact Cardinal.add_lt_aleph0 (hN 0) hrank
+    · rw [(Fin.consLinearEquiv R N).symm.finrank_eq,
+        finrank_prod_of_hasRankNullity (hN 0) hrank, hsum, Fin.sum_univ_succ]
+
+end HasRankNullity
+
+/-- The dimension of `V × V^* × K` is `2 * finrank K V + 1` for a finite-dimensional vector space
+`V` over a field `K`. -/
+theorem finrank_prod_dual_prod_self (K V : Type*) [Field K] [AddCommGroup V] [Module K V]
+    [Module.Finite K V] : finrank K (V × Dual K V × K) = 2 * finrank K V + 1 := by
+  rw [Module.finrank_prod, Module.finrank_prod, Subspace.dual_finrank_eq, finrank_self]
+  omega
 
 end Module

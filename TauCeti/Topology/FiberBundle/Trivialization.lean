@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.FiberBundle.Basic
+public import Mathlib.Topology.Category.TopCat.Basic
 
 /-!
 # Preferred trivializations and disjoint unions of trivializations
@@ -20,9 +21,10 @@ fibre coordinate over the overlap of their base sets, which makes the transition
 fibre bundle continuous.
 A homeomorphism of the total space with a product, lying over the base, is a trivialization over
 the whole base.
-A map is continuous as soon as every point of the base lies in the base set of a trivialization,
-and the trivializations at the points of the base of a fibre bundle make its projection such a
-locally trivial map.
+A map is continuous as soon as every point of the base lies in the base set of a trivialization
+(`TauCeti.continuous_of_forall_exists_trivialization`), so it packages as a morphism in `TopCat`
+(`TauCeti.locallyTrivialHom`), and the trivializations at the points of the base of a fibre bundle
+make its projection such a locally trivial map.
 Finally, the inverse of a trivialization undoes a coordinate change into it, and over a point
 of its base set a trivialization is an equivalence between the fibre and the model fibre.
 When the model fibre is a point, so is every fibre, and a projection with a chosen point in each
@@ -35,6 +37,7 @@ fibre is a bijection onto the base.
 * `IsCompact.exists_finset_subset_preimage_biUnion_baseSet`: a compact subset of the total
   space lies over a finite union of preferred trivializing base sets.
 * `TauCeti.continuous_of_forall_exists_trivialization`: a locally trivial map is continuous.
+* `TauCeti.locallyTrivialHom`: a locally trivial map packaged as a morphism in `TopCat`.
 * `Homeomorph.toTrivialization`: a homeomorphism `Z ≃ₜ B × F` over `B` is a trivialization of the
   projection `Z → B` over all of `B`.
 * `FiberBundle.continuous_of_forall_trivialization`: chart formulas continuous at each point give
@@ -287,6 +290,12 @@ theorem continuous_of_forall_exists_trivialization {B F Z : Type*} [TopologicalS
   continuous_iff_continuousAt.2 fun z ↦ by
     obtain ⟨e, he⟩ := h (p z)
     exact e.continuousAt_proj (e.mem_source.2 he)
+
+/-- A locally trivial map `p : Z → B` packaged as a morphism in `TopCat`. -/
+abbrev locallyTrivialHom {B Z : Type u} {F : Type*} [TopologicalSpace B] [TopologicalSpace F]
+    [TopologicalSpace Z] {p : Z → B} (h : ∀ b, ∃ e : Trivialization F p, b ∈ e.baseSet) :
+    _root_.TopCat.of Z ⟶ _root_.TopCat.of B :=
+  _root_.TopCat.ofHom ⟨p, continuous_of_forall_exists_trivialization h⟩
 
 end TauCeti
 

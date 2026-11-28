@@ -102,7 +102,7 @@ theorem finrank_singularHomology_of_attach_gaugeDiscBundles_eq_sum [Fintype ι]
       ∑ i, finrank R ((thomPair (F i) (E i)).singularHomology V n : ModuleCat R) := by
   rw [← (singularHomologyIsoThomPairsOfAttachGaugeDiscBundles
     hρ hf hX hfX hdisj hfcover V n).toLinearEquiv.finrank_eq]
-  exact ModuleCat.finrank_biproduct _
+  exact ModuleCat.finrank_biproduct _ fun _ ↦ Module.rank_lt_aleph0 _ _
 
 end Finrank
 
@@ -273,7 +273,7 @@ theorem finrank_singularHomology_of_attach_gaugeDiscBundles_of_unique_base
   cases nonempty_fintype S
   rw [(singularHomologyIsoOfAttachGaugeDiscBundlesOfUniqueBase
     hρ hf hX hfX hdisj hfcover V n).toLinearEquiv.finrank_eq,
-    ModuleCat.finrank_biproduct (fun _ : S ↦ V),
+    ModuleCat.finrank_biproduct (fun _ : S ↦ V) fun _ ↦ Module.rank_lt_aleph0 _ _,
     Finset.sum_const, Finset.card_univ, smul_eq_mul, Nat.card_eq_fintype_card]
 
 end PointAttachment

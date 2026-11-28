@@ -26,7 +26,7 @@ Euler characteristics `HomologicalComplex.homologyEulerChar` of the quantum comp
 normalized Khovanov complex. Only finitely many of them are nonzero, because the bracket has
 finite quantum support.
 
-Over a Noetherian ring with the rank-nullity property, such as `ℤ` or a field, the ranks are the
+Over a commutative ring with the rank-nullity property, such as `ℤ` or a field, the ranks are the
 ranks of finitely generated modules, the free ranks in the case of `ℤ`. Euler–Poincaré then
 computes each coefficient from the terms of the complex instead of its homology, and the
 normalized complex is a cochain shift of the bracket by `n₋`, so the coefficient of `qʲ` is the
@@ -195,31 +195,31 @@ theorem khovanovEulerChar_empty (h : (empty : OrientedPDCode 0).toPDCode.IsPlana
 
 end Nontrivial
 
-variable [IsNoetherianRing R] [HasRankNullity.{u} R]
+variable [HasRankNullity.{u} R]
 
-/-- **Euler–Poincaré for Khovanov homology**: over a Noetherian ring with the rank-nullity property,
-such as `ℤ` or a field, the homology Euler characteristic of the quantum component `j` of the
-normalized Khovanov complex is the coefficient of `qʲ` in the enhanced state sum, the signed count
-of enhanced states of quantum degree `j`. -/
+/-- **Euler–Poincaré for Khovanov homology**: over a commutative ring with the rank-nullity
+property, such as `ℤ` or a field, the homology Euler characteristic of the quantum component `j` of
+the normalized Khovanov complex is the coefficient of `qʲ` in the enhanced state sum, the signed
+count of enhanced states of quantum degree `j`. -/
 theorem homologyEulerChar_khovanovComplex (j : ℤ) :
     (D.khovanovComplex hD R j).homologyEulerChar = D.enhancedStateSum.coeff j := by
   rw [coeff_enhancedStateSum_eq_homologyEulerChar_khovanovBracket D hD R,
-    ← CochainComplex.eulerChar_eq_homologyEulerChar (D.toPDCode.khovanovBracket hD R _)
-      (fun _ ↦ inferInstance) 0 n,
+    ← HomologicalComplex.eulerChar_eq_homologyEulerChar (D.toPDCode.khovanovBracket hD R _)
+      ((D.toPDCode.khovanovBracket hD R _).finite_not_isZero_X 0 n),
     ← eulerChar_khovanovComplex,
-    CochainComplex.eulerChar_eq_homologyEulerChar _
-      (fun _ ↦ inferInstance)
-      (-D.negativeCrossingCount) D.positiveCrossingCount]
+    HomologicalComplex.eulerChar_eq_homologyEulerChar _
+      ((D.khovanovComplex hD R j).finite_not_isZero_X
+        (-D.negativeCrossingCount) D.positiveCrossingCount)]
 
 /-- **The graded Euler characteristic of Khovanov homology is the enhanced state sum**, over a
-Noetherian ring with the rank-nullity property, such as `ℤ` or a field. -/
+commutative ring with the rank-nullity property, such as `ℤ` or a field. -/
 theorem khovanovEulerChar_eq_enhancedStateSum : D.khovanovEulerChar hD R = D.enhancedStateSum :=
   AddMonoidAlgebra.coeff_injective <| Finsupp.ext fun j ↦ by
     rw [coeff_khovanovEulerChar, homologyEulerChar_khovanovComplex]
 
 /-- **Khovanov's theorem**: the graded Euler characteristic of the Khovanov homology of a nonempty
 planar oriented code is `(q + q⁻¹)` times its Jones polynomial at `t ^ (1/2) = -q`, over a
-Noetherian ring with the rank-nullity property, such as `ℤ` or a field. The hypothesis
+commutative ring with the rank-nullity property, such as `ℤ` or a field. The hypothesis
 `0 < componentCount` says that the diagram is nonempty; the empty diagram has graded Euler
 characteristic `1` (`TauCeti.OrientedPDCode.khovanovEulerChar_empty`). -/
 theorem khovanovEulerChar_eq_mul_eval₂_jonesPolynomial (h : 0 < D.toPDCode.componentCount) :
@@ -228,14 +228,13 @@ theorem khovanovEulerChar_eq_mul_eval₂_jonesPolynomial (h : 0 < D.toPDCode.com
   rw [khovanovEulerChar_eq_enhancedStateSum, enhancedStateSum_eq_mul_eval₂_jonesPolynomial D h]
 
 /-- **At `q = 1`, the graded Euler characteristic `χ_q Kh(D; R)` equals `2 ^ c`**, for every
-planar oriented diagram over any Noetherian commutative ring `R` satisfying rank-nullity. -/
+planar oriented diagram over any commutative ring `R` satisfying rank-nullity. -/
 @[simp] theorem eval₂_one_khovanovEulerChar :
     eval₂ (RingHom.id ℤ) 1 (D.khovanovEulerChar hD R) = (2 : ℤ) ^ D.componentCount := by
   rw [D.khovanovEulerChar_eq_enhancedStateSum hD R, D.eval₂_one_enhancedStateSum_eq_two_pow hD]
 
 /-- **The graded Euler characteristic of Khovanov homology is nonzero** for every planar oriented
-diagram (including the empty diagram) over any Noetherian commutative ring `R` satisfying
-rank-nullity. -/
+diagram (including the empty diagram) over any commutative ring `R` satisfying rank-nullity. -/
 theorem khovanovEulerChar_ne_zero : D.khovanovEulerChar hD R ≠ 0 := by
   intro hzero
   have heval := D.eval₂_one_khovanovEulerChar hD R

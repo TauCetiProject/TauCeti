@@ -27,7 +27,8 @@ torsion-free, a vector with a regular multiple in that range is a cycle
 (`CategoryTheory.ShortComplex.mem_ker_g_of_smul_mem_range_f`).  This file also records two
 finiteness consequences of that description:
 
-* over a ring for which the middle module is noetherian, the homology is finitely generated;
+* over a ring for which the middle module is noetherian, the homology is noetherian (and hence
+  finitely generated);
 * over a ring satisfying the strong rank condition, when the middle term is finite, the
   homology has rank at most that of the middle term; if the ring also satisfies rank-nullity
   (for instance a division ring or a commutative domain), the rank of the homology plus the rank
@@ -93,13 +94,13 @@ end LinearMap
 
 namespace CategoryTheory.ShortComplex
 
-/-- The homology of a short complex of modules with noetherian middle term is finitely generated. -/
-theorem finite_homology {k : Type u} [Ring k] (S : ShortComplex (ModuleCat.{v} k))
-    [IsNoetherian k S.X₂] : Module.Finite k S.homology :=
+/-- The homology of a short complex of modules with noetherian middle term is noetherian. -/
+instance isNoetherian_homology {k : Type u} [Ring k] (S : ShortComplex (ModuleCat.{v} k))
+    [IsNoetherian k S.X₂] : IsNoetherian k S.homology :=
   -- The homology object of `S.moduleCatLeftHomologyData` is this quotient by construction.
-  have : Module.Finite k S.moduleCatLeftHomologyData.H :=
-    inferInstanceAs (Module.Finite k (LinearMap.ker S.g.hom ⧸ LinearMap.range S.moduleCatToCycles))
-  .equiv S.moduleCatHomologyIso.toLinearEquiv.symm
+  have : IsNoetherian k S.moduleCatLeftHomologyData.H :=
+    inferInstanceAs (IsNoetherian k (LinearMap.ker S.g.hom ⧸ LinearMap.range S.moduleCatToCycles))
+  isNoetherian_of_linearEquiv S.moduleCatHomologyIso.toLinearEquiv.symm
 
 /-- If the next term of a short complex of modules is torsion-free, a vector a regular multiple of
 which is a boundary is a cycle. -/

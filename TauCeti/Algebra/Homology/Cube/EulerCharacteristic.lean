@@ -21,9 +21,9 @@ Let `F : Finset ι ⥤ ModuleCat R` be a finite commutative cube of modules. The
 of its signed totalization `F.cubeComplex` is the product of the vertices `F(S)` of height
 `#S = r` (`CategoryTheory.Functor.cubeComplexXLinearEquiv`). When the vertices are finite free,
 so are the terms, and the Euler characteristic of the cube complex is the signed sum of the ranks
-of the vertices, each vertex `F(S)` counted with the sign `(-1) ^ #S`. Over a Noetherian ring with
-the rank-nullity property, such as `ℤ` or a field, Euler–Poincaré identifies this signed sum with
-the Euler characteristic of the cohomology of the cube complex.
+of the vertices, each vertex `F(S)` counted with the sign `(-1) ^ #S`. Over a ring with the
+strong rank condition and the rank-nullity property, such as `ℤ` or a field, Euler–Poincaré
+identifies this signed sum with the Euler characteristic of the cohomology of the cube complex.
 
 This computes the quantum components of the graded Euler characteristic of Khovanov homology from
 the cube of resolutions: there the vertices are the homogeneous pieces of the circle tensors,
@@ -154,15 +154,16 @@ theorem eulerChar_cubeComplex [StrongRankCondition R] :
   refine Finset.sum_congr rfl fun S hS ↦ ?_
   rw [(Finset.mem_filter.1 hS).2]
 
-/-- **Euler–Poincaré for cubes.** Over a Noetherian ring with the rank-nullity property, such as
-`ℤ` or a field, the Euler characteristic of the cohomology of the cube complex of a cube of finite
-free modules is the sum of the ranks of the vertices `F(S)`, each with the sign `(-1) ^ #S`. Over
-`ℤ` the rank of a cohomology group is the rank of its free part, so torsion does not
-contribute. -/
-theorem homologyEulerChar_cubeComplex [IsNoetherianRing R] [HasRankNullity.{v} R] :
+/-- **Euler–Poincaré for cubes.** Over a ring with the strong rank condition and the rank-nullity
+property, such as `ℤ` or a field, the Euler characteristic of the cohomology of the cube complex of
+a cube of finite free modules is the sum of the ranks of the vertices `F(S)`, each with the sign
+`(-1) ^ #S`. Over `ℤ` the rank of a cohomology group is the rank of its free part, so torsion does
+not contribute. -/
+theorem homologyEulerChar_cubeComplex [StrongRankCondition R] [HasRankNullity.{v} R] :
     F.cubeComplex.homologyEulerChar =
       ∑ S : Finset ι, ((#S : ℤ).negOnePow : ℤ) * finrank R (F.obj S) := by
   rw [← F.eulerChar_cubeComplex,
-    CochainComplex.eulerChar_eq_homologyEulerChar _ inferInstance 0 (Fintype.card ι)]
+    HomologicalComplex.eulerChar_eq_homologyEulerChar _
+      (F.cubeComplex.finite_not_isZero_X 0 (Fintype.card ι))]
 
 end CategoryTheory.Functor

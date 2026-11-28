@@ -341,7 +341,7 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber {a b c :
       (n - Fintype.card (ULift (Fin (r j))))
   have := finite_singularHomology_sublevelPair_of_criticalValue (ModuleCat.of K K) h.contMDiff
     h.contMDiff.continuous.isProperMap hac hcb hcrit n
-  rw [ModuleCat.finrank_eq_sum_of_iso_sigma (W := W) e]
+  rw [ModuleCat.finrank_eq_sum_of_iso_sigma (Module.rank_lt_aleph0 _ _) (W := W) e]
   rw [Finset.sum_subtype _
     (p := fun j ↦ (∀ s, f (i j s) = c) ∧ Fintype.card (ULift (Fin (r j))) ≤ n) fun j ↦ by simp]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
