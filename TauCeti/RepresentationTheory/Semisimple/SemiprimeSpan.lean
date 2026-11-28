@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.SimpleModule.Basic
 public import TauCeti.RepresentationTheory.AsAlgebraHom
 public import TauCeti.RepresentationTheory.OfGL
 public import TauCeti.RepresentationTheory.Semisimple
+import Mathlib.RingTheory.Jacobson.Ideal
+import Mathlib.RingTheory.Jacobson.Semiprimary
 import TauCeti.RingTheory.Semisimple.Semiprime
 
 /-!
@@ -48,8 +50,8 @@ span and the character theory of semisimple modules instead.
 
 ## Main results
 
-* `Representation.eq_zero_of_mem_span_of_forall_mul_mul_eq_zero`: **a finite-dimensional
-  semisimple representation has semiprime span.**
+* `Representation.eq_zero_of_mem_span_of_forall_mul_mul_eq_zero`: **a semisimple representation
+  has semiprime span.**
 * `MonoidHom.isSemisimpleRepresentation_comp_of_forall_eq_zero_of_forall_mul_mul_eq_zero`: **a
   homomorphism into a finite-dimensional algebra with semiprime span gives semisimple
   representations.**
@@ -75,12 +77,13 @@ namespace Representation
 
 variable {k G V : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V]
 
-/-- **A finite-dimensional semisimple representation has semiprime span.** If `x` is a
-`k`-combination of the operators `ρ g` with `x * ρ g * x = 0` for every `g`, then `x = 0`. -/
+/-- **A semisimple representation has semiprime span.** If `x` is a `k`-combination of the
+operators `ρ g` with `x * ρ g * x = 0` for every `g`, then `x = 0`. -/
 theorem eq_zero_of_mem_span_of_forall_mul_mul_eq_zero (ρ : Representation k G V)
-    [FiniteDimensional k V] [ρ.IsSemisimpleRepresentation] {x : Module.End k V}
+    [ρ.IsSemisimpleRepresentation] {x : Module.End k V}
     (hx : x ∈ Submodule.span k (Set.range ρ)) (h : ∀ g, x * ρ g * x = 0) : x = 0 := by
-  have := isSemisimpleRing_range_asAlgebraHom ρ
+  have := (isSemisimpleModule_asModule_iff_isSemisimpleModule_range_asAlgebraHom ρ).mp <|
+    (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule ρ).mp ‹_›
   -- `y ↦ x * y * x` is linear, so it vanishes on the span of the `ρ g`.
   have hspan (y) (hy : y ∈ Submodule.span k (Set.range ρ)) : x * y * x = 0 := by
     induction hy using Submodule.span_induction with
@@ -89,9 +92,19 @@ theorem eq_zero_of_mem_span_of_forall_mul_mul_eq_zero (ρ : Representation k G V
     | add _ _ _ _ h₁ h₂ => rw [mul_add, add_mul, h₁, h₂, add_zero]
     | smul c _ _ h₁ => rw [mul_smul_comm, smul_mul_assoc, h₁, smul_zero]
   rw [← toSubmodule_range_asAlgebraHom] at hx hspan
-  have := IsSemisimpleRing.eq_zero_of_forall_mul_mul_eq_zero
-    (x := (⟨x, hx⟩ : ρ.asAlgebraHom.range)) fun y ↦ Subtype.ext (hspan y y.property)
-  exact congrArg Subtype.val this
+  set a : ρ.asAlgebraHom.range := ⟨x, hx⟩
+  have ha (y : ρ.asAlgebraHom.range) : a * y * a = 0 := Subtype.ext (hspan y y.property)
+  -- `a` is in the Jacobson radical of the image `A` of `k[G]`: each `1 + y * a` is invertible,
+  -- since `(y * a) ^ 2 = y * (a * y * a) = 0`. So `a` annihilates the semisimple `A`-module `V`.
+  have hJ : a ∈ Ring.jacobson ρ.asAlgebraHom.range := by
+    rw [← Ideal.jacobson_bot, Ideal.mem_jacobson_iff]
+    intro y
+    obtain ⟨z, hz⟩ := IsUnit.exists_left_inv <| IsNilpotent.isUnit_one_add (r := y * a)
+      ⟨2, by rw [pow_two, mul_assoc, ← mul_assoc a, ha, mul_zero]⟩
+    refine ⟨z, (Submodule.mem_bot _).mpr ?_⟩
+    rw [← hz, mul_add, mul_one, mul_assoc, add_comm, sub_self]
+  exact LinearMap.ext fun v ↦
+    Module.mem_annihilator.mp (IsSemisimpleModule.jacobson_le_annihilator _ V hJ) v
 
 end Representation
 
