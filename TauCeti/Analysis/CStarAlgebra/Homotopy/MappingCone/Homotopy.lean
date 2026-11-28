@@ -224,20 +224,30 @@ private theorem inclZeroSquare_one_left (Φ : NonUnitalStarAlgHom.Homotopy φ₀
     rw [scaleClamp_one_left, CStarCone.toPath_apply_one, ← x.eq_evalOne, Φ.toHom_apply_zero]
   · rw [shiftClamp_one_left]
 
+private def inclZeroConeHom (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
+    MappingCone φ₀ →⋆ₙₐ[ℂ] CStarCone C(I, B) where
+  toFun x := CStarCone.ofPathEqZero ((inclZeroSquare Φ x).curry) (inclZeroSquare_zero_left Φ x)
+  map_smul' c x := by ext s t; simp [map_smul]
+  map_zero' := by ext s t; simp
+  map_add' x y := by ext s t; simp [map_add]
+  map_mul' x y := by ext s t; simp [map_mul]
+  map_star' x := by ext s t; simp [map_star]
+
+private theorem inclZeroConeHom_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁)
+    (x : MappingCone φ₀) :
+    inclZeroConeHom Φ x =
+      CStarCone.ofPathEqZero ((inclZeroSquare Φ x).curry) (inclZeroSquare_zero_left Φ x) :=
+  rfl
+
 /-- Rescaling-and-concatenation `⋆`-homomorphism `MappingCone φ₀ →⋆ₙₐ[ℂ] MappingCone Φ.toHom`
 forming a `⋆`-homotopy inverse to `evalZeroMap Φ`. -/
 def inclZeroMap (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
     MappingCone φ₀ →⋆ₙₐ[ℂ] MappingCone Φ.toHom :=
-  lift Φ.toHom (fstHom φ₀)
-    { toFun x := CStarCone.ofPathEqZero ((inclZeroSquare Φ x).curry) (inclZeroSquare_zero_left Φ x)
-      map_smul' c x := by ext s t; simp [map_smul]
-      map_zero' := by ext s t; simp
-      map_add' x y := by ext s t; simp [map_add]
-      map_mul' x y := by ext s t; simp [map_mul]
-      map_star' x := by ext s t; simp [map_star] }
+  lift Φ.toHom (fstHom φ₀) (inclZeroConeHom Φ)
     (by
       ext x t
-      simpa using DFunLike.congr_fun (inclZeroSquare_one_left Φ x).symm t)
+      simpa [inclZeroConeHom_apply] using
+        DFunLike.congr_fun (inclZeroSquare_one_left Φ x).symm t)
 
 @[simp]
 theorem fst_inclZeroMap_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x : MappingCone φ₀) :
@@ -252,8 +262,8 @@ theorem snd_inclZeroMap_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x
       else
         Φ.toHom x.fst ⟨(s : ℝ) * (1 + (t : ℝ)) - 1,
           by linarith, by nlinarith [s.property.1, s.property.2, t.property.1, t.property.2]⟩ := by
-  simp only [inclZeroMap, snd_lift_apply, NonUnitalStarAlgHom.coe_mk', NonUnitalAlgHom.coe_mk,
-    CStarCone.ofPathEqZero_apply, ContinuousMap.curry_apply, inclZeroSquare_apply]
+  rw [inclZeroMap, snd_lift_apply, inclZeroConeHom_apply]
+  simp only [CStarCone.ofPathEqZero_apply, ContinuousMap.curry_apply, inclZeroSquare_apply]
   split_ifs with h
   · congr 1; ext; simp [h]
   · congr 1; ext; simp [(not_le.mp h).le]
@@ -373,6 +383,15 @@ theorem fst_symmEquiv_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x :
 theorem snd_symmEquiv_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x : MappingCone Φ.toHom)
     (s : Ioc (0 : ℝ) 1) (t : I) : (symmEquiv Φ x).snd s t = x.snd s (σ t) := by simp [symmEquiv]
 
+@[simp]
+theorem fst_symmEquiv_symm_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁)
+    (x : MappingCone Φ.symm.toHom) : ((symmEquiv Φ).symm x).fst = x.fst := by simp [symmEquiv]
+
+@[simp]
+theorem snd_symmEquiv_symm_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁)
+    (x : MappingCone Φ.symm.toHom) (s : Ioc (0 : ℝ) 1) (t : I) :
+    ((symmEquiv Φ).symm x).snd s t = x.snd s (σ t) := by simp [symmEquiv]
+
 theorem evalOneMap_eq_evalZeroMap_comp_symmEquiv (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
     evalOneMap Φ = (evalZeroMap Φ.symm).comp (symmEquiv Φ).toNonUnitalStarAlgHom := by
   ext x : 1; refine ext (by simp) ?_; ext s; simp [symmEquiv]
@@ -404,6 +423,14 @@ and `MappingCone φ₁`. -/
 def homotopyEquiv (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
     StarHomotopyEquiv (MappingCone φ₀) (MappingCone φ₁) :=
   (evalZeroHomotopyEquiv Φ).symm.trans (evalOneHomotopyEquiv Φ)
+
+@[simp] theorem homotopyEquiv_toFun (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
+    (homotopyEquiv Φ).toFun = (evalOneMap Φ).comp (inclZeroMap Φ) := by simp [homotopyEquiv]
+
+@[simp] theorem homotopyEquiv_invFun (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
+    (homotopyEquiv Φ).invFun =
+      (evalZeroMap Φ).comp ((symmEquiv Φ).symm.toNonUnitalStarAlgHom.comp (inclZeroMap Φ.symm)) :=
+  by simp [homotopyEquiv]
 
 end HomotopyInvariance
 

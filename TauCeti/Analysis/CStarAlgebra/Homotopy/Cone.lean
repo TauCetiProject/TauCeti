@@ -449,11 +449,11 @@ private theorem windingQuasiUnitary_relation :
     star windingQuasiUnitary + windingQuasiUnitary +
       star windingQuasiUnitary * windingQuasiUnitary = 0 := by
   apply toLoopPath_injective
-  rw [map_add, map_add, map_mul, map_star, map_zero, toLoopPath_windingQuasiUnitary]
   ext s
   set u : Circle := AddCircle.homeomorphCircle one_ne_zero (AddCircle.zsmulLoop (1 : ℝ) 0 1 s)
   have hu : star (u : ℂ) * (u : ℂ) = 1 := by simp [mul_comm, Complex.mul_conj]
-  simp only [ContinuousMap.add_apply, ContinuousMap.mul_apply, ContinuousMap.star_apply,
+  simp only [map_add, map_mul, map_star, map_zero, toLoopPath_windingQuasiUnitary,
+    ContinuousMap.add_apply, ContinuousMap.mul_apply, ContinuousMap.star_apply,
     ContinuousMap.zero_apply, windingQuasiUnitaryPath, ContinuousMap.coe_mk]
   rw [star_sub, star_one]; linear_combination hu
 
@@ -529,14 +529,22 @@ from `.id` to `0` transports the quasi-unitary loop `s ↦ exp(2πis) - 1` to a 
 winding-number-`1` loop in `AddCircle 1`. -/
 theorem not_isContractible_complex : ¬IsContractibleCStarAlgebra (CStarSuspension ℂ) := by
   rintro ⟨H⟩
+  let _ : Fact (0 < (1 : ℝ)) := ⟨zero_lt_one⟩
+  have h0 : AddCircle.windingNumber (p := (1 : ℝ)) (x := ((0 : ℝ) : AddCircle (1 : ℝ)))
+      (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (Path.refl _))) = 0 := by
+    have hdiv := AddCircle.windingNumber_eq_div (p := (1 : ℝ))
+      (Path.refl ((0 : ℝ) : AddCircle (1 : ℝ))) (ContinuousMap.const I 0) rfl
+    norm_num at hdiv
+    exact Int.cast_eq_zero.mp hdiv
   have hfg : (FundamentalGroup.fromPath
       (Path.Homotopic.Quotient.mk (AddCircle.zsmulLoop (1 : ℝ) 0 1)) :
-        FundamentalGroup (AddCircle (1 : ℝ)) (0 : ℝ)) = 1 :=
+        FundamentalGroup (AddCircle (1 : ℝ)) (0 : ℝ)) =
+      FundamentalGroup.fromPath
+        (Path.Homotopic.Quotient.mk (Path.refl ((0 : ℝ) : AddCircle (1 : ℝ)))) :=
     congrArg FundamentalGroup.fromPath (Quotient.sound ⟨windingNullHomotopy H⟩)
-  let _ : Fact (0 < (1 : ℝ)) := ⟨zero_lt_one⟩
   have hw := congrArg (AddCircle.windingNumber (p := (1 : ℝ)) (x := (0 : ℝ))) hfg
   rw [AddCircle.windingNumber_zsmulLoop (p := (1 : ℝ)) 0 1] at hw
-  exact one_ne_zero (hw.trans (by simp [AddCircle.windingNumber]))
+  exact one_ne_zero (hw.trans h0)
 
 end NonContractibleComplex
 

@@ -57,14 +57,14 @@ of `φ : A →⋆ₙₐ[ℂ] B`. -/
 def mappingConeSubalgebra (φ : A →⋆ₙₐ[ℂ] B) : NonUnitalStarSubalgebra ℂ (A × CStarCone B) where
   carrier := {p : A × CStarCone B | φ p.1 = CStarCone.evalOne p.2}
   mul_mem' {p q} (hp : φ p.1 = CStarCone.evalOne p.2) (hq : φ q.1 = CStarCone.evalOne q.2) := by
-    rw [mem_ofPred_eq, Prod.fst_mul, Prod.snd_mul, map_mul, map_mul, hp, hq]
+    simp_all
   zero_mem' := by simp
   add_mem' {p q} (hp : φ p.1 = CStarCone.evalOne p.2) (hq : φ q.1 = CStarCone.evalOne q.2) := by
-    rw [mem_ofPred_eq, Prod.fst_add, Prod.snd_add, map_add, map_add, hp, hq]
+    simp_all
   smul_mem' c {p} (hp : φ p.1 = CStarCone.evalOne p.2) := by
-    rw [mem_ofPred_eq, Prod.smul_fst, Prod.smul_snd, map_smul, map_smul, hp]
+    simp_all
   star_mem' {p} (hp : φ p.1 = CStarCone.evalOne p.2) := by
-    rw [mem_ofPred_eq, Prod.fst_star, Prod.snd_star, map_star, map_star, hp]
+    simp_all [map_star]
 
 @[simp] theorem mem_mappingConeSubalgebra_iff (φ : A →⋆ₙₐ[ℂ] B) (p : A × CStarCone B) :
     p ∈ mappingConeSubalgebra φ ↔ φ p.1 = CStarCone.evalOne p.2 := Iff.rfl
