@@ -34,6 +34,14 @@ rate. The words and their counts are defined in `TauCeti.Dynamics.SymbolicDynami
 * `TauCeti.coverEntropy_shift_nat_eq_expGrowthSup`: the entropy formula.
 
 Used to compute the entropy of subshifts of finite type (`TauCeti.Dynamics.Entropy.FiniteType`).
+
+## References
+
+* D. Lind and B. Marcus, *An Introduction to Symbolic Dynamics and Coding*, Cambridge University
+  Press, 1995, §4.1 (entropy as the growth rate of the number of words) and §6.3 (topological
+  entropy of shift spaces).
+* P. Walters, *An Introduction to Ergodic Theory*, Graduate Texts in Mathematics 79, Springer,
+  1982, §7.2.
 -/
 
 public section

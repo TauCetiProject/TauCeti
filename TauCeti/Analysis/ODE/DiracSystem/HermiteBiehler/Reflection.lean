@@ -33,6 +33,12 @@ functions (`TauCeti.diracHermiteBiehler`, `TauCeti.diracHermiteBiehlerDirichlet`
 (`TauCeti.diracFundamentalMatrix_neg_potential`), so `E_{-q} = i E~_q` and `E~_{-q} = -i E_q`
 (`TauCeti.diracHermiteBiehler_neg_potential`, `TauCeti.diracHermiteBiehlerDirichlet_neg_potential`).
 
+**Conjugate potential.** Combining the reflection with the parity of the fundamental matrix
+(`TauCeti.diracFundamentalMatrix_neg_of_eqOn_conj`), for `q'` equal to `conj q` on `[0, ∞)`,
+`E_{q'}(t, -conj z) = conj E_q(t, z)` and `E~_{q'}(t, -conj z) = -conj E~_q(t, z)`
+(`TauCeti.diracHermiteBiehler_neg_conj_of_eqOn_conj`,
+`TauCeti.diracHermiteBiehlerDirichlet_neg_conj_of_eqOn_conj`).
+
 ## References
 
 * A. Poltoratski, *Pointwise convergence of the non-linear Fourier transform*, Ann. of Math. (2)
@@ -162,5 +168,27 @@ theorem diracHermiteBiehlerDirichlet_neg_potential (hq : LocallyIntegrableOn q (
     simp [diracFundamentalMatrix_neg_potential hq ht]
   rw [diracHermiteBiehlerDirichlet_def, diracHermiteBiehler_def]
   linear_combination h01 - I * h11 - diracFundamentalMatrix q t z 1 0 * I_sq
+
+/-- **The conjugate potential for `E`.** For `q` locally integrable on `[0, ∞)`, a potential `q'`
+equal to `conj q` on `[0, ∞)`, and `t ≥ 0`, `E_{q'}(t, -conj z) = conj E_q(t, z)`. -/
+theorem diracHermiteBiehler_neg_conj_of_eqOn_conj {q' : ℝ → ℂ}
+    (hq : LocallyIntegrableOn q (Ici 0)) (hconj : EqOn q' (fun s ↦ conj (q s)) (Ici 0))
+    (ht : 0 ≤ t) (z : ℂ) :
+    diracHermiteBiehler q' t (-conj z) = conj (diracHermiteBiehler q t z) := by
+  rw [diracHermiteBiehler_def, diracHermiteBiehler_def,
+    diracFundamentalMatrix_neg_of_eqOn_conj hq hconj ht, diracFundamentalMatrix_conj hq ht]
+  simp
+
+/-- **The conjugate potential for `E~`.** For `q` locally integrable on `[0, ∞)`, a potential `q'`
+equal to `conj q` on `[0, ∞)`, and `t ≥ 0`, `E~_{q'}(t, -conj z) = -conj E~_q(t, z)`. -/
+theorem diracHermiteBiehlerDirichlet_neg_conj_of_eqOn_conj {q' : ℝ → ℂ}
+    (hq : LocallyIntegrableOn q (Ici 0)) (hconj : EqOn q' (fun s ↦ conj (q s)) (Ici 0))
+    (ht : 0 ≤ t) (z : ℂ) :
+    diracHermiteBiehlerDirichlet q' t (-conj z) = -conj (diracHermiteBiehlerDirichlet q t z) := by
+  rw [diracHermiteBiehlerDirichlet_def, diracHermiteBiehlerDirichlet_def,
+    diracFundamentalMatrix_neg_of_eqOn_conj hq hconj ht, diracFundamentalMatrix_conj hq ht]
+  simp only [map_apply, of_apply, cons_val', cons_val_zero, cons_val_one, empty_val',
+    cons_val_fin_one, map_sub, map_mul, conj_I]
+  ring
 
 end TauCeti

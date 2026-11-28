@@ -69,6 +69,9 @@ has no antiderivative.
 
 As linear endomorphisms of `R[X]`, the derivative and multiplication by `X` satisfy the Weyl
 relation `d x = x d + 1` (`Polynomial.derivative_mul_mulLeft_X`).
+
+The constant coefficient of `derivative^[k] (X ^ m)` is `m !` when `k = m` and `0` otherwise
+(`Polynomial.coeff_zero_iterate_derivative_X_pow`).
 -/
 
 public section
@@ -394,5 +397,18 @@ theorem derivative_mul_mulLeft_X {R : Type*} [CommSemiring R] :
       LinearMap.mulLeft R X * derivative + 1 := by
   refine LinearMap.ext fun p ↦ ?_
   simp [derivative_mul, add_comm]
+
+section
+
+open scoped Nat
+
+/-- The constant coefficient of the `k`-th derivative of `X ^ m` is `m !` when `k = m` and `0`
+otherwise. -/
+theorem coeff_zero_iterate_derivative_X_pow {R : Type*} [Semiring R] (m k : ℕ) :
+    (derivative^[k] (X ^ m : R[X])).coeff 0 = if k = m then (m ! : R) else 0 := by
+  rw [coeff_iterate_derivative, zero_add, Nat.descFactorial_self, coeff_X_pow]
+  split_ifs with h <;> simp [h]
+
+end
 
 end Polynomial

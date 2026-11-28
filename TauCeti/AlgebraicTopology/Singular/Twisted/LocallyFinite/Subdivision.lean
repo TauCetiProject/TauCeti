@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Homotopy
-public import TauCeti.AlgebraicTopology.Singular.Twisted.Subdivision
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Subdivision.Basic
 
 /-!
 # Barycentric subdivision of locally finite chains with local coefficients

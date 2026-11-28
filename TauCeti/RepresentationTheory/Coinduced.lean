@@ -6,13 +6,16 @@ Authors: Codex
 module
 
 public import Mathlib.RepresentationTheory.Coinduced
+public import Mathlib.RepresentationTheory.Stabilizer
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.RepresentationTheory.AsModule
 public import TauCeti.RepresentationTheory.OfMulAction
+public import TauCeti.RepresentationTheory.WeightSpace
 public import TauCeti.GroupTheory.GroupAction.PiTransport
+public import TauCeti.Topology.Algebra.Group.LocallyConstant
 
 /-!
 # Coinduction: exactness and coextension of scalars
@@ -40,7 +43,12 @@ Mathlib's coinduced action is evaluated by `Representation.coind_apply_coe_apply
 `(h • f) h₁ = f (h₁ * h)`. Coinduction along an open map whose image has finite index preserves
 representations with open kernel (`Representation.isOpen_ker_coind`): the kernel of the
 coinduced action contains the open set of `x` with `t x t⁻¹ ∈ φ(ker ρ)` for `t` in a finite set of
-coset representatives.
+coset representatives. The stabilizer of a coinduced function is its right-translation
+stabilizer `TauCeti.rightTranslationStabilizer` (`Representation.stabilizer_coind_eq`).
+
+`Representation.coindSupport` gives the support modulo a subgroup in the ordinary coset space.
+The action on this support is described by `Representation.coindSupport_coind_apply` using
+Mathlib's left action on cosets.
 
 ## References
 
@@ -106,6 +114,55 @@ theorem coind_apply_coe_apply (φ : G →* H) (ρ : Representation k G V) (f : c
 
 end Apply
 
+section Support
+
+open Function
+
+variable {A G V : Type*} [Semiring A] [Group G] [AddCommMonoid V] [Module A V]
+  {H : Subgroup G} {σ : Representation A H V}
+
+/-- Support modulo `H` of a left-covariant function. Inversion identifies its left `H`-orbits
+with the ordinary cosets in `G ⧸ H`. -/
+def coindSupport (f : σ.coindV H.subtype) : Set (G ⧸ H) :=
+  (fun g : G ↦ (↑g⁻¹ : G ⧸ H)) '' support f.val
+
+/-- The coset of `g⁻¹` lies in the support iff the function is nonzero at `g`. -/
+@[simp]
+theorem coindSupport_mk_inv_mem_iff {f : σ.coindV H.subtype} {g : G} :
+    (↑g⁻¹ : G ⧸ H) ∈ coindSupport f ↔ f.val g ≠ 0 := by
+  refine ⟨?_, fun hg ↦ ⟨g, hg, rfl⟩⟩
+  rintro ⟨x, hx, heq⟩
+  have h : x * g⁻¹ ∈ H := by
+    simpa only [inv_inv] using QuotientGroup.eq.mp heq
+  have hcov := f.property ⟨x * g⁻¹, h⟩ g
+  simp only [Subgroup.subtype_apply, inv_mul_cancel_right] at hcov
+  intro hg
+  exact hx (hcov.trans (by rw [hg, map_zero]))
+
+/-- Quotient support is the image of ordinary function support under the inverse coset map. -/
+theorem coindSupport_def (f : σ.coindV H.subtype) :
+    coindSupport f = (fun g : G ↦ (↑g⁻¹ : G ⧸ H)) '' support f.val := (rfl)
+
+/-- The zero function has empty support modulo the subgroup. -/
+@[simp] theorem coindSupport_zero : coindSupport (0 : σ.coindV H.subtype) = ∅ := by
+  simp only [coindSupport_def, Submodule.coe_zero, support_zero, Set.image_empty]
+
+/-- Right translation on coinduction translates support by the left action on `G ⧸ H`. -/
+theorem coindSupport_coind_apply (f : σ.coindV H.subtype) (g : G) :
+    coindSupport (σ.coind H.subtype g f) = (g • ·) '' coindSupport f := by
+  ext q
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    refine ⟨(↑(x * g)⁻¹ : G ⧸ H), coindSupport_mk_inv_mem_iff.2 ?_, ?_⟩
+    · simpa only [mem_support, coind_apply_coe_apply] using hx
+    · simp only [MulAction.Quotient.smul_coe, smul_eq_mul, mul_inv_rev, mul_inv_cancel_left]
+  · rintro ⟨q, ⟨x, hx, rfl⟩, rfl⟩
+    refine ⟨x * g⁻¹, ?_, ?_⟩
+    · simpa only [mem_support, coind_apply_coe_apply, inv_mul_cancel_right] using hx
+    · simp only [MulAction.Quotient.smul_coe, smul_eq_mul, mul_inv_rev, inv_inv]
+
+end Support
+
 section OpenKernel
 
 variable {k G H V : Type*} [Semiring k] [Group G] [Group H] [AddCommMonoid V] [Module k V]
@@ -143,6 +200,36 @@ theorem isOpen_ker_coind {φ : G →* H} (hφ : IsOpenMap φ) [φ.range.FiniteIn
   exact Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (hS.mem_nhds h1) hSK)
 
 end OpenKernel
+
+section WeightSpace
+
+variable {k G H V : Type*} [CommSemiring k] [Monoid G] [Group H] [AddCommMonoid V] [Module k V]
+  {φ : G →* H} {ρ : Representation k G V}
+
+/-- A coinduced function lies in the character weight space for a subgroup exactly when right
+translation by each subgroup element scales its values by the character. -/
+theorem mem_weightSpace_coind_comp_subtype_iff {K : Subgroup H} {χ : K →* k} {f : coindV φ ρ} :
+    f ∈ weightSpace ((coind φ ρ).comp K.subtype) χ ↔
+      ∀ (h : K) h₁, f.val (h₁ * h) = χ h • f.val h₁ := by
+  simp only [mem_weightSpace, MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype,
+    Subtype.ext_iff, funext_iff, coind_apply_coe_apply, Submodule.coe_smul, Pi.smul_apply]
+
+end WeightSpace
+
+section Stabilizer
+
+variable {k G H V : Type*} [Semiring k] [Monoid G] [Group H] [AddCommMonoid V] [Module k V]
+  {φ : G →* H} {ρ : Representation k G V}
+
+/-- The stabilizer of a coinduced function `f` is its right-translation stabilizer: `h` stabilizes
+`f` exactly when `f (h₁ * h) = f h₁` for every `h₁`. -/
+theorem stabilizer_coind_eq (f : coindV φ ρ) :
+    (coind φ ρ).stabilizer f = TauCeti.rightTranslationStabilizer f.val := by
+  ext h
+  simp only [mem_stabilizer, TauCeti.mem_rightTranslationStabilizer, Subtype.ext_iff, funext_iff,
+    coind_apply_coe_apply]
+
+end Stabilizer
 
 open scoped MonoidAlgebra
 

@@ -51,6 +51,9 @@ norm, and the transport along `e⁻¹` inverts it.
   highest derivative.
 * `TauCeti.Wkp.compLinearIsometryEquiv_mem_wkp0Submodule_iff`: zero boundary values are preserved
   and reflected.
+* `TauCeti.Wkp.firstOrder_compLinearIsometryEquiv_mem_w1p0Submodule`: at order two, the
+  first-order part keeps zero boundary values under the transport, as in the Dirichlet problem in
+  `W^{2,p} ∩ W^{1,p}_0`.
 -/
 
 public section
@@ -343,6 +346,15 @@ theorem compLinearIsometryEquiv_mem_wkp0Submodule_iff (he : MeasurePreserving e 
   have hWU : (W : Set E') = e.symm ⁻¹' U := hUW ▸ (e.toEquiv.symm_preimage_preimage W).symm
   simpa [← compLinearIsometryEquiv_symm he hUW he' hWU] using
     compLinearIsometryEquiv_mem_wkp0Submodule he' hWU k hu
+
+/-- At order two, the transport along `e` preserves zero boundary values of the first-order
+part. -/
+theorem firstOrder_compLinearIsometryEquiv_mem_w1p0Submodule (he : MeasurePreserving e μ ν)
+    (hUW : (U : Set E) = e ⁻¹' W) {u : Wkp ν W p 2} (hu : firstOrder 1 u ∈ w1p0Submodule ν W p) :
+    firstOrder 1 (compLinearIsometryEquiv he hUW 2 u) ∈ w1p0Submodule μ U p := by
+  have h := compLinearIsometryEquiv_mem_wkp0Submodule he hUW 1
+    (show lowerOrder 1 u ∈ wkp0Submodule ν W p 1 by rwa [wkp0Submodule_one, ← firstOrder_one])
+  rwa [wkp0Submodule_one, ← lowerOrder_compLinearIsometryEquiv, ← firstOrder_one] at h
 
 end Wkp
 
