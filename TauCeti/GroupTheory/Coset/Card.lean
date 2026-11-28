@@ -25,6 +25,8 @@ sets in a locally profinite group, which are finite unions of cosets of a compac
 * `Subgroup.ncard_image_mk_of_le`: for `W' ≤ W`, a union of left cosets of `W` meets `[W : W']`
   times as many left cosets of `W'` as of `W`.
 * `Subgroup.ncard_image_mk_eq_relIndex`: a subgroup `U ≥ W` meets `[U : W]` left cosets of `W`.
+* `QuotientGroup.finite_support_indicator_of_le`: so the indicator of a subgroup `K' ≥ K` of finite
+  index is supported on finitely many left cosets of `K`.
 -/
 
 public section
@@ -81,3 +83,17 @@ theorem ncard_image_mk_eq_relIndex {U : Subgroup G} (h : W ≤ U) :
   rw [ncard_image_mk_of_le hU h, hone, ncard_singleton, one_mul]
 
 end Subgroup
+
+namespace QuotientGroup
+
+variable {A G : Type*} [Zero A] [One A] [Group G] {K K' : Subgroup G}
+
+/-- The indicator of a subgroup `K'` containing `K` with finite index is supported on finitely
+many left cosets of `K`. -/
+theorem finite_support_indicator_of_le (hKK' : K ≤ K') [K.IsFiniteRelIndex K'] :
+    (Function.support fun q : G ⧸ K ↦ (K' : Set G).indicator (1 : G → A) q.out).Finite :=
+  (Set.finite_of_ncard_ne_zero (s := ((↑) : G → G ⧸ K) '' K')
+    (by rw [Subgroup.ncard_image_mk_eq_relIndex hKK']; exact Subgroup.relIndex_ne_zero)).subset
+    fun q hq ↦ ⟨q.out, Set.mem_of_indicator_ne_zero hq, q.out_eq'⟩
+
+end QuotientGroup

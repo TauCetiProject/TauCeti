@@ -10,8 +10,10 @@ public import Mathlib.LinearAlgebra.Span.Defs
 public import TauCeti.GroupTheory.AlmostConjugate
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.LinearAlgebra.Matrix.Eigenvectors
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonzeroVectors
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SubspaceOrbit
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Span.Basic
@@ -56,8 +58,19 @@ For `n = 2` both subgroups are line stabilizers and they are conjugate.
   terms of matrix entries.
 * `TauCeti.coe_mul_apply_of_mem_lineStabilizer`: right multiplication by an element of the line
   stabilizer scales column `i` by its diagonal entry.
+* `TauCeti.apply_self_ne_zero_of_mem_lineStabilizer`,
+  `TauCeti.apply_self_ne_zero_of_mem_hyperplaneStabilizer`: the diagonal entry `gᵢᵢ` of an element
+  of either stabilizer is nonzero; `TauCeti.single_vecMul_eq_of_mem_hyperplaneStabilizer`: row `i`
+  of an element of the hyperplane stabilizer is `gᵢᵢ eᵢ`;
+  `TauCeti.mul_apply_self_ne_zero_of_mem_hyperplaneStabilizer`: a product of an element of the
+  hyperplane stabilizer and one of the line stabilizer has nonzero entry `(i, i)`.
+* `TauCeti.exists_mem_hyperplaneStabilizer_inv_mul_mem`: an invertible matrix with nonzero entry
+  `(i, i)` is the product of an element of the hyperplane stabilizer and one of the line
+  stabilizer.
 * `TauCeti.map_inverseTranspose_lineStabilizer`: inverse transpose carries the line stabilizer
   onto the hyperplane stabilizer.
+* `TauCeti.index_lineStabilizer_mul`: over a field with `q` elements the line stabilizer has index
+  the number `(qⁿ - 1) / (q - 1)` of lines.
 * `TauCeti.exists_conj_notMem_lineStabilizer`: a representation with no proper stable subspace
   has no conjugate in a line stabilizer.
 * `TauCeti.exists_mem_hyperplaneStabilizer_smul_ne`: if `n` has at least three elements, the
@@ -169,6 +182,85 @@ theorem mem_hyperplaneStabilizer_iff {g : GL n K} {i : n} :
     · exact (Submodule.mem_smul_pointwise_iff_exists _ _ _).mpr
         ⟨g⁻¹ • w, hmaps hinv hw, smul_inv_smul g w⟩
 
+/-! ### Diagonal entries -/
+
+/-- An element of the stabilizer of the line `K ∙ eᵢ` has a nonzero `(i, i)` entry. -/
+theorem apply_self_ne_zero_of_mem_lineStabilizer {g : GL n K} {i : n}
+    (hg : g ∈ lineStabilizer K i) : (g : Matrix n n K) i i ≠ 0 := by
+  intro h
+  have h0 : (g : Matrix n n K) *ᵥ Pi.single i 1 = 0 := by
+    ext a
+    rw [mulVec_single_one, col_apply, Pi.zero_apply]
+    by_cases ha : a = i
+    · rwa [ha]
+    · exact mem_lineStabilizer_iff.mp hg a ha
+  have h1 : (Pi.single i 1 : n → K) = 0 := by
+    rw [← one_mulVec (Pi.single i 1), ← Units.inv_mul g, ← mulVec_mulVec, h0, mulVec_zero]
+  simpa using congrFun h1 i
+
+/-- An element of the stabilizer of the hyperplane `{v | v i = 0}` has a nonzero `(i, i)` entry. -/
+theorem apply_self_ne_zero_of_mem_hyperplaneStabilizer {g : GL n K} {i : n}
+    (hg : g ∈ hyperplaneStabilizer K i) : (g : Matrix n n K) i i ≠ 0 := by
+  intro h
+  have h0 : Pi.single i 1 ᵥ* (g : Matrix n n K) = 0 := by
+    ext b
+    rw [single_one_vecMul, row_apply, Pi.zero_apply]
+    by_cases hb : b = i
+    · rwa [hb]
+    · exact mem_hyperplaneStabilizer_iff.mp hg b hb
+  have h1 : (Pi.single i 1 : n → K) = 0 := by
+    rw [← vecMul_one (Pi.single i 1), ← Units.mul_inv g, ← vecMul_vecMul, h0, zero_vecMul]
+  simpa using congrFun h1 i
+
+/-- The `i`th row of a matrix stabilizing the hyperplane `{v | v i = 0}` is a multiple of `eᵢ`. -/
+theorem single_vecMul_eq_of_mem_hyperplaneStabilizer {g : GL n K} {i : n}
+    (hg : g ∈ hyperplaneStabilizer K i) :
+    Pi.single i 1 ᵥ* (g : Matrix n n K) = (g : Matrix n n K) i i • Pi.single i 1 := by
+  ext b
+  rw [single_one_vecMul, row_apply, Pi.smul_apply, smul_eq_mul]
+  by_cases hb : b = i
+  · subst hb
+    simp
+  · rw [mem_hyperplaneStabilizer_iff.mp hg b hb, Pi.single_eq_of_ne hb, mul_zero]
+
+/-- A product `p' p` of a matrix stabilizing the hyperplane `{v | v i = 0}` and one stabilizing
+the line `K ∙ eᵢ` has nonzero `(i, i)` entry `p'ᵢᵢ pᵢᵢ`. -/
+theorem mul_apply_self_ne_zero_of_mem_hyperplaneStabilizer {p p' : GL n K} {i : n}
+    (hp' : p' ∈ hyperplaneStabilizer K i) (hp : p ∈ lineStabilizer K i) :
+    ((p' * p : GL n K) : Matrix n n K) i i ≠ 0 := by
+  rw [coe_mul_apply_of_mem_lineStabilizer p' hp i]
+  exact mul_ne_zero (apply_self_ne_zero_of_mem_hyperplaneStabilizer hp')
+    (apply_self_ne_zero_of_mem_lineStabilizer hp)
+
+/-- For `ξ` with `ξᵢᵢ ≠ 0` there is `p'` stabilizing the hyperplane `{v | v i = 0}` with `p'⁻¹ ξ`
+stabilizing the line `K ∙ eᵢ`: `p'` is the identity off the `i`th column, which is the `i`th
+column of `ξ` scaled to have `i`th entry `1`. -/
+theorem exists_mem_hyperplaneStabilizer_inv_mul_mem {ξ : GL n K} {i : n}
+    (hξ : (ξ : Matrix n n K) i i ≠ 0) :
+    ∃ p' ∈ hyperplaneStabilizer K i, p'⁻¹ * ξ ∈ lineStabilizer K i := by
+  set d := (ξ : Matrix n n K) i i
+  set w : n → K := d⁻¹ • (ξ : Matrix n n K) *ᵥ Pi.single i 1
+  have hw : w i = 1 := by simp [w, d, hξ]
+  have hdet : ((1 : Matrix n n K).updateCol i w).det ≠ 0 := by
+    rw [← det_transpose, ← updateRow_transpose, transpose_one, det_updateRow_one, hw]
+    exact one_ne_zero
+  set p' := GeneralLinearGroup.mkOfDetNeZero _ hdet
+  have hp' : (p' : Matrix n n K) = (1 : Matrix n n K).updateCol i w :=
+    GeneralLinearGroup.val_mkOfDetNeZero _ _
+  have hp'e : (p' : Matrix n n K) *ᵥ Pi.single i 1 = w := by
+    ext a
+    rw [hp', mulVec_single_one, col_apply, updateCol_self]
+  refine ⟨p', mem_hyperplaneStabilizer_iff.mpr fun b hb ↦ ?_,
+    mem_lineStabilizer_iff.mpr fun a ha ↦ ?_⟩
+  · rw [hp', updateCol_ne hb, one_apply_ne (Ne.symm hb)]
+  · -- `p'⁻¹ ξ eᵢ = d p'⁻¹ w = d eᵢ`
+    have hcol : ((p'⁻¹ * ξ : GL n K) : Matrix n n K) *ᵥ Pi.single i 1 = d • Pi.single i 1 := by
+      have hξe : (ξ : Matrix n n K) *ᵥ Pi.single i 1 = d • w := by
+        simp [w, smul_smul, mul_inv_cancel₀ hξ]
+      rw [Units.val_mul, ← mulVec_mulVec, hξe, mulVec_smul, ← hp'e, mulVec_mulVec,
+        ← Units.val_mul, inv_mul_cancel, Units.val_one, one_mulVec]
+    simpa [mulVec_single_one, Pi.single_eq_of_ne ha] using congrFun hcol a
+
 /-- **Inverse transpose exchanges the two stabilizers**: the automorphism `g ↦ (g⁻¹)ᵀ` of
 `GL n K` carries the stabilizer of the line `K ∙ eᵢ` onto the stabilizer of the hyperplane
 `{v | v i = 0}`. -/
@@ -179,6 +271,33 @@ theorem map_inverseTranspose_lineStabilizer (i : n) :
   rw [Subgroup.mem_map_equiv, GeneralLinearGroup.inverseTranspose_symm, mem_lineStabilizer_iff,
     ← Subgroup.inv_mem_iff, mem_hyperplaneStabilizer_iff]
   simp [GeneralLinearGroup.coe_inverseTranspose]
+
+/-- **The index of the line stabilizer.** Over a field with `q` elements the stabilizer of the
+line `K ∙ eᵢ` has index the number `(qⁿ - 1) / (q - 1)` of lines in `Kⁿ`, stated without division:
+`[GL n K : lineStabilizer K i] (q - 1) = qⁿ - 1`. For an infinite field both sides are `0`. -/
+theorem index_lineStabilizer_mul (i : n) :
+    (lineStabilizer K i).index * (Nat.card K - 1) = Nat.card K ^ Fintype.card n - 1 := by
+  cases finite_or_infinite K
+  swap
+  · rw [Nat.card_eq_zero_of_infinite, zero_tsub, mul_zero]
+    rcases Nat.eq_zero_or_pos (Fintype.card n) with h | h
+    · rw [h, pow_zero, tsub_self]
+    · rw [zero_pow h.ne', zero_tsub]
+  have := Fintype.ofFinite K
+  rw [lineStabilizer_def, GeneralLinearGroup.index_stabilizer_submodule_eq_gaussianBinomial,
+    finrank_span_singleton (by simp), Nat.card_eq_fintype_card]
+  -- the product formula for `[n, 1]_q`, read in `ℤ`
+  have h := gaussianBinomial_mul_prod_pow_sub_pow (Fintype.card K : ℤ) (Fintype.card n) 1
+  have hc : ((gaussianBinomial (Fintype.card K) (Fintype.card n) 1 : ℕ) : ℤ) =
+      gaussianBinomial (Fintype.card K : ℤ) (Fintype.card n) 1 :=
+    map_gaussianBinomial (Nat.castRingHom ℤ) _ _ _
+  rw [← hc] at h
+  have hq : 1 ≤ Fintype.card K := Fintype.card_pos
+  have hqn : 1 ≤ Fintype.card K ^ Fintype.card n := Nat.one_le_pow _ _ hq
+  simp only [Finset.range_one, Finset.prod_singleton, pow_one, pow_zero] at h
+  exact_mod_cast (by push_cast [hq, hqn]; exact h :
+    ((gaussianBinomial (Fintype.card K) (Fintype.card n) 1 * (Fintype.card K - 1) : ℕ) : ℤ) =
+      ((Fintype.card K ^ Fintype.card n - 1 : ℕ) : ℤ))
 
 /-! ### Representations without stable lines -/
 

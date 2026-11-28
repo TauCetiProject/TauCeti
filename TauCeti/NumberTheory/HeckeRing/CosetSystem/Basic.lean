@@ -55,6 +55,9 @@ left-invariant measure (`TauCeti.NumberTheory.HeckeRing.CosetSystem.Volume`).
   `Subgroup.isCosetSystem_congr_of_mem`: changing the representative `g` of the double coset.
 * `Subgroup.isCosetSystem_out_mul`: the canonical coset system indexed by `H ⧸ (H ∩ gKg⁻¹)`.
 * `Subgroup.IsCosetSystem.natCard_eq_relIndex`: a coset system has `[H : H ∩ gKg⁻¹]` members.
+* `QuotientGroup.finite_support_indicator_doubleCoset_of_isFiniteRelIndex`: when
+  `[K : K ∩ gKg⁻¹]` is finite, the indicator of `KgK` is supported on finitely many left cosets of
+  `K`.
 * `Subgroup.exists_isCosetSystem_fin_of_finite`, `HeckeCoset.exists_isCosetSystem_fin_degree`:
   existence of finite coset systems, in particular for a Hecke triple, where
   `Subgroup.IsCosetSystem.natCard_eq_degree` counts the members by the degree.
@@ -249,6 +252,22 @@ theorem exists_isCosetSystem_fin_of_finite
   exact ⟨_, h.comp_equiv (h.equivCosets.trans (Finite.equivFin _)).symm⟩
 
 end Subgroup
+
+namespace QuotientGroup
+
+variable {A : Type*} [Zero A] [One A] {K : Subgroup G}
+
+/-- If `K ∩ g K g⁻¹` has finite index in `K`, the indicator of the double coset `K g K` is
+supported on finitely many left cosets of `K`, those of a coset system of `K g K`. This is the
+algebraic counterpart of `QuotientGroup.finite_support_indicator_doubleCoset`. -/
+theorem finite_support_indicator_doubleCoset_of_isFiniteRelIndex (g : G)
+    [(ConjAct.toConjAct g • K).IsFiniteRelIndex K] :
+    (Function.support fun q : G ⧸ K ↦
+      (doubleCoset g (K : Set G) K).indicator (1 : G → A) q.out).Finite :=
+  ((Subgroup.isCosetSystem_out_mul K K g).finite_iff.mp inferInstance).subset
+    fun q hq ↦ ⟨q.out, Set.mem_of_indicator_ne_zero hq, q.out_eq'⟩
+
+end QuotientGroup
 
 namespace HeckeCoset
 
