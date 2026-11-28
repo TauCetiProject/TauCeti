@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.Datum
-import TauCeti.Algebra.Algebra.Pi
 import TauCeti.LinearAlgebra.RootSystem.BaseChange.CartanType
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NonSimplyLaced
 
@@ -97,10 +96,6 @@ theorem piAlgebraMap_mem_range_root_typeBBaseChangeRootSystem_iff (n : ℕ) (x :
 /-- Evaluating the `k`-th simple coroot of `typeBBaseChangeRootSystem K n` on `y` gives `y k`. -/
 theorem coroot'_typeBBaseChangeRootSystem_simpleIndex (n : ℕ) (k : Fin n) (y : Fin n → K) :
     (typeBBaseChangeRootSystem K n).coroot' (typeBSimpleIndex n k) y = y k := by
-  rw [RootPairing.coroot', LinearMap.flip_apply, toLinearMap_typeBBaseChangeRootSystem,
-    coroot_typeBBaseChangeRootSystem, coroot_typeBSimpleIndex]
-  have hsingle : Pi.algebraMap (Fin n) ℤ K (Pi.single k 1) = Pi.single k (1 : K) := by
-    ext j; rcases eq_or_ne j k with rfl | hjk <;> simp [piAlgebraMap_apply, *]
-  rw [hsingle, dotProduct_single, mul_one]
+  simp [RootPairing.coroot']
 
 end TauCeti.DynkinType

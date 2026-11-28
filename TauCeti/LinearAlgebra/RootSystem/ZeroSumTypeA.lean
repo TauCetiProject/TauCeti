@@ -13,7 +13,6 @@ public import TauCeti.LinearAlgebra.RootSystem.Isomorphism.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Map
 public import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import TauCeti.Algebra.Algebra.Pi
 
 /-!
 # The classical sum-zero root system of type `Aₘ`

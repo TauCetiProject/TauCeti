@@ -9,9 +9,9 @@ public import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import Mathlib.LinearAlgebra.RootSystem.Chain
 public import Mathlib.LinearAlgebra.RootSystem.Reduced
+public import TauCeti.Algebra.Algebra.Pi
 public import TauCeti.LinearAlgebra.Matrix.Dual
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import TauCeti.Algebra.Algebra.Pi
 
 /-!
 # Base change of a root pairing carried by the standard lattices
@@ -102,10 +102,8 @@ theorem span_range_piAlgebraMap_eq_top [Finite κ] {ι : Type*} {v : ι → (κ 
     exact Submodule.span_le_restrictScalars R S _ h
   rw [eq_top_iff, ← (Pi.basisFun S κ).span_eq, Submodule.span_le]
   rintro - ⟨j, rfl⟩
-  have hj : Pi.algebraMap κ R S (Pi.single j 1) = Pi.basisFun S κ j := by
-    ext k
-    rcases eq_or_ne k j with rfl | hk <;> simp [piAlgebraMap_apply, *]
-  exact hj ▸ hmem _
+  exact (by simp [Pi.basisFun_apply] :
+    Pi.algebraMap κ R S (Pi.single j 1) = Pi.basisFun S κ j) ▸ hmem _
 
 end Entrywise
 

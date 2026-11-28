@@ -330,6 +330,13 @@ theorem piAlgebraMap_apply (x : κ → R) (j : κ) :
     Pi.algebraMap κ R S x j = algebraMap R S (x j) :=
   rfl
 
+/-- `Pi.algebraMap` sends a single-coordinate tuple `Pi.single j r` to
+`Pi.single j (algebraMap R S r)`. -/
+@[simp]
+theorem piAlgebraMap_single [DecidableEq κ] (j : κ) (r : R) :
+    Pi.algebraMap κ R S (Pi.single j r) = Pi.single j (algebraMap R S r) := by
+  ext k; by_cases h : k = j <;> simp [h]
+
 end PiAlgebraMap
 
 section IsUnitDet
