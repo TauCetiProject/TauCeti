@@ -380,11 +380,6 @@ theorem conductor_infinitePart_eq_empty_iff_even_toDirichletCharacter (ψ : RayC
     ψ.conductor.infinitePart = ∅ ↔ ψ.toDirichletCharacter.Even := by
   rw [toDirichletCharacter_def, ← conductor_infinitePart_eq_empty_iff_even, conductor_induced]
 
-private theorem conductor_infinitePart_eq_empty_of_infinitePart_eq_empty (h : 𝔪.infinitePart = ∅)
-    (ψ : RayClassCharacter 𝔪) : ψ.conductor.infinitePart = ∅ := by
-  rw [← Finset.subset_empty, ← h]
-  exact (Modulus.dvd_iff.mp ψ.conductor_dvd).2
-
 /-- Every ray class character of a modulus of `ℚ` without the real place corresponds to an even
 Dirichlet character. -/
 theorem even_toDirichletCharacter_of_infinitePart_eq_empty (h : 𝔪.infinitePart = ∅)
@@ -425,16 +420,16 @@ theorem mem_range_toDirichletCharacter_iff
       have hfin : Modulus.spanNat ℚ (Ideal.absNorm 𝔪.finitePart) ∣
           ratModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _) :=
         spanNat_dvd_ratModulus
-      have hmod : Modulus.spanNat ℚ (Ideal.absNorm 𝔪.finitePart) ∣ 𝔪 := by
-        conv_rhs => rw [eq_spanNat_of_infinitePart_eq_empty_rat h0]
+      have hmod : Modulus.spanNat ℚ (Ideal.absNorm 𝔪.finitePart) ∣ 𝔪 :=
+        (congrArg (· ∣ 𝔪) (eq_spanNat_of_infinitePart_eq_empty_rat h0)).mp (Modulus.dvd_refl 𝔪)
       have hχ : (ratDirichletEquiv _ (NeZero.ne _)
           ((ratDirichletEquiv _ (NeZero.ne _)).symm χ)).Even := by
         simpa only [MulEquiv.apply_symm_apply] using heven
       obtain ⟨ψ₀, hψ₀⟩ := (even_ratDirichletEquiv_iff_exists_induced hfin _).mp hχ
       refine ⟨ψ₀.induced hmod, ?_⟩
       rw [toDirichletCharacter_def, induced_trans, hψ₀, MulEquiv.apply_symm_apply]
-    · have hmod : ratModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _) ∣ 𝔪 := by
-        conv_rhs => rw [eq_ratModulus_of_infinitePart_ne_empty h0]
+    · have hmod : ratModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _) ∣ 𝔪 :=
+        (congrArg (· ∣ 𝔪) (eq_ratModulus_of_infinitePart_ne_empty h0)).mp (Modulus.dvd_refl 𝔪)
       refine ⟨((ratDirichletEquiv _ (NeZero.ne _)).symm χ).induced hmod, ?_⟩
       rw [toDirichletCharacter_def, induced_trans, induced_refl, MulEquiv.apply_symm_apply]
 

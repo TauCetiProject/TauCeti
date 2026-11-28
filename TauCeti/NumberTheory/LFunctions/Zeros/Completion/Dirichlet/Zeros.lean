@@ -208,8 +208,8 @@ theorem toNat_divisor_dirichletData_entireCompletion_eq_LFunction {s : ℂ} (hs 
     (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ s).toNat =
       (MeromorphicOn.divisor χ.LFunction Set.univ s).toNat := by
   rcases eq_or_ne χ 1 with rfl | hne
-  · rw [dirichletData_entireCompletion_eq_zetaEntireCompletion_of_eq_one _ hχ rfl,
-      DirichletCharacter.LFunction_eq_riemannZeta_of_eq_one (hχ.eq_one_iff.mp rfl)]
+  · obtain ⟨hξ, hL⟩ := dirichletData_entireCompletion_and_LFunction_eq_of_eq_one _ hχ rfl
+    rw [hξ, hL]
     exact toNat_divisor_zetaEntireCompletion_eq_riemannZeta hs
   · exact congrArg Int.toNat
       (divisor_dirichletData_entireCompletion_eq_LFunction χ hχ hs (.inr hne))

@@ -179,10 +179,10 @@ analytic orders vanish). -/
 theorem analyticOrderAt_zetaEntireCompletion_eq_riemannZeta {s : ℂ} (hs : 0 < s.re) :
     analyticOrderAt zetaEntireCompletion s = analyticOrderAt riemannZeta s := by
   rcases eq_or_ne s 1 with rfl | hs1
-  · have hnot : ¬ AnalyticAt ℂ riemannZeta 1 := fun ha ↦ by
-      have hm : (0 : WithTop ℤ) ≤ -1 :=
-        meromorphicOrderAt_riemannZeta_one ▸ ha.meromorphicOrderAt_nonneg
-      exact absurd hm (by decide)
+  · have hnot : ¬ AnalyticAt ℂ riemannZeta 1 := by
+      rw [← DirichletCharacter.LFunction_modOne_eq (χ := (1 : DirichletCharacter ℂ 1))]
+      exact (DirichletCharacter.analyticAt_LFunction_iff (1 : DirichletCharacter ℂ 1) 1).not.mpr
+        (by simp)
     rw [(differentiable_zetaEntireCompletion.analyticAt 1).analyticOrderAt_eq_zero.mpr (by simp),
       analyticOrderAt_of_not_analyticAt hnot]
   · have hs0 : s ≠ 0 := by rintro rfl; simp at hs

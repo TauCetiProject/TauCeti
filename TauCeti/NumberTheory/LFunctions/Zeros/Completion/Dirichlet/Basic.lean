@@ -75,6 +75,13 @@ theorem dirichletData_entireCompletion_eq_zetaEntireCompletion_of_eq_one (h1 : �
   subst hN
   rw [dirichletData_modOne, riemannZetaData_entireCompletion]
 
+/-- For the principal primitive character (necessarily of conductor `1`), the entire completion
+equals `zetaEntireCompletion` and the ordinary L-function equals `riemannZeta`. -/
+theorem dirichletData_entireCompletion_and_LFunction_eq_of_eq_one (h1 : χ = 1) :
+    (dirichletData χ hχ).entireCompletion = zetaEntireCompletion ∧ χ.LFunction = riemannZeta :=
+  ⟨dirichletData_entireCompletion_eq_zetaEntireCompletion_of_eq_one χ hχ h1,
+    DirichletCharacter.LFunction_eq_riemannZeta_of_eq_one (hχ.eq_one_iff.mp h1) χ⟩
+
 /-- The functional equation of a primitive Dirichlet entire completion, against the inverse
 character. -/
 theorem dirichletData_entireCompletion_one_sub (s : ℂ) :
@@ -138,8 +145,8 @@ theorem analyticOrderAt_dirichletData_entireCompletion_eq_LFunction
     {s : ℂ} (hs : 0 < s.re) :
     analyticOrderAt (dirichletData χ hχ).entireCompletion s = analyticOrderAt χ.LFunction s := by
   rcases eq_or_ne χ 1 with rfl | hne
-  · rw [dirichletData_entireCompletion_eq_zetaEntireCompletion_of_eq_one _ hχ rfl,
-      DirichletCharacter.LFunction_eq_riemannZeta_of_eq_one (hχ.eq_one_iff.mp rfl)]
+  · obtain ⟨hξ, hL⟩ := dirichletData_entireCompletion_and_LFunction_eq_of_eq_one _ hχ rfl
+    rw [hξ, hL]
     exact analyticOrderAt_zetaEntireCompletion_eq_riemannZeta hs
   · rw [analyticOrderAt_dirichletData_entireCompletion χ hχ hne,
       χ.analyticOrderAt_completedLFunction hs (.inr hne)]
@@ -170,8 +177,8 @@ theorem dirichletData_entireCompletion_eq_zero_iff {s : ℂ} (hs : 0 < s.re) :
       (χ.analyticAt_LFunction h1).analyticOrderAt_ne_zero]
   · push Not at h1
     rcases h1 with ⟨rfl, rfl⟩
-    rw [dirichletData_entireCompletion_eq_zetaEntireCompletion_of_eq_one _ hχ rfl,
-      DirichletCharacter.LFunction_eq_riemannZeta_of_eq_one (hχ.eq_one_iff.mp rfl)]
+    obtain ⟨hξ, hL⟩ := dirichletData_entireCompletion_and_LFunction_eq_of_eq_one _ hχ rfl
+    rw [hξ, hL]
     simp [riemannZeta_one_ne_zero]
 
 /-- Every primitive Dirichlet entire completion is nonzero at the origin,
