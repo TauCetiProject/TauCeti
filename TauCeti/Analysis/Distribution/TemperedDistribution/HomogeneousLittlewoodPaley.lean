@@ -18,6 +18,7 @@ import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.SpecificLimits.ZPow
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
+import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
 # The homogeneous Littlewood–Paley decomposition of a tempered distribution
@@ -577,33 +578,19 @@ theorem exists_tendsto_sum_homogeneousLittlewoodPaleyBlock_of_summable {u : 𝓢
         ∑ j ∈ Finset.Ioc ab.1 ab.2, homogeneousLittlewoodPaleyBlock F φ j u)
           (atBot ×ˢ atTop) (𝓝 v) ∧ IsVanishingOn (𝓕 (u - v) : 𝓢'(E, F)) {0}ᶜ := by
   obtain ⟨w, hw⟩ := hsum.of_norm
-  -- The low-frequency partial sums `∑_{a < j ≤ 0} Pⱼ u` converge to `w` as `a → -∞`.
-  have hlow : Tendsto (fun a : ℤ ↦ ∑ j ∈ Finset.Ioc a 0, homogeneousLittlewoodPaleyBlock F φ j u)
-      atBot (𝓝 (w : 𝓢'(E, F))) := by
-    have hw' := ((Lp.toTemperedDistributionCLM F volume ∞).continuous.tendsto w).comp
-      hw.tendsto_sum_nat
-    have htoNat : Tendsto (fun a : ℤ ↦ (-a).toNat) atBot atTop :=
-      tendsto_atTop.2 fun N ↦ (eventually_le_atBot (-(N : ℤ))).mono fun a ha ↦ by omega
-    refine (hw'.comp htoNat).congr' ?_
-    filter_upwards [eventually_le_atBot (0 : ℤ)] with a ha
-    have ha' : a = -(((-a).toNat : ℕ) : ℤ) := by omega
-    rw [ha', Finset.sum_Ioc_neg_zero_eq_sum_range, ← ha']
-    simp only [Function.comp_apply, map_sum, Lp.toTemperedDistributionCLM_apply, hg]
   -- The high-frequency partial sums `∑_{0 < j ≤ b} Pⱼ u` telescope to `S_b u - S_0 u → u - S_0 u`.
   have hhigh : Tendsto (fun b : ℤ ↦ ∑ j ∈ Finset.Ioc 0 b, homogeneousLittlewoodPaleyBlock F φ j u)
       atTop (𝓝 (u - fourierMultiplierCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ (0 : ℤ))⁻¹ • ξ) : ℂ)) u)) := by
     refine ((tendsto_fourierMultiplierCLM_two_zpow_atTop φ u).sub_const _).congr' ?_
     filter_upwards [eventually_ge_atTop (0 : ℤ)] with b hb
     rw [← _root_.sum_apply, sum_homogeneousLittlewoodPaleyBlock_Ioc φ hb, _root_.sub_apply]
-  have hsplit : (fun ab : ℤ × ℤ ↦
-      ∑ j ∈ Finset.Ioc ab.1 ab.2, homogeneousLittlewoodPaleyBlock F φ j u) =ᶠ[atBot ×ˢ atTop]
-      fun ab ↦ (∑ j ∈ Finset.Ioc ab.1 0, homogeneousLittlewoodPaleyBlock F φ j u) +
-        ∑ j ∈ Finset.Ioc 0 ab.2, homogeneousLittlewoodPaleyBlock F φ j u := by
-    filter_upwards [tendsto_fst.eventually (eventually_le_atBot (0 : ℤ)),
-      tendsto_snd.eventually (eventually_ge_atTop (0 : ℤ))] with ab ha hb
-    rw [← Finset.Ioc_union_Ioc_eq_Ioc ha hb,
-      Finset.sum_union (Finset.Ioc_disjoint_Ioc_of_le le_rfl)]
-  have hlim := ((hlow.comp tendsto_fst).add (hhigh.comp tendsto_snd)).congr' hsplit.symm
+  -- The low-frequency blocks `P₋ₖ u` sum to `w`, so the partial sums `∑_{a < j ≤ 0} Pⱼ u`
+  -- converge to `w` as `a → -∞`.
+  have hlow : HasSum (fun k : ℕ ↦ homogeneousLittlewoodPaleyBlock F φ (-k) u) (w : 𝓢'(E, F)) := by
+    simpa only [Function.comp_def, Lp.toTemperedDistributionCLM_apply, hg] using
+      hw.map (Lp.toTemperedDistributionCLM F volume ∞)
+        (Lp.toTemperedDistributionCLM F volume ∞).continuous
+  have hlim := hlow.tendsto_sum_Ioc_atBot.sum_Ioc_prod_atBot_atTop hhigh
   exact ⟨_, hlim, isVanishingOn_fourier_sub_of_tendsto_sum_homogeneousLittlewoodPaleyBlock φ hlim⟩
 
 end Lp

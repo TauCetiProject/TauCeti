@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.LinearAlgebra.Projectivization.Basic
 public import Mathlib.SetTheory.Cardinal.Order
 public import TauCeti.NumberTheory.NumberField.CMField.AdelicLattice
+public import TauCeti.NumberTheory.NumberField.CMField.FinitePlace
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 import Mathlib.LinearAlgebra.Projectivization.Cardinality
 import TauCeti.Algebra.Order.GroupWithZero.WithZeroInt
@@ -71,9 +72,7 @@ A fixed well-ordering of the finite places (`WellOrderingRel`) defines the *plac
 `(1 − ε_w q_w^{−s})(1 − ε_{conj w} q_{conj w}^{−s}) = 1 − q_w^{−2s}` at a split place.
 
 The conjugate place `conj w` is the image of `w` under the isomorphism of rings of integers
-induced by complex conjugation,
-`HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv (complexConj E).toRingEquiv) w`;
-declaration names refer to it as `conjPlace`.
+induced by complex conjugation, `IsDedekindDomain.HeightOneSpectrum.conjPlace`.
 
 ## Main definitions
 
@@ -137,39 +136,22 @@ namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {E : Type*} [Field E] [NumberField E] [IsCMField E]
 
-/-- The conjugate `conj w` of a finite place `w` of a CM field: its image under the isomorphism of
-rings of integers induced by complex conjugation. -/
-local notation "conjPlace" =>
-  HeightOneSpectrum.equivOfRingEquiv
-    (RingOfIntegers.mapRingEquiv (AlgEquiv.toRingEquiv (complexConj E)))
-
 /-! ### Complex conjugation on the places and on the finite adeles -/
 
 section Conjugation
 
-/-- `|conj x|_{conj w} = |x|_w`. -/
-private theorem valuation_conjPlace (w : HeightOneSpectrum (𝓞 E)) (x : E) :
-    (conjPlace w).valuation E (complexConj E x) = w.valuation E x := by
-  have := valuation_ringEquivOfRingEquiv (K := E) (K' := E)
-    (RingOfIntegers.mapRingEquiv (complexConj E).toRingEquiv)
-    (asIdeal_equivOfRingEquiv _ w) x
-  rwa [RingOfIntegers.ringEquivOfRingEquiv_mapRingEquiv, AlgEquiv.coe_toRingEquiv] at this
+/-- The ideal of `conj w` is the image of that of `w` under conjugation of the integers. -/
+private theorem asIdeal_conjPlace (w : HeightOneSpectrum (𝓞 E)) :
+    (conjPlace w).asIdeal =
+      w.asIdeal.map (RingOfIntegers.mapRingEquiv (complexConj E).toRingEquiv) := by
+  rw [← eq_conjPlace_iff.2 <| RingEquiv.valuation_equivOfRingEquiv (complexConj E).toRingEquiv w,
+    asIdeal_equivOfRingEquiv]
 
 /-- `|conj x|_w = |x|_{conj w}`. -/
 private theorem valuation_complexConj (w : HeightOneSpectrum (𝓞 E)) (x : E) :
     w.valuation E ((complexConj E).toRingEquiv x) = (conjPlace w).valuation E x := by
   rw [AlgEquiv.coe_toRingEquiv, ← valuation_conjPlace w (complexConj E x),
     complexConj_apply_apply]
-
-/-- Conjugation of finite places is an involution. -/
-private theorem conjPlace_conjPlace (w : HeightOneSpectrum (𝓞 E)) :
-    conjPlace (conjPlace w) = w := by
-  ext x
-  rw [asIdeal_equivOfRingEquiv, asIdeal_equivOfRingEquiv, ← Ideal.symm_apply_mem_of_equiv_iff,
-    ← Ideal.symm_apply_mem_of_equiv_iff]
-  convert Iff.rfl using 2
-  ext
-  simp [AlgEquiv.eq_symm_apply]
 
 /-- The component of `conj a` at a place `w'` with `|conj x|_{w'} = |x|_w` is the image of `a_w`
 under the isomorphism `E_w ≃ E_{w'}` extending complex conjugation. -/
@@ -485,7 +467,7 @@ private theorem mem_higherDegreePrimes_of_conjPlace_eq (h : conjPlace w = w) {y 
     have e : RingOfIntegers.mapRingEquiv (complexConj E).toRingEquiv x =
         ringOfIntegersComplexConj E x := RingOfIntegers.ext (by simp)
     have := Ideal.mem_map_of_mem (RingOfIntegers.mapRingEquiv (complexConj E).toRingEquiv) hx
-    rwa [← asIdeal_equivOfRingEquiv, h, e] at this
+    rwa [← asIdeal_conjPlace, h, e] at this
   let := Fintype.ofFinite (𝓞 E ⧸ w.asIdeal)
   have hcard : Fintype.card (𝓞 E ⧸ w.asIdeal) = Ideal.absNorm w.asIdeal := by
     rw [Ideal.absNorm_apply, Submodule.cardQuot_apply, Nat.card_eq_fintype_card]
@@ -741,7 +723,7 @@ theorem prod_one_sub_placeSign_mul_rpow [DecidableEq (HeightOneSpectrum (𝓞 E)
     ∏ u ∈ {w, conjPlace w}, (1 - u.placeSign * (Ideal.absNorm u.asIdeal : ℝ) ^ (-s)) =
       1 - (Ideal.absNorm w.asIdeal : ℝ) ^ (-(2 * s)) := by
   have e : -(2 * s) = -s * 2 := by ring
-  rw [Finset.prod_pair (Ne.symm h), placeSign_conjPlace_of_ne h, asIdeal_equivOfRingEquiv,
+  rw [Finset.prod_pair (Ne.symm h), placeSign_conjPlace_of_ne h, asIdeal_conjPlace,
     Ideal.absNorm_map_of_ringEquiv, e,
     Real.rpow_mul (Nat.cast_nonneg _), Real.rpow_two]
   have := congrArg (Int.cast : ℤ → ℝ) (placeSign_mul_self (w := w))

@@ -49,8 +49,10 @@ notation on the structure morphism.
 
 ## Main results
 
-* `TauCeti.range_specialFiberι`: the special fibre of a scheme over a local ring is the preimage
-  of the closed point;
+* `TauCeti.range_specialFiberι` and `TauCeti.specialFiberHomeomorph`: the special fibre of a
+  scheme over a local ring is homeomorphic to the preimage of the closed point, and is nonempty
+  whenever `X` is nonempty and universally closed over `R`
+  (`TauCeti.nonempty_specialFiber`, `TauCeti.connectedSpace_specialFiber_iff_isPreconnected`);
 * `TauCeti.ker_specialFiberι_le_vanishingIdeal_iff`: a closed subset lies in the special fibre
   exactly when its reduced induced closed subscheme is a closed subscheme of the special fibre, as
   for the closure of a point of the special fibre
@@ -86,9 +88,9 @@ notation on the structure morphism.
 
 ## References
 
-* [The Stacks Project, Section 55.9](https://stacks.math.columbia.edu/tag/0C9U), the geometry of
-  a regular model, in particular the description of the special fibre as the divisor of a
-  uniformizer.
+* [The Stacks Project, Section 55.9 (Tag 0C5Y)](https://stacks.math.columbia.edu/tag/0C5Y), the
+  geometry of a regular model, in particular the description of the special fibre as the divisor of
+  a uniformizer.
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 8.3, on models of curves and the
   multiplicities of the components of their special fibres.
 -/
@@ -166,6 +168,70 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.ne_zero_of_base_ne_closedPoint {x : 
     (hx : toBase x ≠ closedPoint R) {π : R} (hπ : maximalIdeal R = Ideal.span {π}) : π ≠ 0 :=
   fun h ↦ toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hx
     (by rw [hπ, h, Ideal.span_singleton_eq_bot])
+
+/-- The underlying topological space of the special fibre is homeomorphic to the preimage of the
+closed point, compatibly with the inclusion into `X` (`coe_specialFiberHomeomorph_apply`). -/
+noncomputable def specialFiberHomeomorph :
+    (specialFiber R toBase).left ≃ₜ ↥(toBase ⁻¹' {closedPoint R}) :=
+  (specialFiberIsoFiberClosedPoint (.of R) toBase).hom.homeomorph.trans
+    (toBase.fiberHomeo (closedPoint R))
+
+/-- Under `specialFiberHomeomorph`, inclusion into `X` is `specialFiberι`. -/
+lemma coe_specialFiberHomeomorph_apply (x : (specialFiber R toBase).left) :
+    ((specialFiberHomeomorph R toBase x : ↥(toBase ⁻¹' {closedPoint R})) : X) =
+      specialFiberι R toBase x := by
+  rw [specialFiberHomeomorph, Homeomorph.trans_apply]
+  refine (toBase.fiberHomeo_apply (closedPoint R) _).trans ?_
+  rw [Scheme.Hom.homeomorph_apply, ← Scheme.Hom.comp_apply,
+    specialFiberIsoFiberClosedPoint_hom_fiberι]
+
+/-- The special fibre is nonempty if and only if some point of `X` lies over the closed point. -/
+theorem nonempty_specialFiber_iff :
+    Nonempty (specialFiber R toBase).left ↔ (toBase ⁻¹' {closedPoint R}).Nonempty :=
+  (specialFiberHomeomorph R toBase).nonempty_congr.trans Set.nonempty_coe_sort
+
+/-- The special fibre is preconnected iff the preimage of the closed point is preconnected. -/
+theorem preconnectedSpace_specialFiber_iff :
+    PreconnectedSpace (specialFiber R toBase).left ↔
+      _root_.IsPreconnected (toBase ⁻¹' {closedPoint R}) :=
+  let e := specialFiberHomeomorph R toBase
+  ⟨fun _ ↦ _root_.isPreconnected_iff_preconnectedSpace.mpr <|
+      e.surjective.denseRange.preconnectedSpace e.continuous,
+    fun h ↦ letI := Subtype.preconnectedSpace h
+      e.symm.surjective.denseRange.preconnectedSpace e.symm.continuous⟩
+
+/-- The special fibre is connected if and only if the preimage of the closed point is connected. -/
+theorem connectedSpace_specialFiber_iff :
+    ConnectedSpace (specialFiber R toBase).left ↔ _root_.IsConnected (toBase ⁻¹' {closedPoint R}) :=
+  (specialFiberHomeomorph R toBase).connectedSpace_iff.trans
+    _root_.isConnected_iff_connectedSpace.symm
+
+section UniversallyClosed
+
+variable [UniversallyClosed toBase] [Nonempty X]
+
+variable {R} in
+/-- The preimage of the closed point under a universally closed morphism from a nonempty scheme to
+the spectrum of a local ring is nonempty. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.preimage_closedPoint_nonempty :
+    (toBase ⁻¹' {closedPoint R}).Nonempty :=
+  let ⟨x⟩ := ‹Nonempty X›
+  (IsLocalRing.specializes_closedPoint (toBase x)).mem_closed
+    toBase.isClosedMap.isClosed_range ⟨x, rfl⟩
+
+/-- The special fibre of a nonempty scheme universally closed over a local ring is nonempty. -/
+instance nonempty_specialFiber : Nonempty (specialFiber R toBase).left :=
+  (nonempty_specialFiber_iff R toBase).mpr toBase.preimage_closedPoint_nonempty
+
+/-- For a nonempty scheme universally closed over a local ring, the special fibre is connected if
+and only if the preimage of the closed point is preconnected. -/
+theorem connectedSpace_specialFiber_iff_isPreconnected :
+    ConnectedSpace (specialFiber R toBase).left ↔
+      _root_.IsPreconnected (toBase ⁻¹' {closedPoint R}) :=
+  (connectedSpace_specialFiber_iff R toBase).trans
+    (and_iff_right toBase.preimage_closedPoint_nonempty)
+
+end UniversallyClosed
 
 end LocalRing
 
@@ -288,10 +354,7 @@ is closed and contains a point of `Spec R`, hence contains the closed point. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.nonempty_setOf_base_eq_closedPoint
     [UniversallyClosed toBase] (hη : toBase (genericPoint X) ≠ closedPoint R) :
     {η : CodimensionOnePoint X | toBase η = closedPoint R}.Nonempty := by
-  obtain ⟨x, hx⟩ : closedPoint R ∈ Set.range toBase :=
-    (specializes_closedPoint _).mem_closed toBase.isClosedMap.isClosed_range
-      (Set.mem_range_self (genericPoint X))
-  have hx' : x ∈ toBase ⁻¹' {closedPoint R} := hx
+  obtain ⟨x, hx'⟩ := toBase.preimage_closedPoint_nonempty
   rw [← toBase.biUnion_closure_eq_preimage_closedPoint hη] at hx'
   obtain ⟨η, hη', -⟩ := Set.mem_iUnion₂.mp hx'
   exact ⟨η, hη'⟩
