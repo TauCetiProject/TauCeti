@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Star.SelfAdjoint
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Data.Fintype.Prod
 import Mathlib.Algebra.Field.Basic
+import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -71,9 +72,9 @@ theorem infinite_of_exists_star_ne {K : Type*} [Field K] [Infinite K] [StarRing 
     simpa only [star_add, selfAdjoint.star_val_eq, star_zero] using congrArg star hm
   have hmem : ∀ m : selfAdjoint K, ((m : K) + z) / (m + star z) ∈ unitary K := by
     intro m
-    rw [mem_iff_star_mul_self, star_div₀, star_add, star_add,
-      selfAdjoint.star_val_eq, star_star, div_mul_div_comm,
-      mul_comm ((m : K) + star z), div_self (mul_ne_zero (hnum m) (hden m))]
+    rw [mem_iff_star_mul_self]
+    simp only [star_div₀, star_add, selfAdjoint.star_val_eq, star_star]
+    field_simp [hnum m, hden m]
   -- The quotients `(m + z) / (m + star z)` are pairwise distinct.
   refine Infinite.of_injective (fun m : selfAdjoint K ↦ ⟨_, hmem m⟩) fun m m' hmm' ↦ ?_
   have h : ((m : K) + z) / (m + star z) = ((m' : K) + z) / (m' + star z) :=
