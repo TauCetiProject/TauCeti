@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Group.TypeTags.Hom
 public import Mathlib.LinearAlgebra.TensorPower.Basic
 public import Mathlib.RingTheory.GradedAlgebra.RingHom
-public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import TauCeti.LinearAlgebra.TensorSquare
 public import TauCeti.RingTheory.MilnorK.Homogeneous
 public import TauCeti.RingTheory.MilnorK.SteinbergPairing
@@ -19,14 +18,12 @@ import TauCeti.Algebra.Module.LinearMap.Defs
 import TauCeti.Algebra.Ring.Hom
 
 /-!
-# Graded maps, kernel span, and degree-two symbol-group identification for Milnor K-theory
+# Graded maps and degree-two symbol-group identification for Milnor K-theory
 
 Building on the homogeneous tensor-power presentation `TauCeti.MilnorK.degreeEquiv` and internal
 `ℕ`-grading `TauCeti.MilnorK.instGradedRingDegree` in `TauCeti.RingTheory.MilnorK.Homogeneous`,
 this file provides:
 
-* the kernel identification `MilnorK.ker_mk_eq_span` as a `TwoSidedIdeal.span` of Steinberg
-  products;
 * the graded universal property `MilnorK.gradedLift`, graded functoriality `MilnorK.gradedMap`
   (with extensionality `MilnorK.gradedRingHom_ext`), and the degree-`n` restriction
   `MilnorK.degreeMap`;
@@ -47,7 +44,6 @@ this file provides:
 
 ## Main results
 
-* `TauCeti.MilnorK.ker_mk_eq_span`: the kernel of `MilnorK.mk` as a `TwoSidedIdeal.span`.
 * `TauCeti.MilnorK.map_symbolGroupRelations_eq`: `TauCeti.SymbolGroup.relations R` corresponds to
   `TauCeti.MilnorK.steinbergRelations R 2` under `TauCeti.tensorProductEquivTensorSquare`.
 * `TauCeti.MilnorK.degreeTwoEquiv_map`: naturality of `degreeTwoEquiv` with respect to ring
@@ -67,43 +63,6 @@ open scoped DirectSum TensorProduct
 namespace TauCeti.MilnorK
 
 universe u v w
-
-section KernelSpan
-
-variable (R : Type u) [CommRing R]
-
-private theorem ringCon_eq_span_ringCon :
-    MilnorK.ringCon R =
-      (TwoSidedIdeal.span
-        {z | ∃ a b : Rˣ, (a : R) + b = 1 ∧
-          z = TensorAlgebra.ι ℤ (Additive.ofMul a) *
-            TensorAlgebra.ι ℤ (Additive.ofMul b)}).ringCon := by
-  refine le_antisymm ?_ ?_
-  · rw [MilnorK.ringCon_eq, RingCon.ringConGen_le]
-    rintro _ _ h
-    rcases (milnorRel_iff R).mp h with ⟨a, b, hab, rfl, rfl⟩
-    rw [TwoSidedIdeal.rel_iff, sub_zero]
-    exact TwoSidedIdeal.subset_span ⟨a, b, hab, rfl⟩
-  · refine (TwoSidedIdeal.ringCon_le_iff
-      (J := TwoSidedIdeal.ofRingCon (MilnorK.ringCon R))).mp (TwoSidedIdeal.span_le.mpr ?_)
-    rintro _ ⟨a, b, hab, rfl⟩
-    rw [SetLike.mem_coe, TwoSidedIdeal.mem_ofRingCon, MilnorK.ringCon_eq]
-    exact RingConGen.Rel.of _ _ ((milnorRel_iff R).mpr ⟨a, b, hab, rfl, rfl⟩)
-
-/-- The kernel of `MilnorK.mk` is the two-sided ideal of `TensorAlgebra ℤ (Additive Rˣ)` generated
-by the Steinberg products `ι ℤ (Additive.ofMul a) * ι ℤ (Additive.ofMul b)` with
-`(a : R) + b = 1`. -/
-theorem ker_mk_eq_span :
-    RingHom.ker (mk (R := R)) =
-      (TwoSidedIdeal.span
-        {z | ∃ a b : Rˣ, (a : R) + b = 1 ∧
-          z = TensorAlgebra.ι ℤ (Additive.ofMul a) *
-            TensorAlgebra.ι ℤ (Additive.ofMul b)}).asIdeal := by
-  ext z
-  rw [RingHom.mem_ker, ← map_zero (mk (R := R)), mk_eq_mk_iff, ← MilnorK.ringCon_eq,
-    ringCon_eq_span_ringCon, TwoSidedIdeal.mem_asIdeal, TwoSidedIdeal.mem_iff]
-
-end KernelSpan
 
 section Ring
 
