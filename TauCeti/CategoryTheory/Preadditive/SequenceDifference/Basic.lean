@@ -203,7 +203,7 @@ def isColimitCokernelCoforkOfIsColimit {c : Cocone X} (hc : IsColimit c) :
       (opCoproductIsoProduct X.obj).symm (Iso.refl _)
       (by simp [sequenceDifference_op]) (by simp [kfOp])
   exact IsColimit.ofIsoColimit (KernelFork.IsLimit.ofιUnop _ _ hforkOp)
-    (Cofork.ext (Iso.refl _) (by dsimp; exact Category.comp_id _))
+    (Cofork.ext (Iso.refl _) (by rw [Iso.refl_hom, Category.comp_id]; rfl))
 
 /-- The sequence–difference map is natural in morphisms of sequences `α : X ⟶ Y`. -/
 @[reassoc]

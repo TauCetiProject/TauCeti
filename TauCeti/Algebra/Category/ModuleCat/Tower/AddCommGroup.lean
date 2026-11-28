@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.Grp.ZModuleEquivalence
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Exact
 public import TauCeti.Algebra.Category.ModuleCat.Tower.MittagLeffler
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Padic
@@ -18,7 +19,10 @@ of a space. This file sets up that presentation, `TauCeti.CompactCoefficients.To
 identifies it with the tower of `ℤ`-modules `Tower.toModuleFunctor : ℕᵒᵖ ⥤ ModuleCat ℤ`.
 The shift `δ(a)ₙ = aₙ - φₙ(aₙ₊₁)` on `∏ₙ Aₙ` has kernel `lim A` and cokernel `lim¹ A`, and the
 comparisons `Tower.limComparison` and `Tower.limOneComparison` identify these with the limit and
-first derived limit of `TauCeti.ModuleTower`, naturally in morphisms of towers.
+first derived limit of `TauCeti.ModuleTower`, naturally in morphisms of towers. Functors
+`G : ℕᵒᵖ ⥤ AddCommGrpCat` are viewed as towers via `Tower.ofFunctor G`, whose `lim` and `lim¹`
+identify with those of `G ⋙ AddCommGrpCat.toIntModule` (`Tower.ofFunctorLimEquiv`,
+`Tower.ofFunctorLimOneEquiv`).
 
 All further results are transported from `TauCeti.ModuleTower` along these comparisons: vanishing
 of `lim¹` for surjective transitions and for Mittag-Leffler towers, and the six-term exact sequence
@@ -39,6 +43,11 @@ multiplication by `p` has `lim = 0` and `lim¹ ≃ ℤ_[p] ⧸ ℤ`, so it is no
 * `TauCeti.CompactCoefficients.Tower.limComparison`,
   `TauCeti.CompactCoefficients.Tower.limOneComparison`: the identifications of `lim` and `lim¹`
   with those of the tower of `ℤ`-modules.
+* `TauCeti.CompactCoefficients.Tower.ofFunctor`,
+  `TauCeti.CompactCoefficients.Tower.Hom.ofNatTrans`,
+  `TauCeti.CompactCoefficients.Tower.ofFunctorLimEquiv`,
+  `TauCeti.CompactCoefficients.Tower.ofFunctorLimOneEquiv`: towers and morphisms attached to
+  functors `ℕᵒᵖ ⥤ AddCommGrpCat` and their comparisons with `AddCommGrpCat.toIntModule`.
 * `TauCeti.CompactCoefficients.Tower.Hom`: morphisms of towers, with the induced maps
   `Hom.onProduct`, `Hom.limMap` and `Hom.limOneMap`.
 * `TauCeti.CompactCoefficients.Tower.subsingleton_limOne_of_isMittagLeffler`: Mittag-Leffler towers
@@ -536,6 +545,179 @@ theorem Hom.limOneMap_zero (A B : Tower.{u}) : (Hom.zero A B).limOneMap = 0 := b
   simp
 
 end Hom
+
+section Functor
+
+/-- The tower of abelian groups attached to a functor `G : ℕᵒᵖ ⥤ AddCommGrpCat`. -/
+@[expose]
+def ofFunctor (G : ℕᵒᵖ ⥤ AddCommGrpCat.{u}) : Tower.{u} where
+  obj n := G.obj (op n)
+  map n := (G.map (homOfLE (n.le_add_right 1)).op).hom
+
+theorem ofFunctor_obj (G : ℕᵒᵖ ⥤ AddCommGrpCat.{u}) (n : ℕ) :
+    (ofFunctor G).obj n = G.obj (op n) :=
+  rfl
+
+@[simp]
+theorem ofFunctor_map (G : ℕᵒᵖ ⥤ AddCommGrpCat.{u}) (n : ℕ) :
+    (ofFunctor G).map n = (G.map (homOfLE (n.le_add_right 1)).op).hom :=
+  rfl
+
+/-- A natural transformation between `ℕᵒᵖ ⥤ AddCommGrpCat` functors induces a morphism of towers
+of abelian groups. -/
+@[expose]
+def Hom.ofNatTrans {G H : ℕᵒᵖ ⥤ AddCommGrpCat.{u}} (η : G ⟶ H) :
+    Hom (ofFunctor G) (ofFunctor H) where
+  app n := (η.app (op n)).hom
+  comm n x := ConcreteCategory.congr_hom (η.naturality (homOfLE (n.le_add_right 1)).op) x
+
+@[simp]
+theorem Hom.ofNatTrans_app {G H : ℕᵒᵖ ⥤ AddCommGrpCat.{u}} (η : G ⟶ H) (n : ℕ) :
+    (Hom.ofNatTrans η).app n = (η.app (op n)).hom :=
+  rfl
+
+@[simp]
+theorem Hom.ofNatTrans_id (G : ℕᵒᵖ ⥤ AddCommGrpCat.{u}) :
+    Hom.ofNatTrans (𝟙 G) = Hom.id (ofFunctor G) := by
+  ext n x
+  rfl
+
+@[simp]
+theorem Hom.ofNatTrans_comp {G H K : ℕᵒᵖ ⥤ AddCommGrpCat.{u}} (η : G ⟶ H) (θ : H ⟶ K) :
+    Hom.ofNatTrans (η ≫ θ) = (Hom.ofNatTrans θ).comp (Hom.ofNatTrans η) := by
+  ext n x
+  rfl
+
+@[simp]
+theorem Hom.ofNatTrans_zero (G H : ℕᵒᵖ ⥤ AddCommGrpCat.{u}) :
+    Hom.ofNatTrans (0 : G ⟶ H) = Hom.zero (ofFunctor G) (ofFunctor H) := by
+  ext n x
+  rfl
+
+/-- The tower of `ℤ`-modules attached to `ofFunctor G` is isomorphic to
+`G ⋙ AddCommGrpCat.toIntModule` by the identity at each level. -/
+@[expose]
+def toModuleFunctorOfFunctorIso (G : ℕᵒᵖ ⥤ AddCommGrpCat.{u}) :
+    (ofFunctor G).toModuleFunctor ≅ G ⋙ AddCommGrpCat.toIntModule where
+  hom := NatTrans.ofOpSequence (fun _ ↦ 𝟙 _) fun n ↦ by
+    simp only [toModuleFunctor, Functor.ofOpSequence_map_homOfLE_succ, Functor.comp_map]
+    rfl
+  inv := NatTrans.ofOpSequence (fun _ ↦ 𝟙 _) fun n ↦ by
+    simp only [toModuleFunctor, Functor.ofOpSequence_map_homOfLE_succ, Functor.comp_map]
+    rfl
+
+@[simp]
+theorem toModuleFunctorOfFunctorIso_hom_app (G : ℕᵒᵖ ⥤ AddCommGrpCat.{u}) (n : ℕ) :
+    (toModuleFunctorOfFunctorIso G).hom.app (op n) = 𝟙 _ :=
+  rfl
+
+@[simp]
+theorem toModuleFunctorOfFunctorIso_inv_app (G : ℕᵒᵖ ⥤ AddCommGrpCat.{u}) (n : ℕ) :
+    (toModuleFunctorOfFunctorIso G).inv.app (op n) = 𝟙 _ :=
+  rfl
+
+/-- The limit of `ofFunctor G` identifies additively with
+`ModuleTower.lim (G ⋙ AddCommGrpCat.toIntModule)`. -/
+def ofFunctorLimEquiv (G : ℕᵒᵖ ⥤ AddCommGrpCat.{u}) :
+    (ofFunctor G).lim ≃+ ModuleTower.lim (G ⋙ AddCommGrpCat.toIntModule) :=
+  (ofFunctor G).limComparison.trans
+    (ModuleTower.limEquivOfIso (toModuleFunctorOfFunctorIso G)).toAddEquiv
+
+@[simp]
+theorem coe_ofFunctorLimEquiv_apply (G : ℕᵒᵖ ⥤ AddCommGrpCat.{u}) (a : (ofFunctor G).lim)
+    (n : ℕ) :
+    (ofFunctorLimEquiv G a : ModuleTower.Product (G ⋙ AddCommGrpCat.toIntModule)) n =
+      (a : ∀ k, (ofFunctor G).obj k) n := by
+  rw [ofFunctorLimEquiv, AddEquiv.trans_apply]
+  change ((ModuleTower.limEquivOfIso (toModuleFunctorOfFunctorIso G))
+    ((ofFunctor G).limComparison a) : ModuleTower.Product (G ⋙ AddCommGrpCat.toIntModule)) n = _
+  rw [ModuleTower.limEquivOfIso_apply, ModuleTower.coe_limMap_apply,
+    ModuleTower.productMap_apply, toModuleFunctorOfFunctorIso_hom_app]
+  rfl
+
+@[simp]
+theorem coe_ofFunctorLimEquiv_symm_apply (G : ℕᵒᵖ ⥤ AddCommGrpCat.{u})
+    (a : ModuleTower.lim (G ⋙ AddCommGrpCat.toIntModule)) (n : ℕ) :
+    ((ofFunctorLimEquiv G).symm a : ∀ k, (ofFunctor G).obj k) n =
+      (a : ModuleTower.Product (G ⋙ AddCommGrpCat.toIntModule)) n := by
+  rw [ofFunctorLimEquiv, AddEquiv.symm_trans_apply]
+  change ((ofFunctor G).limComparison.symm
+    ((ModuleTower.limEquivOfIso (toModuleFunctorOfFunctorIso G)).symm a) :
+    ∀ k, (ofFunctor G).obj k) n = _
+  rw [coe_limComparison_symm_apply, ModuleTower.limEquivOfIso_symm_apply]
+  have hcoord := congrFun (ModuleTower.coe_limMap_apply (toModuleFunctorOfFunctorIso G).inv a) n
+  rw [ModuleTower.productMap_apply, toModuleFunctorOfFunctorIso_inv_app] at hcoord
+  exact hcoord
+
+/-- Naturality of `ofFunctorLimEquiv` with respect to a natural transformation `η : G ⟶ H`. -/
+theorem ofFunctorLimEquiv_limMap {G H : ℕᵒᵖ ⥤ AddCommGrpCat.{u}} (η : G ⟶ H)
+    (a : (ofFunctor G).lim) :
+    ofFunctorLimEquiv H ((Hom.ofNatTrans η).limMap a) =
+      ModuleTower.limMap (Functor.whiskerRight η AddCommGrpCat.toIntModule)
+        (ofFunctorLimEquiv G a) := by
+  refine Subtype.ext <| funext fun n ↦ ?_
+  rw [coe_ofFunctorLimEquiv_apply, ModuleTower.coe_limMap_apply, ModuleTower.productMap_apply,
+    coe_ofFunctorLimEquiv_apply, Hom.coe_limMap_apply, Hom.onProduct_apply, Hom.ofNatTrans_app]
+  rfl
+
+/-- The first derived limit of `ofFunctor G` identifies additively with
+`ModuleTower.limOne (G ⋙ AddCommGrpCat.toIntModule)`. -/
+def ofFunctorLimOneEquiv (G : ℕᵒᵖ ⥤ AddCommGrpCat.{u}) :
+    (ofFunctor G).limOne ≃+ ModuleTower.limOne (G ⋙ AddCommGrpCat.toIntModule) :=
+  (ofFunctor G).limOneComparison.trans
+    (ModuleTower.limOneEquivOfIso (toModuleFunctorOfFunctorIso G)).toAddEquiv
+
+@[simp]
+theorem ofFunctorLimOneEquiv_mk (G : ℕᵒᵖ ⥤ AddCommGrpCat.{u}) (a : ∀ n, (ofFunctor G).obj n) :
+    ofFunctorLimOneEquiv G (QuotientAddGroup.mk a) =
+      (Submodule.Quotient.mk (fun n ↦ (a n : (G ⋙ AddCommGrpCat.toIntModule).obj (op n))) :
+        ModuleTower.limOne (G ⋙ AddCommGrpCat.toIntModule)) := by
+  rw [ofFunctorLimOneEquiv, AddEquiv.trans_apply, limOneComparison_mk]
+  change (ModuleTower.limOneEquivOfIso (toModuleFunctorOfFunctorIso G))
+    (Submodule.Quotient.mk ((ofFunctor G).productEquiv a)) = _
+  rw [ModuleTower.limOneEquivOfIso_apply, ModuleTower.limOneMap_mk]
+  congr 1
+  funext n
+  rw [ModuleTower.productMap_apply, toModuleFunctorOfFunctorIso_hom_app]
+  rfl
+
+@[simp]
+theorem ofFunctorLimOneEquiv_symm_mk (G : ℕᵒᵖ ⥤ AddCommGrpCat.{u})
+    (a : ModuleTower.Product (G ⋙ AddCommGrpCat.toIntModule)) :
+    (ofFunctorLimOneEquiv G).symm (Submodule.Quotient.mk a) =
+      QuotientAddGroup.mk (fun n ↦ (a n : (ofFunctor G).obj n)) := by
+  rw [ofFunctorLimOneEquiv, AddEquiv.symm_trans_apply]
+  change (ofFunctor G).limOneComparison.symm
+    ((ModuleTower.limOneEquivOfIso (toModuleFunctorOfFunctorIso G)).symm
+      (Submodule.Quotient.mk a)) = _
+  rw [ModuleTower.limOneEquivOfIso_symm_apply, ModuleTower.limOneMap_mk, limOneComparison_symm_mk]
+  congr 1
+  funext n
+  have hcoord : ((ofFunctor G).productEquiv.symm
+      (ModuleTower.productMap (toModuleFunctorOfFunctorIso G).inv a)) n =
+      (a n : (ofFunctor G).obj n) := by
+    change (ModuleTower.productMap (toModuleFunctorOfFunctorIso G).inv a) n = _
+    rw [ModuleTower.productMap_apply, toModuleFunctorOfFunctorIso_inv_app]
+    rfl
+  exact hcoord
+
+/-- Naturality of `ofFunctorLimOneEquiv` with respect to a natural transformation `η : G ⟶ H`. -/
+theorem ofFunctorLimOneEquiv_limOneMap {G H : ℕᵒᵖ ⥤ AddCommGrpCat.{u}} (η : G ⟶ H)
+    (x : (ofFunctor G).limOne) :
+    ofFunctorLimOneEquiv H ((Hom.ofNatTrans η).limOneMap x) =
+      ModuleTower.limOneMap (Functor.whiskerRight η AddCommGrpCat.toIntModule)
+        (ofFunctorLimOneEquiv G x) := by
+  induction x using QuotientAddGroup.induction_on with | _ a =>
+  rw [Hom.limOneMap_mk, ofFunctorLimOneEquiv_mk, ofFunctorLimOneEquiv_mk]
+  refine Eq.trans ?_ (ModuleTower.limOneMap_mk (Functor.whiskerRight η AddCommGrpCat.toIntModule)
+    (fun n ↦ (a n : (G ⋙ AddCommGrpCat.toIntModule).obj (op n)))).symm
+  congr 1
+  funext n
+  have hp := ModuleTower.productMap_apply (Functor.whiskerRight η AddCommGrpCat.toIntModule)
+    (fun k ↦ (a k : (G ⋙ AddCommGrpCat.toIntModule).obj (op k))) n
+  exact hp.symm
+
+end Functor
 
 section Exact
 

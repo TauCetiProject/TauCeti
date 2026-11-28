@@ -16,6 +16,7 @@ import Mathlib.CategoryTheory.Adjunction.Additive
 import Mathlib.CategoryTheory.Adjunction.Limits
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 import Mathlib.CategoryTheory.ObjectProperty.FunctorCategory.PreservesLimits
+import TauCeti.CategoryTheory.Preadditive.Yoneda
 
 /-!
 # Objects compact for coproducts in a preadditive category
@@ -156,11 +157,12 @@ private theorem preservesColimit_discrete_preadditiveCoyoneda_iff_sameUniv (G : 
   let φ : AddCommGrpCat.of (⨁ j, ↑(F.obj (f j))) ⟶ F.obj (∐ f) :=
     (AddCommGrpCat.coprodIsoDirectSum (fun j ↦ F.obj (f j))).inv ≫ sigmaComparison F f
   have hφ : φ.hom = coprodComparisonAddHom G f := by
-    refine DirectSum.addHom_ext fun j g ↦ ?_
+    refine DirectSum.addHom_ext fun j (g : G ⟶ f j) ↦ ?_
     have hcomp := congrArg (fun ψ : F.obj (f j) ⟶ F.obj (∐ f) ↦ ψ g)
       (AddCommGrpCat.of_coprodIsoDirectSum_inv_assoc (fun i ↦ F.obj (f i)) j
         (sigmaComparison F f))
     rw [ι_comp_sigmaComparison] at hcomp
+    simp only [F, preadditiveCoyoneda_obj_map_apply] at hcomp
     exact hcomp.trans (coprodComparisonAddHom_of G f j g).symm
   have hbij : Function.Bijective φ ↔ Function.Bijective (coprodComparisonAddHom G f) :=
     iff_of_eq (congrArg Function.Bijective (funext (DFunLike.congr_fun hφ)))

@@ -244,6 +244,7 @@ theorem telescopeDiff_injective : Function.Injective (telescopeDiff F) := by
 /-- The telescope sequence `⨁ₙ Fₙ → ⨁ₙ Fₙ → c.pt` of a cocone `c` over a sequence of modules
 `F`: the first map is `telescopeDiff F`, the second is induced by the legs of `c`. It is short
 exact when `c` is a colimit cocone (`ModuleCat.shortExact_telescopeShortComplex`). -/
+@[expose]
 noncomputable def telescopeShortComplex (c : Cocone F) :
     ShortComplex (ModuleCat.{v} R) :=
   ShortComplex.mk (ofHom (telescopeDiff F))
@@ -264,15 +265,15 @@ theorem telescopeShortComplex_X₂ (c : Cocone F) :
 @[simp]
 theorem telescopeShortComplex_X₃ (c : Cocone F) : (telescopeShortComplex F c).X₃ = c.pt := (rfl)
 
+@[simp]
 theorem telescopeShortComplex_f (c : Cocone F) :
-    (telescopeShortComplex F c).f = eqToHom (telescopeShortComplex_X₁ F c) ≫
-      ofHom (telescopeDiff F) ≫ eqToHom (telescopeShortComplex_X₂ F c).symm := (rfl)
+    (telescopeShortComplex F c).f = ofHom (telescopeDiff F) := (rfl)
 
+@[simp]
 theorem telescopeShortComplex_g (c : Cocone F) :
-    (telescopeShortComplex F c).g = eqToHom (telescopeShortComplex_X₂ F c) ≫
+    (telescopeShortComplex F c).g =
       ConcreteCategory.ofHom (C := ModuleCat R) (X := of R (⨁ n, F.obj n)) (Y := c.pt)
-        (toModule R ℕ c.pt fun n ↦ (c.ι.app n).hom) ≫
-      eqToHom (telescopeShortComplex_X₃ F c).symm := (rfl)
+        (toModule R ℕ c.pt fun n ↦ (c.ι.app n).hom) := (rfl)
 
 /-- The telescope sequence of a colimit cocone over a sequence of modules is short exact. -/
 theorem shortExact_telescopeShortComplex {c : Cocone F} (hc : IsColimit c) :
@@ -281,15 +282,21 @@ theorem shortExact_telescopeShortComplex {c : Cocone F} (hc : IsColimit c) :
   let S := telescopeShortComplex F c
   let e := coprodIsoDirectSum F.obj
   have hg : e.hom ≫ S.g = Sigma.desc (fun n : ℕ ↦ c.ι.app n) ≫ (Iso.refl c.pt).hom := by
-    dsimp only [S, telescopeShortComplex]
-    rw [Iso.refl_hom, Category.comp_id]
-    refine Limits.Sigma.hom_ext _ _ fun n ↦ ?_
-    rw [← Category.assoc, ι_coprodIsoDirectSum_hom, Sigma.ι_comp_desc]
-    ext x
-    simp
+    have hg₀ : e.hom ≫ ConcreteCategory.ofHom (C := ModuleCat R) (X := of R (⨁ n, F.obj n))
+        (Y := c.pt) (toModule R ℕ c.pt fun n ↦ (c.ι.app n).hom) =
+        Sigma.desc (fun n : ℕ ↦ c.ι.app n) ≫ (Iso.refl c.pt).hom := by
+      rw [Iso.refl_hom, Category.comp_id]
+      refine Limits.Sigma.hom_ext _ _ fun n ↦ ?_
+      rw [← Category.assoc, ι_coprodIsoDirectSum_hom, Sigma.ι_comp_desc]
+      ext x
+      simp
+    exact (congrArg (fun k : of R (⨁ n, F.obj n) ⟶ c.pt ↦ e.hom ≫ k)
+      (telescopeShortComplex_g F c)).trans hg₀
   have hf : e.hom ≫ S.f = F.sequenceDifference ≫ e.hom := by
-    dsimp only [S, telescopeShortComplex]
-    rw [ofHom_telescopeDiff, Iso.hom_inv_id_assoc]
+    have hf₀ : e.hom ≫ ofHom (telescopeDiff F) = F.sequenceDifference ≫ e.hom := by
+      rw [ofHom_telescopeDiff, Iso.hom_inv_id_assoc]
+    exact (congrArg (fun k : of R (⨁ n, F.obj n) ⟶ of R (⨁ n, F.obj n) ↦ e.hom ≫ k)
+      (telescopeShortComplex_f F c)).trans hf₀
   have hcok : IsColimit (CokernelCofork.ofπ S.g S.zero) :=
     IsCokernel.ofIso _ (F.isColimitCokernelCoforkOfIsColimit hc) _ e e (Iso.refl c.pt) hf hg
   have : Mono S.f := (mono_iff_injective _).2 (telescopeDiff_injective F)
