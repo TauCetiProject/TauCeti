@@ -179,18 +179,14 @@ theorem isGeneratedInDegree_zero_gradedVertexProjective (i : Q) :
   rw [InternalGrading.isGeneratedInDegree_iff]
   intro x
   let e' : gradedVertexProjective k Q i :=
-    (gradedVertexProjectiveEquiv k Q i).symm
-      ⟨vertexIdempotent k i, Ideal.subset_span rfl⟩
+    (gradedVertexProjectiveEquiv k Q i).symm (spanSingletonGenerator (vertexIdempotent k i))
   have he' : e' ∈ (gradedVertexProjective k Q i).grading.piece 0 := by
     rw [mem_gradedVertexProjective_piece_iff, ← coe_gradedVertexProjectiveEquiv_apply]
-    simpa [e'] using vertexIdempotent_mem_integerGrade_zero k Q i
-  have hx : gradedVertexProjectiveSubtype k Q i x • e' = x := by
-    apply gradedVertexProjectiveSubtype_injective k Q i
-    rw [map_smul, smul_eq_mul, ← coe_gradedVertexProjectiveEquiv_apply,
-      ← coe_gradedVertexProjectiveEquiv_apply]
-    simp only [e', LinearEquiv.apply_symm_apply]
-    exact (mem_span_singleton_iff_mul_eq_self (vertexIdempotent_mul_self i)).mp
-      (gradedVertexProjectiveEquiv k Q i x).property
+    simpa only [e', LinearEquiv.apply_symm_apply, coe_spanSingletonGenerator] using
+      vertexIdempotent_mem_integerGrade_zero k Q i
+  have hx : (gradedVertexProjectiveEquiv k Q i x : pathAlgebra k Q) • e' = x := by
+    simpa only [e', ← map_smul, smul_spanSingletonGenerator (vertexIdempotent_mul_self i)] using
+      (gradedVertexProjectiveEquiv k Q i).symm_apply_apply x
   rw [← hx]
   exact Submodule.smul_mem _ _ (Submodule.subset_span he')
 

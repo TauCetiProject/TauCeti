@@ -392,6 +392,10 @@ private theorem moduleProjective_gradedVertexSimpleZeroTerm (i : Q) :
     (Module.Projective (pathAlgebra k Q)
       (DirectSum (Fin 0) fun _ => gradedVertexProjective k Q i))
 
+private theorem isGeneratedInDegree_gradedVertexSimpleZeroTerm (i : Q) (d : ℤ) :
+    (gradedVertexSimpleZeroTerm k Q i).grading.IsGeneratedInDegree (pathAlgebra k Q) d :=
+  InternalGrading.isGeneratedInDegree_directSum _ _ Fin.elim0
+
 /-- **The length-one graded projective resolution of a graded vertex simple `Sᵢ`**:
 `⋯ ⟶ 0 ⟶ ⨁_{a : i ⟶ j} (kQ eⱼ){1} ⟶ kQ eᵢ ⟶ Sᵢ ⟶ 0`. -/
 def gradedVertexSimpleProjectiveResolution (i : Q) [Finite ((j : Q) × (i ⟶ j))] :
@@ -502,12 +506,7 @@ theorem isLinear_gradedVertexSimpleProjectiveResolution (i : Q)
     exact isGeneratedInDegree_zero_gradedVertexProjective k Q i
   · rw [Nat.cast_one]
     exact isGeneratedInDegree_one_gradedArrowSum k Q i
-  · rw [InternalGrading.isGeneratedInDegree_iff]
-    intro x
-    have : Subsingleton ((gradedVertexSimpleProjectiveResolution k Q i).X (m + 2)) :=
-      subsingleton_gradedVertexSimpleProjectiveResolution_X_of_two_le k Q i (by omega)
-    rw [Subsingleton.elim x 0]
-    exact Submodule.zero_mem _
+  · exact isGeneratedInDegree_gradedVertexSimpleZeroTerm k Q i _
 
 /-- **The first-arrow resolution of a graded vertex simple is minimal.** -/
 theorem isMinimal_gradedVertexSimpleProjectiveResolution (i : Q)

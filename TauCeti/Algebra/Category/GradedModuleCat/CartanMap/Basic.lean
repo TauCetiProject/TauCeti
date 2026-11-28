@@ -605,11 +605,9 @@ private theorem laurentK0_of_directSumObj_aux
         ⟨M j, hM j⟩ := by
   let _ := HasBiproduct.of_hasCoproduct M
   let _ : P.IsClosedUnderIsomorphisms := ObjectProperty.isClosedUnderIsomorphisms_of_containsZero P
-  have e : GradedModuleCat.directSumObj M ≅ ⨁ M :=
-    (GradedModuleCat.coproductCofanIsColimit M).coconePointUniqueUpToIso (biproduct.isColimit M)
-  have hsum : P (⨁ M) := P.prop_of_iso e (hPsum M hM)
+  have hsum : P (⨁ M) := P.prop_of_iso (GradedModuleCat.directSumObjIsoBiproduct M) (hPsum M hM)
   rw [LaurentK0.of_congr.{max uJ v} _
-      (ObjectProperty.isoMk P e :
+      (ObjectProperty.isoMk P (GradedModuleCat.directSumObjIsoBiproduct M) :
         (⟨GradedModuleCat.directSumObj M, hPsum M hM⟩ : P.FullSubcategory) ≅ ⟨⨁ M, hsum⟩)]
   exact LaurentK0.of_biproduct_fullSubcategory.{max uJ v} hPext hPshift M hM hsum
 
