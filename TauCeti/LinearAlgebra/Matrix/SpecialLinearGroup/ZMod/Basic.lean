@@ -11,14 +11,10 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 /-!
 # Prime-power decomposition and reduction of `SL(n, ℤ/Nℤ)`
 
-This file develops the prime-power decomposition and reduction maps of `SL(n, ℤ/Nℤ)` (exact
-cardinalities live in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Card`):
-
-1. **Prime-power decomposition and reduction**:
-   `SL(n, ℤ/Nℤ) ≃* ∀ p : N.primeFactors, SL(n, ℤ/p^{v_p(N)}ℤ)` for `N ≠ 0`, and surjectivity of
-   `SL₂(ℤ/Nℤ) →* SL₂(ℤ/Mℤ)` whenever `M ∣ N`.
-2. **The sign `-I` modulo `N`**: `-I = I` in `SL₂(ℤ/Nℤ)` if and only if `N ∣ 2`
-   (`neg_one_eq_one_zmod_iff`).
+This file develops the prime-power decomposition
+`SL(n, ℤ/Nℤ) ≃* ∀ p : N.primeFactors, SL(n, ℤ/p^{v_p(N)}ℤ)` for `N ≠ 0` and surjectivity of
+the reduction map `SL₂(ℤ/Nℤ) →* SL₂(ℤ/Mℤ)` whenever `M ∣ N` (exact cardinalities live in
+`TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Card`).
 
 The `p`-group/solvability structure of congruence kernels is in
 `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.CongruenceKernel`, signed-quotient orders
@@ -73,12 +69,5 @@ theorem map_zmod_castHom_surjective {M N : ℕ} (h : M ∣ N) :
   rw [← MonoidHom.comp_apply, map_comp_map,
     RingHom.ext_int ((ZMod.castHom h (ZMod M)).comp (Int.castRingHom (ZMod N)))
       (Int.castRingHom (ZMod M))]
-
-/-- `-1 = 1` in `SL₂(ℤ/Nℤ)` if and only if `N ∣ 2`. -/
-theorem neg_one_eq_one_zmod_iff {N : ℕ} : (-1 : SL(2, ZMod N)) = 1 ↔ N ∣ 2 := by
-  rw [Nat.dvd_prime Nat.prime_two, ← ZMod.neg_one_eq_one_iff]
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · simpa using congrArg (fun M : SL(2, ZMod N) ↦ (M : Matrix (Fin 2) (Fin 2) (ZMod N)) 0 0) h
-  · ext i j; fin_cases i <;> fin_cases j <;> simp [h]
 
 end Matrix.SpecialLinearGroup

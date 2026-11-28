@@ -35,13 +35,13 @@ open _root_.Matrix.SpecialLinearGroup
 /-- When `N ∣ 2` (`N = 1` or `N = 2`), `{±I} ≤ SL₂(ℤ/Nℤ)` is trivial of order `1`. -/
 theorem card_zpowers_neg_one_zmod_eq_one_of_dvd_two {N : ℕ} (h : N ∣ 2) :
     Nat.card (Subgroup.zpowers (-1 : SL(2, ZMod N))) = 1 := by
-  rw [Nat.card_zpowers, neg_one_eq_one_zmod_iff.mpr h, orderOf_one]
+  rw [Nat.card_zpowers, neg_one_eq_one_iff_dvd_two.mpr h, orderOf_one]
 
 /-- When `¬ (N ∣ 2)`, `{±I} ≤ SL₂(ℤ/Nℤ)` has order `2`. -/
 theorem card_zpowers_neg_one_zmod_eq_two {N : ℕ} (h : ¬ N ∣ 2) :
     Nat.card (Subgroup.zpowers (-1 : SL(2, ZMod N))) = 2 := by
   rw [Nat.card_zpowers]
-  exact orderOf_eq_prime neg_one_sq fun heq ↦ h (neg_one_eq_one_zmod_iff.mp heq)
+  exact orderOf_eq_prime neg_one_sq fun heq ↦ h (neg_one_eq_one_iff_dvd_two.mp heq)
 
 end TauCeti.Matrix.SpecialLinearGroup
 
