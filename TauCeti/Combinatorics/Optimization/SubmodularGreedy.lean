@@ -117,18 +117,26 @@ end Field
 /-- The bound of Nemhauser, Wolsey and Fisher with an exponential factor. Let `f` be a monotone
 submodular real set function and let `s 0, ..., s l` be built by adding at each step an element that
 gives the greatest value of `f`. Then for every finite set `T` with at most `k` elements,
-`f T - f (s l) ≤ Real.exp (-l / k) * (f T - f ∅)`. -/
+`f T - f (s l) ≤ Real.exp (-l / k) * (f T - f (s 0))`. -/
 theorem sub_le_exp_mul_sub_of_greedy {f : Finset α → ℝ} (hf : IsSubmodular f)
     (hmono : Monotone f) (s : ℕ → Finset α) (l : ℕ)
     (hs : ∀ i < l, ∃ x, s (i + 1) = insert x (s i) ∧
       ∀ y, f (insert y (s i)) ≤ f (insert x (s i)))
     {k : ℕ} {T : Finset α} (hT : T.card ≤ k) :
-    f T - f (s l) ≤ Real.exp (-l / k) * (f T - f ∅) := by
-  have hpow : (1 - 1 / (k : ℝ)) ^ l ≤ Real.exp (-l / k) := by
-    rw [show -(l : ℝ) / k = l * -(1 / k) by ring, Real.exp_natCast_mul]
-    exact pow_le_pow_left₀ (Nat.one_sub_one_div_cast_nonneg k) (Real.one_sub_le_exp_neg _) l
-  exact (sub_le_pow_mul_sub_empty_of_greedy hf hmono s l hs hT).trans <|
-    mul_le_mul_of_nonneg_right hpow (sub_nonneg.mpr (hmono (Finset.empty_subset _)))
+    f T - f (s l) ≤ Real.exp (-l / k) * (f T - f (s 0)) := by
+  rcases le_total 0 (f T - f (s 0)) with h | h
+  · have hpow : (1 - 1 / (k : ℝ)) ^ l ≤ Real.exp (-l / k) := by
+      rw [show -(l : ℝ) / k = l * -(1 / k) by ring, Real.exp_natCast_mul]
+      exact pow_le_pow_left₀ (Nat.one_sub_one_div_cast_nonneg k) (Real.one_sub_le_exp_neg _) l
+    exact (hf.sub_le_pow_mul_sub_of_greedy hmono s l hs hT).trans <|
+      mul_le_mul_of_nonneg_right hpow h
+  · have hl : f (s 0) ≤ f (s l) := by
+      have h0 := hf.sub_le_pow_mul_sub_of_greedy hmono s l hs (k := 0) (T := ∅) le_rfl
+      simp only [Nat.cast_zero, div_zero, sub_zero, one_pow, one_mul] at h0
+      linarith
+    have hexp : Real.exp (-l / k) ≤ 1 :=
+      Real.exp_le_one_iff.mpr (div_nonpos_of_nonpos_of_nonneg (by simp) k.cast_nonneg)
+    nlinarith [mul_nonpos_of_nonneg_of_nonpos (sub_nonneg.mpr hexp) h]
 
 /-- The approximation ratio `1 - 1 / e` of greedy maximization. Let `f` be a monotone submodular
 real set function with `0 ≤ f ∅`, and let `s 0, ..., s k` be built by adding at each step an element
