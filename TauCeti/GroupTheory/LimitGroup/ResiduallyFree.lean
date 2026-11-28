@@ -371,8 +371,9 @@ theorem isFullyResiduallyFree_multiplicative_int : IsFullyResiduallyFree (Multip
 rank `n`, is fully residually free. -/
 theorem isFullyResiduallyFree_multiplicative_pi_int (ι : Type*) :
     IsFullyResiduallyFree (Multiplicative (ι → ℤ)) :=
-  isFullyResiduallyFree_multiplicative_int.of_isDiscriminatedBy
-    (isDiscriminatedBy_multiplicative_pi_int ι)
+  (isFullyResiduallyFree_multiplicative_int.of_isDiscriminatedBy
+    (isDiscriminatedBy_pi ι)).of_injective (f := (MulEquiv.funMultiplicative ι ℤ).toMonoidHom)
+    (MulEquiv.funMultiplicative ι ℤ).injective
 
 /-- The product of a nonabelian group and a nontrivial group is not fully residually free, since
 it is not commutative transitive. -/

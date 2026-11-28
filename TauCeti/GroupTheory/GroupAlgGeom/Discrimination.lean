@@ -8,7 +8,6 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.GroupTheory.CSA
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
-import TauCeti.Data.Matrix.DotProduct
 import TauCeti.GroupTheory.FreeGroup.CSA
 
 /-!
@@ -22,8 +21,10 @@ used to recognize irreducible coordinate groups and, with trivial coefficients, 
 The coefficient maps need not be injective: the same definitions apply to the coefficient maps
 of quotients of free `G`-groups, even before the quotient is known to be a `G`-group.
 
-With trivial coefficients, every power `ℤ^ι` of the infinite cyclic group is discriminated by `ℤ`
-through integer linear forms in finitely many coordinates.
+Separation by a torsion-free abelian group `A` implies discrimination by `A`, as soon as there is
+one homomorphism to `A` over `G`. For instance, with trivial coefficients, every power `A^ι`, such
+as the power `ℤ^ι` of the infinite cyclic group, is discriminated by `A`, being separated by its
+coordinate projections.
 
 Discrimination implies separation, but not conversely. A group discriminated by a commutative
 transitive group, such as a free group, is commutative transitive, while the product of a
@@ -57,14 +58,17 @@ to `F₂` keeping `(1, b)` nontrivial makes the images of `(a, 1)` and `(b, 1)` 
 * `TauCeti.GroupAlgGeom.IsSeparatedBy.nonempty_gHom`: a nontrivial group separated by `H` admits a
   coefficient-preserving homomorphism to `H`; with discrimination the group may be trivial
   (`TauCeti.GroupAlgGeom.IsDiscriminatedBy.nonempty_gHom`).
+* `TauCeti.GroupAlgGeom.IsSeparatedBy.isDiscriminatedBy_of_commGroup`: a group separated by a
+  torsion-free abelian group `A`, with some coefficient-preserving homomorphism to `A`, is
+  discriminated by `A`.
 * `TauCeti.GroupAlgGeom.IsDiscriminatedBy.injective_of_injective`: a group discriminated by a
   `G`-group is a `G`-group.
 * `TauCeti.GroupAlgGeom.IsSeparatedBy.mem_range_of_pow_mem_range`: in a group with unique roots
   separated by its coefficients `G` over `G`, the image of `G` is closed under roots.
 * `TauCeti.GroupAlgGeom.isSeparatedBy_iff_iInf_ker`: separation by `H` means the kernels of all
   coefficient-preserving homomorphisms to `H` intersect trivially.
-* `TauCeti.GroupAlgGeom.isDiscriminatedBy_multiplicative_pi_int`: every power `ℤ^ι` of the
-  infinite cyclic group, in particular the free abelian group `ℤⁿ`, is discriminated by `ℤ`.
+* `TauCeti.GroupAlgGeom.isDiscriminatedBy_pi`: every power `A^ι` of a torsion-free abelian group
+  `A`, for instance the free abelian group `ℤⁿ`, is discriminated by `A`.
 
 ## References
 
@@ -251,6 +255,40 @@ theorem nonempty_gHom [Nontrivial K] {ιK : G →* K} {ιH : G →* H}
   let ⟨k, hk⟩ := exists_ne (1 : K)
   ⟨((isSeparatedBy_def _ _).1 h k hk).choose⟩
 
+/-- A group `K` separated over `G` by a torsion-free abelian group `A`, with some homomorphism to
+`A` over `G`, is discriminated by `A` over `G`. This is the abelian counterpart of the criterion
+for discrimination by a domain (Baumslag–Myasnikov–Remeslennikov, Theorem C1), nontrivial abelian
+groups not being domains. -/
+theorem isDiscriminatedBy_of_commGroup {A : Type*} [CommGroup A] [IsMulTorsionFree A]
+    {ιK : G →* K} {ιA : G →* A} (h : IsSeparatedBy ιK ιA) (hK : Nonempty (GHom ιK ιA)) :
+    IsDiscriminatedBy ιK ιA := by
+  classical
+  refine (isDiscriminatedBy_def _ _).2 fun s hs ↦ ?_
+  induction s using Finset.induction_on with
+  | empty => exact ⟨hK.some, by simp⟩
+  | insert a s ha ih =>
+    obtain ⟨φ, hφ⟩ := ih fun k hk ↦ hs k (Finset.mem_insert_of_mem hk)
+    obtain ⟨φ', hφ'⟩ := (isSeparatedBy_def _ _).1 h a (hs a (Finset.mem_insert_self a s))
+    -- The homomorphisms `φ · (φ' / φ) ^ N` over `G`.
+    let ψ (N : ℤ) : GHom ιK ιA :=
+      ⟨(φ : K →* A) * ((φ' : K →* A) / φ) ^ N, fun g ↦ by simp [GHom.map_coeff]⟩
+    have hψ (N : ℤ) (k : K) : ψ N k = φ k * (φ' k / φ k) ^ N := by simp [ψ]
+    -- Each `k ∈ insert a s` is kept by `φ` or by `φ'`, so it is killed by `φ · (φ' / φ) ^ N` for
+    -- at most one `N`: for no `N` if `φ k = φ' k`, and otherwise since `A` is torsion-free.
+    have hbad (k) (hk : k ∈ insert a s) : {N : ℤ | ψ N k = 1}.Subsingleton := by
+      simp only [hψ]
+      by_cases hy : φ' k / φ k = 1
+      · intro N hN
+        simp only [Set.mem_ofPred_eq, hy, one_zpow, mul_one] at hN
+        rw [hN, div_one] at hy
+        rcases Finset.mem_insert.1 hk with rfl | hk
+        exacts [(hφ' hy).elim, (hφ k hk hN).elim]
+      · exact Set.subsingleton_singleton.preimage
+          ((mul_right_injective (φ k)).comp (IsMulTorsionFree.zpow_right_injective hy))
+    obtain ⟨N, hN⟩ :=
+      ((insert a s).finite_toSet.biUnion fun k hk ↦ (hbad k hk).finite).exists_notMem
+    exact ⟨ψ N, fun k hk hk1 ↦ hN (Set.mem_biUnion hk hk1)⟩
+
 /-- If a group `K` with unique roots is separated by the coefficients `G` over `G`, then the image
 of `G` in `K` contains every element of `K` having a nonzero power in it. -/
 theorem mem_range_of_pow_mem_range [HasUniqueRoots K] {ιK : G →* K}
@@ -321,27 +359,17 @@ theorem isSeparatedBy_iff_iInf_ker (ιK : G →* K) (ιH : G →* H) :
       by_contra hne
       exact hall ⟨φ, hne⟩⟩
 
-/-- A power `ℤ^ι` of the infinite cyclic group is discriminated by `ℤ`, with trivial
-coefficients. -/
-theorem isDiscriminatedBy_multiplicative_pi_int (ι : Type*) :
-    IsDiscriminatedBy (1 : Unit →* Multiplicative (ι → ℤ)) (1 : Unit →* Multiplicative ℤ) := by
-  classical
-  rw [isDiscriminatedBy_def]
-  intro s hs
-  -- Each element of `s` is nonzero at some coordinate; collect these coordinates in `J`, so that
-  -- the restrictions to `J` stay nonzero, and take a linear form in them vanishing on none.
-  have hi (g : s) : ∃ i, (g : Multiplicative (ι → ℤ)).toAdd i ≠ 0 :=
-    Function.ne_iff.1 fun h => hs g g.property (toAdd_eq_zero.1 h)
-  choose i hi using hi
-  let J : Finset ι := Finset.univ.image i
-  let r : Multiplicative (ι → ℤ) → J → ℤ := fun g j => g.toAdd j
-  obtain ⟨w, hw⟩ := (s.image r).exists_forall_dotProduct_ne_zero <| by
-    simp only [Finset.forall_mem_image]
-    exact fun g hg h => hi ⟨g, hg⟩ (congrFun h ⟨i ⟨g, hg⟩, by simp [J]⟩)
-  let φ : Multiplicative (ι → ℤ) →* Multiplicative ℤ :=
-    AddMonoidHom.toMultiplicative
-      (AddMonoidHom.mk' (fun v => dotProduct w fun j : J => v j) fun _ _ => dotProduct_add w _ _)
-  exact ⟨⟨φ, fun _ => by simp⟩, fun g hg h =>
-    hw _ (Finset.mem_image_of_mem r hg) (by simpa [φ, r] using h)⟩
+/-- A power `A^ι` of a torsion-free abelian group `A`, such as the power `ℤ^ι` of the infinite
+cyclic group, is discriminated by `A`, with trivial coefficients: it is separated by `A` through
+its coordinate projections. -/
+theorem isDiscriminatedBy_pi (ι : Type*) {A : Type*} [CommGroup A] [IsMulTorsionFree A] :
+    IsDiscriminatedBy (1 : Unit →* (ι → A)) (1 : Unit →* A) := by
+  -- Every homomorphism from `A^ι` to `A` preserves the trivial coefficients.
+  let ofHom (φ : (ι → A) →* A) : GHom (1 : Unit →* (ι → A)) (1 : Unit →* A) :=
+    ⟨φ, fun _ ↦ by simp only [MonoidHom.one_apply, OneHom.toFun_eq_coe, map_one]⟩
+  refine IsSeparatedBy.isDiscriminatedBy_of_commGroup (fun g hg ↦ ?_) ⟨ofHom 1⟩
+  -- Some coordinate of `g` is nontrivial, and the projection to it keeps `g`.
+  obtain ⟨i, hi⟩ := Function.ne_iff.1 hg
+  exact ⟨ofHom (Pi.evalMonoidHom (fun _ ↦ A) i), by rwa [GHom.coe_mk, Pi.evalMonoidHom_apply]⟩
 
 end TauCeti.GroupAlgGeom
