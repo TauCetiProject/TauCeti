@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Nat.ModEq
 import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Tactic.Ring
@@ -18,6 +19,9 @@ This is the arithmetic behind the uniqueness of the decomposition of an exponent
 with `ν i < p`. Likewise, since `(p - 1) a ≡ -a` modulo `p`, two residues `a, b < p` with
 `p ∣ (p - 1) a + b` are equal.
 
+A finite set `H` of natural numbers misses some residue class modulo `p > 0` exactly when the set
+of its residues `h % p` has fewer than `p` elements.
+
 ## Main results
 
 * `Nat.not_dvd_mul_add_sub`: for distinct `a, b < p` with `b ≤ p * m + a`, `p` does not divide
@@ -30,6 +34,9 @@ with `ν i < p`. Likewise, since `(p - 1) a ≡ -a` modulo `p`, two residues `a,
 * `Nat.div_two_sub_one_modEq_of_mul_dvd`: reduce that class modulo a divisor of `q / 2`.
 * `Nat.modEq_sub_one_iff_dvd_add_one`: for `M > 0`, `n ≡ M - 1 (mod M)` if and only if
   `M ∣ n + 1`.
+* `Nat.exists_forall_not_modEq_iff_card_image_mod_lt`: for `p > 0`, a finite set of natural
+  numbers misses a residue class modulo `p` exactly when its residues modulo `p` number fewer
+  than `p`.
 * `TauCeti.sq_sub_one_eq_four_mul_of_mod_four_eq_three`: for `q ≡ 3 (mod 4)`, factor `q² - 1`
   with the factor `4` made explicit.
 -/
@@ -128,6 +135,29 @@ theorem modEq_sub_one_iff_dvd_add_one {n M : ℕ} (hM : 0 < M) :
     apply Nat.ModEq.add_right_cancel' 1
     rw [hpred]
     exact h.trans hz.symm
+
+/-- For `p > 0`, a finite set `H` misses a residue class modulo `p` exactly when its residues
+modulo `p` number fewer than `p`. -/
+theorem exists_forall_not_modEq_iff_card_image_mod_lt {p : ℕ} (hp : 0 < p) (H : Finset ℕ) :
+    (∃ a : ℕ, ∀ h ∈ H, ¬h ≡ a [MOD p]) ↔ (H.image (· % p)).card < p := by
+  have hsub : H.image (· % p) ⊆ Finset.range p := fun r hr ↦ by
+    obtain ⟨h, -, rfl⟩ := Finset.mem_image.1 hr
+    exact Finset.mem_range.2 (mod_lt h hp)
+  constructor
+  · rintro ⟨a, ha⟩
+    have hne : H.image (· % p) ≠ Finset.range p := fun heq ↦ by
+      have hmem : a % p ∈ H.image (· % p) := by
+        rw [heq]
+        exact Finset.mem_range.2 (mod_lt a hp)
+      obtain ⟨h, hh, hmod⟩ := Finset.mem_image.1 hmem
+      exact ha h hh hmod
+    simpa using Finset.card_lt_card (hsub.ssubset_of_ne hne)
+  · intro hlt
+    obtain ⟨a, ha, hnot⟩ := Finset.exists_mem_notMem_of_card_lt_card
+      (by simpa using hlt : (H.image (· % p)).card < (Finset.range p).card)
+    refine ⟨a, fun h hh hmod ↦ hnot (Finset.mem_image.2 ⟨h, hh, ?_⟩)⟩
+    rw [← mod_eq_of_lt (Finset.mem_range.1 ha)]
+    exact hmod
 
 end Nat
 
