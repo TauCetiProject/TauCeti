@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Curvature
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ExteriorSquare
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
-import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 
 /-!
@@ -70,11 +69,13 @@ theorem map_curvatureEndomorphism (hf : IsLocalRiemannianIsometry I J f) (x : M)
   obtain ⟨e, he⟩ := hf.exists_linearIsometryEquiv_eq_mfderiv x
   have heL : e.toLinearEquiv.toLinearMap = (mfderiv I J f x).toLinearMap :=
     LinearMap.ext he
+  have heI : e.toLinearIsometry.toLinearMap = e.toLinearEquiv.toLinearMap := by
+    ext v
+    simp
   have hinner (b c : ⋀[ℝ]^2 (TangentSpace I x)) :
       ⟪exteriorPower.map 2 e.toLinearEquiv.toLinearMap b,
         exteriorPower.map 2 e.toLinearEquiv.toLinearMap c⟫ = ⟪b, c⟫ := by
-    simpa only [e.toLinearIsometry_toLinearMap] using
-      exteriorPower.inner_map_map e.toLinearIsometry b c
+    simpa only [heI] using exteriorPower.inner_map_map e.toLinearIsometry b c
   have hmap : exteriorPower.map 2 e.toLinearEquiv.toLinearMap ∘ₗ
         (leviCivitaConnection I M).curvatureEndomorphism
           (isMetricCompatible_leviCivitaConnection I) x =

@@ -8,9 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
-import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.LinearAlgebra.BilinearMap.Multilinear
-import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Square
 
 /-!
@@ -47,9 +45,6 @@ tensors.
 * `TauCeti.twoVectorContraction_bivectorAd_ιMulti`: `A_[X, Y] = ⁅A_X, A_Y⁆`.
 * `TauCeti.inner_bivectorAd_ιMulti`: `⟪[X, Y], u ∧ v⟫ = ⟪A_X u, A_Y v⟫ - ⟪A_Y u, A_X v⟫`.
 * `TauCeti.adjoint_bivectorAd_ιMulti`: `ad* (u ∧ v) = ∑ₚ (u ∧ eₚ) ∧ (v ∧ eₚ)`.
-* `LinearIsometryEquiv.exteriorPower_map_comp_bivectorAd` and
-  `LinearIsometryEquiv.adjoint_bivectorAd_comp_exteriorPower_map`: equivariance of `bivectorAd`
-  and its adjoint under linear isometric equivalences.
 
 ## References
 
@@ -142,40 +137,3 @@ theorem adjoint_bivectorAd_ιMulti {ι : Type*} [Fintype ι] (b : OrthonormalBas
     Finset.sum_sub_distrib, b.real_sum_inner_mul_inner]
 
 end TauCeti
-
-namespace LinearIsometryEquiv
-
-open exteriorPower TauCeti
-
-/-- The Lie bracket `TauCeti.bivectorAd` is equivariant under linear isometric equivalences. -/
-theorem exteriorPower_map_comp_bivectorAd {W V : Type*}
-    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-    (e : W ≃ₗᵢ[ℝ] V) :
-    map 2 e.toLinearMap ∘ₗ bivectorAd =
-      bivectorAd ∘ₗ map 2 (map 2 e.toLinearMap) := by
-  refine linearMap_ext_ιMulti_two fun X Y ↦ ext_inner_ιMulti_two fun u v ↦ ?_
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, map_apply_ιMulti_two]
-  conv_lhs =>
-    rw [e.ιMulti_two_eq_exteriorPower_map_symm u v, ← e.toLinearIsometry_toLinearMap,
-      exteriorPower.inner_map_map]
-  rw [inner_bivectorAd_ιMulti, inner_bivectorAd_ιMulti]
-  simp only [e.twoVectorContraction_exteriorPower_map, e.inner_map_map]
-
-/-- The adjoint of `TauCeti.bivectorAd` is equivariant under linear isometric equivalences. -/
-theorem adjoint_bivectorAd_comp_exteriorPower_map {W V : Type*}
-    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-    (e : W ≃ₗᵢ[ℝ] V) :
-    LinearMap.adjoint bivectorAd ∘ₗ map 2 e.toLinearMap =
-      map 2 (map 2 e.toLinearMap) ∘ₗ LinearMap.adjoint bivectorAd := by
-  let e2 : (⋀[ℝ]^2 V) ≃ₗᵢ[ℝ] (⋀[ℝ]^2 W) :=
-    (e.symm.toLinearEquiv.exteriorPower 2).isometryOfInner
-      (exteriorPower.inner_map_map e.symm.toLinearIsometry)
-  have he2 : LinearMap.adjoint (map 2 (map 2 e.symm.toLinearMap)) =
-      map 2 (map 2 e.toLinearMap) := e2.adjoint_exteriorPower_map
-  have h := congrArg LinearMap.adjoint e.symm.exteriorPower_map_comp_bivectorAd
-  simpa only [LinearMap.adjoint_comp, e.symm.adjoint_exteriorPower_map, he2,
-    LinearIsometryEquiv.symm_symm] using h
-
-end LinearIsometryEquiv

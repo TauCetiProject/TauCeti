@@ -11,7 +11,6 @@ public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 import Mathlib.Analysis.InnerProductSpace.Trace
 import TauCeti.Analysis.InnerProductSpace.Dual
-import TauCeti.Analysis.Normed.Operator.LinearIsometry
 
 /-!
 # Metric index raising of bilinear forms to endomorphisms
@@ -177,8 +176,9 @@ theorem comp_bilinFormToEnd_compl₁₂ {F : Type*} [NormedAddCommGroup F]
     e.toLinearIsometry.toLinearMap ∘ₗ bilinFormToEnd
         (B.compl₁₂ e.toLinearIsometry.toLinearMap e.toLinearIsometry.toLinearMap) =
       bilinFormToEnd B ∘ₗ e.toLinearIsometry.toLinearMap := by
-  rw [B.bilinFormToEnd_compl₁₂, e.toLinearIsometry_toLinearMap, e.adjoint_toLinearMap_eq_symm,
-    ← LinearMap.comp_assoc, ← LinearMap.comp_assoc]
+  have he : e.toLinearIsometry.toLinearMap = e.toLinearMap := LinearMap.ext fun _ ↦ by simp
+  rw [B.bilinFormToEnd_compl₁₂, he, e.adjoint_toLinearMap_eq_symm, ← LinearMap.comp_assoc,
+    ← LinearMap.comp_assoc]
   ext; simp
 
 /-- Pointwise equivariance of `bilinFormToEnd` under a linear isometric equivalence `e` relating

@@ -9,7 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.ExteriorSquare
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Reaction.Basic
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Bracket
-import TauCeti.Analysis.InnerProductSpace.ExteriorPower.SymmetricProduct
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Trace
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
@@ -50,6 +49,7 @@ curvature operator `I`, the curvature operator of the unit sphere, this pins the
 
 ## Main results
 
+* `TauCeti.bivectorSharp_rankOne_self`: every rank-one operator on `⋀² V` has vanishing `#`-square.
 * `TauCeti.inner_bivectorSharp_ιMulti` and `TauCeti.inner_bivectorSharp_self_ιMulti`: the sharp
   product as a contraction in an orthonormal basis.
 * `TauCeti.FourTensor.IsBivectorSymmetric.inner_curvatureEndomorphism_mul_ιMulti`: the product of
@@ -57,16 +57,8 @@ curvature operator `I`, the curvature operator of the unit sphere, this pins the
 * `TauCeti.FourTensor.IsBivectorSymmetric.curvatureEndomorphism_reactionBilinear` and
   `TauCeti.FourTensor.IsBivectorSymmetric.curvatureEndomorphism_reactionTensor`:
   `Q(r, s) = R S + S R + 2 R # S` and `Q(r) = 2 (R² + R#)` on the operator side.
-* `TauCeti.adjoint_bivectorSharp`, `LinearMap.IsSymmetric.bivectorSharp`,
-  `TauCeti.bivectorSharp_rankOne_self`, and
-  `LinearIsometryEquiv.bivectorSharp_conj_exteriorPower_map`:
-  adjoint commutation, symmetry preservation, rank-one vanishing, and `O(V)`-equivariance of
-  `bivectorSharp`.
-* `LinearMap.IsSymmetric.reactionBilinear_ofExteriorEnd`,
-  `LinearMap.IsSymmetric.reactionTensor_ofExteriorEnd`,
-  `TauCeti.FourTensor.IsAlgebraicCurvatureEndomorphism.mul_add_mul_add_two_smul_bivectorSharp`,
-  and `TauCeti.FourTensor.IsAlgebraicCurvatureEndomorphism.two_smul_mul_add_bivectorSharp`:
-  the `ofExteriorEnd` reaction identities and closure of `Sym²_B(⋀²V)`.
+* `LinearMap.IsSymmetric.reactionBilinear_ofExteriorEnd` and
+  `LinearMap.IsSymmetric.reactionTensor_ofExteriorEnd`: the `ofExteriorEnd` reaction identities.
 * `TauCeti.bivectorSharp_id_id`: `I# = (n - 2) I`.
 
 ## References
@@ -111,13 +103,6 @@ theorem bivectorSharp_comm (R S : Module.End ℝ (⋀[ℝ]^2 V)) :
 theorem bivectorSharp_self (R : Module.End ℝ (⋀[ℝ]^2 V)) :
     bivectorSharp R R = bivectorAd ∘ₗ map 2 R ∘ₗ LinearMap.adjoint bivectorAd := by
   rw [bivectorSharp_apply, symmMap₂_self]
-
-/-- Taking the adjoint commutes with `TauCeti.bivectorSharp`. -/
-@[simp]
-theorem adjoint_bivectorSharp (R S : Module.End ℝ (⋀[ℝ]^2 V)) :
-    (bivectorSharp R S).adjoint = bivectorSharp R.adjoint S.adjoint := by
-  rw [bivectorSharp_apply, bivectorSharp_apply, LinearMap.adjoint_comp, LinearMap.adjoint_comp,
-    LinearMap.adjoint_adjoint, adjoint_symmMap₂, LinearMap.comp_assoc]
 
 /-- Quadratic expansion of `TauCeti.bivectorSharp` on a sum of endomorphisms. -/
 theorem bivectorSharp_add_self (R S : Module.End ℝ (⋀[ℝ]^2 V)) :
@@ -191,54 +176,6 @@ theorem inner_bivectorSharp_ιMulti {ι : Type*} [Fintype ι] (b : OrthonormalBa
   ring
 
 end TauCeti
-
-namespace LinearIsometryEquiv
-
-open exteriorPower TauCeti
-
-/-- Conjugating two endomorphisms of `⋀[ℝ]^2 V` by the exterior square of a linear isometric
-equivalence commutes with `TauCeti.bivectorSharp`. -/
-theorem bivectorSharp_conj_exteriorPower_map {W V : Type*}
-    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-    (e : W ≃ₗᵢ[ℝ] V) (R S : Module.End ℝ (⋀[ℝ]^2 V)) :
-    bivectorSharp
-        (map 2 e.symm.toLinearMap ∘ₗ R ∘ₗ map 2 e.toLinearMap)
-        (map 2 e.symm.toLinearMap ∘ₗ S ∘ₗ map 2 e.toLinearMap) =
-      map 2 e.symm.toLinearMap ∘ₗ bivectorSharp R S ∘ₗ map 2 e.toLinearMap := by
-  rw [bivectorSharp_apply, bivectorSharp_apply, ← map_comp_symmMap₂, ← symmMap₂_comp_map]
-  calc
-    bivectorAd ∘ₗ
-        (map 2 (map 2 e.symm.toLinearMap) ∘ₗ (symmMap₂ R S ∘ₗ map 2 (map 2 e.toLinearMap))) ∘ₗ
-          LinearMap.adjoint bivectorAd
-        = (bivectorAd ∘ₗ map 2 (map 2 e.symm.toLinearMap)) ∘ₗ symmMap₂ R S ∘ₗ
-            (map 2 (map 2 e.toLinearMap) ∘ₗ LinearMap.adjoint bivectorAd) := by
-          simp only [LinearMap.comp_assoc]
-    _ = (map 2 e.symm.toLinearMap ∘ₗ bivectorAd) ∘ₗ symmMap₂ R S ∘ₗ
-            (LinearMap.adjoint bivectorAd ∘ₗ map 2 e.toLinearMap) := by
-          rw [← e.symm.exteriorPower_map_comp_bivectorAd,
-            ← e.adjoint_bivectorAd_comp_exteriorPower_map]
-    _ = map 2 e.symm.toLinearMap ∘ₗ
-            (bivectorAd ∘ₗ symmMap₂ R S ∘ₗ LinearMap.adjoint bivectorAd) ∘ₗ
-              map 2 e.toLinearMap := by
-          simp only [LinearMap.comp_assoc]
-
-end LinearIsometryEquiv
-
-namespace LinearMap.IsSymmetric
-
-open TauCeti
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- The `#` product of two symmetric endomorphisms of `⋀[ℝ]^2 V` is symmetric. -/
-theorem bivectorSharp {R S : Module.End ℝ (⋀[ℝ]^2 V)} (hR : R.IsSymmetric) (hS : S.IsSymmetric) :
-    (TauCeti.bivectorSharp R S).IsSymmetric :=
-  (LinearMap.isSymmetric_iff_isSelfAdjoint _).mpr <| by
-    simp only [IsSelfAdjoint, LinearMap.star_eq_adjoint, TauCeti.adjoint_bivectorSharp,
-      hR.adjoint_eq, hS.adjoint_eq]
-
-end LinearMap.IsSymmetric
 
 namespace TauCeti
 
@@ -332,31 +269,6 @@ theorem reactionTensor_ofExteriorEnd {R : Module.End ℝ (⋀[ℝ]^2 V)} (hR : R
   module
 
 end LinearMap.IsSymmetric
-
-namespace TauCeti.FourTensor.IsAlgebraicCurvatureEndomorphism
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- `IsAlgebraicCurvatureEndomorphism` is closed under the polarized Hamilton reaction
-`R * S + S * R + 2 • TauCeti.bivectorSharp R S`. -/
-theorem mul_add_mul_add_two_smul_bivectorSharp {R S : Module.End ℝ (⋀[ℝ]^2 V)}
-    (hR : IsAlgebraicCurvatureEndomorphism R) (hS : IsAlgebraicCurvatureEndomorphism S) :
-    IsAlgebraicCurvatureEndomorphism (R * S + S * R + (2 : ℝ) • bivectorSharp R S) := by
-  rw [← isAlgebraicCurvature_ofExteriorEnd_iff,
-    ← LinearMap.IsSymmetric.reactionBilinear_ofExteriorEnd hR.isSymmetric hS.isSymmetric]
-  exact ((isAlgebraicCurvature_ofExteriorEnd_iff R).mpr hR).reactionBilinear
-    ((isAlgebraicCurvature_ofExteriorEnd_iff S).mpr hS)
-
-/-- `IsAlgebraicCurvatureEndomorphism` is closed under Hamilton's quadratic operator
-`2 • (R * R + TauCeti.bivectorSharp R R)`. -/
-theorem two_smul_mul_add_bivectorSharp {R : Module.End ℝ (⋀[ℝ]^2 V)}
-    (hR : IsAlgebraicCurvatureEndomorphism R) :
-    IsAlgebraicCurvatureEndomorphism ((2 : ℝ) • (R * R + bivectorSharp R R)) := by
-  rw [← isAlgebraicCurvature_ofExteriorEnd_iff,
-    ← LinearMap.IsSymmetric.reactionTensor_ofExteriorEnd hR.isSymmetric]
-  exact ((isAlgebraicCurvature_ofExteriorEnd_iff R).mpr hR).reactionTensor
-
-end TauCeti.FourTensor.IsAlgebraicCurvatureEndomorphism
 
 namespace TauCeti
 

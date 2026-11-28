@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Gram.Factor
 public import TauCeti.Analysis.InnerProductSpace.PartialIsometry
 public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
-import TauCeti.Analysis.Normed.Operator.LinearIsometry
 
 /-!
 # The canonical finite-dimensional polar factor
@@ -343,8 +342,11 @@ theorem polarFactor_comp_linearIsometryEquiv (A : F →ₗ[𝕜] G) (e : E ≃�
 theorem operatorAbs_conj (e : E ≃ₗᵢ[𝕜] F) (T : E →ₗ[𝕜] E) :
     (e.toLinearEquiv.conj T).operatorAbs = e.toLinearEquiv.conj T.operatorAbs := by
   have h := operatorAbs_comp_linearIsometryEquiv (e.toLinearIsometry.toLinearMap ∘ₗ T) e.symm
+  -- `operatorAbs_linearIsometry_comp` reaches `e` through `e.toLinearIsometry.toLinearMap`, while
+  -- `conj` uses the coercion of `e.toLinearEquiv`. Both are by definition the underlying linear
+  -- map of `e`, and Mathlib states no lemma relating these two projections, so `rfl` aligns them.
   rw [operatorAbs_linearIsometry_comp, LinearIsometryEquiv.symm_symm,
-    e.toLinearIsometry_toLinearMap] at h
+    show e.toLinearIsometry.toLinearMap = e.toLinearEquiv from rfl] at h
   rw [LinearEquiv.conj_apply, LinearEquiv.conj_apply, ← LinearIsometryEquiv.toLinearEquiv_symm,
     h, comp_assoc]
 
@@ -352,7 +354,9 @@ theorem operatorAbs_conj (e : E ≃ₗᵢ[𝕜] F) (T : E →ₗ[𝕜] E) :
 theorem polarFactor_conj (e : E ≃ₗᵢ[𝕜] F) (T : E →ₗ[𝕜] E) :
     (e.toLinearEquiv.conj T).polarFactor = e.toLinearEquiv.conj T.polarFactor := by
   have h := polarFactor_comp_linearIsometryEquiv (e.toLinearIsometry.toLinearMap ∘ₗ T) e.symm
-  rw [polarFactor_linearIsometry_comp, e.toLinearIsometry_toLinearMap] at h
+  -- As in `operatorAbs_conj`, `rfl` identifies the two definitionally equal projections of `e`.
+  rw [polarFactor_linearIsometry_comp,
+    show e.toLinearIsometry.toLinearMap = e.toLinearEquiv from rfl] at h
   rw [LinearEquiv.conj_apply, LinearEquiv.conj_apply, ← LinearIsometryEquiv.toLinearEquiv_symm,
     h, comp_assoc]
 

@@ -15,7 +15,6 @@ public import TauCeti.LinearAlgebra.BilinearForm.ExteriorSquare
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
-import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
@@ -52,15 +51,12 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 ## Main results
 
 * `exteriorPower.inner_map_map`: `⟪⋀ⁿ f x, ⋀ⁿ f y⟫ = ⟪x, y⟫` for a linear isometry `f`.
-* `LinearIsometryEquiv.ιMulti_two_eq_exteriorPower_map_symm`:
-  `u ∧ v = ⋀² e (e.symm u ∧ e.symm v)` for a linear isometric equivalence `e`.
+* `LinearIsometryEquiv.exteriorPower`: the linear isometric equivalence on `⋀ⁿ E` induced by
+  `e : E ≃ₗᵢ[ℝ] F`.
 * `LinearIsometryEquiv.adjoint_exteriorPower_map` and
   `LinearIsometryEquiv.exteriorPower_map_comp_adjoint`:
   `LinearMap.adjoint (⋀ⁿ e) = ⋀ⁿ e.symm` and `⋀ⁿ e ∘ₗ LinearMap.adjoint (⋀ⁿ e) = id` for a
   linear isometric equivalence `e`.
-* `LinearIsometry.twoVectorContraction_exteriorPower_map` and
-  `LinearIsometryEquiv.twoVectorContraction_exteriorPower_map`: equivariance of
-  `TauCeti.twoVectorContraction` under linear isometries and linear isometric equivalences.
 * `exteriorPower.norm_map`, `exteriorPower.norm_map_linearIsometryEquiv`: `‖⋀ⁿ f x‖ = ‖x‖` for a
   linear isometry `f`.
 * `exteriorPower.inner_ιMulti_two`: `⟪a ∧ b, u ∧ w⟫ = ⟪a, u⟫ ⟪b, w⟫ - ⟪a, w⟫ ⟪b, u⟫`, and
@@ -324,29 +320,56 @@ namespace LinearIsometryEquiv
 open exteriorPower
 open scoped RealInnerProductSpace
 
-/-- A pure wedge `x ∧ y` in the codomain of a linear isometric equivalence `e` is the image
-under `exteriorPower.map 2 e.toLinearMap` of `e.symm x ∧ e.symm y`. -/
-theorem ιMulti_two_eq_exteriorPower_map_symm {E F : Type*}
-    [SeminormedAddCommGroup E] [Module ℝ E]
-    [SeminormedAddCommGroup F] [Module ℝ F]
-    (e : E ≃ₗᵢ[ℝ] F) (x y : F) :
-    ιMulti ℝ 2 ![x, y] = map 2 e.toLinearMap (ιMulti ℝ 2 ![e.symm x, e.symm y]) := by
-  rw [map_apply_ιMulti_two]
-  simp
-
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] {n : ℕ}
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+
+/-- A linear isometric equivalence `e : E ≃ₗᵢ[ℝ] F` induces a linear isometric equivalence
+`⋀ⁿ E ≃ₗᵢ[ℝ] ⋀ⁿ F` on every exterior power. -/
+noncomputable def exteriorPower (e : E ≃ₗᵢ[ℝ] F) (n : ℕ) :
+    (⋀[ℝ]^n E) ≃ₗᵢ[ℝ] ⋀[ℝ]^n F :=
+  (e.toLinearEquiv.exteriorPower n).isometryOfInner fun x y ↦ by
+    have hmap : e.toLinearEquiv.toLinearMap = e.toLinearIsometry.toLinearMap :=
+      LinearMap.ext fun _ ↦ by simp
+    simp only [← LinearEquiv.coe_coe, LinearEquiv.exteriorPower_toLinearMap, hmap]
+    exact _root_.exteriorPower.inner_map_map e.toLinearIsometry x y
+
+private theorem exteriorPower_toLinearEquiv (e : E ≃ₗᵢ[ℝ] F) (n : ℕ) :
+    (e.exteriorPower n).toLinearEquiv = e.toLinearEquiv.exteriorPower n :=
+  LinearEquiv.isometryOfInner_toLinearEquiv _ _
+
+/-- Evaluation of `e.exteriorPower n` agrees with `exteriorPower.map n e.toLinearMap`. -/
+@[simp]
+theorem exteriorPower_apply (e : E ≃ₗᵢ[ℝ] F) (n : ℕ) (x : ⋀[ℝ]^n E) :
+    e.exteriorPower n x = map n e.toLinearMap x := by
+  have he : e.toLinearEquiv.toLinearMap = e.toLinearMap := LinearMap.ext fun _ ↦ by simp
+  rw [← LinearIsometryEquiv.coe_toLinearEquiv, exteriorPower_toLinearEquiv,
+    ← LinearEquiv.coe_coe, LinearEquiv.exteriorPower_toLinearMap, he]
+
+/-- The underlying linear map of `e.exteriorPower n` is `exteriorPower.map n e.toLinearMap`. -/
+@[simp]
+theorem exteriorPower_toLinearMap (e : E ≃ₗᵢ[ℝ] F) (n : ℕ) :
+    (e.exteriorPower n).toLinearMap = map n e.toLinearMap :=
+  LinearMap.ext (e.exteriorPower_apply n)
+
+/-- The inverse of `e.exteriorPower n` is `e.symm.exteriorPower n`. -/
+@[simp]
+theorem exteriorPower_symm (e : E ≃ₗᵢ[ℝ] F) (n : ℕ) :
+    (e.exteriorPower n).symm = e.symm.exteriorPower n :=
+  LinearIsometryEquiv.toLinearEquiv_injective <| by
+    rw [LinearIsometryEquiv.toLinearEquiv_symm, exteriorPower_toLinearEquiv,
+      LinearEquiv.exteriorPower_symm, exteriorPower_toLinearEquiv,
+      LinearIsometryEquiv.toLinearEquiv_symm]
 
 /-- The adjoint of `exteriorPower.map n e.toLinearMap` is
 `exteriorPower.map n e.symm.toLinearMap`. -/
 @[simp]
-theorem adjoint_exteriorPower_map (e : E ≃ₗᵢ[ℝ] F) :
-    LinearMap.adjoint (map n e.toLinearMap) = map n e.symm.toLinearMap :=
-  ((e.toLinearEquiv.exteriorPower n).isometryOfInner
-    (exteriorPower.inner_map_map e.toLinearIsometry)).adjoint_toLinearMap_eq_symm
+theorem adjoint_exteriorPower_map {n : ℕ} (e : E ≃ₗᵢ[ℝ] F) :
+    LinearMap.adjoint (map n e.toLinearMap) = map n e.symm.toLinearMap := by
+  rw [← e.exteriorPower_toLinearMap n, (e.exteriorPower n).adjoint_toLinearMap_eq_symm,
+    e.exteriorPower_symm n, e.symm.exteriorPower_toLinearMap n]
 
 /-- Composing `exteriorPower.map n e.toLinearMap` with its adjoint gives the identity. -/
-theorem exteriorPower_map_comp_adjoint (e : E ≃ₗᵢ[ℝ] F) :
+theorem exteriorPower_map_comp_adjoint {n : ℕ} (e : E ≃ₗᵢ[ℝ] F) :
     map n e.toLinearMap ∘ₗ LinearMap.adjoint (map n e.toLinearMap) = LinearMap.id := by
   rw [e.adjoint_exteriorPower_map, ← map_comp]
   have h : e.toLinearMap ∘ₗ e.symm.toLinearMap = LinearMap.id := by ext; simp
@@ -784,45 +807,6 @@ end Normed
 end TwoVectorContraction
 
 end TauCeti
-
-namespace LinearIsometry
-
-open exteriorPower TauCeti
-open scoped RealInnerProductSpace
-
-/-- Contracting a two-vector mapped by a linear isometry against an image vector commutes with
-the linear isometry. -/
-theorem twoVectorContraction_exteriorPower_map {W V : Type*}
-    [SeminormedAddCommGroup W] [InnerProductSpace ℝ W]
-    [SeminormedAddCommGroup V] [InnerProductSpace ℝ V]
-    (f : W →ₗᵢ[ℝ] V) (Z : ⋀[ℝ]^2 W) (w : W) :
-    twoVectorContraction (map 2 f.toLinearMap Z) (f w) =
-      f (twoVectorContraction Z w) := by
-  have key : LinearMap.applyₗ (R := ℝ) (f w) ∘ₗ twoVectorContractionₗ ∘ₗ
-        map 2 f.toLinearMap =
-      f.toLinearMap ∘ₗ LinearMap.applyₗ (R := ℝ) w ∘ₗ twoVectorContractionₗ := by
-    refine linearMap_ext_ιMulti_two fun a b ↦ ?_
-    simp [f.inner_map_map]
-  exact LinearMap.congr_fun key Z
-
-end LinearIsometry
-
-namespace LinearIsometryEquiv
-
-open exteriorPower TauCeti
-
-/-- Contracting a two-vector mapped by a linear isometric equivalence commutes with the
-equivalence. -/
-theorem twoVectorContraction_exteriorPower_map {W V : Type*}
-    [SeminormedAddCommGroup W] [InnerProductSpace ℝ W]
-    [SeminormedAddCommGroup V] [InnerProductSpace ℝ V]
-    (e : W ≃ₗᵢ[ℝ] V) (Z : ⋀[ℝ]^2 W) (x : V) :
-    twoVectorContraction (map 2 e.toLinearMap Z) x =
-      e (twoVectorContraction Z (e.symm x)) := by
-  simpa [e.apply_symm_apply x] using
-    e.toLinearIsometry.twoVectorContraction_exteriorPower_map Z (e.symm x)
-
-end LinearIsometryEquiv
 
 namespace TauCeti
 

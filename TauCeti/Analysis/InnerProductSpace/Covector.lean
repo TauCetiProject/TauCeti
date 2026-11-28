@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 import TauCeti.Analysis.InnerProductSpace.Comass
-import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import Mathlib.Algebra.Module.TransferInstance
 
 /-!
@@ -259,7 +258,10 @@ theorem toExteriorPower_pullback (e : V ≃ₗᵢ[ℝ] W) (α : Covector W k) :
   have h := e.symm.toLinearIsometry.alternatingFormEquiv_map (toExteriorPower W k α)
   have hα : alternatingFormEquiv W k (toExteriorPower W k α) = α.ofCovector := by
     simp
-  rw [hα, e.symm.toLinearIsometry_toLinearMap, ← toExteriorPower_pullback] at h
+  have he : e.symm.toLinearIsometry.toLinearMap = e.symm.toLinearMap := by
+    ext x
+    rfl
+  rw [hα, he, ← toExteriorPower_pullback] at h
   simp only [toExteriorPower_apply, LinearEquiv.apply_symm_apply] at h
   ext v
   have hv := DFunLike.congr_fun h (e ∘ v)
