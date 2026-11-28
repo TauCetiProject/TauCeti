@@ -123,10 +123,8 @@ theorem conj_mem_unitriangularSubgroup {u d : GL n R} (hd : d ∈ blockTriangula
   have hd_bt : (d : Matrix n n R).BlockTriangular lev := mem_blockTriangularGroup_iff.1 hd
   have hd_inv : ((d⁻¹ : GL n R) : Matrix n n R).BlockTriangular lev :=
     mem_blockTriangularGroup_iff.1 ((blockTriangularGroup R lev).inv_mem hd)
-  have hu_entry : ∀ k l : n, lev l ≤ lev k → u.val k l = (1 : Matrix n n R) k l := fun k l h ↦ by
-    rcases h.lt_or_eq with hlt | heq
-    · rw [hu.blockTriangular hlt, one_apply_ne fun hkl ↦ hlt.ne (congrArg lev hkl.symm)]
-    · exact hu.apply_of_eq heq.symm
+  have hu_entry : ∀ k l : n, lev l ≤ lev k → u.val k l = (1 : Matrix n n R) k l :=
+    blockUnitriangular_iff_forall_le.1 hu
   have h_term : ∀ k l : n, d⁻¹.val i k * u.val k l * d.val l j =
       d⁻¹.val i k * (1 : Matrix n n R) k l * d.val l j := fun k l ↦ by
     grind [@hd_inv i k, @hd_bt l j, hu_entry k l, not_le, not_lt]

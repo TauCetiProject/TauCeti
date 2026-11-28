@@ -41,6 +41,9 @@ These are the facts shared by the indefinite unitary groups `U(p, q)`
 ## Main results
 
 * `Matrix.mem_unitaryGroupOf_iff`: membership is the equation `star g * A * g = A`.
+* `Matrix.mul_val_inv_eq_star_mul_of_mem_unitaryGroupOf`: `A * g⁻¹ = star g * A`.
+* `Matrix.mul_val_apply_eq_apply_of_mem_unitaryGroupOf`: if `g` fixes the basis vector `x`, the
+  row `x` of `A * g` is that of `A`.
 * `Matrix.unitaryGroupOf_one`: `unitaryGroupOf 1` is the unitary subgroup of `GL n R`.
 * `Matrix.inv_mul_mul_mem_unitaryGroupOf`: conjugation by an invertible `x` pulling the form `A`
   back to `B` (`star x * A * x = B`) maps `unitaryGroupOf A` into `unitaryGroupOf B`, and
@@ -94,6 +97,32 @@ theorem mem_unitaryGroupOf_iff {g : GL n R} :
 theorem unitaryGroupOf.ext {g h : unitaryGroupOf A}
     (H : ((g : GL n R) : Matrix n n R) = ((h : GL n R) : Matrix n n R)) : g = h :=
   Subtype.ext <| Units.ext H
+
+/-- For an element `g` of `unitaryGroupOf A`, `A * g⁻¹ = star g * A`; no invertibility of `A` is
+needed. -/
+theorem mul_val_inv_eq_star_mul_of_mem_unitaryGroupOf {g : GL n R} (hg : g ∈ unitaryGroupOf A) :
+    A * (↑g⁻¹ : Matrix n n R) = star (g : Matrix n n R) * A := by
+  calc A * (↑g⁻¹ : Matrix n n R) = star (g : Matrix n n R) * A * g * (↑g⁻¹ : Matrix n n R) := by
+        rw [mem_unitaryGroupOf_iff.mp hg]
+    _ = star (g : Matrix n n R) * A := by
+        rw [Matrix.mul_assoc _ (g : Matrix n n R), Units.mul_inv, Matrix.mul_one]
+
+/-- If an element `g` of `unitaryGroupOf A` fixes the basis vector `x`, then the row `x` of
+`A * g` is that of `A`. -/
+theorem mul_val_apply_eq_apply_of_mem_unitaryGroupOf {g : GL n R} (hg : g ∈ unitaryGroupOf A)
+    {x : n} (hx : ∀ m, (g : Matrix n n R) m x = (1 : Matrix n n R) m x) (k : n) :
+    (A * (g : Matrix n n R)) x k = A x k := by
+  -- The row `x` of `star g` is that of `1`, and `star g * A * g = A`.
+  have hrow (m : n) : star (g : Matrix n n R) x m = (1 : Matrix n n R) x m := by
+    rw [star_apply, hx m]
+    rcases eq_or_ne m x with rfl | h
+    · simp
+    · simp [h, h.symm]
+  calc (A * (g : Matrix n n R)) x k = ((1 : Matrix n n R) * (A * (g : Matrix n n R))) x k := by
+        rw [Matrix.one_mul]
+    _ = (star (g : Matrix n n R) * (A * (g : Matrix n n R))) x k := by
+        simp only [Matrix.mul_apply, hrow]
+    _ = A x k := by rw [← Matrix.mul_assoc, mem_unitaryGroupOf_iff.1 hg]
 
 /-- An element `g` of `unitaryGroupOf A` satisfies `gᴴ (A g) = A`, the right-associated form of
 `star g * A * g = A`. -/
