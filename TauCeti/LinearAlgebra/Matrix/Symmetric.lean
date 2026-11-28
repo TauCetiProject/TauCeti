@@ -6,19 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Even
+public import Mathlib.Algebra.Ring.BooleanRing
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.SetTheory.Cardinal.Finite
+import Mathlib.Algebra.Field.ZMod
 import Mathlib.Algebra.Ring.Int.Parity
+import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.Data.Sym.Card
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
+import TauCeti.Algebra.Ring.BooleanRing
 
 /-!
 # Quadratic forms, idempotents, and the number of symmetric matrices
@@ -93,6 +98,8 @@ column and a corner, the transpose of the column filling the last row.
   bordered by a column, its transpose and a corner.
 * `Matrix.subTransposeEqEquiv`: for an alternating `Q`, the solutions of `S - Sᵀ = Q` are
   parametrized by the functions on `Sym2 n`.
+* `Matrix.IsSymm.exists_vecMul_eq_diag`: a symmetric matrix over a Boolean ring admits a vector
+  `c` with `c ᵥ* G = G.diag`.
 -/
 
 public section
@@ -434,5 +441,75 @@ theorem coe_subTransposeEqEquiv_symm_apply (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i 
   (rfl)
 
 end SubTranspose
+
+/-- Every symmetric finite matrix `A` over `ℤ/2ℤ` admits a row-combination vector `c` satisfying
+`c ᵥ* A = A.diag`. -/
+private theorem IsSymm.exists_vecMul_eq_diag_zmod_two {ι : Type*} [Fintype ι]
+    {A : Matrix ι ι (ZMod 2)} (hA : A.IsSymm) :
+    ∃ c : ι → ZMod 2, c ᵥ* A = A.diag := by
+  classical
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  have hB : A.toBilin'.IsSymm := Matrix.isSymm_toBilin'_iff_isSymm.mpr hA
+  have hB_flip : LinearMap.flip A.toBilin' = A.toBilin' :=
+    LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ hB.eq y x
+  have hc_sq : ∀ c : ZMod 2, c * c = c := fun | ⟨0, _⟩ => rfl | ⟨1, _⟩ => rfl
+  let φ : (ι → ZMod 2) →ₗ[ZMod 2] ZMod 2 :=
+    { toFun := fun x ↦ A.toBilin' x x
+      map_add' := fun x y ↦ by
+        have htwo : A.toBilin' x y + A.toBilin' x y = 0 := by
+          rw [← two_mul, ← Nat.cast_ofNat (R := ZMod 2), ZMod.natCast_self, zero_mul]
+        simp only [map_add, LinearMap.add_apply, hB.eq y x]
+        rw [add_assoc (A.toBilin' x x), ← add_assoc (A.toBilin' x y) (A.toBilin' x y), htwo,
+          zero_add]
+      map_smul' := fun c x ↦ by
+        simp [smul_eq_mul, ← mul_assoc, hc_sq c] }
+  have hmem : φ ∈ LinearMap.range A.toBilin' := by
+    rw [← hB_flip, ← LinearMap.dualAnnihilator_ker_eq_range_flip (B := A.toBilin'),
+      Submodule.mem_dualAnnihilator]
+    intro u hu
+    simp [φ, LinearMap.mem_ker.mp hu]
+  obtain ⟨c, hc⟩ := hmem
+  refine ⟨c, funext fun j ↦ ?_⟩
+  have hj := LinearMap.congr_fun hc (Pi.single j 1)
+  simpa [φ, vecMul, dotProduct, Matrix.toBilin'_apply', Matrix.mulVec, Pi.single_apply] using hj
+
+/-- For a symmetric finite matrix `G` over a Boolean ring `S`, there exists a vector `c : ι → S`
+such that `c ᵥ* G = G.diag`. -/
+theorem IsSymm.exists_vecMul_eq_diag {S ι : Type*} [BooleanRing S] [Fintype ι]
+    {G : Matrix ι ι S} (hG : G.IsSymm) :
+    ∃ c : ι → S, c ᵥ* G = G.diag := by
+  classical
+  have h2S : ((2 : ℕ) : S) = 0 := by
+    rw [Nat.cast_ofNat, ← one_add_one_eq_two, BooleanRing.add_self 1]
+  let toS : ZMod 2 →+* S := ZMod.castHom (ringChar.dvd h2S) S
+  let X : Finset S := Finset.univ.image fun p : ι × ι ↦ G p.1 p.2
+  have hG_mem (i j) : G i j ∈ X := Finset.mem_image.mpr ⟨(i, j), Finset.mem_univ _, rfl⟩
+  let e : Finset S → S := fun T ↦ (∏ x ∈ T, x) * ∏ x ∈ X \ T, (1 - x)
+  obtain ⟨hsum_e, he_mul⟩ := TauCeti.booleanRing_partition_unity X
+  have hsol (T : Finset S) : ∃ c : ι → ZMod 2,
+      ∀ j, ∑ i, c i * (if G i j ∈ T then 1 else 0) = if G j j ∈ T then 1 else 0 := by
+    let A : Matrix ι ι (ZMod 2) := Matrix.of fun i j ↦ if G i j ∈ T then 1 else 0
+    obtain ⟨c, hc⟩ := IsSymm.exists_vecMul_eq_diag_zmod_two (A := A) (by
+      ext i j; simp [A, hG.apply i j])
+    exact ⟨c, fun j ↦ by simpa [A, vecMul, dotProduct] using congrFun hc j⟩
+  choose c hc using hsol
+  refine ⟨fun i ↦ ∑ T ∈ X.powerset, toS (c T i) * e T, funext fun j ↦ ?_⟩
+  simp only [vecMul, dotProduct, diag_apply]
+  calc
+    ∑ i, (∑ T ∈ X.powerset, toS (c T i) * e T) * G i j
+        = ∑ T ∈ X.powerset, ∑ i, toS (c T i) * (e T * G i j) := by
+          simp_rw [Finset.sum_mul, mul_assoc]; exact Finset.sum_comm
+    _ = ∑ T ∈ X.powerset, (∑ i, toS (c T i) * toS (if G i j ∈ T then 1 else 0)) * e T := by
+          refine Finset.sum_congr rfl fun T _ ↦ ?_
+          rw [Finset.sum_mul]
+          refine Finset.sum_congr rfl fun i _ ↦ ?_
+          rw [he_mul T (hG_mem i j)]; simp only [apply_ite toS, map_one, map_zero]; ring
+    _ = ∑ T ∈ X.powerset, toS (if G j j ∈ T then 1 else 0) * e T := by
+          refine Finset.sum_congr rfl fun T _ ↦ ?_
+          rw [← hc T j, map_sum]; simp_rw [map_mul]
+    _ = ∑ T ∈ X.powerset, e T * G j j := by
+          refine Finset.sum_congr rfl fun T _ ↦ ?_
+          rw [he_mul T (hG_mem j j)]; simp only [apply_ite toS, map_one, map_zero]; rfl
+    _ = G j j := by rw [← Finset.sum_mul, hsum_e, one_mul]
 
 end Matrix

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.BilinearForm.ValuationRing
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -27,6 +28,9 @@ and the unit determinant of each constituent are read off the diagonal.
   localized integral form of a lattice has an orthogonal basis.
 * `TauCeti.IntegralLattice.exists_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow`: for a
   nondegenerate lattice the diagonal entries are units times powers of `p`.
+* `TauCeti.IntegralLattice.exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow`: the same
+  diagonal Jordan form indexed by `Fin n` whenever `finrank ℤ L = n`.
+
 ## References
 
 * O. T. O'Meara, *Introduction to Quadratic Forms*, §91C and 92:1.
@@ -70,6 +74,22 @@ theorem exists_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow (hp : p ≠ 2)
   exact ⟨b, fun i ↦ _root_.PadicInt.unitCoeff (hne i),
     fun i ↦ (L.localIntegralForm p (b i) (b i)).valuation, hb,
     fun i ↦ _root_.PadicInt.unitCoeff_spec (hne i)⟩
+
+/-- **Diagonal Jordan form indexed by `Fin n`.** For an odd prime `p` and a nondegenerate integral
+lattice of rank `n`, the localized integral form has an orthogonal `Fin n`-indexed basis whose
+diagonal entries are units of `ℤ_p` times powers of `p`. -/
+theorem exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow (hp : p ≠ 2)
+    (hL : L.form.Nondegenerate) {n : ℕ} (hn : finrank ℤ L = n) :
+    ∃ (b : Basis (Fin n) ℤ_[p] (L.LocalCarrier p)) (u : Fin n → ℤ_[p]ˣ) (k : Fin n → ℕ),
+      (L.localIntegralForm p).iIsOrtho b ∧
+        ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i := by
+  have hnL : finrank ℤ_[p] (L.LocalCarrier p) = n := by
+    rw [Module.finrank_eq_card_basis ((Module.finBasis ℤ L).baseChange ℤ_[p]), Fintype.card_fin, hn]
+  obtain ⟨b', u', k', hb', hbu'⟩ :=
+    L.exists_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp hL
+  refine ⟨b'.reindex (finCongr hnL), fun i ↦ u' ((finCongr hnL).symm i),
+    fun i ↦ k' ((finCongr hnL).symm i), hb'.reindex (finCongr hnL), fun i ↦ ?_⟩
+  simpa [Basis.reindex_apply] using hbu' ((finCongr hnL).symm i)
 
 end IntegralLattice
 

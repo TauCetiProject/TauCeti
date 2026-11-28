@@ -57,8 +57,8 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
   `p`-primary component is all of `M`.
 * `TauCeti.primaryComponent_eq_bot_of_injective_nsmul`: injective multiplication by `p`
   makes the `p`-primary component trivial.
-* `AddEquiv.primaryComponent_eq_bot_iff`: an additive equivalence preserves the triviality of
-  the `p`-primary component.
+* `AddEquiv.map_mem_primaryComponent_iff`, `AddEquiv.primaryComponent_eq_bot_iff`: an additive
+  equivalence preserves membership in and triviality of the `p`-primary component.
 * `TauCeti.AddCommGroup.pow_nsmul_eq_zero_of_mem_primaryComponent`: a `p`-primary element killed
   by `p ^ N * m`, with `m` prime to `p`, is killed by `p ^ N`.
 * `IsAddPGroup.isAddTorsion`: a `p`-primary torsion group is torsion when `p ≠ 0`.
@@ -236,6 +236,12 @@ theorem primaryComponent_eq_bot_of_injective_nsmul
     rw [← smul_iterate]
     exact hp.iterate m
   exact hpPow (by simpa using hm)
+
+/-- An additive equivalence preserves and reflects membership in the `p`-primary component. -/
+theorem _root_.AddEquiv.map_mem_primaryComponent_iff {N : Type*} [AddCommGroup N] (e : M ≃+ N)
+    {x : M} :
+    e x ∈ AddCommGroup.primaryComponent N p ↔ x ∈ AddCommGroup.primaryComponent M p := by
+  simp only [AddCommGroup.mem_primaryComponent, ← map_nsmul, EmbeddingLike.map_eq_zero_iff]
 
 /-- An additive equivalence preserves the triviality of the `p`-primary component: the
 `p`-primary component of `M` is trivial exactly when that of `N` is. -/

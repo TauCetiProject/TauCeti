@@ -35,6 +35,12 @@ covering the range is weighted by its occurrence count.
 * `Function.occCount_subtype_ne`, `Function.exists_equiv_subtype_ne_of_occCount_eq`: deleting the
   indices with value `z` keeps the other counts, so equal counts away from `z` match the
   remaining indices.
+* `Function.occCount_eq_of_natCard_eq_of_occCount_eq_of_ne`,
+  `Function.occCount_eq_of_occCount_eq_of_ne`, `Function.exists_perm_of_occCount_eq_of_ne`: on
+  index types of equal finite cardinality, equal counts away from `z` force equal counts at `z` as
+  well, giving a permutation when the index types coincide.
+* `Finset.prod_filter_equiv`: a product over a fiber is preserved by an equivalence intertwining
+  two families.
 * `Finset.prod_filter_subtype_ne`: a product over one fiber ignores the deletion of another.
 * `Finset.prod_filter_subtype_ne_equiv`: a product over one fiber is preserved by a value-preserving
   matching of the indices away from another fiber.
@@ -212,6 +218,43 @@ theorem exists_equiv_subtype_ne_of_occCount_eq {Y : Type*} [Finite X] [Finite Y]
       · rw [occCount_subtype_ne u ha, occCount_subtype_ne v ha, h a ha]
   exact ⟨σ, congrFun hσ⟩
 
+/-- Two finite families on index types of equal cardinality whose occurrence counts agree away from
+`z` have the same occurrence count at every value. -/
+theorem occCount_eq_of_natCard_eq_of_occCount_eq_of_ne {Y : Type*} [Finite X] [Finite Y]
+    {u : X → S} {v : Y → S} {z : S} (hXY : Nat.card X = Nat.card Y)
+    (h : ∀ a, a ≠ z → occCount u a = occCount v a) (a : S) :
+    occCount u a = occCount v a := by
+  classical
+  let _ := Fintype.ofFinite X
+  let _ := Fintype.ofFinite Y
+  obtain rfl | ha := eq_or_ne a z
+  · let T : Finset S := insert a (Finset.univ.image u ∪ Finset.univ.image v)
+    have huT : ∑ b ∈ T, occCount u b = Nat.card X :=
+      sum_occCount_eq_card u fun i => Finset.mem_insert_of_mem
+        (Finset.mem_union_left _ (Finset.mem_image_of_mem u (Finset.mem_univ i)))
+    have hvT : ∑ b ∈ T, occCount v b = Nat.card Y :=
+      sum_occCount_eq_card v fun j => Finset.mem_insert_of_mem
+        (Finset.mem_union_right _ (Finset.mem_image_of_mem v (Finset.mem_univ j)))
+    rw [← Finset.add_sum_erase T _ (Finset.mem_insert_self a _)] at huT hvT
+    have herase : ∑ b ∈ T.erase a, occCount u b = ∑ b ∈ T.erase a, occCount v b :=
+      Finset.sum_congr rfl fun b hb => h b (Finset.ne_of_mem_erase hb)
+    omega
+  · exact h a ha
+
+/-- Two families on a finite index type whose occurrence counts agree away from `z` have equal
+occurrence counts everywhere. -/
+theorem occCount_eq_of_occCount_eq_of_ne [Finite X] {u v : X → S} {z : S}
+    (h : ∀ a, a ≠ z → occCount u a = occCount v a) (a : S) :
+    occCount u a = occCount v a :=
+  occCount_eq_of_natCard_eq_of_occCount_eq_of_ne rfl h a
+
+/-- Two families on a finite index type whose occurrence counts agree away from `z` differ by a
+permutation of their indices. -/
+theorem exists_perm_of_occCount_eq_of_ne [Finite X] {u v : X → S} {z : S}
+    (h : ∀ a, a ≠ z → occCount u a = occCount v a) :
+    ∃ σ : Equiv.Perm X, v ∘ σ = u :=
+  exists_perm_of_occCount_eq (occCount_eq_of_occCount_eq_of_ne h)
+
 /-- Occurrence counts are the multiplicities in the multiset of values of a finite family. -/
 theorem occCount_eq_count_map_univ [Fintype X] [DecidableEq S] (f : X → S) (y : S) :
     occCount f y = (Finset.univ.val.map f).count y := by
@@ -233,6 +276,17 @@ end Function
 namespace Finset
 
 variable {X S : Type*}
+
+/-- Matching two index types along a bijection `σ` that intertwines families `u` and `v` does not
+change a product over the indices at which they take a value `a`. -/
+@[to_additive /-- Matching two index types along a bijection `σ` that intertwines families `u` and
+`v` does not change a sum over the indices at which they take a value `a`. -/]
+theorem prod_filter_equiv {Y : Type*} [Fintype X] [Fintype Y] [DecidableEq S]
+    {M : Type*} [CommMonoid M] (u : X → S) (v : Y → S) (g : Y → M) (a : S)
+    (σ : X ≃ Y) (hσ : ∀ x, v (σ x) = u x) :
+    ∏ x with u x = a, g (σ x) = ∏ y with v y = a, g y := by
+  rw [prod_filter, prod_filter]
+  exact Fintype.prod_equiv σ _ _ fun x ↦ by simp only [hσ x]
 
 /-- A product over the indices at which a family takes a value `a` is unchanged by first deleting
 the indices at which it takes another value `z`. -/

@@ -7,10 +7,11 @@ module
 
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.Data.ZMod.Basic
+public import TauCeti.GroupTheory.Rank
 import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.Data.ZMod.Torsion
 import Mathlib.Data.Fintype.EquivFin
-import Mathlib.LinearAlgebra.Pi
 
 /-!
 # Finite abelian groups of prime-power exponent and given rank
@@ -18,7 +19,8 @@ import Mathlib.LinearAlgebra.Pi
 A finite abelian group killed by `p ^ k`, of order `p ^ (r * k)`, and with exactly `p ^ r`
 elements killed by `p` is the product of `r` cyclic groups of order `p ^ k`.  This is the
 homogeneous prime-power case of the structure theorem for finite abelian groups, and the
-rank-two case is recorded separately.
+rank-two case is recorded separately. On a finite product `∏ᵢ ℤ/pᵏⁱ`, `AddGroup.rank` equals
+`#{i | kᵢ ≠ 0}`.
 
 The criterion is useful when the total order and the first torsion layer are easier to count than
 explicit generators.  It determines both the number of cyclic factors and their exponents.
@@ -27,12 +29,14 @@ explicit generators.  It determines both the number of cyclic factors and their 
 
 * `TauCeti.AddCommGroup.nonempty_addEquiv_pi_zmod_primePow`: the rank-`r` characterisation.
 * `TauCeti.AddCommGroup.nonempty_addEquiv_prod_zmod_primePow`: the rank-two case.
+* `TauCeti.AddCommGroup.rank_pi_zmod_pow`: `AddGroup.rank` of `∏ᵢ ℤ/pᵏⁱ` is `#{i | kᵢ ≠ 0}`.
 -/
 
 public section
 
 namespace TauCeti.AddCommGroup
 
+open Finset
 open scoped DirectSum
 
 variable {G : Type*} [AddCommGroup G]
@@ -115,6 +119,31 @@ theorem nonempty_addEquiv_prod_zmod_primePow {p k : ℕ} (hp : p.Prime)
     Nonempty (G ≃+ ZMod (p ^ k) × ZMod (p ^ k)) :=
   (nonempty_addEquiv_pi_zmod_primePow hp hpow hcard hcardp).map fun e ↦
     e.trans (LinearEquiv.finTwoArrow ℕ (ZMod (p ^ k))).toAddEquiv
+
+/-- The minimal number of generators of a finite product `∏ᵢ ℤ/pᵏⁱ` is the number of nonzero
+exponents `kᵢ ≠ 0`. -/
+theorem rank_pi_zmod_pow {p : ℕ} [Fact p.Prime] {ι : Type*} [Fintype ι] (k : ι → ℕ) :
+    AddGroup.rank (∀ i, ZMod (p ^ k i)) = #{i | k i ≠ 0} := by
+  classical
+  have hp : p.Prime := Fact.out
+  have : ∀ j : {i // k i ≠ 0}, NeZero (p ^ k j.val) := fun j ↦ ⟨pow_ne_zero _ hp.ne_zero⟩
+  let e : (∀ i, ZMod (p ^ k i)) ≃+ (∀ j : {i // k i ≠ 0}, ZMod (p ^ k j.val)) :=
+    { toFun := fun x j ↦ x j.val
+      invFun := fun y i ↦ if hi : k i ≠ 0 then y ⟨i, hi⟩ else 0
+      left_inv := fun x ↦ funext fun i ↦ by
+        by_cases hi : k i = 0
+        · have : Subsingleton (ZMod (p ^ k i)) := by rw [hi, pow_zero]; infer_instance
+          exact Subsingleton.elim _ _
+        · simp [hi]
+      right_inv := fun y ↦ funext fun ⟨i, hi⟩ ↦ by simp [hi]
+      map_add' := fun _ _ ↦ rfl }
+  calc
+    AddGroup.rank (∀ i, ZMod (p ^ k i))
+      = AddGroup.rank (∀ j : {i // k i ≠ 0}, ZMod (p ^ k j.val)) := AddGroup.rank_congr e
+    _ = Fintype.card {i // k i ≠ 0} :=
+        AddGroup.rank_pi_zmod (fun j : {i // k i ≠ 0} ↦ p ^ k j.val) hp
+          fun j ↦ dvd_pow_self p j.property
+    _ = #{i | k i ≠ 0} := Fintype.card_subtype _
 
 end TauCeti.AddCommGroup
 

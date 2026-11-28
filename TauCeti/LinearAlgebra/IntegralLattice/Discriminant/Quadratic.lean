@@ -7,9 +7,11 @@ module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.Algebra.AddCircle
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Bilinear
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
+import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Refinement
 
 import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 
@@ -39,6 +41,8 @@ construction.
 
 * `TauCeti.IntegralLattice.discriminantQuadraticMap`: the descended half-norm on `A_L`.
 * `TauCeti.IntegralLattice.discriminantQuadraticModule`: the packaged finite quadratic module.
+* `IntegralLattice.nonempty_isometry_restrict_discriminantQuadraticModule_primaryComponent_iff`:
+  equivalence between quadratic and bilinear isometry of odd-primary discriminant modules.
 * `TauCeti.IntegralLattice.isNondegenerate_discriminantQuadraticModule`: nondegeneracy of its
   polar pairing.
 * `TauCeti.IntegralLattice.Isometry.discriminantQuadraticIsometry`,
@@ -199,12 +203,66 @@ theorem discriminantQuadraticModule_quadratic (L : IntegralLattice V)
     (L.discriminantQuadraticModule hL).quadratic x = L.discriminantQuadraticMap hL x :=
   rfl
 
+/-- The pairing of the discriminant quadratic module is the discriminant pairing. -/
+theorem discriminantQuadraticModule_pairing (L : IntegralLattice V)
+    [L.IsNondegenerate] (hL : L.IsEven) (x y : L.DiscriminantGroup) :
+    (L.discriminantQuadraticModule hL).pairing x y = L.discriminantPairing x y :=
+  rfl
+
 /-- The polar finite bilinear module of the discriminant quadratic module is the existing
 discriminant bilinear module. -/
 theorem discriminantQuadraticModule_toFiniteBilinearModule (L : IntegralLattice V)
     [L.IsNondegenerate] (hL : L.IsEven) :
     (L.discriminantQuadraticModule hL).toFiniteBilinearModule =
       L.discriminantBilinearModule :=
+  rfl
+
+/-- Restricting the discriminant quadratic module to a subgroup `H` has polar finite bilinear
+module equal to the restriction of the discriminant bilinear module to `H`. -/
+theorem restrict_discriminantQuadraticModule_toFiniteBilinearModule (L : IntegralLattice V)
+    [L.IsNondegenerate] (hL : L.IsEven) (H : AddSubgroup (L.discriminantQuadraticModule hL)) :
+    ((L.discriminantQuadraticModule hL).restrict H).toFiniteBilinearModule =
+      L.discriminantBilinearModule.restrict H :=
+  rfl
+
+/-- Restricting the discriminant quadratic module to its `n`-primary component has polar finite
+bilinear module equal to the restriction of the discriminant bilinear module to its `n`-primary
+component. -/
+theorem restrict_discriminantQuadraticModule_primaryComponent_toFiniteBilinearModule
+    (L : IntegralLattice V) [L.IsNondegenerate] (hL : L.IsEven) (n : ℕ) :
+    ((L.discriminantQuadraticModule hL).restrict
+        (AddCommGroup.primaryComponent (L.discriminantQuadraticModule hL)
+          n)).toFiniteBilinearModule =
+      L.discriminantBilinearModule.restrict
+        (AddCommGroup.primaryComponent L.discriminantBilinearModule n) :=
+  rfl
+
+/-- At an odd index `n`, quadratic and bilinear isometry agree on the `n`-primary components of
+the discriminant modules of two even nondegenerate lattices. -/
+theorem nonempty_isometry_restrict_discriminantQuadraticModule_primaryComponent_iff
+    {W : Type v} [AddCommGroup W] [Module ℚ W]
+    (L : IntegralLattice V) (M : IntegralLattice W) [L.IsNondegenerate] [M.IsNondegenerate]
+    (hL : L.IsEven) (hM : M.IsEven) {n : ℕ} (hn : Odd n) :
+    Nonempty (FiniteQuadraticModule.Isometry
+      ((L.discriminantQuadraticModule hL).restrict
+        (AddCommGroup.primaryComponent (L.discriminantQuadraticModule hL) n))
+      ((M.discriminantQuadraticModule hM).restrict
+        (AddCommGroup.primaryComponent (M.discriminantQuadraticModule hM) n))) ↔
+      Nonempty (FiniteBilinearModule.Isometry
+        (L.discriminantBilinearModule.restrict
+          (AddCommGroup.primaryComponent L.discriminantBilinearModule n))
+        (M.discriminantBilinearModule.restrict
+          (AddCommGroup.primaryComponent M.discriminantBilinearModule n))) := by
+  rw [FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd
+      ((L.discriminantQuadraticModule hL).odd_natCard_restrict_primaryComponent hn),
+    L.restrict_discriminantQuadraticModule_primaryComponent_toFiniteBilinearModule hL n,
+    M.restrict_discriminantQuadraticModule_primaryComponent_toFiniteBilinearModule hM n]
+
+/-- The cardinality of the discriminant quadratic module is that of the discriminant group. -/
+@[simp]
+theorem natCard_discriminantQuadraticModule (L : IntegralLattice V)
+    [L.IsNondegenerate] (hL : L.IsEven) :
+    Nat.card (L.discriminantQuadraticModule hL) = Nat.card L.DiscriminantGroup :=
   rfl
 
 /-- The discriminant quadratic module of an even nondegenerate lattice is nondegenerate. -/

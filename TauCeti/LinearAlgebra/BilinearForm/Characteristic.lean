@@ -8,8 +8,11 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
+import Mathlib.Algebra.Field.ZMod
+import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Matrix.Symmetric
 public import TauCeti.LinearAlgebra.BilinearForm.Prod
 
 /-!
@@ -20,8 +23,11 @@ Let `B` be a symmetric bilinear form over a commutative ring `R`. A vector `w` i
 
 Suppose that `c ^ 2 ≡ c` modulo `2` for every `c : R`, as for `ℤ` and `ℤ_[2]`. Then
 `x ↦ B x x` is linear modulo `2`, so a perfect symmetric form on a free module has a
-characteristic vector. Any two characteristic vectors differ by twice a vector, and therefore
-their self-pairings agree modulo `8`. If `b` is an orthogonal basis, then `∑ i, b i` is
+characteristic vector, and more generally every symmetric form on a finite free module has a
+characteristic vector (even without perfection, by reducing modulo `(2)` to a Boolean ring and
+splitting the finite set of Gram entries into idempotent pieces over `ℤ/2ℤ`). Any two
+characteristic vectors of a perfect form differ by twice a vector, and therefore their
+self-pairings agree modulo `8`. If `b` is an orthogonal basis, then `∑ i, b i` is
 characteristic, and its self-pairing is the trace `∑ i, B (b i) (b i)` of the diagonal Gram matrix.
 Consequently that trace modulo `8` is an isometry invariant of a perfect symmetric form with an
 orthogonal basis. Over `ℤ_[2]` these are the odd unimodular forms, and the invariant is their
@@ -35,6 +41,12 @@ orthogonal basis. Over `ℤ_[2]` these are the odd unimodular forms, and the inv
 
 * `LinearMap.BilinForm.IsSymm.exists_isCharacteristic`: a perfect symmetric form on a free module
   has a characteristic vector.
+* `LinearMap.BilinForm.IsSymm.exists_apply_eq_apply_self_zmod_two`: every symmetric form on a
+  finite `ℤ/2ℤ`-module has a vector representing its diagonal `x ↦ B x x`.
+* `LinearMap.BilinForm.IsSymm.exists_isCharacteristic_of_finite`: every symmetric form on a finite
+  free module has a characteristic vector.
+* `LinearMap.BilinForm.IsSymm.exists_apply_eq_apply_self`: every symmetric form on a finite free
+  module over a ring with `c ^ 2 = c` has a vector representing its diagonal `x ↦ B x x`.
 * `LinearMap.BilinForm.Equivalent.forall_two_dvd_apply_self_iff`: isometric forms are even
   together.
 * `LinearMap.BilinForm.IsCharacteristic.isCharacteristic_iff_exists_eq_add_two_smul`: the
@@ -181,6 +193,59 @@ theorem IsSymm.exists_isCharacteristic [Free R M] [B.IsPerfPair] (hB : B.IsSymm)
   let φ : Dual R M := b.constr R fun i ↦ B (b i) (b i)
   refine ⟨B.toPerfPair.symm φ, (hB.isCharacteristic_iff_forall_basis h2 b).2 fun i ↦ ?_⟩
   simp [φ]
+
+/-- **Existence of characteristic vectors on finite free modules.** If `c ^ 2 ≡ c` modulo `2` for
+every `c : R`, then every symmetric bilinear form on a finite free `R`-module has a characteristic
+vector. -/
+theorem IsSymm.exists_isCharacteristic_of_finite [Free R M] [Module.Finite R M] (hB : B.IsSymm)
+    (h2 : ∀ c : R, (2 : R) ∣ c ^ 2 - c) : ∃ w, B.IsCharacteristic w := by
+  classical
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact ⟨0, fun x ↦ ⟨0, Subsingleton.elim _ _⟩⟩
+  let b := Free.chooseBasis R M
+  have : Finite (Free.ChooseBasisIndex R M) := Module.Finite.finite_basis b
+  let _ : Fintype (Free.ChooseBasisIndex R M) := Fintype.ofFinite _
+  let I : Ideal R := Ideal.span {(2 : R)}
+  let S := R ⧸ I
+  have hmul_self (a : S) : a * a = a := by
+    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective a
+    rw [← map_mul, ← sub_eq_zero, ← map_sub]
+    refine Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton.mpr ?_)
+    simpa [sq] using h2 r
+  let instCR : CommRing S := inferInstance
+  let _ : BooleanRing S :=
+    { instCR with isIdempotentElem := hmul_self }
+  let G : Matrix (Free.ChooseBasisIndex R M) (Free.ChooseBasisIndex R M) S :=
+    Matrix.of fun i j ↦ Ideal.Quotient.mk I (B (b i) (b j))
+  have hG : G.IsSymm := Matrix.ext fun i j ↦ congrArg (Ideal.Quotient.mk I) (hB.eq (b j) (b i))
+  obtain ⟨c, hc⟩ := hG.exists_vecMul_eq_diag
+  choose r hr using fun i ↦ Ideal.Quotient.mk_surjective (I := I) (c i)
+  refine ⟨∑ i, r i • b i, (hB.isCharacteristic_iff_forall_basis h2 b).2 fun j ↦ ?_⟩
+  refine Ideal.mem_span_singleton.mp ((Ideal.Quotient.eq_zero_iff_mem (I := I)).mp ?_)
+  rw [map_sub, sub_eq_zero]
+  have hcj := congrFun hc j
+  simp only [Matrix.vecMul, dotProduct, Matrix.diag_apply] at hcj
+  simpa [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, map_mul, hr,
+    G] using hcj
+
+/-- Every symmetric bilinear form on a finite free module over a ring in which every element
+satisfies `c ^ 2 = c` has a vector `w` satisfying `B w x = B x x` for every `x`. -/
+theorem IsSymm.exists_apply_eq_apply_self [Free R M] [Module.Finite R M] (hB : B.IsSymm)
+    (hsq : ∀ c : R, c ^ 2 = c) : ∃ w : M, ∀ x : M, B w x = B x x := by
+  have h2 : (2 : R) = 0 := by
+    have h1 := hsq (-1); rw [neg_one_sq] at h1; linear_combination h1
+  obtain ⟨w, hw⟩ := hB.exists_isCharacteristic_of_finite fun c ↦ by simp [hsq c]
+  exact ⟨w, fun x ↦ sub_eq_zero.mp (zero_dvd_iff.mp (h2 ▸ hw x))⟩
+
+omit [CommRing R] [Module R M] in
+/-- **Existence of a diagonal-representing vector over `ℤ/2ℤ`.** Every symmetric bilinear form on a
+finite `ℤ/2ℤ`-module has a vector `w` satisfying `B w x = B x x` for every `x`. -/
+theorem IsSymm.exists_apply_eq_apply_self_zmod_two [Module (ZMod 2) M] [Module.Finite (ZMod 2) M]
+    {B : BilinForm (ZMod 2) M} (hB : B.IsSymm) :
+    ∃ w : M, ∀ x : M, B w x = B x x := by
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  have : Free (ZMod 2) M := Module.Free.of_divisionRing (ZMod 2) M
+  exact hB.exists_apply_eq_apply_self fun | ⟨0, _⟩ => rfl | ⟨1, _⟩ => rfl
 
 /-- **Two characteristic vectors differ by twice a vector** when the form is perfect and the
 module is free. -/

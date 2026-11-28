@@ -175,6 +175,13 @@ theorem rankOneDiscriminantEquiv_zsmul_rankOneClass (k : ℤ) :
     rankOneDiscriminantEquiv a (k • rankOneClass a) = (k : ZMod a.natAbs) := by
   rw [map_zsmul, rankOneDiscriminantEquiv_rankOneClass, zsmul_eq_mul, mul_one]
 
+/-- The inverse coordinate formula for the cyclic identification of a rank-one discriminant
+group: every class `c` equals `(rankOneDiscriminantEquiv a c).val • rankOneClass a`. -/
+theorem zsmul_val_rankOneDiscriminantEquiv_rankOneClass (c : (rankOne a).DiscriminantGroup) :
+    ((rankOneDiscriminantEquiv a c).val : ℤ) • rankOneClass a = c := by
+  apply (rankOneDiscriminantEquiv a).injective
+  rw [rankOneDiscriminantEquiv_zsmul_rankOneClass, Int.cast_natCast, ZMod.natCast_zmod_val]
+
 omit [NeZero a] in
 /-- The discriminant group of `⟨a⟩` has `|a|` elements, as a `Nat.card`: for `a = 0` the group is
 infinite and both sides are `0`. -/

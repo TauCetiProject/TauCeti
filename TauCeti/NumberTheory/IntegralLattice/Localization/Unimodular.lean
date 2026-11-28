@@ -41,6 +41,8 @@ perfect summand orthogonally after localization.
   odd prime, these invariants classify the integral local forms.
 * `TauCeti.IntegralLattice.localIntegralForm_equivalent_of_not_dvd`: equal rank and signed
   determinant give integral local isometry outside the prime factors of twice the determinant.
+* `TauCeti.IntegralLattice.odd_discriminant_iff_isUnit_determinant_padicInt_two`: odd discriminant
+  means unit signed determinant in `ℤ_[2]`.
 
 ## References
 
@@ -55,6 +57,12 @@ open Module
 namespace TauCeti.IntegralLattice
 
 variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
+
+/-- The discriminant of `L` is odd if and only if its signed determinant is a unit in `ℤ_[2]`. -/
+theorem odd_discriminant_iff_isUnit_determinant_padicInt_two (L : IntegralLattice V) :
+    Odd L.discriminant ↔ IsUnit (L.determinant : ℤ_[2]) := by
+  rw [PadicInt.isUnit_intCast_iff, discriminant_def, ← Nat.not_even_iff_odd, even_iff_two_dvd,
+    ← Int.natCast_dvd]
 
 /-- **A lattice whose determinant is a unit at `p` has a unimodular localization.** The localized
 integral form is then a perfect pairing on `ℤ_p ⊗[ℤ] L`. -/

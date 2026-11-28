@@ -9,18 +9,26 @@ public import Mathlib.Data.Int.ModEq
 public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Sum
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
+import TauCeti.Data.Int.MulPred
 
 /-!
 # Characteristic vectors of integral lattices
 
 A lattice vector is characteristic when pairing it with any lattice vector agrees modulo two
-with the latter's norm. This parity condition is the input to the characteristic-norm congruence
-for unimodular lattices. The results here give its behavior under evenness, isometries,
+with the latter's norm. Every integral lattice admits a characteristic vector
+(`TauCeti.IntegralLattice.exists_isCharacteristicVector`), as an instance of the general finite
+free bilinear-form theorem `LinearMap.BilinForm.IsSymm.exists_isCharacteristic_of_finite`. The
+results here also give the behavior of characteristic vectors under evenness, isometries,
 translation by twice a vector, and orthogonal sums.
 
 The congruences are in `ℤ`, using the integral restriction of the rational bilinear form, so the
 characteristic vectors of a lattice are those of that integral form in the sense of
 `LinearMap.BilinForm.IsCharacteristic`.
+
+## Main results
+
+* `TauCeti.IntegralLattice.exists_isCharacteristicVector`: every integral lattice admits a
+  characteristic vector.
 
 ## References
 
@@ -71,6 +79,12 @@ theorem isCharacteristicVector_iff_isCharacteristic (L : IntegralLattice V) (w :
   rw [isCharacteristicVector_iff, LinearMap.BilinForm.isCharacteristic_iff]
   refine forall_congr' fun x ↦ ?_
   rw [Int.modEq_iff_dvd, L.integralNorm_apply, ← dvd_neg, neg_sub]
+
+/-- **Every integral lattice has a characteristic vector.** -/
+theorem exists_isCharacteristicVector (L : IntegralLattice V) :
+    ∃ w : L, L.IsCharacteristicVector w := by
+  obtain ⟨w, hw⟩ := L.isSymm_integralForm.exists_isCharacteristic_of_finite Int.two_dvd_sq_sub_self
+  exact ⟨w, (L.isCharacteristicVector_iff_isCharacteristic w).mpr hw⟩
 
 /-- Zero is characteristic precisely when the lattice is even. -/
 @[simp ←]

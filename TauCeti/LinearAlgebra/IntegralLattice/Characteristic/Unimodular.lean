@@ -7,14 +7,13 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
-import TauCeti.Data.Int.MulPred
 
 /-!
 # Characteristic vectors in unimodular lattices
 
-The norm of an integral lattice is additive modulo two. For a unimodular lattice its
-mod-two character is represented by pairing with a lattice vector. All such representatives
-form one coset of twice the carrier, so their norms agree modulo eight.
+Every integral lattice has a characteristic vector
+(`TauCeti.IntegralLattice.exists_isCharacteristicVector`). In a unimodular lattice all
+characteristic vectors form one coset of twice the carrier, so their norms agree modulo eight.
 
 ## References
 
@@ -30,13 +29,6 @@ universe u
 variable {V : Type u} [AddCommGroup V] [Module ℚ V]
 
 namespace IntegralLattice
-
-/-- Every unimodular integral lattice has a characteristic vector. -/
-theorem IsUnimodular.exists_isCharacteristicVector {L : IntegralLattice V}
-    (hL : L.IsUnimodular) : ∃ w : L, L.IsCharacteristicVector w := by
-  have := hL.isPerfPair_integralForm
-  simpa only [isCharacteristicVector_iff_isCharacteristic] using
-    L.isSymm_integralForm.exists_isCharacteristic Int.two_dvd_sq_sub_self
 
 /-- Two characteristic vectors of a unimodular lattice differ by twice a lattice vector. -/
 theorem IsUnimodular.exists_characteristicVector_sub_eq_two_smul {L : IntegralLattice V}

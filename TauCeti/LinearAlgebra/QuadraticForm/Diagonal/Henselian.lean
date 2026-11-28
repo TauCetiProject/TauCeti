@@ -87,25 +87,31 @@ theorem equivalent_weightedSumSquares_snoc_prod_of_isUnit_two (h2 : IsUnit (2 : 
   simpa only [weightedSumSquares_units] using
     (diagonalChain_snoc_prod_of_isUnit_two h2 w).equivalent
 
-/-- Two unit diagonal forms of the same rank over a finite-residue Henselian local ring with
-two invertible are isometric exactly when their determinants agree modulo unit squares. -/
+/-- Two unit diagonal forms on the same finite index type over a finite-residue Henselian local
+ring with two invertible are isometric exactly when their determinants agree modulo unit squares. -/
 theorem equivalent_weightedSumSquares_iff_isSquare_prod_mul_prod_of_isUnit_two
-    (h2 : IsUnit (2 : R)) {n : ℕ} (w v : Fin n → Rˣ) :
+    (h2 : IsUnit (2 : R)) {ι : Type*} [Fintype ι] (w v : ι → Rˣ) :
     (weightedSumSquares R w).Equivalent (weightedSumSquares R v) ↔
       IsSquare ((∏ i, w i) * ∏ i, v i) := by
   let := h2.invertible
   refine ⟨isSquare_prod_mul_prod_of_equivalent, fun h ↦ ?_⟩
-  cases n with
-  | zero =>
-      have hv : w = v := Subsingleton.elim _ _
-      rw [hv]
-  | succ n =>
-      refine (equivalent_weightedSumSquares_snoc_prod_of_isUnit_two h2 w).trans
+  rcases eq_or_ne (Fintype.card ι) 0 with hc | hc
+  · have : IsEmpty ι := Fintype.card_eq_zero_iff.mp hc
+    rw [Subsingleton.elim w v]
+  · obtain ⟨n, hn⟩ : ∃ n, Fintype.card ι = n + 1 := ⟨Fintype.card ι - 1, by omega⟩
+    let α : Fin (n + 1) ≃ ι := (Fintype.equivFinOfCardEq hn).symm
+    have hcomp (u : ι → Rˣ) :
+        (weightedSumSquares R u).Equivalent (weightedSumSquares R (u ∘ α)) :=
+      ⟨QuadraticForm.isometryEquivWeightedSumSquaresReindex u α⟩
+    have hfin : IsSquare ((∏ j, (w ∘ α) j) * ∏ j, (v ∘ α) j) := by
+      rwa [Function.comp_def, Equiv.prod_comp α w, Function.comp_def, Equiv.prod_comp α v]
+    refine (hcomp w).trans <|
+      (equivalent_weightedSumSquares_snoc_prod_of_isUnit_two h2 (w ∘ α)).trans
         ((equivalent_weightedSumSquares_of_isSquare_div ?_).trans
-          (equivalent_weightedSumSquares_snoc_prod_of_isUnit_two h2 v).symm)
-      intro i
-      refine Fin.lastCases ?_ (fun j ↦ ?_) i
-      · simpa [div_eq_mul_inv, pow_two, mul_assoc] using h.div (IsSquare.sq (∏ i, v i))
-      · simp
+          ((equivalent_weightedSumSquares_snoc_prod_of_isUnit_two h2 (v ∘ α)).symm.trans
+            (hcomp v).symm))
+    intro i
+    refine Fin.lastCases ?_ (fun _ ↦ by simp) i
+    simpa [div_eq_mul_inv, pow_two, mul_assoc] using hfin.div (IsSquare.sq (∏ j, (v ∘ α) j))
 
 end TauCeti

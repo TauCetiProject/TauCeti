@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 public import Mathlib.GroupTheory.Torsion
 import Mathlib.Data.Nat.Factorization.Basic
+import TauCeti.Algebra.Group.Primary.Card
 import TauCeti.GroupTheory.Torsion
 
 /-!
@@ -37,9 +38,12 @@ of the `p`-primary components.
   pairing of primary decompositions is the sum of the component pairings.
 * `TauCeti.FiniteQuadraticModule.quadratic_sum_of_mem_primaryComponent`: a quadratic value on a
   sum of primary components is the sum of the component values.
+* `TauCeti.FiniteQuadraticModule.odd_natCard_restrict_primaryComponent`: for any odd natural
+  number `n`, the restricted `n`-primary component has odd cardinality.
 * `TauCeti.FiniteBilinearModule.Isometry.restrictPrimaryComponent` and
   `TauCeti.FiniteQuadraticModule.Isometry.restrictPrimaryComponent`: an isometry restricts to an
-  isometry of `p`-primary components.
+  isometry of `p`-primary components, commuting with `.symm`, `refl`, and `trans` in the bilinear
+  case.
 * `TauCeti.FiniteQuadraticModule.restrictPrimaryComponentProdIsometry`: the `p`-primary component
   of an orthogonal product is the orthogonal product of the `p`-primary components.
 
@@ -53,7 +57,7 @@ public section
 
 namespace TauCeti
 
-universe u
+universe u v
 
 private theorem eq_zero_of_coprime_nsmul_eq_zero {M : Type*} [AddMonoid M] {m n : ℕ} {x : M}
     (hmn : m.Coprime n) (hm : m • x = 0) (hn : n • x = 0) : x = 0 := by
@@ -184,9 +188,51 @@ theorem Isometry.restrictHom_restrictPrimaryComponent_apply {B : FiniteBilinearM
     B.restrictHom _ (f.restrictPrimaryComponent p x) = f (A.restrictHom _ x) :=
   f.restrictHom_restrict_apply _ x
 
+/-- The restricted bilinear isometry on `n`-primary components acts as `f` on subtypes. -/
+@[simp]
+theorem Isometry.coe_restrictPrimaryComponent_apply {A : FiniteBilinearModule.{u}}
+    {B : FiniteBilinearModule.{v}} (f : Isometry A B) (n : ℕ)
+    (x : AddCommGroup.primaryComponent A n) :
+    (f.restrictPrimaryComponent n x : B) = f x.val := by
+  simpa [B.restrictHom_apply, A.restrictHom_apply] using
+    f.restrictHom_restrictPrimaryComponent_apply n x
+
+/-- Restricting a bilinear isometry to `n`-primary components commutes with inversion. -/
+@[simp]
+theorem Isometry.restrictPrimaryComponent_symm {A : FiniteBilinearModule.{u}}
+    {B : FiniteBilinearModule.{v}} (f : Isometry A B) (n : ℕ) :
+    (f.restrictPrimaryComponent n).symm = f.symm.restrictPrimaryComponent n := by
+  apply DFunLike.ext
+  intro x
+  refine EquivLike.injective (f.restrictPrimaryComponent n) ?_
+  rw [apply_symm_apply]
+  apply Subtype.ext
+  rw [coe_restrictPrimaryComponent_apply, coe_restrictPrimaryComponent_apply, apply_symm_apply]
+
+/-- Restricting the identity bilinear isometry to the `n`-primary component gives the identity. -/
+@[simp]
+theorem Isometry.refl_restrictPrimaryComponent (n : ℕ) :
+    (Isometry.refl A).restrictPrimaryComponent n =
+      Isometry.refl (A.restrict (AddCommGroup.primaryComponent A n)) := by
+  ext x
+  rw [coe_restrictPrimaryComponent_apply, refl_apply, refl_apply]
+
+/-- Restricting bilinear isometries to `n`-primary components commutes with composition. -/
+@[simp]
+theorem Isometry.trans_restrictPrimaryComponent {A : FiniteBilinearModule.{u}}
+    {B : FiniteBilinearModule.{v}} {C : FiniteBilinearModule}
+    (f : Isometry A B) (g : Isometry B C) (n : ℕ) :
+    (f.trans g).restrictPrimaryComponent n =
+      (f.restrictPrimaryComponent n).trans (g.restrictPrimaryComponent n) := by
+  ext x
+  rw [coe_restrictPrimaryComponent_apply, trans_apply, trans_apply,
+    coe_restrictPrimaryComponent_apply, coe_restrictPrimaryComponent_apply]
+
 end FiniteBilinearModule
 
 namespace FiniteQuadraticModule
+
+section
 
 variable (A : FiniteQuadraticModule)
 
@@ -196,6 +242,13 @@ theorem isNondegenerate_restrict_primaryComponent (hA : A.IsNondegenerate) {p : 
     (hp : p.Prime) :
     (A.restrict (AddCommGroup.primaryComponent A p)).IsNondegenerate :=
   A.toFiniteBilinearModule.isNondegenerate_restrict_primaryComponent hA hp
+
+/-- For any odd natural number `n`, the restriction of a finite quadratic module to its
+`n`-primary component has odd cardinality. -/
+theorem odd_natCard_restrict_primaryComponent {n : ℕ} (hn : Odd n) :
+    Odd (Nat.card (A.restrict (AddCommGroup.primaryComponent A n))) := by
+  rw [A.natCard_restrict]
+  exact TauCeti.AddCommGroup.odd_natCard_primaryComponent hn
 
 /-- A quadratic map is additive on elements belonging to primary components for distinct primes. -/
 theorem quadratic_add_of_mem_primaryComponent {p q : ℕ} (hp : p.Prime) (hq : q.Prime)
@@ -246,8 +299,7 @@ isometry between them. -/
 def Isometry.restrictPrimaryComponent {B : FiniteQuadraticModule} (f : Isometry A B) (p : ℕ) :
     Isometry (A.restrict (AddCommGroup.primaryComponent A p))
       (B.restrict (AddCommGroup.primaryComponent B p)) :=
-  f.restrict fun x ↦ by
-    simp only [AddCommGroup.mem_primaryComponent, ← map_nsmul, EmbeddingLike.map_eq_zero_iff]
+  f.restrict fun _ ↦ f.toLinearEquiv.toAddEquiv.map_mem_primaryComponent_iff
 
 variable {A} in
 /-- The restriction of an isometry to primary components acts as the isometry. -/
@@ -256,6 +308,72 @@ theorem Isometry.restrictHom_restrictPrimaryComponent_apply {B : FiniteQuadratic
     (f : Isometry A B) (p : ℕ) (x : A.restrict (AddCommGroup.primaryComponent A p)) :
     B.restrictHom _ (f.restrictPrimaryComponent p x) = f (A.restrictHom _ x) :=
   f.restrictHom_restrict_apply _ x
+
+variable {A} in
+/-- Forgetting the quadratic map on a primary-component restriction gives the primary-component
+restriction of the underlying bilinear isometry. -/
+@[simp]
+theorem Isometry.restrictPrimaryComponent_toFiniteBilinearModule {B : FiniteQuadraticModule}
+    (f : Isometry A B) (p : ℕ) :
+    (f.restrictPrimaryComponent p).toFiniteBilinearModule =
+      f.toFiniteBilinearModule.restrictPrimaryComponent p := by
+  ext x
+  apply Subtype.ext
+  rw [Isometry.toFiniteBilinearModule_apply]
+  exact (B.restrictHom_apply _ ((f.restrictPrimaryComponent p) x)).symm.trans <|
+    (Isometry.restrictHom_restrictPrimaryComponent_apply f p x).trans <|
+      (congrArg f (A.restrictHom_apply _ x)).trans <|
+        (Isometry.toFiniteBilinearModule_apply f x.val).symm.trans
+          (FiniteBilinearModule.Isometry.coe_restrictPrimaryComponent_apply
+            f.toFiniteBilinearModule p x).symm
+
+variable {A} in
+/-- Restricting a quadratic isometry to `n`-primary components commutes with inversion. -/
+@[simp]
+theorem Isometry.restrictPrimaryComponent_symm {B : FiniteQuadraticModule}
+    (f : Isometry A B) (n : ℕ) :
+    (f.restrictPrimaryComponent n).symm = Isometry.restrictPrimaryComponent f.symm n := by
+  apply DFunLike.ext
+  intro x
+  refine EquivLike.injective (f.restrictPrimaryComponent n) ?_
+  rw [QuadraticMap.IsometryEquiv.apply_symm_apply]
+  exact Subtype.ext <|
+    (B.restrictHom_apply _ x).symm.trans <|
+      (QuadraticMap.IsometryEquiv.apply_symm_apply f (B.restrictHom _ x)).symm.trans <|
+        (congrArg f (Isometry.restrictHom_restrictPrimaryComponent_apply f.symm n x)).symm.trans <|
+          (Isometry.restrictHom_restrictPrimaryComponent_apply f n _).symm.trans
+            (B.restrictHom_apply _ _)
+
+/-- Restricting the identity quadratic isometry to the `n`-primary component gives the identity. -/
+@[simp]
+theorem Isometry.refl_restrictPrimaryComponent (n : ℕ) :
+    Isometry.restrictPrimaryComponent (QuadraticMap.IsometryEquiv.refl A.quadratic) n =
+      QuadraticMap.IsometryEquiv.refl
+        (A.restrict (AddCommGroup.primaryComponent A n)).quadratic := by
+  apply DFunLike.ext
+  intro x
+  exact Subtype.ext <|
+    (A.restrictHom_apply _ _).symm.trans <|
+      (Isometry.restrictHom_restrictPrimaryComponent_apply
+        (QuadraticMap.IsometryEquiv.refl A.quadratic) n x).trans
+        (A.restrictHom_apply _ x)
+
+variable {A} in
+/-- Restricting quadratic isometries to `n`-primary components commutes with composition. -/
+@[simp]
+theorem Isometry.trans_restrictPrimaryComponent {B C : FiniteQuadraticModule}
+    (f : Isometry A B) (g : Isometry B C) (n : ℕ) :
+    Isometry.restrictPrimaryComponent (f.trans g) n =
+      (f.restrictPrimaryComponent n).trans (g.restrictPrimaryComponent n) := by
+  apply DFunLike.ext
+  intro x
+  exact Subtype.ext <|
+    (C.restrictHom_apply _ _).symm.trans <|
+      (Isometry.restrictHom_restrictPrimaryComponent_apply (f.trans g) n x).trans <|
+        (congrArg g (Isometry.restrictHom_restrictPrimaryComponent_apply f n x).symm).trans <|
+          (Isometry.restrictHom_restrictPrimaryComponent_apply g n _).symm.trans
+            (C.restrictHom_apply _
+              ((g.restrictPrimaryComponent n) ((f.restrictPrimaryComponent n) x)))
 
 /-- **The `p`-primary component of an orthogonal product** is the orthogonal product of the
 `p`-primary components (`AddCommGroup.primaryComponent_prod`). -/
@@ -283,6 +401,8 @@ theorem restrictHom_restrictPrimaryComponentProdIsometry_apply_snd (B : FiniteQu
       ((A.prod B).restrictHom _ x).2 := by
   rw [restrictPrimaryComponentProdIsometry, Isometry.trans_apply,
     restrictHom_restrictProdIsometry_apply_snd, restrictHom_restrictCongr_apply]
+
+end
 
 end FiniteQuadraticModule
 
