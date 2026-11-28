@@ -916,9 +916,8 @@ theorem apply_sub_starProjection_ker (u : E →ₗ[𝕜] F) [u.ker.HasOrthogonal
 @[simp]
 theorem ker_comp_subtype_orthogonal (u : E →ₗ[𝕜] F) :
     (u ∘ₗ u.kerᗮ.subtype).ker = ⊥ := by
-  rw [Submodule.eq_bot_iff]
-  intro x hx
-  exact Subtype.ext (Submodule.disjoint_def.mp u.ker.orthogonal_disjoint x hx x.property)
+  rw [ker_comp, ← Submodule.disjoint_iff_comap_eq_bot]
+  exact u.ker.orthogonal_disjoint.symm
 
 /-- Restricting a linear map to the orthogonal complement of its kernel preserves its range. -/
 @[simp]

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Operator.Banach
-public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Snake
+public import Mathlib.Analysis.Normed.Module.Basic
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Snake.Basic
 import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Exact
 

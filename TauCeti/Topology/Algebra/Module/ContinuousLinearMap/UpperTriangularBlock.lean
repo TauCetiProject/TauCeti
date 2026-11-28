@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 import Mathlib.Tactic.Abel
 
@@ -89,11 +88,6 @@ theorem upperTriangularBlock_comp (A₁ : F₁ →L[R] G₁) (B₁ : F₂ →L[R
 @[simp] theorem snd_comp_upperTriangularBlock :
     snd R F₁ F₂ ∘L upperTriangularBlock A B D = D ∘L snd R E₁ E₂ := by ext x <;> simp
 
-/-- Composing `fst` on the left and `inr` on the right of `upperTriangularBlock A B D` extracts
-the off-diagonal block `B`. -/
-theorem fst_comp_upperTriangularBlock_comp_inr :
-    fst R F₁ F₂ ∘L upperTriangularBlock A B D ∘L inr R E₁ E₂ = B := by ext x; simp
-
 end Semiring
 
 section Recognition
@@ -112,21 +106,15 @@ theorem eq_upperTriangularBlock_of_comm (M : E₁ × E₂ →L[R] F₁ × F₂)
     (h₁ : M ∘L inl R E₁ E₂ = inl R F₁ F₂ ∘L A)
     (h₂ : snd R F₁ F₂ ∘L M = D ∘L snd R E₁ E₂) :
     M = upperTriangularBlock A (fst R F₁ F₂ ∘L M ∘L inr R E₁ E₂) D := by
+  have hrow := (LinearMap.coprod_comp_inl_inr (fst R F₁ F₂ ∘L M).toLinearMap).symm
+  have hlinl : (fst R F₁ F₂ ∘L M).toLinearMap ∘ₗ LinearMap.inl R E₁ E₂ = A.toLinearMap := by
+    ext x
+    simpa [comp_apply] using congrArg Prod.fst (DFunLike.congr_fun h₁ x)
+  rw [hlinl] at hrow
   apply ContinuousLinearMap.ext; rintro ⟨x₁, x₂⟩
-  have hsplit : (x₁, x₂) = inl R E₁ E₂ x₁ + inr R E₁ E₂ x₂ := by ext <;> simp
-  have h1 : (M (inl R E₁ E₂ x₁)).1 = A x₁ := by
-    simpa using congrArg Prod.fst (DFunLike.congr_fun h₁ x₁)
-  have h2 : (M (x₁, x₂)).2 = D x₂ := by
-    simpa using DFunLike.congr_fun h₂ (x₁, x₂)
   ext
-  · calc (M (x₁, x₂)).1
-      _ = (M (inl R E₁ E₂ x₁ + inr R E₁ E₂ x₂)).1 := by rw [← hsplit]
-      _ = (M (inl R E₁ E₂ x₁)).1 + (M (inr R E₁ E₂ x₂)).1 := by rw [map_add, Prod.fst_add]
-      _ = A x₁ + (fst R F₁ F₂ ∘L M ∘L inr R E₁ E₂) x₂ := by
-          simp only [h1, comp_apply, coe_fst']
-      _ = (upperTriangularBlock A (fst R F₁ F₂ ∘L M ∘L inr R E₁ E₂) D (x₁, x₂)).1 := by
-          simp only [upperTriangularBlock_apply]
-  · simpa only [upperTriangularBlock_apply] using h2
+  · simpa [LinearMap.coprod_apply] using LinearMap.congr_fun hrow (x₁, x₂)
+  · simpa using DFunLike.congr_fun h₂ (x₁, x₂)
 
 /-- Characterization of `M = upperTriangularBlock A B D` in terms of the commuting squares
 `M ∘L inl = inl ∘L A`, `fst ∘L M ∘L inr = B`, and `snd ∘L M = D ∘L snd`. -/
@@ -138,9 +126,7 @@ theorem eq_upperTriangularBlock_iff (M : E₁ × E₂ →L[R] F₁ × F₂)
           snd R F₁ F₂ ∘L M = D ∘L snd R E₁ E₂ := by
   refine ⟨?_, fun ⟨h₁, hB, h₂⟩ ↦ hB ▸ M.eq_upperTriangularBlock_of_comm h₁ h₂⟩
   rintro rfl
-  exact ⟨upperTriangularBlock_comp_inl A B D,
-    fst_comp_upperTriangularBlock_comp_inr A B D,
-    snd_comp_upperTriangularBlock A B D⟩
+  exact ⟨upperTriangularBlock_comp_inl A B D, by simp, snd_comp_upperTriangularBlock A B D⟩
 
 end Recognition
 

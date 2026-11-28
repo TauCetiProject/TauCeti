@@ -54,12 +54,6 @@ variable {R R₂ : Type*} [Ring R] [Ring R₂] {σ : R →+* R₂} {M M₂ : Typ
   [TopologicalSpace M₂] [AddCommGroup M₂] [Module R₂ M₂]
   (p : Submodule R M)
 
-/-- Precomposition with `p.mkQL` is injective on continuous semilinear maps out of `M ⧸ p`. -/
-theorem comp_mkQL_injective :
-    Function.Injective fun (φ : M ⧸ p →SL[σ] M₂) ↦ φ.comp p.mkQL :=
-  fun _ _ h ↦ ContinuousLinearMap.coe_injective <|
-    Submodule.linearMap_qext p (congrArg ContinuousLinearMap.toLinearMap h)
-
 variable (q : Submodule R₂ M₂)
 
 section
@@ -95,11 +89,13 @@ theorem mapQL_comp {R₃ M₃ : Type*} [Ring R₃] [TopologicalSpace M₃] [AddC
     (hf : p ≤ q.comap f.toLinearMap) (hg : q ≤ r.comap g.toLinearMap)
     (h : p ≤ r.comap (g.comp f).toLinearMap := hf.trans (comap_mono hg)) :
     p.mapQL r (g.comp f) h = (q.mapQL r g hg).comp (p.mapQL q f hf) := by
-  refine p.comp_mkQL_injective ?_
-  dsimp only
-  rw [mapQL_comp_mkQL, ContinuousLinearMap.comp_assoc, mapQL_comp_mkQL,
-    ← ContinuousLinearMap.comp_assoc (q.mapQL r g hg), mapQL_comp_mkQL,
-    ContinuousLinearMap.comp_assoc]
+  have hcomp : (p.mapQL r (g.comp f) h).comp p.mkQL =
+      ((q.mapQL r g hg).comp (p.mapQL q f hf)).comp p.mkQL := by
+    rw [mapQL_comp_mkQL, ContinuousLinearMap.comp_assoc, mapQL_comp_mkQL,
+      ← ContinuousLinearMap.comp_assoc (q.mapQL r g hg), mapQL_comp_mkQL,
+      ContinuousLinearMap.comp_assoc]
+  exact ContinuousLinearMap.coe_injective
+    (Submodule.linearMap_qext p (congrArg ContinuousLinearMap.toLinearMap hcomp))
 
 end MapQL
 

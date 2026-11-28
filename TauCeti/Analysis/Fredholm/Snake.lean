@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.Module.SnakeLemma
 public import TauCeti.Analysis.Fredholm.ClosedRange
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
-public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Snake
-import TauCeti.Analysis.Fredholm.Prod
 
 /-!
 # Fredholm operators along maps of short exact sequences
@@ -36,8 +34,6 @@ completeness nor norms: it holds for Fredholm maps between topological vector sp
 Some exactness hypotheses are not needed in each two-out-of-three statement and are omitted: for
 example, the middle map is Fredholm without injectivity of `f₁` or surjectivity of `g₂`.
 
-We also record the specialization to the composition snake diagram (`compSnakeMiddle T S`).
-
 ## Main declarations
 
 * `ContinuousLinearMap.IsFredholm.isFredholm₂_of_exact`,
@@ -47,8 +43,6 @@ We also record the specialization to the composition snake diagram (`compSnakeMi
   `ContinuousLinearMap.IsFredholm.index_eq_add_of_exact_of_left_middle`, and
   `ContinuousLinearMap.IsFredholm.index_eq_add_of_exact_of_middle_right`: the index is additive
   along a map of short exact sequences.
-* `ContinuousLinearMap.isFredholm_compSnakeMiddle_iff`: `(compSnakeMiddle T S).IsFredholm ↔
-  (S ∘L T).IsFredholm`.
 
 ## References
 
@@ -206,29 +200,5 @@ theorem IsFredholm.index_eq_add_of_exact_of_middle_right (hi₂ : i₂.IsFredhol
     (toLinearMap_comp_eq h₁) (toLinearMap_comp_eq h₂)
 
 end TVS
-
-section FredholmCompSnake
-
-variable {E F G : Type*}
-  [TopologicalSpace E] [AddCommGroup E] [Module 𝕜 E] [IsTopologicalAddGroup E]
-  [TopologicalSpace F] [AddCommGroup F] [Module 𝕜 F] [IsTopologicalAddGroup F]
-  [TopologicalSpace G] [AddCommGroup G] [Module 𝕜 G] [IsTopologicalAddGroup G]
-
-/-- `compSnakeMiddle T S` is Fredholm if and only if the composite `S ∘L T` is Fredholm. Combined
-with `index_compSnakeMiddle` and `index_upperTriangularBlock`, applying the snake index theorem to
-`(T, compSnakeMiddle T S, S)` directly recovers `IsFredholm.index_comp`:
-`(S ∘L T).index = (compSnakeMiddle T S).index = T.index + S.index = S.index + T.index`. -/
-@[simp] theorem isFredholm_compSnakeMiddle_iff (T : E →L[𝕜] F) (S : F →L[𝕜] G) :
-    (compSnakeMiddle T S).IsFredholm ↔ (S ∘L T).IsFredholm := by
-  have hconj : (S.compSnakeMiddleCodEquiv.symm : F × G →L[𝕜] F × G) ∘L compSnakeMiddle T S =
-      ((ContinuousLinearMap.id 𝕜 F).prodMap (S ∘L T)) ∘L
-        (T.compSnakeMiddleDomEquiv : E × F →L[𝕜] F × E) := by
-    rw [T.compSnakeMiddle_eq_comp_prodMap_comp S]
-    ext x <;> simp
-  rw [isFredholm_iff_of_comp_eq T.compSnakeMiddleDomEquiv S.compSnakeMiddleCodEquiv.symm hconj,
-    isFredholm_prodMap_iff]
-  exact ⟨And.right, fun hST ↦ ⟨.id, hST⟩⟩
-
-end FredholmCompSnake
 
 end ContinuousLinearMap
