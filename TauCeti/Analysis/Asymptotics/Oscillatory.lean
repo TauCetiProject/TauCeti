@@ -34,9 +34,9 @@ and Bessel (`p = 1, α₀ = 1 / 2`) asymptotics.
 * `TauCeti.HasOscillatoryDecay.of_asymptoticExpansion`: criterion from a Poincaré oscillatory
   asymptotic series.
 * `TauCeti.HasOscillatoryDecay.isBigO_rpow_neg`: leading amplitude bound `O(t ^ (-α₀))`.
-* Algebraic and mode-construction lemmas: `of_isBigO`, `zero`, `congr_atTop`, `mono`, `const_mul`,
-  `neg`, `add`, `sub`, `sum`, `rpow_mul_cos`, `rpow_mul_sin`, `rpow_mul_cos_add`,
-  `rpow_mul_sin_add`.
+* Algebraic and mode-construction lemmas: `of_isBigO`, `zero`, `congr_atTop`, `mono`,
+  `mono_order`, `const_mul`, `neg`, `add`, `sub`, `sum`, `rpow_mul_cos`, `rpow_mul_sin`,
+  `rpow_mul_cos_add`, `rpow_mul_sin_add`.
 
 ## References
 
@@ -118,6 +118,13 @@ theorem mono {c p α₀ α₁ B : ℝ} {f : ℝ → ℝ}
     HasOscillatoryDecayAt c p α₁ B f := by
   obtain ⟨k, α, u, v, r, hαi, hr, heq⟩ := hf
   exact ⟨k, α, u, v, r, fun i ↦ hα.trans (hαi i), hr, heq⟩
+
+/-- Lowering the remainder order `B` preserves `HasOscillatoryDecayAt`. -/
+theorem mono_order {c p α₀ B B' : ℝ} {f : ℝ → ℝ}
+    (hf : HasOscillatoryDecayAt c p α₀ B f) (hB : B' ≤ B) :
+    HasOscillatoryDecayAt c p α₀ B' f := by
+  obtain ⟨k, α, u, v, r, hαi, hr, heq⟩ := hf
+  exact ⟨k, α, u, v, r, hαi, hr.trans (isBigO_rpow_rpow_atTop_of_le (neg_le_neg hB)), heq⟩
 
 /-- Multiplication by a constant preserves `HasOscillatoryDecayAt`. -/
 theorem const_mul {c p α₀ B : ℝ} {f : ℝ → ℝ}

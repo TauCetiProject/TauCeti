@@ -96,6 +96,8 @@ inclusion.
   polynomial moments `t ↦ (exp (-(p * t)) * t ^ j) • f t` for every `p > q`.
 * `TauCeti.integrableOn_exp_neg_mul_mul_pow_smul_of_isBigO_one`: exponential-polynomial moment
   integrability on `(0, ∞)` for a function continuous on `[0, ∞)` and bounded at `+∞`.
+* `TauCeti.integrableOn_and_norm_integral_exp_neg_mul_mul_pow_smul_le`: quantitative moment
+  integrability and norm bound on `(0, ∞)` for a locally integrable function bounded on a tail.
 -/
 
 public section
@@ -723,5 +725,54 @@ theorem integrableOn_exp_neg_mul_mul_pow_smul_of_isBigO_one {E : Type*} [NormedA
   ((integrableOn_pow_mul_exp_neg_mul_Ioi k hp).congr_fun
     (fun t _ ↦ mul_comm (t ^ k) (Real.exp (-(p * t))))
     measurableSet_Ioi).smul_of_continuousOn_of_isBigO_one Ioi_subset_Ici_self hh_cont hh_top
+
+/-- Quantitative exponential-polynomial moment integrability and norm bound on `(0, ∞)`: if `h` is
+locally integrable on `[0, ∞)` and bounded by `c` on `(T, ∞)` (`0 ≤ T`), then
+`t ↦ (exp (-(p * t)) * t ^ j) • h t` is integrable on `(0, ∞)` with norm integral at most
+`T ^ j * ∫ t in Ioc 0 T, ‖h t‖ + c * (j ! / p ^ (j + 1))`. -/
+theorem integrableOn_and_norm_integral_exp_neg_mul_mul_pow_smul_le {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {h : ℝ → E} {p T c : ℝ} (hp : 0 < p) (hT : 0 ≤ T)
+    (j : ℕ) (hh : LocallyIntegrableOn h (Ici 0)) (hbound : ∀ t ∈ Ioi T, ‖h t‖ ≤ c) :
+    IntegrableOn (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ j) • h t) (Ioi 0) ∧
+      ‖∫ t in Ioi 0, (Real.exp (-(p * t)) * t ^ j) • h t‖ ≤
+        T ^ j * (∫ t in Ioc 0 T, ‖h t‖) + c * (j.factorial / p ^ (j + 1)) := by
+  have hc : 0 ≤ c := (norm_nonneg (h (T + 1))).trans (hbound (T + 1) (lt_add_one T))
+  have hh_Ioc : IntegrableOn h (Ioc 0 T) :=
+    (hh.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set Ioc_subset_Icc_self
+  have h1_w : ∀ t ∈ Ioc 0 T, ‖Real.exp (-(p * t)) * t ^ j‖ ≤ T ^ j := fun t ht ↦ by
+    rw [Real.norm_of_nonneg (mul_nonneg (Real.exp_pos _).le (pow_nonneg ht.1.le _))]
+    exact (mul_le_of_le_one_left (pow_nonneg ht.1.le _)
+      (Real.exp_le_one_iff.mpr (by nlinarith [ht.1]))).trans (pow_le_pow_left₀ ht.1.le ht.2 j)
+  have h1_int : IntegrableOn (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ j) • h t) (Ioc 0 T) :=
+    hh_Ioc.bdd_smul (T ^ j)
+      (by fun_prop : Continuous fun t : ℝ ↦ Real.exp (-(p * t)) * t ^ j).aestronglyMeasurable
+      (ae_restrict_of_forall_mem measurableSet_Ioc h1_w)
+  have hdom_T : IntegrableOn (fun t : ℝ ↦ c * (t ^ j * Real.exp (-(p * t)))) (Ioi T) :=
+    ((integrableOn_pow_mul_exp_neg_mul_Ioi j hp).mono_set (Ioi_subset_Ioi hT)).const_mul c
+  have h2_ae : ∀ᵐ t ∂volume.restrict (Ioi T),
+      ‖(Real.exp (-(p * t)) * t ^ j) • h t‖ ≤ c * (t ^ j * Real.exp (-(p * t))) := by
+    filter_upwards [self_mem_ae_restrict measurableSet_Ioi] with t ht
+    have ht0 : 0 ≤ t := hT.trans (mem_Ioi.mp ht).le
+    rw [norm_smul, Real.norm_of_nonneg (mul_nonneg (Real.exp_pos _).le (pow_nonneg ht0 _)),
+      mul_comm (Real.exp _), mul_comm c]
+    exact mul_le_mul_of_nonneg_left (hbound t ht)
+      (mul_nonneg (pow_nonneg ht0 _) (Real.exp_pos _).le)
+  have h2_int : IntegrableOn (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ j) • h t) (Ioi T) :=
+    hdom_T.mono' ((by fun_prop : Continuous fun t : ℝ ↦ Real.exp (-(p * t)) * t ^ j
+      ).aestronglyMeasurable.smul (hh.aestronglyMeasurable.mono_set (Ioi_subset_Ici hT))) h2_ae
+  refine ⟨Ioc_union_Ioi_eq_Ioi hT ▸ h1_int.union h2_int, ?_⟩
+  rw [← Ioc_union_Ioi_eq_Ioi hT, setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi
+    h1_int h2_int]
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+  · exact (norm_integral_le_of_norm_le (hh_Ioc.norm.const_mul (T ^ j))
+      (ae_restrict_of_forall_mem measurableSet_Ioc fun t ht ↦ by
+        rw [norm_smul]; exact mul_le_mul_of_nonneg_right (h1_w t ht) (norm_nonneg _))).trans_eq
+      (integral_const_mul _ _)
+  · refine (norm_integral_le_of_norm_le hdom_T h2_ae).trans ?_
+    rw [← integral_pow_mul_exp_neg_mul_Ioi j hp, ← integral_const_mul]
+    exact setIntegral_mono_set ((integrableOn_pow_mul_exp_neg_mul_Ioi j hp).const_mul c)
+      (ae_restrict_of_forall_mem measurableSet_Ioi fun t ht ↦
+        mul_nonneg hc (mul_nonneg (pow_nonneg (mem_Ioi.mp ht).le _) (Real.exp_pos _).le))
+      (Eventually.of_forall (Ioi_subset_Ioi hT))
 
 end TauCeti

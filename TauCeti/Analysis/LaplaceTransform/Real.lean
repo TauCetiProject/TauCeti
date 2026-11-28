@@ -114,54 +114,6 @@ theorem iteratedDeriv_integral_exp_neg_mul_smul {μ : Measure ℝ} {f : ℝ → 
       ((hasDerivAt_integral_exp_neg_mul_mul_pow_smul hqp hf n).const_smul ((-1 : ℝ) ^ n)).deriv]
     simp [pow_succ, mul_smul]
 
-/-- Helper for `tendsto_pow_succ_smul_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero`: if `h` is
-locally integrable on `[0, ∞)` and bounded by `c` on `(T, ∞)` (`0 ≤ T`), then
-`t ↦ (exp (-(p * t)) * t ^ j) • h t` is integrable on `(0, ∞)` with norm integral at most
-`T ^ j * ∫ t in Ioc 0 T, ‖h t‖ + c * (j ! / p ^ (j + 1))`. -/
-private theorem integrableOn_and_norm_integral_exp_neg_mul_mul_pow_smul_le {h : ℝ → E}
-    {p T c : ℝ} (hp : 0 < p) (hT : 0 ≤ T) (hc : 0 ≤ c) (j : ℕ)
-    (hh : LocallyIntegrableOn h (Ici 0)) (hbound : ∀ t ∈ Ioi T, ‖h t‖ ≤ c) :
-    IntegrableOn (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ j) • h t) (Ioi 0) ∧
-      ‖∫ t in Ioi 0, (Real.exp (-(p * t)) * t ^ j) • h t‖ ≤
-        T ^ j * (∫ t in Ioc 0 T, ‖h t‖) + c * (j.factorial / p ^ (j + 1)) := by
-  have hh_Ioc : IntegrableOn h (Ioc 0 T) :=
-    (hh.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set Ioc_subset_Icc_self
-  have h1_w : ∀ t ∈ Ioc 0 T, ‖Real.exp (-(p * t)) * t ^ j‖ ≤ T ^ j := fun t ht ↦ by
-    rw [Real.norm_of_nonneg (mul_nonneg (Real.exp_pos _).le (pow_nonneg ht.1.le _))]
-    exact (mul_le_of_le_one_left (pow_nonneg ht.1.le _)
-      (Real.exp_le_one_iff.mpr (by nlinarith [ht.1]))).trans (pow_le_pow_left₀ ht.1.le ht.2 j)
-  have h1_int : IntegrableOn (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ j) • h t) (Ioc 0 T) :=
-    hh_Ioc.bdd_smul (T ^ j)
-      (by fun_prop : Continuous fun t : ℝ ↦ Real.exp (-(p * t)) * t ^ j).aestronglyMeasurable
-      (ae_restrict_of_forall_mem measurableSet_Ioc h1_w)
-  have hdom_T : IntegrableOn (fun t : ℝ ↦ c * (t ^ j * Real.exp (-(p * t)))) (Ioi T) :=
-    ((integrableOn_pow_mul_exp_neg_mul_Ioi j hp).mono_set (Ioi_subset_Ioi hT)).const_mul c
-  have h2_ae : ∀ᵐ t ∂volume.restrict (Ioi T),
-      ‖(Real.exp (-(p * t)) * t ^ j) • h t‖ ≤ c * (t ^ j * Real.exp (-(p * t))) := by
-    filter_upwards [self_mem_ae_restrict measurableSet_Ioi] with t ht
-    have ht0 : 0 ≤ t := hT.trans (mem_Ioi.mp ht).le
-    rw [norm_smul, Real.norm_of_nonneg (mul_nonneg (Real.exp_pos _).le (pow_nonneg ht0 _)),
-      mul_comm (Real.exp _), mul_comm c]
-    exact mul_le_mul_of_nonneg_left (hbound t ht)
-      (mul_nonneg (pow_nonneg ht0 _) (Real.exp_pos _).le)
-  have h2_int : IntegrableOn (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ j) • h t) (Ioi T) :=
-    hdom_T.mono' ((by fun_prop : Continuous fun t : ℝ ↦ Real.exp (-(p * t)) * t ^ j
-      ).aestronglyMeasurable.smul (hh.aestronglyMeasurable.mono_set (Ioi_subset_Ici hT))) h2_ae
-  refine ⟨Ioc_union_Ioi_eq_Ioi hT ▸ h1_int.union h2_int, ?_⟩
-  rw [← Ioc_union_Ioi_eq_Ioi hT, setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi
-    h1_int h2_int]
-  refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-  · exact (norm_integral_le_of_norm_le (hh_Ioc.norm.const_mul (T ^ j))
-      (ae_restrict_of_forall_mem measurableSet_Ioc fun t ht ↦ by
-        rw [norm_smul]; exact mul_le_mul_of_nonneg_right (h1_w t ht) (norm_nonneg _))).trans_eq
-      (integral_const_mul _ _)
-  · refine (norm_integral_le_of_norm_le hdom_T h2_ae).trans ?_
-    rw [← integral_pow_mul_exp_neg_mul_Ioi j hp, ← integral_const_mul]
-    exact setIntegral_mono_set ((integrableOn_pow_mul_exp_neg_mul_Ioi j hp).const_mul c)
-      (ae_restrict_of_forall_mem measurableSet_Ioi fun t ht ↦
-        mul_nonneg hc (mul_nonneg (pow_nonneg (mem_Ioi.mp ht).le _) (Real.exp_pos _).le))
-      (Eventually.of_forall (Ioi_subset_Ioi hT))
-
 /-- **Abelian limit for rescaled Lebesgue-measure Laplace moments.** If `E` is a real Banach space,
 `h : ℝ → E` is locally integrable on `[0, ∞)` with respect to Lebesgue measure `volume`, and
 `h t → L` as `t → ∞`, then
@@ -184,7 +136,7 @@ theorem tendsto_pow_succ_smul_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero [Com
       (by simpa using half_pos hδ)
   filter_upwards [hsmall, self_mem_nhdsWithin] with p hpK (hp : 0 < p)
   obtain ⟨hint_sub, hnorm⟩ := integrableOn_and_norm_integral_exp_neg_mul_mul_pow_smul_le
-    (h := fun t ↦ h t - L) hp (le_max_right T₀ 0) hc.le j (hh.sub (locallyIntegrableOn_const L))
+    (h := fun t ↦ h t - L) hp (le_max_right T₀ 0) j (hh.sub (locallyIntegrableOn_const L))
     fun t ht ↦ by simpa [dist_eq_norm] using hT₀ t ((le_max_left T₀ 0).trans (mem_Ioi.mp ht).le)
   have hw : IntegrableOn (fun t : ℝ ↦ Real.exp (-(p * t)) * t ^ j) (Ioi 0) :=
     (integrableOn_pow_mul_exp_neg_mul_Ioi j hp).congr_fun

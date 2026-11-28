@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Integral.IteratedTailIntegral.Basic
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Single-integral representations and explicit evaluations of iterated tail integrals
@@ -32,10 +33,10 @@ exponentials.
 
 public section
 
-namespace TauCeti
-
 open MeasureTheory Set
 open scoped Interval
+
+namespace TauCeti
 
 section CauchyTriangle
 
@@ -89,15 +90,6 @@ private theorem integral_cauchyTriangleKernel_snd [CompleteSpace E]
       ← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le ht.le,
       intervalIntegral.integral_smul_const, hsub, div_eq_inv_mul]
   · simp [ht]
-
-/-- Recover `AEStronglyMeasurable f` on `(y, ∞)` from integrability of `(t - y) ^ m • f t`. -/
-private theorem aestronglyMeasurable_of_integrableOn_sub_pow_smul {f : ℝ → E} {y : ℝ} {m : ℕ}
-    (hf : IntegrableOn (fun t : ℝ ↦ (t - y) ^ m • f t) (Ioi y)) :
-    AEStronglyMeasurable f (volume.restrict (Ioi y)) :=
-  (aestronglyMeasurable_fun_smul_iff₀
-    (by fun_prop : Continuous fun t : ℝ ↦ (t - y) ^ m).aestronglyMeasurable
-    (by filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : y < t)
-        exact pow_ne_zero _ (sub_pos.mpr ht).ne')).mp hf.aestronglyMeasurable
 
 /-- Product integrability of `cauchyTriangleKernel` on `ℝ × ℝ` from integrability of
 `t ↦ (t - y) ^ (m + 1) • f t` on `(y, ∞)`. -/

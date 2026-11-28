@@ -39,7 +39,8 @@ Single-integral Cauchy representations and exponential evaluations live in
 ## Main declarations
 
 * `TauCeti.iteratedTailIntegral`: repeated improper tail integrals `I_n` of `f : ℝ → E`.
-* `TauCeti.iteratedTailIntegral_congr_Ici`, `TauCeti.iteratedTailIntegral_succ_congr_Ioi`,
+* `TauCeti.iteratedTailIntegral_congr_Ici`, `TauCeti.iteratedTailIntegral_succ_congr_ae`,
+  `TauCeti.iteratedTailIntegral_succ_congr_Ioi`,
   `TauCeti.iteratedTailIntegral_congr_atTop`: unconditional ray congruence lemmas.
 * `TauCeti.continuousOn_iteratedTailIntegral_succ`,
   `TauCeti.locallyIntegrableOn_iteratedTailIntegral`,
@@ -178,9 +179,10 @@ theorem iteratedTailIntegral_congr_Ici {f g : ℝ → E} {a : ℝ} (h : EqOn f g
     exact intervalIntegral.integral_congr fun _ ht ↦
       ih (ordConnected_Ici.uIcc_subset hx (hx.trans hR) ht)
 
-/-- Two functions agreeing on `(a, ∞)` have identical positive-order `iteratedTailIntegral` on
-`[a, ∞)` (including at the endpoint `a`). -/
-theorem iteratedTailIntegral_succ_congr_Ioi {f g : ℝ → E} {a : ℝ} (h : EqOn f g (Ioi a)) (n : ℕ) :
+/-- Two functions agreeing almost everywhere on `(a, ∞)` have identical positive-order
+`iteratedTailIntegral` on `[a, ∞)` (including at the endpoint `a`). -/
+theorem iteratedTailIntegral_succ_congr_ae {f g : ℝ → E} {a : ℝ}
+    (h : f =ᵐ[volume.restrict (Ioi a)] g) (n : ℕ) :
     EqOn (iteratedTailIntegral f (n + 1)) (iteratedTailIntegral g (n + 1)) (Ici a) := by
   have h1 : EqOn (iteratedTailIntegral f 1) (iteratedTailIntegral g 1) (Ici a) := by
     intro x (hx : a ≤ x)
@@ -188,9 +190,16 @@ theorem iteratedTailIntegral_succ_congr_Ioi {f g : ℝ → E} {a : ℝ} (h : EqO
     refine limUnder_congr ?_
     filter_upwards [eventually_ge_atTop x] with R hR
     rw [intervalIntegral.integral_of_le hR, intervalIntegral.integral_of_le hR]
-    exact setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ h (hx.trans_lt ht.1)
+    exact setIntegral_congr_ae measurableSet_Ioc
+      (((ae_restrict_iff' measurableSet_Ioi).mp h).mono fun t ht htx ↦ ht (hx.trans_lt htx.1))
   rw [iteratedTailIntegral_succ' f, iteratedTailIntegral_succ' g]
   exact iteratedTailIntegral_congr_Ici h1 n
+
+/-- Two functions agreeing on `(a, ∞)` have identical positive-order `iteratedTailIntegral` on
+`[a, ∞)` (including at the endpoint `a`). -/
+theorem iteratedTailIntegral_succ_congr_Ioi {f g : ℝ → E} {a : ℝ} (h : EqOn f g (Ioi a)) (n : ℕ) :
+    EqOn (iteratedTailIntegral f (n + 1)) (iteratedTailIntegral g (n + 1)) (Ici a) :=
+  iteratedTailIntegral_succ_congr_ae (ae_restrict_of_forall_mem measurableSet_Ioi h) n
 
 /-- Two functions agreeing eventually at `+∞` have eventually equal `iteratedTailIntegral` at `+∞`.
 -/
