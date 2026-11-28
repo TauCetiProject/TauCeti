@@ -98,16 +98,6 @@ noncomputable def bigradedUnblockedHomologyGrading :
     (G.val.unblockedDifferential_comp_self_eq_zero R)).map
       ((G.val.unblockedHomologyIso R).symm.toLinearEquiv.restrictScalars R)
 
-/-- `bigradedUnblockedHomologyGrading` is the homology grading of `bigradedChainMinusGrading`
-transported along `unblockedHomologyIso`. -/
-theorem bigradedUnblockedHomologyGrading_def :
-    G.bigradedUnblockedHomologyGrading R =
-      ((G.bigradedChainMinusGrading R).homology
-        (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)
-        (G.val.unblockedDifferential_comp_self_eq_zero R)).map
-          ((G.val.unblockedHomologyIso R).symm.toLinearEquiv.restrictScalars R) := by
-  rw [bigradedUnblockedHomologyGrading]
-
 /-- The bidegree-`g` piece of `GH⁻`: classes of cycles homogeneous of bidegree `g`. -/
 noncomputable def bigradedUnblockedHomologyPiece (g : ℤ × ℤ) :
     Submodule R (G.val.unblockedHomology R) :=

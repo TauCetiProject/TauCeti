@@ -165,6 +165,10 @@ theorem isKnot_unknot : (unknot n).IsKnot := by
   rw [isKnot_iff_componentPerm_isCycle, componentPerm_unknot]
   exact isCycle_finRotate.inv
 
+/-- The standard `2 × 2` unknot diagram represents a knot. -/
+theorem isKnot_twoByTwo : twoByTwo.IsKnot :=
+  unknot_zero ▸ isKnot_unknot 0
+
 /-- The sole component of the standard unknot grid diagram carries all `n + 2` markings. -/
 theorem componentCycleType_unknot : (unknot n).componentCycleType = {n + 2} :=
   (isKnot_unknot n).componentCycleType_eq

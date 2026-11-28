@@ -123,6 +123,11 @@ theorem toGridLink_unknot (n : ℕ) : (unknot n).toGridLink = GridLink.unknot :=
     exact (IsStabilization.toGridLink_eq
       ((isStabilization_iff _ _).mpr (Or.inr (isXStabilization_unknot_succ n)))).symm
 
+/-- The standard `2 × 2` unknot diagram presents the unknot. -/
+@[simp]
+theorem toGridLink_twoByTwo : twoByTwo.toGridLink = GridLink.unknot := by
+  rw [← unknot_zero, toGridLink_unknot]
+
 end GridDiagram
 
 namespace GridLink

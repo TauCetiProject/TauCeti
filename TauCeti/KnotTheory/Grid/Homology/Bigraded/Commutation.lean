@@ -104,14 +104,6 @@ namespace GridDiagram.IsKnot
 
 variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (K : Type*) [CommRing K] [CharP K 2]
 
-/-- The degree-`g` piece of a swapped knot grid's bigrading agrees with the piece on
-`hG.toOddComponentGridDiagram.swapColumns C`. -/
-theorem bigradedUnblockedHomologyGrading_swapColumns_piece (C : ColumnTurn n) (g : ℤ × ℤ) :
-    ((hG.swapColumns C.column (finRotate n C.column)).bigradedUnblockedHomologyGrading K).piece g =
-      (hG.toOddComponentGridDiagram.swapColumns C).bigradedUnblockedHomologyPiece K g :=
-  (hG.swapColumns C.column (finRotate n C.column)).bigradedUnblockedHomologyGrading_piece_eq_mk
-    K _ g
-
 open OddComponentGridDiagram in
 /-- For a knot grid, the `K[U]`-linear commutation map of any column turn `C` is homogeneous for the
 Maslov--Alexander bigradings, of bidegree `G.commutationBidegree C`. -/
@@ -126,8 +118,8 @@ theorem isHomogeneous_unblockedHomologyCommutationLinearMap_bigraded (C : Column
   let _ := (hG.swapColumns C.column (finRotate n C.column)).unblockedHomologyModule K
   refine LinearMap.isHomogeneous_def.mpr fun g y hy ↦ ?_
   rw [hG.bigradedUnblockedHomologyGrading_piece] at hy
-  rw [hG.bigradedUnblockedHomologyGrading_swapColumns_piece,
-    unblockedHomologyCommutationLinearMap_apply]
+  rw [(hG.swapColumns C.column (finRotate n C.column)).bigradedUnblockedHomologyGrading_piece_eq_mk
+    K _ (g + G.commutationBidegree C), unblockedHomologyCommutationLinearMap_apply]
   exact unblockedHomologyCommutationMap_mem_bigradedUnblockedHomologyPiece_add _ K C hy
 
 end GridDiagram.IsKnot

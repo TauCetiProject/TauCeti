@@ -341,12 +341,6 @@ noncomputable def bigradedChainMinusPiece (R : Type*) [CommSemiring R] (g : ℤ 
     Submodule R (GridChainMinus R n) :=
   GridChainMinus.monomialDegreePiece R G.monomialBidegree g
 
-/-- A Maslov--Alexander piece is the submodule supported on `{g}`. -/
-theorem bigradedChainMinusPiece_def (R : Type*) [CommSemiring R] (g : ℤ × ℤ) :
-    G.bigradedChainMinusPiece R g =
-      GridChainMinus.monomialDegreeSupported R G.monomialBidegree {g} :=
-  GridChainMinus.monomialDegreePiece_eq_monomialDegreeSupported R G.monomialBidegree g
-
 /-- Each Maslov--Alexander homogeneous piece of `GC⁻` is finitely generated over the ground
 semiring. -/
 instance finite_bigradedChainMinusPiece (R : Type*) [CommSemiring R] (g : ℤ × ℤ) :
@@ -546,12 +540,6 @@ only. -/
 noncomputable def alexanderChainMinusPiece (R : Type*) [CommSemiring R] (a : ℤ) :
     Submodule R (GridChainMinus R n) :=
   GridChainMinus.monomialDegreePiece R (fun x e ↦ G.alexanderℤ x - (e.degree : ℤ)) a
-
-/-- An Alexander piece is the submodule supported on `{a}`. -/
-theorem alexanderChainMinusPiece_def (R : Type*) [CommSemiring R] (a : ℤ) :
-    G.alexanderChainMinusPiece R a =
-      GridChainMinus.monomialDegreeSupported R (fun x e ↦ G.alexanderℤ x - (e.degree : ℤ)) {a} :=
-  GridChainMinus.monomialDegreePiece_eq_monomialDegreeSupported R _ a
 
 /-- Each Alexander-homogeneous piece of `GC⁻` is finitely generated over the ground semiring. -/
 instance finite_alexanderChainMinusPiece (R : Type*) [CommSemiring R] (a : ℤ) :

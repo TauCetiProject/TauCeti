@@ -38,9 +38,9 @@ that base-changed differential with the restriction of `unblockedDifferential R`
 ## References
 
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4; the chain bigrading and
-Alexander pieces are in `TauCeti.KnotTheory.Grid.Grading.Unblocked.Chain`, and the analogous
-base-change mechanism for finite generation of homology is in
-`TauCeti.KnotTheory.Grid.Homology.Finite`.
+Alexander pieces are in `TauCeti.KnotTheory.Grid.Grading.Unblocked.Chain`, while
+`TauCeti.KnotTheory.Grid.Homology.Finite` proves `MvPolynomial`-finite generation of unblocked
+homology over Noetherian coefficients.
 -/
 
 public section
@@ -195,7 +195,11 @@ theorem finite_ker_unblockedDifferential_bigradedChainMinusPiece (R : Type*) [Co
     Module.Finite R
       (LinearMap.ker (((G.val.unblockedDifferential R).restrictScalars R).comp
         (G.bigradedChainMinusPiece R g).subtype)) := by
-  rw [G.bigradedChainMinusPiece_def R g]
+  have hpiece : G.bigradedChainMinusPiece R g =
+      GridChainMinus.monomialDegreeSupported R G.monomialBidegree {g} := by
+    ext c
+    simp only [mem_bigradedChainMinusPiece, mem_monomialDegreeSupported, Set.mem_singleton_iff]
+  rw [hpiece]
   exact G.finite_ker_unblockedDifferential_monomialDegreeSupported R G.monomialBidegree {g} <|
     (G.finite_state_exponent_of_alexander_eq g.snd).subset
       fun ix (hix : G.monomialBidegree _ _ = g) ↦
@@ -208,7 +212,11 @@ theorem finite_ker_unblockedDifferential_alexanderChainMinusPiece (R : Type*) [C
     Module.Finite R
       (LinearMap.ker (((G.val.unblockedDifferential R).restrictScalars R).comp
         (G.alexanderChainMinusPiece R a).subtype)) := by
-  rw [G.alexanderChainMinusPiece_def R a]
+  have hpiece : G.alexanderChainMinusPiece R a =
+      GridChainMinus.monomialDegreeSupported R (fun x e ↦ G.alexanderℤ x - (e.degree : ℤ)) {a} := by
+    ext c
+    simp only [mem_alexanderChainMinusPiece, mem_monomialDegreeSupported, Set.mem_singleton_iff]
+  rw [hpiece]
   exact G.finite_ker_unblockedDifferential_monomialDegreeSupported R
     (fun x e ↦ G.alexanderℤ x - (e.degree : ℤ)) {a} <|
       by simpa only [Set.mem_singleton_iff] using G.finite_state_exponent_of_alexander_eq a

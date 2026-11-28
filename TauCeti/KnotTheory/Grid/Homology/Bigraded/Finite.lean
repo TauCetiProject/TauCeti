@@ -74,28 +74,24 @@ instance finite_bigradedUnblockedCyclesPiece_of_charP_two (g : ℤ × ℤ) :
   rw [← G.ker_bigradedChainMinusGrading_piece R g]
   infer_instance
 
-/-- Each Maslov--Alexander piece of `GH⁻` is the image of the corresponding cycle piece under
-`unblockedHomologyClass`. -/
-theorem bigradedUnblockedHomologyPiece_eq_map (g : ℤ × ℤ) :
-    G.bigradedUnblockedHomologyPiece R g =
+/-- Over any commutative ring of characteristic two, each Maslov--Alexander piece of `GH⁻` is
+finitely generated over the ground ring. -/
+instance finite_bigradedUnblockedHomologyPiece (g : ℤ × ℤ) :
+    Module.Finite R (G.bigradedUnblockedHomologyPiece R g) := by
+  have hmap : G.bigradedUnblockedHomologyPiece R g =
       (G.bigradedUnblockedCyclesPiece R g).map
         ((G.val.unblockedHomologyClass R).restrictScalars R) := by
-  ext y
-  simpa only [Submodule.mem_map, mem_bigradedUnblockedCyclesPiece,
-    LinearMap.restrictScalars_apply] using G.mem_bigradedUnblockedHomologyPiece_iff R
+    ext y
+    simpa only [Submodule.mem_map, mem_bigradedUnblockedCyclesPiece,
+      LinearMap.restrictScalars_apply] using G.mem_bigradedUnblockedHomologyPiece_iff R
+  rw [hmap]
+  infer_instance
 
 /-- Over any commutative ring of characteristic two, each bundled piece of
 `bigradedUnblockedHomologyGrading` is finitely generated over the ground ring. -/
 instance finite_bigradedUnblockedHomologyGrading_piece (g : ℤ × ℤ) :
     Module.Finite R ((G.bigradedUnblockedHomologyGrading R).piece g) := by
-  rw [G.bigradedUnblockedHomologyGrading_def R]
-  infer_instance
-
-/-- Over any commutative ring of characteristic two, each Maslov--Alexander piece of `GH⁻` is
-finitely generated over the ground ring. -/
-instance finite_bigradedUnblockedHomologyPiece (g : ℤ × ℤ) :
-    Module.Finite R (G.bigradedUnblockedHomologyPiece R g) := by
-  rw [← G.bigradedUnblockedHomologyGrading_piece R g]
+  rw [G.bigradedUnblockedHomologyGrading_piece R g]
   infer_instance
 
 end Homology

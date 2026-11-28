@@ -55,6 +55,15 @@ theorem even_card_unblockedRectangles_torusLink_X :
   (torusLink p q).even_card_unblockedRectangles_X_of_X_toPerm_eq_finRotate_pow y
     (torusLink_X_toPerm p q)
 
+/-- Every grid state of the standard `2 × 2` unknot diagram has an even number, zero or two, of
+rectangles into the `X`-marking state counted by the unblocked differential. -/
+theorem even_card_unblockedRectangles_twoByTwo_X (y : GridState 2) :
+    Even (twoByTwo.unblockedRectangles y twoByTwo.X).card := by
+  have heq : twoByTwo = torusLink 0 0 :=
+    unknot_zero.symm.trans (torusLink_zero_right (p := 0)).symm
+  rw [heq]
+  exact even_card_unblockedRectangles_torusLink_X (p := 0) (q := 0) y
+
 end GridDiagram
 
 end TauCeti

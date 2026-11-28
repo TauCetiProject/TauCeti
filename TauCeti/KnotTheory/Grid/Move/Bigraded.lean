@@ -9,7 +9,7 @@ public import TauCeti.KnotTheory.Grid.Homology.Bigraded.Invariance
 public import TauCeti.KnotTheory.Grid.Move.Unknot
 public import TauCeti.KnotTheory.Grid.SmallGrid.Unblocked
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
-import TauCeti.KnotTheory.Grid.TorusLink.Homology
+import TauCeti.KnotTheory.Grid.TorusLink.Rectangle
 
 /-!
 # The bigraded `GH⁻` piece-`finrank` invariant of grid knots
@@ -87,31 +87,13 @@ end GridLink.IsKnot
 
 namespace GridLink
 
-private theorem isKnot_twoByTwo : GridDiagram.twoByTwo.IsKnot :=
-  GridDiagram.unknot_zero ▸ GridDiagram.isKnot_unknot 0
-
-private theorem toGridLink_twoByTwo : GridDiagram.twoByTwo.toGridLink = unknot := by
-  rw [← GridDiagram.unknot_zero, GridDiagram.toGridLink_unknot]
-
-private theorem bidegree_twoByTwo_X :
-    OddComponentGridDiagram.twoByTwo.bidegree GridDiagram.twoByTwo.X = (0, 0) := by
-  rw [GridDiagram.twoByTwo_X, OddComponentGridDiagram.bidegree_twoByTwo_twoByTwoSwap]
-
-private theorem even_card_unblockedRectangles_twoByTwo_X :
-    ∀ x : GridState 2,
-      Even (GridDiagram.twoByTwo.unblockedRectangles x GridDiagram.twoByTwo.X).card := by
-  have heq : GridDiagram.twoByTwo = GridDiagram.torusLink 0 0 :=
-    GridDiagram.unknot_zero.symm.trans (GridDiagram.torusLink_zero_right (p := 0)).symm
-  rw [heq]
-  exact GridDiagram.even_card_unblockedRectangles_torusLink_X (p := 0) (q := 0)
-
 private theorem bigradedUnblockedHomologyPieceFinrank_unknot_eq_twoByTwo
     (K : Type*) [CommRing K] [CharP K 2] (g : ℤ × ℤ) :
     isKnot_unknot.bigradedUnblockedHomologyPieceFinrank K g =
       Module.finrank K (OddComponentGridDiagram.twoByTwo.bigradedUnblockedHomologyPiece K g) := by
   rw [isKnot_unknot.bigradedUnblockedHomologyPieceFinrank_eq_of_toGridLink_eq K
-    isKnot_twoByTwo toGridLink_twoByTwo g,
-    isKnot_twoByTwo.bigradedUnblockedHomologyGrading_piece_eq_mk K _ g]
+    GridDiagram.isKnot_twoByTwo GridDiagram.toGridLink_twoByTwo g,
+    GridDiagram.isKnot_twoByTwo.bigradedUnblockedHomologyGrading_piece_eq_mk K _ g]
 
 section CommRing
 
@@ -146,12 +128,12 @@ theorem bigradedUnblockedHomologyPieceFinrank_unknot_zero :
       OddComponentGridDiagram.twoByTwo.bigradedUnblockedHomologyPiece K (0, 0) := by
     have hm :=
       OddComponentGridDiagram.twoByTwo.XMarkingClass_mem_bigradedUnblockedHomologyPiece K
-    rwa [bidegree_twoByTwo_X] at hm
+    rwa [OddComponentGridDiagram.bidegree_twoByTwo_X] at hm
   refine Module.finrank_of_bijective_toSpanSingleton
     (x := ⟨GridDiagram.twoByTwo.XMarkingClass K, hvmem⟩)
     ⟨?_, fun w ↦ ?_⟩
   · simpa using GridDiagram.twoByTwo.injective_toSpanSingleton_monomial_smul_XMarkingClass K
-      even_card_unblockedRectangles_twoByTwo_X 0 (by simpa using hvmem)
+      GridDiagram.even_card_unblockedRectangles_twoByTwo_X 0 (by simpa using hvmem)
   · obtain ⟨z, hz, hzw⟩ :=
       (OddComponentGridDiagram.twoByTwo.mem_bigradedUnblockedHomologyPiece_iff K).mp w.property
     have hzc :=
@@ -173,12 +155,12 @@ theorem bigradedUnblockedHomologyPieceFinrank_unknot_neg_two_mul_neg_pos (k : �
     0 < isKnot_unknot.bigradedUnblockedHomologyPieceFinrank K (-2 * (k : ℤ), -(k : ℤ)) := by
   rw [bigradedUnblockedHomologyPieceFinrank_unknot_eq_twoByTwo]
   have h := OddComponentGridDiagram.twoByTwo.finrank_bigradedUnblockedHomologyPiece_pos K
-    even_card_unblockedRectangles_twoByTwo_X (Finsupp.single 0 k)
+    GridDiagram.even_card_unblockedRectangles_twoByTwo_X (Finsupp.single 0 k)
   have hb : OddComponentGridDiagram.twoByTwo.bidegree GridDiagram.twoByTwo.X -
       (2 * ((Finsupp.single (0 : Fin 2) k).degree : ℤ),
         ((Finsupp.single (0 : Fin 2) k).degree : ℤ)) =
       (-2 * (k : ℤ), -(k : ℤ)) := by
-    rw [bidegree_twoByTwo_X, Finsupp.degree_single]
+    rw [OddComponentGridDiagram.bidegree_twoByTwo_X, Finsupp.degree_single]
     exact Prod.ext (by simp) (by simp)
   rwa [hb] at h
 
