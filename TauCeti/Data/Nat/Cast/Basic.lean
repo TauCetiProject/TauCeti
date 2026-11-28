@@ -20,6 +20,7 @@ after casting to a ring, including when `c = 0`. In a semiring without zero divi
 * `TauCeti.four_eq_zero_iff_two_eq_zero`: without zero divisors, `4 = 0` if and only if `2 = 0`.
 * `TauCeti.add_natCast_ne_neg_natCast`: an element off `−ℕ` stays off `−ℕ` after adding a
   natural number.
+* `TauCeti.ne_neg_natCast_of_two_mul_ne`: if `2 * a ∉ -ℕ`, then `a ∉ -ℕ`.
 -/
 
 public section
@@ -47,5 +48,10 @@ natural number. -/
 theorem add_natCast_ne_neg_natCast {R : Type*} [AddCommGroupWithOne R] {a : R}
     (ha : ∀ m : ℕ, a ≠ -m) (n m : ℕ) : a + n ≠ -m := fun h =>
   ha (m + n) (by rw [Nat.cast_add, neg_add, ← h, add_neg_cancel_right])
+
+/-- If `2 * a` is not a nonpositive integer, then `a` is not a nonpositive integer. -/
+theorem ne_neg_natCast_of_two_mul_ne {α : Type*} [NonAssocRing α] {a : α}
+    (ha : ∀ n : ℕ, 2 * a ≠ -(n : α)) (m : ℕ) : a ≠ -(m : α) := fun hm ↦
+  ha (2 * m) (by rw [hm, Nat.cast_mul, Nat.cast_ofNat, mul_neg])
 
 end TauCeti

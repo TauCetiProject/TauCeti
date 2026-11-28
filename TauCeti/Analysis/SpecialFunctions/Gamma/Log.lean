@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
-import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Complex.BranchLogRoot
 import TauCeti.Analysis.Complex.ContinuousLog.Basic

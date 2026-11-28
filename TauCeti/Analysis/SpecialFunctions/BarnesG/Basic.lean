@@ -19,7 +19,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import TauCeti.Analysis.Analytic.Order
 import TauCeti.Analysis.Complex.SlitPlane
-import TauCeti.Analysis.SpecialFunctions.Gamma.GaussSeries
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.GaussSeries
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Basic
 
 /-!

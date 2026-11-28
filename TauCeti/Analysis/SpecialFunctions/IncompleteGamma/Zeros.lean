@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Tricomi
 import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Complementary
-import TauCeti.Analysis.SpecialFunctions.Gamma.Real
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Real
 
 /-!
 # Zeros of Tricomi's function in its parameter

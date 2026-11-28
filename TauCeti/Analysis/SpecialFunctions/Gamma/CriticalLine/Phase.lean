@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Log
 import TauCeti.Analysis.SpecialFunctions.Gamma.Conjugation
-import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Basic
 
 /-!
 # The phase of `Γ` on the line `Re s = ½`

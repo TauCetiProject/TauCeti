@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Log
-import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Basic
 import TauCeti.Analysis.Contour.Argument.Lift
 import TauCeti.Analysis.SpecialFunctions.Complex.Exp.Polar
 

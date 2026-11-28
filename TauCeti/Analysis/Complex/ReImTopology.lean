@@ -13,7 +13,7 @@ import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Topology.UniformSpace.HeineCantor
 
 /-!
-# Upper halves of open planar sets
+# Upper halves and real accumulation points in the complex plane
 
 The open upper half `W ∩ {0 < im}` of an open set `W ⊆ ℂ` is packaged as an open set,
 `TopologicalSpace.Opens.upperHalf`. A closed half-plane `{a ≤ im}` is closed
@@ -36,6 +36,10 @@ the closure of `U ∩ {0 ≤ im}` lies in `Ω ∩ {0 ≤ im}`
 axis (`TauCeti.inter_setOf_im_nonneg_induction`). A function continuous on `Ω ∩ {0 ≤ im}` and
 zero on `Ω ∩ ℝ` is uniformly small near the axis on compact sets
 (`TauCeti.exists_forall_norm_lt_of_im_lt`).
+
+The centre `t₀` of any real neighborhood `s`, and every point of an open interval `(a, b)`, is an
+accumulation point in `ℂ` of the image of `s` (resp. `(a, b)`) under `Complex.ofReal`
+(`Complex.accPt_ofReal_of_mem_nhds`, `Complex.accPt_ofReal_Ioo`).
 -/
 
 public noncomputable section
@@ -201,3 +205,20 @@ theorem exists_forall_norm_lt_of_im_lt {E : Type*} [NormedAddCommGroup E] {Ω : 
   rwa [hg0 _ (hrΩ hz'.1), dist_zero_right] at h
 
 end TauCeti
+
+/-- If `s` is a neighborhood of `t₀` in `ℝ`, then `(t₀ : ℂ)` is an accumulation point of
+`Complex.ofReal '' s`. -/
+theorem Complex.accPt_ofReal_of_mem_nhds {s : Set ℝ} {t₀ : ℝ} (hs : s ∈ 𝓝 t₀) :
+    AccPt (t₀ : ℂ) (Filter.principal ((↑) '' s)) := by
+  rw [accPt_iff_frequently_nhdsNE]
+  have hreal : Filter.Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] t₀) (𝓝[≠] (t₀ : ℂ)) :=
+    Complex.continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin fun _ ht =>
+      Complex.ofReal_inj.not.mpr ht
+  exact hreal.frequently
+    ((eventually_nhdsWithin_of_eventually_nhds hs).frequently.mono fun x hx => ⟨x, hx, rfl⟩)
+
+/-- Every point of a real open interval `(a, b)` is an accumulation point in `ℂ` of the interval's
+image under `Complex.ofReal`. -/
+theorem Complex.accPt_ofReal_Ioo {a b t₀ : ℝ} (ht₀ : t₀ ∈ Set.Ioo a b) :
+    AccPt (t₀ : ℂ) (Filter.principal ((↑) '' Set.Ioo a b)) :=
+  Complex.accPt_ofReal_of_mem_nhds (isOpen_Ioo.mem_nhds ht₀)

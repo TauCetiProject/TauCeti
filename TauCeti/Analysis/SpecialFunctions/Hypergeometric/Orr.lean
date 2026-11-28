@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.RingTheory.Binomial
-public import TauCeti.Analysis.SpecialFunctions.OrdinaryHypergeometric
+public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Basic
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.RingTheory.PowerSeries.Binomial

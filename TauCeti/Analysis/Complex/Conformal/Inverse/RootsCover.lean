@@ -17,7 +17,7 @@ import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Normed.Ring.Basic
-import TauCeti.Analysis.SpecialFunctions.OrdinaryHypergeometric
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Basic
 
 /-!
 # The hypergeometric inverse germ of the roots-of-unity cover

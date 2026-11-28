@@ -10,8 +10,9 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.CoefficientAsymptotics
-import TauCeti.Analysis.SpecialFunctions.OrdinaryHypergeometric
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Basic
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.Analysis.SpecificLimits.Normed
 

@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.Analysis.SpecialFunctions.OrdinaryHypergeometric
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
-import TauCeti.Analysis.SpecialFunctions.OrdinaryHypergeometric
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Basic
 
 /-!
 # The size of the Gauss hypergeometric coefficients

@@ -5,14 +5,14 @@ Authors: OpenAI Codex
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Real
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Real
 public import Mathlib.Analysis.PSeries
 public import Mathlib.Analysis.Complex.HalfPlane
 public import Mathlib.Analysis.Complex.Convex
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
-import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Basic
 
 /-!
 # Gauss' series for digamma
@@ -27,6 +27,10 @@ through the right half-plane by the identity theorem. Recurrences for the sum an
 then extend it to every regular complex point. Telescoping the finite partial sums also yields
 the Euler–Gauss limit representation `log (s + N) - ∑_{k ≤ N} (s + k)⁻¹ → digamma s`
 (`Complex.tendsto_log_add_sub_sum_inv_add`).
+
+Subtracting Gauss' series at two regular arguments cancels Euler's constant and expresses
+`digamma s - digamma w` as the absolutely convergent series
+`∑' n, (s - w) / ((w + n) * (s + n))`, for both complex and real arguments.
 
 The series converges uniformly on bounded sets, so on a pole-free disc it can be differentiated
 termwise. This gives Gauss' series for the derivative of digamma,
@@ -270,6 +274,34 @@ theorem digamma_eq_gaussSeries {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) :
       ∑' n : ℕ, (1 / ((n : ℂ) + 1) - 1 / (s + n)) := by
   simpa only [gaussSeries, gaussTerm] using digamma_eq_gaussSeries_regular hs
 
+/-- The termwise difference `(s - w) / ((w + n) * (s + n))` of two Gauss digamma series is
+summable for all complex `s` and `w`. -/
+theorem summable_sub_div_add_mul_add (s w : ℂ) :
+    Summable fun n : ℕ ↦ (s - w) / ((w + n) * (s + n)) := by
+  refine ((summable_gaussSeries s).sub (summable_gaussSeries w)).congr_cofinite ?_
+  rw [Nat.cofinite_eq_atTop]
+  filter_upwards [eventually_ge_atTop (⌈‖s‖⌉₊ + ⌈‖w‖⌉₊ + 1)] with n hn
+  have hnR : (⌈‖s‖⌉₊ : ℝ) + ⌈‖w‖⌉₊ + 1 ≤ n := by exact_mod_cast hn
+  have hns : ‖s‖ < (n : ℝ) := by linarith [Nat.le_ceil ‖s‖, Nat.cast_nonneg (α := ℝ) ⌈‖w‖⌉₊]
+  have hnw : ‖w‖ < (n : ℝ) := by linarith [Nat.le_ceil ‖w‖, Nat.cast_nonneg (α := ℝ) ⌈‖s‖⌉₊]
+  have hs0 : s + n ≠ 0 := fun h ↦ hns.ne' (by simp [add_eq_zero_iff_eq_neg.mp h])
+  have hw0 : w + n ≠ 0 := fun h ↦ hnw.ne' (by simp [add_eq_zero_iff_eq_neg.mp h])
+  rw [sub_sub_sub_cancel_left, div_sub_div _ _ hw0 hs0]
+  ring
+
+/-- Away from the nonpositive integers, `digamma s - digamma w` equals the reciprocal-product
+series `∑' n, (s - w) / ((w + n) * (s + n))`. -/
+theorem digamma_sub_digamma_eq_tsum {s w : ℂ}
+    (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) (hw : ∀ m : ℕ, w ≠ -(m : ℂ)) :
+    digamma s - digamma w = ∑' n : ℕ, (s - w) / ((w + n) * (s + n)) := by
+  rw [digamma_eq_gaussSeries hs, digamma_eq_gaussSeries hw,
+    add_sub_add_left_eq_sub, ← (summable_gaussSeries s).tsum_sub (summable_gaussSeries w)]
+  refine tsum_congr fun n ↦ ?_
+  have hs0 : s + n ≠ 0 := fun h ↦ hs n (add_eq_zero_iff_eq_neg.mp h)
+  have hw0 : w + n ≠ 0 := fun h ↦ hw n (add_eq_zero_iff_eq_neg.mp h)
+  rw [sub_sub_sub_cancel_left, div_sub_div _ _ hw0 hs0]
+  ring
+
 private theorem hasDerivAt_gaussTerm {s : ℂ} {n : ℕ} (hsn : s + n ≠ 0) :
     HasDerivAt (fun w ↦ gaussTerm w n) (1 / (s + n) ^ 2) s := by
   have h := (((hasDerivAt_id s).add_const (n : ℂ)).inv hsn).const_sub (1 / ((n : ℂ) + 1))
@@ -333,7 +365,7 @@ private theorem tendsto_log_add_natCast_sub_log (s : ℂ) :
     have hn : (N : ℂ) + 2 ≠ 0 := by
       intro hn
       have h := congrArg Complex.re hn
-      norm_num at h
+      simp only [add_re, natCast_re, re_ofNat, zero_re] at h
       linarith [Nat.cast_nonneg (α := ℝ) N]
     field_simp
     ring
@@ -371,3 +403,52 @@ theorem tendsto_log_add_sub_sum_inv_add {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n :
   · simp
 
 end Complex
+
+namespace Real
+
+private theorem gaussTerm_ofReal_re (x : ℝ) (n : ℕ) :
+    (1 / ((n : ℂ) + 1) - 1 / ((x : ℂ) + n)).re = 1 / ((n : ℝ) + 1) - 1 / (x + n) := by
+  have h : 1 / ((n : ℂ) + 1) - 1 / ((x : ℂ) + n) =
+      ((1 / ((n : ℝ) + 1) - 1 / (x + n) : ℝ) : ℂ) := by
+    simp only [Complex.ofReal_sub, Complex.ofReal_div, Complex.ofReal_one, Complex.ofReal_add,
+      Complex.ofReal_natCast]
+  rw [h, Complex.ofReal_re]
+
+/-- The paired summands in Gauss' real digamma series are summable at every real `x`. -/
+theorem summable_gaussSeries (x : ℝ) :
+    Summable fun n : ℕ ↦ 1 / ((n : ℝ) + 1) - 1 / (x + n) :=
+  (Complex.reCLM.summable (Complex.summable_gaussSeries (x : ℂ))).congr fun n ↦ by
+    rw [Complex.reCLM_apply, gaussTerm_ofReal_re]
+
+/-- Gauss' paired reciprocal series equals real digamma away from the nonpositive integers. -/
+theorem digamma_eq_gaussSeries {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
+    digamma x = -eulerMascheroniConstant +
+      ∑' n : ℕ, (1 / ((n : ℝ) + 1) - 1 / (x + n)) := by
+  have h := congrArg Complex.re
+    (Complex.digamma_eq_gaussSeries (s := x) fun m hm ↦ hx m (by exact_mod_cast hm))
+  rw [Complex.digamma_ofReal, Complex.ofReal_re, Complex.add_re, Complex.neg_re, Complex.ofReal_re,
+    ← Complex.reCLM_apply, Complex.reCLM.map_tsum (Complex.summable_gaussSeries (x : ℂ))] at h
+  exact h.trans <| congrArg (-eulerMascheroniConstant + ·) <| tsum_congr fun n ↦ by
+    rw [Complex.reCLM_apply, gaussTerm_ofReal_re]
+
+/-- The real reciprocal-product series `(x - y) / ((y + n) * (x + n))` is summable for all
+real `x` and `y`. -/
+theorem summable_sub_div_add_mul_add (x y : ℝ) :
+    Summable fun n : ℕ ↦ (x - y) / ((y + n) * (x + n)) :=
+  (Complex.reCLM.summable (Complex.summable_sub_div_add_mul_add (x : ℂ) (y : ℂ))).congr fun n ↦ by
+    rw [Complex.reCLM_apply]; norm_cast
+
+/-- Away from the nonpositive integers, `Real.digamma x - Real.digamma y` equals
+`∑' n, (x - y) / ((y + n) * (x + n))`. -/
+theorem digamma_sub_digamma_eq_tsum {x y : ℝ}
+    (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) (hy : ∀ m : ℕ, y ≠ -(m : ℝ)) :
+    digamma x - digamma y = ∑' n : ℕ, (x - y) / ((y + n) * (x + n)) := by
+  have h := congrArg Complex.re (Complex.digamma_sub_digamma_eq_tsum
+    (s := x) (w := y) (fun m hm ↦ hx m (by exact_mod_cast hm))
+    (fun m hm ↦ hy m (by exact_mod_cast hm)))
+  rw [Complex.digamma_ofReal, Complex.digamma_ofReal, ← Complex.ofReal_sub, Complex.ofReal_re,
+    ← Complex.reCLM_apply,
+    Complex.reCLM.map_tsum (Complex.summable_sub_div_add_mul_add (x : ℂ) (y : ℂ))] at h
+  exact h.trans <| tsum_congr fun n ↦ by rw [Complex.reCLM_apply]; norm_cast
+
+end Real

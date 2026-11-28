@@ -17,6 +17,10 @@ For two solutions `φ`, `ψ` of the equation `f'' = q f` on a preconnected open 
 `ψ φ' - φ ψ'` has derivative `ψ q φ - φ q ψ = 0`, so it is constant. For the fundamental pair of
 global solutions with `φ(a) = 0`, `φ'(a) = 1` and `ψ(a) = 1` it is identically one.
 
+More generally, for two solutions `u`, `v` of a Sturm–Liouville equation `(p y')' = q y` on an
+open preconnected domain `s`, the weighted Wronskian `u (p v') - (p u') v` has zero derivative and
+is therefore constant on `s`.
+
 For an equation in Sturm–Liouville form `(p f')' + q f = 0`, written out as
 `p f'' + p' f' + q f = 0`, the product `p (f g' - f' g)` of `p` with the Wronskian of two
 solutions has derivative `(q₁ - q₂) f g` when `f` solves the equation with `q₁` and `g` with
@@ -37,6 +41,10 @@ scalars `P`, `Q`, `R` are the coefficients evaluated at `t` and `P ≠ 0`, this 
 * `TauCeti.wronskian_eq_of_iteratedDeriv_eq_mul`: the same for `C²` solutions, with the equation
   written with `iteratedDeriv 2` and the Wronskian with `deriv`.
 * `TauCeti.wronskian_eq_one_of_hasDerivAt`: the Wronskian of the fundamental pair is one.
+* `TauCeti.hasDerivAt_weightedWronskian`: the weighted Wronskian of two solutions of
+  `(p y')' = q y` has zero derivative.
+* `TauCeti.weightedWronskian_eq_of_hasDerivAtOn`: the weighted Wronskian of two solutions of
+  `(p y')' = q y` on an open preconnected set is constant.
 * `TauCeti.hasDerivAt_mul_wronskian_of_sturmLiouville`: Lagrange's identity
   `(p (f g' - f' g))' = (q₁ - q₂) f g` for the expanded Sturm–Liouville equation.
 * `TauCeti.mul_wronskian_eq_of_sturmLiouville`: Abel's identity, `p (f g' - f' g)` is constant on
@@ -142,6 +150,31 @@ theorem wronskian_eq_one_of_hasDerivAt {a : 𝕜}
     (fun t _ ↦ hφ' t) (fun t _ ↦ hψ t) (fun t _ ↦ hψ' t) (mem_univ t) (mem_univ a), hφa, hφ'a,
     hψa]
   ring
+
+/-- The weighted Wronskian `u (p v') - (p u') v` of two solutions of the Sturm–Liouville equation
+`(p y')' = q y` has zero derivative. -/
+theorem hasDerivAt_weightedWronskian {p q u u' v v' : 𝕜 → 𝕜} {t : 𝕜}
+    (hu : HasDerivAt u (u' t) t) (hpu : HasDerivAt (fun r ↦ p r * u' r) (q t * u t) t)
+    (hv : HasDerivAt v (v' t) t) (hpv : HasDerivAt (fun r ↦ p r * v' r) (q t * v t) t) :
+    HasDerivAt (fun r ↦ u r * (p r * v' r) - (p r * u' r) * v r) 0 t :=
+  ((hu.mul hpv).sub (hpu.mul hv)).congr_deriv (by ring)
+
+/-- The weighted Wronskian `u (p v') - (p u') v` of two solutions of the Sturm–Liouville equation
+`(p y')' = q y` on an open preconnected set `s` is constant on `s`. -/
+theorem weightedWronskian_eq_of_hasDerivAtOn {p q u u' v v' : 𝕜 → 𝕜} {s : Set 𝕜}
+    (hs_open : IsOpen s) (hs_conn : IsPreconnected s)
+    (hu : ∀ t ∈ s, HasDerivAt u (u' t) t)
+    (hpu : ∀ t ∈ s, HasDerivAt (fun r ↦ p r * u' r) (q t * u t) t)
+    (hv : ∀ t ∈ s, HasDerivAt v (v' t) t)
+    (hpv : ∀ t ∈ s, HasDerivAt (fun r ↦ p r * v' r) (q t * v t) t)
+    {t a : 𝕜} (ht : t ∈ s) (ha : a ∈ s) :
+    u t * (p t * v' t) - (p t * u' t) * v t = u a * (p a * v' a) - (p a * u' a) * v a := by
+  have hderiv : ∀ r ∈ s,
+      HasDerivAt (fun x ↦ u x * (p x * v' x) - (p x * u' x) * v x) 0 r := fun r hr ↦
+    hasDerivAt_weightedWronskian (hu r hr) (hpu r hr) (hv r hr) (hpv r hr)
+  exact hs_open.is_const_of_deriv_eq_zero hs_conn
+    (fun r hr ↦ (hderiv r hr).differentiableAt.differentiableWithinAt)
+    (fun r hr ↦ (hderiv r hr).deriv) ht ha
 
 end RCLike
 

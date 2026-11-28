@@ -14,6 +14,7 @@ public import TauCeti.Analysis.Complex.SlitPlane
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.SpecialFunctions.Integrability.Cpow
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.RingTheory.Binomial
@@ -45,6 +46,12 @@ The integral is defined at all parameters, but no representation of the Gauss
 function is asserted outside the convergence region. In particular, its normalized
 value can vanish when a Gamma factor has a pole.
 
+On the open unit disc `‖z‖ < 1`, expanding `(1 - z * t) ^ (-a)` in its binomial series and
+integrating term by term against `Complex.betaIntegral` identifies `eulerIntegral a b c z`
+with `(Gamma c)⁻¹ * ₂F₁(a, b; c; z)` for all `a : ℂ` and `0 < b.re < c.re`
+(`Complex.eulerIntegral_eq_inv_Gamma_mul_ordinaryHypergeometric`). Taking real parameters
+gives the real integral formula `TauCeti.ordinaryHypergeometric_eq_integral`.
+
 ## Main results
 
 * `Complex.eulerIntegral` — Euler's normalized integral representation.
@@ -55,6 +62,9 @@ value can vanish when a Gamma factor has a pole.
   every complex `z` when `0 < b.re < c.re`.
 * `Complex.hasSum_inv_Gamma_mul_integral_of_hasSum_mul_pow` — termwise integration of a power
   series in `z t` against the normalized Beta weight; shared with Kummer's integral.
+* `Complex.eulerIntegral_eq_inv_Gamma_mul_ordinaryHypergeometric` —
+  `eulerIntegral a b c z = (Gamma c)⁻¹ * ₂F₁(a, b; c; z)` on `‖z‖ < 1` when `0 < b.re < c.re`.
+* `TauCeti.ordinaryHypergeometric_eq_integral` — Euler's integral representation for real `₂F₁`.
 * `Complex.regularizedGaussHGFun_eq_eulerIntegral` — `𝐅(a, b; c; z) = eulerIntegral a b c z` on
   `‖z‖ < 1` when `0 < b.re < c.re` (DLMF 15.6.1).
 * `Complex.eulerIntegral_one` — `eulerIntegral a b c 1 = Γ(c - a - b) / (Γ(c - a) Γ(c - b))` when
@@ -304,6 +314,15 @@ theorem regularizedGaussHGFun_eq_eulerIntegral (a : ℂ) {b c z : ℂ}
     TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer]
   ring
 
+/-- On the open unit disc, Euler's normalized integral equals `(Γ c)⁻¹ * ₂F₁(a, b; c; z)` for all
+`a : ℂ` and `0 < b.re < c.re` (DLMF 15.6.1). -/
+theorem eulerIntegral_eq_inv_Gamma_mul_ordinaryHypergeometric (a : ℂ) {b c z : ℂ}
+    (hb : 0 < b.re) (hbc : b.re < c.re) (hz : ‖z‖ < 1) :
+    eulerIntegral a b c z = (Gamma c)⁻¹ * ₂F₁ a b c z := by
+  rw [← regularizedGaussHGFun_eq_eulerIntegral a hb hbc hz,
+    ← ordinaryHypergeometric_div_Gamma_eq (a := a) (b := b) (z := z)
+      (ne_neg_natCast_of_re_pos (hb.trans hbc)), div_eq_inv_mul]
+
 /-- At `z = 1`, Euler's normalized integral reduces to Euler's Beta integral when `0 < b.re` and
 `(a + b).re < c.re`. -/
 theorem eulerIntegral_one {a b c : ℂ} (hb : 0 < b.re) (habc : (a + b).re < c.re) :
@@ -531,3 +550,34 @@ theorem tendsto_regularizedGaussHGFun_nhdsWithin_ball_one {a b c : ℂ}
       (regularizedGaussHGFun_eq_mul_sub_mul_mul a b c (by simpa using hz)).symm)
 
 end Complex
+
+namespace TauCeti
+
+/-- Euler's integral representation for the real Gauss hypergeometric function `₂F₁` (DLMF 15.6.1):
+for every `a : ℝ`, `0 < b < c`, and `|z| < 1`,
+`₂F₁(a, b; c; z) = Γ(c) / (Γ(b) Γ(c - b)) * ∫ t in 0..1, t^(b-1) (1-t)^(c-b-1) (1 - z t)^(-a)`. -/
+theorem ordinaryHypergeometric_eq_integral {a b c z : ℝ}
+    (hb : 0 < b) (hbc : b < c) (hz : |z| < 1) :
+    ₂F₁ a b c z =
+      Real.Gamma c / (Real.Gamma b * Real.Gamma (c - b)) *
+        ∫ t in (0 : ℝ)..1, t ^ (b - 1) * (1 - t) ^ (c - b - 1) * (1 - z * t) ^ (-a) := by
+  apply Complex.ofReal_injective
+  have heul := Complex.eulerIntegral_eq_inv_Gamma_mul_ordinaryHypergeometric (a : ℂ)
+    (b := (b : ℂ)) (c := (c : ℂ)) (z := (z : ℂ))
+    (by simpa using hb) (by simpa using hbc) (by simpa [Real.norm_eq_abs] using hz)
+  have hint : Complex.ofReal (∫ t in (0 : ℝ)..1,
+        t ^ (b - 1) * (1 - t) ^ (c - b - 1) * (1 - z * t) ^ (-a)) =
+      ∫ t : ℝ in 0..1, (t : ℂ) ^ ((b : ℂ) - 1) * (1 - (t : ℂ)) ^ ((c : ℂ) - b - 1) *
+        (1 - (z : ℂ) * t) ^ (-(a : ℂ)) := by
+    rw [← intervalIntegral.integral_ofReal]
+    refine intervalIntegral.integral_congr fun t ht ↦ ?_
+    rw [uIcc_of_le zero_le_one] at ht
+    push_cast
+    rw [Complex.ofReal_cpow ht.1, Complex.ofReal_cpow (sub_nonneg.mpr ht.2),
+      Complex.ofReal_cpow (by nlinarith [(abs_lt.mp hz).1, (abs_lt.mp hz).2, ht.1, ht.2])]
+    push_cast; ring
+  push_cast [← Complex.Gamma_ofReal]
+  rw [hint, div_eq_mul_inv, mul_assoc, ← Complex.eulerIntegral_def, heul,
+    mul_inv_cancel_left₀ (Complex.Gamma_ne_zero_of_re_pos (by simpa using hb.trans hbc))]
+
+end TauCeti

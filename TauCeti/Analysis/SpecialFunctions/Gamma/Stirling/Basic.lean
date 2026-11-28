@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Log
-public import TauCeti.Analysis.SpecialFunctions.Gamma.SectorialDigamma
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Sectorial
 public import Mathlib.Analysis.SpecialFunctions.Stirling
 import TauCeti.Analysis.SpecialFunctions.Integrals.PeriodicStieltjes
 

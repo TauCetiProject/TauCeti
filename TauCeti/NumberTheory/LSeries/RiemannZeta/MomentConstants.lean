@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Data.Nat.Prime.Defs
 public import TauCeti.Analysis.SpecialFunctions.BarnesG.Basic
-public import TauCeti.Analysis.SpecialFunctions.OrdinaryHypergeometric
+public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Log.Summable
 import Mathlib.NumberTheory.EulerProduct.DirichletLSeries

@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
-import TauCeti.Analysis.SpecialFunctions.Gamma.GaussSeries
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.GaussSeries
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!

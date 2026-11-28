@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Real
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Real
 public import TauCeti.Analysis.SpecialFunctions.Log.Pi
 public import Mathlib.Analysis.Real.Pi.Bounds
 

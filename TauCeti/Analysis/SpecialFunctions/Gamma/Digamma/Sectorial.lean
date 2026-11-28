@@ -5,7 +5,7 @@ Authors: OpenAI Codex, Robby Sneiderman
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma.GaussSeries
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.GaussSeries
 public import TauCeti.Analysis.SpecialFunctions.Complex.Log.Bounds
 public import Mathlib.NumberTheory.AbelSummation
 public import TauCeti.Analysis.SpecialFunctions.Integrals.Basic

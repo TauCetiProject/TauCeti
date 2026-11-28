@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Convex.Deriv
 public import Mathlib.Analysis.Complex.RealDeriv
 public import Mathlib.Analysis.Complex.ExponentialBounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
-import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Basic
 import TauCeti.Data.Nat.Cast.Basic
 
 /-!
@@ -30,8 +30,8 @@ derivative of real Gamma, and relates it to Mathlib's `Complex.digamma`.
 * `Real.digamma_one`, `Real.digamma_apply_add_one`, `Real.digamma_apply_add_nat`: the value
   `ψ(1) = -γ` and the recurrence `ψ(x + 1) = ψ(x) + 1 / x` with its iterates.
 * `Real.digamma_le_log_le`: for `x > 0`, `ψ(x) ≤ log x ≤ ψ(x + 1)`.
-* `Real.monotoneOn_digamma`: digamma is monotone on the positive real axis, being the derivative
-  of the convex function `log ∘ Gamma`.
+* `Real.monotoneOn_digamma`, `Real.strictMonoOn_digamma`: digamma is monotone and strictly
+  monotone on the positive real axis.
 * `Real.differentiableAt_digamma`, `Real.deriv_digamma_apply_add_nat`, `Real.deriv_digamma_pos`:
   at every regular real point digamma is differentiable, its derivative satisfies the shifted
   recurrence `ψ'(x + n) = ψ'(x) - ∑_{k < n} 1 / (x + k)²`, and it is positive.
@@ -77,18 +77,6 @@ private theorem ofReal_ne_neg_nat {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ))
     ∀ m : ℕ, (x : ℂ) ≠ -(m : ℂ) := by
   intro m hm
   exact hx m (by exact_mod_cast hm)
-
-/-- At every regular real point, the complex Gamma derivative is the complex coercion
-of the derivative of real Gamma. -/
-theorem deriv_Gamma_ofReal {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
-    deriv Gamma (x : ℂ) = ((deriv Real.Gamma x : ℝ) : ℂ) := by
-  have hpoles := ofReal_ne_neg_nat hx
-  have hc := (differentiableAt_Gamma _ hpoles).hasDerivAt.comp_ofReal
-  have hr := (Real.differentiableAt_Gamma hx).hasDerivAt.ofReal_comp
-  have heq : (fun y : ℝ ↦ Gamma (y : ℂ)) = fun y ↦ (Real.Gamma y : ℂ) :=
-    funext Gamma_ofReal
-  rw [heq] at hc
-  exact hc.unique hr
 
 /-- At every real point, including the total zero values at poles, complex digamma
 is the coercion of the real Gamma logarithmic derivative. -/
@@ -213,6 +201,14 @@ theorem deriv_digamma_pos {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) : 0 < d
     Finset.sum_pos (fun k _ => inv_pos.2 (sq_pos_iff.2 fun h => hx k (by linarith)))
       ⟨0, Finset.mem_range.2 (by exact_mod_cast (le_max_right (-x) 0).trans_lt hn)⟩
   linarith
+
+/-- Real digamma is strictly monotone on the positive real axis. -/
+theorem strictMonoOn_digamma : StrictMonoOn digamma (Ioi 0) :=
+  strictMonoOn_of_deriv_pos (convex_Ioi (0 : ℝ))
+    (fun _ hx ↦ (differentiableAt_digamma
+      (Complex.real_ne_neg_nat_of_pos hx)).continuousAt.continuousWithinAt)
+    fun _ hx ↦ deriv_digamma_pos
+      (Complex.real_ne_neg_nat_of_pos (interior_subset hx))
 
 /-- The value `ψ(1/2) = -γ - 2 log 2`. -/
 theorem digamma_one_half : digamma (1 / 2) = -eulerMascheroniConstant - 2 * log 2 := by

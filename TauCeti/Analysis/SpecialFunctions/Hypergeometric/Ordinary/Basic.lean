@@ -6,11 +6,15 @@ Authors: Tau Ceti
 module
 
 public import Mathlib.Analysis.Analytic.Basic
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.SpecialFunctions.OrdinaryHypergeometric
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import TauCeti.Analysis.Analytic.OfScalars
 public import TauCeti.RingTheory.Binomial
 import Mathlib.Analysis.Analytic.ChangeOrigin
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.RingTheory.PowerSeries.Derivative
 
 /-!
@@ -19,8 +23,11 @@ import TauCeti.RingTheory.PowerSeries.Derivative
 Mathlib computes the radius of convergence of the series of `₂F₁(a, b; c; ·)`: it is `1`, unless
 one of the parameters is a nonpositive integer, in which case the series is finite or its
 coefficients take the junk value `0`, and the radius is `⊤`. This file records the uniform
-consequence that the radius is always at least `1`, so `₂F₁(a, b; c; ·)` is analytic on the open
-unit ball for all parameters.
+consequence that the radius is always at least `1`, so `₂F₁(a, b; c; ·)` has a convergent power
+series representation (`TauCeti.hasFPowerSeriesOnBall_ordinaryHypergeometric`) and is analytic on
+the open unit ball (`TauCeti.analyticOnNhd_ordinaryHypergeometric`) for all parameters. Joint
+complex analyticity in all four arguments `(a, b, c, z)` is proved in
+`TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Analytic`.
 
 Over a complete nontrivially normed field of characteristic zero, the series can be
 differentiated termwise inside its disc of convergence. This shows that, when `c` is not a
@@ -35,19 +42,32 @@ is equivalent to the recurrence `(n + 1) (c + n) cₙ₊₁ = (a + n) (b + n) c�
 
 * `TauCeti.one_le_radius_ordinaryHypergeometricSeries`: the radius of convergence of
   `ordinaryHypergeometricSeries 𝔸 a b c` is at least `1`.
+* `TauCeti.hasFPowerSeriesOnBall_ordinaryHypergeometric`: `₂F₁ a b c` has the scalar formal power
+  series of hypergeometric coefficients on the open unit ball of radius `1`.
 * `TauCeti.analyticOnNhd_ordinaryHypergeometric`: `₂F₁ a b c` is analytic on the open unit ball.
+* `TauCeti.ofReal_ordinaryHypergeometricCoefficient`: coercing
+  `ordinaryHypergeometricCoefficient a b c n` from `ℝ` to `ℂ` yields the complex coefficient.
+* `TauCeti.ofReal_ordinaryHypergeometric`: coercing `₂F₁ a b c z` from `ℝ` to `ℂ` yields
+  `₂F₁ (a : ℂ) (b : ℂ) (c : ℂ) (z : ℂ)`.
 * `TauCeti.mem_eball_ordinaryHypergeometricSeries_radius`: the open unit ball lies inside the
   ball of convergence of the series.
 * `TauCeti.hasSum_ordinaryHypergeometric`: on the open unit ball, `₂F₁ a b c` is the sum of its
   series, and `TauCeti.summable_norm_ordinaryHypergeometricCoefficient_smul_pow`: the series
   converges absolutely there.
+* `TauCeti.ordinaryHypergeometricCoefficient_one_nonneg`,
+  `TauCeti.ordinaryHypergeometricCoefficient_self_one_nonneg`,
+  `TauCeti.norm_ordinaryHypergeometricCoefficient_one_le`, and
+  `TauCeti.norm_ordinaryHypergeometricCoefficient_one_le_one`: nonnegativity and multichoose /
+  norm-`1` bounds on the denominator-one hypergeometric coefficients `(a)ₙ (b)ₙ / (n!)²`.
 * `TauCeti.hasSum_multichoose_mul_multichoose_mul_pow`: with lower parameter `1`, the coefficients
   are products of generalized multichoose numbers, so `∑ (a)ₙ (b)ₙ / (n!)² xⁿ = ₂F₁(a, b; 1; x)`.
   For `a = b` over `𝕂` this is `TauCeti.hasSum_multichoose_sq_mul_pow`.
 * `TauCeti.ordinaryHypergeometric_eq_one_add_sq_mul_add_tsum`,
-  `TauCeti.one_add_sq_mul_le_ordinaryHypergeometric`, `TauCeti.exists_ordinaryHypergeometric_le`:
-  `₂F₁(a, a; 1; x) = 1 + a² x + O(x²)`, with the explicit tail on the open unit disc and two-sided
-  bounds for real `0 ≤ x ≤ r < 1`.
+  `TauCeti.one_add_sq_mul_le_ordinaryHypergeometric`,
+  `TauCeti.one_le_ordinaryHypergeometric_self_one`,
+  `TauCeti.norm_ordinaryHypergeometric_one_le`, `TauCeti.exists_ordinaryHypergeometric_le`:
+  `₂F₁(a, a; 1; x) = 1 + a² x + O(x²)` and uniform bounds on `₂F₁(a, b; 1; x)` inside the unit
+  disc.
 * `TauCeti.ordinaryHypergeometric_neg_nat_eq_sum`: a terminating `₂F₁(−n, b; c; z)` is the sum of
   its first `n + 1` terms.
 * `TauCeti.ordinaryHypergeometricCoefficient_eq_div`: the coefficient as `(a)ₙ (b)ₙ / ((c)ₙ n!)`.
@@ -56,8 +76,11 @@ is equivalent to the recurrence `(n + 1) (c + n) cₙ₊₁ = (a + n) (b + n) c�
   particular `TauCeti.deriv_ordinaryHypergeometric_zero` gives `(₂F₁ a b c)' 0 = a b / c`.
 * `TauCeti.ordinaryHypergeometric_gaussEquation`: Gauss's hypergeometric equation inside the disc
   of convergence, with the special cases
-  `TauCeti.ordinaryHypergeometric_gaussEquation_of_norm_lt_one` (the open unit disc) and
-  `TauCeti.ordinaryHypergeometric_gaussEquation_of_neg_nat` (terminating series, everywhere).
+  `TauCeti.ordinaryHypergeometric_gaussEquation_of_norm_lt_one` (the open unit disc),
+  `TauCeti.ordinaryHypergeometric_gaussEquation_of_neg_nat` (terminating series, everywhere),
+  `TauCeti.hasDerivAt_rpow_mul_one_sub_rpow_deriv_ordinaryHypergeometric` (Sturm–Liouville form for
+  general `c ∉ −ℕ`), and `TauCeti.hasDerivAt_mul_one_sub_rpow_deriv_ordinaryHypergeometric` (`c = 1`
+  on `(-1, 1)`).
 * `TauCeti.mk_ordinaryHypergeometricCoefficient_gaussEquation`: Gauss's hypergeometric equation
   for the series as a formal power series, over any field of characteristic zero.
 
@@ -106,6 +129,49 @@ theorem ordinaryHypergeometricCoefficient_one_eq_multichoose_mul {K : Type*} [Fi
     Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer, ascPochhammer_eval_one]
   ring
 
+/-- For nonnegative parameters `a, b` in an ordered field, the denominator-one hypergeometric
+coefficient `(a)ₙ (b)ₙ / (n!)²` is nonnegative. -/
+theorem ordinaryHypergeometricCoefficient_one_nonneg {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {a b : K} (ha : 0 ≤ a) (hb : 0 ≤ b) (n : ℕ) :
+    0 ≤ ordinaryHypergeometricCoefficient a b 1 n := by
+  have eval_nonneg {x : K} (hx : 0 ≤ x) : 0 ≤ (ascPochhammer K n).eval x := by
+    rcases hx.eq_or_lt with rfl | hx
+    · cases n with
+      | zero => simp
+      | succ m => rw [ascPochhammer_succ_left]; simp
+    · exact (ascPochhammer_pos n x hx).le
+  rw [ordinaryHypergeometricCoefficient, ascPochhammer_eval_one]
+  have h1 : (0 : K) ≤ ((n.factorial : ℕ) : K) := Nat.cast_nonneg _
+  exact mul_nonneg (mul_nonneg (mul_nonneg (inv_nonneg.mpr h1) (eval_nonneg ha))
+    (eval_nonneg hb)) (inv_nonneg.mpr h1)
+
+/-- For any parameter `a` in an ordered field, the diagonal denominator-one hypergeometric
+coefficient `(a)ₙ² / (n!)²` is nonnegative. -/
+theorem ordinaryHypergeometricCoefficient_self_one_nonneg {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] (a : K) (n : ℕ) :
+    0 ≤ ordinaryHypergeometricCoefficient a a 1 n := by
+  rw [ordinaryHypergeometricCoefficient_one_eq_multichoose_mul, ← sq]
+  exact sq_nonneg _
+
+/-- Over `ℝ` or `ℂ`, if `‖a‖ ≤ R₁` and `‖b‖ ≤ R₂`, then the denominator-one hypergeometric
+coefficient `(a)ₙ (b)ₙ / (n!)²` has norm at most `Ring.multichoose R₁ n * Ring.multichoose R₂ n`. -/
+theorem norm_ordinaryHypergeometricCoefficient_one_le {𝕂 : Type*} [RCLike 𝕂]
+    {a b : 𝕂} {R₁ R₂ : ℝ} (ha : ‖a‖ ≤ R₁) (hb : ‖b‖ ≤ R₂) (n : ℕ) :
+    ‖ordinaryHypergeometricCoefficient a b 1 n‖ ≤
+      Ring.multichoose R₁ n * Ring.multichoose R₂ n := by
+  rw [ordinaryHypergeometricCoefficient_one_eq_multichoose_mul, norm_mul]
+  have h1 := norm_multichoose_le_of_norm_le ha n
+  exact mul_le_mul h1 (norm_multichoose_le_of_norm_le hb n)
+    (norm_nonneg _) ((norm_nonneg _).trans h1)
+
+/-- Over `ℝ` or `ℂ`, if `‖a‖ ≤ 1` and `‖b‖ ≤ 1`, then the denominator-one hypergeometric
+coefficient `(a)ₙ (b)ₙ / (n!)²` has norm at most `1`. -/
+theorem norm_ordinaryHypergeometricCoefficient_one_le_one {𝕂 : Type*} [RCLike 𝕂]
+    {a b : 𝕂} (ha : ‖a‖ ≤ 1) (hb : ‖b‖ ≤ 1) (n : ℕ) :
+    ‖ordinaryHypergeometricCoefficient a b 1 n‖ ≤ 1 := by
+  simpa only [Ring.multichoose_one, mul_one] using
+    norm_ordinaryHypergeometricCoefficient_one_le ha hb n
+
 variable {𝕂 : Type*} (𝔸 : Type*) [RCLike 𝕂] [NormedDivisionRing 𝔸] [NormedAlgebra 𝕂 𝔸]
 
 /-- The radius of convergence of the hypergeometric series `₂F₁(a, b; c; ·)` is at least `1`, for
@@ -128,16 +194,44 @@ theorem one_le_radius_ordinaryHypergeometricSeries (a b c : 𝕂) :
       rw [hc, ordinaryHypergeometric_radius_top_of_neg_nat₃]
       exact le_top
 
+/-- On the open unit ball of radius `1`, `₂F₁(a, b; c; ·)` has the scalar formal power series of
+hypergeometric coefficients `ordinaryHypergeometricCoefficient a b c`. -/
+theorem hasFPowerSeriesOnBall_ordinaryHypergeometric [CompleteSpace 𝔸] (a b c : 𝕂) :
+    HasFPowerSeriesOnBall (₂F₁ a b c : 𝔸 → 𝔸)
+      (FormalMultilinearSeries.ofScalars 𝔸 (ordinaryHypergeometricCoefficient a b c)) 0 1 :=
+  ((ordinaryHypergeometricSeries 𝔸 a b c).hasFPowerSeriesOnBall
+    (zero_lt_one.trans_le (one_le_radius_ordinaryHypergeometricSeries 𝔸 a b c))).mono
+      zero_lt_one (one_le_radius_ordinaryHypergeometricSeries 𝔸 a b c)
+
 /-- The ordinary hypergeometric function `₂F₁(a, b; c; ·)` is analytic on the open unit ball, for
 all parameters. -/
 theorem analyticOnNhd_ordinaryHypergeometric [CompleteSpace 𝔸] (a b c : 𝕂) :
-    AnalyticOnNhd 𝕂 (₂F₁ a b c : 𝔸 → 𝔸) (Metric.ball 0 1) := by
-  intro x hx
-  have h1 := one_le_radius_ordinaryHypergeometricSeries 𝔸 a b c
-  exact ((ordinaryHypergeometricSeries 𝔸 a b c).hasFPowerSeriesOnBall
-    (zero_lt_one.trans_le h1)).analyticAt_of_mem
-      (Metric.eball_subset_eball h1 (by
-        simpa only [Metric.mem_eball, edist_dist, ENNReal.ofReal_lt_one, Metric.mem_ball] using hx))
+    AnalyticOnNhd 𝕂 (₂F₁ a b c : 𝔸 → 𝔸) (Metric.ball 0 1) := fun _ hx ↦
+  (hasFPowerSeriesOnBall_ordinaryHypergeometric 𝔸 a b c).analyticAt_of_mem (by
+    simpa only [Metric.mem_eball, edist_dist, ENNReal.ofReal_lt_one, Metric.mem_ball] using hx)
+
+/-- Coercing the real hypergeometric coefficient `ordinaryHypergeometricCoefficient a b c n` to
+`ℂ` agrees with the complex coefficient. -/
+@[norm_cast]
+theorem ofReal_ordinaryHypergeometricCoefficient (a b c : ℝ) (n : ℕ) :
+    ((ordinaryHypergeometricCoefficient a b c n : ℝ) : ℂ) =
+      ordinaryHypergeometricCoefficient (a : ℂ) (b : ℂ) (c : ℂ) n := by
+  have hp (x : ℝ) :
+      (((ascPochhammer ℝ n).eval x : ℝ) : ℂ) = (ascPochhammer ℂ n).eval (x : ℂ) := by
+    have h := Polynomial.eval_map_apply (p := ascPochhammer ℝ n) (f := Complex.ofRealHom) x
+    rw [ascPochhammer_map] at h
+    exact h.symm
+  simp only [ordinaryHypergeometricCoefficient, Complex.ofReal_mul, Complex.ofReal_inv,
+    Complex.ofReal_natCast, hp]
+
+/-- Coercing the real hypergeometric function `₂F₁ a b c z` to `ℂ` agrees with complex `₂F₁`. -/
+@[simp, norm_cast]
+theorem ofReal_ordinaryHypergeometric (a b c z : ℝ) :
+    ((₂F₁ a b c z : ℝ) : ℂ) = ₂F₁ (a : ℂ) (b : ℂ) (c : ℂ) (z : ℂ) := by
+  simp only [ordinaryHypergeometric_eq_ofScalarsSum,
+    FormalMultilinearSeries.ofScalarsSum_eq_tsum, smul_eq_mul, Complex.ofReal_tsum]
+  refine tsum_congr fun n ↦ ?_
+  rw [Complex.ofReal_mul, Complex.ofReal_pow, ofReal_ordinaryHypergeometricCoefficient]
 
 variable {𝔸} in
 /-- The open unit ball lies inside the ball of convergence of the hypergeometric series, for all
@@ -198,6 +292,27 @@ theorem one_add_sq_mul_le_ordinaryHypergeometric (a : ℝ) {x : ℝ} (hx₀ : 0 
   rw [ordinaryHypergeometric_eq_one_add_sq_mul_add_tsum a
     (by rw [Real.norm_eq_abs, abs_of_nonneg hx₀]; exact hx₁)]
   exact le_add_of_nonneg_right (tsum_nonneg fun n ↦ by positivity)
+
+/-- For `0 ≤ x < 1`, `1 ≤ ₂F₁(a, a; 1; x)`. -/
+theorem one_le_ordinaryHypergeometric_self_one (a : ℝ) {x : ℝ} (hx₀ : 0 ≤ x) (hx₁ : x < 1) :
+    1 ≤ ₂F₁ a a 1 x :=
+  (le_add_of_nonneg_right (mul_nonneg (sq_nonneg a) hx₀)).trans
+    (one_add_sq_mul_le_ordinaryHypergeometric a hx₀ hx₁)
+
+/-- Over `ℝ` or `ℂ`, if `‖a‖ ≤ 1`, `‖b‖ ≤ 1`, and `‖x‖ < 1`, then
+`‖₂F₁(a, b; 1; x)‖ ≤ (1 - ‖x‖)⁻¹`. -/
+theorem norm_ordinaryHypergeometric_one_le {𝕜 : Type*} [RCLike 𝕜] {a b x : 𝕜}
+    (ha : ‖a‖ ≤ 1) (hb : ‖b‖ ≤ 1) (hx : ‖x‖ < 1) :
+    ‖₂F₁ a b 1 x‖ ≤ (1 - ‖x‖)⁻¹ := by
+  have hs := hasSum_ordinaryHypergeometric a b 1 hx
+  have hgeom : HasSum (fun n : ℕ ↦ ‖x‖ ^ n) (1 - ‖x‖)⁻¹ :=
+    hasSum_geometric_of_lt_one (norm_nonneg x) hx
+  rw [← hs.tsum_eq, ← hgeom.tsum_eq]
+  refine (norm_tsum_le_tsum_norm hs.summable.norm).trans ?_
+  refine hs.summable.norm.tsum_le_tsum (fun n ↦ ?_) hgeom.summable
+  rw [smul_eq_mul, norm_mul, norm_pow]
+  exact mul_le_of_le_one_left (pow_nonneg (norm_nonneg x) n)
+    (norm_ordinaryHypergeometricCoefficient_one_le_one ha hb n)
 
 /-- On `[0, r]` with `0 < r < 1`, `₂F₁(a, a; 1; x)` is `1 + a² x + O(x²)`: it is at most
 `1 + a² x + C x²` for some constant `C ≥ 0`. -/
@@ -300,8 +415,8 @@ theorem ordinaryHypergeometric_gaussEquation (a b c : 𝕂) (hc : ∀ k : ℕ, (
     (h0.mul_left (a * b)))
   -- by the coefficient recurrence, every term of the combined series vanishes
   have hzero : (fun n : ℕ ↦ n * ((n + 1) * C (n + 1)) * x ^ n + c * ((n + 1) * C (n + 1) * x ^ n) -
-      (((n : 𝕂) - 1) * n * C n * x ^ n + (a + b + 1) * (n * C n * x ^ n) + a * b * (C n * x ^ n))) =
-      0 := by
+      (((n : 𝕂) - 1) * n * C n * x ^ n + (a + b + 1) * (n * C n * x ^ n) +
+        a * b * (C n * x ^ n))) = 0 := by
     funext n
     have hcn : c + n ≠ 0 := fun h ↦ hc n (eq_neg_of_add_eq_zero_right h)
     have hrec : (n + 1) * (c + n) * C (n + 1) = (a + n) * (b + n) * C n := by
@@ -342,6 +457,47 @@ theorem ordinaryHypergeometric_gaussEquation_of_neg_nat (a b c : 𝕂) {k : ℕ}
     exact eNorm_lt_top
 
 end Scalar
+
+/-- **Sturm–Liouville form of Gauss's hypergeometric equation**: whenever `c` is not a nonpositive
+integer, on `(-1, 1)` (away from `0` unless `1 ≤ c`, in particular on `(0, 1)`),
+`y = ₂F₁(a, b; c; ·)` satisfies
+`(x ^ c * (1 - x) ^ (a + b - c + 1) * y')' = a * b * x ^ (c - 1) * (1 - x) ^ (a + b - c) * y`. -/
+theorem hasDerivAt_rpow_mul_one_sub_rpow_deriv_ordinaryHypergeometric (a b c : ℝ)
+    (hc : ∀ k : ℕ, (k : ℝ) ≠ -c) {x : ℝ} (hx : |x| < 1) (hx0 : x ≠ 0 ∨ 1 ≤ c) :
+    HasDerivAt (fun y ↦ y ^ c * (1 - y) ^ (a + b - c + 1) * deriv (₂F₁ a b c) y)
+      (a * b * x ^ (c - 1) * (1 - x) ^ (a + b - c) * ₂F₁ a b c x) x := by
+  have hx_e : x ∈ Metric.eball (0 : ℝ) 1 := by
+    rwa [← ENNReal.ofReal_one, Metric.eball_ofReal, mem_ball_zero_iff, Real.norm_eq_abs]
+  have hf := hasFPowerSeriesOnBall_ordinaryHypergeometric ℝ a b c
+  have hd2 := (hf.deriv_ofScalars.analyticAt_of_mem hx_e).differentiableAt.hasDerivAt
+  have h1x : 0 < 1 - x := sub_pos.mpr (abs_lt.mp hx).2
+  have hd1 := (Real.hasDerivAt_rpow_const hx0).mul
+    ((Real.hasDerivAt_rpow_const (p := a + b - c + 1) (Or.inl h1x.ne')).comp x
+      ((hasDerivAt_id x).const_sub 1))
+  refine (hd1.mul hd2).congr_deriv ?_
+  have hode := ordinaryHypergeometric_gaussEquation_of_norm_lt_one (𝕂 := ℝ) a b c
+    hc (Real.norm_eq_abs x ▸ hx)
+  have hpow1 : (1 - x) ^ (a + b - c + 1) = (1 - x) ^ (a + b - c) * (1 - x) := by
+    simpa only [sub_add_cancel] using Real.rpow_add_one h1x.ne' (a + b - c)
+  have hpow0 : x ^ c = x ^ (c - 1) * x := by
+    by_cases hx_ne : x = 0
+    · subst hx_ne
+      have hc0 : c ≠ 0 := fun h ↦ hc 0 (by simp [h])
+      simp [hc0]
+    · simpa only [sub_add_cancel] using Real.rpow_add_one hx_ne (c - 1)
+  simp only [Pi.mul_apply, Function.comp_apply, add_sub_cancel_right, hpow0, hpow1]
+  linear_combination x ^ (c - 1) * (1 - x) ^ (a + b - c) * hode
+
+/-- **Sturm–Liouville form of Gauss's hypergeometric equation for `c = 1`**: on `(-1, 1)`,
+`y = ₂F₁(a, b; 1; ·)` satisfies
+`(x (1 - x) ^ (a + b) y')' = a b (1 - x) ^ (a + b - 1) y`. -/
+theorem hasDerivAt_mul_one_sub_rpow_deriv_ordinaryHypergeometric (a b : ℝ) {x : ℝ}
+    (hx : |x| < 1) :
+    HasDerivAt (fun y ↦ y * (1 - y) ^ (a + b) * deriv (₂F₁ a b 1) y)
+      (a * b * (1 - x) ^ (a + b - 1) * ₂F₁ a b 1 x) x := by
+  have h := hasDerivAt_rpow_mul_one_sub_rpow_deriv_ordinaryHypergeometric a b 1
+    (fun k hk ↦ by linarith [show (0 : ℝ) ≤ k by positivity]) hx (Or.inr le_rfl)
+  simpa only [Real.rpow_one, sub_add_cancel, sub_self, Real.rpow_zero, mul_one] using h
 
 section FormalGaussEquation
 

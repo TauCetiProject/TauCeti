@@ -108,6 +108,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   `TauCeti.integral_comp_sin_sq_int_mul_pi`: the integral from `0` of an integrand
   `θ ↦ G (sin² θ)` (with `G` valued in a normed space) is odd and quasi-periodic in its upper
   limit.
+* `TauCeti.integral_finset_mul_rpow` and `TauCeti.integral_finset_rpow_zero_one`: termwise
+  integration of finite sums of real powers `∑ i ∈ s, c i * x ^ p i`.
 -/
 
 public section
@@ -699,6 +701,28 @@ theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hS : S <
   rw [intervalIntegral.integral_comp_sub_left (fun x : ℝ => x ^ S) (r + β)] at h
   rw [intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) r]
   convert h using 2 <;> ring
+
+/-- Termwise integration of a finite sum of weighted real powers `∑ i ∈ s, c i * x ^ p i`. -/
+theorem integral_finset_mul_rpow {ι : Type*} (s : Finset ι) (c p : ι → ℝ) {a b : ℝ}
+    (hp : ∀ i ∈ s, -1 < p i ∨ p i ≠ -1 ∧ (0 : ℝ) ∉ Set.uIcc a b) :
+    ∫ x in a..b, ∑ i ∈ s, c i * x ^ p i =
+      ∑ i ∈ s, c i * ((b ^ (p i + 1) - a ^ (p i + 1)) / (p i + 1)) := by
+  rw [intervalIntegral.integral_finsetSum fun i hi ↦
+    ((hp i hi).elim intervalIntegral.intervalIntegrable_rpow'
+      fun h ↦ intervalIntegral.intervalIntegrable_rpow (Or.inr h.2)).const_mul (c i)]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [intervalIntegral.integral_const_mul, integral_rpow (hp i hi)]
+
+/-- Termwise integration of a finite sum of real powers `∑ i ∈ s, x ^ p i` on `[0, 1]` when every
+exponent satisfies `-1 < p i`. -/
+theorem integral_finset_rpow_zero_one {ι : Type*} (s : Finset ι) (p : ι → ℝ)
+    (hp : ∀ i ∈ s, -1 < p i) :
+    ∫ x in (0 : ℝ)..1, ∑ i ∈ s, x ^ p i = ∑ i ∈ s, 1 / (p i + 1) := by
+  have h := integral_finset_mul_rpow s (fun _ ↦ 1) p (a := 0) (b := 1) fun i hi ↦ Or.inl (hp i hi)
+  simp only [one_mul, Real.one_rpow] at h
+  rw [h]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [Real.zero_rpow (by linarith [hp i hi]), sub_zero, one_div]
 
 /-- Fundamental theorem of calculus for `t ↦ (z₀ + t * d)⁻¹ * d` along a real segment mapped into
 `Complex.slitPlane` after rotation by a constant `u`. -/
