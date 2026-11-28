@@ -30,14 +30,6 @@ namespace Matrix
 variable {R ι κ : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
   [Fintype κ] [DecidableEq κ]
 
-/-- For a matrix with nonzero determinant, `det (1 - X A)` has degree equal to its size. -/
-theorem natDegree_charpolyRev_of_det_ne_zero {A : Matrix ι ι R} (hA : A.det ≠ 0) :
-    A.charpolyRev.natDegree = Fintype.card ι := by
-  apply le_antisymm (natDegree_charpolyRev_le A)
-  apply Polynomial.le_natDegree_of_ne_zero
-  rw [coeff_charpolyRev_card]
-  exact (isUnit_neg_one.pow _).mul_right_eq_zero.not.mpr hA
-
 /-- Over an additively torsion-free ring, matrices with nonzero determinants and equal traces
 of positive powers have equal sizes. No equality of sizes is assumed. -/
 theorem card_eq_of_trace_pow_eq_of_det_ne_zero [IsAddTorsionFree R]
