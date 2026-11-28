@@ -66,6 +66,13 @@ theorem isSparse_iff {P : Parameters} {s L : ℕ} {S : Set (ZMod (P.q₁ s))ˣ} 
               (ZMod.unitsMap (Nat.ordCompl_dvd (P.q₁ s) p) σ : ZMod (ordCompl[p] (P.q₁ s))) :=
   (Iff.rfl)
 
+/-- Sparsity is preserved by passing to a subset and lowering the prime cutoff. -/
+theorem IsSparse.mono {P : Parameters} {s L L' : ℕ} {S T : Set (ZMod (P.q₁ s))ˣ}
+    (h : P.IsSparse s L' T) (hST : S ⊆ T) (hL : L ≤ L') : P.IsSparse s L S := by
+  rw [isSparse_iff] at h ⊢
+  intro p hp hpL i j hi hij hj σ hσ τ hτ ρ hρ
+  exact h hp (hpL.trans hL) hi hij hj σ (hST hσ) τ (hST hτ) ρ (hST hρ)
+
 /-- The empty family is sparse for every prime cutoff. -/
 @[simp] theorem isSparse_empty (s L : ℕ) : P.IsSparse s L ∅ := by
   simp only [isSparse_iff, Set.mem_empty_iff_false, false_implies, implies_true]
@@ -84,9 +91,7 @@ private theorem not_exists_signed_two_pow_towerUnit {s i a b : ℕ}
   have hb₃ : 3 ^ (Nat.log 3 s + 4 + 1) ∣ 3 * l₀ s * P.q₀ := by
     rw [pow_succ, l₀_def, mul_comm _ 3]
     exact dvd_mul_right _ _
-  have hq : 3 * l₀ s * P.q₀ ∣ P.q₁ s := by
-    rw [q₁_def, towerDeg_def, ← mul_assoc, mul_comm P.q₀]
-    exact dvd_mul_right _ _
+  have hq : 3 * l₀ s * P.q₀ ∣ P.q₁ s := ⟨_, P.q₁_eq_base_mul_two_pow s⟩
   have h₂ : ¬ 2 ∣ 3 ^ (Nat.log 3 s + 4 + 1) := fun h ↦
     (by decide : (2 : ℕ) ≠ 3) (Nat.prime_eq_prime_of_dvd_pow Nat.prime_two Nat.prime_three h)
   have hd := Nat.dvd_ordCompl_of_dvd_not_dvd (hb₃.trans hq) h₂
@@ -122,25 +127,17 @@ theorem isSparse_neg_pow_towerUnit_image {s L : ℕ} {S : Set ℕ}
   rcases eq_or_ne p 2 with rfl | hp₂
   · exact P.not_exists_signed_two_pow_towerUnit hi (by omega)
       ⟨(ε : ℤ), hε ε, by simpa only [g, f, ZMod.castHom_apply, Nat.cast_ofNat] using hab⟩
-  · have hb₀ : 3 * l₀ s * P.q₀ ≠ 0 :=
-      Nat.mul_ne_zero (by rw [l₀_def]; positivity) P.q₀_ne_zero
-    let k := (3 * l₀ s * P.q₀).factorization 2
-    let u := ordCompl[2] (3 * l₀ s * P.q₀)
-    have hu : Odd u := Nat.not_even_iff_odd.mp
-      (mt Even.two_dvd (Nat.not_dvd_ordCompl Nat.prime_two hb₀))
-    have hk : 2 ≤ k := (Nat.prime_two.pow_dvd_iff_le_factorization hb₀).mp
-      (dvd_mul_of_dvd_right ((by norm_num : 4 ∣ 18480).trans P.dvd_q₀) _)
-    let v := k - 2
-    have hv : v + 2 = k := Nat.sub_add_cancel hk
+  · obtain ⟨m, hm⟩ := P.four_dvd_towerUnit_base s
+    have hpos : 0 < 3 * l₀ s * P.q₀ := by have := P.q₀_pos; rw [l₀_def]; positivity
+    have hm₀ : m ≠ 0 := by omega
+    obtain ⟨v, u, hu, hmu⟩ := Nat.exists_eq_two_pow_mul_odd hm₀
     have hbase : 3 * l₀ s * P.q₀ = 2 ^ (v + 2) * u := by
-      rw [hv]
-      exact (Nat.ordProj_mul_ordCompl_eq_self _ _).symm
+      rw [hm, hmu, pow_add]
+      norm_num only [Nat.reducePow]
+      ac_rfl
     have hd : 2 ^ (s + (v + 2)) ∣ ordCompl[p] (P.q₁ s) := by
       apply Nat.dvd_ordCompl_of_dvd_not_dvd
-      · have hq : P.q₁ s = (3 * l₀ s * P.q₀) * 2 ^ s := by
-          rw [q₁_def, towerDeg_def]
-          ac_rfl
-        rw [hq, hbase, pow_add]
+      · rw [P.q₁_eq_base_mul_two_pow s, hbase, pow_add]
         exact ⟨u, by ac_rfl⟩
       · exact fun h ↦ hp₂ (Nat.prime_eq_prime_of_dvd_pow hp Nat.prime_two h)
     have hg : g = 1 + 2 ^ (v + 2) * u := by
