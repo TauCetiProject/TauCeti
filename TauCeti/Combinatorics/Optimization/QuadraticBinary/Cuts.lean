@@ -119,7 +119,12 @@ theorem ising_ancilla [Fintype ι] (J : Matrix ι ι ℝ) (h : ι → ℝ) (y : 
     ising (isingAncillaMatrix J h) 0 y = ising J h fun i ↦ xor (y (some i)) (y none) := by
   let x : ι → Bool := fun i ↦ xor (y (some i)) (y none)
   have hspin (i : ι) : spin y (some i) = spin x i * spin y none := by
-    cases h1 : y (some i) <;> cases h2 : y none <;> simp [x, h1, h2]
+    have hxor := spin_xor (fun j ↦ y (some j)) (fun _ ↦ y none) i
+    have h1 : spin (fun j ↦ y (some j)) i = spin y (some i) := by simp only [spin_def]
+    have h2 : spin (fun _ ↦ y none) i = spin y none := by simp only [spin_def]
+    have hx : spin (fun j ↦ xor (y (some j)) (y none)) i = spin x i := rfl
+    rw [hx, h1, h2] at hxor
+    rw [hxor, mul_assoc, spin_mul_spin, mul_one]
   simp only [ising_def, Pi.zero_apply, zero_mul, Finset.sum_const_zero, add_zero,
     Fintype.sum_option, isingAncillaMatrix_none_none, isingAncillaMatrix_none_some,
     isingAncillaMatrix_some_none, isingAncillaMatrix_some_some, zero_add,
@@ -273,6 +278,22 @@ theorem cutWeight_not_of_isSymm {w : Matrix ι ι ℝ} (hw : w.IsSymm) (x : ι �
     cutWeight w (fun i ↦ !x i) = cutWeight w x := by
   rw [cutWeight_not, hw.eq]
 
+/-- `cutWeight w x` is the sum of `w i j` over pairs `(i, j)` with `x i = true` and `x j = false`.
+-/
+theorem cutWeight_eq_sum_filter (w : Matrix ι ι ℝ) (x : ι → Bool) :
+    cutWeight w x =
+      ∑ i ∈ Finset.univ.filter (fun i ↦ x i = true),
+        ∑ j ∈ Finset.univ.filter (fun j ↦ x j = false), w i j := by
+  have hterm (i j : ι) :
+      w i j * bit x i * (1 - bit x j) =
+        if x i = true then (if x j = false then w i j else 0) else 0 := by
+    cases hi : x i <;> cases hj : x j <;> simp [hi, hj]
+  have hinner (i : ι) :
+      (∑ j : ι, if x i = true then (if x j = false then w i j else 0) else 0) =
+        if x i = true then ∑ j ∈ Finset.univ.filter (fun j ↦ x j = false), w i j else 0 := by
+    by_cases hi : x i = true <;> simp [hi, Finset.sum_filter]
+  simp_rw [cutWeight_def, hterm, hinner, ← Finset.sum_filter]
+
 end Cuts
 
 end TauCeti
@@ -283,40 +304,6 @@ section
 
 variable {ι : Type*} [Fintype ι]
 
-private theorem cutWeight_adjMatrix_eq_sum_card_filter (G : SimpleGraph ι) [DecidableRel G.Adj]
-    [DecidableEq ι] (x : ι → Bool) :
-    TauCeti.cutWeight (G.adjMatrix ℝ) x =
-      ∑ v ∈ Finset.univ.filter (fun i ↦ x i = true),
-        ((#{w ∈ (Finset.univ.filter fun i ↦ x i = true)ᶜ | G.Adj v w} : ℕ) : ℝ) := by
-  set s : Finset ι := Finset.univ.filter fun i ↦ x i = true
-  simp only [TauCeti.cutWeight_def, adjMatrix_apply, Finset.card_filter]
-  have houter (v : ι) :
-      (∑ j : ι, (if G.Adj v j then (1 : ℝ) else 0) * TauCeti.bit x v * (1 - TauCeti.bit x j)) =
-        if v ∈ s then ∑ w ∈ sᶜ, if G.Adj v w then (1 : ℝ) else 0 else 0 := by
-    by_cases hv : x v = true
-    · have hvs : v ∈ s := Finset.mem_filter.mpr ⟨Finset.mem_univ _, hv⟩
-      simp only [hvs, ↓reduceIte]
-      rw [← Finset.sum_add_sum_compl s]
-      have hs0 :
-          ∑ j ∈ s, (if G.Adj v j then (1 : ℝ) else 0) * TauCeti.bit x v * (1 - TauCeti.bit x j) =
-            0 :=
-        Finset.sum_eq_zero fun j hj ↦ by
-          have hjtrue : x j = true := (Finset.mem_filter.mp hj).2
-          simp [hjtrue]
-      rw [hs0, zero_add]
-      refine Finset.sum_congr rfl fun w hw ↦ ?_
-      have hwfalse : x w = false := Bool.eq_false_iff.mpr fun hwt ↦
-        (Finset.mem_compl.mp hw) (Finset.mem_filter.mpr ⟨Finset.mem_univ _, hwt⟩)
-      simp [hv, hwfalse]
-    · have hvs : v ∉ s := fun h ↦ hv (Finset.mem_filter.mp h).2
-      have hvf : x v = false := Bool.eq_false_iff.mpr hv
-      simp [hvs, hvf]
-  simp_rw [houter, ← Finset.sum_filter]
-  have hfilt : Finset.univ.filter (· ∈ s) = s := by ext v; simp
-  rw [hfilt]
-  refine Finset.sum_congr rfl fun v _ ↦ ?_
-  simp only [Nat.cast_sum, Nat.cast_one]
-
 /-- For a simple graph `G`, `TauCeti.cutWeight (G.adjMatrix ℝ) x` counts the edges of `G` with one
 endpoint where `x` is `true` and one endpoint where `x` is `false`. -/
 theorem cutWeight_adjMatrix_eq_card_between (G : SimpleGraph ι) [DecidableRel G.Adj]
@@ -325,6 +312,9 @@ theorem cutWeight_adjMatrix_eq_card_between (G : SimpleGraph ι) [DecidableRel G
       ((G.between {i | x i = true} {i | x i = true}ᶜ).edgeFinset.card : ℝ) := by
   classical
   let s : Finset ι := Finset.univ.filter fun i ↦ x i = true
+  have hs_compl : sᶜ = Finset.univ.filter fun j ↦ x j = false := by
+    ext j
+    simp [s]
   have hs : (s : Set ι) = {i | x i = true} := by ext i; simp [s]
   have hcard :
       #(G.between (s : Set ι) (s : Set ι)ᶜ).edgeFinset = ∑ v ∈ s, #{w ∈ sᶜ | G.Adj v w} :=
@@ -334,7 +324,10 @@ theorem cutWeight_adjMatrix_eq_card_between (G : SimpleGraph ι) [DecidableRel G
         (G.between {i | x i = true} {i | x i = true}ᶜ).edgeFinset := by
     ext e
     simp [hs]
-  rw [cutWeight_adjMatrix_eq_sum_card_filter, ← Nat.cast_sum, ← hcard, hB]
+  rw [TauCeti.cutWeight_eq_sum_filter, ← hs_compl, ← hB, hcard, Nat.cast_sum]
+  refine Finset.sum_congr rfl fun v _ ↦ ?_
+  simp only [adjMatrix_apply, Finset.card_filter, Nat.cast_sum, Nat.cast_ite, Nat.cast_one,
+    Nat.cast_zero]
 
 end
 
