@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Order.Floor.Semiring
 public import Mathlib.NumberTheory.PrimeCounting
 public import Mathlib.Topology.Algebra.GroupWithZero
 import Mathlib.Tactic.Linarith
-import TauCeti.Data.Nat.Count
+import TauCeti.Data.Nat.Interval
 import TauCeti.Order.Filter.AtTopBot
 
 /-!

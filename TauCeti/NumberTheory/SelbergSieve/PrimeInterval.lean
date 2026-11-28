@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.NumberTheory.Primorial
 public import Mathlib.NumberTheory.SelbergSieve
 import TauCeti.Data.Nat.Interval
+import TauCeti.NumberTheory.PrimeCounting
 
 /-!
 # The prime-interval sieve and its remainder
@@ -144,22 +145,8 @@ number of primes at most the sieving cutoff. -/
 theorem primeCounting_sub_le_primeInterval (x y z : ℝ) :
     ((Nat.primeCounting ⌊x + y⌋₊ - Nat.primeCounting ⌊x⌋₊ : ℕ) : ℝ) ≤
       (primeInterval x y z).siftedSum + Nat.primeCounting ⌊z⌋₊ := by
-  by_cases hfloor : ⌊x⌋₊ ≤ ⌊x + y⌋₊
-  swap
-  · rw [Nat.sub_eq_zero_of_le (Nat.monotone_primeCounting (not_le.mp hfloor).le),
-      Nat.cast_zero, siftedSum_primeInterval]
-    positivity
-  have heq : (Ioc ⌊x⌋₊ ⌊x + y⌋₊).filter Nat.Prime =
-      Nat.primesLE ⌊x + y⌋₊ \ Nat.primesLE ⌊x⌋₊ := by
-    ext p
-    simp only [mem_filter, mem_Ioc, mem_sdiff, Nat.mem_primesLE]
-    constructor
-    · rintro ⟨⟨ha, hb⟩, hp⟩
-      exact ⟨⟨hb, hp⟩, fun h ↦ (not_le.mpr ha) h.1⟩
-    · rintro ⟨⟨hb, hp⟩, ha⟩
-      exact ⟨⟨lt_of_not_ge fun h ↦ ha ⟨h, hp⟩, hb⟩, hp⟩
   have hcard := card_primes_primeInterval_le x y z
-  rwa [heq, card_sdiff_of_subset (Nat.primesLE_mono hfloor),
-    Nat.primesLE_card_eq_primeCounting, Nat.primesLE_card_eq_primeCounting] at hcard
+  rwa [← Icc_add_one_left_eq_Ioc, Nat.card_filter_Icc_prime,
+    ← Nat.primeCounting_eq_primeCounting'_succ] at hcard
 
 end BoundingSieve

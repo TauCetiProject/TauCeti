@@ -100,15 +100,10 @@ theorem eventually_card_primesLE_filter_gt_three_mul_bounds :
   have hhi := (tendsto_order.mp hlim).2 3 (by norm_num)
   filter_upwards [hlo, hhi, TauCeti.Real.tendsto_div_log_atTop.eventually_gt_atTop 8,
     eventually_ge_atTop (0 : ℝ)] with x hl hu hx hx0
-  have hfloor : ⌊x⌋₊ ≤ ⌊3 * x⌋₊ := Nat.floor_mono (by nlinarith : x ≤ 3 * x)
-  have heq : (Nat.primesLE ⌊3 * x⌋₊).filter (fun p : ℕ ↦ x < (p : ℝ)) =
-      {p ∈ Finset.Icc (⌊x⌋₊ + 1) ⌊3 * x⌋₊ | p.Prime} := by
-    ext p
-    simp only [Finset.mem_filter, Nat.mem_primesLE, Finset.mem_Icc, Nat.add_one_le_iff,
-      Nat.floor_lt hx0]
-    tauto
-  rw [heq, Nat.card_filter_Icc_prime, ← Nat.primeCounting_eq_primeCounting'_succ,
-    Nat.cast_sub (Nat.monotone_primeCounting hfloor)]
+  have hsplit := Nat.sum_primesLE_floor_eq_add_filter_gt (fun _ : ℕ ↦ (1 : ℝ))
+    (by nlinarith : x ≤ 3 * x)
+  simp only [Finset.sum_const, nsmul_eq_mul, mul_one, Nat.primesLE_card_eq_primeCounting] at hsplit
+  rw [eq_sub_iff_add_eq'.2 hsplit.symm]
   have hpos : 0 < x / Real.log x := lt_trans (by norm_num) hx
   have hl' := (lt_div_iff₀ hpos).mp hl
   have hu' := (div_lt_iff₀ hpos).mp hu
