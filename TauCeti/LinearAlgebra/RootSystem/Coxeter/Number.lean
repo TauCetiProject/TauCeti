@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Classical
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Eigen
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.NumberOfRoots
+import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 import TauCeti.RingTheory.Polynomial.Cyclotomic.Exponents
 import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
@@ -64,9 +65,11 @@ reduced crystallographic finite root systems:
 * `TauCeti.DynkinType.mem_exponents_of_coprime`: every natural number `a < h` coprime to `h` is an
   exponent of a valid `DynkinType`.
 * `TauCeti.Coxeter.roots_charpoly_coxeterElement`,
+  `TauCeti.Coxeter.map_charpoly_coxeterElement_eq_prod`,
   `TauCeti.Coxeter.mem_roots_charpoly_coxeterElement_of_coprime`, and
-  `TauCeti.HasCartanType.mem_roots_charpoly_of_actsBy_of_coprime`: complex eigenvalue multisets and
-  primitive-root containment for canonical Cartan Coxeter matrices and `ActsBy` matrices.
+  `TauCeti.HasCartanType.mem_roots_charpoly_of_actsBy_of_coprime`: complex eigenvalue multisets,
+  linear factorizations over rational domains, and primitive-root containment for canonical Cartan
+  Coxeter matrices and `ActsBy` matrices.
 * `RootPairing.Base.orderOf_wordProd_eq_orderOf_wordProd`,
   `RootPairing.Base.two_le_orderOf_wordProd`,
   `RootPairing.Base.natCard_eq_card_support_mul_orderOf_wordProd`,
@@ -483,45 +486,6 @@ end HasCartanType
 
 /-! ### Galois conjugacy: every coprime residue `< h` is an exponent -/
 
-/-- **Every natural number `a < h` coprime to the Coxeter number `h` is an exponent** of a valid
-`DynkinType`. -/
-theorem DynkinType.mem_exponents_of_coprime {t : DynkinType} (ht : t.Valid) {a : ℕ}
-    (ha : a < t.coxeterNumber) (hcop : a.Coprime t.coxeterNumber) : a ∈ t.exponents := by
-  let b₀ := t.simplyConnectedBase ht
-  let l₀ : List b₀.support := Finset.univ.toList
-  let W₀ : Matrix b₀.support b₀.support ℤ := (l₀.map (reflMatrix b₀.cartanMatrix)).prod
-  have hct := t.hasCartanType_simplyConnectedRootDatum ht
-  have hroots := hct.roots_charpoly_of_actsBy ht (Finset.nodup_toList _)
-    (fun i => Finset.mem_toList.mpr (Finset.mem_univ i)) (b₀.actsBy_wordProd l₀)
-  set h := t.coxeterNumber
-  have hh : 0 < h := t.coxeterNumber_pos ht
-  simp_rw [← exp_two_pi_I_div_pow (h : ℂ)] at hroots
-  set ζ : ℂ := Complex.exp (2 * Real.pi * Complex.I / (h : ℂ))
-  have hζ : IsPrimitiveRoot ζ h := Complex.isPrimitiveRoot_exp h hh.ne'
-  set p : ℚ[X] := W₀.charpoly.map (Int.castRingHom ℚ)
-  have hp_map : p.map (algebraMap ℚ ℂ) = (W₀.map (Int.castRingHom ℂ)).charpoly := by
-    rw [Polynomial.map_map,
-      Subsingleton.elim ((algebraMap ℚ ℂ).comp (Int.castRingHom ℚ)) (Int.castRingHom ℂ),
-      Matrix.charpoly_map]
-  have hcard : (W₀.map (Int.castRingHom ℂ)).charpoly.roots.card =
-      (W₀.map (Int.castRingHom ℂ)).charpoly.natDegree := by
-    rw [hroots, Multiset.coe_card, List.length_map, t.length_exponents,
-      Matrix.charpoly_natDegree_eq_dim]
-    exact hct.card_support.symm.trans (Fintype.card_coe b₀.support).symm
-  have hprod : p.map (algebraMap ℚ ℂ) =
-      ∏ i : Fin t.exponents.length, (X - Polynomial.C (ζ ^ t.exponents[i])) := by
-    rw [hp_map, ← prod_multiset_X_sub_C_of_monic_of_roots_card_eq (Matrix.charpoly_monic _) hcard,
-      hroots, Multiset.map_coe, Multiset.prod_coe, List.map_map]
-    conv_lhs => rw [← List.ofFn_getElem (xs := t.exponents), List.map_ofFn, Fin.prod_ofFn]
-    rfl
-  have hp1 : (p.map (algebraMap ℚ ℂ)).IsRoot ζ := by
-    rw [hp_map, ← mem_roots (Matrix.charpoly_monic _).ne_zero, hroots, Multiset.mem_coe,
-      List.mem_map]
-    exact ⟨1, t.one_mem_exponents ht, pow_one ζ⟩
-  obtain ⟨i, hi⟩ := IsPrimitiveRoot.exists_eq_of_isRoot_of_map_eq_prod hζ hζ hp1
-    (fun i => t.lt_coxeterNumber_of_mem_exponents ht (List.getElem_mem _)) hprod ha hcop
-  exact hi ▸ List.getElem_mem _
-
 namespace Coxeter
 
 /-- **Complex eigenvalue multiset of the canonical Coxeter matrix `Matrix.coxeterElement
@@ -540,6 +504,66 @@ theorem roots_charpoly_coxeterElement {t : DynkinType} (ht : t.Valid) :
     (fun i => Finset.mem_toList.mpr (Finset.mem_univ i)) (b₀.actsBy_wordProd l₀)
   rw [Matrix.charpoly_map, ← hcp, ← Matrix.charpoly_map]
   exact hroots
+
+/-- **Linear factorization of the characteristic polynomial of `Matrix.coxeterElement
+t.cartanMatrix`** over any rational domain `K` containing a primitive `h`-th root of unity `ζ`. -/
+theorem map_charpoly_coxeterElement_eq_prod {K : Type*} [CommRing K] [IsDomain K] [Algebra ℚ K]
+    {t : DynkinType} (ht : t.Valid) {ζ : K} (hζ : IsPrimitiveRoot ζ t.coxeterNumber) :
+    (coxeterElement t.cartanMatrix).charpoly.map (Int.castRingHom K) =
+      ∏ i : Fin t.exponents.length, (X - Polynomial.C (ζ ^ t.exponents[i])) := by
+  set h := t.coxeterNumber
+  have hh : 0 < h := t.coxeterNumber_pos ht
+  set ζ₀ : ℂ := Complex.exp (2 * Real.pi * Complex.I / (h : ℂ))
+  have hζ₀ : IsPrimitiveRoot ζ₀ h := Complex.isPrimitiveRoot_exp h hh.ne'
+  set p : ℚ[X] := (coxeterElement t.cartanMatrix).charpoly.map (Int.castRingHom ℚ)
+  have hp_mapℂ : p.map (algebraMap ℚ ℂ) =
+      ((coxeterElement t.cartanMatrix).map (Int.castRingHom ℂ)).charpoly := by
+    rw [Polynomial.map_map,
+      Subsingleton.elim ((algebraMap ℚ ℂ).comp (Int.castRingHom ℚ)) (Int.castRingHom ℂ),
+      Matrix.charpoly_map]
+  have hp_mapK : p.map (algebraMap ℚ K) =
+      (coxeterElement t.cartanMatrix).charpoly.map (Int.castRingHom K) := by
+    rw [Polynomial.map_map,
+      Subsingleton.elim ((algebraMap ℚ K).comp (Int.castRingHom ℚ)) (Int.castRingHom K)]
+  have hprodℂ : p.map (algebraMap ℚ ℂ) =
+      ∏ i : Fin t.exponents.length, (X - Polynomial.C (ζ₀ ^ t.exponents[i])) := by
+    have hroots := roots_charpoly_coxeterElement ht
+    simp_rw [← exp_two_pi_I_div_pow (t.coxeterNumber : ℂ)] at hroots
+    rw [hp_mapℂ,
+      (IsAlgClosed.splits
+        ((coxeterElement t.cartanMatrix).map (Int.castRingHom ℂ)).charpoly).eq_prod_roots_of_monic
+        (Matrix.charpoly_monic _),
+      hroots, Multiset.map_coe, Multiset.prod_coe, List.map_map]
+    conv_lhs => rw [← List.ofFn_getElem (xs := t.exponents), List.map_ofFn, Fin.prod_ofFn]
+    rfl
+  rw [← hp_mapK]
+  exact hζ₀.map_eq_prod_of_map_eq_prod hh hζ hprodℂ
+
+end Coxeter
+
+/-- **Every natural number `a < h` coprime to the Coxeter number `h` is an exponent** of a valid
+`DynkinType`. -/
+theorem DynkinType.mem_exponents_of_coprime {t : DynkinType} (ht : t.Valid) {a : ℕ}
+    (ha : a < t.coxeterNumber) (hcop : a.Coprime t.coxeterNumber) : a ∈ t.exponents := by
+  set h := t.coxeterNumber
+  have hh : 0 < h := t.coxeterNumber_pos ht
+  set ζ : ℂ := Complex.exp (2 * Real.pi * Complex.I / (h : ℂ))
+  have hζ : IsPrimitiveRoot ζ h := Complex.isPrimitiveRoot_exp h hh.ne'
+  set p : ℚ[X] := (coxeterElement t.cartanMatrix).charpoly.map (Int.castRingHom ℚ)
+  have hprod : p.map (algebraMap ℚ ℂ) =
+      ∏ i : Fin t.exponents.length, (X - Polynomial.C (ζ ^ t.exponents[i])) := by
+    rw [Polynomial.map_map,
+      Subsingleton.elim ((algebraMap ℚ ℂ).comp (Int.castRingHom ℚ)) (Int.castRingHom ℂ)]
+    exact Coxeter.map_charpoly_coxeterElement_eq_prod ht hζ
+  have hp1 : (p.map (algebraMap ℚ ℂ)).IsRoot ζ := by
+    obtain ⟨i, hlt, hi⟩ := List.mem_iff_getElem.mp (t.one_mem_exponents ht)
+    rw [hprod, IsRoot.def, eval_prod]
+    exact Finset.prod_eq_zero (Finset.mem_univ ⟨i, hlt⟩) (by simp [hi])
+  obtain ⟨i, hi⟩ := IsPrimitiveRoot.exists_eq_of_isRoot_of_map_eq_prod hζ hζ hp1
+    (fun i => t.lt_coxeterNumber_of_mem_exponents ht (List.getElem_mem _)) hprod ha hcop
+  exact hi ▸ List.getElem_mem _
+
+namespace Coxeter
 
 /-- **Every primitive `h`-th root of unity `exp (2πi e / h)` (`e < h`, `gcd(e, h) = 1`) is an
 eigenvalue of `Matrix.coxeterElement t.cartanMatrix`** for any valid Dynkin type `t`. -/

@@ -14,7 +14,6 @@ public import TauCeti.RingTheory.Polynomial.Cyclotomic.Exponents
 import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 import TauCeti.LinearAlgebra.RootSystem.Basic
 import TauCeti.RingTheory.Polynomial.Roots
-import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
 
 /-!
 # The Coxeter number and the exponents of a Weyl group
@@ -35,9 +34,9 @@ eigenvector (`RootPairing.exists_isPrimitiveRoot_charpoly_bipartiteCoxeterElemen
 second statement says that its eigenvalues are `ζ ^ eᵢ` for a primitive `h`-th root of unity `ζ`,
 with exponents `1 ≤ eᵢ < h` (the lower bound is
 `RootPairing.two_le_of_injective_aeval_weylGroupRootRep_dual`). Comparing this rational
-characteristic polynomial with its complex eigenvalue multiset from
-`TauCeti.HasCartanType.roots_charpoly_of_actsBy` then identifies the basic-invariant exponents and
-degrees with the Dynkin-type lists `exponents` and `degrees`.
+characteristic polynomial with the Coxeter-matrix factorization from
+`TauCeti.Coxeter.map_charpoly_coxeterElement_eq_prod` then identifies the basic-invariant exponents
+and degrees with the Dynkin-type lists `exponents` and `degrees`.
 
 ## The argument
 
@@ -172,33 +171,6 @@ theorem degree_sub_one_lt_orderOf_wordProd [Finite κ] (b : P.Base) {l : List b.
   rw [← P.orderOf_bipartiteCoxeterElement_eq_orderOf_wordProd b c hl hl']
   exact (P.natCard_eq_and_degree_sub_one_lt_orderOf_bipartiteCoxeterElement b c hf hbij).2 k
 
-/-- Transfer a factorization `p = ∏ i, (X - ζ ^ e i)` from a primitive `h`-th root of unity in one
-rational domain to a primitive `h`-th root of unity in another. -/
-private theorem map_eq_prod_of_map_eq_prod {K₁ K₂ ι' : Type*} [CommRing K₁] [IsDomain K₁]
-    [Algebra ℚ K₁] [CommRing K₂] [IsDomain K₂] [Algebra ℚ K₂] [Fintype ι'] {h : ℕ} (hh : 0 < h)
-    {ζ : K₁} {ξ : K₂} (hζ : IsPrimitiveRoot ζ h) (hξ : IsPrimitiveRoot ξ h) {p : ℚ[X]}
-    {e : ι' → ℕ} (hprod : p.map (algebraMap ℚ K₁) = ∏ i, (X - C (ζ ^ e i))) :
-    p.map (algebraMap ℚ K₂) = ∏ i, (X - C (ξ ^ e i)) := by
-  have : NeZero (h : ℚ) := ⟨Nat.cast_ne_zero.mpr hh.ne'⟩
-  let F : ℚ[X][X] := ∏ i, (X - C (X ^ e i))
-  have hF₁ : F.map (aeval ζ).toRingHom = ∏ i, (X - C (ζ ^ e i)) := by
-    simp [F, Polynomial.map_prod]
-  have hF₂ : F.map (aeval ξ).toRingHom = ∏ i, (X - C (ξ ^ e i)) := by
-    simp [F, Polynomial.map_prod]
-  ext j
-  have hj := congr(($hprod).coeff j)
-  rw [← hF₁, coeff_map, coeff_map] at hj
-  rw [← hF₂, coeff_map, coeff_map]
-  obtain ⟨q, hq⟩ : cyclotomic h ℚ ∣ F.coeff j - C (p.coeff j) := by
-    rw [hζ.minpoly_eq_cyclotomic_of_irreducible (cyclotomic.irreducible_rat hh)]
-    exact minpoly.dvd ℚ ζ (by simpa [sub_eq_zero] using hj.symm)
-  have hcy : aeval ξ (cyclotomic h ℚ) = 0 := by
-    rw [aeval_def, eval₂_eq_eval_map, map_cyclotomic]
-    exact (hξ.isRoot_cyclotomic hh).eq_zero
-  have hξq := congr(aeval ξ $hq)
-  rw [map_mul, hcy, zero_mul, map_sub, aeval_C, sub_eq_zero] at hξq
-  simpa using hξq.symm
-
 /-- **The basic-invariant exponents of `Sym(M*)^W` equal the exponents of the classified Dynkin
 type.** For any base `b` of a finite irreducible reduced crystallographic root system over an
 algebraically closed field containing `ℝ`, and any finite homogeneous basic invariant system of
@@ -230,39 +202,13 @@ theorem map_sub_one_eq_exponents_classifiedDynkinType [Fintype κ] (b : P.Base)
     change orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement c) = t.coxeterNumber
     rw [← hw]
     exact b.orderOf_wordProd_eq_coxeterNumber_classifiedDynkinType hnd hall
-  have hpos : 0 < orderOf g := orderOf_pos g
-  let W : Matrix b.support b.support ℤ := (l.map b.cartanMatrix.reflMatrix).prod
-  let q : ℚ[X] := W.charpoly.map (Int.castRingHom ℚ)
-  have hqC : q.map (algebraMap ℚ ℂ) = (W.map (Int.castRingHom ℂ)).charpoly := by
-    rw [Polynomial.map_map,
-      Subsingleton.elim ((algebraMap ℚ ℂ).comp (Int.castRingHom ℚ)) (Int.castRingHom ℂ),
-      Matrix.charpoly_map]
-  have hqK : q.map (algebraMap ℚ K) = (P.weylGroupRootRep g).charpoly := by
-    change q.map (algebraMap ℚ K) =
-      (P.weylGroupRootRep ((weylCoxeterSystem P b).bipartiteCoxeterElement c)).charpoly
-    rw [← hw, (b.actsBy_wordProd l).charpoly_weylGroupRootRep, Polynomial.map_map,
-      Subsingleton.elim ((algebraMap ℚ K).comp (Int.castRingHom ℚ)) (Int.castRingHom K)]
-  have hroots : (W.map (Int.castRingHom ℂ)).charpoly.roots =
-      Multiset.ofList (t.exponents.map fun e : ℕ =>
-        Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / (orderOf g : ℂ)))) := by
-    rw [hh]
-    exact hct.roots_charpoly_of_actsBy ht hnd hall (b.actsBy_wordProd l)
-  simp_rw [← exp_two_pi_I_div_pow (orderOf g : ℂ)] at hroots
-  set ζ₀ : ℂ := Complex.exp (2 * Real.pi * Complex.I / (orderOf g : ℂ))
-  have hζ₀ : IsPrimitiveRoot ζ₀ (orderOf g) := Complex.isPrimitiveRoot_exp _ hpos.ne'
-  have hcard : (W.map (Int.castRingHom ℂ)).charpoly.roots.card =
-      (W.map (Int.castRingHom ℂ)).charpoly.natDegree := by
-    rw [hroots, Multiset.coe_card, List.length_map, t.length_exponents,
-      Matrix.charpoly_natDegree_eq_dim]
-    exact hct.card_support.symm.trans (Fintype.card_coe b.support).symm
-  have hprodC : q.map (algebraMap ℚ ℂ) =
-      ∏ i : Fin t.exponents.length, (X - C (ζ₀ ^ t.exponents[i])) := by
-    rw [hqC, ← prod_multiset_X_sub_C_of_monic_of_roots_card_eq (Matrix.charpoly_monic _) hcard,
-      hroots, Multiset.map_coe, Multiset.prod_coe, List.map_map]
-    conv_lhs => rw [← List.ofFn_getElem (xs := t.exponents), List.map_ofFn, Fin.prod_ofFn]
-    rfl
-  have hprodK := map_eq_prod_of_map_eq_prod hpos hζ₀ hζ hprodC
-  rw [hqK, hchar] at hprodK
+  have hcharCox : (P.weylGroupRootRep g).charpoly =
+      (Matrix.coxeterElement t.cartanMatrix).charpoly.map (Int.castRingHom K) := by
+    change (P.weylGroupRootRep ((weylCoxeterSystem P b).bipartiteCoxeterElement c)).charpoly = _
+    rw [← hw, (b.actsBy_wordProd l).charpoly_weylGroupRootRep,
+      Coxeter.charpoly_of_hasCartanType_of_actsBy hct hnd hall (b.actsBy_wordProd l)]
+  have hprodK := hchar.symm.trans (hcharCox.trans
+    (Coxeter.map_charpoly_coxeterElement_eq_prod ht (hh ▸ hζ)))
   have hrootsEq := congrArg Polynomial.roots hprodK
   simp only [roots_prod_X_sub_C_map] at hrootsEq
   let s₁ : Multiset ℕ := Finset.univ.val.map fun k ↦ d k - 1
@@ -287,12 +233,13 @@ theorem map_sub_one_eq_exponents_classifiedDynkinType [Fintype κ] (b : P.Base)
   by_cases ha : a < orderOf g
   · have hc (s : Multiset ℕ) (hs : ∀ b ∈ s, b < orderOf g) :
         (s.map (ζ ^ ·)).count (ζ ^ a) = s.count a := by
-      simp only [Multiset.count_eq_card_filter_eq, Multiset.filter_map]
-      rw [Multiset.card_map]
-      congr 1
-      exact Multiset.filter_congr fun b hb ↦ by
-        simp only [Function.comp_apply]
-        exact ⟨fun hb' ↦ hζ.pow_inj ha (hs b hb) hb', fun hb' ↦ hb' ▸ rfl⟩
+      by_cases has : a ∈ s
+      · exact Multiset.count_map_eq_count (ζ ^ ·) s
+          (fun b hb c hc hbc ↦ hζ.pow_inj (hs b hb) (hs c hc) hbc) a has
+      · rw [Multiset.count_eq_zero.mpr has, Multiset.count_eq_zero.mpr]
+        intro hmem
+        obtain ⟨b, hb, hba⟩ := Multiset.mem_map.mp hmem
+        exact has (hζ.pow_inj (hs b hb) ha hba ▸ hb)
     have hmap : s₁.map (ζ ^ ·) = s₂.map (ζ ^ ·) := by
       simpa [s₁, s₂, Multiset.map_map, Function.comp_def] using hrootsEq
     rw [← hc s₁ hlt₁, ← hc s₂ hlt₂, hmap]
