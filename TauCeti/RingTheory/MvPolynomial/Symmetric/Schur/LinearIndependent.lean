@@ -90,9 +90,7 @@ theorem linearIndependent_schurPoly_of_card_le {σ : Type*} [Fintype σ] [IsCanc
     refine (Finset.sum_eq_single ξ (fun ν hν hνξ => ?_) fun hξ' => absurd hξt hξ').trans ?_
     · have hlt : ν.val < ξ.val := lt_of_le_of_ne (Subtype.coe_le_coe.mpr (Finset.le_max' t ν hν))
         (fun h => hνξ (Subtype.ext h))
-      rw [kostkaNumber_eq_zero_of_not_dominates fun hdom =>
-        absurd (Nat.Partition.lex_le_of_dominates hdom) (not_le.mpr hlt),
-        Nat.cast_zero, mul_zero]
+      rw [kostkaNumber_eq_zero_of_lt hlt, Nat.cast_zero, mul_zero]
     · rw [kostkaNumber_self, Nat.cast_one, mul_one]
   change ∑ ν ∈ t, g ν * (kostkaNumber ν.val ξ.val : R) =
       ∑ ν ∈ t, g' ν * (kostkaNumber ν.val ξ.val : R) at hcoeff
@@ -200,8 +198,8 @@ theorem eq_of_sum_nsmul_diagramSchurPoly_eq [CharZero R] {N : ℕ} (h : n ≤ N)
     (heq : ∑ ν : n.Partition, c ν • diagramSchurPoly N R (YoungDiagram.ofPartition ν) =
       ∑ ν : n.Partition, c' ν • diagramSchurPoly N R (YoungDiagram.ofPartition ν)) :
     c = c' := by
-  rw [sum_nsmul_diagramSchurPoly_eq_sum_colLen_le le_rfl,
-    sum_nsmul_diagramSchurPoly_eq_sum_colLen_le le_rfl] at heq
+  rw [sum_smul_diagramSchurPoly_eq_sum_colLen_le le_rfl,
+    sum_smul_diagramSchurPoly_eq_sum_colLen_le le_rfl] at heq
   funext ν
   exact congrFun (eq_of_sum_nsmul_diagramSchurPoly_eq_of_colLen_le heq)
     ⟨ν, by rw [YoungDiagram.colLen_zero_ofPartition]; exact ν.card_parts_le.trans h⟩

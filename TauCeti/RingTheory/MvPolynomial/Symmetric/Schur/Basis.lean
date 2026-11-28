@@ -323,9 +323,8 @@ private theorem isUnit_det_schurPolyElem :
     exact msymmBasis_repr_schurPoly μ.val ν
   have htri : ((msymmBasis σ R n).toMatrix (schurPolyElem σ R n)).IsUpperTriangular := by
     intro ν μ hμν
-    have hlt : (μ : n.Partition) < (ν : n.Partition) := Subtype.coe_lt_coe.mpr hμν
-    rw [hentry ν μ, kostkaNumber_eq_zero_of_not_dominates fun hdom =>
-      absurd (Nat.Partition.lex_le_of_dominates hdom) (not_le.mpr hlt), Nat.cast_zero]
+    rw [hentry ν μ, kostkaNumber_eq_zero_of_lt (Subtype.coe_lt_coe.mpr hμν : (μ : n.Partition) < ν),
+      Nat.cast_zero]
   have hdiag : ∏ ν, (msymmBasis σ R n).toMatrix (schurPolyElem σ R n) ν ν = 1 :=
     Finset.prod_eq_one fun ν _ => by rw [hentry ν ν, kostkaNumber_self, Nat.cast_one]
   rw [Module.Basis.det_apply, Matrix.det_of_isUpperTriangular htri, hdiag]

@@ -50,6 +50,8 @@ polynomials they generalize already live.
   `MvPolynomial.symmetricSubalgebra`.
 * `TauCeti.symmetricDiagramSchurPoly`: the Schur polynomial of a diagram as an element of
   `MvPolynomial.symmetricSubalgebra`.
+* `TauCeti.sum_smul_diagramSchurPoly_eq_sum_colLen_le`: a sum of diagram Schur polynomials in
+  `N ≤ b` variables only sees the partitions with at most `b` rows.
 
 ## References
 
@@ -211,6 +213,22 @@ diagram whose size is recorded as an arbitrary `d`. Both lemmas are needed: `sim
 theorem schurPoly_fin_toPartition (N : ℕ) {μ : YoungDiagram} {d : ℕ} (h : μ.card = d) :
     schurPoly (Fin N) R (μ.toPartition h) = diagramSchurPoly N R μ := by
   rw [schurPoly_eq_rename, YoungDiagram.ofPartition_toPartition, rename_diagramSchurPoly]
+
+/-- A sum of Schur polynomials in the alphabet `Fin N` over the partitions of `n` only sees the
+partitions with at most `b` rows whenever `N ≤ b`: the Schur polynomials of the others vanish. -/
+theorem sum_smul_diagramSchurPoly_eq_sum_colLen_le {N n : ℕ} {M : Type*}
+    [SMulZeroClass M (MvPolynomial (Fin N) R)] {b : ℕ} (hN : N ≤ b) (c : n.Partition → M) :
+    ∑ ν, c ν • diagramSchurPoly N R (YoungDiagram.ofPartition ν) =
+      ∑ ν : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ b},
+        c ν.val • diagramSchurPoly N R (YoungDiagram.ofPartition ν.val) := by
+  have hdiag (ν : n.Partition) :
+      diagramSchurPoly N R (YoungDiagram.ofPartition ν) = schurPoly (Fin N) R ν := by
+    rw [schurPoly_eq_rename, rename_diagramSchurPoly]
+  simp_rw [hdiag]
+  rw [sum_smul_schurPoly_eq_sum_card_le (by simpa using hN) c]
+  exact Fintype.sum_equiv
+    (Equiv.subtypeEquivRight fun ν => by rw [YoungDiagram.colLen_zero_ofPartition])
+    _ _ fun _ => rfl
 
 /-- Renaming a symmetric polynomial along a bijection of alphabets keeps it symmetric. -/
 private theorem isSymmetric_rename {σ τ : Type*} {p : MvPolynomial τ R} (hp : p.IsSymmetric)

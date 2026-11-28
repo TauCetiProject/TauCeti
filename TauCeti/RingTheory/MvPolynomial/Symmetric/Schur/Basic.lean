@@ -69,10 +69,8 @@ involution, and it lives downstream in
   tableaux.
 * `TauCeti.diagramSchurPoly_eq_zero_iff` and `TauCeti.schurPoly_eq_zero_iff`: a Schur polynomial
   vanishes exactly for a shape taller than its alphabet.
-* `TauCeti.sum_smul_schurPoly_eq_sum_card_le` and
-  `TauCeti.sum_nsmul_diagramSchurPoly_eq_sum_colLen_le`: a sum of Schur polynomials over the
-  partitions of `n` in an alphabet of size at most `b` only sees the partitions with at most `b`
-  parts/rows.
+* `TauCeti.sum_smul_schurPoly_eq_sum_card_le`: a sum of Schur polynomials over the partitions
+  of `n` in an alphabet of size at most `b` only sees the partitions with at most `b` parts.
 * `TauCeti.isHomogeneous_diagramSchurPoly` and `TauCeti.isHomogeneous_schurPoly`: a Schur
   polynomial is homogeneous of degree the number of cells of its shape.
 
@@ -486,20 +484,6 @@ theorem sum_smul_schurPoly_eq_sum_card_le {M : Type*} [SMulZeroClass M (MvPolyno
     Finset.sum_filter_of_ne fun ν _ hν => by
       by_contra hlt
       exact hν (by rw [schurPoly_eq_zero_of_card_lt _ (hσ.trans_lt (not_le.mp hlt)), smul_zero])]
-
-/-- A sum of Schur polynomials in the alphabet `Fin N` over the partitions of `n` only sees the
-partitions with at most `b` rows whenever `N ≤ b`: the Schur polynomials of the others vanish. -/
-theorem sum_nsmul_diagramSchurPoly_eq_sum_colLen_le {b : ℕ} (hN : N ≤ b) (c : n.Partition → ℕ) :
-    ∑ ν, c ν • diagramSchurPoly N R (ofPartition ν) =
-      ∑ ν : {ν : n.Partition // (ofPartition ν).colLen 0 ≤ b},
-        c ν.val • diagramSchurPoly N R (ofPartition ν.val) := by
-  rw [← Finset.subtype_univ,
-    Finset.sum_subtype_eq_sum_filter
-      (f := fun ν : n.Partition => c ν • diagramSchurPoly N R (ofPartition ν)),
-    Finset.sum_filter_of_ne fun ν _ hν => by
-      by_contra hlt
-      exact hν (by rw [diagramSchurPoly_eq_zero_of_lt_colLen (hN.trans_lt (not_le.mp hlt)),
-        smul_zero])]
 
 /-- **A Schur polynomial vanishes exactly for a partition with more parts than the alphabet has
 letters.** -/

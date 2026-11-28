@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Hive.LittlewoodRichardson
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.LittlewoodRichardson
 import Mathlib.Algebra.FiniteSupport.Basic
+import TauCeti.Algebra.BigOperators.Finprod
 
 /-!
 # The hive model of the Littlewood–Richardson rule for Schur polynomials
@@ -89,23 +90,21 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount {n N : ℕ} (h
       simp [emb, embDiag, shapeEquivPolynomialWeight_apply_coe, Function.Embedding.subtypeMap])
   let f (γ : DominantWeight n) : MvPolynomial (Fin N) R :=
     hiveCount (productBoundary lam μ γ) • diagramSchurPoly N R γ.shape
-  have hsupp : Function.support f ⊆ (Finset.univ.map emb : Finset (DominantWeight n)) := by
-    intro γ hγ_supp
-    have hcnt : hiveCount (productBoundary lam μ γ) ≠ 0 :=
-      Function.support_smul_subset_left (fun γ => hiveCount (productBoundary lam μ γ))
-        (fun γ => diagramSchurPoly N R γ.shape) hγ_supp
+  have hrange : ∀ γ ∉ Set.range emb, f γ = 0 := by
+    intro γ hγ
+    by_contra hne
+    have hcnt : hiveCount (productBoundary lam μ γ) ≠ 0 := fun h => hne (by simp [f, h])
     rw [hiveCount_productBoundary_of_isPolynomial hlam hμ γ] at hcnt
     split_ifs at hcnt with hγ_poly
     · obtain ⟨T⟩ := (Nat.card_pos_iff.mp (Nat.pos_of_ne_zero hcnt)).1
-      refine Finset.mem_coe.mpr (Finset.mem_map.mpr
-        ⟨⟨γ.shape.toPartition T.card_eq, by
-          rw [YoungDiagram.ofPartition_toPartition]
-          exact DominantWeight.colLen_zero_shape_le γ⟩, Finset.mem_univ _, ?_⟩)
-      rw [hemb, YoungDiagram.ofPartition_toPartition, weightOfShape_shape hγ_poly]
+      refine hγ ⟨⟨γ.shape.toPartition T.card_eq, ?_⟩, ?_⟩
+      · rw [YoungDiagram.ofPartition_toPartition]
+        exact DominantWeight.colLen_zero_shape_le γ
+      · rw [hemb, YoungDiagram.ofPartition_toPartition, weightOfShape_shape hγ_poly]
     · exact absurd rfl hcnt
-  rw [finsum_eq_sum_of_support_subset f hsupp, Finset.sum_map,
+  rw [← TauCeti.finsum_comp_eq_of_injective emb.injective f hrange, finsum_eq_sum_of_fintype,
     diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau,
-    sum_nsmul_diagramSchurPoly_eq_sum_colLen_le hN]
+    sum_smul_diagramSchurPoly_eq_sum_colLen_le hN]
   refine Finset.sum_congr rfl fun ν _ => ?_
   simp only [f, hemb ν, shape_weightOfShape ν.property]
   congr 1
@@ -199,22 +198,6 @@ theorem finsum_hiveCount_smul_diagramSchurPoly_eq_zero {n N : ℕ} {R : Type*}
   · rw [diagramSchurPoly_eq_zero_of_lt_colLen h, zero_mul]
   · rw [diagramSchurPoly_eq_zero_of_lt_colLen h, mul_zero]
 
-private theorem shape_eq_of_one_two (w₁ : DominantWeight 1) (w₂ : DominantWeight 2)
-    (h0 : w₁.val 0 = w₂.val 0) (h1 : w₂.val 1 = 0) : w₁.shape = w₂.shape := by
-  have hw₂ : w₂.shape.colLen 0 ≤ 1 := YoungDiagram.rowLen_eq_zero_iff.mp <| by
-    have := w₂.rowLen_shape 1
-    simp only [Fin.val_one, h1] at this
-    omega
-  rw [← YoungDiagram.ofRowLensFin_rowLen w₁.shape w₁.colLen_zero_shape_le,
-    ← YoungDiagram.ofRowLensFin_rowLen w₂.shape hw₂]
-  congr 1
-  funext i
-  have hi : (i : ℕ) = 0 := congrArg Fin.val (Fin.fin_one_eq_zero i)
-  have a := w₁.rowLen_shape 0
-  have b := w₂.rowLen_shape 0
-  simp only [hi, Fin.val_zero, h0] at a b ⊢
-  omega
-
 /-- Sharpness of the `N ≤ n` alphabet bound in
 `diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount`: for rank `1` weights
 `λ = μ = (1)` evaluated in `2` variables, `s_{(1)}² = s_{(2)} + s_{(1, 1)}`, whereas the rank-`1`
@@ -233,7 +216,8 @@ theorem schur_mul_two_vars_ne_finsum_hiveCount_one :
       hiveCount (productBoundary ω ω γ) • diagramSchurPoly 2 ℤ γ.shape) =
       diagramSchurPoly 2 ℤ sym₂.shape := by
     rw [finsum_eq_single _ (ω + ω)]
-    · rw [shape_eq_of_one_two (ω + ω) sym₂ rfl rfl]
+    · rw [(DominantWeight.shape_eq_shape_iff (ω + ω) sym₂).mpr fun i => by
+        rcases i with _ | _ | i <;> rfl]
       simp [hiveCount_one_productBoundary]
     · intro γ hγ
       have hne : ω.val 0 + ω.val 0 ≠ γ.val 0 := fun h => hγ <| by
@@ -253,7 +237,8 @@ theorem schur_mul_two_vars_ne_finsum_hiveCount_one :
     exact hδ rfl
   have hlhs₂ : diagramSchurPoly 2 ℤ ω.shape * diagramSchurPoly 2 ℤ ω.shape =
       diagramSchurPoly 2 ℤ sym₂.shape + diagramSchurPoly 2 ℤ det₂.shape := by
-    rw [shape_eq_of_one_two ω std₂ rfl rfl,
+    rw [(DominantWeight.shape_eq_shape_iff ω std₂).mpr fun i => by
+        rcases i with _ | _ | i <;> rfl,
       diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount le_rfl hstd₂ hstd₂,
       finsum_eq_sum_of_support_subset _ hsupp₂, Finset.sum_pair (by decide : sym₂ ≠ det₂),
       hiveCount_two_std_std_eq, hiveCount_two_std_std_eq]
