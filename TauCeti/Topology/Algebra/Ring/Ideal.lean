@@ -78,6 +78,8 @@ a point; it is not a further hypothesis of the theorem but a consequence for its
   structure comes along with it and needs no transport of its own.
 * `IsOpenQuotientMap.isTopologicalRing`: the target of an open quotient ring homomorphism out of a
   topological ring is a topological ring.
+* `TauCeti.isOpen_span_of_one_mem`: any subset containing `1` generates the unit ideal, which is
+  open.
 * `Ideal.closure_mul_le`, `Ideal.closure_pow_le`, `Ideal.closure_bot`, `Ideal.closure_pow_eq_bot`:
   products and powers of topological closures of ideals lie inside the closures of products and
   powers, so in a `T₁` topological ring the closure of a nilpotent ideal has the same nilpotency
@@ -308,6 +310,16 @@ theorem IsOpenQuotientMap.isTopologicalRing {F R B : Type*} [NonUnitalNonAssocRi
   exact {}
 
 end OpenQuotient
+
+namespace TauCeti
+
+/-- A subset of a topological semiring containing `1` spans the unit ideal, which is open. -/
+theorem isOpen_span_of_one_mem {A : Type*} [Semiring A] [TopologicalSpace A] {s : Set A}
+    (h : (1 : A) ∈ s) : IsOpen (Ideal.span s : Set A) := by
+  rw [(Ideal.eq_top_iff_one _).2 (Ideal.subset_span h), Submodule.top_coe]
+  exact isOpen_univ
+
+end TauCeti
 
 section ClosureMul
 

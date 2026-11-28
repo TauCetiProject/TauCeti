@@ -56,6 +56,8 @@ commutativity is assumed.
   matrix on row vectors, `S ⊗_R (Rⁿ e) ≃ Sⁿ f(e)`.
 * `TauCeti.BalancedExtension.rangeMulVecBilinEquiv`: extension of the column range of an
   idempotent matrix, `(e Rⁿ) ⊗_R S ≃ f(e) Sⁿ`.
+* `TauCeti.balancedExtensionEquivTensorProduct`: comparison with Mathlib's `TensorProduct` for
+  commutative algebras `A → B`.
 
 The extension of the zero module is zero by the `Subsingleton` instances of
 `TauCeti.BalancedTensorProduct`, since `TauCeti.BalancedExtension` is an `abbrev`.
@@ -857,5 +859,52 @@ theorem tensorProductEquiv_comp_map {P' : Type*} [AddCommGroup P'] [Module R P']
 end TensorProduct
 
 end BalancedExtension
+
+section TensorProduct
+open TensorProduct
+
+variable (A B M : Type*) [CommRing A] [CommRing B] [Algebra A B] [AddCommGroup M] [Module A M]
+
+/-- Canonical `B`-linear equivalence `BalancedExtension (algebraMap A B) M ≃ₗ[B] B ⊗[A] M`. -/
+noncomputable def balancedExtensionEquivTensorProduct :
+    BalancedExtension (algebraMap A B) M ≃ₗ[B] B ⊗[A] M :=
+  letI := BalancedExtension.moduleBase (algebraMap A B) M A
+  let fwd : BalancedExtension (algebraMap A B) M →ₗ[B] B ⊗[A] M := BalancedExtension.lift
+    { toFun m := (1 : B) ⊗ₜ[A] m, map_add' _ _ := TensorProduct.tmul_add _ _ _,
+      map_smul' a m := by simp only [algebraMap_smul B a _, TensorProduct.tmul_smul] }
+  let bwdA : B ⊗[A] M →ₗ[A] BalancedExtension (algebraMap A B) M := TensorProduct.lift
+    { toFun b :=
+        { toFun m := BalancedExtension.tmul (algebraMap A B) b m
+          map_add' _ _ := BalancedExtension.tmul_add _ _ _
+          map_smul' a m := by
+            change BalancedExtension.tmul (algebraMap A B) b (a • m) =
+              algebraMap A B a • BalancedExtension.tmul (algebraMap A B) b m
+            rw [BalancedExtension.tmul_smul, BalancedExtension.smul_tmul, mul_comm] }
+      map_add' _ _ := LinearMap.ext fun _ ↦ BalancedExtension.add_tmul _ _ _
+      map_smul' a b := LinearMap.ext fun m ↦ by
+        change BalancedExtension.tmul (algebraMap A B) (a • b) m =
+          algebraMap A B a • BalancedExtension.tmul (algebraMap A B) b m
+        rw [Algebra.smul_def, BalancedExtension.smul_tmul] }
+  let bwd : B ⊗[A] M →ₗ[B] BalancedExtension (algebraMap A B) M :=
+    { toFun := bwdA, map_add' := bwdA.map_add,
+      map_smul' b x := by induction x using TensorProduct.inductionOn with
+        | tmul =>
+          change bwdA (b • _) = _; rw [TensorProduct.smul_tmul', smul_eq_mul]; simp [bwdA]
+        | add _ _ hx hy => simp only [smul_add, map_add, hx, hy] }
+  LinearEquiv.ofLinearMap fwd bwd
+    (LinearMap.ext fun x ↦ by induction x using TensorProduct.inductionOn with
+      | tmul => change fwd (bwdA _) = _; simp [fwd, bwdA, TensorProduct.smul_tmul']
+      | add _ _ hx hy => simp only [map_add, LinearMap.id_apply, hx, hy])
+    (BalancedExtension.hom_ext fun m ↦ by
+      change bwdA (fwd _) = BalancedExtension.tmul (algebraMap A B) 1 m; simp [fwd, bwdA])
+
+variable {A B M}
+@[simp] theorem balancedExtensionEquivTensorProduct_tmul (b : B) (m : M) :
+    balancedExtensionEquivTensorProduct A B M (BalancedExtension.tmul (algebraMap A B) b m) =
+      b ⊗ₜ[A] m := by simp [balancedExtensionEquivTensorProduct, TensorProduct.smul_tmul']
+@[simp] theorem balancedExtensionEquivTensorProduct_symm_tmul (b : B) (m : M) :
+    (balancedExtensionEquivTensorProduct A B M).symm (b ⊗ₜ[A] m) =
+      BalancedExtension.tmul (algebraMap A B) b m := by simp [balancedExtensionEquivTensorProduct]
+end TensorProduct
 
 end TauCeti

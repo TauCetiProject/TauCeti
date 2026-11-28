@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
+import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # Laurent covers of the adic spectrum
@@ -55,6 +56,9 @@ coordinate rings, is treated in
 
 * `TauCeti.ValuationSpectrum.laurentPiece` : the piece `X(f^ε)` of the Laurent cover generated
   by a family `f`, with sign set `J`.
+* `TauCeti.ValuationSpectrum.laurentCoverOpen` : the two pieces `R({f, 1}/1)` and `R({1}/f)` of
+  the simple Laurent cover, indexed by `Bool`. Both are rational opens
+  (`TauCeti.ValuationSpectrum.laurentCoverOpen_mem_spaRationalOpens`).
 
 ## Main results
 
@@ -68,6 +72,13 @@ coordinate rings, is treated in
   `TauCeti.ValuationSpectrum.not_vle_zero_of_mem_laurentPiece_inv_mul` and
   `TauCeti.ValuationSpectrum.mem_rationalSubset_iff_of_mem_laurentPiece_inv_mul` : part (ii).
 * `TauCeti.ValuationSpectrum.exists_rationalSubset_superset_laurentPiece_mul_inverse` : part (iii).
+* `TauCeti.ValuationSpectrum.spaBasicOpen_mul_self_one_eq_inf` : overlap identity for the
+  two-piece simple Laurent cover.
+* `TauCeti.ValuationSpectrum.spa_subset_iUnion_laurentCover` : the two-piece simple Laurent cover
+  covers `Spa (A, A⁺)`.
+* `TauCeti.ValuationSpectrum.laurentCoverOpen_inv_mul_true` and
+  `TauCeti.ValuationSpectrum.laurentCoverOpen_inv_mul_false` : for a unit `u`, the pieces of the
+  Laurent cover of `u⁻¹ g` are `R({g, u}/u) = {|g| ≤ |u|}` and `R({u}/g) = {|g| ≥ |u|}`.
 
 ## References
 
@@ -171,9 +182,6 @@ theorem val_preimage_laurentPiece_mem_spaRationalFamily
     [Finite ι] (Aplus : Subring A) (f : ι → A) (J : Set ι) :
     (Subtype.val ⁻¹' laurentPiece Aplus f J : Set (spa Aplus)) ∈ spaRationalFamily Aplus := by
   classical
-  have hopen {T : Finset A} (h1 : (1 : A) ∈ T) : IsOpen (Ideal.span (T : Set A) : Set A) := by
-    rw [(Ideal.eq_top_iff_one _).mpr (Ideal.subset_span h1)]
-    exact isOpen_univ
   -- Every finite intersection of the pieces is a rational subset with `1` in the numerator set.
   have key (t : Finset ι) : ∃ (T : Finset A) (s : A), (1 : A) ∈ T ∧
       (⋂ i ∈ t, Subtype.val ⁻¹' (if i ∈ J then rationalSubset Aplus {1} (f i)
@@ -181,20 +189,16 @@ theorem val_preimage_laurentPiece_mem_spaRationalFamily
         Subtype.val ⁻¹' rationalSubset Aplus T s := by
     induction t using Finset.induction with
     | empty =>
-      refine ⟨{1}, 1, by simp, ?_⟩
-      simp [rationalSubset_singleton_one, Subtype.coe_preimage_self]
+      exact ⟨{1}, 1, by simp, by simp [rationalSubset_singleton_one, Subtype.coe_preimage_self]⟩
     | insert i t _ ih =>
       obtain ⟨T, s, hT, hts⟩ := ih
       rw [Finset.set_biInter_insert, hts, ← Set.preimage_inter]
-      split_ifs
-      · refine ⟨_, _, ?_, by rw [rationalSubset_inter]⟩
-        exact (Finset.mem_mul.2 ⟨1, by simp, 1, Finset.mem_insert_of_mem hT, by simp⟩)
-      · refine ⟨_, _, ?_, by rw [rationalSubset_inter]⟩
-        exact (Finset.mem_mul.2 ⟨1, by simp, 1, Finset.mem_insert_of_mem hT, by simp⟩)
+      split_ifs <;> refine ⟨_, _, ?_, by rw [rationalSubset_inter]⟩ <;>
+        exact Finset.mem_mul.2 ⟨1, by simp, 1, Finset.mem_insert_of_mem hT, by simp⟩
   cases nonempty_fintype ι
   rw [val_preimage_laurentPiece_eq_iInter]
   obtain ⟨T, s, hT, h⟩ := key Finset.univ
-  exact mem_spaRationalFamily_iff.mpr ⟨T, s, hopen hT, by simpa using h⟩
+  exact mem_spaRationalFamily_iff.mpr ⟨T, s, isOpen_span_of_one_mem hT, by simpa using h⟩
 
 /-! ### Part (ii): restricting a standard cover to a Laurent cover -/
 
@@ -343,5 +347,80 @@ theorem exists_rationalSubset_superset_laurentPiece_mul_inverse (Aplus : Subring
   exact ⟨m, m.property, fun v hv ↦ (mem_rationalSubset_iff _ _ _ _).mpr
     ⟨hv.1, fun t ht ↦ hm ⟨t, ht⟩ (Finset.mem_univ _) v hv,
       @TauCeti.ValuativeRel.not_vle_zero_of_isUnit A _ v.toValuativeRel _ (hu m m.property)⟩⟩
+
+open scoped Pointwise in
+/-- The basic open `R({f², 1}/f)` equals `R({f, 1}/1) ⊓ R({1}/f)`. -/
+theorem spaBasicOpen_mul_self_one_eq_inf [DecidableEq A] (Aplus : Subring A) (f : A) :
+    spaBasicOpen Aplus {f * f, 1} f =
+      spaBasicOpen Aplus {f, 1} 1 ⊓ spaBasicOpen Aplus {1} f := by
+  have hrat : rationalSubset Aplus {f * f, 1} f =
+      rationalSubset Aplus {f, 1} 1 ∩ rationalSubset Aplus {1} f := by
+    rw [rationalSubset_inter, one_mul, ← rationalSubset_insert_self Aplus {f * f, 1} f]
+    congr 1; ext x; simp [Finset.mem_mul, eq_comm]; tauto
+  ext v; simp only [Opens.coe_inf, Set.mem_inter_iff, SetLike.mem_coe, mem_spaBasicOpen]
+  rw [← Set.mem_inter_iff, ← hrat]
+
+open scoped Classical in
+/-- **The two Laurent pieces cover the adic spectrum**: every point of `Spa(A, A⁺)` lies in
+`R({f, 1}/1)` (`true`) or `R({1}/f)` (`false`). -/
+theorem spa_subset_iUnion_laurentCover (Aplus : Subring A) (f : A) :
+    spa Aplus ⊆ ⋃ b : Bool, rationalSubset Aplus (cond b ({f, 1} : Finset A) ({1} : Finset A))
+        (cond b 1 f) := by
+  intro v hv
+  have hspan : Ideal.span (({f, 1} : Finset A) : Set A) = ⊤ :=
+    Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) isUnit_one
+  obtain ⟨s, hs, hvs⟩ := mem_rationalSubset_of_span_eq_top_of_mem_spa Aplus hspan hv
+  rcases Finset.mem_insert.1 hs with rfl | hs
+  · refine Set.mem_iUnion.2 ⟨false, ?_⟩
+    rw [mem_rationalSubset_iff] at hvs ⊢
+    exact ⟨hvs.1, fun t ht ↦ hvs.2.1 t (by simp_all), hvs.2.2⟩
+  · rw [Finset.mem_singleton.1 hs] at hvs; exact Set.mem_iUnion.2 ⟨true, hvs⟩
+
+section SimpleLaurentOpen
+
+variable {Aplus : Subring A}
+
+open scoped Classical in
+variable (Aplus) in
+/-- **The Laurent cover of `f`**: `R({f, 1}/1) = {|f| ≤ 1}` (at `true`) and `R({1}/f) = {|f| ≥ 1}`
+(at `false`), an `abbrev` for `spaBasicOpen`. -/
+noncomputable abbrev laurentCoverOpen (f : A) (b : Bool) : Opens ↥(spa Aplus) :=
+  spaBasicOpen Aplus (cond b ({f, 1} : Finset A) ({1} : Finset A)) (cond b 1 f)
+
+open scoped Classical in
+variable (Aplus) in
+/-- Each piece of the Laurent cover is a rational open (`1` lies in its numerator set). -/
+theorem laurentCoverOpen_mem_spaRationalOpens (f : A) (b : Bool) :
+    laurentCoverOpen Aplus f b ∈ spaRationalOpens Aplus :=
+  spaBasicOpen_mem_spaRationalOpens (isOpen_span_of_one_mem (by cases b <;> simp))
+
+open scoped Classical in
+variable (Aplus) in
+/-- The two pieces of `laurentCoverOpen Aplus f` cover `Spa(A, A⁺)`. -/
+theorem iSup_laurentCoverOpen (f : A) : ⨆ b : Bool, laurentCoverOpen Aplus f b = ⊤ :=
+  top_le_iff.mp fun v _ ↦ by
+    obtain ⟨b, hb⟩ := Set.mem_iUnion.mp (spa_subset_iUnion_laurentCover Aplus f v.property)
+    exact Opens.mem_iSup.mpr ⟨b, mem_spaBasicOpen.mpr hb⟩
+
+variable (Aplus) in
+/-- **First piece of `laurentCoverOpen (u⁻¹ g)`**: `{|u⁻¹ g| ≤ 1} = R({g, u}/u)`. -/
+theorem laurentCoverOpen_inv_mul_true [DecidableEq A] (u : Aˣ) (g : A) :
+    laurentCoverOpen Aplus (↑u⁻¹ * g) true = spaBasicOpen Aplus {g, ↑u} u := by
+  ext v
+  have hu : (v : Spv A).valuation u ≠ 0 := (u.isUnit.map (v : Spv A).valuation).ne_zero
+  simp [laurentCoverOpen, ← valuation_le_iff, map_units_inv, hu, v.property,
+    inv_mul_le_iff₀ (pos_iff_ne_zero.mpr hu)]
+
+open scoped Classical in
+variable (Aplus) in
+/-- **Second piece of `laurentCoverOpen (u⁻¹ g)`**: `{|u⁻¹ g| ≥ 1} = R({u}/g)`. -/
+theorem laurentCoverOpen_inv_mul_false (u : Aˣ) (g : A) :
+    laurentCoverOpen Aplus (↑u⁻¹ * g) false = spaBasicOpen Aplus {↑u} g := by
+  ext v
+  have hu : (v : Spv A).valuation u ≠ 0 := (u.isUnit.map (v : Spv A).valuation).ne_zero
+  simp [laurentCoverOpen, ← valuation_le_iff, map_units_inv, hu, v.property,
+    le_inv_mul_iff₀ (pos_iff_ne_zero.mpr hu)]
+
+end SimpleLaurentOpen
 
 end TauCeti.ValuationSpectrum
