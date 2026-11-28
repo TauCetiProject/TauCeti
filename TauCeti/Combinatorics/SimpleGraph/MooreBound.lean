@@ -11,6 +11,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Finite
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Tactic.Ring
+import TauCeti.Combinatorics.SimpleGraph.Metric
 
 /-!
 # The Moore bound for the diameter
@@ -30,8 +31,6 @@ the Moore number `1 + k + k (k - 1) + ⋯ + k (k - 1) ^ (d - 1)`.
 
 ## Main results
 
-* `SimpleGraph.exists_adj_dist_eq_of_dist_eq_add_one`: a vertex at distance `i + 1` from `x` has
-  a neighbour at distance `i` from `x`.
 * `SimpleGraph.card_filter_dist_eq_add_one_le`: if all degrees are at most `k`, then at most
   `k (k - 1) ^ i` vertices lie at distance `i + 1` from `x`.
 * `SimpleGraph.card_le_mooreBound_of_eccent_le`: if all degrees are at most `k` and the
@@ -108,30 +107,7 @@ namespace SimpleGraph
 
 open TauCeti
 
-variable {V : Type*} {G : SimpleGraph V}
-
-/-- A vertex at distance `i + 1` from `x` has a neighbour at distance `i` from `x`. -/
-theorem exists_adj_dist_eq_of_dist_eq_add_one {x w : V} {i : ℕ} (h : G.dist x w = i + 1) :
-    ∃ u, G.Adj u w ∧ G.dist x u = i := by
-  obtain ⟨p, hp⟩ := exists_walk_of_dist_ne_zero (by omega : G.dist x w ≠ 0)
-  cases hq : p.reverse with
-  | nil =>
-    have := congrArg Walk.length hq
-    simp only [Walk.length_reverse, Walk.length_nil] at this
-    omega
-  | cons hadj q =>
-    have hlen : q.length = i := by
-      have := congrArg Walk.length hq
-      simp only [Walk.length_reverse, Walk.length_cons] at this
-      omega
-    refine ⟨_, hadj.symm, le_antisymm ?_ ?_⟩
-    · rw [dist_comm, ← hlen]
-      exact dist_le q
-    · have := hadj.symm.reachable.dist_triangle_right x
-      rw [dist_eq_one_iff_adj.mpr hadj.symm] at this
-      omega
-
-variable [Fintype V] [DecidableRel G.Adj] {k : ℕ}
+variable {V : Type*} {G : SimpleGraph V} [Fintype V] [DecidableRel G.Adj] {k : ℕ}
 
 /-- If all degrees are at most `k`, then at most `k (k - 1) ^ i` vertices lie at distance `i + 1`
 from a vertex `x`. -/
