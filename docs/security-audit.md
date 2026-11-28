@@ -62,8 +62,16 @@ source bundle, notes and findings are retained; no independent partial approvals
 are combined. Haiku supports native compaction within its inspection; retained-session
 automatic recovery currently supports Codex only.
 Immediate continuations share at most three launches, with 5- and 10-second delays. Afterward,
-the ordinary worker loop uses a durable 5/10/20/40/60-minute backoff, capped at
-one recovery invocation per hour. Each invocation rechecks hard quota limits,
+failed or stalled invocations use a durable 5/10/20/40/60-minute backoff, capped at
+one recovery invocation per hour. A clean unfinished continuation that delivers
+new pages may become eligible again after one minute. This requires the same
+immutable bundle and native UUID, validated coverage that strictly includes all
+previously delivered pages, and a clear coverage-only judgment. The reserved
+attempt count is preserved; rereads, provider failures, nonzero exits, timeouts,
+source findings and damaged evidence never earn the shorter delay. Actual
+launches also follow the worker loop's cadence and quota scheduling. Reading
+progress changes scheduling only and never approves source.
+Each invocation rechecks hard quota limits,
 admin authority, the current cursor, exact next main prefix, unchanged input,
 native UUID, reader, catalog, launcher and exact inspection prompt. It preserves
 all prior findings and notes. Only a fresh complete passing judgment and confirmed
