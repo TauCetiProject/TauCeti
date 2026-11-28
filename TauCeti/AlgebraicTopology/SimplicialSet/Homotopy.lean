@@ -143,6 +143,14 @@ lemma verticalEdge_fst {X : SSet.{w}} (v : X _⦋0⦌) : (verticalEdge v).1 = X.
 lemma verticalEdge_snd {X : SSet.{w}} (v : X _⦋0⦌) :
     (verticalEdge v).2 = stdSimplex.edge 1 0 1 (by decide) := (rfl)
 
+/-- A map of cylinders sends a vertical edge to the vertical edge of the image vertex. -/
+lemma whiskerRight_app_verticalEdge {X Y : SSet.{w}} (f : X ⟶ Y) (v : X _⦋0⦌) :
+    (f ▷ Δ[1]).app _ (verticalEdge v) = verticalEdge (f.app _ v) := by
+  -- Put the pointwise cylinder map in product form before comparing its coordinates.
+  change (f.app _ (verticalEdge v).1, (verticalEdge v).2) = verticalEdge (f.app _ v)
+  simp only [verticalEdge_fst, verticalEdge_snd]
+  exact Prod.ext (NatTrans.naturality_apply f (SimplexCategory.σ (n := 0) 0).op v) rfl
+
 /-- The vertical edge over `v` starts at `(v, 0)`. -/
 lemma δ_one_verticalEdge {X : SSet.{w}} (v : X _⦋0⦌) :
     (X ⊗ Δ[1]).δ 1 (verticalEdge v) = ι₀.app _ v :=

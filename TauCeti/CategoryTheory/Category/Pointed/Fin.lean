@@ -247,6 +247,17 @@ lemma ρ_toFun (i : Fin n.len) (j : Fin (n.len + 1)) :
 @[simp]
 lemma ρ_toFun_self (i : Fin n.len) : (ρ i).toFun i.succ = 1 := by simp [ρ_toFun]
 
+/-- The unique non-basepoint fiber of an inert projection is its selected coordinate. -/
+@[simp]
+lemma fiber_ρ {b : FinPointed.{u}} (i : Fin b.len) (j : Fin 1) :
+    (ρ i).fiber j = [i] := by
+  have hj : j = 0 := Subsingleton.elim _ _
+  subst j
+  apply List.perm_singleton.1
+  apply (List.perm_ext_iff_of_nodup (Hom.nodup_fiber _ _) (List.nodup_singleton i)).2
+  intro k
+  simp [Hom.mem_fiber, ρ_toFun, Fin.succ_inj]
+
 /-- The projection `ρ i` is inert. -/
 lemma isInert_ρ (i : Fin n.len) : (ρ i).IsInert := by
   intro j hj
