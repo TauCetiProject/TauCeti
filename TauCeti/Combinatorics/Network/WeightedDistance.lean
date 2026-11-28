@@ -188,9 +188,7 @@ theorem IsShortest.walkWeight_nonneg [AddLeftReflectLE R] [AddRightReflectLE R]
   obtain ⟨p₁, p₂, rfl⟩ := @Quiver.Path.exists_eq_comp_of_mem_vertices V ⟨Q⟩ _ _ p _ hv
   have h' := h (ArrowWalk.comp p₁ (c.comp p₂))
   simp only [walkWeight_comp] at h'
-  refine le_of_add_le_add_right (a := walkWeight w p₂) ?_
-  rw [zero_add]
-  exact le_of_add_le_add_left h'
+  exact le_of_add_le_add_right ((zero_add _).trans_le (le_of_add_le_add_left h'))
 
 end LE
 
