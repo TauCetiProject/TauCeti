@@ -26,11 +26,6 @@ element of `𝔞`. This is the polynomial of Ribet's method for constructing con
 Galois representations, where `Λ` is a group algebra and `𝔞` an ideal of elements whose traces
 lie in a prescribed module.
 
-For a ring homomorphism `ρ : Λ →+* Matrix σ σ L` and an additive subgroup `𝒥` of `L`, the trace
-ideal `TauCeti.traceIdeal ρ 𝒥` is the two-sided ideal of the `w ∈ Λ` such that `tr ρ (w * s) ∈ 𝒥`
-for every `s ∈ Λ`. It contains the kernel of `ρ`, and it is the ideal `𝔞` to which Ribet's method
-is applied when the traces of a family of representations are controlled by `𝒥`.
-
 ## Implementation notes
 
 Writing `(B *ᵥ y) i = a i + (B₁ *ᵥ y) i * ρ₀` with `a i ∈ 𝔞`, the matrix `B - X • B₁` over the
@@ -58,7 +53,6 @@ block matrix of `B`.
 The statement and the route through the polynomial ring `Λ[X]` follow
 `New.Selmer.exists_ribet_polynomial` (file `src/New/Congruences/FirstOrder/RibetMethod.lean`) in
 grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC).
-`TauCeti.traceIdeal` follows `New.Selmer.traceIdeal` in the same grh-lean file.
 -/
 
 public section
@@ -168,34 +162,3 @@ theorem exists_ribet_polynomial (ρ : Λ →ₐ[R] Matrix σ σ L)
 end Ribet
 
 end AlgHom
-
-namespace TauCeti
-
-variable {Λ σ L F : Type*} [Ring Λ] [CommRing L] [Fintype σ] [DecidableEq σ]
-  [FunLike F Λ (Matrix σ σ L)] [RingHomClass F Λ (Matrix σ σ L)]
-
-/-- The trace ideal of `𝒥` along `ρ`: the two-sided ideal of the `w ∈ Λ` such that the trace of
-`ρ (w * s)` lies in `𝒥` for every `s ∈ Λ`. It is a two-sided ideal because the trace is cyclic. -/
-def traceIdeal (ρ : F) (𝒥 : AddSubgroup L) : TwoSidedIdeal Λ :=
-  .mk' {w | ∀ s, (ρ (w * s)).trace ∈ 𝒥} (by simp)
-    (fun hw hw' s ↦ by simpa [add_mul] using add_mem (hw s) (hw' s))
-    (fun hw s ↦ by simpa using neg_mem (hw s))
-    (fun {w w'} hw' s ↦ by simpa [mul_assoc, trace_mul_comm (ρ w)] using hw' (s * w))
-    (fun {w w'} hw s ↦ by simpa [mul_assoc] using hw (w' * s))
-
-@[simp]
-theorem mem_traceIdeal {ρ : F} {𝒥 : AddSubgroup L} {w : Λ} :
-    w ∈ traceIdeal ρ 𝒥 ↔ ∀ s, (ρ (w * s)).trace ∈ 𝒥 :=
-  TwoSidedIdeal.mem_mk' ..
-
-/-- An element of the trace ideal of `𝒥` has its trace in `𝒥`. -/
-theorem trace_mem_of_mem_traceIdeal {ρ : F} {𝒥 : AddSubgroup L} {w : Λ}
-    (hw : w ∈ traceIdeal ρ 𝒥) : (ρ w).trace ∈ 𝒥 := by
-  simpa using mem_traceIdeal.1 hw 1
-
-/-- The kernel of `ρ` lies in every trace ideal along `ρ`. -/
-theorem mem_traceIdeal_of_map_eq_zero {ρ : F} (𝒥 : AddSubgroup L) {w : Λ} (hw : ρ w = 0) :
-    w ∈ traceIdeal ρ 𝒥 := by
-  simp [hw]
-
-end TauCeti

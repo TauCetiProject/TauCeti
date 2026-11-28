@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Matrix.Block
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Ribet
 import TauCeti.LinearAlgebra.Matrix.Determinant.FromBlocks
 import TauCeti.LinearAlgebra.Matrix.Trace.Basic
+import TauCeti.LinearAlgebra.Matrix.Trace.Ideal
 
 /-!
 # Ribet's element for a matrix of tied rows
