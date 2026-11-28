@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import TauCeti.LinearAlgebra.Matrix.Determinant.IdealDivisibility
-import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.Data.Nat.Choose.Sum
-import TauCeti.RingTheory.Derivation.Ideal
+import TauCeti.LinearAlgebra.Matrix.LDU
+import TauCeti.RingTheory.MvPolynomial.DerivativeIdealPow
 
 /-!
 # Frobenius divisibility of ordinary jet minors
@@ -19,10 +19,11 @@ determinant-one row change that introduces powers of `X ^ p - Y`. The ordinary d
 `X` of this factor are divisible by `p`, with no restriction on the derivative order.
 
 * `TauCeti.exists_det_one_mul_monomial_eq_frobenius` gives the row change after applying
-  any linear map to the polynomials, using `Matrix.BlockTriangular.det_fintype`.
+  any linear map to the polynomials, using `Matrix.BlockUnitriangular.det_eq_one`.
 * `TauCeti.pow_dvd_det_ordinaryJet_of_frobenius` bounds every full-row minor of the
   original ordinary jet matrix, including after applying coordinate linear maps to its entries.
-  It uses `Derivation.iterate_mul_prod_mem_ideal_pow` and `Matrix.prod_dvd_det_of_dvd_row`.
+  It uses `MvPolynomial.pow_dvd_aeval_iterate_pderiv_mul_X_pow_sub_X_pow` and
+  `Matrix.prod_dvd_det_of_dvd_row`.
 
 The row change and its divisibility are from Ben Green, *On Landau–Siegel zeros*,
 Hexagon 2610.00311 (2026), §§2–6.
@@ -68,13 +69,10 @@ theorem exists_det_one_mul_monomial_eq_frobenius {ι : Type*} {m n : ℕ} (p : �
       refine fun i j (hlt : j.2 < i.2) ↦ ?_
       have hne : i ≠ j := ne_of_apply_ne Prod.snd hlt.ne'
       simp only [Matrix.add_apply, hzero i j hlt.le, Matrix.one_apply_ne hne, add_zero]
-    have hblock (j : Fin n) : (1 + U).toSquareBlock Prod.snd j = 1 := by
-      ext u v
-      have huv : u.val.2 = v.val.2 := u.property.trans v.property.symm
-      simp only [toSquareBlock_def, of_apply, Matrix.add_apply, hzero _ _ huv.ge, add_zero,
-        Matrix.one_apply, Subtype.ext_iff]
-    rw [htri.det_fintype]
-    simp only [hblock, det_one, prod_const_one]
+    have hunitri : (1 + U).BlockUnitriangular Prod.snd := by
+      refine blockUnitriangular_iff.mpr ⟨htri, fun i j hij ↦ ?_⟩
+      rw [Matrix.add_apply, hzero i j hij.ge, add_zero]
+    exact hunitri.det_eq_one
   · rw [Matrix.add_mul, Matrix.one_mul]
     ext i j
     have hbinom : X 0 ^ (i.1.val - p * h i) * X 1 ^ i.2.val * (X 0 ^ p - X 1) ^ h i =
@@ -98,33 +96,6 @@ theorem exists_det_one_mul_monomial_eq_frobenius {ι : Type*} {m n : ℕ} (p : �
     congr 1
     exact sum_congr rfl fun t _ ↦ by
       simp only [ite_mul, zero_mul, sum_ite_eq, mem_univ, ite_true]
-
-/-- All ordinary jets in `X i` of `g * (X i ^ p - X j)^e` are divisible by `p ^ e` at
-a point satisfying `a i ^ p ≡ a j (mod p)`, when `i ≠ j`. See Green, *On Landau–Siegel zeros*. -/
-theorem _root_.MvPolynomial.pow_dvd_aeval_iterate_pderiv_mul_X_pow_sub_X_pow {σ : Type*} {i j : σ}
-    (g : MvPolynomial σ R) (hij : j ≠ i) {p : ℕ} {a : σ → S}
-    (ha : (p : S) ∣ a i ^ p - a j) (e k : ℕ) :
-    (p : S) ^ e ∣ aeval a ((pderiv i)^[k] (g * (X i ^ p - X j) ^ e)) := by
-  let d : Derivation R (MvPolynomial σ R) (MvPolynomial σ R) := pderiv i
-  have hfactor (t : ℕ) : aeval a (d^[t] (X i ^ p - X j)) ∈ Ideal.span {(p : S)} := by
-    rw [Ideal.mem_span_singleton]
-    cases t with
-    | zero =>
-      simpa only [Function.iterate_zero_apply, map_sub, map_pow, aeval_X] using ha
-    | succ t =>
-      have hd : d (X i ^ p - X j) = p • X i ^ (p - 1) := by
-        simp only [d, map_sub, pderiv_pow, pderiv_X_self, pderiv_X_of_ne hij, mul_one,
-          sub_zero, nsmul_eq_mul]
-      rw [Function.iterate_succ_apply, hd]
-      have hmap (f : MvPolynomial σ R) : d^[t] (p • f) = p • d^[t] f := by
-        simpa only [pow_apply_eq_iterate, Derivation.coeFn_coe] using
-          map_nsmul (d.toLinearMap ^ t) p f
-      rw [hmap, map_nsmul, nsmul_eq_mul]
-      exact dvd_mul_right _ _
-  have hprod := d.iterate_mul_prod_mem_ideal_pow (RingHomClass.toRingHom (aeval a))
-    (fun _ : Fin e ↦ X i ^ p - X j) g (Ideal.span {(p : S)}) k (fun _ t _ ↦ hfactor t) k le_rfl
-  simpa only [prod_const, card_univ, Fintype.card_fin, Ideal.span_singleton_pow,
-    Ideal.mem_span_singleton, RingHom.coe_coe, d] using hprod
 
 /-- At points satisfying the Frobenius congruence, the determinant of any full-row ordinary jet
 minor is divisible by `p` to the sum of the row gains
