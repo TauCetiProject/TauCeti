@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.Postcomposition
-public import TauCeti.AlgebraicTopology.Quasicategory.RightFibration.KanComplex
 
 /-!
 # Relative postcomposition and the fibres of the relative slice map
@@ -38,10 +37,6 @@ namespace SSet.rightMappingSpace.postcompSpace
 open SSet.modelCategoryQuillen
 
 variable {X S : SSet.{u}} (x : X _⦋0⦌) {y z : X _⦋0⦌} (g : Edge y z)
-
-/-- Target restriction on composition spaces in a quasicategory is a Kan fibration. -/
-instance fibration_tgt [Quasicategory X] : Fibration (tgt x g) :=
-  RightFibration.fibration_of_kanComplex _
 
 /-- The pullback of long edges in `X` and composition triangles in the base, with a common
 long edge in the base. -/

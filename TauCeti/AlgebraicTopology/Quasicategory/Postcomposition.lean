@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Quasicategory.RightFibration.KanComplex
 public import TauCeti.AlgebraicTopology.Quasicategory.RightMappingSpace
 public import TauCeti.AlgebraicTopology.Quasicategory.Slice
 public import TauCeti.AlgebraicTopology.SimplicialSet.CompStruct
@@ -365,6 +366,11 @@ instance rightFibration_tgt [Quasicategory X] : RightFibration (tgt x g) := by
     simp [r]
   rw [ht]
   infer_instance
+
+open modelCategoryQuillen in
+/-- Target restriction on composition spaces in a quasicategory is a Kan fibration. -/
+instance fibration_tgt [Quasicategory X] : HomotopicalAlgebra.Fibration (tgt x g) :=
+  RightFibration.fibration_of_kanComplex _
 
 end
 
