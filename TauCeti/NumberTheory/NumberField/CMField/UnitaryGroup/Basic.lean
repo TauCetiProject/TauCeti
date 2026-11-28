@@ -165,6 +165,51 @@ theorem finiteAdelicUnitaryGroup.continuous_proj (w : HeightOneSpectrum (𝓞 E)
   (Continuous.generalLinearGroup_map (FiniteAdeleRing.proj E w).continuous).comp
     continuous_subtypeVal
 
+/-- The component of `g ∈ G_f` at a finite place `w` is the component of `g` read in
+`GL_n(𝔸_f)`. -/
+theorem finiteAdelicUnitaryGroup.proj_eq_map (w : HeightOneSpectrum (𝓞 E))
+    (g : finiteAdelicUnitaryGroup E ι) :
+    finiteAdelicUnitaryGroup.proj E ι w g =
+      GeneralLinearGroup.map (FiniteAdeleRing.proj E w : _ →+* w.adicCompletion E)
+        (g : GL ι 𝔸ᶠ[E]) :=
+  GeneralLinearGroup.ext fun i j ↦ by
+    simp only [finiteAdelicUnitaryGroup.proj_apply, GeneralLinearGroup.map_apply,
+      RingHom.coe_coe, FiniteAdeleRing.proj_apply]
+
+/-- **The adjoint of an adelic matrix at a conjugate place.** For `x ∈ GL_n(𝔸_f)` and a finite
+place `w`, the component at `conj w` of the inverse of the adjoint `x* = (conj x)ᵀ` is the inverse
+transpose of the image of `x_w` under the isomorphism `σ : E_w ≃ E_{conj w}` extending the
+conjugation of `E`: `((x*)⁻¹)_{conj w} = (σ(x_w)⁻¹)ᵀ`. For `x ∈ G_f`, where `(x*)⁻¹ = x`, this is
+`TauCeti.finiteAdelicUnitaryGroup.proj_conjPlace`. -/
+theorem _root_.IsDedekindDomain.FiniteAdeleRing.map_proj_conjPlace_star_inv (x : GL ι 𝔸ᶠ[E])
+    (w : HeightOneSpectrum (𝓞 E)) :
+    GeneralLinearGroup.map (FiniteAdeleRing.proj E w.conjPlace :
+        _ →+* w.conjPlace.adicCompletion E) (star x)⁻¹ =
+      GeneralLinearGroup.inverseTranspose (GeneralLinearGroup.map
+        (adicCompletionCongr w w.conjPlace (complexConj E).toRingEquiv (valuation_conjPlace w) :
+          w.adicCompletion E →+* w.conjPlace.adicCompletion E)
+        (GeneralLinearGroup.map (FiniteAdeleRing.proj E w : _ →+* w.adicCompletion E) x)) := by
+  refine GeneralLinearGroup.ext fun i j ↦ ?_
+  rw [← star_inv, GeneralLinearGroup.coe_inverseTranspose, transpose_apply, ← map_inv, ← map_inv]
+  simp only [GeneralLinearGroup.map_apply, RingHom.coe_coe, FiniteAdeleRing.proj_apply,
+    Units.coe_star, star_apply]
+  exact FiniteAdeleRing.star_apply_conjPlace _ w
+
+/-- **Components at conjugate places.** For `g ∈ G_f` and a finite place `w` with conjugate
+`conj w` (`conjPlace`), the component `g_{conj w}` is the inverse transpose of the image of `g_w`
+under the isomorphism `σ : E_w ≃ E_{conj w}` extending the conjugation of `E`:
+`g_{conj w} = (σ(g_w)⁻¹)ᵀ`. It is the case `(g*)⁻¹ = g` of
+`IsDedekindDomain.FiniteAdeleRing.map_proj_conjPlace_star_inv`. -/
+theorem finiteAdelicUnitaryGroup.proj_conjPlace (g : finiteAdelicUnitaryGroup E ι)
+    (w : HeightOneSpectrum (𝓞 E)) :
+    finiteAdelicUnitaryGroup.proj E ι w.conjPlace g =
+      GeneralLinearGroup.inverseTranspose (GeneralLinearGroup.map
+        (adicCompletionCongr w w.conjPlace (complexConj E).toRingEquiv (valuation_conjPlace w) :
+          w.adicCompletion E →+* w.conjPlace.adicCompletion E)
+        (finiteAdelicUnitaryGroup.proj E ι w g)) := by
+  rw [proj_eq_map, proj_eq_map, ← FiniteAdeleRing.map_proj_conjPlace_star_inv,
+    inv_eq_of_mul_eq_one_left (Unitary.mul_star_self_of_mem (mem_unitarySubgroup_iff.1 g.property))]
+
 /-- **Components at conjugate places**, entrywise. For `g ∈ G_f` and a finite place `w` with
 conjugate `conj w` (`conjPlace`), the entry `(i, j)` of the component `g_{conj w}` is the image of
 the entry `(j, i)` of `(g_w)⁻¹` under the isomorphism `E_w ≃ E_{conj w}` extending the conjugation
@@ -175,25 +220,7 @@ theorem finiteAdelicUnitaryGroup.proj_conjPlace_apply (g : finiteAdelicUnitaryGr
         i j =
       adicCompletionCongr w w.conjPlace (complexConj E).toRingEquiv (valuation_conjPlace w)
         ((↑(finiteAdelicUnitaryGroup.proj E ι w g)⁻¹ : Matrix ι ι (w.adicCompletion E)) j i) := by
-  have h := coe_inv_eq_star_of_mem_unitarySubgroup (inv_mem g.property)
-  rw [inv_inv] at h
-  rw [← map_inv, finiteAdelicUnitaryGroup.proj_apply, finiteAdelicUnitaryGroup.proj_apply,
-    InvMemClass.coe_inv, h, star_apply, FiniteAdeleRing.star_apply_conjPlace]
-
-/-- **Components at conjugate places.** For `g ∈ G_f` and a finite place `w` with conjugate
-`conj w` (`conjPlace`), the component `g_{conj w}` is the inverse transpose of the image of `g_w`
-under the isomorphism `σ : E_w ≃ E_{conj w}` extending the conjugation of `E`:
-`g_{conj w} = (σ(g_w)⁻¹)ᵀ`. -/
-theorem finiteAdelicUnitaryGroup.proj_conjPlace (g : finiteAdelicUnitaryGroup E ι)
-    (w : HeightOneSpectrum (𝓞 E)) :
-    finiteAdelicUnitaryGroup.proj E ι w.conjPlace g =
-      GeneralLinearGroup.inverseTranspose (GeneralLinearGroup.map
-        (adicCompletionCongr w w.conjPlace (complexConj E).toRingEquiv (valuation_conjPlace w) :
-          w.adicCompletion E →+* w.conjPlace.adicCompletion E)
-        (finiteAdelicUnitaryGroup.proj E ι w g)) := by
-  refine GeneralLinearGroup.ext fun i j ↦ ?_
-  rw [proj_conjPlace_apply, GeneralLinearGroup.coe_inverseTranspose, transpose_apply,
-    ← map_inv (GeneralLinearGroup.map _) (finiteAdelicUnitaryGroup.proj E ι w g),
+  rw [proj_conjPlace, GeneralLinearGroup.coe_inverseTranspose, transpose_apply, ← map_inv,
     GeneralLinearGroup.map_apply, RingHom.coe_coe]
 
 /-- An element of `G_f` is determined by its components at the finite places. -/
@@ -245,13 +272,14 @@ theorem mem_integralAdelicUnitaryGroup_iff_forall_place {g : finiteAdelicUnitary
     g ∈ integralAdelicUnitaryGroup E ι ↔ ∀ w : HeightOneSpectrum (𝓞 E),
       finiteAdelicUnitaryGroup.proj E ι w g ∈
         (GeneralLinearGroup.map (n := ι) (w.adicCompletionIntegers E).subtype).range := by
-  -- Membership in `GL_n(𝒪_w)` is integrality of the entries of `g_w` and of `(g_w)⁻¹`.
-  have hS (w : HeightOneSpectrum (𝓞 E)) (x : w.adicCompletion E) :
-      x ∈ (w.adicCompletionIntegers E).subtype.range ↔ x ∈ w.adicCompletionIntegers E :=
-    ⟨fun ⟨y, hy⟩ ↦ hy ▸ y.property, fun h ↦ ⟨⟨x, h⟩, rfl⟩⟩
-  simp only [GeneralLinearGroup.mem_range_map_iff_of_injective
-    (ValuationSubring.subtype_injective _), hS, ← map_inv, finiteAdelicUnitaryGroup.proj_apply,
-    InvMemClass.coe_inv]
+  -- Membership in `GL_n(𝒪_w)` is integrality of the entries of `g_w` and of `(g_w)⁻¹`; here
+  -- `ValuationSubring.subtype A` is by definition the inclusion of the subring `A.toSubring`.
+  have hS (w : HeightOneSpectrum (𝓞 E)) (h : GL ι (w.adicCompletion E)) :
+      h ∈ (GeneralLinearGroup.map (n := ι) (w.adicCompletionIntegers E).subtype).range ↔
+        (∀ i j, (h : Matrix ι ι _) i j ∈ w.adicCompletionIntegers E) ∧
+          ∀ i j, (↑h⁻¹ : Matrix ι ι _) i j ∈ w.adicCompletionIntegers E :=
+    GeneralLinearGroup.mem_range_map_subtype_iff (w.adicCompletionIntegers E).toSubring
+  simp only [hS, ← map_inv, finiteAdelicUnitaryGroup.proj_apply, InvMemClass.coe_inv]
   refine ⟨fun hg w ↦ ⟨fun i j ↦ ?_, fun i j ↦ ?_⟩, fun h ↦ ?_⟩
   · exact FiniteAdeleRing.mem_integralAdeles.1 (mem_integralAdelicUnitaryGroup_iff.1 hg i j) w
   · exact FiniteAdeleRing.mem_integralAdeles.1

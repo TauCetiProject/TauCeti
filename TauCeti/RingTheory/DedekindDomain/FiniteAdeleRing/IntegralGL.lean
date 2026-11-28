@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Instances.Matrix
-public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.GeneralLinearGroup
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Subalgebra
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
@@ -48,8 +48,6 @@ These are the cases `Ô ⊆ 𝔸_f` of the general statements for a subalgebra
   determinant `1` whose entries are integral at every finite place comes from `SL_n(R)`.
 * `IsDedekindDomain.FiniteAdeleRing.mem_map_integralGL_iff`: entrywise membership in the image of
   a subgroup of `GL_n(Ô)`.
-* `IsDedekindDomain.FiniteAdeleRing.generalLinearGroup_ext`: a matrix of `GL_n(𝔸_f)` is determined
-  by its components at the finite places.
 * `IsDedekindDomain.FiniteAdeleRing.eventually_map_proj_mem_range`: the component at `v` of a
   matrix of `GL_n(𝔸_f)` lies in `GL_n(𝒪_v)` for all but finitely many finite places `v`.
 * `IsDedekindDomain.FiniteAdeleRing.det_integralGL`,
@@ -172,13 +170,6 @@ theorem mem_map_integralGL_iff {H : Subgroup (GL ι (integralAdeles R K))}
   Matrix.GeneralLinearGroup.mem_map_map_val_iff hH
 
 /-! ### Components at the finite places -/
-
-/-- A matrix of `GL_n(𝔸_f)` is determined by its components at the finite places. -/
-theorem generalLinearGroup_ext {g h : GL ι 𝔸ᶠ[R, K]}
-    (H : ∀ v : HeightOneSpectrum R, Matrix.GeneralLinearGroup.map (proj K v).toRingHom g =
-      Matrix.GeneralLinearGroup.map (proj K v).toRingHom h) : g = h := by
-  refine Units.ext <| Matrix.ext fun i j ↦ ext K fun v ↦ ?_
-  simpa using congrArg (fun x : GL ι (v.adicCompletion K) ↦ x.val i j) (H v)
 
 /-- **Almost all components are integral.** The component at `v` of a matrix of `GL_n(𝔸_f)` lies
 in the image `GL_n(𝒪_v)` of the general linear group over the local integers for all but finitely
