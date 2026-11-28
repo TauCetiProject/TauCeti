@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
+public import TauCeti.Algebra.Group.Subgroup.Map
+public import TauCeti.Algebra.Module.Equiv.AutCongr
 public import TauCeti.LinearAlgebra.SesquilinearForm.IsometryGroup
 public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Basic
 
@@ -28,6 +30,8 @@ with itself (`TauCeti.SignedHermitianSpace.IsometryEquiv.ofMemIsometryGroup`).
 * `TauCeti.SignedHermitianSpace.prod H₁ H₂`: the orthogonal sum `H₁ ⊥ H₂` on `V₁ × V₂`.
 * `TauCeti.SignedHermitianSpace.restrict H W hW`: the signed hermitian space carried by a
   submodule `W` on which the restricted form is left-separating.
+* `TauCeti.SignedHermitianSpace.IsometryEquiv.isometryGroupCongr f`: the isomorphism of unitary
+  groups `U(H₁) ≃* U(H₂)` given by conjugation by an isometric equivalence `f`.
 
 ## Main statements
 
@@ -177,6 +181,43 @@ unitary group of the space. -/
 theorem toLinearEquiv_mem_isometryGroup (f : IsometryEquiv H H) :
     f.toLinearEquiv ∈ H.form.isometryGroup :=
   LinearMap.mem_isometryGroup_iff.2 f.map_app
+
+/-- Conjugation by an isometric equivalence `f : H₁ ≅ H₂` carries the unitary group of `H₁` onto
+the unitary group of `H₂`. -/
+theorem map_isometryGroup (f : IsometryEquiv H₁ H₂) :
+    H₁.form.isometryGroup.map (LinearEquiv.autCongr f.toLinearEquiv : _ →* _) =
+      H₂.form.isometryGroup := by
+  ext g
+  simp only [Subgroup.mem_map, MonoidHom.coe_ofClass, LinearMap.mem_isometryGroup_iff]
+  constructor
+  · rintro ⟨g₁, hg₁, rfl⟩ x y
+    simp only [LinearEquiv.autCongr_apply_apply, coe_toLinearEquiv, coe_symm_toLinearEquiv,
+      map_app, hg₁, f.symm.map_app]
+  · refine fun hg ↦ ⟨(LinearEquiv.autCongr f.toLinearEquiv).symm g, fun x y ↦ ?_,
+      MulEquiv.apply_symm_apply _ g⟩
+    simp only [LinearEquiv.autCongr_symm_apply_apply, coe_toLinearEquiv, coe_symm_toLinearEquiv,
+      f.symm.map_app, hg, map_app]
+
+/-- Isometric signed hermitian spaces have isomorphic unitary groups: an isometric equivalence
+`f : H₁ ≅ H₂` conjugates `U(H₁)` onto `U(H₂)`, sending `g` to `f ∘ g ∘ f⁻¹`. -/
+def isometryGroupCongr (f : IsometryEquiv H₁ H₂) :
+    H₁.form.isometryGroup ≃* H₂.form.isometryGroup :=
+  Subgroup.congrOfMapEq (LinearEquiv.autCongr f.toLinearEquiv) f.map_isometryGroup
+
+/-- The conjugate of `g` by `f` sends `x` to `f (g (f⁻¹ x))`. -/
+@[simp]
+theorem coe_isometryGroupCongr_apply (f : IsometryEquiv H₁ H₂) (g : H₁.form.isometryGroup)
+    (x : V₂) : (f.isometryGroupCongr g : V₂ ≃ₗ[K] V₂) x = f ((g : V₁ ≃ₗ[K] V₁) (f.symm x)) := by
+  simp only [isometryGroupCongr, Subgroup.coe_congrOfMapEq_apply,
+    LinearEquiv.autCongr_apply_apply, coe_toLinearEquiv, coe_symm_toLinearEquiv]
+
+/-- The inverse conjugation sends `g` to `x ↦ f⁻¹ (g (f x))`. -/
+@[simp]
+theorem coe_isometryGroupCongr_symm_apply (f : IsometryEquiv H₁ H₂) (g : H₂.form.isometryGroup)
+    (x : V₁) :
+    ((f.isometryGroupCongr).symm g : V₁ ≃ₗ[K] V₁) x = f.symm ((g : V₂ ≃ₗ[K] V₂) (f x)) := by
+  simp only [isometryGroupCongr, Subgroup.coe_congrOfMapEq_symm_apply,
+    LinearEquiv.autCongr_symm_apply_apply, coe_toLinearEquiv, coe_symm_toLinearEquiv]
 
 end IsometryEquiv
 

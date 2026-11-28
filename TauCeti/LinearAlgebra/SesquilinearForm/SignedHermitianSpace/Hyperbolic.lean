@@ -139,6 +139,13 @@ theorem hyperbolic_form_apply (ι : Type*) [Fintype ι] (x y : (ι → K) × (ι
     (hyperbolic K σ ε ι).form x y = ∑ i, (σ (x.1 i) * y.2 i + ε • (σ (x.2 i) * y.1 i)) :=
   (rfl)
 
+open Matrix in
+/-- The form of `H^ι` in terms of dot products: `h x y = σ (x.1) ⬝ y.2 + ε • (σ (x.2) ⬝ y.1)`. -/
+theorem hyperbolic_form_apply_eq_dotProduct (ι : Type*) [Fintype ι] (x y : (ι → K) × (ι → K)) :
+    (hyperbolic K σ ε ι).form x y = (σ ∘ x.1) ⬝ᵥ y.2 + ε • ((σ ∘ x.2) ⬝ᵥ y.1) := by
+  simp only [hyperbolic_form_apply, Finset.sum_add_distrib, dotProduct, Function.comp_apply,
+    Finset.smul_sum]
+
 /-- The hyperbolic space of a sum of index types is the orthogonal sum of the hyperbolic spaces:
 `H^(ι ⊕ κ) ≅ H^ι ⊥ H^κ`. -/
 def IsometryEquiv.hyperbolicSum (ι κ : Type*) [Fintype ι] [Fintype κ] :
