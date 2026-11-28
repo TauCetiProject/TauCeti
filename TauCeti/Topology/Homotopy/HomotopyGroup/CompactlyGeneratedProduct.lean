@@ -60,9 +60,16 @@ theorem compactlyGeneratedProdEquiv_apply (n : ℕ)
         (TopCat.of (X × Y))).hom) rfl a,
        map (ContinuousMap.snd.comp (CompactlyGenerated.adjCounit.{u}.app
         (TopCat.of (X × Y))).hom) rfl a) := by
-  let c : C(↑(TopCat.toCompactlyGenerated.{u, max v w}.obj (TopCat.of (X × Y))), X × Y) :=
-    (CompactlyGenerated.adjCounit.{u}.app (TopCat.of (X × Y))).hom
-  have h : compactlyGeneratedProdEquiv n p a = prodEquiv p.1 p.2 (map c rfl a) := rfl
+  let P := TopCat.of (X × Y)
+  let c : C(↑(TopCat.toCompactlyGenerated.{u, max v w}.obj P), X × Y) :=
+    (CompactlyGenerated.adjCounit.{u}.app P).hom
+  have hc := P.isWeakHomotopyEquivalence_compactlyGeneratedAdjCounit.{_, u}.bijective n p
+  let e := Equiv.ofBijective (map c rfl) hc
+  have h : compactlyGeneratedProdEquiv n p a = prodEquiv p.1 p.2 (map c rfl a) := calc
+    _ = (e.trans (prodEquiv p.1 p.2)) a :=
+      congrArg (fun f : _ ≃ _ ↦ f a) (compactlyGeneratedProdEquiv.eq_def n p)
+    _ = prodEquiv p.1 p.2 (e a) := Equiv.trans_apply e _ a
+    _ = _ := congrArg (prodEquiv p.1 p.2) (congrFun (Equiv.coe_ofBijective (map c rfl) hc) a)
   exact h.trans ((prodEquiv_apply p.1 p.2 (map c rfl a)).trans
     (Prod.ext (map_comp_apply ContinuousMap.fst rfl c rfl a)
       (map_comp_apply ContinuousMap.snd rfl c rfl a)))
@@ -86,10 +93,26 @@ theorem compactlyGeneratedProdMulEquiv_apply (n : ℕ)
     (p : TopCat.toCompactlyGenerated.{u, max v w}.obj (TopCat.of (X × Y)))
     (a : HomotopyGroup (Fin (n + 1)) _ p) :
     compactlyGeneratedProdMulEquiv n p a = compactlyGeneratedProdEquiv (n + 1) p a := by
-  let c : C(↑(TopCat.toCompactlyGenerated.{u, max v w}.obj (TopCat.of (X × Y))), X × Y) :=
-    (CompactlyGenerated.adjCounit.{u}.app (TopCat.of (X × Y))).hom
-  -- Both counit comparisons act on classes by the same map.
-  exact prodMulEquiv_apply p.1 p.2 (map c rfl a)
+  let P := TopCat.of (X × Y)
+  let c : C(↑(TopCat.toCompactlyGenerated.{u, max v w}.obj P), X × Y) :=
+    (CompactlyGenerated.adjCounit.{u}.app P).hom
+  have hc := P.isWeakHomotopyEquivalence_compactlyGeneratedAdjCounit.{_, u}.bijective (n + 1) p
+  let m := mapHom (N := Fin (n + 1)) (x := p) (y := (p.1, p.2)) c rfl
+  have hm : Function.Bijective m := hc
+  let e := Equiv.ofBijective (map c rfl) hc
+  let em := MulEquiv.ofBijective m hm
+  calc
+    _ = (em.trans (prodMulEquiv p.1 p.2)) a :=
+      congrArg (fun f : _ ≃* _ ↦ f a) (compactlyGeneratedProdMulEquiv.eq_def n p)
+    _ = prodMulEquiv p.1 p.2 (em a) := MulEquiv.trans_apply em _ a
+    _ = prodEquiv p.1 p.2 (em a) := prodMulEquiv_apply _ _ _
+    _ = prodEquiv p.1 p.2 (map c rfl a) :=
+      congrArg (prodEquiv p.1 p.2) ((MulEquiv.ofBijective_apply m hm a).trans
+        (mapHom_apply c rfl a))
+    _ = prodEquiv p.1 p.2 (e a) :=
+      congrArg (prodEquiv p.1 p.2) (congrFun (Equiv.coe_ofBijective (map c rfl) hc) a).symm
+    _ = (e.trans (prodEquiv p.1 p.2)) a := (Equiv.trans_apply e _ a).symm
+    _ = _ := congrArg (fun f : _ ≃ _ ↦ f a) (compactlyGeneratedProdEquiv.eq_def (n + 1) p).symm
 
 /-- The underlying equivalence of the positive-degree comparison. -/
 @[simp]
