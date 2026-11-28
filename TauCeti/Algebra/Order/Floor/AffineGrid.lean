@@ -8,8 +8,9 @@ module
 public import Mathlib.Data.Fintype.BigOperators
 public import TauCeti.Algebra.Order.Floor.Ring
 
-import Mathlib.Data.Fintype.Perm
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Data.Finset.NAry
+import Mathlib.Data.Fintype.Perm
 
 /-!
 # Finite grids for affine sums
@@ -17,7 +18,8 @@ import Mathlib.Algebra.Order.BigOperators.Group.Finset
 The theorem `TauCeti.exists_finset_forall_affine_sum_le` rounds each input up on a fixed mesh
 and bounds the resulting error in every affine sum. The cardinality bound depends on the
 number of inputs, independently of the number of outputs. The proof uses the grid in
-`TauCeti.exists_finset_forall_exists_le_lt_add` and Mathlib's `Fintype.card_equiv`.
+`TauCeti.exists_finset_forall_exists_le_lt_add` and Mathlib's `Finset.card_image₂_le`
+and `Fintype.card_equiv`.
 
 In the parametric Subspace Theorem the inputs are the base-`Q` logarithms of the successive
 minima. For the wedge exponents at one infinite place, the summation indices are the inverse images
@@ -55,18 +57,18 @@ theorem exists_finset_forall_affine_sum_le {ι κ R : Type*} [Fintype ι]
   classical
   let n := Fintype.card ι
   obtain ⟨G, hGcard, hG⟩ := exists_finset_forall_exists_le_lt_add (κ := Fin n) hγ B
-  let system (data : (Fin n ≃ ι) × (Fin n → R)) (j : κ) :=
-    c j + a j * (∑ i ∈ s data.1 j, data.2 i)
-  refine ⟨(univ ×ˢ G).image system, ?_, ?_⟩
-  · refine card_image_le.trans ?_
-    rw [card_product, card_univ, Fintype.card_equiv (Fintype.equivFin ι).symm, Fintype.card_fin]
+  let system (σ : Fin n ≃ ι) (z : Fin n → R) (j : κ) :=
+    c j + a j * (∑ i ∈ s σ j, z i)
+  refine ⟨image₂ system univ G, ?_, ?_⟩
+  · refine (card_image₂_le system univ G).trans ?_
+    rw [card_univ, Fintype.card_equiv (Fintype.equivFin ι).symm, Fintype.card_fin]
     rw [Nat.card_eq_fintype_card, Fintype.card_fin] at hGcard
     exact Nat.mul_le_mul_left _ hGcard
   · intro σ x hx
     obtain ⟨z, hzG, hz⟩ := hG x fun i ↦ abs_le.mpr (hx i)
-    refine ⟨system (σ, z), mem_image_of_mem _ (mem_product.mpr ⟨mem_univ _, hzG⟩), fun j ↦ ?_⟩
+    refine ⟨system σ z, mem_image₂_of_mem (mem_univ _) hzG, fun j ↦ ?_⟩
     have hnonneg := ha j
-    have hsystem : system (σ, z) j = c j + a j * (∑ i ∈ s σ j, z i) := rfl
+    have hsystem : system σ z j = c j + a j * (∑ i ∈ s σ j, z i) := rfl
     rw [hsystem]
     constructor
     · gcongr with i
