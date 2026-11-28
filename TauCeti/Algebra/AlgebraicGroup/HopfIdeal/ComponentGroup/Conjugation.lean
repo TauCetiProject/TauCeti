@@ -36,8 +36,9 @@ transport.
   `TauCeti.HopfIdeal.componentGroupInclusion_componentGroupConjugationEquiv`: identity,
   composition, inverse, inner self-conjugation, triviality of conjugation by points of `N°(k)` on
   `π₀(N)`, and ambient-homomorphism compatibility laws for `componentGroupConjugationEquiv`.
-* `TauCeti.HopfIdeal.mapComponentGroup_quotientMapOfLe_componentGroupConjugationEquiv`: naturality
-  with respect to nested closed-subgroup inclusions.
+* `TauCeti.HopfIdeal.componentGroupMap_componentGroupConjugationEquiv` and
+  `TauCeti.HopfIdeal.mapComponentGroup_quotientMapOfLe_componentGroupConjugationEquiv`: naturality
+  with respect to closed-subgroup maps and nested closed-subgroup inclusions.
 
 ## References
 
@@ -211,6 +212,33 @@ theorem componentGroupConjugationEquiv_self_eq_refl_of_mem_identityComponent (I 
     (I.rationalComponentMap_eq_one_iff gI).mpr hg
   rw [componentGroupConjugationEquiv_self_eq_conj I gI, h1, map_one, MulAut.one_def]
 
+/-- Component-group maps induced by affine group homomorphisms commute with conjugation by
+rational points. -/
+theorem componentGroupMap_componentGroupConjugationEquiv
+    {K : FiniteTypeCommHopfAlgCat.{u, u} k} {I I' : HopfIdeal k H} {J J' : HopfIdeal k K}
+    (f : H ⟶ K) (h : I.map (FiniteTypeCommHopfAlgCat.toBialgHom f) ≤ J)
+    (g : HopfAlgebra.points (R := k) (H := K) (CommAlgCat.of k k))
+    (hI' : I' = I.conjugate
+      (BialgHom.mapDomain (A := k) (FiniteTypeCommHopfAlgCat.toBialgHom f) g))
+    (hJ' : J' = J.conjugate g)
+    (h' : I'.map (FiniteTypeCommHopfAlgCat.toBialgHom f) ≤ J')
+    (C : J.ComponentGroup) :
+    componentGroupMap I' J' f h' (componentGroupConjugationEquiv J J' g hJ' C) =
+      componentGroupConjugationEquiv I I'
+        (BialgHom.mapDomain (A := k) (FiniteTypeCommHopfAlgCat.toBialgHom f) g) hI'
+        (componentGroupMap I J f h C) := by
+  obtain ⟨c, rfl⟩ := J.rationalComponentMap_surjective C
+  rw [componentGroupConjugationEquiv_rationalComponentMap,
+    componentGroupMap_rationalComponentMap,
+    componentGroupMap_rationalComponentMap,
+    componentGroupConjugationEquiv_rationalComponentMap]
+  refine congrArg I'.rationalComponentMap (Subtype.ext ?_)
+  dsimp only
+  rw [_root_.CommHopfAlgCat.Hom.coe_mapDomainQuotientPointsSubgroup_apply,
+    _root_.CommHopfAlgCat.Hom.coe_mapDomainQuotientPointsSubgroup_apply]
+  dsimp only
+  simp only [map_mul, map_inv]
+
 /-- Conjugation is natural with respect to nested closed-subgroup inclusions `V(I₂) ⊆ V(I₁)`. -/
 theorem mapComponentGroup_quotientMapOfLe_componentGroupConjugationEquiv
     {I₁ I₂ J₁ J₂ : HopfIdeal k H} (hI : I₁ ≤ I₂)
@@ -224,10 +252,14 @@ theorem mapComponentGroup_quotientMapOfLe_componentGroupConjugationEquiv
       componentGroupConjugationEquiv I₁ J₁ g hJ₁
         (FiniteTypeCommHopfAlgCat.mapComponentGroup
           (FiniteTypeCommHopfAlgCat.quotientMapOfLe H hI) C) := by
-  obtain ⟨x, rfl⟩ := I₂.rationalComponentMap_surjective C
-  rw [componentGroupConjugationEquiv_rationalComponentMap,
-    FiniteTypeCommHopfAlgCat.mapComponentGroup_quotientMapOfLe_rationalComponentMap,
-    FiniteTypeCommHopfAlgCat.mapComponentGroup_quotientMapOfLe_rationalComponentMap,
-    componentGroupConjugationEquiv_rationalComponentMap]
+  have hg : BialgHom.mapDomain (A := k) (FiniteTypeCommHopfAlgCat.toBialgHom (𝟙 H)) g = g := by
+    rw [FiniteTypeCommHopfAlgCat.toBialgHom_id, BialgHom.mapDomain_id, MonoidHom.id_apply]
+  have h12 : I₁.map (FiniteTypeCommHopfAlgCat.toBialgHom (𝟙 H)) ≤ I₂ := by
+    rwa [FiniteTypeCommHopfAlgCat.toBialgHom_id, HopfIdeal.map_id]
+  have hJ12 : J₁.map (FiniteTypeCommHopfAlgCat.toBialgHom (𝟙 H)) ≤ J₂ := by
+    rw [FiniteTypeCommHopfAlgCat.toBialgHom_id, HopfIdeal.map_id, hJ₁, hJ₂]
+    exact conjugate_mono g hI
+  simpa only [componentGroupMap_eq_mapComponentGroup, FiniteTypeCommHopfAlgCat.quotientMap_id, hg]
+    using componentGroupMap_componentGroupConjugationEquiv (𝟙 H) h12 g (by rw [hg, hJ₁]) hJ₂ hJ12 C
 
 end TauCeti.HopfIdeal

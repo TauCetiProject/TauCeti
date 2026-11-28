@@ -50,24 +50,6 @@ theorem existsUnique_comp_eq_iff_of_injective (χ : M →* P) (f : N →* P)
   have hψ' : f.comp ψ' = χ := MonoidHom.ext hψ
   exact ⟨ψ', hψ', fun _ h => (MonoidHom.cancel_left hf).mp (h.trans hψ'.symm)⟩
 
-/-- A homomorphism out of a group factors uniquely through a surjective group homomorphism if and
-only if it kills the kernel of that surjection. The target may be any monoid. -/
-@[to_additive /-- An additive homomorphism out of an additive group factors uniquely through a
-surjective additive group homomorphism if and only if it kills the kernel of that surjection. The
-target may be any additive monoid. -/]
-theorem existsUnique_comp_eq_iff_ker_le {G H M : Type*} [Group G] [Group H] [Monoid M]
-    (χ : G →* M) (f : G →* H) (hf : Function.Surjective f) :
-    (∃! ψ : H →* M, ψ.comp f = χ) ↔ f.ker ≤ χ.ker := by
-  refine ⟨fun ⟨ψ, hψ, _⟩ g hg => by
-    rw [mem_ker, ← hψ, comp_apply, (mem_ker).mp hg, map_one], fun hχ => ?_⟩
-  -- `χ` lands in the units of `M`, where `f` lifts through any homomorphism killing its kernel.
-  have hker : f.ker ≤ χ.toHomUnits.ker := fun g hg => by
-    simpa [mem_ker, Units.ext_iff] using hχ hg
-  have hcomp : ((Units.coeHom M).comp (f.liftOfSurjective hf ⟨χ.toHomUnits, hker⟩)).comp f = χ := by
-    ext g
-    simp
-  exact ⟨_, hcomp, fun ψ hψ => (cancel_right hf).mp (hψ.trans hcomp.symm)⟩
-
 section LiftOfSurjectiveToMonoid
 
 variable {P Q M' : Type*} [Group P] [Group Q] [Monoid M']
@@ -124,5 +106,19 @@ theorem injective_liftOfSurjectiveToMonoid_iff :
     EquivLike.injective_comp, QuotientGroup.injective_lift_iff, eq_comm]
 
 end LiftOfSurjectiveToMonoid
+
+/-- A homomorphism out of a group factors uniquely through a surjective group homomorphism if and
+only if it kills the kernel of that surjection. The target may be any monoid. -/
+@[to_additive /-- An additive homomorphism out of an additive group factors uniquely through a
+surjective additive group homomorphism if and only if it kills the kernel of that surjection. The
+target may be any additive monoid. -/]
+theorem existsUnique_comp_eq_iff_ker_le {G H M : Type*} [Group G] [Group H] [Monoid M]
+    (χ : G →* M) (f : G →* H) (hf : Function.Surjective f) :
+    (∃! ψ : H →* M, ψ.comp f = χ) ↔ f.ker ≤ χ.ker := by
+  refine ⟨fun ⟨ψ, hψ, _⟩ g hg => by
+    rw [mem_ker, ← hψ, comp_apply, (mem_ker).mp hg, map_one], fun hχ => ?_⟩
+  exact ⟨liftOfSurjectiveToMonoid f hf χ hχ, liftOfSurjectiveToMonoid_comp f hf χ hχ,
+    fun ψ hψ => liftOfSurjectiveToMonoid_unique f hf χ hχ ψ fun g => by
+      rw [← hψ, comp_apply]⟩
 
 end MonoidHom

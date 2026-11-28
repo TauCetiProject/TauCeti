@@ -246,8 +246,8 @@ theorem orbit_componentGroupMulAction (X : Type*)
     MulAction.orbit (ConnectedComponents (PrimeSpectrum H)) x =
       MulAction.orbit (HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) x := by
   let _ := componentGroupMulAction H X htriv
-  exact TauCeti.MulAction.orbit_eq_of_surjective (rationalComponentMap_surjective H)
-    (componentGroupMulAction_rationalComponentMap_smul H X htriv) x
+  exact TauCeti.MulAction.orbit_eq_of_surjective (rationalComponentMap_surjective H) x fun g ↦
+    componentGroupMulAction_rationalComponentMap_smul H X htriv g x
 
 /-- The stabilizer in `π₀(G)` of a point is the image of its `G(k)`-stabilizer. -/
 theorem stabilizer_componentGroupMulAction (X : Type*)
@@ -260,8 +260,8 @@ theorem stabilizer_componentGroupMulAction (X : Type*)
       (MulAction.stabilizer (HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) x).map
         (rationalComponentMap H) := by
   let _ := componentGroupMulAction H X htriv
-  exact TauCeti.MulAction.stabilizer_eq_map_of_surjective (rationalComponentMap_surjective H)
-    (componentGroupMulAction_rationalComponentMap_smul H X htriv) x
+  exact TauCeti.MulAction.stabilizer_eq_map_of_surjective (rationalComponentMap_surjective H) x
+    fun g ↦ componentGroupMulAction_rationalComponentMap_smul H X htriv g x
 
 /-- The fixed points of the descended `π₀(G)`-action coincide with the `G(k)`-fixed points. -/
 theorem fixedPoints_componentGroupMulAction (X : Type*)

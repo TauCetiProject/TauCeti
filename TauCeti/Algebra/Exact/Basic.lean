@@ -10,9 +10,9 @@ public import Mathlib.Algebra.Exact.Basic
 /-!
 # Elementary properties of exact pairs
 
-* `Function.MulExact.comp_iff_of_surjective`: precomposing the first map of a multiplicative (or
-  additive) exact pair `f : M → N`, `g : N → P` with a surjective map `p : M' → M` preserves and
-  reflects exactness.
+* `Function.Surjective.mulExact_comp_iff`: precomposing the first map of a
+  multiplicative (or additive) exact pair `f : M → N`, `g : N → P` with a surjective map
+  `p : M' → M` preserves and reflects exactness.
 * `MonoidHom.mulExact_subtype_ker_map`: for a monoid homomorphism `f : G →* M` out of a group `G`,
   the kernel inclusion `f.ker.subtype` and `f` form an exact pair, with additive counterpart
   `AddMonoidHom.exact_subtype_ker_map`.
@@ -20,19 +20,19 @@ public import Mathlib.Algebra.Exact.Basic
 
 public section
 
-namespace Function.MulExact
+namespace Function.Surjective
 
 /-- Precomposing the first map of an exact pair with a surjection preserves and reflects
 exactness. -/
 @[to_additive
   /-- Precomposing the first map of an additive exact pair with a surjection preserves and reflects
   exactness. -/]
-theorem comp_iff_of_surjective {M' M N P : Type*} [One P]
+theorem mulExact_comp_iff {M' M N P : Type*} [One P]
     {p : M' → M} (hp : Function.Surjective p) {f : M → N} {g : N → P} :
     Function.MulExact (f ∘ p) g ↔ Function.MulExact f g := by
   simp only [Function.MulExact, hp.range_comp]
 
-end Function.MulExact
+end Function.Surjective
 
 namespace MonoidHom
 

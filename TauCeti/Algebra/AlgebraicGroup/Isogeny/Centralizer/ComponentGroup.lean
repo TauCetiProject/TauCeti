@@ -45,8 +45,8 @@ theorem centralizerComponentGroupMap_surjective_of_etaleKernel (hg : IsIsogeny g
     (hker : Algebra.Etale k (K' ⧸ (kernelHopfIdeal g.hom).toIdeal))
     (x : Module.Dual k (Bialgebra.CotangentSpace k K')) :
     Function.Surjective (centralizerComponentGroupMap g x) :=
-  centralizerComponentGroupMap_surjective_of_injective_of_injective_differential g hg.injective
-    (hg.dualCotangentMap_bijective_of_etaleKernel hker).injective x
+  centralizerComponentGroupMap_surjective_of_injective_coordinateMap_of_injective_differential
+    g hg.injective (hg.dualCotangentMap_bijective_of_etaleKernel hker).injective x
 
 /-- In characteristic zero, an isogeny `φ : G' → G` induces a surjection
 `π₀(C_G'(x)) →* π₀(C_G(dφ x))` of centralizer component groups. This includes central isogenies
@@ -58,8 +58,8 @@ theorem centralizerComponentGroupMap_surjective_of_charZero [CharZero k] (hg : I
     (hg.map_centralizerHopfIdeal_of_charZero x)
 
 /-- For an isogeny `g` with injective differential, the sequence
-`π₀(ker g ∩ C_K(x)) → A_K(x) → A_H(dg(x))` is exact at `A_K(x)` (and surjective at `A_H(dg(x))`
-by `centralizerComponentGroupMap_surjective_of_injective_of_injective_differential`). -/
+`π₀(ker g ∩ C_K(x)) → A_K(x) → A_H(dg(x))` is exact at `A_K(x)` (and surjective at `A_H(dg(x))` by
+`centralizerComponentGroupMap_surjective_of_injective_coordinateMap_of_injective_differential`). -/
 theorem mulExact_centralizerComponentGroupMap_of_injective_differential (hg : IsIsogeny g.hom)
     (hinj : Function.Injective (dualCotangentMap (toBialgHom g)))
     (x : Module.Dual k (Bialgebra.CotangentSpace k K')) :
@@ -74,7 +74,7 @@ theorem mulExact_centralizerComponentGroupMap_of_injective_differential (hg : Is
 /-- **Central-isogeny exact sequence on centralizer component groups.** For an isogeny `g` with
 injective differential and central kernel, the natural sequence
 `π₀(ker g) → A_K(x) → A_H(dg(x))` is exact at `A_K(x)` (and surjective at `A_H(dg(x))` by
-`centralizerComponentGroupMap_surjective_of_injective_of_injective_differential`). -/
+`centralizerComponentGroupMap_surjective_of_injective_coordinateMap_of_injective_differential`). -/
 theorem mulExact_centralizerComponentGroupMap_of_injective_differential_of_isCentral
     (hg : IsIsogeny g.hom)
     (hinj : Function.Injective (dualCotangentMap (toBialgHom g)))
@@ -88,8 +88,8 @@ theorem mulExact_centralizerComponentGroupMap_of_injective_differential_of_isCen
 
 /-- For a central isogeny with injective differential, `A_K(x) → A_H(dg(x))` is injective (hence
 an isomorphism, combined with
-`centralizerComponentGroupMap_surjective_of_injective_of_injective_differential`) if and only if
-every rational point of `ker g` lies in `C_K(x)°(k)`. -/
+`centralizerComponentGroupMap_surjective_of_injective_coordinateMap_of_injective_differential`) if
+and only if every rational point of `ker g` lies in `C_K(x)°(k)`. -/
 theorem injective_centralizerComponentGroupMap_iff_of_injective_differential_of_isCentral
     (hg : IsIsogeny g.hom)
     (hinj : Function.Injective (dualCotangentMap (toBialgHom g)))

@@ -160,8 +160,8 @@ theorem centralizerMap_toRingHom_eq (φ : H →ₐc[k] K)
     AlgHom.coe_toRingHom, coe_toAlgHom]
   exact φ.centralizerMap_mk x a
 
-/-- If the source centralizer pulls back to the target centralizer and `φ` is faithfully flat,
-then `φ.centralizerMap x` is faithfully flat by base change. -/
+/-- If the target centralizer pulls back to the source centralizer along `Spec K → Spec H` and
+`φ` is faithfully flat, then `φ.centralizerMap x` is faithfully flat by base change. -/
 theorem faithfullyFlat_centralizerMap_of_map_eq (φ : H →ₐc[k] K)
     (hff : φ.toAlgHom.toRingHom.FaithfullyFlat)
     (x : Module.Dual k (Bialgebra.CotangentSpace k K))

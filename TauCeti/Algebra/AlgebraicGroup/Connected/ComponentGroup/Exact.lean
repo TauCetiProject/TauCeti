@@ -141,8 +141,8 @@ theorem mulExact_mapComponentGroup_kernel (f : Q ⟶ G)
       CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup G.obj
         (CommHopfAlgCat.kernelHopfIdeal f.hom) (CommAlgCat.of k k) n, rfl⟩
 
-/-- Precomposing the first map of a component-group exact pair with an isomorphism preserves
-exactness. -/
+/-- If a pair of component-group homomorphisms is exact after precomposing its first map by the
+isomorphism induced by `iso`, then the original pair is exact. -/
 theorem mulExact_mapComponentGroup_of_comp_iso_hom {A B C : FiniteTypeCommHopfAlgCat.{u, u} k}
     {D : Type*} [MulOneClass D] (p : A ⟶ B) (q : A ⟶ C) (iso : B ≅ C) (hcomp : p ≫ iso.hom = q)
     (r : ConnectedComponents (PrimeSpectrum A) →* D)
@@ -153,6 +153,6 @@ theorem mulExact_mapComponentGroup_of_comp_iso_hom {A B C : FiniteTypeCommHopfAl
     obtain ⟨E, rfl⟩ := (mapComponentGroupMulEquiv iso).surjective y
     exact ⟨E, (mapComponentGroupMulEquiv_apply iso E).symm⟩
   rw [← hcomp, mapComponentGroup_comp, MonoidHom.coe_comp] at hex
-  exact (Function.MulExact.comp_iff_of_surjective hsurj).mp hex
+  exact hsurj.mulExact_comp_iff.mp hex
 
 end TauCeti.FiniteTypeCommHopfAlgCat
