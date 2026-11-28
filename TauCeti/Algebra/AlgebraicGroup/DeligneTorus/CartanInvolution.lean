@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.CartanInvolution.Conjugation
+public import TauCeti.Algebra.AlgebraicGroup.CartanInvolution
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.InnerConjugation
 public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.Basic
 
@@ -14,8 +14,10 @@ public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.Basic
 
 `TauCeti.DeligneTorus.IsCartanInvolutionAtI.innerConjugationIso_iff` shows that the condition
 that conjugation by `h(i)` be a Cartan involution depends only on the real conjugacy
-class of the algebraic homomorphism `h`. It uses `CommHopfAlgCat.innerConjugationIso_mul`
-and `TauCeti.isCartanInvolution_conj_iff`. Applied to the adjoint-group homomorphism,
+class of the algebraic homomorphism `h`. It follows from
+`TauCeti.DeligneTorus.IsCartanInvolutionAtI.iso_hom_comp_iff`, which transports the condition across
+isomorphic target groups using naturality of inner conjugation and
+`TauCeti.isCartanInvolution_conj_iff`. Applied to the adjoint-group homomorphism,
 this is the conjugacy invariance of the Shimura axiom SV2.
 
 See J. S. Milne, *Introduction to Shimura varieties*, Definition 5.5.
@@ -27,7 +29,7 @@ open CategoryTheory
 
 namespace TauCeti.DeligneTorus
 
-variable {H : CommHopfAlgCat ℝ}
+variable {H K : CommHopfAlgCat ℝ}
 
 /-- The Cartan condition at `i` for a homomorphism from the Deligne torus, contravariantly
 represented by `h`. For the homomorphism to the adjoint group this is SV2
@@ -46,31 +48,30 @@ theorem IsCartanInvolutionAtI.iff_innerConjugationIso {h : H ⟶ CommHopfAlgCat.
         (h.mapPointsFunctor.app (CommAlgCat.of ℝ ℝ) imaginaryUnitPoint)) :=
   (Iff.rfl)
 
-/-- The Cartan condition at `i` is invariant under conjugating the Deligne torus homomorphism
-by a real point of the target group. -/
+/-- The Cartan condition at `i` is invariant under isomorphisms of the target group. -/
 @[simp]
-theorem IsCartanInvolutionAtI.innerConjugationIso_iff
-    {g : WithConv (H →ₐ[ℝ] ℝ)} {h : H ⟶ CommHopfAlgCat.of ℝ S} :
-    IsCartanInvolutionAtI ((H.innerConjugationIso g).hom ≫ h) ↔ IsCartanInvolutionAtI h := by
+theorem IsCartanInvolutionAtI.iso_hom_comp_iff
+    {e : K ≅ H} {h : H ⟶ CommHopfAlgCat.of ℝ S} :
+    IsCartanInvolutionAtI (e.hom ≫ h) ↔ IsCartanInvolutionAtI h := by
+  rw [IsCartanInvolutionAtI.iff_innerConjugationIso, IsCartanInvolutionAtI.iff_innerConjugationIso,
+    CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply]
   let x : HopfAlgebra.points (R := ℝ) (H := H) (CommAlgCat.of ℝ ℝ) :=
     h.mapPointsFunctor.app (CommAlgCat.of ℝ ℝ) imaginaryUnitPoint
-  have hpoint :
-      ((H.innerConjugationIso g).hom ≫ h).mapPointsFunctor.app (CommAlgCat.of ℝ ℝ)
-        imaginaryUnitPoint =
-        g * x * g⁻¹ := by
-    have hx : (H.innerConjugationIso g).hom.mapPointsFunctor.app (CommAlgCat.of ℝ ℝ) x =
-        g * x * g⁻¹ := by
-      rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
-        CommHopfAlgCat.innerConjugationIso_hom_toAlgHom]
-      exact HopfAlgebra.comp_pointConjugationAlgHom_self g x
-    rw [CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply]
-    exact hx
-  -- The pointwise conjugation induces conjugation of the coordinate automorphism in
-  -- reverse order, since coordinate morphisms are contravariant.
-  rw [IsCartanInvolutionAtI.iff_innerConjugationIso,
-    IsCartanInvolutionAtI.iff_innerConjugationIso, hpoint]
-  rw [CommHopfAlgCat.innerConjugationIso_mul, CommHopfAlgCat.innerConjugationIso_mul,
-    CommHopfAlgCat.innerConjugationIso_inv_point, Iso.trans_assoc]
-  exact isCartanInvolution_conj_iff (H.innerConjugationIso g).symm
+  have hconj : K.innerConjugationIso (e.hom.mapPointsFunctor.app (CommAlgCat.of ℝ ℝ) x) =
+      e ≪≫ H.innerConjugationIso x ≪≫ e.symm := by
+    apply Iso.ext
+    apply (cancel_mono e.hom).mp
+    exact (e.hom.innerConjugationIso_hom_comp x).trans (by simp)
+  rw [hconj]
+  exact isCartanInvolution_conj_iff e.symm
+
+/-- The Cartan condition at `i` is invariant under conjugating the Deligne torus homomorphism
+by a real point of the target group. This specialization states SV2 invariance in the
+real-conjugacy formulation of a Shimura datum. Simplification uses
+`IsCartanInvolutionAtI.iso_hom_comp_iff`. -/
+theorem IsCartanInvolutionAtI.innerConjugationIso_iff
+    {g : WithConv (H →ₐ[ℝ] ℝ)} {h : H ⟶ CommHopfAlgCat.of ℝ S} :
+    IsCartanInvolutionAtI ((H.innerConjugationIso g).hom ≫ h) ↔ IsCartanInvolutionAtI h :=
+  IsCartanInvolutionAtI.iso_hom_comp_iff
 
 end TauCeti.DeligneTorus

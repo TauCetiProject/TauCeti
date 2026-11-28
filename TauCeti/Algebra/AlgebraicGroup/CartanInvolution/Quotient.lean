@@ -54,14 +54,10 @@ theorem mem_twistedRealPoints_quotientIsoOfComapEq_iff
     (p : H ⧸ I.toIdeal →ₐ[ℝ] ℂ) :
     p ∈ twistedRealPoints (CommHopfAlgCat.quotientIsoOfComapEq θ I hI) ↔
       p.comp (Ideal.Quotient.mkₐ ℝ I.toIdeal) ∈ twistedRealPoints θ := by
-  rw [mem_twistedRealPoints_iff, mem_twistedRealPoints_iff]
-  simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk]
-  constructor
-  · intro hp x
-    rw [hp, CommHopfAlgCat.quotientIsoOfComapEq_hom_mk]
-  · intro hp y
-    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
-    rw [hp, CommHopfAlgCat.quotientIsoOfComapEq_hom_mk]
+  refine mem_twistedRealPoints_iff_comp_of_surjective
+    (Ideal.Quotient.mkₐ_surjective ℝ _) fun x ↦ ?_
+  simpa only [Ideal.Quotient.mkₐ_eq_mk] using
+    CommHopfAlgCat.quotientIsoOfComapEq_hom_mk θ I hI x
 
 open scoped PointTopology in
 /-- **A Cartan involution restricts to a Cartan involution of every stable closed subgroup.** If

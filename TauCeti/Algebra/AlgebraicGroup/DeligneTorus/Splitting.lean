@@ -42,6 +42,8 @@ is defined.
   `TauCeti.DeligneTorus.characterGroup_mapValue`: the splitting, `μ` and the characters are natural
   in `R`.
 * `TauCeti.DeligneTorus.complexSplitting_real`: the image of a real point `z` is `(z, conj z)`.
+* `TauCeti.DeligneTorus.complexSplitting_imaginaryUnitPoint`: the image of
+  `imaginaryUnitPoint` is `(i, -i)`.
 * `TauCeti.DeligneTorus.complexSplitting_conj`: complex conjugation on `S(ℂ)` is
   `(z₁, z₂) ↦ (conj z₂, conj z₁)`.
 * `TauCeti.DeligneTorus.complexSplitting_diagonal`, `TauCeti.DeligneTorus.complexSplitting_weight`:
@@ -144,10 +146,11 @@ theorem complexSplitting_conj (f : WithConv (S →ₐ[ℝ] ℂ)) :
 
 /-- The real point `i` goes to `(i, -i)` in `S(ℂ) ≃ ℂˣ × ℂˣ`, which pins the order of the two
 factors. -/
-example : complexSplitting ℂ (AlgHom.mapValue (Algebra.ofId ℝ ℂ)
-      (realPointsMulEquiv.symm (Units.mk0 _ Complex.I_ne_zero))) =
+@[simp]
+theorem complexSplitting_imaginaryUnitPoint :
+    complexSplitting ℂ (WithConv.toConv ((Algebra.ofId ℝ ℂ).comp imaginaryUnitPoint.ofConv)) =
     (Units.mk0 _ Complex.I_ne_zero, Units.mk0 (-Complex.I) (neg_ne_zero.2 Complex.I_ne_zero)) := by
-  rw [complexSplitting_real, MulEquiv.apply_symm_apply]
+  rw [← AlgHom.mapValue_apply, complexSplitting_real, realPointsMulEquiv_imaginaryUnitPoint]
   ext <;> simp
 
 /-- The `ℂ`-point with value `1 ⊗ i`, the diagonal `d(i)`, goes to `(i, i)`; compare the real point
