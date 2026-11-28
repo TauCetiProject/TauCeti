@@ -44,7 +44,9 @@ theorem differentIdeal_eq_span_gen_of_mod_four_eq_one {K : Type*} [Field K] [Num
 
 end TauCeti.NumberField
 
-namespace QuadraticAlgebra
+namespace TauCeti.QuadraticAlgebra
+
+open _root_.QuadraticAlgebra
 
 /-- The different of the model `ℚ(√d)` for squarefree `d ≡ 1 (mod 4)` is the ideal generated
 by its distinguished square root `ω`. -/
@@ -55,4 +57,4 @@ theorem differentIdeal_eq_span_integralSqrt_of_mod_four_eq_one {d : ℤ} [Fact (
   TauCeti.NumberField.differentIdeal_eq_span_gen_of_mod_four_eq_one minpoly_integralSqrt_omega
     adjoin_integralSqrt_omega hsf hd
 
-end QuadraticAlgebra
+end TauCeti.QuadraticAlgebra
