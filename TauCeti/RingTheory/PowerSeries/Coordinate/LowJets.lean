@@ -15,12 +15,11 @@ import TauCeti.RingTheory.PowerSeries.Substitution
 `FormalCoordinate.Jet.oneEquivUnits` identifies first jets with coefficient units.
 `FormalCoordinate.Jet.coeffEquiv` classifies jets of any positive order by their coefficients.
 `FormalCoordinate.Jet.twoEquiv` records the linear and quadratic coefficients of a second jet.
-`FormalCoordinate.Jet.twoEquiv_mul` computes their composition.
-`FormalCoordinate.Jet.isMulCommutative_two_iff_subsingleton_units` characterizes commutativity.
-For coefficient pairs, the product is `(a, b) * (c, d) = (ac, ad + bc²)`, composing the first
-coordinate after the second. This uses `PowerSeries.coeff_subst_eq_sum_range` and
-`PowerSeries.coeff_pow_mul_of_le_order`. The coefficient reconstruction uses
-`FormalCoordinate.homothety` and `FormalCoordinate.ofStrictCoeffs`.
+`FormalCoordinate.Jet.twoEquiv_mul` gives the product `(a, b) * (c, d) = (ac, ad + bc²)`,
+composing the first coordinate after the second. `FormalCoordinate.Jet.twoEquiv_symm_apply`
+recovers a jet from its coefficient pair, and
+`FormalCoordinate.Jet.isMulCommutative_two_iff_subsingleton_units` shows that the second-jet group
+is commutative exactly when `1` is the only unit of the coefficient ring.
 -/
 
 public section
@@ -69,7 +68,8 @@ theorem twoEquiv_symm_apply (a : Rˣ) (b : R) :
   · -- Only the homothety contributes to the linear coefficient.
     rw [truncate_jet, oneEquivUnits_jet, map_mul, linearCoeff_homothety,
       MonoidHom.mem_ker.mp (ofStrictCoeffs_mem_ker_linearCoeff _), mul_one]
-  · have h₂ : PowerSeries.coeff 2
+  · -- `ofStrictCoeffs` sets the quadratic coefficient before scaling by the homothety.
+    have h₂ : PowerSeries.coeff 2
         (ofStrictCoeffs (Pi.single 1 ((↑a⁻¹ : R) * b))).toPowerSeries = (↑a⁻¹ : R) * b :=
       (coeff_succ_ofStrictCoeffs _ 1).trans (Pi.single_eq_same 1 _)
     simp only [coeff_jet, Fin.val_last, toPowerSeries_homothety_mul, coeff_smul, smul_eq_mul,
@@ -82,6 +82,8 @@ theorem twoEquiv_mul (x y : Jet R 2) :
   refine Prod.ext (by simp only [twoEquiv_apply, map_mul]) ?_
   obtain ⟨φ, rfl⟩ := jet_surjective 2 x
   obtain ⟨ψ, rfl⟩ := jet_surjective 2 y
+  -- In `coeff_subst_eq_sum_range`, the square contributes only its leading term,
+  -- computed by `coeff_pow_mul_of_le_order`.
   have hsq : PowerSeries.coeff 2 (ψ.toPowerSeries ^ 2) =
       PowerSeries.coeff 1 ψ.toPowerSeries ^ 2 :=
     coeff_pow_mul_of_le_order (n := 1)

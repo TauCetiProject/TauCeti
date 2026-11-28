@@ -47,12 +47,12 @@ groups is then an isomorphism of topological groups.
 * `TauCeti.FormalCoordinate.tendsto_iff_X_pow_dvd`: convergence of coordinates is eventual
   agreement modulo each power of `X`.
 * `TauCeti.FormalCoordinate.isClosed_jetLimit`: the compatible families form a closed subgroup.
-* `TauCeti.FormalCoordinate.Jet.oneEquivUnits` identifies first jets with units using Mathlib's
-  `QuotientGroup.quotientKerEquivOfRightInverse`.
-* `TauCeti.FormalCoordinate.Jet.coeffEquiv` classifies positive-order jets by their coefficients
-  using `FormalCoordinate.ofStrictCoeffs`.
-* `TauCeti.FormalCoordinate.Jet.coeff_mul`: coefficients of jet multiplication are computed
-  by polynomial composition, using `PowerSeries.coeff_trunc_comp_trunc`.
+* `TauCeti.FormalCoordinate.Jet.oneEquivUnits` identifies first jets with the group of units
+  via the linear coefficient.
+* `TauCeti.FormalCoordinate.Jet.coeffEquiv` identifies an `(N + 1)`-jet with its unit linear
+  coefficient and the tuple of coefficients in degrees `2` through `N + 1`.
+* `TauCeti.FormalCoordinate.Jet.coeff_mul` computes the retained coefficients of a product by
+  composing the polynomial of the left factor after that of the right factor.
 * `TauCeti.FormalCoordinate.Jet.map_jet`, `TauCeti.FormalCoordinate.Jet.truncate_map`: passing to
   jets and truncating jets are natural in the coefficients.
 * `TauCeti.FormalCoordinate.continuous_map`: base change of formal coordinates is continuous.
@@ -175,6 +175,7 @@ theorem jetKernel_one : jetKernel R 1 = (linearCoeff (R := R)).ker := by
 
 namespace Jet
 
+-- Apply `QuotientGroup.quotientKerEquivOfRightInverse` to the homothety section.
 /-- A first jet is determined by its unit linear coefficient. -/
 noncomputable def oneEquivUnits : Jet R 1 ≃* Rˣ :=
   (QuotientGroup.quotientMulEquivOfEq jetKernel_one).trans
@@ -233,13 +234,10 @@ theorem coeff_mul {N : ℕ} (x y : Jet R N) (i : Fin (N + 1)) :
       (∑ j : Fin (N + 1), Polynomial.monomial j ((jet N χ).coeff j)) =
         trunc (N + 1) χ.toPowerSeries := by
     simp only [coeff_jet]
-    -- Convert the sum over the retained indices to the polynomial's monomial expansion.
     rw [Fin.sum_univ_eq_sum_range
-      (fun k ↦ Polynomial.monomial k (PowerSeries.coeff k χ.toPowerSeries))]
-    conv_rhs => rw [Polynomial.as_sum_range' _ _ (natDegree_trunc_lt χ.toPowerSeries N)]
-    refine Finset.sum_congr rfl fun k hk ↦ ?_
-    rw [coeff_trunc, ite_eq_left (Finset.mem_range.mp hk)]
-  -- Replace the retained polynomials by truncations to apply the substitution formula.
+      (fun k ↦ Polynomial.monomial k (PowerSeries.coeff k χ.toPowerSeries)),
+      PowerSeries.trunc_apply, Nat.Ico_zero_eq_range]
+  -- `coeff_trunc_comp_trunc` compares truncated polynomial composition with substitution.
   rw [← map_mul, coeff_jet, toPowerSeries_mul, htrunc, htrunc,
     coeff_trunc_comp_trunc _ ψ.constantCoeff_toPowerSeries i.isLt i.isLt]
 
@@ -303,6 +301,7 @@ noncomputable def coeffEquiv (N : ℕ) : Jet R (N + 1) ≃ Rˣ × (Fin N → R) 
           congrArg (fun p : Rˣ × (Fin N → R) ↦ (p.1 : R)) h
       · exact congrFun (congrArg Prod.snd h)
     · rintro ⟨u, b⟩
+      -- `ofStrictCoeffs` prescribes the higher coefficients before scaling by the linear unit.
       let c : ℕ+ → R := fun i ↦ if h : (i : ℕ) - 1 < N then ↑u⁻¹ * b ⟨_, h⟩ else 0
       refine ⟨jet _ (homothety u * ofStrictCoeffs c), Prod.ext ?_ (funext fun i ↦ ?_)⟩
       · -- The strict factor has unit linear coefficient, so the homothety gives the first jet.
