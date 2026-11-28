@@ -22,19 +22,20 @@ graphs are homomorphically equivalent exactly when their core retracts are isomo
 
 ## Main definitions
 
-* `SimpleGraph.IsCore` — each endomorphism of the graph is bijective;
-* `SimpleGraph.IsCoreRetract` — a set of vertices whose induced subgraph is a core and onto which
+* `SimpleGraph.IsCore`: each endomorphism of the graph is bijective;
+* `SimpleGraph.IsCoreRetract`: a set of vertices whose induced subgraph is a core and onto which
   the graph retracts.
 
 ## Main results
 
-* `SimpleGraph.isCore_top` — a complete graph on a finite type is a core;
-* `SimpleGraph.Iso.isCore_iff` — a graph isomorphic to a core is a core;
-* `SimpleGraph.IsCore.nonempty_iso` — homomorphically equivalent cores are isomorphic;
-* `SimpleGraph.exists_isCoreRetract` — each graph on a finite type has a core retract;
-* `SimpleGraph.nonempty_hom_and_hom_iff` — two graphs are homomorphically equivalent exactly when
+* `SimpleGraph.isCore_top`: a complete graph on a finite type is a core;
+* `SimpleGraph.Iso.isCore_iff`: a graph isomorphic to a core is a core;
+* `SimpleGraph.IsCore.nonempty_iso`: homomorphically equivalent cores are isomorphic when the
+  first has finitely many edges;
+* `SimpleGraph.exists_isCoreRetract`: each graph on a finite type has a core retract;
+* `SimpleGraph.nonempty_hom_and_hom_iff`: two graphs are homomorphically equivalent exactly when
   their core retracts are isomorphic;
-* `SimpleGraph.IsCoreRetract.nonempty_iso` — any two core retracts of a graph are isomorphic.
+* `SimpleGraph.IsCoreRetract.nonempty_iso`: any two core retracts of a graph are isomorphic.
 
 ## References
 
@@ -88,7 +89,7 @@ theorem Iso.isCore_iff {H : SimpleGraph V} {K : SimpleGraph W} (e : H ≃g K) :
   ⟨fun hH => hH.of_iso e, fun hK => hK.of_iso e.symm⟩
 
 /-- **Godsil and Royle, Lemma 6.2.1.** Two cores that map homomorphically to each other are
-isomorphic. -/
+isomorphic when the first has finitely many edges. -/
 theorem IsCore.nonempty_iso {H : SimpleGraph V} {K : SimpleGraph W} [Finite H.edgeSet]
     (hH : H.IsCore) (hK : K.IsCore) (f : H →g K) (g : K →g H) : Nonempty (H ≃g K) := by
   have hgf : Function.Bijective (g ∘ f) := hH (g.comp f)
