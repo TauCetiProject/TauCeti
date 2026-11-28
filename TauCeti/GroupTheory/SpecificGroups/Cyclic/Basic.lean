@@ -36,6 +36,9 @@ by the powers of a generator.
   iff it is sent to `0`.
 * `TauCeti.prod_range_orderOf_eq_prod`, `TauCeti.sum_range_orderOf_eq_sum`: multiplying or summing
   over powers of a generator enumerates a finite group.
+* `IsCyclic.exists_monoidHom_apply_eq_of_orderOf_dvd_natCard`: for a cyclic group `G` and an
+  element `y` of a group `M` with `orderOf y ∣ Nat.card G`, there exist a homomorphism `f : G →* M`
+  and an element `g : G` with `f g = y`.
 
 ## References
 
@@ -123,3 +126,19 @@ theorem _root_.MulEquiv.isOfFinOrder_iff_toAdd_eq_zero {G : Type*} [Group G]
     MulEquiv.coe_toMonoidHom, toAdd_eq_zero]
 
 end TauCeti
+
+namespace IsCyclic
+
+/-- If `G` is cyclic and `y : M` has order dividing `Nat.card G`, then there exist a group
+homomorphism `f : G →* M` and an element `g : G` with `f g = y`. -/
+theorem exists_monoidHom_apply_eq_of_orderOf_dvd_natCard {G M : Type*} [Group G] [IsCyclic G]
+    [Group M] {y : M} (hy : orderOf y ∣ Nat.card G) :
+    ∃ (f : G →* M) (g : G), f g = y := by
+  obtain ⟨g, hg⟩ := IsCyclic.exists_zpow_surjective (G := G)
+  have hgen (x : G) : x ∈ Subgroup.zpowers g := Subgroup.mem_zpowers_iff.mpr (hg x)
+  have hord : orderOf y ∣ orderOf g := by
+    rwa [orderOf_eq_card_of_forall_mem_zpowers hgen]
+  exact ⟨monoidHomOfForallMemZpowers hgen hord, g,
+    monoidHomOfForallMemZpowers_apply_gen hgen hord⟩
+
+end IsCyclic

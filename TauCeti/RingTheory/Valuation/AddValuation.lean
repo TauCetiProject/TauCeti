@@ -25,9 +25,11 @@ only at zero.
 
 ## Main results
 
-* `AddValuation.map_prod`: `v (∏ i ∈ s, f i) = ∑ i ∈ s, v (f i)`.
+* `AddValuation.map_prod`, `AddValuation.map_multiset_prod`: finite and multiset products
+  become sums of valuations.
 * `AddValuation.map_prod_castLE`: the valuation of the product of the first `k` entries of a
   tuple is the prefix sum of their valuations.
+* `AddValuation.map_eq_zero_of_pow_eq_one`: roots of unity of nonzero order have valuation zero.
 * `AddValuation.map_neg_one_pow`: `v ((-1) ^ k) = 0`.
 * `AddValuation.le_map_nsmul`: `v x ≤ v (n • x)`.
 * `AddValuation.map_eq_zero_of_isUnit`, `AddValuation.map_le_map_of_dvd`: for an additive valuation
@@ -53,6 +55,14 @@ theorem map_prod {ι : Type*} (s : Finset ι) (f : ι → R) :
   | empty => simp [v.map_one]
   | cons a s ha ih => rw [Finset.prod_cons, Finset.sum_cons, v.map_mul, ih]
 
+/-- An additive valuation of a multiset product is the sum of the valuations. -/
+@[simp]
+theorem map_multiset_prod (s : Multiset R) : v s.prod = (s.map v).sum := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons a s ih => simp only [Multiset.prod_cons, v.map_mul, ih, Multiset.map_cons,
+      Multiset.sum_cons]
+
 /-- The valuation of the product of the first `k` entries of `s : Fin n → R` is the prefix sum of
 length `k` of their valuations. -/
 theorem map_prod_castLE {n k : ℕ} (hk : k ≤ n) (s : Fin n → R) :
@@ -65,6 +75,15 @@ section Ring
 theorem map_neg_one_pow {R : Type*} [Ring R] (v : AddValuation R Γ₀) (k : ℕ) :
     v ((-1) ^ k) = 0 := by
   rw [v.map_pow, v.map_neg, v.map_one, smul_zero]
+
+/-- A root of unity of nonzero order has additive valuation zero. -/
+theorem map_eq_zero_of_pow_eq_one {R : Type*} [Ring R] (v : AddValuation R Γ₀)
+    {x : R} {n : ℕ} (hn : n ≠ 0) (hx : x ^ n = 1) : v x = 0 := by
+  have H : n • v x = 0 := by rw [← v.map_pow, hx, v.map_one]
+  rcases lt_trichotomy (v x) 0 with h | h | h
+  · exact ((nsmul_neg h hn).ne H).elim
+  · exact h
+  · exact ((nsmul_pos h hn).ne' H).elim
 
 /-- A natural multiple `n • x` has at least the valuation of `x`. -/
 theorem le_map_nsmul {R : Type*} [Ring R] (v : AddValuation R Γ₀) (n : ℕ) (x : R) :
