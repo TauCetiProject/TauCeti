@@ -287,6 +287,33 @@ theorem ramificationIdealSheaf_ideal_eq_fittingIdeal_kaehlerDifferential
   rw [ramificationIdealSheaf_eq_fittingIdeal_cokernel R f, Scheme.Modules.fittingIdeal_ideal]
   exact (TauCeti.fittingIdeal_congr (cotangentCokernelSectionsEquiv R f V U hUV) 0).symm
 
+private theorem isScalarTower_sections_stalk {X Y : Scheme.{u}} (f : X ⟶ Y) (x : X)
+    {V : Y.Opens} {U : X.Opens} (hxV : f x ∈ V) (hxU : x ∈ U) (hUV : U ≤ f ⁻¹ᵁ V) :
+    letI : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V U hUV).hom.toAlgebra
+    letI : Algebra Γ(X, U) (X.presheaf.stalk x) := X.presheaf.algebra_section_stalk ⟨x, hxU⟩
+    letI : Algebra Γ(Y, V) (Y.presheaf.stalk (f x)) :=
+      Y.presheaf.algebra_section_stalk ⟨f x, hxV⟩
+    letI : Algebra (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := (f.stalkMap x).hom.toAlgebra
+    letI : Algebra Γ(Y, V) (X.presheaf.stalk x) :=
+      (f.appLE V U hUV ≫ X.presheaf.germ U x hxU).hom.toAlgebra
+    IsScalarTower Γ(Y, V) Γ(X, U) (X.presheaf.stalk x) ∧
+      IsScalarTower Γ(Y, V) (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
+  let _ : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V U hUV).hom.toAlgebra
+  let _ : Algebra Γ(X, U) (X.presheaf.stalk x) := X.presheaf.algebra_section_stalk ⟨x, hxU⟩
+  let _ : Algebra Γ(Y, V) (Y.presheaf.stalk (f x)) :=
+    Y.presheaf.algebra_section_stalk ⟨f x, hxV⟩
+  let _ : Algebra (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := (f.stalkMap x).hom.toAlgebra
+  let _ : Algebra Γ(Y, V) (X.presheaf.stalk x) :=
+    (f.appLE V U hUV ≫ X.presheaf.germ U x hxU).hom.toAlgebra
+  have hnat : f.appLE V U hUV ≫ X.presheaf.germ U x hxU =
+      Y.presheaf.germ V (f x) hxV ≫ f.stalkMap x := by
+    rw [Scheme.Hom.germ_stalkMap, Scheme.Hom.app_eq_appLE,
+      ← X.presheaf.germ_res (homOfLE hUV) x hxU, Scheme.Hom.appLE_map_assoc]
+  refine ⟨.of_algebraMap_eq fun r ↦ ?_, .of_algebraMap_eq fun r ↦ ?_⟩
+  · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.hom_comp, RingHom.comp_apply]
+  · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.hom_ext_iff.mp hnat,
+      CommRingCat.hom_comp, RingHom.comp_apply]
+
 private theorem exists_fittingIdeal_kaehlerDifferential_stalk
     [(cokernel (cotangentMap R f)).IsFiniteType] (x : X) :
     letI : Algebra (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := (f.stalkMap x).hom.toAlgebra
@@ -303,30 +330,13 @@ private theorem exists_fittingIdeal_kaehlerDifferential_stalk
   let : Algebra (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := (f.stalkMap x).hom.toAlgebra
   let : Algebra Γ(Y, V) (X.presheaf.stalk x) :=
     (f.appLE V U hUV ≫ X.presheaf.germ U x hxU).hom.toAlgebra
-  have hnat : f.appLE V U hUV ≫ X.presheaf.germ U x hxU =
-      Y.presheaf.germ V (f x) hxV ≫ f.stalkMap x := by
-    rw [Scheme.Hom.germ_stalkMap, Scheme.Hom.app_eq_appLE,
-      ← X.presheaf.germ_res (homOfLE hUV) x hxU, Scheme.Hom.appLE_map_assoc]
-  have : IsScalarTower Γ(Y, V) Γ(X, U) (X.presheaf.stalk x) :=
-    .of_algebraMap_eq fun r ↦ by
-      change (X.presheaf.germ U x hxU) ((f.appLE V U hUV) r) =
-        algebraMap Γ(X, U) (X.presheaf.stalk x) ((f.appLE V U hUV) r)
-      exact congrFun (congrArg DFunLike.coe (X.presheaf.stalk_open_algebraMap ⟨x, hxU⟩)) _
-  have : IsScalarTower Γ(Y, V) (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) :=
-    .of_algebraMap_eq fun r ↦ by
-      have h1 : algebraMap Γ(Y, V) (X.presheaf.stalk x) r =
-          (f.stalkMap x) (Y.presheaf.germ V (f x) hxV r) :=
-        congrFun (congrArg DFunLike.coe (congrArg CommRingCat.Hom.hom hnat)) r
-      rw [h1]
-      exact congrArg (f.stalkMap x)
-        (congrFun (congrArg DFunLike.coe (Y.presheaf.stalk_open_algebraMap ⟨f x, hxV⟩)) r)
+  obtain ⟨_, _⟩ := isScalarTower_sections_stalk f x hxV hxU hUV
   have := hU.isLocalization_stalk ⟨x, hxU⟩
   have := hV.isLocalization_stalk ⟨f x, hxV⟩
   have : Algebra.FormallyEtale Γ(X, U) (X.presheaf.stalk x) :=
     Algebra.FormallyEtale.of_isLocalization (hU.primeIdealOf ⟨x, hxU⟩).asIdeal.primeCompl
   have : Algebra.FormallyUnramified Γ(Y, V) (Y.presheaf.stalk (f x)) :=
-    Algebra.FormallyUnramified.of_isLocalization
-      (hV.primeIdealOf ⟨f x, hxV⟩).asIdeal.primeCompl
+    Algebra.FormallyUnramified.of_isLocalization (hV.primeIdealOf ⟨f x, hxV⟩).asIdeal.primeCompl
   have := Scheme.Modules.finite_sections_of_isAffineOpen (cokernel (cotangentMap R f)) U hU
   have : Module.Finite Γ(X, U) Ω[Γ(X, U)⁄Γ(Y, V)] :=
     Module.Finite.equiv (cotangentCokernelSectionsEquiv R f ⟨V, hV⟩ ⟨U, hU⟩ hUV).symm
@@ -335,8 +345,7 @@ private theorem exists_fittingIdeal_kaehlerDifferential_stalk
     Module.Finite.equiv hbc.equiv
   let e := KaehlerDifferential.equivOfFormallyUnramifiedBase
     Γ(Y, V) (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)
-  have hfin2 : Module.Finite (X.presheaf.stalk x)
-      Ω[X.presheaf.stalk x⁄Y.presheaf.stalk (f x)] :=
+  have hfin2 : Module.Finite (X.presheaf.stalk x) Ω[X.presheaf.stalk x⁄Y.presheaf.stalk (f x)] :=
     Module.Finite.equiv e
   refine ⟨hfin2, ?_⟩
   rw [(ramificationIdealSheaf R f).stalkIdeal_eq_map ⟨U, hU⟩ x hxU,
@@ -512,6 +521,15 @@ theorem mk_toInvertibleSheaf_ramificationIdealSheaf [Mono (cotangentMap R f)] :
     (by rw [LineBundleClass.mk_tensorProduct, ← LineBundleClass.inv_mk,
       ← LineBundleClass.pullback_mk])
 
+/-- **The Picard-group Riemann–Hurwitz relation** for `𝒪_X(R_f)`: the inverse of the line-bundle
+class of the ramification ideal sheaf is `[Ω_{X/R}] · (f^* [Ω_{Y/R}])⁻¹`. -/
+theorem inv_mk_toInvertibleSheaf_ramificationIdealSheaf [Mono (cotangentMap R f)] :
+    (LineBundleClass.mk (isEffectiveCartier_ramificationIdealSheaf R f).toInvertibleSheaf)⁻¹ =
+      LineBundleClass.mk ⟨X.relativeDifferentials R, inferInstance⟩ *
+        (LineBundleClass.pullback f
+          (LineBundleClass.mk ⟨Y.relativeDifferentials R, inferInstance⟩))⁻¹ := by
+  rw [mk_toInvertibleSheaf_ramificationIdealSheaf R f, mul_inv_rev, inv_inv]
+
 /-- **The Picard-group Riemann–Hurwitz formula**: when `Ω_{X/R}` and `Ω_{Y/R}` are invertible and
 `cotangentMap R f` is a monomorphism, `[Ω_{X/R}] = f^* [Ω_{Y/R}] · [𝒪_X(-R_f)]⁻¹`. -/
 theorem mk_relativeDifferentials_eq_pullback_mul_inv_ramification [Mono (cotangentMap R f)] :
@@ -520,8 +538,7 @@ theorem mk_relativeDifferentials_eq_pullback_mul_inv_ramification [Mono (cotange
         (LineBundleClass.mk ⟨Y.relativeDifferentials R, inferInstance⟩) *
         (LineBundleClass.mk
           (isEffectiveCartier_ramificationIdealSheaf R f).toInvertibleSheaf)⁻¹ := by
-  rw [mk_toInvertibleSheaf_ramificationIdealSheaf R f, mul_inv_rev, inv_inv,
-    mul_comm _ (LineBundleClass.pullback f _)⁻¹, mul_inv_cancel_left]
+  rw [inv_mk_toInvertibleSheaf_ramificationIdealSheaf R f, mul_left_comm, mul_inv_cancel, mul_one]
 
 /-- On an integral scheme `X` with invertible `Ω_{X/R}` and `Ω_{Y/R}`, a nonzero cotangent map
 `cotangentMap R f ≠ 0` is automatically a monomorphism. -/
@@ -592,7 +609,10 @@ theorem toLineBundleClass_ramificationCartierDivisor [IsIntegral X] [Mono (cotan
           (LineBundleClass.mk ⟨Y.relativeDifferentials R, inferInstance⟩))⁻¹ := by
   rw [ramificationCartierDivisor_eq_zeroDivisor R f,
     InvertibleSheaf.toLineBundleClass_zeroDivisor, LineBundleClass.pullback_mk]
-  rfl
+  exact congrArg
+    (fun L ↦ LineBundleClass.mk ⟨X.relativeDifferentials R, inferInstance⟩ *
+      (LineBundleClass.mk L)⁻¹)
+    (ObjectProperty.FullSubcategory.ext rfl)
 
 /-- **The Picard-group Riemann–Hurwitz formula in terms of the Cartier ramification divisor**:
 `[Ω_{X/R}] = f^* [Ω_{Y/R}] · [𝒪_X(R_f)]`. -/

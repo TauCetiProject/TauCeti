@@ -84,7 +84,7 @@ theorem isFinite_homOfAlgHom (hF : IsFunctionField k F) (hF' : IsFunctionField k
         map hF hF' hx hy' (rfl : algebraMap F F' x = y') =
       homOfAlgHom hF hF' hx hx' hxt hx't (IsScalarTower.toAlgHom k F F') := by
     rw [isoOfAlgEquiv_hom, map_eq_homOfAlgHom (hxt := hxt) (hx't := hy't), homOfAlgHom_comp]
-    rfl
+    exact congrArg (homOfAlgHom hF hF' hx hx' hxt hx't) (AlgHom.ext fun _ ↦ rfl)
   have : IsFinite (map hF hF' hx hy' (rfl : algebraMap F F' x = y')) :=
     isFinite_map hF hF' hx hy' rfl hxt
   rw [← hcomp]

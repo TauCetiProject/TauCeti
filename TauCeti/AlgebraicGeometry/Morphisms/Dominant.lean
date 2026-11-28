@@ -409,10 +409,11 @@ theorem isSeparable_functionFieldMap [IsIntegral X] [IsIntegral Y] (f : X ⟶ Y)
     [Algebra Y.functionField X.functionField] [Algebra.IsSeparable Y.functionField X.functionField]
     (hmap : ∀ z : Y.functionField,
       algebraMap Y.functionField X.functionField z = f.functionFieldMap z) :
-    @Algebra.IsSeparable Y.functionField X.functionField _ _ f.functionFieldMap.hom.toAlgebra :=
-  @Algebra.IsSeparable.of_equiv_equiv Y.functionField X.functionField Y.functionField
-    X.functionField _ _ _ _ _ f.functionFieldMap.hom.toAlgebra
-    (RingEquiv.refl _) (RingEquiv.refl _) (RingHom.ext fun z ↦ (hmap z).symm) ‹_›
+    @Algebra.IsSeparable Y.functionField X.functionField _ _ f.functionFieldMap.hom.toAlgebra := by
+  have halg : f.functionFieldMap.hom.toAlgebra = ‹Algebra Y.functionField X.functionField› :=
+    Algebra.algebra_ext _ _ fun z ↦ by rw [RingHom.algebraMap_toAlgebra, hmap]
+  rw [halg]
+  infer_instance
 
 end Scheme.Hom
 

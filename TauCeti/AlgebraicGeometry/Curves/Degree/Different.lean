@@ -14,6 +14,7 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Cartier.Inverse
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.FunctionField
 public import TauCeti.FieldTheory.FunctionField.Different.Divisor
 import TauCeti.AlgebraicGeometry.CartierDivisor.WeilComparison
+import TauCeti.AlgebraicGeometry.Curves.Normalization
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Dominant
 import TauCeti.FieldTheory.FunctionField.Different.Kaehler
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
@@ -121,16 +122,12 @@ theorem ramificationIdealSheaf_stalkIdeal_eq_maximalIdeal_pow_differentExponent
     (X.stalkToPlaceIntegersAlgEquiv (k := k) x).toRingEquiv
   have he : ∀ y : Y.presheaf.stalk (f x), e (algebraMap _ _ y) = algebraMap _ _ (e₀ y) := by
     intro y
-    apply Subtype.ext
-    change ((X.stalkToPlaceIntegersAlgEquiv (k := k) x ((f.stalkMap x) y) :
-        P'.integers) : X.functionField) =
-      algebraMap Y.functionField X.functionField
-        ((e₀ y : P.integers) : Y.functionField)
-    have he₀ : ((e₀ y : P.integers) : Y.functionField) =
-        ((Y.stalkToPlaceIntegersAlgEquiv (k := k) (f x) y :
-          (Y.toPlace (k := k) (f x)).integers) : Y.functionField) :=
-      rfl
-    rw [X.coe_stalkToPlaceIntegersAlgEquiv (k := k) x, he₀,
+    refine Subtype.ext ?_
+    rw [RingHom.algebraMap_toAlgebra, Place.coe_algebraMap_integers]
+    dsimp only [e, e₀]
+    rw [RingEquiv.trans_apply, RingEquiv.coe_subringCongr_apply,
+      AlgEquiv.coe_toRingEquiv, AlgEquiv.coe_toRingEquiv,
+      X.coe_stalkToPlaceIntegersAlgEquiv (k := k) x,
       Y.coe_stalkToPlaceIntegersAlgEquiv (k := k) (f x), hmap]
     exact (f.functionFieldMap_algebraMap_stalk x y).symm
   let eM := KaehlerDifferential.mapSemilinearEquivOfRingEquiv e₀ e fun r ↦ (he r).symm
@@ -142,13 +139,8 @@ theorem ramificationIdealSheaf_stalkIdeal_eq_maximalIdeal_pow_differentExponent
       (IsLocalRing.maximalIdeal P'.integers) = IsLocalRing.maximalIdeal (X.presheaf.stalk x) :=
     IsLocalRing.map_ringEquiv_maximalIdeal e.symm
   rw [hfitt,
-    ← Ideal.map_id (TauCeti.fittingIdeal (X.presheaf.stalk x)
+    ← Ideal.map_of_equiv e (I := TauCeti.fittingIdeal (X.presheaf.stalk x)
       Ω[X.presheaf.stalk x⁄Y.presheaf.stalk (f x)] 0),
-    show RingHom.id (X.presheaf.stalk x) =
-      (e.symm : P'.integers →+* X.presheaf.stalk x).comp
-        (e : X.presheaf.stalk x →+* P'.integers) from
-      RingHom.ext fun z ↦ (e.symm_apply_apply z).symm,
-    ← Ideal.map_map,
     ← TauCeti.fittingIdeal_eq_map_of_semilinearEquiv eM 0,
     Place.fittingIdeal_kaehlerDifferential_integers_eq_maximalIdeal_pow (k := k)
       (F := Y.functionField) P',
@@ -221,14 +213,9 @@ theorem equivFunctionFieldDivisor_toWeilDivisor_ramificationCartierDivisor
   rw [CodimensionOnePoint.equivPlace_apply,
     SchemeWeilDivisor.coeff_equivFunctionFieldDivisor_toPlace,
     Scheme.CartierDivisor.coeff_toWeilDivisor, Divisor.coeff_different]
-  have hfxne : f (x : X) ≠ genericPoint Y :=
-    f.ne_genericPoint_of_isIntegral (k := k) hmap (x : X)
-  have hfxco : Order.coheight (f (x : X)) = 1 :=
-    (Scheme.coheight_eq_one_iff_ne_genericPoint
-      (Scheme.IsCurveOver.topologicalKrullDim_eq_one (X := Y) k).le).mpr hfxne
   have : IsDiscreteValuationRing (Y.presheaf.stalk (f (x : X))) :=
-    inferInstanceAs (IsDiscreteValuationRing (Y.presheaf.stalk (⟨f (x : X), hfxco⟩ :
-      CodimensionOnePoint Y)))
+    f.isDiscreteValuationRing_stalk_image (k := k) hmap
+      (Scheme.IsCurveOver.topologicalKrullDim_eq_one (X := Y) k).le (x : X)
   have := hsep x
   rw [orderAt_ramificationCartierDivisor_eq_differentExponent k f hmap x]
 
@@ -264,24 +251,11 @@ theorem finrank_ramificationIdealSheaf_eq_degree_different
     hI.isFinite_subschemeι_comp
   have : IsNoetherian X := Scheme.IsCurveOver.isNoetherian k X
   have : X.IsSeparated := Scheme.IsSeparated.of_isSeparated (X ↘ Spec (.of k))
-  have hcohom1 : FiniteDimensional k
-      (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) :=
-    finiteDimensional_cohomology_one_trivial_of_isProper k
-      (Scheme.IsCurveOver.topologicalKrullDim_eq_one (X := X) k)
-  have hcohom0 : FiniteDimensional k
-      (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0) :=
-    InvertibleSheaf.finiteDimensional_cohomology_zero k
-      (Scheme.IsCurveOver.coheight_le_one (k := k)) (InvertibleSheaf.trivial X)
   have hdeg : (((ramificationIdealSheaf k f).subschemeι ≫
       X ↘ Spec (.of k)).finrank default : ℤ) =
       LineBundleClass.eulerDegree k (ramificationCartierDivisor k f).toLineBundleClass := by
     rw [toLineBundleClass_ramificationCartierDivisor,
-      show LineBundleClass.mk ⟨X.relativeDifferentials k, inferInstance⟩ *
-          (LineBundleClass.pullback f
-            (LineBundleClass.mk ⟨Y.relativeDifferentials k, inferInstance⟩))⁻¹ =
-        (LineBundleClass.mk (isEffectiveCartier_ramificationIdealSheaf k f).toInvertibleSheaf)⁻¹
-        from by
-          rw [mk_toInvertibleSheaf_ramificationIdealSheaf k f, mul_inv_rev, inv_inv],
+      ← inv_mk_toInvertibleSheaf_ramificationIdealSheaf k f,
       LineBundleClass.eulerDegree_inv k (Scheme.IsCurveOver.coheight_le_one (k := k)),
       LineBundleClass.eulerDegree_mk,
       hI.eulerDegree_toInvertibleSheaf k _ default, neg_neg]
@@ -325,22 +299,6 @@ theorem eulerDegree_relativeDifferentials_eq_finrank_mul_add_degree_different
     cotangentMap_ne_zero_of_isDominant_of_isSeparable k f (f.isSeparable_functionFieldMap hmap)
   have : IsNoetherian X := Scheme.IsCurveOver.isNoetherian k X
   have : X.IsSeparated := Scheme.IsSeparated.of_isSeparated (X ↘ Spec (.of k))
-  have hcohomX0 : FiniteDimensional k
-      (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0) :=
-    InvertibleSheaf.finiteDimensional_cohomology_zero k
-      (Scheme.IsCurveOver.coheight_le_one (k := k)) (InvertibleSheaf.trivial X)
-  have hcohomX1 : FiniteDimensional k
-      (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) :=
-    finiteDimensional_cohomology_one_trivial_of_isProper k
-      (Scheme.IsCurveOver.topologicalKrullDim_eq_one (X := X) k)
-  have hcohomY0 : FiniteDimensional k
-      (Scheme.Modules.Cohomology (InvertibleSheaf.trivial Y).obj 0) :=
-    InvertibleSheaf.finiteDimensional_cohomology_zero k
-      (Scheme.IsCurveOver.coheight_le_one (k := k)) (InvertibleSheaf.trivial Y)
-  have hcohomY1 : FiniteDimensional k
-      (Scheme.Modules.Cohomology (InvertibleSheaf.trivial Y).obj 1) :=
-    finiteDimensional_cohomology_one_trivial_of_isProper k
-      (Scheme.IsCurveOver.topologicalKrullDim_eq_one (X := Y) k)
   have hdimY : RelativeDimensionLE 1 (Y ↘ Spec (.of k)) :=
     (relativeDimensionLE_iff_of_field (Y ↘ Spec (.of k))).mpr
       (Scheme.IsCurveOver.topologicalKrullDim_eq_one (X := Y) k).le

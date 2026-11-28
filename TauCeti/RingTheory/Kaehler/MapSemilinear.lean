@@ -325,14 +325,18 @@ theorem mapSemilinearOfRingEquiv_symm_apply_apply (eR : R ≃+* R') (eA : A ≃+
   | add _ _ _ _ ih₁ ih₂ => simp [ih₁, ih₂]
   | smul a _ _ ih => simp [ih]
 
+private theorem algebraMap_symm_of_ringEquiv (eR : R ≃+* R') (eA : A ≃+* A')
+    (h : ∀ r : R, algebraMap R' A' (eR r) = eA (algebraMap R A r)) (r' : R') :
+    algebraMap R A (eR.symm r') = eA.symm (algebraMap R' A' r') :=
+  eA.injective (by rw [eA.apply_symm_apply, ← h, eR.apply_symm_apply])
+
 attribute [local instance] RingHomInvPair.of_ringEquiv in
 /-- **The semilinear isomorphism of Kähler differentials along commuting ring isomorphisms**
 `eR : R ≃+* R'` and `eA : A ≃+* A'`. -/
 noncomputable def mapSemilinearEquivOfRingEquiv (eR : R ≃+* R') (eA : A ≃+* A')
     (h : ∀ r : R, algebraMap R' A' (eR r) = eA (algebraMap R A r)) :
     Ω[A⁄R] ≃ₛₗ[(eA : A →+* A')] Ω[A'⁄R'] :=
-  have hsymm : ∀ r' : R', algebraMap R A (eR.symm r') = eA.symm (algebraMap R' A' r') :=
-    fun r' ↦ eA.injective (by rw [eA.apply_symm_apply, ← h, eR.apply_symm_apply])
+  have hsymm := algebraMap_symm_of_ringEquiv eR eA h
   { __ := mapSemilinearOfRingEquiv eR eA h
     invFun := mapSemilinearOfRingEquiv eR.symm eA.symm hsymm
     left_inv := mapSemilinearOfRingEquiv_symm_apply_apply eR eA h hsymm
@@ -352,8 +356,7 @@ attribute [local instance] RingHomInvPair.of_ringEquiv in
 theorem mapSemilinearEquivOfRingEquiv_symm_D (eR : R ≃+* R') (eA : A ≃+* A')
     (h : ∀ r : R, algebraMap R' A' (eR r) = eA (algebraMap R A r)) (x' : A') :
     (mapSemilinearEquivOfRingEquiv eR eA h).symm (D R' A' x') = D R A (eA.symm x') :=
-  mapSemilinearOfRingEquiv_D eR.symm eA.symm
-    (fun r' ↦ eA.injective (by rw [eA.apply_symm_apply, ← h, eR.apply_symm_apply])) x'
+  mapSemilinearOfRingEquiv_D eR.symm eA.symm (algebraMap_symm_of_ringEquiv eR eA h) x'
 
 end RingEquiv
 

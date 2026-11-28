@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
+public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
 public import TauCeti.AlgebraicGeometry.Scheme.Place.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
+import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 
 /-!
 # Dominant morphisms and the places of points
@@ -35,6 +37,9 @@ restriction of the place of `x` to `k(Y)`. It also shows that `f x` is not the g
   point.
 * `AlgebraicGeometry.Scheme.Hom.ne_genericPoint_of_isIntegral`: if `k(X)` is integral over `k(Y)`,
   then `f x ≠ genericPoint Y`.
+* `AlgebraicGeometry.Scheme.Hom.coheight_image_eq_one` and
+  `AlgebraicGeometry.Scheme.Hom.isDiscreteValuationRing_stalk_image`: when `dim Y ≤ 1`, `f x`
+  has codimension one and inherits a DVR stalk.
 * `AlgebraicGeometry.Scheme.Hom.toPlace_restrict_eq`: if `𝒪_{Y, f x}` is also a discrete valuation
   ring, then `(X.toPlace x).restrict k Y.functionField = Y.toPlace (f x)`.
 
@@ -112,14 +117,36 @@ theorem ne_genericPoint_of_isIntegral (f : X ⟶ Y) [IsDominant f]
       algebraMap Y.functionField X.functionField z = f.functionFieldMap z)
     (x : X) [IsDiscreteValuationRing (X.presheaf.stalk x)] :
     f x ≠ genericPoint Y := by
-  by_contra hfx
-  apply ((X.toPlace (k := k) x).restrict k Y.functionField).integers_ne_top
-  rw [eq_top_iff]
-  intro z _
-  rw [Place.mem_integers_restrict_iff, hmap]
-  obtain ⟨U, hU, s, rfl⟩ := TopCat.Presheaf.exists_germ_eq Y.presheaf z
-  have : Nonempty U := ⟨⟨_, hU⟩⟩
-  exact functionFieldMap_germToFunctionField_mem_toPlace_integers f x (hfx ▸ hU) s
+  obtain ⟨z, -, hz⟩ := IsConcreteLE.exists_of_lt
+    (lt_top_iff_ne_top.mpr ((X.toPlace (k := k) x).restrict k Y.functionField).integers_ne_top)
+  exact f.ne_genericPoint_of_functionFieldMap_notMem_toPlace_integers x (z := z)
+    (by rwa [← hmap, ← Place.mem_integers_restrict_iff k Y.functionField (X.toPlace (k := k) x) z])
+
+/-- **The image of a DVR point in a one-dimensional integral target has codimension one**. -/
+theorem coheight_image_eq_one (f : X ⟶ Y) [IsDominant f]
+    [Algebra Y.functionField X.functionField] [IsScalarTower k Y.functionField X.functionField]
+    [Algebra.IsIntegral Y.functionField X.functionField]
+    (hmap : ∀ z : Y.functionField,
+      algebraMap Y.functionField X.functionField z = f.functionFieldMap z)
+    (hdim : topologicalKrullDim Y ≤ 1)
+    (x : X) [IsDiscreteValuationRing (X.presheaf.stalk x)] :
+    Order.coheight (f x) = 1 :=
+  (TauCeti.AlgebraicGeometry.Scheme.coheight_eq_one_iff_ne_genericPoint hdim).mpr
+    (f.ne_genericPoint_of_isIntegral (k := k) hmap x)
+
+/-- **The image of a DVR point has a DVR stalk** when `Y` is one-dimensional and has discrete
+valuation ring stalks at all codimension-one points. -/
+theorem isDiscreteValuationRing_stalk_image (f : X ⟶ Y) [IsDominant f]
+    [Algebra Y.functionField X.functionField] [IsScalarTower k Y.functionField X.functionField]
+    [Algebra.IsIntegral Y.functionField X.functionField]
+    (hmap : ∀ z : Y.functionField,
+      algebraMap Y.functionField X.functionField z = f.functionFieldMap z)
+    (hdim : topologicalKrullDim Y ≤ 1)
+    [hDVR : ∀ y : TauCeti.AlgebraicGeometry.CodimensionOnePoint Y,
+      IsDiscreteValuationRing (Y.presheaf.stalk (y : Y))]
+    (x : X) [IsDiscreteValuationRing (X.presheaf.stalk x)] :
+    IsDiscreteValuationRing (Y.presheaf.stalk (f x)) :=
+  hDVR ⟨f x, f.coheight_image_eq_one (k := k) hmap hdim x⟩
 
 /-- **Place restriction along a dominant morphism**: if `f : X ⟶ Y` is dominant with integral
 function-field extension along `f^*` and the stalks at `x` and `f x` are discrete valuation rings,
