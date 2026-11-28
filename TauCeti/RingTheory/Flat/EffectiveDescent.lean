@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Flat.Amitsur
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 public import TauCeti.RingTheory.TensorProduct.Maps
+
+import TauCeti.RingTheory.Flat.Amitsur
 
 /-!
 # Effective faithfully flat descent for algebras

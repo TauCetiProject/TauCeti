@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
-public import Mathlib.RingTheory.TensorProduct.IncludeLeftSubRight
+
+import Mathlib.RingTheory.TensorProduct.IncludeLeftSubRight
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Degree-one exactness of the Amitsur complex
@@ -55,9 +57,6 @@ theorem d₀_def : d₀ (R := R) S M =
   ext s m
   simp [d₀, sub_tmul]
 
-theorem d₁_def : d₁ (R := R) S M =
-    TensorProduct.mk R S (S ⊗[R] (S ⊗[R] M)) 1 + (d₀ S M).lTensor S := (rfl)
-
 @[simp]
 theorem d₀_tmul (s : S) (m : M) :
     d₀ S M (s ⊗ₜ[R] m) = s ⊗ₜ[R] (1 ⊗ₜ[R] m) - 1 ⊗ₜ[R] (s ⊗ₜ[R] m) := by
@@ -70,6 +69,12 @@ theorem d₁_tmul (s t : S) (m : M) :
         s ⊗ₜ[R] (t ⊗ₜ[R] (1 ⊗ₜ[R] m)) := by
   simp [d₁, tmul_sub]
   abel
+
+/-- The augmentation followed by the degree-zero Amitsur differential is zero. -/
+@[simp]
+theorem d₀_comp_mk_one : d₀ (R := R) S M ∘ₗ TensorProduct.mk R S M 1 = 0 := by
+  ext m
+  simp
 
 /-- The first two Amitsur differentials compose to zero over any algebra. -/
 @[simp]
@@ -94,20 +99,16 @@ variable {R : Type*} [CommRing R] (S M : Type*) [Ring S] [Algebra R S]
 `s ⊗ m ↦ s ⊗ (1 ⊗ m) - 1 ⊗ (s ⊗ m)`, is exact. -/
 theorem Module.FaithfullyFlat.exact_mk_one_lTensor_sub_mk_one [Module.FaithfullyFlat R S] :
     Function.Exact (TensorProduct.mk R S M 1) (TauCeti.Amitsur.d₀ S M) := by
-  have hd : TauCeti.Amitsur.d₀ S M ∘ₗ TensorProduct.mk R S M 1 = 0 := by
-    ext m
-    simp
   -- Multiplication of the first two factors contracts the complex after base change.
-  let h := (LinearMap.mul' R S).rTensor M ∘ₗ (TensorProduct.assoc R S S M).symm.toLinearMap
-  let h' := (LinearMap.mul' R S).rTensor (S ⊗[R] M) ∘ₗ
-    (TensorProduct.assoc R S S (S ⊗[R] M)).symm.toLinearMap
+  let h := TauCeti.tensorProductMulLeft (R := R) S M
+  let h' := TauCeti.tensorProductMulLeft (R := R) S (S ⊗[R] M)
   have key : h' ∘ₗ (TauCeti.Amitsur.d₀ S M).lTensor S =
       (TensorProduct.mk R S M 1).lTensor S ∘ₗ h - LinearMap.id := by
     ext s t m
     simp [TauCeti.Amitsur.d₀_def, h, h']
   apply Module.FaithfullyFlat.lTensor_reflects_exact R S
   refine LinearMap.exact_of_comp_of_mem_range ?_ fun y hy ↦ ?_
-  · rw [← LinearMap.lTensor_comp, hd, LinearMap.lTensor_zero]
+  · rw [← LinearMap.lTensor_comp, TauCeti.Amitsur.d₀_comp_mk_one, LinearMap.lTensor_zero]
   · refine ⟨h y, ?_⟩
     have hk := congr($key y)
     simp only [LinearMap.comp_apply, hy, map_zero, LinearMap.sub_apply,
@@ -120,14 +121,12 @@ namespace TauCeti.Amitsur
 theorem exact_d₀_d₁ [Module.FaithfullyFlat R S] :
     Function.Exact (d₀ (R := R) S M) (d₁ S M) := by
   -- Multiplication of the first two factors contracts the complex after base change.
-  let h' := (LinearMap.mul' R S).rTensor (S ⊗[R] M) ∘ₗ
-    (TensorProduct.assoc R S S (S ⊗[R] M)).symm.toLinearMap
-  let h'' := (LinearMap.mul' R S).rTensor (S ⊗[R] (S ⊗[R] M)) ∘ₗ
-    (TensorProduct.assoc R S S (S ⊗[R] (S ⊗[R] M))).symm.toLinearMap
+  let h' := tensorProductMulLeft (R := R) S (S ⊗[R] M)
+  let h'' := tensorProductMulLeft (R := R) S (S ⊗[R] (S ⊗[R] M))
   have key : h'' ∘ₗ (d₁ S M).lTensor S =
       LinearMap.id + (d₀ S M).lTensor S ∘ₗ h' := by
     ext s t u m
-    simp [h', h'', d₁_def, d₀_def]
+    simp [h', h'', d₁, d₀_def]
   apply Module.FaithfullyFlat.lTensor_reflects_exact R S
   refine LinearMap.exact_of_comp_of_mem_range ?_ fun y hy ↦ ?_
   · rw [← LinearMap.lTensor_comp, d₁_comp_d₀, LinearMap.lTensor_zero]
