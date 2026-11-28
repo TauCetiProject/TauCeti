@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Process.Stopping
-public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
+public import TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry
+public import TauCeti.Probability.BrownianMotion.Integral.Stopping
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
-import TauCeti.Probability.BrownianMotion.Integral.Stopping
 import TauCeti.Probability.Finance.SimpleStrategy.Stopping
+import TauCeti.Probability.Process.StochasticInterval
 import TauCeti.Probability.Process.StoppedValue
 import TauCeti.Probability.Process.Stopping
 import TauCeti.Topology.Instances.ENNReal
@@ -21,17 +22,29 @@ For any continuous Itô integral `I` of `H` against a filtered pre-Brownian moti
 filtration, stopping `I` at a stopping time `σ` gives a continuous Itô integral of
 `H · 1_{[0, σ]}` (`TauCeti.Probability.IsItoIntegral.stoppedProcess`), without path continuity of
 `W` or moment bounds. As a consequence, `stoppedProcess I σ` is indistinguishable from any Itô
-integral of `H · 1_{[0, σ]}` (`TauCeti.Probability.IsItoIntegral.stoppedProcess_indist`), and for
-stopping times `σ ≤ τ`, `stoppedProcess I τ - stoppedProcess I σ` is an Itô integral of
-`H · 1_{(σ, τ]}` (`TauCeti.Probability.IsItoIntegral.ite_Ioc`).
+integral of `H · 1_{[0, σ]}` (`TauCeti.Probability.IsItoIntegral.stoppedProcess_indist`), for
+`BrownianIntegrable` integrands it agrees almost surely at each deterministic horizon `T` with
+`hW.l2Integral T` of the cutoff integrand
+(`TauCeti.Probability.IsFilteredPreBrownianReal.stoppedProcess_ae_eq_l2Integral`), for stopping
+times `σ ≤ τ`, `stoppedProcess I τ - stoppedProcess I σ` is an Itô integral of `H · 1_{(σ, τ]}`
+(`TauCeti.Probability.IsItoIntegral.ite_Ioc`), and adjacent interval integrals concatenate
+(`TauCeti.Probability.IsItoIntegral.add_Ioc_stopping`, `TauCeti.Probability.IsItoIntegral.add_Ioc`,
+`TauCeti.Probability.IsItoIntegral.add_le_Ioc`).
 
 ## Main results
 
 * `TauCeti.Probability.IsItoIntegral.stoppedProcess`,
   `TauCeti.Probability.IsItoIntegral.stoppedProcess_indist`: stopping a continuous Itô integral at a
   stopping time `σ` integrates `H · 1_{[0, σ]}`.
-* `TauCeti.Probability.IsItoIntegral.ite_Ioc`: restricting an integrand to `(σ, τ]` for stopping
-  times `σ ≤ τ` integrates to `stoppedProcess I τ - stoppedProcess I σ`.
+* `TauCeti.Probability.IsFilteredPreBrownianReal.stoppedProcess_ae_eq_l2Integral`: `L²`
+  identification of the stopped Itô integral for `BrownianIntegrable` integrands.
+* `TauCeti.Probability.IsItoIntegral.ite_Ioc` and
+  `TauCeti.Probability.IsFilteredPreBrownianReal.isItoIntegral_stoppedProcess_sub`: restricting an
+  integrand to `(σ, τ]` for stopping times `σ ≤ τ` (or deterministic `(s, t]`) integrates to
+  `stoppedProcess I τ - stoppedProcess I σ`.
+* `TauCeti.Probability.IsItoIntegral.add_Ioc_stopping`,
+  `TauCeti.Probability.IsItoIntegral.add_Ioc`, `TauCeti.Probability.IsItoIntegral.add_le_Ioc`:
+  concatenation of adjacent interval Itô integrals.
 
 ## References
 
@@ -200,6 +213,18 @@ theorem stoppedProcess_indist (hW : IsFilteredPreBrownianReal ℱ W P)
     MeasureTheory.stoppedProcess I σ ≡ᵐ[P] J :=
   isItoIntegral_unique hW (hI.stoppedProcess hW hσ) hJ
 
+/-- For a `BrownianIntegrable` integrand, stopping its Itô integral at any stopping time `τ` on a
+raw filtration agrees almost surely at every deterministic horizon `T` with `hW.l2Integral T` of
+the cutoff integrand `1_{[0, τ]} · H`, without assuming path continuity of `W`. -/
+theorem _root_.TauCeti.Probability.IsFilteredPreBrownianReal.stoppedProcess_ae_eq_l2Integral
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    {H I : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I)
+    {τ : Ω → WithTop ℝ≥0} (hτ : IsStoppingTime ℱ τ) (T : ℝ≥0) :
+    MeasureTheory.stoppedProcess I τ T =ᵐ[P]
+      hW.l2Integral T (((hH.ite_le hτ).memLp_predictableMeasure T).toLp
+        (Function.uncurry fun t ω ↦ if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)) :=
+  (hI.stoppedProcess hW hτ).ae_eq_l2Integral hW (hH.ite_le hτ) T
+
 /-- **Stochastic-interval restriction for the continuous Brownian Itô integral**: for stopping
 times `σ ≤ τ`, restricting `H` to `(σ, τ]` yields an Itô integral equal to
 `stoppedProcess I τ - stoppedProcess I σ`, without path continuity of `W` or moment bounds. -/
@@ -216,5 +241,62 @@ theorem ite_Ioc (hW : IsFilteredPreBrownianReal ℱ W P)
     split_ifs <;> simp_all <;> grind
   rw [heq]
   exact (hI.stoppedProcess hW hτ).sub (hI.stoppedProcess hW hσ)
+
+/-- **Concatenation of Itô integrals on adjacent stochastic intervals.** If `ρ ≤ σ ≤ τ`, the sum
+of Itô integrals of `1_{(ρ, σ]} · H` and `1_{(σ, τ]} · H` is an Itô integral of
+`1_{(ρ, τ]} · H`. -/
+theorem add_Ioc_stopping {ρ σ τ : Ω → WithTop ℝ≥0}
+    (hρσ : ρ ≤ σ) (hστ : σ ≤ τ) {H I₁ I₂ : ℝ≥0 → Ω → ℝ}
+    (hI₁ : IsItoIntegral ℱ P W
+      (fun u ω ↦ if ρ ω < u ∧ (u : WithTop ℝ≥0) ≤ σ ω then H u ω else 0) I₁)
+    (hI₂ : IsItoIntegral ℱ P W
+      (fun u ω ↦ if σ ω < u ∧ (u : WithTop ℝ≥0) ≤ τ ω then H u ω else 0) I₂) :
+    IsItoIntegral ℱ P W
+      (fun u ω ↦ if ρ ω < u ∧ (u : WithTop ℝ≥0) ≤ τ ω then H u ω else 0) (I₁ + I₂) := by
+  rw [TauCeti.ite_Ioc_eq_add_ite_Ioc hρσ hστ H]
+  exact hI₁.add hI₂
+
+/-- **Concatenation of Itô integrals on adjacent deterministic intervals.** If `r ≤ s ≤ t`, the
+sum of Itô integrals of `1_{(r, s]} · H` and `1_{(s, t]} · H` is an Itô integral of
+`1_{(r, t]} · H`. -/
+theorem add_Ioc {r s t : ℝ≥0} (hrs : r ≤ s)
+    (hst : s ≤ t) {H I₁ I₂ : ℝ≥0 → Ω → ℝ}
+    (hI₁ : IsItoIntegral ℱ P W (fun u ω ↦ if r < u ∧ u ≤ s then H u ω else 0) I₁)
+    (hI₂ : IsItoIntegral ℱ P W (fun u ω ↦ if s < u ∧ u ≤ t then H u ω else 0) I₂) :
+    IsItoIntegral ℱ P W (fun u ω ↦ if r < u ∧ u ≤ t then H u ω else 0) (I₁ + I₂) := by
+  have hadd := IsItoIntegral.add_Ioc_stopping
+    (fun _ ↦ WithTop.coe_le_coe.mpr hrs) (fun _ ↦ WithTop.coe_le_coe.mpr hst)
+    (by simpa only [WithTop.coe_lt_coe, WithTop.coe_le_coe] using hI₁)
+    (by simpa only [WithTop.coe_lt_coe, WithTop.coe_le_coe] using hI₂)
+  simpa only [WithTop.coe_lt_coe, WithTop.coe_le_coe] using hadd
+
+/-- **Concatenation of an initial-interval Itô integral and a subsequent interval integral.**
+If `σ ≤ τ`, the sum of Itô integrals of `1_{[0, σ]} · H` and `1_{(σ, τ]} · H` is an Itô
+integral of `1_{[0, τ]} · H`. -/
+theorem add_le_Ioc {σ τ : Ω → WithTop ℝ≥0} (hστ : σ ≤ τ)
+    {H I₁ I₂ : ℝ≥0 → Ω → ℝ}
+    (hI₁ : IsItoIntegral ℱ P W (fun u ω ↦ if (u : WithTop ℝ≥0) ≤ σ ω then H u ω else 0) I₁)
+    (hI₂ : IsItoIntegral ℱ P W
+      (fun u ω ↦ if σ ω < u ∧ (u : WithTop ℝ≥0) ≤ τ ω then H u ω else 0) I₂) :
+    IsItoIntegral ℱ P W (fun u ω ↦ if (u : WithTop ℝ≥0) ≤ τ ω then H u ω else 0) (I₁ + I₂) := by
+  rw [TauCeti.ite_le_eq_add_ite_Ioc hστ H]
+  exact hI₁.add hI₂
+
+/-- **Deterministic-interval restriction for local Brownian Itô integrals.** For `s ≤ t`, the
+difference of stopped integrals `u ↦ I (min u t) - I (min u s)` is an Itô integral of the
+`(s, t]` restriction `1_{(s, t]} · H`, without assuming path continuity of `W`. -/
+theorem _root_.TauCeti.Probability.IsFilteredPreBrownianReal.isItoIntegral_stoppedProcess_sub
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    {H I : ℝ≥0 → Ω → ℝ} (hI : IsItoIntegral ℱ P W H I) {s t : ℝ≥0} (hst : s ≤ t) :
+    IsItoIntegral ℱ P W (fun u ω ↦ if s < u ∧ u ≤ t then H u ω else 0)
+      (fun u ω ↦ I (min u t) ω - I (min u s) ω) := by
+  have hH_eq : (fun (u : ℝ≥0) ω ↦ if s < u ∧ u ≤ t then H u ω else 0) =
+      fun (u : ℝ≥0) ω ↦ if (s : WithTop ℝ≥0) < u ∧ (u : WithTop ℝ≥0) ≤ t then H u ω else 0 := by
+    ext u ω
+    simp only [WithTop.coe_lt_coe, WithTop.coe_le_coe]
+  rw [hH_eq]
+  exact (hI.ite_Ioc hW (isStoppingTime_const ℱ s) (isStoppingTime_const ℱ t)
+    fun _ ↦ WithTop.coe_le_coe.mpr hst).congr (.of_forall fun ω u ↦ by
+      simp only [Pi.sub_apply, MeasureTheory.stoppedProcess_const_time])
 
 end TauCeti.Probability.IsItoIntegral

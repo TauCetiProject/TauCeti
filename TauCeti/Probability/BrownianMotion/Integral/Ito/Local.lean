@@ -10,6 +10,7 @@ public import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Stopping
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.Probability.BrownianMotion.Integral.Progressive
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Martingale.Local.Congruence
 import TauCeti.Probability.Process.Patching
@@ -28,17 +29,29 @@ the local-martingale property on a raw filtration
 `W`, and `TauCeti.LocallyBrownianIntegrable.exists_isItoIntegral` constructs a strongly
 progressive continuous local-martingale Itô integral whenever `W` has a.s. continuous paths.
 
+It also characterizes the domain of Brownian Itô integration
+(`exists_isItoIntegral_iff_locallyBrownianIntegrable`) and handles strongly progressive inputs via
+predictable representatives (`exists_isItoIntegral_of_isStronglyProgressive`).
+
 ## Main results
 
 * `TauCeti.Probability.IsItoIntegral.locally_martingale`: strongly progressive continuous Itô
   integrals are native local martingales on the raw filtration.
 * `TauCeti.LocallyBrownianIntegrable.exists_isItoIntegral`: existence of a strongly progressive
   continuous local-martingale Itô integral for `LocallyBrownianIntegrable` integrands.
+* `IsFilteredPreBrownianReal.exists_isItoIntegral_iff_locallyBrownianIntegrable`
+  (in `TauCeti.Probability`): `H` admits an Itô integral if and only if `H` is
+  `LocallyBrownianIntegrable`.
+* `TauCeti.Probability.IsFilteredPreBrownianReal.exists_isItoIntegral_of_isStronglyProgressive`:
+  strongly progressive integrands with a.s. finite pathwise square energy admit a predictable
+  representative and local-martingale Itô integral.
 
 ## References
 
 * I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
   Springer, 1991, §3.2.D.
+* D. Revuz and M. Yor, *Continuous Martingales and Brownian Motion*, third edition,
+  Springer, 1999, Chapter IV, §2.
 -/
 
 public section
@@ -195,5 +208,51 @@ theorem LocallyBrownianIntegrable.exists_isItoIntegral
     hτ_loc.tendsto_top hHs hU_ito (fun k T ↦ (hI_stop k).mono fun _ hω ↦ hω T)
     hH.ae_eventually_ite_le_energyLocalizer_eqOn
   exact ⟨I, hI_ito, hI_prog, hI_ito.locally_martingale hW hI_prog⟩
+
+namespace Probability
+
+/-! ### Domain characterization, strongly progressive integrands, and interval multipliers -/
+
+/-- **Domain characterization for Brownian Itô integration.** Against an almost surely continuous
+filtered pre-Brownian motion `W`, a process `H` admits an Itô integral if and only if `H` is
+`LocallyBrownianIntegrable`. -/
+theorem IsFilteredPreBrownianReal.exists_isItoIntegral_iff_locallyBrownianIntegrable
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hcont : ∀ᵐ ω ∂P, Continuous (W · ω))
+    {H : ℝ≥0 → Ω → ℝ} :
+    (∃ I : ℝ≥0 → Ω → ℝ, IsItoIntegral ℱ P W H I) ↔ LocallyBrownianIntegrable ℱ P H :=
+  ⟨fun ⟨_, hI⟩ ↦ hI.locallyBrownianIntegrable,
+    fun hH ↦ let ⟨I, hI, _, _⟩ := hH.exists_isItoIntegral hW hcont; ⟨I, hI⟩⟩
+
+/-- **Existence of the Brownian Itô integral for a strongly progressive integrand.** Against an
+almost surely continuous filtered pre-Brownian motion `W`, every strongly progressive process `H`
+with almost surely finite pathwise square energy on every finite horizon admits a
+`LocallyBrownianIntegrable` predictable representative `H'` agreeing with `H` almost everywhere with
+respect to `(timeMeasure T).prod P` on every finite horizon `T`, together with a strongly
+progressive local-martingale Itô integral `I` of `H'`. -/
+theorem IsFilteredPreBrownianReal.exists_isItoIntegral_of_isStronglyProgressive
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hcont : ∀ᵐ ω ∂P, Continuous (W · ω))
+    {H : ℝ≥0 → Ω → ℝ} (hH : IsStronglyProgressive ℱ H)
+    (hfin : ∀ᵐ ω ∂P, ∀ T : ℝ≥0, MemLp (fun t ↦ H t ω) 2 (timeMeasure T)) :
+    ∃ H' I : ℝ≥0 → Ω → ℝ,
+      LocallyBrownianIntegrable ℱ P H' ∧
+      (∀ T : ℝ≥0, Function.uncurry H' =ᵐ[(timeMeasure T).prod P] Function.uncurry H) ∧
+      IsItoIntegral ℱ P W H' I ∧ IsStronglyProgressive ℱ I ∧
+      Locally (fun Y ↦ Martingale Y ℱ P) ℱ I P := by
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  have henergy (n : ℕ) : ∀ᵐ ω ∂P,
+      (∫⁻ t, ‖H t ω‖ₑ ^ 2 ∂((volume.restrict (Ioc 0 (n : ℝ))).comap
+        ((↑) : ℝ≥0 → ℝ))) < ∞ := by
+    filter_upwards [hfin] with ω hω
+    rw [← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def]
+    exact (hω n).aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.mp (hω n)
+  obtain ⟨H', hH'loc, hprod_real⟩ := hH.exists_locallyBrownianIntegrable_ae_prod (P := P) henergy
+  have hprod (T : ℝ≥0) :
+      Function.uncurry H' =ᵐ[(timeMeasure T).prod P] Function.uncurry H := by
+    have h := hprod_real T
+    rwa [NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def] at h
+  obtain ⟨I, hIito, hIprog, hIloc⟩ := hH'loc.exists_isItoIntegral hW hcont
+  exact ⟨H', I, hH'loc, hprod, hIito, hIprog, hIloc⟩
+
+end Probability
 
 end TauCeti

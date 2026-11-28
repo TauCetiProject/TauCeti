@@ -141,10 +141,12 @@ theorem _root_.Continuous.memLp_timeMeasure {E : Type*} [NormedAddCommGroup E] {
 theorem timeMeasure_zero : timeMeasure 0 = 0 := by
   simp [timeMeasure_def]
 
-/-- The initial time carries no mass, independently of the horizon. -/
+/-- Every singleton time carries no mass under `timeMeasure T`. -/
 @[simp]
-theorem timeMeasure_singleton_zero (T : ℝ≥0) : timeMeasure T {0} = 0 := by
-  simp [timeMeasure_apply T (measurableSet_singleton 0)]
+theorem timeMeasure_singleton (T t : ℝ≥0) : timeMeasure T {t} = 0 := by
+  rw [timeMeasure_apply T (measurableSet_singleton t)]
+  exact measure_mono_null ((Set.image_mono Set.inter_subset_left).trans_eq Set.image_singleton)
+    Real.volume_singleton
 
 /-- Restricting time measure again clips the horizon to the smaller endpoint. -/
 @[simp]

@@ -31,6 +31,10 @@ zero, and freezing after the horizon all hold simultaneously outside one common 
 and `I T =ᵐ[P] hW.l2Integral T f`. This uses the original raw filtration; no usual conditions
 or everywhere-continuous raw version are assumed.
 
+`eLpNorm_l2Integral` and `eLpNorm_l2Integral_sub` express the `L²` seminorm and `L²` distance of
+finite-horizon predictable L² Brownian integrals directly in terms of `eLpNorm` on
+`(timeMeasure t).prod P`.
+
 The construction uses the overlapping-increment Gram identity and the density of predictable
 rectangles, followed by Mathlib's `LinearMap.extendOfIsometry`. The continuous realization
 uses `MeasureTheory.exists_continuous_martingale_of_cauchySeq_Lp` on finite linear
@@ -458,5 +462,27 @@ theorem exists_continuous_martingale_l2Integral (hW : IsFilteredPreBrownianReal 
       (tendstoInMeasure_of_tendsto_eLpNorm (by norm_num : (2 : ℝ≥0∞) ≠ 0) (hlim T).2)
       ((tendstoInMeasure_of_tendsto_Lp htermLim).congr
         (fun n ↦ (hmem n T).coeFn_toLp) EventuallyEq.rfl)
+
+/-- The `L²(P)` seminorm of a finite-horizon predictable L² Brownian integral equals the
+time-product `L²` seminorm of its integrand on `(0, t]`. -/
+theorem eLpNorm_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P) (t : ℝ≥0)
+    {f : ℝ≥0 × Ω → ℝ} (hf : StronglyMeasurable[ℱ.predictable] f)
+    (hm : MemLp f 2 (ℱ.predictableMeasure P t)) :
+    eLpNorm (hW.l2Integral t (hm.toLp f) : Ω → ℝ) 2 P = eLpNorm f 2 ((timeMeasure t).prod P) := by
+  rw [← Lp.eNorm_def, LinearIsometry.eNorm_map, Lp.eNorm_def, eLpNorm_congr_ae hm.coeFn_toLp,
+    ℱ.predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod hf]
+
+/-- The `L²(P)` distance between two finite-horizon predictable L² Brownian integrals equals the
+time-product `L²` distance between their integrands on `(0, t]`. -/
+theorem eLpNorm_l2Integral_sub (hW : IsFilteredPreBrownianReal ℱ W P) (t : ℝ≥0)
+    {f₁ f₂ : ℝ≥0 × Ω → ℝ} (hf₁ : StronglyMeasurable[ℱ.predictable] f₁)
+    (hf₂ : StronglyMeasurable[ℱ.predictable] f₂)
+    (hm₁ : MemLp f₁ 2 (ℱ.predictableMeasure P t)) (hm₂ : MemLp f₂ 2 (ℱ.predictableMeasure P t)) :
+    eLpNorm ((hW.l2Integral t (hm₁.toLp f₁) : Ω → ℝ) - (hW.l2Integral t (hm₂.toLp f₂) : Ω → ℝ))
+      2 P = eLpNorm (f₁ - f₂) 2 ((timeMeasure t).prod P) := by
+  refine (eLpNorm_congr_ae (Lp.coeFn_sub (hW.l2Integral t (hm₁.toLp f₁))
+    (hW.l2Integral t (hm₂.toLp f₂))).symm).trans ?_
+  rw [← map_sub, ← MemLp.toLp_sub]
+  exact hW.eLpNorm_l2Integral t (hf₁.sub hf₂) (hm₁.sub hm₂)
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

@@ -42,6 +42,10 @@ of the pullback Lebesgue measure to `(0,T]`, that is `TauCeti.Probability.timeMe
 square energy means a finite nonnegative lower integral, never the default value of a divergent
 Bochner integral.
 
+Both domains are also closed under subtraction, and `BrownianIntegrable.memLp_predictableMeasure`
+and `brownianIntegrable_iff_memLp_predictableMeasure` bridge the expected-energy domain with
+`ℱ.predictableMeasure`.
+
 ## References
 
 * I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
@@ -136,12 +140,27 @@ theorem BrownianIntegrable.memLp_predictableMeasure (h : BrownianIntegrable ℱ 
     MemLp (Function.uncurry H) 2 (ℱ.predictableMeasure P T) :=
   (ℱ.memLp_predictableMeasure_iff P h.isStronglyPredictable T 2).mpr (h.memLp_timeMeasure T)
 
+/-- Characterization of `BrownianIntegrable` via `L²(ℱ.predictableMeasure P T)`. -/
+theorem brownianIntegrable_iff_memLp_predictableMeasure :
+    BrownianIntegrable ℱ P H ↔
+      IsStronglyPredictable ℱ H ∧
+        ∀ T : ℝ≥0, MemLp (Function.uncurry H) 2 (ℱ.predictableMeasure P T) :=
+  ⟨fun hH ↦ ⟨hH.isStronglyPredictable, hH.memLp_predictableMeasure⟩,
+    fun ⟨hp, hm⟩ ↦ ⟨hp, fun T ↦ by
+      simpa only [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def] using
+        (ℱ.memLp_predictableMeasure_iff P hp T 2).mp (hm T)⟩⟩
+
 /-- The expected-energy domain is closed under addition. -/
 theorem BrownianIntegrable.add (hH : BrownianIntegrable ℱ P H)
     (hK : BrownianIntegrable ℱ P K) :
     BrownianIntegrable ℱ P (fun t ω ↦ H t ω + K t ω) :=
   ⟨hH.isStronglyPredictable.add hK.isStronglyPredictable,
     fun T ↦ (hH.memLp T).add (hK.memLp T)⟩
+
+/-- The expected-energy domain is closed under subtraction. -/
+theorem BrownianIntegrable.sub (hH : BrownianIntegrable ℱ P H) (hK : BrownianIntegrable ℱ P K) :
+    BrownianIntegrable ℱ P (fun t ω ↦ H t ω - K t ω) :=
+  ⟨hH.isStronglyPredictable.sub hK.isStronglyPredictable, fun T ↦ (hH.memLp T).sub (hK.memLp T)⟩
 
 /-- The pathwise-energy domain is closed under addition. -/
 theorem LocallyBrownianIntegrable.add (hH : LocallyBrownianIntegrable ℱ P H)
@@ -150,6 +169,13 @@ theorem LocallyBrownianIntegrable.add (hH : LocallyBrownianIntegrable ℱ P H)
   refine ⟨hH.isStronglyPredictable.add hK.isStronglyPredictable, ?_⟩
   filter_upwards [hH.ae_memLp, hK.ae_memLp] with ω hω kω
   exact fun T ↦ (hω T).add (kω T)
+
+/-- The pathwise-energy domain is closed under subtraction. -/
+theorem LocallyBrownianIntegrable.sub (hH : LocallyBrownianIntegrable ℱ P H)
+    (hK : LocallyBrownianIntegrable ℱ P K) :
+    LocallyBrownianIntegrable ℱ P (fun t ω ↦ H t ω - K t ω) :=
+  ⟨hH.isStronglyPredictable.sub hK.isStronglyPredictable,
+    hH.ae_memLp.mp (hK.ae_memLp.mono fun _ kω hω T ↦ (hω T).sub (kω T))⟩
 
 /-- Scaling preserves finite expected square energy. -/
 theorem BrownianIntegrable.const_mul (h : BrownianIntegrable ℱ P H) (c : ℝ) :

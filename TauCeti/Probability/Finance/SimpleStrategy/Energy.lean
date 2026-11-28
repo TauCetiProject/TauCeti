@@ -20,7 +20,9 @@ These identities connect finite-grid stochastic-integral estimates to the actual
 lower-integral energy used in predictable approximation and localization. In particular,
 no divergent Bochner integral is interpreted as zero energy. Left-measurable heights
 in `Lᵖ` also give an elementary holding in the predictable `Lᵖ` space on each finite
-horizon; this membership result does not require the grid to be monotone.
+horizon; this membership result does not require the grid to be monotone. On any finite time
+measure, every elementary holding has finite pathwise square energy
+(`MeasureTheory.Measure.lintegral_enorm_sq_simpleHolding_lt_top`).
 
 ## References
 
@@ -66,6 +68,14 @@ theorem _root_.MeasureTheory.Measure.lintegral_enorm_sq_simpleHolding [Measurabl
   simp_rw [enorm_sq_simpleHolding hτ]
   rw [lintegral_finsetSum _ (fun j hj ↦ measurable_const.indicator (hI j (mem_range.mp hj)))]
   exact sum_congr rfl fun j hj ↦ lintegral_indicator_const (hI j (mem_range.mp hj)) _
+
+/-- Every elementary holding has finite pathwise square energy on any finite time measure. -/
+theorem _root_.MeasureTheory.Measure.lintegral_enorm_sq_simpleHolding_lt_top [MeasurableSpace ι]
+    (μ : Measure ι) [IsFiniteMeasure μ] (hτ : MonotoneOn τ (Set.Iic n))
+    (hI : ∀ j < n, MeasurableSet (Ioc (τ j) (τ (j + 1)))) (ω : Ω) :
+    ∫⁻ t, ‖simpleHolding τ n a t ω‖ₑ ^ 2 ∂μ < ∞ := by
+  rw [Measure.lintegral_enorm_sq_simpleHolding μ hτ hI]
+  exact ENNReal.sum_lt_top.mpr fun j _ ↦ ENNReal.mul_lt_top (by finiteness) (measure_lt_top μ _)
 
 /-- Under finite-horizon Lebesgue time, the square energy uses the interval lengths
 clipped at the horizon, including intervals that have not yet started. -/

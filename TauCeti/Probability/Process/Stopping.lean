@@ -197,6 +197,14 @@ theorem stoppedProcess_bot {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
   ext ω
   exact stoppedProcess_eq_of_le (by simp)
 
+/-- Evaluating `stoppedProcess` at a constant finite time `t` reduces to `u (min s t)`. -/
+@[simp]
+theorem stoppedProcess_const_time {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    (u : ι → Ω → E) (t s : ι) (ω : Ω) :
+    stoppedProcess u (fun _ ↦ (t : WithTop ι)) s ω = u (min s t) ω := by
+  rw [stoppedProcess, ← WithTop.coe_min, WithTop.untopA_eq_untop WithTop.coe_ne_top,
+    WithTop.untop_coe]
+
 variable {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι] [Zero E] [Preorder E]
   {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : ι → Ω → E} {s : Set Ω}
 

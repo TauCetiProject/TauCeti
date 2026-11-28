@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Data.Finset.Sort
+import TauCeti.Order.Interval.Set.ProjIcc
 
 /-!
 # Common trading grids
@@ -25,6 +26,9 @@ by the sum of the original absolute heights; thus boundedness and Lᵖ control s
 without additional moment assumptions.
 `exists_simpleHolding_simpleGains_eq_sub` specializes this to the difference of two simple
 strategies on monotone grids, subtracting both their holdings and their gains.
+`MeasureTheory.Filtration.stronglyMeasurable_clip_Ioc_mul`, `simpleHolding_clip_Ioc_mul`, and
+`simpleGains_clip_Ioc_mul` clip a simple strategy to `(s, t]` via `Set.projIcc s t hst ∘ τ` and
+multiply by an `ℱ s`-measurable height `ξ`, factoring `ξ` out of the `(s, t]` gain difference.
 
 A finite family of elementary predictable holdings can also be refined simultaneously while
 preserving each holding and its gains separately, not just their sum. Tagging each strategy with
@@ -237,11 +241,66 @@ theorem exists_simpleHolding_simpleGains_eq_sub [OrderBot ι] {mΩ : MeasurableS
   · rw [hhold t ω, simpleHolding_smul, neg_one_mul, ← sub_eq_add_neg]
   · rw [hgain X t ω, simpleGains_smul, neg_one_mul, ← sub_eq_add_neg]
 
+/-- Clipping a simple holding `(τ, n, a)` to `(s, t]` via `Set.projIcc s t hst ∘ τ` and
+multiplying by `ξ` yields `1_{(s, t]} · ξ · simpleHolding τ n a`. -/
+theorem simpleHolding_clip_Ioc_mul {τ : ℕ → ι} {n : ℕ} {a : ℕ → Ω → ℝ}
+    {s t : ι} (hst : s ≤ t) (ξ : Ω → ℝ) (u : ι) (ω : Ω) :
+    simpleHolding (fun j ↦ (Set.projIcc s t hst (τ j) : ι)) n
+        (fun j ω ↦ if τ j ≤ t then ξ ω * a j ω else 0) u ω =
+      (Set.Ioc s t).indicator (fun _ ↦ ξ ω * simpleHolding τ n a u ω) u := by
+  rw [simpleHolding_def, simpleHolding_def]
+  simp_rw [Set.indicator_Ioc_projIcc_ite_le hst (fun _ ↦ ξ ω * _)]
+  by_cases hu : u ∈ Set.Ioc s t
+  · simp only [Set.indicator_of_mem hu, mul_sum]
+    refine sum_congr rfl fun j _ ↦ ?_
+    by_cases hju : u ∈ Set.Ioc (τ j) (τ (j + 1)) <;> simp [hju]
+  · simp [Set.indicator_of_notMem hu]
+
+/-- Clipping a simple holding `(τ, n, a)` on a monotone grid to `(s, t]` via
+`Set.projIcc s t hst ∘ τ` and multiplying by `ξ` factors `ξ` out of the `(s, t]` gain
+difference. -/
+theorem simpleGains_clip_Ioc_mul {τ : ℕ → ι} {n : ℕ} {a : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Set.Iic n)) {s t : ι} (hst : s ≤ t) (ξ : Ω → ℝ)
+    (X : ι → Ω → ℝ) (T : ι) (ω : Ω) :
+    simpleGains (fun j ↦ (Set.projIcc s t hst (τ j) : ι)) n
+        (fun j ω ↦ if τ j ≤ t then ξ ω * a j ω else 0) X T ω =
+      ξ ω * (simpleGains τ n a X (min T t) ω - simpleGains τ n a X (min T s) ω) := by
+  rw [simpleGains_def, simpleGains_def, simpleGains_def, ← sum_sub_distrib, mul_sum]
+  refine sum_congr rfl fun j hj ↦ ?_
+  have hj' : j < n := mem_range.mp hj
+  rw [← mul_sub, ← Set.ite_le_sub_min_coe_projIcc hst (hτ hj'.le hj' (Nat.le_succ j)) (X · ω)]
+  by_cases hlt : τ j ≤ t <;> simp [hlt, mul_assoc]
+
 end TauCeti.Finance
 
 namespace MeasureTheory.Filtration
 
 open TauCeti.Finance
+
+section
+
+variable {Ω ι : Type*} [LinearOrder ι]
+
+/-- Clipping left-measurable heights to `(s, t]` via `Set.projIcc s t hst ∘ τ` and multiplying by
+an `ℱ s`-measurable function `ξ` preserves left-measurability at the clipped dates. -/
+theorem stronglyMeasurable_clip_Ioc_mul {mΩ : MeasurableSpace Ω} (ℱ : Filtration ι mΩ)
+    {τ : ℕ → ι} {n : ℕ} {a : ℕ → Ω → ℝ}
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    {s t : ι} (hst : s ≤ t) {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) :
+    ∀ j < n, StronglyMeasurable[ℱ (Set.projIcc s t hst (τ j) : ι)]
+      (fun ω ↦ if τ j ≤ t then ξ ω * a j ω else 0) := by
+  intro j hj
+  by_cases hjt : τ j ≤ t
+  · simp only [hjt, ite_true]
+    have hsσ : s ≤ (Set.projIcc s t hst (τ j) : ι) := (Set.projIcc s t hst (τ j)).property.1
+    have hτσ : τ j ≤ (Set.projIcc s t hst (τ j) : ι) := by
+      rw [Set.coe_projIcc]
+      exact le_max_of_le_right (le_min hjt le_rfl)
+    exact (hξ.mono (ℱ.mono hsσ)).mul ((ha j hj).mono (ℱ.mono hτσ))
+  · simp only [hjt, ite_false]
+    exact stronglyMeasurable_zero
+
+end
 
 variable {Ω ι κ : Type*} [LinearOrder ι] [OrderBot ι] [Finite κ]
 

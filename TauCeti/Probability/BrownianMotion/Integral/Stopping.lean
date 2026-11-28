@@ -82,6 +82,36 @@ theorem LocallyBrownianIntegrable.ite_Ioc (hH : LocallyBrownianIntegrable ℱ P 
   simpa only [Set.indicator_apply, Set.mem_ofPred_eq, Function.uncurry_apply_pair] using
     hH.indicator (hσ.measurableSet_predictable_Ioc hτ)
 
+/-- Cutoffs along stopping times whose cutoff tests eventually agree almost surely at each
+time with a target `τ : Ω → WithTop ℝ≥0` converge in expected square-energy norm on each finite
+horizon. -/
+theorem BrownianIntegrable.tendsto_eLpNorm_ite_le_sub_ite_le
+    (hH : BrownianIntegrable ℱ P H) {σ : ℕ → Ω → WithTop ℝ≥0}
+    (hσ : ∀ n, IsStoppingTime ℱ (σ n)) (τ : Ω → WithTop ℝ≥0)
+    (hagree : ∀ᵐ ω ∂P, ∀ t : ℝ≥0, ∀ᶠ n in atTop,
+      ((t : WithTop ℝ≥0) ≤ σ n ω ↔ (t : WithTop ℝ≥0) ≤ τ ω)) (T : ℝ≥0) :
+    Tendsto (fun n ↦ eLpNorm
+      (fun p : ℝ≥0 × Ω ↦ (if (p.1 : WithTop ℝ≥0) ≤ σ n p.2 then H p.1 p.2 else 0) -
+        (if (p.1 : WithTop ℝ≥0) ≤ τ p.2 then H p.1 p.2 else 0)) 2
+      (((volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ)).prod P))
+      atTop (𝓝 0) := by
+  apply tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) (by norm_num)
+    (Eventually.of_forall fun n ↦ ((hH.ite_le (hσ n)).memLp T).aestronglyMeasurable)
+    (hH.memLp T)
+  · exact Eventually.of_forall fun n ↦ Eventually.of_forall fun p ↦ by
+      dsimp only [Function.uncurry]
+      split_ifs <;> simp
+  · have hprod := (Measure.quasiMeasurePreserving_snd
+        (μ := (volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ))
+        (ν := P)).ae hagree
+    filter_upwards [hprod] with p hp
+    apply tendsto_const_nhds.congr'
+    filter_upwards [hp p.1] with n hn
+    dsimp only [Function.uncurry]
+    by_cases h : (p.1 : WithTop ℝ≥0) ≤ τ p.2
+    · simp only [h, hn.mpr h, ite_true]
+    · simp only [h, mt hn.mp h, ite_false]
+
 /-- Cutoffs along stopping times tending almost surely to infinity converge on each finite
 horizon in expected square-energy norm. Monotonicity of the times is unnecessary. -/
 theorem BrownianIntegrable.tendsto_eLpNorm_ite_le_sub
@@ -93,19 +123,11 @@ theorem BrownianIntegrable.tendsto_eLpNorm_ite_le_sub
         H p.1 p.2) 2
       (((volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ)).prod P))
       atTop (𝓝 0) := by
-  apply tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) (by norm_num)
-    (Eventually.of_forall fun n ↦ ((hH.ite_le (hτ n)).memLp T).aestronglyMeasurable)
-    (hH.memLp T)
-  · exact Eventually.of_forall fun n ↦ Eventually.of_forall fun p ↦ by
-      dsimp only [Function.uncurry]
-      split_ifs <;> simp
-  · have hprod := (Measure.quasiMeasurePreserving_snd
-        (μ := (volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ))
-        (ν := P)).ae hlim
-    filter_upwards [hprod] with p hp
-    apply tendsto_const_nhds.congr'
-    filter_upwards [hp.eventually (eventually_gt_nhds (WithTop.coe_lt_top p.1))] with n hn
-    exact (ite_eq_left hn.le).symm
+  have hconv := hH.tendsto_eLpNorm_ite_le_sub_ite_le hτ (fun _ ↦ ⊤) ?_ T
+  · simpa only [le_top, ite_true] using hconv
+  · filter_upwards [hlim] with ω hω t
+    filter_upwards [hω.eventually (eventually_gt_nhds (WithTop.coe_lt_top t))] with n hn
+    simp only [hn.le, le_top]
 
 /-- On a finite measure space `P`, stopping a locally Brownian-integrable integrand at the dyadic
 ceilings `dyadicCeilTime k ∘ σ` converges in probability in pathwise square energy on `(0, T]` to
