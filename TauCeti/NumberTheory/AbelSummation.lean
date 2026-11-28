@@ -14,6 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.Log.InvLog
 import Mathlib.MeasureTheory.Function.Floor
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Indicator
 
 /-!
 # Consequences of Abel summation for partial sums
@@ -68,6 +69,8 @@ at `k = 2`, where `log k > 0`.
   `[1, ∞)`, the step function is interval integrable between any two reals.
 * `TauCeti.exists_tendsto_sum_mul_and_norm_le`: the limit and norm bound for a decaying weight
   with integrable derivative against bounded coefficient partial sums.
+* `TauCeti.sum_mul_eq_sub_sub_integral_mul_of_hasDerivAt`: Abel summation for weights that are
+  continuous on the closed interval and have an integrable derivative in its interior.
 * `TauCeti.summable_div_mul_one_add_log_cube`: if the partial sums `∑_{1 ≤ k ≤ t} u k` of a
   nonnegative sequence are `O(t log t)`, then `∑ u n / (n (1 + log n) ^ 3)` converges.
 * `TauCeti.sum_Icc_rpow_mul_eq`: the exact Abel-summation identity for the weight `t ^ τ`.
@@ -168,6 +171,65 @@ theorem exists_tendsto_sum_mul_and_norm_le {𝕜 : Type*} [RCLike 𝕜] {c : ℕ
   rw [zero_sub, norm_neg, ← integral_const_mul]
   exact norm_integral_le_of_norm_le ((hdf.mono_set Ioi_subset_Ici_self).norm.const_mul B)
     (Eventually.of_forall hbound)
+
+/-! ### Abel summation with interior derivatives -/
+
+open Finset in
+/-- Abel summation for arbitrary coefficients and a weight that is continuous on `[a, b]`
+with an integrable derivative on its interior. This version of Mathlib's
+`sum_mul_eq_sub_sub_integral_mul` allows the derivative to be singular at either endpoint. -/
+theorem sum_mul_eq_sub_sub_integral_mul_of_hasDerivAt {𝕜 : Type*} [RCLike 𝕜]
+    (c : ℕ → 𝕜) {g g' : ℝ → 𝕜} {a b : ℝ} (hab : a ≤ b)
+    (hc : ContinuousOn g (Set.Icc a b)) (hg : ∀ t ∈ Set.Ioo a b, HasDerivAt g (g' t) t)
+    (hg' : IntervalIntegrable g' volume a b) :
+    ∑ k ∈ Ioc ⌊a⌋₊ ⌊b⌋₊, g k * c k =
+      g b * (∑ k ∈ Icc 0 ⌊b⌋₊, c k) - g a * (∑ k ∈ Icc 0 ⌊a⌋₊, c k) -
+        ∫ t in a..b, g' t * ∑ k ∈ Icc 0 ⌊t⌋₊, c k := by
+  let S := Finset.Icc 0 ⌊b⌋₊
+  -- The natural floor includes the term at index 0 even at negative arguments.
+  let cutoff (k : ℕ) : ℝ := if k = 0 then a else k
+  let F (k : ℕ) := (Ici (cutoff k)).indicator (fun t ↦ g' t * c k)
+  have hcut (k : ℕ) {t : ℝ} (ht : a ≤ t) : cutoff k ≤ t ↔ k ≤ ⌊t⌋₊ := by
+    by_cases hk : k = 0
+    · simp [cutoff, hk, ht]
+    · simpa only [cutoff, ite_eq_right hk] using (Nat.le_floor_iff' hk).symm
+  have hprefix (n : ℕ) (hn : n ≤ ⌊b⌋₊) : S.filter (· ≤ n) = Finset.Icc 0 n := by
+    ext k
+    simp only [S, mem_filter, Finset.mem_Icc, zero_le, true_and]
+    omega
+  have hsum (t : ℝ) (ht : t ∈ uIcc a b) :
+      g' t * (∑ k ∈ Icc 0 ⌊t⌋₊, c k) = ∑ k ∈ S, F k t := by
+    have ht' : t ∈ Set.Icc a b := uIcc_of_le hab ▸ ht
+    rw [← hprefix _ (Nat.floor_le_floor ht'.2), mul_sum, sum_filter]
+    exact sum_congr rfl fun k _ ↦ by simp only [F, indicator_apply, Set.mem_Ici, hcut k ht'.1]
+  have hF (k : ℕ) (_ : k ∈ S) : IntervalIntegrable (F k) volume a b :=
+    (intervalIntegrable_iff_integrableOn_Icc_of_le hab).mpr
+      (((intervalIntegrable_iff_integrableOn_Icc_of_le hab).mp hg').mul_const
+        (c k) |>.indicator measurableSet_Ici)
+  have hlate : S.filter (⌊a⌋₊ < ·) = Finset.Ioc ⌊a⌋₊ ⌊b⌋₊ := by
+    ext k
+    simp only [S, mem_filter, Finset.mem_Icc, Finset.mem_Ioc, zero_le, true_and]
+    omega
+  rw [intervalIntegral.integral_congr hsum, intervalIntegral.integral_finsetSum hF,
+    ← hlate, ← hprefix _ (Nat.floor_le_floor hab)]
+  simp only [mul_sum, sum_filter]
+  rw [← sum_sub_distrib, ← sum_sub_distrib]
+  refine sum_congr rfl fun k hk ↦ ?_
+  have hkb := (hcut k hab).mpr (Finset.mem_Icc.mp hk).2
+  have hsub : Set.Icc (max a (cutoff k)) b ⊆ Set.Icc a b := Icc_subset_Icc_left (le_max_left ..)
+  have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le (max_le hab hkb)
+    (hc.mono hsub) (fun t ht ↦ hg t ⟨(le_max_left ..).trans_lt ht.1, ht.2⟩)
+    (hg'.mono_set (by simpa only [uIcc_of_le hab, uIcc_of_le (max_le hab hkb)] using hsub))
+  rw [intervalIntegral.integral_indicator_Ici_eq_integral_max hab hkb,
+    intervalIntegral.integral_mul_const, hFTC]
+  by_cases hk' : k ≤ ⌊a⌋₊
+  · simp only [max_eq_left ((hcut k le_rfl).mpr hk'), hk', not_lt_of_ge hk', ite_false, ite_true]
+    ring
+  · have hak : a < cutoff k := lt_of_not_ge fun h ↦ hk' ((hcut k le_rfl).mp h)
+    have hk₀ : k ≠ 0 := fun h ↦ hk' (h ▸ Nat.zero_le _)
+    rw [max_eq_right hak.le]
+    simp only [cutoff, ite_eq_right hk₀, hk', lt_of_not_ge hk', ite_true, ite_false]
+    ring
 
 /-! ### The comparison weight -/
 
