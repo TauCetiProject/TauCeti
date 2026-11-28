@@ -258,6 +258,24 @@ theorem mapSimplex_eq_reindex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) :
 theorem coe_mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) (y : IteratedFiberProduct π (b + 1)) :
     (mapSimplex θ y : Fin (a + 1) → Y) = y.val ∘ θ.toOrderHom := (rfl)
 
+/-- Evaluating `mapSimplex θ y` at `i` evaluates `y` at `θ.toOrderHom i`. -/
+theorem eval_mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) (y : IteratedFiberProduct π (b + 1))
+    (i : Fin (a + 1)) :
+    eval i (mapSimplex θ y) = eval (θ.toOrderHom i) y := by
+  rw [mapSimplex_eq_reindex, eval_reindex]
+
+/-- `mapSimplex θ` sends a constant diagonal tuple to the constant diagonal tuple. -/
+@[simp]
+theorem mapSimplex_const {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) (z : Y) :
+    mapSimplex (π := π) θ (const (b + 1) z) = const (a + 1) z := by
+  rw [mapSimplex_eq_reindex, reindex_const]
+
+/-- Every Čech-nerve map `mapSimplex θ` commutes with `baseProj`. -/
+@[simp]
+theorem baseProj_mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) (y : IteratedFiberProduct π (b + 1)) :
+    baseProj (mapSimplex θ y) = baseProj y := by
+  rw [mapSimplex_eq_reindex, baseProj_reindex]
+
 /-- `mapSimplex` sends the identity morphism in `SimplexCategory` to the identity. -/
 @[simp]
 theorem mapSimplex_id {a : ℕ} (y : IteratedFiberProduct π (a + 1)) :
@@ -279,12 +297,20 @@ theorem mapSimplex_mapSimplex {a b c : ℕ} (θ₁ : ⦋a⦌ ⟶ ⦋b⦌) (θ₂
 /-- `mapSimplex` sends `SimplexCategory.δ i` to `face i`. -/
 @[simp]
 theorem mapSimplex_δ {a : ℕ} (i : Fin (a + 2)) :
-    mapSimplex (π := π) (SimplexCategory.δ i) = face i := (rfl)
+    mapSimplex (π := π) (SimplexCategory.δ i) = face i := by
+  funext y
+  refine ext fun j ↦ ?_
+  rw [mapSimplex_eq_reindex, face_eq_reindex, eval_reindex, eval_reindex]
+  exact congrArg (fun k ↦ eval k y) (SimplexCategory.δ_apply i j)
 
 /-- `mapSimplex` sends `SimplexCategory.σ i` to `degeneracy i`. -/
 @[simp]
 theorem mapSimplex_σ {a : ℕ} (i : Fin (a + 1)) :
-    mapSimplex (π := π) (SimplexCategory.σ i) = degeneracy i := (rfl)
+    mapSimplex (π := π) (SimplexCategory.σ i) = degeneracy i := by
+  funext y
+  refine ext fun j ↦ ?_
+  rw [mapSimplex_eq_reindex, degeneracy_eq_reindex, eval_reindex, eval_reindex]
+  exact congrArg (fun k ↦ eval k y) (SimplexCategory.σ_apply i j)
 
 end SimplexCategory
 

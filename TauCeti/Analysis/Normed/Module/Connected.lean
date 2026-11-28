@@ -157,6 +157,7 @@ private theorem not_homeomorph_finOne_of_punctured_nhds_splits
   let φ := IsometryEquiv.funUnique (Fin 1) ℝ
   let z₀ : ℝ := φ y₀
   have hball : φ.symm '' Metric.ball z₀ r = Metric.ball y₀ r := by simp [z₀]
+  have hy₀ : φ.symm z₀ = (e ⟨x₀, hx₀⟩).val := φ.symm_apply_apply y₀
   let C : Set ℝ → Set X := fun I ↦ Subtype.val '' (e.symm '' (Subtype.val ⁻¹' (φ.symm '' I)))
   have hpiece : ∀ I : Set ℝ, I ⊆ Metric.ball z₀ r → z₀ ∉ I → IsPreconnected I →
       ∃ i : Fin m, C I ⊆ Q i := by
@@ -167,7 +168,6 @@ private theorem not_homeomorph_finOne_of_punctured_nhds_splits
         Subtype.val_injective hV.isOpenMap_subtypeVal (Subtype.range_coe_subtype ▸ hIV)
     have hC_pre : IsPreconnected (C I) :=
       (hA.image _ e.symm.continuous.continuousOn).image _ continuous_subtypeVal.continuousOn
-    have hy₀ : φ.symm z₀ = (e ⟨x₀, hx₀⟩).val := φ.symm_apply_apply y₀
     have hC_sub : C I ⊆ S₀ := by
       rw [hS₀_eq]
       refine image_mono (image_mono (preimage_mono ?_))
@@ -187,11 +187,9 @@ private theorem not_homeomorph_finOne_of_punctured_nhds_splits
     rw [Real.ball_eq_Ioo]
     exact Set.Ioo_union_Ioo_eq_Ioo_sdiff_singleton (by linarith) (by linarith)
   have hS₀_cover : S₀ ⊆ C J₁ ∪ C J₂ := by
-    rw [hS₀_eq, ← hball]
-    have hdiff : φ.symm '' Metric.ball z₀ r \ {y₀} = φ.symm '' (J₁ ∪ J₂) := by
-      rw [hJ, Set.image_sdiff φ.symm.injective, image_singleton, φ.symm_apply_apply]
-    change Subtype.val '' (e.symm '' (Subtype.val ⁻¹' (φ.symm '' Metric.ball z₀ r \ {y₀}))) ⊆ _
-    rw [hdiff]
+    have hdiff : φ.symm '' Metric.ball z₀ r \ {(e ⟨x₀, hx₀⟩).val} = φ.symm '' (J₁ ∪ J₂) := by
+      rw [hJ, Set.image_sdiff φ.symm.injective, image_singleton, hy₀]
+    rw [hS₀_eq, ← hball, hdiff]
     simp only [C, image_union, preimage_union, subset_rfl]
   obtain ⟨k, hk₁, hk₂⟩ := Fin.exists_ne_and_ne_of_two_lt i₁ i₂ hm
   obtain ⟨x, hxS, hxQ⟩ := hS₀_Q k

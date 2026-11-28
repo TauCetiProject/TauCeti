@@ -13,8 +13,10 @@ import TauCeti.Geometry.Manifold.IsManifold.InteriorChart
 # Composition of submersions
 
 Structural operations on `Manifold.IsSubmersion` for iterated submersion fibre products:
-chart alignment (`IsSubmersionAtOfComplement.exists_domChart_of_codChart`) and composition
-(`IsSubmersion.comp`).
+chart alignment (`IsSubmersionAtOfComplement.exists_domChart_of_codChart`), requiring boundaryless
+source and target models (`I` and `J`), and composition (`IsSubmersion.comp`), requiring
+boundaryless source and intermediate models (`I` and `J`) while not requiring the final target
+model `K` to be boundaryless.
 
 ## References
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013), Thms. 4.12, 4.26.
@@ -154,7 +156,9 @@ theorem IsSubmersionAtOfComplement.exists_domChart_of_codChart
   rw [mem_preimage, ← (φ.extend I).left_inv hy', hfy, ← ψ.extend_source (I := J)]
   exact (ψ.extend J).map_target hu'
 
-/-- **Composition of submersions at a point, keeping track of complements.** -/
+/-- **Composition of submersions at a point, keeping track of complements.** For `f : M → N` and
+`g : N → P`, requires boundaryless source and intermediate models `I` and `J` (the final target
+model `K` need not be boundaryless). -/
 theorem IsSubmersionAtOfComplement.comp (hg : IsSubmersionAtOfComplement F₂ J K n g (f x))
     (hf : IsSubmersionAtOfComplement F₁ I J n f x) :
     IsSubmersionAtOfComplement (F₁ × F₂) I K n (g ∘ f) x := by
@@ -170,7 +174,8 @@ theorem IsSubmersionAtOfComplement.comp (hg : IsSubmersionAtOfComplement F₂ J 
   exact (hg.writtenInCharts hu').trans (by simp [L])
 
 /-- **Composition of submersions at a point.** The composition `g ∘ f` of a submersion `f` at `x`
-and a submersion `g` at `f x` is a submersion at `x`. -/
+and a submersion `g` at `f x` is a submersion at `x`. Requires boundaryless source and intermediate
+models `I` and `J` (the final target model `K` need not be boundaryless). -/
 theorem IsSubmersionAt.comp (hg : IsSubmersionAt J K n g (f x)) (hf : IsSubmersionAt I J n f x) :
     IsSubmersionAt I K n (g ∘ f) x :=
   (hg.isSubmersionAtOfComplement_complement.comp
@@ -178,13 +183,15 @@ theorem IsSubmersionAt.comp (hg : IsSubmersionAt J K n g (f x)) (hf : IsSubmersi
 
 /-- **Composition of submersions with complements.** If `f` is a submersion with complement `F₁`
 and `g` is a submersion with complement `F₂`, then `g ∘ f` is a submersion with complement
-`F₁ × F₂`. -/
+`F₁ × F₂`. Requires boundaryless source and intermediate models `I` and `J` (the final target
+model `K` need not be boundaryless). -/
 theorem IsSubmersionOfComplement.comp (hg : IsSubmersionOfComplement F₂ J K n g)
     (hf : IsSubmersionOfComplement F₁ I J n f) :
     IsSubmersionOfComplement (F₁ × F₂) I K n (g ∘ f) :=
   isSubmersionOfComplement_iff.mpr fun x ↦ (hg.isSubmersionAt (f x)).comp (hf.isSubmersionAt x)
 
-/-- **Composition of submersions.** -/
+/-- **Composition of submersions.** Requires boundaryless source and intermediate models `I` and
+`J` (the final target model `K` need not be boundaryless). -/
 theorem IsSubmersion.comp (hg : IsSubmersion J K n g) (hf : IsSubmersion I J n f) :
     IsSubmersion I K n (g ∘ f) :=
   (hg.isSubmersionOfComplement_complement.comp hf.isSubmersionOfComplement_complement).isSubmersion
