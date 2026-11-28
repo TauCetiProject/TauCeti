@@ -202,31 +202,22 @@ private theorem jetCoeffAt_projIcc (ω : SymplecticForm V)
   obtain ⟨hJ, hKs, hKt⟩ := hcyl.eq_projIcc s t
   simp only [jetCoeffAt, hJ, hKs, hKt]
 
-/-- Data of an end of the cylinder that are the values of `C¹` cylinder data at a fixed `s = a`
-(with `C²` Hamiltonians) are `C¹` (with `C²` Hamiltonians). -/
-private theorem contDiff_endData_of_eq {J : ℝ × ℝ → V → AlmostComplexStructure V}
-    {Kt : ℝ × ℝ → V → ℝ} {Je : ℝ → V → AlmostComplexStructure V} {He : ℝ → V → ℝ} (a : ℝ)
-    (hJe : ∀ t, J (a, t) = Je t) (hHe : ∀ t, Kt (a, t) = He t)
-    (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
-    (hKt : ContDiff ℝ 2 (uncurry Kt)) :
-    (ContDiff ℝ 1 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap) ∧
-      ContDiff ℝ 2 (uncurry He) := by
-  obtain rfl : Je = fun t ↦ J (a, t) := funext fun t ↦ (hJe t).symm
-  obtain rfl : He = fun t ↦ Kt (a, t) := funext fun t ↦ (hHe t).symm
-  exact ⟨contDiff_comp_prodMap_prodMk_right hJ a, contDiff_comp_prodMap_prodMk_right hKt a⟩
-
-/-- Data of an end of the cylinder that are the values of `C¹` cylinder data at a fixed `s = a`
-(with `C²` Hamiltonians) are `C¹` (with `C²` Hamiltonians), and compatible where the cylinder data
-are. -/
-private theorem endData_of_eq (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V}
-    {Kt : ℝ × ℝ → V → ℝ} {Je : ℝ → V → AlmostComplexStructure V} {He : ℝ → V → ℝ} (a : ℝ)
-    (hJe : ∀ t, J (a, t) = Je t) (hHe : ∀ t, Kt (a, t) = He t)
+/-- The end data of Floer data cylindrical near the ends, `C¹` on the whole cylinder (with `C²`
+Hamiltonian `K_t`) and compatible, are `C¹` (with `C²` Hamiltonians) and compatible. -/
+private theorem endData_of_cylindrical (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u : ℝ × ℝ → V}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
     (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hKt : ContDiff ℝ 2 (uncurry Kt)) (hJc : ∀ z y, ω.Compatible (J z y)) :
-    (ContDiff ℝ 1 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap) ∧
-      ContDiff ℝ 2 (uncurry He) ∧ ∀ t y, ω.Compatible (Je t y) :=
-  ⟨(contDiff_endData_of_eq a hJe hHe hJ hKt).1, (contDiff_endData_of_eq a hJe hHe hJ hKt).2,
-    fun t ↦ (hJe t) ▸ hJc (a, t)⟩
+    ((ContDiff ℝ 1 fun p : ℝ × V ↦ (Jm p.1 p.2).toLinearMap.toContinuousLinearMap) ∧
+      ContDiff ℝ 2 (uncurry Hm) ∧ ∀ t y, ω.Compatible (Jm t y)) ∧
+    ((ContDiff ℝ 1 fun p : ℝ × V ↦ (Jp p.1 p.2).toLinearMap.toContinuousLinearMap) ∧
+      ContDiff ℝ 2 (uncurry Hp) ∧ ∀ t y, ω.Compatible (Jp t y)) :=
+  ⟨⟨(hcyl.contDiff_endData_neg hJ hKt).1, (hcyl.contDiff_endData_neg hJ hKt).2,
+      fun t ↦ hcyl.almostComplex_eq_of_le_neg (-R, t) le_rfl ▸ hJc (-R, t)⟩,
+    ⟨(hcyl.contDiff_endData_pos hJ hKt).1, (hcyl.contDiff_endData_pos hJ hKt).2,
+      fun t ↦ hcyl.almostComplex_eq_of_le (R, t) le_rfl ▸ hJc (R, t)⟩⟩
 
 /-- **Uniform closeness of the coefficient fields along a segment of maps.** For data cylindrical
 near the ends and `C¹` on the whole cylinder (with `C²` Hamiltonians), and differentiable maps
@@ -454,19 +445,13 @@ theorem continuousOn_floerSobolevOperator_family {E : Type*} [NormedAddCommGroup
       (fun w y ↦ (J (μ, w) y).toLinearMap.toContinuousLinearMap) (fun w ↦ Ks (μ, w))
       (fun w ↦ Kt (μ, w)) u) P := by
   intro lam hlam
-  have hR := le_abs_self R
-  have hR' : -|R| ≤ -R := by linarith
-  -- At each parameter, the data of the ends are those of the cylinder at `s = ∓|R|`; so they are
+  -- At each parameter, the data of the ends are those of the cylinder at `s = ∓R`; so they are
   -- `C¹` (with `C²` Hamiltonians).
   have hend (μ : E) (hμ : μ ∈ P) := And.intro
-    (contDiff_endData_of_eq (J := fun w ↦ J (μ, w)) (Kt := fun w ↦ Kt (μ, w)) (-|R|)
-      (fun t ↦ (hcyl μ hμ).almostComplex_eq_of_le_neg (_, t) hR')
-      (fun t ↦ (hcyl μ hμ).hamiltonianT_eq_of_le_neg (_, t) hR')
-      (contDiff_comp_prodMap_prodMk_right hJ μ) (contDiff_comp_prodMap_prodMk_right hKt μ))
-    (contDiff_endData_of_eq (J := fun w ↦ J (μ, w)) (Kt := fun w ↦ Kt (μ, w)) |R|
-      (fun t ↦ (hcyl μ hμ).almostComplex_eq_of_le (_, t) hR)
-      (fun t ↦ (hcyl μ hμ).hamiltonianT_eq_of_le (_, t) hR)
-      (contDiff_comp_prodMap_prodMk_right hJ μ) (contDiff_comp_prodMap_prodMk_right hKt μ))
+    ((hcyl μ hμ).contDiff_endData_neg (contDiff_comp_prodMap_prodMk_right hJ μ)
+      (contDiff_comp_prodMap_prodMk_right hKt μ))
+    ((hcyl μ hμ).contDiff_endData_pos (contDiff_comp_prodMap_prodMk_right hJ μ)
+      (contDiff_comp_prodMap_prodMk_right hKt μ))
   have hM (μ : E) (hμ : μ ∈ P) :=
     ω.memLp_floerJetCoeff_of_cylindrical (hcyl μ hμ) hu (hend μ hμ).1.2 (hend μ hμ).1.1 huxm hδm
       (hend μ hμ).2.2 (hend μ hμ).2.1 huxp hδp
@@ -532,13 +517,8 @@ private theorem isFredholm_and_index_eq_of_cylindrical (ω : SymplecticForm V)
         (ω.floerWeightedSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks
           Kt u c).index := by
   have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
-  obtain ⟨hR, hR'⟩ : R ≤ |R| ∧ -|R| ≤ -R := ⟨le_abs_self R, neg_le_neg (le_abs_self R)⟩
-  -- The data of the ends are the data of the cylinder at `s = ∓|R|`.
-  obtain ⟨hJm, hHm, hJxm⟩ := endData_of_eq ω (-|R|)
-    (fun t ↦ hcyl.almostComplex_eq_of_le_neg (_, t) hR')
-    (fun t ↦ hcyl.hamiltonianT_eq_of_le_neg (_, t) hR') hJ hKt hJc
-  obtain ⟨hJp, hHp, hJxp⟩ := endData_of_eq ω |R| (fun t ↦ hcyl.almostComplex_eq_of_le (_, t) hR)
-    (fun t ↦ hcyl.hamiltonianT_eq_of_le (_, t) hR) hJ hKt hJc
+  -- The data of the ends are the data of the cylinder at `s = ∓R`.
+  obtain ⟨⟨hJm, hHm, hJxm⟩, hJp, hHp, hJxp⟩ := endData_of_cylindrical ω hcyl hJ hKt hJc
   have hXmc : Continuous (uncurry fun t ↦ ω.hamiltonianVectorField (Hm t)) :=
     (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hHm).continuous
   have hXpc : Continuous (uncurry fun t ↦ ω.hamiltonianVectorField (Hp t)) :=
@@ -625,12 +605,7 @@ private theorem isFredholm_and_index_eq_of_cylindrical_zero (ω : SymplecticForm
           u').index =
         (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
           u).index := by
-  have hR := le_abs_self R
-  have hR' : -|R| ≤ -R := by linarith
-  have hHm := (endData_of_eq ω (-|R|) (fun t ↦ hcyl.almostComplex_eq_of_le_neg (_, t) hR')
-    (fun t ↦ hcyl.hamiltonianT_eq_of_le_neg (_, t) hR') hJ hKt hJc).2.1
-  have hHp := (endData_of_eq ω |R| (fun t ↦ hcyl.almostComplex_eq_of_le (_, t) hR)
-    (fun t ↦ hcyl.hamiltonianT_eq_of_le (_, t) hR) hJ hKt hJc).2.1
+  obtain ⟨⟨-, hHm, -⟩, -, hHp, -⟩ := endData_of_cylindrical ω hcyl hJ hKt hJc
   simp only [← floerWeightedSobolevOperator_zero] at h ⊢
   exact isFredholm_and_index_eq_of_cylindrical ω hcyl hJ hKs hKt hJc hu hu' continuous_const
     (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hxm
@@ -871,21 +846,10 @@ theorem isFredholm_floerSobolevOperator_and_index_eq_of_family (ω : SymplecticF
           (fun w ↦ Ks (μ₁, w)) (fun w ↦ Kt (μ₁, w)) u).index =
         (ω.floerSobolevOperator 2 (fun w y ↦ (J (μ₀, w) y).toLinearMap.toContinuousLinearMap)
           (fun w ↦ Ks (μ₀, w)) (fun w ↦ Kt (μ₀, w)) u).index := by
-  have hR := le_abs_self R
-  have hR' : -|R| ≤ -R := by linarith
-  -- At each parameter, the data of the ends are those of the cylinder at `s = ∓|R|`; so they are
+  -- At each parameter, the data of the ends are those of the cylinder at `s = ∓R`; so they are
   -- `C¹` (with `C²` Hamiltonians) and compatible.
-  have hend (μ : ℝ) (hμ : μ ∈ P) := And.intro
-    (endData_of_eq ω (J := fun w ↦ J (μ, w)) (Kt := fun w ↦ Kt (μ, w)) (-|R|)
-      (fun t ↦ (hcyl μ hμ).almostComplex_eq_of_le_neg (_, t) hR')
-      (fun t ↦ (hcyl μ hμ).hamiltonianT_eq_of_le_neg (_, t) hR')
-      (contDiff_comp_prodMap_prodMk_right hJ μ) (contDiff_comp_prodMap_prodMk_right hKt μ)
-      (hJc μ hμ))
-    (endData_of_eq ω (J := fun w ↦ J (μ, w)) (Kt := fun w ↦ Kt (μ, w)) |R|
-      (fun t ↦ (hcyl μ hμ).almostComplex_eq_of_le (_, t) hR)
-      (fun t ↦ (hcyl μ hμ).hamiltonianT_eq_of_le (_, t) hR)
-      (contDiff_comp_prodMap_prodMk_right hJ μ) (contDiff_comp_prodMap_prodMk_right hKt μ)
-      (hJc μ hμ))
+  have hend (μ : ℝ) (hμ : μ ∈ P) := endData_of_cylindrical ω (hcyl μ hμ)
+    (contDiff_comp_prodMap_prodMk_right hJ μ) (contDiff_comp_prodMap_prodMk_right hKt μ) (hJc μ hμ)
   -- The slice defects tend to zero for every parameter, since the vector fields `X_{H±_μ}` all
   -- agree along the orbits `x±`.
   have hδm' (μ : ℝ) (hμ : μ ∈ P) :=

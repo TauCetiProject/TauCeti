@@ -371,6 +371,22 @@ variable {R : Type*} [Ring R]
     (n • f).eval x y = n • f.eval x y :=
   map_zsmul (evalLinearMap x y) n f
 
+/-- A binary quadratic form is determined by its values: `a` and `c` are the values at `(1, 0)`
+and `(0, 1)`, and `a + b + c` is the value at `(1, 1)`. -/
+theorem eval_injective : Function.Injective (eval : BinaryQuadraticForm R → R → R → R) := by
+  intro f g h
+  have h₁ := congrFun (congrFun h 1) 0
+  have h₂ := congrFun (congrFun h 0) 1
+  have h₃ := congrFun (congrFun h 1) 1
+  rw [eval_one_zero, eval_one_zero] at h₁
+  rw [eval_zero_one, eval_zero_one] at h₂
+  simp only [eval_def, one_pow, mul_one] at h₃
+  ext
+  · exact h₁
+  · rw [h₁, h₂] at h₃
+    exact add_left_cancel (add_right_cancel h₃)
+  · exact h₂
+
 end Ring
 
 variable {R : Type*} [CommRing R]

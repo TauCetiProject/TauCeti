@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair
+public import TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair.Basic
 public import TauCeti.Analysis.InnerProductSpace.Variational.FormEigenspace.Basic
 public import TauCeti.Analysis.InnerProductSpace.Variational.EnergySpace
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic

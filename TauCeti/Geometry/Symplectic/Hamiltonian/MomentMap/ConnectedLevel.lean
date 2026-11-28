@@ -24,11 +24,17 @@ point lies in a convexity chart of `μ^ξ`
 level set of `μ^ξ` is connected**, critical levels included
 (`TauCeti.SmoothTwoForm.IsMomentMap.isPreconnected_setOf_apply_eq`). This holds for irrational as
 well as rational directions `ξ`, and neither closedness of `σ` nor equivariance of `μ` is used.
+The same convexity charts show that a critical point at which `μ^ξ` has Morse index zero, a local
+minimum by the Morse–Bott lemma, is a global minimum
+(`TauCeti.SmoothTwoForm.IsMomentMap.isMinOn_of_manifoldMorseIndex_eq_zero`).
 
 ## Main results
 
 * `TauCeti.SmoothTwoForm.IsMomentMap.isPreconnected_setOf_apply_eq`: the levels of the components
   of the moment map of a compact group action on a compact connected manifold are preconnected.
+* `TauCeti.SmoothTwoForm.IsMomentMap.isMinOn_of_manifoldMorseIndex_eq_zero`: a critical point of
+  Morse index zero of such a component, for instance one with positive semidefinite Hessian, is a
+  global minimum.
 
 ## References
 
@@ -42,7 +48,7 @@ well as rational directions `ξ`, and neither closedness of `σ` nor equivarianc
 
 public section
 
-open Filter Set
+open Filter Set Topology
 open scoped ContDiff Manifold
 
 namespace TauCeti.SmoothTwoForm.IsMomentMap
@@ -59,21 +65,20 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [CompactSpace M] [PreconnectedSpace M] [MulAction G M] [ContMDiffSMul I 𝓘(ℝ, E') ∞ G M]
   {σ : SmoothTwoForm 𝓘(ℝ, E') M} {μ : M → Module.Dual ℝ (GroupLieAlgebra I G)}
 
-/-- **The levels of a moment map component are connected.** Let a compact Lie group `G` act
-smoothly on a compact connected boundaryless finite-dimensional manifold `M`, preserving a
-nondegenerate two-form `σ`, with moment map `μ`. Then for every `ξ` in the Lie algebra of `G` and
-every `c`, the level set `{x | ⟨μ x, ξ⟩ = c}` is preconnected, so connected when nonempty. -/
-theorem isPreconnected_setOf_apply_eq
+omit [PreconnectedSpace M] in
+/-- At a critical point `x` of a moment map component `μ^ξ`, which lies on one of the Morse–Bott
+critical submanifolds `M^{T_ξ}_d`, the component has a convexity chart, and a local minimum if its
+Morse index at `x` is zero. -/
+private theorem exists_isConvexChart_and_isLocalMin
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G 𝓘(ℝ, E') M) μ)
     (hσ : σ.IsNondegenerate)
     (hσG : ∀ (a : G) (x : M) (u v : TangentSpace 𝓘(ℝ, E') x),
       σ.eval₂ (a • x) (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') (a • ·) x u)
         (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') (a • ·) x v) = σ.eval₂ x u v)
-    (ξ : GroupLieAlgebra I G) (c : ℝ) :
-    IsPreconnected {x | μ x ξ = c} := by
+    (ξ : GroupLieAlgebra I G) {x : M} (hx : x ∈ criticalPoints 𝓘(ℝ, E') fun y ↦ μ y ξ) :
+    (∃ U, x ∈ U ∧ IsConvexChart (fun y ↦ μ y ξ) U) ∧
+      (manifoldMorseIndex 𝓘(ℝ, E') (fun y ↦ μ y ξ) x = 0 → IsLocalMin (fun y ↦ μ y ξ) x) := by
   have hf : ContMDiff 𝓘(ℝ, E') 𝓘(ℝ) ∞ fun y ↦ μ y ξ := h.contMDiff ξ
-  refine isPreconnected_preimage_singleton_of_forall_mem_criticalPoints_exists_isConvexChart
-    (hf.of_le (by simp)) (fun x hx ↦ ?_) c
   -- A critical point lies on one of the Morse–Bott critical submanifolds `M^{T_ξ}_d`.
   obtain ⟨d, hd⟩ := mem_iUnion.1 (h.criticalPoints_eq_iUnion_fixedPointsOfFinrank hσ ξ ▸ hx)
   -- The fixed tangent subspace at `x`, of dimension `d`, is a subspace of the model `E'`, which is
@@ -87,10 +92,52 @@ theorem isPreconnected_setOf_apply_eq
   let := C
   have hix : SmoothEmbedding.ofIsSmoothEmbedding _ hemb ⟨x, hd⟩ = x := by
     rw [SmoothEmbedding.coe_ofIsSmoothEmbedding]
-  have := hcrit.exists_isConvexChart (s := ⟨x, hd⟩) (by simp)
-    (Eventually.of_forall fun y ↦ (hf y).of_le (by simp))
-    (fun h1 ↦ Nat.not_even_one (h1 ▸ h.even_manifoldMorseIndex hσ hσG (by rw [hix]; exact hx)))
-    (fun h1 ↦ Nat.not_even_one (h1 ▸ h.even_manifoldMorseIndex_neg hσ hσG (by rw [hix]; exact hx)))
-  rwa [hix] at this
+  have hf3 : ∀ᶠ y in 𝓝 (SmoothEmbedding.ofIsSmoothEmbedding _ hemb ⟨x, hd⟩),
+      ContMDiffAt 𝓘(ℝ, E') 𝓘(ℝ) 3 (fun y ↦ μ y ξ) y :=
+    Eventually.of_forall fun y ↦ (hf y).of_le (by simp)
+  refine ⟨?_, fun h0 ↦ ?_⟩
+  · have := hcrit.exists_isConvexChart (s := ⟨x, hd⟩) (by simp) hf3
+      (fun h1 ↦ Nat.not_even_one (h1 ▸ h.even_manifoldMorseIndex hσ hσG (by rw [hix]; exact hx)))
+      (fun h1 ↦ Nat.not_even_one
+        (h1 ▸ h.even_manifoldMorseIndex_neg hσ hσG (by rw [hix]; exact hx)))
+    rwa [hix] at this
+  · have := hcrit.isLocalMin_of_manifoldMorseIndex_eq_zero (s := ⟨x, hd⟩) (by simp) hf3
+      (by rw [hix]; exact h0)
+    rwa [hix] at this
+
+/-- **The levels of a moment map component are connected.** Let a compact Lie group `G` act
+smoothly on a compact connected boundaryless finite-dimensional manifold `M`, preserving a
+nondegenerate two-form `σ`, with moment map `μ`. Then for every `ξ` in the Lie algebra of `G` and
+every `c`, the level set `{x | ⟨μ x, ξ⟩ = c}` is preconnected, so connected when nonempty. -/
+theorem isPreconnected_setOf_apply_eq
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G 𝓘(ℝ, E') M) μ)
+    (hσ : σ.IsNondegenerate)
+    (hσG : ∀ (a : G) (x : M) (u v : TangentSpace 𝓘(ℝ, E') x),
+      σ.eval₂ (a • x) (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') (a • ·) x u)
+        (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') (a • ·) x v) = σ.eval₂ x u v)
+    (ξ : GroupLieAlgebra I G) (c : ℝ) :
+    IsPreconnected {x | μ x ξ = c} :=
+  isPreconnected_preimage_singleton_of_forall_mem_criticalPoints_exists_isConvexChart
+    ((h.contMDiff ξ).of_le (by simp))
+    (fun _ hx ↦ (h.exists_isConvexChart_and_isLocalMin hσ hσG ξ hx).1) c
+
+/-- **A critical point of index zero of a moment map component is a global minimum.** Let a compact
+Lie group `G` act smoothly on a compact connected boundaryless finite-dimensional manifold `M`,
+preserving a nondegenerate two-form `σ`, with moment map `μ`. If `x` is a critical point of a
+component `μ^ξ` at which its Morse index is zero, for instance one at which its Hessian is positive
+semidefinite, then `μ^ξ` attains its minimum at `x`. -/
+theorem isMinOn_of_manifoldMorseIndex_eq_zero
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G 𝓘(ℝ, E') M) μ)
+    (hσ : σ.IsNondegenerate)
+    (hσG : ∀ (a : G) (x : M) (u v : TangentSpace 𝓘(ℝ, E') x),
+      σ.eval₂ (a • x) (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') (a • ·) x u)
+        (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') (a • ·) x v) = σ.eval₂ x u v)
+    {ξ : GroupLieAlgebra I G} {x : M} (hx : x ∈ criticalPoints 𝓘(ℝ, E') fun y ↦ μ y ξ)
+    (h0 : manifoldMorseIndex 𝓘(ℝ, E') (fun y ↦ μ y ξ) x = 0) :
+    IsMinOn (fun y ↦ μ y ξ) univ x :=
+  isMinOn_of_isLocalMin_of_forall_mem_criticalPoints_exists_isConvexChart
+    ((h.contMDiff ξ).of_le (by simp))
+    (fun _ hy ↦ (h.exists_isConvexChart_and_isLocalMin hσ hσG ξ hy).1)
+    ((h.exists_isConvexChart_and_isLocalMin hσ hσG ξ hx).2 h0)
 
 end TauCeti.SmoothTwoForm.IsMomentMap

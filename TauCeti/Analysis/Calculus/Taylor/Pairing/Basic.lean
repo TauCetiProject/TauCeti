@@ -18,10 +18,12 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 /-!
 # Taylor-monomial integral pairings
 
-Over `[RCLike 𝕜]`, integrating iterated directional derivatives of shifted polynomial kernels
-`(∏ l ∈ t, ⟪a l, x - z⟫_𝕜) * φ z` against a locally integrable function `v` on a set `s` expands
-via powersets into `∑ u ∈ t.powerset, (∏ l ∈ u, ⟪a l, x⟫_𝕜) * c (t \ u)`, yielding `C^m` smoothness,
-factor-by-factor spatial differentiation, and high-order directional vanishing.
+Over `[RCLike 𝕜]`, pointwise and integrated iterated directional derivatives of shifted polynomial
+kernels `(∏ l ∈ t, ⟪a l, x - z⟫_𝕜) * φ z` expand via powersets into
+`∑ u ∈ t.powerset, (∏ l ∈ u, ⟪a l, x⟫_𝕜) * c (t \ u)`, yielding `C^m` smoothness,
+factor-by-factor spatial differentiation, and high-order directional vanishing. The basis-parametric
+summand `TauCeti.taylorKernelTerm` packages the order-`j` adjoint Taylor term shared between the
+averaged Taylor kernel and Sobolev weak-derivative commutation.
 -/
 
 public section
@@ -127,6 +129,80 @@ theorem iteratedFDerivAlong_insertNth_prod_inner_sub_erase_mul {j : ℕ} (p : Fi
   rw [herase, congrFun ((List.ofFn_insertNth_perm p v a).iteratedFDerivAlong_eq (hqg.mul hφ)
     (by simp)) y, iteratedFDerivAlong_cons_apply]
 
+/-- Powerset expansion of the pointwise iterated directional derivative of a Taylor-monomial
+kernel `(∏ l ∈ t, ⟪a l, x - z⟫_𝕜) * φ z`. -/
+theorem iteratedFDerivAlong_prod_inner_sub_mul_eq_sum {α : Type*} [DecidableEq α]
+    (t : Finset α) (a : α → E) {n : ℕ∞ω} {φ : E → 𝕜} (hφ : ContDiff 𝕜 n φ)
+    (vs : List E) (hvs : vs.length ≤ n) (x y : E) :
+    iteratedFDerivAlong 𝕜 vs (fun z => (∏ l ∈ t, ⟪a l, x - z⟫_𝕜) * φ z) y =
+      ∑ u ∈ t.powerset, (∏ l ∈ u, ⟪a l, x⟫_𝕜) *
+        iteratedFDerivAlong 𝕜 vs (fun z => (∏ l ∈ t \ u, -⟪a l, z⟫_𝕜) * φ z) y := by
+  let ψ : Finset α → E → 𝕜 := fun r z => (∏ l ∈ r, -⟪a l, z⟫_𝕜) * φ z
+  have hψ : ∀ r, ContDiff 𝕜 n (ψ r) := fun _ =>
+    ((contDiff_prod fun l _ => (innerSL 𝕜 (a l)).contDiff.neg).of_le le_top).mul hφ
+  have hexp : (fun z => (∏ l ∈ t, ⟪a l, x - z⟫_𝕜) * φ z) =
+      fun z => ∑ u ∈ t.powerset, (∏ l ∈ u, ⟪a l, x⟫_𝕜) * ψ (t \ u) z :=
+    funext fun z => by
+      simp_rw [ψ, prod_inner_sub_right_eq_sum_powerset t a x z, Finset.sum_mul, mul_assoc]
+  rw [hexp, iteratedFDerivAlong_fun_sum _ (fun u _ => contDiff_const.mul (hψ (t \ u))) vs hvs]
+  exact Finset.sum_congr rfl fun u _ =>
+    congrFun (iteratedFDerivAlong_const_mul (hψ (t \ u)) _ vs hvs) y
+
+/-- Order-`j` weighted adjoint Taylor kernel summand along a finite family of directions
+`b : ι → E`:
+`((-1) ^ j / j!) * ∑ I : Fin j → ι,`
+`  D_{b (I 0), …, b (I (j - 1))} (z ↦ (∏ l, ⟪b (I l), x - z⟫_𝕜) * φ z) y`. -/
+def taylorKernelTerm {ι : Type*} [Fintype ι] (b : ι → E) (φ : E → 𝕜) (j : ℕ) (x y : E) : 𝕜 :=
+  ((-1 : 𝕜) ^ j / (j.factorial : 𝕜)) *
+    ∑ I : Fin j → ι,
+      iteratedFDerivAlong 𝕜 (List.ofFn (b ∘ I))
+        (fun z => (∏ l : Fin j, ⟪b (I l), x - z⟫_𝕜) * φ z) y
+
+/-- Definitional formula for `TauCeti.taylorKernelTerm`. -/
+theorem taylorKernelTerm_def {ι : Type*} [Fintype ι] (b : ι → E) (φ : E → 𝕜) (j : ℕ)
+    (x y : E) :
+    taylorKernelTerm b φ j x y =
+      ((-1 : 𝕜) ^ j / (j.factorial : 𝕜)) *
+        ∑ I : Fin j → ι,
+          iteratedFDerivAlong 𝕜 (List.ofFn (b ∘ I))
+            (fun z => (∏ l : Fin j, ⟪b (I l), x - z⟫_𝕜) * φ z) y := by
+  rfl
+
+/-- At order `0`, `taylorKernelTerm` reduces to `φ y`. -/
+@[simp]
+theorem taylorKernelTerm_zero {ι : Type*} [Fintype ι] (b : ι → E) (φ : E → 𝕜) (x y : E) :
+    taylorKernelTerm b φ 0 x y = φ y := by
+  simp [taylorKernelTerm]
+
+/-- For every `x`, the topological support of `y ↦ taylorKernelTerm b φ j x y` lies in
+`tsupport φ`. -/
+theorem tsupport_taylorKernelTerm_subset {ι : Type*} [Fintype ι] (b : ι → E) (φ : E → 𝕜)
+    (j : ℕ) (x : E) :
+    tsupport (taylorKernelTerm b φ j x) ⊆ tsupport φ := by
+  refine closure_minimal (fun y hy => by_contra fun hyφ => Function.mem_support.mp hy ?_)
+    (isClosed_tsupport φ)
+  rw [taylorKernelTerm_def]
+  exact mul_eq_zero_of_right _ (Finset.sum_eq_zero fun I _ =>
+    image_eq_zero_of_notMem_tsupport fun h =>
+      hyφ ((tsupport_iteratedFDerivAlong_subset 𝕜 _ _).trans tsupport_mul_subset_right h))
+
+/-- Compact support of `φ` passes to `y ↦ taylorKernelTerm b φ j x y`. -/
+theorem hasCompactSupport_taylorKernelTerm {ι : Type*} [Fintype ι] (b : ι → E) {φ : E → 𝕜}
+    (hφc : HasCompactSupport φ) (j : ℕ) (x : E) :
+    HasCompactSupport (taylorKernelTerm b φ j x) :=
+  hφc.of_isClosed_subset (isClosed_tsupport _) (tsupport_taylorKernelTerm_subset b φ j x)
+
+/-- If `φ` is `C^n` and `k + j ≤ n`, then `y ↦ taylorKernelTerm b φ j x y` is `C^k`. -/
+theorem contDiff_taylorKernelTerm_right {ι : Type*} [Fintype ι] (b : ι → E)
+    {n k : ℕ∞ω} {j : ℕ} {φ : E → 𝕜} (hφ : ContDiff 𝕜 n φ) (hkj : k + j ≤ n) (x : E) :
+    ContDiff 𝕜 k (taylorKernelTerm b φ j x) := by
+  unfold taylorKernelTerm
+  refine contDiff_const.mul (ContDiff.sum fun I _ => ?_)
+  have hprod : ContDiff 𝕜 n (fun z => (∏ l : Fin j, ⟪b (I l), x - z⟫_𝕜) * φ z) :=
+    ((contDiff_prod fun l _ =>
+      (innerSL 𝕜 (b (I l))).contDiff.comp (contDiff_const.sub contDiff_id)).of_le le_top).mul hφ
+  exact hprod.iteratedFDerivAlong (List.ofFn (b ∘ I)) (by simpa using hkj)
+
 end Pointwise
 
 section Pairing
@@ -203,19 +279,45 @@ theorem setIntegral_iteratedFDerivAlong_prod_inner_sub_mul_eq_sum {α : Type*} [
       (hφc.mul_left.iteratedFDerivAlong 𝕜 vs)
       (((tsupport_iteratedFDerivAlong_subset 𝕜 vs _).trans tsupport_mul_subset_right).trans
         hφs)).integrableOn
-  have hexp : (fun z => (∏ l ∈ t, ⟪a l, x - z⟫_𝕜) * φ z) =
-      fun z => ∑ u ∈ t.powerset, (∏ l ∈ u, ⟪a l, x⟫_𝕜) * ψ (t \ u) z :=
-    funext fun z => by
-      simp_rw [ψ, prod_inner_sub_right_eq_sum_powerset t a x z, Finset.sum_mul, mul_assoc]
   have hstep : ∀ y, iteratedFDerivAlong 𝕜 vs (fun z => (∏ l ∈ t, ⟪a l, x - z⟫_𝕜) * φ z) y * v y =
       ∑ u ∈ t.powerset, (∏ l ∈ u, ⟪a l, x⟫_𝕜) * (iteratedFDerivAlong 𝕜 vs (ψ (t \ u)) y * v y) :=
     fun y => by
-      rw [hexp, iteratedFDerivAlong_fun_sum _ (fun u _ => contDiff_const.mul (hψ (t \ u))) vs hvs,
-        Finset.sum_mul]
-      exact Finset.sum_congr rfl fun u _ => by
-        rw [congrFun (iteratedFDerivAlong_const_mul (hψ (t \ u)) _ vs hvs) y, mul_assoc]
+      rw [iteratedFDerivAlong_prod_inner_sub_mul_eq_sum t a hφ vs hvs x y, Finset.sum_mul]
+      exact Finset.sum_congr rfl fun _ _ => mul_assoc _ _ _
   simp_rw [hstep]; rw [integral_finsetSum _ fun u _ => (hint u).const_mul _]
   exact Finset.sum_congr rfl fun _ _ => integral_const_mul _ _
+
+/-- Set-integral pairing of `TauCeti.taylorKernelTerm` against a locally integrable function `w`
+on `s` containing `tsupport φ`, expressed in `iteratedFDeriv` form. -/
+theorem setIntegral_taylorKernelTerm_mul_eq {ι : Type*} [Fintype ι]
+    {μ : Measure E} {s : Set E} (b : ι → E) {r : ℕ} {φ : E → 𝕜}
+    (hφ : ContDiff 𝕜 r φ) (hφc : HasCompactSupport φ) (hφs : tsupport φ ⊆ s)
+    {w : E → 𝕜} (hw : LocallyIntegrableOn w s μ) (x : E) :
+    ∫ y in s, taylorKernelTerm b φ r x y * w y ∂μ =
+      ((-1 : 𝕜) ^ r / (r.factorial : 𝕜)) * ∑ I : Fin r → ι, ∫ y in s,
+        iteratedFDeriv 𝕜 r (fun z => (∏ l : Fin r, ⟪b (I l), x - z⟫_𝕜) * φ z)
+          y (b ∘ I) * w y ∂μ := by
+  have hint : ∀ I : Fin r → ι, IntegrableOn (fun y =>
+      iteratedFDerivAlong 𝕜 (List.ofFn (b ∘ I))
+        (fun z => (∏ l : Fin r, ⟪b (I l), x - z⟫_𝕜) * φ z) y * w y) s μ := fun I => by
+    have hcont : ContDiff 𝕜 0 (iteratedFDerivAlong 𝕜 (List.ofFn (b ∘ I))
+        (fun z => (∏ l : Fin r, ⟪b (I l), x - z⟫_𝕜) * φ z)) :=
+      (((contDiff_prod fun l _ =>
+        (innerSL 𝕜 (b (I l))).contDiff.comp (contDiff_const.sub contDiff_id)).of_le le_top).mul
+          hφ).iteratedFDerivAlong _ (by simp)
+    exact (hw.integrable_smul_left_of_hasCompactSupport hcont.continuous.continuousOn
+      (hφc.mul_left.iteratedFDerivAlong 𝕜 _)
+      (((tsupport_iteratedFDerivAlong_subset 𝕜 _ _).trans tsupport_mul_subset_right).trans
+        hφs)).integrableOn
+  have hpt : (fun y => taylorKernelTerm b φ r x y * w y) = fun y =>
+      ((-1 : 𝕜) ^ r / (r.factorial : 𝕜)) * ∑ I : Fin r → ι,
+        iteratedFDerivAlong 𝕜 (List.ofFn (b ∘ I))
+          (fun z => (∏ l : Fin r, ⟪b (I l), x - z⟫_𝕜) * φ z) y * w y := funext fun y => by
+    simp only [taylorKernelTerm_def, Finset.sum_mul, Finset.mul_sum, mul_assoc]
+  rw [hpt, integral_const_mul, integral_finsetSum _ fun I _ => hint I]
+  exact congrArg _ (Finset.sum_congr rfl fun I _ =>
+    (setIntegral_iteratedFDeriv_prod_inner_sub_mul_eq_iteratedFDerivAlong
+      (b ∘ I) hφ w x).symm)
 
 /-- Every Taylor-monomial pairing (`iteratedFDerivAlong` form) on `s` is `C^m` for every `m`. -/
 theorem contDiff_setIntegral_iteratedFDerivAlong_prod_inner_sub_mul {α : Type*} {μ : Measure E}

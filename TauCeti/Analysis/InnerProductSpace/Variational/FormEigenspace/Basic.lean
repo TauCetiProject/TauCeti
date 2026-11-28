@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair
+public import TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 
 /-!
