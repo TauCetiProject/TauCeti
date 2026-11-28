@@ -104,10 +104,6 @@ variable (ℬ) in
 private abbrev coeff (b : B) : S →+* Γ(Proj ℬ, basicOpen ℬ b) :=
   (awayToSection ℬ b).hom.comp (algebraMap S (Away ℬ b))
 
-private theorem val_coeff_apply (b : B) (s : S) (y : basicOpen ℬ b) :
-    ((coeff ℬ b s).val y).val = Localization.mk (algebraMap S B s) 1 :=
-  (rfl)
-
 variable [Algebra Γ(Proj 𝒜, basicOpen 𝒜 a) Γ(Proj ℬ, basicOpen ℬ (f a))]
   (halg : ∀ c, algebraMap Γ(Proj 𝒜, basicOpen 𝒜 a) Γ(Proj ℬ, basicOpen ℬ (f a)) c =
     (map f hf).appLE _ _ (map_preimage_basicOpen f hf a).ge c)
@@ -258,20 +254,14 @@ private theorem exists_eq_theta
       theta_mulPow f hf φ hφ ha n halg k' j' k _ _ h' hJ (Nat.add_comm _ _) hJK]
   | tmul c m =>
     obtain ⟨k, j, h, x, hx, rfl⟩ := exists_eq_const_basicOpen ha hd m
-    obtain ⟨l, j₀, h₀, y, hy, hc⟩ := exists_eq_const_basicOpen (n := 0) (Graded.map_mem f ha) hd
-      (sectionsLinearEquivTwistingSheafZero ℬ _ c)
-    obtain rfl : j₀ = l * d := by omega
+    obtain ⟨c, rfl⟩ := (basicOpenIsoAway ℬ (f a) (Graded.map_mem f ha)
+      hd).commRingCatIsoToRingEquiv.surjective c
+    obtain ⟨l, y, hy, rfl⟩ := Away.mk_surjective ℬ (Graded.map_mem f ha) c
     obtain ⟨u, hu⟩ := hsurj (l * d) ⟨y, hy⟩
-    -- Under `Γ(D₊(f a), 𝒪) ≃ Γ(D₊(f a), 𝒪(0))`, the fraction `y / (f a)ˡ` is a function.
-    have hc' : c = awayToSection ℬ (f a) (Away.mk ℬ (Graded.map_mem f ha) l _
-        ((φ (l * d)).liftBaseChange S u).property) :=
-      (sectionsLinearEquivTwistingSheafZero ℬ _).injective <| hc.trans <|
-        (const_ext (by rw [hu]) : _ = fracPow (n := 0) (Graded.map_mem f ha) l (l * d) (by simp) _
-          ((φ (l * d)).liftBaseChange S u).property).trans (ext fun _ ↦ rfl)
+    obtain rfl : ((φ (l * d)).liftBaseChange S u : B) = y := congrArg Subtype.val hu
     have hJ : ((l * d + j : ℕ) : ℤ) = ((l + k) * d : ℕ) + n := by push_cast at h ⊢; linarith
     refine ⟨l + k, l * d + j, hJ,
       ((DirectSum.gMulLHom R (fun i ↦ 𝒜 i)).flip ⟨x, hx⟩).baseChange S u, ?_⟩
-    rw [hc']
     exact awayToSection_mk_tmul_eq_theta f hf φ hφ ha n halg l k j h hJ x hx u
 
 variable [Module Γ(Proj 𝒜, basicOpen 𝒜 a) Γ(twistingSheaf ℬ n, basicOpen ℬ (f a))]
@@ -294,13 +284,18 @@ private theorem liftBaseChange_theta (k j : ℕ) (h : (j : ℤ) = (k * d : ℕ) 
     refine (congrArg (coeff ℬ (f a) s • ·) (comap_const f hf _ h _ _ x.property
       (by simpa [mul_comm] using SetLike.pow_mem_graded k ha)
       fun y (hy : y ∈ basicOpen 𝒜 a) hak ↦ hy (y.isPrime.mem_of_pow_mem k hak))).trans ?_
-    refine ext fun y ↦ (smul_apply _ _ y).trans ?_
-    erw [val_coeff_apply, const_apply, const_apply]
-    rw [Localization.mk_mul]
-    refine Localization.mk_eq_mk_iff.2 (Localization.r_iff_exists.2 ⟨1, ?_⟩)
-    simp only [LinearMap.liftBaseChange_tmul, Submodule.coe_smul, hφ, Algebra.smul_def,
-      map_pow, Submonoid.coe_mul, Submonoid.coe_one]
-    ring
+    -- The coefficient `s` is the function `s / (f a)⁰` on `D₊(f a)`.
+    have hs : algebraMap S B s ∈ ℬ (0 * d) := by simpa using SetLike.algebraMap_mem_graded ℬ s
+    have e : algebraMap S (Away ℬ (f a)) s = Away.mk ℬ (Graded.map_mem f ha) 0 _ hs :=
+      HomogeneousLocalization.val_injective _ (by
+        rw [HomogeneousLocalization.val_algebraMap, Away.val_mk,
+          IsScalarTower.algebraMap_apply S B, ← Localization.mk_one_eq_algebraMap]
+        exact congrArg _ (Subtype.ext (pow_zero _).symm))
+    rw [RingHom.comp_apply, e]
+    refine (congrArg (_ • ·) (const_ext (by rw [map_pow]) : _ = fracPow (Graded.map_mem f ha) k j h
+      (f x) (Graded.map_mem f x.property))).trans <|
+        (awayToSection_mk_smul_fracPow _ 0 k j h (by simpa using h) ..).trans ?_
+    exact const_ext (by simp [hφ, Algebra.smul_def])
 
 include hφ ha halg hψ hd in
 /-- **Pulling back sections of `𝒪(n)` over a standard open is a base change.** Let `f : 𝒜 →+*ᵍ ℬ`
