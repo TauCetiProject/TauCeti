@@ -13,6 +13,7 @@ public import Mathlib.Basic.Complex.Basic
 import Mathlib.Data.ZMod.QuotientGroup
 import TauCeti.LinearAlgebra.LinearIndependent.MonoidHom
 import TauCeti.NumberTheory.MulChar.Basic
+import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import Mathlib.RingTheory.IntegralDomain
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
@@ -258,9 +259,8 @@ theorem ringHomComp_eq_pow {χ : MulChar M R} {n : ℕ} [NeZero n] (hχ : χ ^ n
     (hμ : IsPrimitiveRoot μ n) {σ : R →+* R} {t : ℕ} (hσ : σ μ = μ ^ t) :
     χ.ringHomComp σ = χ ^ t := by
   refine MulChar.ext fun u ↦ ?_
-  obtain ⟨k, -, hk⟩ := hμ.eq_pow_of_pow_eq_one (ξ := χ u) <| by
-    rw [← pow_apply_coe, hχ, one_apply_coe]
-  rw [ringHomComp_apply, pow_apply_coe, ← hk, map_pow, hσ, ← pow_mul, ← pow_mul, mul_comm]
+  rw [ringHomComp_apply, pow_apply_coe]
+  exact hμ.map_eq_pow σ hσ <| by rw [← pow_apply_coe, hχ, one_apply_coe]
 
 end IsDomain
 

@@ -8,9 +8,11 @@ module
 public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Algebra.Group.AddChar
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
+public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import Mathlib.Algebra.Group.Units.Equiv
 import Mathlib.GroupTheory.OrderOfElement
 import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
+import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
 # Additive characters
@@ -30,6 +32,8 @@ import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
   group sum to zero once some `ψ b - 1` is left-regular, over any commutative ring.
 * `AddChar.isIntegral_apply`: the values of an additive character of a finite group are algebraic
   integers.
+* `MonoidHom.compAddChar_eq_pow`: if `ψ ^ n = 1` and `σ` sends a primitive `n`-th root of unity
+  `ζ` to `ζ ^ c`, then `σ ∘ ψ = ψ ^ c`.
 -/
 
 public section
@@ -87,3 +91,13 @@ theorem AddChar.map_eq_one_of_add_eq_zero {A M : Type*} [AddMonoid A] [Monoid M]
     (ψ : AddChar A M) {x y : A} (hx : ψ x = 1) (hxy : y + x = 0) : ψ y = 1 :=
   calc ψ y = ψ y * ψ x := by rw [hx, mul_one]
     _ = 1 := by rw [← AddChar.map_add_eq_mul, hxy, AddChar.map_zero_eq_one]
+
+/-- **The Galois action on an additive character.** If `ψ ^ n = 1` and a monoid endomorphism `σ`
+of a domain sends a primitive `n`-th root of unity `ζ` to `ζ ^ c`, then `σ ∘ ψ = ψ ^ c`: every
+value of `ψ` is a power of `ζ`. -/
+theorem MonoidHom.compAddChar_eq_pow {A S : Type*} [AddMonoid A] [CommRing S] [IsDomain S]
+    {ψ : AddChar A S} {n : ℕ} [NeZero n] (hψ : ψ ^ n = 1) {ζ : S} (hζ : IsPrimitiveRoot ζ n)
+    {σ : S →* S} {c : ℕ} (hσ : σ ζ = ζ ^ c) : σ.compAddChar ψ = ψ ^ c := by
+  ext x
+  rw [MonoidHom.coe_compAddChar, Function.comp_apply, _root_.pow_apply]
+  exact hζ.map_eq_pow σ hσ <| by rw [← _root_.pow_apply, hψ, _root_.one_apply]

@@ -10,8 +10,8 @@ public import Mathlib.RingTheory.Adjoin.Basic
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import Mathlib.NumberTheory.JacobiSum.Basic
 import Mathlib.NumberTheory.MulChar.Lemmas
+import TauCeti.Algebra.Group.AddChar.Basic
 import TauCeti.NumberTheory.GaussSum.Basic
-import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 import TauCeti.NumberTheory.MulChar.GaloisOrbit
 import TauCeti.RingTheory.RootsOfUnity.Adjoin
 
@@ -46,7 +46,7 @@ fixes `g(χ, ψ) ^ m`.
 * `TauCeti.map_gaussSum_of_apply_eq_pow`: the same if `σ μ = μ ^ t` and `σ ζ = ζ ^ c`.
 * `TauCeti.map_gaussSum_eq_inv_apply_mul`: `σ_c (g(χ, ψ)) = χ⁻¹ (c) g(χ, ψ)` if `σ` fixes `μ`.
 * `TauCeti.map_gaussSum_eq_gaussSum_pow`: `τ_t (g(χ, ψ)) = g(χ ^ t, ψ)` if `σ` fixes `ζ`.
-* `TauCeti.gaussSum_pow_mem_algebraAdjoin`: over a finite field, `g(χ, ψ) ^ m ∈ ℤ[μ]`.
+* `AddChar.gaussSum_pow_mem_algebraAdjoin`: over a finite field, `g(χ, ψ) ^ m ∈ ℤ[μ]`.
 
 ## References
 
@@ -122,9 +122,10 @@ end FiniteRing
 
 /-- **The `m`-th power of a Gauss sum.** Over a finite field, if `χ ^ m = 1` and `μ` is a
 primitive `m`-th root of unity, then `g(χ, ψ) ^ m ∈ ℤ[μ]`. -/
-theorem gaussSum_pow_mem_algebraAdjoin {F R : Type*} [Field F] [Fintype F] [CommRing R]
-    [IsDomain R] {χ : MulChar F R} (ψ : AddChar F R) {m : ℕ} [NeZero m] (hχ : χ ^ m = 1) {μ : R}
-    (hμ : IsPrimitiveRoot μ m) : gaussSum χ ψ ^ m ∈ Algebra.adjoin ℤ {μ} := by
+theorem _root_.AddChar.gaussSum_pow_mem_algebraAdjoin {F R : Type*} [Field F] [Fintype F]
+    [CommRing R] [IsDomain R] {χ : MulChar F R} (ψ : AddChar F R) {m : ℕ} [NeZero m]
+    (hχ : χ ^ m = 1) {μ : R} (hμ : IsPrimitiveRoot μ m) :
+    gaussSum χ ψ ^ m ∈ Algebra.adjoin ℤ {μ} := by
   -- Reduce to `m = orderOf χ`, with the primitive root `ν = μ ^ a` for `m = orderOf χ * a`.
   obtain ⟨a, ha⟩ := orderOf_dvd_of_pow_eq_one hχ
   have hν : IsPrimitiveRoot (μ ^ a) (orderOf χ) := hμ.pow (NeZero.pos m) (by rw [ha, mul_comm])

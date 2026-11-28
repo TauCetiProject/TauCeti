@@ -34,8 +34,6 @@ that its order, as a monoid hom out of `Multiplicative (ZMod n)`, is the order o
 
 * `AddChar.orderOf_toMonoidHom_zmodChar`: the character `i ↦ ζ ^ i` of `ZMod n` has the order of
   `ζ`.
-* `MonoidHom.compAddChar_eq_pow`: if `ψ ^ n = 1` and `σ` sends a primitive `n`-th root of unity
-  `ζ` to `ζ ^ c`, then `σ ∘ ψ = ψ ^ c`.
 * `AddChar.IsPrimitive.ne_one`: a primitive additive character on a nontrivial ring is
   nontrivial.
 * `AddChar.IsPrimitive.mulShift_eq_one_iff`: the shift of a primitive character by `a` is
@@ -92,18 +90,6 @@ theorem orderOf_toMonoidHom_zmodChar {C : Type*} [CommMonoid C] {n : ℕ} [NeZer
     simpa [zmodChar_apply, TauCeti.pow_val_one hζ, ← pow_mul] using this
   · simp only [MonoidHom.pow_apply, toMonoidHom_apply, zmodChar_apply, MonoidHom.one_apply]
     rw [← pow_mul, pow_mul', h, one_pow]
-
-/-- **The Galois action on an additive character.** If `ψ ^ n = 1` and a monoid endomorphism `σ`
-of a domain sends a primitive `n`-th root of unity `ζ` to `ζ ^ c`, then `σ ∘ ψ = ψ ^ c`: every
-value of `ψ` is a power of `ζ`. -/
-theorem _root_.MonoidHom.compAddChar_eq_pow {A S : Type*} [AddMonoid A] [CommRing S] [IsDomain S]
-    {ψ : AddChar A S} {n : ℕ} [NeZero n] (hψ : ψ ^ n = 1) {ζ : S} (hζ : IsPrimitiveRoot ζ n)
-    {σ : S →* S} {c : ℕ} (hσ : σ ζ = ζ ^ c) : σ.compAddChar ψ = ψ ^ c := by
-  ext x
-  obtain ⟨k, -, hk⟩ := hζ.eq_pow_of_pow_eq_one (ξ := ψ x) <| by
-    rw [← _root_.pow_apply, hψ, _root_.one_apply]
-  rw [MonoidHom.coe_compAddChar, Function.comp_apply]
-  rw [_root_.pow_apply, ← hk, map_pow, hσ, ← pow_mul, ← pow_mul, mul_comm]
 
 variable {R R' : Type*} [CommRing R] [Nontrivial R] [CommMonoid R']
 
