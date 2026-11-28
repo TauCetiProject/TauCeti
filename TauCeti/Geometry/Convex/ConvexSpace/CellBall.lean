@@ -62,6 +62,12 @@ open interior `{y | ∀ i, 0 < y.weights i}`
   `TauCeti.standardCellBallToOrderedSimplex_one_neg_one`, and
   `TauCeti.weights_standardCellBallToOrderedSimplex_two_single`: explicit boundary evaluations in
   dimensions `1` and `2`.
+
+## References
+
+* Yury Kudryashov's `Mathlib.Analysis.Convex.GaugeRescale`, whose `gaugeRescaleHomeomorph` and
+  `image_gaugeRescaleHomeomorph_closure` supply the underlying radial rescaling homeomorphism
+  between the sup-norm unit closed ball and the barycenter-centered coordinate simplex.
 -/
 
 public section
