@@ -11,6 +11,8 @@ public import Mathlib.Algebra.Star.TensorProduct
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import TauCeti.Analysis.CStarAlgebra.Completion
 public import TauCeti.Analysis.Normed.Ring.Completion
+public import TauCeti.Algebra.Star.TensorProductLift
+import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.CStarAlgebra.Quotient
 
 /-!
@@ -28,7 +30,12 @@ homomorphism `TauCeti.CStarTensorProduct.of N : A ⊗[ℂ] B → TauCeti.CStarTe
 is injective, isometric for `N` and has dense range. A star homomorphism `A ⊗[ℂ] B → C` into a
 C*-algebra bounded by `N` extends to `TauCeti.CStarTensorProduct N`
 (`TauCeti.CStarTensorProduct.extend`), isometrically and injectively if it preserves `N`, and
-surjectively if it has dense range.
+surjectively if it has dense range. For C*-norms `N` on `A ⊗[ℂ] B` and `N'` on `B ⊗[ℂ] A`
+that agree under the flip, the flip `a ⊗ b ↦ b ⊗ a` extends to a star isomorphism
+`TauCeti.CStarTensorProduct.comm : CStarTensorProduct N ≃ CStarTensorProduct N'`.
+A linear map `A ⊗[ℂ] B → E` into a Banach space bounded by a
+multiple of `N` extends to a continuous linear map on `TauCeti.CStarTensorProduct N`
+(`TauCeti.CStarTensorProduct.extendLinear`).
 
 The maximal and minimal tensor products `TauCeti.MaxTensorProduct A B` and
 `TauCeti.MinTensorProduct A B` are the cases of the maximal and minimal norms.
@@ -41,9 +48,14 @@ The maximal and minimal tensor products `TauCeti.MaxTensorProduct A B` and
 * `TauCeti.CStarTensorProduct N`: its completion, a C*-algebra.
 * `TauCeti.CStarTensorProduct.of`, `TauCeti.CStarTensorProduct.norm_of`,
   `TauCeti.CStarTensorProduct.of_injective`, `TauCeti.CStarTensorProduct.denseRange_of`,
-  `TauCeti.CStarTensorProduct.starAlgHom_ext`.
+  `TauCeti.CStarTensorProduct.starAlgHom_ext`,
+  `TauCeti.CStarTensorProduct.continuousLinearMap_ext`.
 * `TauCeti.CStarTensorProduct.extend`: extension of star homomorphisms bounded by `N`, with
   `TauCeti.CStarTensorProduct.extend_injective` and `TauCeti.CStarTensorProduct.extend_surjective`.
+* `TauCeti.CStarTensorProduct.commHom`, `TauCeti.CStarTensorProduct.comm`: the flip, for a pair
+  of C*-norms that agree under the flip.
+* `TauCeti.CStarTensorProduct.extendLinear`: extension of linear maps `A ⊗[ℂ] B → E` into a
+  Banach space bounded by a multiple of `N`.
 
 ## References
 
@@ -206,6 +218,13 @@ theorem map_star_mul_self (N : CStarTensorNorm A B) (x : A ⊗[ℂ] B) :
     N (star x * x) = N x ^ 2 := by
   rw [← norm_equiv, map_mul, StarHomClass.map_star, CStarRing.norm_star_mul_self, norm_equiv, sq]
 
+/-- If the flip `A ⊗[ℂ] B → B ⊗[ℂ] A` carries `N'` back to `N`, then so does the flip
+`B ⊗[ℂ] A → A ⊗[ℂ] B` with the roles of `N` and `N'` exchanged. -/
+theorem apply_comm_of_apply_comm {N : CStarTensorNorm A B} {N' : CStarTensorNorm B A}
+    (h : ∀ x, N' (TensorProduct.comm ℂ A B x) = N x) (y : B ⊗[ℂ] A) :
+    N (TensorProduct.comm ℂ B A y) = N' y := by
+  rw [← h, TensorProduct.comm_comm]
+
 end CStarTensorNorm
 
 open CStarTensorAlgebra
@@ -282,6 +301,18 @@ theorem starAlgHom_ext {C : Type*} [NonUnitalCStarAlgebra C]
   | tmul a b => exact h a b
   | add x y hx hy => rw [map_add, map_add, map_add, hx, hy]
 
+/-- Continuous linear maps out of `CStarTensorProduct N` into a Hausdorff space are determined by
+their values on the elementary tensors `a ⊗ b`. -/
+@[ext]
+theorem continuousLinearMap_ext {E : Type*} [TopologicalSpace E] [T2Space E] [AddCommMonoid E]
+    [Module ℂ E] {f g : CStarTensorProduct N →L[ℂ] E}
+    (h : ∀ a b, f (of N (a ⊗ₜ b)) = g (of N (a ⊗ₜ b))) : f = g := by
+  refine ContinuousLinearMap.ext fun u ↦ induction_on u (isClosed_eq (map_continuous f)
+    (map_continuous g)) fun x ↦ ?_
+  induction x using TensorProduct.inductionOn with
+  | tmul a b => exact h a b
+  | add x y hx hy => rw [map_add, map_add, map_add, hx, hy]
+
 /-- A star homomorphism `A ⊗[ℂ] B → C` into a C*-algebra that is bounded by `N` extends to
 `CStarTensorProduct N`. -/
 def extend {C : Type*} [NonUnitalCStarAlgebra C] (f : A ⊗[ℂ] B →⋆ₙₐ[ℂ] C)
@@ -316,6 +347,95 @@ theorem extend_surjective {C : Type*} [NonUnitalCStarAlgebra C] (f : A ⊗[ℂ] 
   NonUnitalStarAlgHom.surjective_of_denseRange <| hd.mono <| by
     rintro _ ⟨x, rfl⟩
     exact ⟨of N x, extend_of f hf x⟩
+
+section Comm
+
+variable {N' : CStarTensorNorm B A}
+
+/-- The flip `a ⊗ b ↦ b ⊗ a` as a star homomorphism `CStarTensorProduct N → CStarTensorProduct N'`,
+for C*-norms `N` on `A ⊗[ℂ] B` and `N'` on `B ⊗[ℂ] A` that agree under the flip: the extension of
+the flip of `A ⊗[ℂ] B`, which is isometric for these norms. -/
+def commHom (h : ∀ x, N' (TensorProduct.comm ℂ A B x) = N x) :
+    CStarTensorProduct N →⋆ₙₐ[ℂ] CStarTensorProduct N' :=
+  extend ((of N').comp (Algebra.TensorProduct.commNonUnitalStarAlgHom ℂ A B)) fun x ↦ by
+    simp [Algebra.TensorProduct.coe_commNonUnitalStarAlgHom, h]
+
+/-- On `A ⊗[ℂ] B`, the flip is the algebraic flip. -/
+@[simp]
+theorem commHom_of (h : ∀ x, N' (TensorProduct.comm ℂ A B x) = N x) (x : A ⊗[ℂ] B) :
+    commHom h (of N x) = of N' (TensorProduct.comm ℂ A B x) :=
+  (extend_of _ _ x).trans (by simp [Algebra.TensorProduct.coe_commNonUnitalStarAlgHom])
+
+/-- Flipping twice is the identity, as a composite of star homomorphisms. -/
+@[simp]
+theorem commHom_comp_commHom (h : ∀ x, N' (TensorProduct.comm ℂ A B x) = N x)
+    (h' : ∀ y, N (TensorProduct.comm ℂ B A y) = N' y) :
+    (commHom h').comp (commHom h) = NonUnitalStarAlgHom.id ℂ _ :=
+  starAlgHom_ext fun a b ↦ by simp
+
+/-- Flipping twice is the identity. -/
+@[simp]
+theorem commHom_commHom (h : ∀ x, N' (TensorProduct.comm ℂ A B x) = N x)
+    (h' : ∀ y, N (TensorProduct.comm ℂ B A y) = N' y) (x : CStarTensorProduct N) :
+    commHom h' (commHom h x) = x :=
+  DFunLike.congr_fun (commHom_comp_commHom h h') x
+
+/-- The flip is isometric. -/
+@[simp]
+theorem norm_commHom (h : ∀ x, N' (TensorProduct.comm ℂ A B x) = N x) (x : CStarTensorProduct N) :
+    ‖commHom h x‖ = ‖x‖ :=
+  norm_extend _ (fun x ↦ by simp [Algebra.TensorProduct.coe_commNonUnitalStarAlgHom, h]) x
+
+/-- **The flip of a C*-tensor product**: for C*-norms `N` on `A ⊗[ℂ] B` and `N'` on `B ⊗[ℂ] A`
+that agree under the flip, the star isomorphism `CStarTensorProduct N ≃ CStarTensorProduct N'`
+sending `a ⊗ b` to `b ⊗ a` (`TauCeti.CStarTensorProduct.comm_of_tmul`). -/
+def comm (h : ∀ x, N' (TensorProduct.comm ℂ A B x) = N x) :
+    CStarTensorProduct N ≃⋆ₐ[ℂ] CStarTensorProduct N' :=
+  .ofNonUnitalStarAlgHom (commHom h) (commHom (CStarTensorNorm.apply_comm_of_apply_comm h))
+    (commHom_comp_commHom _ _) (commHom_comp_commHom _ _)
+
+/-- The flip is the star homomorphism `TauCeti.CStarTensorProduct.commHom`. -/
+@[simp]
+theorem comm_apply (h : ∀ x, N' (TensorProduct.comm ℂ A B x) = N x) (x : CStarTensorProduct N) :
+    comm h x = commHom h x :=
+  (rfl)
+
+/-- The inverse of the flip is the flip. -/
+@[simp]
+theorem comm_symm (h : ∀ x, N' (TensorProduct.comm ℂ A B x) = N x) :
+    (comm h).symm = comm (CStarTensorNorm.apply_comm_of_apply_comm h) :=
+  StarAlgEquiv.symm_ofNonUnitalStarAlgHom _ _ _ _
+
+/-- The flip sends `a ⊗ b` to `b ⊗ a`. -/
+theorem comm_of_tmul (h : ∀ x, N' (TensorProduct.comm ℂ A B x) = N x) (a : A) (b : B) :
+    comm h (of N (a ⊗ₜ b)) = of N' (b ⊗ₜ a) := by
+  simp
+
+end Comm
+
+section ExtendLinear
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+
+variable (N) in
+/-- The extension of a linear map `f : A ⊗[ℂ] B → E` into a Banach space to a continuous linear
+map `CStarTensorProduct N → E`. If `‖f x‖ ≤ c * N x` for all `x`, it extends `f`
+(`TauCeti.CStarTensorProduct.extendLinear_of`) and has norm at most `c`
+(`TauCeti.CStarTensorProduct.norm_extendLinear_le`). -/
+def extendLinear (f : A ⊗[ℂ] B →ₗ[ℂ] E) : CStarTensorProduct N →L[ℂ] E :=
+  f.extendOfNorm (of N : A ⊗[ℂ] B →ₗ[ℂ] CStarTensorProduct N)
+
+/-- On `A ⊗[ℂ] B`, the extension of a bounded linear map `f` is `f`. -/
+theorem extendLinear_of {f : A ⊗[ℂ] B →ₗ[ℂ] E} {c : ℝ} (hf : ∀ x, ‖f x‖ ≤ c * N x)
+    (x : A ⊗[ℂ] B) : extendLinear N f (of N x) = f x :=
+  LinearMap.extendOfNorm_eq denseRange_of ⟨c, fun x ↦ by simpa using hf x⟩ x
+
+/-- If `‖f x‖ ≤ c * N x` for all `x`, the extension of `f` has norm at most `c`. -/
+theorem norm_extendLinear_le {f : A ⊗[ℂ] B →ₗ[ℂ] E} {c : ℝ} (hc : 0 ≤ c)
+    (hf : ∀ x, ‖f x‖ ≤ c * N x) : ‖extendLinear N f‖ ≤ c :=
+  LinearMap.opNorm_extendOfNorm_le denseRange_of hc fun x ↦ by simpa using hf x
+
+end ExtendLinear
 
 end CStarTensorProduct
 

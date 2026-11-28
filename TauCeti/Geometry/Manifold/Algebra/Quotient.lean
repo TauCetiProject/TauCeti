@@ -120,6 +120,7 @@ Each of the following results also has an additive counterpart in the `AddSubgro
   Lie group.
 * `Subgroup.contMDiff_quotient_iff`: smoothness on the coset space is equivalent to smoothness
   after composition with the projection.
+* `Subgroup.mdifferentiable_quotient_iff`: likewise for differentiability.
 * `Subgroup.contMDiff_quotientGroup_lift`: a smooth homomorphism killing a discrete normal
   subgroup descends smoothly to the quotient group.
 
@@ -252,6 +253,17 @@ theorem contMDiff_quotient_iff {m : ℕ∞ω} (hm : m ≤ n) (f : G ⧸ N → M)
     ContMDiff I I' m f ↔ ContMDiff I I' m (f ∘ QuotientGroup.mk (s := N)) :=
   ((isLocalDiffeomorph_quotientMk (I := I) (n := n) N).contMDiff_comp_iff
     QuotientGroup.mk_surjective hm).symm
+
+/-- A map out of the native coset space is differentiable if and only if it is differentiable on
+the covering group, when the group is at least `C¹`. -/
+@[to_additive /-- A map out of the native additive coset space is differentiable if and only if it
+is differentiable on the covering additive group, when the additive group is at least `C¹`. -/]
+theorem mdifferentiable_quotient_iff (hn : n ≠ 0) (f : G ⧸ N → M) :
+    MDifferentiable I I' f ↔ MDifferentiable I I' (f ∘ QuotientGroup.mk (s := N)) := by
+  refine ⟨fun h z ↦ ((isLocalDiffeomorph_quotientMk (I := I) N z).mdifferentiableAt_comp_iff
+    hn).2 (h z), fun h x ↦ ?_⟩
+  obtain ⟨z, rfl⟩ := QuotientGroup.mk_surjective x
+  exact ((isLocalDiffeomorph_quotientMk (I := I) N z).mdifferentiableAt_comp_iff hn).1 (h z)
 
 /-- A smooth homomorphism killing a discrete normal subgroup descends smoothly to the native
 quotient group. The target need only be a charted monoid, such as an endomorphism monoid;

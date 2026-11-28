@@ -15,10 +15,13 @@ Mathlib's `Nat.totient_eq_one_iff` says that `φ(n) = 1` exactly for `n = 1` and
 specialises it to prime powers: `φ(p ^ k) = 1` exactly when `k = 0`, or `p = 2` and `k = 1`. It
 also lists the `n` with `φ(n) ≤ 2`, which are the orders of the roots of unity of degree at most
 two over `ℚ`. It also writes Mathlib's product formula `Nat.totient_eq_mul_prod_factors` in
-the reciprocal form used for Euler products over a field of characteristic zero.
+the reciprocal form used for Euler products over a field of characteristic zero. The totients
+of the positive powers of a prime are strictly increasing.
 
 ## Main results
 
+* `Nat.strictMono_totient_prime_pow_succ`: `φ(p ^ (k + 1))` strictly increases with `k`
+  for prime `p`.
 * `TauCeti.Nat.totient_prime_pow_eq_one_iff`: for a prime `p`, `φ(p ^ k) = 1` iff `k = 0`, or
   `p = 2` and `k = 1`.
 * `TauCeti.Nat.totient_le_two_iff`: `φ(n) ≤ 2` iff `n ∈ {0, 1, 2, 3, 4, 6}`.
@@ -86,3 +89,13 @@ theorem pow_dvd_totient_pow_succ (ℓ m : ℕ) : ℓ ^ m ∣ (ℓ ^ (m + 1)).tot
     simpa only [pow_succ'] using mul_dvd_mul_left ℓ ih
 
 end TauCeti.Nat
+
+namespace Nat
+
+/-- The totients of the positive powers of a prime are strictly increasing. -/
+theorem strictMono_totient_prime_pow_succ {p : ℕ} (hp : p.Prime) :
+    StrictMono fun k : ℕ ↦ (p ^ (k + 1)).totient := by
+  simp only [totient_prime_pow_succ hp]
+  exact (pow_right_strictMono₀ hp.one_lt).mul_const (Nat.sub_pos_of_lt hp.one_lt)
+
+end Nat

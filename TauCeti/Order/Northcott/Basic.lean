@@ -26,7 +26,11 @@ its natural floor. It also provides the `Northcott` instance for the identity on
 order bounded below (identifying `summatory (fun n : ℕ ↦ n)` for zero-vanishing weights with the
 partial sum over `Finset.Icc 1 ⌊x⌋₊`), the conversion between a norm-truncated `finprod` and a
 finite product over `normLE`, and the identification of the `HasSum` tail of a summable weight
-above a cutoff as the total sum minus `summatory`.
+above a cutoff as the total sum minus `summatory`. In addition, shifted natural cutoffs
+`(N i : ℝ) + c ≤ x` select finitely many indices (`finite_setOf_natCast_add_le`), and for any
+Northcott function `f` into a linearly ordered topological space with the order topology, the
+sublevel sets `{i | f i ≤ t}` are eventually constant as `t → r⁺`
+(`Northcott.eventuallyEq_setOf_le_nhdsGE`).
 -/
 
 public section
@@ -54,6 +58,11 @@ variable {ι : Type*} (N : ι → ℕ) [Northcott N]
 is a natural number and `N` is Northcott. -/
 theorem finite_setOf_natCast_le (x : ℝ) : {i : ι | (N i : ℝ) ≤ x}.Finite :=
   (Northcott.finite_le (h := N) ⌊x⌋₊).subset fun _ hi ↦ Nat.le_floor hi
+
+/-- Only finitely many indices have shifted `N`-value `(N i : ℝ) + c` at most a fixed real
+number `x`. -/
+theorem finite_setOf_natCast_add_le (c x : ℝ) : {i : ι | (N i : ℝ) + c ≤ x}.Finite :=
+  (finite_setOf_natCast_le N (x - c)).subset fun _ hi ↦ le_sub_iff_add_le.2 hi
 
 /-- The finite set of indices whose `N`-value is at most the real cutoff `x`. The cutoff is
 inclusive: an index with `N i = x` belongs to `normLE N x`. -/
@@ -292,3 +301,37 @@ theorem summatory_id_eq_sum_Icc {M : Type*} [AddCommMonoid M] {w : ℕ → M} (h
       exact hw0
 
 end TauCeti
+
+namespace Northcott
+
+open Filter
+open scoped Topology
+
+/-- For a Northcott function into a linearly ordered topological space with the order topology, the
+sublevel sets `{i | f i ≤ t}` are eventually equal to `{i | f i ≤ r}` as `t → r⁺`. -/
+theorem eventuallyEq_setOf_le_nhdsGE {ι α : Type*} [LinearOrder α] [TopologicalSpace α]
+    [OrderTopology α] (f : ι → α) [Northcott f] (r : α) :
+    (fun t => {i : ι | f i ≤ t}) =ᶠ[𝓝[≥] r] fun _ => {i : ι | f i ≤ r} := by
+  by_cases hgt : ∃ R, r < R
+  · rcases hgt with ⟨R, hR⟩
+    have hS : {i : ι | f i ≤ R}.Finite := finite_le (h := f) R
+    have hfin : ∀ᶠ t in 𝓝[≥] r, ∀ i ∈ {i : ι | f i ≤ R}, f i ≤ t ↔ f i ≤ r :=
+      (Filter.eventually_all_finite hS).2 fun i _ => by
+        by_cases hi : f i ≤ r
+        · filter_upwards [self_mem_nhdsWithin] with t ht
+          exact iff_of_true (hi.trans ht) hi
+        · filter_upwards [nhdsWithin_le_nhds (Iio_mem_nhds (not_le.1 hi))] with t ht
+          exact iff_of_false (not_le.2 ht) hi
+    filter_upwards [hfin, nhdsWithin_le_nhds (Iio_mem_nhds hR)] with t ht hlt
+    ext i
+    simp only [Set.mem_ofPred_eq]
+    by_cases hi : f i ≤ R
+    · exact ht i hi
+    · have hlt_i : R < f i := not_le.1 hi
+      exact iff_of_false (not_le.2 (hlt.trans hlt_i)) (not_le.2 (hR.trans hlt_i))
+  · filter_upwards [self_mem_nhdsWithin] with t (ht : r ≤ t)
+    have hmax : ∀ s, s ≤ r := fun s => not_lt.1 fun hs => hgt ⟨s, hs⟩
+    obtain rfl : t = r := le_antisymm (hmax t) ht
+    rfl
+
+end Northcott

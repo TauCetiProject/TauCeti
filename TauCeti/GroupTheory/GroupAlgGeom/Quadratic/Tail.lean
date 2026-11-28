@@ -164,23 +164,19 @@ private theorem headAtom_notMem_range_inl (S : Standard G X) :
   have hcomm {Q : Set X} {p q : Q} (hpq : p ≠ q) :
       ⁅(inr (FreeGroup.of p) : GX G Q)⁻¹, (inr (FreeGroup.of q) : GX G Q)⁻¹⁆ ∉
         Set.range (inl : G →* GX G Q) := by
-    have hl : GX.IsReduced ([.inr (p, false), .inr (q, false), .inr (p, true), .inr (q, true)] :
-        List (G ⊕ Q × Bool)) := by
-      simp [hpq, hpq.symm]
-    have := hl.occurrences_prod p
-    rw [mem_range_inl_iff_forall_occurrences_eq_zero, not_forall]
-    exact ⟨p, by simp_all [commutatorElement_def, mul_assoc, Ne.symm hpq]⟩
+    classical
+    rw [← GX.occVars_eq_empty_iff, ← commWord_def (p, q)]
+    simp [hpq]
   have hsq {Q : Set X} (p : Q) :
       (inr (FreeGroup.of p) : GX G Q) ^ 2 ∉ Set.range (inl : G →* GX G Q) := by
-    have hl : GX.IsReduced ([.inr (p, true), .inr (p, true)] : List (G ⊕ Q × Bool)) := by simp
-    have := hl.occurrences_prod p
-    rw [mem_range_inl_iff_forall_occurrences_eq_zero, not_forall]
-    exact ⟨p, by simp_all [pow_two]⟩
+    rw [← GX.occVars_eq_empty_iff, ← sqWord_def]
+    simp
   have hconj {Q : Set X} {c : G} (hc : c ≠ 1) (p : Q) :
       (inr (FreeGroup.of p) : GX G Q)⁻¹ * inl c * inr (FreeGroup.of p) ∉
         Set.range (inl : G →* GX G Q) := by
-    rw [mem_range_inl_iff_forall_occurrences_eq_zero, not_forall]
-    exact ⟨p, by simp [occurrences_inv_mul_inl_mul_self hc]⟩
+    classical
+    rw [← GX.occVars_eq_empty_iff, ← conjWord_def (p, c)]
+    simp [hc]
   match S with
   | orientable (n + 1) hn x y inj =>
     exact hcomm fun h => Sum.inl_ne_inr (@inj (.inl 0) (.inr 0) (congrArg Subtype.val h))
