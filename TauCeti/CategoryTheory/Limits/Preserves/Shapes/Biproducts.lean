@@ -5,16 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Biproducts
-import Mathlib.CategoryTheory.Adjunction.Limits
-import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
+public import Mathlib.CategoryTheory.Adjunction.Limits
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
 /-!
 # Preservation of binary biproducts
 
-This module provides binary biproduct preservation instances for composition, equivalences,
-and functors preserving biproducts of shape `WalkingPair`. These instances supply the preservation
-hypotheses for the functoriality of the Bass group.
+This module provides binary biproduct preservation instances for composition and functors
+preserving biproducts of shape `WalkingPair`. The latter instance also supplies preservation for
+identities and equivalences.
 -/
 
 public section
@@ -36,10 +35,5 @@ instance (priority := 100) preservesBinaryBiproducts_comp (F : C ⥤ D) (G : D �
     PreservesBinaryBiproducts (F ⋙ G) where
   preserves := { preserves := fun hb =>
     ⟨isBinaryBilimitOfPreserves G (isBinaryBilimitOfPreserves F hb)⟩ }
-
-/-- An equivalence of categories preserves binary biproducts. -/
-instance (priority := 100) preservesBinaryBiproducts_of_isEquivalence (F : C ⥤ D)
-    [F.IsEquivalence] : PreservesBinaryBiproducts F :=
-  preservesBinaryBiproducts_of_preservesBiproducts F
 
 end CategoryTheory.Limits

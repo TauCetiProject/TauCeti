@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import TauCeti.CategoryTheory.Limits.Preserves.Shapes.Biproducts
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 import Mathlib.Algebra.Module.Presentation.Basic
+import TauCeti.CategoryTheory.Preadditive.UnipotentCommutator
 
 /-!
 # Bass's automorphism presentation of K₁
@@ -225,19 +225,21 @@ section Triangular
 
 variable {A : Type u} [Category.{v} A] [Preadditive A] [HasBinaryBiproducts A] {X Y : A}
 
-/-- A unipotent block automorphism represents zero in the Bass group. -/
+open scoped commutatorElement in
+/-- A lower unipotent block represents zero in the Bass group. -/
+@[simp] theorem of_unipotentLower (r : Y ⟶ X) : of (Biprod.unipotentLower r) = 0 := by
+  -- After adjoining a copy of Y, the unipotent automorphism is a commutator.
+  have h := congrArg (fun a => of a.asIso) (Biprod.unipotentLower_biprod_eq_commutatorElement r)
+  simp only [commutatorElement_def, Aut.mul_asIso, Aut.inv_asIso, of_mapIso, of_refl, add_zero,
+    of_trans, of_symm] at h
+  rw [h]
+  abel
+
+/-- An upper unipotent block represents zero in the Bass group. -/
 @[simp] theorem of_unipotentUpper (r : X ⟶ Y) : of (Biprod.unipotentUpper r) = 0 := by
-  -- After adjoining a copy of Y, the elementary block is the commutator of
-  -- the blocks from X to the new Y and from the new Y to the original Y.
-  let p := Biprod.unipotentUpper ((biprod.fst : X ⊞ Y ⟶ X) ≫ r)
-  let q := Biprod.unipotentLower (biprod.inr : Y ⟶ X ⊞ Y)
-  have h : p ≪≫ q = q ≪≫ p ≪≫ biprod.mapIso (Biprod.unipotentUpper r) (Iso.refl Y) := by
-    apply Iso.ext
-    ext <;> simp [p, q, Biprod.ofComponents, Category.assoc]
-  have hc := congrArg of h
-  simp only [of_trans, of_mapIso, of_refl, add_zero] at hc
-  apply add_left_cancel (a := of q + of p)
-  simpa [add_assoc, add_comm, add_left_comm] using hc.symm
+  rw [← of_unipotentLower r]
+  apply of_congr (biprod.braiding X Y)
+  ext <;> simp [Biprod.ofComponents, biprod.braiding]
 
 /-- A block triangular automorphism whose diagonal blocks are automorphisms has class equal to the
 sum of their classes, independently of the off-diagonal morphism. The block indices here follow
@@ -248,12 +250,6 @@ theorem of_upperTriangular (e : X ⊞ Y ≅ X ⊞ Y) (a : X ≅ X) (b : Y ≅ Y)
     apply Iso.ext
     ext <;> simp [h, Biprod.ofComponents]
   simp [he]
-
-/-- A lower unipotent block also represents zero in the Bass group. -/
-@[simp] theorem of_unipotentLower (r : Y ⟶ X) : of (Biprod.unipotentLower r) = 0 := by
-  rw [← of_unipotentUpper r]
-  apply of_congr (biprod.braiding X Y)
-  ext <;> simp [Biprod.ofComponents, biprod.braiding]
 
 /-- The lower triangular block formula, with morphisms indexed as in `Biprod.ofComponents`. -/
 theorem of_lowerTriangular (e : X ⊞ Y ≅ X ⊞ Y) (a : X ≅ X) (b : Y ≅ Y) (r : Y ⟶ X)
