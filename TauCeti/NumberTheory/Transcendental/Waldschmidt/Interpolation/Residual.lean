@@ -44,6 +44,8 @@ coefficient vector `b = (β₀, β₁, …, β_{m-1})`, as in `TauCeti.waldschmi
 * `TauCeti.IsWaldschmidtResidual`: `V` contains `c`, satisfies
   `(d + 1) #π_V(S) ≤ (m + 1) T₀^(m-d)`, and has the smallest dimension among such subspaces.
 * `TauCeti.exists_isWaldschmidtResidual`: such a subspace `V` exists, and `d ≥ 1`.
+* `TauCeti.ncard_image_le_ncard_image_mkQ_mul_ncard_image_sub_inter`: for finite `S` and an
+  additive map `f`, `#f(S) ≤ #π_V(S) · #f((S - S) ∩ V)`.
 * `TauCeti.mul_pow_lt_mul_ncard_image_mkQ_sub_inter_of_isWaldschmidtResidual`: for such a minimal
   `V` and every subspace `V' ∋ c` of dimension `d' < d`,
   `(d + 1) T₀^(d-d') < (d' + 1) #π_{V'}((S - S) ∩ V)`.
@@ -112,6 +114,27 @@ theorem exists_isWaldschmidtResidual {c : Fin (n + 1) → K} (hc : c ≠ 0)
     hd ▸ Nat.find_min' hp ⟨V', hcV', rfl, hcard'⟩⟩,
     Submodule.one_le_finrank_iff.2 ((Submodule.ne_bot_iff _).2 ⟨c, hcV, hc⟩)⟩
 
+/-- **Counting through the classes modulo `V`.** For a finite set `S ⊆ ℤᵐ`, a subspace `V ⊆ Kᵐ`
+and an additive map `f` out of `ℤᵐ`, the images of the elements of `S` in one class modulo `V`
+are translates of images of elements of `(S - S) ∩ V`, so
+`#f(S) ≤ #π_V(S) · #f((S - S) ∩ V)`. -/
+theorem ncard_image_le_ncard_image_mkQ_mul_ncard_image_sub_inter {B : Type*} [AddZeroClass B]
+    (f : (Fin (n + 1) → ℤ) →+ B) {S : Set (Fin (n + 1) → ℤ)} (hS : S.Finite)
+    (V : Submodule K (Fin (n + 1) → K)) :
+    (f '' S).ncard ≤ ((fun s ↦ V.mkQ fun i ↦ (s i : K)) '' S).ncard *
+      (f '' ((S - S) ∩ {s | (fun i ↦ (s i : K)) ∈ V})).ncard := by
+  let φ : (Fin (n + 1) → ℤ) →+ Fin (n + 1) → K := AddMonoidHom.compLeft (Int.castAddHom K) _
+  have hπ : ⇑(V.mkQ.toAddMonoidHom.comp φ) = fun s ↦ V.mkQ fun i ↦ (s i : K) := by
+    funext s
+    exact congrArg V.mkQ (funext fun i ↦ by simp [φ])
+  have hker : ((V.mkQ.toAddMonoidHom.comp φ).ker : Set (Fin (n + 1) → ℤ)) =
+      {s | (fun i ↦ (s i : K)) ∈ V} := by
+    ext s
+    simp only [SetLike.mem_coe, AddMonoidHom.mem_ker, hπ, Submodule.mkQ_apply,
+      Submodule.Quotient.mk_eq_zero, Set.mem_ofPred_eq]
+  have h := f.ncard_image_le_mul_ncard_image_sub_inter_ker (V.mkQ.toAddMonoidHom.comp φ) hS
+  rwa [hker, hπ] at h
+
 /-- **Counting on a proper subspace.** Let `V` be a residual subspace of dimension `d` for a
 vector `c` (`TauCeti.IsWaldschmidtResidual`):
 `(d + 1) #π_V(S) ≤ (m + 1) T₀^(m-d)`, and no subspace containing `c` of smaller dimension satisfies
@@ -133,18 +156,12 @@ theorem mul_pow_lt_mul_ncard_image_mkQ_sub_inter_of_isWaldschmidtResidual
   set d := finrank K V
   set d' := finrank K V'
   let φ : (Fin (n + 1) → ℤ) →+ Fin (n + 1) → K := AddMonoidHom.compLeft (Int.castAddHom K) _
-  have hφ (W : Submodule K (Fin (n + 1) → K)) :
-      ⇑(W.mkQ.toAddMonoidHom.comp φ) = fun s ↦ W.mkQ fun i ↦ (s i : K) := by
+  have hcount := ncard_image_le_ncard_image_mkQ_mul_ncard_image_sub_inter
+    (V'.mkQ.toAddMonoidHom.comp φ) hS V
+  have hφ : ⇑(V'.mkQ.toAddMonoidHom.comp φ) = fun s ↦ V'.mkQ fun i ↦ (s i : K) := by
     funext s
-    exact congrArg W.mkQ (funext fun i ↦ by simp [φ])
-  have hker : ((V.mkQ.toAddMonoidHom.comp φ).ker : Set (Fin (n + 1) → ℤ)) =
-      {s | (fun i ↦ (s i : K)) ∈ V} := by
-    ext s
-    simp only [SetLike.mem_coe, AddMonoidHom.mem_ker, hφ, Submodule.mkQ_apply,
-      Submodule.Quotient.mk_eq_zero, Set.mem_ofPred_eq]
-  have hcount := AddMonoidHom.ncard_image_le_mul_ncard_image_sub_inter_ker
-    (V'.mkQ.toAddMonoidHom.comp φ) (V.mkQ.toAddMonoidHom.comp φ) hS
-  rw [hker, hφ, hφ] at hcount
+    exact congrArg V'.mkQ (funext fun i ↦ by simp [φ])
+  rw [hφ] at hcount
   -- By minimality of `V`, the subspace `V'` violates the defining inequality.
   have hV' : (n + 2) * T₀ ^ (n + 1 - d') <
       (d' + 1) * ((fun s ↦ V'.mkQ fun i ↦ (s i : K)) '' S).ncard :=
