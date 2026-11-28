@@ -377,6 +377,15 @@ def reducedSingularHomologySuccIso (n : ℕ) :
 lemma reducedSingularHomologySuccIso_hom (n : ℕ) :
     (reducedSingularHomologySuccIso R n).hom = reducedSingularHomologyι R (n + 1) := (rfl)
 
+/-- In positive degrees, ordinary singular homology vanishes if and only if reduced singular
+homology does. -/
+theorem isZero_singularHomologyFunctor_iff_isZero_reducedSingularHomologyFunctor
+    (X : TopCat.{w}) {q : ℕ} (hq : q ≠ 0) :
+    IsZero (((singularHomologyFunctor C q).obj R).obj X) ↔
+      IsZero ((reducedSingularHomologyFunctor R q).obj X) := by
+  obtain ⟨q', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq
+  exact Iso.isZero_iff ((reducedSingularHomologySuccIso R q').app X).symm
+
 /-- A continuous map induces a monomorphism on singular homology when the reduced homology of
 its source vanishes in that degree. -/
 lemma _root_.TopCat.Hom.mono_singularHomologyMap_of_isZero {X Y : TopCat.{w}} (f : X ⟶ Y)

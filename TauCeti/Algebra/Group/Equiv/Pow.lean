@@ -18,6 +18,9 @@ injective on one side exactly when it is injective on the other.
 
 * `MulEquiv.injective_pow_iff` and its additive form `AddEquiv.injective_nsmul_iff`: taking `n`-th
   powers is injective on one side of an equivalence exactly when it is injective on the other.
+* `MulEquiv.bijective_zpow_iff` and its additive form `AddEquiv.bijective_zsmul_iff`: raising
+  to the `m`-th power (multiplying by `m`) is bijective on one side of an equivalence exactly when
+  it is bijective on the other.
 * `MulEquiv.isOfFinOrder_iff` and its additive form `AddEquiv.isOfFinAddOrder_iff`: a
   multiplicative equivalence preserves and reflects finite order.
 * `MulEquiv.isMulTorsionFree_iff` and its additive form `AddEquiv.isAddTorsionFree_iff`: one side
@@ -38,6 +41,17 @@ theorem injective_pow_iff {M N : Type*} [Monoid M] [Monoid N] (e : M ≃* N) (n 
     ext y
     simp
   rw [h, EquivLike.comp_injective, EquivLike.injective_comp]
+
+/-- Raising to the `m`-th power is bijective on `G` exactly when it is bijective on `H`, for a
+multiplicative equivalence `G ≃* H`, since the equivalence commutes with it. -/
+@[to_additive /-- Multiplication by `m : ℤ` is bijective on `G` exactly when it is bijective on
+`H`, for an additive equivalence `G ≃+ H`, since the equivalence commutes with it. -/]
+theorem bijective_zpow_iff {G H : Type*} [Group G] [Group H] (e : G ≃* H) (m : ℤ) :
+    Function.Bijective (fun x : G ↦ x ^ m) ↔ Function.Bijective (fun y : H ↦ y ^ m) := by
+  have h : (fun y : H ↦ y ^ m) = e ∘ (fun x : G ↦ x ^ m) ∘ e.symm := by
+    ext y
+    simp
+  rw [h, EquivLike.comp_bijective, EquivLike.bijective_comp]
 
 /-- An element has finite order after applying a multiplicative equivalence `e : M ≃* N` if and
 only if it has finite order in `M`. -/

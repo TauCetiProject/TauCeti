@@ -19,6 +19,8 @@ forms the sequence `ℤ → ℤ → ℤ/n` of `ℤ`-modules, which is the short 
 for homology constructions in arbitrary universes.
 
 * `TauCeti.zmodCoefficientSequence` packages the multiplication and reduction maps.
+* `TauCeti.zmodCoefficientSequence_zero_X₂_eq_X₃` and `TauCeti.zmodCoefficientSequence_zero_g`
+  isolate the identification `ZMod 0 = ℤ` at modulus zero.
 * `TauCeti.zmodCoefficientSequence_shortExact` proves its short exactness for `n ≠ 0`.
 -/
 
@@ -51,6 +53,18 @@ theorem zmodCoefficientSequence_f (n : ℕ) :
 @[simp↓]
 theorem zmodCoefficientSequence_g_apply (n : ℕ) (z : ℤ) :
     (zmodCoefficientSequence.{u} n).g (ULift.up z) = ULift.up (z : ZMod n) := rfl
+
+/-- For modulus `0`, `ZMod 0` is `ℤ` definitionally, so the middle and right objects of
+`TauCeti.zmodCoefficientSequence 0` coincide. -/
+theorem zmodCoefficientSequence_zero_X₂_eq_X₃ :
+    (zmodCoefficientSequence.{u} 0).X₂ = (zmodCoefficientSequence.{u} 0).X₃ := rfl
+
+/-- For modulus `0`, `ZMod 0` is `ℤ` definitionally, so the reduction map
+`(zmodCoefficientSequence 0).g` is `eqToHom`. -/
+theorem zmodCoefficientSequence_zero_g :
+    (zmodCoefficientSequence.{u} 0).g = eqToHom zmodCoefficientSequence_zero_X₂_eq_X₃ := by
+  ext ⟨z⟩
+  rfl
 
 /-- For `n ≠ 0`, multiplication by `n` and reduction modulo `n` form a short exact coefficient
 sequence, including after universe lifting. -/

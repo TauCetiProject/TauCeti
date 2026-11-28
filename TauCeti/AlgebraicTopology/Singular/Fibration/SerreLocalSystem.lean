@@ -137,6 +137,15 @@ def pullbackFiberTransport [ContractibleSpace K] (g : K ⟶ B)
 
 variable [ContractibleSpace K]
 
+/-- Transport over a contractible parameter space is an isomorphism on singular homology. -/
+instance isIso_pullbackFiberTransport (g : K ⟶ B) {k₀ k₁ : K} {b₀ b₁ : B}
+    (h₀ : g k₀ = b₀) (h₁ : g k₁ = b₁) :
+    IsIso (pullbackFiberTransport hp M n g h₀ h₁) := by
+  have := isIso_singularHomologyMap_pullbackFiberι hp M n g h₀
+  have := isIso_singularHomologyMap_pullbackFiberι hp M n g h₁
+  rw [pullbackFiberTransport]
+  infer_instance
+
 /-- Transport followed by the fibre inclusion at the end point is the fibre inclusion at the
 starting point. -/
 @[reassoc (attr := simp)]
@@ -233,13 +242,6 @@ theorem pullbackFiberTransport_comp_left {K' : TopCat.{u}} [ContractibleSpace K'
   simpa using pullbackFiberTransport_naturality hp M n (CommSq.mk (by simp : 𝟙 E ≫ p = p ≫ 𝟙 B))
     hp (φ ≫ g) g φ (Category.comp_id _).symm h₀ h₁ h₀' h₁'
 
-instance isIso_pullbackFiberTransport (g : K ⟶ B) {k₀ k₁ : K} {b₀ b₁ : B} (h₀ : g k₀ = b₀)
-    (h₁ : g k₁ = b₁) : IsIso (pullbackFiberTransport hp M n g h₀ h₁) := by
-  have := isIso_singularHomologyMap_pullbackFiberι hp M n g h₀
-  have := isIso_singularHomologyMap_pullbackFiberι hp M n g h₁
-  unfold pullbackFiberTransport
-  infer_instance
-
 /-- **Transport is natural in the coefficients.** Transport commutes with the maps induced on
 homology by a linear map of coefficient modules. -/
 @[reassoc]
@@ -306,6 +308,32 @@ theorem fiberHomologyTransport_comp_map_pullbackFiberι
   rw [fiberHomologyTransport_eq_pullbackFiberTransport]
   exact pullbackFiberTransport_comp_map_pullbackFiberι hp M n _ _ _
 
+/-- Transport along a path is an isomorphism on singular homology. -/
+instance isIso_fiberHomologyTransport (γ : Path b₀ b₁) :
+    IsIso (fiberHomologyTransport hp M n γ) := by
+  rw [fiberHomologyTransport_eq_pullbackFiberTransport]
+  infer_instance
+
+/-- Transport along a path commutes with the maps from the fibres to a point on singular
+homology. -/
+@[reassoc (attr := simp)]
+theorem fiberHomologyTransport_comp_map_isTerminalPUnit_from (γ : Path b₀ b₁) :
+    fiberHomologyTransport hp M n γ ≫
+        ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
+          (_root_.TopCat.isTerminalPUnit.from (p.fiber b₁)) =
+      ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
+        (_root_.TopCat.isTerminalPUnit.from (p.fiber b₀)) := by
+  have h₁ : p.pullbackFiberι (TopCat.pathEquiv.symm γ).hom (k := 1)
+      (TopCat.pathEquiv.symm γ).hom₁ ≫ _root_.TopCat.isTerminalPUnit.from _ =
+      _root_.TopCat.isTerminalPUnit.from (p.fiber b₁) :=
+    _root_.TopCat.isTerminalPUnit.hom_ext _ _
+  have h₀ : p.pullbackFiberι (TopCat.pathEquiv.symm γ).hom (k := 0)
+      (TopCat.pathEquiv.symm γ).hom₀ ≫ _root_.TopCat.isTerminalPUnit.from _ =
+      _root_.TopCat.isTerminalPUnit.from (p.fiber b₀) :=
+    _root_.TopCat.isTerminalPUnit.hom_ext _ _
+  rw [← h₁, Functor.map_comp, fiberHomologyTransport_comp_map_pullbackFiberι_assoc,
+    ← Functor.map_comp, h₀]
+
 /-- Transport along `γ` is the unique map which, followed by the inclusion of the fibre over `b₁`
 into `γ*E`, is the inclusion of the fibre over `b₀`. -/
 theorem eq_fiberHomologyTransport_iff (γ : Path b₀ b₁)
@@ -320,11 +348,6 @@ theorem eq_fiberHomologyTransport_iff (γ : Path b₀ b₁)
             (TopCat.pathEquiv.symm γ).hom₀) := by
   rw [fiberHomologyTransport_eq_pullbackFiberTransport]
   exact eq_pullbackFiberTransport_iff hp M n _ _ _ f
-
-instance isIso_fiberHomologyTransport (γ : Path b₀ b₁) :
-    IsIso (fiberHomologyTransport hp M n γ) := by
-  rw [fiberHomologyTransport_eq_pullbackFiberTransport]
-  infer_instance
 
 /-- **Transport along the image of a path in a contractible space.** For `g : K ⟶ B` with `K`
 contractible and a path `ε` from `k₀` to `k₁` in `K`, transport along the image of `ε` under `g` is

@@ -13,9 +13,10 @@ public import TauCeti.AlgebraicTopology.Singular.SerreClass
 public import TauCeti.CategoryTheory.Abelian.GrothendieckAxioms.ObjectProperty
 public import TauCeti.Topology.Homotopy.SerreFibration.WeakHomotopyEquivalence
 import TauCeti.AlgebraicTopology.Singular.Contractible
+import TauCeti.AlgebraicTopology.Singular.Fibration.SerreLocalSystem
+import TauCeti.AlgebraicTopology.Singular.Reduced
 import TauCeti.CategoryTheory.ObjectProperty.ArrowIso
 import TauCeti.CategoryTheory.ObjectProperty.ColimitsOfShape
-import TauCeti.AlgebraicTopology.Singular.Reduced
 
 /-!
 # Maps of Serre fibrations which are homology isomorphisms on the fibres
@@ -26,12 +27,18 @@ on the homology of every fibre for `q ≤ k`, then it induces an isomorphism `H�
 (`TauCeti.TopCat.isIso_singularHomologyMap_of_commSq`). In particular, if every fibre of a Serre
 fibration `p : E ⟶ B` has the `R`-homology of a point in degrees `q ≤ k`, then `p` induces an
 isomorphism `Hₖ(E; R) ≅ Hₖ(B; R)`
-(`TauCeti.TopCat.isIso_singularHomologyMap_of_isIso_fiber_to_point`). Only homology enters:
-unlike `TauCeti.TopCat.isWeakHomotopyEquivalence_of_commSq`, nothing is assumed about homotopy
-groups, and the base need not be simply connected. This is the comparison theorem for Serre
-spectral sequences with an isomorphism on the first page, proved without assembling the spectral
-sequences. For instance, a fibration over an arbitrary space with fibres that are acyclic modulo `2`
-does not change homology modulo `2`.
+(`TauCeti.TopCat.isIso_singularHomologyMap_of_isIso_fiber_to_point`, and
+`TauCeti.TopCat.isIso_singularHomologyMap_of_isZero_fiber` phrased via path-connectedness and
+vanishing of positive-degree homology). Over a path-connected base `B`, fibres over points joined
+by a path are linked by homology isomorphisms through the pullback along the path, so it suffices
+to check the fibre over a single base point
+(`TauCeti.TopCat.isIso_singularHomologyMap_of_isIso_fiber_to_point_of_pathConnectedSpace`,
+`TauCeti.TopCat.isIso_singularHomologyMap_of_isZero_fiber_of_pathConnectedSpace`). Only homology
+enters: unlike `TauCeti.TopCat.isWeakHomotopyEquivalence_of_commSq`, nothing is assumed about
+homotopy groups, and the base need not be simply connected. This is the comparison theorem for
+Serre spectral sequences with an isomorphism on the first page, proved without assembling the
+spectral sequences. For instance, a fibration over an arbitrary space with fibres that are acyclic
+modulo `2` does not change homology modulo `2`.
 
 ## Modulo a Serre class
 
@@ -104,6 +111,11 @@ map over a weak homotopy equivalence `g : B ⟶ B'` factors as a map over `B` in
   degree `k`.
 * `TauCeti.TopCat.isIso_singularHomologyMap_of_isZero_fiber`: the same, with the hypothesis on the
   fibres stated as path-connectedness and vanishing of positive-degree homology.
+* `TauCeti.TopCat.isIso_singularHomologyMap_fiber_to_point_iff_of_joined`: for a Serre fibration,
+  having the homology of a point is constant along path components of the base.
+* `TauCeti.TopCat.isIso_singularHomologyMap_of_isIso_fiber_to_point_of_pathConnectedSpace` and
+  `TauCeti.TopCat.isIso_singularHomologyMap_of_isZero_fiber_of_pathConnectedSpace`: over a
+  path-connected base it suffices to check the fibre over a single point.
 
 ## References
 
@@ -599,13 +611,52 @@ theorem isIso_singularHomologyMap_of_isZero_fiber (hp : serreFibrations p) (R : 
       (ModuleCat.of R R)).map p) := by
   refine isIso_singularHomologyMap_of_isIso_fiber_to_point hp R k fun b q hq ↦ ?_
   have := hconn b
-  rcases eq_or_ne q 0 with rfl | hq0
-  · -- In degree zero both augmentations are isomorphisms, and the map commutes with them.
-    exact IsIso.of_isIso_fac_right
-      (singularHomologyMap_singularHomology₀ε (ModuleCat.of R R) _)
-  · -- In positive degrees both groups vanish; the point is contractible.
-    exact (hfib b q hq0 hq).isIso
-      (isZero_singularHomologyFunctor_of_contractibleSpace _ (_root_.TopCat.of PUnit) hq0) _
+  exact TauCeti.isIso_singularHomologyMap_isTerminalPUnit_from_of_isZero (ModuleCat.of R R)
+    (p.fiber b) q fun hq0 ↦ hfib b q hq0 hq
+
+/-- **Fibre homology comparison along a path.** For a Serre fibration `p : E ⟶ B`, points `b₀, b₁`
+in the same path component of `B`, and a ring `R`, the map from `p⁻¹(b₀)` to a point induces an
+isomorphism on `Hq(-; R)` if and only if the map from `p⁻¹(b₁)` to a point does. -/
+theorem isIso_singularHomologyMap_fiber_to_point_iff_of_joined (hp : serreFibrations p)
+    (R : Type u) [Ring R] {b₀ b₁ : B} (h : Joined b₀ b₁) (q : ℕ) :
+    IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+      (ModuleCat.of R R)).map (_root_.TopCat.isTerminalPUnit.from (p.fiber b₀))) ↔
+      IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).map (_root_.TopCat.isTerminalPUnit.from (p.fiber b₁))) := by
+  rw [← fiberHomologyTransport_comp_map_isTerminalPUnit_from hp (ModuleCat.of R R) q h.somePath,
+    isIso_comp_left_iff]
+
+/-- **A Serre fibration over a path-connected base whose fibre over one point has the homology of
+a point is a homology isomorphism.** Let `p : E ⟶ B` be a Serre fibration over a path-connected
+space `B` and `b₀ : B`. If the map from `p⁻¹(b₀)` to a point induces isomorphisms on `Hq(-; R)` for
+`q ≤ k`, then `p` induces an isomorphism `Hₖ(E; R) ≅ Hₖ(B; R)`. -/
+theorem isIso_singularHomologyMap_of_isIso_fiber_to_point_of_pathConnectedSpace
+    (hp : serreFibrations p) [PathConnectedSpace B] (b₀ : B) (R : Type u) [Ring R] (k : ℕ)
+    (hfib : ∀ q ≤ k, IsIso (((AlgebraicTopology.singularHomologyFunctor
+      (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map
+        (_root_.TopCat.isTerminalPUnit.from (p.fiber b₀)))) :
+    IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj
+      (ModuleCat.of R R)).map p) :=
+  isIso_singularHomologyMap_of_isIso_fiber_to_point hp R k fun b q hq ↦
+    (isIso_singularHomologyMap_fiber_to_point_iff_of_joined hp R
+      (PathConnectedSpace.joined b₀ b) q).1 (hfib q hq)
+
+/-- **A Serre fibration over a path-connected base with a path-connected acyclic fibre is a
+homology isomorphism.** Let `p : E ⟶ B` be a Serre fibration over a path-connected space `B` and
+`b₀ : B`. If `p⁻¹(b₀)` is path-connected and `Hq₊₁(p⁻¹(b₀); R) = 0` for all `q < k`, then `p`
+induces an isomorphism `Hₖ(E; R) ≅ Hₖ(B; R)`. -/
+theorem isIso_singularHomologyMap_of_isZero_fiber_of_pathConnectedSpace
+    (hp : serreFibrations p) [PathConnectedSpace B] (b₀ : B) [PathConnectedSpace (p.fiber b₀)]
+    (R : Type u) [Ring R] (k : ℕ)
+    (hfib : ∀ q < k, IsZero (((AlgebraicTopology.singularHomologyFunctor
+      (ModuleCat.{u} R) (q + 1)).obj (ModuleCat.of R R)).obj (p.fiber b₀))) :
+    IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj
+      (ModuleCat.of R R)).map p) := by
+  refine isIso_singularHomologyMap_of_isIso_fiber_to_point_of_pathConnectedSpace hp b₀ R k
+    fun q hq ↦ TauCeti.isIso_singularHomologyMap_isTerminalPUnit_from_of_isZero (ModuleCat.of R R)
+      (p.fiber b₀) q fun hq0 ↦ ?_
+  obtain ⟨q', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq0
+  exact hfib q' hq
 
 end TopCat
 

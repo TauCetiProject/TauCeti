@@ -7,8 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.EilenbergMacLane
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.UniquelyDivisible
-public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.TwoDivisible
-public import TauCeti.AlgebraicTopology.Singular.Coefficients.ModTwo
+import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.ZMod
+import TauCeti.AlgebraicTopology.Singular.Coefficients.ZModCoefficientSequence
 
 /-!
 # Mod-two acyclic Eilenberg--Mac Lane spaces
@@ -30,17 +30,17 @@ two-divisible. In particular no `K(ℤ/2, n)` space, such as the infinite real p
 The converse needs only the two homology groups in the degrees `n` and `n + 1`. Write `Hᵢ(X; ℤ)`
 and `Hᵢ(X; ℤ/2)` for integral and mod-two singular homology. By the coefficient sequence
 `0 ⟶ ℤ ⟶ ℤ ⟶ ℤ/2 ⟶ 0`, vanishing of `Hₙ(X; ℤ/2)` and `Hₙ₊₁(X; ℤ/2)` makes multiplication by two
-bijective on `Hₙ(X; ℤ)` (`TopCat.isUniquelyTwoDivisible_singularHomology_of_isZero_mod_two`), and
+bijective on `Hₙ(X; ℤ)` (`TopCat.bijective_zsmul_singularHomology_of_isZero_zmod`), and
 for a `K(A, n)` space `Hₙ(X; ℤ) ≅ A` by the Hurewicz theorem: in degree one because the first
 integral homology of a `K(G, 1)` space is the abelianization of `G`
 (`TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_addEquiv_singularHomology_one`), which for an abelian
 group is the group itself
 (`TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_addEquiv_singularHomology_one_of_comm`), and for
 `n ≥ 2` for an `(n - 1)`-connected space
-(`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two`).
+(`TauCeti.bijective_zsmul_homotopyGroup_of_subsingleton_lower_homotopyGroups_of_isZero_ringEquiv`).
 
 In degree one the first mod-two homology alone detects two-divisibility: since `H₀(X; ℤ)` is free,
-`H₁(X; ℤ/2)` is `H₁(X; ℤ) ⧸ 2 H₁(X; ℤ)` (`TopCat.singularHomologyOneModTwoAddEquiv`), so it
+`H₁(X; ℤ/2)` is `H₁(X; ℤ) ⧸ 2 H₁(X; ℤ)` (`TopCat.singularHomologyOneZModAddEquiv`), so it
 vanishes exactly when multiplication by two is onto `H₁(X; ℤ)`
 (`TopCat.subsingleton_singularHomology_one_iff_surjective_zsmul`). For a `K(A, 1)` space it thus
 vanishes exactly when `A = 2 A`
@@ -100,7 +100,7 @@ theorem subsingleton_singularHomology_one_iff_surjective_zsmul (e : k ≃+* ZMod
     simp
   rw [hψ, EquivLike.comp_surjective, EquivLike.surjective_comp,
     ← singularHomologyFunctor_obj_obj]
-  exact (TopCat.of X).subsingleton_singularHomology_one_iff_surjective_zsmul e
+  exact (TopCat.of X).subsingleton_singularHomology_one_iff_surjective_zsmul 2 e
 
 /-- **A mod-two acyclic `K(A, 1)` space has a uniquely two-divisible group.** If a `K(A, 1)` space
 `X` has vanishing first and second homology with coefficients in a ring `k` isomorphic to
@@ -112,11 +112,12 @@ theorem isUniquelyTwoDivisible_of_subsingleton_singularHomology (e : k ≃+* ZMo
     IsUniquelyTwoDivisible A := by
   obtain ⟨φ⟩ := hX.nonempty_addEquiv_singularHomology_one_of_comm
   rw [← singularHomologyFunctor_obj_obj] at h₁ h₂
-  exact ((TopCat.of X).isUniquelyTwoDivisible_singularHomology_of_isZero_mod_two 1
-    (((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv 2 e 1).2
-      (ModuleCat.isZero_iff_subsingleton.2 h₁))
-    (((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv 2 e 2).2
-      (ModuleCat.isZero_iff_subsingleton.2 h₂))).of_addEquiv φ.symm
+  exact ((isUniquelyTwoDivisible_iff _).2
+    ((TopCat.of X).bijective_zsmul_singularHomology_of_isZero_zmod 2 1
+      (((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv 2 e 1).2
+        (ModuleCat.isZero_iff_subsingleton.2 h₁))
+      (((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv 2 e 2).2
+        (ModuleCat.isZero_iff_subsingleton.2 h₂)))).of_addEquiv φ.symm
 
 /-- **`K(ℤ/2, 1)` spaces have nonzero first mod-two homology.** For every `K(ℤ/2, 1)` space `X`,
 such as `ℝP^∞`, and every ring `k` isomorphic to `ZMod 2`, the group `H₁(X; k)` is nonzero:
@@ -153,8 +154,11 @@ theorem isUniquelyTwoDivisible_of_subsingleton_singularHomology (e : k ≃+* ZMo
       (isEilenbergMacLaneSpace_one_iff.1 hX) hn hn'
   · -- for `n ≥ 2` the space is `(n - 1)`-connected and `πₙ ≅ A` is its first nonzero group
     obtain ⟨φ⟩ := hX.nonempty_homotopyGroupMulEquiv
-    exact (isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two e
-      (fun j hj ↦ hX.subsingleton_homotopyGroup hj.ne) hn hn').of_addEquiv
+    exact ((isUniquelyTwoDivisible_iff _).2
+      (bijective_zsmul_homotopyGroup_of_subsingleton_lower_homotopyGroups_of_isZero_ringEquiv e
+        (fun j _ hj ↦ hX.subsingleton_homotopyGroup hj.ne)
+        (ModuleCat.isZero_iff_subsingleton.2 hn)
+        (ModuleCat.isZero_iff_subsingleton.2 hn'))).of_addEquiv
       (MulEquiv.toAdditiveLeft φ)
 
 /-- **Mod-two acyclic Eilenberg--Mac Lane spaces.** For an abelian group `A` and `n ≥ 1`, a

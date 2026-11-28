@@ -113,6 +113,20 @@ theorem isIso_singularHomologyMap_isTerminalPUnit_from_iff {Y Z : TopCat.{w}} (f
     (f ≫ TopCat.isTerminalPUnit.from Z), Functor.map_comp]
   exact isIso_comp_right_iff _ _
 
+/-- **A path-connected space with vanishing positive-degree `R`-homology has the homology of a
+point.** If `X` is path-connected and `H_q(X; R) = 0` whenever `q ≠ 0`, then the map from `X` to a
+point induces an isomorphism on `H_q(-; R)`. -/
+theorem isIso_singularHomologyMap_isTerminalPUnit_from_of_isZero (X : TopCat.{w})
+    [PathConnectedSpace X] (q : ℕ)
+    (hX : q ≠ 0 → IsZero (((singularHomologyFunctor C q).obj R).obj X)) :
+    IsIso (((singularHomologyFunctor C q).obj R).map (TopCat.isTerminalPUnit.from X)) := by
+  rcases eq_or_ne q 0 with rfl | hq0
+  · -- In degree zero both augmentations are isomorphisms, and the map commutes with them.
+    exact IsIso.of_isIso_fac_right (singularHomologyMap_singularHomology₀ε R _)
+  · -- In positive degrees both groups vanish; the point is contractible.
+    exact (hX hq0).isIso
+      (isZero_singularHomologyFunctor_of_contractibleSpace R (TopCat.of PUnit) hq0) _
+
 variable [HasKernels C]
 
 /-- **The reduced singular homology of a contractible space vanishes in every degree.** -/

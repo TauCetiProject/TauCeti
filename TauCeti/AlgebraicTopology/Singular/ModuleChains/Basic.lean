@@ -44,6 +44,8 @@ sum of the coefficients of a `0`-chain, natural and vanishing on boundaries.
   the map of the singular homology functor.
 * `TauCeti.subsingleton_singularChains_homology_iff_of_isIso`: a homology isomorphism identifies
   the vanishing of the homology of the chains of its source and target.
+* `TauCeti.subsingleton_singularChains_homology_of_forall_succ`: vanishing of singular homology in
+  all positive degrees `i + 1` extends to every nonzero degree.
 * `TauCeti.singularChains_linearMap_ext`, `TauCeti.singularChains_addMonoidHom_ext`: linear maps,
   and additive maps out of the chains with coefficients in a ring isomorphic to `ℤ`, are
   determined on simplices.
@@ -93,6 +95,15 @@ theorem subsingleton_singularChains_homology_iff_of_isIso {X Y : TopCat.{u}} (f 
   rw [← singularHomologyFunctor_obj_obj, ← singularHomologyFunctor_obj_obj]
   exact (asIso (((singularHomologyFunctor (ModuleCat.{u} k) i).obj (ModuleCat.of k k)).map f))
     |>.toLinearEquiv.toEquiv.subsingleton_congr
+
+/-- Vanishing of singular homology with coefficients in `k` in all positive degrees `i + 1`
+extends to every nonzero degree. -/
+theorem subsingleton_singularChains_homology_of_forall_succ {X : TopCat.{u}}
+    (h : ∀ i, Subsingleton (((singularChains k).obj X).homology (i + 1)))
+    {q : ℕ} (hq : q ≠ 0) :
+    Subsingleton (((singularChains k).obj X).homology q) := by
+  obtain ⟨q', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq
+  exact h q'
 
 section Singular
 
