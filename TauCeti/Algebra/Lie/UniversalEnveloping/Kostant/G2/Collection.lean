@@ -360,7 +360,7 @@ theorem dividedPower_root_mul_of_g2_reverse_triple {α β γ δ ε ζ : ι}
     (-(c.structConst α δ).sign) (-(c.structConst δ γ).sign)
     h₁' h₂' h₃' h₄' h₅.op h₆.op h₇.op h₈.op h₉.op h₁₀.op h₁₁.op m n
   simpa only [MulOpposite.unop_mul, Finset.unop_sum, MulOpposite.unop_smul,
-    MulOpposite.unop_op, unop_dividedPower, mul_assoc, neg_mul_neg, mul_neg,
+    MulOpposite.unop_op, MulOpposite.unop_dividedPower, mul_assoc, neg_mul_neg, mul_neg,
     neg_mul, neg_sq, neg_neg] using congrArg MulOpposite.unop h
 
 /-- The short-pair collection formula in the reverse orientation. The two double-root factors
