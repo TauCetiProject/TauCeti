@@ -166,19 +166,8 @@ end TauCeti.Probability
 namespace ProbabilityTheory.HasLaw
 
 open TauCeti.Probability
-open scoped ENNReal
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0}
-
-/-- Every natural power of the absolute deviation of a real Gaussian random variable from its
-mean is integrable. -/
-theorem integrable_abs_sub_pow_gaussianReal (hX : HasLaw X (gaussianReal m v) P) (n : ℕ) :
-    Integrable (fun ω ↦ |X ω - m| ^ n) P := by
-  let _ : IsProbabilityMeasure P := hX.isProbabilityMeasure
-  have hmem : MemLp (fun ω ↦ X ω - m) (n : ℝ≥0∞) P :=
-    (ProbabilityTheory.gaussianReal_sub_const hX m).memLp
-      (memLp_id_gaussianReal' (n : ℝ≥0∞) (by simp))
-  simpa only [Real.norm_eq_abs] using hmem.integrable_norm_pow'
 
 /-- The absolute centered moments of a real Gaussian random variable. -/
 theorem integral_abs_sub_pow_gaussianReal (hX : HasLaw X (gaussianReal m v) P) (n : ℕ) :
@@ -193,14 +182,6 @@ theorem integral_abs_gaussianReal (hX : HasLaw X (gaussianReal 0 v) P) :
     ∫ ω, |X ω| ∂P = √(2 * v / Real.pi) := by
   rw [← Function.comp_def (f := fun x : ℝ ↦ |x|), hX.integral_comp (by fun_prop),
     TauCeti.Probability.integral_abs_gaussianReal]
-
-/-- Every natural power of the deviation of a real Gaussian random variable from its mean is
-integrable. -/
-theorem integrable_sub_pow_gaussianReal (hX : HasLaw X (gaussianReal m v) P) (n : ℕ) :
-    Integrable (fun ω ↦ (X ω - m) ^ n) P := by
-  rw [← integrable_norm_iff
-    ((hX.aemeasurable.sub_const m).pow_const n).aestronglyMeasurable]
-  simpa only [Real.norm_eq_abs, norm_pow] using hX.integrable_abs_sub_pow_gaussianReal n
 
 /-- The even centered moments of a real Gaussian random variable. -/
 theorem integral_sub_pow_two_mul_gaussianReal
