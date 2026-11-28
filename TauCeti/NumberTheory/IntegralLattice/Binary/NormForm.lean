@@ -275,6 +275,17 @@ theorem binaryContent_smul (n : ℤ) (hV : Module.finrank ℚ V = 2) :
     binaryContent_eq_content_binaryNormForm L b hV, binaryNormForm_smul,
     BinaryQuadraticForm.content_smul']
 
+/-- Negating the lattice form negates the associated binary form. -/
+@[simp]
+theorem binaryNormForm_neg : (-L).binaryNormForm b = -L.binaryNormForm b := by
+  ext <;> simp
+
+/-- Negating the lattice form preserves the lattice content. -/
+@[simp]
+theorem binaryContent_neg (hV : Module.finrank ℚ V = 2) :
+    (-L).binaryContent hV = L.binaryContent hV := by
+  rw [neg_def, binaryContent_smul, Int.natAbs_neg, Int.natAbs_one, one_mul]
+
 /-- The primitive discriminant of a positive definite rank-two lattice is negative. -/
 theorem binaryDiscriminant_neg_of_isPosDef (hV : Module.finrank ℚ V = 2)
     (hL : L.IsPosDef) : L.binaryDiscriminant hV < 0 := by
