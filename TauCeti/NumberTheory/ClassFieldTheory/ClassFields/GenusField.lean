@@ -12,12 +12,16 @@ import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.InfinitePlace
 import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.Ramification
 
 /-!
-# When an imaginary quadratic genus field is the Hilbert class field
+# When a quadratic genus field is the Hilbert class field
 
 For squarefree `d < 0`, the canonical genus field is everywhere unramified over its quadratic
 base. If the class number of that base equals the genus-field degree `2 ^ (t - 1)`, where `t`
 is the number of prime discriminants, every embedding of the genus field into the separable
 closure of the base has image equal to the Hilbert class field.
+
+For either signature, the prime-discriminant compositum is the narrow Hilbert class field
+when its relative degree exhausts the narrow class number. Only the finite primes must be
+unramified in this comparison; real places may become complex.
 
 ## References
 
@@ -31,6 +35,20 @@ open IsDedekindDomain NumberField
 open TauCeti.Multiquadratic
 
 namespace TauCeti.ClassFieldTheory
+
+/-- The prime-discriminant compositum is the narrow Hilbert class field when its relative degree
+exhausts the narrow class number. This applies to both real and imaginary quadratic bases. -/
+theorem fieldRange_candidateGenusField_eq_narrowHilbertClassField {d : ℤ} (hd : Squarefree d)
+    (hclass : Nat.card (NarrowClassGroup (candidateGenusFieldBase hd)) =
+      2 ^ ((genusPrimeDiscriminants hd).card - 1))
+    (ι : candidateGenusField hd →ₐ[candidateGenusFieldBase hd]
+      SeparableClosure (candidateGenusFieldBase hd)) :
+    ι.fieldRange = narrowHilbertClassField (candidateGenusFieldBase hd) := by
+  apply fieldRange_eq_narrowHilbertClassField_of_unramified_of_finrank_eq_card ι
+  · intro w
+    exact isUnramifiedIn_candidateGenusField hd
+      (w.asIdeal.under (𝓞 (candidateGenusFieldBase hd))) w.asIdeal inferInstance inferInstance
+  · rw [finrank_candidateGenusField_over_candidateGenusFieldBase hd, hclass]
 
 /-- The genus field of an imaginary quadratic field is its Hilbert class field when its relative
 degree exhausts the class number. The equality holds for every embedding over the quadratic base. -/

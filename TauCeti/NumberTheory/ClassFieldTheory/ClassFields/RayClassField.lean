@@ -470,6 +470,24 @@ theorem fieldRange_le_narrowHilbertClassField_iff (ι : L →ₐ[K] SeparableClo
       ∀ w : HeightOneSpectrum (𝓞 L), Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal := by
   rw [← isAdmissibleModulus_iff_le_rayClassField, isAdmissibleModulus_narrowModulus_iff]
 
+variable {K} in
+omit [NumberField L] in
+/-- An abelian extension unramified at every finite prime whose degree equals the narrow class
+number is the narrow Hilbert class field, for every embedding into the separable closure. -/
+theorem fieldRange_eq_narrowHilbertClassField_of_unramified_of_finrank_eq_card
+    (ι : L →ₐ[K] SeparableClosure K)
+    (hfin : ∀ w : HeightOneSpectrum (𝓞 L), Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal)
+    (hdeg : Module.finrank K L = Nat.card (NarrowClassGroup K)) :
+    ι.fieldRange = narrowHilbertClassField K := by
+  have hpos : 0 < Module.finrank K L := by
+    rw [hdeg, ← finrank_narrowHilbertClassField]
+    exact Module.finrank_pos
+  have : Module.Finite K L := Module.finite_of_finrank_pos hpos
+  have : NumberField L := NumberField.of_module_finite K L
+  apply IntermediateField.eq_of_le_of_finrank_eq
+  · exact (fieldRange_le_narrowHilbertClassField_iff ι).2 hfin
+  · rw [← ι.equivFieldRange.toLinearEquiv.finrank_eq, finrank_narrowHilbertClassField, hdeg]
+
 end
 
 /-! ### Relative ray class fields in the separable closure of the base -/
