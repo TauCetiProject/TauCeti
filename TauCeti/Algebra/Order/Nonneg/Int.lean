@@ -37,14 +37,23 @@ def nonnegIntOrderAddMonoidIsoNat : Nonneg ℤ ≃+o ℕ :=
     }
   e.symm
 
-theorem nonnegIntOrderAddMonoidIsoNat_apply (n : Nonneg ℤ) :
-    nonnegIntOrderAddMonoidIsoNat n = n.val.toNat :=
-  by rw [nonnegIntOrderAddMonoidIsoNat, ← OrderAddMonoidIso.invFun_eq_symm]
+end TauCeti
+
+namespace Nonneg
+
+theorem intOrderAddMonoidIsoNat_apply (n : Nonneg ℤ) :
+    TauCeti.nonnegIntOrderAddMonoidIsoNat n = n.val.toNat :=
+  by
+    rw [TauCeti.nonnegIntOrderAddMonoidIsoNat, ← OrderAddMonoidIso.invFun_eq_symm]
+
+end Nonneg
+
+namespace Nat
 
 theorem nonnegIntOrderAddMonoidIsoNat_symm_apply (n : ℕ) :
-    nonnegIntOrderAddMonoidIsoNat.symm n = (Nat.cast n : Nonneg ℤ) :=
+    TauCeti.nonnegIntOrderAddMonoidIsoNat.symm n = (Nat.cast n : Nonneg ℤ) :=
   by
-    rw [nonnegIntOrderAddMonoidIsoNat, OrderAddMonoidIso.symm_symm]
+    rw [TauCeti.nonnegIntOrderAddMonoidIsoNat, OrderAddMonoidIso.symm_symm]
     rfl
 
-end TauCeti
+end Nat
