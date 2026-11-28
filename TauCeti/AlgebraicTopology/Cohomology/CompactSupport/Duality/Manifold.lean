@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality.MayerVietoris
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Euclidean.Duality
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Manifold
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass.Manifold
 
 import TauCeti.CategoryTheory.Linear.Int
 
@@ -25,7 +26,7 @@ which caps a class with compact support with the fundamental classes of `o` alon
 (`TauCeti.HomologicalOrientation.bijective_dualityMap`). No compactness, connectedness or
 countability of `M` is assumed. For compact `M` this is the classical statement that the cap
 product with the fundamental class `[M]` is a bijection `Hᵖ(M; L) → H_q(M; L)`
-(`TauCeti.HomologicalOrientation.bijective_singularCap_fundamentalClass`).
+(`TauCeti.HomologicalOrientation.bijective_singularCapAddHom_fundamentalClass`).
 
 The proof is Hatcher's induction over the open subsets of `M` (Lemma 3.36), run through the
 Mayer–Vietoris induction principle over convex chart domains
@@ -48,8 +49,10 @@ with the orientation restricted from `o`, that its duality map is bijective in e
 * `TauCeti.HomologicalOrientation.bijective_dualityMap`: **Poincaré duality**, the duality map of
   an oriented manifold is bijective, and `TauCeti.HomologicalOrientation.isIso_dualityMap` as an
   isomorphism.
-* `TauCeti.HomologicalOrientation.bijective_singularCap_fundamentalClass`: for a closed oriented
-  manifold, the cap product with the fundamental class is bijective.
+* `TauCeti.HomologicalOrientation.bijective_singularCapAddHom_fundamentalClass`: for a closed
+  oriented manifold, the cap product with the fundamental class is bijective.
+* `TauCeti.IsFundamentalClass.bijective_singularCapAddHom`: the same for an integral fundamental
+  class given without an orientation.
 
 ## References
 
@@ -121,19 +124,36 @@ instance isIso_dualityMap (p q : ℕ) (h : p + q = n) : IsIso (o.dualityMap hn L
 
 /-- **Poincaré duality for a closed oriented manifold.** For a compact Hausdorff manifold `M`
 without boundary of dimension `n` with a homological orientation, the cap product with the
-fundamental class, `α ↦ [M] ⌢ α`, is a bijection `Hᵖ(M; L) → H_q(M; L)` for `p + q = n`. -/
-theorem bijective_singularCap_fundamentalClass [CompactSpace M] (p q : ℕ) (h : p + q = n) :
+fundamental class, `α ↦ [M] ⌢ α` (`TopCat.singularCapAddHom`), is a bijection
+`Hᵖ(M; L) → H_q(M; L)` for `p + q = n`. -/
+theorem bijective_singularCapAddHom_fundamentalClass [CompactSpace M] (p q : ℕ) (h : p + q = n) :
     Function.Bijective
-      fun α : (TopCat.of M).singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p ↦
-        ((TopCat.of M).singularCap ℤ (ρ_ _).inv (ρ_ L).hom p q n h α).hom
-          (o.fundamentalClass hn) := by
+      ((TopCat.of M).singularCapAddHom ℤ (ρ_ _).inv (ρ_ L).hom h (o.fundamentalClass hn)) := by
   have := (o.bijective_dualityMap hn L p q h).comp (ConcreteCategory.bijective_of_isIso
     (TopCat.compactSupportCohomologyIsoOfCompactSpace (R := ModuleCat.of ℤ (ULift.{0} ℤ)) (k := ℤ)
       (M := L) (X := TopCat.of M) p).inv)
   convert this using 1
   funext α
-  exact (o.dualityMap_compactSupportCohomologyIsoOfCompactSpace_inv hn L p q h α).symm
+  exact (TopCat.singularCapAddHom_apply ..).trans
+    (o.dualityMap_compactSupportCohomologyIsoOfCompactSpace_inv hn L p q h α).symm
 
 end HomologicalOrientation
+
+variable {M E : Type} [TopologicalSpace M] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [ChartedSpace E M] {n : ℕ}
+
+/-- **Poincaré duality for an integral fundamental class.** For a compact Hausdorff manifold `M`
+without boundary of dimension `n` and an integral fundamental class `μ ∈ Hₙ(M; ℤ)`, a class whose
+image in the local homology at every point is a generator, the cap product with `μ` is a bijection
+`Hᵖ(M; L) → H_q(M; L)` for `p + q = n`. No orientation is given: `μ` determines one
+(`TauCeti.HomologicalOrientation.ofIsFundamentalClass`), whose fundamental class it is. -/
+theorem IsFundamentalClass.bijective_singularCapAddHom [T2Space M] [CompactSpace M]
+    (hn : finrank ℝ E = n) (L : ModuleCat.{0} ℤ)
+    {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+      ModuleCat.{0} ℤ)} (hμ : IsFundamentalClass μ) (p q : ℕ) (h : p + q = n) :
+    Function.Bijective ((TopCat.of M).singularCapAddHom ℤ (ρ_ _).inv (ρ_ L).hom h μ) := by
+  have := (HomologicalOrientation.ofIsFundamentalClass (E := E) hμ
+    ).bijective_singularCapAddHom_fundamentalClass hn L p q h
+  rwa [HomologicalOrientation.fundamentalClass_ofIsFundamentalClass] at this
 
 end TauCeti

@@ -48,6 +48,9 @@ group.
 * `TauCeti.OrthonormalFrameBundle.exists_trivialization_of_continuousOn_smul_mem`: a set of frames
   stable exactly under `H` is locally trivial with fibre `H` wherever a local frame can be
   corrected into it continuously.
+* `TauCeti.OrthonormalFrameBundle.isLocallyTrivialReduction_of_forall_exists_section`: a set of
+  frames stable exactly under `H`, with continuous local sections near every point, is a locally
+  trivial reduction to `H`.
 
 ## References
 
@@ -87,24 +90,46 @@ theorem SMulMemIff.exists_mem_smul_eq {p q : OrthonormalFrameBundle ℝ F E V} (
   obtain ⟨g, rfl⟩ := OrthonormalFrameBundle.exists_smul_eq_iff.2 h
   exact ⟨g, (smul_mem_iff (H := H) hp).1 hq, rfl⟩
 
-/-- The right action of `H` on `S`, by precomposition. A direct `SMul` instance, so that instance
-search finds it before the generic paths (such as `Algebra.toSMul`) through `MulAction`. -/
-instance instSMulSubtype : SMul Hᵐᵒᵖ S where
-  smul g p := ⟨op (g.unop : unitary (V →L[ℝ] V)) • p.val,
-    (SMulMemIff.smul_mem_iff p.property).2 g.unop.property⟩
+/-- The frames lying in two sets of frames, stable exactly under `H` and `K`, are stable exactly
+under `H ⊓ K`. -/
+instance SMulMemIff.inter {K : Subgroup (unitary (V →L[ℝ] V))}
+    {T : Set (OrthonormalFrameBundle ℝ F E V)} [SMulMemIff K T] :
+    SMulMemIff (H ⊓ K) (S ∩ T) :=
+  ⟨fun hp _ ↦ by
+    rw [Set.mem_inter_iff, smul_mem_iff (H := H) hp.1, smul_mem_iff (H := K) hp.2,
+      Subgroup.mem_inf]⟩
 
-/-- The right action of `H` on `S` is an action. -/
-instance : MulAction Hᵐᵒᵖ S where
-  one_smul p := Subtype.ext (one_smul _ p.val)
-  mul_smul g h p := Subtype.ext (mul_smul (op (g.unop : unitary (V →L[ℝ] V)))
-    (op (h.unop : unitary (V →L[ℝ] V))) p.val)
+/-- The right action of `H` on `S`, by precomposition: the action of the orthogonal group on
+all orthonormal frames, restricted (`TauCeti.reductionMulAction`). -/
+instance instMulActionSubtype : MulAction Hᵐᵒᵖ S :=
+  reductionMulAction fun _ hp _ hg ↦ (SMulMemIff.smul_mem_iff hp).2 hg
+
+/-- The right action of `H` on `S`, as a direct `SMul` instance, so that instance search finds it
+before the generic paths (such as `Algebra.toSMul`) through `MulAction`. -/
+instance instSMulSubtype : SMul Hᵐᵒᵖ S :=
+  instMulActionSubtype.toSMul
 
 /-- The action on `S` is the action on all orthonormal frames. -/
-@[simp]
 theorem SMulMemIff.coe_smul (g : Hᵐᵒᵖ) (p : S) :
     ((g • p : S) : OrthonormalFrameBundle ℝ F E V) =
       op (g.unop : unitary (V →L[ℝ] V)) • (p : OrthonormalFrameBundle ℝ F E V) :=
-  rfl
+  coe_reductionMulAction_smul _ g p
+
+/-- The action of `g ∈ H` on a point `p` of `S` is the point `op g • p` of `S`, with any proof
+that it lies in `S`. -/
+theorem SMulMemIff.smul_eq_mk (g : H) (p : S)
+    (hgp : op (g : unitary (V →L[ℝ] V)) • (p : OrthonormalFrameBundle ℝ F E V) ∈ S) :
+    op g • p = ⟨_, hgp⟩ :=
+  reductionMulAction_smul_eq_mk _ g p hgp
+
+/-- A map on `S` takes the value `x` at the point `op g • p` of `S` if it does so at the point
+`⟨op g • p, hgp⟩` for every proof `hgp` that it lies in `S`. This turns the equivariance of a
+trivialization in the form of `TauCeti.IsLocallyTrivialReduction` into the form of the action. -/
+theorem SMulMemIff.apply_smul_eq_of_apply_mk_eq {X : Type*} {f : S → X} {g : H} {p : S} {x : X}
+    (h : ∀ hgp : op (g : unitary (V →L[ℝ] V)) • (p : OrthonormalFrameBundle ℝ F E V) ∈ S,
+      f ⟨_, hgp⟩ = x) :
+    f (op g • p) = x :=
+  (congrArg f (smul_eq_mk g p _)).trans (h ((smul_mem_iff p.property).2 g.property))
 
 /-- The action of `H` on `S` is free. -/
 @[simp↓]
@@ -118,15 +143,16 @@ theorem SMulMemIff.exists_smul_eq_iff {p q : S} :
     (∃ g : H, op g • p = q) ↔ p.val.proj = q.val.proj := by
   refine ⟨fun ⟨g, h⟩ ↦ by rw [← h, coe_smul, proj_smul], fun h ↦ ?_⟩
   obtain ⟨g, hg, hgq⟩ := exists_mem_smul_eq (H := H) p.property q.property h
-  exact ⟨⟨g, hg⟩, Subtype.ext hgq⟩
+  exact ⟨⟨g, hg⟩, Subtype.ext ((coe_smul _ p).trans hgq)⟩
 
 variable [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace B]
   [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E] [FiniteDimensional ℝ V]
 
 /-- The right action of `H` on `S` is continuous. -/
 instance : ContinuousSMul Hᵐᵒᵖ S where
-  continuous_smul := ((continuous_op.comp ((continuous_subtypeVal.comp continuous_unop).comp
-    continuous_fst)).smul (continuous_subtypeVal.comp continuous_snd)).subtype_mk _
+  continuous_smul := Topology.IsInducing.subtypeVal.continuous_iff.2 <|
+    ((continuous_op.comp ((continuous_subtypeVal.comp continuous_unop).comp continuous_fst)).smul
+      (continuous_subtypeVal.comp continuous_snd)).congr fun p ↦ (SMulMemIff.coe_smul p.1 p.2).symm
 
 end Action
 
@@ -150,16 +176,58 @@ theorem exists_trivialization_of_continuousOn_smul_mem (hUT : U ⊆ T.baseSet)
     (hcS : ∀ y ∈ U, op (c y) • T.toOpenPartialHomeomorph.symm (y, 1) ∈ S) (hU : IsOpen U)
     (hc : ContinuousOn c U) {x : B} (hx : x ∈ U) :
     ∃ t : Trivialization H (fun p : S ↦ (p : OrthonormalFrameBundle ℝ F E V).proj),
-      t.baseSet = U ∧ ∀ (g : H) (p : S), (p : OrthonormalFrameBundle ℝ F E V).proj ∈ U →
-        t (op g • p) = ((t p).1, (t p).2 * g) := by
+      t.baseSet = U ∧ ∀ (g : H) (p : S)
+        (hgp : op (g : unitary (V →L[ℝ] V)) • (p : OrthonormalFrameBundle ℝ F E V) ∈ S),
+        (p : OrthonormalFrameBundle ℝ F E V).proj ∈ U → t ⟨_, hgp⟩ = ((t p).1, (t p).2 * g) := by
   have he : ∀ (g : unitary (V →L[ℝ] V)) (p : OrthonormalFrameBundle ℝ F E V),
       p.proj ∈ T.baseSet → (T (op g • p)).2 = (T p).2 * g := fun g p hp ↦
     T.isEquivariant_orthonormalFrameBundleFiber_iff.1 inferInstance p hp g
-  obtain ⟨t, ht, hteq⟩ := T.exists_trivialization_of_continuousOn_symm_mem (fun _ _ ↦ rfl) he
+  exact T.exists_trivialization_of_continuousOn_symm_mem (fun _ _ ↦ rfl) he
     (fun _ hp _ ↦ SMulMemIff.smul_mem_iff (H := H) hp) hUT
     (fun y hy ↦ T.op_smul_symm_one (fun _ _ ↦ rfl) he (hUT hy) (c y) ▸ hcS y hy) hU hc hx
-  exact ⟨t, ht, fun g p hp ↦ hteq g p (op g • p).property hp⟩
 
 end Reduction
+
+section Section
+
+variable [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F E] [VectorBundle ℝ F E]
+  [ContinuousFiberNorm F E] [FiniteDimensional ℝ F]
+  {H : Subgroup (unitary (V →L[ℝ] V))} {S : Set (OrthonormalFrameBundle ℝ F E V)} [SMulMemIff H S]
+
+/-- **A set of frames with continuous local sections is a locally trivial reduction.** If `S` is
+carried into itself by exactly the elements of `H`, and every point of the base has an open
+neighbourhood `U` with a continuous local section `q` of frames of `S` over `U`, then `S` is a
+locally trivial reduction of the orthonormal frame bundle to `H`. -/
+theorem isLocallyTrivialReduction_of_forall_exists_section
+    (hsec : ∀ x : B, ∃ U : Set B, IsOpen U ∧ x ∈ U ∧ ∃ q : B → OrthonormalFrameBundle ℝ F E V,
+      (∀ y ∈ U, q y ∈ S ∧ (q y).proj = y) ∧ ContinuousOn q U) :
+    IsLocallyTrivialReduction (proj : OrthonormalFrameBundle ℝ F E V → B) H S := by
+  refine isLocallyTrivialReduction_iff.2 fun x ↦ ?_
+  obtain ⟨U, hU, hxU, q, hqS, hq⟩ := hsec x
+  -- The frame `q x` identifies `V` with the model fibre `F`.
+  obtain ⟨eV⟩ := (q x).nonempty_linearEquiv
+  have : FiniteDimensional ℝ V := LinearEquiv.finiteDimensional eV.symm
+  obtain ⟨T, hxT, hT⟩ := exists_trivialization (E := E) (V := V) eV.finrank_eq x
+  have : T.orthonormalFrameBundleFiber.IsEquivariant :=
+    T.isEquivariant_orthonormalFrameBundleFiber_iff.2 fun p _ g ↦ congrArg Prod.snd (hT g p)
+  -- Over `U ∩ T.baseSet` the section is the local frame of `T` corrected by its fibre coordinate.
+  have hsrc : ∀ y ∈ U ∩ T.baseSet, q y ∈ T.source := fun y hy ↦
+    T.mem_source.2 ((hqS y hy.1).2.symm ▸ hy.2)
+  have hqT : ∀ y ∈ U ∩ T.baseSet, T.toOpenPartialHomeomorph.symm (y, (T (q y)).2) = q y :=
+    fun y hy ↦ by
+      have hpair : (y, (T (q y)).2) = T (q y) :=
+        Prod.ext (by rw [T.coe_fst (hsrc y hy), (hqS y hy.1).2]) rfl
+      rw [hpair]
+      exact T.toOpenPartialHomeomorph.left_inv (hsrc y hy)
+  have hcont : ContinuousOn (fun y ↦ T (q y)) (U ∩ T.baseSet) :=
+    T.continuousOn_toFun.comp (hq.mono inter_subset_left) hsrc
+  obtain ⟨t, ht, hteq⟩ := exists_trivialization_of_continuousOn_smul_mem (T := T) (H := H)
+    (S := S) (c := fun y ↦ (T (q y)).2) inter_subset_right (fun y hy ↦ by
+      rw [T.op_smul_symm_one (fun _ _ ↦ proj_smul _ _) (fun g p _ ↦ by rw [hT g p]) hy.2, hqT y hy]
+      exact (hqS y hy.1).1)
+    (hU.inter T.open_baseSet) (continuous_snd.comp_continuousOn hcont) ⟨hxU, hxT⟩
+  exact ⟨t, ht ▸ ⟨hxU, hxT⟩, fun g p hgp hp ↦ hteq g p hgp (ht ▸ hp)⟩
+
+end Section
 
 end TauCeti.OrthonormalFrameBundle

@@ -12,7 +12,7 @@ import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.FirstInequality
 import TauCeti.NumberTheory.HilbertSymbol.Basic
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Surjective
-import TauCeti.NumberTheory.QuadraticForm.Global.Transport
+import TauCeti.NumberTheory.QuadraticForm.Global.Transport.Basic
 import TauCeti.RingTheory.Norm.Quadratic
 
 /-!

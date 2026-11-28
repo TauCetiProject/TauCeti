@@ -150,6 +150,20 @@ variable {A D C : FiniteRankBundleCore 𝕜 B}
     (f ≫ g).fiberMap x = (g.fiberMap x).comp (f.fiberMap x) :=
   CoordinateHom.fiberMap_comp g f x
 
+/-- The inverse of an isomorphism of cores undoes it on every fibre. -/
+@[simp] theorem _root_.CategoryTheory.Iso.fiberMap_hom_inv_id_apply (e : A ≅ D) (x : B)
+    (v : Fin A.rank → 𝕜) :
+    e.inv.fiberMap x (e.hom.fiberMap x v) = v := by
+  rw [← ContinuousLinearMap.comp_apply, ← fiberMap_comp, e.hom_inv_id, fiberMap_id,
+    ContinuousLinearMap.id_apply]
+
+/-- An isomorphism of cores undoes its inverse on every fibre. -/
+@[simp] theorem _root_.CategoryTheory.Iso.fiberMap_inv_hom_id_apply (e : A ≅ D) (x : B)
+    (v : Fin D.rank → 𝕜) :
+    e.hom.fiberMap x (e.inv.fiberMap x v) = v := by
+  rw [← ContinuousLinearMap.comp_apply, ← fiberMap_comp, e.inv_hom_id, fiberMap_id,
+    ContinuousLinearMap.id_apply]
+
 /-- Evaluating the fibre map of `eqToHom h` casts the coordinate index along the rank equality. -/
 @[simp] theorem fiberMap_eqToHom_apply (h : A = D) (x : B)
     (v : Fin A.rank → 𝕜) (i : Fin D.rank) :
@@ -277,6 +291,18 @@ theorem continuous_fiberMap_trivial (f : A ⟶ trivial 𝕜 B n) :
   rw [CoordinateHom.totalSpaceMap_def] at h
   exact continuous_trivial_snd.comp h
 
+/-- Multiplying the coordinates of the trivial core by a continuous scalar function is continuous
+on its total space. -/
+theorem continuous_smul_trivial (f : B → 𝕜) (hf : Continuous f) :
+    Continuous fun p : (trivial 𝕜 B n).core.TotalSpace ↦
+      (f p.proj • ContinuousLinearMap.id 𝕜 (Fin n → 𝕜)) p.snd := by
+  have h : Continuous fun p : (trivial 𝕜 B n).core.TotalSpace ↦ f p.proj • (p.snd : Fin n → 𝕜) :=
+    (hf.comp (trivial 𝕜 B n).core.continuous_proj).smul continuous_trivial_snd
+  have e (c : 𝕜) (v : Fin n → 𝕜) : c • v = (c • ContinuousLinearMap.id 𝕜 (Fin n → 𝕜)) v := by
+    rw [_root_.smul_apply, ContinuousLinearMap.id_apply]
+  -- The fibres of the trivial core are `Fin n → 𝕜` (`rank_trivial`).
+  exact h.congr fun p ↦ e _ p.snd
+
 variable [CompleteSpace 𝕜]
 
 /-- A family of linear maps from the fibres of a core to `Fin n → 𝕜` which is continuous on the
@@ -291,6 +317,14 @@ def toTrivial (f : B → (Fin A.rank → 𝕜) →L[𝕜] (Fin n → 𝕜))
     (hf : Continuous fun p : A.core.TotalSpace ↦ f p.proj p.snd) (x : B) :
     (toTrivial f hf).fiberMap x = f x :=
   congrFun (CoordinateHom.fiberMap_ofContinuous _ _) x
+
+/-- Multiplication by a continuous scalar function, as a bundle map of the trivial core. -/
+def smulTrivial (f : B → 𝕜) (hf : Continuous f) : trivial 𝕜 B n ⟶ trivial 𝕜 B n :=
+  toTrivial (fun x ↦ f x • ContinuousLinearMap.id 𝕜 (Fin n → 𝕜)) (continuous_smul_trivial f hf)
+
+@[simp] theorem fiberMap_smulTrivial (f : B → 𝕜) (hf : Continuous f) (x : B) :
+    (smulTrivial (n := n) f hf).fiberMap x = f x • ContinuousLinearMap.id 𝕜 (Fin n → 𝕜) :=
+  fiberMap_toTrivial _ (continuous_smul_trivial f hf) x
 
 end ToTrivial
 

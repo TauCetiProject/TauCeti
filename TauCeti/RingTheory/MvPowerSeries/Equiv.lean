@@ -33,6 +33,8 @@ identification of restricted series in two families of variables with iterated r
 * `PowerSeries.coeff_toMvPowerSeries`: the coefficients of `w.toMvPowerSeries i`.
 * `PowerSeries.coeff_prod_toMvPowerSeries`: the coefficients of a product of one-variable series
   placed in separate variables.
+* `MvPowerSeries.finSuccEquiv_apply`: Mathlib's finite splitting as a renaming followed by
+  `MvPowerSeries.optionEquivLeft`.
 * `MvPowerSeries.sumAlgEquiv`: the algebra isomorphism
   `MvPowerSeries (σ ⊕ τ) A ≃ₐ[R] MvPowerSeries σ (MvPowerSeries τ A)`.
 * `MvPowerSeries.coeff_coeff_sumAlgEquiv` and
@@ -120,6 +122,13 @@ end PowerSeries
 namespace MvPowerSeries
 
 open Finset
+
+/-- The finite splitting first reindexes with `finSuccEquiv` and then separates the variable
+indexed by `none` with `optionEquivLeft`. -/
+theorem finSuccEquiv_apply {R : Type*} [CommSemiring R] {n : ℕ}
+    (f : MvPowerSeries (Fin (n + 1)) R) :
+    finSuccEquiv R n f = optionEquivLeft (Fin n) R (renameEquiv R (_root_.finSuccEquiv n) f) :=
+  (rfl)
 
 section Semiring
 

@@ -44,9 +44,10 @@ and cutoffs `χᵢ` equal to `1` near the supports of the `ρᵢ`, the operator 
 by `ρᵢ` and `χᵢ`
 (`TauCeti.mulLeft_sum_comp_sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators`).
 When the `ρᵢ` add up to `1`, this is `P` itself
-(`TauCeti.sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators`), and on a compact
-manifold such cutoffs exist. This is the converse of
-`OpenPartialHomeomorph.chartQuantization_mem_classicalPseudodifferentialOperators`.
+(`TauCeti.sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators`). This is the
+converse of `OpenPartialHomeomorph.chartQuantization_mem_classicalPseudodifferentialOperators`.
+On a σ-compact manifold, the locally finite version with charts and cutoffs chosen once for all
+operators is `TauCeti.exists_sub_patchedQuantization_mem_smoothingPseudodifferentialOperators`.
 
 ## Main definitions
 
@@ -57,15 +58,14 @@ manifold such cutoffs exist. This is the converse of
 * `TauCeti.mem_smoothingPseudodifferentialOperators_iff_isSmoothing`: an operator has order `-∞`
   exactly when it is properly supported and its chart compressions are quantizations of smoothing
   symbols.
+* `TauCeti.mem_smoothingPseudodifferentialOperators_iff_forall_mem`: an operator has order `-∞`
+  exactly when it has every order `m - N`, `N ∈ ℕ`, for one real `m`.
 * `TauCeti.classicalPrincipalSymbol_eq_zero_of_mem_smoothingPseudodifferentialOperators`: the
   principal symbol of an operator of order `-∞` vanishes in every order.
 * `TauCeti.mulLeft_comp_comp_mulLeft_mem_smoothingPseudodifferentialOperators`: pseudolocality.
 * `TauCeti.sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators`: a classical
   pseudodifferential operator is a sum of chart quantizations modulo an operator of order `-∞`,
   given cutoffs in charts adding up to `1`.
-* `TauCeti.exists_sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators`: on a compact
-  manifold, every classical pseudodifferential operator of order `m` is a finite sum of chart
-  quantizations of classical symbols of order `m`, modulo an operator of order `-∞`.
 
 ## References
 
@@ -126,11 +126,11 @@ theorem mem_smoothingPseudodifferentialOperators_iff_isSmoothing (m : ℝ) :
     -- same coefficient.
     obtain ⟨a, ha⟩ := (mem_classicalPseudodifferentialOperators_iff.1
       (mem_smoothingPseudodifferentialOperators_iff.1 hP m)).2 e he φ ψ
-    refine ⟨a.toSymbol, Symbol.isSmoothing_iff.2 fun m' ↦ ?_, ha⟩
+    refine ⟨a.toSymbol,
+      Symbol.isSmoothing_iff_forall_exists_quantizeSchwartzValue_eq.2 fun m' ↦ ?_, ha⟩
     obtain ⟨b, hb⟩ := (mem_classicalPseudodifferentialOperators_iff.1
       (mem_smoothingPseudodifferentialOperators_iff.1 hP m')).2 e he φ ψ
-    exact ⟨b.toSymbol, Symbol.coefficient_eq_of_forall_quantizeSchwartzValue_eq fun u _ ↦
-      funext fun x ↦ (hb u x).trans (ha u x).symm⟩
+    exact ⟨b.toSymbol, fun u _ ↦ funext fun x ↦ (hb u x).trans (ha u x).symm⟩
   · refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hP, fun e he φ ψ ↦ ?_⟩
     obtain ⟨r, hr, hop⟩ := h e he φ ψ
     obtain ⟨b, hb⟩ := Symbol.isSmoothing_iff.1 hr m'
@@ -138,6 +138,26 @@ theorem mem_smoothingPseudodifferentialOperators_iff_isSmoothing (m : ℝ) :
       (Symbol.isSmoothing_iff.1 hr m'').imp fun _ h ↦ h.trans hb.symm),
       fun u x ↦ ?_⟩
     rw [ClassicalSymbol.toSymbol_ofIsSmoothing, hb, hop]
+
+/-- **Operators of order `-∞` through the orders `m - N`.** For any real `m`, an operator has order
+`-∞` exactly when it is a classical pseudodifferential operator of order `m - N` for every natural
+number `N`. -/
+theorem mem_smoothingPseudodifferentialOperators_iff_forall_mem (m : ℝ) :
+    P ∈ smoothingPseudodifferentialOperators ↔
+      ∀ N : ℕ, P ∈ classicalPseudodifferentialOperators (m - N) := by
+  refine ⟨fun hP N ↦ smoothingPseudodifferentialOperators_le_classicalPseudodifferentialOperators _
+    hP, fun h ↦ (mem_smoothingPseudodifferentialOperators_iff_isSmoothing m).2
+      ⟨(mem_classicalPseudodifferentialOperators_iff.1 (h 0)).1, fun e he φ ψ ↦ ?_⟩⟩
+  -- The chart symbols of the orders `m - N` have the same quantization, hence the same full symbol.
+  choose a ha using fun N : ℕ ↦ (mem_classicalPseudodifferentialOperators_iff.1 (h N)).2 e he φ ψ
+  have hcoeff (N : ℕ) : (a N).toSymbol.coefficient = (a 0).toSymbol.coefficient :=
+    Symbol.coefficient_eq_of_forall_quantizeSchwartzValue_eq fun u _ ↦
+      funext fun x ↦ (ha N u x).trans (ha 0 u x).symm
+  refine ⟨Symbol.inclusion (by simp) (a 0).toSymbol, Symbol.isSmoothing_iff.2 fun μ ↦ ?_,
+    fun u x ↦ by rw [Symbol.coefficient_inclusion, ha]⟩
+  obtain ⟨N, hN⟩ := exists_nat_ge (m - μ)
+  exact ⟨Symbol.inclusion (by linarith) (a N).toSymbol, by
+    rw [Symbol.coefficient_inclusion, Symbol.coefficient_inclusion, hcoeff]⟩
 
 /-- An operator of order `-∞` has principal symbol `0` in every order. -/
 theorem classicalPrincipalSymbol_eq_zero_of_mem_smoothingPseudodifferentialOperators
@@ -304,46 +324,5 @@ theorem sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators
   simpa [hρ, LinearMap.mulLeft_one] using
     mulLeft_sum_comp_sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators hP hχ ha hφ
       hψ
-
-/-- **On a compact manifold, a classical pseudodifferential operator is a finite sum of chart
-quantizations modulo order `-∞`.** If `M` is compact and `P` is a classical pseudodifferential
-operator of order `m`, there are finitely many points `x`, cutoffs `φₓ`, `ψₓ` in the preferred
-charts at these points and classical symbols `aₓ` of order `m` such that `P - ∑ₓ Op_{eₓ}(aₓ)`
-has order `-∞`. Conversely every such sum is a classical pseudodifferential operator of order `m`
-(`OpenPartialHomeomorph.chartQuantization_mem_classicalPseudodifferentialOperators`). -/
-theorem exists_sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators
-    [CompactSpace M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
-    (hP : P ∈ classicalPseudodifferentialOperators m) :
-    ∃ (s : Finset M) (φ ψ : ∀ x : M, 𝓓(⟨(chartAt (CoordinateSpace n) x).target,
-        (chartAt (CoordinateSpace n) x).open_target⟩, ℝ)) (a : M → ClassicalSymbol n ℂ ℂ m),
-      P - ∑ x ∈ s, (chartAt (CoordinateSpace n) x).chartQuantization
-          (IsManifold.chart_mem_maximalAtlas x) (φ x) (ψ x) (a x) ∈
-        smoothingPseudodifferentialOperators := by
-  -- A smooth partition of unity `f` subordinate to the chart sources; on the compact space `M`
-  -- only the finitely many `x ∈ s` have `f x ≠ 0`.
-  obtain ⟨f, hf⟩ :=
-    SmoothPartitionOfUnity.exists_isSubordinate_chartAt_source 𝓘(ℝ, CoordinateSpace n) M
-  have hs := f.locallyFinite.finite_nonempty_of_compact
-  -- Each `f x` is the pullback of a cutoff `ρ x` in the chart at `x`; `χ x` and `ψ x` are cutoffs
-  -- equal to `1` near the supports of `ρ x` and `χ x`, and `a x` is the chart symbol of `P`.
-  choose ρ hρ using fun x ↦ OpenPartialHomeomorph.exists_cutoffPullback_one_eq
-    (IsManifold.chart_mem_maximalAtlas x) (isCompact_univ.of_isClosed_subset (isClosed_tsupport _)
-      (subset_univ _)) (hf x)
-  choose χ hχ using fun x ↦ TestFunction.exists_eventually_eq_one (n := ⊤)
-    (ρ x).hasCompactSupport.isCompact (ρ x).tsupport_subset
-  choose ψ hψ using fun x ↦ TestFunction.exists_eventually_eq_one (n := ⊤)
-    (χ x).hasCompactSupport.isCompact (χ x).tsupport_subset
-  choose a ha using fun x ↦ (mem_classicalPseudodifferentialOperators_iff.1 hP).2 _
-    (IsManifold.chart_mem_maximalAtlas x) (ρ x) (χ x)
-  refine ⟨hs.toFinset, χ, ψ, a, sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators
-    hP ?_ (fun x _ ↦ (hχ x).1) (fun x _ ↦ ha x) (fun x _ y hy ↦ (hχ x).1.self_of_nhdsSet y hy)
-    (fun x _ y hy ↦ (hψ x).1.self_of_nhdsSet y hy)⟩
-  ext p
-  have hsum : ∑ x ∈ hs.toFinset, f x p = 1 :=
-    f.sum_finsupport' p (mem_univ p) fun x hx ↦ hs.mem_toFinset.2 ⟨p, (f.mem_finsupport p).1 hx⟩
-  simp only [ContMDiffMap.coe_sum, Finset.sum_apply,
-    OpenPartialHomeomorph.complexCutoffPullback_one_apply, hρ,
-    ContMDiffMap.coe_one, Pi.one_apply]
-  exact_mod_cast hsum
 
 end TauCeti

@@ -11,7 +11,7 @@ import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.Algebra.Order.Monoid.Unbundled.Pow
 import TauCeti.RingTheory.PowerSeries.Log
 import TauCeti.RingTheory.PowerSeries.Trunc
-import TauCeti.RingTheory.Valuation.Polynomial
+import TauCeti.RingTheory.Valuation.Polynomial.Weighted
 import TauCeti.Topology.Algebra.ValuativeRel.HasSum
 
 /-!

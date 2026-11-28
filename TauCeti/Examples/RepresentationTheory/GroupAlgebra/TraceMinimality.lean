@@ -25,9 +25,6 @@ namespace TauCeti.GroupAlgebraTraceMinimalityExamples
 
 open _root_.MonoidAlgebra TauCeti.GroupAlgebraBlockExamples
 
-/-- The transposition `s = (0 1)` of `S₃`. -/
-abbrev s : S₃ := Equiv.swap 0 1
-
 /-- The subgroup `⟨s⟩` of order `2` has index `3` in `S₃`. -/
 theorem index_zpowers_s : (Subgroup.zpowers s).index = 3 := by
   have h := (Subgroup.zpowers s).index_mul_card

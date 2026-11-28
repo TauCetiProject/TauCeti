@@ -36,6 +36,8 @@ unit of `K` and `a ↦ a • x` is bijective.
   (for instance a commutative one) whose only unit is `1` has a single generator.
 * `LinearEquiv.eq_one_of_smul_eq_self_of_span_singleton_eq_top`: in a faithful module over a
   commutative semiring, the only scalar fixing a single-element generator is `1`.
+* `LinearEquiv.bijective_smul_of_isUnit_apply`: an element carried to a unit of the base ring
+  generates freely.
 * `LinearEquiv.isUnit_apply_of_apply_eq_one`, `LinearEquiv.bijective_smul_of_apply_eq_one`: an
   element on which a linear functional takes the value `1` is carried to a unit, and generates
   freely.
@@ -111,16 +113,21 @@ theorem isUnit_apply_of_apply_eq_one {K N : Type*} [CommSemiring K] [AddCommMono
   have hxe : x = e x • e.symm 1 := by simp [← map_smul]
   exact IsUnit.of_mul_eq_one (Ψ (e.symm 1)) <| by simpa [hx] using (congrArg Ψ hxe).symm
 
+/-- **An element carried to a unit by an isomorphism with the base ring generates freely**: for
+`e : M ≃ₗ[R] R`, if `e x` is a unit of `R`, then `a ↦ a • x` is a bijection `R → M`. -/
+theorem bijective_smul_of_isUnit_apply {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    (e : M ≃ₗ[R] R) {x : M} (hx : IsUnit (e x)) : Function.Bijective fun a : R ↦ a • x := by
+  -- `a ↦ a • x` is `a ↦ e⁻¹ (a * e x)`, a composite of bijections.
+  convert e.symm.bijective.comp (Units.mulRight hx.unit).bijective using 1
+  funext a
+  simp [← smul_eq_mul]
+
 /-- If a linear functional `Ψ` on a module `N ≃ₗ[K] K` takes the value `1` on `x`, then
 `a ↦ a • x` is bijective. -/
 theorem bijective_smul_of_apply_eq_one {K N : Type*} [CommSemiring K] [AddCommMonoid N]
     [Module K N] (e : N ≃ₗ[K] K) (Ψ : N →ₗ[K] K) {x : N} (hx : Ψ x = 1) :
-    Function.Bijective fun a : K ↦ a • x := by
-  -- `a ↦ a • x` is `a ↦ e⁻¹ (a * e x)`, a composite of bijections.
-  convert e.symm.bijective.comp
-    (Units.mulRight (e.isUnit_apply_of_apply_eq_one Ψ hx).unit).bijective using 1
-  funext a
-  simp [← smul_eq_mul]
+    Function.Bijective fun a : K ↦ a • x :=
+  e.bijective_smul_of_isUnit_apply (e.isUnit_apply_of_apply_eq_one Ψ hx)
 
 /-- **A generator of a module isomorphic to the base ring is a basis**: for `e : M ≃ₗ[R] R`, if
 `x` spans `M`, then `a ↦ a • x` is a bijection `R → M`. The coordinate `e x` is a unit `u`, and

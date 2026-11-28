@@ -34,6 +34,8 @@ invertible matrix, and `GL(n, k)` is transitive on nonzero vectors.
 * `TauCeti.GeneralLinear.isFaithful_standardComodule`: the standard comodule is faithful.
 * `TauCeti.GeneralLinear.piScalarRight_comp_endOfPoint`: a point acts on the standard comodule
   by the invertible matrix it names.
+* `TauCeti.GeneralLinear.piScalarRight_comp_endOfPoint_corestrictStandardComodule`: a point `g`
+  acts on the standard comodule corestricted along `f` by the invertible matrix of `g ∘ f`.
 * `TauCeti.GeneralLinear.mulVec_mem`: a subcomodule of the standard comodule is stable under
   every invertible matrix.
 * `TauCeti.GeneralLinear.pointToGeneralLinear_mul_map_toMatrix`: change of basis conjugates the
@@ -260,6 +262,21 @@ theorem piScalarRight_comp_endOfPoint (g : WithConv (coordinateHopfAlgebra R n �
   simp only [Finset.sum_apply, Matrix.mulVec, dotProduct]
   simp [TensorProduct.piScalarRight_apply, TensorProduct.piScalarRightHom_tmul,
     Pi.single_apply, pointToGeneralLinear_apply]
+
+/-- Under the canonical scalar-extension identification `A ⊗[R] Rⁿ ≃ Aⁿ`, a point `g` of `H` acts
+on the standard comodule corestricted along `f` by the invertible matrix named by the point
+`g ∘ f` of `GLₙ`. -/
+theorem piScalarRight_comp_endOfPoint_corestrictStandardComodule {H : Type*} [CommRing H]
+    [HopfAlgebra R H] (f : coordinateHopfAlgebra R n →ₐc[R] H) (g : H →ₐ[R] A) :
+    letI := corestrictStandardComodule R n f
+    (TensorProduct.piScalarRight R A A (Fin n)).toLinearMap.comp
+        (Comodule.endOfPoint (Fin n → R) g) =
+      (Matrix.GeneralLinearGroup.toLin
+          (pointToGeneralLinear n (toConv (g.comp (f : coordinateHopfAlgebra R n →ₐ[R] H)))) :
+          (Fin n → A) →ₗ[A] Fin n → A).comp
+        (TensorProduct.piScalarRight R A A (Fin n)).toLinearMap := by
+  let _ := standardComodule R n
+  rw [← piScalarRight_comp_endOfPoint, ofConv_toConv, ← Comodule.endOfPoint_corestrict]
 
 end PointAction
 

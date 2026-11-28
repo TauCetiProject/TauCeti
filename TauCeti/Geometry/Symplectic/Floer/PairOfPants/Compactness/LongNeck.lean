@@ -32,7 +32,9 @@ vector space target `(V, ω)`, uniformly in `R`, on the pair of pants and on the
 plane, where the signed longitudinal coordinate in the translated coordinate is at least `2`.
 Compactness over
 compact windows of parameters is in
-`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Capped`.
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Capped`, and the same compactness at
+the long-neck end for a closed manifold target, with no condition on where the solutions take their
+values, is in `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LongNeck.Closed`.
 
 * **The pair of pants.** On the truncation `S_T` of the pair of pants, every signed longitudinal
   coordinate is at most `T`, so once `T ≤ L + 2 = R + 1` the data of the family are the
@@ -306,20 +308,15 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComp
     cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x v
   set Kb : ℂ → ℝ × ℝ → V → ℝ := fun v z x ↦
     pairOfPantsPerturbation H (equivRealProdCLM.symm z) x v
-  -- Every signed longitudinal coordinate of a point of `Ω` is at most `T ≤ (Rₖ - 1) + 2`.
-  have hσ {z : ℝ × ℝ} (hz : z ∈ Ω) {L : ℝ} (hL : T ≤ L + 2) (q : Puncture) :
-      q.endSign * (q.endCoord (equivRealProdCLM.symm z)).re ≤ L + 2 :=
-    ((mem_truncation.1 (hΩT hz)).2.2 q).trans hL
-  have hKb (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ Ω) (v : ℂ) : KR k v z = Kb v z := funext fun x ↦ by
+  have hKb (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ Ω) (v : ℂ) : KR k v z = Kb v z := by
     simp only [KR, Kb]
-    rw [cappedComparisonPerturbation_of_two_le H (hR2 k),
-      cappedPerturbation_eq_smul_pairOfPantsPerturbation (hσ hz (by linarith [hRT k])), one_smul]
+    rw [cappedComparisonPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation H (hR2 k)
+      (hRT k) (hΩT hz)]
   have hJb (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ Ω) (x : V) :
       cappedComparisonAlmostComplex h₀ J hJ (R k) (equivRealProdCLM.symm z) x =
-        cappedAlmostComplex h₀ J hJ 1 T (equivRealProdCLM.symm z) x := by
-    rw [cappedComparisonAlmostComplex_of_two_le h₀ (hR2 k),
-      cappedAlmostComplex_eq_pairOfPantsAlmostComplex h₀ le_rfl (hσ hz (by linarith [hRT k])),
-      cappedAlmostComplex_eq_pairOfPantsAlmostComplex h₀ le_rfl (hσ hz (by linarith))]
+        cappedAlmostComplex h₀ J hJ 1 T (equivRealProdCLM.symm z) x :=
+    cappedComparisonAlmostComplex_eq_cappedAlmostComplex_of_mem_truncation h₀ (hR2 k) (hRT k)
+      (hΩT hz) x
   -- The energy over `Ω` is at most the energy over the plane.
   have hE (k : ℕ) : ∫ z in Ω, ω.floerEnergyDensity (Kb 1) (Kb I) (u k) z ≤ A + 2 * ∑ q, B q := by
     rw [setIntegral_congr_fun hΩ.measurableSet fun z hz ↦
