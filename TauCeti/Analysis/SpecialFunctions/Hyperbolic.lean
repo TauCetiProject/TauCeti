@@ -81,7 +81,7 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   resulting bound on that exponential moment, for every real `l`.
 * `Complex.hasDerivAt_tanh` — the derivative of `Complex.tanh` is `1 / cosh z ^ 2` where
   `cosh z ≠ 0`.
-* `TauCeti.isEquivalent_complexTanh` — `tanh z ∼ z` as `z → 0` in `ℂ` (DLMF 2.1.4). It follows
+* `Complex.isEquivalent_tanh` — `tanh z ∼ z` as `z → 0` in `ℂ` (DLMF 2.1.4). It follows
   the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
   `DLMF/AsymptoticApproximations/Basics/OrderSymbols.lean`.
 
@@ -476,21 +476,17 @@ theorem hasDerivAt_tanh (z : ℂ) (hz : cosh z ≠ 0) : HasDerivAt tanh (1 / cos
   convert h using 1
   rw [← sq, ← sq, cosh_sq_sub_sinh_sq]
 
-end Complex
-
-namespace TauCeti
-
 open Asymptotics Topology in
 /-- `tanh z ∼ z` as `z → 0` in `ℂ` (DLMF 2.1.4), along the full neighbourhood filter: `tanh` has
 derivative `1` at `0`, where both sides vanish. It parallels Mathlib's `Complex.isEquivalent_sinh`
 and `Complex.isEquivalent_sin`. -/
-theorem isEquivalent_complexTanh : Complex.tanh ~[𝓝 0] id := by
+theorem isEquivalent_tanh : tanh ~[𝓝 0] id := by
   refine IsLittleO.isEquivalent ?_
   -- At `0` the derivative remainder `tanh z - tanh 0 - (z - 0) • (1 / cosh 0 ^ 2)` is
   -- `tanh z - z`, since `tanh 0 = 0` and `cosh 0 = 1`; the goal `(tanh - id) =o[𝓝 0] id` is
   -- that statement with `Pi.sub` and `id` unfolded.
-  have h : (fun z ↦ Complex.tanh z - z) =o[𝓝 0] fun z ↦ z := by
-    simpa using (Complex.hasDerivAt_tanh 0 (by simp)).isLittleO
+  have h : (fun z ↦ tanh z - z) =o[𝓝 0] fun z ↦ z := by
+    simpa using (hasDerivAt_tanh 0 (by simp)).isLittleO
   exact h
 
-end TauCeti
+end Complex

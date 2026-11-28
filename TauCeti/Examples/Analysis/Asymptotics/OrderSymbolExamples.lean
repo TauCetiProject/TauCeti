@@ -19,7 +19,7 @@ for them, including the remark after 2.1.7 that `e^{-z} = o(1)` holds uniformly 
 sector `|ph z| ≤ π/2 - δ` with `δ > 0` but not in the open half-plane `|ph z| < π/2`.
 
 The examples cite the general results. DLMF 2.1.4, `tanh z ∼ z` as `z → 0`, is
-`TauCeti.isEquivalent_complexTanh` of `TauCeti.Analysis.SpecialFunctions.Hyperbolic`.
+`Complex.isEquivalent_tanh` of `TauCeti.Analysis.SpecialFunctions.Hyperbolic`.
 DLMF 2.1.5, `e^{-x} = o(1)` as `x → +∞`, is Mathlib's `Real.tendsto_exp_neg_atTop_nhds_zero`.
 DLMF 2.1.6, `sin(πn + n⁻¹) = O(n⁻¹)` as `n → ±∞` in `ℤ`, follows from
 `Int.abs_sin_pi_mul_intCast_add_le` of `TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds`.
@@ -43,9 +43,9 @@ open scoped Topology Real
 
 namespace TauCeti
 
-/-- DLMF 2.1.4: `tanh z ∼ z` as `z → 0` in `ℂ`, the result `TauCeti.isEquivalent_complexTanh`. -/
+/-- DLMF 2.1.4: `tanh z ∼ z` as `z → 0` in `ℂ`, the result `Complex.isEquivalent_tanh`. -/
 example : (fun z : ℂ => tanh z) ~[𝓝 0] fun z => z :=
-  isEquivalent_complexTanh
+  Complex.isEquivalent_tanh
 
 /-- DLMF 2.1.5: `e^{-x} = o(1)` as `x → +∞` in `ℝ`. -/
 example : (fun x : ℝ => Real.exp (-x)) =o[atTop] fun _ => (1 : ℝ) :=
