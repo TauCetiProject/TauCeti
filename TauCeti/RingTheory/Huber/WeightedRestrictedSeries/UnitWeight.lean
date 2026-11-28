@@ -28,7 +28,7 @@ instances on `TauCeti.Huber.weightedRestrictedSubring` from those on `A`.
 
 Over a normed ring whose units `uᵢ` scale norms exactly, this turns the weighted bound into the
 Gauss-norm bound at the radii `‖uᵢ‖⁻¹`; that comparison is in
-`TauCeti.RingTheory.Huber.Restricted.GaussNorm` and
+`TauCeti.RingTheory.Huber.Restricted.Gauss.Norm` and
 `TauCeti.RingTheory.Huber.Restricted.UnitWeight`.
 
 ## Main results

@@ -21,16 +21,17 @@ for a ring of coefficients `k` and a property `P` of abelian groups invariant un
 (`TauCeti.prop_homotopyGroup_of_subsingleton_singularHomology`), with the space, the ring and the
 groups in one arbitrary universe. It needs two inputs:
 
-* **the first homotopy group:** if `Z` is `(n + 1)`-connected and has the `k`-homology of a point,
-  then `πₙ₊₂(Z)` has the property `P`; this comes from the Hurewicz isomorphism
-  `πₙ₊₂(Z) ≅ Hₙ₊₂(Z; ℤ)` and a change of coefficients;
+* **the first homotopy group:** if `Z` is `(n + 1)`-connected and has vanishing `k`-homology in
+  degrees `n + 2` and `n + 3`, then `πₙ₊₂(Z)` has the property `P`; this comes from the Hurewicz
+  isomorphism `πₙ₊₂(Z) ≅ Hₙ₊₂(Z; ℤ)` and a change of coefficients;
 * **Eilenberg--Mac Lane spaces:** every `K(A, n)` space, `n ≥ 1`, of a group `A` with the property
   `P` has the `k`-homology of a point.
 
-The step up the tower is `TauCeti.subsingleton_singularHomology_nConnectedCover_of_fiber`: the
-projection `Z⟨n + 2⟩ → Z` from the `(n + 2)`-connected cover is a fibration whose fibres are
-`K(πₙ₊₂(Z), n + 1)` spaces (`TauCeti.isEilenbergMacLaneSpace_fiber_nConnectedCoverProj`). When
-these are `k`-acyclic it is a `k`-homology isomorphism, so the cover is `k`-acyclic as well. The
+The step up the tower is `TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_of_fiber` and
+`TauCeti.subsingleton_singularHomology_nConnectedCover_of_fiber`: the projection `Z⟨n + 2⟩ → Z`
+from the `(n + 2)`-connected cover is a fibration whose fibres are `K(πₙ₊₂(Z), n + 1)` spaces
+(`TauCeti.isEilenbergMacLaneSpace_fiber_nConnectedCoverProj`). When these are `k`-acyclic it is a
+`k`-homology isomorphism in every degree `q`, so vanishing of `H_q(Z; k)` passes to the cover. The
 cover is `(n + 2)`-connected and has the homotopy groups of `Z` above `n + 2`, so the first input
 applies to it in the next degree. This is the shared induction along the Whitehead tower,
 `TauCeti.whiteheadTower_induction`, which replaces each stage by its CW approximation.
@@ -41,11 +42,14 @@ and no spectral sequence is needed.
 
 ## Main results
 
-* `TauCeti.subsingleton_singularHomology_nConnectedCover_of_fiber`: the `(n + 2)`-connected cover
-  of an `(n + 1)`-connected Hausdorff `k`-acyclic space is `k`-acyclic when the
-  `K(πₙ₊₂, n + 1)` spaces are.
-* `TauCeti.prop_homotopyGroup_of_subsingleton_singularHomology`: given the two inputs, every
-  homotopy group `πₙ₊₂` of a simply connected `k`-acyclic space has the property `P`.
+* `TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_of_fiber`: the projection from the
+  `(n + 2)`-connected cover of an `(n + 1)`-connected Hausdorff space induces an isomorphism on
+  `k`-homology in every degree `q` when the `K(πₙ₊₂, n + 1)` spaces are `k`-acyclic.
+* `TauCeti.subsingleton_singularHomology_nConnectedCover_of_fiber`: vanishing of `H_q(X; k)` passes
+  to the `(n + 2)`-connected cover under the same hypothesis.
+* `TauCeti.prop_homotopyGroup_of_subsingleton_singularHomology`: given the two inputs, the
+  homotopy group `πₙ₊₂` of a path-connected space with trivial fundamental group and vanishing
+  `k`-homology in degrees `2, …, n + 3` has the property `P`.
 
 ## References
 
@@ -68,32 +72,43 @@ namespace TauCeti
 
 variable (k : Type u) [CommRing k]
 
-/-- **The `(n + 2)`-connected cover of a `k`-acyclic space.** Let `X` be a Hausdorff,
-path-connected space whose homotopy groups `πⱼ` vanish for `1 ≤ j < m + 2`, and which has the
-`k`-homology of a point. If every `K(πₘ₊₂(X), m + 1)` space has the `k`-homology of a point, then
-so has the `(m + 2)`-connected cover `X⟨m + 2⟩`. -/
-theorem subsingleton_singularHomology_nConnectedCover_of_fiber (X : TopCat.{u}) [T2Space X]
+/-- **The projection from the `(m + 2)`-connected cover is a homology isomorphism** when its
+`K(πₘ₊₂(X), m + 1)` fibres are `k`-acyclic. -/
+theorem isIso_singularHomologyMap_nConnectedCoverProj_of_fiber (X : TopCat.{u}) [T2Space X]
     [PathConnectedSpace X] (x : X) (m : ℕ)
     (hX : ∀ j, j ≠ 0 → j < m + 2 → Subsingleton (π_ j X x))
-    (hXk : ∀ i, Subsingleton (((singularChains k).obj X).homology (i + 1)))
     (hK : ∀ {Y : Type u} [TopologicalSpace Y] {y : Y},
       IsEilenbergMacLaneSpace (π_ (m + 2) X x) (m + 1) Y y →
         ∀ i, Subsingleton (((singularChains k).obj (TopCat.of Y)).homology (i + 1)))
     (i : ℕ) :
-    Subsingleton (((singularChains k).obj (nConnectedCover (m + 2) X x)).homology (i + 1)) := by
-  -- Every fibre of the projection is a `K(πₘ₊₂(X), m + 1)` space, so it is `k`-acyclic and the
-  -- projection is a `k`-homology isomorphism.
-  have := isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber k
+    IsIso (((singularHomologyFunctor (ModuleCat.{u} k) i).obj (ModuleCat.of k k)).map
+      (nConnectedCoverProj (m + 2) X x)) :=
+  isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber k
     (serreFibrations_nConnectedCoverProj (m + 2) X x)
-    (isEilenbergMacLaneSpace_fiber_nConnectedCoverProj X x m hX) hK (i + 1)
+    (isEilenbergMacLaneSpace_fiber_nConnectedCoverProj X x m hX) hK i
+
+/-- **Connected-cover homology vanishing in a single degree.** Let `X` be a Hausdorff,
+path-connected space whose homotopy groups `πⱼ` vanish for `1 ≤ j < m + 2`, and whose `k`-homology
+vanishes in degree `q`. If every `K(πₘ₊₂(X), m + 1)` space has the `k`-homology of a point, then
+the `(m + 2)`-connected cover `X⟨m + 2⟩` also has vanishing `k`-homology in degree `q`. -/
+theorem subsingleton_singularHomology_nConnectedCover_of_fiber (X : TopCat.{u}) [T2Space X]
+    [PathConnectedSpace X] (x : X) (m : ℕ)
+    (hX : ∀ j, j ≠ 0 → j < m + 2 → Subsingleton (π_ j X x))
+    (hK : ∀ {Y : Type u} [TopologicalSpace Y] {y : Y},
+      IsEilenbergMacLaneSpace (π_ (m + 2) X x) (m + 1) Y y →
+        ∀ i, Subsingleton (((singularChains k).obj (TopCat.of Y)).homology (i + 1)))
+    {q : ℕ} (hq : Subsingleton (((singularChains k).obj X).homology q)) :
+    Subsingleton (((singularChains k).obj (nConnectedCover (m + 2) X x)).homology q) := by
+  have := isIso_singularHomologyMap_nConnectedCoverProj_of_fiber k X x m hX hK q
   exact (subsingleton_singularChains_homology_iff_of_isIso _
-    (nConnectedCoverProj (m + 2) X x) _).2 (hXk i)
+    (nConnectedCoverProj (m + 2) X x) _).2 hq
 
 variable (P : (G : Type u) → [AddCommGroup G] → Prop)
   (hP : ∀ {G H : Type u} [AddCommGroup G] [AddCommGroup H], (G ≃+ H) → P G → P H)
   (hπ : ∀ {Z : Type u} [TopologicalSpace Z] [PathConnectedSpace Z] (z : Z) (n : ℕ),
     (∀ j, j ≠ 0 → j < n + 2 → Subsingleton (π_ j Z z)) →
-    (∀ i, Subsingleton (((singularChains k).obj (TopCat.of Z)).homology (i + 1))) →
+    Subsingleton (((singularChains k).obj (TopCat.of Z)).homology (n + 2)) →
+    Subsingleton (((singularChains k).obj (TopCat.of Z)).homology (n + 3)) →
       P (Additive (π_ (n + 2) Z z)))
   (hK : ∀ {A : Type u} [AddCommGroup A], P A → ∀ {n : ℕ} [NeZero n] {X : Type u}
     [TopologicalSpace X] {x : X}, IsEilenbergMacLaneSpace (Multiplicative A) n X x →
@@ -103,32 +118,35 @@ include hP hπ hK in
 /-- **Homotopy groups of acyclic spaces.** Let `k` be a commutative ring and `P` a property of
 abelian groups invariant under isomorphism. Suppose that
 
-* for every `(n + 1)`-connected space `Z` with the `k`-homology of a point, `πₙ₊₂(Z)` has the
-  property `P`, and
+* for every `(n + 1)`-connected space `Z` with vanishing `k`-homology in degrees `n + 2` and
+  `n + 3`, `πₙ₊₂(Z)` has the property `P`, and
 * every `K(A, n)` space, `n ≥ 1`, of an abelian group `A` with the property `P` has the
   `k`-homology of a point.
 
-Then every homotopy group `πₙ₊₂(Y)` of a simply connected space `Y` with the `k`-homology of a
-point has the property `P`. No CW structure is assumed on `Y`. -/
+Then the homotopy group `πₙ₊₂(Y, y)` of a path-connected space `Y` with trivial fundamental group
+`π₁(Y, y)` and vanishing `k`-homology in degrees `2, …, n + 3` has the property `P`. No CW
+structure is assumed on `Y`. -/
 theorem prop_homotopyGroup_of_subsingleton_singularHomology {Y : Type u} [TopologicalSpace Y]
-    [SimplyConnectedSpace Y]
-    (hY : ∀ i, Subsingleton (((singularChains k).obj (TopCat.of Y)).homology (i + 1)))
-    (y : Y) (n : ℕ) : P (Additive (π_ (n + 2) Y y)) := by
+    [PathConnectedSpace Y] (y : Y) (hπ₁ : Subsingleton (π_ 1 Y y)) (n : ℕ)
+    (hY : ∀ q ≤ n + 1, Subsingleton (((singularChains k).obj (TopCat.of Y)).homology (q + 2))) :
+    P (Additive (π_ (n + 2) Y y)) := by
   -- `Y` is `1`-connected: its fundamental group is trivial.
   have h₁ (j : ℕ) (hj0 : j ≠ 0) (hj : j < 2) : Subsingleton (π_ j Y y) := by
     obtain rfl : j = 1 := by omega
-    exact HomotopyGroup.pi1MulEquivFundamentalGroup.toEquiv.subsingleton
+    exact hπ₁
   -- Climb the Whitehead tower: the first homotopy group of each stage has `P`, so the fibres of its
   -- next cover are `k`-acyclic, and so is the cover.
   refine whiteheadTower_induction (N := n)
-    (fun X ↦ ∀ i, Subsingleton (((singularChains k).obj X).homology (i + 1)))
-    (fun G _ ↦ P (Additive G)) (fun _ _ f hf hXk i ↦ ?_) (fun _ _ _ _ e ↦ hP e.toAdditive)
-    (fun z hZ hZk ↦ hπ z n hZ hZk)
-    (fun m _ X _ _ x hX hXk ↦ subsingleton_singularHomology_nConnectedCover_of_fiber k X x m hX hXk
-      fun hY ↦ hK (hπ x m hX hXk) (hY.of_mulEquiv (MulEquiv.multiplicativeAdditive _).symm))
+    (fun X ↦ ∀ q ≤ n + 1, Subsingleton (((singularChains k).obj X).homology (q + 2)))
+    (fun G _ ↦ P (Additive G)) (fun _ _ f hf hXk q hq ↦ ?_) (fun _ _ _ _ e ↦ hP e.toAdditive)
+    (fun z hZ hZk ↦ hπ z n hZ (hZk n (by omega)) (hZk (n + 1) le_rfl))
+    (fun m hm X _ _ x hX hXk q hq ↦ subsingleton_singularHomology_nConnectedCover_of_fiber k X x m
+      hX (fun hY ↦ hK (hπ x m hX (hXk m (by omega)) (hXk (m + 1) (by omega)))
+        (hY.of_mulEquiv (MulEquiv.multiplicativeAdditive _).symm))
+      (hXk q hq))
     (Nat.zero_le n) y h₁ hY
   -- A weak homotopy equivalence is a homology isomorphism.
-  have := hf.isIso_singularHomologyMap (ModuleCat.of k k) (i + 1)
-  exact (subsingleton_singularChains_homology_iff_of_isIso _ f _).2 (hXk i)
+  have := hf.isIso_singularHomologyMap (ModuleCat.of k k) (q + 2)
+  exact (subsingleton_singularChains_homology_iff_of_isIso _ f _).2 (hXk q hq)
 
 end TauCeti

@@ -54,7 +54,8 @@ and Tate lines, pure of no weight.
 
 ## Main definitions
 
-* `Representation.IsUnramifiedOutside ρ I T`: each `I v` with `v ∉ T` acts trivially.
+* `Representation.IsUnramifiedOutside ρ I T`: each `I v` with `v ∉ T` acts trivially, that is,
+  lies in the kernel of `ρ` (`Representation.isUnramifiedOutside_iff_le_ker`).
 * `Representation.IsPureOutside ρ I F q T w`: `ρ` is pure of weight `w` outside `T`.
 * `Representation.IsIotaPureOutside ι ρ I F q T r`: `ρ` is `ι`-pure of weight `r` outside `T`.
 * `Representation.HasIntegralCharpolyOutside ρ I F T`: the characteristic polynomials of the
@@ -114,6 +115,19 @@ theorem IsUnramifiedOutside.apply_eq_one (h : ρ.IsUnramifiedOutside I T) {v : �
 theorem IsUnramifiedOutside.mono (h : ρ.IsUnramifiedOutside I T) (hT : T ⊆ T') :
     ρ.IsUnramifiedOutside I T' :=
   fun v hv ↦ h v fun hvT ↦ hv (hT hvT)
+
+/-- A representation is unramified outside `T` exactly when every inertia subgroup outside `T`
+lies in its kernel. -/
+theorem isUnramifiedOutside_iff_le_ker : ρ.IsUnramifiedOutside I T ↔ ∀ v ∉ T, I v ≤ ρ.ker := by
+  simp only [isUnramifiedOutside_iff, IsConcreteLE.le_iff, MonoidHom.mem_ker]
+
+/-- A representation whose kernel contains that of a representation unramified outside `T` is
+unramified outside `T`. -/
+theorem IsUnramifiedOutside.of_ker_le {W : Type*} [AddCommMonoid W] [Module k W]
+    {σ : Representation k G W} (h : ρ.IsUnramifiedOutside I T) (hle : ρ.ker ≤ σ.ker) :
+    σ.IsUnramifiedOutside I T := by
+  rw [isUnramifiedOutside_iff_le_ker] at h ⊢
+  exact fun v hv ↦ (h v hv).trans hle
 
 /-- A representation of rank zero is unramified everywhere. -/
 theorem isUnramifiedOutside_of_subsingleton [Subsingleton V] : ρ.IsUnramifiedOutside I T :=

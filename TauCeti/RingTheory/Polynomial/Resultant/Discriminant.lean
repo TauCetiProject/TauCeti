@@ -62,7 +62,9 @@ depressed specialization of that formula is used to compare a quartic with its c
   discriminant is `(-1) ^ (n * (n - 1) / 2)` times the resultant of `f` and its derivative.
 * `Polynomial.Monic.prod_roots_eval_derivative`: the product of the derivative over the root
   multiset, which is the discriminant up to the same sign. This is the shape in which the
-  discriminant of a minimal polynomial is a norm.
+  discriminant of a minimal polynomial is a norm. For a non-monic polynomial of positive degree,
+  `Polynomial.leadingCoeff_pow_mul_prod_roots_eval_derivative` keeps track of the leading
+  coefficient.
 * `Polynomial.Monic.discr_mul`: the product formula for discriminants, with the square of the
   resultant as its cross term.
 * `Polynomial.discr_prod_of_monic`: the same formula for a finite product of monic polynomials,
@@ -442,19 +444,33 @@ theorem discr_prod_of_monic {ι : Type*} [LinearOrder ι] (s : Finset ι) (f : �
     rw [hnew, prod_congr rfl hold]
     ring
 
-namespace Monic
-
 /-! ### The root-product formula -/
 
+/-- For a polynomial of positive degree `n` that splits, the product of the derivative over the
+root multiset, scaled by `lc(f) ^ (n - 1)`, is `lc(f)` times the discriminant, up to the sign
+`(-1) ^ (n * (n - 1) / 2)`. -/
+theorem leadingCoeff_pow_mul_prod_roots_eval_derivative [IsDomain R] {f : R[X]}
+    (hf : 0 < f.degree) (hs : f.Splits) :
+    f.leadingCoeff ^ (f.natDegree - 1) * (f.roots.map fun a ↦ eval a f.derivative).prod =
+      (-1) ^ (f.natDegree * (f.natDegree - 1) / 2) * f.leadingCoeff * f.discr := by
+  rw [← resultant_eq_prod_eval f f.derivative (f.natDegree - 1) (natDegree_derivative_le f) hs,
+    resultant_deriv hf]
+
+namespace Monic
+
 /-- For a monic polynomial that splits, the product of the derivative over the root multiset is
-the discriminant, up to the sign `(-1) ^ (n * (n - 1) / 2)`. After base change and identification
-of the roots with conjugates, this yields the corresponding norm formula. -/
+the discriminant, up to the sign `(-1) ^ (n * (n - 1) / 2)`. This is the monic case of
+`Polynomial.leadingCoeff_pow_mul_prod_roots_eval_derivative`, where the polynomial `1` of degree
+zero is also covered. After base change and identification of the roots with conjugates, this
+yields the corresponding norm formula. -/
 theorem prod_roots_eval_derivative [IsDomain R] {f : R[X]} (hf : f.Monic)
     (hs : f.Splits) : (f.roots.map fun a ↦ eval a f.derivative).prod =
       (-1) ^ (f.natDegree * (f.natDegree - 1) / 2) * f.discr := by
-  have key := resultant_eq_prod_eval f f.derivative (f.natDegree - 1)
-    (natDegree_derivative_le f) hs
-  rwa [hf.resultant_deriv, hf.leadingCoeff, one_pow, one_mul, eq_comm] at key
+  rcases Nat.eq_zero_or_pos f.natDegree with h | h
+  · obtain rfl := eq_one_of_monic_natDegree_zero hf h
+    simpa using (discr_C (R := R) 1).symm
+  · simpa [hf.leadingCoeff] using
+      leadingCoeff_pow_mul_prod_roots_eval_derivative (natDegree_pos_iff_degree_pos.mp h) hs
 
 end Monic
 

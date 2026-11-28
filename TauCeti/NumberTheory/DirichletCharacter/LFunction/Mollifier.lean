@@ -8,23 +8,33 @@ module
 public import Mathlib.Analysis.Complex.Hadamard
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
-public import TauCeti.NumberTheory.LSeries.GaussianTheta
+public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
 import TauCeti.Analysis.Complex.VerticalStrip.Basic
 import TauCeti.Analysis.Complex.VerticalStrip.PowerBounds
+import TauCeti.Analysis.MellinTransform.Basic
+import TauCeti.Analysis.MellinTransform.StripBounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
+import TauCeti.NumberTheory.DirichletCharacter.ArithmeticFunction
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Bounds
+import TauCeti.NumberTheory.LSeries.GaussianTheta.Mellin
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 
 /-!
 # A truncated Gaussian mollifier for Dirichlet L-functions, and zero detection
 
-The Mellin integral of the theta series with coefficients `μ(n) χ(n)`, truncated below `r`,
-approximates `Γℝ(s+j)/(2 L(s,χ))` on `Re s = 2`. Multiplying by the gamma-weighted L-function
+The Mellin integral of the theta series with coefficients `μ(n) χ(n)` equals
+`Γℝ(s+j)/(2 L(s,χ))` on `Re s > 1`. On `Re s = 2`, the integral truncated below `r`
+approximates that value. Multiplying by the gamma-weighted L-function
 shows that the error is `O(r)`, uniformly in the character, its modulus and the imaginary part.
 This provides the right boundary estimate in the three-lines argument that detects zeros from
-theta integrals. The estimate corresponds to `New.norm_mul_mollifier_sub_le` in
-`grh/src/Lib/Analytic/QuadraticTwist.lean` of lsernau/grh-lean (`72fead1`).
+theta integrals.
+
+The theta–Mellin normalization follows Montgomery and Vaughan, *Multiplicative Number Theory I:
+Classical Theory*, Chapter 10. The zero-cutoff formula corresponds to
+`New.mellin_thetaSeries_moebius` in `grh/src/Lib/Analytic/DirichletTheta.lean`;
+the right boundary estimate corresponds to `New.norm_mul_mollifier_sub_le` in
+`grh/src/Lib/Analytic/QuadraticTwist.lean`, both from lsernau/grh-lean (`72fead1`).
 
 The zero-detection step interpolates a bound on the critical line and a decaying error bound on
 `Re z = 2` for the mollified completed L-function. At a zero the mollified term drops out, so
@@ -40,7 +50,7 @@ public section
 
 section GaussianMollifier
 
-open Complex MeasureTheory Set TauCeti
+open Complex Complex.HadamardThreeLines MeasureTheory Set TauCeti
 open scoped ArithmeticFunction.Moebius
 
 namespace DirichletCharacter
@@ -59,6 +69,56 @@ theorem gaussianMollifier_def {N : ℕ} (χ : DirichletCharacter ℂ N)
     χ.gaussianMollifier j r s =
     ∫ t : ℝ in Ioi r, (t : ℂ) ^ (s - 1) *
       gaussianDirichletTheta j (fun n ↦ χ n * (μ n : ℂ)) t := (rfl)
+
+/-- At parity degrees and a nonnegative cutoff the mollifier is a truncated Mellin transform. -/
+private theorem gaussianMollifier_eq_mellin_indicator {N : ℕ} (χ : DirichletCharacter ℂ N)
+    (j : Fin 2) {r : ℝ} (hr : 0 ≤ r) :
+    χ.gaussianMollifier j.val r =
+      mellin ((Ioi r).indicator (gaussianTheta j (fun n ↦ χ n * (μ n : ℂ)))) := by
+  funext s
+  rw [gaussianMollifier_def, mellin_indicator_Ioi _ hr]
+  simp only [smul_eq_mul, gaussianTheta_eq_gaussianDirichletTheta]
+
+/-- On the critical line, only the Möbius-twisted theta tail is needed to bound the
+Gaussian mollifier. -/
+theorem norm_gaussianMollifier_le_moebius_theta_tail {N : ℕ} (χ : DirichletCharacter ℂ N)
+    (j : Fin 2) {r : ℝ} (hr : 0 ≤ r) {s : ℂ} (hs : s.re = 1 / 2) :
+    ‖χ.gaussianMollifier j.val r s‖ ≤
+      ∫ u in Ioi r, ‖gaussianThetaSeries j (fun n ↦ χ n * μ n) u‖ / u := by
+  rw [gaussianMollifier_eq_mellin_indicator χ j hr]
+  refine (norm_mellin_indicator_Ioi_le_integral_rpow_mul_norm _ hr s).trans_eq
+    (setIntegral_congr_fun measurableSet_Ioi fun u hu ↦ ?_)
+  have hu₀ : 0 < u := hr.trans_lt hu
+  rw [hs, gaussianThetaSeries_def, norm_mul, Complex.norm_real,
+    Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _)]
+  rw [Real.rpow_sub_one hu₀.ne', ← Real.sqrt_eq_rpow, div_mul_eq_mul_div]
+
+/-- Above a positive cutoff, the Gaussian mollifier of degree zero or one satisfies the
+regularity and boundedness hypotheses of three-lines interpolation on any vertical strip. -/
+theorem gaussianMollifier_mellin_bounds {N : ℕ} (χ : DirichletCharacter ℂ N)
+    (j : Fin 2) {r : ℝ} (hr : 0 < r) (a b : ℝ) :
+    DiffContOnCl ℂ (χ.gaussianMollifier j.val r) (verticalStrip a b) ∧
+      BddAbove ((norm ∘ χ.gaussianMollifier j.val r) '' verticalClosedStrip a b) := by
+  rw [gaussianMollifier_eq_mellin_indicator χ j hr.le]
+  let c (n : ℕ) := χ n * (μ n : ℂ)
+  have hc (n : ℕ+) : ‖c n‖ ≤ 1 := χ.norm_mul_moebius_le_one n
+  refine ⟨(differentiable_mellin_indicator_Ioi_gaussianTheta j hc hr).diffContOnCl, ?_⟩
+  obtain ⟨B, hB⟩ := (mellinConvergent_indicator_Ioi_gaussianTheta j hc hr (a : ℂ))
+    |>.exists_norm_mellin_le_on_strip (mellinConvergent_indicator_Ioi_gaussianTheta j hc hr (b : ℂ))
+  exact ⟨B, by rintro _ ⟨z, hz, rfl⟩; exact hB z hz⟩
+
+/-- With no lower cutoff, the Gaussian mollifier is the half-gamma factor divided by the
+character's L-function on `Re s > 1`. -/
+theorem gaussianMollifier_zero {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
+    (j : ℕ) {s : ℂ} (hs : 1 < s.re) :
+    χ.gaussianMollifier j 0 s = Gammaℝ (s + j) / 2 / χ.LFunction s := by
+  have hsum := χ.LSeriesSummable_mul (ArithmeticFunction.LSeriesSummable_moebius_iff.mpr hs)
+  have hpos : 0 < s.re + j := by positivity
+  have hinv := eq_inv_of_mul_eq_one_right (LSeries.mul_mu_eq_one χ hs)
+  rw [LFunction_eq_LSeries χ hs, div_eq_mul_inv (Gammaℝ (s + j) / 2), ← hinv,
+    mul_comm (Gammaℝ (s + j) / 2), gaussianMollifier_def]
+  simpa only [mellin, smul_eq_mul, Pi.mul_def] using
+    (hasMellin_gaussianDirichletTheta j hsum hpos).2
 
 /-- On `Re s = 2`, the completed product of a Dirichlet L-function and its Gaussian
 mollifier differs from the square of the half-gamma factor by at most `C r`. The constant
@@ -91,10 +151,6 @@ theorem norm_LFunction_mul_gaussianMollifier_sub (j : ℕ) :
     dsimp only [G]
     gcongr
     simpa only [hσ'] using norm_Gamma_le_Gamma_re (s := (s + j) / 2) (by rw [hσ']; positivity)
-  have hcoeff (n : ℕ) (_ : n ≠ 0) : ‖χ n * (μ n : ℂ)‖ ≤ 1 := by
-    rw [norm_mul]
-    refine (mul_le_of_le_one_left (norm_nonneg _) (χ.norm_le_one n)).trans ?_
-    exact_mod_cast ArithmeticFunction.abs_moebius_le_one (n := n)
   let γ := Gammaℝ (s + j) / 2
   have hinv : χ.LFunction s * LSeries (fun n ↦ χ n * (μ n : ℂ)) s = 1 := by
     rw [LFunction_eq_LSeries χ hs₁]
@@ -113,8 +169,28 @@ theorem norm_LFunction_mul_gaussianMollifier_sub (j : ℕ) :
       gcongr
       · exact hχ.trans (by linarith)
       · rw [gaussianMollifier_def]
-        exact norm_integral_gaussianDirichletTheta_sub j hcoeff hr hs
+        exact norm_integral_gaussianDirichletTheta_sub j (fun n _ ↦ χ.norm_mul_moebius_le_one n)
+          hr hs
     _ = _ := by ring
+
+/-- With matching parity, the right-edge Gaussian mollifier estimate can be written in
+terms of the completed L-function and its gamma factor. The constant is uniform in the
+character, its modulus, the cutoff, and the imaginary part. -/
+theorem norm_completedLFunction_div_two_mul_gaussianMollifier_sub (j : Fin 2) :
+    ∃ C > (0 : ℝ), ∀ {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N},
+      χ (-1) = (-1) ^ j.val → ∀ {r : ℝ}, 0 ≤ r → ∀ {s : ℂ}, s.re = 2 →
+      ‖χ.completedLFunction s / 2 * χ.gaussianMollifier j.val r s -
+        (χ.gammaFactor s / 2) ^ 2‖ ≤ C * r := by
+  obtain ⟨C, hC₀, hC⟩ := norm_LFunction_mul_gaussianMollifier_sub j.val
+  refine ⟨C, hC₀, fun {N} _ {χ} hj {r} hr {s} hs ↦ ?_⟩
+  have hΓ : χ.gammaFactor s = Gammaℝ (s + j.val) := by
+    fin_cases j
+    · have he : χ.Even := by simpa [Even] using hj
+      simp [he.gammaFactor_def]
+    · have ho : χ.Odd := by simpa [Odd] using hj
+      simp [ho.gammaFactor_def]
+  rw [χ.completedLFunction_eq_gammaFactor_mul_LFunction (by linarith), hΓ]
+  simpa only [div_eq_mul_inv, mul_right_comm] using hC χ hr hs
 
 end DirichletCharacter
 

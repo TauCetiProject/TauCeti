@@ -48,6 +48,10 @@ smooth when `C` is constant along the fibres of a collar projection near the bou
 * `TauCeti.SchottkyDouble.contMDiffOn_coordChange_doubledBundleCore`: if the transitions of `C` are
   real `C^n` on `M`, and constant along the fibres of such a `ρ`, then the transitions of the
   doubled bundle are real `C^n` on the Schottky double.
+* `TauCeti.SchottkyDouble.contMDiffOn_inChartCoordinates_doubleAlongMap`: likewise, if the chart
+  expressions of a bundle map `φ` real over the boundary are real `C^n` and constant along the
+  fibres of such a `ρ`, then the chart expressions of the doubled bundle map
+  `TauCeti.FiniteRankBundleCore.doubleAlongMap φ` are real `C^n` on the Schottky double.
 * `TauCeti.SchottkyDouble.contMDiff_doubleAlongSwap`: the lifted involution is real `C^n` on the
   total space of the doubled bundle, with no regularity hypothesis on `C`.
 
@@ -57,8 +61,9 @@ with real `C^n` chart operators in both directions which commutes with conjugati
 boundary, to a bundle pair with real `C^n` transitions and smooth doubled transitions, real `C^n`
 on the Schottky double
 (`TauCeti.SchottkyDouble.exists_iso_contMDiffOn_coordChange_doubledBundleCore`, in
-`TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.DoubledBundle.CollarForm`). Not treated
-here: independence of the doubled bundle of the choices up to isomorphism.
+`TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.DoubledBundle.CollarForm`). Its doubled
+bundle is isomorphic to `doubledBundleCore C hC`, compatibly with the lifted involutions, through
+`TauCeti.FiniteRankBundleCore.doubleAlongIso`, whatever choices the collar form was built from.
 
 ## References
 
@@ -216,9 +221,8 @@ theorem contMDiffOn_coordChange_doubledBundleCore (C : FiniteRankBundleCore ℂ 
   have hdom : (doubledBundleCore C hC).core.baseSet i ∩ (doubledBundleCore C hC).core.baseSet j =
       DoubleAlong.fold A ⁻¹' (C.core.baseSet (DoubleAlong.fold A i) ∩
         C.core.baseSet (DoubleAlong.fold A j)) := by
-    ext y
-    rw [doubledBundleCore_eq, Set.mem_inter_iff, FiniteRankBundleCore.mem_baseSet_doubleAlong,
-      FiniteRankBundleCore.mem_baseSet_doubleAlong, Set.mem_preimage, Set.mem_inter_iff]
+    rw [doubledBundleCore_eq]
+    exact FiniteRankBundleCore.baseSet_inter_baseSet_doubleAlong hC hC i j
   rw [hdom]
   -- The doubled core has rank `C.rank` and transitions `doubleAlongCoordChange C A`, both by
   -- definition (`doubledBundleCore_eq`, `rank_doubleAlong`, `coordChange_doubleAlong`). The rank
@@ -232,6 +236,57 @@ theorem contMDiffOn_coordChange_doubledBundleCore (C : FiniteRankBundleCore ℂ 
     fun x hx ↦ by
       obtain ⟨hρi, hρj, hρg⟩ := hCρ _ _ x hx.1 hx.2.1 hx.2.2
       exact ⟨⟨hρi, hρj⟩, hρg⟩
+
+/-- **Smoothness of a doubled bundle map through a collar projection.** Let `φ : C ⟶ C'` be a
+bundle map between complex cores real along the boundary, whose fibre maps over the boundary commute
+with coordinatewise conjugation. Let its chart expressions be real `C^n` on `M`, and constant along
+the fibres of a collar projection `ρ : M → M` on an open neighbourhood `U` of the boundary, as in
+`contMDiffOn_coordChange_doubledBundleCore`. Then the chart expressions of the doubled bundle map
+`FiniteRankBundleCore.doubleAlongMap φ` are real `C^n` on the Schottky double.
+
+The doubled chart expressions are those of `φ` on the first copy and their conjugates on the second
+copy (`FiniteRankBundleCore.inChartCoordinates_doubleAlong_conjExtend`), so this is
+`contMDiffOn_of_eq_sheets_of_collar`. -/
+theorem contMDiffOn_inChartCoordinates_doubleAlongMap {C C' : FiniteRankBundleCore ℂ M}
+    (hC : C.IsRealAlong A) (hC' : C'.IsRealAlong A) (φ : C ⟶ C')
+    (hφ : ∀ a ∈ A, ∀ v, φ.fiberMap a (star v) = star (φ.fiberMap a v)) {n : ℕ∞ω}
+    (hφs : ∀ i j, ContMDiffOn closedUpperHalfPlaneModel
+      𝓘(ℝ, (Fin C.rank → ℂ) →L[ℂ] (Fin C'.rank → ℂ)) n
+      (fun x ↦ C.core.inChartCoordinates C'.core i j x (φ.fiberMap x))
+      (C.core.baseSet i ∩ C'.core.baseSet j))
+    {U : Set M} (hU : IsOpen U) (hAU : (borderedInterior M : Set M)ᶜ ⊆ U) {ρ : M → M}
+    (hρA : Set.MapsTo ρ U (borderedInterior M : Set M)ᶜ)
+    (hρ : ContMDiffOn 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel n
+      (ρ ∘ DoubleAlong.fold (borderedInterior M : Set M)ᶜ)
+      (DoubleAlong.fold (borderedInterior M : Set M)ᶜ ⁻¹' U))
+    (hφρ : ∀ i j x, x ∈ U → x ∈ C.core.baseSet i → x ∈ C'.core.baseSet j →
+      ρ x ∈ C.core.baseSet i ∧ ρ x ∈ C'.core.baseSet j ∧
+        C.core.inChartCoordinates C'.core i j (ρ x) (φ.fiberMap (ρ x)) =
+          C.core.inChartCoordinates C'.core i j x (φ.fiberMap x))
+    (i j : SchottkyDouble M) :
+    ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, (Fin (C.doubleAlong hC).rank → ℂ) →L[ℂ]
+      (Fin (C'.doubleAlong hC').rank → ℂ)) n
+      (fun y ↦ (C.doubleAlong hC).core.inChartCoordinates (C'.doubleAlong hC').core i j y
+        ((FiniteRankBundleCore.doubleAlongMap hC hC' φ hφ).fiberMap y))
+      ((C.doubleAlong hC).core.baseSet i ∩ (C'.doubleAlong hC').core.baseSet j) := by
+  -- The chart domains of the doubled cores are the preimages of those of `C`, `C'` under the fold.
+  rw [FiniteRankBundleCore.baseSet_inter_baseSet_doubleAlong]
+  -- The doubles have ranks `C.rank` and `C'.rank` by definition (`rank_doubleAlong`). The ranks
+  -- occur in the model of the target, so the statement is restated rather than rewritten.
+  change ContMDiffOn (M' := (Fin C.rank → ℂ) →L[ℂ] (Fin C'.rank → ℂ)) 𝓘(ℝ, ℂ)
+    𝓘(ℝ, (Fin C.rank → ℂ) →L[ℂ] (Fin C'.rank → ℂ)) n
+    (fun y ↦ (C.doubleAlong hC).core.inChartCoordinates (C'.doubleAlong hC').core i j y
+      ((FiniteRankBundleCore.doubleAlongMap hC hC' φ hφ).fiberMap y)) _
+  refine (contMDiffOn_of_eq_sheets_of_collar
+    ((C.core.isOpen_baseSet _).inter (C'.core.isOpen_baseSet _)) (hφs _ _)
+    (fun x _ ↦ DoubleAlong.conjExtend_inl A _ x)
+    (fun x hx ↦ DoubleAlong.conjExtend_inr A _ fun hxA ↦
+      FiniteRankBundleCore.isSelfAdjoint_inChartCoordinates hC hC' φ hφ hxA hx.1 hx.2)
+    hU hAU hρA hρ fun x hx ↦ ?_).congr fun y _ ↦ ?_
+  · obtain ⟨hρi, hρj, hρφ⟩ := hφρ _ _ x hx.1 hx.2.1 hx.2.2
+    exact ⟨⟨hρi, hρj⟩, hρφ⟩
+  · rw [FiniteRankBundleCore.fiberMap_doubleAlongMap]
+    exact FiniteRankBundleCore.inChartCoordinates_doubleAlong_conjExtend hC hC' φ i j y
 
 open Bundle Filter Topology in
 /-- **The lifted involution is smooth.** The lift `FiniteRankBundleCore.doubleAlongSwap` of the
