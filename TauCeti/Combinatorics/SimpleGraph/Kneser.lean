@@ -109,6 +109,11 @@ section KneserGraph
 
 variable {k : ℕ}
 
+/-- `KG(α, k)` is `kneserGraphOf` of the family of the `k`-element subsets of `α`. -/
+theorem kneserGraph_eq_kneserGraphOf (α : Type*) (k : ℕ) :
+    kneserGraph α k = kneserGraphOf {s : Finset α | s.card = k} :=
+  (rfl)
+
 /-- Two `k`-subsets are adjacent in `KG(α, k)` when they are distinct and disjoint. -/
 @[simp]
 theorem kneserGraph_adj {A B : {s : Finset α | s.card = k}} :
@@ -204,6 +209,13 @@ theorem coe_kneserGraphOneIso_symm_apply (a : α) :
 theorem kneserGraphOneIso_apply_singleton (a : α) :
     kneserGraphOneIso α ⟨{a}, card_singleton a⟩ = a :=
   (kneserGraphOneIso α).apply_symm_apply a
+
+/-- The isomorphism `kneserGraphOneIso α` sends a vertex `A` to the element `a` with
+`A = {a}`. -/
+@[simp]
+theorem singleton_kneserGraphOneIso_apply (A : {s : Finset α | s.card = 1}) :
+    ({kneserGraphOneIso α A} : Finset α) = A :=
+  congrArg Subtype.val ((kneserGraphOneIso α).symm_apply_apply A)
 
 /-- An injection `f : α ↪ β` induces an embedding of `KG(α, k)` into `KG(β, k)`, given by
 `A ↦ A.map f`. -/
