@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Character
 public import TauCeti.GroupTheory.DoubleCoset.Mass
-public import TauCeti.RepresentationTheory.LevelForms
+public import TauCeti.RepresentationTheory.LevelForms.Basic
 import Mathlib.RingTheory.IntegralDomain
 import TauCeti.RepresentationTheory.Character.Basic
 
