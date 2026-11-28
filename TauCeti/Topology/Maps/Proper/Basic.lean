@@ -38,6 +38,8 @@ The nonemptiness hypotheses cannot be dropped: a map out of an empty space is pr
 * `IsProperMap.restrictPreimage_range_of_isEmbedding`: the converse direction, giving a proper
   restriction from a proper pullback along an embedding.
 * `IsProperMap.pullback_snd`: proper maps are stable under base change along continuous maps.
+* `IsProperMap.prodMk_of_t2_left` and `IsProperMap.prodMk_of_t2_right`: pairing a proper map with
+  an arbitrary continuous map into a Hausdorff space is proper.
 * `IsProperMap.exists_tendsto_of_tendsto_apply_prodMk`: ultrafilter convergence for a proper map
   `h : T × Y → W` evaluated at a variable first coordinate `φ z` that is continuous away from a
   set `A` where `t ↦ h (t, y)` is independent of `t`.
@@ -239,6 +241,22 @@ theorem Continuous.isClosedEmbedding_fst_prod {P : Type*} [TopologicalSpace P] [
     rw [himage]
     exact isClosedMap_fst_of_compactSpace _
       ((hC.preimage (by fun_prop)).inter (isClosed_eq (by fun_prop) (by fun_prop)))
+
+/-- Pairing a continuous map into a Hausdorff space with a proper map `g : X → Z` yields a proper
+map `x ↦ (f x, g x)`. No separation axiom is needed on `X` or `Z`. -/
+theorem IsProperMap.prodMk_of_t2_left {g : X → Z} [T2Space Y] (hg : IsProperMap g)
+    (hf : Continuous f) : IsProperMap fun x ↦ (f x, g x) := by
+  rw [isProperMap_iff_ultrafilter]
+  refine ⟨hf.prodMk hg.continuous, fun 𝒰 ⟨y, z⟩ hyz ↦ ?_⟩
+  rw [nhds_prod_eq, tendsto_prod_iff'] at hyz
+  obtain ⟨x, rfl, hx⟩ := hg.ultrafilter_le_nhds_of_tendsto hyz.2
+  exact ⟨x, Prod.ext (tendsto_nhds_unique ((hf.tendsto x).mono_left hx) hyz.1) rfl, hx⟩
+
+/-- Pairing a proper map `f : X → Y` with a continuous map into a Hausdorff space yields a proper
+map `x ↦ (f x, g x)`. No separation axiom is needed on `X` or `Y`. -/
+theorem IsProperMap.prodMk_of_t2_right {g : X → Z} [T2Space Z] (hf : IsProperMap f)
+    (hg : Continuous g) : IsProperMap fun x ↦ (f x, g x) :=
+  (Homeomorph.prodComm Z Y).isProperMap.comp (hf.prodMk_of_t2_left hg)
 
 namespace TauCeti
 
