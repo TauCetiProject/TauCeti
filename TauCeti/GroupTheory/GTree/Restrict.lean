@@ -22,12 +22,21 @@ is elliptic exactly when its image is, and its translation length is that of its
 a minimal tree along a surjective homomorphism, for instance precomposing the action with an
 automorphism of `G`, gives a minimal tree; restricting to a subgroup need not. Stabilizers and
 distances in an invariant subtree are those of the tree.
+For a subgroup `H` and a nonempty convex `H`-invariant set `C` of vertices, `GTree.restrict` is
+the action of `H` on the subtree spanned by `C`: an element of `H` moves a vertex or a dart of the
+subtree as it does in `T`, so the stabilizer in `H` of a vertex or a dart is its stabilizer in `G`
+intersected with `H`. By the structure theorem for groups acting on trees, the quotient graph of
+this action carries the splitting of `H` induced by `C`.
 
 ## Main declarations
 
 * `TauCeti.GTree.comap`: the restriction of a `G`-tree along a homomorphism `H →* G`.
 * `TauCeti.GTree.subtree`: the restriction of a `G`-tree to a nonempty convex invariant set of
   vertices.
+* `TauCeti.GTree.restrict`: the action of a subgroup on an invariant subtree.
+* `TauCeti.GTree.stabilizer_restrict_vertex`, `TauCeti.GTree.map_stabilizer_restrict_vertex`
+  (and the `_dart` versions): its stabilizers are the intersections of the subgroup with the
+  stabilizers in `G`.
 
 ## References
 
@@ -190,6 +199,72 @@ variable {C} (hC : T.IsConvex C) (hne : C.Nonempty) (hinv : ∀ g : G, ∀ v ∈
 @[simp] theorem dist_subtree (a b : (T.subtree C hC hne hinv).V) :
     (T.subtree C hC hne hinv).dist a b = T.dist (Subtype.val a) (Subtype.val b) :=
   hC.dist_induce a b
+
+end GTree
+
+/-! ### Restriction to a subgroup and an invariant subtree -/
+
+namespace GTree
+
+variable {G : Type w} [Group G] (T : GTree.{u, v} G) (H : Subgroup G)
+
+/-- The action of a subgroup `H` on the subtree spanned by a nonempty convex `H`-invariant set of
+vertices. -/
+@[expose] def restrict (C : Set T.V) (hC : T.IsConvex C) (hne : C.Nonempty)
+    (hinv : ∀ h ∈ H, ∀ v ∈ C, h • v ∈ C) : GTree.{u, v} H :=
+  (T.comap H.subtype).subtree C hC hne fun h v hv => hinv h h.property v hv
+
+variable {T H} {C : Set T.V} (hC : T.IsConvex C) (hne : C.Nonempty)
+  (hinv : ∀ h ∈ H, ∀ v ∈ C, h • v ∈ C)
+
+/-- The underlying graph of the action of a subgroup on an invariant subtree is the subgraph
+induced on its vertices. -/
+@[simp] theorem restrict_toSerreGraph :
+    (T.restrict H C hC hne hinv).toSerreGraph = T.toSerreGraph.induce C := (rfl)
+
+/-- A vertex of an invariant subtree is a vertex of the invariant set. -/
+theorem restrict_vertex_val_mem (v : (T.restrict H C hC hne hinv).V) :
+    (Subtype.val v : T.V) ∈ C :=
+  v.property
+
+/-- A dart of an invariant subtree is a dart induced by the invariant set. -/
+theorem restrict_dart_val_mem (e : (T.restrict H C hC hne hinv).E) :
+    (Subtype.val e : T.E) ∈ T.inducedDarts C :=
+  e.property
+
+/-- An element of `H` moves a vertex of an invariant subtree as it moves it in the tree. -/
+@[simp] theorem restrict_smul_vertex_val (h : H) (v : (T.restrict H C hC hne hinv).V) :
+    Subtype.val (h • v) = (h : G) • (Subtype.val v : T.V) :=
+  (T.comap H.subtype).subtree_smul_vertex_val hC hne _ h v
+
+/-- An element of `H` moves a dart of an invariant subtree as it moves it in the tree. -/
+@[simp] theorem restrict_smul_dart_val (h : H) (e : (T.restrict H C hC hne hinv).E) :
+    Subtype.val (h • e) = (h : G) • (Subtype.val e : T.E) :=
+  (T.comap H.subtype).subtree_smul_dart_val hC hne _ h e
+
+/-- The stabilizer in `H` of a vertex of an invariant subtree is the preimage of its stabilizer
+in `G`. -/
+@[simp] theorem stabilizer_restrict_vertex (v : (T.restrict H C hC hne hinv).V) :
+    stabilizer H v = (stabilizer G (Subtype.val v : T.V)).comap H.subtype :=
+  ((T.comap H.subtype).stabilizer_subtree_vertex hC hne _ v).trans (stabilizer_comap_vertex _ _ _)
+
+/-- The stabilizer in `H` of a dart of an invariant subtree is the preimage of its stabilizer
+in `G`. -/
+@[simp] theorem stabilizer_restrict_dart (e : (T.restrict H C hC hne hinv).E) :
+    stabilizer H e = (stabilizer G (Subtype.val e : T.E)).comap H.subtype :=
+  ((T.comap H.subtype).stabilizer_subtree_dart hC hne _ e).trans (stabilizer_comap_dart _ _ _)
+
+/-- The stabilizer in `H` of a vertex of an invariant subtree is the intersection of `H` with its
+stabilizer in `G`. -/
+theorem map_stabilizer_restrict_vertex (v : (T.restrict H C hC hne hinv).V) :
+    (stabilizer H v).map H.subtype = H ⊓ stabilizer G (Subtype.val v : T.V) := by
+  rw [stabilizer_restrict_vertex, Subgroup.map_comap_eq, Subgroup.range_subtype]
+
+/-- The stabilizer in `H` of a dart of an invariant subtree is the intersection of `H` with its
+stabilizer in `G`. -/
+theorem map_stabilizer_restrict_dart (e : (T.restrict H C hC hne hinv).E) :
+    (stabilizer H e).map H.subtype = H ⊓ stabilizer G (Subtype.val e : T.E) := by
+  rw [stabilizer_restrict_dart, Subgroup.map_comap_eq, Subgroup.range_subtype]
 
 end GTree
 

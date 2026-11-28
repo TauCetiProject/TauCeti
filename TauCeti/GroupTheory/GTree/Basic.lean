@@ -23,7 +23,8 @@ such actions.
 
 * The quotient graph `T / G` of a `G`-tree (`GTree.quotient`) has the orbits of vertices and
   of darts as its vertices and darts; it is connected, and the projection `GTree.quotientMap`
-  onto it is surjective with the orbits as fibres.
+  onto it is surjective with the orbits as fibres. It has finitely many vertices (darts) as soon
+  as a finite set of vertices (darts) meets every orbit.
 * An element is *elliptic* when it fixes a vertex and *hyperbolic* otherwise; a subgroup is
   elliptic when it fixes a vertex. The vertices fixed by an element or a subgroup form a convex
   set, an elliptic subgroup fixes a vertex of every nonempty convex set of vertices it preserves,
@@ -206,6 +207,25 @@ theorem quotientMap_mapE_eq_iff {e f : T.E} :
 @[simp] theorem quotientMap_mapE_smul (g : G) (e : T.E) :
     T.quotientMap.mapE (g • e) = T.quotientMap.mapE e :=
   SerreGraph.quotientMap_mapE_smul g e
+
+/-- If a finite set of vertices meets every orbit, the quotient graph has finitely many
+vertices. -/
+theorem finite_quotient_V_of_forall_exists_smul_mem {K : Set T.V} (hK : K.Finite)
+    (h : ∀ v : T.V, ∃ g : G, g • v ∈ K) : Finite T.quotient.V := by
+  have := hK.to_subtype
+  refine Finite.of_surjective (fun k : K => T.quotientMap.mapV k) fun b => ?_
+  obtain ⟨v, rfl⟩ := T.quotientMap_mapV_surjective b
+  obtain ⟨g, hg⟩ := h v
+  exact ⟨⟨g • v, hg⟩, quotientMap_mapV_smul g v⟩
+
+/-- If a finite set of darts meets every orbit, the quotient graph has finitely many darts. -/
+theorem finite_quotient_E_of_forall_exists_smul_mem {K : Set T.E} (hK : K.Finite)
+    (h : ∀ e : T.E, ∃ g : G, g • e ∈ K) : Finite T.quotient.E := by
+  have := hK.to_subtype
+  refine Finite.of_surjective (fun k : K => T.quotientMap.mapE k) fun b => ?_
+  obtain ⟨e, rfl⟩ := T.quotientMap_mapE_surjective b
+  obtain ⟨g, hg⟩ := h e
+  exact ⟨⟨g • e, hg⟩, quotientMap_mapE_smul g e⟩
 
 end Quotient
 
