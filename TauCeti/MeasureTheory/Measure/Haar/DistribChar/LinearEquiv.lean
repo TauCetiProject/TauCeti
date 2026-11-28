@@ -18,7 +18,7 @@ import TauCeti.Topology.Algebra.Module.ModuleTopology
 `LinearEquiv.map_addHaar_eq_smul` computes the pushforward of additive Haar measure under
 a linear automorphism of a finite-dimensional vector space over a locally compact second
 countable field: the scaling factor is the Haar character of the inverse determinant.
-The reduction to basis coordinates follows the real-case precedent
+The reduction via `Module.Basis.toGL_smul_equivFun` follows the real-case precedent
 `MeasureTheory.Measure.map_linearMap_addHaar_eq_smul_addHaar` in Mathlib. The proof uses
  `MeasureTheory.distribHaarChar_eq_distribHaarChar_det` and
 `MeasureTheory.Measure.map_smul_eq_inv_distribHaarChar_smul` in a basis.
@@ -42,20 +42,15 @@ variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K]
 
 namespace LinearEquiv
 
-/-- The pushforward of additive Haar measure under a linear automorphism over a locally compact
-second countable field scales by the Haar character of its inverse determinant. See Weil,
+/-- The pushforward of additive Haar measure under a linear automorphism of a finite-dimensional
+vector space over a locally compact second countable field scales by the Haar character of its
+inverse determinant. See Weil,
 *Basic Number Theory*, Chapter I, §2. -/
 theorem map_addHaar_eq_smul (e : V ≃ₗ[K] V) (μ : Measure V) [μ.IsAddHaarMeasure] :
     μ.map e = distribHaarChar K e.det⁻¹ • μ := by
   classical
   let b := Module.finBasis K V
   let g := b.toGL e
-  have hg_matrix : (g : Matrix _ _ K) = LinearMap.toMatrix b b e.toLinearMap :=
-    Module.Basis.coe_toGL b e
-  have hgdet : g.det = e.det := by
-    apply Units.ext
-    rw [GeneralLinearGroup.val_det_apply, hg_matrix, LinearMap.det_toMatrix,
-      LinearEquiv.coe_det]
   let c := b.equivFun.toContinuousLinearEquivOfIsModuleTopology
   borelize (Fin (Module.finrank K V) → K)
   let μc := μ.map c
@@ -63,12 +58,12 @@ theorem map_addHaar_eq_smul (e : V ≃ₗ[K] V) (μ : Measure V) [μ.IsAddHaarMe
   have : μc.IsAddHaarMeasure := c.isAddHaarMeasure_map μ
   have hg : μc.map (g • ·) = distribHaarChar K e.det⁻¹ • μc := by
     rw [μc.map_smul_eq_inv_distribHaarChar_smul g, distribHaarChar_eq_distribHaarChar_det,
-      hgdet, map_inv]
+      Module.Basis.det_toGL b e, map_inv]
   have hcoord : c ∘ e = (g • ·) ∘ c := by
     funext v
     simp only [Function.comp_apply, c, LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology,
-      Module.Basis.equivFun_apply, Units.smul_def, smul_eq_mulVec, hg_matrix]
-    exact (LinearMap.toMatrix_mulVec_repr b b (e : V →ₗ[K] V) v).symm
+      g]
+    exact (b.toGL_smul_equivFun e v).symm
   have hmeas : Measurable e :=
     (IsModuleTopology.continuous_of_linearMap e.toLinearMap).measurable
   -- Compare the two measures after pushing both to the same basis coordinates.
@@ -80,7 +75,7 @@ theorem map_addHaar_eq_smul (e : V ≃ₗ[K] V) (μ : Measure V) [μ.IsAddHaarMe
   exact hg
 
 /-- A linear automorphism whose determinant squares to one preserves additive Haar measure
-over a locally compact second countable field. -/
+on a finite-dimensional vector space over a locally compact second countable field. -/
 theorem measurePreserving_addHaar_of_det_sq_eq_one (e : V ≃ₗ[K] V) (μ : Measure V)
     [μ.IsAddHaarMeasure] (hdet : e.det ^ 2 = 1) : MeasurePreserving e μ μ := by
   have hchar : distribHaarChar K e.det = 1 := by
@@ -94,8 +89,8 @@ end LinearEquiv
 
 namespace LinearMap.BilinForm
 
-/-- Every linear isometry of a left-separating bilinear form preserves additive Haar measure
-over a locally compact second countable field. -/
+/-- Every linear isometry of a left-separating bilinear form on a finite-dimensional vector
+space over a locally compact second countable field preserves additive Haar measure. -/
 theorem measurePreserving_isometryGroup (B : LinearMap.BilinForm K V)
     (g : LinearMap.isometryGroup B) (hB : B.SeparatingLeft) (ν : Measure V) [ν.IsAddHaarMeasure] :
     MeasurePreserving (g : V ≃ₗ[K] V) ν ν := by

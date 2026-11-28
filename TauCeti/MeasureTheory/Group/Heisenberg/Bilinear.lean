@@ -15,11 +15,12 @@ import TauCeti.MeasureTheory.Measure.Prod
 # Symplectic invariance of Heisenberg Haar measure
 
 `LinearMap.BilinForm.measurePreserving_isometryGroupToMulAut` shows that the isometry
-action on the Heisenberg extension of a left-separating bilinear form over a locally compact
-second countable field preserves the product of a central measure and an additive Haar measure
-on the vector space. The action fixes the first coordinate and preserves Haar measure on the
-second by `LinearMap.BilinForm.measurePreserving_isometryGroup`. The product argument uses
-`MeasureTheory.MeasurePreserving.prodMap_id_left` and
+action on the Heisenberg extension of a left-separating bilinear form on a finite-dimensional
+vector space over a locally compact second countable field preserves the product of a central
+measure and an additive Haar measure on the vector space. The action fixes the first coordinate
+and preserves Haar measure on the second by `LinearMap.BilinForm.measurePreserving_isometryGroup`.
+The product argument uses
+`MeasureTheory.MeasurePreserving.prodMap_right_self` and
 `TauCeti.FactorSet.measurePreserving_prodMeasure`. This includes the symplectic action
 for a nondegenerate alternating form.
 
@@ -42,8 +43,9 @@ variable {K W : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K]
   [AddCommGroup W] [Module K W] [FiniteDimensional K W] [TopologicalSpace W]
   [IsModuleTopology K W] [MeasurableSpace W] [BorelSpace W]
 
-/-- For a left-separating bilinear form, the isometry action preserves the transported
-product of any central measure and an additive Haar measure on the underlying vector space.
+/-- For a left-separating bilinear form on a finite-dimensional vector space over a locally
+compact second countable field, the isometry action preserves the transported product of any
+central measure and an additive Haar measure on the vector space.
 In particular this holds for symplectic automorphisms and self-dual Haar measures.
 See Weil, *Sur certains groupes d'opérateurs unitaires*, I, §§2–4. -/
 theorem measurePreserving_isometryGroupToMulAut (B : BilinForm K W)
@@ -55,14 +57,13 @@ theorem measurePreserving_isometryGroupToMulAut (B : BilinForm K W)
   let e : W ≃ₗ[K] W := g
   have htag : MeasurePreserving ofAdd ν (ν.map ofAdd) :=
     measurable_ofAdd.measurePreserving ν
-  have huntag : MeasurePreserving toAdd (ν.map ofAdd) ν := by
-    refine ⟨measurable_toAdd, ?_⟩
-    have hcomp : (toAdd : Multiplicative W → W) ∘ ofAdd = _root_.id := funext toAdd_ofAdd
-    rw [Measure.map_map measurable_toAdd measurable_ofAdd, hcomp, Measure.map_id]
+  have huntag : MeasurePreserving toAdd (ν.map ofAdd) ν :=
+    MeasurableEquiv.multiplicative.measurePreserving_symm ν
   have hvector : MeasurePreserving e ν ν := B.measurePreserving_isometryGroup g hB ν
   have hmul : MeasurePreserving (ofAdd ∘ (e : W → W) ∘ toAdd) (ν.map ofAdd) (ν.map ofAdd) :=
     htag.comp (hvector.comp huntag)
-  apply B.bilinearFactorSet.measurePreserving_prodMeasure (hmul.prodMap_id_left μ)
+  apply B.bilinearFactorSet.measurePreserving_prodMeasure
+    ((MeasurePreserving.id μ).prodMap_right_self hmul)
   intro p
   simp only [FactorSet.Extension.measurableEquivProd_apply, Prod.map_apply, id_eq,
     Function.comp_apply, isometryGroupToMulAut_apply, e]
