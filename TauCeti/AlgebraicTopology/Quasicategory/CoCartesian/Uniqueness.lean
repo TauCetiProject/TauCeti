@@ -78,13 +78,6 @@ lemma IsCoCartesian.exists_compStruct {f : Edge x y} (hf : f.IsCoCartesian p) {y
     ((δ_comp_σ_self_apply (1 : Fin 2) _).trans h.symm)
     fun σ₀ hσ₀ hτ ↦ hf.exists_lift_horn_zero σ₀ hσ₀ _ hτ
 
-/-- The face `0` of the degenerate `3`-simplex `s₁ s₁ e` on an edge `e` is the degenerate
-`2`-simplex on the target of `e`. -/
-private lemma δ_zero_σ_one_σ_one (e : S _⦋1⦌) :
-    S.δ 0 (S.σ 1 (S.σ 1 e)) = S.σ 0 (S.σ 0 (S.δ 0 e)) :=
-  (δ_comp_σ_of_le_apply (i := (0 : Fin 3)) (j := 0) (Fin.zero_le _) _).trans
-    (congrArg _ (δ_comp_σ_of_le_apply (i := (0 : Fin 2)) (j := 0) (Fin.zero_le _) _))
-
 /-- Let `f : x ⟶ y` be `p`-coCartesian, and let `c` and `c'` be `2`-simplices exhibiting
 `f' = f ≫ g` and `f = f' ≫ g'`, both lying over the degenerate `2`-simplex `s₁ e` on the image
 `e` of `f`. Then `g ≫ g' = id y`, through a `2`-simplex lying over the degenerate `2`-simplex on
@@ -103,14 +96,6 @@ lemma IsCoCartesian.exists_compStruct_id {f : Edge x y} (hf : f.IsCoCartesian p)
     fun σ₀ hσ₀ hτ ↦ hf.exists_lift_horn_zero σ₀ hσ₀ _ hτ
   refine ⟨d, hd.trans ?_⟩
   rw [δ_zero_σ_one_σ_one, ← δ_naturality_apply, f.tgt_eq]
-
-/-- The edge `g` of a `2`-simplex `c` of `X` over the degenerate `2`-simplex `s₁ e`, from the
-vertex `1` to the vertex `2`, lies in the fiber over the target `t` of `e`. -/
-private lemma δ_zero_mem_fiber {t : S _⦋0⦌} {e : S _⦋1⦌} (he : S.δ 0 e = t) (z : X _⦋2⦌)
-    (hz : p.app _ z = S.σ 1 e) : X.δ 0 z ∈ (fiber p t).obj _ :=
-  mem_fiber_of_app_eq_map _ _ _ (SimplexCategory.σ 0) (by
-    rw [δ_naturality_apply, hz, ← he]
-    exact δ_comp_σ_of_le_apply (i := (0 : Fin 2)) (j := 0) (Fin.zero_le _) _)
 
 /-- **CoCartesian lifts are unique up to equivalence: comparison.** Let `f : x ⟶ y` and
 `f' : x ⟶ y'` be `p`-coCartesian edges with targets `y` and `y'` in the fiber of `p` over a vertex

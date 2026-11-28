@@ -27,6 +27,8 @@ monotone along the vertices of every simplex.
   last face is constant at `x` are `x`.
 * `SSet.map_const_succ_of_δ_zero`: the last `n + 1` vertices of an `(n + 1)`-simplex whose
   face opposite to the initial vertex is constant at `y` are `y`.
+* `SSet.δ_zero_σ_one_σ_one`: the face `0` of `s₁ s₁ e` is the degenerate `2`-simplex at the
+  target of the edge `e`.
 * `SSet.yonedaEquiv_const_one`, `SSet.const_app_one`: the constant map `Δ[1] ⟶ X` at a vertex
   `x` is the degenerate edge at `x`, and every constant map at `x` sends `1`-simplices to it.
 * `SSet.lift_id_const_app_one`: the graph `W ⟶ W ⊗ X` of a constant map at `x` sends a
@@ -42,6 +44,13 @@ universe u
 namespace SSet
 
 variable {X : SSet.{u}}
+
+/-- The face `0` of the degenerate `3`-simplex `s₁ s₁ e` on an edge `e` is the degenerate
+`2`-simplex on the target of `e`. -/
+lemma δ_zero_σ_one_σ_one (e : X _⦋1⦌) :
+    X.δ 0 (X.σ 1 (X.σ 1 e)) = X.σ 0 (X.σ 0 (X.δ 0 e)) :=
+  (δ_comp_σ_of_le_apply (i := (0 : Fin 3)) (j := 0) (Fin.zero_le _) _).trans
+    (congrArg _ (δ_comp_σ_of_le_apply (i := (0 : Fin 2)) (j := 0) (Fin.zero_le _) _))
 
 /-- The `i`-th vertex of the image of a simplex `s` under `X.map f` is the `f i`-th vertex
 of `s`. -/
