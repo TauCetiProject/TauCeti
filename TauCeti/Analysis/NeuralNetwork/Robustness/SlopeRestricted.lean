@@ -16,12 +16,12 @@ import Mathlib.Algebra.Order.Group.Pointwise.Interval
 # Slope-restricted activation functions
 
 A function `σ : ℝ → ℝ` is *slope-restricted in `[α, β]`* when
-`0 ≤ (σ a - σ b - α (a - b)) (β (a - b) - (σ a - σ b))` for all `a` and `b`, that is, when each
-increment `σ a - σ b` lies between `α (a - b)` and `β (a - b)`. For `a ≠ b` this says that the
-slope of `σ` between `a` and `b` lies between `α` and `β`. This quadratic form of the condition
-is the one that the semidefinite Lipschitz certificates of neural networks use: summed over the
-neurons of a layer with nonnegative weights, it gives the incremental quadratic constraint that
-these certificates add to the quadratic form of a network.
+`0 ≤ (σ a - σ b - α * (a - b)) * (β * (a - b) - (σ a - σ b))` for all `a` and `b`, that is,
+when each increment `σ a - σ b` lies between `α * (a - b)` and `β * (a - b)`. For `a ≠ b` this
+says that the slope of `σ` between `a` and `b` lies between `α` and `β`. This quadratic form of
+the condition is the one that the semidefinite Lipschitz certificates of neural networks use:
+summed over the neurons of a layer with nonnegative weights, it gives the incremental quadratic
+constraint that these certificates add to the quadratic form of a network.
 
 The condition does not need `α ≤ β`: it is symmetric in `α` and `β`.
 
@@ -29,20 +29,20 @@ The condition does not need `α ≤ β`: it is symmetric in `α` and `β`.
 
 * `TauCeti.SlopeRestricted`: `σ` is slope-restricted in `[α, β]`.
 * `TauCeti.slopeRestricted_iff_mem_uIcc` and `TauCeti.slopeRestricted_iff_slope_mem_uIcc`: the
-  condition says that each increment `σ a - σ b` lies in `[[α (a - b), β (a - b)]]`, or that
+  condition says that each increment `σ a - σ b` lies in `[[α * (a - b), β * (a - b)]]`, or that
   each slope `slope σ a b` with `a ≠ b` lies in `[[α, β]]`.
 * `TauCeti.slopeRestricted_of_monotone_of_lipschitzWith`: a monotone `K`-Lipschitz function is
   slope-restricted in `[0, K]`.
 * `TauCeti.SlopeRestricted.abs_sub_le` and `TauCeti.SlopeRestricted.lipschitzWith`: a function
   that is slope-restricted in `[α, β]` is `max |α| |β|`-Lipschitz.
-* `TauCeti.slopeRestricted_max_mul`: `t ↦ max (p t) (q t)` is slope-restricted in `[p, q]`.
+* `TauCeti.slopeRestricted_max_mul`: `t ↦ max (p * t) (q * t)` is slope-restricted in `[p, q]`.
   Special cases are the ReLU `t ↦ max 0 t` in `[0, 1]` (`TauCeti.slopeRestricted_relu`) and the
-  leaky ReLU `t ↦ max t (c t)` in `[c, 1]` for every real `c`
+  leaky ReLU `t ↦ max t (c * t)` in `[c, 1]` for every real `c`
   (`TauCeti.slopeRestricted_leakyRelu`).
 * `TauCeti.slopeRestricted_tanh`: `Real.tanh` is slope-restricted in `[0, 1]`.
 * `TauCeti.SlopeRestricted.sum_nonneg`: the incremental quadratic constraint
-  `0 ≤ ∑ p, 2 t_p (Δy_p - α Δu_p) (β Δu_p - Δy_p)` for weights `t ≥ 0`, where
-  `Δu = u - u'` and `Δy_p = σ (u p) - σ (u' p)`.
+  `0 ≤ ∑ p, 2 * t p * (Δy p - α * Δu p) * (β * Δu p - Δy p)` for weights `t ≥ 0`, where
+  `Δu p = u p - u' p` and `Δy p = σ (u p) - σ (u' p)`.
 
 ## References
 
@@ -59,8 +59,9 @@ namespace TauCeti
 variable {α β : ℝ} {σ : ℝ → ℝ}
 
 /-- The function `σ : ℝ → ℝ` is *slope-restricted in `[α, β]`*: for all `a` and `b`, the
-increment `σ a - σ b` satisfies `0 ≤ (σ a - σ b - α (a - b)) (β (a - b) - (σ a - σ b))`, so it
-lies between `α (a - b)` and `β (a - b)`. -/
+increment `σ a - σ b` satisfies
+`0 ≤ (σ a - σ b - α * (a - b)) * (β * (a - b) - (σ a - σ b))`, so it lies between `α * (a - b)`
+and `β * (a - b)`. -/
 def SlopeRestricted (α β : ℝ) (σ : ℝ → ℝ) : Prop :=
   ∀ a b, 0 ≤ (σ a - σ b - α * (a - b)) * (β * (a - b) - (σ a - σ b))
 
@@ -71,7 +72,7 @@ theorem slopeRestricted_iff :
   Iff.rfl
 
 /-- A function is slope-restricted in `[α, β]` if and only if each increment `σ a - σ b` lies
-in the unordered interval `[[α (a - b), β (a - b)]]`. -/
+in the unordered interval `[[α * (a - b), β * (a - b)]]`. -/
 theorem slopeRestricted_iff_mem_uIcc :
     SlopeRestricted α β σ ↔ ∀ a b, σ a - σ b ∈ Set.uIcc (α * (a - b)) (β * (a - b)) := by
   refine forall₂_congr fun a b ↦ ?_
@@ -80,7 +81,7 @@ theorem slopeRestricted_iff_mem_uIcc :
 
 /-- Slope restriction is symmetric in the two bounds. -/
 theorem SlopeRestricted.symm (h : SlopeRestricted α β σ) : SlopeRestricted β α σ :=
-  fun a b ↦ (h a b).trans_eq (by ring)
+  slopeRestricted_iff.2 fun a b ↦ (slopeRestricted_iff.1 h a b).trans_eq (by ring)
 
 /-- Slope restriction is symmetric in the two bounds. -/
 theorem slopeRestricted_comm : SlopeRestricted α β σ ↔ SlopeRestricted β α σ :=
@@ -131,9 +132,10 @@ theorem SlopeRestricted.lipschitzWith (h : SlopeRestricted α β σ) :
     LipschitzWith (max ‖α‖₊ ‖β‖₊) σ :=
   LipschitzWith.of_dist_le_mul fun a b ↦ by simpa [Real.dist_eq] using h.abs_sub_le a b
 
-/-- The maximum `t ↦ max (p t) (q t)` of two linear functions is slope-restricted in `[p, q]`. -/
+/-- The maximum `t ↦ max (p * t) (q * t)` of two linear functions is slope-restricted in
+`[p, q]`. -/
 theorem slopeRestricted_max_mul (p q : ℝ) : SlopeRestricted p q fun t ↦ max (p * t) (q * t) := by
-  intro a b
+  refine slopeRestricted_iff.2 fun a b ↦ ?_
   rcases le_total (p * a) (q * a) with ha | ha <;> rcases le_total (p * b) (q * b) with hb | hb <;>
     simp only [max_eq_left, max_eq_right, ha, hb] <;>
     nlinarith [mul_nonneg (sub_nonneg.2 ha) (sub_nonneg.2 hb)]
@@ -142,7 +144,7 @@ theorem slopeRestricted_max_mul (p q : ℝ) : SlopeRestricted p q fun t ↦ max 
 theorem slopeRestricted_relu : SlopeRestricted 0 1 fun t ↦ max 0 t := by
   simpa using slopeRestricted_max_mul 0 1
 
-/-- The leaky ReLU `t ↦ max t (c t)` is slope-restricted in `[c, 1]`, for every real `c`. -/
+/-- The leaky ReLU `t ↦ max t (c * t)` is slope-restricted in `[c, 1]`, for every real `c`. -/
 theorem slopeRestricted_leakyRelu (c : ℝ) : SlopeRestricted c 1 fun t ↦ max t (c * t) := by
   simpa using (slopeRestricted_max_mul 1 c).symm
 
@@ -153,7 +155,7 @@ theorem slopeRestricted_tanh : SlopeRestricted 0 1 Real.tanh := by
 
 /-- **Incremental quadratic constraint.** If `σ` is slope-restricted in `[α, β]` and the weights
 `t p` are nonnegative, then for all `u` and `u'`, with `Δu p = u p - u' p` and
-`Δy p = σ (u p) - σ (u' p)`, the sum `∑ p, 2 t p (Δy p - α Δu p) (β Δu p - Δy p)` is
+`Δy p = σ (u p) - σ (u' p)`, the sum `∑ p, 2 * t p * (Δy p - α * Δu p) * (β * Δu p - Δy p)` is
 nonnegative. -/
 theorem SlopeRestricted.sum_nonneg {ι : Type*} [Fintype ι] (h : SlopeRestricted α β σ)
     {t : ι → ℝ} (ht : 0 ≤ t) (u u' : ι → ℝ) :
@@ -161,7 +163,7 @@ theorem SlopeRestricted.sum_nonneg {ι : Type*} [Fintype ι] (h : SlopeRestricte
       (β * (u p - u' p) - (σ (u p) - σ (u' p))) :=
   Finset.sum_nonneg fun p _ ↦ by
     rw [mul_assoc]
-    exact mul_nonneg (mul_nonneg zero_le_two (ht p)) (h _ _)
+    exact mul_nonneg (mul_nonneg zero_le_two (ht p)) (slopeRestricted_iff.1 h _ _)
 
 /-! ### Examples -/
 
@@ -183,7 +185,7 @@ example : ¬ SlopeRestricted (3 / 5) 1 fun t ↦ max t (1 / 2 * t) := fun h ↦ 
   have := h (-1) 0
   norm_num at this
 
-/-- `t ↦ 2 t` is slope-restricted in `[2, 2]`, hence `2`-Lipschitz. -/
+/-- `t ↦ 2 * t` is slope-restricted in `[2, 2]`, hence `2`-Lipschitz. -/
 example : LipschitzWith 2 fun t : ℝ ↦ 2 * t := by
   have h : SlopeRestricted 2 2 fun t ↦ 2 * t := by simpa using slopeRestricted_max_mul 2 2
   simpa using h.lipschitzWith
