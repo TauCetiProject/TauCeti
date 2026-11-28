@@ -57,6 +57,8 @@ derivative applies.
   the differential.
 * `TauCeti.isLocalFrameOn_degreeOneEquiv_iff`: real one-forms are a frame of the cotangent bundle
   on a set exactly when their values are a basis of every cotangent space over it.
+* `TauCeti.contMDiffAt_mextDeriv_ofFunction`: the differential of a function that is `C^(n+1)`
+  at a point is a `C^n` degree-one form there, on a `C¹` manifold.
 * `TauCeti.SmoothForm.degreeOneEquiv_mextDerivₗ`: the section of the exterior derivative `df` of a
   smooth function is its manifold derivative.
 * `ContMDiffAt.contMDiffAt_totalSpaceMk_mvfderiv_uncurry`,
@@ -226,6 +228,15 @@ theorem isSmoothForm_ofSubsingleton_iff {n : WithTop ℕ∞}
       ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) x (α x)) := by
   rw [isSmoothForm_def, ← isSmoothBundleForm_def]
   exact isSmoothBundleForm_ofSubsingleton_iff
+
+/-- The differential of a function that is `C^(n+1)` at `x` is a `C^n` section at `x`. -/
+theorem contMDiffAt_mextDeriv_ofFunction {n : WithTop ℕ∞} {f : M → F} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ, F) (n + 1) f x) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F)) n
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) y (mextDeriv (RoughForm.ofFunction I f) y))
+      x := by
+  simp only [mextDeriv_ofFunction]
+  exact contMDiffAt_ofSubsingleton_iff.2 hf.contMDiffAt_totalSpaceMk_mvfderiv
 
 end OnceDifferentiable
 
