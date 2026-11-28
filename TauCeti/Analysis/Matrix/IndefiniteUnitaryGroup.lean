@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Analysis.Matrix.DotProduct
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
-public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
+public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup.Basic
 public import TauCeti.Topology.Algebra.UnitaryGroup
 public import TauCeti.Topology.Instances.Matrix
 import Mathlib.Topology.Algebra.Group.Units
@@ -35,8 +35,8 @@ that use the topology or the order of `ℝ` and `ℂ`.
 * For invertible `A` over a Hausdorff commutative topological ring with continuous star,
   `unitaryGroupOf A` is a closed subset of the matrices with the subspace topology
   (`Matrix.unitaryGroupOf.isClosedEmbedding_val`, in
-  `TauCeti.Topology.Algebra.Matrix.UnitaryGroup`); over `ℝ` or `ℂ` this makes `U(p, q)` locally
-  compact and second countable.
+  `TauCeti.Topology.Algebra.Matrix.UnitaryGroup.Basic`); over `ℝ` or `ℂ` this makes
+  `U(p, q)` locally compact and second countable.
 * Over a topological ring, the conjugation `g ↦ b⁻¹ g b` and the bijection `g ↦ a g b` between the
   unitary groups of congruent forms `A` and `bᴴ (t A) b` are continuous.
 * For a unitary Gram matrix `A` over `ℝ` or `ℂ`, such as `diag(1, …, 1, -1, …, -1)`, the inverse

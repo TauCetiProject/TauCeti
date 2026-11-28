@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
+public import TauCeti.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.Data.Fin.Tuple.Take
 public import Mathlib.Data.Fintype.Sort
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
@@ -102,6 +102,10 @@ Borel measurable structure on the scalar field.
   norm, as a linear isometric automorphism of `EuclideanSpace 𝕜 ι`.
 * `PiLp.inner_single_left`, `PiLp.inner_single_right`: the inner product against `PiLp.single 2 i v`
   extracts the `i`-th coordinate inner product.
+* `EuclideanSpace.basisFun_toBasis_constrL_apply`:
+  `(EuclideanSpace.basisFun ι 𝕜).toBasis.constrL y g` expands as `∑ i, g i • y i`.
+* `EuclideanSpace.truncVec` and `EuclideanSpace.tailVec`: coordinatewise truncation to `[-t, t]`
+  and its complementary tail on `EuclideanSpace ℝ ι`.
 * `LinearIsometryEquiv.submodulePiLp_orthogonalProjectionOnto`,
   `LinearIsometryEquiv.map_starProjection_apply`, and
   `LinearIsometryEquiv.mem_orthogonal_iff_forall_mem_orthogonal`: coordinatewise orthogonal
@@ -840,6 +844,13 @@ theorem forall_finsetComplEquivProd_symm_mk_zero_iff (P : 𝕜 → Prop)
 
 end finsetCompl
 
+/-- Expanding `(EuclideanSpace.basisFun ι 𝕜).toBasis.constrL y g` as a coordinate linear
+combination. -/
+theorem basisFun_toBasis_constrL_apply {Y : Type*} [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+    (y : ι → Y) (g : EuclideanSpace 𝕜 ι) :
+    (EuclideanSpace.basisFun ι 𝕜).toBasis.constrL y g = ∑ i, g i • y i := by
+  simp [Module.Basis.constrL_apply, EuclideanSpace.basisFun_toBasis]
+
 end EuclideanSpace
 
 namespace TauCeti
@@ -968,6 +979,61 @@ variable {ι 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [RCLike 𝕜] {F : ι �
   rw [← inner_conj_symm, inner_single_left, inner_conj_symm]
 
 end PiLp
+
+namespace EuclideanSpace
+
+section Truncation
+
+variable {ι : Type*}
+
+/-- Coordinatewise truncation of a real Euclidean vector to `[-t, t]`. -/
+def truncVec (t : ℝ) (g : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι :=
+  PiLp.coordIndicator {r : ℝ | |r| ≤ t} g
+
+/-- Defining formula for `EuclideanSpace.truncVec`. -/
+theorem truncVec_def (t : ℝ) (g : EuclideanSpace ℝ ι) :
+    truncVec t g = PiLp.coordIndicator {r : ℝ | |r| ≤ t} g :=
+  (rfl)
+
+/-- Coordinatewise tail of a real Euclidean vector outside `[-t, t]`. -/
+def tailVec (t : ℝ) (g : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι :=
+  PiLp.coordIndicator {r : ℝ | t < |r|} g
+
+/-- Defining formula for `EuclideanSpace.tailVec`. -/
+theorem tailVec_def (t : ℝ) (g : EuclideanSpace ℝ ι) :
+    tailVec t g = PiLp.coordIndicator {r : ℝ | t < |r|} g :=
+  (rfl)
+
+@[simp]
+theorem truncVec_apply (t : ℝ) (g : EuclideanSpace ℝ ι) (i : ι) :
+    truncVec t g i = if |g i| ≤ t then g i else 0 := by
+  simp [truncVec, Set.indicator_apply]
+
+@[simp]
+theorem tailVec_apply (t : ℝ) (g : EuclideanSpace ℝ ι) (i : ι) :
+    tailVec t g i = if t < |g i| then g i else 0 := by
+  simp [tailVec, Set.indicator_apply]
+
+/-- Splitting a real Euclidean vector into its coordinatewise truncation and tail. -/
+theorem truncVec_add_tailVec (t : ℝ) (g : EuclideanSpace ℝ ι) :
+    truncVec t g + tailVec t g = g := by
+  have hcompl : {r : ℝ | |r| ≤ t}ᶜ = {r : ℝ | t < |r|} := by
+    ext r
+    simp [not_le]
+  simpa only [truncVec, tailVec, hcompl] using
+    PiLp.coordIndicator_add_compl {r : ℝ | |r| ≤ t} g
+
+/-- Each coordinate of `EuclideanSpace.truncVec t g` has absolute value at most `t` when `0 ≤ t`. -/
+theorem abs_truncVec_apply_le {t : ℝ} (ht : 0 ≤ t) (g : EuclideanSpace ℝ ι) (i : ι) :
+    |truncVec t g i| ≤ t := by
+  simp only [truncVec_apply]
+  split_ifs with h
+  · exact h
+  · simpa using ht
+
+end Truncation
+
+end EuclideanSpace
 
 namespace LinearIsometryEquiv
 

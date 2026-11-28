@@ -12,8 +12,10 @@ import Mathlib.GroupTheory.GroupAction.MultipleTransitivity
 /-!
 # Basic cardinality and stabilizer properties of alternating groups
 
-This file records two general facts about `alternatingGroup α` for a finite type `α`:
+This file records three general facts about `alternatingGroup α` for a finite type `α`:
 
+* `TauCeti.alternatingGroup_eq_bot_iff`: `alternatingGroup α = ⊥` if and only if
+  `Fintype.card α ≤ 2`.
 * `TauCeti.card_alternatingGroup_of_card_eq_three`: when `Nat.card α = 3`, `alternatingGroup α`
   has cardinality `3`, parallel to Mathlib's `alternatingGroup.card_of_card_eq_four`.
 * `TauCeti.eq_of_forall_mem_stabilizer_alternatingGroup_smul_eq`: for `4 ≤ Nat.card α`, `a` is
@@ -27,6 +29,15 @@ public section
 namespace TauCeti
 
 variable {α : Type*} [Fintype α] [DecidableEq α]
+
+/-- The alternating group on a finite type `α` is trivial if and only if `Fintype.card α ≤ 2`. -/
+theorem alternatingGroup_eq_bot_iff :
+    alternatingGroup α = ⊥ ↔ Fintype.card α ≤ 2 := by
+  rw [← Nat.card_eq_fintype_card]
+  refine ⟨fun hbot => ?_, alternatingGroup.eq_bot_of_card_le_two⟩
+  by_contra hlt
+  exact ((alternatingGroup α).nontrivial_iff_ne_bot.mp
+    (alternatingGroup.nontrivial_of_three_le_card (by omega))) hbot
 
 /-- When `Nat.card α = 3`, the alternating group `alternatingGroup α` has order `3`. -/
 theorem card_alternatingGroup_of_card_eq_three (hα3 : Nat.card α = 3) :

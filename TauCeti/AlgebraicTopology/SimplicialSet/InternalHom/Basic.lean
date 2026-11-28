@@ -45,7 +45,8 @@ it is a Kan complex. For `p = 𝟙 B` there is exactly one functor over `f`, and
 
 ## Main results
 
-* `SSet.ihomOver.homEquiv`: maps `Z ⟶ Fun_B(K, E)` are the maps `K ⊗ Z ⟶ E` over `f`.
+* `SSet.ihomOver.homEquiv`: maps `Z ⟶ Fun_B(K, E)` are the maps `K ⊗ Z ⟶ E` over `f`, and
+  restriction `SSet.ihomOver.pre` along a map `L ⟶ K` restricts them (`homEquiv_comp_pre_coe`).
 * `SSet.ihomOver.objEquiv`: the `n`-simplices of `Fun_B(K, E)` are the maps `K ⊗ Δ[n] ⟶ E`
   over `f`.
 * `SSet.ihomOver.obj₀Equiv`: the vertices of `Fun_B(K, E)` are the maps `K ⟶ E` over `f`.
@@ -369,6 +370,27 @@ lemma homEquiv_comp_coe {Z Z' : SSet.{u}} (h : Z' ⟶ Z) (φ : Z ⟶ ihomOver p 
     (homEquiv (h ≫ φ)).val = K ◁ h ≫ (homEquiv φ).val := by
   rw [homEquiv_apply_coe, homEquiv_apply_coe, Category.assoc, uncurry_natural_left]
 
+/-- Restriction `Fun_B(K, E) ⟶ Fun_B(L, E)` of functors over `f` along a map `i : L ⟶ K`, to
+functors over `i ≫ f`. -/
+noncomputable def pre {L : SSet.{u}} (i : L ⟶ K) :
+    (ihomOver p f : SSet) ⟶ ihomOver p (i ≫ f) :=
+  Subcomplex.lift ((ihomOver p f).ι ≫ (MonoidalClosed.pre i).app E) (by
+    rw [range_le_ihomOver_iff, uncurry_pre_app, Category.assoc,
+      (range_le_ihomOver_iff (p := p) (f := f) (ihomOver p f).ι).1 (by simp),
+      whiskerRight_fst_assoc])
+
+@[reassoc (attr := simp)]
+lemma pre_ι {L : SSet.{u}} (i : L ⟶ K) :
+    pre i ≫ (ihomOver p (i ≫ f)).ι = (ihomOver p f).ι ≫ (MonoidalClosed.pre i).app E :=
+  (rfl)
+
+/-- Under the universal property, restriction along `i : L ⟶ K` restricts a map `K ⊗ Z ⟶ E`
+along `i ▷ Z`. -/
+lemma homEquiv_comp_pre_coe {Z L : SSet.{u}} (φ : Z ⟶ ihomOver p f) (i : L ⟶ K) :
+    (homEquiv (φ ≫ pre i)).val = i ▷ Z ≫ (homEquiv φ).val := by
+  rw [homEquiv_apply_coe, homEquiv_apply_coe, Category.assoc, pre_ι, ← Category.assoc,
+    uncurry_pre_app]
+
 /-- **The relative simplex description of `Fun_B(K, E)`**: its `n`-simplices are the maps
 `K ⊗ Δ[n] ⟶ E` over `f`, that is, whose composite with `p` is the projection to `K` followed
 by `f`. -/
@@ -389,6 +411,25 @@ def obj₀Equiv : (ihomOver p f : SSet) _⦋0⦌ ≃ {g : K ⟶ E // g ≫ p = f
 lemma obj₀Equiv_apply_coe (σ : (ihomOver p f : SSet) _⦋0⦌) :
     dsimp% (obj₀Equiv σ).val = ihomObj₀Equiv K E σ.val :=
   (rfl)
+
+/-- The functor over `f` corresponding to the image of a vertex `z` under
+`φ : Z ⟶ Fun_B(K, E)` is the restriction of the uncurried form of `φ` to `K ⊗ {z}`. -/
+lemma obj₀Equiv_app_coe {Z : SSet.{u}} (φ : Z ⟶ ihomOver p f) (z : Z _⦋0⦌) :
+    (obj₀Equiv (φ.app _ z)).val = lift (𝟙 _) (const z) ≫ (homEquiv φ).val := by
+  rw [obj₀Equiv_apply_coe, homEquiv_apply_coe, ← ihomObj₀Equiv_app, NatTrans.comp_app_apply]
+  -- The inclusion `(ihomOver p f).ι` sends a simplex to its underlying simplex, by definition.
+  rfl
+
+/-- Restriction along `i : L ⟶ K` acts on vertices of `Fun_B(K, E)` by precomposition with `i`. -/
+lemma obj₀Equiv_pre_app_coe {L : SSet.{u}} (i : L ⟶ K) (v : (ihomOver p f : SSet) _⦋0⦌) :
+    (obj₀Equiv ((pre i).app _ v)).val = i ≫ (obj₀Equiv v).val := by
+  obtain ⟨g, hg⟩ := (ihomObj₀Equiv K E).symm.surjective v.val
+  -- The underlying vertex of `(pre i).app _ v` is the image of `v` under the inclusion
+  -- `(ihomOver p (i ≫ f)).ι`, which sends a simplex to its underlying simplex by definition.
+  have h : ((pre i).app _ v).val = ((MonoidalClosed.pre i).app E).app _ v.val :=
+    congrArg (fun φ ↦ φ.app _ v) (pre_ι (p := p) i)
+  rw [obj₀Equiv_apply_coe, obj₀Equiv_apply_coe, h, ← hg, pre_app_app_ihomObj₀Equiv_symm,
+    Equiv.apply_symm_apply, Equiv.apply_symm_apply]
 
 /-- Restricting a relative simplex to a parameter vertex precomposes its corresponding map
 with the inclusion of that vertex, identifying `K ⊗ Δ[0]` with `K`. This formula rewrites
