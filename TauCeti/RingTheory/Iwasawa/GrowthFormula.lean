@@ -83,8 +83,11 @@ module `Λ ⧸ (X - ϖ)` has `μ = 0` and `λ = 1`, but `#(M ⧸ ω_n M) = p ^ p
   `pⁿ`.
 * `TauCeti.Iwasawa.isDistinguishedAt_growthTransition`: `ν_{n₀,n}` is distinguished at every
   ideal containing `p`.
-* `TauCeti.Iwasawa.coeff_zero_growthTransition`: for `n₀ ≥ 1` the constant coefficient of
-  `ν_{n₀,n}` is `p ^ (n + 1 - n₀)`.
+* `TauCeti.Iwasawa.growthTransition_zero_left` and
+  `TauCeti.Iwasawa.coe_growthTransition_zero`: `ν_{0,n} = ω_n`.
+* `TauCeti.Iwasawa.coeff_zero_growthTransition` and
+  `TauCeti.Iwasawa.coeff_zero_growthTransition_zero`: for `n₀ ≥ 1` the constant coefficient of
+  `ν_{n₀,n}` is `p ^ (n + 1 - n₀)`, and for `n₀ = 0` it is `0`.
 * `TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_eq`: Iwasawa's growth
   formula `#(M ⧸ ν_{n₀,n} M) = q ^ (μ pⁿ + e λ n + ν)` for all large `n`.
 * `TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_eq_padicInt`: the
@@ -205,6 +208,25 @@ theorem natDegree_prod_range_add_natDegree_growthTransition [Nontrivial O] {n₀
     TauCeti.Polynomial.natDegree_one_add_X_pow_sub_one]
 
 end Transition
+
+section TransitionZero
+
+/-- For prime `p`, the image of `ν_{0, n}` in `O⟦X⟧` is `ω_n = (1 + X) ^ p ^ n - 1`. -/
+theorem coe_growthTransition_zero (p : ℕ) (O : Type*) [CommRing O] (hp : p.Prime) (n : ℕ) :
+    (growthTransition p O 0 n : O⟦X⟧) = (1 + X) ^ p ^ n - 1 := by
+  have : Fact p.Prime := ⟨hp⟩
+  rw [growthTransition_zero_left]
+  simp
+
+/-- Starting at `n₀ = 0`, the constant coefficient of `ν_{0, n}` is `0`. -/
+@[simp]
+theorem coeff_zero_growthTransition_zero (p : ℕ) (O : Type*) [CommRing O] (n : ℕ) :
+    (growthTransition p O 0 n).coeff 0 = 0 := by
+  rw [Polynomial.coeff_zero_eq_eval_zero, growthTransition_def, Polynomial.eval_prod]
+  refine Finset.prod_eq_zero (Finset.mem_Icc.mpr ⟨le_rfl, Nat.zero_le n⟩) ?_
+  simp
+
+end TransitionZero
 
 section Growth
 

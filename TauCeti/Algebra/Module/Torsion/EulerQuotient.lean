@@ -57,7 +57,7 @@ need not agree.
 * `TauCeti.natCard_quotSMulTop_mul_natCard_torsionBy_of_exact_of_finite_left` and
   `TauCeti.natCard_quotSMulTop_mul_natCard_torsionBy_of_exact_of_finite_right`: a finite outer
   term of a short exact sequence may be discarded.
-* `TauCeti.finite_ker_torsionByMap`, `TauCeti.finite_coker_torsionByMap`,
+* `TauCeti.finite_coker_torsionByMap`,
   `TauCeti.finite_smul_top_iff_of_finite_ker_of_finite_coker`,
   `TauCeti.finite_torsionBy_iff_of_finite_ker_of_finite_coker`,
   `TauCeti.finite_quotSMulTop_iff_of_finite_ker_of_finite_coker` and
@@ -229,18 +229,6 @@ theorem natCard_quotSMulTop_mul_natCard_torsionBy_of_exact_of_finite_right [Fini
 
 end Exact
 
-/-- If `φ : M → N` has finite kernel, then its restriction `M[r] → N[r]` to the `r`-torsion has
-finite kernel. -/
-theorem finite_ker_torsionByMap {R M N : Type*} [CommSemiring R] (r : R)
-    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] (φ : M →ₗ[R] N)
-    [Finite (LinearMap.ker φ)] :
-    Finite (LinearMap.ker (torsionByMap r φ)) := by
-  have hmap : ∀ x ∈ torsionBy R M r, φ x ∈ torsionBy R N r :=
-    fun x hx ↦ coe_torsionByMap_apply r φ ⟨x, hx⟩ ▸ (torsionByMap r φ ⟨x, hx⟩).property
-  have h : torsionByMap r φ = φ.restrict hmap := by ext x; simp
-  rw [h]
-  exact φ.finite_ker_restrict hmap
-
 section FiniteKerCoker
 
 variable {M N : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
@@ -350,12 +338,12 @@ theorem finite_smul_top_iff_of_finite_ker_of_finite_coker {R M N : Type*} [CommR
   let φ' : ↥(r • (⊤ : Submodule R M)) →ₗ[R] ↥(r • (⊤ : Submodule R N)) := φ.restrict hmap
   have : Finite (LinearMap.ker φ') := φ.finite_ker_restrict hmap
   let toSmul : N →ₗ[R] ↥(r • (⊤ : Submodule R N)) :=
-    (LinearEquiv.ofEq _ _ (range_lsmul_eq_smul_top r)).toLinearMap ∘ₗ
-      (LinearMap.lsmul R N r).rangeRestrict
+    (LinearEquiv.ofEq _ _ (by rw [Submodule.map_top, range_lsmul_eq_smul_top])).toLinearMap ∘ₗ
+      ((LinearMap.lsmul R N r).submoduleMap ⊤ ∘ₗ Submodule.topEquiv.symm.toLinearMap)
   have htoSmul_surj : Function.Surjective toSmul := by
-    dsimp only [toSmul]
-    rw [LinearMap.coe_comp]
-    exact (LinearEquiv.surjective _).comp (LinearMap.surjective_rangeRestrict _)
+    simpa only [toSmul, LinearMap.coe_comp, LinearEquiv.coe_coe] using
+      (LinearEquiv.surjective _).comp
+        ((LinearMap.submoduleMap_surjective _ ⊤).comp Submodule.topEquiv.symm.surjective)
   have hq : Function.Surjective ((LinearMap.range φ).mapQ (LinearMap.range φ') toSmul fun n hn ↦ by
       rcases hn with ⟨m, rfl⟩
       refine ⟨⟨r • m, Submodule.smul_mem_pointwise_smul m r ⊤ Submodule.mem_top⟩, Subtype.ext ?_⟩

@@ -42,8 +42,7 @@ characteristic polynomial is `∏ Fⱼ ^ nⱼ`.
 * `TauCeti.Iwasawa.exists_isPseudoIsomorphism_elementary`: every finitely generated
   `O⟦X⟧`-module admits a pseudo-isomorphism onto an elementary module, with every exponent
   positive and every `Fⱼ` irreducible and distinguished.
-* `TauCeti.Iwasawa.eq_zero_of_isPseudoIsomorphism_elementary_of_isTorsion` and
-  `TauCeti.Iwasawa.exists_isPseudoIsomorphism_elementary_of_isTorsion`: for a torsion module, the
+* `TauCeti.Iwasawa.exists_isPseudoIsomorphism_elementary_of_isTorsion`: for a torsion module, the
   free rank vanishes (`r = 0`).
 
 ## References
@@ -142,24 +141,6 @@ theorem exists_isPseudoIsomorphism_elementary (hϖ : Irreducible ϖ) [Module.Fin
   exact ⟨((LinearEquiv.refl _ _).prodCongr (split ≪≫ₗ eVert.prodCongr eHor)).toLinearMap ∘ₗ f,
     (IsPseudoIsomorphism.of_bijective (LinearEquiv.bijective _)).comp hf⟩
 
-omit [IsDiscreteValuationRing O] [IsAdicComplete (maximalIdeal O) O] in
-/-- For a torsion module, the free rank of any pseudo-isomorphic elementary module vanishes. -/
-theorem eq_zero_of_isPseudoIsomorphism_elementary_of_isTorsion {r a b : ℕ} {m : Fin a → ℕ}
-    {F : Fin b → O[X]} {n : Fin b → ℕ} {f : M →ₗ[O⟦X⟧] Elementary O ϖ r m F n}
-    (hf : IsPseudoIsomorphism f) (hM : Module.IsTorsion O⟦X⟧ M) : r = 0 := by
-  by_contra hr
-  let y : Elementary O ϖ r m F n := (Pi.single ⟨0, Nat.pos_of_ne_zero hr⟩ 1, 0, 0)
-  obtain ⟨s, hs⟩ := hf.isPseudoNull_coker.isTorsion (x := Submodule.Quotient.mk y)
-  rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at hs
-  obtain ⟨x, hx⟩ := hs
-  obtain ⟨t, ht⟩ := @hM x
-  simp only [Submonoid.smul_def] at hx ht
-  have hts : ((t : O⟦X⟧) * s) • y = 0 := by
-    rw [mul_smul, ← hx, ← map_smul, ht, map_zero]
-  have h0 : (t : O⟦X⟧) * s = 0 := by
-    simpa [y] using congrFun (congrArg Prod.fst hts) ⟨0, Nat.pos_of_ne_zero hr⟩
-  exact nonZeroDivisors.ne_zero (Submonoid.mul_mem _ t.property s.property) h0
-
 /-- **The structure theorem for torsion Iwasawa modules.** Every finitely generated torsion
 `O⟦X⟧`-module admits a pseudo-isomorphism onto an elementary module with zero free rank. -/
 theorem exists_isPseudoIsomorphism_elementary_of_isTorsion (hϖ : Irreducible ϖ)
@@ -168,7 +149,7 @@ theorem exists_isPseudoIsomorphism_elementary_of_isTorsion (hϖ : Irreducible ϖ
       (∀ j, (F j).IsDistinguishedAt (maximalIdeal O) ∧ Irreducible (F j) ∧ n j ≠ 0) ∧
         ∃ f : M →ₗ[O⟦X⟧] Elementary O ϖ 0 m F n, IsPseudoIsomorphism f := by
   obtain ⟨r, a, b, m, F, n, hm, hFn, f, hf⟩ := exists_isPseudoIsomorphism_elementary (M := M) hϖ
-  obtain rfl := eq_zero_of_isPseudoIsomorphism_elementary_of_isTorsion hf hM
+  obtain rfl := eq_zero_of_isTorsion_elementary (hf.isTorsion_iff.mp hM)
   exact ⟨a, b, m, F, n, hm, hFn, f, hf⟩
 
 end TauCeti.Iwasawa
