@@ -57,8 +57,7 @@ theorem sum_primesLE_mul_log_eq_sub_integral {g g' : ℝ → ℝ} {x : ℝ} (hx 
     (hg' : IntervalIntegrable g' volume 2 x) :
     ∑ p ∈ Nat.primesLE ⌊x⌋₊, g p * Real.log p =
       g x * Chebyshev.theta x - ∫ t in (2 : ℝ)..x, g' t * Chebyshev.theta t := by
-  have h := sum_filter_primesLE_mul_log_eq_sub_sub_integral
-    (by norm_num : (0 : ℝ) ≤ 2) hx hc hg hg'
+  have h := sum_filter_primesLE_mul_log_eq_sub_sub_integral hx hc hg hg'
   have hfloor : ⌊(2 : ℝ)⌋₊ = 2 := by norm_num
   have htwo : Nat.primesLE ⌊(2 : ℝ)⌋₊ = {2} := by
     rw [hfloor]

@@ -67,6 +67,14 @@ private theorem filter_primesLE_floor_gt_eq_empty {a b : ℝ} (hab : ¬ a ≤ b)
     simp [Nat.floor_of_nonpos (le_of_not_ge hb), hp'.2.ne_zero] at hp'
   exact hpa.le.trans ((Nat.le_floor_iff hb).mp hp'.1)
 
+private theorem intervalIntegrable_two_div_cube {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
+    IntervalIntegrable (fun t : ℝ ↦ 2 / t ^ 3) volume a b := by
+  have hdenom (t : ℝ) (ht : t ∈ Set.uIcc a b) : t ^ 3 ≠ 0 := by
+    rw [Set.uIcc_of_le hab] at ht
+    exact pow_ne_zero 3 (ha.trans_le ht.1).ne'
+  simpa only [div_eq_mul_inv, one_mul] using
+    (intervalIntegral.intervalIntegrable_one_div hdenom (continuousOn_id.pow 3)).const_mul (2 : ℝ)
+
 /-- Partial summation for the logarithmic prime sum on `(a, b]`. -/
 theorem sum_primesLE_log_div_sq_eq {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
     ∑ p ∈ (Nat.primesLE ⌊b⌋₊).filter (fun p : ℕ ↦ a < (p : ℝ)),
@@ -77,15 +85,9 @@ theorem sum_primesLE_log_div_sq_eq {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
     convert ((hasDerivAt_id' (x := t)).fun_pow 2).inv (pow_ne_zero 2 ht) using 1
     field_simp
     ring
-  have hi : IntervalIntegrable (fun t : ℝ ↦ -(2 / t ^ 3)) volume a b := by
-    apply ContinuousOn.intervalIntegrable
-    rw [Set.uIcc_of_le hab]
-    intro t ht
-    have : 0 < t := ha.trans_le ht.1
-    fun_prop (disch := positivity)
-  have h := sum_filter_primesLE_mul_log_eq_sub_sub_integral ha.le hab
+  have h := sum_filter_primesLE_mul_log_eq_sub_sub_integral hab
     (fun t ht ↦ (hd t (ha.trans_le ht.1).ne').continuousAt.continuousWithinAt)
-    (fun t ht ↦ hd t (ha.trans ht.1).ne') hi
+    (fun t ht ↦ hd t (ha.trans ht.1).ne') (intervalIntegrable_two_div_cube ha hab).neg
   have heq : (∫ t in a..b, -(2 / t ^ 3) * Chebyshev.theta t) =
       -(∫ t in a..b, 2 * Chebyshev.theta t / t ^ 3) := by
     rw [← intervalIntegral.integral_neg]
@@ -97,11 +99,7 @@ theorem sum_primesLE_log_div_sq_eq {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
 private theorem intervalIntegrable_two_mul_theta_div_cube {a b : ℝ}
     (ha : 0 < a) (hab : a ≤ b) :
     IntervalIntegrable (fun t ↦ 2 * Chebyshev.theta t / t ^ 3) volume a b := by
-  have hw : ContinuousOn (fun t : ℝ ↦ 2 / t ^ 3) (Set.Icc a b) := by
-    intro t ht
-    have : 0 < t := ha.trans_le ht.1
-    fun_prop (disch := positivity)
-  exact (hw.intervalIntegrable_of_Icc hab).mul_chebyshev_theta.congr (fun t _ ↦ by ring)
+  exact (intervalIntegrable_two_div_cube ha hab).mul_chebyshev_theta.congr (fun t _ ↦ by ring)
 
 -- Chebyshev bounds the remainder by an elementary power integral.
 private theorem integral_two_mul_theta_div_cube_le {a b : ℝ}
@@ -338,7 +336,7 @@ theorem sum_primesLE_rpow_neg_eq (s : ℝ) {a b : ℝ} (ha : 0 < a) (hab : a ≤
       fun_prop (disch := exact Or.inl this))
   have hleft : ∑ n ∈ Ioc ⌊a⌋₊ ⌊b⌋₊, (n : ℝ) ^ (-s) * c n =
       ∑ p ∈ (Nat.primesLE ⌊b⌋₊).filter (fun p : ℕ ↦ a < (p : ℝ)), (p : ℝ) ^ (-s) := by
-    simp only [c, sum_Ioc_mul_ite_prime_eq_sum_filter_primesLE ha.le, mul_one]
+    simp only [c, sum_Ioc_mul_ite_prime_eq_sum_filter_primesLE, mul_one]
   rw [hleft, hc, hc, ← intervalIntegral.integral_of_le hab] at h
   have heq : (∫ t in a..b, deriv (fun u : ℝ ↦ u ^ (-s)) t * ∑ k ∈ Icc 0 ⌊t⌋₊, c k) =
       -(s * ∫ t in a..b, t ^ (-s - 1) * Nat.primeCounting ⌊t⌋₊) := by

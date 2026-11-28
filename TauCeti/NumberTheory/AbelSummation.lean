@@ -177,9 +177,10 @@ private theorem integral_indicator_Ici_eq_integral_max {𝕜 : Type*} [RCLike �
     {f : ℝ → 𝕜} {a b p : ℝ} (hab : a ≤ b) (hpb : p ≤ b) :
     (∫ t in a..b, (Ici p).indicator f t) = ∫ t in max a p..b, f t := by
   have hset : Icc a b ∩ Ici p = Icc (max a p) b := by
-    ext t
-    simp only [mem_inter_iff, mem_Icc, mem_Ici, max_le_iff]
-    tauto
+    calc
+      _ = Icc a b ∩ (Ici p ∩ Iic b) := by
+        rw [inter_left_comm, inter_eq_left.mpr Icc_subset_Iic_self, inter_comm]
+      _ = _ := by rw [Ici_inter_Iic, Icc_inter_Icc, inf_idem]
   calc
     _ = ∫ t in Icc a b, (Ici p).indicator f t := by
       rw [intervalIntegral.integral_of_le hab, integral_Icc_eq_integral_Ioc]
@@ -193,14 +194,20 @@ open Finset in
 with an integrable derivative on its interior. This version of Mathlib's
 `sum_mul_eq_sub_sub_integral_mul` allows the derivative to be singular at either endpoint. -/
 theorem sum_mul_eq_sub_sub_integral_mul_of_hasDerivAt {𝕜 : Type*} [RCLike 𝕜]
-    (c : ℕ → 𝕜) {g g' : ℝ → 𝕜} {a b : ℝ} (ha : 0 ≤ a) (hab : a ≤ b)
+    (c : ℕ → 𝕜) {g g' : ℝ → 𝕜} {a b : ℝ} (hab : a ≤ b)
     (hc : ContinuousOn g (Set.Icc a b)) (hg : ∀ t ∈ Set.Ioo a b, HasDerivAt g (g' t) t)
     (hg' : IntervalIntegrable g' volume a b) :
     ∑ k ∈ Ioc ⌊a⌋₊ ⌊b⌋₊, g k * c k =
       g b * (∑ k ∈ Icc 0 ⌊b⌋₊, c k) - g a * (∑ k ∈ Icc 0 ⌊a⌋₊, c k) -
         ∫ t in a..b, g' t * ∑ k ∈ Icc 0 ⌊t⌋₊, c k := by
   let S := Finset.Icc 0 ⌊b⌋₊
-  let F (k : ℕ) := (Ici (k : ℝ)).indicator (fun t ↦ g' t * c k)
+  -- The natural floor includes the term at index 0 even at negative arguments.
+  let cutoff (k : ℕ) : ℝ := if k = 0 then a else k
+  let F (k : ℕ) := (Ici (cutoff k)).indicator (fun t ↦ g' t * c k)
+  have hcut (k : ℕ) {t : ℝ} (ht : a ≤ t) : cutoff k ≤ t ↔ k ≤ ⌊t⌋₊ := by
+    by_cases hk : k = 0
+    · simp [cutoff, hk, ht]
+    · simpa only [cutoff, ite_eq_right hk] using (Nat.le_floor_iff' hk).symm
   have hprefix (n : ℕ) (hn : n ≤ ⌊b⌋₊) : S.filter (· ≤ n) = Finset.Icc 0 n := by
     ext k
     simp only [S, mem_filter, Finset.mem_Icc, zero_le, true_and]
@@ -209,7 +216,7 @@ theorem sum_mul_eq_sub_sub_integral_mul_of_hasDerivAt {𝕜 : Type*} [RCLike �
       g' t * (∑ k ∈ Icc 0 ⌊t⌋₊, c k) = ∑ k ∈ S, F k t := by
     have ht' : t ∈ Set.Icc a b := uIcc_of_le hab ▸ ht
     rw [← hprefix _ (Nat.floor_le_floor ht'.2), mul_sum, sum_filter]
-    simp only [F, indicator_apply, Set.mem_Ici, Nat.le_floor_iff (ha.trans ht'.1)]
+    exact sum_congr rfl fun k _ ↦ by simp only [F, indicator_apply, Set.mem_Ici, hcut k ht'.1]
   have hF (k : ℕ) (_ : k ∈ S) : IntervalIntegrable (F k) volume a b :=
     (intervalIntegrable_iff_integrableOn_Icc_of_le hab).mpr
       (((intervalIntegrable_iff_integrableOn_Icc_of_le hab).mp hg').mul_const
@@ -223,18 +230,19 @@ theorem sum_mul_eq_sub_sub_integral_mul_of_hasDerivAt {𝕜 : Type*} [RCLike �
   simp only [mul_sum, sum_filter]
   rw [← sum_sub_distrib, ← sum_sub_distrib]
   refine sum_congr rfl fun k hk ↦ ?_
-  have hkb : (k : ℝ) ≤ b := (Nat.le_floor_iff (ha.trans hab)).mp (Finset.mem_Icc.mp hk).2
-  have hsub : Set.Icc (max a (k : ℝ)) b ⊆ Set.Icc a b := Icc_subset_Icc_left (le_max_left ..)
+  have hkb := (hcut k hab).mpr (Finset.mem_Icc.mp hk).2
+  have hsub : Set.Icc (max a (cutoff k)) b ⊆ Set.Icc a b := Icc_subset_Icc_left (le_max_left ..)
   have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le (max_le hab hkb)
     (hc.mono hsub) (fun t ht ↦ hg t ⟨(le_max_left ..).trans_lt ht.1, ht.2⟩)
     (hg'.mono_set (by simpa only [uIcc_of_le hab, uIcc_of_le (max_le hab hkb)] using hsub))
   rw [integral_indicator_Ici_eq_integral_max hab hkb, intervalIntegral.integral_mul_const, hFTC]
-  rcases le_or_gt (k : ℝ) a with hka | hak
-  · have hk' := (Nat.le_floor_iff ha).mpr hka
-    simp only [max_eq_left hka, hk', not_lt_of_ge hk', ite_false, ite_true]
+  by_cases hk' : k ≤ ⌊a⌋₊
+  · simp only [max_eq_left ((hcut k le_rfl).mpr hk'), hk', not_lt_of_ge hk', ite_false, ite_true]
     ring
-  · have hk' := (Nat.floor_lt ha).mpr hak
-    simp only [max_eq_right hak.le, hk', not_le_of_gt hk', ite_true, ite_false]
+  · have hak : a < cutoff k := lt_of_not_ge fun h ↦ hk' ((hcut k le_rfl).mp h)
+    have hk₀ : k ≠ 0 := fun h ↦ hk' (h ▸ Nat.zero_le _)
+    rw [max_eq_right hak.le]
+    simp only [cutoff, ite_eq_right hk₀, hk', lt_of_not_ge hk', ite_true, ite_false]
     ring
 
 /-! ### The comparison weight -/
