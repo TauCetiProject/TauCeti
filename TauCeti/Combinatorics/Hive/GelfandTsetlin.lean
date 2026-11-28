@@ -1112,25 +1112,13 @@ theorem hiveCount_three_zero_adjoint_zero :
 theorem hiveCount_two_std_dual_adjoint :
     hiveCount
       (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![1, -1], by decide⟩) = 1 := by
-  have hshift :
-      productBoundary (DominantWeight.shift ⟨![1, 0], by decide⟩ 0)
-        (DominantWeight.shift ⟨![0, -1], by decide⟩ 1)
-        (DominantWeight.shift ⟨![1, -1], by decide⟩ (0 + 1)) =
-      productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![2, 0], by decide⟩ := by
-    ext s i; fin_cases s <;> fin_cases i <;> simp [DominantWeight.dual_apply]
-  rw [← hiveCount_productBoundary_shift _ _ _ 0 1, hshift, hiveCount_two_std_std_sym]
+  rw [hiveCount_two_productBoundary]; decide
 
 /-- Rank-`2` signed exclusion check: `productBoundary (1, 0) (0, -1) (2, -2)` has hive count `0`. -/
 theorem hiveCount_two_std_dual_two_neg_two :
     hiveCount
       (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![2, -2], by decide⟩) = 0 := by
-  have hshift :
-      productBoundary (DominantWeight.shift ⟨![1, 0], by decide⟩ 0)
-        (DominantWeight.shift ⟨![0, -1], by decide⟩ 1)
-        (DominantWeight.shift ⟨![2, -2], by decide⟩ (0 + 1)) =
-      productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![3, -1], by decide⟩ := by
-    ext s i; fin_cases s <;> fin_cases i <;> simp [DominantWeight.dual_apply]
-  rw [← hiveCount_productBoundary_shift _ _ _ 0 1, hshift, hiveCount_two_std_std_three_neg_one]
+  rw [hiveCount_two_productBoundary]; decide
 
 end LowRankAndChecks
 
