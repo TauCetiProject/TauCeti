@@ -84,6 +84,13 @@ theorem couplingSum_def [TopologicalSpace R] (p : ℕ) (S : Set ℕ) (pr : ℕ �
     (couplingSum p S pr l : MvPowerSeries (Φ × c) R) =
       ∑' x : S × ℕ, l x.1 x.2 • coupling p pr x.1 ^ p ^ x.2 := by rfl
 
+/-- A coefficient map preserves the coupling for each partner rule and exponent. -/
+@[simp]
+theorem map_coupling {S : Type*} [CommRing S] (f : R →+* S)
+    (p : ℕ) (pr : ℕ → Φ → Φ) (e : ℕ) :
+    map (σ := Φ × c) f (coupling p pr e) = coupling p pr e := by
+  simp [coupling_def]
+
 /-- Substituting `Z` into `coupling p pr e`. -/
 theorem subst_coupling {p : ℕ} {pr : ℕ → Φ → Φ} {τ : Type*} {Z : Φ × c → MvPowerSeries τ R}
     (hZ : HasSubst Z) (e : ℕ) :
