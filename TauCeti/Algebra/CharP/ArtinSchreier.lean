@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Intervals
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Algebra.CharP.Defs
 
@@ -36,5 +38,20 @@ theorem sub_algebraMap_pow_sub_self_eq {F F' : Type*} [CommRing F] [Ring F']
       (y ^ p - y) - algebraMap F F' (w ^ p - w) := by
   rw [sub_pow_expChar_of_commute p (Algebra.commute_algebraMap_right w y), map_sub, map_pow]
   abel
+
+
+/-- In exponential characteristic `p`, if `s - s ^ (p ^ e) = x`, then
+`s = ∑ l ∈ Finset.range B, x ^ (p ^ (e * l)) + s ^ (p ^ (e * B))` for every `B`.
+
+Adapted from `grh-lean` (`https://github.com/lsernau/grh-lean`, commit
+`72fead102f663d5c7a407964a13dc0cf9d977207`, Apache 2.0, Copyright 2026 Anthropic, PBC), file
+`src/Lib/CM/FormalGroup/IntegralParameter.lean` (`New.eq_sum_pow_of_sub_pow_eq`), generalized to
+`[ExpChar R p]`. -/
+theorem eq_sum_pow_of_sub_pow_eq {p : ℕ} {R : Type*} [CommRing R] [ExpChar R p]
+    {x s : R} {e : ℕ} (hs : s - s ^ p ^ e = x) (B : ℕ) :
+    s = ∑ l ∈ Finset.range B, x ^ p ^ (e * l) + s ^ p ^ (e * B) := by
+  have h_term (l : ℕ) : x ^ p ^ (e * l) = s ^ p ^ (e * l) - s ^ p ^ (e * (l + 1)) := by
+    simp [← hs, sub_pow_expChar_pow, ← pow_mul, ← pow_add, mul_add, add_comm]
+  simp [h_term, Finset.sum_range_sub' fun l ↦ s ^ p ^ (e * l)]
 
 end TauCeti
