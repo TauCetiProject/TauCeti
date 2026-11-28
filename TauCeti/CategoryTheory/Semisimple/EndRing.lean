@@ -8,7 +8,6 @@ module
 public import Mathlib.CategoryTheory.Idempotents.Basic
 public import TauCeti.CategoryTheory.Semisimple.Basic
 import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Semiperfect
-public import TauCeti.CategoryTheory.VonNeumannRegular.Abelian
 public import TauCeti.CategoryTheory.VonNeumannRegular.Endomorphism
 public import TauCeti.RingTheory.Semisimple.Regular
 
