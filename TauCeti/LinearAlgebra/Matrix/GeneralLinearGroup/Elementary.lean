@@ -57,6 +57,8 @@ pairs of coordinates, carries every vector to a multiple of a standard basis vec
   `n ↪ m` of index types.
 * `Matrix.upperBlockGL`, `Matrix.lowerBlockGL`: the block unipotent matrices
   `fromBlocks 1 X 0 1` and `fromBlocks 1 0 Y 1`.
+* `Matrix.upperBlockGLHom`: the injective homomorphism `X ↦ fromBlocks 1 X 0 1` from the additive
+  group of `m × k` matrices to `GL (m ⊕ k) A` (`Matrix.upperBlockGLHom_injective`).
 * `Matrix.GeneralLinearGroup.toBlocks₁₁GL`: the invertible upper-left block of a block matrix in
   `GL (m ⊕ k) A` whose lower-left block is `0` and lower-right block is `1`.
 
@@ -607,6 +609,28 @@ theorem upperBlockGL_inv (X : Matrix m k A) : (upperBlockGL X)⁻¹ = upperBlock
 @[simp]
 theorem lowerBlockGL_inv (Y : Matrix k m A) : (lowerBlockGL Y)⁻¹ = lowerBlockGL (-Y) :=
   Units.ext (rfl)
+
+/-- An upper block unipotent matrix determines its block. -/
+theorem upperBlockGL_injective :
+    Function.Injective (upperBlockGL : Matrix m k A → GL (m ⊕ k) A) := fun X Y h ↦ by
+  simpa using congrArg (fun g : GL (m ⊕ k) A ↦ (g : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₂) h
+
+/-- The upper block unipotent matrices `fromBlocks 1 X 0 1` as a homomorphism from the additive
+group of `m × k` matrices to `GL (m ⊕ k) A`. -/
+def upperBlockGLHom : Multiplicative (Matrix m k A) →* GL (m ⊕ k) A where
+  toFun X := upperBlockGL X.toAdd
+  map_one' := upperBlockGL_zero
+  map_mul' X Y := upperBlockGL_add X.toAdd Y.toAdd
+
+@[simp]
+theorem upperBlockGLHom_apply (X : Multiplicative (Matrix m k A)) :
+    upperBlockGLHom X = upperBlockGL X.toAdd :=
+  (rfl)
+
+/-- The homomorphism of upper block unipotent matrices is injective. -/
+theorem upperBlockGLHom_injective :
+    Function.Injective (upperBlockGLHom : Multiplicative (Matrix m k A) →* GL (m ⊕ k) A) :=
+  upperBlockGL_injective.comp Multiplicative.toAdd.injective
 
 /-- The upper block unipotent matrix with the single entry `c` at `(a, b)` is the elementary matrix
 `e_(inl a, inr b)(c)`. -/

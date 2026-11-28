@@ -18,6 +18,8 @@ import Mathlib.SetTheory.Cardinal.NatCard
 import Mathlib.Tactic.FieldSimp
 import TauCeti.Algebra.BigOperators.Finset.Range
 -- Non-public: the count along a local surjection is the unit count of the matrix rings.
+-- Non-public: the upper block unipotent matrices embed the matrices of a block in `GL`.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 import TauCeti.LinearAlgebra.Matrix.IdealEntries
 import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 import TauCeti.RingTheory.LocalRing.RingHom.Basic
@@ -55,10 +57,17 @@ reduction `ℤ/pᵏ → 𝔽_p`, multiplies the order of `GL n` by `|ker f| ^ (n
 invertible exactly when its image is, and the entrywise map on matrices is a surjective local
 homomorphism whose kernel is the matrices with entries in `ker f`.
 
+## Unipotent blocks
+
+The upper block unipotent matrices `fromBlocks 1 X 0 1` form a subgroup of `GL (m ⊕ k) R`
+isomorphic to the additive group of `m × k` matrices, so the number of these matrices divides the
+order of `GL (m ⊕ k) R`; both sides are `0` when `R` is infinite and the blocks are nonempty.
+
 ## Main results
 
 * `Matrix.natCard_GL_eq_natCard_ker_pow_mul`: `|GL n R| = |ker f| ^ (n²) · |GL n S|` for a
   surjective local homomorphism `f : R →+* S`.
+* `Matrix.natCard_matrix_dvd_natCard_GL`: `|M_{m×k}(R)|` divides `|GL_{m ⊕ k}(R)|`.
 * `TauCeti.natCard_GL_fin`: `|GLₙ(𝔽_q)| = q ^ (n.choose 2) · ∏_{i = 1}^{n} (q ^ i - 1)`.
 * `TauCeti.natCard_GL_fin_two`: `|GL₂(𝔽_q)| = (q - 1)² · q(q + 1)`.
 * `TauCeti.natCard_GL_fin_two_eq_sq_sub_one_mul`: `|GL₂(𝔽_q)| = (q² - 1) · q(q - 1)`.
@@ -158,5 +167,13 @@ theorem natCard_GL_eq_natCard_ker_pow_mul {n R S : Type*} [Fintype n] [Decidable
   rw [← f.natCard_ker_mapMatrix]
   exact (f.mapMatrix (m := n)).natCard_units_eq_natCard_ker_mul fun M ↦
     ⟨of fun i j ↦ (hf (M i j)).choose, ext fun i j ↦ (hf (M i j)).choose_spec⟩
+
+/-- **`#M_{m×k}(R)` divides `#GL_{m ⊕ k}(R)`**: the upper block unipotent matrices
+`fromBlocks 1 X 0 1` embed the additive group of `m × k` matrices in `GL (m ⊕ k) R`
+(`Matrix.upperBlockGLHom_injective`). -/
+theorem natCard_matrix_dvd_natCard_GL {m k R : Type*} [Fintype m] [DecidableEq m] [Fintype k]
+    [DecidableEq k] [Ring R] : Nat.card (Matrix m k R) ∣ Nat.card (GL (m ⊕ k) R) := by
+  rw [← Nat.card_congr (Multiplicative.toAdd : Multiplicative (Matrix m k R) ≃ _)]
+  exact Subgroup.card_dvd_of_injective _ upperBlockGLHom_injective
 
 end Matrix

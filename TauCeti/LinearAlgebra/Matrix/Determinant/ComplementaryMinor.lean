@@ -48,6 +48,10 @@ matrices in it.
   identity takes for a pair of inverse matrices of determinant one.
 * `Matrix.det_submatrix_comp_inr_eq_sign_mul_det_mul_det_submatrix_comp_inl_nonsing_inv`: the
   form it takes for a matrix and its nonsingular inverse.
+* `Matrix.det_submatrix_comp_inl_eq_det_mul_det_submatrix_comp_inr_nonsing_inv`: its form for
+  complementary principal minors, `det A₁₁ = det A * det (A⁻¹)₂₂`.
+* `Matrix.inv_submatrix_nonsing_inv_mul_eq_neg_submatrix_mul_inv`: the off-diagonal blocks of a
+  matrix and of its inverse, `((A⁻¹)₂₂)⁻¹ (A⁻¹)₂₁ = -A₂₁ A₁₁⁻¹`.
 
 ## References
 
@@ -165,5 +169,49 @@ theorem det_submatrix_comp_inr_eq_sign_mul_det_mul_det_submatrix_comp_inl_nonsin
         (A⁻¹.submatrix (⇑σ ∘ ⇑e ∘ Sum.inl) (⇑τ ∘ ⇑e ∘ Sum.inl)).det :=
   det_submatrix_comp_inr_eq_sign_mul_det_mul_det_submatrix_comp_inl A A⁻¹
     (mul_nonsing_inv A hA) e σ τ
+
+section Principal
+
+variable [Fintype n] [DecidableEq n] (A : Matrix n n R) (hA : IsUnit A.det) (e : m ⊕ p ≃ n)
+
+include hA
+
+/-- **Jacobi's identity for principal minors.** For a matrix `A` with invertible determinant and
+a splitting `e : m ⊕ p ≃ n`, the principal minor of `A` on `e (m)` is `det A` times the
+complementary principal minor of `A⁻¹`, on `e (p)`. -/
+theorem det_submatrix_comp_inl_eq_det_mul_det_submatrix_comp_inr_nonsing_inv :
+    (A.submatrix (e ∘ Sum.inl) (e ∘ Sum.inl)).det =
+      A.det * (A⁻¹.submatrix (e ∘ Sum.inr) (e ∘ Sum.inr)).det := by
+  simpa [Function.comp_def] using
+    det_submatrix_comp_inr_eq_sign_mul_det_mul_det_submatrix_comp_inl_nonsing_inv A hA
+      ((Equiv.sumComm p m).trans e) 1 1
+
+/-- **The off-diagonal blocks of a matrix and of its inverse.** For a matrix `A` with invertible
+determinant and a splitting `e : m ⊕ p ≃ n`, write `A₁₁`, `A₂₁` for the blocks of `A` on the
+columns `e (m)` and the rows `e (m)`, `e (p)`, and `B₂₂`, `B₂₁` for the blocks of `B = A⁻¹` on the
+rows `e (p)` and the columns `e (p)`, `e (m)`. Then `B₂₂⁻¹ B₂₁ = -A₂₁ A₁₁⁻¹`. When `B₂₂` is
+singular so is `A₁₁`, by `det A₁₁ = det A * det B₂₂`, and both sides vanish. -/
+theorem inv_submatrix_nonsing_inv_mul_eq_neg_submatrix_mul_inv :
+    (A⁻¹.submatrix (e ∘ Sum.inr) (e ∘ Sum.inr))⁻¹ * A⁻¹.submatrix (e ∘ Sum.inr) (e ∘ Sum.inl) =
+      -(A.submatrix (e ∘ Sum.inr) (e ∘ Sum.inl) * (A.submatrix (e ∘ Sum.inl) (e ∘ Sum.inl))⁻¹) := by
+  have hjac := det_submatrix_comp_inl_eq_det_mul_det_submatrix_comp_inr_nonsing_inv A hA e
+  by_cases hu : IsUnit (A⁻¹.submatrix (e ∘ Sum.inr) (e ∘ Sum.inr)).det
+  · -- The block `(p, m)` of `A⁻¹ * A = 1`.
+    have hrel : A⁻¹.submatrix (e ∘ Sum.inr) (e ∘ Sum.inl) * A.submatrix (e ∘ Sum.inl) (e ∘ Sum.inl)
+        + A⁻¹.submatrix (e ∘ Sum.inr) (e ∘ Sum.inr) * A.submatrix (e ∘ Sum.inr) (e ∘ Sum.inl) =
+          0 := by
+      ext i j
+      have := congrArg (fun M : Matrix n n R ↦ M (e (.inr i)) (e (.inl j))) (nonsing_inv_mul A hA)
+      simpa [Matrix.mul_apply, ← e.sum_comp, Fintype.sum_sum_type, Matrix.one_apply] using this
+    rw [← mul_nonsing_inv_cancel_right _ (A⁻¹.submatrix (e ∘ Sum.inr) (e ∘ Sum.inl))
+      (hjac ▸ hA.mul hu), eq_neg_of_add_eq_zero_left hrel, Matrix.neg_mul, Matrix.mul_neg,
+      ← Matrix.mul_assoc, ← Matrix.mul_assoc, nonsing_inv_mul _ hu, Matrix.one_mul]
+  · have hu' : ¬IsUnit (A.submatrix (e ∘ Sum.inl) (e ∘ Sum.inl)).det := by
+      rw [hjac, IsUnit.mul_iff]
+      exact fun h ↦ hu h.2
+    rw [nonsing_inv_apply_not_isUnit _ hu, nonsing_inv_apply_not_isUnit _ hu', Matrix.zero_mul,
+      Matrix.mul_zero, neg_zero]
+
+end Principal
 
 end Matrix
