@@ -257,8 +257,11 @@ theorem germToFunctionField_functionFieldMap (f : X ⟶ Y) [IsDominant f] (U : Y
     TopCat.Presheaf.germ_stalkSpecializes_assoc, germ_stalkMap]
 
 /-- Pulling a section back to a smaller nonempty open and then taking its germ in the function
-field agrees with taking its germ first and pulling back along the dominant morphism. -/
-@[reassoc (attr := simp)]
+field agrees with taking its germ first and pulling back along the dominant morphism. This is
+not a simp lemma: `simp` derives it from `Scheme.Hom.appLE_germ` in
+`TauCeti.AlgebraicGeometry.ResidueDegree`, `germ_stalkMap` and
+`germToFunctionField_functionFieldMap`. -/
+@[reassoc]
 theorem appLE_germToFunctionField (f : X ⟶ Y) [IsDominant f]
     (U : Y.Opens) (V : X.Opens) [Nonempty U] [Nonempty V] (e : V ≤ f ⁻¹ᵁ U) :
     f.appLE U V e ≫ X.germToFunctionField V =
