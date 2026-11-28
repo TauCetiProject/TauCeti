@@ -192,6 +192,21 @@ theorem _root_.GroupExtension.Section.factorSetFun_one_right (σ : S.Section)
   apply S.inl_injective
   simp [hσ]
 
+/-- Relabelling a section transforms its bare factor set by precomposing with `eG.symm` and
+postcomposing with `eM.symm`. -/
+@[simp]
+theorem _root_.GroupExtension.Section.factorSetFun_relabel {M' G' : Type*} [Group M'] [Group G']
+    (σ : S.Section) (eM : M' ≃* M) (eG : G ≃* G') (g' h' : G') :
+    factorSetFun (σ.relabel eM eG) (g', h') =
+      eM.symm (factorSetFun σ (eG.symm g', eG.symm h')) := by
+  apply eM.injective
+  rw [MulEquiv.apply_symm_apply]
+  apply S.inl_injective
+  have h := inl_factorSetFun (σ.relabel eM eG) g' h'
+  rw [GroupExtension.relabel_inl, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom] at h
+  rw [h, inl_factorSetFun]
+  simp
+
 /-- Section factors satisfy the noncommutative cocycle law, with conjugation by the section.
 No abelian-kernel hypothesis is required. -/
 theorem _root_.GroupExtension.Section.factorSetFun_mul (σ : S.Section) (g h j : G) :

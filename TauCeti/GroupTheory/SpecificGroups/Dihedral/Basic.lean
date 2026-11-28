@@ -13,6 +13,7 @@ public import TauCeti.GroupTheory.Solvable.DerivedLength
 import Mathlib.Algebra.Group.TypeTags.Finite
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Data.ZMod.Torsion
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # The dihedral groups: an enumeration, a recognition criterion, and the rotation subgroup
@@ -50,7 +51,8 @@ nonabelian dihedral group has derived length `2`.
 * `TauCeti.dihedralGroupMulEquiv`: that homomorphism as an isomorphism, when the two involutions
   generate `G` and neither is the identity.
 * `TauCeti.dihedralReflectionParity`, `TauCeti.dihedralRotations`: the reflection parity and the
-  rotation subgroup it cuts out, with `TauCeti.dihedralRotationsMulEquiv` its cyclic coordinate.
+  rotation subgroup it cuts out, with `TauCeti.dihedralRotationsMulEquiv` its cyclic coordinate and
+  `TauCeti.dihedralQuotientEquiv` the quotient identification with `Multiplicative (ZMod 2)`.
 
 ## Main results
 
@@ -607,6 +609,21 @@ theorem coe_dihedralRotationsMulEquiv_symm (i : Multiplicative (ZMod n)) :
 commutative. -/
 instance isCyclic_dihedralRotations (n : ℕ) : IsCyclic (dihedralRotations n) :=
   isCyclic_of_surjective _ (dihedralRotationsMulEquiv n).symm.surjective
+
+/-- The quotient of `DihedralGroup n` by its rotation subgroup is `Multiplicative (ZMod 2)`, via
+the reflection parity homomorphism. -/
+noncomputable def dihedralQuotientEquiv (n : ℕ) :
+    DihedralGroup n ⧸ dihedralRotations n ≃* Multiplicative (ZMod 2) :=
+  QuotientGroup.quotientKerEquivOfSurjective (dihedralReflectionParity n)
+    (dihedralReflectionParity_surjective n)
+
+/-- On a coset representative `g`, `TauCeti.dihedralQuotientEquiv` is the reflection parity of
+`g`. -/
+@[simp]
+theorem dihedralQuotientEquiv_mk (n : ℕ) (g : DihedralGroup n) :
+    dihedralQuotientEquiv n (g : DihedralGroup n ⧸ dihedralRotations n) =
+      dihedralReflectionParity n g :=
+  TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk _ _ g
 
 end Rotations
 

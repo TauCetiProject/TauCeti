@@ -26,6 +26,8 @@ are written multiplicatively, as `Multiplicative (ZMod N)` and `Multiplicative (
 ## Main results
 
 * `Multiplicative.mem_zpowers_ofAdd_one`: the element `1` generates `ℤ/Nℤ`.
+* `TauCeti.orderOf_ofAdd_one_zmod`: `Multiplicative.ofAdd 1` has order `n` in
+  `Multiplicative (ZMod n)`.
 * `TauCeti.zmodMonoidHomEquiv_symm_apply` and `TauCeti.zmodProdMonoidHomEquiv_symm_apply`: the
   homomorphism of `g` sends `a` to `g ^ a.val`, and that of `(g, h)` sends `(a, b)` to
   `g ^ a.val * h ^ b.val`.
@@ -43,6 +45,11 @@ theorem Multiplicative.mem_zpowers_ofAdd_one (x : Multiplicative (ZMod N)) :
   ⟨x.toAdd.cast, by simp [← ofAdd_zsmul]⟩
 
 namespace TauCeti
+
+/-- In `Multiplicative (ZMod n)`, the generator `ofAdd 1` has order `n`. -/
+theorem orderOf_ofAdd_one_zmod (n : ℕ) :
+    orderOf (Multiplicative.ofAdd (1 : ZMod n)) = n := by
+  rw [orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
 
 /-- The homomorphism `ℤ/Nℤ →+ G` sending `1` to an element `g` of `G` killed by `N`. -/
 private noncomputable def zmodLift {G : Type*} [Group G] (g : G) (hg : g ^ N = 1) :

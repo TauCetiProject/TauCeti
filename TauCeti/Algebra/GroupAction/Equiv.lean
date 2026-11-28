@@ -10,17 +10,21 @@ public import Mathlib.Algebra.Group.Equiv.Basic
 public import Mathlib.GroupTheory.GroupAction.Hom
 
 /-!
-# Equivariant equivalences of additive groups
+# Equivariant equivalences of groups
 
-This file records elementary facts about additive equivalences that intertwine group actions.
+This file records elementary facts about multiplicative and additive equivalences that intertwine
+group actions.
 
 ## Main results
 
-* `AddEquiv.symm_map_smul_of_map_smul_of_rightInverse`: if `e (φ h • m) = h • e m` for a map
+* `MulEquiv.symm_smul_of_intertwining`, `AddEquiv.symm_smul_of_intertwining`: if
+  `e (φ h • m) = h • e m` for a map `φ : H → G`, then `e.symm (h • n) = φ h • e.symm n`.
+* `MulEquiv.symm_map_smul_of_map_smul_of_rightInverse`,
+  `AddEquiv.symm_map_smul_of_map_smul_of_rightInverse`: if `e (φ h • m) = h • e m` for a map
   `φ : H → G` with a right inverse `ψ`, then `e.symm (ψ g • n) = g • e.symm n`. This covers a
   change of the acting group along a multiplicative equivalence.
-* `AddEquiv.symm_map_smul_of_map_smul`: the inverse of an equivariant additive
-  equivalence is equivariant.
+* `MulEquiv.symm_map_smul_of_map_smul`, `AddEquiv.symm_map_smul_of_map_smul`: the inverse of an
+  equivariant equivalence is equivariant.
 * `AddEquiv.ofBijective_smul`: the additive equivalence of a bijective equivariant homomorphism is
   equivariant, and `AddEquiv.ofBijective_toDistribMulActionHom` identifies the equivariant
   homomorphism it carries with the original one.
@@ -28,29 +32,52 @@ This file records elementary facts about additive equivalences that intertwine g
 
 public section
 
-namespace AddEquiv
+namespace MulEquiv
 
 section Symm
 
-variable {G H M N : Type*} [Add M] [Add N] [SMul G M] [SMul H N]
+variable {G H M N : Type*} [Mul M] [Mul N] [SMul G M] [SMul H N]
 
-/-- The inverse of an additive equivalence compatible with a change of the acting group is
+/-- The inverse of a multiplicative equivalence compatible with a map of scalars is compatible
+with that map in the opposite direction: if `e (φ h • m) = h • e m`, then
+`e.symm (h • n) = φ h • e.symm n`. -/
+@[to_additive (dont_translate := G H) _root_.AddEquiv.symm_smul_of_intertwining
+  /-- The inverse of an additive equivalence compatible with a map of scalars is compatible with
+  that map in the opposite direction: if `e (φ h • m) = h • e m`, then
+  `e.symm (h • n) = φ h • e.symm n`. -/]
+theorem symm_smul_of_intertwining (e : M ≃* N) (φ : H → G)
+    (hequiv : ∀ (h : H) (m : M), e (φ h • m) = h • e m) (h : H) (n : N) :
+    e.symm (h • n) = φ h • e.symm n := by
+  simpa using (congrArg e.symm (hequiv h (e.symm n))).symm
+
+/-- The inverse of a multiplicative equivalence compatible with a change of the acting group is
 compatible with a right inverse of that change: if `e (φ h • m) = h • e m` for a map `φ : H → G`
 and `ψ : G → H` satisfies `φ (ψ g) = g`, then `e.symm (ψ g • n) = g • e.symm n`. For a
 multiplicative equivalence `φ`, take `ψ = φ.symm` and `hφψ = φ.apply_symm_apply`. -/
-theorem symm_map_smul_of_map_smul_of_rightInverse (e : M ≃+ N) (φ : H → G) (ψ : G → H)
+@[to_additive (dont_translate := G H) _root_.AddEquiv.symm_map_smul_of_map_smul_of_rightInverse
+  /-- The inverse of an additive equivalence compatible with a change of the acting group is
+  compatible with a right inverse of that change: if `e (φ h • m) = h • e m` for a map `φ : H → G`
+  and `ψ : G → H` satisfies `φ (ψ g) = g`, then `e.symm (ψ g • n) = g • e.symm n`. For a
+  multiplicative equivalence `φ`, take `ψ = φ.symm` and `hφψ = φ.apply_symm_apply`. -/]
+theorem symm_map_smul_of_map_smul_of_rightInverse (e : M ≃* N) (φ : H → G) (ψ : G → H)
     (hφψ : Function.RightInverse ψ φ) (hequiv : ∀ (h : H) (m : M), e (φ h • m) = h • e m)
     (g : G) (n : N) :
     e.symm (ψ g • n) = g • e.symm n := by
-  simpa [hφψ g] using (congrArg e.symm (hequiv (ψ g) (e.symm n))).symm
+  rw [e.symm_smul_of_intertwining φ hequiv (ψ g) n, hφψ g]
 
-/-- The inverse of an equivariant additive equivalence is equivariant. -/
-theorem symm_map_smul_of_map_smul [SMul G N] (e : M ≃+ N)
+/-- The inverse of an equivariant multiplicative equivalence is equivariant. -/
+@[to_additive (dont_translate := G) _root_.AddEquiv.symm_map_smul_of_map_smul
+  /-- The inverse of an equivariant additive equivalence is equivariant. -/]
+theorem symm_map_smul_of_map_smul [SMul G N] (e : M ≃* N)
     (hequiv : ∀ (g : G) (m : M), e (g • m) = g • e m) (g : G) (n : N) :
     e.symm (g • n) = g • e.symm n :=
-  e.symm_map_smul_of_map_smul_of_rightInverse id id (fun _ ↦ rfl) hequiv g n
+  e.symm_smul_of_intertwining id hequiv g n
 
 end Symm
+
+end MulEquiv
+
+namespace AddEquiv
 
 section OfBijective
 
