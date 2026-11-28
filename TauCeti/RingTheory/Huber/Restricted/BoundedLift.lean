@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.Restricted.Comparison
+public import TauCeti.RingTheory.Huber.Restricted.Comparison.Basic
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Quotient
 
 import TauCeti.Logic.Equiv.Basic

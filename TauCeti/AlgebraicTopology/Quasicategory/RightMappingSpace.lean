@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicTopology.Quasicategory.Basic
 public import Mathlib.AlgebraicTopology.SimplicialSet.CompStruct
 public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
 public import Mathlib.AlgebraicTopology.SimplicialSet.StrictSegal
+public import TauCeti.AlgebraicTopology.Quasicategory.FullSubcategory
 public import TauCeti.AlgebraicTopology.Quasicategory.HomotopyCategory
 public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Basic
 public import TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex
@@ -106,6 +107,8 @@ map into `Hom^R_X(x, y)` lands in `Hom^R_X(x, y)_e` as soon as its vertices do.
   an isomorphism of right mapping spaces exactly when it is bijective on edges.
 * `SSet.rightMappingSpace.isIso_map_ι`: a subcomplex containing all simplices of a right mapping
   space has the same right mapping space.
+* `SSet.rightMappingSpace.isIso_map_fullEnhancedSubcategory_ι`: the inclusion of a full enhanced
+  subcategory induces isomorphisms on right mapping spaces.
 * `SSet.rightMappingSpace.π₀Equiv_mapπ₀_map`: under `π₀Equiv`, the map induced by `f` on
   connected components of right mapping spaces is the action of `mapHomotopyCategory f` on
   morphisms.
@@ -523,11 +526,11 @@ theorem map_ι (f : X ⟶ Y) :
       (X.rightMappingSpace x y).ι ≫ Functor.whiskerLeft joinVertex.op f :=
   (rfl)
 
-/-- The map induced on right mapping spaces sends an `(n + 1)`-simplex of `X` to its image under
-`f`. -/
+/-- The map induced on right mapping spaces sends a simplex of `X` to its image under `f`. -/
 @[simp]
-theorem map_app_coe (f : X ⟶ Y) {n : ℕ} (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n⦌) :
-    dsimp% ((map x y f).app _ s).val = f.app _ (s.val : X _⦋n + 1⦌) :=
+theorem map_app_coe (f : X ⟶ Y) {m : SimplexCategoryᵒᵖ}
+    (s : (X.rightMappingSpace x y : SSet.{u}).obj m) :
+    dsimp% ((map x y f).app m s).val = f.app (op (joinVertex.obj m.unop)) s.val :=
   (rfl)
 
 variable (x y) in
@@ -610,6 +613,22 @@ theorem isIso_map_ι {A : X.Subcomplex} (x y : (A : SSet.{u}) _⦋0⦌)
   obtain ⟨h₁, h₂⟩ := (mem_rightMappingSpace_iff _).1 s.property
   refine ⟨⟨⟨s.val, h n s⟩, (mem_rightMappingSpace_iff _).2 ⟨Subtype.ext h₁, Subtype.ext h₂⟩⟩, ?_⟩
   exact Subtype.ext (map_app_coe A.ι _)
+
+/-- The inclusion of a full enhanced subcategory induces an isomorphism on right mapping spaces:
+every vertex of a simplex of `Hom^R_X(x, y)` is either `x` or `y`, so the whole simplex already
+lies in the full enhanced subcategory. -/
+instance isIso_map_fullEnhancedSubcategory_ι (P : X _⦋0⦌ → Prop)
+    (x y : (X.fullEnhancedSubcategory P : SSet.{u}) _⦋0⦌) :
+    IsIso (map x y (X.fullEnhancedSubcategory P).ι) :=
+  isIso_map_ι x y fun n s ↦
+    (mem_fullEnhancedSubcategory_obj_iff_forall_fin P (s.val : X _⦋n + 1⦌)).2 fun i ↦ by
+      cases i using Fin.lastCases with
+      | last =>
+        rw [map_const_last s]
+        exact (mem_fullEnhancedSubcategory_obj_zero_iff P y.val).1 y.property
+      | cast j =>
+        rw [map_const_castSucc s j]
+        exact (mem_fullEnhancedSubcategory_obj_zero_iff P x.val).1 x.property
 
 end map
 
@@ -889,6 +908,45 @@ theorem uliftIso_inv_app_coe {m : SimplexCategoryᵒᵖ}
     dsimp% (((uliftIso.{u, v} x y).inv.app m s).val :
       (joinVertex.op ⋙ uliftFunctor.{v, u}.obj X).obj m) = ULift.up s.down.val :=
   (rfl)
+
+private theorem map_uliftFunctor_map_app_down_coe {Y : SSet.{u}} (f : X ⟶ Y)
+    {m : SimplexCategoryᵒᵖ}
+    (s : ((uliftFunctor.{v, u}.obj X).rightMappingSpace (ULift.up x) (ULift.up y) :
+      SSet.{max u v}).obj m) :
+    (((map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f)).app m s).val :
+      (joinVertex.op ⋙ uliftFunctor.{v, u}.obj Y).obj m).down =
+      f.app (op (joinVertex.obj m.unop)) s.val.down :=
+  (congrArg ULift.down (map_app_coe (uliftFunctor.{v, u}.map f) s)).trans
+    (uliftFunctor_map_app_down f s.val)
+
+variable (x y) in
+/-- `uliftIso.hom` is natural in the ambient simplicial set. -/
+@[reassoc]
+theorem map_comp_uliftIso_hom {Y : SSet.{u}} (f : X ⟶ Y) :
+    map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f) ≫
+        (uliftIso.{u, v} (f.app (op ⦋0⦌) x) (f.app (op ⦋0⦌) y)).hom =
+      (uliftIso.{u, v} x y).hom ≫ uliftFunctor.{v, u}.map (map x y f) := by
+  refine SSet.hom_ext fun m ↦ ConcreteCategory.hom_ext _ _ fun s ↦ ?_
+  refine ULift.ext (Subtype.ext ?_)
+  -- Unfold `(map ... ≫ (uliftIso ...).hom).app m` and `((uliftIso ...).hom.app m _).down.val`
+  -- by defeq: `NatTrans.comp_app` does not match the LHS directly because the target vertex
+  -- `(uliftFunctor.map f).app _ (ULift.up x)` only reduces to `ULift.up (f.app _ x)` at default
+  -- transparency.
+  change (((map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f)).app m s).val).down =
+    (((uliftIso.{u, v} x y).hom ≫ uliftFunctor.{v, u}.map (map x y f)).app m s).down.val
+  rw [map_uliftFunctor_map_app_down_coe]
+  simp only [NatTrans.comp_app, types_comp_apply, uliftFunctor_map_app_down]
+  rw [map_app_coe, uliftIso_hom_app_down_coe]
+
+variable (x y) in
+/-- `uliftIso.inv` is natural in the ambient simplicial set. -/
+@[reassoc]
+theorem uliftIso_inv_comp_map {Y : SSet.{u}} (f : X ⟶ Y) :
+    (uliftIso.{u, v} x y).inv ≫ map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f) =
+      uliftFunctor.{v, u}.map (map x y f) ≫
+        (uliftIso.{u, v} (f.app (op ⦋0⦌) x) (f.app (op ⦋0⦌) y)).inv := by
+  exact (Iso.inv_comp_eq _).2
+    (((Iso.eq_comp_inv _).2 (map_comp_uliftIso_hom x y f)).trans (Category.assoc _ _ _))
 
 end ulift
 

@@ -8,9 +8,11 @@ module
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Valuation.ValuationSubring
 public import TauCeti.RingTheory.Valuation.Center
+import Mathlib.FieldTheory.Galois.IsGaloisGroup
 import Mathlib.FieldTheory.Galois.Profinite
 import Mathlib.RingTheory.Invariant.Profinite
 import Mathlib.RingTheory.Valuation.LocalSubring
+import TauCeti.RingTheory.Invariant.Basic
 import TauCeti.RingTheory.Invariant.Galois
 import TauCeti.RingTheory.Valuation.AlgebraicExtension
 import TauCeti.RingTheory.Valuation.ValuationSubring
@@ -41,7 +43,7 @@ contains `B` and has a centre `P_A` on `B`, a prime lying over the maximal ideal
 * `Gal(L/K)` is profinite, acts continuously on `B` with the discrete topology (stabilizers of
   algebraic elements are open, `TauCeti.InfiniteGalois.continuousSMul_integralClosure`), and the
   invariants of `B` are `O`, since `O` is integrally closed in `K`
-  (`TauCeti.InfiniteGalois.isInvariant_integralClosure`). Mathlib's
+  (`TauCeti.Algebra.isInvariant_integralClosure`). Mathlib's
   `Algebra.IsInvariant.exists_smul_of_under_eq_of_profinite` then moves `P_A` to `P_{A'}`, and the
   first point moves `A` to `A'`.
 
@@ -122,7 +124,7 @@ theorem exists_algEquiv_smul_eq_of_comap_eq_of_isGalois {A A' : ValuationSubring
   let _ : TopologicalSpace (integralClosure O L) := ⊥
   have : DiscreteTopology (integralClosure O L) := ⟨rfl⟩
   have := TauCeti.InfiniteGalois.continuousSMul_integralClosure O K L
-  have := TauCeti.InfiniteGalois.isInvariant_integralClosure O K L
+  have := TauCeti.Algebra.isInvariant_integralClosure O K L Gal(L/K)
   obtain ⟨σ, hσ⟩ := Algebra.IsInvariant.exists_smul_of_under_eq_of_profinite
     (G := Gal(L/K)) _ _ hunder
   refine ⟨σ, eq_of_comap_eq_of_isCenteredAt (comap_algebraMap_pointwise_smul σ A) h.symm

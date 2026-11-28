@@ -85,6 +85,11 @@ noncomputable abbrev regular [DirectSum.Decomposition 𝒜] [SetLike.GradedMul �
   carrier := A
   grading := InternalGrading.ofDecomposition 𝒜
 
+/-- The degree-`p` homogeneous piece of the regular graded module is `𝒜 p`. -/
+theorem regular_grading_piece [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜] (p : ℤ) :
+    (regular (𝒜 := 𝒜)).grading.piece p = 𝒜 p :=
+  congrFun (InternalGrading.ofDecomposition_piece 𝒜) p
+
 /-- A morphism of graded `𝒜`-modules: an `A`-linear map of degree zero. -/
 structure Hom (M N : GradedModuleCat.{v} 𝒜) where
   /-- The underlying `A`-linear map. -/
