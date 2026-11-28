@@ -42,6 +42,8 @@ protected so that opening `Function.Periodic` does not shadow `deriv` and `logDe
   periodic.
 * `TauCeti.periodic_fderiv_of_apply_add_eq_add`: the Fréchet derivative of a function with
   `f (x + c) = f x + d` is `c`-periodic.
+* `TauCeti.fderiv_add_fst_of_apply_add_eq_add`: its form on a product, for a translation of the
+  first coordinate.
 * `TauCeti.periodic_deriv_of_apply_add_eq_add`: its one-variable form; for instance the derivative
   of a lift of a degree one circle map is `1`-periodic.
 * `Function.Periodic.deriv`: the derivative of a periodic function is periodic.
@@ -76,6 +78,16 @@ theorem periodic_fderiv_of_apply_add_eq_add {𝕜 E F : Type*} [NontriviallyNorm
     {f : E → F} {c : E} {d : F} (h : ∀ x, f (x + c) = f x + d) :
     Function.Periodic (fderiv 𝕜 f) c := fun x ↦ by
   rw [← fderiv_comp_add_right, funext h, fderiv_add_const]
+
+/-- A map on a product with `f (p + (c, 0)) = f p + d`, such as a map of the strip commuting with
+the deck translations, has a Fréchet derivative of period `c` in the first coordinate. This is
+`TauCeti.periodic_fderiv_of_apply_add_eq_add` for the translation `(c, 0)`. -/
+theorem fderiv_add_fst_of_apply_add_eq_add {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {f : E × F → G} {c : E} {d : G}
+    (h : ∀ p, f (p + (c, 0)) = f p + d) (x : E) (y : F) :
+    fderiv 𝕜 f (x + c, y) = fderiv 𝕜 f (x, y) := by
+  simpa using periodic_fderiv_of_apply_add_eq_add (𝕜 := 𝕜) h (x, y)
 
 /-- The derivative of a function with `f (x + c) = f x + d`, such as a lift of a degree one circle
 map (`c = d = 1`), is `c`-periodic. This is the one-variable form of

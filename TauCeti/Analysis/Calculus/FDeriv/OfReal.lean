@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Support
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Mul
+import Mathlib.Analysis.Complex.RealDeriv
 import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
@@ -28,6 +29,9 @@ sides vanish when `f` is not differentiable at `x`.
 * `TauCeti.fderiv_ofReal_im`: the imaginary part `w ↦ (w.im : ℂ)` is its own real derivative.
 * `HasDerivAt.hasFDerivAt_comp_im`: the chain rule for a function `w ↦ φ (Im w)` of the imaginary
   part.
+* `HasFDerivWithinAt.hasDerivAt_comp_ofReal`: a map `ℂ → F` differentiable at a real point within
+  a set containing the nearby real points, such as a closed half-plane, restricts to a map on the
+  real axis with derivative its derivative in the direction `1`.
 * `DifferentiableAt.ofReal_comp`, `TauCeti.norm_fderiv_ofReal_comp_le`: `y ↦ (f y : ℂ)` is
   differentiable where `f` is, and its real derivative has norm at most `‖Df(x)‖`.
 * `ContDiffAt.hasFDerivAt_fderiv_ofReal_comp_apply`: at a `C²` point of `f`, the complexified
@@ -75,6 +79,18 @@ theorem _root_.HasDerivAt.hasFDerivAt_comp_im {F : Type*} [NormedAddCommGroup F]
   refine (h'.hasFDerivAt.comp w imCLM.hasFDerivAt).congr_fderiv ?_
   ext v
   simp
+
+/-- **The derivative along the real axis.** If `u : ℂ → F` has the derivative `D` at a real point
+`x` within a set `s` containing the real points near `x`, such as a closed half-plane
+`{0 ≤ im}`, then the restriction `t ↦ u t` of `u` to the real axis has the derivative `D 1` at
+`x`. -/
+theorem _root_.HasFDerivWithinAt.hasDerivAt_comp_ofReal {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {u : ℂ → F} {D : ℂ →L[ℝ] F} {s : Set ℂ} {x : ℝ}
+    (hu : HasFDerivWithinAt u D s x) (hs : ofReal ⁻¹' s ∈ nhds x) :
+    HasDerivAt (fun t : ℝ ↦ u t) (D 1) x := by
+  have hγ : HasDerivWithinAt (fun t : ℝ ↦ (t : ℂ)) 1 (ofReal ⁻¹' s) x := by
+    simpa using (hasDerivAt_id' x).ofReal_comp.hasDerivWithinAt
+  exact (hu.comp_hasDerivWithinAt x hγ fun _ ht ↦ ht).hasDerivAt hs
 
 /-- A real function differentiable at `x` stays differentiable at `x` after composing with the
 inclusion `ℝ → ℂ`. -/

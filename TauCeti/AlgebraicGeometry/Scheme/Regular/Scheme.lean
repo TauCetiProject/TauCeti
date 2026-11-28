@@ -31,6 +31,8 @@ rings.
 * `TauCeti.AlgebraicGeometry.isRegular_iff_forall_stalk`: the stalkwise characterization.
 * `TauCeti.AlgebraicGeometry.IsRegular.of_isOpenImmersion`: open subschemes are regular.
 * `TauCeti.AlgebraicGeometry.IsRegular.of_smooth`: schemes smooth over a regular scheme are regular.
+* `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_iff_of_isIso_morphismRestrict`: over an
+  open where a morphism is an isomorphism, it identifies the regularity of local rings.
 * `TauCeti.AlgebraicGeometry.IsRegular.of_isIso_morphismRestrict`: a scheme covered by a regular
   open subscheme and by an open isomorphic to an open with regular local rings is regular.
 * `TauCeti.AlgebraicGeometry.isRegular_iff_openCover`: regularity is local on an open cover.
@@ -94,6 +96,20 @@ theorem IsRegular.of_smooth {target : Scheme.{u}} (morphism : X ⟶ target) [Smo
   have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian morphism
   exact ⟨isRegularLocalRing_stalk_of_smooth morphism⟩
 
+/-- If `f' : Y' ⟶ B` restricts to an isomorphism over an open `V` containing `f' p`, the local
+ring of `Y'` at `p` is regular exactly when the local ring of `B` at `f' p` is. -/
+theorem isRegularLocalRing_stalk_iff_of_isIso_morphismRestrict {Y' B : Scheme.{u}} (f' : Y' ⟶ B)
+    (V : B.Opens) [IsIso (f' ∣_ V)] {p : Y'} (hp : f' p ∈ V) :
+    IsRegularLocalRing (Y'.presheaf.stalk p) ↔ IsRegularLocalRing (B.presheaf.stalk (f' p)) := by
+  -- Over `V`, the local ring of `Y'` at `p` is that of `f' ⁻¹ᵁ V ≅ V`, hence that of `B` at `f' p`.
+  let p' : (f' ⁻¹ᵁ V).toScheme := ⟨p, hp⟩
+  have e : V.ι ((f' ∣_ V) p') = f' p := by
+    rw [← Scheme.Hom.comp_apply, morphismRestrict_ι, Scheme.Hom.comp_apply, Scheme.Opens.ι_apply]
+  rw [← e, isRegularLocalRing_stalk_iff_of_isOpenImmersion V.ι,
+    isRegularLocalRing_stalk_iff_of_isOpenImmersion (f' ∣_ V)]
+  -- `(f' ⁻¹ᵁ V).ι p'` is `p` by `Scheme.Opens.ι_apply`, which holds by `rfl`.
+  exact isRegularLocalRing_stalk_iff_of_isOpenImmersion (f' ⁻¹ᵁ V).ι p'
+
 /-- A scheme `Y'` covered by an open immersion `ι` from a regular scheme and by the inverse image of
 an open `V` over which `f' : Y' ⟶ B` is an isomorphism is regular as soon as `B` has regular local
 rings at the points of `V` and `Y'` is locally Noetherian. -/
@@ -105,14 +121,7 @@ theorem IsRegular.of_isIso_morphismRestrict {Y Y' B : Scheme.{u}} [IsRegular Y]
   rcases TopologicalSpace.Opens.mem_sup.mp (hcov.ge (by trivial : p ∈ (⊤ : Y'.Opens))) with
     ⟨y, rfl⟩ | hp
   · exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion ι y).mpr inferInstance
-  -- Over `V`, the local ring of `Y'` at `p` is that of `f' ⁻¹ᵁ V ≅ V`, hence that of `B` at `f' p`.
-  let p' : (f' ⁻¹ᵁ V).toScheme := ⟨p, hp⟩
-  have e : V.ι ((f' ∣_ V) p') = f' p := by
-    rw [← Scheme.Hom.comp_apply, morphismRestrict_ι, Scheme.Hom.comp_apply, Scheme.Opens.ι_apply]
-  have hB := hV (f' p) hp
-  exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion (f' ⁻¹ᵁ V).ι p').mpr
-    ((isRegularLocalRing_stalk_iff_of_isOpenImmersion (f' ∣_ V) p').mp
-      ((isRegularLocalRing_stalk_iff_of_isOpenImmersion V.ι _).mp (e ▸ hB)))
+  · exact (isRegularLocalRing_stalk_iff_of_isIso_morphismRestrict f' V hp).mpr (hV _ hp)
 
 /-- Every open subscheme of a regular scheme is regular. -/
 instance IsRegular.opens [IsRegular X] (U : X.Opens) : IsRegular U :=

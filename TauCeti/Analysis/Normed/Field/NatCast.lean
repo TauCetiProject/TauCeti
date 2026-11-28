@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
+import Mathlib.Algebra.Field.ZMod
 import Mathlib.Analysis.Normed.Ring.Finite
 import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 import Mathlib.Analysis.SpecificLimits.Normed
@@ -31,6 +32,8 @@ convergence radius; the norm estimates themselves hold in every characteristic.
 
 ## Main results
 
+* `NormedField.charZero_of_norm_natCast_ne_one`: a nonzero natural-number cast whose norm
+  differs from one forces characteristic zero, even in a normed division ring.
 * `NormedField.exists_norm_inv_natCast_le_rpow`: `‖(n : K)⁻¹‖ ≤ n ^ c` for some `c ≥ 0`.
 * `NormedField.tendsto_norm_inv_natCast_mul_pow`: `‖(n : K)⁻¹‖ * q ^ n → 0` for `0 ≤ q < 1`.
 * `NormedField.tendsto_norm_inv_intCast_mul_zpow_atTop`,
@@ -41,6 +44,19 @@ convergence radius; the norm estimates themselves hold in every characteristic.
 public section
 
 namespace NormedField
+
+/-- A nonzero natural-number cast whose norm differs from one forces characteristic zero. -/
+theorem charZero_of_norm_natCast_ne_one {C : Type*} [NormedDivisionRing C] {n : ℕ}
+    (hnC : ‖(n : C)‖ ≠ 1) (hn0 : (n : C) ≠ 0) : CharZero C := by
+  rcases CharP.exists' C with h | ⟨p, hp, hchar⟩
+  · exact h
+  · let := hp
+    let := hchar
+    let f := ZMod.castHom (dvd_refl p) C
+    have hn : (n : ZMod p) ≠ 0 := fun h ↦ hn0 (by simpa using congrArg f h)
+    have hunit : IsUnit (n : ZMod p) := isUnit_iff_ne_zero.mpr hn
+    have horder := f.toMonoidHom.isOfFinOrder hunit.isOfFinOrder
+    exact (hnC (by simpa using horder.norm_eq_one)).elim
 
 open Filter Topology
 
