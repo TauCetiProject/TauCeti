@@ -35,6 +35,9 @@ the test functions invariant under right translation by `U` are the finitely sup
 * `LocallyConstant.exists_isCompact_openSubgroup_forall_mul_eq`: on a weakly locally compact
   nonarchimedean group, every test function is left and right invariant under some compact open
   subgroup.
+* `LocallyConstant.exists_openSubgroup_finset_forall_mul_fst_eq`: a test function on a product
+  `G × Y` of a topological group and a space is invariant under right translation of the first
+  variable by an open subgroup `U`, and is supported over finitely many cosets of `U`.
 
 ## References
 
@@ -70,6 +73,36 @@ theorem exists_isCompact_openSubgroup_forall_mul_eq [NonarchimedeanGroup G]
   refine ⟨U, hUc, fun u hu x => ⟨?_,
     TauCeti.mem_rightTranslationStabilizer.1 (Subgroup.mem_inf.1 (hUS hu)).2 x⟩⟩
   simpa using TauCeti.mem_rightTranslationStabilizer.1 (Subgroup.mem_inf.1 (hUS (inv_mem hu))).1 x⁻¹
+
+/-- **Uniform local constancy in the first factor.** A locally constant function with compact
+support on a product `G × Y` of a topological group and a topological space is invariant under
+right translation of the first variable by some open subgroup `U` of `G`, and the first coordinates
+of the points where it does not vanish lie in finitely many left cosets of `U`. -/
+theorem exists_openSubgroup_finset_forall_mul_fst_eq [IsTopologicalGroup G] {Y : Type*}
+    [TopologicalSpace Y] [Zero M] {f : LocallyConstant (G × Y) M} (hf : HasCompactSupport f) :
+    ∃ (U : OpenSubgroup G) (T : Finset (G ⧸ U.toSubgroup)),
+      (∀ u ∈ U, ∀ a z, f (a * u, z) = f (a, z)) ∧
+        ∀ a z, f (a, z) ≠ 0 → (a : G ⧸ U.toSubgroup) ∈ T := by
+  -- Uniformly on the compact support, `f (a * u, z) = f (a, z)` for `u` near `1`.
+  have hF : Continuous fun q : (G × Y) × G => (q.1.1 * q.2, q.1.2) := by fun_prop
+  obtain ⟨V, hVo, hV1, hV⟩ :=
+    (f.isLocallyConstant.comp_continuous hF).exists_isOpen_forall_mem_eq hf.isCompact (1 : G)
+  have hVn : V ∈ nhds (1 : G) := hVo.mem_nhds hV1
+  -- So the stabilizer of `a ↦ f (a, ·)` under right translation contains `V ∩ V⁻¹` and is open.
+  let S := TauCeti.rightTranslationStabilizer fun a z => f (a, z)
+  have hS : IsOpen (S : Set G) := by
+    refine Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (Filter.inter_mem hVn
+      (inv_mem_nhds_one G hVn)) fun u hu => TauCeti.mem_rightTranslationStabilizer.2 fun a => ?_)
+    funext z
+    by_cases ha : (a, z) ∈ tsupport f
+    · simpa using hV u hu.1 _ ha
+    by_cases hau : (a * u, z) ∈ tsupport f
+    · simpa using (hV u⁻¹ hu.2 _ hau).symm
+    rw [image_eq_zero_of_notMem_tsupport ha, image_eq_zero_of_notMem_tsupport hau]
+  have hfin := (isCompact_image_fst_support hf).finite_image_mk ⟨S, hS⟩
+  exact ⟨⟨S, hS⟩, hfin.toFinset,
+    fun u hu a z => congrFun (TauCeti.mem_rightTranslationStabilizer.1 hu a) z,
+    fun a z ha => hfin.mem_toFinset.2 ⟨a, ⟨(a, z), ha, rfl⟩, rfl⟩⟩
 
 variable [Semiring R] [AddCommMonoid M] [Module R M]
 

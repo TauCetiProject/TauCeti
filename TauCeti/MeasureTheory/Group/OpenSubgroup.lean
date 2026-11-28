@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Coset.Basic
+public import TauCeti.GroupTheory.Coset.Basic
 public import TauCeti.MeasureTheory.Group.OpenSubgroup.Basic
 public import TauCeti.MeasureTheory.Group.ModularCharacter
 public import TauCeti.MeasureTheory.Integral.ComapSubtype
@@ -283,31 +284,6 @@ end LeftCoset
 
 section CosetSum
 
-open scoped Classical in
-/-- If `f` vanishes off the cosets `a s` in a finite set `T`, then `f` is the sum over `q ∈ T` of
-its restrictions to the cosets `q`, each written through the representative `q.out`. -/
-theorem _root_.QuotientGroup.sum_ite_out_inv_mul_mem {G M : Type*} [Group G] [AddCommMonoid M]
-    {s : Subgroup G} {T : Finset (G ⧸ s)} {f : G → M} (hT : ∀ a, f a ≠ 0 → (a : G ⧸ s) ∈ T)
-    (a : G) : ∑ q ∈ T, (if q.out⁻¹ * a ∈ s then f a else 0) = f a := by
-  have hq (q : G ⧸ s) : q.out⁻¹ * a ∈ s ↔ (a : G ⧸ s) = q := by
-    rw [← QuotientGroup.eq, QuotientGroup.out_eq', eq_comm]
-  simp_rw [hq, Finset.sum_ite_eq]
-  split_ifs with h
-  · rfl
-  · by_contra hne
-    exact h (hT a (Ne.symm hne))
-
-/-- A function invariant under right translation by an open subgroup is continuous. -/
-private theorem continuous_of_forall_mul_eq {G E : Type*} [Group G] [TopologicalSpace G]
-    [ContinuousMul G] [TopologicalSpace E] (H : OpenSubgroup G) {f : G → E}
-    (hfH : ∀ a, ∀ u ∈ H, f (a * u) = f a) :
-    Continuous f :=
-  continuous_iff_continuousAt.2 fun a => by
-    -- Near `a`, every point is `a * u` with `u ∈ H`.
-    have ha : ∀ᶠ b in 𝓝 a, a⁻¹ * b ∈ H := (continuous_const_mul a⁻¹).continuousAt.preimage_mem_nhds
-      (by rw [inv_mul_cancel]; exact H.isOpen.mem_nhds H.one_mem)
-    exact tendsto_const_nhds.congr' (ha.mono fun b hb => by simpa using (hfH a _ hb).symm)
-
 variable {G E : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G] [OpensMeasurableSpace G]
   [MeasurableMul G] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] (μ : Measure G)
   (H : OpenSubgroup G) {f : G → E} {T : Finset (G ⧸ H.toSubgroup)}
@@ -359,8 +335,8 @@ theorem sum_eq_zero_of_integral_eq_zero [IsTopologicalGroup G] [μ.IsHaarMeasure
   have hpos : μ.real H ≠ 0 :=
     (measureReal_ne_zero_iff hfin).2 (H.isOpen.measure_pos μ ⟨1, H.one_mem⟩).ne'
   rw [integral_eq_measureReal_smul_sum μ H
-    ((continuous_of_forall_mul_eq H hfH).integrable_of_hasCompactSupport hfc) hfH hT,
-    smul_eq_zero] at h0
+    ((H.isLocallyConstant_of_forall_mul_eq hfH).continuous.integrable_of_hasCompactSupport hfc)
+    hfH hT, smul_eq_zero] at h0
   exact h0.elim hpos hne
 
 end CosetSum

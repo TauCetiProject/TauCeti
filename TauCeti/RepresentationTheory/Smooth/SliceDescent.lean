@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.MeasureTheory.Group.OpenSubgroup
 public import TauCeti.RepresentationTheory.Smooth.CompactSupport
 public import TauCeti.Topology.Algebra.Group.LocallyConstant
+public import TauCeti.Topology.Algebra.Group.LocallyConstant.CompactSupport
 public import TauCeti.Topology.Algebra.Support
 public import TauCeti.Topology.LocallyConstant.CompactSupport.OpenClosed
 
@@ -241,14 +242,6 @@ theorem IsSlice.fiberIntegral_eq [TopologicalSpace Γ] [TopologicalSpace G] [Mea
   simp only [Subgroup.coe_mul, map_mul]
   congr 2 <;> group
 
-omit [NormedSpace ℝ E] [Group Γ] [Group G] [MeasurableSpace H] in
-/-- The projection to `Γ` of the support of a test function on `Γ × G` is compact. -/
-private theorem isCompact_image_fst_support [TopologicalSpace Γ] [TopologicalSpace G]
-    (Ψ : compactlySupported R (Γ × G) E) :
-    IsCompact (Prod.fst '' support (Ψ : LocallyConstant (Γ × G) E)) :=
-  (hasCompactSupport_iff_isCompact_support.1 (mem_compactlySupported.1 Ψ.property)).image
-    continuous_fst
-
 omit [NormedSpace ℝ E] in
 /-- The integrand of the fibre integral of a test function is integrable over a closed subgroup
 `H`, for continuous `j` and a measure `μ` finite on compact sets: it is continuous with compact
@@ -266,7 +259,8 @@ theorem integrable_fiberIntegral_integrand [TopologicalSpace Γ] [TopologicalSpa
     (Homeomorph.mulLeft γ).isClosedEmbedding.comp hH.isClosedEmbedding_subtypeVal
   have hφ : HasCompactSupport φ := by
     rw [hasCompactSupport_iff_isCompact_support]
-    exact (hemb.isCompact_preimage (isCompact_image_fst_support Ψ)).of_isClosed_subset
+    exact (hemb.isCompact_preimage
+      (isCompact_image_fst_support (mem_compactlySupported.1 Ψ.property))).of_isClosed_subset
       φ.isClopen_support.isClosed fun h hh => ⟨_, hh, rfl⟩
   exact (φ.continuous.integrable_of_hasCompactSupport hφ).congr
     (.of_forall fun h => coe_comap_apply _ _ h)
@@ -354,7 +348,8 @@ private theorem IsSlice.eventually_exists_fiberIntegral_eq (hs : IsSlice j H X C
       fiberIntegral j μ (Ψ : LocallyConstant (Γ × G) E) γ' y' =
         fiberIntegral j μ (Ψ : LocallyConstant (Γ × G) E) γ y := by
   have hQ : IsCompact ((γ⁻¹ * ·) '' (Prod.fst '' support (Ψ : LocallyConstant (Γ × G) E))) :=
-    (isCompact_image_fst_support Ψ).image (continuous_const_mul _)
+    (isCompact_image_fst_support (mem_compactlySupported.1 Ψ.property)).image
+      (continuous_const_mul _)
   -- Points of `C` near `y` are `j u * x * (j u)⁻¹` with `u` near `1` and `y⁻¹ * x` near `1`.
   have hx : Tendsto (fun p : Γ × G => y⁻¹ * ((j p.1)⁻¹ * p.2 * j p.1)) (𝓝 (1, y)) (𝓝 1) :=
     (by fun_prop : Continuous fun p : Γ × G => y⁻¹ * ((j p.1)⁻¹ * p.2 * j p.1)).tendsto' _ _
@@ -440,64 +435,32 @@ section Descent
 
 variable [TopologicalSpace Γ] [TopologicalSpace G] [IsTopologicalGroup Γ] [IsTopologicalGroup G]
 
-/-- A test function `Ψ` on `Γ × G` is invariant under right translation in the first variable by
-an open subgroup `U`, and finitely many cosets of `U` contain the first coordinates of the points
-where `Ψ` does not vanish. -/
-private theorem exists_openSubgroup_finset (Ψ : compactlySupported ℂ (Γ × G) ℂ) :
-    ∃ (U : OpenSubgroup Γ) (T : Finset (Γ ⧸ U.toSubgroup)),
-      (∀ u ∈ U, ∀ a z, (Ψ : LocallyConstant (Γ × G) ℂ) (a * u, z) =
-        (Ψ : LocallyConstant (Γ × G) ℂ) (a, z)) ∧
-      ∀ a z, (Ψ : LocallyConstant (Γ × G) ℂ) (a, z) ≠ 0 → (a : Γ ⧸ U.toSubgroup) ∈ T := by
-  set ψ := (Ψ : LocallyConstant (Γ × G) ℂ)
-  have hinl' : ⇑(MonoidHom.inl Γ G) = fun u => (u, 1) := funext fun u => by simp
-  have hinl : Continuous (MonoidHom.inl Γ G) := by
-    rw [hinl']
-    fun_prop
-  let U : OpenSubgroup Γ :=
-    { toSubgroup := (rightTranslationStabilizer ψ).comap (MonoidHom.inl Γ G)
-      isOpen' := (isOpen_rightTranslationStabilizer_of_hasCompactSupport ψ.isLocallyConstant
-        (mem_compactlySupported.1 Ψ.property)).preimage hinl }
-  -- The quotient by the open subgroup `U` is discrete, so the image of the compact first
-  -- projection of the support in it is finite.
-  have := QuotientGroup.discreteTopology U.isOpen
-  have hfin := ((isCompact_image_fst_support Ψ).image
-    (QuotientGroup.continuous_mk (N := U.toSubgroup))).finite_of_discrete
-  refine ⟨U, hfin.toFinset, fun u hu a z => ?_, fun a z ha =>
-    hfin.mem_toFinset.2 ⟨a, ⟨(a, z), ha, rfl⟩, rfl⟩⟩
-  simpa using mem_rightTranslationStabilizer.1 (Subgroup.mem_comap.1 hu) (a, z)
-
 variable {U : OpenSubgroup Γ} {T : Finset (Γ ⧸ U.toSubgroup)}
 
 open scoped Classical in
-/-- The piece `(γ, y) ↦ 1_U (γ) Ψ (r * γ, y)` of a test function `Ψ` on `Γ × G`, for an open
-subgroup `U` and a coset representative `r`, is a test function. -/
-private theorem exists_eq_ite_mem (Ψ : compactlySupported ℂ (Γ × G) ℂ) :
-    ∃ Φ : Γ ⧸ U.toSubgroup → compactlySupported ℂ (Γ × G) ℂ, ∀ q a z,
-      (Φ q : LocallyConstant (Γ × G) ℂ) (a, z) =
-        if a ∈ U then (Ψ : LocallyConstant (Γ × G) ℂ) (q.out * a, z) else 0 := by
-  classical
-  have hUcl : IsClopen ((U : Set Γ) ×ˢ (univ : Set G)) :=
-    ⟨U.isClosed.prod isClosed_univ, U.isOpen.prod isOpen_univ⟩
-  -- The translate `(γ, y) ↦ Ψ (r * γ, y)` is a test function, and so is its restriction to the
-  -- clopen set `U × G`.
-  set τ : Γ ⧸ U.toSubgroup → compactlySupported ℂ (Γ × G) ℂ := fun q =>
-    compactlySupportedRep ℂ (Γ × G) (Γ × G) ℂ (q.out⁻¹, 1) Ψ
-  exact ⟨fun q => ⟨(τ q : LocallyConstant (Γ × G) ℂ).indicator hUcl,
-    indicator_mem_compactlySupported_of_mem (τ q).property hUcl⟩,
-    fun q a z => by simp [τ, LocallyConstant.indicator_apply, Set.indicator_apply]⟩
-
-open scoped Classical in
-/-- The fibre integral of `Ψ` is the sum of the fibre integrals of the pieces `1_U (γ) Ψ (r γ, y)`
-at `(r⁻¹ γ, y)`, over the representatives `r` of the cosets in `T`. -/
-private theorem fiberIntegral_eq_sum [MeasurableSpace H] [OpensMeasurableSpace H]
+/-- The pieces `Φ q : (γ, y) ↦ 1_U (γ) Ψ (q.out * γ, y)` of a test function `Ψ` on `Γ × G`, for the
+cosets `q` of an open subgroup `U`, are test functions, and the fibre integral of `Ψ` is the sum of
+the fibre integrals of the pieces at `(q.out⁻¹ * γ, y)` over the cosets `q` in `T`. -/
+private theorem exists_fiberIntegral_eq_sum [MeasurableSpace H] [OpensMeasurableSpace H]
     (hj : Continuous j) (hH : IsClosed (H : Set Γ)) (μ : Measure H) [IsFiniteMeasureOnCompacts μ]
     (Ψ : compactlySupported ℂ (Γ × G) ℂ)
-    (hT : ∀ a z, (Ψ : LocallyConstant (Γ × G) ℂ) (a, z) ≠ 0 → (a : Γ ⧸ U.toSubgroup) ∈ T)
-    (Φ : Γ ⧸ U.toSubgroup → compactlySupported ℂ (Γ × G) ℂ)
-    (hΦ : ∀ q a z, (Φ q : LocallyConstant (Γ × G) ℂ) (a, z) =
-      if a ∈ U then (Ψ : LocallyConstant (Γ × G) ℂ) (q.out * a, z) else 0) (γ : Γ) (y : G) :
-    fiberIntegral j μ Ψ γ y =
-      ∑ q ∈ T, fiberIntegral j μ (Φ q : LocallyConstant (Γ × G) ℂ) (q.out⁻¹ * γ) y := by
+    (hT : ∀ a z, (Ψ : LocallyConstant (Γ × G) ℂ) (a, z) ≠ 0 → (a : Γ ⧸ U.toSubgroup) ∈ T) :
+    ∃ Φ : Γ ⧸ U.toSubgroup → compactlySupported ℂ (Γ × G) ℂ,
+      (∀ q a z, (Φ q : LocallyConstant (Γ × G) ℂ) (a, z) =
+        if a ∈ U then (Ψ : LocallyConstant (Γ × G) ℂ) (q.out * a, z) else 0) ∧
+      ∀ γ y, fiberIntegral j μ Ψ γ y =
+        ∑ q ∈ T, fiberIntegral j μ (Φ q : LocallyConstant (Γ × G) ℂ) (q.out⁻¹ * γ) y := by
+  -- `Φ q` is the translate `(γ, y) ↦ Ψ (q.out * γ, y)`, cut off along the clopen set `U × G`.
+  have hUcl : IsClopen ((U : Set Γ) ×ˢ (univ : Set G)) := U.isClopen.prod isClopen_univ
+  set τ : Γ ⧸ U.toSubgroup → compactlySupported ℂ (Γ × G) ℂ := fun q =>
+    compactlySupportedRep ℂ (Γ × G) (Γ × G) ℂ (q.out⁻¹, 1) Ψ
+  set Φ : Γ ⧸ U.toSubgroup → compactlySupported ℂ (Γ × G) ℂ := fun q =>
+    ⟨(τ q : LocallyConstant (Γ × G) ℂ).indicator hUcl,
+      indicator_mem_compactlySupported_of_mem (τ q).property hUcl⟩
+  have hΦ (q : Γ ⧸ U.toSubgroup) (a : Γ) (z : G) : (Φ q : LocallyConstant (Γ × G) ℂ) (a, z) =
+      if a ∈ U then (Ψ : LocallyConstant (Γ × G) ℂ) (q.out * a, z) else 0 := by
+    simp [Φ, τ, LocallyConstant.indicator_apply, Set.indicator_apply]
+  refine ⟨Φ, hΦ, fun γ y => ?_⟩
   simp only [fiberIntegral_apply]
   rw [← integral_finsetSum _ fun q _ => integrable_fiberIntegral_integrand hj hH μ (Φ q) _ y]
   congr 1
@@ -530,12 +493,13 @@ theorem IsSlice.map_eq_zero_of_integral_eq_zero_of_eq_fiberIntegral [T2Space G]
     (hf : ∀ γ, ∀ y ∈ X, (f : LocallyConstant G ℂ) (j γ * y * (j γ)⁻¹) = fiberIntegral j μ Ψ γ y) :
     I f = 0 := by
   classical
-  obtain ⟨U, T, hUψ, hT⟩ := exists_openSubgroup_finset Ψ
+  obtain ⟨U, T, hUψ, hT⟩ :=
+    exists_openSubgroup_finset_forall_mul_fst_eq (mem_compactlySupported.1 Ψ.property)
   have hsum (y : G) (hy : y ∈ X) : ∑ q ∈ T, (Ψ : LocallyConstant (Γ × G) ℂ) (q.out, y) = 0 :=
     OpenSubgroup.sum_eq_zero_of_integral_eq_zero ν U
       ((mem_compactlySupported.1 Ψ.property).comp_prodMk_left y) (fun a u hu => hUψ u hu a y)
       (fun a => hT a y) (hΨ y hy)
-  obtain ⟨Φ, hΦ⟩ := exists_eq_ite_mem (U := U) Ψ
+  obtain ⟨Φ, hΦ, hΦsum⟩ := exists_fiberIntegral_eq_sum hj hH μ Ψ hT
   choose g hg using fun q => hs.exists_eq_fiberIntegral hj μ (Φ q)
   set R : Γ ⧸ U.toSubgroup → compactlySupported ℂ G ℂ := fun q =>
     compactlySupportedRep ℂ (ConjAct G) G ℂ (ConjAct.toConjAct (j q.out)) (g q)
@@ -557,7 +521,7 @@ theorem IsSlice.map_eq_zero_of_integral_eq_zero_of_eq_fiberIntegral [T2Space G]
       congr 1
       group
     simp only [Submodule.coe_sub, LocallyConstant.coe_sub, Pi.sub_apply, hsum_apply, hR,
-      hf γ y hy, fiberIntegral_eq_sum hj hH μ Ψ hT Φ hΦ γ y, sub_self]
+      hf γ y hy, hΦsum γ y, sub_self]
   -- The sum of the `g q` vanishes on `C`, since the sum of the pieces vanishes on `Γ × X`.
   have h₂ : I (∑ q ∈ T, g q) = 0 := by
     refine hIC _ fun c hc => ?_

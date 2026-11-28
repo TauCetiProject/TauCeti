@@ -100,6 +100,13 @@ theorem hasCompactSupport_iff_isCompact_support {f : LocallyConstant X M} :
     HasCompactSupport f ↔ IsCompact (support f) := by
   rw [HasCompactSupport, tsupport_eq_support]
 
+/-- The projection to the first factor of the support of a compactly supported locally constant
+function on a product is compact. -/
+theorem isCompact_image_fst_support {Y : Type*} [TopologicalSpace Y]
+    {f : LocallyConstant (X × Y) M} (hf : HasCompactSupport f) :
+    IsCompact (Prod.fst '' support f) :=
+  (hasCompactSupport_iff_isCompact_support.1 hf).image continuous_fst
+
 /-- A locally constant function with compact support takes only finitely many values. -/
 theorem finite_range_of_hasCompactSupport {f : LocallyConstant X M} (hf : HasCompactSupport f) :
     (range f).Finite := by
