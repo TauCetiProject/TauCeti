@@ -188,7 +188,7 @@ theorem enhancedStateEulerSum_eq_resolveCrossingOriented
 
 /-- **Evaluating the Jones polynomial of a nonempty planar diagram at `t ^ (1/2) = -1` gives
 `2 ^ (c - 1)`** (Jones 1985, Theorems 14–15; Lickorish 1997, Chapter 3). -/
-theorem eval₂_neg_one_jonesPolynomial (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
+@[simp] theorem eval₂_neg_one_jonesPolynomial (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
     (hpos : 0 < D.toPDCode.componentCount) :
     eval₂ (RingHom.id ℤ) (-1 : ℤˣ) D.jonesPolynomial = (2 : ℤ) ^ (D.componentCount - 1) := by
   have hsum := congrArg (eval₂ (RingHom.id ℤ) (1 : ℤˣ))

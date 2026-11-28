@@ -66,8 +66,8 @@ theorem enhancedQuantumDegree_mod_two (hD : D.toPDCode.IsPlanar)
     PDCode.card_resolvedCircle]
   omega
 
-/-- Every coefficient of `D.enhancedStateSum` in a quantum degree whose parity differs from
-`D.componentCount` vanishes. -/
+/-- For a planar oriented PD-code `D`, every coefficient of `D.enhancedStateSum` in a quantum
+degree whose parity differs from `D.componentCount` vanishes. -/
 theorem coeff_enhancedStateSum_eq_zero_of_mod_two_ne (hD : D.toPDCode.IsPlanar) {j : ℤ}
     (hj : j % 2 ≠ (D.componentCount : ℤ) % 2) :
     D.enhancedStateSum.coeff j = 0 := by

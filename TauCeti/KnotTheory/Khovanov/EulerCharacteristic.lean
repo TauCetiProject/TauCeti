@@ -62,9 +62,9 @@ including the empty diagram.
 * `TauCeti.OrientedPDCode.khovanovEulerChar_empty`: the empty diagram has `χ_q Kh = 1`.
 * `TauCeti.OrientedPDCode.eval₂_one_khovanovEulerChar`,
   `TauCeti.OrientedPDCode.khovanovEulerChar_ne_zero`, and
-  `TauCeti.OrientedPDCode.exists_coeff_khovanovEulerChar_ne_zero`: `χ_q Kh(D; R)` evaluates
-  to `2 ^ c` at `q = 1`, is nonzero, and has a nonzero coefficient in some parity-compatible quantum
-  degree.
+  `TauCeti.OrientedPDCode.exists_coeff_khovanovEulerChar_ne_zero`: over any Noetherian
+  commutative ring `R` satisfying `HasRankNullity`, `χ_q Kh(D; R)` evaluates to `2 ^ c` at
+  `q = 1`, is nonzero, and has a nonzero coefficient in some parity-compatible quantum degree.
 
 ## References
 
@@ -242,8 +242,9 @@ theorem khovanovEulerChar_ne_zero : D.khovanovEulerChar hD R ≠ 0 := by
   rw [hzero, map_zero] at heval
   exact (by positivity : (0 : ℤ) < (2 : ℤ) ^ D.componentCount).ne heval
 
-/-- For every planar oriented PD-code `D`, some quantum degree `j ≡ D.componentCount (mod 2)` has a
-nonzero coefficient in `D.khovanovEulerChar hD R`. -/
+/-- For every planar oriented PD-code `D` and every Noetherian commutative ring `R` satisfying
+`HasRankNullity`, some quantum degree `j ≡ D.componentCount (mod 2)` has a nonzero coefficient
+in `D.khovanovEulerChar hD R`. -/
 theorem exists_coeff_khovanovEulerChar_ne_zero :
     ∃ j : ℤ, j % 2 = (D.componentCount : ℤ) % 2 ∧ (D.khovanovEulerChar hD R).coeff j ≠ 0 := by
   have ⟨j, hj⟩ := Finsupp.ne_iff.mp

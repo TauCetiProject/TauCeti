@@ -60,7 +60,9 @@ theorem enhancedStateEulerSum_eq_two_pow_componentCount (D : OrientedPDCode n)
     Even.neg_one_pow ⟨_, rfl⟩, one_mul]
 
 /-- **Evaluating the enhanced state sum of a planar diagram at `q = 1` gives `2 ^ c`.** -/
-theorem eval₂_one_enhancedStateSum_eq_two_pow (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar) :
+-- Prefer the planar closed form over the general `eval₂_one_enhancedStateSum` rewrite.
+@[simp 1100] theorem eval₂_one_enhancedStateSum_eq_two_pow (D : OrientedPDCode n)
+    (hD : D.toPDCode.IsPlanar) :
     eval₂ (RingHom.id ℤ) 1 D.enhancedStateSum = (2 : ℤ) ^ D.componentCount := by
   rw [D.eval₂_one_enhancedStateSum, D.enhancedStateEulerSum_eq_two_pow_componentCount hD]
 
