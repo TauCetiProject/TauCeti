@@ -12,8 +12,9 @@ import TauCeti.LinearAlgebra.Matrix.Diagonal
 /-!
 # The selected corner of a symbol algebra
 
-The inverse images of matrix units under `algEquivMatrixOfPow` give the complete orthogonal
-idempotents and the matrix units associated to the factor `X ^ d - c`. The selected corner has
+The inverse images of matrix units under `algEquivMatrixOfPow` form matrix units, whose diagonal
+elements form a complete orthogonal family of idempotents. The zeroth idempotent corresponds to
+the factor `X ^ d - c`, as expressed by `x_pow_mul_cornerIdempotentOfPow`. The selected corner has
 its own unit, the selected idempotent, and is an algebra isomorphic to the smaller symbol algebra.
 -/
 
