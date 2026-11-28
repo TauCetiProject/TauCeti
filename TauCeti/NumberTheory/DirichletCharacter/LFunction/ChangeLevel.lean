@@ -38,9 +38,9 @@ in terms of the number of distinct prime divisors, rather than the size of the n
 The exact identity is Mathlib's `DirichletCharacter.LFunction_changeLevel`,
 by David Loeffler and Michael Stoll. When the levels have the same prime factors,
 `DirichletCharacter.LFunction_changeLevel_eq_of_primeFactors_eq` shows that no correction
-is needed, away from the possible pole. This comparison is used in
-`New.exists_regularL_eq_of_sq_eq_one` in `grh/src/Lib/Analytic/Primes.lean` of
-https://github.com/lsernau/grh-lean (rev. `72fead1`).
+is needed away from the possible pole. The entire and regularized functions agree at every point.
+This comparison is used in `New.exists_regularL_eq_of_sq_eq_one` in
+`grh/src/Lib/Analytic/Primes.lean` of https://github.com/lsernau/grh-lean (rev. `72fead1`).
 
 For the elementary finite-product estimates see Davenport, *Multiplicative Number Theory*,
 the treatment of imprimitive characters and Siegel's theorem.
@@ -217,6 +217,33 @@ theorem LFunction_changeLevel_eq_of_primeFactors_eq {M N : ℕ} [NeZero M] [NeZe
   rw [LFunction_changeLevel hMN χ hs, h, Finset.prod_eq_one, mul_one]
   intro p hp
   simp [χ.map_nonunit (ZMod.not_isUnit_of_mem_primeFactors hp)]
+
+/-- Raising the level without introducing a new prime divisor leaves the entire Dirichlet
+L-function unchanged, including the pole-cleared value at `1` for a principal character. -/
+theorem entireLFunction_changeLevel_eq_of_primeFactors_eq {M N : ℕ} [NeZero M] [NeZero N]
+    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) (h : N.primeFactors = M.primeFactors) :
+    (χ.changeLevel hMN).entireLFunction = χ.entireLFunction := by
+  rcases eq_or_ne χ 1 with rfl | hχ
+  · rw [map_one, entireLFunction_one, entireLFunction_one]
+    exact LFunctionTrivChar₁_eq_of_primeFactors_eq h
+  · have hlift : χ.changeLevel hMN ≠ 1 := fun he ↦ hχ ((changeLevel_eq_one_iff hMN).mp he)
+    rw [entireLFunction_of_ne_one hlift, entireLFunction_of_ne_one hχ]
+    funext z
+    exact χ.LFunction_changeLevel_eq_of_primeFactors_eq hMN h (.inl hχ)
+
+/-- Raising the level without introducing a new prime divisor leaves the regularized Dirichlet
+L-function unchanged. -/
+theorem regularizedLFunction_changeLevel_eq_of_primeFactors_eq {M N : ℕ} [NeZero M] [NeZero N]
+    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) (h : N.primeFactors = M.primeFactors) :
+    (χ.changeLevel hMN).regularizedLFunction = χ.regularizedLFunction := by
+  have hE := χ.entireLFunction_changeLevel_eq_of_primeFactors_eq hMN h
+  rcases eq_or_ne χ 1 with rfl | hχ
+  · rw [map_one] at hE ⊢
+    funext z
+    rw [regularizedLFunction_one_apply, regularizedLFunction_one_apply, hE]
+  · have hlift : χ.changeLevel hMN ≠ 1 := fun he ↦ hχ ((changeLevel_eq_one_iff hMN).mp he)
+    simpa only [regularizedLFunction_of_ne_one _ hlift, regularizedLFunction_of_ne_one _ hχ,
+      entireLFunction_of_ne_one hlift, entireLFunction_of_ne_one hχ] using hE
 
 /-- Raising the level preserves the zeros of the continued L-function off the imaginary axis.
 At the possible pole `1`, require the original character to be nonprincipal. -/
