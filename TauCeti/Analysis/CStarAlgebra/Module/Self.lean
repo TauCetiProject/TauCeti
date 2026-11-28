@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.Analysis.CStarAlgebra.Module.Constructions
 public import TauCeti.Analysis.CStarAlgebra.Module.AdjointPair
 
@@ -46,6 +45,7 @@ left self-module of `Aᵐᵒᵖ` transported along `MulOpposite.op : A → Aᵐ�
 public section
 
 open MulOpposite Filter Topology
+open scoped WithCStarModule
 
 namespace CStarModule
 

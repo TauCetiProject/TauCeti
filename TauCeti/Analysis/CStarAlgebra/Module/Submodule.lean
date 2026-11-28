@@ -38,8 +38,9 @@ as well.
   with `CompleteLattice`, `SMul A F`, `CStarModule A F`, and `topologicalClosure`.
 * `TauCeti.CStarSubmodule.ofRightIdeal`, `TauCeti.CStarSubmodule.ofClosedRightAddSubgroup`,
   `TauCeti.CStarSubmodule.rightFixedSubmodule`, `TwoSidedIdeal.toCStarSubmodule`,
-  `Ideal.toCStarSubmodule`, `Submodule.toCStarSubmodule`: right ideals of `A` as submodules
-  of the right self-module `CStarModule Aᵐᵒᵖ A`, and unital submodules as `CStarSubmodule`s.
+  `Ideal.toCStarSubmodule`, `Submodule.toCStarSubmodule`, `Submodule.instCStarModule`,
+  `Submodule.coe_inner_cstarModule`: right ideals of `A` as submodules of the right self-module
+  `CStarModule Aᵐᵒᵖ A`, and unital submodules as `CStarSubmodule`s and `CStarModule`s.
 
 ## References
 
@@ -749,6 +750,7 @@ namespace Submodule
 
 /-- View an `A`-submodule of a complex vector space with a compatible unital `A`-module structure
 (in particular, any `Submodule ℂ E`) as a `TauCeti.CStarSubmodule A E`. -/
+@[expose]
 def toCStarSubmodule {A E : Type*} [Semiring A] [AddCommGroup E] [Module ℂ E] [Module A E]
     [SMul ℂ A] [IsScalarTower ℂ A E] (K : Submodule A E) : TauCeti.CStarSubmodule A E where
   toSubmodule := K.restrictScalars ℂ
@@ -770,6 +772,22 @@ theorem toSubmodule_toCStarSubmodule {A E : Type*} [Semiring A] [AddCommGroup E]
 theorem coe_toCStarSubmodule {A E : Type*} [Semiring A] [AddCommGroup E] [Module ℂ E] [Module A E]
     [SMul ℂ A] [IsScalarTower ℂ A E] (K : Submodule A E) :
     (K.toCStarSubmodule : Set E) = K :=
+  (rfl)
+
+/-- Any `A`-submodule of a `CStarModule` over a unital coefficient ring inherits a `CStarModule`
+structure from the ambient `CStarModule`. -/
+instance instCStarModule {A E : Type*} [Ring A] [StarRing A] [Module ℂ A] [PartialOrder A]
+    [Norm A] [SeminormedAddCommGroup E] [Module ℂ E] [Module A E] [IsScalarTower ℂ A E]
+    [CStarModule A E] (K : Submodule A E) : CStarModule A K :=
+  K.toCStarSubmodule.instCStarModule
+
+/-- The `A`-valued inner product on an `A`-submodule agrees with that of the ambient
+`CStarModule`. -/
+@[simp]
+theorem coe_inner_cstarModule {A E : Type*} [Ring A] [StarRing A] [Module ℂ A] [PartialOrder A]
+    [Norm A] [SeminormedAddCommGroup E] [Module ℂ E] [Module A E] [IsScalarTower ℂ A E]
+    [CStarModule A E] (K : Submodule A E) (x y : K) :
+    inner A x y = inner A (x : E) (y : E) :=
   (rfl)
 
 end Submodule

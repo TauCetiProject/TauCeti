@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Module.Semidef
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt.Basic
 
+public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
+
 /-!
 # Basic norm estimates for Hilbert C⋆-modules
 
@@ -31,8 +33,12 @@ Riesz theorem.
 ## Main declarations
 
 * `CStarModule.inner_zero_left'`, `CStarModule.inner_zero_right'`, `CStarModule.inner_neg_left'`,
-  `CStarModule.inner_neg_right'`: zero and negation inner-product identities without
-  `[StarModule ℂ A]`.
+  `CStarModule.inner_neg_right'`, `TauCeti.CStarModule.inner_sum_right'`: zero, negation, and
+  finite-sum inner-product identities without `[StarModule ℂ A]`.
+* `TauCeti.CStarModule.parallelogram_law`, `TauCeti.CStarModule.inner_add_add_self_le`,
+  `TauCeti.CStarModule.unop_inner_add_add_self_le`: the parallelogram identity and the order
+  bounds `⟪x + y, x + y⟫_A ≤ 2 • (⟪x, x⟫_A + ⟪y, y⟫_A)` and
+  `⟨x + y, x + y⟩_A ≤ 2 • (⟨x, x⟩_A + ⟨y, y⟩_A)`.
 * `CStarModule.inner_map_polarization`, `CStarModule.inner_polarization`: polarization identities
   expressing `⟪S x, T y⟫_A` and `⟪x, y⟫_A` through diagonal inner products.
 * `CStarModule.ext_inner_left`, `CStarModule.ext_inner_right`: vectors are determined by their
@@ -41,6 +47,11 @@ Riesz theorem.
   `CStarModule.inner_map_map_iff_forall_inner_map_map_self`: complex-linear endomorphisms are
   determined by diagonal inner products `⟪x, T x⟫_A`, and a complex-linear map preserves all inner
   products iff it preserves the diagonal inner products `⟪x, x⟫_A`.
+* `TauCeti.CStarModule.induced`: pullback `CStarModule` structure along a norm-preserving
+  module injection.
+* `LinearMap.isometryOfInnerCStarModule`, `LinearEquiv.isometryOfInnerCStarModule`: construct
+  linear isometries and isometric equivalences from diagonal inner-product preservation, without
+  `[StarModule ℂ A]`.
 * `CStarModule.inner_eq_zero_symm`, `CStarModule.inner_add_self_of_inner_eq_zero`,
   `CStarModule.norm_add_sq_le_of_inner_eq_zero`,
   `CStarModule.norm_le_norm_add_right_of_inner_eq_zero`,
@@ -50,18 +61,29 @@ Riesz theorem.
   `‖⟪y, x⟫_A‖` over the closed unit ball.
 * `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`, and `CStarModule.norm_inner_smul_le`:
   `‖⟪y, z⟫_A x‖ ≤ ‖x‖ ‖y‖ ‖z‖`.
-* `CStarModule.inner_map_map_le_norm_sq_smul`: Paschke's inequality
-  `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A` for any bounded `A`-linear operator `T : E →L[ℂ] F`.
-* `CStarModule.tendsto_smul`: the action is essential, `e x → x` along an approximate unit.
+* `TauCeti.CStarModule.inner_self_le_of_norm_smul_le`,
+  `TauCeti.CStarModule.inner_map_map_le_of_norm_le`,
+  `ContinuousLinearMap.inner_map_map_le_norm_sq_smul`:
+  two-vector Paschke inequality `⟪y, y⟫_A ≤ C ^ 2 • ⟪x, x⟫_A` from
+  `∀ a : A, ‖a • y‖ ≤ C * ‖a • x‖`, Paschke's inequality `⟪T x, T x⟫_A ≤ C ^ 2 • ⟪x, x⟫_A` for
+  any action-preserving function with pointwise norm bound `‖T x‖ ≤ C * ‖x‖`, and its bounded
+  operator specialization `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A`.
+* `CStarModule.tendsto_smul`, `Unitization.tendsto_smul_approximateUnit`: the action is
+  essential, `e x → x` along an approximate unit, and
+  `(v.fst • e + v.snd * e) z → v.fst • z + v.snd • z` for `v : Unitization ℂ A`.
 * `CStarModule.star_unop_inner_mul_unop_inner_le`: the Cauchy–Schwarz inequality
   `⟨x, y⟩_A⋆ ⟨x, y⟩_A ≤ ‖x‖² ⟨y, y⟩_A` for right modules.
 * `CStarModule.isGreatest_norm_unop_inner`, `CStarModule.norm_op_smul_le`,
-  `CStarModule.tendsto_op_smul`: norm recovery, `‖x a‖ ≤ ‖x‖ ‖a‖`, and essentiality of the
-  action for right modules.
+  `TauCeti.CStarModule.unop_inner_self_le_of_norm_op_smul_le`,
+  `TauCeti.CStarModule.unop_inner_map_map_le_of_norm_le`,
+  `ContinuousLinearMap.unop_inner_map_map_le_norm_sq_smul`, `CStarModule.tendsto_op_smul`: norm
+  recovery, `‖x a‖ ≤ ‖x‖ ‖a‖`, Paschke's inequality, and essentiality of the action for right
+  modules.
 
 ## References
 
-* E. Christopher Lance, *Hilbert C⋆-Modules: A Toolkit for Operator Algebraists*, Chapter 1.
+* E. Christopher Lance, *Hilbert C⋆-Modules: A Toolkit for Operator Algebraists*, Chapters 1–2.
+* William L. Paschke, *Inner product modules over B*-algebras*, Proposition 2.6.
 * Iain Raeburn and Dana P. Williams, *Morita Equivalence and Continuous-Trace C⋆-Algebras*,
   Chapter 2.
 -/
@@ -118,27 +140,22 @@ theorem inner_zero_right' {x : E} : inner A x (0 : E) = 0 := by
 (compare Mathlib's `CStarModule.inner_neg_left`). -/
 @[simp]
 theorem inner_neg_left' {x y : E} : inner A (-x) y = -inner A x y :=
-  eq_neg_of_add_eq_zero_left <| by
-    rw [← inner_add_left, neg_add_cancel, inner_zero_left']
+  eq_neg_of_add_eq_zero_left <| by rw [← inner_add_left, neg_add_cancel, inner_zero_left']
 
 /-- Right negation inner product `⟪x, -y⟫_A = -⟪x, y⟫_A`, without requiring `[StarModule ℂ A]`
 (compare Mathlib's `CStarModule.inner_neg_right`). -/
 @[simp]
 theorem inner_neg_right' {x y : E} : inner A x (-y) = -inner A x y :=
-  eq_neg_of_add_eq_zero_left <| by
-    rw [← inner_add_right, neg_add_cancel, inner_zero_right']
+  eq_neg_of_add_eq_zero_left <| by rw [← inner_add_right, neg_add_cancel, inner_zero_right']
 
 /-- Vectors are determined by their inner products against all vectors in the first slot. -/
 theorem ext_inner_left {x y : E} (h : ∀ z, inner A z x = inner A z y) : x = y := by
-  apply sub_eq_zero.mp
-  apply (inner_self (A := A)).mp
+  apply sub_eq_zero.mp; apply (inner_self (A := A)).mp
   rw [sub_eq_add_neg, inner_add_right, inner_neg_right', h, add_neg_cancel]
 
 /-- Vectors are determined by their inner products against all vectors in the second slot. -/
-theorem ext_inner_right {x y : E} (h : ∀ z, inner A x z = inner A y z) : x = y := by
-  apply ext_inner_left (A := A)
-  intro z
-  simpa using congrArg star (h z)
+theorem ext_inner_right {x y : E} (h : ∀ z, inner A x z = inner A y z) : x = y :=
+  ext_inner_left (A := A) fun z ↦ by simpa using congrArg star (h z)
 
 end NoStarModule
 
@@ -173,8 +190,7 @@ theorem eq_of_forall_inner_map_self {M : Type*} [FunLike M E E] [LinearMapClass 
   DFunLike.ext S T fun y ↦ ext_inner_left (A := A) fun x ↦ by
     have hS := inner_map_polarization (A := A) (LinearMap.id : E →ₗ[ℂ] E) S x y
     have hT := inner_map_polarization (A := A) (LinearMap.id : E →ₗ[ℂ] E) T x y
-    simp only [LinearMap.id_apply, h] at hS hT
-    exact hS.trans hT.symm
+    simp only [LinearMap.id_apply, h] at hS hT; exact hS.trans hT.symm
 
 /-- A complex-linear map between C⋆-modules preserves all inner products if and only if it
 preserves diagonal inner products `⟪x, x⟫_A`. -/
@@ -191,9 +207,8 @@ omit [StarModule ℂ A] in
 the `A`-valued inner product is injective. -/
 theorem injective_of_inner_map_map {F : Type*} [Inner A F] {f : E → F}
     (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y) :
-    Function.Injective f := fun x y hxy ↦
-  ext_inner_left (A := A) fun z ↦ by
-    rw [← hf z x, ← hf z y, hxy]
+    Function.Injective f := fun _ _ hxy ↦
+  ext_inner_left (A := A) fun z ↦ by rw [← hf z _, ← hf z _, hxy]
 
 omit [StarModule ℂ A] in
 /-- Vectors with equal diagonal `A`-valued inner products have equal norms. -/
@@ -245,6 +260,90 @@ theorem norm_add_sq_le_of_inner_eq_zero {x y : E} (h : inner A x y = 0) :
   exact norm_add_le _ _
 
 end NormSeminormed
+
+end CStarModule
+
+namespace LinearMap
+
+variable {R A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [Semiring R] [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [Module R E] [CStarModule A E]
+  [SeminormedAddCommGroup F] [Module ℂ F] [SMul A F] [Module R F] [CStarModule A F]
+  (f : E →ₗ[R] F) (hf : ∀ x : E, inner A (f x) (f x) = inner A x x)
+
+/-- An `R`-linear map between Hilbert C⋆-modules preserving self-inner products is an `R`-linear
+isometry. -/
+def isometryOfInnerCStarModule : E →ₗᵢ[R] F where
+  toLinearMap := f
+  norm_map' x := CStarModule.norm_eq_of_inner_self_eq (hf x)
+
+@[simp] theorem coe_isometryOfInnerCStarModule : ⇑(f.isometryOfInnerCStarModule hf) = f := (rfl)
+
+@[simp] theorem isometryOfInnerCStarModule_toLinearMap :
+    (f.isometryOfInnerCStarModule hf).toLinearMap = f := (rfl)
+
+end LinearMap
+
+namespace LinearEquiv
+
+variable {R A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [Semiring R] [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [Module R E] [CStarModule A E]
+  [SeminormedAddCommGroup F] [Module ℂ F] [SMul A F] [Module R F] [CStarModule A F]
+  (f : E ≃ₗ[R] F) (hf : ∀ x : E, inner A (f x) (f x) = inner A x x)
+
+/-- An `R`-linear equivalence between Hilbert C⋆-modules preserving self-inner products is a linear
+isometric equivalence. -/
+def isometryOfInnerCStarModule : E ≃ₗᵢ[R] F where
+  toLinearEquiv := f
+  norm_map' := (f.toLinearMap.isometryOfInnerCStarModule hf).norm_map
+
+@[simp] theorem coe_isometryOfInnerCStarModule : ⇑(f.isometryOfInnerCStarModule hf) = f := (rfl)
+
+@[simp] theorem isometryOfInnerCStarModule_toLinearEquiv :
+    (f.isometryOfInnerCStarModule hf).toLinearEquiv = f := (rfl)
+
+@[simp] theorem coe_symm_isometryOfInnerCStarModule :
+    ⇑(f.isometryOfInnerCStarModule hf).symm = f.symm := (rfl)
+
+end LinearEquiv
+
+namespace TauCeti.CStarModule
+variable {A M E : Type*} [NonUnitalSemiring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [AddCommGroup M] [Module ℂ M] [SMul A M] [Norm M]
+  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
+
+/-- Pull back a `CStarModule` structure along an injective complex-linear map that commutes with
+the coefficient action and preserves the norm. -/
+@[instance_reducible]
+def induced (g : M →ₗ[ℂ] E) (hg : Function.Injective g)
+    (hA : ∀ (a : A) (x : M), g (a • x) = a • g x)
+    (hnorm : ∀ x : M, ‖x‖ = ‖g x‖) : CStarModule A M where
+  inner x y := inner A (g x) (g y)
+  inner_add_right := by simp
+  inner_self_nonneg := _root_.CStarModule.inner_self_nonneg
+  inner_self {x} := by simp [_root_.CStarModule.inner_self, map_eq_zero_iff g hg]
+  inner_op_smul_right := by simp [hA]
+  inner_smul_right_complex := by simp
+  star_inner x y := _root_.CStarModule.star_inner (g x) (g y)
+  norm_eq_sqrt_norm_inner_self x :=
+    (hnorm x).trans (_root_.CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (x := g x))
+
+/-- The inner product of the pullback `TauCeti.CStarModule.induced` structure is the pullback along
+`g`. -/
+@[simp] theorem induced_inner (g : M →ₗ[ℂ] E) (hg : Function.Injective g)
+    (hA : ∀ (a : A) (x : M), g (a • x) = a • g x)
+    (hnorm : ∀ x : M, ‖x‖ = ‖g x‖) (x y : M) :
+    @inner A M (induced g hg hA hnorm).toInner x y = inner A (g x) (g y) := (rfl)
+
+/-- The separated `NormedAddCommGroup` structure on a `CStarModule A E` over a (possibly
+non-unital) C⋆-algebra `A`, obtained from `CStarModule.norm_zero_iff`. -/
+noncomputable abbrev normedAddCommGroupOfCStarModule (A E : Type*) [NonUnitalCStarAlgebra A]
+    [PartialOrder A] [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [CStarModule A E] :
+    NormedAddCommGroup E :=
+  NormedAddCommGroup.ofSeparation fun x ↦ (_root_.CStarModule.norm_zero_iff A x).mp
+
+end TauCeti.CStarModule
+
+namespace CStarModule
 
 variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
@@ -416,11 +515,106 @@ theorem tendsto_op_smul [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] {l : Filt
 
 end Essential
 
+end CStarModule
+
+namespace Unitization
+
+variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [NormedAddCommGroup E] [Module ℂ E]
+
+/-- The action of `Unitization ℂ A` on a Hilbert C⋆-module is approximated along the approximate
+unit of `A` by `(v.fst • e + v.snd * e) • z → v.fst • z + v.snd • z`. -/
+theorem tendsto_smul_approximateUnit [SMul A E] [CStarModule A E] (v : Unitization ℂ A) (z : E) :
+    Tendsto (fun e : A ↦ (v.fst • e + v.snd * e) • z)
+      (CStarAlgebra.approximateUnit A) (𝓝 (v.fst • z + v.snd • z)) := by
+  let : NormedSpace ℂ E := .ofCore (_root_.CStarModule.normedSpaceCore A)
+  have hsmul : Tendsto (· • z) (CStarAlgebra.approximateUnit A) (𝓝 z) :=
+    _root_.CStarModule.tendsto_smul
+      (CStarAlgebra.increasingApproximateUnit A).tendsto_mul_right z
+  have hsnd : Tendsto (fun e : A ↦ v.snd • (e • z)) (CStarAlgebra.approximateUnit A)
+      (𝓝 (v.snd • z)) := by
+    rw [tendsto_iff_norm_sub_tendsto_zero]
+    refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun e ↦ ?_)
+      (by simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hsmul).const_mul ‖v.snd‖)
+    simpa [_root_.CStarModule.ext_inner_left (A := A) (x := v.snd • (e • z) - v.snd • z)
+      (y := v.snd • (e • z - z)) fun w ↦ by simp [mul_sub]] using
+      _root_.CStarModule.norm_smul_le v.snd (e • z - z)
+  refine ((hsmul.const_smul v.fst).add hsnd).congr fun e ↦
+    _root_.CStarModule.ext_inner_left (A := A) fun w ↦ by simp [add_mul, mul_assoc, smul_mul_assoc]
+
+end Unitization
+
+namespace TauCeti.CStarModule
+
+/-- Right finite-sum inner product `⟪x, ∑ i ∈ s, y i⟫_A = ∑ i ∈ s, ⟪x, y i⟫_A`, without requiring
+`[StarModule ℂ A]` (compare Mathlib's `CStarModule.inner_sum_right`). -/
+theorem inner_sum_right' {A E ι : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A]
+    [PartialOrder A] [Norm A] [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
+    {s : Finset ι} {x : E} {y : ι → E} :
+    inner A x (∑ i ∈ s, y i) = ∑ i ∈ s, inner A x (y i) :=
+  map_sum (AddMonoidHom.mk' (inner A x) fun _ _ ↦ CStarModule.inner_add_right) y s
+
+section Parallelogram
+
+/-- The parallelogram law in a C⋆-module:
+`⟪x + y, x + y⟫_A + ⟪x - y, x - y⟫_A = 2 • (⟪x, x⟫_A + ⟪y, y⟫_A)`. -/
+lemma parallelogram_law {A E : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A]
+    [Norm A] [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E] (x y : E) :
+    inner A (x + y) (x + y) + inner A (x - y) (x - y) = 2 • (inner A x x + inner A y y) := by
+  simp only [sub_eq_add_neg, CStarModule.inner_add_left, CStarModule.inner_add_right,
+    CStarModule.inner_neg_left', CStarModule.inner_neg_right', two_nsmul]
+  abel
+
+/-- In an ordered coefficient ring, `⟪x + y, x + y⟫_A ≤ 2 • (⟪x, x⟫_A + ⟪y, y⟫_A)` by dropping
+the nonnegative difference term in the parallelogram law. -/
+lemma inner_add_add_self_le {A E : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A]
+    [PartialOrder A] [Norm A] [IsOrderedAddMonoid A] [AddCommGroup E] [Module ℂ E] [SMul A E]
+    [Norm E] [CStarModule A E] (x y : E) :
+    inner A (x + y) (x + y) ≤ 2 • (inner A x x + inner A y y) :=
+  (le_add_of_nonneg_right CStarModule.inner_self_nonneg).trans_eq (parallelogram_law x y)
+
+/-- Right-module form of `inner_add_add_self_le`:
+`⟨x + y, x + y⟩_A ≤ 2 • (⟨x, x⟩_A + ⟨y, y⟩_A)`. -/
+lemma unop_inner_add_add_self_le {A E : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A]
+    [PartialOrder A] [Norm Aᵐᵒᵖ] [IsOrderedAddMonoid A] [AddCommGroup E] [Module ℂ E]
+    [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E] (x y : E) :
+    unop (inner Aᵐᵒᵖ (x + y) (x + y)) ≤
+      2 • (unop (inner Aᵐᵒᵖ x x) + unop (inner Aᵐᵒᵖ y y)) := by
+  simpa only [unop_smul, unop_add] using
+    unop_le_unop.mpr (inner_add_add_self_le (A := Aᵐᵒᵖ) x y)
+
+/-- Scalar-order combine bound for nonnegative elements: if `0 ≤ u`, `0 ≤ v`, and `0 ≤ c`, then
+`c • u + v ≤ (1 + c) • (u + v)`. -/
+lemma smul_add_le_one_add_smul {A : Type*} [AddCommMonoid A] [PartialOrder A]
+    [IsOrderedAddMonoid A] [Module ℝ A] [PosSMulMono ℝ A] {u v : A} (hu : 0 ≤ u) (hv : 0 ≤ v)
+    {c : ℝ} (hc : 0 ≤ c) : c • u + v ≤ (1 + c) • (u + v) :=
+  (add_le_add (le_add_of_nonneg_left hu) (le_add_of_nonneg_right (smul_nonneg hc hv))).trans_eq
+    (by rw [add_add_add_comm, add_smul, one_smul, smul_add])
+
+/-- Parallelogram lower-bound helper for a sum of two vectors when the first vector satisfies
+`⟨x, x⟩_A ≤ c • u` with `0 ≤ u` and `0 ≤ c`:
+`⟨x + y, x + y⟩_A ≤ (2 * (1 + c)) • (u + ⟨y, y⟩_A)`. -/
+lemma unop_inner_add_self_le_of_le_smul {A E : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A]
+    [PartialOrder A] [Norm Aᵐᵒᵖ] [IsOrderedAddMonoid A] [Module ℝ A] [PosSMulMono ℝ A]
+    [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
+    (x y : E) {u : A} (hu : 0 ≤ u) {c : ℝ} (hc : 0 ≤ c)
+    (hx : unop (inner Aᵐᵒᵖ x x) ≤ c • u) :
+    unop (inner Aᵐᵒᵖ (x + y) (x + y)) ≤
+      (2 * (1 + c)) • (u + unop (inner Aᵐᵒᵖ y y)) :=
+  (unop_inner_add_add_self_le (A := A) x y).trans
+    (((nsmul_le_nsmul_right ((add_le_add hx le_rfl).trans
+      (smul_add_le_one_add_smul hu (unop_nonneg.mpr CStarModule.inner_self_nonneg) hc)) 2).trans_eq
+      (by rw [two_smul, ← two_smul ℝ])).trans_eq (mul_smul _ _ _).symm)
+
+end Parallelogram
+
 /-! ### Paschke's inequality -/
 
 section Paschke
 
 open scoped ComplexOrder Ring
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
 omit [StarOrderedRing A] in
 /-- The diagonal inner product of `u.fst • z + u.snd • z` embeds into `Unitization ℂ A` as
@@ -433,82 +627,127 @@ private lemma inr_inner_unitization_smul {E : Type*} [AddCommGroup E] [Module �
   · simp [Unitization.fst_mul]
   · simp only [Unitization.snd_inr, Unitization.snd_mul, Unitization.fst_mul, Unitization.fst_inr,
       Unitization.fst_star, Unitization.snd_star, zero_mul, zero_smul, zero_add, add_zero,
-      inner_add_left, inner_add_right, inner_smul_left_complex, inner_smul_right_complex,
-      inner_op_smul_left, inner_op_smul_right, smul_add, smul_smul, mul_add, mul_smul_comm,
-      mul_assoc]
+      CStarModule.inner_add_left, CStarModule.inner_add_right, CStarModule.inner_smul_left_complex,
+      CStarModule.inner_smul_right_complex, CStarModule.inner_op_smul_left,
+      CStarModule.inner_op_smul_right, smul_add, smul_smul, mul_add, mul_smul_comm, mul_assoc]
 
 /-- Regularized Paschke estimate: for any strictly positive majorant `b ≥ ⟪x, x⟫_A` in
-`Unitization ℂ A`, we have `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • b`.
-
-The proof normalizes `x` by `v = √(b⁻¹)`, forming `y = v • x` in the unit ball of `E`;
-boundedness of `T` then bounds `v ⟪T x, T x⟫_A v = ⟪T y, T y⟫_A` by `‖T‖ ^ 2`, and
-`CFC.conjSqrt_ringInverse_le_algebraMap_iff` conjugates back by `√b`. -/
-private lemma inr_inner_map_map_le_norm_sq_smul_of_le {E F : Type*} [SeminormedAddCommGroup E]
-    [NormedSpace ℂ E] [SMul A E] [CStarModule A E] [SeminormedAddCommGroup F] [NormedSpace ℂ F]
-    [SMul A F] [CStarModule A F] (T : E →L[ℂ] F)
-    (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) (x : E) {b : Unitization ℂ A}
-    (hb : IsStrictlyPositive b) (hxb : (inner A x x : Unitization ℂ A) ≤ b) :
-    (inner A (T x) (T x) : Unitization ℂ A) ≤ ‖T‖ ^ 2 • b := by
+`Unitization ℂ A`, if `‖v.fst • y + v.snd • y‖ ≤ C * ‖v.fst • x + v.snd • x‖` for `v = √(b⁻¹)`,
+then `⟪y, y⟫_A ≤ C ^ 2 • b`. -/
+private lemma inr_inner_self_le_sq_smul_of_le {E F : Type*} [AddCommGroup E] [Module ℂ E]
+    [SMul A E] [Norm E] [CStarModule A E] [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F]
+    [CStarModule A F] (x : E) (y : F) {C : ℝ} {b : Unitization ℂ A}
+    (hb : IsStrictlyPositive b) (hxb : (inner A x x : Unitization ℂ A) ≤ b)
+    (hnorm : ‖(CFC.sqrt b⁻¹ʳ).fst • y + (CFC.sqrt b⁻¹ʳ).snd • y‖ ≤
+      C * ‖(CFC.sqrt b⁻¹ʳ).fst • x + (CFC.sqrt b⁻¹ʳ).snd • x‖) :
+    (inner A y y : Unitization ℂ A) ≤ C ^ 2 • b := by
   set q : Unitization ℂ A := (inner A x x : Unitization ℂ A)
-  set p : Unitization ℂ A := (inner A (T x) (T x) : Unitization ℂ A)
-  -- Normalize `x` via the unitization action of `v = √(b⁻¹)`.
+  set p : Unitization ℂ A := (inner A y y : Unitization ℂ A)
   set v : Unitization ℂ A := CFC.sqrt b⁻¹ʳ
+  set x' := v.fst • x + v.snd • x; set y' := v.fst • y + v.snd • y
   have hv_sa : IsSelfAdjoint v := (CFC.sqrt_nonneg _).isSelfAdjoint
-  set y : E := v.fst • x + v.snd • x
-  have hy_inner : (inner A y y : Unitization ℂ A) = CFC.conjSqrt b⁻¹ʳ q := by
-    rw [CFC.conjSqrt_apply]
-    simpa only [hv_sa.star_eq] using inr_inner_unitization_smul v x
-  have hTy_inner : (inner A (T y) (T y) : Unitization ℂ A) = CFC.conjSqrt b⁻¹ʳ p := by
-    have hTy : T y = v.fst • T x + v.snd • T x := by simp only [y, map_add, map_smul, hT]
-    rw [CFC.conjSqrt_apply]
-    simpa only [hTy, hv_sa.star_eq] using inr_inner_unitization_smul v (T x)
-  -- The majorant `q ≤ b` forces `⟪y, y⟫_A = √(b⁻¹) q √(b⁻¹) ≤ 1`, hence `‖y‖² ≤ 1`.
-  have hvqv_nonneg : 0 ≤ CFC.conjSqrt b⁻¹ʳ q :=
-    hv_sa.conjugate_nonneg (Unitization.inr_nonneg ℂ _ inner_self_nonneg)
-  have hvqv_le : CFC.conjSqrt b⁻¹ʳ q ≤ 1 :=
-    (CFC.conjSqrt_le_conjSqrt hxb).trans_eq (CFC.conjSqrt_ringInverse_self b hb)
-  have hy_norm_sq : ‖y‖ ^ 2 ≤ 1 := by
-    rw [CStarModule.norm_sq_eq A, ← Unitization.norm_inr (𝕜 := ℂ), hy_inner]
-    exact (CStarAlgebra.norm_le_one_iff_of_nonneg _ hvqv_nonneg).mpr hvqv_le
-  -- Boundedness of `T` on the normalized vector `y` bounds `√(b⁻¹) p √(b⁻¹)` by `‖T‖²`.
-  have hvpv_nonneg : 0 ≤ CFC.conjSqrt b⁻¹ʳ p :=
-    hv_sa.conjugate_nonneg (Unitization.inr_nonneg ℂ _ inner_self_nonneg)
-  have hvpv_norm : ‖CFC.conjSqrt b⁻¹ʳ p‖ ≤ ‖T‖ ^ 2 := by
-    rw [← hTy_inner, Unitization.norm_inr (𝕜 := ℂ), ← CStarModule.norm_sq_eq A]
-    calc ‖T y‖ ^ 2 ≤ (‖T‖ * ‖y‖) ^ 2 := by gcongr; exact T.le_opNorm y
-      _ = ‖T‖ ^ 2 * ‖y‖ ^ 2 := mul_pow _ _ _
-      _ ≤ ‖T‖ ^ 2 * 1 := by gcongr
-      _ = ‖T‖ ^ 2 := mul_one _
-  have hvpv_le : CFC.conjSqrt b⁻¹ʳ p ≤ algebraMap ℝ (Unitization ℂ A) (‖T‖ ^ 2) :=
-    (CStarAlgebra.norm_le_iff_le_algebraMap _ (sq_nonneg ‖T‖) hvpv_nonneg).mp hvpv_norm
-  -- Conjugate back by `√b` to recover `p ≤ ‖T‖² • b`.
-  exact (CFC.conjSqrt_ringInverse_le_algebraMap_iff hb).mp hvpv_le
+  have hx'_inner : (inner A x' x' : Unitization ℂ A) = CFC.conjSqrt b⁻¹ʳ q := by
+    simpa only [CFC.conjSqrt_apply, hv_sa.star_eq] using inr_inner_unitization_smul v x
+  have hy'_inner : (inner A y' y' : Unitization ℂ A) = CFC.conjSqrt b⁻¹ʳ p := by
+    simpa only [CFC.conjSqrt_apply, hv_sa.star_eq] using inr_inner_unitization_smul v y
+  have hx'_norm_sq : ‖x'‖ ^ 2 ≤ 1 := by
+    rw [CStarModule.norm_sq_eq A, ← Unitization.norm_inr (𝕜 := ℂ), hx'_inner]
+    exact (CStarAlgebra.norm_le_one_iff_of_nonneg _
+      (hv_sa.conjugate_nonneg (Unitization.inr_nonneg ℂ _ CStarModule.inner_self_nonneg))).mpr
+      ((CFC.conjSqrt_le_conjSqrt hxb).trans_eq (CFC.conjSqrt_ringInverse_self b hb))
+  have hvpv_norm : ‖CFC.conjSqrt b⁻¹ʳ p‖ ≤ C ^ 2 := by
+    rw [← hy'_inner, Unitization.norm_inr (𝕜 := ℂ), ← CStarModule.norm_sq_eq A]
+    exact (pow_le_pow_left₀ (CStarModule.norm_nonneg A) hnorm 2).trans <| by
+      rw [mul_pow]; exact (mul_le_mul_of_nonneg_left hx'_norm_sq (sq_nonneg C)).trans_eq (mul_one _)
+  exact (CFC.conjSqrt_ringInverse_le_algebraMap_iff hb).mp <|
+    (CStarAlgebra.norm_le_iff_le_algebraMap _ (sq_nonneg C)
+      (hv_sa.conjugate_nonneg (Unitization.inr_nonneg ℂ _ CStarModule.inner_self_nonneg))).mp
+      hvpv_norm
+
+/-- **Paschke's inequality** (two-vector form): if `x : E` and `y : F` satisfy
+`‖a • y‖ ≤ C * ‖a • x‖` for all `a : A`, then `⟪y, y⟫_A ≤ C ^ 2 • ⟪x, x⟫_A`, with no linearity,
+continuity, adjointability, or completeness assumptions. -/
+theorem inner_self_le_of_norm_smul_le {E F : Type*} [AddCommGroup E] [Module ℂ E] [SMul A E]
+    [Norm E] [CStarModule A E] [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F]
+    [CStarModule A F] (x : E) (y : F) {C : ℝ} (h : ∀ a : A, ‖a • y‖ ≤ C * ‖a • x‖) :
+    inner A y y ≤ C ^ 2 • inner A x x := by
+  let : NormedAddCommGroup E := CStarModule.normedAddCommGroup A
+  let : NormedAddCommGroup F := CStarModule.normedAddCommGroup A
+  have := (CStarAlgebra.increasingApproximateUnit A).neBot
+  rw [← Unitization.inr_le_inr_iff ℂ, Unitization.inr_smul]
+  set q : Unitization ℂ A := (inner A x x : Unitization ℂ A)
+  have htend : Tendsto (fun ε : ℝ ↦ C ^ 2 • (q + algebraMap ℝ (Unitization ℂ A) ε))
+      (𝓝[>] 0) (𝓝 (C ^ 2 • q)) := by
+    simpa only [map_zero, add_zero] using ((by fun_prop : Continuous fun ε : ℝ ↦
+      C ^ 2 • (q + algebraMap ℝ (Unitization ℂ A) ε)).tendsto 0).mono_left nhdsWithin_le_nhds
+  refine ge_of_tendsto htend (eventually_nhdsWithin_of_forall fun ε hε ↦
+    inr_inner_self_le_sq_smul_of_le x y
+      (IsStrictlyPositive.nonneg_add (Unitization.inr_nonneg ℂ _ CStarModule.inner_self_nonneg)
+        (isStrictlyPositive_algebraMap hε))
+      (le_add_of_nonneg_right (isStrictlyPositive_algebraMap hε).nonneg)
+      (le_of_tendsto_of_tendsto'
+        (Unitization.tendsto_smul_approximateUnit
+          (CFC.sqrt (q + algebraMap ℝ (Unitization ℂ A) ε)⁻¹ʳ) y).norm
+        ((Unitization.tendsto_smul_approximateUnit
+          (CFC.sqrt (q + algebraMap ℝ (Unitization ℂ A) ε)⁻¹ʳ) x).norm.const_mul C)
+        fun e ↦ h _))
+
+/-- **Paschke's inequality** for any function `T : E → F` commuting with the `A`-action
+(`∀ a x, T (a • x) = a • T x`) and satisfying a pointwise norm bound `‖T x‖ ≤ C * ‖x‖`:
+`⟪T x, T x⟫_A ≤ C ^ 2 • ⟪x, x⟫_A`, with no linearity, continuity, adjointability, or completeness
+assumptions (Paschke, Proposition 2.6; Lance, Proposition 1.2). -/
+theorem inner_map_map_le_of_norm_le {E F : Type*} [AddCommGroup E] [Module ℂ E] [SMul A E]
+    [Norm E] [CStarModule A E] [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F]
+    [CStarModule A F] (T : E → F) {C : ℝ} (hbound : ∀ x : E, ‖T x‖ ≤ C * ‖x‖)
+    (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) (x : E) :
+    inner A (T x) (T x) ≤ C ^ 2 • inner A x x :=
+  inner_self_le_of_norm_smul_le x (T x) fun a ↦ by rw [← hT]; exact hbound _
+
+/-- Right-module two-vector form of Paschke's inequality: if `x : E` and `y : F` satisfy
+`‖op a • y‖ ≤ C * ‖op a • x‖` for all `a : A`, then `⟨y, y⟩_A ≤ C ^ 2 • ⟨x, x⟩_A`. -/
+theorem unop_inner_self_le_of_norm_op_smul_le {A E F : Type*} [NonUnitalCStarAlgebra A]
+    [PartialOrder A] [StarOrderedRing A] [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E]
+    [CStarModule Aᵐᵒᵖ E] [AddCommGroup F] [Module ℂ F] [SMul Aᵐᵒᵖ F] [Norm F]
+    [CStarModule Aᵐᵒᵖ F] (x : E) (y : F) {C : ℝ} (h : ∀ a : A, ‖op a • y‖ ≤ C * ‖op a • x‖) :
+    unop (inner Aᵐᵒᵖ y y) ≤ C ^ 2 • unop (inner Aᵐᵒᵖ x x) := by
+  rw [← unop_smul]
+  exact unop_le_unop.mpr <| inner_self_le_of_norm_smul_le (A := Aᵐᵒᵖ) x y fun a ↦ h (unop a)
+
+/-- Right-module form of Paschke's inequality for any function `T : E → F` commuting with the
+right `A`-action (`∀ a x, T (op a • x) = op a • T x`) and satisfying `‖T x‖ ≤ C * ‖x‖`:
+`⟨T x, T x⟩_A ≤ C ^ 2 • ⟨x, x⟩_A`. -/
+theorem unop_inner_map_map_le_of_norm_le {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+    [StarOrderedRing A] [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E]
+    [CStarModule Aᵐᵒᵖ E] [AddCommGroup F] [Module ℂ F] [SMul Aᵐᵒᵖ F] [Norm F]
+    [CStarModule Aᵐᵒᵖ F] (T : E → F) {C : ℝ} (hbound : ∀ x : E, ‖T x‖ ≤ C * ‖x‖)
+    (hT : ∀ (a : A) (x : E), T (op a • x) = op a • T x) (x : E) :
+    unop (inner Aᵐᵒᵖ (T x) (T x)) ≤ C ^ 2 • unop (inner Aᵐᵒᵖ x x) :=
+  unop_inner_self_le_of_norm_op_smul_le x (T x) fun a ↦ by rw [← hT]; exact hbound _
+
+end Paschke
+
+end TauCeti.CStarModule
+
+namespace ContinuousLinearMap
 
 /-- Paschke's inequality for bounded `A`-linear operators between Hilbert C⋆-modules:
 `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A`, with no adjointability or completeness assumptions
 (Lance, Proposition 1.2). -/
-theorem inner_map_map_le_norm_sq_smul {E F : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
-    [SMul A E] [CStarModule A E] [SeminormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F]
-    [CStarModule A F] (T : E →L[ℂ] F) (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) (x : E) :
-    inner A (T x) (T x) ≤ ‖T‖ ^ 2 • inner A x x := by
-  -- Pass to `Unitization ℂ A`, regularize `⟪x, x⟫_A` by `+ ε`, and let `ε → 0⁺`.
-  rw [← Unitization.inr_le_inr_iff ℂ, Unitization.inr_smul]
-  set q : Unitization ℂ A := (inner A x x : Unitization ℂ A)
-  have hq : 0 ≤ q := Unitization.inr_nonneg ℂ _ inner_self_nonneg
-  have hle (ε : ℝ) (hε : 0 < ε) :
-      (inner A (T x) (T x) : Unitization ℂ A) ≤
-        ‖T‖ ^ 2 • (q + algebraMap ℝ (Unitization ℂ A) ε) := by
-    have hε_pos : IsStrictlyPositive (algebraMap ℝ (Unitization ℂ A) ε) :=
-      isStrictlyPositive_algebraMap hε
-    exact inr_inner_map_map_le_norm_sq_smul_of_le T hT x
-      (IsStrictlyPositive.nonneg_add hq hε_pos) (le_add_of_nonneg_right hε_pos.nonneg)
-  have hcont : Continuous (fun ε : ℝ ↦ ‖T‖ ^ 2 • (q + algebraMap ℝ (Unitization ℂ A) ε)) := by
-    fun_prop
-  have htend : Tendsto (fun ε : ℝ ↦ ‖T‖ ^ 2 • (q + algebraMap ℝ (Unitization ℂ A) ε))
-      (𝓝[>] 0) (𝓝 (‖T‖ ^ 2 • q)) := by
-    simpa only [map_zero, add_zero] using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
-  exact ge_of_tendsto htend (eventually_nhdsWithin_of_forall hle)
+theorem inner_map_map_le_norm_sq_smul {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+    [StarOrderedRing A] [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
+    [SeminormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F] (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) (x : E) :
+    inner A (T x) (T x) ≤ ‖T‖ ^ 2 • inner A x x :=
+  TauCeti.CStarModule.inner_map_map_le_of_norm_le T T.le_opNorm hT x
 
-end Paschke
+/-- Right-module form of Paschke's inequality for a bounded right `A`-linear map `T : E →L[ℂ] F`
+(commuting with the right `A`-action): `⟨T x, T x⟩_A ≤ ‖T‖ ^ 2 • ⟨x, x⟩_A`. -/
+theorem unop_inner_map_map_le_norm_sq_smul {A E F : Type*} [NonUnitalCStarAlgebra A]
+    [PartialOrder A] [StarOrderedRing A] [SeminormedAddCommGroup E] [NormedSpace ℂ E]
+    [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] [SeminormedAddCommGroup F] [NormedSpace ℂ F]
+    [SMul Aᵐᵒᵖ F] [CStarModule Aᵐᵒᵖ F] (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (op a • x) = op a • T x) (x : E) :
+    unop (inner Aᵐᵒᵖ (T x) (T x)) ≤ ‖T‖ ^ 2 • unop (inner Aᵐᵒᵖ x x) :=
+  TauCeti.CStarModule.unop_inner_map_map_le_of_norm_le T T.le_opNorm hT x
 
-end CStarModule
+end ContinuousLinearMap
