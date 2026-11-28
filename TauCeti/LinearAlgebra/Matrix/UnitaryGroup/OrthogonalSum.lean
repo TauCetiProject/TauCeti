@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Matrix.Block
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Form
 
@@ -27,9 +28,6 @@ block-diagonal elements of the adelic unitary group of an orthogonal sum of herm
 
 ## Main results
 
-* `Matrix.diagonal_comp_sumElim`: the diagonal matrix of concatenated entries is block diagonal.
-* `Matrix.conjTranspose_fromBlocks_mul_fromBlocks_mul_fromBlocks`: congruence by a
-  block-diagonal matrix is blockwise congruence.
 * `Matrix.fromBlocksGL_mem_unitaryGroupOf_iff`: `diag(g, h)` preserves `diag(A, D)` exactly when
   `g` preserves `A` and `h` preserves `D`.
 -/
@@ -40,27 +38,7 @@ namespace Matrix
 
 open TauCeti
 
-variable {m n p q R : Type*}
-
-/-- **Congruence by a block-diagonal matrix is blockwise congruence**:
-`diag(x, y)ᴴ * diag(A, D) * diag(x, y) = diag(xᴴ * A * x, yᴴ * D * y)`, for rectangular blocks `x`
-and `y`. -/
-theorem conjTranspose_fromBlocks_mul_fromBlocks_mul_fromBlocks [Fintype m] [Fintype n]
-    [NonUnitalNonAssocSemiring R] [StarAddMonoid R] (x : Matrix m p R) (y : Matrix n q R)
-    (A : Matrix m m R) (D : Matrix n n R) :
-    (fromBlocks x 0 0 y)ᴴ * fromBlocks A 0 0 D * fromBlocks x 0 0 y =
-      fromBlocks (xᴴ * A * x) 0 0 (yᴴ * D * y) := by
-  simp [fromBlocks_conjTranspose, fromBlocks_multiply]
-
-/-- **The Gram matrix of an orthogonal sum of diagonal forms**: the diagonal matrix of a function of
-concatenated entries is the block-diagonal matrix of the diagonal matrices of the two parts. -/
-theorem diagonal_comp_sumElim [DecidableEq m] [DecidableEq n] [Zero R] {α : Type*} (f : α → R)
-    (d₁ : m → α) (d₂ : n → α) :
-    (diagonal fun i ↦ f (Sum.elim d₁ d₂ i)) =
-      fromBlocks (diagonal fun i ↦ f (d₁ i)) 0 0 (diagonal fun i ↦ f (d₂ i)) := by
-  rw [fromBlocks_diagonal]
-  congr 1
-  ext (i | i) <;> simp
+variable {m n R : Type*}
 
 variable [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n] [Ring R] [StarRing R]
   {A : Matrix m m R} {D : Matrix n n R}
