@@ -69,15 +69,6 @@ theorem algebraicModularFormsOfLevel_ext
     (fun u : weightSpace ((coind V.finiteRationalEmbedding (V.coefficientRep ρ)).comp
       K.subtype) χ ↦ u.val) h)
 
-/-- A character level is the intersection of the smooth vectors with the ambient character
-weight space. -/
-theorem algebraicModularFormsOfLevel_def :
-    V.algebraicModularFormsOfLevel ρ K χ = (V.algebraicModularForms ρ).toSubmodule ⊓
-      weightSpace ((coind V.finiteRationalEmbedding (V.coefficientRep ρ)).comp K.subtype) χ := by
-  ext f
-  simp only [mem_algebraicModularFormsOfLevel_iff, Submodule.mem_inf,
-    Subrepresentation.mem_toSubmodule, mem_weightSpace_coind_comp_subtype_iff]
-
 end TauCeti.FramedHermitianSpace
 
 namespace TauCeti.FramedHermitianSpace
