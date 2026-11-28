@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Indicator
 
 /-!
 # Fubini's theorem on a triangle
@@ -38,16 +39,6 @@ private theorem integral_eq_integral_indicator_le {c d v : ℝ} (hc : c ≤ v) (
   rw [integral_of_le hc, MeasureTheory.integral_indicator measurableSet_Iic,
     Measure.restrict_restrict measurableSet_Iic, Iic_inter_Ioc_of_le hd]
 
-/-- An interval integral over `w..d` with `c ≤ w` is the integral over `Ioc c d` of the
-restriction to `w ≤ v`. -/
-private theorem integral_eq_integral_indicator_ge {c d w : ℝ} (hc : c < w) (hd : w ≤ d)
-    (f : ℝ → E) :
-    ∫ v in w..d, f v = ∫ v in Ioc c d, (Ici w).indicator f v := by
-  have h : Ici w ∩ Ioc c d = Icc w d :=
-    Set.ext fun x ↦ ⟨fun h ↦ ⟨h.1, h.2.2⟩, fun h ↦ ⟨h.1, hc.trans_le h.1, h.2⟩⟩
-  rw [integral_of_le hd, MeasureTheory.integral_indicator measurableSet_Ici,
-    Measure.restrict_restrict measurableSet_Ici, h, integral_Icc_eq_integral_Ioc]
-
 /-- Fubini's theorem on a triangle, for `c ≤ d`. -/
 private theorem integral_integral_swap_triangle_of_le {g : ℝ → ℝ → E} {c d : ℝ} (hcd : c ≤ d)
     (hg : IntegrableOn (Function.uncurry g) (Icc c d ×ˢ Icc c d)) :
@@ -66,8 +57,11 @@ private theorem integral_integral_swap_triangle_of_le {g : ℝ → ℝ → E} {c
   have hr : ∫ w in c..d, ∫ v in w..d, g v w = ∫ w in Ioc c d, ∫ v in Ioc c d, h (v, w) := by
     rw [integral_of_le hcd]
     refine setIntegral_congr_fun measurableSet_Ioc fun w hw ↦ ?_
-    simp only [integral_eq_integral_indicator_ge hw.1 hw.2, h_def, indicator_apply, mem_Ici,
-      mem_ofPred_eq, Function.uncurry_apply_pair]
+    have hcut := TauCeti.intervalIntegral.integral_indicator_Ici_eq_integral_max
+      (μ := volume) (f := fun v ↦ g v w) hcd hw.2
+    rw [max_eq_right hw.1.le, integral_of_le hcd] at hcut
+    simpa only [h_def, indicator_apply, mem_Ici, mem_ofPred_eq, Function.uncurry_apply_pair]
+      using hcut.symm
   rw [hl, hr]
   exact integral_integral_swap hint
 

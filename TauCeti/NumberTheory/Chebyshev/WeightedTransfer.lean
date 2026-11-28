@@ -86,7 +86,7 @@ theorem sum_primesLE_mul_log_eq_integral_add {g g' : ℝ → ℝ} {x : ℝ} (hx 
   simp only [one_mul] at hparts
   have hsplit : (∫ t in (2 : ℝ)..x, (Chebyshev.theta t - t) * g' t) =
       (∫ t in (2 : ℝ)..x, g' t * Chebyshev.theta t) - ∫ t in (2 : ℝ)..x, t * g' t := by
-    rw [← intervalIntegral.integral_sub hg'.mul_chebyshev_theta ht]
+    rw [← intervalIntegral.integral_sub hg'.mul_chebyshevTheta ht]
     exact intervalIntegral.integral_congr fun _ _ ↦ by ring
   rw [sum_primesLE_mul_log_eq_sub_integral hx hc hg hg', hsplit]
   linarith

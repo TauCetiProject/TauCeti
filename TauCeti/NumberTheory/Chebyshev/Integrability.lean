@@ -19,7 +19,7 @@ public section
 open MeasureTheory Set
 
 /-- Multiplication by the Chebyshev function `θ` preserves interval integrability. -/
-theorem IntervalIntegrable.mul_chebyshev_theta {w : ℝ → ℝ} {μ : Measure ℝ} {a b : ℝ}
+theorem IntervalIntegrable.mul_chebyshevTheta {w : ℝ → ℝ} {μ : Measure ℝ} {a b : ℝ}
     (hw : IntervalIntegrable w μ a b) :
     IntervalIntegrable (fun t ↦ w t * Chebyshev.theta t) μ a b := by
   rw [intervalIntegrable_iff] at hw ⊢

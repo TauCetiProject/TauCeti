@@ -69,11 +69,9 @@ private theorem filter_primesLE_floor_gt_eq_empty {a b : ℝ} (hab : ¬ a ≤ b)
 
 private theorem intervalIntegrable_two_div_cube {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
     IntervalIntegrable (fun t : ℝ ↦ 2 / t ^ 3) volume a b := by
-  have hdenom (t : ℝ) (ht : t ∈ Set.uIcc a b) : t ^ 3 ≠ 0 := by
-    rw [Set.uIcc_of_le hab] at ht
-    exact pow_ne_zero 3 (ha.trans_le ht.1).ne'
-  simpa only [div_eq_mul_inv, one_mul] using
-    (intervalIntegral.intervalIntegrable_one_div hdenom (continuousOn_id.pow 3)).const_mul (2 : ℝ)
+  simpa [div_eq_mul_inv, zpow_neg, zpow_natCast] using
+    (intervalIntegral.intervalIntegrable_zpow (n := -3)
+      (Or.inr (Set.notMem_uIcc_of_lt ha (ha.trans_le hab)))).const_mul (2 : ℝ)
 
 /-- Partial summation for the logarithmic prime sum on `(a, b]`. -/
 theorem sum_primesLE_log_div_sq_eq {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
@@ -82,9 +80,7 @@ theorem sum_primesLE_log_div_sq_eq {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
       Chebyshev.theta b / b ^ 2 - Chebyshev.theta a / a ^ 2 +
         ∫ t in a..b, 2 * Chebyshev.theta t / t ^ 3 := by
   have hd (t : ℝ) (ht : t ≠ 0) : HasDerivAt (fun u : ℝ ↦ (u ^ 2)⁻¹) (-(2 / t ^ 3)) t := by
-    convert ((hasDerivAt_id' (x := t)).fun_pow 2).inv (pow_ne_zero 2 ht) using 1
-    field_simp
-    ring
+    simpa [zpow_neg, zpow_natCast, div_eq_mul_inv] using hasDerivAt_zpow (-2) t (Or.inl ht)
   have h := sum_filter_primesLE_mul_log_eq_sub_sub_integral hab
     (fun t ht ↦ (hd t (ha.trans_le ht.1).ne').continuousAt.continuousWithinAt)
     (fun t ht ↦ hd t (ha.trans ht.1).ne') (intervalIntegrable_two_div_cube ha hab).neg
@@ -99,7 +95,7 @@ theorem sum_primesLE_log_div_sq_eq {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
 private theorem intervalIntegrable_two_mul_theta_div_cube {a b : ℝ}
     (ha : 0 < a) (hab : a ≤ b) :
     IntervalIntegrable (fun t ↦ 2 * Chebyshev.theta t / t ^ 3) volume a b := by
-  exact (intervalIntegrable_two_div_cube ha hab).mul_chebyshev_theta.congr (fun t _ ↦ by ring)
+  exact (intervalIntegrable_two_div_cube ha hab).mul_chebyshevTheta.congr (fun t _ ↦ by ring)
 
 -- Chebyshev bounds the remainder by an elementary power integral.
 private theorem integral_two_mul_theta_div_cube_le {a b : ℝ}

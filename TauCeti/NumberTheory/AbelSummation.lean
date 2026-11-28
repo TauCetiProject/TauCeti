@@ -14,6 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.Log.InvLog
 import Mathlib.MeasureTheory.Function.Floor
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Indicator
 
 /-!
 # Consequences of Abel summation for partial sums
@@ -173,22 +174,6 @@ theorem exists_tendsto_sum_mul_and_norm_le {𝕜 : Type*} [RCLike 𝕜] {c : ℕ
 
 /-! ### Abel summation with interior derivatives -/
 
-private theorem integral_indicator_Ici_eq_integral_max {𝕜 : Type*} [RCLike 𝕜]
-    {f : ℝ → 𝕜} {a b p : ℝ} (hab : a ≤ b) (hpb : p ≤ b) :
-    (∫ t in a..b, (Ici p).indicator f t) = ∫ t in max a p..b, f t := by
-  have hset : Icc a b ∩ Ici p = Icc (max a p) b := by
-    calc
-      _ = Icc a b ∩ (Ici p ∩ Iic b) := by
-        rw [inter_left_comm, inter_eq_left.mpr Icc_subset_Iic_self, inter_comm]
-      _ = _ := by rw [Ici_inter_Iic, Icc_inter_Icc, inf_idem]
-  calc
-    _ = ∫ t in Icc a b, (Ici p).indicator f t := by
-      rw [intervalIntegral.integral_of_le hab, integral_Icc_eq_integral_Ioc]
-    _ = ∫ t in Icc (max a p) b, f t := by
-      rw [setIntegral_indicator measurableSet_Ici, hset]
-    _ = _ := by
-      rw [intervalIntegral.integral_of_le (max_le hab hpb), integral_Icc_eq_integral_Ioc]
-
 open Finset in
 /-- Abel summation for arbitrary coefficients and a weight that is continuous on `[a, b]`
 with an integrable derivative on its interior. This version of Mathlib's
@@ -235,7 +220,8 @@ theorem sum_mul_eq_sub_sub_integral_mul_of_hasDerivAt {𝕜 : Type*} [RCLike �
   have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le (max_le hab hkb)
     (hc.mono hsub) (fun t ht ↦ hg t ⟨(le_max_left ..).trans_lt ht.1, ht.2⟩)
     (hg'.mono_set (by simpa only [uIcc_of_le hab, uIcc_of_le (max_le hab hkb)] using hsub))
-  rw [integral_indicator_Ici_eq_integral_max hab hkb, intervalIntegral.integral_mul_const, hFTC]
+  rw [intervalIntegral.integral_indicator_Ici_eq_integral_max hab hkb,
+    intervalIntegral.integral_mul_const, hFTC]
   by_cases hk' : k ≤ ⌊a⌋₊
   · simp only [max_eq_left ((hcut k le_rfl).mpr hk'), hk', not_lt_of_ge hk', ite_false, ite_true]
     ring
