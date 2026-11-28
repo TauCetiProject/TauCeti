@@ -187,25 +187,16 @@ theorem commute_simpleReflection_of_eq_zero {i j : I} (hij : A i j = 0) (hji : A
   exact Module.commute_reflection _ _ (by simpa [R.root_coroot] using hij)
     (by simpa [R.root_coroot] using hji)
 
-/-- If `i ≠ j` and the simple reflections `sᵢ` and `sⱼ` commute, then `A i j = 0` and
-`A j i = 0`. -/
-theorem eq_zero_of_commute_simpleReflection {i j : I} (hij : i ≠ j)
-    (h : Commute (R.simpleReflection hA i) (R.simpleReflection hA j)) :
-    A i j = 0 ∧ A j i = 0 := by
-  rw [R.simpleReflection_eq_reflection hA i,
-    R.simpleReflection_eq_reflection hA j (by simp [hA j])] at h
-  have hne (k : I) : Dual.eval K H (R.coroot k) ≠ 0 :=
-    (Module.eval_apply_eq_zero_iff K _).not.mpr (R.coroot_linearIndependent.ne_zero k)
-  have h0 := (Module.commute_reflection_iff
-    (R.linearIndependent_root_pair hij) (hne i) (hne j)).mp h
-  simpa [R.root_coroot] using h0
-
 /-- For `i ≠ j`, the simple reflections `sᵢ` and `sⱼ` commute if and only if `A i j = 0` and
 `A j i = 0`. -/
 theorem commute_simpleReflection_iff_eq_zero {i j : I} (hij : i ≠ j) :
-    Commute (R.simpleReflection hA i) (R.simpleReflection hA j) ↔ A i j = 0 ∧ A j i = 0 :=
-  ⟨R.eq_zero_of_commute_simpleReflection hA hij,
-    fun ⟨h1, h2⟩ ↦ R.commute_simpleReflection_of_eq_zero hA h1 h2⟩
+    Commute (R.simpleReflection hA i) (R.simpleReflection hA j) ↔ A i j = 0 ∧ A j i = 0 := by
+  rw [R.simpleReflection_eq_reflection hA i,
+    R.simpleReflection_eq_reflection hA j (by simp [hA j])]
+  have hne (k : I) : Dual.eval K H (R.coroot k) ≠ 0 :=
+    (Module.eval_apply_eq_zero_iff K _).not.mpr (R.coroot_linearIndependent.ne_zero k)
+  simpa [R.root_coroot] using
+    Module.commute_reflection_iff (R.linearIndependent_root_pair hij) (hne i) (hne j)
 
 /-- If `A i j = 0` and `A j i = 0`, the dual simple reflections `sᵢ` and `sⱼ` commute. -/
 theorem commute_simpleCoreflection_of_eq_zero {i j : I} (hij : A i j = 0) (hji : A j i = 0) :
@@ -253,20 +244,6 @@ group. -/
 theorem commute_weylSimple_of_eq_zero {i j : I} (hij : A i j = 0) (hji : A j i = 0) :
     Commute (R.weylSimple hA i) (R.weylSimple hA j) :=
   Subtype.ext (R.commute_simpleReflection_of_eq_zero hA hij hji)
-
-/-- If `i ≠ j` and the simple reflections `sᵢ` and `sⱼ` commute in the Weyl group, then
-`A i j = 0` and `A j i = 0`. -/
-theorem eq_zero_of_commute_weylSimple {i j : I} (hij : i ≠ j)
-    (h : Commute (R.weylSimple hA i) (R.weylSimple hA j)) :
-    A i j = 0 ∧ A j i = 0 :=
-  R.eq_zero_of_commute_simpleReflection hA hij (h.map (R.weylGroup hA).subtype)
-
-/-- For `i ≠ j`, the simple reflections `sᵢ` and `sⱼ` commute in the Weyl group if and only if
-`A i j = 0` and `A j i = 0`. -/
-theorem commute_weylSimple_iff_eq_zero {i j : I} (hij : i ≠ j) :
-    Commute (R.weylSimple hA i) (R.weylSimple hA j) ↔ A i j = 0 ∧ A j i = 0 :=
-  ⟨R.eq_zero_of_commute_weylSimple hA hij,
-    fun ⟨h1, h2⟩ ↦ R.commute_weylSimple_of_eq_zero hA h1 h2⟩
 
 /-- The simple reflections generate the Weyl group. -/
 theorem closure_range_weylSimple : Subgroup.closure (Set.range (R.weylSimple hA)) = ⊤ := by
@@ -529,9 +506,8 @@ theorem zpowers_weylSimple_eq_top_of_subsingleton {I K H : Type*} [Subsingleton 
     (R : CartanRealization A H) (hdiag : ∀ j, A j j = 2) (i : I) :
     Subgroup.zpowers (R.weylSimple hdiag i) = ⊤ := by
   have : Nonempty I := ⟨i⟩
-  have hrange : Set.range (R.weylSimple hdiag) = {R.weylSimple hdiag i} := by
-    ext x
-    simp [Subsingleton.elim _ i, eq_comm]
+  have hrange :=
+    Set.range_eq_singleton fun k ↦ congrArg (R.weylSimple hdiag) (Subsingleton.elim k i)
   rw [Subgroup.zpowers_eq_closure, ← hrange, R.closure_range_weylSimple]
 
 /-- **Rank-one element dichotomy (`|I| ≤ 1`)**: every element of the Weyl group of a realization
@@ -555,7 +531,7 @@ theorem card_weylGroup_of_subsingleton {I K H : Type*} [Subsingleton I] [Nonempt
     Nat.card_zpowers, R.orderOf_weylSimple]
 
 /-- **Type `A₁` check (`CartanMatrix.A 1`)**: over any field, the Weyl group has order `2`. -/
-theorem card_weylGroup_A_one {K H : Type*} [Field K] [AddCommGroup H] [Module K H]
+example {K H : Type*} [Field K] [AddCommGroup H] [Module K H]
     (R : CartanRealization ((CartanMatrix.A 1).map (Int.cast : ℤ → K)) H) :
     Nat.card (R.weylGroup (diag_map_intCast fun i ↦ congrFun (CartanMatrix.A_diag 1) i)) = 2 :=
   R.card_weylGroup_of_subsingleton _

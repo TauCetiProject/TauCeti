@@ -64,6 +64,7 @@ presentation `α = w(αᵢ)`, yielding the canonical **real coroot** `α^∨ = w
 public section
 
 open Module
+open scoped Pointwise
 
 namespace TauCeti.CartanRealization
 
@@ -73,11 +74,6 @@ section RealRootsBasic
 
 variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H]
   {A : Matrix I I K} (R : CartanRealization A H) (hA : ∀ i, A i i = 2)
-
-private theorem coe_mul_apply (w u : R.weylGroup hA) (φ : Dual K H) :
-    ((w * u : R.weylGroup hA) : Dual K H ≃ₗ[K] Dual K H) φ =
-      (w : Dual K H ≃ₗ[K] Dual K H) ((u : Dual K H ≃ₗ[K] Dual K H) φ) := by
-  rw [Subgroup.coe_mul, mul_apply_eq_comp]
 
 /-- Multiplying `w` on the right by `sᵢ` negates `w(αᵢ)`. -/
 theorem mul_weylSimple_apply_root (w : R.weylGroup hA) (i : I) :
@@ -99,44 +95,47 @@ theorem conj_weylSimple_apply (w : R.weylGroup hA) (i : I) (φ : Dual K H) :
   simp
 
 /-- The **real roots** `Φ^re = W · {αᵢ}` of the realization. -/
-def realRoots : Set (Dual K H) :=
-  {α | ∃ (w : R.weylGroup hA) (i : I), (w : Dual K H ≃ₗ[K] Dual K H) (R.root i) = α}
+noncomputable def realRoots : Set (Dual K H) :=
+  ⋃ i, MulAction.orbit (R.weylGroup hA) (R.root i)
 
 theorem mem_realRoots_iff {α : Dual K H} :
     α ∈ R.realRoots hA ↔
-      ∃ (w : R.weylGroup hA) (i : I), (w : Dual K H ≃ₗ[K] Dual K H) (R.root i) = α :=
-  Iff.rfl
+      ∃ (w : R.weylGroup hA) (i : I), (w : Dual K H ≃ₗ[K] Dual K H) (R.root i) = α := by
+  simp only [realRoots, Set.mem_iUnion, MulAction.mem_orbit_iff, Subgroup.smul_def,
+    LinearEquiv.smul_def]
+  exact exists_comm
 
 @[simp]
 theorem root_mem_realRoots (i : I) : R.root i ∈ R.realRoots hA :=
-  ⟨1, i, by simp⟩
+  (R.mem_realRoots_iff hA).mpr ⟨1, i, by simp⟩
 
 theorem apply_root_mem_realRoots (w : R.weylGroup hA) (i : I) :
     (w : Dual K H ≃ₗ[K] Dual K H) (R.root i) ∈ R.realRoots hA :=
-  ⟨w, i, rfl⟩
+  (R.mem_realRoots_iff hA).mpr ⟨w, i, rfl⟩
 
+/-- Weyl-group translates preserve and reflect membership in the real roots. -/
 @[simp]
 theorem apply_mem_realRoots_iff (w : R.weylGroup hA) {α : Dual K H} :
     (w : Dual K H ≃ₗ[K] Dual K H) α ∈ R.realRoots hA ↔ α ∈ R.realRoots hA := by
-  have hmaps (u : R.weylGroup hA) {β : Dual K H} (hβ : β ∈ R.realRoots hA) :
-      (u : Dual K H ≃ₗ[K] Dual K H) β ∈ R.realRoots hA := by
-    obtain ⟨v, i, rfl⟩ := hβ
-    exact ⟨u * v, i, rfl⟩
-  refine ⟨fun h ↦ ?_, hmaps w⟩
-  have h' := hmaps w⁻¹ h
-  simpa [← mul_apply_eq_comp] using h'
+  have hsmul : w • R.realRoots hA = R.realRoots hA := by
+    simp only [realRoots, Set.smul_set_iUnion, MulAction.smul_orbit]
+  rw [← LinearEquiv.smul_def, ← Subgroup.smul_def w α]
+  nth_rw 1 [← hsmul]
+  exact Set.smul_mem_smul_set_iff (a := w) (x := α) (s := R.realRoots hA)
 
+/-- Negation preserves and reflects membership in the real roots. -/
 @[simp]
 theorem neg_mem_realRoots_iff {α : Dual K H} :
     -α ∈ R.realRoots hA ↔ α ∈ R.realRoots hA := by
   have hmaps {β : Dual K H} (hβ : β ∈ R.realRoots hA) : -β ∈ R.realRoots hA := by
-    obtain ⟨w, i, rfl⟩ := hβ
-    exact ⟨w * R.weylSimple hA i, i, R.mul_weylSimple_apply_root hA w i⟩
+    obtain ⟨w, i, rfl⟩ := (R.mem_realRoots_iff hA).mp hβ
+    exact (R.mem_realRoots_iff hA).mpr
+      ⟨w * R.weylSimple hA i, i, R.mul_weylSimple_apply_root hA w i⟩
   exact ⟨fun h ↦ by simpa using hmaps h, hmaps⟩
 
 /-- Every real root is nonzero. -/
 theorem ne_zero_of_mem_realRoots {α : Dual K H} (hα : α ∈ R.realRoots hA) : α ≠ 0 := by
-  obtain ⟨w, i, rfl⟩ := hα
+  obtain ⟨w, i, rfl⟩ := (R.mem_realRoots_iff hA).mp hα
   exact (map_ne_zero_iff _ (w : Dual K H ≃ₗ[K] Dual K H).injective).mpr
     (R.root_linearIndependent.ne_zero i)
 
@@ -152,7 +151,8 @@ variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H]
 /-- Every real root lies in the root lattice `Q`. -/
 theorem realRoots_subset_rootLattice (hA : ∀ i, (A.map (Int.cast : ℤ → K)) i i = 2) :
     R.realRoots hA ⊆ R.rootLattice := by
-  rintro _ ⟨w, i, rfl⟩
+  intro _ hα
+  obtain ⟨w, i, rfl⟩ := (R.mem_realRoots_iff hA).mp hα
   exact (R.apply_mem_rootLattice_iff_of_mem_weylGroup hA w.property).mpr (R.root_mem_rootLattice i)
 
 end RealRootsIntegral
@@ -169,7 +169,7 @@ theorem mem_posRootCone_or_neg_mem_posRootCone_of_mem_realRoots (hdiag : ∀ i, 
     (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
     {α : Dual K H} (hα : α ∈ R.realRoots (diag_map_intCast hdiag)) :
     α ∈ R.posRootCone ∨ -α ∈ R.posRootCone := by
-  obtain ⟨w, i, rfl⟩ := hα
+  obtain ⟨w, i, rfl⟩ := (R.mem_realRoots_iff (diag_map_intCast hdiag)).mp hα
   exact R.apply_root_mem_posRootCone_or_neg_mem_posRootCone hdiag hoff hzero w i
 
 /-- If `w₁(αᵢ) = w₂(αⱼ)`, then strong exchange gives `w₁ sᵢ w₁⁻¹ = w₂ sⱼ w₂⁻¹`. -/
@@ -200,10 +200,8 @@ private theorem conj_weylSimple_eq_of_apply_root_eq (hdiag : ∀ i, A i i = 2)
     exact R.root_mem_posRootCone i
   have hlen_usj : cs.length (u * cs.simple j) = cs.length u + 1 :=
     cs.not_isRightDescent_iff.mp hnd_uj
-  have hlen_siu : cs.length (cs.simple i * u) = cs.length u + 1 := by
-    have h₁ := cs.not_isRightDescent_iff.mp hnd_uinv_i
-    have h₂ : (u⁻¹ * cs.simple i)⁻¹ = cs.simple i * u := by simp
-    rw [← h₂, cs.length_inv, h₁, cs.length_inv]
+  have hlen_siu : cs.length (cs.simple i * u) = cs.length u + 1 :=
+    cs.not_isLeftDescent_iff.mp (cs.isRightDescent_inv_iff.not.mp hnd_uinv_i)
   have hlen_both : cs.length (cs.simple i * u * cs.simple j) = cs.length u := by
     have := cs.isRightDescent_iff.mp hd_siu_j
     omega
@@ -240,7 +238,8 @@ private theorem ambientAction_coroot_eq_of_apply_root_eq (hdiag : ∀ i, A i i =
     (sub_smul _ _ ((w₁ : Dual K H ≃ₗ[K] Dual K H) (R.root i))).trans (by rw [hφ, sub_self])
   rw [← map_sub] at hsub
   exact (smul_eq_zero.mp hsub).resolve_right
-    (R.ne_zero_of_mem_realRoots (diag_map_intCast hdiag) ⟨w₁, i, rfl⟩)
+    (R.ne_zero_of_mem_realRoots (diag_map_intCast hdiag)
+      (R.apply_root_mem_realRoots (diag_map_intCast hdiag) w₁ i))
 
 /-- Existence of a presentation-independent real coroot for `α`. -/
 private theorem exists_realCoroot (hdiag : ∀ i, A i i = 2)
@@ -249,7 +248,7 @@ private theorem exists_realCoroot (hdiag : ∀ i, A i i = 2)
     ∃ h : H, ∀ (w : R.weylGroup (diag_map_intCast hdiag)) (i : I),
       (w : Dual K H ≃ₗ[K] Dual K H) (R.root i) = α →
       h = R.ambientAction (diag_map_intCast hdiag) w (R.coroot i) := by
-  obtain ⟨w₀, i₀, hw₀⟩ := hα
+  obtain ⟨w₀, i₀, hw₀⟩ := (R.mem_realRoots_iff (diag_map_intCast hdiag)).mp hα
   exact ⟨R.ambientAction (diag_map_intCast hdiag) w₀ (R.coroot i₀), fun w i hw ↦
     R.ambientAction_coroot_eq_of_apply_root_eq hdiag hoff hzero (hw₀.trans hw.symm)⟩
 
@@ -290,7 +289,7 @@ theorem apply_realCoroot_self (hdiag : ∀ i, A i i = 2)
     (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
     {α : Dual K H} (hα : α ∈ R.realRoots (diag_map_intCast hdiag)) :
     α (R.realCoroot hdiag hoff hzero hα) = 2 := by
-  obtain ⟨w, i, rfl⟩ := hα
+  obtain ⟨w, i, rfl⟩ := (R.mem_realRoots_iff (diag_map_intCast hdiag)).mp hα
   rw [R.realCoroot_eq_ambientAction_coroot hdiag hoff hzero w i,
     R.apply_ambientAction (diag_map_intCast hdiag), R.root_coroot_two (diag_map_intCast hdiag)]
 
@@ -310,9 +309,9 @@ theorem realCoroot_weylGroup_apply_eq_ambientAction (hdiag : ∀ i, A i i = 2)
     R.realCoroot hdiag hoff hzero
         ((R.apply_mem_realRoots_iff (diag_map_intCast hdiag) w).mpr hα) =
       R.ambientAction (diag_map_intCast hdiag) w (R.realCoroot hdiag hoff hzero hα) := by
-  obtain ⟨u, i, rfl⟩ := hα
+  obtain ⟨u, i, rfl⟩ := (R.mem_realRoots_iff (diag_map_intCast hdiag)).mp hα
   rw [R.realCoroot_eq_of_apply_root hdiag hoff hzero _
-      (R.coe_mul_apply (diag_map_intCast hdiag) w u (R.root i)),
+      (by rw [Subgroup.coe_mul, mul_apply_eq_comp]),
     map_mul, mul_apply_eq_comp, R.realCoroot_eq_ambientAction_coroot hdiag hoff hzero u i]
 
 /-- Negating a real root negates its real coroot: `(-α)^∨ = -α^∨`. -/
@@ -325,7 +324,7 @@ theorem realCoroot_neg (hdiag : ∀ i, A i i = 2)
         ((R.neg_mem_realRoots_iff (diag_map_intCast hdiag)).mp hα) := by
   have hmem : α ∈ R.realRoots (diag_map_intCast hdiag) :=
     (R.neg_mem_realRoots_iff (diag_map_intCast hdiag)).mp hα
-  obtain ⟨w, i, rfl⟩ := hmem
+  obtain ⟨w, i, rfl⟩ := (R.mem_realRoots_iff (diag_map_intCast hdiag)).mp hmem
   rw [R.realCoroot_eq_ambientAction_coroot hdiag hoff hzero w i,
     R.realCoroot_eq_of_apply_root hdiag hoff hzero hα
       (R.mul_weylSimple_apply_root (diag_map_intCast hdiag) w i),
@@ -339,7 +338,7 @@ private theorem exists_realReflection (hdiag : ∀ i, A i i = 2)
       ∀ (w : R.weylGroup (diag_map_intCast hdiag)) (i : I),
         (w : Dual K H ≃ₗ[K] Dual K H) (R.root i) = α →
         s = w * R.weylSimple (diag_map_intCast hdiag) i * w⁻¹ := by
-  obtain ⟨w₀, i₀, hw₀⟩ := hα
+  obtain ⟨w₀, i₀, hw₀⟩ := (R.mem_realRoots_iff (diag_map_intCast hdiag)).mp hα
   exact ⟨w₀ * R.weylSimple (diag_map_intCast hdiag) i₀ * w₀⁻¹, fun w i hw ↦
     R.conj_weylSimple_eq_of_apply_root_eq hdiag hoff hzero (hw₀.trans hw.symm)⟩
 
@@ -383,7 +382,7 @@ theorem realReflection_apply (hdiag : ∀ i, A i i = 2)
     ((R.realReflection hdiag hoff hzero hα : R.weylGroup (diag_map_intCast hdiag)) :
         Dual K H ≃ₗ[K] Dual K H) φ =
       φ - φ (R.realCoroot hdiag hoff hzero hα) • α := by
-  obtain ⟨w, i, rfl⟩ := hα
+  obtain ⟨w, i, rfl⟩ := (R.mem_realRoots_iff (diag_map_intCast hdiag)).mp hα
   rw [R.realReflection_eq_conj_weylSimple hdiag hoff hzero w i,
     R.realCoroot_eq_ambientAction_coroot hdiag hoff hzero w i,
     R.conj_weylSimple_apply (diag_map_intCast hdiag)]
@@ -403,7 +402,7 @@ theorem isReflection_realReflection [DecidableEq I] (hdiag : ∀ i, A i i = 2)
     {α : Dual K H} (hα : α ∈ R.realRoots (diag_map_intCast hdiag)) :
     (R.weylCoxeterSystem hdiag hoff hzero).IsReflection
       (R.realReflection hdiag hoff hzero hα) := by
-  obtain ⟨w, i, rfl⟩ := hα
+  obtain ⟨w, i, rfl⟩ := (R.mem_realRoots_iff (diag_map_intCast hdiag)).mp hα
   exact ⟨w, i, by rw [R.weylCoxeterSystem_simple, R.realReflection_eq_conj_weylSimple]⟩
 
 @[simp]
@@ -438,9 +437,9 @@ theorem realReflection_weylGroup_apply_eq_conj (hdiag : ∀ i, A i i = 2)
     R.realReflection hdiag hoff hzero
         ((R.apply_mem_realRoots_iff (diag_map_intCast hdiag) w).mpr hα) =
       w * R.realReflection hdiag hoff hzero hα * w⁻¹ := by
-  obtain ⟨u, i, rfl⟩ := hα
+  obtain ⟨u, i, rfl⟩ := (R.mem_realRoots_iff (diag_map_intCast hdiag)).mp hα
   rw [R.realReflection_eq_of_apply_root hdiag hoff hzero _
-      (R.coe_mul_apply (diag_map_intCast hdiag) w u (R.root i)),
+      (by rw [Subgroup.coe_mul, mul_apply_eq_comp]),
     R.realReflection_eq_conj_weylSimple hdiag hoff hzero u i]
   simp [mul_assoc]
 
@@ -454,7 +453,7 @@ theorem realReflection_neg (hdiag : ∀ i, A i i = 2)
         ((R.neg_mem_realRoots_iff (diag_map_intCast hdiag)).mp hα) := by
   have hmem : α ∈ R.realRoots (diag_map_intCast hdiag) :=
     (R.neg_mem_realRoots_iff (diag_map_intCast hdiag)).mp hα
-  obtain ⟨w, i, rfl⟩ := hmem
+  obtain ⟨w, i, rfl⟩ := (R.mem_realRoots_iff (diag_map_intCast hdiag)).mp hmem
   rw [R.realReflection_eq_conj_weylSimple hdiag hoff hzero w i,
     R.realReflection_eq_of_apply_root hdiag hoff hzero hα
       (R.mul_weylSimple_apply_root (diag_map_intCast hdiag) w i)]

@@ -11,7 +11,7 @@ public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Weyl.Basic
 
 /-!
-# Rank-two Weyl groups and two-reflection dihedral subgroups
+# Rank-two Weyl groups as dihedral groups
 
 For a realization `R` of any matrix `A` with diagonal `2` over any field, when a pair of indices
 `i, j : I` exhausts `I` (`∀ k : I, k = i ∨ k = j`), the Weyl group `R.weylGroup hdiag` is
@@ -36,7 +36,7 @@ isomorphic to `DihedralGroup (orderOf (sᵢ * sⱼ))` for `sᵢ = R.weylSimple h
 * `TauCeti.CartanRealization.dihedralGroupFourEquivWeylBTwo`: isomorphism
   `DihedralGroup 4 ≃* W(B₂)` over any field.
 * `TauCeti.CartanRealization.dihedralGroupZeroEquivWeylAffineAOne`: isomorphism
-  `DihedralGroup 0 ≃* W(A₁⁽¹⁾)`.
+  `DihedralGroup 0 ≃* W(A₁⁽¹⁾)` over a characteristic-zero field.
 
 ## Main results
 
@@ -45,10 +45,10 @@ isomorphic to `DihedralGroup (orderOf (sᵢ * sⱼ))` for `sᵢ = R.weylSimple h
   `TauCeti.CartanRealization.card_weylGroup_B_two`: `orderOf (sᵢ * sⱼ) = 4` whenever
   `A i j * A j i = 2` and `A i j ≠ 0 ∨ A j i ≠ 0`, and `Nat.card (W(B₂)) = 8` over any field.
 * `TauCeti.CartanRealization.orderOf_weylSimple_mul_weylSimple_eq_zero_affine_A_one` and
-  `TauCeti.CartanRealization.instInfiniteWeylGroupAffineAOne`: `s₀ s₁` has infinite order and
-  `W(A₁⁽¹⁾)` is infinite.
+  `TauCeti.CartanRealization.instInfiniteWeylGroupAffineAOne`: over a characteristic-zero field,
+  `s₀ s₁` has infinite order and `W(A₁⁽¹⁾)` is infinite.
 * `TauCeti.CartanRealization.weylSimple_mul_weylSimple_apply_root_affine_A_one`:
-  `(s₀ s₁)(α₁) = α₁ - 2 • (α₀ + α₁)`.
+  `(s₀ s₁)(α₁) = α₁ - 2 • (α₀ + α₁)` over any field.
 
 ## References
 
@@ -145,25 +145,14 @@ noncomputable def dihedralGroupFourEquivWeylBTwo {K H : Type*} [Field K]
   R.dihedralGroupMulEquivWeyl (diag_map_intCast (CartanMatrix.B_diag 2))
     (fun k ↦ by fin_cases k <;> simp) R.orderOf_weylSimple_mul_weylSimple_eq_four_B_two
 
-/-- `TauCeti.CartanRealization.dihedralGroupFourEquivWeylBTwo` evaluates to `TauCeti.dihedralHom`.
--/
-@[simp]
-theorem dihedralGroupFourEquivWeylBTwo_apply {K H : Type*} [Field K]
-    [AddCommGroup H] [Module K H]
-    (R : CartanRealization ((CartanMatrix.B 2).map (Int.cast : ℤ → K)) H)
-    (x : DihedralGroup 4) :
-    R.dihedralGroupFourEquivWeylBTwo x =
-      TauCeti.dihedralHom (R.weylSimple_mul_self _ 0) (R.weylSimple_mul_self _ 1)
-        (R.orderOf_weylSimple_mul_weylSimple_eq_four_B_two ▸ pow_orderOf_eq_one _) x :=
-  R.dihedralGroupMulEquivWeyl_apply _ _ R.orderOf_weylSimple_mul_weylSimple_eq_four_B_two x
-
 /-- **Type `B₂` cardinality check**: `|W(B₂)| = 8` over any field. -/
 theorem card_weylGroup_B_two {K H : Type*} [Field K] [AddCommGroup H] [Module K H]
     (R : CartanRealization ((CartanMatrix.B 2).map (Int.cast : ℤ → K)) H) :
     Nat.card (R.weylGroup (diag_map_intCast (CartanMatrix.B_diag 2))) = 8 := by
   rw [← Nat.card_congr (R.dihedralGroupFourEquivWeylBTwo).toEquiv, DihedralGroup.nat_card]
 
-/-- **Affine `A₁⁽¹⁾` infinite-order check**: `s₀ s₁` has infinite order (`orderOf = 0`). -/
+/-- **Affine `A₁⁽¹⁾` infinite-order check**: over a characteristic-zero field, `s₀ s₁` has
+infinite order (`orderOf = 0`). -/
 theorem orderOf_weylSimple_mul_weylSimple_eq_zero_affine_A_one {K H : Type*} [Field K] [CharZero K]
     [AddCommGroup H] [Module K H]
     (R : CartanRealization ((!![(2 : ℤ), -2; -2, 2]).map (Int.cast : ℤ → K)) H) :
@@ -172,7 +161,8 @@ theorem orderOf_weylSimple_mul_weylSimple_eq_zero_affine_A_one {K H : Type*} [Fi
   rw [R.orderOf_weylSimple_mul_weylSimple (by decide) (by decide) (by decide),
     coxeterMatrixOfGeneralizedCartanMatrix_apply_of_four_le _ (by decide) (by decide)]
 
-/-- **Affine `A₁⁽¹⁾` Weyl group**: isomorphic to the infinite dihedral group `DihedralGroup 0`. -/
+/-- **Affine `A₁⁽¹⁾` Weyl group**: over a characteristic-zero field, isomorphic to the infinite
+dihedral group `DihedralGroup 0`. -/
 noncomputable def dihedralGroupZeroEquivWeylAffineAOne {K H : Type*} [Field K] [CharZero K]
     [AddCommGroup H] [Module K H]
     (R : CartanRealization ((!![(2 : ℤ), -2; -2, 2]).map (Int.cast : ℤ → K)) H) :
@@ -182,22 +172,7 @@ noncomputable def dihedralGroupZeroEquivWeylAffineAOne {K H : Type*} [Field K] [
     (fun k ↦ by fin_cases k <;> simp)
     R.orderOf_weylSimple_mul_weylSimple_eq_zero_affine_A_one
 
-/-- `TauCeti.CartanRealization.dihedralGroupZeroEquivWeylAffineAOne` evaluates to
-`TauCeti.dihedralHom`. -/
-@[simp]
-theorem dihedralGroupZeroEquivWeylAffineAOne_apply {K H : Type*} [Field K] [CharZero K]
-    [AddCommGroup H] [Module K H]
-    (R : CartanRealization ((!![(2 : ℤ), -2; -2, 2]).map (Int.cast : ℤ → K)) H)
-    (x : DihedralGroup 0) :
-    R.dihedralGroupZeroEquivWeylAffineAOne x =
-      TauCeti.dihedralHom
-        (R.weylSimple_mul_self (diag_map_intCast (A := !![(2 : ℤ), -2; -2, 2]) (by decide)) 0)
-        (R.weylSimple_mul_self (diag_map_intCast (A := !![(2 : ℤ), -2; -2, 2]) (by decide)) 1)
-        (R.orderOf_weylSimple_mul_weylSimple_eq_zero_affine_A_one ▸ pow_orderOf_eq_one _) x :=
-  R.dihedralGroupMulEquivWeyl_apply _ _
-    R.orderOf_weylSimple_mul_weylSimple_eq_zero_affine_A_one x
-
-/-- The Weyl group of affine `A₁⁽¹⁾` is infinite. -/
+/-- Over a characteristic-zero field, the Weyl group of affine `A₁⁽¹⁾` is infinite. -/
 instance instInfiniteWeylGroupAffineAOne {K H : Type*} [Field K] [CharZero K]
     [AddCommGroup H] [Module K H]
     (R : CartanRealization ((!![(2 : ℤ), -2; -2, 2]).map (Int.cast : ℤ → K)) H) :
