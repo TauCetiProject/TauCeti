@@ -185,17 +185,6 @@ private theorem toComplexMatrix_mem_of_mem_binaryOctahedralCosetCoords {w : Fin 
 /-- The integer quaternion with coordinates `v`. -/
 private def intQuaternion (v : Fin 4 → ℤ) : ℍ[ℤ] := ⟨v 0, v 1, v 2, v 3⟩
 
-/-- The product of two quaternions with coordinates in `ℤ/√2` has coordinates in `ℤ/2`. -/
-private theorem exists_div_sqrt_two_mul_div_sqrt_two_eq_half (w w' : Fin 4 → ℤ) :
-    ∃ u : Fin 4 → ℤ, (⟨w 0 / √2, w 1 / √2, w 2 / √2, w 3 / √2⟩ : ℍ[ℝ]) *
-      ⟨w' 0 / √2, w' 1 / √2, w' 2 / √2, w' 3 / √2⟩ = ⟨u 0 / 2, u 1 / 2, u 2 / 2, u 3 / 2⟩ := by
-  set x := intQuaternion w * intQuaternion w' with hx
-  have hs (a b : ℝ) : a / √2 * (b / √2) = a * b / 2 := by
-    rw [div_mul_div_comm, Real.mul_self_sqrt zero_le_two]
-  refine ⟨![x.re, x.imI, x.imJ, x.imK], ?_⟩
-  ext <;> simp only [hx, intQuaternion, re_mul, imI_mul, imJ_mul, imK_mul, Matrix.cons_val, hs] <;>
-    push_cast <;> ring
-
 /-- For a doubled binary tetrahedral coordinate vector `v` and a scaled coordinate vector `w` of the
 second family, all coordinates of the integer quaternions `v w` and `w v` are even. Either all
 coordinates of `v` are even, or they are all odd and each coordinate of `v w` and `w v` has the
@@ -209,16 +198,6 @@ private theorem even_coords_of_mem {v w : Fin 4 → ℤ} (hv : v ∈ binaryTetra
     ∀ x ∈ [intQuaternion v * intQuaternion w, intQuaternion w * intQuaternion v],
       Even x.re ∧ Even x.imI ∧ Even x.imJ ∧ Even x.imK) v hv w hw
 
-/-- An integer quaternion `x` with even coordinates gives a quaternion `x / (2√2)` with coordinates
-in `ℤ/√2`. -/
-private theorem exists_div_two_mul_sqrt_two_eq {x : ℍ[ℤ]}
-    (hx : Even x.re ∧ Even x.imI ∧ Even x.imJ ∧ Even x.imK) :
-    ∃ u : Fin 4 → ℤ, (⟨x.re / (2 * √2), x.imI / (2 * √2), x.imJ / (2 * √2), x.imK / (2 * √2)⟩ :
-      ℍ[ℝ]) = ⟨u 0 / √2, u 1 / √2, u 2 / √2, u 3 / √2⟩ := by
-  obtain ⟨⟨a, ha⟩, ⟨b, hb⟩, ⟨c, hc⟩, ⟨d, hd⟩⟩ := hx
-  refine ⟨![a, b, c, d], ?_⟩
-  ext <;> simp only [ha, hb, hc, hd, Matrix.cons_val] <;> push_cast <;> field_simp <;> ring
-
 /-- The product of a binary tetrahedral point `v / 2` and a quaternion `w / √2` of the second
 family, in either order, has coordinates in `ℤ/√2`. -/
 private theorem exists_half_mul_div_sqrt_two_eq {v w : Fin 4 → ℤ}
@@ -228,13 +207,15 @@ private theorem exists_half_mul_div_sqrt_two_eq {v w : Fin 4 → ℤ}
     ∃ u : Fin 4 → ℤ, (⟨w 0 / √2, w 1 / √2, w 2 / √2, w 3 / √2⟩ : ℍ[ℝ]) *
       ⟨v 0 / 2, v 1 / 2, v 2 / 2, v 3 / 2⟩ = ⟨u 0 / √2, u 1 / √2, u 2 / √2, u 3 / √2⟩ := by
   have h := even_coords_of_mem hv hw
-  refine ⟨(exists_div_two_mul_sqrt_two_eq (h (intQuaternion v * intQuaternion w) (by simp))).imp
+  refine ⟨(exists_mk_div_two_mul_eq √2 (h (intQuaternion v * intQuaternion w) (by simp))).imp
     fun u hu => ?_,
-    (exists_div_two_mul_sqrt_two_eq (h (intQuaternion w * intQuaternion v) (by simp))).imp
-    fun u hu => ?_⟩ <;>
-  · rw [← hu]
-    ext <;> simp only [intQuaternion, re_mul, imI_mul, imJ_mul, imK_mul] <;> push_cast <;>
-      field_simp
+    (exists_mk_div_two_mul_eq √2 (h (intQuaternion w * intQuaternion v) (by simp))).imp
+    fun u hu => ?_⟩
+  · rw [← hu, mk_div_mul_mk_div (⟨v 0, v 1, v 2, v 3⟩ : ℍ[ℝ]) (⟨w 0, w 1, w 2, w 3⟩ : ℍ[ℝ]) 2 √2]
+    ext <;> simp [intQuaternion]
+  · rw [← hu, mk_div_mul_mk_div (⟨w 0, w 1, w 2, w 3⟩ : ℍ[ℝ]) (⟨v 0, v 1, v 2, v 3⟩ : ℍ[ℝ]) √2 2,
+      mul_comm √2 2]
+    ext <;> simp [intQuaternion]
 
 /-- A quaternion with coordinates in `ℤ/√2` is never a binary tetrahedral point: a coordinate
 `±1/√2` is not a half-integer. -/
@@ -282,7 +263,7 @@ noncomputable def binaryOctahedralSubgroup : Subgroup SU2 where
       obtain ⟨u, hu⟩ := (exists_half_mul_div_sqrt_two_eq hv hw).2
       refine .inr (exists_mem_binaryOctahedralCosetCoords_of_coe_eq (w := u) ?_)
       rw [← hu, map_mul, ← hg, ← hh, Submonoid.coe_mul]
-    · obtain ⟨u, hu⟩ := exists_div_sqrt_two_mul_div_sqrt_two_eq_half w w'
+    · obtain ⟨u, hu⟩ := exists_mk_div_mul_mk_div (Real.mul_self_sqrt zero_le_two) w w'
       refine .inl (mem_binaryTetrahedralSubgroup_iff_exists_int.mpr ⟨u, ?_⟩)
       rw [← hu, map_mul, ← hg, ← hh, Submonoid.coe_mul]
   one_mem' := .inl (one_mem _)

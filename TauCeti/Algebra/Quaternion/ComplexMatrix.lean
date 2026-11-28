@@ -21,6 +21,7 @@ public import TauCeti.Algebra.Quaternion.NormForm
 -- `TauCeti.LinearAlgebra.UnitaryGroup` supplies `Matrix.specialUnitaryGroup.star_eq_adjugate`,
 -- which turns the unitarity of a special unitary matrix into four entry identities.
 public import TauCeti.LinearAlgebra.UnitaryGroup
+import TauCeti.Algebra.Quaternion.Basic
 
 /-!
 # The real quaternions as two-by-two complex matrices, and `SU(2)`
@@ -83,6 +84,8 @@ equivalence is in `TauCeti/Analysis/Matrix/UnitaryGroup/Quaternion.lean`.
   `Quaternion.exists_eq_toComplexMatrix_of_mem_specialUnitaryGroup`: the characterization of unit
   quaternions in `SU(2)` and surjectivity onto `SU(2)`, packaged as
   `Quaternion.mem_specialUnitaryGroup_iff_exists_toComplexMatrix`.
+* `Quaternion.toComplexMatrix_mem_specialUnitaryGroup_iff_sum_sq_eq`: the special unitary
+  criterion for a quaternion with scaled integer coordinates.
 
 ## Implementation notes
 
@@ -229,6 +232,18 @@ theorem toComplexMatrix_mem_specialUnitaryGroup_iff {q : ℍ[ℝ]} :
     exact (Matrix.mem_specialUnitaryGroup_iff.mp hq).2
   · refine Matrix.mem_specialUnitaryGroup_iff.mpr ⟨Unitary.map_mem toComplexMatrix hq, ?_⟩
     rw [det_toComplexMatrix, (mem_unitary_iff_normSq_eq_one q).mp hq, Complex.ofReal_one]
+
+/-- A quaternion with `ℤ`-coordinates scaled by a nonzero denominator `d` gives an element of
+`SU(2)` exactly when the integer sum of squares equals `d ^ 2`. -/
+theorem toComplexMatrix_mem_specialUnitaryGroup_iff_sum_sq_eq {v : Fin 4 → ℤ} {d : ℝ}
+    (hd : d ≠ 0) :
+    toComplexMatrix ⟨v 0 / d, v 1 / d, v 2 / d, v 3 / d⟩ ∈
+        Matrix.specialUnitaryGroup (Fin 2) ℂ ↔
+      ((∑ i, v i ^ 2 : ℤ) : ℝ) = d ^ 2 := by
+  rw [toComplexMatrix_mem_specialUnitaryGroup_iff, mem_unitary_iff_normSq_eq_one,
+    normSq_mk_div, div_eq_one_iff_eq (pow_ne_zero 2 hd), Fin.sum_univ_four]
+  push_cast
+  rfl
 
 /-- **Every special unitary matrix of degree two is the matrix of a unit quaternion.** -/
 theorem exists_eq_toComplexMatrix_of_mem_specialUnitaryGroup

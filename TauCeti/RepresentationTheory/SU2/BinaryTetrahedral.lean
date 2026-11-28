@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.SU2.BinaryDihedral
-import TauCeti.Algebra.Quaternion.Basic
 
 /-!
 # The binary tetrahedral subgroup of SU(2)
@@ -113,18 +112,6 @@ private theorem even_iff_even_of_mem_binaryTetrahedralCoords {v : Fin 4 → ℤ}
   (by decide : ∀ v ∈ binaryTetrahedralCoords, ∀ i : Fin 4, Even (v i) ↔ Even (v 0)) v hv i
 
 /-! ### Half-integer quaternions -/
-
-/-- A quaternion with `ℤ`-coordinates scaled by a nonzero denominator `d` gives an element of
-`SU(2)` exactly when the integer sum of squares equals `d ^ 2`. -/
-theorem toComplexMatrix_mem_specialUnitaryGroup_iff_sum_sq_eq {v : Fin 4 → ℤ} {d : ℝ}
-    (hd : d ≠ 0) :
-    toComplexMatrix ⟨v 0 / d, v 1 / d, v 2 / d, v 3 / d⟩ ∈
-        Matrix.specialUnitaryGroup (Fin 2) ℂ ↔
-      ((∑ i, v i ^ 2 : ℤ) : ℝ) = d ^ 2 := by
-  rw [toComplexMatrix_mem_specialUnitaryGroup_iff, mem_unitary_iff_normSq_eq_one,
-    normSq_mk_div, div_eq_one_iff_eq (pow_ne_zero 2 hd), Fin.sum_univ_four]
-  push_cast
-  rfl
 
 /-- An element of `SU(2)` with half-integer quaternion coordinates has doubled coordinates in the
 binary tetrahedral coordinate set, since its quaternion has norm one. -/
