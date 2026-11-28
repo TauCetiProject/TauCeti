@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Defs
+public import Mathlib.Algebra.Notation.Pi.Basic
 public import Mathlib.Data.Fin.Tuple.Basic
+public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Order.Interval.Set.Defs
 import Mathlib.Algebra.NeZero
 import Mathlib.Data.Set.Image
@@ -59,6 +61,10 @@ set of the earlier ones.
 * `Fin.comp_append`, `Fin.comp_append_comp_cast`, `Fin.comp_cast_comp_cast`: postcomposing an
   appended (or casted appended) tuple with a function, and collapsing nested `Fin.cast`
   precompositions.
+* `Fin.append_comp_finSumFinEquiv`, `Fin.sumElim_comp_finSumFinEquiv_symm`: converting between
+  `Fin.append` and `Sum.elim` across `finSumFinEquiv`.
+* `Fin.append_single_zero`, `Fin.append_zero_single`: padding `Pi.single` on the right or left by
+  `0` reindexes `Pi.single` by `Fin.castAdd` or `Fin.natAdd`.
 * `Fin.contractNth_zero_cons`, `Fin.contractNth_succ_cons`: contracting entries of a tuple
   `Fin.cons x a`.
 * `Fin.contractNth_castSucc_castSucc_snoc`, `Fin.contractNth_castSucc_last_snoc`: contracting
@@ -269,6 +275,43 @@ theorem comp_append_comp_cast {β : Sort*} {n k : ℕ} (f : α → β) (u : Fin 
 theorem comp_cast_comp_cast {k n : ℕ} (u : Fin n → α) (h₁ : k = m) (h₂ : m = n) :
     (u ∘ Fin.cast h₂) ∘ Fin.cast h₁ = u ∘ Fin.cast (h₁.trans h₂) :=
   rfl
+
+/-- Reindexing `Fin.append u v` along `finSumFinEquiv` gives `Sum.elim u v`. -/
+theorem append_comp_finSumFinEquiv {n : ℕ} (u : Fin m → α) (v : Fin n → α) :
+    (append u v : Fin (m + n) → α) ∘ finSumFinEquiv = Sum.elim u v :=
+  Fin.append_comp_sumElim
+
+/-- Reindexing `Sum.elim u v` along `finSumFinEquiv.symm` gives `Fin.append u v`. -/
+theorem sumElim_comp_finSumFinEquiv_symm {n : ℕ} (u : Fin m → α) (v : Fin n → α) :
+    Sum.elim u v ∘ finSumFinEquiv.symm = append u v := by
+  rw [← append_comp_finSumFinEquiv u v, Function.comp_assoc, Equiv.self_comp_symm,
+    Function.comp_id]
+
+/-- Padding `Pi.single i a` on the right with `0` gives `Pi.single (Fin.castAdd n i) a`. -/
+@[simp]
+theorem append_single_zero {α : Type*} [Zero α] {m n : ℕ} (i : Fin m) (a : α) :
+    append (Pi.single i a) (0 : Fin n → α) = Pi.single (castAdd n i) a := by
+  funext k
+  refine addCases (fun j ↦ ?_) (fun j ↦ ?_) k
+  · simp [Pi.single_apply]
+  · rw [append_right, Pi.zero_apply, Pi.single_apply, ite_eq_right]
+    intro h
+    have hv := congrArg Fin.val h
+    simp at hv
+    omega
+
+/-- Padding `Pi.single i a` on the left with `0` gives `Pi.single (Fin.natAdd m i) a`. -/
+@[simp]
+theorem append_zero_single {α : Type*} [Zero α] {m n : ℕ} (i : Fin n) (a : α) :
+    append (0 : Fin m → α) (Pi.single i a) = Pi.single (natAdd m i) a := by
+  funext k
+  refine addCases (fun j ↦ ?_) (fun j ↦ ?_) k
+  · rw [append_left, Pi.zero_apply, Pi.single_apply, ite_eq_right]
+    intro h
+    have hv := congrArg Fin.val h
+    simp at hv
+    omega
+  · simp [Pi.single_apply]
 
 section ContractNth
 

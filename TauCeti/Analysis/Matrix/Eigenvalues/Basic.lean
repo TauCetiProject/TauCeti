@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Matrix.PosDef
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.Matrix.EntrywiseOpNorm
+public import TauCeti.Analysis.Matrix.SelfAdjoint
 import TauCeti.Analysis.InnerProductSpace.Spectrum
 import TauCeti.Analysis.Matrix.Spectrum
 import TauCeti.LinearAlgebra.Matrix.Rank
@@ -542,3 +543,65 @@ theorem IsHermitian.abs_card_eigenvalues₀_le_sub_card_le_rank (hA : A.IsHermit
   constructor <;> omega
 
 end Matrix
+
+namespace selfAdjoint
+
+open Matrix Matrix.UnitaryGroup
+
+variable {n : ℕ} {𝕜 : Type*} [RCLike 𝕜]
+
+/-- The decreasing eigenvalues of a self-adjoint matrix indexed by `Fin n`. -/
+noncomputable abbrev orderedEigenvalues (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)) :
+    Fin n → ℝ :=
+  (isHermitian_coe A).eigenvalues₀ ∘ Fin.cast (Fintype.card_fin n).symm
+
+/-- The ordered eigenvalue vector is antitone, with repeats allowed. -/
+theorem orderedEigenvalues_antitone (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)) :
+    Antitone (orderedEigenvalues A) :=
+  (isHermitian_coe A).eigenvalues₀_antitone.comp_monotone
+    (Fin.castOrderIso (Fintype.card_fin n).symm).monotone
+
+/-- Unitary conjugation leaves the ordered eigenvalue vector unchanged. -/
+@[simp] theorem orderedEigenvalues_selfAdjointConj
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)) (U : unitaryGroup (Fin n) 𝕜) :
+    orderedEigenvalues (selfAdjointConj U A) = orderedEigenvalues A := by
+  have h : (selfAdjointConj U A : Matrix (Fin n) (Fin n) 𝕜) = U.val * A * star U.val := by
+    rw [coe_selfAdjointConj_apply, star_eq_conjTranspose]
+  have hA : (U.val * A * star U.val).IsHermitian := h ▸ isHermitian_coe (selfAdjointConj U A)
+  exact congrArg (· ∘ Fin.cast (Fintype.card_fin n).symm)
+    (((isHermitian_coe _).eigenvalues₀_congr h hA).trans
+      ((isHermitian_coe A).eigenvalues₀_mul_mul_star U.property hA))
+
+/-- The ordered eigenvalues of a decreasing real diagonal are its diagonal entries. -/
+@[simp] theorem orderedEigenvalues_selfAdjointDiagonal {d : Fin n → ℝ} (hd : Antitone d) :
+    orderedEigenvalues (TauCeti.selfAdjointDiagonal (𝕜 := 𝕜) d) = d := by
+  let D := TauCeti.selfAdjointDiagonal (𝕜 := 𝕜) d
+  have hD : (D : Matrix (Fin n) (Fin n) 𝕜) = diagonal (fun i ↦ (d i : 𝕜)) :=
+    TauCeti.coe_selfAdjointDiagonal d
+  have hdiag : (diagonal fun i ↦ (d i : 𝕜)).IsHermitian := hD ▸ isHermitian_coe D
+  have h := (isHermitian_coe D).eigenvalues₀_congr hD hdiag
+  have he := eigenvalues₀_conjStarAlgAut_diagonal (1 : unitaryGroup (Fin n) 𝕜) hd
+    (hA := by simpa using hdiag)
+  funext i
+  rw [orderedEigenvalues, Function.comp_apply, h]
+  simpa [Function.comp_def, Unitary.conjStarAlgAut_apply,
+    Subsingleton.elim (Fintype.orderIsoFinOfCardEq (Fin n) rfl)
+      (Fin.castOrderIso (Fintype.card_fin n))] using
+        congrFun he (Fin.cast (Fintype.card_fin n).symm i)
+
+/-- Every self-adjoint matrix is a unitary conjugate of its ordered real diagonal. -/
+theorem exists_selfAdjointConj_diagonal (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)) :
+    ∃ U : unitaryGroup (Fin n) 𝕜,
+      A = selfAdjointConj U (TauCeti.selfAdjointDiagonal (orderedEigenvalues A)) := by
+  let D := TauCeti.selfAdjointDiagonal (𝕜 := 𝕜) (orderedEigenvalues A)
+  have hEq : (isHermitian_coe D).eigenvalues₀ = (isHermitian_coe A).eigenvalues₀ := by
+    funext i
+    exact congrFun (orderedEigenvalues_selfAdjointDiagonal (𝕜 := 𝕜)
+      (orderedEigenvalues_antitone A)) (Fin.cast (Fintype.card_fin n) i)
+  obtain ⟨U, hU, h⟩ := (isHermitian_coe D).exists_unitary_conj_of_eigenvalues₀_eq
+    (isHermitian_coe A) hEq
+  refine ⟨⟨U, hU⟩, Subtype.ext ?_⟩
+  rw [coe_selfAdjointConj_apply, ← star_eq_conjTranspose]
+  exact h
+
+end selfAdjoint

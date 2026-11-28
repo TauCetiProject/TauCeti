@@ -9,12 +9,14 @@ public import Mathlib.LinearAlgebra.Matrix.Action
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Univ
 public import Mathlib.LinearAlgebra.Matrix.Kronecker
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
+public import Mathlib.LinearAlgebra.Vandermonde
 public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import Mathlib.Topology.UniformSpace.Matrix
 public import Mathlib.Topology.Metrizable.Basic
+public import Mathlib.Topology.Order.Lattice
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 public import TauCeti.LinearAlgebra.Matrix.Trace.Partial
 public import TauCeti.LinearAlgebra.Pi
@@ -37,6 +39,9 @@ their entries are. Matrices over a compact space are compact.
 Square matrices act jointly continuously on column vectors by `Matrix.mulVec`, the action of
 `Mathlib.LinearAlgebra.Matrix.Action`; through the unit group, so does `GL n R`
 (`Units.continuousSMul`).
+
+Powers of the absolute Vandermonde determinant are continuous in the nodes
+(`TauCeti.continuous_abs_det_vandermonde_pow`).
 
 The same product topology gives entrywise control of a real matrix-valued map near a point of
 continuity, again without a matrix norm
@@ -100,6 +105,17 @@ its inverse.
 public section
 
 namespace TauCeti
+
+/-- The absolute Vandermonde determinant raised to a fixed natural power is continuous. -/
+theorem continuous_abs_det_vandermonde_pow {R : Type*} [CommRing R] [LinearOrder R]
+    [TopologicalSpace R] [IsTopologicalRing R] [ContinuousSup R] {n : ℕ} (k : ℕ) :
+    Continuous (fun d : Fin n → R ↦ |(Matrix.vandermonde d).det| ^ k) := by
+  have h : Continuous (Matrix.vandermonde : (Fin n → R) → Matrix (Fin n) (Fin n) R) :=
+    continuous_matrix fun i j ↦ by
+      simp only [Matrix.vandermonde_apply]
+      exact (continuous_apply i).pow (j : ℕ)
+  simp only [abs_eq_max_neg]
+  exact (h.matrix_det.sup h.matrix_det.neg).pow k
 
 /-- A space of matrices with finitely many rows and columns over a pseudo-metrizable space is
 pseudo-metrizable. -/

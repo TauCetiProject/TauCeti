@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Prod
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.LowRank
 
 /-!
 # The Spin lift of the diagonal `A ↦ A ⊕ A`
@@ -32,10 +32,9 @@ of the compact groups `SO(k)`, and over separably closed fields
 This is the group-level input of the distinguished spin structure on the ordered double `E ⊕ E` of
 an oriented vector bundle `E`, which needs no spin structure on `E` itself.
 
-The one-block inclusion `A ↦ A ⊕ 1` has no such lift as soon as `Q` contains an orthogonal pair
-`u, w` with `Q u * Q w = 1` (for instance an orthonormal pair of a real positive-definite form):
-the Spin element `ι u ι w` squares to `-1`, but its image in `SO(Q)` squares to `1`
-(`CliffordAlgebra.not_exists_spinLift_prod_one`).
+By contrast, the one-block inclusion `A ↦ A ⊕ 1` has no such lift as soon as `Q` contains an
+orthogonal pair `u, w` with `Q u * Q w = 1` (`CliffordAlgebra.not_exists_spinLift_prod_one` in
+`TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Prod`).
 
 ## Main definitions
 
@@ -46,14 +45,21 @@ the Spin element `ι u ι w` squares to `-1`, but its image in `SO(Q)` squares t
 
 * `CliffordAlgebra.diagSpinLift_spinToSpecialOrthogonal`: the lift of the image of `x ∈ Spin(Q)`
   is `spinGroupProd Q Q (x, x)`.
-* `CliffordAlgebra.spinToSpecialOrthogonal_diagSpinLift`: it lifts `A ↦ A ⊕ A`.
+* `CliffordAlgebra.diagSpinLift_spinToSpecialOrthogonal_eq_mul`: the lift of the image of
+  `x ∈ Spin(Q)` multiplies its images under `Isometry.inl` and `Isometry.inr`.
+* `CliffordAlgebra.spinToSpecialOrthogonal_diagSpinLift`,
+  `CliffordAlgebra.spinToOrthogonal_diagSpinLift`, and
+  `CliffordAlgebra.spinVectorAction_diagSpinLift`: it lifts `A ↦ A ⊕ A` to `SO(Q ⊕ Q)` and
+  `O(Q ⊕ Q)` and acts diagonally on `M × M`.
+* `CliffordAlgebra.diagSpinLift_injective` and
+  `CliffordAlgebra.diagSpinLift_eq_one_of_finrank_le_one`: injectivity and low-rank triviality.
 * `CliffordAlgebra.eq_diagSpinLift`: it is the unique homomorphism with the first property.
-* `CliffordAlgebra.diagSpinLift_specialOrthogonalGroupCongr`: naturality under isometric
-  equivalences.
+* `CliffordAlgebra.diagSpinLift_specialOrthogonalGroupCongr` and
+  `CliffordAlgebra.spinGroupEquiv_prodComm_diagSpinLift`: naturality under isometric
+  equivalences and invariance under swapping the two summands.
 * `CliffordAlgebra.diagSpinLift_specialOrthogonalGroupProd`: the ordered direct-sum law; the lift
   for `Q₁ ⊕ Q₂` is the product of the lifts for `Q₁` and `Q₂`, transported along the block
   permutation `(Q₁ ⊕ Q₁) ⊕ (Q₂ ⊕ Q₂) ≃ (Q₁ ⊕ Q₂) ⊕ (Q₁ ⊕ Q₂)`.
-* `CliffordAlgebra.not_exists_spinLift_prod_one`: the one-block inclusion `A ↦ A ⊕ 1` has no lift.
 
 ## References
 
@@ -136,50 +142,59 @@ theorem diagSpinLift_specialOrthogonalGroupProd {M₁ M₂ : Type*} [AddCommGrou
   obtain ⟨x₂, rfl⟩ := hsurj₂ A₂
   rw [← spinToSpecialOrthogonal_spinGroupProd Q₁ Q₂ (x₁, x₂), diagSpinLift_spinToSpecialOrthogonal,
     diagSpinLift_spinToSpecialOrthogonal, diagSpinLift_spinToSpecialOrthogonal]
-  have hc := commute_spinGroupMap_inl_spinGroupMap_inr (Q₁.prod Q₂) (Q₁.prod Q₂)
-    ((Isometry.inr Q₁ Q₂).spinGroupMap x₂) ((Isometry.inl Q₁ Q₂).spinGroupMap x₁)
-  simp only [Isometry.spinGroupMap_spinGroupMap] at hc
-  simp only [IsometryEquiv.spinGroupEquiv_apply, spinGroupProd_apply, map_mul,
-    Isometry.spinGroupMap_spinGroupMap, IsometryEquiv.prodProdProdComm_comp_inl_comp_inl,
-    IsometryEquiv.prodProdProdComm_comp_inl_comp_inr,
-    IsometryEquiv.prodProdProdComm_comp_inr_comp_inl,
-    IsometryEquiv.prodProdProdComm_comp_inr_comp_inr]
-  exact hc.mul_mul_mul_comm _ _
+  exact (spinGroupEquiv_prodProdProdComm_spinGroupProd Q₁ Q₁ Q₂ Q₂ x₁ x₁ x₂ x₂).symm
 
-/-- **The one-block inclusion `A ↦ A ⊕ 1` has no Spin lift.** If `Q` has an orthogonal pair `u, w`
-with `Q u * Q w = 1`, no homomorphism `SO(Q) →* Spin(Q ⊕ Q₂)` lifts `A ↦ A ⊕ 1`: the Spin
-element `ι u ι w` squares to `-1` and its image `A` squares to `1`, while every lift of `A ⊕ 1` is
-`±(ι u ι w)` and squares to `-1`. Doubling, as in `diagSpinLift`, is what makes the lift exist. -/
-theorem not_exists_spinLift_prod_one {M₂ : Type*} [AddCommGroup M₂] [Module K M₂]
-    [FiniteDimensional K M₂] {Q₂ : QuadraticForm K M₂} (hQ : Q.Nondegenerate)
-    (hQ₂ : Q₂.Nondegenerate) {u w : M} (huw : Q.IsOrtho u w) (h : Q u * Q w = 1) :
-    ¬∃ s : specialOrthogonalGroup Q →* spinGroup (Q.prod Q₂),
-      ∀ A, spinToSpecialOrthogonal (Q.prod Q₂) (s A) = specialOrthogonalGroupProd Q Q₂ (A, 1) := by
-  rintro ⟨s, hs⟩
-  have hQ0 : Q ≠ 0 := by rintro rfl; simp at h
-  have : Nontrivial M := ⟨⟨u, 0, by rintro rfl; simp at h⟩⟩
-  let x : spinGroup Q := ⟨ι Q u * ι Q w, ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one u w h⟩
-  have hx : x * x = spinGroup.negOne Q hQ0 :=
-    Subtype.ext <| by simp [x, ι_mul_ι_mul_self_of_isOrtho huw, h]
-  have hA : spinToSpecialOrthogonal Q x * spinToSpecialOrthogonal Q x = 1 := by
-    rw [← map_mul, hx, spinGroup.spinToSpecialOrthogonal_negOne]
-  have hy : spinToSpecialOrthogonal (Q.prod Q₂) (s (spinToSpecialOrthogonal Q x)) =
-      spinToSpecialOrthogonal (Q.prod Q₂) (spinGroupProd Q Q₂ (x, 1)) := by
-    rw [hs, spinToSpecialOrthogonal_spinGroupProd, map_one]
-  have hyy : spinGroupProd Q Q₂ (x, 1) * spinGroupProd Q Q₂ (x, 1) =
-      spinGroupProd Q Q₂ (spinGroup.negOne Q hQ0, 1) := by
-    rw [← map_mul, Prod.mk_mul_mk, hx, one_mul]
-  have hsA : s (spinToSpecialOrthogonal Q x) * s (spinToSpecialOrthogonal Q x) = 1 := by
-    rw [← map_mul, hA, map_one]
-  rcases eq_or_eq_negOne_mul_of_spinToSpecialOrthogonal_eq (Q.prod Q₂) (hQ.prod hQ₂) _ _ hy
-    with h' | h'
-  · rw [h', hyy, spinGroupProd_negOne_one] at hsA
-    exact spinGroup.negOne_ne_one _ _ hsA
-  · have hc : Commute (spinGroupProd Q Q₂ (x, 1))
-        (spinGroup.negOne (Q.prod Q₂) (hQ.prod hQ₂).ne_zero) :=
-      (spinGroup.negOne_mul_comm _ _ _).symm
-    rw [h', hc.mul_mul_mul_comm, spinGroup.negOne_mul_self, one_mul, hyy,
-      spinGroupProd_negOne_one] at hsA
-    exact spinGroup.negOne_ne_one _ _ hsA
+/-- Evaluating `diagSpinLift` on the projection of `x ∈ Spin(Q)` multiplies the images of `x`
+under the two orthogonal summand inclusions. -/
+theorem diagSpinLift_spinToSpecialOrthogonal_eq_mul (x : spinGroup Q) :
+    diagSpinLift Q hQ hsurj (spinToSpecialOrthogonal Q x) =
+      (QuadraticMap.Isometry.inl Q Q).spinGroupMap x *
+        (QuadraticMap.Isometry.inr Q Q).spinGroupMap x := by
+  rw [diagSpinLift_spinToSpecialOrthogonal, spinGroupProd_apply]
+
+/-- **The projection of `diagSpinLift` to `O(Q ⊕ Q)`** is the diagonal embedding
+`A ↦ (A, A)`. -/
+@[simp]
+theorem spinToOrthogonal_diagSpinLift (A : specialOrthogonalGroup Q) :
+    spinToOrthogonal (Q.prod Q) (diagSpinLift Q hQ hsurj A) =
+      orthogonalGroupProd Q Q
+        (specialOrthogonalToOrthogonal Q A, specialOrthogonalToOrthogonal Q A) := by
+  rw [← specialOrthogonalToOrthogonal_spinToSpecialOrthogonal,
+    spinToSpecialOrthogonal_diagSpinLift,
+    specialOrthogonalToOrthogonal_specialOrthogonalGroupProd]
+
+/-- **`diagSpinLift` acts diagonally on `M × M`**: `diagSpinLift A` sends `(u, v)` to
+`(A u, A v)`. -/
+@[simp]
+theorem spinVectorAction_diagSpinLift (A : specialOrthogonalGroup Q) (u v : M) :
+    spinVectorAction (Q.prod Q) (diagSpinLift Q hQ hsurj A) (u, v) =
+      ((A : M ≃ₗ[K] M) u, (A : M ≃ₗ[K] M) v) := by
+  obtain ⟨x, rfl⟩ := hsurj A
+  rw [diagSpinLift_spinToSpecialOrthogonal, spinVectorAction_spinGroupProd,
+    coe_spinToSpecialOrthogonal_apply, coe_spinToSpecialOrthogonal_apply]
+
+/-- **The diagonal Spin lift `SO(Q) →* Spin(Q ⊕ Q)` is injective.** -/
+theorem diagSpinLift_injective : Function.Injective (diagSpinLift Q hQ hsurj) := by
+  intro g₁ g₂ h
+  have hSO := congrArg (spinToSpecialOrthogonal (Q.prod Q)) h
+  rw [spinToSpecialOrthogonal_diagSpinLift, spinToSpecialOrthogonal_diagSpinLift] at hSO
+  exact congrArg Prod.fst (specialOrthogonalGroupProd_injective Q Q hSO)
+
+/-- When `dim M ≤ 1`, `SO(Q)` is trivial and `diagSpinLift` is constantly `1`. -/
+theorem diagSpinLift_eq_one_of_finrank_le_one (hM : Module.finrank K M ≤ 1)
+    (A : specialOrthogonalGroup Q) : diagSpinLift Q hQ hsurj A = 1 := by
+  have hsub : Subsingleton (specialOrthogonalGroup Q) := by
+    rw [QuadraticMap.specialOrthogonalGroup_eq_bot_of_finrank_le_one Q hM]
+    infer_instance
+  rw [Subsingleton.elim A 1, map_one]
+
+-- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
+/-- **Swapping the two copies of `Q` fixes the diagonal Spin lift.** -/
+theorem spinGroupEquiv_prodComm_diagSpinLift (A : specialOrthogonalGroup Q) :
+    (IsometryEquiv.prodComm Q Q).spinGroupEquiv (diagSpinLift Q hQ hsurj A) =
+      diagSpinLift Q hQ hsurj A := by
+  obtain ⟨x, rfl⟩ := hsurj A
+  rw [diagSpinLift_spinToSpecialOrthogonal, spinGroupEquiv_prodComm_spinGroupProd,
+    Prod.swap_prod_mk]
 
 end CliffordAlgebra

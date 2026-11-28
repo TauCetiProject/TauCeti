@@ -50,8 +50,8 @@ This file proves the elementary facts about them: `d ≡ 7 (mod 8)` and `d > 64`
 * `TauCeti.OneSidedBound.lt_l₀`, `TauCeti.OneSidedBound.l₀_le`, `Parameters.two_pow_succ_dvd_q₁`.
 * `Parameters.dvd_q₀_of_dvd_q₁`, `Parameters.primeFactors_towerDeg_subset`,
   `Parameters.four_mul_dvd_d_add_one`,
-  `Parameters.dvd_d_add_one_div_four`, `Parameters.legendreSym_eq_one_of_dvd_q₁`,
-  `Parameters.thirteen_le_of_legendreSym_ne_one`.
+  `Parameters.dvd_d_add_one_div_four`, `Parameters.q₁_dvd_norm_pow`,
+  `Parameters.legendreSym_eq_one_of_dvd_q₁`, `Parameters.thirteen_le_of_legendreSym_ne_one`.
 * `Parameters.coprime_q₁_d`, `Parameters.q₁_mul_d_dvd_q₂`.
 * `Parameters.d_pow_ne_neg_one`.
 
@@ -265,6 +265,14 @@ theorem dvd_d_add_one_div_four {p s : ℕ} (hp : p.Prime) (h : p ∣ P.q₁ s) :
     p ∣ (P.d + 1) / 4 :=
   (Nat.dvd_div_iff_mul_dvd P.four_dvd_d_add_one).2
     (P.four_mul_dvd_d_add_one hp (P.dvd_q₀_of_dvd_q₁ hp h))
+
+/-- Every cyclotomic-level prime divides the norm of the trace-one integer of `ℚ(√−d)`.
+Consequently the level divides a power of that norm. -/
+theorem q₁_dvd_norm_pow (s : ℕ) : P.q₁ s ∣ ((P.d + 1) / 4) ^ P.q₁ s := by
+  have hd : (P.d + 1) / 4 ≠ 0 := by have := P.sixty_four_lt_d; omega
+  refine (Nat.dvd_pow_self_iff (P.q₁_pos s).ne' hd).mpr fun p hp ↦ ?_
+  obtain ⟨hp, hq, _⟩ := Nat.mem_primeFactors.mp hp
+  exact hp.mem_primeFactors (P.dvd_d_add_one_div_four hp hq) hd
 
 /-- Every divisor `n` of `q₁ s` has `(n / d) = 1`; in particular `(p / d) = 1` for every prime
 factor `p` of `q₁ s`. -/
