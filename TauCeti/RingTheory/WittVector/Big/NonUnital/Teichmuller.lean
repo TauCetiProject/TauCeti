@@ -119,13 +119,14 @@ corresponding positive power in the coefficient ring and shifts the truncation s
 theorem frobenius_teichmuller (n : ℕ) (r : R) :
     frobenius (n + 1) (teichmuller S r) = teichmuller (S / (n + 1)) ((· * r)^[n] r) := by
   apply toBigWitt_injective
-  rw [toBigWitt_frobenius, toBigWitt_teichmuller, BigWittVector.frobenius_teichmuller,
-    toBigWitt_teichmuller]
-  congr 1
   have h : Semiconj (Unitization.inr : R → Unitization ℤ R) (· * r)
       (· * (Unitization.inr r : Unitization ℤ R)) := fun a ↦ Unitization.inr_mul ℤ a r
-  exact (mul_right_iterate_apply_self (Unitization.inr r : Unitization ℤ R) n).symm.trans
-    (h.iterate_right n r).symm
+  have hpow : (Unitization.inr r : Unitization ℤ R) ^ (n + 1) =
+      Unitization.inr ((· * r)^[n] r) :=
+    (mul_right_iterate_apply_self (Unitization.inr r : Unitization ℤ R) n).symm.trans
+      (h.iterate_right n r).symm
+  simpa only [toBigWitt_frobenius, toBigWitt_teichmuller, BigWittVector.frobenius_teichmuller]
+    using congrArg (BigWittVector.teichmuller (S / (n + 1))) hpow
 
 /-- The Teichmüller expansion on a finite restriction, over a nonunital coefficient ring. -/
 theorem sum_verschiebung_teichmuller_eq_restrict (h : T ≤ S) (s : Finset ℕ)

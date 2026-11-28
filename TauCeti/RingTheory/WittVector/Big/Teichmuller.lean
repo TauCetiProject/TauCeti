@@ -68,10 +68,11 @@ private theorem teichmullerFun_mul (r s : R) :
     teichmullerFun (S := S) (r * s) = teichmullerFun r * teichmullerFun s := by
   obtain ⟨r, rfl⟩ := counit_surjective R r
   obtain ⟨s, rfl⟩ := counit_surjective R s
-  rw [← map_mul, ← map_teichmullerFun, ← map_teichmullerFun, ← map_teichmullerFun, ← map_mul]
-  apply map_counit_eq_of_ghostMap_eq
-  funext n
-  simp [ghostMap_teichmullerFun, mul_pow]
+  have hghost : ghostMap (teichmullerFun (S := S) (r * s)) =
+      ghostMap (teichmullerFun r * teichmullerFun s) := by
+    funext n
+    simp only [ghostMap_teichmullerFun, map_mul, Pi.mul_apply, mul_pow]
+  simpa only [map_mul, map_teichmullerFun] using map_counit_eq_of_ghostMap_eq hghost
 
 variable (S) in
 /-- The multiplicative Teichmüller map into the big Witt ring. Its coefficient at index one is
@@ -136,10 +137,12 @@ index and shifts the truncation set. -/
 theorem frobenius_teichmuller (n : ℕ) (r : R) :
     frobenius n (teichmuller S r) = teichmuller (S / n) (r ^ n) := by
   obtain ⟨r, rfl⟩ := counit_surjective R r
-  rw [← map_teichmuller, frobenius_map, ← map_pow, ← map_teichmuller]
-  apply map_counit_eq_of_ghostMap_eq
-  funext k
-  simpa only [ghostMap_frobenius, ghostMap_teichmuller] using pow_mul r n (k : ℕ)
+  have hghost : ghostMap (frobenius n (teichmuller S r)) =
+      ghostMap (teichmuller (S / n) (r ^ n)) := by
+    funext k
+    simpa only [ghostMap_frobenius, ghostMap_teichmuller] using pow_mul r n (k : ℕ)
+  simpa only [← frobenius_map, map_teichmuller, map_pow] using
+    map_counit_eq_of_ghostMap_eq hghost
 
 private theorem ghostMap_sum_verschiebung_teichmuller
     (h : T ≤ S) (s : Finset ℕ) (hs : ∀ n ∈ T, n ∈ s) (x : BigWittVector S R) :
@@ -147,6 +150,7 @@ private theorem ghostMap_sum_verschiebung_teichmuller
       ghostMap (restrict h x) := by
   funext n
   let g := (Pi.evalRingHom (fun _ : T ↦ R) n).comp (ghostMap (S := T) (R := R))
+  have hg (y : BigWittVector T R) : g y = ghostMap y n := rfl
   calc
     g (∑ d ∈ s, verschiebung d (teichmuller (T / d) (x.coeff d))) =
         ∑ d ∈ s, g (verschiebung d (teichmuller (T / d) (x.coeff d))) := map_sum g _ _
@@ -155,17 +159,19 @@ private theorem ghostMap_sum_verschiebung_teichmuller
         (Nat.dvd_of_mem_divisors hd)))]
       · refine Finset.sum_congr rfl fun d hd ↦ ?_
         have hdn := Nat.dvd_of_mem_divisors hd
-        have hk := ghostMap_verschiebung_mul (S := T) d (teichmuller (T / d) (x.coeff d))
-          ⟨(n : ℕ) / d, TruncationSet.div_mem_div n.property hdn⟩
-        simpa [g, Nat.mul_div_cancel' hdn] using hk
+        let k : T / d := ⟨(n : ℕ) / d, TruncationSet.div_mem_div n.property hdn⟩
+        have hk : (⟨d * (k : ℕ), TruncationSet.mem_div.mp k.property⟩ : T) = n :=
+          Subtype.ext (Nat.mul_div_cancel' hdn)
+        simpa only [hg, hk, ghostMap_teichmuller] using
+          ghostMap_verschiebung_mul d (teichmuller (T / d) (x.coeff d)) k
       · intro d _ hd
         have hdn : ¬ d ∣ (n : ℕ) := fun hd' ↦ hd
           (Nat.mem_divisors.2 ⟨hd', T.ne_zero_of_mem n.property⟩)
-        exact ghostMap_verschiebung_of_not_dvd _ _ hdn
+        simpa only [hg] using
+          ghostMap_verschiebung_of_not_dvd d (teichmuller (T / d) (x.coeff d)) hdn
     _ = g (restrict h x) := by
       rw [← ghostPolynomial_eq_sum]
-      simpa only [g, RingHom.comp_apply, Pi.evalRingHom_apply, ghostMap_apply] using
-        (ghostMap_restrict h x n).symm
+      simpa only [hg, ghostMap_apply] using (ghostMap_restrict h x n).symm
 
 /-- On a finite restriction, the Witt vector is the sum of Verschiebung translates of the
 Teichmüller representatives of its coefficients. The sum can use any finite set containing every
