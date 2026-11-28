@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
+import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
 # Factorial determinant bounds for norms and logarithms
@@ -25,6 +26,10 @@ row has an entry of positive absolute value.
 ## Main results
 
 * `Matrix.norm_det_le_factorial_prod`: `‖A.det‖ ≤ n! · ∏ i, b i` when `‖A i j‖ ≤ b i`.
+* `Matrix.norm_det_le_factorial_mul_pow`: `‖A.det‖ ≤ n! · c ^ n` when `‖A i j‖ ≤ c`; for a
+  nonempty index type it needs no `‖1‖ = 1` (`Matrix.norm_det_le_factorial_mul_pow_of_nonempty`).
+* `Matrix.norm_adjugate_apply_le`: the entries of the adjugate of a matrix of size `k + 1` with
+  entries of norm at most `c` have norm at most `k! · c ^ k`.
 * `Matrix.log_abv_det_le`: `log (abv A.det) ≤ log n! + ∑ i, log (b i)` when `A.det ≠ 0`.
 
 ## References
@@ -60,6 +65,43 @@ theorem norm_det_le_factorial_prod {R : Type*} [NormedCommRing R] [NormOneClass 
     _ ≤ ∑ _σ : Equiv.Perm n, ∏ i, b i := sum_le_sum fun σ _ ↦ hterm σ
     _ = (Fintype.card n).factorial * ∏ i, b i := by
       rw [sum_const, card_univ, Fintype.card_perm, nsmul_eq_mul]
+
+/-- **Factorial determinant bound for a nonempty index type.** Over a seminormed commutative ring,
+with no assumption on `‖1‖`, if the index type is nonempty and every entry of `A` has norm at most
+`c`, then `‖A.det‖ ≤ n! · c ^ n`, where `n` is the size of the matrix. -/
+theorem norm_det_le_factorial_mul_pow_of_nonempty {R : Type*} [SeminormedCommRing R] [Nonempty n]
+    {A : Matrix n n R} {c : ℝ} (hA : ∀ i j, ‖A i j‖ ≤ c) :
+    ‖A.det‖ ≤ (Fintype.card n).factorial * c ^ Fintype.card n := by
+  -- Each Leibniz term is a nonempty product of entries.
+  have hterm (σ : Equiv.Perm n) : ‖Equiv.Perm.sign σ • ∏ i, A (σ i) i‖ ≤ c ^ Fintype.card n := by
+    rw [norm_units_zsmul]
+    refine (TauCeti.norm_prod_le_prod_norm_of_nonempty univ_nonempty _).trans ?_
+    simpa using prod_le_prod₀ (s := univ) (fun _ _ ↦ norm_nonneg _) fun i _ ↦ hA (σ i) i
+  rw [det_apply]
+  refine (norm_sum_le _ _).trans ((sum_le_sum fun σ _ ↦ hterm σ).trans_eq ?_)
+  rw [sum_const, card_univ, Fintype.card_perm, nsmul_eq_mul]
+
+/-- **Factorial determinant bound for a constant bound.** Over a seminormed commutative ring with
+`‖1‖ = 1`, if every entry of `A` has norm at most `c`, then `‖A.det‖ ≤ n! · c ^ n`, where `n` is
+the size of the matrix. -/
+theorem norm_det_le_factorial_mul_pow {R : Type*} [SeminormedCommRing R] [NormOneClass R]
+    {A : Matrix n n R} {c : ℝ} (hA : ∀ i j, ‖A i j‖ ≤ c) :
+    ‖A.det‖ ≤ (Fintype.card n).factorial * c ^ Fintype.card n := by
+  rcases isEmpty_or_nonempty n with hn | hn
+  · simp
+  exact norm_det_le_factorial_mul_pow_of_nonempty hA
+
+/-- **Entrywise bound for the adjugate.** Over a seminormed commutative ring with `‖1‖ = 1`, if
+every entry of a matrix `A` of size `k + 1` has norm at most `c`, then every entry of its adjugate
+has norm at most `k! · c ^ k`. -/
+theorem norm_adjugate_apply_le {R : Type*} [SeminormedCommRing R] [NormOneClass R] {k : ℕ}
+    {A : Matrix (Fin (k + 1)) (Fin (k + 1)) R} {c : ℝ} (hA : ∀ i j, ‖A i j‖ ≤ c)
+    (i j : Fin (k + 1)) : ‖A.adjugate i j‖ ≤ k.factorial * c ^ k := by
+  have h := norm_det_le_factorial_mul_pow (A := A.submatrix j.succAbove i.succAbove)
+    fun _ _ ↦ hA _ _
+  rw [adjugate_fin_succ_eq_det_submatrix]
+  -- The sign `(-1) ^ (j + i)` is `1` or `-1`.
+  rcases neg_one_pow_eq_or R (j + i : ℕ) with hs | hs <;> simpa [hs] using h
 
 /-- **Factorial determinant bound, logarithmic form.** For a real-valued absolute value `abv`, if
 row `i` of `A` is bounded entrywise in `abv` by `b i` and `A.det ≠ 0`, then

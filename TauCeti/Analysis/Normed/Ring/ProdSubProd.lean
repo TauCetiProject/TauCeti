@@ -22,6 +22,10 @@ Only `‖a i‖ ≤ 1` and `‖b i‖ ≤ 1` are assumed: the bound `norm_prod_s
 in any seminormed commutative ring, `ℝ` and `ℂ` included, without assuming `‖1‖ = 1`. For an empty
 `s` both sides are `0`.
 
+It is the case `c = 1` of the bound for factors of norm at most `c`,
+`‖∏ i ∈ s, a i - ∏ i ∈ s, b i‖ ≤ c ^ (#s - 1) * ∑ i ∈ s, ‖a i - b i‖`
+(`TauCeti.norm_prod_sub_prod_le_pow_mul_sum_norm_sub`).
+
 The bounds on a single product, `TauCeti.norm_prod_le_prod_norm`, `TauCeti.norm_prod_le_one` and
 its nonempty form `TauCeti.norm_prod_le_one_of_nonempty` (which needs no `‖1‖ = 1`), are in
 `TauCeti.Analysis.Normed.Ring.Basic`. The real-valued corollary
@@ -50,6 +54,33 @@ namespace TauCeti
 
 open Finset
 
+/-- **Telescoping bound for products of bounded factors.** If `‖a i‖ ≤ c` and `‖b i‖ ≤ c` for every
+`i ∈ s`, then `‖∏ i ∈ s, a i - ∏ i ∈ s, b i‖ ≤ c ^ (#s - 1) * ∑ i ∈ s, ‖a i - b i‖`. For `c = 1`
+this is `TauCeti.norm_prod_sub_prod_le_sum_norm_sub`. -/
+theorem norm_prod_sub_prod_le_pow_mul_sum_norm_sub {ι R : Type*} [SeminormedCommRing R]
+    (s : Finset ι) {a b : ι → R} {c : ℝ} (ha : ∀ i ∈ s, ‖a i‖ ≤ c) (hb : ∀ i ∈ s, ‖b i‖ ≤ c) :
+    ‖∏ i ∈ s, a i - ∏ i ∈ s, b i‖ ≤ c ^ (#s - 1) * ∑ i ∈ s, ‖a i - b i‖ := by
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp
+  induction hs using Finset.Nonempty.cons_induction with
+  | singleton j => simp
+  | cons j s hj hs ih =>
+    simp only [mem_cons, forall_eq_or_imp] at ha hb
+    have hc : 0 ≤ c := (norm_nonneg _).trans ha.1
+    have hb' : ‖∏ i ∈ s, b i‖ ≤ c ^ #s :=
+      (norm_prod_le_prod_norm_of_nonempty hs b).trans
+        ((prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) hb.2).trans_eq (prod_const c))
+    have hpow : c ^ #s = c * c ^ (#s - 1) := by
+      rw [← pow_succ', Nat.sub_add_cancel hs.card_pos]
+    rw [prod_cons, prod_cons, sum_cons, card_cons, Nat.add_sub_cancel]
+    -- Compare through `a j * ∏ i ∈ s, b i`.
+    refine (norm_mul_sub_le_left (a j) _ (∏ i ∈ s, b i) _).trans ?_
+    rw [← sub_mul]
+    calc _ ≤ c * (c ^ (#s - 1) * ∑ i ∈ s, ‖a i - b i‖) + ‖a j - b j‖ * c ^ #s :=
+          add_le_add (mul_le_mul ha.1 (ih ha.2 hb.2) (norm_nonneg _) hc)
+            ((norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left hb' (norm_nonneg _)))
+      _ = c ^ #s * (‖a j - b j‖ + ∑ i ∈ s, ‖a i - b i‖) := by rw [hpow]; ring
+
 /-- **Telescoping bound for a product of unit-ball elements.** If `‖a i‖ ≤ 1` and `‖b i‖ ≤ 1` for
 every `i ∈ s`, then the difference of the products is at most the sum of the pointwise
 differences. -/
@@ -57,20 +88,7 @@ theorem norm_prod_sub_prod_le_sum_norm_sub {ι R : Type*} [SeminormedCommRing R]
     (s : Finset ι) {a b : ι → R}
     (ha : ∀ i ∈ s, ‖a i‖ ≤ 1) (hb : ∀ i ∈ s, ‖b i‖ ≤ 1) :
     ‖∏ i ∈ s, a i - ∏ i ∈ s, b i‖ ≤ ∑ i ∈ s, ‖a i - b i‖ := by
-  rcases s.eq_empty_or_nonempty with rfl | hs
-  · simp
-  induction hs using Finset.Nonempty.cons_induction with
-  | singleton j => simp
-  | cons j s hj hs ih =>
-    simp only [mem_cons, forall_eq_or_imp] at ha hb
-    rw [prod_cons, prod_cons, sum_cons]
-    calc _ = ‖a j * (∏ i ∈ s, a i - ∏ i ∈ s, b i) + (a j - b j) * ∏ i ∈ s, b i‖ := by
-          congr 1; ring
-      _ ≤ ‖a j‖ * ‖∏ i ∈ s, a i - ∏ i ∈ s, b i‖ + ‖a j - b j‖ * ‖∏ i ∈ s, b i‖ :=
-          (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) (norm_mul_le _ _))
-      _ ≤ 1 * ∑ i ∈ s, ‖a i - b i‖ + ‖a j - b j‖ * 1 := by
-          gcongr; exacts [ha.1, ih ha.2 hb.2, norm_prod_le_one_of_nonempty hs hb.2]
-      _ = _ := by ring
+  simpa using norm_prod_sub_prod_le_pow_mul_sum_norm_sub s ha hb
 
 /-- **Real-valued form** of `norm_prod_sub_prod_le_sum_norm_sub`, phrased with `|·|`: if
 `|a i| ≤ 1` and `|b i| ≤ 1` for every `i ∈ s`, then the difference of the products is at most the

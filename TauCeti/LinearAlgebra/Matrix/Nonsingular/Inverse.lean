@@ -40,6 +40,10 @@ Scaling a square matrix by a semifield scalar scales its nonsingular inverse by 
 
 `LinearMap.toMatrix_ringInverse` identifies the matrix of an endomorphism's ring inverse.
 
+By the cofactor formula, the last diagonal entry of the inverse of a matrix of size `k + 1` is
+`Ring.inverse` of its determinant times its leading principal minor of order `k`
+(`Matrix.inv_apply_last_last`).
+
 For invertible matrices `A`, `B` over a linearly ordered field, inverse entries bounded by `L`
 and entrywise difference bounded by `d` give `|A⁻¹ i j - B⁻¹ i j| ≤ (card ι)² L² d`
 (`Matrix.abs_inv_sub_inv_apply_le`). This estimate supplies the inverse-entry Hölder modulus.
@@ -145,6 +149,14 @@ theorem inv_submatrix_mul_row_eq_single {K ι : Type*} [CommRing K] [Fintype ι]
       e.injective.eq_iff, Matrix.one_apply, eq_comm] using h
   · have hz : ∀ b, e b ≠ j := fun b h ↦ hj ⟨b, h⟩
     simp [Matrix.mul_apply, hred, hj, hz, Ne.symm]
+
+/-- **Corner entry of the inverse.** For a square matrix `A` of size `k + 1`, the last diagonal
+entry of `A⁻¹` is `Ring.inverse (det A)` times the leading principal minor of order `k`; over a
+field this is the minor divided by `det A`. Both sides are `0` when `det A` is not a unit. -/
+theorem inv_apply_last_last {k : ℕ} (A : Matrix (Fin (k + 1)) (Fin (k + 1)) R) :
+    A⁻¹ (Fin.last k) (Fin.last k) =
+      Ring.inverse A.det * (A.submatrix Fin.castSucc Fin.castSucc).det := by
+  simp [inv_def, adjugate_fin_succ_eq_det_submatrix, ← two_mul, pow_mul]
 
 /-- If `L` has unit determinant and `L * Lᵀ = M * Mᵀ`, then `L⁻¹ * M` is orthogonal:
 `(L⁻¹ * M) * (L⁻¹ * M)ᵀ = 1`. -/
