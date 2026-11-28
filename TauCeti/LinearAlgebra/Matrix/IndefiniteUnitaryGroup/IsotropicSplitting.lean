@@ -131,6 +131,14 @@ namespace IsotropicSplitting
 
 variable {A : Matrix n n R} {A₀ : Matrix n₀ n₀ R} (D : IsotropicSplitting A A₀ p)
 
+/-- Two splittings with the same frames and the same core embedding are equal. -/
+@[ext]
+theorem ext {D D' : IsotropicSplitting A A₀ p} (hk : D.k = D'.k) (hl : D.l = D'.l)
+    (hι : D.ι = D'.ι) : D = D' := by
+  cases D
+  cases D'
+  simp_all
+
 /-! ### The remaining relations and the coordinates -/
 
 /-- `k` and `l` are dual. -/
