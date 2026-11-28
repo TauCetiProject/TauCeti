@@ -102,6 +102,14 @@ theorem companion_apply (p : R[X]) (i j : Fin p.natDegree) :
       if (i : ℕ) = j + 1 then 1 else if (j : ℕ) + 1 = p.natDegree then -p.coeff i else 0 :=
   (rfl)
 
+/-- Equal polynomials have equal companion matrices after reindexing to a common size. -/
+theorem reindex_companion_eq {p q : R[X]} {d : ℕ}
+    (hp : p.natDegree = d) (hq : q.natDegree = d) (h : p = q) :
+    Matrix.reindex (finCongr hp) (finCongr hp) p.companion =
+      Matrix.reindex (finCongr hq) (finCongr hq) q.companion := by
+  subst q
+  rfl
+
 end Ring
 
 section CommRing

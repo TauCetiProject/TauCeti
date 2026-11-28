@@ -141,7 +141,8 @@ private theorem linearIndependent_powers_of_eq_on_initial_powers (A B : Module.E
     intro hmem
     -- A first dependence would make the span of the earlier iterates invariant under both maps.
     let W := Submodule.span K (Set.range fun i : Fin m ↦ (A ^ (i : ℕ)) v)
-    have hlast : (A ^ m) v ∈ W := hmem
+    have hlast : (A ^ m) v ∈ W := by
+      simpa only [Fin.init_def, Fin.val_last, Fin.val_castSucc] using hmem
     have hA : W ≤ W.comap A := by
       apply Submodule.span_le.mpr
       rintro _ ⟨i, rfl⟩
@@ -195,25 +196,27 @@ private theorem exists_basis_shift_of_isCoprime_charpoly_of_finrank_range_sub_le
 /-- **Levelt's simultaneous companion form.** A pair of endomorphisms with coprime
 characteristic polynomials and difference of rank at most one has a common basis in which
 each is the companion matrix of its characteristic polynomial. -/
-theorem levelt_rigidity_field (A B : Module.End K V)
-    (hcop : IsCoprime A.charpoly B.charpoly) (hrank : finrank K (A - B).range ≤ 1)
-    {d : ℕ} (hd : finrank K V = d) :
+theorem levelt_rigidity_field (A B : Module.End K V) (p q : K[X])
+    (hp : A.charpoly = p) (hq : B.charpoly = q)
+    (hcop : IsCoprime p q) (hrank : finrank K (A - B).range ≤ 1)
+    {d : ℕ} (hpd : p.natDegree = d) (hqd : q.natDegree = d) :
     ∃ b : Basis (Fin d) K V,
-      A.toMatrix b b = Matrix.reindex
-        (finCongr (A.charpoly_natDegree.trans hd)) (finCongr (A.charpoly_natDegree.trans hd))
-        A.charpoly.companion ∧
-      B.toMatrix b b = Matrix.reindex
-        (finCongr (B.charpoly_natDegree.trans hd)) (finCongr (B.charpoly_natDegree.trans hd))
-        B.charpoly.companion := by
+      A.toMatrix b b = Matrix.reindex (finCongr hpd) (finCongr hpd) p.companion ∧
+      B.toMatrix b b = Matrix.reindex (finCongr hqd) (finCongr hqd) q.companion := by
+  have hd : finrank K V = d := A.charpoly_natDegree.symm.trans (hp ▸ hpd)
   obtain ⟨b, hb⟩ := A.exists_basis_shift_of_isCoprime_charpoly_of_finrank_range_sub_le_one
-    B hcop hrank hd
-  exact ⟨b, A.toMatrix_eq_companion_of_basis_shift b _ (fun i hi ↦ (hb i hi).1),
-    B.toMatrix_eq_companion_of_basis_shift b _ (fun i hi ↦ (hb i hi).2)⟩
+    B (by rwa [hp, hq]) hrank hd
+  exact ⟨b, (A.toMatrix_eq_companion_of_basis_shift b (A.charpoly_natDegree.trans hd)
+    (fun i hi ↦ (hb i hi).1)).trans
+    (reindex_companion_eq _ hpd hp),
+    (B.toMatrix_eq_companion_of_basis_shift b (B.charpoly_natDegree.trans hd)
+      (fun i hi ↦ (hb i hi).2)).trans
+      (reindex_companion_eq _ hqd hq)⟩
 
 /-- Every endomorphism commuting with both members of a pair as in Levelt's theorem
 is scalar. In particular an invertible intertwiner between two such pairs is unique up to
 a nonzero scalar. -/
-theorem exists_eq_smul_id_of_commute_of_isCoprime_charpoly_of_rank_sub_le_one
+theorem exists_eq_smul_id_of_isCoprime_charpoly_of_finrank_range_sub_le_one_of_commute
     (A B T : Module.End K V) (hcop : IsCoprime A.charpoly B.charpoly)
     (hrank : finrank K (A - B).range ≤ 1) (hTA : Commute T A) (hTB : Commute T B) :
     ∃ a : K, T = a • LinearMap.id := by
@@ -235,8 +238,9 @@ theorem exists_eq_smul_id_of_commute_of_isCoprime_charpoly_of_rank_sub_le_one
   have hle : (A - B).range ≤ W := by
     intro x hx
     apply Module.End.mem_eigenspace_iff.mpr
-    have h := congrArg Subtype.val (DFunLike.congr_fun ha ⟨x, hx⟩)
-    exact h
+    simpa only [LinearMap.restrict_apply, LinearMap.smul_apply, LinearMap.id_apply,
+      Submodule.coe_smul_of_tower] using
+      congrArg Subtype.val (DFunLike.congr_fun ha ⟨x, hx⟩)
   have hW (S : Module.End K V) (hTS : Commute T S) : W ≤ W.comap S :=
     fun _ hx ↦ Module.End.mapsTo_genEigenspace_of_comm hTS a 1 hx
   have htop := (A.eq_bot_or_eq_top_of_isCoprime_charpoly_of_finrank_range_sub_le_one
@@ -255,11 +259,15 @@ invariant subspace. -/
 theorem levelt_irreducible_field {K : Type*} [Field K] (p q : K[X])
     (hp : p.Monic) (hq : q.Monic) (hcop : IsCoprime p q) {d : ℕ}
     (hpdeg : p.natDegree = d) (hqdeg : q.natDegree = d)
-    (L : Type*) [Field L] [Algebra K L] (W : Submodule L (Fin d → L)) :
-    let A := (Matrix.reindex (finCongr hpdeg) (finCongr hpdeg) p.companion).map (algebraMap K L)
-    let B := (Matrix.reindex (finCongr hqdeg) (finCongr hqdeg) q.companion).map (algebraMap K L)
-    W ≤ W.comap A.toLin' → W ≤ W.comap B.toLin' → W = ⊥ ∨ W = ⊤ := by
-  intro A B hA hB
+    (L : Type*) [Field L] [Algebra K L] (W : Submodule L (Fin d → L))
+    (hA : W ≤ W.comap
+      ((Matrix.reindex (finCongr hpdeg) (finCongr hpdeg) p.companion).map
+        (algebraMap K L)).toLin')
+    (hB : W ≤ W.comap
+      ((Matrix.reindex (finCongr hqdeg) (finCongr hqdeg) q.companion).map
+        (algebraMap K L)).toLin') : W = ⊥ ∨ W = ⊤ := by
+  let A := (Matrix.reindex (finCongr hpdeg) (finCongr hpdeg) p.companion).map (algebraMap K L)
+  let B := (Matrix.reindex (finCongr hqdeg) (finCongr hqdeg) q.companion).map (algebraMap K L)
   apply A.toLin'.eq_bot_or_eq_top_of_isCoprime_charpoly_of_finrank_range_sub_le_one
     B.toLin' _ _ W hA hB
   · simpa only [A, B, Matrix.charpoly_toLin', Matrix.charpoly_map, Matrix.charpoly_reindex,
@@ -287,39 +295,34 @@ variable {K : Type*} [Field K] {d : ℕ}
 
 /-- Two square matrices with coprime characteristic polynomials and difference of rank
 at most one are simultaneously conjugate to their companion matrices. -/
-theorem levelt_rigidity_field (A B : Matrix (Fin d) (Fin d) K)
-    (hcop : IsCoprime A.charpoly B.charpoly) (hrank : Matrix.rank (A - B) ≤ 1) :
+theorem levelt_rigidity_field (A B : Matrix (Fin d) (Fin d) K) (p q : K[X])
+    (hp : A.charpoly = p) (hq : B.charpoly = q)
+    (hcop : IsCoprime p q) (hrank : Matrix.rank (A - B) ≤ 1)
+    (hpd : p.natDegree = d) (hqd : q.natDegree = d) :
     ∃ c : GL (Fin d) K,
       A = (↑c : Matrix (Fin d) (Fin d) K) *
-        Matrix.reindex (finCongr (by simp : A.charpoly.natDegree = d))
-          (finCongr (by simp : A.charpoly.natDegree = d)) A.charpoly.companion *
+        Matrix.reindex (finCongr hpd) (finCongr hpd) p.companion *
         (↑c⁻¹ : Matrix (Fin d) (Fin d) K) ∧
       B = (↑c : Matrix (Fin d) (Fin d) K) *
-        Matrix.reindex (finCongr (by simp : B.charpoly.natDegree = d))
-          (finCongr (by simp : B.charpoly.natDegree = d)) B.charpoly.companion *
+        Matrix.reindex (finCongr hqd) (finCongr hqd) q.companion *
         (↑c⁻¹ : Matrix (Fin d) (Fin d) K) := by
   let standard := Pi.basisFun K (Fin d)
   have hr : finrank K (A.toLin' - B.toLin').range ≤ 1 := by
     rwa [← map_sub, Matrix.toLin'_apply', Matrix.finrank_range_mulVecLin]
-  obtain ⟨b, hA, hB⟩ := A.toLin'.levelt_rigidity_field B.toLin'
-    (by simpa only [Matrix.charpoly_toLin'] using hcop) hr (d := d) (by simp)
+  obtain ⟨b, hA, hB⟩ := A.toLin'.levelt_rigidity_field B.toLin' p q
+    ((Matrix.charpoly_toLin' A).trans hp) ((Matrix.charpoly_toLin' B).trans hq)
+    hcop hr hpd hqd
   let := standard.invertibleToMatrix b
   let c : GL (Fin d) K := unitOfInvertible (standard.toMatrix b)
-  -- The index types of the companions depend on their characteristic polynomials.
-  have transport {p q : K[X]} (hp : p.natDegree = d) (hq : q.natDegree = d) (h : p = q) :
-      reindex (finCongr hp) (finCongr hp) p.companion =
-        reindex (finCongr hq) (finCongr hq) q.companion := by
-    subst q
-    rfl
-  have conjugate (M : Matrix (Fin d) (Fin d) K) (hm : M.toLin'.charpoly.natDegree = d)
-      (hM : M.toLin'.toMatrix b b = reindex (finCongr hm) (finCongr hm)
-        M.toLin'.charpoly.companion) :
-      M = (↑c : Matrix (Fin d) (Fin d) K) *
-        reindex (finCongr (by simp : M.charpoly.natDegree = d))
-          (finCongr (by simp : M.charpoly.natDegree = d)) M.charpoly.companion *
+  have hc : (↑c : Matrix (Fin d) (Fin d) K) = standard.toMatrix b := rfl
+  have hc' : (↑c⁻¹ : Matrix (Fin d) (Fin d) K) = b.toMatrix standard := by
+    apply left_inv_eq_right_inv (Units.inv_mul c)
+    rw [hc, Basis.toMatrix_mul_toMatrix_flip]
+  have conjugate (M C : Matrix (Fin d) (Fin d) K)
+      (hM : M.toLin'.toMatrix b b = C) :
+      M = (↑c : Matrix (Fin d) (Fin d) K) * C *
         (↑c⁻¹ : Matrix (Fin d) (Fin d) K) := by
-    rw [← transport hm _ (Matrix.charpoly_toLin' M), ← hM]
-    -- The inverse of the change-of-basis matrix is the reverse change of basis.
+    rw [hc, hc', ← hM]
     exact (basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix
       standard b standard b M.toLin').trans (by simp [standard]) |>.symm
   exact ⟨c, conjugate A _ hA, conjugate B _ hB⟩
@@ -328,22 +331,22 @@ namespace GeneralLinearGroup
 
 /-- **Levelt's companion form for a triple.** For a triple with product one in the order
 `gInf * gOne * gZero`, coprime characteristic polynomials for `gInf` and `gZero⁻¹`, and
-middle displacement of rank at most one, one change of basis puts the two endpoint
-operators in companion form and identifies the middle operator with their quotient. -/
-theorem levelt_rigidity_field (gInf gOne gZero : GL (Fin d) K)
+middle displacement of rank at most one, one change of basis conjugates `gInf` and
+`gZero⁻¹` to the prescribed companion matrices `Cp` and `Cq`, respectively, and conjugates
+`gOne` to `Cp⁻¹ * Cq`. -/
+theorem levelt_rigidity_field (gInf gOne gZero : GL (Fin d) K) (p q : K[X])
     (hprod : gInf * gOne * gZero = 1)
-    (hcop : IsCoprime gInf.val.charpoly gZero⁻¹.val.charpoly)
-    (hrank : Matrix.rank (gOne.val - 1) ≤ 1) :
+    (hp : gInf.val.charpoly = p) (hq : gZero⁻¹.val.charpoly = q)
+    (hcop : IsCoprime p q) (hrank : Matrix.rank (gOne.val - 1) ≤ 1)
+    (hpd : p.natDegree = d) (hqd : q.natDegree = d) :
     ∃ c : GL (Fin d) K,
-      let p := gInf.val.charpoly
-      let q := gZero⁻¹.val.charpoly
-      let Cp := Matrix.reindex (finCongr (by simp [p] : p.natDegree = d))
-        (finCongr (by simp [p] : p.natDegree = d)) p.companion
-      let Cq := Matrix.reindex (finCongr (by simp [q] : q.natDegree = d))
-        (finCongr (by simp [q] : q.natDegree = d)) q.companion
-      (c⁻¹ * gInf * c).val = Cp ∧
-      (c⁻¹ * gZero⁻¹ * c).val = Cq ∧
-      (c⁻¹ * gOne * c).val = Cp⁻¹ * Cq := by
+      (c⁻¹ * gInf * c).val =
+        Matrix.reindex (finCongr hpd) (finCongr hpd) p.companion ∧
+      (c⁻¹ * gZero⁻¹ * c).val =
+        Matrix.reindex (finCongr hqd) (finCongr hqd) q.companion ∧
+      (c⁻¹ * gOne * c).val =
+        (Matrix.reindex (finCongr hpd) (finCongr hpd) p.companion)⁻¹ *
+          Matrix.reindex (finCongr hqd) (finCongr hqd) q.companion := by
   have hmul : gInf * gOne = gZero⁻¹ := by
     calc
       gInf * gOne = (gInf * gOne * gZero) * gZero⁻¹ := by group
@@ -353,9 +356,9 @@ theorem levelt_rigidity_field (gInf gOne gZero : GL (Fin d) K)
       _ = Matrix.rank (gInf.val * (gOne.val - 1)) := by
         rw [mul_sub, Matrix.mul_one, ← coe_mul, hmul]
       _ ≤ 1 := (Matrix.rank_mul_le_right _ _).trans hrank
-  obtain ⟨c, hq, hp⟩ := Matrix.levelt_rigidity_field gZero⁻¹.val gInf.val hcop.symm hr
+  obtain ⟨c, hq, hp⟩ := Matrix.levelt_rigidity_field gZero⁻¹.val gInf.val q p
+    hq hp hcop.symm hr hqd hpd
   refine ⟨c, ?_⟩
-  dsimp only
   have conjugate (g : GL (Fin d) K) (C : Matrix (Fin d) (Fin d) K)
       (hg : g.val = c.val * C * c⁻¹.val) : (c⁻¹ * g * c).val = C := by
     rw [coe_mul, coe_mul, hg]
@@ -369,25 +372,33 @@ theorem levelt_rigidity_field (gInf gOne gZero : GL (Fin d) K)
     c⁻¹ * gOne * c = (c⁻¹ * gInf * c)⁻¹ * (c⁻¹ * (gInf * gOne) * c) := by group
     _ = _ := by rw [hmul]
 
+end GeneralLinearGroup
+
 /-- Two changes of basis that give the same simultaneous conjugates of a pair as in Levelt's
 theorem differ by a nonzero scalar. -/
-theorem exists_smul_eq_of_levelt_conj_eq (A B c c' : GL (Fin d) K)
-    (hcop : IsCoprime A.val.charpoly B.val.charpoly) (hrank : Matrix.rank (A.val - B.val) ≤ 1)
-    (hA : c⁻¹ * A * c = c'⁻¹ * A * c') (hB : c⁻¹ * B * c = c'⁻¹ * B * c') :
+theorem exists_smul_eq_of_levelt_conj_eq (A B : Matrix (Fin d) (Fin d) K)
+    (c c' : GL (Fin d) K) (hcop : IsCoprime A.charpoly B.charpoly)
+    (hrank : Matrix.rank (A - B) ≤ 1)
+    (hA : c⁻¹.val * A * c.val = c'⁻¹.val * A * c'.val)
+    (hB : c⁻¹.val * B * c.val = c'⁻¹.val * B * c'.val) :
     ∃ a : Kˣ, c'.val = (a : K) • c.val := by
   let T := c' * c⁻¹
-  have commute (M : GL (Fin d) K) (hM : c⁻¹ * M * c = c'⁻¹ * M * c') :
-      Commute T.val.toLin' M.val.toLin' := by
-    have h : Commute T M := calc
-      T * M = c' * (c⁻¹ * M * c) * c⁻¹ := by dsimp [T]; group
-      _ = c' * (c'⁻¹ * M * c') * c⁻¹ := by rw [hM]
-      _ = M * T := by dsimp [T]; group
-    exact (h.map (Units.coeHom _)).map Matrix.toLinAlgEquiv'
-  have hr : finrank K (A.val.toLin' - B.val.toLin').range ≤ 1 := by
+  have commute (M : Matrix (Fin d) (Fin d) K)
+      (hM : c⁻¹.val * M * c.val = c'⁻¹.val * M * c'.val) :
+      Commute T.val.toLin' M.toLin' := by
+    have h : Commute T.val M := by
+      calc
+        T.val * M = c'.val * (c⁻¹.val * M * c.val) * c⁻¹.val := by
+          simp [T, Matrix.mul_assoc]
+        _ = c'.val * (c'⁻¹.val * M * c'.val) * c⁻¹.val := by rw [hM]
+        _ = M * T.val := by
+          simp [T, Matrix.mul_assoc]
+    exact h.map Matrix.toLinAlgEquiv'
+  have hr : finrank K (A.toLin' - B.toLin').range ≤ 1 := by
     rwa [← map_sub, Matrix.toLin'_apply', Matrix.finrank_range_mulVecLin]
   obtain ⟨a, ha⟩ :=
-    A.val.toLin'.exists_eq_smul_id_of_commute_of_isCoprime_charpoly_of_rank_sub_le_one
-      B.val.toLin' T.val.toLin' (by simpa only [Matrix.charpoly_toLin'] using hcop)
+    A.toLin'.exists_eq_smul_id_of_isCoprime_charpoly_of_finrank_range_sub_le_one_of_commute
+      B.toLin' T.val.toLin' (by simpa only [Matrix.charpoly_toLin'] using hcop)
       hr (commute A hA) (commute B hB)
   have hscalar : T.val = a • (1 : Matrix (Fin d) (Fin d) K) := by
     apply Matrix.toLin'.injective
@@ -399,9 +410,7 @@ theorem exists_smul_eq_of_levelt_conj_eq (A B c c' : GL (Fin d) K)
     exact ⟨1, Subsingleton.elim _ _⟩
   refine ⟨Units.mk0 a hzero, ?_⟩
   calc
-    c'.val = T.val * c.val := by rw [← coe_mul]; simp [T, mul_assoc]
+    c'.val = T.val * c.val := by rw [← GeneralLinearGroup.coe_mul]; simp [T, mul_assoc]
     _ = a • c.val := by rw [hscalar, smul_mul_assoc, Matrix.one_mul]
-
-end GeneralLinearGroup
 
 end Matrix
