@@ -19,10 +19,9 @@ import TauCeti.Analysis.Normed.Operator.ClosedRange
 An endomorphism and its adjoint have the same real quadratic form
 (`ContinuousLinearMap.re_inner_star_apply_self`).
 For bounded operators between complete inner product spaces, the adjoint takes values in the
-orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`), the
-orthogonal projection onto `ker T†` agrees with the orthogonal projection onto `(range T)ᗮ`
-(`ContinuousLinearMap.starProjection_ker_adjoint`), and the adjoint is injective exactly when the
-operator has dense range (`ContinuousLinearMap.adjoint_injective_iff_denseRange`).
+orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`),
+and the adjoint is injective exactly when the operator has dense range
+(`ContinuousLinearMap.adjoint_injective_iff_denseRange`).
 The Gram operator of an operator with finite-dimensional source is invertible exactly when the
 operator is injective (`ContinuousLinearMap.isUnit_adjoint_comp_self_iff`).
 An operator on a Hilbert space is invertible exactly when its adjoint is
@@ -133,15 +132,6 @@ theorem adjoint_apply_mem_orthogonal_ker [CompleteSpace E] [CompleteSpace F]
     (u : E →L[𝕜] F) (y : F) : (u†) y ∈ u.kerᗮ := by
   rw [orthogonal_ker]
   exact Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ y)
-
-/-- For any bounded operator `T : E →L[𝕜] F` between Hilbert spaces, the orthogonal projection onto
-`ker T†` equals the orthogonal projection onto `(range T)ᗮ`. -/
-theorem starProjection_ker_adjoint [CompleteSpace E] [CompleteSpace F] (T : E →L[𝕜] F) :
-    ((T†).ker).starProjection = T.rangeᗮ.starProjection := by
-  ext y
-  exact Submodule.eq_starProjection_of_mem_orthogonal
-    (T.orthogonal_range ▸ T.rangeᗮ.starProjection_apply_mem y)
-    (T.orthogonal_range ▸ T.rangeᗮ.sub_starProjection_mem_orthogonal y)
 
 /-- The adjoint of a bounded operator between Hilbert spaces is injective exactly when the
 operator has dense range: its kernel is the orthogonal complement of the range. -/

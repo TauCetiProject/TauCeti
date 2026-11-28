@@ -127,14 +127,6 @@ theorem isTopCompl_map_of_isInvertible_comp_subtypeL_coprod {T : E →L[𝕜] F}
   exact hrange ▸ hker ▸ A.isTopCompl_range_ker_of_leftInverse (B.quotientRangeCoordinate A)
     (quotientRangeCoordinate_apply_right hBA)
 
-/-- If `(T ∘L V.subtypeL).coprod W.subtypeL` is invertible and `W` is `T1`, then `V.map T` is
-closed in `F`. -/
-theorem isClosed_map_of_isInvertible_comp_subtypeL_coprod
-    {T : E →L[𝕜] F} {V : Submodule 𝕜 E} {W : Submodule 𝕜 F} [T1Space W] [ContinuousSub F]
-    (hΦ : ((T ∘L V.subtypeL).coprod W.subtypeL).IsInvertible) :
-    IsClosed ((V.map (T : E →ₗ[𝕜] F)) : Set F) :=
-  (isTopCompl_map_of_isInvertible_comp_subtypeL_coprod hΦ).isClosed
-
 /-- If `(T ∘L V.subtypeL).coprod W.subtypeL` is invertible, `T` restricts to a continuous linear
 equivalence `V ≃L[𝕜] V.map T`. -/
 noncomputable def restrictMapEquiv {T : E →L[𝕜] F} {V : Submodule 𝕜 E} {W : Submodule 𝕜 F}
@@ -185,14 +177,6 @@ theorem apply_restrictMapEquiv_symm {T : E →L[𝕜] F} {V : Submodule 𝕜 E} 
     (hΦ : ((T ∘L V.subtypeL).coprod W.subtypeL).IsInvertible) (y : V.map (T : E →ₗ[𝕜] F)) :
     T ((restrictMapEquiv hΦ).symm y) = (y : F) := by
   rw [← coe_restrictMapEquiv_apply hΦ, (restrictMapEquiv hΦ).apply_symm_apply]
-
-/-- If `(T ∘L V.subtypeL).coprod W.subtypeL` is invertible, the restriction `V →L[𝕜] V.map T` of
-`T` is invertible. -/
-theorem isInvertible_restrict_of_isInvertible_comp_subtypeL_coprod {T : E →L[𝕜] F}
-    {V : Submodule 𝕜 E} {W : Submodule 𝕜 F}
-    (hΦ : ((T ∘L V.subtypeL).coprod W.subtypeL).IsInvertible) :
-    (T.restrict (q := V.map (T : E →ₗ[𝕜] F)) fun _ ↦ Submodule.mem_map_of_mem).IsInvertible :=
-  ⟨restrictMapEquiv hΦ, (toContinuousLinearMap_restrictMapEquiv hΦ).symm⟩
 
 end Pointwise
 
@@ -245,7 +229,7 @@ theorem isFredholm_of_isInvertible_comp_subtypeL_coprod {T : E →L[𝕜] F} {V 
   have : (V.map (T : E →ₗ[𝕜] F)).CoFG :=
     Submodule.FG.cofg_of_isCompl hcompl.isCompl.symm .of_finite
   exact .of_isInvertible_restrict hV hcompl.isClosed (fun _ ↦ Submodule.mem_map_of_mem)
-    (isInvertible_restrict_of_isInvertible_comp_subtypeL_coprod hΦ)
+    ⟨restrictMapEquiv hΦ, rfl⟩
 
 /-- **Index formula from a finite-codimension transverse subspace.** Under the hypotheses of
 `isFredholm_of_isInvertible_comp_subtypeL_coprod`, the index of `T` equals

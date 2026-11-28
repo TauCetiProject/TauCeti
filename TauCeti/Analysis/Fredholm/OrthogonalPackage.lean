@@ -145,8 +145,8 @@ theorem IsFredholm.subtypeL_comp_orthogonalFredholmPackage_decCodom_proj (hT : T
     T.range.subtypeL ∘L hT.orthogonalFredholmPackage.decCodom.proj =
       .id 𝕜 F - ((T†).ker).starProjection := by
   have : T.range.HasOrthogonalProjection := hT.hasOrthogonalProjection_range
-  rw [hT.orthogonalFredholmPackage_decCodom_proj, ← Submodule.starProjection,
-    T.starProjection_ker_adjoint, Submodule.starProjection_orthogonal, sub_sub_cancel]
+  rw [hT.orthogonalFredholmPackage_decCodom_proj, ← Submodule.starProjection]
+  simp_rw [← T.orthogonal_range, Submodule.starProjection_orthogonal, sub_sub_cancel]
 
 /-- The essential isomorphism of the orthogonal Fredholm package is
 `ContinuousLinearMap.orthogonalKerEquivRange`. -/
@@ -252,8 +252,8 @@ projection onto `ker T†`. -/
 theorem IsFredholm.id_sub_self_comp_orthogonalFredholmPackage_quasiInverse (hT : T.IsFredholm) :
     .id 𝕜 F - T ∘L hT.orthogonalFredholmPackage.quasiInverse = ((T†).ker).starProjection := by
   have : T.range.HasOrthogonalProjection := hT.hasOrthogonalProjection_range
-  rw [hT.self_comp_orthogonalFredholmPackage_quasiInverse, T.starProjection_ker_adjoint,
-    Submodule.starProjection_orthogonal]
+  rw [hT.self_comp_orthogonalFredholmPackage_quasiInverse]
+  simp_rw [← T.orthogonal_range, Submodule.starProjection_orthogonal]
 
 /-- **Moore–Penrose characterization of the orthogonal quasi-inverse.** For a Fredholm operator `T`
 between Hilbert spaces, `hT.orthogonalFredholmPackage.quasiInverse` satisfies all four Penrose
