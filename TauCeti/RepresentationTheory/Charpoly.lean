@@ -45,8 +45,9 @@ eigenvalues of arithmetic and geometric Frobenius.
 * `Representation.eq_one_of_mem_roots_map_charpoly_trivial`: its roots in any domain are `1`.
 * `Representation.charpoly_apply_eq_subrepresentation_mul_quotient`: multiplicativity on an
   invariant submodule and its quotient.
-* `Representation.charpoly_lsmul_asModule_of`: `g` acts on the `R[G]`-module `ρ.asModule` with the
-  characteristic polynomial of `ρ g`.
+* `Representation.charpoly_lsmul_asModule`, `Representation.charpoly_lsmul_asModule_of`: `a ∈ R[G]`
+  acts on the `R[G]`-module `ρ.asModule` with the characteristic polynomial of `ρ.asAlgebraHom a`,
+  and `g` with that of `ρ g`.
 * `Representation.charpoly_apply_inv`, `Representation.aroots_charpoly_apply_inv`: the
   characteristic polynomial and the characteristic roots of `g⁻¹`.
 * `Representation.charpoly_dual_apply`, `Representation.aroots_charpoly_dual_apply`: the
@@ -132,15 +133,21 @@ theorem charpoly_apply_eq_subrepresentation_mul_quotient (ρ : Representation R 
   LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ U (ρ g) (le_comap g)
 
 variable (ρ) in
+/-- The action of `a ∈ R[G]` on the `R[G]`-module `ρ.asModule` has the characteristic polynomial of
+`ρ.asAlgebraHom a`. -/
+theorem charpoly_lsmul_asModule (a : MonoidAlgebra R G) :
+    (Algebra.lsmul R R ρ.asModule a).charpoly = (ρ.asAlgebraHom a).charpoly := by
+  rw [← ρ.asModuleEquiv.charpoly_conj]
+  refine congrArg LinearMap.charpoly (LinearMap.ext fun x => ?_)
+  simp only [LinearEquiv.conj_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, Algebra.lsmul_coe,
+    asModuleEquiv_map_smul, LinearEquiv.apply_symm_apply]
+
+variable (ρ) in
 /-- The action of `g` on the `R[G]`-module `ρ.asModule` has the characteristic polynomial of
 `ρ g`. -/
 theorem charpoly_lsmul_asModule_of (g : G) :
     (Algebra.lsmul R R ρ.asModule (MonoidAlgebra.of R G g)).charpoly = (ρ g).charpoly := by
-  rw [← ρ.asModuleEquiv.charpoly_conj]
-  congr 1
-  ext x
-  simp only [LinearEquiv.conj_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, Algebra.lsmul_coe,
-    ← asModuleEquiv_symm_map_rho, LinearEquiv.apply_symm_apply]
+  rw [charpoly_lsmul_asModule, asAlgebraHom_of]
 
 end Monoid
 
