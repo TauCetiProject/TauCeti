@@ -33,6 +33,7 @@ On points it carries the homomorphisms pinned in Milne's conventions for Hodge s
 * `TauCeti.DeligneTorus.S`: the coordinate Hopf algebra of the Deligne torus.
 * `TauCeti.DeligneTorus.pointsMulEquiv`: `S(R) ≃* (ℂ ⊗[ℝ] R)ˣ`.
 * `TauCeti.DeligneTorus.realPointsMulEquiv`: `S(ℝ) ≃* ℂˣ`.
+* `TauCeti.DeligneTorus.imaginaryUnitPoint`: the real point corresponding to `i` in `ℂˣ`.
 * `TauCeti.DeligneTorus.diagonal`, `TauCeti.DeligneTorus.weight`, `TauCeti.DeligneTorus.norm`: the
   diagonal, weight and norm on points.
 
@@ -40,6 +41,8 @@ On points it carries the homomorphisms pinned in Milne's conventions for Hodge s
 
 * `TauCeti.DeligneTorus.realPointsMulEquiv_apply`: the complex number attached to a real point is
   its value on the coordinate `T` of `𝔾ₘ`, read in `ℂ ⊗[ℝ] ℝ ≃ ℂ`.
+* `TauCeti.DeligneTorus.realPointsMulEquiv_imaginaryUnitPoint`: the coordinate of the
+  imaginary-unit point is `i`.
 * `TauCeti.DeligneTorus.isHomeomorph_realPointsMulEquiv`: `S(ℝ) ≃ ℂˣ` is a homeomorphism.
 * `TauCeti.DeligneTorus.pointsMulEquiv_mapValue`, `TauCeti.DeligneTorus.mapValue_diagonal`,
   `TauCeti.DeligneTorus.mapValue_weight`, `TauCeti.DeligneTorus.norm_mapValue`: the identification
@@ -107,6 +110,17 @@ theorem pointsMulEquiv_mapValue {R' : Type*} [CommRing R'] [Algebra ℝ R'] (h :
 /-- **The real points of the Deligne torus** are `ℂˣ`, through `ℂ ⊗[ℝ] ℝ ≃ ℂ`. -/
 noncomputable def realPointsMulEquiv : WithConv (S →ₐ[ℝ] ℝ) ≃* ℂˣ :=
   (pointsMulEquiv ℝ).trans (Units.mapEquiv (Algebra.TensorProduct.rid ℝ ℝ ℂ).toMulEquiv)
+
+/-- The real point of the Deligne torus corresponding to the imaginary unit in `ℂˣ`.
+Its coordinate under this identification is given by `realPointsMulEquiv_imaginaryUnitPoint`. -/
+noncomputable def imaginaryUnitPoint : WithConv (S →ₐ[ℝ] ℝ) :=
+  realPointsMulEquiv.symm (Units.mk0 Complex.I Complex.I_ne_zero)
+
+/-- Under `S(ℝ) ≃ ℂˣ`, the imaginary-unit point is sent to the unit `i`. -/
+@[simp]
+theorem realPointsMulEquiv_imaginaryUnitPoint :
+    realPointsMulEquiv imaginaryUnitPoint = Units.mk0 Complex.I Complex.I_ne_zero :=
+  realPointsMulEquiv.apply_symm_apply _
 
 /-- The complex number attached to a real point of `S` is its unit in `ℂ ⊗[ℝ] ℝ`, read in
 `ℂ ⊗[ℝ] ℝ ≃ ℂ`. -/
