@@ -112,17 +112,36 @@ their outputs, indexed by the sum of the output types. -/
   funext w x j
   cases j <;> simp
 
-/-- Collecting the input polynomials of a paired model pairs the collected input polynomials of the
-two components. -/
-@[simp] theorem inputPolynomial_sumElim (P : J → MvPolynomial (W ⊕ I) K)
-    (Q : L → MvPolynomial (W ⊕ I) K) :
-    inputPolynomial (Sum.elim P Q) = Sum.elim (inputPolynomial P) (inputPolynomial Q) := by
-  funext j
-  cases j <;> simp [inputPolynomial_def]
-
 end Basic
 
 section Substitution
+
+/-- Collecting the inputs after substituting parameter polynomials `R` for the parameters and `P`
+for the inputs of `Q` maps the parameter coefficients of `Q` by `aeval R` and substitutes the
+collected input polynomials of `P` for the inputs of `Q`. -/
+theorem inputPolynomial_aeval_sumElim {W' : Type*} (R : V → MvPolynomial W' K)
+    (P : J → MvPolynomial (W' ⊕ I) K) (Q : L → MvPolynomial (V ⊕ J) K) (l : L) :
+    inputPolynomial (fun k => aeval (Sum.elim (fun v => rename Sum.inl (R v)) P) (Q k)) l =
+      eval₂ (C.comp (aeval R : MvPolynomial V K →ₐ[K] MvPolynomial W' K))
+        (inputPolynomial P) (inputPolynomial Q l) := by
+  have hC :
+      (C.comp (aeval R : MvPolynomial V K →ₐ[K] MvPolynomial W' K) :
+          MvPolynomial V K →+* MvPolynomial I (MvPolynomial W' K)) =
+        eval₂Hom (C.comp C) (fun v => C (R v)) := by
+    apply ringHom_ext <;> simp
+  -- Express `inputPolynomial` as a `RingHom` application so `map_aeval` rewrites `φ (aeval _ _)`.
+  let φ : MvPolynomial (W' ⊕ I) K →+* MvPolynomial I (MvPolynomial W' K) :=
+    ((sumAlgEquiv K I W').toAlgHom.comp (rename Sum.swap)).toRingHom
+  have hφ (p : MvPolynomial (W' ⊕ I) K) : sumAlgEquiv K I W' (rename Sum.swap p) = φ p := rfl
+  rw [inputPolynomial_def, inputPolynomial_def (P := Q), hC, eval₂_sumAlgEquiv, eval₂_rename,
+    hφ, map_aeval, algebraMap_eq]
+  refine congrArg₂ (fun f g => eval₂ f g (Q l)) (RingHom.ext fun k => by simp [φ])
+    (funext fun x => ?_)
+  rcases x with v | j
+  · have hinr : sumAlgEquiv K I W' (rename Sum.inr (R v)) = C (R v) := by
+      simpa using AlgHom.congr_fun (sumAlgEquiv_comp_rename_inr K I W') (R v)
+    simpa [φ, ← AlgHom.comp_apply, rename_comp_rename, Function.comp_def] using hinr
+  · simp [φ, inputPolynomial_def]
 
 /-- Substitute a polynomial `R i` in the new parameters `W'` for each old parameter `i`,
 leaving the input variables unchanged. -/
@@ -142,13 +161,11 @@ coefficients of each collected input polynomial. -/
     (P : J → MvPolynomial (W ⊕ I) K) (j : J) :
     inputPolynomial (polynomialReparametrize R P) j =
       map (aeval R : MvPolynomial W K →ₐ[K] MvPolynomial W' K) (inputPolynomial P j) := by
-  have hinr (q : MvPolynomial W' K) : sumAlgEquiv K I W' (rename Sum.inr q) = C q := by
-    simpa using AlgHom.congr_fun (sumAlgEquiv_comp_rename_inr K I W') q
-  simp only [inputPolynomial_def, polynomialReparametrize_apply]
-  induction P j using MvPolynomial.induction_on with
-  | C a => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p i hp => cases i <;> simp [hp, hinr, Function.comp_def]
+  have hX : inputPolynomial (fun a : I => (X (Sum.inr a) : MvPolynomial (W' ⊕ I) K)) = X :=
+    funext (inputPolynomial_X_inr id)
+  unfold polynomialReparametrize
+  rw [map_eq_eval₂Hom_C_comp, coe_eval₂Hom, ← hX]
+  exact inputPolynomial_aeval_sumElim R (fun a : I => X (Sum.inr a)) P j
 
 /-- A reparametrized polynomial model realizes the original model at the evaluated
 polynomial parameters. -/
@@ -223,33 +240,6 @@ theorem polynomialCompose_apply (P : J → MvPolynomial (W ⊕ I) K)
     polynomialCompose P Q l =
       aeval (Sum.elim (fun v => X (Sum.inl (Sum.inr v)))
         (fun j => rename (Sum.map Sum.inl id) (P j))) (Q l) := (rfl)
-
-/-- Collecting the inputs after substituting parameter polynomials `R` for the parameters and `P`
-for the inputs of `Q` maps the parameter coefficients of `Q` by `aeval R` and substitutes the
-collected input polynomials of `P` for the inputs of `Q`. -/
-theorem inputPolynomial_aeval_sumElim {W' : Type*} (R : V → MvPolynomial W' K)
-    (P : J → MvPolynomial (W' ⊕ I) K) (Q : L → MvPolynomial (V ⊕ J) K) (l : L) :
-    inputPolynomial (fun k => aeval (Sum.elim (fun v => rename Sum.inl (R v)) P) (Q k)) l =
-      eval₂ (C.comp (aeval R : MvPolynomial V K →ₐ[K] MvPolynomial W' K))
-        (inputPolynomial P) (inputPolynomial Q l) := by
-  have hC :
-      (C.comp (aeval R : MvPolynomial V K →ₐ[K] MvPolynomial W' K) :
-          MvPolynomial V K →+* MvPolynomial I (MvPolynomial W' K)) =
-        eval₂Hom (C.comp C) (fun v => C (R v)) := by
-    apply ringHom_ext <;> simp
-  -- Express `inputPolynomial` as a `RingHom` application so `map_aeval` rewrites `φ (aeval _ _)`.
-  let φ : MvPolynomial (W' ⊕ I) K →+* MvPolynomial I (MvPolynomial W' K) :=
-    ((sumAlgEquiv K I W').toAlgHom.comp (rename Sum.swap)).toRingHom
-  have hφ (p : MvPolynomial (W' ⊕ I) K) : sumAlgEquiv K I W' (rename Sum.swap p) = φ p := rfl
-  rw [inputPolynomial_def, inputPolynomial_def (P := Q), hC, eval₂_sumAlgEquiv, eval₂_rename,
-    hφ, map_aeval, algebraMap_eq]
-  refine congrArg₂ (fun f g => eval₂ f g (Q l)) (RingHom.ext fun k => by simp [φ])
-    (funext fun x => ?_)
-  rcases x with v | j
-  · have hinr : sumAlgEquiv K I W' (rename Sum.inr (R v)) = C (R v) := by
-      simpa using AlgHom.congr_fun (sumAlgEquiv_comp_rename_inr K I W') (R v)
-    simpa [φ, ← AlgHom.comp_apply, rename_comp_rename, Function.comp_def] using hinr
-  · simp [φ, inputPolynomial_def]
 
 /-- Collecting the inputs of a composite model substitutes the collected input polynomials of
 `P`, with parameters renamed into the composite parameters, for the inputs of `Q`. -/
