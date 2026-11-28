@@ -28,6 +28,8 @@ formula and commuting pairs, show that commutators strictly increase this table 
 to be inverted in the value ring. The root formulas used here are those of the imported native
 Chevalley commutator development; the collection argument is the graded-subgroup construction
 in `TauCeti.Algebra.Group.Subgroup.OrderedProduct`.
+Collection also holds after omitting either simple root: the correction index is greater
+than both distinct input indices, so it cannot be one of the two simple indices.
 
 ## References
 
@@ -183,6 +185,88 @@ theorem mem_biSup_posRoots_g2_iff_exists_list_prod_map (A : CommAlgCat ℤ)
   simpa only [Finset.mem_univ, iSup_true] using
     mem_biSup_range_iff_exists_list_prod_map (X := X) (ht := id) hcomm hl
       (fun i => by simp [hlall i]) (g := g)
+
+/-- The six-row G₂ collection theorem, indexed by the native positive-root subtype. -/
+theorem exists_prod_of_mem_iSup_posRoots_chevalleyRootSubgroup_G2 {ht : G2.Valid}
+    (ρ : _root_.UniversalEnvelopingAlgebra ℚ (G2.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
+    (M : AddSubgroup V)
+    (hM : ∀ z ∈ TauCeti.UniversalEnvelopingAlgebra.kostantForm
+      (G2.lieBasis ht).rootGenerator (G2.lieBasis ht).h,
+      ∀ v ∈ M, ρ z v ∈ M)
+    (hnil : ∀ r, IsNilpotent
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ((G2.lieBasis ht).rootGenerator r))))
+    (A : CommAlgCat ℤ)
+    (l : List (posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht)))
+    (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l)
+    (q : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M))
+    (hq : q ∈ ⨆ γ ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht),
+      (chevalleyRootSubgroup ρ M hM hnil γ A).range) :
+    ∃ u : posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) → A,
+      (l.map fun γ => chevalleyRootSubgroup ρ M hM hnil γ.val A
+        (Multiplicative.ofAdd (u γ))).prod = q := by
+  let e := g2PositiveRootEquiv ht
+  obtain ⟨u, hu⟩ := (mem_biSup_posRoots_g2_iff_exists_list_prod_map ρ M hM hnil A
+    (l.map e) (hl.map e.injective)
+    (fun i => List.mem_map.mpr ⟨e.symm i, hcover _, e.apply_symm_apply i⟩) q).mp hq
+  exact ⟨fun γ => u (e γ), by
+    simpa only [List.map_map, Function.comp_def, e, castAdd_g2PositiveRootEquiv] using hu⟩
+
+open scoped Classical in
+/-- In G₂, the positive root groups other than one simple root admit ordered collection
+over every commutative value ring, using the native six-row commutator filtration. -/
+theorem exists_prod_of_mem_iSup_punctured_posRoots_G2 {ht : G2.Valid}
+    (ρ : _root_.UniversalEnvelopingAlgebra ℚ (G2.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
+    (M : AddSubgroup V)
+    (hM : ∀ z ∈ TauCeti.UniversalEnvelopingAlgebra.kostantForm
+      (G2.lieBasis ht).rootGenerator (G2.lieBasis ht).h,
+      ∀ v ∈ M, ρ z v ∈ M)
+    (hnil : ∀ r, IsNilpotent
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ((G2.lieBasis ht).rootGenerator r))))
+    (A : CommAlgCat ℤ) (i : Fin G2.rank)
+    (l : List {γ // γ ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht)})
+    (hl : l.Nodup) (hall : ∀ γ, γ ∈ l ↔ γ ≠ ⟨G2.simpleIndex ht i, simpleIndex_mem_posRoots i⟩)
+    (g : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M))
+    (hg : g ∈ ⨆ γ ∈ Finset.univ.erase
+      (⟨G2.simpleIndex ht i, simpleIndex_mem_posRoots i⟩ :
+        {γ // γ ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht)}),
+      (chevalleyRootSubgroup ρ M hM hnil γ.val A).range) :
+    ∃ u : {γ // γ ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht)} → A,
+      (l.map fun γ => chevalleyRootSubgroup ρ M hM hnil γ.val A
+        (Multiplicative.ofAdd (u γ))).prod = g := by
+  classical
+  let X (γ : {γ // γ ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht)}) :=
+    chevalleyRootSubgroup ρ M hM hnil γ.val A
+  let S := Finset.univ.erase (⟨G2.simpleIndex ht i, simpleIndex_mem_posRoots i⟩ :
+      {γ // γ ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht)})
+  let e := g2PositiveRootEquiv ht
+  have hcomm (α) (_ : α ∈ S) (β) (_ : β ∈ S) (hne : α ≠ β) :
+      ⁅(X α).range, (X β).range⁆ ≤
+        ⨆ γ ∈ {γ ∈ S | max (e α) (e β) < e γ}, (X γ).range := by
+    let a := e α
+    let b := e β
+    have hab : a ≠ b := e.injective.ne hne
+    have hbound := commutator_range_chevalleyRootSubgroup_g2_le ρ M hM hnil A a b hab
+    rw [castAdd_g2PositiveRootEquiv, castAdd_g2PositiveRootEquiv] at hbound
+    refine hbound.trans (iSup₂_le fun k hk => ?_)
+    let γ := e.symm k
+    have hγval : γ.val = Fin.castAdd 6 k := by
+      rw [← castAdd_g2PositiveRootEquiv ht γ, ← e.apply_symm_apply k]
+    have hk' : max α.val.val β.val.val < k.val := by
+      simpa only [Fin.lt_def, Fin.val_max, a, b, e, g2PositiveRootEquiv_apply_val] using hk
+    have hγ : γ ≠ ⟨G2.simpleIndex ht i, simpleIndex_mem_posRoots i⟩ := by
+      intro heq
+      have heq' := congrArg (fun x => x.val.val) heq
+      have hi : i.val < 2 := i.isLt
+      have hne' : α.val.val ≠ β.val.val := by
+        simpa only [a, b, e, g2PositiveRootEquiv_apply_val] using Fin.val_injective.ne hab
+      simp only [hγval, val_simpleIndex, Fin.val_castAdd] at heq'
+      omega
+    refine le_iSup_of_le γ (le_iSup_of_le
+      (Finset.mem_filter.mpr ⟨Finset.mem_erase.mpr ⟨hγ, Finset.mem_univ _⟩, by
+        simpa only [γ, e.apply_symm_apply] using hk⟩) ?_)
+    simp only [X, hγval, le_refl]
+  exact (mem_biSup_range_iff_exists_list_prod_map hcomm hl
+    (fun γ => by simpa only [S, Finset.mem_erase, Finset.mem_univ, and_true] using hall γ)).mp hg
 
 end
 

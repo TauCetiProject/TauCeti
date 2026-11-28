@@ -195,7 +195,8 @@ The equations below identify the dispatcher with those names, so a statement pro
 about its own index transfers to the uniform one. The `F₄` and `G₂` modules name no such index;
 for them the equations give the dispatcher index as `Fin.castAdd`. -/
 
-private theorem simpleIndex_A (n : ℕ) (ht : (A n).Valid) (i : Fin n) :
+/-- The type A dispatcher uses the existing type A simple-root index. -/
+@[simp] theorem simpleIndex_A (n : ℕ) (ht : (A n).Valid) (i : Fin n) :
     (A n).simpleIndex ht i = typeASimpleIndex n i := by
   apply Fin.ext
   rw [typeASimpleIndex_val]

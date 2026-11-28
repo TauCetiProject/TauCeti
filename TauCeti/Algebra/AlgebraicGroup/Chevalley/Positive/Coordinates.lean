@@ -69,6 +69,15 @@ theorem coe_positiveRootProduct (l : List PositiveRoot) (A : Type v) [CommRing A
       (l.map fun γ => D.rootSubgroupPoints γ.val A (ofAdd (u γ))).prod :=
   (rfl)
 
+/-- Positive-root products agree whenever their parameters agree on the listed roots.
+The list may contain repetitions. -/
+theorem positiveRootProduct_congr (l : List PositiveRoot) (A : Type v) [CommRing A]
+    {u v : PositiveRoot → A} (huv : ∀ γ ∈ l, u γ = v γ) :
+    D.positiveRootProduct l A u = D.positiveRootProduct l A v := by
+  ext1
+  simp only [coe_positiveRootProduct]
+  exact congrArg List.prod (List.map_congr_left fun γ hγ => by rw [huv γ hγ])
+
 /-- The empty positive-root product is the identity element of `D.positivePoints A`. -/
 @[simp]
 theorem positiveRootProduct_nil (A : Type v) [CommRing A] (u : PositiveRoot → A) :
@@ -121,6 +130,19 @@ theorem map_positiveRootProduct (l : List PositiveRoot)
 
 attribute [local instance high] Algebra.toModule
 
+/-- The matrix underlying a positive-root product is the basis transport of the ordered
+product of the corresponding lattice root homomorphisms. This holds for every root list. -/
+theorem coe_positiveRootProduct_eq_latticeProduct (l : List PositiveRoot)
+    (A : Type v) [CommRing A] (u : PositiveRoot → A) :
+    ((D.positiveRootProduct l A u : D.points A) : Matrix.GeneralLinearGroup (Fin D.dim) A) =
+      Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom
+        ((l.map fun γ => chevalleyRootSubgroup D.representation D.lattice
+          D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
+          γ.val (CommAlgCat.of ℤ A) (ofAdd (u γ))).prod) := by
+  simp only [coe_positiveRootProduct, SubmonoidClass.coe_list_prod,
+    coe_rootSubgroupPoints, map_list_prod, List.map_map, Function.comp_def,
+    MulEquiv.toMonoidHom_eq_coe]
+
 /-- Every positive point has coordinates in any enumeration of the positive roots.
 No field or reducedness hypothesis is required. -/
 theorem positiveRootProduct_surjective (l : List PositiveRoot)
@@ -136,11 +158,8 @@ theorem positiveRootProduct_surjective (l : List PositiveRoot)
   refine ⟨u, ?_⟩
   apply Subtype.ext
   apply Subtype.ext
-  have h := congrArg
-    (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom) hu
-  simpa only [map_list_prod, List.map_map, Function.comp_def,
-    coe_positiveRootProduct, SubmonoidClass.coe_list_prod,
-    coe_rootSubgroupPoints, MulEquiv.toMonoidHom_eq_coe, hmatrix] using h
+  rw [D.coe_positiveRootProduct_eq_latticeProduct, hu]
+  exact hmatrix
 
 /-- A datum point is positive exactly when it is a product of its positive root
 subgroups, in any order containing every positive root exactly once. Existence holds for every
@@ -185,10 +204,7 @@ theorem positiveRootProduct_inj (l : List PositiveRoot) (hl : l.Nodup)
     intro γ hγ
     simpa only [extend, dite_eq_left γ.property] using
       hparams γ.val (List.mem_map.mpr ⟨γ, hγ, rfl⟩)
-  · intro huv
-    ext1
-    simp only [coe_positiveRootProduct]
-    exact congrArg List.prod (List.map_congr_left fun γ hγ => by rw [huv γ hγ])
+  · exact D.positiveRootProduct_congr l A
 
 /-- For any Chevalley datum, an ordered enumeration of all positive roots without repetitions
 gives an injective parameter map. The value ring is arbitrary. -/

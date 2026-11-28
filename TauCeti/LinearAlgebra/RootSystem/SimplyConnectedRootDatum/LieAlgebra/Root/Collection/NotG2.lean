@@ -26,6 +26,8 @@ commutator formulas then show that commutators strictly raise height. Collection
 `TauCeti.mem_biSup_iff_exists_list_prod_map`, rather than division by structure constants or
 rewriting root words. The rational root system is used only to determine which root strings
 occur; every group operation and parameter remains over the original value ring.
+The same collection applies after omitting a chosen simple root: every correction has
+height greater than one and therefore avoids that root.
 
 ## References
 
@@ -166,6 +168,47 @@ theorem mem_iSup_posRoots_chevalleyRootSubgroup_iff_exists_list_prod
     exact ⟨fun γ => (u γ).toAdd, by simpa only [ofAdd_toAdd, hu] using hprod⟩
   · rintro ⟨u, rfl⟩
     exact ⟨_, fun γ => ⟨Multiplicative.ofAdd (u γ), rfl⟩, rfl⟩
+
+local notation "PositiveRoot" =>
+  {γ // γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)}
+
+open scoped Classical in
+/-- Outside G₂, the positive root groups other than one simple root admit ordered collection
+over every commutative value ring, on any Kostant-stable lattice. -/
+theorem exists_prod_of_mem_iSup_punctured_posRoots_of_isNotG2
+    [(t.rationalRootSystem ht).IsNotG2] (A : CommAlgCat ℤ) (i : Fin t.rank)
+    (l : List PositiveRoot) (hl : l.Nodup)
+    (hall : ∀ γ, γ ∈ l ↔ γ ≠ ⟨t.simpleIndex ht i, simpleIndex_mem_posRoots i⟩)
+    (g : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M))
+    (hg : g ∈ ⨆ γ ∈ Finset.univ.erase
+      (⟨t.simpleIndex ht i, simpleIndex_mem_posRoots i⟩ : PositiveRoot),
+      (chevalleyRootSubgroup ρ M hM hnil γ.val A).range) :
+    ∃ u : PositiveRoot → A,
+      (l.map fun γ => chevalleyRootSubgroup ρ M hM hnil γ.val A
+        (Multiplicative.ofAdd (u γ))).prod = g := by
+  classical
+  let X (γ : PositiveRoot) := chevalleyRootSubgroup ρ M hM hnil γ.val A
+  let S : Finset PositiveRoot := Finset.univ.erase ⟨t.simpleIndex ht i, simpleIndex_mem_posRoots i⟩
+  have hcomm (α) (_ : α ∈ S) (β) (_ : β ∈ S) (_ : α ≠ β) :
+      ⁅(X α).range, (X β).range⁆ ≤
+        ⨆ γ ∈ {γ ∈ S | max ((t.rationalBase ht).height α.val)
+          ((t.rationalBase ht).height β.val) < (t.rationalBase ht).height γ.val},
+          (X γ).range := by
+    refine (commutator_range_chevalleyRootSubgroup_le ρ M hM hnil
+      α.property β.property A).trans (iSup₂_le fun γ hγ => ?_)
+    obtain ⟨hpos, hheight⟩ := Finset.mem_filter.mp hγ
+    have hpos' := (mem_posRootsFinset _ _ _).mp hpos
+    have hne : (⟨γ, hpos'⟩ : PositiveRoot) ≠ ⟨t.simpleIndex ht i, simpleIndex_mem_posRoots i⟩ := by
+      intro heq
+      have hroot : γ = t.simpleIndex ht i := congrArg Subtype.val heq
+      have hp := (t.rationalBase ht).isPos_iff.mp ((mem_posRoots _ _ _).mp α.property)
+      rw [hroot, (t.rationalBase ht).height_one_of_mem_support
+        (simpleIndex_mem_support i)] at hheight
+      omega
+    exact le_iSup_of_le ⟨γ, hpos'⟩ (le_iSup_of_le
+      (Finset.mem_filter.mpr ⟨Finset.mem_erase.mpr ⟨hne, Finset.mem_univ _⟩, hheight⟩) le_rfl)
+  exact (mem_biSup_range_iff_exists_list_prod_map hcomm hl
+    (fun γ => by simpa only [S, Finset.mem_erase, Finset.mem_univ, and_true] using hall γ)).mp hg
 
 end
 
