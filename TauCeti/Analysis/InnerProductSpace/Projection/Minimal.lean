@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Hull
 public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import Mathlib.Topology.MetricSpace.Bounded
 
 import Mathlib.Algebra.Order.Monoid.Canonical.Basic
@@ -20,7 +21,7 @@ import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 
 /-!
-# Nested convex projections and norm-convergent tail convex combinations in Hilbert spaces
+# Convex projections: nonexpansiveness, nested projections and tail convex combinations
 
 Let `K : ℕ → Set E` be a decreasing sequence of convex subsets of a real inner product space `E`,
 and let `p n ∈ K n` minimize the distance `‖u - w‖` to a fixed point `u : E` over `w ∈ K n`. When
@@ -41,8 +42,19 @@ of a bounded sequence `f : ℕ → E` in a complete real inner product space yie
 of Mazur's lemma without passing through the weak topology: there exists a sequence `w : ℕ → E` of
 finite tail convex combinations `w n ∈ convexHull ℝ (f '' Set.Ici n)` that converges in norm.
 
+A point `p ∈ K` of a convex set is a nearest point of `K` to `x` exactly when it satisfies the
+variational inequality `⟪x - p, w - p⟫ ≤ 0` for every `w ∈ K` (Mathlib's
+`norm_eq_iInf_iff_real_inner_le_zero`). Two solutions of such variational inequalities are no
+farther apart than the points they solve for, so the nearest point is unique and a nonempty
+complete convex set has a `1`-Lipschitz nearest-point map. Lipschitz maps do not increase
+Hausdorff measures, so this map compares the boundary areas of nested convex sets.
+
 ## Main results
 
+* `TauCeti.norm_sub_le_norm_sub_of_inner_sub_le_zero`: solutions of variational inequalities are
+  nonexpansive.
+* `Convex.exists_lipschitzWith_one_forall_inner_le_zero`: a nonempty complete convex set has a
+  `1`-Lipschitz nearest-point map.
 * `TauCeti.cauchySeq_of_antitone_convex_norm_sub_le`: metric projections onto a decreasing sequence
   of convex sets with bounded distances form a Cauchy sequence.
 * `TauCeti.exists_tendsto_of_antitone_isClosed_convex_norm_sub_le`: in a complete real inner product
@@ -56,18 +68,46 @@ finite tail convex combinations `w n ∈ convexHull ℝ (f '' Set.Ici n)` that c
 * `TauCeti.exists_tendsto_sum_smul_of_isBounded_range`: explicit-coefficient form giving finite sets
   `s n : Finset ℕ` and nonnegative weights `w n` summing to `1` such that
   `∑ i ∈ s n, w n i • f (n + i)` converges in norm.
+* `TauCeti.exists_mem_forall_norm_le_of_isComplete_convex`: over any `RCLike` field, a nonempty
+  complete convex set has an element of least norm.
 -/
 
 public section
 
 open Filter Set
-open scoped Topology
+open scoped RealInnerProductSpace Topology
 
 namespace TauCeti
 
 section InnerProduct
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- **Solutions of variational inequalities are nonexpansive.** If `p` and `p'` satisfy the
+variational inequalities `⟪x - p, p' - p⟫ ≤ 0` and `⟪x' - p', p - p'⟫ ≤ 0`, as nearest points
+`p` of a convex set to `x` and `p'` to `x'` do, then `‖p - p'‖ ≤ ‖x - x'‖`. -/
+theorem norm_sub_le_norm_sub_of_inner_sub_le_zero {x x' p p' : E} (h : ⟪x - p, p' - p⟫ ≤ 0)
+    (h' : ⟪x' - p', p - p'⟫ ≤ 0) : ‖p - p'‖ ≤ ‖x - x'‖ := by
+  have hxx : x - x' = (x - p) - (x' - p') + (p - p') := by abel
+  rw [← neg_sub p p', inner_neg_right] at h
+  have hsq : ‖p - p'‖ ^ 2 ≤ ⟪x - x', p - p'⟫ := by
+    rw [hxx, inner_add_left, inner_sub_left, real_inner_self_eq_norm_sq]
+    linarith
+  nlinarith [real_inner_le_norm (x - x') (p - p'), norm_nonneg (p - p'), norm_nonneg (x - x')]
+
+/-- **The nearest-point map of a convex set is `1`-Lipschitz.** A nonempty complete convex set
+`K` in a real inner product space admits a `1`-Lipschitz map `P` sending each point `x` to a point
+`P x ∈ K` satisfying the variational inequality `⟪x - P x, w - P x⟫ ≤ 0` for every `w ∈ K`, so
+that `P x` is the nearest point of `K` to `x`. -/
+theorem _root_.Convex.exists_lipschitzWith_one_forall_inner_le_zero {K : Set E}
+    (hK : Convex ℝ K) (hKc : IsComplete K) (hne : K.Nonempty) :
+    ∃ P : E → E, LipschitzWith 1 P ∧ ∀ x, P x ∈ K ∧ ∀ w ∈ K, ⟪x - P x, w - P x⟫ ≤ 0 := by
+  choose P hPK hP using exists_norm_eq_iInf_of_complete_convex hne hKc hK
+  have hvar (x : E) : ∀ w ∈ K, ⟪x - P x, w - P x⟫ ≤ 0 :=
+    (norm_eq_iInf_iff_real_inner_le_zero hK (hPK x)).1 (hP x)
+  refine ⟨P, LipschitzWith.of_dist_le_mul fun x y => ?_, fun x => ⟨hPK x, hvar x⟩⟩
+  simpa [dist_eq_norm] using
+    norm_sub_le_norm_sub_of_inner_sub_le_zero (hvar x _ (hPK y)) (hvar y _ (hPK x))
 
 /-- Let `K : ℕ → Set E` be a decreasing sequence of convex sets in a real inner product space, and
 suppose `p n ∈ K n` minimizes `‖u - w‖` over `w ∈ K n`. If the minimal distances `‖u - p n‖` are
@@ -248,5 +288,37 @@ theorem exists_tendsto_sum_smul_of_isBounded_range {f : ℕ → E}
 end Complete
 
 end InnerProduct
+
+section RCLike
+
+open scoped InnerProductSpace
+
+/-- **Minimal-norm element of a complete convex set.** In an inner product space over an `RCLike`
+field `𝕜`, a nonempty complete set which is convex for a real scalar action compatible with that
+of `𝕜` has an element of least norm. The field `𝕜` is explicit, since only the instances on `E`
+mention it. -/
+theorem exists_mem_forall_norm_le_of_isComplete_convex (𝕜 : Type*) {E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
+    {C : Set E} (hne : C.Nonempty)
+    (hc : IsComplete C) (hconv : Convex ℝ C) : ∃ η ∈ C, ∀ w ∈ C, ‖η‖ ≤ ‖w‖ := by
+  -- The real inner product `re ⟪x, y⟫` is built on the given `NormedSpace ℝ E`, rather than taken
+  -- from `InnerProductSpace.rclikeToReal`, whose real scalar action is the restriction of the
+  -- `𝕜`-action and is not syntactically the given one in which `C` is convex.
+  let : InnerProductSpace ℝ E :=
+    { ‹NormedSpace ℝ E› with
+      inner x y := RCLike.re ⟪x, y⟫_𝕜
+      norm_sq_eq_re_inner := norm_sq_eq_re_inner
+      conj_inner_symm x y := inner_re_symm (𝕜 := 𝕜) y x
+      add_left x y z := by rw [inner_add_left, map_add]
+      smul_left x y r := by
+        rw [RCLike.real_smul_eq_coe_smul (K := 𝕜), inner_smul_left, RCLike.conj_ofReal,
+          RCLike.re_ofReal_mul, conj_trivial] }
+  obtain ⟨η, hηC, hη⟩ := exists_norm_eq_iInf_of_complete_convex hne hc hconv 0
+  refine ⟨η, hηC, fun w hw ↦ ?_⟩
+  have := ciInf_le (f := fun w : C ↦ ‖(0 : E) - w‖)
+    ⟨0, forall_mem_range.2 fun _ ↦ norm_nonneg _⟩ ⟨w, hw⟩
+  rwa [← hη, zero_sub, norm_neg, zero_sub, norm_neg] at this
+
+end RCLike
 
 end TauCeti

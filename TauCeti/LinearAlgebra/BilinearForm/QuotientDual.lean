@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
+public import Mathlib.LinearAlgebra.PerfectPairing.Basic
+import Mathlib.LinearAlgebra.Projection
 
 /-!
 # Duality with the quotient by an orthogonal complement
@@ -14,7 +16,8 @@ A nondegenerate bilinear form `B` on a finite-dimensional vector space identifie
 `V ⧸ Wᗮ` with `W*` by `[v] ↦ B(·, v)|W`. No symmetry of `B` is required.
 For a Lagrangian subspace, `Wᗮ = W`, so this is the canonical identification of its
 normal quotient with its dual. The order of the two arguments fixes the sign of
-that identification.
+that identification. Restricting the quotient map to any complement of the right
+orthogonal gives a perfect pairing of that complement with the original subspace.
 
 The construction uses Mathlib's `BilinForm.toDual`, `Submodule.dualRestrict`, and
 `LinearMap.quotKerEquivOfSurjective`.
@@ -55,5 +58,20 @@ theorem quotientOrthogonalEquivDual_symm_apply_eq_mk_iff (B : LinearMap.BilinFor
   rw [LinearEquiv.symm_apply_eq]
   exact (LinearMap.ext_iff).trans
     (forall_congr' fun w ↦ by rw [quotientOrthogonalEquivDual_mk_apply, eq_comm])
+
+/-- A subspace pairs perfectly with any complement of its right orthogonal. The equivalence
+from the complement to the dual of the subspace sends `v` to `B(·, v)`. -/
+theorem isPerfPair_domRestrict₁₂_of_isCompl_orthogonal (B : LinearMap.BilinForm K V)
+    (hnd : B.Nondegenerate) {L C : Submodule K V} (hc : IsCompl (B.orthogonal L) C) :
+    (B.domRestrict₁₂ L C).IsPerfPair := by
+  let e := ((B.orthogonal L).quotientEquivOfIsCompl C hc).symm.trans
+    (B.quotientOrthogonalEquivDual hnd L)
+  have he : e.toLinearMap = (B.domRestrict₁₂ L C).flip := by
+    ext v x
+    simp [e, domRestrict₁₂_apply]
+  have hbij : Function.Bijective (B.domRestrict₁₂ L C).flip := by
+    rw [← he]
+    exact e.bijective
+  exact (IsPerfPair.of_bijective _ hbij).flip
 
 end LinearMap.BilinForm

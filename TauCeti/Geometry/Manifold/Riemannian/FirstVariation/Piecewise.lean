@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Basic
+import TauCeti.Algebra.BigOperators.Fin
 
 /-!
 # First variation of energy for curves with corners
@@ -44,6 +45,36 @@ open scoped ContDiff Manifold Topology
 noncomputable section
 
 namespace TauCeti.Manifold
+
+/-- If a piecewise family `F` agrees on each closed piece with extensions `G i` near `s = 0` and
+has a stationary left endpoint `τ 0`, then the first extension `G 0` also has stationary left
+endpoint near `s = 0`. -/
+theorem eventually_eq_left_of_piecewise {M : Type*} {n : ℕ} {τ : Fin (n + 2) → ℝ}
+    (hτ : Monotone τ) {F : ℝ → ℝ → M} {G : Fin (n + 1) → ℝ → ℝ → M}
+    (hFG : ∀ᶠ s in 𝓝 0, ∀ i : Fin (n + 1),
+      EqOn (F s) (G i s) (Icc (τ i.castSucc) (τ i.succ)))
+    (ha : ∀ᶠ s in 𝓝 0, F s (τ 0) = F 0 (τ 0)) :
+    ∀ᶠ s in 𝓝 0, G 0 s (τ 0) = G 0 0 (τ 0) := by
+  have hleft : τ 0 ∈ Icc (τ (0 : Fin (n + 1)).castSucc) (τ (0 : Fin (n + 1)).succ) :=
+    ⟨le_rfl, hτ (Fin.zero_le _)⟩
+  filter_upwards [hFG, ha] with s hs hs0
+  rw [← hs 0 hleft, hs0, hFG.self_of_nhds 0 hleft]
+
+/-- If a piecewise family `F` agrees on each closed piece with extensions `G i` near `s = 0` and
+has a stationary right endpoint `τ (Fin.last (n + 1))`, then the last extension `G (Fin.last n)`
+also has stationary right endpoint near `s = 0`. -/
+theorem eventually_eq_right_of_piecewise {M : Type*} {n : ℕ} {τ : Fin (n + 2) → ℝ}
+    (hτ : Monotone τ) {F : ℝ → ℝ → M} {G : Fin (n + 1) → ℝ → ℝ → M}
+    (hFG : ∀ᶠ s in 𝓝 0, ∀ i : Fin (n + 1),
+      EqOn (F s) (G i s) (Icc (τ i.castSucc) (τ i.succ)))
+    (hb : ∀ᶠ s in 𝓝 0, F s (τ (Fin.last (n + 1))) = F 0 (τ (Fin.last (n + 1)))) :
+    ∀ᶠ s in 𝓝 0, G (Fin.last n) s (τ (Fin.last (n + 1))) =
+      G (Fin.last n) 0 (τ (Fin.last (n + 1))) := by
+  have hright : τ (Fin.last (n + 1)) ∈
+      Icc (τ (Fin.last n).castSucc) (τ (Fin.last n).succ) :=
+    ⟨hτ (Fin.le_last _), le_rfl⟩
+  filter_upwards [hFG, hb] with s hs hs0
+  rw [← hs (Fin.last n) hright, hs0, hFG.self_of_nhds (Fin.last n) hright]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -132,15 +163,8 @@ theorem hasDerivAt_energy_piecewise {n : ℕ} (τ : Fin (n + 2) → ℝ)
     (IB := I) (n := 1) (F := E) (V := fun x : M ↦ TangentSpace I x)
   have heq := eventually_energy_eq_sum_of_piecewise τ hτ
     (fun i t ht ↦ (hG i t ht).of_le (by norm_num)) hFG
-  have hboundary : ∑ i : Fin (n + 1), (B i (τ i.succ) - B i (τ i.castSucc)) =
-      B (Fin.last n) (τ (Fin.last (n + 1))) - B 0 (τ 0) +
-        ∑ j : Fin n, (B j.castSucc (τ j.succ.castSucc) - B j.succ (τ j.succ.castSucc)) := by
-    rw [Finset.sum_sub_distrib, Fin.sum_univ_castSucc (fun i ↦ B i (τ i.succ)),
-      Fin.sum_univ_succ (fun i ↦ B i (τ i.castSucc)), Finset.sum_sub_distrib]
-    simp only [Fin.succ_castSucc, Fin.succ_last, Fin.castSucc_zero]
-    ring
   convert hd.congr_of_eventuallyEq heq using 1
-  rw [← hboundary]
+  rw [← Fin.sum_univ_sub_eq_boundary_add_sum_jump (fun i j ↦ B i (τ j))]
   simp only [B, Finset.sum_sub_distrib]
 
 /-- For stationary outer endpoints the first variation consists of the interior velocity-jump
@@ -160,19 +184,8 @@ theorem hasDerivAt_energy_piecewise_of_fixed_endpoints {n : ℕ} (τ : Fin (n + 
         ∑ i : Fin (n + 1), ∫ t in τ i.castSucc..τ i.succ,
           inner ℝ (variationField I (G i) t)
             (acceleration (leviCivitaConnection I M) (G i 0) t)) 0 := by
-  have hleft : τ 0 ∈ Icc (τ (0 : Fin (n + 1)).castSucc) (τ (0 : Fin (n + 1)).succ) :=
-    ⟨le_rfl, hτ (Fin.zero_le _)⟩
-  have hright : τ (Fin.last (n + 1)) ∈
-      Icc (τ (Fin.last n).castSucc) (τ (Fin.last n).succ) :=
-    ⟨hτ (Fin.le_last _), le_rfl⟩
-  have haG : ∀ᶠ s in 𝓝 0, G 0 s (τ 0) = G 0 0 (τ 0) := by
-    filter_upwards [hFG, ha] with s hs hs0
-    rw [← hs 0 hleft, hs0, hFG.self_of_nhds 0 hleft]
-  have hbG : ∀ᶠ s in 𝓝 0,
-      G (Fin.last n) s (τ (Fin.last (n + 1))) =
-        G (Fin.last n) 0 (τ (Fin.last (n + 1))) := by
-    filter_upwards [hFG, hb] with s hs hs0
-    rw [← hs (Fin.last n) hright, hs0, hFG.self_of_nhds (Fin.last n) hright]
+  have haG := eventually_eq_left_of_piecewise hτ hFG ha
+  have hbG := eventually_eq_right_of_piecewise hτ hFG hb
   have h := hasDerivAt_energy_piecewise τ hτ hG hFG
   simpa only [variationField_eq_zero haG, variationField_eq_zero hbG, inner_zero_left,
     sub_zero, zero_add, sub_self] using h

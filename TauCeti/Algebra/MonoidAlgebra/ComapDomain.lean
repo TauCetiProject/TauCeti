@@ -28,13 +28,17 @@ statement about completed group algebras.
 ## Main results
 
 * `MonoidAlgebra.comapDomain_smul`: `comapDomain` commutes with scalar multiplication.
+* `MonoidAlgebra.comapDomainLinearMap`: along an injective monoid homomorphism, `comapDomain` as
+  an `R`-linear map, with its coefficients, `MonoidAlgebra.comapDomainLinearMap_id`,
+  `MonoidAlgebra.comapDomainLinearMap_comp` and `MonoidAlgebra.comapDomainLinearMap_one`.
 * `MonoidAlgebra.comapDomain_mapDomain`: `comapDomain f` is a retraction of `mapDomain f`.
 * `MonoidAlgebra.mapDomain_comapDomain_eq_comapDomain_mapDomain`: `comapDomain` commutes with
   `mapDomain` along a commutative square in which every point mapped into the range of one
   injection already lies in the range of the other.
 * `MonoidAlgebra.comapDomain_mapDomain_mul`, `MonoidAlgebra.comapDomain_mul_mapDomain`: along an
   injective group homomorphism `φ`, `comapDomain φ` is linear for the left and right actions of
-  the source group algebra through `mapDomain φ`.
+  the source group algebra through `mapDomain φ`. The left version only needs a monoid as target,
+  and has the additive form `AddMonoidAlgebra.comapDomain_mapDomain_mul`.
 * `MonoidAlgebra.sum_mapDomain_comapDomain_mul_single`,
   `MonoidAlgebra.sum_single_mul_mapDomain_comapDomain`: the decomposition of an element of `R[G]`
   along representatives of the right, respectively left, cosets of `Set.range φ`.
@@ -94,13 +98,61 @@ theorem mapDomain_comapDomain_eq_comapDomain_mapDomain {M₂ N₂ : Type*} {f₁
 
 end Map
 
+section LinearMap
+
+variable {G H : Type*} [Monoid G] [Monoid H]
+
+/-- The **restriction of coefficients** `R[G] → R[H]` along an injective homomorphism
+`f : H →* G`, as an `R`-linear map: the coefficient of `comapDomainLinearMap f hf x` at `h` is
+that of `x` at `f h`. For a subgroup `H ≤ G` it sends `z` to `z_H`, which keeps the coefficients
+on `H`. -/
+noncomputable def comapDomainLinearMap (f : H →* G) (hf : Function.Injective f) :
+    MonoidAlgebra R G →ₗ[R] MonoidAlgebra R H where
+  toFun := comapDomain f hf
+  map_add' := comapDomain_add _ _
+  map_smul' := comapDomain_smul f hf
+
+/-- The coefficient of `comapDomainLinearMap f hf x` at `h` is the coefficient of `x` at `f h`. -/
+@[simp]
+theorem coeff_comapDomainLinearMap (f : H →* G) (hf : Function.Injective f) (x : MonoidAlgebra R G)
+    (h : H) : (comapDomainLinearMap f hf x).coeff h = x.coeff (f h) := by
+  simp [comapDomainLinearMap]
+
+/-- Restriction of coefficients along the identity is the identity. -/
+@[simp]
+theorem comapDomainLinearMap_id (x : MonoidAlgebra R G) :
+    comapDomainLinearMap (MonoidHom.id G) Function.injective_id x = x := by
+  ext
+  simp
+
+/-- Restriction of coefficients along a composite is the composite of the restrictions. -/
+theorem comapDomainLinearMap_comp {K : Type*} [Monoid K] (f₂ : H →* G) (hf₂ : Function.Injective f₂)
+    (f₁ : K →* H) (hf₁ : Function.Injective f₁) (x : MonoidAlgebra R G) :
+    comapDomainLinearMap (f₂.comp f₁) (hf₂.comp hf₁) x =
+      comapDomainLinearMap f₁ hf₁ (comapDomainLinearMap f₂ hf₂ x) := by
+  ext
+  simp
+
+/-- The restriction of `1` is `1`. -/
+@[simp]
+theorem comapDomainLinearMap_one (f : H →* G) (hf : Function.Injective f) :
+    comapDomainLinearMap f hf (1 : MonoidAlgebra R G) = 1 := by
+  ext h
+  simpa [one_def] using Finsupp.single_apply_left hf (1 : H) h (1 : R)
+
+end LinearMap
+
 section Group
 
-variable {K G : Type*} [Group K] [Group G] (φ : K →* G) (hφ : Function.Injective φ)
+variable {K G : Type*} [Group K]
 
-/-- Along an injective group homomorphism `φ : K →* G`, pulling coefficients back is linear for
-the left action of `R[K]` on `R[G]` through `mapDomain φ`. -/
-theorem comapDomain_mapDomain_mul (a : MonoidAlgebra R K) (y : MonoidAlgebra R G) :
+/-- Along an injective monoid homomorphism `φ : K →* G` out of a group, pulling coefficients back
+is linear for the left action of `R[K]` on `R[G]` through `mapDomain φ`. -/
+@[to_additive (dont_translate := R)
+/-- Along an injective additive monoid homomorphism `φ : K →+ G` out of an additive group, pulling
+coefficients back is linear for the left action of `R[K]` on `R[G]` through `mapDomain φ`. -/]
+theorem comapDomain_mapDomain_mul [Monoid G] (φ : K →* G) (hφ : Function.Injective φ)
+    (a : MonoidAlgebra R K) (y : MonoidAlgebra R G) :
     comapDomain φ hφ (mapDomain φ a * y) = a * comapDomain φ hφ y := by
   induction a using induction_linear with
   | zero => simp
@@ -115,9 +167,12 @@ theorem comapDomain_mapDomain_mul (a : MonoidAlgebra R K) (y : MonoidAlgebra R G
       · obtain ⟨k', rfl⟩ := hg
         rw [← map_mul, comapDomain_single_map, comapDomain_single_map, single_mul_single]
       · have hkg : φ k * g ∉ Set.range φ := fun ⟨k', hk'⟩ ↦
-          hg ⟨k⁻¹ * k', by rw [map_mul, hk', map_inv, inv_mul_cancel_left]⟩
+          hg ⟨k⁻¹ * k', by rw [map_mul, hk', ← mul_assoc, ← map_mul, inv_mul_cancel, map_one,
+            one_mul]⟩
         rw [comapDomain_single_of_notMem_range hkg, comapDomain_single_of_notMem_range hg,
           mul_zero]
+
+variable [Group G] (φ : K →* G) (hφ : Function.Injective φ)
 
 /-- Along an injective group homomorphism `φ : K →* G`, pulling coefficients back is linear for
 the right action of `R[K]` on `R[G]` through `mapDomain φ`. -/

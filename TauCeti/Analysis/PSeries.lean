@@ -28,9 +28,9 @@ inequalities and none of them wants `π` in the goal.
 Nothing here is specific to any application, and the file contains no number theory. The `m = 0`
 term is `0`, by the junk value of `0 ^ (-t)`.
 
-The file also records the value `π ^ 2 / 3` of `∑_{n ∈ ℤ} n⁻²`, and the summability over `ℤ` of
-the shifted weights `(1 + |n|) ^ r` for `r < -1`, the form in which the `p`-series enters
-weighted sequence spaces.
+The file also records the value `π ^ 2 / 3` of `∑_{n ∈ ℤ} n⁻²`. The summability over `ℤ` of the
+shifted weights `(1 + |n|) ^ r` for `r < -1` is in `TauCeti.Analysis.PSeries.Shifted`, which
+needs none of the zeta values used here.
 
 A weighted family of radii with finite sublevel sets also has summable reciprocal powers
 when its weighted counts grow at a smaller exponent. The proof partitions the radii into
@@ -40,11 +40,14 @@ dyadic annuli and compares their contributions with a geometric series.
 
 * `TauCeti.tsum_nat_rpow_neg_le_two` — `∑' m : ℕ, m ^ (-t) ≤ 2` for `2 ≤ t`.
 * `TauCeti.hasSum_int_inv_sq` — `∑_{n ∈ ℤ} n⁻² = π ^ 2 / 3`.
-* `TauCeti.summable_one_add_abs_int_rpow` — `∑ n : ℤ, (1 + |n|) ^ r` converges for `r < -1`.
 * `TauCeti.summable_mul_rpow_of_count_growth` — weighted reciprocal powers are summable
   when sublevel counts grow at a smaller exponent.
+* `TauCeti.summable_norm_inv_natCast_add_one_zpow` — `∑ k : ℕ, ‖((k + 1) ^ n)⁻¹‖` converges in
+  an `RCLike` field for an integer exponent `n > 1`.
 * `TauCeti.not_summable_norm_zpow_neg_add_mul` — along a nonvanishing arithmetic progression
   `w + v n` in `ℂ`, the norms of the inverse `k`-th powers are not summable for `k < 2`.
+* `TauCeti.tsum_Ioi_le_of_le_rpow` — a nonnegative sequence bounded by `E (m + n₀) ^ (e - s)`
+  with `e ≤ 0` and `1 < s` has tails `∑_{m > n}` bounded by a multiple of `(n + 1 + n₀) ^ e`.
 -/
 
 public section
@@ -81,16 +84,6 @@ theorem hasSum_int_inv_sq : HasSum (fun n : ℤ ↦ ((n : ℝ) ^ 2)⁻¹) (Real.
   convert HasSum.of_nat_of_neg (f := fun n : ℤ ↦ ((n : ℝ) ^ 2)⁻¹) h h' using 1
   simp only [Int.cast_zero, zero_pow two_ne_zero, inv_zero, sub_zero]
   ring
-
-/-- The weights `(1 + |n|) ^ r` are summable over `ℤ` for `r < -1`. -/
-theorem summable_one_add_abs_int_rpow {r : ℝ} (hr : r < -1) :
-    Summable fun n : ℤ ↦ (1 + |(n : ℝ)|) ^ r := by
-  refine Summable.of_norm_bounded_eventually (Real.summable_abs_int_rpow (b := -r) (by linarith))
-    ?_
-  filter_upwards [Filter.eventually_cofinite_ne 0] with n hn
-  rw [neg_neg, Real.norm_of_nonneg (by positivity)]
-  exact Real.rpow_le_rpow_of_nonpos (abs_pos.2 (Int.cast_ne_zero.2 hn))
-    (le_add_of_nonneg_left zero_le_one) (by linarith)
 
 open Filter Topology
 
@@ -160,6 +153,13 @@ theorem summable_mul_rpow_of_count_growth {ι : Type*} (r w : ι → ℝ)
       mul_le_mul_of_nonneg_right (hweight.trans hn) (by positivity)
     _ = (C * 2 ^ B) * q ^ n := by rw [mul_assoc, hscale]; ring
 
+/-- **The shifted `p`-series in `𝕜`.** For an integer exponent `n > 1`, the norms of the
+reciprocals `((k + 1) ^ n)⁻¹` in an `RCLike` field `𝕜` are summable over `k : ℕ`. -/
+theorem summable_norm_inv_natCast_add_one_zpow (𝕜 : Type*) [RCLike 𝕜] {n : ℤ} (hn : 1 < n) :
+    Summable fun k : ℕ ↦ ‖((k + 1 : 𝕜) ^ n)⁻¹‖ := by
+  obtain ⟨m, rfl⟩ : ∃ m : ℕ, n = m := ⟨n.toNat, by omega⟩
+  simpa [zpow_natCast, one_div] using summable_pow_div_add (1 : 𝕜) m 1 (by omega)
+
 /-- Along a nonvanishing arithmetic progression `w + v n`, the norms of the inverse `k`-th powers
 are not summable for `k < 2`: they are bounded below by a multiple of the harmonic series. -/
 theorem not_summable_norm_zpow_neg_add_mul {k : ℕ} {v : ℂ} (hk : k < 2) {w : ℂ}
@@ -193,6 +193,34 @@ theorem not_summable_norm_zpow_neg_add_mul {k : ℕ} {v : ℂ} (hk : k < 2) {w :
     push_cast
     field_simp
   exact Real.not_summable_one_div_natCast ((summable_nat_add_iff 1).mp h3)
+
+/-- **Tails dominated by shifted powers.** If `0 ≤ b m ≤ E * (m + n₀) ^ (e - s)` with `e ≤ 0`
+and `1 < s`, then the tails satisfy `∑_{m > n} b m ≤ E * S * (n + 1 + n₀) ^ e`, where
+`S = ∑ m, (m + n₀) ^ (-s)`. -/
+theorem tsum_Ioi_le_of_le_rpow {b : ℕ → ℝ} {E e s : ℝ} {n₀ : ℕ} (hE : 0 ≤ E) (he : e ≤ 0)
+    (hs : 1 < s) (hb0 : ∀ m, 0 ≤ b m) (hb : ∀ m, b m ≤ E * ((m + n₀ : ℕ) : ℝ) ^ (e - s))
+    (n : ℕ) : ∑' m : Set.Ioi n, b m ≤
+      E * (∑' m : ℕ, ((m + n₀ : ℕ) : ℝ) ^ (-s)) * ((n + 1 + n₀ : ℕ) : ℝ) ^ e := by
+  have hsumm₂ : Summable fun m : ℕ ↦ ((m + n₀ : ℕ) : ℝ) ^ (-s) :=
+    (summable_nat_add_iff n₀).2 (Real.summable_nat_rpow.2 (by linarith))
+  have hbs : Summable b := (((summable_nat_add_iff n₀).2
+    (Real.summable_nat_rpow.2 (by linarith))).mul_left E).of_nonneg_of_le hb0 hb
+  have hbound (m : Set.Ioi n) :
+      b m ≤ E * ((n + 1 + n₀ : ℕ) : ℝ) ^ e * ((m + n₀ : ℕ) : ℝ) ^ (-s) := by
+    have hm : n < (m : ℕ) := m.property
+    have hX : (0 : ℝ) < ((m + n₀ : ℕ) : ℝ) := by exact_mod_cast (by omega : 0 < (m : ℕ) + n₀)
+    refine (hb m).trans ?_
+    rw [sub_eq_add_neg, Real.rpow_add hX, ← mul_assoc]
+    exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left
+      (Real.rpow_le_rpow_of_nonpos (by positivity) (Nat.cast_le.2 (by omega)) he) hE)
+      (by positivity)
+  calc _ ≤ ∑' m : Set.Ioi n, E * ((n + 1 + n₀ : ℕ) : ℝ) ^ e * ((m + n₀ : ℕ) : ℝ) ^ (-s) :=
+        (hbs.subtype _).tsum_le_tsum hbound ((hsumm₂.subtype _).mul_left _)
+    _ ≤ E * ((n + 1 + n₀ : ℕ) : ℝ) ^ e * ∑' m : ℕ, ((m + n₀ : ℕ) : ℝ) ^ (-s) := by
+        rw [tsum_mul_left]
+        exact mul_le_mul_of_nonneg_left (hsumm₂.tsum_subtype_le _ _ fun m ↦ by positivity)
+          (by positivity)
+    _ = _ := by ring
 
 end TauCeti
 

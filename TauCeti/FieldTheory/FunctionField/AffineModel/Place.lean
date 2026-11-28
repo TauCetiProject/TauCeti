@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.OrderOfVanishing.Noetherian
 public import Mathlib.RingTheory.Valuation.Integral
 public import TauCeti.FieldTheory.FunctionField.Place.Adic
 
@@ -39,9 +40,12 @@ integrally closed, then swallows everything integral over `k[x]`.
   with the maximal ideal of `𝒪_P`, `TauCeti.Place.center_injective` showing that a place finite on a
   model is determined by its centre, and `TauCeti.Place.comap_center_asIdeal` showing that the
   centre on a larger model contracts to the centre on a smaller one.
-* `TauCeti.Place.existsUnique_valuation_eq`: the uniqueness statement, and
-  `TauCeti.Place.valuationSubringAtPrime_eq_integers`: the valuation ring of the place is the
-  localization of the model at the centre.
+* `TauCeti.Place.ordFrac_integers`: Mathlib's order of vanishing `Ring.ordFrac` along `𝒪_P` is the
+  inverse of the valuation of the place.
+* `TauCeti.Place.existsUnique_valuation_eq`: the uniqueness statement,
+  `TauCeti.Place.valuationSubringAtPrime_eq_integers`, and
+  `TauCeti.Place.isLocalization_integers_center`: the valuation ring of the place is the
+  localization of the model at the centre (for the `R`-algebra `TauCeti.Place.integersAlgebra`).
 * `TauCeti.Place.ord_algebraMap_eq_multiplicity_center`: the coefficient formula
   `ord_P r = mult_(centre) (r)`, which reads an order at the place off the factorization of an
   ideal of the model.
@@ -159,6 +163,12 @@ theorem valuationSubringAtPrime_eq_integers :
   rw [HeightOneSpectrum.valuationSubringAtPrime_eq_valuationSubring, P.valuation_center hR]
   exact SetLike.ext fun _ ↦ P.mem_integers_iff.symm
 
+/-- The valuation ring of a place finite on a Dedekind affine model `R` is the localization of `R`
+at the centre of `P`. -/
+theorem isLocalization_integers_center [Algebra R P.integers] [IsScalarTower R P.integers F] :
+    IsLocalization.AtPrime P.integers (P.center hR).asIdeal :=
+  (P.center hR).isLocalization_of_eq_valuationSubring (by rw [integers_def, P.valuation_center hR])
+
 /-- Distinct places finite on an affine model have distinct centres: a place is recovered from its
 centre. -/
 theorem center_injective {Q : Place k F} (hQ : ∀ r : R, algebraMap R F r ∈ Q.integers)
@@ -175,6 +185,14 @@ theorem center_integers_asIdeal (hC : ∀ c : P.integers, algebraMap P.integers 
     (P.center hC).asIdeal = IsLocalRing.maximalIdeal P.integers := by
   ext x
   rw [mem_center_asIdeal, ValuationSubring.algebraMap_apply, mem_maximalIdeal_iff_valuation_lt_one]
+
+/-- The order of vanishing along the valuation ring of a place, Mathlib's `Ring.ordFrac`, is the
+inverse of the valuation of the place. -/
+theorem ordFrac_integers (x : F) : Ring.ordFrac P.integers x = (P.valuation x)⁻¹ := by
+  have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ r.property
+  have h : IsDiscreteValuationRing.maximalIdeal P.integers = P.center hR :=
+    HeightOneSpectrum.ext (P.center_integers_asIdeal hR).symm
+  rw [Ring.ordFrac_eq_valuation_inv, h, valuation_center]
 
 variable [IsDedekindDomain R]
 

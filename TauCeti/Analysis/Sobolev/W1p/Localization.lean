@@ -25,7 +25,9 @@ unity. For every `1 ≤ p ≤ ∞`, localizing the restriction of a `W^{1,p}_0(�
 `V` lands in `W^{1,p}_0(V)` when `V ∩ tsupport ψ ⊆ Ω` and `Ω ∩ tsupport ψ ⊆ V`
 (`TauCeti.W1p.localizeL_restrictL_mem_w1p0Submodule`). In particular a `W^{1,p}_0(Ω)` function
 vanishing off a compact subset of `V` restricts to `W^{1,p}_0(Ω ∩ V)`
-(`TauCeti.W1p.restrictL_mem_w1p0Submodule_of_isCompact`). Consequently, zero boundary values
+(`TauCeti.W1p.restrictL_mem_w1p0Submodule_of_isCompact`), and zero boundary values on `∂Ω ∩ U`
+give `ψ u ∈ W^{1,p}_0(Ω ∩ U')` for `ψ` compactly supported in an open `U' ⊆ U`
+(`TauCeti.W1p.exists_w1p0_value_ae_eq_mul_restrictL`). Consequently, zero boundary values
 carry over to any open set agreeing with `Ω` near such a compact set
 (`TauCeti.W1p.mem_w1p0Submodule_of_inter_eq_of_isCompact`).
 
@@ -263,6 +265,27 @@ theorem W1p.restrictL_mem_w1p0Submodule_of_isCompact {V : Opens E} {K : Set E}
   by_cases hxK : x ∈ K
   · rw [hψK x hxK, one_smul]
   · rw [h4 hxK, smul_zero]
+
+/-- **Zero boundary values on part of the boundary localize.** Let `U' ⊆ U` be open and let
+`u ∈ W^{1,p}(Ω)` vanish on `∂Ω ∩ U`, in the sense that `χ u ∈ W^{1,p}_0(Ω)` for every smooth `χ`
+compactly supported in `U`. Then `ψ u ∈ W^{1,p}_0(Ω ∩ U')` for every smooth `ψ` compactly
+supported in `U'`. -/
+theorem W1p.exists_w1p0_value_ae_eq_mul_restrictL {U' : Opens E} (hU' : (U' : Set E) ⊆ U)
+    {u : W1p μ Ω p}
+    (hu0 : ∀ χ : E → ℝ, ContDiff ℝ ∞ χ → HasCompactSupport χ → tsupport χ ⊆ U →
+      ∃ v : W1p0 μ Ω p, W1p.value (v : W1p μ Ω p) =ᵐ[μ.restrict Ω] fun x => χ x * W1p.value u x)
+    (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψs : tsupport ψ ⊆ U') :
+    ∃ v : W1p0 μ (Ω ⊓ U') p, W1p.value (v : W1p μ (Ω ⊓ U') p) =ᵐ[μ.restrict (Ω ⊓ U')]
+      fun x => ψ x * W1p.value (W1p.restrictL (inf_le_left : Ω ⊓ U' ≤ Ω) u) x := by
+  obtain ⟨v, hv⟩ := hu0 ψ hψ hψc (hψs.trans hU')
+  have hv0 : ∀ᵐ x ∂μ.restrict Ω, x ∉ tsupport ψ → W1p.value (v : W1p μ Ω p) x = 0 := by
+    filter_upwards [hv] with x hx hxψ
+    rw [hx, image_eq_zero_of_notMem_tsupport hxψ, zero_mul]
+  refine ⟨⟨_, W1p.restrictL_mem_w1p0Submodule_of_isCompact hψc hψs v.property hv0⟩, ?_⟩
+  filter_upwards [W1p.value_restrictL_ae inf_le_left (v : W1p μ Ω p),
+    W1p.value_restrictL_ae inf_le_left u,
+    ae_restrict_of_ae_restrict_of_subset inter_subset_left hv] with x h1 h2 h3
+  rw [h1, h3, h2]
 
 /-- **Zero boundary values transfer between domains that agree near the support.** Let `Ω`, `V`
 and `U` be open with `Ω ∩ U = V ∩ U`, and let `u ∈ W^{1,p}_0(Ω)` vanish almost everywhere

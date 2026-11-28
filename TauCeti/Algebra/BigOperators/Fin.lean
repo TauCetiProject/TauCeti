@@ -10,6 +10,8 @@ public import Mathlib.Data.Fintype.Pi
 public import Mathlib.Data.Fintype.Prod
 public import TauCeti.Logic.Equiv.Fin.Basic
 public import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.BigOperators.GroupWithZero.Action
+import Mathlib.Algebra.Module.NatInt
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Finset.Max
 import Mathlib.Data.List.OfFn
@@ -21,12 +23,18 @@ import TauCeti.Data.Fin.Basic
 
 Successive differences along a finite sequence sum to the difference of its endpoints,
 including the empty edge sequence. Reversing every difference reverses the endpoint difference.
+Around a cycle, where the successor of the last index is the first one, the increments
+`f (finRotate n i) - f i` sum to zero (`Fin.sum_univ_finRotate_sub`, multiplicatively
+`Fin.prod_univ_finRotate_div`).
+The alternating sum over the faces of a simplex of the products of values on its front and back
+faces splits as in the Leibniz rule for cup products (`Fin.sum_neg_one_pow_zsmul_mul_succAbove`).
 Summing a tuple on `Fin (k + 1)` with one index left out, over all choices of the omitted
 index, counts every entry `k` times (`Fin.sum_sum_succAbove`, multiplicatively
 `Fin.prod_prod_succAbove`).
 The equivalence omitting the last index also reindexes sums by the preceding indices, and a
 filtered product over `Fin (n + 1)` splits off its first index; when two such products agree and
-so do their first factors, the products over the remaining indices agree.
+so do their first factors, the products over the remaining indices agree. In particular a
+product over the indices below `k.succ` splits off its first index (`Fin.prod_Iio_succ`).
 
 Along a divisibility chain `d₀ ∣ d₁ ∣ ⋯`, the product of the first `k` entries divides the
 product of the entries at any `k` distinct positions. This is what makes the leading `k × k`
@@ -41,6 +49,11 @@ product over the triples `Fin 3 → α` is the triple product over their three e
 over pairs of paths `Fin (i + 1) → X` and `Fin (j + 1) → X` meeting at an endpoint is a sum over
 the paths of length `i + j` (`Fin.sum_sum_ite_apply_last_eq_apply_zero`). A sum over the pairs
 `(a, b)` with `P a` and a fixed second entry `b` is the sum over the `a` with `P a`.
+
+Deleting the entry at position `p` of a tuple leaves its partial products up to `p` unchanged
+(`Fin.partialProd_removeNth_of_le`); in a group, the later partial products of the shortened tuple
+are those of the original one with the factor at `p` cancelled
+(`Fin.partialProd_removeNth_of_ge`).
 
 A strictly increasing list `a` on `Fin (n + 1)` in an additive group with a preorder (no
 compatibility between the two is needed) telescopes (`StrictMono.eq_add_sum_ite_sub`): `a k` is
@@ -92,6 +105,68 @@ theorem sum_univ_castSucc_sub_succ {G : Type*} [AddCommGroup G] {n : ℕ}
     (f : Fin (n + 1) → G) :
     ∑ i : Fin n, (f i.castSucc - f i.succ) = f 0 - f (last n) := by
   simpa only [neg_sub_neg] using sum_univ_succ_sub_castSucc (fun i ↦ -f i)
+
+/-- The ratios `f (finRotate n i) / f i` around a cycle multiply to one. -/
+@[to_additive /-- The increments `f (finRotate n i) - f i` around a cycle sum to zero. -/]
+theorem prod_univ_finRotate_div {G : Type*} [CommGroup G] {n : ℕ} (f : Fin n → G) :
+    ∏ i, f (finRotate n i) / f i = 1 := by
+  rw [Finset.prod_div_distrib, Equiv.prod_comp, div_self']
+
+/-- A sum of piece-indexed endpoint differences splits into the outer endpoint difference plus the
+sum of interior jumps between consecutive pieces. -/
+theorem sum_univ_sub_eq_boundary_add_sum_jump {G : Type*} [AddCommGroup G] {n : ℕ}
+    (f : Fin (n + 1) → Fin (n + 2) → G) :
+    ∑ i : Fin (n + 1), (f i i.succ - f i i.castSucc) =
+      f (last n) (last (n + 1)) - f 0 0 +
+        ∑ j : Fin n, (f j.castSucc j.succ.castSucc - f j.succ j.succ.castSucc) := by
+  rw [Finset.sum_sub_distrib, Finset.sum_sub_distrib, sum_univ_castSucc, sum_univ_succ]
+  simp only [succ_castSucc, succ_last, castSucc_zero]
+  rw [add_comm (f 0 0), add_sub_add_comm, add_comm]
+
+/-- The **Leibniz rule for front and back faces**. Let `α` and `β` assign values in a ring to the
+maps of vertices `Fin (p + 1) → Fin (p + q + 2)` and `Fin (q + 1) → Fin (p + q + 2)`. The
+alternating sum over the faces `j` of the products of `α` on the front `p`-face and `β` on the back
+`q`-face of `j` is the alternating sum of the faces of `α` on the front `(p + 1)`-face times `β` on
+the back `q`-face, plus `(-1) ^ p` times `α` on the front `p`-face times the alternating sum of the
+faces of `β` on the back `(q + 1)`-face. The faces `j ≤ p` give the first sum, the faces `j ≥ p + 1`
+the second, and the last face in the first sum cancels the first face in the second. This is the
+combinatorial core of the Leibniz rule for cup products of simplicial cochains. -/
+theorem sum_neg_one_pow_zsmul_mul_succAbove {A : Type*} [Ring A] {p q : ℕ}
+    (α : (Fin (p + 1) → Fin (p + q + 2)) → A) (β : (Fin (q + 1) → Fin (p + q + 2)) → A) :
+    ∑ j : Fin (p + q + 2), (-1 : ℤ) ^ (j : ℕ) •
+        (α (j.succAbove ∘ castLE (by omega)) *
+          β (j.succAbove ∘ fun i ↦ Fin.cast (by omega) (natAdd p i))) =
+      (∑ i : Fin (p + 2), (-1 : ℤ) ^ (i : ℕ) • α (castLE (by omega) ∘ i.succAbove)) *
+          β (fun i ↦ Fin.cast (by omega) (natAdd (p + 1) i)) +
+        (-1 : ℤ) ^ p • (α (castLE (by omega)) *
+          ∑ i : Fin (q + 2), (-1 : ℤ) ^ (i : ℕ) •
+            β ((fun i ↦ Fin.cast (by omega) (natAdd p i)) ∘ i.succAbove)) := by
+  have hα {σ σ' : Fin (p + 1) → Fin (p + q + 2)} (h : ∀ i, (σ i : ℕ) = σ' i) : α σ = α σ' :=
+    congrArg α (funext fun i ↦ Fin.ext (h i))
+  have hβ {σ σ' : Fin (q + 1) → Fin (p + q + 2)} (h : ∀ i, (σ i : ℕ) = σ' i) : β σ = β σ' :=
+    congrArg β (funext fun i ↦ Fin.ext (h i))
+  rw [← sum_congr' _ (show p + 1 + (q + 1) = p + q + 2 by omega), sum_univ_add,
+    sum_univ_castSucc (n := p + 1), sum_univ_succ (n := q + 1)]
+  simp only [add_mul, mul_add, smul_add, Finset.sum_mul, Finset.mul_sum, Finset.smul_sum]
+  have key {P₁ P₂ Q₁ Q₂ S T : A} (h₁ : P₁ = Q₁) (h₂ : P₂ = Q₂) (h : S + T = 0) :
+      P₁ + P₂ = Q₁ + S + (T + Q₂) := by
+    rw [h₁, h₂, add_assoc Q₁, ← add_assoc S, h, zero_add]
+  refine key (Finset.sum_congr rfl fun x _ ↦ ?_) (Finset.sum_congr rfl fun x _ ↦ ?_) ?_
+  · rw [smul_mul_assoc]
+    congr 2
+    · exact hα fun i ↦ by grind [val_succAbove]
+    · exact hβ fun i ↦ by grind [val_succAbove]
+  · rw [mul_smul_comm, smul_smul, ← pow_add]
+    congr 2
+    · simp only [val_cast, val_natAdd, val_succ]
+      omega
+    · exact hα fun i ↦ by grind [val_succAbove]
+    · exact hβ fun i ↦ by grind [val_succAbove]
+  · simp only [val_last, val_zero, pow_zero, one_smul, pow_succ, mul_neg_one, neg_smul, neg_mul,
+      smul_mul_assoc, neg_add_eq_zero]
+    congr 2
+    · exact hα fun i ↦ by grind [val_succAbove]
+    · exact hβ fun i ↦ by grind [val_succAbove]
 
 /-- Multiplying the products of a tuple on `Fin (k + 1)` with one index left out, over all `k + 1`
 choices of the omitted index, takes every entry `k` times. -/
@@ -168,6 +243,13 @@ theorem prod_filter_univ_succ {M : Type*} [CommMonoid M] {n : ℕ} (P : Fin (n +
     ∏ i with P i, f i = (if P 0 then f 0 else 1) * ∏ i : Fin n with P i.succ, f i.succ := by
   rw [Finset.prod_filter, prod_univ_succ, Finset.prod_filter]
 
+/-- A product over the indices of `Fin (n + 1)` below `k.succ` splits off the first index. -/
+@[to_additive /-- A sum over the indices of `Fin (n + 1)` below `k.succ` splits off the first
+index. -/]
+theorem prod_Iio_succ {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M) (k : Fin n) :
+    ∏ i ∈ Finset.Iio k.succ, f i = f 0 * ∏ i ∈ Finset.Iio k, f i.succ := by
+  simp [← Finset.filter_gt_eq_Iio, prod_filter_univ_succ]
+
 /-- If two filtered products over `Fin (n + 1)` agree, and their first factors are nonzero and
 equal whenever the first index is selected, then the filtered products over the remaining indices
 agree. -/
@@ -216,6 +298,38 @@ theorem sum_sum_ite_apply_last_eq_apply_zero {X N : Type*} [Fintype X] [Decidabl
         simpa [hi] using hp
       · simp only [show ¬ (i + t ≤ i) by omega, dite_false]
         exact congrArg p.2 (Fin.ext (by simp))
+
+/-- Deleting the entry at position `p` does not change the partial products up to `p`. -/
+@[to_additive /-- Deleting the entry at position `p` does not change the partial sums up to
+`p`. -/]
+theorem partialProd_removeNth_of_le {M : Type*} [Monoid M] {n : ℕ} (f : Fin (n + 1) → M)
+    {p l : Fin (n + 1)} (h : l ≤ p) :
+    partialProd (p.removeNth f) l = partialProd f l.castSucc := by
+  induction l using Fin.induction with
+  | zero => simp
+  | succ l ih =>
+    have hl : l.castSucc < p := lt_of_lt_of_le castSucc_lt_succ h
+    rw [partialProd_succ, ih hl.le, removeNth_apply, succAbove_of_castSucc_lt _ _ hl,
+      ← succ_castSucc, partialProd_succ]
+
+/-- After the deleted position `p`, a partial product of the shortened tuple is the corresponding
+partial product of the original tuple with the factor `f p` cancelled. -/
+@[to_additive /-- After the deleted position `p`, a partial sum of the shortened tuple is the
+corresponding partial sum of the original tuple with the term `f p` cancelled. -/]
+theorem partialProd_removeNth_of_ge {G : Type*} [Group G] {n : ℕ} (f : Fin (n + 1) → G)
+    {p l : Fin (n + 1)} (h : p ≤ l) :
+    partialProd (p.removeNth f) l =
+      partialProd f p.castSucc * (partialProd f p.succ)⁻¹ * partialProd f l.succ := by
+  induction l using Fin.induction with
+  | zero =>
+    obtain rfl : p = 0 := nonpos_iff_eq_zero.1 h
+    simp
+  | succ l ih =>
+    rcases (h.lt_or_eq) with hlt | rfl
+    · have hpl : p ≤ l.castSucc := le_castSucc_iff.2 hlt
+      rw [partialProd_succ, ih hpl, removeNth_apply, succAbove_of_le_castSucc _ _ hpl,
+        mul_assoc _ (partialProd f l.castSucc.succ), succ_castSucc, ← partialProd_succ]
+    · rw [partialProd_removeNth_of_le f le_rfl, inv_mul_cancel_right]
 
 end Fin
 

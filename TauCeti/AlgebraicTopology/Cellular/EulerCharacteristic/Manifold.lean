@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Noncompact
 import TauCeti.Algebra.Category.ModuleCat.Finrank
+import TauCeti.AlgebraicTopology.Singular.Reduced
 
 /-!
 # Euler characteristic of a manifold as a sum of Betti numbers
@@ -73,11 +74,7 @@ theorem eulerChar_eq_one_sub_finrank_add_finrank [ConnectedSpace M] (hE : finran
         (TopCat.of M)) := by
   have := ChartedSpace.locallyPathConnectedSpace E M
   have : PathConnectedSpace M := pathConnectedSpace_iff_connectedSpace.mpr inferInstance
-  have h₀ : finrank k
-      (((singularHomologyFunctor (ModuleCat.{u} k) 0).obj (ModuleCat.of k k)).obj
-        (TopCat.of M)) = 1 := by
-    rw [(asIso ((TopCat.of M).singularHomology₀ε (ModuleCat.of k k))).toLinearEquiv.finrank_eq]
-    exact finrank_self k
+  have h₀ := finrank_singularHomology₀_eq_one (k := k) (TopCat.of M)
   rw [eulerChar_eq_sum_range_finrank_singularHomology (E := E) M k, hE]
   simp [Finset.sum_range_succ, h₀]
   ring

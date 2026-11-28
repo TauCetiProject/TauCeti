@@ -69,6 +69,10 @@ the flat base change of sections over a quasi-compact quasi-separated open
 * `TauCeti.AlgebraicGeometry.cohomologyBaseChangeLinearEquiv`: the resulting flat base change
   isomorphism, whose underlying linear map is `cohomologyBaseChange`
   (`TauCeti.AlgebraicGeometry.cohomologyBaseChangeLinearEquiv_toLinearMap`);
+* `TauCeti.AlgebraicGeometry.subsingleton_cohomology_pullback_iff_of_isPullback`: for faithfully
+  flat `R → R'`, `Hⁿ(X, M)` vanishes exactly when `Hⁿ(Y, g^* M)` does, and
+  `TauCeti.AlgebraicGeometry.subsingleton_cohomology_unit_iff_of_isPullback`: its specialisation
+  to the structure sheaf;
 * `TauCeti.AlgebraicGeometry.finrank_cohomology_pullback_eq_of_isPullback` and
   `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_pullback_of_isPullback`: invariance of
   the dimension and finite-dimensionality of `Hⁿ(X, M)` under extension of the base field,
@@ -573,6 +577,28 @@ lemma cohomologyBaseChangeLinearEquiv_tmul [Module.Flat R R'] [CompactSpace X]
     (n : ℕ) (r' : R') (x : Cohomology M n) :
     cohomologyBaseChangeLinearEquiv H M n (r' ⊗ₜ x) = r' • g.cohomologyPullback M n x :=
   (rfl)
+
+include H in
+/-- `Hⁿ(X, M)` vanishes exactly when it vanishes after a faithfully flat base change `R → R'`,
+for instance an extension of the base field, for a quasi-coherent sheaf `M` on a quasi-compact
+quasi-separated scheme over `R`. The vanishing is that of the canonical pullback sheaf `g^* M`. -/
+theorem subsingleton_cohomology_pullback_iff_of_isPullback [Module.FaithfullyFlat R R']
+    [CompactSpace X] [QuasiSeparatedSpace X] (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
+    Subsingleton (Cohomology ((Scheme.Modules.pullback g).obj M) n) ↔
+      Subsingleton (Cohomology M n) := by
+  rw [← (cohomologyBaseChangeLinearEquiv H M n).toEquiv.subsingleton_congr,
+    Module.FaithfullyFlat.subsingleton_tensorProduct_iff_right]
+
+include H in
+/-- `Hⁿ(X, 𝒪_X)` vanishes exactly when `Hⁿ(Y, 𝒪_Y)` does, for a faithfully flat base change
+`R → R'`, for instance an extension of the base field, on a quasi-compact quasi-separated scheme
+over `R`. -/
+theorem subsingleton_cohomology_unit_iff_of_isPullback [Module.FaithfullyFlat R R']
+    [CompactSpace X] [QuasiSeparatedSpace X] (n : ℕ) :
+    Subsingleton (Cohomology (SheafOfModules.unit Y.ringCatSheaf) n) ↔
+      Subsingleton (Cohomology (SheafOfModules.unit X.ringCatSheaf) n) :=
+  (cohomologyBaseLinearEquivOfIso R' (pullbackObjUnitIso g) n).toEquiv.subsingleton_congr.symm.trans
+    (subsingleton_cohomology_pullback_iff_of_isPullback H _ n)
 
 end FlatBaseChange
 

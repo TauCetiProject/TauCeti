@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Integral.Marginal
 import Mathlib.Probability.HasLaw
 import TauCeti.MeasureTheory.Function.Lp.Iterated
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Integrals over finite product measures
@@ -31,6 +32,10 @@ Mathlib's: reduce a `Fin (n + 1)`-indexed product to a binary product measure al
 `MeasureTheory.measurePreserving_piFinSuccAbove`, split it with
 `MeasureTheory.lintegral_prod_mul`, and transfer an arbitrary `Fintype` index to `Fin` along
 `MeasureTheory.measurePreserving_piCongrLeft`.
+
+The coordinate replacement bounds use `TauCeti.measurePreserving_piSplitAt` to isolate one
+coordinate at a time before applying Fubini. For finite products of probability measures,
+summing these bounds controls the difference of the product integrals.
 
 ## Main statements
 
@@ -52,6 +57,11 @@ Mathlib's: reduce a `Fin (n + 1)`-indexed product to a binary product measure al
 * `TauCeti.setIntegral_prod_le_exp_mul_pow`: the exponential-moment (Chernoff) bound for the
   integral of `∏ i, g (x i)` over the half-space `∑ i, x i ≤ s`, by the `card ι`-th power of the
   one-dimensional integral of `exp (-(l * x)) * g x`.
+* `TauCeti.norm_integral_pi_sub_integral_pi_le_of_eq_off` and
+  `TauCeti.norm_integral_pi_sub_integral_pi_le_of_ae_slice_le`: bounds for replacing one coordinate
+  or all coordinates of a product measure.
+* `TauCeti.integral_pi_comp_perm`: a function invariant under a permutation of the coordinates
+  has the same integral under the product measure and under the product of the permuted factors.
 * `TauCeti.ae_slice_pi_eq_zero`: for a binary kernel whose second-variable slices are a.e.
   integrable with integral zero, fixing one coordinate and integrating another against
   `Measure.pi μ` yields an a.e. integrable function with integral zero.
@@ -314,5 +324,93 @@ theorem ae_slice_pi_eq_zero {ι : Type*} [Fintype ι] {α : ι → Type*}
   have ha : AEMeasurable (Function.eval b) (Measure.pi μ) := (measurable_pi_apply b).aemeasurable
   exact ⟨(integrable_map_measure (heval ▸ hz_int.aestronglyMeasurable) ha).mp (heval.symm ▸ hz_int),
     (heval ▸ integral_map ha (heval ▸ hz_int.aestronglyMeasurable)).symm.trans hz_zero⟩
+
+/-- **Symmetric integrands do not see the order of the factors.** A function on `ι → β` that is
+invariant under precomposition with a permutation `σ` has the same integral under the product
+measure `Measure.pi μ` and under the product `Measure.pi (μ ∘ σ)` of the permuted factors. -/
+theorem integral_pi_comp_perm {ι β E : Type*} [Fintype ι] [MeasurableSpace β]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (μ : ι → Measure β) [∀ i, SigmaFinite (μ i)]
+    (σ : Equiv.Perm ι) {g : (ι → β) → E} (hg : ∀ x, g (x ∘ σ) = g x) :
+    ∫ x, g x ∂Measure.pi (fun i ↦ μ (σ i)) = ∫ x, g x ∂Measure.pi μ := by
+  rw [← (measurePreserving_piCongrLeft μ σ).integral_comp']
+  congr 1
+  funext x
+  rw [MeasurableEquiv.coe_piCongrLeft, ← hg (Equiv.piCongrLeft _ σ x)]
+  congr 1
+  funext i
+  exact (Equiv.piCongrLeft_apply_apply (fun _ ↦ β) σ x i).symm
+
+section Replacement
+
+open Finset
+
+variable {ι E : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type*}
+  [∀ i, MeasurableSpace (α i)] [NormedAddCommGroup E] [NormedSpace ℝ E] {f : (∀ i, α i) → E}
+
+/-- When two finite product laws differ only in one coordinate and their common background
+has finite mass, an almost-everywhere bound on the difference of the two slice integrals,
+multiplied by the background mass, bounds the difference of the product integrals. -/
+theorem norm_integral_pi_sub_integral_pi_le_of_eq_off
+    (μ ν : ∀ j, Measure (α j)) [∀ j, SigmaFinite (μ j)] [∀ j, SigmaFinite (ν j)]
+    (i : ι) [IsFiniteMeasure (Measure.pi fun j : {j // j ≠ i} ↦ μ j)]
+    (heq : ∀ j ≠ i, μ j = ν j)
+    (hμ : Integrable f (Measure.pi μ)) (hν : Integrable f (Measure.pi ν)) {C : ℝ}
+    (hC : ∀ᵐ x ∂Measure.pi (fun j : {j // j ≠ i} ↦ μ j),
+      ‖(∫ t, f ((MeasurableEquiv.piSplitAt i α).symm (t, x)) ∂μ i) -
+      ∫ t, f ((MeasurableEquiv.piSplitAt i α).symm (t, x)) ∂ν i‖ ≤ C) :
+    ‖(∫ x, f x ∂Measure.pi μ) - ∫ x, f x ∂Measure.pi ν‖ ≤
+      C * (Measure.pi fun j : {j // j ≠ i} ↦ μ j).real Set.univ := by
+  let e := MeasurableEquiv.piSplitAt i α
+  have hr : (fun j : {j // j ≠ i} ↦ ν j) = (fun j : {j // j ≠ i} ↦ μ j) :=
+    funext fun j ↦ (heq j j.property).symm
+  have hprod (ρ : ∀ j, Measure (α j)) [∀ j, SigmaFinite (ρ j)]
+      (hint : Integrable f (Measure.pi ρ)) :
+      Integrable (fun p ↦ f (e.symm p)) ((ρ i).prod (Measure.pi fun j : {j // j ≠ i} ↦ ρ j)) ∧
+        (∫ x, f x ∂Measure.pi ρ) = ∫ p, f (e.symm p)
+          ∂((ρ i).prod (Measure.pi fun j : {j // j ≠ i} ↦ ρ j)) := by
+    have he := MeasurePreserving.symm e (measurePreserving_piSplitAt ρ i)
+    exact ⟨he.integrable_comp_of_integrable hint, (he.integral_comp' f).symm⟩
+  obtain ⟨hμ', hμeq⟩ := hprod μ hμ
+  obtain ⟨hν', hνeq⟩ := hprod ν hν
+  rw [hμeq, hνeq, hr]
+  rw [hr] at hν'
+  rw [← integral_prod_swap (μ := μ i) (fun p ↦ f (e.symm p)),
+    ← integral_prod_swap (μ := ν i) (fun p ↦ f (e.symm p))]
+  exact norm_integral_prod_sub_integral_prod_le_of_ae hμ'.swap hν'.swap hC
+
+/-- For finite products of probability measures, the sum of bounds on the changes in the
+one-coordinate integrals bounds the change of the product integral. Each bound need only hold
+almost everywhere under the corresponding product of the other coordinates. The integrand must
+be integrable under all intermediate product laws. -/
+theorem norm_integral_pi_sub_integral_pi_le_of_ae_slice_le
+    (μ ν : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)]
+    [∀ i, IsProbabilityMeasure (ν i)]
+    (hf : ∀ s : Finset ι, Integrable f (Measure.pi fun i ↦ if i ∈ s then ν i else μ i))
+    (C : ι → ℝ)
+    (hC : ∀ (s : Finset ι) (i : ι), i ∉ s →
+      ∀ᵐ x ∂Measure.pi (fun j : {j // j ≠ i} ↦ if j.val ∈ s then ν j else μ j),
+      ‖(∫ t, f ((MeasurableEquiv.piSplitAt i α).symm (t, x)) ∂μ i) -
+      ∫ t, f ((MeasurableEquiv.piSplitAt i α).symm (t, x)) ∂ν i‖ ≤ C i) :
+    ‖(∫ x, f x ∂Measure.pi μ) - ∫ x, f x ∂Measure.pi ν‖ ≤ ∑ i, C i := by
+  let ρ (s : Finset ι) (i : ι) := if i ∈ s then ν i else μ i
+  have (s : Finset ι) (i : ι) : IsProbabilityMeasure (ρ s i) := by
+    dsimp [ρ]
+    split <;> infer_instance
+  let F (s : Finset ι) := ∫ x, f x ∂Measure.pi (ρ s)
+  have hstep (s : Finset ι) (i : ι) (hi : i ∉ s) : ‖F s - F (insert i s)‖ ≤ C i := by
+    have hstep := norm_integral_pi_sub_integral_pi_le_of_eq_off (ρ s) (ρ (insert i s)) i
+      (fun j hj ↦ by simp [ρ, hj]) (hf s) (hf (insert i s)) (C := C i) (by
+        simpa only [ρ, hi, mem_insert_self, ite_true, ite_false] using hC s i hi)
+    simpa only [probReal_univ, mul_one, F] using hstep
+  have h (s : Finset ι) : ‖F ∅ - F s‖ ≤ ∑ i ∈ s, C i := by
+    induction s using Finset.induction_on with
+    | empty => simp
+    | insert i s hi ih =>
+      rw [sum_insert hi]
+      exact (norm_sub_le_norm_sub_add_norm_sub (F ∅) (F s) (F (insert i s))).trans
+        (by linarith [hstep s i hi])
+  simpa [F, ρ] using h univ
+
+end Replacement
 
 end TauCeti

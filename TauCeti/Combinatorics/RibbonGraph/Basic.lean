@@ -9,10 +9,11 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import Mathlib.GroupTheory.Perm.Cycle.Factors
 public import Mathlib.Order.Setoid.Basic
+public import TauCeti.GroupTheory.Perm.Basic
+public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 import Mathlib.GroupTheory.GroupAction.Transitive
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
-import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Finite bipartite ribbon graphs
@@ -27,8 +28,9 @@ away from the incident edges.
 The product of the two vertex rotations determines the face permutation, whose orbits are the
 faces.  Gluing a disc into each face gives a closed oriented surface, one for each connected
 component, and `eulerChar` is its Euler characteristic `|B| + |W| - |E| + |F|`.  This file also
-provides morphisms, isomorphisms, automorphisms, connected components, vertex degrees, the two
-incidence degree-sum formulas, and the copy of a ribbon graph in a higher universe.
+provides morphisms, isomorphisms, automorphisms, connected components, vertex degrees, the
+vertex counts as cycle counts of the two rotations, the two incidence degree-sum formulas, and the
+copy of a ribbon graph in a higher universe.
 
 ## References
 
@@ -111,6 +113,18 @@ theorem whiteEnd_eq_whiteEnd_iff {e e' : Γ.E} :
     Γ.whiteEnd e = Γ.whiteEnd e' ↔ Γ.rotW.SameCycle e e' :=
   ⟨fun h ↦ (Γ.isCycleOn_rotW (Γ.whiteEnd e')).2 (by simpa using h) (by simp),
     fun h ↦ h.apply_eq_of_apply_eq Γ.whiteEnd_rotW⟩
+
+/-- The black vertices are the cycles of the black rotation, fixed points included. -/
+theorem orbitCount_rotB : orbitCount Γ.rotB = Fintype.card Γ.B := by
+  rw [orbitCount_def, ← Nat.card_eq_fintype_card]
+  exact Nat.card_congr ((Quotient.congrRight fun _ _ ↦ Γ.blackEnd_eq_blackEnd_iff.symm).trans
+    (Setoid.quotientKerEquivOfSurjective Γ.blackEnd Γ.blackEnd_surjective))
+
+/-- The white vertices are the cycles of the white rotation, fixed points included. -/
+theorem orbitCount_rotW : orbitCount Γ.rotW = Fintype.card Γ.W := by
+  rw [orbitCount_def, ← Nat.card_eq_fintype_card]
+  exact Nat.card_congr ((Quotient.congrRight fun _ _ ↦ Γ.whiteEnd_eq_whiteEnd_iff.symm).trans
+    (Setoid.quotientKerEquivOfSurjective Γ.whiteEnd Γ.whiteEnd_surjective))
 
 /-! ### Permutations, faces, and connected components -/
 
@@ -756,6 +770,52 @@ def uliftIso : (Γ.ulift : BipartiteRibbonGraph.{max u v}).Iso Γ where
 /-- The universe-lifting isomorphism sends a lifted white vertex to the vertex it wraps. -/
 @[simp] theorem uliftIso_white_apply (w : (Γ.ulift : BipartiteRibbonGraph.{max u v}).W) :
     Γ.uliftIso.white w = w.down := (rfl)
+
+/-! ### Ribbon graphs from two permutations -/
+
+/-- The finite bipartite ribbon graph with edges `E` and rotations `σ` and `τ`: its black and
+white vertices are the cycles of `σ` and of `τ`, the cyclic orders around them being `σ` and `τ`
+themselves. Every finite set with two permutations arises this way as the edge set of a ribbon
+graph; the graph of a permutation triple is the case `E = Fin n`. -/
+@[expose] def ofPerms (E : Type u) [Fintype E] [DecidableEq E] (σ τ : Perm E) :
+    BipartiteRibbonGraph.{u} where
+  E := E
+  B := Quotient (Perm.SameCycle.setoid σ)
+  W := Quotient (Perm.SameCycle.setoid τ)
+  fintypeE := inferInstance
+  fintypeB := @Quotient.fintype _ _ _ (inferInstanceAs (DecidableRel (Perm.SameCycle σ)))
+  fintypeW := @Quotient.fintype _ _ _ (inferInstanceAs (DecidableRel (Perm.SameCycle τ)))
+  decidableEqE := inferInstance
+  decidableEqB := @Quotient.decidableEq _ _ (inferInstanceAs (DecidableRel (Perm.SameCycle σ)))
+  decidableEqW := @Quotient.decidableEq _ _ (inferInstanceAs (DecidableRel (Perm.SameCycle τ)))
+  blackEnd := Quotient.mk (Perm.SameCycle.setoid σ)
+  whiteEnd := Quotient.mk (Perm.SameCycle.setoid τ)
+  rotB := σ
+  rotW := τ
+  blackEnd_surjective := Quotient.mk_surjective
+  whiteEnd_surjective := Quotient.mk_surjective
+  isCycleOn_rotB := Equiv.Perm.isCycleOn_preimage_quotientMk σ
+  isCycleOn_rotW := Equiv.Perm.isCycleOn_preimage_quotientMk τ
+
+section OfPerms
+
+variable {E : Type u} [Fintype E] [DecidableEq E] (σ τ : Perm E)
+
+/-- The black rotation of `ofPerms E σ τ` is `σ`. -/
+@[simp] theorem rotB_ofPerms : (ofPerms E σ τ).rotB = σ := (rfl)
+
+/-- The white rotation of `ofPerms E σ τ` is `τ`. -/
+@[simp] theorem rotW_ofPerms : (ofPerms E σ τ).rotW = τ := (rfl)
+
+/-- The black end of an edge of `ofPerms E σ τ` is its cycle under `σ`. -/
+@[simp] theorem blackEnd_ofPerms (e : E) :
+    (ofPerms E σ τ).blackEnd e = Quotient.mk (Perm.SameCycle.setoid σ) e := (rfl)
+
+/-- The white end of an edge of `ofPerms E σ τ` is its cycle under `τ`. -/
+@[simp] theorem whiteEnd_ofPerms (e : E) :
+    (ofPerms E σ τ).whiteEnd e = Quotient.mk (Perm.SameCycle.setoid τ) e := (rfl)
+
+end OfPerms
 
 end BipartiteRibbonGraph
 

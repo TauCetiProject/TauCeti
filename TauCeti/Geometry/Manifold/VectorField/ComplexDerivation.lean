@@ -166,14 +166,7 @@ theorem complex_smul_im (z : ℂ) (δ : Derivation ℂ C^n⟮I, M; 𝓘(ℝ, ℂ
 def complexify :
     Derivation ℝ C^n⟮I, M; ℝ⟯ C^n⟮I, M; ℝ⟯ →ₗ[ℝ]
       Derivation ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ where
-  toFun D := Derivation.mk'
-    { toFun f := ContMDiffMap.ofReal (D f.re) + Complex.I • ContMDiffMap.ofReal (D f.im)
-      map_add' f g := by
-        simp only [map_add, smul_add]
-        abel
-      map_smul' z f := by
-        ext x
-        apply Complex.ext <;> simp <;> ring }
+  toFun D := Derivation.mk' (ContMDiffMap.complexifyLinearMap D.toLinearMap)
     fun f g ↦ by
       ext x
       apply Complex.ext <;> simp [ContMDiffMap.mul_re, ContMDiffMap.mul_im] <;> ring
@@ -189,7 +182,7 @@ def complexify :
 theorem complexify_apply (D : Derivation ℝ C^n⟮I, M; ℝ⟯ C^n⟮I, M; ℝ⟯)
     (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
     complexify D f = ContMDiffMap.ofReal (D f.re) + Complex.I • ContMDiffMap.ofReal (D f.im) :=
-  (rfl)
+  ContMDiffMap.complexifyLinearMap_apply D.toLinearMap f
 
 /-- The complexification of `D` extends `D` from real to complex functions. -/
 theorem complexify_apply_ofReal (D : Derivation ℝ C^n⟮I, M; ℝ⟯ C^n⟮I, M; ℝ⟯)

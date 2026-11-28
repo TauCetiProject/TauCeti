@@ -22,7 +22,9 @@ single `v ∈ W^{k,p}(Ω)` with value `u`, which restricts to `w i` on each `V i
 `‖v‖ ≤ ∑ᵢ ‖w i‖` (`TauCeti.Wkp.exists_glue`). Equivalently, a family whose restrictions agree on
 the pairwise intersections glues (`TauCeti.Wkp.exists_glue_of_restrictL_eq`). The glued function
 is unique, since a Sobolev function on `Ω` is determined by its restrictions to the members of any
-open cover (`TauCeti.Wkp.ext_of_restrictL_eq`).
+open cover (`TauCeti.Wkp.ext_of_restrictL_eq`). Local regularity near every point of a compact
+set containing `Ω` gives global regularity, by gluing along a finite subcover
+(`TauCeti.Wkp.exists_value_ae_eq_of_isCompact`).
 
 These are the statements used to pass between a Sobolev function on a domain and its restrictions
 to the charts of a finite atlas, for every order `k` and every `1 ≤ p ≤ ∞`. No boundary
@@ -40,7 +42,11 @@ the plane (`Real.sqrt_sum_sq_add_sum_sq_le_sum_sqrt`).
 
 * `TauCeti.Wkp.exists_glue`: gluing along a finite open cover with prescribed value.
 * `TauCeti.Wkp.exists_glue_of_restrictL_eq`: gluing compatible families along a finite open cover.
+* `TauCeti.Wkp.exists_value_ae_eq_of_isCompact`: local `W^{k,p}` regularity near every point of a
+  compact set containing `Ω` gives `W^{k,p}(Ω)`.
 * `TauCeti.Wkp.ext_of_restrictL_eq`: restrictions to an open cover determine a Sobolev function.
+* `TauCeti.Wkp.exists_lowerOrder_eq_restrictL_of_forall_lowerOrder_eq_restrictL`: a function that
+  gains a derivative on each member of a finite open cover gains it on every open set they cover.
 
 ## References
 
@@ -122,6 +128,26 @@ theorem exists_glue [Fintype ι] {V : ι → Opens E} (hle : ∀ i, V i ≤ Omeg
   obtain ⟨v, hv, hvn⟩ := exists_glue_aux hle hcov k w hw
   exact ⟨v, hv, fun i => restrictL_eq_of_value_ae_eq_restrict (hle i) k hv (hw i), hvn⟩
 
+/-- **Local `W^{k,p}` regularity near a compact set glues.** Let `K` be a compact set containing
+`Ω`. If every point of `K` has an open neighbourhood `V` such that some `w ∈ W^{k,p}(Ω ∩ V)` has
+value `u` almost everywhere on `Ω ∩ V`, then some `v ∈ W^{k,p}(Ω)` has value `u` almost
+everywhere on `Ω`. For a bounded `Ω` in finite dimensions, `K` is the closure of `Ω`. -/
+theorem exists_value_ae_eq_of_isCompact {K : Set E} (hK : IsCompact K)
+    (hΩK : (Omega : Set E) ⊆ K) (k : ℕ) {u : E → ℝ}
+    (hloc : ∀ x ∈ K, ∃ V : Opens E, x ∈ V ∧ ∃ w : Wkp mu (Omega ⊓ V) p k,
+      value k w =ᵐ[mu.restrict ((Omega ⊓ V : Opens E) : Set E)] u) :
+    ∃ v : Wkp mu Omega p k, value k v =ᵐ[mu.restrict (Omega : Set E)] u := by
+  -- Finitely many of the neighbourhoods cover `K`, hence `Ω`.
+  choose V hxV w hw using hloc
+  obtain ⟨t, ht⟩ := hK.elim_nhds_subcover' (fun x hx => (V x hx : Set E))
+    fun x hx => (V x hx).isOpen.mem_nhds (hxV x hx)
+  have hcov : Omega ≤ ⨆ i : t, Omega ⊓ V i.val.val i.val.property := fun y hy => by
+    obtain ⟨x, hxt, hyx⟩ := mem_iUnion₂.1 (ht (hΩK hy))
+    exact Opens.mem_iSup.2 ⟨⟨x, hxt⟩, Opens.mem_inf.2 ⟨hy, hyx⟩⟩
+  obtain ⟨v, hv, -, -⟩ := exists_glue (fun _ => inf_le_left) hcov k
+    (fun i => w i.val.val i.val.property) fun i => hw _ _
+  exact ⟨v, hv⟩
+
 /-- **Restrictions to a cover determine a Sobolev function.** Two elements of `W^{k,p}(Ω)` with
 the same restrictions to the members of an open cover of `Ω` are equal. The cover may be
 uncountable. -/
@@ -164,5 +190,28 @@ theorem exists_glue_of_restrictL_eq [Fintype ι] {V : ι → Opens E} (hle : ∀
       exact (hu n).symm
   obtain ⟨v, -, hv, hvn⟩ := exists_glue hle hcov k w hu
   exact ⟨v, hv, hvn⟩
+
+/-- **One more derivative glues along a finite open cover.** Let finitely many open sets
+`V i ⊆ Ω` cover an open set `U ⊆ Ω`, and let `u ∈ W^{k,p}(Ω)`. If the restriction of `u` to each
+`V i` is the order-`k` part of some `w i ∈ W^{k+1,p}(V i)`, then its restriction to `U` is the
+order-`k` part of some `v ∈ W^{k+1,p}(U)` with `‖v‖ ≤ ∑ᵢ ‖w i‖`. -/
+theorem exists_lowerOrder_eq_restrictL_of_forall_lowerOrder_eq_restrictL [Fintype ι]
+    {U : Opens E} {V : ι → Opens E} (hU : U ≤ Omega) (hle : ∀ i, V i ≤ Omega)
+    (hcov : U ≤ ⨆ i, V i) {k : ℕ} (u : Wkp mu Omega p k) (w : ∀ i, Wkp mu (V i) p (k + 1))
+    (hw : ∀ i, lowerOrder k (w i) = restrictL (hle i) k u) :
+    ∃ v : Wkp mu U p (k + 1), lowerOrder k v = restrictL hU k u ∧ ‖v‖ ≤ ∑ i, ‖w i‖ := by
+  have hcov' : U ≤ ⨆ i, U ⊓ V i := fun x hx => by
+    obtain ⟨i, hi⟩ := Opens.mem_iSup.1 (hcov hx)
+    exact Opens.mem_iSup.2 ⟨i, Opens.mem_inf.2 ⟨hx, hi⟩⟩
+  -- The restrictions of the `w i` to `U ⊓ V i` all have the value of `u`.
+  obtain ⟨v, hv, -, hvn⟩ := exists_glue (fun _ => inf_le_left) hcov' (k + 1)
+    (fun i => restrictL inf_le_right (k + 1) (w i)) (u := value k u) fun i => by
+      refine (value_restrictL_ae inf_le_right (k + 1) (w i)).trans
+        (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 inf_le_right) ?_)
+      rw [value_succ, hw i]
+      exact value_restrictL_ae (hle i) k u
+  refine ⟨v, ext k (Lp.ext ?_), hvn.trans (Finset.sum_le_sum fun i _ => norm_restrictL_le _ _ _)⟩
+  rw [← value_succ]
+  exact hv.trans (value_restrictL_ae hU k u).symm
 
 end TauCeti.Wkp

@@ -171,6 +171,31 @@ theorem mfderiv_suspensionCover_apply (p : (ℝ × ℝ) × M)
   -- derivative evaluates componentwise by definition.
   rfl
 
+/-- The differential of the covering map sends `a ∂_s + b ∂_t + v` at `((s, t), x)` to
+`a ∂_s + b T + v` at `([s], [t, x])`. -/
+theorem mfderiv_suspensionCover_mk (s t : ℝ) (x : M) (a b : ℝ) (v : TangentSpace I x) :
+    mfderiv (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (suspensionCover φ) ((s, t), x)
+        ((Manifold.tangentSpaceProdEquiv ((s, t), x)).symm
+          ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (s, t)).symm (a, b), v)) =
+      (Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I)
+        ((s : UnitAddCircle), mk φ t x)).symm
+        (a, mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
+          ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))) := by
+  rw [mfderiv_suspensionCover_apply, suspensionCover_apply]
+  simp only [ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The differential of the covering map sends the vertical vector `0 ∂_s + 0 ∂_t + v` at
+`((s, t), x)` to the vertical vector `0 ∂_s + 0 T + v` at `([s], [t, x])`. -/
+theorem mfderiv_suspensionCover_mk_zero (s t : ℝ) (x : M) (v : TangentSpace I x) :
+    mfderiv (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (suspensionCover φ) ((s, t), x)
+        ((Manifold.tangentSpaceProdEquiv ((s, t), x)).symm (0, v)) =
+      (Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I)
+        ((s : UnitAddCircle), mk φ t x)).symm
+        ((0 : ℝ), mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
+          ((Manifold.tangentSpaceProdEquiv (t, x)).symm ((0 : ℝ), v))) := by
+  have h := mfderiv_suspensionCover_mk φ s t x 0 0 v
+  rwa [Prod.mk_zero_zero, map_zero] at h
+
 /-! ### The pulled back symplectic form -/
 
 variable {φ} {σ : SmoothTwoForm I M} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}

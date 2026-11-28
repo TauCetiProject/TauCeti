@@ -46,6 +46,8 @@ in which `Z` is a Reeb vector field.
 
 ## Main results
 
+* `TauCeti.isOpen_setOf_notMem_range_mfderiv_of_finrank_add_one_eq`: the points of an immersed
+  hypersurface at which a smooth vector field is transverse to it form an open set.
 * `TauCeti.exists_contMDiffOn_mvfderiv_eq_of_isTransverseAlong`: a smooth solution of `Z h = g`
   on an open neighbourhood of a transverse embedded hypersurface, vanishing on the hypersurface.
 * `TauCeti.exists_contMDiff_mvfderiv_eq_of_isTransverseAlong`: for a closed hypersurface in a
@@ -147,10 +149,10 @@ private theorem mfderiv_snd_flowOf_integralField_zero_apply (s : S)
     mfderiv (𝓘(ℝ).prod J) I (fun q : ℝ × S ↦ (flowOf (integralField Z g) q.1 (0, ι q.2)).2)
         (0, s) v = v.1 • Z (ι s) + mfderiv J I ι s v.2 := by
   have hZg := (contMDiff_integralField hZ hg).of_le (show (1 : WithTop ℕ∞) ≤ ∞ by simp)
-  have hf : ContMDiffAt J (𝓘(ℝ).prod I) 1 (fun y : S ↦ ((0 : ℝ), ι y)) s :=
-    contMDiffAt_const.prodMk (hι.contMDiffAt.of_le (by simp))
+  have hf : MDifferentiableAt J (𝓘(ℝ).prod I) (fun y : S ↦ ((0 : ℝ), ι y)) s :=
+    mdifferentiableAt_const.prodMk (hι.mdifferentiableAt (by simp))
   have h0 : ((0 : ℝ), ((0 : ℝ), ι s)) ∈ flowDomain (integralField Z g) :=
-    mem_flowDomain_zero hZg _
+    mem_flowDomain_zero (hZg _)
   have hF : MDifferentiableAt (𝓘(ℝ).prod J) (𝓘(ℝ).prod I)
       (fun q : ℝ × S ↦ flowOf (integralField Z g) q.1 ((0 : ℝ), ι q.2)) ((0 : ℝ), s) :=
     ((contMDiffOn_flowOf_integralField hZ hg hι).contMDiffAt
@@ -173,7 +175,7 @@ variable [BoundarylessManifold J S]
 the spatial part of the trajectories of `(g, Z)` through the points `(0, ι s)` is a local
 diffeomorphism at `(0, s)`. -/
 private theorem isLocalDiffeomorphAt_snd_flowOf_integralField [IsManifold J ∞ S] {s : S}
-    (himm : Injective (mfderiv J I ι s)) (htr : IsTransverseAlong J Z ι)
+    (himm : Injective (mfderiv J I ι s)) (htr : Z (ι s) ∉ (mfderiv J I ι s).range)
     (hdim : finrank ℝ E' + 1 = finrank ℝ E) :
     IsLocalDiffeomorphAt (𝓘(ℝ).prod J) I ∞
       (fun q : ℝ × S ↦ (flowOf (integralField Z g) q.1 ((0 : ℝ), ι q.2)).2) ((0 : ℝ), s) := by
@@ -183,16 +185,39 @@ private theorem isLocalDiffeomorphAt_snd_flowOf_integralField [IsManifold J ∞ 
   -- Transversality makes the differential `(a, w) ↦ a Z (ι s) + dι w` injective.
   have hinj : Injective (mfderiv (𝓘(ℝ).prod J) I
       (fun q : ℝ × S ↦ (flowOf (integralField Z g) q.1 ((0 : ℝ), ι q.2)).2) ((0 : ℝ), s)) :=
-    fun v v' hv ↦ htr.injective_smul_add himm
+    fun v v' hv ↦ (injective_smul_add_mfderiv_iff_notMem_range himm).2 htr
       ((mfderiv_snd_flowOf_integralField_zero_apply hZ hg hι s v).symm.trans
         (hv.trans (mfderiv_snd_flowOf_integralField_zero_apply hZ hg hι s v')))
   exact isLocalDiffeomorphAt_of_injective_mfderiv
     ((contMDiff_snd.contMDiffOn (s := univ)).comp (contMDiffOn_flowOf_integralField hZ hg hι)
       fun _ _ ↦ mem_univ _)
     (isOpen_setOf_mem_flowDomain_integralField hZ hg hι)
-    (mem_flowDomain_zero ((contMDiff_integralField hZ hg).of_le (by simp)) _)
+    (mem_flowDomain_zero ((contMDiff_integralField hZ hg).contMDiffAt.of_le (by simp)))
     BoundarylessManifold.isInteriorPoint (by simp) hinj
     (by rw [Module.finrank_prod, finrank_self, ← hdim, add_comm])
+
+omit hg in
+/-- **Transversality to a hypersurface is an open condition.** Let `Z` be a smooth vector field on
+a finite-dimensional boundaryless manifold `N`, and let `ι : S → N` be a smooth immersion of a
+boundaryless manifold of one dimension less. Then the points `s` at which `Z (ι s)` is transverse
+to `ι`, that is, not in the range of `dι_s`, form an open subset of `S`.
+
+This is the codimension-one case, read off from the flow-out of `Z` along `ι`: at a transverse
+point the flow-out is a local diffeomorphism, hence so it is nearby. -/
+theorem isOpen_setOf_notMem_range_mfderiv_of_finrank_add_one_eq [IsManifold J ∞ S]
+    (himm : ∀ s, Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E) :
+    IsOpen {s | Z (ι s) ∉ (mfderiv J I ι s).range} := by
+  have hg : ContMDiff I 𝓘(ℝ) ∞ (0 : N → ℝ) := contMDiff_const
+  refine isOpen_iff_mem_nhds.2 fun s hs ↦ ?_
+  -- The flow-out of `(0, Z)` is a local diffeomorphism at `(0, s)`, hence at `(0, s')` for `s'`
+  -- near `s`, and there its differential `(a, w) ↦ a Z (ι s') + dι w` is injective.
+  have hev := ((continuous_const.prodMk continuous_id).tendsto s).eventually
+    (isLocalDiffeomorphAt_snd_flowOf_integralField hZ hg hι (himm s) hs hdim).eventually
+  filter_upwards [hev] with s' hs'
+  exact (injective_smul_add_mfderiv_iff_notMem_range (himm s')).1 fun v v' hv ↦
+    (hs'.isInvertible_mfderiv (by simp)).injective
+      ((mfderiv_snd_flowOf_integralField_zero_apply hZ hg hι s' v).trans
+        (hv.trans (mfderiv_snd_flowOf_integralField_zero_apply hZ hg hι s' v').symm))
 
 variable [IsManifold J ∞ S] [TopologicalSpace.PseudoMetrizableSpace N]
   [TopologicalSpace.PseudoMetrizableSpace S]
@@ -226,8 +251,9 @@ theorem exists_contMDiffOn_mvfderiv_eq_of_isTransverseAlong
     (s := fun y : S ↦ ((0 : ℝ), y))
     (by
       rintro _ ⟨y, rfl⟩
-      exact ⟨mem_flowDomain_zero ((contMDiff_integralField hZ hg).of_le (by simp)) _,
-        isLocalDiffeomorphAt_snd_flowOf_integralField hZ hg hι (himm y) htr hdim⟩)
+      exact ⟨mem_flowDomain_zero ((contMDiff_integralField hZ hg).contMDiffAt.of_le (by simp)),
+        isLocalDiffeomorphAt_snd_flowOf_integralField hZ hg hι (himm y)
+          (isTransverseAlong_iff.1 htr y) hdim⟩)
     (continuous_const.prodMk continuous_id) Prod.snd continuous_snd (fun _ ↦ rfl)
     (by simpa only [Function.comp_def, hF0] using hind)
   -- The solution is the integral of `g`, the first component of `F`, read through `Ψ⁻¹`.

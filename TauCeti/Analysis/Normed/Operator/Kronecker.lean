@@ -25,7 +25,10 @@ Over any normed field `𝕜` (without assuming nontriviality of the norm or comp
 entry, `Continuous.clm_homCoordConj` and `ContinuousOn.clm_homCoordConj` establish continuity of
 coordinate operator conjugation `ContinuousLinearMap.homCoordConj` in both factors, and
 `ContinuousLinearEquiv.kroneckerCurry` supplies the tensor-Hom currying equivalence on finite
-coordinate spaces.
+coordinate spaces. Currying intertwines Kronecker precomposition with operator conjugation
+(`ContinuousLinearMap.kroneckerCurry_comp_kronecker`); in particular the coevaluation
+`kroneckerCurry (id)` transforms like a bundle map under changes of frame
+(`ContinuousLinearMap.homCoordConj_kronecker_comp_kroneckerCurry_id`).
 -/
 
 public section
@@ -295,6 +298,24 @@ theorem kroneckerCurry_comp_kronecker (S : (Fin m' → 𝕜) →L[𝕜] (Fin m �
     ContinuousLinearMap.ext fun u ↦ ?_
   simp only [comp_apply, finProdCLM_homCoordConj,
     ContinuousLinearEquiv.finProdCLM_kroneckerCurry_apply, kronecker_apply_mul]
+
+/-- The coevaluation `kroneckerCurry (id)` intertwines `P` with the operator conjugation by `S`
+and `T ⊗ P`, whenever `T` is a left inverse of `S`. This is the transition law of the
+coevaluation `C ⟶ hom A (A ⊗ C)` of vector bundles. -/
+theorem homCoordConj_kronecker_comp_kroneckerCurry_id {S : (Fin m' → 𝕜) →L[𝕜] (Fin m → 𝕜)}
+    {T : (Fin m → 𝕜) →L[𝕜] (Fin m' → 𝕜)} (hTS : T.comp S = ContinuousLinearMap.id 𝕜 _)
+    (P : (Fin p → 𝕜) →L[𝕜] (Fin p' → 𝕜)) :
+    (homCoordConj S (T.kronecker P)).comp
+        (ContinuousLinearEquiv.kroneckerCurry 𝕜 m p (m * p) (ContinuousLinearMap.id 𝕜 _)) =
+      (ContinuousLinearEquiv.kroneckerCurry 𝕜 m' p' (m' * p') (ContinuousLinearMap.id 𝕜 _)).comp
+        P := by
+  have h₁ := kroneckerCurry_comp_kronecker S (ContinuousLinearMap.id 𝕜 (Fin p → 𝕜))
+    (T.kronecker P) (ContinuousLinearMap.id 𝕜 (Fin (m * p) → 𝕜))
+  have h₂ := kroneckerCurry_comp_kronecker (ContinuousLinearMap.id 𝕜 (Fin m' → 𝕜)) P
+    (ContinuousLinearMap.id 𝕜 (Fin (m' * p') → 𝕜)) (ContinuousLinearMap.id 𝕜 (Fin (m' * p') → 𝕜))
+  rw [id_comp, comp_id, kronecker_comp_kronecker, hTS, comp_id] at h₁
+  rw [id_comp, id_comp, id_homCoordConj_id, id_comp] at h₂
+  exact h₁.symm.trans h₂
 
 @[simp] theorem kroneckerCurry_kroneckerHomEv (m n : ℕ) :
     ContinuousLinearEquiv.kroneckerCurry 𝕜 m (m * n) n (kroneckerHomEv 𝕜 m n) =

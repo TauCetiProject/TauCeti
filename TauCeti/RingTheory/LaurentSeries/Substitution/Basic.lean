@@ -322,12 +322,6 @@ theorem substAlgHom_X :
   rw [RingHom.coe_coe, RingHom.coe_coe, _root_.LaurentSeries.coe_algebraMap, substAlgHom_coe,
     X_subst, AlgHom.id_apply]
 
-/-- `substAlgHom_X`, for a series `φ` known to equal `X` and carrying its own hypotheses. -/
-private theorem substAlgHom_eq_id_of_eq_X (h : φ = X) :
-    substAlgHom hφ hφ₀ = AlgHom.id K K⸨X⸩ := by
-  subst h
-  exact substAlgHom_X
-
 /-- The ramified substitution `X ↦ X ^ e`, for `e ≠ 0`, multiplies all exponents by `e`: it is the
 exponent embedding `HahnSeries.embDomainRingHom` along `n ↦ e * n`. -/
 theorem substAlgHom_X_pow {e : ℕ} (he : e ≠ 0) :

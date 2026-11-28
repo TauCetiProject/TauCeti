@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Basic
 import Mathlib.Geometry.Manifold.Notation
+import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.ZeroOne.Basic
 
 /-!
 # The real Cauchy–Riemann operator of a connection
@@ -30,6 +31,8 @@ is complex linear when `∇` commutes with multiplication by `i`
 * `TauCeti.IsRealCauchyRiemannOperator.tensorialAt_sub_zeroOnePart`: a real Cauchy–Riemann
   operator differs from the `(0,1)`-part of a covariant derivative over a set by a tensorial term
   at each point of that set.
+* `ContMDiffCovariantDerivativeOn.zeroOnePart`: the `(0,1)`-part of a `C^n` covariant derivative
+  is `C^n`.
 
 ## References
 
@@ -112,5 +115,21 @@ theorem _root_.IsCovariantDerivativeOn.isComplexLinearOperator_zeroOnePart
   refine (hcov.isRealCauchyRiemannOperator_zeroOnePart j).isComplexLinearOperator ?_
   intro σ x hσ
   rw [hI hσ, zeroOnePart_complex_smul]
+
+/-! ### Smooth real Cauchy–Riemann operators -/
+
+section Smooth
+
+variable [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [VectorBundle ℝ F V] [VectorBundle ℂ F V]
+
+/-- The `(0,1)`-part of a `C^n` covariant derivative over a set `u` is `C^n` over `u`, for
+`n ≤ ∞`. -/
+theorem _root_.ContMDiffCovariantDerivativeOn.zeroOnePart {n : ℕ∞ω} (hn : n ≤ ∞) {u : Set M}
+    {cov : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x}
+    (hcov : ContMDiffCovariantDerivativeOn F n cov u) :
+    ContMDiffCovariantDerivativeOn F n (fun σ x ↦ j.zeroOnePart (cov σ x)) u where
+  contMDiff hσ := (j.contMDiff_totalSpace_zeroOnePart hn).comp_contMDiffOn (hcov.contMDiff hσ)
+
+end Smooth
 
 end TauCeti

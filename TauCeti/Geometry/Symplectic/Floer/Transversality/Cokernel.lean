@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Perturbation.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Transversality.AlmostComplexVariation
+public import TauCeti.Geometry.Symplectic.Floer.Transversality.RegularPoint
 public import TauCeti.Geometry.Symplectic.Floer.UniqueContinuation
 
 /-!
@@ -19,7 +20,8 @@ the directions in which the Floer operator moves when the perturbation data vary
 element of the universal operator is a covector field `η` along `u` annihilating, for the
 pairing `∫ η(·) ds dt`, both the range of `D_u` and these extra directions. Transversality of
 Floer moduli spaces is the statement that only `η = 0` does so. This file proves it for `C¹`
-covector fields, for each of the two kinds of variation.
+covector fields, for each of three kinds of variation, and for continuous covector fields along a
+Floer strip under variations of `J_t` alone.
 
 * **Hamiltonian variations on a core.** If `η` annihilates `D_u ξ` for every smooth test map `ξ`
   compactly supported in `Ω`, and annihilates the change of the Floer operator under every
@@ -37,19 +39,52 @@ covector fields, for each of the two kinds of variation.
   (`SymplecticForm.eqOn_zero_of_integral_floerLinearization_of_integral_deriv_floerOperator`).
   This is the argument for a component on which the almost complex structure is frozen, such as
   a sphere bubble, where only variations of `J` are available.
+* **Periodic variations of `J_t` along a Floer trajectory.** Let `u` be a nonstationary `C²`
+  solution of `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` on `ℝ × ℝ`, for a family `J_t` of period one in
+  time, with limits `xm` and `xp` along its ends. If `η` annihilates the range of `D_u` and, over
+  the strip `ℝ × (0, 1)`, the derivative of the Floer operator along every compatible variation
+  `Y_t` of `J_t` of period one in time, then `η = 0`
+  (`SymplecticForm.eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator`).
+  This is the argument of Floer, Hofer and Salamon for generic periodic `J_t`, where a
+  variation of `J_t` near `(t, u(s, t))` is felt by the trajectory away from `(s, t)` unless
+  `(s, t)` is an injective point of `(s, t) ↦ (t, u(s, t))`. The regular points of `u`
+  (`TauCeti.Floer.regularPoints`) are such injective points
+  (`TauCeti.comap_nhds_le_nhds_of_forall_slice_eq_imp_eq`), with
+  `∂ₜu - X_{H_t} = J_t ∂ₛu ≠ 0`, and they are dense (`TauCeti.Floer.dense_regularPoints`), so `η`
+  vanishes on the strip.
+* **Variations of `J_t` along a Floer strip.** Let `u` be a nonstationary `C²` solution of the
+  same equation on the open strip `ℝ × (0, 1)`, or on any band `ℝ × T` over an open interval `T`,
+  with limits along its ends. If a covector field `η`, continuous on the band, annihilates over the
+  band the derivative of the Floer operator along every compatible variation `Y_t` of `J_t`
+  compactly supported in `T × V`, then `η = 0` on the band
+  (`SymplecticForm.eqOn_zero_of_setIntegral_apply_deriv_floerOperator_timeDependent_eq_zero`).
+  This is the injective-point argument of Floer, Hofer and Salamon adapted to strips between two
+  Lagrangians: the regular points of `u` in the band are dense in the band
+  (`TauCeti.Floer.subset_closure_inter_regularPoints`), and variations of `J_t` supported near
+  `(t, u(s, t))` detect `η` at each of them
+  (`TauCeti.SymplecticForm.eq_zero_of_integral_apply_deriv_floerOperator_timeDependent_eq_zero`).
+  Since the variations are available at every time of the band, neither the range of `D_u` nor
+  unique continuation for the adjoint equation `D_u^* η = 0` enters (unique continuation for `u`
+  is used only in the density of regular points), and the Lagrangian boundary conditions play no
+  role.
 
-In both cases the first hypothesis says that `η` solves the adjoint equation `D_u^* η = 0` on `Ω`
+In each of the first three cases the first hypothesis says that `η` solves the adjoint equation
+`D_u^* η = 0` on `Ω`
 (`TauCeti.SymplecticForm.forall_integral_apply_floerLinearization_eq_zero_iff`), the second that
-`η` vanishes on `U`
+`η` vanishes on a nonempty open set `U`
 (`TauCeti.SymplecticForm.eqOn_zero_of_forall_integral_apply_floerOperator_add_sub_eq_zero`,
-`TauCeti.SymplecticForm.eq_zero_of_integral_apply_deriv_floerOperator_eq_zero`), and unique
+`TauCeti.SymplecticForm.eq_zero_of_integral_apply_deriv_floerOperator_eq_zero`,
+`TauCeti.SymplecticForm.eq_zero_of_setIntegral_apply_deriv_floerOperator_periodic_eq_zero`), and
+unique
 continuation for the adjoint equation
 (`TauCeti.SymplecticForm.eqOn_zero_of_floerLinearizationAdjoint_eq_zero_of_eqOn_zero`) spreads the
 vanishing over `Ω`.
 
-These are statements about classical (`C¹`) cokernel elements. The regularity of weak (`Lᵖ`)
-cokernel elements of a Sobolev realization of `D_u`, and the surjectivity of the universal
-operator on Banach spaces that follows, are not treated here.
+These are statements about classical (`C¹`) cokernel elements. Weak (locally `L^q`, `q > 1`)
+cokernel elements of a Sobolev realization of `D_u` are regular, and vanish under the same
+variations once the data have one more derivative, by
+`TauCeti.Geometry.Symplectic.Floer.Transversality.WeakCokernel`; the surjectivity of the universal
+operator on Banach spaces that follows is not treated here.
 
 ## References
 
@@ -153,5 +188,183 @@ theorem eqOn_zero_of_integral_floerLinearization_of_integral_deriv_floerOperator
     (hev.mono fun z hz ↦ (huΩ z hz).continuousAt) hξ
     (hev.mono fun z hz ↦ (hη.contDiffAt (hΩ.mem_nhds hz)).continuousAt) (hinj z₀ hz₀)
     (hξ₀ z₀ hz₀) (hW z₀ hz₀) hY
+
+/-- At a regular point `z` of a map `u`, continuous along the slice through `z`, solving the Floer
+equation `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` at `z`, the point `z` is an injective point of
+`(s, t) ↦ (t, u(s, t))`, and `∂ₜu - X_{H_t} = J_t ∂ₛu` does not vanish there. These are the
+conditions under which variations of `J_t` detect cokernel elements at `z`. -/
+private theorem comap_nhds_le_nhds_and_ne_zero_of_mem_regularPoints
+    {J : ℝ × V → AlmostComplexStructure V} {H : ℝ → V → ℝ} {z : ℝ × ℝ}
+    (hu : ∀ s, ContinuousAt u (s, z.2))
+    (hF : ω.floerOperator
+      (fun z x ↦ LinearMap.toContinuousLinearMap (J (z.2, x)).toLinearMap) (fun _ _ ↦ 0)
+        (fun z ↦ H z.2) u z = 0)
+    {xm xp : ℝ → V} (hm : Tendsto u (atBot ×ˢ 𝓝 z.2) (𝓝 (xm z.2)))
+    (hp : Tendsto u (atTop ×ˢ 𝓝 z.2) (𝓝 (xp z.2))) (hz : z ∈ Floer.regularPoints u xm xp) :
+    (𝓝 (z.2, u z)).comap (fun z ↦ (z.2, u z)) ≤ 𝓝 z ∧
+      fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (H z.2) (u z) ≠ 0 := by
+  obtain ⟨hd, hzm, hzp, hzs⟩ := Floer.mem_regularPoints.1 hz
+  -- By the Floer equation, `∂ₛu = -J_t (∂ₜu - X_{H_t})`, which is nonzero at `z`.
+  refine ⟨comap_nhds_le_nhds_of_forall_slice_eq_imp_eq hu hm hp hzm hzp hzs, fun h ↦ hd ?_⟩
+  simpa [floerOperator_def, h] using hF
+
+/-- Along a map `u` that is `C¹` on an open set `O`, the vector field `∂ₜu - X_{H_t}(u)` of a `C²`
+Hamiltonian `H` is continuous on `O`. -/
+private theorem continuousOn_fderiv_apply_sub_hamiltonianVectorField {H : ℝ → V → ℝ}
+    {O : Set (ℝ × ℝ)} (hH : ContDiff ℝ 2 (uncurry H)) (hO : IsOpen O) (hu : ContDiffOn ℝ 1 u O) :
+    ContinuousOn (fun w ↦
+      fderiv ℝ u w stdComplexLineImag - ω.hamiltonianVectorField (H w.2) (u w)) O := by
+  intro w hw
+  have hwO := hO.mem_nhds hw
+  have hKt : ContDiffAt ℝ 2 (uncurry fun w : ℝ × ℝ ↦ H w.2) (w, u w) :=
+    (hH.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)).contDiffAt
+  have hX := (ω.contDiffAt_hamiltonianVectorField_uncurry (n := 1) hKt).continuousAt.comp
+    (x := w) (continuousAt_id.prodMk (hu.continuousOn.continuousAt hwO))
+  exact ((((hu.continuousOn_fderiv_of_isOpen hO le_rfl).continuousAt hwO).clm_apply
+    continuousAt_const).sub hX).continuousWithinAt
+
+/-- **Periodic variations of `J_t` kill the cokernel of the universal operator along a Floer
+trajectory** (Floer, Hofer and Salamon). Let `J (t, x)` be a `Cⁿ` family of complex structures
+preserving `ω`, with `1 ≤ n`, of period one in the time `t` and tamed by `ω` along `u`, and let
+`u` be a nonstationary `C²` solution of the Floer equation `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0`
+for a `C²` Hamiltonian `H`. Suppose that `u(s, t)` tends to `xm(t₀)` and `xp(t₀)`, for continuous
+loops `xm` and `xp`, as `s → -∞` and `s → +∞` and `t → t₀`. Let `η` be a `C¹` covector field
+annihilating `D_u ξ` for every smooth compactly supported test map `ξ`, and annihilating, over the
+strip `ℝ × (0, 1)`, the derivative of the Floer operator along `J + q Y` for every `Cⁿ` field `Y`
+of period one in time, vanishing for `x` outside a compact set, with `Y (t, x)` in the compatible
+tangent space of `J (t, x)`. Then `η = 0`. -/
+theorem eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator {n : ℕ∞}
+    {J : ℝ × V → AlmostComplexStructure V}
+    (hJ : ContDiff ℝ n fun p ↦ LinearMap.toContinuousLinearMap (J p).toLinearMap) (hn : 1 ≤ n)
+    (hJω : ∀ p, ω.Invariant (J p)) (hJper : ∀ t x, J (t + 1, x) = J (t, x))
+    (hJ₀ : ∀ z, ω.Tames (J (z.2, u z))) {H : ℝ → V → ℝ} (hH : ContDiff ℝ 2 (uncurry H))
+    (hu : ContDiff ℝ 2 u)
+    (hF : ∀ z, ω.floerOperator
+      (fun z x ↦ LinearMap.toContinuousLinearMap (J (z.2, x)).toLinearMap) (fun _ _ ↦ 0)
+        (fun z ↦ H z.2) u z = 0)
+    (hne : ∃ z, fderiv ℝ u z stdComplexLineReal ≠ 0) {xm xp : ℝ → V} (hxm : Continuous xm)
+    (hxp : Continuous xp) (hm : ∀ t, Tendsto u (atBot ×ˢ 𝓝 t) (𝓝 (xm t)))
+    (hp : ∀ t, Tendsto u (atTop ×ˢ 𝓝 t) (𝓝 (xp t))) (hη : ContDiff ℝ 1 η)
+    (hD : ∀ ξ : ℝ × ℝ → V, ContDiff ℝ (⊤ : ℕ∞) ξ → HasCompactSupport ξ →
+      ∫ z, η z (ω.floerLinearization
+        (fun z x ↦ LinearMap.toContinuousLinearMap (J (z.2, x)).toLinearMap) (fun _ _ ↦ 0)
+          (fun z ↦ H z.2) u ξ z) = 0)
+    (hY : ∀ Y : ℝ × V → V →L[ℝ] V, ContDiff ℝ n Y → (∀ t x, Y (t + 1, x) = Y (t, x)) →
+      (∀ᶠ p in comap Prod.snd (cocompact V), Y p = 0) →
+      (∀ p, (Y p : Module.End ℝ V) ∈ ω.compatibleTangentSpace (J p)) →
+        ∫ z in univ ×ˢ Ioo 0 1, η z (deriv (fun q : ℝ ↦ ω.floerOperator
+          (fun z x ↦ LinearMap.toContinuousLinearMap (J (z.2, x)).toLinearMap + q • Y (z.2, x))
+            (fun _ _ ↦ 0) (fun z ↦ H z.2) u z) 0) = 0) :
+    η = 0 := by
+  set J' : ℝ × ℝ → V → V →L[ℝ] V :=
+    fun z x ↦ LinearMap.toContinuousLinearMap (J (z.2, x)).toLinearMap
+  have hJ1 : ContDiff ℝ 1 fun p ↦ LinearMap.toContinuousLinearMap (J p).toLinearMap :=
+    hJ.of_le (mod_cast hn)
+  have hJ' (z : ℝ × ℝ) : ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J' p.1 p.2) (z, u z) :=
+    (hJ1.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)).contDiffAt
+  have hJJ (z : ℝ × ℝ) : J' z (u z) ∘L J' z (u z) = -ContinuousLinearMap.id ℝ V := by
+    ext v
+    simp [J']
+  have hKs (z : ℝ × ℝ) :
+      ContDiffAt ℝ 2 (uncurry fun (_ : ℝ × ℝ) (_ : V) ↦ (0 : ℝ)) (z, u z) :=
+    contDiff_const.contDiffAt
+  have hKt (z : ℝ × ℝ) : ContDiffAt ℝ 2 (uncurry fun z : ℝ × ℝ ↦ H z.2) (z, u z) :=
+    (hH.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)).contDiffAt
+  have hu1 : ContDiff ℝ 1 u := hu.of_le one_le_two
+  have hD' := (forall_integral_apply_floerLinearization_eq_zero_iff isOpen_univ
+    (fun z _ ↦ hJ' z) (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) (fun _ _ ↦ hu1.contDiffAt)
+    fun _ _ ↦ hη.contDiffAt).1 fun ξ hξ hξc _ ↦ hD ξ hξ hξc
+  -- `η` vanishes at the regular points of `u` in the strip `S = ℝ × (0, 1)`.
+  set S : Set (ℝ × ℝ) := univ ×ˢ Ioo 0 1
+  have hS : IsOpen S := isOpen_univ.prod isOpen_Ioo
+  have hξ := continuousOn_fderiv_apply_sub_hamiltonianVectorField (ω := ω) hH isOpen_univ
+    hu1.contDiffOn
+  have hreg : EqOn η 0 (S ∩ Floer.regularPoints u xm xp) := fun z hz ↦ by
+    obtain ⟨hinj, hξ₀⟩ := comap_nhds_le_nhds_and_ne_zero_of_mem_regularPoints (J := J)
+      (fun _ ↦ hu1.continuous.continuousAt) (hF z) (hm z.2) (hp z.2) hz.2
+    exact eq_zero_of_setIntegral_apply_deriv_floerOperator_periodic_eq_zero (μ := volume)
+      (Ks := fun _ _ ↦ 0) hJ hJω hJper hz.1.2 (hJ₀ z)
+      (Eventually.of_forall fun _ ↦ hu1.continuous.continuousAt)
+      (Eventually.of_forall fun _ ↦ hξ.continuousAt univ_mem)
+      (Eventually.of_forall fun _ ↦ hη.continuous.continuousAt) hinj hξ₀ hY
+  -- The regular points are dense, so `η` vanishes on the strip, and by unique continuation for
+  -- the adjoint equation everywhere.
+  have hdense := Floer.dense_regularPoints (J := fun t x ↦
+      LinearMap.toContinuousLinearMap (J (t, x)).toLinearMap) hJ1 (fun z ↦ hJJ z) hH hu hF hne
+    hxm hxp (fun t ↦ (hm t).comp (tendsto_id.prodMk tendsto_const_nhds))
+    (fun t ↦ (hp t).comp (tendsto_id.prodMk tendsto_const_nhds))
+  have hSη : EqOn η 0 S := fun z hz ↦
+    hreg.closure hη.continuous continuous_const (hdense.open_subset_closure_inter hS hz)
+  funext z
+  exact eqOn_zero_of_floerLinearizationAdjoint_eq_zero_of_eqOn_zero isOpen_univ isPreconnected_univ
+    (fun z _ ↦ hJ' z) (fun z _ ↦ hJJ z) (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) hu1.contDiffOn
+    hη.contDiffOn (fun _ hz ↦ hD' hz) hS ⟨(0, 1 / 2), mem_univ _, by norm_num, by norm_num⟩
+    (subset_univ _) hSη (mem_univ z)
+
+/-- **Time-dependent variations of `J_t` kill the cokernel of the universal operator along a
+Floer strip** (Floer, Hofer and Salamon). Let `T ⊆ ℝ` be open and preconnected, such as the
+interval `(0, 1)` of a strip. Let `J (t, x)` be a `Cⁿ` family of complex structures preserving
+`ω`, with `1 ≤ n`, tamed by `ω` along `u` over the band `ℝ × T`, and let `u` be a map, `C²` on the
+band, solving the Floer equation `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` there, for a `C²`
+Hamiltonian `H`, and not stationary there. Suppose that `u(s, t)` tends to `xm(t₀)` and
+`xp(t₀)`, for loops `xm` and `xp` continuous on `T`, as `s → -∞` and `s → +∞` and `t → t₀ ∈ T`.
+Let `η` be a covector field continuous on the band annihilating, over the band, the derivative of
+the Floer operator along `J + q Y` for every compactly supported `Cⁿ` field `Y` supported in
+`T × V`, with `Y (t, x)` in the compatible tangent space of `J (t, x)`. Then `η = 0` on the band.
+No boundary condition and no adjoint equation enter: the regular points of `u` are dense in the
+band, and `η` vanishes at each of them. -/
+theorem eqOn_zero_of_setIntegral_apply_deriv_floerOperator_timeDependent_eq_zero {n : ℕ∞}
+    {J : ℝ × V → AlmostComplexStructure V}
+    (hJ : ContDiff ℝ n fun p ↦ LinearMap.toContinuousLinearMap (J p).toLinearMap) (hn : 1 ≤ n)
+    (hJω : ∀ p, ω.Invariant (J p)) {T : Set ℝ} (hT : IsOpen T) (hTc : IsPreconnected T)
+    (hJ₀ : ∀ z ∈ univ ×ˢ T, ω.Tames (J (z.2, u z))) {H : ℝ → V → ℝ}
+    (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiffOn ℝ 2 u (univ ×ˢ T))
+    (hF : ∀ z ∈ univ ×ˢ T, ω.floerOperator
+      (fun z x ↦ LinearMap.toContinuousLinearMap (J (z.2, x)).toLinearMap) (fun _ _ ↦ 0)
+        (fun z ↦ H z.2) u z = 0)
+    (hne : ∃ z ∈ univ ×ˢ T, fderiv ℝ u z stdComplexLineReal ≠ 0) {xm xp : ℝ → V}
+    (hxm : ContinuousOn xm T) (hxp : ContinuousOn xp T)
+    (hm : ∀ t ∈ T, Tendsto u (atBot ×ˢ 𝓝 t) (𝓝 (xm t)))
+    (hp : ∀ t ∈ T, Tendsto u (atTop ×ˢ 𝓝 t) (𝓝 (xp t))) (hη : ContinuousOn η (univ ×ˢ T))
+    (hY : ∀ Y : ℝ × V → V →L[ℝ] V, ContDiff ℝ n Y → HasCompactSupport Y →
+      tsupport Y ⊆ T ×ˢ univ → (∀ p, (Y p : Module.End ℝ V) ∈ ω.compatibleTangentSpace (J p)) →
+        ∫ z in univ ×ˢ T, η z (deriv (fun q : ℝ ↦ ω.floerOperator
+          (fun z x ↦ LinearMap.toContinuousLinearMap (J (z.2, x)).toLinearMap + q • Y (z.2, x))
+            (fun _ _ ↦ 0) (fun z ↦ H z.2) u z) 0) = 0) :
+    EqOn η 0 (univ ×ˢ T) := by
+  have hJ1 : ContDiff ℝ 1 fun p ↦ LinearMap.toContinuousLinearMap (J p).toLinearMap :=
+    hJ.of_le (mod_cast hn)
+  have hu1 : ContDiffOn ℝ 1 u (univ ×ˢ T) := hu.of_le one_le_two
+  have hB : IsOpen (univ ×ˢ T : Set (ℝ × ℝ)) := isOpen_univ.prod hT
+  have hξ := continuousOn_fderiv_apply_sub_hamiltonianVectorField (ω := ω) hH hB hu1
+  -- `η` vanishes at the regular points of `u` in the band, which are injective points of
+  -- `(s, t) ↦ (t, u(s, t))` where `∂ₜu - X_{H_t} ≠ 0`.
+  have hreg : EqOn η 0 (univ ×ˢ T ∩ Floer.regularPoints u xm xp) := fun z hz ↦ by
+    obtain ⟨hzB, hzR⟩ := hz
+    obtain ⟨hinj, hξ₀⟩ := comap_nhds_le_nhds_and_ne_zero_of_mem_regularPoints (J := J)
+      (fun s ↦ hu1.continuousOn.continuousAt (hB.mem_nhds ⟨mem_univ s, hzB.2⟩)) (hF z hzB)
+      (hm z.2 hzB.2) (hp z.2 hzB.2) hzR
+    have hev := hB.mem_nhds hzB
+    refine eq_zero_of_integral_apply_deriv_floerOperator_timeDependent_eq_zero (μ := volume)
+      (Ks := fun _ _ ↦ 0) (Kt := fun z ↦ H z.2) hJ hJω (hJ₀ z hzB)
+      (eventually_of_mem hev fun w hw ↦ hu1.continuousOn.continuousAt (hB.mem_nhds hw))
+      (eventually_of_mem hev fun w hw ↦ hξ.continuousAt (hB.mem_nhds hw))
+      (eventually_of_mem hev fun w hw ↦ hη.continuousAt (hB.mem_nhds hw)) hinj hξ₀
+      (prod_mem_nhds (hT.mem_nhds hzB.2) univ_mem) fun Y hYd hYc hYT hYJ ↦ ?_
+    -- The integrand vanishes off the band, where `Y` vanishes along `u`.
+    have hint := hY Y hYd hYc hYT hYJ
+    simp only [(hasDerivAt_floerOperator_add_smul ω _ (fun z x ↦ Y (z.2, x)) _ _ u _ 0).deriv]
+      at hint ⊢
+    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := univ ×ˢ T) fun w hw ↦ by
+      rw [image_eq_zero_of_notMem_tsupport fun h ↦ hw ⟨mem_univ _, (hYT h).1⟩,
+        zero_apply, map_zero]]
+    exact hint
+  -- The regular points are dense in the band, so `η` vanishes on the band.
+  exact hreg.of_subset_closure hη continuousOn_const inter_subset_left
+    (Floer.subset_closure_inter_regularPoints
+      (J := fun t x ↦ LinearMap.toContinuousLinearMap (J (t, x)).toLinearMap) hT hTc hJ1
+      (fun z _ ↦ by ext v; simp) hH hu hF hne hxm hxp
+      (fun t ht ↦ (hm t ht).comp (tendsto_id.prodMk tendsto_const_nhds))
+      (fun t ht ↦ (hp t ht).comp (tendsto_id.prodMk tendsto_const_nhds)))
 
 end TauCeti.SymplecticForm

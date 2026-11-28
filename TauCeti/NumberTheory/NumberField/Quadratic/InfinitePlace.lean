@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Quadratic.Basic
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 public import TauCeti.NumberTheory.NumberField.QuadraticAlgebra
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Trace
 
 /-!
 # The infinite places of a quadratic field `ℚ(√d)`
@@ -22,6 +23,10 @@ embeddings fixed on `ℚ(θ)` to be real. Combining them,
 when `d < 0`, both for a presented field and for the model `QuadraticAlgebra ℚ a 0` of a nonsquare
 rational `a`.
 
+An imaginary quadratic field, a totally complex field of degree `2`, has a single infinite place,
+the place of either of its two complex embeddings `σ`. Hence its norm and trace are read off `σ`:
+`|N(x)| = |σ x|²` and `Tr x = 2 Re (σ x)`.
+
 ## Main results
 
 * `NumberField.isTotallyComplex_of_minpoly_eq_X_sq_sub_C_of_neg`.
@@ -32,6 +37,11 @@ rational `a`.
   quadratic field has a presentation with negative squarefree radicand.
 * `QuadraticAlgebra.isTotallyComplex_iff`: `QuadraticAlgebra ℚ a 0` is totally complex exactly
   when `a < 0`.
+* `TauCeti.NumberField.infinitePlace_eq_mk_of_finrank_eq_two`: an imaginary quadratic field has a
+  single infinite place.
+* `TauCeti.NumberField.abs_norm_eq_norm_sq_of_finrank_eq_two`,
+  `TauCeti.NumberField.trace_eq_two_mul_re_of_finrank_eq_two`: the norm and the trace of an
+  imaginary quadratic field through a complex embedding.
 -/
 
 public section
@@ -77,6 +87,40 @@ theorem exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top_of_isTotallyComplex [IsTo
     (isTotallyComplex_iff_neg_of_minpoly_eq_X_sq_sub_C hmin hgen).mp inferInstance⟩
 
 end NumberField
+
+open NumberField.InfinitePlace
+
+namespace TauCeti.NumberField
+
+variable {K : Type*} [Field K] [NumberField K] [IsTotallyComplex K]
+
+/-- An imaginary quadratic field has a single infinite place: every infinite place is the place of
+either complex embedding `σ`. -/
+theorem infinitePlace_eq_mk_of_finrank_eq_two (hK : Module.finrank ℚ K = 2) (σ : K →+* ℂ)
+    (w : InfinitePlace K) : w = InfinitePlace.mk σ := by
+  refine Fintype.card_le_one_iff.mp ?_ _ _
+  rw [card_eq_nrRealPlaces_add_nrComplexPlaces, IsTotallyComplex.nrRealPlaces_eq_zero,
+    nrComplexPlaces_eq_one_of_finrank_eq_two hK]
+
+/-- In an imaginary quadratic field the absolute value of the norm of `x` is `|σ x|²`, for either
+complex embedding `σ`. -/
+theorem abs_norm_eq_norm_sq_of_finrank_eq_two (hK : Module.finrank ℚ K = 2) (σ : K →+* ℂ)
+    (x : K) : |(Algebra.norm ℚ x : ℝ)| = ‖σ x‖ ^ 2 := by
+  rw [← Rat.cast_abs, ← prod_eq_abs_norm, Fintype.prod_eq_single (InfinitePlace.mk σ)
+    fun w hw ↦ (hw (infinitePlace_eq_mk_of_finrank_eq_two hK σ w)).elim, apply,
+    IsTotallyComplex.mult_eq]
+
+/-- In an imaginary quadratic field the trace of `x` is `2 Re (σ x)`, for either complex
+embedding `σ`. -/
+theorem trace_eq_two_mul_re_of_finrank_eq_two (hK : Module.finrank ℚ K = 2) (σ : K →+* ℂ)
+    (x : K) : (Algebra.trace ℚ K x : ℝ) = 2 * (σ x).re := by
+  classical
+  rw [← InfinitePlace.sum_mult_mul_re_embedding_eq_trace, Fintype.sum_eq_single (InfinitePlace.mk σ)
+    fun w hw ↦ (hw (infinitePlace_eq_mk_of_finrank_eq_two hK σ w)).elim,
+    IsTotallyComplex.mult_eq]
+  rcases embedding_mk_eq σ with h | h <;> simp [h, ComplexEmbedding.conjugate_coe_eq]
+
+end TauCeti.NumberField
 
 namespace QuadraticAlgebra
 

@@ -81,6 +81,12 @@ noncomputable instance barCarrierAddCommGroup {X : Type*} [AddCommMonoid X] [Mod
     AddCommGroup ((TensorWords R A ⊗[R] X) ⊗[R] TensorWords R B) :=
   Module.addCommMonoidToAddCommGroup R
 
+/-- Additive inverses on `Tᶜ(sA) ⊗ (Tᶜ(sA) ⊗ X ⊗ Tᶜ(sB))`, the target of the left coaction of the
+two-sided bar carrier, supplied by the ground ring. -/
+noncomputable instance leftCoactCarrierAddCommGroup {X : Type*} [AddCommMonoid X] [Module R X] :
+    AddCommGroup (TensorWords R A ⊗[R] ((TensorWords R A ⊗[R] X) ⊗[R] TensorWords R B)) :=
+  Module.addCommMonoidToAddCommGroup R
+
 /-- The total suspended grading on the cofree bar bicomodule `Tᶜ(sA) ⊗ sM ⊗ Tᶜ(sB)`. -/
 noncomputable def barGrading (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
     (G : InternalGrading R M ℤ) :
@@ -169,16 +175,14 @@ variable (R A B M) in
 `Tᶜ(sA)` forgets the left word. -/
 noncomputable def taylorProj : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R] M :=
   Comodule.leftCofreeCounit R (TensorWords R A) M ∘ₗ
-    (TensorProduct.rid R (TensorWords R A ⊗[R] M)).toLinearMap ∘ₗ
-      (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor (TensorWords R A ⊗[R] M)
+    Comodule.cofreeCounit R (TensorWords R B) (TensorWords R A ⊗[R] M)
 
-/-- The two-sided counit projection applies the counit of the right words, the right unitor, and
-the cofree counit projection of the left words. -/
+/-- The two-sided counit projection applies the counit projection `Comodule.cofreeCounit` of the
+right words and then the cofree counit projection of the left words. -/
 theorem taylorProj_def :
     taylorProj R A B M =
       Comodule.leftCofreeCounit R (TensorWords R A) M ∘ₗ
-        (TensorProduct.rid R (TensorWords R A ⊗[R] M)).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor (TensorWords R A ⊗[R] M) :=
+        Comodule.cofreeCounit R (TensorWords R B) (TensorWords R A ⊗[R] M) :=
   (rfl)
 
 /-- The two-sided counit projection on a pure tensor `(w ⊗ m) ⊗ v` scales `m` by the counits of
@@ -200,7 +204,7 @@ theorem isHomogeneous_taylorProj_comp {N : Type*} [AddCommGroup N] [Module R N]
     LinearMap.IsHomogeneous (taylorProj R A B N ∘ₗ F)
       (barGrading AA BB G).piece (H.shift 1).piece p := by
   simp only [barGrading_def] at hF ⊢
-  rw [taylorProj_def, Comodule.leftCofreeCounit_def]
+  rw [taylorProj_def, Comodule.leftCofreeCounit_def, Comodule.cofreeCounit_def]
   simpa only [LinearMap.comp_assoc, add_zero] using
     ((TensorWords.isHomogeneous_lid_comp_rTensor_counit (AA.grading.shift 1)
       (H.shift 1)).comp (TensorWords.isHomogeneous_rid_comp_lTensor_counit
@@ -305,16 +309,13 @@ theorem barDifferential_sq_iff_taylor_comp_eq_zero (G : InternalGrading R M ℤ)
       BB.coaugmentedBarDifferential D) :
     D ∘ₗ D = 0 ↔
       taylorProj R A B M ∘ₗ D ∘ₗ D = 0 := by
-  have hb : LinearMap.IsHomogeneous AA.coaugmentedBarDifferential
-      (TensorWords.grading (AA.grading.shift 1)).piece
-      (TensorWords.grading (AA.grading.shift 1)).piece 1 := by
-    rw [TensorWords.grading_piece]
-    exact AA.isHomogeneous_coaugmentedBarDifferential
   have hleft' := hleft.comp_square_eq_zero_iff_counit_of_negOnePow_eq_neg_one
     (Comodule.comp_rid_comp_lTensor_eq_lTensor_comp_leftCoactRTensor _
       (Coalgebra.counit (R := R) (A := TensorWords R B)))
-    hb (by norm_num) AA.coaugmentedBarDifferential_sq
-  rw [taylorProj_def, LinearMap.comp_assoc, ← hleft', LinearMap.comp_assoc]
+    AA.isHomogeneous_coaugmentedBarDifferential (by norm_num)
+    AA.coaugmentedBarDifferential_sq
+  rw [taylorProj_def, Comodule.cofreeCounit_def, LinearMap.comp_assoc, ← hleft',
+    ← Comodule.cofreeCounit_def]
   exact hright.square_eq_zero_iff_counit (barGrading AA BB G) _ D hD
     BB.coaugmentedBarDifferential_sq
 
@@ -384,9 +385,9 @@ theorem eq_of_taylorProj_comp_eq {G : InternalGrading R M ℤ}
   have hleft := hDl.comp_eq_comp_of_counit_comp_eq
     (Comodule.comp_rid_comp_lTensor_eq_lTensor_comp_leftCoactRTensor _
       (Coalgebra.counit (R := R) (A := TensorWords R B)))
-    hEl (by simpa only [taylorProj_def, LinearMap.comp_assoc] using h)
+    hEl (by simpa only [taylorProj_def, Comodule.cofreeCounit_def, LinearMap.comp_assoc] using h)
   exact hDr.eq_of_counit_comp_eq (barGrading AA BB G) BB.coaugmentedBarDifferential D E hEr
-    (by simpa only [LinearMap.comp_assoc] using hleft)
+    (by simpa only [Comodule.cofreeCounit_def, LinearMap.comp_assoc] using hleft)
 
 /-- `A∞` bimodules on a fixed carrier are determined by their grading and Taylor map.  In
 particular, the stored bar differential contains no data beyond its two-sided counit component. -/

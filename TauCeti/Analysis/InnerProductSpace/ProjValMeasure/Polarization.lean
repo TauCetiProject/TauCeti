@@ -16,9 +16,10 @@ import TauCeti.MeasureTheory.VectorMeasure.Operations
 A normalized projection-valued measure `P` carries a finite diagonal positive measure
 `P.diag ξ` for every vector `ξ`. Complex polarization produces a genuine complex vector measure
 `P.polarizedComplexMeasure ψ ξ` whose value on a measurable set `B` is
-`⟪ψ, P.proj B hB ξ⟫_ℂ`. Its dependence on `ψ` is conjugate-linear and on `ξ` linear, swapping
-the two vectors conjugates the values (`mapRangeL_conjCLE_polarizedComplexMeasure`), and applying
-`P.proj B hB` in either vector argument restricts the measure to `B`
+`⟪ψ, P.proj B hB ξ⟫_ℂ`, the four-term polarization of the diagonal measures
+(`inner_proj_eq_polarization`). Its dependence on `ψ` is conjugate-linear and on `ξ` linear,
+swapping the two vectors conjugates the values (`mapRangeL_conjCLE_polarizedComplexMeasure`), and
+applying `P.proj B hB` in either vector argument restricts the measure to `B`
 (`polarizedComplexMeasure_proj_left`, `polarizedComplexMeasure_proj_right`). On the diagonal,
 `P.polarizedComplexMeasure ξ ξ` is `P.diag ξ` with the constant complex density `1`.
 
@@ -67,21 +68,25 @@ noncomputable def polarizedComplexMeasure (P : ProjValMeasure X H) (ψ ξ : H) :
     (diagComplex P (ξ + ψ) + Complex.I • diagComplex P (ξ + Complex.I • ψ) -
       diagComplex P (ξ - ψ) - Complex.I • diagComplex P (ξ - Complex.I • ψ))
 
+/-- Complex polarization of a matrix element of a PVM projection through the diagonal
+measures. -/
+theorem inner_proj_eq_polarization (P : ProjValMeasure X H) (ψ ξ : H)
+    (B : Set X) (hB : MeasurableSet B) :
+    ⟪ψ, P.proj B hB ξ⟫_ℂ =
+      (1 / 4 : ℂ) * ((P.diag (ξ + ψ)).real B + Complex.I * (P.diag (ξ + Complex.I • ψ)).real B -
+        (P.diag (ξ - ψ)).real B - Complex.I * (P.diag (ξ - Complex.I • ψ)).real B) := by
+  have hpol := LinearMap.inner_polarization (P.proj B hB) ψ ξ
+  rw [ContinuousLinearMap.coe_coe, P.inner_proj B hB (ξ + ψ), P.inner_proj B hB (ξ + Complex.I • ψ),
+    P.inner_proj B hB (ξ - ψ), P.inner_proj B hB (ξ - Complex.I • ψ)] at hpol
+  simpa only [measureReal_def] using hpol.symm
+
 /-- Polarization evaluates to the matrix element of the PVM projection. -/
 @[simp]
 theorem polarizedComplexMeasure_apply (P : ProjValMeasure X H) (ψ ξ : H)
     (B : Set X) (hB : MeasurableSet B) :
     P.polarizedComplexMeasure ψ ξ B = ⟪ψ, P.proj B hB ξ⟫_ℂ := by
-  have hpol := ContinuousLinearMap.inner_polarization (P.proj B hB) ψ ξ
-  rw [P.inner_proj B hB (ξ + ψ), P.inner_proj B hB (ξ + Complex.I • ψ),
-    P.inner_proj B hB (ξ - ψ), P.inner_proj B hB (ξ - Complex.I • ψ)] at hpol
-  simpa only [polarizedComplexMeasure, _root_.smul_apply, _root_.add_apply,
-    _root_.sub_apply,
-    diagComplex_apply P (ξ + ψ) B hB,
-    diagComplex_apply P (ξ + Complex.I • ψ) B hB,
-    diagComplex_apply P (ξ - ψ) B hB,
-    diagComplex_apply P (ξ - Complex.I • ψ) B hB,
-    smul_eq_mul] using hpol
+  simp only [P.inner_proj_eq_polarization ψ ξ B hB, polarizedComplexMeasure, _root_.smul_apply,
+    _root_.add_apply, _root_.sub_apply, diagComplex_apply _ _ B hB, measureReal_def, smul_eq_mul]
 
 /-- On the diagonal, the polarized measure recovers the PVM's positive scalar measure. -/
 theorem polarizedComplexMeasure_diag (P : ProjValMeasure X H) (ξ : H)

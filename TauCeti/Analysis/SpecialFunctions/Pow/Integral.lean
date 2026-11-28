@@ -100,6 +100,8 @@ leaving the Sobolev space.
   against the weight `t ^ q`.
 * `TauCeti.lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul`: the layer cake formula for an
   `ℝ≥0∞`-valued function.
+* `TauCeti.lintegral_ofReal_rpow_le_lintegral_meas_lt_mul`: the upper layer-cake inequality
+  for a real function without a measurability assumption.
 * `TauCeti.lintegral_rpow_le_of_measure_lt_le_rpow_mul`: a power tail bound
   `ν {u > t} ≤ t ^ (-ε) W` above a level `m` bounds `∫⁻ u ^ p` for `p < ε`.
 * `TauCeti.exists_contDiff_deriv_eq_rpow`: a `C¹` primitive of `γ (min (t⁺, K)) ^ (γ - 1)` with
@@ -561,6 +563,25 @@ theorem sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top (hf : AEMeasurable f �
       exact Set.mem_iUnion.2
         ⟨n, Set.mem_union_left _ ((ENNReal.inv_le_inv' le_self_add).trans hn.le)⟩
 
+/-- A positive power of `f` vanishes off `{f > 0}`, so restricting `μ` to `{f > 0}` changes none
+of its set integrals. With `TauCeti.sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top` this
+reduces estimates for `f` in `Lᵖ` to a σ-finite measure. -/
+theorem setLIntegral_rpow_restrict_pos (hf : Measurable f) {r : ℝ} (hr : 0 < r) (S : Set α) :
+    ∫⁻ x in S, f x ^ r ∂(μ.restrict {x | 0 < f x}) = ∫⁻ x in S, f x ^ r ∂μ := by
+  have hpos : MeasurableSet {x | 0 < f x} := measurableSet_lt measurable_const hf
+  have hsupp : Function.support (fun x => f x ^ r) ⊆ {x | 0 < f x} := by
+    refine Function.support_subset_iff'.2 fun x hx => ?_
+    have hx0 : f x = 0 := by simpa [Set.mem_ofPred, nonpos_iff_eq_zero] using hx
+    simp [hx0, ENNReal.zero_rpow_of_pos hr]
+  rw [Measure.restrict_restrict' hpos, Set.inter_comm, ← Measure.restrict_restrict hpos]
+  exact setLIntegral_eq_of_support_subset hsupp
+
+/-- The whole-space case of `TauCeti.setLIntegral_rpow_restrict_pos`: restricting `μ` to
+`{f > 0}` does not change the integral of a positive power of `f`. -/
+theorem lintegral_rpow_restrict_pos (hf : Measurable f) {r : ℝ} (hr : 0 < r) :
+    ∫⁻ x, f x ^ r ∂(μ.restrict {x | 0 < f x}) = ∫⁻ x, f x ^ r ∂μ := by
+  simpa using setLIntegral_rpow_restrict_pos hf hr univ
+
 variable {β : Type*} [MeasurableSpace β]
 
 /-- **The layer cake formula** for an `ℝ≥0∞`-valued function: for `0 < p`,
@@ -610,6 +631,34 @@ theorem lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul (ν : Measure β) {u : β
             (lintegral_const_mul _ (by fun_prop)).symm
         _ ≤ _ := lintegral_mono fun t => mul_le_mul_left (measure_mono hsub) _
     rw [hL, hR, ENNReal.mul_top (ENNReal.ofReal_pos.2 hp).ne']
+
+/-- The upper layer-cake bound for an almost everywhere nonnegative real function and a positive
+exponent. The function need not be measurable: a measurable minorant attains its lower integral. -/
+theorem lintegral_ofReal_rpow_le_lintegral_meas_lt_mul {ν : Measure β} {f : β → ℝ}
+    (hf : 0 ≤ᵐ[ν] f)
+    {p : ℝ} (hp : 0 < p) :
+    ∫⁻ x, ENNReal.ofReal (f x ^ p) ∂ν ≤ ENNReal.ofReal p *
+      ∫⁻ t in Ioi (0 : ℝ), ν {x | t < f x} * ENNReal.ofReal (t ^ (p - 1)) := by
+  obtain ⟨g, hg, hgf, hint⟩ :=
+    exists_measurable_le_lintegral_eq ν (fun x ↦ (ENNReal.ofReal (f x)) ^ p)
+  let v := fun x ↦ g x ^ p⁻¹
+  have hpow (x) : v x ^ p = g x := by simp [v, ← ENNReal.rpow_mul, hp.ne']
+  have hle (x) : v x ≤ ENNReal.ofReal (f x) := by
+    calc v x ≤ ((ENNReal.ofReal (f x)) ^ p) ^ p⁻¹ :=
+          ENNReal.rpow_le_rpow (hgf x) (by positivity)
+         _ = _ := by simp [← ENNReal.rpow_mul, hp.ne']
+  calc
+    ∫⁻ x, ENNReal.ofReal (f x ^ p) ∂ν = ∫⁻ x, (ENNReal.ofReal (f x)) ^ p ∂ν := by
+      refine lintegral_congr_ae (hf.mono fun x hx ↦ ?_)
+      exact (ENNReal.ofReal_rpow_of_nonneg hx hp.le).symm
+    _ = ∫⁻ x, v x ^ p ∂ν := by simpa only [hpow] using hint
+    _ = _ := lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul ν
+      (show AEMeasurable v ν by dsimp [v]; fun_prop) hp
+    _ ≤ _ := by
+      gcongr ENNReal.ofReal p * ?_
+      refine setLIntegral_mono' measurableSet_Ioi fun t ht ↦ ?_
+      refine mul_le_mul_left (measure_mono fun x hx ↦ ?_) _
+      exact (ENNReal.ofReal_lt_ofReal_iff_of_nonneg (show 0 < t from ht).le).1 (hx.trans_le (hle x))
 
 /-- **A power tail bound gives integrability below its exponent.** Let `0 ≤ p < ε` and `m > 0`,
 and suppose that the superlevel sets of `u` above `m` decay like a power,

@@ -162,11 +162,10 @@ theorem isHomogeneous (F : homCochains MM NN p) :
 degree `p` from the suspended bar grading to the suspended grading of the target. -/
 theorem isHomogeneous_taylor (F : homCochains MM NN p) :
     LinearMap.IsHomogeneous
-      ((TensorProduct.rid R N).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ
+      (Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ
           (F : (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A))
       (barGrading AA MM.grading).piece (NN.grading.shift 1).piece p := by
-  rw [LinearMap.isHomogeneous_def]
+  rw [Comodule.cofreeCounit_def, LinearMap.isHomogeneous_def]
   intro q x hx
   have hz := (isHomogeneous F).map_mem hx
   rw [barGrading_piece] at hz
@@ -177,11 +176,9 @@ theorem isHomogeneous_taylor (F : homCochains MM NN p) :
 /-- Cochains are determined by their Taylor maps, the components obtained by applying the
 coalgebra counit. -/
 theorem ext_taylor {F G : homCochains MM NN p}
-    (h : (TensorProduct.rid R N).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ
+    (h : Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ
           (F : (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A) =
-      (TensorProduct.rid R N).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ
+      Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ
           (G : (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A)) :
     F = G := by
   have hFG : toComoduleHom F = toComoduleHom G :=
@@ -195,11 +192,10 @@ theorem ext_taylor {F G : homCochains MM NN p}
 theorem eq_cofreeLift (F : homCochains MM NN p) :
     (F : (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A) =
       (Comodule.Hom.cofreeLift (C := TensorWords R A)
-        ((TensorProduct.rid R N).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ
+        (Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ
             (F : (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A))).toLinearMap :=
   (congrArg Comodule.Hom.toLinearMap
-    (Comodule.Hom.cofreeLift_rid_comp_lTensor_counit_comp (toComoduleHom F))).symm
+    (Comodule.Hom.cofreeLift_cofreeCounit_comp (toComoduleHom F))).symm
 
 end homCochains
 
@@ -285,12 +281,10 @@ theorem homDifferential_comp_homDifferential (p : ℤ) :
 /-- The Taylor map of the differential of a cochain: the counit component of
 `b_N ∘ F - (-1)^p F ∘ b_M` is `taylor_N ∘ F - (-1)^p taylor(F) ∘ b_M`. -/
 theorem homCochains.taylor_homDifferential {p : ℤ} (F : homCochains MM NN p) :
-    (TensorProduct.rid R N).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ
+    Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ
           (homDifferential MM NN p F : (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A) =
       NN.taylor ∘ₗ F - p.negOnePow •
-        (((TensorProduct.rid R N).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ
+        ((Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ
             (F : (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A)) ∘ₗ
           MM.barDifferential) := by
   simp only [coe_homDifferential, LinearMap.comp_sub, LinearMap.comp_smul, taylor_def,

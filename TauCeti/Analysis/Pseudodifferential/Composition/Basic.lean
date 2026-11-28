@@ -39,6 +39,10 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
 * `TauCeti.Symbol.quantizeSchwartzValue_sharp`: **composition of quantizations**. For a Schwartz
   function `u`, `Op(a # b) u (x) = ∫ exp(2πi ⟪ζ, x⟫) a(x, 2πζ) (𝓕 (Op(b) u) ζ) dζ`, the Fourier
   integral defining `Op(a)` applied to the function `Op(b) u`.
+* `TauCeti.Symbol.coefficient_sharp_of_coefficient_eq_smul`: at a position `x`, `a # b` only
+  involves `a(x, ·)`. In particular, for a Schwartz function `ψ`, the composition `ψ # b` vanishes
+  at positions outside `tsupport ψ`
+  (`TauCeti.Symbol.coefficient_ofSpatial_smul_id_sharp_eq_zero_of_notMem_tsupport`).
 * `TauCeti.Symbol.spatialDeriv_sharp`, `TauCeti.Symbol.coefficient_frequencyDeriv_sharp`: the
   Leibniz rules `∂(a # b) = (∂a) # b + a # (∂b)` for position and frequency derivatives.
 * `TauCeti.Symbol.sharp_add`, `TauCeti.Symbol.add_sharp`, `TauCeti.Symbol.sharp_smul`,
@@ -58,6 +62,13 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
   functions of two symbols which satisfies the Leibniz rules follow from its growth bound, for
   positions in a compact set or, for uniform symbols, at all positions, and uniformly over a family
   of right factors.
+* `TauCeti.Symbol.exists_seminorm_le_of_leibniz`: the quantitative form for symbols depending on
+  two symbols: if the seminorm without derivatives is bounded by a product of finite sums of
+  seminorms of the two factors, then so is every seminorm. With
+  `TauCeti.Symbol.exists_norm_integral_sharpIntegrand_le_seminorm`, which bounds the integrals of
+  the shifted integrand by such a product, this gives the continuity of `a # b` and of the
+  remainders of its expansion
+  (`TauCeti.Analysis.Pseudodifferential.Composition.Continuity`).
 * `TauCeti.Symbol.HasCompactSpatialSupport.sharp`: if `a` also has compact spatial support, then
   so does `a # b`.
 * `TauCeti.Symbol.IsUniform.sharp`: if the estimates of `a` hold uniformly in the position, then
@@ -68,6 +79,9 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
   for the test function `w = Op(b) u`, and
   `TauCeti.Symbol.coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq`: `a # b` is the only
   symbol, of any order, whose quantization is `Op(a) ∘ Op(b)`.
+* `TauCeti.Symbol.smul_quantizeSchwartzValue_sharp_eq_add`: a symbol identity
+  `ψ(x) (c # b) = ψ(x) (1 + R)` gives the operator identity
+  `ψ · Op(c) (Op(b) u) = ψ · u + Op(ψ R) u`, the form of a local right parametrix.
 * `TauCeti.Symbol.coordSub_smul_coefficient_sharp`: **commutator with a coordinate function**,
   `(x - z)ⱼ (a # b) = a # ((y - z)ⱼ b) + i (∂_{ξⱼ} a) # b`, where `(y - z)ⱼ b` is the composition
   with the symbol `TauCeti.Symbol.coordSubSymbol z j` of multiplication by `(y - z)ⱼ`.
@@ -108,6 +122,7 @@ public section
 noncomputable section
 
 open MeasureTheory Real FourierTransform
+open TopologicalSpace (Compacts)
 open scoped ContDiff RealInnerProductSpace SchwartzMap
 
 namespace TauCeti
@@ -205,6 +220,157 @@ theorem exists_norm_mixedDeriv_le_of_leibniz {ι : Type*} (s : ℝ)
       rw [e₂] at h₂
       rw [← mixedDeriv_coordinateDeriv_snd, hfun]
       exact norm_mixedDeriv_add_le (hF _ hb i) (hF a _ i) h₁ h₂
+
+/-- Two bilinear bounds `x ≤ C₁ P₁ Q₁` and `y ≤ C₂ P₂ Q₂` combine to `x + y ≤ (C₁ + C₂) P Q` for
+`P ≥ P₁, P₂` and `Q ≥ Q₁, Q₂`. -/
+private theorem add_le_add_mul_mul {x y C₁ C₂ P₁ P₂ Q₁ Q₂ P Q : ℝ}
+    (hx : x ≤ C₁ * P₁ * Q₁) (hy : y ≤ C₂ * P₂ * Q₂) (h₁ : P₁ ≤ P) (h₂ : P₂ ≤ P) (h₃ : Q₁ ≤ Q)
+    (h₄ : Q₂ ≤ Q) (hC₁ : 0 ≤ C₁) (hC₂ : 0 ≤ C₂) (hP₁ : 0 ≤ P₁) (hP₂ : 0 ≤ P₂) (hQ₁ : 0 ≤ Q₁)
+    (hQ₂ : 0 ≤ Q₂) : x + y ≤ (C₁ + C₂) * P * Q := by
+  have e₁ : C₁ * P₁ * Q₁ ≤ C₁ * P * Q :=
+    mul_le_mul (mul_le_mul_of_nonneg_left h₁ hC₁) h₃ hQ₁ (mul_nonneg hC₁ (hP₁.trans h₁))
+  have e₂ : C₂ * P₂ * Q₂ ≤ C₂ * P * Q :=
+    mul_le_mul (mul_le_mul_of_nonneg_left h₂ hC₂) h₄ hQ₂ (mul_nonneg hC₂ (hP₂.trans h₂))
+  linarith
+
+/-- **The step of a position derivative** in `exists_seminorm_le_of_leibniz`: a bilinear seminorm
+bound for `p_{L,α,β}(B a b)` gives one for `p_{L,α ++ [j],β}(B a b)`, by the Leibniz rule
+`∂_{x_j} (B a b) = B (∂_{x_j} a) b + B a (∂_{x_j} b)` and
+`p_{L,α,β}(∂_{x_j} a) = p_{L,α ++ [j],β}(a)`. -/
+private theorem seminorm_append_le_of_leibniz [DecidableEq (List (Fin n))] {μ : ℝ}
+    (B : Symbol n W U m' → (b : Symbol n V W m) → b.HasCompactSpatialSupport → Symbol n V U μ)
+    {j : Fin n} (hspatial : ∀ (a : Symbol n W U m') (b : Symbol n V W m)
+      (hb : b.HasCompactSpatialSupport),
+        spatialDeriv j (B a b hb) = B (spatialDeriv j a) b hb + B a (spatialDeriv j b)
+          (hb.spatialDeriv j))
+    {K L : Compacts (CoordinateSpace n)} {α β : List (Fin n)}
+    {s t : Finset (List (Fin n) × List (Fin n))} {C : ℝ} (hC0 : 0 ≤ C)
+    (hC : ∀ (a : Symbol n W U m') (b : Symbol n V W m) (hb : b.HasCompactSpatialSupport),
+      (∀ x ∉ K, ∀ ξ, b.coefficient (x, ξ) = 0) → Symbol.seminorm L α β (B a b hb) ≤
+        C * (∑ i ∈ s, Symbol.seminorm L i.1 i.2 a) * ∑ i ∈ t, Symbol.seminorm K i.1 i.2 b)
+    (a : Symbol n W U m') (b : Symbol n V W m) (hb : b.HasCompactSpatialSupport)
+    (hbK : ∀ x ∉ K, ∀ ξ, b.coefficient (x, ξ) = 0) :
+    Symbol.seminorm L (α ++ [j]) β (B a b hb) ≤
+      (C + C) * (∑ i ∈ s ∪ s.image (Prod.map (· ++ [j]) id), Symbol.seminorm L i.1 i.2 a) *
+        ∑ i ∈ t ∪ t.image (Prod.map (· ++ [j]) id), Symbol.seminorm K i.1 i.2 b := by
+  have hf : Function.Injective (Prod.map (· ++ [j]) id : List (Fin n) × List (Fin n) → _) :=
+    (List.append_left_injective [j]).prodMap Function.injective_id
+  rw [← seminorm_spatialDeriv, hspatial]
+  exact (map_add_le_add _ _ _).trans (add_le_add_mul_mul (hC _ b hb hbK)
+    (hC a _ _ fun x hx ↦ coefficient_spatialDeriv_eq_zero K.isCompact.isClosed hbK j hx)
+    (Finset.sum_le_sum_of_injOn _ hf.injOn Finset.subset_union_right
+      (fun i _ ↦ (seminorm_spatialDeriv j L i.1 i.2 a).le) fun _ _ _ ↦ apply_nonneg _ _)
+    (Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_left
+      fun _ _ _ ↦ apply_nonneg _ _)
+    (Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_left
+      fun _ _ _ ↦ apply_nonneg _ _)
+    (Finset.sum_le_sum_of_injOn _ hf.injOn Finset.subset_union_right
+      (fun i _ ↦ (seminorm_spatialDeriv j K i.1 i.2 b).le) fun _ _ _ ↦ apply_nonneg _ _)
+    hC0 hC0 (by positivity) (by positivity) (by positivity) (by positivity))
+
+/-- **The step of a frequency derivative** in `exists_seminorm_le_of_leibniz`: bilinear seminorm
+bounds for `p_{L,α,β}(B₁ a' b)` and `p_{L,α,β}(B₂ a b')`, at the orders of `a' = ∂_{ξ_j} a` and
+`b' = ∂_{ξ_j} b`, give one for `p_{L,α,β ++ [j]}(B a b)`, by the Leibniz rule
+`∂_{ξ_j} (B a b) = B₁ (∂_{ξ_j} a) b + B₂ a (∂_{ξ_j} b)` and
+`p_{L,α,β}(∂_{ξ_j} a) = p_{L,α,β ++ [j]}(a)`. -/
+private theorem seminorm_frequency_append_le_of_leibniz [DecidableEq (List (Fin n))]
+    {μ μ₁ μ₂ : ℝ}
+    (B : Symbol n W U m' → (b : Symbol n V W m) → b.HasCompactSpatialSupport → Symbol n V U μ)
+    (B₁ : Symbol n W U (m' - 1) → (b : Symbol n V W m) → b.HasCompactSpatialSupport →
+      Symbol n V U μ₁)
+    (B₂ : Symbol n W U m' → (b : Symbol n V W (m - 1)) → b.HasCompactSpatialSupport →
+      Symbol n V U μ₂)
+    (h₁ : μ₁ ≤ μ - 1) (h₂ : μ₂ ≤ μ - 1) {j : Fin n}
+    (hfrequency : ∀ (a : Symbol n W U m') (b : Symbol n V W m) (hb : b.HasCompactSpatialSupport),
+      (frequencyDeriv j (B a b hb)).coefficient = (B₁ (frequencyDeriv j a) b hb).coefficient +
+        (B₂ a (frequencyDeriv j b) (hb.frequencyDeriv j)).coefficient)
+    {K L : Compacts (CoordinateSpace n)} {α β : List (Fin n)}
+    {s₁ t₁ s₂ t₂ : Finset (List (Fin n) × List (Fin n))} {C₁ C₂ : ℝ} (hC₁0 : 0 ≤ C₁)
+    (hC₂0 : 0 ≤ C₂)
+    (hC₁ : ∀ (a : Symbol n W U (m' - 1)) (b : Symbol n V W m) (hb : b.HasCompactSpatialSupport),
+      (∀ x ∉ K, ∀ ξ, b.coefficient (x, ξ) = 0) → Symbol.seminorm L α β (B₁ a b hb) ≤
+        C₁ * (∑ i ∈ s₁, Symbol.seminorm L i.1 i.2 a) * ∑ i ∈ t₁, Symbol.seminorm K i.1 i.2 b)
+    (hC₂ : ∀ (a : Symbol n W U m') (b : Symbol n V W (m - 1)) (hb : b.HasCompactSpatialSupport),
+      (∀ x ∉ K, ∀ ξ, b.coefficient (x, ξ) = 0) → Symbol.seminorm L α β (B₂ a b hb) ≤
+        C₂ * (∑ i ∈ s₂, Symbol.seminorm L i.1 i.2 a) * ∑ i ∈ t₂, Symbol.seminorm K i.1 i.2 b)
+    (a : Symbol n W U m') (b : Symbol n V W m) (hb : b.HasCompactSpatialSupport)
+    (hbK : ∀ x ∉ K, ∀ ξ, b.coefficient (x, ξ) = 0) :
+    Symbol.seminorm L α (β ++ [j]) (B a b hb) ≤
+      (C₁ + C₂) * (∑ i ∈ s₁.image (Prod.map id (· ++ [j])) ∪ s₂, Symbol.seminorm L i.1 i.2 a) *
+        ∑ i ∈ t₁ ∪ t₂.image (Prod.map id (· ++ [j])), Symbol.seminorm K i.1 i.2 b := by
+  have hg : Function.Injective (Prod.map id (· ++ [j]) : List (Fin n) × List (Fin n) → _) :=
+    Function.injective_id.prodMap (List.append_left_injective [j])
+  have hsplit : frequencyDeriv j (B a b hb) = inclusion h₁ (B₁ (frequencyDeriv j a) b hb) +
+      inclusion h₂ (B₂ a (frequencyDeriv j b) (hb.frequencyDeriv j)) := by
+    ext1
+    rw [coefficient_add, coefficient_inclusion, coefficient_inclusion, hfrequency]
+  rw [← seminorm_frequencyDeriv, hsplit]
+  exact (map_add_le_add _ _ _).trans (add_le_add_mul_mul
+    ((seminorm_inclusion_le _ L α β _).trans (hC₁ _ b hb hbK))
+    ((seminorm_inclusion_le _ L α β _).trans
+      (hC₂ a _ _ fun x hx ↦ coefficient_frequencyDeriv_eq_zero (hbK x hx) j))
+    (Finset.sum_le_sum_of_injOn _ hg.injOn Finset.subset_union_left
+      (fun i _ ↦ (seminorm_frequencyDeriv j L i.1 i.2 a).le) fun _ _ _ ↦ apply_nonneg _ _)
+    (Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_right
+      fun _ _ _ ↦ apply_nonneg _ _)
+    (Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_left
+      fun _ _ _ ↦ apply_nonneg _ _)
+    (Finset.sum_le_sum_of_injOn _ hg.injOn Finset.subset_union_right
+      (fun i _ ↦ (seminorm_frequencyDeriv j K i.1 i.2 b).le) fun _ _ _ ↦ apply_nonneg _ _)
+    hC₁0 hC₂0 (by positivity) (by positivity) (by positivity) (by positivity))
+
+/-- **Bilinear seminorm estimates from the Leibniz rules.** Let `B a b` be symbols of order
+`o m' m`, defined for symbols `a` of order `m'` and symbols `b` of order `m` with compact spatial
+support, which satisfy the Leibniz rules `∂ (B a b) = B (∂a) b + B a (∂b)` for the position and
+the frequency derivatives, where a frequency derivative lowers the order `o` by at least one in
+either argument. Fix compact sets `K` and `L` of positions. If, at all orders, the seminorm
+`p_{L,[],[]}(B a b)` is at most `C` times a finite sum of seminorms of `a` on `L` times a finite
+sum of seminorms of `b` on `K`, for all `b` vanishing at positions outside `K`, then so is every
+seminorm `p_{L,α,β}(B a b)`: each derivative falls on one of the two symbols, and its seminorms
+are seminorms of that symbol with one more derivative. -/
+theorem exists_seminorm_le_of_leibniz (o : ℝ → ℝ → ℝ)
+    (ho₁ : ∀ m' m, o (m' - 1) m ≤ o m' m - 1) (ho₂ : ∀ m' m, o m' (m - 1) ≤ o m' m - 1)
+    (B : ∀ {m m' : ℝ}, Symbol n W U m' → (b : Symbol n V W m) → b.HasCompactSpatialSupport →
+      Symbol n V U (o m' m))
+    (hspatial : ∀ {m m' : ℝ} (a : Symbol n W U m') (b : Symbol n V W m)
+      (hb : b.HasCompactSpatialSupport) (j : Fin n),
+        spatialDeriv j (B a b hb) = B (spatialDeriv j a) b hb + B a (spatialDeriv j b)
+          (hb.spatialDeriv j))
+    (hfrequency : ∀ {m m' : ℝ} (a : Symbol n W U m') (b : Symbol n V W m)
+      (hb : b.HasCompactSpatialSupport) (j : Fin n),
+        (frequencyDeriv j (B a b hb)).coefficient = (B (frequencyDeriv j a) b hb).coefficient +
+          (B a (frequencyDeriv j b) (hb.frequencyDeriv j)).coefficient)
+    (K L : Compacts (CoordinateSpace n))
+    (hbase : ∀ {m m' : ℝ}, ∃ (s t : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
+      ∀ (a : Symbol n W U m') (b : Symbol n V W m) (hb : b.HasCompactSpatialSupport),
+        (∀ x ∉ K, ∀ ξ, b.coefficient (x, ξ) = 0) → Symbol.seminorm L [] [] (B a b hb) ≤
+          C * (∑ i ∈ s, Symbol.seminorm L i.1 i.2 a) * ∑ i ∈ t, Symbol.seminorm K i.1 i.2 b)
+    (α β : List (Fin n)) :
+    ∃ (s t : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
+      ∀ (a : Symbol n W U m') (b : Symbol n V W m) (hb : b.HasCompactSpatialSupport),
+        (∀ x ∉ K, ∀ ξ, b.coefficient (x, ξ) = 0) → Symbol.seminorm L α β (B a b hb) ≤
+          C * (∑ i ∈ s, Symbol.seminorm L i.1 i.2 a) * ∑ i ∈ t, Symbol.seminorm K i.1 i.2 b := by
+  classical
+  -- induction on the number of derivatives, removing the last letter of `β`, or of `α` if `β = []`
+  obtain ⟨D, hD⟩ : ∃ D, α.length + β.length = D := ⟨_, rfl⟩
+  induction D generalizing m m' α β with
+  | zero =>
+    obtain ⟨rfl, rfl⟩ : α = [] ∧ β = [] := by simpa [List.length_eq_zero_iff] using hD
+    exact hbase
+  | succ D ih =>
+    rcases List.eq_nil_or_concat' β with rfl | ⟨β, j, rfl⟩
+    · rcases List.eq_nil_or_concat' α with rfl | ⟨α, j, rfl⟩
+      · simp at hD
+      obtain ⟨s, t, C, hC0, hC⟩ := ih (m := m) (m' := m') α [] (by simpa using hD)
+      exact ⟨_, _, C + C, by positivity,
+        seminorm_append_le_of_leibniz B (fun a b hb ↦ hspatial a b hb j) hC0 hC⟩
+    · have hlen : α.length + β.length = D := by
+        simp only [List.length_append, List.length_singleton] at hD
+        omega
+      obtain ⟨s₁, t₁, C₁, hC₁0, hC₁⟩ := ih (m := m) (m' := m' - 1) α β hlen
+      obtain ⟨s₂, t₂, C₂, hC₂0, hC₂⟩ := ih (m := m - 1) (m' := m') α β hlen
+      exact ⟨_, _, C₁ + C₂, by positivity, seminorm_frequency_append_le_of_leibniz B B B
+        (ho₁ m' m) (ho₂ m' m) (fun a b hb ↦ hfrequency a b hb j) hC₁0 hC₂0 hC₁ hC₂⟩
 
 end Leibniz
 
@@ -363,6 +529,43 @@ theorem HasCompactSpatialSupport.exists_norm_integral_sharpIntegrand_le
   refine ⟨C * I, mul_nonneg hC0 hI, fun s hs x hx ξ ↦ ?_⟩
   refine (norm_integral_le_of_norm_le (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul
     (C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2))) (.of_forall fun η ↦ hC s hs x hx ξ η)).trans_eq ?_
+  rw [integral_const_mul]
+  ring
+
+/-- **The shifted composition integrals, bounded by seminorms.** For compact sets `K` and `L` of
+positions and `R ≥ 1` there are finitely many words `γ` and a constant `C` such that
+
+`‖∫ sharpIntegrand a b s (x, ξ) η dη‖ ≤ C p_{L,[],[]}(a) (∑_γ p_{K,γ,[]}(b)) ⟨ξ⟩ ^ (m' + m)`
+
+for `|s| ≤ R` and `x ∈ L`, for every symbol `a` of order `m'` and every symbol `b` of order `m`
+vanishing at positions outside `K`. This is the quantitative form of
+`TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_integral_sharpIntegrand_le`, with a constant
+bilinear in seminorms of `a` and `b`. -/
+theorem exists_norm_integral_sharpIntegrand_le_seminorm (K L : Compacts (CoordinateSpace n))
+    {R : ℝ} (hR : 1 ≤ R) :
+    ∃ (t : Finset (List (Fin n))) (C : ℝ), 0 ≤ C ∧
+      ∀ (a : Symbol n W U m') (b : Symbol n V W m), (∀ x ∉ K, ∀ ξ, b.coefficient (x, ξ) = 0) →
+        ∀ s : ℝ, |s| ≤ R → ∀ x ∈ L, ∀ ξ, ‖∫ η, sharpIntegrand a b s (x, ξ) η‖ ≤
+          C * Symbol.seminorm L [] [] a * (∑ γ ∈ t, Symbol.seminorm K γ [] b) *
+            (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
+  obtain ⟨t, CF, hCF0, hCF⟩ := exists_norm_fourier_slice_le_sum_seminorm (V := V) (W := W)
+    (m := m) K ((n : ℝ) + 1 + |m'|)
+  set I := ∫ η : CoordinateSpace n, (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2)
+  refine ⟨t, 2 ^ (|m'| / 2) * R ^ |m'| * CF * I, by positivity, fun a b hbK s hs x hx ξ ↦ ?_⟩
+  set A := Symbol.seminorm L [] [] a
+  set Q := ∑ γ ∈ t, Symbol.seminorm K γ [] b
+  have hA : 0 ≤ A := apply_nonneg _ _
+  -- the pointwise bound on the integrand, with the integrable weight `⟨η⟩ ^ (-(n + 1))`
+  have hpt : ∀ η, ‖sharpIntegrand a b s (x, ξ) η‖ ≤
+      A * 2 ^ (|m'| / 2) * R ^ |m'| * (CF * Q) * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) *
+        (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := fun η ↦ by
+    rw [sharpIntegrand_apply, norm_smul, Circle.norm_coe, one_mul]
+    refine norm_comp_fourier_slice_le hA hR ?_ (norm_coefficient_le_seminorm L a hx _) ?_
+    · rw [norm_smul, Real.norm_eq_abs]
+      gcongr
+    · simpa only [add_assoc] using hCF b hbK η ξ
+  refine (norm_integral_le_of_norm_le
+    (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul _) (.of_forall hpt)).trans_eq ?_
   rw [integral_const_mul]
   ring
 
@@ -756,6 +959,18 @@ theorem coefficient_sharp_of_coefficient_eq_smul {a' : Symbol n W U m'}
   simp only [h, ContinuousLinearMap.smul_comp]
   exact smul_comm _ _ _
 
+/-- The composition `ψ # a` of multiplication by a Schwartz function `ψ` with a symbol `a`
+vanishes at positions outside `tsupport ψ`. -/
+theorem coefficient_ofSpatial_smul_id_sharp_eq_zero_of_notMem_tsupport {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) {ψ : 𝓢(CoordinateSpace n, ℂ)} {x : CoordinateSpace n}
+    (hx : x ∉ tsupport ψ) (ξ : CoordinateSpace n) :
+    ((ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ W)
+      ((ψ.smooth ⊤).smul contDiff_const)).sharp a ha).coefficient (x, ξ) = 0 := by
+  set F := ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ W) ((ψ.smooth ⊤).smul contDiff_const)
+  -- At a position where `ψ` vanishes, so does the left factor `F`, and with it `F # a`.
+  rw [coefficient_sharp_of_coefficient_eq_smul (a := F) (a' := F) ha (t := 0)
+    (fun η ↦ by simp [F, image_eq_zero_of_notMem_tsupport hx]), zero_smul]
+
 /-- **Leibniz rule in the position** for the composition symbol. -/
 theorem spatialDeriv_sharp (hb : b.HasCompactSpatialSupport) (j : Fin n) :
     Symbol.spatialDeriv j (a.sharp b hb) =
@@ -939,6 +1154,16 @@ theorem coefficient_const_id_sharp [CompleteSpace W] (hb : b.HasCompactSpatialSu
         simp [coefficient_const, Circle.smul_def]
     _ = b.coefficient (x, ξ) := by rw [hinv, ← hf]
 
+/-- Composing multiplication by a Schwartz function `ψ` with a symbol `a` multiplies `a` pointwise
+by `ψ`: `(ψ # a)(x, ξ) = ψ(x) a(x, ξ)`. -/
+theorem coefficient_ofSpatial_smul_id_sharp [CompleteSpace W] {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) (ψ : 𝓢(CoordinateSpace n, ℂ)) (x ξ : CoordinateSpace n) :
+    ((ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ W)
+      ((ψ.smooth ⊤).smul contDiff_const)).sharp a ha).coefficient (x, ξ) =
+      ψ x • a.coefficient (x, ξ) := by
+  rw [coefficient_sharp_of_coefficient_eq_smul (a := const (ContinuousLinearMap.id ℂ W)) ha
+    (t := ψ x) (fun _ ↦ by simp [coefficient_const]), coefficient_const_id_sharp]
+
 end Sharp
 
 /-! ### The composition of the quantizations -/
@@ -1060,6 +1285,36 @@ theorem quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue [CompleteSpace W] [
     funext (HasCompactSupport.toSchwartzMap_toFun _ _)
   rw [quantizeSchwartzValue_sharp hb, quantizeSchwartzValue_def, SchwartzMap.fourier_coe, hw]
 
+/-- **A right parametrix identity from a symbol identity.** If at the position `x` the
+composition `c # b` with a compactly supported `b` is the identity plus `R` after multiplication
+by `ψ(x)`, then `ψ · Op(c) (Op(b) u) = ψ · u + Op(ψ R) u` at `x`. -/
+theorem smul_quantizeSchwartzValue_sharp_eq_add [CompleteSpace V] [CompleteSpace W]
+    {c : Symbol n W V m'} (hb : b.HasCompactSpatialSupport) {m'' : ℝ} (R : Symbol n V V m'')
+    {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ) (u : 𝓢(CoordinateSpace n, V))
+    (x : CoordinateSpace n)
+    (h : ∀ ξ, (ψ x : ℂ) • (c.sharp b hb).coefficient (x, ξ) =
+      (ψ x : ℂ) • (ContinuousLinearMap.id ℂ V + R.coefficient (x, ξ))) :
+    (ψ x : ℂ) • quantizeSchwartzValue c.coefficient
+        ((hb.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+          (b.contDiff_quantizeSchwartzValue u)) x =
+      (ψ x : ℂ) • u x + quantizeSchwartzValue ((ofSpatial
+        (fun x => ψ x • ContinuousLinearMap.id ℂ V) (hψ.smul contDiff_const)).comp R).coefficient
+          u x := by
+  -- The identity as the coefficient of a symbol, so that the quantization is additive in it.
+  have hId : (ofSpatial (n := n) (fun _ => ContinuousLinearMap.id ℂ V)
+      contDiff_const).coefficient = fun _ => ContinuousLinearMap.id ℂ V :=
+    funext fun p => coefficient_ofSpatial _ _ p
+  calc _ = quantizeSchwartzValue ((ψ x : ℂ) • (c.sharp b hb).coefficient) u x := by
+        rw [quantizeSchwartzValue_smul_left, quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue]
+    _ = quantizeSchwartzValue ((ψ x : ℂ) • ((ofSpatial (fun _ => ContinuousLinearMap.id ℂ V)
+          contDiff_const).coefficient + R.coefficient)) u x :=
+        quantizeSchwartzValue_congr_left (fun ξ => by simpa [hId] using h ξ) u
+    _ = _ := by
+        rw [quantizeSchwartzValue_smul_left, quantizeSchwartzValue_coefficient_add, hId,
+          quantizeSchwartzValue_id, smul_add, ← quantizeSchwartzValue_smul_left]
+        exact congrArg _ (quantizeSchwartzValue_congr_left (fun ξ ↦ by
+          simp [coefficient_comp, ← Complex.coe_smul]) u)
+
 /-- **Composition of uniform quantizations.** For a symbol `b` with compact spatial support,
 `Op(a # b) = Op(a) ∘ Op(b)` on Schwartz space. -/
 theorem quantizeUniformCLM_sharp [CompleteSpace W] [CompleteSpace U] (ha : a.IsUniform)
@@ -1109,8 +1364,9 @@ theorem coefficient_coordSubSymbol (z : CoordinateSpace n) (j : Fin n)
 theorem quantizeSchwartzValue_coordSubSymbol_comp (b : Symbol n V W m) (z : CoordinateSpace n)
     (j : Fin n) (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
     quantizeSchwartzValue ((coordSubSymbol z j).comp b).coefficient u x =
-      ((x - z) j : ℂ) • quantizeSchwartzValue b.coefficient u x :=
-  quantizeSchwartzValue_ofSpatial_smul_id_comp b _ u x
+      ((x - z) j : ℂ) • quantizeSchwartzValue b.coefficient u x := by
+  rw [quantizeSchwartzValue_congr_left (b := ((x - z) j : ℂ) • b.coefficient) (fun ξ ↦ by
+      simp [coefficient_comp, ← Complex.coe_smul]), quantizeSchwartzValue_smul_left]
 
 /-- **Commutator with a coordinate function.** For a symbol `b` with compact spatial support,
 `(x - z)ⱼ (a # b) = a # ((y - z)ⱼ b) + i (∂_{ξⱼ} a) # b`: multiplying `Op(a) (Op(b) u)` by

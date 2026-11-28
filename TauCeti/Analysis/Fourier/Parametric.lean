@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.Fourier.FourierCharDeriv
 
 /-!
 # Fourier integrals of compactly supported functions of two variables
@@ -76,10 +77,8 @@ theorem hasFDerivAt_integral_fourierChar_smul [NormedSpace ℝ P] (hg : ContDiff
     {ξ₀ : P} (hK : IsCompact K) (hKg : ∀ᶠ ξ in 𝓝 ξ₀, ∀ y ∉ K, g (y, ξ) = 0) (η : E) :
     HasFDerivAt (fun ξ ↦ ∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • g (y, ξ))
       (∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ g (y, ξ)) ξ₀) ξ₀ := by
-  have he : ContDiff ℝ 1 fun y : E ↦ (𝐞 (-⟪y, η⟫) : ℂ) := by
-    simp only [Real.fourierChar_apply]
-    exact Complex.contDiff_exp.comp ((Complex.ofRealCLM.contDiff.comp
-      (contDiff_const.mul (ContDiff.inner ℝ contDiff_id contDiff_const).neg)).mul contDiff_const)
+  have he : ContDiff ℝ 1 fun y : E ↦ (𝐞 (-⟪y, η⟫) : ℂ) :=
+    (ContDiff.inner ℝ contDiff_id contDiff_const).neg.fourierChar
   have h := hasFDerivAt_integral_of_contDiffOn (μ := volume) (x₀ := ξ₀)
     (f := fun ξ y ↦ (𝐞 (-⟪y, η⟫) : ℂ) • g (y, ξ)) Filter.univ_mem hK hK.measure_lt_top.ne
     subset_rfl ((he.comp contDiff_snd).smul (hg.comp (contDiff_snd.prodMk contDiff_fst))).contDiffOn

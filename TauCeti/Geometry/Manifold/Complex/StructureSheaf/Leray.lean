@@ -22,8 +22,8 @@ so on a compact Riemann surface every open cover is refined by a finite cover by
 `H¹(X, 𝒪)`, and the refinement maps between two such covers are isomorphisms in degree one
 (`TauCeti.Topology.isIso_homologyMap_cechComplexMap_one`).
 
-The vanishing on plane discs,
-`TauCeti.isZero_cechCohomology_one_holomorphicStructureSheafModules_eball`, is proved from the
+The vanishing on open subsets of the plane,
+`TauCeti.isZero_cechCohomology_one_holomorphicStructureSheafModules`, is proved from the
 Dolbeault lemma for the cover-colimit Čech cohomology with complex vector space
 coefficients. It is carried to a coordinate disc by the general fact that the vanishing of
 Čech `H¹(Y, 𝒪)` is invariant under biholomorphisms (precomposition with a biholomorphism `W ≃ₜ Y`
@@ -195,7 +195,7 @@ theorem subsingleton_H'_one_holomorphicStructureSheafModules_chart_eball
     ((contMDiffOn_symm_of_mem_maximalAtlas he).mdifferentiableOn one_ne_zero).contMDiffOn
       e.open_target
   refine φ.subsingleton_H'_one_holomorphicStructureSheafModules_of_homeomorph (Y := D) ?_ ?_
-    (isZero_cechCohomology_one_holomorphicStructureSheafModules_eball c R)
+    (isZero_cechCohomology_one_holomorphicStructureSheafModules D)
   · rw [← ContMDiff.subtypeVal_comp_iff]
     exact he₁.comp_contMDiff contMDiff_subtypeVal fun x ↦ x.property.1
   · rw [← ContMDiff.subtypeVal_comp_iff]
@@ -210,18 +210,17 @@ theorem exists_mem_subset_subsingleton_H'_one_holomorphicStructureSheafModules (
         (holomorphicStructureSheafModules 𝓘(ℂ) X)) 1 W) := by
   let e := chartAt ℂ x
   have hx : x ∈ e.source := mem_chart_source ℂ x
-  have hT : e '' (e.source ∩ N) ∈ 𝓝 (e x) :=
-    e.image_mem_nhds hx (Filter.inter_mem (e.open_source.mem_nhds hx) hN)
+  have hT : e.target ∩ e.symm ⁻¹' N ∈ 𝓝 (e x) :=
+    Filter.inter_mem (e.open_target.mem_nhds (e.map_source hx))
+      ((e.eventually_nhds' (· ∈ N) hx).2 hN)
   obtain ⟨R, hR, hRT⟩ := EMetric.mem_nhds_iff.1 hT
-  have hRe : Metric.eball (e x) R ⊆ e.target :=
-    hRT.trans ((Set.image_mono Set.inter_subset_left).trans e.image_source_eq_target.subset)
+  have hRe : Metric.eball (e x) R ⊆ e.target := hRT.trans Set.inter_subset_left
   refine ⟨⟨e.source ∩ e ⁻¹' Metric.eball (e x) R, e.isOpen_inter_preimage Metric.isOpen_eball⟩,
     ⟨hx, Metric.mem_eball_self hR⟩, ?_,
     subsingleton_H'_one_holomorphicStructureSheafModules_chart_eball
       (IsManifold.chart_mem_maximalAtlas x) hRe⟩
   rintro y ⟨hy, hyR⟩
-  obtain ⟨z, ⟨hz, hzN⟩, hzy⟩ := hRT hyR
-  rwa [← e.injOn hz hy hzy]
+  simpa only [Set.mem_preimage, e.left_inv hy] using (hRT hyR).2
 
 /-- **Finite acyclic covers.** On a compact Riemann surface, every open cover `V` is refined by a
 finite open cover `U` whose members have `H¹(U i, 𝒪) = 0`. Such a cover computes `H¹(X, 𝒪)` by the

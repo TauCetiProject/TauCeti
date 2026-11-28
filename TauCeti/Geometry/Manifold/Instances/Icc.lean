@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.Algebra.Structures
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Smooth time maps into the unit interval
@@ -25,7 +26,8 @@ on. Run at double speed on each half of the interval it gives the time maps
 `TauCeti.collaredFirstHalf` and `TauCeti.collaredSecondHalf` of a stationary-time concatenation,
 which glue two `C^n` maps on `M × [0, 1]` agreeing at the seam into a `C^n` map
 (`ContMDiff.glue_collaredHalves`). Convex combinations of smooth interval-valued maps are smooth
-(`ContMDiff.convexComb`). These support reversal, rescaling, straight-line homotopies and
+(`ContMDiff.convexComb`), and the inclusion `[a, b] → ℝ` is the bundled `C^n` map
+`ContMDiffMap.subtypeValIcc`. These support reversal, rescaling, straight-line homotopies and
 stationary-time concatenation of smooth isotopies.
 
 The constructions reuse Mathlib’s interval immersion and `Real.smoothTransition`.
@@ -35,7 +37,14 @@ inclusion is invertible at every point, including both endpoints. At interior po
 `ℝ → [a, b]` is differentiable and sends the unit vector of `ℝ` to that of the interval, and the
 map `(s, t) ↦ (γ s, t)` from the plane to `M × [a, b]` has the product derivative.
 
+The source of the preferred chart is `[a, b)` for the left chart and `(a, b]` for the right chart
+(`TauCeti.mem_extChartAt_Icc_source_iff`), equivalently the points whose coordinate is below
+`b - a` (`TauCeti.mem_extChartAt_Icc_source_iff_apply_zero_lt`).
+
 Both preferred charts send their endpoints to `0` (`extChartAt_Icc_bot`, `extChartAt_Icc_top`).
+The unit tangent vector `1` of the interval has the chart sign as its coordinate in its own chart
+(`TauCeti.one_tangentSpace_Icc_apply`), and the unit vector field `t ↦ 1` is a smooth section of
+the tangent bundle, including at both endpoints (`TauCeti.contMDiff_one_tangentSpace_Icc`).
 -/
 
 public section
@@ -114,6 +123,20 @@ theorem ContMDiff.convexComb {a b : ℝ} [Fact (a < b)] {f g : M → Set.Icc a b
   have hreal : ContMDiff I 𝓘(ℝ) n fun x ↦ (1 - (h x : ℝ)) * f x + h x * g x :=
     ((contMDiff_const.sub (hval hh)).mul (hval hf)).add ((hval hh).mul (hval hg))
   exact contMDiff_iff_comp_subtypeVal_Icc.mpr ⟨continuous_induced_rng.mpr hreal.continuous, hreal⟩
+
+namespace ContMDiffMap
+
+/-- The inclusion `[a, b] → ℝ` as a `C^n` map. -/
+noncomputable def subtypeValIcc {a b : ℝ} [Fact (a < b)] : C^n⟮𝓡∂ 1, Set.Icc a b; 𝓘(ℝ), ℝ⟯ :=
+  ⟨Subtype.val, contMDiff_subtypeVal_Icc⟩
+
+/-- The inclusion `[a, b] → ℝ` is the coercion. -/
+@[simp]
+theorem coe_subtypeValIcc {a b : ℝ} [Fact (a < b)] :
+    ⇑(subtypeValIcc : C^n⟮𝓡∂ 1, Set.Icc a b; 𝓘(ℝ), ℝ⟯) = Subtype.val :=
+  (rfl)
+
+end ContMDiffMap
 
 namespace TauCeti
 
@@ -297,6 +320,20 @@ theorem extChartAt_Icc_target (α : Icc a b) :
     modelWithCornersEuclideanHalfSpace_symm_apply, range_modelWithCornersEuclideanHalfSpace,
     max_lt_iff, hab', and_comm]
 
+/-- The source of the preferred interval chart at `α` is `[a, b)` when `α < b`, the left chart,
+and `(a, b]` otherwise, the right chart. -/
+theorem mem_extChartAt_Icc_source_iff (α x : Icc a b) :
+    x ∈ (extChartAt (𝓡∂ 1) α).source ↔ if (α : ℝ) < b then (x : ℝ) < b else a < (x : ℝ) := by
+  rw [extChartAt_source, Icc_chartedSpaceChartAt]
+  split_ifs <;> simp [IccLeftChart, IccRightChart]
+
+/-- The source of a preferred interval chart is cut out by its coordinate: a point lies in it
+exactly when its coordinate is below the length `b - a` of the interval. -/
+theorem mem_extChartAt_Icc_source_iff_apply_zero_lt (α x : Icc a b) :
+    x ∈ (extChartAt (𝓡∂ 1) α).source ↔ extChartAt (𝓡∂ 1) α x 0 < b - a := by
+  rw [mem_extChartAt_Icc_source_iff, extChartAt_Icc_apply]
+  split_ifs <;> simp
+
 /-- On the actual coordinate target, the inverse interval chart composed with inclusion is
 affine; the model retraction and interval clamps do not alter these values. -/
 theorem subtypeVal_extChartAt_Icc_symm (α : Icc a b)
@@ -454,6 +491,52 @@ theorem isInvertible_mfderiv_subtypeVal_Icc (x : Icc a b) :
   rw [← ContinuousLinearMap.isInvertible_equiv_comp (e := NormedSpace.fromTangentSpace (x : ℝ))]
   rw [← h]
   exact ContinuousLinearMap.isInvertible_equiv
+
+/-- The unit tangent vector `1` of the interval at `x`, the image of the unit vector of `ℝ`, has
+the chart sign as its coordinate in the preferred chart at `x`: it is `+1` in the translation
+chart and `-1` in the reflection chart at the right endpoint. -/
+theorem one_tangentSpace_Icc_apply (x : Icc a b) (i : Fin 1) :
+    WithLp.ofLp (p := 2) (1 : TangentSpace (𝓡∂ 1) x) i = if (x : ℝ) < b then 1 else -1 := by
+  rw [Subsingleton.elim i 0]
+  have h := mfderiv_subtypeVal_Icc_one x
+  rw [mfderiv_subtypeVal_Icc] at h
+  -- `h` says `s * v 0 = 1` for the chart sign `s`, an identity in the real tangent space of `ℝ`.
+  -- After the rewrite, `h` applies the functional `s • EuclideanSpace.proj 0` on
+  -- `EuclideanSpace ℝ (Fin 1)` as a map between tangent spaces, which is type-correct only up to
+  -- unfolding `TangentSpace`. Neither `rw [smul_apply]` nor `simp` matches this application, so
+  -- `change` performs the unfolding.
+  change (if (x : ℝ) < b then (1 : ℝ) else -1) *
+    WithLp.ofLp (p := 2) (1 : TangentSpace (𝓡∂ 1) x) 0 = 1 at h
+  by_cases hx : (x : ℝ) < b
+  · simpa only [hx, ↓reduceIte, one_mul] using h
+  · simp only [hx, ↓reduceIte, neg_one_mul] at h ⊢
+    linarith
+
+/-- **The unit vector field of the interval is smooth.** The field `t ↦ 1` of unit tangent
+vectors, the images of the unit vector of `ℝ`, is a smooth section of the tangent bundle of the
+interval `[a, b]`, including at both endpoints. Its coordinate in a fixed preferred chart is the
+constant sign of that chart. -/
+theorem contMDiff_one_tangentSpace_Icc {n : WithTop ℕ∞} :
+    ContMDiff (𝓡∂ 1) (𝓡∂ 1).tangent n
+      (fun x : Icc a b ↦ (⟨x, 1⟩ : TangentBundle (𝓡∂ 1) (Icc a b))) := by
+  intro x₀
+  rw [Bundle.contMDiffAt_section_iff]
+  refine (contMDiffAt_const (c := WithLp.toLp 2 fun _ : Fin 1 ↦
+    if (x₀ : ℝ) < b then (1 : ℝ) else -1)).congr_of_eventuallyEq (.of_forall fun x ↦ ?_)
+  -- In the chart at `x₀` the vector `1` at `x` is `tangentCoordChange x x₀ x 1`, whose coordinate
+  -- is the product of the two chart signs times the sign of the chart at `x`.
+  beta_reduce
+  rw [TangentBundle.trivializationAt_snd_eq_tangentCoordChange,
+    tangentCoordChange_Icc x x₀ x (mem_extChartAt_source x)]
+  ext i
+  -- A scalar multiple of the identity scales each coordinate; the tangent space at `x` is
+  -- `EuclideanSpace ℝ (Fin 1)` up to unfolding `TangentSpace`.
+  have hsmul (c : ℝ) (v : EuclideanSpace ℝ (Fin 1)) :
+      ((c • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin 1))) v).ofLp i = c * v.ofLp i :=
+    (rfl)
+  refine (hsmul _ _).trans ?_
+  rw [one_tangentSpace_Icc_apply, WithLp.ofLp_toLp]
+  split_ifs <;> norm_num
 
 /-- The derivative of an affine map from the interval to any real normed space is its linear
 part applied to the actual interval inclusion derivative, including at both endpoints. -/
