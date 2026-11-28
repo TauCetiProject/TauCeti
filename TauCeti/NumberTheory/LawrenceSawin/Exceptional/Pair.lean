@@ -17,6 +17,7 @@ The sequence starts at `(1, 5)` and replaces `(a, b)` by `(b, 4 * b + 1 - a)`.
 Its terms are precisely the ordered positive solutions to
 `a ^ 2 - 4 * a * b + b ^ 2 = a + b`. Replacing the larger entry by the other root
 of the same quadratic gives a descent on the smaller entry.
+`exceptionalPair_succ_snd_add_fst` gives the additive form of the recurrence on `ℕ`.
 
 ## References
 
@@ -71,8 +72,9 @@ theorem exceptionalPair_fst_lt_snd (j : ℕ) : (exceptionalPair j).1 < (exceptio
 theorem exceptionalPair_snd_pos (j : ℕ) : 0 < (exceptionalPair j).2 :=
   (exceptionalPair_fst_pos j).trans (exceptionalPair_fst_lt_snd j)
 
-/-- Adding the subtracted entry back recovers the minuend in the recurrence. -/
-theorem exceptionalPair_sub_exact (j : ℕ) :
+/-- The next second entry plus the current first entry equals four times the current second
+entry plus one. -/
+theorem exceptionalPair_succ_snd_add_fst (j : ℕ) :
     (exceptionalPair (j + 1)).2 + (exceptionalPair j).1 = 4 * (exceptionalPair j).2 + 1 := by
   rw [exceptionalPair_succ]
   exact Nat.sub_add_cancel (by have := exceptionalPair_fst_lt_snd j; omega)
