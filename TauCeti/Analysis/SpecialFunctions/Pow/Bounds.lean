@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Analysis.SpecialFunctions.Log.Base
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
@@ -92,8 +93,10 @@ length `(2 ^ ε - 2 ^ (-ε)) X` of the window `(2 ^ (-ε) X, 2 ^ ε X)` on which
 For a natural number `n ≤ x` and every real exponent `p`, `n ^ p ≤ max 1 (x ^ p)`. This bounds
 all the weights `n ^ p` of a partial sum `∑_{n ≤ x}` at once, whatever the sign of `p`.
 
-For `x ≥ 0` and `a > 0` (with `x ≥ 1` or `⌊y⌋₊ < a`), the roots `x ^ (1 / k)` decrease as `k`
-grows, so their sum over `a ≤ k ≤ ⌊y⌋₊` is bounded by `(y + 1 - a)⁺ * x ^ (1 / a)`.
+For `x ≥ 0`, `a > 0`, and either `x ≥ 1` or `⌊y⌋₊ < a`, the sum of roots `x ^ (1 / k)` over
+`a ≤ k ≤ ⌊y⌋₊` is bounded by `(y + 1 - a)⁺ * x ^ (1 / a)`: the roots are nonincreasing in `k`
+for `x ≥ 1`, while for `⌊y⌋₊ < a` the sum is empty. In particular, taking `y = Real.logb b x`
+with `1 < b` satisfies `⌊y⌋₊ = 0 < a` automatically when `0 ≤ x < 1`.
 
 For `0 ≤ x` and `0 < ε ≤ 1`, `log (x + 1) ≤ x ^ ε / ε`. Unlike Mathlib's `Real.log_le_rpow_div`
 for `log x`, the shifted logarithm is dominated by the power of `x` itself, so a coefficient bound
@@ -114,6 +117,8 @@ both for `0 ≤ log x` and for the case `p = 0`, where the statement reduces to 
 * `Real.sum_Icc_floor_rpow_one_div_le`:
   `∑ k ∈ Finset.Icc a ⌊y⌋₊, x ^ ((1 : ℝ) / k) ≤ max (y + 1 - a) 0 * x ^ ((1 : ℝ) / a)` for
   `x ≥ 0`, `a > 0`, and either `1 ≤ x` or `⌊y⌋₊ < a`.
+* `Real.sum_Icc_floor_logb_rpow_one_div_le`: logarithmic-cutoff specialization of
+  `Real.sum_Icc_floor_rpow_one_div_le` at `y = Real.logb b x` for `1 < b` and `0 ≤ x`.
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
 * `Real.pow_mul_sqrt_le_rpow_div_two`: `q ^ n √q ≤ q ^ (M / 2)` for `1 ≤ q` and `2n < M`.
 * `Real.rpow_neg_le_mul_rpow_neg`: `y ^ (-q) ≤ a ^ q x ^ (-q)` for `0 < x ≤ a y`, `a ≥ 0` and
@@ -509,6 +514,19 @@ theorem sum_Icc_floor_rpow_one_div_le {x : ℝ} (hx : 0 ≤ x) {a : ℕ} (ha : 0
             (by exact_mod_cast (Finset.mem_Icc.mp hk).1))
   · rw [Finset.Icc_eq_empty (by omega), Finset.sum_empty]
     exact mul_nonneg (le_max_right _ _) (rpow_nonneg hx _)
+
+/-- For `1 < b`, `0 ≤ x`, and `a > 0`, the roots `x ^ (1 / k)` over `a ≤ k ≤ ⌊logb b x⌋₊`
+sum to at most `(logb b x + 1 - a)⁺ * x ^ (1 / a)`. -/
+theorem sum_Icc_floor_logb_rpow_one_div_le {b x : ℝ} (hb : 1 < b) (hx : 0 ≤ x) {a : ℕ}
+    (ha : 0 < a) :
+    ∑ k ∈ Finset.Icc a ⌊logb b x⌋₊, x ^ ((1 : ℝ) / k) ≤
+      max (logb b x + 1 - a) 0 * x ^ ((1 : ℝ) / a) := by
+  refine sum_Icc_floor_rpow_one_div_le hx ha (logb b x) ?_
+  rcases lt_or_ge x 1 with hx1 | hx1
+  · refine Or.inr ?_
+    rw [Nat.floor_of_nonpos (logb_nonpos hb hx hx1.le)]
+    exact ha
+  · exact Or.inl hx1
 
 /-- For `0 ≤ x` and `0 < ε ≤ 1`, `log (x + 1) ≤ x ^ ε / ε`. -/
 theorem log_add_one_le_rpow_div {x ε : ℝ} (hx : 0 ≤ x) (hε : 0 < ε) (hε₁ : ε ≤ 1) :
