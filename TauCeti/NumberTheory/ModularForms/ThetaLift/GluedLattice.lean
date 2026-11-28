@@ -50,38 +50,6 @@ open scoped Matrix
 
 namespace TauCeti.ThetaLift
 
-section InclusionMatrix
-
-/-- The matrix whose columns are the standard basis vectors selected by `u`. -/
-def inclusionMatrix (R : Type*) [Zero R] [One R] {m n : Type*} [DecidableEq n]
-    (u : m → n) : Matrix n m R := fun i j ↦ if i = u j then 1 else 0
-
-/-- Right multiplication by an inclusion matrix selects the corresponding columns. -/
-@[simp] theorem mul_inclusionMatrix {R : Type*} [Semiring R] {k m n : Type*}
-    [Fintype n] [DecidableEq n] (A : Matrix k n R) (u : m → n) :
-    A * inclusionMatrix R u = A.submatrix id u := by
-  classical
-  ext i j
-  simp [inclusionMatrix, Matrix.mul_apply]
-
-/-- The transpose of an inclusion matrix is its left inverse. -/
-theorem inclusionMatrix_transpose_mul {R : Type*} [Semiring R] {m n : Type*}
-    [Fintype n] [DecidableEq n] [DecidableEq m] (u : m ↪ n) :
-    (inclusionMatrix R u)ᵀ * inclusionMatrix R u = 1 := by
-  classical
-  ext i j
-  simp [inclusionMatrix, Matrix.mul_apply, Matrix.one_apply, u.injective.eq_iff, eq_comm]
-
-/-- Left multiplication by the transpose of an inclusion matrix selects the corresponding rows. -/
-@[simp] theorem inclusionMatrix_transpose_mul_submatrix {R : Type*} [Semiring R] {k m n : Type*}
-    [Fintype n] [DecidableEq n] (u : m → n) (T : Matrix n k R) :
-    (inclusionMatrix R u)ᵀ * T = T.submatrix u id := by
-  classical
-  ext i j
-  simp [inclusionMatrix, Matrix.mul_apply]
-
-end InclusionMatrix
-
 /-- The index data of a divided splitting. -/
 structure DividedSplitting (r n N m a : Type*) (z : r ↪ m) where
   /-- The identification of the split index set with the ambient index set. -/
@@ -108,9 +76,9 @@ def stack (_V : DividedSplitting r n N m a z) (varpi : R) (s : Matrix a N R) :
 
 /-- Block normalisation of an `n × r` matrix. -/
 def IsBlockNormalised (varpi : R) (s : Matrix a N R) (x : Matrix n r R) : Prop :=
-  x.submatrix (V.epsilon ∘ Sum.inr) id = inclusionMatrix R z ∧
+  x.submatrix (V.epsilon ∘ Sum.inr) id = (1 : Matrix m m R).submatrix id z ∧
     V.stack varpi s * x.submatrix (V.epsilon ∘ Sum.inl) id =
-      V.stack varpi s * inclusionMatrix R V.fixed
+      V.stack varpi s * (1 : Matrix N N R).submatrix id V.fixed
 
 /-- The principal congruence group defined by `Y ≡ 1 (mod ϖ)`. -/
 def congruenceGroup (_V : DividedSplitting r n N m a z) (varpi : R) : Subgroup (GL r R) :=
@@ -137,13 +105,13 @@ structure DividedLattice (R : Type*) [CommRing R] (n : Type*) [Fintype n] [Decid
 structure IsGlued (varpi : R) (s : Matrix a N R) (L : DividedLattice R n varpi) : Prop where
   /-- A solution of the glued equation has a unique block normaliser. -/
   existsUnique (x : Matrix n r R)
-    (hx : L.reducedInverse * x = varpi • inclusionMatrix R V.incl) :
+    (hx : L.reducedInverse * x = varpi • (1 : Matrix n n R).submatrix id V.incl) :
     ∃! Y : V.congruenceGroup varpi, V.IsBlockNormalised varpi s
       (x * ((Y : GL r R) : Matrix r r R))
   /-- Every block-normalised translate solves the glued equation. -/
   mul_eq_of_isBlockNormalised (x : Matrix n r R) (Y : V.congruenceGroup varpi)
     (hY : V.IsBlockNormalised varpi s (x * ((Y : GL r R) : Matrix r r R))) :
-    L.reducedInverse * x = varpi • inclusionMatrix R V.incl
+    L.reducedInverse * x = varpi • (1 : Matrix n n R).submatrix id V.incl
   /-- Outside the divided columns, the corrected first-summand columns vanish modulo `ϖ`. -/
   exists_cols_eq_zero : ∃ K : GL N R, ∀ i : n, ∀ j : N, j ∉ Set.range V.divided →
     varpi * (L.reducedInverse.submatrix id (V.epsilon ∘ Sum.inl) *
@@ -195,13 +163,13 @@ def upperDiagonal (varpi : R) (z : r ↪ m) : Matrix m m R :=
 /-- The explicit block matrix giving the glued reduced inverse in split coordinates. -/
 def glueMatrix (varpi : R) (z : r ↪ m) (fix : r ↪ N) (D : Matrix N N R) :
     Matrix (N ⊕ m) (N ⊕ m) R :=
-  Matrix.fromBlocks D (-D.submatrix id fix * (inclusionMatrix R z)ᵀ) 0
+  Matrix.fromBlocks D (-D.submatrix id fix * (1 : Matrix m m R).submatrix z id) 0
     (lowerDiagonal varpi z)
 
 /-- The explicit reduced adjoint of `glueMatrix`. -/
 def glueAdjoint (varpi : R) (z : r ↪ m) (fix : r ↪ N) (B : Matrix N N R) :
     Matrix (N ⊕ m) (N ⊕ m) R :=
-  Matrix.fromBlocks B (inclusionMatrix R fix * (inclusionMatrix R z)ᵀ) 0
+  Matrix.fromBlocks B ((1 : Matrix N N R).submatrix id fix * (1 : Matrix m m R).submatrix z id) 0
     (upperDiagonal varpi z)
 
 omit [Fintype r] [Fintype n] [Fintype m] [DecidableEq r] [DecidableEq n]
@@ -223,20 +191,29 @@ theorem glueAdjoint_mul_glueMatrix {varpi : R} {B D : Matrix N N R}
     glueAdjoint varpi z V.fixed B * glueMatrix varpi z V.fixed D = varpi • 1 := by
   classical
   have h_diag :
-      inclusionMatrix R V.fixed * (lowerDiagonal varpi z).submatrix z id =
-        varpi • (inclusionMatrix R V.fixed * (inclusionMatrix R z)ᵀ) := by
+      (1 : Matrix N N R).submatrix id V.fixed * (lowerDiagonal varpi z).submatrix z id =
+        varpi • ((1 : Matrix N N R).submatrix id V.fixed * (1 : Matrix m m R).submatrix z id) := by
     rw [← Matrix.mul_smul]
     congr 1
     ext i j
     by_cases hij : j = z i
     · subst j
-      simp [lowerDiagonal, inclusionMatrix]
-    · simp [lowerDiagonal, inclusionMatrix, hij, Ne.symm hij]
+      simp [lowerDiagonal, Matrix.one_apply]
+    · simp [lowerDiagonal, Ne.symm hij]
+  have h1 : (1 : Matrix m m R).submatrix z id * lowerDiagonal varpi z =
+      (lowerDiagonal varpi z).submatrix z id := by
+    simpa using Matrix.one_submatrix_mul z (Equiv.refl m) (lowerDiagonal varpi z)
+  have h2 : B * D.submatrix id V.fixed =
+      varpi • (1 : Matrix N N R).submatrix id V.fixed := by
+    have hD : D * (1 : Matrix N N R).submatrix id V.fixed = D.submatrix id V.fixed := by
+      simpa using Matrix.mul_submatrix_one (Equiv.refl N) V.fixed D
+    rw [← hD, ← Matrix.mul_assoc, hBD, Matrix.smul_mul, Matrix.one_mul]
   rw [glueAdjoint, glueMatrix, fromBlocks_multiply, ← fromBlocks_one, fromBlocks_smul,
     fromBlocks_inj]
   refine ⟨by simp [hBD], ?_, by simp, ?_⟩
-  · rw [Matrix.mul_assoc _ _ᵀ, inclusionMatrix_transpose_mul_submatrix]
-    simp [← mul_inclusionMatrix, ← B.mul_assoc, hBD, h_diag]
+  · rw [Matrix.mul_assoc _ ((1 : Matrix m m R).submatrix z id), h1, h_diag,
+      Matrix.neg_mul, Matrix.mul_neg, ← Matrix.mul_assoc, h2, Matrix.smul_mul,
+      neg_add_cancel, smul_zero]
   · ext i j
     by_cases _hi : i ∈ Set.range z <;> simp_all [lowerDiagonal, upperDiagonal,
       diagonal_apply, Matrix.one_apply]
@@ -254,22 +231,23 @@ omit [Fintype n] [Fintype a] [DecidableEq r] [DecidableEq n] [DecidableEq a] in
 /-- The split-coordinate glued equation, expanded into its two block equations. -/
 theorem glueMatrix_mul_eq_iff {varpi : R} (D : Matrix N N R) (x : Matrix n r R) :
     glueMatrix varpi z V.fixed D * x.submatrix V.epsilon id =
-        varpi • inclusionMatrix R (Sum.inr ∘ z) ↔
+        varpi • (1 : Matrix (N ⊕ m) (N ⊕ m) R).submatrix id (Sum.inr ∘ z) ↔
       D * x.submatrix (V.epsilon ∘ Sum.inl) id =
           D.submatrix id V.fixed * (x.submatrix (V.epsilon ∘ Sum.inr) id).submatrix z id ∧
         lowerDiagonal varpi z * x.submatrix (V.epsilon ∘ Sum.inr) id =
-          varpi • inclusionMatrix R z := by
+          varpi • (1 : Matrix m m R).submatrix id z := by
   classical
-  simp [glueMatrix, inclusionMatrix, lowerDiagonal, diagonal_apply, sum_mul,
-    sum_comm (γ := m), add_neg_eq_zero, ← Matrix.ext_iff, Matrix.mul_apply]
+  simp [glueMatrix, lowerDiagonal, diagonal_apply, sum_mul,
+    sum_comm (γ := m), add_neg_eq_zero, ← Matrix.ext_iff, Matrix.mul_apply, Matrix.one_apply]
 
 /-- The lower block equation is equivalent to the full inclusion matrix once its
 `z` rows are `1`. -/
 theorem lowerDiagonal_mul_eq_iff {varpi : R} {X : Matrix m r R}
     (h_top : X.submatrix z id = 1) :
-    lowerDiagonal varpi z * X = varpi • inclusionMatrix R z ↔ X = inclusionMatrix R z := by
+    lowerDiagonal varpi z * X = varpi • (1 : Matrix m m R).submatrix id z ↔
+      X = (1 : Matrix m m R).submatrix id z := by
   classical
-  simp only [← Matrix.ext_iff, lowerDiagonal, inclusionMatrix, diagonal_mul,
+  simp only [← Matrix.ext_iff, lowerDiagonal, diagonal_mul,
     Matrix.smul_apply, submatrix_apply, id_eq, _root_.smul_eq_mul,
     mul_ite, mul_one, mul_zero, Matrix.one_apply] at h_top ⊢
   grind
@@ -280,9 +258,10 @@ theorem isBlockNormalised_iff {varpi : R} {s : Matrix a N R}
     (F : StackNormalForm V varpi s) (x : Matrix n r R) :
     V.IsBlockNormalised varpi s x ↔ x.submatrix (V.epsilon ∘ Sum.inr ∘ z) id = 1 ∧
       glueMatrix varpi z V.fixed F.D * x.submatrix V.epsilon id =
-        varpi • inclusionMatrix R (Sum.inr ∘ z) := by
-  rw [IsBlockNormalised, F.mul_eq_mul_iff, mul_inclusionMatrix,
-    V.glueMatrix_mul_eq_iff]
+        varpi • (1 : Matrix (N ⊕ m) (N ⊕ m) R).submatrix id (Sum.inr ∘ z) := by
+  have hmul : F.D * (1 : Matrix N N R).submatrix id V.fixed = F.D.submatrix id V.fixed := by
+    simpa using Matrix.mul_submatrix_one (Equiv.refl N) V.fixed F.D
+  rw [IsBlockNormalised, F.mul_eq_mul_iff, hmul, V.glueMatrix_mul_eq_iff]
   have h_split : x.submatrix (V.epsilon ∘ Sum.inr ∘ z) id =
       (x.submatrix (V.epsilon ∘ Sum.inr) id).submatrix z id := by
     rfl
@@ -292,7 +271,7 @@ theorem isBlockNormalised_iff {varpi : R} {s : Matrix a N R}
     have h_top : (x.submatrix (V.epsilon ∘ Sum.inr) id).submatrix z id = 1 := by
       rw [h_m]
       ext i j
-      simp [inclusionMatrix, Matrix.one_apply]
+      simp [Matrix.one_apply]
     refine ⟨h_top, by rwa [h_top, Matrix.mul_one], ?_⟩
     exact (lowerDiagonal_mul_eq_iff h_top).2 h_m
   · rintro ⟨h_top, h_N, h_lower⟩
@@ -305,9 +284,9 @@ theorem dividedLatticeOfNormalForm_mul_eq_iff {varpi : R} {s : Matrix a N R}
     (F : StackNormalForm V varpi s) (epsilon' : N ⊕ m ≃ n)
     (h_epsilon' : ∀ i : r, epsilon' (Sum.inr (z i)) = V.incl i) (x : Matrix n r R) :
     (V.dividedLatticeOfNormalForm F epsilon').reducedInverse * x =
-        varpi • inclusionMatrix R V.incl ↔
+        varpi • (1 : Matrix n n R).submatrix id V.incl ↔
       glueMatrix varpi z V.fixed F.D * x.submatrix V.epsilon id =
-        varpi • inclusionMatrix R (Sum.inr ∘ z) := by
+        varpi • (1 : Matrix (N ⊕ m) (N ⊕ m) R).submatrix id (Sum.inr ∘ z) := by
   rw [dividedLatticeOfNormalForm]
   rw [← (Matrix.reindex epsilon'.symm (.refl r)).injective.eq_iff]
   have h_reindex_mul :
@@ -317,10 +296,10 @@ theorem dividedLatticeOfNormalForm_mul_eq_iff {varpi : R} {s : Matrix a N R}
     ext i j
     simp [Matrix.reindex, Matrix.mul_apply, ← V.epsilon.sum_comp]
   have h_reindex_incl : Matrix.reindex epsilon'.symm (.refl r)
-      (varpi • inclusionMatrix R V.incl) =
-        varpi • inclusionMatrix R (Sum.inr ∘ z) := by
+      (varpi • (1 : Matrix n n R).submatrix id V.incl) =
+        varpi • (1 : Matrix (N ⊕ m) (N ⊕ m) R).submatrix id (Sum.inr ∘ z) := by
     ext i j
-    simp [inclusionMatrix, ← h_epsilon']
+    simp [Matrix.one_apply, ← h_epsilon']
   rw [h_reindex_mul, h_reindex_incl]
 
 omit [Fintype n] [Fintype N] [Fintype m] [Fintype a]
@@ -346,7 +325,7 @@ theorem isBlockNormalised_mul_iff {varpi : R} {s : Matrix a N R}
       x.submatrix (V.epsilon ∘ Sum.inr ∘ z) id =
           (((Y⁻¹ : V.congruenceGroup varpi) : GL r R) : Matrix r r R) ∧
         (V.dividedLatticeOfNormalForm F epsilon').reducedInverse * x =
-          varpi • inclusionMatrix R V.incl := by
+          varpi • (1 : Matrix n n R).submatrix id V.incl := by
   have h_top : x.submatrix (V.epsilon ∘ Sum.inr ∘ z) id =
         (((Y⁻¹ : V.congruenceGroup varpi) : GL r R) : Matrix r r R) ↔
       (x * ((Y : GL r R) : Matrix r r R)).submatrix
@@ -442,12 +421,12 @@ theorem existsUnique_blockNormalised {varpi : R} {s : Matrix a N R}
     (h_epsilon' : ∀ i : r, epsilon' (Sum.inr (z i)) = V.incl i)
     (x : Matrix n r R)
     (hx : (V.dividedLatticeOfNormalForm F epsilon').reducedInverse * x =
-      varpi • inclusionMatrix R V.incl) :
+      varpi • (1 : Matrix n n R).submatrix id V.incl) :
     ∃! Y : V.congruenceGroup varpi, V.IsBlockNormalised varpi s
       (x * ((Y : GL r R) : Matrix r r R)) := by
   have h_one : varpi • (1 - x.submatrix (V.epsilon ∘ Sum.inr ∘ z) id) = 0 := by
     ext i j
-    simpa [glueMatrix, inclusionMatrix, lowerDiagonal, diagonal_apply, Matrix.mul_apply,
+    simpa [glueMatrix, lowerDiagonal, diagonal_apply, Matrix.mul_apply,
       Matrix.one_apply, Matrix.smul_apply, mul_sub, sub_eq_zero] using
       congrFun₂ ((V.dividedLatticeOfNormalForm_mul_eq_iff F epsilon' h_epsilon' x).1 hx).symm
         (Sum.inr (z i)) j
@@ -554,7 +533,7 @@ theorem IsGlued.indicator_eq_sum {V : DividedSplitting r n N m a z} {varpi : R}
     {s : Matrix a N R} {L : DividedLattice R n varpi} (hL : V.IsGlued varpi s L)
     [Fintype (V.congruenceGroup varpi)] {A : Type*} [AddCommMonoid A]
     (x : Matrix n r R) (c : A) :
-    (if L.reducedInverse * x = varpi • inclusionMatrix R V.incl then c else 0) =
+    (if L.reducedInverse * x = varpi • (1 : Matrix n n R).submatrix id V.incl then c else 0) =
       ∑ Y : V.congruenceGroup varpi,
         if V.IsBlockNormalised varpi s (x * ((Y : GL r R) : Matrix r r R)) then c else 0 := by
   classical
