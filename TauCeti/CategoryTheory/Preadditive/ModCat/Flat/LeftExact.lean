@@ -49,12 +49,10 @@ theorem Flat.exact_of_isWeakCokernel [F.Flat] {X Y Z : C} {f : X ⟶ Y} {q : Y �
     have h (i : Fin m) : f ≫ α i 0 = 0 := by simpa using hα i
     choose l hl using fun i ↦ hq.exists_desc (α i 0) (h i)
     refine ⟨∑ i, F.obj.map (l i).op (z i), ?_⟩
-    simpa only [map_sum, ← ConcreteCategory.comp_apply,
-      ← Functor.map_comp, ← op_comp, hl] using (hy' 0).symm
+    simpa only [map_sum, ← Functor.map_comp_apply, ← op_comp, hl] using (hy' 0).symm
   · rintro ⟨z, rfl⟩
-    have h : q.op ≫ f.op = 0 := by simp [← op_comp, hq.comp_eq_zero]
-    simp only [← ConcreteCategory.comp_apply, ← Functor.map_comp, h, Functor.map_zero,
-      AddCommGrpCat.zero_apply]
+    simp only [← Functor.map_comp_apply, ← op_comp, hq.comp_eq_zero, op_zero,
+      Functor.map_zero, AddCommGrpCat.zero_apply]
 
 /-- A module over a category with finite biproducts is flat if every arrow extends to a pair
 with zero composite that the module sends to an exact sequence. -/
@@ -67,7 +65,7 @@ theorem Flat.of_exists_exact [HasFiniteBiproducts C]
     let f : X ⟶ ⨁ Y := biproduct.lift β
     let t : F.obj.obj (op (⨁ Y)) := ∑ j, F.obj.map (biproduct.π Y j).op (y j)
     have ht : F.obj.map f.op t = 0 := by
-      simpa only [t, map_sum, ← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp, f,
+      simpa only [t, map_sum, ← Functor.map_comp_apply, ← op_comp, f,
         biproduct.lift_π] using hy
     obtain ⟨Z, q, hq, hq'⟩ := h f
     obtain ⟨z, hz⟩ := (hq' t).mp ht
@@ -75,13 +73,13 @@ theorem Flat.of_exists_exact [HasFiniteBiproducts C]
       fun _ j ↦ biproduct.ι Y j ≫ q, ?_, ?_⟩
     · intro j
       -- Restriction along the jth inclusion recovers the jth coefficient.
-      rw [Fin.sum_univ_one, op_comp, Functor.map_comp, ConcreteCategory.comp_apply, hz]
+      rw [Fin.sum_univ_one, op_comp, Functor.map_comp_apply, hz]
       dsimp only [t]
       rw [map_sum, Finset.sum_eq_single j]
-      · simp only [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp,
+      · simp only [← Functor.map_comp_apply, ← op_comp,
           biproduct.ι_π_self, op_id, F.obj.map_id, ConcreteCategory.id_apply]
       · intro k _ hkj
-        simp only [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp,
+        simp only [← Functor.map_comp_apply, ← op_comp,
           biproduct.ι_π_ne Y (Ne.symm hkj), op_zero, Functor.map_zero, AddCommGrpCat.zero_apply]
       · simp
     · intro _
@@ -116,20 +114,24 @@ theorem flat_iff_exact_of_isWeakCokernel [HasFiniteBiproducts C] [HasWeakKernels
 theorem Flat.map_mono [F.Flat] {X Y : Cᵒᵖ} (f : X ⟶ Y) [Mono f] :
     Mono (F.obj.map f) := by
   have hq := IsWeakCokernel.zero_of_epi f.unop
+  have he : Function.Exact (F.obj.map (0 : X ⟶ X)) (F.obj.map f) := by
+    simpa only [op_zero, Quiver.Hom.op_unop] using Flat.exact_of_isWeakCokernel (F := F) hq
   refine (AddCommGrpCat.mono_iff_injective _).mpr ((injective_iff_map_eq_zero _).mpr ?_)
   intro x hx
-  obtain ⟨y, hy⟩ := (Flat.exact_of_isWeakCokernel (F := F) hq x).mp (by simpa using hx)
-  simpa only [op_zero, Functor.map_zero, AddCommGrpCat.zero_apply] using hy.symm
+  obtain ⟨y, hy⟩ := (he x).mp hx
+  simpa only [Functor.map_zero, AddCommGrpCat.zero_apply] using hy.symm
 
 /-- A flat module preserves every existing kernel in the opposite category. -/
-theorem Flat.preservesLimit_parallelPair_zero [F.Flat] {X Y : Cᵒᵖ} (f : X ⟶ Y) [HasKernel f] :
+theorem Flat.preservesKernel [F.Flat] {X Y : Cᵒᵖ} (f : X ⟶ Y) [HasKernel f] :
     PreservesLimit (parallelPair f 0) F.obj := by
   let S := (ShortComplex.mk (kernel.ι f) f (kernel.condition f)).map F.obj
-  have hq := IsWeakCokernel.of_isLimit (h := kernel.condition f) (kernelIsKernel f)
-  have he : S.Exact := S.ab_exact_iff_function_exact.mpr (Flat.exact_of_isWeakCokernel hq)
+  have hq := (kernelIsKernel f).isWeakCokernel (h := kernel.condition f)
+  have he : Function.Exact (F.obj.map (kernel.ι f)) (F.obj.map f) := by
+    simpa only [Quiver.Hom.op_unop] using Flat.exact_of_isWeakCokernel (F := F) hq
+  have hS : S.Exact := S.ab_exact_iff_function_exact.mpr he
   have : Mono S.f := Flat.map_mono (kernel.ι f)
   exact preservesLimit_of_preserves_limit_cone (kernelIsKernel f)
-    ((isLimitMapConeForkEquiv' F.obj (kernel.condition f)).symm he.fIsKernel)
+    ((isLimitMapConeForkEquiv' F.obj (kernel.condition f)).symm hS.fIsKernel)
 
 /-- Over an additive category with cokernels, flatness is equivalent to preservation of finite
 limits by the contravariant functor. -/
@@ -139,13 +141,17 @@ theorem flat_iff_preservesFiniteLimits [HasFiniteBiproducts C] [HasCokernels C] 
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · let : HasBinaryBiproducts Cᵒᵖ := .of_hasBinaryProducts
     let {X Y : Cᵒᵖ} (f : X ⟶ Y) : PreservesLimit (parallelPair f 0) F.obj :=
-      Flat.preservesLimit_parallelPair_zero f
+      Flat.preservesKernel f
     exact F.obj.preservesFiniteLimits_of_preservesKernels
   · apply (flat_iff_exists_isWeakCokernel_exact F).mpr
     intro X Y f
     let S := (ShortComplex.mk (kernel.ι f.op) f.op (kernel.condition f.op)).map F.obj
     have he : S.Exact := S.exact_of_f_is_kernel (isLimitOfHasKernelOfPreservesLimit F.obj f.op)
-    exact ⟨_, _, IsWeakCokernel.of_isLimit (h := kernel.condition f.op) (kernelIsKernel f.op),
-      S.ab_exact_iff_function_exact.mp he⟩
+    have hmaps : Function.Exact (F.obj.map (kernel.ι f.op)) (F.obj.map f.op) :=
+      S.ab_exact_iff_function_exact.mp he
+    refine ⟨_, (kernel.ι f.op).unop, ?_, ?_⟩
+    · simpa only [Quiver.Hom.unop_op] using
+        (kernelIsKernel f.op).isWeakCokernel (h := kernel.condition f.op)
+    · simpa only [Quiver.Hom.op_unop] using hmaps
 
 end TauCeti.ModCat

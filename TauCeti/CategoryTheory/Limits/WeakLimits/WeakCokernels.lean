@@ -29,7 +29,8 @@ def IsWeakCokernel {X Y Z : C} (f : X ⟶ Y) (q : Y ⟶ Z) : Prop :=
   ∃ h : q.op ≫ f.op = 0, Nonempty (IsWeakLimit (KernelFork.ofι q.op h))
 
 /-- A weak kernel fork in the opposite category gives a weak cokernel. -/
-theorem IsWeakCokernel.of_isWeakLimit {X Y Z : Cᵒᵖ} {f : X ⟶ Y} {i : Z ⟶ X}
+theorem _root_.CategoryTheory.Limits.IsWeakLimit.isWeakCokernel
+    {X Y Z : Cᵒᵖ} {f : X ⟶ Y} {i : Z ⟶ X}
     {h : i ≫ f = 0} (hi : IsWeakLimit (KernelFork.ofι i h)) :
     IsWeakCokernel f.unop i.unop :=
   ⟨by simpa only [Quiver.Hom.op_unop] using h, ⟨by simpa only [Quiver.Hom.op_unop] using hi⟩⟩
@@ -41,7 +42,7 @@ theorem IsWeakCokernel.comp_eq_zero {X Y Z : C} {f : X ⟶ Y} {q : Y ⟶ Z}
   Quiver.Hom.op_inj (by simpa only [op_comp, op_zero] using hq.choose)
 
 /-- A weak cokernel gives a weak kernel fork in the opposite category. -/
-theorem IsWeakCokernel.isWeakLimit {X Y Z : C} {f : X ⟶ Y} {q : Y ⟶ Z}
+theorem IsWeakCokernel.nonempty_isWeakLimit {X Y Z : C} {f : X ⟶ Y} {q : Y ⟶ Z}
     (hq : IsWeakCokernel f q) :
     Nonempty (IsWeakLimit (KernelFork.ofι (f := f.op) q.op (by
       simpa only [op_comp, op_zero] using congrArg Quiver.Hom.op hq.comp_eq_zero))) :=
@@ -50,7 +51,7 @@ theorem IsWeakCokernel.isWeakLimit {X Y Z : C} {f : X ⟶ Y} {q : Y ⟶ Z}
 /-- Every morphism that kills the given arrow factors through its weak cokernel. -/
 theorem IsWeakCokernel.exists_desc {X Y Z W : C} {f : X ⟶ Y} {q : Y ⟶ Z}
     (hq : IsWeakCokernel f q) (k : Y ⟶ W) (hk : f ≫ k = 0) : ∃ l : Z ⟶ W, q ≫ l = k := by
-  obtain ⟨h⟩ := hq.isWeakLimit
+  obtain ⟨h⟩ := hq.nonempty_isWeakLimit
   let s : KernelFork f.op := KernelFork.ofι k.op (by simp [← op_comp, hk])
   refine ⟨(h.lift s).unop, Quiver.Hom.op_inj ?_⟩
   have hl : h.lift s ≫ q.op = k.op := h.fac s WalkingParallelPair.zero
@@ -73,17 +74,19 @@ theorem isWeakCokernel_iff {X Y Z : C} {f : X ⟶ Y} {q : Y ⟶ Z} :
       congrArg Quiver.Hom.op hl.choose_spec
 
 /-- A colimiting cokernel cofork gives a weak cokernel. -/
-theorem IsWeakCokernel.of_isColimit {X Y : C} {f : X ⟶ Y} {s : CokernelCofork f}
+theorem _root_.CategoryTheory.Limits.IsColimit.isWeakCokernel
+    {X Y : C} {f : X ⟶ Y} {s : CokernelCofork f}
     (hs : IsColimit s) : IsWeakCokernel f s.π := by
   refine isWeakCokernel_iff.mpr ⟨CokernelCofork.condition s, fun _ k hk ↦ ?_⟩
   obtain ⟨l, hl⟩ := CokernelCofork.IsColimit.desc' hs k hk
   exact ⟨l, hl⟩
 
 /-- A limiting kernel fork in the opposite category gives a weak cokernel. -/
-theorem IsWeakCokernel.of_isLimit {X Y Z : Cᵒᵖ} {f : X ⟶ Y} {i : Z ⟶ X}
+theorem _root_.CategoryTheory.Limits.IsLimit.isWeakCokernel
+    {X Y Z : Cᵒᵖ} {f : X ⟶ Y} {i : Z ⟶ X}
     {h : i ≫ f = 0} (hi : IsLimit (KernelFork.ofι i h)) :
     IsWeakCokernel f.unop i.unop :=
-  of_isWeakLimit hi.isWeakLimit
+  hi.isWeakLimit.isWeakCokernel
 
 /-- The zero endomorphism of the target is a weak cokernel of an epimorphism. -/
 theorem IsWeakCokernel.zero_of_epi {X Y : C} (f : X ⟶ Y) [Epi f] :
@@ -91,9 +94,10 @@ theorem IsWeakCokernel.zero_of_epi {X Y : C} (f : X ⟶ Y) [Epi f] :
   isWeakCokernel_iff.mpr ⟨comp_zero, fun _ k hk ↦ ⟨0, by simp [zero_of_epi_comp f hk]⟩⟩
 
 /-- Weak kernels in the opposite category supply weak cokernels in the original category. -/
-theorem exists_isWeakCokernel [HasWeakKernels Cᵒᵖ] {X Y : C} (f : X ⟶ Y) :
-    ∃ (Z : C) (q : Y ⟶ Z), IsWeakCokernel f q :=
-  ⟨_, _, IsWeakCokernel.of_isWeakLimit (h := weakKernel.condition f.op)
-    (weakKernelIsWeakKernel f.op)⟩
+theorem exists_isWeakCokernel {X Y : C} (f : X ⟶ Y) [HasWeakKernel f.op] :
+    ∃ (Z : C) (q : Y ⟶ Z), IsWeakCokernel f q := by
+  refine ⟨_, (weakKernel.ι f.op).unop, ?_⟩
+  simpa only [Quiver.Hom.unop_op] using
+    (weakKernelIsWeakKernel f.op).isWeakCokernel (h := weakKernel.condition f.op)
 
 end TauCeti

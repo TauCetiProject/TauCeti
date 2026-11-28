@@ -38,14 +38,20 @@ triangles in the opposite category to exact sequences. -/
 theorem flat_iff_isHomological (F : ModCat.{w} C) : F.Flat ↔ F.obj.IsHomological := by
   refine ⟨fun hF ↦ ⟨fun T hT ↦ ?_⟩, fun hF ↦ ?_⟩
   · let S := (shortComplexOfDistTriangle T hT).map F.obj
-    exact S.ab_exact_iff_function_exact.mpr
-      (Flat.exact_of_isWeakCokernel (isWeakCokernel_of_distTriang hT))
+    have he : Function.Exact (F.obj.map T.mor₁) (F.obj.map T.mor₂) := by
+      simpa only [Quiver.Hom.op_unop] using
+        Flat.exact_of_isWeakCokernel (F := F) (isWeakCokernel_of_distTriang_op hT)
+    exact S.ab_exact_iff_function_exact.mpr he
   · apply (flat_iff_exists_isWeakCokernel_exact F).mpr
     intro X Y f
     obtain ⟨Z, q, k, hT⟩ := distinguished_cocone_triangle₁ f.op
     let T := Triangle.mk q f.op k
     let S := (shortComplexOfDistTriangle T hT).map F.obj
-    exact ⟨Z.unop, q.unop, isWeakCokernel_of_distTriang hT,
-      S.ab_exact_iff_function_exact.mp (F.obj.map_distinguished_exact T hT)⟩
+    have he : Function.Exact (F.obj.map q) (F.obj.map f.op) :=
+      S.ab_exact_iff_function_exact.mp (F.obj.map_distinguished_exact T hT)
+    refine ⟨Z.unop, q.unop, ?_, ?_⟩
+    · simpa only [T, Triangle.mk_mor₂, Triangle.mk_mor₁, Quiver.Hom.unop_op] using
+        isWeakCokernel_of_distTriang_op hT
+    · simpa only [Quiver.Hom.op_unop] using he
 
 end TauCeti.ModCat

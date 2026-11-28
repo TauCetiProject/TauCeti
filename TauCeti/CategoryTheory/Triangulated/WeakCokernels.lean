@@ -11,8 +11,9 @@ public import TauCeti.CategoryTheory.Limits.WeakLimits.WeakCokernels
 /-!
 # Weak cokernels from distinguished triangles
 
-A distinguished triangle in the opposite category supplies a weak cokernel pair in the
-original category. This lets exactness on distinguished triangles detect flatness.
+The first two arrows of a distinguished triangle form a weak cokernel pair. A
+distinguished triangle in the opposite category also gives a weak cokernel pair in the
+original category, which lets exactness on distinguished triangles detect flatness.
 -/
 
 public section
@@ -21,14 +22,22 @@ open CategoryTheory Limits
 
 namespace CategoryTheory.Pretriangulated
 
-variable {C : Type*} [Category* C] [Preadditive C] [HasZeroObject Cᵒᵖ] [HasShift Cᵒᵖ ℤ]
-  [∀ n : ℤ, (shiftFunctor Cᵒᵖ n).Additive] [Pretriangulated Cᵒᵖ]
+variable {C : Type*} [Category* C] [Preadditive C]
+
+/-- The second arrow of a distinguished triangle is a weak cokernel of its first arrow. -/
+theorem isWeakCokernel_of_distTriang [HasZeroObject C] [HasShift C ℤ]
+    [∀ n : ℤ, (shiftFunctor C n).Additive] [Pretriangulated C]
+    {T : Triangle C} (hT : T ∈ distTriang C) : TauCeti.IsWeakCokernel T.mor₁ T.mor₂ := by
+  refine TauCeti.isWeakCokernel_iff.mpr ⟨comp_distTriang_mor_zero₁₂ T hT, fun _ k hk ↦ ?_⟩
+  obtain ⟨l, hl⟩ := T.yoneda_exact₂ hT k hk
+  exact ⟨l, hl.symm⟩
 
 /-- The first two arrows of a distinguished triangle in the opposite category yield a weak
 cokernel pair in the original category. -/
-theorem isWeakCokernel_of_distTriang {T : Triangle Cᵒᵖ}
+theorem isWeakCokernel_of_distTriang_op [HasZeroObject Cᵒᵖ] [HasShift Cᵒᵖ ℤ]
+    [∀ n : ℤ, (shiftFunctor Cᵒᵖ n).Additive] [Pretriangulated Cᵒᵖ] {T : Triangle Cᵒᵖ}
     (hT : T ∈ distTriang Cᵒᵖ) : TauCeti.IsWeakCokernel T.mor₂.unop T.mor₁.unop :=
-  TauCeti.IsWeakCokernel.of_isWeakLimit (h := comp_distTriang_mor_zero₁₂ T hT)
-    (isWeakLimitKernelForkOfDistTriangle T hT)
+  (isWeakLimitKernelForkOfDistTriangle T hT).isWeakCokernel
+    (h := comp_distTriang_mor_zero₁₂ T hT)
 
 end CategoryTheory.Pretriangulated
