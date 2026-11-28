@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Monoidal.KFlat.MapDerivedTensor
+public import TauCeti.Algebra.Homology.Monoidal.KFlat.MapDerivedTensor.Resolutions
 
 /-!
 # The identity functor and the derived tensor comparison
