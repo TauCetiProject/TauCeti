@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 public import TauCeti.NumberTheory.MulChar.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.Analysis.Fourier.ZMod
+import TauCeti.NumberTheory.GaussSum.Galois
 import TauCeti.Data.ZMod.Count
 
 /-!
@@ -154,24 +155,20 @@ theorem map_gaussSumOfPrimitiveRoot (χ : DirichletCharacter ℤ N) {ζ : L}
     σ (gaussSumOfPrimitiveRoot χ hζ) =
       (χ.ringHomComp (Int.castRingHom L))⁻¹ (hζ.autToPow ℚ σ) *
         gaussSumOfPrimitiveRoot χ hζ := by
-  simp only [gaussSumOfPrimitiveRoot]
-  rw [gaussSum, map_sum]
-  have hmap (a : ZMod N) :
-      σ ((χ.ringHomComp (Int.castRingHom L)) a * AddChar.zmodChar N hζ.pow_eq_one a) =
-        (χ.ringHomComp (Int.castRingHom L)) a *
-          (AddChar.zmodChar N hζ.pow_eq_one).mulShift (hζ.autToPow ℚ σ) a := by
-    rw [map_mul]
-    simp only [MulChar.ringHomComp_apply]
-    have hcast : σ ((Int.castRingHom L) (χ a)) = (Int.castRingHom L) (χ a) := by
-      simp
-    rw [hcast, mulShift_apply, AddChar.zmodChar_apply, AddChar.zmodChar_apply,
-      map_pow, ← hζ.autToPow_spec ℚ σ, ← pow_mul]
-    congr 1
-    apply pow_eq_pow_of_modEq _ hζ.pow_eq_one
-    rw [← ZMod.natCast_eq_natCast_iff]
-    simp
-  simp_rw [hmap]
-  exact gaussSum_mulShift_eq _ _ _
+  -- The values of `χ` at units are `±1`, so `χ ^ 2 = 1` and `σ` fixes the root of unity `-1`.
+  have hχ : χ.ringHomComp (Int.castRingHom L) ^ 2 = 1 := by
+    ext u
+    have h := Int.isUnit_sq (χ.toUnitHom u).isUnit
+    rw [MulChar.coe_toUnitHom] at h
+    simp [MulChar.pow_apply_coe, ← Int.cast_pow, h]
+  have hψ : AddChar.zmodChar N hζ.pow_eq_one ^ N = 1 := by
+    ext x
+    simp [← AddChar.map_nsmul_eq_pow]
+  have h := TauCeti.map_gaussSum_eq_inv_apply_mul hχ hψ (IsPrimitiveRoot.neg_one 0 (by norm_num))
+    hζ (σ := (σ : L →+* L)) (by simp) (hζ.autToPow_spec ℚ σ).symm
+    (by rw [ZMod.natCast_zmod_val]; exact Units.isUnit _)
+  rw [gaussSumOfPrimitiveRoot_def]
+  simpa [ZMod.natCast_zmod_val] using h
 
 /-- The Gauss sum attached to a primitive integer-valued Dirichlet character does not vanish in a
 characteristic-zero field. -/
