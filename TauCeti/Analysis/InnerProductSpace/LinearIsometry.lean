@@ -402,7 +402,7 @@ theorem orthogonalLineIsometry_symm_apply (e : E) (he : ‖e‖ = 1) (x : E) :
       WithLp.toLp 2 ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x, ⟪e, x⟫) :=
   (orthogonalLineIsometry e he).injective <| by
     rw [LinearIsometryEquiv.apply_symm_apply, orthogonalLineIsometry_apply,
-      orthogonalProjectionOnto_add_inner_smul he]
+      Submodule.coe_orthogonalProjectionOnto_orthogonal_singleton he, sub_add_cancel]
 
 /-- A unit vector `e` in a finite-dimensional real inner product space `E` induces an orthonormal
 splitting `Φ : E ≃ₗᵢ[ℝ] WithLp 2 (EuclideanSpace ℝ (Fin (finrank ℝ E - 1)) × ℝ)` whose second
@@ -453,8 +453,9 @@ theorem _root_.LinearIsometryEquiv.exists_unit
         simp }
   refine ⟨e, he, ψ, fun x => ?_, hin⟩
   have hΦe : (Φ e).fst = 0 := by simp [e, p₀]
-  simpa [ψ, map_add, map_smul, hΦe] using
-    congrArg (fun z => (Φ z).fst) (orthogonalProjectionOnto_add_inner_smul (𝕜 := ℝ) he x)
+  have hdec : ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x : E) + inner ℝ e x • e = x := by
+    rw [Submodule.coe_orthogonalProjectionOnto_orthogonal_singleton he, sub_add_cancel]
+  simpa [ψ, map_add, map_smul, hΦe] using congrArg (fun z => (Φ z).fst) hdec
 
 end TauCeti
 

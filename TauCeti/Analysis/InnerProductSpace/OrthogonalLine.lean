@@ -104,7 +104,8 @@ theorem setOf_inner_eq_eq_range {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGro
     {x : F | inner 𝕜 e x = φ ((𝕜 ∙ e)ᗮ.orthogonalProjectionOnto x)} =
       Set.range fun y : (𝕜 ∙ e)ᗮ => (y : F) + φ y • e := by
   ext x; simp only [Set.mem_ofPred_eq, Set.mem_range]
-  refine ⟨fun hx => ⟨_, hx ▸ orthogonalProjectionOnto_add_inner_smul he x⟩, ?_⟩
+  refine ⟨fun hx => ⟨_, by
+    rw [← hx, Submodule.coe_orthogonalProjectionOnto_orthogonal_singleton he, sub_add_cancel]⟩, ?_⟩
   rintro ⟨y, rfl⟩
   simp [inner_add_right, inner_smul_right,
     Submodule.mem_orthogonal_singleton_iff_inner_right.mp y.property, he]
@@ -142,7 +143,10 @@ theorem _root_.ContinuousLinearEquiv.exists_image_setOf_inner_eq {F : Type*}
   let ℓ : ↥(ℝ ∙ e')ᗮ →L[ℝ] ℝ :=
     c • ((innerSL ℝ e).comp (L.symm.toContinuousLinearMap.comp (ℝ ∙ e')ᗮ.subtypeL))
   refine ⟨e', he', c, hc, B, ℓ, Set.ext fun z => ?_⟩
-  have hd := congrArg L.symm (real_inner_comm e' z ▸ orthogonalProjectionOnto_add_inner_smul he' z)
+  have hz' : ((ℝ ∙ e')ᗮ.orthogonalProjectionOnto z : F) + inner ℝ z e' • e' = z := by
+    rw [Submodule.coe_orthogonalProjectionOnto_orthogonal_singleton he', real_inner_comm,
+      sub_add_cancel]
+  have hd := congrArg L.symm hz'
   have hLe' : L.symm e' = c⁻¹ • e := by simp [e', map_smul]
   simp only [map_add, map_smul, hLe', smul_smul] at hd
   have hproj : (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (L.symm z) =
@@ -187,12 +191,13 @@ theorem exists_unit_singleton_eq_setOf_inner_eq (hdim : Module.finrank ℝ E = 1
   have horth := Submodule.orthogonal_span_singleton_eq_bot_of_finrank_eq_one hdim (v := e)
     (fun h => by simp [h] at he)
   have hrep (w : E) : inner ℝ w e • e = w := by
-    have h := orthogonalProjectionOnto_add_inner_smul (𝕜 := ℝ) he w
     have hmem : ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto w : E) ∈ (⊥ : Submodule ℝ E) := by
       rw [← horth]
       exact Subtype.prop _
     have h0 := (Submodule.mem_bot ℝ).1 hmem
-    simpa only [h0, zero_add, real_inner_comm] using h
+    rw [Submodule.coe_orthogonalProjectionOnto_orthogonal_singleton (𝕜 := ℝ) he, sub_eq_zero,
+      real_inner_comm] at h0
+    exact h0.symm
   exact ⟨e, he, Set.ext fun z => ⟨by rintro rfl; simp, fun h =>
     Set.mem_singleton_iff.2 (by rw [← hrep z, ← hrep x, Set.mem_ofPred_eq.mp h])⟩⟩
 

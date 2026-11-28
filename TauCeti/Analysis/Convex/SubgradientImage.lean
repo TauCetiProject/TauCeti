@@ -13,7 +13,6 @@ public import Mathlib.Topology.MetricSpace.Lipschitz
 public import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.Analysis.Convex.Function.Topology
-import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Compactness of subgradient images of convex functions
@@ -79,8 +78,6 @@ neighbourhood of the subgradient image of `K` under `u` eventually contains that
   `ConvexOn.exists_convexOn_lipschitzWith_eqOn` — supporting hyperplanes, subgradient
   characterization of differentiability on open convex domains, and global convex Lipschitz
   modification agreeing on a compact subset of an open convex domain;
-* `TauCeti.exists_convexOn_lipschitzWith_eq_toReal_sub_mul_inner` — global convex Lipschitz
-  interpolation on a hyperplane slice along a constant-component subgradient selection;
 * `TauCeti.exists_forall_add_apply_le_of_forall_frontier` — continuous-linear-functional slopes
   below the boundary values support the function on the closure at an interior-domain point;
 * `TauCeti.exists_forall_add_inner_le_of_forall_frontier` — slopes of affine functions through a
@@ -336,9 +333,8 @@ theorem differentiableAt_toReal_iff_subsingleton_subdifferential {f : E → ERea
       exact (hasGradientAt_toReal_of_forall_mem_subdifferential_eq hf hx hy
         fun _ hy' => hsub hy' hy).differentiableAt
     · push Not at hbot; obtain ⟨_, hz₀⟩ := hbot
-      refine (differentiableAt_const (0 : ℝ)).congr_of_eventuallyEq ?_
-      filter_upwards [isOpen_interior.mem_nhds hx] with _ hx'
-      simp [eq_bot_of_mem_interior_of_eq_bot hf hx' hz₀]
+      exact (differentiableAt_const (0 : ℝ)).congr_of_eventuallyEq
+        (toReal_eventuallyEq_zero_of_mem_interior_of_eq_bot hf hx hz₀)
 
 /-- **Supporting hyperplanes of convex functions.** A real function convex on an open subset `Ω`
 of a finite-dimensional real inner product space has a subgradient relative to `Ω` at every point
@@ -391,47 +387,6 @@ theorem _root_.ConvexOn.exists_convexOn_lipschitzWith_eqOn {Ω : Set E} {u : E �
   exact ⟨L, v, hconv, hlip, fun y hy => (hv ⟨y, hy⟩).symm⟩
 
 end OpenDomain
-
-section HyperplaneSlice
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- **Global convex Lipschitz interpolation on a hyperplane slice.** Given a set `S : Set E`
-and a selection `α : S → E` of subgradients of `u : E → EReal` bounded in norm by `M` with
-constant component `c` along a unit vector `e`, there exists a globally convex,
-`M.toNNReal`-Lipschitz function `F : ↥(ℝ ∙ e)ᗮ → ℝ` whose value at the orthogonal projection
-of each `x ∈ S` is `(u x).toReal - c * ⟪x, e⟫`. -/
-theorem exists_convexOn_lipschitzWith_eq_toReal_sub_mul_inner {u : E → EReal} {e : E}
-    (he : ‖e‖ = 1) {M : ℝ} (c : ℝ) {S : Set E} (α : S → E)
-    (hα : ∀ x : S, α x ∈ subdifferential (innerₗ E) u x ∧ ‖α x‖ ≤ M ∧ inner ℝ (α x) e = c) :
-    ∃ F : ↥(ℝ ∙ e)ᗮ → ℝ, ConvexOn ℝ univ F ∧ LipschitzWith M.toNNReal F ∧
-      ∀ x : S, F ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x) = (u x).toReal - c * inner ℝ (x : E) e := by
-  let P := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto
-  obtain ⟨F, hconv, hlip, hF⟩ := exists_convexOn_lipschitzWith_apply_eq
-    (x := fun x : S => P x) (p := fun x : S => P (α x))
-    (a := fun x : S => (u x).toReal - c * inner ℝ (x : E) e) (L := M.toNNReal)
-    (fun x => (Submodule.norm_orthogonalProjectionOnto_apply_le _ _).trans
-      ((hα x).2.1.trans (le_max_left _ _)))
-    fun x₁ x₂ => by
-      have hsubg : (u x₁).toReal + inner ℝ ((x₂ : E) - x₁) (α x₁) ≤ (u x₂).toReal := by
-        simpa only [innerₗ_apply_apply] using toReal_add_le_toReal_of_mem_subdifferential
-          (innerₗ E) (hα x₁).1 (ne_top_of_mem_subdifferential (innerₗ E) (hα x₂).1)
-      have hαeq : (P (α x₁) : E) + c • e = α x₁ := by
-        have h := orthogonalProjectionOnto_add_inner_smul (𝕜 := ℝ) he (α x₁)
-        rwa [real_inner_comm, (hα x₁).2.2] at h
-      have hdec : inner ℝ ((x₂ : E) - x₁) (α x₁) =
-          inner ℝ (P x₂ - P x₁) (P (α x₁)) + c * inner ℝ ((x₂ : E) - x₁) e :=
-        calc inner ℝ ((x₂ : E) - x₁) (α x₁)
-            = inner ℝ ((x₂ : E) - x₁) ((P (α x₁) : E) + c • e) := by rw [hαeq]
-          _ = inner ℝ ((x₂ : E) - x₁) (P (α x₁)) + c * inner ℝ ((x₂ : E) - x₁) e := by
-                rw [inner_add_right, real_inner_smul_right]
-          _ = inner ℝ (P x₂ - P x₁) (P (α x₁)) + c * inner ℝ ((x₂ : E) - x₁) e := by
-                rw [← Submodule.inner_orthogonalProjectionOnto_eq_of_mem_right, map_sub]
-      simp only [inner_sub_left] at hdec hsubg ⊢
-      linarith
-  exact ⟨F, hconv, hlip, hF⟩
-
-end HyperplaneSlice
 
 section CompactClosure
 

@@ -431,15 +431,13 @@ theorem IsCCRegular.isOptimalCoupling_graphPlan_gradient [IsFiniteMeasure μ] (h
   · push Not at hbot; obtain ⟨z₀, hz₀⟩ := hbot
     have hgrad : (∇ fun x => (u x).toReal) =ᵐ[μ] ∇ fun _ : E => ((0 : EReal).toReal) := by
       filter_upwards [hdiff] with x hx
-      have hev : (fun x' => (u x').toReal) =ᶠ[𝓝 x] fun _ => (0 : ℝ) := by
-        filter_upwards [isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.2 hx.1)] with x' hx'
-        simp [eq_bot_of_mem_interior_of_eq_bot hu hx' hz₀]
+      have hev := toReal_eventuallyEq_zero_of_mem_interior_of_eq_bot hu
+        (mem_interior_iff_mem_nhds.2 hx.1) hz₀
       rw [((hasGradientAt_const x (0 : ℝ)).congr_of_eventuallyEq hev).gradient,
         (by simpa using hasGradientAt_const x (0 : ℝ) :
           HasGradientAt (fun _ : E => ((0 : EReal).toReal)) 0 x).gradient]
-    have hu₀ : Convex ℝ {p : E × ℝ | (0 : EReal) ≤ p.2} := fun x hx y hy a b ha hb _ => by
-      simp only [mem_ofPred_eq, EReal.coe_nonneg, Prod.snd_add, Prod.smul_snd,
-        smul_eq_mul] at hx hy ⊢; positivity
+    have hu₀ : Convex ℝ {p : E × ℝ | (0 : EReal) ≤ p.2} := by
+      simpa using convexOn_iff_convex_epigraph_coe.1 (convexOn_const (0 : ℝ) convex_univ)
     have hu₀ν := huν.congr hgrad.symm
     rw [graphPlan_congr hgrad]
     exact (isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hu₀ν hc.aemeasurable).1

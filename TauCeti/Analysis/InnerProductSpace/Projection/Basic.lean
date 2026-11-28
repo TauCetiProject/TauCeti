@@ -106,8 +106,6 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `1 - P_U` is `Uᗮ`, and the range of `1 - P` is `(range P)ᗮ` for every star projection `P`.
 * `Submodule.isCompl_orthogonal_span_of_finite`: the span of finitely many vectors is
   complemented by its orthogonal complement.
-* `TauCeti.orthogonalProjectionOnto_add_inner_smul`: orthogonal decomposition along a unit vector
-  `e`.
 * `TauCeti.exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank`,
   `TauCeti.exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank`: fewer than `dim E` vectors
   have a common nonzero, and hence a common unit, orthogonal vector.
@@ -808,13 +806,6 @@ theorem exists_mem_orthogonal_inner_ne_zero_of_not_le {S P : Submodule 𝕜 E}
   push Not at hsP
   obtain ⟨w, hw, hne⟩ := hsP
   exact ⟨w, hw, s, hs, hne⟩
-
-/-- Orthogonal decomposition of a vector into its projection onto `(𝕜 ∙ e)ᗮ` and its component
-along a unit vector `e`. -/
-theorem orthogonalProjectionOnto_add_inner_smul {e : E} (he : ‖e‖ = 1) (x : E) :
-    ((𝕜 ∙ e)ᗮ.orthogonalProjectionOnto x : E) + inner 𝕜 e x • e = x := by
-  simpa only [Submodule.starProjection_unit_singleton 𝕜 he, Submodule.starProjection_apply,
-    add_comm] using (𝕜 ∙ e).starProjection_add_starProjection_orthogonal x
 
 section ProjectedBasis
 

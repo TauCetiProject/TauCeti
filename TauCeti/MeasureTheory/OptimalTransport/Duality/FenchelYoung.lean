@@ -52,6 +52,15 @@ variable {E F : Type*} [AddCommGroup E] [Module ℝ E] [AddCommMonoid F] [Module
   [MeasurableSpace E] [MeasurableSpace F] {B : E →ₗ[ℝ] F →ₗ[ℝ] ℝ}
   {μ : Measure E} {ν : Measure F} {π σ : Measure (E × F)}
 
+private theorem ae_toReal_add_toReal_fenchelConjugate_eq_of_ae_mem_subdifferential
+    {u : E → EReal} (h : ∀ᵐ z ∂π, z.2 ∈ subdifferential B u z.1) :
+    ∀ᵐ z ∂π, u z.1 ≠ ⊤ ∧ fenchelConjugate B u z.2 ≠ ⊤ ∧
+      (u z.1).toReal + (fenchelConjugate B u z.2).toReal = B z.1 z.2 :=
+  h.mono fun _ hz =>
+    ⟨ne_top_of_mem_subdifferential B hz,
+      fenchelConjugate_ne_top_of_mem_subdifferential B hz,
+      toReal_add_toReal_fenchelConjugate_eq_of_mem_subdifferential B hz⟩
+
 /-- For a coupling `π` of a finite measure `μ` and a measure `ν` concentrated on the
 subdifferential graph of `u : E → EReal` with respect to a bilinear pairing `B`, the real
 representatives of `u` and of its Legendre–Fenchel conjugate `fenchelConjugate B u` are
@@ -75,12 +84,7 @@ theorem IsCoupling.integrable_toReal_of_ae_mem_subdifferential [IsFiniteMeasure 
   obtain ⟨⟨x₀, y₀⟩, h₀⟩ := h.exists
   have hx₀ := ne_top_of_mem_subdifferential B h₀
   have hy₀ := fenchelConjugate_ne_top_of_mem_subdifferential B h₀
-  have hgraph : ∀ᵐ z ∂π, u z.1 ≠ ⊤ ∧ fenchelConjugate B u z.2 ≠ ⊤ ∧
-      (u z.1).toReal + (fenchelConjugate B u z.2).toReal = B z.1 z.2 :=
-    h.mono fun _ hz =>
-      ⟨ne_top_of_mem_subdifferential B hz,
-        fenchelConjugate_ne_top_of_mem_subdifferential B hz,
-        toReal_add_toReal_fenchelConjugate_eq_of_mem_subdifferential B hz⟩
+  have hgraph := ae_toReal_add_toReal_fenchelConjugate_eq_of_ae_mem_subdifferential h
   refine ⟨?_, ?_⟩
   · refine (hπ.measurePreserving_fst.integrable_comp hu.ereal_toReal.aestronglyMeasurable).1 <|
       integrable_of_le_of_le (f := fun z => (u z.1).toReal)
@@ -120,12 +124,7 @@ theorem IsCoupling.integral_apply_le_of_ae_mem_subdifferential [IsFiniteMeasure 
     ∫ z, B z.1 z.2 ∂σ ≤ ∫ z, B z.1 z.2 ∂π := by
   have := hπ.isFiniteMeasure
   obtain ⟨hφ, hψ⟩ := hπ.integrable_toReal_of_ae_mem_subdifferential hu hv hBπ hBμ hBν h
-  have hgraph : ∀ᵐ z ∂π, u z.1 ≠ ⊤ ∧ fenchelConjugate B u z.2 ≠ ⊤ ∧
-      (u z.1).toReal + (fenchelConjugate B u z.2).toReal = B z.1 z.2 :=
-    h.mono fun _ hz =>
-      ⟨ne_top_of_mem_subdifferential B hz,
-        fenchelConjugate_ne_top_of_mem_subdifferential B hz,
-        toReal_add_toReal_fenchelConjugate_eq_of_mem_subdifferential B hz⟩
+  have hgraph := ae_toReal_add_toReal_fenchelConjugate_eq_of_ae_mem_subdifferential h
   have hμfin : ∀ᵐ x ∂μ, u x ≠ ⊤ := by
     rw [← hπ.measurePreserving_fst.map_eq, ae_map_iff (p := fun x => u x ≠ ⊤)
       measurable_fst.aemeasurable (hu (measurableSet_singleton ⊤).compl)]
