@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.CommAlgCat.RestrictScalars
-public import Mathlib.RingTheory.TensorProduct.Maps
 public import Mathlib.CategoryTheory.Adjunction.Limits
+public import Mathlib.RingTheory.TensorProduct.Maps
+public import TauCeti.Algebra.Category.CommAlgCat.RestrictScalars
 
 /-!
 # Base change of commutative algebras

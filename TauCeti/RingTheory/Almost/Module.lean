@@ -42,6 +42,8 @@ All almost vanishing statements about almost modules, such as the almost acyclic
 * `TauCeti.Almost.Module.lift`: the factorisation through `toAlmost S` of an exact functor killing
   almost zero modules.
 * `TauCeti.Almost.Module.classicalEquiv`: for the classical setup, `ModuleCat V ≌ Module S`.
+* `TauCeti.Almost.Module.toAlmostBaseChangeEquiv`: when `mW = W` (in particular after
+  inverting an element `ϖ ∈ m`), almostification identifies `W`-modules with almost `W`-modules.
 * `TauCeti.Almost.Module.firmEquiv`: the equivalence `Module S ≌ S.Firm`, with comparison
   `TauCeti.Almost.Module.toAlmostCompFirmIso` on almostifications.
 
@@ -54,9 +56,11 @@ All almost vanishing statements about almost modules, such as the almost acyclic
 * `TauCeti.Almost.Module.isIso_toAlmost_map_iff`: `f^a` is an isomorphism iff `f` is an almost
   isomorphism; `mono_toAlmost_map_iff` and `epi_toAlmost_map_iff` treat monomorphisms and
   epimorphisms, and `toAlmost_map_eq_zero_iff` zero morphisms.
-* `TauCeti.Almost.Module.exact_map_toAlmost_iff` and
-  `TauCeti.Almost.Module.exactAt_mapHomologicalComplex_toAlmost_iff`: a short complex or homological
-  complex of `V`-modules becomes exact in `Almost.Module S` iff its homology is almost zero.
+* `TauCeti.Almost.Module.exact_map_toAlmost_iff`,
+  `TauCeti.Almost.Module.exactAt_mapHomologicalComplex_toAlmost_iff`, and
+  `TauCeti.Almost.Module.acyclic_mapHomologicalComplex_toAlmost_iff`: a short complex or
+  homological complex of `V`-modules becomes exact (or acyclic) in `Almost.Module S` iff its
+  homology is almost zero.
 * `TauCeti.Almost.Module.isZero_of_ideal_eq_bot`: for the zero setup `(V, 0)` every almost module is
   zero.
 
@@ -184,6 +188,14 @@ theorem exactAt_mapHomologicalComplex_toAlmost_iff {ι : Type*} {c : ComplexShap
   rw [Functor.mapHomologicalComplex_obj_exactAt_iff, exact_map_toAlmost_iff]
   rfl
 
+/-- A complex `K` of `V`-modules becomes acyclic after almostification iff all of its homology
+modules are almost zero. -/
+theorem acyclic_mapHomologicalComplex_toAlmost_iff {ι : Type*} {c : ComplexShape ι}
+    (K : HomologicalComplex (ModuleCat.{u} V) c) :
+    (((toAlmost S).mapHomologicalComplex c).obj K).Acyclic ↔
+      ∀ i : ι, S.IsAlmostZero (K.homology i) := by
+  simp_rw [HomologicalComplex.acyclic_iff, exactAt_mapHomologicalComplex_toAlmost_iff]
+
 /-- The inclusion `m ⊆ V` becomes an isomorphism of almost modules. -/
 instance isIso_toAlmost_map_subtype :
     IsIso ((toAlmost S).map (ModuleCat.ofHom S.ideal.subtype)) :=
@@ -281,6 +293,30 @@ noncomputable def classicalEquiv : ModuleCat.{u} V ≌ Module (BasicSetup.classi
 @[simp]
 theorem classicalEquiv_functor :
     (classicalEquiv (V := V)).functor = toAlmost (BasicSetup.classical V) :=
+  (rfl)
+
+/-- If `S.ideal` generates the unit ideal in a `V`-algebra `W`, then `S.baseChange W` is
+classical, so almostification `ModuleCat W ⥤ Module (S.baseChange W)` is an equivalence of
+categories. -/
+theorem isEquivalence_toAlmost_baseChange (W : Type u) [CommRing W] [_root_.Algebra V W]
+    (hW : S.ideal.map (algebraMap V W) = ⊤) :
+    (toAlmost (S.baseChange W)).IsEquivalence := by
+  rw [S.baseChange_eq_classical_of_map_eq_top W hW]
+  infer_instance
+
+/-- If `S.ideal` generates the unit ideal in a `V`-algebra `W`, almostification identifies honest
+`W`-modules with almost `W`-modules over `S.baseChange W`. -/
+noncomputable def toAlmostBaseChangeEquiv (W : Type u) [CommRing W] [_root_.Algebra V W]
+    (hW : S.ideal.map (algebraMap V W) = ⊤) :
+    ModuleCat.{u} W ≌ Module (S.baseChange W) :=
+  have := isEquivalence_toAlmost_baseChange S W hW
+  (toAlmost (S.baseChange W)).asEquivalence
+
+/-- The forward functor of `toAlmostBaseChangeEquiv` is almostification over `S.baseChange W`. -/
+@[simp]
+theorem toAlmostBaseChangeEquiv_functor (W : Type u) [CommRing W] [_root_.Algebra V W]
+    (hW : S.ideal.map (algebraMap V W) = ⊤) :
+    (toAlmostBaseChangeEquiv S W hW).functor = toAlmost (S.baseChange W) :=
   (rfl)
 
 end Module
