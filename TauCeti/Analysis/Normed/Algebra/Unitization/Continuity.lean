@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Normed.Algebra.Unitization
 public import TauCeti.Algebra.Algebra.Unitization
 
 /-!
-# Continuity of the canonical ring homomorphisms of the normed unitization
+# Bounds and continuity of the canonical maps of the normed unitization
 
 For a normed algebra `A` over a nontrivially normed field `𝕜`, the scalar part
 `Unitization 𝕜 A →+* 𝕜` is continuous (`Unitization.continuous_fstHom`). When `A` is unital, the
@@ -18,8 +18,12 @@ a homeomorphism (`Unitization.continuous_prodAlgEquiv`,
 `Unitization.continuous_prodAlgEquiv_symm`), and so the lift `(r, a) ↦ r • 1 + a` of the identity
 of `A` is continuous (`Unitization.continuous_lift_id`).
 
-These are stated for the bundled ring homomorphisms, so that they can be supplied where continuity
-of a bundled ring homomorphism is an argument, such as that of `TauCeti.StableComponentGroup.map`.
+For the minimal unitization norm, the nonunital coordinate has norm at most twice the
+unitization norm (`Unitization.norm_snd_le_two_mul_norm`).
+
+The continuity results are stated for the bundled ring homomorphisms, so that they can be supplied
+where continuity of a bundled ring homomorphism is an argument, such as that of
+`TauCeti.StableComponentGroup.map`.
 -/
 
 public section
@@ -27,6 +31,17 @@ public section
 noncomputable section
 
 namespace Unitization
+
+/-- The algebra coordinate of a unitization element has norm at most twice the unitization
+norm. -/
+theorem norm_snd_le_two_mul_norm {𝕜 A : Type*} [NontriviallyNormedField 𝕜]
+    [NonUnitalNormedRing A] [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
+    [RegularNormedAlgebra 𝕜 A] (x : Unitization 𝕜 A) : ‖x.snd‖ ≤ 2 * ‖x‖ := by
+  -- The canonical metric inherits the extended distance from the auxiliary metric.
+  have h : LipschitzWith 2 (addEquiv 𝕜 A) := fun a b => lipschitzWith_addEquiv a b
+  have hbound := (norm_snd_le (addEquiv 𝕜 A x)).trans (h.norm_le_mul (map_zero _) x)
+  rw [NNReal.coe_ofNat] at hbound
+  exact hbound
 
 section General
 
