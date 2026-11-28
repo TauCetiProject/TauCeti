@@ -179,10 +179,11 @@ theorem mk_liftIdealTower (n : ℕ) (m : M) :
 theorem eq_liftIdealTower {F : M →L[R] R}
     (hF : ∀ n m, Ideal.Quotient.mk (K n) (F m) = g n m) :
     F = hI.liftIdealTower ha hK g hopen hcomp := by
-  ext m
-  exact congr_fun (IsHausdorff.StrictMono.funext' I ha fun n x ↦ by
-    rw [← Ideal.quotEquivOfEq_mk (hK n), ← Ideal.quotEquivOfEq_mk (hK n),
-      hF n x, mk_liftIdealTower]) m
+  have := hI.nonarchimedeanRing
+  dsimp only [liftIdealTower]
+  refine IsAdicComplete.StrictMono.eq_liftContinuousLinearMap I _ ha _ _ _ fun n m ↦ ?_
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
+  rw [← hF n m, ← Ideal.Quotient.mk_eq_mk, Submodule.quotEquivOfEq_mk]
 
 end LiftIdealTower
 

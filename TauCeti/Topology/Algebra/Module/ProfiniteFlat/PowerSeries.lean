@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.MvPowerSeries.PiTopology
 public import TauCeti.RingTheory.PowerSeries.PiTopology
 public import TauCeti.Topology.Algebra.Module.ProfiniteFlat.Basic
+import TauCeti.RingTheory.MvPowerSeries.PiTopology
 
 /-!
 # Power series over profinite flat modules
@@ -33,7 +33,7 @@ topology, form a profinite flat `R`-module. -/
 theorem mvPowerSeries (hS : IsProfiniteFlat R S) (σ : Type*) :
     IsProfiniteFlat R (MvPowerSeries σ S) :=
   (pi fun _ : σ →₀ ℕ ↦ hS).of_continuousLinearEquiv
-    (ContinuousLinearEquiv.refl R ((σ →₀ ℕ) → S))
+    (MvPowerSeries.WithPiTopology.continuousLinearEquivPi σ R S).symm
 
 /-- Over a coherent ring `R`, formal power series `PowerSeries S` with coefficients in a
 profinite flat `R`-module ring `S`, equipped with the coefficientwise product topology, form a

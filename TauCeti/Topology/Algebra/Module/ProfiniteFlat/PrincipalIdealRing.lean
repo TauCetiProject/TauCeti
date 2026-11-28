@@ -10,15 +10,18 @@ import Mathlib.Algebra.Module.Torsion.Basic
 import Mathlib.RingTheory.Ideal.Quotient.PowTransition
 import TauCeti.Algebra.Module.Injective.PrincipalIdealRing
 import TauCeti.LinearAlgebra.Quotient.Basic
-import TauCeti.LinearAlgebra.Quotient.ScalarMap
+import TauCeti.RingTheory.Ideal.Colon
+import TauCeti.RingTheory.Ideal.Quotient.Colon
 
 /-!
 # One-step lifting over compact principal ideal domains
 
 Over a compact principal ideal domain `O`, any `O`-linear functional `φ : M →ₗ[O] O ⧸ I` (`I ≠ ⊥`)
-with open kernel on a profinite flat `O`-module `M` lifts along `O ⧸ (ϖ) * I → O ⧸ I` for any
-nonzero `ϖ : O` (`TauCeti.IsProfiniteFlat.exists_lift_mul`). Specializing to `I = (ϖ ^ (n + 1))`
-gives the one-step lift along `(ϖ ^ (n + 2)) → (ϖ ^ (n + 1))`
+with open kernel on a profinite flat `O`-module `M` lifts along the quotient projection
+`O ⧸ Ideal.span {ϖ} * I → O ⧸ I` for any nonzero `ϖ : O` to a map with open kernel
+(`TauCeti.IsProfiniteFlat.exists_lift_mul`). Specializing to `I = Ideal.span {ϖ ^ (n + 1)}` gives
+the one-step lift with open kernel along the quotient projection
+`O ⧸ Ideal.span {ϖ ^ (n + 2)} → O ⧸ Ideal.span {ϖ ^ (n + 1)}`
 (`TauCeti.IsProfiniteFlat.exists_lift_span_pow_succ`).
 -/
 
@@ -34,7 +37,8 @@ variable {O M : Type*} [CommRing O] [IsDomain O] [IsPrincipalIdealRing O]
 
 include hM in
 /-- One-step lifting of `O`-linear maps `M →ₗ[O] O ⧸ I` with open kernel (for `I ≠ ⊥`) along
-`(ϖ) * I → I` over a compact principal ideal domain `O`. -/
+the quotient projection `O ⧸ Ideal.span {ϖ} * I → O ⧸ I` for nonzero `ϖ : O` over a compact
+principal ideal domain `O`, producing a lift with open kernel. -/
 theorem exists_lift_mul {I : Ideal O} (hI : I ≠ ⊥) {ϖ : O} (hϖ : ϖ ≠ 0)
     (φ : M →ₗ[O] O ⧸ I) (hker : IsOpen (LinearMap.ker φ : Set M)) :
     ∃ φ' : M →ₗ[O] O ⧸ (Ideal.span {ϖ} * I), IsOpen (LinearMap.ker φ' : Set M) ∧
@@ -45,16 +49,23 @@ theorem exists_lift_mul {I : Ideal O} (hI : I ≠ ⊥) {ϖ : O} (hϖ : ϖ ≠ 0)
   have hJ₂_ne : J₂ ≠ ⊥ := by
     rw [ne_eq, Ideal.mul_eq_bot, Ideal.span_singleton_eq_bot]
     exact not_or.mpr ⟨hϖ, hI⟩
+  have hcolon : J₂.colon {ϖ} = I :=
+    Ideal.span_singleton_mul_colon_singleton (mul_right_injective₀ hϖ) I
+  let mulQ : (O ⧸ I) →ₗ[O] (O ⧸ J₂) :=
+    TauCeti.ColonQuotient.mulColon O J₂ ϖ ∘ₗ (Submodule.quotEquivOfEq _ _ hcolon.symm).toLinearMap
+  have hmulQ_inj : Function.Injective mulQ :=
+    (TauCeti.ColonQuotient.mulColon_injective O J₂ ϖ).comp
+      (Submodule.quotEquivOfEq _ _ hcolon.symm).injective
+  have hmulQ_factor : ∀ q : O ⧸ J₂,
+      mulQ (Ideal.Quotient.factor Ideal.mul_le_right q) = ϖ • q := fun q ↦ by
+    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective q
+    rw [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, Ideal.Quotient.factor_mk,
+      ← Ideal.Quotient.mk_eq_mk, Submodule.quotEquivOfEq_mk, Ideal.Quotient.mk_eq_mk,
+      TauCeti.ColonQuotient.mulColon_mk, ← smul_eq_mul, ← Ideal.Quotient.mk_eq_mk,
+      Submodule.Quotient.mk_smul, Ideal.Quotient.mk_eq_mk]
   have htor : Module.IsTorsionBySet O (M ⧸ V) J₂ := (Module.isTorsionBySet_quotient_iff V J₂).mpr
     fun _ _ hr ↦ hJ₂_le (Submodule.smul_mem_smul hr Submodule.mem_top)
   let := htor.module; have : IsScalarTower O (O ⧸ J₂) (M ⧸ V) := htor.isScalarTower
-  have hIsmul : I = I • (⊤ : Submodule O O) := by rw [smul_eq_mul, Ideal.mul_top]
-  have hJ₂smul : J₂ • (⊤ : Submodule O O) = J₂ := by rw [smul_eq_mul, Ideal.mul_top]
-  have hle : I ≤ J₂.colon {ϖ} := by
-    rw [← Ideal.colon_span, Ideal.le_colon_iff, mul_comm]
-  let mulQ : (O ⧸ I) →ₗ[O] (O ⧸ J₂) :=
-    (Submodule.quotEquivOfEq _ _ hJ₂smul).toLinearMap ∘ₗ
-      Ideal.smulMapQ O ϖ hle ∘ₗ (Submodule.quotEquivOfEq _ _ hIsmul).toLinearMap
   let β : M →ₗ[O] (O ⧸ J₂) := mulQ.comp φ
   let βbar : (M ⧸ V) →ₗ[O ⧸ J₂] (O ⧸ J₂) :=
     (V.liftQ β (hV_le_ker.trans (LinearMap.ker_le_ker_comp φ _))).extendScalarsOfSurjective
@@ -74,20 +85,6 @@ theorem exists_lift_mul {I : Ideal O} (hI : I ≠ ⊥) {ϖ : O} (hϖ : ϖ ≠ 0)
   let φ' : M →ₗ[O] (O ⧸ J₂) := (ψ.restrictScalars O).comp V.mkQ
   refine ⟨φ', Submodule.isOpen_mono
     (fun m hm ↦ by simp [φ', (Submodule.Quotient.mk_eq_zero V).mpr hm]) hV_open, fun m ↦ ?_⟩
-  have hsmul_inj : Function.Injective (Ideal.smulMapQ O ϖ hle) :=
-    Ideal.smulMapQ_injective_of_colon_le hle
-      (Ideal.span_singleton_mul_colon_singleton (mul_right_injective₀ hϖ) I).le
-  have hmulQ_inj : Function.Injective mulQ := by
-    rw [LinearMap.coe_comp, LinearMap.coe_comp, LinearEquiv.coe_coe, LinearEquiv.coe_coe]
-    exact (Submodule.quotEquivOfEq _ _ hJ₂smul).injective.comp
-      (hsmul_inj.comp (Submodule.quotEquivOfEq _ _ hIsmul).injective)
-  have hmulQ_factor : ∀ q : O ⧸ J₂,
-      mulQ (Ideal.Quotient.factor Ideal.mul_le_right q) = ϖ • q := fun q ↦ by
-    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective q
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-      Ideal.Quotient.factor_mk, ← Ideal.Quotient.mk_eq_mk, Submodule.quotEquivOfEq_mk,
-      Ideal.smulMapQ_mk, Submodule.quotEquivOfEq_mk, Submodule.Quotient.mk_smul,
-      Ideal.Quotient.mk_eq_mk]
   apply hmulQ_inj
   rw [hmulQ_factor, ← map_smul]
   calc φ' (ϖ • m) = (ψ.comp (LinearMap.range μ).subtype) (μ.rangeRestrict (V.mkQ m)) := by
@@ -97,7 +94,8 @@ theorem exists_lift_mul {I : Ideal O} (hI : I ≠ ⊥) {ϖ : O} (hϖ : ϖ ≠ 0)
 
 include hM in
 /-- One-step lifting of `O`-linear maps `M →ₗ[O] O ⧸ Ideal.span {ϖ ^ (n + 1)}` with open kernel
-along `(ϖ ^ (n + 2)) → (ϖ ^ (n + 1))` over a compact principal ideal domain `O`. -/
+along the quotient projection `O ⧸ Ideal.span {ϖ ^ (n + 2)} → O ⧸ Ideal.span {ϖ ^ (n + 1)}` for
+nonzero `ϖ : O` over a compact principal ideal domain `O`, producing a lift with open kernel. -/
 theorem exists_lift_span_pow_succ {ϖ : O} (hϖ : ϖ ≠ 0) (n : ℕ)
     (φ : M →ₗ[O] O ⧸ Ideal.span {ϖ ^ (n + 1)}) (hker : IsOpen (LinearMap.ker φ : Set M)) :
     ∃ φ' : M →ₗ[O] O ⧸ Ideal.span {ϖ ^ (n + 2)}, IsOpen (LinearMap.ker φ' : Set M) ∧

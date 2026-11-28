@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.Basis.Defs
 public import TauCeti.Topology.Algebra.Module.Compact.Basic
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.Topology.Algebra.GroupWithZero
-import Mathlib.Topology.Homeomorph.Lemmas
 import TauCeti.Topology.Algebra.Module.Dual
 import TauCeti.Topology.Algebra.Module.LinearTopology.Dual
 
@@ -28,7 +27,7 @@ ring admitting a nontrivial compact `T₁` linearly topologized vector space is 
 ## References
 
 * [S. Lefschetz, *Algebraic Topology*], Ch. II, §6, (25.4)–(27.1).
-* [N. Bourbaki, *Algebra I*], Ch. II, §7, Exercises, and *Commutative Algebra*, Ch. III, §2, Ex.
+* [N. Bourbaki, *Algebra I*], Ch. II, §7, Exercises.
 -/
 
 public section
@@ -63,29 +62,16 @@ variable {K V ι : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K]
   [AddCommGroup V] [Module K V] [TopologicalSpace V] [IsTopologicalAddGroup V]
   [IsLinearTopology K V] [CompactSpace V] [T2Space V] [T2Space K]
 
-omit [CompactSpace V] [T2Space K] in
-private theorem pi_injective (b : Module.Basis ι K (V →L[K] K)) :
-    Function.Injective (ContinuousLinearMap.pi b).toLinearMap := by
-  have := TauCeti.separatingDual_of_isLinearTopology K V
-  rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
-  intro v hv
-  refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := K) fun φ ↦ ?_
-  have hbv : ∀ i : ι, b i v = 0 := fun i ↦ by
-    simpa [ContinuousLinearMap.pi_apply] using congr_fun (LinearMap.mem_ker.mp hv) i
-  conv_lhs => rw [← b.linearCombination_repr φ]
-  simp [Finsupp.linearCombination_apply, Finsupp.sum, hbv]
-
 /-- **Lefschetz product decomposition from a continuous dual basis**: a `K`-basis
 `b : Module.Basis ι K (V →L[K] K)` induces `V ≃L[K] (ι → K)` sending `v` to `fun i ↦ b i v`. -/
 noncomputable def continuousDualEquivPi (b : Module.Basis ι K (V →L[K] K)) :
     V ≃L[K] (ι → K) :=
+  have := TauCeti.separatingDual_of_isLinearTopology K V
   let e := LinearEquiv.ofBijective (ContinuousLinearMap.pi b).toLinearMap
-    ⟨pi_injective b, b.linearIndependent.surjective_continuousLinearMap_pi⟩
-  { toLinearEquiv := e
-    continuous_toFun := (ContinuousLinearMap.pi b).continuous
-    continuous_invFun :=
-      (ContinuousLinearMap.pi b).continuous.continuous_symm_of_equiv_compact_to_t2
-        (f := e.toEquiv) }
+    ⟨SeparatingDual.injective_continuousLinearMap_pi b.span_eq,
+      b.linearIndependent.surjective_continuousLinearMap_pi⟩
+  ContinuousLinearEquiv.ofIsHomeomorph e
+    (isHomeomorph_iff_continuous_bijective.mpr ⟨(ContinuousLinearMap.pi b).continuous, e.bijective⟩)
 
 @[simp, grind =]
 theorem continuousDualEquivPi_apply (b : Module.Basis ι K (V →L[K] K)) (v : V) (i : ι) :

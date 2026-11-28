@@ -76,6 +76,15 @@ theorem FG.smul_top_pi_self_eq_pi {R : Type*} [CommSemiring R] {ι : Type*}
     J • (⊤ : Submodule R (ι → R)) = Submodule.pi Set.univ fun _ : ι ↦ J := by
   simpa only [smul_eq_mul, Ideal.mul_top] using hJ.smul_top_pi_eq_pi (M := fun _ : ι ↦ R)
 
+private theorem modulePi_smul_mk {R ι : Type*} [Ring R] {J : Ideal R} [J.IsTwoSided]
+    (s : R) (x : ι → R) :
+    Ideal.Quotient.mk J s • (Submodule.Quotient.mk x : (ι → R) ⧸ Ideal.pi fun _ : ι ↦ J) =
+      Submodule.Quotient.mk (s • x) := rfl
+
+private theorem piQuotEquiv_mk {R : Type*} [Ring R] (ι : Type*) (J : Ideal R) [J.IsTwoSided]
+    (x : ι → R) :
+    Ideal.piQuotEquiv ι J (Submodule.Quotient.mk x) = fun i ↦ Ideal.Quotient.mk J (x i) := rfl
+
 /-- For a finitely generated ideal `J` of a commutative ring `R`, the quotient `(ι → R) ⧸ (J • ⊤)`
 is `R`-linearly isomorphic to `ι → R ⧸ J`. -/
 noncomputable def FG.quotientSmulTopEquivPi {R : Type*} [CommRing R] (ι : Type*)
@@ -89,10 +98,9 @@ noncomputable def FG.quotientSmulTopEquivPi {R : Type*} [CommRing R] (ι : Type*
     ⟨fun r s x ↦ by
       obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective s
       obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ x
-      -- `Ideal.modulePi` defines `mk s • mk x` as `mk (s • x)` without an evaluation lemma,
-      -- and `r • Ideal.Quotient.mk J s` is definitionally `Ideal.Quotient.mk J (r • s)`.
-      change Submodule.Quotient.mk ((r • s) • x) = r • Submodule.Quotient.mk (s • x)
-      rw [smul_assoc, Submodule.Quotient.mk_smul]⟩
+      have hrs : r • Ideal.Quotient.mk J s = Ideal.Quotient.mk J (r • s) := by
+        rw [← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul, Ideal.Quotient.mk_eq_mk]
+      rw [hrs, modulePi_smul_mk, modulePi_smul_mk, smul_assoc, Submodule.Quotient.mk_smul]⟩
   Submodule.quotEquivOfEq _ _ hpi ≪≫ₗ
     Submodule.Quotient.restrictScalarsEquiv R (Ideal.pi fun _ : ι ↦ J) ≪≫ₗ
     (Ideal.piQuotEquiv ι J).restrictScalars R
@@ -104,9 +112,7 @@ theorem FG.quotientSmulTopEquivPi_mk {R : Type*} [CommRing R] (ι : Type*)
     {J : Ideal R} (hJ : J.FG) (x : ι → R) (i : ι) :
     hJ.quotientSmulTopEquivPi ι (Submodule.Quotient.mk x) i = Ideal.Quotient.mk J (x i) := by
   simp only [FG.quotientSmulTopEquivPi, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
-    Submodule.Quotient.restrictScalarsEquiv_mk, LinearEquiv.restrictScalars_apply]
-  -- `Ideal.piQuotEquiv` has no evaluation lemma in Mathlib; its `toFun` is definitionally
-  -- `Quotient.liftOn' · (fun f i ↦ Ideal.Quotient.mk J (f i))`.
-  rfl
+    Submodule.Quotient.restrictScalarsEquiv_mk, LinearEquiv.restrictScalars_apply,
+    piQuotEquiv_mk]
 
 end Ideal

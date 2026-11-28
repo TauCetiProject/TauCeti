@@ -5,21 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 public import Mathlib.Topology.Constructions
-public import Mathlib.Topology.Maps.Basic
 import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
-# Dense range and surjectivity of evaluation against linearly independent dual families
+# Dense range, surjectivity, and injectivity of evaluation against dual families
 
 For a `K`-linearly independent family `f : ι → (V →ₗ[K] K)` over a field `K` equipped with any
 topology, the product map `LinearMap.pi f : V →ₗ[K] (ι → K)` surjects onto every finite
 subfamily of coordinates and hence has dense range (`LinearIndependent.denseRange_pi`). When `V`
 is compact and `f : ι → (V →L[K] K)` consists of continuous linear forms into a Hausdorff space
 `K`, the evaluation map `ContinuousLinearMap.pi f : V →L[K] (ι → K)` has closed dense range and
-is therefore surjective (`LinearIndependent.surjective_continuousLinearMap_pi`).
+is therefore surjective (`LinearIndependent.surjective_continuousLinearMap_pi`). When continuous
+linear forms separate points (`SeparatingDual R V`), evaluation against any `R`-spanning family
+`f : ι → (V →L[R] R)` is injective (`SeparatingDual.injective_continuousLinearMap_pi`).
 -/
 
 public section
@@ -55,9 +57,8 @@ theorem surjective_continuousLinearMap_pi [TopologicalSpace K] [ContinuousAdd K]
   have hclosed : IsClosed (Set.range (ContinuousLinearMap.pi f)) :=
     (isCompact_range (ContinuousLinearMap.pi f).continuous).isClosed
   rw [← hclosed.closure_eq]
-  have hf' : LinearIndependent K fun i ↦ (f i).toLinearMap := by
-    refine fun c₁ c₂ hc ↦ hf (ContinuousLinearMap.ext_iff.mpr fun v ↦ ?_)
-    simpa [Finsupp.linearCombination_apply, Finsupp.sum] using LinearMap.congr_fun hc v
+  have hf' : LinearIndependent K fun i ↦ (f i).toLinearMap :=
+    hf.map_injOn (ContinuousLinearMap.coeLM K) ContinuousLinearMap.coe_injective.injOn
   have hrange : Set.range (ContinuousLinearMap.pi f) =
       Set.range (LinearMap.pi fun i ↦ (f i).toLinearMap) := by
     rw [← ContinuousLinearMap.coe_pi, ContinuousLinearMap.coe_coe]
@@ -67,3 +68,32 @@ theorem surjective_continuousLinearMap_pi [TopologicalSpace K] [ContinuousAdd K]
 end Field
 
 end LinearIndependent
+
+namespace SeparatingDual
+
+section CommRing
+
+variable {R V ι : Type*} [CommRing R] [TopologicalSpace R] [ContinuousAdd R]
+  [ContinuousConstSMul R R] [AddCommGroup V] [Module R V] [TopologicalSpace V]
+  [SeparatingDual R V]
+
+/-- Evaluation against a spanning family of continuous linear forms `V →L[R] R` is injective
+whenever continuous linear forms separate points (`SeparatingDual R V`). -/
+theorem injective_continuousLinearMap_pi {f : ι → (V →L[R] R)}
+    (hf : Submodule.span R (Set.range f) = ⊤) :
+    Function.Injective (ContinuousLinearMap.pi f) := by
+  rw [injective_iff_map_eq_zero]
+  intro v hv
+  refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := R) fun φ ↦ ?_
+  have hmem : φ ∈ Submodule.span R (Set.range f) := hf ▸ Submodule.mem_top
+  induction hmem using Submodule.span_induction with
+  | mem _ h =>
+    obtain ⟨i, rfl⟩ := h
+    simpa [ContinuousLinearMap.pi_apply] using congr_fun hv i
+  | zero => simp
+  | add _ _ _ _ hx hy => simp [hx, hy]
+  | smul r _ _ hx => simp [hx]
+
+end CommRing
+
+end SeparatingDual

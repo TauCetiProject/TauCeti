@@ -8,7 +8,6 @@ module
 public import TauCeti.Topology.Algebra.Module.ProfiniteFlat.PrincipalIdealRing
 public import TauCeti.Topology.Algebra.Ring.Compact
 import TauCeti.RingTheory.Ideal.Operations.Pi
-import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.Topology.Algebra.Module.Compact.LocalRing
 import TauCeti.Topology.Algebra.Module.LinearTopology.CompactVectorSpace
 import TauCeti.Topology.Algebra.Module.Nakayama
@@ -19,6 +18,7 @@ import TauCeti.Topology.Algebra.Module.Nakayama
 Over a compact Hausdorff discrete valuation ring `O`, every profinite flat `O`-module `M : Type v`
 admits a *pseudobasis*: a topological `O`-linear isomorphism `M ≃L[O] (I → O)` for some `I : Type v`
 (`TauCeti.IsProfiniteFlat.exists_pseudobasis`, `TauCeti.IsProfiniteFlat.iff_exists_pseudobasis`).
+Such modules are `(maximalIdeal O)`-adically complete (`TauCeti.IsProfiniteFlat.isAdicComplete`).
 The proof lifts a continuous dual basis of the residue vector space `M ⧸ maximalIdeal O • ⊤`
 inductively along the uniformizer power quotients `O ⧸ (ϖ ^ (n + 1))` using Baer's criterion
 (`TauCeti.IsProfiniteFlat.exists_continuousLinearMap_mk_maximalIdeal_eq`) and applies topological
@@ -39,9 +39,19 @@ open Filter IsLocalRing Topology
 
 namespace TauCeti.IsProfiniteFlat
 
-section DiscreteValuationRing
-
 universe u v
+
+/-- **Maximal-ideal adic completeness.** Over a compact Hausdorff noetherian local ring `O` (in
+particular a compact Hausdorff discrete valuation ring), every profinite flat `O`-module `M` is
+`(maximalIdeal O)`-adically complete and separated. -/
+theorem isAdicComplete {O : Type u} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
+    [CompactSpace O] [T2Space O] [IsLocalRing O] [IsNoetherianRing O] {M : Type v}
+    [AddCommGroup M] [Module O M] [TopologicalSpace M] (hM : IsProfiniteFlat O M) :
+    IsAdicComplete (maximalIdeal O) M :=
+  hM.toIsCompactModule.isAdicComplete_of_isAdic
+    (isAdic_maximalIdeal O) (IsNoetherian.noetherian (maximalIdeal O))
+
+section DiscreteValuationRing
 
 variable {O : Type u} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
   [TopologicalSpace O] [IsTopologicalRing O] [CompactSpace O] [T2Space O]

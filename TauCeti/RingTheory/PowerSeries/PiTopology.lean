@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import TauCeti.RingTheory.PowerSeries.CoeffProd
+import TauCeti.Topology.Algebra.Module.Equiv.Pi
 
 /-!
 # Power series in the coefficientwise topology
@@ -43,15 +44,16 @@ noncomputable def continuousLinearEquivPi : S⟦X⟧ ≃L[R] (ℕ → S) :=
 @[simp, grind =]
 theorem continuousLinearEquivPi_apply (f : S⟦X⟧) (n : ℕ) :
     continuousLinearEquivPi R S f n = PowerSeries.coeff n f := by
-  rw [← PowerSeries.coeff_coeToMvPowerSeries, MvPowerSeries.coeff_apply]
-  have h := Equiv.piCongrLeft_apply (fun _ : ℕ ↦ S) (Finsupp.uniqueEquiv ()) f n
-  simp only [eq_rec_constant] at h
-  exact h
+  have h := ContinuousLinearEquiv.piCongrLeft_const_apply R S (Finsupp.uniqueEquiv ()) f n
+  rw [Finsupp.uniqueEquiv_symm_apply] at h
+  exact h.trans (PowerSeries.coeff_coeToMvPowerSeries n)
 
 @[simp, grind =]
 theorem continuousLinearEquivPi_symm_apply (c : ℕ → S) :
-    (continuousLinearEquivPi R S).symm c = PowerSeries.mk c :=
-  funext fun s ↦ Equiv.piCongrLeft_symm_apply (fun _ : ℕ ↦ S) (Finsupp.uniqueEquiv ()) c s
+    (continuousLinearEquivPi R S).symm c = PowerSeries.mk c := by
+  ext n
+  rw [← continuousLinearEquivPi_apply R S, ContinuousLinearEquiv.apply_symm_apply,
+    PowerSeries.coeff_mk]
 
 end Semiring
 

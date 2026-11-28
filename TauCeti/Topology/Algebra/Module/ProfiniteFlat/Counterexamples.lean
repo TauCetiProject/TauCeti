@@ -15,7 +15,8 @@ import TauCeti.Topology.Algebra.Ring.Compact
 # Non-examples of profinite flat modules
 
 Examples of modules that are not profinite flat: nonzero proper quotients of a domain fail
-flatness, discrete non-fields and fraction fields of compact DVRs fail compactness, and
+flatness, discrete integral domains that are not fields fail compactness, no topology on the
+fraction field of a compact Hausdorff DVR makes it a compact module over the DVR, and
 nontrivial indiscrete modules fail Hausdorffness.
 -/
 
