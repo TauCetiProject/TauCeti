@@ -40,6 +40,8 @@ Poincaré expansions at infinity are the specialization `w z = z⁻¹`.
   `constantCoeff P ≠ 0`).
 * `Asymptotics.hasAsymptoticExpansion_pow_subst`: composition `H ∘ y ~ P.subst Q` when `H ~ P`
   in `σ`, `σ ∘ y ~ Q` in `w`, and `constantCoeff Q = 0`.
+* `PowerSeries.isBigO_sum_trunc_sub_of_subst_eq_X`: remainder estimate for substituting a
+  truncated series `Q` into a truncated series `P` when `P.subst Q = X`.
 * `Asymptotics.hasAsymptoticExpansion_pow_substInv`: inversion `σ ∘ y ~ P.substInvOfIsUnit _`
   when `σ → 0`, `H ~ P` in `σ` with `constantCoeff P = 0` and `coeff 1 P ≠ 0`, and eventually
   `H (y x) = w x`.
@@ -206,16 +208,11 @@ theorem hasAsymptoticExpansion_pow_inv (hw : Tendsto w l (𝓝 0)) {P : 𝕜⟦X
         (PowerSeries.trunc M P⁻¹).eval (w x)) =O[l] fun x => w x ^ M := by
       simpa only [mul_one] using (hf.isBigO_sub_trunc_eval M).mul hQ0
     have h2 := PowerSeries.isBigO_mul_trunc_eval_sub hw P P⁻¹ M
-    have hPQ1 : ∀ x : α, (PowerSeries.trunc M (P * P⁻¹)).eval (w x) = 1 := fun x => by
-      rw [PowerSeries.mul_inv_cancel P hP, PowerSeries.eval_trunc, Finset.sum_eq_single 0]
-      · simp
-      · intro k _ hk; simp [coeff_one, hk]
-      · intro h0; exact absurd (mem_range.mpr (Nat.succ_pos N)) h0
     have hprod : (fun x => 1 - f x * (PowerSeries.trunc M P⁻¹).eval (w x)) =O[l]
         fun x => w x ^ M := by
       refine (h1.add h2).neg_left.congr' (Eventually.of_forall fun x => ?_) EventuallyEq.rfl
       dsimp only
-      rw [hPQ1 x]
+      rw [PowerSeries.mul_inv_cancel P hP, PowerSeries.trunc_one, Polynomial.eval_one]
       ring
     have hmul : (fun x => (f x)⁻¹ * (1 - f x * (PowerSeries.trunc M P⁻¹).eval (w x))) =O[l]
         fun x => w x ^ M := by
@@ -296,20 +293,42 @@ private lemma isBigO_substInv_linear {σ H : β → 𝕜} {y : α → β} {P : �
       simpa only [Function.comp_def, pow_one] using
         (isLittleO_pow_pow one_lt_two (𝕜 := 𝕜)).comp_tendsto hs0
     exact h2'.trans_isLittleO hsq
-  have hsO : s =O[l] w := by
-    have hpos : 0 < ‖coeff 1 P‖ / 2 := half_pos (norm_pos_iff.mpr hP1)
-    refine IsBigO.of_bound (2 / ‖coeff 1 P‖) ?_
-    filter_upwards [hlin.bound hpos] with x hx
-    have htri : ‖s x‖ * ‖coeff 1 P‖ - ‖w x‖ ≤ ‖w x - s x * coeff 1 P‖ := by
-      rw [← norm_mul, norm_sub_rev]
-      exact norm_sub_norm_le _ _
-    have hc : 0 < ‖coeff 1 P‖ := norm_pos_iff.mpr hP1
-    rw [div_mul_eq_mul_div, le_div_iff₀ hc]
-    linarith
-  have hwO : w =O[l] s := by
-    refine (hlin.isBigO.add ((isBigO_refl s l).const_mul_left (coeff 1 P))).congr'
-      (Eventually.of_forall fun x => by dsimp only; ring) EventuallyEq.rfl
-  exact ⟨hsO, hwO⟩
+  have hm : (fun x => coeff 1 P * s x) =Θ[l] s := (isTheta_refl s l).const_mul_left hP1
+  have hwΘ := hlin.add_isTheta hm
+  exact ⟨hwΘ.2.congr_right fun x => by simp only [Pi.add_apply]; ring,
+    hwΘ.1.congr_left fun x => by simp only [Pi.add_apply]; ring⟩
+
+end Algebra
+
+end Asymptotics
+
+namespace PowerSeries
+
+/-- If `P.subst Q = X` with `constantCoeff Q = 0`, then substituting the `N`-th truncation of
+`Q` into the `N`-th truncation of `P` matches `w` up to `O(w ^ N)` along `w → 0`. -/
+theorem isBigO_sum_trunc_sub_of_subst_eq_X {α 𝕜 : Type*} [NormedField 𝕜] {l : Filter α}
+    {w : α → 𝕜} {N : ℕ} {P Q : 𝕜⟦X⟧} (hw0 : Tendsto w l (𝓝 0))
+    (hQ0 : constantCoeff Q = 0) (hPQ : P.subst Q = X) :
+    (fun x => (∑ k ∈ range N, (trunc N Q).eval (w x) ^ k * coeff k P) - w x) =O[l]
+      fun x => w x ^ N := by
+  set R : 𝕜[X] := (trunc N P).comp (trunc N Q) - Polynomial.X
+  have hcoeff : ∀ k < N, R.coeff k = 0 := fun k hk => by
+    rw [← Polynomial.coeff_coe]
+    simp only [R, Polynomial.coeff_coe, Polynomial.coeff_sub,
+      coeff_trunc_comp_trunc P hQ0 hk hk, hPQ, coeff_X, Polynomial.coeff_X]
+    split_ifs <;> first | exact sub_self _ | omega
+  refine (Polynomial.isBigO_eval_pow_of_coeff_eq_zero hw0 R hcoeff).congr'
+    (Eventually.of_forall fun x => ?_) EventuallyEq.rfl
+  simp only [R, Polynomial.eval_sub, Polynomial.eval_comp, Polynomial.eval_X, eval_trunc,
+    mul_comm]
+
+end PowerSeries
+
+namespace Asymptotics
+
+section Algebra
+
+variable {α β 𝕜 : Type*} [NormedField 𝕜] {l : Filter α} {m : Filter β} {w : α → 𝕜}
 
 /-- Bootstrap step for power-series inversion: given an `O(w ^ M)` remainder after `M` terms of
 `Q = P.substInvOfIsUnit _` (with `M ≥ 1`), upgrade the remainder to `O(w ^ (M + 1))` after
@@ -358,7 +377,7 @@ private lemma isBigO_substInv_step {σ H : β → 𝕜} {y : α → β} {P Q : �
     simp only [eval_trunc_eq_sum_smul, smul_eq_mul]
   have hC : (fun x => (∑ k ∈ range (M + 1), q x ^ k * coeff k P) - w x) =O[l]
       fun x => w x ^ (M + 1) :=
-    PowerSeries.isBigO_sum_trunc_substInv hw0 hQ0 hPQ
+    PowerSeries.isBigO_sum_trunc_sub_of_subst_eq_X hw0 hQ0 hPQ
   have hcomb : (fun x => r x * coeff 1 P) =O[l] fun x => w x ^ (M + 1) := by
     refine ((hA.add hB).add hC).neg_left.congr' (Eventually.of_forall fun x => ?_)
       EventuallyEq.rfl

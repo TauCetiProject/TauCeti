@@ -536,9 +536,7 @@ theorem norm_sub_sum_le_of_hasSum {𝕜 E : Type*} [NormedField 𝕜] [Seminorme
     (hasSum_geometric_of_lt_one (by positivity) (by norm_num)).mul_left _
   have hle : ‖v - ∑ s ∈ range N, (z ^ s)⁻¹ • a s‖ ≤
       (M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖) * (1 - 1 / 2)⁻¹ := by
-    refine le_of_tendsto_of_tendsto htail.tendsto_sum_nat.norm hgeom.tendsto_sum_nat
-      (Eventually.of_forall fun m => ?_)
-    refine (norm_sum_le _ _).trans (sum_le_sum fun k _ => ?_)
+    refine htail.norm_le_of_bounded hgeom fun k => ?_
     have hratio : ‖z₀‖ / ‖z‖ ≤ 1 / 2 := by
       rw [div_le_div_iff₀ hz_pos (by norm_num : (0 : ℝ) < 2)]
       linarith

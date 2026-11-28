@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.RCLike.Sqrt
 public import TauCeti.Analysis.Asymptotics.Expansion.Basic
 
 import TauCeti.Analysis.SpecialFunctions.Exp.StretchedDecay
@@ -15,7 +16,7 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 
 This file establishes that exponentially decaying functions have the zero Poincaré asymptotic
 expansion in `(z ^ n)⁻¹` at infinity, demonstrating DLMF 2.1.17 non-uniqueness: distinct
-functions such as `0`, `Complex.exp (-z)`, and `Complex.exp (-z ^ (1 / 2 : ℂ))` share the same
+functions such as `0`, `Complex.exp (-z)`, and `Complex.exp (-Complex.sqrt z)` share the same
 Poincaré asymptotic expansion in any closed sector `|arg z| ≤ π / 2 - δ` with `δ > 0`.
 
 ## Main results
@@ -87,16 +88,16 @@ theorem hasAsymptoticExpansion_zero_cexp_neg_sector {δ : ℝ} (hδ : 0 < δ) :
       (fun n z => (z ^ n)⁻¹) 0 (fun z => Complex.exp (-z)) := by
   simpa using hasAsymptoticExpansion_zero_cexp_neg_cpow_sector one_pos hδ
 
-/-- DLMF 2.1.17: `cexp (-z ^ (1 / 2 : ℂ))` has the zero Poincaré expansion in `(z ^ n)⁻¹` at
+/-- DLMF 2.1.17: `cexp (-Complex.sqrt z)` has the zero Poincaré expansion in `(z ^ n)⁻¹` at
 infinity in any closed sector `|arg z| ≤ π / 2 - δ` with `δ > 0`. -/
 theorem hasAsymptoticExpansion_zero_cexp_neg_sqrt_sector {δ : ℝ} (hδ : 0 < δ) :
     HasAsymptoticExpansion
       (Bornology.cobounded ℂ ⊓ 𝓟 {z : ℂ | |Complex.arg z| ≤ π / 2 - δ})
-      (fun n z => (z ^ n)⁻¹) 0 (fun z => Complex.exp (-z ^ (1 / 2 : ℂ))) := by
+      (fun n z => (z ^ n)⁻¹) 0 (fun z => Complex.exp (-Complex.sqrt z)) := by
   have h := hasAsymptoticExpansion_zero_cexp_neg_cpow_sector (r := 1 / 2) (δ := δ / 2)
     (by positivity) (half_pos hδ)
   refine (h.mono (inf_le_inf_left _ (principal_mono.mpr fun z hz => ?_))).congr'
-    (Eventually.of_forall fun z => by norm_num)
+    (Eventually.of_forall fun z => by simp [Complex.sqrt])
   simp only [mem_ofPred_eq] at hz ⊢
   rw [abs_mul, abs_of_pos (by positivity : (0 : ℝ) < 1 / 2)]
   linarith [Real.pi_pos]

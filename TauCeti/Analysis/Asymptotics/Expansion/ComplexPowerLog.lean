@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.Analysis.Asymptotics.Expansion.PowerSeries
 public import TauCeti.RingTheory.PowerSeries.ComplexPower
 

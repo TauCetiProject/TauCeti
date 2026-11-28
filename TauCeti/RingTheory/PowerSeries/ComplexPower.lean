@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
-public import Mathlib.RingTheory.PowerSeries.Inverse
 public import TauCeti.RingTheory.PowerSeries.Binomial
 
 /-!
