@@ -53,6 +53,8 @@ fundamental inequality.
   auxiliary subgroup of index `[L : K]` contained in the norm group for `L ⊆ K(U_S^{1/p})`.
 * `TauCeti.ClassFieldTheory.index_range_ideleClassNormMap_le_of_finrank_prime`: the Kummer case
   of the second fundamental inequality, `[C_K : N_{L/K}(C_L)] ≤ p`.
+* `TauCeti.ClassFieldTheory.index_range_ideleClassNormMap_eq_two`: the norm index of a quadratic
+  extension is `2`.
 
 ## References
 
@@ -318,5 +320,20 @@ theorem index_range_ideleClassNormMap_le_of_finrank_prime
   exact (congrArg Subgroup.index
     (GlobalNumberFields.range_ideleClassNormMap_eq_of_algEquiv ι.equivFieldRange)).trans_le
     (Nat.le_of_dvd (Fact.out : p.Prime).pos hdvd)
+
+/-- **The norm index of a quadratic extension.** For a quadratic extension `L/K` of number fields,
+the idele-class norm group has index two: `[C_K : N_{L/K}(C_L)] = 2`. This is the Kummer case of
+the second fundamental inequality at `p = 2`, where `K` contains `-1`, together with the first
+fundamental inequality. -/
+theorem index_range_ideleClassNormMap_eq_two
+    (K L : Type) [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
+    [Algebra.IsQuadraticExtension K L] :
+    (GlobalNumberFields.ideleClassNormMap K L).range.index = 2 := by
+  have : HasEnoughRootsOfUnity K 2 :=
+    ⟨⟨-1, IsPrimitiveRoot.neg_one 0 (by decide)⟩, inferInstance⟩
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  have hfin := Algebra.IsQuadraticExtension.finrank_eq_two K L
+  exact le_antisymm (index_range_ideleClassNormMap_le_of_finrank_prime K L 2 hfin)
+    (hfin ▸ finrank_le_index_range_ideleClassNormMap K L)
 
 end TauCeti.ClassFieldTheory
