@@ -188,6 +188,22 @@ theorem lpNorm_natCast_pow_eq_integral_norm_pow {f : α → F} (hf : AEStronglyM
     inv_mul_cancel₀ (Nat.cast_ne_zero.2 hn), Real.rpow_one]
   simp only [Real.rpow_natCast]
 
+/-- **The `L²` norm as the square root of the integral.** -/
+theorem lpNorm_two_eq_sqrt_integral_norm_sq {f : α → F} (hf : AEStronglyMeasurable f μ) :
+    lpNorm f 2 μ = √(∫ x, ‖f x‖ ^ 2 ∂μ) := by
+  rw [lpNorm_eq_integral_norm_rpow_toReal two_ne_zero ENNReal.ofNat_ne_top hf,
+    ENNReal.toReal_ofNat, Real.sqrt_eq_rpow]
+  norm_num
+
+/-- **The `L²` Minkowski triangle inequality** in square-root-of-integral form. -/
+theorem MemLp.sqrt_integral_norm_add_sq_le {f g : α → F}
+    (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    √(∫ x, ‖(f + g) x‖ ^ 2 ∂μ) ≤ √(∫ x, ‖f x‖ ^ 2 ∂μ) + √(∫ x, ‖g x‖ ^ 2 ∂μ) := by
+  have h := lpNorm_add_le hf one_le_two (g := g)
+  rwa [lpNorm_two_eq_sqrt_integral_norm_sq (hf.add hg).aestronglyMeasurable,
+    lpNorm_two_eq_sqrt_integral_norm_sq hf.aestronglyMeasurable,
+    lpNorm_two_eq_sqrt_integral_norm_sq hg.aestronglyMeasurable] at h
+
 /-- **Translation invariance of `lpNorm`.** For a right-invariant measure on an additive group,
 translating a function does not change its `Lᵖ` norm: `‖u (· - c)‖_p = ‖u‖_p`. -/
 theorem lpNorm_comp_sub_right [AddGroup α] [MeasurableAdd α] [μ.IsAddRightInvariant] (u : α → F)

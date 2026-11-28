@@ -791,7 +791,11 @@ determinant line is the anticanonical line `K⁻¹`
 then the conjugate of `K⁻¹ ⊗ E`, which for Hermitian lines is `K ⊗ E⁻¹`, the line of Taubes's
 isomorphism `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`
 (`TauCeti.OrthonormalFrameBundle.chargeConjTwistEquivTwistCanonicalBundle`, at the level of
-circle bundles). The identification of this conjugate line with `K ⊗ E⁻¹` is not proved here. -/
+circle bundles). There the twisting circle bundle is the tensor product of the canonical circle
+bundle with the inverse of the circle bundle of `E`. Its line is the tensor product of the
+canonical line `K` with the conjugate of `E` (`TauCeti.PrincipalBundle.tensorLineEquiv`,
+`TauCeti.PrincipalBundle.inverseLineEquiv`), and `K` is the conjugate of the anticanonical line
+`K⁻¹` (`TauCeti.OrthonormalFrameBundle.canonicalLineEquivDetBundle`). -/
 def chargeConjTwistLineEquiv (s : SpinCStructure F V n) (x : X) :
     AssociatedBundle Circle (Tensor Circle s.inverseDeterminantBundle (Inverse Circle E)) ℂ x
       ≃L⋆[ℂ] s.determinantLine x ⊗[ℂ] AssociatedBundle Circle E ℂ x where

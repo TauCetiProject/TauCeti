@@ -105,21 +105,6 @@ private theorem W1p.memLp_mulGradient_morreyRepresentative
       (MemLp.smul (p := ∞) (q := (p : ℝ≥0∞)) (r := (p : ℝ≥0∞))
         (W1p.memLp_top_morreyRepresentative hp v) (Lp.memLp (W1p.gradient u)))
 
-private theorem W1p.morreyRepresentative_ofTestFunction
-    (hp : (finrank ℝ E : ℝ≥0) < p) (phi : TestFunction (⊤ : Opens E) ℝ ⊤) :
-    W1p.morreyRepresentative (W1p.ofTestFunctionₗ mu ⊤ (p : ℝ≥0∞) phi) hp = phi := by
-  let _ : (mu.restrict ((⊤ : Opens E) : Set E)).IsOpenPosMeasure := by
-    simpa only [Opens.coe_top, Measure.restrict_univ] using
-      (inferInstance : mu.IsOpenPosMeasure)
-  apply (Continuous.ae_eq_iff_eq (mu.restrict (⊤ : Opens E))
-    (W1p.continuous_morreyRepresentative (W1p.ofTestFunctionₗ mu ⊤ (p : ℝ≥0∞) phi) hp)
-    phi.contDiff.continuous).1
-  refine ((W1p.value_ae_eq_morreyRepresentative
-    (W1p.ofTestFunctionₗ mu ⊤ (p : ℝ≥0∞) phi) hp).symm.filter_mono
-      (ae_mono Measure.restrict_le_self)).trans ?_
-  rw [W1p.value_ofTestFunctionₗ]
-  exact testFunctionLp_apply_ae (mu := mu) (p : ℝ≥0∞) phi
-
 /-- The Morrey representative of a Sobolev class is within the Morrey-embedding distance of a
 test function whose Sobolev class is close to it. -/
 private theorem W1p.enorm_testFunction_sub_morreyRepresentative_le
@@ -127,7 +112,7 @@ private theorem W1p.enorm_testFunction_sub_morreyRepresentative_le
     (a u : W1p mu ⊤ (p : ℝ≥0∞)) (hphi : W1p.ofTestFunctionₗ mu ⊤ (p : ℝ≥0∞) phi = a) (x : E) :
     ‖(phi : E → ℝ) x - W1p.morreyRepresentative u hp x‖ₑ ≤
       ‖W1p.morreyEmbedding hp a - W1p.morreyEmbedding hp u‖ₑ := by
-  rw [← W1p.morreyRepresentative_ofTestFunction (mu := mu) hp phi, hphi]
+  rw [← W1p.morreyRepresentative_ofTestFunctionₗ (mu := mu) hp phi, hphi]
   exact W1p.enorm_morreyRepresentative_sub_le_enorm_morreyEmbedding_sub hp a u x
 
 /-- The error of approximating the product `u v` by `phi * v` is bounded by the uniform error of
