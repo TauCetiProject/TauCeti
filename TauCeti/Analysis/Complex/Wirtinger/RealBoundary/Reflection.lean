@@ -815,8 +815,7 @@ theorem hasWeakConjWirtingerDerivRealBoundaryOn_of_contDiffOn
     HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η := by
   have hm : MeasurableSet ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :=
     Ω.isOpen.measurableSet.inter measurableSet_im_nonneg
-  have hD := hξ.continuousOn_fderivWithin
-    (by rw [inter_comm]; exact (uniqueDiffOn_setOfPred_le_im 0).inter Ω.isOpen) le_rfl
+  have hD := hξ.continuousOn_fderivWithin Ω.isOpen.uniqueDiffOn_inter_setOf_im_nonneg le_rfl
   have hηc : ContinuousOn
       (fun z ↦ (2 : ℂ)⁻¹ • (fderivWithin ℝ ξ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) z 1 +
         I • fderivWithin ℝ ξ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) z I))

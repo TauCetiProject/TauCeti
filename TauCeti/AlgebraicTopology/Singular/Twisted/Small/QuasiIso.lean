@@ -29,7 +29,7 @@ small, so subdividing a filling gives a filling inside the small-chain complex.
 
 * A. Hatcher, *Algebraic Topology*, proof of Proposition 2.21 and Section 3.H.
 * The twisted subdivision and prism constructions in
-  `TauCeti.AlgebraicTopology.Singular.Twisted.Subdivision`.
+  `TauCeti.AlgebraicTopology.Singular.Twisted.Subdivision.Basic`.
 -/
 
 public section

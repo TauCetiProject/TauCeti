@@ -30,7 +30,8 @@ mean zero and vanishing gradient, so the least Rayleigh quotient `‖∇u‖² /
 
 * `TauCeti.Examples.NeumannTwoIntervals.twoIntervals`: the open set `(0, 1) ∪ (2, 3)` of `ℝ¹`.
 * `TauCeti.Examples.NeumannTwoIntervals.card_connectedComponents_twoIntervals`: it has two
-  connected components.
+  connected components, the component of `5/2` being `(2, 3)`
+  (`TauCeti.Examples.NeumannTwoIntervals.connectedComponentIn_twoIntervals_fiveHalves`).
 * `TauCeti.Examples.NeumannTwoIntervals.finrank_ker_gradientL_twoIntervals`: the Sobolev
   functions on it with vanishing weak gradient form a space of dimension `2`, for every `p`.
 * `TauCeti.Examples.NeumannTwoIntervals.forall_energyFormH1_eq_zero_iff_twoIntervals`: the
@@ -69,7 +70,7 @@ theorem mem_twoIntervals {x : EuclideanSpace ℝ (Fin 1)} :
   Opens.mem_sup
 
 /-- The two intervals are disjoint. -/
-private theorem disjoint_intervalDomain :
+theorem disjoint_intervalDomain :
     Disjoint (PDE.intervalDomain 0 1 : Set (EuclideanSpace ℝ (Fin 1))) (PDE.intervalDomain 2 3) :=
   disjoint_left.2 fun _ h1 h2 => by
     simp only [SetLike.mem_coe, PDE.mem_intervalDomain, mem_Ioo] at h1 h2
@@ -81,7 +82,7 @@ private theorem intervalDomain_zero_one_subset :
   subset_union_left
 
 /-- The right interval lies in `Ω`. -/
-private theorem intervalDomain_two_three_subset :
+theorem intervalDomain_two_three_subset :
     (PDE.intervalDomain 2 3 : Set (EuclideanSpace ℝ (Fin 1))) ⊆ twoIntervals :=
   subset_union_right
 
@@ -92,10 +93,19 @@ private theorem half_mem_intervalDomain :
   norm_num
 
 /-- The point `5/2` of the right interval. -/
-private theorem fiveHalves_mem_intervalDomain :
+theorem fiveHalves_mem_intervalDomain :
     WithLp.toLp 2 (fun _ : Fin 1 => (5 / 2 : ℝ)) ∈ PDE.intervalDomain 2 3 := by
   rw [PDE.mem_intervalDomain, mem_Ioo]
   norm_num
+
+/-- The connected component of `5/2` in `Ω` is the right interval `(2, 3)`. -/
+theorem connectedComponentIn_twoIntervals_fiveHalves :
+    connectedComponentIn (twoIntervals : Set (EuclideanSpace ℝ (Fin 1)))
+      (WithLp.toLp 2 fun _ => 5 / 2) = PDE.intervalDomain 2 3 := by
+  rw [coe_twoIntervals, union_comm]
+  exact (PDE.isPreconnected_intervalDomain 2 3).connectedComponentIn_union_eq_left
+    (PDE.intervalDomain 2 3).isOpen (PDE.intervalDomain 0 1).isOpen
+    disjoint_intervalDomain.symm fiveHalves_mem_intervalDomain
 
 /-- **`(0, 1) ∪ (2, 3)` has two connected components.** -/
 theorem card_connectedComponents_twoIntervals :
@@ -106,13 +116,8 @@ theorem card_connectedComponents_twoIntervals :
   have hb := fiveHalves_mem_intervalDomain
   refine Nat.card_eq_two_iff.2 ⟨ConnectedComponents.mk ⟨_, hL ha⟩,
     ConnectedComponents.mk ⟨_, hR hb⟩, fun h => ?_, ?_⟩
-  · have hc : connectedComponentIn (twoIntervals : Set (EuclideanSpace ℝ (Fin 1)))
-        (WithLp.toLp 2 fun _ => 5 / 2) = PDE.intervalDomain 2 3 := by
-      rw [coe_twoIntervals, union_comm]
-      exact (PDE.isPreconnected_intervalDomain 2 3).connectedComponentIn_union_eq_left
-        (PDE.intervalDomain 2 3).isOpen (PDE.intervalDomain 0 1).isOpen
-        disjoint_intervalDomain.symm hb
-    rw [ConnectedComponents.mk_eq_mk_iff_mem_connectedComponentIn, hc] at h
+  · rw [ConnectedComponents.mk_eq_mk_iff_mem_connectedComponentIn,
+      connectedComponentIn_twoIntervals_fiveHalves] at h
     exact disjoint_intervalDomain.notMem_of_mem_left ha h
   · refine eq_univ_of_forall fun c => ?_
     obtain ⟨⟨z, hz⟩, rfl⟩ := ConnectedComponents.surjective_coe c

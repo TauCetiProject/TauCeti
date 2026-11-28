@@ -138,8 +138,8 @@ private theorem injective_mfderiv_flowOf_comp (h : IsLiouvilleCompletion ω α W
     rw [h.flowOf_eq_globalFlowDiffeomorph hZ t]
     exact (Diffeomorph.contMDiff _ _).mdifferentiableAt (by simp)
   rw [mfderiv_comp s hψ ((hι s).mdifferentiableAt (by simp)), ContinuousLinearMap.coe_comp]
-  exact (injective_mfderiv_flowOf ((h.contMDiff_of_interior_eq hZ).of_le (by simp))
-    (h.isCompleteVectorField hZ) t (ι s)).comp (hιs s)
+  exact (bijective_mfderiv_flowOf ((h.contMDiff_of_interior_eq hZ).of_le (by simp))
+    ((h.isCompleteVectorField hZ).mem_flowDomain t (ι s))).1.comp (hιs s)
 
 omit [IsManifold J (⊤ : ℕ∞) S] in
 /-- **The flow-out of the boundary is a level of the radial coordinate, infinitesimally.** Let

@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Valued.LocallyCompact
 public import Mathlib.Topology.Algebra.LinearTopology
 
 import Mathlib.Analysis.Normed.Operator.NNNorm
+import TauCeti.Topology.Algebra.Valued.NormedValued
 
 /-!
 # Integer rings of valued rings and nonarchimedean normed fields
@@ -91,16 +92,17 @@ instance instCompleteSpaceInteger [CompleteSpace K] :
 
 end Valued
 
-section Integer
+section NormedField
 
-variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
+variable {K : Type*} [NormedField K] [IsUltrametricDist K]
 
 /-- An element of the valuation ring of a nonarchimedean field lies in its maximal ideal exactly
 when its norm is less than `1`. -/
 theorem Valued.integer.mem_maximalIdeal_iff {x : Valued.integer K} :
     x ∈ IsLocalRing.maximalIdeal (Valued.integer K) ↔ ‖x‖ < 1 := by
-  rw [mem_maximalIdeal, mem_nonunits_iff, Valued.integer.isUnit_iff_norm_eq_one,
-    (Valued.integer.norm_le_one x).lt_iff_ne]
+  rw [mem_maximalIdeal, mem_nonunits_iff, Valuation.Integer.not_isUnit_iff_valuation_lt_one,
+    TauCeti.NormedField.v_eq_valuation, NormedField.valuation_apply,
+    ← NNReal.coe_lt_coe, coe_nnNorm, NNReal.coe_one, AddSubgroupClass.coe_norm]
 
 /-- An element of the valuation ring of a nonarchimedean field has residue zero exactly when its
 norm is less than `1`. -/
@@ -115,6 +117,12 @@ theorem Valued.integer.residue_eq_residue_iff_norm_sub_lt_one {x y : Valued.inte
     residue (Valued.integer K) x = residue (Valued.integer K) y ↔ ‖(x : K) - y‖ < 1 := by
   rw [← sub_eq_zero, ← map_sub, Valued.integer.residue_eq_zero_iff_norm_lt_one,
     AddSubgroupClass.coe_sub]
+
+end NormedField
+
+section Integer
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
 
 /-- The maximal ideal of the valuation ring of a nontrivially normed nonarchimedean field
 contains a nonzero element. -/
@@ -213,6 +221,14 @@ noncomputable def RingHom.integerRestrict : Valued.integer K →+* Valued.intege
 @[simp]
 theorem RingHom.coe_integerRestrict_apply (x : Valued.integer K) :
     (φ.integerRestrict hφ x : L) = φ x := (rfl)
+
+/-- Restricting the identity homomorphism of a nonarchimedean field to its valuation ring gives
+the identity homomorphism. -/
+@[simp]
+theorem RingHom.integerRestrict_id :
+    (RingHom.id K).integerRestrict (fun _ ↦ le_rfl) = RingHom.id (Valued.integer K) := by
+  ext x
+  simp
 
 /-- The restriction of a norm-nonincreasing homomorphism of nonarchimedean fields to their
 valuation rings is a local homomorphism: an element of `𝒪[K]` whose image has norm one has norm

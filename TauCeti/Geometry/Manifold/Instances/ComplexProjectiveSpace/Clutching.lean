@@ -139,6 +139,14 @@ theorem lineSquare_apply (y : Fin 2 → I) :
     lineSquare n y = coordinateLine n (riemannSphereSquare y) :=
   (rfl)
 
+/-- The class of the line sphere is the image of the class of the standard sphere of the Riemann
+sphere under the coordinate line. -/
+theorem mk_lineSquare_eq_map :
+    (⟦lineSquare n⟧ : HomotopyGroup (Fin 2) (ComplexProjectiveSpace (n + 1)) (affineParam 1 0)) =
+      HomotopyGroup.map (coordinateLine n) coordinateLine_infty ⟦riemannSphereSquare⟧ := by
+  rw [HomotopyGroup.map_mk]
+  exact congrArg _ (GenLoop.ext _ _ fun y ↦ by simp [lineSquare_apply])
+
 /-- The line sphere sends the boundary of the square to `[0 : 1 : 0 : ⋯ : 0]`. -/
 @[simp]
 theorem lineSquare_apply_of_mem {y : Fin 2 → I} (hy : y ∈ Cube.boundary (Fin 2)) :

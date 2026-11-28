@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.OrderZero
 public import TauCeti.Analysis.Sobolev.Local.Norm
+import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
 
 /-!
@@ -46,6 +47,9 @@ arbitrary, so the induction runs on the reciprocal exponents directly.
 * `TauCeti.exists_inv_le_inv_sub_and_eLpNorm_le_mul_eLpNormWkp_one`: one rung of the exponent
   ladder, the Sobolev or Morrey estimate of `W^{1,r'}` for `1/r' = 1/p + 1/s`.
 * `TauCeti.IsWeakCRSolution.memWkpLoc_one_of_le`: interior `W^{1,r}` regularity for `r ≤ p`.
+* `TauCeti.memWkpLoc_one_of_hasWeakFDerivOn_of_ae_eq`: the same for a `W^{1,q}_loc` function `u`
+  with a weak derivative solving `∂_s u + J₀ ∂_t u + S u = η` almost everywhere, for a constant
+  complex structure `J₀` on a finite-dimensional normed target and any `1 < q < ∞`.
 
 ## References
 
@@ -180,5 +184,92 @@ theorem memWkpLoc_one_of_le [FiniteDimensional ℝ V] (h : IsWeakCRSolution q Ω
       _ = r⁻¹ - p⁻¹ + ↑n * d + d := by push_cast; ring
 
 end IsWeakCRSolution
+
+/-! ### Strong solutions with an `Lᵖ` zeroth-order term -/
+
+section Strong
+
+/-- The planar statement behind `TauCeti.memWkpLoc_one_of_hasWeakFDerivOn_of_ae_eq`, for an inner
+product space target. -/
+private theorem memWkpLoc_one_of_hasWeakFDerivOn_of_ae_eq_of_inner [FiniteDimensional ℝ V]
+    {J₀ : V →L[ℝ] V} (hJ₀ : J₀ * J₀ = -1) (hp : 2 < p) (hS : MemLpLoc p Ω S) (hq : 1 < q)
+    (hq_top : q ≠ ⊤) {Dξ : ℂ → ℂ →L[ℝ] V} (hξ : MemWkpLoc q Ω 1 ξ)
+    (hDξ : HasWeakFDerivOn volume Ω ξ Dξ) (hr : 1 < r) (hr_top : r ≠ ⊤) (hrp : r ≤ p)
+    (hη : MemLpLoc r Ω η)
+    (h : ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + J₀ (Dξ z Complex.I) + S z (ξ z) = η z) :
+    MemWkpLoc r Ω 1 ξ := by
+  have hloc := Ω.isOpen.isLocallyClosed
+  have hq1 : q⁻¹ < 1 := ENNReal.inv_lt_one.2 hq
+  -- The weak derivative is locally `L^q`.
+  obtain ⟨-, D, hD, hDq⟩ := memWkpLoc_succ_iff_of_isOpen.1 hξ
+  have hDξq : MemLpLoc q Ω Dξ := (memWkpLoc_zero_iff.1 hDq).congr_ae (hD.ae_eq hDξ)
+  -- The Sobolev embedding `W^{1,q}_loc ⊂ L^t_loc` with `1/t = 1/(2q)`.
+  set t : ℝ≥0∞ := (q⁻¹ / 2)⁻¹
+  have ht_inv : t⁻¹ = q⁻¹ / 2 := inv_inv _
+  have hq0 : q⁻¹ ≠ 0 := ENNReal.inv_ne_zero.2 hq_top
+  have hξt : MemLpLoc t Ω ξ := hξ.memLpLoc_of_forall_exists_eLpNorm_le fun hVc hVW ↦
+    exists_eLpNorm_le_mul_eLpNormWkp_one_of_ne_top hq.le
+      (ENNReal.inv_ne_top.2 (ENNReal.div_pos hq0 ENNReal.ofNat_ne_top).ne')
+      (ENNReal.inv_le_inv.1 (by rw [ht_inv]; exact ENNReal.half_le_self))
+      (by
+        rw [ht_inv, ENNReal.sub_half (ne_top_of_lt hq1)]
+        exact (ENNReal.div_le_div_right hq1.le 2).trans_eq (one_div 2))
+      hVc hVW
+  have hpt : p⁻¹ + t⁻¹ < 1 := by
+    rw [ht_inv, ← ENNReal.inv_two_add_inv_two]
+    exact ENNReal.add_lt_add (ENNReal.inv_lt_inv.2 hp)
+      ((ENNReal.div_lt_div_right two_ne_zero ENNReal.ofNat_ne_top hq1).trans_eq (one_div 2))
+  -- The equation with the constant coefficient `J₀` alone and the right-hand side `η - S ξ`.
+  set P : ℝ≥0∞ := (1 - q⁻¹)⁻¹
+  have hP : P⁻¹ + q⁻¹ ≤ 1 := by rw [inv_inv, tsub_add_cancel_of_le hq1.le]
+  have hP_top : P ≠ ⊤ := ENNReal.inv_ne_top.2 (tsub_pos_of_lt hq1).ne'
+  have hSξ : LocallyIntegrableOn (fun z ↦ S z (ξ z)) Ω :=
+    hS.locallyIntegrableOn_clm_apply hξt hpt.le hloc
+  have h₀ : IsWeakCRSolution q Ω (fun _ ↦ J₀) (fderiv ℝ fun _ ↦ J₀) (fun _ ↦ 0) ξ
+      (fun z ↦ η z - S z (ξ z)) := by
+    refine ((IsSobolevCRCoefficients.of_contDiffOn contDiffOn_const continuousOn_const P)
+      |>.isWeakCRSolution_iff_ae hP hP_top hq_top hDξ hξ.memLpLoc hDξq
+        ((hη.locallyIntegrableOn hr.le hloc).sub hSξ)).2 ?_
+    filter_upwards [h] with z hz
+    rw [Pi.sub_apply, ← hz, _root_.zero_apply, add_zero,
+      add_sub_cancel_right]
+  -- Moving `S ξ` back into the zeroth-order coefficient.
+  have h₁ := (h₀.of_memLpLoc hξt).add_zeroth hS hpt.le
+  refine h₁.memWkpLoc_one_of_le
+    ((IsSobolevCRCoefficients.of_contDiffOn contDiffOn_const continuousOn_const p).add_zeroth hS)
+    hp (ae_of_all _ fun _ ↦ hJ₀) hpt hr hr_top hrp ?_
+  simpa only [sub_add_cancel] using hη
+
+/-- **Interior `W^{1,r}` regularity for a strong solution with an `Lᵖ` zeroth-order term.** Let
+`G` be a finite-dimensional real normed space, `J₀` a constant complex structure on `G`, `p > 2`
+and `S ∈ Lᵖ_loc(Ω)`. If `u ∈ W^{1,q}_loc(Ω)`, `1 < q < ∞`, has a weak derivative `Du` satisfying
+`∂_s u + J₀ ∂_t u + S u = η` almost everywhere on `Ω`, and `η ∈ Lʳ_loc` with `1 < r < ∞` and
+`r ≤ p`, then `u ∈ W^{1,r}_loc(Ω)`. No relation between `q` and `p` is needed: the Sobolev
+embedding first puts `u` in `L^{2q}_loc`, where `1/p + 1/(2q) < 1`. -/
+theorem memWkpLoc_one_of_hasWeakFDerivOn_of_ae_eq {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [FiniteDimensional ℝ G] {J₀ : G →L[ℝ] G} (hJ₀ : J₀ * J₀ = -1)
+    {S : ℂ → G →L[ℝ] G} (hp : 2 < p) (hS : MemLpLoc p Ω S) (hq : 1 < q) (hq_top : q ≠ ⊤)
+    {u η : ℂ → G} {Du : ℂ → ℂ →L[ℝ] G} (hu : MemWkpLoc q Ω 1 u)
+    (hDu : HasWeakFDerivOn volume Ω u Du) (hr : 1 < r) (hr_top : r ≠ ⊤) (hrp : r ≤ p)
+    (hη : MemLpLoc r Ω η)
+    (h : ∀ᵐ z ∂volume.restrict Ω, Du z 1 + J₀ (Du z Complex.I) + S z (u z) = η z) :
+    MemWkpLoc r Ω 1 u := by
+  let E := EuclideanSpace ℝ (Fin (Module.finrank ℝ G))
+  let e : G ≃L[ℝ] E := toEuclidean
+  let c : (G →L[ℝ] G) ≃L[ℝ] (E →L[ℝ] E) :=
+    e.conjContinuousAlgEquiv.toContinuousLinearEquiv
+  have hS' : MemLpLoc p Ω fun z ↦ c (S z) :=
+    hS.clm_comp (c : (G →L[ℝ] G) →L[ℝ] (E →L[ℝ] E))
+  have hJ₀' : c J₀ * c J₀ = -1 := by
+    simp only [c, ContinuousAlgEquiv.toContinuousLinearEquiv_apply, ← map_mul, hJ₀, map_neg,
+      map_one]
+  have h' := memWkpLoc_one_of_hasWeakFDerivOn_of_ae_eq_of_inner hJ₀' hp hS' hq hq_top
+    (hu.clm_comp (e : G →L[ℝ] E)) (hDu.clm_comp (e : G →L[ℝ] E)) hr hr_top hrp
+    (hη.clm_comp (e : G →L[ℝ] E)) (by
+      filter_upwards [h] with z hz
+      simp [c, ← hz, ContinuousLinearEquiv.conjContinuousAlgEquiv_apply])
+  simpa using h'.clm_comp (e.symm : E →L[ℝ] G)
+
+end Strong
 
 end TauCeti
