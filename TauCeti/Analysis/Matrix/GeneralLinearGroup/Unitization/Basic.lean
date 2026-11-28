@@ -9,8 +9,9 @@ public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import Mathlib.Topology.UnitInterval
 public import TauCeti.Analysis.Matrix.GeneralLinearGroup.StableComponent
+public import TauCeti.Analysis.Normed.Algebra.Unitization.Continuity
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Unitization
-public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.StableComponent
+public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.StableComponent.Basic
 
 /-!
 # `K₁` of a nonunital algebra through the unitization
@@ -90,12 +91,6 @@ section General
 
 variable (𝕜 A : Type*) [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
   [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
-
-/-- The scalar part `A⁺ → 𝕜` of the unitization is continuous, stated for the bundled ring
-homomorphism so that it matches the continuity argument of `TauCeti.StableComponentGroup.map`. -/
-theorem _root_.Unitization.continuous_fstHom :
-    Continuous (Unitization.fstHom 𝕜 A : Unitization 𝕜 A →+* 𝕜) :=
-  Unitization.continuous_fst
 
 /-- The scalar part `GLₙ(A⁺) →* GLₙ(𝕜)` is continuous. -/
 theorem continuous_unitizationGLFst (n : Type*) [Fintype n] [DecidableEq n] :

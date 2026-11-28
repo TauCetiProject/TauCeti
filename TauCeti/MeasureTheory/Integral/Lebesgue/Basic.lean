@@ -13,7 +13,8 @@ public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 This file records null-measurable monotonicity and constant lower bounds for set Lebesgue integrals,
 extending Mathlib's `MeasureTheory.setLIntegral_mono_ae'` and `MeasureTheory.setLIntegral_mono'`
 from `MeasurableSet` to `NullMeasurableSet` (parallel to `MeasureTheory.setLIntegral_congr_fun_ae₀`
-and `MeasureTheory.setLIntegral_congr_fun₀`).
+and `MeasureTheory.setLIntegral_congr_fun₀`). It also records the matching upper bound: if
+`μ t ≤ m` and `f x · m ≤ w` on `t`, then `∫_t f dμ ≤ w`, with no measurability assumptions.
 
 ## Main statements
 
@@ -25,6 +26,8 @@ and `MeasureTheory.setLIntegral_congr_fun₀`).
   null-measurable, then `c * μ s ≤ ∫⁻ x in s, f x ∂μ`.
 * `TauCeti.mul_measure_le_setLIntegral₀`: pointwise form of
   `TauCeti.mul_measure_le_setLIntegral_ae₀`.
+* `TauCeti.setLIntegral_le_of_measure_le_of_forall_mul_le`: if `μ t ≤ m` and `f x * m ≤ w` for
+  every `x ∈ t`, then `∫⁻ x in t, f x ∂μ ≤ w`.
 -/
 
 public section
@@ -64,5 +67,21 @@ theorem mul_measure_le_setLIntegral₀ {s : Set α} {f : α → ℝ≥0∞} {c :
     (hs : NullMeasurableSet s μ) (hcf : ∀ x ∈ s, c ≤ f x) :
     c * μ s ≤ ∫⁻ x in s, f x ∂μ :=
   mul_measure_le_setLIntegral_ae₀ hs (ae_of_all _ hcf)
+
+/-- If `μ t ≤ m` and `f x · m ≤ w` on `t`, then the integral of `f` over `t` is at most `w`.
+Neither `f` nor `t` needs to be measurable. -/
+theorem setLIntegral_le_of_measure_le_of_forall_mul_le {f : α → ℝ≥0∞} {t : Set α} {m w : ℝ≥0∞}
+    (hm : μ t ≤ m) (h : ∀ x ∈ t, f x * m ≤ w) : ∫⁻ x in t, f x ∂μ ≤ w := by
+  rcases eq_or_ne m 0 with h0 | h0
+  · rw [setLIntegral_measure_zero _ _ (nonpos_iff_eq_zero.1 (h0 ▸ hm))]
+    exact zero_le
+  rcases eq_or_ne w ∞ with htop | htop
+  · exact htop ▸ le_top
+  calc ∫⁻ x in t, f x ∂μ
+    _ ≤ ∫⁻ _ in t, w / m ∂μ := setLIntegral_mono measurable_const fun x hx ↦
+        (ENNReal.le_div_iff_mul_le (.inl h0) (.inr htop)).2 (h x hx)
+    _ = w / m * μ t := setLIntegral_const t _
+    _ ≤ m * (w / m) := by rw [mul_comm]; gcongr
+    _ ≤ w := ENNReal.mul_div_le
 
 end TauCeti

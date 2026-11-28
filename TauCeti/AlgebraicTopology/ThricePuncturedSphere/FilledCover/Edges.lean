@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Basic
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.SegmentComponents
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.UpperHalfPlaneComponents
+public import TauCeti.Topology.ConnectedComponents
 
 /-!
 # Edges and positive triangles in a filled cover
@@ -63,6 +64,16 @@ def edge {n : ℕ} (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
     {x | ∃ hx : p x ∈ unitSegment,
       ConnectedComponents.mk ⟨x, hx⟩ = hp.finEquivConnectedComponentsUnitSegment ν i}
 
+/-- The numbered edge is the image of the corresponding unnumbered segment component. -/
+theorem edge_eq_image_carrierIn {n : ℕ} (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
+    (i : Fin n) : edge hp ν i = PunctureFilling.incl (chart p) ''
+      (hp.finEquivConnectedComponentsUnitSegment ν i).carrierIn := by
+  rw [edge]
+  congr 1
+  ext x
+  exact (ConnectedComponents.mem_carrierIn_iff
+    (c := hp.finEquivConnectedComponentsUnitSegment ν i) (x := x)).symm
+
 /-- Membership in an open edge, expressed using its connected-component label before inclusion in
 the filled cover. -/
 theorem mem_edge_iff {n : ℕ} (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
@@ -85,6 +96,20 @@ theorem incl_mem_edge_iff {n : ℕ} (hp : IsCoveringMap p) (ν : p ⁻¹' {baseP
     PunctureFilling.incl (chart p) x ∈ edge hp ν i ↔ ∃ hx : p x ∈ unitSegment,
       ConnectedComponents.mk ⟨x, hx⟩ = hp.finEquivConnectedComponentsUnitSegment ν i := by
   simp only [edge, PunctureFilling.incl_injective.mem_set_image, mem_ofPred_eq]
+
+/-- Taking the closure of an edge adds no points in the original covering space. -/
+@[simp] theorem incl_mem_closure_edge_iff {n : ℕ} (hp : IsCoveringMap p)
+    (ν : p ⁻¹' {basePt} ≃ Fin n) (i : Fin n) (x : E) :
+    PunctureFilling.incl (chart p) x ∈ closure (edge hp ν i) ↔
+      PunctureFilling.incl (chart p) x ∈ edge hp ν i := by
+  have hfin : Finite (p ⁻¹' {basePt}) := .of_equiv _ ν.symm
+  have hι := PunctureFilling.isOpenEmbedding_incl
+    (fun j ↦ (isOpenEmbedding_chart hp hfin j).continuous)
+  have hc : IsClosed (hp.finEquivConnectedComponentsUnitSegment ν i).carrierIn := by
+    rw [hp.finEquivConnectedComponentsUnitSegment_apply, ConnectedComponents.carrierIn_mk]
+    exact (isClosed_unitSegment.preimage hp.continuous).connectedComponentIn
+  rw [edge_eq_image_carrierIn, hι.injective.mem_set_image]
+  exact Set.ext_iff.mp (hι.isOpenMap.preimage_closure_image hι.injective hι.continuous _ hc) x
 
 /-- The added points of the filled cover lie on no edge. -/
 theorem center_notMem_edge {n : ℕ} (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
