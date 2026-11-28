@@ -82,7 +82,13 @@ theorem _root_.IsCompact.exists_mem_span_ridgeFunctions_dist_lt {K : Set E} (hK 
   let e : Multiplicative E →* C(E, ℝ) :=
     (Real.expMonoidHom.compLeftContinuous E (Real.continuous_exp.comp continuous_toAdd)).comp
       L.toMultiplicative
-  have he (a : Multiplicative E) (x : E) : e a x = Real.exp ⟪a.toAdd, x⟫ := rfl
+  have he (a : Multiplicative E) (x : E) : e a x = Real.exp ⟪a.toAdd, x⟫ := by
+    dsimp only [e]
+    erw [MonoidHom.comp_apply, MonoidHom.compLeftContinuous_apply, ContinuousMap.comp_apply,
+      ContinuousMap.coe_mk, Real.expMonoidHom_apply, AddMonoidHom.coe_toMultiplicative]
+    -- Evaluating a multiplicative tag on a continuous map tags its value pointwise.
+    change Real.exp (Multiplicative.ofAdd (L a.toAdd x)).toAdd = _
+    simp [L]
   let A : Subalgebra ℝ C(E, ℝ) := Algebra.adjoin ℝ (MonoidHom.mrange e : Set C(E, ℝ))
   have hsep : A.SeparatesPoints := by
     intro x y hxy
