@@ -40,6 +40,8 @@ exactly when `(a, b)_K = -1`.
 * `TauCeti.BrauerGroup.quaternionSubgroup_eq_twoTorsion`: `Q(K) = Br(K)[2]`.
 * `TauCeti.BrauerGroup.invMap_brauerGroupEquivBr_quaternionClass_eq_half_iff`: the quaternion
   class `[(a, b)]` has local invariant `1/2` exactly when `(a, b)_K = -1`.
+* `TauCeti.BrauerGroup.invMap_brauerGroupEquivBr_eq_toRatAddCircle_sign`: the local invariant of
+  any quaternion-subgroup class is its sign read in `(½ℤ)/ℤ`.
 * `TauCeti.BrauerGroup.h2MuEquivZMod_eq_one_iff_hilbertSymbol_eq_neg_one`: the class of
   `H²(K, μ₂)` of `[(a, b)]` is `1 ∈ ℤ/2` exactly when `(a, b)_K = -1`.
 
@@ -83,6 +85,27 @@ theorem invMap_brauerGroupEquivBr_quaternionClass_eq_half_iff (a b : Kˣ) :
   rw [invMap_brauerGroupEquivBr_eq_half_iff K (mem_twoTorsion.2 (quaternionClass_sq a b)), ne_eq,
     quaternionClass_eq_one_iff, ← hilbertSymbol_eq_one_iff_nonempty_algEquiv_matrix]
   rcases Int.units_eq_one_or (hilbertSymbol a b) with h | h <;> simp [h]
+
+variable {K} in
+/-- On the quaternion subgroup of a nonarchimedean local field with two invertible, the local
+invariant is the canonical quaternion sign, with `1` sent to `0` and `-1` to `1/2` in
+`ℚ/ℤ` (Serre, *Local Fields*, Chapter XIV, §2). -/
+theorem invMap_brauerGroupEquivBr_eq_toRatAddCircle_sign (x : quaternionSubgroup K) :
+    invMap K (brauerGroupEquivBr K (Additive.ofMul x.val)) =
+      ZMod.toRatAddCircle 2
+        (additiveIntUnitsAddEquiv (Additive.ofMul (quaternionSubgroupSignEquiv x))) := by
+  obtain ⟨x, hx⟩ := x
+  obtain ⟨a, b, rfl⟩ := (mem_quaternionSubgroup_iff x).1 hx
+  rw [quaternionSubgroupSignEquiv_apply_quaternionClass]
+  rcases Int.units_eq_one_or (hilbertSymbol a b) with h | h
+  · have hsplit : quaternionClass a b = 1 := by
+      exact (quaternionClass_eq_one_iff a b).2
+        ((hilbertSymbol_eq_one_iff_nonempty_algEquiv_matrix a b).1 h)
+    simp [hsplit, h]
+  · have hhalf : ZMod.toRatAddCircle 2 1 = ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) := by
+      simpa only [Nat.cast_one, Nat.cast_ofNat] using ZMod.toRatAddCircle_natCast 2 1
+    have hinv := (invMap_brauerGroupEquivBr_quaternionClass_eq_half_iff K a b).2 h
+    simpa [h] using hinv.trans hhalf.symm
 
 /-- **The quaternion division class is `1 ∈ ℤ/2` in `H²(K, μ₂)`.** Let `y` be a class of
 `H²(K, μ₂)` whose Kummer image `h2MuToBr 2 K y` in `Br K` is the quaternion class `[(a, b)]`;
