@@ -16,7 +16,7 @@ The unit group of a quadratic algebra modulo `2` has order `1`, `2` or `3`, in t
 ramified and inert cases respectively (`card_periodMatrixGroup_zmod_two`). These are the orders
 of the corresponding multiplication matrix groups, before quotienting by the image of the integral
 units. When the constant coefficient is `-1`, every residue unit lifts to an integral unit, for any
-integral linear coefficient (`TauCeti.QuadraticAlgebra.units_map_zmod_two_neg_one_surjective`).
+integral linear coefficient (`Int.units_map_zmod_two_neg_one_surjective`).
 In particular, every residue unit in the Gaussian and Eisenstein integer algebras lifts to an
 integral unit (`units_map_zmod_two_gaussian_surjective`,
 `units_map_zmod_two_eisenstein_surjective`). Thus their unit images cannot be replaced by the
@@ -43,7 +43,7 @@ theorem card_periodMatrixGroup_zmod_two (a b : ZMod 2) :
 
 /-- Every unit modulo `2` in an integral quadratic algebra with constant coefficient `-1`
 lifts to an integral unit. The lifts are `1`, `omegaUnit b`, and `(omegaUnit b)²`. -/
-theorem _root_.TauCeti.QuadraticAlgebra.units_map_zmod_two_neg_one_surjective (b : ℤ) :
+theorem _root_.Int.units_map_zmod_two_neg_one_surjective (b : ℤ) :
     Function.Surjective (Units.map
       (mapRingHom (Int.castRingHom (ZMod 2)) (-1) b).toMonoidHom) := by
   intro u
@@ -66,13 +66,13 @@ theorem _root_.TauCeti.QuadraticAlgebra.units_map_zmod_two_neg_one_surjective (b
 theorem units_map_zmod_two_gaussian_surjective :
     Function.Surjective (Units.map
       (mapRingHom (Int.castRingHom (ZMod 2)) (-1) 0).toMonoidHom) :=
-  TauCeti.QuadraticAlgebra.units_map_zmod_two_neg_one_surjective 0
+  Int.units_map_zmod_two_neg_one_surjective 0
 
 /-- Every unit modulo `2` in the Eisenstein integer algebra lifts to an integral unit. The
 three residues are represented by `1`, `ω`, and `ω² = ω - 1`. -/
 theorem units_map_zmod_two_eisenstein_surjective :
     Function.Surjective (Units.map
       (mapRingHom (Int.castRingHom (ZMod 2)) (-1) 1).toMonoidHom) :=
-  TauCeti.QuadraticAlgebra.units_map_zmod_two_neg_one_surjective 1
+  Int.units_map_zmod_two_neg_one_surjective 1
 
 end QuadraticAlgebra

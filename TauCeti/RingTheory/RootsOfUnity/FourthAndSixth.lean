@@ -98,8 +98,9 @@ theorem isPrimitiveRoot_one_add_mul_invOf_two_of_sq_eq_neg_three {R : Type*} [Co
 theorem isPrimitiveRoot_one_add_div_two_of_sq_eq_neg_three {F : Type*} [Field F]
     [NeZero ((6 : ℕ) : F)] {θ : F} (h : θ ^ 2 = -3) :
     IsPrimitiveRoot ((1 + θ) / 2) 6 := by
+  have htwo_mul_three : (2 : F) * 3 = 6 := by norm_num
   have hsix : (2 : F) * 3 ≠ 0 := by
-    simpa only [Nat.cast_ofNat, show (2 : F) * 3 = 6 by norm_num] using
+    simpa only [Nat.cast_ofNat, htwo_mul_three] using
       NeZero.ne ((6 : ℕ) : F)
   let : Invertible (2 : F) := invertibleOfNonzero (left_ne_zero_of_mul hsix)
   have : NeZero (3 : F) := ⟨right_ne_zero_of_mul hsix⟩

@@ -58,7 +58,7 @@ def omegaUnit {R : Type*} [CommRing R] (b : R) : (QuadraticAlgebra R (-1) b)ˣ :
 proof argument allows callers to use their chosen transport. Use this equation to rewrite
 transported units. For the underlying value of the untransported `Units.map`, `simp` uses
 `Units.coe_map`, `omegaUnit_val`, and `QuadraticAlgebra.mapRingHom_omega`. -/
-theorem omegaUnit_map {R S : Type*} [CommRing R] [CommRing S]
+theorem _root_.RingHom.map_omegaUnit {R S : Type*} [CommRing R] [CommRing S]
     (f : R →+* S) (b : R) (h : f (-1) = (-1 : S) := by simp) :
     Units.map (h ▸
       (_root_.QuadraticAlgebra.mapRingHom f (-1) b).toMonoidHom) (omegaUnit b) =
