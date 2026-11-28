@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 public import TauCeti.MeasureTheory.Function.Lp.Linfty.Algebra
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import TauCeti.MeasureTheory.Function.Lp.Holder
@@ -41,11 +42,12 @@ Multiplication by the indicator of a measurable set `s` is the operator
 `MeasureTheory.Lp.indicatorMultiplication 𝕜 p hs` on `Lp E p μ`, built from
 `TauCeti.linftyIndicator μ 𝕜 s hs` in scalar `L∞` (`indicatorMultiplication_apply`). It acts as
 `f ↦ 1_s f` almost everywhere (`indicatorMultiplication_ae`, `indicatorMultiplication_eq_iff`,
-`indicatorMultiplication_eq_self_of_ae_notMem`), it is the identity for `univ`, zero for `∅` and
-composes by intersection (`indicatorMultiplication_comp_indicatorMultiplication`), cut-offs to a
-set and its complement add up to the identity (`indicatorMultiplication_add_compl`), it restricts
-constant indicator classes (`indicatorMultiplication_indicatorConstLp`), it is a contraction
-(`norm_indicatorMultiplication_le`), the `Lʳ` seminorm of `1_s f` is that of `f` on `s`
+`indicatorMultiplication_eq_self_of_ae_notMem`), agrees with restricting to `s` and extending
+by zero (`TauCeti.castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM`), is the identity for `univ`,
+zero for `∅` and composes by intersection (`indicatorMultiplication_comp_indicatorMultiplication`),
+cut-offs to a set and its complement add up to the identity (`indicatorMultiplication_add_compl`),
+it restricts constant indicator classes (`indicatorMultiplication_indicatorConstLp`), it is a
+contraction (`norm_indicatorMultiplication_le`), the `Lʳ` seminorm of `1_s f` is that of `f` on `s`
 (`eLpNorm_indicatorMultiplication`), and it is self-adjoint on `L²`
 (`inner_indicatorMultiplication_left`, `adjoint_indicatorMultiplication`).
 
@@ -260,6 +262,22 @@ theorem indicatorMultiplication_eq_self_of_ae_notMem (hs : MeasurableSet s) {f :
   · rw [Set.indicator_of_mem hxs]
   · rw [Set.indicator_of_notMem hxs, hfx hxs]
 
+/-- Restricting an `Lᵖ` class to a measurable set `s` and extending back by zero to the whole
+space equals `MeasureTheory.Lp.indicatorMultiplication 𝕜 p hs`. -/
+theorem _root_.TauCeti.castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM {s : Set α}
+    (hs : MeasurableSet s) (f : Lp E p μ) :
+    TauCeti.castLpₗᵢ (𝕜 := 𝕜) Measure.restrict_univ
+      (TauCeti.extendByZeroLpₗᵢ 𝕜 μ hs.nullMeasurableSet (Set.subset_univ s)
+        (LpToLpRestrictCLM α E 𝕜 μ p s f)) =
+      indicatorMultiplication 𝕜 p hs f := by
+  refine Lp.ext ((TauCeti.coeFn_castLpₗᵢ_extendByZeroLpₗᵢ 𝕜 hs.nullMeasurableSet _).trans ?_)
+  filter_upwards [(ae_restrict_iff' hs).mp (LpToLpRestrictCLM_coeFn 𝕜 s f),
+    (indicatorMultiplication_ae (𝕜 := 𝕜) hs f).symm] with x hxR hind
+  rw [← hind]
+  by_cases hxs : x ∈ s
+  · simp [hxs, hxR hxs]
+  · simp [hxs]
+
 /-- Commuting with `indicatorMultiplication` commutes its action on `Lp` functions. -/
 theorem _root_.Commute.indicatorMultiplication_apply {T : Lp E p μ →L[𝕜] Lp E p μ}
     {hs : MeasurableSet s} (h : Commute T (indicatorMultiplication 𝕜 p hs)) (f : Lp E p μ) :
@@ -303,7 +321,7 @@ theorem indicatorMultiplication_indicatorConstLp {t : Set α} (hs : MeasurableSe
     (ht : MeasurableSet t) (hμt : μ t ≠ ∞) (v : E) :
     indicatorMultiplication 𝕜 p hs (indicatorConstLp p ht hμt v) =
       indicatorConstLp p (hs.inter ht)
-        ((measure_mono Set.inter_subset_right).trans_lt hμt.lt_top).ne v := by
+        (measure_ne_top_of_subset Set.inter_subset_right hμt) v := by
   rw [indicatorMultiplication_apply]
   exact TauCeti.linftyIndicator_smul_indicatorConstLp hs ht hμt v
 
@@ -312,7 +330,7 @@ it to `s`. -/
 theorem indicatorMultiplication_indicatorConstLp_of_subset {t : Set α} (hs : MeasurableSet s)
     (ht : MeasurableSet t) (hμt : μ t ≠ ∞) (hst : s ⊆ t) (v : E) :
     indicatorMultiplication 𝕜 p hs (indicatorConstLp p ht hμt v) =
-      indicatorConstLp p hs ((measure_mono hst).trans_lt hμt.lt_top).ne v := by
+      indicatorConstLp p hs (measure_ne_top_of_subset hst hμt) v := by
   rw [indicatorMultiplication_indicatorConstLp]
   simp [Set.inter_eq_left.mpr hst]
 

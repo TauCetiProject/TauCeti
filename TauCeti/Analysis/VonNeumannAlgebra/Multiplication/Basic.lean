@@ -149,9 +149,7 @@ theorem mem_multiplicationAlgebra_iff_forall_commute_indicatorMultiplication {μ
     rintro _ ⟨a, rfl⟩
     exact (commute_iff_eq _ _).mp <|
       Lp.commute_of_forall_commute_indicatorMultiplication
-        (fun _ hs _ ↦ by
-          rw [← Lp.multiplicationOperator_linftyIndicator hs]
-          exact Lp.commute_multiplicationOperator a _) hT
+        (fun _ hs _ ↦ Lp.commute_multiplicationOperator_indicatorMultiplication a hs) hT
 
 instance instIsMulCommutativeMultiplicationAlgebra (μ : Measure α) :
     IsMulCommutative (multiplicationAlgebra μ) :=
@@ -202,7 +200,7 @@ theorem bot_lt_multiplicationAlgebra {μ : Measure α} {s t : Set α}
       simpa [Algebra.algebraMap_eq_smul_one] using hfs
     exact sub_eq_zero.mp ((smul_eq_zero.mp h1).resolve_right hfs0)
   have hzero : indicatorConstLp 2 (hs.inter ht)
-      ((measure_mono Set.inter_subset_right).trans_lt hμt.lt_top).ne (1 : ℂ) = 0 := by
+      (measure_ne_top_of_subset Set.inter_subset_right hμt) (1 : ℂ) = 0 := by
     rw [TauCeti.indicatorConstLp_eq_zero_iff]
     exact Or.inl hst
   have hc0 : c = 0 := by
@@ -522,6 +520,19 @@ private theorem isIdempotentElem_of_mul_linftyIndicator_eq {μ : Measure α}
         rw [Lp.multiplicationOperator_sub, sub_eq_zero]
         simpa only [coe_multiplicationStarAlgHom_apply] using congrArg Subtype.val hS_idem)
 
+/-- If `P * multiplicationStarAlgHom μ (linftyIndicator μ ℂ E hE) = 0`, then `P` vanishes on every
+constant indicator supported on `E`. -/
+private theorem apply_indicatorConstLp_eq_zero_of_mul_linftyIndicator_eq_zero
+    {μ : Measure α} {E : Set α} (hE : MeasurableSet E) (hμE : μ E ≠ ∞)
+    {P : multiplicationAlgebra μ}
+    (hPE : P * multiplicationStarAlgHom μ (TauCeti.linftyIndicator μ ℂ E hE) = 0) (c : ℂ) :
+    (P : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ) (indicatorConstLp 2 hE hμE c) = 0 := by
+  have h := congr($(congrArg Subtype.val hPE) (indicatorConstLp 2 hE hμE c))
+  rwa [MulMemClass.coe_mul, ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply,
+    coe_multiplicationStarAlgHom_apply, Lp.multiplicationOperator_linftyIndicator,
+    Lp.indicatorMultiplication_indicatorConstLp_self hE hμE c,
+    ZeroMemClass.coe_zero, zero_apply] at h
+
 /-- A nonzero idempotent `P ∈ multiplicationAlgebra μ` restricts on some finite-measure measurable
 set `E` to multiplication by the indicator of a positive-measure measurable subset `s ⊆ E` (with
 no `SigmaFinite` hypothesis on `μ`). -/
@@ -538,14 +549,10 @@ private theorem exists_measurableSet_subset_and_mul_linftyIndicator_eq {μ : Mea
     exact hP0 (Subtype.ext (ContinuousLinearMap.eq_zero_of_apply_indicatorConstLp
       ENNReal.ofNat_ne_top (P : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ) hall))
   set eE := TauCeti.linftyIndicator μ ℂ E hE with heE_def
-  have hPcomm : ∀ b : Lp ℂ ∞ μ,
-      Commute (P : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ) (Lp.multiplicationOperator b) := fun b ↦
-    (commute_iff_eq _ _).mpr <| by
-      simpa only [MulMemClass.coe_mul, coe_multiplicationStarAlgHom_apply] using
-        congrArg Subtype.val (mul_comm P (multiplicationStarAlgHom μ b))
   obtain ⟨b, -, hb_eq⟩ := Lp.exists_norm_le_and_comp_indicatorMultiplication_eq
-    hE hμE (P : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ) fun _ ht _ ↦ by
-      rw [← Lp.multiplicationOperator_linftyIndicator ht]; exact hPcomm _
+    hE hμE (P : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ) fun _ ht hts ↦
+      mem_multiplicationAlgebra_iff_forall_commute_indicatorMultiplication.mp P.property ht
+        (measure_ne_top_of_subset hts hμE)
   set p : Lp ℂ ∞ μ := b * eE with hp_def
   have hPE : P * multiplicationStarAlgHom μ eE = multiplicationStarAlgHom μ p :=
     Subtype.ext <| by
@@ -561,15 +568,8 @@ private theorem exists_measurableSet_subset_and_mul_linftyIndicator_eq {μ : Mea
     rw [← hpe, hp_s₀, heE_def, TauCeti.linftyIndicator_mul_linftyIndicator]
   refine ⟨E, hE, hμE, s₀ ∩ E, hs₀.inter hE, Set.inter_subset_right,
     pos_iff_ne_zero.mpr fun h0 ↦ hPEc ?_, hPE.trans (congrArg _ hp_s)⟩
-  have hzero : multiplicationStarAlgHom μ p = 0 := by
-    rw [hp_s, (TauCeti.linftyIndicator_eq_zero_iff (hs₀.inter hE)).mpr h0, map_zero]
-  have hPE_val := congrArg Subtype.val (hPE.trans hzero)
-  have h0' := congr($hPE_val (indicatorConstLp 2 hE hμE c))
-  simpa only [MulMemClass.coe_mul, coe_multiplicationStarAlgHom_apply,
-    mul_apply_eq_comp, ContinuousLinearMap.comp_apply, eE,
-    Lp.multiplicationOperator_linftyIndicator,
-    Lp.indicatorMultiplication_indicatorConstLp_self hE hμE c,
-    ZeroMemClass.coe_zero, zero_apply] using h0'
+  refine apply_indicatorConstLp_eq_zero_of_mul_linftyIndicator_eq_zero hE hμE ?_ c
+  rw [hPE, hp_s, (TauCeti.linftyIndicator_eq_zero_iff (hs₀.inter hE)).mpr h0, map_zero]
 
 /-- Indicator multiplication by any measurable set `t` defines a star projection in
 `multiplicationAlgebra μ`. -/
@@ -597,10 +597,10 @@ theorem exists_multiplicationAlgebra_isStarProjection_ne_zero_and_mul_eq_and_ne_
     ∃ Q : multiplicationAlgebra μ, IsStarProjection Q ∧ Q ≠ 0 ∧ Q * P = Q ∧ Q ≠ P := by
   obtain ⟨E, hE, hμE, s, hs, hsE, hμs_pos, hPE⟩ :=
     exists_measurableSet_subset_and_mul_linftyIndicator_eq hP hP0
-  have hμs_fin : μ s ≠ ∞ := ((measure_mono hsE).trans_lt hμE.lt_top).ne
+  have hμs_fin : μ s ≠ ∞ := measure_ne_top_of_subset hsE hμE
   obtain ⟨t, hts, ht, hμt_pos, hμts_lt⟩ :=
     (Measure.IsAtom.not_isAtom_iff_exists hs hμs_pos).mp (hμ s hμs_fin)
-  have hμt_fin : μ t ≠ ∞ := ((measure_mono (hts.trans hsE)).trans_lt hμE.lt_top).ne
+  have hμt_fin : μ t ≠ ∞ := measure_ne_top_of_subset (hts.trans hsE) hμE
   set q := TauCeti.linftyIndicator μ ℂ t ht
   set eE := TauCeti.linftyIndicator μ ℂ E hE
   set es := TauCeti.linftyIndicator μ ℂ s hs

@@ -32,7 +32,8 @@ by lifting scalar-to-endomorphism embedding to
 
 For a measurable set `s`, multiplication by the class `TauCeti.linftyIndicator μ 𝕜 s hs` of its
 indicator agrees with `MeasureTheory.Lp.indicatorMultiplication 𝕜 p hs`
-(`multiplicationOperator_linftyIndicator`).
+(`multiplicationOperator_linftyIndicator`), which commutes with every `multiplicationOperator a`
+(`commute_multiplicationOperator_indicatorMultiplication`).
 
 A function `f` continuous and bounded on a measurable set `s` has a class
 `TauCeti.linftyOfContinuousOn μ hf hs hC` in `L∞(μ.restrict s)`, and multiplication by it acts by
@@ -247,6 +248,13 @@ theorem multiplicationOperator_linftyIndicator (hs : MeasurableSet s) :
   ContinuousLinearMap.ext fun f ↦
     (multiplicationOperator_apply _ _).trans (indicatorMultiplication_apply hs f).symm
 
+/-- Multiplication by an `L∞` class commutes with indicator multiplication. -/
+theorem commute_multiplicationOperator_indicatorMultiplication (a : Lp 𝕜 ∞ μ)
+    (hs : MeasurableSet s) :
+    Commute (multiplicationOperator (E := E) (p := p) a) (indicatorMultiplication 𝕜 p hs) := by
+  rw [← multiplicationOperator_linftyIndicator hs]
+  exact commute_multiplicationOperator a _
+
 open Filter Topology in
 /-- **Cut-offs to shrinking sets.** Cutting an `Lᵖ` class, `p < ∞`, off to the sets of a decreasing
 family with empty intersection gives classes whose norms tend to zero: the `p`-th powers of the
@@ -392,18 +400,12 @@ section ComplexInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
 
-private theorem continuous_starAlgHom_ofId (E : Type*) [NormedAddCommGroup E]
-    [InnerProductSpace ℂ E] [CompleteSpace E] :
-    Continuous (StarAlgHom.ofId ℂ (E →L[ℂ] E)) :=
-  (algebraMapCLM ℂ (E →L[ℂ] E)).lipschitzWith.continuous.congr fun c ↦ by
-    rw [coe_algebraMapCLM, StarAlgHom.ofId_apply]
-
 /-- Pointwise multiplication by essentially bounded complex functions, bundled as a unital
 ⋆-algebra homomorphism into the bounded operators on `L²`. -/
 def multiplicationStarAlgHom (μ : Measure α) (E : Type*) [NormedAddCommGroup E]
     [InnerProductSpace ℂ E] [CompleteSpace E] : Lp ℂ ∞ μ →⋆ₐ[ℂ] (Lp E 2 μ →L[ℂ] Lp E 2 μ) :=
   (operatorMultiplicationStarAlgHom ℂ E μ).comp
-    ((StarAlgHom.ofId ℂ (E →L[ℂ] E)).compLpTop (continuous_starAlgHom_ofId E) μ)
+    ((StarAlgHom.ofId ℂ (E →L[ℂ] E)).compLpTop (continuous_algebraMap ℂ (E →L[ℂ] E)) μ)
 
 @[simp]
 theorem multiplicationStarAlgHom_apply (a : Lp ℂ ∞ μ) :
@@ -412,8 +414,8 @@ theorem multiplicationStarAlgHom_apply (a : Lp ℂ ∞ μ) :
   rw [multiplicationStarAlgHom, StarAlgHom.comp_apply, operatorMultiplicationStarAlgHom_apply]
   filter_upwards
     [operatorMultiplication_ae
-      ((StarAlgHom.ofId ℂ (E →L[ℂ] E)).compLpTop (continuous_starAlgHom_ofId E) μ a) f,
-    (StarAlgHom.ofId ℂ (E →L[ℂ] E)).coeFn_compLpTop (continuous_starAlgHom_ofId E) a,
+      ((StarAlgHom.ofId ℂ (E →L[ℂ] E)).compLpTop (continuous_algebraMap ℂ (E →L[ℂ] E)) μ a) f,
+    (StarAlgHom.ofId ℂ (E →L[ℂ] E)).coeFn_compLpTop (continuous_algebraMap ℂ (E →L[ℂ] E)) a,
     multiplicationOperator_ae a f] with x hx hcomp hmul
   rw [hx, hcomp, StarAlgHom.ofId_apply, Algebra.algebraMap_eq_smul_one, smul_apply,
     ContinuousLinearMap.one_def, id_apply, hmul]

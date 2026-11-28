@@ -353,32 +353,26 @@ private theorem norm_le_norm_cutoffL_add_cutoffL {R : ℝ} {β γ : ℝ → ℝ}
           (f₂ : Lp (V × V × V) 2 stripMeasure)‖ := by
   set g := cutoffL 2 hβ hβ1 hβ'1 f₁ + cutoffL 2 hγ hγ1 hγ'1 f₂
   have key {A : Set (ℝ × ℝ)} (hA : MeasurableSet A) (f : H1 V)
-      (hg : Lp.multiplicationOperator (linftyIndicator stripMeasure ℝ A hA)
-        (g : Lp (V × V × V) 2 stripMeasure) =
-        Lp.multiplicationOperator (linftyIndicator stripMeasure ℝ A hA)
-          (f : Lp (V × V × V) 2 stripMeasure)) :
-      ‖f‖ ≤ ‖g‖ + ‖Lp.multiplicationOperator (linftyIndicator stripMeasure ℝ Aᶜ hA.compl)
+      (hg : Lp.indicatorMultiplication ℝ 2 hA (g : Lp (V × V × V) 2 stripMeasure) =
+        Lp.indicatorMultiplication ℝ 2 hA (f : Lp (V × V × V) 2 stripMeasure)) :
+      ‖f‖ ≤ ‖g‖ + ‖Lp.indicatorMultiplication ℝ 2 hA.compl
         (f : Lp (V × V × V) 2 stripMeasure)‖ := by
-    set m := Lp.multiplicationOperator (linftyIndicator stripMeasure ℝ Aᶜ hA.compl)
-      (f : Lp (V × V × V) 2 stripMeasure)
-    calc ‖f‖ = ‖Lp.multiplicationOperator (linftyIndicator stripMeasure ℝ A hA)
-          (g : Lp (V × V × V) 2 stripMeasure) + m‖ := by
-          rw [hg, Lp.multiplicationOperator_linftyIndicator,
-            show m = Lp.indicatorMultiplication ℝ 2 hA.compl (f : Lp (V × V × V) 2 stripMeasure)
-              from by simp [m, Lp.multiplicationOperator_linftyIndicator],
-            Lp.indicatorMultiplication_add_compl, Submodule.norm_coe]
-      _ ≤ ‖g‖ + ‖m‖ := by
-          refine (norm_add_le _ _).trans (add_le_add_left ?_ _)
-          rw [Lp.multiplicationOperator_linftyIndicator]
-          exact (Lp.norm_indicatorMultiplication_apply_le hA _).trans_eq (Submodule.norm_coe g)
+    set m := Lp.indicatorMultiplication ℝ 2 hA.compl (f : Lp (V × V × V) 2 stripMeasure)
+    calc ‖f‖ = ‖Lp.indicatorMultiplication ℝ 2 hA (g : Lp (V × V × V) 2 stripMeasure) + m‖ := by
+          rw [hg, Lp.indicatorMultiplication_add_compl, Submodule.norm_coe]
+      _ ≤ ‖g‖ + ‖m‖ := (norm_add_le _ _).trans (add_le_add_left
+          ((Lp.norm_indicatorMultiplication_apply_le hA _).trans_eq (Submodule.norm_coe g)) _)
+  simp only [Lp.multiplicationOperator_linftyIndicator]
   refine ⟨key (measurableSet_lt measurable_fst measurable_const) f₁ ?_,
     key (measurableSet_lt measurable_const measurable_fst) f₂ ?_⟩
-  · rw [Submodule.coe_add, map_add, multiplicationOperator_linftyIndicator_cutoffL hβ hβ1 hβ'1 _
-      (fun z hz ↦ hβ₀ z.1 hz), multiplicationOperator_linftyIndicator_cutoffL hγ hγ1 hγ'1 _
-      (fun z hz ↦ hγ₀ z.1 hz), one_smul, zero_smul, add_zero]
-  · rw [Submodule.coe_add, map_add, multiplicationOperator_linftyIndicator_cutoffL hβ hβ1 hβ'1 _
-      (fun z hz ↦ hβR z.1 hz), multiplicationOperator_linftyIndicator_cutoffL hγ hγ1 hγ'1 _
-      (fun z hz ↦ hγR z.1 hz), one_smul, zero_smul, zero_add]
+  · rw [← Lp.multiplicationOperator_linftyIndicator, Submodule.coe_add, map_add,
+      multiplicationOperator_linftyIndicator_cutoffL hβ hβ1 hβ'1 _ (fun z hz ↦ hβ₀ z.1 hz),
+      multiplicationOperator_linftyIndicator_cutoffL hγ hγ1 hγ'1 _ (fun z hz ↦ hγ₀ z.1 hz),
+      one_smul, zero_smul, add_zero, Lp.multiplicationOperator_linftyIndicator]
+  · rw [← Lp.multiplicationOperator_linftyIndicator, Submodule.coe_add, map_add,
+      multiplicationOperator_linftyIndicator_cutoffL hβ hβ1 hβ'1 _ (fun z hz ↦ hβR z.1 hz),
+      multiplicationOperator_linftyIndicator_cutoffL hγ hγ1 hγ'1 _ (fun z hz ↦ hγR z.1 hz),
+      one_smul, zero_smul, zero_add, Lp.multiplicationOperator_linftyIndicator]
 
 /-- The kernel of an operator on `W^{1,2} × S` is a free module. (The instance is found through
 its image in `L² × S`, where instance search identifies the additive structures directly.) -/
