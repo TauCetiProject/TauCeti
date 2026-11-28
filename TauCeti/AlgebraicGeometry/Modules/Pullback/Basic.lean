@@ -379,6 +379,10 @@ theorem pullbackEquiv_functor (e : X ≅ Y) : (pullbackEquiv e).functor = pullba
 theorem pullbackEquiv_inverse (e : X ≅ Y) : (pullbackEquiv e).inverse = pullback e.inv :=
   (rfl)
 
+/-- Pulling back modules along an isomorphism of schemes preserves addition of morphisms. -/
+instance (e : X ≅ Y) : (pullbackEquiv e).functor.Additive :=
+  inferInstanceAs (pullback e.hom).Additive
+
 /-- The unit isomorphism of `pullbackEquiv e` is the pullback coherence isomorphism
 `(pullbackId Y).symm ≪≫ pullbackCongr e.inv_hom_id.symm ≪≫ (pullbackComp e.inv e.hom).symm`. -/
 theorem pullbackEquiv_unitIso (e : X ≅ Y) :

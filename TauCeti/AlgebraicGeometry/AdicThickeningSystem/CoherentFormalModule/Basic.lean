@@ -754,6 +754,11 @@ theorem pullbackEquiv_functor (e : 𝔛 ≅ 𝔜) : (pullbackEquiv e).functor = 
 theorem pullbackEquiv_inverse (e : 𝔛 ≅ 𝔜) : (pullbackEquiv e).inverse = pullback e.inv := by
   rfl
 
+/-- Pulling back coherent formal modules along an isomorphism of adic thickening systems preserves
+addition of morphisms. -/
+instance (e : 𝔛 ≅ 𝔜) : (pullbackEquiv e).functor.Additive :=
+  inferInstanceAs (pullback e.hom).Additive
+
 /-- The unit isomorphism of `pullbackEquiv e` is the pullback coherence isomorphism
 `(pullbackId 𝔜).symm ≪≫ pullbackCongr e.inv_hom_id.symm ≪≫ (pullbackComp e.inv e.hom).symm`. -/
 theorem pullbackEquiv_unitIso (e : 𝔛 ≅ 𝔜) :
@@ -991,7 +996,10 @@ private lemma botCompletionLevelIso_naturality
       ih, Category.assoc, Category.assoc, ← CoherentFormalModule.Hom.transitionIso_inv_naturality,
       ← Category.assoc, ← Category.assoc]
 
-private noncomputable def botCompletionCounitIso :
+/-- Completing the explicit inverse `completionFunctorBotInv X` along `⊥` recovers the coherent
+formal module, naturally in `N`. At level `0`, this is the pullback cancellation isomorphism
+(`botCompletionCounitIso_hom_app_app_zero`). -/
+noncomputable def botCompletionCounitIso :
     completionFunctorBotInv X ⋙ completionFunctor X ⊥ ≅ 𝟭 _ :=
   NatIso.ofComponents
     (fun N ↦ CoherentFormalModule.isoMk (botCompletionLevelIso X N) fun n ↦ by
@@ -1004,6 +1012,28 @@ private noncomputable def botCompletionCounitIso :
       rw [Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, Category.assoc, Category.assoc,
         Iso.inv_hom_id, Category.comp_id])
     fun φ ↦ CoherentFormalModule.hom_ext (botCompletionLevelIso_naturality X φ)
+
+/-- At level `0`, `botCompletionCounitIso X` is the pullback cancellation isomorphism for
+`toScheme X ⊥ 0`. -/
+@[simp]
+theorem botCompletionCounitIso_hom_app_app_zero
+    (N : CoherentFormalModule (X.formalCompletion ⊥)) :
+    ((botCompletionCounitIso X).hom.app N).app 0 =
+      (Modules.pullbackComp (toScheme X ⊥ 0) (inv (toScheme X ⊥ 0))).hom.app (N.obj 0) ≫
+        (Modules.pullbackCongr (IsIso.hom_inv_id (toScheme X ⊥ 0))).hom.app (N.obj 0) ≫
+          (Modules.pullbackId ((X.formalCompletion ⊥).X 0)).hom.app (N.obj 0) :=
+  (rfl)
+
+/-- At level `0`, the inverse of `botCompletionCounitIso X` is the inverse pullback cancellation
+isomorphism for `toScheme X ⊥ 0`. -/
+@[simp]
+theorem botCompletionCounitIso_inv_app_app_zero
+    (N : CoherentFormalModule (X.formalCompletion ⊥)) :
+    ((botCompletionCounitIso X).inv.app N).app 0 =
+      (Modules.pullbackId ((X.formalCompletion ⊥).X 0)).inv.app (N.obj 0) ≫
+        (Modules.pullbackCongr (IsIso.hom_inv_id (toScheme X ⊥ 0))).inv.app (N.obj 0) ≫
+          (Modules.pullbackComp (toScheme X ⊥ 0) (inv (toScheme X ⊥ 0))).inv.app (N.obj 0) :=
+  (rfl)
 
 instance essSurj_completionFunctor_bot : (completionFunctor X ⊥).EssSurj where
   mem_essImage N :=
