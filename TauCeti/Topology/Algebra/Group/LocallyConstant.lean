@@ -193,8 +193,7 @@ test function under small translations.** Let `act : Z → G → Z` be jointly c
 `act z 0 = z` and `act (act z g) (-g) = z`, for instance a continuous additive right action. A
 locally constant function with compact support on `Z` is invariant under `act · g`, uniformly in the
 point, for all `g` near `0`. -/]
-theorem eventually_forall_apply_act_eq_of_hasCompactSupport [TopologicalSpace G]
-    [IsTopologicalGroup G]
+theorem eventually_forall_apply_act_eq_of_hasCompactSupport [TopologicalSpace G] [ContinuousInv G]
     {Z : Type*} [TopologicalSpace Z] [Zero A] {f : Z → A} (hf : IsLocallyConstant f)
     (hfc : HasCompactSupport f) {act : Z → G → Z} (hact : Continuous (Function.uncurry act))
     (hone : ∀ z, act z 1 = z) (hinv : ∀ z g, act (act z g) g⁻¹ = z) :
@@ -203,7 +202,9 @@ theorem eventually_forall_apply_act_eq_of_hasCompactSupport [TopologicalSpace G]
   obtain ⟨V, hVopen, hV1, hV⟩ :=
     (hf.comp_continuous hact).exists_isOpen_forall_mem_eq hfc.isCompact (1 : G)
   have hVn : V ∈ nhds (1 : G) := hVopen.mem_nhds hV1
-  filter_upwards [hVn, inv_mem_nhds_one G hVn] with g hg hg' z
+  have hVinv : Inv.inv ⁻¹' V ∈ nhds (1 : G) :=
+    continuous_inv.continuousAt.preimage_mem_nhds (by rwa [inv_one])
+  filter_upwards [hVn, hVinv] with g hg hg' z
   -- If `z` or `act z g` lies in the support, translate from that point; otherwise both values
   -- vanish.
   by_cases hz : z ∈ tsupport f

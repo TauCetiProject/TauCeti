@@ -18,7 +18,7 @@ Let a topological group `Γ` act on a topological group `G` by conjugation throu
 homomorphism `j : Γ →* G`, and let `X ⊆ C` be a slice for this action with closed stabiliser
 `H ⊆ Γ` (`TauCeti.IsSlice j H X C`, in `TauCeti.Topology.Algebra.Group.Slice`). For a test function
 `Ψ` on `Γ × G` (a locally constant function with compact support,
-`LocallyConstant.compactlySupported`, with values in a real Banach space `E`) and a left invariant
+`LocallyConstant.compactlySupported`, with values in a real normed space `E`) and a left invariant
 measure `μ` on `H`, the fibre integral `TauCeti.fiberIntegral j μ Ψ` over the `H`-orbits descends to
 a test function on `C`, which is the restriction of a test function on `G`
 (`TauCeti.IsSlice.exists_eq_fiberIntegral`, in `TauCeti.MeasureTheory.Group.SliceIntegral`).
@@ -110,20 +110,12 @@ private theorem exists_fiberIntegral_eq_sum [MeasurableSpace H] [OpensMeasurable
   rw [hΦ]
   simp only [OpenSubgroup.mem_toSubgroup, mul_assoc, mul_inv_cancel_left]
 
-/-- **Descent of invariant distributions to a slice.** Let `X ⊆ C` be a slice for the conjugation
-action of `Γ` on a Hausdorff, locally compact, totally disconnected group `G` through a continuous
-`j`, with closed stabiliser `H` carrying a left invariant measure `μ` finite on compact sets, and
-let `ν` be a Haar measure on `Γ`. Test functions take values in a real Banach space `E` that is a
-module over a ring `R`. Let `I` be an `R`-linear map from the test functions on `G` to an `R`-module
-`F` that is invariant under conjugation by `j Γ` and vanishes on the test functions vanishing on
-`C`. If a test function `Ψ` on `Γ × G`
-satisfies `∫ γ, Ψ (γ, y) ∂ν = 0` for every `y ∈ X`, then `I f = 0` for every test function `f`
-whose value at `j γ * y * (j γ)⁻¹` is the fibre integral of `Ψ` at `(γ, y)` for all `γ` and
-`y ∈ X`. Such an `f` exists by `TauCeti.IsSlice.exists_eq_fiberIntegral`. -/
-theorem IsSlice.map_eq_zero_of_integral_eq_zero_of_eq_fiberIntegral [T2Space G]
+/-- The descent of invariant distributions, for complete `E`
+(`TauCeti.IsSlice.map_eq_zero_of_integral_eq_zero_of_eq_fiberIntegral`). -/
+private theorem IsSlice.map_eq_zero_of_completeSpace [CompleteSpace E] [T2Space G]
     [WeaklyLocallyCompactSpace G] [TotallyDisconnectedSpace G] [MeasurableSpace Γ]
     [OpensMeasurableSpace Γ] [MeasurableMul Γ] [MeasurableSpace H] [OpensMeasurableSpace H]
-    [MeasurableMul H] [CompleteSpace E] (hs : IsSlice j H X C) (hj : Continuous j)
+    [MeasurableMul H] (hs : IsSlice j H X C) (hj : Continuous j)
     (hH : IsClosed (H : Set Γ)) (ν : Measure Γ) [ν.IsHaarMeasure] (μ : Measure H)
     [μ.IsMulLeftInvariant] [IsFiniteMeasureOnCompacts μ] (I : compactlySupported R G E →ₗ[R] F)
     (hI : ∀ γ f, I (compactlySupportedRep R (ConjAct G) G E (ConjAct.toConjAct (j γ)) f) = I f)
@@ -179,6 +171,36 @@ theorem IsSlice.map_eq_zero_of_integral_eq_zero_of_eq_fiberIntegral [T2Space G]
     · simp
   rw [h₁]
   simpa [Rq, hI, ← map_sum] using h₂
+
+/-- **Descent of invariant distributions to a slice.** Let `X ⊆ C` be a slice for the conjugation
+action of `Γ` on a Hausdorff, locally compact, totally disconnected group `G` through a continuous
+`j`, with closed stabiliser `H` carrying a left invariant measure `μ` finite on compact sets, and
+let `ν` be a Haar measure on `Γ`. Test functions take values in a real normed space `E` that is a
+module over a ring `R`. Let `I` be an `R`-linear map from the test functions on `G` to an `R`-module
+`F` that is invariant under conjugation by `j Γ` and vanishes on the test functions vanishing on
+`C`. If a test function `Ψ` on `Γ × G`
+satisfies `∫ γ, Ψ (γ, y) ∂ν = 0` for every `y ∈ X`, then `I f = 0` for every test function `f`
+whose value at `j γ * y * (j γ)⁻¹` is the fibre integral of `Ψ` at `(γ, y)` for all `γ` and
+`y ∈ X`. Such an `f` exists by `TauCeti.IsSlice.exists_eq_fiberIntegral`. -/
+theorem IsSlice.map_eq_zero_of_integral_eq_zero_of_eq_fiberIntegral [T2Space G]
+    [WeaklyLocallyCompactSpace G] [TotallyDisconnectedSpace G] [MeasurableSpace Γ]
+    [OpensMeasurableSpace Γ] [MeasurableMul Γ] [MeasurableSpace H] [OpensMeasurableSpace H]
+    [MeasurableMul H] (hs : IsSlice j H X C) (hj : Continuous j)
+    (hH : IsClosed (H : Set Γ)) (ν : Measure Γ) [ν.IsHaarMeasure] (μ : Measure H)
+    [μ.IsMulLeftInvariant] [IsFiniteMeasureOnCompacts μ] (I : compactlySupported R G E →ₗ[R] F)
+    (hI : ∀ γ f, I (compactlySupportedRep R (ConjAct G) G E (ConjAct.toConjAct (j γ)) f) = I f)
+    (hIC : ∀ f : compactlySupported R G E, (∀ c ∈ C, (f : LocallyConstant G E) c = 0) → I f = 0)
+    (Ψ : compactlySupported R (Γ × G) E)
+    (hΨ : ∀ y ∈ X, ∫ γ, (Ψ : LocallyConstant (Γ × G) E) (γ, y) ∂ν = 0)
+    (f : compactlySupported R G E)
+    (hf : ∀ γ, ∀ y ∈ X, (f : LocallyConstant G E) (j γ * y * (j γ)⁻¹) = fiberIntegral j μ Ψ γ y) :
+    I f = 0 := by
+  by_cases hE : CompleteSpace E
+  · exact hs.map_eq_zero_of_completeSpace hj hH ν μ I hI hIC Ψ hΨ f hf
+  -- Without completeness every Bochner integral into `E` is `0`, so `f` vanishes on `C`.
+  refine hIC f fun c hc => ?_
+  obtain ⟨γ, y, hy, rfl⟩ := (hs.mem_iff c).1 hc
+  rw [hf γ y hy, fiberIntegral_apply, integral_of_not_completeSpace hE]
 
 end Descent
 
