@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Operator.NNNorm
 public import Mathlib.Analysis.RCLike.Lemmas
 public import Mathlib.Topology.Order.IsLUB
-import Mathlib.Analysis.Normed.Module.DoubleDual
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
@@ -97,20 +96,6 @@ theorem Submodule.exists_finset_norming (M : Submodule 𝕜 (E →L[𝕜] F))
     refine ⟨x, Finset.mem_insert_of_mem (Finset.mem_image.mpr ⟨x, hxs, rfl⟩), ?_⟩
     have := (lt_div_iff₀ hfpos).mp hx'
     nlinarith [inv_mul_cancel₀ hApos.ne']
-
-/-- A finite-dimensional subspace of a normed space has a finite norming set of functionals in
-the dual unit ball, with any loss `A > 1`. This also covers the zero subspace. -/
-theorem Submodule.exists_finset_strongDual_norming (F : Submodule 𝕜 E) [FiniteDimensional 𝕜 F]
-    {A : ℝ} (hA : 1 < A) :
-    ∃ t : Finset (StrongDual 𝕜 E), (∀ g ∈ t, ‖g‖ ≤ 1) ∧ ∀ x ∈ F, ∃ g ∈ t, ‖x‖ ≤ A * ‖g x‖ := by
-  -- Apply the operator statement to the image of `F` under the isometric bidual inclusion.
-  let J := NormedSpace.inclusionInDoubleDualLi (E := E) 𝕜
-  -- `J x` evaluates functionals at `x`; this holds by definition of the bidual inclusion.
-  have hJ (x : E) (g : StrongDual 𝕜 E) : J x g = g x := rfl
-  obtain ⟨t, ht, hnorm⟩ := (F.map J.toLinearMap).exists_finset_norming hA
-  refine ⟨t, ht, fun x hx ↦ ?_⟩
-  obtain ⟨g, hg, hxg⟩ := hnorm (J x) (Submodule.mem_map_of_mem hx)
-  exact ⟨g, hg, by rwa [J.norm_map, hJ] at hxg⟩
 
 end Finite
 

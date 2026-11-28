@@ -8,32 +8,37 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.RCLike.Basic
 import TauCeti.Algebra.Order.Field.RatioMonotone
-import TauCeti.Analysis.Normed.Operator.Norming
+import TauCeti.Analysis.Normed.Module.Dual.Norming
 
 /-!
 # Basic subsequences of weakly null sequences
 
 Let `u` be a sequence in a real or complex normed space which is weakly null, meaning that
-`f (u k) → 0` for every continuous linear functional `f`, but which is not norm null. Then `u` has
-a subsequence `v` which is a *basic sequence with basis constant at most `2`*: initial segments of
-finite combinations are dominated by the whole combination,
+`f (u k) → 0` for every continuous linear functional `f`, but which is not norm null: for some
+`ε > 0`, `ε ≤ ‖u k‖` for infinitely many `k`. Then for every `B > 1`, `u` has a subsequence `v`,
+all of whose terms have norm at least `ε`, which is a *basic sequence with basis constant at most
+`B`*: initial segments of finite combinations are dominated by the whole combination,
 
-`‖∑ i ∈ range m, a i • v i‖ ≤ 2 * ‖∑ i ∈ range n, a i • v i‖` for `m ≤ n`
+`‖∑ i ∈ range m, a i • v i‖ ≤ B * ‖∑ i ∈ range n, a i • v i‖` for `m ≤ n`
 
-(`TauCeti.exists_strictMono_norm_sum_range_le_two_mul`). The subsequence can moreover be chosen
-with norms bounded below by any `ε` with `ε ≤ ‖u k‖` for infinitely many `k`.
+(`TauCeti.exists_strictMono_norm_sum_range_le_mul`). In such a sequence each term of a
+combination is controlled by every later partial sum,
+`‖a m • v m‖ ≤ 2 * B * ‖∑ i ∈ range n, a i • v i‖` for `m < n`
+(`TauCeti.norm_smul_le_two_mul_mul_norm_sum_range`).
 
-The selection rests on **Mazur's lemma** (`TauCeti.exists_ge_norm_le_mul_norm_add_smul`): for a
-finite-dimensional subspace `F`, a loss `B > 1` and any cutoff `N`, there is a term `u k` with
-`k ≥ N` and norm at least `ε` such that `‖y‖ ≤ B * ‖y + c • u k‖` for all `y ∈ F` and scalars `c`.
-Indeed `F` is normed, up to a small loss, by finitely many functionals, and these are almost zero
-at late terms. Choosing the losses `Bⱼ = bⱼ / bⱼ₊₁` with `bⱼ = 1 + (1 / 2) ^ j` makes
+The selection rests on **Mazur's lemma** (`TauCeti.exists_ge_norm_le_mul_norm_add_smul`): for
+`ε > 0`, a finite-dimensional subspace `F`, a loss `A > 1` and any cutoff `N`, there is a term
+`u k` with `k ≥ N` and norm at least `ε` such that `‖y‖ ≤ A * ‖y + c • u k‖` for all `y ∈ F` and
+scalars `c`. Indeed `F` is normed, up to a small loss, by finitely many functionals
+(`Submodule.exists_finset_strongDual_norming`), and these are almost zero at late terms. Choosing
+the losses `Aⱼ = bⱼ / bⱼ₊₁` with `bⱼ = 1 + (B - 1) * (1 / 2) ^ j` makes
 `‖∑ i ∈ range n, a i • v i‖ / bₙ` increasing in `n`
-(`TauCeti.le_div_mul_of_forall_le_div_mul_succ`), which gives the constant `b₀ / 1 = 2`.
+(`TauCeti.le_div_mul_of_forall_le_div_mul_succ`), which gives the constant `b₀ / 1 = B`.
 
-If moreover the finite subsums of the selected subsequence are uniformly bounded, its closed
-linear span is isomorphic to `c₀`; this is the Bessaga–Pełczyński argument of
-`TauCeti.summable_of_forall_not_antilipschitzWith`.
+If moreover the ambient space is complete and the finite subsums of the selected subsequence are
+uniformly bounded, its closed linear span is isomorphic to `c₀`
+(`ZeroAtInftyContinuousMap.antilipschitzWith_linearCombinationOfBoundedSubsums`); this is the
+Bessaga–Pełczyński argument of `TauCeti.summable_of_forall_not_antilipschitzWith`.
 
 ## References
 
@@ -50,9 +55,10 @@ namespace TauCeti
 
 variable {𝕜 X : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
 
-/-- **Mazur's lemma.** Let `u` be a weakly null sequence with `ε ≤ ‖u k‖` for infinitely many `k`.
-For a finite-dimensional subspace `F` and a loss `B > 1`, beyond any index `N` there is a term
-`u k` with `ε ≤ ‖u k‖` such that `‖y‖ ≤ B * ‖y + c • u k‖` for all `y ∈ F` and all scalars `c`. -/
+/-- **Mazur's lemma.** Let `u` be a weakly null sequence with `ε ≤ ‖u k‖` for infinitely many `k`,
+where `ε > 0`. For a finite-dimensional subspace `F` and a loss `B > 1`, beyond any index `N` there
+is a term `u k` with `ε ≤ ‖u k‖` such that `‖y‖ ≤ B * ‖y + c • u k‖` for all `y ∈ F` and all
+scalars `c`. -/
 theorem exists_ge_norm_le_mul_norm_add_smul {u : ℕ → X}
     (hu : ∀ f : StrongDual 𝕜 X, Tendsto (fun k ↦ f (u k)) atTop (𝓝 0)) {ε : ℝ} (hε : 0 < ε)
     (huε : ∃ᶠ k in atTop, ε ≤ ‖u k‖) (F : Submodule 𝕜 X) [FiniteDimensional 𝕜 F] {B : ℝ}
@@ -96,23 +102,28 @@ theorem exists_ge_norm_le_mul_norm_add_smul {u : ℕ → X}
     rw [div_mul_eq_mul_div, div_le_iff₀ hB0] at key
     nlinarith
 
-/-- **Basic subsequences of weakly null sequences.** A weakly null sequence `u` with `ε ≤ ‖u k‖`
-for infinitely many `k` has a subsequence `u ∘ φ`, all of whose terms have norm at least `ε`,
-which is a basic sequence with basis constant at most `2`: for all scalars `a` and `m ≤ n`,
-`‖∑ i ∈ range m, a i • u (φ i)‖ ≤ 2 * ‖∑ i ∈ range n, a i • u (φ i)‖`. -/
-theorem exists_strictMono_norm_sum_range_le_two_mul {u : ℕ → X}
+/-- **Basic subsequences of weakly null sequences.** Let `u` be a weakly null sequence with
+`ε ≤ ‖u k‖` for infinitely many `k`, where `ε > 0`. For every `B > 1`, `u` has a subsequence
+`u ∘ φ`, all of whose terms have norm at least `ε`, which is a basic sequence with basis constant
+at most `B`: for all scalars `a` and `m ≤ n`,
+`‖∑ i ∈ range m, a i • u (φ i)‖ ≤ B * ‖∑ i ∈ range n, a i • u (φ i)‖`. -/
+theorem exists_strictMono_norm_sum_range_le_mul {u : ℕ → X}
     (hu : ∀ f : StrongDual 𝕜 X, Tendsto (fun k ↦ f (u k)) atTop (𝓝 0)) {ε : ℝ} (hε : 0 < ε)
-    (huε : ∃ᶠ k in atTop, ε ≤ ‖u k‖) :
+    (huε : ∃ᶠ k in atTop, ε ≤ ‖u k‖) {B : ℝ} (hB : 1 < B) :
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ (∀ j, ε ≤ ‖u (φ j)‖) ∧
       ∀ (a : ℕ → 𝕜) {m n : ℕ}, m ≤ n →
-        ‖∑ i ∈ range m, a i • u (φ i)‖ ≤ 2 * ‖∑ i ∈ range n, a i • u (φ i)‖ := by
+        ‖∑ i ∈ range m, a i • u (φ i)‖ ≤ B * ‖∑ i ∈ range n, a i • u (φ i)‖ := by
   classical
-  -- The loss allowed at step `j` is `b j / b (j + 1) > 1`, for weights `b j` decreasing to `1`.
-  set b : ℕ → ℝ := fun j ↦ 1 + (1 / 2 : ℝ) ^ j with hb
+  -- The loss allowed at step `j` is `b j / b (j + 1) > 1`, for weights `b j` decreasing from `B`
+  -- to `1`.
+  set b : ℕ → ℝ := fun j ↦ 1 + (B - 1) * (1 / 2 : ℝ) ^ j with hb
+  have hB1 : 0 < B - 1 := sub_pos.2 hB
+  have hb1 (j : ℕ) : 1 ≤ b j := le_add_of_nonneg_right (by positivity)
+  have hb0 (j : ℕ) : 0 < b j := zero_lt_one.trans_le (hb1 j)
   have hloss (j : ℕ) : 1 < b j / b (j + 1) := by
-    rw [one_lt_div (by positivity)]
+    rw [one_lt_div (hb0 _)]
     simp only [hb, pow_succ]
-    have : 0 < (1 / 2 : ℝ) ^ j := by positivity
+    have : 0 < (B - 1) * (1 / 2 : ℝ) ^ j := by positivity
     linarith
   have hstep (j : ℕ) (s : Finset ℕ) (N : ℕ) : ∃ k ≥ N, ε ≤ ‖u k‖ ∧
       ∀ y ∈ Submodule.span 𝕜 (u '' s), ∀ c : 𝕜, ‖y‖ ≤ b j / b (j + 1) * ‖y + c • u k‖ := by
@@ -142,13 +153,27 @@ theorem exists_strictMono_norm_sum_range_le_two_mul {u : ℕ → X}
       exact ⟨φ i, by simpa using mem_image_of_mem φ hi, rfl⟩
     rw [sum_range_succ]
     exact hnext n (q n).1 (q n).2 _ hmem (a n)
-  -- The weights lie between `1` and `2`, so the accumulated loss is at most `2`.
-  have hb1 (j : ℕ) : 1 ≤ b j := le_add_of_nonneg_right (by positivity)
-  have hb2 : b m ≤ 2 * b n := by
-    have : (1 / 2 : ℝ) ^ m ≤ 1 := pow_le_one₀ (by norm_num) (by norm_num)
-    linarith [hb1 n]
-  refine (le_div_mul_of_forall_le_div_mul_succ (fun j ↦ by positivity) hw hmn).trans ?_
+  -- The weights lie between `1` and `B`, so the accumulated loss is at most `B`.
+  have hbB : b m ≤ B * b n := by
+    have : (B - 1) * (1 / 2 : ℝ) ^ m ≤ B - 1 :=
+      mul_le_of_le_one_right hB1.le (pow_le_one₀ (by norm_num) (by norm_num))
+    nlinarith [hb1 n]
+  refine (le_div_mul_of_forall_le_div_mul_succ hb0 hw hmn).trans ?_
   gcongr
-  exact (div_le_iff₀ (zero_lt_one.trans_le (hb1 n))).2 hb2
+  exact (div_le_iff₀ (hb0 n)).2 hbB
+
+/-- In a basic sequence with basis constant at most `B`, each term of a combination is controlled
+by every later partial sum: if `‖∑ i ∈ range m, a i • v i‖ ≤ B * ‖∑ i ∈ range n, a i • v i‖`
+whenever `m ≤ n`, then `‖a m • v m‖ ≤ 2 * B * ‖∑ i ∈ range n, a i • v i‖` whenever `m < n`. -/
+theorem norm_smul_le_two_mul_mul_norm_sum_range {R V : Type*} [Semiring R]
+    [SeminormedAddCommGroup V] [Module R V] {v : ℕ → V} {a : ℕ → R} {B : ℝ}
+    (hbasic : ∀ {m n : ℕ}, m ≤ n → ‖∑ i ∈ range m, a i • v i‖ ≤ B * ‖∑ i ∈ range n, a i • v i‖)
+    {m n : ℕ} (hmn : m < n) : ‖a m • v m‖ ≤ 2 * B * ‖∑ i ∈ range n, a i • v i‖ :=
+  calc ‖a m • v m‖ = ‖∑ i ∈ range (m + 1), a i • v i - ∑ i ∈ range m, a i • v i‖ := by
+        rw [sum_range_succ_sub_sum]
+    _ ≤ ‖∑ i ∈ range (m + 1), a i • v i‖ + ‖∑ i ∈ range m, a i • v i‖ := norm_sub_le _ _
+    _ ≤ B * ‖∑ i ∈ range n, a i • v i‖ + B * ‖∑ i ∈ range n, a i • v i‖ :=
+        add_le_add (hbasic hmn) (hbasic hmn.le)
+    _ = 2 * B * ‖∑ i ∈ range n, a i • v i‖ := by ring
 
 end TauCeti

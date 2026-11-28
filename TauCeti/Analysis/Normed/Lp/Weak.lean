@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Analysis.Normed.Module.Seminorm.Norm
+import TauCeti.Analysis.Normed.Module.BoundedCoefficients
 import TauCeti.Analysis.Normed.Operator.Basic
 import Mathlib.Analysis.Normed.Lp.lpSpace
 import Mathlib.Analysis.Normed.Module.Completion
@@ -282,14 +283,11 @@ theorem weakLpNorm_one_le_iff (x : ι → E) {C : ℝ} :
     weakLpNorm (𝕜 := 𝕜) 1 x ≤ C ↔ ∀ c : ι → 𝕜, (∀ i, ‖c i‖ ≤ 1) → ‖∑ i, c i • x i‖ ≤ C := by
   refine ⟨fun h c hc ↦ (norm_sum_smul_le_weakLpNorm_one x hc).trans h, fun h ↦ ?_⟩
   refine (weakLpNorm_le_iff_unitBall 1 x).2 fun f hf ↦ ?_
-  -- Rotate each value `f (x i)` onto the nonnegative real axis.
-  choose c hc hfc using fun i ↦ RCLike.exists_norm_eq_mul_self (f (x i))
+  have hC : 0 ≤ C := by simpa using h 0 fun _ ↦ by simp
   calc
-    ‖WithLp.toLp 1 (fun i ↦ f (x i))‖ = RCLike.re (f (∑ i, c i • x i)) := by
-      simp only [PiLp.norm_eq_of_L1, map_sum, map_smul, smul_eq_mul, ← hfc, RCLike.ofReal_re]
-    _ ≤ ‖f (∑ i, c i • x i)‖ := RCLike.re_le_norm _
-    _ ≤ ‖f‖ * ‖∑ i, c i • x i‖ := f.le_opNorm _
-    _ ≤ C := (mul_le_of_le_one_left (norm_nonneg _) hf).trans (h c fun i ↦ (hc i).le)
+    ‖WithLp.toLp 1 (fun i ↦ f (x i))‖ = ∑ i, ‖f (x i)‖ := by simp [PiLp.norm_eq_of_L1]
+    _ ≤ ‖f‖ * C := sum_norm_apply_le_of_forall_norm_sum_smul_le h f
+    _ ≤ C := mul_le_of_le_one_left hC hf
 
 end RCLike
 

@@ -17,9 +17,9 @@ Let `b` be a sequence of positive weights in a linearly ordered field. If a sequ
 so `w m ≤ b m / b n * w n` whenever `m ≤ n` (`TauCeti.le_div_mul_of_forall_le_div_mul_succ`).
 When the weights lie between `1` and `2`, every term is therefore at most twice any later term.
 
-Mazur's construction of basic subsequences uses this comparison with weights decreasing from `2`
-to `1`: the loss `b n / b (n + 1) > 1` allowed at each step of the selection multiplies to at
-most `b 0 / b n ≤ 2`.
+Mazur's construction of basic subsequences uses this comparison with weights decreasing from a
+prescribed basis constant `B > 1` to `1`: the loss `b n / b (n + 1) > 1` allowed at each step of
+the selection multiplies to at most `b 0 / b n ≤ B`.
 -/
 
 public section

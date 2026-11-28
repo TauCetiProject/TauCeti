@@ -39,9 +39,15 @@ every finite set, with the following consequences:
 
 * `TauCeti.sum_norm_apply_le_of_forall_norm_sum_le` and
   `TauCeti.summable_norm_apply_of_forall_norm_sum_le`: every continuous linear functional `f` is
-  absolutely summable along `x`, with absolute sums at most `4 * C * ‖f‖`;
-* `TauCeti.summable_smul_of_forall_norm_sum_le`: in a complete space, `∑ i, a i • x i` converges
-  unconditionally for coefficients `a` tending to zero along the cofinite filter;
+  absolutely summable along `x`, with absolute sums at most `4 * C * ‖f‖`; over a single finite
+  set `s`, only the subsums over subsets of `s` need to be bounded. The phase rotation behind
+  this is `TauCeti.sum_norm_apply_le_of_forall_norm_sum_smul_le`, which bounds
+  `∑ i ∈ s, ‖f (x i)‖` by `‖f‖` times any bound on the combinations of `x` over `s` with
+  coefficients of norm at most one;
+* `TauCeti.cauchySeq_finset_smul_of_forall_norm_sum_le` and
+  `TauCeti.summable_smul_of_forall_norm_sum_le`: for coefficients `a` tending to zero along the
+  cofinite filter, the series `∑ i, a i • x i` is unconditionally Cauchy, and so converges
+  unconditionally in a complete space;
 * `TauCeti.norm_tsum_smul_le_of_forall_norm_sum_le`: for coefficients of norm at most `M`, the
   sum `∑' i, a i • x i` has norm at most `4 * C * M`, also without completeness.
 
@@ -260,37 +266,45 @@ section FiniteSubsums
 
 open Filter Topology
 
-/-- If every finite subsum of a family `x` has norm at most `C`, then the values of a continuous
-linear functional `f` along `x` have absolute sums at most `4 * C * ‖f‖`. -/
-theorem sum_norm_apply_le_of_forall_norm_sum_le {x : ι → E} {C : ℝ}
-    (hx : ∀ s : Finset ι, ‖∑ i ∈ s, x i‖ ≤ C) (f : StrongDual 𝕜 E) (s : Finset ι) :
-    ∑ i ∈ s, ‖f (x i)‖ ≤ 4 * C * ‖f‖ := by
+/-- If every combination `∑ i ∈ s, c i • x i` with coefficients of norm at most one has norm at most
+`C`, then the values of a continuous linear functional `f` along `x` satisfy
+`∑ i ∈ s, ‖f (x i)‖ ≤ ‖f‖ * C`. -/
+theorem sum_norm_apply_le_of_forall_norm_sum_smul_le {x : ι → E} {s : Finset ι} {C : ℝ}
+    (hx : ∀ c : ι → 𝕜, (∀ i, ‖c i‖ ≤ 1) → ‖∑ i ∈ s, c i • x i‖ ≤ C) (f : StrongDual 𝕜 E) :
+    ∑ i ∈ s, ‖f (x i)‖ ≤ ‖f‖ * C := by
   -- Rotate each value `f (x i)` onto the nonnegative real axis.
   choose c hc hfc using fun i ↦ RCLike.exists_norm_eq_mul_self (f (x i))
   calc ∑ i ∈ s, ‖f (x i)‖ = RCLike.re (f (∑ i ∈ s, c i • x i)) := by
         simp only [map_sum, map_smul, smul_eq_mul, ← hfc, RCLike.ofReal_re]
     _ ≤ ‖f (∑ i ∈ s, c i • x i)‖ := RCLike.re_le_norm _
     _ ≤ ‖f‖ * ‖∑ i ∈ s, c i • x i‖ := f.le_opNorm _
-    _ ≤ ‖f‖ * (4 * 1 * C) := by
-        gcongr
-        exact norm_sum_smul_le_four_mul (fun u _ ↦ hx u) zero_le_one fun i _ ↦ (hc i).le
-    _ = 4 * C * ‖f‖ := by ring
+    _ ≤ ‖f‖ * C := by gcongr; exact hx c fun i ↦ (hc i).le
+
+/-- If every subsum of `x` over a subset of `s` has norm at most `C`, then the values of a
+continuous linear functional `f` along `x` satisfy `∑ i ∈ s, ‖f (x i)‖ ≤ 4 * C * ‖f‖`. -/
+theorem sum_norm_apply_le_of_forall_norm_sum_le {x : ι → E} {s : Finset ι} {C : ℝ}
+    (hx : ∀ u ⊆ s, ‖∑ i ∈ u, x i‖ ≤ C) (f : StrongDual 𝕜 E) :
+    ∑ i ∈ s, ‖f (x i)‖ ≤ 4 * C * ‖f‖ :=
+  (sum_norm_apply_le_of_forall_norm_sum_smul_le (fun _ hc ↦
+    norm_sum_smul_le_four_mul hx zero_le_one fun i _ ↦ hc i) f).trans_eq (by ring)
 
 /-- A family with uniformly bounded finite subsums is absolutely summable against every continuous
 linear functional. -/
 theorem summable_norm_apply_of_forall_norm_sum_le {x : ι → E} {C : ℝ}
     (hx : ∀ s : Finset ι, ‖∑ i ∈ s, x i‖ ≤ C) (f : StrongDual 𝕜 E) :
     Summable fun i ↦ ‖f (x i)‖ :=
-  summable_of_sum_le (fun _ ↦ norm_nonneg _) (sum_norm_apply_le_of_forall_norm_sum_le hx f)
+  summable_of_sum_le (fun _ ↦ norm_nonneg _) fun _ ↦
+    sum_norm_apply_le_of_forall_norm_sum_le (fun u _ ↦ hx u) f
 
 /-- If the finite subsums of `x` are bounded, then the series `∑ i, a i • x i` with coefficients
-tending to zero along the cofinite filter converges unconditionally in a complete space. -/
-theorem summable_smul_of_forall_norm_sum_le [CompleteSpace E] {x : ι → E} {C : ℝ}
+tending to zero along the cofinite filter is unconditionally Cauchy: its finite partial sums form a
+Cauchy net. No completeness is needed. -/
+theorem cauchySeq_finset_smul_of_forall_norm_sum_le {x : ι → E} {C : ℝ}
     (hx : ∀ s : Finset ι, ‖∑ i ∈ s, x i‖ ≤ C) {a : ι → 𝕜} (ha : Tendsto a cofinite (𝓝 0)) :
-    Summable fun i ↦ a i • x i := by
+    CauchySeq fun s : Finset ι ↦ ∑ i ∈ s, a i • x i := by
   classical
   have hC : 0 ≤ C := by simpa using hx ∅
-  refine summable_iff_vanishing_norm.2 fun δ hδ ↦ ?_
+  refine cauchySeq_finset_iff_vanishing_norm.2 fun δ hδ ↦ ?_
   -- Only finitely many coefficients exceed `η`; the remaining terms have small sums.
   set η := δ / (4 * C + 1) with hη
   have hη0 : 0 < η := by positivity
@@ -303,6 +317,13 @@ theorem summable_smul_of_forall_norm_sum_le [CompleteSpace E] {x : ι → E} {C 
     _ = δ * (4 * C / (4 * C + 1)) := by rw [hη]; field_simp
     _ < δ * 1 := by gcongr; exact (div_lt_one (by positivity)).2 (lt_add_one _)
     _ = δ := mul_one δ
+
+/-- If the finite subsums of `x` are bounded, then the series `∑ i, a i • x i` with coefficients
+tending to zero along the cofinite filter converges unconditionally in a complete space. -/
+theorem summable_smul_of_forall_norm_sum_le [CompleteSpace E] {x : ι → E} {C : ℝ}
+    (hx : ∀ s : Finset ι, ‖∑ i ∈ s, x i‖ ≤ C) {a : ι → 𝕜} (ha : Tendsto a cofinite (𝓝 0)) :
+    Summable fun i ↦ a i • x i :=
+  summable_iff_cauchySeq_finset.2 (cauchySeq_finset_smul_of_forall_norm_sum_le hx ha)
 
 /-- If the finite subsums of `x` have norm at most `C` and the coefficients `a i` have norm at most
 `M`, then `‖∑' i, a i • x i‖ ≤ 4 * C * M`. No completeness is needed, since a series that does not
