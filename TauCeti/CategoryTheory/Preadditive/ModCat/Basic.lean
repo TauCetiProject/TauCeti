@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.Subcategory
+public import Mathlib.CategoryTheory.Generator.Basic
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Basic
 
 /-!
@@ -34,12 +35,16 @@ finitely presented functors are additive, so `mod C` is a full subcategory of `M
 
 * `TauCeti.ModCat C`: the category `Cᵒᵖ ⥤+ AddCommGrpCat.{w}` of `C`-modules.
 * `TauCeti.ModCat.yoneda C : C ⥤ ModCat C`: the Yoneda embedding `X ↦ Hom(-, X)`.
+* `TauCeti.ModCat.yonedaHomEquiv`: the Yoneda lemma `(Hom(-, X) ⟶ M) ≃+ M(X)` for modules.
 * `TauCeti.ModCat.ofFinitelyPresented C`: the fully faithful inclusion `mod C ⥤ ModCat C`.
 
 ## Main results
 
 * `Abelian (ModCat C)` and `HasColimitsOfShape J (ModCat C)`, found by instance inference from
   the closure instances for additive functors and Mathlib's full-subcategory instances.
+* `ModCat.isSeparating_yoneda`: representable modules separate morphisms in `ModCat.{v} C`,
+  where `v` is the universe of the morphisms of `C`, by the Yoneda equivalence
+  `ModCat.yonedaHomEquiv`.
 * `Projective ((ModCat.yoneda C).obj X)`: representable modules are projective.
 * `TauCeti.ModCat.linear`: the scoped instance `Linear R (D ⥤+ AddCommGrpCat)` for an `R`-linear
   preadditive category `D`; after `open scoped TauCeti.ModCat`, specializing `D` to an opposite
@@ -80,6 +85,48 @@ through the full subcategory of additive functors. It is fully faithful by the `
 instances, and `ObjectProperty.liftCompιIso` recovers `preadditiveYoneda`. -/
 abbrev yoneda : C ⥤ ModCat.{v} C :=
   ObjectProperty.lift _ preadditiveYoneda fun _ ↦ (additiveFunctor_iff _).2 inferInstance
+
+variable {C}
+
+/-- **The Yoneda lemma for modules.** Evaluation at `𝟙 X` identifies the morphisms from the
+representable module `Hom(-, X)` to a module `M` with the elements of `M` at `X`. -/
+def yonedaHomEquiv {X : C} {M : ModCat.{v} C} :
+    ((yoneda C).obj X ⟶ M) ≃+ M.obj.obj (op X) :=
+  InducedCategory.homAddEquiv.trans preadditiveYonedaHomEquiv
+
+/-- The Yoneda equivalence for modules evaluates a morphism at the representing identity. -/
+theorem yonedaHomEquiv_apply {X : C} {M : ModCat.{v} C} (f : (yoneda C).obj X ⟶ M) :
+    yonedaHomEquiv f = f.hom.app (op X) (𝟙 X) :=
+  preadditiveYonedaHomEquiv_apply f.hom
+
+/-- The inverse Yoneda equivalence for modules sends an arrow to its action on the given
+element. -/
+@[simp]
+theorem yonedaHomEquiv_symm_hom_app_apply {X : C} {M : ModCat.{v} C} (x : M.obj.obj (op X))
+    (Y : Cᵒᵖ) (f : Y.unop ⟶ X) :
+    dsimp% (yonedaHomEquiv.symm x).hom.app Y f = M.obj.map f.op x :=
+  preadditiveYonedaHomEquiv_symm_app_apply x Y f
+
+/-- The Yoneda equivalence for modules is natural in the target module. -/
+theorem yonedaHomEquiv_comp {X : C} {M N : ModCat.{v} C} (f : (yoneda C).obj X ⟶ M)
+    (g : M ⟶ N) : yonedaHomEquiv (f ≫ g) = g.hom.app (op X) (yonedaHomEquiv f) :=
+  preadditiveYonedaHomEquiv_comp f.hom g.hom
+
+/-- The representable modules separate morphisms of modules in `ModCat.{v} C`, where `v` is the
+universe of the morphisms of `C`: the representables take values in `AddCommGrpCat.{v}`. An
+element `x` of a module `F` at `X` is the value of `yonedaHomEquiv` on the morphism
+`yonedaHomEquiv.symm x` out of the representable module at `X`, so two morphisms agreeing after
+every such morphism agree on `x`. -/
+theorem isSeparating_yoneda :
+    (ObjectProperty.ofObj (yoneda C).obj).IsSeparating := by
+  intro F G f g h
+  apply ObjectProperty.hom_ext
+  ext X x
+  have hc (k : F ⟶ G) : k.hom.app X x = yonedaHomEquiv (yonedaHomEquiv.symm x ≫ k) := by
+    rw [yonedaHomEquiv_comp, AddEquiv.apply_symm_apply]
+  rw [hc f, hc g, h _ ⟨X.unop⟩ (yonedaHomEquiv.symm x)]
+
+variable (C)
 
 /-- **Representable modules are projective.** A morphism `Hom(-, X) ⟶ G` is an element of
 `G(X)` by Yoneda, and it lifts along an epimorphism `F ⟶ G`, which is surjective at `X`. -/

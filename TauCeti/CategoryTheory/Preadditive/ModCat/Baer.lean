@@ -212,23 +212,10 @@ private theorem maximal_graph_isIso (hE : E.Baer)
     intro X
     apply (AddCommGrpCat.epi_iff_surjective _).2
     intro x
-    let f : (yoneda C).obj X.unop ⟶ M :=
-      ObjectProperty.homMk
-        { app Y := AddCommGrpCat.ofHom
-            ((AddMonoidHom.eval x).comp (AddCommGrpCat.homAddEquiv.toAddMonoidHom.comp
-              (M.obj.mapAddHom.comp (CategoryTheory.opHom Y.unop X.unop))))
-          naturality Y Z g := by
-            apply AddCommGrpCat.ext
-            intro h
-            exact ConcreteCategory.congr_hom (M.obj.map_comp h.op g) x }
-    obtain ⟨g, hg⟩ := maximal_graph_factors hE s hs f
-    refine ⟨g.hom.app X (𝟙 X.unop), ?_⟩
-    have hx := congrArg (fun k : (yoneda C).obj X.unop ⟶ M ↦ k.hom.app X (𝟙 X.unop)) hg
-    have hfx : f.hom.app X (𝟙 X.unop) = x := by
-      -- Evaluate the composite of bundled additive maps on the identity.
-      change M.obj.map (𝟙 X.unop).op x = x
-      simp
-    exact hx.trans hfx
+    obtain ⟨g, hg⟩ := maximal_graph_factors hE s hs (yonedaHomEquiv.symm x)
+    refine ⟨yonedaHomEquiv g, ?_⟩
+    exact (yonedaHomEquiv_comp g p).symm.trans
+      ((congrArg yonedaHomEquiv hg).trans (yonedaHomEquiv.apply_symm_apply x))
   exact isIso_of_mono_of_epi p
 
 end
