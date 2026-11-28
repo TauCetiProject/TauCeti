@@ -176,16 +176,6 @@ lemma levelSmashMappingSpaceAdjunction₂_adj (X : SymmetricSpectrum) :
     levelSmashMappingSpaceAdjunction₂.adj X = levelSmashMappingSpaceAdjunction X :=
   (rfl)
 
-/-- The adjunction bijection of `levelSmashMappingSpaceAdjunction` is natural in the source
-spectrum `X`. -/
-lemma levelSmashMappingSpaceAdjunction_homEquiv_naturality_left {X Y : SymmetricSpectrum}
-    (f : X ⟶ Y) {K : PointedSSet.{0}} {E : SymmetricSpectrum}
-    (g : (levelSmashRight K).obj Y ⟶ E) :
-    (levelSmashMappingSpaceAdjunction X).homEquiv K E ((levelSmashRight K).map f ≫ g) =
-      (levelSmashMappingSpaceAdjunction Y).homEquiv K E g ≫
-        (mappingSpaceBifunctor.map f.op).app E :=
-  levelSmashMappingSpaceAdjunction₂.homEquiv_naturality_one f g
-
 /-- Specializing naturality of `levelSmashMappingSpaceAdjunction` to the counit at `Y` turns
 precomposition with `f` into `mappingSpaceBifunctor.map f.op`. -/
 lemma levelSmashMappingSpaceAdjunction_homEquiv_levelSmashRight_counit
@@ -194,19 +184,107 @@ lemma levelSmashMappingSpaceAdjunction_homEquiv_levelSmashRight_counit
         ((levelSmashRight ((mappingSpace Y).obj E)).map f ≫
           (levelSmashMappingSpaceAdjunction Y).counit.app E) =
       (mappingSpaceBifunctor.map f.op).app E := by
-  let m : (mappingSpace Y).obj E ⟶ (mappingSpace X).obj E :=
-    (mappingSpaceBifunctor.map f.op).app E
+  have hrhs :
+      (levelSmashMappingSpaceAdjunction Y).homEquiv ((mappingSpace Y).obj E) E
+          ((levelSmashMappingSpaceAdjunction Y).counit.app E) = 𝟙 _ := by
+    rw [Adjunction.homEquiv_unit, Adjunction.right_triangle_components]
+  exact (levelSmashMappingSpaceAdjunction₂.homEquiv_naturality_one f
+    ((levelSmashMappingSpaceAdjunction Y).counit.app E)).trans
+      ((congrArg (fun g : ((mappingSpace Y).obj E ⟶ (mappingSpace Y).obj E) ↦
+        g ≫ (mappingSpaceBifunctor.map f.op).app E) hrhs).trans (Category.id_comp _))
+
+private lemma free_map_hom (n : ℕ) {K K' : PointedSSet.{0}} (f : K ⟶ K') :
+    ((free n).map f).hom = SymmetricSequence.sphere ◁ (SymmetricSequence.free n).map f := (rfl)
+
+private lemma levelSmashRight_map_hom (L : PointedSSet.{0}) {X Y : SymmetricSpectrum}
+    (f : X ⟶ Y) :
+    ((levelSmashRight L).map f).hom = f.hom ▷ (SymmetricSequence.free 0).obj L := (rfl)
+
+/-- The inverse free-smash comparison `(levelSmashFreeIso n K).inv.app L` is natural in the
+generating pointed simplicial set `K`. -/
+@[reassoc]
+lemma levelSmashFreeIso_inv_app_naturality (n : ℕ) {K K' : PointedSSet.{0}}
+    (f : K ⟶ K') (L : PointedSSet.{0}) :
+    (free n).map (f ▷ L) ≫ (levelSmashFreeIso n K').inv.app L =
+      (levelSmashFreeIso n K).inv.app L ≫ (levelSmashRight L).map ((free n).map f) := by
+  apply Mod.Hom.ext
+  rw [Mod.comp_hom', Mod.comp_hom', levelSmashFreeIso_inv_app_hom,
+    levelSmashFreeIso_inv_app_hom, levelSmashRight_map_hom, free_map_hom, free_map_hom,
+    ← whiskerLeft_comp_assoc, SymmetricSequence.freeTensorFreeZeroIso_inv_app_naturality,
+    whiskerLeft_comp_assoc, Category.assoc, associator_inv_naturality_middle]
+
+/-- The free-smash comparison `(levelSmashFreeIso n K).hom.app L` is natural in the
+generating pointed simplicial set `K`. -/
+@[reassoc]
+lemma levelSmashFreeIso_hom_app_naturality (n : ℕ) {K K' : PointedSSet.{0}}
+    (f : K ⟶ K') (L : PointedSSet.{0}) :
+    (levelSmashRight L).map ((free n).map f) ≫ (levelSmashFreeIso n K').hom.app L =
+      (levelSmashFreeIso n K).hom.app L ≫ (free n).map (f ▷ L) :=
+  (CommSq.mk (levelSmashFreeIso_inv_app_naturality n f L) :
+    CommSq ((free n).map (f ▷ L)) ((levelSmashFreeIso n K).app L).symm.hom
+      ((levelSmashFreeIso n K').app L).symm.hom
+      ((levelSmashRight L).map ((free n).map f))).vert_inv.w
+
+private lemma evaluation_map_eq (n : ℕ) {X Y : SymmetricSpectrum} (f : X ⟶ Y) :
+    (evaluation n).map f = f.hom.natTrans.app (FiniteBijection.mk n) := (rfl)
+
+private lemma evaluation_map_levelSmashRight_map (n : ℕ) (L : PointedSSet.{0})
+    {X Y : SymmetricSpectrum} (f : X ⟶ Y) :
+    (evaluation n).map ((levelSmashRight L).map f) =
+      (f.hom ▷ (SymmetricSequence.free 0).obj L).natTrans.app (FiniteBijection.mk n) := (rfl)
+
+private lemma evaluation_map_levelSmashRight_comp_aux (n : ℕ) {K K' : PointedSSet.{0}}
+    (f : K ⟶ K') (L : PointedSSet.{0}) {X Y E : SymmetricSpectrum} (φ : X ⟶ Y)
+    (ιX : K ⟶ (evaluation n).obj X) (ιY : K' ⟶ (evaluation n).obj Y)
+    (hι : ιX ≫ (evaluation n).map φ = f ≫ ιY) (g : (levelSmash Y).obj L ⟶ E) :
+    ιX ▷ L ≫
+        SymmetricSequence.tensorFreeZeroι X.X L n ≫
+        (evaluation n).map ((levelSmashRight L).map φ ≫ g) =
+      f ▷ L ≫ ιY ▷ L ≫
+        SymmetricSequence.tensorFreeZeroι Y.X L n ≫ (evaluation n).map g := by
+  rw [Functor.map_comp, evaluation_map_levelSmashRight_map,
+    ← Category.assoc (X.X.tensorFreeZeroι L n),
+    ← SymmetricSequence.tensorFreeZeroι_naturality_left φ.hom L n, Category.assoc,
+    ← evaluation_map_eq, ← comp_whiskerRight_assoc, hι, comp_whiskerRight_assoc]
+
+/-- The free mapping-space comparison `(mappingSpaceFreeIso n K).hom.app E` is natural in the
+generating pointed simplicial set `K`, intertwining precomposition along `F_n f` with
+precomposition along `f`. -/
+@[reassoc]
+lemma mappingSpaceFreeIso_hom_app_naturality (n : ℕ) {K K' : PointedSSet.{0}}
+    (f : K ⟶ K') (E : SymmetricSpectrum) :
+    (mappingSpaceBifunctor.map ((free n).map f).op).app E ≫
+        (mappingSpaceFreeIso n K).hom.app E =
+      (mappingSpaceFreeIso n K').hom.app E ≫ (MonoidalClosed.pre f).app ((evaluation n).obj E) := by
   have h :
-      ((levelSmashMappingSpaceAdjunction X).homEquiv ((mappingSpace Y).obj E) E).symm
-          (𝟙 ((mappingSpace Y).obj E) ≫ m) =
-        (levelSmashRight ((mappingSpace Y).obj E)).map f ≫
-          ((levelSmashMappingSpaceAdjunction Y).homEquiv ((mappingSpace Y).obj E) E).symm
-            (𝟙 ((mappingSpace Y).obj E)) :=
-    levelSmashMappingSpaceAdjunction₂.homEquiv_symm_naturality_one f
-      (𝟙 ((mappingSpace Y).obj E))
-  rw [Category.id_comp, Adjunction.homEquiv_symm_id] at h
-  exact (congrArg ((levelSmashMappingSpaceAdjunction X).homEquiv _ E) h.symm).trans
-    (Equiv.apply_symm_apply _ _)
+      (levelSmashMappingSpaceAdjunction ((free n).obj K)).homEquiv
+          ((mappingSpace ((free n).obj K')).obj E) E
+          ((levelSmashRight ((mappingSpace ((free n).obj K')).obj E)).map ((free n).map f) ≫
+            (levelSmashMappingSpaceAdjunction ((free n).obj K')).counit.app E) ≫
+        (mappingSpaceFreeIso n K).hom.app E =
+      (mappingSpaceFreeIso n K').hom.app E ≫ (MonoidalClosed.pre f).app ((evaluation n).obj E) := by
+    rw [homEquiv_comp_mappingSpaceFreeIso_hom_app]
+    apply MonoidalClosed.uncurry_injective
+    rw [MonoidalClosed.uncurry_curry, MonoidalClosed.uncurry_pre_app,
+      uncurry_mappingSpaceFreeIso_hom_app]
+    exact evaluation_map_levelSmashRight_comp_aux n f _ ((free n).map f) (freeι n K)
+      (freeι n K') (freeι_naturality f).symm _
+  rw [← levelSmashMappingSpaceAdjunction_homEquiv_levelSmashRight_counit ((free n).map f) E]
+  exact h
+
+/-- The inverse free mapping-space comparison `(mappingSpaceFreeIso n K).inv.app E` is natural in
+the generating pointed simplicial set `K`. -/
+@[reassoc]
+lemma mappingSpaceFreeIso_inv_app_naturality (n : ℕ) {K K' : PointedSSet.{0}}
+    (f : K ⟶ K') (E : SymmetricSpectrum) :
+    (mappingSpaceFreeIso n K').inv.app E ≫
+        (mappingSpaceBifunctor.map ((free n).map f).op).app E =
+      (MonoidalClosed.pre f).app ((evaluation n).obj E) ≫
+        (mappingSpaceFreeIso n K).inv.app E :=
+  (CommSq.mk (mappingSpaceFreeIso_hom_app_naturality n f E) :
+    CommSq ((mappingSpaceBifunctor.map ((free n).map f).op).app E)
+      ((mappingSpaceFreeIso n K').app E).hom ((mappingSpaceFreeIso n K).app E).hom
+      ((MonoidalClosed.pre f).app ((evaluation n).obj E))).vert_inv.w.symm
 
 /-- The parametrized adjunction `levelSmashBifunctor.flip ⊣₂ cotensorBifunctor`: spectrum maps
 `E ∧ K ⟶ F` correspond naturally in all three variables to spectrum maps `E ⟶ F^K`. -/

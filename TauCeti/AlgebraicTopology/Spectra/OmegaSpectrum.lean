@@ -27,6 +27,8 @@ weak equivalence of simplicial sets.
 
 ## Main statements
 
+* `SymmetricSpectrum.isOmegaSpectrum_iff_of_iso`: being an Ω-spectrum is invariant under
+  isomorphism of symmetric spectra.
 * `SymmetricSpectrum.isOmegaSpectrum_iff_mappingSpace_freeStabilizationMap`: `E` is an Ω-spectrum
   precisely when every level is a Kan complex and precomposition along each
   `freeStabilizationMap n S⁰` is a weak equivalence on `Map(-, E)`.
@@ -61,6 +63,33 @@ class IsOmegaSpectrum (E : SymmetricSpectrum) : Prop where
 
 attribute [instance] IsOmegaSpectrum.kanComplex
   IsOmegaSpectrum.weakEquivalence_adjointStructureMap
+
+/-- Being an Ω-spectrum is invariant under isomorphism of symmetric spectra. -/
+theorem isOmegaSpectrum_iff_of_iso {E F : SymmetricSpectrum} (e : E ≅ F) :
+    IsOmegaSpectrum E ↔ IsOmegaSpectrum F := by
+  rw [isOmegaSpectrum_iff, isOmegaSpectrum_iff]
+  refine and_congr ?_ (forall_congr' fun n ↦ ?_)
+  · simp only [← levelFibrations_terminal_from_iff]
+    rw [← terminal.comp_from e.hom, levelFibrations.cancel_left_of_respectsIso]
+  · have hnat :
+        (PointedSSet.forgetBasepoint.mapIso ((evaluation n).mapIso e)).hom ≫
+            (F.smashPowAdjointStructureMap n).right =
+          (E.smashPowAdjointStructureMap n).right ≫
+            (PointedSSet.forgetBasepoint.mapIso
+              ((CategoryTheory.ihom PointedSSet.circle).mapIso
+                ((evaluation (1 + n)).mapIso e))).hom := by
+      rw [Functor.mapIso_hom, Functor.mapIso_hom, Functor.mapIso_hom, Functor.mapIso_hom]
+      exact (congrArg PointedSSet.forgetBasepoint.map
+        (Mod.smashPowAdjointStructureMap_hom e.hom n)).symm
+    let a : Arrow.mk (E.smashPowAdjointStructureMap n).right ≅
+        Arrow.mk (F.smashPowAdjointStructureMap n).right :=
+      Arrow.isoMk' _ _
+        (PointedSSet.forgetBasepoint.mapIso ((evaluation n).mapIso e))
+        (PointedSSet.forgetBasepoint.mapIso
+          ((CategoryTheory.ihom PointedSSet.circle).mapIso ((evaluation (1 + n)).mapIso e)))
+        hnat
+    simpa only [HomotopicalAlgebra.weakEquivalence_iff] using
+      (weakEquivalences SSet.{0}).arrow_mk_iso_iff a
 
 /-- A symmetric spectrum `E` is an Ω-spectrum if and only if every level `E_n` is a Kan complex
 and precomposition along every stabilization map `freeStabilizationMap n S⁰` is a weak

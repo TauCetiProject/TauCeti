@@ -126,16 +126,10 @@ lemma freeLevelIso_hom_naturality (n m : ℕ) {K L : PointedSSet.{0}} (f : K ⟶
     ((free n).map f).natTrans.app (FiniteBijection.mk m) ≫ (freeLevelIso n m L).hom =
       (freeLevelIso n m K).hom ≫ Limits.Sigma.map fun _ ↦ f := by
   refine free_level_hom_ext fun σ ↦ ?_
-  have hnat : ((free n).obj K).functor.map σ ≫
-      ((free n).map f).natTrans.app (FiniteBijection.mk m) =
-      ((free n).map f).natTrans.app (FiniteBijection.mk n) ≫
-        ((free n).obj L).functor.map σ :=
-    ((free n).map f).natTrans.naturality σ
-  slice_lhs 2 3 => rw [hnat]
-  slice_lhs 1 2 => rw [← freeι_naturality]
-  slice_lhs 2 4 => rw [freeι_comp_map_comp_freeLevelIso_hom]
-  slice_rhs 1 3 => rw [freeι_comp_map_comp_freeLevelIso_hom]
-  rw [Limits.Sigma.ι_map]
+  rw [((free n).map f).natTrans.naturality_assoc, ← Category.assoc (freeι n K),
+    ← freeι_naturality, Category.assoc, freeι_comp_map_comp_freeLevelIso_hom,
+    ← Limits.Sigma.ι_map (fun _ ↦ f) σ, ← freeι_comp_map_comp_freeLevelIso_hom]
+  simp only [Category.assoc]
 
 /-- Under `(freeLevelIso n m K).inv`, the summandwise map `Limits.Sigma.map fun _ ↦ f`
 transports to the action of `f : K ⟶ L` on generators in level `m`. -/
@@ -156,9 +150,15 @@ lemma map_comp_freeLevelIso_hom (n : ℕ) {m m' : ℕ} (K : PointedSSet.{0})
         Limits.Sigma.map' (fun σ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ σ ≫ τ)
           fun _ ↦ 𝟙 K := by
   refine free_level_hom_ext fun σ ↦ ?_
-  rw [← Functor.map_comp_assoc, freeι_comp_map_comp_freeLevelIso_hom]
-  slice_rhs 1 3 => rw [freeι_comp_map_comp_freeLevelIso_hom]
-  rw [Limits.Sigma.ι_comp_map', Category.id_comp]
+  calc
+    freeι n K ≫ ((free n).obj K).functor.map σ ≫ ((free n).obj K).functor.map τ ≫
+        (freeLevelIso n m' K).hom
+      = Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m' ↦ K) (σ ≫ τ) := by
+        rw [← Functor.map_comp_assoc, freeι_comp_map_comp_freeLevelIso_hom]
+    _ = (freeι n K ≫ ((free n).obj K).functor.map σ ≫ (freeLevelIso n m K).hom) ≫
+          Limits.Sigma.map' (fun σ ↦ σ ≫ τ) (fun _ ↦ 𝟙 K) := by
+        rw [freeι_comp_map_comp_freeLevelIso_hom, Limits.Sigma.ι_comp_map', Category.id_comp]
+    _ = _ := by simp only [Category.assoc]
 
 /-- Under `(freeLevelIso n m K).inv`, reindexing the coproduct summands by postcomposition with
 `τ : mk m ⟶ mk m'` transports to the bijection action between levels. -/
