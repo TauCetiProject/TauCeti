@@ -5,62 +5,40 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.GradientEnergy
-public import TauCeti.Analysis.Calculus.Morse.Linearization
-import TauCeti.Analysis.Calculus.Gradient
+public import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.HessianEnergy
 
 /-!
-# The gradient energy of a gradient field
+# The solenoidal gradient-energy identity fails for gradient fields
 
-For the gradient field `u = ∇φ` of a compactly supported `C²` function `φ`, the derivative
-`∇u = D²φ` is the Hessian, which is self-adjoint. Its antisymmetric part vanishes, so the
-gradient-energy identity `‖∇u‖²_{L²} = ½ ‖∇u - (∇u)†‖²_{L²} + ‖div u‖²_{L²}` of
-`TauCeti.HasWeakFDerivOn.integral_sq_hilbertSchmidtNorm_eq_sub_adjoint_add_trace_sq` puts all of
-the energy into the divergence `div u = Δφ`:
+The solenoidal identity `‖∇u‖²_{L²} = ½ ‖∇u - (∇u)†‖²_{L²}` of
+`TauCeti.IsSolenoidalOn.integral_sq_hilbertSchmidtNorm_eq_sub_adjoint` needs `div u = 0`. For the
+gradient field `u = ∇φ` of a compactly supported `C²` function `φ`, whose derivative is the
+Hessian `D²φ`:
 
-* `hessianOperator_sub_adjoint`: `D²φ - (D²φ)† = 0`, so the
-  vorticity term `½ ‖∇u - (∇u)†‖²_{L²}` is zero;
-* `integral_sq_hilbertSchmidtNorm_hessianOperator_eq_integral_trace_sq`:
-  the classical `L²` identity `∫ ‖D²φ‖_HS² = ∫ (Δφ)²`.
+* `integral_sq_hilbertSchmidtNorm_hessianOperator_sub_adjoint_div_two_eq_zero`: the right side
+  `½ ‖D²φ - (D²φ)†‖²_{L²}` is zero, by `ContDiffAt.hessianOperator_sub_adjoint`;
+* the left side is `‖D²φ‖²_{L²} = ‖Δφ‖²_{L²}`, by
+  `TauCeti.integral_sq_hilbertSchmidtNorm_hessianOperator_eq_integral_trace_sq`.
 
-So the solenoidal identity `‖∇u‖²_{L²} = ½ ‖∇u - (∇u)†‖²_{L²}` of
-`TauCeti.IsSolenoidalOn.integral_sq_hilbertSchmidtNorm_eq_sub_adjoint` needs `div u = 0`: for a
-gradient field its right side is zero, while its left side is `‖D²φ‖²_{L²} = ‖Δφ‖²_{L²}`, which
-is positive for every nonzero `φ`.
+When `E` has positive dimension the left side is positive for every nonzero such `φ`, since a
+compactly supported harmonic function vanishes; that positivity is not formalized here.
 -/
 
 public section
 
 open MeasureTheory ContinuousLinearMap
-open scoped Gradient
 
 namespace TauCeti.Examples.GradientEnergy
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {φ : E → ℝ}
+  [MeasurableSpace E] {φ : E → ℝ}
 
-/-- The Hessian of a `C²` function has no antisymmetric part: `D²φ - (D²φ)† = 0`. -/
-theorem hessianOperator_sub_adjoint (hφ : ContDiff ℝ 2 φ) (x : E) :
-    hessianOperator φ x - adjoint (hessianOperator φ x) = 0 := by
-  rw [(hφ.contDiffAt.isSelfAdjoint_hessianOperator).adjoint_eq, sub_self]
-
-variable [MeasurableSpace E] [BorelSpace E]
-
-/-- **The `L²` norm of the Hessian is the `L²` norm of the Laplacian.** For a compactly supported
-`C²` function `φ`, `∫ ‖D²φ‖_HS² = ∫ (Δφ)²`, where `Δφ = tr D²φ`. -/
-theorem integral_sq_hilbertSchmidtNorm_hessianOperator_eq_integral_trace_sq (μ : Measure E)
-    [μ.IsAddHaarMeasure] (hφ : ContDiff ℝ 2 φ) (hc : HasCompactSupport φ) :
-    ∫ x, (hessianOperator φ x).hilbertSchmidtNorm ^ 2 ∂μ =
-      ∫ x, LinearMap.trace ℝ E (hessianOperator φ x).toLinearMap ^ 2 ∂μ := by
-  have hgrad : ContDiff ℝ 1 (∇ φ) := hφ.gradient_right (by norm_num)
-  have hH : HasCompactSupport (hessianOperator φ) := by
-    simpa only [← funext (fderiv_gradient φ)] using hc.gradient.fderiv (𝕜 := ℝ)
-  have hweak : HasWeakFDerivOn μ ⊤ (∇ φ) (hessianOperator φ) := by
-    simpa only [← funext (fderiv_gradient φ)] using hgrad.contDiffOn.hasWeakFDerivOn_fderiv
-  rw [hweak.integral_sq_hilbertSchmidtNorm_eq_sub_adjoint_add_trace_sq
-    (hc.memLp_gradient (hφ.of_le (by norm_num)))
-    ((hφ.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.memLp_of_hasCompactSupport
-      hH)]
-  simp [hessianOperator_sub_adjoint hφ]
+/-- For a gradient field `u = ∇φ`, the right side `½ ‖∇u - (∇u)†‖²_{L²}` of the solenoidal
+gradient-energy identity is zero, because the Hessian `∇u = D²φ` is self-adjoint. -/
+theorem integral_sq_hilbertSchmidtNorm_hessianOperator_sub_adjoint_div_two_eq_zero
+    (μ : Measure E) (hφ : ContDiff ℝ 2 φ) :
+    (∫ x, (hessianOperator φ x - adjoint (hessianOperator φ x)).hilbertSchmidtNorm ^ 2 ∂μ) / 2 =
+      0 := by
+  simp [fun x ↦ (hφ.contDiffAt (x := x)).hessianOperator_sub_adjoint]
 
 end TauCeti.Examples.GradientEnergy
