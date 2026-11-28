@@ -20,13 +20,15 @@ rings. This file constructs the natural isomorphisms `SheafOfModules.pullbackCon
 `SheafOfModules.pullbackCongr₂` between pullback functors along equal ring-sheaf morphisms or
 naturally isomorphic site functors, conjugate to Mathlib's `SheafOfModules.pushforwardCongr` and
 `SheafOfModules.pushforwardCongr₂`, shows that `pushforward` between small sites in the same
-universe is a right adjoint, and records that pullback along a morphism of ringed spaces is
-additive.
+universe is a right adjoint when the target site admits weak abelian-group sheafification and its
+sheafification equivalences are the locally bijective maps, and records that pullback along a
+morphism of ringed spaces is additive.
 
 ## Main declarations
 
 * `SheafOfModules.isRightAdjoint_pushforward`: pushforward of module sheaves between small sites
-  in the same universe is a right adjoint;
+  in the same universe is a right adjoint when the target site admits weak abelian-group
+  sheafification and its sheafification equivalences are the locally bijective maps;
 * `SheafOfModules.pullbackCongr` and `SheafOfModules.pullbackCongr₂`: natural isomorphisms between
   pullback functors along equal ring-sheaf morphisms or naturally isomorphic site functors;
 * `SheafOfModules.additive_pullback`: pullback of sheaves of modules along a morphism of ringed
@@ -117,9 +119,10 @@ theorem conjugateEquiv_pullbackCongr₂_inv {F' : C ⥤ D} [Functor.IsContinuous
 end SiteCongr
 
 /-- Between small sites in the same universe, pushforward of module sheaves along any continuous
-functor and ring-sheaf morphism is a right adjoint. This is a theorem rather than a global instance
-so that explicit `[IsRightAdjoint]` hypotheses on general site-level lemmas do not become redundant
-instance binders. -/
+functor and ring-sheaf morphism is a right adjoint, assuming the target site admits weak
+abelian-group sheafification and its sheafification equivalences are the locally bijective maps.
+This is a theorem rather than a global instance so that explicit `[IsRightAdjoint]` hypotheses on
+general site-level lemmas do not become redundant instance binders. -/
 theorem isRightAdjoint_pushforward {C D : Type u} [SmallCategory C] [SmallCategory D]
     {J : GrothendieckTopology C} {K : GrothendieckTopology D} {F : C ⥤ D}
     [Functor.IsContinuous F J K] {S : Sheaf J RingCat.{u}} {R : Sheaf K RingCat.{u}}

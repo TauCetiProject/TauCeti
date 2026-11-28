@@ -92,12 +92,8 @@ theorem sheafOfModulesRestrictUnitIso_hom_val_app
       (U.sheafOfModulesRestrictUnitIso R).hom,
       U.sheafOfModulesRestrictAdj_homEquiv_sheafOfModulesRestrictUnitIso_hom R,
       Adjunction.homEquiv_symm_apply]
-  rw [hhom]
-  change ((U.sheafOfModulesRestrictAdj.{u} R).counit.app _).val.app W
-      (((U.sheafOfModulesRestrict.{u} R).map
-        (SheafOfModules.unitToPushforwardObjUnit (U.sheafInclusionHom RingCat.{u} R))).val.app W
-        x) = _
-  rw [Opens.sheafOfModulesRestrict_map_val_app_apply]
+  rw [hhom, SheafOfModules.comp_val, PresheafOfModules.comp_app, ModuleCat.comp_apply,
+    Opens.sheafOfModulesRestrict_map_val_app_apply]
   refine (Opens.sheafOfModulesRestrictAdj_counit_app_val_app U R
     (SheafOfModules.unit ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj R)) W _).trans ?_
   refine (congrArg
@@ -106,16 +102,31 @@ theorem sheafOfModulesRestrictUnitIso_hom_val_app
     (SheafOfModules.unitToPushforwardObjUnit_val_app_apply
       (U.sheafInclusionHom RingCat.{u} R) _)).trans ?_
   dsimp only
-  rw [U.sheafInclusionHom_hom_app]
-  change (R.obj.map (U.isOpenEmbedding.isOpenMap.adjunction.counit.app
-      (U.isOpenEmbedding.functor.obj W.unop)).op ≫
-    R.obj.map (U.isOpenEmbedding.functor.map
-      (U.isOpenEmbedding.isOpenMap.adjunction.unit.app W.unop)).op) _ = _
+  rw [U.sheafInclusionHom_hom_app, Topology.IsOpenEmbedding.sheafPullback_obj_obj_map]
+  -- `sheafPullback_obj_obj_map` keeps `(sheafPullback.obj R).obj.obj` as the implicit domain
+  -- in `ConcreteCategory.hom`, which matches `R.obj.obj` under `refine` (`comp_apply`).
+  refine (ConcreteCategory.comp_apply (R.obj.map _) (R.obj.map _) _).symm.trans ?_
   rw [← R.obj.map_comp, ← op_comp]
   refine (congrArg (fun k ↦ R.obj.map k.op _)
     (U.isOpenEmbedding.isOpenMap.adjunction.left_triangle_components W.unop)).trans ?_
   rw [op_id, R.obj.map_id]
+  refine (ConcreteCategory.id_apply _).trans ?_
+  -- The remaining transport is cancelling `eqToHom` on the section carrier along the open equality
+  -- `Opens.map U.inclusion' (U.isOpenEmbedding.functor W) = W`.
   rfl
+
+/-- Sectionwise action of `(U.sheafOfModulesEquivOverUnit R).inv` followed by the image of
+`(SheafOfModules.overFunctorUnitIso R U).hom` under `(U.sheafOfModulesEquivOver R).functor`. -/
+private lemma sheafOfModulesEquivOverUnit_inv_comp_map_overFunctorUnitIso_val_app_apply
+    (W : (Opens U)ᵒᵖ) (x : (U.sheafRestrict.obj R).obj.obj W) :
+    (((U.sheafOfModulesEquivOverUnit R).inv ≫
+        (U.sheafOfModulesEquivOver R).functor.map
+          (SheafOfModules.overFunctorUnitIso R U).hom).val.app W) x =
+      (x : R.obj.obj (Opposite.op (U.isOpenEmbedding.functor.obj W.unop))) := by
+  rw [SheafOfModules.comp_val, PresheafOfModules.comp_app]
+  refine (ModuleCat.comp_apply _ _ _).trans ?_
+  unfold sheafOfModulesEquivOver sheafOfModulesEquivOverUnit
+  exact SheafOfModules.overFunctorUnitIso_hom_val_app R U _ _
 
 /-- Comparing the unit sheaf on the slice site over `U` with the unit sheaf on the open subspace
 `U` via `sheafOfModulesEquivOverUnit` and `overFunctorCompSheafOfModulesEquivOver` gives a right
@@ -128,13 +139,7 @@ theorem sheafOfModulesEquivOverUnit_inv_comp_sheafOfModulesRestrictUnitIso_hom :
         (U.sheafOfModulesRestrictUnitIso R).hom = 𝟙 _ := by
   ext W
   let W' : (Opens ((Opens.toTopCat X).obj U))ᵒᵖ := W
-  have h1 :
-      (((U.sheafOfModulesEquivOverUnit R).inv ≫
-          (U.sheafOfModulesEquivOver R).functor.map
-            (SheafOfModules.overFunctorUnitIso R U).hom).val.app W)
-        (1 : (U.sheafRestrict.obj R).obj.obj W) =
-      (1 : R.obj.obj (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop))) :=
-    SheafOfModules.overFunctorUnitIso_hom_val_app R U _ _
+  have h1 := sheafOfModulesEquivOverUnit_inv_comp_map_overFunctorUnitIso_val_app_apply U R W 1
   refine (congrArg ((U.sheafOfModulesRestrictUnitIso R).hom.val.app W')
     (congrArg (((U.overFunctorCompSheafOfModulesEquivOver R).hom.app
       (SheafOfModules.unit R)).val.app W') h1)).trans ?_

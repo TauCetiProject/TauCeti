@@ -280,27 +280,18 @@ def sheafHomResLE {A : Type*} [Category.{u} A] {f : X ⟶ Y}
     { app W := φ.hom.app (op (V.isOpenEmbedding.functor.obj W.unop)) ≫
         R.obj.map (homOfLE (Opens.functor_map_resLE_le f V U e W.unop)).op
       naturality W₁ W₂ g := by
-        let a := S.obj.map (V.isOpenEmbedding.functor.map g.unop).op
-        let b₁ : S.obj.obj (op (V.isOpenEmbedding.functor.obj W₁.unop)) ⟶
-            R.obj.obj (op ((Opens.map f).obj (V.isOpenEmbedding.functor.obj W₁.unop))) :=
-          φ.hom.app (op (V.isOpenEmbedding.functor.obj W₁.unop))
-        let b₂ : S.obj.obj (op (V.isOpenEmbedding.functor.obj W₂.unop)) ⟶
-            R.obj.obj (op ((Opens.map f).obj (V.isOpenEmbedding.functor.obj W₂.unop))) :=
-          φ.hom.app (op (V.isOpenEmbedding.functor.obj W₂.unop))
-        let c₁ := R.obj.map (homOfLE (Opens.functor_map_resLE_le f V U e W₁.unop)).op
-        let c₂ := R.obj.map (homOfLE (Opens.functor_map_resLE_le f V U e W₂.unop)).op
-        let d := R.obj.map
-          (U.isOpenEmbedding.functor.map ((Opens.map (Opens.resLE f V U e)).map g.unop)).op
-        let e₀ := R.obj.map ((Opens.map f).map (V.isOpenEmbedding.functor.map g.unop)).op
-        have hnat : a ≫ b₂ = b₁ ≫ e₀ :=
-          φ.hom.naturality (V.isOpenEmbedding.functor.map g.unop).op
-        have hR : e₀ ≫ c₂ = c₁ ≫ d := by
-          rw [← R.obj.map_comp, ← R.obj.map_comp, ← op_comp, ← op_comp]
+        have hnat := φ.hom.naturality (V.isOpenEmbedding.functor.map g.unop).op
+        have hR :
+            R.obj.map ((Opens.map f).map (V.isOpenEmbedding.functor.map g.unop)).op ≫
+              R.obj.map (homOfLE (Opens.functor_map_resLE_le f V U e W₂.unop)).op =
+            R.obj.map (homOfLE (Opens.functor_map_resLE_le f V U e W₁.unop)).op ≫
+              R.obj.map (U.isOpenEmbedding.functor.map
+                ((Opens.map (Opens.resLE f V U e)).map g.unop)).op := by
+          simp only [← R.obj.map_comp, ← op_comp]
           exact congrArg (R.obj.map ∘ Quiver.Hom.op) (Subsingleton.elim _ _)
-        exact (Category.assoc a b₂ c₂).symm.trans
-          ((congrArg (· ≫ c₂) hnat).trans
-            ((Category.assoc b₁ e₀ c₂).trans
-              ((congrArg (b₁ ≫ ·) hR).trans (Category.assoc b₁ c₁ d).symm))) }
+        dsimp [Topology.IsOpenEmbedding.sheafPullback, Functor.sheafPushforwardContinuous] at hnat ⊢
+        simp only [Category.assoc]
+        rw [← Category.assoc, hnat, Category.assoc, hR] }
 
 /-- Component of `Opens.sheafHomResLE` on an open `W` of `(Opens.toTopCat Y).obj V`. -/
 @[simp]
@@ -362,29 +353,23 @@ theorem sheafInclusionHom_comp_map_sheafHomResLE {A : Type*} [Category.{u} A] {f
           (Opens.grothendieckTopology ((Opens.toTopCat X).obj U))).obj
             ((U.isOpenEmbedding.sheafPullback A).obj R)) := by
   refine Sheaf.hom_ext (NatTrans.ext (funext fun Z ↦ ?_))
-  let τ := (Opens.mapCompResLEIso f V U e).hom
-  let a := S.obj.map (V.isOpenEmbedding.isOpenMap.adjunction.counit.app Z.unop).op
-  let b₁ : S.obj.obj Z ⟶ R.obj.obj (op ((Opens.map f).obj Z.unop)) := φ.hom.app Z
-  let b₂ : S.obj.obj (op (V.isOpenEmbedding.functor.obj
-        ((Opens.map V.inclusion').obj Z.unop))) ⟶
-      R.obj.obj (op ((Opens.map f).obj (V.isOpenEmbedding.functor.obj
-        ((Opens.map V.inclusion').obj Z.unop)))) :=
-    φ.hom.app (op (V.isOpenEmbedding.functor.obj ((Opens.map V.inclusion').obj Z.unop)))
-  let c := R.obj.map (homOfLE (Opens.functor_map_resLE_le f V U e
-    ((Opens.map V.inclusion').obj Z.unop))).op
-  let d := R.obj.map (U.isOpenEmbedding.functor.map (τ.app Z.unop)).op
-  let e₀ := R.obj.map ((Opens.map f).map
-    (V.isOpenEmbedding.isOpenMap.adjunction.counit.app Z.unop)).op
-  let e₁ := R.obj.map (U.isOpenEmbedding.isOpenMap.adjunction.counit.app
-    ((Opens.map f).obj Z.unop)).op
-  have hnat : a ≫ b₂ = b₁ ≫ e₀ :=
-    φ.hom.naturality (V.isOpenEmbedding.isOpenMap.adjunction.counit.app Z.unop).op
-  have hR : (e₀ ≫ c) ≫ d = e₁ := by
-    rw [← R.obj.map_comp, ← R.obj.map_comp, ← op_comp, ← op_comp]
+  have hnat := φ.hom.naturality (V.isOpenEmbedding.isOpenMap.adjunction.counit.app Z.unop).op
+  have hR :
+      R.obj.map ((Opens.map f).map
+          (V.isOpenEmbedding.isOpenMap.adjunction.counit.app Z.unop)).op ≫
+        R.obj.map (homOfLE (Opens.functor_map_resLE_le f V U e
+          ((Opens.map V.inclusion').obj Z.unop))).op ≫
+        R.obj.map (U.isOpenEmbedding.functor.map
+          ((Opens.mapCompResLEIso f V U e).hom.app Z.unop)).op =
+      R.obj.map (U.isOpenEmbedding.isOpenMap.adjunction.counit.app
+          ((Opens.map f).obj Z.unop)).op := by
+    simp only [← R.obj.map_comp, ← op_comp]
     exact congrArg (R.obj.map ∘ Quiver.Hom.op) (Subsingleton.elim _ _)
-  exact (congrArg (· ≫ d) ((Category.assoc a b₂ c).symm.trans
-    ((congrArg (· ≫ c) hnat).trans (Category.assoc b₁ e₀ c)))).trans
-      ((Category.assoc b₁ (e₀ ≫ c) d).trans (congrArg (b₁ ≫ ·) hR))
+  dsimp [sheafInclusionHom, sheafHomResLE, Topology.IsOpenEmbedding.sheafPullback,
+    Functor.sheafPushforwardContinuous, Functor.sheafPushforwardContinuousNatTrans] at hnat ⊢
+  simp only [Category.assoc]
+  rw [← Category.assoc, hnat, Category.assoc, hR]
+  rfl
 
 end
 

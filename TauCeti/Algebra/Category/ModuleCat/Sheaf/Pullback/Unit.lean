@@ -23,9 +23,10 @@ final (together with its inverse composition law `pullbackObjUnitIso_inv_comp`),
 
 ## Main declarations
 
-* `SheafOfModules.unitToPushforwardObjUnit_id` and
-  `SheafOfModules.unitToPushforwardObjUnit_comp`: identity and composition coherences for
-  `unitToPushforwardObjUnit`;
+* `SheafOfModules.unitToPushforwardObjUnit_id`,
+  `SheafOfModules.unitToPushforwardObjUnit_comp`, and
+  `SheafOfModules.unitToPushforwardObjUnit_comp_pushforwardCongr₂_val_app_apply`: identity,
+  composition, and congruence section formulas for `unitToPushforwardObjUnit`;
 * `SheafOfModules.pullbackObjUnitToUnit_id` and `SheafOfModules.pullbackObjUnitToUnit_comp`:
   identity and composition coherences for `pullbackObjUnitToUnit`;
 * `SheafOfModules.pullbackObjUnitIso`: the isomorphism `(pullback φ).obj (unit S) ≅ unit R` when the
@@ -76,6 +77,20 @@ theorem unitToPushforwardObjUnit_comp
       unitToPushforwardObjUnit (F := F ⋙ G)
         (φ ≫ (F.sheafPushforwardContinuous RingCat.{u} J K).map ψ) := by
   ext U
+  rfl
+
+/-- Section-level formula for
+`unitToPushforwardObjUnit φ ≫ (pushforwardCongr₂ φ e he).hom.app (unit R)` on sections over `U`. -/
+theorem unitToPushforwardObjUnit_comp_pushforwardCongr₂_val_app_apply
+    {F' : C ⥤ D} [Functor.IsContinuous F' J K]
+    (φ : S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj R)
+    {ψ : S ⟶ (F'.sheafPushforwardContinuous RingCat.{u} J K).obj R}
+    (e : F' ≅ F)
+    (he : φ ≫ (Functor.sheafPushforwardContinuousNatTrans e.hom RingCat.{u} J K).app R = ψ)
+    (U : Cᵒᵖ) (x : S.obj.obj U) :
+    ((unitToPushforwardObjUnit φ ≫ (pushforwardCongr₂ φ e he).hom.app (unit R)).val.app U) x =
+      R.obj.map (e.hom.app U.unop).op
+        ((φ.hom.app U x : (F.sheafPushforwardContinuous RingCat.{u} J K).obj R |>.obj.obj U)) :=
   rfl
 
 /-- Along the identity morphism of ring sheaves, `pullbackObjUnitToUnit` is the component of
@@ -165,20 +180,6 @@ theorem pullbackCongr_hom_app_pullbackObjUnitToUnit
       pullbackObjUnitToUnit φ := by
   subst e
   simp
-
-/-- Section-level formula for
-`unitToPushforwardObjUnit φ ≫ (pushforwardCongr₂ φ e he).hom.app (unit R)` on sections over `U`. -/
-private lemma unitToPushforwardObjUnit_comp_pushforwardCongr₂_val_app_apply
-    {F' : C ⥤ D} [Functor.IsContinuous F' J K]
-    (φ : S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj R)
-    {ψ : S ⟶ (F'.sheafPushforwardContinuous RingCat.{u} J K).obj R}
-    (e : F' ≅ F)
-    (he : φ ≫ (Functor.sheafPushforwardContinuousNatTrans e.hom RingCat.{u} J K).app R = ψ)
-    (U : Cᵒᵖ) (x : S.obj.obj U) :
-    ((unitToPushforwardObjUnit φ ≫ (pushforwardCongr₂ φ e he).hom.app (unit R)).val.app U) x =
-      R.obj.map (e.hom.app U.unop).op
-        ((φ.hom.app U x : (F.sheafPushforwardContinuous RingCat.{u} J K).obj R |>.obj.obj U)) :=
-  rfl
 
 /-- `pullbackCongr₂` commutes with `pullbackObjUnitToUnit`. -/
 @[reassoc]
