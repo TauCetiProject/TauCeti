@@ -34,10 +34,17 @@ for instance any ideal of a noetherian ring contained in the nilradical, `p ^ c`
 `W(N)` has bounded `p`-power torsion. This is why rational Witt vector cohomology does not see
 nilpotents.
 
+For an ideal `𝔪` of a subring `O` of a ring `K`, we also consider the additive subgroup
+`W(𝔪) + p^n W(K)` of `W(K)` (`TauCeti.WittVector.idealModPow`), the image of `W(𝔪)` plus the
+multiples of `p^n`. When `K` is perfect of characteristic `p`, it consists of the Witt vectors
+whose first `n` coordinates lie in `𝔪`.
+
 ## Main definitions
 
 * `WittVector.ideal p I`: the Witt ideal `W(I) = ker (W(A) → W(A ⧸ I))`.
 * `TruncatedWittVector.ideal p n I`: the truncated Witt ideal `W_n(I)`.
+* `TauCeti.WittVector.idealModPow p 𝔪 n`: for an ideal `𝔪` of a subring `O ⊆ K`, the additive
+  subgroup `W(𝔪) + p^n W(K)` of `W(K)`.
 * `WittVector.quotientIdealEquiv p I`: the isomorphism `W(A) ⧸ W(I) ≃+* W(A ⧸ I)`, and its
   truncated analogue `TruncatedWittVector.quotientIdealEquiv p n I`.
 
@@ -57,6 +64,10 @@ nilpotents.
   then `x * p ^ c ∈ W(I)` for all `x ∈ W(J)`.
 * `WittVector.exponentExists_ideal`: in characteristic `p`, the Witt ideal of a nil ideal `N`
   with `a ^ p ^ c = 0` for all `a ∈ N` has an additive exponent.
+* `TauCeti.WittVector.mem_idealModPow_iff`: over a perfect ring `K` of characteristic `p`,
+  `x ∈ W(𝔪) + p^n W(K)` iff each of the first `n` coordinates of `x` lies in `𝔪`; this subgroup
+  is stable under Frobenius, and `V^k x` lies in `W(𝔪) + p^(n+k) W(K)` iff `x` lies in
+  `W(𝔪) + p^n W(K)`.
 * `WittVector.forall_mem_ideal_mul_p_pow_eq_zero_iff`: in characteristic `p`, `p ^ c` kills `W(N)`
   exactly when `a ^ p ^ c = 0` for all `a ∈ N`.
 
@@ -413,3 +424,124 @@ theorem ideal_sup (n : ℕ) (I J : Ideal A) : ideal p n (I ⊔ J) = ideal p n I 
   simp only [← map_wittVector_truncate_ideal, WittVector.ideal_sup, Ideal.map_sup]
 
 end TruncatedWittVector
+
+namespace TauCeti.WittVector
+
+/-! ### The subgroups `W(𝔪) + p^n W(K)` for an ideal `𝔪` of a subring `O ⊆ K` -/
+
+open _root_.WittVector
+
+variable (p : ℕ) [hp : Fact p.Prime] {K : Type*} [CommRing K]
+
+@[inherit_doc] local notation "𝕎" => _root_.WittVector p
+
+/-- For an ideal `𝔪` of a subring `O ⊆ K`, the additive subgroup `W(𝔪) + p^n W(K)` of `W(K)`:
+the Witt vectors over `K` congruent modulo `p^n` to the image of a Witt vector all of whose
+coordinates lie in `𝔪`. Over a perfect ring of characteristic `p` these are the Witt vectors
+whose first `n` coordinates lie in `𝔪` (`TauCeti.WittVector.mem_idealModPow_iff`). -/
+def idealModPow {O : Subring K} (𝔪 : Ideal O) (n : ℕ) : AddSubgroup (𝕎 K) :=
+  (ideal p 𝔪).toAddSubgroup.map (map O.subtype).toAddMonoidHom ⊔
+    (Ideal.span {(p : 𝕎 K) ^ n}).toAddSubgroup
+
+variable {p} {O : Subring K} {𝔪 : Ideal O}
+
+/-- `idealModPow p 𝔪 n` is the sum of the image of `W(𝔪)` and the ideal `p^n W(K)`. -/
+theorem idealModPow_def (n : ℕ) : idealModPow p 𝔪 n =
+    (ideal p 𝔪).toAddSubgroup.map (map O.subtype).toAddMonoidHom ⊔
+      (Ideal.span {(p : 𝕎 K) ^ n}).toAddSubgroup :=
+  (rfl)
+
+/-- A Witt vector lies in `W(𝔪) + p^n W(K)` exactly when it is the sum of the image of an element
+of `W(𝔪)` and a multiple of `p^n`. -/
+theorem mem_idealModPow {n : ℕ} {x : 𝕎 K} : x ∈ idealModPow p 𝔪 n ↔
+    ∃ w ∈ ideal p 𝔪, ∃ y ∈ Ideal.span {(p : 𝕎 K) ^ n}, map O.subtype w + y = x := by
+  simp [idealModPow, AddSubgroup.mem_sup]
+
+/-- The image of the Witt ideal `W(𝔪)` lies in `W(𝔪) + p^n W(K)`. -/
+theorem map_mem_idealModPow {w : 𝕎 O} (hw : w ∈ ideal p 𝔪) (n : ℕ) :
+    map O.subtype w ∈ idealModPow p 𝔪 n :=
+  AddSubgroup.mem_sup_left ⟨w, hw, rfl⟩
+
+/-- The multiples of `p^n` lie in `W(𝔪) + p^n W(K)`. -/
+theorem mem_idealModPow_of_mem_span {n : ℕ} {x : 𝕎 K}
+    (hx : x ∈ Ideal.span {(p : 𝕎 K) ^ n}) : x ∈ idealModPow p 𝔪 n :=
+  AddSubgroup.mem_sup_right hx
+
+/-- Every Witt vector lies in `W(𝔪) + p^0 W(K)`. -/
+@[simp]
+theorem idealModPow_zero : idealModPow p 𝔪 0 = ⊤ :=
+  eq_top_iff.mpr fun _ _ ↦ mem_idealModPow_of_mem_span (by simp)
+
+/-- The subgroups `W(𝔪) + p^n W(K)` decrease as `n` grows. -/
+theorem idealModPow_antitone : Antitone (idealModPow p 𝔪) := fun _ _ h ↦
+  sup_le_sup_left (Submodule.toAddSubgroup_mono
+    (Ideal.span_singleton_le_span_singleton.mpr (pow_dvd_pow _ h))) _
+
+/-- `W(𝔪) + p^n W(K)` is stable under the Witt vector Frobenius. -/
+theorem frobenius_mem_idealModPow {n : ℕ} {x : 𝕎 K} (hx : x ∈ idealModPow p 𝔪 n) :
+    frobenius x ∈ idealModPow p 𝔪 n := by
+  obtain ⟨w, hw, y, hy, rfl⟩ := mem_idealModPow.mp hx
+  obtain ⟨t, rfl⟩ := Ideal.mem_span_singleton'.mp hy
+  rw [map_add, ← (frobenius_isPoly p).map]
+  refine add_mem (map_mem_idealModPow (frobenius_mem_ideal hw) n)
+    (mem_idealModPow_of_mem_span (Ideal.mem_span_singleton'.mpr ⟨frobenius t, ?_⟩))
+  simp
+
+variable [CharP K p] [PerfectRing K p]
+
+/-- Over a perfect ring of characteristic `p`, a Witt vector lies in `W(𝔪) + p^n W(K)` exactly
+when its first `n` coordinates lie in `𝔪`. -/
+theorem mem_idealModPow_iff {n : ℕ} {x : 𝕎 K} :
+    x ∈ idealModPow p 𝔪 n ↔ ∀ i < n, ∃ a ∈ 𝔪, (a : K) = x.coeff i := by
+  constructor
+  · intro hx i hi
+    obtain ⟨w, hw, y, hy, rfl⟩ := mem_idealModPow.mp hx
+    have hy : ∀ j < n, y.coeff j = 0 :=
+      (mem_span_p_pow_iff_le_coeff_eq_zero y n).mp hy
+    -- adding `y`, whose first `n` coordinates vanish, does not change the first `n` coordinates
+    have hcoeff : ∀ j < n, (map O.subtype w + y).coeff j = (map O.subtype w).coeff j :=
+      le_coeff_eq_iff_le_sub_coeff_eq_zero.mpr (by simpa only [add_sub_cancel_left] using hy)
+    exact ⟨w.coeff i, mem_ideal_iff.mp hw i, by
+      rw [hcoeff i hi, map_coeff, Subring.coe_subtype]⟩
+  · intro h
+    classical
+    let w : 𝕎 O := mk p fun i ↦ if hi : i < n then (h i hi).choose else 0
+    have hw : w ∈ ideal p 𝔪 := mem_ideal_iff.mpr fun i ↦ by
+      by_cases hi : i < n
+      · simpa [w, hi] using (h i hi).choose_spec.1
+      · simp [w, hi]
+    have hsub : x - map O.subtype w ∈ Ideal.span {(p : 𝕎 K) ^ n} := by
+      refine (mem_span_p_pow_iff_le_coeff_eq_zero _ n).mpr
+        (le_coeff_eq_iff_le_sub_coeff_eq_zero.mp fun i hi ↦ ?_)
+      simpa [w, hi] using (h i hi).choose_spec.2.symm
+    simpa using add_mem (map_mem_idealModPow hw n) (mem_idealModPow_of_mem_span hsub)
+
+/-- A Witt vector lies in `W(𝔪) + p W(K)` exactly when its zeroth coordinate lies in `𝔪`. -/
+theorem mem_idealModPow_one_iff {x : 𝕎 K} :
+    x ∈ idealModPow p 𝔪 1 ↔ ∃ a ∈ 𝔪, (a : K) = x.coeff 0 := by
+  simp [mem_idealModPow_iff]
+
+/-- A Verschiebung `V x` lies in `W(𝔪) + p^(n+1) W(K)` exactly when `x` lies in
+`W(𝔪) + p^n W(K)`. -/
+@[simp]
+theorem verschiebung_mem_idealModPow_succ_iff {n : ℕ} {x : 𝕎 K} :
+    verschiebung x ∈ idealModPow p 𝔪 (n + 1) ↔ x ∈ idealModPow p 𝔪 n := by
+  simp only [mem_idealModPow_iff]
+  constructor
+  · intro h i hi
+    simpa only [verschiebung_coeff_succ] using h (i + 1) (Nat.succ_lt_succ hi)
+  · rintro h (_ | i) hi
+    · exact ⟨0, 𝔪.zero_mem, by simp⟩
+    · simpa only [verschiebung_coeff_succ] using h i (Nat.succ_lt_succ_iff.mp hi)
+
+/-- An iterated Verschiebung `V^k x` lies in `W(𝔪) + p^(n+k) W(K)` exactly when `x` lies in
+`W(𝔪) + p^n W(K)`. -/
+@[simp]
+theorem iterate_verschiebung_mem_idealModPow_add_iff {n k : ℕ} {x : 𝕎 K} :
+    verschiebung^[k] x ∈ idealModPow p 𝔪 (n + k) ↔ x ∈ idealModPow p 𝔪 n := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', ← add_assoc, verschiebung_mem_idealModPow_succ_iff, ih]
+
+end TauCeti.WittVector

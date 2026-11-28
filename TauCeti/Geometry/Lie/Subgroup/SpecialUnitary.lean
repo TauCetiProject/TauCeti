@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Lie.Subgroup.Unitary.Basic
 public import TauCeti.Topology.Algebra.UnitaryGroup
 
 /-!
-# The Lie algebra of the special unitary group
+# The special unitary group as a Lie group and its Lie algebra
 
 The special unitary group sits inside the general linear group as `TauCeti.GLSpecialUnitary`, a
 subgroup of `GL n 𝕜 = (Matrix n n 𝕜)ˣ`, which over `ℝ` or `ℂ` (any `RCLike` field) is a real Lie
@@ -43,6 +43,13 @@ trace, and for a nonempty index type `i • 1` is skew-Hermitian without being t
 there the special unitary group is Mathlib's special orthogonal group; that degeneration is
 recorded below.
 
+Being closed in `GL n 𝕜`, the special unitary group is an embedded Lie subgroup, and so a Lie
+group modelled on its Lie algebra; the last section records this structure. As throughout this
+file, the Lie group `GL n 𝕜` and the special unitary group carry the topology of the operator norm
+on matrices, `Matrix.linftyOpTopologicalSpace`, which is not a global instance: the `ChartedSpace`,
+`LieGroup`, `CompactSpace` and `SecondCountableTopology` instances below are only found where that
+topology is enabled as a local instance, as in `TauCeti.RepresentationTheory.SU2.LieGroup`.
+
 ## Main results
 
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_GLSpecialUnitary`: the Lie algebra of the special unitary
@@ -53,6 +60,13 @@ recorded below.
   `ℝ` it is Mathlib's orthogonal Lie algebra, the trace condition being automatic there.
 * `TauCeti.Lie.isEmbeddedLieSubgroup_GLSpecialUnitary`: **the special unitary group is an embedded
   Lie subgroup** of the general linear group, hence a Lie group in its own right.
+
+## Main definitions
+
+* `TauCeti.GLSpecialUnitary.lieAlgebra`: the Lie algebra `𝔰𝔲(n)` of the special unitary group.
+* `TauCeti.GLSpecialUnitary.embeddedLieSubgroupData`: the Lie group structure of the special
+  unitary group, modelled on `𝔰𝔲(n)`, with its `ChartedSpace` and `LieGroup` instances, for the
+  operator-norm topology `Matrix.linftyOpTopologicalSpace`, enabled as a local instance.
 -/
 
 public section
@@ -142,3 +156,58 @@ theorem isEmbeddedLieSubgroup_GLSpecialUnitary :
   isEmbeddedLieSubgroup_of_isClosed (isClosed_GLSpecialUnitary n 𝕜)
 
 end TauCeti.Lie
+
+/-! ### The special unitary group as a Lie group -/
+
+namespace TauCeti.GLSpecialUnitary
+
+open Lie
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
+
+variable (n 𝕜 : Type*) [Fintype n] [DecidableEq n] [RCLike 𝕜]
+
+/-- The Lie algebra `𝔰𝔲(n)` of the special unitary group: the Lie algebra of the special unitary
+subgroup of the real Lie group `GL n 𝕜`. -/
+abbrev lieAlgebra :
+    LieSubalgebra ℝ (LeftInvariantDerivation 𝓘(ℝ, Matrix n n 𝕜) (Matrix n n 𝕜)ˣ) :=
+  lieSubalgebraOfSubgroup (GLSpecialUnitary n 𝕜 : Subgroup (Matrix n n 𝕜)ˣ)
+
+/-- **The special unitary group is a Lie group.** The structure of embedded Lie subgroup of
+`GL n 𝕜` that the closed-subgroup theorem gives the closed subgroup `TauCeti.GLSpecialUnitary n 𝕜`,
+with model space its Lie algebra. Here `GL n 𝕜` and its subgroup carry the operator-norm topology
+`Matrix.linftyOpTopologicalSpace`, which is not a global instance: the `ChartedSpace` and
+`LieGroup` instances built from this structure are only found where that topology is enabled as a
+local instance. -/
+def embeddedLieSubgroupData :
+    EmbeddedLieSubgroupData 𝓘(ℝ, Matrix n n 𝕜) (GLSpecialUnitary n 𝕜)
+      (lieAlgebra n 𝕜).toSubmodule :=
+  EmbeddedLieSubgroupData.ofIsClosed (isClosed_GLSpecialUnitary n 𝕜)
+
+/-- The charts of the special unitary group from its embedded Lie subgroup structure. -/
+instance instChartedSpace :
+    ChartedSpace (lieAlgebra n 𝕜).toSubmodule (GLSpecialUnitary n 𝕜) :=
+  (embeddedLieSubgroupData n 𝕜).chartedSpace
+
+/-- The special unitary group is a Lie group, modelled on its Lie algebra. -/
+instance instLieGroup :
+    LieGroup 𝓘(ℝ, (lieAlgebra n 𝕜).toSubmodule) ∞ (GLSpecialUnitary n 𝕜) :=
+  (embeddedLieSubgroupData n 𝕜).lieGroup
+
+/-! The topological instances of `TauCeti.GLSpecialUnitary`, stated for the entrywise topology of
+matrices, restated for the operator-norm topology. The two topologies agree by definition
+(`Matrix.linftyOpTopologicalSpace_eq`), but not up to instance reducibility, so instance search
+does not transfer them. -/
+
+/-- The special unitary group is compact, for the operator-norm topology. -/
+instance instCompactSpaceOperatorNorm : CompactSpace (GLSpecialUnitary n 𝕜) :=
+  GLSpecialUnitary.instCompactSpace
+
+/-- The special unitary group is second countable, for the operator-norm topology. -/
+instance instSecondCountableTopologyOperatorNorm :
+    SecondCountableTopology (GLSpecialUnitary n 𝕜) :=
+  GLSpecialUnitary.instSecondCountableTopology
+
+end TauCeti.GLSpecialUnitary

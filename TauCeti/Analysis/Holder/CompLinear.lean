@@ -18,8 +18,8 @@ import TauCeti.Analysis.Normed.Module.Multilinear.Basic
 Precomposition by a continuous linear map acts boundedly on `CkHolderSpace`. The derivative
 of order `i` is pulled back in all `i` arguments, and the top Hölder seminorm acquires the
 additional factor `‖e‖^α`. Invertible linear coordinate changes therefore give continuous
-linear equivalences. These maps transport spatial initial data together with parabolic
-changes of coordinates.
+linear equivalences, and linear isometric equivalences induce linear isometric equivalences.
+These maps transport spatial initial data together with parabolic changes of coordinates.
 
 Postcomposition by a continuous linear map `g : F →L[ℝ] G` of the values also acts boundedly
 (`TauCeti.CkHolderSpace.compLeftL`), with operator norm at most `‖g‖`: every derivative of `g ∘ f`
@@ -270,6 +270,26 @@ theorem norm_compLinearL_le (e : E →L[ℝ] E') :
       (max 1 ‖e‖) ^ k * max 1 (‖e‖ ^ (α : ℝ)) :=
   ContinuousLinearMap.opNorm_le_bound _ (by positivity) (norm_compLinear_le e)
 
+/-- Linear precomposition by a contraction (`‖e‖ ≤ 1`) has operator norm at most `1`. -/
+theorem norm_compLinearL_le_one {e : E →L[ℝ] E'} (he : ‖e‖ ≤ 1) :
+    ‖compLinearL (k := k) (α := α) (F := F) e‖ ≤ 1 := by
+  refine (norm_compLinearL_le (k := k) (α := α) (F := F) e).trans ?_
+  have h1 : max 1 ‖e‖ ≤ 1 := max_le le_rfl he
+  have h2 : max 1 (‖e‖ ^ (α : ℝ)) ≤ 1 :=
+    max_le le_rfl ((Real.rpow_le_rpow (norm_nonneg _) he (NNReal.coe_nonneg α)).trans
+      (by rw [Real.one_rpow]))
+  calc (max 1 ‖e‖) ^ k * max 1 (‖e‖ ^ (α : ℝ))
+      ≤ 1 ^ k * 1 := mul_le_mul (pow_le_pow_left₀ (by positivity) h1 k) h2
+        (by positivity) (by positivity)
+    _ = 1 := by simp
+
+/-- Precomposing a `C^{k,α}` function with a linear map of norm at most `1` does not increase its
+norm. -/
+theorem norm_compLinearL_apply_le_of_norm_le_one {e : E →L[ℝ] E'} (he : ‖e‖ ≤ 1)
+    (f : CkHolderSpace k α E' F) :
+    ‖compLinearL e f‖ ≤ ‖f‖ :=
+  ((compLinearL e).le_of_opNorm_le (norm_compLinearL_le_one he) f).trans_eq (one_mul _)
+
 @[simp]
 theorem compLinearL_id (f : CkHolderSpace k α E F) : compLinearL (.id ℝ E) f = f :=
   ext fun _ ↦ by simp
@@ -298,6 +318,28 @@ theorem compLinearCLE_apply (e : E ≃L[ℝ] E') (f : CkHolderSpace k α E' F) :
 theorem compLinearCLE_symm_apply (e : E ≃L[ℝ] E') (f : CkHolderSpace k α E F) :
     (compLinearCLE e).symm f = compLinearL (e.symm : E' →L[ℝ] E) f :=
   (rfl)
+
+/-- Isometric linear coordinate changes on bounded `C^{k,α}` functions, as a linear isometric
+equivalence. -/
+def compLinearLIE (e : E ≃ₗᵢ[ℝ] E') : CkHolderSpace k α E' F ≃ₗᵢ[ℝ] CkHolderSpace k α E F :=
+  LinearIsometryEquiv.ofBounds
+    (compLinearCLE e.toContinuousLinearEquiv).toLinearEquiv
+    (norm_compLinearL_apply_le_of_norm_le_one e.toLinearIsometry.norm_toContinuousLinearMap_le)
+    (norm_compLinearL_apply_le_of_norm_le_one
+      e.symm.toLinearIsometry.norm_toContinuousLinearMap_le)
+
+/-- Applying `compLinearLIE` agrees with `compLinearL` on the underlying continuous linear map. -/
+@[simp]
+theorem compLinearLIE_apply (e : E ≃ₗᵢ[ℝ] E') (f : CkHolderSpace k α E' F) :
+    compLinearLIE e f = compLinearL e.toLinearIsometry.toContinuousLinearMap f :=
+  (rfl)
+
+/-- The inverse of `compLinearLIE e` is `compLinearLIE e.symm`. -/
+@[simp]
+theorem compLinearLIE_symm (e : E ≃ₗᵢ[ℝ] E') :
+    (compLinearLIE (k := k) (α := α) (F := F) e).symm = compLinearLIE e.symm := by
+  ext f x
+  rfl
 
 end compLinear
 

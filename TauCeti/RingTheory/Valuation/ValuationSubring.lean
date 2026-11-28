@@ -30,7 +30,11 @@ For a group acting on `L` by ring automorphisms, the translate `g • A` of a va
 its pullback along `g⁻¹`, with units and nonunits translated accordingly; automorphisms fixing a
 subfield `K` do not change the restriction to `K`.
 
+Membership in the subring of an additive valuation is equivalent to nonnegativity.
+
 ## Main results
+
+* `AddValuation.mem_toValuation_valuationSubring_iff`: additive valuation subring membership.
 
 * `ValuationSubring.mem_nonunits_comap`: nonunits of a pulled-back valuation subring.
 * `ValuationSubring.valuation_map_eq_one`: units of `O` map to units of every valuation subring
@@ -380,3 +384,17 @@ theorem exists_valuationRing_of_isPrime_le {V : Type*} {T : Type v} [CommRing V]
     exact mem_nonunits_iff.mp ((mem_maximalIdeal _).mp hgx) hx
 
 end TauCeti
+
+namespace AddValuation
+
+/-- Membership in the valuation subring is nonnegativity of the additive valuation. -/
+@[simp high] -- Apply before `Valuation.mem_valuationSubring_iff`.
+theorem mem_toValuation_valuationSubring_iff {K Γ : Type*} [Field K]
+    [LinearOrderedAddCommGroupWithTop Γ] (v : AddValuation K Γ) (x : K) :
+    x ∈ v.toValuation.valuationSubring ↔ 0 ≤ v x := by
+  rw [Valuation.mem_valuationSubring_iff, toValuation_apply,
+    ← ofAdd_zero, Multiplicative.ofAdd_le, ← toDual_zero,
+    OrderDual.toDual_le_toDual]
+
+
+end AddValuation

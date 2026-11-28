@@ -25,6 +25,7 @@ which identifies `(α →₀ R) ⊗[R] (β →₀ R)` with `α × β →₀ R`.
 * `finsuppTensorFinsupp'_mapDomain`: the identification of the tensor product of two spaces of
   finitely supported functions with functions on the product of the index types is natural in the
   index types.
+* `finsuppTensorFinsupp'_comm_apply`: exchanging the factors exchanges the coordinates.
 * `finsuppTensorFinsupp'_rTensor_apply`, `finsuppTensorFinsupp'_lTensor_apply`: the coefficients
   of `(φ ⊗ 1) t` and `(1 ⊗ ψ) t` are those of `t` multiplied by the matrix of `φ` or `ψ`.
 * `finsuppTensorFinsupp'_lid_rTensor_apply`, `finsuppTensorFinsupp'_rid_lTensor_apply`: the
@@ -91,6 +92,18 @@ theorem finsuppTensorFinsupp'_mapDomain (g₁ : α → α') (g₂ : β → β') 
       Finsupp.lmapDomain R R (Prod.map g₁ g₂) ∘ₗ (finsuppTensorFinsupp' R α β).toLinearMap := by
     ext; simp [Finsupp.mapDomain_single]
   exact congr($h (c ⊗ₜ d))
+
+/-- **The coefficients of `TensorProduct.comm t`.** Under the identifications of
+`(α →₀ R) ⊗ (β →₀ R)` with `α × β →₀ R` and of `(β →₀ R) ⊗ (α →₀ R)` with `β × α →₀ R`, the
+coefficient of `(b, a)` in the image of `t` under the exchange of the factors is the coefficient of
+`(a, b)` in `t`. -/
+@[simp]
+theorem finsuppTensorFinsupp'_comm_apply (t : (α →₀ R) ⊗[R] (β →₀ R)) (b : β) (a : α) :
+    finsuppTensorFinsupp' R β α (TensorProduct.comm R _ _ t) (b, a) =
+      finsuppTensorFinsupp' R α β t (a, b) := by
+  induction t with
+  | tmul x y => simp [finsuppTensorFinsupp'_apply_apply, mul_comm]
+  | add x y hx hy => simp [hx, hy]
 
 /-- **The coefficients of `(φ ⊗ 1) t`.** Under the identification of
 `(α →₀ R) ⊗ (β →₀ R)` with `α × β →₀ R`, the coefficient of `(a', b)` in `(φ ⊗ 1) t` is the sum

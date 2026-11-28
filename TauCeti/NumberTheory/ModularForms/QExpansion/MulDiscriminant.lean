@@ -75,7 +75,7 @@ theorem mem_range_mulDiscriminant_iff_qExpansion_coeff_eq_zero
   · rintro ⟨f, rfl⟩ γ n hn
     rw [qExpansion_translate_mulDiscriminant hΓN hΓ, PowerSeries.coeff_mul]
     refine Finset.sum_eq_zero fun p hp ↦ ?_
-    have := Finset.mem_antidiagonal.mp hp
+    have := Finset.HasAntidiagonal.mem_antidiagonal.mp hp
     rw [qExpansion_natCast_discriminant_coeff_of_lt (by omega), mul_zero]
   · refine fun hg ↦ (mem_range_mulDiscriminant_iff hΓ).mpr fun γ ↦ ?_
     have hNγ := natCast_mem_strictPeriods_conjAct_of_Gamma_le hΓN γ

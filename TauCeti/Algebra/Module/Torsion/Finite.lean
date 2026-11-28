@@ -22,6 +22,10 @@ Similarly, if `π : A →+* k` is a surjective ring homomorphism and `M` is an `
 by `RingHom.ker π`, then `M` is finite over `k` (via `Module.IsTorsionBySet.moduleOfSurjective`)
 if and only if it is finite over `A` (`Module.IsTorsionBySet.finite_iff_of_surjective`).
 
+In addition, any finitely generated `S`-torsion module over a commutative semiring is uniformly
+annihilated by a single element of `S` (`Module.IsTorsion'.exists_isTorsionBy_of_finite`),
+obtained as the product of annihilators of a finite generating set.
+
 Over a ring with finite quotients by nonzero ideals, such as the ring of integers of a number
 field, a finitely generated torsion module is killed by a nonzero divisor, hence is a finitely
 generated module over a finite ring, so it is a finite set (`Module.IsTorsion.finite`). This
@@ -69,6 +73,31 @@ theorem finite_iff_of_surjective {A k M : Type*} [Ring A] [Ring k] [AddCommGroup
     (hM.semilinearMapOfSurjective_bijective hπ)
 
 end Module.IsTorsionBySet
+
+namespace Module.IsTorsion'
+
+/-- A finitely generated `S`-torsion module over a commutative semiring is uniformly annihilated by
+a single element of `S`, namely the product of annihilators of a finite generating set. -/
+theorem exists_isTorsionBy_of_finite {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    {S : Submonoid R} [Module.Finite R M] (hM : Module.IsTorsion' M S) :
+    ∃ s ∈ S, Module.IsTorsionBy R M s := by
+  classical
+  obtain ⟨G, hG⟩ := Module.Finite.fg_top (R := R) (M := M)
+  choose s hs using fun g : G ↦ @hM g.val
+  let r : R := ∏ g ∈ G.attach, (s g : R)
+  refine ⟨r, S.prod_mem fun g _ ↦ (s g).property, ?_⟩
+  rw [Module.isTorsionBy_iff_torsionBy_eq_top, eq_top_iff, ← hG, Submodule.span_le]
+  intro x hx
+  obtain ⟨c, hc⟩ :=
+    Finset.dvd_prod_of_mem (fun g : G ↦ (s g : R)) (Finset.mem_attach G ⟨x, hx⟩)
+  have hx0 : (s ⟨x, hx⟩ : R) • x = 0 := hs ⟨x, hx⟩
+  have hrx : r • x = 0 := by
+    dsimp only [r]
+    rw [hc, mul_comm, mul_smul]
+    simp [hx0]
+  simpa [SetLike.mem_coe, Submodule.mem_torsionBy_iff] using hrx
+
+end Module.IsTorsion'
 
 namespace Module.IsTorsion
 

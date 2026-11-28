@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Meromorphic.ZeroFree
 public import TauCeti.NumberTheory.LFunctions.Hecke.FamilyRieszRemainder
 import TauCeti.NumberTheory.DirichletCharacter.Primitive.Riesz.ExplicitFormula
 import TauCeti.NumberTheory.DirichletCharacter.Primitive.Riesz.RayClass
-import TauCeti.NumberTheory.LSeries.RiemannZeta.FirstRieszSum
 
 /-!
 # Bounds for rational ray class Riesz remainders
@@ -33,19 +32,7 @@ theorem PrimitiveRayClassCharacter.exists_norm_rieszRemainder_le_of_zeroFreeRigh
   obtain ⟨ψ, rfl⟩ := PrimitiveDirichletCharacter.toPrimitiveRayClassCharacter.surjective η
   have hψ := (ψ.zeroFreeRightOf_heckeLFunctionC_toPrimitiveRayClassCharacter_iff σ).mp hη
   simp only [PrimitiveDirichletCharacter.rieszRemainder_toPrimitiveRayClassCharacter]
-  by_cases h : ψ = 1
-  · subst ψ
-    have hL : (1 : PrimitiveDirichletCharacter).character.LFunction = riemannZeta := by
-      rw [PrimitiveDirichletCharacter.character_one]
-      exact DirichletCharacter.LFunction_modOne_eq
-    rw [hL] at hψ
-    obtain ⟨C, hC⟩ := PrimitiveDirichletCharacter.exists_norm_rieszRemainder_one_le_rpow hψ
-    have hC₀ : 0 ≤ C := (norm_nonneg _).trans (by simpa using hC 1 le_rfl)
-    have hmax : max σ 0 ≤ max σ (1 / 2) := max_le_max_left σ (by norm_num)
-    exact ⟨C, fun y hy ↦ (hC y hy).trans (mul_le_mul_of_nonneg_left
-      (Real.rpow_le_rpow_of_exponent_le hy hmax) hC₀)⟩
-  · obtain ⟨C, hC⟩ := ψ.exists_norm_rieszRemainder_le_of_zeroFreeRightOf h
-    exact ⟨C, hC hψ⟩
+  exact ψ.exists_norm_rieszRemainder_le_rpow_of_zeroFreeRightOf hψ
 
 /-- If each member of a weighted rational ray class family is zero-free right of `σ`, its
 real first Riesz remainder has a power bound with exponent `max σ (1 / 2)`. No sign condition

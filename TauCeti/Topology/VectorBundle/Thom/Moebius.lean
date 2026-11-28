@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Reduced
 public import TauCeti.Geometry.Manifold.LocallyContractible
 public import TauCeti.Topology.VectorBundle.Moebius
+public import TauCeti.Topology.VectorBundle.Orientation.OfThomClass
 public import TauCeti.Topology.VectorBundle.Thom.LineBundle
 import TauCeti.RingTheory.Ideal.Quotient.LinearEquiv
 
@@ -22,13 +23,17 @@ with constant coefficients
 (`TauCeti.not_nonempty_moebiusThomPair_singularHomology_one_linearEquiv`): the relative homology
 across the level of a critical circle of index one whose negative normal bundle is a Möbius line is
 the homology of the circle twisted by the orientation local system of that line, and constant
-integer coefficients give the wrong answer.
+integer coefficients give the wrong answer. For the same reason the Möbius line bundle has no Thom
+class with integer coefficients (`TauCeti.not_exists_isThomClass_moebiusCore`), since a bundle over
+a locally path-connected base with an integral Thom class is orientable
+(`TauCeti.IsThomClass.nonempty_vectorBundleOrientation`).
 
 ## Main results
 
 * `TauCeti.moebiusThomPairSingularHomologyOneEquiv`: `H₁(E, E₀; R) ≅ R ⧸ 2R`.
 * `TauCeti.not_nonempty_moebiusThomPair_singularHomology_one_linearEquiv`:
   `H₁(E, E₀; ℤ)` is not isomorphic to `H₀(S¹; ℤ)`.
+* `TauCeti.not_exists_isThomClass_moebiusCore`: the Möbius line bundle has no integral Thom class.
 
 ## References
 
@@ -89,5 +94,16 @@ theorem not_nonempty_moebiusThomPair_singularHomology_one_linearEquiv :
   exact two_ne_zero (Ideal.span_singleton_eq_bot.1 (Ideal.nonempty_quotient_linearEquiv_self_iff.1
     ⟨(moebiusThomPairSingularHomologyOneEquiv ℤ).symm ≪≫ₗ e ≪≫ₗ
       (asIso ((TopCat.of Circle).singularHomology₀ε (ModuleCat.of ℤ ℤ))).toLinearEquiv⟩))
+
+/-- **The Möbius line bundle has no integral Thom class**, since it is not orientable. With
+coefficients in `ℤ/2` it has one (`TauCeti.exists_isThomClass_of_two_eq_zero`). -/
+theorem not_exists_isThomClass_moebiusCore :
+    ¬ ∃ u : (thomPair ℝ moebiusCore.Fiber).singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) (finrank ℝ ℝ), IsThomClass ℝ moebiusCore.Fiber u := by
+  have : LocallyPathConnectedSpace Circle :=
+    ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin 1)) Circle
+  rintro ⟨_, hu⟩
+  exact isEmpty_vectorBundleOrientation_moebiusCore.elim
+    (hu.nonempty_vectorBundleOrientation (finrank_self ℝ)).some
 
 end TauCeti

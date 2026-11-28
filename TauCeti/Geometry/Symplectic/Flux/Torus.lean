@@ -491,19 +491,14 @@ section Area
 
 variable (p : Fin 2 → ℝ) [∀ i, Fact (0 < p i)] (v : Fin 2 → ℝ) (A : ℝ)
 
-/-- The area form `A dt_0 ∧ dt_1` of the two-torus has constant coefficients. -/
-private theorem smul_torusVolumeForm_apply_eq (x : ∀ i, AddCircle (p i)) :
-    ((A • torusVolumeForm p).val x : (Fin 2 → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) =
-      (A • torusVolumeForm p).val 0 :=
-  congrArg (A • ·) (torusVolumeForm_apply_eq_apply_zero p x)
-
 /-- **The flux form of a translation of the two-torus.** For the area form `A dt_0 ∧ dt_1`, the
 translation diffeotopy along `v` has the constant flux form `A (v 0 dt_1 - v 1 dt_0)`. -/
 theorem fluxForm_torusTranslationDiffeotopy_smul_torusVolumeForm :
     (torusTranslationDiffeotopy p v).fluxForm (A • torusVolumeForm p) =
       A • (v 0 • torusTimeForm p 1 - v 1 • torusTimeForm p 0) := by
   refine Subtype.ext (funext fun x ↦ ?_)
-  rw [fluxForm_torusTranslationDiffeotopy_apply p v (smul_torusVolumeForm_apply_eq p A) x]
+  rw [fluxForm_torusTranslationDiffeotopy_apply p v
+    (smul_torusVolumeForm_apply_eq_apply_zero p A) x]
   ext w
   refine (ContinuousAlternatingMap.curryLeft_apply_apply _ v w).trans ?_
   -- Both sides are `A` times a `2 × 2` determinant, read through the formulas for the volume form
@@ -618,7 +613,7 @@ theorem exists_final_eq_refl_and_flux_smul_torusVolumeForm_eq (m n : ℤ) :
     · exact ⟨n, by simp [v]⟩
     · exact ⟨-m, by simp [v]⟩
   have hslice := timeSlice_torusTranslationDiffeotopy_mem_diffeomorphStabilizer p v
-    (smul_torusVolumeForm_apply_eq p A)
+    (smul_torusVolumeForm_apply_eq_apply_zero p A)
   refine ⟨torusTranslationDiffeotopy p v, by rw [Diffeotopy.final_def]; exact hslice 1, hslice,
     (final_torusTranslationDiffeotopy_eq_refl_iff p v).2 hloop, ?_⟩
   rw [flux_torusTranslationDiffeotopy_smul_torusVolumeForm]
@@ -672,7 +667,8 @@ theorem isHamiltonian_torusShearDiffeotopy_smul_torusVolumeForm_iff (hA : A ≠ 
     refine h.trans ?_
     simp [Matrix.det_fin_two]
   rw [isHamiltonian_torusShearDiffeotopy_iff (σ := ⟨A • torusVolumeForm p,
-    mem_closedForms_of_finrank_le _ (by simp) _⟩) p rfl g (smul_torusVolumeForm_apply_eq p A) hβ,
+    mem_closedForms_of_finrank_le _ (by simp) _⟩) p rfl g
+    (smul_torusVolumeForm_apply_eq_apply_zero p A) hβ,
     neg_eq_zero, or_iff_right hA]
 
 end Area

@@ -77,7 +77,9 @@ divisors `weightedOrder` and `order` multiply by `n` on `n`-th powers
 
 For two-variable series with linear coefficients one, the degree-one component is `X + Y`.
 Over a ring, vanishing of the constant coefficient then puts the remainder after subtracting
-`X + Y` in order at least two. Over a commutative ring, whatever the constant coefficient of `f`,
+`X + Y` in order at least two. Vanishing on both blocks of a sum of variable types also gives
+order at least two (`MvPowerSeries.two_le_order_of_killCompl_sum_eq_zero`), using Mathlib's
+`MvPowerSeries.coeff_killCompl`. Over a commutative ring, whatever the constant coefficient of `f`,
 the linear part of `f(x, y)` is the sum of the linear parts of `x` and `y` whenever `x` and `y`
 have zero constant coefficient (`MvPowerSeries.homogeneousComponent_one_subst_pair`).
 -/
@@ -739,6 +741,28 @@ theorem two_le_order_sub_X_add_X (h₀ : f.constantCoeff = 0)
     simp [hc]
 
 end Ring
+
+/-- A series that vanishes on both coordinate blocks has total order at least two. -/
+theorem two_le_order_of_killCompl_sum_eq_zero {σ τ : Type*} [CommSemiring R]
+    (f : MvPowerSeries (σ ⊕ τ) R)
+    (hl : killCompl Function.Embedding.inl f = 0)
+    (hr : killCompl Function.Embedding.inr f = 0) : 2 ≤ f.order := by
+  refine nat_le_order (n := 2) fun d hd ↦ ?_
+  have hdeg : d.degree = 0 ∨ d.degree = 1 := by lia
+  rcases hdeg with hdeg | hdeg
+  · rw [(Finsupp.degree_eq_zero_iff d).mp hdeg]
+    have h := congrArg (coeff 0) hl
+    simpa only [coeff_killCompl, Finsupp.embDomain_zero, map_zero] using h
+  · obtain ⟨i, rfl⟩ := (Set.ext_iff.mp Finsupp.range_single_one d).mpr hdeg
+    cases i with
+    | inl i =>
+      have h := congrArg (coeff (Finsupp.single i 1)) hl
+      simpa only [coeff_killCompl, Finsupp.embDomain_single, Function.Embedding.inl_apply,
+        map_zero] using h
+    | inr i =>
+      have h := congrArg (coeff (Finsupp.single i 1)) hr
+      simpa only [coeff_killCompl, Finsupp.embDomain_single, Function.Embedding.inr_apply,
+        map_zero] using h
 
 section CommRing
 
