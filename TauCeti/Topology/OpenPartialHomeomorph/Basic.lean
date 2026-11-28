@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.ContinuousMap.Basic
 public import Mathlib.Topology.LocallyClosed
 public import Mathlib.Topology.OpenPartialHomeomorph.Basic
+public import Mathlib.Topology.Sets.Compacts
 public import TauCeti.Topology.PartialHomeomorph.Basic
 
 /-!
@@ -43,6 +44,7 @@ or target are also sent to locally closed subsets of the ambient space.
   mapped into `s` lies in the second source, with the same image.
 * `OpenPartialHomeomorph.sourceRestrict`: the restriction of an open partial homeomorphism to its
   source, as a continuous map.
+* `OpenPartialHomeomorph.imageCompact`: the compact image of a compact subset of the source.
 * `OpenPartialHomeomorph.isOpenEmbedding_domRestrict`: its restriction to an open subset of the
   source is an open embedding.
 * `Topology.IsOpenEmbedding.of_continuousOn_inverse`: a continuous map with a continuous inverse
@@ -123,6 +125,23 @@ theorem isOpenEmbedding_domRestrict {U : Set X} (hU : IsOpen U) (hUs : U ⊆ e.s
 theorem sourceRestrict_preimage {a : X} (ha : a ∈ e.source) :
     e.sourceRestrict ⁻¹' {e a} ⊆ ContinuousMap.subtypeVal e.source ⁻¹' {a} :=
   fun x hx ↦ e.injOn x.property ha hx
+
+/-- The compact image of a compact subset of `e.source` under `e`. -/
+def imageCompact {K : TopologicalSpace.Compacts X} (hK : (K : Set X) ⊆ e.source) :
+    TopologicalSpace.Compacts Y :=
+  ⟨e '' (K : Set X), K.isCompact.image_of_continuousOn (e.continuousOn.mono hK)⟩
+
+/-- The carrier of the compact chart image is the set image. -/
+@[simp]
+theorem coe_imageCompact {K : TopologicalSpace.Compacts X} (hK : (K : Set X) ⊆ e.source) :
+    (e.imageCompact hK : Set Y) = e '' K :=
+  (rfl)
+
+/-- The compact image of a compact subset of `e.source` lies in `e.target`. -/
+theorem imageCompact_subset_target {K : TopologicalSpace.Compacts X}
+    (hK : (K : Set X) ⊆ e.source) :
+    (e.imageCompact hK : Set Y) ⊆ e.target :=
+  Set.image_subset_iff.2 fun _ hx ↦ e.map_source (hK hx)
 
 end OpenPartialHomeomorph
 

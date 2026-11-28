@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.BaseChange.BrauerNesbitt
+public import TauCeti.RepresentationTheory.BrauerNesbitt
 public import Mathlib.RepresentationTheory.Character
 public import Mathlib.Algebra.CharP.Defs
 import Mathlib.Data.Nat.Prime.Factorial
@@ -16,8 +16,8 @@ import TauCeti.RepresentationTheory.Character.Charpoly
 
 For `d`-dimensional representations of a monoid over a field `k` in which `d!` is nonzero, the
 character values at `g, g², …, gᵈ` determine the characteristic polynomial of `ρ g`, by Newton's
-identities (`Representation.charpoly_eq_of_character_pow_eq_of_factorial_ne_zero`). So over a
-perfect field Brauer–Nesbitt (`Representation.nonempty_equiv_of_charpoly_eq_of_perfectField`)
+identities (`Representation.charpoly_eq_of_character_pow_eq_of_factorial_ne_zero`). So
+Brauer–Nesbitt (`Representation.nonempty_equiv_of_charpoly_eq_of_isSemisimpleRepresentation`)
 turns equal characters into an equivalence of semisimple representations of the same dimension
 `d`. In characteristic `p` the condition `d! ≠ 0` is `p > d`; the Checks in
 `TauCeti.Examples.RepresentationTheory.BrauerNesbitt` show that `p > d` cannot be weakened to
@@ -25,10 +25,10 @@ turns equal characters into an equivalence of semisimple representations of the 
 
 ## Main results
 
-* `Representation.nonempty_equiv_of_character_eq_of_factorial_ne_zero`: over a perfect field in
-  which `d!` is nonzero, semisimple representations of dimension `d` with equal characters are
+* `Representation.nonempty_equiv_of_character_eq_of_factorial_ne_zero`: over a field in which
+  `d!` is nonzero, semisimple representations of dimension `d` with equal characters are
   equivalent.
-* `Representation.nonempty_equiv_of_character_eq_of_finrank_lt`: the same over a perfect field of
+* `Representation.nonempty_equiv_of_character_eq_of_finrank_lt`: the same over a field of
   characteristic `p > d`.
 
 ## References
@@ -43,19 +43,19 @@ open Module
 
 namespace Representation
 
-variable {k G V W : Type*} [Field k] [PerfectField k] [Monoid G] [AddCommGroup V] [Module k V]
+variable {k G V W : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V]
   [FiniteDimensional k V] [AddCommGroup W] [Module k W] [FiniteDimensional k W]
 
-/-- **Brauer–Nesbitt, trace form**: over a perfect field in which `d!` is nonzero, two semisimple
+/-- **Brauer–Nesbitt, trace form**: over a field in which `d!` is nonzero, two semisimple
 representations of a monoid of the same dimension `d` with the same character are equivalent. -/
 theorem nonempty_equiv_of_character_eq_of_factorial_ne_zero (ρ : Representation k G V)
     (σ : Representation k G W) [ρ.IsSemisimpleRepresentation] [σ.IsSemisimpleRepresentation]
     (hVW : finrank k V = finrank k W) (hd : ((finrank k V).factorial : k) ≠ 0)
     (h : ∀ g, ρ.character g = σ.character g) : Nonempty (ρ.Equiv σ) :=
-  nonempty_equiv_of_charpoly_eq_of_perfectField ρ σ fun g ↦
+  nonempty_equiv_of_charpoly_eq_of_isSemisimpleRepresentation ρ σ fun g ↦
     charpoly_eq_of_character_pow_eq_of_factorial_ne_zero hVW hd fun j _ _ ↦ h (g ^ j)
 
-/-- **Brauer–Nesbitt in characteristic `p > d`, trace form**: over a perfect field of
+/-- **Brauer–Nesbitt in characteristic `p > d`, trace form**: over a field of
 characteristic `p`, two semisimple representations of a monoid of the same dimension `d < p` with
 the same character are equivalent. -/
 theorem nonempty_equiv_of_character_eq_of_finrank_lt (p : ℕ) [CharP k p]

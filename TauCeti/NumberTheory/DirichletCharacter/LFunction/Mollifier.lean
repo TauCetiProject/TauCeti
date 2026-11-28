@@ -11,24 +11,32 @@ public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
 public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
 import TauCeti.Analysis.Complex.VerticalStrip.Basic
 import TauCeti.Analysis.Complex.VerticalStrip.PowerBounds
-import TauCeti.Analysis.MellinTransform.UpperTail
+import TauCeti.Analysis.MellinTransform.Basic
+import TauCeti.Analysis.MellinTransform.ExponentialCutoff
+import TauCeti.Analysis.MellinTransform.StripBounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
-import TauCeti.NumberTheory.ArithmeticFunction.Moebius
+import TauCeti.NumberTheory.DirichletCharacter.ArithmeticFunction
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Bounds
+import TauCeti.NumberTheory.LSeries.GaussianTheta.Mellin
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 
 /-!
 # A truncated Gaussian mollifier for Dirichlet L-functions, and zero detection
 
-The Mellin integral of the theta series with coefficients `μ(n) χ(n)`, truncated below `r`,
-approximates `Γℝ(s+j)/(2 L(s,χ))` on `Re s = 2`. Multiplying by the gamma-weighted L-function
+The Mellin integral of the theta series with coefficients `μ(n) χ(n)` equals
+`Γℝ(s+j)/(2 L(s,χ))` on `Re s > 1`. On `Re s = 2`, the integral truncated below `r`
+approximates that value. Multiplying by the gamma-weighted L-function
 shows that the error is `O(r)`, uniformly in the character, its modulus and the imaginary part.
 This provides the right boundary estimate in the three-lines argument that detects zeros from
-theta integrals. At a positive cutoff the integral is absolutely convergent and entire in `s`.
-For Gaussian weights of degree zero or one it is also bounded uniformly in the height on
-`1/2 ≤ Re s ≤ 2`. The right-edge estimate corresponds to `New.norm_mul_mollifier_sub_le` in
-`grh/src/Lib/Analytic/QuadraticTwist.lean` of lsernau/grh-lean (`72fead1`).
+theta integrals. A positive cutoff gives absolute convergence and entire dependence on `s`
+for all degrees, as well as an explicit bound on `1/2 ≤ Re s ≤ 2` for degrees zero and one.
+
+The theta–Mellin normalization follows Montgomery and Vaughan, *Multiplicative Number Theory I:
+Classical Theory*, Chapter 10. The zero-cutoff formula corresponds to
+`New.mellin_thetaSeries_moebius` in `grh/src/Lib/Analytic/DirichletTheta.lean`;
+the right boundary estimate corresponds to `New.norm_mul_mollifier_sub_le` in
+`grh/src/Lib/Analytic/QuadraticTwist.lean`, both from lsernau/grh-lean (`72fead1`).
 
 The zero-detection step interpolates a bound on the critical line and a decaying error bound on
 `Re z = 2` for the mollified completed L-function. At a zero the mollified term drops out, so
@@ -44,7 +52,7 @@ public section
 
 section GaussianMollifier
 
-open Asymptotics Complex Filter MeasureTheory Set TauCeti
+open Asymptotics Complex Complex.HadamardThreeLines Filter MeasureTheory Set TauCeti
 open scoped ArithmeticFunction.Moebius
 
 namespace DirichletCharacter
@@ -64,28 +72,33 @@ theorem gaussianMollifier_def {N : ℕ} (χ : DirichletCharacter ℂ N)
     ∫ t : ℝ in Ioi r, (t : ℂ) ^ (s - 1) *
       gaussianDirichletTheta j (fun n ↦ χ n * (μ n : ℂ)) t := (rfl)
 
-/-- Specializing the upper-tail kernel at `-s` gives the mollifier integrand. -/
-private theorem upperTail_gaussianMollifier_integrand {N : ℕ} (χ : DirichletCharacter ℂ N)
-    (j : ℕ) (s : ℂ) (t : ℝ) :
-    gaussianDirichletTheta j (fun n ↦ χ n * (μ n : ℂ)) t * (t : ℂ) ^ (-(-s + 1)) =
-      (t : ℂ) ^ (s - 1) * gaussianDirichletTheta j (fun n ↦ χ n * (μ n : ℂ)) t := by
-  have hexp : -(-s + 1) = s - 1 := by ring
-  rw [hexp, mul_comm]
+/-- At a nonnegative cutoff the mollifier is a truncated Mellin transform. -/
+private theorem gaussianMollifier_eq_mellin_indicator {N : ℕ} (χ : DirichletCharacter ℂ N)
+    (j : ℕ) {r : ℝ} (hr : 0 ≤ r) :
+    χ.gaussianMollifier j r =
+      mellin ((Ioi r).indicator (gaussianDirichletTheta j (fun n ↦ χ n * (μ n : ℂ)))) := by
+  funext s
+  rw [gaussianMollifier_def, mellin_indicator_Ioi _ hr]
+  simp only [smul_eq_mul]
 
-/-- The theta kernel of the mollifier decays faster than every power at infinity. -/
-private theorem isBigO_gaussianMollifier_kernel {N : ℕ} (χ : DirichletCharacter ℂ N) (j : ℕ)
-    (a : ℝ) :
-    (gaussianDirichletTheta j (fun n ↦ χ n * (μ n : ℂ))) =O[atTop] (fun t ↦ t ^ a) := by
-  have h : (gaussianDirichletTheta j (fun n ↦ χ n * (μ n : ℂ))) =O[atTop]
-      (fun t ↦ Real.exp (-t)) := by
-    refine IsBigO.of_bound ((j.factorial : ℝ) * Real.exp 1 / (1 - Real.exp (-1))) ?_
-    filter_upwards [eventually_ge_atTop (1 : ℝ)] with t ht
-    simpa only [one_mul, Real.norm_eq_abs, abs_of_nonneg (Real.exp_nonneg _)] using
-      norm_gaussianDirichletTheta_le_mul_exp_neg j
-        (fun n _ ↦ (ArithmeticFunction.norm_mul_moebius_le n (χ n)).trans (χ.norm_le_one n))
-        zero_lt_one ht
-  exact h.trans (by simpa only [neg_one_mul] using
-    (isLittleO_exp_neg_mul_rpow_atTop zero_lt_one a).isBigO)
+/-- The theta kernel is locally integrable up to a positive cutoff and decays exponentially. -/
+private theorem gaussianMollifier_kernel_bounds {N : ℕ} (χ : DirichletCharacter ℂ N)
+    (j : ℕ) {r : ℝ} (hr : 0 < r) :
+    let θ := gaussianDirichletTheta j (fun n ↦ χ n * (μ n : ℂ))
+    LocallyIntegrableOn θ (Ici r) ∧ θ =O[atTop] (fun t ↦ Real.exp (-1 * t)) := by
+  intro θ
+  let C := (j.factorial : ℝ) * Real.exp 1 / (1 - Real.exp (-r))
+  have hbound (t : ℝ) (ht : r ≤ t) : ‖θ t‖ ≤ C * Real.exp (-t) := by
+    simpa only [one_mul] using norm_gaussianDirichletTheta_le_mul_exp_neg j
+      (fun n _ ↦ χ.norm_mul_moebius_le_one n) hr ht
+  have hmajor : IntegrableOn (fun t ↦ C * Real.exp (-t)) (Ici r) := by
+    rw [integrableOn_Ici_iff_integrableOn_Ioi]
+    exact (integrableOn_exp_neg_Ioi r).const_mul C
+  have hi : IntegrableOn θ (Ici r) := by
+    refine hmajor.mono' (measurable_gaussianDirichletTheta j _).aestronglyMeasurable ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ici] with t ht using hbound t ht
+  refine ⟨hi.locallyIntegrableOn, IsBigO.of_bound C ((eventually_ge_atTop r).mono fun t ht ↦ ?_)⟩
+  simpa only [neg_one_mul, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] using hbound t ht
 
 /-- The truncated integral defining the Gaussian mollifier converges absolutely at every
 complex parameter when the cutoff is positive. -/
@@ -93,30 +106,16 @@ theorem integrableOn_gaussianMollifier_integrand {N : ℕ} (χ : DirichletCharac
     {r : ℝ} (hr : 0 < r) (s : ℂ) :
     IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) *
       gaussianDirichletTheta j (fun n ↦ χ n * (μ n : ℂ)) t) (Ioi r) := by
-  have hθ : IntegrableOn (gaussianDirichletTheta j (fun n ↦ χ n * (μ n : ℂ))) (Ioi r) := by
-    refine ((integrableOn_exp_neg_Ioi r).const_mul
-      ((j.factorial : ℝ) * Real.exp 1 / (1 - Real.exp (-r)))).mono'
-        (measurable_gaussianDirichletTheta j _).aestronglyMeasurable ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-    simpa only [one_mul] using norm_gaussianDirichletTheta_le_mul_exp_neg j
-      (fun n _ ↦ (ArithmeticFunction.norm_mul_moebius_le n (χ n)).trans (χ.norm_le_one n))
-      hr (mem_Ioi.mp ht).le
-  simpa only [upperTail_gaussianMollifier_integrand] using
-    integrableOn_mul_cpow_of_isBigO hr
-      ((integrableOn_Ici_iff_integrableOn_Ioi (by finiteness)).mpr hθ).locallyIntegrableOn
-      (χ.isBigO_gaussianMollifier_kernel j ((-s).re - 1)) (sub_one_lt (-s).re)
+  obtain ⟨hi, htop⟩ := χ.gaussianMollifier_kernel_bounds j hr
+  simpa only [smul_eq_mul] using (mellinConvergent_indicator_Ioi_iff hr.le).mp
+    (mellinConvergent_indicator_Ioi_of_isBigO_exp hr one_pos hi htop s)
 
 /-- A positive cutoff makes the Gaussian mollifier entire. -/
 theorem differentiable_gaussianMollifier {N : ℕ} (χ : DirichletCharacter ℂ N) (j : ℕ)
     {r : ℝ} (hr : 0 < r) : Differentiable ℂ (χ.gaussianMollifier j r) := by
-  intro s
-  let a := (-s).re - 1
-  have h := differentiableOn_integral_mul_cpow_of_isBigO hr (χ.isBigO_gaussianMollifier_kernel j a)
-  have hs : -s ∈ {z : ℂ | a < z.re} := mem_ofPred.mpr (sub_one_lt (-s).re)
-  have hd := h.differentiableAt (IsOpen.mem_nhds (isOpen_lt continuous_const continuous_re) hs)
-  have hcomp := hd.comp s differentiableAt_id.neg
-  rw [funext (χ.gaussianMollifier_def j r)]
-  simpa only [Function.comp_def, id_eq, upperTail_gaussianMollifier_integrand] using hcomp
+  rw [χ.gaussianMollifier_eq_mellin_indicator j hr.le]
+  obtain ⟨hi, htop⟩ := χ.gaussianMollifier_kernel_bounds j hr
+  exact differentiable_mellin_indicator_Ioi_of_isBigO_exp hr one_pos hi htop
 
 /-- A bound independent of the imaginary part, on the whole strip from `1/2` to `2`.
 It is uniform in the modulus, character, and choice of Gaussian parity. -/
@@ -138,12 +137,12 @@ theorem norm_gaussianMollifier_le_of_re_mem_Icc {N : ℕ} (χ : DirichletCharact
     · have hσ : -(3 / 2 : ℝ) ≤ s.re - 2 := by linarith [hs.1]
       exact (Real.rpow_le_rpow_of_exponent_ge ht₀ ht₁.le hσ).trans
         ((Real.rpow_le_rpow_of_nonpos hr ht.le (by norm_num)).trans (le_max_right _ _))
-  rw [norm_cpow_mul_gaussianDirichletTheta j _ s ht₀]
+  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht₀, sub_re, one_re,
+    ← gaussianTheta_eq_gaussianDirichletTheta]
   calc
     _ ≤ t ^ (s.re - 1) * (3 * Real.exp (-t) / t) := by
       gcongr
-      exact norm_gaussianTheta_le
-        (fun n ↦ (ArithmeticFunction.norm_mul_moebius_le n (χ n)).trans (χ.norm_le_one n)) ht₀
+      exact norm_gaussianTheta_le (fun n ↦ χ.norm_mul_moebius_le_one n) ht₀
     _ = 3 * t ^ (s.re - 2) * Real.exp (-t) := by
       have hexponent : s.re - 2 = (s.re - 1) - 1 := by ring
       rw [hexponent, Real.rpow_sub_one ht₀.ne' (s.re - 1)]
@@ -151,6 +150,48 @@ theorem norm_gaussianMollifier_le_of_re_mem_Icc {N : ℕ} (χ : DirichletCharact
     _ ≤ C * Real.exp (-t) := by
       dsimp only [C]
       gcongr
+
+/-- On the critical line, only the Möbius-twisted theta tail is needed to bound the
+Gaussian mollifier. -/
+theorem norm_gaussianMollifier_le_moebius_theta_tail {N : ℕ} (χ : DirichletCharacter ℂ N)
+    (j : Fin 2) {r : ℝ} (hr : 0 ≤ r) {s : ℂ} (hs : s.re = 1 / 2) :
+    ‖χ.gaussianMollifier j.val r s‖ ≤
+      ∫ u in Ioi r, ‖gaussianThetaSeries j (fun n ↦ χ n * μ n) u‖ / u := by
+  rw [gaussianMollifier_eq_mellin_indicator χ j.val hr,
+    ← funext (gaussianTheta_eq_gaussianDirichletTheta j _)]
+  refine (norm_mellin_indicator_Ioi_le_integral_rpow_mul_norm _ hr s).trans_eq
+    (setIntegral_congr_fun measurableSet_Ioi fun u hu ↦ ?_)
+  have hu₀ : 0 < u := hr.trans_lt hu
+  rw [hs, norm_gaussianThetaSeries, Real.rpow_sub_one hu₀.ne', ← Real.sqrt_eq_rpow,
+    div_mul_eq_mul_div]
+
+/-- Above a positive cutoff, the Gaussian mollifier of degree zero or one satisfies the
+regularity and boundedness hypotheses of three-lines interpolation on any vertical strip. -/
+theorem gaussianMollifier_mellin_bounds {N : ℕ} (χ : DirichletCharacter ℂ N)
+    (j : Fin 2) {r : ℝ} (hr : 0 < r) (a b : ℝ) :
+    DiffContOnCl ℂ (χ.gaussianMollifier j.val r) (verticalStrip a b) ∧
+      BddAbove ((norm ∘ χ.gaussianMollifier j.val r) '' verticalClosedStrip a b) := by
+  rw [gaussianMollifier_eq_mellin_indicator χ j.val hr.le,
+    ← funext (gaussianTheta_eq_gaussianDirichletTheta j _)]
+  let c (n : ℕ) := χ n * (μ n : ℂ)
+  have hc (n : ℕ+) : ‖c n‖ ≤ 1 := χ.norm_mul_moebius_le_one n
+  refine ⟨(differentiable_mellin_indicator_Ioi_gaussianTheta j hc hr).diffContOnCl, ?_⟩
+  obtain ⟨B, hB⟩ := (mellinConvergent_indicator_Ioi_gaussianTheta j hc hr (a : ℂ))
+    |>.exists_norm_mellin_le_on_strip (mellinConvergent_indicator_Ioi_gaussianTheta j hc hr (b : ℂ))
+  exact ⟨B, by rintro _ ⟨z, hz, rfl⟩; exact hB z hz⟩
+
+/-- With no lower cutoff, the Gaussian mollifier is the half-gamma factor divided by the
+character's L-function on `Re s > 1`. -/
+theorem gaussianMollifier_zero {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
+    (j : ℕ) {s : ℂ} (hs : 1 < s.re) :
+    χ.gaussianMollifier j 0 s = Gammaℝ (s + j) / 2 / χ.LFunction s := by
+  have hsum := χ.LSeriesSummable_mul (ArithmeticFunction.LSeriesSummable_moebius_iff.mpr hs)
+  have hpos : 0 < s.re + j := by positivity
+  have hinv := eq_inv_of_mul_eq_one_right (LSeries.mul_mu_eq_one χ hs)
+  rw [LFunction_eq_LSeries χ hs, div_eq_mul_inv (Gammaℝ (s + j) / 2), ← hinv,
+    mul_comm (Gammaℝ (s + j) / 2), gaussianMollifier_def]
+  simpa only [mellin, smul_eq_mul, Pi.mul_def] using
+    (hasMellin_gaussianDirichletTheta j hsum hpos).2
 
 /-- On `Re s = 2`, the completed product of a Dirichlet L-function and its Gaussian
 mollifier differs from the square of the half-gamma factor by at most `C r`. The constant
@@ -201,10 +242,28 @@ theorem norm_LFunction_mul_gaussianMollifier_sub (j : ℕ) :
       gcongr
       · exact hχ.trans (by linarith)
       · rw [gaussianMollifier_def]
-        exact norm_integral_gaussianDirichletTheta_sub j
-          (fun n _ ↦ (ArithmeticFunction.norm_mul_moebius_le n (χ n)).trans (χ.norm_le_one n))
+        exact norm_integral_gaussianDirichletTheta_sub j (fun n _ ↦ χ.norm_mul_moebius_le_one n)
           hr hs
     _ = _ := by ring
+
+/-- With matching parity, the right-edge Gaussian mollifier estimate can be written in
+terms of the completed L-function and its gamma factor. The constant is uniform in the
+character, its modulus, the cutoff, and the imaginary part. -/
+theorem norm_completedLFunction_div_two_mul_gaussianMollifier_sub (j : Fin 2) :
+    ∃ C > (0 : ℝ), ∀ {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N},
+      χ (-1) = (-1) ^ j.val → ∀ {r : ℝ}, 0 ≤ r → ∀ {s : ℂ}, s.re = 2 →
+      ‖χ.completedLFunction s / 2 * χ.gaussianMollifier j.val r s -
+        (χ.gammaFactor s / 2) ^ 2‖ ≤ C * r := by
+  obtain ⟨C, hC₀, hC⟩ := norm_LFunction_mul_gaussianMollifier_sub j.val
+  refine ⟨C, hC₀, fun {N} _ {χ} hj {r} hr {s} hs ↦ ?_⟩
+  have hΓ : χ.gammaFactor s = Gammaℝ (s + j.val) := by
+    fin_cases j
+    · have he : χ.Even := by simpa [Even] using hj
+      simp [he.gammaFactor_def]
+    · have ho : χ.Odd := by simpa [Odd] using hj
+      simp [ho.gammaFactor_def]
+  rw [χ.completedLFunction_eq_gammaFactor_mul_LFunction (by linarith), hΓ]
+  simpa only [div_eq_mul_inv, mul_right_comm] using hC χ hr hs
 
 end DirichletCharacter
 

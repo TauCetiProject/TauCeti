@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.Topology.Algebra.IsOpenUnits
 public import Mathlib.Topology.IsLocalHomeomorph
 public import Mathlib.Topology.Maps.Proper.Basic
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 import TauCeti.Topology.Algebra.IsOpenUnits
 
 /-!
@@ -96,13 +97,8 @@ theorem Units.measurableEmbedding_val₀ {G₀ : Type*} [GroupWithZero G₀] [Me
   measurable := Measurable.of_comap_le le_rfl
   measurableSet_image' := by
     rintro _ ⟨t, ht, rfl⟩
-    rw [Set.image_preimage_eq_inter_range]
-    refine ht.inter ?_
-    have : Set.range (Units.val : G₀ˣ → G₀) = {0}ᶜ := by
-      ext x
-      exact ⟨by rintro ⟨u, rfl⟩; exact u.ne_zero, fun hx ↦ ⟨Units.mk0 x hx, rfl⟩⟩
-    rw [this]
-    exact (measurableSet_singleton 0).compl
+    rw [Set.image_preimage_eq_inter_range, Units.range_val_eq_compl_zero]
+    exact ht.inter (measurableSet_singleton 0).compl
 
 /-- A local homeomorphism out of a Lindelöf space maps measurable sets to measurable sets. -/
 theorem IsLocalHomeomorph.measurableSet_image {α β : Type*} [TopologicalSpace α]

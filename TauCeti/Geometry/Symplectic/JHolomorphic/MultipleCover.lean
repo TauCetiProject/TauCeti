@@ -61,16 +61,16 @@ variable {X Y : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
   [FiniteCWType Y] (f : FiniteHolomorphicMap X Y)
 
 /-- **The unmarked virtual dimension of a multiple cover.** Let `f : X → Y` be a finite
-holomorphic map of compact Riemann surfaces satisfying `χ = 2 - 2 · genus`. Then
+holomorphic map of compact connected Riemann surfaces. Then
 `D(genus X, deg f · c) = deg f · D(genus Y, c) - (m - 3) R(f)` for every integer `c`, where `D` is
 `TauCeti.unmarkedVirtualDimension m`. For a curve `v` on `Y` with Chern number `c` whose composite
 `v ∘ f` has Chern number `deg f · c`, this is `D(v ∘ f) = deg f · D(v) - (m - 3) R(f)`. -/
-theorem unmarkedVirtualDimension_eq_degree_mul_unmarkedVirtualDimension_sub (m c : ℤ)
-    (hX : eulerChar X = 2 - 2 * genus X) (hY : eulerChar Y = 2 - 2 * genus Y) :
+theorem unmarkedVirtualDimension_eq_degree_mul_unmarkedVirtualDimension_sub [ConnectedSpace X]
+    (m c : ℤ) :
     unmarkedVirtualDimension m (genus X) (degree f * c) =
       degree f * unmarkedVirtualDimension m (genus Y) c - (m - 3) * ramificationDegree f := by
   rw [unmarkedVirtualDimension_def, unmarkedVirtualDimension_def]
-  linear_combination (3 - m) * f.two_mul_genus_sub_two_eq_of_eulerChar_eq hX hY
+  linear_combination (3 - m) * riemannHurwitz f
 
 end FiniteHolomorphicMap
 

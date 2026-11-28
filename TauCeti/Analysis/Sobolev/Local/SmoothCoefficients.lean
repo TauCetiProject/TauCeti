@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
-import TauCeti.Analysis.Calculus.ContDiff.FDerivApply
+import TauCeti.Analysis.Calculus.ContDiff.FDeriv.Apply
 import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
