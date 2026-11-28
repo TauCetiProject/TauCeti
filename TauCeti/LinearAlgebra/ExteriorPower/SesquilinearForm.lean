@@ -148,12 +148,11 @@ theorem sesqExteriorPower_degree_zero_apply (B : M →ₛₗ[σ] M →ₗ[R] R) 
 @[simp]
 theorem sesqExteriorPower_zero (n : ℕ) [NeZero n] :
     (0 : M →ₛₗ[σ] M →ₗ[R] R).sesqExteriorPower n = 0 := by
-  have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (NeZero.pos n)
   symm
   rw [eq_sesqExteriorPower_iff]
   intro v w
-  have h0 : (Matrix.of fun _ _ : Fin n ↦ (0 : R)) = 0 := by ext; simp
-  simp [h0]
+  simp only [LinearMap.zero_apply]
+  exact (Matrix.det_eq_zero_of_row_eq_zero (0 : Fin n) (by simp)).symm
 
 /-- **Naturality of the exterior Gram form**: an `R`-linear map pulling `B'` back to `B` pulls
 `B'.sesqExteriorPower n` back to `B.sesqExteriorPower n`. -/
