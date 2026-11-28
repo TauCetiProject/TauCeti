@@ -19,9 +19,9 @@ import TauCeti.RingTheory.Algebraic.Denominator
 
 An element of a number field admits a denominator coprime to a natural number `m` exactly when
 it is integral at every finite place whose prime ideal contains `m`. For a rational prime `p`,
-every embedding into a normed extension of `ℚ_[p]` sends an element integral above `p` into the
-closed unit ball. This allows identities for algebraic integers to be used on elements integral
-above `p` by clearing denominators without changing their `p`-adic size.
+every embedding into a normed division algebra over `ℚ_[p]` sends an element integral above `p`
+into the closed unit ball. This allows identities for algebraic integers to be used on elements
+integral above `p` by clearing denominators without changing their `p`-adic size.
 
 The denominator criterion is also used in `New.IsIntegralAbove.exists_mul_eq` in
 `lsernau/grh-lean`, `grh/src/New/Derivatives/FormalGroup/Resolution.lean` at `72fead1`.
@@ -85,11 +85,11 @@ theorem exists_coprime_natCast_mul_isIntegral_iff {K : Type*} [Field K] [NumberF
 
 end TauCeti
 
-/-- Every embedding into a normed extension of `ℚ_[p]` takes an element integral at all places
-above `p` into the closed unit ball. This applies to any such embedding, including one obtained
-by precomposing with an automorphism of the number field. -/
+/-- Every embedding into a normed division algebra over `ℚ_[p]` takes an element integral at
+all places above `p` into the closed unit ball. This applies to any such embedding, including one
+obtained by precomposing with an automorphism of the number field. -/
 theorem RingHom.norm_le_one_of_integral_above_prime {K L : Type*} [Field K] [NumberField K]
-    {p : ℕ} [Fact p.Prime] [NormedField L] [NormedAlgebra ℚ_[p] L] (σ : K →+* L) {x : K}
+    {p : ℕ} [Fact p.Prime] [NormedDivisionRing L] [NormedAlgebra ℚ_[p] L] (σ : K →+* L) {x : K}
     (hx : ∀ v : HeightOneSpectrum (𝓞 K), (p : 𝓞 K) ∈ v.asIdeal → v.valuation K x ≤ 1) :
     ‖σ x‖ ≤ 1 := by
   obtain ⟨n, hn, hnx⟩ := (TauCeti.exists_coprime_natCast_mul_isIntegral_iff x p).mpr hx
