@@ -148,7 +148,12 @@ theorem pow_mul_eq_pow_mul_of_mul_eq {M : Type*} [CommMonoid M] {b c y : M}
     (h : b * y = c * y) (k : ℕ) : b ^ k * y = c ^ k * y := by
   induction k with
   | zero => simp
-  | succ k ih => rw [pow_succ', mul_assoc, ih, mul_left_comm, h, ← mul_assoc, ← pow_succ]
+  | succ k ih =>
+    calc b ^ (k + 1) * y
+        = b * (b ^ k * y) := by rw [pow_succ', mul_assoc]
+      _ = c ^ k * (b * y) := by rw [ih]; ac_rfl
+      _ = c ^ k * (c * y) := by rw [h]
+      _ = c ^ (k + 1) * y := by rw [pow_succ', mul_assoc]; ac_rfl
 
 /-- The powers of an element of a monoid form a directed family for divisibility. For example,
 this is the directedness hypothesis for inverse limits along the powers of one element. -/

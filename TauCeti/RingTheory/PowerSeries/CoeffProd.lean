@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Basic
+import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.BigOperators.Intervals
 
@@ -119,16 +120,22 @@ coefficients of the factors `f i`. -/
 theorem coeff_prod_eq_sum_sym [DecidableEq ι] (s : Finset ι) (f : ι → R⟦X⟧) (n : ℕ) :
     coeff n (∏ i ∈ s, f i) =
       ∑ k ∈ s.sym n, ∏ i ∈ s, coeff (Multiset.count i (k : Multiset ι)) (f i) := by
-  calc coeff n (∏ i ∈ s, f i)
-      = ∑ l ∈ s.finsuppAntidiag n, ∏ i ∈ s, coeff (l i) (f i) :=
-        coeff_prod f n s
-    _ = ∑ l ∈ s.piAntidiag n, ∏ i ∈ s, coeff (l i) (f i) := by
-        rw [Finset.finsuppAntidiag, Finset.sum_map,
-          ← Finset.sum_attach (s.piAntidiag n) (fun l ↦ ∏ i ∈ s, coeff (l i) (f i))]
-        simp
-    _ = ∑ k ∈ s.sym n, ∏ i ∈ s, coeff (Multiset.count i (k : Multiset ι)) (f i) := by
-        rw [← Finset.map_sym_eq_piAntidiag, Finset.sum_map]
-        simp [Sym.val_eq_coe]
+  have hs : ((univ : Finset s).map (Function.Embedding.subtype (· ∈ s))).sym n = s.sym n := by
+    congr 1
+    ext a
+    simp
+  rw [coeff_prod, ← hs, Finset.sym_map, Finset.sym_univ, Finset.sum_map,
+    ← Finset.sum_coe_sort (s.finsuppAntidiag n)]
+  refine (Equiv.sum_comp (s.finsuppAntidiagEquiv n).symm
+    (fun l : s.finsuppAntidiag n ↦ ∏ i ∈ s, coeff (l.val i) (f i))).symm.trans ?_
+  refine sum_congr rfl fun k _ ↦ ?_
+  rw [← Finset.prod_attach s, ← Finset.prod_attach s]
+  refine prod_congr rfl fun i _ ↦ ?_
+  dsimp only [Function.Embedding.coeFn_mk]
+  rw [Finset.finsuppAntidiagEquiv_symm_apply_apply, Sym.coe_map]
+  congr 2
+  exact (Multiset.count_map_eq_count' _ _
+    (Function.Embedding.subtype (· ∈ s)).injective i).symm
 
 /-- Multiplying a power series by a finite product of factors `1 + X ^ d i` with `k < d i`
 does not change the `k`-th coefficient. -/
