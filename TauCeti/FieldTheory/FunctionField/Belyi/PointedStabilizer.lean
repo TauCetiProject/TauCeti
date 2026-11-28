@@ -402,32 +402,33 @@ variable (X)
 
 /-- Lift an ordinary `k(t)`-automorphism of `X` to a semilinear automorphism acting trivially on
 `k`. -/
-noncomputable def ofAlgEquiv : (X ≃ₐ[RatFunc k] X) →* semilinearAut X where
+noncomputable def semilinearAutOfAlgEquiv : (X ≃ₐ[RatFunc k] X) →* semilinearAut X where
   toFun σ := ⟨(σ.toRingEquiv, 1), mem_semilinearAut_iff.mpr fun r ↦ by
     rw [AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes, AlgEquiv.toRingEquiv_one,
       RatFunc.mapRingEquiv_refl, RingEquiv.refl_apply]⟩
   map_one' := Subtype.ext <| Prod.ext AlgEquiv.toRingEquiv_one rfl
   map_mul' _ _ := Subtype.ext <| Prod.ext (RingEquiv.ext fun _ ↦ rfl) rfl
 
-/-- The first projection of `ofAlgEquiv X σ` is `σ` as a ring automorphism. -/
+/-- The first projection of `semilinearAutOfAlgEquiv X σ` is `σ` as a ring automorphism. -/
 @[simp]
-theorem ofAlgEquiv_fst (σ : X ≃ₐ[RatFunc k] X) :
-    ((ofAlgEquiv X σ : semilinearAut X) : RingAut X × (k ≃ₐ[ℚ] k)).1 = σ.toRingEquiv :=
+theorem semilinearAutOfAlgEquiv_fst (σ : X ≃ₐ[RatFunc k] X) :
+    ((semilinearAutOfAlgEquiv X σ : semilinearAut X) : RingAut X × (k ≃ₐ[ℚ] k)).1 =
+      σ.toRingEquiv :=
   (rfl)
 
-/-- The second projection of `ofAlgEquiv X σ` is trivial on `k`. -/
+/-- The second projection of `semilinearAutOfAlgEquiv X σ` is trivial on `k`. -/
 @[simp]
-theorem ofAlgEquiv_snd (σ : X ≃ₐ[RatFunc k] X) :
-    ((ofAlgEquiv X σ : semilinearAut X) : RingAut X × (k ≃ₐ[ℚ] k)).2 = 1 :=
+theorem semilinearAutOfAlgEquiv_snd (σ : X ≃ₐ[RatFunc k] X) :
+    ((semilinearAutOfAlgEquiv X σ : semilinearAut X) : RingAut X × (k ≃ₐ[ℚ] k)).2 = 1 :=
   (rfl)
 
 /-- Lifting a `k(t)`-automorphism to `semilinearAut X` preserves the action on places. -/
 @[simp]
-theorem ofAlgEquiv_smul (σ : X ≃ₐ[RatFunc k] X) (Q : Place k X) :
-    ofAlgEquiv X σ • Q = σ • Q :=
+theorem semilinearAutOfAlgEquiv_smul (σ : X ≃ₐ[RatFunc k] X) (Q : Place k X) :
+    semilinearAutOfAlgEquiv X σ • Q = σ • Q :=
   Place.ext <| Valuation.ext fun z ↦ by
-    rw [valuation_smul, Place.valuation_smul, ofAlgEquiv_fst, ← AlgEquiv.symm_toRingEquiv,
-      AlgEquiv.coe_toRingEquiv]
+    rw [valuation_smul, Place.valuation_smul, semilinearAutOfAlgEquiv_fst,
+      ← AlgEquiv.symm_toRingEquiv, AlgEquiv.coe_toRingEquiv]
 
 variable [IsGalois (RatFunc k) X]
 
@@ -441,8 +442,8 @@ theorem pointedStabilizer_eq_stabilizer_of_isGalois_of_forall_restrict_eq {P : P
   obtain ⟨p, hp, hpg⟩ := hg
   obtain ⟨σ, hσ⟩ := Place.exists_smul_eq_of_restrict_eq (hfib ⟨p, hp⟩)
   rw [pointedStabilizer_def, Subgroup.mem_map]
-  refine ⟨ofAlgEquiv X σ * ⟨p, hp⟩, ?_, ?_⟩
-  · rw [MulAction.mem_stabilizer_iff, mul_smul, ofAlgEquiv_smul, hσ]
+  refine ⟨semilinearAutOfAlgEquiv X σ * ⟨p, hp⟩, ?_, ?_⟩
+  · rw [MulAction.mem_stabilizer_iff, mul_smul, semilinearAutOfAlgEquiv_smul, hσ]
   · simpa using hpg
 
 /-- **For a Galois Belyi pair, the pointed stabilizer at any place over a finite point `t = q`
