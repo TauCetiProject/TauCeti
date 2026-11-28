@@ -14,6 +14,7 @@ import Mathlib.Analysis.Normed.Ring.InfiniteSum
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
+public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.BilinearMap
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import Mathlib.Topology.Algebra.InfiniteSum.Module
@@ -72,6 +73,10 @@ of norm at most one preserve summability.
 Specializing the norm-summable bilinear Cauchy products to continuous-linear-map evaluation gives
 `HasSum.sum_clm_apply_antidiagonal_of_summable_norm` and
 `HasSum.sum_clm_apply_range_of_summable_norm` without any ultrametric or completeness hypothesis.
+
+For a sequence `g` in a real Banach space, convergence of `∑_d ‖g(d)‖ / √d` gives convergence of
+`∑_d g(d) / d` (`TauCeti.summable_inv_smul_of_summable_norm_div_sqrt`), by comparison of the
+weights `1 / d ≤ 1 / √d`.
 -/
 
 public section
@@ -610,6 +615,21 @@ theorem summable_mul_of_norm_le_one {R ι : Type*} [SeminormedRing R] [IsUltrame
     Summable (fun i ↦ c i * f i) := by
   simpa only [smul_eq_mul] using
     summable_smul_of_tendsto_of_norm_le_one hf.tendsto_cofinite_zero hc
+
+/-- **Comparison with a square-root weight.** In a real Banach space, if `∑_d ‖g(d)‖ / √d`
+converges for a sequence `g`, then the series `∑_d g(d) / d` converges, because
+`‖g(d)‖ / d ≤ ‖g(d)‖ / √d` for `d ≥ 1`. This is the convergence of the mean value in Wintner's
+theorem. -/
+theorem summable_inv_smul_of_summable_norm_div_sqrt {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {g : ℕ → E}
+    (hg : Summable fun d : ℕ ↦ ‖g d‖ / √d) : Summable fun d : ℕ ↦ (d : ℝ)⁻¹ • g d := by
+  refine Summable.of_norm_bounded hg fun d ↦ ?_
+  rcases d.eq_zero_or_pos with rfl | hd
+  · simp
+  have hd' : (1 : ℝ) ≤ d := mod_cast hd
+  rw [norm_smul, norm_inv, Real.norm_natCast, inv_mul_eq_div]
+  exact div_le_div_of_nonneg_left (norm_nonneg _) (Real.sqrt_pos.2 (by linarith))
+    ((Real.sqrt_le_left (by linarith)).2 (by nlinarith))
 
 end TauCeti
 
