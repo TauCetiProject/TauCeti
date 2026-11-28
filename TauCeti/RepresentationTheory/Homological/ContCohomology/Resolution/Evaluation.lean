@@ -90,10 +90,7 @@ theorem resolutionEval_resolutionMap_apply {H : Type v} [Group H] [TopologicalSp
   | succ n ih =>
     rw [resolutionEval_succ_apply, resolutionEval_succ_apply,
       ContinuousCohomology.resolutionMap_succ, hom_ofHom, ContRepresentation.coind₁ResMap_apply]
-    have htail : Fin.tail (φ ∘ x) = φ ∘ Fin.tail x := by
-      funext i
-      simp only [Fin.tail_def, Function.comp_apply]
-    rw [htail]
+    rw [← Fin.comp_tail]
     exact ih _ (Fin.tail x)
 
 /-- An element of the coinduced resolution is determined by its values at tuples. -/
