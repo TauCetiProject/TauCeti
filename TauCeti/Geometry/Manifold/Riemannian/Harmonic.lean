@@ -14,10 +14,12 @@ import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 # Harmonic functions on closed Riemannian manifolds
 
 A real `C²` function with vanishing Laplace–Beltrami operator on a compact manifold without
-boundary has zero gradient. On a preconnected manifold it is therefore constant. This is the
-energy argument for the scalar-flat case of conformal metric rigidity: Green's first identity
-gives zero Dirichlet energy, and the full support of Riemannian volume turns almost-everywhere
-vanishing into pointwise vanishing.
+boundary has zero gradient. On a preconnected manifold it is therefore constant, and two `C²`
+functions with equal Laplacians and equal Riemannian integrals coincide
+(`TauCeti.Manifold.eq_of_laplaceBeltrami_eq_of_integral_eq`). This is the energy argument for the
+scalar-flat case of conformal metric rigidity and classical Poisson uniqueness: Green's first
+identity gives zero Dirichlet energy, and the full support of Riemannian volume turns
+almost-everywhere vanishing into pointwise vanishing.
 
 ## References
 
@@ -38,13 +40,15 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
+local instance instIsContinuousRiemannianBundleHarmonic :
+    IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+  IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
+
 /-- A harmonic `C²` function on a compact boundaryless Riemannian manifold has zero gradient.
 No connectedness assumption is needed. -/
 theorem mgradient_eq_zero_of_laplaceBeltrami_eq_zero {u : M → ℝ}
     (hu : ContMDiff I 𝓘(ℝ) 2 u) (hΔ : ∀ x, laplaceBeltrami I u x = 0) (x : M) :
     mgradient I u x = 0 := by
-  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
-    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
   have hcont : Continuous fun y ↦ ‖mgradient I u y‖ ^ 2 :=
     continuous_norm_sq_mgradient (hu.of_le one_le_two)
   have hint := integral_mul_laplaceBeltrami (hu.of_le one_le_two)
@@ -64,5 +68,27 @@ theorem apply_eq_of_laplaceBeltrami_eq_zero [PreconnectedSpace M] {u : M → ℝ
   intro z
   exact mvfderiv_eq_zero_iff.mp
     (mgradient_eq_zero_iff.mp (mgradient_eq_zero_of_laplaceBeltrami_eq_zero hu hΔ z))
+
+/-- Two `C²` functions on a closed connected Riemannian manifold with a `C¹` metric that have the
+same Laplace–Beltrami operator and the same Riemannian integral are equal. -/
+theorem eq_of_laplaceBeltrami_eq_of_integral_eq [PreconnectedSpace M] {u v : M → ℝ}
+    (hu : ContMDiff I 𝓘(ℝ) 2 u) (hv : ContMDiff I 𝓘(ℝ) 2 v)
+    (hΔ : ∀ x, laplaceBeltrami I u x = laplaceBeltrami I v x)
+    (hint : ∫ x, u x ∂riemannianVolume I M = ∫ x, v x ∂riemannianVolume I M) :
+    u = v := by
+  have hΔ0 : ∀ x, laplaceBeltrami I (u - v) x = 0 := fun x ↦ by
+    rw [laplaceBeltrami_sub I hu hv, hΔ x, sub_self]
+  have hconst : ∀ x y, (u - v) x = (u - v) y :=
+    apply_eq_of_laplaceBeltrami_eq_zero (hu.sub hv) hΔ0
+  have hint0 : ∫ x, (u - v) x ∂riemannianVolume I M = 0 := by
+    rw [Pi.sub_def, integral_sub
+      (hu.continuous.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace u))
+      (hv.continuous.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace v)),
+      hint, sub_self]
+  ext x
+  have : Nonempty M := ⟨x⟩
+  rw [show (fun y ↦ (u - v) y) = fun _ ↦ (u - v) x from funext fun y ↦ hconst y x,
+    integral_const, smul_eq_mul, mul_eq_zero] at hint0
+  exact sub_eq_zero.1 (hint0.resolve_left measureReal_univ_ne_zero)
 
 end TauCeti.Manifold

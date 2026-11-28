@@ -12,7 +12,7 @@ import Mathlib.Analysis.InnerProductSpace.Convex
 import TauCeti.Analysis.Convex.Uniform.Basic
 import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
-import TauCeti.Geometry.Manifold.Riemannian.Poisson
+import TauCeti.Geometry.Manifold.Riemannian.Poisson.Basic
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Integral.Exp.AddMul
 

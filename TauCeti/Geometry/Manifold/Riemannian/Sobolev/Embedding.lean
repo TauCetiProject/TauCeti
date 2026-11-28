@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.H1
 public import TauCeti.MeasureTheory.Function.Lp.Exponent
+import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Basic
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -112,8 +113,11 @@ private def toCriticalLpAux (hn : 2 < finrank ℝ E) :
   liftSmooth
     ((ContinuousMap.toLp (ENNReal.ofReal (2 * finrank ℝ E / (finrank ℝ E - 2)))
         (riemannianVolume I M) ℝ).toLinearMap ∘ₗ
-      (⟨⟨fun u ↦ (u : C(M, ℝ)), fun _ _ ↦ rfl⟩, fun _ _ ↦ rfl⟩ : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C(M, ℝ)))
-    (exists_norm_toLp_critical_le hn)
+      (ContMDiffMap.toContinuousMapLinearMap : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C(M, ℝ)))
+    (by
+      simpa only [LinearMap.coe_comp, ContinuousLinearMap.coe_coe, Function.comp_apply,
+        ContMDiffMap.toContinuousMapLinearMap_apply] using
+        exists_norm_toLp_critical_le (I := I) (M := M) hn)
 
 /-- **The Sobolev embedding on a closed Riemannian manifold.** On a compact manifold without
 boundary of dimension `n > 2` with a continuous Riemannian metric, `H¹(M)` embeds continuously and
@@ -135,7 +139,7 @@ theorem toLpOfLE_ofSmooth {q : ℝ≥0∞} [Fact (1 ≤ q)] (hn : 2 < finrank �
     ⟨one_le_ofReal_critical hn⟩
   rw [toLpOfLE, ContinuousLinearMap.comp_apply, toCriticalLpAux, liftSmooth_ofSmooth]
   simp only [LinearMap.coe_comp, ContinuousLinearMap.coe_coe, Function.comp_apply,
-    LinearMap.coe_mk, AddHom.coe_mk]
+    ContMDiffMap.toContinuousMapLinearMap_apply]
   refine Lp.ext ?_
   rw [Lp.coeFn_ofExponentLEL]
   exact (ContinuousMap.coeFn_toLp _ (u : C(M, ℝ))).trans
