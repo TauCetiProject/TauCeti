@@ -420,25 +420,32 @@ private theorem localizationFunctorAlgEquiv_algebraMap (M : Submonoid R)
   rw [localizationFunctorEquiv_algebraMap, AlgEquiv.symm_apply_eq,
     Localization.tensorRightAlgEquiv_apply_one_tmul]
 
+private noncomputable def localizationFunctorObjIso (M : Submonoid R)
+    (A : CommAlgCat.{max u w} R) :
+    (localizationFunctor.{u, max u w} M).obj A ≅
+      (extendScalars.{u, u, max u w} R (Localization M)).obj A :=
+  isoMk (localizationFunctorAlgEquiv M A)
+
+private theorem localizationFunctorObjIso_hom_algebraMap (M : Submonoid R)
+    (A : CommAlgCat.{max u w} R) (a : A) :
+    (localizationFunctorObjIso M A).hom.hom
+        (algebraMap A ((localizationFunctor.{u, max u w} M).obj A) a) =
+      (1 : Localization M) ⊗ₜ[R] a :=
+  localizationFunctorAlgEquiv_algebraMap M A a
+
 /-- Algebra localization at `M` is naturally isomorphic to extension of scalars along
 `R → Localization M`. -/
 noncomputable def localizationFunctorIsoExtendScalars (M : Submonoid R) :
     localizationFunctor.{u, max u w} M ≅ extendScalars.{u, u, max u w} R (Localization M) :=
-  NatIso.ofComponents
-    (fun A ↦ isoMk (localizationFunctorAlgEquiv M A))
-    fun {A B} f ↦ by
-      apply hom_ext
-      apply AlgHom.toRingHom_injective
-      apply IsLocalization.ringHom_ext (Algebra.algebraMapSubmonoid A M)
-      ext a
-      change ((localizationFunctorAlgEquiv M B)
-          (((localizationFunctor M).map f).hom
-            (algebraMap A ((localizationFunctor M).obj A) a))) =
-        Algebra.TensorProduct.map (AlgHom.id (Localization M) (Localization M)) f.hom
-          ((localizationFunctorAlgEquiv M A)
-            (algebraMap A ((localizationFunctor M).obj A) a))
-      rw [localizationFunctor_map_hom_algebraMap, localizationFunctorAlgEquiv_algebraMap,
-        localizationFunctorAlgEquiv_algebraMap, Algebra.TensorProduct.map_tmul, AlgHom.id_apply]
+  NatIso.ofComponents (localizationFunctorObjIso M) fun {A B} f ↦ by
+    apply hom_ext
+    apply AlgHom.toRingHom_injective
+    apply IsLocalization.ringHom_ext (Algebra.algebraMapSubmonoid A M)
+    ext a
+    simp only [hom_comp, AlgHom.coe_toRingHom, RingHom.coe_comp, AlgHom.coe_comp,
+      Function.comp_apply, localizationFunctor_map_hom_algebraMap, hom_ofHom]
+    rw [localizationFunctorObjIso_hom_algebraMap, localizationFunctorObjIso_hom_algebraMap,
+      Algebra.TensorProduct.map_tmul, AlgHom.id_apply]
 
 /-- The forward component of `localizationFunctorIsoExtendScalars` sends `algebraMap A _ a` to
 `1 ⊗ₜ a`. -/
