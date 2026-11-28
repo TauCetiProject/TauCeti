@@ -485,7 +485,13 @@ theorem monoidalNatIso_hom_app_of (a : S.Obj) :
     (monoidalNatIso he).hom.app (of a) = (e a).hom := by rfl
 
 instance isMonoidal_monoidalNatIso_hom : NatTrans.IsMonoidal (monoidalNatIso he).hom :=
-  NatTrans.IsMonoidal.of_unit_tensor _ (wordIso_tensorUnit_hom F G e) (wordIso_tensor_hom F G e)
+  NatTrans.IsMonoidal.of_oplax _
+    (by
+      rw [monoidalNatIso_hom_app, wordIso_tensorUnit_hom, Category.assoc,
+        Functor.Monoidal.ε_η, Category.comp_id])
+    (fun X Y ↦ by
+      rw [monoidalNatIso_hom_app, wordIso_tensor_hom, Category.assoc, Category.assoc,
+        Functor.Monoidal.μ_δ, Category.comp_id, monoidalNatIso_hom_app, monoidalNatIso_hom_app])
 
 end Uniqueness
 

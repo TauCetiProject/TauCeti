@@ -300,16 +300,10 @@ theorem mk_rightDual (X : RigidObject (no_index S.Obj)) :
 theorem mk_leftDual (X : RigidObject (no_index S.Obj)) :
     (⟨X.leftDual⟩ : S.FreeRigid) = (ᘁ(⟨X⟩ : S.FreeRigid) : S.FreeRigid) := rfl
 
-/-- The chosen right dual of `X` in `S.FreeRigid` is the formal right dual expression. -/
-theorem rightDual_eq (X : S.FreeRigid) : Xᘁ = ⟨X.as.rightDual⟩ := rfl
-
-/-- The chosen left dual of `X` in `S.FreeRigid` is the formal left dual expression. -/
-theorem leftDual_eq (X : S.FreeRigid) : (ᘁX : S.FreeRigid) = ⟨X.as.leftDual⟩ := rfl
-
 /-- Double right duality does not identify a generating object with itself in `S.FreeRigid`. -/
 theorem of_ne_doubleRightDual (a : S.Obj) : (of a : S.FreeRigid) ≠ ((of a : S.FreeRigid)ᘁ)ᘁ := by
   intro h
-  rw [rightDual_eq, rightDual_eq] at h
+  change (⟨_⟩ : S.FreeRigid) = ⟨(RigidObject.of a).rightDual.rightDual⟩ at h
   exact RigidObject.normalize_rightDual_rightDual_ne a
     (congrArg (RigidObject.normalize ∘ FreeRigid.as) h).symm
 
@@ -322,11 +316,15 @@ theorem eval_of (X : RigidObject S.Obj) :
   | of a => rfl
   | unit => rfl
   | tensor X Y ihX ihY => simp only [RigidObject.eval_tensor, ihX, ihY, mk_tensor]
-  | rightDual X ih => simp only [RigidObject.eval_rightDual, ih, rightDual_eq]
-  | leftDual X ih => simp only [RigidObject.eval_leftDual, ih, leftDual_eq]
+  | rightDual X ih =>
+    exact (RigidObject.eval_rightDual _ _).trans
+      ((congrArg (fun Z : S.FreeRigid ↦ Zᘁ) ih).trans (mk_rightDual X).symm)
+  | leftDual X ih =>
+    exact (RigidObject.eval_leftDual _ _).trans
+      ((congrArg (fun Z : S.FreeRigid ↦ (ᘁZ : S.FreeRigid)) ih).trans (mk_leftDual X).symm)
 
 /-- The generating morphism given by a coupon, from its source to its target. -/
-@[expose] def coupon (g : S.Coupon) : (⟨S.src g⟩ : S.FreeRigid) ⟶ ⟨S.tgt g⟩ :=
+def coupon (g : S.Coupon) : (⟨S.src g⟩ : S.FreeRigid) ⟶ ⟨S.tgt g⟩ :=
   homMk (Hom.coupon g)
 
 /-- `Hom.εRight` represents the evaluation of the chosen right dual. -/
@@ -950,7 +948,13 @@ theorem monoidalNatIso_hom_app_of (a : S.Obj) :
 
 /-- The natural isomorphism `monoidalNatIso he` is monoidal. -/
 instance isMonoidal_monoidalNatIso_hom : NatTrans.IsMonoidal (monoidalNatIso he).hom :=
-  NatTrans.IsMonoidal.of_unit_tensor _ (wordIso_tensorUnit_hom F G e) (wordIso_tensor_hom F G e)
+  NatTrans.IsMonoidal.of_oplax _
+    (by
+      rw [monoidalNatIso_hom_app, wordIso_tensorUnit_hom, Category.assoc,
+        Functor.Monoidal.ε_η, Category.comp_id])
+    (fun X Y ↦ by
+      rw [monoidalNatIso_hom_app, wordIso_tensor_hom, Category.assoc, Category.assoc,
+        Functor.Monoidal.μ_δ, Category.comp_id, monoidalNatIso_hom_app, monoidalNatIso_hom_app])
 
 /-- A monoidal natural isomorphism between strong monoidal functors out of the free rigid monoidal
 category is the `wordIso` of its components at the generating objects. -/

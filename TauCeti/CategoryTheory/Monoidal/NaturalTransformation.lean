@@ -211,15 +211,6 @@ theorem δ_comp_tensor {F G : C ⥤ D} [F.Monoidal] [G.Monoidal] (τ : F ⟶ G) 
   rw [app_tensor_eq_δ_comp_tensor_comp_μ, Category.assoc, Category.assoc, Functor.Monoidal.μ_δ,
     Category.comp_id]
 
-/-- A natural transformation between strong monoidal functors whose unit and tensor components are
-given by the canonical comparison formulas is monoidal. -/
-theorem of_unit_tensor {F G : C ⥤ D} [F.Monoidal] [G.Monoidal] (τ : F ⟶ G)
-    (hunit : τ.app (𝟙_ C) = η F ≫ ε G)
-    (htensor : ∀ X Y, τ.app (X ⊗ Y) = δ F X Y ≫ (τ.app X ⊗ₘ τ.app Y) ≫ μ G X Y) :
-    τ.IsMonoidal where
-  unit := by rw [hunit, Functor.Monoidal.ε_η_assoc]
-  tensor X Y := by rw [htensor, Functor.Monoidal.μ_δ_assoc]
-
 end CategoryTheory.NatTrans.IsMonoidal
 
 namespace CategoryTheory.Functor.Monoidal
