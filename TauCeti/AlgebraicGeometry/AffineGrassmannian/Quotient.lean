@@ -22,9 +22,10 @@ the affine site over `Spec k` with the topology induced by the big fpqc topology
 objects include every commutative `k`-algebra. No smoothness, reductivity, or reducedness
 assumption is needed for this quotient sheaf.
 
-The quotient has the universal property for natural maps invariant under right multiplication
-by positive loops. Its projection is locally surjective. Left multiplication extends from
-cosets to an action of loops on the quotient, naturally in the value algebra.
+Invariant natural maps from loops to fpqc sheaves factor uniquely through the loop Grassmannian.
+For arbitrary presheaf targets, `loopCosetHomEquiv` gives the corresponding universal property
+of the coset presheaf. The quotient projection is locally surjective. Left multiplication extends
+from cosets to an action of loops on the quotient, naturally in the value algebra.
 
 This construction uses the coefficientwise `k`-algebra structure on Laurent series, as does
 `TauCeti.HopfAlgebra.loopGroup`. It does not assert representability or a torsor description.
@@ -133,8 +134,7 @@ theorem loopCosetMk_mul_positive (A : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ)
     (n : (positiveLoopGroup k H).obj A.unop.unop) :
     dsimp% loopCosetMk k H A (g * (positiveLoopToLoop k H).app A.unop.unop n) =
       loopCosetMk k H A g := by
-  apply (loopCosetMk_eq_iff k H A _ _).mpr
-  exact ⟨n⁻¹, by simp⟩
+  exact congrArg ULift.up (QuotientGroup.mk_mul_of_mem g ⟨n, rfl⟩)
 
 /-- Natural maps invariant under right multiplication by positive loops. -/
 def IsPositiveLoopInvariant {F : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ ⥤ Type (u + 1)}
@@ -143,6 +143,15 @@ def IsPositiveLoopInvariant {F : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ ⥤ Type (u + 
     (n : (positiveLoopGroup k H).obj A.unop.unop),
     f.app A (ULift.up (g * (positiveLoopToLoop k H).app A.unop.unop n)) =
       f.app A (ULift.up g)
+
+/-- Invariance means componentwise invariance under right multiplication by positive loops. -/
+theorem isPositiveLoopInvariant_iff {F : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ ⥤ Type (u + 1)}
+    (f : loopPresheaf k H ⟶ F) :
+    IsPositiveLoopInvariant k H f ↔
+      ∀ (A : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ) (g : (loopGroup k H).obj A.unop.unop)
+        (n : (positiveLoopGroup k H).obj A.unop.unop),
+        f.app A (ULift.up (g * (positiveLoopToLoop k H).app A.unop.unop n)) =
+          f.app A (ULift.up g) := Iff.rfl
 
 /-- The coset projection is invariant under right multiplication by positive loops. -/
 theorem isPositiveLoopInvariant_loopCosetProjection :
@@ -209,10 +218,63 @@ theorem loopGrassmannian_obj :
 def loopGrassmannianProjection : loopPresheaf k H ⟶ (loopGrassmannian k H).obj :=
   loopCosetProjection k H ≫ toSheafify (CommAlgCat.fpqcTopology k) (loopCosetPresheaf k H)
 
+/-- The quotient projection is the coset projection followed by the sheafification unit. -/
+theorem loopGrassmannianProjection_def :
+    loopGrassmannianProjection k H = loopCosetProjection k H ≫
+      toSheafify (CommAlgCat.fpqcTopology k) (loopCosetPresheaf k H) ≫
+        eqToHom (loopGrassmannian_obj k H).symm := (rfl)
+
 /-- The image of a loop in the fpqc quotient. -/
 def loopGrassmannianMk (A : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ)
     (g : (loopGroup k H).obj A.unop.unop) : (loopGrassmannian k H).obj.obj A :=
   (loopGrassmannianProjection k H).app A (ULift.up g)
+
+/-- Evaluating the projection on a loop gives its quotient class. -/
+@[simp]
+theorem loopGrassmannianProjection_app (A : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ)
+    (g : (loopGroup k H).obj A.unop.unop) :
+    dsimp% (loopGrassmannianProjection k H).app A (ULift.up g) =
+      loopGrassmannianMk k H A g := (rfl)
+
+/-- The coset equality sieve consists of restrictions whose right difference is positive. -/
+theorem equalizerSieve_loopCosetMk_apply {A B : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ}
+    (f : A ⟶ B) (g g' : (loopGroup k H).obj A.unop.unop) :
+    Presheaf.equalizerSieve (F := loopCosetPresheaf k H)
+      (loopCosetMk k H A g) (loopCosetMk k H A g') f.unop ↔
+      ∃ n : (positiveLoopGroup k H).obj B.unop.unop,
+        (positiveLoopToLoop k H).app B.unop.unop n =
+          ((loopGroup k H).map f.unop.unop g)⁻¹ * (loopGroup k H).map f.unop.unop g' := by
+  simpa only [Presheaf.equalizerSieve_apply, Quiver.Hom.op_unop,
+    loopCosetPresheaf_map_mk] using
+    loopCosetMk_eq_iff k H B ((loopGroup k H).map f.unop.unop g)
+      ((loopGroup k H).map f.unop.unop g')
+
+/-- Two loop classes agree exactly when their cosets agree fpqc locally.
+By `equalizerSieve_loopCosetMk_apply`, this is the covering sieve of restrictions on which
+the right difference of the two loops lies in the image of positive loops. -/
+theorem loopGrassmannianMk_eq_iff (A : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ)
+    (g g' : (loopGroup k H).obj A.unop.unop) :
+    loopGrassmannianMk k H A g = loopGrassmannianMk k H A g' ↔
+      Presheaf.equalizerSieve (F := loopCosetPresheaf k H)
+        (loopCosetMk k H A g) (loopCosetMk k H A g') ∈
+        CommAlgCat.fpqcTopology k A.unop := by
+  constructor
+  · exact Presheaf.equalizerSieve_mem (CommAlgCat.fpqcTopology k)
+      (toSheafify (CommAlgCat.fpqcTopology k) (loopCosetPresheaf k H)) _ _
+  · intro hS
+    refine (((isSheaf_iff_isSheaf_of_type _ _).mp
+      (loopGrassmannian k H).property).isSeparated _ hS).ext ?_
+    intro B f hf
+    -- Identify sections with their sheafification-unit values to use the unit's naturality.
+    change (sheafify (CommAlgCat.fpqcTopology k) (loopCosetPresheaf k H)).map f.op
+      ((toSheafify (CommAlgCat.fpqcTopology k) (loopCosetPresheaf k H)).app A
+        (loopCosetMk k H A g)) =
+      (sheafify (CommAlgCat.fpqcTopology k) (loopCosetPresheaf k H)).map f.op
+        ((toSheafify (CommAlgCat.fpqcTopology k) (loopCosetPresheaf k H)).app A
+          (loopCosetMk k H A g'))
+    rw [← NatTrans.naturality_apply, ← NatTrans.naturality_apply]
+    exact congrArg ((toSheafify (CommAlgCat.fpqcTopology k)
+      (loopCosetPresheaf k H)).app (op B)) hf
 
 /-- Changing the value algebra maps a representative by the loop-group functor. -/
 @[simp]
@@ -236,12 +298,18 @@ theorem loopGrassmannianMk_mul_positive (A : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ)
 def loopGrassmannianBasePoint (A : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ) :
     (loopGrassmannian k H).obj.obj A := loopGrassmannianMk k H A 1
 
+/-- The class of the identity loop is the base point. -/
+@[simp]
+theorem loopGrassmannianMk_one (A : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ) :
+    loopGrassmannianMk k H A 1 = loopGrassmannianBasePoint k H A := (rfl)
+
 /-- The base point is natural in the value algebra. -/
 @[simp]
 theorem loopGrassmannian_map_basePoint {A B : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ} (f : A ⟶ B) :
     (loopGrassmannian k H).obj.map f (loopGrassmannianBasePoint k H A) =
       loopGrassmannianBasePoint k H B := by
-  simp [loopGrassmannianBasePoint]
+  exact (loopGrassmannian_map_mk k H f 1).trans
+    (congrArg (loopGrassmannianMk k H B) ((loopGroup k H).map f.unop.unop).hom.map_one)
 
 /-- The quotient projection is fpqc locally surjective. -/
 instance loopGrassmannianProjection_isLocallySurjective :
@@ -277,6 +345,17 @@ theorem loopGrassmannian_hom_ext
   apply (loopGrassmannianHomEquiv k H F).injective
   apply Subtype.ext
   simpa only [loopGrassmannianHomEquiv_apply] using h
+
+/-- Sheaf morphisms out of the quotient are determined on loop classes. -/
+@[ext]
+theorem loopGrassmannian_hom_ext_mk
+    {F : Sheaf (CommAlgCat.fpqcTopology k) (Type (u + 1))} {f g : loopGrassmannian k H ⟶ F}
+    (h : ∀ (A : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ) (x : (loopGroup k H).obj A.unop.unop),
+      f.hom.app A (loopGrassmannianMk k H A x) =
+        g.hom.app A (loopGrassmannianMk k H A x)) : f = g := by
+  apply loopGrassmannian_hom_ext
+  ext A ⟨x⟩
+  exact h A x
 
 /-- The inverse universal property recovers the invariant map on representatives. -/
 @[reassoc (attr := simp)]
@@ -391,14 +470,9 @@ instance instUniqueLoopGrassmannianSelf (A : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ) :
 
 /-- The fpqc quotient for the trivial group is the terminal sheaf. -/
 def isTerminalLoopGrassmannianSelf : Limits.IsTerminal (loopGrassmannian k k) :=
-  Limits.IsTerminal.ofUniqueHom
-    (fun F ↦ ⟨{ app A := ↾fun _ ↦ loopGrassmannianBasePoint k k A
-                naturality {A B} f := by
-                  ext _x
-                  exact (loopGrassmannian_map_basePoint k k f).symm }⟩)
-    (fun F f ↦ by
-      ext A x
-      exact loopGrassmannian_self_eq_basePoint k A (f.hom.app A x))
+  Limits.IsTerminal.isTerminalOfObj (sheafToPresheaf _ _) _
+    (Functor.isTerminal fun A ↦ (Limits.Types.isTerminalEquivUnique _).symm
+      (instUniqueLoopGrassmannianSelf k A))
 
 end
 
@@ -414,47 +488,58 @@ noncomputable section
 
 variable {k : Type u} [CommRing k] {H K L : _root_.CommHopfAlgCat.{u} k}
 
+private def loopPresheafMap (φ : H ⟶ K) : loopPresheaf k K ⟶ loopPresheaf k H :=
+  Functor.whiskerRight
+    (Functor.whiskerLeft (unopUnop (CommAlgCat.{u} k))
+      ((TauCeti.CommHopfAlgCat.loopGroupFunctor k).map φ.op))
+    (forget GrpCat ⋙ uliftFunctor.{u + 1, u})
+
+private theorem loopPresheafMap_app (φ : H ⟶ K) (A : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ)
+    (g : (loopGroup k K).obj A.unop.unop) :
+    (loopPresheafMap φ).app A (ULift.up g) = ULift.up
+      (((TauCeti.CommHopfAlgCat.loopGroupFunctor k).map φ.op :
+        loopGroup k K ⟶ loopGroup k H).app A.unop.unop g) := (rfl)
+
 private theorem loopPresheafMap_invariant (φ : H ⟶ K) :
-    IsPositiveLoopInvariant k K (Functor.whiskerRight
-      (Functor.whiskerLeft (unopUnop (CommAlgCat.{u} k))
-        ((TauCeti.CommHopfAlgCat.loopGroupFunctor k).map φ.op))
-      (forget GrpCat ⋙ uliftFunctor.{u + 1, u}) ≫ loopGrassmannianProjection k H) := by
+    IsPositiveLoopInvariant k K (loopPresheafMap φ ≫ loopGrassmannianProjection k H) := by
   intro A g n
-  -- Remove the whiskering and universe-lift wrappers to use multiplicativity.
-  change loopGrassmannianMk k H A
-    (BialgHom.mapDomain φ.hom (g * (positiveLoopToLoop k K).app A.unop.unop n)) =
-    loopGrassmannianMk k H A (BialgHom.mapDomain φ.hom g)
-  have hpos := congrArg (fun α ↦ α.app A.unop.unop n)
-    ((TauCeti.CommHopfAlgCat.positiveLoopToLoop k).naturality φ.op)
-  simp only [TauCeti.CommHopfAlgCat.positiveLoopToLoop_app] at hpos
-  exact (congrArg (loopGrassmannianMk k H A)
-    (((BialgHom.mapDomain φ.hom).map_mul g _).trans
-      (congrArg (fun x ↦ BialgHom.mapDomain φ.hom g * x) hpos.symm))).trans
-    (loopGrassmannianMk_mul_positive k H A _ _)
+  let α : loopGroup k K ⟶ loopGroup k H :=
+    (TauCeti.CommHopfAlgCat.loopGroupFunctor k).map φ.op
+  have hpos : α.app A.unop.unop ((positiveLoopToLoop k K).app A.unop.unop n) =
+      (positiveLoopToLoop k H).app A.unop.unop
+        (((TauCeti.CommHopfAlgCat.positiveLoopGroupFunctor k).map φ.op).app A.unop.unop n) :=
+    by
+      have h := congrArg (fun t ↦ t.app A.unop.unop n)
+        ((TauCeti.CommHopfAlgCat.positiveLoopToLoop k).naturality φ.op)
+      simp only [TauCeti.CommHopfAlgCat.positiveLoopToLoop_app] at h
+      -- Evaluate the two composites after removing the inclusion's functor wrappers.
+      convert h.symm using 1 <;> rfl
+  have heval (x : (loopGroup k K).obj A.unop.unop) :
+      (loopPresheafMap φ ≫ loopGrassmannianProjection k H).app A (ULift.up x) =
+        loopGrassmannianMk k H A (α.app A.unop.unop x) :=
+    congrArg ((loopGrassmannianProjection k H).app A) (loopPresheafMap_app φ A x)
+  rw [heval, heval, (α.app A.unop.unop).hom.map_mul, hpos]
+  exact loopGrassmannianMk_mul_positive k H A _ _
 
 /-- A homomorphism of affine groups induces a map of loop Grassmannians.
 The coordinate Hopf-algebra morphism goes in the opposite direction. -/
 def loopGrassmannianMap (φ : H ⟶ K) : loopGrassmannian k K ⟶ loopGrassmannian k H :=
   (loopGrassmannianHomEquiv k K (loopGrassmannian k H)).symm
-    ⟨Functor.whiskerRight
-      (Functor.whiskerLeft (unopUnop (CommAlgCat.{u} k))
-        ((TauCeti.CommHopfAlgCat.loopGroupFunctor k).map φ.op))
-      (forget GrpCat ⋙ uliftFunctor.{u + 1, u}) ≫ loopGrassmannianProjection k H,
-      loopPresheafMap_invariant φ⟩
+    ⟨loopPresheafMap φ ≫ loopGrassmannianProjection k H, loopPresheafMap_invariant φ⟩
 
 /-- The induced map applies the group homomorphism to a loop representative. -/
 @[simp]
 theorem loopGrassmannianMap_mk (φ : H ⟶ K) (A : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ)
     (g : (loopGroup k K).obj A.unop.unop) :
     φ.loopGrassmannianMap.hom.app A (loopGrassmannianMk k K A g) =
-      loopGrassmannianMk k H A (BialgHom.mapDomain φ.hom g) := by
-  exact congrArg (fun t ↦ t.app A (ULift.up g))
+      loopGrassmannianMk k H A
+        (((TauCeti.CommHopfAlgCat.loopGroupFunctor k).map φ.op :
+          loopGroup k K ⟶ loopGroup k H).app A.unop.unop g) := by
+  exact (congrArg (fun t ↦ t.app A (ULift.up g))
     (loopGrassmannianHomEquiv_symm_apply k K (loopGrassmannian k H)
-      (Functor.whiskerRight
-        (Functor.whiskerLeft (unopUnop (CommAlgCat.{u} k))
-          ((TauCeti.CommHopfAlgCat.loopGroupFunctor k).map φ.op))
-        (forget GrpCat ⋙ uliftFunctor.{u + 1, u}) ≫ loopGrassmannianProjection k H)
-      (loopPresheafMap_invariant φ))
+      (loopPresheafMap φ ≫ loopGrassmannianProjection k H)
+      (loopPresheafMap_invariant φ))).trans
+    (congrArg ((loopGrassmannianProjection k H).app A) (loopPresheafMap_app φ A g))
 
 /-- Group homomorphisms intertwine the left actions on loop Grassmannians. -/
 @[simp]
@@ -463,18 +548,25 @@ theorem loopGrassmannianMap_smul (φ : H ⟶ K) (A : ((CommAlgCat.{u} k)ᵒᵖ)�
     dsimp% φ.loopGrassmannianMap.hom.app A (x • z) =
       HSMul.hSMul (α := (loopGroup k H).obj A.unop.unop) (BialgHom.mapDomain φ.hom x)
         (φ.loopGrassmannianMap.hom.app A z) := by
+  let α : loopGroup k K ⟶ loopGroup k H :=
+    (TauCeti.CommHopfAlgCat.loopGroupFunctor k).map φ.op
+  suffices h : φ.loopGrassmannianMap.hom.app A (x • z) =
+      α.app A.unop.unop x • φ.loopGrassmannianMap.hom.app A z by
+    exact h.trans (congrArg (fun y : (loopGroup k H).obj A.unop.unop ↦
+      y • φ.loopGrassmannianMap.hom.app A z)
+      (TauCeti.CommHopfAlgCat.loopGroupFunctor_map_app_apply k φ.op A.unop.unop x))
   refine eq_of_forall_loopGrassmannian_map_eq_mk k K (loopGrassmannian k H) z
     fun B f g hg ↦ ?_
-  rw [loopGrassmannian_map_smul k H f (BialgHom.mapDomain φ.hom x)]
-  simp only [← NatTrans.naturality_apply, loopGrassmannian_map_smul, hg,
+  have hnat := congrArg (fun t ↦ t x) (α.naturality f.unop.unop)
+  simp only [ConcreteCategory.comp_apply] at hnat
+  rw [loopGrassmannian_map_smul k H f (α.app A.unop.unop x)]
+  rw [← NatTrans.naturality_apply, loopGrassmannian_map_smul k K f x, hg,
     smul_loopGrassmannianMk, loopGrassmannianMap_mk]
-  -- The coordinate map has an unfolded convolution-point type, so rewrite at default transparency.
-  erw [smul_loopGrassmannianMk k H B]
-  apply congrArg (loopGrassmannianMk k H B)
-  exact ((BialgHom.mapDomain φ.hom).map_mul _ _).trans
-    (congrArg (fun y ↦ y * BialgHom.mapDomain φ.hom g)
-      (DFunLike.congr_fun
-        (BialgHom.mapValue_mapDomain φ.hom (HahnSeries.mapAlgHom f.unop.unop.hom)) x))
+  rw [← NatTrans.naturality_apply, hg, loopGrassmannianMap_mk]
+  exact (congrArg (loopGrassmannianMk k H B)
+    (((α.app B.unop.unop).hom.map_mul _ _).trans
+      (congrArg (fun y ↦ y * α.app B.unop.unop g) hnat))).trans
+    (smul_loopGrassmannianMk k H B _ _).symm
 
 /-- Group homomorphisms preserve the base point of the loop Grassmannian. -/
 @[simp]
@@ -482,38 +574,53 @@ theorem loopGrassmannianMap_basePoint (φ : H ⟶ K) (A : ((CommAlgCat.{u} k)ᵒ
     φ.loopGrassmannianMap.hom.app A (loopGrassmannianBasePoint k K A) =
       loopGrassmannianBasePoint k H A := by
   exact (loopGrassmannianMap_mk φ A 1).trans
-    (congrArg (loopGrassmannianMk k H A) (BialgHom.mapDomain φ.hom).map_one)
-
-/-- The map induced by the identity homomorphism is the identity. -/
-@[simp]
-theorem loopGrassmannianMap_id (H : _root_.CommHopfAlgCat.{u} k) :
-    loopGrassmannianMap (𝟙 H) = 𝟙 (loopGrassmannian k H) := by
-  apply loopGrassmannian_hom_ext
-  ext A ⟨g⟩
-  exact (loopGrassmannianMap_mk (𝟙 H) A g).trans
-    (congrArg (loopGrassmannianMk k H A) (DFunLike.congr_fun BialgHom.mapDomain_id g))
+    (congrArg (loopGrassmannianMk k H A)
+      ((((TauCeti.CommHopfAlgCat.loopGroupFunctor k).map φ.op).app A.unop.unop).hom.map_one))
 
 /-- Maps of loop Grassmannians compose contravariantly in coordinate Hopf algebras. -/
 @[simp]
 theorem loopGrassmannianMap_comp (φ : H ⟶ K) (ψ : K ⟶ L) :
     loopGrassmannianMap (φ ≫ ψ) = ψ.loopGrassmannianMap ≫ φ.loopGrassmannianMap := by
-  apply loopGrassmannian_hom_ext
-  ext A ⟨g⟩
-  -- Present the composite natural transformations as their functions on a loop class.
-  change (loopGrassmannianMap (φ ≫ ψ)).hom.app A (loopGrassmannianMk k L A g) =
-    φ.loopGrassmannianMap.hom.app A
-      (ψ.loopGrassmannianMap.hom.app A (loopGrassmannianMk k L A g))
+  apply loopGrassmannian_hom_ext_mk
+  intro A g
+  let α : loopGroup k L ⟶ loopGroup k K :=
+    (TauCeti.CommHopfAlgCat.loopGroupFunctor k).map ψ.op
   calc
-    _ = loopGrassmannianMk k H A (BialgHom.mapDomain φ.hom (BialgHom.mapDomain ψ.hom g)) :=
-      (loopGrassmannianMap_mk (φ ≫ ψ) A g).trans
-        (congrArg (loopGrassmannianMk k H A)
-          (DFunLike.congr_fun (BialgHom.mapDomain_comp ψ.hom φ.hom) g))
+    _ = loopGrassmannianMk k H A
+        (((TauCeti.CommHopfAlgCat.loopGroupFunctor k).map (φ ≫ ψ).op).app A.unop.unop g) :=
+      loopGrassmannianMap_mk (φ ≫ ψ) A g
+    _ = loopGrassmannianMk k H A
+        (((TauCeti.CommHopfAlgCat.loopGroupFunctor k).map φ.op).app A.unop.unop
+          (α.app A.unop.unop g)) :=
+      congrArg (fun β : loopGroup k L ⟶ loopGroup k H ↦
+        loopGrassmannianMk k H A (β.app A.unop.unop g))
+        ((TauCeti.CommHopfAlgCat.loopGroupFunctor k).map_comp ψ.op φ.op)
     _ = φ.loopGrassmannianMap.hom.app A
-        (loopGrassmannianMk k K A (BialgHom.mapDomain ψ.hom g)) :=
+        (loopGrassmannianMk k K A (α.app A.unop.unop g)) :=
       (loopGrassmannianMap_mk φ A _).symm
-    _ = _ := congrArg (fun x ↦ φ.loopGrassmannianMap.hom.app A x)
+    _ = _ := congrArg (φ.loopGrassmannianMap.hom.app A)
       (loopGrassmannianMap_mk ψ A g).symm
 
 end
 
 end CommHopfAlgCat.Hom
+
+namespace CommHopfAlgCat
+
+open TauCeti HopfAlgebra
+
+universe u
+
+/-- The map induced by the identity homomorphism is the identity. -/
+@[simp]
+theorem loopGrassmannianMap_id {k : Type u} [CommRing k] (H : CommHopfAlgCat.{u} k) :
+    Hom.loopGrassmannianMap (𝟙 H) = 𝟙 (loopGrassmannian k H) := by
+  apply loopGrassmannian_hom_ext_mk
+  intro A g
+  simp only [Hom.loopGrassmannianMap_mk, ObjectProperty.FullSubcategory.id_hom,
+    NatTrans.id_app, ConcreteCategory.id_apply]
+  exact congrArg (fun α : loopGroup k H ⟶ loopGroup k H ↦
+    loopGrassmannianMk k H A (α.app A.unop.unop g))
+    ((TauCeti.CommHopfAlgCat.loopGroupFunctor k).map_id (op H))
+
+end CommHopfAlgCat
