@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Sites.Big.Sheaf
+public import TauCeti.AlgebraicGeometry.Sites.Big.Sheaf.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Big.SmallZariski
 
 /-!

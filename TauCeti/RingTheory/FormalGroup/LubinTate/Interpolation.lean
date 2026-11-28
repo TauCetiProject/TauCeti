@@ -92,6 +92,13 @@ structure IsLubinTateSeries (π : O) (q : ℕ) (f : O⟦X⟧) : Prop where
   /-- A Lubin–Tate series for `q` reduces to `X ^ q` modulo the maximal ideal. -/
   map_residue : map (residue O) f = X ^ q
 
+/-- The reduction exponent is nonzero since reduction preserves the zero constant term. -/
+theorem IsLubinTateSeries.exponent_ne_zero {π : O} {q : ℕ} {f : O⟦X⟧}
+    (hf : IsLubinTateSeries π q f) : q ≠ 0 := by
+  rintro rfl
+  have h := congrArg (coeff 0) hf.map_residue
+  simp [coeff_map, coeff_zero_eq_constantCoeff_apply, hf.constantCoeff_eq_zero] at h
+
 /-- A Lubin–Tate series can be substituted into power series. -/
 theorem IsLubinTateSeries.hasSubst {π : O} {q : ℕ} {f : O⟦X⟧} (hf : IsLubinTateSeries π q f) :
     HasSubst f :=

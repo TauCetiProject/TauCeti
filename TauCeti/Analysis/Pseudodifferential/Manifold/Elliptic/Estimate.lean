@@ -236,17 +236,10 @@ theorem IsClassicalElliptic.exists_sum_norm_toBesovSpaceCLM_le_add
     (SchwartzMap.toBesovSpaceCLM_injective ℂ b r p ∞)
     (fun hκ hκ' _ hθ hθc hθs ↦
       BesovSpace.exists_norm_toBesovSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ hθc hθs b r p ∞)
-    _ (fun a ha ↦ ?_) ⌈s + m - r⌉₊ (fun a ha ↦ ?_) he φ he' ψ hψ
-  · obtain ⟨C, -, hC⟩ := ha.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le b s
-    refine ⟨C, fun w ↦ ?_⟩
-    have := hC (p := p) w
-    rwa [sub_neg_eq_add] at this
-  · -- `Op(a)` maps `B^r_{p,∞}` to `B^{r + N}_{p,∞}`, which embeds into `B^{s + m}_{p,∞}`.
-    obtain ⟨C, -, hC⟩ := ha.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le b r
-    refine ⟨‖BesovSpace.inclusion ℂ b p (q := ∞) (q' := ∞) hN le_rfl‖ * C, fun w ↦ ?_⟩
-    rw [← SchwartzMap.inclusion_toBesovSpaceCLM hN le_rfl, mul_assoc]
-    exact (ContinuousLinearMap.le_opNorm _ _).trans
-      (mul_le_mul_of_nonneg_left (hC w) (norm_nonneg _))
+    _ (fun a ha ↦ ha.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le_of_le b
+      (sub_neg_eq_add s m).ge p) ⌈s + m - r⌉₊
+    -- `Op(a)` maps `B^r_{p,∞}` to `B^{r + N}_{p,∞}`, which embeds into `B^{s + m}_{p,∞}`.
+    (fun a ha ↦ ha.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le_of_le b hN p) he φ he' ψ hψ
 
 /-! ### The elliptic estimate on the Sobolev spaces -/
 
@@ -274,10 +267,10 @@ theorem IsClassicalElliptic.exists_norm_le_mul_norm_chartSobolevExtension_add
     (s := s + m) (t := s) (by linarith)
   refine ⟨|C| * Real.sqrt (Fintype.card ι), fun x ↦ ?_⟩
   -- Both sides are continuous in `x`, so the estimate extends from smooth functions.
-  refine (denseRange_toChartSobolevSpace hc ψ (s + m)).induction_on x
+  refine (chartReading hc ψ (s + m)).denseRange_toRangeClosure.induction_on x
     (isClosed_le (by fun_prop) (by fun_prop)) fun u ↦ ?_
-  rw [hPx, chartSobolevInclusion_toChartSobolevSpace]
-  simp only [norm_toChartSobolevSpace]
+  rw [hPx, LinearMap.rangeClosureMap_toRangeClosure]
+  simp only [LinearMap.norm_toRangeClosure]
   -- On smooth functions this is the estimate in the sums of the norms of the chart readings.
   calc ‖chartReading hc ψ (s + m) u‖
       ≤ ∑ i, ‖chartReading hc ψ (s + m) u i‖ := PiLp.norm_le_sum_norm _
