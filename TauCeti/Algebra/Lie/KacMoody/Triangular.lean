@@ -680,29 +680,21 @@ section SerreInjective
 
 variable [DecidableEq I]
 
-private noncomputable def toSerreE :
-    FreeLieAlgebra K I ⧸ serreIdeal K A →ₗ⁅K⁆ Matrix.ToLieAlgebra K A :=
-  serreIdealLift (ad_pow_lie_serreE_serreE K A)
-
-private noncomputable def toSerreF :
-    FreeLieAlgebra K I ⧸ serreIdeal K A →ₗ⁅K⁆ Matrix.ToLieAlgebra K A :=
-  serreIdealLift (ad_pow_lie_serreF_serreF K A)
-
 private theorem serreHom_comp_toSerreE :
-    (serreHom R).comp (toSerreE (K := K) (A := A)) = positiveQuotientHom R :=
+    (serreHom R).comp (toSerreE K A) = positiveQuotientHom R :=
   TauCeti.FreeLieAlgebra.quotient_hom_ext fun i => by
-    rw [LieHom.comp_apply, LieIdeal.mkQ_apply, toSerreE, serreIdealLift_mk_of,
+    rw [LieHom.comp_apply, LieIdeal.mkQ_apply, toSerreE_mk_of,
       positiveQuotientHom_mk_of, serreHom_serreE]
 
 private theorem serreHom_comp_toSerreF :
-    (serreHom R).comp (toSerreF (K := K) (A := A)) = negativeQuotientHom R :=
+    (serreHom R).comp (toSerreF K A) = negativeQuotientHom R :=
   TauCeti.FreeLieAlgebra.quotient_hom_ext fun i => by
-    rw [LieHom.comp_apply, LieIdeal.mkQ_apply, toSerreF, serreIdealLift_mk_of,
+    rw [LieHom.comp_apply, LieIdeal.mkQ_apply, toSerreF_mk_of,
       negativeQuotientHom_mk_of, serreHom_serreF]
 
 private theorem exists_serreHom_eq_triangular (z : Matrix.ToLieAlgebra K A) :
     ∃ (a b : FreeLieAlgebra K I ⧸ serreIdeal K A) (c : I →₀ K),
-      z = toSerreF a + c.sum (fun i r => r • serreH K A i) + toSerreE b ∧
+      z = toSerreF K A a + c.sum (fun i r => r • serreH K A i) + toSerreE K A b ∧
       serreHom R z = negativeQuotientHom R a +
         cartanElement R (Finsupp.linearCombination K R.coroot c) + positiveQuotientHom R b := by
   have htop : z ∈ (LieSubalgebra.lieSpan K _ (Set.range (serreF K A))).toSubmodule ⊔
@@ -711,12 +703,12 @@ private theorem exists_serreHom_eq_triangular (z : Matrix.ToLieAlgebra K A) :
     rw [lieSpan_serreF_sup_span_serreH_sup_lieSpan_serreE_eq_top K A]; trivial
   obtain ⟨uh, huh, v, hv, rfl⟩ := Submodule.mem_sup.mp htop
   obtain ⟨u, hu, h, hh, rfl⟩ := Submodule.mem_sup.mp huh
-  have hrF : (toSerreF (K := K) (A := A)).range =
+  have hrF : (toSerreF K A).range =
       LieSubalgebra.lieSpan K _ (Set.range (serreF K A)) :=
-    range_serreIdealLift _
-  have hrE : (toSerreE (K := K) (A := A)).range =
+    range_toSerreF K A
+  have hrE : (toSerreE K A).range =
       LieSubalgebra.lieSpan K _ (Set.range (serreE K A)) :=
-    range_serreIdealLift _
+    range_toSerreE K A
   rw [LieSubalgebra.mem_toSubmodule, ← hrF] at hu
   rw [LieSubalgebra.mem_toSubmodule, ← hrE] at hv
   rcases hu with ⟨a, rfl⟩
@@ -726,9 +718,9 @@ private theorem exists_serreHom_eq_triangular (z : Matrix.ToLieAlgebra K A) :
   have hserreH : serreHom R (c.sum fun i r => r • serreH K A i) =
       cartanElement R (Finsupp.linearCombination K R.coroot c) := by
     simp [Finsupp.linearCombination_apply, Finsupp.sum, map_sum]
-  have hF : serreHom R (toSerreF a) = negativeQuotientHom R a :=
+  have hF : serreHom R (toSerreF K A a) = negativeQuotientHom R a :=
     DFunLike.congr_fun (serreHom_comp_toSerreF R) a
-  have hE : serreHom R (toSerreE b) = positiveQuotientHom R b :=
+  have hE : serreHom R (toSerreE K A b) = positiveQuotientHom R b :=
     DFunLike.congr_fun (serreHom_comp_toSerreE R) b
   simp only [LieHom.coe_toLinearMap]
   rw [map_add, map_add, hF, hserreH, hE]

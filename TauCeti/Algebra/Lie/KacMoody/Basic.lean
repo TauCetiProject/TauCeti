@@ -844,7 +844,7 @@ theorem lieSpan_generators_eq_top :
       Set.range (positiveGenerator R) ∪ Set.range (negativeGenerator R)) = ⊤ := by
   rw [← range_generator (fun g => presentationMk R (FreeLieAlgebra.of K g))
     (presentationMk_of_cartan R) (presentationMk_of_positive R) (presentationMk_of_negative R)]
-  exact TauCeti.FreeLieAlgebra.lieSpan_range_mkQ_of_eq_top (presentationIdeal R)
+  exact LieIdeal.lieSpan_range_mkQ_of_eq_top (presentationIdeal R)
 
 /-- A Cartan vector annihilated by every simple root is central in the presented algebra. -/
 theorem cartanElement_mem_center {z : H} (hz : z ∈ R.cartanCenter) :

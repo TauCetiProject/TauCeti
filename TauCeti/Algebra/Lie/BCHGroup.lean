@@ -117,7 +117,7 @@ theorem _root_.LieHom.map_bch [LieRing.IsNilpotent L'] (f : L →ₗ⁅ℚ⁆ L'
   obtain ⟨c, hc⟩ := LieModule.IsNilpotent.nilpotent ℚ L L
   have hφ : _root_.FreeLieAlgebra.lift ℚ ![f x, f y] =
       f.comp (_root_.FreeLieAlgebra.lift ℚ ![x, y]) :=
-    (FreeLieAlgebra.comp_lift_pair f x y).symm
+    (LieHom.comp_lift_pair f x y).symm
   have h := LieHom.lowerCentralSeries_le_ker (_root_.FreeLieAlgebra.lift ℚ ![x, y]) hc
   have h' : lcs 𝔣 𝔣 c ≤ (_root_.FreeLieAlgebra.lift ℚ ![f x, f y]).ker := by
     rw [hφ, LieHom.ker_comp]
@@ -145,7 +145,7 @@ theorem exp_lowerCentralQuotientι_bch (c : ℕ) (x y : L ⧸ LieModule.lowerCen
   have hf : _root_.FreeLieAlgebra.lift ℚ
       ![(LieIdeal.mkQ (lcs L L c)) x, (LieIdeal.mkQ (lcs L L c)) y] =
       (LieIdeal.mkQ (lcs L L c)).comp f :=
-    (FreeLieAlgebra.comp_lift_pair _ x y).symm
+    (LieHom.comp_lift_pair _ x y).symm
   have key := FreeLieAlgebra.exp_lowerCentralQuotientι_bchElement c
   rw [← hb, LieIdeal.mkQ_apply, UniversalEnvelopingAlgebra.lowerCentralQuotientι_mk] at key
   rw [bch_eq_liftQ _ _ (LieHom.lowerCentralSeries_le_ker _

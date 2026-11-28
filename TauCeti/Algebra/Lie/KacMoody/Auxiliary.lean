@@ -82,7 +82,7 @@ private theorem lieSpan_auxGenerators_eq_top :
       (Set.range (auxCartan R) ∪ Set.range (auxPos R) ∪ Set.range (auxNeg R)) = ⊤ := by
   rw [← range_generator (fun g => (auxIdeal R).mkQ (FreeLieAlgebra.of K g))
     (fun x => (quotientCartanElement_apply R le_rfl x).symm) (fun _ => rfl) (fun _ => rfl)]
-  exact TauCeti.FreeLieAlgebra.lieSpan_range_mkQ_of_eq_top (auxIdeal R)
+  exact LieIdeal.lieSpan_range_mkQ_of_eq_top (auxIdeal R)
 
 private noncomputable abbrev auxChevalley : AuxLieAlgebra R ≃ₗ⁅K⁆ AuxLieAlgebra R :=
   quotientChevalleyInvolution R le_rfl

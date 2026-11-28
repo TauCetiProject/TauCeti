@@ -62,6 +62,34 @@ namespace TauCeti
 
 namespace KacMoody
 
+section Lowering
+
+open MonoidAlgebra
+
+variable {I K : Type*} [CommRing K]
+
+/-- The lowering operator: left multiplication by a letter. -/
+noncomputable def lowering (i : I) : Module.End K K[FreeMonoid I] :=
+  Algebra.lmul K K[FreeMonoid I] (single (FreeMonoid.of i) 1)
+
+/-- `TauCeti.KacMoody.lowering` equals left multiplication by the single-letter basis element. -/
+theorem lowering_eq_lmul (i : I) :
+    lowering (K := K) i =
+      Algebra.lmul K K[FreeMonoid I] (MonoidAlgebra.of K (FreeMonoid I) (.of i)) := by
+  rw [lowering, MonoidAlgebra.of_apply]
+
+/-- `TauCeti.KacMoody.lowering` acts by left multiplication by the single-letter monomial. -/
+theorem lowering_apply (i : I) (y : K[FreeMonoid I]) :
+    lowering i y = single (FreeMonoid.of i) 1 * y := by
+  rw [lowering, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply']
+
+/-- Action of `TauCeti.KacMoody.lowering` on a monomial. -/
+theorem lowering_single (i : I) (w : FreeMonoid I) (c : K) :
+    lowering i (single w c) = single (FreeMonoid.of i * w) c := by
+  rw [lowering_apply, single_mul_single, one_mul]
+
+end Lowering
+
 section WordRep
 
 open MonoidAlgebra
@@ -134,26 +162,6 @@ theorem cartanAction_single (x : H) (w : FreeMonoid I) (c : K) :
     cartanAction R μ x (single w c) = (μ x - rootSum R w x) • single w c := by
   simp [cartanAction, weightDerivation_single, sub_smul]
 
-/-- The lowering operator: left multiplication by a letter. -/
-noncomputable def lowering (i : I) : Module.End K K[FreeMonoid I] :=
-  Algebra.lmul K K[FreeMonoid I] (single (FreeMonoid.of i) 1)
-
-/-- `TauCeti.KacMoody.lowering` equals left multiplication by the single-letter basis element. -/
-theorem lowering_eq_lmul (i : I) :
-    lowering (K := K) i =
-      Algebra.lmul K K[FreeMonoid I] (MonoidAlgebra.of K (FreeMonoid I) (.of i)) := by
-  rw [lowering, MonoidAlgebra.of_apply]
-
-/-- `TauCeti.KacMoody.lowering` acts by left multiplication by the single-letter monomial. -/
-theorem lowering_apply (i : I) (y : K[FreeMonoid I]) :
-    lowering i y = single (FreeMonoid.of i) 1 * y := by
-  rw [lowering, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply']
-
-/-- Action of `TauCeti.KacMoody.lowering` on a monomial. -/
-theorem lowering_single (i : I) (w : FreeMonoid I) (c : K) :
-    lowering i (single w c) = single (FreeMonoid.of i * w) c := by
-  rw [lowering_apply, single_mul_single, one_mul]
-
 /-- `D_x fⱼ = fⱼ D_x + αⱼ(x) fⱼ` for the weight derivation `D_x`. -/
 theorem weightDerivation_lowering (x : H) (j : I) (y : K[FreeMonoid I]) :
     weightDerivation R x (lowering j y) =
@@ -221,7 +229,8 @@ theorem raising_lowering (k j : I) (y : K[FreeMonoid I]) :
   have := LinearMap.congr_fun key y
   split_ifs at this ⊢ <;> simpa using this
 
-/-- The raising operator lowers the weight by a simple root. -/
+/-- The raising operator decreases the word's root sum by `αₖ`, and therefore increases its Cartan
+weight `μ - α(w)` by `αₖ`. -/
 theorem weightDerivation_raisingWord (x : H) (k : I) (w : FreeMonoid I) :
     weightDerivation R x (raisingWord R μ k w) =
       (rootSum R w x - R.root k x) • raisingWord R μ k w := by
