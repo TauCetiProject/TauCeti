@@ -382,7 +382,7 @@ private theorem exists_local_forwardSemiflow_contDiffOn_nat.{u} (k : ℕ) :
     let q₀ : F := (x₀, (1 : E →L[ℝ] E))
     have hq₀ : q₀ ∈ U' ∩ C' := ⟨⟨hx₀.1, trivial⟩, ⟨hx₀.2, trivial⟩⟩
     have hX'_in : X' q₀ ∈ strictInwardCone C' q₀ :=
-      prod_mem_strictInwardCone_prod_univ hX_in (1 : E →L[ℝ] E) _
+      mk_mem_strictInwardCone_prod_univ hX_in (1 : E →L[ℝ] E) _
     obtain ⟨r₂, hr₂, τ₂, hτ₂, _, _, hCD₂⟩ :=
       ih (hC.prod convex_univ) (hU.prod isOpen_univ) hX' hq₀ hX'_in
     -- Step 3: Intersect neighborhoods to `S = Icc 0 τ ×ˢ (ball x₀ r ∩ C)`.

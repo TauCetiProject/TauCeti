@@ -163,7 +163,7 @@ theorem strictInwardCone_prod {F : Type*} [SeminormedAddCommGroup F] [NormedSpac
 
 /-- Pairing a strictly inward vector with any direction at any base point in an unconstrained
 second factor yields a vector strictly inward to `s ×ˢ univ`, without any convexity assumption. -/
-theorem prod_mem_strictInwardCone_prod_univ {F : Type*} [SeminormedAddCommGroup F]
+theorem mk_mem_strictInwardCone_prod_univ {F : Type*} [SeminormedAddCommGroup F]
     [NormedSpace ℝ F] (hv : v ∈ strictInwardCone s x) (y w : F) :
     (v, w) ∈ strictInwardCone (s ×ˢ (univ : Set F)) (x, y) := by
   simp [hv]
