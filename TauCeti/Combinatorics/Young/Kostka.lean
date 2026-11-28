@@ -334,7 +334,7 @@ theorem kostkaNumber_eq_zero_of_not_dominates {n : ℕ} {μ ν : n.Partition}
   not_not.mp fun h' => h (dominates_of_kostkaNumber_ne_zero h')
 
 open scoped PartitionLex in
-/-- **The Kostka numbers vanish below the diagonal in the lexicographic order**: there is no
+/-- **Lexicographic vanishing of Kostka numbers** (`K_{μ ν} = 0` for `μ < ν`): there is no
 semistandard tableau of shape `μ` and content `ν` when `μ < ν` in `TauCeti.PartitionLex`. -/
 theorem kostkaNumber_eq_zero_of_lt {n : ℕ} {μ ν : n.Partition} (h : μ < ν) :
     kostkaNumber μ ν = 0 :=

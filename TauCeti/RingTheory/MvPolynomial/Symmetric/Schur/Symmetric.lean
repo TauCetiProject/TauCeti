@@ -197,12 +197,18 @@ theorem rename_diagramSchurPoly {M N : ℕ} (μ : YoungDiagram) (e : Fin M ≃ F
   subst M
   exact isSymmetric_diagramSchurPoly N R μ e
 
+/-- In the alphabet `Fin N`, the partition-indexed Schur polynomial of `ν` equals the diagram
+Schur polynomial of `YoungDiagram.ofPartition ν`. -/
+theorem schurPoly_fin_eq_diagramSchurPoly (N : ℕ) {n : ℕ} (ν : n.Partition) :
+    schurPoly (Fin N) R ν = diagramSchurPoly N R (YoungDiagram.ofPartition ν) := by
+  rw [schurPoly_eq_rename, rename_diagramSchurPoly]
+
 /-- The partition-indexed Schur polynomial of a Young diagram in `Fin N` is its
 diagram-indexed Schur polynomial. -/
 @[simp]
 theorem schurPoly_fin_shapePartition (N : ℕ) (μ : YoungDiagram) :
     schurPoly (Fin N) R (shapePartition μ) = diagramSchurPoly N R μ := by
-  rw [schurPoly_eq_rename, ofPartition_shapePartition, rename_diagramSchurPoly]
+  rw [schurPoly_fin_eq_diagramSchurPoly, ofPartition_shapePartition]
 
 /-- The partition-indexed Schur polynomial in `Fin N` of the partition read off a Young diagram is
 its diagram-indexed Schur polynomial; this is `TauCeti.schurPoly_fin_shapePartition` for a
@@ -212,7 +218,7 @@ diagram whose size is recorded as an arbitrary `d`. Both lemmas are needed: `sim
 @[simp]
 theorem schurPoly_fin_toPartition (N : ℕ) {μ : YoungDiagram} {d : ℕ} (h : μ.card = d) :
     schurPoly (Fin N) R (μ.toPartition h) = diagramSchurPoly N R μ := by
-  rw [schurPoly_eq_rename, YoungDiagram.ofPartition_toPartition, rename_diagramSchurPoly]
+  rw [schurPoly_fin_eq_diagramSchurPoly, YoungDiagram.ofPartition_toPartition]
 
 /-- A sum of Schur polynomials in the alphabet `Fin N` over the partitions of `n` only sees the
 partitions with at most `b` rows whenever `N ≤ b`: the Schur polynomials of the others vanish. -/
@@ -221,10 +227,7 @@ theorem sum_smul_diagramSchurPoly_eq_sum_colLen_le {N n : ℕ} {M : Type*}
     ∑ ν, c ν • diagramSchurPoly N R (YoungDiagram.ofPartition ν) =
       ∑ ν : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ b},
         c ν.val • diagramSchurPoly N R (YoungDiagram.ofPartition ν.val) := by
-  have hdiag (ν : n.Partition) :
-      diagramSchurPoly N R (YoungDiagram.ofPartition ν) = schurPoly (Fin N) R ν := by
-    rw [schurPoly_eq_rename, rename_diagramSchurPoly]
-  simp_rw [hdiag]
+  simp_rw [← schurPoly_fin_eq_diagramSchurPoly]
   rw [sum_smul_schurPoly_eq_sum_card_le (by simpa using hN) c]
   exact Fintype.sum_equiv
     (Equiv.subtypeEquivRight fun ν => by rw [YoungDiagram.colLen_zero_ofPartition])

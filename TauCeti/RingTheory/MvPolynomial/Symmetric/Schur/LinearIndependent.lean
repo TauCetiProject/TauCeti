@@ -19,8 +19,8 @@ Schur polynomials over any characteristic-zero commutative semiring (`[CharZero 
 
 Unlike the basis construction in `TauCeti/RingTheory/MvPolynomial/Symmetric/Schur/Basis.lean`
 (which inverts the unitriangular Kostka matrix and therefore requires a commutative ring), linear
-independence needs only upper-triangularity of the Kostka matrix (`K_{μν} = 0` unless `μ` dominates
-`ν`, `K_{μμ} = 1`) together with additive cancellation.
+independence needs only `K_{μν} = 0` for `μ < ν` in lexicographic order (in fact `K_{μν} = 0`
+unless `μ` dominates `ν`) and `K_{μμ} = 1`, together with additive cancellation.
 
 ## Main results
 
@@ -123,8 +123,8 @@ theorem linearIndependent_diagramSchurPoly_of_colLen_le [IsCancelAdd R] {N : ℕ
       (fun μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card (Fin N)} =>
         schurPoly (Fin N) R μ.val) ∘ e := by
     funext ν
-    simp only [Function.comp_apply, e, Equiv.subtypeEquivRight_apply, schurPoly_eq_rename,
-      rename_diagramSchurPoly]
+    simp only [Function.comp_apply, e, Equiv.subtypeEquivRight_apply,
+      schurPoly_fin_eq_diagramSchurPoly]
   rw [heq]
   exact (linearIndependent_schurPoly_of_card_le (σ := Fin N) (R := R) (n := n)).comp e
     e.injective
@@ -172,23 +172,17 @@ theorem eq_of_sum_nsmul_diagramSchurPoly_eq_of_colLen_le [CharZero R] {N : ℕ}
       ∑ ν : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N},
         c' ν • diagramSchurPoly N R (YoungDiagram.ofPartition ν.val)) :
     c = c' := by
-  let e : {ν : n.Partition // ν.parts.card ≤ Fintype.card (Fin N)} ≃
-      {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N} :=
-    Equiv.subtypeEquivRight fun ν => by
-      rw [YoungDiagram.colLen_zero_ofPartition, Fintype.card_fin]
-  have heq' :
-      ∑ ν : {ν : n.Partition // ν.parts.card ≤ Fintype.card (Fin N)},
-        c (e ν) • schurPoly (Fin N) R ν.val =
-      ∑ ν : {ν : n.Partition // ν.parts.card ≤ Fintype.card (Fin N)},
-        c' (e ν) • schurPoly (Fin N) R ν.val := by
-    have hterm (ν : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N}) :
-        diagramSchurPoly N R (YoungDiagram.ofPartition ν.val) = schurPoly (Fin N) R ν.val := by
-      rw [schurPoly_eq_rename, rename_diagramSchurPoly]
-    simp only [hterm] at heq
-    exact (Fintype.sum_equiv e _ _ fun _ => rfl).trans
-      (heq.trans (Fintype.sum_equiv e _ _ fun _ => rfl).symm)
+  have hℕ :
+      ∑ ν : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N},
+        c ν • diagramSchurPoly N ℕ (YoungDiagram.ofPartition ν.val) =
+      ∑ ν : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N},
+        c' ν • diagramSchurPoly N ℕ (YoungDiagram.ofPartition ν.val) :=
+    MvPolynomial.map_injective (Nat.castRingHom R) Nat.cast_injective <| by
+      simpa only [map_sum, map_nsmul, map_diagramSchurPoly] using heq
   funext ν
-  simpa using congrFun (eq_of_sum_nsmul_schurPoly_eq_of_card_le heq') (e.symm ν)
+  exact linearIndependent_iff'ₛ.mp
+    (linearIndependent_diagramSchurPoly_of_colLen_le (R := ℕ))
+    Finset.univ c c' hℕ ν (Finset.mem_univ ν)
 
 /-- Over a characteristic-zero commutative semiring, a natural-number linear combination of the
 diagram Schur polynomials of the partitions of `n` in `N ≥ n` variables determines its

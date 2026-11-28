@@ -328,6 +328,14 @@ theorem rowLen_shape_eq_zero_of_le (l : DominantWeight n) {i : ℕ} (hi : n ≤ 
     l.shape.rowLen i = 0 :=
   YoungDiagram.rowLen_ofRowLensFin_eq_zero_of_le _ _ hi
 
+/-- The `i`-th row length of `l.shape` at an arbitrary natural index `i`: `(l.val ⟨i, h⟩).toNat`
+when `i < n`, and `0` otherwise. -/
+theorem rowLen_shape_eq_ite (l : DominantWeight n) (i : ℕ) :
+    l.shape.rowLen i = if h : i < n then (l.val ⟨i, h⟩).toNat else 0 := by
+  split_ifs with h
+  · exact l.rowLen_shape ⟨i, h⟩
+  · exact l.rowLen_shape_eq_zero_of_le (not_lt.mp h)
+
 @[simp]
 theorem colLen_zero_shape_le (l : DominantWeight n) : l.shape.colLen 0 ≤ n :=
   YoungDiagram.colLen_zero_ofRowLensFin_le _ _
@@ -386,13 +394,7 @@ theorem DominantWeight.shape_eq_shape_iff {m n : ℕ} (w₁ : DominantWeight m)
       ∀ i : ℕ, (if h : i < m then (w₁.val ⟨i, h⟩).toNat else 0) =
         if h : i < n then (w₂.val ⟨i, h⟩).toNat else 0 := by
   rw [← YoungDiagram.rowLen_injective.eq_iff, funext_iff]
-  refine forall_congr' fun i => ?_
-  have hrow {k : ℕ} (w : DominantWeight k) :
-      w.shape.rowLen i = if h : i < k then (w.val ⟨i, h⟩).toNat else 0 := by
-    split_ifs with h
-    · exact w.rowLen_shape ⟨i, h⟩
-    · exact w.rowLen_shape_eq_zero_of_le (not_lt.mp h)
-  rw [hrow w₁, hrow w₂]
+  exact forall_congr' fun i => by rw [w₁.rowLen_shape_eq_ite, w₂.rowLen_shape_eq_ite]
 
 @[simp]
 theorem weightOfShape_shape {n : ℕ} {l : DominantWeight n} (hl : l.IsPolynomial) :
