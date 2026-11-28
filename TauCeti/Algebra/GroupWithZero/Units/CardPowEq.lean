@@ -10,7 +10,6 @@ public import Mathlib.Data.Fintype.Prod
 public import Mathlib.SetTheory.Cardinal.Finite
 
 import Mathlib.Algebra.BigOperators.Ring.Finset
-import Mathlib.RingTheory.IntegralDomain
 import TauCeti.Algebra.Group.Units.PowEq
 import TauCeti.GroupTheory.Coset.Fiber
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.PowMonoidHom
