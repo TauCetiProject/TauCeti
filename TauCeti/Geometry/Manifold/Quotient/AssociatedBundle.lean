@@ -159,7 +159,7 @@ noncomputable def characterFiniteRankCoreDiffeomorph (χ : G →* 𝕜ˣ) :
       (hp.characterFiniteRankCoreHomeomorph χ)
       (fun p₀ ↦ by simp [characterFiniteRankCoreHomeomorph_apply])
       (ContinuousLinearMap.proj (⟨0, by simp⟩ : Fin (hp.characterFiniteRankCore χ).rank))
-      fun b p₀ ↦ by
+      fun b p₀ _ ↦ by
         rw [← (hp.characterFiniteRankCore χ).trivializationAt_core,
           characterFiniteRankCoreHomeomorph_apply]
         exact hp.trivializationAt_characterCore_snd χ b p₀
@@ -167,7 +167,7 @@ noncomputable def characterFiniteRankCoreDiffeomorph (χ : G →* 𝕜ˣ) :
     (hp.characterFiniteRankCore χ).contMDiff_of_trivializationAt_snd
       (hp.characterFiniteRankCoreHomeomorph χ).symm
       (fun q ↦ by simp [characterFiniteRankCoreHomeomorph_symm_apply])
-      (ContinuousLinearMap.pi fun _ ↦ ContinuousLinearMap.id 𝕜 𝕜) fun b q ↦ by
+      (ContinuousLinearMap.pi fun _ ↦ ContinuousLinearMap.id 𝕜 𝕜) fun b q _ ↦ by
         ext k
         rw [← (hp.characterFiniteRankCore χ).trivializationAt_core,
           characterFiniteRankCoreHomeomorph_symm_apply]

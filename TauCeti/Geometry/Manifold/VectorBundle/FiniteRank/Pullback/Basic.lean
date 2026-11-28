@@ -81,7 +81,7 @@ theorem contMDiff_pullbackHomeomorph (A : FiniteRankBundleCore 𝕜 Y) (f : C(X,
       (IX.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n (A.pullbackHomeomorph f) :=
   (A.pullback f).contMDiff_of_localTriv_snd (A.pullbackHomeomorph f)
     (fun p ↦ by rw [pullbackHomeomorph_apply])
-    (ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜)) fun x p ↦ by
+    (ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜)) fun x p _ ↦ by
       rw [pullback_trivializationAt_eq, A.pullbackHomeomorph_localTriv f x p]
       exact (ContinuousLinearMap.id_apply _).symm
 
@@ -92,7 +92,7 @@ theorem contMDiff_pullbackHomeomorph_symm (A : FiniteRankBundleCore 𝕜 Y) (f :
       (IX.prod 𝓘(𝕜, Fin (A.pullback f).rank → 𝕜)) n (A.pullbackHomeomorph f).symm :=
   (A.pullback f).contMDiff_of_trivializationAt_snd (A.pullbackHomeomorph f).symm
     (fun p ↦ by rw [pullbackHomeomorph_symm_apply])
-    (ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜)) fun x p ↦ by
+    (ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜)) fun x p _ ↦ by
       rw [pullback_trivializationAt_eq, ← A.pullbackHomeomorph_localTriv f x,
         Homeomorph.apply_symm_apply, ContinuousLinearMap.id_apply]
 

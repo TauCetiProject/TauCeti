@@ -21,8 +21,9 @@ Since precomposition is itself a continuous bilinear operation, transposition is
 linear map `ContinuousLinearMap.piTransposeL` of operator spaces; in particular a continuous
 family of matrices has a continuous family of transposes. The defining adjunction for the
 standard pairing is `ContinuousLinearMap.sum_mul_piTranspose`, the matrix of the transpose is
-the transposed matrix (`ContinuousLinearMap.toMatrix'_piTranspose`), and transposition is an
-involution reversing composition.
+the transposed matrix (`ContinuousLinearMap.toMatrix'_piTranspose`), so transposition preserves
+determinants (`ContinuousLinearMap.det_piTranspose`), and transposition is an involution
+reversing composition.
 
 These are the coordinate transition maps of a dual vector bundle presented by finite-matrix
 charts.
@@ -30,6 +31,12 @@ charts.
 On `Fin`-indexed Kronecker coordinates, `ContinuousLinearMap.piTranspose_kronecker_eq_homCoordConj`
 identifies `S.piTranspose.kronecker R` with operator conjugation
 `ContinuousLinearMap.homCoordConj S R`.
+
+Given a coordinate equivalence `e : F ≃L[𝕜] (ι → 𝕜)`, `ContinuousLinearEquiv.dualCoords e`
+identifies the continuous dual `F →L[𝕜] 𝕜` with `ι → 𝕜`. Changing dual coordinates from `e₁` to `e₂`
+is `ContinuousLinearMap.piTranspose` of the primal coordinate change
+(`ContinuousLinearEquiv.dualCoords_symm_trans_dualCoords`), and for two bases `b₁`, `b₂` of `F` its
+determinant is `b₁.det b₂` (`Module.Basis.det_dualCoords_equivFunL_symm_trans`).
 -/
 
 public section
@@ -103,6 +110,12 @@ theorem eq_piTranspose_iff (T : (ι → 𝕜) →L[𝕜] (κ → 𝕜)) (S : (κ
   ext i j
   simp [LinearMap.toMatrix'_apply, piTranspose_apply, Pi.single_apply]
 
+/-- Transposition preserves the determinant of an endomorphism of a coordinate space. -/
+@[simp] theorem det_piTranspose (T : (ι → 𝕜) →L[𝕜] (ι → 𝕜)) :
+    T.piTranspose.det = T.det := by
+  rw [ContinuousLinearMap.det, ContinuousLinearMap.det, ← LinearMap.det_toMatrix',
+    ← LinearMap.det_toMatrix', toMatrix'_piTranspose, Matrix.det_transpose]
+
 @[simp] theorem piTranspose_id :
     (ContinuousLinearMap.id 𝕜 (ι → 𝕜)).piTranspose = ContinuousLinearMap.id 𝕜 (ι → 𝕜) :=
   ((eq_piTranspose_iff _ _).2 fun v w => by simp).symm
@@ -164,3 +177,81 @@ theorem piTranspose_kronecker_eq_homCoordConj (S : (Fin m' → 𝕜) →L[𝕜] 
 end Kronecker
 
 end ContinuousLinearMap
+
+namespace ContinuousLinearEquiv
+
+section DualCoords
+
+variable {𝕜 F ι κ : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
+  [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
+
+/-- The dual coordinate equivalence on `F →L[𝕜] 𝕜` associated to `e : F ≃L[𝕜] (ι → 𝕜)`,
+sending `p` to `i ↦ p (e.symm (Pi.single i 1))`. -/
+noncomputable def dualCoords (e : F ≃L[𝕜] (ι → 𝕜)) : (F →L[𝕜] 𝕜) ≃L[𝕜] (ι → 𝕜) :=
+  (e.arrowCongr (.refl 𝕜 𝕜)).trans (ContinuousLinearEquiv.piRing (𝕜 := 𝕜) (E := 𝕜) ι)
+
+@[simp] theorem dualCoords_apply (e : F ≃L[𝕜] (ι → 𝕜)) (p : F →L[𝕜] 𝕜) (i : ι) :
+    e.dualCoords p i = p (e.symm (Pi.single i 1)) := by simp [dualCoords]
+
+@[simp] theorem dualCoords_symm_apply (e : F ≃L[𝕜] (ι → 𝕜)) (w : ι → 𝕜) (v : F) :
+    e.dualCoords.symm w v = ∑ i, e v i * w i := by simp [dualCoords]
+
+/-- Pairing a coordinate vector `v` against `e.dualCoords p` evaluates `p` on `e.symm v`. -/
+theorem sum_mul_dualCoords_apply (e : F ≃L[𝕜] (ι → 𝕜)) (p : F →L[𝕜] 𝕜) (v : ι → 𝕜) :
+    ∑ i, v i * e.dualCoords p i = p (e.symm v) := by
+  have hv : (∑ i, v i • Pi.single i (1 : 𝕜)) = v := by ext j; simp [Pi.single_apply]
+  calc ∑ i, v i * e.dualCoords p i
+      = p (e.symm (∑ i, v i • Pi.single i 1)) := by
+        simp [dualCoords_apply, ← smul_eq_mul, map_sum, _root_.map_smul]
+    _ = p (e.symm v) := by rw [hv]
+
+/-- Changing dual coordinates from `e₁` to `e₂` is the transpose of changing primal coordinates from
+`e₂` to `e₁`. -/
+theorem dualCoords_symm_trans_dualCoords (e₁ : F ≃L[𝕜] (ι → 𝕜)) (e₂ : F ≃L[𝕜] (κ → 𝕜)) :
+    ((e₁.dualCoords.symm.trans e₂.dualCoords : (ι → 𝕜) →L[𝕜] (κ → 𝕜))) =
+      (e₂.symm.trans e₁ : (κ → 𝕜) →L[𝕜] (ι → 𝕜)).piTranspose := by
+  refine (_root_.ContinuousLinearMap.eq_piTranspose_iff _ _).2 fun v w ↦ ?_
+  exact (e₂.sum_mul_dualCoords_apply (e₁.dualCoords.symm w) v).trans
+    (e₁.dualCoords_symm_apply w (e₂.symm v))
+
+end DualCoords
+
+end ContinuousLinearEquiv
+
+namespace Module.Basis
+
+section DualCoords
+
+variable {𝕜 F ι : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
+  [IsTopologicalAddGroup F] [ContinuousSMul 𝕜 F] [T2Space F]
+  [Fintype ι] [DecidableEq ι]
+
+/-- In `b.equivFunL.dualCoords`, the `i`th coordinate of `p : F →L[𝕜] 𝕜` is `p (b i)`. -/
+theorem dualCoords_equivFunL_apply (b : Module.Basis ι 𝕜 F) (p : F →L[𝕜] 𝕜) (i : ι) :
+    b.equivFunL.dualCoords p i = p (b i) :=
+  (b.equivFunL.dualCoords_apply p i).trans (congrArg p (b.equivFunL.injective (by simp)))
+
+/-- Reconstructing a functional from its dual coordinates `w` pairs `v : F` with `w` against
+`b.equivFun v`. -/
+theorem dualCoords_equivFunL_symm_apply (b : Module.Basis ι 𝕜 F) (w : ι → 𝕜) (v : F) :
+    b.equivFunL.dualCoords.symm w v = ∑ i, b.equivFun v i * w i :=
+  b.equivFunL.dualCoords_symm_apply w v
+
+/-- Changing dual coordinates from `b₁` to `b₂` has determinant `b₁.det b₂`. -/
+theorem det_dualCoords_equivFunL_symm_trans (b₁ b₂ : Module.Basis ι 𝕜 F) :
+    ((b₁.equivFunL.dualCoords.symm.trans
+      b₂.equivFunL.dualCoords).toContinuousLinearMap).det = b₁.det b₂ := by
+  rw [ContinuousLinearEquiv.dualCoords_symm_trans_dualCoords, ContinuousLinearMap.det_piTranspose]
+  have hconj : ((b₂.equivFunL.symm.trans b₁.equivFunL : (ι → 𝕜) →L[𝕜] (ι → 𝕜)) :
+      (ι → 𝕜) →ₗ[𝕜] (ι → 𝕜)) =
+      b₁.equivFun.toLinearMap ∘ₗ (b₁.equiv b₂ (Equiv.refl ι)).toLinearMap ∘ₗ
+        b₁.equivFun.symm.toLinearMap :=
+    LinearMap.ext fun v ↦ by simp [Module.Basis.equivFun_symm_apply, map_sum, map_smul]
+  rw [ContinuousLinearMap.det, hconj, LinearMap.det_conj _ b₁.equivFun, b₂.det_basis b₁]
+
+end DualCoords
+
+end Module.Basis
+

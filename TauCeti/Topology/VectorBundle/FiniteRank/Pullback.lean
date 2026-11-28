@@ -26,10 +26,10 @@ gives the induced contravariant action on isomorphism classes of fixed rank. Pul
 strictly compatible with trivial cores, constant maps, constant intertwining morphisms and
 isomorphisms, Whitney sums, and actual bundles (`pullback_trivial`, `pullback_const`,
 `pullbackMap_constHom`, `pullbackMap_constIso_hom`, `pullbackMap_constIso_inv`,
-`pullback_whitneySum`, `pullback_ofBundle`) together with the Whitney projections, inclusions,
-pairings, copairings, and direct sums of maps.
+`pullback_whitneySum`, `pullback_ofLinearEquiv`) together with the Whitney projections,
+inclusions, pairings, copairings, and direct sums of maps.
 The reconstructed bundle is identified with Mathlib's actual pullback by `pullbackHomeomorph`
-(and for `ofBundle` by `pullbackOfBundleHomeomorph`), which carries each core chart to
+(and for `ofLinearEquiv` by `pullbackOfLinearEquivHomeomorph`), which carries each core chart to
 Mathlib's pulled-back trivialization (`pullbackHomeomorph_localTriv`,
 `pullback_trivializationAt_eq`), and lifts to the original core total space via `pullbackLift`.
 
@@ -531,63 +531,80 @@ pulled-back Whitney sum. -/
 
 end WhitneySum
 
-section OfBundle
-variable {n : ℕ} (E : Y → Type*) [∀ y, AddCommMonoid (E y)] [∀ y, Module 𝕜 (E y)]
-  [∀ y, TopologicalSpace (E y)] [TopologicalSpace (TotalSpace (Fin n → 𝕜) E)]
-  [FiberBundle (Fin n → 𝕜) E] [VectorBundle 𝕜 (Fin n → 𝕜) E] (f : C(X, Y))
-/-- Pulling back `ofBundle 𝕜 n E` along `f` agrees strictly with `ofBundle 𝕜 n ((⇑f) *ᵖ E)`. -/
-@[simp] theorem pullback_ofBundle :
-    (ofBundle 𝕜 n E).pullback f = ofBundle 𝕜 n ((⇑f) *ᵖ E) := by
-  have htriv (k : X) : trivializationAt (Fin n → 𝕜) ((⇑f) *ᵖ E) k =
-      (trivializationAt (Fin n → 𝕜) E (f k)).pullback f :=
-    FiberBundle.pullback_trivializationAt' (F := Fin n → 𝕜) (E := E) f k
-  dsimp only [pullback, ofBundle]; congr
-  · funext x; rw [VectorBundleCore.baseSet_at, VectorBundleCore.baseSet_at,
-      pointIndexedCore_localTriv_baseSet, pointIndexedCore_localTriv_baseSet,
-      htriv x, Trivialization.pullback_baseSet]
-  · funext x; exact (pointIndexedCore_indexAt 𝕜 (Fin n → 𝕜) ((⇑f) *ᵖ E) x).symm
-  · funext i j x; rw [pointIndexedCore_coordChange, pointIndexedCore_coordChange]; simp only [htriv]
-    set eᵢ := trivializationAt (Fin n → 𝕜) E (f i); set eⱼ := trivializationAt (Fin n → 𝕜) E (f j)
-    by_cases hx : x ∈ (eᵢ.pullback f).baseSet ∩ (eⱼ.pullback f).baseSet
-    · have hfx : f x ∈ eᵢ.baseSet ∩ eⱼ.baseSet := hx
-      refine ContinuousLinearMap.ext fun v ↦ ?_; simp only [ContinuousLinearEquiv.coe_coe]
+section OfLinearEquiv
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜)) (E : Y → Type*)
+  [∀ y, AddCommMonoid (E y)] [∀ y, Module 𝕜 (E y)]
+  [∀ y, TopologicalSpace (E y)] [TopologicalSpace (TotalSpace F E)]
+  [FiberBundle F E] [VectorBundle 𝕜 F E] (f : C(X, Y))
+/-- Pulling back `ofLinearEquiv e E` along `f` agrees strictly with
+`ofLinearEquiv e ((⇑f) *ᵖ E)`. -/
+@[simp] theorem pullback_ofLinearEquiv :
+    (ofLinearEquiv e E).pullback f = ofLinearEquiv e ((⇑f) *ᵖ E) := by
+  have htriv (k : X) : trivializationAt F ((⇑f) *ᵖ E) k =
+      (trivializationAt F E (f k)).pullback f :=
+    FiberBundle.pullback_trivializationAt' (F := F) (E := E) f k
+  dsimp only [pullback, ofLinearEquiv]; congr
+  · funext i
+    rw [VectorBundleCore.baseSet_congrModel, VectorBundleCore.baseSet_congrModel]
+    change ⇑f ⁻¹' ((pointIndexedCore 𝕜 F E).localTriv (f i)).baseSet =
+      ((pointIndexedCore 𝕜 F ((⇑f) *ᵖ E)).localTriv i).baseSet
+    rw [pointIndexedCore_localTriv_baseSet, pointIndexedCore_localTriv_baseSet, htriv i,
+      Trivialization.pullback_baseSet]
+  · funext x
+    exact ((VectorBundleCore.indexAt_congrModel _ _ x).trans
+      (pointIndexedCore_indexAt 𝕜 F ((⇑f) *ᵖ E) x)).symm
+  · funext i j x
+    rw [VectorBundleCore.coordChange_congrModel, VectorBundleCore.coordChange_congrModel,
+      pointIndexedCore_coordChange, pointIndexedCore_coordChange]
+    refine congrArg (e.arrowCongr e) (ContinuousLinearMap.ext fun v ↦ ?_)
+    set eᵢ := trivializationAt F E (f i); set eⱼ := trivializationAt F E (f j)
+    set pᵢ := trivializationAt F ((⇑f) *ᵖ E) i; set pⱼ := trivializationAt F ((⇑f) *ᵖ E) j
+    have hpᵢ : pᵢ = eᵢ.pullback f := htriv i
+    have hpⱼ : pⱼ = eⱼ.pullback f := htriv j
+    by_cases hx : x ∈ pᵢ.baseSet ∩ pⱼ.baseSet
+    · have hfx : f x ∈ eᵢ.baseSet ∩ eⱼ.baseSet := by
+        rw [hpᵢ, hpⱼ, Trivialization.pullback_baseSet, Trivialization.pullback_baseSet] at hx
+        exact ⟨hx.1, hx.2⟩
+      simp only [ContinuousLinearEquiv.coe_coe]
       rw [Trivialization.coordChangeL_apply' eᵢ eⱼ hfx,
-        Trivialization.coordChangeL_apply' (eᵢ.pullback f) (eⱼ.pullback f) hx]
+        Trivialization.coordChangeL_apply' pᵢ pⱼ hx, hpᵢ, hpⱼ]
       exact (eᵢ.coordChange_pullback eⱼ f hfx.1 v).symm
-    · have hfx : f x ∉ eᵢ.baseSet ∩ eⱼ.baseSet := hx
-      rw [eᵢ.coordChangeL_of_notMem 𝕜 eⱼ hfx,
-        (eᵢ.pullback f).coordChangeL_of_notMem 𝕜 (eⱼ.pullback f) hx]
+    · have hfx : f x ∉ eᵢ.baseSet ∩ eⱼ.baseSet := by
+        rw [hpᵢ, hpⱼ, Trivialization.pullback_baseSet, Trivialization.pullback_baseSet] at hx
+        exact fun h ↦ hx ⟨h.1, h.2⟩
+      rw [eᵢ.coordChangeL_of_notMem 𝕜 eⱼ hfx, pᵢ.coordChangeL_of_notMem 𝕜 pⱼ hx]
 
-/-- Reconstruction of `(ofBundle 𝕜 n E).pullback f` is homeomorphic to Mathlib's pullback bundle
-`TotalSpace (Fin n → 𝕜) ((⇑f) *ᵖ E)`, acting via `pointIndexedCoreFiberEquiv` at `f x`. -/
-noncomputable def pullbackOfBundleHomeomorph :
-    ((ofBundle 𝕜 n E).pullback f).core.TotalSpace ≃ₜ TotalSpace (Fin n → 𝕜) ((⇑f) *ᵖ E) where
-  toFun p := ⟨p.proj, pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E (f p.proj) p.snd⟩
-  invFun p := ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E (f p.proj)).symm p.snd⟩
+/-- Reconstruction of `(ofLinearEquiv e E).pullback f` is homeomorphic to Mathlib's pullback
+bundle `TotalSpace F ((⇑f) *ᵖ E)`, acting via `ofLinearEquivFiberEquiv e E` at `f x`. -/
+noncomputable def pullbackOfLinearEquivHomeomorph :
+    ((ofLinearEquiv e E).pullback f).core.TotalSpace ≃ₜ TotalSpace F ((⇑f) *ᵖ E) where
+  toFun p := ⟨p.proj, ofLinearEquivFiberEquiv e E (f p.proj) p.snd⟩
+  invFun p := ⟨p.proj, (ofLinearEquivFiberEquiv e E (f p.proj)).symm p.snd⟩
   left_inv := fun ⟨x, v⟩ ↦ congrArg (TotalSpace.mk x)
-    ((pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E (f x)).symm_apply_apply v)
+    ((ofLinearEquivFiberEquiv e E (f x)).symm_apply_apply v)
   right_inv := fun ⟨x, v⟩ ↦ congrArg (TotalSpace.mk x)
-    ((pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E (f x)).apply_symm_apply v)
+    ((ofLinearEquivFiberEquiv e E (f x)).apply_symm_apply v)
   continuous_toFun := by
-    rw [(inducing_pullbackTotalSpaceEmbedding (Fin n → 𝕜) E f).continuous_iff]
-    exact ((ofBundle 𝕜 n E).pullback f).core.continuous_proj.prodMk
-      (((pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) E).continuous.comp
-        (continuous_pullbackLift (ofBundle 𝕜 n E) f)).congr fun ⟨x, v⟩ ↦
-          pointIndexedCoreHomeomorph_apply 𝕜 (Fin n → 𝕜) E ⟨f x, v⟩)
-  continuous_invFun := (continuous_core_pullback_iff (ofBundle 𝕜 n E) f).2
-    ⟨Pullback.continuous_proj (Fin n → 𝕜) E f,
-      (((pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) E).symm.continuous.comp
-        (Pullback.continuous_lift (Fin n → 𝕜) E f)).congr fun ⟨x, v⟩ ↦
-          pointIndexedCoreHomeomorph_symm_apply 𝕜 (Fin n → 𝕜) E ⟨f x, v⟩)⟩
-@[simp] theorem pullbackOfBundleHomeomorph_apply
-    (p : ((ofBundle 𝕜 n E).pullback f).core.TotalSpace) :
-    pullbackOfBundleHomeomorph E f p =
-      ⟨p.proj, pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E (f p.proj) p.snd⟩ := (rfl)
-@[simp] theorem pullbackOfBundleHomeomorph_symm_apply
-    (p : TotalSpace (Fin n → 𝕜) ((⇑f) *ᵖ E)) :
-    (pullbackOfBundleHomeomorph E f).symm p =
-      ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E (f p.proj)).symm p.snd⟩ := (rfl)
-end OfBundle
+    rw [(inducing_pullbackTotalSpaceEmbedding F E f).continuous_iff]
+    exact ((ofLinearEquiv e E).pullback f).core.continuous_proj.prodMk
+      (((ofLinearEquivTotalSpaceHomeomorph e E).continuous.comp
+        (continuous_pullbackLift (ofLinearEquiv e E) f)).congr fun ⟨x, v⟩ ↦
+          ofLinearEquivTotalSpaceHomeomorph_apply e E ⟨f x, v⟩)
+  continuous_invFun := (continuous_core_pullback_iff (ofLinearEquiv e E) f).2
+    ⟨Pullback.continuous_proj F E f,
+      (((ofLinearEquivTotalSpaceHomeomorph e E).symm.continuous.comp
+        (Pullback.continuous_lift F E f)).congr fun ⟨x, v⟩ ↦
+          ofLinearEquivTotalSpaceHomeomorph_symm_apply e E ⟨f x, v⟩)⟩
+@[simp] theorem pullbackOfLinearEquivHomeomorph_apply
+    (p : ((ofLinearEquiv e E).pullback f).core.TotalSpace) :
+    pullbackOfLinearEquivHomeomorph e E f p =
+      ⟨p.proj, ofLinearEquivFiberEquiv e E (f p.proj) p.snd⟩ := (rfl)
+@[simp] theorem pullbackOfLinearEquivHomeomorph_symm_apply
+    (p : TotalSpace F ((⇑f) *ᵖ E)) :
+    (pullbackOfLinearEquivHomeomorph e E f).symm p =
+      ⟨p.proj, (ofLinearEquivFiberEquiv e E (f p.proj)).symm p.snd⟩ := (rfl)
+end OfLinearEquiv
 
 variable (𝕜) in
 /-- Isomorphism classes of rank-`n` vector-bundle cores over `X`. -/

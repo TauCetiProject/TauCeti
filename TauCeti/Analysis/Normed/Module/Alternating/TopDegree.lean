@@ -44,6 +44,14 @@ theorem continuousDet_apply (b : Module.Basis ι 𝕜 E) (v : ι → E) :
 theorem continuousDet_toAlternatingMap (b : Module.Basis ι 𝕜 E) :
     b.continuousDet.toAlternatingMap = b.det := by rfl
 
+/-- Changing from basis `b₁` to `b₂` rescales the continuous determinant form by `b₁.det b₂`. -/
+theorem continuousDet_eq_det_smul (b₁ b₂ : Module.Basis ι 𝕜 E) :
+    b₁.continuousDet = (b₁.det b₂) • b₂.continuousDet := by
+  ext v
+  rw [ContinuousAlternatingMap.smul_apply, smul_eq_mul, mul_comm]
+  exact (b₁.continuousDet.apply_eq_det_mul b₂ v).trans
+    (by rw [continuousDet_apply, continuousDet_apply])
+
 /-- Evaluation on a basis is a continuous linear equivalence from top-degree forms to scalars.
 The inverse sends `c` to `c` times the determinant form of the basis. -/
 noncomputable def topFormEquiv (b : Module.Basis ι 𝕜 E) :
@@ -74,6 +82,26 @@ theorem topFormEquiv_symm_eq_smul (b : Module.Basis ι 𝕜 E) (c : 𝕜) :
 theorem topFormEquiv_symm_apply (b : Module.Basis ι 𝕜 E)
     (c : 𝕜) (v : ι → E) : b.topFormEquiv.symm c v = c * b.det v := by
   simp [Module.Basis.topFormEquiv_symm_eq_smul]
+
+/-- Coordinate equivalence identifying top-degree continuous alternating forms `E [⋀^ι]→L[𝕜] 𝕜`
+with `Fin 1 → 𝕜` via evaluation on `b`. -/
+noncomputable def canonicalModelCoords (b : Module.Basis ι 𝕜 E) :
+    (E [⋀^ι]→L[𝕜] 𝕜) ≃L[𝕜] (Fin 1 → 𝕜) :=
+  b.topFormEquiv.trans (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).symm
+
+/-- `b.canonicalModelCoords` evaluates a top-degree alternating form on the basis `b`. -/
+@[simp]
+theorem canonicalModelCoords_apply (b : Module.Basis ι 𝕜 E)
+    (η : E [⋀^ι]→L[𝕜] 𝕜) (i : Fin 1) :
+    b.canonicalModelCoords η i = η b :=
+  b.topFormEquiv_apply η
+
+/-- The inverse of `b.canonicalModelCoords` scales `b.continuousDet` by the unique coordinate. -/
+@[simp]
+theorem canonicalModelCoords_symm_apply (b : Module.Basis ι 𝕜 E)
+    (u : Fin 1 → 𝕜) :
+    b.canonicalModelCoords.symm u = u 0 • b.continuousDet :=
+  b.topFormEquiv_symm_eq_smul (u 0)
 
 omit [Fintype ι] [DecidableEq ι] in
 /-- The top-degree scalar-valued continuous alternating forms on a space with a finite basis form

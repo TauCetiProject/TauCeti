@@ -10,6 +10,7 @@ public import Mathlib.Basic.Sign.Defs
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Topology.Algebra.Module.Determinant
+public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 public import TauCeti.Topology.Algebra.Module.Equiv.Pi
 
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff

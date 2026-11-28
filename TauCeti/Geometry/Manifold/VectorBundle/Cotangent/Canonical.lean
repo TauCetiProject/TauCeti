@@ -127,6 +127,16 @@ theorem trivializationAt_apply_snd_basis_eq_det_mul {x₀ x₁ x : M}
     (ω.compContinuousLinearMap (e₀.symmL 𝕜 x)).compContinuousLinearMap_apply_basis b
       (tangentCoordChange I x₁ x₀ x)
 
+/-- Evaluated on vectors `v : Fin (finrank 𝕜 E) → E` in the model space, the preferred
+trivialization of `CanonicalBundle I M` at `x` evaluates `ω` on the corresponding coordinate
+tangent vectors at `x`. -/
+theorem trivializationAt_apply_snd_basis (x : M) (ω : CanonicalBundle I M x)
+    (v : Fin (finrank 𝕜 E) → E) :
+    (trivializationAt (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M) x ⟨x, ω⟩).2 v =
+      ω fun i ↦ (trivializationAt E (TangentSpace I) x).symmL 𝕜 x (v i) := by
+  rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def]
+
 /-! ### The coordinate form of a chart -/
 
 section CoordForm
@@ -175,6 +185,16 @@ theorem trivializationAt_apply_snd_coordForm (hx : x ∈ (chartAt H x₀).source
   rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
     coordForm_compContinuousLinearMap_symmL hx]
 
+/-- Under the preferred trivialization of `CanonicalBundle I M` at `x`, the constant determinant
+form `b.continuousDet` corresponds to the coordinate form `coordForm I x b x`. -/
+theorem continuousLinearEquivAt_symm_continuousDet (x : M) (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) :
+    (VectorBundle.continuousLinearEquivAt 𝕜 (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜)
+      (CanonicalBundle I M) x).symm b.continuousDet = coordForm I x b x := by
+  rw [VectorBundle.continuousLinearEquivAt_symm_apply,
+    ← trivializationAt_apply_snd_coordForm (I := I) (b := b) (mem_chart_source H x),
+    Trivialization.symm_apply_apply_mk _
+      (mem_baseSet_trivializationAt (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M) x)]
+
 /-- Read in the trivialization of its own chart, a multiple `c` of the coordinate form is `c` times
 the constant determinant form of the basis. -/
 theorem trivializationAt_apply_snd_smul_coordForm (hx : x ∈ (chartAt H x₀).source) (c : 𝕜) :
@@ -220,6 +240,14 @@ theorem coordForm_eq_det_smul_coordForm (hx₀ : x ∈ (chartAt H x₀).source)
   conv_lhs => rw [eq_smul_coordForm (x₀ := x₁) (b := b) hx₁ (coordForm I x₀ b x)]
   rw [trivializationAt_apply_snd_basis_eq_det_mul hx₀ hx₁, trivializationAt_apply_snd_coordForm hx₀]
   simp [b.det_self]
+
+/-- Changing the model basis from `b₁` to `b₂` rescales `coordForm` by `b₁.det b₂`. -/
+theorem coordForm_eq_basis_det_smul_coordForm (x₀ : M)
+    (b₁ b₂ : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (x : M) :
+    coordForm I x₀ b₁ x = (b₁.det b₂) • coordForm I x₀ b₂ x := by
+  ext v
+  simp only [coordForm, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+    b₁.continuousDet_eq_det_smul b₂, ContinuousAlternatingMap.smul_apply]
 
 variable {k : WithTop ℕ∞}
   [ContMDiffVectorBundle k (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M) I]

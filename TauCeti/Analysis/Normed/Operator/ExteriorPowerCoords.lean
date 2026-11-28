@@ -26,8 +26,10 @@ preserves identities and composition, is homogeneous of degree `j` in the operat
 on the operator (`ContinuousLinearMap.continuous_exteriorPowerCoords`), even by a `C^k` or analytic
 map (`ContinuousLinearMap.contDiff_exteriorPowerCoords`), since its matrix entries are minors of the
 matrix of `g`. It can therefore be applied to continuous, smooth or holomorphic families of
-transition matrices. For an endomorphism of `Fin m → 𝕜` the compound matrix in the top degree `m` is
-multiplication by the determinant (`ContinuousLinearMap.exteriorPowerCoords_self`).
+transition matrices. For an endomorphism of `Fin m → 𝕜` the compound matrix in the top degree `m`
+is multiplication by the determinant (`ContinuousLinearMap.exteriorPowerCoords_self`, and in
+scalar coordinates via `ContinuousLinearEquiv.topExteriorScalarEquiv`,
+`ContinuousLinearMap.topExteriorScalarEquiv_exteriorPowerCoords_self`).
 
 In degrees zero and one the compound matrices are identified explicitly, through the continuous
 coordinate equivalences `exteriorPower.piZeroContinuousEquiv` with the coordinate line and
@@ -35,6 +37,30 @@ coordinate equivalences `exteriorPower.piZeroContinuousEquiv` with the coordinat
 -/
 
 public section
+
+namespace ContinuousLinearEquiv
+
+section TopExterior
+
+variable (R : Type*) [Semiring R] [TopologicalSpace R]
+
+/-- Scalar evaluation on `Fin (m.choose r) → R` when `m = r`. -/
+noncomputable def topExteriorScalarEquiv {m r : ℕ} (h : m = r) :
+    (Fin (m.choose r) → R) ≃L[R] R :=
+  (piCongrLeft R (fun _ ↦ R) (finCongr (h ▸ Nat.choose_self m))).trans (funUnique (Fin 1) R R)
+
+variable {R}
+
+@[simp] theorem topExteriorScalarEquiv_apply {m r : ℕ} (h : m = r) (v : Fin (m.choose r) → R) :
+    topExteriorScalarEquiv R h v = v ⟨0, h ▸ Nat.choose_self m ▸ Nat.zero_lt_one⟩ := (rfl)
+
+@[simp] theorem topExteriorScalarEquiv_symm_apply {m r : ℕ} (h : m = r) (c : R)
+    (i : Fin (m.choose r)) :
+    (topExteriorScalarEquiv R h).symm c i = c := (rfl)
+
+end TopExterior
+
+end ContinuousLinearEquiv
 
 namespace ContinuousLinearMap
 
@@ -108,6 +134,15 @@ by its determinant on the coordinate line `Fin (m.choose m) → 𝕜`. -/
 @[simp] theorem exteriorPowerCoords_self (g : (Fin m → 𝕜) →L[𝕜] (Fin m → 𝕜)) :
     g.exteriorPowerCoords m = g.det • ContinuousLinearMap.id 𝕜 (Fin (m.choose m) → 𝕜) :=
   coe_injective (LinearMap.exteriorPowerCoords_self (g : (Fin m → 𝕜) →ₗ[𝕜] (Fin m → 𝕜)))
+
+/-- Under `ContinuousLinearEquiv.topExteriorScalarEquiv`, the top-degree compound matrix
+`g.exteriorPowerCoords r` acts by scalar multiplication by `g.det`. -/
+theorem topExteriorScalarEquiv_exteriorPowerCoords_self {r : ℕ}
+    (g : (Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜)) (w : Fin (r.choose r) → 𝕜) :
+    ContinuousLinearEquiv.topExteriorScalarEquiv 𝕜 (rfl : r = r) (g.exteriorPowerCoords r w) =
+      g.det * ContinuousLinearEquiv.topExteriorScalarEquiv 𝕜 (rfl : r = r) w := by
+  rw [exteriorPowerCoords_self]
+  simp [ContinuousLinearEquiv.topExteriorScalarEquiv_apply]
 
 /-- The compound matrix as a sum of rank-one operators: its column at `t` is the vector of the
 `j × j` minors of `g` with columns selected by the subset enumerated by `t`. -/
