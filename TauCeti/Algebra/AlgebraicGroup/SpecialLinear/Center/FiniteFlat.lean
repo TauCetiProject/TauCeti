@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Augmentation
 public import TauCeti.Algebra.AlgebraicGroup.Isogeny.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Center.Basic
 
@@ -31,6 +32,8 @@ finite flat but nonreduced, exactly as the group-scheme statement requires.
   finite over the ground field.
 * `TauCeti.SpecialLinear.moduleFaithfullyFlat_centerCoordinate`: it is faithfully flat.
 * `TauCeti.SpecialLinear.finrank_centerCoordinate`: its rank is `n`.
+* `TauCeti.SpecialLinear.centerDefiningIdeal_ne_augmentation`: for `1 < n`, the scheme-theoretic
+  center `Z(SLₙ) = μₙ` is nontrivial over every field.
 * `TauCeti.SpecialLinear.isCentralIsogeny_centerStructureMorphism`: the center's structure
   morphism is a central isogeny.
 
@@ -112,6 +115,16 @@ theorem finrank_centerCoordinate (hn : 0 < n) :
   rw [(centerCoordinateLinearEquiv n hn).finrank_eq,
     Module.finrank_eq_card_basis (MonoidAlgebra.basis (Multiplicative (ZMod n)) k)]
   simp
+
+/-- For `1 < n`, the scheme-theoretic center `Z(SLₙ) = μₙ` is nontrivial over every field. -/
+theorem centerDefiningIdeal_ne_augmentation {n : ℕ} (hn : 1 < n) :
+    CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n) ≠
+      HopfIdeal.augmentation k (coordinateHopfAlgebra k n) := by
+  intro heq
+  have hrank := finrank_centerCoordinate (k := k) n (Nat.zero_lt_of_lt hn)
+  have haug := HopfIdeal.finrank_quotient_augmentation (R := k) (coordinateHopfAlgebra k n)
+  rw [heq, haug] at hrank
+  omega
 
 /-- The structure morphism from the represented center of `SLₙ` to the trivial group is a
 central isogeny. The kernel is the center itself, identified with the finite flat group `μₙ`. -/

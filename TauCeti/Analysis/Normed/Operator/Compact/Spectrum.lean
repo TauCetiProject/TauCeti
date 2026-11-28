@@ -24,7 +24,8 @@ eigenvectors `v n` with distinct eigenvalues `μ n`, the kernels of the operator
 `K - μ n • 1` steps down, which the ascending-chain criterion
 `IsCompactOperator.exists_succ_eq_of_ascending_chain` rules out when the `μ n` are bounded away
 from zero. On a complete ambient space, the Fredholm alternative then shows that the spectrum is
-countable and can accumulate only at zero, still without completeness of `𝕜`.
+countable and can accumulate only at zero, still without completeness of `𝕜`. In particular,
+each nonzero point `μ` forms a clopen part `{μ}` of the spectrum.
 
 ## References
 
@@ -121,6 +122,21 @@ theorem eq_zero_of_accPt_spectrum (hK : IsCompactOperator K) {μ : 𝕜}
   obtain ⟨ν, ⟨hne, hν⟩, hnorm, hnot⟩ :=
     ((accPt_iff_frequently.mp hμ).and_eventually (hnear.and havoid)).exists
   exact hnot ⟨⟨hν, hnorm.le⟩, hne⟩
+
+open Filter Topology in
+/-- For a compact operator on a Banach space over a nontrivially normed field and a nonzero scalar
+`μ`, the points of the spectrum equal to `μ` form a clopen part of the spectrum, empty when `μ` is
+not a spectral value. -/
+theorem isClopen_setOf_coe_eq (hK : IsCompactOperator K) {μ : 𝕜} (hμ : μ ≠ 0) :
+    IsClopen {x : spectrum 𝕜 K | (x : 𝕜) = μ} := by
+  refine ⟨isClosed_eq continuous_subtypeVal continuous_const,
+    isOpen_iff_mem_nhds.mpr fun x (hx : (x : 𝕜) = μ) ↦ ?_⟩
+  have h : ∀ᶠ y in 𝓝 μ, ¬(y ≠ μ ∧ y ∈ spectrum 𝕜 K) :=
+    not_frequently.mp fun h ↦ hμ (hK.eq_zero_of_accPt_spectrum (accPt_iff_frequently.mpr h))
+  rw [← hx] at h
+  filter_upwards [(continuous_subtypeVal.tendsto x).eventually h] with y hy
+  by_contra hne
+  exact hy ⟨fun h ↦ hne (h.trans hx), y.property⟩
 
 open Filter Topology in
 /-- The nonzero points of the real spectrum of a compact operator on a complex Banach space are

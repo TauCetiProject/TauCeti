@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Schwartz
+public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Schwartz.Basic
 
 /-!
 # Ladder and harmonic-oscillator operators on Schwartz space
