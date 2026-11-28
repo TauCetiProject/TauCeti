@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Basic
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.UnitaryWeight
 import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
+import TauCeti.NumberTheory.LFunctions.DedekindZeta.Rat
 import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.RealParity
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 

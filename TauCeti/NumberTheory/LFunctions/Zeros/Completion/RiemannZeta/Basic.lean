@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Meromorphic.Counting.Basic
 public import TauCeti.NumberTheory.LFunctions.Data.RiemannZeta
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Basic
 
 import Mathlib.NumberTheory.LSeries.Nonvanishing
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
 import TauCeti.NumberTheory.LFunctions.Zeros.Divisor
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Meromorphic
 
 /-!
 # The entire completion of the Riemann zeta function
@@ -21,6 +24,8 @@ conjugation symmetries `zetaEntireCompletion (1 - s) = zetaEntireCompletion s` a
 `zetaEntireCompletion (conj s) = conj (zetaEntireCompletion s)` (hence is real on the real axis),
 along with the matching logarithmic-derivative symmetries `logDeriv_zetaEntireCompletion_conj`,
 `logDeriv_zetaEntireCompletion_one_sub`, and `im_logDeriv_zetaEntireCompletion_ofReal`.
+On the positive half-plane `0 < Re s`, its zero counts agree with those of `riemannZeta` (even
+across `1`), and on `0 < Re s` away from `1` their divisors agree.
 
 The identity `riemannZetaData_entireCompletion` connects this explicit formula to the general
 pole-clearing construction `riemannZetaData.entireCompletion`. Combining nonvanishing of
@@ -36,7 +41,8 @@ confines all zeros of `zetaEntireCompletion` to the open critical strip `0 < Re 
 
 public section
 
-open Complex ComplexConjugate Polynomial
+open Complex ComplexConjugate Filter Polynomial
+open scoped Topology
 
 namespace TauCeti.LFunctions
 
@@ -166,5 +172,62 @@ theorem re_mem_Ioo_of_zetaEntireCompletion_eq_zero {ρ : ℂ}
     (by simpa only [riemannZetaData_entireCompletion] using
       fun _ ↦ zetaEntireCompletion_ne_zero_of_one_le_re)
     (by simpa only [riemannZetaData_entireCompletion] using hρ)
+
+/-- On the positive half-plane, `zetaEntireCompletion` and `riemannZeta` have the same analytic
+order (at the pole `1`, `zetaEntireCompletion 1 = 1 ≠ 0` and `riemannZeta` is not analytic, so both
+analytic orders vanish). -/
+theorem analyticOrderAt_zetaEntireCompletion_eq_riemannZeta {s : ℂ} (hs : 0 < s.re) :
+    analyticOrderAt zetaEntireCompletion s = analyticOrderAt riemannZeta s := by
+  rcases eq_or_ne s 1 with rfl | hs1
+  · have hnot : ¬ AnalyticAt ℂ riemannZeta 1 := by
+      rw [← DirichletCharacter.LFunction_modOne_eq (χ := (1 : DirichletCharacter ℂ 1))]
+      exact (DirichletCharacter.analyticAt_LFunction_iff (1 : DirichletCharacter ℂ 1) 1).not.mpr
+        (by simp)
+    rw [(differentiable_zetaEntireCompletion.analyticAt 1).analyticOrderAt_eq_zero.mpr (by simp),
+      analyticOrderAt_of_not_analyticAt hnot]
+  · have hs0 : s ≠ 0 := by rintro rfl; simp at hs
+    have hc : AnalyticAt ℂ (fun z : ℂ ↦ z * (z - 1)) s :=
+      analyticAt_id.mul (analyticAt_id.sub analyticAt_const)
+    have hc0 : s * (s - 1) ≠ 0 := mul_ne_zero hs0 (sub_ne_zero.mpr hs1)
+    have he : zetaEntireCompletion =ᶠ[𝓝 s] (fun z : ℂ ↦ z * (z - 1)) * completedRiemannZeta := by
+      filter_upwards [eventually_ne_nhds hs0, eventually_ne_nhds hs1] with z hz0 hz1
+      exact zetaEntireCompletion_eq_mul hz0 hz1
+    rw [analyticOrderAt_congr he, analyticOrderAt_mul hc (analyticAt_completedRiemannZeta hs0 hs1),
+      hc.analyticOrderAt_eq_zero.mpr hc0, zero_add,
+      ← DirichletCharacter.completedLFunction_modOne_eq (χ := (1 : DirichletCharacter ℂ 1)),
+      (1 : DirichletCharacter ℂ 1).analyticOrderAt_completedLFunction hs (.inl hs1),
+      DirichletCharacter.LFunction_modOne_eq]
+
+/-- On the positive half-plane away from `1`, `zetaEntireCompletion` and `riemannZeta` have the
+same divisor. -/
+theorem divisor_zetaEntireCompletion_eq_riemannZeta {s : ℂ} (hs : 0 < s.re) (hs1 : s ≠ 1) :
+    MeromorphicOn.divisor zetaEntireCompletion Set.univ s =
+      MeromorphicOn.divisor riemannZeta Set.univ s := by
+  have hξ : AnalyticOnNhd ℂ zetaEntireCompletion Set.univ :=
+    fun z _ ↦ differentiable_zetaEntireCompletion.analyticAt z
+  rw [hξ.meromorphicOn.divisor_eq_analyticOrderNatAt (hξ s (Set.mem_univ s)) (Set.mem_univ s),
+    meromorphic_riemannZeta.meromorphicOn.divisor_eq_analyticOrderNatAt
+      (analyticOn_riemannZeta s hs1) (Set.mem_univ s)]
+  simp only [analyticOrderNatAt, analyticOrderAt_zetaEntireCompletion_eq_riemannZeta hs]
+
+/-- On the positive half-plane, `zetaEntireCompletion` and `riemannZeta` have the same positive
+divisor multiplicity (at the pole `1`, both vanish). -/
+theorem toNat_divisor_zetaEntireCompletion_eq_riemannZeta {s : ℂ} (hs : 0 < s.re) :
+    (MeromorphicOn.divisor zetaEntireCompletion Set.univ s).toNat =
+      (MeromorphicOn.divisor riemannZeta Set.univ s).toNat := by
+  rcases eq_or_ne s 1 with rfl | hs1
+  · rw [(differentiable_zetaEntireCompletion.analyticAt 1).divisor_apply_eq_zero (by simp),
+      (meromorphicOn_univ.2 meromorphic_riemannZeta).divisor_apply (Set.mem_univ 1),
+      meromorphicOrderAt_riemannZeta_one]
+    simp
+  · rw [divisor_zetaEntireCompletion_eq_riemannZeta hs hs1]
+
+/-- On any region in the positive half-plane, `zetaEntireCompletion` and `riemannZeta` have the
+same zero count (at the pole `1`, both positive divisor multiplicities vanish). -/
+theorem zeroCount_zetaEntireCompletion_eq_riemannZeta {R : Set ℂ}
+    (hR : ∀ s ∈ R, 0 < s.re) :
+    zeroCount zetaEntireCompletion Set.univ R = zeroCount riemannZeta Set.univ R :=
+  zeroCount_congr_divisor_toNat fun s hs ↦
+    toNat_divisor_zetaEntireCompletion_eq_riemannZeta (hR s hs)
 
 end TauCeti.LFunctions

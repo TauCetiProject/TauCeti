@@ -45,7 +45,7 @@ private theorem card_unitsCongruenceTorsion_mul_rayClassIdealMainTerm (𝔪 : Mo
           (2 ^ nrRealPlaces K * (2 * π) ^ nrComplexPlaces K * regulator K) /
         (2 ^ 𝔪.infinitePart.card * Ideal.absNorm 𝔪.finitePart * √|(discr K : ℝ)|) := by
   have h𝔪 : (Ideal.absNorm 𝔪.finitePart : ℝ) ≠ 0 :=
-    Nat.cast_ne_zero.mpr (Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_zero)
+    Nat.cast_ne_zero.mpr (NeZero.ne _)
   -- the correction product is the proportion of residues modulo `𝔪₀` that are units
   rw [rayClassIdealMainTerm_eq, ← mul_div_cancel_left₀ (∏ v ∈ 𝔪.support, _) h𝔪,
     ← Ideal.card_units_quotient_eq_absNorm_mul_prod 𝔪.finitePart 𝔪.mem_support_iff,

@@ -71,18 +71,10 @@ private theorem exists_eq_ratModulus_or_eq_spanNat {𝔫 : Modulus ℚ}
     (h : 𝔫 ∣ ratModulus n hn) :
     ∃ (d : ℕ) (_ : NeZero d), d ∣ n ∧
       (𝔫 = ratModulus d (NeZero.ne d) ∨ 𝔫 = Modulus.spanNat ℚ d) := by
-  have : NeZero (Ideal.absNorm 𝔫.finitePart) := ⟨by
-    rw [Ne, Ideal.absNorm_eq_zero_iff]
-    exact 𝔫.finitePart_ne_bot⟩
-  have hspan := Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔫.finitePart
-  have hinf := (Modulus.dvd_iff.mp h).2
-  rw [ratModulus_infinitePart] at hinf
   refine ⟨_, inferInstance, dvd_ratModulus_iff.mp h, ?_⟩
-  rcases Finset.subset_singleton_iff.mp hinf with hinf | hinf
-  · exact Or.inr (Modulus.ext (by rw [Modulus.spanNat_finitePart, hspan])
-      (by rw [Modulus.spanNat_infinitePart, hinf]))
-  · exact Or.inl (Modulus.ext (by rw [ratModulus_finitePart, hspan])
-      (by rw [ratModulus_infinitePart, hinf]))
+  by_cases hinf : 𝔫.infinitePart = ∅
+  · exact Or.inr (eq_spanNat_of_infinitePart_eq_empty_rat hinf)
+  · exact Or.inl (eq_ratModulus_of_infinitePart_ne_empty hinf)
 
 -- For `n > 2` the transition map from `(n)·∞` to a modulus `(d)` without the real place is not
 -- injective: the class of `-1` is nontrivial modulo `(n)·∞` and trivial modulo `(d)`.

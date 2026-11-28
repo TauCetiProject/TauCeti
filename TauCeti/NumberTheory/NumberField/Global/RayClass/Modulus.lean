@@ -179,9 +179,9 @@ theorem wellFounded_dvd_and_ne : WellFounded fun 𝔪 𝔫 : Modulus K ↦ 𝔪 
   obtain ⟨⟨⟨L, hL⟩, hinf⟩, hne⟩ := h
   have hnorm : Ideal.absNorm 𝔫.finitePart = Ideal.absNorm 𝔪.finitePart * Ideal.absNorm L := by
     rw [hL, map_mul]
-  have h𝔫 : Ideal.absNorm 𝔫.finitePart ≠ 0 := Ideal.absNorm_eq_zero_iff.not.mpr 𝔫.finitePart_ne_bot
+  have h𝔫 : Ideal.absNorm 𝔫.finitePart ≠ 0 := NeZero.ne _
   have hL0 : Ideal.absNorm L ≠ 0 := fun h0 ↦ h𝔫 (by rw [hnorm, h0, mul_zero])
-  have h𝔪 : Ideal.absNorm 𝔪.finitePart ≠ 0 := fun h0 ↦ h𝔫 (by rw [hnorm, h0, zero_mul])
+  have h𝔪 : Ideal.absNorm 𝔪.finitePart ≠ 0 := NeZero.ne _
   have hcard := Finset.card_le_card hinf
   have hle : Ideal.absNorm 𝔪.finitePart ≤ Ideal.absNorm 𝔫.finitePart :=
     hnorm ▸ Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero hL0)

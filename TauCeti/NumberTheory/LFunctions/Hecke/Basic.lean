@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Meromorphic.Continuation
-public import TauCeti.NumberTheory.LFunctions.Hecke.EulerCorrection
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight
+public import TauCeti.NumberTheory.LFunctions.Hecke.EulerCorrection.Basic
 
 /-!
 # Presented Hecke L-functions of ray class characters

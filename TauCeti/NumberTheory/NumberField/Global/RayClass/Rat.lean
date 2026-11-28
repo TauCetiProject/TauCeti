@@ -14,6 +14,7 @@ import Mathlib.NumberTheory.NumberField.Units.Basic
 import TauCeti.Algebra.Group.Subgroup.ZPowers
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Integral
+import TauCeti.NumberTheory.NumberField.Ideal.DegreeOne
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.IntCast
 
@@ -70,6 +71,10 @@ and a class with positive sign is determined by its residue.
   a nonzero integral ideal prime to `n` is its absolute norm modulo `n`, up to sign.
 * `TauCeti.GlobalNumberFields.two_mul_card_rayClassGroup_spanNat_rat`: for `n > 2`, the ray
   class group modulo `(n)` has order `φ(n) / 2`.
+* `TauCeti.GlobalNumberFields.mem_support_rat_iff`,
+  `TauCeti.GlobalNumberFields.image_absNorm_support_rat`, and
+  `TauCeti.GlobalNumberFields.isPrimeTo_span_natCast_support_iff`: finite prime support of
+  rational moduli in terms of prime factors of the finite-part norm.
 
 ## References
 
@@ -413,5 +418,93 @@ theorem two_mul_card_rayClassGroup_spanNat_rat [NeZero n] (h2 : 2 < n) :
   rw [Nat.card_congr (ratSpanNatEquivZMod n).toEquiv, ← Subgroup.index,
     ← orderOf_eq_prime neg_one_sq hne, ← Nat.card_zpowers, Subgroup.card_mul_index,
     Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
+
+/-- The finite part of `ratModulus n hn` has absolute norm `n`. -/
+-- Not a `simp` lemma: `ratModulus_finitePart` and `Ideal.absNorm_span_singleton` rewrite the LHS.
+theorem absNorm_ratModulus_finitePart (n : ℕ) (hn : n ≠ 0) :
+    Ideal.absNorm (ratModulus n hn).finitePart = n := by
+  rw [ratModulus_finitePart,
+    RingOfIntegers.absNorm_span_natCast_of_finrank_eq_one (Module.finrank_self ℚ)]
+
+/-- The finite part of `Modulus.spanNat ℚ n` has absolute norm `n`. -/
+-- Not a `simp` lemma: `Modulus.spanNat_finitePart` and `Ideal.absNorm_span_singleton` rewrite
+-- the LHS.
+theorem absNorm_spanNat_finitePart_rat (n : ℕ) [NeZero n] :
+    Ideal.absNorm (Modulus.spanNat ℚ n).finitePart = n := by
+  rw [Modulus.spanNat_finitePart, ← ratModulus_finitePart n (NeZero.ne n),
+    absNorm_ratModulus_finitePart]
+
+/-- The moduli `(n)` and `(n)·∞` of `ℚ` have the same finite prime support. -/
+@[simp]
+theorem support_spanNat_eq_support_ratModulus (n : ℕ) [NeZero n] :
+    (Modulus.spanNat ℚ n).support = (ratModulus n (NeZero.ne n)).support := by
+  ext v
+  simp [Modulus.mem_support_iff]
+
+/-- Every modulus `𝔪` of `ℚ` has the same finite prime support as `(N)·∞`, where `N` is the
+absolute norm of its finite part. -/
+theorem support_ratModulus_absNorm (𝔪 : Modulus ℚ) :
+    (ratModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _)).support = 𝔪.support := by
+  ext v
+  rw [Modulus.mem_support_iff, Modulus.mem_support_iff, ratModulus_finitePart,
+    Rat.RingOfIntegers.ideal_span_absNorm_eq_self]
+
+/-- A height-one prime of `𝓞 ℚ` belongs to the support of `𝔪` exactly when its absolute norm
+divides `Ideal.absNorm 𝔪.finitePart`. -/
+theorem mem_support_rat_iff {𝔪 : Modulus ℚ} {v : HeightOneSpectrum (𝓞 ℚ)} :
+    v ∈ 𝔪.support ↔ Ideal.absNorm v.asIdeal ∣ Ideal.absNorm 𝔪.finitePart := by
+  conv_lhs =>
+    rw [Modulus.mem_support_iff, ← Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart,
+      Ideal.dvd_span_singleton, Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd]
+
+/-- Mapping height-one primes of `𝓞 ℚ` to their absolute norms identifies the support of `𝔪` with
+the prime factors of `Ideal.absNorm 𝔪.finitePart`. -/
+-- Not a `simp` lemma: `Rat.HeightOneSpectrum.absNorm_asIdeal` rewrites the LHS.
+theorem image_absNorm_support_rat (𝔪 : Modulus ℚ) :
+    𝔪.support.image (fun v ↦ Ideal.absNorm v.asIdeal) =
+      (Ideal.absNorm 𝔪.finitePart).primeFactors := by
+  ext p
+  rw [Finset.mem_image, Nat.mem_primeFactors]
+  refine ⟨?_, fun ⟨hp, hdvd, _⟩ ↦ ?_⟩
+  · rintro ⟨v, hv, rfl⟩
+    exact ⟨Rat.HeightOneSpectrum.prime_absNorm_asIdeal v,
+      mem_support_rat_iff.mp hv, NeZero.ne _⟩
+  · obtain ⟨v, rfl⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
+    exact ⟨v, mem_support_rat_iff.mpr hdvd, rfl⟩
+
+/-- For `m ≠ 0`, the ideal `(m)` of `𝓞 ℚ` is prime to `𝔪.support` exactly when `m` is coprime to
+`Ideal.absNorm 𝔪.finitePart`. -/
+theorem isPrimeTo_span_natCast_support_iff {𝔪 : Modulus ℚ} {m : ℕ} (hm : m ≠ 0) :
+    Ideal.IsPrimeTo (Ideal.span {(m : 𝓞 ℚ)}) 𝔪.support ↔
+      m.Coprime (Ideal.absNorm 𝔪.finitePart) := by
+  have hbot : Ideal.span {(m : 𝓞 ℚ)} ≠ ⊥ := by
+    rw [Ne, Ideal.span_singleton_eq_bot]
+    exact_mod_cast hm
+  rw [← support_ratModulus_absNorm 𝔪]
+  refine (Ideal.isPrimeTo_iff.trans <| Modulus.isCoprimeTo_iff.symm.trans <|
+    isCoprimeTo_ratModulus_iff hbot).trans ?_
+  rw [RingOfIntegers.absNorm_span_natCast_of_finrank_eq_one (Module.finrank_self ℚ)]
+
+/-- A modulus of `ℚ` with empty infinite part is `Modulus.spanNat ℚ N` for the absolute norm `N`
+of its finite part. -/
+theorem eq_spanNat_of_infinitePart_eq_empty_rat {𝔪 : Modulus ℚ}
+    (h : 𝔪.infinitePart = ∅) :
+    𝔪 = Modulus.spanNat ℚ (Ideal.absNorm 𝔪.finitePart) := by
+  refine Modulus.ext ?_ ?_
+  · simpa only [Modulus.spanNat_finitePart] using
+      (Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart).symm
+  · simpa only [Modulus.spanNat_infinitePart] using h
+
+/-- A modulus of `ℚ` with nonempty infinite part is `ratModulus N` for the absolute norm `N` of
+its finite part, since `ℚ` has a unique infinite place. -/
+theorem eq_ratModulus_of_infinitePart_ne_empty {𝔪 : Modulus ℚ}
+    (h : 𝔪.infinitePart ≠ ∅) :
+    𝔪 = ratModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _) := by
+  refine Modulus.ext ?_ ?_
+  · simpa only [ratModulus_finitePart] using
+      (Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart).symm
+  · obtain ⟨w, hw⟩ := Finset.ne_empty_iff_nonempty.mp h
+    rw [ratModulus_infinitePart, Subsingleton.elim ⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩ w]
+    exact Finset.coe_eq_singleton.mp (Set.subsingleton_of_subsingleton.eq_singleton_of_mem hw)
 
 end TauCeti.GlobalNumberFields

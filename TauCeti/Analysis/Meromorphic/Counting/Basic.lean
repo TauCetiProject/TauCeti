@@ -23,6 +23,7 @@ do not detect functions which vanish identically near a point.
 public section
 
 open Set Filter
+open scoped Topology
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -218,15 +219,49 @@ theorem sum_zeroCount_le {Rs : List (Set 𝕜)} (hdisj : Rs.Pairwise Disjoint)
     · exact subset_sdiff.2 ⟨hsub T (List.mem_cons_of_mem _ hT), (hdisj.1 T hT).symm⟩
     · exact hS.subset fun z hz ↦ ⟨hz.1.1, hz.2⟩
 
+/-- Intersecting `R` with a set `S` that contains every point of `R` of positive divisor leaves
+the zero count unchanged, without any finite-support hypothesis. -/
+theorem zeroCount_inter_eq_self (h : ∀ z ∈ R, 0 < MeromorphicOn.divisor f U z → z ∈ S) :
+    zeroCount f U (R ∩ S) = zeroCount f U R := by
+  rw [zeroCount_def, zeroCount_def]
+  refine finsum_mem_inter_support_eq' _ (R ∩ S) R fun z hz ↦ ⟨fun hz' ↦ hz'.1, fun hzR ↦ ⟨hzR, ?_⟩⟩
+  exact h z hzR (by have := Function.mem_support.mp hz; omega)
+
 /-- If the divisor vanishes on the frontier of a region, then the region and its interior have
 the same zero count. -/
 theorem zeroCount_interior (hfr : ∀ z ∈ frontier R, MeromorphicOn.divisor f U z = 0) :
     zeroCount f U (interior R) = zeroCount f U R := by
-  have hsupp : interior R ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat) =
-      R ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat) := by
-    refine subset_antisymm (inter_subset_inter_left _ interior_subset) ?_
-    refine fun z ⟨hz, hz₀⟩ ↦ ⟨by_contra fun hint ↦ hz₀ ?_, hz₀⟩
-    simp [hfr z ⟨subset_closure hz, hint⟩]
-  rw [zeroCount_def, zeroCount_def, ← finsum_mem_inter_support, hsupp, finsum_mem_inter_support]
+  rw [← inter_eq_right.mpr interior_subset]
+  exact zeroCount_inter_eq_self fun z hz hpos ↦ by_contra fun hint ↦
+    hpos.ne' (hfr z ⟨subset_closure hz, hint⟩)
+
+/-- Equal divisor values on `R` give equal signed divisor counts on `R`. -/
+theorem divisorCount_congr_divisor {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {g : 𝕜 → F} {V : Set 𝕜}
+    (h : ∀ z ∈ R, MeromorphicOn.divisor f U z = MeromorphicOn.divisor g V z) :
+    divisorCount f U R = divisorCount g V R := by
+  rw [divisorCount_def, divisorCount_def]
+  exact finsum_mem_congr rfl h
+
+/-- Equal positive divisor multiplicities on `R` give equal zero counts on `R`. -/
+theorem zeroCount_congr_divisor_toNat {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {g : 𝕜 → F} {V : Set 𝕜}
+    (h : ∀ z ∈ R, (MeromorphicOn.divisor f U z).toNat = (MeromorphicOn.divisor g V z).toNat) :
+    zeroCount f U R = zeroCount g V R := by
+  rw [zeroCount_def, zeroCount_def]
+  exact finsum_mem_congr rfl h
+
+/-- Functions with equal punctured germs at every point of `U` have the same signed divisor count
+on every region `R`. -/
+theorem divisorCount_congr_nhdsNE {g : 𝕜 → E} (h : ∀ z ∈ U, f =ᶠ[𝓝[≠] z] g) :
+    divisorCount f U R = divisorCount g U R := by
+  rw [divisorCount_def, divisorCount_def, MeromorphicOn.divisor_congr_nhdsNE h]
+
+/-- Functions with equal punctured germs at every point of `U` have the same zero count on every
+region `R`. -/
+theorem zeroCount_congr_nhdsNE {g : 𝕜 → E} (h : ∀ z ∈ U, f =ᶠ[𝓝[≠] z] g) :
+    zeroCount f U R = zeroCount g U R := by
+  rw [zeroCount_def, zeroCount_def, MeromorphicOn.divisor_congr_nhdsNE h]
 
 end TauCeti
+

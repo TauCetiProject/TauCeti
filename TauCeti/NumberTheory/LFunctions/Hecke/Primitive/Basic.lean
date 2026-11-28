@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Conductor
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight.Basic
 
 /-!
 # Primitive ray class characters and imprimitive Euler factors
@@ -188,6 +188,12 @@ theorem character_one : (1 : PrimitiveRayClassCharacter K).character = 1 :=
 theorem of_one : of (1 : RayClassCharacter 𝔪) = 1 :=
   of_eq_iff.mpr ⟨Modulus.one_dvd 𝔪, map_one _⟩
 
+/-- A primitive ray class character is trivial iff its underlying character is trivial. -/
+@[simp]
+theorem character_eq_one_iff (ψ : PrimitiveRayClassCharacter K) :
+    ψ.character = 1 ↔ ψ = 1 :=
+  ⟨fun h ↦ by rw [← of_character ψ, h, of_one], fun h ↦ h ▸ character_one⟩
+
 /-- The inverse of a primitive character is primitive at the same conductor. -/
 instance : InvolutiveInv (PrimitiveRayClassCharacter K) where
   inv ψ := ⟨ψ.conductor, ψ.character⁻¹, by
@@ -236,6 +242,13 @@ through the ideal weight of `χ`, which is total and vanishes at the primes divi
 def eulerCorrection (χ : RayClassCharacter 𝔪) (𝔫 : Modulus K) (s : ℂ) : ℂ :=
   ∏ 𝔭 ∈ 𝔫.support \ 𝔪.support,
     (1 - χ.toMultiplicativeIdealWeight 𝔭.asIdeal * (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-s))
+
+open Classical in
+/-- The defining equation of `RayClassCharacter.eulerCorrection`. -/
+theorem eulerCorrection_def (χ : RayClassCharacter 𝔪) (𝔫 : Modulus K) (s : ℂ) :
+    χ.eulerCorrection 𝔫 s = ∏ 𝔭 ∈ 𝔫.support \ 𝔪.support,
+      (1 - χ.toMultiplicativeIdealWeight 𝔭.asIdeal * (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-s)) :=
+  (rfl)
 
 /-- Since the ideal weight of `χ` vanishes at the primes dividing `𝔪₀`, the Euler correction may
 be taken over all primes dividing `𝔫₀`. -/

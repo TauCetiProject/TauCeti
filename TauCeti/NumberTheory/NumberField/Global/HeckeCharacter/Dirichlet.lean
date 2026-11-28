@@ -139,9 +139,7 @@ theorem existsUnique_primitive_dirichletCharacter (χ : HeckeCharacter ℚ) (hχ
       ∃! ψ : DirichletCharacter ℂ (Ideal.absNorm (χ.conductor hχ).finitePart),
         ψ.IsPrimitive ∧ ofDirichletCharacter _ hn ψ = χ := by
   let n := Ideal.absNorm (χ.conductor hχ).finitePart
-  have hn : n ≠ 0 := by
-    rw [Ne, Ideal.absNorm_eq_zero_iff]
-    exact (χ.conductor hχ).finitePart_ne_bot
+  have hn : n ≠ 0 := NeZero.ne _
   have hmod : χ.conductor hχ ∣ ratModulus n hn := dvd_ratModulus_absNorm _
   obtain ⟨η, hη⟩ := (conductor_dvd_iff hχ).mp hmod
   have hψ : ofDirichletCharacter n hn (ratDirichletEquiv n hn η) = χ := by

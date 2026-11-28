@@ -95,6 +95,12 @@ theorem conductor_dvd_iff (h : 𝔫 ∣ 𝔪) {η : RayClassCharacter 𝔪} :
 theorem conductor_dvd (η : RayClassCharacter 𝔪) : η.conductor ∣ 𝔪 :=
   (conductor_dvd_iff (Modulus.dvd_refl 𝔪)).mpr ⟨η, induced_refl η⟩
 
+/-- If a modulus has empty infinite part, so does the conductor of any ray class character of it. -/
+theorem conductor_infinitePart_eq_empty_of_infinitePart_eq_empty (h : 𝔪.infinitePart = ∅)
+    (η : RayClassCharacter 𝔪) : η.conductor.infinitePart = ∅ := by
+  rw [← Finset.subset_empty, ← h]
+  exact (Modulus.dvd_iff.mp η.conductor_dvd).2
+
 /-- **The primitive character inducing a ray class character**: the character of the conductor
 from which the ray class character is induced (`RayClassCharacter.induced_primitiveCharacter`).
 It is primitive (`RayClassCharacter.isPrimitive_primitiveCharacter`). -/

@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Meromorphic.LogDeriv
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed
 import TauCeti.Analysis.Calculus.LogDeriv.Symmetry
 import TauCeti.Analysis.Meromorphic.Conj
+import TauCeti.NumberTheory.LFunctions.DedekindZeta.Rat
 
 /-!
 # The Euler–Kronecker constant

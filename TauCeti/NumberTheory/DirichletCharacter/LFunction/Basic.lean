@@ -23,6 +23,8 @@ nonprincipal character `χ ≠ 1` and differentiable away from `s = 1` for the p
 This file packages the basic regularity and meromorphic-order API for the uncompleted continued
 function `χ.LFunction`, without going through completed `L`-functions or Gamma factors:
 
+* `DirichletCharacter.LFunction_eq_of_changeLevel_eq`: equal levels with compatible `changeLevel`
+  give equal continued `L`-functions.
 * `TauCeti.not_differentiableAt_LFunctionTrivChar_one` and
   `DirichletCharacter.differentiableAt_LFunction_iff`: `χ.LFunction` is differentiable at `s` if
   and only if `s ≠ 1` or `χ ≠ 1`.
@@ -173,6 +175,16 @@ theorem meromorphic_LFunction : Meromorphic χ.LFunction := by
       field_simp [sub_ne_zero.mpr hs]
     · exact (χ.analyticAt_LFunction (.inr hχ)).meromorphicAt
   · exact (χ.analyticAt_LFunction (.inl hz)).meromorphicAt
+
+/-- Equal levels with compatible `changeLevel` give equal continued `L`-functions. -/
+theorem LFunction_eq_of_changeLevel_eq {M : ℕ} [NeZero M]
+    {ψ : DirichletCharacter ℂ M} {χ : DirichletCharacter ℂ N}
+    (hMN : M = N) (h : changeLevel (dvd_of_eq hMN) ψ = χ) :
+    ψ.LFunction = χ.LFunction := by
+  subst hMN
+  rw [changeLevel_self] at h
+  subst h
+  rfl
 
 end DirichletCharacter
 

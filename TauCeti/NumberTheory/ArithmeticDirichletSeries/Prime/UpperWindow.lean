@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import TauCeti.Analysis.MellinTransform.Windows
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.ErrorTransform
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Rat
 import TauCeti.Analysis.LaplaceTransform.WindowedLandau
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.PrimeIdealTheorem
+import TauCeti.NumberTheory.LFunctions.DedekindZeta.Rat
 import TauCeti.NumberTheory.LFunctions.Zeros.RiemannHypotheses.HalfPlane
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 

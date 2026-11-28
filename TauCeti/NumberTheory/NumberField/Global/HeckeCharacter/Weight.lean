@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.FiniteOrder
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight.Basic
 
 /-!
 # Ideal weights of finite-order Hecke characters

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Hecke.ChangeModulus
 public import TauCeti.NumberTheory.LSeries.RiemannZeta.RiemannHypothesis
+import TauCeti.NumberTheory.LFunctions.DedekindZeta.Rat
 
 /-!
 # Riemann hypotheses in half-plane form over number fields

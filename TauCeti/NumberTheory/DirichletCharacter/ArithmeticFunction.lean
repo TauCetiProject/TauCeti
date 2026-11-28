@@ -35,7 +35,7 @@ variable {R : Type*} [CommMonoidWithZero R] {M N : ℕ}
 
 /-- At a power of a nonzero natural number, a character's arithmetic function is the
 corresponding power of its character value. -/
-@[simp] theorem toArithmeticFunction_apply_pow (χ : DirichletCharacter R M)
+theorem toArithmeticFunction_apply_pow (χ : DirichletCharacter R M)
     {n : ℕ} (hn : n ≠ 0) (k : ℕ) : toArithmeticFunction (χ ·) (n ^ k) = χ n ^ k := by
   rw [← χ.apply_eq_toArithmeticFunction_apply (pow_ne_zero _ hn), Nat.cast_pow, map_pow]
 

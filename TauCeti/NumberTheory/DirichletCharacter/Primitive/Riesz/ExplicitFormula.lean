@@ -75,7 +75,7 @@ theorem exists_norm_rieszRemainder_le_of_zeroFreeRightOf (χ : PrimitiveDirichle
   have hzeros : ∀ ρ, F ρ = 0 → ρ.re ≤ max σ (1 / 2) := by
     intro ρ hρ
     have hρ₀ := re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ.character χ.isPrimitive hρ
-    have hcompare := dirichletData_entireCompletion_eq_zero_iff χ.character χ.isPrimitive hne hρ₀.1
+    have hcompare := dirichletData_entireCompletion_eq_zero_iff χ.character χ.isPrimitive hρ₀.1
     have hL := hcompare.mp hρ
     have hpos := χ.character.meromorphicOrderAt_LFunction_pos_iff.mpr ⟨hL, .inr hne⟩
     exact le_max_of_le_left (not_lt.mp fun h ↦ ((zeroFreeRightOf_iff.mp hσ) ρ h).not_gt hpos)

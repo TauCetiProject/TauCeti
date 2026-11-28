@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.ThreeFourOne
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight.Basic
 
 /-!
 # The `3-4-1` inequality for logarithmic derivatives of presented Hecke L-series
