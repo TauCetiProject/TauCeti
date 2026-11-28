@@ -58,8 +58,8 @@ Dasgupta–Kakde equation (171)).
 * `TauCeti.PresentationTranspose σ f`: the cokernel `coker(f^* : P₀^* → P₁^*)` as the `S`-module
   quotient `ContragredientDual σ P₁ ⧸ LinearMap.range (ContragredientDual.map σ f)`.
 * `TauCeti.PresentationTranspose.auslanderReitenTransposeEquiv`: the `σ`-semilinear identification
-  with `TauCeti.AuslanderReitenTranspose f`, constructed via
-  `AuslanderReitenTranspose.quotientEquiv`.
+  with `TauCeti.AuslanderReitenTranspose f`, constructed via `Submodule.Quotient.equiv` and
+  `AuslanderReitenTranspose.cokernelDualMapEquiv`.
 * `TauCeti.PresentationTranspose.congr`: functoriality of the transpose under an isomorphism of
   presenting arrows.
 * `TauCeti.PresentationTranspose.fstEquiv` and `TauCeti.PresentationTranspose.mulLeftEquiv`:
@@ -118,35 +118,15 @@ abbrev PresentationTranspose (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) : Type _
 
 namespace PresentationTranspose
 
-private def arOppositeEquiv (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) :
-    PresentationTranspose σ f ≃ₛₗ[((ContragredientDual.oppositeRingEquiv σ).symm : S →+* Rᵐᵒᵖ)]
-      AuslanderReitenTranspose f :=
-  (AuslanderReitenTranspose.quotientEquiv f
-    (LinearMap.range (ContragredientDual.map σ f))
-    (ContragredientDual.ofDualOppositeLinearEquiv σ P₁)
-    (ContragredientDual.map_ofDualOppositeLinearEquiv_range_lcomp f)).symm
-
-private theorem arOppositeEquiv_mk (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀)
-    (φ : ContragredientDual σ P₁) :
-    arOppositeEquiv σ f (Submodule.Quotient.mk φ) =
-      AuslanderReitenTranspose.mk f φ.toDual := by
-  rw [arOppositeEquiv, AuslanderReitenTranspose.quotientEquiv_symm_mk]
-  exact congrArg (AuslanderReitenTranspose.mk f)
-    (ContragredientDual.ofDualOppositeLinearEquiv_symm_apply φ)
-
 /-- `PresentationTranspose σ f` is `σ`-semilinearly equivalent to `AuslanderReitenTranspose f`,
-constructed from `AuslanderReitenTranspose.quotientEquiv`. -/
+constructed from `ContragredientDual.toDualLinearEquiv`, `Submodule.Quotient.equiv`, and
+`AuslanderReitenTranspose.cokernelDualMapEquiv`. -/
 def auslanderReitenTransposeEquiv (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) :
     PresentationTranspose σ f ≃ₛₗ[(σ : S →+* R)] AuslanderReitenTranspose f :=
-  let q := arOppositeEquiv σ f
-  { q.toAddEquiv with
-    map_smul' := fun s x ↦ by
-      simp [q, ← AuslanderReitenTranspose.op_algebraMap_smul (k := R)] }
-
-private theorem auslanderReitenTransposeEquiv_apply {σ : S ≃+* R} {f : P₁ →ₗ[R] P₀}
-    (x : PresentationTranspose σ f) :
-    auslanderReitenTransposeEquiv σ f x = arOppositeEquiv σ f x :=
-  (rfl)
+  (Submodule.Quotient.equiv _ (LinearMap.range f.dualMap)
+    (ContragredientDual.toDualLinearEquiv σ P₁)
+    (ContragredientDual.map_toDualLinearEquiv_range_map f)).trans
+    (AuslanderReitenTranspose.cokernelDualMapEquiv f).symm
 
 /-- `auslanderReitenTransposeEquiv` sends the quotient class of `φ` to
 `AuslanderReitenTranspose.mk f φ.toDual`. -/
@@ -155,7 +135,7 @@ theorem auslanderReitenTransposeEquiv_mk {σ : S ≃+* R} {f : P₁ →ₗ[R] P�
     (φ : ContragredientDual σ P₁) :
     auslanderReitenTransposeEquiv σ f (Submodule.Quotient.mk φ) =
       AuslanderReitenTranspose.mk f φ.toDual := by
-  rw [auslanderReitenTransposeEquiv_apply, arOppositeEquiv_mk]
+  simp [auslanderReitenTransposeEquiv, Submodule.Quotient.equiv_apply]
 
 /-- The inverse of `auslanderReitenTransposeEquiv` sends `AuslanderReitenTranspose.mk f φ` to the
 quotient class of `ContragredientDual.ofDual φ`. -/

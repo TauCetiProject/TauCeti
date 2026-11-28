@@ -88,10 +88,7 @@ def baseChangeHom (f : P₁ →ₗ[R] P₀) :
 theorem baseChangeHom_tmul_mk (f : P₁ →ₗ[R] P₀) (a : A) (φ : Module.Dual R P₁) :
     baseChangeHom A f (a ⊗ₜ[R] mk f φ) =
       a • mk (f.baseChange A) (Module.Dual.baseChange A φ) := by
-  simp only [baseChangeHom, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.baseChange_tmul, cokernelDualMapEquiv_mk, LinearMap.cokernelBaseChangeEquiv_tmul,
-    Submodule.mapQ_apply, TauCeti.Module.Dual.baseChangeEvaluation_tmul_eq_smul,
-    Submodule.Quotient.mk_smul, map_smul, cokernelDualMapEquiv_symm_mk]
+  simp [baseChangeHom, TauCeti.Module.Dual.baseChangeEvaluation_tmul_eq_smul]
 
 private theorem map_range_baseChange_dualMap_eq [Module.Finite R P₀] [Module.Projective R P₀]
     (f : P₁ →ₗ[R] P₀) :
@@ -109,22 +106,26 @@ variable [Module.Finite R P₀] [Module.Projective R P₀]
 
 private theorem baseChangeHom_bijective (f : P₁ →ₗ[R] P₀) :
     Function.Bijective (baseChangeHom A f) := by
-  have he : Function.Bijective
-      (TauCeti.Module.Dual.baseChangeEvaluation (R := R) (A := A) (M := P₁)) := by
-    rw [← TauCeti.Module.Dual.baseChangeEvaluationEquiv_toLinearMap]
-    exact (TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := R) (A := A) (M := P₁)).bijective
-  have hmapQ : Function.Bijective
-      (Submodule.mapQ _ _ (TauCeti.Module.Dual.baseChangeEvaluation (R := R) (A := A) (M := P₁))
-        (Submodule.map_le_iff_le_comap.1 (map_range_baseChange_dualMap_le A f))) := by
-    refine ⟨LinearMap.ker_eq_bot.1 ?_, LinearMap.range_eq_top.1 ?_⟩
-    · rw [Submodule.ker_mapQ, ← map_range_baseChange_dualMap_eq A f,
-        Submodule.comap_map_eq_of_injective he.1]
-      simp
-    · rw [Submodule.range_mapQ, LinearMap.range_eq_top.2 he.2, Submodule.map_top,
-        LinearMap.range_eq_top]
-      exact Submodule.mkQ_surjective _
+  let q := Submodule.Quotient.equiv (LinearMap.range (f.dualMap.baseChange A))
+    (LinearMap.range (f.baseChange A).dualMap)
+    (TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := R) (A := A) (M := P₁))
+    (by
+      rw [TauCeti.Module.Dual.baseChangeEvaluationEquiv_toLinearMap]
+      exact map_range_baseChange_dualMap_eq A f)
+  have hmapQ : Submodule.mapQ (LinearMap.range (f.dualMap.baseChange A))
+      (LinearMap.range (f.baseChange A).dualMap)
+      (TauCeti.Module.Dual.baseChangeEvaluation (R := R) (A := A) (M := P₁))
+      (Submodule.map_le_iff_le_comap.1 (map_range_baseChange_dualMap_le A f)) =
+      q.toLinearMap := by
+    refine LinearMap.ext fun x ↦ Submodule.Quotient.induction_on _ x fun φ ↦ ?_
+    simp [q, Submodule.Quotient.equiv_apply,
+      TauCeti.Module.Dual.baseChangeEvaluationEquiv_toLinearMap]
+  have hbi : Function.Bijective (Submodule.mapQ _ _
+      (TauCeti.Module.Dual.baseChangeEvaluation (R := R) (A := A) (M := P₁))
+      (Submodule.map_le_iff_le_comap.1 (map_range_baseChange_dualMap_le A f))) :=
+    hmapQ ▸ q.bijective
   exact ((cokernelDualMapEquiv (f.baseChange A)).symm.bijective).comp
-    (hmapQ.comp ((f.dualMap.cokernelBaseChangeEquiv (S := A)).bijective.comp
+    (hbi.comp ((f.dualMap.cokernelBaseChangeEquiv (S := A)).bijective.comp
       ((cokernelDualMapEquiv f).baseChange R A _ _).bijective))
 
 /-- **Base change commutes with the transpose of a finite projective presentation.** For a

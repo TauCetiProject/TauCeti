@@ -215,46 +215,6 @@ theorem toDualLinearEquiv_symm_apply (φ : Module.Dual R M) :
     (toDualLinearEquiv σ M).symm φ = ofDual φ :=
   (rfl)
 
-/-- The ring equivalence `Rᵐᵒᵖ ≃+* S` induced by `σ : S ≃+* R`, sending `MulOpposite.op r` to
-`σ⁻¹ r`. -/
-def oppositeRingEquiv (σ : S ≃+* R) : Rᵐᵒᵖ ≃+* S :=
-  (RingEquiv.toOpposite R).symm.trans σ.symm
-
-@[simp]
-theorem oppositeRingEquiv_apply (σ : S ≃+* R) (r : Rᵐᵒᵖ) :
-    oppositeRingEquiv σ r = σ.symm (MulOpposite.unop r) :=
-  (rfl)
-
-@[simp]
-theorem oppositeRingEquiv_symm_apply (σ : S ≃+* R) (s : S) :
-    (oppositeRingEquiv σ).symm s = MulOpposite.op (σ s) :=
-  (rfl)
-
-/-- `ofDual` and `toDual` form a `ContragredientDual.oppositeRingEquiv σ`-semilinear equivalence
-from `Module.Dual R M` (with its `Rᵐᵒᵖ`-module structure) to `ContragredientDual σ M`. -/
-def ofDualOppositeLinearEquiv (σ : S ≃+* R) (M : Type*) [AddCommMonoid M] [Module R M] :
-    Module.Dual R M ≃ₛₗ[(oppositeRingEquiv σ : Rᵐᵒᵖ →+* S)] ContragredientDual σ M where
-  toFun := ofDual
-  invFun := toDual
-  map_add' := ofDual_add
-  map_smul' r φ := by
-    ext x
-    simp [LinearMap.smul_apply, mul_comm]
-  left_inv := toDual_ofDual
-  right_inv := ofDual_toDual
-
-/-- `ofDualOppositeLinearEquiv` sends a functional `φ` to `ofDual φ`. -/
-@[simp]
-theorem ofDualOppositeLinearEquiv_apply (φ : Module.Dual R M) :
-    ofDualOppositeLinearEquiv σ M φ = ofDual φ :=
-  (rfl)
-
-/-- The inverse of `ofDualOppositeLinearEquiv` sends `φ` to `φ.toDual`. -/
-@[simp]
-theorem ofDualOppositeLinearEquiv_symm_apply (φ : ContragredientDual σ M) :
-    (ofDualOppositeLinearEquiv σ M).symm φ = φ.toDual :=
-  (rfl)
-
 /-- Precomposition with `f : M →ₗ[R] N` as an `S`-linear map between contragredient duals. -/
 def map (σ : S ≃+* R) (f : M →ₗ[R] N) : ContragredientDual σ N →ₗ[S] ContragredientDual σ M where
   toFun φ := ofDual (φ.toDual.comp f)
@@ -302,29 +262,12 @@ theorem toDualLinearEquiv_comp_map (f : M →ₗ[R] N) :
   ext φ x
   simp
 
-/-- `ofDualOppositeLinearEquiv` intertwines `LinearMap.lcomp Rᵐᵒᵖ R` with
-`ContragredientDual.map`. -/
-theorem ofDualOppositeLinearEquiv_comp_lcomp (f : M →ₗ[R] N) :
-    (ofDualOppositeLinearEquiv σ M).toLinearMap.comp (f.lcomp Rᵐᵒᵖ R) =
-      (map σ f).comp (ofDualOppositeLinearEquiv σ N).toLinearMap := by
-  ext φ x
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-    ofDualOppositeLinearEquiv_apply, ofDualOppositeLinearEquiv_apply]
-  simp [LinearMap.lcomp_apply]
-
 /-- `toDualLinearEquiv` transports the range of `ContragredientDual.map σ f` to the range of
 `f.dualMap`. -/
 theorem map_toDualLinearEquiv_range_map (f : M →ₗ[R] N) :
     (LinearMap.range (map σ f)).map (toDualLinearEquiv σ M).toLinearMap =
       LinearMap.range f.dualMap := by
   rw [← LinearMap.range_comp, toDualLinearEquiv_comp_map, LinearEquiv.range_comp]
-
-/-- `ofDualOppositeLinearEquiv` transports the range of `f.lcomp Rᵐᵒᵖ R` to the range of
-`ContragredientDual.map σ f`. -/
-theorem map_ofDualOppositeLinearEquiv_range_lcomp (f : M →ₗ[R] N) :
-    (LinearMap.range (f.lcomp Rᵐᵒᵖ R)).map (ofDualOppositeLinearEquiv σ M).toLinearMap =
-      LinearMap.range (map σ f) := by
-  rw [← LinearMap.range_comp, ofDualOppositeLinearEquiv_comp_lcomp, LinearEquiv.range_comp]
 
 /-- The evaluation equivalence `φ ↦ σ⁻¹(φ 1)` maps the range of
 `ContragredientDual.map σ (LinearMap.mulLeft R a)` onto `Ideal.span {σ.symm a}`. -/

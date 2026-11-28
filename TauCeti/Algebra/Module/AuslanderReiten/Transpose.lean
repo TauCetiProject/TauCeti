@@ -577,9 +577,7 @@ def fstEquiv :
     AuslanderReitenTranspose (fst A A₁ C) ≃ₗ[Aᵐᵒᵖ] Module.Dual A C :=
   (linearEquiv (q₁ := (LinearMap.id : A₁ →ₗ[A] A₁) ∘ₗ fst A A₁ C)
     (LinearEquiv.refl A A₁) (LinearEquiv.refl A (A₁ × C))
-    (show (LinearEquiv.refl A A₁).toLinearMap ∘ₗ fst A A₁ C =
-        ((LinearMap.id : A₁ →ₗ[A] A₁) ∘ₗ fst A A₁ C) ∘ₗ
-          (LinearEquiv.refl A (A₁ × C)).toLinearMap from by simp)).trans
+    (LinearMap.ext fun _ ↦ rfl)).trans
     ((compFstEquiv (LinearMap.id : A₁ →ₗ[A] A₁) C).trans LinearEquiv.uniqueProd)
 
 /-- `fstEquiv` restricts a representative functional on `A₁ × C` to the second summand `C`. -/
