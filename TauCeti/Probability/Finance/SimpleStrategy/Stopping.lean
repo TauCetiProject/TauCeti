@@ -25,10 +25,10 @@ On a horizon `T`, holding one unit on step `k` of `dyadicGrid d T` when
 (`simpleHolding_dyadicGrid_ite_lt`), with gains `stoppedProcess X (dyadicCeilTime d ∘ τ) s - X 0`
 at `s ≤ T` (`simpleGains_dyadicGrid_ite_lt`). Combining this with associativity and refinement
 represents any stopped left-measurable simple strategy throughout `[0, T]`, universally across `W`,
-on one strictly increasing grid starting at `0` with bounded heights
-(`exists_simpleHolding_simpleGains_stoppedProcess_dyadicCeilTime`), while
-`exists_simpleHolding_simpleGains_dyadicCeilTime` gives the corresponding representation on the
-`dyadicNNRat` grid.
+on one strictly increasing grid starting at `0` whose heights are bounded pointwise by the sum of
+the original absolute heights (`exists_simpleHolding_simpleGains_stoppedProcess_dyadicCeilTime`),
+while `exists_simpleHolding_simpleGains_dyadicCeilTime` gives the corresponding representation on
+the `dyadicNNRat` grid.
 
 ## References
 
