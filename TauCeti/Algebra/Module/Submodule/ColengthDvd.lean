@@ -94,6 +94,21 @@ theorem ColengthDvd.exists_matrix (h : M.ColengthDvd N z) {ι : Type*} [Fintype 
   rw [← e.symm.sum_comp]
   simpa using hm (e i)
 
+/-- For a nonempty finite family of elements of `M`, a colength bound `M ⊸_z N` gives a matrix
+of row combinations in `N` whose determinant is exactly `z`. -/
+theorem ColengthDvd.exists_matrix_det_eq (h : M.ColengthDvd N z) {ι : Type*} [Fintype ι]
+    [DecidableEq ι] [Nonempty ι] (Φ : ι → V) (hΦ : ∀ k, Φ k ∈ M) :
+    ∃ m : Matrix ι ι O, m.det = z ∧ ∀ i, ∑ k, m i k • Φ k ∈ N := by
+  obtain ⟨m, ⟨c, rfl⟩, hm⟩ := h.exists_matrix Φ hΦ
+  let i₀ : ι := Classical.choice ‹Nonempty ι›
+  refine ⟨m.updateRow i₀ (c • m i₀), ?_, ?_⟩
+  · rw [det_updateRow_smul, updateRow_eq_self, mul_comm]
+  · intro i
+    rcases eq_or_ne i i₀ with rfl | hi
+    · simp only [updateRow_self, Pi.smul_apply, smul_eq_mul, mul_smul, ← Finset.smul_sum]
+      exact N.smul_mem c (hm i₀)
+    · simpa only [updateRow_ne hi] using hm i
+
 /-- If `M ⊸_z N`, every `x ∈ M` has a multiple `a • x ∈ N` with `a ∣ z` (the case of families
 of one element). -/
 theorem ColengthDvd.exists_smul_mem (h : M.ColengthDvd N z) {x : V} (hx : x ∈ M) :
