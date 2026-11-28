@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.MeasureTheory.Function.Lp.Indicator
 public import TauCeti.MeasureTheory.Measure.Atom
-import Mathlib.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
+import Mathlib.MeasureTheory.Function.LpSpace.CompleteOfCompleteLp
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
 
@@ -44,6 +44,9 @@ density. Hence, for σ-finite `μ`, the integral pairing `L∞(μ; X*) → L¹(�
 
 * T. Hytönen, J. van Neerven, M. Veraar, L. Weis, *Analysis in Banach Spaces*, Vol. I, Springer,
   2016, Proposition 1.3.3 and the discussion of atomic measure spaces preceding it.
+* T. Hytönen, J. van Neerven, M. Veraar, L. Weis, errata to *Analysis in Banach Spaces*, Vol. I,
+  <https://fa.ewi.tudelft.nl/~neerven/ABS/errata-vol1.pdf>, entry for p. 39, which corrects an
+  inequality in the proof there.
 -/
 
 public section
@@ -61,17 +64,13 @@ namespace MeasureTheory.MemLp
 vanishes almost everywhere on an atom of infinite measure. -/
 theorem ae_eq_zero_restrict_of_atom {f : S → X} (hf : MemLp f p μ) (hp0 : p ≠ 0) (hp : p ≠ ∞)
     {A : Set S} (hAinf : μ A = ∞) (hAatom : μ.IsAtom A) : f =ᵐ[μ.restrict A] 0 := by
-  -- Each set `{‖f‖ ≥ 1 / (n + 1)}` has finite measure, hence meets the atom in a null set.
-  have hnull (n : ℕ) : μ.restrict A {x | ((n : ℝ≥0) + 1)⁻¹ ≤ ‖f x‖₊} = 0 := by
-    rw [restrict_apply' hAatom.measurableSet]
-    refine (hAatom.measure_eq_zero_or_eq inter_subset_right).resolve_right fun h ↦ ?_
-    have hfin := hf.meas_ge_lt_top hp0 hp (ε := ((n : ℝ≥0) + 1)⁻¹) (by positivity)
-    exact (measure_mono inter_subset_left).trans_lt hfin |>.ne (h.trans hAinf)
-  filter_upwards [measure_eq_zero_iff_ae_notMem.1 (measure_iUnion_null hnull)] with x hx
-  simp only [mem_iUnion, mem_ofPred_eq, not_exists, not_le] at hx
+  -- A nonzero `Lᵖ` function on `A` sees a subset of `A` of positive finite measure.
   by_contra hne
-  obtain ⟨n, hn⟩ := exists_nat_one_div_lt (nnNorm_pos.2 hne)
-  exact (hx n).not_gt (by simpa [one_div] using hn)
+  obtain ⟨t, ht, ht0, htfin⟩ :=
+    ((hf.restrict A).aefinStronglyMeasurable hp0 hp).exists_measurableSet_measure_pos_lt_top hne
+  rw [restrict_apply ht] at ht0 htfin
+  exact htfin.ne (((hAatom.measure_eq_zero_or_eq inter_subset_right).resolve_left ht0.ne').trans
+    hAinf)
 
 end MeasureTheory.MemLp
 

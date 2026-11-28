@@ -193,10 +193,8 @@ theorem IsAtom.ae_mem_or_ae_notMem_restrict {s U : Set X} (hs : μ.IsAtom s) (hf
   have hUs : μ.restrict s U = μ (U ∩ s) := restrict_apply' hs.measurableSet
   rcases hs.measure_eq_zero_or_eq inter_subset_right with h0 | heq
   · exact Or.inr (measure_eq_zero_iff_ae_notMem.1 (hUs.trans h0))
-  · have hU_fin : μ.restrict s U ≠ ∞ := by rw [hUs, heq]; exact hfin
-    have hUc : μ.restrict s Uᶜ = 0 := by
-      rw [measure_compl₀ hU hU_fin, hUs, heq, restrict_apply_univ, tsub_self]
-    exact Or.inl (ae_iff.2 hUc)
+  · have := isFiniteMeasure_restrict.2 hfin
+    exact Or.inl ((ae_mem_iff_measure_eq hU).2 (by rw [hUs, heq, restrict_apply_univ]))
 
 /-- **Finite-mass atoms are points.** A finite-mass atom of a measure on a countably separated
 measurable space is concentrated on one of its points. -/

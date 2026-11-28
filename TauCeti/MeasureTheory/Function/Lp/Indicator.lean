@@ -149,7 +149,10 @@ theorem norm_indicatorConstLpL_le [Fact (1 ≤ p)] (hs : MeasurableSet s) (hμs 
   LinearMap.mkContinuous_norm_le _ (Real.rpow_nonneg measureReal_nonneg _) _
 
 /-- For a continuous linear map `T` on `Lᵖ`, the map `c ↦ T (1_s c)` on the constants has norm at
-most `‖T‖ μ(s) ^ (1 / p)`. -/
+most `‖T‖ μ(s) ^ (1 / p)`. On an atom `s` this is the bound of the discussion of atomic measure
+spaces before Proposition 1.3.3 of Hytönen, van Neerven, Veraar and Weis, *Analysis in Banach
+Spaces*, Vol. I, as corrected in the authors' Volume I errata, entry for p. 39
+(<https://fa.ewi.tudelft.nl/~neerven/ABS/errata-vol1.pdf>). -/
 theorem _root_.ContinuousLinearMap.norm_comp_indicatorConstLpL_le {F : Type*}
     [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [Fact (1 ≤ p)] (T : Lp E p μ →L[𝕜] F)
     (hs : MeasurableSet s) (hμs : μ s ≠ ∞) :
