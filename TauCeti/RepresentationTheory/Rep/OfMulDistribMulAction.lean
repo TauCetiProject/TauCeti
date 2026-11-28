@@ -166,8 +166,8 @@ theorem ofMulDistribMulActionLinearEquiv_isIntertwining {G M G' M' : Type*}
 /-- The intertwining morphism `Rep.res eG.symm (Rep.ofMulDistribMulAction G M) ⟶
 Rep.ofMulDistribMulAction G' M'` induced by action-intertwining equivalences `eM` and `eG`. -/
 def ofMulDistribMulActionResHom {G G' : Type*} {M M' : Type _}
-    [Group G] [CommGroup M] [MulDistribMulAction G M]
-    [Group G'] [CommGroup M'] [MulDistribMulAction G' M']
+    [Monoid G] [CommGroup M] [MulDistribMulAction G M]
+    [Monoid G'] [CommGroup M'] [MulDistribMulAction G' M']
     (eM : M' ≃* M) (eG : G ≃* G')
     (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m) :
     Rep.res eG.symm.toMonoidHom (Rep.ofMulDistribMulAction G M) ⟶
@@ -183,8 +183,8 @@ def ofMulDistribMulActionResHom {G G' : Type*} {M M' : Type _}
 /-- The underlying linear map of `Rep.ofMulDistribMulActionResHom` is
 `Rep.ofMulDistribMulActionLinearEquiv`. -/
 theorem ofMulDistribMulActionResHom_hom_toLinearMap {G G' : Type*} {M M' : Type _}
-    [Group G] [CommGroup M] [MulDistribMulAction G M]
-    [Group G'] [CommGroup M'] [MulDistribMulAction G' M']
+    [Monoid G] [CommGroup M] [MulDistribMulAction G M]
+    [Monoid G'] [CommGroup M'] [MulDistribMulAction G' M']
     (eM : M' ≃* M) (eG : G ≃* G')
     (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m) :
     (ofMulDistribMulActionResHom eM eG hsmul).hom.toLinearMap =
@@ -194,8 +194,8 @@ theorem ofMulDistribMulActionResHom_hom_toLinearMap {G G' : Type*} {M M' : Type 
 
 /-- Pointwise evaluation of `Rep.ofMulDistribMulActionResHom` in additive coordinates. -/
 theorem toAdditive_ofMulDistribMulActionResHom_hom {G G' : Type*} {M M' : Type _}
-    [Group G] [CommGroup M] [MulDistribMulAction G M]
-    [Group G'] [CommGroup M'] [MulDistribMulAction G' M']
+    [Monoid G] [CommGroup M] [MulDistribMulAction G M]
+    [Monoid G'] [CommGroup M'] [MulDistribMulAction G' M']
     (eM : M' ≃* M) (eG : G ≃* G')
     (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m)
     (a : Rep.ofMulDistribMulAction G M) :

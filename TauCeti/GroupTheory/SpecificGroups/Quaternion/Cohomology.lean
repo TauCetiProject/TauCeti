@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GroupExtension.Cyclic.Inversion
 public import TauCeti.GroupTheory.GroupExtension.Quotient.Cohomology
-public import TauCeti.GroupTheory.GroupExtension.Quotient.Inversion
+public import TauCeti.GroupTheory.GroupExtension.Quotient.Inversion.Basic
 public import TauCeti.GroupTheory.GroupExtension.Relabel
 public import TauCeti.GroupTheory.SpecificGroups.Quaternion.Basic
 public import TauCeti.GroupTheory.SpecificGroups.Quaternion.Extension
