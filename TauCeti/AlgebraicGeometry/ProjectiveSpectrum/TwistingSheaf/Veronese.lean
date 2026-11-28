@@ -59,8 +59,8 @@ inclusion `A^{(d)} → A` multiplies degrees by `d`.
 * `AlgebraicGeometry.Proj.twistingSheaf.bijective_comapVeronese_basicOpen`: for `g ∈ A^{(d)}`
   homogeneous of positive degree, the pullback from `D₊(g) ⊆ Proj A^{(d)}` to its full preimage
   `D₊(g) ⊆ Proj A` is bijective.
-* `AlgebraicGeometry.Proj.pullbackVeroneseTwistingSheafIso`: the canonical isomorphism on sheaves
-  of modules, using `Scheme.Modules.Hom.isIso_of_isBasis` and the pullback–pushforward adjunction.
+* `AlgebraicGeometry.Proj.pullbackVeroneseTwistingSheafIso`: for the inverse Veronese isomorphism
+  `v : Proj A ⟶ Proj A^{(d)}`, the canonical isomorphism `v^* 𝒪(n) ≅ 𝒪(d n)`.
 
 ## References
 
@@ -213,7 +213,8 @@ open Scheme.Modules twistingSheaf
 
 variable (𝒜 d) in
 /-- The comparison `𝒪(n) ⟶ v_* 𝒪(d n)` for `v : Proj A ⟶ Proj A^{(d)}` the inverse Veronese
-isomorphism. It pulls sections back by the inclusion on localizations. -/
+isomorphism. It pulls sections back by the inclusion on localizations, following
+`AlgebraicGeometry.Proj.twistingSheafMap` with degrees rescaled by `d`. -/
 def veroneseTwistingSheafMap (n : ℤ) :
     twistingSheaf (veroneseGrading 𝒜 d) n ⟶
       (pushforward (veroneseIso 𝒜 d).inv).obj (twistingSheaf 𝒜 (d * n)) where
@@ -235,8 +236,10 @@ theorem veroneseTwistingSheafMap_app (n : ℤ) (U : (Proj (veroneseGrading 𝒜 
       (comapVeronese (U := U) le_rfl) :=
   (rfl)
 
-/-- The comparison is an isomorphism, since it is bijective on positive-degree standard opens. -/
+/-- The section comparison `𝒪(n) ⟶ v_* 𝒪(d n)` along the inverse Veronese isomorphism `v`
+is an isomorphism of sheaves of modules. -/
 instance isIso_veroneseTwistingSheafMap (n : ℤ) : IsIso (veroneseTwistingSheafMap 𝒜 d n) := by
+  -- It suffices to check bijectivity on the basis of positive-degree standard opens.
   refine Hom.isIso_of_isBasis _ (isBasis_basicOpen_pos (veroneseGrading 𝒜 d))
     fun ⟨k, f⟩ ↦ (ConcreteCategory.isIso_iff_bijective _).mpr ?_
   rw [veroneseTwistingSheafMap_app]
