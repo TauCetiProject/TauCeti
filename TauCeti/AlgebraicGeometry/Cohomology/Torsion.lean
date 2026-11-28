@@ -13,9 +13,15 @@ import TauCeti.AlgebraicGeometry.Cohomology.Localization
 /-!
 # Torsion in finite cohomology
 
-`AlgebraicGeometry.Scheme.Modules.exists_pow_le_annihilator_cohomology` uses
-`isLocalizedModule_cohomologyOnResLinear_comp_cohomologyOnTopLinearEquiv_symm` to bound the
-annihilator of finite cohomology in terms of the basic opens on which the cohomology vanishes.
+`AlgebraicGeometry.Scheme.Modules.exists_pow_le_annihilator_cohomology` turns vanishing on the
+inverse images of principal opens `D(r)` for `r ∈ I` into a uniform torsion bound. For a
+quasi-coherent sheaf on a quasi-compact, quasi-separated scheme over `R`, if its degree-`n`
+cohomology is finite over `R` and `I` is finitely generated, one power of `I` annihilates the
+entire degree-`n` cohomology module. This gives, for example, an ideal-of-definition torsion
+bound on higher coherent cohomology of submodule blowups.
+
+The criterion combines cohomology localization on principal opens with
+`Module.IsTorsion'.exists_isTorsionBy_of_finite` and `Ideal.exists_pow_le_of_le_radical_of_fg`.
 -/
 
 public section
