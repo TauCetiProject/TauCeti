@@ -175,13 +175,6 @@ theorem gaugeDistErr_le_ciInf_costErr (α : Cochain X (Perm (Fin n))) (hm : 2 �
   rw [gaugeDistErr_def]
   exact ciInf_le α.bddBelow_range_iInf_costErr k
 
-/-- `gaugeDist ℓ` equals the infimum of unoriented edge-cost sums over `X.edges`. -/
-theorem gaugeDist_eq_ciInf_sum_edgeCost {G : Type*} [Group G] (ℓ : GroupNorm G)
-    (α : Cochain X G) :
-    α.gaugeDist ℓ = ⨅ β : V → G, ∑ e ∈ X.edges, α.edgeCost ℓ β e := by
-  rw [gaugeDist_def]
-  exact iInf_congr fun β => α.cost_eq_sum_edges ℓ β
-
 /-- Relabelling a cochain along `e : V ≃ W` pulls the gauge back along `e` in `costErr`. -/
 @[simp] theorem costErr_relabel [Fintype W] [LinearOrder W] (α : Cochain X (Perm (Fin n)))
     (γ : W → Perm (Fin m)) (e : V ≃ W) :

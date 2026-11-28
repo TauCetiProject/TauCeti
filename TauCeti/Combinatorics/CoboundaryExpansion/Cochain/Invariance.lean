@@ -219,6 +219,13 @@ theorem cost_eq_sum_edges [Fintype V] [LinearOrder V] (ℓ : GroupNorm G) (α : 
   rw [cost_def, ← X.orientedEdges_def, ← X.sum_orientedEdges (α.edgeCost ℓ β)]
   exact sum_congr rfl fun p hp => (α.edgeCost_pair ℓ β (X.mem_orientedEdges.mp hp).2).symm
 
+/-- `gaugeDist ℓ` equals the infimum of unoriented edge-cost sums over `X.edges`. -/
+theorem gaugeDist_eq_ciInf_sum_edgeCost [Fintype V] [LinearOrder V] (ℓ : GroupNorm G)
+    (α : Cochain X G) :
+    α.gaugeDist ℓ = ⨅ β : V → G, ∑ e ∈ X.edges, α.edgeCost ℓ β e := by
+  rw [gaugeDist_def]
+  exact iInf_congr fun β => α.cost_eq_sum_edges ℓ β
+
 /-- Under a conjugation-invariant norm, the holonomy norm around three mutually adjacent vertices
 is bounded above by the cost of any gauge `β`. -/
 theorem norm_holonomy_le_cost [Fintype V] [LinearOrder V] {ℓ : GroupNorm G}
