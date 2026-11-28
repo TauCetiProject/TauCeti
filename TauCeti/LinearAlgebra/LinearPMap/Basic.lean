@@ -17,6 +17,8 @@ General lemmas on `LinearPMap` that Mathlib does not provide.
 * `LinearPMap.congr_fun`: the value-level part of `LinearPMap.ext_iff`, with the two domain
   memberships as explicit arguments.
 * `LinearPMap.neg_smul` and `LinearPMap.smul_neg`: a negation moves through a scalar multiple.
+* `LinearPMap.apply_eq_neg_smul_of_anticommute`: a linear map preserving `A.domain` and
+  anticommuting with `A` negates eigenvalues on eigenvectors.
 * `LinearPMap.eq_of_le_of_smul_sub_surjective_of_injective`: an extension `B` of `A` equals `A`
   when `lambda • I - A` is surjective and `lambda • I - B` is injective.
 * `LinearPMap.exists_eq_add_smul_supSpanSingleton`: every vector of the domain of
@@ -25,6 +27,8 @@ General lemmas on `LinearPMap` that Mathlib does not provide.
   outside its range keeps it injective.
 * `LinearPMap.mem_ker_iff_mem_graph`: the kernel consists of the vectors `x` with `(x, 0)` in the
   graph.
+* `LinearPMap.exists_apply_eq_iff_mem_graph`: `x` lies in the domain with value `y` exactly when
+  `(x, y)` lies in the graph.
 -/
 
 public section
@@ -52,6 +56,16 @@ theorem neg_smul {M : Type*} [Ring M] [Module M F] [SMulCommClass S M F] (c : M)
 theorem smul_neg {M : Type*} [Monoid M] [DistribMulAction M F] [SMulCommClass S M F] (c : M)
     (A : E →ₛₗ.[σ] F) : c • (-A) = -(c • A) :=
   LinearPMap.ext rfl fun _ _ _ => _root_.smul_neg _ _
+
+/-- If a linear map `γ` preserves the domain of `A` and anticommutes with `A` on `D(A)`, then `γ`
+sends an eigenvector of `A` with eigenvalue `r` to one with eigenvalue `-r`. -/
+theorem apply_eq_neg_smul_of_anticommute {𝕜 E G : Type*} [Ring 𝕜] [AddCommGroup E] [Module 𝕜 E]
+    [FunLike G E E] [LinearMapClass G 𝕜 E E] {A : E →ₗ.[𝕜] E} {γ : G}
+    (hγdom : ∀ x ∈ A.domain, γ x ∈ A.domain)
+    (hγA : ∀ x : A.domain, γ (A x) = -A ⟨γ x, hγdom x x.property⟩)
+    (x : A.domain) {r : 𝕜} (hx : A x = r • (x : E)) :
+    A ⟨γ x, hγdom x x.property⟩ = (-r) • γ x := by
+  rw [← neg_neg (A ⟨γ x, hγdom x x.property⟩), ← hγA x, hx, _root_.map_smul, _root_.neg_smul]
 
 /-- **An operator has no proper extension on which a shift stays injective.** If `A ≤ B`,
 `lambda • I - A` maps `D(A)` onto `E` and `lambda • I - B` is injective on `D(B)`, then `A = B`.
@@ -112,6 +126,12 @@ end supSpanSingleton
 theorem mem_ker_iff_mem_graph {M : Type*} [AddCommGroup M] [Module R M] (f : E →ₗ.[R] M) {x : E} :
     x ∈ f.ker ↔ (x, 0) ∈ f.graph := by
   simp [mem_ker_iff, eq_comm]
+
+/-- A vector `x` lies in the domain of a partial linear map with value `y` exactly when `(x, y)`
+lies in its graph. -/
+theorem exists_apply_eq_iff_mem_graph {M : Type*} [AddCommGroup M] [Module R M] (f : E →ₗ.[R] M)
+    {x : E} {y : M} : (∃ hx : x ∈ f.domain, f ⟨x, hx⟩ = y) ↔ (x, y) ∈ f.graph := by
+  simp only [mem_graph_iff, Subtype.exists, exists_and_left, exists_eq_left]
 
 end LinearPMap
 

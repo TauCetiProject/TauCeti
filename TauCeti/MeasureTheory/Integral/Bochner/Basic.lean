@@ -38,6 +38,9 @@ for set and probability integrals.
 * `TauCeti.integral_norm_pow_add_two_le`: under a probability measure, a function bounded by `K`
   in norm with `∫ ‖Y‖ ^ 2 ≤ v` has `∫ ‖Y‖ ^ (m + 2) ≤ K ^ m * min v (K ^ 2)`: the factor
   `‖Y‖ ^ m` acts as a multiplier bounded by `K ^ m`. No measurability of `Y` is assumed.
+* `TauCeti.integral_norm_smul_sq_le`: a scalar factor of norm at most one almost everywhere does
+  not increase the squared `L²` norm, `∫ ‖f • ξ‖² ≤ ∫ ‖ξ‖²`. Applied to a restricted measure, this
+  bounds the squared `L²` norm of a cut-off function `χ ξ` on a set by that of `ξ`.
 
 ## Differences of integrals
 
@@ -47,10 +50,12 @@ for set and probability integrals.
 * `TauCeti.MeasureTheory.norm_integral_le_of_eLpNorm_one_le` bounds the norm of an integral by any
   real bound on the `L¹` norm of the integrand.
 
-## Finite averages
+## Finite averages and weighted double sums
 
 * `MeasureTheory.integrable_expect` and `MeasureTheory.integral_expect`: a finite average of
   integrable functions is integrable, and its integral is the average of the integrals.
+* `MeasureTheory.integral_sum_smul_sum` and `MeasureTheory.integral_sum_mul_sum`: commute Bochner
+  integration with a weighted finite sum of finite sums of integrable functions.
 
 ## Counting measures of multisets
 
@@ -104,6 +109,8 @@ for set and probability integrals.
 
 ## Set and probability integrals
 
+* `TauCeti.integral_norm_sq_le_of_ae_bound`: on a finite measure space, an a.e. norm bound
+  `C` bounds the second moment by `C²` times the total mass, without a measurability assumption.
 * `TauCeti.setIntegral_Icc_update_add_setIntegral_Icc_update` splits a Bochner set integral over
   `Set.Icc a b` in `ι → ℝ` along a coordinate cut `t ∈ Set.Icc (a k) (b k)`.
 * `nonpos_nonneg_of_mem_Icc_of_integral_eq_zero`: a mean zero random variable with values in
@@ -133,6 +140,9 @@ for set and probability integrals.
 * `exists_mem_sub_div_lt_of_sub_lt_integral`: if `f ≤ M` on a probability space has integral
   within `δ` of `M`, then every set `B` of positive mass contains a point where `f` exceeds
   `M - δ / μ B`.
+* `TauCeti.aestronglyMeasurable_of_integrableOn_sub_pow_smul`: recovers
+  `AEStronglyMeasurable f (μ.restrict (Set.Ioi y))` from integrability of
+  `t ↦ (t - y) ^ m • f t` on `(y, ∞)`.
 
 ## Uniformly bounded centers
 
@@ -285,6 +295,17 @@ end Multiset
 
 namespace TauCeti
 
+/-- On a finite measure space, an a.e. norm bound bounds the second moment by the squared
+bound times the total mass. No measurability assumption is needed for this upper bound. -/
+theorem integral_norm_sq_le_of_ae_bound {Ω E : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} [IsFiniteMeasure μ] [SeminormedAddGroup E] {f : Ω → E} {C : ℝ}
+    (hb : ∀ᵐ ω ∂μ, ‖f ω‖ ≤ C) : ∫ ω, ‖f ω‖ ^ 2 ∂μ ≤ C ^ 2 * μ.real Set.univ := by
+  calc
+    _ ≤ ‖∫ ω, ‖f ω‖ ^ 2 ∂μ‖ := Real.le_norm_self _
+    _ ≤ _ := norm_integral_le_of_norm_le_const (hb.mono fun ω hω ↦ by
+      rw [Real.norm_of_nonneg (sq_nonneg _)]
+      exact pow_le_pow_left₀ (norm_nonneg _) hω 2)
+
 /-- A family bounded in norm almost everywhere by a common real function, with uniformly bounded
 `L¹` deviations from given centers, has uniformly bounded centers under any nonzero measure.
 Only the norms of the deviations need to be integrable, and no measurability or integrability of
@@ -379,6 +400,16 @@ theorem integral_norm_pow_add_two_le {Ω E : Type*} [MeasurableSpace Ω] {μ : M
     _ = K ^ m * ∫ ω, ‖Y ω‖ ^ 2 ∂μ := integral_const_mul _ _
     _ ≤ _ := mul_le_mul_of_nonneg_left (le_min hv hK2) (pow_nonneg hK₀ m)
 
+/-- A scalar factor of norm at most one almost everywhere does not increase the squared `L²`
+norm: `∫ ‖f • ξ‖² ≤ ∫ ‖ξ‖²` whenever `‖ξ‖²` is integrable. -/
+theorem integral_norm_smul_sq_le {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : α → 𝕜} {ξ : α → E}
+    (hf : ∀ᵐ x ∂μ, ‖f x‖ ≤ 1) (hξ : Integrable (fun x ↦ ‖ξ x‖ ^ 2) μ) :
+    ∫ x, ‖f x • ξ x‖ ^ 2 ∂μ ≤ ∫ x, ‖ξ x‖ ^ 2 ∂μ :=
+  integral_mono_of_nonneg (.of_forall fun _ ↦ sq_nonneg _) hξ (hf.mono fun x hx ↦ by
+    simp only [norm_smul, mul_pow]
+    exact mul_le_of_le_one_left (sq_nonneg _) (pow_le_one₀ (norm_nonneg _) hx))
+
 namespace MeasureTheory
 
 /-- For integrable `f` and `g`, the integral of the norm of their sum is bounded by the sum of
@@ -415,6 +446,30 @@ theorem _root_.MeasureTheory.integral_expect (hf : ∀ i ∈ s, Integrable (f i)
     integral_finsetSum s hf]
 
 end Expect
+
+/-- Commute Bochner integration with a weighted finite sum of finite sums of integrable
+functions. -/
+theorem _root_.MeasureTheory.integral_sum_smul_sum {α ι 𝕜 E : Type*} {κ : ι → Type*}
+    [MeasurableSpace α] {μ : Measure α} [NormedRing 𝕜] [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [SMulCommClass ℝ 𝕜 E]
+    (s : Finset ι) (t : ∀ i, Finset (κ i)) (w : ι → 𝕜) (g : ∀ i, κ i → α → E)
+    (hg : ∀ i ∈ s, ∀ k ∈ t i, Integrable (g i k) μ) :
+    ∫ y, (∑ i ∈ s, w i • ∑ k ∈ t i, g i k y) ∂μ =
+      ∑ i ∈ s, w i • ∑ k ∈ t i, ∫ y, g i k y ∂μ := by
+  rw [integral_finsetSum (f := fun i y ↦ w i • ∑ k ∈ t i, g i k y) s fun i hi ↦
+    (integrable_finsetSum (t i) fun k hk ↦ hg i hi k hk).smul _]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [(integrable_finsetSum (t i) fun k hk ↦ hg i hi k hk).integral_smul,
+    integral_finsetSum (t i) fun k hk ↦ hg i hi k hk]
+
+/-- Scalar-multiplication form of `MeasureTheory.integral_sum_smul_sum` over `[RCLike 𝕜]`. -/
+theorem _root_.MeasureTheory.integral_sum_mul_sum {α ι 𝕜 : Type*} {κ : ι → Type*}
+    [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
+    (s : Finset ι) (t : ∀ i, Finset (κ i)) (w : ι → 𝕜) (g : ∀ i, κ i → α → 𝕜)
+    (hg : ∀ i ∈ s, ∀ k ∈ t i, Integrable (g i k) μ) :
+    ∫ y, (∑ i ∈ s, w i * ∑ k ∈ t i, g i k y) ∂μ =
+      ∑ i ∈ s, w i * ∑ k ∈ t i, ∫ y, g i k y ∂μ :=
+  _root_.MeasureTheory.integral_sum_smul_sum s t w g hg
 
 /-- The negative exponential of an almost-everywhere nonnegative, almost-everywhere measurable
 function is integrable on a finite measure space. -/
@@ -1274,5 +1329,16 @@ theorem sqrt_integral_sq_le_of_ae_abs_sub_le {α : Type*} [MeasurableSpace α] {
           Real.sqrt_sq hW]
 
 end MeasureTheory
+
+/-- Recover `AEStronglyMeasurable f` on `(y, ∞)` from integrability of `(t - y) ^ m • f t`
+with respect to any measure `μ : Measure ℝ`. -/
+theorem aestronglyMeasurable_of_integrableOn_sub_pow_smul {E : Type*} [SeminormedAddCommGroup E]
+    [MulAction ℝ E] [ContinuousSMul ℝ E] {μ : Measure ℝ} {f : ℝ → E} {y : ℝ} {m : ℕ}
+    (hf : IntegrableOn (fun t : ℝ ↦ (t - y) ^ m • f t) (Set.Ioi y) μ) :
+    AEStronglyMeasurable f (μ.restrict (Set.Ioi y)) :=
+  (aestronglyMeasurable_fun_smul_iff₀
+    (by fun_prop : Continuous fun t : ℝ ↦ (t - y) ^ m).aestronglyMeasurable
+    (by filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : y < t)
+        exact pow_ne_zero _ (sub_pos.mpr ht).ne')).mp hf.aestronglyMeasurable
 
 end TauCeti

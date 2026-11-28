@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.Data.Fintype.Perm
+public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
+import TauCeti.LinearAlgebra.LinearIndependent.Fin
 
 /-!
 # Further results on exterior powers
@@ -39,6 +41,9 @@ and moving the remaining factors by vectors of that subspace does not change the
   equivalence.
 ## Main results
 
+* `exteriorPower.mem_span_ιMulti`: every element of `⋀[R]^n M` is in the span of the
+  decomposable vectors.
+* `exteriorPower.coe_ιMulti_two`: in the exterior algebra, `m ∧ a` is the product `ι m * ι a`.
 * `exteriorPower.eq_zero_of_finrank_lt` states that every element of `⋀[R]^d M` is zero when
   `Module.finrank R M < d`.
 * `exteriorPower.instProjective`: exterior powers of projective modules are projective.
@@ -50,6 +55,8 @@ and moving the remaining factors by vectors of that subspace does not change the
   exactly when the vectors are linearly independent.
 * `exteriorPower.ιMulti_comp_ne_zero_of_eq_basis`: lifts along a linear map `g` of a basis of its
   target have a nonzero exterior product.
+* `exteriorPower.ιMulti_append_subtype_ne_zero`: linearly independent families in two disjoint
+  subspaces have a nonzero joint exterior product.
 * `exteriorPower.toTensorPower_injective_of_free`: antisymmetrization is injective for free
   modules in every characteristic, without factorial invertibility.
 * `exteriorPower.range_toTensorPower`: the image of the antisymmetrization is the image of the
@@ -58,6 +65,8 @@ and moving the remaining factors by vectors of that subspace does not change the
   `exteriorPower.map_bijective`: the map induced by `f` sends a two-vector `u ∧ w` to
   `f u ∧ f w`, induced maps preserve commuting squares, and bijective maps induce bijections of
   exterior powers.
+* `exteriorPower.exists_finite_mem_range_map`: every element of an exterior power comes from
+  the exterior power of a finitely generated submodule.
 * `exteriorPower.map_smul_eq_pow_smul`: the map induced by `c • f` on the `n`th exterior power is
   `c ^ n` times the map induced by `f`.
 * `exteriorPower.ofEq_ιMulti`: the identification of exterior powers of equal degree renumbers the
@@ -92,6 +101,12 @@ and moving the remaining factors by vectors of that subspace does not change the
   `v ↦ m ∧ v` with values in degree `n + 1`; it squares to zero
   (`TauCeti.ExteriorAlgebra.wedgeLeft_comp_wedgeLeft`), and
   `TauCeti.ExteriorAlgebra.wedgeLeftₗ` is exterior multiplication as a bilinear map.
+* `ExteriorAlgebra.ι_mul_ιMulti`: prepending a vector to a pure wedge in `ExteriorAlgebra R M`.
+* `ExteriorAlgebra.basis_mem_exteriorPower`: every wedge-basis element `b.ExteriorAlgebra S`
+  lies in `⋀[R]^S.card M`.
+* `TauCeti.ExteriorAlgebra.linearMap_ext_exteriorPower` and
+  `TauCeti.ExteriorAlgebra.linearMap_ext₂_exteriorPower`: semilinear and sesquilinear maps out of
+  `ExteriorAlgebra R M` are determined on homogeneous exterior powers.
 * `exteriorPower.not_finite_of_not_finite`: a positive exterior power of an infinite-dimensional
   vector space is infinite-dimensional.
 * `TauCeti.exteriorPower.finrank_range_map`: over a field, the image of `⋀ⁿ V` under the map
@@ -122,6 +137,19 @@ universe u w
 variable {R : Type u} {M : Type w}
 
 namespace exteriorPower
+
+/-- Every element of `⋀[R]^n M` lies in the span of the decomposable vectors; this is the
+membership form of `exteriorPower.ιMulti_span`, ready for `Submodule.span_induction`. -/
+theorem mem_span_ιMulti [CommRing R] [AddCommGroup M] [Module R M] {n : ℕ} (x : ⋀[R]^n M) :
+    x ∈ Submodule.span R (Set.range (ιMulti R n)) :=
+  ιMulti_span R n M ▸ Submodule.mem_top
+
+/-- In the exterior algebra, the exterior product of two vectors is the product of their images:
+`m ∧ a = ι m * ι a`. -/
+theorem coe_ιMulti_two [CommRing R] [AddCommGroup M] [Module R M] (m a : M) :
+    (ιMulti R 2 ![m, a] : _root_.ExteriorAlgebra R M) =
+      _root_.ExteriorAlgebra.ι R m * _root_.ExteriorAlgebra.ι R a := by
+  simp [_root_.ExteriorAlgebra.ιMulti_apply]
 
 section Vanishing
 
@@ -323,6 +351,17 @@ theorem ιMulti_comp_ne_zero_of_eq_basis {W : Type*} [AddCommGroup W] [Module K 
   rw [show g ∘ v = ⇑b from funext hv]
   exact (ιMulti_ne_zero_iff _).2 b.linearIndependent
 
+/-- A family of vectors of `p` followed by a family of vectors of `q` has a nonzero exterior
+product when both families are linearly independent and `p`, `q` are disjoint. -/
+theorem ιMulti_append_subtype_ne_zero {p q : Submodule K V} (hpq : Disjoint p q) {m n : ℕ}
+    {a : Fin m → p} {b : Fin n → q} (ha : LinearIndependent K a) (hb : LinearIndependent K b) :
+    ιMulti K (m + n) (Fin.append (p.subtype ∘ a) (q.subtype ∘ b)) ≠ 0 := by
+  rw [ιMulti_ne_zero_iff]
+  refine TauCeti.linearIndependent_fin_append.2
+    ⟨ha.map' _ p.ker_subtype, hb.map' _ q.ker_subtype, hpq.mono ?_ ?_⟩
+  · exact Submodule.span_le.2 (by rintro _ ⟨i, rfl⟩; exact (a i).property)
+  · exact Submodule.span_le.2 (by rintro _ ⟨i, rfl⟩; exact (b i).property)
+
 end Field
 
 /-! ### Induced maps -/
@@ -352,6 +391,27 @@ theorem map_bijective {n : ℕ} {f : M →ₗ[R] N} (hf : Function.Bijective f) 
     Function.Bijective (map n f) :=
   ⟨map_injective (LinearEquiv.ofBijective f hf).symm.toLinearMap (by ext; simp),
     map_surjective hf.2⟩
+
+/-- Every element of `⋀ⁿ M` lies in the image of `⋀ⁿ W → ⋀ⁿ M` for some finitely generated
+submodule `W ≤ M`. -/
+theorem exists_finite_mem_range_map {n : ℕ} (X : ⋀[R]^n M) :
+    ∃ W : Submodule R M, Module.Finite R W ∧ X ∈ LinearMap.range (map n W.subtype) := by
+  induction mem_span_ιMulti X using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨v, rfl⟩ := hx
+    refine ⟨Submodule.span R (Set.range v), Module.Finite.span_of_finite R (Set.finite_range v),
+      ιMulti R n fun i ↦ ⟨v i, Submodule.subset_span ⟨i, rfl⟩⟩, ?_⟩
+    simp [map_apply_ιMulti, Function.comp_def]
+  | zero => exact ⟨⊥, inferInstance, 0, map_zero _⟩
+  | add x y _ _ hx hy =>
+    obtain ⟨W₁, _, x₁, rfl⟩ := hx
+    obtain ⟨W₂, _, y₂, rfl⟩ := hy
+    refine ⟨W₁ ⊔ W₂, inferInstance,
+      map n (Submodule.inclusion le_sup_left) x₁ + map n (Submodule.inclusion le_sup_right) y₂, ?_⟩
+    simp [← LinearMap.comp_apply, ← map_comp, Submodule.subtype_comp_inclusion]
+  | smul r x _ hx =>
+    obtain ⟨W, hW, x₀, rfl⟩ := hx
+    exact ⟨W, hW, r • x₀, map_smul _ _ _⟩
 
 /-- Scaling a linear map by `c` scales the induced map on the `n`th exterior power by `c ^ n`. -/
 @[simp] theorem map_smul_eq_pow_smul (n : ℕ) (c : R) (f : M →ₗ[R] N) :
@@ -426,6 +486,22 @@ theorem exteriorPower_apply_ιMulti (e : M ≃ₗ[R] N) (n : ℕ) (m : Fin n →
 theorem exteriorPower_symm (e : M ≃ₗ[R] N) (n : ℕ) :
     (e.exteriorPower n).symm = e.symm.exteriorPower n :=
   (rfl)
+
+/-- The map induced by a linear equivalence `e` inverts the map induced by `e.symm`: the inverse
+law of `LinearEquiv.exteriorPower`, stated for the underlying maps. -/
+@[simp]
+theorem _root_.exteriorPower.map_map_symm {n : ℕ} (e : M ≃ₗ[R] N) (x : ⋀[R]^n N) :
+    _root_.exteriorPower.map n e.toLinearMap (_root_.exteriorPower.map n e.symm.toLinearMap x) =
+      x :=
+  (e.exteriorPower n).apply_symm_apply x
+
+/-- The map induced by `e.symm` inverts the map induced by a linear equivalence `e`: the inverse
+law of `LinearEquiv.exteriorPower`, stated for the underlying maps. -/
+@[simp]
+theorem _root_.exteriorPower.map_symm_map {n : ℕ} (e : M ≃ₗ[R] N) (x : ⋀[R]^n M) :
+    _root_.exteriorPower.map n e.symm.toLinearMap (_root_.exteriorPower.map n e.toLinearMap x) =
+      x :=
+  (e.exteriorPower n).symm_apply_apply x
 
 @[simp]
 theorem exteriorPower_refl (n : ℕ) :
@@ -578,6 +654,13 @@ theorem _root_.ExteriorAlgebra.ιMulti_mul_ιMulti_mul_eq_neg_one_pow_smul {i j 
   rw [← mul_assoc, TauCeti.ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul, smul_mul_assoc,
     mul_assoc]
 
+/-- Prepending a vector `m` to a pure wedge `v₀ ∧ ⋯ ∧ vₙ₋₁` in `ExteriorAlgebra R M` yields the
+pure wedge of `Fin.cons m v`. -/
+theorem _root_.ExteriorAlgebra.ι_mul_ιMulti (m : M) {n : ℕ} (v : Fin n → M) :
+    _root_.ExteriorAlgebra.ι R m * _root_.ExteriorAlgebra.ιMulti R n v =
+      _root_.ExteriorAlgebra.ιMulti R (n + 1) (Fin.cons m v) := by
+  rw [_root_.ExteriorAlgebra.ιMulti_succ_apply, Fin.cons_zero, Matrix.vecTail, Fin.cons_comp_succ]
+
 /-- Inside the exterior algebra, the image of the `n`th exterior power under the map induced by
 `f` is the `n`th power of the degree-one image of the range of `f`. -/
 theorem exteriorPower_map_map (n : ℕ) (f : M →ₗ[R] N) :
@@ -644,6 +727,34 @@ theorem ι_mul_mem_exteriorPower (m : M) {n : ℕ} {x : _root_.ExteriorAlgebra R
     _root_.ExteriorAlgebra.ι R m * x ∈ ⋀[R]^(n + 1) M := by
   rw [_root_.ExteriorAlgebra.exteriorPower, pow_succ']
   exact Submodule.mul_mem_mul (LinearMap.mem_range_self _ m) hx
+
+/-- Every basis element `b.ExteriorAlgebra S` of `ExteriorAlgebra R M` lies in the homogeneous
+exterior power `⋀[R]^S.card M` of degree `S.card`. -/
+theorem _root_.ExteriorAlgebra.basis_mem_exteriorPower {I : Type*} [LinearOrder I]
+    (b : Module.Basis I R M) (S : Finset I) :
+    b.ExteriorAlgebra S ∈ ⋀[R]^S.card M := by
+  rw [_root_.ExteriorAlgebra.basis_eq_coe_basis b ⟨S, rfl⟩]
+  exact (b.exteriorPower S.card ⟨S, rfl⟩).property
+
+/-- Two semilinear maps out of `ExteriorAlgebra R M` that agree on all homogeneous exterior powers
+`⋀[R]^p M` are equal. -/
+theorem linearMap_ext_exteriorPower {S P : Type*} [Semiring S] [AddCommMonoid P] [Module S P]
+    {σ : R →+* S} {f g : _root_.ExteriorAlgebra R M →ₛₗ[σ] P}
+    (h : ∀ {p : ℕ} (x : ⋀[R]^p M), f x = g x) : f = g := by
+  refine LinearMap.ext fun s ↦ ?_
+  induction s using DirectSum.Decomposition.inductionOn fun p ↦ ⋀[R]^p M with
+  | zero => simp
+  | add s₁ s₂ hs₁ hs₂ => simp [hs₁, hs₂]
+  | @homogeneous p s => exact h s
+
+/-- Two bilinear or sesquilinear maps `ExteriorAlgebra R M →ₛₗ[σ₁] ExteriorAlgebra R M →ₛₗ[σ₂] P`
+that agree on all homogeneous pairs `⋀[R]^p M × ⋀[R]^q M` are equal. -/
+theorem linearMap_ext₂_exteriorPower {S₁ S₂ P : Type*} [Semiring S₁] [Semiring S₂]
+    [AddCommMonoid P] [Module S₁ P] [Module S₂ P] [SMulCommClass S₂ S₁ P]
+    {σ₁ : R →+* S₁} {σ₂ : R →+* S₂}
+    {F G : _root_.ExteriorAlgebra R M →ₛₗ[σ₁] _root_.ExteriorAlgebra R M →ₛₗ[σ₂] P}
+    (h : ∀ {p q : ℕ} (x : ⋀[R]^p M) (y : ⋀[R]^q M), F x y = G x y) : F = G :=
+  linearMap_ext_exteriorPower fun x ↦ linearMap_ext_exteriorPower fun y ↦ h x y
 
 /-- Exterior multiplication `v ↦ m ∧ v` by a vector `m`, from the `n`-th exterior power to the
 `(n + 1)`-th. Mathlib's `exteriorPower.wedge R M 1 n` is the same product with values in degree

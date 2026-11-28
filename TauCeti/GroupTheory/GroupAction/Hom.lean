@@ -30,7 +30,10 @@ monoid actions, whether it is fixed; no `MulActionHom` structure is needed.
 An equivariant map `X →[G] Y` sends each point to a point whose stabilizer contains the
 stabilizer of the first. Conversely, if every point of `X` has such a point in `Y`, an equivariant
 map exists: choose a representative of each orbit of `X`, send it to a point of `Y` fixed by its
-stabilizer, and extend along the orbit.
+stabilizer, and extend along the orbit. More generally, an equivariant map `f : X →[G] Z` lifts
+along an equivariant map `π : Y →[G] Z` exactly when every point `x` of `X` has a point over `f x`
+whose stabilizer contains the stabilizer of `x`; the existence of an equivariant map `X →[G] Y` is
+the case where `Z` is the point.
 
 ## Main declarations
 
@@ -44,6 +47,8 @@ stabilizer, and extend along the orbit.
   stabilizers, and a bijective one carries the fixed points onto the fixed points.
 * `TauCeti.MulAction.orbitRel_apply_iff_of_injective`: an injective equivariant map preserves and
   reflects the orbit relation.
+* `MulActionHom.exists_comp_eq_iff`: an equivariant map lifts along an equivariant map exactly
+  when every stabilizer of `X` is contained in the stabilizer of a point over the image.
 * `TauCeti.MulAction.nonempty_mulActionHom_iff`: an equivariant map exists exactly when every
   stabilizer of `X` is contained in a stabilizer of `Y`.
 -/
@@ -106,6 +111,21 @@ end Range
 end MulActionHom
 
 namespace TauCeti
+
+/-- Iterating a map compatible with a twisted scalar action iterates the scalar twist as well. -/
+theorem iterate_map_smulₛₗ {R F M : Type*} {σ : R → R} [SMul R M] [FunLike F M M]
+    [MulActionSemiHomClass F σ M M] (f : F) (n : ℕ) (r : R) (x : M) :
+    f^[n] (r • x) = σ^[n] r • f^[n] x := by
+  have h : Function.Semiconj (fun z : R × M => z.1 • z.2) (Prod.map σ f) f :=
+    fun z => (map_smulₛₗ f z.1 z.2).symm
+  simpa only [Prod.map_iterate, Prod.map_fst, Prod.map_snd] using
+    ((h.iterate_right n) (r, x)).symm
+
+/-- The iterates of an equivariant map preserve scalar multiplication. -/
+theorem iterate_map_smul {R F M : Type*} [SMul R M] [FunLike F M M]
+    [MulActionHomClass F R M M]
+    (f : F) (n : ℕ) (r : R) (x : M) : f^[n] (r • x) = r • f^[n] x := by
+  simpa only [Function.iterate_id, id_eq] using iterate_map_smulₛₗ (σ := id) f n r x
 
 open MulAction
 
@@ -184,13 +204,15 @@ theorem MulAction.image_fixedPoints_of_bijective {f : X → Y} (hf : Function.Bi
 
 end FixedPoints
 
-/-- There is an equivariant map `X →[G] Y` exactly when the stabilizer of every point of `X` is
-contained in the stabilizer of some point of `Y`. -/
-theorem MulAction.nonempty_mulActionHom_iff :
-    Nonempty (X →[G] Y) ↔ ∀ x : X, ∃ y : Y, stabilizer G x ≤ stabilizer G y := by
-  refine ⟨fun ⟨f⟩ x => ⟨f x, fun g hg => ?_⟩, fun h => ?_⟩
-  · rw [mem_stabilizer_iff, ← map_smul f, mem_stabilizer_iff.mp hg]
-  choose w hw using h
+/-- An equivariant map `f : X →[G] Z` lifts along an equivariant map `π : Y →[G] Z` exactly when
+every point `x` of `X` has a point over `f x` whose stabilizer contains the stabilizer of `x`. -/
+theorem _root_.MulActionHom.exists_comp_eq_iff {Z : Type*} [MulAction G Z] (π : Y →[G] Z)
+    (f : X →[G] Z) : (∃ f' : X →[G] Y, π.comp f' = f) ↔
+      ∀ x : X, ∃ y : Y, stabilizer G x ≤ stabilizer G y ∧ π y = f x := by
+  refine ⟨fun ⟨f', hf'⟩ x => ⟨f' x, fun g hg => ?_, by rw [← hf', MulActionHom.comp_apply]⟩,
+    fun h => ?_⟩
+  · rw [mem_stabilizer_iff, ← map_smul f', mem_stabilizer_iff.mp hg]
+  choose w hw hπw using h
   -- `r x` is the chosen representative of the orbit of `x`, and `c x • r x = x`.
   let r : X → X := fun x => (Quotient.mk (orbitRel G X) x).out
   have hr (x : X) : ∃ g : G, g • r x = x := by
@@ -199,16 +221,30 @@ theorem MulAction.nonempty_mulActionHom_iff :
   choose c hc using hr
   have hr_smul (g : G) (x : X) : r (g • x) = r x :=
     congrArg Quotient.out (Quotient.sound (orbitRel_apply.mpr (mem_orbit x g)))
-  refine ⟨{ toFun := fun x => c x • w (r x), map_smul' := fun g x => ?_ }⟩
-  -- The two choices of a group element carrying `r x` to `g • x` differ by a stabilizer element.
-  have h1 : c (g • x) • r x = g • x := by simpa only [hr_smul] using hc (g • x)
-  have key : (g * c x)⁻¹ * c (g • x) ∈ stabilizer G (r x) := by
-    rw [mem_stabilizer_iff, mul_smul, h1, mul_inv_rev, mul_smul, inv_smul_smul, inv_smul_eq_iff,
-      hc]
-  have hfix := mem_stabilizer_iff.mp (hw (r x) key)
-  rw [mul_smul, inv_smul_eq_iff] at hfix
-  -- `MulActionHom` states equivariance for the identity of `G`, written `id g`.
-  change c (g • x) • w (r (g • x)) = g • c x • w (r x)
-  rw [hr_smul, hfix, mul_smul]
+  refine ⟨{ toFun := fun x => c x • w (r x), map_smul' := fun g x => ?_ }, ?_⟩
+  · -- The two choices of a group element carrying `r x` to `g • x` differ by a stabilizer
+    -- element.
+    have h1 : c (g • x) • r x = g • x := by simpa only [hr_smul] using hc (g • x)
+    have key : (g * c x)⁻¹ * c (g • x) ∈ stabilizer G (r x) := by
+      rw [mem_stabilizer_iff, mul_smul, h1, mul_inv_rev, mul_smul, inv_smul_smul, inv_smul_eq_iff,
+        hc]
+    have hfix := mem_stabilizer_iff.mp (hw (r x) key)
+    rw [mul_smul, inv_smul_eq_iff] at hfix
+    -- `MulActionHom` states equivariance for the identity of `G`, written `id g`.
+    change c (g • x) • w (r (g • x)) = g • c x • w (r x)
+    rw [hr_smul, hfix, mul_smul]
+  · ext x
+    -- Unfold the coercion of the map just built to its defining formula.
+    change π (c x • w (r x)) = f x
+    rw [map_smul, hπw, ← map_smul, hc]
+
+/-- There is an equivariant map `X →[G] Y` exactly when the stabilizer of every point of `X` is
+contained in the stabilizer of some point of `Y`. -/
+theorem MulAction.nonempty_mulActionHom_iff :
+    Nonempty (X →[G] Y) ↔ ∀ x : X, ∃ y : Y, stabilizer G x ≤ stabilizer G y := by
+  -- An equivariant map to `Y` is the same as a lift of the map from `X` to the point.
+  have h := (MulActionHom.toPUnit.{0} Y (@id G)).exists_comp_eq_iff (MulActionHom.toPUnit X id)
+  exact ⟨fun ⟨f⟩ x => (h.mp ⟨f, MulActionHom.ext fun _ => rfl⟩ x).imp fun _ => And.left,
+    fun h' => (h.mpr fun x => (h' x).imp fun _ hy => ⟨hy, rfl⟩).nonempty⟩
 
 end TauCeti

@@ -121,7 +121,7 @@ variable {r : ℝ}
 
 /-- A circle of regular values about `(1, 0)` runs above the curve of relative equilibria off the
 axis `j = 0`. -/
-private theorem mem_sphericalPendulumTurningPointDomain_circle (hr : 0 < r)
+theorem mem_sphericalPendulumTurningPointDomain_circle (hr : 0 < r)
     (hU : U ≤ sphericalPendulumRegularValues) (hγU : ∀ t, ![1 + r * cos t, r * sin t] ∈ U)
     {t : ℝ} (hs : sin t ≠ 0) :
     (1 + r * cos t, r * sin t) ∈ sphericalPendulumTurningPointDomain := by
@@ -264,6 +264,6 @@ theorem not_exists_actionAngle_sphericalPendulumEnergyMomentumVec
   -- Global action–angle coordinates frame the period lattices by the exact forms `p • daⱼ`.
   exact not_forall_periodLattice_eq_closure_sphericalPendulum hU hγU p
     ((h.contMDiff_of_actionAngle p hΦ hΦa).of_le (by simp))
-    (h.periodLattice_eq_closure_of_actionAngle p _ hΦ hΦσ hΦa hΦi)
+    (h.periodLattice_eq_closure_of_actionAngle p _ hΦ hΦσ hΦa fun _ ↦ hΦi.injOn)
 
 end TauCeti

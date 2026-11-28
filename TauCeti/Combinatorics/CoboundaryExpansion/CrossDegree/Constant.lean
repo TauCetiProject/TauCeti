@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Prod.Lex.Basic
-public import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree.CheegerConstant
+public import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree.Cochain
 public import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Complete
 public import TauCeti.GroupTheory.Perm.DistErr.Basic
 import Mathlib.Data.Nat.Choose.Cast
@@ -14,11 +14,9 @@ import Mathlib.Data.Nat.Factors
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
-import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Replication
 import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree.Basic
 import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
-import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Basic
-import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Staircase
+import TauCeti.Combinatorics.CoboundaryExpansion.GraphCochain
 import TauCeti.Combinatorics.SimpleGraph.Staircase
 import TauCeti.GroupTheory.Perm.DistErr.Invariance
 
@@ -40,7 +38,7 @@ the complete complex, so `h1Err (complete V)` depends only on `Fintype.card V`
 
 On the complete complex:
 
-* `TauCeti.Cochain.gaugeDistErr_ofLt_lex_seed`: the `k = 4` seed `TauCeti.Sym3.seed`, replicated
+* `TauCeti.Cochain.gaugeDistErr_replicate_seed`: the `k = 4` seed `TauCeti.Sym3.seed`, replicated
   along `Fin 4 ×ₗ ι`, has no cheaper gauge in any degree: its cross-degree distance is
   `2 * (card ι) ^ 2`, while its defect is `8 * (card ι) ^ 3`;
 * `TauCeti.h1Err_complete`: hence `h1Err (complete V) = card V / 3` whenever `3 ≤ card V`. When
@@ -76,21 +74,6 @@ section CrossDegree
 
 variable {V : Type*} [Fintype V] [LinearOrder V] {X : TwoComplex V} {n m : ℕ}
 
-/-- The cross-degree cost of an `ofLt` cochain on the complete complex reads the defining function
-on the increasing pairs. -/
-theorem costErr_ofLt_complete (f : V → V → Perm (Fin n)) (β : V → Perm (Fin m)) :
-    (ofLt (complete V) f).costErr β =
-      ∑ p ∈ univ.filter (fun p : V × V => p.1 < p.2), distErr (f p.1 p.2) (β p.1 * (β p.2)⁻¹) := by
-  rw [costErr_complete]
-  exact sum_congr rfl fun p hp => by
-    rw [ofLt_apply_of_lt _ ((adj_complete _ _).mpr (mem_filter.mp hp).2.ne) (mem_filter.mp hp).2]
-
-/-- In equal nonzero degree, the cross-degree cost is the moved-point cost divided by the
-degree. -/
-theorem costErr_eq_cost_div [NeZero n] (α : Cochain X (Perm (Fin n))) (β : V → Perm (Fin n)) :
-    α.costErr β = α.cost (movedNorm (Fin n)) β / n := by
-  rw [← mul_costErr_eq_cost, mul_div_cancel_left₀ _ (NeZero.ne _ : (n : ℝ) ≠ 0)]
-
 /-- For a cochain of degree `n + 2`, the gauges of its own degree show that the cross-degree
 distance is at most the moved-point gauge distance divided by the degree. -/
 theorem gaugeDistErr_le_gaugeDist_div (α : Cochain X (Perm (Fin (n + 2)))) :
@@ -100,55 +83,13 @@ theorem gaugeDistErr_le_gaugeDist_div (α : Cochain X (Perm (Fin (n + 2)))) :
 
 end CrossDegree
 
-/-! ### Relabelling the complete complex -/
-
-section Relabel
-
-variable {V W : Type*} [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W] {n m : ℕ}
-
-/-- On the complete complex, twice the cross-degree cost is the sum over all ordered pairs of
-distinct vertices, since reversing a pair inverts both arguments of `distErr`. -/
-private theorem two_mul_costErr_complete (α : Cochain (complete V) (Perm (Fin n)))
-    (β : V → Perm (Fin m)) :
-    2 * α.costErr β = ∑ p : V × V, if p.1 ≠ p.2 then
-      distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹) else 0 := by
-  have hsplit : univ.filter (fun p : V × V => p.1 ≠ p.2) =
-      univ.filter (fun p : V × V => p.1 < p.2) ∪ univ.filter (fun p : V × V => p.2 < p.1) := by
-    ext p
-    simp only [mem_filter, mem_univ, true_and, mem_union]
-    exact ne_iff_lt_or_gt
-  rw [← sum_filter, hsplit, sum_union (disjoint_filter.mpr fun p _ h h' => lt_asymm h h'),
-    costErr_complete, two_mul]
-  congr 1
-  refine sum_nbij' Prod.swap Prod.swap (by simp) (by simp) (by simp) (by simp) fun p _ => ?_
-  rw [α.apply_swap p.2 p.1, ← distErr_inv_inv]
-  simp
-
-/-- Relabelling a cochain on `complete V` along `e : V ≃ W` pulls the gauge back along `e` in
-`costErr`. -/
-@[simp] theorem costErr_relabelComplete (α : Cochain (complete V) (Perm (Fin n)))
-    (γ : W → Perm (Fin m)) (e : V ≃ W) :
-    (α.relabelComplete e).costErr γ = α.costErr (γ ∘ e) := by
-  suffices h : 2 * (α.relabelComplete e).costErr γ = 2 * α.costErr (γ ∘ e) by linarith
-  rw [two_mul_costErr_complete, two_mul_costErr_complete, ← (e.prodCongr e).sum_comp]
-  simp
-
-/-- Relabelling a cochain on `complete V` along `e : V ≃ W` preserves `gaugeDistErr`. -/
-@[simp] theorem gaugeDistErr_relabelComplete (α : Cochain (complete V) (Perm (Fin n)))
-    (e : V ≃ W) : (α.relabelComplete e).gaugeDistErr = α.gaugeDistErr := by
-  rw [gaugeDistErr_def, gaugeDistErr_def]
-  refine iInf_congr fun m => ?_
-  exact ((Equiv.arrowCongr e (Equiv.refl _)).iInf_congr fun β => by simp [Function.comp_def]).symm
-
-end Relabel
-
 end Cochain
 
 /-! ### The cross-degree Cheeger constant -/
 
 section Constant
 
-variable {V W : Type*} [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+variable {V : Type*} [Fintype V] [LinearOrder V]
 
 /-- When every cochain of degree at least `2` is a coboundary, the ratio set is empty and
 `h1Err X = 0`. -/
@@ -156,19 +97,6 @@ theorem h1Err_eq_zero_of_forall_isCoboundary {X : TwoComplex V}
     (h : ∀ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), α.IsCoboundary) : h1Err X = 0 :=
   h1Err_eq_zero_of_forall_gaugeDistErr_eq_zero fun n α =>
     (α.gaugeDistErr_eq_zero_iff_isCoboundary (by omega)).mpr (h n α)
-
-/-- `h1Err` on the complete complex is preserved along any bijection `V ≃ W`. -/
-theorem h1Err_complete_congr (e : V ≃ W) : h1Err (complete V) = h1Err (complete W) := by
-  rw [h1Err_def, h1Err_def]
-  congr 1
-  ext r
-  refine exists_congr fun n => ((Cochain.relabelCompleteEquiv e).exists_congr fun α => ?_)
-  simp [α.defect_relabelComplete isConjInvariant_movedNorm e]
-
-/-- `h1Err (complete V)` depends on `V` only through `Fintype.card V`. -/
-theorem h1Err_complete_eq_of_card_eq (hcard : Fintype.card V = Fintype.card W) :
-    h1Err (complete V) = h1Err (complete W) :=
-  h1Err_complete_congr (Fintype.equivOfCardEq hcard)
 
 end Constant
 
@@ -186,11 +114,10 @@ theorem gaugeDistErr_ofLt_seed : (ofLt (complete (Fin 4)) Sym3.seed).gaugeDistEr
 /-- Replicating the `k = 4` seed along `Fin 4 ×ₗ ι`, with `1` inside clusters, multiplies its
 cross-degree distance by `(card ι) ^ 2`: no gauge of any degree is cheaper than the replicated
 identity gauge. -/
-theorem gaugeDistErr_ofLt_lex_seed (ι : Type*) [Fintype ι] [LinearOrder ι] :
-    (ofLt (complete (Fin 4 ×ₗ ι)) fun x y =>
-        if (ofLex x).1 = (ofLex y).1 then 1 else Sym3.seed (ofLex x).1 (ofLex y).1).gaugeDistErr =
+theorem gaugeDistErr_replicate_seed (ι : Type*) [Fintype ι] [LinearOrder ι] :
+    ((ofLt (complete (Fin 4)) Sym3.seed).replicate ι).gaugeDistErr =
       2 * (Fintype.card ι : ℝ) ^ 2 := by
-  simp only [gaugeDistErr_def, costErr_ofLt_complete]
+  simp only [replicate_ofLt, gaugeDistErr_def, costErr_ofLt_complete]
   exact ciInf₂_sum_distErr_lex_fin_four_of_eq_setOf_isSwap _ Sym3.seed_zero_of_pos
     Sym3.insert_seed_eq_setOf_isSwap
 
@@ -204,11 +131,11 @@ seed replicated along `Fin 4 ×ₗ Fin q`, with defect `8 q ^ 3` and cross-degre
 private theorem h1Err_complete_le_of_card_eq_four_mul {q : ℕ} (hq : 0 < q)
     (hV : Fintype.card V = 4 * q) : h1Err (complete V) ≤ (Fintype.card V : ℝ) / 3 := by
   rw [h1Err_complete_eq_of_card_eq (W := Fin 4 ×ₗ Fin q) (by simp [hV])]
-  have hD := Cochain.gaugeDistErr_ofLt_lex_seed (Fin q)
+  have hD := Cochain.gaugeDistErr_replicate_seed (Fin q)
   rw [Fintype.card_fin] at hD
   have hpos : (0 : ℝ) < 2 * (q : ℝ) ^ 2 := by positivity
   refine (h1Err_le_div (n := 1) (hD ▸ hpos)).trans_eq ?_
-  rw [hD, Cochain.defect_ofLt_lex, Sym3.defect_ofLt_seed, Fintype.card_fin, hV]
+  rw [hD, Cochain.defect_replicate, Sym3.defect_ofLt_seed, Fintype.card_fin, hV]
   have hq' : (q : ℝ) ≠ 0 := by positivity
   push_cast
   field_simp
@@ -251,7 +178,8 @@ private theorem h1Err_complete_le_of_card_eq_mul {q t : ℕ} (hq : 0 < q) (ht : 
     rcases eq_or_ne m 1 with rfl | hm
     · rw [Cochain.costErr_eq_cost_div]
       exact div_le_div_of_nonneg_right
-        (G.two_mul_card_edgeFinset_le_cost (SimpleGraph.isCutMinimal_staircase q t) β)
+        (G.two_mul_card_edgeFinset_le_cost ⟨0, 1, by decide, rfl⟩
+          (SimpleGraph.isCutMinimal_staircase q t) β)
         (Nat.cast_nonneg _)
     · rw [Cochain.costErr_ofLt_complete]
       refine le_trans ?_ (card_div_four_le_sum_distErr_three_of_ne _
@@ -266,7 +194,8 @@ private theorem h1Err_complete_le_of_card_eq_mul {q t : ℕ} (hq : 0 < q) (ht : 
   refine (h1Err_le_div (n := 1) (hpos.trans_le hD)).trans ?_
   refine (div_le_div_of_nonneg_left (div_nonneg (α.defect_nonneg _) (Nat.cast_nonneg _)) hpos
     hD).trans_eq ?_
-  rw [SimpleGraph.defect_ofLt_ite_adj, SimpleGraph.card_oddTriangleFinset_staircase, hV]
+  rw [SimpleGraph.defect_ofLt_ite_adj _ _ (swap_mul_self 0 1),
+    Perm.IsSwap.movedNorm ⟨0, 1, by decide, rfl⟩, SimpleGraph.card_oddTriangleFinset_staircase, hV]
   have hE' : (#G.edgeFinset : ℝ) ≠ 0 := by linarith
   push_cast
   field_simp

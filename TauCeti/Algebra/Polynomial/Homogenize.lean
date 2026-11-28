@@ -78,6 +78,10 @@ roots of `F(X, 1)` multiplied by `a`.
   algebra and `natDegree p ≤ n`, as `p(a / b) b ^ n`.
 * `Polynomial.aeval_homogenize_of_eq_zero`, `Polynomial.aeval_homogenize_reflect`: the value
   at `(a, 0)` is `p_n a ^ n`, and reflecting `p` at `n` exchanges the two coordinates.
+* `Polynomial.coeff_aeval_homogenize_X_one`: dehomogenizing the homogenization of degree `n`
+  recovers the coefficients of index at most `n`.
+* `Polynomial.homogenize_mul_of_degree_lt`: homogenizing a product with a strict degree bound on
+  the second factor.
 * `Polynomial.homogenize_expand`: for `p ≠ 0`, homogenizing `q(X ^ p)` at degree `p n` is
   substituting `(X₀ ^ p, X₁ ^ p)` into the homogenization of `q` at degree `n`.
 * `Polynomial.eval_homogenize_geom_sum`: the homogenization of degree `m (p - 1)` of the geometric
@@ -89,6 +93,7 @@ roots of `F(X, 1)` multiplied by `a`.
   `a d - b c ≠ 0` in a commutative ring without zero divisors.
 * `MvPolynomial.aeval_X_one_map`: the dehomogenization `F(X, 1)` commutes with mapping the
   coefficients along a ring homomorphism.
+* `MvPolynomial.coeff_zero_aeval_X_one`: the constant coefficient of `F(X, 1)` is `F(0, 1)`.
 * `MvPolynomial.IsHomogeneous.exists_linear_factors`: a binary form of degree `d` with no
   squared linear factor, whose dehomogenization splits, is `a ∏_{ℓ ∈ T} (ℓ.1 X₀ + ℓ.2 X₁)` for `d`
   pairwise non-proportional linear forms.
@@ -311,6 +316,23 @@ theorem homogenize_expand {p : ℕ} (hp : p ≠ 0) (q : S[X]) (n : ℕ) :
 
 end Expand
 
+section Mul
+
+variable {S : Type*} [CommSemiring S]
+
+/-- A variant of `Polynomial.homogenize_mul` with a strict degree bound on the second factor: for
+`natDegree p ≤ m` and `degree q < n`, homogenizing `p * q` in degree `m + n - 1` multiplies the
+homogenizations of degrees `m` and `n - 1`. For `n = 0` both sides vanish, since then `q = 0`. -/
+theorem homogenize_mul_of_degree_lt (p q : S[X]) {m n : ℕ} (hp : p.natDegree ≤ m)
+    (hq : q.degree < n) :
+    (p * q).homogenize (m + n - 1) = p.homogenize m * q.homogenize (n - 1) := by
+  rcases eq_or_ne q 0 with rfl | hq0
+  · simp
+  have hqn : q.natDegree < n := (natDegree_lt_iff_degree_lt hq0).mpr hq
+  rw [Nat.add_sub_assoc (by lia : 1 ≤ n), homogenize_mul _ _ hp (by lia)]
+
+end Mul
+
 section Evaluation
 
 variable {S : Type*} [CommSemiring S]
@@ -322,6 +344,15 @@ theorem aeval_homogenize_eq_sum {A : Type*} [CommSemiring A] [Algebra S A] (p : 
     MvPolynomial.aeval ![a, b] (p.homogenize n) =
       ∑ kl ∈ Finset.antidiagonal n, algebraMap S A (p.coeff kl.1) * (a ^ kl.1 * b ^ kl.2) := by
   simp [homogenize, MvPolynomial.aeval_monomial, Finsupp.prod_fintype, Fin.prod_univ_two]
+
+/-- Dehomogenizing the homogenization of degree `n` of `p` recovers the coefficients of `p` of
+index at most `n`. Unlike `Polynomial.aeval_homogenize_X_one`, this needs no bound on
+`natDegree p`. -/
+@[simp]
+theorem coeff_aeval_homogenize_X_one (p : S[X]) {n i : ℕ} (hi : i ≤ n) :
+    (MvPolynomial.aeval ![X, 1] (p.homogenize n) : S[X]).coeff i = p.coeff i := by
+  rw [aeval_homogenize_eq_sum, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
+  simp [Nat.lt_succ_of_le hi]
 
 /-- For `natDegree p ≤ n` and `x 1 ≠ 0`, the homogenization of degree `n` of `p` takes the value
 `p(x 0 / x 1) x 1 ^ n` at `x`, in any semifield that is an algebra over the coefficients. This is
@@ -436,6 +467,17 @@ theorem aeval_X_one_map {R S : Type*} [CommSemiring R] [CommSemiring S] (φ : R 
   · funext i
     fin_cases i <;> simp
 
+/-- The constant coefficient of the dehomogenization `F(X, 1)` of a binary form is its value
+`F(0, 1)`. -/
+@[simp]
+theorem coeff_zero_aeval_X_one {R : Type*} [CommSemiring R] (F : MvPolynomial (Fin 2) R) :
+    (aeval ![Polynomial.X, 1] F : Polynomial R).coeff 0 = eval ![0, 1] F := by
+  rw [Polynomial.coeff_zero_eq_eval_zero]
+  induction F using MvPolynomial.induction_on with
+  | C a => simp
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p i hp => fin_cases i <;> simp [hp]
+
 /-- **Splitting of binary forms.** Let `F` be a binary form of degree `d` over a domain, with no
 squared linear factor (so `F ≠ 0`), whose dehomogenization `F(X, 1)` has as many roots as its
 degree (for instance, over an algebraically closed field). Then
@@ -454,7 +496,7 @@ theorem IsHomogeneous.exists_linear_factors {R : Type*} [CommRing R] [IsDomain R
   classical
   -- `F = g.homogenize d` for the dehomogenization `g = F(X, 1)`.
   set g : Polynomial R := MvPolynomial.aeval ![Polynomial.X, 1] F
-  have hgd : g.natDegree ≤ d := hF.natDegree_aeval_le fun i ↦ by fin_cases i <;> simp
+  have hgd : g.natDegree ≤ d := hF.natDegree_aeval_X_one_le
   have hG : g.homogenize d = F := Polynomial.homogenize_eq_of_isHomogeneous hF rfl
   have hF₀ : F ≠ 0 := fun h ↦ hsq 0 1 (by simp) (by simp [h])
   have hg₀ : g ≠ 0 := fun hg ↦ hF₀ (by rw [← hG, hg, Polynomial.homogenize_zero])

@@ -14,6 +14,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.WeakEquivalence
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.PartialSum
 import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.Basic
+import TauCeti.AlgebraicTopology.TopologicalSimplex
 import TauCeti.Data.Set.Function
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
@@ -53,6 +54,8 @@ coupling of `s` with the distribution `(1 - t, t)` on `Fin 2`, which is natural 
 * `SSet.prodStdSimplex₁.prism`: the triangulation `Δᵖ × I → |Δ[p] ⊗ Δ[1]|` of the prism, natural
   in `Δ[p]` (`SSet.prodStdSimplex₁.prism_naturality`), with ends `ι₀` and `ι₁`.
 * `SSet.toTopCylinder X`: the triangulation `|X| × I → |X ⊗ Δ[1]|` of the realized cylinder.
+* `SSet.toTopCylinder_toTopObjMk_verticalEdge`: over a vertex `v`, the triangulation traces the
+  vertical edge `{v} × Δ[1]`, so a realized homotopy moves `v` along the image of that edge.
 * `SSet.Homotopy.toTop`: the realization of a simplicial homotopy.
 * `SSet.toTopHomotopyEquiv`: the realization of a simplicial homotopy equivalence.
 * `SSet.nonempty_homotopy_iff_homotopic_homEquiv_symm`: maps into a singular simplicial set are
@@ -92,46 +95,26 @@ private lemma exists_injective_toTopObjMk_eq {n : ℕ} (x : (Δ[p] ⊗ Δ[q] : S
       Function.Injective (objEquiv y) ∧ (∀ j, w'.weights j ≠ 0) ∧
       toTopObjMk x w = toTopObjMk y w' ∧
       StdSimplex.map (objEquiv x) w = StdSimplex.map (objEquiv y) w' := by
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-  by_cases h0 : ∃ j, w.weights j = 0
-  · -- Pass to the face opposite a vertex with vanishing coordinate.
-    obtain ⟨j, hj⟩ := h0
-    obtain _ | n := n
-    · simp at hj
-    have hsupp : Set.BijOn j.succAbove (j.succAbove ⁻¹' ↑w.weights.support) ↑w.weights.support :=
-      Set.bijOn_preimage_iff.2 ⟨Fin.succAbove_right_injective.injOn, by
-        simp [Fin.range_succAbove, Set.subset_compl_singleton_iff, hj]⟩
-    obtain ⟨r, y, w'', hy, hw'', h₁, h₂⟩ :=
-      ih n (by lia) ((Δ[p] ⊗ Δ[q]).δ j x) (StdSimplex.comap w hsupp)
-    refine ⟨r, y, w'', hy, hw'', ?_, ?_⟩
-    · rw [← h₁, SimplicialObject.δ, toTopObjMk_map]
-      exact congrArg _ (StdSimplex.map_comap w hsupp).symm
-    · rw [← h₂]
-      conv_lhs => rw [← StdSimplex.map_comap w hsupp]
-      rw [StdSimplex.map_map, objEquiv_δ, Function.comp_def]
-  · push Not at h0
-    by_cases hi : Function.Injective (objEquiv x)
-    · exact ⟨n, x, w, hi, h0, rfl, rfl⟩
-    -- Pass to a degeneracy of the face opposite a repeated vertex.
-    obtain _ | n := n
-    · exact absurd (fun a b _ ↦ Fin.ext (by have := a.isLt; have := b.isLt; lia)) hi
-    obtain ⟨j, hj⟩ : ∃ j : Fin (n + 1), objEquiv x j.castSucc = objEquiv x j.succ := by
-      have h : ¬ StrictMono (objEquiv x) := fun h ↦ hi h.injective
-      rw [Fin.strictMono_iff_lt_succ] at h
-      push Not at h
-      obtain ⟨j, hj⟩ := h
-      exact ⟨j, ((objEquiv x).monotone (Fin.castSucc_le_succ j)).eq_of_not_lt hj⟩
-    have hx := (σ_δ_succ_of_eq x j hj).symm
-    obtain ⟨r, y, w'', hy, hw'', h₁, h₂⟩ :=
-      ih n (by lia) ((Δ[p] ⊗ Δ[q]).δ j.succ x) (StdSimplex.map j.predAbove w)
-    refine ⟨r, y, w'', hy, hw'', ?_, ?_⟩
-    · rw [← h₁]
-      conv_lhs => rw [hx]
-      rw [SimplicialObject.σ, toTopObjMk_map, SimplexCategory.coe_σ]
-    · rw [← h₂, StdSimplex.map_map]
-      conv_lhs => rw [hx]
-      rw [objEquiv_σ, Function.comp_def]
+  -- First strip zero weights via `SimplexCategory.exists_mono_stdSimplex_map_eq` to land in a face
+  -- with interior weights, then factor the resulting simplex into a nondegenerate one via
+  -- `SSet.exists_nonDegenerate`.
+  obtain ⟨k, θ, _, w₀, hw₀, hw⟩ := SimplexCategory.exists_mono_stdSimplex_map_eq w
+  rw [hw]
+  obtain ⟨r, π, hπ, ⟨y, hy⟩, hxy⟩ :=
+    SSet.exists_nonDegenerate (Δ[p] ⊗ Δ[q] : SSet.{u}) ((Δ[p] ⊗ Δ[q] : SSet.{u}).map θ.op x)
+  refine ⟨r, y, w₀.map π.toOrderHom, (nonDegenerate_iff_injective_objEquiv y).1 hy,
+    StdSimplex.weights_map_ne_zero_of_surjective
+      ((SimplexCategory.epi_iff_surjective (f := π)).1 hπ) hw₀, ?_, ?_⟩
+  · dsimp only at hxy
+    exact (toTopObjMk_map θ x w₀).symm.trans <|
+      (congrArg (toTopObjMk · w₀) hxy).trans (toTopObjMk_map π y w₀)
+  · rw [StdSimplex.map_map, StdSimplex.map_map]
+    refine congrArg (fun g ↦ w₀.map g) (funext fun j ↦ ?_)
+    have h1 := objEquiv_map_apply x θ j
+    have h2 := objEquiv_map_apply y π j
+    -- `ConcreteCategory.hom` on `SimplexCategory` is `SimplexCategory.Hom.toOrderHom`.
+    dsimp only [Function.comp_apply, ConcreteCategory.hom]
+    rw [← h1, hxy, h2]
 
 /-- Two points of the realizations of simplices of `Δ[p] ⊗ Δ[q]` with injective vertex maps and
 nowhere vanishing coordinates agree if their coordinates have the same distribution on the
@@ -143,34 +126,16 @@ private lemma toTopObjMk_eq_of_injective {r r' : ℕ} {y : (Δ[p] ⊗ Δ[q] : SS
     (hw' : ∀ j, w'.weights j ≠ 0)
     (h : StdSimplex.map (objEquiv y) w = StdSimplex.map (objEquiv y') w') :
     toTopObjMk y w = toTopObjMk y' w' := by
-  classical
-  have hsupp {r : ℕ} (w : StdSimplex ℝ (Fin (r + 1))) (hw : ∀ j, w.weights j ≠ 0) :
-      w.weights.support = Finset.univ :=
-    Finset.eq_univ_iff_forall.2 fun j ↦ by simpa using hw j
-  have himage : Finset.univ.image (objEquiv y) = Finset.univ.image (objEquiv y') := by
-    have := congrArg (fun w ↦ w.weights.support) h
-    simpa only [StdSimplex.weights_map, Finsupp.mapDomain_support_of_injective hy,
-      Finsupp.mapDomain_support_of_injective hy', hsupp w hw, hsupp w' hw'] using this
-  obtain rfl : r = r' := by
-    simpa [Finset.card_image_of_injective _ hy, Finset.card_image_of_injective _ hy'] using
-      congrArg Finset.card himage
+  obtain rfl : r = r' := StdSimplex.eq_of_injective_map_eq_fin hy hw hy' hw' h
   have hmono {y : (Δ[p] ⊗ Δ[q] : SSet.{u}) _⦋r⦌} (hy : Function.Injective (objEquiv y)) :
       StrictMono (toLex ∘ objEquiv y) :=
     (Prod.Lex.toLex_mono.comp (objEquiv y).monotone).strictMono_of_injective
       (toLex.injective.comp hy)
-  have hrange : Set.range (toLex ∘ objEquiv y) = Set.range (toLex ∘ objEquiv y') := by
-    have : Set.range (objEquiv y) = Set.range (objEquiv y') := by
-      rw [← Set.image_univ, ← Set.image_univ, ← Finset.coe_univ, ← Finset.coe_image,
-        ← Finset.coe_image, himage]
-    rw [Set.range_comp, Set.range_comp, this]
-  obtain rfl : y = y' := by
-    apply objEquiv.injective
-    refine OrderHom.ext _ _ (funext fun k ↦ ?_)
-    exact toLex.injective
-      (congrFun ((StrictMono.range_inj_of_wellFoundedLT (hmono hy) (hmono hy')).1 hrange) k)
-  obtain rfl : w = w' := by
-    rw [← StdSimplex.weights_inj, StdSimplex.weights_map, StdSimplex.weights_map] at h
-    exact (StdSimplex.weights_inj).1 (Finsupp.mapDomain_injective hy h)
+  have hlex : w.map (toLex ∘ objEquiv y) = w'.map (toLex ∘ objEquiv y') := by
+    rw [StdSimplex.map_comp, StdSimplex.map_comp, h]
+  obtain ⟨hfn, rfl⟩ := StdSimplex.eq_of_strictMono_map_eq (hmono hy) (hmono hy') hw hw' hlex
+  obtain rfl : y = y' := objEquiv.injective <|
+    OrderHom.ext _ _ (funext fun k ↦ toLex.injective (congrFun hfn k))
   rfl
 
 /-- A point of the geometric realization of `Δ[p] ⊗ Δ[q]` is determined by the distribution of its
@@ -471,6 +436,33 @@ lemma prism_one (s : StdSimplex ℝ (Fin (p + 1))) :
     (funext fun i ↦ Prod.ext (prodStdSimplex.objEquiv_apply_fst _ i)
       (prodStdSimplex.objEquiv_apply_snd _ i)) s
 
+/-- Over the `0`-simplex, the triangulation of the prism is the vertical edge `{0} × Δ[1]`: the
+point `(s, t)` has barycentric coordinates `(1 - t, t)` in it. -/
+private lemma prism_zero_eq (s : StdSimplex ℝ (Fin 1)) (t : I) :
+    prism.{u} 0 (s, t) = toTopObjMk (verticalEdge (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌)))
+      (StdSimplex.homeomorphI.symm t) := by
+  have hb (b : Fin 2) : prodStdSimplex.objEquiv
+      (verticalEdge (X := Δ[0]) (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌))) b = (0, b) := by
+    refine Prod.ext (Subsingleton.elim (α := Fin 1) _ _)
+      ((prodStdSimplex.objEquiv_apply_snd _ b).trans ?_)
+    rw [verticalEdge_snd (X := Δ[0]) (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌))]
+    fin_cases b <;> rfl
+  have hinj : Function.Injective (prodStdSimplex.objEquiv
+      (verticalEdge (X := Δ[0]) (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌)))) := fun i j h ↦ by
+    rw [hb, hb] at h
+    exact congrArg Prod.snd h
+  refine prism_eq _ _ ?_
+  rw [← StdSimplex.weights_inj]
+  ext ⟨i, b⟩
+  obtain rfl := Subsingleton.elim (α := Fin 1) i 0
+  have h₁ : prefixSum 1 s.weights = 1 := by
+    rw [TauCeti.prefixSum_of_le le_rfl, StdSimplex.total_of_fintype]
+  rw [← hb, StdSimplex.weights_map_apply_of_injective hinj, hb, prismMeasure_weights]
+  simp only [prismWeights, Fin.val_zero, zero_add, h₁, TauCeti.prefixSum_zero]
+  fin_cases b
+  · simp [min_eq_right (sub_le_self 1 t.property.1), min_eq_left (sub_nonneg.2 t.property.2)]
+  · simp [max_eq_left (sub_le_self 1 t.property.1), max_eq_right (sub_nonneg.2 t.property.2)]
+
 end prodStdSimplex₁
 
 /-! ### Realization of the cylinder and of homotopies -/
@@ -526,6 +518,20 @@ lemma toTopCylinder_toTopObjMk {n : ℕ} (x : X _⦋n⦌) (w : StdSimplex ℝ (F
   have h := apply_toTopObjMk ((sSetTopAdj.homEquiv _ _).symm (cylinderPaths X)) x w
   rw [Equiv.apply_symm_apply] at h
   exact DFunLike.congr_fun h t
+
+/-- Over a vertex `v` of `X`, the triangulation of the realized cylinder traces the vertical edge
+`{v} × Δ[1]`: at time `t` it is the point of `SSet.verticalEdge v` with barycentric coordinates
+`(1 - t, t)`. -/
+lemma toTopCylinder_toTopObjMk_verticalEdge (v : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)) (t : I) :
+    toTopCylinder X (toTopObjMk v w, t) =
+      toTopObjMk (verticalEdge v) (StdSimplex.homeomorphI.symm t) := by
+  rw [toTopCylinder_toTopObjMk, prodStdSimplex₁.prism_zero_eq, toTop_map_toTopObjMk]
+  congr 1
+  refine (whiskerRight_app_apply _ _ _).trans
+    (Prod.ext ?_ ((verticalEdge_snd _).trans (verticalEdge_snd v).symm))
+  refine (congrArg _ (verticalEdge_fst _)).trans ((σ_naturality_apply _ 0 _).trans ?_)
+  rw [verticalEdge_fst, yonedaEquiv_symm_app_objEquiv_symm, op_id, CategoryTheory.Functor.map_id,
+    types_id_apply]
 
 /-- If at the end `t` the triangulation of every prism is the realization of `j`, for a natural
 family `j : Z ⟶ Z ⊗ Δ[1]`, then so is the triangulation of the realized cylinder. -/
@@ -625,10 +631,8 @@ theorem weakEquivalence_of_homotopyEquiv (f : X ⟶ Y) (g : Y ⟶ X) (H₁ : Hom
 trivial fibration of the Kan–Quillen model structure, is a weak equivalence. -/
 theorem weakEquivalence_of_rlp_monomorphisms {p : X ⟶ Y} (hp : (monomorphisms SSet.{u}).rlp p) :
     WeakEquivalence p := by
-  have := isSplitEpi_of_rlp_monomorphisms hp
-  let h := Shrinking.ofRLP hp (section_ p) (IsSplitEpi.id p)
-  exact weakEquivalence_of_homotopyEquiv p h.section_ h.homotopy
-    (RelativeMorphism.Homotopy.ofEq (congrArg _ h.section_comp))
+  obtain ⟨g, ⟨H₁⟩, ⟨H₂⟩⟩ := exists_homotopy_inverse_of_rlp_monomorphisms hp
+  exact weakEquivalence_of_homotopyEquiv p g H₁ H₂
 
 end modelCategoryQuillen
 

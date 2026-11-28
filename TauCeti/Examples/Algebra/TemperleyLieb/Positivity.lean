@@ -238,7 +238,7 @@ example
     ⌊π / arccos (√2 / 2)⌋₊ = 4 ∧
       (∀ (n : ℕ) (x : TemperleyLieb ℂ (√2 : ℂ) n), 0 ≤ tr n (star x * x)) ∧
       jonesWenzl (√2 : ℂ) 3 ≠ 0 ∧
-      jonesWenzl (√2 : ℂ) 3 ∈ (tr 3).traceRadical (htr.map_mul_comm 3) := by
+      jonesWenzl (√2 : ℂ) 3 ∈ htr.traceRadical 3 := by
   have hfl : ⌊π / arccos (√2 / 2)⌋₊ = 4 := by
     refine floor_pi_div_arccos_eq (by omega) ?_ ?_
     · rw [Nat.cast_ofNat, cos_pi_div_four]
@@ -276,23 +276,17 @@ example
 -- `IsMarkovTrace.quotientStrandIncl`, and is faithful across module boundaries.
 example {δ : ℝ} (hδ : δ ∈ jonesLoopParameters)
     {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ}
-    (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (n : ℕ)
-    (x : TemperleyLieb ℂ (δ : ℂ) (n + 1) ⧸
-      (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) :
-    letI := htr.isStar_traceRadical (n + 1)
-    letI := htr.isStar_traceRadical (n + 2)
-    htr.quotientStarPositiveFunctional hδ (n + 2) (htr.quotientStrandIncl n x) =
-        (δ : ℂ) * htr.quotientStarPositiveFunctional hδ (n + 1) x ∧
-      (htr.quotientStarPositiveFunctional hδ (n + 1)).nullSubmodule = ⊥ ∧
-      (htr.quotientStarPositiveFunctional hδ (n + 1) (star x * x) = 0 ↔ x = 0) ∧
-      (htr.starPositiveFunctional hδ (n + 1)).toLinearMap.traceRadical
-          (htr.starPositiveFunctional_mul_comm hδ (n + 1)) =
-        (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1)) := by
-  have := htr.isStar_traceRadical (n + 1)
-  have := htr.isStar_traceRadical (n + 2)
-  refine ⟨?_, htr.nullSubmodule_quotientStarPositiveFunctional hδ (n + 1),
-    htr.quotientStarPositiveFunctional_star_mul_self_eq_zero_iff hδ (n + 1) x,
-    htr.traceRadical_starPositiveFunctional hδ (n + 1)⟩
+    (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (n : ℕ) (x : htr.Quotient n) :
+    htr.quotientStarPositiveFunctional hδ (n + 1) (htr.quotientStrandIncl n x) =
+        (δ : ℂ) * htr.quotientStarPositiveFunctional hδ n x ∧
+      (htr.quotientStarPositiveFunctional hδ n).nullSubmodule = ⊥ ∧
+      (htr.quotientStarPositiveFunctional hδ n (star x * x) = 0 ↔ x = 0) ∧
+      (htr.starPositiveFunctional hδ n).toLinearMap.traceRadical
+          (htr.starPositiveFunctional_mul_comm hδ n) =
+        htr.traceRadical n := by
+  refine ⟨?_, htr.nullSubmodule_quotientStarPositiveFunctional hδ n,
+    htr.quotientStarPositiveFunctional_star_mul_self_eq_zero_iff hδ n x,
+    htr.traceRadical_starPositiveFunctional hδ n⟩
   rw [htr.quotientStarPositiveFunctional_apply, htr.quotientStarPositiveFunctional_apply,
     htr.quotientTrace_quotientStrandIncl]
 
@@ -300,15 +294,14 @@ example {δ : ℝ} (hδ : δ ∈ jonesLoopParameters)
 -- not belong to the Jacobson radical because `1 - f₂ = e 0` is killed by the augmentation.
 example {tr : ∀ n : ℕ, TemperleyLieb ℂ ((1 : ℝ) : ℂ) n →ₗ[ℂ] ℂ}
     (htr : IsMarkovTrace ℂ ((1 : ℝ) : ℂ) tr) :
-    jonesWenzl ((1 : ℝ) : ℂ) 2 ∈ (tr 2).traceRadical (htr.map_mul_comm 2) ∧
+    jonesWenzl ((1 : ℝ) : ℂ) 2 ∈ htr.traceRadical 2 ∧
       jonesWenzl ((1 : ℝ) : ℂ) 2 ∉ Ring.jacobson (TemperleyLieb ℂ ((1 : ℝ) : ℂ) 2) ∧
-      (tr 2).traceRadical (htr.map_mul_comm 2) ≠
-        Ring.jacobson (TemperleyLieb ℂ ((1 : ℝ) : ℂ) 2) := by
+      htr.traceRadical 2 ≠ Ring.jacobson (TemperleyLieb ℂ ((1 : ℝ) : ℂ) 2) := by
   have hunit : ∀ k ∈ Finset.Icc 1 2, IsUnit (qInt ℂ ((1 : ℝ) : ℂ) k) := by
     intro k hk
     rcases Finset.mem_Icc.1 hk with ⟨hk1, hk2⟩
     interval_cases k <;> simp
-  have hmem : jonesWenzl ((1 : ℝ) : ℂ) 2 ∈ (tr 2).traceRadical (htr.map_mul_comm 2) := by
+  have hmem : jonesWenzl ((1 : ℝ) : ℂ) 2 ∈ htr.traceRadical 2 := by
     rw [htr.jonesWenzl_mem_traceRadical_iff hunit, qInt_add_two, qInt_two, qInt_one]
     norm_num
   have hnotjac :

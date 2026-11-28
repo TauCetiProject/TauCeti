@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
+public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Asymptotics.Lemmas
@@ -51,15 +52,18 @@ valid for every `s`, is the form from which the growth of hypergeometric coeffic
 
 ## Main results
 
+* `Complex.analyticAt_Gamma` — Gamma is analytic away from the nonpositive integers.
 * `Real.measurable_Gamma` — `Real.Gamma` is measurable.
 * `Real.continuous_inv_Gamma` — `s ↦ (Real.Gamma s)⁻¹` is continuous.
 * `TauCeti.continuous_Gamma_sum_div_prod` — the finite Gamma quotient is jointly continuous on
   positive parameters.
 * `Real.exists_abs_inv_Gamma_le` — `(Real.Gamma s)⁻¹` is bounded on `[a, ∞)`.
 * `Real.Gamma_add_nat_div_Gamma_eq` — `Γ(x + n) / Γ x` is the rising factorial `x (x + 1) ⋯`.
+* `Real.Gamma_add_natCast_eq_ascPochhammer_eval_mul` — `Γ(x + k) = (x)ₖ Γ(x)` off the poles.
 * `Real.prod_range_add_mul_Gamma` — `s (s + 1) ⋯ (s + n - 1) Γ s = Γ(s + n)` for positive `s`.
 * `Real.Gamma_le_one_of_mem_Icc` — `Γ s ≤ 1` for `s ∈ [1, 2]`.
-* `Real.Gamma_nat_add_half_eq_factorial` — `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`.
+* `Real.Gamma_nat_add_half_eq_factorial`, `Complex.Gamma_natCast_add_half_eq_factorial` —
+  `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`.
 * `Real.Gamma_three_halves` — `Γ(3 / 2) = √π / 2`.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
@@ -71,6 +75,8 @@ valid for every `s`, is the form from which the growth of hypergeometric coeffic
 * `Complex.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add` and
   `Real.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add` — the pole-free reciprocal identity
   `(Γ s)⁻¹ = s (s + 1) ⋯ (s + n - 1) (Γ(s + n))⁻¹`, valid at every `s`.
+* `Real.inv_Gamma_sub_natCast` — the same identity shifted down, with a falling factorial:
+  `(Γ(s - n))⁻¹ = (s - 1) ⋯ (s - n) (Γ s)⁻¹`.
 * `Complex.ne_neg_natCast_of_neg_one_lt_re_of_ne_zero`,
   `Real.ne_neg_natCast_of_neg_one_lt_of_ne_zero` — a nonzero parameter strictly to the right of
   `-1` avoids `−ℕ`.
@@ -85,7 +91,8 @@ valid for every `s`, is the form from which the growth of hypergeometric coeffic
   `(-k, -k + 1)`, `k ≥ 1`, with the even case `Real.pi_div_factorial_le_Gamma_of_mem_Ioo`.
 * `Real.ne_neg_natCast_of_mem_Ioo` — a real number strictly between `-(k + 1)` and `-k` avoids
   `−ℕ`.
-* `Real.eventually_ne_neg_natCast` — the points near a real number off `−ℕ` are off `−ℕ`.
+* `Real.eventually_ne_neg_natCast`, `Complex.eventually_ne_neg_natCast` — the points near a
+  number off `−ℕ` are off `−ℕ`.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
 * `Complex.norm_inv_Gamma_add_natCast_mul_factorial_le` —
@@ -193,6 +200,12 @@ theorem Gamma_add_nat_div_Gamma_eq {n : ℕ} (x : ℝ) (hx : ∀ k : ℕ, x ≠ 
       Polynomial.eval_natCast, ← ih, Nat.cast_succ, ← add_assoc, Gamma_add_one hxn]
     ring
 
+/-- `Γ(x + k) = (x)ₖ Γ(x)` for real `x` off the poles of `Γ`; the real counterpart of
+`Complex.Gamma_add_natCast_eq_ascPochhammer_eval_mul`. -/
+theorem Gamma_add_natCast_eq_ascPochhammer_eval_mul {x : ℝ} (hx : ∀ m : ℕ, x ≠ -m) (k : ℕ) :
+    Gamma (x + k) = (ascPochhammer ℝ k).eval x * Gamma x := by
+  rw [← Gamma_add_nat_div_Gamma_eq x hx, div_mul_cancel₀ _ (Gamma_ne_zero hx)]
+
 /-- The product `s (s + 1) ⋯ (s + n - 1)` times `Γ s` is `Γ (s + n)`, for positive `s`. -/
 theorem prod_range_add_mul_Gamma {s : ℝ} (hs : 0 < s) (n : ℕ) :
     (∏ j ∈ Finset.range n, (s + j)) * Gamma s = Gamma (s + n) := by
@@ -275,6 +288,16 @@ end Real
 
 namespace Complex
 
+open scoped Real in
+/-- The complex half-integer value `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`, the complex form of
+`Real.Gamma_nat_add_half_eq_factorial`. -/
+theorem Gamma_natCast_add_half_eq_factorial (n : ℕ) :
+    Gamma (n + 1 / 2) = (2 * n)! * √π / (4 ^ n * n !) := by
+  have h := congrArg ((↑) : ℝ → ℂ) (Real.Gamma_nat_add_half_eq_factorial n)
+  rw [← Gamma_ofReal] at h
+  push_cast at h
+  exact h
+
 /-- `Γ(c + k) = (c)ₖ Γ(c)` for `c` off the poles of `Γ`. -/
 theorem Gamma_add_natCast_eq_ascPochhammer_eval_mul {c : ℂ} (hc : ∀ m : ℕ, c ≠ -m) (k : ℕ) :
     Gamma (c + k) = (ascPochhammer ℂ k).eval c * Gamma c := by
@@ -287,6 +310,15 @@ theorem ne_neg_natCast_of_re_pos {b : ℂ} (hb : 0 < b.re) (n : ℕ) :
   have heq := congrArg re h
   simp only [neg_re, natCast_re] at heq
   linarith [n.cast_nonneg (α := ℝ)]
+
+/-- The points near a complex number off `−ℕ` are off `−ℕ`: the poles of `Γ` are isolated. -/
+theorem eventually_ne_neg_natCast {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) :
+    ∀ᶠ w in 𝓝 s, ∀ m : ℕ, w ≠ -(m : ℂ) := by
+  -- The poles are the zeros of the entire function `1 / Γ`.
+  have hne : (Gamma s)⁻¹ ≠ 0 := inv_ne_zero (Gamma_ne_zero hs)
+  filter_upwards [differentiable_one_div_Gamma.continuous.continuousAt.eventually_ne hne]
+    with w hw m hm
+  exact hw (by simp [hm, Gamma_neg_nat_eq_zero])
 
 /-- `Complex.Gamma` does not vanish off the real axis. -/
 theorem Gamma_ne_zero_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) : Gamma z ≠ 0 :=
@@ -392,6 +424,15 @@ theorem inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (s : ℝ) (n : ℕ) :
   rw [hcast, Complex.Gamma_ofReal, Complex.Gamma_ofReal, heval, ← Complex.ofReal_inv,
     ← Complex.ofReal_inv, ← Complex.ofReal_mul] at h
   exact Complex.ofReal_injective h
+
+/-- Shifting the argument of the reciprocal Gamma function down by `n` multiplies it by a falling
+factorial: `(Γ(s - n))⁻¹ = (s - 1)(s - 2) ⋯ (s - n) (Γ s)⁻¹` for every real `s`, including at
+the nonpositive integer poles where the reciprocals vanish. -/
+theorem inv_Gamma_sub_natCast (s : ℝ) (n : ℕ) :
+    (Gamma (s - n))⁻¹ = (descPochhammer ℝ n).eval (s - 1) * (Gamma s)⁻¹ := by
+  have hs : s - 1 - n + 1 = s - n := by ring
+  rw [inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add, sub_add_cancel,
+    descPochhammer_eval_eq_ascPochhammer, hs]
 
 /-- A nonzero real number strictly greater than `-1` is not a nonpositive integer. -/
 theorem ne_neg_natCast_of_neg_one_lt_of_ne_zero {σ : ℝ} (hσ₀ : -1 < σ) (hσ : σ ≠ 0) (n : ℕ) :
@@ -620,5 +661,15 @@ theorem isEquivalent_factorial_div_ascPochhammer_eval_succ {s : ℂ} (hs : ∀ m
   have hn' : (n : ℂ) ^ s ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl (Nat.cast_ne_zero.mpr hn))
   simp only [Pi.mul_apply, GammaSeq, ← TauCeti.ascPochhammer_eval_eq_prod_range]
   field_simp
+
+end Complex
+
+namespace Complex
+
+/-- Gamma is analytic away from the nonpositive integers. -/
+@[fun_prop]
+theorem analyticAt_Gamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ Gamma s := by
+  have h := (differentiable_one_div_Gamma.analyticAt s).inv (inv_ne_zero (Gamma_ne_zero hs))
+  simpa only [Pi.inv_def, inv_inv] using h
 
 end Complex

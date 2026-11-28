@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Linearization.Adjoint
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Geometry.Symplectic.Cayley.Tangent
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
@@ -78,7 +79,9 @@ Let `dφ_w` be complex linear, so that it is multiplication by a complex number 
   structure and `φ` has period one in `t`, the form `η'` is `C^n` when the end structure, `u` and
   `η` are, and has period one
   (`TauCeti.Floer.contDiff_covectorPullback_of_eqOn`,
-  `TauCeti.Floer.covectorPullback_add_snd_of_periodic_snd`).
+  `TauCeti.Floer.covectorPullback_add_snd_of_periodic_snd`). For a holomorphic chart the norms of
+  `η'(w)` and `η (φ w)` agree up to the Jacobian and the factor `(1 + ‖J‖)²`
+  (`TauCeti.Floer.det_mul_norm_sq_le_and_norm_covectorPullback_realChart_sq_le`).
 
 Away from solutions, `floerLinearization_perturbationPullback_eq_sub` gives the correction
 `-b (dJ ξ) F(u)` for endomorphism-valued families with `J² = -1` near the target point.
@@ -165,29 +168,114 @@ theorem covectorPullback_add_snd_of_periodic_snd {φ : ℝ × ℝ → ℝ × ℝ
     covectorPullback φ J u η (s, t + c) = covectorPullback φ J u η (s, t) := by
   simp only [covectorPullback_apply, hφ, fderiv_add_snd_of_periodic_snd hφ]
 
-/-- The pulled-back covector field is `C^n` when `φ` is `C^(n+1)`, `η ∘ φ` is `C^n`, and on an open
-set `U` containing the support of `η ∘ φ` the structure `J ∘ φ` agrees with a jointly `C^n` family
-`J_e` and `u` is `C^n` at `φ ζ`. This is how a covector field supported far out on a cylindrical
-end, where `J` is an end structure `J_e(t)`, reads in the end chart. -/
+/-- The pulled-back covector field is `C^n` when `η ∘ φ` is `C^n`, and on an open set `U`
+containing the support of `η ∘ φ` the map `φ` is `C^(n+1)`, the structure `J ∘ φ` agrees with a
+jointly `C^n` family `J_e` and `u` is `C^n` at `φ ζ`. This is how a covector field supported far
+out on a cylindrical end, where `J` is an end structure `J_e(t)`, reads in the end chart. -/
 theorem contDiff_covectorPullback_of_eqOn {φ : ℝ × ℝ → ℝ × ℝ} {J : ℝ × ℝ → V → V →L[ℝ] V}
     {Je : ℝ × ℝ → V → V →L[ℝ] V} {u : ℝ × ℝ → V} {η : ℝ × ℝ → V →L[ℝ] ℝ} {n : WithTop ℕ∞}
-    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hφ : ContDiff ℝ (n + 1) φ)
+    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hφ : ∀ ζ ∈ U, ContDiffAt ℝ (n + 1) φ ζ)
     (hJe : ContDiff ℝ n fun p : (ℝ × ℝ) × V ↦ Je p.1 p.2) (hJeq : EqOn (J ∘ φ) Je U)
     (hu : ∀ ζ ∈ U, ContDiffAt ℝ n u (φ ζ)) (hηφ : ContDiff ℝ n (η ∘ φ))
     (hsupp : tsupport (η ∘ φ) ⊆ U) :
     ContDiff ℝ n (covectorPullback φ J u η) := by
-  have hA : ContDiff ℝ n fun ζ ↦ fderiv ℝ φ ζ stdComplexLineReal :=
-    (hφ.fderiv_right le_rfl).clm_apply contDiff_const
   refine contDiff_covectorPullback_of_contDiffOn hU (fun ζ hζ ↦ ?_) hηφ hsupp
+  have hA : ContDiffAt ℝ n (fun ζ' ↦ fderiv ℝ φ ζ' stdComplexLineReal) ζ :=
+    ((hφ ζ hζ).fderiv_right le_rfl).clm_apply contDiffAt_const
   -- Near `ζ ∈ U` the factor `a + b J(φ ·, u ∘ φ)` is `a + b J_e(·, u ∘ φ)`, which is `C^n`.
   have hJζ : ContDiffAt ℝ n (fun ζ' ↦ Je ζ' (u (φ ζ'))) ζ :=
     hJe.contDiffAt.comp ζ (contDiffAt_id.prodMk ((hu ζ hζ).comp ζ
-      (hφ.contDiffAt.of_le le_self_add)))
-  refine (ContDiffAt.congr_of_eventuallyEq (((contDiff_fst.comp hA).contDiffAt.smul
-    (contDiffAt_const (c := (1 : V →L[ℝ] V)))).add
-    ((contDiff_snd.comp hA).contDiffAt.smul hJζ)) ?_).contDiffWithinAt
+      ((hφ ζ hζ).of_le le_self_add)))
+  refine (ContDiffAt.congr_of_eventuallyEq ((hA.fst.smul
+    (contDiffAt_const (c := (1 : V →L[ℝ] V)))).add (hA.snd.smul hJζ)) ?_).contDiffWithinAt
   filter_upwards [hU.mem_nhds hζ] with ζ' hζ'
   simp only [Pi.smul_apply', ← hJeq hζ', Function.comp_apply]
+
+/-- The pulled-back covector field is `C^n` when `φ` is `C^(n+1)`, `η` is `C^n` with support in a
+set `S`, and on `S` the map `u` is `C^n` and `J` is `C^n` along `u`: near a point whose image lies
+off the support of `η`, the pulled-back field vanishes. -/
+theorem contDiff_covectorPullback {φ : ℝ × ℝ → ℝ × ℝ} {J : ℝ × ℝ → V → V →L[ℝ] V}
+    {u : ℝ × ℝ → V} {η : ℝ × ℝ → V →L[ℝ] ℝ} {n : WithTop ℕ∞} {S : Set (ℝ × ℝ)}
+    (hφ : ContDiff ℝ (n + 1) φ) (hJ : ∀ z ∈ S, ContDiffAt ℝ n (uncurry J) (z, u z))
+    (hu : ∀ z ∈ S, ContDiffAt ℝ n u z) (hη : ContDiff ℝ n η) (hηS : tsupport η ⊆ S) :
+    ContDiff ℝ n (covectorPullback φ J u η) := by
+  refine contDiff_iff_contDiffAt.2 fun ζ ↦ ?_
+  have hφn : ContDiffAt ℝ n φ ζ := (hφ.of_le le_self_add).contDiffAt
+  by_cases hζ : φ ζ ∈ tsupport η
+  · have hS := hηS hζ
+    have hdφ : ContDiffAt ℝ n (fun w ↦ fderiv ℝ φ w stdComplexLineReal) ζ :=
+      ((hφ.fderiv_right le_rfl).clm_apply contDiff_const).contDiffAt
+    have hJu : ContDiffAt ℝ n (fun w ↦ J (φ w) (u (φ w))) ζ :=
+      (hJ _ hS).comp (f := fun w ↦ (φ w, u (φ w))) ζ (hφn.prodMk ((hu _ hS).comp ζ hφn))
+    rw [show covectorPullback φ J u η = _ from funext (covectorPullback_apply φ J u η)]
+    exact (hη.contDiffAt.comp ζ hφn).clm_comp ((hdφ.fst.smul
+      (contDiffAt_const (c := (1 : V →L[ℝ] V)))).add (hdφ.snd.smul hJu))
+  · refine contDiffAt_const (c := (0 : V →L[ℝ] ℝ)).congr_of_eventuallyEq ?_
+    filter_upwards [((isClosed_tsupport η).isOpen_compl.preimage hφ.continuous).mem_nhds hζ]
+      with ζ' hζ'
+    exact covectorPullback_eq_zero_of_apply_eq_zero φ J u (image_eq_zero_of_notMem_tsupport hζ')
+
+/-- **Covectors through a holomorphic chart.** Let `φ = realChart f`, where `f` has complex
+derivative `f' ≠ 0` at `ζ`, so that `det dφ_ζ = a² + b² = |f'|²`. The form
+`η'(ζ) = η (φ ζ) ∘ (a + b J)` (`TauCeti.Floer.covectorPullback`) and the covector `η (φ ζ)` have
+comparable norms: `det dφ_ζ ‖η (φ ζ)‖² ≤ (1 + ‖J‖)² ‖η'(ζ)‖²` and
+`‖η'(ζ)‖² ≤ (1 + ‖J‖)² det dφ_ζ ‖η (φ ζ)‖²`, where `J` is the structure at `(φ ζ, u (φ ζ))`. -/
+theorem det_mul_norm_sq_le_and_norm_covectorPullback_realChart_sq_le [FiniteDimensional ℝ V]
+    {f : ℂ → ℂ} {f' : ℂ} {ζ : ℝ × ℝ} (hf : HasDerivAt f f' (Complex.equivRealProdCLM.symm ζ))
+    (hf' : f' ≠ 0) (J : ℝ × ℝ → V → AlmostComplexStructure V) (u : ℝ × ℝ → V)
+    (η : ℝ × ℝ → V →L[ℝ] ℝ) :
+    (fderiv ℝ (TauCeti.Complex.realChart f) ζ).det *
+        ‖η (TauCeti.Complex.realChart f ζ)‖ ^ 2 ≤
+      (1 + ‖(J (TauCeti.Complex.realChart f ζ)
+          (u (TauCeti.Complex.realChart f ζ))).toLinearMap.toContinuousLinearMap‖) ^ 2 *
+        ‖covectorPullback (TauCeti.Complex.realChart f)
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η ζ‖ ^ 2 ∧
+    ‖covectorPullback (TauCeti.Complex.realChart f)
+        (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η ζ‖ ^ 2 ≤
+      (1 + ‖(J (TauCeti.Complex.realChart f ζ)
+          (u (TauCeti.Complex.realChart f ζ))).toLinearMap.toContinuousLinearMap‖) ^ 2 *
+        ((fderiv ℝ (TauCeti.Complex.realChart f) ζ).det *
+          ‖η (TauCeti.Complex.realChart f ζ)‖ ^ 2) := by
+  set φ := TauCeti.Complex.realChart f
+  set J₁ := J (φ ζ) (u (φ ζ))
+  set NJ := ‖J₁.toLinearMap.toContinuousLinearMap‖
+  set a := (fderiv ℝ φ ζ stdComplexLineReal).1
+  set b := (fderiv ℝ φ ζ stdComplexLineReal).2
+  set θ := η (φ ζ)
+  have hab : a ^ 2 + b ^ 2 = (fderiv ℝ φ ζ).det := by
+    rw [← TauCeti.Complex.sq_add_sq_fderiv_realChart hf, ← stdComplexLineReal_eq]
+  have hdet : 0 < (fderiv ℝ φ ζ).det := by
+    rw [TauCeti.Complex.det_fderiv_realChart hf]
+    exact Complex.normSq_pos.2 hf'
+  set r := √(fderiv ℝ φ ζ).det
+  have hr : 0 < r := Real.sqrt_pos.2 hdet
+  have hr2 : r ^ 2 = (fderiv ℝ φ ζ).det := Real.sq_sqrt hdet.le
+  have hpull : covectorPullback φ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η ζ =
+      θ.comp (a • 1 + b • J₁.toLinearMap.toContinuousLinearMap) :=
+    covectorPullback_apply _ _ _ _ _
+  rw [hpull]
+  constructor
+  · have hJζ := J₁.mul_opNorm_le_opNorm_comp_smul_add_smul θ (a := a) (b := b) (r := r)
+      (by rw [hr2, hab]) hr
+    calc (fderiv ℝ φ ζ).det * ‖θ‖ ^ 2 = (r * ‖θ‖) * (r * ‖θ‖) := by rw [← hr2]; ring
+      _ ≤ ((1 + NJ) * ‖θ.comp (a • 1 + b • J₁.toLinearMap.toContinuousLinearMap)‖) *
+          ((1 + NJ) * ‖θ.comp (a • 1 + b • J₁.toLinearMap.toContinuousLinearMap)‖) :=
+          mul_le_mul hJζ hJζ (by positivity) (by positivity)
+      _ = _ := by ring
+  · -- `‖a + b J‖ ≤ |a| + |b| ‖J‖ ≤ r (1 + ‖J‖)`.
+    have ha : |a| ≤ r := Real.abs_le_sqrt (by nlinarith [sq_nonneg b])
+    have hb : |b| ≤ r := Real.abs_le_sqrt (by nlinarith [sq_nonneg a])
+    have hM : ‖a • (1 : V →L[ℝ] V) + b • J₁.toLinearMap.toContinuousLinearMap‖ ≤ r * (1 + NJ) := by
+      refine (norm_add_le _ _).trans ?_
+      rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
+      have h1 : ‖(1 : V →L[ℝ] V)‖ ≤ 1 := ContinuousLinearMap.norm_id_le
+      nlinarith [abs_nonneg a, abs_nonneg b, norm_nonneg J₁.toLinearMap.toContinuousLinearMap,
+        norm_nonneg (1 : V →L[ℝ] V)]
+    calc ‖θ.comp (a • 1 + b • J₁.toLinearMap.toContinuousLinearMap)‖ ^ 2 ≤
+          (‖θ‖ * (r * (1 + NJ))) ^ 2 :=
+          pow_le_pow_left₀ (norm_nonneg _)
+            ((θ.opNorm_comp_le _).trans (mul_le_mul_of_nonneg_left hM (norm_nonneg _))) 2
+      _ = _ := by rw [← hr2]; ring
 
 end TauCeti.Floer
 
