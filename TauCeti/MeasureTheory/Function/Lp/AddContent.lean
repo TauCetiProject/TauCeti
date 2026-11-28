@@ -74,6 +74,9 @@ simple functions in `L∞` come from `TauCeti/MeasureTheory/Function/Lp/Indicato
   functional.
 * `PositiveLinearMap.le_iff_addContentLpTopEquiv_le`: `addContentLpTopEquiv` matches the order of
   functionals on the nonnegative cone with the pointwise order of contents.
+* `PositiveLinearMap.addContentLpTopEquiv_add_apply` and
+  `PositiveLinearMap.addContentLpTopCompletionEquiv_add_apply`: both correspondences send sums of
+  functionals to pointwise sums of contents.
 * `PositiveLinearMap.addContentLpTopCompletionEquiv_apply`: the completed content of a
   null-measurable set is the value of the functional on its indicator class.
 * `PositiveLinearMap.forall_apply_leftTranslation_eq_iff`: invariance of a functional under left
@@ -298,6 +301,17 @@ theorem coe_addContentLpTopEquiv_apply (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) :
       M.toLinearMap.toAddContentLpTop :=
   (rfl)
 
+/-- The content of a sum of positive functionals on `L∞(μ)` is their pointwise content sum. -/
+@[simp↓] -- Distribute before rewriting the underlying content.
+theorem addContentLpTopEquiv_add_apply (M N : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) (s : Set α) :
+    (addContentLpTopEquiv μ (M + N)).val s =
+      (addContentLpTopEquiv μ M).val s + (addContentLpTopEquiv μ N).val s := by
+  by_cases hs : MeasurableSet s
+  · simp only [coe_addContentLpTopEquiv_apply, LinearMap.toAddContentLpTop_apply _ hs,
+      coe_toLinearMap, _root_.add_apply]
+  · simp only [coe_addContentLpTopEquiv_apply,
+      LinearMap.toAddContentLpTop_of_not_measurableSet _ hs, add_zero]
+
 /-- The functional of a content under `addContentLpTopEquiv` is `ofAddContentLpTop`. -/
 @[simp]
 theorem addContentLpTopEquiv_symm_apply
@@ -401,6 +415,18 @@ theorem addContentLpTopCompletionEquiv_apply (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ)
       M (((memLp_top_const (1 : ℝ)).indicator hs).toLp (s.indicator (1 : α → ℝ))) := by
   exact M.addContentLpTopCompletionEquiv_apply_of_ae_eq_indicator
     ((memLp_top_const (1 : ℝ)).indicator hs).coeFn_toLp
+
+/-- The completed content of a sum of positive functionals on `L∞(μ)` is their pointwise
+completed content sum. -/
+@[simp↓] -- Distribute before rewriting the underlying content.
+theorem addContentLpTopCompletionEquiv_add_apply (M N : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) (s : Set α) :
+    (addContentLpTopCompletionEquiv μ (M + N)).val s =
+      (addContentLpTopCompletionEquiv μ M).val s +
+        (addContentLpTopCompletionEquiv μ N).val s := by
+  by_cases hs : NullMeasurableSet s μ
+  · simp only [addContentLpTopCompletionEquiv_apply _ hs, _root_.add_apply]
+  · simp only [coe_addContentLpTopCompletionEquiv_apply,
+      AddContent.completion_of_not_nullMeasurableSet _ hs, add_zero]
 
 /-- The functional of a content under `addContentLpTopCompletionEquiv` integrates against its
 restriction to the measurable sets. -/
