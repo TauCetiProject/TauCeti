@@ -9,7 +9,8 @@ public import Mathlib.Basic.Complex.Basic
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Matrix.Trace
-import Mathlib.Tactic.LinearCombination
+import Mathlib.Algebra.Polynomial.Coeff
+import Mathlib.Algebra.Polynomial.Eval.Defs
 import TauCeti.Data.Matrix.Block
 
 /-!
@@ -49,52 +50,42 @@ private theorem inv_fromBlocks_zero_add_smul_one (A : Matrix n m 𝕜) (B : Matr
 
 /-- The diagonal blocks of the resolvent of an off-diagonal matrix with square blocks
 have equal traces. This includes singular shifts, where the nonsingular inverse is zero. -/
-theorem trace_toBlocks₁₁_inv_fromBlocks_zero_sub_smul_one_eq [IsDomain 𝕜]
+theorem trace_toBlocks₁₁_inv_fromBlocks_zero_sub_smul_one_eq
     (A B : Matrix n n 𝕜) (w : 𝕜) :
     let R := (fromBlocks 0 A B 0 - w • 1)⁻¹
     R.toBlocks₁₁.trace = R.toBlocks₂₂.trace := by
-  intro R
-  let H := fromBlocks 0 A B 0
-  by_cases hw : w = 0
-  · by_cases hdet : IsUnit H.det
-    · have hR : R = H⁻¹ := by simp only [R, H, hw, zero_smul, sub_zero]
-      have hmul : H * R = 1 := hR ▸ mul_nonsing_inv H hdet
-      have hmul' : R * H = 1 := hR ▸ nonsing_inv_mul H hdet
-      have h12 : A * R.toBlocks₂₂ = 0 := by
-        simpa [H, toBlocks₁₂_mul, toBlocks₁₂_one] using congrArg toBlocks₁₂ hmul
-      have h21 : B * R.toBlocks₁₁ = 0 := by
-        simpa [H, toBlocks₂₁_mul, toBlocks₂₁_one] using congrArg toBlocks₂₁ hmul
-      have ha : R.toBlocks₂₁ * A = 1 := by
-        simpa [H, toBlocks₂₂_mul, toBlocks₂₂_one] using congrArg toBlocks₂₂ hmul'
-      have hb : R.toBlocks₁₂ * B = 1 := by
-        simpa [H, toBlocks₁₁_mul, toBlocks₁₁_one] using congrArg toBlocks₁₁ hmul'
-      have h₁ : R.toBlocks₁₁ = 0 := by
-        rw [← one_mul R.toBlocks₁₁, ← hb, Matrix.mul_assoc, h21, Matrix.mul_zero]
-      have h₂ : R.toBlocks₂₂ = 0 := by
-        rw [← one_mul R.toBlocks₂₂, ← ha, Matrix.mul_assoc, h12, Matrix.mul_zero]
-      rw [h₁, h₂]
-    · have hR : R = H⁻¹ := by simp only [R, H, hw, zero_smul, sub_zero]
-      rw [hR, nonsing_inv_apply_not_isUnit H hdet]
-      rfl
-  by_cases hu : IsUnit (H - w • 1).det
-  · have hl := congrArg (fun M : Matrix (n ⊕ n) (n ⊕ n) 𝕜 ↦ M.toBlocks₁₁.trace)
-      (mul_nonsing_inv (H - w • 1) hu)
-    have hr := congrArg (fun M : Matrix (n ⊕ n) (n ⊕ n) 𝕜 ↦ M.toBlocks₂₂.trace)
-      (nonsing_inv_mul (H - w • 1) hu)
-    have hR : (H - w • 1)⁻¹ = R := rfl
-    rw [hR] at hl hr
-    simp only [sub_mul, smul_mul_assoc, Matrix.one_mul, H, toBlocks₁₁_sub, toBlocks₁₁_mul,
-      toBlocks₁₁_smul, toBlocks_fromBlocks₁₁, toBlocks_fromBlocks₁₂, Matrix.zero_mul, zero_add,
-      trace_sub, trace_smul, smul_eq_mul, toBlocks₁₁_one] at hl
-    simp only [Matrix.mul_sub, Matrix.mul_smul, Matrix.mul_one, H, toBlocks₂₂_sub,
-      toBlocks₂₂_mul, toBlocks₂₂_smul, toBlocks_fromBlocks₁₂, toBlocks_fromBlocks₂₂,
-      Matrix.mul_zero, add_zero, trace_sub, trace_smul, smul_eq_mul, toBlocks₂₂_one] at hr
-    rw [trace_mul_comm R.toBlocks₂₁ A] at hr
-    apply mul_left_cancel₀ hw
-    linear_combination hr - hl
-  · have hR : (H - w • 1)⁻¹ = R := rfl
-    rw [← hR, nonsing_inv_apply_not_isUnit _ hu]
-    rfl
+  let H : Matrix (n ⊕ n) (n ⊕ n) (Polynomial 𝕜) :=
+    fromBlocks 0 (A.map Polynomial.C) (B.map Polynomial.C) 0
+  let S := H - (Polynomial.X : Polynomial 𝕜) • 1
+  let C := S.adjugate
+  -- The adjugate identities give equality after multiplying the traces by the indeterminate.
+  have hl := congrArg (fun M : Matrix (n ⊕ n) (n ⊕ n) (Polynomial 𝕜) ↦ M.toBlocks₁₁.trace)
+    (mul_adjugate S)
+  have hr := congrArg (fun M : Matrix (n ⊕ n) (n ⊕ n) (Polynomial 𝕜) ↦ M.toBlocks₂₂.trace)
+    (adjugate_mul S)
+  change (S * C).toBlocks₁₁.trace = _ at hl
+  change (C * S).toBlocks₂₂.trace = _ at hr
+  simp only [S, sub_mul, smul_mul_assoc, Matrix.one_mul, H, toBlocks₁₁_sub, toBlocks₁₁_mul,
+    toBlocks₁₁_smul, toBlocks_fromBlocks₁₁, toBlocks_fromBlocks₁₂, Matrix.zero_mul, zero_add,
+    trace_sub, trace_smul, smul_eq_mul, toBlocks₁₁_one] at hl
+  simp only [S, Matrix.mul_sub, Matrix.mul_smul, Matrix.mul_one, H, toBlocks₂₂_sub,
+    toBlocks₂₂_mul, toBlocks₂₂_smul, toBlocks_fromBlocks₁₂, toBlocks_fromBlocks₂₂,
+    Matrix.mul_zero, add_zero, trace_sub, trace_smul, smul_eq_mul, toBlocks₂₂_one] at hr
+  rw [trace_mul_comm C.toBlocks₂₁ (A.map Polynomial.C)] at hr
+  have hC : C.toBlocks₁₁.trace = C.toBlocks₂₂.trace :=
+    Polynomial.isRegular_X.left (sub_right_inj.mp (hl.trans hr.symm))
+  let e := Polynomial.evalRingHom w
+  have hS : e.mapMatrix S = fromBlocks 0 A B 0 - w • 1 := by
+    change (H - (Polynomial.X : Polynomial 𝕜) • 1).map e = _
+    rw [Matrix.map_sub _ (map_sub _), Matrix.map_smul' _ _ _ (map_mul _),
+      Matrix.map_one _ (map_zero _) (map_one _)]
+    simp [H, fromBlocks_map, e, Function.comp_def]
+  have h := congrArg e hC
+  simp only [AddMonoidHom.map_trace, ← toBlocks₁₁_map, ← toBlocks₂₂_map] at h
+  change (e.mapMatrix S.adjugate).toBlocks₁₁.trace = (e.mapMatrix S.adjugate).toBlocks₂₂.trace at h
+  simp only [e.map_adjugate, hS] at h
+  dsimp only
+  rw [inv_def, toBlocks₁₁_smul, toBlocks₂₂_smul, trace_smul, trace_smul, h]
 
 open Complex in
 /-- At a purely imaginary shift the trace of the Hermitian dilation resolvent is purely
