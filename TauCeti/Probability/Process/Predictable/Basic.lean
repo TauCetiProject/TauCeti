@@ -36,8 +36,6 @@ The time projection is measurable for the predictable sigma-algebra, so determin
 time dependence can be combined with predictable processes. A predictably measurable function
 remains strongly predictable when extended by zero outside a measurable set of times.
 
-For a strongly predictable process, `t ↦ ‖H t ω‖ₑ ^ n` is measurable (`measurable_eNorm_pow`).
-
 ## References
 
 * I. Karatzas, S. E. Shreve, *Brownian Motion and Stochastic Calculus*, Springer, 1991,
@@ -454,12 +452,3 @@ theorem Measurable.isStronglyPredictable_ite_zero {ι Ω E : Type*}
     {P : ι → Prop} [DecidablePred P] (hP : MeasurableSet {t | P t}) :
     IsStronglyPredictable ℱ (fun t ω => if P t then f (t, ω) else 0) :=
   (hf.ite (hP.preimage ℱ.measurable_fst_predictable) measurable_const).stronglyMeasurable
-
-/-- Every sample path `t ↦ ‖H t ω‖ₑ ^ n` of a strongly predictable process is measurable. -/
-theorem MeasureTheory.IsStronglyPredictable.measurable_eNorm_pow {ι Ω E : Type*}
-    {m : MeasurableSpace Ω} [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι]
-    [OrderClosedTopology ι] [MeasurableSpace ι] [OpensMeasurableSpace ι]
-    [TopologicalSpace E] [ContinuousENorm E] {ℱ : Filtration ι m} {H : ι → Ω → E}
-    (hH : IsStronglyPredictable ℱ H) (ω : Ω) (n : ℕ) : Measurable (fun t ↦ ‖H t ω‖ₑ ^ n) :=
-  (continuous_eNorm.comp_stronglyMeasurable
-    ((hH.mono ℱ.predictable_le_prod).of_uncurry_right)).measurable.pow_const n

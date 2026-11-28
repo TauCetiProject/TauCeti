@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.Topology.Order.Lattice
+import TauCeti.Probability.Finance.SimpleStrategy.Congruence
 public import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 
 /-!
@@ -21,10 +22,10 @@ process uses intervals open on the left and closed on the right, and is zero at 
 The elementary integral is the existing `TauCeti.Finance.simpleGains`, not a new
 integration operator. It depends only on the represented process (`integral_congr_toProcess`), and
 its finite-sum formula, path continuity, martingale property, finite-time Lᵖ membership, filtration
-monotonicity (`monoFiltration`), interval clipping (`clipIocMul`), and construction from bounded
-monotone-grid simple holdings (`ofSimpleHolding`) provide the starting objects for
-stochastic-integral completion. Neither completion nor an integral of an arbitrary predictable
-process is asserted here.
+monotonicity (`monoFiltration`), interval clipping (`clipIocMul`), and conversion to and from
+bounded monotone-grid simple holdings (`ofSimpleHolding`, `exists_simpleHolding_eq`) provide the
+starting objects for stochastic-integral completion. Neither completion nor an integral of an
+arbitrary predictable process is asserted here.
 
 ## References
 
@@ -65,59 +66,40 @@ namespace ElementaryIntegrand
 
 variable {ℱ : Filtration ℝ≥0 mΩ} (K : ElementaryIntegrand ℱ)
 
-/-- Canonical extension of `K.grid` to `ℕ`, constant after `K.n`. -/
-def dates (j : ℕ) : ℝ≥0 := K.grid ⟨min j K.n, by omega⟩
+private def dates (j : ℕ) : ℝ≥0 := K.grid ⟨min j K.n, by omega⟩
 
-/-- Canonical extension of `K.height` to `ℕ`, zero at indices `j ≥ K.n`. -/
-def positions (j : ℕ) : Ω → ℝ :=
+private def positions (j : ℕ) : Ω → ℝ :=
   if h : j < K.n then K.height ⟨j, h⟩ else 0
 
-/-- Beyond `K.n`, `K.dates` stays at the terminal grid point. -/
-@[simp]
-theorem dates_of_le {j : ℕ} (hj : K.n ≤ j) : K.dates j = K.grid (Fin.last K.n) := by
-  simp [dates, Fin.last, min_eq_right hj]
-
-/-- Beyond `K.n`, `K.positions` vanishes. -/
-@[simp]
-theorem positions_of_le {j : ℕ} (hj : K.n ≤ j) : K.positions j = 0 := by
+private theorem positions_of_le {j : ℕ} (hj : K.n ≤ j) : K.positions j = 0 := by
   simp [positions, not_lt.mpr hj]
 
-/-- On a trading interval index, `K.dates i` is the left endpoint `K.grid i.castSucc`. -/
-@[simp]
-theorem dates_castSucc (i : Fin K.n) : K.dates i = K.grid i.castSucc := by
+private theorem dates_castSucc (i : Fin K.n) : K.dates i = K.grid i.castSucc := by
   rw [dates]
   congr 1
   ext
   simp
 
-/-- On a trading interval index, `K.dates (i + 1)` is the right endpoint `K.grid i.succ`. -/
-@[simp]
-theorem dates_succ (i : Fin K.n) : K.dates (i + 1) = K.grid i.succ := by
+private theorem dates_succ (i : Fin K.n) : K.dates (i + 1) = K.grid i.succ := by
   simp [dates, Fin.succ]
 
-/-- On a trading interval index, `K.positions i` equals `K.height i`. -/
-@[simp]
-theorem positions_eq (i : Fin K.n) : K.positions i = K.height i := by
+private theorem positions_eq (i : Fin K.n) : K.positions i = K.height i := by
   simp [positions, i.isLt]
 
-/-- The extended grid `K.dates` is monotone. -/
-theorem monotone_dates : Monotone K.dates := fun _ _ hij ↦
+private theorem monotone_dates : Monotone K.dates := fun _ _ hij ↦
   K.monotone_grid (min_le_min_right _ hij)
 
-/-- Every extended position `K.positions j` for `j < K.n` is strongly measurable at `K.dates j`. -/
-theorem measurable_positions (j : ℕ) (hj : j < K.n) :
+private theorem measurable_positions (j : ℕ) (hj : j < K.n) :
     StronglyMeasurable[ℱ (K.dates j)] (K.positions j) := by
   rw [K.dates_castSucc ⟨j, hj⟩, K.positions_eq ⟨j, hj⟩]
   exact K.measurable_height ⟨j, hj⟩
 
-/-- Every extended position `K.positions j` is uniformly bounded. -/
-theorem bounded_positions (j : ℕ) : ∃ C : ℝ, ∀ ω, |K.positions j ω| ≤ C := by
+private theorem bounded_positions (j : ℕ) : ∃ C : ℝ, ∀ ω, |K.positions j ω| ≤ C := by
   by_cases hj : j < K.n
   · simpa [positions, hj] using K.bounded_height ⟨j, hj⟩
   · exact ⟨0, fun ω ↦ by simp [positions, hj]⟩
 
-/-- All extended positions of an elementary integrand share one deterministic bound. -/
-theorem exists_bound_positions : ∃ C : ℝ, ∀ j ω, ‖K.positions j ω‖ ≤ C := by
+private theorem exists_bound_positions : ∃ C : ℝ, ∀ j ω, ‖K.positions j ω‖ ≤ C := by
   choose C hC using K.bounded_positions
   refine ⟨∑ i ∈ range K.n, max (C i) 0, fun j ω ↦ ?_⟩
   by_cases hj : j < K.n
@@ -126,16 +108,6 @@ theorem exists_bound_positions : ∃ C : ℝ, ∀ j ω, ‖K.positions j ω‖ �
       (single_le_sum (fun _ _ ↦ le_max_right _ _) (mem_range.mpr hj)))
   · rw [K.positions_of_le (not_lt.mp hj), Pi.zero_apply, norm_zero]
     exact sum_nonneg fun _ _ ↦ le_max_right _ _
-
-/-- On a finite measure space, every extended position `K.positions j` belongs to `Lᵖ(P)`. -/
-theorem memLp_positions (P : Measure Ω) [IsFiniteMeasure P] (p : ℝ≥0∞) (j : ℕ) :
-    MemLp (K.positions j) p P := by
-  obtain ⟨C, hC⟩ := K.bounded_positions j
-  by_cases hj : j < K.n
-  · exact MemLp.of_bound
-      (((K.measurable_positions j hj).mono (ℱ.le _)).aestronglyMeasurable) C
-      (Filter.Eventually.of_forall fun ω ↦ by simpa [Real.norm_eq_abs] using hC ω)
-  · simp [positions_of_le K (not_lt.mp hj)]
 
 /-- The predictable process represented by the bounded positions and their half-open
 trading intervals. It vanishes outside the finite grid. -/
@@ -147,15 +119,17 @@ intervals truncated at the evaluation time. -/
 def integral (X : ℝ≥0 → Ω → ℝ) : ℝ≥0 → Ω → ℝ :=
   Finance.simpleGains K.dates K.n K.positions X
 
-/-- `K.toProcess` is `Finance.simpleHolding K.dates K.n K.positions`. -/
-theorem toProcess_eq_simpleHolding :
-    K.toProcess = Finance.simpleHolding K.dates K.n K.positions := by
-  rw [toProcess]
-
-/-- `K.integral X` is `Finance.simpleGains K.dates K.n K.positions X`. -/
-theorem integral_eq_simpleGains (X : ℝ≥0 → Ω → ℝ) :
-    K.integral X = Finance.simpleGains K.dates K.n K.positions X := by
-  rw [integral]
+/-- Every `ElementaryIntegrand` has a monotone-grid, left-measurable, uniformly bounded
+simple-holding presentation with the same represented process and elementary integrals. -/
+theorem exists_simpleHolding_eq (K : ElementaryIntegrand ℱ) :
+    ∃ (n : ℕ) (τ : ℕ → ℝ≥0) (a : ℕ → Ω → ℝ),
+      MonotoneOn τ (Set.Iic n) ∧
+      (∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j)) ∧
+      (∀ j < n, ∃ C : ℝ, ∀ ω, |a j ω| ≤ C) ∧
+      K.toProcess = Finance.simpleHolding τ n a ∧
+      ∀ X : ℝ≥0 → Ω → ℝ, K.integral X = Finance.simpleGains τ n a X :=
+  ⟨K.n, K.dates, K.positions, K.monotone_dates.monotoneOn _, K.measurable_positions,
+    fun j _ ↦ K.bounded_positions j, rfl, fun _ ↦ rfl⟩
 
 /-- Two elementary integrands that represent the same process have the same elementary integral
 against every integrator. -/
@@ -163,22 +137,10 @@ theorem integral_congr_toProcess {ℱ 𝒢 : Filtration ℝ≥0 mΩ}
     {K : ElementaryIntegrand ℱ} {L : ElementaryIntegrand 𝒢}
     (hKL : K.toProcess = L.toProcess) (X : ℝ≥0 → Ω → ℝ) :
     K.integral X = L.integral X := by
-  let ℱ₀ : Filtration ℝ≥0 mΩ := ⟨fun _ ↦ mΩ, fun _ _ _ ↦ le_rfl, fun _ ↦ le_rfl⟩
-  obtain ⟨N, ρ, c, -, hρ, -, hhold, hgain⟩ := Finance.exists_simpleHolding_simpleGains_eq_sub ℱ₀
-    (K.monotone_dates.monotoneOn _) (L.monotone_dates.monotoneOn _)
-    (fun j hj ↦ (K.measurable_positions j hj).mono (ℱ.le _))
-    (fun j hj ↦ (L.measurable_positions j hj).mono (𝒢.le _))
-  have hc₀ : ∀ j < N, ∀ ω, c j ω = 0 := by
-    intro j hj ω
-    have hmem : ρ (j + 1) ∈ Set.Ioc (ρ j) (ρ (j + 1)) :=
-      ⟨hρ hj.le hj (Nat.lt_succ_self j), le_rfl⟩
-    rw [← Finance.simpleHolding_of_mem_Ioc (a := c) hρ.monotoneOn hj hmem ω, hhold,
-      ← toProcess_eq_simpleHolding, ← toProcess_eq_simpleHolding, hKL, sub_self]
   ext t ω
-  have hzero : Finance.simpleGains ρ N c X t ω = 0 := by
-    rw [Finance.simpleGains_def]
-    exact sum_eq_zero fun j hj ↦ by simp [hc₀ j (mem_range.mp hj) ω]
-  rw [integral_eq_simpleGains, integral_eq_simpleGains, ← sub_eq_zero, ← hgain, hzero]
+  exact Finance.simpleGains_congr_of_ae_eq_nnvolume
+    (K.monotone_dates.monotoneOn _) (L.monotone_dates.monotoneOn _) ω
+    (ae_of_all _ fun u ↦ congrFun (congrFun hKL u) ω) t
 
 /-- Finite-sum formula for the represented predictable process. -/
 theorem toProcess_def (t : ℝ≥0) (ω : Ω) :
@@ -338,8 +300,7 @@ theorem toProcess_ofSimpleHolding {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → 
     (hτ : MonotoneOn τ (Set.Iic n)) (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
     (hb : ∀ j < n, ∃ C : ℝ, ∀ ω, |a j ω| ≤ C) (t : ℝ≥0) (ω : Ω) :
     (ofSimpleHolding hτ ha hb).toProcess t ω = Finance.simpleHolding τ n a t ω := by
-  rw [toProcess_eq_simpleHolding, Finance.simpleHolding_def, Finance.simpleHolding_def,
-    ofSimpleHolding_n]
+  rw [toProcess, Finance.simpleHolding_def, Finance.simpleHolding_def, ofSimpleHolding_n]
   refine sum_congr rfl fun j hj ↦ ?_
   have hj' : j < n := mem_range.mp hj
   simp [dates, positions, ofSimpleHolding, hj', Nat.min_eq_left hj'.le]
@@ -350,8 +311,7 @@ theorem integral_ofSimpleHolding {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → �
     (hτ : MonotoneOn τ (Set.Iic n)) (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
     (hb : ∀ j < n, ∃ C : ℝ, ∀ ω, |a j ω| ≤ C) (X : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) (ω : Ω) :
     (ofSimpleHolding hτ ha hb).integral X t ω = Finance.simpleGains τ n a X t ω := by
-  rw [integral_eq_simpleGains, Finance.simpleGains_def, Finance.simpleGains_def,
-    ofSimpleHolding_n]
+  rw [integral, Finance.simpleGains_def, Finance.simpleGains_def, ofSimpleHolding_n]
   refine sum_congr rfl fun j hj ↦ ?_
   have hj' : j < n := mem_range.mp hj
   simp [dates, positions, ofSimpleHolding, hj', Nat.min_eq_left hj'.le]
@@ -448,11 +408,11 @@ theorem exists_toProcess_add_integral_add (K L : ElementaryIntegrand ℱ) :
   refine ⟨ofSimpleHolding hτ.monotoneOn (fun j _ ↦ hb_meas j) hb_unif, ?_, fun X ↦ ?_⟩
   · ext t ω
     rw [toProcess_ofSimpleHolding, hhold t ω, sum_disjSum]
-    simp only [l, u, a, Sum.elim_inl, Sum.elim_inr, Pi.add_apply, toProcess_eq_simpleHolding,
+    simp only [l, u, a, Sum.elim_inl, Sum.elim_inr, Pi.add_apply, toProcess,
       Finance.simpleHolding_def]
   · ext t ω
     rw [integral_ofSimpleHolding, hgain X t ω, sum_disjSum]
-    simp only [l, u, a, Sum.elim_inl, Sum.elim_inr, Pi.add_apply, integral_eq_simpleGains,
+    simp only [l, u, a, Sum.elim_inl, Sum.elim_inr, Pi.add_apply, integral,
       Finance.simpleGains_def]
     congr 1 <;> refine sum_congr rfl fun j _ ↦ ?_
     · simp [K.monotone_dates (Nat.le_succ j)]
@@ -486,7 +446,7 @@ theorem toProcess_clipIocMul {s t : ℝ≥0} (hst : s ≤ t)
     (u : ℝ≥0) (ω : Ω) :
     (K.clipIocMul hst hξ hCξ).toProcess u ω =
       if s < u ∧ u ≤ t then ξ ω * K.toProcess u ω else 0 := by
-  rw [clipIocMul, toProcess_ofSimpleHolding, toProcess_eq_simpleHolding]
+  rw [clipIocMul, toProcess_ofSimpleHolding, toProcess]
   simpa only [Set.indicator_apply, Set.mem_Ioc] using Finance.simpleHolding_clip_Ioc_mul hst ξ u ω
 
 /-- Clipping an elementary integrand to `(s, t]` and multiplying by `ξ` multiplies the `(s, t]`
@@ -497,7 +457,7 @@ theorem integral_clipIocMul {s t : ℝ≥0} (hst : s ≤ t)
     (X : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (ω : Ω) :
     (K.clipIocMul hst hξ hCξ).integral X T ω =
       ξ ω * (K.integral X (min T t) ω - K.integral X (min T s) ω) := by
-  rw [clipIocMul, integral_ofSimpleHolding, integral_eq_simpleGains]
+  rw [clipIocMul, integral_ofSimpleHolding, integral]
   exact Finance.simpleGains_clip_Ioc_mul (K.monotone_dates.monotoneOn _) hst ξ X T ω
 
 /-- A one-interval elementary integrand. The height is selected at `s`, not at `t`. -/

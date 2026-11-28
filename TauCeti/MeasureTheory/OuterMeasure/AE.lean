@@ -20,9 +20,6 @@ so the result also applies to subsequences used in integral limit arguments. In 
 almost everywhere bound `g ≤ C (f + δ)` for every `δ = 1/(k + 1)` gives `g ≤ C f` almost
 everywhere.
 
-A sequence of sets covered almost everywhere by the union of two vanishing sequences also has
-outer measure tending to zero (`TauCeti.tendsto_measure_of_ae_subset_union`).
-
 A property holding almost everywhere holds at every point of positive mass
 (`Filter.Eventually.self_of_ae_of_measure_singleton_ne_zero`).
 -/
@@ -40,23 +37,6 @@ theorem Filter.Eventually.self_of_ae_of_measure_singleton_ne_zero {p : α → Pr
   exact hx (measure_mono_null (Set.singleton_subset_iff.2 hne) (ae_iff.1 h))
 
 namespace TauCeti
-
-section
-
-variable {α ι M : Type*} [FunLike M (Set α) ℝ≥0∞] [OuterMeasureClass M α] {μ : M} {l : Filter ι}
-
-/-- If `A k ⊆ B k ∪ C k` almost everywhere along a filter `l`, and both `μ (B k)` and
-`μ (C k)` tend to `0`, then `μ (A k)` tends to `0`. -/
-theorem tendsto_measure_of_ae_subset_union {A B C : ι → Set α}
-    (hB : Tendsto (fun k ↦ μ (B k)) l (𝓝 0))
-    (hC : Tendsto (fun k ↦ μ (C k)) l (𝓝 0))
-    (hsub : ∀ᶠ k in l, A k ≤ᵐ[μ] (B k ∪ C k : Set α)) :
-    Tendsto (fun k ↦ μ (A k)) l (𝓝 0) :=
-  tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (by simpa only [add_zero] using hB.add hC) (Eventually.of_forall fun _ ↦ zero_le)
-    (hsub.mono fun k hk ↦ (measure_mono_ae hk).trans (measure_union_le (B k) (C k)))
-
-end
 
 variable {α ι M : Type*} [FunLike M (Set α) ℝ≥0∞] [OuterMeasureClass M α] {μ : M} {l : Filter ι}
   [l.IsCountablyGenerated]

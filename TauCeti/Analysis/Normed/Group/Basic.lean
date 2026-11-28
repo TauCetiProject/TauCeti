@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Analysis.Normed.Group.Continuity
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
-import Mathlib.Analysis.MeanInequalitiesPow
 import Mathlib.Topology.Algebra.Ring.Real
 import Mathlib.Topology.MetricSpace.Bounded
 
@@ -62,8 +61,6 @@ A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` 
 
 * `TauCeti.norm_sub_sq_le_two_mul` -- the squared triangle inequality through an intermediate
   point.
-* `TauCeti.eNorm_add_sq_le` -- the squared extended triangle inequality
-  `‖x + y‖ₑ ^ 2 ≤ 2 * (‖x‖ₑ ^ 2 + ‖y‖ₑ ^ 2)` in any extended seminormed additive monoid.
 * `TauCeti.norm_add_add_sq_le_three_mul` -- the squared triangle inequality for three summands.
 * `TauCeti.eNorm_sub_le_eNorm_sub_add_eNorm_sub` -- the triangle inequality for the extended norm.
 * `TauCeti.mem_eball_iff_eNorm` -- `b ∈ eball a r ↔ ‖b - a‖ₑ < r`.
@@ -124,15 +121,6 @@ theorem norm_sub_sq_le_two_mul {E : Type*} [SeminormedAddCommGroup E] (a b c : E
   (pow_le_pow_left₀ (norm_nonneg _)
     ((norm_sub_le_norm_sub_add_norm_sub a c b).trans_eq (by rw [norm_sub_rev c b])) 2).trans
     add_sq_le
-
-/-- **Squared extended triangle inequality.** For any elements `x, y` of an extended seminormed
-additive monoid, `‖x + y‖ₑ ^ 2 ≤ 2 * (‖x‖ₑ ^ 2 + ‖y‖ₑ ^ 2)`. -/
-theorem eNorm_add_sq_le {E : Type*} [TopologicalSpace E] [ESeminormedAddMonoid E] (x y : E) :
-    ‖x + y‖ₑ ^ 2 ≤ 2 * (‖x‖ₑ ^ 2 + ‖y‖ₑ ^ 2) := by
-  refine (pow_le_pow_left' (eNorm_add_le x y) 2).trans ?_
-  have h := ENNReal.rpow_add_le_mul_rpow_add_rpow ‖x‖ₑ ‖y‖ₑ (p := 2) one_le_two
-  norm_num at h
-  simpa [ENNReal.rpow_two] using h
 
 /-- **Squared triangle inequality for three summands.** The squared norm of `a + b + c` is at most
 three times the sum of the squared norms of `a`, `b` and `c`. -/

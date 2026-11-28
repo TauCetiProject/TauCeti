@@ -54,9 +54,6 @@ is at most `2 b`. Finally, an upper bound `x ≤ y` may be checked against the f
   `a ≤ t ≤ 1` and `ν < t < b + ν`.
 * `ENNReal.le_mul_two_of_le_add_div_two`: the absorption step `a ≤ b + a / 2 → a ≤ 2 b` for
   finite `a`, as used in elliptic estimates.
-* `ENNReal.half_le_or_half_le_of_le_add`: if `ε ≤ a + b`, then `ε / 2 ≤ a` or `ε / 2 ≤ b`.
-* `ENNReal.div_two_mul_le_or_div_two_mul_le_of_le_mul_add`: if `ε ≤ c * (a + b)`, then
-  `ε / (2 * c) ≤ a` or `ε / (2 * c) ≤ b`.
 * `ENNReal.ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul`: the cancellation
   `ofReal (d ^ n / n) / m * ofReal (n * a) = ofReal (a * d ^ n / m.toReal)` for `m` finite and
   nonzero.
@@ -198,29 +195,6 @@ theorem le_mul_two_of_le_add_div_two {a b : ℝ≥0∞} (ha : a ≠ ∞) (h : a 
     a ≤ b * 2 := by
   rw [← ENNReal.div_le_iff two_ne_zero ofNat_ne_top, ← ENNReal.sub_half ha]
   exact tsub_le_iff_right.2 h
-
-/-- If `ε ≤ a + b` in `ℝ≥0∞`, then `ε / 2 ≤ a` or `ε / 2 ≤ b`. -/
-theorem half_le_or_half_le_of_le_add {ε a b : ℝ≥0∞} (h : ε ≤ a + b) :
-    ε / 2 ≤ a ∨ ε / 2 ≤ b := by
-  by_contra hnot; push Not at hnot
-  by_cases hε : ε = ∞
-  · subst hε; simp only [top_div_of_ne_top ofNat_ne_top] at hnot
-    exact (add_lt_top.2 hnot).not_ge h
-  · exact ((ENNReal.add_lt_add hnot.1 hnot.2).trans_eq (ENNReal.add_halves ε)).not_ge h
-
-/-- If `ε ≤ c * (a + b)` in `ℝ≥0∞`, then `ε / (2 * c) ≤ a` or `ε / (2 * c) ≤ b`.
-No finiteness or positivity hypothesis on `c` is required. -/
-theorem div_two_mul_le_or_div_two_mul_le_of_le_mul_add {ε c a b : ℝ≥0∞}
-    (h : ε ≤ c * (a + b)) : ε / (2 * c) ≤ a ∨ ε / (2 * c) ≤ b := by
-  rcases eq_or_ne c 0 with rfl | hc0
-  · simp only [zero_mul, nonpos_iff_eq_zero] at h; simp [h]
-  rcases eq_or_ne c ∞ with rfl | hctop; · simp [mul_top two_ne_zero]
-  have hle {x : ℝ≥0∞} (hx : ε / 2 ≤ c * x) : ε / (2 * c) ≤ x := by
-    rw [ENNReal.div_le_iff_le_mul (.inl (mul_ne_zero two_ne_zero hc0))
-      (.inl (mul_ne_top ofNat_ne_top hctop))]
-    exact ((ENNReal.div_le_iff_le_mul (.inl two_ne_zero) (.inl ofNat_ne_top)).mp hx).trans_eq
-      (by ring)
-  exact (half_le_or_half_le_of_le_add (mul_add c a b ▸ h)).imp hle hle
 
 /-- **The equal-step exponent ladder.** For `n ≤ (j + 1) p`, the exponent `q = (j + 1) p`
 satisfies `1/p ≤ 1/q + j/n` and `1/q ≤ 1/p`: the ladder from `1/p` down to `1/q` in `j` equal
