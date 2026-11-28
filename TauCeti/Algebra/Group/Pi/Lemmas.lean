@@ -29,6 +29,8 @@ range of `f`.
 * `MonoidHom.pi_evalMonoidHom_surjective_of_injective`,
   `AddMonoidHom.pi_evalAddMonoidHom_surjective_of_injective`: restriction of a product of monoids
   along an injective map is surjective.
+* `Function.extend_const_eq_mulSingle`, `Function.extend_const_eq_single`: extending a constant
+  family from a unique index type yields `Pi.mulSingle` / `Pi.single`.
 -/
 
 public section
@@ -68,3 +70,13 @@ theorem pi_evalMonoidHom_surjective_of_injective {σ τ : Type*} {G : τ → Typ
   hf.surjective_pi_comp_right 1
 
 end MonoidHom
+
+/-- Extending a constant family on a unique index type `κ` along `f : κ → ι` with fallback `1`
+produces `Pi.mulSingle (f default) x`. -/
+@[to_additive /-- Extending a constant family on a unique index type `κ` along `f : κ → ι` with
+fallback `0` produces `Pi.single (f default) x`. -/]
+theorem Function.extend_const_eq_mulSingle {κ ι α : Type*} [Unique κ] [DecidableEq ι]
+    [One α] (f : κ → ι) (x : α) :
+    Function.extend f (fun _ ↦ x) 1 = Pi.mulSingle (f default) x := by
+  rw [← Subsingleton.pi_mulSingle_eq default x,
+    (Function.injective_of_subsingleton f).extend_mulSingle]

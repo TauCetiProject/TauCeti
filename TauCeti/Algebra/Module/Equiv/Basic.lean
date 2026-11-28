@@ -28,10 +28,10 @@ For coordinate transport, forgetting linearity gives the corresponding additive 
 equivalence, with the same direction on coordinates. A commutative square of linear maps with
 isomorphisms on its vertical sides transports the ranges of precomposition on hom spaces.
 Conjugating an endomorphism by a semilinear equivalence commutes with powers, moves its kernel
-and its range by the equivalence, and preserves the square-zero property, the conjugate being
-characterized by the equivalence intertwining the two endomorphisms. In the group of linear
-automorphisms, the conjugate `e g e⁻¹` of `g` acts on `e x` and on images of submodules under `e`
-through `g`.
+and its range by the equivalence, and preserves and reflects the square-zero property, the
+conjugate being characterized by the equivalence intertwining the two endomorphisms. In the group
+of linear automorphisms, the conjugate `e g e⁻¹` of `g` acts on `e x` and on images of submodules
+under `e` through `g`.
 
 ## Main results
 
@@ -46,7 +46,9 @@ through `g`.
   commutes with powers and transports kernels.
 * `LinearEquiv.eq_conjRingEquiv_apply_iff`: the conjugate `f ∘ d ∘ f⁻¹` of an endomorphism
   by a semilinear equivalence is the unique endomorphism `e` with `e ∘ f = f ∘ d`; it squares
-  to zero when `d` does (`LinearEquiv.conjRingEquiv_apply_comp_self`).
+  to zero when `d` does (`LinearEquiv.conjRingEquiv_apply_comp_self`), and more generally an
+  intertwining equivalence makes either endomorphism square to zero exactly when the other does
+  (`LinearEquiv.comp_self_eq_zero_iff_of_comp_eq`).
 * `LinearEquiv.mulAut_conj_apply_apply` and `LinearEquiv.map_map_mulAut_conj`: the conjugate
   `e g e⁻¹` of a linear automorphism sends `e x` to `e (g x)`, and the image under `e` of a
   submodule `p` to the image under `e` of `g p`.
@@ -230,6 +232,13 @@ theorem eq_conjRingEquiv_apply_iff (f : M ≃ₛₗ[σ] N) (d : M →ₗ[R] M) {
 theorem conjRingEquiv_apply_comp_self (f : M ≃ₛₗ[σ] N) {d : M →ₗ[R] M} (hd : d ∘ₗ d = 0) :
     f.conjRingEquiv d ∘ₗ f.conjRingEquiv d = 0 := by
   rw [← Module.End.mul_eq_comp, ← map_mul, Module.End.mul_eq_comp, hd, map_zero]
+
+/-- If a semilinear equivalence `f` intertwines endomorphisms `d` and `e` (`f ∘ d = e ∘ f`), then
+`e` squares to zero exactly when `d` does. -/
+theorem comp_self_eq_zero_iff_of_comp_eq (f : M ≃ₛₗ[σ] N) {d : M →ₗ[R] M} {e : N →ₗ[S] N}
+    (hf : f.toLinearMap ∘ₛₗ d = e ∘ₛₗ f.toLinearMap) : e ∘ₗ e = 0 ↔ d ∘ₗ d = 0 := by
+  rw [(f.eq_conjRingEquiv_apply_iff d).mpr hf.symm, ← Module.End.mul_eq_comp, ← map_mul,
+    EmbeddingLike.map_eq_zero_iff, Module.End.mul_eq_comp]
 
 end ConjRingEquiv
 

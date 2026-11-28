@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.State.AmenableTrace.Basic
 import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Matrix
 import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Unitization
-import TauCeti.Analysis.Normed.Algebra.Unitization.Basic
+import TauCeti.Analysis.Normed.Algebra.Unitization.Continuity
 
 /-!
 # Amenable traces and unitization

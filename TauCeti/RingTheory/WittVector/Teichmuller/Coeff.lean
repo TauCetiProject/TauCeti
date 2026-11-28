@@ -44,6 +44,7 @@ valuations on `A_inf = W(𝒪_F)`.
   divides `x pᵐ` only if it divides `x` (`WittVector.teichmuller_dvd_mul_natCast_pow_iff`).
 * `WittVector.teichmuller_mem_nonZeroDivisors_iff` : `[c]` is a nonzerodivisor iff `c` is.
 * `WittVector.p_mem_nonZeroDivisors` : `p` is a nonzerodivisor.
+* `WittVector.teichmuller_add_sub_teichmuller_mem_span_p` : `[a] + [b] - [a + b] ∈ (p)`.
 * `WittVector.ringHom_ext_teichmuller` : a ring homomorphism from `𝕎 R` to a `p`-adically
   separated ring is determined by its values on Teichmüller representatives.
 
@@ -68,6 +69,13 @@ omit [CharP R p] [PerfectRing R p] in
 /-- The Teichmüller representative `[a]` of `a ≠ 0` is nonzero, as its `0`-th coordinate is `a`. -/
 theorem teichmuller_ne_zero {a : R} (ha : a ≠ 0) : teichmuller p a ≠ 0 := fun h ↦
   ha (by simpa using congrArg (coeff · 0) h)
+
+/-- Teichmüller representatives are additive modulo `p`: `[a] + [b] - [a + b] ∈ (p)`. -/
+theorem teichmuller_add_sub_teichmuller_mem_span_p (a b : R) :
+    teichmuller p a + teichmuller p b - teichmuller p (a + b) ∈ Ideal.span {(p : 𝕎 R)} := by
+  rw [← WittVector.ker_constantCoeff, RingHom.mem_ker, map_sub, map_add,
+    constantCoeff_apply, constantCoeff_apply, constantCoeff_apply,
+    teichmuller_coeff_zero, teichmuller_coeff_zero, teichmuller_coeff_zero, sub_self]
 
 /-- The `n`-th **Teichmüller coordinate** of a Witt vector `x` over a perfect ring of
 characteristic `p`: the `p ^ n`-th root of the `n`-th Witt coordinate of `x`. These are the

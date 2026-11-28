@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
-public import TauCeti.LinearAlgebra.BilinearForm.LagrangianBasis
+public import TauCeti.LinearAlgebra.BilinearForm.Lagrangian.Basis
 import Mathlib.LinearAlgebra.Basis.Prod
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
@@ -101,6 +101,15 @@ theorem eq_orthogonal_iff_two_mul_finrank_eq (hnd : B.Nondegenerate) {U : Submod
   have hle := Submodule.finrank_le U
   refine ⟨fun h ↦ ?_, fun h ↦ eq_of_le_of_finrank_le hU (by omega)⟩
   rw [← h] at horth
+  omega
+
+/-- An isotropic complement of a self-orthogonal subspace is itself self-orthogonal. -/
+theorem eq_orthogonal_of_isCompl_of_le_orthogonal (hnd : B.Nondegenerate)
+    {L Y : Submodule K V} (hL : L = B.orthogonal L)
+    (hc : IsCompl L Y) (hY : Y ≤ B.orthogonal Y) : Y = B.orthogonal Y := by
+  apply (eq_orthogonal_iff_two_mul_finrank_eq hnd hY).2
+  have := (eq_orthogonal_iff_two_mul_finrank_eq hnd hL.le).1 hL
+  have := finrank_add_eq_of_isCompl hc
   omega
 
 /-- For an alternating form on a finite-dimensional space, there are isotropic subspaces of every

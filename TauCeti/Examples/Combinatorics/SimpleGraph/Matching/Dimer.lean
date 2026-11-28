@@ -21,7 +21,9 @@ public import Mathlib.Data.ZMod.Basic
   two different singletons, while their sets of restrictions to `F` agree: the completion set
   itself is not determined by `ω` near `F`, only its restrictions to `F` are
   (`dimerCompletionSet_empty_evenConfig_ne_oddConfig`,
-  `image_restrict_dimerCompletionSet_empty_eq`).
+  `image_restrict_dimerCompletionSet_empty_eq`). Translation by `n` (`shift n`, moving a
+  configuration `ω` to `e ↦ ω ((shift n)⁻¹ • e)`) swaps the even and the odd edges when `n` is
+  odd (`evenConfig_shift_inv_smul_of_odd`).
 * **Local finiteness is needed for closedness.** On the vertices `c, d, x_n, y_n` (`n : ℕ`) with
   edges `c x_n`, `d y_n`, `x_n y_n`, the perfect matchings
   `M_k = {c x_k, d y_k} ∪ {x_n y_n : n ≠ k}` converge coordinatewise to the rungs
@@ -219,45 +221,63 @@ theorem setOf_isDimerConfiguration_int :
     obtain ⟨a, rfl⟩ := exists_edge_eq e
     simp [key a, h0, ← Int.not_odd_iff_even]
 
-/-- Translation by `2` as an automorphism of the line. -/
-def shiftTwo : nnGraph ℤ ≃g nnGraph ℤ where
-  toEquiv := Equiv.addRight 2
+/-- Translation by `n` as an automorphism of the line. -/
+def shift (n : ℤ) : nnGraph ℤ ≃g nnGraph ℤ where
+  toEquiv := Equiv.addRight n
   map_rel_iff' := by
     intro a b
     simp only [Equiv.coe_addRight, nnGraph_adj]
     omega
 
 @[simp]
-theorem shiftTwo_apply (a : ℤ) : shiftTwo a = a + 2 :=
+theorem shift_apply (n a : ℤ) : shift n a = a + n :=
   (rfl)
 
-/-- The inverse of `shiftTwo` is translation by `-2`. -/
+/-- The inverse of `shift n` is translation by `-n`. -/
 @[simp]
-theorem shiftTwo_inv_apply (a : ℤ) : shiftTwo⁻¹ a = a - 2 :=
+theorem shift_symm_apply (n a : ℤ) : (shift n).symm a = a - n :=
   (rfl)
+
+/-- The group inverse of `shift n` is translation by `-n`. -/
+@[simp]
+theorem shift_inv_apply (n a : ℤ) : (shift n)⁻¹ a = a - n :=
+  (rfl)
+
+/-- `(shift n)⁻¹` moves the edge `{a, a + 1}` to `{a - n, a - n + 1}`. Not a simp lemma: the
+simp lemma `SimpleGraph.Iso.smul_eq_mapEdgeSet` rewrites its left-hand side first. -/
+theorem shift_inv_smul_edge (n a : ℤ) : (shift n)⁻¹ • edge a = edge (a - n) :=
+  Subtype.ext <| by simp [coe_edge, sub_add_eq_add_sub]
+
+/-- Translation by an odd number swaps the even and the odd edges: the configuration
+`e ↦ evenConfig ((shift n)⁻¹ • e)` is `oddConfig`. -/
+theorem evenConfig_shift_inv_smul_of_odd {n : ℤ} (hn : Odd n) (e : (nnGraph ℤ).edgeSet) :
+    evenConfig ((shift n)⁻¹ • e) = oddConfig e := by
+  obtain ⟨a, rfl⟩ := exists_edge_eq e
+  rw [shift_inv_smul_edge]
+  simp [evenConfig_edge, oddConfig_edge, Int.odd_sub, ← Int.not_odd_iff_even, hn]
 
 /-- The group `2ℤ`, written multiplicatively as `Multiplicative ℤ` with `ofAdd 1` acting as
 translation by `2`, acting on the edges of the line. -/
 instance instMulActionMultiplicativeIntEdgeSetNNGraph :
     MulAction (Multiplicative ℤ) (nnGraph ℤ).edgeSet :=
-  MulAction.compHom _ (zpowersHom _ shiftTwo)
+  MulAction.compHom _ (zpowersHom _ (shift 2))
 
-/-- The powers of the translation by `2` are the translations by even numbers. -/
+/-- The powers of the translation by `n` are the translations by multiples of `n`. -/
 @[simp]
-theorem zpow_shiftTwo_apply (n a : ℤ) : (shiftTwo ^ n) a = a + 2 * n := by
-  induction n using Int.induction_on generalizing a with
+theorem zpow_shift_apply (n m a : ℤ) : (shift n ^ m) a = a + n * m := by
+  induction m using Int.induction_on generalizing a with
   | zero => simp
-  | succ n ih =>
-    rw [zpow_add_one, RelIso.mul_apply, ih, shiftTwo_apply]
+  | succ m ih =>
+    rw [zpow_add_one, RelIso.mul_apply, ih, shift_apply]
     ring
-  | pred n ih =>
-    rw [zpow_sub_one, RelIso.mul_apply, ih, shiftTwo_inv_apply]
+  | pred m ih =>
+    rw [zpow_sub_one, RelIso.mul_apply, ih, shift_inv_apply]
     ring
 
-/-- `g : Multiplicative ℤ` moves an edge of the line by the automorphism `shiftTwo ^ toAdd g`. -/
+/-- `g : Multiplicative ℤ` moves an edge of the line by the automorphism `shift 2 ^ toAdd g`. -/
 @[simp]
 theorem coe_smul_edgeSet (g : Multiplicative ℤ) (e : (nnGraph ℤ).edgeSet) :
-    ((g • e : (nnGraph ℤ).edgeSet) : Sym2 ℤ) = Sym2.map ⇑(shiftTwo ^ g.toAdd) e := by
+    ((g • e : (nnGraph ℤ).edgeSet) : Sym2 ℤ) = Sym2.map ⇑(shift 2 ^ g.toAdd) e := by
   rw [MulAction.compHom_smul_def, zpowersHom_apply, Iso.coe_smul_edgeSet]
 
 /-- `ofAdd n` moves the edge `{a, a + 1}` to `{a + 2n, a + 2n + 1}`. -/
@@ -269,7 +289,7 @@ theorem ofAdd_smul_edge (n a : ℤ) :
 /-- The subshift of dimer configurations of the line, for `2ℤ` acting by translations. -/
 abbrev dimerSubshiftInt : Subshift (Multiplicative ℤ) (nnGraph ℤ).edgeSet Bool :=
   (nnGraph ℤ).dimerSubshift (Multiplicative ℤ)
-    (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ shiftTwo))
+    (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ (shift 2)))
 
 /-- The subshift of dimer configurations of the line has exactly two points. -/
 theorem coe_dimerSubshiftInt :

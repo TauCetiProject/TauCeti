@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Algebra.Subalgebra.Adjoin
 public import Mathlib.Algebra.Algebra.Spectrum.Quasispectrum
 public import Mathlib.Algebra.Algebra.Subalgebra.Unitization
-public import Mathlib.Analysis.Normed.Algebra.Unitization
 public import Mathlib.Analysis.Normed.Algebra.UnitizationL1
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
@@ -34,9 +33,6 @@ also bundled as bounded linear maps, the scalar augmentation is bundled as a con
 algebra homomorphism (`WithLp.unitizationFstA`), and the spectrum in the ℓ¹ unitization is
 identified with the quasispectrum (`WithLp.spectrum_unitizationInrL`).
 
-For the minimal unitization norm, the nonunital coordinate has norm at most twice the
-unitization norm (`Unitization.norm_snd_le_two_mul_norm`).
-
 No normalization of the norm of the identity is assumed. The forward map is bounded by
 `max ‖(1 : A)‖ 1`, so the results apply to any complete nontrivially normed scalar field.
 
@@ -48,21 +44,6 @@ No normalization of the norm of the identity is assumed. The forward map is boun
 -/
 
 public section
-
-namespace Unitization
-
-/-- The algebra coordinate of a unitization element has norm at most twice the unitization
-norm. -/
-theorem norm_snd_le_two_mul_norm {𝕜 A : Type*} [NontriviallyNormedField 𝕜]
-    [NonUnitalNormedRing A] [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
-    [RegularNormedAlgebra 𝕜 A] (x : Unitization 𝕜 A) : ‖x.snd‖ ≤ 2 * ‖x‖ := by
-  -- The canonical metric inherits the extended distance from the auxiliary metric.
-  have h : LipschitzWith 2 (addEquiv 𝕜 A) := fun a b => lipschitzWith_addEquiv a b
-  have hbound := (norm_snd_le (addEquiv 𝕜 A x)).trans (h.norm_le_mul (map_zero _) x)
-  rw [NNReal.coe_ofNat] at hbound
-  exact hbound
-
-end Unitization
 
 namespace NonUnitalSubalgebra
 

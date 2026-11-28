@@ -30,11 +30,16 @@ In a pseudometric space, the closed `δ`-thickening of a nonempty set, for `δ �
 points at distance at most `δ` from it (`TauCeti.mem_cthickening_iff_infDist_le`). This is the
 closed counterpart of Mathlib's `Metric.mem_thickening_iff_infDist_lt`, and describes closed
 thickenings as sublevel sets of the distance function, and their complements as strict
-superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`). If a compact set does not meet
+superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`). If the Hausdorff extended
+distance between `s` and `t` is at most `η ≥ 0`, the closed `r`-thickening of `s` lies in the closed
+`(r + η)`-thickening of `t` for every `r ≥ 0`
+(`TauCeti.cthickening_subset_cthickening_add_of_hausdorffEDist_le`). If a compact set does not meet
 the closed `δ`-thickening of a set `t`, its own closed `δ`-thickening does not meet `t`
 (`IsCompact.disjoint_cthickening_left`). A point is not in the closed `δ`-thickening of the
-complement of a ball around it of larger radius (`TauCeti.notMem_cthickening_compl_ball`). In a
-proper space, the closed `δ`-thickening of a compact set is compact
+complement of a ball around it of larger radius (`TauCeti.notMem_cthickening_compl_ball`). A ball
+`B(y, r)` meeting a set has the concentric ball `B(y, ρ)` in its `δ`-thickening when `ρ + r ≤ δ`
+(`TauCeti.ball_subset_thickening_of_inter_nonempty`). In a proper space, the closed
+`δ`-thickening of a compact set is compact
 (`TopologicalSpace.Compacts.cthickening`). If balls of radius `η` cover a set `T`, the closed
 balls of radius `η` meeting `T` among them lie in the closed `2 η`-thickening of `T`, so their
 union contains `T` and has extended diameter at most `ediam T + 4 η`
@@ -56,7 +61,9 @@ On the real line, the terms of an injective two-sided sequence tending to `-∞`
 ends have pairwise disjoint closed intervals around them forming a locally finite family
 (`TauCeti.exists_closedBall_pairwiseDisjoint_locallyFinite`). An open subset of `X × ℝ` containing
 a vertical line contains a tube around it, whose radius is locally bounded below by positive
-constants (`IsOpen.exists_tube_subset`).
+constants (`IsOpen.exists_tube_subset`). An open subset of `ℝ × X` invariant under the integer
+translations of the first coordinate and containing `ℝ × K`, for a compact `K`, contains a band
+`ℝ × thickening δ K` (`IsCompact.exists_univ_prod_thickening_subset_open`).
 
 For an open set `s` with nonempty complement and `δ → 0`, the sets `{y | δ < infDist y sᶜ}`
 exhaust `s` from the inside, eventually containing a ball around each point of `s`
@@ -112,6 +119,15 @@ theorem compl_cthickening_eq_setOf_lt_infDist {X : Type*} [PseudoMetricSpace X] 
   ext x
   simp [mem_cthickening_iff_infDist_le hs hδ]
 
+/-- If the Hausdorff extended distance between `s` and `t` is at most `η ≥ 0`, then for `r ≥ 0`
+the closed `r`-thickening of `s` lies in the closed `(r + η)`-thickening of `t`. -/
+theorem cthickening_subset_cthickening_add_of_hausdorffEDist_le {X : Type*}
+    [PseudoEMetricSpace X] {s t : Set X} {r η : ℝ} (hr : 0 ≤ r) (hη : 0 ≤ η)
+    (h : hausdorffEDist s t ≤ ENNReal.ofReal η) : cthickening r s ⊆ cthickening (r + η) t :=
+  fun x hx ↦ mem_cthickening_iff.2 <| (infEDist_le_infEDist_add_hausdorffEDist).trans <| by
+    rw [ENNReal.ofReal_add hr hη]
+    exact add_le_add (mem_cthickening_iff.1 hx) h
+
 /-- If the open balls `ball p η`, `p ∈ J`, cover a set `T`, then `T` lies in the union of the closed
 balls `closedBall p η` about the centres `p ∈ J` whose balls meet `T`, and this union has extended
 diameter at most `ediam T + 4 η`: it lies in the closed `2 η`-thickening of `T`. -/
@@ -153,6 +169,16 @@ theorem notMem_cthickening_compl_ball {X : Type*} [PseudoMetricSpace X] {x : X} 
     (le_infEDist.2 fun y hy ↦ ?_)
   rw [edist_dist]
   exact ENNReal.ofReal_le_ofReal (not_lt.1 fun h ↦ hy (mem_ball'.2 h))
+
+/-- A ball `B(y, r)` that meets `s` has its concentric ball `B(y, ρ)` in the `δ`-thickening of `s`
+when `ρ + r ≤ δ`. -/
+theorem ball_subset_thickening_of_inter_nonempty {X : Type*} [PseudoMetricSpace X] {s : Set X}
+    {y : X} {r ρ δ : ℝ} (hy : (ball y r ∩ s).Nonempty) (h : ρ + r ≤ δ) :
+    ball y ρ ⊆ thickening δ s := by
+  obtain ⟨x, hxy, hxs⟩ := hy
+  refine (ball_subset_ball' ?_).trans (ball_subset_thickening hxs δ)
+  rw [dist_comm]
+  linarith [mem_ball.1 hxy]
 
 /-- The closed `δ`-thickening of a compact set in a proper pseudometric space, as a compact set. -/
 def _root_.TopologicalSpace.Compacts.cthickening {X : Type*} [PseudoMetricSpace X] [ProperSpace X]
@@ -390,6 +416,26 @@ theorem IsOpen.exists_tube_subset {X : Type*} [PseudoMetricSpace X] {c : X}
       (Int.lt_floor_add_one t).le⟩, ?_⟩
     rw [Prod.dist_eq, dist_self, max_eq_left dist_nonneg]
     exact hut.trans_lt (half_lt_self (hδ _))
+
+/-- **Thickening a periodic band.** If an open subset `W` of `ℝ × X` is invariant under the
+translations `(x, y) ↦ (x + k, y)`, `k ∈ ℤ`, and contains `ℝ × K` for a compact set `K`, then it
+contains `ℝ × thickening δ K` for some `δ > 0`. This is the periodic counterpart, for the
+noncompact band `ℝ × K`, of `IsCompact.exists_thickening_subset_open`. -/
+theorem IsCompact.exists_univ_prod_thickening_subset_open {X : Type*} [PseudoMetricSpace X]
+    {K : Set X} (hK : IsCompact K) {W : Set (ℝ × X)} (hW : IsOpen W)
+    (hper : ∀ (x : ℝ) (y : X) (k : ℤ), (x, y) ∈ W → (x + k, y) ∈ W) (hKW : univ ×ˢ K ⊆ W) :
+    ∃ δ > 0, univ ×ˢ thickening δ K ⊆ W := by
+  -- A thickening of the compact piece `[0, 1] × K` lies in `W`; translate it by integers.
+  obtain ⟨δ, hδ, hsub⟩ := (isCompact_Icc.prod hK : IsCompact (Icc (0 : ℝ) 1 ×ˢ K))
+    |>.exists_thickening_subset_open hW fun p hp ↦ hKW ⟨mem_univ _, hp.2⟩
+  refine ⟨δ, hδ, ?_⟩
+  rintro ⟨x, y⟩ ⟨-, hy⟩
+  obtain ⟨z, hz, hyz⟩ := mem_thickening_iff.1 hy
+  have h : (Int.fract x, y) ∈ W := hsub <| mem_thickening_iff.2
+    ⟨(Int.fract x, z), ⟨⟨Int.fract_nonneg x, (Int.fract_lt_one x).le⟩, hz⟩, by
+      rw [Prod.dist_eq, dist_self, max_eq_right dist_nonneg]
+      exact hyz⟩
+  simpa using hper _ _ ⌊x⌋ h
 
 /-- **Interior exhaustion by the distance to the complement.** If `δ` tends to `0`, then every
 point `z` of an open set `s` with nonempty complement has a closed ball around it which eventually

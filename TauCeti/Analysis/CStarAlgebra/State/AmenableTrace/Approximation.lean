@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
-public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
+public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace.Basic
 
 /-!
 # Matrix approximation for trace predicates

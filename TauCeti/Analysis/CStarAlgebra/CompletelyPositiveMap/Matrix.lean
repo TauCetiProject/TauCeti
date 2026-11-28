@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
-public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
+public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace.Basic
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.FiniteSpectrum
 import TauCeti.Analysis.CStarAlgebra.Matrix.Order
 import TauCeti.Analysis.CStarAlgebra.State.Space
