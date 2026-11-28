@@ -711,6 +711,12 @@ theorem toHom_inr_of (k : Fin Ω.numItems) :
       FreeGroup.mk (U.word k) := by
   simp
 
+/-- The homomorphism of a solution sends the generic point to the point of the solution. -/
+@[simp]
+theorem toHom_genericPoint (k : Fin Ω.numItems) :
+    U.toHom (CoordGroup.genericPoint (MonoidHom.id (FreeGroup A)) Ω.toSystem k) = U.point k :=
+  CoordGroup.evalGHom_genericPoint U.point_mem_V k
+
 end Solution
 
 /-! ### Formal consistency -/
