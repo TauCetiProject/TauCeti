@@ -79,6 +79,9 @@ at `k = 2`, where `log k > 0`.
   `log log x + B + O(1 / log x)`.
 * `TauCeti.exists_abs_sum_Icc_div_log_sub_log_log_sub_le`: if `∑_{2 ≤ k ≤ t} c k = log t + O(1)`,
   then `∑_{2 ≤ k ≤ x} c k / log k = log log x + B + O(1 / log x)`.
+* `TauCeti.sum_Icc_div_log_le_of_forall_sum_Icc_le`: the one-sided form, if `0 ≤ κ` and
+  `∑_{2 ≤ k ≤ n} c k ≤ κ log n + C` for all `n ≥ 2`, then
+  `∑_{2 ≤ k ≤ N} c k / log k ≤ κ log log N + (κ - κ log log 2 + C / log 2)`.
 
 ## References
 
@@ -589,5 +592,126 @@ theorem exists_abs_sum_Icc_div_log_sub_log_log_sub_le {c : ℕ → ℝ} {C : ℝ
     (S := fun t ↦ ∑ k ∈ Finset.Icc 2 ⌊t⌋₊, c k)
     ((measurable_from_nat (f := fun n ↦ ∑ k ∈ Finset.Icc 2 n, c k)).comp Nat.measurable_floor) h
   exact ⟨B, fun x hx ↦ by simpa only [← sum_Icc_div_log_eq] using hB x hx⟩
+
+/-- One step of the summation by parts for the weight `1 / log`: if `0 < L ≤ L'` and `U` is at
+most both `κ L + C` and `κ L' + C`, then
+`(1 / L - 1 / L') U ≤ κ (log L' - log L) + C (1 / L - 1 / L')`, written with the signs in which the
+step occurs. For `κ ≥ 0` it uses the first bound and `1 - L / L' ≤ log L' - log L`; for `κ < 0`
+the second bound and `log L' - log L ≤ L' / L - 1`. -/
+private theorem neg_one_div_sub_one_div_mul_le {κ C U L L' : ℝ} (hL : 0 < L) (hLL' : L ≤ L')
+    (hU : U ≤ κ * L + C) (hU' : U ≤ κ * L' + C) :
+    -((1 / L' - 1 / L) * U) ≤
+      κ * (Real.log L' - Real.log L) + C * (-(1 / L') - -(1 / L)) := by
+  have hL' : 0 < L' := hL.trans_le hLL'
+  have hd : 0 ≤ 1 / L - 1 / L' := sub_nonneg.2 (one_div_le_one_div_of_le hL hLL')
+  rcases le_or_gt 0 κ with hκ | hκ
+  · have h1 := mul_le_mul_of_nonneg_right hU hd
+    have h2 : (κ * L + C) * (1 / L - 1 / L') = κ * (1 - L / L') + C * (1 / L - 1 / L') := by
+      field_simp
+    have hconc : 1 - L / L' ≤ Real.log L' - Real.log L := by
+      have h3 := Real.one_sub_inv_le_log_of_pos (div_pos hL' hL)
+      rwa [inv_div, Real.log_div hL'.ne' hL.ne'] at h3
+    nlinarith [mul_le_mul_of_nonneg_left hconc hκ]
+  · have h1 := mul_le_mul_of_nonneg_right hU' hd
+    have h2 : (κ * L' + C) * (1 / L - 1 / L') = κ * (L' / L - 1) + C * (1 / L - 1 / L') := by
+      field_simp
+    have hconv : Real.log L' - Real.log L ≤ L' / L - 1 := by
+      have h3 := Real.log_le_sub_one_of_pos (div_pos hL' hL)
+      rwa [Real.log_div hL'.ne' hL.ne'] at h3
+    nlinarith [mul_le_mul_of_nonpos_left hconv hκ.le]
+
+/-- If `U ≤ κ log t + C` for every real `t` in `[n, n + 1)`, then `U ≤ κ log (n + 1) + C`, by
+continuity of the logarithm at `n + 1`. -/
+private theorem le_mul_log_succ_add {κ C U : ℝ} {n : ℕ}
+    (h : ∀ t : ℝ, (n : ℝ) ≤ t → t < n + 1 → U ≤ κ * Real.log t + C) :
+    U ≤ κ * Real.log ((n + 1 : ℕ) : ℝ) + C := by
+  have hcont : ContinuousAt (fun t : ℝ ↦ κ * Real.log t + C) ((n : ℝ) + 1) :=
+    (continuousAt_const.mul (Real.continuousAt_log (by positivity))).add continuousAt_const
+  rw [Nat.cast_add_one]
+  exact ge_of_tendsto (hcont.tendsto.mono_left nhdsWithin_le_nhds)
+    (Filter.mem_of_superset (Ico_mem_nhdsLT (lt_add_one (n : ℝ))) fun t ht ↦ h t ht.1 ht.2)
+
+/-- Summation by parts at an integer cutoff `N ≥ 2`: if the partial sum `U_n = ∑_{2 ≤ k ≤ n} c k`
+is at most both `κ log n + C` and `κ log (n + 1) + C` for `2 ≤ n < N`, then
+`∑_{2 ≤ k ≤ N} c k / log k` is at most
+`U_N / log N + κ (log log N - log log 2) + C (1 / log 2 - 1 / log N)`. -/
+private theorem sum_Icc_div_log_le_div_add {c : ℕ → ℝ} {κ C : ℝ} {N : ℕ} (hN : 2 ≤ N)
+    (hn : ∀ n : ℕ, 2 ≤ n → n < N → ∑ k ∈ Finset.Icc 2 n, c k ≤ κ * Real.log n + C)
+    (hn' : ∀ n : ℕ, 2 ≤ n → n < N →
+      ∑ k ∈ Finset.Icc 2 n, c k ≤ κ * Real.log ((n + 1 : ℕ) : ℝ) + C) :
+    ∑ k ∈ Finset.Icc 2 N, c k / Real.log k ≤
+      (∑ k ∈ Finset.Icc 2 N, c k) / Real.log N +
+        κ * (Real.log (Real.log N) - Real.log (Real.log 2)) +
+        C * (1 / Real.log 2 - 1 / Real.log N) := by
+  have hG (n : ℕ) : ∑ k ∈ Finset.range (n + 1), (if 2 ≤ k then c k else 0) =
+      ∑ k ∈ Finset.Icc 2 n, c k := by
+    rw [← Finset.sum_filter]
+    refine Finset.sum_congr ?_ fun _ _ ↦ rfl
+    ext k
+    simp only [Finset.mem_filter, Finset.mem_range, Finset.mem_Icc]
+    omega
+  have h21 : ∑ k ∈ Finset.Icc 2 1, c k = 0 := by simp
+  have hsum := Finset.sum_le_sum fun i (hi : i ∈ Finset.Ico 2 N) ↦
+    neg_one_div_sub_one_div_mul_le (κ := κ) (C := C)
+      (Real.log_pos (by exact_mod_cast (show 1 < i by have := (Finset.mem_Ico.1 hi).1; omega)))
+      (Real.log_le_log (by exact_mod_cast (show 0 < i by have := (Finset.mem_Ico.1 hi).1; omega))
+        (Nat.cast_le.2 i.le_succ))
+      (hn i (Finset.mem_Ico.1 hi).1 (Finset.mem_Ico.1 hi).2)
+      (hn' i (Finset.mem_Ico.1 hi).1 (Finset.mem_Ico.1 hi).2)
+  rw [Finset.sum_neg_distrib, Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.mul_sum,
+    Finset.sum_Ico_sub (fun i : ℕ ↦ Real.log (Real.log i)) hN,
+    Finset.sum_Ico_sub (fun i : ℕ ↦ -(1 / Real.log i)) hN] at hsum
+  have hparts := Finset.sum_Ico_by_parts (fun i : ℕ ↦ 1 / Real.log i)
+    (fun k ↦ if 2 ≤ k then c k else 0) (show 2 < N + 1 by omega)
+  simp only [smul_eq_mul, Nat.add_sub_cancel, hG] at hparts
+  have hL : ∑ k ∈ Finset.Icc 2 N, c k / Real.log k =
+      ∑ x ∈ Finset.Ico 2 (N + 1), 1 / Real.log x * if 2 ≤ x then c x else 0 := by
+    rw [← Finset.Ico_add_one_right_eq_Icc]
+    refine Finset.sum_congr rfl fun k hk ↦ ?_
+    rw [ite_eq_left (Finset.mem_Ico.1 hk).1, one_div_mul_eq_div]
+  rw [hL, hparts, h21, mul_zero, sub_zero, one_div_mul_eq_div]
+  simp only [Nat.cast_ofNat] at hsum
+  linarith
+
+/-- **A one-sided bound for partial sums weighted by `1 / log`.** If `x ≥ 2` and the partial sums
+`∑_{2 ≤ k ≤ t} c k` are at most `κ log t + C` for every real `2 ≤ t ≤ x`, then
+`∑_{2 ≤ k ≤ x} c k / log k ≤ κ log log x + (κ - κ log log 2 + C / log 2)`. No sign condition on
+`c`, `κ` or `C` and no lower bound on the partial sums is needed. The proof is the discrete
+summation by parts `Finset.sum_Ico_by_parts`; the hypothesis at real cutoffs bounds the partial
+sum up to `n` by both `κ log n + C` and `κ log (n + 1) + C`, of which each step uses the first for
+`κ ≥ 0` and the second for `κ < 0`. -/
+theorem sum_Icc_div_log_le_of_forall_sum_Icc_le {c : ℕ → ℝ} {κ C x : ℝ} (hx : 2 ≤ x)
+    (h : ∀ t : ℝ, 2 ≤ t → t ≤ x → ∑ k ∈ Finset.Icc 2 ⌊t⌋₊, c k ≤ κ * Real.log t + C) :
+    ∑ k ∈ Finset.Icc 2 ⌊x⌋₊, c k / Real.log k ≤
+      κ * Real.log (Real.log x) + (κ - κ * Real.log (Real.log 2) + C / Real.log 2) := by
+  have hN : 2 ≤ ⌊x⌋₊ := Nat.le_floor (by exact_mod_cast hx)
+  have hNx : (⌊x⌋₊ : ℝ) ≤ x := Nat.floor_le (by linarith)
+  have hL : 0 < Real.log ⌊x⌋₊ := Real.log_pos (by exact_mod_cast (show 1 < ⌊x⌋₊ by omega))
+  have hLL' : Real.log ⌊x⌋₊ ≤ Real.log x :=
+    Real.log_le_log (by exact_mod_cast (show 0 < ⌊x⌋₊ by omega)) hNx
+  have hn (n : ℕ) (h2 : 2 ≤ n) (hnN : n ≤ ⌊x⌋₊) :
+      ∑ k ∈ Finset.Icc 2 n, c k ≤ κ * Real.log n + C := by
+    simpa only [Nat.floor_natCast] using
+      h n (by exact_mod_cast h2) ((Nat.cast_le.2 hnN).trans hNx)
+  have hn' (n : ℕ) (h2 : 2 ≤ n) (hnN : n < ⌊x⌋₊) :
+      ∑ k ∈ Finset.Icc 2 n, c k ≤ κ * Real.log ((n + 1 : ℕ) : ℝ) + C :=
+    le_mul_log_succ_add fun t ht ht' ↦ by
+      have h2' : (2 : ℝ) ≤ n := by exact_mod_cast h2
+      have hN' : (n : ℝ) + 1 ≤ ⌊x⌋₊ := by exact_mod_cast hnN
+      have ht'' := h t (h2'.trans ht) ((ht'.le.trans hN').trans hNx)
+      rwa [(Nat.floor_eq_iff (by linarith)).2 ⟨ht, ht'⟩] at ht''
+  have key := sum_Icc_div_log_le_div_add hN (fun n h2 hnN ↦ hn n h2 hnN.le) hn'
+  have hstep := neg_one_div_sub_one_div_mul_le (κ := κ) (C := C) hL hLL' (hn _ hN le_rfl)
+    (h x hx le_rfl)
+  have hU : (∑ k ∈ Finset.Icc 2 ⌊x⌋₊, c k) / Real.log x ≤ κ + C / Real.log x := by
+    rw [div_le_iff₀ (hL.trans_le hLL'), add_mul, div_mul_cancel₀ _ (hL.trans_le hLL').ne']
+    exact h x hx le_rfl
+  have hid : (∑ k ∈ Finset.Icc 2 ⌊x⌋₊, c k) / Real.log ⌊x⌋₊ =
+      (∑ k ∈ Finset.Icc 2 ⌊x⌋₊, c k) / Real.log x +
+        -((1 / Real.log x - 1 / Real.log ⌊x⌋₊) * ∑ k ∈ Finset.Icc 2 ⌊x⌋₊, c k) := by ring
+  have hsplit : C * (1 / Real.log 2 - 1 / Real.log ⌊x⌋₊) +
+      C * (-(1 / Real.log x) - -(1 / Real.log ⌊x⌋₊)) = C / Real.log 2 - C / Real.log x := by
+    ring
+  linarith
 
 end TauCeti
