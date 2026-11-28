@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Basic.Complex.Basic
 public import Mathlib.NumberTheory.MulChar.Basic
+public import TauCeti.NumberTheory.MulChar.Circle
 public import TauCeti.NumberTheory.NumberField.ResidueDegree
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 import TauCeti.NumberTheory.MulChar.Kernel
 
 /-!
@@ -19,11 +21,16 @@ sufficient congruence on the rational primes dividing `M` guarantees that the ch
 be made trivial on a prescribed subgroup of roots of unity in each residue field. This is
 useful for choosing a tame part compatible with global roots of unity.
 
+The theorem `Ideal.exists_residueCharacterFamily_on_completion` gives the same order, support and
+torsion conditions on circle-valued characters of the completed residue unit groups. It uses
+the canonical residue-field equivalence and `MulChar.mulEquivToCircle`.
+
 ## References
 
 * The local order and triviality conditions follow the choice `New.Data.chiMLocal` in
   `New/Derivatives/Field/ChosenPlaces.lean` of [lsernau/grh-lean](https://github.com/lsernau/grh-lean)
-  at commit `72fead102f663d5c7a407964a13dc0cf9d977207`.
+  (Apache 2.0, Copyright 2026 Anthropic, PBC) at commit
+  `72fead102f663d5c7a407964a13dc0cf9d977207`.
 -/
 
 public section
@@ -71,5 +78,37 @@ theorem exists_residueCharacterFamily {K : Type*} [Field K] [NumberField K] (I :
     · exact ⟨1, fun hv' ↦ (hv hv').elim, fun _ ↦ rfl, fun u _ ↦ MulChar.one_apply_coe u⟩
   choose ω hω using hlocal
   exact ⟨ω, fun v ↦ (hω v).1, fun v ↦ (hω v).2.1, fun v ↦ (hω v).2.2⟩
+
+/-- Suppose `I` contains the rational integer `M` and `r * m` divides `p - 1` for every
+prime divisor `p` of `M`. The completed residue groups then admit circle-valued characters
+of order `m` at the primes containing `I`, trivial elsewhere, and trivial on every
+`r`-torsion unit. -/
+theorem exists_residueCharacterFamily_on_completion {K : Type*} [Field K] [NumberField K]
+    (I : Ideal (𝓞 K)) {M r m : ℕ} (hM : (M : 𝓞 K) ∈ I)
+    (h : ∀ p : ℕ, p.Prime → p ∣ M → r * m ∣ p - 1) :
+    ∃ ω : (v : HeightOneSpectrum (𝓞 K)) →
+        (IsLocalRing.ResidueField (v.adicCompletionIntegers K))ˣ →* Circle,
+      (∀ v, I ≤ v.asIdeal → orderOf (ω v) = m) ∧
+      (∀ v, ¬ I ≤ v.asIdeal → ω v = 1) ∧
+      ∀ v (u : (IsLocalRing.ResidueField (v.adicCompletionIntegers K))ˣ),
+        u ^ r = 1 → ω v u = 1 := by
+  obtain ⟨χ, horder, hsupport, htor⟩ := I.exists_residueCharacterFamily hM h
+  let e (v : HeightOneSpectrum (𝓞 K)) :
+      (𝓞 K ⧸ v.asIdeal)ˣ ≃* (IsLocalRing.ResidueField (v.adicCompletionIntegers K))ˣ :=
+    Units.mapEquiv (v.residueFieldEquivAdicCompletionIntegers (K := K)).toMulEquiv
+  let transport (v : HeightOneSpectrum (𝓞 K)) :=
+    (MulChar.mulEquivToCircle (R := 𝓞 K ⧸ v.asIdeal)).trans
+      ((e v).monoidHomCongrLeft (N := Circle))
+  refine ⟨fun v ↦ transport v (χ v), ?_, ?_, ?_⟩
+  · exact fun v hv ↦ ((transport v).orderOf_eq (χ v)).trans (horder v hv)
+  · intro v hv
+    simp only [hsupport v hv, map_one]
+  · intro v u hu
+    apply Circle.coe_eq_one.mp
+    have happly : (transport v (χ v) u : ℂ) = χ v ((e v).symm u) := by
+      simp only [transport, MulEquiv.trans_apply, MulEquiv.monoidHomCongrLeft_apply,
+        MonoidHom.comp_apply, ← MulEquiv.toMonoidHom_eq_coe, MulEquiv.coe_toMonoidHom,
+        MulChar.coe_mulEquivToCircle_apply]
+    exact happly.trans (htor v ((e v).symm u) (by rw [← map_pow, hu, map_one]))
 
 end Ideal
