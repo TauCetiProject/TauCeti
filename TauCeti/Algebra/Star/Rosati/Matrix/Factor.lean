@@ -125,22 +125,6 @@ private theorem exists_starAlgEquiv_matrix_of_hermitian_unit {D : Type*} [Divisi
   exact and_congr_right fun _ ↦ forall₂_congr fun _ _ ↦
     ⟨fun h ↦ pos_of_mul_pos_right h hc.le, fun h ↦ mul_pos hc h⟩
 
-private theorem exists_cyclic_trace_pos {D : Type*} [Ring D] [Nontrivial D] [Algebra ℝ D]
-    [Nonempty n] (φ : A ≃ₐ[ℝ] Matrix n n D) (t : A →ₗ[ℝ] ℝ)
-    (hcyc : ∀ x y, t (x * y) = t (y * x)) (hpos : ∀ x, x ≠ 0 → 0 < t (x * star x)) :
-    ∃ τ : D →ₗ[ℝ] ℝ, 0 < τ 1 ∧ (∀ a b, τ (a * b) = τ (b * a)) ∧
-      ∀ x, t x = τ (Matrix.trace (φ x)) := by
-  obtain ⟨τ, hτ_cyc, hτ⟩ := LinearMap.exists_eq_comp_matrixTrace_of_cyclic
-    (t.comp φ.symm.toLinearMap) fun _ _ ↦ by simp [hcyc]
-  have htpos : 0 < (Fintype.card n : ℝ) * τ 1 := by
-    have h := hτ 1
-    simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_one] at h
-    rw [← one_smul D (1 : Matrix n n D), τ.map_trace_smul_one, smul_eq_mul] at h
-    exact h ▸ by simpa using hpos 1 fun h0 ↦
-      (one_ne_zero : (1 : Matrix n n D) ≠ 0) (by simpa using congrArg φ h0)
-  exact ⟨τ, pos_of_mul_pos_right htpos (Nat.cast_pos.mpr Fintype.card_pos).le, hτ_cyc,
-    fun x ↦ by simpa using hτ (φ x)⟩
-
 private theorem exists_starAlgEquiv_empty {D : Type*} [Ring D] [Algebra ℝ D] [StarRing D]
     [IsEmpty n] (φ : A ≃ₐ[ℝ] Matrix n n D) (t : A →ₗ[ℝ] ℝ) (P : Matrix n n D → Prop)
     (hP : ∀ X, P X) : ∃ e : A ≃⋆ₐ[ℝ] Matrix n n D, ∀ s : A, IsRosatiPositive t s ↔ P (e s) :=
@@ -166,10 +150,15 @@ private theorem exists_starAlgEquiv_trivial_star {D : Type*} [DivisionRing D] [A
   · exact exists_starAlgEquiv_empty φ t _ fun _ ↦
       (Matrix.isRosatiPositive_comp_traceLinearMap_iff _ hre_cyc).mpr
         ⟨Matrix.ext fun i _ ↦ isEmptyElim i, fun _ hv ↦ absurd (funext fun i ↦ isEmptyElim i) hv⟩
-  have : StarModule ℝ A := starModule_of_trace_mul_star_pos t hpos
-  obtain ⟨τ, hc, hτ_cyc, hτ⟩ := exists_cyclic_trace_pos φ t hcyc hpos
+  have : StarModule ℝ A := starModule_of_forall_pos_mul_star t hpos
+  obtain ⟨τ, hc, hτ_cyc, hτ⟩ := LinearMap.exists_eq_comp_traceLinearMap_pos_of_cyclic
+    (t.comp φ.symm.toLinearMap) (fun _ _ ↦ by simp [hcyc])
+    (by simpa using hpos 1 fun h0 ↦ one_ne_zero (α := Matrix n n D) (by simpa using congrArg φ h0))
   have ht x : t x = τ 1 * (rePart.comp (Matrix.traceLinearMap n ℝ D)) (φ x) := by
-    rw [hτ x, hD_cyc τ hτ_cyc, LinearMap.comp_apply, Matrix.traceLinearMap_apply]
+    have hτx := LinearMap.congr_fun hτ (φ x)
+    rw [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, AlgEquiv.symm_apply_apply,
+      LinearMap.comp_apply, Matrix.traceLinearMap_apply] at hτx
+    rw [hτx, hD_cyc τ hτ_cyc, LinearMap.comp_apply, Matrix.traceLinearMap_apply]
   let α := φ.toRingEquiv.starConjAlgEquiv ℝ fun r ↦ by
     simp [Algebra.algebraMap_eq_smul_one, star_smul]
   obtain ⟨u, huSign, hu⟩ := exists_unit_conj_star_eq_self_or_neg_of_central ℝ α fun X ↦ by simp [α]
@@ -200,58 +189,6 @@ private theorem not_pos_of_skewSymmetric_real {n : Type*} [Fintype n] [Decidable
   exact lt_irrefl 0 hposX
 
 end RealFactor
-
-section ComplexFactor
-
-private theorem star_I_smul_one_eq_neg {A : Type*} [Ring A] [Algebra ℝ A] [StarRing A]
-    {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n] (φ : A ≃ₐ[ℝ] Matrix n n ℂ)
-    (t : A →ₗ[ℝ] ℝ) (hpos : ∀ x, x ≠ 0 → 0 < t (x * star x)) :
-    φ (star (φ.symm (Complex.I • (1 : Matrix n n ℂ)))) = -(Complex.I • (1 : Matrix n n ℂ)) := by
-  let M := Matrix n n ℂ; let z : M := Complex.I • 1; let w : M := φ (star (φ.symm z))
-  have hw : w ∈ Subalgebra.center ℂ M := Subalgebra.mem_center_iff.mpr fun Y ↦ by
-    have hcomm : φ (star (φ.symm Y)) * z = z * φ (star (φ.symm Y)) := by simp [z]
-    simpa [w, map_mul, star_mul] using (congrArg (fun X ↦ φ (star (φ.symm X))) hcomm).symm
-  rw [Algebra.IsCentral.center_eq_bot ℂ M, Algebra.mem_bot] at hw; obtain ⟨c, hc⟩ := hw
-  have hc_sq : c * c = -1 := (algebraMap ℂ M).injective <| by
-    have hz2 : z * z = -1 := by simp [z, smul_smul, Complex.I_mul_I]
-    simpa [hc, w] using congrArg (fun X ↦ φ (star (φ.symm X))) hz2
-  rcases (mul_eq_zero.mp (by linear_combination hc_sq - Complex.I_mul_I :
-      (c - Complex.I) * (c + Complex.I) = 0)).imp sub_eq_zero.mp eq_neg_of_add_eq_zero_left with
-      rfl | rfl
-  · have h1 := hpos (φ.symm z) fun h0 ↦ Complex.I_ne_zero <| by
-      simpa [z, M] using congrFun (congrFun (congrArg φ h0)
-        (Classical.arbitrary n)) (Classical.arbitrary n)
-    have h2 : φ.symm z * star (φ.symm z) = -1 := φ.injective <| by
-      simpa [w, z, smul_smul, Algebra.algebraMap_eq_smul_one] using congrArg (z * ·) hc.symm
-    have hone : 0 < t 1 := by
-      simpa using hpos 1 fun h0 ↦ one_ne_zero (α := M) (by simpa using congrArg φ h0)
-    rw [h2, map_neg] at h1; linarith
-  · simpa [w, z, Algebra.algebraMap_eq_smul_one, neg_smul] using hc.symm
-
-private theorem trace_eq_mul_comp_traceLinearMap_complex {A : Type*} [Ring A] [Algebra ℝ A]
-    [StarRing A] {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n]
-    (φ : A ≃ₐ[ℝ] Matrix n n ℂ)
-    (hI : φ (star (φ.symm (Complex.I • (1 : Matrix n n ℂ)))) =
-      -(Complex.I • (1 : Matrix n n ℂ)))
-    (t' : A →ₗ[ℝ] ℝ) (hcyc' : ∀ x y, t' (x * y) = t' (y * x))
-    (hstar' : ∀ x, t' (star x) = t' x) (hpos' : ∀ x, x ≠ 0 → 0 < t' (x * star x)) :
-    ∃ c : ℝ, 0 < c ∧
-      ∀ x, t' x = c * (Complex.reLm.comp (Matrix.traceLinearMap n ℝ ℂ)) (φ x) := by
-  obtain ⟨τ, hc, -, hτ⟩ := exists_cyclic_trace_pos φ t' hcyc' hpos'
-  have hτI : τ Complex.I = 0 := by
-    have h2 : t' (φ.symm (Complex.I • 1)) = -t' (φ.symm (Complex.I • 1)) := by
-      conv_lhs => rw [← hstar', ← AlgEquiv.symm_apply_apply φ (star _), hI, map_neg, map_neg]
-    rw [hτ, AlgEquiv.apply_symm_apply, τ.map_trace_smul_one, smul_eq_mul] at h2
-    exact (mul_eq_zero.mp (by linarith : (Fintype.card n : ℝ) * τ Complex.I = 0)).resolve_left
-      (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
-  refine ⟨τ 1, hc, fun x ↦ ?_⟩
-  have htr : Matrix.trace (φ x) =
-      (Matrix.trace (φ x)).re • (1 : ℂ) + (Matrix.trace (φ x)).im • Complex.I := by
-    simp [Complex.real_smul, Complex.re_add_im]
-  rw [hτ x, htr, map_add, map_smul, map_smul, hτI, smul_zero, add_zero, smul_eq_mul, mul_comm]
-  simp only [LinearMap.comp_apply, Matrix.traceLinearMap_apply, Complex.reLm_coe]
-
-end ComplexFactor
 
 section QuaternionFactor
 
@@ -324,20 +261,33 @@ theorem exists_starAlgEquiv_matrix_complex {A : Type*} [Ring A] [Algebra ℝ A] 
       ⟨Subsingleton.elim _ _, fun v hv ↦ absurd (Subsingleton.elim v 0) hv⟩
   · -- Normalize the star-symmetrized functional `t' x = (t x + t (star x)) / 2`, which has the
     -- same Rosati-positive cone as `t`.
-    have : StarModule ℝ A := starModule_of_trace_mul_star_pos t hpos
+    have : StarModule ℝ A := starModule_of_forall_pos_mul_star t hpos
     let t' : A →ₗ[ℝ] ℝ := (t.comp (selfAdjoint.submodule ℝ A).subtype).comp (selfAdjointPart ℝ)
     have hpos' (x : A) (hx : x ≠ 0) : 0 < t' (x * star x) :=
       LinearMap.comp_selfAdjointPart_mul_star_pos hpos hx
-    have hI := star_I_smul_one_eq_neg φ t' hpos'
-    obtain ⟨c, hc, ht⟩ := trace_eq_mul_comp_traceLinearMap_complex φ hI t'
-      (LinearMap.comp_selfAdjointPart_cyclic hcyclic) t.comp_selfAdjointPart_star hpos'
+    let f : ℂ →ₐ[ℝ] A := φ.symm.toAlgHom.comp ((Algebra.ofId ℂ (Matrix n n ℂ)).restrictScalars ℝ)
+    have hf_center (z : ℂ) : f z ∈ Subalgebra.center ℝ A :=
+      Subalgebra.mem_center_iff.mpr fun y ↦ φ.injective <| by
+        simp [f, Algebra.algebraMap_eq_smul_one]
+    have hstar_f := f.star_apply_of_mem_center_of_forall_pos_mul_star hf_center t hpos
+    let T' : Matrix n n ℂ →ₗ[ℝ] ℝ := t'.comp φ.symm.toLinearMap
+    have hT'I : T' (Complex.I • 1) = 0 := by
+      have hI : star (φ.symm (Complex.I • (1 : Matrix n n ℂ))) = -(φ.symm (Complex.I • 1)) := by
+        simpa [f, Algebra.algebraMap_eq_smul_one, neg_smul] using hstar_f Complex.I
+      have h2 : T' (Complex.I • 1) = -T' (Complex.I • 1) := by
+        simpa [T', hI] using (t.comp_selfAdjointPart_star (φ.symm (Complex.I • 1))).symm
+      linarith
+    obtain ⟨c, hc, hT'⟩ := T'.exists_pos_smul_comp_traceLinearMap_complex_of_apply_I
+      (fun _ _ ↦ by
+        simp only [T', LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_mul]
+        exact LinearMap.comp_selfAdjointPart_cyclic hcyclic _ _)
+      (by simpa [T'] using hpos' 1 fun h0 ↦
+        one_ne_zero (α := Matrix n n ℂ) (by simpa using congrArg φ h0))
+      hT'I
+    have ht x : t' x = c * (Complex.reLm.comp (Matrix.traceLinearMap n ℝ ℂ)) (φ x) := by
+      simpa [T'] using LinearMap.congr_fun hT' (φ x)
     let α := φ.toRingEquiv.starConjAlgEquiv ℂ fun z ↦ by
-      have hz1 (w : ℂ) : w • (1 : Matrix n n ℂ) =
-          w.re • (1 : Matrix n n ℂ) + w.im • (Complex.I • (1 : Matrix n n ℂ)) := by
-        conv_lhs => rw [← Complex.re_add_im w]
-        rw [add_smul, mul_smul, Complex.coe_smul, Complex.coe_smul]
-      rw [Algebra.algebraMap_eq_smul_one, star_smul, star_one, hz1 (star z), hz1 z]
-      simp [hI, neg_smul]
+      simpa [f, Algebra.algebraMap_eq_smul_one, star_smul] using congrArg φ (hstar_f (star z))
     obtain ⟨u, μ, hu, huμ, hμsq⟩ := exists_unit_conj_star_of_central ℂ α fun X ↦ by simp [α]
     obtain ⟨u', hu'sa, hu'conj⟩ := u.exists_isSelfAdjoint_conj_eq_of_star_eq_smul μ huμ hμsq
     have hσ x : φ (star x) = (u' : Matrix n n ℂ) * (φ x)ᴴ * (↑u'⁻¹ : Matrix n n ℂ) := by

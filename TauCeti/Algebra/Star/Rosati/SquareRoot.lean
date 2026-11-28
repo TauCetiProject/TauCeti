@@ -49,7 +49,7 @@ private theorem hasEigenvalue_lmul_pos {E : Type*} [Ring E] [Algebra ℝ E] [Sta
     rw [RosatiSpace.lmul_apply, ← map_smul] at hv1
     exact (RosatiSpace.of t hstar hpos).injective hv1
   have hvne : v ≠ 0 := fun h ↦ hv.2 (by simp [h])
-  have h1 := hs.trace_mul_mul_star_pos hvne
+  have h1 := hs.apply_mul_mul_star_pos hvne
   rw [hsv, smul_mul_assoc, map_smul, smul_eq_mul] at h1
   exact pos_of_mul_pos_left h1 (hpos v hvne).le
 
@@ -95,7 +95,7 @@ private theorem rosatiPositiveSquareRoot_of_star_invariant {E : Type*} [Ring E] 
     have h1 := congrArg (L (↑u⁻¹ : E)) h
     have hinv : (↑u⁻¹ : E) * r = 1 := u.inv_mul
     simpa [← LinearMap.comp_apply, ← Module.End.mul_eq_comp, ← map_mul, hinv] using h1
-  refine ⟨hs.isUnit, u, isRosatiPositive_of_isPositive_lmul t hcyc hstar hpos
+  refine ⟨hs.isUnit, u, isRosatiPositive_of_isPositive_lmul_of_injective t hcyc hstar hpos
       (hlmul_r ▸ hT.sqrt_isPositive) hinj_r,
     RosatiSpace.lmul_injective t hstar hpos
       (by rw [map_mul, hlmul_r, Module.End.mul_eq_comp, hT.sqrt_sq]),
@@ -119,7 +119,7 @@ theorem rosatiPositiveSquareRoot {E : Type*} [Ring E] [Algebra ℝ E] [StarRing 
   -- Pass to the star-symmetrized functional `t'`, then take the positive operator square root
   -- `LinearMap.IsPositive.sqrt` (unique by `LinearMap.IsPositive.sqrt_unique`) and express
   -- `sqrt` and its inverse as polynomials via `LinearMap.IsSymmetric.exists_aeval_eq_cfc`.
-  have : StarModule ℝ E := starModule_of_trace_mul_star_pos t hpos
+  have : StarModule ℝ E := starModule_of_forall_pos_mul_star t hpos
   let t' : E →ₗ[ℝ] ℝ := (t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)
   have hiff (a : E) : IsRosatiPositive t' a ↔ IsRosatiPositive t a :=
     isRosatiPositive_comp_selfAdjointPart_iff hcyclic

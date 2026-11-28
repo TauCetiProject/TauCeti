@@ -232,7 +232,7 @@ theorem realRosatiDecomposition {E : Type*} [Ring E] [Algebra ℝ E] [StarRing E
           (∀ i, ((e s).1 i).PosDef) ∧ (∀ i, ((e s).2.1 i).PosDef) ∧
           (∀ i, ((e s).2.2 i).QuatPosDef) := by
   have : IsProperStar E := isProperStar_of_forall_pos_mul_star t.toAddMonoidHom hpos
-  have : IsSemisimpleRing E := isSemisimpleRing_of_trace_mul_star_pos t hpos
+  have : IsSemisimpleRing E := isSemisimpleRing_of_forall_pos_mul_star t hpos
   obtain ⟨n, D, d, _, _, _, hd, ⟨eW⟩⟩ :=
     IsSemisimpleRing.exists_algEquiv_pi_matrix_divisionRing_finite ℝ E
   have hδ := eW.toRingEquiv.star_symm_single_one

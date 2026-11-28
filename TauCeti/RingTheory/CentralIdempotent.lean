@@ -307,6 +307,7 @@ open TauCeti
 
 /-- In a ring with proper star, every coordinate central idempotent `e.symm (Pi.single i 1)` of a
 product decomposition is fixed by `star`. -/
+@[simp]
 theorem star_symm_single_one {E : Type*} [Ring E] [StarRing E] [IsProperStar E] {ι : Type*}
     [DecidableEq ι] {A : ι → Type*} [∀ i, Ring (A i)] (e : E ≃+* ∀ i, A i) (i : ι) :
     star (e.symm (Pi.single i 1)) = e.symm (Pi.single i 1) := by

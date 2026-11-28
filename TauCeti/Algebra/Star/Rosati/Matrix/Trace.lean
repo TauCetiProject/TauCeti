@@ -18,19 +18,61 @@ import TauCeti.Algebra.Quaternion.Basic
 
 Compares `TauCeti.IsRosatiPositive` for `rePart.comp (Matrix.traceLinearMap n ℝ D)` against
 `Matrix.PosDef` over `ℝ` and `ℂ`, and against `Matrix.QuatPosDef` over `ℍ[ℝ]` (where
-`QuaternionAlgebra.reₗ (-1) 0 (-1)` gives the real part, half the quaternionic reduced trace).
+`QuaternionAlgebra.reₗ (-1) 0 (-1)` gives the real part, half the quaternionic reduced trace),
+and classifies cyclic star-invariant real linear functionals on `Matrix n n ℂ`.
 -/
 
 public section
 
 open scoped Matrix ComplexOrder Quaternion
 
+namespace LinearMap
+
+/-- For nonempty `n`, a cyclic `ℝ`-linear functional `t : Matrix n n ℂ →ₗ[ℝ] ℝ` satisfying
+`0 < t 1` and `t (Complex.I • 1) = 0` is a positive real multiple of
+`Complex.reLm.comp (Matrix.traceLinearMap n ℝ ℂ)`. -/
+theorem exists_pos_smul_comp_traceLinearMap_complex_of_apply_I {n : Type*} [Fintype n]
+    [DecidableEq n] [Nonempty n] (t : Matrix n n ℂ →ₗ[ℝ] ℝ)
+    (hcyc : ∀ X Y : Matrix n n ℂ, t (X * Y) = t (Y * X)) (ht1 : 0 < t 1)
+    (hI : t (Complex.I • 1) = 0) :
+    ∃ c : ℝ, 0 < c ∧ t = c • (Complex.reLm.comp (Matrix.traceLinearMap n ℝ ℂ)) := by
+  obtain ⟨τ, hc, -, hτ⟩ := exists_eq_comp_traceLinearMap_pos_of_cyclic t hcyc ht1
+  have hτI : τ Complex.I = 0 := by
+    have h2 : (Fintype.card n : ℝ) * τ Complex.I = 0 := by
+      have h := LinearMap.congr_fun hτ (Complex.I • 1)
+      rw [comp_apply, Matrix.traceLinearMap_apply, τ.map_trace_smul_one, smul_eq_mul] at h
+      exact h.symm.trans hI
+    exact (mul_eq_zero.mp h2).resolve_left (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
+  refine ⟨τ 1, hc, ext fun X ↦ ?_⟩
+  have htr : Matrix.trace X =
+      (Matrix.trace X).re • (1 : ℂ) + (Matrix.trace X).im • Complex.I := by
+    simp [Complex.real_smul, Complex.re_add_im]
+  rw [LinearMap.congr_fun hτ X, comp_apply, Matrix.traceLinearMap_apply, htr, map_add,
+    map_smul, map_smul, hτI, smul_zero, add_zero, smul_eq_mul, mul_comm]
+  simp [Complex.reLm_coe]
+
+/-- For nonempty `n`, a cyclic, star-invariant `ℝ`-linear functional `t : Matrix n n ℂ →ₗ[ℝ] ℝ`
+with `0 < t 1` is a positive real multiple of `Complex.reLm.comp (Matrix.traceLinearMap n ℝ ℂ)`. -/
+theorem exists_pos_smul_comp_traceLinearMap_complex {n : Type*} [Fintype n] [DecidableEq n]
+    [Nonempty n] (t : Matrix n n ℂ →ₗ[ℝ] ℝ)
+    (hcyc : ∀ X Y : Matrix n n ℂ, t (X * Y) = t (Y * X))
+    (hstar : ∀ X : Matrix n n ℂ, t (star X) = t X) (ht1 : 0 < t 1) :
+    ∃ c : ℝ, 0 < c ∧ t = c • (Complex.reLm.comp (Matrix.traceLinearMap n ℝ ℂ)) := by
+  refine exists_pos_smul_comp_traceLinearMap_complex_of_apply_I t hcyc ht1 ?_
+  have h : t (-(Complex.I • (1 : Matrix n n ℂ))) = t (Complex.I • (1 : Matrix n n ℂ)) := by
+    simpa [Matrix.star_eq_conjTranspose] using hstar (Complex.I • (1 : Matrix n n ℂ))
+  rw [map_neg] at h
+  exact eq_zero_of_neg_eq h
+
+end LinearMap
+
 namespace Matrix
 
 open TauCeti
 
-/-- Characterization of `IsRosatiPositive (rePart.comp (Matrix.traceLinearMap n ℝ D))` via
-Hermitian matrices and strict positivity of `v ↦ rePart (star v ⬝ᵥ (S *ᵥ v))`. -/
+/-- When `rePart` is cyclic (`∀ a b : D, rePart (a * b) = rePart (b * a)`), characterization of
+`IsRosatiPositive (rePart.comp (Matrix.traceLinearMap n ℝ D))` via Hermitian matrices and strict
+positivity of `v ↦ rePart (star v ⬝ᵥ (S *ᵥ v))`. -/
 theorem isRosatiPositive_comp_traceLinearMap_iff {D : Type*} [NonUnitalNonAssocSemiring D]
     [Module ℝ D] [StarRing D] {n : Type*} [Fintype n] (S : Matrix n n D)
     {rePart : D →ₗ[ℝ] ℝ} (hre_cyclic : ∀ a b : D, rePart (a * b) = rePart (b * a)) :

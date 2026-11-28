@@ -45,7 +45,7 @@ theorem isSemisimpleRing_of_isProperStar (A : Type*) [Ring A] [StarRing A]
 
 /-- A finite-dimensional real star algebra with a linear functional strictly positive on
 `x * star x` is semisimple. -/
-theorem isSemisimpleRing_of_trace_mul_star_pos {E : Type*} [Ring E] [Algebra ℝ E] [StarRing E]
+theorem isSemisimpleRing_of_forall_pos_mul_star {E : Type*} [Ring E] [Algebra ℝ E] [StarRing E]
     [Module.Finite ℝ E] (t : E →ₗ[ℝ] ℝ)
     (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) : IsSemisimpleRing E :=
   have := IsArtinianRing.of_finite ℝ E
