@@ -10,7 +10,7 @@ public import Mathlib.Topology.Sheaves.Limits
 public import Mathlib.Topology.Sheaves.LocallySurjective
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Carrier
 public import TauCeti.AlgebraicGeometry.StructureSheaf
-public import TauCeti.RingTheory.AdicCompletion.Limit
+public import TauCeti.RingTheory.AdicCompletion.CofinalLimit
 public import TauCeti.RingTheory.AdicRing.CompletedAway
 
 import Mathlib.Algebra.Category.Ring.Constructions
@@ -113,6 +113,8 @@ canonically isomorphic sheaf (EGA I, Ch. I, 10.1.1).
   on `D(f)` the reduction map `O_J → O_K` is the quotient map `A_f ⧸ J A_f → A_f ⧸ K A_f`.
 * `TauCeti.FormalScheme.Spf.basicOpenSectionsAdicCompletionIso_hom_comp_evalₐ`: a section over
   `D(f)` evaluates in `A_f ⧸ I ^ (n + 1) A_f` to its projection to the `n`-th thickening.
+* `TauCeti.FormalScheme.Spf.toQuotientSheaf_app_basicOpen_comp_quotientSheafBasicOpenIso_hom`:
+  projection to an arbitrary thickening on `D(f)` is `AdicCompletion.toQuotient`.
 * `TauCeti.FormalScheme.Spf.quotientProjection_app_basicOpen_surjective`,
   `TauCeti.FormalScheme.Spf.quotientTransition_app_basicOpen_surjective`,
   `TauCeti.FormalScheme.Spf.toQuotientSheaf_app_basicOpen_surjective`: the projections and
@@ -653,6 +655,35 @@ theorem basicOpenSectionsAdicCompletionIso_hom_comp_evalₐ (hI : IsAdic I) (f :
   calc _ = (preservesLimitIso _ _).hom ≫ (HasLimit.isoOfNatIso _).hom ≫ limit.π _ (op n) :=
         congrArg (_ ≫ _ ≫ ·) hc
     _ = _ := (congrArg (_ ≫ ·) hb).trans ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) ha))
+
+/-- On `D(f)`, projection to a quotient thickening is evaluation on the corresponding
+adic completion, followed by reduction along the given containment of ideals. -/
+@[reassoc]
+theorem toQuotientSheaf_app_basicOpen_comp_quotientSheafBasicOpenIso_hom {I : Ideal A}
+    (hI : IsAdic I) (hJ : IsAdic J) (f : A) {n : ℕ} (hn : I ^ (n + 1) ≤ J) :
+    (toQuotientSheaf hI hJ).hom.app (op (basicOpen f)) ≫
+        (quotientSheafBasicOpenIso hJ f).hom =
+      (basicOpenSectionsAdicCompletionIso hI f).hom ≫
+        CommRingCat.ofHom (AdicCompletion.toQuotient (I.map (algebraMap A (Localization.Away f)))
+          ⟨n + 1, (Ideal.map_pow _ _ _).ge.trans (Ideal.map_mono hn)⟩) := by
+  rw [AdicCompletion.toQuotient_eq _ _ ((Ideal.map_pow _ _ _).ge.trans (Ideal.map_mono hn)),
+    AlgHom.toRingHom_eq_coe, CommRingCat.ofHom_comp]
+  have hfactor :
+      CommRingCat.ofHom
+          (Ideal.quotEquivOfEq (Ideal.map_pow (algebraMap A (Localization.Away f)) I
+            (n + 1))).toRingHom ≫
+        CommRingCat.ofHom (Ideal.Quotient.factor
+          ((Ideal.map_pow (algebraMap A (Localization.Away f)) I (n + 1)).ge.trans
+            (Ideal.map_mono hn))) =
+      CommRingCat.ofHom (Ideal.Quotient.factor
+        (Ideal.map_mono (f := algebraMap A (Localization.Away f)) hn)) := by
+    apply CommRingCat.hom_ext
+    apply Ideal.Quotient.ringHom_ext
+    ext x
+    simp
+  rw [toQuotientSheaf_eq hI hJ hn, TopCat.Sheaf.comp_app, Category.assoc,
+    quotientTransition_app_basicOpen_comp_quotientSheafBasicOpenIso_hom, ← hfactor,
+    basicOpenSectionsAdicCompletionIso_hom_comp_evalₐ_assoc]
 
 /-- Projection to an infinitesimal thickening is surjective on every basic open. -/
 theorem quotientProjection_app_basicOpen_surjective (hI : IsAdic I) (f : A) (n : ℕ) :

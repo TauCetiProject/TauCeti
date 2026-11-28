@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.IdealKernel
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Quotient
-public import TauCeti.RingTheory.AdicCompletion.CofinalLimit
 
 /-!
 # Ideals of definition on the formal spectrum
@@ -65,36 +64,6 @@ theorem idealSheaf_global (hJ : IsAdic J) :
   rw [hh, RingHom.ker_comp_of_injective _
     (ConcreteCategory.bijective_of_isIso (quotientSheafGlobalSectionsIso hJ).inv).injective,
     Ideal.mk_ker]
-
-omit [IsAdicRing A] in
-/-- On `D(f)`, projection to a quotient thickening is evaluation on the corresponding
-adic completion, followed by reduction along the given containment of ideals. -/
-@[reassoc]
-theorem toQuotientSheaf_app_basicOpen_comp_quotientSheafBasicOpenIso_hom {I : Ideal A}
-    (hI : IsAdic I) (hJ : IsAdic J) (f : A) {n : ℕ} (hn : I ^ (n + 1) ≤ J) :
-    (toQuotientSheaf hI hJ).hom.app (op (basicOpen f)) ≫
-        (quotientSheafBasicOpenIso hJ f).hom =
-      (basicOpenSectionsAdicCompletionIso hI f).hom ≫
-        CommRingCat.ofHom (AdicCompletion.toQuotient (I.map (algebraMap A (Localization.Away f)))
-          ⟨n + 1, (Ideal.map_pow _ _ _).ge.trans (Ideal.map_mono hn)⟩) := by
-  rw [AdicCompletion.toQuotient_eq _ _ ((Ideal.map_pow _ _ _).ge.trans (Ideal.map_mono hn)),
-    AlgHom.toRingHom_eq_coe, CommRingCat.ofHom_comp]
-  have hfactor :
-      CommRingCat.ofHom
-          (Ideal.quotEquivOfEq (Ideal.map_pow (algebraMap A (Localization.Away f)) I
-            (n + 1))).toRingHom ≫
-        CommRingCat.ofHom (Ideal.Quotient.factor
-          ((Ideal.map_pow (algebraMap A (Localization.Away f)) I (n + 1)).ge.trans
-            (Ideal.map_mono hn))) =
-      CommRingCat.ofHom (Ideal.Quotient.factor
-        (Ideal.map_mono (f := algebraMap A (Localization.Away f)) hn)) := by
-    apply CommRingCat.hom_ext
-    apply Ideal.Quotient.ringHom_ext
-    ext x
-    simp
-  rw [toQuotientSheaf_eq hI hJ hn, TopCat.Sheaf.comp_app, Category.assoc,
-    quotientTransition_app_basicOpen_comp_quotientSheafBasicOpenIso_hom, ← hfactor,
-    basicOpenSectionsAdicCompletionIso_hom_comp_evalₐ_assoc]
 
 /-- In the completed localization coordinates on `D(f)`, the sections of `J^Δ` are the
 extension of `J` to the completed localization. -/
