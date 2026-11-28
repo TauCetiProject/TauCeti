@@ -140,11 +140,9 @@ theorem cohomFpAddEquivH2_cohomFpMap [LocallyCompactSpace G] {H : Type u} [Group
       (eqToHom (res_trivialFp_hom p φ.toMonoidHom)).hom m = f m :=
     (trivialFpEquiv p H).injective <| by
       simpa [f] using trivialFpEquiv_eqToHom_res_trivialFp_hom p φ.toMonoidHom m
-  have hf (h : H) (m : (trivialFp p G).V) : f (φ h • m) = h • f m := by
-    rw [smul_trivialFp_V, smul_trivialFp_V]
   obtain ⟨y, rfl⟩ := (trivialFp p G).explicitH2AddEquivContinuousCohomologyOfDiscrete.surjective x
   rw [cohomFpMap_def, TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_map (trivialFp p G)
-      (trivialFp p H) φ _ f hF hf,
+      (trivialFp p H) φ _ f hF,
     cohomFpAddEquivH2_explicitH2AddEquivContinuousCohomologyOfDiscrete,
     cohomFpAddEquivH2_explicitH2AddEquivContinuousCohomologyOfDiscrete]
   induction y using QuotientAddGroup.induction_on with

@@ -126,7 +126,7 @@ theorem explicitCoeff2_surjective (hn : IsUnit (n : F)) {B C : GalRep n F}
     C.explicitH2AddEquivContinuousCohomologyOfDiscrete.injective ?_⟩
   -- Naturality of the degree-two comparison carries the explicit map to `coeffMap g 2`.
   have hnat := TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_map B C
-    (ContinuousMonoidHom.id _) g φ.toAddMonoidHom (fun b ↦ (hφ b).symm) φ.map_smul
+    (ContinuousMonoidHom.id _) g φ.toAddMonoidHom (fun b ↦ (hφ b).symm)
     (B.explicitH2AddEquivContinuousCohomologyOfDiscrete.symm x)
   rw [AddEquiv.apply_symm_apply, ← ContinuousCohomology.coeffMap_def, hx] at hnat
   rw [explicitCoeff2_eq_explicitMap2]

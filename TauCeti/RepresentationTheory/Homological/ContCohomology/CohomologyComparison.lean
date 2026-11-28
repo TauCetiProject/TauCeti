@@ -519,11 +519,13 @@ theorem _root_.TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_map
     {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
     (Y : TopRep k H) [DiscreteTopology Y.V] [ContinuousSMul H Y.V]
     (φ : H →ₜ* G) (F : TopRep.res (φ : H →* G) X ⟶ Y) (f : X.V →+ Y.V)
-    (hF : ∀ m, F.hom m = f m) (hf : ∀ (h : H) (m : X.V), f (φ h • m) = h • f m)
-    (x : H1 G X.V) :
+    (hF : ∀ m, F.hom m = f m) (x : H1 G X.V) :
     _root_.ContinuousCohomology.map φ F 1 (X.explicitH1AddEquivContinuousCohomologyOfDiscrete x) =
       Y.explicitH1AddEquivContinuousCohomologyOfDiscrete
-        (explicitMap1 G X.V H Y.V φ f continuous_of_discreteTopology hf x) := by
+        (explicitMap1 G X.V H Y.V φ f continuous_of_discreteTopology
+          (fun h m ↦ by rw [← hF, ← hF]; exact TopRep.hom_comm_apply F h m) x) := by
+  have hf : ∀ (h : H) (m : X.V), f (φ h • m) = h • f m := fun h m ↦ by
+    rw [← hF, ← hF]; exact TopRep.hom_comm_apply F h m
   induction x using QuotientAddGroup.induction_on with
   | H c =>
     rw [TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_apply,
@@ -577,11 +579,13 @@ theorem _root_.TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_map
     [LocallyCompactSpace G] {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
     [LocallyCompactSpace H] (Y : TopRep k H) [DiscreteTopology Y.V] [ContinuousSMul H Y.V]
     (φ : H →ₜ* G) (F : TopRep.res (φ : H →* G) X ⟶ Y) (f : X.V →+ Y.V)
-    (hF : ∀ m, F.hom m = f m) (hf : ∀ (h : H) (m : X.V), f (φ h • m) = h • f m)
-    (x : H2 G X.V) :
+    (hF : ∀ m, F.hom m = f m) (x : H2 G X.V) :
     _root_.ContinuousCohomology.map φ F 2 (X.explicitH2AddEquivContinuousCohomologyOfDiscrete x) =
       Y.explicitH2AddEquivContinuousCohomologyOfDiscrete
-        (explicitMap2 G X.V H Y.V φ f continuous_of_discreteTopology hf x) := by
+        (explicitMap2 G X.V H Y.V φ f continuous_of_discreteTopology
+          (fun h m ↦ by rw [← hF, ← hF]; exact TopRep.hom_comm_apply F h m) x) := by
+  have hf : ∀ (h : H) (m : X.V), f (φ h • m) = h • f m := fun h m ↦ by
+    rw [← hF, ← hF]; exact TopRep.hom_comm_apply F h m
   induction x using QuotientAddGroup.induction_on with
   | H c =>
     rw [TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_apply,
