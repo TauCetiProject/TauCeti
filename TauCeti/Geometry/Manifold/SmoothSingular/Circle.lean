@@ -18,7 +18,13 @@ vertex. Its class `TauCeti.circleLoopClass ∈ H₁^sm(S¹; ℤ)` pairs with the
 angular form `dθ` to `2π`
 (`TauCeti.deRhamCohomology.smoothHomologyPeriod_mk_circleAngularClosedForm_circleLoopClass`), so the
 pairing `TauCeti.deRhamCohomology.smoothHomologyPeriod` of de Rham cohomology with integral smooth
-singular homology is not trivial.
+singular homology is not trivial. By compatibility of periods
+(`TauCeti.closedFormHomologyPeriod_homologyMap_ι`),
+`TauCeti.closedFormHomologyPeriod circleAngularClosedForm` on continuous homology evaluates to
+`2π` on the image of `TauCeti.circleLoopClass` under
+`SSet.homologyMap (smoothSingularSubcomplex (𝓡 1) Circle).ι (ModuleCat.of ℤ ℤ) 1`, so the
+inclusion of smooth singular chains into continuous singular chains induces a nonzero map on
+`H₁(S¹; ℤ)` (`TauCeti.homologyMap_smoothSingularSubcomplex_ι_circle_int_ne_zero`).
 
 ## Main definitions
 
@@ -30,6 +36,8 @@ singular homology is not trivial.
 * `TauCeti.d_ιChainComplex_circleLoopSimplex`: the standard loop is a cycle.
 * `TauCeti.deRhamCohomology.smoothHomologyPeriod_mk_circleAngularClosedForm_circleLoopClass`: the
   period of `dθ` on the standard loop of the circle is `2π`.
+* `TauCeti.homologyMap_smoothSingularSubcomplex_ι_circle_int_ne_zero`: the inclusion of smooth
+  singular chains into continuous singular chains is nonzero on `H₁(S¹; ℤ)`.
 -/
 
 public section
@@ -90,15 +98,31 @@ of de Rham cohomology with integral smooth singular homology is nonzero on the c
 theorem deRhamCohomology.smoothHomologyPeriod_mk_circleAngularClosedForm_circleLoopClass :
     deRhamCohomology.smoothHomologyPeriod (deRhamCohomology.mk (𝓡 1) 1 circleAngularClosedForm)
       circleLoopClass = 2 * Real.pi := by
-  -- reparametrising `t ↦ exp (2π i t)` on `[0, 1]` as `Circle.exp` on `[0, 2π]`
-  have h := pathIntegral_comp_mul_add (isSmoothForm_circleAngularForm.of_le (by simp))
-    (contMDiff_circleExp (m := 1)) (2 * Real.pi) 0 0 1
   rw [circleLoopClass_eq_homologyπ, deRhamCohomology.smoothHomologyPeriod_mk,
     LinearMap.toAddMonoidHom_coe, smoothHomologyPeriodHom_homologyπ
       (circleAngularClosedForm.val.isSmoothForm.of_le (by simp))
       ((mem_closedForms _ _).mp circleAngularClosedForm.property),
     HomologicalComplex.iCycles_moduleCatCyclesMk, integrationCochain_ιChainComplex]
-  simpa [circleLoopSimplex_eq_ofCurve, SmoothSimplex.integral_ofCurve,
-    pathIntegral_circleAngularForm_circleExp] using h
+  simpa [circleLoopSimplex_eq_ofCurve, SmoothSimplex.integral_ofCurve] using
+    pathIntegral_circleAngularForm_circleExp_two_pi_mul
+
+/-- On `Circle`, the inclusion of smooth singular chains into continuous singular chains is nonzero
+on `H₁(Circle; ℤ)`: by compatibility with the smooth period
+(`closedFormHomologyPeriod_homologyMap_ι`), `closedFormHomologyPeriod circleAngularClosedForm`
+evaluates to `2π ≠ 0` on the image of `circleLoopClass` under
+`SSet.homologyMap (smoothSingularSubcomplex (𝓡 1) Circle).ι (ModuleCat.of ℤ ℤ) 1`. -/
+theorem homologyMap_smoothSingularSubcomplex_ι_circle_int_ne_zero :
+    SSet.homologyMap (smoothSingularSubcomplex (𝓡 1) Circle).ι (ModuleCat.of ℤ ℤ) 1 ≠ 0 := by
+  intro hzero
+  have hper :
+      closedFormHomologyPeriod circleAngularClosedForm
+          ((SSet.homologyMap (smoothSingularSubcomplex (𝓡 1) Circle).ι
+            (ModuleCat.of ℤ ℤ) 1).hom circleLoopClass) = 0 := by
+    rw [hzero, ModuleCat.hom_zero, LinearMap.zero_apply]
+    exact map_zero (closedFormHomologyPeriod circleAngularClosedForm)
+  rw [closedFormHomologyPeriod_homologyMap_ι, ← LinearMap.toAddMonoidHom_coe,
+    ← deRhamCohomology.smoothHomologyPeriod_mk,
+    deRhamCohomology.smoothHomologyPeriod_mk_circleAngularClosedForm_circleLoopClass] at hper
+  linarith [Real.pi_pos]
 
 end TauCeti

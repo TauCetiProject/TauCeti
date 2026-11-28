@@ -67,7 +67,10 @@ In particular the time form of the unit-period circle is `dθ / 2π`. Since the 
   inclusion.
 * `TauCeti.circleAngularForm_apply`: evaluation of `dθ` via the ambient derivative in `ℂ`.
 * `TauCeti.circleAngularClosedForm`: `dθ` as a smooth closed form.
+* `TauCeti.mextDeriv_circleAngularForm`: `dθ` is closed.
 * `TauCeti.pathIntegral_circleAngularForm_circleExp`: `∫_{exp (· i)} dθ = b − a` over `a..b`.
+* `TauCeti.pathIntegral_circleAngularForm_circleExp_two_pi_mul`: `∫_{exp (2π i ·)} dθ = 2π`
+  over `[0, 1]`.
 * `TauCeti.circleAngularClosedForm_notMem_exactForms`: `dθ` is not exact.
 * `TauCeti.deRhamCohomology.mk_circleAngularClosedForm_ne_zero`: `[dθ] ≠ 0` in `H¹_dR(S¹)`.
 * `TauCeti.circleOrientation`, `TauCeti.circleOrientation_def`: the orientation of the circle on
@@ -161,6 +164,11 @@ theorem coe_circleAngularClosedForm :
       circleAngularForm :=
   (rfl)
 
+/-- The angular form on the circle is closed. -/
+theorem mextDeriv_circleAngularForm : mextDeriv circleAngularForm = 0 := by
+  simpa only [coe_circleAngularClosedForm] using
+    (mem_closedForms (𝓡 1) _).mp circleAngularClosedForm.property
+
 /-- The angular form takes the value `1` on the velocity of the standard parametrization
 `t ↦ exp (t i)` of the circle. -/
 theorem circleAngularForm_apply_curveVelocity_circleExp (t : ℝ) :
@@ -196,6 +204,15 @@ theorem pathIntegral_circleAngularForm_circleExp (a b : ℝ) :
   rw [pathIntegral_def]
   simp only [circleAngularForm_apply_curveVelocity_circleExp]
   rw [intervalIntegral.integral_const, smul_eq_mul, mul_one]
+
+/-- Along the rescaled standard loop `t ↦ exp (2π i t)` over `[0, 1]`, the angular form
+integrates to `2π`. -/
+theorem pathIntegral_circleAngularForm_circleExp_two_pi_mul :
+    pathIntegral circleAngularForm (fun t : ℝ ↦ Circle.exp (2 * Real.pi * t)) 0 1 =
+      2 * Real.pi := by
+  have h := pathIntegral_comp_mul_add (isSmoothForm_circleAngularForm.of_le (by norm_num))
+    (contMDiff_circleExp (m := 1)) (2 * Real.pi) 0 0 1
+  simpa [pathIntegral_circleAngularForm_circleExp] using h
 
 /-- The angular form vanishes nowhere on the circle. -/
 theorem circleAngularForm_ne_zero (z : Circle) : circleAngularForm z ≠ 0 := by

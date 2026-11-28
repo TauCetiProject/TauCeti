@@ -18,6 +18,7 @@ import TauCeti.Algebra.Homology.Homotopy
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Contraction
 import TauCeti.Geometry.Manifold.SmoothSingular.Additivity
+import TauCeti.Geometry.Manifold.SmoothSingular.ChainMap
 import TauCeti.Geometry.Manifold.SmoothSingular.Homotopy
 import TauCeti.Geometry.Manifold.Topology
 import TauCeti.Topology.MayerVietoris
@@ -357,8 +358,8 @@ theorem smoothSingularChainHomotopyEquiv_hom_naturality {f : M → N}
         SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom ⟨f, hf.continuous⟩)) R =
       SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) R ≫
         (smoothSingularChainHomotopyEquiv J N R).hom := by
-  rw [smoothSingularChainHomotopyEquiv_hom, smoothSingularChainHomotopyEquiv_hom,
-    ← Functor.map_comp, ← Functor.map_comp, smoothSingularSubcomplexMap_ι]
+  simpa only [smoothSingularChainHomotopyEquiv_hom] using
+    (chainComplexMap_smoothSingularSubcomplexMap_ι hf R).symm
 
 variable {I M J N} in
 /-- **Naturality up to chain homotopy of the smoothing inverse.** For any smooth map `f : M → N`,
@@ -373,7 +374,7 @@ def smoothSingularChainHomotopyEquivInvNaturality {f : M → N}
       (SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom ⟨f, hf.continuous⟩)) R ≫
         (smoothSingularChainHomotopyEquiv J N R).inv) :=
   (smoothSingularChainHomotopyEquiv I M R).invNaturality (smoothSingularChainHomotopyEquiv J N R)
-    (smoothSingularChainHomotopyEquiv_hom_naturality R hf)
+    (.ofEq (smoothSingularChainHomotopyEquiv_hom_naturality R hf))
 
 /-! ### Cochain homotopy equivalence and singular cohomology comparison -/
 
