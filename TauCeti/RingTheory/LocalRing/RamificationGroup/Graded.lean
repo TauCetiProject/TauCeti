@@ -90,8 +90,10 @@ group `G_1` is the unique Sylow `p`-subgroup of `G_0`.
   `TauCeti.IsLocalRing.lowerIndex_eq_addVal_smul_sub` computes the lower index there.
 * `TauCeti.IsLocalRing.coe_tameCharacter_of_smul_eq_mul`: the tame character computed at any
   uniformizer.
-* `TauCeti.IsLocalRing.toAdd_ramificationGroupToResidueField_of_mul_eq`: changing the uniformizer
-  from `π` to `π a` multiplies the positive-depth coordinate by the `(n + 1)`-st power of `a`.
+* `TauCeti.IsLocalRing.toAdd_ramificationGroupToResidueField_of_mul_eq` and
+  `TauCeti.IsLocalRing.toAdd_ramificationGroupGradedToResidueField_of_mul_eq`: changing the
+  uniformizer from `π` to `π a` multiplies the positive-depth coordinate by the `(n + 1)`-st
+  power of `a`.
 * `TauCeti.IsLocalRing.ker_tameCharacter`, `TauCeti.IsLocalRing.tameCharacter_injective_iff`,
   `TauCeti.IsLocalRing.tameCharacter_injective_of_charZero`, and
   `TauCeti.IsLocalRing.tameCharacterGraded_injective`;
@@ -886,12 +888,13 @@ theorem not_dvd_index_ramificationGroup_one (R : Type*) [CommRing R] [IsLocalRin
 
 /-! ### The positive-depth graded embeddings -/
 
-/-- An element of `G_{n+1}` moves a uniformizer `π` by a multiple of `π ^ (n + 2)`. -/
-private theorem pow_dvd_smul_sub {π : S} (hπ : Irreducible π) {n : ℕ}
-    (σ : ramificationGroup G S ((n : ℤ) + 1)) : π ^ (n + 2) ∣ (σ : G) • π - π := by
-  have h := mem_ramificationGroup_iff.mp σ.property π
-  rwa [(by omega : ((n : ℤ) + 1 + 1).toNat = n + 2), hπ.maximalIdeal_eq,
-    Ideal.span_singleton_pow, Ideal.mem_span_singleton] at h
+/-- An element of `G_i` moves every element `x : S` (in particular, any uniformizer `π`) by a
+multiple of `π ^ (i + 1)`. -/
+theorem pow_dvd_smul_sub_of_mem_ramificationGroup {π : S} (hπ : Irreducible π) {i : ℕ} {σ : G}
+    (hσ : σ ∈ ramificationGroup G S (i : ℤ)) (x : S) :
+    π ^ (i + 1) ∣ σ • x - x := by
+  have h := mem_ramificationGroup_natCast_iff.mp hσ x
+  rwa [hπ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton] at h
 
 omit [IsDiscreteValuationRing S] in
 /-- The factor `c` with `σ π - π = π ^ (n + 2) c` is unique. -/
@@ -906,15 +909,22 @@ sends `σ` to the residue of the `c` with `σ π - π = π ^ (n + 2) c`
 (`TauCeti.IsLocalRing.ker_ramificationGroupToResidueField`). -/
 noncomputable def ramificationGroupToResidueField {π : S} (hπ : Irreducible π) (n : ℕ) :
     ramificationGroup G S ((n : ℤ) + 1) →* Multiplicative (ResidueField S) :=
-  MonoidHom.mk' (fun σ ↦ Multiplicative.ofAdd (residue S (pow_dvd_smul_sub hπ σ).choose))
+  MonoidHom.mk'
+    (fun σ ↦ Multiplicative.ofAdd (residue S
+      (pow_dvd_smul_sub_of_mem_ramificationGroup hπ (by exact_mod_cast σ.property) π).choose))
     (fun σ τ ↦ by
       -- `σ τ π - π = σ (π ^ (n + 2) c_τ) + π ^ (n + 2) c_σ`, and `σ - 1` moves
       -- `π ^ (n + 2) c_τ` into `𝔪 ^ (n + 3)`.
-      have hcσ := (pow_dvd_smul_sub hπ σ).choose_spec
-      have hcτ := (pow_dvd_smul_sub hπ τ).choose_spec
-      have hcστ := (pow_dvd_smul_sub hπ (σ * τ)).choose_spec
-      set cσ := (pow_dvd_smul_sub hπ σ).choose
-      set cτ := (pow_dvd_smul_sub hπ τ).choose
+      have hcσ :=
+        (pow_dvd_smul_sub_of_mem_ramificationGroup hπ (by exact_mod_cast σ.property) π).choose_spec
+      have hcτ :=
+        (pow_dvd_smul_sub_of_mem_ramificationGroup hπ (by exact_mod_cast τ.property) π).choose_spec
+      have hcστ := (pow_dvd_smul_sub_of_mem_ramificationGroup hπ
+        (by exact_mod_cast (σ * τ).property) π).choose_spec
+      set cσ :=
+        (pow_dvd_smul_sub_of_mem_ramificationGroup hπ (by exact_mod_cast σ.property) π).choose
+      set cτ :=
+        (pow_dvd_smul_sub_of_mem_ramificationGroup hπ (by exact_mod_cast τ.property) π).choose
       have hσ : (σ : G) ∈ ramificationGroup G S (n + 1 : ℕ) := by exact_mod_cast σ.property
       have hy : π ^ (n + 2) * cτ ∈ maximalIdeal S ^ (n + 1 + 1) := by
         rw [hπ.maximalIdeal_eq, Ideal.span_singleton_pow]
@@ -940,14 +950,16 @@ theorem ramificationGroupToResidueField_apply_of_smul_sub_eq {π : S} (hπ : Irr
     {σ : ramificationGroup G S ((n : ℤ) + 1)} {c : S} (hc : (σ : G) • π - π = π ^ (n + 2) * c) :
     ramificationGroupToResidueField hπ n σ = Multiplicative.ofAdd (residue S c) := by
   rw [ramificationGroupToResidueField, MonoidHom.mk'_apply,
-    eq_of_smul_sub_eq_pow_mul hπ (pow_dvd_smul_sub hπ σ).choose_spec hc]
+    eq_of_smul_sub_eq_pow_mul hπ
+      (pow_dvd_smul_sub_of_mem_ramificationGroup hπ (by exact_mod_cast σ.property) π).choose_spec
+      hc]
 
 /-- The positive-depth homomorphism at `σ` is trivial exactly when `σ π ≡ π` modulo
 `𝔪 ^ (n + 3)`. -/
 theorem ramificationGroupToResidueField_eq_one_iff {π : S} (hπ : Irreducible π) {n : ℕ}
     {σ : ramificationGroup G S ((n : ℤ) + 1)} :
     ramificationGroupToResidueField hπ n σ = 1 ↔ (σ : G) • π - π ∈ maximalIdeal S ^ (n + 3) := by
-  obtain ⟨c, hc⟩ := pow_dvd_smul_sub hπ σ
+  obtain ⟨c, hc⟩ := pow_dvd_smul_sub_of_mem_ramificationGroup hπ (by exact_mod_cast σ.property) π
   rw [ramificationGroupToResidueField_apply_of_smul_sub_eq hπ hc, ← ofAdd_zero,
     Multiplicative.ofAdd.apply_eq_iff_eq, residue_eq_zero_iff, hc, mul_comm]
   refine ⟨fun h ↦ ?_, fun h ↦
@@ -961,12 +973,9 @@ theorem toAdd_ramificationGroupToResidueField_of_mul_eq {π π' a : S} (hπ : Ir
     (hπ' : Irreducible π') (ha : π * a = π') {n : ℕ} (σ : ramificationGroup G S ((n : ℤ) + 1)) :
     (ramificationGroupToResidueField hπ n σ).toAdd =
       residue S a ^ (n + 1) * (ramificationGroupToResidueField hπ' n σ).toAdd := by
-  obtain ⟨c, hc⟩ := pow_dvd_smul_sub hπ σ
+  obtain ⟨c, hc⟩ := pow_dvd_smul_sub_of_mem_ramificationGroup hπ (by exact_mod_cast σ.property) π
   obtain ⟨a', ha'⟩ := ((hπ'.isUnit_or_isUnit ha.symm).resolve_left hπ.not_isUnit).exists_right_inv
-  obtain ⟨b, hb⟩ : π ^ (n + 2) ∣ (σ : G) • a - a := by
-    have h := mem_ramificationGroup_iff.mp σ.property a
-    rwa [(by omega : ((n : ℤ) + 1 + 1).toNat = n + 2), hπ.maximalIdeal_eq,
-      Ideal.span_singleton_pow, Ideal.mem_span_singleton] at h
+  obtain ⟨b, hb⟩ := pow_dvd_smul_sub_of_mem_ramificationGroup hπ (by exact_mod_cast σ.property) a
   -- `σ π' - π' = π' ^ (n + 2) a' ^ (n + 2) (π b + c a + c π ^ (n + 2) b)`, with `a a' = 1`.
   have hpow : (a * a') ^ (n + 2) = 1 := by rw [ha', one_pow]
   have hc' : (σ : G) • π' - π' =
@@ -1023,6 +1032,19 @@ theorem ramificationGroupGradedToResidueField_mk {π : S} (hπ : Irreducible π)
     ramificationGroupGradedToResidueField hπ n (σ : RamificationGroupGraded G S ((n : ℤ) + 1)) =
       ramificationGroupToResidueField hπ n σ :=
   (rfl)
+
+/-- **Changing the uniformizer** in the positive-depth graded homomorphism: if `π' = π a`, then
+the coordinate of `τ : G_{n+1} / G_{n+2}` at `π` is `a ^ (n + 1)` times its coordinate at `π'`,
+modulo `𝔪`. -/
+theorem toAdd_ramificationGroupGradedToResidueField_of_mul_eq {π π' a : S} (hπ : Irreducible π)
+    (hπ' : Irreducible π') (ha : π * a = π') {n : ℕ}
+    (τ : RamificationGroupGraded G S ((n : ℤ) + 1)) :
+    (ramificationGroupGradedToResidueField hπ n τ).toAdd =
+      residue S a ^ (n + 1) * (ramificationGroupGradedToResidueField hπ' n τ).toAdd := by
+  induction τ using QuotientGroup.induction_on with
+  | H σ =>
+    rw [ramificationGroupGradedToResidueField_mk, ramificationGroupGradedToResidueField_mk]
+    exact toAdd_ramificationGroupToResidueField_of_mul_eq hπ hπ' ha σ
 
 /-- For a separable residue extension, the positive-depth graded piece `G_{n+1} / G_{n+2}` embeds
 into the additive group of the residue field. -/

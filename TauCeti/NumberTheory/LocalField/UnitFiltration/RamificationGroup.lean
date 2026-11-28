@@ -153,12 +153,22 @@ def uniformizerRatio (hϖ : Irreducible ϖ) (σ : ramificationGroup G 𝒪[L] (i
   (unitFiltrationEquivInteger i).symm
     (TauCeti.IsDiscreteValuationRing.uniformizerRatio i hϖ σ)
 
+/-- Transporting the local-field uniformizer ratio along `unitFiltrationEquivInteger` gives the
+DVR uniformizer ratio. -/
+@[simp]
+theorem unitFiltrationEquivInteger_uniformizerRatio (hϖ : Irreducible ϖ)
+    (σ : ramificationGroup G 𝒪[L] (i : ℤ)) :
+    unitFiltrationEquivInteger i (uniformizerRatio i hϖ σ) =
+      TauCeti.IsDiscreteValuationRing.uniformizerRatio i hϖ σ :=
+  (unitFiltrationEquivInteger i).apply_symm_apply _
+
 @[simp]
 theorem coe_uniformizerRatio (hϖ : Irreducible ϖ) (σ : ramificationGroup G 𝒪[L] (i : ℤ)) :
     ((uniformizerRatio i hϖ σ : Lˣ) : L) = (σ : G) • (ϖ : L) / (ϖ : L) := by
   have hϖ0 : (ϖ : L) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
   apply mul_left_cancel₀ hϖ0
-  rw [mul_div_cancel₀ _ hϖ0, uniformizerRatio, coe_unitFiltrationEquivInteger_symm]
+  rw [mul_div_cancel₀ _ hϖ0, ← coe_unitFiltrationToIntegerUnits i, ← coe_unitFiltrationEquivInteger,
+    unitFiltrationEquivInteger_uniformizerRatio]
   simp [← Subring.coe_mul, TauCeti.IsDiscreteValuationRing.mul_coe_uniformizerRatio,
     coe_smul_integer]
 
@@ -209,7 +219,8 @@ theorem ramificationGroupToUnitFiltrationGraded_apply (hϖ : Irreducible ϖ)
     (σ : ramificationGroup G 𝒪[L] (i : ℤ)) :
     ramificationGroupToUnitFiltrationGraded i hϖ σ =
       QuotientGroup.mk (uniformizerRatio i hϖ σ) := by
-  simp [ramificationGroupToUnitFiltrationGraded, uniformizerRatio]
+  apply (unitFiltrationGradedEquivInteger (K := L) i).injective
+  simp [ramificationGroupToUnitFiltrationGraded]
 
 /-- The quotient homomorphism does not depend on the choice of uniformizer: two uniformizers
 differ by a unit of `𝒪[L]`, and `σ` moves that unit inside `U(L,i+1)`. -/
@@ -269,9 +280,8 @@ theorem mem_ramificationGroup_one_of_valuation_pow_sub_one_lt_one (hϖ : Irreduc
   have hcoe :
       (((TauCeti.IsDiscreteValuationRing.uniformizerRatio 0 hϖ ⟨σ, hσ⟩ : 𝒪[L]ˣ) : 𝒪[L]) : L) =
         σ • (ϖ : L) / (ϖ : L) := by
-    rw [← coe_uniformizerRatio (i := 0) hϖ ⟨σ, hσ⟩, uniformizerRatio,
-      coe_unitFiltrationEquivInteger_symm, Units.coe_map, MonoidHom.coe_ofClass,
-      Subring.coe_subtype]
+    rw [← unitFiltrationEquivInteger_uniformizerRatio, coe_unitFiltrationEquivInteger,
+      coe_unitFiltrationToIntegerUnits, coe_uniformizerRatio]
   simpa [hcoe] using h
 
 /-- For `σ` in the inertia group `G_0` fixing an element `b` of valuation `v(a) ^ n`, the `n`-th
@@ -353,7 +363,8 @@ theorem ramificationGroupGradedToUnitFiltrationGraded_mk (hϖ : Irreducible ϖ)
     (σ : ramificationGroup G 𝒪[L] (i : ℤ)) :
     ramificationGroupGradedToUnitFiltrationGraded i hϖ (QuotientGroup.mk σ) =
       QuotientGroup.mk (uniformizerRatio i hϖ σ) := by
-  simp [ramificationGroupGradedToUnitFiltrationGraded, uniformizerRatio]
+  apply (unitFiltrationGradedEquivInteger (K := L) i).injective
+  simp [ramificationGroupGradedToUnitFiltrationGraded]
 
 /-- **The quotient embeddings are injective.** -/
 theorem ramificationGroupGradedToUnitFiltrationGraded_injective (hϖ : Irreducible ϖ) :
