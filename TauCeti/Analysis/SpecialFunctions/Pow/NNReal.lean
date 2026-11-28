@@ -108,6 +108,8 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
   when `s⁻¹ = b + a` and `b, s > 0`.
 * `ENNReal.rpow_mul_rpow_one_sub`: `x ^ p * x ^ (1 - p) = x` for `p ∈ [0, 1]`.
 * `ENNReal.le_rpow_add`: `x ^ y * x ^ z ≤ x ^ (y + z)` for all real `y` and `z`.
+* `ENNReal.rpow_inv_mul_le_iff_rpow_le_div`: `c ^ r⁻¹ * a ≤ b ↔ a ^ r ≤ b ^ r / c` for `0 < r` and
+  finite nonzero `c`.
 * `ENNReal.inv_mul_rpow_mul_inv_mul_rpow`:
   `(F⁻¹ * a) ^ p * (G⁻¹ * b) ^ q = (F ^ p * G ^ q)⁻¹ * (a ^ p * b ^ q)` for finite `F`, `G`.
 * `ENNReal.sq_rpow_one_half`: `(x ^ 2) ^ (1 / 2) = x`, with no hypothesis on `x`.
@@ -249,6 +251,12 @@ theorem le_rpow_add (x : ℝ≥0∞) (y z : ℝ) : x ^ y * x ^ z ≤ x ^ (y + z)
     obtain rfl : z = 0 := by linarith
     simp
   exact (rpow_add _ _ hx0 hxtop).ge
+
+/-- For `0 < r` and finite nonzero `c`, `c ^ r⁻¹ * a ≤ b` is equivalent to `a ^ r ≤ b ^ r / c`. -/
+theorem rpow_inv_mul_le_iff_rpow_le_div {a b c : ℝ≥0∞} {r : ℝ} (hr : 0 < r)
+    (hc0 : c ≠ 0) (hc : c ≠ ∞) : c ^ r⁻¹ * a ≤ b ↔ a ^ r ≤ b ^ r / c := by
+  rw [← rpow_le_rpow_iff hr, mul_rpow_of_nonneg _ _ hr.le, rpow_inv_rpow hr.ne', mul_comm]
+  exact (ENNReal.le_div_iff_mul_le (Or.inl hc0) (Or.inl hc)).symm
 
 /-- Scaling the factors of `a ^ p * b ^ q` by `F⁻¹` and `G⁻¹` scales it by `(F ^ p * G ^ q)⁻¹`,
 for finite `F` and `G` and nonnegative exponents. -/

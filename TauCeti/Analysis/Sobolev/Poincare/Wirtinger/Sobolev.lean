@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Basic
+public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.Analysis.Sobolev.W1p.Restriction
@@ -60,6 +61,10 @@ theorem `TauCeti.Wkp.dense_contDiffOn_representatives`.
   form on a ball, with averages.
 * `TauCeti.W1p.setLAverage_rpow_enorm_value_sub_setAverage_le_of_ball_subset`: the same for a
   ball inside the domain of a Sobolev function of possibly higher integrability.
+* `TauCeti.W1p.memLp_value_of_convex_of_isBounded_of_finrank_le`: for `n ≤ p₀`, a `W^{1,p₀}(Ω)`
+  function lies in `L^q(U)` for every finite `q` on every bounded convex open subset `U ⊆ Ω`.
+* `TauCeti.Wkp.memLp_value_of_convex_of_isBounded_of_finrank_le`: the higher-order extension for
+  `W^{k,p₀}(Ω)` (`1 ≤ k`).
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_ball_subset`: the same with the averages written
   as norms, `‖u - u_B‖_{Lˢ(B)} ≤ K t μ(B)^(-δ) ‖∇u‖_{L^q(B)}`, with the constant
   `K = TauCeti.sobolevPoincareConst n δ`.
@@ -412,6 +417,55 @@ theorem W1p.setLAverage_rpow_enorm_value_sub_setAverage_le_of_ball_subset [Nontr
       ⨍⁻ x in ball c r, ‖W1p.gradient u x‖ₑ ^ p.toReal ∂mu :=
     laverage_congr (hgrad.mono fun x hx => by simp only [hx])
   rwa [h1, h2] at h
+
+/-- **All finite-exponent `L^q` integrability on a bounded convex open subset when `n ≤ p`.** If
+`n ≤ p ≤ ∞`, where `n` is the dimension, and `U ⊆ Ω` is bounded, convex, and open (with no
+compact-closure requirement in `Ω`), then every `u ∈ W^{1,p}(Ω)` lies in `L^q(U)` for every finite
+`q : ℝ≥0∞`. -/
+theorem W1p.memLp_value_of_convex_of_isBounded_of_finrank_le
+    (hp : (finrank ℝ E : ℝ≥0∞) ≤ p) {U : Set E} (hUo : IsOpen U) (hconv : Convex ℝ U)
+    (hb : Bornology.IsBounded U) (hUΩ : U ⊆ (Omega : Set E)) {q : ℝ≥0∞} (hq : q ≠ ∞)
+    (u : W1p mu Omega p) : MemLp (W1p.value u) q (mu.restrict U) := by
+  rcases U.eq_empty_or_nonempty with rfl | ⟨x₀, _⟩
+  · rw [Measure.restrict_empty]
+    exact memLp_iff.2 (by simp)
+  have : IsFiniteMeasure (mu.restrict U) := isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · exact (memLp_const (W1p.value u x₀)).ae_eq
+      (.of_forall fun x => congrArg _ (Subsingleton.elim x₀ x))
+  set n := finrank ℝ E
+  have hn1 : 1 ≤ n := finrank_pos
+  have : Fact (1 ≤ (n : ℝ≥0∞)) := ⟨by exact_mod_cast hn1⟩
+  set V : Opens E := ⟨U, hUo⟩
+  have hV : V ≤ Omega := hUΩ
+  set uV : W1p mu V n := W1p.ofExponentLE hp (W1p.restrictL hV u)
+  set q' : ℝ≥0 := max (n : ℝ≥0) q.toNNReal
+  have hnq' : (n : ℝ≥0∞) ≤ q' := by exact_mod_cast le_max_left (n : ℝ≥0) q.toNNReal
+  have hqq' : q ≤ q' :=
+    (ENNReal.coe_toNNReal hq).symm.le.trans (by exact_mod_cast le_max_right (n : ℝ≥0) q.toNNReal)
+  have hq'pos : (0 : ℝ) < q' :=
+    lt_of_lt_of_le (Nat.cast_pos.2 finrank_pos)
+      (by exact_mod_cast le_max_left (n : ℝ≥0) q.toNNReal)
+  have hδn : ((n : ℝ≥0∞).toReal)⁻¹ - (q' : ℝ)⁻¹ < (finrank ℝ E : ℝ)⁻¹ := by
+    rw [ENNReal.toReal_natCast]
+    exact sub_lt_self _ (inv_pos.2 hq'pos)
+  have huV : MemLp (W1p.value uV) q' (mu.restrict U) :=
+    W1p.memLp_value_of_subcritical_gain_of_convex uV hconv hb hnq' hδn
+  have hval : W1p.value uV =ᵐ[mu.restrict U] W1p.value u :=
+    (W1p.coeFn_value_ofExponentLE _ _).eventuallyEq.trans (W1p.value_restrictL_ae hV u)
+  exact (huV.mono_exponent hqq').ae_eq hval
+
+/-- **All finite-exponent `L^q` integrability on a bounded convex open subset for higher-order
+Sobolev functions when `n ≤ p`.** If `1 ≤ k`, `n ≤ p ≤ ∞`, where `n` is the dimension, and `U ⊆ Ω`
+is bounded, convex, and open, then every `u ∈ W^{k,p}(Ω)` lies in `L^q(U)` for every finite
+`q : ℝ≥0∞`. -/
+theorem Wkp.memLp_value_of_convex_of_isBounded_of_finrank_le {k : ℕ} (hk : 1 ≤ k)
+    (hp : (finrank ℝ E : ℝ≥0∞) ≤ p) {U : Set E} (hUo : IsOpen U) (hconv : Convex ℝ U)
+    (hb : Bornology.IsBounded U) (hUΩ : U ⊆ (Omega : Set E)) {q : ℝ≥0∞} (hq : q ≠ ∞)
+    (u : Wkp mu Omega p k) : MemLp (Wkp.value k u) q (mu.restrict U) := by
+  have hu := W1p.memLp_value_of_convex_of_isBounded_of_finrank_le hp hUo hconv hb hUΩ hq
+    (Wkp.toOrderL hk u)
+  rwa [← Wkp.value_one, Wkp.value_toOrderL hk u] at hu
 
 /-- The constant `2ⁿ / n · ((1 - δ) / (1/n - δ)) ^ (1 - δ)` of the Sobolev–Poincaré inequality on a
 ball in dimension `n`, where `δ = 1/p - 1/q` is the gap between the exponents

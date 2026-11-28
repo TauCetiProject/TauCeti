@@ -80,6 +80,8 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_neg`: linearity of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_const_mul`: the principal part commutes with multiplication
   by a constant.
+* `TauCeti.PDE.sum_mul_fderiv_fderiv_add_const`: adding a constant does not change the principal
+  part.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_norm_sq`: the operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`
   applied to `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`.
 * `TauCeti.PDE.sum_coefficientSymmetricPart_mul_fderiv_fderiv`: the principal part only sees the
@@ -298,6 +300,17 @@ theorem sum_mul_fderiv_fderiv_const_mul (A : Matrix ι ι ℝ) (u : EuclideanSpa
   have h : (fun y ↦ r * u y) = r • u := rfl
   simp only [h, fderiv_fderiv_const_smul, _root_.smul_apply, smul_eq_mul, Finset.mul_sum]
   exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
+
+/-- Adding a constant does not change the principal part `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ`. -/
+@[simp]
+theorem sum_mul_fderiv_fderiv_add_const (A : Matrix ι ι ℝ) (u : EuclideanSpace ℝ ι → ℝ)
+    (c : ℝ) (x : EuclideanSpace ℝ ι) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun y ↦ u y + c) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
+      ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ u) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
+  have h : (fderiv ℝ fun y ↦ u y + c) = fderiv ℝ u := funext fun _ ↦ fderiv_add_const _
+  rw [h]
 
 /-- The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to the squared norm `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`. -/
 theorem sum_mul_fderiv_fderiv_add_fderiv_norm_sq {A : Matrix ι ι ℝ}

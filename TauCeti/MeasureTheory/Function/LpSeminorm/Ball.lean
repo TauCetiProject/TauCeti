@@ -10,7 +10,12 @@ public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.Normed.Module.CoveringNumber
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
+import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
+import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # `Lᵖ` seminorms on all balls of one radius
@@ -61,6 +66,16 @@ exact form of the bounded-overlap count.
   give a global estimate without that term.
 * `TauCeti.measure_ball_rpow_mul_eLpNorm_restrict_ball_le`: Hölder's inequality on a ball, scaled
   by the volume of a concentric smaller ball.
+* `MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm`: Chebyshev point
+  selection on a ball, finding `w ∈ B(x₀, r)` with
+  `‖f w‖ ≤ |B(0, 1)|^(-1/p) r^(-n/p) ‖f‖_{L^p(B(x₀, r))}`.
+* `MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm_of_dist_le`:
+  off-centre Chebyshev point selection in `B(q', r) ∩ B(q, r)` from the `Lᵖ` norm on `B(q, r)`
+  when `dist q' q ≤ r / 2`.
+* `TauCeti.eLpNorm_restrict_ball_le_of_forall_mem_closedBall`: covering `closedBall x₀ r` by
+  balls of radius `s` upgrades uniform local `Lᵖ` bounds in `ℝ≥0∞` to a bound on `B(x₀, r)`.
+* `TauCeti.toReal_eLpNorm_restrict_ball_le_of_forall_mem_closedBall`: real-valued covering bound
+  on `B(x₀, r)` from uniform finite local `Lᵖ` bounds.
 -/
 
 public section
@@ -449,5 +464,144 @@ theorem lpNorm_le_of_ae_lpNorm_restrict_ball_le_add (hp1 : 1 ≤ p) (hp : p ≠ 
     (add_nonneg (mul_nonneg hc₁ lpNorm_nonneg) (mul_nonneg hc₂ lpNorm_nonneg))] using hreal
 
 end FiniteDimensional
+
+/-- **Chebyshev point selection on a ball.** For `p > 0`, `r > 0`, and `f ∈ L^p(B(x₀, r))` in
+dimension `n`, there is a point `w ∈ B(x₀, r)` at which
+`‖f w‖ ≤ |B(0, 1)|^(-1/p) r^(-n/p) ‖f‖_{L^p(B(x₀, r))}`. -/
+theorem _root_.MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    {F : Type*} [NormedAddCommGroup F] {f : E → F} {p r : ℝ} {x₀ : E}
+    (hp : 0 < p) (hr : 0 < r)
+    (hf : MemLp f (ENNReal.ofReal p) (mu.restrict (ball x₀ r))) :
+    ∃ w ∈ ball x₀ r,
+      ‖f w‖ ≤ mu.real (ball (0 : E) 1) ^ (-p⁻¹) *
+        (r ^ (-((finrank ℝ E : ℝ) / p)) *
+          (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ r))).toReal) := by
+  have hp0 : ENNReal.ofReal p ≠ 0 := (ENNReal.ofReal_pos.2 hp).ne'
+  have hpos : 0 < mu (ball x₀ r) := isOpen_ball.measure_pos mu (nonempty_ball.2 hr)
+  obtain ⟨w, hw, hle⟩ := exists_mem_measure_rpow_mul_enorm_le_eLpNorm f hp0 ENNReal.ofReal_ne_top
+    hpos.ne' measure_ball_lt_top.ne
+  have hreal := ENNReal.toReal_mono hf.eLpNorm_ne_top hle
+  rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal hp.le, toReal_eNorm,
+    ← measureReal_def] at hreal
+  have hmr : 0 < mu.real (ball x₀ r) := Metric.measureReal_ball_pos mu x₀ hr
+  have hinv : ‖f w‖ ≤ mu.real (ball x₀ r) ^ (-p⁻¹) *
+      (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ r))).toReal := by
+    rw [Real.rpow_neg hmr.le, inv_mul_eq_div, le_div_iff₀' (Real.rpow_pos_of_pos hmr _)]
+    exact hreal
+  have hvol : mu.real (ball x₀ r) = r ^ finrank ℝ E * mu.real (ball 0 1) := by
+    rw [measureReal_def, mu.addHaar_ball_of_pos x₀ hr, ENNReal.toReal_mul,
+      ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
+  have hexp : (finrank ℝ E : ℝ) * -p⁻¹ = -((finrank ℝ E : ℝ) / p) := by ring
+  have hpow : mu.real (ball x₀ r) ^ (-p⁻¹) =
+      mu.real (ball (0 : E) 1) ^ (-p⁻¹) * r ^ (-((finrank ℝ E : ℝ) / p)) :=
+    calc mu.real (ball x₀ r) ^ (-p⁻¹)
+        = (r ^ finrank ℝ E * mu.real (ball (0 : E) 1)) ^ (-p⁻¹) := by rw [hvol]
+      _ = (r ^ (finrank ℝ E : ℝ)) ^ (-p⁻¹) * mu.real (ball (0 : E) 1) ^ (-p⁻¹) := by
+          rw [Real.mul_rpow (by positivity) measureReal_nonneg, Real.rpow_natCast]
+      _ = mu.real (ball (0 : E) 1) ^ (-p⁻¹) * r ^ (-((finrank ℝ E : ℝ) / p)) := by
+          rw [← Real.rpow_mul hr.le, hexp, mul_comm]
+  refine ⟨w, hw, hinv.trans_eq ?_⟩
+  rw [hpow, mul_assoc]
+
+/-- **Off-centre Chebyshev point selection on a ball.** For `p > 0`, `r > 0`, `dist q' q ≤ r / 2`,
+and `f ∈ L^p(B(q, r))` in dimension `n`, there is a point `w ∈ B(q', r) ∩ B(q, r)` at which
+`‖f w‖ ≤ 2^(n/p) |B(0, 1)|^(-1/p) r^(-n/p) ‖f‖_{L^p(B(q, r))}`. -/
+theorem _root_.MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm_of_dist_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    {F : Type*} [NormedAddCommGroup F] {f : E → F} {p r : ℝ} {q' q : E}
+    (hp : 0 < p) (hr : 0 < r) (hdist : dist q' q ≤ r / 2)
+    (hf : MemLp f (ENNReal.ofReal p) (mu.restrict (ball q r))) :
+    ∃ w ∈ ball q' r ∩ ball q r,
+      ‖f w‖ ≤ 2 ^ ((finrank ℝ E : ℝ) / p) * mu.real (ball (0 : E) 1) ^ (-p⁻¹) *
+        (r ^ (-((finrank ℝ E : ℝ) / p)) *
+          (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball q r))).toReal) := by
+  have hsub : ball q' (r / 2) ⊆ ball q r := ball_subset_ball' (by linarith)
+  obtain ⟨w, hw, hfw⟩ := mu.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm hp (half_pos hr)
+    (hf.mono_measure (Measure.restrict_mono hsub le_rfl))
+  refine ⟨w, ⟨ball_subset_ball (half_lt_self hr).le hw, hsub hw⟩, ?_⟩
+  have hmono : (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball q' (r / 2)))).toReal ≤
+      (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball q r))).toReal :=
+    ENNReal.toReal_mono hf.eLpNorm_ne_top
+      (eLpNorm_mono_measure _ (Measure.restrict_mono hsub le_rfl))
+  have hrpow : (r / 2) ^ (-((finrank ℝ E : ℝ) / p)) =
+      2 ^ ((finrank ℝ E : ℝ) / p) * r ^ (-((finrank ℝ E : ℝ) / p)) := by
+    rw [Real.div_rpow_eq_rpow_neg_mul_rpow hr.le two_pos, neg_neg]
+  set G : ℝ := r ^ (-((finrank ℝ E : ℝ) / p)) *
+    (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball q r))).toReal
+  calc ‖f w‖ ≤ mu.real (ball (0 : E) 1) ^ (-p⁻¹) *
+          ((r / 2) ^ (-((finrank ℝ E : ℝ) / p)) *
+            (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball q' (r / 2)))).toReal) := hfw
+    _ ≤ mu.real (ball (0 : E) 1) ^ (-p⁻¹) * (2 ^ ((finrank ℝ E : ℝ) / p) * G) := by
+        rw [hrpow, mul_assoc (2 ^ ((finrank ℝ E : ℝ) / p))]
+        dsimp only [G]
+        gcongr
+    _ = 2 ^ ((finrank ℝ E : ℝ) / p) * mu.real (ball (0 : E) 1) ^ (-p⁻¹) * G := by ring
+
+section Covering
+
+variable {E ε : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [TopologicalSpace ε] [ENorm ε]
+  [TopologicalSpace.PseudoMetrizableSpace ε]
+
+/-- **Covering bound for `eLpNorm` on a ball.** Let `E` be a finite-dimensional real normed space
+and `0 < p < ∞`. If `r ≥ 0`, `s > 0`, and on every ball `B(c, s)` with `c ∈ closedBall x₀ r` the
+function `f` has `Lᵖ` seminorm at most `B : ℝ≥0∞`, then covering `closedBall x₀ r` by at most
+`(1 + 4 r / s) ^ dim E` balls `B(c, s)` gives
+
+`eLpNorm f p (μ.restrict (ball x₀ r)) ≤`
+`  ENNReal.ofReal ((1 + 4 * r / s) ^ dim E) ^ p.toReal⁻¹ * B`. -/
+theorem eLpNorm_restrict_ball_le_of_forall_mem_closedBall {μ : Measure E} (f : E → ε)
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) {x₀ : E} {r s : ℝ} {B : ℝ≥0∞} (hr : 0 ≤ r)
+    (hs : 0 < s) (hle : ∀ c ∈ closedBall x₀ r, eLpNorm f p (μ.restrict (ball c s)) ≤ B) :
+    eLpNorm f p (μ.restrict (ball x₀ r)) ≤
+      ENNReal.ofReal ((1 + 4 * r / s) ^ finrank ℝ E) ^ p.toReal⁻¹ * B := by
+  set ε₀ : ℝ≥0 := NNReal.mk (s / 2) (half_pos hs).le
+  have hε₀ : ε₀ ≠ 0 := mt (congrArg NNReal.toReal) (half_pos hs).ne'
+  obtain ⟨S, hSsub, hScov, hScard⟩ := exists_finset_isCover_of_subset_closedBall
+    (r := NNReal.mk r hr) hε₀ (Set.Subset.rfl : closedBall x₀ r ⊆ _)
+  have hS_le : (S.card : ℝ) ≤ (1 + 4 * r / s) ^ finrank ℝ E := by
+    refine hScard.trans_eq ?_
+    simp only [ε₀, NNReal.coe_mk]
+    congr 1
+    field_simp
+    ring
+  have hcover : ball x₀ r ⊆ ⋃ c ∈ S, ball c s :=
+    ball_subset_closedBall.trans <| hScov.subset_iUnion_closedBall.trans <|
+      Set.iUnion₂_mono fun _ _ => closedBall_subset_ball (half_lt_self hs)
+  have hcov_le := eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion f hp0 hp hcover
+    fun c hc => hle c (hSsub hc)
+  refine hcov_le.trans (mul_le_mul' (ENNReal.rpow_le_rpow ?_ (by positivity)) le_rfl)
+  rw [← ENNReal.ofReal_natCast]
+  exact ENNReal.ofReal_le_ofReal hS_le
+
+/-- **Real-valued covering bound for `eLpNorm` on a ball.** Let `E` be a finite-dimensional real
+normed space and `0 < p < ∞`. If `r ≥ 0`, `s > 0`, and on every ball `B(c, s)` with
+`c ∈ closedBall x₀ r` the function `f` has finite `Lᵖ` seminorm at most `B ≥ 0`, then covering
+`closedBall x₀ r` by at most `(1 + 4 r / s) ^ dim E` balls `B(c, s)` gives
+
+`(eLpNorm f p (μ.restrict (ball x₀ r))).toReal ≤ ((1 + 4 * r / s) ^ dim E) ^ p.toReal⁻¹ * B`. -/
+theorem toReal_eLpNorm_restrict_ball_le_of_forall_mem_closedBall {μ : Measure E} (f : E → ε)
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) {x₀ : E} {r s B : ℝ} (hr : 0 ≤ r) (hs : 0 < s)
+    (hB : 0 ≤ B)
+    (hfin : ∀ c ∈ closedBall x₀ r, eLpNorm f p (μ.restrict (ball c s)) ≠ ∞)
+    (hle : ∀ c ∈ closedBall x₀ r, (eLpNorm f p (μ.restrict (ball c s))).toReal ≤ B) :
+    (eLpNorm f p (μ.restrict (ball x₀ r))).toReal ≤
+      ((1 + 4 * r / s) ^ finrank ℝ E) ^ p.toReal⁻¹ * B := by
+  have hcov : eLpNorm f p (μ.restrict (ball x₀ r)) ≤
+      ENNReal.ofReal ((1 + 4 * r / s) ^ finrank ℝ E) ^ p.toReal⁻¹ * ENNReal.ofReal B :=
+    eLpNorm_restrict_ball_le_of_forall_mem_closedBall f hp0 hp hr hs fun c hc =>
+      (ENNReal.le_ofReal_iff_toReal_le (hfin c hc) hB).2 (hle c hc)
+  calc (eLpNorm f p (μ.restrict (ball x₀ r))).toReal
+      ≤ (ENNReal.ofReal ((1 + 4 * r / s) ^ finrank ℝ E) ^ p.toReal⁻¹ * ENNReal.ofReal B).toReal :=
+        ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg
+          (by positivity) ENNReal.ofReal_ne_top) ENNReal.ofReal_ne_top) hcov
+    _ = ((1 + 4 * r / s) ^ finrank ℝ E) ^ p.toReal⁻¹ * B := by
+        rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow,
+          ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_ofReal hB]
+
+end Covering
 
 end TauCeti
