@@ -50,7 +50,7 @@ theorem iterate_comp_mul_X_succ [Semiring R] (g : R[X]) (n : ℕ) :
   rw [Function.iterate_succ_apply', mul_X_comp]
 
 /-- The `n`-fold iterate of composition by `X ^ q` sends `p` to `p ^ (q ^ n)`. -/
-theorem iterate_comp_X_pow [Semiring R] (p : R[X]) (q n : ℕ) :
+@[simp] theorem iterate_comp_X_pow [Semiring R] (p : R[X]) (q n : ℕ) :
     (X ^ q : R[X]).comp^[n] p = p ^ (q ^ n) := by
   induction n with
   | zero => simp
