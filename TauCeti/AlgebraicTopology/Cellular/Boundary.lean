@@ -78,9 +78,10 @@ lemma coe_characteristicCellPairMap_fst_apply {n : ℕ} (j : cell C n)
   unfold characteristicCellPairMap
   erw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, ConcreteCategory.comp_apply,
     ConcreteCategory.comp_apply, characteristicPairMap_fst_apply,
-    sigmaDiskBoundaryPairIso_hom_fst_apply_fst,
-    coe_sigmaDiskBoundaryPairIso_hom_fst_apply_snd]
-  rfl
+    sigmaDiskBoundaryPairIso_hom_fst_apply]
+  -- `TopPair.sigmaι ... j x` reduces to `⟨j, x⟩` after unfolding the summand inclusion.
+  change map n j (diskHomeomorphClosedBall n x) = _
+  rw [coe_diskHomeomorphClosedBall_apply]
 
 /-- The ambient component of the single-cell pair map is the characteristic map
 `TauCeti.cellDiskHom` of the cell. -/

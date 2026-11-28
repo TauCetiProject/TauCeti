@@ -80,7 +80,9 @@ def sigmaDiskBoundaryPairIso :
           Homeomorph.sigmaCongrRight_apply _ p]
       exact (norm_diskHomeomorphClosedBall_eq_one_iff p.2).symm
 
-private lemma sigmaDiskBoundaryPairIso_hom_fst_apply
+/-- On the ambient spaces, `TauCeti.sigmaDiskBoundaryPairIso` applies
+`TauCeti.diskHomeomorphClosedBall` on each summand. -/
+lemma sigmaDiskBoundaryPairIso_hom_fst_apply
     (p : (TopPair.sigma fun _ : ι ↦ diskBoundaryPair.{w} n).fst) :
     TopPair.Hom.fst (sigmaDiskBoundaryPairIso ι n).hom p =
       ⟨p.1, diskHomeomorphClosedBall n p.2⟩ := by
@@ -163,20 +165,14 @@ lemma coe_characteristicPairMap_sigmaDiskBoundaryPairIso_diskCenter (n : ℕ) (j
         (TopPair.Hom.fst (sigmaDiskBoundaryPairIso (cell C n) n).hom
           (TopPair.Hom.fst (TopPair.sigmaι (fun _ : cell C n ↦ diskBoundaryPair.{w} n) j)
             (diskCenter n)))).val = map n j 0 := by
-  let c := TopPair.Hom.fst (TopPair.sigmaι (fun _ : cell C n ↦ diskBoundaryPair.{w} n) j)
-    (diskCenter n)
-  have h₁ := sigmaDiskBoundaryPairIso_hom_fst_apply_fst (cell C n) n c
-  have h₂ :
-      ((TopPair.Hom.fst (sigmaDiskBoundaryPairIso (cell C n) n).hom c).2 : Fin n → ℝ) = 0 := by
-    rw [coe_sigmaDiskBoundaryPairIso_hom_fst_apply_snd,
-      ContinuousLinearEquiv.unitBallHomeomorph_apply]
-    -- The summand of `c` is `diskCenter n` only after unfolding the inclusion of the summand.
-    erw [coe_diskCenter_down, map_zero, gaugeRescale_zero]
+  rw [sigmaDiskBoundaryPairIso_hom_fst_apply]
   refine (characteristicPairMap_fst_apply C n _).trans ?_
-  generalize TopPair.Hom.fst (sigmaDiskBoundaryPairIso (cell C n) n).hom c = q at h₁ h₂ ⊢
-  obtain ⟨i, y⟩ := q
-  obtain rfl : i = j := h₁
-  exact congrArg (map n i) h₂
+  -- `TopPair.sigmaι ... j (diskCenter n)` reduces to `⟨j, diskCenter n⟩` after unfolding the
+  -- summand inclusion.
+  change map n j (diskHomeomorphClosedBall n (diskCenter n)) = map n j 0
+  congr 1
+  rw [coe_diskHomeomorphClosedBall_apply, ContinuousLinearEquiv.unitBallHomeomorph_apply,
+    coe_diskCenter_down, map_zero, gaugeRescale_zero]
 
 /-- With projective coefficients, the cellular chain group in degree `n` is projective whenever
 coproducts indexed by the `n`-cells are exact in `A`. -/
