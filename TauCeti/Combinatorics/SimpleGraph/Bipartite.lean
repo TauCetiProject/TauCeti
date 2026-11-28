@@ -67,6 +67,8 @@ vertex.
   `Bool`-colourings agree or differ by exchanging the colours.
 * `SimpleGraph.Coloring.forall_apply_eq_or_forall_apply_eq_not`: on a preconnected graph, an
   endomorphism either keeps the colour of every vertex or changes the colour of every vertex.
+* `SimpleGraph.Coloring.surjective_of_preconnected`: every `Bool`-colouring of a preconnected
+  graph with at least two vertices is surjective.
 * `SimpleGraph.isBipartite_cycleGraph_iff`: a cycle graph is bipartite exactly when it has an even
   number of vertices or a single vertex.
 * `SimpleGraph.Coloring.cycleGraph_apply_add_eq_iff_even_val`,
@@ -313,6 +315,21 @@ every vertex. -/
 theorem forall_apply_eq_not_of_apply_ne (hG : G.Preconnected) (c : G.Coloring Bool) (f : G →g G)
     {v : V} (hv : c (f v) ≠ c v) (w : V) : c (f w) = !c w :=
   (c.forall_apply_eq_or_forall_apply_eq_not hG f).resolve_left (fun h ↦ hv (h v)) w
+
+/-- Every `Bool`-colouring of a preconnected graph with at least two vertices is surjective. -/
+theorem surjective_of_preconnected [Nontrivial V] (hG : G.Preconnected) (c : G.Coloring Bool) :
+    Function.Surjective c := by
+  obtain ⟨u, v, huv⟩ := exists_pair_ne V
+  obtain ⟨w⟩ := hG u v
+  cases w with
+  | nil => exact absurd rfl huv
+  | @cons _ z _ hadj _ =>
+    have hne : c z ≠ c u := (c.valid hadj).symm
+    intro b
+    by_cases hb : c u = b
+    · exact ⟨u, hb⟩
+    · refine ⟨z, ?_⟩
+      cases hb' : b <;> cases hu : c u <;> cases hz : c z <;> simp_all
 
 variable {n : ℕ}
 

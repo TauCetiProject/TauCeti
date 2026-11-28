@@ -18,6 +18,9 @@ are the bounds that keep the eigenvalues `1` and `-1` away from the exponential 
 ## Main results
 
 * `Complex.eq_zero_of_exp_eq_one_of_norm_lt`: `exp ν = 1` and `‖ν‖ < 2π` imply `ν = 0`.
+* `Complex.two_mul_pi_le_of_exp_ofReal_mul_I_eq_one`: `exp (x i) = 1` with `0 < x` implies `2π ≤ x`.
+* `Complex.two_mul_pi_div_le_of_exp_ofReal_mul_I_pow_eq_one`: `exp (θ i) ^ n = 1` with `0 < θ`
+  and `0 < n` implies `2π / n ≤ θ`.
 * `Complex.pi_le_norm_of_exp_eq_neg_one`: `exp ν = -1` implies `π ≤ ‖ν‖`.
 -/
 
@@ -35,6 +38,22 @@ theorem eq_zero_of_exp_eq_one_of_norm_lt {ν : ℂ} (hν : exp ν = 1)
   have hnorm : ‖(k : ℂ) * (2 * Real.pi * I)‖ = |(k : ℝ)| * (2 * Real.pi) := by
     simp [abs_of_pos Real.pi_pos]
   nlinarith [Real.pi_pos]
+
+/-- A positive real `x` with `exp (x i) = 1` satisfies `2π ≤ x`. -/
+theorem two_mul_pi_le_of_exp_ofReal_mul_I_eq_one {x : ℝ} (hx : 0 < x)
+    (h : exp ((x : ℂ) * I) = 1) : 2 * Real.pi ≤ x := by
+  by_contra! hlt
+  have h0 := eq_zero_of_exp_eq_one_of_norm_lt h (by simpa [abs_of_pos hx] using hlt)
+  exact hx.ne' (by simpa [I_ne_zero] using h0)
+
+/-- A positive real angle `θ` with `exp (θ i) ^ n = 1` (`0 < n`) satisfies `2π / n ≤ θ`. -/
+theorem two_mul_pi_div_le_of_exp_ofReal_mul_I_pow_eq_one {θ : ℝ} {n : ℕ} (hθ : 0 < θ)
+    (hn : 0 < n) (h : exp ((θ : ℂ) * I) ^ n = 1) : 2 * Real.pi / n ≤ θ := by
+  rw [← exp_natCast_mul] at h
+  have h2pi : 2 * Real.pi ≤ n * θ := two_mul_pi_le_of_exp_ofReal_mul_I_eq_one
+    (mul_pos (Nat.cast_pos.mpr hn) hθ) (by convert h using 2; push_cast; ring)
+  rw [div_le_iff₀ (Nat.cast_pos.mpr hn)]
+  linarith
 
 /-- A logarithm `ν` of `-1` has `π ≤ ‖ν‖`, since `ν ∈ π i (2 ℤ + 1)`. -/
 theorem pi_le_norm_of_exp_eq_neg_one {ν : ℂ} (hν : exp ν = -1) : Real.pi ≤ ‖ν‖ := by

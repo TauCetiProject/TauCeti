@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
+import TauCeti.Algebra.Polynomial.AlgebraMap
+import TauCeti.RingTheory.Polynomial.Cyclotomic.Roots
 import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
@@ -20,20 +22,23 @@ primitive root without having its cyclotomic conjugates. No simplicity of the ro
 assumed, so repeated exponents are permitted. This is the arithmetic step that turns
 integral characteristic polynomials into constraints on their lists of eigenvalue exponents.
 
-Rationality also makes such a factorization independent of the primitive root: a rational
-polynomial equal to `∏ i, (X - ζ ^ e i)` is equal to `∏ i, (X - ξ ^ e i)` for every primitive
-`h`-th root of unity `ξ` (`IsPrimitiveRoot.map_eq_prod_of_map_eq_prod`). Each coefficient of the
-product is a rational polynomial expression in `ζ`, and agreeing with a rational number at `ζ` it
-does so at every root of the cyclotomic polynomial, the minimal polynomial of `ζ`.
+Rationality also makes such a factorization independent of the primitive root (even in a second
+`ℚ`-algebra domain) whenever `h > 0`: a rational polynomial equal to `∏ i, (X - ζ ^ e i)` for a
+primitive `h`-th root of unity `ζ` is equal to `∏ i, (X - ξ ^ e i)` for every primitive `h`-th root
+of unity `ξ` (`IsPrimitiveRoot.map_eq_prod_of_map_eq_prod`). Each coefficient of the product is a
+rational polynomial expression in `ζ`, and agreeing with a rational number at `ζ` it does so at
+every root of the cyclotomic polynomial, the minimal polynomial of `ζ`.
 
-The ambient ring can be any domain that is a rational algebra. The proof uses Mathlib's
+The ambient ring can be any domain that is a rational algebra. The proof reuses
+`TauCeti.RingTheory.Polynomial.Cyclotomic.Roots`, which reduces both facts to Mathlib's
 `IsPrimitiveRoot.minpoly_eq_cyclotomic_of_irreducible` and irreducibility of cyclotomic
 polynomials over the rationals.
 
-Over a field, if instead the roots `ζ ^ e i` are stable under inversion with multiplicity, as
-for the eigenvalues of a linear map conjugate to its inverse, and no `e i` is divisible by `h`,
-then the residues `e i % h` pair off as `a` and `h - a`, so they add up to `h / 2` per factor
-(`IsPrimitiveRoot.two_mul_sum_mod_eq_mul_card`).
+Over a field, for `h > 0`, if instead the roots `ζ ^ e i` are stable under inversion with
+multiplicity, as for the eigenvalues of a linear map conjugate to its inverse, then the residues
+`e i` in `ZMod h` are negation-stable (`IsPrimitiveRoot.map_neg_natCast_eq_of_prod_X_sub_C_pow_eq`),
+and when no `e i` is divisible by `h` they pair off as `a` and `h - a`, adding up to `h / 2` per
+factor (`IsPrimitiveRoot.two_mul_sum_mod_eq_mul_card`).
 -/
 
 public section
@@ -44,7 +49,8 @@ namespace IsPrimitiveRoot
 
 section Rational
 
-variable {K ι : Type*} [CommRing K] [IsDomain K] [Algebra ℚ K] [Fintype ι]
+variable {K L ι : Type*} [CommRing K] [IsDomain K] [Algebra ℚ K]
+  [CommRing L] [IsDomain L] [Algebra ℚ L] [Fintype ι]
 
 /-- If a rational polynomial factors with roots `ζ ^ e i`, with all `e i < h`, and has a
 primitive `h`-th root, every residue less than `h` and coprime to `h` occurs in `e`.
@@ -55,51 +61,30 @@ theorem exists_eq_of_isRoot_of_map_eq_prod {h : ℕ} {ζ ξ : K}
     (he : ∀ i, e i < h)
     (hprod : p.map (algebraMap ℚ K) = ∏ i, (X - C (ζ ^ e i)))
     {a : ℕ} (ha : a < h) (hcop : a.Coprime h) : ∃ i, e i = a := by
-  classical
   have hh : 0 < h := Nat.zero_lt_of_lt ha
-  have : NeZero (h : ℚ) := ⟨Nat.cast_ne_zero.mpr hh.ne'⟩
-  have hdiv : cyclotomic h ℚ ∣ p := by
-    rw [hξ.minpoly_eq_cyclotomic_of_irreducible (cyclotomic.irreducible_rat hh)]
-    exact minpoly.dvd ℚ ξ (by simpa only [aeval_def, eval₂_eq_eval_map, IsRoot.def] using hp)
-  have hroot : (p.map (algebraMap ℚ K)).IsRoot (ζ ^ a) := by
-    obtain ⟨q, rfl⟩ := hdiv
-    rw [Polynomial.map_mul, map_cyclotomic]
-    have hcy : (cyclotomic h K).IsRoot (ζ ^ a) :=
-      (hζ.pow_of_coprime a hcop).isRoot_cyclotomic hh
-    rw [IsRoot.def, eval_mul, hcy.eq_zero, zero_mul]
+  have hroot : (p.map (algebraMap ℚ K)).IsRoot (ζ ^ a) :=
+    hξ.isRoot_map_of_isRoot_map hh (hζ.pow_of_coprime a hcop) hp
   rw [hprod, IsRoot.def, eval_prod] at hroot
   obtain ⟨i, -, hi⟩ := Finset.prod_eq_zero_iff.mp hroot
   have hi' : ζ ^ a = ζ ^ e i := sub_eq_zero.mp (by simpa using hi)
   exact ⟨i, (hζ.pow_inj ha (he i) hi').symm⟩
 
-/-- **A rational factorization into powers of a primitive root does not depend on the root.** If a
-rational polynomial factors as `∏ i, (X - ζ ^ e i)` for a primitive `h`-th root of unity `ζ`, then
-it factors as `∏ i, (X - ξ ^ e i)` for every primitive `h`-th root of unity `ξ`. The exponents are
-unrestricted and may repeat. -/
-theorem map_eq_prod_of_map_eq_prod {h : ℕ} (hh : 0 < h) {ζ ξ : K}
+/-- **A rational factorization into powers of a primitive root does not depend on the root.** If
+`h > 0` and a rational polynomial factors as `∏ i, (X - ζ ^ e i)` for a primitive `h`-th root of
+unity `ζ`, then it factors as `∏ i, (X - ξ ^ e i)` for every primitive `h`-th root of unity `ξ` in
+any `ℚ`-algebra domain. The exponents are unrestricted and may repeat. -/
+theorem map_eq_prod_of_map_eq_prod {h : ℕ} (hh : 0 < h) {ζ : K} {ξ : L}
     (hζ : IsPrimitiveRoot ζ h) (hξ : IsPrimitiveRoot ξ h) {p : ℚ[X]} {e : ι → ℕ}
     (hprod : p.map (algebraMap ℚ K) = ∏ i, (X - C (ζ ^ e i))) :
-    p.map (algebraMap ℚ K) = ∏ i, (X - C (ξ ^ e i)) := by
-  have : NeZero (h : ℚ) := ⟨Nat.cast_ne_zero.mpr hh.ne'⟩
-  -- The same product with the root replaced by a variable, whose coefficients lie in `ℚ[X]`.
-  let F : ℚ[X][X] := ∏ i, (X - C (X ^ e i))
-  have hF (μ : K) : F.map (aeval μ).toRingHom = ∏ i, (X - C (μ ^ e i)) := by
-    simp [F, Polynomial.map_prod]
-  -- Each coefficient of `F`, minus the matching coefficient of `p`, vanishes at `ζ`, so it is
-  -- divisible by the minimal polynomial of `ζ`, the cyclotomic polynomial, which also kills `ξ`.
-  ext j
-  have hj := congr(($hprod).coeff j)
-  rw [← hF ζ, coeff_map, coeff_map] at hj
-  rw [← hF ξ, coeff_map, coeff_map]
-  obtain ⟨q, hq⟩ : cyclotomic h ℚ ∣ F.coeff j - C (p.coeff j) := by
-    rw [hζ.minpoly_eq_cyclotomic_of_irreducible (cyclotomic.irreducible_rat hh)]
-    exact minpoly.dvd ℚ ζ (by simpa [sub_eq_zero] using hj.symm)
-  have hcy : aeval ξ (cyclotomic h ℚ) = 0 := by
-    rw [aeval_def, eval₂_eq_eval_map, map_cyclotomic]
-    exact (hξ.isRoot_cyclotomic hh).eq_zero
-  have hξq := congr(aeval ξ $hq)
-  rw [map_mul, hcy, zero_mul, map_sub, aeval_C, sub_eq_zero] at hξq
-  simpa using hξq.symm
+    p.map (algebraMap ℚ L) = ∏ i, (X - C (ξ ^ e i)) := by
+  let F₁ : (ℚ[X])[X] := p.map Polynomial.C
+  let F₂ : (ℚ[X])[X] := ∏ i, (X - C (X ^ e i))
+  have heqK : F₁.map (aeval ζ).toRingHom = F₂.map (aeval ζ).toRingHom := by
+    rw [AlgHom.toRingHom_eq_coe, Polynomial.map_aeval_map_C]
+    simpa [F₂, Polynomial.map_prod] using hprod
+  have heqL := Polynomial.map_aeval_eq_of_isPrimitiveRoot F₁ F₂ hh hζ hξ heqK
+  rw [AlgHom.toRingHom_eq_coe, Polynomial.map_aeval_map_C] at heqL
+  simpa [F₂, Polynomial.map_prod] using heqL
 
 end Rational
 
@@ -107,13 +92,14 @@ section Field
 
 variable {K ι : Type*} [Field K] [Fintype ι]
 
-/-- If the roots `ζ ^ e i` of `∏ i, (X - ζ ^ e i)`, for a primitive `h`-th root of unity `ζ`,
-are stable under inversion with multiplicity, and no `e i` is divisible by `h`, then the residues
-`e i % h` add up to `h / 2` per factor: they pair off as `a` and `h - a`. -/
-theorem two_mul_sum_mod_eq_mul_card {h : ℕ} [NeZero h] {ζ : K} (hζ : IsPrimitiveRoot ζ h)
-    {e : ι → ℕ} (he : ∀ i, ¬ h ∣ e i)
+/-- If `h > 0` and the roots `ζ ^ e i` of `∏ i, (X - C (ζ ^ e i))`, for a primitive `h`-th root
+of unity `ζ`, are stable under inversion with multiplicity, then the exponent residues
+`e i : ZMod h` are stable under negation with multiplicity. -/
+theorem map_neg_natCast_eq_of_prod_X_sub_C_pow_eq {h : ℕ} [NeZero h] {ζ : K}
+    (hζ : IsPrimitiveRoot ζ h) {e : ι → ℕ}
     (hprod : ∏ i, (X - C (ζ ^ e i)) = ∏ i, (X - C (ζ⁻¹ ^ e i))) :
-    2 * ∑ i, e i % h = h * Fintype.card ι := by
+    (Finset.univ.val.map fun i ↦ -(e i : ZMod h)) =
+      Finset.univ.val.map fun i ↦ (e i : ZMod h) := by
   classical
   -- Read the exponents as residues: `a ↦ ζ ^ a.val` is injective on `ZMod h`.
   let f : ZMod h → K := fun a ↦ ζ ^ a.val
@@ -126,12 +112,19 @@ theorem two_mul_sum_mod_eq_mul_card {h : ℕ} [NeZero h] {ζ : K} (hζ : IsPrimi
     have hdvd : h ∣ (-(n : ZMod h)).val + n := (ZMod.natCast_eq_zero_iff _ _).mp (by simp)
     rw [inv_pow]
     exact eq_inv_of_mul_eq_one_left (by rw [← pow_add]; exact (hζ.pow_eq_one_iff_dvd _).mpr hdvd)
-  -- Comparing roots, the residues `e i` are stable under negation, with multiplicity.
-  have hs : (Finset.univ.val.map fun i ↦ -(e i : ZMod h)) =
-      Finset.univ.val.map fun i ↦ (e i : ZMod h) := by
-    refine Multiset.map_injective hf ?_
-    simpa only [Multiset.map_map, Function.comp_def, hfe, hfneg, roots_prod_X_sub_C_map] using
-      (congrArg Polynomial.roots hprod).symm
+  refine Multiset.map_injective hf ?_
+  simpa only [Multiset.map_map, Function.comp_def, hfe, hfneg, roots_prod_X_sub_C_map] using
+    (congrArg Polynomial.roots hprod).symm
+
+/-- If `h > 0`, the roots `ζ ^ e i` of `∏ i, (X - ζ ^ e i)` for a primitive `h`-th root of unity
+`ζ` are stable under inversion with multiplicity, and no `e i` is divisible by `h`, then the
+residues `e i % h` add up to `h / 2` per factor: they pair off as `a` and `h - a`. -/
+theorem two_mul_sum_mod_eq_mul_card {h : ℕ} [NeZero h] {ζ : K} (hζ : IsPrimitiveRoot ζ h)
+    {e : ι → ℕ} (he : ∀ i, ¬ h ∣ e i)
+    (hprod : ∏ i, (X - C (ζ ^ e i)) = ∏ i, (X - C (ζ⁻¹ ^ e i))) :
+    2 * ∑ i, e i % h = h * Fintype.card ι := by
+  classical
+  have hs := hζ.map_neg_natCast_eq_of_prod_X_sub_C_pow_eq hprod
   have hsum : ∑ i, (-(e i : ZMod h)).val = ∑ i, e i % h := by
     simpa only [Multiset.map_map, Function.comp_def, ZMod.val_natCast,
       ← Finset.sum_eq_multiset_sum] using congrArg (fun t ↦ (t.map ZMod.val).sum) hs

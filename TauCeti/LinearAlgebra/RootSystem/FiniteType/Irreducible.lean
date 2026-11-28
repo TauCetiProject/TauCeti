@@ -34,6 +34,10 @@ simple roots of a base, so that it also applies to a family known to span before
   and coroots span, with connected diagram of Cartan integers, makes a root pairing irreducible.
 * `RootPairing.isIrreducible_of_connected_diagramGraph_cartanMatrix`: a connected base
   diagram makes a root system irreducible.
+* `RootPairing.nonempty_of_isIrreducible`, `RootPairing.Base.nonempty_support_of_isIrreducible`,
+  and `RootPairing.Base.isIrreducible_of_cartanMatrix_equiv`: an irreducible root system has
+  nonempty root index type and nonempty base support, and irreducibility transfers along an
+  isomorphism of Cartan matrices of bases.
 * `RootPairing.eq_bot_of_forall_root_not_mem`: a submodule invariant under the simple
   reflections and containing no simple root is trivial.
 * `TauCeti.DynkinType.connected_diagramGraph_cartanMatrix`: every valid standard Dynkin diagram is
@@ -213,6 +217,51 @@ theorem _root_.RootPairing.isIrreducible_of_connected_diagramGraph_cartanMatrix
     simp [RootPairing.Base.cartanMatrix, RootPairing.Base.cartanMatrixIn_def]
   exact RootPairing.isIrreducible_of_connected_diagramGraph_pairingIn ((↑) : b.support → ι)
     (by simp [range_comp]) (by simp [range_comp]) (by rwa [hM])
+
+/-- An irreducible root system has nonempty root index type. -/
+theorem _root_.RootPairing.nonempty_of_isIrreducible
+    {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] (P : RootPairing ι R M N) [P.IsRootSystem]
+    [P.IsIrreducible] : Nonempty ι := by
+  have := RootPairing.IsIrreducible.nontrivial P
+  by_contra h
+  rw [not_nonempty_iff] at h
+  obtain ⟨m, hm⟩ := exists_ne (0 : M)
+  have hmem : m ∈ (⊥ : Submodule R M) := by
+    rw [← Submodule.span_empty (R := R), ← Set.range_eq_empty_iff.mpr h,
+      RootPairing.IsRootSystem.span_root_eq_top (P := P)]
+    exact Submodule.mem_top
+  exact hm ((Submodule.mem_bot R).1 hmem)
+
+/-- The base of an irreducible root system has nonempty support. -/
+theorem _root_.RootPairing.Base.nonempty_support_of_isIrreducible
+    {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [P.IsRootSystem]
+    [P.IsIrreducible] (b : P.Base) : Nonempty b.support := by
+  have := RootPairing.IsIrreducible.nontrivial P
+  by_contra h
+  rw [not_nonempty_iff] at h
+  exact not_subsingleton M b.toWeightBasis.equivFun.subsingleton
+
+/-- For a finite reduced irreducible crystallographic root system `P` over a characteristic-zero
+domain, irreducibility transfers to any crystallographic root system `Q` over a characteristic-zero
+field (possibly on a different root index type `ι'`) along a support equivalence of bases that
+preserves the Cartan matrix. -/
+theorem _root_.RootPairing.Base.isIrreducible_of_cartanMatrix_equiv
+    {ι R M N : Type*} [CommRing R] [IsDomain R] [CharZero R]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+    {P : RootPairing ι R M N} [Finite ι] [P.IsCrystallographic] [P.IsReduced]
+    [P.IsRootSystem] [P.IsIrreducible] (b : P.Base)
+    {ι' S M' N' : Type*} [Field S] [CharZero S] [AddCommGroup M'] [Module S M']
+    [AddCommGroup N'] [Module S N'] {Q : RootPairing ι' S M' N'} [Q.IsRootSystem]
+    [Q.IsCrystallographic] (bQ : Q.Base) (e : bQ.support ≃ b.support)
+    (hC : ∀ u v, bQ.cartanMatrix u v = b.cartanMatrix (e u) (e v)) : Q.IsIrreducible := by
+  have hne' : Nonempty bQ.support := b.nonempty_support_of_isIrreducible.map e.symm
+  let iso : diagramGraph bQ.cartanMatrix ≃g diagramGraph b.cartanMatrix :=
+    { toEquiv := e, map_rel_iff' := @fun u v ↦ by simp [diagramGraph_adj, hC] }
+  refine RootPairing.isIrreducible_of_connected_diagramGraph_cartanMatrix bQ ⟨fun u v ↦ ?_⟩
+  obtain ⟨w⟩ := preconnected_diagramGraph_cartanMatrix b (iso u) (iso v)
+  simpa using (w.map iso.symm.toHom).reachable
 
 end
 

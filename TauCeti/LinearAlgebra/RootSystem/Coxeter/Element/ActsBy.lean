@@ -23,7 +23,7 @@ the roots need not span), so the order of `w` is the order of `W`.
 
 Every element of the Weyl group acts by some integer matrix, because every root is an integer
 combination of the simple roots. When the roots span, the simple roots form a basis of the weight
-space and `W` is the matrix of `w` in that basis. So the characteristic polynomial of every
+space and `W` is the matrix of `w` in that basis. Moreover, the characteristic polynomial of every
 Weyl-group element has integer coefficients, and its roots are closed under Galois conjugation.
 
 ## Main results
@@ -38,7 +38,9 @@ Weyl-group element has integer coefficients, and its roots are closed under Galo
   characteristic polynomial.
 * `RootPairing.Base.exists_charpoly_weylGroupRootRep_eq_map`: the characteristic polynomial of
   every Weyl-group element on the weight space of a root system has integer coefficients.
-* `RootPairing.Base.exists_charpoly_weylGroupRootRep_eq_map_rat`: over a `ℚ`-algebra, the same
+* `RootPairing.Base.exists_charpoly_weylGroupRootRep_eq_map_rat`,
+  `RootPairing.Base.ActsBy.charpoly_weylGroupRootRep_eq_map_rat`, and
+  `RootPairing.Base.charpoly_weylGroupRootRep_wordProd_eq_map_rat`: over a `ℚ`-algebra, the same
   characteristic polynomial has rational coefficients.
 * `RootPairing.Base.orderOf_wordProd_of_cartanMatrix_eq`: for a base whose Cartan matrix is `A` up
   to a relabelling `e`, the Coxeter element spelled in the order `e` has the order of
@@ -234,6 +236,28 @@ theorem exists_charpoly_weylGroupRootRep_eq_map_rat [Algebra ℚ R] [Module.Free
   congr 1
   exact Subsingleton.elim _ _
 
+omit [P.IsCrystallographic] in
+/-- Over a `ℚ`-algebra, if `w` acts on the simple roots of a root system by the integer matrix `W`,
+then the characteristic polynomial of `w` acting on the weight space equals the characteristic
+polynomial of `W` over `ℚ`, coefficients mapped into `R`. -/
+theorem ActsBy.charpoly_weylGroupRootRep_eq_map_rat [Algebra ℚ R] [Module.Free R M]
+    [Module.Finite R M] {b : P.Base} {w : P.weylGroup} {W : Matrix b.support b.support ℤ}
+    (h : ActsBy b w W) :
+    (W.map (Int.castRingHom ℚ)).charpoly.map (algebraMap ℚ R) =
+      (P.weylGroupRootRep w).charpoly := by
+  rw [h.charpoly_weylGroupRootRep, Matrix.charpoly_map, Polynomial.map_map]
+  congr 1; exact RingHom.ext_int _ _
+
+/-- Over a `ℚ`-algebra, the characteristic polynomial of a word in the simple reflections equals
+the characteristic polynomial of the corresponding product of reflection matrices over `ℚ`,
+coefficients mapped into `R`. -/
+theorem charpoly_weylGroupRootRep_wordProd_eq_map_rat [Algebra ℚ R] [Module.Free R M]
+    [Module.Finite R M] (b : P.Base) (l : List b.support) :
+    (((l.map (reflMatrix b.cartanMatrix)).prod.map (Int.castRingHom ℚ)).charpoly).map
+        (algebraMap ℚ R) =
+      (P.weylGroupRootRep (wordProd P b l)).charpoly :=
+  (b.actsBy_wordProd l).charpoly_weylGroupRootRep_eq_map_rat
+
 end RootSystem
 
 /-! ### Relabelling along a Dynkin numbering -/
@@ -245,11 +269,8 @@ theorem prod_reflMatrix_eq {n : ℕ} (b : P.Base) (A : Matrix (Fin n) (Fin n) �
     (((List.finRange n).map e.symm).map (reflMatrix b.cartanMatrix)).prod =
       reindexAlgEquiv ℤ ℤ e.symm (coxeterElement A) := by
   have hC : b.cartanMatrix = A.submatrix e e := by ext i j; exact hA i j
-  rw [hC, coxeterElement, map_list_prod, List.map_map, List.map_map]
-  congr 1
-  refine List.map_congr_left fun i _ => ?_
-  simp only [Function.comp_apply, reflMatrix_submatrix, _root_.Equiv.apply_symm_apply,
-    coe_reindexAlgEquiv, reindex_apply, _root_.Equiv.symm_symm]
+  rw [hC, coxeterElement]
+  exact prod_map_reflMatrix_submatrix A e (List.finRange n)
 
 omit [DecidableEq ι] in
 /-- **The Weyl-group Coxeter element has the order of the Coxeter element of its Cartan

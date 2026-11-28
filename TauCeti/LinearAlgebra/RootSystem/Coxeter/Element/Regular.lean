@@ -72,10 +72,11 @@ variable {ι K M N : Type*} [Field K] [AddCommGroup M] [Module K M] [AddCommGrou
 
 variable [P.IsCrystallographic]
 
-/-- The value of a coroot on a real combination of the simple roots is real. -/
-private theorem coroot'_sum_algebraMap_smul_root [Algebra ℝ K] (a : b.support → ℝ) (j : ι) :
-    P.coroot' j (∑ i : b.support, algebraMap ℝ K (a i) • P.root i) =
-      algebraMap ℝ K (∑ i : b.support, a i * P.pairingIn ℤ i j) := by
+/-- The value of a coroot on an `R`-linear combination of the simple roots. -/
+theorem coroot'_sum_algebraMap_smul_root {R : Type*} [CommRing R] [Algebra R K]
+    (a : b.support → R) (j : ι) :
+    P.coroot' j (∑ i : b.support, algebraMap R K (a i) • P.root i) =
+      algebraMap R K (∑ i : b.support, a i * P.pairingIn ℤ i j) := by
   simp only [map_sum, map_smul, root_coroot'_eq_pairing, smul_eq_mul, map_mul, map_intCast,
     ← P.algebraMap_pairingIn ℤ, algebraMap_int_eq, eq_intCast]
 
@@ -87,15 +88,34 @@ section Plane
 
 variable [Algebra ℝ K]
 
+omit [P.IsCrystallographic] [CharZero K] [Finite ι] [P.IsReduced] in
 /-- The part `∑ yᵢ αᵢ` of colour `x` of a real combination of the simple roots. -/
-private noncomputable def colorPart (c : b.support → Bool) (y : b.support → ℝ) (x : Bool) : M :=
+noncomputable def colorPart (c : b.support → Bool) (y : b.support → ℝ) (x : Bool) : M :=
   ∑ i : b.support, algebraMap ℝ K (if c i = x then y i else 0) • P.root i
 
-variable {P b} {c : (coxeterMatrixOfBase P b).graph.Coloring Bool} {y : b.support → ℝ} {κ : ℝ}
+omit [P.IsCrystallographic] [CharZero K] [Finite ι] [P.IsReduced] in
+/-- Unfolding lemma for `colorPart`. -/
+theorem colorPart_def (c : b.support → Bool) (y : b.support → ℝ) (x : Bool) :
+    colorPart P b c y x =
+      ∑ i : b.support, algebraMap ℝ K (if c i = x then y i else 0) • P.root i :=
+  (rfl)
+
+omit [P.IsCrystallographic] [CharZero K] [Finite ι] [P.IsReduced] in
+/-- The `i`-th simple-root coordinate of a colour part `colorPart P b c y x`. -/
+@[simp]
+theorem toWeightBasis_repr_colorPart [P.IsRootSystem] (c : b.support → Bool)
+    (y : b.support → ℝ) (x : Bool) (i : b.support) :
+    b.toWeightBasis.repr (colorPart P b c y x) i = algebraMap ℝ K (if c i = x then y i else 0) := by
+  classical
+  rw [colorPart, map_sum, Finset.sum_apply', Finset.sum_eq_single i
+    (fun j _ hij ↦ by split_ifs <;> simp [b.toWeightBasis_repr_root, hij]) (by simp)]
+  split_ifs <;> simp [b.toWeightBasis_repr_root, Algebra.smul_def]
+
+variable {b} {c : (coxeterMatrixOfBase P b).graph.Coloring Bool} {y : b.support → ℝ} {κ : ℝ}
 
 omit [P.IsCrystallographic] [CharZero K] [Finite ι] [P.IsReduced] in
 /-- The two colour parts add up to the whole combination. -/
-private theorem colorPart_add (c : b.support → Bool) (y : b.support → ℝ) :
+theorem colorPart_add (c : b.support → Bool) (y : b.support → ℝ) :
     colorPart P b c y true + colorPart P b c y false =
       ∑ i : b.support, algebraMap ℝ K (y i) • P.root i := by
   rw [colorPart, colorPart, ← sum_add_distrib]
@@ -104,7 +124,7 @@ private theorem colorPart_add (c : b.support → Bool) (y : b.support → ℝ) :
 
 omit [CharZero K] [Finite ι] [P.IsReduced] in
 /-- The value of a coroot on a colour part. -/
-private theorem coroot'_colorPart_eq (c : b.support → Bool) (y : b.support → ℝ) (z : Bool)
+theorem coroot'_colorPart_eq (c : b.support → Bool) (y : b.support → ℝ) (z : Bool)
     (i : ι) :
     P.coroot' i (colorPart P b c y z) =
       algebraMap ℝ K (∑ k : b.support, (if c k = z then y k else 0) * P.pairingIn ℤ k i) := by
@@ -113,7 +133,7 @@ private theorem coroot'_colorPart_eq (c : b.support → Bool) (y : b.support →
 omit [CharZero K] [Finite ι] [P.IsReduced] in
 /-- The value of a simple coroot on the sum of the two colour parts of a left eigenvector of the
 Cartan matrix. -/
-private theorem coroot'_colorPart_add
+theorem coroot'_colorPart_add
     (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j) (j : b.support) :
     P.coroot' j (colorPart P b c y true + colorPart P b c y false) =
       algebraMap ℝ K (κ * y j) := by
@@ -150,7 +170,7 @@ private theorem coroot'_colorPart
 
 /-- The product of the simple reflections of colour `x` negates the colour part of colour `x`,
 and adds `2 - κ` times it to the colour part of the other colour. -/
-private theorem colorClassProd_smul_colorPart
+theorem colorClassProd_smul_colorPart
     (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j) (x z : Bool) :
     (weylCoxeterSystem P b).colorClassProd c x • colorPart P b c y z =
       colorPart P b c y z - algebraMap ℝ K (if z = x then 2 else κ - 2) • colorPart P b c y x := by
@@ -160,7 +180,7 @@ private theorem colorClassProd_smul_colorPart
   refine sum_congr rfl fun j _ ↦ ?_
   rw [smul_smul]
   by_cases hj : c j = x
-  · simp only [hj, ↓reduceIte, coroot'_colorPart hy hj, map_mul]
+  · simp only [hj, ↓reduceIte, coroot'_colorPart P hy hj, map_mul]
   · simp only [hj, ↓reduceIte, map_zero, mul_zero]
 
 /-- The bipartite Coxeter element maps the colour part `u₀` of colour `true` to
@@ -171,8 +191,8 @@ private theorem bipartiteCoxeterElement_smul_colorPart_true
       (algebraMap ℝ K (2 - κ) ^ 2 - 1) • colorPart P b c y true +
         algebraMap ℝ K (2 - κ) • colorPart P b c y false := by
   rw [CoxeterSystem.bipartiteCoxeterElement_def, mul_smul,
-    colorClassProd_smul_colorPart hy false true, smul_sub, smul_comm,
-    colorClassProd_smul_colorPart hy true true, colorClassProd_smul_colorPart hy true false]
+    P.colorClassProd_smul_colorPart hy false true, smul_sub, smul_comm,
+    P.colorClassProd_smul_colorPart hy true true, P.colorClassProd_smul_colorPart hy true false]
   simp only [Bool.true_eq_false, Bool.false_eq_true, ↓reduceIte, map_sub, map_ofNat]
   module
 
@@ -183,14 +203,14 @@ private theorem bipartiteCoxeterElement_smul_colorPart_false
     (weylCoxeterSystem P b).bipartiteCoxeterElement c • colorPart P b c y false =
       -colorPart P b c y false - algebraMap ℝ K (2 - κ) • colorPart P b c y true := by
   rw [CoxeterSystem.bipartiteCoxeterElement_def, mul_smul,
-    colorClassProd_smul_colorPart hy false false, smul_sub, smul_comm,
-    colorClassProd_smul_colorPart hy true false]
+    P.colorClassProd_smul_colorPart hy false false, smul_sub, smul_comm,
+    P.colorClassProd_smul_colorPart hy true false]
   simp only [Bool.false_eq_true, ↓reduceIte, map_sub, map_ofNat]
   module
 
-/-- For a root `μ` of `X ^ 2 + (2 - λ ^ 2) X + 1`, the vector `(1 + μ) u₀ + λ u₁` of the Coxeter
-plane is an eigenvector of the bipartite Coxeter element for `μ`. -/
-private theorem bipartiteCoxeterElement_smul_eigen
+/-- For a root `μ` of `X ^ 2 + (2 - λ ^ 2) X + 1`, the bipartite Coxeter element scales the
+colour-part combination `(1 + μ) u₀ + λ u₁` by `μ` (making it an eigenvector when nonzero). -/
+theorem bipartiteCoxeterElement_smul_one_add_smul_colorPart_add_smul
     (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j) {μ : K}
     (hμ : μ ^ 2 + (2 - algebraMap ℝ K (2 - κ) ^ 2) * μ + 1 = 0) :
     (weylCoxeterSystem P b).bipartiteCoxeterElement c •
@@ -198,7 +218,8 @@ private theorem bipartiteCoxeterElement_smul_eigen
       μ • ((1 + μ) • colorPart P b c y true +
         algebraMap ℝ K (2 - κ) • colorPart P b c y false) := by
   rw [smul_add, smul_comm _ (1 + μ), smul_comm _ (algebraMap ℝ K (2 - κ)),
-    bipartiteCoxeterElement_smul_colorPart_true hy, bipartiteCoxeterElement_smul_colorPart_false hy]
+    bipartiteCoxeterElement_smul_colorPart_true P hy,
+    bipartiteCoxeterElement_smul_colorPart_false P hy]
   linear_combination (norm := module) (-1 : K) • hμ • colorPart P b c y true
 
 omit [P.IsCrystallographic] [Finite ι] [P.IsReduced] in
@@ -214,7 +235,7 @@ private theorem ne_algebraMap_of_quadratic (hκ : 0 < κ) (hκ2 : κ < 2) {μ : 
     mul_pos (mul_pos (pow_pos (sub_pos.2 hκ2) 2) hκ) (by linarith : (0 : ℝ) < 4 - κ)]
 
 omit [P.IsCrystallographic] [Finite ι] [P.IsReduced] in
-/-- The value `(1 + μ) p + λ q` of a coroot on the eigenvector `(1 + μ) u₀ + λ u₁`, where `p` and
+/-- The value `(1 + μ) p + λ q` of a coroot on the combination `(1 + μ) u₀ + λ u₁`, where `p` and
 `q` are the real values on `u₀` and `u₁`, is nonzero as soon as `p + q` is: otherwise `μ` would
 be real. -/
 private theorem one_add_mul_add_mul_ne_zero (hκ : 0 < κ) (hκ2 : κ < 2) {μ : K}
@@ -239,11 +260,11 @@ private theorem exists_pos_coroot'_colorPart_add
     (hy0 : ∀ i, 0 < y i) (hκ : 0 < κ) :
     ∀ j ∈ b.support, ∃ t : ℝ, 0 < t ∧
       P.coroot' j (colorPart P b c y true + colorPart P b c y false) = algebraMap ℝ K t :=
-  fun j hj ↦ ⟨κ * y ⟨j, hj⟩, mul_pos hκ (hy0 _), coroot'_colorPart_add hy ⟨j, hj⟩⟩
+  fun j hj ↦ ⟨κ * y ⟨j, hj⟩, mul_pos hκ (hy0 _), P.coroot'_colorPart_add hy ⟨j, hj⟩⟩
 
-/-- For `0 < κ < 2` and a root `ν` of `X ^ 2 + (2 - λ ^ 2) X + 1`, where `λ = 2 - κ`, the
-eigenvector `(1 + ν) u₀ + λ u₁` of the Coxeter plane is regular. -/
-private theorem isRegularWeight_one_add_smul_colorPart_add_smul
+/-- For `0 < κ < 2` and a root `ν` of `X ^ 2 + (2 - λ ^ 2) X + 1`, where `λ = 2 - κ`, the weight
+`(1 + ν) u₀ + λ u₁` is regular (every coroot is nonzero on it). -/
+theorem isRegularWeight_one_add_smul_colorPart_add_smul
     (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j)
     (hy0 : ∀ i, 0 < y i) (hκ : 0 < κ) (hκ2 : κ < 2) {ν : K}
     (hν : ν ^ 2 + (2 - algebraMap ℝ K (2 - κ) ^ 2) * ν + 1 = 0) :
@@ -252,7 +273,7 @@ private theorem isRegularWeight_one_add_smul_colorPart_add_smul
   refine (P.isRegularWeight_iff _).2 fun i ↦ ?_
   -- The values `p` and `q` of the coroot on `u₀` and `u₁` are real, and `p + q ≠ 0`.
   obtain ⟨t, ht, hxt⟩ :=
-    exists_ne_zero_coroot'_eq P b (algebraMap ℝ K) (exists_pos_coroot'_colorPart_add hy hy0 hκ) i
+    exists_ne_zero_coroot'_eq P b (algebraMap ℝ K) (exists_pos_coroot'_colorPart_add P hy hy0 hκ) i
   rw [map_add, coroot'_colorPart_eq, coroot'_colorPart_eq, ← map_add] at hxt
   have hpq := (algebraMap ℝ K).injective hxt
   rw [map_add, map_smul, map_smul, coroot'_colorPart_eq, coroot'_colorPart_eq, smul_eq_mul,
@@ -291,9 +312,11 @@ private theorem pow_eq_one_of_pow_eq_one
     field_simp
     linear_combination hμ
   have h1 : g ^ l • ((1 + μ) • u₀ + L • u₁) = (1 + μ) • u₀ + L • u₁ := by
-    rw [pow_smul_eq_of_smul_eq (bipartiteCoxeterElement_smul_eigen hy hμ), hl, one_smul]
+    rw [pow_smul_eq_of_smul_eq
+      (P.bipartiteCoxeterElement_smul_one_add_smul_colorPart_add_smul hy hμ), hl, one_smul]
   have h2 : g ^ l • ((1 + μ⁻¹) • u₀ + L • u₁) = (1 + μ⁻¹) • u₀ + L • u₁ := by
-    rw [pow_smul_eq_of_smul_eq (bipartiteCoxeterElement_smul_eigen hy hμ'), inv_pow, hl,
+    rw [pow_smul_eq_of_smul_eq
+      (P.bipartiteCoxeterElement_smul_one_add_smul_colorPart_add_smul hy hμ'), inv_pow, hl,
       inv_one, one_smul]
   -- The difference of the two eigenvectors is a nonzero multiple of `u₀`.
   have hg₀ : g ^ l • u₀ = u₀ := by
@@ -310,8 +333,20 @@ private theorem pow_eq_one_of_pow_eq_one
     exact smul_right_injective M ((map_ne_zero _).2 (sub_ne_zero.2 hκ2.ne')) h4
   exact P.eq_one_of_isRegularWeight_of_smul_eq b
     (isRegularWeight_of_forall_exists_pos_coroot'_eq P b _ (algebraMap ℝ K).injective
-      (exists_pos_coroot'_colorPart_add hy hy0 hκ))
+      (exists_pos_coroot'_colorPart_add P hy hy0 hκ))
     (by rw [smul_add, hg₀, hg₁])
+
+/-- For `0 < κ < 2` and a root `μ` of `X ^ 2 + (2 - (2 - κ) ^ 2) X + 1`, the eigenvalue `μ` is a
+primitive root of unity of order equal to the order of the bipartite Coxeter element. -/
+theorem isPrimitiveRoot_bipartiteCoxeterElement_of_quadratic [Nonempty ι]
+    (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j)
+    (hy0 : ∀ i, 0 < y i) (hκ : 0 < κ) (hκ2 : κ < 2) {μ : K}
+    (hμ : μ ^ 2 + (2 - algebraMap ℝ K (2 - κ) ^ 2) * μ + 1 = 0) :
+    IsPrimitiveRoot μ (orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement c)) :=
+  isPrimitiveRoot_orderOf_of_smul_eq
+    (P.isRegularWeight_one_add_smul_colorPart_add_smul hy hy0 hκ hκ2 hμ).ne_zero
+    (P.bipartiteCoxeterElement_smul_one_add_smul_colorPart_add_smul hy hμ)
+    fun _ hl ↦ pow_eq_one_of_pow_eq_one P hy hy0 hκ hκ2 hμ hl
 
 end Plane
 
@@ -326,6 +361,24 @@ private theorem exists_quadratic_root [IsAlgClosed K] (L : K) :
 
 variable [Algebra ℝ K]
 
+omit [Finite ι] [P.IsReduced] [Algebra ℝ K] in
+/-- When `b.support` is subsingleton, the constant vector `1` satisfies the rank-1 left
+eigenvector identity `∑ i, 1 * P.pairingIn ℤ i j = 2 * 1`. -/
+theorem sum_pairingIn_eq_two_of_subsingleton [Subsingleton b.support] (j : b.support) :
+    ∑ i : b.support, (1 : ℝ) * P.pairingIn ℤ i j = 2 * 1 := by
+  rw [sum_eq_single j (fun i _ hij ↦ absurd (Subsingleton.elim i j) hij) (by simp),
+    P.pairingIn_same]
+  push_cast
+  ring
+
+omit [CharZero K] [Finite ι] [P.IsReduced] [Algebra ℝ K] in
+/-- Unfolds a left eigenvector equation `Matrix.vecMul y (b.cartanMatrix.map Int.cast) = κ • y`
+into the componentwise pairing sum identity `∑ i, y i * P.pairingIn ℤ i j = κ * y j`. -/
+theorem sum_mul_pairingIn_eq_of_vecMul_eq_smul {y : b.support → ℝ} {κ : ℝ}
+    (hyC : Matrix.vecMul y (b.cartanMatrix.map (Int.cast : ℤ → ℝ)) = κ • y) (j : b.support) :
+    ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j := by
+  simpa [Matrix.vecMul, dotProduct, Base.cartanMatrixIn_def] using congrFun hyC j
+
 /-- With a single simple root `α`, the bipartite Coxeter element is the reflection in `α`, and `α`
 is a regular eigenvector for `-1`. -/
 private theorem exists_isRegularWeight_smul_eq_of_subsingleton
@@ -333,18 +386,12 @@ private theorem exists_isRegularWeight_smul_eq_of_subsingleton
     ∃ (x : M) (μ : K), P.IsRegularWeight x ∧
       (weylCoxeterSystem P b).bipartiteCoxeterElement c • x = μ • x ∧
       IsPrimitiveRoot μ (orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement c)) := by
-  -- The constant vector `1` is a left eigenvector of the Cartan matrix `(2)` for `κ = 2`.
-  have hy : ∀ j : b.support, ∑ i : b.support, (1 : ℝ) * P.pairingIn ℤ i j = 2 * 1 := by
-    intro j
-    rw [sum_eq_single j (fun i _ hij ↦ absurd (Subsingleton.elim i j) hij) (by simp),
-      P.pairingIn_same]
-    push_cast
-    ring
-  have hx := exists_pos_coroot'_colorPart_add (c := c) hy (fun _ ↦ one_pos) two_pos
+  have hy := P.sum_pairingIn_eq_two_of_subsingleton b
+  have hx := exists_pos_coroot'_colorPart_add P (c := c) hy (fun _ ↦ one_pos) two_pos
   set x := colorPart P b c (fun _ ↦ 1) true + colorPart P b c (fun _ ↦ 1) false with hxdef
   have hgx : (weylCoxeterSystem P b).bipartiteCoxeterElement c • x = (-1 : K) • x := by
-    rw [hxdef, smul_add, bipartiteCoxeterElement_smul_colorPart_true hy,
-      bipartiteCoxeterElement_smul_colorPart_false hy]
+    rw [hxdef, smul_add, bipartiteCoxeterElement_smul_colorPart_true P hy,
+      bipartiteCoxeterElement_smul_colorPart_false P hy]
     simp only [sub_self, map_zero]
     module
   have hreg : P.IsRegularWeight x :=
@@ -369,13 +416,10 @@ theorem exists_isRegularWeight_bipartiteCoxeterElement_smul_eq_smul_isPrimitiveR
   -- At least two simple roots: the Perron eigenvector of the Cartan matrix spans the plane.
   obtain ⟨κ, hκ, hκ2, y, hy0, hyC⟩ :=
     (isFiniteType_cartanMatrix b).exists_pos_vecMul_eq_smul b.cartanMatrix_isIndecomposable
-  have hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j := fun j ↦ by
-    simpa [Matrix.vecMul, dotProduct, Base.cartanMatrixIn_def] using congrFun hyC j
+  have hy := P.sum_mul_pairingIn_eq_of_vecMul_eq_smul b hyC
   obtain ⟨μ, hμ⟩ := exists_quadratic_root (algebraMap ℝ K (2 - κ))
-  have hreg := isRegularWeight_one_add_smul_colorPart_add_smul (c := c) hy hy0 hκ hκ2 hμ
-  have hgv := bipartiteCoxeterElement_smul_eigen (c := c) hy hμ
-  set v := (1 + μ) • colorPart P b c y true + algebraMap ℝ K (2 - κ) • colorPart P b c y false
-  exact ⟨v, μ, hreg, hgv, isPrimitiveRoot_orderOf_of_smul_eq hreg.ne_zero hgv fun l hl ↦
-    pow_eq_one_of_pow_eq_one hy hy0 hκ hκ2 hμ hl⟩
+  exact ⟨_, μ, P.isRegularWeight_one_add_smul_colorPart_add_smul hy hy0 hκ hκ2 hμ,
+    P.bipartiteCoxeterElement_smul_one_add_smul_colorPart_add_smul hy hμ,
+    P.isPrimitiveRoot_bipartiteCoxeterElement_of_quadratic hy hy0 hκ hκ2 hμ⟩
 
 end RootPairing

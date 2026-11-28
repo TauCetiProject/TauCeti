@@ -35,6 +35,8 @@ the Weyl orbit of the simple root `α`, so reducedness cannot be dropped from th
 * `RootPairing.Base.coe_toWeightBasisInt_equivFun_symm_coefficientReflection`: evaluation in the
   root lattice intertwines the reflection on columns with the actual reflection.
 * `RootPairing.Base.rootCoefficients_eq_iff`: the characterization of the column of a root.
+* `RootPairing.Base.injective_pairingIn_support`: the integral pairings of the simple roots
+  against a coroot determine the coroot index.
 * `RootPairing.Base.rootCoefficients_apply_of_injective`: the column of a root, read from an
   expansion in a relabelling of some simple roots.
 * `RootPairing.Base.height_eq_sum_rootCoefficients_of_bijOn`: the height of a root, as the sum of
@@ -238,6 +240,38 @@ theorem eq_highestRoot_of_forall_rootCoefficients_le [Finite ι] [Nonempty ι] {
   have hheight := b.height_le_height_highestRoot i
   rw [← sum_rootCoefficients_eq_height, ← sum_rootCoefficients_eq_height] at hheight
   exact hheight.not_gt (Finset.sum_lt_sum (fun l _ ↦ hle l) ⟨k, Finset.mem_univ k, hk⟩)
+
+/-- The dot product of a root's simple-root coefficient column with the integer pairings of the
+simple roots against a coroot `j` equals the integer pairing `⟨αᵢ, αⱼ^∨⟩`. -/
+theorem rootCoefficients_dotProduct_pairingIn [P.IsCrystallographic] (i j : ι) :
+    b.rootCoefficients i ⬝ᵥ (fun k : b.support ↦ P.pairingIn ℤ k j) = P.pairingIn ℤ i j := by
+  apply FaithfulSMul.algebraMap_injective ℤ R
+  rw [P.algebraMap_pairingIn ℤ i j, dotProduct, map_sum]
+  conv_rhs => rw [← root_coroot_eq_pairing, ← b.sum_rootCoefficients_smul_root i, map_sum,
+    LinearMap.sum_apply]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [map_mul, P.algebraMap_pairingIn ℤ, ← root_coroot_eq_pairing, map_zsmul,
+    LinearMap.smul_apply, zsmul_eq_mul, eq_intCast]
+
+omit [CharZero R] in
+/-- Integral pairings of the simple roots against a coroot distinguish coroot indices. -/
+theorem injective_pairingIn_support [P.IsCrystallographic] [P.IsRootSystem] :
+    Injective (fun j (k : b.support) ↦ P.pairingIn ℤ k j) := fun i j hij ↦ by
+  apply P.coroot.injective
+  apply (LinearMap.IsPerfPair.bijective_right P.toLinearMap).injective
+  refine b.toWeightBasis.ext fun k ↦ ?_
+  simp only [LinearMap.flip_apply, toWeightBasis_apply, root_coroot_eq_pairing,
+    ← P.algebraMap_pairingIn ℤ]
+  exact congrArg (algebraMap ℤ R) (congrFun hij k)
+
+/-- The simple-root coefficient column of the reflected root `sᵢ(αⱼ)`. -/
+theorem rootCoefficients_reflectionPerm [P.IsCrystallographic] (i j : ι) :
+    b.rootCoefficients (P.reflectionPerm i j) =
+      b.rootCoefficients j - P.pairingIn ℤ j i • b.rootCoefficients i := by
+  rw [b.rootCoefficients_eq_iff]
+  simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul, sub_smul, Finset.sum_sub_distrib,
+    mul_smul, ← Finset.smul_sum, b.sum_rootCoefficients_smul_root,
+    ← P.reflection_apply_root' ℤ, P.root_reflectionPerm]
 
 /-! ### Transport of a base -/
 
