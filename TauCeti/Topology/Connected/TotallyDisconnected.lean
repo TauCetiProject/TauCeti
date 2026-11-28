@@ -47,3 +47,15 @@ instance ULift.totallyDisconnectedSpace {X : Type u} [TopologicalSpace X]
     [TotallyDisconnectedSpace X] : TotallyDisconnectedSpace (ULift.{v} X) :=
   Topology.IsEmbedding.uliftDown.isTotallyDisconnected_range.1
     (isTotallyDisconnected_of_totallyDisconnectedSpace _)
+
+namespace TauCeti
+
+/-- A topological space admitting a continuous injection into a totally disconnected space is
+totally disconnected. -/
+theorem totallyDisconnectedSpace_of_injective_of_continuous {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [TotallyDisconnectedSpace Y] {f : X → Y}
+    (hinj : Function.Injective f) (hcont : Continuous f) : TotallyDisconnectedSpace X :=
+  ⟨isTotallyDisconnected_of_image hcont.continuousOn hinj
+    (isTotallyDisconnected_of_totallyDisconnectedSpace _)⟩
+
+end TauCeti

@@ -8,8 +8,8 @@ module
 public import TauCeti.Algebra.Order.Ring.Units
 public import TauCeti.Data.ZMod.ExactDivisor
 public import TauCeti.NumberTheory.LocalField.Padic
-public import TauCeti.NumberTheory.LocalField.Units.Decomposition
 public import TauCeti.NumberTheory.Padics.RingHoms
+public import TauCeti.NumberTheory.Padics.UnitsDecomposition.Rationals
 import Mathlib.Analysis.Normed.Ring.Ultra
 import TauCeti.Data.ZMod.Units
 import TauCeti.NumberTheory.Padics.PadicIntegers
@@ -62,49 +62,10 @@ open scoped TauCeti.ExactDivisor
 
 namespace TauCeti
 
-private def padicUnitReduction (p j : ℕ) [Fact p.Prime] :
-    unitFiltration ℚ_[p] 0 →* (ZMod (p ^ j))ˣ :=
-  (PadicInt.unitsToZModPow j).toMonoidHom.comp
-    ((Units.mapEquiv (Padic.integerRingEquiv p).toMulEquiv).toMonoidHom.comp
-      unitFiltrationZeroEquivIntegerUnits.toMonoidHom)
-
-private def padicIntegerUnitToFiltration (p : ℕ) [Fact p.Prime] :
-    ℤ_[p]ˣ ≃* unitFiltration ℚ_[p] 0 :=
-  (Units.mapEquiv (Padic.integerRingEquiv p).toMulEquiv).symm.trans
-    unitFiltrationZeroEquivIntegerUnits.symm
-
-private theorem coe_padicIntegerUnitToFiltration (p : ℕ) [Fact p.Prime] (w : ℤ_[p]ˣ) :
-    (((padicIntegerUnitToFiltration p w : unitFiltration ℚ_[p] 0) : ℚ_[p]ˣ) : ℚ_[p]) = w :=
-  by
-    simp [padicIntegerUnitToFiltration, Units.coe_mapEquiv]
-
-private theorem padicUnitReduction_padicIntegerUnitToFiltration (p j : ℕ) [Fact p.Prime]
-    (w : ℤ_[p]ˣ) :
-    padicUnitReduction p j (padicIntegerUnitToFiltration p w) =
-      Units.map (PadicInt.toZModPow j : ℤ_[p] →+* ZMod (p ^ j)).toMonoidHom w :=
-  by
-    apply Units.ext
-    simp [padicUnitReduction, padicIntegerUnitToFiltration, Units.coe_mapEquiv]
-
-private theorem unitsEquivIntProd_eq_of_padic_decomposition (p : ℕ) [Fact p.Prime]
-    (x : ℚ_[p]ˣ) (k : ℤ) (w : ℤ_[p]ˣ)
-    (hx : (x : ℚ_[p]) = (p : ℚ_[p]) ^ k * ((w : ℤ_[p]) : ℚ_[p])) :
-    unitsEquivIntProd ℚ_[p] (padicPrimeUnit p)
-      (normalizedValuation_padicPrimeUnit p) x =
-        (.ofAdd k, padicIntegerUnitToFiltration p w) := by
-  have hx_units : x = (padicPrimeUnit p) ^ k * padicIntegerUnitToFiltration p w := by
-    apply Units.ext
-    simpa [coe_padicIntegerUnitToFiltration] using hx
-  rw [hx_units]
-  have h := (unitsEquivIntProd ℚ_[p] (padicPrimeUnit p)
-    (normalizedValuation_padicPrimeUnit p)).apply_symm_apply
-      (.ofAdd k, padicIntegerUnitToFiltration p w)
-  simpa only [unitsEquivIntProd_symm_apply, toAdd_ofAdd] using h
-
 private def cyclotomicSymbolComponents (m p : ℕ) [NeZero m] [Fact p.Prime] :
-    Multiplicative ℤ × unitFiltration ℚ_[p] 0 →*
+    Multiplicative ℤ × ℤ_[p]ˣ →*
       (ZMod (p ^ padicValNat p m))ˣ × (ZMod (m / p ^ padicValNat p m))ˣ :=
-  ((padicUnitReduction p (padicValNat p m))⁻¹.comp (MonoidHom.snd _ _)).prod
+  ((PadicInt.unitsToZModPow (padicValNat p m)).toMonoidHom⁻¹.comp (MonoidHom.snd _ _)).prod
     ((zpowersHom _ (ZMod.unitOfCoprime p (by
       simpa [Nat.padicValNat_def, Nat.factorization_def m (Fact.out : p.Prime)] using
         Nat.coprime_ordCompl (Fact.out : p.Prime) (NeZero.ne m)))).comp
@@ -123,8 +84,14 @@ def cyclotomicSymbol (m : ℕ) [NeZero m] (p : ℕ) [Fact p.Prime] :
       (Nat.isExactDivisor_primePow (N := m) (p := p))
   hprimary.unitsEquivProd.symm.toMonoidHom.comp <|
     (cyclotomicSymbolComponents m p).comp <|
-      (unitsEquivIntProd ℚ_[p] (padicPrimeUnit p)
-        (normalizedValuation_padicPrimeUnit p)).toMonoidHom
+      (padicUnitsEquivIntProd p).toMonoidHom
+
+private theorem unitsEquivProd_cyclotomicSymbol (m : ℕ) [NeZero m] (p : ℕ) [Fact p.Prime]
+    (hprimary : p ^ padicValNat p m ∥ m) (x : ℚ_[p]ˣ) :
+    hprimary.unitsEquivProd (cyclotomicSymbol m p x) =
+      cyclotomicSymbolComponents m p (padicUnitsEquivIntProd p x) := by
+  simp only [cyclotomicSymbol, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
+  exact hprimary.unitsEquivProd.apply_symm_apply _
 
 /-- On a prime-power divisor `p ^ j` of the modulus, the explicit local cyclotomic symbol is the
 inverse of the reduction of the p-adic unit part. -/
@@ -140,24 +107,19 @@ theorem unitsMap_cyclotomicSymbol_primePow (m : ℕ) [NeZero m] (p : ℕ) [Fact 
     simpa only [Nat.padicValNat_def] using
       (multiplicity_dvd_iff_le (p := p) (NeZero.ne m)).mp hj
   have hjprimary : p ^ j ∣ p ^ padicValNat p m := pow_dvd_pow p hjle
-  have hsplit :
-      (unitsEquivIntProd ℚ_[p] (padicPrimeUnit p)
-        (normalizedValuation_padicPrimeUnit p)).toMulEquiv x =
-          (.ofAdd k, padicIntegerUnitToFiltration p w) :=
-    unitsEquivIntProd_eq_of_padic_decomposition p x k w hx
+  have hsplit : padicUnitsEquivIntProd p x = (.ofAdd k, w) :=
+    padicUnitsEquivIntProd_eq_of_decomposition p x k w hx
   have hmap : ZMod.unitsMap hj =
       (ZMod.unitsMap hjprimary).comp (ZMod.unitsMap hprimary.dvd) := by
     simpa using (ZMod.unitsMap_comp hjprimary hprimary.dvd).symm
-  rw [hmap, MonoidHom.comp_apply, ← hprimary.unitsEquivProd_apply_fst]
-  simp only [cyclotomicSymbol, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    cyclotomicSymbolComponents, MonoidHom.prod_apply, MonoidHom.inv_apply]
-  rw [hprimary.unitsEquivProd.apply_symm_apply]
-  rw [hsplit]
-  simp only [MonoidHom.coe_snd]
-  rw [padicUnitReduction_padicIntegerUnitToFiltration, map_inv]
+  rw [hmap, MonoidHom.comp_apply, ← hprimary.unitsEquivProd_apply_fst,
+    unitsEquivProd_cyclotomicSymbol, hsplit]
+  simp only [cyclotomicSymbolComponents, MonoidHom.prod_apply, MonoidHom.comp_apply,
+    MonoidHom.coe_snd, MonoidHom.inv_apply, map_inv]
   congr 1
   apply Units.ext
   simp only [ZMod.unitsMap_val, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+    ContinuousMonoidHom.coe_toMonoidHom, PadicInt.coe_unitsToZModPow_apply,
     PadicInt.cast_toZModPow j (padicValNat p m) hjle]
 
 /-- On a divisor `d` of the modulus coprime to `p`, the explicit local cyclotomic symbol is
@@ -173,22 +135,17 @@ theorem unitsMap_cyclotomicSymbol_of_coprime (m : ℕ) [NeZero m] (p : ℕ) [Fac
   have hdcomp : d ∣ m / p ^ padicValNat p m :=
     (Nat.dvd_div_iff_mul_dvd hprimary.dvd).mpr
       (hcop'.mul_dvd_of_dvd_of_dvd hprimary.dvd hd)
-  have hsplit :
-      (unitsEquivIntProd ℚ_[p] (padicPrimeUnit p)
-        (normalizedValuation_padicPrimeUnit p)).toMulEquiv x =
-          (.ofAdd k, padicIntegerUnitToFiltration p w) :=
-    unitsEquivIntProd_eq_of_padic_decomposition p x k w hx
+  have hsplit : padicUnitsEquivIntProd p x = (.ofAdd k, w) :=
+    padicUnitsEquivIntProd_eq_of_decomposition p x k w hx
   have hmap : ZMod.unitsMap hd =
       (ZMod.unitsMap hdcomp).comp
         (ZMod.unitsMap (Nat.div_dvd_of_dvd hprimary.dvd)) := by
     simpa using
       (ZMod.unitsMap_comp hdcomp (Nat.div_dvd_of_dvd hprimary.dvd)).symm
-  rw [hmap, MonoidHom.comp_apply, ← hprimary.unitsEquivProd_apply_snd]
-  simp only [cyclotomicSymbol, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    cyclotomicSymbolComponents, MonoidHom.prod_apply, MonoidHom.inv_apply]
-  rw [hprimary.unitsEquivProd.apply_symm_apply, hsplit]
-  simp only [MonoidHom.coe_fst, zpowersHom_apply, toAdd_ofAdd]
-  rw [map_zpow]
+  rw [hmap, MonoidHom.comp_apply, ← hprimary.unitsEquivProd_apply_snd,
+    unitsEquivProd_cyclotomicSymbol, hsplit]
+  simp only [cyclotomicSymbolComponents, MonoidHom.prod_apply, MonoidHom.comp_apply,
+    MonoidHom.coe_fst, zpowersHom_apply, toAdd_ofAdd, map_zpow]
   congr 1
   apply Units.ext
   rw [ZMod.unitsMap_val, ZMod.coe_unitOfCoprime, ZMod.coe_unitOfCoprime,

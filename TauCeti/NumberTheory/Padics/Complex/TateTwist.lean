@@ -14,7 +14,7 @@ import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Surjectivity
 import TauCeti.NumberTheory.Cyclotomic.CyclotomicCharacter
 import TauCeti.NumberTheory.Padics.AlgebraicClosure.NormalizedTrace
 import TauCeti.NumberTheory.Padics.Complex.FixedPoints
-import TauCeti.NumberTheory.Padics.UnitsCharacter
+import TauCeti.NumberTheory.Padics.UnitsCharacter.Basic
 import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Operations
 
 /-!

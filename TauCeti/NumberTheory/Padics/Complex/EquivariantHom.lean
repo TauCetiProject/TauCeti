@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Padics.Complex.TateTwist
 
-import TauCeti.NumberTheory.Padics.UnitsCharacter
+import TauCeti.NumberTheory.Padics.UnitsCharacter.Basic
 
 /-!
 # Equivariant maps between distinct Tate twists of `ℂ_p`

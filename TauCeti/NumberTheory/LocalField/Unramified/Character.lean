@@ -37,6 +37,8 @@ geometric Frobenius to `λ`.
 * `TauCeti.unramifiedCharacter_apply_of_valuation_eq_one`: `μ_a` is trivial on `U(K,0)`.
 * `TauCeti.unramifiedCharacter_mul`, `TauCeti.unramifiedCharacter_inv`: `μ_{ab} = μ_a μ_b` and
   `μ_{a⁻¹} = (μ_a)⁻¹` for a commutative group `G`.
+* `TauCeti.exists_monoidHom_mul_unramifiedCharacter_iff`: the pointwise product `μ_a μ_b` is a
+  homomorphism on `Kˣ` iff `a` and `b` commute.
 * `TauCeti.apply_eq_unramifiedCharacter_of_isUniformizer`: a homomorphism trivial on `U(K,0)` is
   the unramified character of its value at a uniformizer.
 * `TauCeti.exists_eq_unramifiedCharacter_iff`: a continuous character is unramified exactly when
@@ -145,6 +147,32 @@ theorem unramifiedCharacter_injective :
   obtain ⟨π, hπ⟩ := exists_isUniformizer K
   rw [← unramifiedCharacter_apply_of_isUniformizer a hπ,
     ← unramifiedCharacter_apply_of_isUniformizer b hπ, h]
+
+variable (K) in
+/-- **Commutativity criterion for pointwise products of unramified characters.** For any
+nonarchimedean local field `K`, topological group `G`, and elements `a, b : G`, the pointwise
+product `x ↦ μ_a(x) * μ_b(x)` is a group homomorphism on `Kˣ` if and only if `a` and `b`
+commute. -/
+theorem exists_monoidHom_mul_unramifiedCharacter_iff (a b : G) :
+    (∃ δ : Kˣ →* G,
+      ∀ x : Kˣ, δ x = unramifiedCharacter K a x * unramifiedCharacter K b x) ↔
+      Commute a b := by
+  obtain ⟨π, hπ⟩ := exists_isUniformizer K
+  constructor
+  · rintro ⟨δ, hδ⟩
+    have hsq : (a * b) ^ 2 = a ^ 2 * b ^ 2 := by
+      have ha : unramifiedCharacter K a π = a := unramifiedCharacter_apply_of_isUniformizer a hπ
+      have hb : unramifiedCharacter K b π = b := unramifiedCharacter_apply_of_isUniformizer b hπ
+      have h1 : δ (π ^ 2) = (a * b) ^ 2 := by rw [map_pow, hδ, ha, hb]
+      have h2 : δ (π ^ 2) = a ^ 2 * b ^ 2 := by rw [hδ, map_pow, map_pow, ha, hb]
+      exact h1.symm.trans h2
+    rw [sq, sq, sq] at hsq
+    have h1 : b * a * b = a * b * b :=
+      mul_left_cancel (a := a) (by simpa [mul_assoc] using hsq)
+    exact (mul_right_cancel h1).symm
+  · intro hcomm
+    refine ⟨(unramifiedCharacter K (a * b)).toMonoidHom, fun x ↦ ?_⟩
+    simp [hcomm.mul_zpow]
 
 variable (K) in
 /-- The unramified character `μ_t` with values in a unit group `Aˣ` is smooth, whatever the topology

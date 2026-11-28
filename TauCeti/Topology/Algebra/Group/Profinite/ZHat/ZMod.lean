@@ -9,6 +9,7 @@ public import Mathlib.Data.ZMod.Basic
 public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.Data.ZMod.FinEquiv
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Ring
+import TauCeti.Data.ZMod.MonoidHomEquiv
 
 /-!
 # The profinite integers as the inverse limit of the `ZMod n`
@@ -41,8 +42,9 @@ is `ℤ`, which is not profinite, and no lift exists.
 
 ## Main definitions
 
-* `TauCeti.zHat.toZMod`: reduction of a profinite integer modulo `n`, a continuous ring
-  homomorphism `Additive zHat →+* ZMod n`.
+* `TauCeti.zHat.toZMod`, `TauCeti.zHat.toZModContinuousMonoidHom`: reduction of a profinite integer
+  modulo `n`, as a ring homomorphism `Additive zHat →+* ZMod n` and as a continuous multiplicative
+  homomorphism `Additive zHat →ₜ* ZMod n`.
 * `TauCeti.zHat.modSubgroup`, `TauCeti.zHat.modQuotientEquiv`, `TauCeti.zHat.modTransversal`:
   the open reduction kernel, its finite cyclic quotient, and the canonical residue transversal.
 * `TauCeti.zHat.addLift`: the additive homomorphism into `Additive zHat` assembled from a
@@ -142,6 +144,18 @@ theorem lift_ofAdd_one_apply (x : zHat.{u}) :
 /-- Reduction modulo `n` is continuous. -/
 theorem continuous_toZMod : Continuous (toZMod n : Additive zHat.{u} → ZMod n) :=
   continuous_toAdd.comp ((lift _).continuous.comp continuous_toMul)
+
+/-- Reduction modulo `n` as a continuous multiplicative homomorphism
+`Additive zHat.{u} →ₜ* ZMod n`. -/
+noncomputable def toZModContinuousMonoidHom : Additive zHat.{u} →ₜ* ZMod n where
+  toMonoidHom := (toZMod n).toMonoidHom
+  continuous_toFun := continuous_toZMod n
+
+/-- Evaluating `zHat.toZModContinuousMonoidHom n` on `a` gives `zHat.toZMod n a`. -/
+@[simp]
+theorem toZModContinuousMonoidHom_apply (a : Additive zHat.{u}) :
+    toZModContinuousMonoidHom n a = toZMod n a :=
+  (rfl)
 
 /-- **Compatibility of the projections along divisibility.** Reducing modulo `n` and then modulo
 a divisor `m` of `n` is reducing modulo `m`. -/
@@ -510,6 +524,29 @@ theorem ringLift_toZMod :
   (ringLift_unique _ _ _ fun n ↦ RingHom.comp_id (toZMod n)).symm
 
 end RingLift
+
+section LiftOfFinOrder
+
+/-- **Lifting an element of finite order.** Construct a continuous homomorphism `ℤ̂ →ₜ* G` sending
+`zHat.gen` to an element `a` of finite order in any topological group `G`, by factoring through
+`Multiplicative (ZMod (orderOf a))`. -/
+noncomputable def liftOfFinOrder {G : Type v} [Group G] [TopologicalSpace G] {a : G}
+    (ha : IsOfFinOrder a) : zHat.{u} →ₜ* G :=
+  haveI : NeZero (orderOf a) := ⟨(orderOf_pos_iff.mpr ha).ne'⟩
+  let ψ : Multiplicative (ZMod (orderOf a)) →ₜ* G :=
+    ⟨(TauCeti.zmodMonoidHomEquiv (orderOf a) G).symm ⟨a, pow_orderOf_eq_one a⟩,
+      continuous_of_discreteTopology⟩
+  ψ.comp (lift (.ofAdd 1))
+
+/-- The lift of a finite-order element sends the generator to that element. -/
+@[simp]
+theorem liftOfFinOrder_gen {G : Type v} [Group G] [TopologicalSpace G] {a : G}
+    (ha : IsOfFinOrder a) : liftOfFinOrder.{u} ha gen = a := by
+  have : NeZero (orderOf a) := ⟨(orderOf_pos_iff.mpr ha).ne'⟩
+  simp only [liftOfFinOrder, ContinuousMonoidHom.coe_comp, Function.comp_apply, lift_gen]
+  exact TauCeti.zmodMonoidHomEquiv_symm_apply_ofAdd_one _
+
+end LiftOfFinOrder
 
 end zHat
 

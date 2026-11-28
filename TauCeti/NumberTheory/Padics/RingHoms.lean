@@ -11,6 +11,7 @@ public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Units
 public import Mathlib.Topology.Clopen
 public import Mathlib.Topology.Instances.ZMod
 public import Mathlib.Topology.LocallyConstant.Basic
@@ -90,9 +91,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   `PadicInt.natCard_quotient_span`, `PadicInt.isAddCyclic_quotient_span`: a nonzero `x` generates
   the same ideal as `p ^ v` for `v` its valuation, so `ℤ_[p] ⧸ (x)` is `ZMod (p ^ v)`, a finite
   ring of cardinality `p ^ v` whose additive group is cyclic.
-* `PadicInt.valuation_natCast`, `PadicInt.valuation_eq_zero_of_isUnit`,
-  `PadicInt.one_le_valuation_of_dvd`: the valuation of a natural number is its `p`-adic
-  valuation, units have valuation `0`, and a nonzero multiple of `p` has valuation at least `1`.
+* `PadicInt.valuation_natCast`, `PadicInt.one_le_valuation_of_dvd`: the valuation of a natural
+  number is its `p`-adic valuation, and a nonzero multiple of `p` has valuation at least `1`.
 * `PadicInt.index_range_nsmul`: `n ℤ_p` has index `p ^ v_p(n)` in `ℤ_p` for `n ≠ 0`.
 * `PadicInt.dvd_pow_valuation`: a nonzero `x` divides `p ^ v` for `v` its valuation.
 * `PadicInt.addVal_eq_valuation`: on nonzero elements, the additive valuation of the discrete
@@ -532,13 +532,6 @@ theorem index_range_nsmul {n : ℕ} (hn : n ≠ 0) :
   -- the ideal quotient `ℤ_[p] ⧸ I` is by definition the additive quotient by `I.toAddSubgroup`
   exact AddSubgroup.index_eq_card _
 
-/-- A unit of `ℤ_[p]` has valuation `0`. -/
-theorem valuation_eq_zero_of_isUnit {x : ℤ_[p]} (hx : IsUnit x) : x.valuation = 0 := by
-  have h := isUnit_iff.1 hx
-  rwa [norm_eq_zpow_neg_valuation hx.ne_zero,
-    zpow_eq_one_iff_right₀ (Nat.cast_nonneg p) (by exact_mod_cast hp.out.ne_one), neg_eq_zero,
-    Nat.cast_eq_zero] at h
-
 /-- A nonzero `p`-adic integer divisible by `p` has valuation at least `1`. -/
 theorem one_le_valuation_of_dvd {x : ℤ_[p]} (hx : x ≠ 0) (h : (p : ℤ_[p]) ∣ x) :
     1 ≤ x.valuation := by
@@ -656,3 +649,46 @@ theorem pow_appr_eq_pow_appr (x : ℤ_[p]) {m : ℕ} (hg : g ^ p ^ m = 1) (hmn :
   pow_eq_pow_of_modEq (x.appr_modEq hmn) hg
 
 end PadicInt
+
+namespace RingHom
+
+/-- Any ring homomorphism `ℤ_[p] →+* k` into a ring of characteristic `p` factors through
+`PadicInt.toZMod` via `ZMod.castHom`. -/
+theorem eq_castHom_comp_toZMod {p : ℕ} [Fact p.Prime] {k : Type*} [Ring k] [CharP k p]
+    (f : ℤ_[p] →+* k) :
+    f = (ZMod.castHom (dvd_refl p) k).comp PadicInt.toZMod := by
+  ext x
+  obtain ⟨y, hy⟩ := PadicInt.dvd_sub_appr x 1
+  rw [pow_one] at hy
+  have hx : x = (x.appr 1 : ℤ_[p]) + (p : ℤ_[p]) * y := eq_add_of_sub_eq' hy
+  rw [RingHom.comp_apply, hx]
+  simp only [map_add, map_mul, map_natCast, CharP.cast_eq_zero, zero_mul, add_zero]
+
+/-- Any ring homomorphism `ℤ_[p] →+* k` into a topological ring of characteristic `p` is
+continuous, because it factors through `PadicInt.toZMod` (`RingHom.eq_castHom_comp_toZMod`). -/
+theorem continuous_of_padicInt_charP {p : ℕ} [Fact p.Prime] {k : Type*} [Ring k] [CharP k p]
+    [TopologicalSpace k] (f : ℤ_[p] →+* k) : Continuous f := by
+  rw [f.eq_castHom_comp_toZMod, RingHom.coe_comp]
+  exact (continuous_of_discreteTopology (f := ZMod.castHom (dvd_refl p) k)).comp
+    PadicInt.continuous_toZMod
+
+end RingHom
+
+namespace ContinuousMonoidHom
+
+/-- Pushing any continuous character `χ : A →ₜ* ℤ_[p]ˣ` along a ring homomorphism `f : ℤ_[p] →+* k`
+into a topological ring `k` of characteristic `p` agrees with pushing its mod-`p` reduction along
+`ZMod.castHom`. -/
+theorem unitsMap_ringHom_comp_eq_castHom {p : ℕ} [Fact p.Prime] {A k : Type*}
+    [Monoid A] [TopologicalSpace A] [Ring k] [CharP k p] [TopologicalSpace k]
+    (χ : A →ₜ* ℤ_[p]ˣ) (f : ℤ_[p] →+* k) :
+    (unitsMap ⟨f.toMonoidHom, f.continuous_of_padicInt_charP⟩).comp χ =
+      (unitsMap ⟨(ZMod.castHom (dvd_refl p) k).toMonoidHom, continuous_of_discreteTopology⟩).comp
+        ((unitsMap ⟨PadicInt.toZMod.toMonoidHom, PadicInt.continuous_toZMod⟩).comp χ) := by
+  ext1 a
+  apply Units.ext
+  simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply,
+    ContinuousMonoidHom.coe_unitsMap_apply]
+  exact DFunLike.congr_fun f.eq_castHom_comp_toZMod (χ a : ℤ_[p])
+
+end ContinuousMonoidHom
