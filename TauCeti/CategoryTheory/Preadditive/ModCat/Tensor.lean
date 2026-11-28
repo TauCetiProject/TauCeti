@@ -39,11 +39,12 @@ section CoendTensor
 
 variable [EssentiallySmall.{w} C]
 
-private noncomputable abbrev tensorDiagram (G : ModCat.{w} Cᵒᵖ) (F : ModCat.{w} C) :=
+/-- The diagram whose coend is the tensor product: `(X, Y) ↦ G(X) ⊗ F(Y)`. -/
+noncomputable abbrev tensorDiagram (G : ModCat.{w} Cᵒᵖ) (F : ModCat.{w} C) :=
   (tensorBifunctor Cᵒᵖ).obj (G.obj, F.obj)
 
 /-- The tensor product over `C`, as a bifunctor with the right module first. -/
-noncomputable def tensor : ModCat.{w} Cᵒᵖ ⥤ ModCat.{w} C ⥤ AddCommGrpCat.{w} :=
+@[expose] noncomputable def tensor : ModCat.{w} Cᵒᵖ ⥤ ModCat.{w} C ⥤ AddCommGrpCat.{w} :=
   Functor.curryObj (((additiveFunctor _ _).ι.prod (additiveFunctor _ _).ι) ⋙
     tensorBifunctor Cᵒᵖ ⋙ coendFunctor Cᵒᵖ AddCommGrpCat.{w})
 
@@ -63,9 +64,23 @@ noncomputable abbrev tmul (X : C) (x : G.obj.obj (op (op X))) (y : F.obj.obj (op
     tensorObj G F :=
   tmulLinear X x y
 
-private lemma tmul_eq_coend_ι (X : C) (x : G.obj.obj (op (op X))) (y : F.obj.obj (op X)) :
+/-- The tensor product over `C` is the coend of its tensor diagram. -/
+noncomputable def tensorObjIsoCoend (G : ModCat.{w} Cᵒᵖ) (F : ModCat.{w} C) :
+    tensorObj G F ≅ coend (tensorDiagram G F) :=
+  Iso.refl _
+
+/-- The class of a pure tensor is the coend leg applied to the ordinary pure tensor. -/
+lemma tmul_eq_coend_ι (X : C) (x : G.obj.obj (op (op X))) (y : F.obj.obj (op X)) :
     tmul (G := G) (F := F) X x y = coend.ι (tensorDiagram G F) (op X) (x ⊗ₜ[ℤ] y) :=
-  rfl
+  (rfl)
+
+/-- The comparison with the coend sends a pure tensor class to the coend leg applied to the
+ordinary pure tensor. -/
+@[simp]
+lemma tensorObjIsoCoend_hom_tmul (X : C) (x : G.obj.obj (op (op X))) (y : F.obj.obj (op X)) :
+    (tensorObjIsoCoend G F).hom (tmul X x y) =
+      coend.ι (tensorDiagram G F) (op X) (x ⊗ₜ[ℤ] y) :=
+  (rfl)
 
 @[simp]
 lemma tmul_add (X : C) (x : G.obj.obj (op (op X))) (y z : F.obj.obj (op X)) :
@@ -159,10 +174,11 @@ private lemma tensorDesc_condition {A : AddCommGrpCat.{w}}
         AddCommGrpCat.ofHom (TensorProduct.lift (b Y.unop)).toAddMonoidHom := by
   apply AddCommGrpCat.tensor_hom_ext
   intro x y
-  -- Evaluate the composites in the ordinary tensor products of the module values.
+  -- Evaluate the composites in the ordinary tensor products of the module values. The
+  -- composition lemmas do not fire by `simp` here, since the objects are diagram values.
   change TensorProduct.lift (b X.unop) (((tensorDiagram G F).map f.op).app X (x ⊗ₜ[ℤ] y)) =
     TensorProduct.lift (b Y.unop) (((tensorDiagram G F).obj (op Y)).map f (x ⊗ₜ[ℤ] y))
-  simp only [tensorBifunctor_map_app_tmul, tensorBifunctor_obj_map_tmul]
+  simp only [tensorBifunctor_map_app_tmul, tensorBifunctor_obj_map_tmul, TensorProduct.lift.tmul]
   exact hb f.unop x y
 
 /-- Extend a family of balanced bilinear maps to a homomorphism on the tensor product over `C`. -/
@@ -228,10 +244,8 @@ instance (F : ModCat.{w} C) : (tensor.flip.obj F).Additive where
     intro G G' f g
     apply tensorObj_hom_ext
     intro X x y
-    -- Use the unflipped components so that the coercions of the maps match the simp lemma.
-    change (tensor.map (f + g)).app F (tmul X x y) =
-      (tensor.map f).app F (tmul X x y) + (tensor.map g).app F (tmul X x y)
-    simp only [tensor_map_app_tmul]
+    simp only [Functor.flip_obj_map, AddCommGrpCat.hom_add_apply]
+    rw [tensor_map_app_tmul, tensor_map_app_tmul, tensor_map_app_tmul]
     exact add_tmul X _ _ y
 
 instance : (tensor (C := C)).Additive where
@@ -259,10 +273,22 @@ private def yonedaRightPairing (G : ModCat.{v} Cᵒᵖ) (X Y : C) :
     ((opHom (op X) (op Y)).comp (opHom Y X)).toIntLinearMap).flip
 
 omit [EssentiallySmall.{v} C] in
+private lemma yonedaLeftPairing_apply (X Y : C) (F : ModCat.{v} C) (g : op Y ⟶ op X)
+    (y : F.obj.obj (op Y)) : yonedaLeftPairing X Y F g y = F.obj.map g y :=
+  rfl
+
+omit [EssentiallySmall.{v} C] in
+private lemma yonedaRightPairing_apply (G : ModCat.{v} Cᵒᵖ) (X Y : C)
+    (x : G.obj.obj (op (op Y))) (g : Y ⟶ X) :
+    yonedaRightPairing G X Y x g = G.obj.map g.op.op x :=
+  rfl
+
+omit [EssentiallySmall.{v} C] in
 private lemma yonedaRightPairing_balance (G : ModCat.{v} Cᵒᵖ) (X : C)
     {Y Z : C} (f : Y ⟶ Z) (x : G.obj.obj (op (op Y))) (g : Z ⟶ X) :
-    yonedaRightPairing G X Z (G.obj.map f.op.op x) g = yonedaRightPairing G X Y x (f ≫ g) :=
-  (ConcreteCategory.congr_hom (G.obj.map_comp f.op.op g.op.op) x).symm
+    yonedaRightPairing G X Z (G.obj.map f.op.op x) g = yonedaRightPairing G X Y x (f ≫ g) := by
+  rw [yonedaRightPairing_apply, yonedaRightPairing_apply]
+  exact (ConcreteCategory.congr_hom (G.obj.map_comp f.op.op g.op.op) x).symm
 
 /-- Tensoring a right module with the representable left module at `X` evaluates it at `X`. -/
 noncomputable def tensorObjYonedaIso (G : ModCat.{v} Cᵒᵖ) (X : C) :
@@ -277,20 +303,21 @@ noncomputable def tensorObjYonedaIso (G : ModCat.{v} Cᵒᵖ) (X : C) :
     change Y ⟶ X at f
     have hEval := tensorDesc_tmul (G := G) (F := (yoneda C).obj X) (yonedaRightPairing G X)
       (fun _ _ f x g ↦ yonedaRightPairing_balance G X f x g) Y x f
+    replace hEval := hEval.trans (yonedaRightPairing_apply G X Y x f)
     have h := tmul_balance (F := (yoneda C).obj X) f x (𝟙 X)
     -- The representable's action in the second factor is precomposition.
-    change tmul (F := (yoneda C).obj X) X (G.obj.map f.op.op x) (𝟙 X) =
-      tmul (F := (yoneda C).obj X) Y x (f ≫ 𝟙 X) at h
+    have hf : (preadditiveYoneda.obj X).map f.op (𝟙 X) = f :=
+      (preadditiveYoneda_obj_map_apply f.op (𝟙 X)).trans (Category.comp_id f)
     exact (congrArg (fun z ↦ tmul (F := (yoneda C).obj X) X z (𝟙 X)) hEval).trans
-      (h.trans (congrArg (fun g : Y ⟶ X ↦ tmul (F := (yoneda C).obj X) Y x g)
-        (Category.comp_id f)))
+      (h.trans (congrArg (fun g : Y ⟶ X ↦ tmul (F := (yoneda C).obj X) Y x g) hf))
   inv_hom_id := by
     apply AddCommGrpCat.ext
     intro x
     -- The inverse inserts the identity of the representing object.
     change tensorDesc (F := (yoneda C).obj X) _ _
       (tmul (F := (yoneda C).obj X) X x (𝟙 X)) = x
-    exact (tensorDesc_tmul (F := (yoneda C).obj X) _ _ X x (𝟙 X)).trans
+    exact ((tensorDesc_tmul (F := (yoneda C).obj X) _ _ X x (𝟙 X)).trans
+      (yonedaRightPairing_apply G X X x (𝟙 X))).trans
       (ConcreteCategory.congr_hom (G.obj.map_id (op (op X))) x)
 
 /-- Yoneda evaluation moves the morphism in the second factor to the right module. -/
@@ -310,8 +337,9 @@ lemma tensorObjYonedaIso_inv_apply (G : ModCat.{v} Cᵒᵖ) (X : C) (x : G.obj.o
 omit [EssentiallySmall.{v} C] in
 private lemma yonedaLeftPairing_balance (X : C) (F : ModCat.{v} C)
     {Y Z : C} (f : Y ⟶ Z) (g : op Y ⟶ op X) (y : F.obj.obj (op Z)) :
-    yonedaLeftPairing X Z F (f.op ≫ g) y = yonedaLeftPairing X Y F g (F.obj.map f.op y) :=
-  ConcreteCategory.congr_hom (F.obj.map_comp f.op g) y
+    yonedaLeftPairing X Z F (f.op ≫ g) y = yonedaLeftPairing X Y F g (F.obj.map f.op y) := by
+  rw [yonedaLeftPairing_apply, yonedaLeftPairing_apply]
+  exact ConcreteCategory.congr_hom (F.obj.map_comp f.op g) y
 
 /-- Tensoring the representable right module at `X` with a left module evaluates it at `X`. -/
 noncomputable def yonedaTensorObjIso (X : C) (F : ModCat.{v} C) :
@@ -327,20 +355,22 @@ noncomputable def yonedaTensorObjIso (X : C) (F : ModCat.{v} C) :
     change op Y ⟶ op X at f
     have hEval := tensorDesc_tmul (G := (yoneda Cᵒᵖ).obj (op X)) (F := F)
       (fun Y ↦ yonedaLeftPairing X Y F) (fun _ _ f g y ↦ yonedaLeftPairing_balance X F f g y) Y f y
+    replace hEval := hEval.trans (yonedaLeftPairing_apply X Y F f y)
     have h := tmul_balance (G := (yoneda Cᵒᵖ).obj (op X)) f.unop (𝟙 (op X)) y
     -- The right representable acts by precomposition in the opposite category.
-    change tmul (G := (yoneda Cᵒᵖ).obj (op X)) Y (f ≫ 𝟙 (op X)) y =
-      tmul (G := (yoneda Cᵒᵖ).obj (op X)) X (𝟙 (op X)) (F.obj.map f y) at h
+    have hf : (preadditiveYoneda.obj (op X)).map f.unop.op.op (𝟙 (op X)) = f :=
+      (preadditiveYoneda_obj_map_apply f.unop.op.op (𝟙 (op X))).trans (Category.comp_id f)
     exact (congrArg (fun z ↦ tmul (G := (yoneda Cᵒᵖ).obj (op X)) X (𝟙 (op X)) z) hEval).trans
       (h.symm.trans (congrArg (fun g : op Y ⟶ op X ↦ tmul (G := (yoneda Cᵒᵖ).obj (op X)) Y g y)
-        (Category.comp_id f)))
+        hf))
   inv_hom_id := by
     apply AddCommGrpCat.ext
     intro y
     -- The inverse inserts the identity into the right representable.
     change tensorDesc (G := (yoneda Cᵒᵖ).obj (op X)) _ _
       (tmul (G := (yoneda Cᵒᵖ).obj (op X)) X (𝟙 (op X)) y) = y
-    exact (tensorDesc_tmul (G := (yoneda Cᵒᵖ).obj (op X)) _ _ X (𝟙 (op X)) y).trans
+    exact ((tensorDesc_tmul (G := (yoneda Cᵒᵖ).obj (op X)) _ _ X (𝟙 (op X)) y).trans
+      (yonedaLeftPairing_apply X X F (𝟙 (op X)) y)).trans
       (ConcreteCategory.congr_hom (F.obj.map_id (op X)) y)
 
 /-- Yoneda evaluation moves the morphism in the first factor to the left module. -/

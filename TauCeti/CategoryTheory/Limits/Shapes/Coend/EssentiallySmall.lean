@@ -41,7 +41,7 @@ lemma whisker_π {F : Jᵒᵖ ⥤ J ⥤ D} (c : Cowedge F) (H : K ⥤ J) (k : K)
 variable {F : Jᵒᵖ ⥤ J ⥤ D} {e : K ≌ J}
 
 /-- The cowedge relation for a diagram restricted in both arguments along a functor. -/
-private lemma condition_whiskeringLeft₂ {H : K ⥤ J}
+lemma condition_whiskeringLeft₂ {H : K ⥤ J}
     (c : Cowedge ((((Functor.whiskeringLeft₂ D).obj H.op).obj H).obj F))
     {i j : K} (f : i ⟶ j) :
     (F.map (H.map f).op).app (H.obj i) ≫ c.π i =
@@ -59,15 +59,32 @@ same codomain. -/
     have naturality := (F.map (e.functor.map (e.inverse.map f)).op).naturality (e.counitInv.app i)
     have naturality' := (F.map (e.counit.app j).op).naturality f
     simp only [Functor.id_obj, Functor.comp_obj] at naturality naturality'
-    rw [← NatTrans.comp_app_assoc, ← F.map_comp, ← op_comp, ← e.counit_naturality f]
-    simp only [op_comp, F.map_comp, NatTrans.comp_app, Category.assoc]
-    rw [← (reassoc_of% naturality) (c.π (e.inverse.obj i))]
-    rw [condition_whiskeringLeft₂ (H := e.functor) c (e.inverse.map f)]
     let T := F.obj (op (e.functor.obj (e.inverse.obj j)))
-    rw [← T.map_comp_assoc (e.counitInv.app i) (e.functor.map (e.inverse.map f))
-      (c.π (e.inverse.obj j)), e.counitInv_naturality f]
-    rw [T.map_comp_assoc f (e.counitInv.app j) (c.π (e.inverse.obj j))]
-    exact ((reassoc_of% naturality') (_ ≫ c.π (e.inverse.obj j))).symm)
+    calc (F.map f.op).app i ≫ (F.map (e.counit.app i).op).app i ≫
+          (F.obj (op (e.functor.obj (e.inverse.obj i)))).map (e.counitInv.app i) ≫
+            c.π (e.inverse.obj i)
+      _ = (F.map (e.counit.app j).op).app i ≫
+          (F.map (e.functor.map (e.inverse.map f)).op).app i ≫
+            (F.obj (op (e.functor.obj (e.inverse.obj i)))).map (e.counitInv.app i) ≫
+              c.π (e.inverse.obj i) := by
+        -- Naturality of the counit in the contravariant variable.
+        rw [← NatTrans.comp_app_assoc, ← F.map_comp, ← op_comp, ← e.counit_naturality f]
+        simp only [op_comp, F.map_comp, NatTrans.comp_app, Category.assoc]
+      _ = (F.map (e.counit.app j).op).app i ≫ T.map (e.counitInv.app i) ≫
+          (F.map (e.functor.map (e.inverse.map f)).op).app (e.functor.obj (e.inverse.obj i)) ≫
+            c.π (e.inverse.obj i) := by
+        rw [← (reassoc_of% naturality) (c.π (e.inverse.obj i))]
+      _ = (F.map (e.counit.app j).op).app i ≫ T.map (e.counitInv.app i) ≫
+          T.map (e.functor.map (e.inverse.map f)) ≫ c.π (e.inverse.obj j) := by
+        -- The cowedge relation of the restricted diagram.
+        rw [condition_whiskeringLeft₂ (H := e.functor) c (e.inverse.map f)]
+      _ = (F.map (e.counit.app j).op).app i ≫ T.map f ≫ T.map (e.counitInv.app j) ≫
+          c.π (e.inverse.obj j) := by
+        -- Naturality of the inverse counit in the covariant variable.
+        rw [← T.map_comp_assoc (e.counitInv.app i) (e.functor.map (e.inverse.map f))
+          (c.π (e.inverse.obj j)), e.counitInv_naturality f,
+          T.map_comp_assoc f (e.counitInv.app j) (c.π (e.inverse.obj j))]
+      _ = _ := ((reassoc_of% naturality') (_ ≫ c.π (e.inverse.obj j))).symm)
 
 @[simp]
 lemma ofWhiskerEquivalence_pt (c : Cowedge ((((Functor.whiskeringLeft₂ D).obj
