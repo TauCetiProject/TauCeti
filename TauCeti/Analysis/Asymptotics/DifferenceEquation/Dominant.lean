@@ -54,7 +54,10 @@ at two consecutive indices `n₀` and `n₀ + 1`, and write `x = v / u`. The dif
 
   `δ (n + 1) * u (n + 2) = g n * u n * δ n - r n * x (n + 1)`,
 
-and since `‖g n u n‖ ≤ q ‖u (n + 2)‖` with `q < 1` (because `‖g₀‖ < ‖ρ‖²`), the forcing term
+and since `‖g n u n‖ ≤ q ‖u (n + 2)‖` with `q < 1` (because `‖g₀‖ < ‖ρ‖²`;
+`TauCeti.eventually_norm_mul_norm_le_of_isEquivalent_pow_mul_cpow`) and
+`‖r n‖ ≤ B n^{-M-1} ‖u (n + 2)‖`
+(`TauCeti.exists_eventually_norm_le_mul_norm_of_isEquivalent_pow_mul_cpow`), the forcing term
 controls `δ` by induction from `n₀` (`TauCeti.norm_sub_le_mul_of_norm_sub_add_two_le`). So `x`
 tends to a nonzero limit `L` with `x n - L = O(n^{1 - M})`, and `v / L` is a solution close to
 `u`. Each order of the expansion needs its own `M`. The solutions so obtained differ by solutions
@@ -314,6 +317,73 @@ private theorem exists_eventually_solution_near {f g u : ℕ → ℂ} {q θ B : 
           mul_le_mul_of_nonneg_left hT hB'
       _ = 4 * B / (θ - q) * (∑' i : ℕ, (((i : ℝ) + 1) ^ 2)⁻¹) *
           (‖u (j + n₀)‖ * (((j + n₀ : ℕ) : ℝ) ^ N)⁻¹) := by ring
+
+/-! ### Comparisons with a solution equivalent to `ρⁿ n^α` -/
+
+/-- If `u n ∼ ρⁿ n^α` with `ρ ≠ 0`, then `‖ρ‖ᵏ k^{Re α} / ‖u (k + 2)‖ → ‖ρ‖⁻²`. -/
+theorem tendsto_div_norm_add_two_of_isEquivalent_pow_mul_cpow {u : ℕ → ℂ} {ρ α : ℂ} (hρ : ρ ≠ 0)
+    (hu : u ~[atTop] fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α) :
+    Tendsto (fun k : ℕ ↦ ‖ρ‖ ^ k * (k : ℝ) ^ α.re / ‖u (k + 2)‖) atTop (𝓝 (‖ρ‖ ^ 2)⁻¹) := by
+  have he := (tendsto_norm_div_of_isEquivalent_pow_mul_cpow hρ hu).comp (tendsto_add_atTop_nat 2)
+  have hc : Tendsto (fun k : ℕ ↦ ((k : ℝ) / (k + 2)) ^ α.re) atTop (𝓝 1) := by
+    simpa using (tendsto_natCast_div_add_atTop (2 : ℝ)).rpow_const (Or.inl one_ne_zero)
+  have h := (hc.div he one_ne_zero).div_const (‖ρ‖ ^ 2)
+  rw [div_one, one_div] at h
+  refine h.congr' ?_
+  filter_upwards [eventually_ge_atTop 1] with k hk
+  have hk' : (0 : ℝ) < k := by exact_mod_cast hk
+  have hR : ‖ρ‖ ≠ 0 := norm_ne_zero_iff.2 hρ
+  have hk₂ : ((k : ℝ) + 2) ^ α.re ≠ 0 := (Real.rpow_pos_of_pos (by positivity) _).ne'
+  simp only [Pi.div_apply, Function.comp_apply]
+  push_cast
+  rw [Real.div_rpow hk'.le (by positivity)]
+  rcases eq_or_ne ‖u (k + 2)‖ 0 with h0 | h0
+  · simp [h0]
+  · field_simp [hR, hk₂, h0]
+    ring
+
+/-- If `u n ∼ ρⁿ n^α` and `g n → g₀` with `‖g₀‖ < q ‖ρ‖²`, then
+`‖g k‖ ‖u k‖ ≤ q ‖u (k + 2)‖` for large `k`. -/
+theorem eventually_norm_mul_norm_le_of_isEquivalent_pow_mul_cpow {E : Type*}
+    [SeminormedAddCommGroup E] {g : ℕ → E} {u : ℕ → ℂ} {g₀ : E} {ρ α : ℂ} {q : ℝ} (hρ : ρ ≠ 0)
+    (hu : u ~[atTop] fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α) (hg : Tendsto g atTop (𝓝 g₀))
+    (hq : ‖g₀‖ < q * ‖ρ‖ ^ 2) : ∀ᶠ k in atTop, ‖g k‖ * ‖u k‖ ≤ q * ‖u (k + 2)‖ := by
+  have hlim : ‖g₀‖ * 1 * (‖ρ‖ ^ 2)⁻¹ < q := by
+    rwa [mul_one, ← div_eq_mul_inv, div_lt_iff₀ (pow_pos (norm_pos_iff.2 hρ) 2)]
+  have h := (hg.norm.mul (tendsto_norm_div_of_isEquivalent_pow_mul_cpow hρ hu)).mul
+    (tendsto_div_norm_add_two_of_isEquivalent_pow_mul_cpow hρ hu)
+  filter_upwards [h.eventually (eventually_lt_nhds hlim), eventually_ge_atTop 1,
+    (tendsto_add_atTop_nat 2).eventually
+      (hu.eventually_ne_zero (eventually_pow_mul_cpow_ne_zero α hρ))]
+    with k hk hk1 hu₂
+  have hP : 0 < ‖ρ‖ ^ k * (k : ℝ) ^ α.re :=
+    mul_pos (pow_pos (norm_pos_iff.2 hρ) k) (Real.rpow_pos_of_pos (by exact_mod_cast hk1) _)
+  have hlt : ‖g k‖ * ‖u k‖ / ‖u (k + 2)‖ < q := by
+    refine lt_of_eq_of_lt ?_ hk
+    field_simp [hP.ne', norm_ne_zero_iff.2 hu₂]
+  exact ((div_lt_iff₀ (norm_pos_iff.2 hu₂)).1 hlt).le
+
+/-- If `u n ∼ ρⁿ n^α` with `ρ ≠ 0` and `r k = O(‖ρ‖ᵏ k^{Re α} φ k)` with `φ ≥ 0`, then
+`‖r k‖ ≤ B φ k ‖u (k + 2)‖` for some `B ≥ 0` and all large `k`. -/
+theorem exists_eventually_norm_le_mul_norm_of_isEquivalent_pow_mul_cpow {E : Type*}
+    [SeminormedAddCommGroup E] {u : ℕ → ℂ} {r : ℕ → E} {φ : ℕ → ℝ} {ρ α : ℂ}
+    (hρ : ρ ≠ 0) (hu : u ~[atTop] fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α) (hφ : ∀ k, 0 ≤ φ k)
+    (hr : r =O[atTop] fun k : ℕ ↦ ‖ρ‖ ^ k * (k : ℝ) ^ α.re * φ k) :
+    ∃ B, 0 ≤ B ∧ ∀ᶠ k in atTop, ‖r k‖ ≤ B * φ k * ‖u (k + 2)‖ := by
+  obtain ⟨C, hC0, hC⟩ := hr.exists_nonneg
+  refine ⟨C * (‖ρ‖ ^ 2)⁻¹ + 1, by positivity, ?_⟩
+  have hs := (tendsto_div_norm_add_two_of_isEquivalent_pow_mul_cpow hρ hu).const_mul C
+  filter_upwards [hC.bound, hs.eventually (eventually_le_nhds (lt_add_one _)),
+    (tendsto_add_atTop_nat 2).eventually
+      (hu.eventually_ne_zero (eventually_pow_mul_cpow_ne_zero α hρ))]
+    with k hk hsk hu₂
+  rw [Real.norm_of_nonneg (mul_nonneg (by positivity) (hφ k))] at hk
+  calc ‖r k‖ ≤ C * (‖ρ‖ ^ k * (k : ℝ) ^ α.re * φ k) := hk
+    _ = C * (‖ρ‖ ^ k * (k : ℝ) ^ α.re / ‖u (k + 2)‖) * φ k * ‖u (k + 2)‖ := by
+        field_simp [norm_ne_zero_iff.2 hu₂]
+    _ ≤ (C * (‖ρ‖ ^ 2)⁻¹ + 1) * φ k * ‖u (k + 2)‖ := by
+        gcongr
+        exact hφ k
 
 /-! ### Solutions to a given order -/
 

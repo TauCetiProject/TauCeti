@@ -491,10 +491,7 @@ theorem difference_solution_unique_of_norm_sq_lt {f g w w' : ℕ → ℂ} {g₀ 
       filter_upwards [isLittleO_zero_right_iff.1 (hv.congr' .rfl hφz), hφz] with n h₁ h₂
       simpa [h₂] using h₁
     exact (hz hwl).trans (hz hw'l).symm
-  have hφ0 : ∀ᶠ n in atTop, φ n ≠ 0 := by
-    filter_upwards [eventually_ge_atTop 1] with n hn
-    exact mul_ne_zero (pow_ne_zero _ hρ) (norm_ne_zero_iff.1
-      (Complex.norm_natCast_cpow_pos_of_pos hn α).ne')
+  have hφ0 : ∀ᶠ n in atTop, φ n ≠ 0 := eventually_pow_mul_cpow_ne_zero α hρ
   -- `w` is eventually nonzero, and `w` and `w'` are `O(φ)`
   have hw0 : ∀ᶠ n in atTop, w n ≠ 0 := by
     filter_upwards [hwl.bound (by norm_num : (0 : ℝ) < 1 / 2), hφ0] with n hn hφn h0
