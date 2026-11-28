@@ -78,13 +78,17 @@ ideals of it, so it is linearly topologized. For an `S`-algebra of coefficients 
   `TauCeti.NovikovSeries.isTopologicallyNilpotent_of_mem_periodFiltration`: a series supported in
   periods `≥ C` has its `n`-th power supported in periods `≥ n • C`, so it is topologically
   nilpotent when `C > 0`.
+* `TauCeti.NovikovSeries.isOpen_posIdeal` and `TauCeti.NovikovSeries.isClosed_posIdeal`: the
+  strictly positive ideal is clopen in `nonnegSubring R N`.
 * `TauCeti.NovikovSeries.isTopologicallyNilpotent_of_mem_posIdeal`: a series of the positive ideal
   is topologically nilpotent.
 * `TauCeti.NovikovSeries.tsum_pow_mem_nonnegSubring` and
   `TauCeti.NovikovSeries.isUnit_one_sub_of_mem_posIdeal`: for `a` in the positive ideal, the
   geometric series `∑ aⁿ` lies in the nonnegative subring and `1 - a` is a unit there.
-* `TauCeti.NovikovSeries.posIdeal_ne_top`: over nontrivial coefficients the positive ideal is
-  proper, so its elements are not units of the nonnegative subring.
+* `TauCeti.NovikovSeries.posIdeal_ne_top`, `TauCeti.NovikovSeries.not_isUnit_of_mem_posIdeal` and
+  `TauCeti.NovikovSeries.not_isUnit_single_nonnegSubring_of_pos`: over nontrivial coefficients the
+  positive ideal is proper, so its elements (in particular, monomials of positive period) are not
+  units of the nonnegative subring.
 * `TauCeti.NovikovSeries.one_sub_single_mul_tsum` and
   `TauCeti.NovikovSeries.tsum_mul_one_sub_single`: the two inverse identities of the monomial
   geometric series `∑ₖ rᵏ e^(k • g)` for `N g > 0`.
@@ -304,6 +308,19 @@ instance : (posIdeal R N).IsTwoSided where
     exact exists_pos_mem_periodFiltration_iff.1
       ⟨C + 0, by rwa [add_zero], mul_mem_periodFiltration haC b.property⟩
 
+/-- The strictly positive ideal is open in the subspace topology on `nonnegSubring R N`. -/
+theorem isOpen_posIdeal : IsOpen (posIdeal R N : Set (nonnegSubring R N)) := by
+  refine AddSubgroup.isOpen_of_mem_nhds (posIdeal R N).toAddSubgroup (g := 0) ?_
+  refine Filter.mem_of_superset
+    (((isOpen_periodFiltration (R := R) (N := N) 1).preimage
+      continuous_subtypeVal).mem_nhds (zero_mem (periodFiltration R N 1))) ?_
+  intro a ha
+  exact mem_posIdeal.2 fun h hh => mem_periodFiltration.1 ha h (hh.trans_lt zero_lt_one)
+
+/-- The strictly positive ideal is closed in the subspace topology on `nonnegSubring R N`. -/
+theorem isClosed_posIdeal : IsClosed (posIdeal R N : Set (nonnegSubring R N)) :=
+  AddSubgroup.isClosed_of_isOpen (posIdeal R N).toAddSubgroup isOpen_posIdeal
+
 /-- A series of the positive ideal is topologically nilpotent. -/
 theorem isTopologicallyNilpotent_of_mem_posIdeal {a : nonnegSubring R N} (ha : a ∈ posIdeal R N) :
     IsTopologicallyNilpotent (a : NovikovSeries R H N) := by
@@ -355,6 +372,18 @@ theorem posIdeal_ne_top [Nontrivial R] : posIdeal R N ≠ ⊤ := fun h => by
     (by simp)
   rw [OneMemClass.coe_one, one_def, coeff_single_same] at h1
   exact one_ne_zero h1
+
+/-- Over a nontrivial coefficient ring, no element of `posIdeal R N` is a unit of
+`nonnegSubring R N`. -/
+theorem not_isUnit_of_mem_posIdeal [Nontrivial R] {a : nonnegSubring R N}
+    (ha : a ∈ posIdeal R N) : ¬ IsUnit a :=
+  fun hu => posIdeal_ne_top ((posIdeal R N).eq_top_of_isUnit_mem ha hu)
+
+/-- Over a nontrivial coefficient ring, a monomial of strictly positive period is not a unit of
+`nonnegSubring R N`. -/
+theorem not_isUnit_single_nonnegSubring_of_pos [Nontrivial R] {h : H} (hh : 0 < N h) (r : R) :
+    ¬ IsUnit (⟨single h r, single_mem_nonnegSubring hh.le r⟩ : nonnegSubring R N) :=
+  not_isUnit_of_mem_posIdeal (single_mem_posIdeal hh r)
 
 /-- For `N g > 0`, the factor `1 - r e^g` as a unit of the nonnegative subring. Its inverse is the
 geometric series `∑ₖ rᵏ e^(k • g)` (`TauCeti.NovikovSeries.coe_inv_unitsOneSubSingle`). -/
@@ -539,7 +568,7 @@ theorem single_mul_mem_periodFiltration_iff (g : H) (u : Rˣ) {C : ℝ}
   refine ⟨fun ha => ?_, mul_mem_periodFiltration (single_mem_periodFiltration g _)⟩
   refine mem_periodFiltration.2 fun h hh => ?_
   have hzero := mem_periodFiltration.1 ha (g + h) (by simpa using add_lt_add_left hh (N g))
-  simpa only [coeff_single_mul_add, Units.mul_right_eq_zero] using hzero
+  simpa only [coeff_single_mul_add (.all g), Units.mul_right_eq_zero] using hzero
 
 end IsLeftCancelAdd
 

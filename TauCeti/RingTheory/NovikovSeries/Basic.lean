@@ -493,6 +493,11 @@ theorem single_zero (h : H) : (single h 0 : NovikovSeries R H N) = 0 := by
 theorem single_injective (h : H) : Injective (single h : R → NovikovSeries R H N) :=
   fun r s hrs => by rw [← coeff_single_same (N := N) h r, hrs, coeff_single_same]
 
+/-- Nonzero monomials at distinct exponents are distinct. -/
+theorem single_ne_single_of_ne {p q : H} (hpq : p ≠ q) {c : R} (hc : c ≠ 0) (d : R) :
+    (single p c : NovikovSeries R H N) ≠ single q d := fun heq =>
+  hc <| by simpa [coeff_single_of_ne hpq] using congrArg (·.coeff p) heq
+
 @[simp]
 theorem single_eq_zero_iff {h : H} {r : R} : (single h r : NovikovSeries R H N) = 0 ↔ r = 0 :=
   ⟨fun hr => single_injective h (hr.trans (single_zero h).symm), fun hr => hr ▸ single_zero h⟩

@@ -436,23 +436,25 @@ theorem coeff_mul_single_zero (a : NovikovSeries R H N) (r : R) (h : H) :
     (a * single 0 r).coeff h = a.coeff h * r :=
   coeff_convolution_single_zero_right _ a r h
 
-/-- Multiplying on the left by the monomial `r e^g` shifts the exponents by `g`. -/
-theorem coeff_single_mul_add [IsLeftCancelAdd H] (g : H) (r : R) (a : NovikovSeries R H N)
+/-- Multiplying on the left by the monomial `r e^g` at a left-cancellable exponent `g` shifts the
+exponents by `g`. -/
+theorem coeff_single_mul_add {g : H} (hg : IsAddLeftRegular g) (r : R) (a : NovikovSeries R H N)
     (h : H) : (single g r * a).coeff (g + h) = r * a.coeff h := by
   rw [coeff_mul_eq_sum (s := {(g, h)}) (fun p hp => by rw [mem_singleton.1 hp])
     fun u v huv hu _ => ?_, sum_singleton, coeff_single_same]
   have hu : u = g := by_contra fun hug => hu (coeff_single_of_ne hug r)
   subst hu
-  rw [mem_singleton, add_left_cancel huv]
+  rw [mem_singleton, hg huv]
 
-/-- Multiplying on the right by the monomial `r e^g` shifts the exponents by `g`. -/
-theorem coeff_mul_single_add [IsRightCancelAdd H] (a : NovikovSeries R H N) (g : H) (r : R)
+/-- Multiplying on the right by the monomial `r e^g` at a right-cancellable exponent `g` shifts the
+exponents by `g`. -/
+theorem coeff_mul_single_add (a : NovikovSeries R H N) {g : H} (hg : IsAddRightRegular g) (r : R)
     (h : H) : (a * single g r).coeff (h + g) = a.coeff h * r := by
   rw [coeff_mul_eq_sum (s := {(h, g)}) (fun p hp => by rw [mem_singleton.1 hp])
     fun u v huv _ hv => ?_, sum_singleton, coeff_single_same]
   have hv : v = g := by_contra fun hvg => hv (coeff_single_of_ne hvg r)
   subst hv
-  rw [mem_singleton, add_right_cancel huv]
+  rw [mem_singleton, hg huv]
 
 /-- Convolution distributes over addition. -/
 instance instNonUnitalNonAssocSemiring : NonUnitalNonAssocSemiring (NovikovSeries R H N) where
@@ -596,12 +598,12 @@ variable [AddGroup H] {N : H →+ ℝ}
 /-- Multiplying on the left by a monomial shifts the exponents. -/
 theorem coeff_single_mul [NonUnitalNonAssocSemiring R] (g : H) (r : R)
     (a : NovikovSeries R H N) (h : H) : (single g r * a).coeff h = r * a.coeff (-g + h) := by
-  rw [← coeff_single_mul_add, add_neg_cancel_left]
+  rw [← coeff_single_mul_add (.all g), add_neg_cancel_left]
 
 /-- Multiplying on the right by a monomial shifts the exponents. -/
 theorem coeff_mul_single [NonUnitalNonAssocSemiring R] (a : NovikovSeries R H N) (g : H) (r : R)
     (h : H) : (a * single g r).coeff h = a.coeff (h - g) * r := by
-  rw [← coeff_mul_single_add, sub_add_cancel]
+  rw [← coeff_mul_single_add _ (.all g), sub_add_cancel]
 
 /-- The monomial `u e^g` with unit coefficient `u`, as a unit with inverse `u⁻¹ e^(-g)`. -/
 def unitsSingle [Semiring R] (g : H) (u : Rˣ) : (NovikovSeries R H N)ˣ where

@@ -55,6 +55,9 @@ the group ring `R[T]`.
   coefficients, as an algebra homomorphism.
 * `TauCeti.NovikovSeries.mapNonnegSubring`: the restriction of `mapRingHom` to the nonnegative
   subrings.
+* `TauCeti.NovikovSeries.periodSpecialization` and
+  `TauCeti.NovikovSeries.nonnegPeriodSpecialization`: the pushforward along the period map
+  `N : H →+ ℝ` itself into `NovikovSeries S ℝ (AddMonoidHom.id ℝ)` and its nonnegative subring.
 * `TauCeti.NovikovSeries.instAlgebraAddSubgroup`: `Nov(R, H, N)` as an algebra over
   `Nov(R, K, N|K)` for a subgroup `K ≤ H`, along the pushforward of the inclusion of exponents.
 
@@ -80,6 +83,10 @@ the group ring `R[T]`.
   into the positive ideal.
 * `TauCeti.NovikovSeries.map_unitsOneSubSingle`: the pushforward sends the unit `1 - r e^g` to
   the unit `1 - ρ r e^(φ g)`.
+* `TauCeti.NovikovSeries.coeff_periodSpecialization`,
+  `TauCeti.NovikovSeries.continuous_periodSpecialization`, and
+  `TauCeti.NovikovSeries.periodSpecialization_mem_periodFiltration`: fibrewise-sum formula,
+  continuity, and filtration preservation of `periodSpecialization`.
 * `TauCeti.NovikovSeries.comap_subtype_algebraMap_mul`: the projection formula for restriction
   of coefficients to a subgroup `K`.
 
@@ -422,6 +429,87 @@ theorem mapNonnegSubring_smul (r : R) (a : nonnegSubring R N) :
   rw [Algebra.smul_def, Algebra.smul_def, _root_.map_mul, mapNonnegSubring_algebraMap]
 
 end AlgebraMap
+
+section PeriodSpecialization
+
+section Semiring
+
+variable [AddMonoid H] [Semiring R] [Semiring S]
+
+/-- **Period specialization.** Pushforward of Novikov series along the period homomorphism
+`N : H →+ ℝ` itself and a unital coefficient homomorphism `ρ : R →+* S`, summing the mapped
+coefficients along each constant-period slice `N h = t`. -/
+def periodSpecialization (ρ : R →+* S) (N : H →+ ℝ) :
+    NovikovSeries R H N →+* NovikovSeries S ℝ (AddMonoidHom.id ℝ) :=
+  mapRingHom ρ N (exists_period_rescale_self N)
+
+/-- `periodSpecialization` is the pushforward `mapRingHom` along `N`. -/
+theorem periodSpecialization_eq_mapRingHom (ρ : R →+* S) (N : H →+ ℝ) :
+    periodSpecialization ρ N = mapRingHom ρ N (exists_period_rescale_self N) :=
+  (rfl)
+
+/-- The coefficient of `periodSpecialization ρ N a` at period `t` is the finite sum of
+`ρ (a.coeff h)` over the fibre `N ⁻¹' {t}`. -/
+theorem coeff_periodSpecialization (ρ : R →+* S) (N : H →+ ℝ) (a : NovikovSeries R H N) (t : ℝ) :
+    (periodSpecialization ρ N a).coeff t = ∑ᶠ h ∈ N ⁻¹' {t}, ρ (a.coeff h) := by
+  rw [periodSpecialization_eq_mapRingHom, mapRingHom_apply, coeff_map]
+  simp only [AddMonoidHom.coe_ofClass]
+
+@[simp]
+theorem periodSpecialization_single (ρ : R →+* S) (N : H →+ ℝ) (h : H) (r : R) :
+    periodSpecialization ρ N (single h r) = single (N h) (ρ r) := by
+  simp [periodSpecialization_eq_mapRingHom]
+
+end Semiring
+
+section Ring
+
+variable [AddMonoid H] [Ring R] [Ring S]
+
+@[fun_prop]
+theorem continuous_periodSpecialization (ρ : R →+* S) (N : H →+ ℝ) :
+    Continuous (periodSpecialization ρ N) :=
+  continuous_mapRingHom ρ N (exists_period_rescale_self N)
+
+/-- The period specialization sends the period neighbourhood `U_C` into `U'_C`. -/
+theorem periodSpecialization_mem_periodFiltration (ρ : R →+* S) (N : H →+ ℝ) {C : ℝ}
+    {a : NovikovSeries R H N} (ha : a ∈ periodFiltration R N C) :
+    periodSpecialization ρ N a ∈ periodFiltration S (AddMonoidHom.id ℝ) C := by
+  rw [periodSpecialization_eq_mapRingHom, mapRingHom_apply]
+  simpa using map_mem_periodFiltration (ρ : R →+ S) N (exists_period_rescale_self N) zero_le_one
+    (fun _ => (one_mul _).symm) ha
+
+/-- The restriction of `periodSpecialization` to the nonnegative subrings. -/
+def nonnegPeriodSpecialization (ρ : R →+* S) (N : H →+ ℝ) :
+    nonnegSubring R N →+* nonnegSubring S (AddMonoidHom.id ℝ) :=
+  mapNonnegSubring ρ N (exists_period_rescale_self N)
+
+/-- `nonnegPeriodSpecialization` is the pushforward `mapNonnegSubring` along `N`. -/
+theorem nonnegPeriodSpecialization_eq_mapNonnegSubring (ρ : R →+* S) (N : H →+ ℝ) :
+    nonnegPeriodSpecialization ρ N = mapNonnegSubring ρ N (exists_period_rescale_self N) :=
+  (rfl)
+
+@[simp]
+theorem coe_nonnegPeriodSpecialization (ρ : R →+* S) (N : H →+ ℝ) (a : nonnegSubring R N) :
+    (nonnegPeriodSpecialization ρ N a : NovikovSeries S ℝ (AddMonoidHom.id ℝ)) =
+      periodSpecialization ρ N a := by
+  rw [nonnegPeriodSpecialization_eq_mapNonnegSubring, coe_mapNonnegSubring,
+    periodSpecialization_eq_mapRingHom, mapRingHom_apply]
+
+@[fun_prop]
+theorem continuous_nonnegPeriodSpecialization (ρ : R →+* S) (N : H →+ ℝ) :
+    Continuous (nonnegPeriodSpecialization ρ N) :=
+  continuous_mapNonnegSubring ρ N (exists_period_rescale_self N)
+
+/-- `nonnegPeriodSpecialization` maps the positive ideal into the positive ideal. -/
+theorem nonnegPeriodSpecialization_mem_posIdeal (ρ : R →+* S) (N : H →+ ℝ)
+    {a : nonnegSubring R N} (ha : a ∈ posIdeal R N) :
+    nonnegPeriodSpecialization ρ N a ∈ posIdeal S (AddMonoidHom.id ℝ) :=
+  mapNonnegSubring_mem_posIdeal ρ N (exists_period_rescale_self N) ha
+
+end Ring
+
+end PeriodSpecialization
 
 section Subgroup
 

@@ -66,9 +66,10 @@ coefficients in `V` with families of scalar Novikov series (`TauCeti.NovikovSeri
   exponent.
 * `TauCeti.NovikovSeries.finite_setOf_map_le`: a period-rescaling homomorphism keeps finitely many
   indexed exponents below each cutoff.
-* `TauCeti.NovikovSeries.exists_period_rescale_id` and
-  `TauCeti.NovikovSeries.exists_period_rescale_comp`: the identity rescales periods by `1`, and
-  composites rescale them by the product of the factors.
+* `TauCeti.NovikovSeries.exists_period_rescale_id`,
+  `TauCeti.NovikovSeries.exists_period_rescale_self` and
+  `TauCeti.NovikovSeries.exists_period_rescale_comp`: the identity and the period map itself
+  rescale periods by `1`, and composites rescale them by the product of the factors.
 * `TauCeti.NovikovSeries.period_rescale_neg`: negating both a period-preserving exponent map
   and its target period rescales periods by `1`.
 * `TauCeti.NovikovSeries.coeff_map_eq_sum`: a coefficient of a pushforward as a sum over any
@@ -156,6 +157,11 @@ theorem finite_setOf_map_le {ι : Type*} {s : Set ι} {f : ι → H} {φ : H →
 
 /-- The identity rescales periods by `1`. -/
 theorem exists_period_rescale_id : ∃ c > 0, ∀ h, N (AddMonoidHom.id H h) = c * N h :=
+  ⟨1, one_pos, fun h => (one_mul (N h)).symm⟩
+
+/-- Every period homomorphism rescales periods by `1` into `ℝ` with the identity period. -/
+theorem exists_period_rescale_self (N : H →+ ℝ) :
+    ∃ c > 0, ∀ h, AddMonoidHom.id ℝ (N h) = c * N h :=
   ⟨1, one_pos, fun h => (one_mul (N h)).symm⟩
 
 /-- If `φ` rescales periods by `c` and `φ'` by `c'`, then `φ'.comp φ` rescales them by `c' * c`. -/

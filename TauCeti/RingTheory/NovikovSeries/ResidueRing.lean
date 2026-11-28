@@ -49,13 +49,18 @@ residues proved before the extension transports to it.
 
 ## Main definitions
 
-* `TauCeti.NovikovSeries.ofMker R N`: the group ring of the period kernel as a subring of `Λ₀`.
-* `TauCeti.NovikovSeries.residue R N`: the residue `Λ₀ →+* R[ker N]`.
-* `TauCeti.NovikovSeries.residueEquiv R N`: the residue ring `Λ₀ ⧸ Λ₊ ≃+* R[ker N]`.
+* `TauCeti.NovikovSeries.ofMker R N`, `TauCeti.NovikovSeries.ofMkerAlgHom S R N`: the group ring of
+  the period kernel as a subring (or `S`-subalgebra) of `Λ₀`.
+* `TauCeti.NovikovSeries.residue R N`, `TauCeti.NovikovSeries.residueAlgHom S R N`: the residue
+  `Λ₀ →+* R[ker N]` (and `S`-algebra variant).
+* `TauCeti.NovikovSeries.residueEquiv R N`, `TauCeti.NovikovSeries.residueAlgEquiv S R N`,
+  `TauCeti.NovikovSeries.residueEquivOfInjective R hN`: the residue ring `Λ₀ ⧸ Λ₊ ≃+* R[ker N]`
+  (with `S`-algebra and injective-period variants).
 * `TauCeti.NovikovSeries.mkerMap φ hφ`: the restriction of a period-rescaling map of exponents to
   the period kernels.
-* `TauCeti.NovikovSeries.residueEquivCoprodId R E`: the residue ring of the action-weighted
-  extension, `Λ₀ ⧸ Λ₊ ≃+* R[G]`.
+* `TauCeti.NovikovSeries.residueEquivCoprodId R E`,
+  `TauCeti.NovikovSeries.residueAlgEquivCoprodId S R E`: the residue ring of the action-weighted
+  extension, `Λ₀ ⧸ Λ₊ ≃+* R[G]` (and `S`-algebra variant).
 
 ## Main results
 
@@ -63,8 +68,10 @@ residues proved before the extension transports to it.
 * `TauCeti.NovikovSeries.ker_residue`: the kernel of the residue is the positive ideal.
 * `TauCeti.NovikovSeries.sub_ofMker_residue_mem_posIdeal`: every series of `Λ₀` differs from the
   image of its residue by a series of positive periods.
-* `TauCeti.NovikovSeries.isUnit_residue_iff`: a series of `Λ₀` is a unit exactly when its residue
-  is.
+* `TauCeti.NovikovSeries.isUnit_residue_iff`, `IsLocalHom (residue R N)`,
+  `IsLocalHom (Ideal.Quotient.mk (posIdeal R N))`,
+  `TauCeti.NovikovSeries.isUnit_nonnegSubring_iff_coeff_zero`: unit reflection of the residue and
+  its constant-coefficient form for injective periods.
 * `TauCeti.NovikovSeries.residue_mem_gradeBy`, `TauCeti.NovikovSeries.ofMker_mem_gradeBy`: the
   residue and its section preserve degrees.
 * `TauCeti.NovikovSeries.residue_mapNonnegSubring`: the residue commutes with pushforward.
@@ -92,7 +99,7 @@ namespace NovikovSeries
 
 open AddMonoidHom (mker mem_mker)
 
-variable {R H : Type*}
+variable {R₀ R H : Type*}
 
 section Semiring
 
@@ -262,6 +269,24 @@ theorem isUnit_residue_iff {a : nonnegSubring R N} : IsUnit (residue R N a) ↔ 
   exact isUnit_iff_exists_and_exists.2
     ⟨⟨_, by rw [← mul_assoc, hv]⟩, ⟨_, by rw [mul_assoc, hw]⟩⟩
 
+/-- Completeness of `nonnegSubring R N` makes the residue homomorphism a local ring homomorphism:
+if `residue R N a` is a unit, then `a` is already a unit of `nonnegSubring R N`. -/
+instance : IsLocalHom (residue R N) where
+  map_nonunit _ := isUnit_residue_iff.1
+
+@[simp]
+theorem residue_single_of_period_eq_zero {h : H} (hh : N h = 0) (r : R) :
+    residue R N ⟨single h r, single_mem_nonnegSubring hh.ge r⟩ =
+      AddMonoidAlgebra.single ⟨h, mem_mker.2 hh⟩ r := by
+  rw [← residue_ofMker (AddMonoidAlgebra.single ⟨h, mem_mker.2 hh⟩ r)]
+  congr 1
+  exact Subtype.ext (coe_ofMker_single ⟨h, mem_mker.2 hh⟩ r).symm
+
+@[simp]
+theorem residue_single_of_pos {h : H} (hh : 0 < N h) (r : R) :
+    residue R N ⟨single h r, single_mem_nonnegSubring hh.le r⟩ = 0 :=
+  residue_eq_zero_iff.2 (single_mem_posIdeal hh r)
+
 variable (R N) in
 /-- The residue ring of the nonnegative Novikov subring is the group ring of the period kernel:
 `Λ₀ ⧸ Λ₊ ≃+* R[ker N]`. -/
@@ -281,6 +306,112 @@ kernel to the class of its image in the nonnegative subring. -/
 theorem residueEquiv_symm_apply (x : AddMonoidAlgebra R (mker N)) :
     (residueEquiv R N).symm x = Ideal.Quotient.mk _ (ofMker R N x) := by
   simp [residueEquiv]
+
+/-- The quotient map modulo `posIdeal R N` is a local ring homomorphism. -/
+instance : IsLocalHom (Ideal.Quotient.mk (posIdeal R N)) where
+  map_nonunit a hu := isUnit_residue_iff.1 <| by
+    rwa [← residueEquiv_mk, MulEquiv.isUnit_map]
+
+section Injective
+
+variable (R) in
+/-- When the period homomorphism `N` is injective, the residue ring
+`nonnegSubring R N ⧸ posIdeal R N` is canonically isomorphic to `R` via the constant coefficient at
+`0`. -/
+def residueEquivOfInjective (hN : Injective N) : nonnegSubring R N ⧸ posIdeal R N ≃+* R :=
+  letI : Subsingleton (mker N) :=
+    AddMonoidHom.comap_bot' N ▸ (N.addSubmonoidComap_injective ⊥ hN).subsingleton
+  (residueEquiv R N).trans (AddMonoidAlgebra.uniqueRingEquiv (mker N))
+
+@[simp]
+theorem residueEquivOfInjective_mk (hN : Injective N) (a : nonnegSubring R N) :
+    residueEquivOfInjective R hN (Ideal.Quotient.mk _ a) = (a : NovikovSeries R H N).coeff 0 := by
+  have : Subsingleton (mker N) :=
+    AddMonoidHom.comap_bot' N ▸ (N.addSubmonoidComap_injective ⊥ hN).subsingleton
+  simp [residueEquivOfInjective]
+
+@[simp]
+theorem residueEquivOfInjective_symm_apply (hN : Injective N) (r : R) :
+    (residueEquivOfInjective R hN).symm r =
+      Ideal.Quotient.mk _ ⟨single 0 r, single_mem_nonnegSubring (map_zero N).ge r⟩ := by
+  have : Subsingleton (mker N) :=
+    AddMonoidHom.comap_bot' N ▸ (N.addSubmonoidComap_injective ⊥ hN).subsingleton
+  simp only [residueEquivOfInjective, RingEquiv.symm_trans_apply,
+    AddMonoidAlgebra.uniqueRingEquiv_symm_apply, residueEquiv_symm_apply]
+  congr 1
+  exact Subtype.ext (by simp)
+
+/-- When the period homomorphism `N` is injective, a series in `nonnegSubring R N` is a unit if
+and only if its coefficient at `0` is a unit of `R`. -/
+theorem isUnit_nonnegSubring_iff_coeff_zero (hN : Injective N) {a : nonnegSubring R N} :
+    IsUnit a ↔ IsUnit ((a : NovikovSeries R H N).coeff 0) := by
+  rw [← residueEquivOfInjective_mk hN a, MulEquiv.isUnit_map,
+    isUnit_map_iff (Ideal.Quotient.mk (posIdeal R N)) a]
+
+end Injective
+
+section Algebra
+
+variable [CommSemiring R₀] [Algebra R₀ R]
+
+variable (R₀ R N) in
+/-- The `R₀`-algebra embedding of `AddMonoidAlgebra R (mker N)` into `nonnegSubring R N`. -/
+def ofMkerAlgHom : AddMonoidAlgebra R (mker N) →ₐ[R₀] nonnegSubring R N where
+  __ := ofMker R N
+  commutes' _ := Subtype.ext <| by
+    simp [ofMker, AddMonoidAlgebra.coe_algebraMap, algebraMap_apply]
+
+@[simp]
+theorem coe_ofMkerAlgHom :
+    (ofMkerAlgHom R₀ R N : AddMonoidAlgebra R (mker N) →+* nonnegSubring R N) = ofMker R N :=
+  (rfl)
+
+@[simp]
+theorem ofMkerAlgHom_apply (x : AddMonoidAlgebra R (mker N)) :
+    ofMkerAlgHom R₀ R N x = ofMker R N x :=
+  (rfl)
+
+variable (R₀ R N) in
+/-- The residue homomorphism as an `R₀`-algebra homomorphism. -/
+def residueAlgHom : nonnegSubring R N →ₐ[R₀] AddMonoidAlgebra R (mker N) where
+  __ := residue R N
+  commutes' s := by
+    rw [RingHom.toFun_eq_coe, ← (ofMkerAlgHom R₀ R N).commutes s, ofMkerAlgHom_apply,
+      residue_ofMker]
+
+@[simp]
+theorem coe_residueAlgHom :
+    (residueAlgHom R₀ R N : nonnegSubring R N →+* AddMonoidAlgebra R (mker N)) = residue R N :=
+  (rfl)
+
+@[simp]
+theorem residueAlgHom_apply (a : nonnegSubring R N) :
+    residueAlgHom R₀ R N a = residue R N a :=
+  (rfl)
+
+variable (R₀ R N) in
+/-- The residue ring isomorphism as an `R₀`-algebra equivalence. -/
+def residueAlgEquiv : (nonnegSubring R N ⧸ posIdeal R N) ≃ₐ[R₀] AddMonoidAlgebra R (mker N) :=
+  AlgEquiv.ofRingEquiv (f := residueEquiv R N) fun r => by
+    rw [← Ideal.Quotient.mk_algebraMap, residueEquiv_mk, ← residueAlgHom_apply (R₀ := R₀),
+      AlgHom.commutes]
+
+@[simp]
+theorem residueAlgEquiv_apply (q : nonnegSubring R N ⧸ posIdeal R N) :
+    residueAlgEquiv R₀ R N q = residueEquiv R N q :=
+  AlgEquiv.ofRingEquiv_apply _ q
+
+@[simp]
+theorem toRingEquiv_residueAlgEquiv :
+    (residueAlgEquiv R₀ R N).toRingEquiv = residueEquiv R N :=
+  RingEquiv.ext (residueAlgEquiv_apply (R₀ := R₀))
+
+@[simp]
+theorem residueAlgEquiv_symm_apply (x : AddMonoidAlgebra R (mker N)) :
+    (residueAlgEquiv R₀ R N).symm x = Ideal.Quotient.mk (posIdeal R N) (ofMker R N x) := by
+  rw [AlgEquiv.symm_apply_eq, residueAlgEquiv_apply, residueEquiv_mk, residue_ofMker]
+
+end Algebra
 
 section Map
 
@@ -387,6 +518,35 @@ theorem residueEquivCoprodId_mk_mapNonnegSubring_inl (a : nonnegSubring R E) :
   | zero => simp
   | add x y hx hy => simp only [_root_.map_add, AddMonoidAlgebra.mapDomain_add, hx, hy]
   | single k r => simp
+
+section Algebra
+
+variable [CommSemiring R₀] [Algebra R₀ R]
+
+variable (R₀ R E) in
+/-- After the action-weighted extension `G × ℝ`, the residue ring of the nonnegative subring is
+isomorphic to `AddMonoidAlgebra R G` as an `R₀`-algebra. -/
+def residueAlgEquivCoprodId :
+    (nonnegSubring R (E.coprod (AddMonoidHom.id ℝ)) ⧸
+      posIdeal R (E.coprod (AddMonoidHom.id ℝ))) ≃ₐ[R₀] AddMonoidAlgebra R G :=
+  (residueAlgEquiv R₀ R (E.coprod (AddMonoidHom.id ℝ))).trans
+    (AddMonoidAlgebra.domCongr R₀ R E.mkerCoprodIdEquiv.symm)
+
+@[simp]
+theorem residueAlgEquivCoprodId_apply (E : G →+ ℝ)
+    (q : nonnegSubring R (E.coprod (AddMonoidHom.id ℝ)) ⧸
+      posIdeal R (E.coprod (AddMonoidHom.id ℝ))) :
+    residueAlgEquivCoprodId R₀ R E q = residueEquivCoprodId R E q := by
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
+  ext g
+  simp [residueAlgEquivCoprodId]
+
+@[simp]
+theorem toRingEquiv_residueAlgEquivCoprodId (E : G →+ ℝ) :
+    (residueAlgEquivCoprodId R₀ R E).toRingEquiv = residueEquivCoprodId R E :=
+  RingEquiv.ext (residueAlgEquivCoprodId_apply (R₀ := R₀) E)
+
+end Algebra
 
 end ActionWeight
 
