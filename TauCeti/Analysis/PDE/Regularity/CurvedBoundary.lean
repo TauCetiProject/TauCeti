@@ -51,10 +51,9 @@ boundary, the weak solution `u ∈ H¹₀(Ω)` of the Dirichlet problem for
 estimate `‖u‖_{H^{m+2}(Ω)} ≤ C (‖u‖_{L²(Ω)} + ‖F‖_{W^{m,2}(Ω)})`
 (`TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_norm_value_of_value_eq_value_of_contDiff_graph`).
 This is Evans, §6.3.2, Theorem 5, for a smooth boundary and smooth principal coefficients; the
-case `m = 0` is the `H²` theorem above. Smoothness, rather than finitely many derivatives, of the
-boundary and of `a` is what the flat model
-`TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_halfSpace` asks of the
-transformed coefficient.
+case `m = 0` is the `H²` theorem above. The flat model
+`TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_halfSpace` itself asks only
+for `C^{m+1}` entries of the transformed coefficient.
 
 ## The argument
 
@@ -591,9 +590,9 @@ private theorem exists_value_eq_value_restrictL_of_isChangeOfVariables (m : ℕ)
   -- `H^{m+2}` regularity near the flat boundary, since `u ∘ Φ` solves
   -- `-∂ᵢ(a'ⁱʲ ∂ⱼ(u ∘ Φ)) = F ∘ Φ` with `F ∘ Φ ∈ W^{m,2}(Ω')`.
   exact UniformlyEllipticOn.exists_value_eq_value_restrictL_of_halfSpace (H := H)
-    (U := ⟨ball y₀ r, isOpen_ball⟩) hν hH hΩU hellip hsm' m
-    (energyFormH1_w1pCompL_restrictL_eq_setIntegral hD hΦm hΨ' (fun x _ => hΨΦ x)
-      (fun y _ => hΦΨ y) hu) hu0' hV hVU
+    (U := ⟨ball y₀ r, isOpen_ball⟩) hν hH hΩU hellip m (fun i j => (hsm' i j).of_le (by simp))
+    (energyFormH1_w1pCompL_restrictL_eq_setIntegral hD hΦm (by omega) (by omega) hΨ'
+      (fun x _ => hΨΦ x) (fun y _ => hΦΨ y) hu) hu0' hV hVU
 
 /-- **Local `H^{m+2}` regularity near a smooth boundary portion.** Let `Ω` be open, and suppose
 that in rigid coordinates `e` centred at `x₀ = e⁻¹ 0`, inside the normal cylinder of half-height

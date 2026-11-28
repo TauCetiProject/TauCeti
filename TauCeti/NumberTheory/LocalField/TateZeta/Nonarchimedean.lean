@@ -13,7 +13,7 @@ import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Analysis.SpecificLimits.Basic
-import TauCeti.NumberTheory.LocalField.HaarCharacter
+import TauCeti.NumberTheory.LocalField.Haar.Character
 import TauCeti.NumberTheory.LocalField.Unramified.Character
 import TauCeti.NumberTheory.LocalField.Units.Shell
 
@@ -351,9 +351,10 @@ theorem localZetaIntegral_eq_zero_of_apply_ne_one (ν : Measure Kˣ) [ν.IsMulLe
     (hf : ∀ x, f (u * x) = f x) (s : ℂ) :
     localZetaIntegral ν (fun x ↦ (normalizedAbsoluteValue K x : ℝ)) ω f s = 0 := by
   refine localZetaIntegral_eq_zero_of_comp_mul_left ν _ ω
-    (fun x ↦ coe_normalizedAbsoluteValue_pos x) (fun x y ↦ by simp) hf ?_
+    (fun x ↦ coe_normalizedAbsoluteValue_pos x) (fun x y ↦ by simp) (c := 1)
+    (fun x ↦ (hf x).trans (one_mul _).symm) ?_
   rw [normalizedAbsoluteValue_of_mem_unitFiltration_zero hu, NNRat.cast_one, ofReal_one, one_cpow,
-    mul_one]
+    mul_one, one_mul]
   exact fun h ↦ hωu (Units.ext h)
 
 /-- **Ramified characters annihilate `𝒪[K]ˣ`-invariant test functions.** If `ω` is nontrivial

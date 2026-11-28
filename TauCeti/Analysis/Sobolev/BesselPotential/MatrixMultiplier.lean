@@ -193,7 +193,7 @@ theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil (hp : 1 < p) (h
     (hbd : ∀ n ≤ ⌈|s|⌉₊, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C)
     {f : 𝓢'(E, F)} (hf : MemSobolev s p f) :
     MemSobolev s p (TemperedDistribution.smulLeftCLM F g f) :=
-  hf.map_of_forall_intCast hp hp_top _ fun _ hk _ hu ↦
+  hf.map_of_forall_intCast hp hp_top hp hp_top _ fun _ hk _ hu ↦
     hu.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top fun n hn ↦ hbd n (hn.trans hk)
 
 /-- **Schwartz multipliers preserve `H^{s,p}`, for every real `s`.** For `1 < p < ∞`,

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 
 /-!
@@ -27,9 +28,14 @@ Over a commutative ring and for invertible `A`, the inverse of `g ∈ unitaryGro
 `A⁻¹ * star g * A`, so every matrix preserving the form is invertible
 (`Matrix.unitaryGroupOf.ofMatrix`).
 
+For a hermitian Gram matrix `A`, skew-adjointness for its form is equivalent to
+skew-hermiticity of `A * X`. Multiplication by `A⁻¹` sends skew-hermitian matrices
+to skew-adjoint matrices, including for singular `A`, whose totalized inverse is zero.
+These coordinates are used in Cayley charts and approximation of unitary groups.
+
 These are the facts shared by the indefinite unitary groups `U(p, q)`
 (`TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup`), the topology of the unitary groups
-(`TauCeti.Topology.Algebra.Matrix.UnitaryGroup`) and the adelic unitary groups of a CM field.
+(`TauCeti.Topology.Algebra.Matrix.UnitaryGroup.Basic`) and the adelic unitary groups of a CM field.
 
 ## Main definitions
 
@@ -95,6 +101,20 @@ theorem unitaryGroupOf.ext {g h : unitaryGroupOf A}
     (H : ((g : GL n R) : Matrix n n R) = ((h : GL n R) : Matrix n n R)) : g = h :=
   Subtype.ext <| Units.ext H
 
+/-- An element `g` of `unitaryGroupOf A` satisfies `gᴴ (A g) = A`, the right-associated form of
+`star g * A * g = A`. -/
+theorem unitaryGroupOf.conjTranspose_mul_mul_cancel (g : unitaryGroupOf A) :
+    ((g : GL n R) : Matrix n n R)ᴴ * (A * ((g : GL n R) : Matrix n n R)) = A := by
+  rw [← Matrix.mul_assoc, ← star_eq_conjTranspose, mem_unitaryGroupOf_iff.mp g.property]
+
+/-- An element `g` of `unitaryGroupOf A` cancels against its conjugate transpose around `A`:
+`gᴴ (A (g X)) = A X`. -/
+theorem unitaryGroupOf.conjTranspose_mul_mul_mul_cancel (g : unitaryGroupOf A) {m : Type*}
+    (X : Matrix n m R) :
+    ((g : GL n R) : Matrix n n R)ᴴ * (A * (((g : GL n R) : Matrix n n R) * X)) = A * X := by
+  rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, Matrix.mul_assoc _ A,
+    unitaryGroupOf.conjTranspose_mul_mul_cancel]
+
 /-- **The unitary group of the identity form is the unitary subgroup** of `GL n R`: both consist
 of the invertible matrices `g` with `star g * g = 1`, which for an invertible `g` also gives
 `g * star g = 1`. -/
@@ -114,11 +134,12 @@ theorem inv_mul_mul_mem_unitaryGroupOf {B : Matrix n n R} {x : GL n R}
   set y : Matrix n n R := ((x⁻¹ : GL n R) : Matrix n n R)
   -- `x⁻¹` pulls the form `B` back to the form `A`: this is the Gram identity for `F = x⁻¹`.
   have h : star y * B * y = A := by
-    have h := conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx y
+    have h := conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx y y
     rw [Units.mul_inv, conjTranspose_one, Matrix.one_mul, Matrix.mul_one] at h
     rw [star_eq_conjTranspose, ← h]
   -- `(x⁻¹ (g x))ᴴ B (x⁻¹ (g x)) = (g x)ᴴ A (g x) = xᴴ A x = B`
   have h' := conjTranspose_mul_mul_mul_of_star_mul_mul_eq h ((g * x : GL n R) : Matrix n n R)
+    ((g * x : GL n R) : Matrix n n R)
   rw [Units.val_mul, conjTranspose_mul_mul_mul_of_star_mul_mul_eq hg,
     ← star_eq_conjTranspose (x : Matrix n n R), hx] at h'
   simpa only [y, Units.val_mul, Matrix.mul_assoc, star_eq_conjTranspose] using h'
@@ -175,5 +196,29 @@ theorem val_ofMatrix (hA : IsUnit A) (M : Matrix n n R) (hM : star M * A * M = A
 end unitaryGroupOf
 
 end CommRing
+
+section Skew
+
+omit [DecidableEq n] in
+/-- For a hermitian Gram matrix `A`, a matrix `X` is skew-adjoint for the form of `A`
+exactly when `A * X` is skew-hermitian. -/
+theorem star_mul_add_mul_eq_zero_iff {R : Type*} [Ring R] [StarRing R]
+    {A X : Matrix n n R} (hA : A.IsHermitian) :
+    star X * A + A * X = 0 ↔ star (A * X) = -(A * X) := by
+  rw [star_mul, star_eq_conjTranspose A, hA.eq, add_eq_zero_iff_eq_neg]
+
+/-- For hermitian `A` and skew-hermitian `Y`, `A⁻¹ * Y` is skew-adjoint for
+its form. For singular `A`, the totalized inverse is zero. -/
+theorem star_inv_mul_mul_add {R : Type*} [CommRing R] [StarRing R]
+    {A Y : Matrix n n R} (hA : A.IsHermitian) (hY : star Y = -Y) :
+    star (A⁻¹ * Y) * A + A * (A⁻¹ * Y) = 0 := by
+  by_cases hA' : IsUnit A
+  · rw [star_mul_add_mul_eq_zero_iff hA,
+      mul_nonsing_inv_cancel_left _ _ ((isUnit_iff_isUnit_det _).1 hA')]
+    exact hY
+  · rw [nonsing_inv_apply_not_isUnit A (mt (isUnit_iff_isUnit_det A).2 hA')]
+    simp
+
+end Skew
 
 end Matrix

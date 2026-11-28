@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
+public import Mathlib.LinearAlgebra.Matrix.Kronecker
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.OpNorm
 public import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
@@ -26,6 +27,11 @@ rather than restricting scalars, so that no algebra diamond arises.
   `ℝ`-algebra.
 
 ## Main results
+
+* `Matrix.l2_opNorm_map_star`, `Matrix.l2_opNorm_transpose`: entrywise conjugation and
+  transposition preserve the Euclidean operator norm.
+* `Matrix.l2_opNorm_kronecker_le`: the operator norm of a rectangular Kronecker product is at
+  most the product of the operator norms of its factors.
 
 * `Matrix.opNorm_toEuclideanLin`: the operator-norm unitarily invariant seminorm of
   `A.toEuclideanLin` equals the scoped `ℓ²` operator norm of `A`.
@@ -58,6 +64,8 @@ rather than restricting scalars, so that no algebra diamond arises.
   For `C ≥ 0`, the inequality `∑ᵢ |∑ⱼ Aᵢⱼ aⱼ|² ≤ C ∑ⱼ |aⱼ|²` for all `a` holds exactly when
   `∑ⱼ |∑ᵢ conj(Aᵢⱼ) bᵢ|² ≤ C ∑ᵢ |bᵢ|²` holds for all `b`, and exactly when the same holds without
   the conjugation.
+* `ContinuousLinearMap.l2_opNorm_toMatrix`: the matrix of an operator in orthonormal bases has the
+  operator norm of the operator.
 -/
 
 public section
@@ -311,6 +319,28 @@ theorem l2_opNorm_sq_le_iff {m : Type*} [Fintype m] {A : Matrix m n 𝕜} {C : �
     simpa using h (WithLp.ofLp x)
   exact (Real.le_sqrt (norm_nonneg _) hC).1 hA
 
+/-- Entrywise conjugation preserves the Euclidean operator norm. -/
+@[simp]
+theorem l2_opNorm_map_star {m : Type*} [Fintype m] (A : Matrix m n 𝕜) :
+    ‖A.map (starRingEnd 𝕜)‖ = ‖A‖ := by
+  have h (M : Matrix m n 𝕜) : ‖M.map star‖ ≤ ‖M‖ := by
+    apply (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).mp
+    apply (l2_opNorm_sq_le_iff (sq_nonneg ‖M‖)).mpr
+    intro a
+    have he (i : m) : ‖(M.map star *ᵥ a) i‖ = ‖(M *ᵥ star a) i‖ := by
+      have hi := congrArg norm ((starRingEnd 𝕜).map_mulVec M (star a) i)
+      simpa [Function.comp_def] using hi.symm
+    simpa only [he, Pi.star_apply, norm_star] using M.sum_norm_sq_mulVec_le (star a)
+  simpa only [RCLike.star_def] using le_antisymm (h A)
+    (by simpa [Matrix.map_map, Function.comp_def] using h (A.map star))
+
+/-- Transposition preserves the Euclidean operator norm. -/
+@[simp]
+theorem l2_opNorm_transpose {m : Type*} [Fintype m] [DecidableEq m]
+    (A : Matrix m n 𝕜) : ‖Aᵀ‖ = ‖A‖ := by
+  rw [← l2_opNorm_conjTranspose Aᵀ, transpose_conjTranspose]
+  simpa only [RCLike.star_def] using l2_opNorm_map_star A
+
 omit [DecidableEq n] in
 /-- **Large-sieve duality.** For a rectangular matrix `A` and `C ≥ 0`, the inequality
 `∑ᵢ |∑ⱼ Aᵢⱼ aⱼ|² ≤ C ∑ⱼ |aⱼ|²` holds for every `a` exactly when
@@ -411,4 +441,65 @@ theorem l2_opNorm_single {m n 𝕜 : Type*} [Fintype m] [Fintype n]
     rw [Pi.norm_single, norm_mul, norm_star]
   exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp (by simpa [pow_two] using hs)
 
+
+open scoped Kronecker in
+/-- The Euclidean operator norm of a rectangular Kronecker product is at most the product
+of the Euclidean operator norms. Empty row and column types are allowed. -/
+theorem l2_opNorm_kronecker_le {m n p q 𝕜 : Type*} [RCLike 𝕜] [Fintype m] [Fintype n] [Fintype p]
+    [Fintype q] [DecidableEq n] [DecidableEq q] (A : Matrix m n 𝕜) (B : Matrix p q 𝕜) :
+    ‖A ⊗ₖ B‖ ≤ ‖A‖ * ‖B‖ := by
+  apply (sq_le_sq₀ (norm_nonneg _) (mul_nonneg (norm_nonneg _) (norm_nonneg _))).mp
+  rw [mul_pow]
+  apply (l2_opNorm_sq_le_iff (mul_nonneg (sq_nonneg _) (sq_nonneg _))).mpr
+  intro v
+  let w (r : n) (i : p) := (B *ᵥ fun j ↦ v (r, j)) i
+  have he (i : m) (k : p) : ((A ⊗ₖ B) *ᵥ v) (i, k) = (A *ᵥ fun r ↦ w r k) i := by
+    simp only [mulVec, dotProduct, kroneckerMap_apply, Fintype.sum_prod_type, w,
+      Finset.mul_sum]
+    exact Finset.sum_congr rfl fun r _ ↦ Finset.sum_congr rfl fun c _ ↦ by ring
+  calc
+    ∑ i, ‖((A ⊗ₖ B) *ᵥ v) i‖ ^ 2 = ∑ k, ∑ i, ‖(A *ᵥ fun r ↦ w r k) i‖ ^ 2 := by
+      simp only [Fintype.sum_prod_type, he]
+      exact Finset.sum_comm
+    _ ≤ ∑ k, ‖A‖ ^ 2 * ∑ r, ‖w r k‖ ^ 2 :=
+      Finset.sum_le_sum fun k _ ↦ A.sum_norm_sq_mulVec_le _
+    _ = ‖A‖ ^ 2 * ∑ r, ∑ k, ‖w r k‖ ^ 2 := by
+      rw [← Finset.mul_sum, Finset.sum_comm]
+    _ ≤ ‖A‖ ^ 2 * ∑ r, ‖B‖ ^ 2 * ∑ j, ‖v (r, j)‖ ^ 2 := by
+      gcongr with r
+      exact B.sum_norm_sq_mulVec_le _
+    _ = (‖A‖ ^ 2 * ‖B‖ ^ 2) * ∑ i, ‖v i‖ ^ 2 := by
+      simp [Fintype.sum_prod_type, Finset.mul_sum, mul_assoc]
+
 end Matrix
+
+namespace ContinuousLinearMap
+
+variable {m n 𝕜 E F : Type*} [RCLike 𝕜] [Fintype m] [Fintype n] [DecidableEq n]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+open Matrix
+open scoped Matrix.Norms.L2Operator
+
+/-- **The matrix of an operator in orthonormal bases has the operator norm of the operator.** For
+orthonormal bases `b` of `E` and `c` of `F`, the `ℓ²` operator norm of the matrix of
+`f : E →L[𝕜] F` in `b` and `c` is the operator norm of `f`: as an operator between Euclidean
+spaces, the matrix is `f` composed with the linear isometries `b.repr⁻¹` and `c.repr`. -/
+@[simp]
+theorem l2_opNorm_toMatrix (f : E →L[𝕜] F) (b : OrthonormalBasis n 𝕜 E)
+    (c : OrthonormalBasis m 𝕜 F) :
+    ‖LinearMap.toMatrix b.toBasis c.toBasis (f : E →ₗ[𝕜] F)‖ = ‖f‖ := by
+  have h : (toEuclideanLin.trans LinearMap.toContinuousLinearMap)
+      (LinearMap.toMatrix b.toBasis c.toBasis (f : E →ₗ[𝕜] F)) =
+      (c.repr.toLinearIsometry.toContinuousLinearMap.comp f).comp
+        b.repr.symm.toContinuousLinearEquiv.toContinuousLinearMap := by
+    ext1 x
+    obtain ⟨x, rfl⟩ := b.repr.surjective x
+    ext i
+    have h := congrFun (LinearMap.toMatrix_mulVec_repr b.toBasis c.toBasis (f : E →ₗ[𝕜] F) x) i
+    rw [show ⇑(b.toBasis.repr x) = (b.repr x).ofLp from funext (b.coe_toBasis_repr_apply x)] at h
+    simpa using h
+  rw [l2_opNorm_def, h, opNorm_comp_linearIsometryEquiv,
+    LinearIsometry.norm_toContinuousLinearMap_comp]
+
+end ContinuousLinearMap

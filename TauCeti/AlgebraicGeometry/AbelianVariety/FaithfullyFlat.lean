@@ -17,8 +17,8 @@ Every surjective homomorphism `f : A ⟶ B` of abelian varieties over a field `K
 flat, with no hypothesis on the dimensions of `A` and `B`
 (`TauCeti.AlgebraicGeometry.AbelianVariety.flat_of_surjective`). This is the case of group
 schemes of finite type with geometrically reduced target,
-`TauCeti.GroupScheme.flat_of_surjective`: an abelian variety is proper, hence of finite type and
-quasi-compact, and smooth, hence geometrically reduced.
+`TauCeti.GroupScheme.flat_of_surjective`: the homomorphism is proper, hence of finite type,
+and the target is smooth, hence geometrically reduced.
 
 In particular an isogeny of abelian varieties, defined as a finite surjective homomorphism, is
 flat (`TauCeti.AlgebraicGeometry.AbelianVariety.IsIsogeny.flat`). So over a field the definition
@@ -57,8 +57,13 @@ variable {K : Type u} [Field K] {A B : AbelianVariety K}
 
 /-- **Surjective homomorphisms of abelian varieties are flat.** -/
 theorem flat_of_surjective (f : A ⟶ B) [Surjective (Hom.toSchemeHom f)] :
-    Flat (Hom.toSchemeHom f) :=
-  GroupScheme.flat_of_surjective (Hom.toOverHom f)
+    Flat (Hom.toSchemeHom f) := by
+  let g := Hom.toOverHom f
+  have : IsProper (g.left ≫ B.toOver.hom) := by
+    rw [Over.w g]
+    infer_instance
+  let : IsProper g.left := IsProper.of_comp g.left B.toOver.hom
+  exact GroupScheme.flat_of_surjective g
 
 /-- An isogeny of abelian varieties is flat: it is a surjective homomorphism. -/
 theorem IsIsogeny.flat {f : A ⟶ B} (hf : IsIsogeny f) : Flat (Hom.toSchemeHom f) :=

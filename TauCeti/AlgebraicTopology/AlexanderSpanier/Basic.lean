@@ -119,6 +119,18 @@ lemma IsLocallyZero.comp_continuous [Zero M] {φ : (ι → X) → M} (hφ : IsLo
   obtain ⟨U, hU, hφU⟩ := hφ (f x)
   exact ⟨f ⁻¹' U, hf.continuousAt hU, fun y hy ↦ hφU _ hy⟩
 
+/-- Being locally zero is a local property: a function on tuples of points of `X` is locally zero
+once every point of `X` has a neighbourhood `U` such that its restriction to tuples of points of
+`U` is locally zero on `U`. The converse is `IsLocallyZero.comp_continuous` along the inclusions. -/
+lemma isLocallyZero_of_forall_nhds [Zero M] {φ : (ι → X) → M}
+    (h : ∀ x : X, ∃ U ∈ 𝓝 x, IsLocallyZero fun y : ι → U ↦ φ (Subtype.val ∘ y)) :
+    IsLocallyZero φ := by
+  intro x
+  obtain ⟨U, hU, hφU⟩ := h x
+  obtain ⟨V, hV, hφV⟩ := hφU ⟨x, mem_of_mem_nhds hU⟩
+  obtain ⟨W, hW, hWV⟩ := (mem_nhds_subtype U _ V).1 hV
+  exact ⟨W ∩ U, inter_mem hW hU, fun y hy ↦ hφV (fun i ↦ ⟨y i, (hy i).2⟩) fun i ↦ hWV (hy i).1⟩
+
 /-- A locally zero function vanishes on every constant tuple. -/
 lemma IsLocallyZero.apply_const [Zero M] {φ : (ι → X) → M} (hφ : IsLocallyZero φ)
     (x : X) : φ (fun _ ↦ x) = 0 := by
