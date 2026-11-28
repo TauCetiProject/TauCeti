@@ -53,6 +53,8 @@ criterion for plane curves (`MvPolynomial.isDedekindDomain_quotient_span_singlet
 * `TauCeti.CircleRing.isCoprime_one_add_x_one_sub_x`: the two charts cover the circle.
 * `TauCeti.CircleRing.instIsDedekindDomain`: over a field in which `2 ≠ 0`, `CircleRing k` is a
   Dedekind domain.
+* `TauCeti.CircleRing.isLocalization_away_chartToOverlap`: the overlap `y ≠ 0` is the
+  localization of a chart `1 + εx ≠ 0` away from `y / (1 + εx)`.
 * `TauCeti.CircleRing.stereographic_overlap_coord_of_sq_eq_one`,
   `TauCeti.CircleRing.stereographic_overlap_of_sq_eq_one`: on the overlap `y ≠ 0`, the
   stereographic coordinates at `ε` and `-ε` (in particular `t₊` and `t₋` for `ε = 1`) satisfy
@@ -534,6 +536,53 @@ theorem chartToOverlap_invSelf (hε : ε ^ 2 = 1) :
     exact map_mul_eq_one (chartToOverlap hε) (by rw [mul_comm, mul_invSelf])
   · rw [← mul_assoc, ← map_mul, one_add_smul_x_mul_one_sub_smul_x hε, map_pow, ← mul_pow,
       mul_invSelf, one_pow]
+
+/-- The overlap `k[x, y, y⁻¹]` is the localization of the stereographic chart `k[x, y, (1 + εx)⁻¹]`
+away from the stereographic coordinate `y / (1 + εx)`, as an algebra through `chartToOverlap`. -/
+theorem isLocalization_away_chartToOverlap (hε : ε ^ 2 = 1) :
+    letI := (chartToOverlap hε).toRingHom.toAlgebra
+    IsLocalization.Away
+      (algebraMap (CircleRing k) (Localization.Away (1 + ε • x : CircleRing k)) y *
+        invSelf (1 + ε • x : CircleRing k))
+      (Localization.Away (y : CircleRing k)) := by
+  let := (chartToOverlap hε).toRingHom.toAlgebra
+  have hy : IsLocalization.Away
+      (algebraMap (CircleRing k) (Localization.Away (1 + ε • x : CircleRing k)) y)
+      (Localization.Away (y : CircleRing k)) := by
+    refine IsLocalization.Away.mk _ ?_ (fun z ↦ ?_) (fun a b hab ↦ ?_)
+    · rw [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+        chartToOverlap_algebraMap]
+      exact IsLocalization.Away.algebraMap_isUnit _
+    · obtain ⟨n, a, ha⟩ := IsLocalization.Away.surj (y : CircleRing k) z
+      refine ⟨n, algebraMap (CircleRing k) _ a, ?_⟩
+      simpa only [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+        map_pow, chartToOverlap_algebraMap] using ha
+    · obtain ⟨m, a', ha'⟩ := IsLocalization.Away.surj (1 + ε • x : CircleRing k) a
+      obtain ⟨l, b', hb'⟩ := IsLocalization.Away.surj (1 + ε • x : CircleRing k) b
+      have hab' : algebraMap (CircleRing k) (Localization.Away (y : CircleRing k))
+          (a' * (1 + ε • x) ^ l) =
+          algebraMap (CircleRing k) _ (b' * (1 + ε • x) ^ m) := by
+        have h : chartToOverlap hε (a * algebraMap (CircleRing k) _ (1 + ε • x) ^ (m + l)) =
+            chartToOverlap hε (b * algebraMap (CircleRing k) _ (1 + ε • x) ^ (m + l)) := by
+          simpa only [map_mul, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
+            RingHom.coe_coe] using congrArg
+              (· * chartToOverlap hε (algebraMap (CircleRing k) _ (1 + ε • x) ^ (m + l))) hab
+        rw [pow_add, ← mul_assoc, ha', mul_comm (algebraMap _ _ _ ^ m), ← mul_assoc, hb'] at h
+        simpa only [← map_pow, ← map_mul, chartToOverlap_algebraMap] using h
+      obtain ⟨n, hn⟩ := IsLocalization.Away.exists_of_eq (y : CircleRing k) hab'
+      refine ⟨n, ?_⟩
+      have hn' := congrArg (algebraMap (CircleRing k)
+        (Localization.Away (1 + ε • x : CircleRing k))) hn
+      simp only [map_mul, map_pow, ← ha', ← hb'] at hn'
+      have hu : IsUnit (algebraMap (CircleRing k)
+          (Localization.Away (1 + ε • x : CircleRing k)) (1 + ε • x)) :=
+        IsLocalization.Away.algebraMap_isUnit _
+      exact (hu.pow (m + l)).mul_right_cancel (by linear_combination hn')
+  refine @IsLocalization.Away.of_associated _ _ _ _ _ _ _ ?_ hy
+  refine ⟨(IsLocalization.Away.algebraMap_isUnit
+    (S := Localization.Away (1 + ε • x : CircleRing k)) (1 + ε • x : CircleRing k)).unit⁻¹, ?_⟩
+  congr 1
+  exact Units.inv_eq_of_mul_eq_one_right (mul_invSelf _)
 
 /-- **Overlap compatibility of the explicit stereographic coordinates.** On `k[x, y, y⁻¹]`, the
 localized coordinates `y / (1 + εx)` and `y / (1 - εx)` for `ε² = 1` are mutually inverse,

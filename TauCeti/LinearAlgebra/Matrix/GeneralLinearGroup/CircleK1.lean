@@ -127,15 +127,25 @@ end CircleRotation
 
 /-- Evaluating the stabilized rotation matrix over `CircleRing ℝ` on the unit circle gives
 `circleRotationLoop`. -/
+@[simp]
 theorem evalGL_stabilizeGL_circleRotation (N : ℕ) (hN : 2 ≤ N) :
     CircleRing.evalGL (stabilizeGL (CircleRing ℝ) hN (SpecialLinearGroup.toGL (circleRotation ℝ))) =
       circleRotationLoop hN := by
-  ext z i j
-  simp only [CircleRing.coe_evalGL_apply, coe_stabilizeGL_apply, coe_circleRotationLoop_apply]
-  split_ifs with hij
-  · rcases i with ⟨_ | _ | i, hi⟩ <;> rcases j with ⟨_ | _ | j, hj⟩ <;> simp at hij ⊢
-  · simp only [Matrix.one_apply]
-    split_ifs <;> simp
+  ext z : 1
+  let φ : CircleRing ℝ →+* ℝ :=
+    (ContinuousMap.evalAlgHom ℝ ℝ z).toRingHom.comp CircleRing.evalCircle.toRingHom
+  have hev : CircleRing.evalGL
+        (stabilizeGL (CircleRing ℝ) hN (SpecialLinearGroup.toGL (circleRotation ℝ))) z =
+      GeneralLinearGroup.map φ
+        (stabilizeGL (CircleRing ℝ) hN (SpecialLinearGroup.toGL (circleRotation ℝ))) := by
+    ext i j
+    simp [φ, CircleRing.coe_evalGL_apply, GeneralLinearGroup.map_apply]
+  rw [hev, GeneralLinearGroup.map, ← stabilizeGL_map hN φ, circleRotationLoop_apply]
+  congr 1
+  ext i j
+  rw [unitsLeftMulMatrix_apply]
+  fin_cases i <;> fin_cases j <;>
+    simp [φ, Complex.basisOneI]
 
 private theorem circleRotation_notMem_elementarySubgroup_real (N : ℕ) (hN : 2 ≤ N) :
     stabilizeGL (CircleRing ℝ) hN (SpecialLinearGroup.toGL (circleRotation ℝ)) ∉
