@@ -10,8 +10,10 @@ public import Mathlib.CategoryTheory.Preadditive.Opposite
 /-!
 # Additivity of the double-opposite equivalence
 
-The forward and inverse functors of Mathlib's `CategoryTheory.opOpEquivalence` are additive.
-They use Mathlib's `CategoryTheory.unop_add` and `CategoryTheory.Equivalence.inverse_additive`.
+The double-opposite functors `CategoryTheory.unopUnop` and `CategoryTheory.opOp` are additive
+by Mathlib's `CategoryTheory.unop_add` and `CategoryTheory.op_add`. The two directions of
+`CategoryTheory.opOpEquivalence` are additive as well, using
+`CategoryTheory.opOpEquivalence_functor` and `CategoryTheory.Equivalence.inverse_additive`.
 -/
 
 public section
@@ -20,12 +22,18 @@ namespace CategoryTheory
 
 variable (C : Type*) [Category* C] [Preadditive C]
 
-/-- The canonical functor from the double opposite is additive. -/
-instance opOpEquivalence_functor_additive : (opOpEquivalence C).functor.Additive where
-  map_add {_ _ f g} := by
-    have h : (unopUnop C).map (f + g) = (unopUnop C).map f + (unopUnop C).map g := by
-      simp only [unopUnop_map, unop_add]
-    exact h
+/-- The functor from the double opposite of a preadditive category is additive. -/
+instance unopUnop_additive : (unopUnop C).Additive where
+  map_add {_ _ _ _} := by simp only [unopUnop_map, unop_add]
+
+/-- The functor from a preadditive category to its double opposite is additive. -/
+instance opOp_additive : (opOp C).Additive where
+  map_add {_ _ _ _} := by simp only [opOp_map, op_add]
+
+/-- The forward functor of the double-opposite equivalence is additive. -/
+instance opOpEquivalence_functor_additive : (opOpEquivalence C).functor.Additive := by
+  rw [opOpEquivalence_functor]
+  infer_instance
 
 /-- The canonical inverse functor from a category to its double opposite is additive. -/
 instance opOpEquivalence_symm_functor_additive : (opOpEquivalence C).symm.functor.Additive :=
