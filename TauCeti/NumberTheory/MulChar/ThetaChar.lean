@@ -52,7 +52,7 @@ open Complex Finset
 
 namespace MulChar
 
-variable {K : Type*} [CommMonoidWithZero K] (T : MulChar K ℂ) {Q m : ℕ} {x y z : K}
+variable {K : Type*} [CommMonoid K] (T : MulChar K ℂ) {Q m : ℕ} {x y z : K}
 
 /-- The canonical natural number `j < Q - 1` with `T x = exp (2πi / (Q - 1)) ^ j`
 (arbitrary if none exists). -/
