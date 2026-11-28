@@ -121,7 +121,7 @@ Haar measure on a finite-dimensional real normed space, the convolution
 `(k ⋆ f)(x) = ∫ t, k(t) • f(x - t) dμ(t)` of `k ∈ L¹(μ; 𝕜)` and `f ∈ Lᵖ(μ; X)` converges
 absolutely almost everywhere and lies in `Lᵖ(μ; X)` for every `1 ≤ p ≤ ∞`
 (`MeasureTheory.Integrable.ae_convolution_exists_of_memLp` and
-`MeasureTheory.eLpNorm_convolution_le`), and its
+`MeasureTheory.Integrable.memLp_convolution`), and its
 almost-everywhere class does not depend on the representatives of `k` and `f`
 (`MeasureTheory.convolution_congr`). -/
 
@@ -140,9 +140,7 @@ private theorem ae_convolutionExistsAt (k : Lp 𝕜 1 μ) (f : Lp X p μ) :
 
 private theorem memLp_convolution (k : Lp 𝕜 1 μ) (f : Lp X p μ) :
     MemLp ((k : G → 𝕜) ⋆[lsmul 𝕜 𝕜, μ] (f : G → X)) p μ :=
-  (eLpNorm_convolution_le _ (Lp.aestronglyMeasurable k) (Lp.aestronglyMeasurable f)
-    Fact.out).trans_lt (ENNReal.mul_lt_top (ENNReal.mul_lt_top eNorm_lt_top
-      (Lp.eLpNorm_lt_top k)) (Lp.eLpNorm_lt_top f))
+  (L1.integrable_coeFn k).memLp_convolution _ (Lp.memLp f) Fact.out
 
 private theorem toLp_convolution_add_left (k₁ k₂ : Lp 𝕜 1 μ) (f : Lp X p μ) :
     (memLp_convolution (k₁ + k₂) f).toLp _ =
