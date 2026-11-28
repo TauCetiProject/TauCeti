@@ -42,6 +42,7 @@ Baker--Campbell--Hausdorff expansion.
   origin.
 * `NormedSpace.hasSum_exp_sub_one`: `exp x - 1 = ∑ₙ (n + 1)!⁻¹ • x ^ (n + 1)`.
 * `NormedSpace.exp_add_smul`: `exp` is multiplicative on scalar multiples of a fixed element.
+* `NormedSpace.exp_add_real_smul_one`: `exp (a + c • 1) = Real.exp c • exp a` for real `c`.
 * `TauCeti.norm_exp_le_mul_exp_of_norm_pow_le`: if `‖x ^ n‖ ≤ M * r ^ n` for every `n`, then
   `‖exp x‖ ≤ M * Real.exp r`; in particular `‖exp x‖ ≤ Real.exp ‖x‖` when `‖1‖ ≤ 1`
   (`TauCeti.norm_exp_le_exp_norm`, with the scalar-multiple form `TauCeti.norm_exp_smul_le`), and
@@ -145,6 +146,14 @@ theorem exp_add_smul (a : A) (s t : 𝕂) :
   rw [add_smul, exp_add_of_commute (((Commute.refl a).smul_left _).smul_right _)]
 
 end Normed
+
+/-- Adding a real scalar multiple of the unit scales the exponential by the real exponential:
+`exp (a + c • 1) = Real.exp c • exp a`. -/
+theorem exp_add_real_smul_one {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] [CompleteSpace A]
+    (a : A) (c : ℝ) : exp (a + c • (1 : A)) = Real.exp c • exp a := by
+  let +nondep : NormedAlgebra ℚ A := .restrictScalars ℚ ℝ A
+  rw [exp_add_of_commute ((Commute.one_right a).smul_right c), exp_real_smul_one, mul_smul_comm,
+    mul_one]
 
 end NormedSpace
 

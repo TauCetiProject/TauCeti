@@ -255,6 +255,7 @@ theorem IsMorseOneForm.isMorse_of_mextDeriv_eq_mpullback (hα : IsMorseOneForm �
     (hdg : mextDeriv (RoughForm.ofFunction I g) = TauCeti.mpullback I I π α) : IsMorse I g :=
   (isMorseOneForm_mextDeriv_ofFunction_iff hg).mp (hdg ▸ hα.mpullback hπ)
 
+omit [IsManifold I ∞ M] in
 /-- **Morse indices of a lifted potential.** If `π` is a smooth local diffeomorphism and `g` is a
 differentiable function with `dg = π^* α`, then at a point `x` over a zero of `α` the Morse index
 of `g` is the Morse index at `π x` of any local primitive of `α` which is `C²` at `π x`. The

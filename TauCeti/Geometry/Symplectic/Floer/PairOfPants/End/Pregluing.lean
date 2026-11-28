@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Symplectic.Floer.Pregluing.EndChart
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Orbit
 
 /-!
 # Pre-gluing a Floer cylinder to an end of a pair of pants
@@ -50,7 +51,8 @@ other end of the cylinder `v`.
   (`TauCeti.Floer.preglueEnd_comp_positiveEndChart`). Beyond the height `R + 1` it is
   `v(s - 2R, t)` (`TauCeti.Floer.preglueEnd_positiveEndChart_of_add_one_le`). In the signed end
   coordinates `(s, t)` themselves no periodicity is needed: for `R ≥ 0` it is `v(s - 2R, t)` where
-  `s ≥ R + 1` (`TauCeti.Floer.preglueEnd_of_add_one_le`).
+  `s ≥ R + 1` (`TauCeti.Floer.preglueEnd_of_add_one_le`), and near every point other than the
+  center of the end where `s > R + 1` (`TauCeti.Floer.preglueEnd_eventuallyEq_of_add_one_lt`).
 * **It is smooth.** For `R ≥ 1` the pre-glued pair of pants of `Cⁿ` data is `Cⁿ` on `S`
   (`TauCeti.Floer.contDiffOn_preglueEnd`): near each point it is the translated pre-glued
   cylinder composed with a local inverse of the end chart.
@@ -67,6 +69,12 @@ other end of the cylinder `v`.
   (`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_eqOn`). The
   error is measured in the cylindrical coordinates of the end, in which the gluing estimates are
   made.
+* **The pre-gluing error of a Floer pair of pants.** If `u` solves the Floer equation
+  `(du - X_K)^{0,1} = 0` on all of `S`, for a perturbation `K` equal to `H_q(t) dt` beyond a height
+  `T₀ > 0` on each end and an almost complex structure which is `J_q(t, ·)` there, then `U` solves
+  the cylindrical Floer equation beyond `T₀`, and the bound holds on `(T₀, ∞) × [0, 1]` with the
+  equation of `u` on `S` as hypothesis
+  (`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_floer`).
 
 The hypotheses on `U` are what the asymptotic analysis of the ends supplies for a finite-energy
 Floer pair of pants whose almost complex structure is cylindrical on the end `q` and whose end
@@ -159,6 +167,19 @@ theorem preglueEnd_eventuallyEq_of_lt (hz : Complex.equivRealProdCLM.symm z ≠ 
     (h : (positiveEndCoord q z).1 < R - 1) : preglueEnd q x u v R =ᶠ[𝓝 z] u :=
   ((continuousAt_fst_positiveEndCoord q hz).eventually_lt continuousAt_const h).mono
     fun _ hw ↦ preglueEnd_of_le hw.le
+
+/-- Near a point other than the center of the end `q` whose signed longitudinal coordinate on `q`
+is greater than `R + 1`, the pre-glued pair of pants agrees with the translated cylinder
+`v(s - 2R, t)`, for `R ≥ 0`. -/
+theorem preglueEnd_eventuallyEq_of_add_one_lt (hR : 0 ≤ R)
+    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter)
+    (h : R + 1 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re) :
+    preglueEnd q x u v R =ᶠ[𝓝 z] fun w ↦
+      v (q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm w)).re - 2 * R,
+        q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm w)).im) := by
+  have hc := continuousAt_fst_positiveEndCoord q hz
+  simp only [fst_positiveEndCoord] at hc
+  exact (continuousAt_const.eventually_lt hc h).mono fun _ hw ↦ preglueEnd_of_add_one_le hR hw.le
 
 /-- **The pre-glued pair of pants on the end.** At the image under the positive end chart of a
 point `(s, t)` with `s > 0`, the pre-glued pair of pants is the pre-glued map at `(s - R, t)`,
@@ -335,6 +356,73 @@ theorem exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_Iio (ω : Sym
   refine ⟨C', hC'.mono fun R hR z hz ↦ hR z ⟨hz.1.1, hz.2⟩ ?_⟩
   rw [mem_Iio]
   linarith [hz.1.2]
+
+/-- **The pre-gluing error of a Floer pair of pants.** Let `K` be a perturbation equal to
+`H_q(t) dt` beyond `T₀ > 0` on each end `q`, for one-periodic `C²` Hamiltonians `H_q`, and let `u`
+be differentiable on `S` and solve the Floer equation `(du - X_K)^{0,1} = 0` there for an almost
+complex structure `J(z, y)` depending on the point `z` of `S` and the target point `y`, which is
+`J_q(t, y)` on the part `s ≥ T₀` of the positive end chart of `q`, with `J_q` continuous. Let `x` be
+a one-periodic orbit of the end Hamiltonian `H'_q` of the positive end
+(`TauCeti.Floer.positiveEndHamiltonian`), and `v` a Floer cylinder for `J_q`, `H'_q`, of period
+one in `t`. If `u ∘ φ'_q` converges to `x` in `C¹` at the exponential rate `κ > 0` as `s → ∞`,
+and `v` as `s → -∞`, then for every large `R` the Floer operator of the pre-glued pair of pants,
+read in the positive end chart, is at most `C' e^{-κR}` on `(T₀, ∞) × [0, 1]`. -/
+theorem exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_floer
+    (ω : SymplecticForm V) {q : Puncture} {x : ℝ → V} {u v : ℝ × ℝ → V}
+    {K : ℂ → V → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → V → ℝ}
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Jq : ℝ → V → AlmostComplexStructure V}
+    {C κ T₀ : ℝ}
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) (hT₀ : 0 < T₀)
+    (hJq : ∀ ζ : ℝ × ℝ, T₀ ≤ ζ.1 → J (positiveEndChart q ζ) = Jq ζ.2)
+    (hJc : Continuous (uncurry fun t y ↦ (Jq t y).toLinearMap.toContinuousLinearMap))
+    (hu : DifferentiableOn ℝ u thricePuncturedSphereReal)
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x t)) t)
+    (hxper : Periodic x 1) (hκ : 0 < κ)
+    (hu' : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖u (positiveEndChart q (s, t)) - x t‖ ≤ C * Real.exp (-(κ * s)))
+    (hdu : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖fderiv ℝ (u ∘ positiveEndChart q) (s, t) - (snd ℝ ℝ ℝ).smulRight
+        (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x t))‖ ≤
+          C * Real.exp (-(κ * s)))
+    (hvd : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ v (s, t))
+    (hv : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1, ‖v (s, t) - x t‖ ≤ C * Real.exp (κ * s))
+    (hdv : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖fderiv ℝ v (s, t) - (snd ℝ ℝ ℝ).smulRight
+        (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x t))‖ ≤
+          C * Real.exp (κ * s))
+    (hvper : ∀ s, Periodic (fun t ↦ v (s, t)) 1)
+    (hvF : ∀ z ∈ univ ×ˢ Icc (0 : ℝ) 1,
+      ω.floerOperator (fun p y ↦ (Jq p.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun p ↦ positiveEndHamiltonian H q p.2) v z = 0) :
+    ∃ C', ∀ᶠ R in atTop, ∀ z ∈ Ioi T₀ ×ˢ Icc (0 : ℝ) 1,
+      ‖ω.floerOperator (fun p y ↦ (Jq p.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun p ↦ positiveEndHamiltonian H q p.2)
+        (preglueEnd q x u v R ∘ positiveEndChart q) z‖ ≤ C' * Real.exp (-(κ * R)) := by
+  have hHd : ∀ q t, Differentiable ℝ (H q t) := fun q t ↦
+    ((hHs q).differentiable two_ne_zero).comp (differentiable_const t |>.prodMk differentiable_id)
+  -- On the part `s > 0` of the positive end chart, `u ∘ φ'_q` is differentiable.
+  have hud (ζ : ℝ × ℝ) (hζ : 0 < ζ.1) : DifferentiableAt ℝ (u ∘ positiveEndChart q) ζ := by
+    have hS := positiveEndChart_mem_thricePuncturedSphereReal (q := q) hζ
+    exact ((hu _ hS).differentiableAt (isOpen_thricePuncturedSphereReal.mem_nhds hS)).comp ζ
+      ((contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ)
+  refine ω.exists_eventually_norm_floerOperator_preglueEnd_comp_le q
+    (J := fun t y ↦ (Jq t y).toLinearMap.toContinuousLinearMap)
+    (contDiff_uncurry_positiveEndHamiltonian (hHs q)) hJc hx hxper hκ
+    ((eventually_gt_atTop 0).mono fun s hs t _ ↦ hud (s, t) hs) hu' hdu
+    (fun ζ hζ ↦ ?_) hvd hv hdv hvper hvF
+  -- The Floer equation on `S` reads, in the positive end chart, as the cylinder equation.
+  have hζT : T₀ ≤ ζ.1 := le_of_lt hζ.1
+  have hS := positiveEndChart_mem_thricePuncturedSphereReal (q := q) (hT₀.trans_le hζT)
+  have h := ω.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart hKH hH hHd hζT
+    ((hu _ hS).differentiableAt (isOpen_thricePuncturedSphereReal.mem_nhds hS)) (hfloer _ hS)
+  rw [hJq ζ hζT] at h
+  exact (ω.floerOperator_eq_zero_iff (fun p y ↦ Jq p.2 y) _ _ _ ζ).2 h
 
 end SymplecticForm
 

@@ -28,6 +28,12 @@ constant on every open preconnected set where both solve the equation. Only the 
 Pointwise, the difference of solutions of two inhomogeneous equations `f'' = a f + c` and
 `g'' = a g + d` with a common coefficient `a` solves `w'' = a w + (c - d)`.
 
+With a first-order term, Abel's identity holds pointwise over any nontrivially normed field: if
+`f` and `g` satisfy `y'' + p y' + q y = 0` at a point `t`, the Wronskian `f g' - f' g` has
+derivative `-p (f g' - f' g)` at `t`. For `P y'' + Q y' + R y = 0` at a point `t`, where the
+scalars `P`, `Q`, `R` are the coefficients evaluated at `t` and `P ≠ 0`, this gives
+`-(Q / P) (f g' - f' g)`.
+
 ## Main results
 
 * `TauCeti.wronskian_eq_of_hasDerivAt`: the Wronskian of two solutions of `f'' = q f` on a
@@ -41,6 +47,11 @@ Pointwise, the difference of solutions of two inhomogeneous equations `f'' = a f
   an open preconnected set.
 * `ContDiffAt.iteratedDeriv_two_sub_eq_smul_add`: the difference of solutions of
   `f'' = a f + c` and `g'' = a g + d` at a point solves `w'' = a w + (c - d)` there.
+* `HasDerivAt.wronskian_of_secondOrderLinearEquation`: Abel's identity at a point, for
+  `y'' + p y' + q y = 0`.
+* `DifferentiableAt.hasDerivAt_wronskian_of_secondOrderLinearEquation`: Abel's identity at a
+  point `t` for `P y'' + Q y' + R y = 0` with scalar coefficients `P ≠ 0`, `Q`, `R` (the
+  coefficients evaluated at `t`), written with `deriv`.
 
 ## References
 
@@ -66,6 +77,43 @@ theorem _root_.ContDiffAt.iteratedDeriv_two_sub_eq_smul_add [NontriviallyNormedF
     iteratedDeriv 2 (f - g) z = a • (f - g) z + (c - d) := by
   rw [iteratedDeriv_sub hf hg, hf', hg', Pi.sub_apply, smul_sub]
   abel
+
+section FirstOrderTerm
+
+variable [NontriviallyNormedField 𝕜]
+
+/-- **Abel's identity** at a point: if `f` and `g` have derivatives `f'`, `g'` at `t`, these have
+derivatives `f''`, `g''` at `t`, and both satisfy `y'' + p y' + q y = 0` at `t`, then the
+Wronskian `f g' - f' g` has derivative `-p (f g' - f' g)` at `t`. -/
+theorem _root_.HasDerivAt.wronskian_of_secondOrderLinearEquation {f f' g g' : 𝕜 → 𝕜}
+    {f'' g'' p q t : 𝕜}
+    (hf : HasDerivAt f (f' t) t) (hf' : HasDerivAt f' f'' t)
+    (hg : HasDerivAt g (g' t) t) (hg' : HasDerivAt g' g'' t)
+    (hfe : f'' + p * f' t + q * f t = 0) (hge : g'' + p * g' t + q * g t = 0) :
+    HasDerivAt (fun s ↦ f s * g' s - f' s * g s) (-p * (f t * g' t - f' t * g t)) t :=
+  ((hf.mul hg').sub (hf'.mul hg)).congr_deriv (by linear_combination f t * hge - g t * hfe)
+
+/-- **Abel's identity** at a point `t` for the equation `P y'' + Q y' + R y = 0`, where the
+scalars `P`, `Q`, `R` are the coefficients evaluated at `t` and the leading one is `P ≠ 0`: if
+`f`, `g`, `f'` and `g'` are differentiable at `t` and `f`, `g` satisfy the equation at `t`, then
+the Wronskian `f g' - f' g` has derivative `-(Q / P) (f g' - f' g)` at `t`. -/
+theorem _root_.DifferentiableAt.hasDerivAt_wronskian_of_secondOrderLinearEquation {f g : 𝕜 → 𝕜}
+    {P Q R t : 𝕜} (hP : P ≠ 0)
+    (hf : DifferentiableAt 𝕜 f t) (hdf : DifferentiableAt 𝕜 (deriv f) t)
+    (hg : DifferentiableAt 𝕜 g t) (hdg : DifferentiableAt 𝕜 (deriv g) t)
+    (hfe : P * deriv (deriv f) t + Q * deriv f t + R * f t = 0)
+    (hge : P * deriv (deriv g) t + Q * deriv g t + R * g t = 0) :
+    HasDerivAt (fun s ↦ f s * deriv g s - deriv f s * g s)
+      (-(Q / P) * (f t * deriv g t - deriv f t * g t)) t := by
+  -- Divided by `P`, the equation is `y'' + p y' + q y = 0`.
+  refine hf.hasDerivAt.wronskian_of_secondOrderLinearEquation (q := R / P) hdf.hasDerivAt
+    hg.hasDerivAt hdg.hasDerivAt ?_ ?_
+  · field_simp
+    linear_combination hfe
+  · field_simp
+    linear_combination hge
+
+end FirstOrderTerm
 
 section RCLike
 

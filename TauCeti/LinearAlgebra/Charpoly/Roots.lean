@@ -9,7 +9,9 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Zero
 
 import Mathlib.LinearAlgebra.Charpoly.BaseChange
+import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import Mathlib.LinearAlgebra.Eigenspace.Charpoly
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # The roots of a characteristic polynomial in an extension field
@@ -36,6 +38,9 @@ the weights of a Frobenius module are defined.
   multiplicity of an eigenvalue does not change under an extension of fields.
 * `Module.End.hasEigenvalue_baseChange_iff`: the eigenvalues of `f ⊗ L` are the characteristic
   roots of `f` in `L`.
+* `Module.Basis.charpoly_of_apply`, `Module.Basis.roots_charpoly_of_apply`: an endomorphism
+  scaling the vectors of a finite basis by `a i` has characteristic polynomial `∏ i, (X - a i)`,
+  whose roots are the entries of `a`.
 
 ## References
 
@@ -95,3 +100,26 @@ theorem hasEigenvalue_baseChange_iff {μ : L} :
     LinearMap.mem_aroots_charpoly_iff, IsRoot.def, eval_map_algebraMap]
 
 end Module.End
+
+namespace Module.Basis
+
+variable {κ : Type*} [Fintype κ] (b : Basis κ R M) {a : κ → R}
+
+/-- **The characteristic polynomial of an endomorphism diagonal in a finite basis.** If `f` scales
+each vector `b i` of a basis by `a i`, then its characteristic polynomial is `∏ i, (X - a i)`. -/
+theorem charpoly_of_apply (hf : ∀ i, f (b i) = a i • b i) :
+    f.charpoly = ∏ i, (X - C (a i)) := by
+  classical
+  rw [← LinearMap.charpoly_toMatrix f b, (b.toMatrix_eq_diagonal_iff b f a).2 hf,
+    Matrix.charpoly_diagonal]
+
+/-- **The characteristic roots of an endomorphism diagonal in a finite basis.** If `f` scales each
+vector `b i` of a basis by `a i`, over a domain, then the roots of its characteristic polynomial,
+with multiplicity, are the entries of `a`. -/
+theorem roots_charpoly_of_apply [IsDomain R] (hf : ∀ i, f (b i) = a i • b i) :
+    f.charpoly.roots = Multiset.map a Finset.univ.val := by
+  rw [b.charpoly_of_apply f hf,
+    roots_prod _ _ (Finset.prod_ne_zero_iff.2 fun i _ ↦ X_sub_C_ne_zero (a i))]
+  simp
+
+end Module.Basis

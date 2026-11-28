@@ -26,9 +26,13 @@ all of which a construction transporting a group of matrices along a change of s
   is its image under evaluation.
 * `Matrix.GeneralLinearGroup.map_injective`: entrywise application of an injective ring hom is
   injective on general linear groups.
+* `Matrix.GeneralLinearGroup.mem_range_map_iff_of_injective`: along an injective ring hom `f`, an
+  invertible matrix comes from the source exactly when its entries and those of its inverse lie in
+  the range of `f`.
 * `Matrix.GeneralLinearGroup.map_neg`: change of scalars commutes with negation.
 * `Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff`: the kernel of reduction modulo an ideal
   `I` consists of the matrices congruent to the identity matrix entrywise modulo `I`.
+* `Matrix.GeneralLinearGroup.ker_map_quotientMk_mono`: that kernel decreases with the ideal.
 * `Matrix.GeneralLinearGroup.map_det_ker_map_quotientMk`: the determinants of that kernel are the
   units congruent to `1` modulo `I`.
 * `Matrix.GeneralLinearGroup.map_upperRightHom`: change of scalars sends the unipotent matrix
@@ -61,6 +65,31 @@ theorem map_injective {f : R →+* S} (hf : Function.Injective f) :
     Function.Injective (Matrix.GeneralLinearGroup.map (n := n) f) :=
   Units.map_injective (Matrix.map_injective hf)
 
+/-- **Which invertible matrices come from `R`** along an injective ring hom `f : R →+* S`: those
+whose entries, and whose inverse's entries, all lie in the range of `f`. Invertibility over `R` is
+a condition on the inverse rather than a consequence of the determinant being a unit of `S`, so
+the second clause cannot be dropped. -/
+theorem mem_range_map_iff_of_injective {f : R →+* S} (hf : Function.Injective f) {g : GL n S} :
+    g ∈ (Matrix.GeneralLinearGroup.map (n := n) f).range ↔
+      (∀ i j, (g : Matrix n n S) i j ∈ f.range) ∧
+        ∀ i j, (↑g⁻¹ : Matrix n n S) i j ∈ f.range := by
+  refine ⟨?_, fun ⟨hg, hg'⟩ ↦ ?_⟩
+  · rintro ⟨h, rfl⟩
+    refine ⟨fun i j ↦ ⟨(h : Matrix n n R) i j, ?_⟩, fun i j ↦ ⟨(↑h⁻¹ : Matrix n n R) i j, ?_⟩⟩
+    · rw [Matrix.GeneralLinearGroup.map_apply]
+    · rw [← map_inv, Matrix.GeneralLinearGroup.map_apply]
+  · choose M hM using hg
+    choose N hN using hg'
+    have hM' : (Matrix.of M).map f = g := Matrix.ext hM
+    have hN' : (Matrix.of N).map f = ↑g⁻¹ := Matrix.ext hN
+    -- The inverse equations over `R` hold after the injective map `f`.
+    refine ⟨⟨Matrix.of M, Matrix.of N, Matrix.map_injective hf ?_, Matrix.map_injective hf ?_⟩,
+      Units.ext hM'⟩
+    · simp only [Matrix.map_mul, hM', hN', Matrix.map_one _ (map_zero f) (map_one f),
+        Units.mul_inv]
+    · simp only [Matrix.map_mul, hM', hN', Matrix.map_one _ (map_zero f) (map_one f),
+        Units.inv_mul]
+
 /-- Change of scalars commutes with negation. Together with Mathlib's `map_one`, `map_mul` and
 `map_inv`, this lets subgroup constructions involving `-1`, such as `Subgroup.adjoinNegOne`, be
 transported along `Matrix.GeneralLinearGroup.map f`. -/
@@ -79,6 +108,13 @@ theorem mem_ker_map_quotientMk_iff (I : Ideal R) {g : GL n R} :
   refine forall₂_congr fun i j ↦ ?_
   rw [Matrix.GeneralLinearGroup.map_apply, Matrix.GeneralLinearGroup.coe_one, ← Ideal.Quotient.eq,
     Matrix.one_apply, Matrix.one_apply, apply_ite (Ideal.Quotient.mk I), map_one, map_zero]
+
+/-- **Principal congruence levels decrease with the ideal**: `I ≤ J` gives
+`ker(GL n R → GL n (R ⧸ I)) ≤ ker(GL n R → GL n (R ⧸ J))`. -/
+theorem ker_map_quotientMk_mono {I J : Ideal R} (h : I ≤ J) :
+    (Matrix.GeneralLinearGroup.map (n := n) (Ideal.Quotient.mk I)).ker ≤
+      (Matrix.GeneralLinearGroup.map (Ideal.Quotient.mk J)).ker := fun _ hg ↦
+  (mem_ker_map_quotientMk_iff J).2 fun i j ↦ h ((mem_ker_map_quotientMk_iff I).1 hg i j)
 
 /-- **The determinants of the principal level are the units congruent to `1`**: for a nonempty
 finite index type `n`, the image under `det` of `ker(GL_n(R) → GL_n(R ⧸ I))` is
