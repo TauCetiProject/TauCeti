@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.LivesOver
 public import TauCeti.Geometry.Manifold.Orientation.Cover.FundamentalClass
-import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass.Manifold
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass.Integral
 
 /-!
 # The twisted fundamental class lives over the fundamental class at every point

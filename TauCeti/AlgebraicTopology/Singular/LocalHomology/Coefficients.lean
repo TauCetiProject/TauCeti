@@ -8,6 +8,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Adjunction
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.MapCoefficients
+public import TauCeti.AlgebraicTopology.Singular.Coefficients.Relative
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.System
 /-!
 # Coefficient change for local homology
@@ -16,8 +17,9 @@ Coefficient-change functoriality and exact-functor comparison isomorphisms for `
 (requiring `[Abelian]` coefficients, unlike `SimplicialSet.Homology.Coefficients`,
 `Relative.Coefficients`, and `MapCoefficients`). Feeds scalar extension and coefficient transport in
 `Orientation.Module.{Basic,FundamentalClass}` (notably `ULift (ZMod 2) →+* R` when `(2 : R) = 0`),
-adapting `Functor.singularHomologyFunctorObjCompIso`, `SSet.homologyExtendScalarsIso`, `IsSplitMono`
-(`Relative.Basic`), and `map_localHomologyTransport_comp_of_restriction` (`LocalHomology.System`):
+adapting `Functor.singularHomologyFunctorObjCompIso`, `TopPair.singularHomologyObjIso`,
+`SSet.homologyExtendScalarsIso`, `IsSplitMono` (`Relative.Basic`), and
+`map_localHomologyTransport_comp_of_restriction` (`LocalHomology.System`):
 * `localHomologyMapOfCoefficients` / `localHomologyIsoOfCoefficientsIso`: maps/isos for `φ : R ⟶ R'`
   and `e : R ≅ R'`, natural in restriction, maps, transport, and `singularHomologyToLocalHomology`.
 * `localHomologyObjIso`: `F (Hₖ(M, M ∖ S; R)) ≅ Hₖ(M, M ∖ S; F R)` for exact coproduct-preserving F.
@@ -26,7 +28,6 @@ adapting `Functor.singularHomologyFunctorObjCompIso`, `SSet.homologyExtendScalar
 -/
 public noncomputable section
 open CategoryTheory Limits
-open CategoryTheory.ConcreteCategory (congr_hom)
 open TopCat (toSSet)
 open TopPair (ofSubset toSSetPair)
 open scoped ChangeOfRings Simplicial
@@ -57,7 +58,8 @@ lemma localHomologyMapOfCoefficients_def (S : Set M) (k : ℕ) :
       localHomologyMapOfCoefficients φ T k ≫ localHomologyRestriction R' h k := by
   rw [localHomologyRestriction_def, localHomologyRestriction_def]
   exact (SSetPair.homologyNatTransOfCoefficients φ k).naturality _
-@[reassoc] lemma homologyNatTransOfCoefficients_app_comp_singularHomologyπ (S : Set M) (k : ℕ) :
+@[reassoc, elementwise nosimp]
+lemma homologyNatTransOfCoefficients_app_comp_singularHomologyπ (S : Set M) (k : ℕ) :
     (SSet.homologyNatTransOfCoefficients φ k).app (toSSet.obj (TopCat.of M)) ≫
         (ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ R' k =
       (ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ R k ≫
@@ -89,11 +91,10 @@ lemma singularHomologyToLocalHomology_homologyNatTransOfCoefficients_app {M : Ty
         ((SSet.homologyNatTransOfCoefficients φ k).app (toSSet.obj (TopCat.of M)) μ) =
       localHomologyMapOfCoefficients φ {x} k (singularHomologyToLocalHomology N x k μ) := by
   refine (singularHomologyToLocalHomology_eq_singularHomologyπ N' x _).trans ?_
-  refine (((comp_apply _ _ μ).symm.trans (congr_hom
-    (homologyNatTransOfCoefficients_app_comp_singularHomologyπ φ {x} k) μ)).trans
-      (comp_apply _ _ μ)).trans ?_
-  exact congrArg (localHomologyMapOfCoefficients φ {x} k)
-    (singularHomologyToLocalHomology_eq_singularHomologyπ N x μ).symm
+  rw [singularHomologyToLocalHomology_eq_singularHomologyπ N x μ]
+  have h := homologyNatTransOfCoefficients_app_comp_singularHomologyπ_apply φ {x} k μ
+  erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at h
+  exact h
 section Iso
 variable {R R' R'' : A} (e : R ≅ R')
 section SingleSpace
@@ -118,13 +119,15 @@ def localHomologyIsoOfCoefficientsIso (S : Set M) (k : ℕ) :
     (k : ℕ) : localHomologyIsoOfCoefficientsIso (e₁ ≪≫ e₂) S k =
       localHomologyIsoOfCoefficientsIso e₁ S k ≪≫ localHomologyIsoOfCoefficientsIso e₂ S k :=
   Iso.ext <| by simp
-@[reassoc] lemma localHomologyRestriction_comp_localHomologyIsoOfCoefficientsIso_hom {S T : Set M}
+@[reassoc, elementwise]
+lemma localHomologyRestriction_comp_localHomologyIsoOfCoefficientsIso_hom {S T : Set M}
     (h : S ⊆ T) (k : ℕ) : localHomologyRestriction R h k ≫
       (localHomologyIsoOfCoefficientsIso e S k).hom =
       (localHomologyIsoOfCoefficientsIso e T k).hom ≫ localHomologyRestriction R' h k := by
   simpa using localHomologyRestriction_comp_localHomologyMapOfCoefficients e.hom h k
 end SingleSpace
-@[reassoc] lemma localHomologyMap_comp_localHomologyIsoOfCoefficientsIso_hom {M N : Type w}
+@[reassoc, elementwise]
+lemma localHomologyMap_comp_localHomologyIsoOfCoefficientsIso_hom {M N : Type w}
     [TopologicalSpace M] [TopologicalSpace N] (j : C(M, N)) {S : Set M} {T : Set N}
     (h : j ⁻¹' T ⊆ S) (k : ℕ) :
     localHomologyMap R j h k ≫ (localHomologyIsoOfCoefficientsIso e T k).hom =
@@ -211,6 +214,7 @@ def localHomologyExtendScalarsIso (A : Set M) (k : ℕ) :
     (extendScalars.{w} f).obj (localHomology (of R R) A k) ≅ localHomology (of S S) A k :=
   localHomologyObjIso (extendScalars.{w} f) (of R R) A k ≪≫
     localHomologyIsoOfCoefficientsIso (εIso (extendScalars.{w} f)).symm A k
+@[elementwise nosimp]
 lemma localHomologyExtendScalarsIso_hom (A : Set M) (k : ℕ) :
     (localHomologyExtendScalarsIso f A k).hom =
       (localHomologyObjIso (extendScalars.{w} f) (of R R) A k).hom ≫

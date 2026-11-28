@@ -262,7 +262,7 @@ private lemma localHomologyRestriction_comp_conj (hj : IsOpenEmbedding j) (k : �
 `j : M → N` of Hausdorff spaces modelled on the same finite-dimensional real normed space, the
 isomorphisms `Hₖ(M, M ∖ {x}) ≅ Hₖ(N, N ∖ {j x})` induced by `j` carry the transport of local
 homology of `M` along a path class to the transport of local homology of `N` along its image. -/
-@[reassoc]
+@[reassoc, elementwise]
 theorem localHomologyTransport_comp_localHomologyIsoOfIsOpenEmbedding_hom [T2Space M]
     [ChartedSpace E M] (hj : IsOpenEmbedding j) (k : ℕ) {x y : FundamentalGroupoid M}
     (f : x ⟶ y) :

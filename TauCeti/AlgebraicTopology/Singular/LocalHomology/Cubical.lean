@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.BoundaryFundament
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.CollaredTop
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.Dense
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Module.Basic
 
 /-!
 # Generators of local cubical homology

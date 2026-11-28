@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Coefficients
-public import TauCeti.AlgebraicTopology.Singular.Relative
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coefficients
 
 /-!
 # Changing the category of coefficients of singular homology
@@ -32,8 +31,9 @@ with coefficients in `M` regarded as an `R`-module. Along `ℤ →+* ℤ/2` this
 reduced modulo two with mod-two chains; see
 `TauCeti.AlgebraicTopology.Singular.Coefficients.ModTwo`.
 Extension of scalars is another example of the chain-level statement, since it preserves colimits.
-When exact (e.g. flat ring maps), it also commutes with relative and absolute singular homology,
-feeding scalar extension of local homology, module orientations, and fundamental classes.
+When exact (e.g. flat ring maps), it also commutes with singular homology, feeding scalar extension
+of local homology, module orientations, and fundamental classes (see
+`TauCeti.AlgebraicTopology.Singular.Coefficients.Relative` for relative singular homology).
 
 ## Main declarations
 
@@ -43,7 +43,6 @@ feeding scalar extension of local homology, module orientations, and fundamental
   naturally in `X`.
 * `CategoryTheory.Functor.isZero_singularHomologyFunctor_iff`: when `F` is also faithful,
   `Hₙ(X; F R) = 0` if and only if `Hₙ(X; R) = 0`.
-* `TopPair.singularHomologyObjIso`: `F (Hₙ(P; R)) ≅ Hₙ(P; F R)` for a topological pair `P`.
 * `RingHom.singularHomologyExtendScalarsIso`: `S ⊗[R] Hₖ(M; R) ≅ Hₖ(M; S)` for exact `f : R →+* S`.
 -/
 
@@ -115,30 +114,6 @@ lemma isZero_singularHomologyFunctor_iff [F.Faithful] (n : ℕ) (X : TopCat.{w})
 
 end CategoryTheory.Functor
 
-namespace TopPair
-variable {C : Type u} {D : Type u'} [Category.{v} C] [Category.{v'} D] [Preadditive C]
-  [Preadditive D] [HasCoproducts.{w} C] [HasCoproducts.{w} D] [CategoryWithHomology C]
-  [CategoryWithHomology D] (F : C ⥤ D) [F.Additive]
-  [∀ T : Type w, PreservesColimitsOfShape (Discrete T) F] [F.PreservesHomology] (R : C)
-/-- **Relative singular homology commutes with exact coproduct-preserving `F`**: `F Hₙ ≅ Hₙ F`. -/
-def singularHomologyObjIso (P : TopPair.{w}) (n : ℕ) :
-    F.obj (P.singularHomology R n) ≅ P.singularHomology (F.obj R) n :=
-  (SSetPair.homologyFunctorObjCompIso F R n).app (toSSetPair.obj P)
-lemma singularHomologyObjIso_hom (P : TopPair.{w}) (n : ℕ) : (singularHomologyObjIso F R P n).hom =
-    (SSetPair.homologyFunctorObjCompIso F R n).hom.app (toSSetPair.obj P) := (rfl)
-lemma singularHomologyObjIso_inv (P : TopPair.{w}) (n : ℕ) : (singularHomologyObjIso F R P n).inv =
-    (SSetPair.homologyFunctorObjCompIso F R n).inv.app (toSSetPair.obj P) := (rfl)
-@[reassoc] lemma map_singularHomologyMap_comp_singularHomologyObjIso_hom {P P' : TopPair.{w}}
-    (f : P ⟶ P') (n : ℕ) :
-    F.map (TopPair.singularHomologyMap f R n) ≫ (singularHomologyObjIso F R P' n).hom =
-      (singularHomologyObjIso F R P n).hom ≫ TopPair.singularHomologyMap f (F.obj R) n :=
-  (SSetPair.homologyFunctorObjCompIso F R n).hom.naturality (toSSetPair.map f)
-@[reassoc] lemma map_singularHomologyπ_comp_singularHomologyObjIso_hom (P : TopPair.{w}) (n : ℕ) :
-    F.map (P.singularHomologyπ R n) ≫ (singularHomologyObjIso F R P n).hom =
-      (SSet.homologyObjIso F R (TopCat.toSSet.obj P.fst) n).hom ≫ P.singularHomologyπ (F.obj R) n :=
-  SSetPair.map_homologyπ_comp_homologyFunctorObjCompIso_hom_app F R n (toSSetPair.obj P)
-end TopPair
-
 namespace RingHom
 open ModuleCat (extendScalars of)
 open CategoryTheory.Functor.Monoidal (εIso)
@@ -153,6 +128,7 @@ def singularHomologyExtendScalarsIso :
     (extendScalars.{w} f).obj ((toSSet.obj (TopCat.of M)).homology (of R R) k) ≅
       (toSSet.obj (TopCat.of M)).homology (of S S) k :=
   (f.simplicialHomologyFunctorExtendScalarsIso k).app (toSSet.obj (TopCat.of M))
+@[elementwise nosimp]
 lemma singularHomologyExtendScalarsIso_hom : (f.singularHomologyExtendScalarsIso M k).hom =
     (homologyObjIso (extendScalars.{w} f) (of R R) (toSSet.obj (TopCat.of M)) k).hom ≫
       (homologyIsoOfCoefficientsIso (εIso _).symm (toSSet.obj (TopCat.of M)) k).hom :=

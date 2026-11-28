@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass.Manifold
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass.Integral
 public import TauCeti.Geometry.Manifold.Degree.StiefelRotation
 import TauCeti.Geometry.Manifold.Degree.Homological
 import TauCeti.Geometry.Manifold.Instances.Stiefel.Projection

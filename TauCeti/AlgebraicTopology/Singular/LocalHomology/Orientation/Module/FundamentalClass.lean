@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors
 -/
 module
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass.Basic
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass.Manifold
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Module.Basic
 import TauCeti.Geometry.Manifold.ModelTransport.Finrank
 /-!
@@ -14,19 +14,20 @@ For Hausdorff `M` modelled on an `n`-dimensional real normed space `E`, ring `R`
 and `R`-module `N`, `o : ModuleOrientation N M E n` glues uniquely along compact `A ⊆ M` to
 `o.fundamentalClassOn hn hA` in `Hₙ(M, M ∖ A; N)` (Hatcher, Lemma 3.27), and for compact `M` to
 `o.fundamentalClass hn` in `Hₙ(M; N)`, giving `equivSubtypeIsFundamentalClass` (Thm 3.26). For
-compact connected `M` over a Dedekind-finite ring `R`, `r ↦ r • μ` gives `R ≃ₗ[R] Hₙ(M; R)`
-(`fundamentalClassEquiv`, `IsFundamentalClass.linearEquiv`). Supplies `IsFundamentalClass` witnesses
-and top-degree homology isomorphisms for closed-manifold Poincaré duality over arbitrary rings. For
-compact `M : Type w` modelled on `E : Type v` (universe-decoupled from `M, R : Type w`),
-orientation-free results via `ChartedSpace.ofFinrankEq` establish:
+compact connected `M` over a Dedekind-finite ring `R`, `IsFundamentalClass.linearEquiv` (from
+`LocalHomology.IsFundamentalClass.Manifold`) gives `R ≃ₗ[R] Hₙ(M; R)` via `r ↦ r • μ`. Supplies
+`IsFundamentalClass` witnesses and top-degree homology isomorphisms for closed-manifold Poincaré
+duality over arbitrary rings. For compact `M : Type w` modelled on `E : Type v`
+(universe-decoupled from `M, R : Type w`), orientation-free results via `ChartedSpace.ofFinrankEq`
+establish:
 * `existsUnique_isFundamentalClass_of_subsingleton_units` and
   `IsFundamentalClass.eq_of_subsingleton_units`: existence and uniqueness when `[Subsingleton Kˣ]`
   (e.g. `ZMod 2`).
 * `exists_isFundamentalClass_of_simplyConnectedSpace`: existence over any ring `R`.
 * `exists_isFundamentalClass_of_two_eq_zero`: existence over `[CommRing R]`, `(2 : R) = 0`.
-* `IsFundamentalClass.linearEquiv`: `R ≃ₗ[R] Hₙ(M; R)` (`[ConnectedSpace M]`, Dedekind-finite `R`).
 * `nonempty_linearEquiv_singularHomology_of_two_eq_zero`: `Nonempty (R ≃ₗ[R] Hₙ(M; R))` for
-  `[CommRing R]`, `(2 : R) = 0`, `[ConnectedSpace M]`.
+  `[CommRing R]`, `(2 : R) = 0`, `[ConnectedSpace M]` (consuming
+  `IsFundamentalClass.linearEquiv` from `LocalHomology.IsFundamentalClass.Manifold`).
 Derives the gluing from `LocalHomology.Section`
 (`existsUnique_localHomologyRestriction_eq_of_invariant` and
 `existsUnique_singularHomology_localHomologyRestriction_eq_of_invariant`; Hatcher, §3.3);
@@ -34,7 +35,6 @@ Derives the gluing from `LocalHomology.Section`
 `ModuleOrientation.equivHomologicalOrientation`. -/
 public noncomputable section
 open CategoryTheory Limits Module Set Topology
-open CategoryTheory.ConcreteCategory (congr_hom)
 open ModuleCat (of)
 open ModuleCat.ExtendScalars (apply_tmul_of_comm)
 open TopCat (toSSet ofHom)
@@ -53,25 +53,16 @@ theorem IsFundamentalClass.extendScalarsObj {N : ModuleCat.{w} R}
       (toSSet.obj (TopCat.of M)) n).hom ((1 : S) ⊗ₜ[R, f] μ)) :=
   (isFundamentalClass_iff _).2 fun x ↦ by
     rw [singularHomologyToLocalHomology_homologyObjIso_hom_tmul]
-    exact (ModuleCat.span_singleton_apply_eq_top_iff _).2
-      (ModuleCat.ExtendScalars.span_singleton_one_tmul_eq_top f ((isFundamentalClass_iff μ).1 hμ x))
+    exact (isModuleLocalOrientation_iff _ x n _).1 <| IsModuleLocalOrientation.extendScalarsObj f
+      ((isModuleLocalOrientation_iff N x n _).2 ((isFundamentalClass_iff μ).1 hμ x))
 /-- **Exact extension of scalars preserves fundamental classes** for ring coefficients. -/
 theorem IsFundamentalClass.extendScalars
     {μ : ↑((toSSet.obj (TopCat.of M)).homology (of R R) n)} (hμ : IsFundamentalClass μ) :
-    IsFundamentalClass ((f.singularHomologyExtendScalarsIso M n).hom ((1 : S) ⊗ₜ[R, f] μ)) := by
-  have h1 : (f.singularHomologyExtendScalarsIso M n).hom ((1 : S) ⊗ₜ[R, f] μ) =
-      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} S) n).map
-        (CategoryTheory.Functor.Monoidal.εIso (ModuleCat.extendScalars.{w} f)).symm.hom).app
-          (TopCat.of M)).hom
-        ((SSet.homologyObjIso (ModuleCat.extendScalars.{w} f) (of R R)
-          (toSSet.obj (TopCat.of M)) n).hom ((1 : S) ⊗ₜ[R, f] μ)) := by
-    refine ((congr_hom (RingHom.singularHomologyExtendScalarsIso_hom f M n)
-      ((1 : S) ⊗ₜ[R, f] μ)).trans (ModuleCat.comp_apply _ _ _)).trans ?_
-    rw [SSet.homologyIsoOfCoefficientsIso_hom, SSet.homologyNatTransOfCoefficients_app]
-    exact (singularHomologyFunctor_map_app_hom_apply _ (TopCat.of M) _).symm
-  exact h1 ▸ (isFundamentalClass_singularHomologyFunctor_map_app_iff
-    (CategoryTheory.Functor.Monoidal.εIso (ModuleCat.extendScalars.{w} f)).symm _).2
-    (hμ.extendScalarsObj f)
+    IsFundamentalClass ((f.singularHomologyExtendScalarsIso M n).hom ((1 : S) ⊗ₜ[R, f] μ)) :=
+  (isFundamentalClass_iff _).2 fun x ↦ by
+    rw [singularHomologyToLocalHomology_singularHomologyExtendScalarsIso_hom_tmul]
+    exact (isModuleLocalOrientation_iff _ x n _).1 <| IsModuleLocalOrientation.extendScalars f
+      ((isModuleLocalOrientation_iff (of R R) x n _).2 ((isFundamentalClass_iff μ).1 hμ x))
 end
 variable {E : Type w} [T2Space M] [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [ChartedSpace E M] {d : ℕ}
@@ -136,9 +127,11 @@ theorem eq_fundamentalClassOn {γ : ↑(localHomology N A n)} (hγ : ∀ x (hx :
     (equivOfCoefficientsIso e o).fundamentalClassOn hn hA =
       (localHomologyIsoOfCoefficientsIso e A n).hom (o.fundamentalClassOn hn hA) :=
   ((equivOfCoefficientsIso e o).eq_fundamentalClassOn hn hA fun x hx ↦ by
-    have h := congr_hom (localHomologyRestriction_comp_localHomologyIsoOfCoefficientsIso_hom e
-      (singleton_subset_iff.2 hx) n) (o.fundamentalClassOn hn hA); simp only [comp_apply] at h
-    rw [← h, o.localHomologyRestriction_fundamentalClassOn hn hA hx]; simp).symm
+    have h := localHomologyRestriction_comp_localHomologyIsoOfCoefficientsIso_hom_apply e
+      (singleton_subset_iff.2 hx) n (o.fundamentalClassOn hn hA)
+    rw [localHomologyIsoOfCoefficientsIso_hom]
+    rw [← h, o.localHomologyRestriction_fundamentalClassOn hn hA hx]
+    simp [localHomologyIsoOfCoefficientsIso_hom]).symm
 end Compact
 section OpenEmbedding
 variable {X : Type w} [TopologicalSpace X] [T1Space X] {ι : M → X} (hι : IsOpenEmbedding ι)
@@ -149,16 +142,11 @@ theorem eq_localHomologyMap_fundamentalClassOn {S : Set M} (hS : IsCompact S) {T
     (hγ : ∀ x (hx : ι x ∈ T), localHomologyRestriction N (singleton_subset_iff.2 hx) n γ =
       (localHomologyIsoOfIsOpenEmbedding N hι x n).hom (o x).val) :
     γ = localHomologyMap N ⟨ι, hι.continuous⟩ h.subset n (o.fundamentalClassOn hn hS) := by
-  have := isIso_localHomologyMap (A := ModuleCat.{w} R) N ⟨ι, hι.continuous⟩ hι h hT hTι n
-  set a := localHomologyMap (A := ModuleCat.{w} R) N ⟨ι, hι.continuous⟩ h.subset n
-  suffices hδ : inv a γ = o.fundamentalClassOn hn hS by
-    rw [← hδ, ← comp_apply, IsIso.inv_hom_id, ModuleCat.id_apply]
-  refine o.eq_fundamentalClassOn hn hS fun x hx ↦
-    ConcreteCategory.injective_of_mono_of_preservesPullback
-      (localHomologyIsoOfIsOpenEmbedding N hι x n).hom ?_
-  have hxT : ι x ∈ T := h.symm.subset hx
-  rw [← comp_apply, ← localHomologyMap_comp_localHomologyRestriction_singleton _ hι h.subset hxT,
-    comp_apply, ← comp_apply (inv a), IsIso.inv_hom_id, ModuleCat.id_apply, hγ x hxT]
+  subst h
+  refine localHomology_ext_of_isOpenEmbedding N hn hι hT hTι hS fun x hx ↦ ?_
+  rw [hγ x hx,
+    localHomologyMap_comp_localHomologyRestriction_singleton_apply _ hι (subset_refl _) hx,
+    o.localHomologyRestriction_fundamentalClassOn hn hS hx]
 /-- **Open embeddings carry relative fundamental classes to relative fundamental classes.** -/
 theorem localHomologyMap_fundamentalClassOn_comap {U : Type w} [TopologicalSpace U] [T2Space U]
     [ChartedSpace E U] {j : C(U, M)} (hj : IsOpenEmbedding j) {K : Set U} (hK : IsCompact K) :
@@ -300,19 +288,6 @@ theorem singularHomologyπ_mapFundamentalClass (f : C(M, X)) :
 end Map
 end CompactSpace
 end Gluing
-section Connected
-variable {R : Type w} [Ring R] [IsDedekindFiniteMonoid R] {M E : Type w} [TopologicalSpace M]
-  [T2Space M] [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
-  [CompactSpace M] [ConnectedSpace M] {n : ℕ} (o : ModuleOrientation (of R R) M E n)
-  (hn : finrank ℝ E = n)
-/-- **`R`-linear iso `R ≃ₗ[R] Hₙ(M; R)`** sending `r ↦ r • o.fundamentalClass hn` on a compact
-connected `n`-manifold over a Dedekind-finite ring `R` (Hatcher, Theorem 3.26(a)). -/
-def fundamentalClassEquiv : R ≃ₗ[R] ↑((toSSet.obj (TopCat.of M)).homology (of R R) n) :=
-  (o.isFundamentalClass_fundamentalClass hn).linearEquiv hn
-@[simp] theorem fundamentalClassEquiv_apply (r : R) :
-    o.fundamentalClassEquiv hn r = r • o.fundamentalClass hn :=
-  (o.isFundamentalClass_fundamentalClass hn).linearEquiv_apply hn r
-end Connected
 section ExtendScalars
 variable {R S : Type w} [CommRing R] [CommRing S] (f : R →+* S)
   [PreservesFiniteLimits (ModuleCat.extendScalars.{w} f)] {M E : Type w} [TopologicalSpace M]
@@ -331,7 +306,7 @@ variable {R S : Type w} [CommRing R] [CommRing S] (f : R →+* S)
       (localHomologyExtendScalarsIso f A n).hom ((1 : S) ⊗ₜ[R, f] o.fundamentalClassOn hn hA) := by
   rw [extendScalars_def, fundamentalClassOn_equivOfCoefficientsIso,
     fundamentalClassOn_extendScalarsObj]
-  exact ((comp_apply _ _ _).symm.trans (congr_hom (localHomologyExtendScalarsIso_hom f A n).symm _))
+  exact (localHomologyExtendScalarsIso_hom_apply f A n ((1 : S) ⊗ₜ[R, f] _)).symm
 @[simp] theorem fundamentalClass_extendScalarsObj [CompactSpace M] {N : ModuleCat.{w} R}
     (o : ModuleOrientation N M E n) : (o.extendScalarsObj f).fundamentalClass hn =
       (SSet.homologyObjIso (ModuleCat.extendScalars.{w} f) N (toSSet.obj (TopCat.of M)) n).hom
@@ -343,8 +318,7 @@ variable {R S : Type w} [CommRing R] [CommRing S] (f : R →+* S)
     (o : ModuleOrientation (of R R) M E n) : (o.extendScalars f).fundamentalClass hn =
       (f.singularHomologyExtendScalarsIso M n).hom ((1 : S) ⊗ₜ[R, f] o.fundamentalClass hn) := by
   rw [extendScalars_def, fundamentalClass_equivOfCoefficientsIso, fundamentalClass_extendScalarsObj]
-  exact ((comp_apply _ _ _).symm.trans
-    (congr_hom (RingHom.singularHomologyExtendScalarsIso_hom f M n).symm _))
+  exact (RingHom.singularHomologyExtendScalarsIso_hom_apply f M n ((1 : S) ⊗ₜ[R, f] _)).symm
 end ExtendScalars
 end ModuleOrientation
 section OrientationFree
@@ -362,13 +336,12 @@ theorem existsUnique_isFundamentalClass_of_subsingleton_units (K : Type w) [Ring
     ∃! μ : ((toSSet.obj (TopCat.of M)).homology (of K K) n : ModuleCat.{w} K),
       IsFundamentalClass μ := by
   let _ : ChartedSpace (ULift.{w} (Fin n) → ℝ) M := ChartedSpace.uliftFin M hn
-  have hE' : finrank ℝ (ULift.{w} (Fin n) → ℝ) = n := by simp
+  have hE' := finrank_ulift_fin_arrow.{w} ℝ n
   let _ : Unique (ModuleOrientation (of K K) M (ULift.{w} (Fin n) → ℝ) n) :=
     ModuleOrientation.uniqueOfSubsingletonUnits hE'
   let e := ModuleOrientation.equivSubtypeIsFundamentalClass (N := of K K) (M := M)
     (E := ULift.{w} (Fin n) → ℝ) hE'
-  exact ⟨(e default).val, (e default).property, fun μ hμ ↦ congrArg Subtype.val
-    ((e.apply_symm_apply ⟨μ, hμ⟩).symm.trans (congrArg e (Subsingleton.elim _ default)))⟩
+  exact (unique_subtype_iff_existsUnique _).1 ⟨e.surjective.unique⟩
 /-- On a compact `n`-manifold, with coefficients in a Dedekind-finite ring whose only unit is `1`,
 any two fundamental classes are equal. -/
 theorem IsFundamentalClass.eq_of_subsingleton_units {K : Type w} [Ring K]
@@ -381,7 +354,7 @@ theorem exists_isFundamentalClass_of_simplyConnectedSpace [SimplyConnectedSpace 
     [Ring R] (hn : finrank ℝ E = n) :
     ∃ μ : ↑((toSSet.obj (TopCat.of M)).homology (of R R) n), IsFundamentalClass μ := by
   let _ : ChartedSpace (ULift.{w} (Fin n) → ℝ) M := ChartedSpace.uliftFin M hn
-  have hE' : finrank ℝ (ULift.{w} (Fin n) → ℝ) = n := by simp
+  have hE' := finrank_ulift_fin_arrow.{w} ℝ n
   obtain ⟨o⟩ := ModuleOrientation.nonempty_of_simplyConnectedSpace (M := M) (R := R) hE'
   exact ⟨o.fundamentalClass hE', o.isFundamentalClass_fundamentalClass hE'⟩
 /-- **Compact `n`-manifolds admit an `R`-fundamental class** for `[CommRing R]`, `(2 : R) = 0`. -/
@@ -389,7 +362,7 @@ theorem exists_isFundamentalClass_of_two_eq_zero {R : Type w} [CommRing R] (hn :
     (h2 : (2 : R) = 0) :
     ∃ μ : ↑((toSSet.obj (TopCat.of M)).homology (of R R) n), IsFundamentalClass μ := by
   let _ : ChartedSpace (ULift.{w} (Fin n) → ℝ) M := ChartedSpace.uliftFin M hn
-  have hE' : finrank ℝ (ULift.{w} (Fin n) → ℝ) = n := by simp
+  have hE' := finrank_ulift_fin_arrow.{w} ℝ n
   let o := ModuleOrientation.ofTwoEqZero (M := M) hE' h2
   exact ⟨o.fundamentalClass hE', o.isFundamentalClass_fundamentalClass hE'⟩
 /-- **Top homology over `[CommRing R]` with `(2 : R) = 0`**: on a compact connected `n`-manifold,

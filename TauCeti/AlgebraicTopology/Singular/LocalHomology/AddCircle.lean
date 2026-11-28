@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.AddCircle
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smooth
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Prod
 public import TauCeti.Geometry.Manifold.Orientation.AddCircle
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass.Integral
 
 /-!
 # The circuit class of a circle and the class of a torus are fundamental classes
