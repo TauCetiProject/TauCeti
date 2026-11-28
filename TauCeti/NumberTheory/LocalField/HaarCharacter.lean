@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
+public import TauCeti.MeasureTheory.Measure.Haar.DistribChar.Matrix
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.MeasureTheory.Group.LocalFieldScaling
 import TauCeti.NumberTheory.LocalField.Topology
 import TauCeti.RingTheory.Valuation.Integers
-import TauCeti.RingTheory.Valuation.ValuationRing
+import TauCeti.RingTheory.Valuation.ValuationRing.Basic
 
 /-!
 # The Haar character of a nonarchimedean local field
@@ -40,6 +41,8 @@ The computation reduces to a uniformizer `ϖ`. The maximal ideal `ϖ • 𝒪[K]
 
 * `TauCeti.integerPositiveCompacts`: the ring of integers as a compact set with nonempty
   interior, the normalizing set of Mathlib's `MeasureTheory.Measure.addHaarMeasure`.
+  Its indicator `1_𝒪` is continuous with compact support (`TauCeti.continuous_indicator_integer`,
+  `TauCeti.hasCompactSupport_indicator_integer`).
 
 ## Main results
 
@@ -49,6 +52,8 @@ The computation reduces to a uniformizer `ϖ`. The maximal ideal `ϖ • 𝒪[K]
   has `q⁻¹` times the mass of `𝒪[K]`.
 * `MeasureTheory.distribHaarChar_eq_normalizedAbsoluteValue`: the Haar character of `a ∈ Kˣ`
   is `|a|_K`; `MeasureTheory.distribHaarChar_eq_zpow` writes it as `q ^ (-v_K(a))`.
+* `MeasureTheory.distribHaarChar_eq_normalizedAbsoluteValue_det`: an invertible matrix `g` scales
+  additive Haar measure on `ι → K` by `|det g|_K`.
 * `MeasureTheory.distribHaarChar_of_isUniformizer`: a uniformizer has character `q⁻¹`.
 * `MeasureTheory.distribHaarChar_eq_one_iff`: the kernel of the character is the unit group
   of `𝒪[K]`.
@@ -56,6 +61,19 @@ The computation reduces to a uniformizer `ϖ`. The maximal ideal `ϖ • 𝒪[K]
   for every `a ∈ K`, including `a = 0`.
 * `MeasureTheory.Measure.map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul`: for `a ≠ 0`,
   multiplication by `a` pushes `μ` forward to `|a|_K⁻¹ • μ`.
+* `MeasureTheory.Measure.addHaar_image_mulVec`: a square matrix over `𝒪[K]` whose determinant is
+  associated to `ϖ ^ k` scales Haar measure on `ι → K` by `q ^ (-k)`.
+* `MeasureTheory.Measure.addHaar_setOf_valuation_le_uniformizer_zpow`: the fractional ideal
+  `𝓂[K] ^ m = {x | valuation K x ≤ uniformizer K ^ m}` has mass `q ^ (-m)` times that of `𝒪[K]`.
+* `MeasureTheory.Measure.addHaar_setOf_normalizedAbsoluteValue_le`,
+  `MeasureTheory.Measure.addHaar_setOf_normalizedAbsoluteValue_lt` and
+  `MeasureTheory.Measure.addHaar_setOf_normalizedAbsoluteValue_eq`: the ball `|x|_K ≤ |a|_K`, the
+  ball `|x|_K < |a|_K` and the sphere `|x|_K = |a|_K` have masses `|a|_K`, `q⁻¹ |a|_K` and
+  `(1 - q⁻¹) |a|_K` times that of `𝒪[K]`.
+* `TauCeti.measurableSet_setOf_normalizedAbsoluteValue_le`,
+  `TauCeti.measurableSet_setOf_normalizedAbsoluteValue_lt` and
+  `TauCeti.measurableSet_setOf_normalizedAbsoluteValue_eq`: these balls and spheres are
+  measurable.
 * `MeasureTheory.Measure.addHaar_setOf_valuation_eq_one`: the units of `𝒪[K]`, the elements of
   valuation one, have mass `(1 - q⁻¹) μ 𝒪[K]`.
 
@@ -91,6 +109,17 @@ noncomputable def integerPositiveCompacts : PositiveCompacts K where
 theorem coe_integerPositiveCompacts : (integerPositiveCompacts K : Set K) = 𝒪[K] :=
   (rfl)
 
+/-- The indicator `1_𝒪` of the ring of integers is continuous: `𝒪[K]` is clopen. -/
+theorem continuous_indicator_integer {M : Type*} [TopologicalSpace M] [Zero M] [One M] :
+    Continuous ((𝒪[K] : Set K).indicator (1 : K → M)) :=
+  (Valuation.isClopen_integer (v := valuation K)).continuous_indicator continuous_const
+
+/-- The indicator `1_𝒪` of the ring of integers has compact support. -/
+theorem hasCompactSupport_indicator_integer {M : Type*} [Zero M] [One M] :
+    HasCompactSupport ((𝒪[K] : Set K).indicator (1 : K → M)) :=
+  HasCompactSupport.intro (integerPositiveCompacts K).isCompact
+    fun _ hx ↦ Set.indicator_of_notMem hx _
+
 /-- In a ring with a valuative topology, the elements of valuation one form a measurable set: they
 are the sphere of radius one, which is closed (`Valuation.isClosed_sphere`). In a local field these
 are the units of the ring of integers. -/
@@ -106,6 +135,45 @@ theorem existsUnique_isAddHaarMeasure_measure_integer_eq_one [MeasurableSpace K]
     [BorelSpace K] : ∃! μ : Measure K, μ.IsAddHaarMeasure ∧ μ 𝒪[K] = 1 :=
   ⟨addHaarMeasure (integerPositiveCompacts K), ⟨inferInstance, addHaarMeasure_self⟩,
     fun μ ⟨_, hμ⟩ ↦ ((addHaarMeasure_eq_iff (integerPositiveCompacts K) μ).2 hμ).symm⟩
+
+variable {K} in
+/-- The dilate `a • 𝒪[K]` is the closed ball `|x|_K ≤ |a|_K`; for `a = 0` both are `{0}`. -/
+theorem smul_integer_eq_setOf_normalizedAbsoluteValue_le (a : K) :
+    a • (𝒪[K] : Set K) = {x | normalizedAbsoluteValue K x ≤ normalizedAbsoluteValue K a} := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · ext x
+    simp [Set.zero_smul_set (⟨0, zero_mem _⟩ : (𝒪[K] : Set K).Nonempty)]
+  ext x
+  rw [Set.mem_smul_set_iff_inv_smul_mem₀ ha, SetLike.mem_coe,
+    mem_integer_iff_normalizedAbsoluteValue_le_one, smul_eq_mul, map_mul, map_inv₀,
+    Set.mem_ofPred_eq, inv_mul_le_one₀ ((normalizedAbsoluteValue K).pos ha)]
+
+section MeasurableSet
+
+variable {K} [MeasurableSpace K] [OpensMeasurableSpace K]
+
+/-- The closed ball `|x|_K ≤ r` is measurable. -/
+@[measurability]
+theorem measurableSet_setOf_normalizedAbsoluteValue_le (r : ℚ≥0) :
+    MeasurableSet {x : K | normalizedAbsoluteValue K x ≤ r} := by
+  simp_rw [← NNRat.cast_le (K := ℝ)]
+  exact (isClosed_le continuous_normalizedAbsoluteValue continuous_const).measurableSet
+
+/-- The open ball `|x|_K < r` is measurable. -/
+@[measurability]
+theorem measurableSet_setOf_normalizedAbsoluteValue_lt (r : ℚ≥0) :
+    MeasurableSet {x : K | normalizedAbsoluteValue K x < r} := by
+  simp_rw [← NNRat.cast_lt (K := ℝ)]
+  exact (isOpen_lt continuous_normalizedAbsoluteValue continuous_const).measurableSet
+
+/-- The sphere `|x|_K = r` is measurable. -/
+@[measurability]
+theorem measurableSet_setOf_normalizedAbsoluteValue_eq (r : ℚ≥0) :
+    MeasurableSet {x : K | normalizedAbsoluteValue K x = r} := by
+  simp_rw [← NNRat.cast_inj (α := ℝ)]
+  exact (isClosed_eq continuous_normalizedAbsoluteValue continuous_const).measurableSet
+
+end MeasurableSet
 
 end TauCeti
 
@@ -156,6 +224,15 @@ by `x ∈ Kˣ` scales additive Haar measure on `K` by `|x|_K`. -/
 theorem distribHaarChar_eq_normalizedAbsoluteValue (x : Kˣ) :
     distribHaarChar K x = normalizedAbsoluteValue K (x : K) := by
   rw [distribHaarChar_eq_zpow, normalizedAbsoluteValue_coe, NNRat.cast_zpow, NNRat.cast_natCast]
+
+/-- **The Haar character of `GL_n` over a local field.** An invertible matrix `g` scales additive
+Haar measure on `ι → K` by the normalized absolute value `|det g|_K` of its determinant. -/
+@[simp]
+theorem distribHaarChar_eq_normalizedAbsoluteValue_det {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (g : GL ι K) :
+    distribHaarChar (ι → K) g = normalizedAbsoluteValue K (g : Matrix ι ι K).det := by
+  rw [distribHaarChar_eq_distribHaarChar_det, distribHaarChar_eq_normalizedAbsoluteValue,
+    Matrix.GeneralLinearGroup.val_det_apply]
 
 /-- A uniformizer scales additive Haar measure by `q⁻¹`, where `q` is the cardinality of the
 residue field. -/
@@ -208,22 +285,127 @@ theorem map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul {a : K} (ha : a ≠
     addHaar_smul_eq_normalizedAbsoluteValue_mul, map_inv₀, smul_apply]
   simp
 
+/-- **Haar measure of a closed ball.** For every additive Haar measure `μ` on `K` and every
+`a ∈ K`, the ball `|x|_K ≤ |a|_K` has mass `|a|_K μ(𝒪[K])`. -/
+theorem addHaar_setOf_normalizedAbsoluteValue_le (a : K) :
+    μ {x | normalizedAbsoluteValue K x ≤ normalizedAbsoluteValue K a} =
+      (normalizedAbsoluteValue K a : ℝ≥0) * μ 𝒪[K] := by
+  rw [← smul_integer_eq_setOf_normalizedAbsoluteValue_le,
+    addHaar_smul_eq_normalizedAbsoluteValue_mul]
+
+/-- **Haar measure of a fractional ideal.** For every additive Haar measure `μ` on `K` and every
+`m : ℤ`, the fractional ideal `𝓂[K] ^ m = {x | valuation K x ≤ uniformizer K ^ m}` has mass
+`q ^ (-m) μ(𝒪[K])`, where `q` is the cardinality of the residue field. -/
+theorem addHaar_setOf_valuation_le_uniformizer_zpow (m : ℤ) :
+    μ {x | valuation K x ≤ uniformizer K ^ m} = (Nat.card 𝓀[K] : ℝ≥0∞) ^ (-m) * μ 𝒪[K] := by
+  -- Pick `a` of valuation `uniformizer K ^ m`, so that `v_K(a) = m` and the ideal is `|x| ≤ |a|`.
+  obtain ⟨a, ha⟩ := valuation_surjective (uniformizer K ^ m)
+  have ha0 : a ≠ 0 := by
+    rintro rfl
+    exact zpow_ne_zero m uniformizer_ne_zero (by simpa using ha.symm)
+  obtain ⟨π, hπ⟩ := exists_isUniformizer K
+  have hm : (normalizedValuation K (Units.mk0 a ha0)).toAdd = m :=
+    (toAdd_normalizedValuation_eq_iff_valuation_eq_zpow ((isUniformizer_def π).1 hπ) m _).2
+      (by rw [Units.val_mk0, ha, hπ.valuation_eq])
+  have hset : {x | valuation K x ≤ uniformizer K ^ m} =
+      {x | normalizedAbsoluteValue K x ≤ normalizedAbsoluteValue K a} := by
+    simp [ha]
+  have hq : (Nat.card 𝓀[K] : ℝ≥0) ≠ 0 := natCard_residueField_pos.ne'
+  rw [hset, addHaar_setOf_normalizedAbsoluteValue_le, ← Units.val_mk0 ha0,
+    normalizedAbsoluteValue_coe, hm]
+  -- `push_cast` brings both sides to the same term, and `eq_self_iff_true` closes that goal.
+  push_cast [ENNReal.coe_zpow hq, eq_self_iff_true]
+
+/-- **Haar measure of an open ball.** For every additive Haar measure `μ` on `K` and every
+`a ∈ K`, the ball `|x|_K < |a|_K` has mass `q⁻¹ |a|_K μ(𝒪[K])`, where `q` is the cardinality of
+the residue field. -/
+theorem addHaar_setOf_normalizedAbsoluteValue_lt (a : K) :
+    μ {x | normalizedAbsoluteValue K x < normalizedAbsoluteValue K a} =
+      (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ * (normalizedAbsoluteValue K a : ℝ≥0) * μ 𝒪[K] := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
+  -- The open ball of radius `|a|_K` is the closed ball of radius `|ϖ a|_K = q⁻¹ |a|_K`.
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  have h : {x | normalizedAbsoluteValue K x < normalizedAbsoluteValue K a} =
+      {x | normalizedAbsoluteValue K x ≤ normalizedAbsoluteValue K ((ϖ : K) * a)} := by
+    ext x
+    rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, normalizedAbsoluteValue_lt_iff_le_inv_mul ha,
+      map_mul, normalizedAbsoluteValue_irreducible hϖ]
+  have hq : (Nat.card 𝓀[K] : ℝ≥0) ≠ 0 := natCard_residueField_pos.ne'
+  rw [h, addHaar_setOf_normalizedAbsoluteValue_le, map_mul,
+    normalizedAbsoluteValue_irreducible hϖ]
+  simp [ENNReal.coe_inv hq]
+
+/-- **Haar measure of a sphere.** For every additive Haar measure `μ` on `K` and every `a ∈ K`,
+the sphere `|x|_K = |a|_K` has mass `(1 - q⁻¹) |a|_K μ(𝒪[K])`, where `q` is the cardinality of
+the residue field. -/
+theorem addHaar_setOf_normalizedAbsoluteValue_eq (a : K) :
+    μ {x | normalizedAbsoluteValue K x = normalizedAbsoluteValue K a} =
+      (1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹) * (normalizedAbsoluteValue K a : ℝ≥0) * μ 𝒪[K] := by
+  have h : {x | normalizedAbsoluteValue K x = normalizedAbsoluteValue K a} =
+      {x | normalizedAbsoluteValue K x ≤ normalizedAbsoluteValue K a} \
+        {x | normalizedAbsoluteValue K x < normalizedAbsoluteValue K a} := by
+    ext x
+    simp only [Set.mem_ofPred_eq, Set.mem_sdiff]
+    exact ⟨fun h ↦ ⟨h.le, not_lt.2 h.ge⟩, fun h ↦ h.1.antisymm (not_lt.1 h.2)⟩
+  have hmeas :=
+    measurableSet_setOf_normalizedAbsoluteValue_lt (K := K) (normalizedAbsoluteValue K a)
+  have hfin : μ 𝒪[K] ≠ ∞ :=
+    (IsNonarchimedeanLocalField.isCompact_closedBall K 1).measure_ne_top
+  have hq : (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ ≠ ∞ :=
+    ENNReal.inv_ne_top.2 natCard_residueField_pos.ne'
+  rw [h, measure_sdiff (Set.ofPred_subset_ofPred.2 fun _ hx ↦ hx.le) hmeas.nullMeasurableSet
+      (by rw [addHaar_setOf_normalizedAbsoluteValue_lt]; finiteness),
+    addHaar_setOf_normalizedAbsoluteValue_le, addHaar_setOf_normalizedAbsoluteValue_lt,
+    mul_assoc, mul_assoc, ENNReal.sub_mul (fun _ _ ↦ by finiteness), one_mul]
+
 /-- **The Haar mass of the units.** The units of the ring of integers of a nonarchimedean local
 field, the elements of valuation one, have Haar mass `(1 - q⁻¹) μ 𝒪[K]`, where `q` is the
 cardinality of the residue field: they are the complement in `𝒪[K]` of the maximal ideal
 `ϖ 𝒪[K]`, of mass `q⁻¹ μ 𝒪[K]`. -/
 theorem addHaar_setOf_valuation_eq_one :
     μ {x : K | valuation K x = 1} = (1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹) * μ 𝒪[K] := by
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-  have hsub : (ϖ : K) • (𝒪[K] : Set K) ⊆ 𝒪[K] := by
-    rintro _ ⟨y, hy, rfl⟩
-    exact mul_mem ϖ.property hy
-  have hO : IsCompact (𝒪[K] : Set K) := IsNonarchimedeanLocalField.isCompact_closedBall K 1
-  have hcpt := hO.smul (ϖ : K)
-  rw [hϖ.setOf_valuation_eq_one_eq_sdiff, measure_sdiff hsub
-    hcpt.isClosed.measurableSet.nullMeasurableSet hcpt.measure_lt_top.ne,
-    addHaar_smul_integer_of_irreducible μ hϖ,
-    ENNReal.sub_mul fun _ _ ↦ hO.measure_lt_top.ne, one_mul]
+  simpa using addHaar_setOf_normalizedAbsoluteValue_eq μ (1 : K)
+
+end Measure
+
+/-! ### The scaling law on `ι → K` -/
+
+namespace Measure
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] [MeasurableSpace (ι → K)] [BorelSpace (ι → K)]
+
+/-- **The scaling law for Haar measure.** If the determinant of a square matrix `A` over `𝒪[K]`
+is associated to `ϖ ^ k` for a uniformizer `ϖ`, then for every additive Haar measure `μ`
+on `ι → K` and every set `s`, `μ (A '' s) = q ^ (-k) * μ s`, where `q = Nat.card 𝓀[K]`. This is
+the nonarchimedean analogue of `MeasureTheory.Measure.addHaar_image_linearMap`, and the case of
+an integral matrix of `MeasureTheory.distribHaarChar_eq_normalizedAbsoluteValue_det`. -/
+theorem addHaar_image_mulVec (μ : Measure (ι → K)) [μ.IsAddHaarMeasure]
+    {A : Matrix ι ι 𝒪[K]} {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) {k : ℕ}
+    (hk : Associated A.det (ϖ ^ k)) (s : Set (ι → K)) :
+    μ ((A.map (algebraMap 𝒪[K] K)).mulVec '' s) = 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ k * μ s := by
+  obtain ⟨u, hu⟩ := hk
+  have hdet : (A.map (algebraMap 𝒪[K] K)).det = (A.det : K) := by
+    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, Algebra.algebraMap_ofSubsemiring_apply]
+  -- The determinant of `A` has absolute value `q ^ (-k)`, the unit `u` having absolute value one.
+  have habs : normalizedAbsoluteValue K (A.det : K) = ((Nat.card 𝓀[K] : ℚ≥0) ^ k)⁻¹ := by
+    have h := congrArg (fun x : 𝒪[K] ↦ normalizedAbsoluteValue K (x : K)) hu
+    simpa [map_mul, map_pow, normalizedAbsoluteValue_irreducible hϖ] using h
+  have hne : (A.map (algebraMap 𝒪[K] K)).det ≠ 0 := by
+    rw [hdet, ← (normalizedAbsoluteValue K).ne_zero_iff, habs]
+    exact inv_ne_zero (pow_ne_zero _ (by exact_mod_cast natCard_residueField_pos.ne'))
+  -- The image under `A` is the translate by the corresponding element of `GL ι K`.
+  have himage : (A.map (algebraMap 𝒪[K] K)).mulVec '' s =
+      Matrix.GeneralLinearGroup.mkOfDetNeZero _ hne • s := by
+    have hg : (Matrix.GeneralLinearGroup.mkOfDetNeZero _ hne • · : (ι → K) → ι → K) =
+        (A.map (algebraMap 𝒪[K] K)).mulVec := by
+      ext x : 1
+      rw [Units.smul_def, Matrix.GeneralLinearGroup.val_mkOfDetNeZero, Matrix.smul_eq_mulVec]
+    rw [← Set.image_smul, hg]
+  rw [himage, ← distribHaarChar_mul, distribHaarChar_eq_normalizedAbsoluteValue_det,
+    Matrix.GeneralLinearGroup.val_mkOfDetNeZero, hdet, habs]
+  push_cast
+  rw [one_div]
 
 end Measure
 

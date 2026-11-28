@@ -26,12 +26,14 @@ The results live in `MvPolynomial.IsHomogeneous`, so a homogeneity proof support
 notation such as `hp.eval₂_const_mul` and `hp.aeval_smul_of_algebra`, the latter for a scalar
 algebra that may differ from the coefficient algebra; Mathlib supplies `hp.aeval_smul` and
 `hp.eval_smul` themselves. For `a = -1` this gives `hp.eval_neg`, and `hp.eval_neg_of_even` in
-even degree. In the same way
+even degree; without zero divisors, `hp.eval_smul_ne_zero_iff` records that scaling the point by a
+nonzero scalar does not change whether the value vanishes. In the same way
 `hp.coeff_single_eq_eval` reads the coefficient of `X_j ^ n` off the value at the `j`-th basis
 vector, `hp.aeval_eq_sum_finsuppAntidiag` expands a value as a sum over the exponent vectors of
 degree `n`, `hp.constantCoeff_eq_zero` records that the constant coefficient vanishes in
 positive degree, `hp.natDegree_aeval_le` bounds by `n` the degree of a substitution of
-polynomials of degree at most one, `hp.homogeneousComponent_mul_right` records that
+polynomials of degree at most one (for a binary form, `hp.natDegree_aeval_X_one_le` specializes
+this to the dehomogenization `F(X, 1)`), `hp.homogeneousComponent_mul_right` records that
 multiplying on the right by a homogeneous polynomial of degree `d` shifts homogeneous components
 by `d`, and `hp.not_dvd_X` records that without zero divisors a homogeneous polynomial of degree at
 least two divides no variable. Without zero divisors, the factors of a homogeneous product are
@@ -40,6 +42,9 @@ coefficients along an additive monoid homomorphism preserves homogeneity
 (`hp.addMonoidAlgebra_map`).
 `TauCeti.eval_coe_homogeneousSubmodule_eq_sum` restates the expansion of values for `eval` on
 elements of `homogeneousSubmodule`.
+
+At the tuple `(C (g i) * X)` of a polynomial ring over an algebra, a form of degree `n` takes the
+value `C (p(g)) * X ^ n` (`hp.aeval_C_mul_X`).
 
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
 product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous, and
@@ -64,6 +69,11 @@ records that a degree-`ν` form takes values in `Iᵛ` on families in `I`. A hom
 of positive degree splits as `G + H * X_last`, with `G` free of the last variable
 (`hp.exists_eq_rename_castSucc_add_mul_X_last`). These are the polynomial descriptions of ideal
 powers used for associated graded rings.
+
+Along any surjective ring homomorphism, every homogeneous polynomial over the codomain lifts to a
+homogeneous polynomial of the same degree (`hp.exists_map_eq`). Acting on a graded module by the
+evaluation of a homogeneous polynomial of degree `i` at elements that shift the grading by `r`
+shifts the grading by `i • r` (`hp.aeval_smul_mem`).
 -/
 
 public section
@@ -98,6 +108,20 @@ theorem aeval_smul_of_algebra {σ R S A : Type*}
   simpa only [_root_.MvPolynomial.aeval_def, Algebra.smul_def, map_pow] using
     hp.eval₂_const_mul (algebraMap R A) g (algebraMap S A a)
 
+/-- At the tuple `(C (g i) * X)` of a polynomial ring, a homogeneous polynomial of degree `n`
+takes the value `C (p(g)) * X ^ n`. -/
+theorem aeval_C_mul_X {σ R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) (g : σ → A) :
+    _root_.MvPolynomial.aeval (fun i ↦ Polynomial.C (g i) * Polynomial.X) p =
+      Polynomial.C (_root_.MvPolynomial.aeval g p) * Polynomial.X ^ n := by
+  have e : (fun i ↦ Polynomial.C (g i) * Polynomial.X) =
+      (Polynomial.X : Polynomial A) • fun i ↦ Polynomial.C (g i) :=
+    _root_.funext fun _ ↦ mul_comm _ _
+  rw [e, hp.aeval_smul_of_algebra, smul_eq_mul, mul_comm]
+  congr 1
+  simpa [Polynomial.algebraMap_eq, Function.comp_def] using
+    _root_.MvPolynomial.aeval_algebraMap_apply (Polynomial A) g p
+
 /-- At `-x`, a homogeneous polynomial of degree `n` takes `(-1) ^ n` times its value at `x`. -/
 theorem eval_neg {σ R : Type*} [CommRing R] {p : MvPolynomial σ R} {n : ℕ}
     (hp : p.IsHomogeneous n) (x : σ → R) :
@@ -109,6 +133,13 @@ theorem eval_neg_of_even {σ R : Type*} [CommRing R] {p : MvPolynomial σ R} {n 
     (hp : p.IsHomogeneous n) (hn : Even n) (x : σ → R) :
     _root_.MvPolynomial.eval (-x) p = _root_.MvPolynomial.eval x p := by
   rw [hp.eval_neg, hn.neg_one_pow, one_mul]
+
+/-- Without zero divisors, a homogeneous polynomial vanishes at `s • x`, for a nonzero scalar `s`,
+exactly when it vanishes at `x`. -/
+theorem eval_smul_ne_zero_iff {σ R : Type*} [CommSemiring R] [NoZeroDivisors R]
+    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) {s : R} (hs : s ≠ 0) (x : σ → R) :
+    _root_.MvPolynomial.eval (s • x) p ≠ 0 ↔ _root_.MvPolynomial.eval x p ≠ 0 := by
+  rw [hp.eval_smul, mul_ne_zero_iff, and_iff_right (pow_ne_zero _ hs)]
 
 /-- The coefficient of `X_j ^ n` in a homogeneous polynomial of degree `n` is its value at the
 `j`-th basis vector: every other monomial involves a variable other than `X_j`. -/
@@ -157,6 +188,12 @@ theorem natDegree_aeval_le {σ R : Type*} [CommSemiring R]
   rw [← hp (mem_support_iff.mp hs), Finsupp.weight_apply, Finsupp.sum]
   refine Finset.sum_le_sum fun i _ ↦ (Polynomial.natDegree_pow_le).trans ?_
   simpa using Nat.mul_le_mul_left (s i) (hv i)
+
+/-- The dehomogenization `F(X, 1)` of a binary form `F` of degree `m` has degree at most `m`. -/
+theorem natDegree_aeval_X_one_le {R : Type*} [CommSemiring R]
+    {F : MvPolynomial (Fin 2) R} {m : ℕ} (hF : F.IsHomogeneous m) :
+    (_root_.MvPolynomial.aeval ![Polynomial.X, 1] F : Polynomial R).natDegree ≤ m :=
+  hF.natDegree_aeval_le fun i ↦ by fin_cases i <;> simp [Polynomial.natDegree_X_le]
 
 attribute [local instance] gradedAlgebra in
 /-- Multiplying by a polynomial homogeneous of degree `d` shifts homogeneous components by `d`:
@@ -497,6 +534,17 @@ theorem MvPolynomial.IsHomogeneous.eval_mem_pow {ι R : Type*} [CommSemiring R] 
   Ideal.pow_right_mono (Ideal.span_le.mpr (Set.range_subset_iff.mpr ha)) ν
     ((Ideal.mem_span_pow_iff_exists_isHomogeneous a _).mpr ⟨F, hF, rfl⟩)
 
+/-- Every monomial in the support of a homogeneous polynomial of degree `ν`, evaluated at a family
+of elements of an ideal `I`, lies in `I ^ ν`. -/
+theorem MvPolynomial.IsHomogeneous.prod_pow_mem_pow {ι R : Type*} [CommSemiring R] [Fintype ι]
+    {I : Ideal R} {t : ι → R} (ht : ∀ i, t i ∈ I) {ν : ℕ} {F : MvPolynomial ι R}
+    (hF : F.IsHomogeneous ν) {e : ι →₀ ℕ} (he : e ∈ F.support) :
+    (∏ j, t j ^ e j) ∈ I ^ ν := by
+  have hdeg : ∑ j, e j = ν := by
+    simpa [Finsupp.weight_apply, Finsupp.sum_fintype] using hF (mem_support_iff.mp he)
+  rw [← hdeg, ← Finset.prod_pow_eq_pow_sum]
+  exact Ideal.prod_mem_prod fun j _ ↦ Ideal.pow_mem_pow (ht j) (e j)
+
 /-- A homogeneous polynomial of degree `ν + 1` in `n + 1` variables is `G + H * X_last`, with `G`
 homogeneous of degree `ν + 1` in the first `n` variables and `H` homogeneous of degree `ν`. -/
 theorem MvPolynomial.IsHomogeneous.exists_eq_rename_castSucc_add_mul_X_last {R : Type*}
@@ -523,3 +571,52 @@ theorem MvPolynomial.IsHomogeneous.exists_eq_rename_castSucc_add_mul_X_last {R :
   rw [← homogeneousComponent_eq_self hF, hGH, map_add, ← rename_homogeneousComponent,
     (isHomogeneous_X R _).homogeneousComponent_mul_right]
   simp
+
+/-- Along any surjective ring homomorphism, every homogeneous polynomial over the codomain lifts to
+a homogeneous polynomial of the same degree. -/
+theorem MvPolynomial.IsHomogeneous.exists_map_eq {A B σ : Type*} [CommSemiring A] [CommSemiring B]
+    {f : A →+* B} (hf : Function.Surjective f) {i : ℕ} {q : MvPolynomial σ B}
+    (hq : q.IsHomogeneous i) :
+    ∃ p : MvPolynomial σ A, p.IsHomogeneous i ∧ MvPolynomial.map f p = q := by
+  obtain ⟨r, rfl⟩ := MvPolynomial.map_surjective f hf q
+  refine ⟨MvPolynomial.homogeneousComponent i r,
+    MvPolynomial.homogeneousComponent_isHomogeneous i r, ?_⟩
+  rw [MvPolynomial.map_homogeneousComponent, MvPolynomial.homogeneousComponent_eq_self hq]
+
+/-- Evaluating a homogeneous polynomial of degree `i` at elements that shift a module grading by
+`r` shifts the grading by `i • r`. -/
+theorem MvPolynomial.IsHomogeneous.aeval_smul_mem {A B σ M ι : Type*} [CommSemiring A]
+    [CommSemiring B] [Algebra A B] [AddCommMonoid M] [Module A M] [Module B M]
+    [IsScalarTower A B M] [AddCommMonoid ι] {f : σ → B} {ℳ : ι → Submodule A M} {r : ι}
+    (hf : ∀ (s : σ) (j : ι) (m : M), m ∈ ℳ j → f s • m ∈ ℳ (j + r))
+    {i : ℕ} {j : ι} {p : MvPolynomial σ A} (hp : p.IsHomogeneous i)
+    {m : M} (hm : m ∈ ℳ j) :
+    (MvPolynomial.aeval f p) • m ∈ ℳ (j + i • r) := by
+  have hpow (s : σ) (k : ℕ) (d : ι) (x : M) (hx : x ∈ ℳ d) :
+      (f s ^ k) • x ∈ ℳ (d + k • r) := by
+    induction k generalizing d x with
+    | zero => simpa using hx
+    | succ k ih =>
+      rw [pow_succ', mul_smul]
+      have h1 := hf s (d + k • r) _ (ih d x hx)
+      rwa [add_assoc, ← succ_nsmul] at h1
+  have hprod (d : σ →₀ ℕ) (a : ι) (x : M) (hx : x ∈ ℳ a) :
+      (d.prod fun s k ↦ f s ^ k) • x ∈ ℳ (a + (Finsupp.weight (1 : σ → ℕ) d) • r) := by
+    induction d using Finsupp.induction generalizing a x with
+    | zero => simpa using hx
+    | single_add s k d _ _ ih =>
+      rw [Finsupp.prod_add_index' (fun _ ↦ pow_zero _) (fun _ _ _ ↦ pow_add _ _ _),
+        Finsupp.prod_single_index (h := fun s k ↦ f s ^ k) (pow_zero (f s)), mul_smul]
+      have h1 := hpow s k _ _ (ih a x hx)
+      have hwt : (Finsupp.weight (1 : σ → ℕ) (Finsupp.single s k + d)) • r =
+          (Finsupp.weight (1 : σ → ℕ) d) • r + k • r := by
+        rw [map_add, Finsupp.weight_single, Pi.one_apply, smul_eq_mul, mul_one, add_comm, add_nsmul]
+      rwa [add_assoc, ← hwt] at h1
+  induction hp using MvPolynomial.IsWeightedHomogeneous.induction_on with
+  | zero => simp
+  | add p q _ _ hp hq =>
+    rw [map_add, add_smul]
+    exact (ℳ (j + i • r)).add_mem hp hq
+  | monomial d a hd =>
+    rw [MvPolynomial.aeval_monomial, mul_smul, algebraMap_smul]
+    exact (ℳ (j + i • r)).smul_mem a (hd ▸ hprod d j m hm)

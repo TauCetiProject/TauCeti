@@ -47,6 +47,8 @@ from a functional representation of an ergodic law.
 * `TauCeti.MeasureTheory.smulInvariantMeasure_comp`, `ErgodicSMul.ae_eq_of_comp_eq`: a mixture of
   invariant measures is invariant, and an ergodic probability measure written as such a mixture
   has almost every component equal to itself
+* `IsExtreme.cond_mem`: a face of the invariant probability measures is closed under conditioning
+  on almost invariant events of positive mass
 
 ## References
 
@@ -100,6 +102,43 @@ theorem smulInvariantMeasure_comp [MeasurableConstSMul G X] {Z : Type*} {mZ : Me
       Measure.bind_apply (measurable_const_smul c hs) κ.aemeasurable]
     exact lintegral_congr_ae (hκ.mono fun z hz => hz.measure_preimage_smul c hs)⟩
 
+/-- **Conditioning on an invariant event stays in a face.** If `S` is a face of the invariant
+probability measures, then a measure of `S` conditioned on a null measurable, almost invariant
+event of positive mass is again in `S`. -/
+theorem _root_.IsExtreme.cond_mem [MeasurableConstSMul G X] {S : Set (Measure X)}
+    (hS : IsExtreme ℝ≥0∞ (invariantMeasuresOfMeasureUnivEq G X 1) S) (hν : ν ∈ S) {t : Set X}
+    (ht : NullMeasurableSet t ν) (htg : ∀ g : G, (fun x => g • x) ⁻¹' t =ᵐ[ν] t)
+    (ht₀ : ν t ≠ 0) : ν[|t] ∈ S := by
+  obtain ⟨_, hν₁⟩ := mem_invariantMeasuresOfMeasureUnivEq_iff.1 (hS.subset hν)
+  have : IsProbabilityMeasure ν := ⟨hν₁⟩
+  -- replace `t` by a measurable version `t'`; the conditioned measure does not change
+  obtain ⟨t', -, ht', htt'⟩ := ht.exists_measurable_subset_ae_eq
+  have hcond : ν[|t] = ν[|t'] := by
+    simp only [ProbabilityTheory.cond, measure_congr htt', Measure.restrict_congr_set htt']
+  rw [hcond]
+  rw [← measure_congr htt'] at ht₀
+  have htg' : ∀ g : G, (fun x => g • x) ⁻¹' t' =ᵐ[ν] t' := fun g =>
+    preimage_smul_ae_eq_self_of_ae_eq htt' (htg g)
+  have hmem {u : Set X} (hu : MeasurableSet u) (hug : ∀ g : G, (fun x => g • x) ⁻¹' u =ᵐ[ν] u)
+      (hu₀ : ν u ≠ 0) : ν[|u] ∈ invariantMeasuresOfMeasureUnivEq G X 1 :=
+    mem_invariantMeasuresOfMeasureUnivEq_iff.2
+      ⟨SMulInvariantMeasure.cond hu hug, (cond_isProbabilityMeasure hu₀).measure_univ⟩
+  rcases eq_or_ne (ν t'ᶜ) 0 with hc | hc
+  · -- `t'` has full measure, so conditioning on it does not change `ν`
+    have h1 : ν t' = 1 := (prob_compl_eq_zero_iff ht').1 hc
+    rwa [ProbabilityTheory.cond, Measure.restrict_eq_self_of_ae_mem (ae_iff.2 hc), h1, inv_one,
+      one_smul]
+  · -- otherwise `ν = ν(t') ν[|t'] + ν(t'ᶜ) ν[|t'ᶜ]` is a proper convex combination
+    have htc : ∀ g : G, (fun x => g • x) ⁻¹' t'ᶜ =ᵐ[ν] t'ᶜ := fun g => by
+      rw [preimage_compl]
+      exact (htg' g).compl
+    refine hS.left_mem_of_mem_openSegment (hmem ht' htg' ht₀) (hmem ht'.compl htc hc) hν
+      ⟨ν t', ν t'ᶜ, pos_iff_ne_zero.2 ht₀, pos_iff_ne_zero.2 hc, prob_add_prob_compl ht', ?_⟩
+    ext u -
+    simp only [_root_.add_apply, _root_.smul_apply, smul_eq_mul]
+    rw [mul_comm (ν t'), mul_comm (ν t'ᶜ)]
+    exact cond_add_cond_compl_eq ht' ν
+
 end TauCeti.MeasureTheory
 
 namespace ErgodicSMul
@@ -113,6 +152,9 @@ variable {X : Type*} {m : MeasurableSpace X} {μ ν : Measure X}
 /-- **An almost invariant function under an ergodic action is almost everywhere constant.** The
 target may be any nonempty countably separated measurable space; the action-level analogue of
 `Ergodic.ae_eq_const_of_ae_eq_comp₀`. -/
+@[to_additive ae_eq_const_of_forall_ae_eq_comp_vadd₀ /-- **An almost invariant function under an
+ergodic additive action is almost everywhere constant.** The target may be any nonempty countably
+separated measurable space. -/]
 theorem ae_eq_const_of_forall_ae_eq_comp_smul₀ (G : Type*) [SMul G X]
     {β : Type*} [Nonempty β] [MeasurableSpace β] [MeasurableSpace.CountablySeparated β]
     [ErgodicSMul G X μ] {g : X → β} (hgm : NullMeasurable g μ)
@@ -203,10 +245,8 @@ theorem of_mem_extremePoints_measure_univ_eq {c : ℝ≥0∞} (hc : c ≠ ∞)
   refine TauCeti.MeasureTheory.ergodicSMul_iff_forall_smul_invariant.2 fun t htm htinv => ?_
   have hmem {u : Set X} (hum : MeasurableSet u) (huinv : ∀ g : G, (fun x => g • x) ⁻¹' u = u)
       (hu0 : μ u ≠ 0) : c • μ[|u] ∈ invariantMeasuresOfMeasureUnivEq G X c := by
-    have := SMulInvariantMeasure.restrict (G := G) (μ := μ) hum fun g => by rw [huinv g]
-    refine ⟨?_, ?_⟩
-    · -- `μ[|u]` is `(μ u)⁻¹ • μ.restrict u` by the definition of `ProbabilityTheory.cond`
-      rw [ProbabilityTheory.cond]; infer_instance
+    have := SMulInvariantMeasure.cond (G := G) (μ := μ) hum fun g => by rw [huinv g]
+    refine ⟨inferInstance, ?_⟩
     · rw [_root_.smul_apply, (cond_isProbabilityMeasure hu0).measure_univ, smul_eq_mul, mul_one]
   by_contra H
   obtain ⟨hs, hs'⟩ : μ t ≠ 0 ∧ μ tᶜ ≠ 0 := by

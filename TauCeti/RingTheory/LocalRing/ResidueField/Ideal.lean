@@ -18,7 +18,8 @@ For ring maps `f : R → S` and `g : S → T` and primes `P`, `Q`, `Q'` of `R`, 
 one another, the maps `κ(P) → κ(Q) → κ(Q')` of Mathlib's `Ideal.ResidueField.map` compose to the
 map `κ(P) → κ(Q')` induced by `g ∘ f`. Thus residue fields are preserved along a composite when
 they are preserved along each step, as for a tower of étale neighbourhoods that do not extend the
-residue field at a point.
+residue field at a point. At maximal ideals, the residue field map is bijective exactly when the
+map of quotients is. Any localization `S` of `R` at a prime `P` has residue field `κ(P)`.
 
 For a local ring `R`, localizing at `maximalIdeal R` inverts only units, identifying the prime
 residue field `(maximalIdeal R).ResidueField` with `IsLocalRing.ResidueField R` as an `R`-algebra
@@ -36,6 +37,10 @@ scheme is its local ring.
   `g ∘ f`.
 * `Ideal.ResidueField.map_bijective_of_comap`: if an `R`-algebra retraction `τ : S →ₐ[R] R` pulls a
   prime `P` of `R` back to `𝔮`, then `κ(P) → κ(𝔮)` is bijective.
+* `Ideal.ResidueField.map_bijective_iff_quotientMap_bijective`: at maximal ideals, `κ(P) → κ(Q)` is
+  bijective exactly when `R ⧸ P → S ⧸ Q` is.
+* `Ideal.residueFieldAlgEquivOfIsLocalization`: for a localization `S` of `R` at a prime `P`,
+  canonical `R`-algebra equivalence `P.ResidueField ≃ₐ[R] IsLocalRing.ResidueField S`.
 * `TauCeti.IsLocalRing.maximalIdealResidueFieldAlgEquiv`: canonical `R`-algebra equivalence
   `(maximalIdeal R).ResidueField ≃ₐ[R] IsLocalRing.ResidueField R`.
 * `AlgHom.residueFieldMap_bijective_of_ker_eq`: a prime cut out by an `R`-algebra map to
@@ -73,6 +78,52 @@ theorem Ideal.ResidueField.map_bijective_of_comap {P : Ideal R} [P.IsPrime] [Alg
     simp [← hτ, RingHom.mem_ker]
   subst hker
   exact ((Algebra.ofId R P.ResidueField).comp τ).residueFieldMap_bijective
+
+/-- At maximal ideals `P` of `R` and `Q` of `S` with `Q` over `P` along `f`, the residue field map
+`κ(P) → κ(Q)` is bijective exactly when `R ⧸ P → S ⧸ Q` is: at a maximal ideal, the quotient is
+already the residue field. -/
+theorem Ideal.ResidueField.map_bijective_iff_quotientMap_bijective (P : Ideal R) (Q : Ideal S)
+    [P.IsMaximal] [Q.IsMaximal] (f : R →+* S) (hf : P = Q.comap f) :
+    Function.Bijective (Ideal.ResidueField.map P Q f hf) ↔
+      Function.Bijective (Ideal.quotientMap Q f hf.le) := by
+  have hcomp : Ideal.ResidueField.map P Q f hf ∘ algebraMap (R ⧸ P) P.ResidueField =
+      algebraMap (S ⧸ Q) Q.ResidueField ∘ Ideal.quotientMap Q f hf.le := by
+    ext r
+    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
+    simp [Ideal.quotientMap_mk]
+  rw [← Function.Bijective.of_comp_iff _ P.bijective_algebraMap_quotient_residueField, hcomp,
+    Function.Bijective.of_comp_iff' Q.bijective_algebraMap_quotient_residueField]
+
+section IsLocalization
+
+variable (P : Ideal R) [P.IsPrime] (S) [Algebra R S] [IsLocalization.AtPrime S P]
+  [IsLocalRing S]
+
+/-- For a localization `S` of `R` at a prime `P`, the residue field `κ(P)` is canonically
+`R`-isomorphic to the residue field of the local ring `S`, because `S` and `R_P` are canonically
+isomorphic `R`-algebras. -/
+noncomputable def Ideal.residueFieldAlgEquivOfIsLocalization :
+    P.ResidueField ≃ₐ[R] IsLocalRing.ResidueField S :=
+  IsLocalRing.ResidueField.mapAlgEquiv
+    (IsLocalization.algEquiv P.primeCompl (Localization.AtPrime P) S)
+
+/-- `Ideal.residueFieldAlgEquivOfIsLocalization` sends the image of `r : R` in `κ(P)` to the
+residue of its image in `S`. -/
+theorem Ideal.residueFieldAlgEquivOfIsLocalization_algebraMap (r : R) :
+    P.residueFieldAlgEquivOfIsLocalization S (algebraMap R P.ResidueField r) =
+      IsLocalRing.residue S (algebraMap R S r) := by
+  rw [AlgEquiv.commutes, IsScalarTower.algebraMap_apply R S (IsLocalRing.ResidueField S),
+    IsLocalRing.ResidueField.algebraMap_eq]
+
+/-- The inverse of `Ideal.residueFieldAlgEquivOfIsLocalization` sends the residue of the image of
+`r : R` in `S` to the image of `r` in `κ(P)`. -/
+@[simp]
+theorem Ideal.residueFieldAlgEquivOfIsLocalization_symm_residue (r : R) :
+    (P.residueFieldAlgEquivOfIsLocalization S).symm (IsLocalRing.residue S (algebraMap R S r)) =
+      algebraMap R P.ResidueField r := by
+  rw [AlgEquiv.symm_apply_eq, Ideal.residueFieldAlgEquivOfIsLocalization_algebraMap]
+
+end IsLocalization
 
 namespace TauCeti.IsLocalRing
 

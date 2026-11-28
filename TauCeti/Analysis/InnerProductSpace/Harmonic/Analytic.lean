@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.PoissonIntegral.Analytic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Ball
-import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 
 /-!
 # Harmonic functions are real analytic
@@ -71,11 +70,8 @@ private theorem HarmonicAt.analyticAt_real {f : E → ℝ} (hf : HarmonicAt f x)
   -- The rescaled function `v y = f (x + r • y)`, transported to `ℝᵈ`, is harmonic on `ball 0 2`.
   set v : EuclideanSpace ℝ (Fin d) → ℝ := fun y ↦ f (x + r • e.symm y)
   have hv : HarmonicOnNhd v (ball 0 2) := by
-    have h₁ : HarmonicOnNhd (fun y ↦ f (x + r • y)) (ball 0 2) :=
-      (harmonicOnNhd_comp_const_add_smul_ball_radius_iff x hr.ne' 2).2 fun y hy ↦
-        hball (by rwa [Real.norm_of_nonneg hr.le, hr₂] at hy)
-    have h₂ := (harmonicOnNhd_comp_linearIsometryEquiv_right_iff e.symm).2 h₁
-    rwa [LinearIsometryEquiv.preimage_ball, map_zero] at h₂
+    refine (harmonicOnNhd_comp_inv_smul_sub_ball_iff e x hr 2).1 fun y hy ↦ ?_
+    simpa [v, smul_smul, hr.ne'] using hball (hr₂ ▸ hy)
   -- By the Poisson representation, `v` is analytic in the unit ball, in particular at `0`.
   have hv₀ : AnalyticAt ℝ v 0 := by
     have hvc : ∀ y ∈ closedBall (0 : EuclideanSpace ℝ (Fin d)) 1, ContinuousAt v y :=

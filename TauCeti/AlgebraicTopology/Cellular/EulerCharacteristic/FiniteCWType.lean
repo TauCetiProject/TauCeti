@@ -9,6 +9,13 @@ public import Mathlib.Algebra.Field.ULift
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Singular
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
+public import TauCeti.Topology.CWComplex.Classical.ULift
+
+import Mathlib.Algebra.Category.ModuleCat.ChangeOfRingsExact
+import TauCeti.Algebra.Category.ModuleCat.AB
+import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
+import TauCeti.AlgebraicTopology.Singular.Coefficients.MapCoefficients
+import TauCeti.RingTheory.Noetherian.ULift
 
 /-!
 # The Euler characteristic of a space of finite CW type
@@ -23,7 +30,9 @@ CW type.
   `TauCeti.eventually_isZero_singularHomology_of_finiteCWType`: the singular homology of a space of
   finite CW type is finitely generated in every degree over a noetherian ring, and vanishes in all
   large degrees; over a field it is finite-dimensional
-  (`TauCeti.finiteDimensional_singularChains_homology`).
+  (`TauCeti.finiteDimensional_singularChains_homology`). Integral homology, with the integers lifted
+  to the universe of the space, is finitely generated
+  (`TauCeti.finite_singularHomology_int_of_finiteCWType`).
 * `TauCeti.eulerChar X`: the Euler characteristic of a space `X` of finite CW type, the
   alternating cell count of a finite CW complex homotopy equivalent to `X`.
 * `TauCeti.eulerChar_eq_cwEulerChar`: **independence of the model**; every finite CW complex
@@ -31,6 +40,8 @@ CW type.
 * `TauCeti.eulerChar_eq_finsum_finrank_singularHomology`: `eulerChar X` is the alternating sum of
   the dimensions of the singular homology of `X` over any division ring.
 * `ContinuousMap.HomotopyEquiv.eulerChar_eq`: **homotopy invariance** of the Euler characteristic.
+* `TauCeti.eulerChar_ulift`: the Euler characteristic does not change under `ULift`, so it is the
+  same for homeomorphic spaces in different universes.
 * `TauCeti.eulerChar_of_discreteTopology` and `TauCeti.eulerChar_of_contractibleSpace`: a finite
   discrete space has Euler characteristic its cardinality, and a contractible space has Euler
   characteristic one.
@@ -47,7 +58,7 @@ noncomputable section
 
 open CategoryTheory Module Topology Topology.RelCWComplex Set AlgebraicTopology
 
-universe w
+universe v w
 
 namespace TauCeti
 
@@ -106,6 +117,35 @@ theorem eventually_isZero_singularHomology_of_finiteCWType :
   exact (eventually_isZero_singularHomology_complexBasePair C M).mono fun n hn ↦
     (hn.of_iso (asIso ((complexBasePair C).singularHomologyπ M n))).of_iso
       (e.singularHomologyIso M n)
+
+/-- **Integral homology of a space of finite CW type is finitely generated** in every degree, for a
+space in any universe, with the integers lifted to that universe as coefficients. -/
+theorem finite_singularHomology_int_of_finiteCWType (n : ℕ) :
+    Module.Finite ℤ (((singularHomologyFunctor (ModuleCat.{w} ℤ) n).obj
+      (ModuleCat.of ℤ (ULift.{w} ℤ))).obj (TopCat.of X)) := by
+  -- Over the noetherian ring `ULift ℤ` the homology is finitely generated, hence also over `ℤ`.
+  have := finite_singularHomology_of_finiteCWType X
+    (ModuleCat.of (ULift.{w} ℤ) (ULift.{w} ℤ)) n
+  have := Module.Finite.trans (R := ℤ) (ULift.{w} ℤ)
+    (((singularHomologyFunctor (ModuleCat.{w} (ULift ℤ)) n).obj
+      (ModuleCat.of (ULift.{w} ℤ) (ULift.{w} ℤ))).obj (TopCat.of X))
+  -- the restricted homology is the same abelian group, with its integer module structure
+  have : Module.Finite ℤ (((singularHomologyFunctor (ModuleCat.{w} (ULift ℤ)) n).obj
+      (ModuleCat.of (ULift.{w} ℤ) (ULift.{w} ℤ)) ⋙
+        ModuleCat.restrictScalars.{w} (algebraMap ℤ (ULift.{w} ℤ))).obj (TopCat.of X)) := by
+    have key {M : Type w} [AddCommGroup M] (i₁ i₂ : Module ℤ M) (h : @Module.Finite ℤ M _ _ i₁) :
+        @Module.Finite ℤ M _ _ i₂ := by
+      obtain rfl := Subsingleton.elim i₁ i₂
+      exact h
+    exact key _ _ this
+  -- Restriction of scalars along `ℤ → ULift ℤ` preserves coproducts and homology, so it carries
+  -- this homology to the integral homology.
+  exact Module.Finite.equiv (((Functor.singularHomologyFunctorObjCompIso
+      (ModuleCat.restrictScalars.{w} (algebraMap ℤ (ULift.{w} ℤ)))
+        (ModuleCat.of (ULift.{w} ℤ) (ULift.{w} ℤ)) n).app (TopCat.of X) ≪≫
+    ((singularHomologyFunctor (ModuleCat.{w} ℤ) n).mapIso
+      (ModuleCat.restrictScalarsAlgebraMapIso (R := ℤ) (S := ULift.{w} ℤ) (ULift.{w} ℤ))).app
+        (TopCat.of X)).toLinearEquiv)
 
 end Finiteness
 
@@ -172,6 +212,18 @@ theorem _root_.ContinuousMap.HomotopyEquiv.eulerChar_eq {Y : Type w} [Topologica
 theorem _root_.Homeomorph.eulerChar_eq {Y : Type w} [TopologicalSpace Y] [FiniteCWType Y]
     (e : X ≃ₜ Y) : eulerChar X = eulerChar Y :=
   e.toHomotopyEquiv.eulerChar_eq
+
+variable (X) in
+/-- **The Euler characteristic in a higher universe.** `ULift.{v} X` has the Euler characteristic
+of `X`: lifting a finite CW model of `X` along `ULift` keeps its cells. -/
+@[simp]
+theorem eulerChar_ulift : eulerChar (ULift.{v} X) = eulerChar X := by
+  obtain ⟨Y, _, _, C, _, _, ⟨e⟩⟩ := ‹FiniteCWType X›.exists_homotopyEquiv
+  -- The lift of `C` to `ULift.{v} Y` is a finite CW complex with the cells of `C`.
+  let := CWComplex.ulift.{v} (C := C)
+  rw [eulerChar_eq_cwEulerChar e.ulift, eulerChar_eq_cwEulerChar e, cwEulerChar_def,
+    cwEulerChar_def]
+  exact finsum_congr fun n ↦ by rw [Nat.card_congr (CWComplex.uliftCellEquiv (C := C) n)]
 
 end
 

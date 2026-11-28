@@ -31,13 +31,18 @@ unchanged by subtracting a constant `m` from `f` when `B m (f a) = B m (f b)`, b
 arc with endpoints in a subspace isotropic for `B` for every `m` in that subspace.
 
 Finally, the primitive `u ↦ ∫ t in a..u, f t` of a function continuous on `[a, b]` has derivative
-`f x` at every point `x` of the open interval `(a, b)`.
+`f x` at every point `x` of the open interval `(a, b)`, and so does any function which agrees with
+a constant plus this primitive on `(a, b)`.
+Within `[a, b]`, the primitive `σ ↦ ∫ r in t₀..σ, A r` of a function `A` continuous on `[a, b]`,
+based at any `t₀ ∈ [a, b]`, has derivative `A τ` within `[a, b]` at every `τ ∈ [a, b]`.
 
 ## Main declarations
 
 * `TauCeti.intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le_of_nonneg`
 * `TauCeti.intervalIntegral.tendsto_sub_inv_smul_integral_nhdsGT`
+* `TauCeti.intervalIntegral.hasDerivWithinAt_integral`
 * `ContinuousOn.integral_hasDerivAt_of_mem_Ioo`
+* `ContinuousOn.hasDerivAt_of_eq_add_integral`
 * `TauCeti.hasDerivAt_of_periodic_of_sub_eq_integral`
 * `ContinuousLinearMap.intervalIntegral_apply_apply_eq_sub_const`
 -/
@@ -76,6 +81,18 @@ theorem tendsto_sub_inv_smul_integral_nhdsGT {E : Type*} [NormedAddCommGroup E]
   refine ((hasDerivWithinAt_iff_tendsto_slope' (by simp : a ∉ Ioi a)).mp h).congr fun t ↦ ?_
   rw [slope_def_module, _root_.intervalIntegral.integral_same, sub_zero]
 
+/-- **The fundamental theorem of calculus within a compact interval** `[a, b]` containing the
+base point `t₀`: for `A` continuous on `[a, b]`, the primitive `σ ↦ ∫_{t₀}^σ A r dr` has
+derivative `A τ` within `[a, b]` at every `τ ∈ [a, b]`. -/
+theorem hasDerivWithinAt_integral {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    [CompleteSpace X] {A : ℝ → X} {a b t₀ τ : ℝ} (hA : ContinuousOn A (Icc a b))
+    (ht₀ : t₀ ∈ Icc a b) (hτ : τ ∈ Icc a b) :
+    HasDerivWithinAt (fun σ ↦ ∫ r in t₀..σ, A r) (A τ) (Icc a b) τ := by
+  have : Fact (τ ∈ Icc a b) := ⟨hτ⟩
+  exact _root_.intervalIntegral.integral_hasDerivWithinAt_right
+    (hA.mono (uIcc_subset_Icc ht₀ hτ)).intervalIntegrable
+    (hA.stronglyMeasurableAtFilter_nhdsWithin measurableSet_Icc τ) (hA τ hτ)
+
 end intervalIntegral
 
 /-- **FTC-1 on an open interval.** If `f` is continuous on `[a, b]`, then its primitive
@@ -88,6 +105,15 @@ theorem _root_.ContinuousOn.integral_hasDerivAt_of_mem_Ioo {E : Type*} [NormedAd
       ).intervalIntegrable)
     ((hf.mono Ioo_subset_Icc_self).stronglyMeasurableAtFilter isOpen_Ioo x hx)
     ((hf.mono Ioo_subset_Icc_self).continuousAt (isOpen_Ioo.mem_nhds hx))
+
+/-- If `g` is continuous on `[a, b]` and `f t = f a + ∫ s in a..t, g s` for `t ∈ (a, b)`, then `f`
+has derivative `g x` at every `x ∈ (a, b)`. -/
+theorem _root_.ContinuousOn.hasDerivAt_of_eq_add_integral {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {f g : ℝ → E} {a b x : ℝ} (hg : ContinuousOn g (Icc a b))
+    (hx : x ∈ Ioo a b) (heq : ∀ t ∈ Ioo a b, f t = f a + ∫ s in a..t, g s) :
+    HasDerivAt f (g x) x :=
+  ((hg.integral_hasDerivAt_of_mem_Ioo hx).const_add (f a)).congr_of_eventuallyEq
+    (Filter.eventually_of_mem (isOpen_Ioo.mem_nhds hx) heq)
 
 /-- **Periodic solutions of an integral equation.** Let `x` and a continuous `Y` be `T`-periodic,
 with `T > 0`. If `x t - x 0 = ∫₀ᵗ Y` for every `t ∈ [0, T]`, then `x` has derivative `Y t` at every

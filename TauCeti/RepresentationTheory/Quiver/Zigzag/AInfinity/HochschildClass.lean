@@ -112,6 +112,9 @@ the strict zigzag algebra over every nontrivial commutative ring is proved in
 
 ## Main results
 
+* `TauCeti.zigzagStrictAInfinityAlgebra_taylor_subword_eq_zero_of_ne_two` and
+  `TauCeti.zigzagStrictAInfinityAlgebra_taylor_subword_two`: the Taylor map of the strict zigzag
+  algebra on a block of letters, zero unless the block has two letters.
 * `TauCeti.zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod_of_mem`: the
   Hochschild differential of a degree-zero suspended cochain on a word of letters of path length
   one, of any length at least two.
@@ -122,8 +125,11 @@ the strict zigzag algebra over every nontrivial commutative ring is proved in
   any degrees, with the Koszul signs of the collapsed products.
 * `TauCeti.zigzagBacktrackPairing_hochschildDifferential_eq_zero`: `Λ` vanishes on coboundaries
   when its weights satisfy the balance condition.
-* `TauCeti.zigzagTrace_obstruction_zigzagLoopAInfinityAlgebra_of_tprod`: the trace of the higher
-  operation of a loop deformation on a word of arrows, in every arity.
+* `TauCeti.obstruction_zigzagLoopAInfinityAlgebra_of_tprod_eq_m`,
+  `TauCeti.obstruction_zigzagLoopAInfinityAlgebra_of_tprod` and
+  `TauCeti.zigzagTrace_obstruction_zigzagLoopAInfinityAlgebra_of_tprod`: the higher operation of a
+  loop deformation on any word as its operation on the Koszul-twisted letters, its value on a word
+  of arrows, in every arity, and the trace of that value.
 * `TauCeti.zigzagBacktrackPairing_obstruction`: the value of `Λ` on the quartic operation of a loop
   deformation.
 * `TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`: the higher operation of
@@ -186,8 +192,9 @@ private theorem taylor_splice_of_ne {n : ℕ} (z : Fin n → nonisolatedZigzagQu
   · rw [splice_eq_zero_of_not_fits k z e hfit, map_zero]
 
 /-- The Taylor map of the strict zigzag algebra vanishes on blocks of length other than two. -/
-private theorem taylor_subword_of_ne {n : ℕ} (x : Fin n → nonisolatedZigzagQuotient k G)
-    (p d : ℕ) (h : d ≠ 2) : (𝒵).taylor (subword k x p d) = 0 := by
+theorem zigzagStrictAInfinityAlgebra_taylor_subword_eq_zero_of_ne_two {n : ℕ}
+    (x : Fin n → nonisolatedZigzagQuotient k G) (p d : ℕ) (h : d ≠ 2) :
+    (𝒵).taylor (subword k x p d) = 0 := by
   rcases Nat.eq_zero_or_pos d with rfl | hd
   · rw [subword_length_zero, map_zero]
   by_cases hpd : p + d ≤ n
@@ -196,8 +203,8 @@ private theorem taylor_subword_of_ne {n : ℕ} (x : Fin n → nonisolatedZigzagQ
   · rw [subword_eq_zero_of_lt_add k x (by omega), map_zero]
 
 /-- The Taylor map of the strict zigzag algebra on a block of length two is the twisted product. -/
-private theorem taylor_subword_two {n : ℕ} (x : Fin n → nonisolatedZigzagQuotient k G)
-    (p : ℕ) (h : p + 2 ≤ n) :
+theorem zigzagStrictAInfinityAlgebra_taylor_subword_two {n : ℕ}
+    (x : Fin n → nonisolatedZigzagQuotient k G) (p : ℕ) (h : p + 2 ≤ n) :
     (𝒵).taylor (subword k x p 2) =
       (𝒵).grading.koszulTwist 1 (x ⟨p, by omega⟩) * x ⟨p + 1, by omega⟩ := by
   rw [subword_eq_of_tprod k x (by norm_num) h, AInfinityAlgebra.taylor_of_tprod,
@@ -264,7 +271,9 @@ theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_homogeneous
     zigzagStrictAInfinityAlgebra_m_two_apply]
   -- In `φ{m}` only the collapses of two letters survive.
   rw [Finset.sum_congr rfl fun p _ ↦ Finset.sum_eq_single 2
-      (fun d _ hd ↦ by rw [taylor_subword_of_ne _ p d hd, splice_zero, map_zero, smul_zero])
+      (fun d _ hd ↦ by
+        rw [zigzagStrictAInfinityAlgebra_taylor_subword_eq_zero_of_ne_two _ p d hd, splice_zero,
+          map_zero, smul_zero])
       (by simp),
     Finset.sum_range_succ, splice_eq_zero_of_block_lt_add k _ _ (by omega), map_zero, smul_zero,
     add_zero]
@@ -273,7 +282,8 @@ theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_homogeneous
           ((𝒵).taylor (subword k (fun j : Fin (n + 2) ↦ x j) p 2)) =
         of k _ ⟨n + 1, by omega⟩ (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦
           replaceBlock x p 2 ((𝒵).grading.koszulTwist 1 (x p) * x (p + 1)) j) := by
-    rw [taylor_subword_two _ p (by omega), splice_eq_of_tprod_replaceBlock k x two_pos (by omega)]
+    rw [zigzagStrictAInfinityAlgebra_taylor_subword_two _ p (by omega),
+      splice_eq_of_tprod_replaceBlock k x two_pos (by omega)]
     exact of_tprod_congr k _ _ (by omega) fun j ↦ by simp
   rw [Finset.sum_congr rfl fun p hp ↦ by rw [hinner p (Finset.mem_range.mp hp)],
     subword_eq_of_tprod k _ (by omega) (by omega), subword_eq_of_tprod k _ (by omega) (by omega)]
@@ -380,6 +390,49 @@ end Differential
 
 section LoopObstruction
 
+/-- The higher operation of a loop deformation, its operation of arity `n + 2` for `n ≥ 1`, on a
+word of `n + 2` letters is the operation of arity `n + 2` of the loop deformation on the letters
+twisted by the Koszul signs of the suspension. -/
+theorem obstruction_zigzagLoopAInfinityAlgebra_of_tprod_eq_m {n : ℕ} (hn : 1 ≤ n)
+    (c : (Fin (n + 2) → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
+    (y : Fin (n + 2) → nonisolatedZigzagQuotient k G) :
+    (zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨n + 2, by omega⟩
+        (of k _ ⟨n + 2, by omega⟩ (PiTensorProduct.tprod k y)) =
+      (zigzagLoopAInfinityAlgebra hns c hc).m (n + 2) fun i ↦
+        (zigzagLoopAInfinityAlgebra hns c hc).grading.koszulTwist (n + 1 - i : ℕ) (y i) := by
+  simp only [AInfinityAlgebra.obstruction_def, LinearMap.comp_apply, LinearMap.sub_apply]
+  rw [lengthProj_of_self, AInfinityAlgebra.taylor_of_tprod, AInfinityAlgebra.taylor_of_tprod,
+    zigzagStrictAInfinityAlgebra_m_eq_zero (by dsimp only; omega), _root_.zero_apply, sub_zero]
+  congr 1
+  funext i
+  congr 2
+  dsimp only
+  omega
+
+/-- **The higher operation of a loop deformation on arrows.** For `n ≥ 1` and coefficients `c` on
+walks of length `n + 2`, the obstruction of the loop deformation, its operation of arity `n + 2`,
+takes the arrows of `n + 2` darts `w` to the coefficient of `w` times the volume class at the head
+of `w 0`, up to the sign `∏ i, (-1) ^ (n + 1 - i)` of the suspension. -/
+theorem obstruction_zigzagLoopAInfinityAlgebra_of_tprod {n : ℕ} (hn : 1 ≤ n)
+    (c : (Fin (n + 2) → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
+    (w : Fin (n + 2) → G.Dart) :
+    (zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨n + 2, by omega⟩
+        (of k _ ⟨n + 2, by omega⟩ (PiTensorProduct.tprod k fun t ↦ 𝔞 (w t))) =
+      ((((∏ i : Fin (n + 2), ((n + 1 - i : ℕ) : ℤ).negOnePow : ℤˣ) : ℤ) : k) * c w) •
+        zigzagVolume k G (w 0).snd := by
+  rw [obstruction_zigzagLoopAInfinityAlgebra_of_tprod_eq_m hn]
+  -- The suspension twists the `i`-th arrow by the sign `(-1) ^ (n + 1 - i)`.
+  have htw : (fun i : Fin (n + 2) ↦ (zigzagLoopAInfinityAlgebra hns c hc).grading.koszulTwist
+      (n + 1 - i : ℕ) (𝔞 (w i))) =
+      fun i : Fin (n + 2) ↦ (((n + 1 - (i : ℕ) : ℕ) : ℤ).negOnePow : k) • 𝔞 (w i) := by
+    funext i
+    rw [InternalGrading.koszulTwist_apply_of_mem _ (e := 1) (by
+      rw [zigzagLoopAInfinityAlgebra_grading_piece]
+      exact zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _), mul_one]
+  rw [htw, MultilinearMap.map_smul_univ, zigzagLoopAInfinityAlgebra_m_ofArrow _ _ (by omega),
+    smul_smul]
+  simp [Units.coe_prod]
+
 /-- **The higher operation of a loop deformation under the trace.** For `n ≥ 1` and coefficients
 `c` on walks of length `n + 2`, the trace of the obstruction of the loop deformation, its operation
 of arity `n + 2`, on the arrows of `n + 2` darts `w` is the coefficient of `w` times the sign
@@ -390,22 +443,8 @@ theorem zigzagTrace_obstruction_zigzagLoopAInfinityAlgebra_of_tprod {n : ℕ} (h
     zigzagTrace k G hns ((zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨n + 2, by omega⟩
       (of k _ ⟨n + 2, by omega⟩ (PiTensorProduct.tprod k fun t ↦ 𝔞 (w t)))) =
       (((∏ i : Fin (n + 2), ((n + 1 - i : ℕ) : ℤ).negOnePow : ℤˣ) : ℤ) : k) * c w := by
-  simp only [AInfinityAlgebra.obstruction_def, LinearMap.comp_apply, LinearMap.sub_apply]
-  rw [lengthProj_of_self, AInfinityAlgebra.taylor_of_tprod, AInfinityAlgebra.taylor_of_tprod,
-    zigzagStrictAInfinityAlgebra_m_eq_zero (by dsimp only; omega), _root_.zero_apply, sub_zero]
-  -- The suspension twists the `i`-th arrow by the sign `(-1) ^ (n + 1 - i)`.
-  have htw : (fun i : Fin (n + 2) ↦ (zigzagLoopAInfinityAlgebra hns c hc).grading.koszulTwist
-      (((⟨n + 2, by omega⟩ : {n : ℕ // 0 < n}) : ℕ) - 1 - (i : ℕ)) (𝔞 (w i))) =
-      fun i : Fin (n + 2) ↦ (((n + 1 - (i : ℕ) : ℕ) : ℤ).negOnePow : k) • 𝔞 (w i) := by
-    funext i
-    rw [InternalGrading.koszulTwist_apply_of_mem _ (e := 1) (by
-      rw [zigzagLoopAInfinityAlgebra_grading_piece]
-      exact zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _), mul_one]
-    congr 4
-    dsimp only
-    omega
-  rw [htw, MultilinearMap.map_smul_univ, zigzagLoopAInfinityAlgebra_m_ofArrow _ _ (by omega)]
-  simp [Units.coe_prod]
+  rw [obstruction_zigzagLoopAInfinityAlgebra_of_tprod hn, map_smul, zigzagTrace_zigzagVolume,
+    smul_eq_mul, mul_one]
 
 /-- **Loop obstructions are Hochschild cocycles.** The obstruction of the loop deformation with
 coefficients `c` on walks of length `n + 2` is a Hochschild cocycle of the strict zigzag algebra,

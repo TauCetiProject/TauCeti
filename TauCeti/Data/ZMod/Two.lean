@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Algebra.Group.TypeTags.Finite
 public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Data.ZMod.Basic
+import Mathlib.Algebra.CharP.Two
 import Mathlib.Tactic.Ring
 import TauCeti.Data.ZMod.Nilpotent
 
@@ -25,7 +27,8 @@ element is never a unit. These are the cases `p = 2` of `ZMod.isUnit_natCast_mul
 `ZMod.not_isUnit_natCast_mul`, stated with the numeral `2`.
 
 The cyclic group of order two, written multiplicatively as `C₂ = Multiplicative (ZMod 2)`, has
-exactly the two elements `1` and `σ = Multiplicative.ofAdd 1`, so a sum over `C₂` has two terms.
+exactly the two elements `1` and `σ = Multiplicative.ofAdd 1`, so a sum over `C₂` has two terms,
+and an isomorphism onto `C₂` is unique, since it must send every non-identity element to `σ`.
 
 ## Main results
 
@@ -38,6 +41,12 @@ exactly the two elements `1` and `σ = Multiplicative.ofAdd 1`, so a sum over `C
 * `ZMod.not_isUnit_two_mul`: `2c` is not a unit in `ℤ/2^{k+1}`.
 * `ZMod.eq_two_mul_or_eq_two_mul_add_one`: every element of `ℤ/n` is even or odd.
 * `Multiplicative.eq_one_or_eq_ofAdd_one`: every element of `C₂` is `1` or `σ`.
+* `AddMonoidHom.exists_eq_one_of_ne_zero`: a nonzero sign character `G →+ ZMod 2` takes the
+  value `1` somewhere.
+* `AddMonoidHom.add_self_mem_ker_zmod_two`: twice any element lies in the kernel of a sign
+  character.
+* `MulEquiv.apply_eq_ofAdd_one_of_ne_one`: an isomorphism onto `C₂` sends every non-identity
+  element to `σ`, so there is at most one such isomorphism.
 * `TauCeti.sum_cyclicTwo`: a sum over `C₂` is the sum of the values at `1` and at `σ`.
 -/
 
@@ -101,6 +110,40 @@ theorem eq_one_or_eq_ofAdd_one (g : Multiplicative (ZMod 2)) :
   decide
 
 end Multiplicative
+
+namespace AddMonoidHom
+
+/-- A nonzero sign character takes the value `1` somewhere. -/
+theorem exists_eq_one_of_ne_zero {G : Type*} [AddZeroClass G] {f : G →+ ZMod 2} (hf : f ≠ 0) :
+    ∃ g, f g = 1 := by
+  obtain ⟨g, hg⟩ := DFunLike.ne_iff.mp hf
+  exact ⟨g, ZMod.ne_zero_iff_eq_one.mp hg⟩
+
+/-- Twice any element lies in the kernel of a homomorphism to `ℤ/2`. -/
+theorem add_self_mem_ker_zmod_two {G : Type*} [AddGroup G] (ι : G →+ ZMod 2) (g : G) :
+    g + g ∈ ι.ker := by
+  rw [mem_ker, map_add, CharTwo.add_self_eq_zero]
+
+end AddMonoidHom
+
+namespace MulEquiv
+
+variable {H : Type*} [MulOneClass H]
+
+/-- An isomorphism onto `C₂` sends every non-identity element to the generator
+`σ = Multiplicative.ofAdd 1`. -/
+theorem apply_eq_ofAdd_one_of_ne_one (e : H ≃* Multiplicative (ZMod 2)) {y : H} (hy : y ≠ 1) :
+    e y = Multiplicative.ofAdd 1 :=
+  (Multiplicative.eq_one_or_eq_ofAdd_one (e y)).resolve_left (e.map_ne_one_iff.2 hy)
+
+/-- There is at most one isomorphism onto `C₂`. -/
+instance : Subsingleton (H ≃* Multiplicative (ZMod 2)) where
+  allEq e e' := MulEquiv.ext fun y ↦ by
+    by_cases hy : y = 1
+    · simp [hy]
+    · rw [e.apply_eq_ofAdd_one_of_ne_one hy, e'.apply_eq_ofAdd_one_of_ne_one hy]
+
+end MulEquiv
 
 namespace TauCeti
 

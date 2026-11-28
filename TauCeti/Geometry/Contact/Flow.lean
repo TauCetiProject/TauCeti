@@ -28,17 +28,19 @@ at time `t`, it rescales `α` by a positive factor:
 (`IsContactHamiltonianVectorField.mpullback_flowOf_apply`). So each local time-`t` map pulls `α`
 back at `x` to a positive multiple of `αₓ`, as a cooriented contactomorphism does
 (`IsContactHamiltonianVectorField.exists_pos_mpullback_flowOf_apply_eq_smul`). The
-local flow preserves `α` itself exactly when `f` is invariant under the Reeb vector field,
-`R_α f = 0` (`IsContactHamiltonianVectorField.mpullback_flowOf_apply_eq_self_iff`). The test is
-local to orbits: the flow preserves `α` at `x` for all times at which `φₜ x` is defined exactly
-when `R_α f` vanishes along the orbit of `x`
-(`IsContactHamiltonianVectorField.forall_mpullback_flowOf_apply_eq_self_iff`). In particular
+strictness test holds orbit by orbit: the local flow preserves `α` at `x` at every time at which
+it is defined, that is, the rescaling factor is `1` there, exactly when `R_α f` vanishes along the
+trajectory of `x` (`IsContactHamiltonianVectorField.forall_mpullback_flowOf_apply_eq_self_iff`).
+So the local flow preserves `α` itself exactly when `f` is invariant under the Reeb vector field,
+`R_α f = 0` (`IsContactHamiltonianVectorField.mpullback_flowOf_apply_eq_self_iff`). In particular
 the local Reeb flow, the flow of the constant Hamiltonian `1`, preserves `α`
 (`IsContactForm.mpullback_flowOf_reebVectorField_apply`). None of this needs completeness.
 
 When `X` is complete, which holds for instance on a compact manifold
-(`TauCeti.isCompleteVectorField_of_compactSpace`), its maximal flow is the global flow `ψ`, and the
-time-`t` maps are diffeomorphisms. They are then cooriented contactomorphisms of `α`
+(`TauCeti.isCompleteVectorField_of_compactSpace`) or when `f` is `C²` with compact support
+(`IsContactForm.isCompleteVectorField_contactHamiltonianVectorField_of_hasCompactSupport`), since
+`X` vanishes off the support of `f`, its maximal flow is the global flow `ψ`, and the
+time-`t` maps are diffeomorphisms. For smooth `f` they are then cooriented contactomorphisms of `α`
 (`IsContactHamiltonianVectorField.preservesCoorientation_globalFlowDiffeomorph`), and strict
 contactomorphisms for every `t` exactly when `R_α f = 0`
 (`IsContactHamiltonianVectorField.isStrictContactomorphism_globalFlowDiffeomorph_iff`). In
@@ -129,41 +131,25 @@ theorem exists_pos_mpullback_flowOf_apply_eq_smul (hα : α.IsContactForm)
     ∃ c : ℝ, 0 < c ∧ TauCeti.mpullback I I (flowOf X t) α.val x = c • α.val x :=
   ⟨_, Real.exp_pos _, hX.mpullback_flowOf_apply hα hf hx⟩
 
-/-- **Strictness along a single orbit.** For a contact form `α` and the contact Hamiltonian vector
-field `X` of a `C³` function `f`, the maximal flow `φ` of `X` preserves `α` at `x`, that is
-`(φₜ^* α)ₓ = αₓ` at every time `t` at which `φₜ x` is defined, exactly when `R_α f` vanishes along
-the orbit of `x`. -/
+/-- **Strictness along one trajectory.** For a contact form `α` and the contact Hamiltonian
+vector field `X` of a `C³` function `f`, the maximal flow `φ` of `X` preserves `α` at `x`,
+`(φₜ^* α)ₓ = αₓ`, at every time `t` at which the flow through `x` is defined exactly when `R_α f`
+vanishes along the trajectory of `x`. Equivalently, by
+`IsContactHamiltonianVectorField.mpullback_flowOf_apply`, the rescaling factor
+`exp (∫₀ᵗ (R_α f)(φₛ x) ds)` is `1` at all those times. -/
 theorem forall_mpullback_flowOf_apply_eq_self_iff (hα : α.IsContactForm)
     (hX : α.IsContactHamiltonianVectorField f X) (hf : ContMDiff I 𝓘(ℝ) 3 f) (x : M) :
     (∀ t, (t, x) ∈ flowDomain X → TauCeti.mpullback I I (flowOf X t) α.val x = α.val x) ↔
       ∀ t, (t, x) ∈ flowDomain X →
         mvfderiv I f (flowOf X t x) (α.reebVectorField (flowOf X t x)) = 0 := by
-  have hX1 : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) :=
-    hX.contMDiff hα (by simp) (hf.of_le (by norm_num))
-  -- The times of the orbit form an open set `J` containing `0`, and `R_α f` is continuous.
-  set J : Set ℝ := {s | (s, x) ∈ flowDomain X}
-  set h : ℝ → ℝ := fun s ↦ mvfderiv I f (flowOf X s x) (α.reebVectorField (flowOf X s x))
-  have hJ : IsOpen J := isOpen_setOf_mem_flowDomain hX1 continuous_id continuous_const
+  have hX2 : ContMDiff I I.tangent 2 (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) :=
+    hX.contMDiff hα (by simp) (by norm_num [hf])
   have hRf : Continuous fun y ↦ mvfderiv I f y (α.reebVectorField y) :=
     (hα.contMDiff_mvfderiv_reebVectorField (n := 0) (by simp) (hf.of_le (by norm_num))).continuous
-  have hα₀ : (α.val x : E [⋀^Fin 1]→L[ℝ] ℝ) ≠ 0 :=
+  exact TauCeti.forall_mpullback_flowOf_apply_eq_self_iff_of_mlieDerivForm_eq_smul
+    (hX2.of_le one_le_two) hRf α.mdifferentiable
+    (hX.mlieDerivForm_eq (hX2.mdifferentiable two_ne_zero))
     (isContactForm_iff_forall_isContactFormAt.mp hα x).ne_zero
-  -- By the rescaling formula, `(φₜ^* α)ₓ = αₓ` exactly when `∫₀ᵗ h = 0`.
-  have hiff (t : ℝ) (ht : t ∈ J) :
-      TauCeti.mpullback I I (flowOf X t) α.val x = α.val x ↔ ∫ s in 0..t, h s = 0 := by
-    rw [hX.mpullback_flowOf_apply hα hf ht, ← Real.exp_eq_one_iff]
-    exact ⟨fun he ↦ smul_left_injective ℝ hα₀ (he.trans (one_smul ℝ _).symm),
-      fun he ↦ by rw [he, one_smul]⟩
-  refine ⟨fun hpull t ht ↦ ?_, fun hzero t ht ↦ (hiff t ht).2 ?_⟩
-  · -- `u ↦ ∫₀ᵘ h` vanishes on the open set `J`, so its derivative `h t` at `t ∈ J` vanishes.
-    have hd : HasDerivAt (fun u ↦ ∫ s in 0..u, h s) (h t) t := by
-      simpa only [flowIntegral_def] using hasDerivAt_flowIntegral hX1 hRf ht
-    have hev : (fun _ : ℝ ↦ (0 : ℝ)) =ᶠ[𝓝 t] fun u ↦ ∫ s in 0..u, h s := by
-      filter_upwards [hJ.mem_nhds ht] with u hu
-      exact ((hiff u hu).1 (hpull u hu)).symm
-    exact (hd.congr_of_eventuallyEq hev).unique (hasDerivAt_const t (0 : ℝ))
-  · rw [intervalIntegral.integral_congr (g := fun _ ↦ (0 : ℝ))
-      (fun s hs ↦ hzero s (uIcc_subset_setOf_mem_flowDomain ht hs)), intervalIntegral.integral_zero]
 
 /-- **Strict contact Hamiltonian flows.** For a contact form `α` and the contact Hamiltonian
 vector field `X` of a `C³` function `f`, the maximal flow of `X` preserves `α` wherever it is
@@ -249,6 +235,21 @@ theorem IsContactForm.isStrictContactomorphism_globalFlowDiffeomorph_reebVectorF
     exact hα.isContactHamiltonianVectorField_contactHamiltonianVectorField 1
   exact (hX.isStrictContactomorphism_globalFlowDiffeomorph_iff hα contMDiff_const hc).2
     (fun x ↦ by simp [Pi.one_def, mvfderiv_const]) t
+
+/-- **Compactly supported contact Hamiltonians have complete flows.** For a contact form `α` and a
+compactly supported `C²` function `f`, the contact Hamiltonian vector field `X_f` vanishes off the
+support of `f`, so it is complete. When `f` is moreover smooth, its flow then consists of
+cooriented contactomorphisms
+(`IsContactHamiltonianVectorField.preservesCoorientation_globalFlowDiffeomorph`), with no
+compactness of `M`. -/
+theorem IsContactForm.isCompleteVectorField_contactHamiltonianVectorField_of_hasCompactSupport
+    (hα : α.IsContactForm) (hf : ContMDiff I 𝓘(ℝ) 2 f) (hfc : HasCompactSupport f) :
+    IsCompleteVectorField (α.contactHamiltonianVectorField f) := by
+  refine isCompleteVectorField_of_isCompact_of_eq_zero_off
+    (hα.contMDiff_contactHamiltonianVectorField (n := 1) (by simp) (hf.of_le (by norm_num)))
+    hfc.isCompact fun x hx ↦ ?_
+  exact ((notMem_tsupport_iff_eventuallyEq.1 hx).contactHamiltonianVectorField_eq α).trans
+    (by simp)
 
 end HamiltonianFlow
 
@@ -384,13 +385,13 @@ def IsContactForm.kerFlowEquiv (hα : α.IsContactForm) {t : ℝ} {p q : M}
     (LinearMap.ext fun u ↦ Subtype.ext <| by
       rw [LinearMap.comp_apply, hα.coe_kerFlowLinearMap_apply, hα.coe_kerFlowLinearMap_apply,
         LinearMap.id_apply]
-      exact (mfderiv_flowOf_add_apply hv hneg hback ht u.val).trans
-        (by rw [neg_add_cancel]; exact mfderiv_flowOf_zero_apply_eq_self _ q u.val))
+      subst hq
+      exact mfderiv_flowOf_mfderiv_flowOf_neg_apply hv ht u.val)
     (LinearMap.ext fun v ↦ Subtype.ext <| by
       rw [LinearMap.comp_apply, hα.coe_kerFlowLinearMap_apply, hα.coe_kerFlowLinearMap_apply,
         LinearMap.id_apply]
-      exact (mfderiv_flowOf_add_apply hv ht hq hneg v.val).trans
-        (by rw [add_neg_cancel]; exact mfderiv_flowOf_zero_apply_eq_self _ p v.val))
+      subst hq
+      exact mfderiv_flowOf_neg_mfderiv_flowOf_apply hv ht v.val)
 
 @[simp]
 theorem IsContactForm.toLinearMap_kerFlowEquiv (hα : α.IsContactForm) {t : ℝ} {p q : M}

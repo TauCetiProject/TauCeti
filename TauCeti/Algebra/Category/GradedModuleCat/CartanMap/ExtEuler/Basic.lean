@@ -38,12 +38,17 @@ projective covers and simples.
 
 ## Main definitions
 
+* `TauCeti.gradedProjectiveExtEulerTarget`: the q-Euler pairing `K₀^gr(proj A) → ℤ[q,q⁻¹]` against
+  any fixed finite-dimensional graded module `N`, defined without assuming `A` is
+  finite-dimensional over `k`.
 * `TauCeti.gradedProjectiveExtEuler`: the q-Euler form `K₀^gr(proj A) × G₀^gr(mod A) → ℤ[q,q⁻¹]`.
 
 ## Main results
 
-* `TauCeti.isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModules`: finite
-  graded projectives and finite graded modules form graded Euler-admissible pairs.
+* `TauCeti.isGradedEulerAdmissible_gradedFiniteProjectiveModules_of_finite` and
+  `TauCeti.isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModules`: finite
+  graded projectives and finite-dimensional (in particular, finite when `A` is finite-dimensional)
+  graded modules form graded Euler-admissible pairs.
 * `TauCeti.gradedExtEuler_ofIdeal_span_singleton`: `χ_q(Af, M) = ∑ₚ dim_k(f • Mₚ) qᵖ`.
 * `TauCeti.gradedProjectiveExtEuler_ofIdeal_span_singleton`: pairing against `[Af]` is the
   idempotent coordinate of `f`.
@@ -126,6 +131,81 @@ theorem gradedExtEuler_ofIdeal_span_singleton [HasExt.{w} (GradedModuleCat.{uA} 
     (GradedModuleCat.ofIdealSpanSingletonHomEquiv hf hf₀ hI _).finrank_eq]
   rw [InternalGrading.shift_piece, neg_neg, zero_add]
 
+/-! ### Pairing with a finite-dimensional target -/
+
+/-- Any finite graded projective and any finite-dimensional graded module form a graded
+Euler-admissible pair, without assuming the algebra is finite-dimensional over `k`. -/
+theorem isGradedEulerAdmissible_gradedFiniteProjectiveModules_of_finite
+    [HasExt.{w} (GradedModuleCat.{uA} 𝒜)]
+    {P : GradedModuleCat.{uA} 𝒜} (hP : gradedFiniteProjectiveModules 𝒜 P)
+    (N : GradedModuleCat.{uA} 𝒜) [Module.Finite k N] :
+    IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) P N := by
+  let _ : Module.Finite A P := (gradedFiniteProjectiveModules_iff.mp hP).left
+  let _ : Module.Projective A P := (gradedFiniteProjectiveModules_iff.mp hP).right
+  exact isGradedEulerAdmissible_of_projective k _ P N
+    ((GradedModuleCat.hasFiniteLaurentSupport_hom_shiftObj P N).of_equiv fun j ↦
+      (GradedModuleCat.homShiftPowEquiv 𝒜 P N j).symm)
+
+private def gradedProjectiveExtEulerTargetInvariant
+    [HasExt.{uA} (GradedModuleCat.{uA} 𝒜)]
+    (N : GradedModuleCat.{uA} 𝒜) [Module.Finite k N] :
+    GradedExactStructure.ShiftInvariant (gradedFiniteProjectiveModulesExactStructure 𝒜)
+      (laurentTAut ℤ (LaurentPolynomial ℤ)) where
+  obj P := invert (gradedExtEuler k (GradedModuleCat.shift 𝒜)
+    (isGradedEulerAdmissible_gradedFiniteProjectiveModules_of_finite P.property N))
+  map_conflation {S} hS := by
+    have hS' : (S.map (gradedFiniteProjectiveModules 𝒜).ι).ShortExact :=
+      (gradedFiniteProjectiveModulesExactStructure_conflation_iff S).mp hS
+    rw [← map_add, ← gradedExtEuler_shortExact₁ hS' N
+      (isGradedEulerAdmissible_gradedFiniteProjectiveModules_of_finite S.X₁.property N)
+      (isGradedEulerAdmissible_gradedFiniteProjectiveModules_of_finite S.X₃.property N)]
+  map_shift P := by
+    have hiso := gradedExtEuler_of_iso k
+      (isGradedEulerAdmissible_gradedFiniteProjectiveModules_of_finite
+        ((gradedFiniteProjectiveModulesExactStructure 𝒜).shift.functor.obj P).property N)
+      (isGradedEulerAdmissible_gradedFiniteProjectiveModules_of_finite P.property N).shiftSource
+      (gradedFiniteProjectiveModulesExactStructureShiftFunctorCompιIso.app P) (Iso.refl N)
+    rw [hiso, gradedExtEuler_shiftSource, map_mul, invert_T, neg_neg, laurentTAut_apply,
+      smul_eq_mul]
+
+/-- **The q-Euler pairing against a fixed finite-dimensional graded module**,
+`K₀^gr(proj A) → ℤ[q,q⁻¹]`. It is `q`-antilinear in the projective class and sends `[P]` to
+`χ_q(P, N)`, with no finite-dimensionality assumption on `A`. -/
+def gradedProjectiveExtEulerTarget [HasExt.{uA} (GradedModuleCat.{uA} 𝒜)]
+    (N : GradedModuleCat.{uA} 𝒜) [Module.Finite k N] :
+    LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
+      →ₛₗ[(LaurentPolynomial.invert (R := ℤ)).toRingEquiv.toRingHom] LaurentPolynomial ℤ where
+  toFun x := invert
+    (LaurentK0.lift.{uA} _ (gradedProjectiveExtEulerTargetInvariant N) x)
+  map_add' x y := by rw [map_add, map_add]
+  map_smul' r x := by
+    rw [map_smul, smul_eq_mul, map_mul]
+    rfl
+
+/-- Evaluating `gradedProjectiveExtEulerTarget N` on `[P]` gives `χ_q(P, N)`. -/
+@[simp]
+theorem gradedProjectiveExtEulerTarget_of [HasExt.{uA} (GradedModuleCat.{uA} 𝒜)]
+    (N : GradedModuleCat.{uA} 𝒜) [Module.Finite k N]
+    (P : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) :
+    gradedProjectiveExtEulerTarget N (LaurentK0.of.{uA} _ P) =
+      gradedExtEuler k (GradedModuleCat.shift 𝒜)
+        (isGradedEulerAdmissible_gradedFiniteProjectiveModules_of_finite P.property N) := by
+  simp only [gradedProjectiveExtEulerTarget, LinearMap.coe_mk, AddHom.coe_mk,
+    LaurentK0.lift_of, gradedProjectiveExtEulerTargetInvariant]
+  exact involutive_invert (R := ℤ) _
+
+/-- Evaluating `gradedProjectiveExtEulerTarget N` on `[Af]` gives `gdim(f • N)`. -/
+@[simp]
+theorem gradedProjectiveExtEulerTarget_ofIdeal_span_singleton
+    [HasExt.{uA} (GradedModuleCat.{uA} 𝒜)] {f : A}
+    (hf : IsIdempotentElem f) (hf₀ : f ∈ 𝒜 0) (hI : (Ideal.span {f} : Ideal A).IsHomogeneous 𝒜)
+    (N : GradedModuleCat.{uA} 𝒜) [Module.Finite k N] :
+    gradedProjectiveExtEulerTarget N (LaurentK0.of.{uA} _
+        ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {f}) hI,
+          gradedFiniteProjectiveModules_ofIdeal_span_singleton hf hI⟩) =
+      N.smulGradedDimension f := by
+  rw [gradedProjectiveExtEulerTarget_of, gradedExtEuler_ofIdeal_span_singleton hf hf₀ hI N]
+
 /-! ### Graded Euler-admissibility of projective pairs -/
 
 variable [Module.Finite k A]
@@ -138,13 +218,9 @@ theorem isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModu
     IsGradedEulerAdmissibleOn.{w} (k := k) (e := GradedModuleCat.shift 𝒜)
       (gradedFiniteProjectiveModules 𝒜) (gradedFiniteModules 𝒜) where
   isGradedEulerAdmissible P M hP hM := by
-    let _ : Module.Finite A P := (gradedFiniteProjectiveModules_iff.1 hP).1
-    let _ : Module.Projective A P := (gradedFiniteProjectiveModules_iff.1 hP).2
-    let _ : Module.Finite A M := gradedFiniteModules_iff.1 hM
+    let _ : Module.Finite A M := gradedFiniteModules_iff.mp hM
     have : Module.Finite k M := Module.Finite.trans A M
-    exact isGradedEulerAdmissible_of_projective k _ P M
-      ((GradedModuleCat.hasFiniteLaurentSupport_hom_shiftObj P M).of_equiv fun j ↦
-        (GradedModuleCat.homShiftPowEquiv 𝒜 P M j).symm)
+    exact isGradedEulerAdmissible_gradedFiniteProjectiveModules_of_finite hP M
 
 /-! ### The q-Euler form on graded Grothendieck groups -/
 
@@ -180,6 +256,34 @@ theorem gradedProjectiveExtEuler_of_of (P : (gradedFiniteProjectiveModules 𝒜)
           (𝒜 := 𝒜)).isGradedEulerAdmissible
           P.property M.property) :=
   gradedExtEulerSesquilinear_of_of _ _ _ _ _ P M
+
+/-- Over a finite-dimensional algebra, pairing a projective class `x` against `[M]` in `G₀^gr`
+coincides with `gradedProjectiveExtEulerTarget M.obj x`. -/
+theorem gradedProjectiveExtEuler_of_right
+    (x : LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜))
+    (M : (gradedFiniteModules 𝒜).FullSubcategory) :
+    gradedProjectiveExtEuler 𝒜 x (LaurentK0.of.{uA} _ M) =
+      gradedProjectiveExtEulerTarget M.obj x := by
+  have hinv (r : LaurentPolynomial ℤ) :
+      invert ((LaurentPolynomial.invert (R := ℤ)).toRingEquiv.toRingHom r) = r :=
+    involutive_invert (R := ℤ) r
+  let φ₁ : LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
+      →ₗ[LaurentPolynomial ℤ] LaurentPolynomial ℤ :=
+    { toFun := fun y ↦ invert (gradedProjectiveExtEuler 𝒜 y (LaurentK0.of.{uA} _ M))
+      map_add' := fun y z ↦ by rw [map_add, LinearMap.add_apply, map_add]
+      map_smul' := fun r y ↦ by
+        rw [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, map_mul, hinv r,
+          RingHom.id_apply, smul_eq_mul] }
+  let φ₂ : LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
+      →ₗ[LaurentPolynomial ℤ] LaurentPolynomial ℤ :=
+    { toFun := fun y ↦ invert (gradedProjectiveExtEulerTarget M.obj y)
+      map_add' := fun y z ↦ by rw [map_add, map_add]
+      map_smul' := fun r y ↦ by
+        rw [map_smulₛₗ, smul_eq_mul, map_mul, hinv r, RingHom.id_apply, smul_eq_mul] }
+  have hlin : φ₁ = φ₂ := LaurentK0.hom_ext _ fun P ↦ by
+    dsimp only [φ₁, φ₂, LinearMap.coe_mk, AddHom.coe_mk]
+    rw [gradedProjectiveExtEuler_of_of, gradedProjectiveExtEulerTarget_of]
+  exact (LaurentPolynomial.invert (R := ℤ)).injective (LinearMap.congr_fun hlin x)
 
 /-- **Pairing against `[Af]` is the idempotent coordinate of `f`**: for an idempotent `f` of degree
 zero, `χ_q([Af], -)` is the `ℤ[q,q⁻¹]`-linear map sending `[M]` to `∑ₚ dim_k(f • Mₚ) qᵖ`. -/

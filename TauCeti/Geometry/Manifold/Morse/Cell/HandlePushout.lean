@@ -9,8 +9,10 @@ public import Mathlib.Topology.Category.TopCat.Sphere
 public import TauCeti.AlgebraicTopology.Disk.Handle
 public import TauCeti.Geometry.Manifold.Morse.Cell.Attachment
 public import TauCeti.Topology.Category.TopCat.Pushout
+import Mathlib.CategoryTheory.Limits.Constructions.BinaryProducts
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
-import TauCeti.AlgebraicTopology.Disk.Prod
+import Mathlib.Topology.Category.TopCat.Limits.Products
+import TauCeti.Topology.Constructions.SumProd
 
 /-!
 # Handle attachment across a critical level as a pushout
@@ -44,6 +46,11 @@ product of closed balls in the coordinates `{j | j < k i}` and `{j | k i ≤ j}`
 are reindexed to the standard discs by relabelling the coordinates
 (`LinearIsometryEquiv.closedBallHomeomorphDisk`).
 
+At a critical point of index `0`, such as a local minimum, the attaching region `∂𝔻 0 × 𝔻 n` of
+the handle is empty, so the handle is glued to nothing. If every critical point on the level has
+index `0`, the pushout is therefore a disjoint union: `M_{c+ε}` is homeomorphic to `M_{c-ε}` with
+one disc `𝔻 n` added for each critical point on the level, as a new connected component.
+
 The handle attachment recovers Milnor's cell attachment theorem. The core of the handle
 `𝔻 (k i) × 𝔻 (n - k i)` is the disc `𝔻 (k i) × {0}`, which meets the attaching region in the core
 sphere `∂𝔻 (k i) × {0}`, and a handle attachment deformation retracts onto the attachment of its
@@ -61,8 +68,15 @@ attached along each core sphere `s ↦ α i (s, 0)`. These attaching spheres are
 * `TauCeti.IsMorse.exists_isPushout_sublevel_handles`: **Milnor's handle attachment theorem** in
   pushout form, for a Morse function with a compact band around a critical value, with one handle
   of index `λ` at each critical point of index `λ` on the level.
+* `TauCeti.IsMorse.exists_homeomorph_pushout_handles`: the same theorem with the named handles
+  `TauCeti.TopCat.handle`: `M_{c+ε}` is homeomorphic to the pushout of one closed embedding of the
+  disjoint union of the attaching regions into the level `f⁻¹(c - ε)` and of the inclusion
+  `TauCeti.TopCat.attachingRegionIncl` of the attaching regions into the handles.
 * `TauCeti.IsMorse.exists_isPushout_sublevel_handle`: the theorem at a level with a single critical
   point, with a single handle attached.
+* `TauCeti.IsMorse.exists_homeomorph_sublevel_sum_of_manifoldMorseIndex_eq_zero`: at a level whose
+  critical points all have index `0`, crossing the level adds one disc `𝔻 n` for each of them as a
+  new component.
 * `TauCeti.IsMorse.exists_coreAttachment_sublevel_deformation`: **Milnor's cell attachment theorem**
   read off the handle attachment: `M_{c+ε}` deformation retracts onto the image of `M_{c-ε}` with
   the cores of the handles attached along their core spheres, the image of the comparison map from
@@ -72,6 +86,8 @@ attached along each core sphere `s ↦ α i (s, 0)`. These attaching spheres are
 
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
   Theorem 3.2 and Remark 3.3.
+* L. Nicolaescu, *An Invitation to Morse Theory*, 2nd ed., Universitext, Springer, 2011,
+  Theorem 2.2.3 and Remark 2.2.5 (the handle attachment as a pushout of the attaching regions).
 -/
 
 public section
@@ -306,14 +322,49 @@ theorem IsMorse.exists_isPushout_sublevel_handles (hf : IsMorse I f) {δ : ℝ} 
   obtain ⟨ε, hε, hεδ, hband, ψ, hψ, hψp⟩ :=
     hf.exists_admissible_morseCharts hδ hcompact (U := fun _ ↦ univ) fun _ _ ↦ Filter.univ_mem
   have : Finite ↥(criticalPoints I f ∩ f ⁻¹' {c}) :=
-    ((hf.finite_criticalPoints_inter hcompact).subset
-      (inter_subset_inter_right _ (preimage_mono (by simp [hδ.le])))).to_subtype
+    (hf.finite_criticalPoints_inter_level hδ.le hcompact).to_subtype
   exact ⟨ε, hε, hεδ, TauCeti.exists_isPushout_sublevel_handles hf.contMDiff ψ hψ _
     (fun _ ↦ manifoldMorseIndex_le_finrank) hε (fun p ↦ (hψp p).2.2.2.1)
     (fun p ↦ (hψp p).2.2.2.2)
     (hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
       (preimage_mono (Icc_subset_Icc (by linarith) (by linarith))))
     fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx.1, hband hx⟩, (hψp _).1⟩⟩
+
+/-- **Milnor's handle attachment theorem, as a homeomorphism with a pushout** (Milnor, Theorem 3.2
+and Remark 3.3; Nicolaescu, Theorem 2.2.3 and Remark 2.2.5). Let `f` be a Morse function on a
+Hausdorff manifold of dimension `m` whose band `f⁻¹[c - δ, c + δ]` is compact, for some `0 < δ`,
+and write `M_a = {f ≤ a}` and `λ p` for the Morse index of `f` at a critical point `p`. Then for
+some width `0 < ε ≤ δ` there is a closed embedding `φ` of the disjoint union, over the critical
+points `p` on the level `f⁻¹(c)`, of the attaching regions `∂𝔻 (λ p) × 𝔻 (m - λ p)` into
+`M_{c-ε}`, with image in the level `f⁻¹(c - ε)`, such that `M_{c+ε}` is homeomorphic to the
+pushout in `TopCat` of `φ` and of the inclusion `TauCeti.TopCat.attachingRegionIncl` of the
+attaching regions into the handles `𝔻 (λ p) × 𝔻 (m - λ p)`. Indices `0` and `m` are included. -/
+theorem IsMorse.exists_homeomorph_pushout_handles (hf : IsMorse I f) {δ : ℝ} (hδ : 0 < δ)
+    (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ))) :
+    ∃ ε, 0 < ε ∧ ε ≤ δ ∧
+      ∃ φ : C((p : ↥(criticalPoints I f ∩ f ⁻¹' {c})) ×
+          TopCat.attachingRegion.{u} (manifoldMorseIndex I f p) (Module.finrank ℝ E),
+          {x | f x ≤ c - ε}),
+        IsClosedEmbedding φ ∧ (∀ q, f (φ q : M) = c - ε) ∧
+        Nonempty ({x | f x ≤ c + ε} ≃ₜ
+          (pushout (TopCat.ofHom φ) (TopCat.ofHom (TopCat.attachingRegionIncl
+            (fun p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) ↦ manifoldMorseIndex I f p)
+            (Module.finrank ℝ E))) : TopCat.{u})) := by
+  obtain ⟨ε, hε, hεδ, α, χ, j, hP, hemb, hdisj, hlev, -⟩ :=
+    hf.exists_isPushout_sublevel_handles hδ hcompact
+  have : Finite ↥(criticalPoints I f ∩ f ⁻¹' {c}) :=
+    (hf.finite_criticalPoints_inter_level hδ.le hcompact).to_subtype
+  -- Glue the attaching maps and the characteristic maps of the coproduct square over the
+  -- critical points; the attaching maps have pairwise disjoint images.
+  have hP' : IsPushout (TopCat.ofHom (ContinuousMap.sigma fun p ↦ (α p).hom))
+      (TopCat.ofHom (TopCat.attachingRegionIncl
+        (fun p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) ↦ manifoldMorseIndex I f p)
+        (Module.finrank ℝ E))) j (TopCat.ofHom (ContinuousMap.sigma fun p ↦ (χ p).hom)) := by
+    refine TopCat.isPushout_attachingRegionIncl_iff.2 ?_
+    convert hP <;> ext <;> simp
+  exact ⟨ε, hε, hεδ, ContinuousMap.sigma fun p ↦ (α p).hom,
+    ContinuousMap.isClosedEmbedding_sigma hemb hdisj (locallyFinite_of_finite _),
+    fun ⟨p, s⟩ ↦ hlev p s, ⟨TopCat.homeoOfIso hP'.isoPushout⟩⟩
 
 /-- **Milnor's handle attachment theorem at a level with one critical point** (Milnor, Theorem 3.2).
 If the only critical point of the Morse function `f` on the level `f⁻¹(c)` is `p`, of index `k` and
@@ -348,6 +399,51 @@ theorem IsMorse.exists_isPushout_sublevel_handle (hf : IsMorse I f) {δ : ℝ} (
     (coproductUniqueIso _) (Iso.refl _) ?_ ?_ ?_ ?_, hemb default, hlev default, htop default,
     fun x hx ↦ hj x fun q ↦ Subsingleton.elim q default ▸ hx⟩
   all_goals rw [← Iso.inv_comp_eq]; simp
+
+/-- **Handles of index `0` add components** (Milnor, Theorem 3.2). Let `f` be a Morse function on
+a Hausdorff manifold of dimension `m` whose band `f⁻¹[c - δ, c + δ]` is compact, for some `0 < δ`,
+and suppose that every critical point of `f` on the level `f⁻¹(c)` has index `0`, as at a level of
+local minima. The handle `𝔻 0 × 𝔻 m` at such a point has the empty attaching region `∂𝔻 0 × 𝔻 m`,
+so the handle attachment of `TauCeti.IsMorse.exists_isPushout_sublevel_handles` glues nothing: for
+some width `0 < ε ≤ δ`, the sublevel `{f ≤ c + ε}` is homeomorphic to the disjoint union of
+`{f ≤ c - ε}` and one disc `𝔻 m` for each critical point on the level. Each disc is a new connected
+component of the sublevel. -/
+theorem IsMorse.exists_homeomorph_sublevel_sum_of_manifoldMorseIndex_eq_zero (hf : IsMorse I f)
+    {δ : ℝ} (hδ : 0 < δ) (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ)))
+    (h0 : ∀ p ∈ criticalPoints I f ∩ f ⁻¹' {c}, manifoldMorseIndex I f p = 0) :
+    ∃ ε, 0 < ε ∧ ε ≤ δ ∧ Nonempty ({x | f x ≤ c + ε} ≃ₜ
+      {x | f x ≤ c - ε} ⊕
+        (↥(criticalPoints I f ∩ f ⁻¹' {c}) × TopCat.disk.{u} (Module.finrank ℝ E))) := by
+  obtain ⟨ε, hε, hεδ, α, χ, j, hpush, -⟩ := hf.exists_isPushout_sublevel_handles hδ hcompact
+  refine ⟨ε, hε, hεδ, ⟨?_⟩⟩
+  have hS₀ : ∀ {k : ℕ}, k = 0 → IsEmpty (TopCat.diskBoundary.{u} k) := by
+    rintro _ rfl; infer_instance
+  -- Every attaching region `∂𝔻 0 × 𝔻 m` is empty, so their coproduct is initial.
+  have hinit : IsInitial (∐ fun p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) ↦
+      TopCat.of (TopCat.diskBoundary.{u} (manifoldMorseIndex I f p) ×
+        TopCat.disk.{u} (Module.finrank ℝ E - manifoldMorseIndex I f p))) := by
+    have hX : IsEmpty ((∐ fun p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) ↦
+        TopCat.of (TopCat.diskBoundary.{u} (manifoldMorseIndex I f p) ×
+          TopCat.disk.{u} (Module.finrank ℝ E - manifoldMorseIndex I f p)) : TopCat.{u})) := by
+      refine ⟨fun x ↦ ?_⟩
+      obtain ⟨p, y, -⟩ := (TopCat.sigmaIsoSigma _).hom x
+      exact (hS₀ (h0 p p.property)).false y
+    exact TopCat.isInitialPEmpty.ofIso (TopCat.isoOfHomeo Homeomorph.empty)
+  -- So the pushout is the coproduct of the lower sublevel and the handles `𝔻 0 × 𝔻 m`.
+  have hc := isCoproductOfIsInitialIsPushout _ _ _ _ hinit hpush.isColimit
+  refine (TopCat.homeoOfIso (hc.coconePointUniqueUpToIso
+    (TopCat.binaryCofanIsColimit _ _))).trans (Homeomorph.sumCongr (.refl _) ?_)
+  -- The handle `𝔻 0 × 𝔻 m` is the disc `𝔻 m`, and the critical points on the level are finitely
+  -- many, hence discrete, so the coproduct of the handles is their product with `𝔻 m`.
+  have hD : ∀ {k : ℕ}, k = 0 →
+      (TopCat.disk.{u} k × TopCat.disk.{u} (Module.finrank ℝ E - k)) ≃ₜ
+        TopCat.disk.{u} (Module.finrank ℝ E) := by
+    rintro _ rfl; exact Homeomorph.uniqueProd _ _
+  have : Finite ↥(criticalPoints I f ∩ f ⁻¹' {c}) :=
+    (hf.finite_criticalPoints_inter_level hδ.le hcompact).to_subtype
+  exact (TopCat.homeoOfIso (TopCat.sigmaIsoSigma _)).trans <|
+    ((IsHomeomorph.sigmaMap bijective_id fun p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) ↦
+      (hD (h0 p p.property)).isHomeomorph).homeomorph _).trans (Homeomorph.sigmaEquivProd _ _)
 
 /-- **Milnor's cell attachment theorem, from the handle attachment** (Milnor, Theorem 3.2 and
 Remark 3.3). Let `f` be a Morse function on a Hausdorff manifold of dimension `m` whose band

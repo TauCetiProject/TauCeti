@@ -65,6 +65,10 @@ the algebra, because each of `h`, `2e` and `-2f` is a bracket of triple elements
   `IsSl2Triple.h_mem_toLieSubalgebra`, which say that the three elements of the triple lie in it.
 * `TauCeti.val_one_one_eq_neg_val_zero_zero`: the bottom-right entry of a trace-zero `2 × 2`
   matrix is minus its top-left entry.
+* `TauCeti.mem_center_slFinTwo_iff`: the centre of `sl (Fin 2) R` consists of the matrices
+  `!![a, 0; 0, -a]` with `2a = 0`, so `TauCeti.isFaithful_self_slFinTwo_iff`: the adjoint
+  representation of `sl (Fin 2) R` is faithful exactly when `2` is a non-zero-divisor of `R`, and
+  over a domain exactly when `2 ≠ 0` (`TauCeti.isFaithful_self_slFinTwo_iff_two_ne_zero`).
 * `IsSl2Triple.map`: the image of a triple under a Lie algebra homomorphism that does not kill its
   Cartan element is a triple.
 * `IsSl2Triple.lieSubmoduleOfStable`: a submodule stable under the raising and lowering elements of
@@ -353,6 +357,74 @@ theorem toLieSubalgebra_isSl2Triple_single_eq_top [Nontrivial R] {i j : Fin 2} (
   rw [IsSl2Triple.mem_toLieSubalgebra_iff, lie_single_single_eq_singleSubSingle hij]
   exact ⟨A.val i j, A.val j i, A.val i i,
     eq_smul_single_add_smul_single_add_smul_singleSubSingle A hij⟩
+
+/-! ### The centre of `sl₂` and faithfulness of the adjoint representation -/
+
+/-- **The centre of `sl₂`.** A trace-zero `2 × 2` matrix is central in `sl (Fin 2) R` exactly when
+its off-diagonal entries vanish and twice its diagonal entry vanishes, that is, the centre
+consists of the matrices `!![a, 0; 0, -a]` with `2a = 0`, which are the scalar matrices `a • 1`. -/
+theorem mem_center_slFinTwo_iff (A : SpecialLinear.sl (Fin 2) R) :
+    A ∈ LieAlgebra.center R (SpecialLinear.sl (Fin 2) R) ↔
+      A.val 0 1 = 0 ∧ A.val 1 0 = 0 ∧ 2 * A.val 0 0 = 0 := by
+  rw [LieModule.mem_maxTrivSubmodule]
+  constructor
+  · -- Bracketing with `e = E₀₁` and `f = E₁₀` reads off the three conditions.
+    intro h
+    have he := congr(($(h (SpecialLinear.single 0 1 zero_ne_one 1))).val)
+    have hf := congr(($(h (SpecialLinear.single 1 0 one_ne_zero 1))).val)
+    have he00 : A.val 1 0 = 0 := by
+      simpa [Ring.lie_def, Matrix.mul_apply, Matrix.single_apply] using congr_fun₂ he 0 0
+    have he01 : -A.val 0 0 - A.val 0 0 = 0 := by
+      simpa [Ring.lie_def, Matrix.mul_apply, Matrix.single_apply] using congr_fun₂ he 0 1
+    have hf00 : A.val 0 1 = 0 := by
+      simpa [Ring.lie_def, Matrix.mul_apply, Matrix.single_apply] using congr_fun₂ hf 0 0
+    exact ⟨hf00, he00, by linear_combination -he01⟩
+  · -- Conversely, such a matrix is the scalar matrix `a • 1`, since `-a = a`.
+    rintro ⟨h01, h10, h00⟩ y
+    have hA : A.val = Matrix.scalar (Fin 2) (A.val 0 0) := by
+      ext i j
+      fin_cases i <;> fin_cases j
+      · simp
+      · simpa using h01
+      · simpa using h10
+      · simp only [Fin.mk_one, Fin.isValue, val_one_one_eq_neg_val_zero_zero, scalar_apply,
+          diagonal_apply_eq]
+        linear_combination -h00
+    refine Subtype.ext ?_
+    rw [LieSubalgebra.coe_bracket, hA, Ring.lie_def,
+      (Matrix.scalar_commute (A.val 0 0) (Commute.all _) y.val).eq, sub_self, ZeroMemClass.coe_zero]
+
+/-- **The adjoint representation of `sl₂` is faithful exactly when `2` is a non-zero-divisor.**
+In particular the adjoint representation of `sl (Fin 2) R` is faithful over a domain of
+characteristic different from `2` (`TauCeti.isFaithful_self_slFinTwo_iff_two_ne_zero`), and it
+kills `h = E₀₀ - E₁₁` in characteristic `2`, although it is nonzero there. -/
+theorem isFaithful_self_slFinTwo_iff :
+    LieModule.IsFaithful R (SpecialLinear.sl (Fin 2) R) (SpecialLinear.sl (Fin 2) R) ↔
+      IsLeftRegular (2 : R) := by
+  rw [isFaithful_self_iff, isLeftRegular_iff_right_eq_zero_of_mul]
+  constructor
+  · intro h c hc
+    have hmem : SpecialLinear.singleSubSingle 0 1 c ∈
+        LieAlgebra.center R (SpecialLinear.sl (Fin 2) R) :=
+      (mem_center_slFinTwo_iff _).2 ⟨by simp, by simp, by simpa⟩
+    rw [h, LieSubmodule.mem_bot] at hmem
+    simpa using congr_fun₂ congr(($hmem).val) 0 0
+  · intro h
+    refine eq_bot_iff.2 fun A hA => ?_
+    obtain ⟨h01, h10, h00⟩ := (mem_center_slFinTwo_iff A).1 hA
+    rw [LieSubmodule.mem_bot]
+    refine Subtype.ext ?_
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [h01, h10, h _ h00]
+
+/-- Over a domain, the adjoint representation of `sl (Fin 2) R` is faithful exactly when
+`2 ≠ 0`. -/
+theorem isFaithful_self_slFinTwo_iff_two_ne_zero [IsDomain R] :
+    LieModule.IsFaithful R (SpecialLinear.sl (Fin 2) R) (SpecialLinear.sl (Fin 2) R) ↔
+      (2 : R) ≠ 0 := by
+  rw [isFaithful_self_slFinTwo_iff, isLeftRegular_iff_right_eq_zero_of_mul]
+  refine ⟨fun h h2 => one_ne_zero (h 1 (by simp [h2])), fun h2 c hc => ?_⟩
+  exact (mul_eq_zero.1 hc).resolve_left h2
 
 end FinTwo
 

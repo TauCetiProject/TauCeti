@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
@@ -9,6 +9,7 @@ public import Mathlib.Data.Nat.Factorization.Defs
 public import Mathlib.GroupTheory.Index
 import Mathlib.Data.Nat.Prime.Infinite
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
+public import TauCeti.Algebra.Group.Subgroup.ZPowers
 public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
@@ -69,6 +70,11 @@ infrastructure independent of the diamond operators.
 * `CongruenceSubgroup.ker_map_intCast_zmod`, `CongruenceSubgroup.map_eq_one_of_mem_Gamma`,
   `CongruenceSubgroup.mem_Gamma_iff_dvd`: `Γ(N)` is the kernel of reduction modulo `N`, and its
   membership is equivalent to four entrywise integer divisibilities (valid at `N = 0` as well).
+* `CongruenceSubgroup.mk'_comp_map_intCast_zmod_surjective`,
+  `CongruenceSubgroup.ker_mk'_comp_map_intCast_zmod`: the reduction
+  `SL₂(ℤ) → SL₂(ℤ/Nℤ) / ⟨-1⟩` is surjective, with kernel `Γ(N) ⊔ ⟨-1⟩`.
+* `CongruenceSubgroup.instNormalGamma`: Mathlib's `CongruenceSubgroup.Gamma_normal` as an
+  instance, so quotients by `Γ(N)` and by its intersections with subgroups are groups.
 * `CongruenceSubgroup.sq_dvd_two_sub_trace_of_mem_Gamma`,
   `CongruenceSubgroup.sq_sub_two_le_abs_trace_of_mem_Gamma`: the trace of an element of `Γ(N)` is
   congruent to `2` modulo `N²`, so a trace other than `2` has absolute value at least `N² - 2`.
@@ -86,9 +92,10 @@ infrastructure independent of the diamond operators.
   right coset of `Γ₁(N)` exactly when their lower rows agree modulo `N`.
 * `CongruenceSubgroup.mem_Gamma1_of_mul_eq`: a matrix of `SL(2, ℤ)` carrying an integral matrix
   that is `!![1, *; 0, *]` modulo `N` to another such matrix lies in `Γ₁(N)`.
-* `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_of_mem_Gamma0` and
-  `CongruenceSubgroup.isUnit_intCast_apply_one_one_of_mem_Gamma0`: a `Γ₀(N)` matrix has
-  unit diagonal entries modulo `N`.
+* `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_of_mem_Gamma0`,
+  `CongruenceSubgroup.isUnit_intCast_apply_one_one_of_mem_Gamma0`, and
+  `CongruenceSubgroup.isCoprime_apply_one_one_of_mem_Gamma0`: a `Γ₀(N)` matrix has unit diagonal
+  entries modulo `N`, and in particular lower-right entry coprime to `N`.
 * `CongruenceSubgroup.intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0`: modulo its
   level, a `Γ₀(N)` matrix has mutually inverse diagonal entries.
 * `CongruenceSubgroup.intCast_add_natCast_mul_of_mem_Gamma0` and
@@ -146,10 +153,14 @@ infrastructure independent of the diamond operators.
   index.
 * `CongruenceSubgroup.Gamma0_one_top`: `Γ₀(1)` is the whole group.
 * `CongruenceSubgroup.Gamma0_prime_index`: `[SL₂(ℤ) : Γ₀(p)] = p + 1` for prime `p`.
+* `CongruenceSubgroup.Gamma1_prime_index`: `[SL₂(ℤ) : Γ₁(p)] = (p - 1) (p + 1)` for prime `p`.
 * `CongruenceSubgroup.Gamma0_relIndex_pow_succ`: `[Γ₀(pᵏ) : Γ₀(p^(k+1))] = p` for `0 < p`
   and `0 < k`.
 * `CongruenceSubgroup.Gamma0_prime_power_index`: `[SL₂(ℤ) : Γ₀(pᵏ)] = p^(k-1) * (p + 1)` for
   prime `p` and `k ≥ 1`.
+* `CongruenceSubgroup.Gamma0_four_index`: `[SL₂(ℤ) : Γ₀(4)] = 6`.
+* `CongruenceSubgroup.Gamma0_index_dvd_of_dvd`: `M ∣ N` implies
+  `[SL₂(ℤ) : Γ₀(M)] ∣ [SL₂(ℤ) : Γ₀(N)]`.
 * `CongruenceSubgroup.Gamma_gcd_eq_sup`: `Γ(gcd a b) = Γ(a) ⊔ Γ(b)` — Shimura's Lemma 3.28,
   the Chinese remainder theorem for `SL₂`.
 * `CongruenceSubgroup.intCast_mul_apply_one_zero_eq_zero_of_mem_Gamma0_div` and
@@ -231,6 +242,12 @@ theorem map_eq_one_of_mem_Gamma {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma 
 theorem ker_map_intCast_zmod (N : ℕ) :
     (map (Int.castRingHom (ZMod N)) : SL(2, ℤ) →* SL(2, ZMod N)).ker = Gamma N := (rfl)
 
+/-- The principal congruence subgroup `Γ(N)` is normal in `SL(2, ℤ)`, being the kernel of
+reduction modulo `N`; as an instance, it makes `Γ ⧸ (Γ ∩ Γ(N))` a group for every subgroup
+`Γ`. -/
+instance instNormalGamma (N : ℕ) : (Gamma N).Normal :=
+  Gamma_normal N
+
 /-- **Membership in `Γ(N)` as four integer divisibilities**, the principal-subgroup counterpart of
 `mem_Gamma0_iff_dvd` and `mem_Gamma1_iff_dvd_lowerRow`. Valid at every `N`, `N = 0` included. -/
 theorem mem_Gamma_iff_dvd {N : ℕ} {γ : SL(2, ℤ)} :
@@ -247,6 +264,22 @@ theorem index_Gamma (N : ℕ) : (Gamma N).index = Nat.card SL(2, ZMod N) := by
   rw [Gamma, Subgroup.index_ker,
     MonoidHom.range_eq_top.mpr Matrix.SpecialLinearGroup.map_intCast_zmod_surjective,
     Subgroup.card_top]
+
+/-- Reduction `SL₂(ℤ) → SL₂(ℤ/Nℤ) / ⟨-1⟩` is surjective. -/
+theorem mk'_comp_map_intCast_zmod_surjective :
+    Function.Surjective ((QuotientGroup.mk' (Subgroup.zpowers (-1 : SL(2, ZMod N)))).comp
+      (map (Int.castRingHom (ZMod N)))) :=
+  (QuotientGroup.mk'_surjective _).comp map_intCast_zmod_surjective
+
+/-- The kernel of the reduction `SL₂(ℤ) → SL₂(ℤ/Nℤ) / ⟨-1⟩` is `Γ(N) ⊔ ⟨-1⟩`. -/
+theorem ker_mk'_comp_map_intCast_zmod :
+    ((QuotientGroup.mk' (Subgroup.zpowers (-1 : SL(2, ZMod N)))).comp
+      (map (Int.castRingHom (ZMod N)))).ker = Gamma N ⊔ Subgroup.zpowers (-1) := by
+  have hneg : map (Int.castRingHom (ZMod N)) (-1 : SL(2, ℤ)) = -1 := by
+    ext i j
+    simp
+  rw [← MonoidHom.comap_ker, QuotientGroup.ker_mk', ← hneg, ← MonoidHom.map_zpowers,
+    Subgroup.comap_map_eq, ker_map_intCast_zmod, sup_comm]
 
 /-- `Γ(2)` has index `6 = |SL₂(𝔽₂)|` in `SL₂(ℤ)`. -/
 theorem index_Gamma_two : (Gamma 2).index = 6 := by
@@ -393,6 +426,14 @@ theorem isUnit_intCast_apply_one_one_of_mem_Gamma0 {N : ℕ} {γ : SL(2, ℤ)} (
     IsUnit ((γ 1 1 : ℤ) : ZMod N) :=
   IsUnit.of_mul_eq_one_right _ (intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 hγ)
 
+/-- The lower-right entry of a `Γ₀(N)` matrix is coprime to `N`: the determinant identity
+`ad - bc = 1` combined with `(N : ℤ) ∣ c` gives a Bézout relation for `d` and `N`. -/
+theorem isCoprime_apply_one_one_of_mem_Gamma0 {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
+    IsCoprime (γ 1 1) (N : ℤ) := by
+  obtain ⟨q, hq⟩ := mem_Gamma0_iff_dvd.mp hγ
+  exact ⟨γ 0 0, -(γ 0 1 * q),
+    by linear_combination Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ + γ 0 1 * hq⟩
+
 /-- **The first column of a `Γ₀(N)` matrix collapses under a natural-number shear**:
 `a + j c ≡ a` modulo `N` for every `j : ℕ`, because `c ≡ 0`. Stated with the casts already
 distributed, since that — not the cast of the sum — is the `simp` normal form. -/
@@ -482,7 +523,6 @@ matrix, since `Γ(N)` is normal in `SL(2, ℤ)`. -/
 theorem Gamma_map_inv_conjAct_eq (N : ℕ) (γ : SL(2, ℤ)) :
     ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Gamma N).map (mapGL ℝ) =
       (Gamma N).map (mapGL ℝ) := by
-  let := Gamma_normal N
   apply Subgroup.conjAct_pointwise_smul_eq_self
   apply Subgroup.inv_mem
   exact Subgroup.le_normalizer_map (H := Gamma N) (mapGL ℝ)
@@ -728,9 +768,8 @@ theorem T_zpow_mem_Gamma1 (N : ℕ) (n : ℤ) : ModularGroup.T ^ n ∈ Gamma1 N 
 
 /-- The normal closure of `T ^ N` in `SL(2, ℤ)` is contained in `Γ(N)` for every `N : ℕ`. -/
 theorem normalClosure_T_pow_le_Gamma (N : ℕ) :
-    Subgroup.normalClosure ({ModularGroup.T ^ N} : Set SL(2, ℤ)) ≤ Gamma N := by
-  have := Gamma_normal N
-  exact Subgroup.normalClosure_le_normal
+    Subgroup.normalClosure ({ModularGroup.T ^ N} : Set SL(2, ℤ)) ≤ Gamma N :=
+  Subgroup.normalClosure_le_normal
     (Set.singleton_subset_iff.mpr (by simpa using ModularGroup_T_pow_mem_Gamma N N dvd_rfl))
 
 /-! ## The index of `Γ₀(pᵏ)`
@@ -812,6 +851,12 @@ private lemma Gamma0_prime_index_surj :
 theorem Gamma0_prime_index : (Gamma0 p).index = p + 1 :=
   Nat.card_eq_of_equiv_fin (Equiv.ofBijective _
     ⟨Gamma0_prime_index_inj p hp, Gamma0_prime_index_surj p hp⟩).symm
+
+/-- `[SL₂(ℤ) : Γ₁(p)] = (p - 1) (p + 1)` for prime `p`. -/
+theorem Gamma1_prime_index : (Gamma1 p).index = (p - 1) * (p + 1) := by
+  have : Fact p.Prime := ⟨hp⟩
+  rw [Gamma1_index, Gamma0_prime_index p hp, Nat.card_eq_fintype_card, ZMod.card_units_eq_totient,
+    Nat.totient_prime hp]
 
 end BaseCase
 
@@ -911,6 +956,15 @@ theorem Gamma0_prime_power_index (p : ℕ) (hp : Nat.Prime p) (k : ℕ) (hk : 0 
       ← Subgroup.relIndex_mul_index (Gamma0_le_Gamma0_of_dvd (pow_dvd_pow p m.le_succ)),
       Gamma0_relIndex_pow_succ p hp.pos m hm, ih, ← mul_assoc, ← pow_succ',
       Nat.sub_add_cancel hm]
+
+/-- `[SL₂(ℤ) : Γ₀(4)] = 2 · 3 = 6`. -/
+theorem Gamma0_four_index : (Gamma0 4).index = 6 := by
+  simpa using Gamma0_prime_power_index 2 Nat.prime_two 2 (by norm_num)
+
+/-- The index of `Γ₀` is monotone for divisibility of the level: if `M ∣ N`, then
+`[SL₂(ℤ) : Γ₀(M)]` divides `[SL₂(ℤ) : Γ₀(N)]`. -/
+theorem Gamma0_index_dvd_of_dvd {M N : ℕ} (h : M ∣ N) : (Gamma0 M).index ∣ (Gamma0 N).index :=
+  Subgroup.index_dvd_of_le (Gamma0_le_Gamma0_of_dvd h)
 
 /-! ### The Chinese-remainder decomposition `Γ(gcd a b) = Γ(a) ⊔ Γ(b)` -/
 
@@ -1036,7 +1090,6 @@ theorem Gamma_gcd_eq_sup (a b : ℕ) : Gamma (Nat.gcd a b) = Gamma a ⊔ Gamma b
   have : NeZero (Nat.lcm a b) := ⟨Nat.lcm_ne_zero (NeZero.ne a) (NeZero.ne b)⟩
   refine le_antisymm ?_ (sup_le (Gamma_le_Gamma_of_dvd (Nat.gcd_dvd_left a b))
     (Gamma_le_Gamma_of_dvd (Nat.gcd_dvd_right a b)))
-  have : (Gamma a).Normal := Gamma_normal a
   intro γ hγ
   rw [Subgroup.mem_sup_of_normal_left]
   obtain ⟨M, hMa, hMb⟩ := exists_matrix_modEq_one_modEq_of_mem_Gamma_gcd hγ
@@ -1143,7 +1196,6 @@ theorem exists_mul_eq_of_mem_Gamma1_gcd {a b : ℕ} {γ : SL(2, ℤ)}
     obtain ⟨h00, h11, h10⟩ := (Gamma1_mem _ _).mp hγ
     rw [Gamma_mem]
     simp [Matrix.mul_apply, Fin.sum_univ_two, ModularGroup.coe_T_zpow, h00, h11, h10]
-  have : (Gamma a).Normal := Gamma_normal a
   rw [Gamma_gcd_eq_sup, Subgroup.mem_sup_of_normal_left] at hδ
   obtain ⟨y, hy, z, hz, hyz⟩ := hδ
   refine ⟨ModularGroup.T ^ (γ 0 1) * y,
@@ -1173,7 +1225,6 @@ theorem Gamma0_relIndex_Gamma0_of_coprime {a b : ℕ} (hab : Nat.Coprime a b) :
   · obtain rfl := Nat.coprime_zero_left _ |>.mp hab
     simp
   have : NeZero a := ⟨ha⟩
-  have : (Gamma b).Normal := Gamma_normal b
   -- `Γ(a) ⊔ Γ(b) = Γ(1) = ⊤` and `Γ(a) ≤ Γ₀(a)`, so `Γ₀(a)` and `Γ(b)` generate everything
   have hsup : Gamma0 a ⊔ Gamma b = ⊤ := top_unique <| by
     rw [← Gamma_one_top, ← hab.gcd_eq_one, Gamma_gcd_eq_sup]
@@ -1285,7 +1336,6 @@ theorem IsCongruenceSubgroup.withCenter {Γ : Subgroup SL(2, ℤ)}
 theorem isCongruenceSubgroup_normalCore_iff {Γ : Subgroup SL(2, ℤ)} :
     IsCongruenceSubgroup Γ.normalCore ↔ IsCongruenceSubgroup Γ :=
   ⟨isCongruenceSubgroup_trans _ _ Γ.normalCore_le, fun ⟨N, hN, hle⟩ ↦
-    have := Gamma_normal N
     ⟨N, hN, Subgroup.normal_le_normalCore.mpr hle⟩⟩
 
 /-- The intersection of all principal congruence subgroups `Γ(N)` (`N ≠ 0`) is trivial:

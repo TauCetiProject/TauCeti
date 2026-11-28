@@ -24,7 +24,10 @@ real slope, so its finite slopes are locally finite: only finitely many
 finite unit edges have slope at most any real cutoff
 (`ContinuousLinearMap.IsPrCompact.finite_setOf_unitSlope_newtonPolygon_charPowerSeries_le`), and
 if there are infinitely many finite edges their slopes tend to infinity
-(`ContinuousLinearMap.IsPrCompact.tendsto_unitSlope_newtonPolygon_charPowerSeries`). The
+(`ContinuousLinearMap.IsPrCompact.tendsto_unitSlope_newtonPolygon_charPowerSeries`). Since the
+polygon starts at or below the origin, its height at the number `N` of unit edges of slope at most
+`σ` is at most `σ N`
+(`ContinuousLinearMap.IsPrCompact.newtonPolygon_charPowerSeries_ncard_setOf_unitSlope_le_le`). The
 multiplicity of a slope `σ` is `PowerSeries.newtonSlopeMultiplicity`, the number of finite unit
 edges of slope `σ`. A slope `σ` corresponds to zeros of `H_u` of valuation `-σ`, and a zero `α`
 gives the eigenvalue `α⁻¹` of `u`, so the slopes describe the valuations of the eigenvalues.
@@ -67,6 +70,8 @@ not algebraically closed a slope need not be the valuation of an eigenvalue: the
 
 * `ContinuousLinearMap.IsPrCompact.exists_isFiniteFace_newtonPolygon_charPowerSeries`: the
   Fredholm polygon has a finite face of every slope.
+* `ContinuousLinearMap.IsPrCompact.newtonPolygon_charPowerSeries_ncard_setOf_unitSlope_le_le`:
+  the Fredholm polygon at the number `N` of slopes at most `σ` is at most `σ N`.
 * `ContinuousLinearMap.IsPrCompact.finite_setOf_unitSlope_newtonPolygon_charPowerSeries_le`,
   `ContinuousLinearMap.IsPrCompact.tendsto_unitSlope_newtonPolygon_charPowerSeries`: local
   finiteness of the slopes.
@@ -161,6 +166,22 @@ theorem exists_isFiniteFace_newtonPolygon_charPowerSeries (hu : u.IsPrCompact) (
     ∃ l l' : ℕ, IsFiniteFace (u.charPowerSeries.newtonPolygon v) σ l l' :=
   hu.isEntire_charPowerSeries.exists_isFiniteFace_newtonPolygon v hb hv
     u.charPowerSeries_ne_zero σ
+
+/-- **Slopes at most `σ` lie under the line of slope `σ`.** If the Fredholm polygon of a
+row-compact endomorphism `u` of a module with property (Pr) has `N` finite unit edges of slope
+at most `σ`, its height at `N` is at most `σ N`. Hence every lower bound of the polygon is at
+most `σ N` at `N`. -/
+theorem newtonPolygon_charPowerSeries_ncard_setOf_unitSlope_le_le (hu : u.IsPrCompact) (σ : ℝ) :
+    u.charPowerSeries.newtonPolygon v {n | n ∈ finiteEdges (u.charPowerSeries.newtonPolygon v) ∧
+      unitSlope (u.charPowerSeries.newtonPolygon v) n ≤ σ}.ncard ≤
+      ((σ * {n | n ∈ finiteEdges (u.charPowerSeries.newtonPolygon v) ∧
+        unitSlope (u.charPowerSeries.newtonPolygon v) n ≤ σ}.ncard : ℝ) : WithTop ℝ) := by
+  -- The polygon starts at or below the height `v 1 = 0` of the constant coefficient.
+  have hadm := (PowerSeries.isAdmissible_addValuation_coeff_iff_exists_isRestricted
+    u.charPowerSeries v hb hv).2 ⟨1, one_pos, hu.isEntire_charPowerSeries.isRestricted 1⟩
+  simpa only [zero_add] using
+    hu.isEntire_charPowerSeries.newtonPolygon_ncard_setOf_unitSlope_le_le v hb hv σ (a := 0) <| by
+      simpa using PowerSeries.newtonPolygon_le hadm 0
 
 /-- **Local finiteness of Fredholm slopes.** Only finitely many finite unit edges of the
 Fredholm polygon of a row-compact endomorphism have slope at most a given real number. -/

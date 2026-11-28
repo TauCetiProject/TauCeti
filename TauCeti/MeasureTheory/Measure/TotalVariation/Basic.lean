@@ -34,6 +34,10 @@ estimates into total-variation estimates.
 
 * `MeasureTheory.abs_measureReal_sub_le_tvDist`: the real masses of a measurable event
   differ by at most `tvDist μ ν`;
+* `MeasureTheory.sum_abs_measureReal_sub_le_tvDist`: the sum of the absolute differences
+  over a finite measurable partition is at most `tvDist μ ν`;
+* `MeasureTheory.tvDist_div_two_le_one`: the normalized distance between probability measures
+  is at most one;
 * `MeasureTheory.etvDist_eq_posPart_univ_add_negPart_univ`: `etvDist μ ν` is the total mass of
   the positive part of the Jordan decomposition of `μ - ν` plus that of its negative part;
 * `MeasureTheory.iSup_measure_sub_eq_iSup_measurableSet`,
@@ -45,6 +49,9 @@ estimates into total-variation estimates.
 * `MeasureTheory.iSup_measure_sub_comm`, `MeasureTheory.etvDist_eq_two_mul_iSup_sub`: for finite
   measures of equal total mass, the two one-sided excesses agree and `etvDist μ ν` is twice either
   of them;
+* `MeasureTheory.etvDist_eq_two_mul_measure_univ_sub_inf`: for a finite measure and a measure of
+  the same total mass, `etvDist μ ν` is twice the mass of `μ` not shared with `ν`, the shared part
+  being the infimum `μ ⊓ ν`;
 * `MeasureTheory.etvDist_le_of_forall_le_add`: eventwise bounds in both directions bound the
   total variation distance;
 * `MeasureTheory.etvDist_le_two_mul_iff`: for finite measures of equal total mass,
@@ -60,7 +67,15 @@ open scoped ENNReal
 
 namespace MeasureTheory
 
-variable {α : Type*} [MeasurableSpace α] {μ ν : Measure α} [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+variable {α : Type*} [MeasurableSpace α] {μ ν : Measure α}
+
+/-- The total variation distance between probability measures, normalized by two, is at most one. -/
+theorem tvDist_div_two_le_one [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    tvDist μ ν / 2 ≤ 1 := by
+  apply (div_le_iff₀ (by norm_num)).mpr
+  simpa [one_add_one_eq_two] using (tvDist_le_add (μ := μ) (ν := ν))
+
+variable [IsFiniteMeasure μ] [IsFiniteMeasure ν]
 
 omit [IsFiniteMeasure μ] [IsFiniteMeasure ν] in
 /-- For arbitrary measures, the supremum of `μ A - ν A` over all sets equals its supremum over
@@ -94,6 +109,16 @@ theorem abs_measureReal_sub_le_tvDist {s : Set α} (hs : MeasurableSet s) :
   have hr := ENNReal.toReal_mono (etvDist_ne_top μ ν) h
   simpa only [_root_.sub_apply, Measure.toSignedMeasure_apply_measurable hs,
     toReal_eNorm, Real.norm_eq_abs, tvDist] using hr
+
+/-- Total variation bounds the sum of the absolute mass differences over a finite measurable
+partition of the whole space. -/
+theorem sum_abs_measureReal_sub_le_tvDist
+    (P : Finpartition (⟨univ, MeasurableSet.univ⟩ : Subtype (MeasurableSet (α := α)))) :
+    ∑ p ∈ P.parts, |μ.real p - ν.real p| ≤ tvDist μ ν := by
+  rw [← ENNReal.ofReal_le_ofReal_iff tvDist_nonneg, ofReal_tvDist,
+    ENNReal.ofReal_sum_of_nonneg (fun _ _ ↦ abs_nonneg _), etvDist_eq_iSup_finPartition_eNorm]
+  simp only [← Real.eNorm_eq_ofReal_abs]
+  exact le_iSup_of_le P le_rfl
 
 /-- The total variation distance between finite measures is the total mass of the positive part
 of the Jordan decomposition of `μ - ν` plus the total mass of its negative part. -/
@@ -132,6 +157,26 @@ theorem etvDist_eq_two_mul_iSup_sub (h : μ univ = ν univ) :
   rw [etvDist_eq_posPart_univ_add_negPart_univ,
     ← Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ_iff.2 h,
     ← two_mul, Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup]
+
+omit [IsFiniteMeasure ν] in
+/-- **Total variation and overlap.** For a finite measure `μ` and a measure `ν` of the same total
+mass (e.g. two probability measures), the total variation distance is twice the mass of `μ` that
+is not shared with `ν`, the shared part being the infimum `μ ⊓ ν`. -/
+theorem etvDist_eq_two_mul_measure_univ_sub_inf (h : μ univ = ν univ) :
+    etvDist μ ν = 2 * (μ univ - (μ ⊓ ν) univ) := by
+  rw [etvDist_eq_two_mul_iSup_sub h, Measure.inf_apply .univ]
+  congr 1
+  refine le_antisymm (iSup₂_le fun A hA => ?_) (tsub_le_iff_tsub_le.1 (le_sInf ?_))
+  · -- Splitting `univ` into `Aᶜ`, measured by `μ`, and `A`, measured by `ν`.
+    calc μ A - ν A = μ univ - (μ Aᶜ + ν A) := by
+          rw [← tsub_tsub, ← measure_compl hA.compl (measure_ne_top μ _), compl_compl]
+      _ ≤ μ univ - sInf {m | ∃ t, m = μ (t ∩ univ) + ν (tᶜ ∩ univ)} :=
+          tsub_le_tsub_left (sInf_le (by exact ⟨Aᶜ, by simp⟩)) _
+  · rintro _ ⟨t, rfl⟩
+    refine tsub_le_iff_tsub_le.1 ?_
+    rw [inter_univ, inter_univ, ← iSup_measure_sub_eq_iSup_measurableSet, ← tsub_tsub]
+    exact le_iSup_of_le tᶜ
+      (tsub_le_tsub_right (tsub_le_iff_left.2 (measure_univ_le_add_compl t)) _)
 
 /-- **Total variation from eventwise bounds.** If every measurable event has `μ`-mass at most its
 `ν`-mass plus `c`, and `ν`-mass at most its `μ`-mass plus `d`, then `etvDist μ ν ≤ c + d`. -/
