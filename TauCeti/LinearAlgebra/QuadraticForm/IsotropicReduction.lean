@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.MaxIsotropic
-import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
@@ -224,7 +224,7 @@ theorem finrank_orthogonalQuotient (hQ : Q.polarBilin.Nondegenerate)
 
 /-- Reduction of a maximal isotropic subspace is maximal isotropic in the reduced space. -/
 theorem IsMaxIsotropic.isotropicReductionSubspace (hW : Q.IsMaxIsotropic W)
-    (hQ : Q.polarBilin.Nondegenerate) (hX : Q.IsTotallyIsotropic X) :
+    (hX : Q.IsTotallyIsotropic X) :
     (Q.orthogonalQuotientForm X hX).IsMaxIsotropic (Q.isotropicReductionSubspace X W) := by
   apply isMaxIsotropic_iff.mpr
   refine ⟨hW.isTotallyIsotropic.isotropicReductionSubspace hX, ?_⟩
@@ -233,8 +233,22 @@ theorem IsMaxIsotropic.isotropicReductionSubspace (hW : Q.IsMaxIsotropic W)
   | H v =>
     rw [mk_mem_isotropicReductionSubspace_iff Q X hX.le_orthogonal_polarBilin W]
     have horth : orthogonal Q.polarBilin (W ⊓ orthogonal Q.polarBilin X) = W ⊔ X := by
-      rw [orthogonal_inf _ hQ, hW.orthogonal_polarBilin_eq,
-        orthogonal_orthogonal hQ Q.isRefl_polarBilin]
+      have hsup : orthogonal Q.polarBilin (W ⊔ X) =
+          orthogonal Q.polarBilin W ⊓ orthogonal Q.polarBilin X :=
+        Submodule.orthogonalBilin_sup W X
+      rw [hW.orthogonal_polarBilin_eq] at hsup
+      rw [← hsup]
+      symm
+      apply Submodule.eq_of_le_of_finrank_le (le_orthogonal_orthogonal Q.isRefl_polarBilin)
+      -- The polar radical lies in both subspaces and contributes equally to their dimensions.
+      have hrad : orthogonal Q.polarBilin ⊤ ≤ W :=
+        hW.orthogonal_polarBilin_eq ▸ orthogonal_le le_top
+      have h₁ := finrank_add_finrank_orthogonal Q.isRefl_polarBilin (W ⊔ X)
+      have h₂ := finrank_add_finrank_orthogonal Q.isRefl_polarBilin
+        (orthogonal Q.polarBilin (W ⊔ X))
+      rw [inf_eq_right.mpr (hrad.trans le_sup_left)] at h₁
+      rw [inf_eq_right.mpr (orthogonal_le le_top)] at h₂
+      omega
     have hmem : Submodule.Quotient.mk v ∈ orthogonal
         (Q.orthogonalQuotientForm X hX).polarBilin (Q.isotropicReductionSubspace X W) ↔
         (v : M) ∈ orthogonal Q.polarBilin (W ⊓ orthogonal Q.polarBilin X) := by
@@ -255,24 +269,24 @@ theorem IsMaxIsotropic.isotropicReductionSubspace (hW : Q.IsMaxIsotropic W)
     exact (and_iff_left v.property).symm
 
 /-- The isotropic reduction map on actual maximal isotropic subspaces. -/
-def isotropicReduction (hQ : Q.polarBilin.Nondegenerate) (hX : Q.IsTotallyIsotropic X)
+def isotropicReduction (hX : Q.IsTotallyIsotropic X)
     (W : Q.maxIsotropicSubspaces) : (Q.orthogonalQuotientForm X hX).maxIsotropicSubspaces :=
   ⟨Q.isotropicReductionSubspace X W, mem_maxIsotropicSubspaces.mpr
-    ((mem_maxIsotropicSubspaces.mp W.property).isotropicReductionSubspace hQ hX)⟩
+    ((mem_maxIsotropicSubspaces.mp W.property).isotropicReductionSubspace hX)⟩
 
 /-- The underlying subspace of isotropic reduction is the quotient image of `W ∩ Xᗮ`. -/
 @[simp]
-theorem coe_isotropicReduction (hQ : Q.polarBilin.Nondegenerate)
+theorem coe_isotropicReduction
     (hX : Q.IsTotallyIsotropic X) (W : Q.maxIsotropicSubspaces) :
-    (isotropicReduction hQ hX W : Submodule K (Q.OrthogonalQuotient X)) =
+    (isotropicReduction hX W : Submodule K (Q.OrthogonalQuotient X)) =
       Q.isotropicReductionSubspace X W :=
   (rfl)
 
 /-- Each quotient maximal isotropic has a unique maximal isotropic lift containing `X`. -/
-theorem existsUnique_isotropicReduction_eq (hQ : Q.polarBilin.Nondegenerate)
+theorem existsUnique_isotropicReduction_eq
     (hX : Q.IsTotallyIsotropic X) (U : (Q.orthogonalQuotientForm X hX).maxIsotropicSubspaces) :
     ∃! W : Q.maxIsotropicSubspaces, X ≤ (W : Submodule K M) ∧
-      isotropicReduction hQ hX W = U := by
+      isotropicReduction hX W = U := by
   let S := ((U : Submodule K (Q.OrthogonalQuotient X)).comap
     (X.comap (orthogonal Q.polarBilin X).subtype).mkQ).map
       (orthogonal Q.polarBilin X).subtype
@@ -281,7 +295,7 @@ theorem existsUnique_isotropicReduction_eq (hQ : Q.polarBilin.Nondegenerate)
   have hXS : X ≤ S := by
     intro x hx
     exact ⟨⟨x, hX.le_orthogonal_polarBilin hx⟩, Submodule.le_comap_mkQ _ _ hx, rfl⟩
-  have hSU : isotropicReduction hQ hX ⟨S, mem_maxIsotropicSubspaces.mpr hS⟩ = U := by
+  have hSU : isotropicReduction hX ⟨S, mem_maxIsotropicSubspaces.mpr hS⟩ = U := by
     apply Subtype.ext
     simp only [coe_isotropicReduction, QuadraticMap.isotropicReductionSubspace, S,
       Submodule.comap_map_eq_of_injective (orthogonal Q.polarBilin X).subtype_injective,
@@ -290,22 +304,22 @@ theorem existsUnique_isotropicReduction_eq (hQ : Q.polarBilin.Nondegenerate)
   rintro W ⟨hXW, hWU⟩
   apply Subtype.ext
   rw [← (mem_maxIsotropicSubspaces.mp W.property).map_comap_isotropicReductionSubspace_of_le hXW]
-  rw [← coe_isotropicReduction hQ hX, hWU]
+  rw [← coe_isotropicReduction hX, hWU]
 
 /-- Isotropic reduction is surjective on maximal isotropic subspaces. -/
-theorem isotropicReduction_surjective (hQ : Q.polarBilin.Nondegenerate)
-    (hX : Q.IsTotallyIsotropic X) : Function.Surjective (isotropicReduction hQ hX) := by
+theorem isotropicReduction_surjective
+    (hX : Q.IsTotallyIsotropic X) : Function.Surjective (isotropicReduction hX) := by
   intro U
-  obtain ⟨W, hW, _⟩ := existsUnique_isotropicReduction_eq hQ hX U
+  obtain ⟨W, hW, _⟩ := existsUnique_isotropicReduction_eq hX U
   exact ⟨W, hW.2⟩
 
 /-- In ambient dimension `2n`, every reduced maximal isotropic has dimension `n - dim X`. -/
 theorem finrank_isotropicReduction (hQ : Q.polarBilin.Nondegenerate)
     (hX : Q.IsTotallyIsotropic X) {n : ℕ} (hM : finrank K M = 2 * n)
     (W : Q.maxIsotropicSubspaces) :
-    finrank K (isotropicReduction hQ hX W : Submodule K (Q.OrthogonalQuotient X)) =
+    finrank K (isotropicReduction hX W : Submodule K (Q.OrthogonalQuotient X)) =
       n - finrank K X := by
-  have hW := mem_maxIsotropicSubspaces.mp (isotropicReduction hQ hX W).property
+  have hW := mem_maxIsotropicSubspaces.mp (isotropicReduction hX W).property
   have hdim := hW.two_mul_finrank_eq
     (nondegenerate_of_nondegenerate_polarBilin
       (nondegenerate_polarBilin_orthogonalQuotientForm hQ hX)).radical_eq_bot
@@ -318,7 +332,7 @@ theorem IsWeaklyMetabolic.orthogonalQuotientForm (hQ : Q.IsWeaklyMetabolic)
   obtain ⟨W, hW⟩ := hQ.exists_isMaxIsotropic
   apply isWeaklyMetabolic_iff.mpr
   exact ⟨nondegenerate_polarBilin_orthogonalQuotientForm hQ.nondegenerate_polarBilin hX,
-    ⟨_, hW.isotropicReductionSubspace hQ.nondegenerate_polarBilin hX⟩⟩
+    ⟨_, hW.isotropicReductionSubspace hX⟩⟩
 
 end Field
 
