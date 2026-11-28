@@ -9,23 +9,24 @@ public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 public import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Algebra.Order.Floor.Semifield
 import TauCeti.NumberTheory.ArithmeticFunction.Moebius
-import TauCeti.NumberTheory.ZetaValues
+import TauCeti.NumberTheory.Bernoulli.Real
 
 /-!
 # MacLeod's functions and MacLeod's identity
 
 MacLeod's functions
-`φ_k(x) = (B_k(x) - B_k({x})) / x ^ (k - 1)` (`TauCeti.macleodFun`) interpolate between
-`φ₁(x) = ⌊x⌋` and higher-degree polynomial approximations to `x - 1` built from the Bernoulli
-polynomials `B_k` (`bernoulliFun k`). Because `B_k(X + 1) - B_k(X) = k X ^ (k - 1)`,
-`φ_k(x)` telescopes to the sum `∑_{1 ≤ n ≤ x} k (1 - n / x) ^ (k - 1)`, and hyperbola Möbius
-inversion (`ArithmeticFunction.sum_moebius_smul_sum_div`) gives MacLeod's identity:
+`φ_k(x) = (B_k(x) - B_k({x})) / x ^ (k - 1)` (`TauCeti.macleodFun`) are Bernoulli-based weighted
+sums built from the Bernoulli polynomials `B_k` (`bernoulliFun k`). Because
+`B_k(X + 1) - B_k(X) = k X ^ (k - 1)`, for `x > 0` the function `φ_k(x)` telescopes to the
+weighted sum `∑_{1 ≤ n ≤ x} k (1 - n / x) ^ (k - 1)`, and hyperbola Möbius inversion
+(`ArithmeticFunction.sum_moebius_smul_sum_div`) gives MacLeod's identity:
 
 `∑_{n ≤ x} μ(n) φ_k(x / n) = k (1 - 1 / x) ^ (k - 1)` for `x ≥ 1`.
 
-At `k = 1` this recovers Meissel's identity `∑_{n ≤ x} μ(n) ⌊x / n⌋ = 1`
-(`TauCeti.sum_moebius_mul_natFloor_div`). At `k = 2`, differentiating the remainder
-`({t}² - {t}) / t` away from the integers gives Balazard's `k = 2` formula for `x m(x) - M(x)`
+At `k = 1` this is `φ₁(x) = ⌊x⌋`, recovering Meissel's identity
+`∑_{n ≤ x} μ(n) ⌊x / n⌋ = 1` (`TauCeti.sum_moebius_mul_natFloor_div`). At `k = 2`,
+`φ₂(x) = x - 1 - ({x}² - {x}) / x`, and differentiating the remainder `({t}² - {t}) / t`
+away from the integers gives Balazard's `k = 2` formula for `x m(x) - M(x)`
 (`TauCeti.mul_moebiusDivSum_sub_moebiusSum_eq` in `Moebius.Balazard`).
 
 ## Main declarations

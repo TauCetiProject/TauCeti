@@ -9,8 +9,9 @@ public import TauCeti.NumberTheory.Explicit.MultiplicativeFunctions.Moebius.Basi
 public import TauCeti.NumberTheory.Explicit.MultiplicativeFunctions.Moebius.MacLeod
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Function.Floor
+import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import TauCeti.Analysis.Calculus.Deriv.Fract
-import TauCeti.NumberTheory.ZetaValues
+import TauCeti.NumberTheory.Bernoulli.Real
 
 /-!
 # Balazard's kernels, identities, and conversion inequalities
@@ -44,23 +45,27 @@ gives Balazard's conversion inequality:
 
 `|m(x)| ≤ |M(x)| / x + (∫_1^x |M(t)| dt) / x² + 8 / (3 x)`
 
-for every real `x ≥ 1`, along with its two-range form when a linear envelope `|M(t)| ≤ ε(t) t` is
-supplied on the tail, and its three-range form when a square-root estimate `|M(t)| ≤ c √t` is
-additionally supplied on the middle interval.
+for every real `x ≥ 1`, along with its two-range form when an interval-integrable tail envelope
+`ε` satisfying `|M(t)| ≤ ε(t) t` on `[t₀, D]` is supplied, and its three-range form when a
+square-root estimate `|M(t)| ≤ c √t` on `[a, t₀]` is additionally supplied alongside an
+interval-integrable tail envelope `ε` on `[t₀, D]`.
 
 ## Main declarations
 
 * `TauCeti.balazardTwoKernel`, `TauCeti.balazardTwoKernelDeriv`: the `k = 2` remainder kernel
   `ε₀(t)` and its piecewise derivative `ε₀'(t)`.
-* `TauCeti.measurable_balazardTwoKernelDeriv`, `TauCeti.measurable_balazardKernelDeriv`:
-  measurability of `balazardTwoKernelDeriv` and `balazardKernelDeriv`.
+* `TauCeti.balazardTwoKernel_intCast`: `ε₀(n) = 0` for `n : ℤ`.
+* `TauCeti.measurable_balazardTwoKernelDeriv`, `TauCeti.integral_balazardTwoKernelDeriv`:
+  measurability and fundamental-theorem integral evaluation of `ε₀'`.
 * `TauCeti.macleodFun_two_eq_sub_balazardTwoKernel`: `φ₂(t) = t - 1 - ε₀(t)` for `t ≠ 0`.
 * `TauCeti.mul_moebiusDivSum_sub_moebiusSum_eq`: Balazard's `k = 2` identity for `x m(x) - M(x)`.
 * `TauCeti.balazardKernel`, `TauCeti.balazardKernelDeriv`: Balazard's kernel `ε₁(t)` and its
   piecewise derivative `ε₁'(t) = ε₀'(t)²`.
+* `TauCeti.balazardKernel_intCast`: `ε₁(n) = 1 / 3 - 1 / (3 * n)` for `n : ℤ`.
 * `TauCeti.continuousOn_balazardKernel`, `TauCeti.hasDerivAt_balazardKernel`,
-  `TauCeti.balazardKernelDeriv_nonneg`, `TauCeti.balazardKernelDeriv_le`: regularity and bounds
-  for `ε₁`.
+  `TauCeti.balazardKernelDeriv_nonneg`, `TauCeti.balazardKernelDeriv_le`,
+  `TauCeti.measurable_balazardKernelDeriv`, `TauCeti.integral_balazardKernelDeriv`:
+  regularity, bounds, measurability, and fundamental-theorem integral evaluation for `ε₁`.
 * `TauCeti.four_div_three_mul_macleodFun_three_sub_one_div_three_mul_macleodFun_four`:
   `(4 / 3) φ₃(t) - (1 / 3) φ₄(t) = t - 1 - ε₁(t)` for `t ≠ 0`.
 * `TauCeti.moebiusDivSum_eq_balazard`: Balazard's identity for `m(x)`.
@@ -99,6 +104,11 @@ theorem balazardTwoKernel_def (t : ℝ) :
 /-- `ε₀(1) = 0`. -/
 @[simp]
 theorem balazardTwoKernel_one : balazardTwoKernel 1 = 0 := by
+  simp [balazardTwoKernel]
+
+/-- At every integer `n : ℤ`, `ε₀(n) = 0`. -/
+@[simp]
+theorem balazardTwoKernel_intCast (n : ℤ) : balazardTwoKernel n = 0 := by
   simp [balazardTwoKernel]
 
 /-- `φ₂(t) = t - 1 - ε₀(t)` for every nonzero `t : ℝ`. -/
@@ -199,6 +209,16 @@ theorem intervalIntegrable_balazardTwoKernelDeriv (a b : ℝ) :
     (ae_of_all _ fun t ↦ by
       simpa only [Real.norm_eq_abs] using abs_balazardTwoKernelDeriv_le_two t)
 
+/-- **Fundamental theorem of calculus for `balazardTwoKernelDeriv`**: on any interval not
+containing `0`, `∫_a^b ε₀'(t) dt = ε₀(b) - ε₀(a)`. -/
+theorem integral_balazardTwoKernelDeriv {a b : ℝ} (h0 : (0 : ℝ) ∉ Set.uIcc a b) :
+    ∫ t in a..b, balazardTwoKernelDeriv t = balazardTwoKernel b - balazardTwoKernel a :=
+  integral_eq_of_hasDerivAt_off_countable balazardTwoKernel
+    balazardTwoKernelDeriv (Set.countable_range ((↑) : ℤ → ℝ))
+    (continuousOn_balazardTwoKernel.mono fun _ ht h ↦ h0 (h ▸ ht))
+    (fun _ ht ↦ hasDerivAt_balazardTwoKernel ht.2)
+    (intervalIntegrable_balazardTwoKernelDeriv a b)
+
 /-- **Balazard's `k = 2` identity** (Balazard 2012, equation (11)): for every real `x ≥ 1`,
 `x m(x) - M(x) = 2 - 2 / x + ∫_1^x M(x / t) ε₀'(t) dt`. -/
 theorem mul_moebiusDivSum_sub_moebiusSum_eq {x : ℝ} (hx : 1 ≤ x) :
@@ -267,6 +287,12 @@ theorem balazardKernel_one : balazardKernel 1 = 0 := by
     bernoulli_four]
   norm_num
 
+/-- At every integer `n : ℤ`, `ε₁(n) = 1 / 3 - 1 / (3 * n)`. -/
+@[simp]
+theorem balazardKernel_intCast (n : ℤ) :
+    balazardKernel n = 1 / 3 - 1 / (3 * (n : ℝ)) := by
+  simp [balazardKernel, bernoulli_four]
+
 /-- `0 ≤ balazardKernelDeriv t` for every real `t`. -/
 theorem balazardKernelDeriv_nonneg (t : ℝ) : 0 ≤ balazardKernelDeriv t :=
   sq_nonneg _
@@ -330,6 +356,16 @@ theorem intervalIntegrable_balazardKernelDeriv (a b : ℝ) :
   rw [Real.norm_eq_abs, abs_of_nonneg (balazardKernelDeriv_nonneg t), balazardKernelDeriv_eq_sq]
   have h := abs_le.mp (abs_balazardTwoKernelDeriv_le_two t)
   exact (sq_le_sq' h.1 h.2).trans_eq (by norm_num)
+
+/-- **Fundamental theorem of calculus for `balazardKernelDeriv`**: on any interval not
+containing `0`, `∫_a^b ε₁'(t) dt = ε₁(b) - ε₁(a)`. -/
+theorem integral_balazardKernelDeriv {a b : ℝ} (h0 : (0 : ℝ) ∉ Set.uIcc a b) :
+    ∫ t in a..b, balazardKernelDeriv t = balazardKernel b - balazardKernel a :=
+  integral_eq_of_hasDerivAt_off_countable balazardKernel
+    balazardKernelDeriv (Set.countable_range ((↑) : ℤ → ℝ))
+    (continuousOn_balazardKernel.mono fun _ ht h ↦ h0 (h ▸ ht))
+    (fun _ ht ↦ hasDerivAt_balazardKernel ht.2)
+    (intervalIntegrable_balazardKernelDeriv a b)
 
 /-! ### Balazard's identity for `m(x)` -/
 

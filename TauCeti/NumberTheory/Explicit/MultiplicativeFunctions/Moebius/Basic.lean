@@ -11,8 +11,6 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-import Mathlib.MeasureTheory.Integral.DivergenceTheorem
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.NumberTheory.AbelSummation
 import Mathlib.NumberTheory.ArithmeticFunction.Misc
 import TauCeti.Algebra.BigOperators.Intervals
@@ -365,52 +363,11 @@ theorem sum_moebius_mul_natFloor_div (hx : 1 ≤ x) :
 
 /-! ### Step-function integral exchange for `M(x / t)` -/
 
-/-- On `(1, x]`, `M(x / t) * w(t)` agrees with the finite sum of indicator-weighted copies
-`∑_{1 ≤ n ≤ x} μ(n) * (Iic (x / n)).indicator w t`. -/
-private theorem eqOn_moebiusSum_div_mul {x : ℝ} (hx : 1 ≤ x) (w : ℝ → ℝ) :
-    Set.EqOn (fun t ↦ moebiusSum (x / t) * w t)
-      (fun t ↦ ∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * (Set.Iic (x / n)).indicator w t)
-      (Set.Ioc 1 x) := by
-  intro t ht
-  have ht0 : 0 < t := lt_of_lt_of_le zero_lt_one ht.1.le
-  have hx0 : 0 ≤ x := zero_le_one.trans hx
-  have hfloor : ⌊x / t⌋₊ ≤ ⌊x⌋₊ := Nat.floor_mono (div_le_self hx0 ht.1.le)
-  dsimp only
-  rw [moebiusSum_def, Finset.sum_mul]
-  symm
-  calc ∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * (Set.Iic (x / n)).indicator w t
-      = ∑ n ∈ Icc 1 ⌊x⌋₊, if n ≤ ⌊x / t⌋₊ then (μ n : ℝ) * w t else 0 := by
-        refine Finset.sum_congr rfl fun n hn ↦ ?_
-        have hn0 : (0 : ℝ) < n := by exact_mod_cast (Finset.mem_Icc.mp hn).1
-        have hmem : t ∈ Set.Iic (x / n) ↔ n ≤ ⌊x / t⌋₊ := by
-          rw [Set.mem_Iic, le_div_iff₀ hn0, mul_comm t (n : ℝ), ← le_div_iff₀ ht0,
-            ← Nat.le_floor_iff (div_nonneg hx0 ht0.le)]
-        by_cases h : t ∈ Set.Iic (x / n)
-        · simp [h, hmem.mp h]
-        · simp [h, mt hmem.mpr h]
-    _ = ∑ n ∈ (Icc 1 ⌊x⌋₊).filter (· ≤ ⌊x / t⌋₊), (μ n : ℝ) * w t := by
-        rw [Finset.sum_filter]
-    _ = ∑ n ∈ Icc 1 ⌊x / t⌋₊, (μ n : ℝ) * w t := by
-        congr 1
-        ext n
-        simp only [Finset.mem_filter, Finset.mem_Icc]
-        exact ⟨fun h ↦ ⟨h.1.1, h.2⟩, fun h ↦ ⟨⟨h.1, h.2.trans hfloor⟩, h.2⟩⟩
-
-private theorem integrableOn_moebius_indicator {x : ℝ} (hx : 1 ≤ x) {w : ℝ → ℝ}
-    (hw : IntervalIntegrable w volume 1 x) :
-    ∀ n ∈ Icc 1 ⌊x⌋₊,
-      IntegrableOn (fun t ↦ (μ n : ℝ) * (Set.Iic (x / n)).indicator w t) (Set.Ioc 1 x) :=
-  fun _ _ ↦ (((intervalIntegrable_iff_integrableOn_Ioc_of_le hx).mp hw).indicator
-    measurableSet_Iic).const_mul _
-
 /-- If `w` is interval integrable on `1..x`, then so is `t ↦ M(x / t) * w(t)`. -/
 theorem intervalIntegrable_moebiusSum_div_mul {x : ℝ} (hx : 1 ≤ x) {w : ℝ → ℝ}
     (hw : IntervalIntegrable w volume 1 x) :
-    IntervalIntegrable (fun t ↦ moebiusSum (x / t) * w t) volume 1 x :=
-  (intervalIntegrable_iff_integrableOn_Ioc_of_le hx).mpr <|
-    IntegrableOn.congr_fun
-      (integrable_finsetSum (Icc 1 ⌊x⌋₊) (integrableOn_moebius_indicator hx hw))
-      (eqOn_moebiusSum_div_mul hx w).symm measurableSet_Ioc
+    IntervalIntegrable (fun t ↦ moebiusSum (x / t) * w t) volume 1 x := by
+  simpa only [moebiusSum] using intervalIntegrable_sum_Icc_div_mul (fun n ↦ (μ n : ℝ)) hx hw
 
 /-- Integrating `M(x / t) * w(t)` over `[1, x]` swaps with the sum defining `M(x / t)`:
 `∫_1^x M(x / t) w(t) dt = ∑_{1 ≤ n ≤ x} μ(n) ∫_1^{x / n} w(t) dt`. -/
@@ -418,37 +375,15 @@ theorem integral_moebiusSum_div_mul {x : ℝ} (hx : 1 ≤ x) {w : ℝ → ℝ}
     (hw : IntervalIntegrable w volume 1 x) :
     ∫ t in (1 : ℝ)..x, moebiusSum (x / t) * w t =
       ∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * ∫ t in (1 : ℝ)..(x / n), w t := by
-  have hx0 : 0 < x := lt_of_lt_of_le zero_lt_one hx
-  rw [intervalIntegral.integral_of_le hx,
-    setIntegral_congr_fun measurableSet_Ioc (eqOn_moebiusSum_div_mul hx w)]
-  have hswap :
-      ∫ t in Set.Ioc 1 x,
-          ∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * (Set.Iic (x / n)).indicator w t =
-        ∑ n ∈ Icc 1 ⌊x⌋₊,
-          ∫ t in Set.Ioc 1 x, (μ n : ℝ) * (Set.Iic (x / n)).indicator w t :=
-    integral_finsetSum (Icc 1 ⌊x⌋₊) (integrableOn_moebius_indicator hx hw)
-  rw [hswap]
-  refine Finset.sum_congr rfl fun n hn ↦ ?_
-  have hn1 : 1 ≤ n := (Finset.mem_Icc.mp hn).1
-  have hnx : (n : ℝ) ≤ x :=
-    le_trans (by exact_mod_cast (Finset.mem_Icc.mp hn).2) (Nat.floor_le hx0.le)
-  have h1xn : 1 ≤ x / n := (one_le_div (by exact_mod_cast hn1)).mpr hnx
-  have hxn_le : x / n ≤ x := div_le_self hx0.le (by exact_mod_cast hn1)
-  rw [integral_const_mul, setIntegral_indicator measurableSet_Iic, Set.Ioc_inter_Iic,
-    min_eq_right hxn_le, intervalIntegral.integral_of_le h1xn]
+  simpa only [moebiusSum] using integral_sum_Icc_div_mul (fun n ↦ (μ n : ℝ)) hx hw
 
 /-- If `f` is interval integrable on `1..x` and has primitive `F` on `[1, x]` (`∫_1^y f = F y`),
 then `∫_1^x M(x / t) f(t) dt = ∑_{1 ≤ n ≤ x} μ(n) F(x / n)`. -/
 theorem integral_moebiusSum_div_mul_eq_sum {x : ℝ} (hx : 1 ≤ x) {f F : ℝ → ℝ}
     (hf : IntervalIntegrable f volume 1 x) (hF : ∀ y ∈ Set.Icc 1 x, ∫ t in (1 : ℝ)..y, f t = F y) :
     ∫ t in (1 : ℝ)..x, moebiusSum (x / t) * f t = ∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * F (x / n) := by
-  have hx0 : 0 ≤ x := zero_le_one.trans hx
-  rw [integral_moebiusSum_div_mul hx hf]
-  refine Finset.sum_congr rfl fun n hn ↦ ?_
-  have hn1 : 1 ≤ n := (Finset.mem_Icc.mp hn).1
-  have hnx : (n : ℝ) ≤ x := le_trans (by exact_mod_cast (Finset.mem_Icc.mp hn).2) (Nat.floor_le hx0)
-  rw [hF (x / n) ⟨(one_le_div (by exact_mod_cast hn1)).mpr hnx,
-    div_le_self hx0 (by exact_mod_cast hn1)⟩]
+  simpa only [moebiusSum] using
+    integral_sum_Icc_div_mul_eq_sum (fun n ↦ (μ n : ℝ)) hx hf hF
 
 /-- FTC version of `integral_moebiusSum_div_mul_eq_sum`: if `F` is continuous on `[1, x]`,
 vanishes at `1`, and has derivative `f` away from a countable set `s`, with `f` interval
@@ -459,16 +394,8 @@ theorem integral_moebiusSum_div_mul_of_hasDerivAt_off_countable {x : ℝ} (hx : 
     (hFd : ∀ t ∈ Set.Ioo 1 x \ s, HasDerivAt F (f t) t)
     (hf : IntervalIntegrable f volume 1 x) :
     ∫ t in (1 : ℝ)..x, moebiusSum (x / t) * f t = ∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * F (x / n) := by
-  refine integral_moebiusSum_div_mul_eq_sum hx hf fun y hy ↦ ?_
-  have hsub : Set.uIcc 1 y ⊆ Set.Icc 1 x := by
-    rw [Set.uIcc_of_le hy.1]
-    exact Set.Icc_subset_Icc_right hy.2
-  have hftc := integral_eq_of_hasDerivAt_off_countable F f hs
-    (hFc.mono hsub)
-    (fun t ht ↦ hFd t ⟨⟨(min_eq_left hy.1 ▸ ht.1.1),
-      (max_eq_right hy.1 ▸ ht.1.2).trans_le hy.2⟩, ht.2⟩)
-    (hf.mono_set (Set.uIcc_subset_uIcc_left (by rw [Set.uIcc_of_le hx]; exact hy)))
-  simpa [hF1] using hftc
+  simpa only [moebiusSum] using
+    integral_sum_Icc_div_mul_of_hasDerivAt_off_countable (fun n ↦ (μ n : ℝ)) hx hs hFc hF1 hFd hf
 
 /-- `t ↦ |M(x / t)| / t ^ 2` is interval integrable on `1..x` for `1 ≤ x`. -/
 theorem intervalIntegrable_abs_moebiusSum_div_div_sq {x : ℝ} (hx : 1 ≤ x) :
