@@ -120,10 +120,9 @@ theorem presentationLimitPreAdicSpacePairComap_base (P : PairOfDefinition A)
     (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
       (presentationLimitPresheaf P' T.plus)) (φ : Pair.Hom S T) :
     (presentationLimitPreAdicSpacePairComap P P' hS hT hsheaf φ).base =
-      spaComapTopHom φ.toRingHom φ.continuous_toRingHom φ.map_mem_plus :=
-  TopCat.hom_ext <| ContinuousMap.ext fun x ↦
-    (presentationLimitPreAdicSpacePairComap_base_apply P P' hS hT hsheaf φ x).trans
-      (congr_fun (Pair.Hom.spaComap_def φ) x)
+      spaComapTopHom φ.toRingHom φ.continuous_toRingHom φ.map_mem_plus := by
+  rw [presentationLimitPreAdicSpacePairComap_def, presentationLimitPreAdicSpaceComap_toHom,
+    presentationLimitPresheafedSpaceComap_base]
 
 /-- The identity morphism of a Huber pair induces the identity morphism of `Spa(A, A⁺)`. -/
 @[simp]

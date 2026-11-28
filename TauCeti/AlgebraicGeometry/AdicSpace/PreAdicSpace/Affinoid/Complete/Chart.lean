@@ -21,15 +21,16 @@ presentation `(P, S)` into a `CompleteAffinoidOpen` interface built on
 
 * **Completed presentations**: `CompleteAffinoidOpen.ofCompletion` produces a complete Hausdorff
   sheafy `CompleteAffinoidOpen` over `Spa(A, A⁺)`, with canonical pair morphism
-  `CompleteAffinoidOpen.toCompletionHom`, surjectivity on underlying points
-  (`range_ofCompletion_hom_base`), ascent of Huber's standing class
+  `CompleteAffinoidOpen.toCompletionHom`, isomorphism `isIso_ofCompletion_hom`, surjectivity on
+  underlying points (`range_ofCompletion_hom_base`), ascent of Huber's standing class
   (`isHuberStandard_ofCompletion`), and finite-type / discrete finite-presentation lemmas
   (`isTopologicallyFiniteType_toCompletionHom`, `finitePresentation_toCompletionHom`).
 * **Functoriality and commuting completion square**: `CompleteAffinoidOpen.ofCompletionMap` lifts
   any Huber-pair morphism `φ : S → T` between sheafy presentations to a morphism between their
-  `{1} / 1` completions, obeying naturality (`ofCompletionMap_comp_toCompletionHom`), the
-  commuting-square law (`pairComap_ofCompletionMap_comp_hom`), preservation of topological finite
-  type (`isTopologicallyFiniteType_ofCompletionMap`), and conditional discrete algebraic finite
+  `{1} / 1` completions, obeying functoriality (`ofCompletionMap_id`, `ofCompletionMap_comp`),
+  naturality (`ofCompletionMap_comp_toCompletionHom`), the commuting-square law
+  (`pairComap_ofCompletionMap_comp_hom`), preservation of topological finite type
+  (`isTopologicallyFiniteType_ofCompletionMap`), and conditional discrete algebraic finite
   presentation (`finitePresentation_ofCompletionMap_of_discreteTopology`).
 
 ## References
@@ -86,6 +87,20 @@ theorem range_ofCompletion_hom_base :
   rw [ofCompletion_hom]
   exact (range_toRationalLocalizationComap_base P hP hsheaf (𝟙 _) ({1} : Finset A) 1
     (by simp)).trans (by rw [spaBasicOpen_singleton_one, Opens.coe_top]; rfl)
+
+/-- The structure morphism of `ofCompletion` is an isomorphism of pre-adic spaces. -/
+instance isIso_ofCompletion_hom : IsIso (ofCompletion P hP hsheaf).hom := by
+  let X := presentationLimitPreAdicSpace P S.plus
+    S.isRingOfIntegralElements.isPowerBounded_of_mem hP
+  have hr : Set.range (ofCompletion P hP hsheaf).hom.base = Set.range (𝟙 X : X ⟶ X).base := by
+    rw [range_ofCompletion_hom_base]
+    exact (Set.range_eq_univ.mpr fun x ↦ ⟨x, PreAdicSpace.id_base_apply X x⟩).symm
+  have heq : (IsOpenImmersion.isoOfRangeEq (ofCompletion P hP hsheaf).hom (𝟙 X) hr).hom =
+      (ofCompletion P hP hsheaf).hom := by
+    simpa only [Category.comp_id] using
+      IsOpenImmersion.isoOfRangeEq_hom_comp (ofCompletion P hP hsheaf).hom (𝟙 X) hr
+  rw [← heq]
+  exact inferInstance
 
 /-- The canonical completion morphism `toCompletionHom` is topologically of finite type. -/
 theorem isTopologicallyFiniteType_toCompletionHom :
@@ -150,6 +165,59 @@ theorem pairComap_ofCompletionMap_comp_hom (φ : Pair.Hom S T) :
   rw [ofCompletion_hom, ofCompletion_hom, pairComap,
     ← presentationLimitPreAdicSpacePairComap_comp, ← presentationLimitPreAdicSpacePairComap_comp,
     ofCompletionMap_comp_toCompletionHom]
+
+/-- `ofCompletionMap` sends the identity morphism of `S` to the identity morphism of the completed
+pair. -/
+@[simp]
+theorem ofCompletionMap_id :
+    ofCompletionMap P hP hsheafA P hP hsheafA (Pair.Hom.id S) =
+      Pair.Hom.id (ofCompletion P hP hsheafA).pair := by
+  apply (ofCompletion P hP hsheafA).pairComap_injective (ofCompletion P hP hsheafA)
+  rw [← cancel_mono (ofCompletion P hP hsheafA).hom,
+    pairComap_ofCompletionMap_comp_hom,
+    presentationLimitPreAdicSpacePairComap_id, Category.comp_id,
+    pairComap_id, Category.id_comp]
+
+/-- `ofCompletionMap` is functorial with respect to composition of Huber-pair morphisms. -/
+@[simp]
+theorem ofCompletionMap_comp {C : Type u} [CommRing C] [TopologicalSpace C] [IsTopologicalRing C]
+    [IsHuberRing C] {U : Pair C} (P'' : PairOfDefinition C) (hU : P''.ringOfDefinition ≤ U.plus)
+    (hsheafC : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa U.plus))
+      (presentationLimitPresheaf P'' U.plus))
+    (φ : Pair.Hom S T) (ψ : Pair.Hom T U) :
+    (ofCompletionMap P' hP' hsheafB P'' hU hsheafC ψ).comp
+        (ofCompletionMap P hP hsheafA P' hP' hsheafB φ) =
+      ofCompletionMap P hP hsheafA P'' hU hsheafC (ψ.comp φ) := by
+  symm
+  apply (ofCompletion P hP hsheafA).pairComap_injective (ofCompletion P'' hU hsheafC)
+  rw [← cancel_mono (ofCompletion P hP hsheafA).hom]
+  calc
+    (ofCompletion P hP hsheafA).pairComap (ofCompletion P'' hU hsheafC)
+          (ofCompletionMap P hP hsheafA P'' hU hsheafC (ψ.comp φ)) ≫
+        (ofCompletion P hP hsheafA).hom
+      = (ofCompletion P'' hU hsheafC).hom ≫
+          presentationLimitPreAdicSpacePairComap P P'' hP hU hsheafC (ψ.comp φ) :=
+        pairComap_ofCompletionMap_comp_hom P hP hsheafA P'' hU hsheafC (ψ.comp φ)
+    _ = ((ofCompletion P'' hU hsheafC).hom ≫
+          presentationLimitPreAdicSpacePairComap P' P'' hP' hU hsheafC ψ) ≫
+          presentationLimitPreAdicSpacePairComap P P' hP hP' hsheafB φ := by
+        simp only [← presentationLimitPreAdicSpacePairComap_comp, Category.assoc]
+    _ = ((ofCompletion P' hP' hsheafB).pairComap (ofCompletion P'' hU hsheafC)
+            (ofCompletionMap P' hP' hsheafB P'' hU hsheafC ψ) ≫
+          (ofCompletion P' hP' hsheafB).hom) ≫
+          presentationLimitPreAdicSpacePairComap P P' hP hP' hsheafB φ := by
+        rw [← pairComap_ofCompletionMap_comp_hom P' hP' hsheafB P'' hU hsheafC ψ]
+    _ = (ofCompletion P' hP' hsheafB).pairComap (ofCompletion P'' hU hsheafC)
+            (ofCompletionMap P' hP' hsheafB P'' hU hsheafC ψ) ≫
+          ((ofCompletion P hP hsheafA).pairComap (ofCompletion P' hP' hsheafB)
+            (ofCompletionMap P hP hsheafA P' hP' hsheafB φ) ≫
+            (ofCompletion P hP hsheafA).hom) := by
+        rw [Category.assoc, pairComap_ofCompletionMap_comp_hom P hP hsheafA P' hP' hsheafB φ]
+    _ = (ofCompletion P hP hsheafA).pairComap (ofCompletion P'' hU hsheafC)
+          ((ofCompletionMap P' hP' hsheafB P'' hU hsheafC ψ).comp
+            (ofCompletionMap P hP hsheafA P' hP' hsheafB φ)) ≫
+          (ofCompletion P hP hsheafA).hom := by
+        simp only [pairComap_comp_assoc]
 
 /-- `ofCompletionMap` preserves `Pair.Hom.IsTopologicallyFiniteType`. -/
 theorem isTopologicallyFiniteType_ofCompletionMap (φ : Pair.Hom S T)

@@ -143,18 +143,6 @@ private theorem exists_finite_weights_isWeightedVarPowerBounded [IsHuberRing A] 
       obtain ⟨a, ha, rfl⟩ := hb; exact hG i ha
   exact ⟨V, hVfin, hV, hφV, hVy⟩
 
-private theorem iterateStructureHom_eq_comp {k m : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A] [IsHuberRing A] {T : Fin k → Set A} (hT : IsWeightFamily T)
-    {W : Fin m → Set (UniformSpace.Completion (weightedRestrictedSubring T hT))}
-    (hW : IsWeightFamily W) :
-    iterateStructureHom hT hW =
-      (algebraMap (UniformSpace.Completion (weightedRestrictedSubring T hT))
-        (UniformSpace.Completion (weightedRestrictedSubring W hW))).comp
-        (algebraMap A (UniformSpace.Completion (weightedRestrictedSubring T hT))) := by
-  ext a
-  simp only [iterateStructureHom_apply, RingHom.comp_apply,
-    algebraMap_completion_weightedRestrictedSubring_apply]
-
 /-- **Wedhorn Proposition 6.33(1).** If `φ : A → B` and `ψ : B → C` are topologically of finite
 type and `A` is a Huber ring, then `ψ ∘ φ` is topologically of finite type. -/
 theorem IsTopologicallyFiniteType.comp [IsHuberRing A]

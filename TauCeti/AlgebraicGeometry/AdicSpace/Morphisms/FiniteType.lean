@@ -53,7 +53,9 @@ with `S = Pair.discrete A` and `T = Pair.discrete B`.
 * `TauCeti.AdicSpace.LocallyOfFiniteType.comp`,
   `TauCeti.AdicSpace.LocallyOfFiniteType.isMultiplicative`,
   `TauCeti.AdicSpace.LocallyOfFiniteType.of_comp`,
-  `TauCeti.AdicSpace.LocallyOfFiniteType.restrict`: Wedhorn, Proposition 8.50.
+  `TauCeti.AdicSpace.LocallyOfFiniteType.restrict`,
+  `TauCeti.AdicSpace.locallyOfFiniteType_iff_of_iSup_eq_top_source`: Wedhorn, Proposition 8.50 and
+  source-open-cover descent.
 * `TauCeti.AdicSpace.locallyOfFiniteType_comapOfPresentation`,
   `TauCeti.AdicSpace.locallyOfFiniteType_comapOfPair`: affinoid morphisms induced by Huber-pair
   morphisms topologically of finite type are locally of finite type.
@@ -265,13 +267,7 @@ theorem LocallyOfFiniteType.of_comp {f : X ⟶ Y} {g : Y ⟶ Z}
     rintro _ ⟨b, rfl⟩
     rw [PreAdicSpace.comp_base_apply, ofRestrictIso_hom_base_apply T P' hP' hsheafB eW b]
     exact hWO (eW.inv.base b).property
-  let p := PreAdicSpace.IsOpenImmersion.lift CZ.hom (CY.hom ≫ g.hom) hrangeY
-  let ψ := presentationLimitHomPairHom CZ.pairOfDefinition CY.pairOfDefinition CZ.pair CY.pair
-    CZ.le_plus CY.le_plus p
-  have hsq_g : CZ.pairComap CY ψ ≫ CZ.hom = CY.hom ≫ g.hom := by
-    rw [pairComap, presentationLimitPreAdicSpacePairComap_presentationLimitHomPairHom
-      CZ.pairOfDefinition CY.pairOfDefinition CZ.pair CY.pair CZ.le_plus CY.le_plus CY.isSheaf]
-    exact PreAdicSpace.IsOpenImmersion.lift_fac CZ.hom (CY.hom ≫ g.hom) hrangeY
+  obtain ⟨ψ, hsq_g⟩ := CZ.exists_pairHom_of_range_subset CY g.hom hrangeY
   obtain ⟨TC, sC, hTC, φ, c₁, hc₁, hsq_f, hφψ⟩ :=
     exists_rationalLocalization_lift_sq (f := f.hom) (g := g.hom) CZ CY CX ψ χ hb₀ hc₀ hsq_g hsq_fg
   exact ⟨CY, CX.rationalLocalization TC sC hTC, φ,
@@ -286,6 +282,17 @@ theorem LocallyOfFiniteType.restrict {U V : AdicSpace.{u}} {iU : U ⟶ X} {iV : 
     (hcomm : g ≫ iV = iU ≫ f) (hf : LocallyOfFiniteType f) : LocallyOfFiniteType g :=
   LocallyOfFiniteType.of_comp (g := iV)
     (hcomm ▸ (LocallyOfFiniteType.of_isOpenImmersion iU).comp hf)
+
+/-- **Open-cover descent on the source for `LocallyOfFiniteType`**: a morphism `f : X ⟶ Y` of
+adic spaces is locally of finite type if and only if its restriction `X.ofRestrict (U i) ≫ f` to
+each member of an open cover `U` of `X` is locally of finite type. -/
+theorem locallyOfFiniteType_iff_of_iSup_eq_top_source {f : X ⟶ Y} {ι : Type*}
+    (U : ι → Opens X.obj) (hU : iSup U = ⊤) :
+    LocallyOfFiniteType f ↔ ∀ i, LocallyOfFiniteType (X.ofRestrict (U i) ≫ f) :=
+  ⟨fun hf i ↦ hf.restrict (iU := X.ofRestrict (U i)) (iV := 𝟙 Y) (Category.comp_id _),
+    fun h ↦ PreAdicSpace.LocallyOfFiniteType.of_iSup_eq_top U hU fun i ↦ by
+      simpa only [locallyOfFiniteType_iff, ObjectProperty.FullSubcategory.comp_hom,
+        AdicSpace.ofRestrict_hom] using h i⟩
 
 end OpenImmersionCharts
 

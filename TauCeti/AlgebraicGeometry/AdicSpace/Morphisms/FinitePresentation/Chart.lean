@@ -39,8 +39,10 @@ this is equivalent to the pointwise complete Hausdorff chart condition
   `.locallyOfWeaklyFiniteType`, `.isAdic`: implications down Huber's hierarchy.
 * `LocallyOfFinitePresentation.isLocallyNoetherian_source`: unconditional locally noetherian
   source.
-* `LocallyOfFinitePresentation.exists_openImmersion_chart`,
+* `LocallyOfFinitePresentationAt.exists_openImmersion_chart`,
   `locallyOfFinitePresentationAt_of_openImmersion_sq`,
+  `locallyOfFinitePresentationAt_iff_exists_openImmersion_chart`,
+  `LocallyOfFinitePresentation.exists_openImmersion_chart`,
   `locallyOfFinitePresentation_iff_forall_exists_openImmersion_chart`: open-immersion charts.
 * `locallyOfFinitePresentation_id_iff`: characterisation of when `𝟙 X` is locally of finite
   presentation.
@@ -152,6 +154,38 @@ theorem locallyOfFinitePresentationAt_of_openImmersion_sq {f : X ⟶ Y} {x : X.o
     _ = eU.hom ≫ (CY.pairComap CX φ ≫ CY.hom) := by rw [hsq]
     _ = eU.hom ≫ CY.pairComap CX φ ≫ eV.inv ≫ Y.obj.ofRestrict V.isOpenEmbedding := by rw [heV]
 
+/-- **Pointwise open-immersion chart extraction for `LocallyOfFinitePresentationAt`**: if
+`LocallyOfFinitePresentationAt f x`, then `x` admits complete affinoid opens `CY` of `Y` (with
+`IsHuberStandard CY.Ring`) and `CX` of `X` covering `x`, together with a morphism
+`φ : CY.pair → CX.pair` topologically of finite type and conditionally algebraically of finite
+presentation when `CY.Ring` is discrete, making the open-immersion square commute. -/
+theorem LocallyOfFinitePresentationAt.exists_openImmersion_chart {f : X ⟶ Y} {x : X.obj}
+    (hf : LocallyOfFinitePresentationAt f x) :
+    ∃ (CY : CompleteAffinoidOpen Y.obj) (CX : CompleteAffinoidOpen X.obj)
+      (_ : IsHuberStandard CY.Ring) (φ : Pair.Hom CY.pair CX.pair) (_ : φ.IsTopologicallyFiniteType)
+      (_ : DiscreteTopology CY.Ring → φ.toRingHom.FinitePresentation) (b₀ : CX.space),
+      CX.hom.base b₀ = x ∧ CY.pairComap CX φ ≫ CY.hom = CX.hom ≫ f.hom := by
+  obtain ⟨U, hxU, V, -, A, _, _, _, _, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP',
+    φ, hφ, hfp, hsheafB, eU, eV, hfac⟩ := hf
+  have hsheafA := isSheaf_of_restrict_iso P hP eV
+  exact ⟨ofRestrictIso S P hP hsheafA eV, ofRestrictIso T P' hP' hsheafB eU,
+    (inferInstance : IsHuberStandard A), φ, hφ, hfp, eU.hom.base ⟨x, hxU⟩,
+    ofRestrictIso_hom_base .., ofRestrictIso_pairComap_comp_hom _ _ _ _ _ _ _ _ _ _ φ hfac⟩
+
+/-- **Pointwise open-immersion chart characterisation of `LocallyOfFinitePresentationAt`**:
+`LocallyOfFinitePresentationAt f x` holds if and only if `x` is covered by a commuting
+open-immersion square between complete affinoid opens with `IsHuberStandard CY.Ring`,
+`φ.IsTopologicallyFiniteType`, and `DiscreteTopology CY.Ring → φ.toRingHom.FinitePresentation`. -/
+theorem locallyOfFinitePresentationAt_iff_exists_openImmersion_chart (f : X ⟶ Y) (x : X.obj) :
+    LocallyOfFinitePresentationAt f x ↔
+      ∃ (CY : CompleteAffinoidOpen Y.obj) (CX : CompleteAffinoidOpen X.obj)
+        (_ : IsHuberStandard CY.Ring) (φ : Pair.Hom CY.pair CX.pair)
+        (_ : φ.IsTopologicallyFiniteType)
+        (_ : DiscreteTopology CY.Ring → φ.toRingHom.FinitePresentation) (b₀ : CX.space),
+        CX.hom.base b₀ = x ∧ CY.pairComap CX φ ≫ CY.hom = CX.hom ≫ f.hom :=
+  ⟨fun hf ↦ hf.exists_openImmersion_chart, fun ⟨CY, CX, _, φ, hφ, hfp, _, hb₀, hsq⟩ ↦
+    locallyOfFinitePresentationAt_of_openImmersion_sq CY CX φ hφ hfp hb₀ hsq⟩
+
 /-- Characterisation of `TauCeti.AdicSpace.LocallyOfFinitePresentation` in terms of complete
 Hausdorff pointwise charts `LocallyOfFinitePresentationAt`. -/
 theorem locallyOfFinitePresentation_iff (f : X ⟶ Y) :
@@ -194,13 +228,8 @@ theorem LocallyOfFinitePresentation.exists_openImmersion_chart {f : X ⟶ Y}
     ∃ (CY : CompleteAffinoidOpen Y.obj) (CX : CompleteAffinoidOpen X.obj)
       (_ : IsHuberStandard CY.Ring) (φ : Pair.Hom CY.pair CX.pair) (_ : φ.IsTopologicallyFiniteType)
       (_ : DiscreteTopology CY.Ring → φ.toRingHom.FinitePresentation) (b₀ : CX.space),
-      CX.hom.base b₀ = x ∧ CY.pairComap CX φ ≫ CY.hom = CX.hom ≫ f.hom := by
-  obtain ⟨U, hxU, V, -, A, _, _, _, _, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP',
-    φ, hφ, hfp, hsheafB, eU, eV, hfac⟩ := (locallyOfFinitePresentation_iff f).mp hf x
-  have hsheafA := isSheaf_of_restrict_iso P hP eV
-  exact ⟨ofRestrictIso S P hP hsheafA eV, ofRestrictIso T P' hP' hsheafB eU,
-    (inferInstance : IsHuberStandard A), φ, hφ, hfp, eU.hom.base ⟨x, hxU⟩,
-    ofRestrictIso_hom_base .., ofRestrictIso_pairComap_comp_hom _ _ _ _ _ _ _ _ _ _ φ hfac⟩
+      CX.hom.base b₀ = x ∧ CY.pairComap CX φ ≫ CY.hom = CX.hom ≫ f.hom :=
+  ((locallyOfFinitePresentation_iff f).mp hf x).exists_openImmersion_chart
 
 /-- **Open-immersion chart characterisation of `LocallyOfFinitePresentation`**: a morphism
 `f : X ⟶ Y` of adic spaces is locally of finite presentation if and only if every `x ∈ X` is
@@ -214,10 +243,8 @@ theorem locallyOfFinitePresentation_iff_forall_exists_openImmersion_chart (f : X
         (_ : φ.IsTopologicallyFiniteType)
         (_ : DiscreteTopology CY.Ring → φ.toRingHom.FinitePresentation) (b₀ : CX.space),
         CX.hom.base b₀ = x ∧ CY.pairComap CX φ ≫ CY.hom = CX.hom ≫ f.hom :=
-  ⟨fun hf x ↦ hf.exists_openImmersion_chart x, fun h ↦ (locallyOfFinitePresentation_iff f).mpr
-    fun x ↦ by
-      obtain ⟨CY, CX, _, φ, hφ, hfp, b₀, hb₀, hsq⟩ := h x
-      exact locallyOfFinitePresentationAt_of_openImmersion_sq CY CX φ hφ hfp hb₀ hsq⟩
+  (locallyOfFinitePresentation_iff f).trans
+    (forall_congr' (locallyOfFinitePresentationAt_iff_exists_openImmersion_chart f))
 
 /-- **Characterisation of when an identity morphism is locally of finite presentation**:
 `LocallyOfFinitePresentation (𝟙 X) ↔ X.IsLocallyHuberStandard`. -/
@@ -227,7 +254,11 @@ theorem locallyOfFinitePresentation_id_iff :
 
 /-- Transfer of topological finite type and conditional algebraic finite presentation along a
 chart factorisation `φ.comp ψ = (CX₀.rationalLocalizationHom TC sC hTC).comp χ` obtained after
-rationally shrinking the source chart `CX₀`. -/
+rationally shrinking the source chart `CX₀`: assuming `CZ.Ring` is in Huber's standing class
+(`IsHuberStandard CZ.Ring`), `ψ` and `χ` are topologically of finite type, and `χ.toRingHom` is
+algebraically of finite presentation whenever `CZ.Ring` is discrete, the morphism `φ` is
+topologically of finite type and `φ.toRingHom` is algebraically of finite presentation whenever
+`CY.Ring` is discrete. -/
 theorem isTopologicallyFiniteType_and_finitePresentation_of_comp_rationalLocalization
     {X₀ Y₀ Z₀ : PreAdicSpace.{u}} {CZ : CompleteAffinoidOpen Z₀} [IsHuberStandard CZ.Ring]
     {CY : CompleteAffinoidOpen Y₀} {CX₀ : CompleteAffinoidOpen X₀} {TC : Finset CX₀.Ring}
@@ -277,8 +308,15 @@ theorem LocallyOfFinitePresentation.exists_openImmersion_over_rationalLocalizati
       (𝟙 Y.obj) had₁
   let CY₁ := CY.rationalLocalization TA sA hTA
   have hα₁α₀ : α₁.comp α₀ = CY.rationalLocalizationHom TA sA hTA := CY.pairComap_injective CY₁ <| by
-    rw [CY.pairComap_comp CY'₁ CY₁, ← cancel_mono CY.hom, Category.assoc, hsq_α₀,
-      Category.comp_id, hsq_α₁, Category.comp_id, ofRationalLocalization_hom]
+    rw [← cancel_mono CY.hom]
+    calc
+      CY.pairComap CY₁ (α₁.comp α₀) ≫ CY.hom
+        = CY'₁.pairComap CY₁ α₁ ≫ (CY.pairComap CY'₁ α₀ ≫ CY.hom) := by
+            simp only [pairComap_comp_assoc]
+      _ = CY'₁.pairComap CY₁ α₁ ≫ CY'₁.hom := by rw [hsq_α₀, Category.comp_id]
+      _ = CY₁.hom := by simp only [hsq_α₁, Category.comp_id, CY₁]
+      _ = CY.pairComap CY₁ (CY.rationalLocalizationHom TA sA hTA) ≫ CY.hom :=
+            (CY.rationalLocalization_hom TA sA hTA).symm
   have hα₁_tft : α₁.IsTopologicallyFiniteType :=
     .of_comp (hα₁α₀ ▸ CY.isTopologicallyFiniteType_rationalLocalizationHom TA sA hTA)
   let ψ₀ := α₁.comp (CY'.rationalLocalizationHom TA' sA' hTA')

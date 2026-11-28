@@ -88,8 +88,8 @@ subspaces (`isPreAdic.isSheafy_iff`), the mechanism of Wedhorn's Remark 8.27.
   for the rational localisation as a pair.
 * `TauCeti.Huber.isSheafyForEveryPresentation_rationalLocalizationPair`: rational localisation
   preserves `TauCeti.Huber.IsSheafyForEveryPresentation`.
-* `TauCeti.AdicSpace.isSheaf_of_restrict_iso`: transferring sheafiness from an open adic subspace
-  across a chart isomorphism.
+* `TauCeti.PreAdicSpace.isSheaf_of_restrict_iso`, `TauCeti.AdicSpace.isSheaf_of_restrict_iso`:
+  transferring sheafiness from an open subspace across a chart isomorphism.
 
 ## References
 
@@ -733,6 +733,26 @@ theorem isAdic_presentationLimitPreAdicSpace_of_isSheafyRing {A : Type u} [CommR
 
 end ValuationSpectrum
 
+namespace PreAdicSpace
+
+open Huber ValuationSpectrum
+
+/-- Transfer sheafiness from a sheafy pre-adic space `X` restricted to `V` across a `PreAdicSpace`
+chart isomorphism `X.restrict V ≅ Spa(A, A⁺)`. -/
+theorem isSheaf_of_restrict_iso {X : PreAdicSpace.{u}} {V : Opens X} (hX : isSheafy X)
+    {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+    {SA : Pair A} (PA : PairOfDefinition A) (hPA : PA.ringOfDefinition ≤ SA.plus)
+    (eV₀ : X.restrict V.isOpenEmbedding ≅
+      presentationLimitPreAdicSpace PA SA.plus SA.isRingOfIntegralElements.isPowerBounded_of_mem
+        hPA) :
+    Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa SA.plus))
+      (presentationLimitPresheaf PA SA.plus) :=
+  (isSheafy_presentationLimitPreAdicSpace_iff PA SA.plus _ hPA).mp
+    (ObjectProperty.prop_of_iso PreAdicSpace.isSheafy eV₀
+      (PreAdicSpace.isSheafy_restrict V.isOpenEmbedding hX))
+
+end PreAdicSpace
+
 namespace AdicSpace
 
 open Huber PreAdicSpace ValuationSpectrum
@@ -747,9 +767,7 @@ theorem isSheaf_of_restrict_iso {S : AdicSpace.{u}} {V : Opens S.obj}
         hPA) :
     Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa SA.plus))
       (presentationLimitPresheaf PA SA.plus) :=
-  (isSheafy_presentationLimitPreAdicSpace_iff PA SA.plus _ hPA).mp
-    (ObjectProperty.prop_of_iso PreAdicSpace.isSheafy eV₀
-      (PreAdicSpace.isSheafy_restrict V.isOpenEmbedding S.property.isSheafy))
+  PreAdicSpace.isSheaf_of_restrict_iso S.property.isSheafy PA hPA eV₀
 
 end AdicSpace
 

@@ -157,8 +157,9 @@ omit [IsTopologicalRing B] in
 lies in Huber's standing class, `ψ : A →+* C` and `φ : C →+* D` are topologically of finite type,
 `C` is discrete, and `φ.comp ψ` is algebraically of finite presentation whenever `A` is discrete.
 Then `φ` is algebraically of finite presentation. By the standing-class dichotomy, either `A` is
-discrete (so `ψ` is finite type and `φ` cancels out of `φ.comp ψ`), or `C` is noetherian (so
-algebraic finite type of `φ` upgrades to finite presentation). -/
+discrete (so finite-type `ψ` is cancelled on the right from `φ.comp ψ` to deduce finite
+presentation of `φ`), or `C` is noetherian (so algebraic finite type of `φ` upgrades to finite
+presentation). -/
 theorem IsTopologicallyFiniteType.finitePresentation_of_comp [IsHuberRing A] [IsHuberStandard A]
     {C : Type*} [CommRing C] [TopologicalSpace C] [NonarchimedeanRing C]
     {D : Type*} [CommRing D] [TopologicalSpace D] {ψ : A →+* C} {φ : C →+* D}

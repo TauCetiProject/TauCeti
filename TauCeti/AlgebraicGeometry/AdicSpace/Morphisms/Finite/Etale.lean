@@ -417,14 +417,11 @@ theorem isFiniteEtale_comapOfPair {A : Type u} [CommRing A] [UniformSpace A] [Is
   have _ : T2Space A := inferInstance
   obtain ⟨P, hP, _⟩ := hS.exists_compatible_isSheaf
   obtain ⟨P', hP', _⟩ := hT.exists_compatible_isSheaf
-  rw [(Iso.eq_comp_inv _).mpr
-      (ofPairIsoOfPresentation_hom_comapOfPresentation hS hT P hP P' hP' φ).symm,
-    Category.assoc, comapOfPresentation_eq_homMk_presentationLimitPreAdicSpaceComap]
-  have hbase := isFiniteEtale_presentationLimitPreAdicSpaceComap P P' hP hP' (hT.isSheaf P' hP')
+  rw [comapOfPair_iff_comapOfPresentation (fun _ _ f ↦ IsFiniteEtale f) hS hT P hP P' hP' φ,
+    comapOfPresentation_eq_homMk_presentationLimitPreAdicSpaceComap]
+  exact isFiniteEtale_presentationLimitPreAdicSpaceComap P P' hP hP' (hT.isSheaf P' hP')
     (isAdic_presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hP (hS.isSheaf P hP)) φ hφ
-  exact MorphismProperty.RespectsIso.precomp @IsFiniteEtale.{u} _ _
-    (MorphismProperty.RespectsIso.postcomp @IsFiniteEtale.{u} _ _ hbase)
 
 /-! ### Finite fibres, empty sources, locally noetherian ascent, and clopen image -/
 

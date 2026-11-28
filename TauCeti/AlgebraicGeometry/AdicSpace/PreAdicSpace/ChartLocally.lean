@@ -346,8 +346,7 @@ theorem exists_complete_chart_of_chartLocally
   -- 3. `R({1} / 1) = ⊤` gives `Spa(A₁, S₁⁺) ≅ Spa(A, S⁺)` compatible with `ιA`.
   have hsheafA : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
       (presentationLimitPresheaf P S.plus) :=
-    (isSheafy_presentationLimitPreAdicSpace_iff P S.plus _ hP).mp
-      (ObjectProperty.prop_of_iso isSheafy eV (isSheafy_restrict _ Y.property.isSheafy))
+    isSheaf_of_restrict_iso P hP eV
   have hsheafA₁ : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S₁.plus))
       (presentationLimitPresheaf P₁ S₁.plus) :=
     isSheaf_presentationLimitPresheaf_rationalLocalizationPair P S hP ({1} : Finset A) 1 L hden

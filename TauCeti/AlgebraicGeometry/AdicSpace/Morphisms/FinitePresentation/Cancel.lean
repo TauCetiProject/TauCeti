@@ -34,6 +34,8 @@ the target (`iV`), using `LocallyOfFiniteType.of_isOpenImmersion iV` to cancel `
 * `TauCeti.AdicSpace.LocallyOfFinitePresentation.restrict`: if `g ≫ iV = iU ≫ f` with `iU` and
   `iV` open immersions and `f` locally of finite presentation, then `g` is locally of finite
   presentation.
+* `TauCeti.AdicSpace.locallyOfFinitePresentation_iff_of_iSup_eq_top_source`: open-cover descent on
+  the source for `LocallyOfFinitePresentation`.
 
 ## References
 
@@ -91,5 +93,22 @@ theorem LocallyOfFinitePresentation.restrict {U V : AdicSpace.{u}} {iU : U ⟶ X
     (hcomm ▸ (LocallyOfFinitePresentation.of_isOpenImmersion iU
       ((IsLocallyHuberStandard.of_locallyOfFinitePresentation hf).of_isOpenImmersion iU)).comp hf)
     (LocallyOfFiniteType.of_isOpenImmersion iV)
+
+/-- **Open-cover descent on the source for `LocallyOfFinitePresentation`**: a morphism
+`f : X ⟶ Y` of adic spaces is locally of finite presentation if and only if its restriction
+`X.ofRestrict (U i) ≫ f` to each member of an open cover `U` of `X` is locally of finite
+presentation. -/
+theorem locallyOfFinitePresentation_iff_of_iSup_eq_top_source {f : X ⟶ Y} {ι : Type*}
+    (U : ι → Opens X.obj) (hU : iSup U = ⊤) :
+    LocallyOfFinitePresentation f ↔ ∀ i, LocallyOfFinitePresentation (X.ofRestrict (U i) ≫ f) := by
+  refine ⟨fun hf i ↦ hf.restrict (iU := X.ofRestrict (U i)) (iV := 𝟙 Y) (Category.comp_id _),
+    fun h ↦ (locallyOfFinitePresentation_iff_forall_exists_openImmersion_chart f).mpr fun x ↦ ?_⟩
+  obtain ⟨i, hx⟩ := Opens.mem_iSup.mp (hU.ge (Opens.mem_top x))
+  let xᵢ : (X.restrict (U i)).obj := ⟨x, hx⟩
+  obtain ⟨CY, CX, _, φ, hφ, hfp, b₀, hb₀, hsq⟩ := (h i).exists_openImmersion_chart xᵢ
+  refine ⟨CY, CX.compOpenImmersion (X.ofRestrict (U i)).hom, inferInstance, φ, hφ, hfp, b₀, ?_, ?_⟩
+  · rw [compOpenImmersion_hom_base, hb₀, AdicSpace.ofRestrict_base_apply]
+  · rw [pairComap_compOpenImmersion_right_eq_comp_iff]
+    simpa only [ObjectProperty.FullSubcategory.comp_hom] using hsq
 
 end TauCeti.AdicSpace

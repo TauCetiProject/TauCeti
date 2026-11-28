@@ -23,9 +23,9 @@ This module bundles a complete Hausdorff sheafy affinoid open immersion `Spa(A, 
 `TauCeti.PreAdicSpace.CompleteAffinoidOpen X` and develops the presentation-level chart API shared
 across local morphism properties:
 
-* `CompleteAffinoidOpen.space`, `pairComap`, `ofRestrictIso`, `ofDiscrete`, `compOpenImmersion`,
-  `ringEquivOfIso`, and `coe_ringEquivOfIso`: categorical, open-restriction, and
-  global-sections interface.
+* `CompleteAffinoidOpen.space`, `pairComap`, `exists_pairHom_of_range_subset`, `ofRestrictIso`,
+  `ofDiscrete`, `compOpenImmersion`, `ringEquivOfIso`, and `coe_ringEquivOfIso`: categorical,
+  open-restriction, and global-sections interface.
 * `CompleteAffinoidOpen.ofRationalLocalization`, `toRationalLocalizationHom`,
   `rationalLocalization`, `rationalLocalizationHom`,
   `pairComap_comp_rationalLocalizationHom_comp_hom`, `exists_ofRationalLocalization_lift`,
@@ -144,6 +144,20 @@ theorem pairComap_comp_hom_base_comp {X Y Z : PreAdicSpace.{u}} (CZ : CompleteAf
     (hc : CX.hom.base c = x) :
     CZ.hom.base ((CZ.pairComap CX χ).base c) = g.base (f.base x) := by
   rw [CZ.pairComap_comp_hom_base CX χ hsq c, PreAdicSpace.comp_base_apply, hc]
+
+/-- Lift a morphism `g : X ⟶ Y` along an open immersion `CY.hom` when
+`Set.range (CX.hom ≫ g).base ⊆ Set.range CY.hom.base`, producing a Huber-pair morphism
+`φ : CY.pair → CX.pair` with commuting square `CY.pairComap CX φ ≫ CY.hom = CX.hom ≫ g`. -/
+theorem exists_pairHom_of_range_subset {X Y : PreAdicSpace.{u}} (CY : CompleteAffinoidOpen Y)
+    (CX : CompleteAffinoidOpen X) (g : X ⟶ Y)
+    (hrange : Set.range (CX.hom ≫ g).base ⊆ Set.range CY.hom.base) :
+    ∃ φ : Pair.Hom CY.pair CX.pair, CY.pairComap CX φ ≫ CY.hom = CX.hom ≫ g := by
+  let l := IsOpenImmersion.lift CY.hom (CX.hom ≫ g) hrange
+  refine ⟨presentationLimitHomPairHom CY.pairOfDefinition CX.pairOfDefinition
+    CY.pair CX.pair CY.le_plus CX.le_plus l, ?_⟩
+  rw [pairComap, presentationLimitPreAdicSpacePairComap_presentationLimitHomPairHom
+    CY.pairOfDefinition CX.pairOfDefinition CY.pair CX.pair CY.le_plus CX.le_plus CX.isSheaf]
+  exact IsOpenImmersion.lift_fac CY.hom (CX.hom ≫ g) hrange
 
 section OfRestrictIso
 
@@ -436,14 +450,10 @@ theorem exists_ofRationalLocalization_lift {Z : PreAdicSpace.{u}}
     rw [ofRationalLocalization_hom_assoc, PreAdicSpace.comp_base_apply]
     exact hRAO (hrange_ι ▸ ⟨z, rfl⟩ :
       (ι.base z : spa S.plus) ∈ (spaBasicOpen S.plus T s : Set (spa S.plus)))
-  let l := IsOpenImmersion.lift D.hom (CY₁.hom ≫ g) hsub
-  refine ⟨T, s, hT, ha₀R, a₁, presentationLimitHomPairHom D.pairOfDefinition CY₁.pairOfDefinition
-    D.pair CY₁.pair D.le_plus CY₁.le_plus l, ?_, ?_⟩
-  · rw [ofRationalLocalization_hom, PreAdicSpace.comp_base_apply]
-    exact congrArg kY.base ha₁
-  · rw [pairComap, presentationLimitPreAdicSpacePairComap_presentationLimitHomPairHom
-      D.pairOfDefinition CY₁.pairOfDefinition D.pair CY₁.pair D.le_plus CY₁.le_plus CY₁.isSheaf]
-    exact IsOpenImmersion.lift_fac D.hom (CY₁.hom ≫ g) hsub
+  obtain ⟨φ, hφ_sq⟩ := D.exists_pairHom_of_range_subset CY₁ g hsub
+  refine ⟨T, s, hT, ha₀R, a₁, φ, ?_, hφ_sq⟩
+  rw [ofRationalLocalization_hom, PreAdicSpace.comp_base_apply]
+  exact congrArg kY.base ha₁
 
 /-- The canonical Huber-pair morphism `S → (ofRationalLocalization P hP hsheaf kY T s hT).pair`
 into the completed rational localisation at `R(T / s)` is topologically of finite type. -/
@@ -558,10 +568,12 @@ theorem finitePresentation_rationalLocalizationHom {X : PreAdicSpace.{u}}
     (C.rationalLocalizationHom T s hT).toRingHom.FinitePresentation :=
   finitePresentation_toRationalLocalizationHom C.pairOfDefinition C.le_plus C.isSheaf C.hom T s hT
 
-/-- **Composed rational-refinement square**: given a chart square `CZ → CY` over `g : Y ⟶ Z` and
-a chart square `(CY.rationalLocalization TB sB hTB) → CX` over `f : X ⟶ Y`, the composite
-Huber-pair morphism `β.comp ((CY.rationalLocalizationHom TB sB hTB).comp ψ)` induces a chart
-square `CZ → CX` over `f ≫ g`. -/
+/-- **Composed rational-refinement square**: given a chart square `CY.space ⟶ CZ.space` over
+`g : Y ⟶ Z` (induced by `ψ : CZ.pair → CY.pair`) and a chart square
+`CX.space ⟶ (CY.rationalLocalization TB sB hTB).space` over `f : X ⟶ Y` (induced by
+`β : (CY.rationalLocalization TB sB hTB).pair → CX.pair`), the composite Huber-pair morphism
+`β.comp ((CY.rationalLocalizationHom TB sB hTB).comp ψ)` induces a chart square
+`CX.space ⟶ CZ.space` over `f ≫ g`. -/
 theorem pairComap_comp_rationalLocalization_sq {X Y Z : PreAdicSpace.{u}}
     {f : X ⟶ Y} {g : Y ⟶ Z} (CZ : CompleteAffinoidOpen Z) (CY : CompleteAffinoidOpen Y)
     {TB : Finset CY.Ring} {sB : CY.Ring}
@@ -585,10 +597,12 @@ theorem pairComap_comp_rationalLocalization_sq {X Y Z : PreAdicSpace.{u}}
     _ = CX.hom ≫ f ≫ g := by simp only [Category.assoc]
 
 /-- **Lifting a compatible chart over a rational localisation of the source**: given chart squares
-`CZ → CY` over `g : Y ⟶ Z` and `CZ → CX` over `f ≫ g` with `x ∈ X` covered by `c₀ ∈ CX` and
-`f(x)` covered by `b₀ ∈ CY`, there is a rational localisation `CX₁ = CX.rationalLocalization TC sC`
-around `x` and a Huber-pair morphism `φ : CY.pair → CX₁.pair` making the chart square over `f`
-commute and satisfying `φ.comp ψ = (CX.rationalLocalizationHom TC sC hTC).comp χ`. -/
+`CY.space ⟶ CZ.space` over `g : Y ⟶ Z` (induced by `ψ : CZ.pair → CY.pair`) and
+`CX.space ⟶ CZ.space` over `f ≫ g` (induced by `χ : CZ.pair → CX.pair`) with `x ∈ X` covered by
+`c₀ ∈ CX.space` and `f(x)` covered by `b₀ ∈ CY.space`, there is a rational localisation
+`CX₁ = CX.rationalLocalization TC sC` around `x` and a Huber-pair morphism `φ : CY.pair → CX₁.pair`
+making the chart square `CX₁.space ⟶ CY.space` over `f` commute and satisfying
+`φ.comp ψ = (CX.rationalLocalizationHom TC sC hTC).comp χ`. -/
 theorem exists_rationalLocalization_lift_sq {X Y Z : PreAdicSpace.{u}}
     {f : X ⟶ Y} {g : Y ⟶ Z} {x : X}
     (CZ : CompleteAffinoidOpen Z) (CY : CompleteAffinoidOpen Y) (CX : CompleteAffinoidOpen X)
@@ -675,17 +689,31 @@ private theorem exists_rationalLocalization_ringEquiv_of_subset
   have heCB' : eCB.symm.hom ≫ CX₁.hom = CT.hom := IsOpenImmersion.isoOfRangeEq_inv_comp ..
   have hγ : CX₁.pairComap CT γ = eCB.symm.hom :=
     presentationLimitPreAdicSpacePairComap_presentationLimitHomPairHom ..
+  have hγ_hom : CX.pairComap CT (γ.comp ιC) ≫ CX.hom = CT.hom := by
+    calc
+      CX.pairComap CT (γ.comp ιC) ≫ CX.hom
+        = CX₁.pairComap CT γ ≫ CX₁.hom := CX.pairComap_comp_rationalLocalizationHom_comp_hom CT γ
+      _ = eCB.symm.hom ≫ CX₁.hom := by rw [hγ]
+      _ = CT.hom := heCB'
   have hpath : γ.comp (ιC.comp α) = ιB.comp φ := CA.pairComap_injective CT <| by
-    rw [CA.pairComap_comp CX₁ CT, CA.pairComap_comp CX CX₁, hγ, hsq_α,
-      ← Category.assoc (CX.pairComap CX₁ ιC), ← rationalLocalization_hom, ← Category.assoc, heCB',
-      CA.pairComap_comp CB CT, ofRationalLocalization_hom, Category.comp_id]
+    calc
+      CA.pairComap CT (γ.comp (ιC.comp α))
+        = CA.pairComap CT ((γ.comp ιC).comp α) := by rw [Pair.Hom.comp_assoc]
+      _ = CX.pairComap CT (γ.comp ιC) ≫ CA.pairComap CX α := CA.pairComap_comp CX CT α (γ.comp ιC)
+      _ = (CX.pairComap CT (γ.comp ιC) ≫ CX.hom) ≫ CA.pairComap CB φ := by
+          simp only [hsq_α, Category.assoc]
+      _ = CT.hom ≫ CA.pairComap CB φ := by rw [hγ_hom]
+      _ = CB.pairComap CT ιB ≫ CA.pairComap CB φ := by
+          simp only [CT, ιB, ofRationalLocalization_hom, Category.comp_id]
+      _ = CA.pairComap CT (ιB.comp φ) := (CA.pairComap_comp CB CT φ ιB).symm
   refine ⟨TC, sC, hTC, eγ, ?_⟩
   rw [RingEquiv.toRingHom_eq_coe, coe_ringEquivOfIso, ← Pair.Hom.toRingHom_comp]
   exact congrArg Pair.Hom.toRingHom hpath
 
-/-- Pointwise discrete rational-chart comparison: given a rational chart `CY₁ → CX` covering a
-point `y` of `Spa(T)` over a discrete Huber-pair morphism `φ : S → T`, with `CX.Ring` discrete and
-`R β.toRingHom`, there exists a rational basic open `R(TB / sB)` containing `y` on which
+/-- Pointwise discrete rational-chart comparison: given a chart square
+`CX.space ⟶ (ofRationalLocalization ...).space` over a discrete Huber-pair morphism `φ : S → T`,
+covering a point `y` of `Spa(T)` with `CX.Ring` discrete and `R β.toRingHom`, there exists a
+rational basic open `R(TB / sB)` containing `y` on which
 `(algebraMap B (Localization.Away sB)).comp φ.toRingHom` satisfies `R`. -/
 private theorem exists_away_comp_of_rational_chart_discrete
     {R : ∀ {X Y : Type u} [CommRing X] [CommRing Y], (X →+* Y) → Prop}
@@ -731,10 +759,20 @@ private theorem exists_away_comp_of_rational_chart_discrete
   let eB := ofRationalLocalizationAwayEquiv P' hP' hsheafB (𝟙 _) TB sB hTB; let e := eγ.trans eB
   have hmap_eq : (algebraMap B (Localization.Away sB)).comp φ.toRingHom =
       e.toRingHom.comp (ιC.comp (β.comp ιA)).toRingHom := by
-    rw [← ofRationalLocalizationAwayEquiv_comp_toRationalLocalizationHom P' hP' hsheafB (𝟙 _) TB sB
-        hTB,
-      ← RingEquiv.toRingHom_eq_coe, RingHom.comp_assoc, ← Pair.Hom.toRingHom_comp, ← he_comp,
-      ← RingHom.comp_assoc, ← RingEquiv.toRingHom_trans']
+    have he_comp' := congrArg (eB.toRingHom.comp ·) he_comp
+    calc
+      (algebraMap B (Localization.Away sB)).comp φ.toRingHom
+        = (eB.toRingHom.comp
+            (toRationalLocalizationHom P' hP' hsheafB (𝟙 _) TB sB hTB).toRingHom).comp
+            φ.toRingHom := by
+          simp only [eB, RingEquiv.toRingHom_eq_coe,
+            ofRationalLocalizationAwayEquiv_comp_toRationalLocalizationHom]
+      _ = eB.toRingHom.comp
+            ((toRationalLocalizationHom P' hP' hsheafB (𝟙 _) TB sB hTB).comp φ).toRingHom := by
+          simp only [Pair.Hom.toRingHom_comp, RingHom.comp_assoc]
+      _ = eB.toRingHom.comp (eγ.toRingHom.comp (ιC.comp (β.comp ιA)).toRingHom) := he_comp'.symm
+      _ = e.toRingHom.comp (ιC.comp (β.comp ιA)).toRingHom := by
+          simp only [e, RingEquiv.toRingHom_trans', RingHom.comp_assoc]
   have hRA : R ιA.toRingHom :=
     ringHom_prop_toRationalLocalizationHom_of_discreteTopology _ _ _ _ _ _ _ hiso hloc
   have hRC := CX.ringHom_prop_rationalLocalizationHom_of_discreteTopology hiso hloc TC sC hTC
@@ -778,7 +816,8 @@ theorem ringHom_prop_of_forall_rational_chart_discrete
     exact exists_away_comp_of_rational_chart_discrete hcomp hiso hloc P hP hsheafA P' hP' hsheafB
       φ y TA sA hTA CX β hRβ c₀ hc₀ hsq
   choose TB sB hyR hR using hpt
-  have : IsLocalization.Away (1 : B) B := IsLocalization.self (by rintro _ ⟨n, rfl⟩; simp)
+  have : IsLocalization.Away (1 : B) B :=
+    IsLocalization.away_of_isUnit_of_bijective B isUnit_one Function.bijective_id
   have hcov : rationalSubset T.plus ({1} : Finset B) 1 ⊆
       ⋃ y : spa T.plus, rationalSubset T.plus (TB y) (sB y) := fun v hv ↦ by
     rw [rationalSubset_singleton_one] at hv; exact Set.mem_iUnion.mpr ⟨⟨v, hv⟩, hyR ⟨v, hv⟩⟩
