@@ -15,6 +15,7 @@ import Mathlib.NumberTheory.Real.Irrational
 import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import Mathlib.RingTheory.Localization.Integral
 import Mathlib.RingTheory.Polynomial.ScaleRoots
+import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # Absolutely integrally closed rings
@@ -53,8 +54,31 @@ be stable under the quotients and localizations used to cut a valuation ring int
   absolutely integrally closed local ring is algebraically closed.
 * `Subfield.isAbsolutelyIntegrallyClosed_comap`: the trace of an integrally closed domain on an
   algebraically closed subfield of its fraction field is absolutely integrally closed.
+* `TauCeti.IsAbsolutelyIntegrallyClosed.isIntegrallyClosedIn_of_injective` and
+  `TauCeti.IsAbsolutelyIntegrallyClosed.isIntegrallyClosedIn`: an absolutely integrally closed
+  ring mapped injectively into a domain (in particular, a subring of a domain) is integrally closed
+  in it.
+* `TauCeti.IsAbsolutelyIntegrallyClosed.isLocalization_of_le_all` and
+  `TauCeti.IsAbsolutelyIntegrallyClosed.isLocalization_away_of_le_all`: a subring `T` of `K`
+  lying in every absolutely integrally closed overring containing `S` and inverting `M` (or `x`) is
+  the localization of `S` at `M` (or away from `x`), with respect to any `S`-algebra structure
+  compatible with the inclusion into `K`.
+* `TauCeti.IsAbsolutelyIntegrallyClosed.isLocalization_away_integralClosure`: in a domain `K`, the
+  integral closure of `S ⊔ Subring.closure {y}` in `K` is the localization of `S` away from `x`
+  whenever `(x : K) * y = 1`, with respect to any `S`-algebra structure compatible with the
+  inclusion into `K`.
 * `TauCeti.not_isAbsolutelyIntegrallyClosed_rat`: `ℚ` is not absolutely integrally closed, as
   `X ^ 2 - 2` has no rational root.
+
+## Provenance
+
+`isLocalization_of_le_all`, `isLocalization_away_of_le_all`, and
+`isLocalization_away_integralClosure` are adapted from grh-lean
+(https://github.com/lsernau/grh-lean at commit `72fead102f663d5c7a407964a13dc0cf9d977207`,
+Apache 2.0, Copyright 2026 Anthropic, PBC), file
+`src/Lib/Cohomology/ProperBaseChange/SubringSplitting.lean`
+(`New.Variety.IsAbsIntegrallyClosed.isLocalization_away`), generalized from subrings of a field
+with a `Fact (S ≤ T)` instance to arbitrary commutative rings, submonoids, and scalar towers.
 
 ## References
 
@@ -186,18 +210,32 @@ theorem isAbsolutelyIntegrallyClosed_iff_isAlgClosed {K : Type*} [Field K] :
   ⟨fun _ ↦ IsAlgClosed.of_exists_root K fun p hp hirr ↦
     IsAbsolutelyIntegrallyClosed.exists_root p hp hirr.natDegree_pos, fun _ ↦ inferInstance⟩
 
-/-- An absolutely integrally closed domain is integrally closed. -/
-instance (priority := 100) IsAbsolutelyIntegrallyClosed.isIntegrallyClosed [IsDomain A]
-    [IsAbsolutelyIntegrallyClosed A] : IsIntegrallyClosed A := by
-  -- An integral element of the fraction field is a root of a monic polynomial over `A`, which is
-  -- a product of linear factors over `A`.
-  refine (isIntegrallyClosed_iff (FractionRing A)).mpr fun {x} ⟨p, hp, hpx⟩ ↦ ?_
+/-- An absolutely integrally closed ring mapped injectively into an integral domain is integrally
+closed in that domain. -/
+theorem IsAbsolutelyIntegrallyClosed.isIntegrallyClosedIn_of_injective {K : Type*} [CommRing K]
+    [IsDomain K] [Algebra A K] [IsAbsolutelyIntegrallyClosed A]
+    (hinj : Function.Injective (algebraMap A K)) : IsIntegrallyClosedIn A K := by
+  refine isIntegrallyClosedIn_iff.mpr ⟨hinj, fun {x} ⟨p, hp, hpx⟩ ↦ ?_⟩
   obtain ⟨m, hm⟩ := splits_iff_exists_multiset.mp (IsAbsolutelyIntegrallyClosed.splits hp)
   rw [hp.leadingCoeff, map_one, one_mul] at hm
   simp only [hm, eval₂_multiset_prod, Multiset.prod_eq_zero_iff, Multiset.map_map,
     Multiset.mem_map] at hpx
   obtain ⟨a, -, ha⟩ := hpx
-  exact ⟨a, (sub_eq_zero.mp (by simpa using ha)).symm⟩
+  dsimp only [Function.comp_apply] at ha
+  rw [eval₂_sub, eval₂_X, eval₂_C, sub_eq_zero] at ha
+  exact ⟨a, ha.symm⟩
+
+/-- An absolutely integrally closed subring of an integral domain is integrally closed in that
+domain. -/
+theorem IsAbsolutelyIntegrallyClosed.isIntegrallyClosedIn {K : Type*} [CommRing K] [IsDomain K]
+    (U : Subring K) [IsAbsolutelyIntegrallyClosed U] : IsIntegrallyClosedIn U K :=
+  isIntegrallyClosedIn_of_injective U.subtype_injective
+
+/-- An absolutely integrally closed domain is integrally closed. -/
+instance (priority := 100) IsAbsolutelyIntegrallyClosed.isIntegrallyClosed [IsDomain A]
+    [IsAbsolutelyIntegrallyClosed A] : IsIntegrallyClosed A :=
+  IsAbsolutelyIntegrallyClosed.isIntegrallyClosedIn_of_injective
+    (IsFractionRing.injective A (FractionRing A))
 
 section FractionRing
 
@@ -246,6 +284,69 @@ instance IsAbsolutelyIntegrallyClosed.integralClosure {R K : Type*} [CommRing R]
     rw [IsRoot, eval_map] at hx
     refine ⟨⟨x, isIntegral_trans x ⟨p, hp, hx⟩⟩, FaithfulSMul.algebraMap_injective O K ?_⟩
     rwa [← eval₂_at_apply, map_zero, Subalgebra.algebraMap_apply]
+
+/-- Let `S` and `T` be subrings of a commutative ring `K`, with `S` absolutely integrally closed and
+`T` an `S`-algebra whose structure map agrees with the inclusion into `K`. If every element of a
+submonoid `M` of `S` becomes a unit in `T`, and `T` lies in every absolutely integrally closed
+subring `U` of `K` containing `S` in which every element of `M` is a unit, then `T` is the
+localization of `S` at `M`. -/
+theorem IsAbsolutelyIntegrallyClosed.isLocalization_of_le_all {K : Type*} [CommRing K]
+    {S T : Subring K} [Algebra S T] [IsScalarTower S T K] [IsAbsolutelyIntegrallyClosed S]
+    (M : Submonoid S) (hMT : ∀ m : M, IsUnit (algebraMap S T m))
+    (hmin : ∀ U : Subring K, IsAbsolutelyIntegrallyClosed U → ∀ hSU : S ≤ U,
+      (∀ m : M, IsUnit (Subring.inclusion hSU m)) → T ≤ U) :
+    IsLocalization M T := by
+  have hST (r : S) : (algebraMap S T r : K) = r := (IsScalarTower.algebraMap_apply S T K r).symm
+  have hmK : ∀ m : M, IsUnit (S.subtype m) := fun m ↦ by simpa [hST] using (hMT m).map T.subtype
+  let φ := IsLocalization.lift (S := Localization M) hmK
+  have hφ (r : S) : φ (algebraMap S _ r) = r := IsLocalization.lift_eq hmK r
+  have hS_le : S ≤ φ.range := fun r hr ↦ ⟨algebraMap S _ ⟨r, hr⟩, hφ ⟨r, hr⟩⟩
+  have hU_unit : ∀ m : M, IsUnit (Subring.inclusion hS_le m) := fun m ↦ by
+    convert (IsLocalization.map_units (Localization M) m).map φ.rangeRestrict
+    exact Subtype.ext (hφ m).symm
+  have hT_le : T ≤ φ.range :=
+    hmin φ.range (.of_surjective φ.rangeRestrict φ.rangeRestrict_surjective) hS_le hU_unit
+  refine ⟨hMT, fun z ↦ ?_, fun {a b} hab ↦ ⟨1, ?_⟩⟩
+  · obtain ⟨u, hu⟩ := hT_le z.property
+    obtain ⟨⟨r, m⟩, hr⟩ := IsLocalization.surj M u
+    refine ⟨⟨r, m⟩, Subtype.ext ?_⟩
+    simpa [hST, hu, hφ] using congrArg φ hr
+  · simpa only [Submonoid.coe_one, one_mul] using
+      Subtype.ext (by simpa only [hST] using congrArg Subtype.val hab)
+
+/-- Let `S` and `T` be subrings of a commutative ring `K`, with `S` absolutely integrally closed and
+`T` an `S`-algebra whose structure map agrees with the inclusion into `K`. If `x : S` has an
+inverse `y ∈ T` in `K` and `T` lies in every absolutely integrally closed subring of `K`
+containing `S` and `y`, then `T` is the localization of `S` away from `x`. -/
+theorem IsAbsolutelyIntegrallyClosed.isLocalization_away_of_le_all {K : Type*} [CommRing K]
+    {S T : Subring K} [Algebra S T] [IsScalarTower S T K] [IsAbsolutelyIntegrallyClosed S]
+    (x : S) {y : K} (hy : y ∈ T) (hxy : (x : K) * y = 1)
+    (hmin : ∀ U : Subring K, IsAbsolutelyIntegrallyClosed U → S ≤ U → y ∈ U → T ≤ U) :
+    IsLocalization.Away x T := by
+  have hST (r : S) : (algebraMap S T r : K) = r := (IsScalarTower.algebraMap_apply S T K r).symm
+  have hx : IsUnit (algebraMap S T x) :=
+    .of_mul_eq_one ⟨y, hy⟩ (Subtype.ext <| by simpa [hST] using hxy)
+  refine isLocalization_of_le_all (Submonoid.powers x)
+    (fun ⟨_, n, hn⟩ ↦ hn ▸ map_pow (algebraMap S T) x n ▸ hx.pow n)
+    fun U hU hSU hmU ↦ hmin U hU hSU ?_
+  obtain ⟨u, hu⟩ := hmU ⟨x, Submonoid.mem_powers x⟩
+  have hxu : (x : K) * ((u⁻¹ : Uˣ) : U) = 1 := by
+    simpa only [Subring.coe_mul, Subring.coe_one, hu, Subring.coe_inclusion] using
+      congrArg (fun z : U ↦ (z : K)) u.mul_inv
+  exact inv_unique hxu hxy ▸ ((u⁻¹ : Uˣ) : U).property
+
+/-- If `K` is an integral domain, `S` is an absolutely integrally closed subring of `K`, and
+`(x : K) * y = 1` for `x : S` and `y : K`, then the integral closure of `S ⊔ Subring.closure {y}`
+in `K` is the localization of `S` away from `x`, with respect to any `S`-algebra structure whose
+structure map agrees with the inclusion into `K`. -/
+theorem IsAbsolutelyIntegrallyClosed.isLocalization_away_integralClosure {K : Type*} [CommRing K]
+    [IsDomain K] {S : Subring K} [IsAbsolutelyIntegrallyClosed S] (x : S) {y : K}
+    (hxy : (x : K) * y = 1)
+    [Algebra S (_root_.integralClosure ↥(S ⊔ Subring.closure {y}) K).toSubring]
+    [IsScalarTower S (_root_.integralClosure ↥(S ⊔ Subring.closure {y}) K).toSubring K] :
+    IsLocalization.Away x (_root_.integralClosure ↥(S ⊔ Subring.closure {y}) K).toSubring :=
+  have := isIntegrallyClosedIn S
+  TauCeti.IsIntegrallyClosedIn.isLocalization_away_integralClosure x hxy
 
 /-- The fraction field of an absolutely integrally closed domain is algebraically closed. -/
 instance IsAbsolutelyIntegrallyClosed.isAlgClosed_fractionRing [IsDomain A]

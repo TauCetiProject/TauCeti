@@ -70,6 +70,10 @@ of `u`.
   is a root of a monic polynomial `p`, in the form `(p.scaleRoots b)(a) = 0`, then `b ∣ a`.
 * `TauCeti.exists_eq_mul_of_pow_eq_mul_pow`: in an integrally closed domain, an `e`-th root `b`
   of `u ϖ ^ e` gives an `e`-th root `b / ϖ` of `u`.
+* `TauCeti.IsIntegrallyClosedIn.isLocalization_away_integralClosure`: when `S` is a subring of
+  `K` integrally closed in `K` and `(x : K) * y = 1` for `x : S`, the integral closure of
+  `S ⊔ Subring.closure {y}` in `K` is the localization of `S` away from `x` with respect to any
+  `S`-algebra structure compatible with the inclusion into `K`.
 * `IsIntegrallyClosed.isSquare_algebraMap_iff`: an element of an integrally closed domain is a
   square in its fraction field if and only if it is a square in the ring.
 * `Subring.perfectRing_of_isIntegrallyClosedIn`: a subring integrally closed in a perfect ring is
@@ -357,3 +361,60 @@ theorem IsIntegrallyClosed.isSquare_algebraMap_iff {R : Type*} [CommRing R] [IsI
     two_pos (by rw [sq, ← hr]; exact isIntegral_algebraMap)
   rw [← map_mul, (IsFractionRing.injective R K).eq_iff] at hr
   exact ⟨y, hr⟩
+
+namespace TauCeti.IsIntegrallyClosedIn
+
+/-- If a subring `S` of a commutative ring `K` is integrally closed in `K` and `(x : K) * y = 1`
+for `x : S` and `y : K`, then the integral closure of `S ⊔ Subring.closure {y}` in `K` is the
+localization of `S` away from `x`, with respect to any `S`-algebra structure whose structure map
+agrees with the inclusion into `K`. -/
+theorem isLocalization_away_integralClosure {K : Type*} [CommRing K] {S : Subring K}
+    [IsIntegrallyClosedIn S K] (x : S) {y : K} (hxy : (x : K) * y = 1)
+    [Algebra S (_root_.integralClosure ↥(S ⊔ Subring.closure {y}) K).toSubring]
+    [IsScalarTower S (_root_.integralClosure ↥(S ⊔ Subring.closure {y}) K).toSubring K] :
+    IsLocalization.Away x
+      (_root_.integralClosure ↥(S ⊔ Subring.closure {y}) K).toSubring := by
+  let T₀ := S ⊔ Subring.closure {y}
+  let : Algebra S T₀ := (Subring.inclusion le_sup_left).toAlgebra
+  have : IsScalarTower S T₀ K := .of_algebraMap_eq fun _ ↦ rfl
+  have hT₀ : IsLocalization.Away x T₀ := by
+    let φ := Localization.awayLift S.subtype x (.of_mul_eq_one y hxy)
+    have hφ (r : S) : φ (algebraMap S _ r) = r := IsLocalization.Away.lift_eq x _ r
+    have hy_mem : y ∈ φ.range := by
+      refine ⟨IsLocalization.Away.invSelf x, inv_unique ?_ hxy⟩
+      simpa only [map_mul, map_one, hφ, Subring.coe_subtype] using
+        congrArg φ (IsLocalization.Away.mul_invSelf x)
+    have hT₀_le : T₀ ≤ φ.range :=
+      sup_le (fun r hr ↦ ⟨algebraMap S _ ⟨r, hr⟩, hφ ⟨r, hr⟩⟩)
+        (Subring.closure_le.mpr (Set.singleton_subset_iff.mpr hy_mem))
+    refine IsLocalization.Away.mk x
+      (.of_mul_eq_one ⟨y, (le_sup_right : Subring.closure {y} ≤ T₀) (Subring.subset_closure rfl)⟩
+        (Subtype.ext (by simpa [RingHom.algebraMap_toAlgebra] using hxy)))
+      (fun z ↦ ?_) fun a b hab ↦ ⟨0, ?_⟩
+    · obtain ⟨u, hu⟩ := hT₀_le z.property
+      obtain ⟨n, r, hr⟩ := IsLocalization.Away.surj x u
+      refine ⟨n, r, Subtype.ext ?_⟩
+      simpa [RingHom.algebraMap_toAlgebra, hu, hφ] using congrArg φ hr
+    · simpa [RingHom.algebraMap_toAlgebra] using congrArg Subtype.val hab
+  have hST (r : S) :
+      (algebraMap S (_root_.integralClosure ↥(S ⊔ Subring.closure {y}) K).toSubring r : K) = r :=
+    (IsScalarTower.algebraMap_apply S
+      (_root_.integralClosure ↥(S ⊔ Subring.closure {y}) K).toSubring K r).symm
+  refine IsLocalization.Away.mk x
+    (.of_mul_eq_one ⟨y, Subalgebra.mem_toSubring.mpr <| by
+      simpa only [Algebra.algebraMap_ofSubring, Subring.coe_subtype] using
+        algebraMap_mem (_root_.integralClosure T₀ K)
+          ⟨y, (le_sup_right : Subring.closure {y} ≤ T₀) (Subring.subset_closure rfl)⟩⟩
+      (Subtype.ext (by simpa only [Subring.coe_mul, hST, Subring.coe_one] using hxy)))
+    (fun z ↦ ?_) fun a b hab ↦ ⟨0, ?_⟩
+  · obtain ⟨⟨_, n, rfl⟩, hn⟩ := IsIntegral.exists_multiple_integral_of_isLocalization
+      (Submonoid.powers x) (R := S) (Rₘ := T₀) (z : K) z.property
+    have hr : (x : K) ^ n * z ∈ S := by
+      simpa [Submonoid.smul_def, Algebra.smul_def, Algebra.algebraMap_ofSubring] using
+        Subring.isIntegrallyClosedIn_iff.mp ‹IsIntegrallyClosedIn S K› hn
+    refine ⟨n, ⟨(x : K) ^ n * z, hr⟩, Subtype.ext ?_⟩
+    simp [hST, mul_comm]
+  · simpa only [pow_zero, one_mul] using
+      Subtype.ext (by simpa only [hST] using congrArg Subtype.val hab)
+
+end TauCeti.IsIntegrallyClosedIn
