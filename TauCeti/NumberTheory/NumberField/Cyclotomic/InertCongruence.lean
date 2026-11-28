@@ -8,15 +8,12 @@ module
 public import TauCeti.NumberTheory.NumberField.CMField.Basic
 public import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 public import Mathlib.RingTheory.RamificationInertia.Inertia
-public import Mathlib.RingTheory.Unramified.Locus
+import TauCeti.NumberTheory.NumberField.CMField.Frobenius
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Compositum
-import TauCeti.FieldTheory.Galois.Basic
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
-import TauCeti.NumberTheory.NumberField.Frobenius.Restriction
 import TauCeti.NumberTheory.NumberField.Frobenius
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
-import TauCeti.NumberTheory.RamificationInertia.Tower
 import TauCeti.RingTheory.Frobenius
 import TauCeti.RingTheory.Ideal.LiesOver
 
@@ -39,75 +36,11 @@ public section
 open scoped NumberField
 open Ideal NumberField NumberField.IsCMField
 
-namespace TauCeti.NumberField
-
-section
+namespace IsPrimitiveRoot
 
 variable {K E : Type*} [Field K] [NumberField K] [IsCMField K] [Algebra.IsQuadraticExtension ℚ K]
   [Field E] [NumberField E] [IsCMField E] [Algebra K E] [IsScalarTower ℚ K E]
   {m p : ℕ} [NeZero m] [IsCyclotomicExtension {m} K E] [Fact p.Prime]
-
-omit [IsCMField E] in
-/-- For odd `n`, the `n`th power of a Frobenius over an inert rational prime restricts to
-complex conjugation on the imaginary quadratic subfield. -/
-private theorem restrictNormal_pow_eq_complexConj (Q : Ideal (𝓞 E)) [Q.IsPrime]
-    {φ : E ≃ₐ[ℚ] E} (hφ : IsArithFrobAt ℤ φ Q)
-    (hf : (Q.under (𝓞 K)).inertiaDeg ℤ = 2) {n : ℕ} (hn : Odd n) :
-    (φ ^ n).restrictNormal K = (complexConj K).restrictScalars ℚ := by
-  have hφK := (Ideal.isArithFrobAt_ringOfIntegers_rat_iff (φ.restrictNormal K) (Q.under (𝓞 K))).mp
-    ((Ideal.isArithFrobAt_ringOfIntegers_rat_iff φ Q).mpr hφ).restrictNormal
-  have hdiv := Ideal.inertiaDeg_dvd_orderOf (Q.under (𝓞 K)) hφK
-  rw [hf] at hdiv
-  have hc : (complexConj K).restrictScalars ℚ ≠ 1 := fun h ↦
-    complexConj_ne_one K (AlgEquiv.restrictScalars_injective ℚ h)
-  refine (Algebra.IsQuadraticExtension.algEquiv_eq_one_or_eq ℚ K hc _).resolve_left ?_
-  intro h
-  let r : (E ≃ₐ[ℚ] E) →* (K ≃ₐ[ℚ] K) := AlgEquiv.restrictNormalHom K
-  have hpow : r (φ ^ n) = 1 := h
-  rw [map_pow] at hpow
-  exact hn.not_two_dvd_nat (hdiv.trans (orderOf_dvd_iff_pow_eq_one.mpr hpow))
-
-omit [NumberField E] [IsCMField K] [IsCMField E] [Algebra.IsQuadraticExtension ℚ K] in
-/-- The prime of the quadratic subfield below a prime above an inert `p` is `(p)` itself. -/
-private theorem under_eq_span_of_inertiaDeg_eq_two
-    (hf : (Ideal.span {(p : 𝓞 K)}).inertiaDeg ℤ = 2)
-    (Q : Ideal (𝓞 E)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})] :
-    Q.under (𝓞 K) = span {(p : 𝓞 K)} := by
-  have hprime : (span {(p : 𝓞 K)} : Ideal (𝓞 K)).IsPrime := by
-    by_contra h
-    simp [inertiaDeg_of_not_isPrime _ _ h] at hf
-  have hmax := hprime.isMaximal (by simpa using (Fact.out : p.Prime).ne_zero)
-  have hQprime : (Q.under (𝓞 K)).IsPrime := inferInstance
-  refine (hmax.eq_of_le hQprime.ne_top ?_).symm
-  rw [span_singleton_le_iff_mem, mem_under, map_natCast]
-  simpa using (liesOver_span_iff (IsPrime.ne_top ‹Q.IsPrime›)
-    (Nat.prime_iff_prime_int.mp Fact.out)).mp (inferInstance : Q.LiesOver (span {(p : ℤ)}))
-
-omit [IsCMField K] [IsCMField E] [IsScalarTower ℚ K E] [NeZero m] in
-/-- If the ideal `(p)` has residue degree two in a quadratic number field, then every prime of
-its cyclotomic extension of level prime to `p` above `p` is unramified. -/
-theorem isUnramifiedAt_of_inertiaDeg_span_natCast_eq_two
-    (hf : (Ideal.span {(p : 𝓞 K)}).inertiaDeg ℤ = 2) (hp : ¬ p ∣ m)
-    (Q : Ideal (𝓞 E)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})] :
-    Algebra.IsUnramifiedAt (𝓞 ℚ) Q := by
-  let P := Q.under (𝓞 K)
-  have hPf : (Q.under (𝓞 K)).inertiaDeg ℤ = 2 :=
-    (under_eq_span_of_inertiaDeg_eq_two hf Q).symm ▸ hf
-  have : P.IsPrime := inferInstanceAs (Q.under (𝓞 K)).IsPrime
-  have : Q.LiesOver P := Ideal.over_under Q
-  have hPo : P.LiesOver (span {(p : ℤ)}) := Ideal.LiesOver.tower_bot Q P _
-  have hP1 : P.ramificationIdx ℤ = 1 := by
-    have hb := TauCeti.RamificationInertia.ramificationIdx_mul_inertiaDeg_le_finrank ℤ P
-    rw [hPf, RingOfIntegers.rank, Algebra.IsQuadraticExtension.finrank_eq_two] at hb
-    have hpos := Ideal.ramificationIdx_pos ℤ P
-    omega
-  have hm : (m : 𝓞 K) ∉ P := by
-    simpa using (Ideal.algebraMap_mem_iff_dvd_of_liesOver P (m : ℤ)).not.mpr
-      (Int.natCast_dvd_natCast.not.mpr hp)
-  have := IsCyclotomicExtension.isUnramifiedAt_of_natCast_notMem E m hm Q
-  apply Ideal.ramificationIdx_eq_one_iff.mp
-  rw [Ideal.ramificationIdx_ringOfIntegers_rat_eq_int, Ideal.ramificationIdx_tower P Q,
-    hP1, one_mul, Ideal.ramificationIdx_eq_one_of_isUnramifiedAt]
 
 /-- If `p` is inert in `K`, then for odd `n` the conjugate of an algebraic integer followed by
 the `K`-automorphism of exponent `−p ^ n` is congruent to its `p ^ n`th power modulo the rational
@@ -137,9 +70,9 @@ theorem natCast_dvd_pow_sub_smul_complexConj_of_inert {ζ : E} (hζ : IsPrimitiv
     exact (Fact.out : p.Prime).coprime_iff_not_dvd.mp hprim
   have : IsGalois ℚ E :=
     IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension ℚ K E {m}
-  refine (natCast_dvd_iff_forall_mem_primesOver
-    (isUnramifiedAt_of_inertiaDeg_span_natCast_eq_two hf hp) _).mpr fun Q ⟨hQ, hQo⟩ ↦ ?_
-  have hP := under_eq_span_of_inertiaDeg_eq_two hf Q
+  refine (TauCeti.NumberField.natCast_dvd_iff_forall_mem_primesOver
+    (fun Q ↦ Q.isUnramifiedAt_of_inertiaDeg_span_natCast_eq_two hf hp) _).mpr fun Q ⟨hQ, hQo⟩ ↦ ?_
+  have hP := Q.under_eq_span_natCast_of_inertiaDeg_ne_zero (hf.trans_ne (by decide))
   obtain ⟨φ, hφ⟩ := NumberField.exists_isArithFrobAt_int_of_liesOver Q (p := p)
   have hφζ : φ ζ = ζ ^ p := by
     have hm : (m : 𝓞 E) ∉ Q := by
@@ -155,12 +88,10 @@ theorem natCast_dvd_pow_sub_smul_complexConj_of_inert {ζ : E} (hζ : IsPrimitiv
     | zero => simp
     | succ j ih => rw [pow_succ', AlgEquiv.mul_apply, ih, map_pow, hφζ, ← pow_mul, pow_succ']
   have heq : φ ^ n = τ := hζ.algEquiv_eq_of_restrictNormal_eq_of_apply_eq
-    ((restrictNormal_pow_eq_complexConj Q hφ (hP.symm ▸ hf) hn).trans hτK.symm)
+    ((hφ.restrictNormal_pow_eq_complexConj (hP.symm ▸ hf) hn).trans hτK.symm)
     ((hpw n).trans hτζ.symm)
   have h := hφ.mk_pow_smul n x
   rw [Q.natCard_quotient_under_of_liesOver (n := p), heq, ← map_pow] at h
   exact Ideal.Quotient.eq.mp h.symm
 
-end
-
-end TauCeti.NumberField
+end IsPrimitiveRoot

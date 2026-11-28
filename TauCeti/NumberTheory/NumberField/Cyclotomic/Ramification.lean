@@ -7,8 +7,12 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Valuation
+public import Mathlib.RingTheory.RamificationInertia.Inertia
 import Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+import TauCeti.NumberTheory.NumberField.PrimeIdeal
+import TauCeti.NumberTheory.RamificationInertia.Tower
+import TauCeti.RingTheory.Ideal.LiesOver
 import TauCeti.RingTheory.DedekindDomain.Different.Derivative
 import TauCeti.RingTheory.RootsOfUnity.CyclotomicUnits
 
@@ -35,6 +39,8 @@ has ramification index `p - 1`, so `ζ_p - 1` is a uniformizer at every prime ab
   of `𝓞 M` over `𝓞 K`.
 * `IsCyclotomicExtension.isUnramifiedAt_of_natCast_notMem`: primes above an ideal not
   containing the level are unramified.
+* `Ideal.isUnramifiedAt_of_inertiaDeg_span_natCast_eq_two`: an inert rational prime in a
+  quadratic number field stays unramified in a cyclotomic extension of level prime to it.
 * `IsCyclotomicExtension.prime_dvd_natAbs_discr_or_dvd_of_dvd_natAbs_discr`: a prime dividing
   `discr M` divides `discr K` or divides `m` — the extension ramifies only below or at the level.
 * `IsCyclotomicExtension.Rat.intValuation_sub_one_eq_exp_neg_one`: in `ℚ(ζ_{p k})` with `p ∤ k`,
@@ -110,6 +116,40 @@ theorem prime_dvd_natAbs_discr_or_dvd_of_dvd_natAbs_discr (K M : Type*) [Field K
   · exact Or.inl (hp.dvd_of_dvd_pow h)
 
 end IsCyclotomicExtension
+
+namespace Ideal
+
+open NumberField
+
+/-- If the ideal `(p)` has residue degree two in a quadratic number field, then every prime of
+its cyclotomic extension of level prime to `p` above `p` is unramified over `ℚ`. -/
+theorem isUnramifiedAt_of_inertiaDeg_span_natCast_eq_two {K E : Type*} [Field K] [NumberField K]
+    [Algebra.IsQuadraticExtension ℚ K] [Field E] [CharZero E] [Algebra K E]
+    {m p : ℕ} [IsCyclotomicExtension {m} K E]
+    (Q : Ideal (𝓞 E)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
+    (hf : (span {(p : 𝓞 K)}).inertiaDeg ℤ = 2) (hp : ¬ p ∣ m) :
+    Algebra.IsUnramifiedAt (𝓞 ℚ) Q := by
+  have : NumberField E := IsCyclotomicExtension.numberField {m} K E
+  let P := Q.under (𝓞 K)
+  have hPf : (Q.under (𝓞 K)).inertiaDeg ℤ = 2 :=
+    (Q.under_eq_span_natCast_of_inertiaDeg_ne_zero (hf.trans_ne (by decide))).symm ▸ hf
+  have : P.IsPrime := inferInstanceAs (Q.under (𝓞 K)).IsPrime
+  have : Q.LiesOver P := Ideal.over_under Q
+  have hPo : P.LiesOver (span {(p : ℤ)}) := Ideal.LiesOver.tower_bot Q P _
+  have hP1 : P.ramificationIdx ℤ = 1 := by
+    have hb := TauCeti.RamificationInertia.ramificationIdx_mul_inertiaDeg_le_finrank ℤ P
+    rw [hPf, RingOfIntegers.rank, Algebra.IsQuadraticExtension.finrank_eq_two] at hb
+    have hpos := Ideal.ramificationIdx_pos ℤ P
+    omega
+  have hm : (m : 𝓞 K) ∉ P := by
+    simpa using (Ideal.algebraMap_mem_iff_dvd_of_liesOver P (m : ℤ)).not.mpr
+      (Int.natCast_dvd_natCast.not.mpr hp)
+  have := IsCyclotomicExtension.isUnramifiedAt_of_natCast_notMem E m hm Q
+  apply Ideal.ramificationIdx_eq_one_iff.mp
+  rw [Ideal.ramificationIdx_ringOfIntegers_rat_eq_int, Ideal.ramificationIdx_tower P Q,
+    hP1, one_mul, Ideal.ramificationIdx_eq_one_of_isUnramifiedAt]
+
+end Ideal
 
 namespace IsCyclotomicExtension.Rat
 
