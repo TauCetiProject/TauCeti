@@ -286,39 +286,6 @@ end FaithfulRealization
 
 end Realization
 
-section Rational
-
-/-- Compatibility of `crystal.e` with `PLPath.raise` in the canonical rational realization
-`LSPath.toRatPLPath`. -/
-theorem raise_toRatPLPath (hlam : lam ∈ dominantChamber P b) (i : b.support)
-    (π : LSPath P b lam) :
-    PLPath.raise (Module.Dual.baseChange ℚ (P.coroot' i))
-        ((TensorProduct.mk ℤ ℚ X 1) (P.root i)) π.toRatPLPath =
-      ((crystal hlam).e i π).map toRatPLPath :=
-  (map_toRatPLPath_crystal_e hlam i π).symm
-
-/-- Compatibility of `crystal.eIter` with `PLPath.raiseIter` in the canonical rational realization
-`LSPath.toRatPLPath`. -/
-theorem raiseIter_toRatPLPath (hlam : lam ∈ dominantChamber P b) (i : b.support)
-    (n : ℕ) (π : LSPath P b lam) :
-    PLPath.raiseIter (Module.Dual.baseChange ℚ (P.coroot' i))
-        ((TensorProduct.mk ℤ ℚ X 1) (P.root i)) n π.toRatPLPath =
-      ((crystal hlam).eIter i n π).map toRatPLPath := by
-  simpa only [toRatPLPath_eq, LinearMap.toAddMonoidHom_coe] using
-    raiseIter_toPLPath hlam (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom i
-      (Module.Dual.baseChange ℚ (P.coroot' i))
-      (Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i)) n π
-
-/-- Compatibility of `crystal.ε` with `PLPath.minHeight` in the canonical rational realization
-`LSPath.toRatPLPath`. -/
-theorem minHeight_toRatPLPath_eq_neg_crystal_ε (hlam : lam ∈ dominantChamber P b)
-    (i : b.support) (π : LSPath P b lam) :
-    π.toRatPLPath.minHeight (Module.Dual.baseChange ℚ (P.coroot' i)) =
-      -((crystal hlam).ε i π : ℚ) := by
-  rw [cast_crystal_ε, neg_neg]
-
-end Rational
-
 /-! ### Shape congruence as a strict crystal isomorphism -/
 
 /-- Shape transport `LSPath.congr` along `λ = λ'` is a strict isomorphism of normal crystals. -/

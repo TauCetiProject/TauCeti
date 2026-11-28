@@ -26,7 +26,8 @@ and `m, n : ℕ` satisfying `(m : 𝕜) = a * n`, `m`-fold lowering or raising o
 equals the `a`-dilation of `n`-fold lowering or raising on the original path (with no integrality
 assumption on the path). Specializing to `(a, m, n) = (n, n, 1)` recovers positive-integer
 dilation (`TauCeti.PLPath.lowerIter_map_natCast_smul`, `TauCeti.PLPath.raiseIter_map_natCast_smul`),
-and specializing to `(a, m, n) = ((n : 𝕜)⁻¹, 1, n)` gives fractional `(n : 𝕜)⁻¹`-contraction.
+and specializing to `(a, m, n) = ((n : 𝕜)⁻¹, 1, n)` for `0 < n` gives fractional
+`(n : 𝕜)⁻¹`-contraction.
 
 Because nonzero scalar dilation acts injectively on `PLPath 𝕜 V`
 (`TauCeti.PLPath.map_smul_id_injective`), whenever `(m : 𝕜) = a * n` for `0 < a`, dilation by `a`
@@ -64,7 +65,7 @@ rigidity and injectivity follow from highest-weight generation of `B(λ)`
 * `TauCeti.PLPath.lowerIter_map_smul`, `TauCeti.PLPath.raiseIter_map_smul`: Littelmann's
   positive-scalar path similarity theorem for `(m : 𝕜) = a * n` on arbitrary piecewise-linear
   paths (covering both positive-integer dilation `(a, m, n) = (n, n, 1)` and fractional
-  contraction `(a, m, n) = ((n : 𝕜)⁻¹, 1, n)`), with positive-integer corollaries
+  contraction `(a, m, n) = ((n : 𝕜)⁻¹, 1, n)` for `0 < n`), with positive-integer corollaries
   `TauCeti.PLPath.lowerIter_map_natCast_smul` and `TauCeti.PLPath.raiseIter_map_natCast_smul`.
 * `TauCeti.PLPath.lowerWord_flatMap_replicate_map_smul`,
   `TauCeti.PLPath.raiseWord_flatMap_replicate_map_smul`,
@@ -76,8 +77,8 @@ rigidity and injectivity follow from highest-weight generation of `B(λ)`
   `TauCeti.PLPath.raiseWord_flatMap_replicate_map_natCast_smul_eq_some_iff`: when `(m : 𝕜) = a * n`
   for `0 < a`, dilation by `a` intertwines (and preserves/reflects definedness of) lowering and
   raising along `m`-replicated words after dilation and `n`-replicated words before dilation
-  (specializing to `n` copies vs. `1` copy at `a = n`, and `1` copy vs. `n` copies at
-  `a = (n : 𝕜)⁻¹`).
+  (specializing, for `0 < n`, to `n` copies vs. `1` copy at `a = n`, and `1` copy vs. `n` copies
+  at `a = (n : 𝕜)⁻¹`).
 * `TauCeti.PLPath.reflTransGen_rootStep_map_natCast_smul`,
   `TauCeti.PLPath.IsIntegralPath.map_natCast_smul_of_reflTransGen_rootStep`: dilation by
   any `n : ℕ` preserves finite sequences of simple-root steps and transports integrality
@@ -116,7 +117,7 @@ variable {ι 𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRin
 /-- **Dilation similarity for iterated lowering** (Littelmann): for `f x = 2`, `0 < a`, and
 `(m : 𝕜) = a * n`, `m`-fold lowering on the `a`-dilated path equals the `a`-dilation of `n`-fold
 lowering on the original path. No integrality of the path is needed. Specializing to
-`(a, m, n) = ((n : 𝕜)⁻¹, 1, n)` yields fractional `(n : 𝕜)⁻¹`-contraction (Littelmann,
+`(a, m, n) = ((n : 𝕜)⁻¹, 1, n)` for `0 < n` yields fractional `(n : 𝕜)⁻¹`-contraction (Littelmann,
 Lemma 2.1(d)). -/
 theorem lowerIter_map_smul (hx : f x = 2) {a : 𝕜} (ha : 0 < a) {m n : ℕ}
     (hmn : (m : 𝕜) = a * n) (p : PLPath 𝕜 V) :
@@ -136,8 +137,8 @@ theorem lowerIter_map_smul (hx : f x = 2) {a : 𝕜} (ha : 0 < a) {m n : ℕ}
 
 /-- **Dilation similarity for iterated raising** (Littelmann): for `f x = 2`, `0 < a`, and
 `(m : 𝕜) = a * n`, `m`-fold raising on the `a`-dilated path equals the `a`-dilation of `n`-fold
-raising on the original path. Specializing to `(a, m, n) = ((n : 𝕜)⁻¹, 1, n)` yields fractional
-`(n : 𝕜)⁻¹`-contraction. -/
+raising on the original path. Specializing to `(a, m, n) = ((n : 𝕜)⁻¹, 1, n)` for `0 < n` yields
+fractional `(n : 𝕜)⁻¹`-contraction. -/
 theorem raiseIter_map_smul (hx : f x = 2) {a : 𝕜} (ha : 0 < a) {m n : ℕ}
     (hmn : (m : 𝕜) = a * n) (p : PLPath 𝕜 V) :
     raiseIter f x m (p.map (a • LinearMap.id)) =
@@ -214,8 +215,8 @@ theorem raiseIter_map_natCast_smul_eq_some_iff (hx : f x = 2) {n : ℕ} (hn : 0 
 `0 < a`, and `(m : 𝕜) = a * n`, lowering along `w.flatMap fun i ↦ List.replicate m i` on the
 `a`-dilated path equals the `a`-dilation of lowering along
 `w.flatMap fun i ↦ List.replicate n i` on the original path. Specializing to
-`(a, m, n) = ((n : 𝕜)⁻¹, 1, n)` contracts `n`-replicated lowering on `π` to lowering along `w`
-on `(n : 𝕜)⁻¹ • π`. -/
+`(a, m, n) = ((n : 𝕜)⁻¹, 1, n)` for `0 < n` contracts `n`-replicated lowering on `π` to lowering
+along `w` on `(n : 𝕜)⁻¹ • π`. -/
 theorem lowerWord_flatMap_replicate_map_smul {F : ι → Dual 𝕜 V} {x : ι → V}
     (w : List ι) (hx : ∀ i ∈ w, F i (x i) = 2) {a : 𝕜} (ha : 0 < a) {m n : ℕ}
     (hmn : (m : 𝕜) = a * n) (π : PLPath 𝕜 V) :
@@ -235,8 +236,8 @@ theorem lowerWord_flatMap_replicate_map_smul {F : ι → Dual 𝕜 V} {x : ι �
 `0 < a`, and `(m : 𝕜) = a * n`, raising along `w.flatMap fun i ↦ List.replicate m i` on the
 `a`-dilated path equals the `a`-dilation of raising along
 `w.flatMap fun i ↦ List.replicate n i` on the original path. Specializing to
-`(a, m, n) = ((n : 𝕜)⁻¹, 1, n)` contracts `n`-replicated raising on `π` to raising along `w` on
-`(n : 𝕜)⁻¹ • π`. -/
+`(a, m, n) = ((n : 𝕜)⁻¹, 1, n)` for `0 < n` contracts `n`-replicated raising on `π` to raising
+along `w` on `(n : 𝕜)⁻¹ • π`. -/
 theorem raiseWord_flatMap_replicate_map_smul {F : ι → Dual 𝕜 V} {x : ι → V}
     (w : List ι) (hx : ∀ i ∈ w, F i (x i) = 2) {a : 𝕜} (ha : 0 < a) {m n : ℕ}
     (hmn : (m : 𝕜) = a * n) (π : PLPath 𝕜 V) :
@@ -711,9 +712,35 @@ open RootPairing
 variable {ι X Y : Type*} [AddCommGroup X] [AddCommGroup Y]
   {P : RootDatum ι X Y} {b : P.Base} [Finite ι] [P.IsReduced] {lam : X}
 
-private theorem toRatPLPath_stretch (π : LSPath P b lam) {n : ℕ} (hn : 0 < n) :
-    (π.stretch n hn).toRatPLPath = π.toRatPLPath.map ((n : ℚ) • LinearMap.id) := by
-  rw [toRatPLPath_def, toPLPath_stretch, ← toRatPLPath_def]
+private noncomputable def stretchSimilarityHomAux (hlam : lam ∈ dominantChamber P b)
+    {n : ℕ} (hn : 0 < n) :
+    NormalCrystal.SimilarityHom (1 * (n * 1)) (crystal hlam)
+      (crystal (nsmul_mem_dominantChamber P b n hlam)) :=
+  let f := (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom
+  let hf : Function.Injective f := by
+    simpa only [f, LinearMap.toAddMonoidHom_coe] using P.tensorProduct_mk_injective ℚ
+  let F : b.support → Module.Dual ℚ (ℚ ⊗[ℤ] X) :=
+    fun i ↦ Module.Dual.baseChange ℚ (P.coroot' i)
+  let hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : ℚ) :=
+    fun i ↦ Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i)
+  let hstr : PLPath.IsIntegralPath b f F (PLPath.straight ℚ (f lam)) :=
+    PLPath.isIntegralPath_straight f F hF
+  let iso₁ := toPLPathComponentIso hlam hf hF
+  let iso₂ := toPLPathComponentIso (nsmul_mem_dominantChamber P b n hlam) hf hF
+  let mid := PLPath.straightComponentDilationSimilarityHom hf hF hstr hn
+  (NormalCrystal.SimilarityHom.ofStrictHom iso₂.symm.toStrictHom).comp
+    (mid.comp (NormalCrystal.SimilarityHom.ofStrictHom iso₁.toStrictHom))
+
+private theorem stretchSimilarityHomAux_apply (hlam : lam ∈ dominantChamber P b)
+    {n : ℕ} (hn : 0 < n) (π : LSPath P b lam) :
+    stretchSimilarityHomAux hlam hn π = π.stretch n hn := by
+  apply toRatPLPath_injective (nsmul_mem_dominantChamber P b n hlam)
+  rw [toRatPLPath_def, toRatPLPath_def, toPLPath_stretch, stretchSimilarityHomAux,
+    NormalCrystal.SimilarityHom.comp_apply, NormalCrystal.SimilarityHom.comp_apply,
+    NormalCrystal.SimilarityHom.coe_ofStrictHom, NormalCrystal.SimilarityHom.coe_ofStrictHom,
+    NormalCrystal.StrictIso.coe_toStrictHom, NormalCrystal.StrictIso.coe_toStrictHom,
+    toPLPath_toPLPathComponentIso_symm, PLPath.straightComponentDilationSimilarityHom_apply,
+    toPLPathComponentIso_apply, toPLPathHom_apply]
 
 /-- **Kashiwara–Littelmann similarity morphism `B(λ) → B(n • λ)`** on the normal crystal of
 Lakshmibai–Seshadri paths, induced by `LSPath.stretch`. -/
@@ -722,23 +749,13 @@ noncomputable def stretchSimilarityHom (hlam : lam ∈ dominantChamber P b) {n :
       (crystal (nsmul_mem_dominantChamber P b n hlam)) where
   toFun π := π.stretch n hn
   wt_toFun π := by
-    simp only [crystal_wt]
-    refine (weight_eq_iff_endpoint_toRatPLPath _).mpr ?_
-    rw [toRatPLPath_stretch, PLPath.endpoint_map, LinearMap.smul_apply, LinearMap.id_apply,
-      endpoint_toRatPLPath, Nat.cast_smul_eq_nsmul, map_nsmul]
-  ε_toFun i π := Nat.cast_injective (R := ℚ) <| neg_injective <| by
-    rw [Nat.cast_mul, ← minHeight_toRatPLPath_eq_neg_crystal_ε, toRatPLPath_stretch,
-      PLPath.minHeight_map_smul (Nat.cast_nonneg n), minHeight_toRatPLPath_eq_neg_crystal_ε,
-      mul_neg]
-  eIter_toFun i π := Option.map_injective
-      (toRatPLPath_injective (nsmul_mem_dominantChamber P b n hlam)) <| by
-    have hroot : Module.Dual.baseChange ℚ (P.coroot' i)
-        ((TensorProduct.mk ℤ ℚ X 1) (P.root i)) = (2 : ℚ) := by
-      rw [TensorProduct.mk_apply, Module.Dual.baseChange_apply_one_tmul, eq_intCast,
-        P.root_coroot'_eq_pairing, P.pairing_same, Int.cast_ofNat]
-    rw [← raiseIter_toRatPLPath, toRatPLPath_stretch, PLPath.raiseIter_map_natCast_smul hroot hn,
-      raise_toRatPLPath hlam, Option.map_map, Option.map_map]
-    simp only [Function.comp_def, toRatPLPath_stretch]
+    simpa [stretchSimilarityHomAux_apply] using (stretchSimilarityHomAux hlam hn).wt_apply π
+  ε_toFun i π := by
+    simpa [stretchSimilarityHomAux_apply] using (stretchSimilarityHomAux hlam hn).ε_apply i π
+  eIter_toFun i π := by
+    have hfun : ⇑(stretchSimilarityHomAux hlam hn) = (·.stretch n hn) :=
+      funext (stretchSimilarityHomAux_apply hlam hn)
+    simpa [hfun] using (stretchSimilarityHomAux hlam hn).eIter_self i π
 
 @[simp]
 theorem stretchSimilarityHom_apply (hlam : lam ∈ dominantChamber P b) {n : ℕ} (hn : 0 < n)

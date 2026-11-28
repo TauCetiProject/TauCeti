@@ -20,9 +20,10 @@ when the lowering operator is defined.
 Positive dilation multiplies all heights and caps by the same scalar, leaving the relative
 cut positions unchanged (`PLPath.cappedReflection_map_smul`). For a normalized root-coroot
 pair `f x = 2`, composing two capped reflections gives a single capped reflection whose cap
-records the cumulative height drop (`PLPath.cappedReflection_cappedReflection`). Whenever all `n`
-lowering steps are defined—equivalently, `(n : 𝕜) ≤ f p.endpoint - p.minHeight f`—the `n`-fold
-lowering operator `lowerIter f x n p` is a single capped reflection up to `p.minHeight f + n`
+records the cumulative height drop (`PLPath.cappedReflection_cappedReflection`). Likewise assuming
+`f x = 2`, all `n` lowering steps are defined if and only if
+`(n : 𝕜) ≤ f p.endpoint - p.minHeight f`, and when this holds the `n`-fold lowering operator
+`lowerIter f x n p` is a single capped reflection up to `p.minHeight f + n`
 (`PLPath.lowerIter_eq_some_cappedReflection`, packaged conditionally on all paths by
 `PLPath.lowerIter_eq_ite_cappedReflection`). Positive-scalar and positive-integer stretching
 similarity is deduced from these two results in `TauCeti.RepresentationTheory.LSPath.Similarity`.
