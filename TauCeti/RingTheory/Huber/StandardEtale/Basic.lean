@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import TauCeti.RingTheory.Huber.QuotientMapping
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.TateSeries
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.TateSeries.Basic
 import Mathlib.Topology.Algebra.Group.Neighborhood
 import TauCeti.RingTheory.Huber.WeightedEval.Continuous
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete

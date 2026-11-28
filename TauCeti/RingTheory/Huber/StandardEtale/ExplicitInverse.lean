@@ -213,13 +213,6 @@ section OfExplicitInverse
 variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
   [IsTateRing A] [CompleteSpace A] [T2Space A]
 
-omit [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A] [IsTateRing A]
-  [CompleteSpace A] [T2Space A] in
-private theorem algebraMap_pow_two_mul_unit_inv_sq {R : Type*} [CommRing R] [Algebra A R]
-    (ϖ : A) (k : ℕ) (u : Rˣ) :
-    algebraMap A R (ϖ ^ (2 * k)) * ↑(u ^ 2)⁻¹ = (algebraMap A R (ϖ ^ k) * ↑u⁻¹) ^ 2 := by
-  rw [Units.inv_pow_eq_pow_inv, mul_pow, ← map_pow, ← pow_mul, mul_comm 2 k]
-
 omit [IsUniformAddGroup A] [CompleteSpace A] [T2Space A] in
 private theorem exists_unit_jacobian_explicitInverseSystem (Aplus : Pair A) {ϖ : A}
     (hϖ : IsPseudoUniformizer ϖ) {N' : ℕ} (F' : Fin N' → tateSeries N' A) (k' : ℕ) :
@@ -244,7 +237,7 @@ private theorem exists_unit_jacobian_explicitInverseSystem (Aplus : Pair A) {ϖ 
     by rw [Units.val_pow_eq_pow_val, hu₀, ← map_pow, ← jacobian_explicitInverseSystem], ?_⟩
   have hs : s = algebraMap A (tateSeries (N' + 1) A ⧸ I) (ϖ ^ k') * ↑u₀⁻¹ :=
     u₀.mul_left_inj.mp (by rw [mul_assoc, Units.inv_mul, mul_one, hu₀, hsj])
-  rw [algebraMap_pow_two_mul_unit_inv_sq, ← hs]
+  rw [mul_comm 2 k', pow_mul, map_pow, Units.inv_pow_eq_pow_inv, ← mul_pow, ← hs]
   refine ((tateSeriesPair (N' + 1) A Aplus).quotient I).plus.pow_mem ?_ 2
   dsimp only [s]
   rw [← Pair.Hom.toRingHom_quotientHom (tateSeriesPair (N' + 1) A Aplus) I]
@@ -612,7 +605,7 @@ noncomputable def withInverse (P : StandardEtalePresentation Aplus ϖ Cplus) :
     refine ⟨u ^ 2, ?_, ?_⟩
     · rw [Units.val_pow_eq_pow_val, hu_eq, jacobian_explicitInverseSystem, map_pow,
         withInverseHom_castSuccAlgHom, P.jacobian_def]
-    · rw [algebraMap_pow_two_mul_unit_inv_sq]
+    · rw [mul_comm 2 P.k, pow_mul, map_pow, Units.inv_pow_eq_pow_inv, ← mul_pow]
       exact Cplus.plus.pow_mem P.exists_unit_jacobian.choose_spec.2 2
 
 @[simp]

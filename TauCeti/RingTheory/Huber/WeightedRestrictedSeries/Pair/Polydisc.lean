@@ -74,8 +74,6 @@ of `(Pair.powerBounded K).polydisc n` over a nontrivially normed ultrametric fie
   closure of `A⁺[T₁, …, Tₙ]` in `A⟨T₁, …, Tₙ⟩`.
 * `TauCeti.Huber.Pair.map_polydiscPlus_equiv`: `restrictedMvPowerSeriesCompletionEquiv` maps
   `S.polydiscPlus n` onto `A⁺⟨T₁, …, Tₙ⟩`.
-* `TauCeti.Huber.isWeightBounded_one_weight_of_mem_plus`: every tuple in a plus ring is unit-weight
-  bounded along any ring homomorphism.
 * `TauCeti.Huber.Pair.polydisc.existsUnique_hom`: universal property of `S.polydisc n` for
   morphisms into complete Hausdorff Huber pairs.
 
@@ -343,16 +341,6 @@ theorem Pair.polydisc.hom_ext {C : Type*} [CommRing C] [TopologicalSpace C] [IsT
   simpa only [Pair.Hom.toRingHom_comp, RingHom.comp_apply,
     Pair.Hom.toRingHom_weightedCompletionHom,
     algebraMap_completion_weightedRestrictedSubring_apply] using ha
-
-omit [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A] in
-/-- A tuple of elements in the plus ring `Bplus.plus` is unit-weight bounded along any ring
-homomorphism `φ : A →+* B`. -/
-theorem isWeightBounded_one_weight_of_mem_plus {N : ℕ} {B : Type*} [CommRing B]
-    [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B] (φ : A →+* B) (Bplus : Pair B)
-    {u : Fin N → B} (hu : ∀ i, u i ∈ Bplus.plus) :
-    IsWeightBounded φ (fun _ : Fin N ↦ ({1} : Set A)) u :=
-  (isWeightBounded_one_weight_iff_forall_isPowerBounded _ _).mpr fun i ↦
-    Bplus.isRingOfIntegralElements.isPowerBounded_of_mem (hu i)
 
 section UniversalProperty
 
