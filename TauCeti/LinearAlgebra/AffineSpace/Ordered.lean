@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors, Codex
 module
 
 public import Mathlib.Algebra.Order.Field.Basic
+public import Mathlib.Basic.Sign.Basic
 public import Mathlib.Data.Finset.Max
 public import Mathlib.Order.Interval.Set.Defs
 public import TauCeti.LinearAlgebra.AffineSpace.AffineMap
+import Mathlib.Analysis.Convex.Segment
+import Mathlib.Data.Finset.Sort
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -18,17 +21,34 @@ import Mathlib.Tactic.Ring
 
 An affine function `g` on a linearly ordered field, positive at `a`, stays positive on `[a, b]`
 until its first zero, and vanishes there only
-(`AffineMap.exists_forall_pos_iff_lt_of_pos`).
+(`AffineMap.exists_forall_pos_iff_lt_of_pos`). Similarly, `AffineMap.lineMap u v` stays
+nonnegative at the endpoints of an interval containing a positive interior point whenever it has no
+zeros on the open interval
+(`AffineMap.lineMap_nonneg_endpoints_of_pos_of_forall_ne_zero`), and `[0, 1]` can be subdivided
+at the zeros of finitely many linear functionals along a segment starting outside their kernels
+(`AffineMap.exists_orderEmbedding_fin_forall_lineMap_ne_zero`).
 
 Finitely many affine functions of a nonnegative parameter, all initially positive and at least
 one decreasing, have a common positive exit parameter. All functions are nonnegative exactly
 up to that parameter and strictly positive exactly before it. The proof uses
 `Finset.exists_min_image` on the times at which decreasing functions vanish.
 
+Along a segment `t ↦ lineMap a b t` of the line, the sign at `t ∈ (0, 1]` is the sign of `b` once
+the sign of `a` is `0` or the sign of `b` (`AffineMap.sign_lineMap_eq_sign_right`). Conversely, a
+constant sign `σ` on `(0, 1]` forces the sign of `a` to be `0` or `σ`
+(`AffineMap.sign_eq_zero_or_of_forall_sign_lineMap`), and a segment with no zero on `[s, t]` has
+the same sign at `s` and `t` (`AffineMap.sign_lineMap_eq_of_forall_ne_zero`).
+
 ## Main results
 
 * `AffineMap.exists_forall_pos_iff_lt_of_pos`: the threshold `z > a` such that, on `[a, b]`, an
   affine function positive at `a` is positive exactly before `z` and vanishes exactly at `z`.
+* `AffineMap.lineMap_nonneg_left_of_pos_of_forall_ne_zero` and
+  `AffineMap.lineMap_nonneg_endpoints_of_pos_of_forall_ne_zero`: sign preservation on an open
+  interval `(a, b)` for `AffineMap.lineMap u v` when it is positive at an interior point and never
+  vanishes on `(a, b)`.
+* `AffineMap.exists_orderEmbedding_fin_forall_lineMap_ne_zero`: subdivide `[0, 1]` at the
+  crossing times where any functional in a finite family vanishes along `AffineMap.lineMap p q`.
 * `Finset.exists_pos_forall_nonneg_add_mul_iff`: the positive exit parameter for a finite
   family of initially positive affine functions, at least one of which decreases.
 
@@ -73,6 +93,158 @@ theorem exists_forall_pos_iff_lt_of_pos (g : k →ᵃ[k] k) {a b : k} (hab : a <
     · exact absurd h (not_le.2 (hpos hab.le))
     · exact ⟨⟨fun _ ↦ by linarith [hs.2], fun _ ↦ hpos hs.1⟩,
         ⟨fun h ↦ ((hpos hs.1).ne' h).elim, fun h ↦ by linarith [hs.2]⟩⟩
+
+/-- One-sided affine sign preservation at the left endpoint of `(a, m]` for
+`AffineMap.lineMap u v`. -/
+theorem lineMap_nonneg_left_of_pos_of_forall_ne_zero {a m u v : k} (ham : a < m)
+    (hm : 0 < lineMap u v m) (hno : ∀ t ∈ Ioo a m, lineMap u v t ≠ 0) :
+    0 ≤ lineMap u v a := by
+  by_contra! hlt
+  have hmem : (0 : k) ∈ (lineMap u v) '' openSegment k a m := by
+    rw [image_openSegment, openSegment_eq_Ioo (hlt.trans hm)]
+    exact ⟨hlt, hm⟩
+  obtain ⟨t, ht, hzero⟩ := hmem
+  rw [openSegment_eq_Ioo ham] at ht
+  exact hno t ht hzero
+
+/-- Affine sign preservation for `AffineMap.lineMap u v`: if `lineMap u v` is strictly positive at
+an interior point `m ∈ (a, b)` and never vanishes on `(a, b)`, then `0 ≤ lineMap u v a` and
+`0 ≤ lineMap u v b`. -/
+theorem lineMap_nonneg_endpoints_of_pos_of_forall_ne_zero {a m b u v : k} (ham : a < m)
+    (hmb : m < b) (hm : 0 < lineMap u v m) (hno : ∀ t ∈ Ioo a b, lineMap u v t ≠ 0) :
+    0 ≤ lineMap u v a ∧ 0 ≤ lineMap u v b := by
+  refine ⟨lineMap_nonneg_left_of_pos_of_forall_ne_zero ham hm
+    fun t ht ↦ hno t ⟨ht.1, ht.2.trans hmb⟩, ?_⟩
+  rw [← lineMap_apply_one_sub v u b]
+  refine lineMap_nonneg_left_of_pos_of_forall_ne_zero (sub_lt_sub_left hmb 1)
+    (by rwa [lineMap_apply_one_sub]) fun t ht ↦ ?_
+  rw [← lineMap_apply_one_sub u v t]
+  exact hno (1 - t) ⟨ham.trans (by linarith [ht.2]), by linarith [ht.1]⟩
+
+/-- Subdivide `[0, 1]` at the crossing times where any functional in `Φ` vanishes along the
+segment `AffineMap.lineMap p q`. -/
+theorem exists_orderEmbedding_fin_forall_lineMap_ne_zero {V : Type*} [AddCommGroup V] [Module k V]
+    (Φ : Finset (V →ₗ[k] k)) {p q : V} (hp : ∀ φ ∈ Φ, φ p ≠ 0) :
+    ∃ (m : ℕ) (c : Fin (m + 2) ↪o k),
+      c 0 = 0 ∧ c (Fin.last (m + 1)) = 1 ∧ (∀ j, 0 ≤ c j ∧ c j ≤ 1) ∧
+      ∀ (j : Fin (m + 1)) (t : k), t ∈ Ioo (c j.castSucc) (c j.succ) →
+        ∀ φ ∈ Φ, φ (lineMap p q t) ≠ 0 := by
+  classical
+  let crossTimes : Finset k :=
+    ((Φ.filter fun φ => φ p ≠ φ q).image fun φ => φ p / (φ p - φ q)).filter
+      fun t => 0 < t ∧ t < 1
+  let nodes : Finset k := insert 0 (insert 1 crossTimes)
+  have h0_mem : (0 : k) ∈ nodes := Finset.mem_insert_self _ _
+  have h1_mem : (1 : k) ∈ nodes := Finset.mem_insert_of_mem (Finset.mem_insert_self _ _)
+  have hnodes_card : 2 ≤ nodes.card := by
+    have h01 : ({0, 1} : Finset k).card = 2 := Finset.card_pair zero_ne_one
+    exact h01 ▸ Finset.card_le_card
+      (Finset.insert_subset_iff.mpr ⟨h0_mem, Finset.singleton_subset_iff.mpr h1_mem⟩)
+  let m : ℕ := nodes.card - 2
+  have hm_eq : nodes.card = m + 2 := by omega
+  let c : Fin (m + 2) ↪o k := nodes.orderEmbOfFin hm_eq
+  have hrange : (nodes : Set k) = Set.range c := (Finset.range_orderEmbOfFin nodes hm_eq).symm
+  have hc_mem : ∀ j, c j ∈ nodes := fun j => Finset.orderEmbOfFin_mem nodes hm_eq j
+  have hc_bounds : ∀ t ∈ nodes, 0 ≤ t ∧ t ≤ 1 := fun t ht => by
+    rcases Finset.mem_insert.mp ht with rfl | ht'
+    · exact ⟨le_rfl, zero_le_one⟩
+    · rcases Finset.mem_insert.mp ht' with rfl | ht''
+      · exact ⟨zero_le_one, le_rfl⟩
+      · have := (Finset.mem_filter.mp ht'').right; exact ⟨this.left.le, this.right.le⟩
+  refine ⟨m, c, ?_, ?_, fun j => hc_bounds _ (hc_mem j), fun j t ht φ hφ hzero => ?_⟩
+  · obtain ⟨j, hj⟩ := hrange ▸ Finset.mem_coe.mpr h0_mem
+    exact le_antisymm (hj ▸ c.monotone (Fin.zero_le j)) (hc_bounds _ (hc_mem 0)).left
+  · obtain ⟨j, hj⟩ := hrange ▸ Finset.mem_coe.mpr h1_mem
+    exact le_antisymm (hc_bounds _ (hc_mem _)).right (hj ▸ c.monotone (Fin.le_last j))
+  · have ht0 : 0 < t := lt_of_le_of_lt (hc_bounds _ (hc_mem j.castSucc)).left ht.left
+    have ht1 : t < 1 := lt_of_lt_of_le ht.right (hc_bounds _ (hc_mem j.succ)).right
+    have hlin : (1 - t) * φ p + t * φ q = 0 := by
+      simpa [lineMap_apply_module, map_add, map_smul, smul_eq_mul] using hzero
+    have hne : φ p ≠ φ q := fun heq => hp φ hφ (by rw [heq] at hlin; linarith)
+    have hteq : t = φ p / (φ p - φ q) := by
+      have hsub : φ p - φ q ≠ 0 := sub_ne_zero.mpr hne
+      field_simp [hsub]; linarith
+    have ht_node : t ∈ nodes := Finset.mem_insert_of_mem (Finset.mem_insert_of_mem
+      (Finset.mem_filter.mpr ⟨Finset.mem_image.mpr
+        ⟨φ, Finset.mem_filter.mpr ⟨hφ, hne⟩, hteq.symm⟩, ht0, ht1⟩))
+    obtain ⟨i, hi⟩ := hrange ▸ Finset.mem_coe.mpr ht_node
+    have h1 : (j : ℕ) < (i : ℕ) := c.lt_iff_lt.mp (hi.symm ▸ ht.left)
+    have h2 : (i : ℕ) < (j : ℕ) + 1 := c.lt_iff_lt.mp (hi.symm ▸ ht.right)
+    omega
+
+/-- On the segment from `a` to `b`, the points other than `a` have the sign of `b`, provided the
+sign of `a` is `0` or the sign of `b`. -/
+theorem sign_lineMap_eq_sign_right {a b t : k}
+    (h : SignType.sign a = 0 ∨ SignType.sign a = SignType.sign b) (ht : t ∈ Ioc 0 1) :
+    SignType.sign (lineMap a b t) = SignType.sign b := by
+  obtain ⟨ht0, ht1⟩ := ht
+  rw [lineMap_apply_ring']
+  rcases lt_trichotomy a 0 with ha | ha | ha <;> rcases lt_trichotomy b 0 with hb | hb | hb
+  · rw [sign_neg hb, sign_neg (by nlinarith)]
+  · simp [sign_neg ha, hb] at h
+  · simp [sign_neg ha, sign_pos hb] at h
+  · rw [sign_neg hb, sign_neg (by simp [ha]; nlinarith)]
+  · simp [ha, hb]
+  · rw [sign_pos hb, sign_pos (by simp [ha]; nlinarith)]
+  · simp [sign_pos ha, sign_neg hb] at h
+  · simp [sign_pos ha, hb] at h
+  · rw [sign_pos hb, sign_pos (by nlinarith)]
+
+/-- A segment which vanishes nowhere between the parameters `s ≤ t` has the same sign at both
+ends. -/
+theorem sign_lineMap_eq_of_forall_ne_zero {a b s t : k} (hst : s ≤ t)
+    (h : ∀ r ∈ Icc s t, lineMap a b r ≠ 0) :
+    SignType.sign (lineMap a b s) = SignType.sign (lineMap a b t) := by
+  have hs := h s (left_mem_Icc.mpr hst)
+  have ht := h t (right_mem_Icc.mpr hst)
+  -- When the signs at `s` and `t` differ, the segment vanishes at `a / (a - b) ∈ [s, t]`.
+  have hzero (hab : a - b ≠ 0) : lineMap a b (a / (a - b)) = 0 := by
+    rw [lineMap_apply_ring']
+    field_simp
+    ring
+  simp only [lineMap_apply_ring'] at hs ht ⊢
+  rcases hs.lt_or_gt with hs' | hs' <;> rcases ht.lt_or_gt with ht' | ht'
+  · rw [sign_neg hs', sign_neg ht']
+  · have hab : a - b < 0 := by nlinarith
+    refine absurd (hzero hab.ne) (h _ ⟨?_, ?_⟩)
+    · rw [le_div_iff_of_neg hab]; nlinarith
+    · rw [div_le_iff_of_neg hab]; nlinarith
+  · have hab : 0 < a - b := by nlinarith
+    refine absurd (hzero hab.ne') (h _ ⟨?_, ?_⟩)
+    · rw [le_div_iff₀ hab]; nlinarith
+    · rw [div_le_iff₀ hab]; nlinarith
+  · rw [sign_pos hs', sign_pos ht']
+
+/-- If the points of the segment from `a` to `b` other than `a` all have the sign `σ`, the sign
+of `a` is `0` or `σ`. -/
+theorem sign_eq_zero_or_of_forall_sign_lineMap {a b : k} {σ : SignType}
+    (h : ∀ t ∈ Ioc (0 : k) 1, SignType.sign (lineMap a b t) = σ) :
+    SignType.sign a = 0 ∨ SignType.sign a = σ := by
+  have h1 := h 1 ⟨one_pos, le_rfl⟩
+  rw [lineMap_apply_one] at h1
+  subst h1
+  -- If `a ≠ 0` and `b` does not have the sign of `a`, the point at parameter
+  -- `a / (2 (a - b)) ∈ (0, 1]` has value `a / 2`, of the sign of `a`.
+  have hmid (hab : a - b ≠ 0) : lineMap a b (a / (2 * (a - b))) = a / 2 := by
+    rw [lineMap_apply_ring']
+    field_simp
+    ring
+  rcases lt_trichotomy a 0 with ha | ha | ha
+  · rcases lt_or_ge b 0 with hb | hb
+    · exact Or.inr (by rw [sign_neg ha, sign_neg hb])
+    · have hab : a - b < 0 := by linarith
+      have ht := h _ ⟨div_pos_of_neg_of_neg ha (by linarith),
+        (div_le_one_of_neg (show 2 * (a - b) < 0 by linarith)).mpr (by linarith)⟩
+      rw [hmid hab.ne, sign_neg (by linarith)] at ht
+      exact absurd (sign_eq_neg_one_iff.mp ht.symm) hb.not_gt
+  · exact Or.inl (by simp [ha])
+  · rcases le_or_gt b 0 with hb | hb
+    · have hab : 0 < a - b := by linarith
+      have ht := h _ ⟨div_pos ha (by linarith),
+        (div_le_one (show 0 < 2 * (a - b) by linarith)).mpr (by linarith)⟩
+      rw [hmid hab.ne', sign_pos (by linarith)] at ht
+      exact absurd (sign_eq_one_iff.mp ht.symm) hb.not_gt
+    · exact Or.inr (by rw [sign_pos ha, sign_pos hb])
 
 end AffineMap
 

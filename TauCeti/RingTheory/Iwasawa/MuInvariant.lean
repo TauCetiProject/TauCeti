@@ -102,6 +102,12 @@ theorem mem_verticalPrime_iff {f : O⟦X⟧} :
     f ∈ (verticalPrime O).asIdeal ↔ ∀ n, coeff n f ∈ maximalIdeal O :=
   mem_map_C_iff_of_fg (IsNoetherian.noetherian _)
 
+/-- The vertical prime is the kernel of reduction modulo the maximal ideal of `O`: a power series
+reduces to zero iff it lies in the vertical prime. -/
+theorem map_mk_eq_zero_iff_mem_verticalPrime {f : O⟦X⟧} :
+    map (Ideal.Quotient.mk (maximalIdeal O)) f = 0 ↔ f ∈ (verticalPrime O).asIdeal := by
+  simp [mem_verticalPrime_iff, PowerSeries.ext_iff, coeff_map, Ideal.Quotient.eq_zero_iff_mem]
+
 /-- A monic polynomial does not lie in the vertical prime: its leading coefficient is `1`. -/
 theorem coe_notMem_verticalPrime_of_monic {F : O[X]} (hF : F.Monic) :
     (F : O⟦X⟧) ∉ (verticalPrime O).asIdeal := fun h ↦ by
@@ -149,6 +155,11 @@ theorem muInvariant_eq_charDivisor (hM : Module.IsTorsion O⟦X⟧ M) :
     muInvariant O M = charDivisor O⟦X⟧ M (verticalPrime O) := by
   rw [muInvariant_def, (LinearEquiv.ofTop _
     (eq_top_iff.mpr fun x _ ↦ (mem_torsion_iff x).mpr (@hM x))).charDivisor_eq]
+
+/-- The `μ`-invariant of `M` is that of its torsion submodule. -/
+@[simp]
+theorem muInvariant_torsion : muInvariant O (torsion O⟦X⟧ M) = muInvariant O M := by
+  rw [muInvariant_eq_charDivisor (M := torsion O⟦X⟧ M) torsion_isTorsion, muInvariant_def]
 
 /-- The `μ`-invariant of a torsion-free module is zero. -/
 @[simp]

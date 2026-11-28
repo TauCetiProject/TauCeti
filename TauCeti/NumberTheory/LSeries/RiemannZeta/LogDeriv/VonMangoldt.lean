@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import Mathlib.NumberTheory.LSeries.Dirichlet
 import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import TauCeti.NumberTheory.LSeries.Positivity
+import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne
 
 /-!
 # A reference bound for restricted von Mangoldt series
@@ -18,7 +19,8 @@ function is bounded by `-Re (ζ′/ζ)` at the real abscissa, even after restric
 of indices. At `1 + 1/U` the unrestricted von Mangoldt sum differs from `U` by a quantity
 that tends to Euler's constant, so the same `U` bounds all the restricted series for large `U`.
 In particular this gives a common reference bound for the two outer ranges in Gaussian
-estimates for primes in logarithmic windows.
+estimates for primes in logarithmic windows. Along the real axis, the von Mangoldt Dirichlet
+series minus its compensating term `σ / (σ - 1)` tends to `-γ - 1`.
 
 The reference point and its use in the window argument are from `New.exists_prime_modEq_one_log_mem`
 in [`Lib/Analytic/Primes.lean`][short-proof]. The estimate here uses the sign of the regular part
@@ -82,13 +84,8 @@ theorem tendsto_sub_tsum_norm_term_vonMangoldt_one_add_inv :
         (1 : ℂ)
     · filter_upwards [eventually_gt_atTop (0 : ℝ)] with U hU
       simpa using (inv_ne_zero hU.ne')
-  have hzero := log_deriv_riemannZeta_add_inv_sub_sub_isLittleO.tendsto_zero_of_tendsto
-    (tendsto_const_nhds (x := (1 : ℂ)))
-  have hreg : Tendsto (fun s : ℂ ↦ logDeriv riemannZeta s + (s - 1)⁻¹) (𝓝[≠] 1)
-      (𝓝 (Real.eulerMascheroniConstant : ℂ)) := by
-    simpa only [← logDeriv_apply, sub_add_cancel, zero_add] using
-      hzero.add_const (Real.eulerMascheroniConstant : ℂ)
-  have h := continuous_re.continuousAt.tendsto.comp (hreg.comp hlim)
+  have h := continuous_re.continuousAt.tendsto.comp
+    (tendsto_logDeriv_riemannZeta_add_inv.comp hlim)
   rw [ofReal_re] at h
   refine h.congr' ?_
   filter_upwards [eventually_gt_atTop (0 : ℝ)] with U hU
@@ -96,6 +93,26 @@ theorem tendsto_sub_tsum_norm_term_vonMangoldt_one_add_inv :
   simp only [Function.comp_apply, add_sub_cancel_left, ← ofReal_inv, inv_inv, add_re, ofReal_re]
   rw [← ofReal_one, ← ofReal_add, (hasSum_norm_term_vonMangoldt hσ).tsum_eq, sub_neg_eq_add,
     add_comm U]
+
+/-- The Dirichlet series of `Λ`, after removing the compensating term `σ / (σ - 1)`, tends to
+`-γ - 1` as the real argument approaches one from above. -/
+theorem tendsto_LSeries_vonMangoldt_sub_div_sub_one :
+    Tendsto (fun σ : ℝ ↦ _root_.LSeries (fun n ↦ (Λ n : ℂ)) (σ : ℂ) - (σ : ℂ) / ((σ : ℂ) - 1))
+      (𝓝[>] 1) (𝓝 (-(Real.eulerMascheroniConstant : ℂ) - 1)) := by
+  have hlim : Tendsto (fun σ : ℝ ↦ (σ : ℂ)) (𝓝[>] 1) (𝓝[≠] (1 : ℂ)) := by
+    rw [tendsto_nhdsWithin_iff]
+    refine ⟨?_, ?_⟩
+    · simpa using (continuous_ofReal.tendsto (1 : ℝ)).mono_left nhdsWithin_le_nhds
+    · filter_upwards [self_mem_nhdsWithin] with σ hσ
+      simpa using (Set.mem_Ioi.mp hσ).ne'
+  refine ((tendsto_logDeriv_riemannZeta_add_inv.comp hlim).neg.sub_const 1).congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with σ hσ
+  have hs : 1 < (σ : ℂ).re := by simpa using (Set.mem_Ioi.mp hσ)
+  have hne : (σ : ℂ) - 1 ≠ 0 := Complex.ne_zero_of_re_pos (by simpa using sub_pos.mpr hs)
+  rw [LSeries_vonMangoldt_eq_deriv_riemannZeta_div hs, neg_div, ← logDeriv_apply]
+  simp only [Function.comp_apply]
+  field_simp
+  ring
 
 /-- For all sufficiently large `U`, the absolute Dirichlet sum at `1 + 1/U` is at most `U`
 for all sets of indices and all coefficient sequences dominated on those indices by `Λ`.

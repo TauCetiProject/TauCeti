@@ -135,7 +135,8 @@ theorem norm_sampleCovariance_resolvent_quadratic_le_sum (X : Matrix p n ℂ)
   set E := X.sampleCovarianceResolventColumnError z
   have hm : (d : ℂ) / N * m = (N : ℂ)⁻¹ * (sampleCovariance X - z • 1)⁻¹.trace := by
     rw [hm_def, resolventTransform_spectralMeasure _ _
-      ((isHermitian_sampleCovariance X).notMem_spectrum_of_im_ne_zero hz)]
+      ((isHermitian_sampleCovariance X).notMem_spectrum_of_im_ne_zero hz),
+      normalizedResolventTrace_def]
     simp only [d]
     field_simp
   have hbound (k : n) : ‖q k - (d : ℂ) / N * m‖ ≤ ‖E k‖ + ((N : ℝ) * |z.im|)⁻¹ := by

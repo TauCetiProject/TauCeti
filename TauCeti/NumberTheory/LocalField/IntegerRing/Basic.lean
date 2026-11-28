@@ -176,4 +176,29 @@ theorem ramificationIndex_eq_ramificationIdx_integralClosure
   simpa only [hcomap] using
     𝓂[K].ramificationIdx'_comap_eq e (maximalIdeal (integralClosure 𝒪[K] L))
 
+/-- The integral closure of `𝒪[K]` in a compatible algebraic local field extension `L/K` is a
+discrete valuation ring. -/
+instance isDiscreteValuationRing_integralClosure :
+    _root_.IsDiscreteValuationRing (integralClosure 𝒪[K] L) :=
+  have : Module.Finite K L := finite_of_valuativeExtension K L
+  IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing
+    (integerRingEquivIntegralClosure K L)
+
+/-- The structure map `𝒪[K] → integralClosure 𝒪[K] L` for a compatible algebraic local field
+extension `L/K` is a local homomorphism. -/
+instance isLocalHom_algebraMap_integralClosure :
+    IsLocalHom (algebraMap 𝒪[K] (integralClosure 𝒪[K] L)) := by
+  have : Module.Finite K L := finite_of_valuativeExtension K L
+  let e := integerRingEquivIntegralClosure K L
+  rw [← e.toAlgHom.comp_algebraMap]
+  infer_instance
+
+/-- The residue field of `integralClosure 𝒪[K] L` for a compatible algebraic local field
+extension `L/K` is finite. -/
+instance finite_residueField_integralClosure :
+    Finite (ResidueField (integralClosure 𝒪[K] L)) :=
+  have : Module.Finite K L := finite_of_valuativeExtension K L
+  Finite.of_equiv (ResidueField 𝒪[L])
+    (ResidueField.mapEquiv (integerRingEquivIntegralClosure K L).toRingEquiv).toEquiv
+
 end TauCeti

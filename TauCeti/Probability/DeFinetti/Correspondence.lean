@@ -57,6 +57,7 @@ shift-invariant events; see `PathSpace/Exchangeable/Ergodic.lean`.
 ## Main results
 
 * `deFinettiEquiv` — mixing laws correspond bijectively to exchangeable path laws.
+* `measurable_deFinettiEquiv` — the correspondence is measurable for the Giry measurable spaces.
 * `deFinettiEquiv_dirac`, `deFinettiEquiv_symm_eq_dirac` — a point mass corresponds to an
   i.i.d. law, in both directions.
 * `deFinettiEquiv_convexComb`, `deFinettiEquiv_symm_convexComb` — the correspondence and its
@@ -124,6 +125,13 @@ theorem deFinettiEquiv_apply_coe [StandardBorelSpace α]
     ((deFinettiEquiv π : ProbabilityMeasure (ℕ → α)) : Measure (ℕ → α)) =
       Measure.deFinettiBarycenter (π : Measure (ProbabilityMeasure α)) :=
   (rfl)
+
+/-- **De Finetti's correspondence is measurable** for the Giry measurable spaces, the exchangeable
+path laws carrying the subspace structure. -/
+@[fun_prop]
+theorem measurable_deFinettiEquiv [StandardBorelSpace α] :
+    Measurable (deFinettiEquiv (α := α)) :=
+  ((Measure.measurable_deFinettiBarycenter.comp measurable_subtypeVal).subtype_mk).subtype_mk
 
 /-- The inverse of the correspondence really is the mixing law: the barycenter of the mixing law
 of an exchangeable law recovers that law. -/

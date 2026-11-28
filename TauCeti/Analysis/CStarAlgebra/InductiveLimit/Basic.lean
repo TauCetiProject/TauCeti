@@ -57,6 +57,9 @@ limit is a unital C⋆-algebra and the canonical maps are unital.
 * `TauCeti.CStarInductiveLimit.isometry_of`: with injective connecting maps, the canonical maps
   are isometric.
 * `TauCeti.CStarInductiveLimit.dense_iUnion_range_of`: the images of the stages are dense.
+* `TauCeti.CStarInductiveLimit.exists_forall_norm_lt`,
+  `TauCeti.CStarInductiveLimit.exists_forall_norm_of_sub_lt`: finitely many elements decay, or
+  are approximated, uniformly in a single stage.
 * `TauCeti.CStarInductiveLimit.hom_ext`: ⋆-homomorphisms out of the limit are determined on the
   stages.
 * `TauCeti.CStarInductiveLimit.range_lift`: the range of `lift g` is the closure of the union of
@@ -303,29 +306,26 @@ instance : StarOrderedRing (CStarInductiveLimit A f) :=
 variable (A f) in
 /-- The completion map of the algebraic direct limit into the C⋆-inductive limit, as a
 ⋆-homomorphism. -/
-def toCompletion : CStarSeminormedDirectLimit A f →⋆ₙₐ[ℂ] CStarInductiveLimit A f where
-  toFun z := (z : Completion (CStarSeminormedDirectLimit A f))
-  map_smul' c z := Completion.coe_smul c z
-  map_zero' := Completion.coe_zero
-  map_add' := Completion.coe_add
-  map_mul' := Completion.coe_mul'
-  map_star' := Completion.coe_star
+def toCompletion : CStarSeminormedDirectLimit A f →⋆ₙₐ[ℂ] CStarInductiveLimit A f :=
+  Completion.coeNonUnitalStarAlgHom ℂ
 
 /-- The completion map `toCompletion` is the coercion of the algebraic direct limit into its
 completion, of which `CStarInductiveLimit A f` is a type synonym. -/
 private theorem toCompletion_apply (z : CStarSeminormedDirectLimit A f) :
     toCompletion A f z = (z : Completion (CStarSeminormedDirectLimit A f)) :=
-  (rfl)
+  congrFun (Completion.coe_coeNonUnitalStarAlgHom ℂ) z
 
 /-- The completion map preserves the C⋆-seminorm of the algebraic direct limit. -/
 @[simp]
-theorem norm_toCompletion (z : CStarSeminormedDirectLimit A f) : ‖toCompletion A f z‖ = ‖z‖ :=
-  Completion.norm_coe z
+theorem norm_toCompletion (z : CStarSeminormedDirectLimit A f) : ‖toCompletion A f z‖ = ‖z‖ := by
+  rw [toCompletion_apply]
+  exact Completion.norm_coe z
 
 variable (A f) in
 /-- The completion map of the algebraic direct limit has dense range. -/
-theorem denseRange_toCompletion : DenseRange (toCompletion A f) :=
-  Completion.denseRange_coe
+theorem denseRange_toCompletion : DenseRange (toCompletion A f) := by
+  rw [show ⇑(toCompletion A f) = ((↑) : _ → Completion _) from funext toCompletion_apply]
+  exact Completion.denseRange_coe
 
 variable (A f) in
 /-- The canonical ⋆-homomorphism from a stage into the C⋆-inductive limit. -/
@@ -343,6 +343,12 @@ theorem toCompletion_of (i : ι) (a : A i) :
 @[simp]
 theorem of_f {i j : ι} (h : i ≤ j) (a : A i) : of A f j (f i j h a) = of A f i a := by
   rw [← toCompletion_of, CStarSeminormedDirectLimit.of_f, toCompletion_of]
+
+omit [IsDirectedOrder ι] [Nonempty ι] in
+/-- The star homomorphism underlying the connecting map from a stage to itself is the identity. -/
+theorem ofClass_f_self (i : ι) :
+    NonUnitalStarRingHom.ofClass (f i i le_rfl) = NonUnitalStarRingHom.id (A i) :=
+  NonUnitalStarRingHom.ext fun a ↦ DirectedSystem.map_self (f := (f · · ·)) a
 
 /-- **The norm formula.** The norm of the image of `a ∈ A i` in the C⋆-inductive limit is the
 infimum of the norms of its images in the later stages, which decrease along `ι`. -/
@@ -412,6 +418,47 @@ theorem dense_iUnion_range_of : Dense (⋃ i, Set.range (of A f i)) := by
   rintro _ ⟨z, rfl⟩
   obtain ⟨i, a, rfl⟩ := CStarSeminormedDirectLimit.exists_of z
   exact Set.mem_iUnion.2 ⟨i, a, toCompletion_of i a⟩
+
+/-- **Uniform decay.** If finitely many elements of `A i` have images of norm `< ε` in the
+C⋆-inductive limit, their images in some later stage all have norm `< ε`. -/
+theorem exists_forall_norm_lt {β : Type*} [Finite β] {i : ι} (a : β → A i) {ε : ℝ}
+    (h : ∀ b, ‖of A f i (a b)‖ < ε) : ∃ j, ∃ hij : i ≤ j, ∀ b, ‖f i j hij (a b)‖ < ε := by
+  classical
+  have : Nonempty {j // i ≤ j} := ⟨⟨i, le_rfl⟩⟩
+  have hb (b : β) : ∃ j, ∃ hij : i ≤ j, ‖f i j hij (a b)‖ < ε := by
+    have hb := h b
+    rw [norm_of] at hb
+    obtain ⟨j, hj⟩ := exists_lt_of_ciInf_lt hb
+    exact ⟨j, j.property, hj⟩
+  choose g hg hgε using hb
+  have := Fintype.ofFinite β
+  obtain ⟨j, hj⟩ := Finset.exists_le (insert i (Finset.univ.image g))
+  have hij : i ≤ j := hj i (Finset.mem_insert_self _ _)
+  refine ⟨j, hij, fun b => ?_⟩
+  have hgj : g b ≤ j :=
+    hj _ (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ (Finset.mem_univ _)))
+  calc ‖f i j hij (a b)‖ = ‖f (g b) j hgj (f i (g b) (hg b) (a b))‖ := by
+        rw [DirectedSystem.map_map (f := (f · · ·))]
+    _ ≤ ‖f i (g b) (hg b) (a b)‖ := NonUnitalStarAlgHom.norm_apply_le _ _
+    _ < ε := hgε b
+
+/-- **Uniform approximation.** Finitely many elements of the C⋆-inductive limit are within `ε`
+of images of elements of a common stage, which can be taken above any given index. -/
+theorem exists_forall_norm_of_sub_lt {β : Type*} [Finite β] (x : β → CStarInductiveLimit A f)
+    (i₀ : ι) {ε : ℝ} (hε : 0 < ε) :
+    ∃ j, i₀ ≤ j ∧ ∃ a : β → A j, ∀ b, ‖of A f j (a b) - x b‖ < ε := by
+  classical
+  have hb (b : β) : ∃ k, ∃ a : A k, ‖of A f k a - x b‖ < ε := by
+    obtain ⟨y, hy, hxy⟩ := (dense_iUnion_range_of A f).exists_dist_lt (x b) hε
+    obtain ⟨k, a, rfl⟩ := Set.mem_iUnion.1 hy
+    exact ⟨k, a, by rwa [dist_comm, dist_eq_norm] at hxy⟩
+  choose g a ha using hb
+  have := Fintype.ofFinite β
+  obtain ⟨j, hj⟩ := Finset.exists_le (insert i₀ (Finset.univ.image g))
+  have hgj (b : β) : g b ≤ j :=
+    hj _ (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ (Finset.mem_univ _)))
+  exact ⟨j, hj _ (Finset.mem_insert_self _ _), fun b => f (g b) j (hgj b) (a b),
+    fun b => by rw [of_f]; exact ha b⟩
 
 /-- The C⋆-inductive limit of a countable directed system of separable C⋆-algebras is
 separable. -/
@@ -503,8 +550,9 @@ def liftCLM : CStarInductiveLimit A f →L[ℂ] E :=
 /-- On the completion map, the induced continuous linear map is `liftCLMAux`, of which it is the
 extension to the completion. -/
 private theorem liftCLM_toCompletion (z : CStarSeminormedDirectLimit A f) :
-    liftCLM g hg hC (toCompletion A f z) = liftCLMAux g hg hC z :=
-  (liftCLMAux g hg hC).fromCompletion_apply_coe z
+    liftCLM g hg hC (toCompletion A f z) = liftCLMAux g hg hC z := by
+  rw [toCompletion_apply]
+  exact (liftCLMAux g hg hC).fromCompletion_apply_coe z
 
 /-- The induced continuous linear map extends each `g i`. -/
 @[simp]

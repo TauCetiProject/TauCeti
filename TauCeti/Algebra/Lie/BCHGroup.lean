@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Free.BCH
+public import TauCeti.Algebra.Lie.InnerAutomorphism
 public import TauCeti.Algebra.Lie.LowerCentralSeries
 
 /-!
@@ -18,7 +19,9 @@ pair `(x, y)` gives the BCH product `TauCeti.bch x y`; it does not depend on the
 file proves that the BCH product is a group law on the underlying set of `L`, with identity `0`
 and inverse `x ↦ -x`, and packages it as the group `TauCeti.BCHGroup L`, with the identity maps
 `BCHGroup.exp : L ≃ BCHGroup L` and `BCHGroup.log` as exponential and logarithm. Lie
-homomorphisms preserve the BCH product, so `BCHGroup` is a functor to groups.
+homomorphisms preserve the BCH product, so `BCHGroup` is a functor to groups. A Lie subalgebra is
+a subgroup, a Lie ideal is a normal subgroup, and the quotient group is the BCH group of the
+quotient Lie algebra.
 
 Associativity is proved universally. For any Lie algebra `L` over `ℚ`, the image of the BCH
 product of two classes of `L ⧸ lowerCentralSeries c` in the truncated enveloping algebra
@@ -36,6 +39,10 @@ this map is injective, which gives associativity there; evaluating the three gen
 * `TauCeti.BCHGroup`: the group structure it defines on the underlying set, with
   `TauCeti.BCHGroup.exp` and `TauCeti.BCHGroup.log`.
 * `TauCeti.BCHGroup.map`: the group homomorphism induced by a Lie homomorphism.
+* `LieSubalgebra.bchSubgroup`: the subgroup of exponentials of a Lie subalgebra; it is normal for
+  a Lie ideal (`LieIdeal.bchSubgroup_normal`).
+* `LieIdeal.bchQuotientEquiv`: the quotient by the subgroup of a Lie ideal is the BCH group of the
+  quotient Lie algebra.
 
 ## Main results
 
@@ -47,7 +54,10 @@ this map is injective, which gives associativity there; evaluating the three gen
 * `TauCeti.bch_assoc`: the BCH product is associative.
 * `TauCeti.bch_eq_of_lie_lie_eq_zero` and `TauCeti.bch_eq_add_of_lie_eq_zero`: the BCH product
   of elements whose bracket commutes with both, and of commuting elements.
+* `TauCeti.bch_mem`: Lie subalgebras are closed under the BCH product.
 * `TauCeti.BCHGroup.exp_mul_exp_eq_exp_mul_exp_lie_mul_exp`: the commutator formula.
+* `TauCeti.BCHGroup.conj_exp_exp`: conjugation by `exp x` acts on logarithms by `expAd x`,
+  using the associative conjugation formula `TauCeti.exp_mul_exp_mul_exp_neg_eq_exp_expAd`.
 
 ## References
 
@@ -196,6 +206,14 @@ theorem bch_eq_add_of_lie_eq_zero [LieRing.IsNilpotent L] {x y : L} (h : ⁅x, y
   rw [bch_eq_of_lie_lie_eq_zero (by rw [h, lie_zero]) (by rw [h, lie_zero]), h, smul_zero,
     add_zero]
 
+/-- A Lie subalgebra is closed under the BCH product. -/
+theorem bch_mem [LieRing.IsNilpotent L] {K : LieSubalgebra ℚ L} {x y : L} (hx : x ∈ K)
+    (hy : y ∈ K) : bch x y ∈ K := by
+  have : LieRing.IsNilpotent K :=
+    Function.Injective.lieAlgebra_isNilpotent (f := K.incl) Subtype.val_injective
+  have h := (bch (⟨x, hx⟩ : K) ⟨y, hy⟩).property
+  rwa [← LieSubalgebra.coe_incl, K.incl.map_bch] at h
+
 /-- `0` is a right identity for the BCH product. -/
 @[simp]
 theorem bch_zero [LieRing.IsNilpotent L] (x : L) : bch x 0 = x := by
@@ -338,6 +356,85 @@ theorem map_comp {L'' : Type*} [LieRing L''] [LieAlgebra ℚ L''] [LieRing.IsNil
     [LieRing.IsNilpotent L''] (g : L' →ₗ⁅ℚ⁆ L'') (f : L →ₗ⁅ℚ⁆ L') :
     map (g.comp f) = (map g).comp (map f) := (rfl)
 
+/-- A surjective Lie homomorphism induces a surjective group homomorphism. -/
+theorem map_surjective [LieRing.IsNilpotent L'] {f : L →ₗ⁅ℚ⁆ L'} (hf : Function.Surjective f) :
+    Function.Surjective (map f) := fun a => by
+  obtain ⟨x, hx⟩ := hf (log a)
+  exact ⟨exp x, by rw [map_exp, hx, exp_log]⟩
+
+section Conjugation
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+local notation "𝔣" => _root_.FreeLieAlgebra ℚ (Fin 2)
+local notation "Q[" c "]" => 𝔣 ⧸ LieModule.lowerCentralSeries ℚ 𝔣 𝔣 c
+
+/-- Conjugation on the free nilpotent Lie algebra of class at most `c`, as detected in the
+truncation of the enveloping algebra of the free Lie algebra. -/
+private theorem conj_exp_exp_free (c : ℕ) (x y : Q[c]) :
+    MulAut.conj (exp x) (exp y) =
+      exp (expAd x
+        (LieModule.isNilpotent_toEnd_of_isNilpotent ℚ Q[c] Q[c] x).exists_pow_apply_eq_zero y) := by
+  let ι := UniversalEnvelopingAlgebra.lowerCentralQuotientι ℚ 𝔣 c
+  let z := expAd (K := ℚ) x
+    (LieModule.isNilpotent_toEnd_of_isNilpotent ℚ Q[c] Q[c] x).exists_pow_apply_eq_zero y
+  have hn (a : Q[c]) : IsNilpotent (ι a) :=
+    UniversalEnvelopingAlgebra.isNilpotent_lowerCentralQuotientι ℚ 𝔣 c a
+  have hιz : ι z = expAd (K := ℚ) (ι x)
+      (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) (hn x)).exists_pow_apply_eq_zero (ι y) :=
+    ι.map_expAd _ _ y
+  have hmul (a b : Q[c]) : IsNilpotent.exp (ι (bch a b)) =
+      IsNilpotent.exp (ι a) * IsNilpotent.exp (ι b) :=
+    exp_lowerCentralQuotientι_bch 𝔣 c a b
+  have hconj : IsNilpotent.exp (ι (bch (bch x y) (-x))) = IsNilpotent.exp (ι z) := by
+    rw [hmul, hmul, map_neg, hιz, exp_mul_exp_mul_exp_neg_eq_exp_expAd (K := ℚ) (hn x)]
+  have h := congrArg IsNilpotent.log hconj
+  rw [IsNilpotent.log_exp (hn _), IsNilpotent.log_exp (hn _)] at h
+  have hι : Function.Injective ι := FreeLieAlgebra.lowerCentralQuotientι_injective ℚ (Fin 2)
+    (UniversalEnvelopingAlgebra.ι_injective ℚ 𝔣) c
+  apply log.injective
+  simpa only [MulAut.conj_apply, log_mul, log_inv, log_exp] using hι h
+
+/-- In the BCH group of a nilpotent rational Lie algebra, conjugation by `exp x` carries
+`exp y` to the exponential of `exp (ad x) y`. -/
+theorem conj_exp_exp (x y : L) :
+    MulAut.conj (exp x) (exp y) =
+      exp (expAd x
+        (LieModule.isNilpotent_toEnd_of_isNilpotent ℚ L L x).exists_pow_apply_eq_zero y) := by
+  obtain ⟨c, hc⟩ := LieModule.IsNilpotent.nilpotent ℚ L L
+  -- Evaluate the free nilpotent Lie algebra on the two elements being conjugated.
+  let g : Q[c] →ₗ⁅ℚ⁆ L := LieIdeal.liftQ _ (_root_.FreeLieAlgebra.lift ℚ ![x, y])
+    (LieHom.lowerCentralSeries_le_ker _ hc)
+  let x₀ : Q[c] := LieIdeal.mkQ _ (_root_.FreeLieAlgebra.of ℚ (0 : Fin 2))
+  let y₀ : Q[c] := LieIdeal.mkQ _ (_root_.FreeLieAlgebra.of ℚ (1 : Fin 2))
+  have hx : g x₀ = x := by
+    simp only [g, x₀, LieIdeal.mkQ_apply, LieIdeal.liftQ_apply, _root_.FreeLieAlgebra.lift_of_apply,
+      Matrix.cons_val_zero]
+  have hy : g y₀ = y := by
+    simp only [g, y₀, LieIdeal.mkQ_apply, LieIdeal.liftQ_apply, _root_.FreeLieAlgebra.lift_of_apply,
+      Matrix.cons_val_one, Matrix.cons_val_zero]
+  have had := g.map_expAd (K := ℚ)
+    (LieModule.isNilpotent_toEnd_of_isNilpotent ℚ Q[c] Q[c] x₀).exists_pow_apply_eq_zero
+    (LieModule.isNilpotent_toEnd_of_isNilpotent ℚ L L (g x₀)).exists_pow_apply_eq_zero y₀
+  have h := congrArg (map g) (conj_exp_exp_free c x₀ y₀)
+  simpa only [MulAut.conj_apply, map_mul, map_inv, map_exp, had, hx, hy] using h
+
+/-- Logarithms turn conjugation in the BCH group into the adjoint exponential.
+This states the identity in the simplifier's normal form for the logarithm of a conjugate. -/
+@[simp]
+theorem _root_.TauCeti.bch_bch_neg_eq_expAd (x y : L) :
+    bch (bch x y) (-x) =
+      expAd x (LieModule.isNilpotent_toEnd_of_isNilpotent ℚ L L x).exists_pow_apply_eq_zero y := by
+  simpa only [MulAut.conj_apply, log_mul, log_inv, log_exp] using
+    congrArg log (conj_exp_exp x y)
+
+end Conjugation
+
+/-- The exponentials of commuting elements commute. -/
+theorem commute_exp_of_lie_eq_zero {x y : L} (h : ⁅x, y⁆ = 0) : Commute (exp x) (exp y) := by
+  rw [Commute, SemiconjBy, ← exp_add_of_lie_eq_zero h,
+    ← exp_add_of_lie_eq_zero (by rw [← lie_skew, h, neg_zero]), add_comm]
+
 /-- **The commutator formula.** If `z = ⁅x, y⁆` commutes with `x` and `y`, then
 `exp x * exp y = exp y * exp z * exp x`. -/
 theorem exp_mul_exp_eq_exp_mul_exp_lie_mul_exp {x y : L} (hx : ⁅x, ⁅x, y⁆⁆ = 0)
@@ -352,6 +449,55 @@ theorem exp_mul_exp_eq_exp_mul_exp_lie_mul_exp {x y : L} (hx : ⁅x, ⁅x, y⁆�
     bch_eq_of_lie_lie_eq_zero h₁ h₂, hyx]
   congr 1
   module
+
+/-- The subgroup of the BCH group consisting of the exponentials of the elements of a Lie
+subalgebra. -/
+def _root_.LieSubalgebra.bchSubgroup (K : LieSubalgebra ℚ L) : Subgroup (BCHGroup L) where
+  carrier := {a | log a ∈ K}
+  mul_mem' {a b} ha hb := by
+    rw [Set.mem_ofPred_eq, log_mul]
+    exact bch_mem ha hb
+  one_mem' := by
+    rw [Set.mem_ofPred_eq, log_one]
+    exact K.zero_mem
+  inv_mem' {a} ha := by
+    rw [Set.mem_ofPred_eq, log_inv]
+    exact K.neg_mem ha
+
+@[simp]
+theorem _root_.LieSubalgebra.mem_bchSubgroup {K : LieSubalgebra ℚ L} {a : BCHGroup L} :
+    a ∈ K.bchSubgroup ↔ log a ∈ K :=
+  Iff.rfl
+
+/-- The subgroup of exponentials of a Lie ideal is the kernel of the group homomorphism induced by
+the quotient map. -/
+theorem ker_map_mkQ (I : LieIdeal ℚ L) :
+    (map I.mkQ).ker = (I : LieSubalgebra ℚ L).bchSubgroup := by
+  ext a
+  rw [MonoidHom.mem_ker, LieSubalgebra.mem_bchSubgroup, ← exp_log a, map_exp, ← exp_zero,
+    Equiv.apply_eq_iff_eq, LieIdeal.mkQ_apply, log_exp, LieSubmodule.Quotient.mk_eq_zero',
+    LieIdeal.mem_toLieSubalgebra]
+
+/-- The exponentials of a Lie ideal form a normal subgroup. -/
+instance _root_.LieIdeal.bchSubgroup_normal (I : LieIdeal ℚ L) :
+    (I : LieSubalgebra ℚ L).bchSubgroup.Normal :=
+  ker_map_mkQ I ▸ MonoidHom.normal_ker _
+
+/-- The quotient of the BCH group by the exponentials of a Lie ideal is the BCH group of the
+quotient Lie algebra. -/
+noncomputable def _root_.LieIdeal.bchQuotientEquiv (I : LieIdeal ℚ L) :
+    BCHGroup L ⧸ (I : LieSubalgebra ℚ L).bchSubgroup ≃* BCHGroup (L ⧸ I) :=
+  (QuotientGroup.quotientMulEquivOfEq (ker_map_mkQ I).symm).trans
+    (QuotientGroup.quotientKerEquivOfRightInverse _ _
+      (Function.rightInverse_surjInv (map_surjective (LieIdeal.surjective_mkQ I))))
+
+@[simp]
+theorem _root_.LieIdeal.bchQuotientEquiv_mk (I : LieIdeal ℚ L) (x : L) :
+    I.bchQuotientEquiv (exp x : BCHGroup L) = exp (LieSubmodule.Quotient.mk x) := by
+  -- The first isomorphism theorem sends the class of `a` to the image of `a`.
+  rw [LieIdeal.bchQuotientEquiv, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
+    QuotientGroup.quotientKerEquivOfRightInverse_apply, QuotientGroup.kerLift_mk, map_exp,
+    LieIdeal.mkQ_apply]
 
 end BCHGroup
 

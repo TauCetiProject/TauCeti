@@ -24,7 +24,9 @@ translating the polytope and changing the lattice.
   kernel torus of one presentation to those of another, then `z ↦ z ∘ e.symm` descends to a
   homeomorphism of Delzant quotients (`TauCeti.Toric.DelzantQuotient.congr`), which intertwines
   the residual torus actions after relabelling the angles along `e`
-  (`TauCeti.Toric.DelzantQuotient.congr_coe_vadd`).
+  (`TauCeti.Toric.DelzantQuotient.congr_coe_vadd`) and matches the moment values of corresponding
+  facets, measured from their support constants
+  (`TauCeti.Toric.DelzantQuotient.reducedMomentMap_congr_apply_sub`).
 * **Relabelling the facets.** Listing the facets along `e` gives the presentation
   `(u ∘ e, c ∘ e)` of the same polytope, and its Delzant quotient is identified with that of
   `(u, c)` (`TauCeti.Toric.DelzantQuotient.relabel`), preserving the reduced moment map.
@@ -79,7 +81,8 @@ manifolds obtained from the presentations of a Delzant polytope related by these
   `TauCeti.Toric.DelzantQuotient.translate_vadd`,
   `TauCeti.Toric.DelzantQuotient.latticeCongr_coe_vadd`: these identifications intertwine the
   residual torus actions.
-* `TauCeti.Toric.DelzantQuotient.reducedMomentMap_relabel`,
+* `TauCeti.Toric.DelzantQuotient.reducedMomentMap_congr_apply_sub`,
+  `TauCeti.Toric.DelzantQuotient.reducedMomentMap_relabel`,
   `TauCeti.Toric.DelzantQuotient.reducedMomentMap_translate`,
   `TauCeti.Toric.DelzantQuotient.reducedMomentMap_latticeCongr_comp`: their effect on the reduced
   moment map.
@@ -171,6 +174,20 @@ theorem congr_coe_vadd (θ : ι' → AddCircle (2 * π)) (q : DelzantQuotient i'
         (ι → AddCircle (2 * π)) ⧸ (facetTorusHom i u (2 * π)).ker) +ᵥ congr e hZ hN q := by
   induction q using DelzantQuotient.inductionOn with | h x =>
   rw [coe_vadd_mk, congr_mk, congr_mk, delzantLevelCongr_vadd, coe_vadd_mk]
+
+/-- **The homeomorphism `congr` matches the moment values of corresponding facets.** On the facet
+`e j` of `(u, c)`, the reduced moment map at `congr e hZ hN q` exceeds the support constant
+`c (e j)` by as much as the reduced moment map at `q` exceeds `c' j` on the facet `j` of
+`(u', c')`: both differences are `½ |z_j|²` for a point `z` of the level over `q`. -/
+theorem reducedMomentMap_congr_apply_sub [FiniteDimensional ℝ V] [FiniteDimensional ℝ V']
+    (hβ : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i (u j)))
+    (hβ' : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i' (u' j)))
+    (q : DelzantQuotient i' u' c') (j : ι') :
+    reducedMomentMap hβ (congr e hZ hN q) (i (u (e j))) - c (e j) =
+      reducedMomentMap hβ' q (i' (u' j)) - c' j := by
+  induction q using DelzantQuotient.inductionOn with | h x =>
+  rw [congr_mk, reducedMomentMap_mk_apply, reducedMomentMap_mk_apply]
+  simp [coe_delzantLevelCongr, LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft'_apply]
 
 end Congr
 

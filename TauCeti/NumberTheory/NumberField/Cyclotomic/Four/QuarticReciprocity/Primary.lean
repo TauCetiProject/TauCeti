@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.QuarticReciprocity.IntCast
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.RationalResidue
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.SupplementaryLaws
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.IntCast
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
 /-!
