@@ -608,14 +608,18 @@ theorem exists_mul_eq_of_star_mul_self_mem (B : NonUnitalStarSubalgebra ℂ A)
   let ι : B →L[ℂ] A := B.toSubmodule.subtypeL
   let R : A →L[ℂ] B →L[ℂ] A := ((ContinuousLinearMap.mul ℂ A).flip.comp ι).flip
   have hR_assoc (z : A) (b₁ b₂ : B) : R (R z b₁) b₂ = R z (b₁ * b₂) := mul_assoc z b₁ b₂
-  have hx_mem :
-      x ∈ (Submodule.span ℂ (Set.range fun p : A × B => R p.1 p.2)).topologicalClosure := by
-    rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe]
-    refine closure_mono Submodule.subset_span ?_
-    exact mem_closure_of_tendsto (hl.tendsto_mul_left_of_star_mul_self_mem hx)
-      (Eventually.of_forall fun e => ⟨(x, e), rfl⟩)
+  have hR_flip (e : B) : R.flip e x = x * (e : A) := by
+    simp only [R, ι, ContinuousLinearMap.flip_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.mul_apply']
+    exact congrArg (x * ·) (Submodule.subtypeL_apply B.toSubmodule e)
+  have hx_mem : x ∈ R.flip.essentialSubmodule :=
+    (R.flip.isClosed_essentialSubmodule).mem_of_tendsto
+      (hl.tendsto_mul_left_of_star_mul_self_mem hx)
+      (Eventually.of_forall fun e => by
+        rw [SetLike.mem_coe, ← hR_flip]
+        exact R.flip.apply_mem_essentialSubmodule e x)
   obtain ⟨b, y, hb_norm, hy_mem, hy_dist, hfac⟩ :=
-    ContinuousLinearMap.exists_apply_eq_of_mem_topologicalClosure_span_right R hR_assoc
+    ContinuousLinearMap.exists_apply_eq_of_mem_essentialSubmodule_right R hR_assoc
       hl.eventually_norm hl.tendsto_mul_left hx_mem hε
   exact ⟨b, b.property, y, hb_norm, hy_mem, hy_dist, hfac⟩
 

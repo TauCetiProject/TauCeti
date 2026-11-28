@@ -11,6 +11,7 @@ import Mathlib.Analysis.Meromorphic.Complex
 import TauCeti.Analysis.Contour.ConnectorLimit
 import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
 import TauCeti.Analysis.Contour.Residue.VerticalLineShift
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Gamma.Residue
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
@@ -197,10 +198,10 @@ private theorem exists_norm_hypergeometricMellinBarnesIntegrand_strip_le (a b c 
     ∃ C K T₀ : ℝ, ∀ x ∈ Icc A B, ∀ T : ℝ, T₀ ≤ |T| →
       ‖hypergeometricMellinBarnesIntegrand a b c z (x + T * I)‖ ≤
         C * ((1 + |T|) ^ K * Real.exp (-((π - |arg (-z)|) * |T|))) := by
-  obtain ⟨Ca, hCa, Ka, Ta, ha⟩ := TauCeti.exists_norm_Gamma_add_vertical_strip_le a A B
-  obtain ⟨Cb, hCb, Kb, Tb, hb⟩ := TauCeti.exists_norm_Gamma_add_vertical_strip_le b A B
-  obtain ⟨Cs, hCs, Ks, Ts, hs⟩ := TauCeti.exists_norm_Gamma_add_vertical_strip_le 0 (-B) (-A)
-  obtain ⟨Cc, hCc, Kc, hc⟩ := TauCeti.exists_norm_inv_Gamma_add_vertical_strip_le c A B
+  obtain ⟨Ca, _, Ka, Ta, ha⟩ := TauCeti.exists_norm_Gamma_add_vertical_strip_le a A B
+  obtain ⟨Cb, _, Kb, Tb, hb⟩ := TauCeti.exists_norm_Gamma_add_vertical_strip_le b A B
+  obtain ⟨Cs, _, Ks, Ts, hs⟩ := TauCeti.exists_norm_Gamma_add_vertical_strip_le 0 (-B) (-A)
+  obtain ⟨Cc, _, Kc, hc⟩ := TauCeti.exists_norm_inv_Gamma_add_vertical_strip_le c A B
   obtain ⟨Cz, hzb⟩ := TauCeti.exists_norm_cpow_strip_le (neg_ne_zero.mpr hz) A B
   refine ⟨Ca * Cb * Cs * Cc * Cz, Ka + Kb + Ks + Kc, max (max Ta Tb) Ts, fun x hx T hT ↦ ?_⟩
   -- `Γ(-t)` is the case `w = 0` at the reflected point `-x - i T`.
@@ -208,29 +209,30 @@ private theorem exists_norm_hypergeometricMellinBarnesIntegrand_strip_le (a b c 
     (by rw [abs_neg]; exact le_trans (le_max_right _ _) hT)
   rw [show (0 : ℂ) + (((-x : ℝ) : ℂ) + ((-T : ℝ) : ℂ) * I) = -((x : ℂ) + T * I) by push_cast; ring,
     abs_neg] at h3
+  have h1 : ‖Gamma (a + (x + T * I))‖ ≤ Ca * (1 + |T|) ^ Ka * Real.exp (-(π / 2) * |T|) :=
+    ha x hx T (le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hT)
+  have h2 : ‖Gamma (b + (x + T * I))‖ ≤ Cb * (1 + |T|) ^ Kb * Real.exp (-(π / 2) * |T|) :=
+    hb x hx T (le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hT)
+  have h4 : ‖(Gamma (c + (x + T * I)))⁻¹‖ ≤ Cc * (1 + |T|) ^ Kc * Real.exp ((π / 2) * |T|) :=
+    hc x hx T
+  have h5 : ‖(-z) ^ ((x : ℂ) + T * I)‖ ≤
+      Cz * (1 + |T|) ^ (0 : ℝ) * Real.exp (|arg (-z)| * |T|) := by
+    simpa only [Real.rpow_zero, mul_one] using hzb x hx T
+  have h12 := TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp (norm_nonneg _) (norm_nonneg _) h1 h2
+  have h123 := TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp
+    (mul_nonneg (norm_nonneg _) (norm_nonneg _)) (norm_nonneg _) h12 h3
+  have h1234 := TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp
+    (mul_nonneg (mul_nonneg (norm_nonneg _) (norm_nonneg _)) (norm_nonneg _))
+    (norm_nonneg _) h123 h4
+  have h12345 := TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp
+    (mul_nonneg (mul_nonneg (mul_nonneg (norm_nonneg _) (norm_nonneg _)) (norm_nonneg _))
+      (norm_nonneg _))
+    (norm_nonneg _) h1234 h5
+  have hrate : (-(π / 2) + -(π / 2) + -(π / 2) + π / 2 + |arg (-z)|) * |T| =
+      -((π - |arg (-z)|) * |T|) := by ring
   rw [hypergeometricMellinBarnesIntegrand_def, norm_mul, norm_mul, norm_mul, norm_mul]
-  calc ‖Gamma (a + (x + T * I))‖ * ‖Gamma (b + (x + T * I))‖ * ‖Gamma (-(x + T * I))‖ *
-        ‖(Gamma (c + (x + T * I)))⁻¹‖ * ‖(-z) ^ ((x : ℂ) + T * I)‖
-      ≤ (Ca * (1 + |T|) ^ Ka * Real.exp (-(π * |T| / 2))) *
-          (Cb * (1 + |T|) ^ Kb * Real.exp (-(π * |T| / 2))) *
-          (Cs * (1 + |T|) ^ Ks * Real.exp (-(π * |T| / 2))) *
-          (Cc * (1 + |T|) ^ Kc * Real.exp (π * |T| / 2)) *
-          (Cz * Real.exp (|arg (-z)| * |T|)) := by
-        gcongr
-        · exact ha x hx T (le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hT)
-        · exact hb x hx T (le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hT)
-        · exact hc x hx T
-        · exact hzb x hx T
-    _ = Ca * Cb * Cs * Cc * Cz * (((1 + |T|) ^ Ka * (1 + |T|) ^ Kb * (1 + |T|) ^ Ks *
-          (1 + |T|) ^ Kc) * (Real.exp (-(π * |T| / 2)) * Real.exp (-(π * |T| / 2)) *
-          Real.exp (-(π * |T| / 2)) * Real.exp (π * |T| / 2) * Real.exp (|arg (-z)| * |T|))) := by
-        ring
-    _ = Ca * Cb * Cs * Cc * Cz * ((1 + |T|) ^ (Ka + Kb + Ks + Kc) *
-          Real.exp (-((π - |arg (-z)|) * |T|))) := by
-        rw [← Real.rpow_add (by positivity), ← Real.rpow_add (by positivity),
-          ← Real.rpow_add (by positivity), ← Real.exp_add, ← Real.exp_add, ← Real.exp_add,
-          ← Real.exp_add]
-        ring_nf
+  refine h12345.trans_eq ?_
+  rw [add_zero, hrate, mul_assoc]
 
 /-- On a vertical strip `A ≤ Re t ≤ B`, the integrand of Barnes's integral tends to `0` as
 `|Im t| → ∞`, uniformly in `Re t`, when `-z ∈ slitPlane`. -/
