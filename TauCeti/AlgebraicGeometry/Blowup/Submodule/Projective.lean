@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Blowup.Submodule.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver.Basic
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
 
 /-!

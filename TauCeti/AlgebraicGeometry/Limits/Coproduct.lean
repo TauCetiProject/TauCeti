@@ -108,16 +108,17 @@ namespace AlgebraicGeometry
 
 open scoped Function
 
-/-- A locally finite disjoint family of closed immersions induces a closed immersion from
-the coproduct. The topological argument uses `ContinuousMap.isClosedEmbedding_sigma`, and
-`IsZariskiLocalAtSource.sigmaDesc` supplies surjectivity on stalks, as in the open-immersion
-analogue `AlgebraicGeometry.isOpenImmersion_sigmaDesc`. No reducedness assumption is needed. -/
+/-- If the images of a family of closed immersions in a common target are pairwise disjoint
+and locally finite, the induced map from the coproduct is a closed immersion. No reducedness
+assumption is needed. -/
 theorem isClosedImmersion_sigmaDesc {ι : Type v} [Small.{u} ι]
     {X : ι → Scheme.{u}} {Y : Scheme.{u}} (f : ∀ i, X i ⟶ Y)
     [∀ i, IsClosedImmersion (f i)]
     (hf : Pairwise (Disjoint on (Set.range <| f ·)))
     (hlf : LocallyFinite fun i ↦ Set.range (f i)) :
     IsClosedImmersion (Sigma.desc f) := by
+  -- Use `ContinuousMap.isClosedEmbedding_sigma` and stalk locality, as in the open-immersion
+  -- analogue `AlgebraicGeometry.isOpenImmersion_sigmaDesc`.
   classical
   let e := equivShrink.{u} ι
   let X' := X ∘ e.symm
@@ -142,24 +143,5 @@ theorem isClosedImmersion_sigmaDesc {ι : Type v} [Small.{u} ι]
   intro i
   obtain ⟨i, rfl⟩ := e.symm.surjective i
   simp [f']
-
-namespace Scheme
-
-variable {ι : Type v} [Small.{u} ι] (X : ι → Scheme.{u})
-    (S : Scheme.{u}) [∀ i, (X i).Over S]
-
-/-- The coproduct structure map descends the specified structure maps of its summands. -/
-noncomputable instance instOverSigma : (∐ X).Over S :=
-  ⟨Sigma.desc fun i ↦ X i ↘ S⟩
-
-/-- The structure map of a scheme coproduct is the descent of the summands' structure maps. -/
-theorem over_sigma : (∐ X) ↘ S = Sigma.desc fun i ↦ X i ↘ S := (rfl)
-
-/-- Coprojections are morphisms over the common base. The simp lemmas `comp_over` and
-`comp_over_assoc` compute their composites with the descended structure map. -/
-instance instIsOverSigmaι (i : ι) : (Sigma.ι X i).IsOver S :=
-  ⟨by rw [over_sigma, Sigma.ι_comp_desc]⟩
-
-end Scheme
 
 end AlgebraicGeometry

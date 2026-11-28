@@ -36,9 +36,6 @@ is projective, without a freeness or projectivity assumption on the ambient modu
 instance isProjectiveOver_scheme (r : ℕ) [Module.Finite R (⋀[R]^r M)] :
     (scheme R M r).IsProjectiveOver R := by
   let f := pluckerHom R M r ≫ (toProjIso R).hom
-  have : f.IsOver (Spec (.of R)) := ⟨by
-    simp only [f, over_eq_projToSpec, over_scheme, Category.assoc,
-      toProjIso_hom_projToSpec, pluckerHom_toSpec]⟩
   exact Scheme.IsProjectiveOver.of_isClosedImmersion R f
 
 end Module.Grassmannian

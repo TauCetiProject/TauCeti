@@ -8,10 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
-public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Functor
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.FiniteType
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.GradedMap
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Integral
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.KrullDimension
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
@@ -225,8 +222,9 @@ open TauCeti.SymmetricAlgebra
 variable (R : Type u) [CommRing R] {M N : Type u}
   [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
-/-- The projective morphism induced by a linear map lies over the coefficient ring: it commutes
-with the structure morphisms `TauCeti.SymmetricAlgebra.projToSpec`. -/
+/-- When the graded lift of a linear map satisfies the irrelevant-ideal condition, the induced
+morphism of projective spectra commutes with the coefficient structure morphisms
+`TauCeti.SymmetricAlgebra.projToSpec`. -/
 @[reassoc (attr := simp)]
 theorem map_gradedMap_projToSpec (f : M →ₗ[R] N)
     (hf : HomogeneousIdeal.irrelevant (homogeneousSubmodule R N) ≤
@@ -247,19 +245,13 @@ universe v
 variable (R : Type (max u v)) [CommRing R] {ι : Type v}
   (M : ι → Type (max u v)) [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
 
-private theorem gradedMap_proj_surjective (i : ι) :
-    Function.Surjective (SymmetricAlgebra.gradedMap R
-      (LinearMap.proj i : (∀ i, M i) →ₗ[R] M i)) := by
-  simpa only [Function.Surjective, SymmetricAlgebra.gradedMap_apply] using
-    SymmetricAlgebra.map_surjective R (LinearMap.proj i : (∀ i, M i) →ₗ[R] M i)
-      (Function.surjective_eval i)
-
 /-- The embedding of the projective spectrum of one coordinate block in that of the full
 product of coordinate modules. -/
 noncomputable def projPiι (i : ι) :
     Proj (homogeneousSubmodule R (M i)) ⟶ Proj (homogeneousSubmodule R (∀ i, M i)) :=
   Proj.map (SymmetricAlgebra.gradedMap R (LinearMap.proj i : (∀ i, M i) →ₗ[R] M i))
-    (HomogeneousIdeal.irrelevant_le_map_of_surjective _ (gradedMap_proj_surjective R M i))
+    (HomogeneousIdeal.irrelevant_le_map_of_surjective _
+      (SymmetricAlgebra.gradedMap_surjective R (LinearMap.proj i) (Function.surjective_eval i)))
 
 /-- A coordinate-block embedding is the Proj map of the graded coordinate projection,
 independently of the proof that the irrelevant ideal maps onto the target irrelevant ideal. -/
@@ -270,18 +262,18 @@ theorem projPiι_def (i : ι)
     projPiι R M i = Proj.map (SymmetricAlgebra.gradedMap R (LinearMap.proj i)) h := (rfl)
 
 /-- Each coordinate-block map is a closed immersion into the Proj of the product module. -/
-instance isClosedImmersion_projPiι (i : ι) : IsClosedImmersion (projPiι R M i) :=
-  Proj.isClosedImmersion_map _ _ (gradedMap_proj_surjective R M i)
-
-/-- Coordinate-block embeddings preserve the specified coefficient morphisms. -/
-@[reassoc (attr := simp)]
-theorem projPiι_projToSpec (i : ι) :
-    projPiι R M i ≫ projToSpec R (∀ i, M i) = projToSpec R (M i) :=
-  Proj.map_gradedMap_projToSpec R _ _
+instance isClosedImmersion_projPiι (i : ι) : IsClosedImmersion (projPiι R M i) := by
+  rw [projPiι_def R M i (HomogeneousIdeal.irrelevant_le_map_of_surjective _
+    (SymmetricAlgebra.gradedMap_surjective R _ (Function.surjective_eval i)))]
+  exact Proj.isClosedImmersion_map _ _
+    (SymmetricAlgebra.gradedMap_surjective R (LinearMap.proj i) (Function.surjective_eval i))
 
 /-- Coordinate-block embeddings are morphisms over the coefficient ring. -/
-instance instIsOverProjPiι (i : ι) : (projPiι R M i).IsOver (Spec (.of R)) :=
-  ⟨by simpa only [over_eq_projToSpec] using projPiι_projToSpec R M i⟩
+instance instIsOverProjPiι (i : ι) : (projPiι R M i).IsOver (Spec (.of R)) := by
+  rw [projPiι_def R M i (HomogeneousIdeal.irrelevant_le_map_of_surjective _
+    (SymmetricAlgebra.gradedMap_surjective R _ (Function.surjective_eval i)))]
+  simp only [SymmetricAlgebra.gradedMap_def]
+  exact instIsOverMapGradedLift R _ _ _
 
 /-- Pulling back a standard open along a coordinate-block embedding evaluates its linear
 coordinate in that block. -/
@@ -292,16 +284,16 @@ theorem projPiι_preimage_basicOpen_ι (i : ι) (m : ∀ i, M i) :
         Proj.basicOpen (homogeneousSubmodule R (M i)) (SymmetricAlgebra.ι R (M i) (m i)) := by
   simp [projPiι]
 
-/-- Distinct coordinate blocks have disjoint images in the projective spectrum of their
-product. The cover `iSup_basicOpen_ι_eq_top` supplies a nonvanishing degree-one coordinate
-in one block, whose pullback to every other block vanishes. This holds over every commutative
-ring, including nonreduced rings. -/
+/-- The coordinate-block images in the projective spectrum of the product are pairwise
+disjoint for arbitrary index families and coordinate modules, with no finiteness hypothesis.
+This holds over every commutative ring, including nonreduced rings. -/
 theorem pairwise_disjoint_range_projPiι :
     Pairwise fun i j ↦ Disjoint (Set.range (projPiι R M i)) (Set.range (projPiι R M j)) := by
   classical
   intro i j hij
   apply Set.disjoint_left.mpr
   rintro _ ⟨x, rfl⟩ ⟨y, hxy⟩
+  -- The degree-one standard-open cover supplies a nonvanishing coordinate in this block.
   have hcover := iSup_basicOpen_ι_eq_top R (M i) (id : M i → M i)
     (by simp)
   simp only [id_eq] at hcover

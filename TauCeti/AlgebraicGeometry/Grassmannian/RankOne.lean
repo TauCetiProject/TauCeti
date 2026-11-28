@@ -198,6 +198,10 @@ theorem toProj_projToSpec : toProj R ≫ projToSpec R M = toSpec R M 1 := by
   exact (chartι_toProj_assoc R a _).trans ((chartToProj_projToSpec R a).trans
     (chartι_toSpec _).symm)
 
+/-- The rank-one Grassmannian map to the symmetric-algebra Proj is over the coefficient ring. -/
+instance instIsOverToProj : (toProj R : scheme R M 1 ⟶ _).IsOver (Spec (.of R)) :=
+  ⟨by simpa only [over_eq_projToSpec, over_scheme] using toProj_projToSpec (M := M) R⟩
+
 /-! ### `toProj` is an isomorphism -/
 
 /-- Inside the chart of `G(1, M)` at `y`, the preimage of the standard open `D₊(x)` of
@@ -259,6 +263,12 @@ noncomputable def toProjIso : scheme R M 1 ≅ Proj (homogeneousSubmodule R M) :
 @[simp]
 theorem toProjIso_hom : (toProjIso R : scheme R M 1 ≅ _).hom = toProj R :=
   (rfl)
+
+/-- The rank-one Grassmannian identification with Proj is over the coefficient ring. -/
+instance instIsOverToProjIsoHom :
+    (toProjIso R : scheme R M 1 ≅ _).hom.IsOver (Spec (.of R)) := by
+  rw [toProjIso_hom]
+  infer_instance
 
 @[reassoc]
 theorem toProjIso_hom_projToSpec :

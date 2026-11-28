@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver.Basic
 public import TauCeti.AlgebraicGeometry.Limits.Coproduct
+public import TauCeti.CategoryTheory.Limits.Shapes.Products.OverClass
 
 /-!
 # Finite coproducts of projective schemes
@@ -63,10 +64,7 @@ theorem IsProjectiveOver.sigma [∀ i, (X i).IsProjectiveOver R] :
     have : IsClosedImmersion (Sigma.desc g) := isClosedImmersion_sigmaDesc g hdisj
       (locallyFinite_of_finite _)
     refine ⟨⟨(∀ i, M i), inferInstance, inferInstance, inferInstance, Sigma.desc g,
-      inferInstance, ⟨?_⟩⟩⟩
-    apply Sigma.hom_ext
-    intro i
-    simp only [Sigma.ι_comp_desc_assoc, comp_over]
+      inferInstance, inferInstance⟩⟩
   let e : (∐ Y) ≅ ∐ X := Sigma.reindex (equivShrink.{u} ι).symm X
   have : e.hom.IsOver (Spec (.of R)) := by
     constructor
