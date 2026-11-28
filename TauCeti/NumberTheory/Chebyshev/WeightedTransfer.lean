@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Chebyshev
-import TauCeti.NumberTheory.AbelSummation
+import TauCeti.NumberTheory.Chebyshev.AbelSummation
 import TauCeti.NumberTheory.Chebyshev.Integrability
+import TauCeti.NumberTheory.PrimeCounting
 
 /-!
 # Weighted prime sums and the Chebyshev remainder
@@ -20,7 +21,7 @@ primes at the upper endpoint are included.
 
 The uncentered identity is the prime-weighted form of Mathlib's
 `sum_mul_eq_sub_integral_mul₁`. Continuity at the endpoints and an integrable interior
-derivative suffice by `TauCeti.sum_mul_eq_sub_sub_integral_mul_of_hasDerivAt`.
+derivative suffice by `TauCeti.sum_filter_primesLE_mul_log_eq_sub_sub_integral`.
 
 If `(θ(t) - t) g'(t)` is absolutely integrable on `(2, ∞)`, its full integral enters the
 constant term and its tail enters the remaining error. This identity underlies the
@@ -56,17 +57,16 @@ theorem sum_primesLE_mul_log_eq_sub_integral {g g' : ℝ → ℝ} {x : ℝ} (hx 
     (hg' : IntervalIntegrable g' volume 2 x) :
     ∑ p ∈ Nat.primesLE ⌊x⌋₊, g p * Real.log p =
       g x * Chebyshev.theta x - ∫ t in (2 : ℝ)..x, g' t * Chebyshev.theta t := by
-  have h := sum_mul_eq_sub_sub_integral_mul_of_hasDerivAt
-    (fun p : ℕ ↦ if p.Prime then Real.log p else 0) (by norm_num : (0 : ℝ) ≤ 2) hx hc hg hg'
-  simp only [mul_ite, mul_zero, ← sum_filter] at h
-  simp_rw [← Chebyshev.theta_eq_sum_Icc] at h
+  have h := sum_filter_primesLE_mul_log_eq_sub_sub_integral
+    (by norm_num : (0 : ℝ) ≤ 2) hx hc hg hg'
   have hfloor : ⌊(2 : ℝ)⌋₊ = 2 := by norm_num
-  rw [hfloor] at h
+  have htwo : Nat.primesLE ⌊(2 : ℝ)⌋₊ = {2} := by
+    rw [hfloor]
+    decide
   have hθ₂ : Chebyshev.theta 2 = Real.log 2 := by
-    simp only [Chebyshev.theta_eq_log_primorial, hfloor, primorial_two, Nat.cast_ofNat]
-  have htwo : 2 ≤ ⌊x⌋₊ := hfloor ▸ Nat.floor_le_floor hx
-  rw [Nat.primesLE_eq_filter_Icc_two, sum_filter, ← add_sum_Ioc_eq_sum_Icc htwo]
-  simp only [Nat.prime_two, ite_true, Nat.cast_ofNat, ← sum_filter, h, hθ₂]
+    simp only [Chebyshev.theta_eq_sum_primesLE, htwo, sum_singleton, Nat.cast_ofNat]
+  rw [Nat.sum_primesLE_floor_eq_add_filter_gt (fun p ↦ g p * Real.log p) hx,
+    htwo, sum_singleton, Nat.cast_ofNat, h, hθ₂]
   ring
 
 /-- Partial summation with the Chebyshev main term removed. The sum includes the prime `2`
@@ -110,8 +110,9 @@ theorem sum_primesLE_eq_integral_div_log_add {f g' : ℝ → ℝ} {x : ℝ} (hx 
       (Nat.prime_of_mem_primesLE hp).one_lt)).ne'
   simpa only [hs, mul_div_assoc] using h
 
-/-- The tail form of the weighted prime-sum identity, with `g = f / log`, assuming
-`(θ(t) - t) g'(t)` is absolutely integrable on `(2, ∞)`. The constant is
+/-- The tail form of `sum_primesLE_eq_integral_div_log_add`, with `g = f / log`.
+In addition to the finite-interval hypotheses, it assumes `(θ(t) - t) g'(t)` is
+absolutely integrable on `(2, ∞)`. The constant is
 `2 f(2) / log 2 - ∫₂^∞ (θ(t) - t) g'(t) dt`. -/
 theorem sum_primesLE_eq_integral_div_log_add_integral_Ioi {f g' : ℝ → ℝ} {x : ℝ}
     (hx : 2 ≤ x)

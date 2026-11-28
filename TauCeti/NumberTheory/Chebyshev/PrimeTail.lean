@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.NumberTheory.Chebyshev
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
 public import TauCeti.NumberTheory.Chebyshev.PowerTail
+import TauCeti.NumberTheory.Chebyshev.AbelSummation
 import TauCeti.NumberTheory.Chebyshev.Integrability
 
 /-!
@@ -53,26 +54,9 @@ open scoped Topology
 
 namespace TauCeti
 
-private theorem sum_prime_log_eq_theta (t : ℝ) :
-    ∑ n ∈ Icc 0 ⌊t⌋₊, (if n.Prime then Real.log n else 0) = Chebyshev.theta t := by
-  simp [Chebyshev.theta_eq_sum_Icc, sum_filter]
-
 private theorem sum_prime_indicator_eq_primeCounting (t : ℝ) :
     ∑ n ∈ Icc 0 ⌊t⌋₊, (if n.Prime then (1 : ℝ) else 0) = Nat.primeCounting ⌊t⌋₊ := by
   simp [← Nat.primesLE_card_eq_primeCounting, Nat.primesLE_eq_filter_Icc_zero]
-
--- Reindexes the sums produced by partial summation over `(⌊a⌋₊, ⌊b⌋₊]` as prime sums on `(a, b]`.
-private theorem sum_Ioc_mul_ite_prime_eq_sum_filter_primesLE {a b : ℝ} (ha : 0 ≤ a)
-    (f g : ℕ → ℝ) :
-    ∑ n ∈ Ioc ⌊a⌋₊ ⌊b⌋₊, f n * (if n.Prime then g n else 0) =
-      ∑ p ∈ (Nat.primesLE ⌊b⌋₊).filter (fun p : ℕ ↦ a < (p : ℝ)), f p * g p := by
-  rw [Nat.primesLE_eq_filter_Icc_zero]
-  simp only [mul_ite, mul_zero, ← sum_filter]
-  congr 1
-  ext n
-  simp only [mem_filter, mem_Icc, mem_Ioc, zero_le, true_and]
-  rw [Nat.floor_lt ha]
-  tauto
 
 private theorem filter_primesLE_floor_gt_eq_empty {a b : ℝ} (hab : ¬ a ≤ b) :
     (Nat.primesLE ⌊b⌋₊).filter (fun p : ℕ ↦ a < (p : ℝ)) = ∅ := by
@@ -89,10 +73,8 @@ theorem sum_primesLE_log_div_sq_eq {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
         Real.log p / (p : ℝ) ^ 2 =
       Chebyshev.theta b / b ^ 2 - Chebyshev.theta a / a ^ 2 +
         ∫ t in a..b, 2 * Chebyshev.theta t / t ^ 3 := by
-  let c : ℕ → ℝ := fun n ↦ if n.Prime then Real.log n else 0
-  have hd (t : ℝ) (ht : t ≠ 0) :
-      deriv (fun u : ℝ ↦ (u ^ 2)⁻¹) t = -(2 / t ^ 3) := by
-    convert (((hasDerivAt_id' (x := t)).fun_pow 2).inv (pow_ne_zero 2 ht)).deriv using 1
+  have hd (t : ℝ) (ht : t ≠ 0) : HasDerivAt (fun u : ℝ ↦ (u ^ 2)⁻¹) (-(2 / t ^ 3)) t := by
+    convert ((hasDerivAt_id' (x := t)).fun_pow 2).inv (pow_ne_zero 2 ht) using 1
     field_simp
     ring
   have hi : IntervalIntegrable (fun t : ℝ ↦ -(2 / t ^ 3)) volume a b := by
@@ -101,33 +83,15 @@ theorem sum_primesLE_log_div_sq_eq {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
     intro t ht
     have : 0 < t := ha.trans_le ht.1
     fun_prop (disch := positivity)
-  have h := sum_mul_eq_sub_sub_integral_mul c ha.le hab
-    (f := fun t : ℝ ↦ (t ^ 2)⁻¹)
-    (fun t ht ↦ by
-      have : 0 < t := ha.trans_le ht.1
-      fun_prop (disch := positivity))
-    (by
-      rw [← intervalIntegrable_iff_integrableOn_Icc_of_le hab]
-      exact hi.congr (fun t ht ↦ (hd t (ne_of_gt (ha.trans_le
-        ((Set.uIoc_of_le hab) ▸ ht).1.le))).symm))
-  have hleft : ∑ n ∈ Ioc ⌊a⌋₊ ⌊b⌋₊, ((n : ℝ) ^ 2)⁻¹ * c n =
-      ∑ p ∈ (Nat.primesLE ⌊b⌋₊).filter (fun p : ℕ ↦ a < (p : ℝ)),
-        Real.log p / (p : ℝ) ^ 2 := by
-    rw [sum_Ioc_mul_ite_prime_eq_sum_filter_primesLE ha.le]
-    exact sum_congr rfl fun n _ ↦ by simp [div_eq_mul_inv, mul_comm]
-  rw [hleft, sum_prime_log_eq_theta, sum_prime_log_eq_theta,
-    ← intervalIntegral.integral_of_le hab] at h
-  have heq : (∫ t in a..b, deriv (fun u : ℝ ↦ (u ^ 2)⁻¹) t *
-      ∑ k ∈ Icc 0 ⌊t⌋₊, c k) = -(∫ t in a..b, 2 * Chebyshev.theta t / t ^ 3) := by
+  have h := sum_filter_primesLE_mul_log_eq_sub_sub_integral ha.le hab
+    (fun t ht ↦ (hd t (ha.trans_le ht.1).ne').continuousAt.continuousWithinAt)
+    (fun t ht ↦ hd t (ha.trans ht.1).ne') hi
+  have heq : (∫ t in a..b, -(2 / t ^ 3) * Chebyshev.theta t) =
+      -(∫ t in a..b, 2 * Chebyshev.theta t / t ^ 3) := by
     rw [← intervalIntegral.integral_neg]
-    apply intervalIntegral.integral_congr
-    intro t ht
-    dsimp only
-    rw [hd t (ne_of_gt (ha.trans_le ((Set.uIcc_of_le hab) ▸ ht).1)),
-      sum_prime_log_eq_theta]
-    ring
-  rw [h, heq]
-  ring
+    exact intervalIntegral.integral_congr fun t _ ↦ by ring
+  rw [heq, sub_neg_eq_add] at h
+  simpa only [div_eq_inv_mul] using h
 
 -- Integrability of the remainder in the partial-summation formula.
 private theorem intervalIntegrable_two_mul_theta_div_cube {a b : ℝ}
