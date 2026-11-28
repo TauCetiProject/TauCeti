@@ -30,6 +30,7 @@ We define the valuation spectrum `Spv A` following Wedhorn, *Adic Spaces*
   `φ : A →+* B`.
 * `TauCeti.ValuationSpectrum.supp v` : The support ideal `{a ∈ A | v(a) = 0}`.
 * `TauCeti.ValuationSpectrum.ofValuation_valuationSubring_valuation`,
+  `ValuationSubring.valuationSubring_valuation_ofValuation`,
   `TauCeti.ValuationSpectrum.ofValuation_comap_valuation`,
   `TauCeti.ValuationSpectrum.comap_ofValuation_valuation` and
   `TauCeti.ValuationSpectrum.valuationSubring_valuation_comap` : over a field, a point is the
@@ -905,3 +906,17 @@ end RationalOpenFinset
 end ValuationSpectrum
 
 end TauCeti
+
+namespace ValuationSubring
+
+open TauCeti.ValuationSpectrum
+
+/-- The valuation subring of the point of `Spv K` given by a valuation subring `O` of a field `K`
+is `O`. -/
+@[simp]
+theorem valuationSubring_valuation_ofValuation {K : Type*} [Field K] (O : ValuationSubring K) :
+    (ofValuation O.valuation).valuation.valuationSubring = O :=
+  ((Valuation.isEquiv_iff_valuationSubring _ _).mp
+    (isEquiv_valuation_ofValuation O.valuation)).trans O.valuationSubring_valuation
+
+end ValuationSubring

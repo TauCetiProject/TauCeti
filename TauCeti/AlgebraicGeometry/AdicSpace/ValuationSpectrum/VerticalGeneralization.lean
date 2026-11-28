@@ -32,6 +32,8 @@ such a quotient between values of elements of `A` is seen by `x`.
   is a generization of it.
 * `TauCeti.ValuationSpectrum.ofValuation_valuation_specializes_of_le`: for valuation subrings
   `W ⊆ O` of a field, the point of `O` is a generization of the point of `W`.
+* `TauCeti.ValuationSpectrum.ofValuation_valuation_specializes_iff`: conversely, over a field
+  this is the only way one such point specializes to another.
 * `TauCeti.ValuationSpectrum.comap_ofValuation_coarsenByUnits_eq`: a vertical generization of the
   pullback of `ofValuation w` is the pullback of a coarsening of `w`.
 * `TauCeti.ValuationSpectrum.exists_specializes_comap_eq`: vertical generizations lift along ring
@@ -69,6 +71,18 @@ theorem ofValuation_valuation_specializes_of_le {K : Type*} [Field K] {O W : Val
   rw [mem_basicOpen_iff, vle_ofValuation, vle_ofValuation, map_zero, nonpos_iff_eq_zero] at hfs ⊢
   rw [← W.mapOfLE_valuation_apply O h, ← W.mapOfLE_valuation_apply O h, map_eq_zero]
   exact ⟨W.monotone_mapOfLE O h hfs.1, hfs.2⟩
+
+/-- **Specialization of points of a field is reverse inclusion of valuation subrings.** For
+valuation subrings `O` and `W` of a field `K`, the point of `Spv K` given by `O` specializes to the
+point given by `W` exactly when `W ⊆ O`: an element `a ∈ W` puts the point of `W` in the basic open
+`{v(a) ≤ v(1) ≠ 0}`, which then contains the point of `O`. -/
+theorem ofValuation_valuation_specializes_iff {K : Type*} [Field K] {O W : ValuationSubring K} :
+    ofValuation O.valuation ⤳ ofValuation W.valuation ↔ W ≤ O := by
+  refine ⟨fun h a ha ↦ ?_, ofValuation_valuation_specializes_of_le⟩
+  have hle := vle_of_specializes h (f := a) (s := 1)
+    (by rw [vle_ofValuation, map_one, W.valuation_le_one_iff]; exact ha)
+    (by simp)
+  rwa [vle_ofValuation, map_one, O.valuation_le_one_iff] at hle
 
 /-- The set of units generating the convex subgroup by which `w` is coarsened: the quotients
 `w(φ c) / w(φ d) ≥ 1` with `x(c) = x(d) ≠ 0`. -/
