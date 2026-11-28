@@ -29,6 +29,8 @@ boundary is compact.
 * `TauCeti.isCompact_stdSimplexBoundary`: the relative boundary is compact.
 * `TauCeti.openStdSimplex`, `TauCeti.openStdSimplexFacet`: the open standard simplex (positive
   weights) and its open facets (one vanishing coordinate, all others positive).
+* `TauCeti.mem_openStdSimplex_iff_sum_eq_one`: for finitely many coordinates, the open standard
+  simplex consists of the vectors with positive coordinates summing to one.
 -/
 
 public section
@@ -111,6 +113,13 @@ theorem mem_openStdSimplex_iff [Preorder R] [AddCommMonoid R] [One R] {x : ι �
 theorem openStdSimplex_subset [Preorder R] [AddCommMonoid R] [One R] :
     openStdSimplex R ι ⊆ range fun s : StdSimplex R ι => ⇑s.weights :=
   fun _ hx => (mem_openStdSimplex_iff.mp hx).1
+
+/-- For finitely many coordinates, a vector lies in the open standard simplex if and only if its
+coordinates are positive and sum to one. -/
+theorem mem_openStdSimplex_iff_sum_eq_one [Fintype ι] [Preorder R] [AddCommMonoid R] [One R]
+    {x : ι → R} : x ∈ openStdSimplex R ι ↔ (∀ i, 0 < x i) ∧ ∑ i, x i = 1 := by
+  rw [mem_openStdSimplex_iff, StdSimplex.mem_range_toFun_comp_weights_iff]
+  exact ⟨fun ⟨⟨_, h1⟩, h⟩ => ⟨h, h1⟩, fun ⟨h, h1⟩ => ⟨⟨fun i => (h i).le, h1⟩, h⟩⟩
 
 /-- When `1 ≠ 0`, the open standard simplex on an empty index type is empty. -/
 @[simp]
