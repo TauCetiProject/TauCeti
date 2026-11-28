@@ -191,6 +191,22 @@ theorem map_lift_surjective {F : C ⥤ D} [F.Additive] (hF : GradedConflationExa
     rwa [ObjectProperty.essSurj_lift_iff, Functor.essImage_ι_comp]
   map_surjective _
 
+/-- The class of an explicitly presented ambient finite biproduct in the graded `K₀` of an
+extension-closed, shift-stable full subcategory is the sum of the classes of its summands. -/
+theorem of_biproduct_fullSubcategory {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
+    [HasBinaryBiproducts C] {E : GradedExactStructure C} {R : ObjectProperty C}
+    [EssentiallySmall.{w} R.FullSubcategory] [R.ContainsZero] [R.IsClosedUnderBinaryProducts]
+    (hR : E.toExactStructure.IsExtensionClosed R) (hRshift : R.inverseImage E.shift.functor = R)
+    {J : Type*} [Fintype J] (f : J → C) [HasBiproduct f] (hf : ∀ j, R (f j)) (hRf : R (⨁ f)) :
+    of.{w} (E.fullSubcategory R hR hRshift) ⟨⨁ f, hRf⟩ =
+      ∑ j, of.{w} (E.fullSubcategory R hR hRshift) ⟨f j, hf j⟩ := by
+  rw [← ofExactK0_exactK0_of,
+    ← ExactK0.ofLE_of (E := E.toExactStructure.fullSubcategory R hR)
+      (E'' := (E.fullSubcategory R hR hRshift).toExactStructure)
+      (fun _ hS => by rw [GradedExactStructure.fullSubcategory_toExactStructure]; exact hS),
+    ExactK0.of_biproduct_fullSubcategory hR f hf hRf, map_sum, map_sum]
+  simp_rw [ExactK0.ofLE_of, ofExactK0_exactK0_of]
+
 end LaurentK0
 
 end TauCeti

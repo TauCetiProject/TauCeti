@@ -29,6 +29,8 @@ theory.
   order.
 * `RootPairing.reflection_apply_eq_self_of_mem_corootKer`: every root reflection fixes `P.corootKer`
   pointwise.
+* `RootPairing.reflection_apply_eq_self_iff`: when `2` is not a zero divisor, a root reflection
+  fixes a weight exactly when its coroot vanishes on it.
 -/
 
 public section
@@ -92,5 +94,19 @@ theorem reflection_apply_eq_self_of_mem_corootKer {x : M} (hx : x ∈ P.corootKe
   rw [reflection_apply, mem_corootKer.mp hx i, zero_smul, sub_zero]
 
 end CorootKer
+
+variable {P : RootPairing ι R M N}
+
+/-- **A root reflection fixes a weight exactly when its coroot vanishes on it.** The vanishing is
+in general stronger than the fixed-point condition, which says only that `⟨x, α^∨⟩ • α = 0`; the
+two agree when `2` is not a zero divisor, as pairing with `α^∨` gives `2 ⟨x, α^∨⟩ = 0`. -/
+theorem reflection_apply_eq_self_iff [NeZero (2 : R)] [NoZeroDivisors R] {i : ι} {x : M} :
+    P.reflection i x = x ↔ P.coroot' i x = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [reflection_apply, h, zero_smul, sub_zero]⟩
+  rw [reflection_apply, sub_eq_self] at h
+  have h2 := congrArg (P.coroot' i) h
+  rw [map_smul, map_zero, root_coroot'_eq_pairing, pairing_same, smul_eq_mul,
+    mul_eq_zero] at h2
+  exact h2.resolve_right two_ne_zero
 
 end RootPairing

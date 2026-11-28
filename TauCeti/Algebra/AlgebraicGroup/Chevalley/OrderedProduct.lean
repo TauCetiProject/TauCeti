@@ -7,12 +7,13 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Primitive
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Scheme
 import TauCeti.Algebra.Group.Hom.Rational
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.OrderedProduct
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 
 /-!
-# Uniqueness of ordered root products for a Chevalley datum
+# Uniqueness and integral recovery of ordered root products for a Chevalley datum
 
 Over every commutative ring and for **any** Chevalley datum `D`, a product of distinct root
 elements in any fixed order determines all its parameters, provided all its roots have positive
@@ -32,6 +33,10 @@ The proof applies `list_prod_map_kostantRootSubgroupParam_inj` to the named all-
 Chevalley system, with a positive integral multiple of the degree. Thus no restriction on
 characteristic or reducedness is needed.
 
+With primitive root operators, every parameter belongs to any integral subalgebra containing
+the entries of the product. This supplies polynomial coordinate recovery for closed root-product
+charts without division or restrictions on the value ring.
+
 ## Main results
 
 * `TauCeti.DynkinType.ChevalleyDatum.list_prod_map_rootSubgroupPoints_inj_of_degree`: ordered
@@ -39,9 +44,13 @@ characteristic or reducedness is needed.
 * `TauCeti.DynkinType.ChevalleyDatum.list_prod_map_rootSubgroupPoints_inj`: an ordered product of
   distinct positive root elements of `D` determines its parameters over every commutative ring.
 
+* `TauCeti.DynkinType.ChevalleyDatum.parameters_mem_of_list_prod_rootSubgroupPoints_mem`:
+  integral recovery of the parameters from the matrix entries of their ordered product.
+
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 17.
+* J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 * R. W. Carter, *Simple Groups of Lie Type*, Theorem 5.3.3.
 -/
 
@@ -116,5 +125,58 @@ theorem list_prod_map_rootSubgroupPoints_inj (A : Type v) [CommRing A]
       ∀ γ ∈ l, u γ = v γ :=
   D.list_prod_map_rootSubgroupPoints_inj_of_degree A hl (t.weightDegree ht)
     fun _ hγ => t.weightDegree_root_pos ht (hpos _ hγ)
+
+/-- Every root parameter in a distinct-root ordered product of positive degree lies in
+any integral subalgebra containing the matrix entries of that product. -/
+theorem parameters_mem_of_list_prod_rootSubgroupPoints_mem
+    {A : Type*} [CommRing A] {l : List (Fin t.numRoots)} (hl : l.Nodup)
+    (degree : (Fin t.rank → ℤ) →+ ℚ)
+    (hdegree : ∀ γ ∈ l, 0 < degree ((t.simplyConnectedRootDatum ht).root γ))
+    (S : Subalgebra ℤ A) (u : Fin t.numRoots → A)
+    (hprod : ∀ r s,
+      (l.map fun γ ↦ ((D.rootSubgroupPoints γ A (Multiplicative.ofAdd (u γ)) :
+        Matrix.GeneralLinearGroup (Fin D.dim) A) :
+          Matrix (Fin D.dim) (Fin D.dim) A)).prod r s ∈ S) :
+    ∀ γ ∈ l, u γ ∈ S := by
+  obtain ⟨n, degreeℤ, hn, hdegreeℤ'⟩ := degree.exists_pos_nat_mul_eq_intCast
+  have hdegreeℤ (γ : Fin t.numRoots) (hγ : γ ∈ l) :
+      0 < degreeℤ ((t.simplyConnectedRootDatum ht).root γ) := by
+    have h := mul_pos (Nat.cast_pos.mpr hn : (0 : ℚ) < n) (hdegree γ hγ)
+    rw [hdegreeℤ'] at h
+    exact_mod_cast h
+  apply parameters_mem_of_list_prod_kostantRootSubgroupMatrix_mem
+    (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice
+    (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator)
+    (isNilpotent_apply_ι_chevalleySystem D.representation
+      D.isNilpotent_representation_rootGenerator)
+    (b := D.basis) (wt := D.weight) (α := (t.simplyConnectedRootDatum ht).root)
+    (degree := degreeℤ) D.isCartanWeightVector_basis
+    (hl.map (t.simplyConnectedRootDatum ht).root.injective)
+    (fun γ _ ↦ t.lie_lieBasis_h_chevalleySystem ht γ) hdegreeℤ ?_ S u ?_
+  · intro γ _
+    obtain ⟨m, w, hmw, hw⟩ := D.exists_isPrimitive_chevalleySystem_apply γ
+    refine ⟨m, ?_⟩
+    have heq : kostantRootOperator (t.chevalleySystem ht) (t.lieBasis ht).h
+        D.representation D.lattice
+        (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
+          D.representation_mem_lattice D.isNilpotent_representation_rootGenerator) γ m = w := by
+      apply Subtype.ext
+      simpa only [coe_kostantRootOperator_apply] using hmw
+    exact heq.symm ▸ hw
+  · have hroot (γ : Fin t.numRoots) :
+        kostantRootSubgroupMatrix (t.chevalleySystem ht) (t.lieBasis ht).h
+          D.representation D.lattice
+          (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
+            D.representation_mem_lattice D.isNilpotent_representation_rootGenerator)
+          γ (isNilpotent_apply_ι_chevalleySystem D.representation
+            D.isNilpotent_representation_rootGenerator γ) D.basis
+          ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
+            (Multiplicative.ofAdd (u γ))) =
+          (D.rootSubgroupPoints γ A (Multiplicative.ofAdd (u γ)) :
+            Matrix.GeneralLinearGroup (Fin D.dim) A) := by
+      rw [kostantRootSubgroupMatrix_eq_matrix_chevalleyRootSubgroup,
+        MulEquiv.apply_symm_apply, coe_rootSubgroupPoints]
+    simpa only [hroot] using hprod
 
 end TauCeti.DynkinType.ChevalleyDatum

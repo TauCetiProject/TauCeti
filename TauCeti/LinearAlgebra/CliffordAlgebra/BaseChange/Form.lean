@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.Matrix
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
@@ -29,6 +30,11 @@ commutes with `reverse`, and `ι(A^n)` is the `A`-span of the images of the coor
   combination of images of the coordinate vectors.
 * `CliffordAlgebra.baseChangeHom_mem_even`, `CliffordAlgebra.baseChangeHom_reverse`: it preserves
   the even part and commutes with `reverse`.
+* `CliffordAlgebra.baseChangeHom_self`, `CliffordAlgebra.baseChangeHom_baseChangeHom`:
+  functoriality in `A`. Over `A = R` it is the identity, and for a tower `R → A → B` the
+  composite `C(q) → C(q_A) → C((q_A)_B)` is `C(q) → C(q_B)`, both up to the identification of
+  equal forms (`QuadraticMap.IsometryEquiv.ofEq`), since `q_R = q` and `(q_A)_B = q_B` are
+  equalities of forms, not of types.
 -/
 
 public section
@@ -101,5 +107,36 @@ theorem baseChangeHom_reverse (x : CliffordAlgebra q) :
   | ι x => rw [reverse_ι, baseChangeHom_ι, reverse_ι]
   | mul x y hx hy => rw [reverse.map_mul, map_mul, map_mul, hx, hy, reverse.map_mul]
   | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- **Base change over `R` itself is the identity**, up to the identification of the equal
+forms `q` and `q_R`. -/
+theorem baseChangeHom_self (x : CliffordAlgebra q) :
+    baseChangeHom q R x =
+      equivOfIsometry (QuadraticMap.IsometryEquiv.ofEq (QuadraticForm.baseChangeForm_self q).symm)
+        x := by
+  rw [equivOfIsometry_apply]
+  refine AlgHom.congr_fun (CliffordAlgebra.hom_ext (LinearMap.ext fun m ↦ ?_)) x
+  simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, baseChangeHom_ι, map_apply_ι,
+    QuadraticMap.IsometryEquiv.toIsometry_apply, QuadraticMap.IsometryEquiv.ofEq_apply,
+    Algebra.algebraMap_self, RingHom.coe_id, Function.id_comp]
+
+/-- **Base change is transitive**: for a tower `R → A → B`, `C(q) → C(q_A) → C((q_A)_B)` is
+`C(q) → C(q_B)` followed by the identification of the equal forms `q_B` and `(q_A)_B`. -/
+theorem baseChangeHom_baseChangeHom (B : Type*) [CommRing B] [Algebra A B] [Algebra R B]
+    [IsScalarTower R A B] (x : CliffordAlgebra q) :
+    baseChangeHom (baseChangeForm q A) B (baseChangeHom q A x) =
+      equivOfIsometry (QuadraticMap.IsometryEquiv.ofEq
+        (QuadraticForm.baseChangeForm_baseChangeForm q A B).symm) (baseChangeHom q B x) := by
+  rw [equivOfIsometry_apply]
+  refine AlgHom.congr_fun (φ₁ := ((baseChangeHom (baseChangeForm q A) B).restrictScalars R).comp
+      (baseChangeHom q A))
+    (φ₂ := ((map (QuadraticMap.IsometryEquiv.ofEq
+      (QuadraticForm.baseChangeForm_baseChangeForm q A B).symm).toIsometry).restrictScalars R).comp
+        (baseChangeHom q B))
+    (CliffordAlgebra.hom_ext (LinearMap.ext fun m ↦ ?_)) x
+  simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, AlgHom.comp_apply,
+    AlgHom.restrictScalars_apply, baseChangeHom_ι, map_apply_ι,
+    QuadraticMap.IsometryEquiv.toIsometry_apply, QuadraticMap.IsometryEquiv.ofEq_apply,
+    IsScalarTower.algebraMap_eq R A B, RingHom.coe_comp, Function.comp_assoc]
 
 end CliffordAlgebra

@@ -9,13 +9,11 @@ public import Mathlib.NumberTheory.LSeries.HurwitzZeta
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
 import Mathlib.Analysis.Normed.Group.FunctionSeries
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.PSeries
-import TauCeti.Analysis.SpecialFunctions.Complex.Log.Bounds
+import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Continuity
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.DiscSeries
-import TauCeti.Analysis.SpecialFunctions.Polylogarithm.RadialIntegrand
 
 /-!
 # Polylogarithms on the closed unit disc and their zeta values
@@ -28,10 +26,9 @@ absolutely and uniformly there, boundary circle included. At `z = 1` this gives 
 duplication relation `Liₙ(z²) = 2 ^ (n - 1) (Liₙ(z) + Liₙ(-z))` holds on the whole closed disc;
 at `z = 1` it gives `Liₙ(-1) = (2 ^ (1 - n) - 1) ζ(n)`, in particular `Li₂(-1) = -π² / 12`.
 
-Continuity comes from the defining radial integral: on the closed disc the principal logarithm
-satisfies `‖Log (1 - t z)‖ ≤ -log (1 - t)` for `0 ≤ t < 1`, so the radial integrand at `z = 1`
-dominates the integrand at every `z` of the disc, and `1 - t z` stays in the right half-plane,
-where the principal logarithm is continuous. The disc series converges uniformly on the closed
+Continuity comes from unrestricted continuity off the open cut `(1, ∞)`
+(`TauCeti.Polylog.continuousAt_polylog`), since every point `z` of the
+closed unit disc satisfies `re z ≤ ‖z‖ ≤ 1`. The disc series converges uniformly on the closed
 disc by comparison with `∑ (k + 1) ^ (-n)`, so its sum is continuous there too. The two
 continuous functions agree on the open disc, hence on its closure.
 
@@ -40,8 +37,6 @@ logarithmic singularity of `Liₙ`.
 
 ## Main results
 
-* `TauCeti.Polylog.continuousOn_polylog_closedBall`: `polylog n` is continuous on
-  `Metric.closedBall 0 1` for `2 ≤ n`.
 * `TauCeti.Polylog.hasSum_polylog_of_norm_le_one` and
   `TauCeti.Polylog.hasSum_norm_polylog_of_norm_le_one`: the disc series converges, absolutely,
   to `polylog n z` for `‖z‖ ≤ 1`; `TauCeti.Polylog.polylog_eq_tsum_of_norm_le_one` is its `tsum`
@@ -70,58 +65,6 @@ open Filter MeasureTheory Metric Set
 open scoped Topology Real
 
 namespace TauCeti.Polylog
-
-private theorem continuousOn_polylog_nat_add_two_closedBall (k : ℕ) :
-    ContinuousOn (polylog (k + 2 : ℕ)) (closedBall 0 1) := by
-  let F : ℂ → ℝ → ℂ := fun z t ↦
-    ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - (t : ℂ) * z)) / (t : ℂ)
-  have hnorm {t : ℝ} (ht : 0 ≤ t) {z : ℂ} (hz : z ∈ closedBall (0 : ℂ) 1) :
-      ‖(t : ℂ) * z‖ ≤ t := by
-    rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg ht]
-    exact mul_le_of_le_one_right ht (mem_closedBall_zero_iff.mp hz)
-  have hcont : ContinuousOn (fun z ↦ ∫ t in (0 : ℝ)..1, F z t) (closedBall 0 1) := by
-    intro z₀ hz₀
-    refine intervalIntegral.continuousWithinAt_of_dominated_interval
-      (bound := fun t ↦ ‖F 1 t‖) ?_ ?_ (intervalIntegrable_radialIntegrand k 1).norm ?_
-    · exact Eventually.of_forall fun z ↦
-        (intervalIntegrable_iff.mp (intervalIntegrable_radialIntegrand k z)).aestronglyMeasurable
-    · -- Domination by the integrand at `z = 1`, for `0 < t < 1`.
-      filter_upwards [self_mem_nhdsWithin] with z hz
-      filter_upwards [Measure.ae_ne volume 1] with t ht1 ht
-      rw [uIoc_of_le zero_le_one] at ht
-      have ht0 : 0 < t := ht.1
-      have ht1' : t < 1 := lt_of_le_of_ne ht.2 ht1
-      have hreal : Complex.log (1 - t) = Real.log (1 - t) := by
-        rw [Complex.ofReal_log (by linarith), Complex.ofReal_sub, Complex.ofReal_one]
-      have hlog : ‖Complex.log (1 - t * z)‖ ≤ ‖Complex.log (1 - t)‖ := by
-        rw [hreal, Complex.norm_real, Real.norm_eq_abs,
-          abs_of_nonpos (Real.log_nonpos (by linarith) (by linarith))]
-        exact (Complex.norm_log_one_sub_le_neg_log_one_sub_norm
-          ((hnorm ht0.le hz).trans_lt ht1')).trans
-          (neg_le_neg (Real.log_le_log (by linarith) (by linarith [hnorm ht0.le hz])))
-      simp only [F, norm_div, norm_mul, norm_neg, mul_one]
-      gcongr
-    · -- Pointwise continuity: for `0 < t < 1`, `1 - t z₀` lies in the right half-plane.
-      filter_upwards [Measure.ae_ne volume 1] with t ht1 ht
-      rw [uIoc_of_le zero_le_one] at ht
-      have hslit : 1 - (t : ℂ) * z₀ ∈ Complex.slitPlane := by
-        refine Complex.mem_slitPlane_iff.mpr (Or.inl ?_)
-        have hre := (Complex.re_le_norm ((t : ℂ) * z₀)).trans (hnorm ht.1.le hz₀)
-        rw [Complex.sub_re, Complex.one_re]
-        linarith [lt_of_le_of_ne ht.2 ht1]
-      have hlog : ContinuousAt (fun z ↦ Complex.log (1 - (t : ℂ) * z)) z₀ :=
-        (continuousAt_const.sub (continuousAt_const.mul continuousAt_id)).clog hslit
-      exact (continuousAt_const.mul hlog.neg).div_const _ |>.continuousWithinAt
-  have hpoly : polylog (k + 2 : ℕ) = fun z ↦ (Nat.factorial k : ℂ)⁻¹ * ∫ t in (0 : ℝ)..1, F z t :=
-    funext (polylog_nat_add_two k)
-  rw [hpoly]
-  exact continuousOn_const.mul hcont
-
-/-- For every integer weight `n ≥ 2`, `polylog n` is continuous on the closed unit disc. -/
-theorem continuousOn_polylog_closedBall {n : ℤ} (hn : 2 ≤ n) :
-    ContinuousOn (polylog n) (closedBall 0 1) := by
-  obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = (k + 2 : ℕ) := ⟨(n - 2).toNat, by omega⟩
-  exact continuousOn_polylog_nat_add_two_closedBall k
 
 /-- **Closed-disc series of the polylogarithm.** For every integer weight `n ≥ 2` and every `z`
 in the closed unit disc `‖z‖ ≤ 1`, the series `∑_{k ≥ 0} z ^ (k + 1) / (k + 1) ^ n` converges to

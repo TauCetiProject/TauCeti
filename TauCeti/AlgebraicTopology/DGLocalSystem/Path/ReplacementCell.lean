@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Cell
+public import TauCeti.AlgebraicTopology.Singular.Fibration.Cubical.Skeleton
 public import TauCeti.Topology.PathSpace.Moore.CornerPaths
 public import TauCeti.Topology.PathSpace.Moore.Replacement.Pullback
 
@@ -57,6 +58,18 @@ homology of `(P, ∂P)`:
 `TauCeti.isCubicalRepresentative_cellReplacementPullbackHomologyEquiv`), where the `j`-th chain is
 pushed forward along the append map of the radial paths of `j` (`TauCeti.cellAppendSection`).
 
+The pair `(P, ∂P)` computes the quotients of the skeletal filtration of the chains on `E'`, the
+filtration by the chains supported over the preimages of the skeleta of `C` under the end point
+map, whose spectral sequence is the Serre spectral sequence of `E' → B`. Since `E' → B` is a
+Hurewicz fibration, pushing chains forward along the projection `P → E'` is a quasi-isomorphism
+from `C_*(P, ∂P)` onto the quotient of the chains over the `n`-skeleton by those over the
+`(n - 1)`-skeleton (`TauCeti.MooreReplacement.exists_add_differential_sub_mem_preimageSkeleton`),
+written on chains: every relative cycle is a relative boundary. Together with the computation of
+`H_*(P, ∂P)` above, this is the cell-by-cell input of the comparison between the twisted complex
+of a Brown model with coefficients in the chains of `F'_b` and the chains of `E'`, which
+`BrownModel.exists_coefficientDifferential_eq_and_fibrationComparison_add_eq_of_forall_exists`
+(in the namespace `TauCeti`) reduces to the quotients of the skeletal filtrations.
+
 For the inclusion of the point `b`, `E'` is the space of Moore paths from `b` and `F'_b` the space
 of Moore loops at `b`, and these are the computations
 `TauCeti.MoorePathPullback.cubicalHomologyCubeBoundaryEquiv` and
@@ -86,6 +99,9 @@ concatenation in front.
   `n`-cells is the disjoint union of the pullbacks over the single cells.
 * `TauCeti.isCubicalRepresentative_cellReplacementPullbackHomologyEquiv`: for a cycle `z` of `F'_b`,
   the chain `append_*(z × [Iᵐ⁺¹])ⱼ` represents the image of `[z]` in the summand of the cell `j`.
+* `TauCeti.MooreReplacement.exists_add_differential_sub_mem_preimageSkeleton`: the projection
+  from `(P, ∂P)` is a quasi-isomorphism onto the quotient of consecutive stages of the skeletal
+  filtration of the chains on `E'`.
 
 ## References
 
@@ -327,5 +343,70 @@ theorem isCubicalRepresentative_cellReplacementPullbackHomologyEquiv (q : ℕ) (
 end Homology
 
 end Cells
+
+/-! ### The skeletal filtration of the chains on the Moore-path replacement -/
+
+section SkeletalFiltration
+
+universe u
+
+variable {E B : Type u} [TopologicalSpace E] [TopologicalSpace B] [T2Space B] (p : C(E, B))
+  {C D : Set B} [RelCWComplex C D] {R : Type u} [CommRing R] (H : Type*)
+
+/-- The pullback of the Moore-path replacement to the disks of the `n`-cells, as the pullback
+`TauCeti.TopCat.cellPullback` of the end point map in `TopCat`. Both are the subtype of the
+product of the disks with `E'` cut out by the same equation, so this is the identity on the
+underlying pairs. -/
+private def cellReplacementPullbackHomeomorph (n : ℕ) :
+    MooreReplacementPullback p (sigmaCellMap C n) ≃ₜ
+      TopCat.cellPullback (_root_.TopCat.ofHom (endpoint p)) C n :=
+  Homeomorph.subtype (Homeomorph.refl _) fun _ ↦ Iff.rfl
+
+omit [T2Space B] in
+/-- `cellReplacementPullbackHomeomorph` is the identity on the underlying pairs. -/
+private theorem val_cellReplacementPullbackHomeomorph (n : ℕ)
+    (z : MooreReplacementPullback p (sigmaCellMap C n)) :
+    (cellReplacementPullbackHomeomorph p (C := C) n z).val = z.val :=
+  (rfl)
+
+variable {p H} in
+/-- **The quotients of the skeletal filtration of the chains on the Moore-path replacement are
+computed over the cells.** Let `E'` be the total space of the Moore-path replacement of `p`, `P` the
+pullback of its end point map `E' → B` along the characteristic maps of the `n`-cells and `∂P` its
+part over the boundary spheres, the pair `TauCeti.cellReplacementPullbackPair`. Pushing chains
+forward along the projection `P → E'` is a quasi-isomorphism from the relative chains `C_*(P, ∂P)`
+onto the quotient of the chains of `E'` supported over the `n`-skeleton by those supported over the
+`(n - 1)`-skeleton, in the following form: if `x` is a chain of `P` whose boundary lies over the
+spheres and `y` a chain over the `n`-skeleton such that the push-forward of `x` minus the boundary
+of `y` lies over the `(n - 1)`-skeleton, then `x` is the boundary of a chain `u` modulo the chains
+over the spheres, and `y` is the push-forward of `u` plus the boundary of a chain `v` over the
+`n`-skeleton, modulo the `(n - 1)`-skeleton. -/
+theorem MooreReplacement.exists_add_differential_sub_mem_preimageSkeleton {n : ℕ}
+    {x : cubicalChainModule (MooreReplacementPullback p (sigmaCellMap C n)) H R}
+    {y : cubicalChainModule (MooreReplacement p) H R}
+    (hx : cubicalChainModuleDifferential _ H R x ∈ cubicalChainModuleSupportedIn H R
+      (pullbackFst ⇑(sigmaCellMap C n) ⇑(endpoint p) ⁻¹' {q | ‖(q.2 : Fin n → ℝ)‖ = 1}))
+    (hy : y ∈ cubicalChainModuleSupportedIn H R (preimageSkeleton C (endpoint p) n))
+    (hxy : cubicalChainModuleLinearMap R (pullbackSnd ⇑(sigmaCellMap C n) ⇑(endpoint p)) x -
+        cubicalChainModuleDifferential _ H R y ∈
+      cubicalChainModuleSupportedIn H R (preimageSkeleton C (endpoint p) (n - 1))) :
+    ∃ (u : cubicalChainModule (MooreReplacementPullback p (sigmaCellMap C n)) H R)
+      (v : cubicalChainModule (MooreReplacement p) H R),
+      v ∈ cubicalChainModuleSupportedIn H R (preimageSkeleton C (endpoint p) n) ∧
+        cubicalChainModuleDifferential _ H R u - x ∈ cubicalChainModuleSupportedIn H R
+          (pullbackFst ⇑(sigmaCellMap C n) ⇑(endpoint p) ⁻¹' {q | ‖(q.2 : Fin n → ℝ)‖ = 1}) ∧
+        cubicalChainModuleLinearMap R (pullbackSnd ⇑(sigmaCellMap C n) ⇑(endpoint p)) u +
+            cubicalChainModuleDifferential _ H R v - y ∈
+          cubicalChainModuleSupportedIn H R (preimageSkeleton C (endpoint p) (n - 1)) :=
+  TopCat.exists_add_differential_sub_mem_preimageSkeleton H
+    (isHurewiczFibration_endpoint.{0} p).mem_serreFibrations
+    (cellReplacementPullbackHomeomorph p n) (pullbackSnd _ _)
+    (fun z ↦ by rw [val_cellReplacementPullbackHomeomorph, coe_pullbackSnd, Function.Pullback.snd])
+    (fun z ↦ by
+      rw [Set.mem_preimage, coe_pullbackFst, val_cellReplacementPullbackHomeomorph,
+        Function.Pullback.fst, Set.mem_ofPred_eq])
+    hx hy hxy
+
+end SkeletalFiltration
 
 end TauCeti

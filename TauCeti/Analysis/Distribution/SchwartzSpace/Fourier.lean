@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.LpSpace
+public import TauCeti.Analysis.Distribution.SchwartzSpace.Dilation
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
@@ -59,6 +60,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 
 ## Main declarations
 
+* `SchwartzMap.fourier_dilate_apply`: the Fourier transform of a nonzero scalar dilation is
+  `|c ^ d|⁻¹ • 𝓕 f (c⁻¹ • y)` in dimension `d`, via `TauCeti.fourier_comp_smul`.
 * `SchwartzMap.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
 * `SchwartzMap.fourier_fourierMultiplierCLM_apply`: on the Fourier side a Fourier multiplier is
   multiplication by its symbol.
@@ -750,5 +753,17 @@ theorem sum_sum_norm_toLp_lineDerivOp_lineDerivOp_sq {ι : Type*} [Fintype ι]
     simp_rw [mul_pow, ← Finset.mul_sum, ← Finset.sum_mul, b.sum_sq_inner_left, sq]
   simp only [fourier_lineDerivOp_lineDerivOp_apply, fourier_laplacian_apply, norm_smul,
     mul_pow, Real.norm_eq_abs, sq_abs, ← hsum, Finset.mul_sum, Finset.sum_mul]
+
+end SchwartzMap
+
+namespace SchwartzMap
+
+/-- In finite dimension, dilation by `c ≠ 0` rescales the Fourier argument by `c⁻¹`
+and the value by the inverse absolute determinant of the dilation. -/
+theorem fourier_dilate_apply {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    [NormedAddCommGroup F] [NormedSpace ℂ F] (f : 𝓢(E, F)) {c : ℝ} (hc : c ≠ 0) (y : E) :
+    𝓕 (f.dilate hc) y = |c ^ Module.finrank ℝ E|⁻¹ • 𝓕 f (c⁻¹ • y) := by
+  rw [fourier_coe, f.coe_dilate, TauCeti.fourier_comp_smul, ← fourier_coe]
 
 end SchwartzMap

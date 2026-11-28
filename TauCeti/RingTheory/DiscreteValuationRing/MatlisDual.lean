@@ -8,42 +8,28 @@ module
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.OrderOfVanishing.Noetherian
-public import TauCeti.Algebra.Module.Injective.Cogenerator.Basic
 public import TauCeti.LinearAlgebra.Matrix.RowLattice
 public import TauCeti.RingTheory.DiscreteValuationRing.Length
-import TauCeti.Algebra.Module.Injective.PrincipalIdealRing
-import TauCeti.Algebra.Module.Submodule.LinearMap
+public import TauCeti.RingTheory.MatlisDuality.PrincipalIdealRing
 
 /-!
 # Matlis duality over a discrete valuation ring and lengths of orthogonals in `(K/O)ⁿ`
 
-Let `O` be a discrete valuation ring with fraction field `K`. The module `K/O` is injective
-over `O`, and `Hom_O(O/𝔪, K/O)` is simple, so `Hom_O(-, K/O)` preserves lengths
-(`TauCeti.length_linearMap_of_forall_isMaximal`). Applied to quotients of `Oⁿ`, this computes
-the length of the orthogonal in `(K/O)ⁿ` of a submodule `R ⊆ Oⁿ` under the pairing
+Let `O` be a discrete valuation ring with fraction field `K`. Matlis duality over a principal
+ideal domain (`TauCeti.length_linearMap_fractionRing_quotient`) shows that `Hom_O(-, K/O)`
+preserves lengths; over `O`, `Hom_O(O/a, K/O)` has length `v(a)`. Applied to quotients of `Oⁿ`,
+this computes the length of the orthogonal in `(K/O)ⁿ` of a submodule `R ⊆ Oⁿ` under the pairing
 `⟨v, u⟩ = ∑ i, v i • u i` (Mathlib's `Submodule.orthogonalBilin` for
 `(Fintype.bilinearCombination O O).flip`): it is the colength of `R`. For the span of
 the rows of a square matrix `M` the orthogonal is the kernel of `M` acting on `(K/O)ⁿ`, and its
 length is the valuation of `det M`, both infinite when `det M = 0`.
 
-## Main definitions
-
-* `IsDiscreteValuationRing.divQuotient`: division by `a`, the map `O/a → K/O`, `t ↦ t/a`.
-* `IsDiscreteValuationRing.quotientEquivTorsionBySet`: for `a ≠ 0`, the identification of `O/a`
-  with the elements of `K/O` killed by `a`.
-* `IsDiscreteValuationRing.linearMapQuotientSpanEquivFractionRingQuotient`: for `a ≠ 0` and an
-  `O`-module `Q` killed by `a`, the identification `Hom_O(Q, O/a) ≃ₗ[O] Hom_O(Q, K/O)`.
-
 ## Main results
 
-* `IsDiscreteValuationRing.divQuotient_injective`, `IsDiscreteValuationRing.range_divQuotient`:
-  for `a ≠ 0`, division by `a` is injective with image the `a`-torsion of `K/O`.
 * `IsDiscreteValuationRing.length_linearMap_quotient_span_singleton`: for `a ≠ 0`,
   `Hom_O(O/a, K/O)` has length `v(a)`.
-* `IsDiscreteValuationRing.length_linearMap_fractionRing_quotient`: `Hom_O(M, K/O)` has the
-  length of `M`, for every `O`-module `M` (Matlis duality over a discrete valuation ring).
-* `IsDiscreteValuationRing.length_linearMap_quotient_span_singleton_right`: for `a ≠ 0` and an
-  `O`-module `Q` killed by `a`, `Hom_O(Q, O/a)` has the length of `Q`.
+* `IsDiscreteValuationRing.length_torsionBy_quotient_span_singleton_le`: the elements of `O/a`
+  killed by `c` form a module of length at most `v(c)`.
 * `IsDiscreteValuationRing.length_orthogonalBilin`: the orthogonal of `R ⊆ Oⁿ` in `(K/O)ⁿ` has
   length `length_O (Oⁿ/R)`.
 * `Matrix.length_ker_eq_addVal_det`: the kernel of a square matrix `M` acting on `(K/O)ⁿ` has
@@ -79,157 +65,44 @@ universe u v
 variable {O : Type u} {K : Type v} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
   [Field K] [Algebra O K] [IsFractionRing O K]
 
-/-- Division by `a`, the functional `O/a → K/O` sending the class of `t` to the class of `t/a`.
-For `a ≠ 0` it identifies `O/a` with the elements of `K/O` killed by `a`
-(`IsDiscreteValuationRing.quotientEquivTorsionBySet`). -/
-noncomputable def divQuotient (a : O) :
-    O ⧸ Ideal.span {a} →ₗ[O] K ⧸ range (Algebra.linearMap O K) :=
-  (Ideal.span {a}).liftQ
-    ((range (Algebra.linearMap O K)).mkQ ∘ₗ toSpanSingleton O K (algebraMap O K a)⁻¹)
-    (by
-      rw [Ideal.span_singleton_le_iff_mem, mem_ker, comp_apply, Submodule.mkQ_apply,
-        Submodule.Quotient.mk_eq_zero]
-      rcases eq_or_ne a 0 with rfl | ha
-      · simp
-      · exact ⟨1, by simp [Algebra.smul_def, IsFractionRing.to_map_eq_zero_iff.not.2 ha]⟩)
-
-omit [IsDomain O] [IsDiscreteValuationRing O] in
-@[simp]
-theorem divQuotient_mk (a t : O) :
-    divQuotient (K := K) a (Ideal.Quotient.mk (Ideal.span {a}) t) =
-      Submodule.Quotient.mk (t • (algebraMap O K a)⁻¹) := by
-  rw [← Ideal.Quotient.mk_eq_mk, divQuotient, Submodule.liftQ_apply, comp_apply,
-    toSpanSingleton_apply, Submodule.mkQ_apply]
-
-omit [IsDiscreteValuationRing O] in
-/-- For `a ≠ 0`, `divQuotient a` identifies `O/a` with the elements of `K/O` killed by `a`. -/
-noncomputable def quotientEquivTorsionBySet {a : O} (ha : a ≠ 0) :
-    (O ⧸ Ideal.span {a}) ≃ₗ[O]
-      Submodule.torsionBySet O (K ⧸ range (Algebra.linearMap O K)) (Ideal.span {a}) := by
-  have ha' : algebraMap O K a ≠ 0 := IsFractionRing.to_map_eq_zero_iff.not.2 ha
-  -- The field identity behind all three steps: `a * (t / a) = t` in `K`.
-  have hdiv (t : O) : algebraMap O K a * (t • (algebraMap O K a)⁻¹) = algebraMap O K t := by
-    rw [Algebra.smul_def]
-    field_simp
-  have htors : Submodule.torsionBySet O (K ⧸ range (Algebra.linearMap O K)) (Ideal.span {a}) =
-      Submodule.torsionBy O _ a :=
-    Submodule.torsionBySet_span_singleton_eq a
-  refine LinearEquiv.ofBijective ((divQuotient a).codRestrict _ fun x ↦ ?_) ⟨?_, ?_⟩
-  · rw [htors, Submodule.mem_torsionBy_iff]
-    induction x using Submodule.Quotient.induction_on with | _ t =>
-    rw [Ideal.Quotient.mk_eq_mk, divQuotient_mk, ← Submodule.Quotient.mk_smul,
-      Submodule.Quotient.mk_eq_zero]
-    exact ⟨t, by rw [Algebra.linearMap_apply, Algebra.smul_def a, hdiv]⟩
-  · rw [← LinearMap.ker_eq_bot, LinearMap.ker_codRestrict, eq_bot_iff]
-    intro r hr
-    induction r using Submodule.Quotient.induction_on with | _ r =>
-    rw [mem_ker, Ideal.Quotient.mk_eq_mk, divQuotient_mk, Submodule.Quotient.mk_eq_zero] at hr
-    obtain ⟨s, hs⟩ := hr
-    rw [Submodule.mem_bot, Submodule.Quotient.mk_eq_zero, Ideal.mem_span_singleton]
-    refine ⟨s, IsFractionRing.injective O K ?_⟩
-    rw [Algebra.linearMap_apply] at hs
-    rw [map_mul, hs, hdiv]
-  · rintro ⟨x, hx⟩
-    rw [htors, Submodule.mem_torsionBy_iff] at hx
-    obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ x
-    rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at hx
-    obtain ⟨r, hr⟩ := hx
-    rw [Algebra.linearMap_apply] at hr
-    refine ⟨Submodule.Quotient.mk r, Subtype.ext ?_⟩
-    rw [LinearMap.codRestrict_apply, Ideal.Quotient.mk_eq_mk, divQuotient_mk]
-    refine congrArg Submodule.Quotient.mk (mul_left_cancel₀ ha' ?_)
-    rw [hdiv, hr, Algebra.smul_def]
-
-omit [IsDomain O] [IsDiscreteValuationRing O] in
-@[simp]
-theorem coe_quotientEquivTorsionBySet_apply_mk {a : O} (ha : a ≠ 0) (t : O) :
-    (quotientEquivTorsionBySet (K := K) ha (Ideal.Quotient.mk (Ideal.span {a}) t) :
-      K ⧸ range (Algebra.linearMap O K)) =
-      Submodule.Quotient.mk (t • (algebraMap O K a)⁻¹) :=
-  divQuotient_mk a t
-
-omit [IsDiscreteValuationRing O] in
-/-- For `a ≠ 0` and an `O`-module `Q` killed by `a`, `divQuotient a` induces an equivalence
-`Hom_O(Q, O ⧸ Ideal.span {a}) ≃ₗ[O] Hom_O(Q, K ⧸ O)`. -/
-noncomputable def linearMapQuotientSpanEquivFractionRingQuotient
-    {Q : Type*} [AddCommMonoid Q] [Module O Q] {a : O} (ha : a ≠ 0) (h : ∀ x : Q, a • x = 0) :
-    (Q →ₗ[O] O ⧸ Ideal.span {a}) ≃ₗ[O] (Q →ₗ[O] K ⧸ range (Algebra.linearMap O K)) :=
-  (LinearEquiv.congrRight (quotientEquivTorsionBySet (K := K) ha)).trans
-    (Submodule.linearMapSubtypeEquiv O _ fun ψ x ↦ by
-      rw [Submodule.torsionBySet_span_singleton_eq, Submodule.mem_torsionBy_iff,
-        ← map_smul, h, map_zero])
-
-omit [IsDomain O] [IsDiscreteValuationRing O] in
-@[simp]
-theorem linearMapQuotientSpanEquivFractionRingQuotient_apply
-    {Q : Type*} [AddCommMonoid Q] [Module O Q] {a : O} (ha : a ≠ 0) (h : ∀ x : Q, a • x = 0)
-    (φ : Q →ₗ[O] O ⧸ Ideal.span {a}) (x : Q) :
-    linearMapQuotientSpanEquivFractionRingQuotient (K := K) ha h φ x =
-      divQuotient (K := K) a (φ x) := by
-  simp [linearMapQuotientSpanEquivFractionRingQuotient]
-  rfl
-
-omit [IsDomain O] [IsDiscreteValuationRing O] in
-/-- `quotientEquivTorsionBySet` is division by `a`. -/
-theorem coe_quotientEquivTorsionBySet_apply {a : O} (ha : a ≠ 0) (x : O ⧸ Ideal.span {a}) :
-    (quotientEquivTorsionBySet (K := K) ha x : K ⧸ range (Algebra.linearMap O K)) =
-      divQuotient a x :=
-  (rfl)
-
-omit [IsDomain O] [IsDiscreteValuationRing O] in
-/-- For `a ≠ 0`, division by `a`, `O/a → K/O`, is injective. -/
-theorem divQuotient_injective {a : O} (ha : a ≠ 0) :
-    Function.Injective (divQuotient (K := K) a) := fun x y h ↦
-  (quotientEquivTorsionBySet (K := K) ha).injective <| Subtype.ext <| by
-    rwa [coe_quotientEquivTorsionBySet_apply, coe_quotientEquivTorsionBySet_apply]
-
-omit [IsDomain O] [IsDiscreteValuationRing O] in
-/-- For `a ≠ 0`, the image of division by `a`, `O/a → K/O`, is the `a`-torsion of `K/O`. -/
-theorem range_divQuotient {a : O} (ha : a ≠ 0) :
-    range (divQuotient (K := K) a) =
-      Submodule.torsionBy O (K ⧸ range (Algebra.linearMap O K)) a := by
-  rw [← Submodule.torsionBySet_span_singleton_eq]
-  ext y
-  refine ⟨?_, fun hy ↦ ⟨(quotientEquivTorsionBySet ha).symm ⟨y, hy⟩, ?_⟩⟩
-  · rintro ⟨x, rfl⟩
-    rw [← coe_quotientEquivTorsionBySet_apply ha]
-    exact (quotientEquivTorsionBySet ha x).property
-  · rw [← coe_quotientEquivTorsionBySet_apply ha, LinearEquiv.apply_symm_apply]
-
 /-- For `a ≠ 0`, `Hom_O(O/a, K/O)` has length `v(a)`. -/
 theorem length_linearMap_quotient_span_singleton {a : O} (ha : a ≠ 0) :
     Module.length O (O ⧸ Ideal.span {a} →ₗ[O] K ⧸ range (Algebra.linearMap O K)) =
       addVal O a := by
   rw [((Ideal.span {a}).quotientLinearMapEquivTorsionBySet _).length_eq,
-    ← (quotientEquivTorsionBySet ha).length_eq, ← Ring.ord, Ring.ord_eq_addVal]
-
-/-- `Hom_O(O/𝔪, K/O)` is simple: `K/O` is an injective hull of the residue field. -/
-theorem length_linearMap_quotient_maximalIdeal :
-    Module.length O
-      (O ⧸ IsLocalRing.maximalIdeal O →ₗ[O] K ⧸ range (Algebra.linearMap O K)) = 1 := by
-  obtain ⟨ϖ, hϖ⟩ := exists_irreducible O
-  rw [hϖ.maximalIdeal_eq, length_linearMap_quotient_span_singleton hϖ.ne_zero,
-    addVal_uniformizer hϖ]
-
-/-- **Matlis duality over a discrete valuation ring.** `Hom_O(M, K/O)` has the length of `M`,
-for every `O`-module `M`: `K/O` is injective, and `Hom_O(O/𝔪, K/O)` has length one. -/
-theorem length_linearMap_fractionRing_quotient (M : Type*) [AddCommGroup M] [Module O M] :
-    Module.length O (M →ₗ[O] K ⧸ range (Algebra.linearMap O K)) = Module.length O M := by
-  have : FaithfulSMul O K := (faithfulSMul_iff_algebraMap_injective O K).2
-    (IsFractionRing.injective O K)
-  have : Small.{v} O := small_of_injective (IsFractionRing.injective O K)
-  refine TauCeti.length_linearMap_of_forall_isMaximal (fun 𝔪 h𝔪 ↦ ?_) M
-  rw [IsLocalRing.eq_maximalIdeal h𝔪]
-  exact length_linearMap_quotient_maximalIdeal
+    ← (TauCeti.quotientEquivTorsionBySet ha).length_eq, ← Ring.ord, Ring.ord_eq_addVal]
 
 omit [Field K] [Algebra O K] [IsFractionRing O K] in
-/-- For an `O`-module `Q` killed by `a ≠ 0`, `Hom_O(Q, O ⧸ Ideal.span {a})` has the same length as
-`Q`. -/
-theorem length_linearMap_quotient_span_singleton_right
-    {Q : Type*} [AddCommGroup Q] [Module O Q] {a : O} (ha : a ≠ 0) (h : ∀ x : Q, a • x = 0) :
-    Module.length O (Q →ₗ[O] O ⧸ Ideal.span {a}) = Module.length O Q := by
-  rw [(linearMapQuotientSpanEquivFractionRingQuotient (K := FractionRing O) ha h).length_eq,
-    length_linearMap_fractionRing_quotient (K := FractionRing O)]
+/-- The elements of `O ⧸ (a)` killed by `c` form a module of length at most `v(c)`. -/
+theorem length_torsionBy_quotient_span_singleton_le (a c : O) :
+    Module.length O (Submodule.torsionBy O (O ⧸ Ideal.span {a}) c) ≤ addVal O c := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  rcases eq_or_ne a 0 with rfl | ha
+  · -- `O ⧸ (0)` has no nonzero element killed by `c ≠ 0`.
+    refine (Module.length_eq_zero_iff.2 ⟨fun x y ↦ ?_⟩).trans_le zero_le
+    have h (w : Submodule.torsionBy O (O ⧸ Ideal.span {(0 : O)}) c) : w = 0 := by
+      obtain ⟨w, hw⟩ := w
+      obtain ⟨t, rfl⟩ := Ideal.Quotient.mk_surjective w
+      simp [Algebra.smul_def, ← map_mul, Ideal.Quotient.eq_zero_iff_mem, hc] at hw
+      ext
+      simp [hw]
+    rw [h x, h y]
+  -- `O ⧸ (a)` embeds in `K/O`, whose elements killed by `c` form a copy of `O ⧸ (c)`.
+  let K := FractionRing O
+  let ι : O ⧸ Ideal.span {a} →ₗ[O] K ⧸ range (Algebra.linearMap O K) :=
+    Submodule.subtype _ ∘ₗ (TauCeti.quotientEquivTorsionBySet (K := K) ha).toLinearMap
+  have hι : Function.Injective ι := Subtype.val_injective.comp (LinearEquiv.injective _)
+  have hmaps : ∀ x ∈ Submodule.torsionBy O _ c, ι x ∈ Submodule.torsionBy O _ c := fun x hx ↦ by
+    rw [Submodule.mem_torsionBy_iff] at hx ⊢
+    rw [← map_smul, hx, map_zero]
+  calc Module.length O (Submodule.torsionBy O (O ⧸ Ideal.span {a}) c)
+      ≤ Module.length O (Submodule.torsionBy O (K ⧸ range (Algebra.linearMap O K)) c) :=
+        Module.length_le_of_injective (ι.restrict hmaps) fun x y hxy ↦
+          Subtype.ext (hι congr(Subtype.val $hxy))
+    _ = addVal O c := by
+        rw [← Submodule.torsionBySet_span_singleton_eq,
+          ← (TauCeti.quotientEquivTorsionBySet hc).length_eq, ← Ring.ord, Ring.ord_eq_addVal]
 
 variable {ι : Type*} [Fintype ι]
 
@@ -240,7 +113,8 @@ theorem length_orthogonalBilin (R : Submodule O (ι → O)) :
         (Fintype.bilinearCombination O O (M := K ⧸ range (Algebra.linearMap O K))).flip) =
       Module.length O ((ι → O) ⧸ R) := by
   classical
-  rw [(R.orthogonalPiEquiv _).length_eq, length_linearMap_fractionRing_quotient]
+  rw [(R.orthogonalPiEquiv _).length_eq,
+    TauCeti.length_linearMap_fractionRing_quotient (not_isField O)]
 
 end IsDiscreteValuationRing
 

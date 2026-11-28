@@ -58,13 +58,19 @@ integration-by-parts arguments:
   integrability.
 * `MeasureTheory.Lp.sum_smul` and `MeasureTheory.Lp.smul_sum`: the heterogeneous scalar
   multiplication `Lᵖ × L^q → Lʳ` distributes over finite sums in each factor.
+* `MeasureTheory.Lp.lpSMul_comm`, `MeasureTheory.Lp.lpSMulₗ`, `MeasureTheory.Lp.tendsto_lpSMul`,
+  and `MeasureTheory.Lp.continuous_lpSMul`: commutativity over a commutative normed ring, bilinear
+  map packaging, and joint continuity of heterogeneous `Lp` scalar multiplication.
 * `MeasureTheory.MemLp.toLp_smul_toLp`: the product of the classes of `f` and `g` is the class of
   `f • g`; `MeasureTheory.Lp.one_smul`: the constant one of `L^∞` acts trivially.
+* `MeasureTheory.Lp.smul_eq_smul_of_ae_eq`: products of almost everywhere equal factors agree,
+  even across different Hölder triples with the same target exponent.
 -/
 
 public section
 
-open scoped ENNReal
+open Filter
+open scoped ENNReal Topology
 
 namespace MeasureTheory.MemLp
 
@@ -283,6 +289,56 @@ protected theorem smul_sum (s : Finset ι) (f : Lp 𝕜 p μ) (g : ι → Lp E q
   | empty => simp
   | insert i s hi ih => rw [Finset.sum_insert hi, Finset.sum_insert hi, Lp.add_smul, ih]
 
+/-- When `R` is a commutative normed ring, the heterogeneous `Lp` product is commutative:
+`(f • g : Lp R r μ) = g • f` for `f ∈ Lᵖ` and `g ∈ L^q` with `1/p + 1/q = 1/r`. -/
+theorem lpSMul_comm {R : Type*} [NormedCommRing R] (f : Lp R p μ) (g : Lp R q μ) :
+    (f • g : Lp R r μ) = g • f := by
+  ext
+  filter_upwards [coeFn_lpSMul (r := r) f g, coeFn_lpSMul (r := r) g f] with x h₁ h₂
+  simp [h₁, h₂, mul_comm]
+
+/-- Heterogeneous `Lp` scalar multiplication `(f, g) ↦ (f • g : Lp E r μ)` as a `𝕜'`-bilinear
+map. -/
+noncomputable def lpSMulₗ (𝕜' : Type*) [NormedCommRing 𝕜'] [Module 𝕜' E] [Module 𝕜' 𝕜]
+    [IsBoundedSMul 𝕜' E] [IsBoundedSMul 𝕜' 𝕜] [IsScalarTower 𝕜' 𝕜 E] [SMulCommClass 𝕜' 𝕜 E] :
+    Lp 𝕜 p μ →ₗ[𝕜'] Lp E q μ →ₗ[𝕜'] Lp E r μ :=
+  LinearMap.mk₂ 𝕜' (fun f g ↦ (f • g : Lp E r μ))
+    Lp.smul_add Lp.smul_assoc Lp.add_smul fun c f g ↦ (Lp.smul_comm c f g).symm
+
+@[simp]
+theorem lpSMulₗ_apply_apply (𝕜' : Type*) [NormedCommRing 𝕜'] [Module 𝕜' E] [Module 𝕜' 𝕜]
+    [IsBoundedSMul 𝕜' E] [IsBoundedSMul 𝕜' 𝕜] [IsScalarTower 𝕜' 𝕜 E] [SMulCommClass 𝕜' 𝕜 E]
+    (f : Lp 𝕜 p μ) (g : Lp E q μ) :
+    lpSMulₗ (p := p) (q := q) (r := r) (𝕜 := 𝕜) (E := E) (μ := μ) 𝕜' f g = f • g := by
+  simp [lpSMulₗ]
+
+/-- The heterogeneous `Lp` scalar multiplication `Lᵖ × L^q → Lʳ` is jointly continuous. -/
+theorem continuous_lpSMul [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)] :
+    Continuous fun x : Lp 𝕜 p μ × Lp E q μ ↦ (x.1 • x.2 : Lp E r μ) :=
+  -- `𝕜` is only assumed to be a `[NormedRing 𝕜]` without a commutative scalar field `𝕜'` in
+  -- scope, so we invoke `IsBoundedBilinearMap.continuous` with `𝕜 := ℕ` via
+  -- `AddMonoidHom.map_nsmul`.
+  IsBoundedBilinearMap.continuous (𝕜 := ℕ)
+    { add_left := Lp.smul_add
+      smul_left := fun c f g ↦ map_nsmul
+        ({ toFun := (· • g)
+           map_zero' := Lp.zero_smul _ _ _
+           map_add' := fun f₁ f₂ ↦ Lp.smul_add f₁ f₂ g } : Lp 𝕜 p μ →+ Lp E r μ) c f
+      add_right := Lp.add_smul
+      smul_right := fun c f g ↦ map_nsmul
+        ({ toFun := (f • ·)
+           map_zero' := Lp.smul_zero _ _ _
+           map_add' := Lp.add_smul f } : Lp E q μ →+ Lp E r μ) c g
+      bound := ⟨1, one_pos, fun f g ↦ by simpa using Lp.norm_smul_le f g⟩ }
+
+/-- If `f i → f₀` in `Lᵖ` and `g i → g₀` in `L^q` (`1/p + 1/q = 1/r`), then `f i • g i → f₀ • g₀`
+in `Lʳ`. -/
+theorem tendsto_lpSMul [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)] {l : Filter ι}
+    {f : ι → Lp 𝕜 p μ} {g : ι → Lp E q μ} {f₀ : Lp 𝕜 p μ} {g₀ : Lp E q μ}
+    (hf : Tendsto f l (𝓝 f₀)) (hg : Tendsto g l (𝓝 g₀)) :
+    Tendsto (fun i ↦ (f i • g i : Lp E r μ)) l (𝓝 (f₀ • g₀)) :=
+  (continuous_lpSMul.tendsto _).comp (hf.prodMk_nhds hg)
+
 /-- The heterogeneous product of the `Lp` classes of `f` and `g` is the class of the pointwise
 product `f • g`. -/
 theorem _root_.MeasureTheory.MemLp.toLp_smul_toLp {f : α → 𝕜} {g : α → E} (hf : MemLp f p μ)
@@ -290,6 +346,16 @@ theorem _root_.MeasureTheory.MemLp.toLp_smul_toLp {f : α → 𝕜} {g : α → 
   MemLp.toLp_congr _ _ <| by
     filter_upwards [hf.coeFn_toLp, hg.coeFn_toLp] with x h₁ h₂
     rw [Pi.smul_apply', h₁, h₂, Pi.smul_apply']
+
+/-- Heterogeneous `Lp` products of almost everywhere equal factors agree, even when the two
+products are taken in different Hölder triples `(p, q, r)` and `(p', q', r)`. -/
+theorem smul_eq_smul_of_ae_eq {p' q' : ℝ≥0∞} [p'.HolderTriple q' r] {f : Lp 𝕜 p μ}
+    {g : Lp E q μ} {f' : Lp 𝕜 p' μ} {g' : Lp E q' μ} (hf : f =ᵐ[μ] f') (hg : g =ᵐ[μ] g') :
+    (f • g : Lp E r μ) = f' • g' :=
+  Lp.ext <| by
+    filter_upwards [coeFn_lpSMul (r := r) f g, coeFn_lpSMul (r := r) f' g', hf, hg]
+      with x h₁ h₂ h₃ h₄
+    rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', h₃, h₄]
 
 omit [p.HolderTriple q r] in
 /-- The constant one of `L^∞` acts trivially on every `L^q` function. -/

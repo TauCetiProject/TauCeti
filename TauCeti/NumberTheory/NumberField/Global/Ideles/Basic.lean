@@ -40,14 +40,17 @@ the idele group and the idele class group are continuous, and so are `toFiniteId
 Finally, `NumberField.IdeleGroup.localUnitsEquiv` identifies the idele group, with its units
 topology, with the product of the unit groups `K_wˣ` at the infinite places and the restricted
 product of the unit groups `K_vˣ` at the finite places with respect to the local integral units
-`𝒪_vˣ`, as topological groups. Its coordinates are the coordinate maps above, and its inverse is
-`TauCeti.GlobalNumberFields.ideleOfUnits`. This is the classical description of the idele group as
-a restricted product over all places, and it shows that the units topology of the adele ring is
-the restricted-product topology of the local unit groups.
+`𝒪_vˣ`, as topological groups. Its coordinates are the coordinate maps above, which are therefore
+continuous, and its inverse is `TauCeti.GlobalNumberFields.ideleOfUnits`. This is the classical
+description of the idele group as a restricted product over all places, and it shows that the
+units topology of the adele ring is the restricted-product topology of the local unit groups.
 
 This topology need not be the subspace topology of the adele ring: when `R` has infinitely many
 height-one primes, `NumberField.IdeleGroup.not_isEmbedding_val` shows that the inclusion of the
 ideles into the adeles is not an embedding.
+
+The idele `TauCeti.GlobalNumberFields.twoInf` is `2` at the infinite places and `1` at the finite
+places. Its projection and norm lemmas describe dyadic scaling of arbitrary adeles.
 
 ## References
 
@@ -327,6 +330,34 @@ theorem localUnitsEquiv_symm_apply (zi : ∀ w : InfinitePlace K, w.Completionˣ
 
 end NumberField.IdeleGroup
 
+section CoordinateContinuity
+
+open NumberField.IdeleGroup
+
+variable {K : Type*} [Field K]
+variable {R : Type*} [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K]
+
+/-- The coordinate of an idele at an infinite place is continuous. -/
+@[continuity, fun_prop]
+theorem NumberField.InfinitePlace.continuous_ideleInfiniteCoord (w : InfinitePlace K) :
+    Continuous (w.ideleInfiniteCoord : IdeleGroup R K → w.Completionˣ) := by
+  have : (w.ideleInfiniteCoord : IdeleGroup R K → w.Completionˣ) =
+      fun x ↦ (localUnitsEquiv R K x).1 w := funext fun x ↦ (localUnitsEquiv_apply_fst x w).symm
+  rw [this]
+  exact (continuous_apply w).comp (continuous_fst.comp (localUnitsEquiv R K).continuous)
+
+/-- The coordinate of an idele at a finite place is continuous. -/
+@[continuity, fun_prop]
+theorem IsDedekindDomain.HeightOneSpectrum.continuous_ideleFiniteCoord (v : HeightOneSpectrum R) :
+    Continuous (v.ideleFiniteCoord : IdeleGroup R K → (v.adicCompletion K)ˣ) := by
+  have : (v.ideleFiniteCoord : IdeleGroup R K → (v.adicCompletion K)ˣ) =
+      fun x ↦ (localUnitsEquiv R K x).2 v := funext fun x ↦ (localUnitsEquiv_apply_snd x v).symm
+  rw [this]
+  exact (RestrictedProduct.continuous_eval v).comp
+    (continuous_snd.comp (localUnitsEquiv R K).continuous)
+
+end CoordinateContinuity
+
 namespace NumberField.IdeleGroup
 
 open Filter Topology
@@ -351,3 +382,95 @@ theorem not_isEmbedding_val [Infinite (HeightOneSpectrum R)] :
     .of_comp Units.continuous_val (continuous_const.prodMk continuous_id) (hval ▸ h.comp hof)
 
 end NumberField.IdeleGroup
+
+namespace TauCeti.GlobalNumberFields
+
+open scoped NumberField.AdeleRing
+
+variable (K : Type*) [Field K] [NumberField K]
+
+/-- The idele `2_∞` of a number field `K`: it is `2` at every infinite place and `1` at every
+finite place. -/
+noncomputable def twoInf : 𝔸[K]ˣ :=
+  IdeleGroup.ofInfiniteIdele (𝓞 K) K
+    (Units.map (algebraMap K (InfiniteAdeleRing K)).toMonoidHom
+      (Units.mk0 (2 : K) two_ne_zero))
+
+variable {K}
+
+/-- The integral powers of `2_∞` are `2 ^ k` at the infinite places and `1` at the finite
+places. -/
+@[simp]
+theorem coe_twoInf_zpow (k : ℤ) :
+    ((twoInf K ^ k : 𝔸[K]ˣ) : 𝔸[K]) = (algebraMap K (InfiniteAdeleRing K) (2 ^ k), 1) := by
+  rw [twoInf, ← map_zpow, IdeleGroup.coe_ofInfiniteIdele, ← map_zpow, Units.coe_map,
+    Units.val_zpow_eq_zpow_val, Units.val_mk0, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
+
+/-- The idele `2_∞` is `2` at the infinite places and `1` at the finite places. -/
+@[simp]
+theorem coe_twoInf : ((twoInf K : 𝔸[K]ˣ) : 𝔸[K]) = (2, 1) := by
+  rw [← zpow_one (twoInf K), coe_twoInf_zpow, zpow_one, map_ofNat]
+
+/-- The inverses of the integral powers of `2_∞`, in the form `simp` reaches through
+`zpow_neg`. -/
+@[simp]
+theorem coe_inv_twoInf_zpow (k : ℤ) :
+    (((twoInf K ^ k)⁻¹ : 𝔸[K]ˣ) : 𝔸[K]) = (algebraMap K (InfiniteAdeleRing K) (2 ^ k)⁻¹, 1) := by
+  rw [← zpow_neg, coe_twoInf_zpow, zpow_neg]
+
+/-- The inverse of `2_∞` is `2⁻¹` at the infinite places and `1` at the finite places. -/
+@[simp]
+theorem coe_inv_twoInf :
+    (((twoInf K)⁻¹ : 𝔸[K]ˣ) : 𝔸[K]) = (algebraMap K (InfiniteAdeleRing K) 2⁻¹, 1) := by
+  rw [← zpow_neg_one, coe_twoInf_zpow, zpow_neg_one]
+
+/-- The natural powers of `2_∞` are `2 ^ n` at the infinite places and `1` at the finite places.
+It is not a `simp` lemma: `simp` first rewrites the left side with `Units.val_pow_eq_pow_val` and
+`coe_twoInf` to `(2, 1) ^ n`. -/
+theorem coe_twoInf_pow (n : ℕ) : ((twoInf K ^ n : 𝔸[K]ˣ) : 𝔸[K]) = (2 ^ n, 1) := by
+  rw [Units.val_pow_eq_pow_val, coe_twoInf, Prod.pow_mk, one_pow]
+
+/-- Multiplying an adele by a power of `2_∞` does not change its finite part. -/
+theorem snd_twoInf_zpow_mul (k : ℤ) (a : 𝔸[K]) :
+    (((twoInf K ^ k : 𝔸[K]ˣ) : 𝔸[K]) * a).2 = a.2 := by
+  rw [coe_twoInf_zpow, Prod.snd_mul, one_mul]
+
+/-- Multiplying an adele by `2_∞ ^ k` multiplies its norm at every infinite place by `2 ^ k`. -/
+theorem norm_fst_twoInf_zpow_mul_apply (k : ℤ) (a : 𝔸[K]) (w : InfinitePlace K) :
+    ‖(((twoInf K ^ k : 𝔸[K]ˣ) : 𝔸[K]) * a).1 w‖ = 2 ^ k * ‖a.1 w‖ := by
+  have h2 : w 2 = 2 := by exact_mod_cast w.map_natCast 2
+  rw [coe_twoInf_zpow, Prod.fst_mul, InfiniteAdeleRing.mul_apply, norm_mul,
+    InfiniteAdeleRing.norm_algebraMap_apply, map_zpow₀, h2]
+
+/-- Multiplying a diagonal adele by `2_∞ ^ k` multiplies its absolute value at every infinite
+place by `2 ^ k`. -/
+theorem norm_fst_twoInf_zpow_mul_algebraMap_apply (k : ℤ) (x : K) (w : InfinitePlace K) :
+    ‖(((twoInf K ^ k : 𝔸[K]ˣ) : 𝔸[K]) * algebraMap K 𝔸[K] x).1 w‖ = 2 ^ k * w x := by
+  rw [norm_fst_twoInf_zpow_mul_apply, AdeleRing.algebraMap_fst_def,
+    InfiniteAdeleRing.norm_algebraMap_apply]
+
+/-- The finite component of `2_∞` is trivial. Powers simplify using `map_zpow`. -/
+@[simp]
+theorem toFiniteIdele_twoInf : IdeleGroup.toFiniteIdele (𝓞 K) K (twoInf K) = 1 := by
+  simp [twoInf]
+
+/-- The coordinate of `2_∞` at every finite place is `1`. Powers simplify using `map_zpow`. -/
+@[simp]
+theorem _root_.IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_twoInf
+    (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K)) : v.ideleFiniteCoord (twoInf K) = 1 := by
+  apply Units.ext
+  rw [IsDedekindDomain.HeightOneSpectrum.coe_ideleFiniteCoord, coe_twoInf, Units.val_one]
+  simp only [FiniteAdeleRing.one_apply]
+
+/-- The coordinate of `2_∞` at an infinite place is the unit `2`. Powers simplify using
+`map_zpow`. -/
+@[simp]
+theorem _root_.NumberField.InfinitePlace.ideleInfiniteCoord_twoInf (w : InfinitePlace K) :
+    w.ideleInfiniteCoord (twoInf K) =
+      Units.map (algebraMap K w.Completion).toMonoidHom (Units.mk0 (2 : K) two_ne_zero) := by
+  apply Units.ext
+  rw [InfinitePlace.coe_ideleInfiniteCoord, coe_twoInf, Units.coe_map, Units.val_mk0,
+    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, map_ofNat]
+  simp only [InfiniteAdeleRing.ofNat_apply]
+
+end TauCeti.GlobalNumberFields

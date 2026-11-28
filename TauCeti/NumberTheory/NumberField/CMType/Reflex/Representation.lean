@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Basic
 import Mathlib.Algebra.Algebra.Hom.Rat
 import Mathlib.RingTheory.Unramified.Field
 import Mathlib.RingTheory.Unramified.Pi
+import TauCeti.NumberTheory.NumberField.CMType.Reflex.SelectedFactor
 import TauCeti.RingTheory.Etale.Trace
 import TauCeti.RingTheory.Unramified.TraceRepresentation
 
@@ -137,35 +138,14 @@ theorem exists_trace_eq_typeTrace [Algebra.FormallyUnramified ℚ E] (Φ : CMTyp
   have : Algebra.FormallyEtale ℚ E := .of_formallyUnramified_of_field ℚ E
   have : Algebra.Etale ℚ E :=
     { finitePresentation := Algebra.FinitePresentation.of_finiteType.mp inferInstance }
-  -- The complex embeddings of `E` are the `k`-algebra maps `k ⊗_ℚ E → ℂ`.
-  let e : (E →+* ℂ) ≃ (k ⊗[ℚ] E →ₐ[k] ℂ) :=
-    (RingHom.equivRatAlgHom E ℂ).trans (Algebra.TensorProduct.liftEquivRight ℚ k E ℂ)
-  have he (φ : E →+* ℂ) (r : k) (a : E) : e φ (r ⊗ₜ a) = r * φ a := by
-    simp [e, Algebra.TensorProduct.liftEquivRight]
-  -- The embeddings in `Φ` have a `k`-valued partial trace.
-  have hΦ (y : k ⊗[ℚ] E) : ∑ᶠ ψ ∈ e '' Φ, ψ y ∈ Set.range (algebraMap k ℂ) := by
-    simp_rw [finsum_mem_image e.injective.injOn]
-    induction y using TensorProduct.inductionOn with
-    | tmul r a =>
-      obtain ⟨t, ht⟩ : Φ.typeTrace a ∈ Set.range (algebraMap k ℂ) :=
-        ⟨⟨_, hk (Φ.typeTrace_mem_reflexField a)⟩, rfl⟩
-      refine ⟨r * t, ?_⟩
-      simp_rw [he, map_mul, ht, typeTrace_apply]
-      exact mul_finsum_mem' _ _ (Set.toFinite _)
-    | add y z hy hz =>
-      obtain ⟨s, hs⟩ := hy
-      obtain ⟨t, ht⟩ := hz
-      refine ⟨s + t, ?_⟩
-      simp_rw [map_add, hs, ht]
-      exact (finsum_mem_add_distrib (Set.toFinite _)).symm
-  -- They are cut out by an idempotent `c` of the étale `k`-algebra `k ⊗_ℚ E`, and `k ⊗_ℚ E` acts
-  -- on the ideal `c (k ⊗_ℚ E)` with that partial trace.
+  -- The selected idempotent gives a module with the descended partial trace.
   obtain ⟨n, ρ, hρ⟩ := TauCeti.Algebra.Etale.exists_trace_eq_finsum (K := k)
-    (A := k ⊗[ℚ] E) (Ω := ℂ) _ hΦ
+    (A := k ⊗[ℚ] E) (Ω := ℂ) _
+    (Φ.finsum_ratTensorProductAlgHomEquiv_image_mem_range hk)
   refine ⟨n, ρ.toRingHom.comp Algebra.TensorProduct.includeRight.toRingHom, fun a ↦ ?_⟩
   have h := hρ (1 ⊗ₜ a)
-  rw [finsum_mem_image e.injective.injOn] at h
-  simpa [he, typeTrace_apply] using h
+  rw [finsum_mem_image (ratTensorProductAlgHomEquiv k E ℂ).injective.injOn] at h
+  simpa [typeTrace_apply] using h
 
 /-- **Representations with the type trace (Milne, *Complex Multiplication*, Proposition 1.21).**
 Let `E` be a finite-dimensional formally unramified `ℚ`-algebra, such as a finite product of CM

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
+import TauCeti.Topology.Constructions.SumProd
 
 import TauCeti.Topology.FiberBundle.Sigma
 import TauCeti.Topology.LocallyConstant.Fiber
@@ -278,12 +279,8 @@ stratum trivialization domain at `z`. -/
   rw [VectorBundleCore.baseSet_at, pointIndexedCore_localTriv_baseSet]
 
 private noncomputable def gluedReconstructionHomeomorph :
-    (ofBundles 𝕜 r E).GluedTotalSpace ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) where
-  toEquiv := Equiv.sigmaCongrRight fun n => (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).toEquiv
-  continuous_toFun := continuous_sigma fun n => continuous_sigmaMk.comp
-    (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).continuous
-  continuous_invFun := continuous_sigma fun n => continuous_sigmaMk.comp
-    (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).symm.continuous
+    (ofBundles 𝕜 r E).GluedTotalSpace ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) :=
+  Homeomorph.sigmaCongrRight fun n => pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)
 
 /-- The reconstructed atlas is homeomorphic, over the base, to the disjoint union
 of the original bundles. The fibre maps are the preferred-chart continuous linear
@@ -297,19 +294,35 @@ noncomputable def reconstructionHomeomorph :
     reconstructionHomeomorph 𝕜 r E p =
       ⟨r p.proj, ⟨⟨p.proj, rfl⟩,
         pointIndexedCoreFiberEquiv 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj)) ⟨p.proj, rfl⟩ p.snd⟩⟩ := by
-  -- The sigma equivalence applies the existing reconstruction on the selected stratum.
-  exact congrArg (Sigma.mk (r p.proj))
-    (pointIndexedCoreHomeomorph_apply 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj)) _)
+  simp only [reconstructionHomeomorph, Homeomorph.trans_apply, totalSpaceHomeomorph_symm_apply,
+    gluedReconstructionHomeomorph]
+  -- `gluedReconstructionHomeomorph` has domain `(ofBundles 𝕜 r E).GluedTotalSpace` with
+  -- `charts` = `pointIndexedCore`; align the domain type so `Homeomorph.sigmaCongrRight_apply`
+  -- matches at reducible transparency.
+  change (Homeomorph.sigmaCongrRight fun n => pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n))
+    ⟨r p.proj, ⟨⟨p.proj, rfl⟩, p.snd⟩⟩ = _
+  rw [Homeomorph.sigmaCongrRight_apply, pointIndexedCoreHomeomorph_apply]
 
 /-- The inverse comparison is the inverse preferred-chart fibre equivalence, followed
 by the canonical inclusion of that stratum into the reconstructed total space. -/
 @[simp] theorem reconstructionHomeomorph_symm_apply
-    (n : ℕ) (p : TotalSpace (Fin n → 𝕜) (E n)) :
-    (reconstructionHomeomorph 𝕜 r E).symm ⟨n, p⟩ =
+    (p : Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n)) :
+    (reconstructionHomeomorph 𝕜 r E).symm p =
       (ofBundles 𝕜 r E).totalSpaceHomeomorph
-        ⟨n, ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) (E n) p.proj).symm p.snd⟩⟩ := by
-  exact congrArg (fun q => (ofBundles 𝕜 r E).totalSpaceHomeomorph ⟨n, q⟩)
-    (pointIndexedCoreHomeomorph_symm_apply 𝕜 (Fin n → 𝕜) (E n) p)
+        ⟨p.1, ⟨p.2.proj,
+          (pointIndexedCoreFiberEquiv 𝕜 (Fin p.1 → 𝕜) (E p.1) p.2.proj).symm p.2.snd⟩⟩ := by
+  simp only [reconstructionHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_symm,
+    gluedReconstructionHomeomorph]
+  refine congrArg (ofBundles 𝕜 r E).totalSpaceHomeomorph ?_
+  -- Align the codomain `(ofBundles 𝕜 r E).GluedTotalSpace` with
+  -- `Σ n, (pointIndexedCore ...).TotalSpace` so `Homeomorph.sigmaCongrRight_symm` matches.
+  change (Homeomorph.sigmaCongrRight fun n =>
+    pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).symm p = _
+  rw [Homeomorph.sigmaCongrRight_symm, Homeomorph.sigmaCongrRight_apply,
+    pointIndexedCoreHomeomorph_symm_apply]
+  -- `Sigma.mk` on `(ofBundles 𝕜 r E).GluedTotalSpace` identifies `(pointIndexedCore ...).Fiber`
+  -- with `(ofBundles 𝕜 r E).charts p.1 |>.Fiber`.
+  rfl
 
 /-- The reconstruction comparison covers the identity map on the original base. -/
 @[simp] theorem proj_reconstructionHomeomorph
