@@ -132,8 +132,9 @@ applies to the quotients appearing here without any further appeal to defeq.
   `MaximalSpectrum.toNat_length_quotient_eq_finrank_residueField`: for `A` local and a maximal
   ideal `m` of an `A`-algebra `B`, the `A`-length of `B ⧸ m` is the residue degree
   `[κ(B_m) : κ(A)]`, for any chosen localization `B_m`.
-* `TauCeti.isFiniteLength_quotient_maximalIdeal_pow`: `A ⧸ 𝔪 ⁿ` has finite length for every `n`
-  over a noetherian local ring, so it is an Artinian ring
+* `TauCeti.isFiniteLength_quotient_maximalIdeal_pow` and
+  `Ideal.isFiniteLength_quotient_sup_maximalIdeal_pow`: `A ⧸ 𝔪 ⁿ` and `A ⧸ (I ⊔ 𝔪 ⁿ)` have finite
+  length for every `n` and ideal `I` over a noetherian local ring, so `A ⧸ 𝔪 ⁿ` is an Artinian ring
   (`TauCeti.isArtinianRing_quotient_maximalIdeal_pow`).
 * `Submodule.eq_of_le_of_length_eq`: a submodule contained in another of the same finite length
   is equal to it.
@@ -782,6 +783,12 @@ theorem _root_.TauCeti.isFiniteLength_quotient_maximalIdeal_pow (n : ℕ) :
   · exact isFiniteLength_quotient_of_isMaximal_radical _ <| by
       rw [radical_pow _ hn, (maximalIdeal.isMaximal A).isPrime.radical]
       infer_instance
+
+/-- Over a noetherian local ring `A`, every quotient `A ⧸ (I ⊔ 𝔪 ^ n)` has finite length. -/
+theorem isFiniteLength_quotient_sup_maximalIdeal_pow (I : Ideal A) (n : ℕ) :
+    IsFiniteLength A (A ⧸ (I ⊔ maximalIdeal A ^ n)) :=
+  (TauCeti.isFiniteLength_quotient_maximalIdeal_pow n).of_surjective
+    (f := Submodule.factor le_sup_right) (Submodule.factor_surjective le_sup_right)
 
 /-- The quotient of a noetherian local ring by a power of its maximal ideal is an Artinian ring,
 being of finite length over the ring. -/

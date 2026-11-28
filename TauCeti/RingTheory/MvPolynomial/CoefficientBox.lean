@@ -160,7 +160,8 @@ theorem ncard_coefficientBox [Fintype ι] [Fintype σ] (d C : ℕ) :
     (coefficientBox ι σ d C).ncard =
       (2 * C + 1) ^ (Fintype.card ι * (d + Fintype.card σ).choose (Fintype.card σ)) := by
   rw [← Nat.card_coe_set_eq, Nat.card_congr (coefficientBoxEquiv ι σ d C), Nat.card_fun,
-    Nat.card_prod, Finsupp.card_degree_le_eq_choose, Nat.card_eq_fintype_card (α := ι),
+    Nat.card_prod, TauCeti.natCard_degree_le_eq_choose, Nat.card_eq_fintype_card (α := σ),
+    Nat.add_comm (Fintype.card σ) d, Nat.card_eq_fintype_card (α := ι),
     Nat.card_eq_fintype_card (α := Set.Icc _ _)]
   congr 1
   simp only [Fintype.card_Icc, Int.card_Icc]

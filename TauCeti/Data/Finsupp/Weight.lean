@@ -12,10 +12,9 @@ public import Mathlib.Data.Finsupp.Option
 public import Mathlib.Data.Set.Card
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Data.Finsupp.Order
-
 import Mathlib.Algebra.BigOperators.Fin
-import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
-import Mathlib.Data.Nat.Choose.Sum
+import Mathlib.Data.Sym.NatCard
+import TauCeti.Algebra.Order.Antidiag.FinsuppEquiv
 
 /-!
 # Weights of finitely supported functions
@@ -73,12 +72,13 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   `i`-th coordinate vector.
 * `Finsupp.finite_degree_eq`, `Finsupp.finite_degree_le`: in finitely many variables there are
   finitely many exponent vectors of each degree, and of degree at most `n`.
-* `Finsupp.fintypeDegreeEq`: for a fintype of variables with decidable equality, the exponent
-  vectors of degree `n` form a fintype, enumerated by `Finset.finsuppAntidiag`.
-* `Finsupp.ncard_setOf_degree_eq`: in `d` variables there are `d.multichoose n` exponent vectors
-  of degree `n`.
-* `Finsupp.card_degree_le_eq_choose`: there are `(m + d choose d)` exponent vectors of degree at
-  most `m` in `d` variables.
+* `Finsupp.fintypeDegreeEq`, `Finsupp.fintypeDegreeLe`: for a fintype of variables with decidable
+  equality, the exponent vectors of degree `n` and at most `n` form a fintype, enumerated by
+  `Finset.finsuppAntidiag`.
+* `TauCeti.natCard_degree_eq_eq_multichoose`: multichoose cardinality of exponent vectors of
+  degree `n`.
+* `TauCeti.natCard_degree_le_eq_choose`: binomial cardinality of exponent vectors of degree at
+  most `n` in finitely many variables.
 * `Finsupp.weight_vecCons_one`, `Finsupp.injOn_weight_vecCons_one`: the weight `![1, B]` sends
   `μ : Fin 2 →₀ ℕ` to `μ 0 + B * μ 1`, and is injective on the exponents with `μ 0 < B`.
 * `Finsupp.single_mod_add_single_div`: for `μ 0 < B`, division with remainder by `B` recovers `μ`
@@ -322,16 +322,6 @@ instance fintypeDegreeEq {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
   Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree = n}) ((Finset.univ : Finset σ).finsuppAntidiag n)
     fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
 
-/-- In `d = card σ` variables there are `d.multichoose n` exponent vectors of degree `n`. -/
-theorem ncard_setOf_degree_eq {σ : Type*} [Fintype σ] (n : ℕ) :
-    {s : σ →₀ ℕ | s.degree = n}.ncard = (Fintype.card σ).multichoose n := by
-  classical
-  have h : {s : σ →₀ ℕ | s.degree = n} =
-      ((Finset.univ : Finset σ).finsuppAntidiag n : Set (σ →₀ ℕ)) := by
-    ext s
-    simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
-  rw [h, Set.ncard_coe_finset, Finset.card_finsuppAntidiag_nat_eq_multichoose, Finset.card_univ]
-
 /-- For a fintype of variables with decidable equality, the exponent vectors of degree at most `n`
 form a fintype, enumerated degree by degree by `Finset.finsuppAntidiag`. -/
 instance fintypeDegreeLe {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
@@ -340,23 +330,34 @@ instance fintypeDegreeLe {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
     ((Finset.range (n + 1)).biUnion fun m ↦ (Finset.univ : Finset σ).finsuppAntidiag m)
     fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
 
-/-- There are `(m + d choose d)` exponent vectors of degree at most `m` in `d = card σ`
-variables. -/
-theorem card_degree_le_eq_choose (σ : Type*) [Fintype σ] (m : ℕ) :
-    Nat.card {s : σ →₀ ℕ // s.degree ≤ m} = (m + Fintype.card σ).choose (Fintype.card σ) := by
-  classical
-  have hset : {s : σ →₀ ℕ | s.degree ≤ m} =
-      ↑((Finset.range (m + 1)).biUnion ((Finset.univ : Finset σ).finsuppAntidiag ·)) := by
-    ext s
-    simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
-  rw [← Set.coe_ofPred, Nat.card_coe_set_eq, hset, Set.ncard_coe_finset, Finset.card_biUnion]
-  · simp [Finset.card_finsuppAntidiag_nat_eq_multichoose, Nat.sum_range_multichoose]
-  · intro k _ l _ hkl
-    refine Finset.disjoint_left.2 fun s hk hl ↦ hkl ?_
-    rw [Finset.mem_finsuppAntidiag] at hk hl
-    exact hk.1.symm.trans hl.1
-
 end Finsupp
+
+namespace TauCeti
+
+/-- The `Nat.card` of exponent vectors of degree `n` in variables `σ` is
+`(Nat.card σ).multichoose n`. -/
+@[simp]
+theorem natCard_degree_eq_eq_multichoose (σ : Type*) (n : ℕ) :
+    Nat.card {s : σ →₀ ℕ // s.degree = n} = (Nat.card σ).multichoose n := by
+  classical
+  have e : {s : σ →₀ ℕ // s.degree = n} ≃ Sym σ n :=
+    (Equiv.subtypeEquivRight fun s ↦ by simp [Finsupp.degree_apply, Finsupp.sum]).trans
+      (Sym.equivNatSum σ n).symm
+  rw [Nat.card_congr e, Sym.natCard_sym_eq_multichoose]
+
+/-- The `Nat.card` of exponent vectors of degree at most `n` in finitely many variables `σ` is
+`(Nat.card σ + n).choose (Nat.card σ)`. -/
+@[simp]
+theorem natCard_degree_le_eq_choose (σ : Type*) [Finite σ] (n : ℕ) :
+    Nat.card {s : σ →₀ ℕ // s.degree ≤ n} = (Nat.card σ + n).choose (Nat.card σ) := by
+  classical
+  have := Fintype.ofFinite σ
+  let e : {s : σ →₀ ℕ // s.degree ≤ n} ≃ ↥{c : σ → ℕ | ∑ a, c a ≤ n} :=
+    Equiv.subtypeEquiv Finsupp.equivFunOnFinite fun s ↦ by simp [Finsupp.degree_eq_sum]
+  rw [Nat.card_congr e, Nat.card_coe_set_eq, TauCeti.ncard_setOf_sum_le,
+    Nat.card_eq_fintype_card, add_comm]
+
+end TauCeti
 
 namespace Finsupp
 
