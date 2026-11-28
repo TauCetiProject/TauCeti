@@ -123,6 +123,12 @@ theorem symmetricAlgebraBaseChangeIso_inv_toSpecCoeff :
         toSpecCoeff (homogeneousSubmodule S (S ⊗[R] M)) = pullback.snd _ _ := by
   rw [← symmetricAlgebraBaseChangeIso_hom_snd R S M, Iso.inv_hom_id_assoc]
 
+/-- The coefficient structure map of the projective spectrum of a symmetric algebra is
+`TauCeti.SymmetricAlgebra.projToSpec`. -/
+theorem toSpecCoeff_homogeneousSubmodule :
+    toSpecCoeff (homogeneousSubmodule R M) = projToSpec R M := by
+  rw [toSpecCoeff_def, projToSpec_def]
+
 /-- The projective space `Proj(Sym(S ⊗[R] M))` is the base change of `Proj(Sym M)` along
 `Spec S ⟶ Spec R`: the square formed by the coefficient projection and the structure morphisms
 `TauCeti.SymmetricAlgebra.projToSpec` is cartesian. -/

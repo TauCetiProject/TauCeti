@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.SymmetricAlgebra.GradedMap
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Integral
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.KrullDimension
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 import TauCeti.LinearAlgebra.SymmetricAlgebra.KrullDimension
 
@@ -68,20 +68,6 @@ theorem projToSpec_def :
     projToSpec R M = Proj.toSpecZero (homogeneousSubmodule R M) ≫
       Spec.map (CommRingCat.ofHom (algebraMap R (homogeneousSubmodule R M 0))) :=
   (rfl)
-
-end TauCeti.SymmetricAlgebra
-
-/-- The coefficient structure map of the projective spectrum of a symmetric algebra is
-`TauCeti.SymmetricAlgebra.projToSpec`. -/
-theorem AlgebraicGeometry.Proj.toSpecCoeff_homogeneousSubmodule
-    (R M : Type u) [CommRing R] [AddCommMonoid M] [Module R M] :
-    toSpecCoeff (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M) =
-      TauCeti.SymmetricAlgebra.projToSpec R M := by
-  rw [toSpecCoeff_def, TauCeti.SymmetricAlgebra.projToSpec_def]
-
-namespace TauCeti.SymmetricAlgebra
-
-variable (R : Type u) (M : Type u) [CommRing R] [AddCommMonoid M] [Module R M]
 
 private theorem isIso_scalarSpecMap :
     IsIso (Spec.map (CommRingCat.ofHom (algebraMap R (homogeneousSubmodule R M 0)))) := by

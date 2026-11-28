@@ -28,7 +28,7 @@ variable {ι A B σ τ : Type*} [Semiring A] [Semiring B] [SetLike σ A] [SetLik
   {𝒜 : ι → σ} {ℬ : ι → τ}
 
 /-- The graded ring homomorphism underlying a degree-preserving ring equivalence. -/
-abbrev toGradedRingHom (e : A ≃+* B) (he : ∀ ⦃i a⦄, a ∈ 𝒜 i → e a ∈ ℬ i) : 𝒜 →+*ᵍ ℬ where
+def toGradedRingHom (e : A ≃+* B) (he : ∀ ⦃i a⦄, a ∈ 𝒜 i → e a ∈ ℬ i) : 𝒜 →+*ᵍ ℬ where
   __ := e.toRingHom
   map_mem := @he
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.ProjectiveBundle.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricBaseChange
 
 /-!
 # Projectivity of a projective bundle over affine opens
@@ -57,8 +58,8 @@ theorem isProjectiveOver_affineOpen
     (Over.forget _).mapIso (affineOpenIso F hU)
   have : e.hom.IsOver (Spec (.of Γ(S, U))) := by
     constructor
-    rw [TauCeti.SymmetricAlgebra.over_eq_projToSpec]
-    rw [Functor.mapIso_hom, Over.forget_map]
+    rw [Functor.mapIso_hom, Over.forget_map, TauCeti.SymmetricAlgebra.over_eq_projToSpec,
+      ← Proj.toSpecCoeff_homogeneousSubmodule]
     exact Over.w (affineOpenIso F hU).hom
   exact Scheme.IsProjectiveOver.of_isClosedImmersion Γ(S, U) e.hom
 

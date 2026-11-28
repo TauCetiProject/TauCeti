@@ -72,29 +72,33 @@ variable {B : Type u} [CommRing B] [Algebra R B]
 
 /-- A grading-preserving algebra equivalence induces a contravariant isomorphism of projective
 spectra over the coefficient spectrum. -/
-noncomputable def mapIsoOverOfAlgEquiv :
-    Over.mk (toSpecCoeff ℬ) ≅ Over.mk (toSpecCoeff 𝒜) :=
+noncomputable def mapIsoOverOfAlgEquiv : Over.mk (toSpecCoeff ℬ) ≅ Over.mk (toSpecCoeff 𝒜) :=
   let f : 𝒜 →+*ᵍ ℬ := e.toRingEquiv.toGradedRingHom (fun {n a} ha ↦ (he n a).mpr ha)
   let g : ℬ →+*ᵍ 𝒜 := e.symm.toRingEquiv.toGradedRingHom fun {n b} hb ↦
     (he n (e.symm b)).mp (by simpa only [e.apply_symm_apply] using hb)
-  have hf := HomogeneousIdeal.irrelevant_le_map_of_surjective f e.surjective
+  have hf_apply (a : A) : f a = e a := by
+    simp only [f, RingEquiv.toGradedRingHom_apply, AlgEquiv.coe_toRingEquiv]
+  have hg_apply (b : B) : g b = e.symm b := by
+    simp only [g, RingEquiv.toGradedRingHom_apply, AlgEquiv.coe_toRingEquiv]
+  have hfg : Function.RightInverse g f := fun b ↦ by
+    rw [hf_apply, hg_apply, e.apply_symm_apply]
+  have hgf : Function.LeftInverse g f := fun a ↦ by
+    rw [hg_apply, hf_apply, e.symm_apply_apply]
   have hr (r : R) :
       f.gradedZeroRingHom (algebraMap R (𝒜 0) r) = algebraMap R (ℬ 0) r := Subtype.ext <| by
     rw [GradedRingHom.gradedZeroRingHom_apply_coe, SetLike.GradeZero.coe_algebraMap,
-      SetLike.GradeZero.coe_algebraMap]
-    exact e.commutes r
-  have hw : (mapIso f g e.apply_symm_apply e.symm_apply_apply).hom ≫ toSpecCoeff 𝒜 =
-      toSpecCoeff ℬ :=
-    (congrArg (· ≫ toSpecCoeff 𝒜) (mapIso_hom f g e.apply_symm_apply e.symm_apply_apply)).trans
-      (map_toSpecCoeff 𝒜 f hf hr)
-  Over.isoMk (mapIso f g e.apply_symm_apply e.symm_apply_apply) hw
+      SetLike.GradeZero.coe_algebraMap, hf_apply, e.commutes]
+  Over.isoMk (mapIso f g hfg hgf) (by
+    rw [mapIso_hom]
+    exact map_toSpecCoeff 𝒜 f _ hr)
 
 /-- The forward map on projective spectra is induced by the graded map of the equivalence. -/
 @[simp]
 theorem mapIsoOverOfAlgEquiv_hom_left :
     (mapIsoOverOfAlgEquiv 𝒜 ℬ e he).hom.left =
       map (e.toRingEquiv.toGradedRingHom (fun {n a} ha ↦ (he n a).mpr ha))
-        (HomogeneousIdeal.irrelevant_le_map_of_surjective _ e.surjective) := by
+        (HomogeneousIdeal.irrelevant_le_map_of_surjective _ fun b ↦ ⟨e.symm b, by
+          rw [RingEquiv.toGradedRingHom_apply, AlgEquiv.coe_toRingEquiv, e.apply_symm_apply]⟩) := by
   simp only [mapIsoOverOfAlgEquiv, Over.isoMk_hom_left]
   apply mapIso_hom
 
@@ -104,7 +108,8 @@ theorem mapIsoOverOfAlgEquiv_inv_left :
     (mapIsoOverOfAlgEquiv 𝒜 ℬ e he).inv.left =
       map (e.symm.toRingEquiv.toGradedRingHom fun {n b} hb ↦
         (he n (e.symm b)).mp (by simpa only [e.apply_symm_apply] using hb))
-        (HomogeneousIdeal.irrelevant_le_map_of_surjective _ e.symm.surjective) := by
+        (HomogeneousIdeal.irrelevant_le_map_of_surjective _ fun a ↦ ⟨e a, by
+          rw [RingEquiv.toGradedRingHom_apply, AlgEquiv.coe_toRingEquiv, e.symm_apply_apply]⟩) := by
   simp only [mapIsoOverOfAlgEquiv, Over.isoMk_inv_left]
   apply mapIso_inv
 
