@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.PlaceOfInt
+public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.PlacePrimeSum
 import TauCeti.Data.ZMod.PrincipalUnits
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.PlaceAverage
 import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Laplace
@@ -40,7 +40,7 @@ noncomputable def totalRemainder (P : Parameters) (s : ℕ) (B : Finset (ZMod (P
   let π := ZMod.unitsMap (P.q₀_dvd_q₁ s)
   let κ := fun τ ↦ if τ ∈ B then a / x else a / x₁
   ∑ τ ∈ univ.filter (fun τ ↦ π τ = 1),
-    ((∑ n ∈ Icc 1 N, primeWeight P.d 1 n * max (a / n - κ (P.placeOfInt s (-(n : ℤ)) * τ)) 0) -
+    (P.placePrimeSum s N κ a τ -
       a * (log a - (∑ σ, log (κ σ)) / Fintype.card (ZMod (P.q₁ s))ˣ + (logDerivMean P.d 1 1).re))
 
 /-- Expand the total remainder as the place sum with the two cutoff weights and the
@@ -50,8 +50,7 @@ theorem totalRemainder_def (P : Parameters) (s : ℕ) (B : Finset (ZMod (P.q₁ 
     let π := ZMod.unitsMap (P.q₀_dvd_q₁ s)
     let κ := fun τ ↦ if τ ∈ B then a / x else a / x₁
     P.totalRemainder s B N a x x₁ = ∑ τ ∈ univ.filter (fun τ ↦ π τ = 1),
-      ((∑ n ∈ Icc 1 N,
-        primeWeight P.d 1 n * max (a / n - κ (P.placeOfInt s (-(n : ℤ)) * τ)) 0) -
+      (P.placePrimeSum s N κ a τ -
         a * (log a - (∑ σ, log (κ σ)) / Fintype.card (ZMod (P.q₁ s))ˣ +
           (logDerivMean P.d 1 1).re)) := (rfl)
 
@@ -79,7 +78,8 @@ theorem totalRemainder_eq_primeRemainder (P : Parameters) {s N : ℕ}
   have h := (ZMod.unitsMap (P.q₀_dvd_q₁ s)).sum_sub_log_eq_rieszSum_sub_log
     (ZMod.unitsMap_surjective _) B hB (fun n ↦ P.placeOfInt s (-(n : ℤ))) (primeWeight P.d 1)
     (logDerivMean P.d 1 1).re (logDerivMean P.d P.q₀ 1).re ha hx hx₁ hN
-  simpa only [totalRemainder_def, hweight, ZMod.card_units_eq_totient, ← hre, ← hre₁] using h
+  simpa only [totalRemainder_def, placePrimeSum_def, hweight, ZMod.card_units_eq_totient,
+    ← hre, ← hre₁] using h
 
 /-- An upper bound on the scaled total remainder gives a bound at the short cutoff.
 The cardinality inequality is the only sparsity input: it pays for the ratio of the
