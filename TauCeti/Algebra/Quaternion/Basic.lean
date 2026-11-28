@@ -30,6 +30,9 @@ Mathlib's `Mathlib.Algebra.Quaternion`.
   `r * s`.
 * `Quaternion.exists_mk_div_two_mul_eq`: an integer quaternion with even coordinates divided by
   `2 * r` has integer coordinates divided by `r`.
+* `Quaternion.exists_mk_div_mul_mk_div_of_even_coords`: multiplying quaternions with
+  `ℤ`-coordinates scaled by `r` and `s` with `r * s = 2 * e` gives `ℤ`-coordinates scaled by `e`
+  when the integer product has even coordinates.
 -/
 
 public section
@@ -105,5 +108,21 @@ theorem exists_mk_div_two_mul_eq {K : Type*} [Field K] [NeZero (2 : K)] (r : K) 
     simp only [ha, hb, hc, hd, Matrix.cons_val, ← two_mul, Int.cast_mul, Int.cast_ofNat] <;>
     by_cases hr : r = 0 <;>
     simp [hr, mul_div_mul_left _ _ (NeZero.ne (2 : K))]
+
+/-- If the integer quaternion product of `v` and `w` has even coordinates, then the product of the
+corresponding quaternions scaled by `r` and `s` has `ℤ`-coordinates scaled by `e` whenever
+`r * s = 2 * e`. -/
+theorem exists_mk_div_mul_mk_div_of_even_coords {K : Type*} [Field K] [NeZero (2 : K)]
+    {r s e : K} (hrs : r * s = 2 * e) {v w : Fin 4 → ℤ}
+    (hx : let x : ℍ[ℤ] := ⟨v 0, v 1, v 2, v 3⟩ * ⟨w 0, w 1, w 2, w 3⟩
+      Even x.re ∧ Even x.imI ∧ Even x.imJ ∧ Even x.imK) :
+    ∃ u : Fin 4 → ℤ, (⟨v 0 / r, v 1 / r, v 2 / r, v 3 / r⟩ : ℍ[K]) *
+        ⟨w 0 / s, w 1 / s, w 2 / s, w 3 / s⟩ =
+      ⟨u 0 / e, u 1 / e, u 2 / e, u 3 / e⟩ := by
+  obtain ⟨u, hu⟩ := exists_mk_div_two_mul_eq e hx
+  refine ⟨u, ?_⟩
+  rw [mk_div_mul_mk_div (⟨v 0, v 1, v 2, v 3⟩ : ℍ[K]) (⟨w 0, w 1, w 2, w 3⟩ : ℍ[K]) r s, hrs,
+    ← hu]
+  ext <;> simp
 
 end Quaternion

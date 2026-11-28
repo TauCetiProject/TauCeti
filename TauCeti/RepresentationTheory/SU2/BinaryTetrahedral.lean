@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.SU2.BinaryDihedral
+import TauCeti.Algebra.Quaternion.Basic
 
 /-!
 # The binary tetrahedral subgroup of SU(2)
@@ -141,22 +142,12 @@ private theorem exists_mul_eq_half {v w : Fin 4 → ℤ} (hv : v ∈ binaryTetra
     ∃ u : Fin 4 → ℤ, (⟨v 0 / 2, v 1 / 2, v 2 / 2, v 3 / 2⟩ : ℍ[ℝ]) *
       ⟨w 0 / 2, w 1 / 2, w 2 / 2, w 3 / 2⟩ = ⟨u 0 / 2, u 1 / 2, u 2 / 2, u 3 / 2⟩ := by
   -- The product of the doubled factors, an integer quaternion with even coordinates.
-  set x : ℍ[ℤ] := ⟨v 0, v 1, v 2, v 3⟩ * ⟨w 0, w 1, w 2, w 3⟩ with hx
   have hpv := even_iff_even_of_mem_binaryTetrahedralCoords hv
   have hpw := even_iff_even_of_mem_binaryTetrahedralCoords hw
-  have heven : Even x.re ∧ Even x.imI ∧ Even x.imJ ∧ Even x.imK := by
-    simp only [hx, re_mul, imI_mul, imJ_mul, imK_mul, Int.even_add, Int.even_sub, Int.even_mul,
-      hpv 1, hpv 2, hpv 3, hpw 1, hpw 2, hpw 3]
-    tauto
-  obtain ⟨⟨a, ha⟩, ⟨b, hb⟩, ⟨c, hc⟩, ⟨d, hd⟩⟩ := heven
-  simp only [hx, re_mul, imI_mul, imJ_mul, imK_mul] at ha hb hc hd
-  rify at ha hb hc hd
-  refine ⟨![a, b, c, d], ?_⟩
-  ext <;> simp only [re_mul, imI_mul, imJ_mul, imK_mul, Matrix.cons_val]
-  · linear_combination ha / 4
-  · linear_combination hb / 4
-  · linear_combination hc / 4
-  · linear_combination hd / 4
+  refine exists_mk_div_mul_mk_div_of_even_coords rfl ?_
+  simp only [re_mul, imI_mul, imJ_mul, imK_mul, Int.even_add, Int.even_sub, Int.even_mul,
+    hpv 1, hpv 2, hpv 3, hpw 1, hpw 2, hpw 3]
+  tauto
 
 /-! ### The binary tetrahedral subgroup -/
 

@@ -127,8 +127,6 @@ theorem map_toSO3_binaryOctahedralSubgroup :
     rw [← SetLike.coe_sort_coe, MonoidHom.coe_range,
       Nat.card_range_of_injective (cubeRotationToSpecialOrthogonalGroup_injective ℝ),
       natCard_cubeRotationGroup]
-  have : Finite (cubeRotationToSpecialOrthogonalGroup ℝ).range :=
-    (Set.finite_range _).to_subtype
   exact Subgroup.eq_of_le_of_card_ge hle (by rw [hcard, natCard_map_toSO3_binaryOctahedralSubgroup])
 
 /-- **The binary octahedral subgroup is the full preimage of the real cube rotation group under
@@ -154,5 +152,21 @@ theorem coe_binaryOctahedralMapToSO3EquivPerm_symm_apply (σ : Equiv.Perm (Fin 4
   simp only [binaryOctahedralMapToSO3EquivPerm, MulEquiv.symm_trans_apply, MulEquiv.symm_symm,
     MulEquiv.subgroupCongr_symm_apply]
   exact MonoidHom.ofInjective_apply (cubeRotationToSpecialOrthogonalGroup_injective ℝ)
+
+/-- Applying `binaryOctahedralMapToSO3EquivPerm` to the `SO(3)` image of a cube rotation `A`
+returns `cubeRotationEquiv A`. -/
+@[simp]
+theorem binaryOctahedralMapToSO3EquivPerm_apply_cubeRotationToSpecialOrthogonalGroup
+    (A : cubeRotationGroup)
+    (hA : cubeRotationToSpecialOrthogonalGroup ℝ A ∈ binaryOctahedralSubgroup.map toSO3 :=
+      map_toSO3_binaryOctahedralSubgroup.symm ▸ ⟨A, rfl⟩) :
+    binaryOctahedralMapToSO3EquivPerm ⟨cubeRotationToSpecialOrthogonalGroup ℝ A, hA⟩ =
+      cubeRotationEquiv A :=
+  binaryOctahedralMapToSO3EquivPerm.eq_symm_apply.mp <| Subtype.ext <|
+    ((coe_binaryOctahedralMapToSO3EquivPerm_symm_apply (cubeRotationEquiv A)).trans
+      (by rw [MulEquiv.symm_apply_apply])).symm
+
+instance : Finite (binaryOctahedralSubgroup.map toSO3) :=
+  Finite.of_equiv _ binaryOctahedralMapToSO3EquivPerm.symm.toEquiv
 
 end TauCeti.SU2

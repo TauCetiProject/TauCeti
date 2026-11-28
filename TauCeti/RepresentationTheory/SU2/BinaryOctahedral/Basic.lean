@@ -16,6 +16,7 @@ import TauCeti.GroupTheory.Index.Two
 import TauCeti.GroupTheory.SpecificGroups.Quaternion.Basic
 import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
+import TauCeti.RepresentationTheory.ClassicalGroups.Volume
 
 /-!
 # The binary octahedral subgroup of SU(2)
@@ -205,17 +206,11 @@ private theorem exists_half_mul_div_sqrt_two_eq {v w : Fin 4 → ℤ}
     (∃ u : Fin 4 → ℤ, (⟨v 0 / 2, v 1 / 2, v 2 / 2, v 3 / 2⟩ : ℍ[ℝ]) *
       ⟨w 0 / √2, w 1 / √2, w 2 / √2, w 3 / √2⟩ = ⟨u 0 / √2, u 1 / √2, u 2 / √2, u 3 / √2⟩) ∧
     ∃ u : Fin 4 → ℤ, (⟨w 0 / √2, w 1 / √2, w 2 / √2, w 3 / √2⟩ : ℍ[ℝ]) *
-      ⟨v 0 / 2, v 1 / 2, v 2 / 2, v 3 / 2⟩ = ⟨u 0 / √2, u 1 / √2, u 2 / √2, u 3 / √2⟩ := by
+      ⟨v 0 / 2, v 1 / 2, v 2 / 2, v 3 / 2⟩ = ⟨u 0 / √2, u 1 / √2, u 2 / √2, u 3 / √2⟩ :=
   have h := even_coords_of_mem hv hw
-  refine ⟨(exists_mk_div_two_mul_eq √2 (h (intQuaternion v * intQuaternion w) (by simp))).imp
-    fun u hu => ?_,
-    (exists_mk_div_two_mul_eq √2 (h (intQuaternion w * intQuaternion v) (by simp))).imp
-    fun u hu => ?_⟩
-  · rw [← hu, mk_div_mul_mk_div (⟨v 0, v 1, v 2, v 3⟩ : ℍ[ℝ]) (⟨w 0, w 1, w 2, w 3⟩ : ℍ[ℝ]) 2 √2]
-    ext <;> simp [intQuaternion]
-  · rw [← hu, mk_div_mul_mk_div (⟨w 0, w 1, w 2, w 3⟩ : ℍ[ℝ]) (⟨v 0, v 1, v 2, v 3⟩ : ℍ[ℝ]) √2 2,
-      mul_comm √2 2]
-    ext <;> simp [intQuaternion]
+  ⟨exists_mk_div_mul_mk_div_of_even_coords rfl (h (intQuaternion v * intQuaternion w) (by simp)),
+   exists_mk_div_mul_mk_div_of_even_coords (mul_comm √2 2)
+     (h (intQuaternion w * intQuaternion v) (by simp))⟩
 
 /-- A quaternion with coordinates in `ℤ/√2` is never a binary tetrahedral point: a coordinate
 `±1/√2` is not a half-integer. -/
@@ -411,29 +406,6 @@ theorem binaryOctahedralRep_apply_apply (g : binaryOctahedralSubgroup) (v : Fin 
 theorem binaryOctahedralRep_injective : Function.Injective binaryOctahedralRep :=
   (stdRep_injective ℂ 2).comp (toGL_injective.comp binaryOctahedralSubgroup.subtype_injective)
 
-/-- **The defining representation preserves the determinant bilinear form**
-`(x, y) ↦ x 0 * y 1 - x 1 * y 0` on `ℂ²`. -/
-theorem isInvariantForm_binaryOctahedralRep :
-    Representation.IsInvariantForm binaryOctahedralRep (Matrix.toBilin' !![0, (1 : ℂ); -1, 0]) := by
-  refine Representation.isInvariantForm_iff.mpr fun g x y => ?_
-  have hdet : ((g : SU2) : Matrix (Fin 2) (Fin 2) ℂ).det = 1 :=
-    (Matrix.mem_specialUnitaryGroup_iff.mp (g : SU2).property).2
-  rw [Matrix.det_fin_two] at hdet
-  simp only [binaryOctahedralRep_apply_apply, Matrix.toBilin'_apply', Matrix.mulVec, dotProduct,
-    Fin.sum_univ_two, Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one]
-  linear_combination (x 0 * y 1 - x 1 * y 0) * hdet
-
-/-- **The defining representation preserves `Matrix.detRowAlternating` on `ℂ²`.** -/
-theorem detRowAlternating_binaryOctahedralRep (g : binaryOctahedralSubgroup)
-    (v : Fin 2 → Fin 2 → ℂ) :
-    Matrix.detRowAlternating (fun i => binaryOctahedralRep g (v i)) =
-      Matrix.detRowAlternating v := by
-  have hdet : ((g : SU2) : Matrix (Fin 2) (Fin 2) ℂ).det = 1 :=
-    (Matrix.mem_specialUnitaryGroup_iff.mp (g : SU2).property).2
-  simpa only [binaryOctahedralRep_apply_apply, hdet, one_mul] using
-    Matrix.detRowAlternating_mulVec (ι := Fin 2) ((g : SU2) : Matrix (Fin 2) (Fin 2) ℂ) v
-
 end Representation
 
 /-- **The binary octahedral subgroup as a subgroup of `SL₂(ℂ)`**, the image of
@@ -476,6 +448,36 @@ theorem binaryOctahedralRep_eq_stdSLRep_comp :
         binaryOctahedralEquivSLSubgroup.toMonoidHom := by
   ext g
   simp
+
+/-- **The defining representation preserves `Matrix.detRowAlternating` on `ℂ²`.** -/
+theorem detRowAlternating_binaryOctahedralRep (g : binaryOctahedralSubgroup)
+    (v : Fin 2 → Fin 2 → ℂ) :
+    Matrix.detRowAlternating (fun i => binaryOctahedralRep g (v i)) =
+      Matrix.detRowAlternating v := by
+  simpa only [binaryOctahedralRep_eq_stdSLRep_comp, MonoidHom.comp_apply,
+    Subgroup.coe_subtype, MulEquiv.coe_toMonoidHom] using
+    detRowAlternating_stdSLRep ℂ 2 (binaryOctahedralEquivSLSubgroup g :
+      Matrix.SpecialLinearGroup (Fin 2) ℂ) v
+
+/-- **The defining representation preserves the determinant bilinear form**
+`(x, y) ↦ x 0 * y 1 - x 1 * y 0` on `ℂ²`. -/
+theorem isInvariantForm_binaryOctahedralRep :
+    Representation.IsInvariantForm binaryOctahedralRep (Matrix.toBilin' !![0, (1 : ℂ); -1, 0]) := by
+  refine Representation.isInvariantForm_iff.mpr fun g x y => ?_
+  have hform (u v : Fin 2 → ℂ) :
+      Matrix.toBilin' !![0, (1 : ℂ); -1, 0] u v = Matrix.detRowAlternating ![u, v] := by
+    change Matrix.toBilin' !![0, (1 : ℂ); -1, 0] u v = (Matrix.of ![u, v]).det
+    rw [Matrix.det_fin_two]
+    simp only [Matrix.toBilin'_apply', Matrix.mulVec, dotProduct, Fin.sum_univ_two,
+      Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+    ring
+  rw [hform, hform]
+  have hrow : (fun i => binaryOctahedralRep g (![x, y] i)) =
+      ![binaryOctahedralRep g x, binaryOctahedralRep g y] := by
+    ext i
+    fin_cases i <;> rfl
+  rw [← hrow]
+  exact detRowAlternating_binaryOctahedralRep g ![x, y]
 
 instance : Finite binaryOctahedralSLSubgroup :=
   Finite.of_equiv _ binaryOctahedralEquivSLSubgroup.toEquiv

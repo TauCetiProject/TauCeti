@@ -620,6 +620,9 @@ def cubeRotationToSpecialOrthogonalGroup (R : Type*) [CommRing R] :
   (Matrix.SpecialOrthogonalGroup.map (Int.castRingHom R)).comp
     cubeRotationToIntSpecialOrthogonalGroup
 
+instance (R : Type*) [CommRing R] : Finite (cubeRotationToSpecialOrthogonalGroup R).range :=
+  (Set.finite_range _).to_subtype
+
 /-- The underlying matrix of `cubeRotationToSpecialOrthogonalGroup R A` is the entrywise cast of
 `A` from `ℤ` to `R`. -/
 @[simp]
