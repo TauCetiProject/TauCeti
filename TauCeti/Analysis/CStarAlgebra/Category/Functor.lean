@@ -101,11 +101,9 @@ theorem norm_mapCLM_le (X Y : C) : ‖F.mapCLM X Y‖ ≤ 1 :=
 
 /-- `F.map` is `1`-Lipschitz on every Hom space (with its norm-induced metric). -/
 theorem lipschitzWith_map (X Y : C) :
-    LipschitzWith 1 (F.map : (X ⟶ Y) → (F.obj X ⟶ F.obj Y)) := by
-  rw [show (F.map : (X ⟶ Y) → (F.obj X ⟶ F.obj Y)) = F.mapCLM X Y from
-    funext fun f => (F.mapCLM_apply X Y f).symm]
-  exact ContinuousLinearMap.lipschitzWith_of_opNorm_le (K := 1)
-    (by simpa using F.norm_mapCLM_le X Y)
+    LipschitzWith 1 (F.map : (X ⟶ Y) → (F.obj X ⟶ F.obj Y)) :=
+  LipschitzWith.of_dist_le_mul fun f g => by
+    simpa only [NNReal.coe_one, one_mul, dist_eq_norm, ← F.map_sub] using F.norm_map_le (f - g)
 
 /-- `F.map` is continuous on every Hom space (with its norm-induced topology). -/
 @[fun_prop] theorem continuous_map (X Y : C) :

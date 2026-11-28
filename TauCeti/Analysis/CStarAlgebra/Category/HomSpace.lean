@@ -91,9 +91,8 @@ def daggerLinearIsometryEquiv (X Y : C) :
 
 /-- Taking the dagger is an isometry between opposite Hom spaces. -/
 theorem isometry_dagger (X Y : C) :
-    Isometry (dagger : (X ⟶ Y) → (Y ⟶ X)) := by
-  simpa only [show (daggerLinearIsometryEquiv X Y : (X ⟶ Y) → (Y ⟶ X)) = dagger from
-    funext daggerLinearIsometryEquiv_apply] using (daggerLinearIsometryEquiv X Y).isometry
+    Isometry (dagger : (X ⟶ Y) → (Y ⟶ X)) :=
+  Isometry.of_dist_eq dist_dagger
 
 /-- Taking the dagger is continuous on Hom spaces. -/
 @[fun_prop] theorem continuous_dagger (X Y : C) :
