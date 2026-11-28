@@ -45,7 +45,9 @@ For a compactly supported `C¹` map `u` on a real normed space, integrating its 
 ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`). For a compactly
 supported `C¹` function `ψ` on `ℝ`, the function `x ↦ x ψ' x` is integrable
 (`HasCompactSupport.integrable_id_mul_deriv`) and integration by parts gives `∫ x ψ' x = -∫ ψ`
-(`HasCompactSupport.integral_id_mul_deriv_eq_neg_integral`). For general
+(`HasCompactSupport.integral_id_mul_deriv_eq_neg_integral`). Such a `ψ`, with values in a Banach
+space, satisfies `2 ‖ψ x‖ ≤ ∫ ‖ψ'‖` (`HasCompactSupport.two_mul_eNorm_le_lintegral_eNorm_deriv`),
+since the integrals of `ψ'` over `(-∞, x]` and `(x, ∞)` are `ψ x` and `-ψ x`. For general
 Banach-space-valued integrands, `TauCeti.integral_comp_add_mul_left_Ioi'` records the affine
 change of variables `y = c + b * x` (`0 < b`) on `Ioi a`. Splitting `(c, ∞)` at two points bounds
 the norm of an integral over it by the integrals of majorants of its integrand on the three pieces
@@ -310,6 +312,29 @@ theorem HasCompactSupport.integral_id_mul_deriv_eq_neg_integral (hψc : HasCompa
   simpa using h
 
 end IdMulDeriv
+
+section TwoSided
+
+open MeasureTheory
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+
+/-- A compactly supported `C¹` function on `ℝ` is bounded by half the integral of the norm of
+its derivative: `2 ‖f x‖ ≤ ∫ ‖f'‖`. -/
+theorem HasCompactSupport.two_mul_eNorm_le_lintegral_eNorm_deriv {f : ℝ → F}
+    (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) (x : ℝ) :
+    2 * ‖f x‖ₑ ≤ ∫⁻ y, ‖deriv f y‖ₑ := by
+  have hIic : ‖f x‖ₑ ≤ ∫⁻ y in Iic x, ‖deriv f y‖ₑ := by
+    rw [← hc.integral_Iic_deriv_eq hf x]
+    exact eNorm_integral_le_lintegral_eNorm _
+  have hIoi : ‖f x‖ₑ ≤ ∫⁻ y in Ioi x, ‖deriv f y‖ₑ := by
+    rw [← eNorm_neg, ← hc.integral_Ioi_deriv_eq hf x]
+    exact eNorm_integral_le_lintegral_eNorm _
+  calc 2 * ‖f x‖ₑ = ‖f x‖ₑ + ‖f x‖ₑ := two_mul _
+    _ ≤ (∫⁻ y in Iic x, ‖deriv f y‖ₑ) + ∫⁻ y in Ioi x, ‖deriv f y‖ₑ := add_le_add hIic hIoi
+    _ = ∫⁻ y, ‖deriv f y‖ₑ := by rw [← compl_Iic, lintegral_add_compl _ measurableSet_Iic]
+
+end TwoSided
 
 namespace MeasureTheory.AECover
 
