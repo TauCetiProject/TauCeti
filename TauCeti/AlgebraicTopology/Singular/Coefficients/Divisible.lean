@@ -128,9 +128,8 @@ private lemma homologyMap_zsmulAddProjEndo_eq_zero {X : Type u} [TopologicalSpac
     ext q : 1
     let Y := (C.obj (TopCat.of X)).X q
     have hw : m • 𝟙 (M' ⊗ Y) = (m • 𝟙 M') ▷ Y := by
-      rw [← MonoidalCategory.id_whiskerRight, ← MonoidalCategory.curriedTensor_map_app,
-        ← Functor.flip_obj_map, ← Functor.map_zsmul, Functor.flip_obj_map,
-        MonoidalCategory.curriedTensor_map_app]
+      rw [← MonoidalCategory.id_whiskerRight]
+      exact (Functor.map_zsmul (MonoidalCategory.tensorRight Y)).symm
     simp [F, FCh, Y, hw, hM0]
   let H := HomologicalComplex.homologyFunctor (ModuleCat.{u} (ULift.{u} ℤ)) (.down ℕ) (n + 1)
   have hP : Limits.IsZero (H.obj (FCh.obj (C.obj (TopCat.of PUnit.{u + 1})))) :=
