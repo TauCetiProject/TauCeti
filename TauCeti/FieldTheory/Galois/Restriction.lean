@@ -187,7 +187,7 @@ theorem _root_.IntermediateField.restrictNormalHom_inclusion
     (IntermediateField.inclusion h).restrictNormalHom (AlgEquiv.restrictNormalHom N σ) =
       AlgEquiv.restrictNormalHom M σ := by
   have hcomp : N.val.comp (IntermediateField.inclusion h) = M.val :=
-    AlgHom.ext (IntermediateField.coe_inclusion h)
+    Subalgebra.val_comp_inclusion (S := M.toSubalgebra) (T := N.toSubalgebra) h
   rw [← IntermediateField.restrictNormalHom_val N,
     AlgHom.restrictNormalHom_restrictNormalHom, hcomp, IntermediateField.restrictNormalHom_val]
 

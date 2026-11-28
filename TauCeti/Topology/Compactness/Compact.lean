@@ -66,10 +66,9 @@ theorem _root_.Continuous.image_iInter_of_isClosed {Y ι : Type*} [CompactSpace 
   have hne (i : ι) : (C i).Nonempty := by
     obtain ⟨x, hx, hxy⟩ := mem_iInter.mp hy i
     exact ⟨x, hx, hxy⟩
-  have hC : Directed (· ⊇ ·) C := by
-    intro i j
-    obtain ⟨k, hki, hkj⟩ := hdir i j
-    exact ⟨k, inter_subset_inter_left _ hki, inter_subset_inter_left _ hkj⟩
+  have hC : Directed (· ⊇ ·) C :=
+    hdir.mono_comp (· ⊇ ·) (g := fun s ↦ s ∩ f ⁻¹' {y})
+      (fun {_ _} h ↦ inter_subset_inter_left _ h)
   obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed C hC hne
     (fun i ↦ (hclosed i).isCompact) hclosed
   exact ⟨x, mem_iInter.mpr fun i ↦ (mem_iInter.mp hx i).1,

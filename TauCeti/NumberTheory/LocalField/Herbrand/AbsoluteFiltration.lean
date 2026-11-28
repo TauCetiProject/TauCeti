@@ -609,8 +609,7 @@ theorem map_restrictNormalHom_localAbsoluteUpperRamificationGroup_eq_iInf
     -- which unfolds to the ambient group `Gal(AlgebraicClosure K/K)` of `S`.
     rw [localAbsoluteUpperRamificationGroup_def,
       MonoidHom.map_iInf_of_isClosed _ (InfiniteGalois.restrictNormalHom_continuous E) S
-        (fun N ↦ N.isClosed_comap_restrictNormalHom _)
-        (fun N P ↦ ⟨N ⊔ P, hanti le_sup_left, hanti le_sup_right⟩)]
+        (fun N ↦ N.isClosed_comap_restrictNormalHom _) hanti.directed_ge]
     intro τ hτ
     refine Subgroup.mem_iInf.2 fun N ↦ ?_
     obtain ⟨σ, hσE, hσN⟩ :=
