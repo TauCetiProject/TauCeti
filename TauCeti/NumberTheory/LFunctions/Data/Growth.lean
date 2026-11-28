@@ -20,7 +20,10 @@ on the half-plane used by `HasDirichletAgreement`, without imposing any
 continuation or functional equation.
 
 Duality and `EqOffZero` preserve this predicate. Uniformly bounded positive-index
-coefficients provide a sufficient criterion, as for zeta and Dirichlet characters.
+coefficients provide a sufficient criterion, as for zeta and Dirichlet characters, and so does a
+coefficientwise norm bound by a card that already has average growth
+(`HasAverageCoefficientGrowth.of_norm_coeff_le_norm_coeff`), as for ideal weights bounded by the
+ideal counts of the Dedekind zeta function.
 -/
 
 public section
@@ -90,5 +93,16 @@ theorem hasAverageCoefficientGrowth_of_norm_coeff_le (h : ∃ C : ℝ,
     ∀ n : ℕ, n ≠ 0 → ‖d.coeff n‖ ≤ C) : d.HasAverageCoefficientGrowth :=
   hasAverageCoefficientGrowth_iff_abscissaOfAbsConv_le.mpr
     (LSeries.abscissaOfAbsConv_le_of_le_const h)
+
+/-- Average growth passes to a card whose positive-index coefficients are dominated in norm by
+those of a card with average growth. The coefficients at zero are not compared. -/
+theorem HasAverageCoefficientGrowth.of_norm_coeff_le_norm_coeff
+    (he : e.HasAverageCoefficientGrowth) (h : ∀ n : ℕ, n ≠ 0 → ‖d.coeff n‖ ≤ ‖e.coeff n‖) :
+    d.HasAverageCoefficientGrowth := by
+  intro t ht
+  refine (isBigO_of_le _ fun n ↦ ?_).trans (he t ht)
+  rw [Real.norm_of_nonneg (sum_nonneg fun _ _ ↦ norm_nonneg _),
+    Real.norm_of_nonneg (sum_nonneg fun _ _ ↦ norm_nonneg _)]
+  exact sum_le_sum fun k hk ↦ h k (by have := (mem_Icc.mp hk).1; omega)
 
 end TauCeti.LFunctions.AnalyticLFunctionData
