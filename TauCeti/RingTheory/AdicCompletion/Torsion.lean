@@ -399,21 +399,28 @@ variable {R : Type*} [CommRing R] {I : Ideal R}
 variable {M : Type*} [AddCommGroup M] [Module R M]
 variable [Module (AdicCompletion I R) M] [IsScalarTower R (AdicCompletion I R) M]
 
+/-- Any `AdicCompletion I R`-module structure extending the `R`-action acts on an element killed
+by `I ^ n` via `r` whenever `a - algebraMap R (AdicCompletion I R) r` lies in `(I ^ n).map _`. -/
+theorem smul_eq_of_sub_mem_map_pow (a : AdicCompletion I R) {x : M} {n : ℕ} (r : R)
+    (hx : x ∈ Submodule.torsionBySet R M ↑(I ^ n))
+    (ha : a - algebraMap R (AdicCompletion I R) r ∈
+      (I ^ n).map (algebraMap R (AdicCompletion I R))) :
+    a • x = r • x := by
+  have hzero : (a - algebraMap R (AdicCompletion I R) r) • x = 0 :=
+    (Submodule.mem_torsionBySet_iff _ _).mp
+      ((Submodule.mem_torsionBySet_map_iff (S := AdicCompletion I R) (I ^ n)).mpr hx) ⟨_, ha⟩
+  rw [sub_smul, algebraMap_smul, sub_eq_zero] at hzero
+  exact hzero
+
 /-- For a finitely generated ideal `I`, any `AdicCompletion I R`-module structure extending the
 `R`-action acts on an element killed by `I ^ n` through its residue modulo `I ^ n`. -/
 theorem smul_eq_of_mem_torsionBySet (a : AdicCompletion I R) (hI : I.FG) {x : M} {n : ℕ} (r : R)
     (hx : x ∈ Submodule.torsionBySet R M ↑(I ^ n))
     (ha : evalₐ I n a = Ideal.Quotient.mk (I ^ n) r) :
     a • x = r • x := by
-  have hmem : a - algebraMap R (AdicCompletion I R) r ∈
-      (I ^ n).map (algebraMap R (AdicCompletion I R)) := by
-    rw [← ker_evalₐ_eq_map_pow hI n, RingHom.mem_ker, map_sub, ha, algebraMap_apply, evalₐ_of]
-    simp
-  have hzero : (a - algebraMap R (AdicCompletion I R) r) • x = 0 :=
-    (Submodule.mem_torsionBySet_iff _ _).mp
-      ((Submodule.mem_torsionBySet_map_iff (S := AdicCompletion I R) (I ^ n)).mpr hx) ⟨_, hmem⟩
-  rw [sub_smul, algebraMap_smul, sub_eq_zero] at hzero
-  exact hzero
+  refine a.smul_eq_of_sub_mem_map_pow r hx ?_
+  rw [← ker_evalₐ_eq_map_pow hI n, RingHom.mem_ker, map_sub, ha, algebraMap_apply, evalₐ_of]
+  simp
 
 end AdicCompletion
 

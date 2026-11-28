@@ -96,15 +96,6 @@ theorem evalEquivOfFinite_symm_apply_apply (φ : (M →ₗ[R] E) →ₗ[R] E) (f
 
 end Eval
 
-/-- `evalEquivOfFinite` is natural with respect to `R`-linear maps. -/
-@[simp]
-theorem lcomp_lcomp_evalEquivOfFinite {M : Type w} [AddCommGroup M] [Module R M]
-    [Module.Finite R M] {N : Type z} [AddCommGroup N] [Module R N] [Module.Finite R N]
-    (f : M →ₗ[R] N) (m : M) :
-    (f.lcomp R E).lcomp R E (hι.evalEquivOfFinite M m) = hι.evalEquivOfFinite N (f m) := by
-  ext g
-  simp
-
 /-- Over a complete Noetherian local ring, Matlis duality is bijective on morphisms into any
 finitely generated module. -/
 theorem bijective_lcomp_of_finite (M : Type w) [AddCommGroup M] [Module R M]

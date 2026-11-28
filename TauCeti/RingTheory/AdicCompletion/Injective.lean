@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.AdicCompletion.Algebra
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 import TauCeti.Algebra.Module.Torsion.ArtinRees
 import TauCeti.RingTheory.AdicCompletion.Algebra
+import TauCeti.RingTheory.AdicCompletion.Torsion
 
 /-!
 # Injective ideal-power-torsion modules over the completion
@@ -77,16 +78,10 @@ theorem moduleInjective_of_primaryComponent {R : Type u} [CommRing R] {I : Ideal
     obtain ⟨r, hr⟩ := exists_sub_algebraMap_mem_map_pow hI m a
     have hzero : h ((a - algebraMap R Rhat r) * b) = 0 :=
       hhI _ (Ideal.mul_mem_right b _ (Ideal.map_pow (algebraMap R Rhat) I m ▸ hr))
-    have hzero' : (a - algebraMap R Rhat r) • h b = 0 :=
-      (Submodule.mem_torsionBySet_iff _ _).mp
-        ((Submodule.mem_torsionBySet_map_iff (S := Rhat) (I ^ m)).mpr hb) ⟨_, hr⟩
     have hlhs : h (a • b) = r • h b := by
       rw [smul_eq_mul, ← sub_add_cancel a (algebraMap R Rhat r), add_mul, map_add, hzero, zero_add,
         ← Algebra.smul_def, map_smul]
-    have hrhs : a • h b = r • h b := by
-      rw [← sub_eq_zero, ← algebraMap_smul Rhat r (h b), ← sub_smul]
-      exact hzero'
-    exact hlhs.trans hrhs.symm
+    exact hlhs.trans (a.smul_eq_of_sub_mem_map_pow r hb hr).symm
   exact ⟨{ h with map_smul' := hsmul }, hhJ⟩
 
 end TauCeti.AdicCompletion

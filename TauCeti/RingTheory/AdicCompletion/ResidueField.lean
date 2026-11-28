@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.PrimaryComponent
 public import Mathlib.RingTheory.AdicCompletion.LocalRing
+import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 
 /-!
 # Residue field of the completion of a local ring
@@ -13,7 +15,9 @@ public import Mathlib.RingTheory.AdicCompletion.LocalRing
 Let `R` be a Noetherian local ring with maximal ideal `𝔪` and `𝔪`-adic completion `R̂`. The
 canonical map `R → R̂` induces an isomorphism on residue fields
 (`AdicCompletion.residueField_map_bijective`).
-This file packages it as the `R`-algebra equivalence `TauCeti.AdicCompletion.residueFieldEquiv`.
+This file packages it as the `R`-algebra equivalence `TauCeti.AdicCompletion.residueFieldEquiv`,
+and records that the residue field of `R̂` is `𝔪`-power torsion over `R`
+(`TauCeti.AdicCompletion.mem_primaryComponent_maximalIdeal_residueField`).
 
 ## Main results
 
@@ -21,6 +25,8 @@ This file packages it as the `R`-algebra equivalence `TauCeti.AdicCompletion.res
   `ResidueField R ≃ₐ[R] ResidueField R̂` induced by `R → R̂`.
 * `TauCeti.AdicCompletion.residueFieldEquiv_apply`: `residueFieldEquiv` agrees with
   `IsLocalRing.ResidueField.map` of `algebraMap R R̂`.
+* `TauCeti.AdicCompletion.mem_primaryComponent_maximalIdeal_residueField`: the residue field of
+  `R̂` is `𝔪`-power torsion over `R`.
 -/
 
 public section
@@ -48,6 +54,25 @@ theorem residueFieldEquiv_apply (x : ResidueField R) :
     residueFieldEquiv R x =
       ResidueField.map (algebraMap R (AdicCompletion (maximalIdeal R) R)) x :=
   AlgEquiv.ofBijective_apply _ _ x
+
+/-- The residue field of `AdicCompletion (maximalIdeal R) R` is `(maximalIdeal R)`-power torsion
+over `R` (in fact annihilated by `maximalIdeal R`). -/
+theorem mem_primaryComponent_maximalIdeal_residueField
+    (x : ResidueField (AdicCompletion (maximalIdeal R) R)) :
+    x ∈ (maximalIdeal R).primaryComponent
+      (ResidueField (AdicCompletion (maximalIdeal R) R)) := by
+  have htop : (maximalIdeal R).primaryComponent
+      (ResidueField (AdicCompletion (maximalIdeal R) R)) = ⊤ :=
+    Ideal.primaryComponent_eq_top_of_le_annihilator _ (n := 1) (by
+      rw [pow_one]
+      exact fun r hr ↦
+        Module.mem_annihilator.mpr fun y ↦ by
+          rw [← algebraMap_smul (AdicCompletion (maximalIdeal R) R),
+            Algebra.smul_def, ResidueField.algebraMap_eq,
+            (residue_eq_zero_iff (R := AdicCompletion (maximalIdeal R) R) _).mpr
+              ((_root_.AdicCompletion.maximalIdeal_eq_map (R := R)).ge
+                (Ideal.mem_map_of_mem _ hr)), zero_mul])
+  exact htop.ge Submodule.mem_top
 
 end
 

@@ -142,20 +142,6 @@ theorem evalEquivAdicCompletionOfIsArtinian_symm_apply_apply (M : Type w) [AddCo
     congrArg (fun ψ : (M →ₗ[R] E) →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E ↦ ψ f)
       ((hι.evalEquivAdicCompletionOfIsArtinian M).apply_symm_apply φ)
 
-/-- `evalEquivAdicCompletionOfIsArtinian` is natural with respect to `R`-linear maps. -/
-@[simp]
-theorem lcomp_lcomp_evalEquivAdicCompletionOfIsArtinian {M : Type w} [AddCommGroup M]
-    [Module R M] [IsArtinian R M] {N : Type z} [AddCommGroup N] [Module R N] [IsArtinian R N]
-    (f : M →ₗ[R] N) (m : M) :
-    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
-    (f.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E).lcomp
-        (_root_.AdicCompletion (maximalIdeal R) R) E
-      (hι.evalEquivAdicCompletionOfIsArtinian M m) =
-      hι.evalEquivAdicCompletionOfIsArtinian N (f m) := by
-  let := AdicCompletion.torsionModule hι.mem_primaryComponent
-  ext g
-  simp
-
 /-- **General Matlis biduality for finite `R̂`-modules**: over any Noetherian local ring `R`,
 evaluation identifies a finitely generated `R̂`-module `N` with `Hom_R(Hom_{R̂}(N, E), E)`. -/
 def evalEquivOfFiniteAdicCompletion (N : Type w) [AddCommGroup N]
@@ -193,22 +179,6 @@ theorem evalEquivOfFiniteAdicCompletion_symm_apply_apply (N : Type w) [AddCommGr
   simpa only [evalEquivOfFiniteAdicCompletion_apply_apply] using
     congrArg (fun ψ : (N →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E) →ₗ[R] E ↦ ψ f)
       ((hι.evalEquivOfFiniteAdicCompletion N).apply_symm_apply φ)
-
-/-- `evalEquivOfFiniteAdicCompletion` is natural with respect to `R̂`-linear maps. -/
-@[simp]
-theorem lcomp_lcomp_evalEquivOfFiniteAdicCompletion {M : Type w} [AddCommGroup M]
-    [Module (_root_.AdicCompletion (maximalIdeal R) R) M]
-    [Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) M]
-    {N : Type z} [AddCommGroup N]
-    [Module (_root_.AdicCompletion (maximalIdeal R) R) N]
-    [Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) N]
-    (f : M →ₗ[_root_.AdicCompletion (maximalIdeal R) R] N) (x : M) :
-    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
-    (f.lcomp R E).lcomp R E (hι.evalEquivOfFiniteAdicCompletion M x) =
-      hι.evalEquivOfFiniteAdicCompletion N (f x) := by
-  let := AdicCompletion.torsionModule hι.mem_primaryComponent
-  ext g
-  simp
 
 /-- Over any Noetherian local ring, `Hom_R(-, E)` is bijective on morphisms into an Artinian
 `R`-module, valued in `R̂`-linear maps between Matlis duals. -/

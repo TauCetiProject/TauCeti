@@ -14,6 +14,7 @@ public import TauCeti.CategoryTheory.ObjectProperty.Kernels
 public import TauCeti.RingTheory.MatlisDuality.Completion.Basic
 import Mathlib.CategoryTheory.Abelian.Subcategory
 import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
+import TauCeti.CategoryTheory.ObjectProperty.Equivalence
 import TauCeti.RingTheory.AdicCompletion.Noetherian
 import TauCeti.RingTheory.AdicCompletion.Small
 
@@ -350,57 +351,41 @@ contravariant equivalence between Artinian `R`-modules and finitely generated `R
 unit and counit are evaluation. -/
 def adicCompletionMatlisDuality :
     (ModuleCat.isArtinian.{max v w} R).FullSubcategoryᵒᵖ ≌
-      FGModuleCat.{max v w} (_root_.AdicCompletion (maximalIdeal R) R) where
-  functor := ObjectProperty.lift _
-    ((ModuleCat.isArtinian.{max v w} R).ι.op ⋙ hι.matlisDualAdicCompletion)
-    fun M ↦ by
+      FGModuleCat.{max v w} (_root_.AdicCompletion (maximalIdeal R) R) :=
+  ObjectProperty.antiEquivalence (ModuleCat.isArtinian.{max v w} R)
+    (ModuleCat.isFG.{max v w} (_root_.AdicCompletion (maximalIdeal R) R))
+    hι.matlisDualAdicCompletion hι.matlisDualOfAdicCompletion
+    (fun M hM ↦ by
       let := AdicCompletion.torsionModule hι.mem_primaryComponent
-      have : IsArtinian R M.unop.obj := (ModuleCat.isArtinian_iff _).mp M.unop.property
-      have : Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) (M.unop.obj →ₗ[R] E) :=
+      have : IsArtinian R M := (ModuleCat.isArtinian_iff _).mp hM
+      have : Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) (M →ₗ[R] E) :=
         hι.finite_adicCompletion_linearMap_of_isArtinian
       exact (ModuleCat.isFG_iff _).mpr
-        (Module.Finite.equiv (hι.matlisDualAdicCompletionObjEquiv M.unop.obj).symm)
-  inverse := (ObjectProperty.lift _
-    ((ModuleCat.isFG.{max v w} (_root_.AdicCompletion (maximalIdeal R) R)).ι.op ⋙
-      hι.matlisDualOfAdicCompletion)
-    fun N ↦ by
-      have : Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) N.unop.obj :=
-        (ModuleCat.isFG_iff _).mp N.unop.property
+        (Module.Finite.equiv (hι.matlisDualAdicCompletionObjEquiv M).symm))
+    (fun N hN ↦ by
+      have : Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) N :=
+        (ModuleCat.isFG_iff _).mp hN
       let := AdicCompletion.torsionModule hι.mem_primaryComponent
-      have : IsArtinian R (N.unop.obj →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E) :=
-        hι.isArtinian_adicCompletion_linearMap_of_finite N.unop.obj
+      have : IsArtinian R (N →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E) :=
+        hι.isArtinian_adicCompletion_linearMap_of_finite N
       exact (ModuleCat.isArtinian_iff _).mpr
-        (isArtinian_of_linearEquiv
-          (hι.matlisDualOfAdicCompletionObjEquiv N.unop.obj).symm)).rightOp
-  unitIso := NatIso.ofComponents (fun M ↦
-      (ObjectProperty.isoMk _ (hι.evalIsoAdicCompletionOfIsArtinian M.unop.obj
-        ((ModuleCat.isArtinian_iff _).mp M.unop.property))).symm.op)
-    (fun {X Y} g ↦ Quiver.Hom.unop_inj <| (Iso.inv_comp_eq _).mpr <|
-      ((Iso.eq_comp_inv _).mpr <| ObjectProperty.hom_ext _ <|
-        hι.evalIsoAdicCompletionOfIsArtinian_hom_naturality g.unop.hom
-          ((ModuleCat.isArtinian_iff _).mp Y.unop.property)
-          ((ModuleCat.isArtinian_iff _).mp X.unop.property)).trans (Category.assoc _ _ _))
-  counitIso := NatIso.ofComponents (fun N ↦
-      (ObjectProperty.isoMk _ (hι.evalIsoOfFiniteAdicCompletion N.obj
-        ((ModuleCat.isFG_iff _).mp N.property))).symm)
-    (fun {X Y} g ↦ (Iso.comp_inv_eq _).mpr <| ((Iso.eq_inv_comp _).mpr <|
-      (ObjectProperty.hom_ext _ <|
-        (hι.evalIsoOfFiniteAdicCompletion_hom_naturality g.hom
-          ((ModuleCat.isFG_iff _).mp X.property)
-          ((ModuleCat.isFG_iff _).mp Y.property)).symm)).trans (Category.assoc _ _ _).symm)
-  functor_unitIso_comp M := by
-    refine ObjectProperty.hom_ext _ ?_
-    have : IsArtinian R M.unop.obj := (ModuleCat.isArtinian_iff _).mp M.unop.property
-    let := AdicCompletion.torsionModule hι.mem_primaryComponent
-    have : Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) (M.unop.obj →ₗ[R] E) :=
-      hι.finite_adicCompletion_linearMap_of_isArtinian
-    have hM' : Module.Finite (_root_.AdicCompletion (maximalIdeal R) R)
-        (hι.matlisDualAdicCompletionObj M.unop.obj) :=
-      Module.Finite.equiv (hι.matlisDualAdicCompletionObjEquiv M.unop.obj).symm
-    exact (Iso.comp_inv_eq_id (hι.evalIsoOfFiniteAdicCompletion
-      (hι.matlisDualAdicCompletionObj M.unop.obj) hM')).mpr
-      (hι.evalIsoOfFiniteAdicCompletion_matlisDualAdicCompletionObj_hom M.unop.obj
-        ((ModuleCat.isArtinian_iff _).mp M.unop.property) hM').symm
+        (isArtinian_of_linearEquiv (hι.matlisDualOfAdicCompletionObjEquiv N).symm))
+    (fun M hM ↦ hι.evalIsoAdicCompletionOfIsArtinian M ((ModuleCat.isArtinian_iff _).mp hM))
+    (fun hX hX' g ↦ hι.evalIsoAdicCompletionOfIsArtinian_hom_naturality g
+      ((ModuleCat.isArtinian_iff _).mp hX) ((ModuleCat.isArtinian_iff _).mp hX'))
+    (fun N hN ↦ hι.evalIsoOfFiniteAdicCompletion N ((ModuleCat.isFG_iff _).mp hN))
+    (fun hY hY' g ↦ hι.evalIsoOfFiniteAdicCompletion_hom_naturality g
+      ((ModuleCat.isFG_iff _).mp hY) ((ModuleCat.isFG_iff _).mp hY'))
+    (fun M hM ↦ by
+      have : IsArtinian R M := (ModuleCat.isArtinian_iff _).mp hM
+      let := AdicCompletion.torsionModule hι.mem_primaryComponent
+      have : Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) (M →ₗ[R] E) :=
+        hι.finite_adicCompletion_linearMap_of_isArtinian
+      have hM' : Module.Finite (_root_.AdicCompletion (maximalIdeal R) R)
+          (hι.matlisDualAdicCompletionObj M) :=
+        Module.Finite.equiv (hι.matlisDualAdicCompletionObjEquiv M).symm
+      exact hι.evalIsoOfFiniteAdicCompletion_matlisDualAdicCompletionObj_hom M
+        ((ModuleCat.isArtinian_iff _).mp hM) hM')
 
 @[simp]
 theorem adicCompletionMatlisDuality_functor_obj_obj
@@ -416,7 +401,7 @@ theorem adicCompletionMatlisDuality_functor_map_hom
       eqToHom (hι.adicCompletionMatlisDuality_functor_obj_obj M) ≫
         hι.matlisDualAdicCompletionMap g.unop.hom ≫
         eqToHom (hι.adicCompletionMatlisDuality_functor_obj_obj M').symm := by
-  simp [adicCompletionMatlisDuality]
+  simp [adicCompletionMatlisDuality, ObjectProperty.antiEquivalence]
 
 @[simp]
 theorem adicCompletionMatlisDuality_inverse_obj_unop_obj
@@ -432,7 +417,7 @@ theorem adicCompletionMatlisDuality_inverse_map_unop_hom
       eqToHom (hι.adicCompletionMatlisDuality_inverse_obj_unop_obj N') ≫
         hι.matlisDualOfAdicCompletionMap g.hom ≫
         eqToHom (hι.adicCompletionMatlisDuality_inverse_obj_unop_obj N).symm := by
-  simp [adicCompletionMatlisDuality]
+  simp [adicCompletionMatlisDuality, ObjectProperty.antiEquivalence]
 
 /-- The inverse of the unit of `adicCompletionMatlisDuality` is evaluation
 `M → Hom_{R̂}(Hom_R(M, E), E)`. -/

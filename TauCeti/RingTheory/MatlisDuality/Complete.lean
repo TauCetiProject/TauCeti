@@ -121,16 +121,6 @@ theorem finite_iff_isArtinian_linearMap : Module.Finite R M ↔ IsArtinian R (M 
   have := hι.finite_linearMap_of_isArtinian (M →ₗ[R] E)
   exact Module.Finite.of_injective _ (injective_applyₗ_of_injective (M := M) hι.injective)
 
-/-- `evalEquivOfIsArtinian` is natural with respect to `R`-linear maps. -/
-@[simp]
-theorem lcomp_lcomp_evalEquivOfIsArtinian {M : Type w} [AddCommGroup M] [Module R M]
-    [IsArtinian R M] {N : Type z} [AddCommGroup N] [Module R N] [IsArtinian R N]
-    (f : M →ₗ[R] N) (m : M) :
-    (f.lcomp R E).lcomp R E (hι.evalEquivOfIsArtinian M m) =
-      hι.evalEquivOfIsArtinian N (f m) := by
-  ext g
-  simp
-
 /-- Over a complete Noetherian local ring, Matlis duality is bijective on morphisms into any
 Artinian module. -/
 theorem bijective_lcomp_of_isArtinian

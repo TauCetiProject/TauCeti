@@ -26,6 +26,10 @@ act on underlying objects and morphisms as the ambient ones, by Mathlib's `@[sim
 * `CategoryTheory.ObjectProperty.inverseImage_functor_inverseImage_inverse`: pulling an
   isomorphism-invariant property backward along both functors of an equivalence recovers it, as
   `congrFullSubcategory` asks of the transported property `P.inverseImage e.inverse`.
+* `CategoryTheory.ObjectProperty.antiEquivalence`: given contravariant functors `F : Cᵒᵖ ⥤ D` and
+  `G : Dᵒᵖ ⥤ C` sending `P` and `Q` into each other, together with natural evaluation
+  isomorphisms satisfying the triangle identity, constructs the anti-equivalence
+  `P.FullSubcategoryᵒᵖ ≌ Q.FullSubcategory`.
 * `CategoryTheory.Equivalence.congrFullSubcategory_functor_additive` and
   `CategoryTheory.Equivalence.congrFullSubcategory_inverse_additive`: if the ambient functor,
   respectively the ambient inverse, of an equivalence is additive, then so is its restriction to
@@ -35,6 +39,8 @@ act on underlying objects and morphisms as the ambient ones, by Mathlib's `@[sim
 public section
 
 namespace CategoryTheory
+
+open Opposite
 
 namespace ObjectProperty
 
@@ -53,6 +59,45 @@ theorem inverseImage_functor_inverseImage_inverse {C D : Type*} [Category* C] [C
     (P : ObjectProperty C) [P.IsClosedUnderIsomorphisms] (e : C ≌ D) :
     (P.inverseImage e.inverse).inverseImage e.functor = P :=
   P.inverseImage_eq_of_iso e.unitIso.symm
+
+/-- Given contravariant functors `F : Cᵒᵖ ⥤ D` and `G : Dᵒᵖ ⥤ C` sending full subcategories `P`
+and `Q` into each other, together with natural evaluation isomorphisms
+`X ≅ G.obj (op (F.obj (op X)))` on `P` and `Y ≅ F.obj (op (G.obj (op Y)))` on `Q` satisfying the
+triangle identity, `F` and `G` restrict to an anti-equivalence
+`P.FullSubcategoryᵒᵖ ≌ Q.FullSubcategory`. -/
+@[expose]
+def antiEquivalence {C D : Type*} [Category* C] [Category* D]
+    (P : ObjectProperty C) (Q : ObjectProperty D)
+    (F : Cᵒᵖ ⥤ D) (G : Dᵒᵖ ⥤ C)
+    (hPQ : ∀ X, P X → Q (F.obj (op X)))
+    (hQP : ∀ Y, Q Y → P (G.obj (op Y)))
+    (η : ∀ X, P X → (X ≅ G.obj (op (F.obj (op X)))))
+    (hη : ∀ {X X' : C} (hX : P X) (hX' : P X') (f : X ⟶ X'),
+      f ≫ (η X' hX').hom = (η X hX).hom ≫ G.map (F.map f.op).op)
+    (ε : ∀ Y, Q Y → (Y ≅ F.obj (op (G.obj (op Y)))))
+    (hε : ∀ {Y Y' : D} (hY : Q Y) (hY' : Q Y') (g : Y ⟶ Y'),
+      g ≫ (ε Y' hY').hom = (ε Y hY).hom ≫ F.map (G.map g.op).op)
+    (hTri : ∀ X (hX : P X),
+      (ε (F.obj (op X)) (hPQ X hX)).hom = F.map (η X hX).inv.op) :
+    P.FullSubcategoryᵒᵖ ≌ Q.FullSubcategory where
+  functor := Q.lift (P.ι.op ⋙ F) fun M => hPQ _ M.unop.property
+  inverse := (P.lift (Q.ι.op ⋙ G) fun N => hQP _ N.unop.property).rightOp
+  unitIso := NatIso.ofComponents
+    (fun M => (P.isoMk (η M.unop.obj M.unop.property)).symm.op)
+    (fun {X Y} g => by
+      refine Quiver.Hom.unop_inj ((Iso.inv_comp_eq _).mpr ?_)
+      refine ((Iso.eq_comp_inv _).mpr (P.hom_ext ?_)).trans (Category.assoc _ _ _)
+      exact hη Y.unop.property X.unop.property g.unop.hom)
+  counitIso := NatIso.ofComponents
+    (fun N => (Q.isoMk (ε N.obj N.property)).symm)
+    (fun {X Y} g => by
+      refine (Iso.comp_inv_eq _).mpr ?_
+      refine ((Iso.eq_inv_comp _).mpr (Q.hom_ext ?_)).trans (Category.assoc _ _ _).symm
+      exact (hε X.property Y.property g.hom).symm)
+  functor_unitIso_comp M := by
+    refine Q.hom_ext ?_
+    exact (Iso.comp_inv_eq_id (ε (F.obj (op M.unop.obj)) (hPQ _ M.unop.property))).mpr
+      (hTri M.unop.obj M.unop.property).symm
 
 end ObjectProperty
 
