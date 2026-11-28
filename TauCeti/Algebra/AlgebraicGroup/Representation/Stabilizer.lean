@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Antipode
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Comul
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Product
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Submodule
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 public import TauCeti.Algebra.HopfAlgebra.Antipode
@@ -36,11 +37,18 @@ This file constructs that Hopf ideal and characterizes it in four ways.
 The last statement is the infinitesimal input to the comparison of `G`-stable and
 `Lie(G)`-stable subspaces.
 
+Embedding a subspace in the first summand of a direct-sum representation preserves its
+scheme-theoretic stabilizer. In particular, the line through `(m, 0)` has the same stabilizer
+as the line through `m`. The proof compares the defining matrix coefficients, so it applies
+to nonreduced subgroup schemes over any field.
+
 ## Main declarations
 
 * `Submodule.stabilizerHopfIdeal`: the Hopf ideal of the stabilizer of `W`.
 * `Submodule.stabilizerHopfIdeal_le_ker_iff`: its points are the points carrying `A ⊗ W` onto
   itself.
+* `Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint`: its points over
+  any commutative value algebra preserve the scalar extension of `W`.
 * `Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff`: its rational points are the
   rational points carrying `W` onto itself.
 * `Submodule.stabilizerHopfIdeal_le_iff`: its universal property among Hopf ideals.
@@ -49,6 +57,10 @@ The last statement is the infinitesimal input to the comparison of `G`-stable an
   does not change stabilizers.
 * `Submodule.mem_lieSubalgebra_stabilizerHopfIdeal_iff`: its Lie algebra is the stabilizer of
   `W` under the differentiated representation.
+* `Submodule.stabilizerHopfIdeal_map_inl`: embedding a subspace in the first summand preserves
+  its stabilizer.
+* `Submodule.stabilizerHopfIdeal_span_singleton_prod_zero`: the lines through `(m, 0)` and `m`
+  have the same stabilizer.
 
 ## References
 
@@ -61,7 +73,7 @@ public section
 open scoped TensorProduct
 open TauCeti
 
-universe u v w
+universe u v w x
 
 noncomputable section
 
@@ -310,6 +322,17 @@ theorem stabilizerHopfIdeal_le_ker_iff (W : Submodule k M) {A : Type*} [CommRing
     · rw [SetLike.mem_coe, RingHom.mem_ker, ← hinv]
       exact (mapsTo_endOfPoint_baseChange_iff W (g⁻¹).ofConv).mp hginv ψ w w.property
 
+/-- An algebra-valued point lies in the stabilizer of `W` as a subgroup of `H(A)` exactly when its
+action carries `A ⊗ W` onto itself. -/
+theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint (W : Submodule k M)
+    {A : Type*} [CommRing A] [Algebra k A] (g : WithConv (H →ₐ[k] A)) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
+        (W.stabilizerHopfIdeal H) (CommAlgCat.of k A) ↔
+      (W.baseChange A).map (Comodule.endOfPoint M g.ofConv) = W.baseChange A := by
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
+  simpa only [IsConcreteLE.le_iff, HopfIdeal.mem_toIdeal, RingHom.mem_ker] using
+    W.stabilizerHopfIdeal_le_ker_iff g
+
 /-- A rational point lies in the stabilizer of `W` exactly when its action carries `W` onto
 itself. -/
 theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff (W : Submodule k M)
@@ -331,11 +354,8 @@ theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff (W : Submodule k M)
     simp only [e, LinearMap.comp_apply, LinearEquiv.coe_coe, TensorProduct.lid_symm_apply]
     rw [Comodule.endOfPoint_tmul, one_smul,
       Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation]
-  have hker : (∀ h ∈ W.stabilizerHopfIdeal H, g.ofConv h = 0) ↔
-      (W.stabilizerHopfIdeal H).toIdeal ≤ RingHom.ker g.ofConv :=
-    ⟨fun h _ hx ↦ h _ hx, fun h _ hx ↦ h hx⟩
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, hker,
-    W.stabilizerHopfIdeal_le_ker_iff g, hbc, ← map_comp, hcomp, map_comp]
+  rw [W.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint g,
+    hbc, ← map_comp, hcomp, map_comp]
   exact (map_injective_of_injective (TensorProduct.lid k M).symm.injective).eq_iff
 
 section Map
@@ -359,5 +379,49 @@ theorem stabilizerHopfIdeal_map_of_injective (f : Comodule.Hom k H V W)
 end Map
 
 end Hopf
+
+section Product
+
+variable {k : Type u} [Field k] {H : Type v} [CommRing H] [HopfAlgebra k H]
+  {M : Type w} {V : Type x} [AddCommGroup M] [Module k M] [Comodule k H M]
+  [AddCommGroup V] [Module k V] [Comodule k H V]
+
+attribute [local instance] Comodule.Prod
+
+/-- Adding a direct summand preserves the stabilizer of a subspace in the first summand. -/
+theorem stabilizerHopfIdeal_map_inl (W : Submodule k M) :
+    (W.map (LinearMap.inl k M V)).stabilizerHopfIdeal H = W.stabilizerHopfIdeal H := by
+  let U := W.map (LinearMap.inl k M V)
+  apply le_antisymm
+  · rw [stabilizerHopfIdeal_le_iff]
+    intro ψ y hy
+    obtain ⟨z, hz, rfl⟩ := hy
+    let f := (ψ ∘ₗ U.mkQ) ∘ₗ LinearMap.inl k M V
+    have hf : W ≤ LinearMap.ker f := by
+      intro z hz
+      simp only [LinearMap.mem_ker, f, LinearMap.comp_apply, mkQ_apply,
+        (Quotient.mk_eq_zero U).mpr (mem_map_of_mem hz), map_zero]
+    rw [LinearMap.inl_apply, ← Comodule.prodInl_apply (R := k) (C := H) (N := V) z,
+      Comodule.matrixCoefficient_map]
+    simpa only [liftQ_mkQ, Comodule.prodInl_toLinearMap] using
+      W.matrixCoefficient_mem_stabilizerHopfIdeal (W.liftQ f hf) hz
+  · rw [stabilizerHopfIdeal_le_iff]
+    intro ψ z hz
+    let f := (ψ ∘ₗ W.mkQ) ∘ₗ LinearMap.fst k M V
+    have hf : U ≤ LinearMap.ker f := by
+      rintro y ⟨z, hz, rfl⟩
+      simp only [LinearMap.mem_ker, f, LinearMap.comp_apply, LinearMap.inl_apply,
+        LinearMap.fst_apply, mkQ_apply, (Quotient.mk_eq_zero W).mpr hz, map_zero]
+    have hzU : LinearMap.inl k M V z ∈ U := mem_map_of_mem hz
+    have h := U.matrixCoefficient_mem_stabilizerHopfIdeal (H := H) (U.liftQ f hf) hzU
+    simpa only [liftQ_mkQ, f, Comodule.matrixCoefficient_prod_inl] using h
+
+/-- The line through `(m, 0)` has the same stabilizer as the line through `m`. -/
+theorem stabilizerHopfIdeal_span_singleton_prod_zero (m : M) :
+    (k ∙ (m, (0 : V))).stabilizerHopfIdeal H = (k ∙ m).stabilizerHopfIdeal H := by
+  simpa only [map_span, Set.image_singleton, LinearMap.inl_apply] using
+    stabilizerHopfIdeal_map_inl (H := H) (V := V) (k ∙ m)
+
+end Product
 
 end Submodule
