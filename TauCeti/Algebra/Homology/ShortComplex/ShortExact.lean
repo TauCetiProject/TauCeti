@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Abelian.DiagramLemmas.KernelCokernelComp
 public import Mathlib.CategoryTheory.Abelian.Exact
 public import Mathlib.CategoryTheory.Subobject.Limits
 public import TauCeti.Algebra.Homology.ShortComplex.Biproduct
+import TauCeti.Algebra.Homology.ShortComplex.Exact
 import TauCeti.CategoryTheory.Exact.KernelCokernelPair
 
 /-!
@@ -313,6 +314,25 @@ lemma Exact.isIso_cokernelDesc {S : ShortComplex C} (hS : S.Exact) [Epi S.g] :
   have := hS.mono_cokernelDesc
   have : Epi (cokernel.desc S.f S.g S.zero) := epi_of_epi_fac (cokernel.π_desc S.f S.g S.zero)
   exact isIso_of_mono_of_epi _
+
+/-- An exact five-term sequence induces a short exact sequence from the cokernel of its
+first map to the kernel of its last map, through its middle object. -/
+lemma Exact.shortExact_cokernelDesc_kernelLift {D : Type u} [Category.{v} D] [Preadditive D]
+    {S : ShortComplex D} (hS : S.Exact) {A E : D} {a : A ⟶ S.X₁} {e : S.X₃ ⟶ E}
+    [HasCokernel a] [HasKernel e] (wa : a ≫ S.f = 0) (we : S.g ≫ e = 0)
+    (ha : (ShortComplex.mk a S.f wa).Exact) (he : (ShortComplex.mk S.g e we).Exact) :
+    (ShortComplex.mk (cokernel.desc a S.f wa) (kernel.lift e S.g we)
+      (by ext; simp)).ShortExact := by
+  let := ha.hasHomology
+  let := he.hasHomology
+  have h₁ : cokernel.desc a S.f wa ≫ S.g = 0 := by
+    rw [← cancel_epi (cokernel.π a)]
+    simp
+  refine ShortExact.mk' ?_ ha.mono_cokernelDesc he.epi_kernelLift
+  apply (exact_mk_comp_mono_iff _ _ (kernel.ι e) (by simpa using h₁) _).1
+  simp only [kernel.lift_ι]
+  apply (exact_mk_epi_comp_iff (cokernel.π a) _ _ (by simp) h₁).1
+  simpa only [cokernel.π_desc] using hS
 
 /-- A componentwise direct sum of short exact sequences is short exact. -/
 lemma ShortExact.biprod {S T : ShortComplex C} (hS : S.ShortExact) (hT : T.ShortExact) :
