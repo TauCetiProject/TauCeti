@@ -90,18 +90,27 @@ def ofFullyFaithful
     (H : Homotopy (((whiskering C D).obj F).map f) (((whiskering C D).obj F).map g)) :
     Homotopy f g where
   h i := F.preimage (H.h i)
-  h_zero_comp_δ_zero n := F.map_injective <| by simpa [δ] using H.h_zero_comp_δ_zero n
-  h_last_comp_δ_last n := F.map_injective <| by simpa [δ] using H.h_last_comp_δ_last n
-  h_succ_comp_δ_castSucc_of_lt i j hij :=
-    F.map_injective <| by simpa [δ] using H.h_succ_comp_δ_castSucc_of_lt i j hij
-  h_succ_comp_δ_castSucc_succ j :=
-    F.map_injective <| by simpa [δ] using H.h_succ_comp_δ_castSucc_succ j
-  h_castSucc_comp_δ_succ_of_lt i j hji :=
-    F.map_injective <| by simpa [δ] using H.h_castSucc_comp_δ_succ_of_lt i j hji
-  h_comp_σ_castSucc_of_le i j hij :=
-    F.map_injective <| by simpa [σ] using H.h_comp_σ_castSucc_of_le i j hij
-  h_comp_σ_succ_of_lt i j hji :=
-    F.map_injective <| by simpa [σ] using H.h_comp_σ_succ_of_lt i j hji
+  h_zero_comp_δ_zero n := F.map_injective <| by
+    simp only [Functor.map_comp, F.map_preimage, ← whiskering_obj_obj_δ,
+      ← Functor.whiskerRight_app, ← Functor.whiskeringRight_obj_map]; exact H.h_zero_comp_δ_zero n
+  h_last_comp_δ_last n := F.map_injective <| by
+    simp only [Functor.map_comp, F.map_preimage, ← whiskering_obj_obj_δ,
+      ← Functor.whiskerRight_app, ← Functor.whiskeringRight_obj_map]; exact H.h_last_comp_δ_last n
+  h_succ_comp_δ_castSucc_of_lt i j hij := F.map_injective <| by
+    simp only [Functor.map_comp, F.map_preimage, ← whiskering_obj_obj_δ]
+    exact H.h_succ_comp_δ_castSucc_of_lt i j hij
+  h_succ_comp_δ_castSucc_succ j := F.map_injective <| by
+    simp only [Functor.map_comp, F.map_preimage, ← whiskering_obj_obj_δ]
+    exact H.h_succ_comp_δ_castSucc_succ j
+  h_castSucc_comp_δ_succ_of_lt i j hji := F.map_injective <| by
+    simp only [Functor.map_comp, F.map_preimage, ← whiskering_obj_obj_δ]
+    exact H.h_castSucc_comp_δ_succ_of_lt i j hji
+  h_comp_σ_castSucc_of_le i j hij := F.map_injective <| by
+    simp only [Functor.map_comp, F.map_preimage, ← whiskering_obj_obj_σ]
+    exact H.h_comp_σ_castSucc_of_le i j hij
+  h_comp_σ_succ_of_lt i j hji := F.map_injective <| by
+    simp only [Functor.map_comp, F.map_preimage, ← whiskering_obj_obj_σ]
+    exact H.h_comp_σ_succ_of_lt i j hji
 
 /-- Each component of `Homotopy.ofFullyFaithful` is the `F`-preimage of the corresponding
 component. -/
@@ -156,13 +165,11 @@ def symm {f g : X ⟶ Y} (h : Homotopy f g) : Homotopy g f where
   h i := (refl f).h i + (refl g).h i - h.h i
   h_zero_comp_δ_zero _ := by simp [-refl_h, sub_comp, add_comp]
   h_last_comp_δ_last _ := by simp [-refl_h, sub_comp, add_comp]
-  h_succ_comp_δ_castSucc_of_lt _ _ l := by
-    simp [-refl_h, sub_comp, add_comp, comp_sub, comp_add, l]
+  h_succ_comp_δ_castSucc_of_lt _ _ l := by simp [-refl_h, sub_comp, add_comp, comp_sub, comp_add, l]
   h_succ_comp_δ_castSucc_succ _ := by
     simp only [sub_comp, add_comp, (refl f).h_succ_comp_δ_castSucc_succ,
       (refl g).h_succ_comp_δ_castSucc_succ, h.h_succ_comp_δ_castSucc_succ]
-  h_castSucc_comp_δ_succ_of_lt _ _ l := by
-    simp [-refl_h, sub_comp, add_comp, comp_sub, comp_add, l]
+  h_castSucc_comp_δ_succ_of_lt _ _ l := by simp [-refl_h, sub_comp, add_comp, comp_sub, comp_add, l]
   h_comp_σ_castSucc_of_le _ _ l := by simp [-refl_h, sub_comp, add_comp, comp_sub, comp_add, l]
   h_comp_σ_succ_of_lt _ _ l := by simp [-refl_h, sub_comp, add_comp, comp_sub, comp_add, l]
 
@@ -188,13 +195,11 @@ def trans {e f g : X ⟶ Y} (h₁ : Homotopy e f) (h₂ : Homotopy f g) : Homoto
   h i := h₁.h i + h₂.h i - (refl f).h i
   h_zero_comp_δ_zero _ := by simp [-refl_h, sub_comp, add_comp]
   h_last_comp_δ_last _ := by simp [-refl_h, sub_comp, add_comp]
-  h_succ_comp_δ_castSucc_of_lt _ _ l := by
-    simp [-refl_h, sub_comp, add_comp, comp_sub, comp_add, l]
+  h_succ_comp_δ_castSucc_of_lt _ _ l := by simp [-refl_h, sub_comp, add_comp, comp_sub, comp_add, l]
   h_succ_comp_δ_castSucc_succ _ := by
     simp only [sub_comp, add_comp, h₁.h_succ_comp_δ_castSucc_succ,
       h₂.h_succ_comp_δ_castSucc_succ, (refl f).h_succ_comp_δ_castSucc_succ]
-  h_castSucc_comp_δ_succ_of_lt _ _ l := by
-    simp [-refl_h, sub_comp, add_comp, comp_sub, comp_add, l]
+  h_castSucc_comp_δ_succ_of_lt _ _ l := by simp [-refl_h, sub_comp, add_comp, comp_sub, comp_add, l]
   h_comp_σ_castSucc_of_le _ _ l := by simp [-refl_h, sub_comp, add_comp, comp_sub, comp_add, l]
   h_comp_σ_succ_of_lt _ _ l := by simp [-refl_h, sub_comp, add_comp, comp_sub, comp_add, l]
 
@@ -243,13 +248,9 @@ lemma ext {e₁ e₂ : HomotopyEquiv X Y}
     (hhomInv : e₁.homotopyHomInvId.congrLeft (by rw [hhom, hinv]) = e₂.homotopyHomInvId)
     (hinvHom : e₁.homotopyInvHomId.congrLeft (by rw [hhom, hinv]) = e₂.homotopyInvHomId) :
     e₁ = e₂ := by
-  rcases e₁ with ⟨hom₁, inv₁, h₁, h₁'⟩
-  rcases e₂ with ⟨hom₂, inv₂, h₂, h₂'⟩
-  dsimp only at hhom hinv
-  subst hhom hinv
-  simp only [Homotopy.congrLeft] at hhomInv hinvHom
-  subst hhomInv hinvHom
-  rfl
+  rcases e₁ with ⟨hom₁, inv₁, h₁, h₁'⟩; rcases e₂ with ⟨hom₂, inv₂, h₂, h₂'⟩
+  dsimp only at hhom hinv; subst hhom hinv
+  simp only [Homotopy.congrLeft] at hhomInv hinvHom; subst hhomInv hinvHom; rfl
 
 /-- Every simplicial object is combinatorially simplicially homotopy equivalent to itself. -/
 @[refl]
@@ -273,8 +274,7 @@ lemma refl_homotopyHomInvId_h (X : SimplicialObject C) {n : ℕ} (i : Fin (n + 1
 lemma refl_homotopyInvHomId_h (X : SimplicialObject C) {n : ℕ} (i : Fin (n + 1)) :
     (refl X).homotopyInvHomId.h i = X.σ i := by simp [refl]
 
-instance (X : SimplicialObject C) : Inhabited (HomotopyEquiv X X) :=
-  ⟨refl X⟩
+instance (X : SimplicialObject C) : Inhabited (HomotopyEquiv X X) := ⟨refl X⟩
 
 /-- Symmetry of combinatorial simplicial homotopy equivalences. -/
 @[symm]
@@ -329,14 +329,12 @@ def whiskerRight (e : HomotopyEquiv X Y) {D : Type u'} [Category.{v'} D] (F : C 
     HomotopyEquiv (((whiskering C D).obj F).obj X) (((whiskering C D).obj F).obj Y) where
   hom := ((whiskering C D).obj F).map e.hom
   inv := ((whiskering C D).obj F).map e.inv
-  homotopyHomInvId :=
-    ((e.homotopyHomInvId.whiskerRight F).congrLeft
-      (((whiskering C D).obj F).map_comp e.hom e.inv)).congrRight
-      (((whiskering C D).obj F).map_id X)
-  homotopyInvHomId :=
-    ((e.homotopyInvHomId.whiskerRight F).congrLeft
-      (((whiskering C D).obj F).map_comp e.inv e.hom)).congrRight
-      (((whiskering C D).obj F).map_id Y)
+  homotopyHomInvId := ((e.homotopyHomInvId.whiskerRight F).congrLeft
+    (((whiskering C D).obj F).map_comp e.hom e.inv)).congrRight
+    (((whiskering C D).obj F).map_id X)
+  homotopyInvHomId := ((e.homotopyInvHomId.whiskerRight F).congrLeft
+    (((whiskering C D).obj F).map_comp e.inv e.hom)).congrRight
+    (((whiskering C D).obj F).map_id Y)
 
 @[simp]
 lemma whiskerRight_hom (e : HomotopyEquiv X Y) {D : Type u'} [Category.{v'} D] (F : C ⥤ D) :
@@ -365,16 +363,12 @@ def ofFullyFaithful {D : Type u'} [Category.{v'} D] (F : C ⥤ D) [F.Full] [F.Fa
     HomotopyEquiv X Y where
   hom := ((whiskering C D).obj F).preimage e.hom
   inv := ((whiskering C D).obj F).preimage e.inv
-  homotopyHomInvId :=
-    (e.homotopyHomInvId.congrLeft
-      ((((whiskering C D).obj F).map_comp _ _).trans
-        (by rw [Functor.map_preimage, Functor.map_preimage])).symm).congrRight
-      (((whiskering C D).obj F).map_id X).symm |>.ofFullyFaithful F
-  homotopyInvHomId :=
-    (e.homotopyInvHomId.congrLeft
-      ((((whiskering C D).obj F).map_comp _ _).trans
-        (by rw [Functor.map_preimage, Functor.map_preimage])).symm).congrRight
-      (((whiskering C D).obj F).map_id Y).symm |>.ofFullyFaithful F
+  homotopyHomInvId := (e.homotopyHomInvId.congrLeft ((((whiskering C D).obj F).map_comp _ _).trans
+    (by rw [Functor.map_preimage, Functor.map_preimage])).symm).congrRight
+    (((whiskering C D).obj F).map_id X).symm |>.ofFullyFaithful F
+  homotopyInvHomId := (e.homotopyInvHomId.congrLeft ((((whiskering C D).obj F).map_comp _ _).trans
+    (by rw [Functor.map_preimage, Functor.map_preimage])).symm).congrRight
+    (((whiskering C D).obj F).map_id Y).symm |>.ofFullyFaithful F
 
 /-- Whiskering the forward map of `HomotopyEquiv.ofFullyFaithful` recovers the original forward
 map. -/
@@ -402,9 +396,8 @@ lemma ofFullyFaithful_hom_app {D : Type u'} [Category.{v'} D] (F : C ⥤ D)
     (e : HomotopyEquiv (((whiskering C D).obj F).obj X) (((whiskering C D).obj F).obj Y))
     (m : SimplexCategoryᵒᵖ) :
     (e.ofFullyFaithful F).hom.app m = F.preimage (e.hom.app m) :=
-  F.map_injective <| by
-    rw [F.map_preimage]
-    exact NatTrans.congr_app (whiskerRight_ofFullyFaithful_hom F e) m
+  F.map_injective <|
+    (NatTrans.congr_app (whiskerRight_ofFullyFaithful_hom F e) m).trans (F.map_preimage _).symm
 
 /-- Each component of the backward map of `HomotopyEquiv.ofFullyFaithful` is the `F`-preimage of
 the corresponding component. -/
@@ -414,9 +407,8 @@ lemma ofFullyFaithful_inv_app {D : Type u'} [Category.{v'} D] (F : C ⥤ D)
     (e : HomotopyEquiv (((whiskering C D).obj F).obj X) (((whiskering C D).obj F).obj Y))
     (m : SimplexCategoryᵒᵖ) :
     (e.ofFullyFaithful F).inv.app m = F.preimage (e.inv.app m) :=
-  F.map_injective <| by
-    rw [F.map_preimage]
-    exact NatTrans.congr_app (whiskerRight_ofFullyFaithful_inv F e) m
+  F.map_injective <|
+    (NatTrans.congr_app (whiskerRight_ofFullyFaithful_inv F e) m).trans (F.map_preimage _).symm
 
 @[simp]
 lemma ofFullyFaithful_homotopyHomInvId_h {D : Type u'} [Category.{v'} D] (F : C ⥤ D)
@@ -462,12 +454,10 @@ def trans {Z : SimplicialObject C} (e₁ : HomotopyEquiv X Y) (e₂ : HomotopyEq
     HomotopyEquiv X Z where
   hom := e₁.hom ≫ e₂.hom
   inv := e₂.inv ≫ e₁.inv
-  homotopyHomInvId :=
-    ((((e₂.homotopyHomInvId.precomp e₁.hom).postcomp e₁.inv).congrLeft
-      (by simp [Category.assoc])).congrRight (by simp)).trans e₁.homotopyHomInvId
-  homotopyInvHomId :=
-    ((((e₁.homotopyInvHomId.precomp e₂.inv).postcomp e₂.hom).congrLeft
-      (by simp [Category.assoc])).congrRight (by simp)).trans e₂.homotopyInvHomId
+  homotopyHomInvId := ((((e₂.homotopyHomInvId.precomp e₁.hom).postcomp e₁.inv).congrLeft
+    (by simp [Category.assoc])).congrRight (by simp)).trans e₁.homotopyHomInvId
+  homotopyInvHomId := ((((e₁.homotopyInvHomId.precomp e₂.inv).postcomp e₂.hom).congrLeft
+    (by simp [Category.assoc])).congrRight (by simp)).trans e₂.homotopyInvHomId
 
 @[simp]
 lemma trans_hom {Z : SimplicialObject C} (e₁ : HomotopyEquiv X Y) (e₂ : HomotopyEquiv Y Z) :
@@ -483,8 +473,7 @@ lemma trans_homotopyHomInvId_h {Z : SimplicialObject C}
     (e₁.trans e₂).homotopyHomInvId.h i =
       e₁.hom.app (op ⦋n⦌) ≫ e₂.homotopyHomInvId.h i ≫ e₁.inv.app (op ⦋n + 1⦌) +
         e₁.homotopyHomInvId.h i -
-        X.σ i ≫ e₁.hom.app (op ⦋n + 1⦌) ≫ e₁.inv.app (op ⦋n + 1⦌) := by
-  simp [trans]
+        X.σ i ≫ e₁.hom.app (op ⦋n + 1⦌) ≫ e₁.inv.app (op ⦋n + 1⦌) := by simp [trans]
 
 @[simp]
 lemma trans_homotopyInvHomId_h {Z : SimplicialObject C}
@@ -492,8 +481,7 @@ lemma trans_homotopyInvHomId_h {Z : SimplicialObject C}
     (e₁.trans e₂).homotopyInvHomId.h i =
       e₂.inv.app (op ⦋n⦌) ≫ e₁.homotopyInvHomId.h i ≫ e₂.hom.app (op ⦋n + 1⦌) +
         e₂.homotopyInvHomId.h i -
-        Z.σ i ≫ e₂.inv.app (op ⦋n + 1⦌) ≫ e₂.hom.app (op ⦋n + 1⦌) := by
-  simp [trans]
+        Z.σ i ≫ e₂.inv.app (op ⦋n + 1⦌) ≫ e₂.hom.app (op ⦋n + 1⦌) := by simp [trans]
 
 end Preadditive
 

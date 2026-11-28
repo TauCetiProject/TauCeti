@@ -24,8 +24,6 @@ alternating face map complexes have the simplices as a basis.
 
 * `AlgebraicTopology.DoldKan.normalizedMooreComplexHomEquiv`: chain maps `N[X] ⟶ L` are the chain
   maps `K[X] ⟶ L` vanishing on degeneracies.
-* `CategoryTheory.Abelian.DoldKan.N_eq_normalizedMooreComplex`: `Abelian.DoldKan.N` equals
-  `AlgebraicTopology.normalizedMooreComplex A`.
 * `CategoryTheory.SimplicialObject.quasiIso_normalizedMooreComplex_map_iff_N`,
   `CategoryTheory.SimplicialObject.quasiIso_normalizedMooreComplex_map_iff`: quasi-isomorphism
   comparisons between `normalizedMooreComplex`, `Idempotents.DoldKan.N`, and
@@ -94,16 +92,6 @@ lemma normalizedMooreComplexHomEquiv_naturality {X Y : SimplicialObject A} (g : 
 
 end AlgebraicTopology.DoldKan
 
-namespace CategoryTheory.Abelian.DoldKan
-
-/-- The abelian Dold–Kan functor `Abelian.DoldKan.N` is
-`AlgebraicTopology.normalizedMooreComplex A`. -/
-lemma N_eq_normalizedMooreComplex {A : Type*} [Category* A] [Abelian A] :
-    (N : SimplicialObject A ⥤ ChainComplex A ℕ) = AlgebraicTopology.normalizedMooreComplex A :=
-  rfl
-
-end CategoryTheory.Abelian.DoldKan
-
 namespace CategoryTheory.SimplicialObject
 
 open AlgebraicTopology
@@ -115,8 +103,10 @@ on normalized Moore complexes if and only if it induces a quasi-isomorphism on p
 normalized chains `Idempotents.DoldKan.N`. -/
 theorem quasiIso_normalizedMooreComplex_map_iff_N {X Y : SimplicialObject A} (f : X ⟶ Y) :
     QuasiIso ((normalizedMooreComplex A).map f) ↔ QuasiIso (Idempotents.DoldKan.N.map f) := by
-  rw [← Abelian.DoldKan.N_eq_normalizedMooreComplex,
-    ← NatIso.naturality_2 Abelian.DoldKan.comparisonN f,
+  -- `Abelian.DoldKan.N` is defined as `AlgebraicTopology.normalizedMooreComplex A`
+  -- (`Equivalence.lean`), so `comparisonN` applies after exposing `Abelian.DoldKan.N.map f`.
+  change QuasiIso (Abelian.DoldKan.N.map f) ↔ _
+  rw [← NatIso.naturality_2 Abelian.DoldKan.comparisonN f,
     quasiIso_iff_comp_left (Abelian.DoldKan.comparisonN.hom.app X) _,
     quasiIso_iff_comp_right (Idempotents.DoldKan.N.map f)
       (Abelian.DoldKan.comparisonN.inv.app Y)]

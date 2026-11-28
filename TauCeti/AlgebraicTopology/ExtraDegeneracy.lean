@@ -30,8 +30,7 @@ lemma const_homotopyEquiv_hom {C : Type u} [Category.{v} C] [Preadditive C] [Has
     (X : C) :
     (const X).homotopyEquiv.hom =
       AlgebraicTopology.AlternatingFaceMapComplex.ε.app
-        (SimplicialObject.Augmented.const.obj X) :=
-  rfl
+        (SimplicialObject.Augmented.const.obj X) := rfl
 
 /-- The backward map of `(ExtraDegeneracy.const X).homotopyEquiv` is the canonical section
 `(ChainComplex.fromSingle₀Equiv _ X).symm (𝟙 X)`. -/
@@ -41,35 +40,7 @@ lemma const_homotopyEquiv_inv {C : Type u} [Category.{v} C] [Preadditive C] [Has
     (const X).homotopyEquiv.inv =
       (ChainComplex.fromSingle₀Equiv
           ((AlgebraicTopology.alternatingFaceMapComplex C).obj
-            ((SimplicialObject.const C).obj X)) X).symm (𝟙 X) :=
-  rfl
-
-/-- Degree-zero component of `const_homotopyEquiv_inv_naturality`. -/
-private lemma const_homotopyEquiv_inv_naturality_f_zero {C : Type u} [Category.{v} C]
-    [Preadditive C] [HasZeroObject C] {X Y : C} (f : X ⟶ Y) :
-    ((ChainComplex.single₀ C).map f ≫ (const Y).homotopyEquiv.inv).f 0 =
-      ((const X).homotopyEquiv.inv ≫
-        (AlgebraicTopology.alternatingFaceMapComplex C).map
-          ((SimplicialObject.const C).map f)).f 0 := by
-  -- Unfold `(f ≫ g).f 0` (`HomologicalComplex.comp_f`) and `(const _).homotopyEquiv.inv`
-  -- (`const_homotopyEquiv_inv`), as `(Augmented.const.obj _).right` and `.left` are only
-  -- definitionally equal to `_` and `(SimplicialObject.const C).obj _` at default transparency.
-  change ((ChainComplex.single₀ C).map f).f 0 ≫
-      ((ChainComplex.fromSingle₀Equiv
-        ((AlgebraicTopology.alternatingFaceMapComplex C).obj
-          ((SimplicialObject.const C).obj Y)) Y).symm (𝟙 Y)).f 0 =
-    ((ChainComplex.fromSingle₀Equiv
-      ((AlgebraicTopology.alternatingFaceMapComplex C).obj
-        ((SimplicialObject.const C).obj X)) X).symm (𝟙 X)).f 0 ≫
-      ((AlgebraicTopology.alternatingFaceMapComplex C).map
-        ((SimplicialObject.const C).map f)).f 0
-  rw [ChainComplex.fromSingle₀Equiv_symm_apply_f_zero
-      (C := (AlgebraicTopology.alternatingFaceMapComplex C).obj
-        ((SimplicialObject.const C).obj Y)) (𝟙 Y),
-    ChainComplex.fromSingle₀Equiv_symm_apply_f_zero
-      (C := (AlgebraicTopology.alternatingFaceMapComplex C).obj
-        ((SimplicialObject.const C).obj X)) (𝟙 X)]
-  simp
+            ((SimplicialObject.const C).obj X)) X).symm (𝟙 X) := rfl
 
 /-- Naturality of the inverse homotopy equivalence `(ExtraDegeneracy.const X).homotopyEquiv.inv`
 with respect to morphisms `f : X ⟶ Y`. -/
@@ -80,6 +51,12 @@ lemma const_homotopyEquiv_inv_naturality {C : Type u} [Category.{v} C] [Preaddit
       (const X).homotopyEquiv.inv ≫
         (AlgebraicTopology.alternatingFaceMapComplex C).map ((SimplicialObject.const C).map f) := by
   ext
-  exact const_homotopyEquiv_inv_naturality_f_zero f
+  change ((ChainComplex.single₀ C).map f).f 0 ≫
+      ((ChainComplex.fromSingle₀Equiv _ Y).symm (𝟙 Y)).f 0 =
+    ((ChainComplex.fromSingle₀Equiv _ X).symm (𝟙 X)).f 0 ≫
+      ((AlgebraicTopology.alternatingFaceMapComplex C).map
+        ((SimplicialObject.const C).map f)).f 0
+  rw [ChainComplex.fromSingle₀Equiv_symm_apply_f_zero,
+    ChainComplex.fromSingle₀Equiv_symm_apply_f_zero]; simp
 
 end CategoryTheory.SimplicialObject.Augmented.ExtraDegeneracy

@@ -41,4 +41,10 @@ lemma toMk₁_last (n : ℕ) :
   rw [toMk₁_of_castSucc_lt _ k (Fin.castSucc_lt_last k)]
   simp [const, ConcreteCategory.hom]
 
+/-- `toMk₁Equiv.symm` cancels `toMk₁`. -/
+@[simp]
+lemma toMk₁Equiv_symm_toMk₁ {n : ℕ} (k : Fin (n + 2)) :
+    toMk₁Equiv.symm (toMk₁ k) = k := by
+  rw [← toMk₁Equiv_apply, Equiv.symm_apply_apply]
+
 end SimplexCategory

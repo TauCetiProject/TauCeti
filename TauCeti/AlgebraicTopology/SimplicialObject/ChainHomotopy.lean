@@ -94,25 +94,21 @@ def toChainHomotopyEquiv (e : HomotopyEquiv X Y) :
 
 @[simp]
 lemma toChainHomotopyEquiv_hom (e : HomotopyEquiv X Y) :
-    e.toChainHomotopyEquiv.hom = (alternatingFaceMapComplex C).map e.hom :=
-  (rfl)
+    e.toChainHomotopyEquiv.hom = (alternatingFaceMapComplex C).map e.hom := (rfl)
 
 @[simp]
 lemma toChainHomotopyEquiv_inv (e : HomotopyEquiv X Y) :
-    e.toChainHomotopyEquiv.inv = (alternatingFaceMapComplex C).map e.inv :=
-  (rfl)
+    e.toChainHomotopyEquiv.inv = (alternatingFaceMapComplex C).map e.inv := (rfl)
 
 @[simp]
 lemma toChainHomotopyEquiv_homotopyHomInvId_hom (e : HomotopyEquiv X Y) (p q : ℕ) :
     e.toChainHomotopyEquiv.homotopyHomInvId.hom p q =
-      e.homotopyHomInvId.toChainHomotopy.hom p q := by
-  simp [toChainHomotopyEquiv]
+      e.homotopyHomInvId.toChainHomotopy.hom p q := by simp [toChainHomotopyEquiv]
 
 @[simp]
 lemma toChainHomotopyEquiv_homotopyInvHomId_hom (e : HomotopyEquiv X Y) (p q : ℕ) :
     e.toChainHomotopyEquiv.homotopyInvHomId.hom p q =
-      e.homotopyInvHomId.toChainHomotopy.hom p q := by
-  simp [toChainHomotopyEquiv]
+      e.homotopyInvHomId.toChainHomotopy.hom p q := by simp [toChainHomotopyEquiv]
 
 end CategoryTheory.SimplicialObject.HomotopyEquiv
 

@@ -7,24 +7,19 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.KProjective
 public import TauCeti.AlgebraicTopology.DoldKan.SimplicialHomotopy
-import TauCeti.CategoryTheory.Preadditive.Projective.Basic
 
 /-!
-# Projectivity across Dold–Kan and weak equivalences under non-additive functors
+# Weak equivalences between projective simplicial objects under non-additive functors
 
 Building on `TauCeti.AlgebraicTopology.DoldKan.SimplicialHomotopy`, this file develops the
-projectivity layer of Albrecht Dold and Dieter Puppe's theory of derived non-additive functors.
-Because levelwise postcomposition `(SimplicialObject.whiskering C D).obj F` by *any* functor
-`F : C ⥤ D` preserves simplicial homotopies—even when `F` is non-additive—it sends weak
+weak-equivalence layer of Albrecht Dold and Dieter Puppe's theory of derived non-additive
+functors. Because levelwise postcomposition `(SimplicialObject.whiskering C D).obj F` by *any*
+functor `F : C ⥤ D` preserves simplicial homotopies—even when `F` is non-additive—it sends weak
 equivalences between degreewise projective simplicial objects to chain homotopy equivalences and
 hence to quasi-isomorphisms.
 
 ## Main definitions and results
 
-* `SimplicialObject.projective_iff_N_projective`,
-  `SimplicialObject.projective_iff_normalizedMooreComplex_projective`: `X` is degreewise projective
-  iff its normalized chain complex / Moore complex is degreewise projective; also
-  `Γ₀.projective_obj` and `Γ.projective_obj`.
 * `SimplicialObject.quasiIso_alternatingFaceMapComplex_map_iff_of_projective`,
   `SimplicialObject.homotopyEquivOfQuasiIso`: weak equivalences between degreewise projective
   simplicial objects in an abelian category coincide with simplicial homotopy equivalences.
@@ -37,7 +32,7 @@ hence to quasi-isomorphisms.
 ## References
 
 * A. Dold and D. Puppe, *Homologie nicht-additiver Funktoren. Anwendungen*, Ann. Inst. Fourier 11
-  (1961), 201–312, §§3–4 (especially 3.31 and 4.4–4.7).
+  (1961), 201–312, §§4.4–4.7.
 * D. Quillen, *Homotopical Algebra*, Lecture Notes in Mathematics 43, Springer-Verlag (1967), II.4.
 * C. A. Weibel, *An Introduction to Homological Algebra*, Cambridge University Press (1994), §8.4.
 -/
@@ -46,94 +41,10 @@ public noncomputable section
 
 universe v u v' u'
 
-open CategoryTheory Limits Opposite SimplexCategory AlgebraicTopology AlgebraicTopology.DoldKan
-open scoped Simplicial DoldKan
-
-namespace AlgebraicTopology.DoldKan
-
-instance Γ₀.projective_obj {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteCoproducts C]
-    (K : ChainComplex C ℕ) [∀ n, Projective (K.X n)] (Δ : SimplexCategoryᵒᵖ) :
-    Projective ((Γ₀.obj K).obj Δ) := by
-  have : ∀ A : SimplicialObject.Splitting.IndexSet Δ, Projective (Γ₀.Obj.summand K Δ A) :=
-    fun A ↦ inferInstanceAs (Projective (K.X A.1.unop.len))
-  exact Projective.of_isColimit_cofan (coproductIsCoproduct _)
-
-end AlgebraicTopology.DoldKan
-
-namespace CategoryTheory.Idempotents.DoldKan
-
-section Projective
-
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteCoproducts C]
-  [IsIdempotentComplete C]
-
-instance Γ.projective_obj (K : ChainComplex C ℕ) [∀ n, Projective (K.X n)]
-    (Δ : SimplexCategoryᵒᵖ) :
-    Projective ((Γ.obj K).obj Δ) :=
-  -- `Idempotents.DoldKan.Γ` is defined as `Γ₀` (`EquivalencePseudoabelian.lean`).
-  inferInstanceAs (Projective ((Γ₀.obj K).obj Δ))
-
-instance N.projective_X (X : SimplicialObject C) [∀ n, Projective (X _⦋n⦌)] (n : ℕ) :
-    Projective ((N.obj X).X n) :=
-  (((retractN (C := C)).map ((evaluation _ _).obj X)).map
-    (HomologicalComplex.eval _ _ n)).projective (p := inferInstanceAs (Projective (X _⦋n⦌)))
-
-end Projective
-
-end CategoryTheory.Idempotents.DoldKan
-
-namespace CategoryTheory.Abelian.DoldKan
-
-instance Γ.projective_obj {A : Type u} [Category.{v} A] [Abelian A]
-    (K : ChainComplex A ℕ) [∀ n, Projective (K.X n)] (Δ : SimplexCategoryᵒᵖ) :
-    Projective ((Γ.obj K).obj Δ) :=
-  -- `Abelian.DoldKan.Γ` is defined as `Idempotents.DoldKan.Γ` (`Equivalence.lean`).
-  inferInstanceAs (Projective ((Idempotents.DoldKan.Γ.obj K).obj Δ))
-
-end CategoryTheory.Abelian.DoldKan
-
-namespace AlgebraicTopology
-
-instance normalizedMooreComplex.projective_X {A : Type u} [Category.{v} A] [Abelian A]
-    (X : SimplicialObject A) [∀ n, Projective (X _⦋n⦌)] (n : ℕ) :
-    Projective (((normalizedMooreComplex A).obj X).X n) := by
-  rw [← Abelian.DoldKan.N_eq_normalizedMooreComplex]
-  exact Projective.of_iso
-    (HomologicalComplex.Hom.isoApp ((Abelian.DoldKan.comparisonN (A := A)).symm.app X) n)
-    inferInstance
-
-end AlgebraicTopology
+open CategoryTheory Limits AlgebraicTopology AlgebraicTopology.DoldKan
+open scoped Simplicial
 
 namespace CategoryTheory.SimplicialObject
-
-/-- In an idempotent-complete preadditive category with finite coproducts, a simplicial object `X`
-is degreewise projective if and only if its normalized chain complex `Idempotents.DoldKan.N.obj X`
-is degreewise projective. -/
-theorem projective_iff_N_projective {C : Type u} [Category.{v} C] [Preadditive C]
-    [HasFiniteCoproducts C] [IsIdempotentComplete C] (X : SimplicialObject C) :
-    (∀ n : ℕ, Projective (X _⦋n⦌)) ↔ ∀ n : ℕ, Projective ((Idempotents.DoldKan.N.obj X).X n) := by
-  constructor
-  · intro _ n
-    infer_instance
-  · intro _ n
-    have hΓ : Projective
-        ((Idempotents.DoldKan.Γ.obj (Idempotents.DoldKan.N.obj X)).obj (op ⦋n⦌)) :=
-      inferInstance
-    exact Projective.of_iso
-      (((Idempotents.DoldKan.ε (C := C)).symm.app X).app (op ⦋n⦌)) hΓ
-
-/-- In an abelian category, a simplicial object `X` is degreewise projective if and only if its
-normalized Moore complex `(normalizedMooreComplex A).obj X` is degreewise projective. -/
-theorem projective_iff_normalizedMooreComplex_projective {A : Type u} [Category.{v} A] [Abelian A]
-    (X : SimplicialObject A) :
-    (∀ n : ℕ, Projective (X _⦋n⦌)) ↔
-      ∀ n : ℕ, Projective (((normalizedMooreComplex A).obj X).X n) := by
-  rw [projective_iff_N_projective, ← Abelian.DoldKan.N_eq_normalizedMooreComplex]
-  refine ⟨fun h n ↦ ?_, fun h n ↦ ?_⟩
-  · exact Projective.of_iso
-      (HomologicalComplex.Hom.isoApp ((Abelian.DoldKan.comparisonN (A := A)).symm.app X) n) (h n)
-  · exact Projective.of_iso
-      (HomologicalComplex.Hom.isoApp ((Abelian.DoldKan.comparisonN (A := A)).app X) n) (h n)
 
 section WhiskeringProjective
 
@@ -146,10 +57,10 @@ theorem quasiIso_alternatingFaceMapComplex_map_iff_of_projective
     {X Y : SimplicialObject C} [∀ n, Projective (X _⦋n⦌)] [∀ n, Projective (Y _⦋n⦌)]
     (f : X ⟶ Y) :
     QuasiIso ((alternatingFaceMapComplex C).map f) ↔ ∃ e : HomotopyEquiv X Y, e.hom = f := by
-  have : ∀ n, Projective (((alternatingFaceMapComplex C).obj X).X n) := fun n ↦
-    inferInstanceAs (Projective (X _⦋n⦌))
-  have : ∀ n, Projective (((alternatingFaceMapComplex C).obj Y).X n) := fun n ↦
-    inferInstanceAs (Projective (Y _⦋n⦌))
+  have : ∀ n, Projective (((alternatingFaceMapComplex C).obj X).X n) :=
+    fun n ↦ inferInstanceAs (Projective (X _⦋n⦌))
+  have : ∀ n, Projective (((alternatingFaceMapComplex C).obj Y).X n) :=
+    fun n ↦ inferInstanceAs (Projective (Y _⦋n⦌))
   rw [ChainComplex.quasiIso_iff_of_projective,
     homotopyEquivalences_alternatingFaceMapComplex_map_iff]
 
@@ -158,8 +69,7 @@ category whose alternating face map complex morphism is a quasi-isomorphism to a
 equivalence `HomotopyEquiv X Y` with forward morphism `f`. -/
 def homotopyEquivOfQuasiIso {X Y : SimplicialObject C}
     [∀ n, Projective (X _⦋n⦌)] [∀ n, Projective (Y _⦋n⦌)] (f : X ⟶ Y)
-    [hf : QuasiIso ((alternatingFaceMapComplex C).map f)] :
-    HomotopyEquiv X Y :=
+    [hf : QuasiIso ((alternatingFaceMapComplex C).map f)] : HomotopyEquiv X Y :=
   ((quasiIso_alternatingFaceMapComplex_map_iff_of_projective f).mp hf).choose
 
 @[simp]
@@ -237,11 +147,7 @@ theorem quasiIso_whiskering_of_fullyFaithful_projective
   have : ∀ n, Projective ((((whiskering C₀ C).obj ι).obj Y) _⦋n⦌) := hY
   let e : HomotopyEquiv X Y :=
     (homotopyEquivOfQuasiIso (((whiskering C₀ C).obj ι).map f)).ofFullyFaithful ι
-  have he : e.hom = f := by
-    apply ((whiskering C₀ C).obj ι).map_injective
-    dsimp only [e]
-    rw [Functor.whiskeringRight_obj_map, HomotopyEquiv.whiskerRight_ofFullyFaithful_hom,
-      homotopyEquivOfQuasiIso_hom]
+  have he : e.hom = f := ((whiskering C₀ C).obj ι).map_injective (by simp [e])
   rw [← he, ← e.whiskerRight_hom F]
   simpa using (e.whiskerRight F).toChainHomotopyEquiv.quasiIso_hom
 
