@@ -50,6 +50,12 @@ meets every closed ball of radius `D`
 lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>), file
 `CKSD/Nonparametric/LowerBounds/Testing.lean` (`CKSD.sum_pow_hammingDist_eq`,
 `CKSD.exists_hamming_packing`).
+
+This file also proves that changing one coordinate moves a word by distance at most one, that two
+words with a subsingleton index type are at distance at most one, and that two words at distance
+at most `k + 1` are joined through a word at distance at most `1` from the first and `k` from the
+second (`TauCeti.exists_hammingDist_le_one_and_hammingDist_le`), the step of an induction along a
+path of single-coordinate changes.
 -/
 
 public section
@@ -335,6 +341,55 @@ theorem exists_finset_pairwise_lt_hammingDist_forall_exists {ι : Type*} {β : �
     exact ⟨x, by simpa using hx, hxy⟩
 
 end Codes
+
+/-! ### Changing one coordinate -/
+
+section Update
+
+variable {ι : Type*} {β : ι → Type*} [Fintype ι] [DecidableEq ι] [∀ i, DecidableEq (β i)]
+
+/-- Changing one coordinate of a word moves it by Hamming distance at most `1`. -/
+theorem hammingDist_update_le_one (x : ∀ i, β i) (i : ι) (b : β i) :
+    hammingDist x (Function.update x i b) ≤ 1 := by
+  refine Finset.card_le_one.2 fun j hj k hk ↦ ?_
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj hk
+  by_contra hjk
+  rcases eq_or_ne j i with rfl | hj'
+  · exact hk (Function.update_of_ne (Ne.symm hjk) b x).symm
+  · exact hj (Function.update_of_ne hj' b x).symm
+
+/-- Copying into `x` a coordinate at which `x` and `y` differ lowers their Hamming distance by
+exactly one. -/
+theorem hammingDist_update_add_one {x y : ∀ i, β i} {i : ι} (h : x i ≠ y i) :
+    hammingDist (Function.update x i (y i)) y + 1 = hammingDist x y := by
+  have hset : ({j | Function.update x i (y i) j ≠ y j} : Finset ι) =
+      ({j | x j ≠ y j} : Finset ι).erase i := by
+    ext j
+    rcases eq_or_ne j i with rfl | hj
+    · simp
+    · simp [hj]
+  rw [hammingDist, hset, Finset.card_erase_add_one (by simpa using h), hammingDist]
+
+omit [DecidableEq ι] in
+/-- Two words over a subsingleton index type, such as data sets of one record, are at Hamming
+distance at most `1`. -/
+theorem hammingDist_le_one_of_subsingleton [Subsingleton ι] (x y : ∀ i, β i) :
+    hammingDist x y ≤ 1 :=
+  hammingDist_le_card_fintype.trans (Fintype.card_le_one_iff_subsingleton.2 ‹_›)
+
+omit [DecidableEq ι] in
+/-- Two words at Hamming distance at most `k + 1` are joined through a word at distance at most
+`1` from the first and at most `k` from the second. -/
+theorem exists_hammingDist_le_one_and_hammingDist_le {x y : ∀ i, β i} {k : ℕ}
+    (h : hammingDist x y ≤ k + 1) : ∃ z, hammingDist x z ≤ 1 ∧ hammingDist z y ≤ k := by
+  classical
+  by_cases hxy : x = y
+  · exact ⟨x, by simp, by simp [hxy]⟩
+  · obtain ⟨i, hi⟩ := Function.ne_iff.1 hxy
+    have := hammingDist_update_add_one hi
+    exact ⟨Function.update x i (y i), hammingDist_update_le_one x i (y i), by omega⟩
+
+end Update
 
 end TauCeti
 

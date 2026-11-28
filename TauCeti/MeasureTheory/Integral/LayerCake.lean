@@ -68,6 +68,11 @@ from bounded thresholds is integrable. For measures on the nonnegative half-line
 of the shifted tail is the extended integral of a truncated difference. A finite first moment
 therefore makes every shifted tail integrable.
 
+Finally, an affine domination `μ s ≤ c * ν s + δ` of measures on all measurable sets extends to
+the integrals of functions with values in `[0, 1]`, with the constant `δ` paid once. This follows
+the first stage of the proof of `CKSD.isDifferentiallyPrivate_compProd` in lean-CKSD
+(<https://github.com/bjbraams/lean-CKSD>), file `CKSD/Learning/Privacy/Basic.lean`.
+
 ## Main statements
 
 * `TauCeti.lintegral_mul_eq_lintegral_lintegral_measure_inter` — the integral of a product of
@@ -111,6 +116,8 @@ therefore makes every shifted tail integrable.
 * `TauCeti.integrable_rpow_iff_integrableOn_weighted_tail` and
   `TauCeti.integrable_rpow_iff_integrableAtFilter_weighted_tail` — the weighted-tail
   integrability criteria for positive real-power moments.
+* `TauCeti.lintegral_le_mul_lintegral_add_of_forall_measure_le` — affine domination of measures
+  extends from sets to functions with values at most `1`.
 -/
 
 public section
@@ -859,6 +866,50 @@ theorem integrable_rpow_iff_integrableAtFilter_weighted_tail
     exact hbounded.union htail
 
 end WeightedTail
+
+section AffineDomination
+
+/-- **Affine domination extends from sets to functions.** If `μ s ≤ c * ν s + δ` for every
+measurable set `s`, then `∫⁻ f ∂μ ≤ c * ∫⁻ f ∂ν + δ` for every function `f` with values at
+most `1`: the additive constant `δ` is not multiplied.
+
+Adapted from the first stage of the proof of `CKSD.isDifferentiallyPrivate_compProd` in lean-CKSD
+(<https://github.com/bjbraams/lean-CKSD>), file `CKSD/Learning/Privacy/Basic.lean`. -/
+theorem lintegral_le_mul_lintegral_add_of_forall_measure_le {μ ν : Measure α} {c δ : ℝ≥0∞}
+    (h : ∀ s, MeasurableSet s → μ s ≤ c * ν s + δ) {f : α → ℝ≥0∞} (hf : ∀ x, f x ≤ 1) :
+    ∫⁻ x, f x ∂μ ≤ c * ∫⁻ x, f x ∂ν + δ := by
+  -- Reduce to a measurable minorant with the same `μ`-integral.
+  obtain ⟨g, hg, hgf, hfg⟩ := exists_measurable_le_lintegral_eq μ f
+  have hlevel : ∀ t : ℝ, μ {x | ENNReal.ofReal t ≤ g x} ≤
+      c * ν {x | ENNReal.ofReal t ≤ g x} + (Iic (1 : ℝ)).indicator (fun _ ↦ δ) t := by
+    intro t
+    by_cases ht : t ≤ 1
+    · rw [indicator_of_mem (mem_Iic.2 ht)]
+      exact h _ (measurableSet_le measurable_const hg)
+    · have hempty : {x | ENNReal.ofReal t ≤ g x} = ∅ := by
+        refine eq_empty_of_forall_notMem fun x hx ↦ ?_
+        have : ENNReal.ofReal t ≤ 1 := (mem_ofPred_eq ▸ hx).trans ((hgf x).trans (hf x))
+        exact ht (by simpa using this)
+      simp [hempty]
+  have hδ : ∫⁻ t in Ioi 0, (Iic (1 : ℝ)).indicator (fun _ ↦ δ) t ≤ δ := by
+    simp [lintegral_indicator_const measurableSet_Iic, Measure.restrict_apply measurableSet_Iic,
+      Iic_inter_Ioi]
+  calc ∫⁻ x, f x ∂μ = ∫⁻ t in Ioi 0, μ {x | ENNReal.ofReal t ≤ g x} := by
+        rw [hfg, lintegral_eq_lintegral_measure_ofReal_le μ hg.aemeasurable]
+    _ ≤ ∫⁻ t in Ioi 0, (c * ν {x | ENNReal.ofReal t ≤ g x} +
+          (Iic (1 : ℝ)).indicator (fun _ ↦ δ) t) := lintegral_mono hlevel
+    _ = c * (∫⁻ t in Ioi 0, ν {x | ENNReal.ofReal t ≤ g x}) +
+          ∫⁻ t in Ioi 0, (Iic (1 : ℝ)).indicator (fun _ ↦ δ) t := by
+        rw [lintegral_add_right _ (measurable_const.indicator measurableSet_Iic),
+          lintegral_const_mul c (Antitone.measurable (f := fun t : ℝ ↦
+            ν {x | ENNReal.ofReal t ≤ g x}) fun t t' htt' ↦ measure_mono
+              fun x hx ↦ (ENNReal.ofReal_le_ofReal htt').trans hx)]
+    _ ≤ c * ∫⁻ x, g x ∂ν + δ := by
+        rw [lintegral_eq_lintegral_measure_ofReal_le ν hg.aemeasurable]
+        exact add_le_add_right hδ _
+    _ ≤ c * ∫⁻ x, f x ∂ν + δ := by gcongr with x; exact hgf x
+
+end AffineDomination
 
 end TauCeti
 
