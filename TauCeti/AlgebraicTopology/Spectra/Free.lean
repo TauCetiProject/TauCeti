@@ -119,6 +119,57 @@ lemma free_level_hom_ext {n m : ℕ} {K Y : PointedSSet.{0}}
   rw [ι_comp_freeLevelIso_inv_assoc, ι_comp_freeLevelIso_inv_assoc]
   exact h σ
 
+/-- Under `freeLevelIso`, the action of a map `f : K ⟶ L` on generators in level `m` is the
+summandwise map `Limits.Sigma.map fun _ ↦ f` on the coproduct presentation. -/
+@[reassoc]
+lemma freeLevelIso_hom_naturality (n m : ℕ) {K L : PointedSSet.{0}} (f : K ⟶ L) :
+    ((free n).map f).natTrans.app (FiniteBijection.mk m) ≫ (freeLevelIso n m L).hom =
+      (freeLevelIso n m K).hom ≫ Limits.Sigma.map fun _ ↦ f := by
+  refine free_level_hom_ext fun σ ↦ ?_
+  have hnat : ((free n).obj K).functor.map σ ≫
+      ((free n).map f).natTrans.app (FiniteBijection.mk m) =
+      ((free n).map f).natTrans.app (FiniteBijection.mk n) ≫
+        ((free n).obj L).functor.map σ :=
+    ((free n).map f).natTrans.naturality σ
+  slice_lhs 2 3 => rw [hnat]
+  slice_lhs 1 2 => rw [← freeι_naturality]
+  slice_lhs 2 4 => rw [freeι_comp_map_comp_freeLevelIso_hom]
+  slice_rhs 1 3 => rw [freeι_comp_map_comp_freeLevelIso_hom]
+  rw [Limits.Sigma.ι_map]
+
+/-- Under `(freeLevelIso n m K).inv`, the summandwise map `Limits.Sigma.map fun _ ↦ f`
+transports to the action of `f : K ⟶ L` on generators in level `m`. -/
+@[reassoc]
+lemma freeLevelIso_inv_naturality (n m : ℕ) {K L : PointedSSet.{0}} (f : K ⟶ L) :
+    (Limits.Sigma.map fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ f) ≫
+        (freeLevelIso n m L).inv =
+      (freeLevelIso n m K).inv ≫ ((free n).map f).natTrans.app (FiniteBijection.mk m) := by
+  rw [Iso.comp_inv_eq, Category.assoc, freeLevelIso_hom_naturality, Iso.inv_hom_id_assoc]
+
+/-- Under `freeLevelIso`, the action of a bijection `τ : mk m ⟶ mk m'` between levels is
+reindexing the coproduct summands by postcomposition with `τ`. -/
+@[reassoc]
+lemma map_comp_freeLevelIso_hom (n : ℕ) {m m' : ℕ} (K : PointedSSet.{0})
+    (τ : FiniteBijection.mk m ⟶ FiniteBijection.mk m') :
+    ((free n).obj K).functor.map τ ≫ (freeLevelIso n m' K).hom =
+      (freeLevelIso n m K).hom ≫
+        Limits.Sigma.map' (fun σ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ σ ≫ τ)
+          fun _ ↦ 𝟙 K := by
+  refine free_level_hom_ext fun σ ↦ ?_
+  rw [← Functor.map_comp_assoc, freeι_comp_map_comp_freeLevelIso_hom]
+  slice_rhs 1 3 => rw [freeι_comp_map_comp_freeLevelIso_hom]
+  rw [Limits.Sigma.ι_comp_map', Category.id_comp]
+
+/-- Under `(freeLevelIso n m K).inv`, reindexing the coproduct summands by postcomposition with
+`τ : mk m ⟶ mk m'` transports to the bijection action between levels. -/
+@[reassoc]
+lemma sigmaMap'_comp_freeLevelIso_inv (n : ℕ) {m m' : ℕ} (K : PointedSSet.{0})
+    (τ : FiniteBijection.mk m ⟶ FiniteBijection.mk m') :
+    Limits.Sigma.map' (fun σ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ σ ≫ τ)
+          (fun _ ↦ 𝟙 K) ≫ (freeLevelIso n m' K).inv =
+      (freeLevelIso n m K).inv ≫ ((free n).obj K).functor.map τ := by
+  rw [Iso.comp_inv_eq, Category.assoc, map_comp_freeLevelIso_hom, Iso.inv_hom_id_assoc]
+
 /-- The unit of the free symmetric sequence adjunction is the universal generator. -/
 @[simp]
 lemma freeEvaluationAdjunction_unit_app (n : ℕ) (K : PointedSSet.{0}) :
@@ -139,6 +190,17 @@ lemma freeι_comp_homEquiv_symm (n : ℕ) {K : PointedSSet.{0}}
         (FiniteBijection.mk n) = g := by
   have h := ((freeEvaluationAdjunction n).homEquiv K Y).apply_symm_apply g
   rw [Adjunction.homEquiv_unit, freeEvaluationAdjunction_unit_app] at h
+  exact h
+
+/-- Maps out of a free symmetric sequence are determined by the universal generator. -/
+@[ext]
+lemma free_hom_ext {n : ℕ} {K : PointedSSet.{0}} {Y : SymmetricSequence.{0}}
+    {f g : (free n).obj K ⟶ Y}
+    (h : freeι n K ≫ f.natTrans.app (FiniteBijection.mk n) =
+      freeι n K ≫ g.natTrans.app (FiniteBijection.mk n)) :
+    f = g := by
+  apply ((freeEvaluationAdjunction n).homEquiv K Y).injective
+  rw [Adjunction.homEquiv_unit, Adjunction.homEquiv_unit, freeEvaluationAdjunction_unit_app]
   exact h
 
 /-- The free symmetric sequence `G_n K` is the point in every level `m ≠ n`: there is no bijection

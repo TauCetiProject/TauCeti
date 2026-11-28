@@ -215,65 +215,6 @@ private lemma freeStabilizationMap_levelSmash_comp (n : ℕ) (K L : PointedSSet.
   evaluation_map_levelSmashRight_comp_aux n E (freeStabilizationMap n K)
     (freeι (1 + n) (PointedSSet.circle ⊗ K)) (freeι n K) (freeι_stabilizationMap n K) ε
 
-private lemma adj_homEquiv_heq
-    {F₁ F₂ : PointedSSet.{0} ⥤ SymmetricSpectrum}
-    {G₁ G₂ : SymmetricSpectrum ⥤ PointedSSet.{0}}
-    (hF : F₁ = F₂) (hG : G₁ = G₂)
-    (adj₁ : F₁ ⊣ G₁) (adj₂ : F₂ ⊣ G₂) (hadj : HEq adj₁ adj₂)
-    {L : PointedSSet.{0}} {E : SymmetricSpectrum}
-    {f₁ : F₁.obj L ⟶ E} {f₂ : F₂.obj L ⟶ E} (hf : HEq f₁ f₂) :
-    HEq (adj₁.homEquiv L E f₁) (adj₂.homEquiv L E f₂) := by
-  subst hF; subst hG; cases hadj; cases hf; rfl
-
-private lemma eq_of_heq_comp_id_left
-    {A₁ A₂ B₁ B₂ : PointedSSet.{0}} (hA : A₁ = A₂) (hB : B₁ = B₂)
-    {u : A₂ ⟶ B₂} {v : A₂ ⟶ B₁} {w : A₂ ⟶ A₁} {p : A₁ ⟶ B₁}
-    (hu : HEq v u) (hw : HEq w (𝟙 A₂)) (h : v = w ≫ p) :
-    u ≍ p := by
-  subst hA; subst hB; cases hu; cases hw; rw [Category.id_comp] at h; exact heq_of_eq h
-
-private lemma homEquiv_levelSmashRight_counit (n : ℕ) (K : PointedSSet.{0})
-    (E : SymmetricSpectrum) :
-    (levelSmashMappingSpaceAdjunction ((free (1 + n)).obj (PointedSSet.circle ⊗ K))).homEquiv
-        ((mappingSpace ((free n).obj K)).obj E) E
-        ((levelSmashRight ((mappingSpace ((free n).obj K)).obj E)).map
-          (freeStabilizationMap n K) ≫
-          (levelSmashMappingSpaceAdjunction ((free n).obj K)).counit.app E) =
-      (mappingSpaceBifunctor.map (freeStabilizationMap n K).op).app E := by
-  have h := levelSmashMappingSpaceAdjunction₂.homEquiv_naturality_one
-    (freeStabilizationMap n K)
-    ((levelSmashMappingSpaceAdjunction ((free n).obj K)).counit.app E)
-  dsimp only [ParametrizedAdjunction.homEquiv, Functor.id_obj] at h
-  have h1 : HEq
-      ((levelSmashMappingSpaceAdjunction₂.adj
-          ((free (1 + n)).obj (PointedSSet.circle ⊗ K))).homEquiv
-        ((mappingSpace ((free n).obj K)).obj E) E
-        ((levelSmashBifunctor.map (freeStabilizationMap n K)).app
-            ((mappingSpace ((free n).obj K)).obj E) ≫
-          (levelSmashMappingSpaceAdjunction ((free n).obj K)).counit.app E))
-      ((levelSmashMappingSpaceAdjunction ((free (1 + n)).obj (PointedSSet.circle ⊗ K))).homEquiv
-        ((mappingSpace ((free n).obj K)).obj E) E
-        ((levelSmashRight ((mappingSpace ((free n).obj K)).obj E)).map
-            (freeStabilizationMap n K) ≫
-          (levelSmashMappingSpaceAdjunction ((free n).obj K)).counit.app E)) := by
-    refine adj_homEquiv_heq (levelSmashBifunctor_obj _) (mappingSpaceBifunctor_obj _) _ _
-      (heq_of_eq (levelSmashMappingSpaceAdjunction₂_adj _)) ?_
-    rw [levelSmashBifunctor_map_app]
-    exact HEq.rfl
-  have h2 : HEq
-      ((levelSmashMappingSpaceAdjunction₂.adj ((free n).obj K)).homEquiv
-        ((mappingSpace ((free n).obj K)).obj E) E
-        ((levelSmashMappingSpaceAdjunction ((free n).obj K)).counit.app E))
-      (𝟙 ((mappingSpace ((free n).obj K)).obj E)) := by
-    refine (adj_homEquiv_heq (levelSmashBifunctor_obj _) (mappingSpaceBifunctor_obj _) _ _
-      (heq_of_eq (levelSmashMappingSpaceAdjunction₂_adj _)) HEq.rfl).trans (heq_of_eq ?_)
-    rw [Adjunction.homEquiv_unit, Adjunction.right_triangle_components]
-  exact eq_of_heq (eq_of_heq_comp_id_left
-    (congrArg (Functor.obj · E) (mappingSpaceBifunctor_obj (Opposite.op ((free n).obj K))))
-    (congrArg (Functor.obj · E)
-      (mappingSpaceBifunctor_obj (Opposite.op ((free (1 + n)).obj (PointedSSet.circle ⊗ K)))))
-    h1 h2 h)
-
 /-- Under `mappingSpaceFreeIso` and `ihomCurryIso`, precomposition along
 `freeStabilizationMap n K : F_(1+n)(S¹ ∧ K) ⟶ F_n K` agrees with
 `Map_*(K, E.smashPowAdjointStructureMap n)`. -/
@@ -305,12 +246,14 @@ theorem mappingSpace_freeStabilizationMap_eq (n : ℕ) (K : PointedSSet.{0})
       Iso.hom_inv_id_assoc]
     exact freeStabilizationMap_levelSmash_comp n K ((mappingSpace ((free n).obj K)).obj E) E
       ((levelSmashMappingSpaceAdjunction ((free n).obj K)).counit.app E)
-  rw [← homEquiv_levelSmashRight_counit n K E]
+  rw [← levelSmashMappingSpaceAdjunction_homEquiv_levelSmashRight_counit
+    (freeStabilizationMap n K) E]
   exact hc
 
-/-- For `K = S⁰`, precomposition along `freeStabilizationMap n S⁰` agrees under
-`mappingSpaceFreeZeroIso n` and `mappingSpaceFreeIso (1 + n) (S¹ ∧ S⁰)` with the adjoint
-structure map `E.smashPowAdjointStructureMap n`. -/
+/-- For `K = S⁰`, precomposition along `freeStabilizationMap n S⁰` agrees, under
+`mappingSpaceFreeZeroIso n` on the source and `mappingSpaceFreeIso (1 + n) (S¹ ∧ S⁰)` followed by
+precomposition with `(ρ_ S¹).inv : S¹ ⟶ S¹ ∧ S⁰` on the target, with the adjoint structure map
+`E.smashPowAdjointStructureMap n`. -/
 theorem mappingSpace_freeStabilizationMap_unit_eq (n : ℕ) (E : SymmetricSpectrum) :
     (mappingSpaceBifunctor.map (freeStabilizationMap n (𝟙_ _)).op).app E ≫
         (mappingSpaceFreeIso (1 + n) (PointedSSet.circle ⊗ 𝟙_ _)).hom.app E ≫

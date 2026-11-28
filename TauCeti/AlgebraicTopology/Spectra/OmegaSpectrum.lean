@@ -72,10 +72,6 @@ theorem isOmegaSpectrum_iff_mappingSpace_freeStabilizationMap (E : SymmetricSpec
           ((mappingSpaceBifunctor.map (freeStabilizationMap n (𝟙_ _)).op).app E).right := by
   rw [isOmegaSpectrum_iff]
   refine and_congr_right fun _ ↦ forall_congr' fun n ↦ ?_
-  have : IsIso ((MonoidalClosed.pre (ρ_ PointedSSet.circle).inv).app
-      ((evaluation (1 + n)).obj E)) :=
-    Iso.isIso_hom ((MonoidalClosed.internalHom.mapIso (ρ_ PointedSSet.circle).symm.op).app
-      ((evaluation (1 + n)).obj E))
   have heq :
       ((mappingSpaceBifunctor.map (freeStabilizationMap n (𝟙_ _)).op).app E).right ≫
         ((mappingSpaceFreeIso (1 + n) (PointedSSet.circle ⊗ 𝟙_ _)).hom.app E ≫
@@ -83,19 +79,18 @@ theorem isOmegaSpectrum_iff_mappingSpace_freeStabilizationMap (E : SymmetricSpec
       ((mappingSpaceFreeZeroIso n).hom.app E).right ≫
         (E.smashPowAdjointStructureMap n).right :=
     congrArg PointedSSet.forgetBasepoint.map (mappingSpace_freeStabilizationMap_unit_eq n E)
-  have hIso0 : IsIso ((mappingSpaceFreeZeroIso n).hom.app E).right :=
-    Functor.map_isIso PointedSSet.forgetBasepoint ((mappingSpaceFreeZeroIso n).hom.app E)
-  have hIso1 :
-      IsIso (((mappingSpaceFreeIso (1 + n) (PointedSSet.circle ⊗ 𝟙_ _)).hom.app E ≫
-        (MonoidalClosed.pre (ρ_ PointedSSet.circle).inv).app ((evaluation (1 + n)).obj E)).right) :=
-    Functor.map_isIso PointedSSet.forgetBasepoint
-      ((mappingSpaceFreeIso (1 + n) (PointedSSet.circle ⊗ 𝟙_ _)).hom.app E ≫
-        (MonoidalClosed.pre (ρ_ PointedSSet.circle).inv).app ((evaluation (1 + n)).obj E))
-  simp only [HomotopicalAlgebra.weakEquivalence_iff]
-  rw [← (weakEquivalences SSet.{0}).cancel_left_of_respectsIso
-    ((mappingSpaceFreeZeroIso n).hom.app E).right, ← heq]
-  exact @MorphismProperty.cancel_right_of_respectsIso _ _ (weakEquivalences SSet.{0}) _ _ _ _ _ _
-    hIso1
+  let e :
+      Arrow.mk ((mappingSpaceBifunctor.map (freeStabilizationMap n (𝟙_ _)).op).app E).right ≅
+        Arrow.mk (E.smashPowAdjointStructureMap n).right :=
+    Arrow.isoMk' _ _
+      (PointedSSet.forgetBasepoint.mapIso ((mappingSpaceFreeZeroIso n).app E))
+      (PointedSSet.forgetBasepoint.mapIso
+        ((mappingSpaceFreeIso (1 + n) (PointedSSet.circle ⊗ 𝟙_ _)).app E ≪≫
+          (MonoidalClosed.internalHom.mapIso (ρ_ PointedSSet.circle).symm.op).app
+            ((evaluation (1 + n)).obj E)))
+      heq.symm
+  simpa only [HomotopicalAlgebra.weakEquivalence_iff] using
+    ((weakEquivalences SSet.{0}).arrow_mk_iso_iff e).symm
 
 /-- A symmetric spectrum `E` is an Ω-spectrum if and only if `E ⟶ ⊤` is a level fibration and
 precomposition along every stabilization map `freeStabilizationMap n S⁰` is a weak equivalence

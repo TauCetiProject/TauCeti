@@ -176,6 +176,38 @@ lemma levelSmashMappingSpaceAdjunction₂_adj (X : SymmetricSpectrum) :
     levelSmashMappingSpaceAdjunction₂.adj X = levelSmashMappingSpaceAdjunction X :=
   (rfl)
 
+/-- The adjunction bijection of `levelSmashMappingSpaceAdjunction` is natural in the source
+spectrum `X`. -/
+lemma levelSmashMappingSpaceAdjunction_homEquiv_naturality_left {X Y : SymmetricSpectrum}
+    (f : X ⟶ Y) {K : PointedSSet.{0}} {E : SymmetricSpectrum}
+    (g : (levelSmashRight K).obj Y ⟶ E) :
+    (levelSmashMappingSpaceAdjunction X).homEquiv K E ((levelSmashRight K).map f ≫ g) =
+      (levelSmashMappingSpaceAdjunction Y).homEquiv K E g ≫
+        (mappingSpaceBifunctor.map f.op).app E :=
+  levelSmashMappingSpaceAdjunction₂.homEquiv_naturality_one f g
+
+/-- Specializing naturality of `levelSmashMappingSpaceAdjunction` to the counit at `Y` turns
+precomposition with `f` into `mappingSpaceBifunctor.map f.op`. -/
+lemma levelSmashMappingSpaceAdjunction_homEquiv_levelSmashRight_counit
+    {X Y : SymmetricSpectrum} (f : X ⟶ Y) (E : SymmetricSpectrum) :
+    (levelSmashMappingSpaceAdjunction X).homEquiv ((mappingSpace Y).obj E) E
+        ((levelSmashRight ((mappingSpace Y).obj E)).map f ≫
+          (levelSmashMappingSpaceAdjunction Y).counit.app E) =
+      (mappingSpaceBifunctor.map f.op).app E := by
+  let m : (mappingSpace Y).obj E ⟶ (mappingSpace X).obj E :=
+    (mappingSpaceBifunctor.map f.op).app E
+  have h :
+      ((levelSmashMappingSpaceAdjunction X).homEquiv ((mappingSpace Y).obj E) E).symm
+          (𝟙 ((mappingSpace Y).obj E) ≫ m) =
+        (levelSmashRight ((mappingSpace Y).obj E)).map f ≫
+          ((levelSmashMappingSpaceAdjunction Y).homEquiv ((mappingSpace Y).obj E) E).symm
+            (𝟙 ((mappingSpace Y).obj E)) :=
+    levelSmashMappingSpaceAdjunction₂.homEquiv_symm_naturality_one f
+      (𝟙 ((mappingSpace Y).obj E))
+  rw [Category.id_comp, Adjunction.homEquiv_symm_id] at h
+  exact (congrArg ((levelSmashMappingSpaceAdjunction X).homEquiv _ E) h.symm).trans
+    (Equiv.apply_symm_apply _ _)
+
 /-- The parametrized adjunction `levelSmashBifunctor.flip ⊣₂ cotensorBifunctor`: spectrum maps
 `E ∧ K ⟶ F` correspond naturally in all three variables to spectrum maps `E ⟶ F^K`. -/
 noncomputable def levelSmashCotensorAdjunction₂ :

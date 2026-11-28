@@ -168,6 +168,32 @@ lemma whiskerLeft_η_app_comp_η_app_comp_associator_inv_natTrans_app (F G H : C
   rw [h]
   exact DayConvolution.associator_inv_unit_unit F.functor G.functor H.functor x y z
 
+/-- Passing the right unitor `(ρ_ q).hom` through the Day convolution units `η G H` and
+`η F (G ⊗ H)` and the inverse associator `(α_ F G H).inv` gives the right unitor on `(F ⊗ G) ⊗ H`
+after the left-associated Day convolution units. -/
+@[reassoc]
+lemma associator_hom_whiskerLeft_η_app_comp_rightUnitor_comp_associator_inv_natTrans_app
+    (F G H : C ⊛⥤ V) (p q : C) :
+    (α_ (F.functor.obj p) (G.functor.obj q) (H.functor.obj (𝟙_ C))).hom ≫
+      F.functor.obj p ◁ (η G H).app (q, 𝟙_ C) ≫
+      F.functor.obj p ◁ (G ⊗ H).functor.map (ρ_ q).hom ≫
+      (η F (G ⊗ H)).app (p, q) ≫
+      (α_ F G H).inv.natTrans.app (p ⊗ q) =
+    (η F G).app (p, q) ▷ H.functor.obj (𝟙_ C) ≫
+      (η (F ⊗ G) H).app (p ⊗ q, 𝟙_ C) ≫
+      ((F ⊗ G) ⊗ H).functor.map (ρ_ (p ⊗ q)).hom := by
+  have hη : F.functor.obj p ◁ (G ⊗ H).functor.map (ρ_ q).hom ≫
+      (η F (G ⊗ H)).app (p, q) =
+      (η F (G ⊗ H)).app (p, q ⊗ 𝟙_ C) ≫
+        (F ⊗ (G ⊗ H)).functor.map (p ◁ (ρ_ q).hom) := by
+    simpa using (η F (G ⊗ H)).naturality ((𝟙 p, (ρ_ q).hom) : (p, q ⊗ 𝟙_ C) ⟶ (p, q))
+  slice_lhs 3 4 => rw [hη]
+  slice_lhs 4 5 =>
+    rw [(α_ F G H).inv.natTrans.naturality (p ◁ (ρ_ q).hom)]
+  slice_lhs 2 4 =>
+    rw [whiskerLeft_η_app_comp_η_app_comp_associator_inv_natTrans_app]
+  simp only [Category.assoc, Iso.hom_inv_id_assoc, ← Functor.map_comp, ← rightUnitor_tensor_hom]
+
 /-- The left unitor `𝟙_ ⊗ F ≅ F` restricted along the Day convolution units. -/
 @[reassoc (attr := simp)]
 lemma ν_whiskerRight_comp_η_app_comp_leftUnitor_hom_natTrans_app (F : C ⊛⥤ V) (y : C) :

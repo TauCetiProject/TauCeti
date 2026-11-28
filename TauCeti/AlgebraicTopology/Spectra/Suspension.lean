@@ -83,23 +83,12 @@ lemma suspensionLevelIso_hom_dayStructureMap (K : PointedSSet.{0}) (p q : ℕ) :
   -- Here `erw` identifies sphere powers with the corresponding functor objects.
   erw [← associator_naturality_right_assoc, ← whisker_exchange_assoc]
   rw [cancel_epi]
-  have hρ := (DayFunctor.η SymmetricSequence.sphere
-    (SymmetricSequence.sphere ⊗ (SymmetricSequence.free 0).obj K)).naturality
-      ((𝟙 (FiniteBijection.mk p), (ρ_ (FiniteBijection.mk q)).hom) :
-        (FiniteBijection.mk p, FiniteBijection.mk q ⊗ FiniteBijection.mk 0) ⟶
-          (FiniteBijection.mk p, FiniteBijection.mk q))
-  simp only [Functor.comp_map, tensor_map, externalProductBifunctor_obj_map,
-    FiniteBijection.toEquiv_id, PointedSSet.smashPowReindex_refl, id_whiskerRight,
-    Category.id_comp, id_tensorHom] at hρ
-  -- Identify the underlying free-module object before rewriting naturality components.
-  dsimp only [free, freeMod, Functor.comp_obj]
-  rw [reassoc_of% hρ]
   -- Move the right unitor through the Day unit and the inverse associator.
-  erw [NatTrans.naturality_assoc]
-  erw [reassoc_of% DayFunctor.whiskerLeft_η_app_comp_η_app_comp_associator_inv_natTrans_app
-    SymmetricSequence.sphere SymmetricSequence.sphere ((SymmetricSequence.free 0).obj K)
-      (FiniteBijection.mk p) (FiniteBijection.mk q) (𝟙_ FiniteBijection),
-    Iso.hom_inv_id_assoc, ← Functor.map_comp_assoc, ← rightUnitor_tensor_hom]
+  dsimp only [free, freeMod, Functor.comp_obj]
+  erw [reassoc_of%
+      DayFunctor.associator_hom_whiskerLeft_η_app_comp_rightUnitor_comp_associator_inv_natTrans_app
+        SymmetricSequence.sphere SymmetricSequence.sphere ((SymmetricSequence.free 0).obj K)
+        (FiniteBijection.mk p) (FiniteBijection.mk q)]
   -- Multiplication restricts to the sphere functor's block-concatenation tensorator.
   erw [NatTrans.naturality, DayFunctor.η_app_comp_whiskerRight_natTrans_app_assoc,
     ← comp_whiskerRight_assoc, DayFunctor.η_app_comp_mul_natTrans_app]
