@@ -9,7 +9,6 @@ public import Mathlib.GroupTheory.FiniteAbelian.Duality
 public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 public import Mathlib.RingTheory.IntegralDomain
 public import TauCeti.Algebra.MonoidAlgebra.CharEval.Basic
-import TauCeti.Algebra.Algebra.Hom
 import TauCeti.Algebra.Algebra.Pi
 
 /-!
@@ -39,8 +38,6 @@ character group ring of the set of all characters is `O[G]` itself.
 * `Set.charGroupRing`: the character group ring `R_Ψ`, the range of `Ψ.jointEval`.
 * `Set.charGroupRing.proj`: the canonical surjection `α_Ψ : O[G] →ₐ[O] R_Ψ` onto the character
   group ring.
-* `Set.charGroupRing.lift`: for commutative ring coefficients, descent of an `O`-algebra
-  homomorphism out of `O[G]` whose kernel contains `ker (proj Ψ)`.
 * `Set.charGroupRing.restrictAlgHom`: the canonical surjective transition homomorphism
   `R_Ψ →ₐ[O] R_{Ψ'}` for `Ψ' ⊆ Ψ`.
 * `Set.charGroupRing.evalAlgHom`: coordinate evaluation `R_Ψ →ₐ[O] O` at `ψ ∈ Ψ`.
@@ -51,8 +48,7 @@ character group ring of the set of all characters is `O[G]` itself.
 * `TauCeti.eq_of_forall_charEval_eq` and `Set.jointEval_injective`: for `G` finite and `O` a
   domain with enough roots of unity, an element of `O[G]` is determined by its values at all
   characters.
-* `Set.charGroupRing.proj_eq_proj_iff`, `Set.charGroupRing.ker_proj`, and
-  `Set.charGroupRing.lift_unique`: the kernel and universal property of `α_Ψ`.
+* `Set.charGroupRing.proj_eq_proj_iff` and `Set.charGroupRing.ker_proj`: the kernel of `α_Ψ`.
 
 ## Implementation notes
 
@@ -233,16 +229,11 @@ theorem evalAlgHom_apply {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ) (y : Ψ.charGroupRi
     evalAlgHom hψ y = (y : Ψ → O) ⟨ψ, hψ⟩ := by
   simp [evalAlgHom]
 
-/-- Composing `evalAlgHom` with `α_Ψ : O[G] → R_Ψ` recovers `ψ.charEval`. -/
-theorem evalAlgHom_proj {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ) (x : MonoidAlgebra O G) :
-    evalAlgHom hψ (proj Ψ x) = ψ.charEval x := by
-  simp
-
 /-- Composing `evalAlgHom` with `proj Ψ` gives `ψ.charEval`. -/
 @[simp]
 theorem evalAlgHom_comp_proj {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ) :
     (evalAlgHom hψ).comp (proj Ψ) = ψ.charEval :=
-  AlgHom.ext (evalAlgHom_proj hψ)
+  AlgHom.ext fun x ↦ by simp
 
 /-- Composing `evalAlgHom` on `R_{Ψ'}` with `restrictAlgHom` recovers `evalAlgHom` on `R_Ψ`. -/
 @[simp]
@@ -300,57 +291,11 @@ theorem singletonAlgEquiv_symm_apply (ψ : G →* Oˣ) (a : O) :
     (singletonAlgEquiv ψ).symm a = algebraMap O ({ψ} : Set (G →* Oˣ)).charGroupRing a := by
   simp [singletonAlgEquiv]
 
-/-- `singletonAlgEquiv` sends `α_{{ψ}}(x)` to `ψ(x)`. -/
-theorem singletonAlgEquiv_proj (ψ : G →* Oˣ) (x : MonoidAlgebra O G) :
-    singletonAlgEquiv ψ (proj {ψ} x) = ψ.charEval x := by
-  simp
-
 end charGroupRing
 
 end Set
 
 end CommSemiring
-
-section CommRing
-
-variable {O G : Type*} [CommRing O] [CommGroup G]
-
-namespace Set.charGroupRing
-
-/-- Universal property of the character group ring as a quotient of `O[G]`: any `O`-algebra
-homomorphism out of `O[G]` whose kernel contains `ker (proj Ψ)` descends to `R_Ψ →ₐ[O] A`. -/
-noncomputable def lift (Ψ : Set (G →* Oˣ)) {A : Type*} [Ring A] [Algebra O A]
-    (f : MonoidAlgebra O G →ₐ[O] A) (hf : RingHom.ker (proj Ψ) ≤ RingHom.ker f) :
-    charGroupRing Ψ →ₐ[O] A :=
-  (proj Ψ).descend (proj_surjective Ψ) f fun _ _ hab ↦
-    (RingHom.sub_mem_ker_iff f).mp (hf ((RingHom.sub_mem_ker_iff (proj Ψ)).mpr hab))
-
-/-- The descent of `f` along `proj Ψ` evaluates on `proj Ψ x` as `f x`. -/
-@[simp]
-theorem lift_proj (Ψ : Set (G →* Oˣ)) {A : Type*} [Ring A] [Algebra O A]
-    (f : MonoidAlgebra O G →ₐ[O] A) (hf : RingHom.ker (proj Ψ) ≤ RingHom.ker f)
-    (x : MonoidAlgebra O G) :
-    lift Ψ f hf (proj Ψ x) = f x :=
-  (proj Ψ).descend_apply (proj_surjective Ψ) f _ x
-
-/-- Composing `lift Ψ f hf` with `proj Ψ` recovers `f`. -/
-@[simp]
-theorem lift_comp_proj (Ψ : Set (G →* Oˣ)) {A : Type*} [Ring A] [Algebra O A]
-    (f : MonoidAlgebra O G →ₐ[O] A) (hf : RingHom.ker (proj Ψ) ≤ RingHom.ker f) :
-    (lift Ψ f hf).comp (proj Ψ) = f :=
-  (proj Ψ).descend_comp (proj_surjective Ψ) f _
-
-/-- `lift Ψ f hf` is the unique `O`-algebra homomorphism out of `R_Ψ` whose composition with
-`proj Ψ` is `f`. -/
-theorem lift_unique (Ψ : Set (G →* Oˣ)) {A : Type*} [Ring A] [Algebra O A]
-    (f : MonoidAlgebra O G →ₐ[O] A) (hf : RingHom.ker (proj Ψ) ≤ RingHom.ker f)
-    (g : charGroupRing Ψ →ₐ[O] A) (hg : g.comp (proj Ψ) = f) :
-    g = lift Ψ f hf :=
-  (proj Ψ).descend_unique (proj_surjective Ψ) f _ g hg
-
-end Set.charGroupRing
-
-end CommRing
 
 section Domain
 

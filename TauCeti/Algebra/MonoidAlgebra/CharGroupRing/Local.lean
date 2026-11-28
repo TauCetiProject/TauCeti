@@ -40,7 +40,7 @@ adic topology, and equips it with its complete Noetherian local `O`-algebra stru
 * **Consequences of locality**: once `[IsLocalRing Ψ.charGroupRing]` holds (with `[Nontrivial O]`,
   and no finiteness or `p`-power hypotheses repeated), surjectivity of `evalAlgHom` makes every
   coordinate evaluation a local homomorphism (`isLocalHom_evalAlgHom_of_isLocalRing`), so `y ∈ R_Ψ`
-  is a unit iff `y(ψ) ∈ Oˣ` at any single `ψ ∈ Ψ` via `(isUnit_map_iff (evalAlgHom hψ) y).symm`.
+  is a unit iff `y(ψ) ∈ Oˣ` at any single `ψ ∈ Ψ` (`Set.charGroupRing.isUnit_iff`).
   When `O` is a local ring, this identifies the maximal ideal of `R_Ψ` as the preimage of `𝔪` at
   any single `ψ ∈ Ψ` (`Set.charGroupRing.maximalIdeal_eq_comap`) and identifies the residue field of
   `R_Ψ` with `ResidueField O` (`Set.charGroupRing.residueFieldEquiv`). When in addition `R_Ψ` is
@@ -66,8 +66,9 @@ adic topology, and equips it with its complete Noetherian local `O`-algebra stru
   modulo the maximal ideal of `O`.
 * `Set.charGroupRing.isLocalHom_evalAlgHom` and `Set.charGroupRing.isLocalRing`: locality of `R_Ψ`
   when characters in `Ψ` have equal `p^k`-th powers.
-* `Set.charGroupRing.maximalIdeal_eq_comap` and `Set.charGroupRing.residueFieldEquiv`: maximal
-  ideal and residue field of a local character group ring (with adic topology given by
+* `Set.charGroupRing.isUnit_iff`, `Set.charGroupRing.maximalIdeal_eq_comap`, and
+  `Set.charGroupRing.residueFieldEquiv`: single-coordinate unit criterion, maximal ideal, and
+  residue field of a local character group ring (with adic topology given by
   `IsLocalRing.maximalIdeal_adicTopology_eq_map`).
 * `Set.charGroupRing.isLocalRing_of_subset_component` and `Set.charGroupRing.isLocalRing_component`:
   specialization to subsets of a `χ`-component when `G ⧸ H` is a `p`-group.
@@ -95,12 +96,19 @@ instance isLocalHom_restrictAlgHom {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ)
 
 /-- When `R_Ψ` is a local ring and `O` is nontrivial, coordinate evaluation
 `evalAlgHom hψ : R_Ψ →ₐ[O] O` at any `ψ ∈ Ψ` is automatically a local homomorphism by
-surjectivity. In particular, `IsUnit y ↔ IsUnit (evalAlgHom hψ y)` holds by
-`(isUnit_map_iff (evalAlgHom hψ) y).symm`. -/
+surjectivity. -/
 instance isLocalHom_evalAlgHom_of_isLocalRing [Nontrivial O] [IsLocalRing Ψ.charGroupRing]
     {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ) :
     IsLocalHom (evalAlgHom hψ) :=
   ⟨((evalAlgHom_surjective hψ).isLocalHom (f := (evalAlgHom hψ).toRingHom)).map_nonunit⟩
+
+/-- When `R_Ψ` is a local ring and `O` is nontrivial, an element `y ∈ R_Ψ` is a unit in `R_Ψ` if
+and only if its `ψ`-coordinate is a unit in `O` at any single `ψ ∈ Ψ`. -/
+theorem isUnit_iff [Nontrivial O] [IsLocalRing Ψ.charGroupRing] {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ)
+    {y : Ψ.charGroupRing} :
+    IsUnit y ↔ IsUnit ((y : Ψ → O) ⟨ψ, hψ⟩) := by
+  rw [← evalAlgHom_apply hψ]
+  exact (isUnit_map_iff (evalAlgHom hψ) y).symm
 
 variable [IsLocalRing O]
 
@@ -140,9 +148,9 @@ theorem residue_algebraMap_evalAlgHom [IsLocalRing Ψ.charGroupRing] {ψ : G →
 private theorem comp_evalAlgHom_surjective {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ) :
     Function.Surjective
       ((Algebra.ofId O (IsLocalRing.ResidueField O)).comp (evalAlgHom hψ)) := by
-  intro z
-  obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective z
-  exact ⟨algebraMap O Ψ.charGroupRing a, by simp [IsLocalRing.ResidueField.algebraMap_eq]⟩
+  simpa only [Function.Surjective, Function.comp_apply, AlgHom.comp_apply, Algebra.ofId_apply,
+    IsLocalRing.ResidueField.algebraMap_eq] using
+    IsLocalRing.residue_surjective.comp (evalAlgHom_surjective hψ)
 
 variable (Ψ) in
 /-- **Residue field isomorphism**: when `R_Ψ` is local, `ResidueField O` is canonically isomorphic
@@ -175,12 +183,6 @@ theorem algebraMap_residueField_bijective [IsLocalRing Ψ.charGroupRing] :
       (algebraMap (IsLocalRing.ResidueField O) (IsLocalRing.ResidueField Ψ.charGroupRing)) := by
   simpa only [← funext residueFieldEquiv_apply] using (residueFieldEquiv Ψ).bijective
 
-/-- `residueFieldEquiv` sends the residue of `a ∈ O` to the residue of `algebraMap O R_Ψ a`. -/
-theorem residueFieldEquiv_residue [IsLocalRing Ψ.charGroupRing] (a : O) :
-    residueFieldEquiv Ψ (IsLocalRing.residue O a) =
-      IsLocalRing.residue Ψ.charGroupRing (algebraMap O Ψ.charGroupRing a) := by
-  simp [residueFieldEquiv_apply]
-
 /-- For any `ψ ∈ Ψ`, the inverse of `residueFieldEquiv` agrees with the residue-field map induced
 by coordinate evaluation `evalAlgHom hψ : R_Ψ →+* O`. -/
 theorem residueFieldEquiv_symm_apply [IsLocalRing Ψ.charGroupRing] {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ)
@@ -193,14 +195,6 @@ theorem residueFieldEquiv_symm_apply [IsLocalRing Ψ.charGroupRing] {ψ : G →*
   rw [RingEquiv.apply_symm_apply, residueFieldEquiv_apply,
     IsLocalRing.ResidueField.algebraMap_residue, AlgHom.coe_toRingHom,
     residue_algebraMap_evalAlgHom hψ y]
-
-/-- For any `ψ ∈ Ψ`, the inverse of `residueFieldEquiv` sends the residue of `y ∈ R_Ψ` to the
-residue of `y(ψ) ∈ O`. -/
-theorem residueFieldEquiv_symm_residue [IsLocalRing Ψ.charGroupRing] {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ)
-    (y : Ψ.charGroupRing) :
-    (residueFieldEquiv Ψ).symm (IsLocalRing.residue Ψ.charGroupRing y) =
-      IsLocalRing.residue O (evalAlgHom hψ y) := by
-  simp [residueFieldEquiv_symm_apply hψ]
 
 /-- For any local ring `O` and single character `ψ : G →* Oˣ`, `R_{{ψ}}` is a local ring. -/
 instance isLocalRing_singleton (ψ : G →* Oˣ) :

@@ -30,8 +30,8 @@ inclusion `O[P] →ₐ[O] O[G]`, and acting on `O[H]` via character evaluation `
   `MonoidAlgebra.componentProj_comp_mapDomainAlgHom_right`, and
   `MonoidAlgebra.componentProj_surjective`: evaluation on basis elements, splitting on `O[P]`,
   evaluation on `O[H]`, and surjectivity.
-* `MonoidAlgebra.charEval_componentProj`: evaluating `componentProj hPH χ x` at `φ : P →* Oˣ`
-  agrees with evaluating `x` at `hPH.extendChar φ χ`.
+* `MonoidAlgebra.charEval_comp_componentProj` and `MonoidAlgebra.charEval_componentProj`:
+  evaluating `componentProj hPH χ` at `φ : P →* Oˣ` agrees with evaluating at `hPH.extendChar φ χ`.
 
 ## References
 
@@ -120,20 +120,25 @@ theorem componentProj_mapDomainAlgHom_right (hPH : P.IsComplement' H) (χ : H �
       algebraMap O (MonoidAlgebra O P) (χ.charEval y) :=
   DFunLike.congr_fun (componentProj_comp_mapDomainAlgHom_right hPH χ) y
 
+/-- Composing character evaluation at `φ : P →* Oˣ` with `componentProj hPH χ` gives character
+evaluation at the extended character `hPH.extendChar φ χ : G →* Oˣ`. -/
+@[simp]
+theorem charEval_comp_componentProj (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ) :
+    φ.charEval.comp (componentProj hPH χ) = (hPH.extendChar φ χ).charEval := by
+  apply MonoidAlgebra.algHom_ext
+  · intro g
+    obtain ⟨⟨p, h⟩, rfl⟩ := hPH.prodMulEquiv.surjective g
+    rw [Subgroup.IsComplement'.prodMulEquiv_apply]
+    simp [mul_comm (χ h : O)]
+  · ext
+
 /-- Evaluating `componentProj hPH χ x` at a character `φ : P →* Oˣ` agrees with evaluating `x` at
 the extended character `hPH.extendChar φ χ : G →* Oˣ`. -/
 @[simp]
 theorem charEval_componentProj (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ)
     (x : MonoidAlgebra O G) :
-    φ.charEval (componentProj hPH χ x) = (hPH.extendChar φ χ).charEval x := by
-  have heq : φ.charEval.comp (componentProj hPH χ) = (hPH.extendChar φ χ).charEval := by
-    apply MonoidAlgebra.algHom_ext
-    · intro g
-      obtain ⟨⟨p, h⟩, rfl⟩ := hPH.prodMulEquiv.surjective g
-      rw [Subgroup.IsComplement'.prodMulEquiv_apply]
-      simp [mul_comm (χ h : O)]
-    · ext
-  exact DFunLike.congr_fun heq x
+    φ.charEval (componentProj hPH χ x) = (hPH.extendChar φ χ).charEval x :=
+  DFunLike.congr_fun (charEval_comp_componentProj hPH φ χ) x
 
 end CommSemiring
 

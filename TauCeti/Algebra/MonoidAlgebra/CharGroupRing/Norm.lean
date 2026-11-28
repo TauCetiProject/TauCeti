@@ -74,12 +74,6 @@ theorem span_norm_le_ker_proj_of_forall {Ψ : Set (G →* Oˣ)} (I : Subgroup G)
   rw [Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
   exact proj_subgroupCharSum_one_eq_zero_of_forall I hΨ
 
-/-- Evaluating `α_Ψ` at `N_I` gives `0` when `Ψ = {ψ | ¬ I ≤ ψ.ker}`. -/
-@[simp]
-theorem proj_subgroupCharSum_one_eq_zero (I : Subgroup G) [Fintype I] :
-    proj {ψ : G →* Oˣ | ¬ I ≤ ψ.ker} (TauCeti.subgroupCharSum (1 : G →* O) I) = 0 :=
-  proj_subgroupCharSum_one_eq_zero_of_forall I fun _ hψ ↦ hψ
-
 variable [Finite G] [HasEnoughRootsOfUnity O (Monoid.exponent G)]
 
 /-- **Quotients by subgroup norms are character group rings** (Dasgupta–Kakde, Lemma 2.2): for a

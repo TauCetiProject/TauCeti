@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Defs
 public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
 import Mathlib.RingTheory.IntegralDomain
-import TauCeti.Algebra.MonoidAlgebra.MapDomain
 
 /-!
 # Evaluation of a group ring at characters
@@ -19,8 +19,9 @@ of `G` is a group homomorphism `ψ : G →* Oˣ`, and evaluation at `ψ` is the 
 homomorphism `ψ : O[G] → O`, `∑ a_g g ↦ ∑ a_g ψ(g)` (`MonoidHom.charEval`).
 
 This file provides the lightweight character-evaluation API for ordinary group rings `O[G]`:
-its functoriality under `MonoidAlgebra.mapDomain`, its agreement with `MonoidAlgebra.augmentation`
-at the trivial character, and row orthogonality on character sums `TauCeti.subgroupCharSum`.
+its functoriality under `MonoidAlgebra.mapDomainAlgHom` and `MonoidAlgebra.mapDomain`, its
+agreement with `MonoidAlgebra.augmentation` at the trivial character, and row orthogonality on
+character sums `TauCeti.subgroupCharSum`.
 
 ## Main definitions
 
@@ -31,8 +32,8 @@ at the trivial character, and row orthogonality on character sums `TauCeti.subgr
 
 * `MonoidAlgebra.charEval_one_apply` and `MonoidHom.charEval_one`: the trivial character
   evaluates by the augmentation.
-* `MonoidHom.charEval_mapDomain`: functoriality of character evaluation under
-  `MonoidAlgebra.mapDomain`.
+* `MonoidHom.charEval_comp_mapDomainAlgHom` and `MonoidHom.charEval_mapDomain`: functoriality
+  of character evaluation under `MonoidAlgebra.mapDomainAlgHom` and `MonoidAlgebra.mapDomain`.
 * `MonoidHom.charEval_subgroupCharSum_of_le_ker` and
   `MonoidHom.charEval_subgroupCharSum_eq_zero`: the evaluation of a character sum over a finite
   subgroup `H`, which is `#H` or `0` (row orthogonality); the norm element `∑_{h ∈ H} h` is the
@@ -77,14 +78,24 @@ theorem charEval_one :
       MonoidAlgebra.augmentation O G :=
   RingHom.ext MonoidAlgebra.charEval_one_apply
 
+/-- Composing character evaluation at `ψ : G →* Oˣ` with `MonoidAlgebra.mapDomainAlgHom O O f`
+for `f : H →* G` gives character evaluation at the restricted character `ψ.comp f`. -/
+@[simp]
+theorem charEval_comp_mapDomainAlgHom {H : Type*} [CommGroup H] (ψ : G →* Oˣ) (f : H →* G) :
+    ψ.charEval.comp (MonoidAlgebra.mapDomainAlgHom O O f) = (ψ.comp f).charEval := by
+  apply MonoidAlgebra.algHom_ext
+  · intro h
+    simp [MonoidHom.charEval]
+  · ext
+
 /-- Evaluating at `ψ : G →* Oˣ` after mapping the group along `f : H →* G` agrees with evaluating
 at the restricted character `ψ.comp f`. -/
 @[simp]
 theorem charEval_mapDomain {H : Type*} [CommGroup H] (ψ : G →* Oˣ) (f : H →* G)
     (y : MonoidAlgebra O H) :
     ψ.charEval (MonoidAlgebra.mapDomain f y) = (ψ.comp f).charEval y := by
-  simpa only [MonoidHom.charEval, TauCeti.DiagonalizableGroup.point, MonoidHom.comp_assoc] using
-    MonoidAlgebra.lift_mapDomain ((Units.coeHom O).comp ψ) f y
+  simpa only [AlgHom.comp_apply, MonoidAlgebra.mapDomainAlgHom_apply] using
+    DFunLike.congr_fun (charEval_comp_mapDomainAlgHom (O := O) ψ f) y
 
 /-- The value of a character `ψ` on the character sum `∑_{h ∈ H} χ(h) h` over a finite subgroup
 `H` is `#H` when `χ ψ` is trivial on `H`. -/

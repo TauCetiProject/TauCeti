@@ -22,7 +22,8 @@ residue congruence holds whenever `ψ₁(g)` and `ψ₂(g)` have equal `p^k`-th 
 
 ## Main results
 
-* `TauCeti.residue_charEval_eq_of_residue_eq`: characters agreeing modulo `𝔪_O` induce equal
+* `TauCeti.ofId_comp_charEval_eq_of_residue_eq` and
+  `TauCeti.residue_charEval_eq_of_residue_eq`: characters agreeing modulo `𝔪_O` induce equal
   evaluations on `O[G]` modulo `𝔪_O`.
 * `TauCeti.residue_charEval_eq_of_pow_eq`: characters with equal `p^k`-th powers induce equal
   evaluations on `O[G]` modulo `𝔪_O`.
@@ -37,19 +38,24 @@ section ResidueEq
 variable {O G : Type*} [CommRing O] [IsLocalRing O] [CommGroup G]
 
 /-- Two characters whose values at every element of `G` agree modulo the maximal ideal of `O`
+induce identical `O`-algebra homomorphisms `O[G] →ₐ[O] ResidueField O`. -/
+theorem ofId_comp_charEval_eq_of_residue_eq {ψ₁ ψ₂ : G →* Oˣ}
+    (h : ∀ g : G, IsLocalRing.residue O (ψ₁ g) = IsLocalRing.residue O (ψ₂ g)) :
+    (Algebra.ofId O (IsLocalRing.ResidueField O)).comp ψ₁.charEval =
+      (Algebra.ofId O (IsLocalRing.ResidueField O)).comp ψ₂.charEval := by
+  apply MonoidAlgebra.algHom_ext
+  · intro g
+    simpa [IsLocalRing.ResidueField.algebraMap_eq] using h g
+  · apply AlgHom.ext; intro a; simp
+
+/-- Two characters whose values at every element of `G` agree modulo the maximal ideal of `O`
 induce identical evaluations on `O[G]` modulo the maximal ideal of `O`. -/
 theorem residue_charEval_eq_of_residue_eq {ψ₁ ψ₂ : G →* Oˣ}
     (h : ∀ g : G, IsLocalRing.residue O (ψ₁ g) = IsLocalRing.residue O (ψ₂ g))
     (x : MonoidAlgebra O G) :
     IsLocalRing.residue O (ψ₁.charEval x) = IsLocalRing.residue O (ψ₂.charEval x) := by
-  have heq :
-      (Algebra.ofId O (IsLocalRing.ResidueField O)).comp ψ₁.charEval =
-        (Algebra.ofId O (IsLocalRing.ResidueField O)).comp ψ₂.charEval := by
-    apply MonoidAlgebra.algHom_ext
-    · intro g
-      simpa [IsLocalRing.ResidueField.algebraMap_eq] using h g
-    · apply AlgHom.ext; intro a; simp
-  simpa [IsLocalRing.ResidueField.algebraMap_eq] using DFunLike.congr_fun heq x
+  simpa [IsLocalRing.ResidueField.algebraMap_eq] using
+    DFunLike.congr_fun (ofId_comp_charEval_eq_of_residue_eq h) x
 
 end ResidueEq
 

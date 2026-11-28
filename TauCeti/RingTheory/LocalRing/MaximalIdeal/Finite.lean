@@ -36,7 +36,7 @@ theorem exists_maximalIdeal_pow_le_map {R S : Type*} [CommRing R] [CommRing S] [
     [IsLocalRing S] [Algebra R S] [Module.Finite R S] :
     ∃ N ≥ 1, maximalIdeal S ^ N ≤ (maximalIdeal R).map (algebraMap R S) := by
   have : Module.Finite R (S ⧸ (maximalIdeal R).map (algebraMap R S)) :=
-    Module.Finite.of_surjective (Ideal.Quotient.mkₐ R _).toLinearMap Ideal.Quotient.mk_surjective
+    Module.Finite.quotient R ((maximalIdeal R).map (algebraMap R S) : Submodule S S)
   have : Module.Finite (R ⧸ maximalIdeal R) (S ⧸ (maximalIdeal R).map (algebraMap R S)) :=
     Module.Finite.of_restrictScalars_finite R _ _
   have : IsArtinianRing (R ⧸ maximalIdeal R) :=
