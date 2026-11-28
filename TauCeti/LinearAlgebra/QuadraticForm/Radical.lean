@@ -16,6 +16,7 @@ import Mathlib.LinearAlgebra.Projection
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
 
 /-!
@@ -63,6 +64,8 @@ regular case.
 * `QuadraticMap.Nondegenerate.nondegenerate_restrict_orthogonal`: in a regular quadratic space,
   the orthogonal complement of a finite-dimensional regular subspace is regular.
 * `QuadraticMap.Nondegenerate.prod`: nondegeneracy passes to an orthogonal product.
+* `TauCeti.nondegenerate_restrict_span_singleton`: a form restricts nondegenerately to the line
+  spanned by a vector of nonzero value.
 * `QuadraticMap.Nondegenerate.ne_zero`: a nondegenerate quadratic map on a nontrivial module is
   nonzero.
 * `QuadraticMap.Nondegenerate.polarBilin_ne_zero`: a nonzero vector has nonzero polar functional
@@ -840,6 +843,22 @@ theorem _root_.QuadraticMap.nondegenerate_smul_sq {a : R} (ha : a ≠ 0) :
   refine ⟨eq_bot_iff.mpr fun x hx ↦ ?_, (Submodule.rank_le _).trans_eq (by simp)⟩
   have h := hx.1
   simpa [ha] using h
+
+omit [Invertible (2 : R)] in
+/-- A quadratic form restricts nondegenerately to the line spanned by a vector of nonzero value:
+on that line it is the form `t ↦ Q v * t²`. -/
+theorem nondegenerate_restrict_span_singleton {Q : QuadraticForm R V} {v : V} (hv : Q v ≠ 0) :
+    (Q.restrict (R ∙ v)).Nondegenerate := by
+  have hinj : Function.Injective (LinearMap.toSpanSingleton R V v) := by
+    refine (injective_iff_map_eq_zero _).mpr fun c hc ↦ ?_
+    have h := congrArg Q hc
+    simp only [LinearMap.toSpanSingleton_apply, QuadraticMap.map_smul, map_zero] at h
+    simpa [hv] using h
+  exact (QuadraticMap.IsometryEquiv.nondegenerate_iff
+    { toLinearEquiv := (LinearEquiv.ofInjective _ hinj).trans
+        (LinearEquiv.ofEq _ _ (LinearMap.span_singleton_eq_range R V v).symm)
+      map_app' := fun t ↦ by simp [QuadraticMap.map_smul, mul_comm] }).mp
+    (QuadraticMap.nondegenerate_smul_sq hv)
 
 end TauCeti
 

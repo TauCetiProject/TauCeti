@@ -143,8 +143,7 @@ theorem wittClass_rankOne_eq_oneFoldPfisterClass_sub (a : Kˣ) :
 theorem wittClass_rankOne_neg (a : Kˣ) :
     wittClass (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -a⟩) =
       -wittClass (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) := by
-  rw [eq_neg_iff_add_eq_zero, add_comm, ← map_add, ← neg_one_mul a,
-    ← RegularFormClass.mk_rankOne_mul_mk_rankOne, RegularFormClass.mk_rankOne_add_neg_one_mul,
+  rw [eq_neg_iff_add_eq_zero, add_comm, ← map_add, RegularFormClass.mk_rankOne_add_mk_rankOne_neg,
     wittClass_hyperbolicClass]
 
 /-- **The one-fold Pfister class of a product**: `⟨⟨ab⟩⟩ = ⟨⟨a⟩⟩ + ⟨⟨b⟩⟩ - ⟨⟨a⟩⟩⟨⟨b⟩⟩`, that is
@@ -175,8 +174,8 @@ theorem oneFoldPfisterClass_neg_one_mul (x : WittRing K) :
 /-- The one-fold Pfister class `⟨⟨1⟩⟩ = ⟨1, -1⟩` is hyperbolic, hence zero in the Witt ring. -/
 @[simp]
 theorem oneFoldPfisterClass_one : oneFoldPfisterClass (1 : Kˣ) = 0 := by
-  have h := RegularFormClass.mk_rankOne_add_neg_one_mul (K := K) (1 : Kˣ)
-  rw [RegularFormClass.mk_rankOne_one, mul_one] at h
+  have h := RegularFormClass.mk_rankOne_add_mk_rankOne_neg (K := K) (1 : Kˣ)
+  rw [RegularFormClass.mk_rankOne_one] at h
   rw [oneFoldPfisterClass, h, wittClass_hyperbolicClass]
 
 /-! ### Additive generation -/

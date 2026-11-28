@@ -28,6 +28,8 @@ isotropic subspace.
   regular space has dimension at most the Witt index.
 * `QuadraticMap.IsTotallyIsotropic.exists_le_finrank_eq_wittIndex`: every totally isotropic
   subspace of a regular space lies in one whose dimension is the Witt index.
+* `QuadraticMap.IsTotallyIsotropic.formClass_eq_nsmul_hyperbolicClass`: a regular space with a
+  totally isotropic subspace of half its dimension is a sum of hyperbolic planes.
 * `QuadraticForm.maximal_isTotallyIsotropic_iff`: a totally isotropic subspace of a regular space
   is maximal exactly when its dimension is the Witt index.
 
@@ -213,6 +215,19 @@ theorem IsTotallyIsotropic.finrank_le_wittIndex (hQ : Q.Nondegenerate)
     finrank K W ≤ RegularFormClass.wittIndex (formClass Q hQ) := by
   obtain ⟨W', hle, -, hW'⟩ := hW.exists_le_finrank_eq_wittIndex hQ
   exact hW' ▸ Submodule.finrank_mono hle
+
+/-- A regular finite-dimensional quadratic space containing a totally isotropic subspace of half
+its dimension is hyperbolic: its class is `finrank K W` hyperbolic planes. -/
+theorem IsTotallyIsotropic.formClass_eq_nsmul_hyperbolicClass (hQ : Q.Nondegenerate)
+    (hW : Q.IsTotallyIsotropic W) (h : 2 * finrank K W = finrank K V) :
+    formClass Q hQ = finrank K W • hyperbolicClass K := by
+  have hle := hW.finrank_le_wittIndex hQ
+  have hrank := RegularFormClass.rank_eq_two_mul_wittIndex_add (formClass Q hQ)
+  rw [rank_formClass] at hrank
+  have hm : RegularFormClass.wittIndex (formClass Q hQ) = finrank K W := by omega
+  have ha : RegularFormClass.anisotropicPart (formClass Q hQ) = 0 :=
+    RegularFormClass.rank_eq_zero_iff.mp (by omega)
+  rw [RegularFormClass.wittDecomposition (formClass Q hQ), hm, ha, add_zero]
 
 end QuadraticMap
 

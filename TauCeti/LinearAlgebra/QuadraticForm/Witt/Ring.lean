@@ -90,20 +90,6 @@ theorem RegularFormClass.mul_hyperbolicClass (x : RegularFormClass K) :
     rw [add_mul, ih, RegularFormClass.mk_rankOne_mul_hyperbolicClass,
       RegularFormClass.rank_add, RegularFormClass.rank_mk, add_nsmul, one_nsmul]
 
-/-- Adding a rank-one class to its scaling by `-1` produces a hyperbolic plane:
-`⟨a, -a⟩ ≅ ℍ`. -/
-theorem RegularFormClass.mk_rankOne_add_neg_one_mul (a : Kˣ) :
-    Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ +
-        Quotient.mk (regularFormSetoid K) ⟨1, fun _ => (-1 : Kˣ)⟩ *
-          Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ = hyperbolicClass K := by
-  refine RegularFormClass.eq_hyperbolicClass_of_rank_eq_two_of_discr_eq_neg_one ?_ ?_
-  · simp
-  · rw [RegularFormClass.discr_add, RegularFormClass.discr_mk_rankOne_mul]
-    simp only [RegularFormClass.discr_mk, RegularFormClass.rank_mk, Fin.prod_univ_one, one_nsmul]
-    rw [← add_assoc, add_comm (squareClass a) (squareClass (-1 : Kˣ)), add_assoc, ← two_nsmul,
-      ZModModule.char_nsmul_eq_zero 2 (squareClass a : SquareClassGroup K)]
-    abel
-
 /-- **Scaling by `-1` inverts a form modulo hyperbolic planes**: `q ⊥ (-q)` is `dim q` copies of
 `ℍ`. This is what makes the Witt class of every form invertible in `W(K)` without leaving the
 image of the forms. -/
@@ -113,8 +99,9 @@ theorem RegularFormClass.add_neg_one_mul (x : RegularFormClass K) :
   induction x using RegularFormClass.induction_on_rankOne with
   | zero => simp
   | add_rankOne y a ih =>
-    rw [mul_add, RegularFormClass.rank_add, RegularFormClass.rank_mk, add_nsmul, one_nsmul, ← ih,
-      ← RegularFormClass.mk_rankOne_add_neg_one_mul a]
+    rw [mul_add, RegularFormClass.mk_rankOne_mul_mk_rankOne, neg_one_mul, RegularFormClass.rank_add,
+      RegularFormClass.rank_mk, add_nsmul, one_nsmul, ← ih,
+      ← RegularFormClass.mk_rankOne_add_mk_rankOne_neg a]
     abel
 
 /-! ### The Witt-Grothendieck ring -/

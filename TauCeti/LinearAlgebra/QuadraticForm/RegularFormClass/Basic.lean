@@ -63,6 +63,11 @@ rank is additive.
 * `TauCeti.presentedForm_tail_isRepresentedBy`: the tail of a diagonal presentation is
   represented by the full form.
 * `TauCeti.formClass_prod`: the class of an orthogonal product is the sum of the classes.
+* `QuadraticForm.formClass_restrict_add_formClass_restrict_orthogonal`: a regular subspace
+  splits the class of a regular space as its own class plus the class of its orthogonal
+  complement.
+* `QuadraticForm.formClass_eq_mk_rankOne_add`: a vector of nonzero value splits off its line
+  `⟨Q v⟩`.
 * `TauCeti.RegularFormClass.mk_succ_eq_mk_rankOne_add`: the class of a presentation of positive
   rank is the rank-one class of its first weight plus the class of the remaining weights.
 * `TauCeti.RegularFormClass.mk_rankOne_inv`: `⟨a⁻¹⟩ ≅ ⟨a⟩`.
@@ -754,5 +759,40 @@ theorem formClass_prod (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (R : Quadr
   obtain ⟨q, hq⟩ := exists_presentedForm_equivalent R hR
   rw [formClass_mk Q hQ p hp, formClass_mk R hR q hq, RegularFormClass.mk_add_mk,
     formClass_mk _ _ _ ((hp.prod hq).trans (equivalent_presentedForm_append_prod p q).symm)]
+
+/-- **Orthogonal splitting.** A regular subspace `U` of a regular space splits the class of the
+space as the class of `U` plus the class of its orthogonal complement. -/
+theorem _root_.QuadraticForm.formClass_restrict_add_formClass_restrict_orthogonal
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) {U : Submodule K V}
+    (hU : (Q.restrict U).Nondegenerate) :
+    formClass (Q.restrict U) hU + formClass (Q.restrict
+      (LinearMap.BilinForm.orthogonal Q.polarBilin U)) (hQ.nondegenerate_restrict_orthogonal hU) =
+      formClass Q hQ := by
+  rw [← formClass_prod, formClass_eq_iff]
+  exact ⟨IsometryEquiv.prodRestrictOrthogonal Q U hU.isCompl_orthogonal⟩
+
+omit [FiniteDimensional K V] in
+/-- The line spanned by a vector `v` with `Q v ≠ 0` has the rank-one class `⟨Q v⟩`. -/
+theorem _root_.QuadraticForm.formClass_restrict_span_singleton (Q : QuadraticForm K V) {v : V}
+    (hv : Q v ≠ 0) :
+    formClass (Q.restrict (K ∙ v)) (nondegenerate_restrict_span_singleton hv) =
+      Quotient.mk (regularFormSetoid K) ⟨1, fun _ => Units.mk0 (Q v) hv⟩ := by
+  refine formClass_mk _ _ _ ⟨IsometryEquiv.symm
+    { toLinearEquiv := (LinearEquiv.funUnique (Fin 1) K K).trans
+        (LinearEquiv.toSpanNonzeroSingleton K V v fun h ↦ hv (by rw [h, map_zero]))
+      map_app' := fun x ↦ ?_ }⟩
+  rw [presentedForm_apply]
+  simp [QuadraticMap.map_smul]
+  ring
+
+/-- **Splitting off a line.** A vector `v` with `Q v ≠ 0` splits the class of a regular form as
+the line `⟨Q v⟩` plus the class of the orthogonal complement of `v`. -/
+theorem _root_.QuadraticForm.formClass_eq_mk_rankOne_add (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) {v : V} (hv : Q v ≠ 0) :
+    formClass Q hQ = Quotient.mk (regularFormSetoid K) ⟨1, fun _ => Units.mk0 (Q v) hv⟩ +
+      formClass (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin (K ∙ v)))
+        (hQ.nondegenerate_restrict_orthogonal (nondegenerate_restrict_span_singleton hv)) := by
+  rw [← formClass_restrict_span_singleton Q hv,
+    formClass_restrict_add_formClass_restrict_orthogonal]
 
 end TauCeti
