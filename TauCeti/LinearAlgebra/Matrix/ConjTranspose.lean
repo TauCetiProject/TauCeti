@@ -27,7 +27,11 @@ back to that of `B` (`star x * A * x = B`) carries pairings for `B` to pairings 
 
 public section
 
+open scoped Matrix
+
 namespace Matrix
+
+section CommSemiring
 
 variable {l m α : Type*} [CommSemiring α] [StarRing α]
 
@@ -45,6 +49,8 @@ theorem conjTranspose_map_intCast {R : Type*} [Ring R] [StarRing R] (X : Matrix 
   ext i j
   simp
 
+end CommSemiring
+
 section NonUnitalSemiring
 
 variable {n R : Type*} [Fintype n] [NonUnitalSemiring R] [StarRing R] {A : Matrix n n R}
@@ -61,5 +67,17 @@ theorem conjTranspose_mul_mul_mul_of_star_mul_mul_eq {m' : Type*} {B x : Matrix 
   simp only [conjTranspose_mul, star_eq_conjTranspose, Matrix.mul_assoc]
 
 end NonUnitalSemiring
+
+/-- Over a star semiring, conjugating `star v ⬝ᵥ (M *ᵥ v)` replaces `M` by `Mᴴ`. -/
+theorem star_dotProduct_mulVec_self {n R : Type*} [Fintype n] [NonUnitalSemiring R] [StarRing R]
+    (M : Matrix n n R) (v : n → R) :
+    star (star v ⬝ᵥ (M *ᵥ v)) = star v ⬝ᵥ (Mᴴ *ᵥ v) := by
+  rw [← star_dotProduct, star_mulVec, dotProduct_mulVec]
+
+/-- For a skew-Hermitian matrix `Mᴴ = -M`, `star v ⬝ᵥ (M *ᵥ v)` is skew-adjoint. -/
+theorem star_dotProduct_mulVec_self_of_skewHermitian {n R : Type*} [Fintype n] [Ring R]
+    [StarRing R] {M : Matrix n n R} (hM : Mᴴ = -M) (v : n → R) :
+    star (star v ⬝ᵥ (M *ᵥ v)) = -(star v ⬝ᵥ (M *ᵥ v)) := by
+  rw [star_dotProduct_mulVec_self, hM, neg_mulVec, dotProduct_neg]
 
 end Matrix

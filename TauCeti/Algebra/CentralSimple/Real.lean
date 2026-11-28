@@ -12,9 +12,10 @@ public import TauCeti.Algebra.CentralSimple.Degree
 -- `Mathlib.Algebra.Quaternion` is imported publicly because `ℍ[ℝ]` occurs in the statement of the
 -- classification.
 public import Mathlib.Algebra.Quaternion
--- `Mathlib.Basic.Real.Basic` is imported publicly because `ℝ` is the base field of every statement
--- below: `Mathlib.Algebra.Quaternion` supplies `ℍ[·]` over an arbitrary base but not `ℝ` itself.
+-- `Mathlib.Basic.Real.Basic` and `Mathlib.LinearAlgebra.Complex.Module` are imported publicly
+-- because `ℝ`, `ℂ`, and the `ℝ`-algebra structure on `ℂ` occur in the classification below.
 public import Mathlib.Basic.Real.Basic
+public import Mathlib.LinearAlgebra.Complex.Module
 -- Non-public: the maximal subfield supplying the degree bound
 -- (`TauCeti.Algebra.exists_subalgebra_isField_isSeparable_finrank_eq_deg`), the quaternion
 -- centrality used in the examples, the basis that builds the isomorphism
@@ -26,14 +27,18 @@ import Mathlib.Algebra.QuaternionBasis
 import Mathlib.Analysis.Complex.Polynomial.Basic
 
 /-!
-# Frobenius' theorem: the real central division algebras are `ℝ` and `ℍ[ℝ]`
+# Frobenius' theorem: finite-dimensional real division algebras are `ℝ`, `ℂ`, or `ℍ[ℝ]`
 
-A finite-dimensional division algebra over `ℝ` whose centre is `ℝ` is `ℝ`-isomorphic either to `ℝ`
-itself or to the Hamilton quaternions `ℍ[ℝ]`. This is the classification the Brauer group of `ℝ`
-needs: it says that the two Brauer classes already known -- the identity and the class of `ℍ[ℝ]` --
-are all there are.
+Every finite-dimensional associative real algebra without zero divisors is `ℝ`-isomorphic to
+`ℝ`, `ℂ`, or the Hamilton quaternions `ℍ[ℝ]`
+(`TauCeti.nonempty_algEquiv_real_or_complex_or_quaternion`).
+The central case (`TauCeti.nonempty_algEquiv_real_or_quaternion`) shows that a finite-dimensional
+real division algebra with centre `ℝ` is `ℝ` or `ℍ[ℝ]`, which is the step that computes the
+Brauer group of `ℝ`: the two Brauer classes already known -- the identity and the class of
+`ℍ[ℝ]` -- are all there are.
 
-The proof runs in three steps, and only the first uses anything about central simple algebras.
+The proof of the central case (`TauCeti.nonempty_algEquiv_real_or_quaternion`) runs in three
+steps, and only the first uses anything about central simple algebras.
 
 *The degree is at most two.* A central division algebra has a subfield of degree `deg ℝ D`
 (`TauCeti.Algebra.exists_subalgebra_isField_isSeparable_finrank_eq_deg`), and a finite extension
@@ -57,7 +62,12 @@ the division ring `D` and put `j` in `ℝ`; rescaling `j` makes `j * j = -1`. Th
 division ring and surjective because both sides have dimension `4`.
 
 Beyond the degree bound no maximal subfield, centralizer theorem or Skolem-Noether argument is
-needed; the rest is the elementary Frobenius argument.
+needed for the central case; the rest is the elementary Frobenius argument. The general theorem
+(`TauCeti.nonempty_algEquiv_real_or_complex_or_quaternion`) reduces to the central case or `ℂ` by
+classifying the centre `Z(D)` via `Real.nonempty_algEquiv_or`: when `Z(D) ≃ₐ[ℝ] ℝ`, `D` is
+central over `ℝ` and the central case applies; when `Z(D) ≃ₐ[ℝ] ℂ`, `D` is finite over the
+algebraically closed field `ℂ`, so `ℂ → D` is bijective by
+`IsAlgClosed.algebraMap_bijective_of_isIntegral`.
 
 ## Main results
 
@@ -72,6 +82,8 @@ needed; the rest is the elementary Frobenius argument.
   that is a domain is `ℍ[ℝ]`.
 * `TauCeti.nonempty_algEquiv_real_or_quaternion`: **Frobenius' theorem**, a real central division
   algebra is `ℝ` or `ℍ[ℝ]`.
+* `TauCeti.nonempty_algEquiv_real_or_complex_or_quaternion`: **general Frobenius' theorem**, every
+  finite-dimensional real algebra without zero divisors is `ℝ`, `ℂ`, or `ℍ[ℝ]`.
 
 ## Implementation notes
 
@@ -424,5 +436,37 @@ theorem nonempty_algEquiv_real_or_quaternion (D : Type*) [DivisionRing D] [Algeb
     right
     rw [hd] at hsq
     exact nonempty_algEquiv_quaternion_of_finrank_eq_four D (by omega)
+
+/-- **Frobenius' theorem for real division algebras.** Every finite-dimensional associative real
+algebra without zero divisors is `ℝ`-isomorphic to `ℝ`, `ℂ`, or `ℍ[ℝ]`. -/
+theorem nonempty_algEquiv_real_or_complex_or_quaternion (D : Type*) [Ring D] [IsDomain D]
+    [Algebra ℝ D] [FiniteDimensional ℝ D] :
+    Nonempty (D ≃ₐ[ℝ] ℝ) ∨ Nonempty (D ≃ₐ[ℝ] ℂ) ∨ Nonempty (D ≃ₐ[ℝ] ℍ[ℝ]) := by
+  let _ : DivisionRing D := divisionRingOfFiniteDimensional ℝ D
+  set Z := Subalgebra.center ℝ D
+  let _ : Field Z := (IsField.of_isDomain_of_finite ℝ Z).toField
+  have _ : Algebra.IsAlgebraic ℝ Z := Algebra.IsAlgebraic.of_finite ℝ Z
+  rcases _root_.Real.nonempty_algEquiv_or Z with ⟨⟨eZ⟩⟩ | ⟨⟨eZ⟩⟩
+  · have : Algebra.IsCentral ℝ D := ⟨fun x hx ↦ by
+      have hz : (⟨x, hx⟩ : Z) = algebraMap ℝ Z (eZ ⟨x, hx⟩) :=
+        eZ.injective (by rw [AlgEquiv.commutes, Algebra.algebraMap_self_apply])
+      have hx_eq : x = algebraMap ℝ D (eZ ⟨x, hx⟩) := congrArg Subtype.val hz
+      rw [hx_eq]
+      exact Subalgebra.algebraMap_mem _ _⟩
+    exact (nonempty_algEquiv_real_or_quaternion D).imp id Or.inr
+  · right; left
+    let f : ℂ →ₐ[ℝ] D := (Subalgebra.val Z).comp eZ.symm.toAlgHom
+    have hcomm (c : ℂ) (x : D) : f c * x = x * f c :=
+      (Subalgebra.mem_center_iff.mp (eZ.symm c).property x).symm
+    let _ : Algebra ℂ D := f.toRingHom.toAlgebra' hcomm
+    have hmap : algebraMap ℂ D = f.toRingHom := RingHom.algebraMap_toAlgebra' f.toRingHom hcomm
+    have _ : IsScalarTower ℝ ℂ D := IsScalarTower.of_algebraMap_eq fun r ↦ by
+      rw [hmap, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, f.commutes]
+    have _ : Module.Finite ℂ D := by
+      -- Pin the `Module ℝ D` instance from `[Algebra ℝ D]` used by `[FiniteDimensional ℝ D]`.
+      let _ : Module ℝ D := Algebra.toModule
+      exact Module.Finite.of_restrictScalars_finite ℝ ℂ D
+    have hbij := IsAlgClosed.algebraMap_bijective_of_isIntegral (k := ℂ) (K := D)
+    rw [hmap] at hbij; exact ⟨(AlgEquiv.ofBijective f hbij).symm⟩
 
 end TauCeti

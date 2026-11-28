@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Real.Basic
 public import Mathlib.RingTheory.Artinian.Module
 public import TauCeti.Algebra.Star.SelfAdjoint
+import TauCeti.Algebra.Star.Basic
 
 /-!
 # Artinian rings with a proper involution
@@ -40,5 +42,14 @@ theorem isSemisimpleRing_of_isProperStar (A : Type*) [Ring A] [StarRing A]
     simpa only [hm, Ideal.zero_eq_bot, Ideal.mem_bot, smul_eq_mul] using hpow
   exact (Submodule.mem_bot _).mpr
     (star_mul_self_eq_zero.mp ((IsSelfAdjoint.star_mul_self x).eq_zero_of_isNilpotent hnil))
+
+/-- A finite-dimensional real star algebra with a linear functional strictly positive on
+`x * star x` is semisimple. -/
+theorem isSemisimpleRing_of_forall_pos_mul_star {E : Type*} [Ring E] [Algebra ℝ E] [StarRing E]
+    [Module.Finite ℝ E] (t : E →ₗ[ℝ] ℝ)
+    (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) : IsSemisimpleRing E :=
+  have := IsArtinianRing.of_finite ℝ E
+  have := isProperStar_of_forall_pos_mul_star t.toAddMonoidHom hpos
+  isSemisimpleRing_of_isProperStar E
 
 end TauCeti

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Ring.Equiv
 public import Mathlib.Algebra.Ring.Pi
 public import Mathlib.Algebra.Ring.Prod
+public import Mathlib.LinearAlgebra.Pi
 
 /-!
 # Factors of a product of rings
@@ -21,6 +22,10 @@ form, and it is not unital as soon as another factor is nonzero. Applied entrywi
 a matrix over `R i` placed in the factor `i` keeps properties such as idempotence. It
 describes the objects of a finite product of rings that are supported in a single factor, for
 instance idempotent matrices.
+
+For a ring equivalence `e : E ≃+* ∀ i, A i`, `RingEquiv.symm_single_one_mul` and
+`RingEquiv.symm_single_mul` record multiplication identities for the coordinate slices
+`e.symm (Pi.single i a)`.
 
 A product `∀ i, A i` of rings is also isomorphic to the product of its nonzero factors, since a
 zero factor contributes nothing. The isomorphism `RingEquiv.piNontrivial` splits the product along
@@ -61,6 +66,25 @@ end NonUnitalRingHom
 
 namespace RingEquiv
 
+section CoordinateSlices
+
+variable {E : Type*} [Semiring E] {ι : Type*} [DecidableEq ι] {A : ι → Type*}
+  [∀ i, Semiring (A i)]
+
+/-- Multiplying on the left by `e.symm (Pi.single i 1)` projects `x` onto the `i`-th slice. -/
+theorem symm_single_one_mul (e : E ≃+* ∀ i, A i) (i : ι) (x : E) :
+    e.symm (Pi.single i 1) * x = e.symm (Pi.single i (e x i)) :=
+  e.injective <| by simp [← Pi.single_mul_left]
+
+/-- The `i`-th coordinate embedding `a ↦ e.symm (Pi.single i a)` preserves multiplication. -/
+theorem symm_single_mul (e : E ≃+* ∀ i, A i) (i : ι) (u v : A i) :
+    e.symm (Pi.single i (u * v)) = e.symm (Pi.single i u) * e.symm (Pi.single i v) := by
+  rw [Pi.single_mul, map_mul]
+
+end CoordinateSlices
+
+section PiNontrivial
+
 variable {ι : Type*} (A : ι → Type*) [∀ i, NonAssocSemiring (A i)]
 
 open Classical in
@@ -90,4 +114,20 @@ theorem piNontrivial_symm_apply_coe (y : ∀ j : {i // Nontrivial (A i)}, A j)
   classical
   rw [piNontrivial_symm_apply, dite_eq_left_of_eq_true (eq_true j.property)]
 
+end PiNontrivial
+
 end RingEquiv
+
+namespace LinearMap
+
+/-- Precomposing a cyclic `R`-linear map on `∀ i, B i` with `LinearMap.single R B i` yields a
+cyclic `R`-linear map on `B i`. -/
+theorem comp_single_cyclic {R : Type*} [CommSemiring R] {ι : Type*} [DecidableEq ι]
+    {B : ι → Type*} [∀ i, NonUnitalNonAssocSemiring (B i)] [∀ i, Module R (B i)]
+    {M : Type*} [AddCommMonoid M] [Module R M] (t : (∀ i, B i) →ₗ[R] M)
+    (hcyc : ∀ x y, t (x * y) = t (y * x)) (i : ι) (x y : B i) :
+    (t.comp (LinearMap.single R B i)) (x * y) = (t.comp (LinearMap.single R B i)) (y * x) := by
+  simp only [LinearMap.comp_apply, LinearMap.single_apply]
+  rw [Pi.single_mul, Pi.single_mul, hcyc]
+
+end LinearMap

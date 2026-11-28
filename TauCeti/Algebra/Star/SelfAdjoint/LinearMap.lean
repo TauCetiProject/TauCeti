@@ -5,15 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Invertible
+public import Mathlib.Algebra.Star.Module
 public import Mathlib.LinearAlgebra.Complex.Module
+import Mathlib.Basic.Real.Star
 import TauCeti.Algebra.Star.SelfAdjoint
 
 /-!
-# Polarization for complex linear maps on star modules
+# Polarization and symmetrization for linear maps on star modules
 
-The self-adjoint part spans a complex star module over the complex scalars. A complex
-linear map that preserves self-adjoint squares therefore preserves the anticommutator
-on the entire module.
+Complex linear maps preserving self-adjoint squares preserve anticommutators. Over a commutative
+ring with trivial star and invertible `2`, precomposing `t` with `selfAdjointPart R` yields its
+star-symmetrization `x ↦ ⅟2 • (t x + t (star x))`.
 -/
 
 public section
@@ -36,5 +39,58 @@ theorem map_mul_add_mul_of_map_mul_self_of_isSelfAdjoint
     (LinearMap.ext_on span_selfAdjoint fun a ha ↦
       LinearMap.ext_on span_selfAdjoint fun b hb ↦
         f.toAddMonoidHom.map_mul_add_mul_of_isSelfAdjoint hf ha hb) x y
+
+section
+
+variable {R E M : Type*} [CommRing R] [StarMul R] [TrivialStar R] [Invertible (2 : R)]
+  [AddCommGroup E] [Module R E] [StarAddMonoid E] [StarModule R E]
+  [AddCommMonoid M] [Module R M] (t : E →ₗ[R] M)
+
+/-- Evaluating `(t.comp (selfAdjoint.submodule R E).subtype).comp (selfAdjointPart R)` gives
+`(⅟2 : R) • (t x + t (star x))`. -/
+theorem comp_selfAdjointPart_apply (x : E) :
+    ((t.comp (selfAdjoint.submodule R E).subtype).comp (selfAdjointPart R)) x =
+      (⅟2 : R) • (t x + t (star x)) := by
+  -- `↥(selfAdjoint.submodule R E)` is defeq to `↥(selfAdjoint E)` (not at reducible transparency).
+  have h : ((t.comp (selfAdjoint.submodule R E).subtype).comp (selfAdjointPart R)) x =
+      t (selfAdjointPart R x : E) := rfl
+  rw [h, selfAdjointPart_apply_coe, map_smul, map_add]
+
+/-- The symmetrization `(t.comp (selfAdjoint.submodule R E).subtype).comp (selfAdjointPart R)` is
+star-invariant. -/
+@[simp] theorem comp_selfAdjointPart_star (x : E) :
+    ((t.comp (selfAdjoint.submodule R E).subtype).comp (selfAdjointPart R)) (star x) =
+      ((t.comp (selfAdjoint.submodule R E).subtype).comp (selfAdjointPart R)) x := by
+  simp only [comp_selfAdjointPart_apply, star_star, add_comm]
+
+/-- On self-adjoint elements,
+`(t.comp (selfAdjoint.submodule R E).subtype).comp (selfAdjointPart R)` agrees with `t`. -/
+theorem comp_selfAdjointPart_apply_of_isSelfAdjoint {x : E} (hx : IsSelfAdjoint x) :
+    ((t.comp (selfAdjoint.submodule R E).subtype).comp (selfAdjointPart R)) x = t x := by
+  -- `↥(selfAdjoint.submodule R E)` is defeq to `↥(selfAdjoint E)` (not at reducible transparency).
+  have h : ((t.comp (selfAdjoint.submodule R E).subtype).comp (selfAdjointPart R)) x =
+      t (selfAdjointPart R x : E) := rfl
+  rw [h, hx.coe_selfAdjointPart_apply R]
+
+end
+
+/-- The symmetrization `(t.comp (selfAdjoint.submodule R E).subtype).comp (selfAdjointPart R)`
+inherits cyclicity from `t`. -/
+theorem comp_selfAdjointPart_cyclic {R E M : Type*} [CommRing R] [StarMul R] [TrivialStar R]
+    [Invertible (2 : R)] [NonUnitalNonAssocRing E] [Module R E] [StarRing E] [StarModule R E]
+    [AddCommMonoid M] [Module R M] {t : E →ₗ[R] M}
+    (hcyclic : ∀ x y : E, t (x * y) = t (y * x)) (x y : E) :
+    ((t.comp (selfAdjoint.submodule R E).subtype).comp (selfAdjointPart R)) (x * y) =
+      ((t.comp (selfAdjoint.submodule R E).subtype).comp (selfAdjointPart R)) (y * x) := by
+  simp only [comp_selfAdjointPart_apply, star_mul, hcyclic x y, hcyclic (star y) (star x)]
+
+/-- The symmetrization `(t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)`
+inherits strict positivity on `x * star x` from `t`. -/
+theorem comp_selfAdjointPart_mul_star_pos {E : Type*} [NonUnitalNonAssocRing E] [Module ℝ E]
+    [StarRing E] [StarModule ℝ E] {t : E →ₗ[ℝ] ℝ}
+    (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) {x : E} (hx : x ≠ 0) :
+    0 < ((t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)) (x * star x) := by
+  rw [comp_selfAdjointPart_apply_of_isSelfAdjoint t (IsSelfAdjoint.mul_star_self x)]
+  exact hpos x hx
 
 end LinearMap

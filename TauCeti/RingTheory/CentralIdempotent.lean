@@ -11,6 +11,7 @@ public import Mathlib.Data.Set.Card
 public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.SimpleRing.Field
 public import Mathlib.SetTheory.Cardinal.Finite
+import Mathlib.Algebra.Star.Center
 
 /-!
 # Central idempotents
@@ -60,6 +61,8 @@ A proper involution (`IsProperStar`) fixes every central idempotent `e`: `x = e 
   `2 ^ (number of factors)` central idempotents.
 * `TauCeti.star_eq_self_of_mem_centralIdempotents`: a proper involution fixes every central
   idempotent.
+* `TauCeti.star_mem_centralIdempotents`, `RingEquiv.star_symm_single_one`: star preserves central
+  idempotents, and in proper star rings fixes coordinate idempotents of product decompositions.
 * `AlgHom.exists_algHom_surjective_of_prod`: a surjection of algebras `A × A ↠ B` onto a simple
   ring restricts to a surjection along one of the two coordinates.
 
@@ -125,6 +128,11 @@ theorem zero_mem_centralIdempotents : (0 : R) ∈ centralIdempotents R :=
 
 theorem one_mem_centralIdempotents : (1 : R) ∈ centralIdempotents R :=
   ⟨IsIdempotentElem.one, Subring.one_mem _⟩
+
+/-- The star involution preserves central idempotents. -/
+theorem star_mem_centralIdempotents [StarRing R] {e : R} (he : e ∈ centralIdempotents R) :
+    star e ∈ centralIdempotents R :=
+  ⟨IsIdempotentElem.star he.1, Set.star_mem_center he.2⟩
 
 end TauCeti
 
@@ -292,3 +300,21 @@ theorem exists_algHom_surjective_of_prod [IsSimpleRing B] (φ : (A × A) →ₐ[
 end ProdSurjection
 
 end AlgHom
+
+namespace RingEquiv
+
+open TauCeti
+
+/-- In a ring with proper star, every coordinate central idempotent `e.symm (Pi.single i 1)` of a
+product decomposition is fixed by `star`. -/
+@[simp]
+theorem star_symm_single_one {E : Type*} [Ring E] [StarRing E] [IsProperStar E] {ι : Type*}
+    [DecidableEq ι] {A : ι → Type*} [∀ i, Ring (A i)] (e : E ≃+* ∀ i, A i) (i : ι) :
+    star (e.symm (Pi.single i 1)) = e.symm (Pi.single i 1) := by
+  refine star_eq_self_of_mem_centralIdempotents (e.symm.map_mem_centralIdempotents
+    ((mem_centralIdempotents_pi A).mpr fun j ↦ ?_))
+  by_cases hj : j = i
+  · subst hj; simpa using one_mem_centralIdempotents (R := A j)
+  · simpa [Pi.single_eq_of_ne hj] using zero_mem_centralIdempotents (R := A j)
+
+end RingEquiv
