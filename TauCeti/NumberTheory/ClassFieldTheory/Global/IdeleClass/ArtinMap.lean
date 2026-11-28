@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.FieldArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Reciprocity
 public import TauCeti.NumberTheory.ClassFieldTheory.GlobalExistence.NormSubgroup
-public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization
 import TauCeti.GroupTheory.Abelianization.Basic
 
 /-!
@@ -19,8 +19,12 @@ topological abelianization of the absolute Galois group. It specializes
 recover `globalArtinMap` and, for abelian extensions, `ideleClassArtinMap`.
 The finite restriction equation `abelianizationRestrictNormalHom_comp_absoluteGlobalArtinMap`
 characterizes the map by `eq_absoluteGlobalArtinMap_of_forall_abelianizationRestrictNormalHom`.
-Open subgroups pull back to norm subgroups by `ClassFormation.exists_absoluteArtinMap_mem_iff`;
-their openness (`isOpen_globalNormSubgroup`) gives continuity.
+`OpenSubgroup.exists_absoluteGlobalArtinMap_mem_iff` identifies open subgroup preimages with
+global norm subgroups using `ClassFormation.exists_absoluteArtinMap_mem_iff`. Its kernel corollary
+`OpenNormalSubgroup.exists_ker_mk'_comp_absoluteGlobalArtinMap_eq` and
+`isOpen_globalNormSubgroup` give `continuous_absoluteGlobalArtinMap`. By continuity,
+`absoluteGlobalArtinMap_eq_one_of_mem_connectedComponent` shows that the map kills the identity
+component of `C_K`.
 
 ## References
 
@@ -54,7 +58,7 @@ theorem absoluteGlobalArtinMap_apply (K : Type) [Field K] [NumberField K]
 /-- On the separable-closure model of `G_K^ab`, the absolute global Artin symbol is the
 symbol of the global class formation. -/
 @[simp]
-theorem absoluteGlobalArtinMap_restrict (K : Type) [Field K] [NumberField K]
+theorem topologicalAbelianizationCongr_absoluteGlobalArtinMap (K : Type) [Field K] [NumberField K]
     (c : IdeleClassGroup (𝓞 K) K) :
     (absoluteGaloisGroupRestrictEquiv K).topologicalAbelianizationCongr
         (absoluteGlobalArtinMap K c) =
@@ -125,27 +129,6 @@ section Finite
 
 open scoped IsMulCommutative
 
-variable {F : Type} {E : Type*} [Field F] [Field E] [Algebra F E]
-  [FiniteDimensional F E] [IsGalois F E]
-
-/-- Restriction from the absolute Galois abelianization to `Gal(E/F)^ab` along a
-separable-closure embedding of a finite Galois extension. -/
-def _root_.AlgHom.abelianizationRestrictNormalHom (ι : E →ₐ[F] SeparableClosure F) :
-    Additive (Field.absoluteGaloisGroupAbelianization F) →+
-      Additive (Group.Abelianization Gal(E/F)) :=
-  (MulEquiv.toAdditive (layerGalEquiv ι).abelianizationCongr).toAddMonoidHom.comp <|
-    (NormalLayer.abelianizationRestrict (fixingOpenNormalSubgroup F E)).comp <|
-      MonoidHom.toAdditive (↑(absoluteGaloisGroupRestrictEquiv F).topologicalAbelianizationCongr)
-
-/-- Finite restriction transports the absolute symbol to the separable-closure model, then
-projects to the finite layer and identifies its Galois group with `Gal(E/F)`. -/
-theorem _root_.AlgHom.abelianizationRestrictNormalHom_apply (ι : E →ₐ[F] SeparableClosure F)
-    (x : Field.absoluteGaloisGroupAbelianization F) :
-    ι.abelianizationRestrictNormalHom (.ofMul x) =
-      MulEquiv.toAdditive (layerGalEquiv ι).abelianizationCongr
-        (NormalLayer.abelianizationRestrict (fixingOpenNormalSubgroup F E)
-          (.ofMul ((absoluteGaloisGroupRestrictEquiv F).topologicalAbelianizationCongr x))) := (rfl)
-
 variable (L : Type*) [Field L] [NumberField L] [Algebra K L]
 
 /-- The restriction of the absolute global Artin map to a finite Galois extension of number
@@ -157,9 +140,10 @@ theorem abelianizationRestrictNormalHom_comp_absoluteGlobalArtinMap [IsGalois K 
       globalArtinMap K L ι := by
   refine AddMonoidHom.ext fun c ↦ ?_
   obtain ⟨c, rfl⟩ := Additive.ofMul.surjective c
+  -- Compare on the separable-closure model, where the formation restriction equation applies.
   rw [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply, toMul_ofMul,
-    ι.abelianizationRestrictNormalHom_apply, absoluteGlobalArtinMap_restrict, ofMul_toMul,
-    ClassFormation.abelianizationRestrict_absoluteArtinMap, globalArtinMap_apply,
+    ι.abelianizationRestrictNormalHom_apply, topologicalAbelianizationCongr_absoluteGlobalArtinMap,
+    ofMul_toMul, ClassFormation.abelianizationRestrict_absoluteArtinMap, globalArtinMap_apply,
     globalArtinEquiv_mk]
 
 /-- Restricting a representative of an absolute global Artin symbol to a finite Galois extension
@@ -174,7 +158,7 @@ theorem globalArtinMap_eq_of_mk_eq_absoluteGlobalArtinMap [IsGalois K L]
   apply globalArtinMap_eq_of_mk_eq_absoluteArtinMap K L ι
   -- Transport the representative back to the separable closure used by the class formation.
   rw [← ContinuousMulEquiv.topologicalAbelianizationCongr_mk, hg,
-    absoluteGlobalArtinMap_restrict, ofMul_toMul]
+    topologicalAbelianizationCongr_absoluteGlobalArtinMap, ofMul_toMul]
 
 /-- Over a finite abelian extension, the restriction of an absolute global Artin symbol is the
 finite Artin symbol in the Galois group itself. -/
