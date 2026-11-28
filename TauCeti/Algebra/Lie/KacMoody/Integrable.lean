@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.KacMoody.WeightModule
 public import TauCeti.LinearAlgebra.End.Exp
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Weyl
 import TauCeti.Algebra.Group.Action.Pow
+import TauCeti.Algebra.Lie.KacMoody.Triangular
 import TauCeti.Algebra.Lie.Sl2.Associative
 import TauCeti.Algebra.Lie.Submodule.LocallyFinite
 import TauCeti.Algebra.Lie.UniversalEnveloping.Module
@@ -33,8 +34,8 @@ Three structural mechanisms govern integrable Kac–Moody representations here:
 
 1. **Spreading local nilpotence from generating sets.** By adjoint local nilpotence of
    `positiveGenerator R i` and `negativeGenerator R i` on `PresentedLieAlgebra R` (proved in
-   `TauCeti.Algebra.Lie.KacMoody.Basic`), for any `x` with locally nilpotent `ad x` the vectors of
-   an `Enveloping R`-module `M` annihilated by a power of `lieAction R M x` form an
+   `TauCeti.Algebra.Lie.KacMoody.Triangular`), for any `x` with locally nilpotent `ad x` the
+   vectors of an `Enveloping R`-module `M` annihilated by a power of `lieAction R M x` form an
    `Enveloping R`-submodule (`TauCeti.KacMoody.locallyNilpotentActionSubmodule`), specializing to
    `locallyNilpotentPositiveSubmodule` and `locallyNilpotentNegativeSubmodule`. Consequently, local
    nilpotence of `eᵢ` and `fᵢ` spreads from any `Enveloping R`-generating set to all of `M`.

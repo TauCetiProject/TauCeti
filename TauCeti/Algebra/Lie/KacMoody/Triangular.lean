@@ -311,6 +311,20 @@ theorem engel_negativeGenerator_eq_top (i : I) :
     LieSubalgebra.engel_neg] at h
   exact eq_top_iff.2 fun y _ => h ▸ ⟨chevalleyInvolution R y, trivial, by simp⟩
 
+/-- Every element of `TauCeti.KacMoody.PresentedLieAlgebra R` is annihilated by some power of
+`ad (positiveGenerator R i)`. -/
+theorem exists_ad_positiveGenerator_pow_apply_eq_zero (i : I) (y : PresentedLieAlgebra R) :
+    ∃ k : ℕ, (ad K (PresentedLieAlgebra R) (positiveGenerator R i) ^ k) y = 0 :=
+  (LieSubalgebra.mem_engel_iff K (positiveGenerator R i) y).mp
+    (engel_positiveGenerator_eq_top R i ▸ LieSubalgebra.mem_top y)
+
+/-- Every element of `TauCeti.KacMoody.PresentedLieAlgebra R` is annihilated by some power of
+`ad (negativeGenerator R i)`. -/
+theorem exists_ad_negativeGenerator_pow_apply_eq_zero (i : I) (y : PresentedLieAlgebra R) :
+    ∃ k : ℕ, (ad K (PresentedLieAlgebra R) (negativeGenerator R i) ^ k) y = 0 :=
+  (LieSubalgebra.mem_engel_iff K (negativeGenerator R i) y).mp
+    (engel_negativeGenerator_eq_top R i ▸ LieSubalgebra.mem_top y)
+
 /-- The derived subalgebra `𝔤'` (the image of `TauCeti.KacMoody.serreHom`) is the sum of `n⁻`, the
 image of `R.corootSpan`, and `n⁺`. -/
 theorem range_serreHom_toSubmodule_eq [DecidableEq I] :
