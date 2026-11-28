@@ -82,14 +82,9 @@ lemma ofWhiskerEquivalence_π (c : Cowedge ((((Functor.whiskeringLeft₂ D).obj
         (e.counitInv.app j) ≫ c.π (e.inverse.obj j) :=
   (rfl)
 
-private lemma map_counitInv_comp_map_counit (T : J ⥤ D) (j : J) {P : D}
-    (leg : T.obj j ⟶ P) :
-    T.map (e.counitInv.app j) ≫ T.map (e.counit.app j) ≫ leg = leg := by
-  have h : e.counitInv.app j ≫ e.counit.app j = 𝟙 j := e.counitIso_inv_hom_id_app j
-  rw [← T.map_comp_assoc, h]
-  exact (congrArg (· ≫ leg) (T.map_id j)).trans (Category.id_comp leg)
-
-private lemma ofWhiskerEquivalence_whisker_π (c : Cowedge F) (j : J) :
+/-- Extending the restriction of a cowedge along an equivalence recovers its legs. -/
+@[simp]
+lemma ofWhiskerEquivalence_whisker_π (c : Cowedge F) (j : J) :
     ((c.whisker e.functor).ofWhiskerEquivalence (e := e)).π j = c.π j := by
   have naturality := (F.map (e.counit.app j).op).naturality (e.counitInv.app j)
   have h := c.condition (e.counit.app j)
@@ -100,7 +95,7 @@ private lemma ofWhiskerEquivalence_whisker_π (c : Cowedge F) (j : J) :
     (congrArg (_ ≫ ·) (whisker_π c e.functor (e.inverse.obj j))).trans h
   rw [ofWhiskerEquivalence_π (e := e),
     ← (reassoc_of% naturality) ((c.whisker e.functor).π (e.inverse.obj j)), h']
-  exact map_counitInv_comp_map_counit (e := e) (F.obj (op j)) j (c.π j)
+  exact (e.counitIso.app j).inv_hom_id_map_assoc (F.obj (op j)) (c.π j)
 
 /-- On the image of the equivalence, the extended legs are the original legs. -/
 @[simp]
@@ -115,8 +110,8 @@ lemma ofWhiskerEquivalence_π_obj (c : Cowedge ((((Functor.whiskeringLeft₂ D).
   rw [ofWhiskerEquivalence_π (e := e), e.counit_app_functor,
     ← (reassoc_of% naturality) (c.π (e.inverse.obj (e.functor.obj k))),
     h, ← e.counit_app_functor]
-  exact map_counitInv_comp_map_counit (e := e)
-    (F.obj (op (e.functor.obj k))) (e.functor.obj k) (c.π k)
+  exact (e.counitIso.app (e.functor.obj k)).inv_hom_id_map_assoc
+    (F.obj (op (e.functor.obj k))) (c.π k)
 
 /-- A colimiting cowedge stays colimiting when extended along the equivalence. -/
 def isColimitOfWhiskerEquivalence (c : Cowedge ((((Functor.whiskeringLeft₂ D).obj
