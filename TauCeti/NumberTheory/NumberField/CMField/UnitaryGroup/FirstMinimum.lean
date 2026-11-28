@@ -80,6 +80,22 @@ theorem archCoords_neg (y : ι → E) : V.archCoords (-y) = -V.archCoords y := b
   apply eq_neg_of_add_eq_zero_left
   rw [← archCoords_add, neg_add_cancel, archCoords_zero]
 
+/-- Scalar multiplication in a rational vector multiplies each archimedean coordinate by
+that scalar's image at the corresponding place. -/
+theorem archCoords_smul_apply (a : E) (y : ι → E) (i : ι) (w : InfinitePlace E) :
+    V.archCoords (a • y) (i, w) = w.embedding a * V.archCoords y (i, w) := by
+  have heq : (algebraMap E (InfiniteAdeleRing E) ∘ (a • y)) =
+      algebraMap E (InfiniteAdeleRing E) a • (algebraMap E (InfiniteAdeleRing E) ∘ y) := by
+    funext j
+    simp only [Function.comp_apply, Pi.smul_apply, smul_eq_mul, map_mul]
+  rw [archCoords_apply, archCoords_apply, heq, mulVec_smul, Pi.smul_apply, smul_eq_mul]
+  -- Evaluation at a place is a ring homomorphism on the product of the completions.
+  let ev := Pi.evalRingHom (fun v : InfinitePlace E ↦ v.Completion) w
+  have hev (b c : InfiniteAdeleRing E) : (b * c) w = b w * c w := ev.map_mul b c
+  rw [hev, map_mul, InfiniteAdeleRing.algebraMap_apply,
+    InfinitePlace.Completion.extensionEmbedding_coe]
+  exact congrArg (fun b : E ↦ w.embedding b * _) (WithAbs.ofAbs_toAbs w.val a)
+
 /-- The archimedean coordinates determine the rational vector. -/
 theorem archCoords_injective : Function.Injective V.archCoords := by
   intro y z h
@@ -111,6 +127,21 @@ theorem vectorLength_zero : V.vectorLength 0 = 0 := by
 
 /-- Lengths are nonnegative. -/
 theorem vectorLength_nonneg (y : ι → E) : 0 ≤ V.vectorLength y := norm_nonneg _
+
+/-- A lower bound on every archimedean absolute value of a scalar gives a lower bound
+on the dilation of the Euclidean length. -/
+theorem mul_vectorLength_le_vectorLength_smul (a : E) (y : ι → E) {R : ℝ}
+    (hR : ∀ w : InfinitePlace E, R ≤ w a) :
+    R * V.vectorLength y ≤ V.vectorLength (a • y) := by
+  by_cases hR₀ : 0 ≤ R
+  · have hsq : R ^ 2 * V.vectorLength y ^ 2 ≤ V.vectorLength (a • y) ^ 2 := by
+      simp only [vectorLength_def, PiLp.norm_sq_eq_of_L2, Finset.mul_sum]
+      refine Finset.sum_le_sum fun p _ ↦ ?_
+      rw [archCoords_smul_apply, norm_mul, mul_pow, InfinitePlace.norm_embedding_eq]
+      exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hR₀ (hR p.2) 2) (sq_nonneg _)
+    exact le_of_sq_le_sq (by simpa only [mul_pow] using hsq) (V.vectorLength_nonneg _)
+  · exact (mul_nonpos_of_nonpos_of_nonneg (le_of_not_ge hR₀) (V.vectorLength_nonneg _)).trans
+      (V.vectorLength_nonneg _)
 
 /-- Only the zero vector has length zero. -/
 @[simp]

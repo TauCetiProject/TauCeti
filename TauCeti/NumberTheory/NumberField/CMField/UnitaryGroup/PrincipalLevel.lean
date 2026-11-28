@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.CMField.UnitaryGroup.Basic
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.CongruenceLevel.NhdsBasis
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ModEq
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import Mathlib.Topology.Algebra.Group.Matrix
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
@@ -110,6 +111,19 @@ theorem mem_principalUnitaryLevel_iff {N : Ideal (𝓞 E)} {g : finiteAdelicUnit
   simp only [principalUnitaryLevel_def, Subgroup.mem_subgroupOf, Subgroup.mem_map,
     GeneralLinearGroup.mem_ker_map_quotientMk_iff]
   exact ⟨fun ⟨h, hh, hg⟩ ↦ ⟨h, hg, hh⟩, fun ⟨h, hg, hh⟩ ↦ ⟨h, hh, hg⟩⟩
+
+/-- At the principal level `(a)`, each column of the finite adelic matrix is congruent
+modulo `a` to the corresponding column of the identity. -/
+theorem modEq_apply_of_mem_principalUnitaryLevel {a : 𝓞 E} {g : finiteAdelicUnitaryGroup E ι}
+    (hg : g ∈ principalUnitaryLevel E ι (Ideal.span {a})) (i j : ι) :
+    FiniteAdeleRing.ModEq a ((↑(g : GL ι 𝔸ᶠ[E]) : Matrix ι ι 𝔸ᶠ[E]) i j)
+      ((1 : Matrix ι ι 𝔸ᶠ[E]) i j) := by
+  obtain ⟨h, hh, hc⟩ := mem_principalUnitaryLevel_iff.mp hg
+  have h₁ : (↑((1 : Matrix ι ι (FiniteAdeleRing.integralAdeles (𝓞 E) E)) i j) : 𝔸ᶠ[E]) =
+      (1 : Matrix ι ι 𝔸ᶠ[E]) i j := by
+    by_cases hij : i = j <;> simp [Matrix.one_apply, hij]
+  rw [← hh, FiniteAdeleRing.integralGL_apply, ← h₁]
+  exact (FiniteAdeleRing.modEq_iff_sub_mem_completedIdeal _ _).mpr (hc i j)
 
 variable (E ι) in
 /-- A principal level is contained in `K₀`. -/
