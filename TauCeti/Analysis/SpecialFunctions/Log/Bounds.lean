@@ -72,6 +72,7 @@ In the other direction, a small logarithm bounds a power from above: if `log z �
 * `TauCeti.pow_le_one_add_two_mul_of_log_le`: `z^n ≤ 1 + 2 ε` when `log z ≤ L`, `n L ≤ ε` and
   `0 ≤ ε ≤ 1 / 2`.
 * `Real.log_sub_one_div_le_log`: `log a - 1 / m ≤ log m` for `0 ≤ m` and `0 ≤ a ≤ m + 1`.
+* `TauCeti.pow_le_of_mul_log_le_log`: a natural power bound from a logarithmic comparison.
 -/
 
 public section
@@ -238,6 +239,15 @@ theorem pow_le_one_add_two_mul_of_log_le {z L ε : ℝ} {n : ℕ} (hzL : log z �
     _ ≤ 1 + 2 * ε := by
       rw [div_le_iff₀ (by linarith)]
       nlinarith [mul_nonneg hε0 (by linarith : (0 : ℝ) ≤ 1 - 2 * ε)]
+
+/-- If `1 < b` and `0 < m`, a lower bound `m * log b ≤ log N` implies `b ^ m ≤ N` over the
+naturals. The logarithmic bound itself forces `N` to be positive. -/
+theorem pow_le_of_mul_log_le_log {b N m : ℕ} (hb : 1 < b) (hm : 0 < m)
+    (hN : m * log b ≤ log N) : b ^ m ≤ N := by
+  have hb' : (1 : ℝ) < b := by exact_mod_cast hb
+  have hpos : 0 < (m : ℝ) * log b := mul_pos (Nat.cast_pos.mpr hm) (log_pos hb')
+  have hN' := (log_pos_iff (Nat.cast_nonneg N)).mp (hpos.trans_le hN)
+  exact_mod_cast (pow_le_iff_le_log (zero_lt_one.trans hb') (zero_lt_one.trans hN')).mpr hN
 
 /-- Explicit decimal lower bound `0.4054 < log (3 / 2)`. -/
 theorem lt_log_three_halves : (0.4054 : ℝ) < log (3 / 2) := by
