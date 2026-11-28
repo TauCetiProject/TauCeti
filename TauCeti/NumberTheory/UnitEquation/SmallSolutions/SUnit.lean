@@ -29,10 +29,9 @@ translated equation `∑ aᵢ bᵢ wᵢ = 1`. For `n = 0` there are no solutions
 reads `0 = 1`, so the bound holds without the packing. Both sides are cardinalities in `ℕ∞`, and
 the statement holds unconditionally.
 
-For `q = exp ((4 n) ^ (3 n))` Evertse, Schlickewei and Schmidt bound the second factor by `q`
-(their Proposition 11.1, the bound for the nondegenerate points of small height on a hyperplane,
-which rests on Schmidt's theorem on small points of subvarieties of tori). That bound is not
-proved here; combined with it, the result below gives the count `q (16 n³ q) ^ r`.
+For `n ≥ 2` and `q = exp ((4 n) ^ (3 n))`, Evertse, Schlickewei and Schmidt bound the
+second factor by `q` in Proposition 11.1, using Schmidt's theorem on small points of subvarieties
+of tori. Combining Proposition 11.1 with the result below gives the bound `q (16 n³ q) ^ r`.
 
 ## Main results
 
@@ -96,13 +95,9 @@ theorem encard_isNondegenerateSolution_le_of_absoluteLogHeightAff_le {n : ℕ}
                 scalarSumHeight_mul_le _ _ (fun _ ↦ Algebra.IsAlgebraic.isAlgebraic _)
                   (fun _ ↦ Algebra.IsAlgebraic.isAlgebraic _)
             _ < 1 / (2 * q) + 1 / (2 * q) := add_lt_add hxb hz
-            _ = 1 / q := by
-                rw [← add_div, one_add_one_eq_two, div_mul_cancel_left₀ two_ne_zero, one_div]
+            _ = 1 / q := by rw [div_mul_eq_div_div_swap, add_halves]
         · rw [hy, ← mul_assoc]
-          congr 1
-          funext i
-          simp only [v, Pi.mul_apply, Pi.div_apply, Subgroup.coe_div, Units.val_div_eq_div_val]
-          exact (mul_div_cancel₀ _ (Units.ne_zero _)).symm
+          exact congrArg (fun t ↦ v t * z) (mul_div_cancel b x).symm
     _ ≤ #(B.image v) * ⨆ b ∈ B.image v,
         {w | IsNondegenerateSolution (a * b) w ∧ w ∈ {w | scalarSumHeight w < 1 / q}}.encard :=
         encard_isNondegenerateSolution_le_card_mul _ _ _

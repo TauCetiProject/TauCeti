@@ -13,6 +13,7 @@ public import Mathlib.Algebra.Ring.Hom.Defs
 
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.Field.Rat
+import Mathlib.Algebra.Group.Pi.Units
 import Mathlib.Order.Preorder.Finite
 import Mathlib.Tactic.NormNum
 
@@ -154,7 +155,8 @@ end Semiring
 `(αᵢ cᵢ) xᵢ = αᵢ (cᵢ xᵢ)` agree. -/
 theorem _root_.TauCeti.isNondegenerateSolution_mul_iff [Semiring R] {α c x : ι → R} :
     IsNondegenerateSolution (α * c) x ↔ IsNondegenerateSolution α (c * x) := by
-  have h (i : ι) : (α * c) i * x i = α i * (c * x) i := mul_assoc _ _ _
+  have h (i : ι) : (α * c) i * x i = α i * (c * x) i := by
+    simp only [Pi.mul_apply, mul_assoc]
   simp only [isNondegenerateSolution_iff, h]
 
 /-- Moving nonzero factors `cᵢ` from the unknowns to the coefficients: `x / c` is a nondegenerate
@@ -163,8 +165,8 @@ solution of `∑ αᵢ cᵢ wᵢ = 1` exactly when `x` is one of `∑ αᵢ xᵢ
 theorem _root_.TauCeti.isNondegenerateSolution_mul_div_iff [Semifield R] {α x c : ι → R}
     (hc : ∀ i, c i ≠ 0) :
     IsNondegenerateSolution (α * c) (x / c) ↔ IsNondegenerateSolution α x := by
-  rw [isNondegenerateSolution_mul_iff, show c * (x / c) = x from
-    funext fun i ↦ mul_div_cancel₀ (x i) (hc i)]
+  have hcUnit : IsUnit c := Pi.isUnit_iff.mpr fun i ↦ isUnit_iff_ne_zero.mpr (hc i)
+  rw [isNondegenerateSolution_mul_iff, hcUnit.mul_div_cancel x]
 
 /-- With a single unknown, `α x = 1` is a nondegenerate solution. -/
 theorem _root_.TauCeti.isNondegenerateSolution_of_subsingleton [Semiring R] [Nontrivial R]
@@ -250,7 +252,8 @@ theorem isNondegenerateHomogeneousSolution_smul_iff [CommSemiring R] [NoZeroDivi
 theorem isNondegenerateHomogeneousSolution_mul_iff [Semiring R] {α c x : ι → R} :
     IsNondegenerateHomogeneousSolution (α * c) x ↔
       IsNondegenerateHomogeneousSolution α (c * x) := by
-  have h (i : ι) : (α * c) i * x i = α i * (c * x) i := mul_assoc _ _ _
+  have h (i : ι) : (α * c) i * x i = α i * (c * x) i := by
+    simp only [Pi.mul_apply, mul_assoc]
   simp only [isNondegenerateHomogeneousSolution_iff, h]
 
 /-- Moving nonzero factors `cᵢ` from the unknowns to the coefficients: `x / c` is a nondegenerate
@@ -260,8 +263,8 @@ theorem isNondegenerateHomogeneousSolution_mul_div_iff [Semifield R] {α x c : �
     (hc : ∀ i, c i ≠ 0) :
     IsNondegenerateHomogeneousSolution (α * c) (x / c) ↔
       IsNondegenerateHomogeneousSolution α x := by
-  rw [isNondegenerateHomogeneousSolution_mul_iff, show c * (x / c) = x from
-    funext fun i ↦ mul_div_cancel₀ (x i) (hc i)]
+  have hcUnit : IsUnit c := Pi.isUnit_iff.mpr fun i ↦ isUnit_iff_ne_zero.mpr (hc i)
+  rw [isNondegenerateHomogeneousSolution_mul_iff, hcUnit.mul_div_cancel x]
 
 namespace IsNondegenerateHomogeneousSolution
 
