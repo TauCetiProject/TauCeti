@@ -119,7 +119,8 @@ theorem complexGenerator_eq_cmOmega_sub (hd : d % 4 = 3) :
     QuadraticOrder.complexGenerator (-d) = cmOmega d - ((d + 1) / 2 : ℕ) := by
   obtain ⟨e, he⟩ : ∃ e : ℕ, d + 1 = 2 * e := ⟨(d + 1) / 2, by omega⟩
   have he' : ((d : ℂ) + 1) = 2 * e := by exact_mod_cast he
-  rw [cmOmega_eq_complexGenerator_add, he', show (d + 1) / 2 = e by omega]
+  have he'' : (d + 1) / 2 = e := by omega
+  rw [cmOmega_eq_complexGenerator_add, he', he'']
   ring
 
 /-- For `d ≡ 3 mod 4`, `ω` lies in the embedded quadratic order `ℤ[ω]` of discriminant `-d`. -/

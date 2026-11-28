@@ -195,9 +195,10 @@ theorem cmOmega_mul_mem_of_mem_iff (hd : d % 8 = 7)
         (mul_one_sub_mul_mem hd (.inl rfl) h.two_mul_mem) using 1
       ring
     · refine hLM ?_
+      have h₁ : 1 - (starRingEnd ℂ) (cmOmega d) = cmOmega d := by
+        linear_combination -cmOmega_add_conj (d := d)
       convert mul_one_sub_mul_mem hd (.inr rfl) h.two_mul_mem using 1
-      rw [show 1 - (starRingEnd ℂ) (cmOmega d) = cmOmega d by
-        linear_combination -cmOmega_add_conj (d := d)]
+      rw [h₁]
       ring
   rcases (hM l).mp hl with hl | hl
   · exact hLM (h.cmOmega_mul_mem hl)
