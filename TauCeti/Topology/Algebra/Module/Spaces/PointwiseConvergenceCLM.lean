@@ -5,25 +5,33 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
+
+import Mathlib.Analysis.Normed.Operator.Completeness
 
 /-!
 # Basic facts on the topology of pointwise convergence
 
 Scalar multiplication on `E →SLₚₜ[σ] F` is jointly continuous whenever it is on `F`, since it is
-computed pointwise (`PointwiseConvergenceCLM.continuousSMul`). Post-composition evaluates as
-`postcomp E L f x = L (f x)` (`PointwiseConvergenceCLM.postcomp_apply_apply`), and
+computed pointwise (`PointwiseConvergenceCLM.continuousSMul`). Post-composition evaluates pointwise
+as `postcomp E L f x = L (f x)` (`PointwiseConvergenceCLM.postcomp_apply_apply`), and
 post-composition by the identity is the identity (`PointwiseConvergenceCLM.postcomp_id`). For
 seminormed codomains, closure in the topology of pointwise convergence is characterized by
 simultaneous norm approximation on finite sets of vectors
 (`PointwiseConvergenceCLM.mem_closure_iff`,
-`ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff_norm`). Passing from
-`E →SL[σ] F` to its pointwise-convergence copy is injective
-(`ContinuousLinearMap.toPointwiseConvergenceCLM_injective`).
+`ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff_norm`). The canonical map
+`ContinuousLinearMap.toPointwiseConvergenceCLM` is bijective
+(`ContinuousLinearMap.toPointwiseConvergenceCLM_injective`,
+`ContinuousLinearMap.toPointwiseConvergenceCLM_surjective`).
 A map lies in the closure of a set of maps in this topology exactly when it is the pointwise limit
 along some filter of maps eventually in the set
 (`ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff`); since this topology need
 not be first countable, nets or filters cannot in general be replaced by sequences here.
+Closure membership yields finite-vector approximation witnesses in the set
+(`PointwiseConvergenceCLM.exists_mem_forall_norm_sub_apply_lt_of_mem_closure`).
+Every closed operator-norm ball is closed in the topology of pointwise convergence
+(`PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall`).
 -/
 
 public section
@@ -89,6 +97,15 @@ theorem mem_closure_iff {𝕜₁ 𝕜₂ E F : Type*} [NormedField 𝕜₁] [Nor
 
 end PointwiseConvergenceCLM
 
+/-- Evaluating `toPointwiseConvergenceCLM 𝕜₂ σ E F f` at a vector `x` gives `f x`. -/
+theorem ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply {𝕜₁ 𝕜₂ E F : Type*}
+    [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂} [AddCommGroup E] [TopologicalSpace E]
+    [Module 𝕜₁ E] [ContinuousSMul 𝕜₁ E] [AddCommGroup F] [TopologicalSpace F]
+    [IsTopologicalAddGroup F] [Module 𝕜₂ F] [ContinuousConstSMul 𝕜₂ F]
+    (f : E →SL[σ] F) (x : E) :
+    toPointwiseConvergenceCLM 𝕜₂ σ E F f x = f x :=
+  DFunLike.congr_fun (toPointwiseConvergenceCLM_apply 𝕜₂ σ E F f) x
+
 /-- Passing to the topology of pointwise convergence does not identify distinct maps. -/
 theorem ContinuousLinearMap.toPointwiseConvergenceCLM_injective {𝕜₁ 𝕜₂ E F : Type*}
     [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂} [AddCommGroup E] [TopologicalSpace E]
@@ -96,6 +113,16 @@ theorem ContinuousLinearMap.toPointwiseConvergenceCLM_injective {𝕜₁ 𝕜₂
     [IsTopologicalAddGroup F] [Module 𝕜₂ F] [ContinuousConstSMul 𝕜₂ F] :
     Function.Injective (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F) :=
   fun _ _ h ↦ ContinuousLinearMap.ext fun v ↦ congrArg (fun T : E →SLₚₜ[σ] F ↦ T v) h
+
+/-- Passing to the topology of pointwise convergence is surjective. -/
+theorem ContinuousLinearMap.toPointwiseConvergenceCLM_surjective {𝕜₁ 𝕜₂ E F : Type*}
+    [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂} [AddCommGroup E] [TopologicalSpace E]
+    [Module 𝕜₁ E] [ContinuousSMul 𝕜₁ E] [AddCommGroup F] [TopologicalSpace F]
+    [IsTopologicalAddGroup F] [Module 𝕜₂ F] [ContinuousConstSMul 𝕜₂ F] :
+    Function.Surjective (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F) :=
+  -- `toPointwiseConvergenceCLM` is `LinearMap.id` on `ContinuousLinearMap`, and
+  -- `UniformConvergenceCLM` is definitionally `ContinuousLinearMap`.
+  fun T ↦ ⟨(UniformConvergenceCLM.ofFun σ F {s : Set E | Finite s}).symm T, rfl⟩
 
 /-- A map lies in the closure of a set `s` of maps for the topology of pointwise convergence
 exactly when it is the pointwise limit, along some nontrivial filter, of maps eventually in `s`. -/
@@ -135,3 +162,47 @@ theorem ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff_norm
   simp only [Set.exists_mem_image, toPointwiseConvergenceCLM_apply]
   -- `UniformConvergenceCLM.instFunLike` is definitionally `ContinuousLinearMap.funLike`.
   exact Iff.rfl
+
+/-- If `x` lies in the strong operator closure of `A`, then for every finite family of vectors `v`
+and `ε > 0` there is `a ∈ A` approximating `x` within `ε` on `v`. -/
+theorem PointwiseConvergenceCLM.exists_mem_forall_norm_sub_apply_lt_of_mem_closure
+    {𝕜₁ 𝕜₂ E F : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂} [AddCommGroup E]
+    [TopologicalSpace E] [Module 𝕜₁ E] [ContinuousSMul 𝕜₁ E] [SeminormedAddCommGroup F]
+    [Module 𝕜₂ F] [ContinuousConstSMul 𝕜₂ F] {A : Set (E →SL[σ] F)} {x : E →SL[σ] F}
+    (hx : ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F x ∈
+      closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' A))
+    {ι : Type*} [Finite ι] (v : ι → E) {ε : ℝ} (hε : 0 < ε) :
+    ∃ a ∈ A, ∀ i, ‖x (v i) - a (v i)‖ < ε := by
+  classical
+  have := Fintype.ofFinite ι
+  obtain ⟨a, ha, hlt⟩ :=
+    (ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff_norm.mp hx)
+      (Finset.univ.image v) hε
+  exact ⟨a, ha, fun i ↦ hlt (v i) (Finset.mem_image_of_mem v (Finset.mem_univ i))⟩
+
+section ClosedBall
+
+variable {𝕜₁ 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂]
+  {σ : 𝕜₁ →+* 𝕜₂} [RingHomIsometric σ] [NormedAddCommGroup E] [NormedSpace 𝕜₁ E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+
+/-- Every closed operator-norm ball is closed in the topology of pointwise convergence (the strong
+operator topology). Neither space needs completeness. -/
+theorem PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall
+    (f₀ : E →SL[σ] F) (r : ℝ) :
+    IsClosed (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F ''
+      Metric.closedBall f₀ r) := by
+  convert (ContinuousLinearMap.isClosed_image_coe_closedBall f₀ r).preimage
+    (PointwiseConvergenceCLM.isEmbedding_coeFn σ E F).continuous using 1
+  ext T
+  simp only [Set.mem_image, Set.mem_preimage]
+  constructor
+  · rintro ⟨f, hf, rfl⟩
+    exact ⟨f, hf, funext fun x ↦ ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply f x⟩
+  · rintro ⟨f, hf, hT⟩
+    obtain ⟨g, rfl⟩ := ContinuousLinearMap.toPointwiseConvergenceCLM_surjective T
+    refine ⟨f, hf, congrArg (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F)
+      (ContinuousLinearMap.ext fun x ↦ ?_)⟩
+    exact (congrFun hT x).trans (ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply g x)
+
+end ClosedBall

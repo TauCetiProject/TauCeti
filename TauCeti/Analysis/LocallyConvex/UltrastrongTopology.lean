@@ -12,6 +12,8 @@ public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 public import TauCeti.Analysis.Normed.Lp.MapCLM
 import Mathlib.Analysis.LocallyConvex.PointwiseConvergence
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
+import TauCeti.Topology.Closure
 
 /-!
 # The ultrastrong operator topology
@@ -32,13 +34,15 @@ topology. The copy is a Hausdorff locally convex topological vector space, with 
 The ultrastrong topology is coarser than the norm topology and finer than the strong operator
 topology on Mathlib's pointwise-convergence copy `E →Lₚₜ[𝕜] F`. On norm-bounded sets the latter
 comparison is an equality (`isInducing_restrict_toPointwiseConvergenceCLM`): for a uniformly
-bounded net, strong and ultrastrong convergence agree. This is the bounded-set agreement used to
-pass between the two topologies in von Neumann algebra theory. Without a norm bound the two
-topologies differ: when `E` is infinite-dimensional with separating dual and `F` is nontrivial, the
-identity from the strong operator topology to the ultrastrong topology is not continuous
-(`not_continuous_ofPointwiseConvergenceCLM`). The test is a square-summable linearly independent
-sequence `ξ` (`lp.exists_linearIndependent`) and a rank-one operator vanishing on the finitely many
-vectors seen by a strong seminorm bound, but not on the whole sequence.
+bounded net, strong and ultrastrong convergence agree, so bounded sets have the same strong and
+ultrastrong closures (`ofCLM_mem_closure_image_iff_of_norm_le`,
+`closure_image_ofCLM_of_closure_image_toPointwiseConvergenceCLM`). This is the bounded-set
+agreement used to pass between the two topologies in von Neumann algebra theory. Without a norm
+bound the two topologies differ: when `E` is infinite-dimensional with separating dual and `F` is
+nontrivial, the identity from the strong operator topology to the ultrastrong topology is not
+continuous (`not_continuous_ofPointwiseConvergenceCLM`). The test is a square-summable linearly
+independent sequence `ξ` (`lp.exists_linearIndependent`) and a rank-one operator vanishing on the
+finitely many vectors seen by a strong seminorm bound, but not on the whole sequence.
 
 The definition needs no inner product: `E` and `F` are arbitrary normed spaces.
 
@@ -93,6 +97,10 @@ def equiv : ContinuousLinearMapUltrastrong 𝕜 E F ≃ (E →L[𝕜] F) where
 theorem toCLM_injective :
     Function.Injective (toCLM : ContinuousLinearMapUltrastrong 𝕜 E F → E →L[𝕜] F) :=
   equiv.injective
+
+theorem ofCLM_injective :
+    Function.Injective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltrastrong 𝕜 E F) :=
+  equiv.symm.injective
 
 instance instAddCommGroup : AddCommGroup (ContinuousLinearMapUltrastrong 𝕜 E F) :=
   equiv.addCommGroup
@@ -409,6 +417,58 @@ theorem not_continuous_ofPointwiseConvergenceCLM [SeparatingDual 𝕜 E] [Nontri
   refine smul_ne_zero hfN hy (norm_le_zero_iff.1 (le_trans ?_ h0))
   simpa [lp.ampliation_apply_apply] using
     lp.norm_apply_le_norm two_ne_zero (lp.ampliation ℕ 2 (f.smulRight y) ξ) N
+
+private theorem isClosed_image_toPointwiseConvergenceCLM_norm_le (C : ℝ) :
+    IsClosed ((fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦
+        ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F A.toCLM) ''
+      {A | ‖A.toCLM‖ ≤ C}) := by
+  have hpre : {A : ContinuousLinearMapUltrastrong 𝕜 E F | ‖A.toCLM‖ ≤ C} =
+      equiv ⁻¹' Metric.closedBall 0 C := by
+    ext A; simp
+  have himg : (fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦
+      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F A.toCLM) =
+      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F ∘ equiv :=
+    funext fun A ↦ by simp only [Function.comp_apply, equiv_apply]
+  rw [hpre, himg, Set.image_comp, Set.image_preimage_eq _ equiv.surjective]
+  exact PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall
+    (0 : E →L[𝕜] F) C
+
+/-- **Bounded-set closure agreement with the strong operator topology.** For any norm-bounded set
+`t` of operators, an operator lies in the ultrastrong closure of `t` if and only if it lies in the
+strong operator closure of `t`. -/
+theorem ofCLM_mem_closure_image_iff_of_norm_le {t : Set (E →L[𝕜] F)} {C : ℝ}
+    (ht : ∀ T ∈ t, ‖T‖ ≤ C) {x : E →L[𝕜] F} :
+    ofCLM x ∈ closure (ofCLM '' t) ↔
+      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F x ∈
+        closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F '' t) := by
+  let q := fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦
+    ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F A.toCLM
+  have hq_inj : Function.Injective q :=
+    fun _ _ h ↦ toCLM_injective (ContinuousLinearMap.toPointwiseConvergenceCLM_injective h)
+  simpa only [q, Set.image_image] using
+    mem_closure_iff_mem_closure_image_of_isInducing_domRestrict
+      continuous_toPointwiseConvergenceCLM
+      (isClosed_image_toPointwiseConvergenceCLM_norm_le (𝕜 := 𝕜) (E := E) (F := F) C)
+      (hq_inj.preimage_image _).subset
+      (isInducing_restrict_toPointwiseConvergenceCLM fun _ hA ↦ hA)
+      (t := ofCLM '' t) (by rintro _ ⟨T, hT, rfl⟩; exact ht T hT) (x := ofCLM x)
+
+/-- **Bounded-set closure transfer from the strong operator topology.** If a norm-bounded set `t`
+of operators has strong operator closure `u`, then its ultrastrong closure is also `u`. -/
+theorem closure_image_ofCLM_of_closure_image_toPointwiseConvergenceCLM {t u : Set (E →L[𝕜] F)}
+    {C : ℝ} (ht : ∀ T ∈ t, ‖T‖ ≤ C)
+    (hsot : closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F '' t) =
+      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F '' u) :
+    closure (ofCLM '' t) = ofCLM '' u := by
+  let q := fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦
+    ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F A.toCLM
+  have hq_inj : Function.Injective q :=
+    fun _ _ h ↦ toCLM_injective (ContinuousLinearMap.toPointwiseConvergenceCLM_injective h)
+  refine closure_eq_of_isInducing_domRestrict continuous_toPointwiseConvergenceCLM hq_inj
+    (isClosed_image_toPointwiseConvergenceCLM_norm_le (𝕜 := 𝕜) (E := E) (F := F) C)
+    (isInducing_restrict_toPointwiseConvergenceCLM fun _ hA ↦ hA)
+    (s := {A | ‖A.toCLM‖ ≤ C}) (by rintro _ ⟨T, hT, rfl⟩; exact ht T hT) ?_
+  simpa only [q, Set.image_image] using hsot
 
 end Comparison
 
