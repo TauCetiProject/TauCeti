@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Basic
+import Mathlib.RingTheory.PowerSeries.Trunc
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -24,6 +25,8 @@ coefficients `map f` acts on the constant coefficient.
 
 * `TauCeti.surjective_sum_mul_map_of_surjective_constantCoeff` lifts solvability of
   a finite sum of coefficient maps from the constant coefficient to the full power series.
+* `TauCeti.eq_of_eq_add_C_mul_X_pow_mul`: for `d > 0`, the equation `D = B + a X ^ d D` has at
+  most one solution `D`.
 * `PowerSeries.constantCoeffAlgHom_comp_toAlgHom`: evaluation at `X = 0` is a retraction of the
   inclusion of constants.
 * `PowerSeries.constantCoeff_map`: a change of coefficients `map f` acts on the constant
@@ -35,10 +38,16 @@ coefficients `map f` acts on the constant coefficient.
   `f₀ * gₖ + fₖ * g₀ + Σ_{0 < i < k} fᵢ * g_{k - i}`.
 * `PowerSeries.coeff_succ_mul_eq_add_sum`: the `Xⁿ⁺¹`-coefficient of `f * g` is
   `f₀ * gₙ₊₁ + Σ_{j ≤ n} fₙ₊₁₋ⱼ * gⱼ`.
+* `PowerSeries.exists_degree_lt_coe_eq`: a power series whose coefficients vanish from `d₀` on is a
+  polynomial of degree less than `d₀`.
+* `PowerSeries.coeff_neg_X_pow_mul`: the `Xᵏ`-coefficient of `(-X) ^ n * f` is
+  `(-1) ^ n * coeff (k - n) f` for `n ≤ k` and `0` otherwise.
 * `PowerSeries.algebraMap_polynomial_powerSeries`: `algebraMap R[X] R⟦X⟧` is the canonical
   polynomial-to-power-series coercion.
 * `Polynomial.coeff_coe_eq_zero_of_degree_lt`: a polynomial of degree less than `s`, viewed as a
   power series, has zero coefficients from `s` on.
+* `Polynomial.coe_sum`, `Polynomial.smul_eq_coe_mul`: viewing polynomials as power series
+  commutes with finite sums, and a polynomial acts on power series by multiplication.
 -/
 
 public section
@@ -83,6 +92,20 @@ theorem surjective_sum_mul_map_of_surjective_constantCoeff {R ι : Type*} [Ring 
     simp [PowerSeries.coeff_zero_eq_constantCoeff]
   simp only [map_sum, hmul, sum_add_distrib, hc, lower]
   abel
+
+/-- For `d > 0`, a power series `D` with `D = B + a X ^ d D` is determined by `B`, since the
+coefficient of `X ^ n` in `a X ^ d D` uses only the coefficients of `D` below `n`. -/
+theorem eq_of_eq_add_C_mul_X_pow_mul {R : Type*} [Semiring R] {B D₁ D₂ : R⟦X⟧} {a : R} {d : ℕ}
+    (hd : 0 < d) (h₁ : D₁ = B + PowerSeries.C a * PowerSeries.X ^ d * D₁)
+    (h₂ : D₂ = B + PowerSeries.C a * PowerSeries.X ^ d * D₂) : D₁ = D₂ := by
+  ext n
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    rw [h₁, h₂]
+    simp only [map_add, mul_assoc, PowerSeries.coeff_C_mul, PowerSeries.coeff_X_pow_mul']
+    split_ifs with hdn
+    · rw [ih (n - d) (by omega)]
+    · rfl
 
 end TauCeti
 
@@ -177,7 +200,30 @@ theorem coeff_succ_mul_eq_add_sum (f g : R⟦X⟧) (n : ℕ) :
   rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ (fun i j ↦ coeff j f * coeff i g),
     Finset.sum_range_succ, Nat.sub_self, add_comm]
 
+/-- A power series whose coefficients vanish from `d₀` on is a polynomial of degree less than `d₀`
+(the zero polynomial if `d₀ = 0`). -/
+theorem exists_degree_lt_coe_eq (f : R⟦X⟧) {d₀ : ℕ} (h : ∀ d ≥ d₀, coeff d f = 0) :
+    ∃ p : Polynomial R, p.degree < d₀ ∧ (p : R⟦X⟧) = f := by
+  refine ⟨trunc d₀ f, degree_trunc_lt _ _, ?_⟩
+  ext d
+  rw [Polynomial.coeff_coe, coeff_trunc]
+  split_ifs with hd
+  · rfl
+  · exact (h d (not_lt.1 hd)).symm
+
 end Coeff
+
+section CoeffRing
+
+variable {R : Type*} [Ring R]
+
+/-- Coefficient of `(-X) ^ n * f` at degree `k`. -/
+theorem coeff_neg_X_pow_mul (k n : ℕ) (f : R⟦X⟧) :
+    coeff k ((-X : R⟦X⟧) ^ n * f) = (-1) ^ n * if n ≤ k then coeff (k - n) f else 0 := by
+  rw [neg_eq_neg_one_mul, (Commute.one_left (X : R⟦X⟧)).neg_left.mul_pow, mul_assoc,
+    ← map_one C, ← map_neg, ← map_pow, coeff_C_mul, coeff_X_pow_mul']
+
+end CoeffRing
 
 /-- Rewriting `algebraMap R[X] R⟦X⟧` as the canonical polynomial-to-power-series coercion. -/
 theorem algebraMap_polynomial_powerSeries {R : Type*} [CommSemiring R] (p : Polynomial R) :
@@ -196,5 +242,20 @@ theorem coeff_coe_eq_zero_of_degree_lt {s : ℕ} {p : Polynomial R} {m : ℕ} (h
     (hm : s ≤ m) : (p : PowerSeries R).coeff m = 0 := by
   rw [coeff_coe]
   exact coeff_eq_zero_of_degree_lt (hp.trans_le (by exact_mod_cast hm))
+
+/-- A finite sum of polynomials, viewed as a power series, is the sum of the polynomials viewed as
+power series. -/
+@[simp, norm_cast]
+theorem coe_sum {ι : Type*} (s : Finset ι) (f : ι → R[X]) :
+    ((∑ i ∈ s, f i : R[X]) : R⟦X⟧) = ∑ i ∈ s, (f i : R⟦X⟧) :=
+  map_sum coeToPowerSeries.ringHom f s
+
+/-- A polynomial acts on a power series by multiplication with the polynomial viewed as a power
+series. -/
+@[simp]
+theorem smul_eq_coe_mul {R : Type*} [CommSemiring R] (p : R[X]) (φ : R⟦X⟧) :
+    p • φ = (p : R⟦X⟧) * φ := by
+  rw [Algebra.smul_def, PowerSeries.algebraMap_apply', Algebra.algebraMap_self, PowerSeries.map_id,
+    id_eq]
 
 end Polynomial

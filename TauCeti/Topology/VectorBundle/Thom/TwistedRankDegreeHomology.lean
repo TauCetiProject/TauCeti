@@ -101,6 +101,10 @@ trivializations over subsets of the base in
 * `TauCeti.thomPairTwistedHomology_hom_ext`: morphisms out of `Hᵣ(E, E₀; π^*o(E))` are determined
   by their values on the fibre classes.
 
+* `TauCeti.thomPairTwistedHomologyFinrankIsoOfGenerator`: over a commutative ring, rescaling
+  by the inverse coordinate of a model-fibre generator `γ` identifies its twisted fibre class
+  (`TauCeti.thomPairTwistedFiberClass`) with the class of the base point.
+
 ## References
 
 * J. W. Milnor, J. D. Stasheff, *Characteristic Classes*, Annals of Mathematics Studies 76,
@@ -125,13 +129,14 @@ variable {B : Type w} [TopologicalSpace B] {F : Type w}
   [NormedAddCommGroup F] [NormedSpace ℝ F] {E : B → Type w}
   [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)]
   [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E] {ι : Type} [Fintype ι]
-  {R : Type w} [Ring R] (hι : Fintype.card ι = finrank ℝ F)
+  {R : Type w}
 
 /-! ### Fibre classes over subsets of the base -/
 
 section FiberClass
 
-variable [FiniteDimensional ℝ F] (ω : Orientation ℝ F ι)
+variable [Ring R] (hι : Fintype.card ι = finrank ℝ F) [FiniteDimensional ℝ F]
+  (ω : Orientation ℝ F ι)
 
 variable (R) in
 /-- The fibre class over `x ∈ W` in `Hᵣ(E|_W, E₀|_W; π^*o(E))`, read through a linear trivialization
@@ -674,5 +679,101 @@ theorem thomPairTwistedHomology_hom_ext {M : ModuleCat.{w} R}
     ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, Iso.hom_inv_id_apply, h b]
 
 end FiberClass
+
+/-! ### Normalization by a model-fibre generator -/
+
+open AlgebraicTopology
+
+variable (hι : Fintype.card ι = finrank ℝ F) [FiniteDimensional ℝ F] (ω : Orientation ℝ F ι)
+
+section Ring
+
+variable [Ring R]
+  (γ : ((TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology
+    (ModuleCat.of R R) (finrank ℝ F) : ModuleCat.{w} R))
+
+variable (E) in
+/-- The class in `Hᵣ(E, E₀; π^*o(E))` obtained by multiplying the fibre class for `ω` over `b`
+by the point-class coordinate of `γ`. Its description by a linear trivialization at `b` is
+`thomPairTwistedFiberClass_eq`. -/
+def thomPairTwistedFiberClass (b : B) :
+    (thomPair F E).twistedHomology (thomPairSignLocalSystem F E R hι) (finrank ℝ F) :=
+  complZeroPairPointCoord γ • thomPairSignFiberClass F E R hι ω b
+
+/-- Rescaling the point-normalized fibre class by the coordinate of `γ` gives the twisted fibre
+class for `γ`. -/
+theorem thomPairTwistedFiberClass_eq_smul (b : B) :
+    thomPairTwistedFiberClass E hι ω γ b =
+      complZeroPairPointCoord γ • thomPairSignFiberClass F E R hι ω b := by
+  rw [thomPairTwistedFiberClass]
+
+/-- Reversing the orientation of the model fibre negates the twisted fibre class. -/
+@[simp]
+theorem thomPairTwistedFiberClass_neg (b : B) :
+    thomPairTwistedFiberClass E hι (-ω) γ b = -thomPairTwistedFiberClass E hι ω γ b := by
+  simp only [thomPairTwistedFiberClass, thomPairSignFiberClass_neg, smul_neg]
+
+/-- For every linear trivialization `e` at `b`, the twisted fibre class is the image under the
+fibre inclusion of the class of `(E_b, E_b ∖ {0})` that `e` reads as `γ`. The coefficients are
+trivialized by the orientation of `E_b` that `e` reads as `ω`. -/
+theorem thomPairTwistedFiberClass_eq (e : Trivialization F (π F E)) [e.IsLinear ℝ]
+    {b : B} (hb : b ∈ e.baseSet) :
+    thomPairTwistedFiberClass E hι ω γ b =
+      thomPairSignFiberMap F E R hι b ((e.mapOrientation ι hb).symm ω) (finrank ℝ F)
+        (TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.inv
+          (ModuleCat.of R R) (finrank ℝ F) γ) := by
+  rw [thomPairTwistedFiberClass_eq_smul, thomPairSignFiberClass_eq_thomPairSignFiberMap hι ω b
+    ((e.mapOrientation ι hb).symm ω), orientedFiberGenerator_of_mapOrientation_eq ω hι e hb
+    (Equiv.apply_symm_apply _ ω), ← map_smul, ← map_smul, complZeroPairPointCoord_smul_pointHom_one]
+
+end Ring
+
+variable [CommRing R]
+  (γ : ((TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology
+    (ModuleCat.of R R) (finrank ℝ F) : ModuleCat.{w} R))
+
+/-- The rank-degree twisted Thom isomorphism for an arbitrary base, normalized by a generator
+`γ` of the model fibre's relative homology. -/
+def thomPairTwistedHomologyFinrankIsoOfGenerator (hγ : Submodule.span R {γ} = ⊤) :
+    (thomPair F E).twistedHomology (thomPairSignLocalSystem F E R hι) (finrank ℝ F) ≅
+      ((singularHomologyFunctor (ModuleCat.{w} R) 0).obj (ModuleCat.of R R)).obj (TopCat.of B) :=
+  thomPairTwistedHomologyFinrankIso F E R hι ω ≪≫
+    (LinearEquiv.smulOfUnit ((isUnit_complZeroPairPointCoord_iff γ).2 hγ).unit).toModuleIso.symm
+
+/-- The generator-normalized Thom map is the point-normalized Thom map followed by
+multiplication by the inverse of the coordinate of `γ`. -/
+theorem thomPairTwistedHomologyFinrankIsoOfGenerator_hom (hγ : Submodule.span R {γ} = ⊤) :
+    (thomPairTwistedHomologyFinrankIsoOfGenerator hι ω γ hγ).hom =
+      (thomPairTwistedHomologyFinrankIso F E R hι ω).hom ≫
+        (LinearEquiv.smulOfUnit
+          ((isUnit_complZeroPairPointCoord_iff γ).2 hγ).unit).toModuleIso.inv := by
+  unfold thomPairTwistedHomologyFinrankIsoOfGenerator
+  rfl
+
+/-- The inverse normalized Thom isomorphism takes a point class to its twisted fibre class. -/
+@[simp]
+theorem thomPairTwistedHomologyFinrankIsoOfGenerator_inv_singularHomology₀Section
+    (hγ : Submodule.span R {γ} = ⊤) (b : B) :
+    (thomPairTwistedHomologyFinrankIsoOfGenerator hι ω γ hγ).inv
+        (singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of B) b 1) =
+      thomPairTwistedFiberClass E hι ω γ b := by
+  rw [← thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass (E := E) hι ω b]
+  -- The codomain of the composite is presented as homology rather than as a bundled module
+  -- of its underlying type. Reduce the composite inverse and the scalar module isomorphism
+  -- together to exhibit multiplication by the unit before the point-normalized inverse.
+  change (thomPairTwistedHomologyFinrankIso F E R hι ω).inv
+    ((((isUnit_complZeroPairPointCoord_iff γ).2 hγ).unit : R) • _) = _
+  rw [IsUnit.unit_spec, map_smul, ← ConcreteCategory.comp_apply, Iso.hom_inv_id,
+    ConcreteCategory.id_apply, thomPairTwistedFiberClass_eq_smul]
+
+/-- The normalized Thom isomorphism takes the twisted fibre class to the class of the base point. -/
+@[simp]
+theorem thomPairTwistedHomologyFinrankIsoOfGenerator_hom_thomPairTwistedFiberClass
+    (hγ : Submodule.span R {γ} = ⊤) (b : B) :
+    (thomPairTwistedHomologyFinrankIsoOfGenerator hι ω γ hγ).hom
+        (thomPairTwistedFiberClass E hι ω γ b) =
+      singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of B) b 1 := by
+  rw [← thomPairTwistedHomologyFinrankIsoOfGenerator_inv_singularHomology₀Section hι ω γ hγ,
+    ← ConcreteCategory.comp_apply, Iso.inv_hom_id, ConcreteCategory.id_apply]
 
 end TauCeti

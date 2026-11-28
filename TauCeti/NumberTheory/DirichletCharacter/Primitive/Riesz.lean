@@ -23,7 +23,7 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Von
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Mellin
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
-import TauCeti.NumberTheory.LSeries.RiemannZeta.RieszMellin
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Riesz.Mellin
 
 /-!
 # First Riesz remainders for primitive Dirichlet characters
@@ -109,6 +109,12 @@ noncomputable def rieszRemainder (χ : PrimitiveDirichletCharacter) (y : ℝ) : 
     if χ = 1 then
       (y : ℂ) * (1 + (Real.eulerMascheroniConstant : ℂ)) - (y : ℂ) * Real.log y
     else (y : ℂ) * logDeriv χ.character.LFunction 1
+
+/-- The L-function of the trivial bundle is the Riemann zeta function. -/
+theorem LFunction_character_one :
+    (1 : PrimitiveDirichletCharacter).character.LFunction = riemannZeta := by
+  rw [character_one]
+  exact DirichletCharacter.LFunction_modOne_eq
 
 /-- At conductor one the first Riesz remainder subtracts `y log y - (1 + γ) y` from the
 untwisted sum. -/
@@ -199,6 +205,16 @@ theorem continuous_rieszRemainder (χ : PrimitiveDirichletCharacter) :
       (Complex.continuous_ofReal.mul_const (logDeriv χ.character.LFunction 1))).congr
         fun y ↦ (rieszRemainder_of_ne_one hχ y).symm
 
+/-- For a bundle equal to its inverse, the logarithmic derivative of its L-function commutes
+with conjugation; in particular it is real at real arguments. -/
+theorem logDeriv_LFunction_conj_of_inv_eq {χ : PrimitiveDirichletCharacter} (hχ : χ⁻¹ = χ)
+    (s : ℂ) :
+    logDeriv χ.character.LFunction (conj s) = conj (logDeriv χ.character.LFunction s) := by
+  -- Compare the characters through their bundles, so no level transport is needed.
+  obtain ⟨hd, he⟩ := of_eq_iff.1 (show of χ.character⁻¹ = χ by rw [of_inv, of_character, hχ])
+  exact DirichletCharacter.logDeriv_LFunction_conj_of_inv_eq
+    (by rw [← he, DirichletCharacter.changeLevel_self]) s
+
 /-- The inverse character's first Riesz remainder is the complex conjugate of the original. -/
 @[simp] theorem rieszRemainder_inv (χ : PrimitiveDirichletCharacter) (y : ℝ) :
     χ⁻¹.rieszRemainder y = conj (χ.rieszRemainder y) := by
@@ -212,6 +228,13 @@ theorem continuous_rieszRemainder (χ : PrimitiveDirichletCharacter) :
       simpa only [map_one] using χ.character.logDeriv_LFunction_inv_conj 1
     simp [rieszRemainder_of_ne_one hi, rieszRemainder_of_ne_one hχ, character_inv,
       rieszSum_def, hlog, ← MulChar.star_apply']
+
+/-- The conductor-one first Riesz remainder is real. -/
+theorem ofReal_re_rieszRemainder_one (y : ℝ) :
+    (((1 : PrimitiveDirichletCharacter).rieszRemainder y).re : ℂ) =
+      (1 : PrimitiveDirichletCharacter).rieszRemainder y := by
+  refine Complex.conj_eq_iff_re.mp ?_
+  simpa only [inv_one] using (rieszRemainder_inv 1 y).symm
 
 /-- For `1 < s.re`, the remainder in logarithmic coordinates has one-sided Laplace transform
 given by the meromorphic Riesz expression. -/
@@ -234,10 +257,7 @@ theorem hasLaplace_rieszRemainder_comp_exp (χ : PrimitiveDirichletCharacter) {s
   have hlin (c : ℂ) := (hasLaplace_exp_mul_pow 0 hs).const_smul c
   by_cases hχ : χ = 1
   · subst χ
-    have hzeta : (1 : PrimitiveDirichletCharacter).character.LFunction = riemannZeta := by
-      rw [character_one]
-      exact DirichletCharacter.LFunction_modOne_eq
-    rw [hzeta] at hr ⊢
+    rw [LFunction_character_one] at hr ⊢
     have h := hr.add ((hlin (1 + (Real.eulerMascheroniConstant : ℂ))).sub
       (hasLaplace_exp_mul_pow 1 hs))
     rw [rieszRemainderMellin_riemannZeta hs]

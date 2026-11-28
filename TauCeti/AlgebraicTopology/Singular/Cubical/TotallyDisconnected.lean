@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Connected.PathConnected
 public import Mathlib.Topology.Connected.TotallyDisconnected
+public import TauCeti.AlgebraicTopology.Singular.Cubical.ChainComplex
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalized
 
 /-!
@@ -17,7 +18,8 @@ The normalized `0`-chains of any space are the formal combinations of its points
 disconnected space, such as a discrete one, nothing else survives. The image of a singular cube is
 connected, hence a point, so every singular cube of positive dimension is constant and in
 particular degenerate (`TauCeti.SingularCube.isDegenerate_of_totallyDisconnectedSpace`), and
-the normalized chains of positive dimension vanish. This is the situation of the fibre of a
+the normalized chains of positive dimension vanish, and with them the cubical homology of positive
+degree. This is the situation of the fibre of a
 covering map, whose chains form the DG local system of the covering.
 
 ## Main results
@@ -26,6 +28,8 @@ covering map, whose chains form the DG local system of the covering.
   every cube of positive dimension is degenerate.
 * `TauCeti.NormalizedCubicalChain.instSubsingletonSuccOfTotallyDisconnectedSpace`: so the
   normalized chains of positive dimension vanish.
+* `TauCeti.isZero_homology_succ_of_totallyDisconnectedSpace`: so does the cubical homology of
+  positive degree.
 
 ## References
 
@@ -35,6 +39,10 @@ covering map, whose chains form the DG local system of the covering.
 public section
 
 noncomputable section
+
+open CategoryTheory Limits
+
+universe u
 
 namespace TauCeti
 
@@ -66,5 +74,14 @@ instance instSubsingletonSuccOfTotallyDisconnectedSpace [TotallyDisconnectedSpac
     | ofCube c => exact ofCube_eq_zero R (SingularCube.isDegenerate_of_totallyDisconnectedSpace c)
 
 end NormalizedCubicalChain
+
+/-- **A totally disconnected space has no cubical homology of positive degree**, since it has no
+normalized chains of positive dimension. -/
+theorem isZero_homology_succ_of_totallyDisconnectedSpace (R : Type u) [Ring R] (Y : TopCat.{u})
+    [TotallyDisconnectedSpace Y] (n : ℕ) :
+    IsZero (((normalizedCubicalChainComplex R).obj Y).homology (n + 1)) :=
+  have := (normalizedCubicalChainComplexXEquiv (R := R) Y (n + 1)).toEquiv.subsingleton
+  ShortComplex.isZero_homology_of_isZero_X₂ _
+    (ModuleCat.isZero_of_subsingleton (((normalizedCubicalChainComplex R).obj Y).X (n + 1)))
 
 end TauCeti

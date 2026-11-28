@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Tiling.Lozenge.Integrable
 public import TauCeti.Combinatorics.Tiling.Lozenge.Lattice
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.LevelSet
 
 /-!
 # The kernel `G_w` inverts the Kasteleyn matrix of the plane
@@ -18,8 +19,9 @@ satisfies `w₃ G_w(d) + w₂ G_w(d + e₁) + w₁ G_w(d − e₂) = [d = 0]`
 (`TauCeti.IsLiquidWeights.lozengeKernel_three_term`, and
 `TauCeti.lozengeKernel_three_term_of_integrableOn` whenever `1 / P_w` is integrable on the torus
 and `P_w ≠ 0` almost everywhere on it): the three terms combine the integrands
-into `e^{i(d₁θ + d₂φ)} P_w / P_w`, which is `e^{i(d₁θ + d₂φ)}` off the zeros of `P_w`, a countable
-and hence null set, and the Fourier integral of that exponential over the torus is `4π² [d = 0]`.
+into `e^{i(d₁θ + d₂φ)} P_w / P_w`, which is `e^{i(d₁θ + d₂φ)}` off the zeros of `P_w`, a null set
+whenever `w₂, w₃ ≠ 0` (`TauCeti.ae_lozengeCharFun_ne_zero_of_ne_zero`), and the Fourier integral of
+that exponential over the torus is `4π² [d = 0]`.
 
 The Kasteleyn matrix of the plane has an entry `w_k` at `(W(u), B(v'))` when the two faces share
 an edge of direction `k`, and `0` otherwise. The white face `W(u)` meets the black faces across
@@ -56,21 +58,15 @@ namespace TauCeti
 
 variable {w₁ w₂ w₃ : ℝ}
 
-/-- For liquid weights `P_w` is almost everywhere nonzero on `ℝ²`: its zeros form a countable
-set. -/
-theorem IsLiquidWeights.ae_lozengeCharFun_ne_zero (hw : IsLiquidWeights w₁ w₂ w₃) :
+/-- For `w₂, w₃ ≠ 0`, `P_w` is almost everywhere nonzero on `ℝ²`: at a zero,
+`cos θ = (w₁² − w₂² − w₃²) / (2 w₂ w₃)`, a null set of `θ`. -/
+theorem ae_lozengeCharFun_ne_zero_of_ne_zero (h₂ : w₂ ≠ 0) (h₃ : w₃ ≠ 0) :
     ∀ᵐ p : ℝ × ℝ, lozengeCharFun w₁ w₂ w₃ p.1 p.2 ≠ 0 := by
-  set θ₀ := lozengeZeroAngleFst w₁ w₂ w₃
-  set φ₀ := lozengeZeroAngleSnd w₁ w₂ w₃
-  have hsub : {p : ℝ × ℝ | lozengeCharFun w₁ w₂ w₃ p.1 p.2 = 0} ⊆
-      range fun x : ℤ × ℤ × Bool =>
-        if x.2.2 then (2 * x.1 * Real.pi + θ₀, 2 * x.2.1 * Real.pi + φ₀)
-        else (2 * x.1 * Real.pi - θ₀, 2 * x.2.1 * Real.pi - φ₀) := by
-    rintro ⟨θ, φ⟩ hp
-    obtain ⟨m, n, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ := (lozengeCharFun_eq_zero_iff hw).1 hp
-    · exact ⟨(m, n, true), rfl⟩
-    · exact ⟨(m, n, false), rfl⟩
-  exact ((countable_range _).mono hsub).ae_notMem ((volume : Measure ℝ).prod volume)
+  have hnull : volume ({θ : ℝ | Real.cos θ = (w₁ ^ 2 - w₂ ^ 2 - w₃ ^ 2) / (2 * w₂ * w₃)} ×ˢ
+      (univ : Set ℝ)) = 0 := by
+    rw [Measure.volume_eq_prod, Measure.prod_prod, Real.volume_setOf_cos_eq, zero_mul]
+  refine ae_iff.2 (measure_mono_null (fun p hp => ?_) hnull)
+  exact ⟨cos_eq_of_lozengeCharFun_eq_zero h₂ h₃ (not_not.1 hp), mem_univ _⟩
 
 /-- Off the zeros of `P_w`, the integrands of `G_w(d)`, `G_w(d + e₁)` and `G_w(d − e₂)` combine
 with the weights `w₃`, `w₂`, `w₁` into `e^{i(d₁θ + d₂φ)}`. -/
@@ -139,7 +135,7 @@ theorem IsLiquidWeights.lozengeKernel_three_term (hw : IsLiquidWeights w₁ w₂
         w₁ * lozengeKernel w₁ w₂ w₃ (d - (0, 1)) =
       if d = 0 then 1 else 0 :=
   lozengeKernel_three_term_of_integrableOn hw.integrableOn_inv_lozengeCharFun
-    (ae_restrict_of_ae hw.ae_lozengeCharFun_ne_zero) d
+    (ae_restrict_of_ae (ae_lozengeCharFun_ne_zero_of_ne_zero hw.pos_snd.ne' hw.pos_thd.ne')) d
 
 /-- **`G_w` is a right inverse of the Kasteleyn matrix.** For liquid weights, summing
 `K(W(u), B(v')) G_w(v' − v)` over the three black faces `B(v')` adjacent to `W(u)`, across the

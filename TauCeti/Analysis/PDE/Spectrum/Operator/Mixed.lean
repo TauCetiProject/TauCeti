@@ -68,7 +68,8 @@ hypothesis but the Rellich property holds outright: the mixed Laplacian `-Δ_Γ`
 nonnegative, every negative number is a resolvent point, and on a domain with the Rellich property
 it has compact resolvent and spectrum its mixed eigenvalues, all nonnegative. Its kernel consists
 of the values of the `u ∈ H¹_Γ(Ω)` with vanishing gradient
-(`TauCeti.PDE.mixedOperator_laplacian_apply_eq_zero_iff`), so `0` is a spectral value as soon as
+(`TauCeti.PDE.mixedOperator_laplacian_apply_eq_zero_iff`, and as a subspace of `L²(Ω)`
+`TauCeti.PDE.mem_ker_mixedOperator_laplacian_iff`), so `0` is a spectral value as soon as
 `H¹_Γ(Ω)` contains such a `u` with nonzero value. This happens for the mixed Laplacian `-Δ_∅` (the
 Neumann Laplacian where `H¹_∅(Ω) = H¹(Ω)`) on every nonempty bounded open set, where the constant
 `1` lies in `H¹_∅(Ω)`: `0` is the least point of its spectrum and `-Δ_∅` has no inverse
@@ -133,6 +134,7 @@ needed for `λ₁ > 0`.
   `TauCeti.PDE.value_mem_domain_mixedOperator_laplacian` and
   `TauCeti.PDE.isSelfAdjoint_resolvent_mixedOperator_laplacian`: the mixed Laplacian `-Δ_Γ`.
 * `TauCeti.PDE.mixedOperator_laplacian_apply_eq_zero_iff`,
+  `TauCeti.PDE.mem_ker_mixedOperator_laplacian_iff`,
   `TauCeti.PDE.zero_mem_spectrum_mixedOperator_laplacian_of_gradient_eq_zero` and
   `TauCeti.PDE.isLeast_spectrum_mixedOperator_laplacian_empty`: the kernel of `-Δ_Γ`, and the
   eigenvalue `0` at the bottom of the spectrum of `-Δ_∅` on a bounded set.
@@ -1054,6 +1056,25 @@ theorem mixedOperator_laplacian_apply_eq_zero_iff (hΓ : Disjoint Γ Omega)
     refine mixedOperator_apply_eq _ hΓ hu fun v ↦ ?_
     rw [energyFormH1_one_zero_zero_eq_inner, hgrad, inner_zero_left, inner_zero_left]
 
+/-- **The kernel of the mixed Laplacian `-Δ_Γ`**, as a subspace of `L²(Ω)`: it consists of the
+values of the `u ∈ H¹_Γ(Ω)` with vanishing weak gradient. This is the eigenspace of `-Δ_Γ` for the
+eigenvalue `0`. -/
+theorem mem_ker_mixedOperator_laplacian_iff (hΓ : Disjoint Γ Omega)
+    {f : Lp ℝ 2 (mu.restrict Omega)} :
+    f ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
+        (1 : Matrix ι ι ℝ)) Γ).ker ↔
+      ∃ u : W1pVanishingOn mu Omega 2 Γ, W1p.value (u : W1p mu Omega 2) = f ∧
+        W1p.gradient (u : W1p mu Omega 2) = 0 := by
+  rw [LinearPMap.mem_ker_iff]
+  constructor
+  · rintro ⟨g, rfl, hg⟩
+    exact (mixedOperator_laplacian_apply_eq_zero_iff hΓ g).1 hg
+  · rintro ⟨u, rfl, hgrad⟩
+    have hdom := value_mem_domain_mixedOperator_laplacian (u := u) hΓ (g := 0) fun v ↦ by
+      rw [hgrad, inner_zero_left, inner_zero_left]
+    exact ⟨⟨_, hdom⟩, rfl,
+      (mixedOperator_laplacian_apply_eq_zero_iff hΓ ⟨_, hdom⟩).2 ⟨u, rfl, hgrad⟩⟩
+
 /-- **A function of `H¹_Γ(Ω)` with vanishing gradient makes `0` a spectral value of `-Δ_Γ`**: if
 some `u ∈ H¹_Γ(Ω)` with nonzero value has `∇u = 0`, then its value is an eigenvector of `-Δ_Γ` for
 the eigenvalue `0`, and `-Δ_Γ` is not invertible. -/
@@ -1065,13 +1086,10 @@ theorem zero_mem_spectrum_mixedOperator_laplacian_of_gradient_eq_zero (hΓ : Dis
   rw [LinearPMap.mem_spectrum_iff]
   intro h0
   -- The value of `u` lies in the kernel, which a resolvent point `0` makes trivial.
-  have hdom : W1p.value u ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu)
-      (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).domain :=
-    value_mem_domain_mixedOperator_laplacian (u := ⟨u, hu⟩) hΓ (g := 0) fun v ↦ by
-      rw [hgrad, inner_zero_left, inner_zero_left]
-  have hker := (mixedOperator_laplacian_apply_eq_zero_iff hΓ ⟨_, hdom⟩).2 ⟨⟨u, hu⟩, rfl, hgrad⟩
-  have h := LinearPMap.eq_zero_of_apply_eq_smul h0 ⟨_, hdom⟩ (by rw [hker, zero_smul])
-  exact hval (congrArg Subtype.val h)
+  obtain ⟨g, hg, hker⟩ := LinearPMap.mem_ker_iff.1
+    ((mem_ker_mixedOperator_laplacian_iff hΓ (f := W1p.value u)).2 ⟨⟨u, hu⟩, rfl, hgrad⟩)
+  have h := LinearPMap.eq_zero_of_apply_eq_smul h0 g (by rw [hker, zero_smul])
+  exact hval (by rw [hg, h, Submodule.coe_zero])
 
 /-- **The mixed Laplacian `-Δ_∅` is not invertible.** On a nonempty bounded open set, `0` is the
 least point of the spectrum of the mixed Laplacian `-Δ_∅`, which is the Neumann Laplacian where

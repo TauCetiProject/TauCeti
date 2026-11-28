@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.LinearAlgebra.Complex.Finrank
 public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 public import TauCeti.LinearAlgebra.TotallyReal.Finrank
+import TauCeti.Algebra.Order.Ring.Square
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # An almost complex structure forces even real dimension
@@ -141,11 +143,12 @@ theorem exists_conjugation [FiniteDimensional ℝ V] (J : AlmostComplexStructure
   simp only [LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply, ← hφ,
     LinearEquiv.coe_ofInvolutive, hcI, map_neg]
 
-/-- The real dimension of a module carrying an almost complex structure is even. -/
+/-- The real dimension of a module carrying an almost complex structure is even
+(`Module.End.even_finrank_of_mul_self_eq_neg_one`, since `-1` is not a square in `ℝ`). -/
 theorem even_finrank_real (J : AlmostComplexStructure V) :
-    Even (Module.finrank ℝ V) := by
-  rw [J.finrank_real_eq_two_mul_complexFinrank]
-  exact even_two_mul _
+    Even (Module.finrank ℝ V) :=
+  Module.End.even_finrank_of_mul_self_eq_neg_one not_isSquare_neg_one
+    (by simpa [Module.End.mul_eq_comp, Module.End.one_eq_id] using J.square_neg)
 
 /-- A real subspace invariant under an almost complex structure has even real dimension: `J`
 restricts to an almost complex structure on it. -/

@@ -9,6 +9,8 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.ZMod.Standard
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.Dynkin
 
+import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.OrthogonalGroup
+
 /-!
 # The glue alphabet of a simply-laced Dynkin type
 
@@ -58,6 +60,8 @@ group for even `n`.
   `TauCeti.DynkinType.glueAlphabetIsometry_glueAlphabetIsometryOfIsometry`: a root-lattice isometry
   between valid simply-laced types functorially induces an isometry of their glue alphabets,
   compatibly with `glueAlphabetIsometry` and with self-isometry group operations.
+* `TauCeti.DynkinType.glueAlphabetIsometry_unitsSMul`: unit scalar multiplication on a root
+  lattice acts compatibly on the glue alphabet.
 * `TauCeti.DynkinType.isNondegenerate_glueAlphabet`, `natCard_glueAlphabet`: the alphabet is
   nondegenerate, of order `|det t.cartanMatrix|`.
 
@@ -436,7 +440,7 @@ theorem toLinearEquiv_glueAlphabetIsometryOfIsometry_pow {t : DynkinType} (hv : 
   | succ k ih =>
     rw [pow_succ, pow_succ, glueAlphabetIsometryOfIsometry_mul, ← ih]
     ext x
-    simp [FiniteQuadraticModule.Isometry.trans_apply]
+    simp
 
 /-- Pointwise evaluation of `glueAlphabetIsometryOfIsometry` on a power of a self-isometry. -/
 theorem glueAlphabetIsometryOfIsometry_pow_apply {t : DynkinType} (hv : t.Valid)
@@ -448,6 +452,23 @@ theorem glueAlphabetIsometryOfIsometry_pow_apply {t : DynkinType} (hv : t.Valid)
         t.glueAlphabet ht ≃ₗ[ℤ] t.glueAlphabet ht) ^ k) x := by
   rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
     toLinearEquiv_glueAlphabetIsometryOfIsometry_pow]
+
+section UnitsSMul
+
+variable {T : DynkinType} {hT : T.IsSimplyLaced} (hvT : T.Valid)
+
+/-- **Naturality of glue labels under unit scalar multiplication on one component.**  Scaling the
+root lattice of a valid simply-laced Dynkin type `T` by a unit `u : ℤˣ` acts on its discriminant
+quadratic module compatibly with scaling the glue alphabet by `u`. -/
+theorem glueAlphabetIsometry_unitsSMul (u : ℤˣ) (x : T.glueAlphabet hT) :
+    T.glueAlphabetIsometry hvT hT (u • x) =
+      (Isometry.unitsSMul u (T.rootLattice hT)).discriminantQuadraticIsometry
+        (T.isEven_rootLattice hT) (T.glueAlphabetIsometry hvT hT x) :=
+  (map_zsmul (T.glueAlphabetIsometry hvT hT) (u : ℤ) x).trans
+    ((Isometry.discriminantQuadraticIsometry_apply _ _ _).trans
+      (Isometry.discriminantGroupEquiv_unitsSMul_apply u _ _)).symm
+
+end UnitsSMul
 
 /-- **The glue alphabet of a simply-laced type is nondegenerate**, for every rank, valid or
 not. -/

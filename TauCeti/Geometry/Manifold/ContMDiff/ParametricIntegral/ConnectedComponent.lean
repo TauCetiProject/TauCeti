@@ -16,8 +16,8 @@ import TauCeti.Geometry.Manifold.Topology
 
 Let `M` be a manifold whose connected components are compact, for instance a compact manifold,
 with a measure `μ` finite on compact sets, and let `F : M × P → V` be a `C^n` function of a point
-of `M` and a parameter in a boundaryless manifold `P`. This file shows that integrating `F` over
-the connected component of the point,
+of `M` and a parameter in a manifold `P`, possibly with boundary and corners. This file shows that
+integrating `F` over the connected component of the point,
 
 `(x, p) ↦ ∫ y in M_x, F (y, p) ∂μ`, where `M_x` is the connected component of `x`,
 
@@ -43,7 +43,7 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
   [MeasurableSpace M] [OpensMeasurableSpace M] {μ : Measure M}
   {G HP : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [TopologicalSpace HP]
-  {IP : ModelWithCorners ℝ G HP} [IP.Boundaryless] {P : Type*} [TopologicalSpace P]
+  {IP : ModelWithCorners ℝ G HP} {P : Type*} [TopologicalSpace P]
   [ChartedSpace HP P] {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   {n : ℕ∞} [IsManifold I n M] [IsManifold IP n P] {F : M × P → V}
 
