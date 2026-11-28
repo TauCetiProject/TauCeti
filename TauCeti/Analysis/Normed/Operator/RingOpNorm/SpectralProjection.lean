@@ -141,19 +141,26 @@ theorem of_le (hE : IsSpectralProjection u C h E) (hn : h ≤ n) :
   refine { hE with pow_mul_eq_zero := ?_ }
   rw [add_comm h k, pow_add, mul_assoc, hE.pow_mul_eq_zero, mul_zero]
 
+omit [TauCeti.NormedRing.IsTate R] in
+private theorem units_smul_mul_inv (c : Rˣ) (A B : M →L[R] M) :
+    (c • A) * (c⁻¹ • B) = A * B := by
+  rw [Units.smul_def, Units.smul_def, smul_mul_smul_comm]
+  simp
+
 /-- Scaling the spectral operator `C` by a unit of the coefficient ring preserves spectral
 projections. -/
 theorem units_smul_spectral (hE : IsSpectralProjection u C h E) (c : Rˣ) :
     IsSpectralProjection u (c • C) h E := by
   obtain ⟨w, hw₁, hw₂, hw₃, hw₄, hw⟩ := hE.exists_inverse
   refine ⟨hE.isIdempotentElem, hE.commute, hE.mem_closure_adjoin, ?_,
-    ⟨(↑c⁻¹ : R) • w, ?_, ?_, ?_, ?_, ?_⟩⟩
+    ⟨c⁻¹ • w, ?_, ?_, ?_, ?_, ?_⟩⟩
   · rw [Units.smul_def, smul_pow, smul_mul_assoc, hE.pow_mul_eq_zero, smul_zero]
-  · rw [Units.smul_def, smul_mul_assoc, mul_smul_comm, smul_smul, Units.mul_inv, one_smul, hw₁]
-  · rw [Units.smul_def, smul_mul_assoc, mul_smul_comm, smul_smul, Units.inv_mul, one_smul, hw₂]
-  · rw [mul_smul_comm, hw₃, smul_zero]
-  · rw [smul_mul_assoc, hw₄, smul_zero]
-  · exact map_mem_closure (continuous_const_smul (↑c⁻¹ : R)) hw
+  · rw [units_smul_mul_inv, hw₁]
+  · simpa only [inv_inv] using (units_smul_mul_inv c⁻¹ w C).trans hw₂
+  · rw [Units.smul_def, mul_smul_comm, hw₃, smul_zero]
+  · rw [Units.smul_def, smul_mul_assoc, hw₄, smul_zero]
+  · rw [Units.smul_def]
+    exact map_mem_closure (continuous_const_smul (↑c⁻¹ : R)) hw
       fun y hy ↦ (Algebra.adjoin R {u} : Subalgebra R _).smul_mem hy (↑c⁻¹ : R)
 
 /-- Scaling the spectral operator `C` by a unit of the coefficient ring yields an equivalent
@@ -254,8 +261,7 @@ theorem inverse_congr {u' C' : M →L[R] M} {k : ℕ}
 theorem inverse_units_smul_spectral (hE : IsSpectralProjection u C h E) (c : Rˣ) :
     (hE.units_smul_spectral c).inverse = c⁻¹ • hE.inverse := by
   refine ((hE.units_smul_spectral c).eq_inverse ?_ ?_).symm
-  · rw [Units.smul_def, Units.smul_def, smul_mul_assoc, mul_smul_comm, smul_smul, Units.mul_inv,
-      one_smul, hE.spectral_mul_inverse]
+  · rw [units_smul_mul_inv, hE.spectral_mul_inverse]
   · rw [Units.smul_def, mul_smul_comm, hE.mul_inverse_eq_zero, smul_zero]
 
 /-- Increasing the nilpotence bound does not change the complementary inverse. -/
@@ -513,39 +519,56 @@ theorem IsSpectralProjection.comp_comp_of_retract (hri : r.comp i = .id R M)
     (hi : Function.Semiconj (i : M →ₗ[R] N) C D)
     (hE : IsSpectralProjection (i.comp (u.comp r)) D h E) :
     IsSpectralProjection u C h (r.comp (E.comp i)) := by
-  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
-  have hrh : Function.Semiconj (r : N →ₗ[R] M) (D ^ h : N →L[R] N) (C ^ h : M →L[R] M) := by
-    simpa only [FunLike.coe_pow_eq_iterate] using hr.iterate_right h
+  have hri' (x : M) : r (i x) = x := by
+    simpa only [comp_apply, id_apply] using congr($hri x)
+  have hr' (y : N) : C (r y) = r (D y) := (hr y).symm
+  have hi' (x : M) : i (C x) = D (i x) := hi x
+  have hrh' (y : N) : (C ^ h) (r y) = r ((D ^ h) y) := by
+    simpa only [FunLike.coe_pow_eq_iterate, coe_coe] using (hr.iterate_right h y).symm
   have hir_comm : Commute (i.comp r) D := by
     ext y
     simp only [mul_apply_eq_comp, comp_apply]
     exact (congrArg i (hr y)).trans (hi (r y))
-  have hE' (y : N) : i (r (E y)) = E (i (r y)) :=
-    congr($(hE.commute_of_commute hir_comm) y)
-  have hw' (y : N) : i (r (hE.inverse y)) = hE.inverse (i (r y)) :=
-    congr($(hE.commute_inverse_of_commute hir_comm) y)
-  have hEE (y : N) : E (E y) = E y := congr($hE.isIdempotentElem.eq y)
-  have hEv (y : N) : E (i (u (r y))) = i (u (r (E y))) := congr($hE.commute.eq y).symm
-  have hpow (y : N) : (D ^ h) (E y) = 0 := congr($hE.pow_mul_eq_zero y)
+  have hE_comm : Commute (i.comp r) E := hE.commute_of_commute hir_comm
+  have hcomp_mul {A B : N →L[R] N} (hAB : Commute (i.comp r) A ∨ Commute (i.comp r) B) :
+      r.comp (A.comp i) * r.comp (B.comp i) = r.comp ((A * B).comp i) := by
+    ext x
+    simp only [mul_apply_eq_comp, comp_apply]
+    rcases hAB with hA | hB
+    · have hA' : i (r (A (B (i x)))) = A (i (r (B (i x)))) := by
+        simpa only [mul_apply_eq_comp, comp_apply] using congr($hA.eq (B (i x)))
+      rw [← hA', hri']
+    · have hB' : i (r (B (i x))) = B (i (r (i x))) := by
+        simpa only [mul_apply_eq_comp, comp_apply] using congr($hB.eq (i x))
+      rw [hB', hri']
   refine ⟨?_, ?_, comp_comp_mem_closure_adjoin hri hE.mem_closure_adjoin, ?_,
     ⟨r.comp (hE.inverse.comp i), ?_, ?_, ?_, ?_,
       comp_comp_mem_closure_adjoin hri hE.inverse_mem_closure_adjoin⟩⟩
-  · ext x; simp [hE', hri', hEE]
-  · ext x; simpa [hri'] using congr(r $(hEv (i x))).symm
-  · ext x; simpa [hpow] using (hrh (E (i x))).symm
+  · rw [IsIdempotentElem, hcomp_mul (Or.inl hE_comm), hE.isIdempotentElem.eq]
   · ext x
-    simpa [hri'] using
-      (hr (hE.inverse (i x))).symm.trans congr(r $(congr($(hE.spectral_mul_inverse) (i x))))
+    simp only [mul_apply_eq_comp, comp_apply]
+    have hEv : i (u (r (E (i x)))) = E (i (u (r (i x)))) := by
+      simpa only [mul_apply_eq_comp, comp_apply] using congr($hE.commute.eq (i x))
+    rw [← hri' (u (r (E (i x)))), hEv, hri']
   · ext x
-    have hiCx : i (C x) = D (i x) := hi x
-    simpa only [mul_apply_eq_comp, comp_apply, sub_apply, one_apply_eq_self, map_sub, hri',
-      hiCx] using congr(r $(congr($(hE.inverse_mul_spectral) (i x))))
+    simp only [mul_apply_eq_comp, comp_apply, zero_apply]
+    have hpow : (D ^ h) (E (i x)) = 0 := by
+      simpa only [mul_apply_eq_comp, zero_apply] using congr($hE.pow_mul_eq_zero (i x))
+    rw [hrh', hpow, map_zero]
   · ext x
-    simp only [mul_apply_eq_comp, comp_apply, hw', hri', zero_apply]
-    rw [← mul_apply_eq_comp, hE.mul_inverse_eq_zero, zero_apply, map_zero]
+    simp only [mul_apply_eq_comp, comp_apply, sub_apply, one_apply_eq_self]
+    have hw₁ : D (hE.inverse (i x)) = i x - E (i x) := by
+      simpa only [mul_apply_eq_comp, sub_apply, one_apply_eq_self] using
+        congr($hE.spectral_mul_inverse (i x))
+    rw [hr', hw₁, map_sub, hri']
   · ext x
-    simp only [mul_apply_eq_comp, comp_apply, hE', hri', zero_apply]
-    rw [← mul_apply_eq_comp, hE.inverse_mul_eq_zero, zero_apply, map_zero]
+    simp only [mul_apply_eq_comp, comp_apply, sub_apply, one_apply_eq_self]
+    have hw₂ : hE.inverse (D (i x)) = i x - E (i x) := by
+      simpa only [mul_apply_eq_comp, sub_apply, one_apply_eq_self] using
+        congr($hE.inverse_mul_spectral (i x))
+    rw [hi', hw₂, map_sub, hri']
+  · rw [hcomp_mul (Or.inl hE_comm), hE.mul_inverse_eq_zero, zero_comp, comp_zero]
+  · rw [hcomp_mul (Or.inr hE_comm), hE.inverse_mul_eq_zero, zero_comp, comp_zero]
 
 /-- The complementary inverse of the retract-compressed spectral projection is the retract
 compression `r ∘ hE.inverse ∘ i` of the original complementary inverse. -/
