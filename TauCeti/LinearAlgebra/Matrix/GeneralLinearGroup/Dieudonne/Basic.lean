@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DieudonneDeterminant
-import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability.Surjective
 
 /-!
@@ -14,10 +13,9 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability.Surjective
 
 Extending `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DieudonneDeterminant`, this file proves
 further formulas and corollaries for `TauCeti.dieudonneDet : GL n D →* Group.Abelianization Dˣ`:
-membership in the elementary subgroup, scalar and block-unipotent matrices, commutator-kernel
-vanishing for nontrivial `Dˣ`, normality of `TauCeti.elementarySubgroup n D` at every finite
-matrix size, and the finite-rank quotient isomorphism
-`GL n D ⧸ TauCeti.elementarySubgroup n D ≃* Group.Abelianization Dˣ`.
+membership in the elementary subgroup, scalar and block-unipotent matrices, normality of
+`TauCeti.elementarySubgroup n D` at every finite matrix size, and the finite-rank quotient
+isomorphism `GL n D ⧸ TauCeti.elementarySubgroup n D ≃* Group.Abelianization Dˣ`.
 
 For stabilization invariance and further properties on `AlgebraicK₁`, see
 `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Dieudonne.AlgebraicK1`.
@@ -33,8 +31,6 @@ For stabilization invariance and further properties on `AlgebraicK₁`, see
 * `TauCeti.dieudonneDet_eq_one_iff`: membership in `elementarySubgroup n D` vs. `dieudonneDet = 1`.
 * `TauCeti.dieudonneDet_scalar`, `Matrix.dieudonneDet_upperBlockGL`,
   `Matrix.dieudonneDet_lowerBlockGL`: values on scalar and block-unipotent matrices.
-* `MonoidHom.elementarySubgroup_le_ker_of_nontrivial`: when `Dˣ` is nontrivial, every homomorphism
-  from `GL n D` to a commutative group vanishes on `elementarySubgroup n D`.
 
 ## References
 
@@ -70,7 +66,8 @@ theorem dieudonneDet_eq_one_iff (hn : 2 ≤ Fintype.card n) {g : GL n D} :
 theorem dieudonneDet_scalar (u : Dˣ) :
     dieudonneDet n D (Matrix.GeneralLinearGroup.scalar n u) =
       Group.Abelianization.of u ^ Fintype.card n := by
-  rw [← diagGL_const, dieudonneDet_diagGL, Finset.prod_const, Finset.card_univ]
+  rw [← AlgebraicK1.divisionRingEquiv_mkOfFintype, AlgebraicK1.mkOfFintype_scalar, map_pow,
+    AlgebraicK1.divisionRingEquiv_ofUnits]
 
 end DivisionRing
 
@@ -94,8 +91,8 @@ def quotientElementarySubgroupDieudonneEquiv (n : Type*) [Fintype n] [DecidableE
     (D : Type*) [DivisionRing D] (hn : 2 ≤ Fintype.card n) :
     GL n D ⧸ elementarySubgroup n D ≃* Group.Abelianization Dˣ :=
   haveI : Nonempty n := Fintype.card_pos_iff.mp (by omega)
-  (QuotientGroup.quotientMulEquivOfEq (ker_dieudonneDet (n := n) (D := D) hn).symm).trans
-    (QuotientGroup.quotientKerEquivOfSurjective (dieudonneDet n D) dieudonneDet_surjective)
+  QuotientGroup.liftEquiv (elementarySubgroup n D) dieudonneDet_surjective
+    (ker_dieudonneDet hn).symm
 
 /-- `TauCeti.quotientElementarySubgroupDieudonneEquiv` evaluates on a coset `QuotientGroup.mk g` as
 `dieudonneDet n D g`. -/
@@ -103,10 +100,8 @@ def quotientElementarySubgroupDieudonneEquiv (n : Type*) [Fintype n] [DecidableE
 theorem quotientElementarySubgroupDieudonneEquiv_mk {n : Type*} [Fintype n] [DecidableEq n]
     {D : Type*} [DivisionRing D] (hn : 2 ≤ Fintype.card n) (g : GL n D) :
     quotientElementarySubgroupDieudonneEquiv n D hn (QuotientGroup.mk g) =
-      dieudonneDet n D g := by
-  unfold quotientElementarySubgroupDieudonneEquiv
-  simp [QuotientGroup.quotientMulEquivOfEq_mk,
-    TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
+      dieudonneDet n D g :=
+  QuotientGroup.liftEquiv_mk (elementarySubgroup n D) _ _ g
 
 /-- The inverse of `TauCeti.quotientElementarySubgroupDieudonneEquiv` sends
 `Group.Abelianization.of u` to the coset of `diagGL (Pi.mulSingle i u)` at any index `i : n`. -/
@@ -118,23 +113,6 @@ theorem quotientElementarySubgroupDieudonneEquiv_symm_of {n : Type*} [Fintype n]
     ← quotientElementarySubgroupDieudonneEquiv_mk hn, MulEquiv.symm_apply_apply]
 
 end TauCeti
-
-namespace MonoidHom
-
-open TauCeti
-
-/-- When `Dˣ` is nontrivial, every homomorphism from `GL n D` into a commutative group vanishes on
-`TauCeti.elementarySubgroup n D`. (Over `𝔽₂` in rank `2`, `GL₂(𝔽₂) = E₂(𝔽₂) ≅ S₃` admits the
-nontrivial sign homomorphism to `ℤˣ`, so `[Nontrivial Dˣ]` cannot be dropped.) -/
-theorem elementarySubgroup_le_ker_of_nontrivial {n : Type*} [Fintype n] [DecidableEq n]
-    {D : Type*} [DivisionRing D] [Nontrivial Dˣ] {G : Type*} [CommGroup G]
-    (φ : GL n D →* G) :
-    elementarySubgroup n D ≤ φ.ker := by
-  obtain ⟨u, hu⟩ := exists_ne (1 : Dˣ)
-  exact (elementarySubgroup_le_commutator_of_ne u.ne_zero
-    (fun h ↦ hu (Units.ext h))).trans (Group.Abelianization.commutator_le_ker φ)
-
-end MonoidHom
 
 namespace Matrix
 

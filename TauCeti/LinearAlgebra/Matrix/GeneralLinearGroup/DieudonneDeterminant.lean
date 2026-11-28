@@ -76,8 +76,9 @@ determinant.
 * `TauCeti.elementarySubgroup_le_ker_dieudonneDet`: elementary matrices have determinant one.
 * `TauCeti.exists_mem_elementarySubgroup_eq_mul_diagGL_mulSingle`: every invertible matrix is an
   elementary matrix times a diagonal matrix with a chosen diagonal entry `d` and all others `1`.
-* `TauCeti.hom_ext_of_elementarySubgroup_le_ker`, `TauCeti.eq_dieudonneDet`: uniqueness of the
-  Dieudonné determinant.
+* `TauCeti.hom_ext_of_elementarySubgroup_le_ker`,
+  `MonoidHom.elementarySubgroup_le_ker_of_nontrivial`, `TauCeti.eq_dieudonneDet`: uniqueness of
+  the Dieudonné determinant.
 * `TauCeti.commutator_eq_elementarySubgroup`: the commutator subgroup of `GLₙ(D)` is `Eₙ(D)` for
   `n ≥ 2`, except for `GL₂(𝔽₂)`; `TauCeti.elementarySubgroup_le_commutator_of_ne` gives the
   inclusion `Eₙ(D) ≤ [GLₙ(D), GLₙ(D)]` in every size when `D ≠ 𝔽₂`.
@@ -536,6 +537,16 @@ theorem commutator_eq_elementarySubgroup (hn : 2 ≤ Fintype.card n)
   · exact elementarySubgroup_le_commutator h₃
   · exact elementarySubgroup_le_commutator_of_ne ha₀ ha₁
 
+/-- When `Dˣ` is nontrivial, every homomorphism from `GL n D` into a commutative group vanishes on
+`TauCeti.elementarySubgroup n D`. (Over `𝔽₂` in rank `2`, `GL₂(𝔽₂) = E₂(𝔽₂) ≅ S₃` admits the
+nontrivial sign homomorphism to `ℤˣ`, so `[Nontrivial Dˣ]` cannot be dropped.) -/
+theorem _root_.MonoidHom.elementarySubgroup_le_ker_of_nontrivial
+    [Nontrivial Dˣ] {G : Type*} [CommGroup G] (φ : GL n D →* G) :
+    elementarySubgroup n D ≤ φ.ker := by
+  obtain ⟨u, hu⟩ := exists_ne (1 : Dˣ)
+  exact (elementarySubgroup_le_commutator_of_ne u.ne_zero
+    (fun h ↦ hu (Units.ext h))).trans (Group.Abelianization.commutator_le_ker φ)
+
 /-- **Uniqueness of the Dieudonné determinant**: a homomorphism `GL n D →* Dˣ/[Dˣ, Dˣ]` that sends
 the diagonal matrix with a chosen diagonal entry `d` and all others `1` to the class of `d` is the
 Dieudonné determinant. It is automatically trivial on elementary matrices: when `D` has an element
@@ -548,15 +559,12 @@ theorem eq_dieudonneDet {φ : GL n D →* Group.Abelianization Dˣ} (i : n)
     φ = dieudonneDet n D := by
   refine hom_ext_of_elementarySubgroup_le_ker i ?_ elementarySubgroup_le_ker_dieudonneDet
     fun d ↦ by rw [h, dieudonneDet_diagGL_mulSingle]
-  by_cases hD : ∃ a : D, a ≠ 0 ∧ a ≠ 1
-  · obtain ⟨a, ha₀, ha₁⟩ := hD
-    exact (elementarySubgroup_le_commutator_of_ne ha₀ ha₁).trans
-      (Group.Abelianization.commutator_le_ker φ)
+  rcases subsingleton_or_nontrivial Dˣ with _ | _
   · -- every unit of `D` is `1`, so the target of `φ` is trivial
-    push Not at hD
     intro g _
     obtain ⟨d, hd⟩ := Group.Abelianization.surjective_of _ (φ g)
-    rw [MonoidHom.mem_ker, ← hd, Units.val_eq_one.1 (hD _ d.ne_zero), map_one]
+    rw [MonoidHom.mem_ker, ← hd, Subsingleton.elim d 1, map_one]
+  · exact MonoidHom.elementarySubgroup_le_ker_of_nontrivial φ
 
 /-! ## Block matrices -/
 

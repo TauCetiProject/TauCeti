@@ -142,20 +142,17 @@ theorem orderEmbOfFin_permOfDisjoint_singleton_erase (i : I) (s : Finset I) {n :
     (Set.powersetCard.disjUnion hdisj).val.orderEmbOfFin (Set.powersetCard.disjUnion hdisj).prop
       (Set.powersetCard.permOfDisjoint hdisj ((finCongr (Nat.add_comm 1 n)).symm j)) =
     (Fin.cons i ((s.erase i).orderEmbOfFin hn) : Fin (n + 1) → I) j := by
-  rw [orderEmbOfFin_permOfDisjoint]
+  rw [orderEmbOfFin_permOfDisjoint,
+    show finSumFinEquiv.symm ((finCongr (Nat.add_comm 1 n)).symm j) =
+        (TauCeti.finOneSumEquiv n).symm j by
+      simp only [TauCeti.finOneSumEquiv, Equiv.symm_trans_apply]]
   cases j using Fin.cases with
   | zero =>
-      have hzero : finSumFinEquiv.symm ((finCongr (Nat.add_comm 1 n)).symm 0) =
-          Sum.inl (0 : Fin 1) :=
-        TauCeti.finOneSumEquiv_symm_zero n
-      rw [hzero, Fin.cons_zero, Sum.elim_inl]
+      rw [TauCeti.finOneSumEquiv_symm_zero, Fin.cons_zero, Sum.elim_inl]
       -- The unique increasing enumeration of a singleton is constant at its element.
       exact Finset.orderEmbOfFin_singleton i 0
   | succ q =>
-      have hsucc : finSumFinEquiv.symm ((finCongr (Nat.add_comm 1 n)).symm q.succ) =
-          Sum.inr q :=
-        TauCeti.finOneSumEquiv_symm_succ n q
-      rw [hsucc, Fin.cons_succ, Sum.elim_inr]
+      rw [TauCeti.finOneSumEquiv_symm_succ, Fin.cons_succ, Sum.elim_inr]
 
 /-- The shuffle of the singleton `{i}` and `s.erase i`, in the presentation `Fin (n + 1)`, is the
 inverse cycle moving the position of `i` in the increasing enumeration of `s` to the front. -/

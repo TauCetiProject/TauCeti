@@ -44,7 +44,7 @@ their order
 begin with a vector transverse to a hyperplane of one factor. Similarly, for the unit basis of `R`
 and the coordinate basis of `Fin m → R`, reindexed by `Fin (m + 1)`, prepending the first
 component of each vector to its second gives the coordinate basis of `Fin (m + 1) → R`
-(`Module.Basis.cons_singleton_prod_basisFun_reindex_finSumFinEquiv_trans_finCongr`).
+(`Module.Basis.cons_singleton_prod_basisFun_reindex_finOneSumEquiv`).
 
 A basis indexed by `Fin n × Fin 2`, reindexed by `Fin k` for `n * 2 = k`, lists its vectors in
 the interleaved order (`Module.Basis.coe_reindex_finProdFinEquiv`), as for Darboux bases
@@ -72,7 +72,7 @@ the first factor before that of the second (`Module.Basis.coe_reindex_prod_finPr
   `Fin (m + n)` or by `Fin k` for `m + n = k`.
 * `Module.Basis.addCases_basisFun_prod_reindex_finSumFinEquiv`: concatenating the components of
   the product of two coordinate bases gives the coordinate basis.
-* `Module.Basis.cons_singleton_prod_basisFun_reindex_finSumFinEquiv_trans_finCongr`: prepending
+* `Module.Basis.cons_singleton_prod_basisFun_reindex_finOneSumEquiv`: prepending
   the first component of the product of the unit basis and a coordinate basis gives the coordinate
   basis.
 * `Module.Basis.coe_prod_reindex_finSumFinEquiv_finCongr`,
@@ -135,7 +135,7 @@ theorem coe_prod_reindex_finSumFinEquiv_trans_finCongr {k : ℕ} (b : Basis (Fin
 /-- Prepending the first component to the second component of the product of the unit basis of
 `R` and the coordinate basis of `Fin m → R`, reindexed by `Fin (m + 1)`, gives the coordinate basis
 of `Fin (m + 1) → R`. -/
-theorem cons_singleton_prod_basisFun_reindex_finSumFinEquiv_trans_finCongr (i : Fin (m + 1)) :
+theorem cons_singleton_prod_basisFun_reindex_finOneSumEquiv (i : Fin (m + 1)) :
     Fin.cons (α := fun _ ↦ R)
         (((Basis.singleton (Fin 1) R).prod (Pi.basisFun R (Fin m))).reindex
           (TauCeti.finOneSumEquiv m) i).1
