@@ -19,7 +19,9 @@ under bounded coefficient-ring homomorphisms `mapCoeffs`.
 
 ## Main results
 
-* `ContinuousLinearMap.IsRieszColemanProjection.mapCoeffs`,
+* `ContinuousLinearMap.IsRieszColemanProjection.mapCoeffs_of_natDegree_eq`,
+  `ContinuousLinearMap.IsRieszColemanProjection.mapCoeffs`,
+  `ContinuousLinearMap.IsRieszColemanProjection.inverse_mapCoeffs_of_natDegree_eq`,
   `ContinuousLinearMap.IsRieszColemanProjection.inverse_mapCoeffs`, and
   `ContinuousLinearMap.IsRowCompact.rieszColemanProjection_mapCoeffs`: compatibility of
   Riesz–Coleman projections, complementary inverses, and explicit Riesz–Coleman projectors with
@@ -53,20 +55,48 @@ variable {I R S : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq 
   [NormedCommRing S] [IsUltrametricDist S] [CompleteSpace S]
   [TauCeti.NormedRing.IsTate S]
 
+/-- **Riesz–Coleman projections under degree-preserving bounded base change.** Whenever `Q`
+preserves its `natDegree` along `f : R →+* S`, the coefficientwise extension of a Riesz–Coleman
+projection of `u` for `Q` is a Riesz–Coleman projection of `u.mapCoeffs f hf` for `Q.map f`. No
+compactness or unit assumption on `Q.leadingCoeff` is needed. -/
+theorem IsRieszColemanProjection.mapCoeffs_of_natDegree_eq {u E : C₀(I, R) →L[R] C₀(I, R)}
+    {Q : R[X]} (hE : IsRieszColemanProjection u Q E)
+    (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖)
+    (hdeg : (Q.map f).natDegree = Q.natDegree) :
+    IsRieszColemanProjection (u.mapCoeffs f hf) (Q.map f) (E.mapCoeffs f hf) := by
+  simpa only [mapCoeffsRingHom_apply] using
+    hE.map (mapCoeffsRingHom f hf)
+      (by
+        simp only [mapCoeffsRingHom_apply]
+        rw [reverse_map_of_natDegree_eq hdeg, aeval_mapCoeffs])
+      (fun {v} hv ↦ by
+        simpa only [mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
+
+/-- The complementary inverse of a Riesz–Coleman projection commutes with bounded base change
+whenever `Q` preserves its `natDegree` along `f`. -/
+@[simp]
+theorem IsRieszColemanProjection.inverse_mapCoeffs_of_natDegree_eq
+    {u E : C₀(I, R) →L[R] C₀(I, R)} {Q : R[X]} (hE : IsRieszColemanProjection u Q E)
+    (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖)
+    (hdeg : (Q.map f).natDegree = Q.natDegree) :
+    (hE.mapCoeffs_of_natDegree_eq f hf hdeg).inverse = hE.inverse.mapCoeffs f hf := by
+  have hinv := hE.inverse_map (mapCoeffsRingHom f hf)
+    (by
+      simp only [mapCoeffsRingHom_apply]
+      rw [reverse_map_of_natDegree_eq hdeg, aeval_mapCoeffs])
+    (fun {v} hv ↦ by
+      simpa only [mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
+  simpa only [mapCoeffsRingHom_apply] using hinv
+
 /-- **Riesz–Coleman projections under bounded base change.** When `Q.leadingCoeff` is a unit, the
 coefficientwise extension of a Riesz–Coleman projection of `u` for `Q` is a Riesz–Coleman
 projection of `u.mapCoeffs f hf` for `Q.map f`. No compactness is needed. -/
 theorem IsRieszColemanProjection.mapCoeffs {u E : C₀(I, R) →L[R] C₀(I, R)} {Q : R[X]}
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff)
     (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
-    IsRieszColemanProjection (u.mapCoeffs f hf) (Q.map f) (E.mapCoeffs f hf) := by
-  simpa only [mapCoeffsRingHom_apply] using
-    hE.map (mapCoeffsRingHom f hf)
-      (by
-        simp only [mapCoeffsRingHom_apply]
-        rw [reverse_map_of_isUnit_leadingCoeff hQ f, aeval_mapCoeffs])
-      (fun {v} hv ↦ by
-        simpa only [mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
+    IsRieszColemanProjection (u.mapCoeffs f hf) (Q.map f) (E.mapCoeffs f hf) :=
+  letI : Nontrivial S := NormOneClass.nontrivial
+  hE.mapCoeffs_of_natDegree_eq f hf (natDegree_map_eq_of_isUnit_leadingCoeff f hQ)
 
 /-- The complementary inverse of a Riesz–Coleman projection commutes with bounded base change when
 `Q.leadingCoeff` is a unit. -/
@@ -74,14 +104,9 @@ theorem IsRieszColemanProjection.mapCoeffs {u E : C₀(I, R) →L[R] C₀(I, R)}
 theorem IsRieszColemanProjection.inverse_mapCoeffs {u E : C₀(I, R) →L[R] C₀(I, R)}
     {Q : R[X]} (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff)
     (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
-    (hE.mapCoeffs hQ f hf).inverse = hE.inverse.mapCoeffs f hf := by
-  have hinv := hE.inverse_map (mapCoeffsRingHom f hf)
-    (by
-      simp only [mapCoeffsRingHom_apply]
-      rw [reverse_map_of_isUnit_leadingCoeff hQ f, aeval_mapCoeffs])
-    (fun {v} hv ↦ by
-      simpa only [mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
-  simpa only [mapCoeffsRingHom_apply] using hinv
+    (hE.mapCoeffs hQ f hf).inverse = hE.inverse.mapCoeffs f hf :=
+  letI : Nontrivial S := NormOneClass.nontrivial
+  hE.inverse_mapCoeffs_of_natDegree_eq f hf (natDegree_map_eq_of_isUnit_leadingCoeff f hQ)
 
 /-- **Bounded base change of the explicit Riesz–Coleman projector.** For a row-compact operator `u`
 with a coprime factorisation `H_u = Q * S'`, where `IsUnit Q.leadingCoeff` and `S'` is entire, the

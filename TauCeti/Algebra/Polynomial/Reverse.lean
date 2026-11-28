@@ -50,11 +50,12 @@ factors with nonzero roots is again such a product in the reciprocal roots
 (`Polynomial.reverse_C_mul_prod_X_sub_C`), unit-scalar multiplication preserves the leading-
 coefficient-normalised reversal (`Polynomial.C_inverse_leadingCoeff_mul_reverse_C_mul`), and
 evaluating a unit-rescaled reversal in an algebra scales the evaluation
-(`Polynomial.aeval_C_mul_reverse`). Reflection at a degree bound stays within that bound,
-also after a coefficient map, and its coefficient at the bound is the constant coefficient; when a
-coefficient map does not kill the leading coefficient, or when the leading coefficient is a unit, it
-commutes with reversal (`Polynomial.reverse_map_of_leadingCoeff_ne_zero`,
-`Polynomial.reverse_map_of_isUnit_leadingCoeff`).
+(`Polynomial.aeval_C_mul_reverse`). Reflection at a degree bound
+stays within that bound, also after a coefficient map, and its coefficient at the bound is the
+constant coefficient; whenever a coefficient map preserves `natDegree` (in particular when it does
+not kill the leading coefficient, or when the leading coefficient is a unit), it commutes with
+reversal (`Polynomial.reverse_map_of_natDegree_eq`,
+`Polynomial.reverse_map_of_leadingCoeff_ne_zero`, `Polynomial.reverse_map_of_isUnit_leadingCoeff`).
 The reverse of
 `(X - C a) ^ n` is `(1 - C a * X) ^ n`, and over a nontrivial ring its factor `1 - X` (for `a = 1`)
 is nonzero.
@@ -214,12 +215,18 @@ theorem coeff_reflect_self [Semiring R] (p : R[X]) (N : ℕ) :
     (p.reflect N).coeff N = p.coeff 0 := by
   rw [coeff_reflect, revAt_le le_rfl, Nat.sub_self]
 
+/-- Mapping coefficients preserves reversal whenever it preserves `natDegree`. -/
+theorem reverse_map_of_natDegree_eq [Semiring R] [Semiring S] {p : R[X]} {f : R →+* S}
+    (h : (p.map f).natDegree = p.natDegree) :
+    (p.map f).reverse = p.reverse.map f := by
+  rw [reverse, h, reflect_map, ← reverse]
+
 /-- When a ring homomorphism does not kill `p.leadingCoeff`, polynomial reversal commutes with
 `Polynomial.map f`. -/
 theorem reverse_map_of_leadingCoeff_ne_zero [Semiring R] [Semiring S] {p : R[X]}
     (f : R →+* S) (hf : f p.leadingCoeff ≠ 0) :
-    (p.map f).reverse = p.reverse.map f := by
-  rw [reverse, reverse, natDegree_map_of_leadingCoeff_ne_zero f hf, reflect_map]
+    (p.map f).reverse = p.reverse.map f :=
+  reverse_map_of_natDegree_eq (natDegree_map_of_leadingCoeff_ne_zero f hf)
 
 /-- When `p.leadingCoeff` is a unit, polynomial reversal commutes with `Polynomial.map f`. -/
 theorem reverse_map_of_isUnit_leadingCoeff [Semiring R] [Semiring S] {p : R[X]}

@@ -19,13 +19,16 @@ modules.
 
 ## Main results
 
-* `ContinuousLinearMap.IsRieszColemanProjection.completedBaseChange`,
+* `ContinuousLinearMap.IsRieszColemanProjection.completedBaseChange_of_natDegree_eq`,
+  `ContinuousLinearMap.IsRieszColemanProjection.completedBaseChange`,
+  `ContinuousLinearMap.IsRieszColemanProjection.inverse_completedBaseChange_of_natDegree_eq`,
   `ContinuousLinearMap.IsRieszColemanProjection.inverse_completedBaseChange`,
   `ContinuousLinearMap.IsRieszColemanProjection.rankAtStalk_range_completedBaseChange`, and
   `ContinuousLinearMap.IsPrCompact.finrank_ker_aeval_reverse_completedBaseChange`: transport of
   Riesz–Coleman projections, complementary inverses, stalk ranks, and field kernel dimensions along
   completed-tensor base change on `(Pr)` modules for bounded scalar extensions.
-* `ContinuousLinearMap.IsRieszColemanProjection.eq_completedBaseChange`: the extended projection is
+* `ContinuousLinearMap.IsRieszColemanProjection.eq_completedBaseChange_of_natDegree_eq` and
+  `ContinuousLinearMap.IsRieszColemanProjection.eq_completedBaseChange`: the extended projection is
   the unique Riesz–Coleman projection of `u.completedBaseChange α α` for `Q.map (algebraMap R S)`.
 * `ContinuousLinearMap.IsRieszColemanProjection.finrank_range_completedBaseChange`: over a bounded
   field extension, the extended Riesz–Coleman summand has the same dimension as the original.
@@ -62,6 +65,46 @@ variable {R S : Type*} [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
   (hS : ∃ C : ℝ≥0, ∀ (r : R) (s : S), ‖r • s‖ ≤ C * ‖r‖ * ‖s‖)
 
 include hS in
+/-- **Riesz–Coleman projections under degree-preserving bounded completed-tensor base change.** On a
+`(Pr)` module `M` over `R`, for a bounded scalar extension `S` satisfying
+`‖r • s‖ ≤ C * ‖r‖ * ‖s‖` along which `Q` preserves its `natDegree`, `completedBaseChange`
+transports a Riesz–Coleman projection of `u` for `Q` to one of `u.completedBaseChange α α` for
+`Q.map (algebraMap R S)` (no compactness or unit assumption on `Q.leadingCoeff` needed). -/
+theorem IsRieszColemanProjection.completedBaseChange_of_natDegree_eq (hM : HasPr R M)
+    (α : S ⊗̂[R] M ≃L[S] N) {u E : M →L[R] M} {Q : R[X]}
+    (hE : IsRieszColemanProjection u Q E)
+    (hdeg : (Polynomial.map (algebraMap R S) Q).natDegree = Q.natDegree) :
+    IsRieszColemanProjection (u.completedBaseChange α α) (Polynomial.map (algebraMap R S) Q)
+      (E.completedBaseChange α α) := by
+  simpa only [completedBaseChangeRingHom_apply] using
+    hE.map (completedBaseChangeRingHom α)
+      (by
+        rw [completedBaseChangeRingHom_apply, Polynomial.reverse_map_of_natDegree_eq hdeg,
+          aeval_completedBaseChange, completedBaseChangeRingHom_apply])
+      (fun {v} hv ↦ by
+        simpa only [completedBaseChangeRingHom_apply] using
+          completedBaseChange_mem_closure_adjoin hS hM α hv)
+
+include hS in
+/-- The complementary inverse of a Riesz–Coleman projection on a `(Pr)` module commutes with
+completed-tensor base change whenever `Q` preserves its `natDegree` along `algebraMap R S`. -/
+@[simp]
+theorem IsRieszColemanProjection.inverse_completedBaseChange_of_natDegree_eq (hM : HasPr R M)
+    (α : S ⊗̂[R] M ≃L[S] N) {u E : M →L[R] M} {Q : R[X]}
+    (hE : IsRieszColemanProjection u Q E)
+    (hdeg : (Polynomial.map (algebraMap R S) Q).natDegree = Q.natDegree) :
+    (hE.completedBaseChange_of_natDegree_eq hS hM α hdeg).inverse =
+      hE.inverse.completedBaseChange α α := by
+  have hinv := hE.inverse_map (completedBaseChangeRingHom α)
+    (by
+      rw [completedBaseChangeRingHom_apply, Polynomial.reverse_map_of_natDegree_eq hdeg,
+        aeval_completedBaseChange, completedBaseChangeRingHom_apply])
+    (fun {v} hv ↦ by
+      simpa only [completedBaseChangeRingHom_apply] using
+        completedBaseChange_mem_closure_adjoin hS hM α hv)
+  simpa only [completedBaseChangeRingHom_apply] using hinv
+
+include hS in
 /-- **Riesz–Coleman projections under bounded completed-tensor base change.** On a `(Pr)` module
 `M` over `R`, for a bounded scalar extension `S` satisfying `‖r • s‖ ≤ C * ‖r‖ * ‖s‖` and
 `IsUnit Q.leadingCoeff`, `completedBaseChange` transports a Riesz–Coleman projection of `u` for `Q`
@@ -70,16 +113,10 @@ theorem IsRieszColemanProjection.completedBaseChange (hM : HasPr R M) (α : S �
     {u E : M →L[R] M} {Q : R[X]} (hE : IsRieszColemanProjection u Q E)
     (hQ : IsUnit Q.leadingCoeff) :
     IsRieszColemanProjection (u.completedBaseChange α α) (Polynomial.map (algebraMap R S) Q)
-      (E.completedBaseChange α α) := by
-  simpa only [completedBaseChangeRingHom_apply] using
-    hE.map (completedBaseChangeRingHom α)
-      (by
-        rw [completedBaseChangeRingHom_apply,
-          Polynomial.reverse_map_of_isUnit_leadingCoeff hQ (algebraMap R S),
-          aeval_completedBaseChange, completedBaseChangeRingHom_apply])
-      (fun {v} hv ↦ by
-        simpa only [completedBaseChangeRingHom_apply] using
-          completedBaseChange_mem_closure_adjoin hS hM α hv)
+      (E.completedBaseChange α α) :=
+  letI : Nontrivial S := NormOneClass.nontrivial
+  hE.completedBaseChange_of_natDegree_eq hS hM α
+    (Polynomial.natDegree_map_eq_of_isUnit_leadingCoeff (algebraMap R S) hQ)
 
 include hS in
 /-- The complementary inverse of a Riesz–Coleman projection on a `(Pr)` module commutes with
@@ -89,16 +126,22 @@ completed-tensor base change for a bounded scalar extension `S` satisfying
 theorem IsRieszColemanProjection.inverse_completedBaseChange (hM : HasPr R M)
     (α : S ⊗̂[R] M ≃L[S] N) {u E : M →L[R] M} {Q : R[X]}
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) :
-    (hE.completedBaseChange hS hM α hQ).inverse = hE.inverse.completedBaseChange α α := by
-  have hinv := hE.inverse_map (completedBaseChangeRingHom α)
-    (by
-      rw [completedBaseChangeRingHom_apply,
-        Polynomial.reverse_map_of_isUnit_leadingCoeff hQ (algebraMap R S),
-        aeval_completedBaseChange, completedBaseChangeRingHom_apply])
-    (fun {v} hv ↦ by
-      simpa only [completedBaseChangeRingHom_apply] using
-        completedBaseChange_mem_closure_adjoin hS hM α hv)
-  simpa only [completedBaseChangeRingHom_apply] using hinv
+    (hE.completedBaseChange hS hM α hQ).inverse = hE.inverse.completedBaseChange α α :=
+  letI : Nontrivial S := NormOneClass.nontrivial
+  hE.inverse_completedBaseChange_of_natDegree_eq hS hM α
+    (Polynomial.natDegree_map_eq_of_isUnit_leadingCoeff (algebraMap R S) hQ)
+
+include hS in
+/-- **Uniqueness of the extended Riesz–Coleman projection under degree-preserving base change.** On
+a `(Pr)` module, for a bounded scalar extension `S` satisfying `‖r • s‖ ≤ C * ‖r‖ * ‖s‖` along
+which `Q` preserves its `natDegree`, every Riesz–Coleman projection of `u.completedBaseChange α α`
+for `Q.map (algebraMap R S)` is `E.completedBaseChange α α`. -/
+theorem IsRieszColemanProjection.eq_completedBaseChange_of_natDegree_eq (hM : HasPr R M)
+    (α : S ⊗̂[R] M ≃L[S] N) {u E : M →L[R] M} {Q : R[X]} (hE : IsRieszColemanProjection u Q E)
+    (hdeg : (Polynomial.map (algebraMap R S) Q).natDegree = Q.natDegree) {E' : N →L[S] N}
+    (hE' : IsRieszColemanProjection (u.completedBaseChange α α) (Q.map (algebraMap R S)) E') :
+    E' = E.completedBaseChange α α :=
+  hE'.unique (hE.completedBaseChange_of_natDegree_eq hS hM α hdeg)
 
 include hS in
 /-- **Uniqueness of the extended Riesz–Coleman projection.** On a `(Pr)` module, for a bounded
@@ -110,7 +153,9 @@ theorem IsRieszColemanProjection.eq_completedBaseChange (hM : HasPr R M) (α : S
     (hQ : IsUnit Q.leadingCoeff) {E' : N →L[S] N}
     (hE' : IsRieszColemanProjection (u.completedBaseChange α α) (Q.map (algebraMap R S)) E') :
     E' = E.completedBaseChange α α :=
-  hE'.unique (hE.completedBaseChange hS hM α hQ)
+  letI : Nontrivial S := NormOneClass.nontrivial
+  hE.eq_completedBaseChange_of_natDegree_eq hS hM α
+    (Polynomial.natDegree_map_eq_of_isUnit_leadingCoeff (algebraMap R S) hQ) hE'
 
 include hS in
 /-- **Constant stalk rank after bounded completed-tensor base change.** For a `(Pr)`-compact
