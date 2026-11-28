@@ -23,6 +23,8 @@ file records consequences of that definition.
   neighbourhood of `u` and `v⁻¹` in a prescribed neighbourhood of `u⁻¹`.
 * In a `T₁` monoid with continuous multiplication, `u ↦ (u, u⁻¹)` is a closed embedding, so the
   units of a σ-compact monoid are σ-compact and the units of a Polish monoid are Polish.
+* The units of a totally disconnected monoid form a totally disconnected space, as `Units.val` is
+  continuous and injective.
 * Since `u ↦ (u, u⁻¹)` is an embedding, the units of a second-countable monoid are second
   countable.
 * In a group with zero with continuous inversion away from zero, the coercion `G₀ˣ → G₀` is a
@@ -39,6 +41,8 @@ file records consequences of that definition.
 * `Units.nhds_eq_comap_inf`: the neighbourhood filter of a unit.
 * `Units.mem_nhds_iff`: the resulting membership criterion for neighbourhoods of a unit.
 * `Units.instSigmaCompactSpace`: the units of a σ-compact monoid are σ-compact.
+* `Units.instTotallyDisconnectedSpace`: the units of a totally disconnected monoid are totally
+  disconnected.
 * `Units.instSecondCountableTopology`: the units of a second-countable monoid are second
   countable.
 * `Units.instPolishSpace`: the units of a Polish monoid with continuous multiplication are Polish.
@@ -95,6 +99,15 @@ instance instSigmaCompactSpace [T1Space M] [ContinuousMul M] [SigmaCompactSpace 
     SigmaCompactSpace Mˣ :=
   ((Homeomorph.refl M).prodCongr MulOpposite.opHomeomorph.symm).isClosedEmbedding.comp
     isClosedEmbedding_embedProduct |>.sigmaCompactSpace
+
+/-- The units of a totally disconnected topological monoid form a totally disconnected space. -/
+@[to_additive /-- The additive units of a totally disconnected topological additive monoid form a
+totally disconnected space. -/]
+instance instTotallyDisconnectedSpace [TotallyDisconnectedSpace M] :
+    TotallyDisconnectedSpace Mˣ := by
+  rw [totallyDisconnectedSpace_iff]
+  exact isTotallyDisconnected_of_image Units.continuous_val.continuousOn val_injective
+    (isTotallyDisconnected_of_totallyDisconnectedSpace _)
 
 /-- **The units of a second-countable monoid are second countable.** The map `u ↦ (u, u⁻¹)` is an
 embedding of `Mˣ` into `M × Mᵐᵒᵖ`, which is homeomorphic to the second-countable space `M × M`. -/

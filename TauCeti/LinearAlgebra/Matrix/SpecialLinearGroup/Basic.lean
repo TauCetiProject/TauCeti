@@ -136,6 +136,7 @@ proof is independent of the source's.
   it does not — both under `-1 ≠ 1`, which fails exactly when `(2 : R) = 0`.
 * `Matrix.SpecialLinearGroup.card_center_subgroupOf_eq_one_or_two`: that order is `1` or `2`,
   needing no hypothesis beyond `NoZeroDivisors R`.
+* `TauCeti.range_mapGL_zmod`: the reduction `SL(2, ℤ) → GL₂(ℤ / N)` has image `SL₂(ℤ / N)`.
 
 ## References
 
@@ -854,3 +855,19 @@ theorem ker_map_quotientMk_mono {ι : Type*} [Fintype ι] [DecidableEq ι] {A : 
   ker_map_mono (by rwa [Ideal.mk_ker, Ideal.mk_ker])
 
 end Matrix.SpecialLinearGroup
+
+namespace TauCeti
+
+open Matrix Matrix.SpecialLinearGroup
+
+open scoped MatrixGroups
+
+/-- **The image of `SL(2, ℤ)` in `GL₂(ℤ / N)` is `SL₂(ℤ / N)`**: the matrices of determinant `1`.
+This is strong approximation for `SL₂`, `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective`. -/
+theorem range_mapGL_zmod (N : ℕ) :
+    (mapGL (ZMod N) : SL(2, ℤ) →* GL (Fin 2) (ZMod N)).range = GeneralLinearGroup.det.ker := by
+  rw [mapGL, MonoidHom.range_comp, MonoidHom.range_eq_top_of_surjective _ (by
+    simpa only [algebraMap_int_eq] using map_intCast_zmod_surjective (d := N)),
+    ← MonoidHom.range_eq_map, range_toGL_eq_ker_det]
+
+end TauCeti

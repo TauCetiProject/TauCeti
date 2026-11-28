@@ -32,7 +32,8 @@ matrix norm.
 
 Matrices with countably many rows and columns are second countable when their entries are, and
 matrices with finitely many rows and columns are σ-compact, respectively locally compact, when
-their entries are. Matrices over a compact space are compact.
+their entries are. Matrices over a compact or totally disconnected space inherit compactness or
+total disconnectedness.
 
 Square matrices act jointly continuously on column vectors by `Matrix.mulVec`, the action of
 `Mathlib.LinearAlgebra.Matrix.Action`; through the unit group, so does `GL n R`
@@ -130,6 +131,12 @@ instance {m n α : Type*} [Finite m] [Finite n] [TopologicalSpace α] [LocallyCo
 instance {m n α : Type*} [TopologicalSpace α] [CompactSpace α] :
     CompactSpace (Matrix m n α) :=
   inferInstanceAs (CompactSpace (m → n → α))
+
+/-- Matrices over a totally disconnected space form a totally disconnected space under the
+entrywise product topology. -/
+instance {m n α : Type*} [TopologicalSpace α] [TotallyDisconnectedSpace α] :
+    TotallyDisconnectedSpace (Matrix m n α) :=
+  inferInstanceAs (TotallyDisconnectedSpace (m → n → α))
 
 /-- Square matrices act jointly continuously on column vectors by `Matrix.mulVec`. -/
 instance {n R : Type*} [Fintype n] [DecidableEq n] [Semiring R] [TopologicalSpace R]

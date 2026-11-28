@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.RingTheory.Ideal.Maps
 
 import Mathlib.Data.Nat.Factorization.Induction
+import Mathlib.Data.ZMod.Units
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import Mathlib.LinearAlgebra.Matrix.Transvection
 import Mathlib.RingTheory.ZMod.LocalRing
@@ -48,6 +49,9 @@ cleared. At `N = 0` both sides vanish, since `SL n R` is infinite for an infinit
   prime powers exactly dividing `N`.
 * `TauCeti.natCard_SL_fin_two`, `TauCeti.natCard_SL_fin_two_zmod`: `|SL₂(𝔽_q)| = q (q² - 1)`.
 * `TauCeti.natCard_SL_fin_two_zmod_mul_prod_primeFactors`: `|SL₂(ℤ/N)| = N³ ∏_{p ∣ N} (1 - 1/p²)`.
+* `TauCeti.natCard_SL_fin_two_zmod_eq_mul_div`:
+  `Nat.card SL(2, ZMod N) = N · (N / ∏_{p ∣ N} p)² · ∏_{p ∣ N} (p² - 1)` (returning `0` at
+  `N = 0`, where `SL₂(ℤ)` is infinite).
 
 ## References
 
@@ -187,5 +191,19 @@ theorem natCard_SL_fin_two_zmod_mul_prod_primeFactors (N : ℕ) :
     (Finsupp.mem_support_iff.mp (Nat.support_factorization N ▸ hp))
   rw [natCard_SL_fin_two_zmod, hk, Fintype.card_fin, Nat.add_sub_cancel]
   ring
+
+/-- **`Nat.card` of `SL₂(ℤ/N)`** in the factored form
+`N · (N / ∏_{p ∣ N} p)² · ∏_{p ∣ N} (p² − 1)`, obtained by dividing
+`TauCeti.natCard_GL_fin_two_zmod` by `φ(N)` (see that theorem for its LMFDB citation). Holds for
+all `N : ℕ`: at `N = 0`, `SL₂(ℤ)` is infinite, so `Nat.card` returns `0`. -/
+theorem natCard_SL_fin_two_zmod_eq_mul_div (N : ℕ) :
+    Nat.card SL(2, ZMod N) =
+      N * (N / ∏ p ∈ N.primeFactors, p) ^ 2 * ∏ p ∈ N.primeFactors, (p ^ 2 - 1) := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · simp [Nat.card_eq_zero_of_infinite]
+  have : NeZero N := ⟨hN⟩
+  rw [Matrix.card_SL, natCard_GL_fin_two_zmod N, Nat.card_eq_fintype_card,
+    ZMod.card_units_eq_totient, mul_assoc (Nat.totient N), mul_assoc (Nat.totient N),
+    Nat.mul_div_right _ (Nat.totient_pos.mpr (Nat.pos_of_ne_zero hN)), mul_assoc]
 
 end TauCeti

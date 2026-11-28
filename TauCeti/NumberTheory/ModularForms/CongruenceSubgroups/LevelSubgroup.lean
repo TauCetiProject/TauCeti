@@ -61,9 +61,9 @@ projective index (`Subgroup.projectiveIndex_pointwise_smul`) and the same determ
 
 ## Main results
 
-* `TauCeti.range_mapGL_zmod`: the reduction `SL(2, ℤ) → GL₂(ℤ / N)` has image `SL₂(ℤ / N)`.
 * `TauCeti.index_comap_mapGL_zmod`: a level whose determinant is surjective has the same index as
-  its preimage in `SL(2, ℤ)`.
+  its preimage in `SL(2, ℤ)` (using `TauCeti.range_mapGL_zmod` from
+  `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic`).
 * `TauCeti.comap_mapGL_GL2Borel`, `TauCeti.comap_mapGL_GL2Gamma1`, `TauCeti.ker_mapGL_zmod`: the
   preimages of the standard levels are `Γ₀(N)`, `Γ₁(N)` and `Γ(N)`.
 * `TauCeti.comap_mapGL_GL2Mirabolic`: the preimage of the level `Γ₁^μ(N)` is also `Γ₁(N)`.
@@ -96,17 +96,7 @@ namespace TauCeti
 
 section Reduction
 
-variable (N : ℕ)
-
-/-- **The image of `SL(2, ℤ)` in `GL₂(ℤ / N)` is `SL₂(ℤ / N)`**: the matrices of determinant `1`.
-This is strong approximation for `SL₂`, `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective`. -/
-theorem range_mapGL_zmod :
-    (mapGL (ZMod N) : SL(2, ℤ) →* GL (Fin 2) (ZMod N)).range = GeneralLinearGroup.det.ker := by
-  rw [mapGL, MonoidHom.range_comp, MonoidHom.range_eq_top_of_surjective _ (by
-    simpa only [algebraMap_int_eq] using map_intCast_zmod_surjective (d := N)),
-    ← MonoidHom.range_eq_map, range_toGL_eq_ker_det]
-
-variable {N}
+variable {N : ℕ}
 
 /-- **A level with surjective determinant has the index of its preimage in `SL(2, ℤ)`.** If
 `det : H → (ℤ / N)ˣ` is surjective, then `H` meets every coset of `SL₂(ℤ / N)`, so its index in

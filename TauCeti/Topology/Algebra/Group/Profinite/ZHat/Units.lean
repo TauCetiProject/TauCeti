@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Decomposition
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
@@ -20,12 +21,18 @@ A compatible family of characters `G →* (ZMod n)ˣ` consequently assembles uni
 character `G →* (Additive zHat)ˣ`. The assembled character is continuous whenever all of its
 finite-level characters are continuous.
 
+The kernels of the reductions `(Additive zHat)ˣ →* (ZMod n)ˣ` form the open principal congruence
+subgroups `TauCeti.zHat.detGamma n`, with join `detGamma m ⊔ detGamma n = detGamma (gcd m n)`
+via the primewise unit decomposition.
+
 ## Main definitions
 
 * `TauCeti.zHat.unitsEquivPiPadicInt`: the topological group isomorphism
   `(Additive zHat)ˣ ≃ₜ* ∀ ℓ : Nat.Primes, ℤ_[ℓ]ˣ`.
 * `TauCeti.zHat.unitsLift`: the character into the profinite units assembled from compatible
   characters at every finite level.
+* `TauCeti.zHat.detGamma`: the principal congruence subgroup of level `n : ℕ+` in
+  `(Additive zHat)ˣ`.
 
 ## Main results
 
@@ -38,6 +45,8 @@ finite-level characters are continuous.
   integer `n` is surjective onto `(ZMod n)ˣ`.
 * `TauCeti.zHat.surjective_of_forall_surjective_unitsMap_toZMod`: a continuous map from a compact
   space into `(Additive zHat)ˣ` is surjective when it is surjective at every finite level.
+* `TauCeti.zHat.detGamma_one`, `TauCeti.zHat.detGamma_le_detGamma_of_dvd`,
+  `TauCeti.zHat.detGamma_gcd_eq_sup`: level-one, divisibility, and join laws for `detGamma`.
 
 ## References
 
@@ -236,6 +245,122 @@ theorem surjective_of_forall_surjective_unitsMap_toZMod {X : Type*} [Topological
   refine ⟨x, ?_⟩
   simpa only [Function.comp_apply, Units.coe_map, MonoidHom.coe_ofClass] using
     congrArg Units.val hx
+
+section Congruence
+
+/-- The principal congruence subgroup of level `n : ℕ+` in `(Additive zHat)ˣ`, consisting of
+units reducing to `1` modulo `n`. -/
+noncomputable def detGamma (n : ℕ+) : OpenSubgroup (Additive zHat.{u})ˣ where
+  toSubgroup := (Units.map (toZMod.{u} n).toMonoidHom).ker
+  isOpen' := (isOpen_discrete {1}).preimage (Continuous.units_map _ (continuous_toZMod n))
+
+@[simp]
+theorem mem_detGamma_iff (n : ℕ+) (a : (Additive zHat.{u})ˣ) :
+    a ∈ detGamma.{u} n ↔ Units.map (toZMod.{u} n).toMonoidHom a = 1 :=
+  Iff.rfl
+
+/-- `detGamma 1` is the whole unit group `(Additive zHat)ˣ`. -/
+@[simp]
+theorem detGamma_one : detGamma.{u} 1 = ⊤ :=
+  OpenSubgroup.ext fun a ↦ by
+    simp only [mem_detGamma_iff, OpenSubgroup.mem_top, iff_true]
+    apply Units.ext
+    simp only [PNat.one_coe]
+    exact Subsingleton.elim _ _
+
+/-- `detGamma n ≤ detGamma m` whenever `m ∣ n`. -/
+theorem detGamma_le_detGamma_of_dvd {m n : ℕ+} (h : (m : ℕ) ∣ n) :
+    detGamma.{u} n ≤ detGamma.{u} m := by
+  intro a ha
+  rw [mem_detGamma_iff] at ha ⊢
+  apply Units.ext
+  have hval := congrArg (ZMod.castHom h (ZMod m)) (congrArg Units.val ha)
+  rw [Units.val_one, map_one] at hval
+  simpa [Units.coe_map, cast_toZMod h] using hval
+
+private theorem mem_detGamma_iff_forall_component {n : ℕ+} {a : (Additive zHat.{u})ˣ} :
+    a ∈ detGamma.{u} n ↔ ∀ ℓ : Nat.Primes,
+      Units.map (PadicInt.toZModPow ((n : ℕ).factorization ℓ)).toMonoidHom
+        (unitsEquivPiPadicInt a ℓ) = 1 := by
+  constructor
+  · intro ha ℓ
+    have hdvd : (ℓ : ℕ) ^ (n : ℕ).factorization ℓ ∣ n := Nat.ordProj_dvd n ℓ
+    let m : ℕ+ := ⟨(ℓ : ℕ) ^ (n : ℕ).factorization ℓ, pow_pos ℓ.property.pos _⟩
+    have hm := detGamma_le_detGamma_of_dvd (m := m) hdvd ha
+    rw [mem_detGamma_iff] at hm
+    apply Units.ext
+    have hval : toZMod.{u} m (a : Additive zHat.{u}) = 1 := by
+      simpa [Units.coe_map] using congrArg Units.val hm
+    simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+      unitsEquivPiPadicInt_apply, Units.val_one]
+    exact (toZModPow_component ℓ ((n : ℕ).factorization ℓ) _).trans hval
+  · intro h
+    rw [mem_detGamma_iff]
+    apply Units.ext
+    simp only [Units.coe_map, MonoidHom.coe_ofClass, RingHom.toMonoidHom_eq_coe, Units.val_one]
+    refine ZMod.eq_of_forall_cast_eq_of_prime_pow_dvd fun p k hp _ hpk ↦ ?_
+    have : Fact p.Prime := ⟨hp⟩
+    have hle : k ≤ (n : ℕ).factorization p :=
+      (hp.pow_dvd_iff_le_factorization n.ne_zero).mp hpk
+    have hℓ : PadicInt.toZModPow ((n : ℕ).factorization p) (component p (a : Additive zHat.{u})) =
+        1 := by
+      have h1 := congrArg Units.val (h ⟨p, hp⟩)
+      have h2 : (unitsEquivPiPadicInt a ⟨p, hp⟩ : ℤ_[p]) = component p (a : Additive zHat.{u}) :=
+        congrArg Units.val (unitsEquivPiPadicInt_apply a ⟨p, hp⟩)
+      simpa only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, h2,
+        Units.val_one] using h1
+    rw [cast_toZMod_eq_toZModPow_component n hpk, ← PadicInt.cast_toZModPow k _ hle, hℓ,
+      ZMod.cast_one (pow_dvd_pow p hle), ZMod.cast_one hpk]
+
+/-- **Join law for principal congruence subgroups of `ℤ̂ˣ`:**
+`detGamma m ⊔ detGamma n = detGamma (gcd m n)`. -/
+theorem detGamma_gcd_eq_sup (m n : ℕ+) :
+    detGamma.{u} m ⊔ detGamma.{u} n =
+      detGamma.{u} ⟨Nat.gcd m n, Nat.gcd_pos_of_pos_left n m.pos⟩ := by
+  classical
+  let d : ℕ+ := ⟨Nat.gcd m n, Nat.gcd_pos_of_pos_left n m.pos⟩
+  have hd : (d : ℕ) = Nat.gcd m n := rfl
+  refine le_antisymm
+    (sup_le (detGamma_le_detGamma_of_dvd (Nat.gcd_dvd_left _ _))
+      (detGamma_le_detGamma_of_dvd (Nat.gcd_dvd_right _ _)))
+    fun a ha ↦ ?_
+  let x : ∀ ℓ : Nat.Primes, ℤ_[ℓ]ˣ := fun ℓ ↦
+    if (m : ℕ).factorization ℓ ≤ (n : ℕ).factorization ℓ then unitsEquivPiPadicInt a ℓ else 1
+  let y : ∀ ℓ : Nat.Primes, ℤ_[ℓ]ˣ := fun ℓ ↦
+    if (m : ℕ).factorization ℓ ≤ (n : ℕ).factorization ℓ then 1 else unitsEquivPiPadicInt a ℓ
+  have hmul : unitsEquivPiPadicInt.symm x * unitsEquivPiPadicInt.symm y = a := by
+    apply unitsEquivPiPadicInt.injective
+    ext ℓ
+    simp only [map_mul, ContinuousMulEquiv.apply_symm_apply, Pi.mul_apply, Units.val_mul, x, y]
+    split_ifs <;> simp
+  have hx : unitsEquivPiPadicInt.symm x ∈ detGamma.{u} m := by
+    rw [mem_detGamma_iff_forall_component]
+    intro ℓ
+    rw [ContinuousMulEquiv.apply_symm_apply]
+    dsimp only [x]
+    split_ifs with hle
+    · have hfac : (d : ℕ).factorization ℓ = (m : ℕ).factorization ℓ := by
+        rw [hd, Nat.factorization_gcd m.ne_zero n.ne_zero]
+        exact min_eq_left hle
+      rw [← hfac]
+      exact mem_detGamma_iff_forall_component.mp (ha : a ∈ detGamma.{u} d) ℓ
+    · simp
+  have hy : unitsEquivPiPadicInt.symm y ∈ detGamma.{u} n := by
+    rw [mem_detGamma_iff_forall_component]
+    intro ℓ
+    rw [ContinuousMulEquiv.apply_symm_apply]
+    dsimp only [y]
+    split_ifs with hle
+    · simp
+    · have hfac : (d : ℕ).factorization ℓ = (n : ℕ).factorization ℓ := by
+        rw [hd, Nat.factorization_gcd m.ne_zero n.ne_zero]
+        exact min_eq_right (le_of_not_ge hle)
+      rw [← hfac]
+      exact mem_detGamma_iff_forall_component.mp (ha : a ∈ detGamma.{u} d) ℓ
+  rw [← hmul]
+  exact Subgroup.mul_mem_sup hx hy
+
+end Congruence
 
 end zHat
 

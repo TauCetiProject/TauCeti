@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 public import TauCeti.Analysis.Normed.Ring.Units
 public import TauCeti.RingTheory.ProfiniteRing
+public import TauCeti.Topology.Algebra.Group.Units
 import Mathlib.RingTheory.Filtration
 import Mathlib.Data.Int.Associated
 import Mathlib.Topology.Algebra.Ring.Compact
@@ -28,8 +29,8 @@ to every `ℤ_p`) and valuation lemmas for `ℚ_p`.
 The unit group `ℤ_pˣ` is a profinite group: it is the closed unit sphere of the compact
 totally disconnected space `ℤ_p`, and the topology of the units is the subspace topology because
 `ℤ_p` is a complete normed ring. Compactness is Mathlib's instance for the units of a compact `T₁`
-topological monoid, recorded here as a shortcut instance; the instance
-`TotallyDisconnectedSpace ℤ_[p]ˣ` is proved here.
+topological monoid, recorded here as a shortcut instance; totally disconnectedness follows from
+`Units.instTotallyDisconnectedSpace`, likewise recorded as a shortcut instance.
 
 Two consequences of the ultrametric divisibility in `ℤ_p` are recorded as well: an element
 divides every element of no larger norm, so that a nonempty family of `p`-adic integers is a common
@@ -103,7 +104,7 @@ The ring `ℤ_[p]` is also profinite in the sequence-ultralimit sense
 * `Padic.exists_forall_norm_pow_mul_le_one`: a single power of `p` carries a finite family of
   `p`-adic numbers into `ℤ_[p]`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
-  profinite group.
+  profinite group (using `Units.instTotallyDisconnectedSpace` via a shortcut instance).
 
 ## Main definitions
 
@@ -300,10 +301,12 @@ instance term matters for unification: elaborating continuous linear maps on `C(
 compact-open topology, which times out at `whnf` with Mathlib's applied instance term. -/
 instance compactSpace_units : CompactSpace ℤ_[p]ˣ := inferInstance
 
-/-- `ℤ_pˣ` is totally disconnected, as a subspace of the ultrametric space `ℤ_p`. -/
-instance totallyDisconnectedSpace_units : TotallyDisconnectedSpace ℤ_[p]ˣ :=
-  ⟨Units.isOpenEmbedding_val.isEmbedding.isTotallyDisconnected
-    (isTotallyDisconnected_of_totallyDisconnectedSpace _)⟩
+/-- `ℤ_pˣ` is totally disconnected: `Units.instTotallyDisconnectedSpace` applied to `ℤ_p`. It is
+recorded as a shortcut instance because the instance term matters for unification: elaborating
+scalar pseudomeasure evaluation on `ℤ_[p]ˣ`
+(`TauCeti.NumberTheory.Padics.WeightSpace.Pseudomeasure`) otherwise times out at `typeclass`
+synthesizing `MulActionSemiHomClass`. -/
+instance totallyDisconnectedSpace_units : TotallyDisconnectedSpace ℤ_[p]ˣ := inferInstance
 
 variable (p) in
 /-- The power character `u ↦ u ^ k` of the unit group `ℤ_pˣ`, as a continuous homomorphism to
