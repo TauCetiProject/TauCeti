@@ -174,6 +174,12 @@ lemma Hom.toSchemeHom_comp_hom {A B : AbelianVariety K} (f : A ⟶ B) :
     Hom.toSchemeHom f ≫ B.toOver.hom = A.toOver.hom :=
   (Hom.toOverHom f).w
 
+/-- The underlying scheme morphism of a homomorphism of abelian varieties is proper. -/
+instance {A B : AbelianVariety K} (f : A ⟶ B) :
+    IsProper (Hom.toSchemeHom f) := by
+  rw [← IsProper.comp_iff (g := B.toOver.hom), Hom.toSchemeHom_comp_hom]
+  exact A.isProper
+
 /-- Two homomorphisms of abelian varieties are equal when their underlying scheme morphisms are
 equal. -/
 @[ext]

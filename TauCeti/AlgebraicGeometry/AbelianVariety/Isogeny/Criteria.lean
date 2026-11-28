@@ -58,8 +58,9 @@ theorem isIsogeny_iff_dim_eq_and_isFinite_kernel (f : A ⟶ B) :
   have hg : g.hom.hom.left = Hom.toSchemeHom f := by
     simp only [g, Hom.homMulEquiv_apply, Hom.toSchemeHom, toOverHom_eq_forget₂Grp_map,
       CommGrp.forget₂Grp_map_hom]
-  have hproper : IsProper g.hom.hom.left := hg.symm ▸
-    (IsProper.comp_iff (g := B.toOver.hom)).mp ((Hom.toSchemeHom_comp_hom f).symm ▸ A.isProper)
+  have hproper : IsProper g.hom.hom.left := by
+    rw [hg]
+    infer_instance
   have hfin := Grp.isFinite_iff_isFinite_kernel g
   rw [hg] at hfin
   exact ⟨fun hf ↦ ⟨hf.dim_eq, hfin.mp hf.isFinite⟩, fun ⟨hdim, hk⟩ ↦
@@ -73,8 +74,6 @@ theorem isIsogeny_comp_iff (f : A ⟶ B) (g : B ⟶ C) (hdim : A.dim = B.dim) :
   refine ⟨fun hfg ↦ ?_, fun ⟨hf, hg⟩ ↦ hf.comp hg⟩
   have hcomp := hfg.isFinite
   rw [Hom.toSchemeHom_comp] at hcomp
-  have : IsProper (Hom.toSchemeHom g) :=
-    (IsProper.comp_iff (g := C.toOver.hom)).mp ((Hom.toSchemeHom_comp_hom g).symm ▸ B.isProper)
   have : IsFinite (Hom.toSchemeHom f) := IsFinite.of_comp _ (Hom.toSchemeHom g)
   have hf := isIsogeny_of_isFinite f hdim
   have := hf.surjective

@@ -13,10 +13,8 @@ import TauCeti.CategoryTheory.Monoidal.Grp.KernelPair
 /-!
 # Proper homomorphisms with finite kernel
 
-A proper homomorphism of group schemes is finite if its scheme-theoretic kernel is finite
-over the base. The kernel pair identifies with the product of the kernel and the source.
-In particular, over a point in the image, a fibre is covered by the fibre of the second
-projection of this product at any chosen point above it.
+A proper homomorphism of group schemes is finite exactly when its scheme-theoretic kernel is
+finite over the base. This criterion is used to characterize isogenies of abelian varieties.
 
 ## References
 
