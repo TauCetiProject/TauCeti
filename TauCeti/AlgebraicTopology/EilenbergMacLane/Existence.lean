@@ -100,7 +100,7 @@ theorem exists_surjective_singularHomology_wedge :
     ∃ ψ : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).obj
       (sphereWedge A (n + 2)) →ₗ[ℤ] A, Function.Surjective ψ := by
   obtain ⟨e⟩ := nonempty_singularHomology_cellAttachment_iso_sigma
-    (sphereWedgeAttachingMap A (n + 2)) ℤ
+    (sphereWedgeAttachingMap A (n + 2)) ℤ (ModuleCat.of ℤ ℤ)
     (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of ℤ ℤ) (TopCat.of PUnit.{1})
       (by omega))
     (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of ℤ ℤ) (TopCat.of PUnit.{1})

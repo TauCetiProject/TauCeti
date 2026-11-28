@@ -169,13 +169,7 @@ private lemma nonempty_fundamentalGroup_cellAttachment_mulEquiv (hE : finrank �
     simplyConnectedSpace_sphere (by rw [← finrank_eq_rank, hE]; norm_cast; omega) 0 zero_le_one
   -- The orbit space has fundamental group `Gᵐᵒᵖ ≅ G`, and attaching a cell of dimension at least
   -- three does not change it.
-  let e₁ := MulEquiv.ofBijective (FundamentalGroup.mapOfEq
-    (cellAttachmentIncl fun _ : PUnit ↦ GenLoop.diskBoundaryMap p).hom rfl)
-    ((HomotopyGroup.bijective_map_iff_bijective_mapOfEq _ rfl).1
-      (bijective_homotopyGroupMap_cellAttachmentIncl (n := n + 2)
-        (fun _ : PUnit ↦ GenLoop.diskBoundaryMap p) (N := Fin 1) (by simp)
-        (Quotient.mk _ x : orbitRel.Quotient G (sphere (0 : E) 1))))
-  exact ⟨e₁.symm.trans
+  exact ⟨(cellAttachmentFundamentalGroupMulEquiv _ (by omega) _).symm.trans
     ((isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul.fundamentalGroupEquiv
       (⟨x, rfl⟩ : Quotient.mk _ ⁻¹' {Quotient.mk _ x})).trans (MulEquiv.inv' G).symm)⟩
 
@@ -209,18 +203,13 @@ private lemma isEilenbergMacLaneSpaceOne_killHomotopyGroups_cellAttachment
         (cellAttachmentIncl (fun _ : PUnit ↦ GenLoop.diskBoundaryMap p) (Quotient.mk _ x))) := by
   have := Module.finite_of_finrank_eq_succ hE
   have := pathConnectedSpace_cellAttachment_orbit p hE
-  set Y := cellAttachment fun _ : PUnit ↦ GenLoop.diskBoundaryMap p
-  set y : Y := cellAttachmentIncl (fun _ : PUnit ↦ GenLoop.diskBoundaryMap p) (Quotient.mk _ x)
   obtain ⟨e⟩ := nonempty_fundamentalGroup_cellAttachment_mulEquiv p hE
-  refine IsEilenbergMacLaneSpaceOne.mk (isAspherical_iff.2 ⟨inferInstance, fun j ↦ ?_⟩)
-    ⟨(killHomotopyGroupsFundamentalGroupMulEquiv (n + 3) Y y (by omega)).symm.trans e⟩
-  rcases lt_or_ge (j + 2) (n + 3) with hj | hj
-  · -- Below degree `n + 3` the homotopy groups are those of `Y`, which vanish from degree two on.
-    have := subsingleton_homotopyGroup_cellAttachment_orbit p hE hp (j := j + 2) (by omega)
-      (by omega)
-    exact (bijective_homotopyGroupMap_killHomotopyGroupsIncl (n + 3) Y y (N := Fin (j + 2))
-      (by simpa using hj)).2.subsingleton
-  · exact subsingleton_homotopyGroup_killHomotopyGroups (n + 3) Y y hj
+  -- The cell attachment has no homotopy groups in degrees `2` to `n + 2`, so killing those from
+  -- degree `n + 3` on leaves only its fundamental group, which is `G`.
+  exact isEilenbergMacLaneSpace_one_iff.1 <|
+    (isEilenbergMacLaneSpace_killHomotopyGroups_of_lt (n + 3) _ _ 1 (by omega)
+      fun j hj0 hj hj1 ↦ subsingleton_homotopyGroup_cellAttachment_orbit p hE hp (by omega)
+        (by omega)).of_mulEquiv (HomotopyGroup.pi1MulEquivFundamentalGroup.trans e)
 
 end OrbitSpace
 
@@ -293,8 +282,8 @@ private lemma exists_ne_one_smul_eq_self_of_two_le {E : Type} [NormedAddCommGrou
       hcard] at h
   omega
 
-/-- On `S⁰`, every action of a group with more than two elements has a nonidentity element fixing a
-point: a free action of `G` needs at least `Nat.card G` points. -/
+/-- On `S⁰`, every action of a finite group with more than two elements has a nonidentity element
+fixing a point: a free action of `G` needs at least `Nat.card G` points. -/
 private lemma exists_ne_one_smul_eq_self_of_finrank_eq_one {E : Type} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (hE : finrank ℝ E = 1) {G : Type} [Group G] (hG : 2 < Nat.card G)
     [MulAction G (sphere (0 : E) 1)] :

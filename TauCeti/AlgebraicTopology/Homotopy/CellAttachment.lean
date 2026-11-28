@@ -63,6 +63,8 @@ corresponding pointed map `Sⁿ → X`. It becomes null-homotopic in `Y`
   surjective on `π_k` for `k ≤ n`.
 * `HomotopicalAlgebra.AttachCells.bijective_homotopyGroupMap`: attaching `(n + 1)`-cells is
   bijective on `π_k` for `k < n`.
+* `TauCeti.cellAttachmentFundamentalGroupMulEquiv`: attaching cells of dimension at least `3`
+  does not change the fundamental group.
 * `TauCeti.mk_mem_range_homotopyGroupMap_of_cellAttachmentCell_comp`: a cell attached along a
   constant map realizes the class of the generalized loop it is sent onto.
 * `TauCeti.subsingleton_homotopyGroup_cellAttachment`: attaching `(n + 1)`-cells along
@@ -172,6 +174,22 @@ a bijection `π_k(X, x) → π_k(X ∪ eⁿ⁺¹, x)` for `k = Nat.card N < n`. 
 theorem bijective_homotopyGroupMap_cellAttachmentIncl (hN : Nat.card N < n) (x : X) :
     Function.Bijective (HomotopyGroup.map (N := N) (x := x) (cellAttachmentIncl φ).hom rfl) :=
   (cellAttachmentAttachCells φ).bijective_homotopyGroupMap hN x
+
+/-- For `n ≥ 2`, attaching `(n + 1)`-cells to a Hausdorff space `X` along any family of maps
+`Sⁿ → X` induces an isomorphism of fundamental groups `π₁(X, x) ≃* π₁(X ∪ eⁿ⁺¹, x)`. -/
+def cellAttachmentFundamentalGroupMulEquiv (hn : 1 < n) (x : X) :
+    FundamentalGroup X x ≃* FundamentalGroup (cellAttachment φ) (cellAttachmentIncl φ x) :=
+  MulEquiv.ofBijective (FundamentalGroup.mapOfEq (cellAttachmentIncl φ).hom rfl)
+    ((HomotopyGroup.bijective_map_iff_bijective_mapOfEq _ rfl).1
+      (bijective_homotopyGroupMap_cellAttachmentIncl φ (N := Fin 1) (by simpa using hn) x))
+
+/-- The isomorphism of fundamental groups is the map induced by the inclusion of `X`. -/
+@[simp]
+lemma cellAttachmentFundamentalGroupMulEquiv_apply (hn : 1 < n) (x : X)
+    (g : FundamentalGroup X x) :
+    cellAttachmentFundamentalGroupMulEquiv φ hn x g =
+      FundamentalGroup.mapOfEq (cellAttachmentIncl φ).hom rfl g :=
+  (rfl)
 
 end TauCeti
 
