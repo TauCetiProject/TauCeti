@@ -206,29 +206,12 @@ private theorem maximal_graph_isIso (hE : E.Baer)
   let p := s.arrow ≫ biprod.fst
   have : Mono p := hs.prop
   have : Epi p := by
-    let P := additiveFunctor Cᵒᵖ AddCommGrpCat.{v}
-    apply P.ι.epi_of_epi_map
-    apply (NatTrans.epi_iff_epi_app _).2
-    intro X
-    apply (AddCommGrpCat.epi_iff_surjective _).2
-    intro x
-    let f : (yoneda C).obj X.unop ⟶ M :=
-      ObjectProperty.homMk
-        { app Y := AddCommGrpCat.ofHom
-            ((AddMonoidHom.eval x).comp (AddCommGrpCat.homAddEquiv.toAddMonoidHom.comp
-              (M.obj.mapAddHom.comp (CategoryTheory.opHom Y.unop X.unop))))
-          naturality Y Z g := by
-            apply AddCommGrpCat.ext
-            intro h
-            exact ConcreteCategory.congr_hom (M.obj.map_comp h.op g) x }
-    obtain ⟨g, hg⟩ := maximal_graph_factors hE s hs f
-    refine ⟨g.hom.app X (𝟙 X.unop), ?_⟩
-    have hx := congrArg (fun k : (yoneda C).obj X.unop ⟶ M ↦ k.hom.app X (𝟙 X.unop)) hg
-    have hfx : f.hom.app X (𝟙 X.unop) = x := by
-      -- Evaluate the composite of bundled additive maps on the identity.
-      change M.obj.map (𝟙 X.unop).op x = x
-      simp
-    exact hx.trans hfx
+    have : M.obj.Additive := (additiveFunctor_iff _).1 M.property
+    apply (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι.epi_of_epi_map
+    refine p.hom.epi_of_preadditiveYoneda_lifts fun Y f ↦ ?_
+    obtain ⟨g, hg⟩ := maximal_graph_factors hE s hs
+      (ObjectProperty.homMk f : (yoneda C).obj Y ⟶ M)
+    exact ⟨g.hom, congrArg (fun k ↦ k.hom) hg⟩
   exact isIso_of_mono_of_epi p
 
 end
