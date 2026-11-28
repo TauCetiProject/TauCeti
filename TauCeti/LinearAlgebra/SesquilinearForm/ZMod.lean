@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 import TauCeti.Algebra.Module.ZMod.Annihilator
+import TauCeti.LinearAlgebra.SesquilinearForm.Orthogonal
 
 /-!
 # Orthogonal complements in finite pairings over `ℤ/n`
@@ -57,27 +58,6 @@ theorem finite_of_bijective_flip_zmod (hB : Function.Bijective B.flip) : Finite 
 end LinearMap
 
 namespace Submodule
-
-section OrthogonalBilin
-
-/-- The kernel of the restricted flipped biadditive pairing attached to a sesquilinear pairing
-`P : M₁ →ₛₗ[I₁] M₂ →ₛₗ[I₂] M` and a submodule `S ≤ M₁` has the same carrier as
-`S.orthogonalBilin P`. -/
-theorem ker_compl₂_toAddSubgroup_eq_orthogonalBilin
-    {R R₁ R₂ M M₁ M₂ : Type*} [CommSemiring R] [CommRing R₁] [CommRing R₂]
-    [AddCommMonoid M] [Module R M] [AddCommGroup M₁] [Module R₁ M₁]
-    [AddCommGroup M₂] [Module R₂ M₂] {I₁ : R₁ →+* R} {I₂ : R₂ →+* R}
-    (S : Submodule R₁ M₁) (P : M₁ →ₛₗ[I₁] M₂ →ₛₗ[I₂] M) :
-    ((LinearMap.toAddMonoidHom'.comp P.flip.toAddMonoidHom).compl₂
-        S.toAddSubgroup.subtype).ker =
-      (S.orthogonalBilin P).toAddSubgroup := by
-  ext y
-  simp only [AddMonoidHom.mem_ker, AddMonoidHom.ext_iff, AddMonoidHom.compl₂_apply,
-    AddMonoidHom.zero_apply, Subtype.forall, mem_toAddSubgroup, mem_orthogonalBilin]
-  -- Forgetting linearity and flipping the pairing preserve its pointwise values.
-  rfl
-
-end OrthogonalBilin
 
 variable {n : ℕ} [NeZero n] {M N : Type*} [AddCommGroup M] [AddCommGroup N]
   [Module (ZMod n) M] [Module (ZMod n) N] [Finite M]
