@@ -22,7 +22,8 @@ Dually, on a separable normed space every norming set of functionals, and every 
 functionals separating points, contains a countable subset with the same property
 (`TauCeti.exists_countable_norming_subset`, `TauCeti.exists_countable_separating_subset`).
 Tests uniformly norming an increasing sequence of operator subspaces separate points
-in the closure of their union.
+in the closure of their union. An almost norming vector for one map is almost norming for
+every relatively close map (`ContinuousLinearMap.mul_norm_le_norm_apply_of_norm_sub_le`).
 
 For scalar-valued maps these are predual norming sets. In particular, applying these
 results with a continuous dual as the domain gives
@@ -275,3 +276,24 @@ theorem ContinuousLinearMap.eq_zero_of_mem_topologicalClosure_iSup_of_norming
     simpa only [mem_ofPred_eq, sub_self, norm_zero, mul_zero] using
       closure_minimal hbound hclosed hψ
   exact ψ.opNorm_zero_iff'.mp (le_antisymm hnorm ψ.opNorm_nonneg)
+
+/-- A vector `v` of norm at most one on which `T` has ratio `c ∈ [0, 1]` is almost norming for
+every `G` relatively close to `T`: if `‖G - T‖ ≤ δ ‖G‖`, then `(c - 2 δ) ‖G‖ ≤ ‖G v‖`. -/
+theorem ContinuousLinearMap.mul_norm_le_norm_apply_of_norm_sub_le
+    {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {G T : E →L[𝕜] F} {v : E} {c δ : ℝ}
+    (hc0 : 0 ≤ c) (hc1 : c ≤ 1) (hδ : 0 ≤ δ) (hv1 : ‖v‖ ≤ 1) (hTv : c * ‖T‖ ≤ ‖T v‖)
+    (hGT : ‖G - T‖ ≤ δ * ‖G‖) :
+    (c - 2 * δ) * ‖G‖ ≤ ‖G v‖ := by
+  have hT : ‖G‖ - ‖G - T‖ ≤ ‖T‖ := by simpa using norm_sub_norm_le G (G - T)
+  have hdiff : ‖(G - T) v‖ ≤ ‖G - T‖ := (G - T).unit_le_opNorm v hv1
+  have happly : ‖T v‖ ≤ ‖G v‖ + ‖(G - T) v‖ :=
+    calc ‖T v‖ = ‖G v - (G - T) v‖ := by simp
+      _ ≤ ‖G v‖ + ‖(G - T) v‖ := norm_sub_le _ _
+  have hG := norm_nonneg G
+  calc (c - 2 * δ) * ‖G‖ ≤ c * ‖G‖ - (c + 1) * (δ * ‖G‖) := by
+        nlinarith [mul_nonneg (mul_nonneg (sub_nonneg.2 hc1) hδ) hG]
+    _ ≤ c * ‖G‖ - (c + 1) * ‖G - T‖ := by gcongr
+    _ ≤ c * ‖T‖ - ‖G - T‖ := by nlinarith [mul_le_mul_of_nonneg_left hT hc0]
+    _ ≤ ‖G v‖ := by linarith
