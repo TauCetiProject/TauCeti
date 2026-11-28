@@ -132,6 +132,12 @@ def algebraicModularForms :
     Subrepresentation (coind V.finiteRationalEmbedding (V.coefficientRep ρ)) :=
   (coind V.finiteRationalEmbedding (V.coefficientRep ρ)).smoothVectors
 
+/-- The algebraic modular forms are the smooth vectors of the coinduced representation. -/
+theorem algebraicModularForms_def :
+    V.algebraicModularForms ρ =
+      (coind V.finiteRationalEmbedding (V.coefficientRep ρ)).smoothVectors :=
+  (rfl)
+
 /-- A coinduced function is an algebraic modular form exactly when the right-translation stabilizer
 `{u | ∀ g, φ(g u) = φ(g)}` of its underlying function is open. -/
 theorem mem_algebraicModularForms_iff_isOpen
