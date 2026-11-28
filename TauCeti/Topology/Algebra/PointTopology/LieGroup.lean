@@ -194,11 +194,6 @@ variable (K H) in
 /-- The dimension of the analytic charts, given by the cotangent space at the identity. -/
 noncomputable def chartDimension : ℕ := Module.finrank K (Bialgebra.CotangentSpace K H)
 
-variable (K H) in
-/-- The chart dimension equals the dimension of the augmentation ideal modulo its square. -/
-theorem chartDimension_eq_finrank_cotangentSpace :
-    chartDimension K H = Module.finrank K (Bialgebra.CotangentSpace K H) := (rfl)
-
 end
 
 section Smooth
@@ -211,7 +206,7 @@ private theorem exists_identityChart :
         ∀ p ∈ e.source, p.ofConv s ≠ 0 ∧ ∀ i, e p i = p.ofConv (a i) / p.ofConv s ^ m i) ∧
       ∀ b : H, AnalyticOnNhd K (fun z ↦ (e.symm z).ofConv b) e.target := by
   have hdim : Module.finrank K (RingHom.ker (1 : G).ofConv).Cotangent = chartDimension K H := by
-    rw [Bialgebra.ofConv_one_eq_counitAlgHom, chartDimension_eq_finrank_cotangentSpace]
+    rw [Bialgebra.ofConv_one_eq_counitAlgHom, chartDimension]
     rfl
   have hchart := Algebra.Smooth.exists_openPartialHomeomorph_points (1 : G).ofConv
   rw [hdim] at hchart
@@ -270,13 +265,6 @@ chosen identity chart. Use `letI := chartedSpace K H` to install it locally. -/
 @[instance_reducible]
 noncomputable def chartedSpace : ChartedSpace (Fin (chartDimension K H) → K) G :=
   (identityChart K H).chartedSpaceOfOne (one_mem_identityChart_source K H)
-
-/-- Every chart in the chosen charted space is the left translate at its base point of the
-chosen identity chart. -/
-@[simp]
-theorem chartAt_eq_translatedChart (p : G) : letI := chartedSpace K H
-    chartAt (Fin (chartDimension K H) → K) p = (identityChart K H).translatedChart p :=
-  chartAt_chartedSpaceOfOne _ (one_mem_identityChart_source K H) p
 
 /-- The points of a smooth commutative Hopf algebra form an analytic Lie group in the
 chosen atlas, for the evaluation topology and convolution group law. -/
