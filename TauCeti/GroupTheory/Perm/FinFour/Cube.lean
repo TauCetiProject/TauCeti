@@ -124,17 +124,24 @@ theorem mulVec_mul_self_of_mem_cubeRotationGroup {A : SpecialLinearGroup (Fin 3)
   rw [← Matrix.toLin'_apply, ← SpecialLinearGroup.toLin'_apply, ← h, monomialEquiv_apply,
     ← Units.val_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one]
 
-/-- A rotation of the cube is an orthogonal matrix: `Aᵀ A = 1`. -/
-theorem transpose_mul_self_of_mem_cubeRotationGroup {A : SpecialLinearGroup (Fin 3) ℤ}
-    (hA : A ∈ cubeRotationGroup) : (A : Matrix (Fin 3) (Fin 3) ℤ)ᵀ * A = 1 := by
-  obtain ⟨σ, ε, h⟩ := mem_cubeRotationGroup_iff.mp hA
+/-- Any integer matrix whose columns are signed standard basis vectors satisfies `Mᵀ * M = 1`. -/
+private theorem transpose_mul_self_of_signed_perm {M : Matrix (Fin 3) (Fin 3) ℤ}
+    {σ : Perm (Fin 3)} {ε : Fin 3 → ℤˣ}
+    (hM : ∀ i j, M i j = if σ j = i then (ε j : ℤ) else 0) :
+    Mᵀ * M = 1 := by
   ext i j
-  simp only [Matrix.mul_apply, Matrix.transpose_apply, h, Matrix.one_apply, ite_mul, zero_mul,
+  simp only [Matrix.mul_apply, Matrix.transpose_apply, hM, Matrix.one_apply, ite_mul, zero_mul,
     mul_ite, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ite_true, σ.injective.eq_iff]
   split_ifs with hij
   · subst hij
     rw [← Units.val_mul, Int.units_mul_self, Units.val_one]
   · rfl
+
+/-- A rotation of the cube is an orthogonal matrix: `Aᵀ A = 1`. -/
+theorem transpose_mul_self_of_mem_cubeRotationGroup {A : SpecialLinearGroup (Fin 3) ℤ}
+    (hA : A ∈ cubeRotationGroup) : (A : Matrix (Fin 3) (Fin 3) ℤ)ᵀ * A = 1 := by
+  obtain ⟨σ, ε, h⟩ := mem_cubeRotationGroup_iff.mp hA
+  exact transpose_mul_self_of_signed_perm h
 
 /-- The rotation group of the cube acts on the vertices `{-1, 1}³ = Fin 3 → ℤˣ` by matrix
 multiplication. -/
@@ -686,15 +693,7 @@ theorem mem_range_cubeRotationToSpecialOrthogonalGroup_iff {R : Type*} [CommRing
       · simp [u, h]
       · simp [u, h, hne.symm]
     let M : Matrix (Fin 3) (Fin 3) ℤ := Matrix.of fun i j => if σ j = i then (u j : ℤ) else 0
-    have hMM : Mᵀ * M = 1 := by
-      ext j k
-      rw [Matrix.mul_apply, Matrix.one_apply]
-      simp only [M, Matrix.transpose_apply, Matrix.of_apply, mul_ite, mul_zero, ite_mul, zero_mul,
-        Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, σ.injective.eq_iff]
-      split_ifs with hjk
-      · subst hjk
-        rcases Int.units_eq_one_or (u j) with hj | hj <;> simp [hj]
-      · rfl
+    have hMM : Mᵀ * M = 1 := transpose_mul_self_of_signed_perm fun _ _ => rfl
     have hdet_sq : M.det ^ 2 = 1 := by
       calc M.det ^ 2 = Mᵀ.det * M.det := by rw [sq, Matrix.det_transpose]
         _ = (Mᵀ * M).det := (Matrix.det_mul Mᵀ M).symm

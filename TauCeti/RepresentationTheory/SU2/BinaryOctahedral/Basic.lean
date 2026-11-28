@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import TauCeti.RepresentationTheory.ClassicalGroups.Restriction
 public import TauCeti.RepresentationTheory.InvariantForm
 public import TauCeti.RepresentationTheory.SU2.BinaryTetrahedral
 public import TauCeti.RepresentationTheory.SU2.SymmetricPower
@@ -63,8 +64,9 @@ image under the double cover `SU(2) →* SO(3)` with the cube rotation group `S�
   `TauCeti.SU2.mem_binaryOctahedralSubgroup_iff_mem_binaryTetrahedralSubgroup_or_mul_mem`:
   coordinate and coset characterizations of the binary octahedral subgroup.
 * `TauCeti.SU2.binaryOctahedralRep_injective`, `TauCeti.SU2.isInvariantForm_binaryOctahedralRep`,
-  and `TauCeti.SU2.detRowAlternating_binaryOctahedralRep`: faithfulness of the defining
-  representation and preservation of the determinant form.
+  `TauCeti.SU2.detRowAlternating_binaryOctahedralRep`, and
+  `TauCeti.SU2.binaryOctahedralRep_eq_stdSLRep_comp`: faithfulness of the defining
+  representation, preservation of the determinant form, and compatibility with the `SL₂(ℂ)` copy.
 * `TauCeti.SU2.natCard_binaryOctahedralSubgroup` and
   `TauCeti.SU2.natCard_binaryOctahedralSLSubgroup`: both copies have exactly 48 elements.
 * `TauCeti.SU2.relIndex_binaryTetrahedralSubgroup_binaryOctahedralSubgroup`: the binary tetrahedral
@@ -165,23 +167,20 @@ private theorem exists_mem_binaryOctahedralCosetCoords_of_coe_eq {g : SU2} {w : 
       toComplexMatrix ⟨w 0 / √2, w 1 / √2, w 2 / √2, w 3 / √2⟩) :
     ∃ w ∈ binaryOctahedralCosetCoords, (g : Matrix (Fin 2) (Fin 2) ℂ) =
       toComplexMatrix ⟨w 0 / √2, w 1 / √2, w 2 / √2, w 3 / √2⟩ := by
-  have hnorm := (mem_unitary_iff_normSq_eq_one _).mp
-    (toComplexMatrix_mem_specialUnitaryGroup_iff.mp (hg ▸ g.property))
-  rw [normSq_mk_div, Real.sq_sqrt zero_le_two, div_eq_one_iff_eq two_ne_zero] at hnorm
-  refine ⟨w, mem_binaryOctahedralCosetCoords_iff.mpr ?_, hg⟩
-  rw [Fin.sum_univ_four]
-  exact_mod_cast hnorm
+  have hnorm := (toComplexMatrix_mem_specialUnitaryGroup_iff_sum_sq_eq (v := w)
+    (Real.sqrt_ne_zero'.mpr two_pos)).mp (hg ▸ g.property)
+  refine ⟨w, mem_binaryOctahedralCosetCoords_iff.mpr (Int.cast_injective (α := ℝ) ?_), hg⟩
+  simpa [Real.sq_sqrt zero_le_two] using hnorm
 
 /-- The points of the scaled coordinate set give unit quaternions. -/
 private theorem toComplexMatrix_mem_of_mem_binaryOctahedralCosetCoords {w : Fin 4 → ℤ}
     (hw : w ∈ binaryOctahedralCosetCoords) :
     toComplexMatrix ⟨w 0 / √2, w 1 / √2, w 2 / √2, w 3 / √2⟩ ∈
       Matrix.specialUnitaryGroup (Fin 2) ℂ := by
-  refine toComplexMatrix_mem_specialUnitaryGroup_iff.mpr ((mem_unitary_iff_normSq_eq_one _).mpr ?_)
-  have hw := mem_binaryOctahedralCosetCoords_iff.mp hw
-  rw [Fin.sum_univ_four] at hw
-  rw [normSq_mk_div, Real.sq_sqrt zero_le_two, div_eq_one_iff_eq two_ne_zero]
-  exact_mod_cast hw
+  refine (toComplexMatrix_mem_specialUnitaryGroup_iff_sum_sq_eq
+    (Real.sqrt_ne_zero'.mpr two_pos)).mpr ?_
+  rw [mem_binaryOctahedralCosetCoords_iff.mp hw, Real.sq_sqrt zero_le_two]
+  norm_num
 
 /-- The integer quaternion with coordinates `v`. -/
 private def intQuaternion (v : Fin 4 → ℤ) : ℍ[ℤ] := ⟨v 0, v 1, v 2, v 3⟩
@@ -364,13 +363,15 @@ noncomputable def binaryOctahedralCoordsEquiv :
 
 @[simp]
 theorem coe_binaryOctahedralCoordsEquiv_inl (v : binaryTetrahedralCoords) :
-    (binaryOctahedralCoordsEquiv (.inl v) : SU2) = binaryTetrahedralCoordsEquiv v := (rfl)
+    (binaryOctahedralCoordsEquiv (.inl v) : SU2) = binaryTetrahedralCoordsEquiv v := by
+  simp only [binaryOctahedralCoordsEquiv, Equiv.coe_ofBijective, binaryOctahedralCoordsFun]
 
 @[simp]
 theorem coe_binaryOctahedralCoordsEquiv_inr (w : binaryOctahedralCosetCoords) :
     ((binaryOctahedralCoordsEquiv (.inr w) : SU2) : Matrix (Fin 2) (Fin 2) ℂ) =
       toComplexMatrix ⟨(w : Fin 4 → ℤ) 0 / √2, (w : Fin 4 → ℤ) 1 / √2, (w : Fin 4 → ℤ) 2 / √2,
-        (w : Fin 4 → ℤ) 3 / √2⟩ := (rfl)
+        (w : Fin 4 → ℤ) 3 / √2⟩ := by
+  simp only [binaryOctahedralCoordsEquiv, Equiv.coe_ofBijective, binaryOctahedralCoordsFun]
 
 instance : Finite binaryOctahedralSubgroup :=
   Finite.of_equiv _ binaryOctahedralCoordsEquiv
@@ -383,6 +384,7 @@ theorem natCard_binaryOctahedralSubgroup : Nat.card binaryOctahedralSubgroup = 4
     card_binaryOctahedralCosetCoords]
 
 /-- **The binary tetrahedral subgroup has index two in the binary octahedral subgroup.** -/
+@[simp]
 theorem relIndex_binaryTetrahedralSubgroup_binaryOctahedralSubgroup :
     binaryTetrahedralSubgroup.relIndex binaryOctahedralSubgroup = 2 := by
   have h := binaryTetrahedralSubgroup.relIndex_mul_card binaryOctahedralSubgroup
@@ -482,7 +484,17 @@ noncomputable def binaryOctahedralEquivSLSubgroup :
 theorem coe_binaryOctahedralEquivSLSubgroup_apply (g : binaryOctahedralSubgroup) :
     (binaryOctahedralEquivSLSubgroup g : Matrix.SpecialLinearGroup (Fin 2) ℂ) =
       Matrix.specialUnitaryGroup.toSL (g : SU2) :=
-  (rfl)
+  Subgroup.coe_equivMapOfInjective_apply _ _ _ _
+
+/-- **Compatibility with `SL₂(ℂ)`**: `TauCeti.SU2.binaryOctahedralRep` is the restriction of
+`TauCeti.stdSLRep ℂ 2` to `TauCeti.SU2.binaryOctahedralSLSubgroup`, pulled back along
+`TauCeti.SU2.binaryOctahedralEquivSLSubgroup`. -/
+theorem binaryOctahedralRep_eq_stdSLRep_comp :
+    binaryOctahedralRep =
+      ((stdSLRep ℂ 2).comp binaryOctahedralSLSubgroup.subtype).comp
+        binaryOctahedralEquivSLSubgroup.toMonoidHom := by
+  ext g
+  simp
 
 instance : Finite binaryOctahedralSLSubgroup :=
   Finite.of_equiv _ binaryOctahedralEquivSLSubgroup.toEquiv
@@ -580,21 +592,6 @@ theorem binaryOctahedralSubgroup_eq_closure :
   refine (Subgroup.eq_of_le_of_card_ge hle ?_).symm
   rw [natCard_binaryOctahedralSubgroup]
   exact Nat.le_of_dvd Nat.card_pos (Nat.Coprime.mul_dvd_of_dvd_of_dvd (by norm_num) h16 h3)
-
-/-- Conjugating `i = τ²` by `ω = (-1 + i + j + k) / 2` recovers `j = weylElement⁻¹`. -/
-private theorem binaryTetrahedralOmega_inv_mul_binaryDihedralRotation_two_mul :
-    binaryTetrahedralOmega⁻¹ * binaryDihedralRotation 2 * binaryTetrahedralOmega =
-      weylElement⁻¹ := by
-  apply Subtype.ext
-  have hωinv : ((binaryTetrahedralOmega⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) =
-      toComplexMatrix ⟨-1 / 2, -1 / 2, -1 / 2, -1 / 2⟩ := by
-    rw [coe_inv_eq_toComplexMatrix_star coe_binaryTetrahedralOmega]
-    congr 1
-    ext <;> simp [neg_div]
-  rw [Submonoid.coe_mul, Submonoid.coe_mul, hωinv, coe_binaryDihedralRotation_eq_toComplexMatrix,
-    coe_binaryTetrahedralOmega, coe_weylElement_inv_eq_toComplexMatrix, ← map_mul, ← map_mul]
-  congr 1
-  ext <;> simp <;> norm_num
 
 /-- **The binary octahedral subgroup is generated by `τ = (1 + i) / √2` and
 `ω = (-1 + i + j + k) / 2`.** -/
