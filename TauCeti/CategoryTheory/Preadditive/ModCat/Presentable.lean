@@ -73,15 +73,33 @@ lemma isStrongGenerator_ofObj_yoneda [EssentiallySmall.{v} C] :
 local instance : HasColimitsOfSize.{v, v} (ModCat.{v} C) where
   has_colimits_of_shape _ := inferInstance
 
+/-- The representable modules of a small model are `κ`-presentable for every regular `κ`. -/
+lemma ofObj_smallModel_yoneda_le_isCardinalPresentable [EssentiallySmall.{v} C]
+    (κ : Cardinal.{v}) [Fact κ.IsRegular] :
+    ObjectProperty.ofObj ((equivSmallModel.{v} C).inverse ⋙ yoneda C).obj ≤
+      isCardinalPresentable (ModCat.{v} C) κ := by
+  have := Cardinal.fact_isRegular_aleph0.{v}
+  rintro _ ⟨X⟩
+  refine isCardinalPresentable_monotone _ (Cardinal.IsRegular.aleph0_le Fact.out) _ ?_
+  exact inferInstanceAs (IsFinitelyPresentable.{v} ((yoneda C).obj
+    ((equivSmallModel.{v} C).inverse.obj X)))
+
 /-- An essentially small preadditive category has a locally finitely presentable
 category of modules. -/
 instance [EssentiallySmall.{v} C] : IsLocallyFinitelyPresentable.{v} (ModCat.{v} C) := by
   have := Cardinal.fact_isRegular_aleph0.{v}
-  refine (IsCardinalLocallyPresentable.iff_exists_isStrongGenerator _ Cardinal.aleph0).2
-    ⟨_, inferInstance, isStrongGenerator_ofObj_yoneda, ?_⟩
-  rintro _ ⟨X⟩
-  exact inferInstanceAs (IsFinitelyPresentable.{v} ((yoneda C).obj
-    ((equivSmallModel.{v} C).inverse.obj X)))
+  exact (IsCardinalLocallyPresentable.iff_exists_isStrongGenerator _ Cardinal.aleph0).2
+    ⟨_, inferInstance, isStrongGenerator_ofObj_yoneda,
+      ofObj_smallModel_yoneda_le_isCardinalPresentable Cardinal.aleph0⟩
+
+/-- A coproduct of representable modules indexed by a type in the morphism universe is
+projective. Mathlib's coproduct projectivity instance uses the module category's morphism
+universe, so the index is first moved along `ULift`. -/
+instance projective_sigma_yoneda {I : Type v} (X : I → C) :
+    Projective (∐ fun i ↦ (yoneda C).obj (X i)) :=
+  let e := Sigma.reindex (Equiv.ulift : ULift.{u} I ≃ I) (fun i ↦ (yoneda C).obj (X i))
+  have hProjective (i : ULift.{u} I) : Projective ((yoneda C).obj (X i.down)) := inferInstance
+  Projective.of_iso e (@Projective.instSigmaObj _ _ _ _ _ hProjective)
 
 section Cardinal
 
@@ -109,6 +127,9 @@ private structure Presentation (F : ModCat.{v} C) where
   π : (∐ fun i ↦ (yoneda C).obj (X i)) ⟶ F
   zero : relation ≫ π = 0
   isCokernel : IsColimit (CokernelCofork.ofπ π zero)
+
+private instance {F : ModCat.{v} C} (P : Presentation F) : Epi P.π :=
+  Cofork.IsColimit.epi P.isCokernel
 
 /-- A presentation whose generator and relation families each have cardinality below `κ`. -/
 private def hasPresentationLT : ObjectProperty (ModCat.{v} C) :=
@@ -163,21 +184,12 @@ private lemma ι_projection (P : ∀ k : K, Presentation (D.obj k)) (c : Cocone 
 private def lift (P : ∀ k : K, Presentation (D.obj k)) (a : Arrow K) :
     (∐ fun i ↦ (yoneda C).obj ((P a.left).X i)) ⟶
       ∐ fun i ↦ (yoneda C).obj ((P a.right).X i) :=
-  have : Epi (P a.right).π := Cofork.IsColimit.epi (P a.right).isCokernel
-  -- Mathlib's coproduct projectivity instance uses the module category's morphism universe.
-  let e := Sigma.reindex (Equiv.ulift : ULift.{u} (P a.left).I ≃ (P a.left).I)
-    (fun i ↦ (yoneda C).obj ((P a.left).X i))
-  have hProjective (i : ULift.{u} (P a.left).I) :
-      Projective ((yoneda C).obj ((P a.left).X i.down)) := inferInstance
-  have : Projective (∐ fun i ↦ (yoneda C).obj ((P a.left).X i)) :=
-    Projective.of_iso e (@Projective.instSigmaObj _ _ _ _ _ hProjective)
   Projective.factorThru ((P a.left).π ≫ D.map a.hom) (P a.right).π
 
 @[reassoc]
 private lemma lift_π (P : ∀ k : K, Presentation (D.obj k)) (a : Arrow K) :
-    lift P a ≫ (P a.right).π = (P a.left).π ≫ D.map a.hom := by
-  unfold lift
-  exact @Projective.factorThru_comp ..
+    lift P a ≫ (P a.right).π = (P a.left).π ≫ D.map a.hom :=
+  Projective.factorThru_comp _ _
 
 -- The first family gives the relations of the individual modules. The second imposes
 -- compatibility along each arrow of the diagram, on each generator of its source.
@@ -220,14 +232,12 @@ private lemma epi_projection (P : ∀ k : K, Presentation (D.obj k)) {c : Cocone
   intro Z f g h
   apply hc.hom_ext
   intro k
-  have : Epi (P k).π := Cofork.IsColimit.epi (P k).isCokernel
   apply (cancel_epi (P k).π).1
   simpa only [ι_projection_assoc] using congrArg (ι P k ≫ ·) h
 
 private def isCokernelOfDiagram (P : ∀ k : K, Presentation (D.obj k)) {c : Cocone D}
     (hc : IsColimit c) :
     IsColimit (CokernelCofork.ofπ (projection P c) (relations_projection P c)) := by
-  have (k : K) : Epi (P k).π := Cofork.IsColimit.epi (P k).isCokernel
   have := epi_projection P hc
   refine CokernelCofork.IsColimit.ofπ' _ _ fun t ht ↦ ?_
   have ht₁ (k : K) : (P k).relation ≫ ι P k ≫ t = 0 := by
@@ -293,12 +303,7 @@ private theorem hasPresentationLT_iff_isCardinalPresentable [EssentiallySmall.{v
   · intro hF
     have := Cardinal.fact_isRegular_aleph0.{v}
     have hgen := isStrongGenerator_ofObj_yoneda (C := C)
-    have hpres : (ObjectProperty.ofObj ((equivSmallModel.{v} C).inverse ⋙ yoneda C).obj) ≤
-        isCardinalPresentable (ModCat.{v} C) κ := by
-      rintro _ ⟨X⟩
-      refine isCardinalPresentable_monotone _ (IsRegular.aleph0_le Fact.out) _ ?_
-      exact inferInstanceAs (IsFinitelyPresentable.{v} ((yoneda C).obj
-        ((equivSmallModel.{v} C).inverse.obj X)))
+    have hpres := ofObj_smallModel_yoneda_le_isCardinalPresentable (C := C) κ
     rw [← isCardinalPresentable_iff,
       IsStrongGenerator.colimitsCardinalClosure_eq_isCardinalPresentable hgen hpres] at hF
     refine ObjectProperty.colimitsCardinalClosure_le _ _ (fun K _ hK ↦ ?_) ?_ _ hF
