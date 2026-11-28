@@ -384,6 +384,11 @@ theorem lift_mk {B : Sort*} (f : OneCocycle G M → B) (hf : ∀ z z', z ≈ z' 
     (z : OneCocycle G M) : lift f hf (mk z) = f z :=
   (rfl)
 
+/-- A function on `H¹(G, T → H)` is determined by its values on classes of `1`-cocycles. -/
+theorem lift_unique {B : Sort*} (f : OneCocycle G M → B) (hf : ∀ z z', z ≈ z' → f z = f z')
+    (F : H1 G M → B) (hF : ∀ z, F (mk z) = f z) : F = lift f hf :=
+  funext fun x ↦ by induction x using induction_on with | mk z => exact hF z
+
 /-- The base point of `H¹(G, T → H)`, the class of the trivial `1`-cocycle. -/
 instance : One (H1 G M) :=
   ⟨mk 1⟩
