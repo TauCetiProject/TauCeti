@@ -12,7 +12,6 @@ public import TauCeti.RepresentationTheory.LSPath.Crystal.Operations
 public import TauCeti.RepresentationTheory.LSPath.RationalChain
 import TauCeti.Data.Option.Basic
 import TauCeti.LinearAlgebra.Dual.BaseChange
-import TauCeti.LinearAlgebra.RootSystem.Reduced
 import TauCeti.RepresentationTheory.LSPath.Realization.Faithful
 
 /-!
@@ -712,6 +711,10 @@ open RootPairing
 variable {ι X Y : Type*} [AddCommGroup X] [AddCommGroup Y]
   {P : RootDatum ι X Y} {b : P.Base} [Finite ι] [P.IsReduced] {lam : X}
 
+private theorem toRatPLPath_stretch (π : LSPath P b lam) {n : ℕ} (hn : 0 < n) :
+    (π.stretch n hn).toRatPLPath = π.toRatPLPath.map ((n : ℚ) • LinearMap.id) := by
+  rw [toRatPLPath_def, toPLPath_stretch, ← toRatPLPath_def]
+
 /-- **Kashiwara–Littelmann similarity morphism `B(λ) → B(n • λ)`** on the normal crystal of
 Lakshmibai–Seshadri paths, induced by `LSPath.stretch`. -/
 noncomputable def stretchSimilarityHom (hlam : lam ∈ dominantChamber P b) {n : ℕ} (hn : 0 < n) :
@@ -720,37 +723,22 @@ noncomputable def stretchSimilarityHom (hlam : lam ∈ dominantChamber P b) {n :
   toFun π := π.stretch n hn
   wt_toFun π := by
     simp only [crystal_wt]
-    exact (weight_eq_iff_endpoint_toRatPLPath (π.stretch n hn)).mpr <| by
-      rw [toRatPLPath_def, endpoint_toPLPath_stretch, ← toRatPLPath_def, endpoint_toRatPLPath,
-        Nat.cast_smul_eq_nsmul, map_nsmul]
-  ε_toFun i π := by
-    have hF : ∀ x, Module.Dual.baseChange ℚ (P.coroot' i)
-        ((TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom x) = (P.coroot' i x : ℚ) :=
-      Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i)
-    rw [← Nat.cast_inj (R := ℚ), Nat.cast_mul, ← neg_inj,
-      ← minHeight_toPLPath_eq_neg_crystal_ε (nsmul_mem_dominantChamber P b n hlam)
-        (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom i (Module.Dual.baseChange ℚ (P.coroot' i)) hF,
-      minHeight_toPLPath_stretch,
-      minHeight_toPLPath_eq_neg_crystal_ε hlam (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom i
-        (Module.Dual.baseChange ℚ (P.coroot' i)) hF]
-    ring
-  eIter_toFun i π := by
-    have hF : ∀ x, Module.Dual.baseChange ℚ (P.coroot' i)
-        ((TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom x) = (P.coroot' i x : ℚ) :=
-      Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i)
+    refine (weight_eq_iff_endpoint_toRatPLPath _).mpr ?_
+    rw [toRatPLPath_stretch, PLPath.endpoint_map, LinearMap.smul_apply, LinearMap.id_apply,
+      endpoint_toRatPLPath, Nat.cast_smul_eq_nsmul, map_nsmul]
+  ε_toFun i π := Nat.cast_injective (R := ℚ) <| neg_injective <| by
+    rw [Nat.cast_mul, ← minHeight_toRatPLPath_eq_neg_crystal_ε, toRatPLPath_stretch,
+      PLPath.minHeight_map_smul (Nat.cast_nonneg n), minHeight_toRatPLPath_eq_neg_crystal_ε,
+      mul_neg]
+  eIter_toFun i π := Option.map_injective
+      (toRatPLPath_injective (nsmul_mem_dominantChamber P b n hlam)) <| by
     have hroot : Module.Dual.baseChange ℚ (P.coroot' i)
-        ((TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom (P.root i)) = (2 : ℚ) := by
-      rw [hF, P.root_coroot'_eq_pairing, P.pairing_same, Int.cast_ofNat]
-    apply Option.map_injective (toRatPLPath_injective (nsmul_mem_dominantChamber P b n hlam))
-    rw [toRatPLPath_eq,
-      ← raiseIter_toPLPath (nsmul_mem_dominantChamber P b n hlam)
-        (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom i (Module.Dual.baseChange ℚ (P.coroot' i)) hF,
-      toPLPath_stretch, PLPath.raiseIter_map_natCast_smul hroot hn,
-      raise_toPLPath hlam (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom i
-        (Module.Dual.baseChange ℚ (P.coroot' i)) hF,
-      Option.map_map, Option.map_map]
-    refine congrArg (Option.map · _) (funext fun ρ ↦ ?_)
-    simp [toPLPath_stretch]
+        ((TensorProduct.mk ℤ ℚ X 1) (P.root i)) = (2 : ℚ) := by
+      rw [TensorProduct.mk_apply, Module.Dual.baseChange_apply_one_tmul, eq_intCast,
+        P.root_coroot'_eq_pairing, P.pairing_same, Int.cast_ofNat]
+    rw [← raiseIter_toRatPLPath, toRatPLPath_stretch, PLPath.raiseIter_map_natCast_smul hroot hn,
+      raise_toRatPLPath hlam, Option.map_map, Option.map_map]
+    simp only [Function.comp_def, toRatPLPath_stretch]
 
 @[simp]
 theorem stretchSimilarityHom_apply (hlam : lam ∈ dominantChamber P b) {n : ℕ} (hn : 0 < n)

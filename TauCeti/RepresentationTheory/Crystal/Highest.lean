@@ -88,10 +88,8 @@ theorem exists_fWord_eq_some_of_unique_highest {h : B}
 
 /-- A finite normal crystal with a unique highest element is connected. -/
 theorem connected_graph_of_unique_highest {h : B}
-    (hh : ∀ x, (∀ i, c.e i x = none) → x = h) : c.graph.Connected := by
-  refine c.graph.connected_iff_exists_forall_reachable.mpr ⟨h, fun x ↦ ?_⟩
-  obtain ⟨w, hw⟩ := c.exists_fWord_eq_some_of_unique_highest hh x
-  exact c.reachable_of_fWord_eq_some hw
+    (hh : ∀ x, (∀ i, c.e i x = none) → x = h) : c.graph.Connected :=
+  c.connected_graph_of_forall_exists_fWord_eq_some (c.exists_fWord_eq_some_of_unique_highest hh)
 
 end Finite
 
