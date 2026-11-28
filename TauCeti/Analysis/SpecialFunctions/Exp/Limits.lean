@@ -102,32 +102,18 @@ theorem continuous_update_one_sub_exp_neg_div_zero :
 /-- Second-order difference quotient `(e^h - 1 - h) / h² → 1 / 2` as `h → 0`, `h ≠ 0`. -/
 theorem tendsto_exp_sub_one_sub_div_sq :
     Tendsto (fun h : ℝ ↦ (exp h - 1 - h) / h ^ 2) (𝓝[≠] 0) (𝓝 (1 / 2 : ℝ)) := by
-  rw [Metric.tendsto_nhdsWithin_nhds]
-  intro ε hε
-  refine ⟨min 1 (ε / 2), lt_min zero_lt_one (half_pos hε), fun h hh hd ↦ ?_⟩
-  have hh0 : h ≠ 0 := Set.mem_compl_singleton_iff.mp hh
-  rw [Real.dist_eq, sub_zero] at hd
-  have hbound := exp_bound (hd.le.trans (min_le_left _ _)) (n := 3) (by norm_num)
+  have h0 := (exp_sub_sum_range_succ_isLittleO_pow 2).tendsto_div_nhds_zero.mono_left
+    (nhdsWithin_le_nhds (s := {0}ᶜ))
   simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, pow_zero, pow_one,
     Nat.factorial_zero, Nat.factorial_one, Nat.factorial_two, Nat.cast_one, Nat.cast_ofNat,
-    div_one] at hbound
-  have hdiv : |(exp h - 1 - h) / h ^ 2 - 1 / 2| =
-      |exp h - (1 + h + h ^ 2 / 2)| / |h| ^ 2 := by
-    rw [← abs_pow, ← abs_div]
-    congr 1
-    field_simp [hh0]
-    ring
-  rw [Real.dist_eq, hdiv]
-  calc |exp h - (1 + h + h ^ 2 / 2)| / |h| ^ 2
-      ≤ (|h| ^ 3 * ((3 + 1 : ℕ) / ((3 : ℕ)! * (3 : ℕ)))) / |h| ^ 2 := by
-        gcongr
-        simpa [sq_abs] using hbound
-    _ = (2 / 9 : ℝ) * |h| := by
-        have ha : |h| ≠ 0 := abs_ne_zero.mpr hh0
-        have hfac : ((3 + 1 : ℕ) / ((3 : ℕ)! * (3 : ℕ)) : ℝ) = 2 / 9 := by
-          norm_num [Nat.factorial]
-        rw [hfac]
-        field_simp [ha]
-    _ < ε := by linarith [hd.trans_le (min_le_right _ _), abs_nonneg h]
+    div_one] at h0
+  have h1 : Tendsto (fun h : ℝ ↦ (exp h - (1 + h + h ^ 2 / 2)) / h ^ 2 + 1 / 2)
+      (𝓝[≠] 0) (𝓝 (1 / 2 : ℝ)) := by
+    simpa using h0.add tendsto_const_nhds
+  refine h1.congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with h hh
+  have hh0 : h ≠ 0 := hh
+  field_simp [hh0]
+  ring
 
 end Real

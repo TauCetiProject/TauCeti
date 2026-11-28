@@ -9,15 +9,13 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.ExpIntegralSeries
 import TauCeti.Analysis.SpecialFunctions.Exp.Limits
-import TauCeti.Analysis.SpecialFunctions.Integrals.LogMulExpNeg
 
 /-!
 # Additional interval-integral identities for exponentials and `1 / t`
 
 This file records interval-integral identities and integrability lemmas for `(1 - e^{-t}) / t`,
-`e^{-t} / t`, and `e^u / u` complementing `TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference`,
-`TauCeti.Analysis.SpecialFunctions.Exp.ExpIntegralSeries`, and
-`TauCeti.Analysis.SpecialFunctions.Integrals.LogMulExpNeg`.
+`e^{-t} / t`, and `e^u / u` complementing `TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference`
+and `TauCeti.Analysis.SpecialFunctions.Exp.ExpIntegralSeries`.
 
 ## Main declarations
 
@@ -63,32 +61,17 @@ theorem intervalIntegrable_exp_neg_div {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
 theorem integral_exp_neg_div_eq_add_integral {b : ℝ} (hb : 0 < b) :
     ∫ t in (1 : ℝ)..b, exp (-t) / t =
       exp (-b) * log b + ∫ t in (1 : ℝ)..b, log t * exp (-t) := by
-  let f (t : ℝ) : ℝ := -exp (-t) * log t
-  let f' (t : ℝ) : ℝ := exp (-t) * log t - exp (-t) / t
-  have hpos : ∀ t ∈ uIcc (1 : ℝ) b, 0 < t := fun t ht ↦ by
-    rcases mem_uIcc.mp ht with ⟨h1, _⟩ | ⟨h1, _⟩ <;> linarith
-  have hderiv : ∀ t ∈ uIcc (1 : ℝ) b, HasDerivAt f (f' t) t := by
-    intro t ht
-    have h1 : HasDerivAt (fun s : ℝ ↦ -exp (-s)) (exp (-t)) t := by
-      simpa using ((hasDerivAt_neg t).exp).fun_neg
-    refine (h1.mul (hasDerivAt_log (hpos t ht).ne')).congr_deriv ?_
-    simp only [f', div_eq_mul_inv]
-    ring
-  have hint_log : IntervalIntegrable (fun t : ℝ ↦ log t * exp (-t)) volume 1 b := by
-    rw [intervalIntegrable_iff]
-    exact TauCeti.integrableOn_log_mul_exp_neg_Ioi.mono_set fun t ht ↦
-      lt_of_lt_of_le (lt_min zero_lt_one hb) (uIoc_subset_uIcc ht).1
-  have hint_exp : IntervalIntegrable (fun t : ℝ ↦ exp (-t) / t) volume 1 b :=
-    intervalIntegrable_exp_neg_div zero_lt_one hb
-  have hint_mul : IntervalIntegrable (fun t : ℝ ↦ exp (-t) * log t) volume 1 b := by
-    simpa only [mul_comm] using hint_log
-  have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv (hint_mul.sub hint_exp)
-  rw [intervalIntegral.integral_sub hint_mul hint_exp] at hFTC
-  have hf1 : f 1 = 0 := by simp [f]
-  have hcomm : (∫ t in (1 : ℝ)..b, exp (-t) * log t) = ∫ t in (1 : ℝ)..b, log t * exp (-t) :=
-    intervalIntegral.integral_congr fun t _ ↦ mul_comm _ _
-  dsimp only [f] at hFTC
-  linarith
+  have hibp := intervalIntegral.integral_mul_deriv_eq_deriv_mul_of_hasDerivAt
+    (u := fun t : ℝ ↦ exp (-t)) (v := log) (u' := fun t : ℝ ↦ -exp (-t)) (v' := fun t : ℝ ↦ t⁻¹)
+    (by fun_prop)
+    (continuousOn_log.mono fun t ht h ↦ notMem_uIcc_of_lt zero_lt_one hb (h ▸ ht))
+    (fun t _ ↦ by simpa using (hasDerivAt_neg t).exp)
+    (fun t ht ↦ hasDerivAt_log ((lt_min zero_lt_one hb).trans ht.1).ne')
+    (Continuous.intervalIntegrable (by fun_prop) 1 b)
+    (intervalIntegrable_inv_iff.mpr (Or.inr (notMem_uIcc_of_lt zero_lt_one hb)))
+  simp_rw [← div_eq_mul_inv, neg_mul, intervalIntegral.integral_neg, log_one, mul_zero, sub_zero,
+    sub_neg_eq_add] at hibp
+  simpa only [mul_comm (log _)] using hibp
 
 /-- For `a, b > 0`, `∫ t in a..b, (1 - e^{-t}) / t = log b - log a - ∫ t in a..b, e^{-t} / t`. -/
 theorem integral_one_sub_exp_neg_div_eq_log_sub {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :

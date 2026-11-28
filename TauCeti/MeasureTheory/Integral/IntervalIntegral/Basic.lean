@@ -431,30 +431,19 @@ theorem tendsto_integral_left_nhdsGT {E : Type*} [NormedAddCommGroup E] [NormedS
     {a b : ℝ} (hab : a < b) (hf : ContinuousOn f (Icc a b))
     (hfg : ∀ᵐ t ∂μ, t ∈ Ioc a b → f t = g t) :
     Tendsto (fun x : ℝ ↦ ∫ t in x..b, g t ∂μ) (𝓝[>] a) (𝓝 (∫ t in a..b, g t ∂μ)) := by
-  have hf_int : IntegrableOn f (uIcc a b) μ := by
-    rw [uIcc_of_le hab.le]
-    exact hf.integrableOn_Icc
-  have hprim : ContinuousOn (fun x : ℝ ↦ ∫ t in x..b, f t ∂μ) (Icc a b) := by
+  have hg_ioc : IntegrableOn g (Ioc a b) μ :=
+    (integrableOn_congr_fun_ae ((ae_restrict_iff' measurableSet_Ioc).mpr hfg)).mp
+      (hf.integrableOn_Icc.mono_set Ioc_subset_Icc_self)
+  have hg_int : IntegrableOn g (uIcc a b) μ := by
+    rw [uIcc_of_le hab.le, integrableOn_Icc_iff_integrableOn_Ioc]
+    exact hg_ioc
+  have hprim : ContinuousOn (fun x : ℝ ↦ ∫ t in x..b, g t ∂μ) (Icc a b) := by
     simpa only [uIcc_of_le hab.le] using
-      _root_.intervalIntegral.continuousOn_primitive_interval_left hf_int
-  have htend : Tendsto (fun x : ℝ ↦ ∫ t in x..b, f t ∂μ) (𝓝[>] a)
-      (𝓝 (∫ t in a..b, f t ∂μ)) := by
-    refine (hprim a ⟨le_rfl, hab.le⟩).tendsto.comp ?_
-    refine tendsto_nhdsWithin_iff.mpr ⟨nhdsWithin_le_nhds, ?_⟩
-    filter_upwards [Ioo_mem_nhdsGT hab] with x hx
-    exact ⟨hx.1.le, hx.2.le⟩
-  have heq0 : ∫ t in a..b, f t ∂μ = ∫ t in a..b, g t ∂μ := by
-    refine _root_.intervalIntegral.integral_congr_ae ?_
-    filter_upwards [hfg] with t ht hmem
-    rw [uIoc_of_le hab.le] at hmem
-    exact ht hmem
-  rw [heq0] at htend
-  refine htend.congr' ?_
+      _root_.intervalIntegral.continuousOn_primitive_interval_left hg_int
+  refine (hprim a ⟨le_rfl, hab.le⟩).tendsto.comp
+    (tendsto_nhdsWithin_iff.mpr ⟨nhdsWithin_le_nhds, ?_⟩)
   filter_upwards [Ioo_mem_nhdsGT hab] with x hx
-  refine _root_.intervalIntegral.integral_congr_ae ?_
-  filter_upwards [hfg] with t ht hmem
-  rw [uIoc_of_le hx.2.le] at hmem
-  exact ht ⟨hx.1.trans hmem.1, hmem.2⟩
+  exact ⟨hx.1.le, hx.2.le⟩
 
 open Filter Topology in
 /-- If the time averages `T⁻¹ ∫₀ᵀ c dt` of a constant `c` tend to `0` as `T → ∞`, then `c = 0`:
