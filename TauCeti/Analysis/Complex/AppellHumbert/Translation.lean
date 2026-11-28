@@ -60,6 +60,11 @@ The Riemann form here is `E = Im H`. With the opposite convention
 `E_B (u, v) = Im (B (u, v) - B (v, u)) / 2π = -E (u, v)`, used for instance for the canonical
 factors of Birkenhake–Lange, Section 3.1, the multiplier `exp (πi E_B (b x, x))` is
 `exp (πi E (x, b x))`, and the phase `exp (2πi E_B (b x, y))` is `exp (2πi E (y, b x))`.
+If `b` satisfies `E (b u, w) + E (u, b w) = E (u, w)` and `E (b l, m)` is an integer for
+`l, m ∈ L` (for instance if `b` maps `L` into itself), then the Heisenberg phase vanishes on `L`:
+`N_l N_m = N_(l + m)` for `l, m ∈ L`
+(`TauCeti.AppellHumbertData.normalizedTranslate_normalizedTranslate_of_mem`). For every `b`, the
+normalised translations are injective (`TauCeti.AppellHumbertData.normalizedTranslate_injective`).
 
 ## Main declarations
 
@@ -75,6 +80,8 @@ factors of Birkenhake–Lange, Section 3.1, the multiplier `exp (πi E_B (b x, x
   endomorphism of the theta functions.
 * `TauCeti.AppellHumbertData.normalizedTranslate`: the normalised translation `N_x`, and its
   Heisenberg law `TauCeti.AppellHumbertData.normalizedTranslate_normalizedTranslate`.
+* `TauCeti.AppellHumbertData.normalizedTranslate_normalizedTranslate_of_mem`,
+  `TauCeti.AppellHumbertData.normalizedTranslate_injective`.
 
 ## Provenance
 
@@ -408,6 +415,33 @@ theorem normalizedTranslate_normalizedTranslate {b : V →L[ℂ] V}
   congr 1
   push_cast
   ring
+
+/-- If `E (b u, w) + E (u, b w) = E (u, w)` and `E (b l, m)` is an integer for `l, m ∈ L` (for
+instance if `b` maps `L` into itself), the normalised translations by points of `L` compose without
+a phase: `N_x N_y = N_(x + y)` for `x, y ∈ L`. -/
+theorem normalizedTranslate_normalizedTranslate_of_mem {b : V →L[ℂ] V}
+    (hadj : ∀ u w, D.riemannForm (b u) w + D.riemannForm u (b w) = D.riemannForm u w)
+    (hint : ∀ l m : L, ∃ n : ℤ, D.riemannForm (b l) m = n) {x y : V} (hx : x ∈ L) (hy : y ∈ L)
+    (f : V → ℂ) :
+    D.normalizedTranslate b x (D.normalizedTranslate b y f) =
+      D.normalizedTranslate b (x + y) f := by
+  obtain ⟨n, hn⟩ := hint ⟨x, hx⟩ ⟨y, hy⟩
+  -- The phase is `exp (2πi E (y, b x)) = exp (-2πi E (b x, y))`, with `E (b x, y) = n`.
+  have h1 : Circle.exp (2 * π * D.riemannForm y (b x)) = 1 := by
+    rw [D.riemannForm_swap, hn, ← Int.cast_neg]
+    exact Circle.exp_two_pi_mul_int (-n)
+  rw [D.normalizedTranslate_normalizedTranslate hadj, h1, Circle.coe_one, one_smul]
+
+/-- The normalised translations are injective: `N_x` is a nonzero multiple of `T_x`, and
+`T_(-x) T_x` is a nonzero multiple of the identity. -/
+theorem normalizedTranslate_injective (b : V →L[ℂ] V) (x : V) :
+    Function.Injective (D.normalizedTranslate b x) := by
+  intro f g hfg
+  simp only [normalizedTranslate_apply] at hfg
+  have h := congrArg (D.twistedTranslate (-x))
+    (smul_right_injective _ (inv_ne_zero (Circle.coe_ne_zero _)) hfg)
+  simp only [twistedTranslate_twistedTranslate, neg_add_cancel, twistedTranslate_zero] at h
+  exact smul_right_injective _ (exp_ne_zero _) h
 
 section CanonicalSemichar
 

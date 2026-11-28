@@ -43,6 +43,7 @@ around `ω` sends punctured neighbourhoods of `0` to punctured neighbourhoods of
 * `TauCeti.isPrimitiveRoot_expCircle`: its value at the class of `1 / n` is a primitive `n`-th
   root of unity; more generally, by `TauCeti.isPrimitiveRoot_expCircle_addOrderOf`, its value at
   a class of additive order `n` is.
+* `TauCeti.mem_range_expCircle_iff`: its values are exactly the complex roots of unity.
 * `CharacterModule.sum_expCircle`: the orthogonality relation
   `∑ m, e^{2πi χ(m)} = if χ = 0 then #M else 0` for a `ℚ/ℤ`-valued character `χ` of a finite
   abelian group `M`.
@@ -148,6 +149,18 @@ theorem isPrimitiveRoot_expCircle_addOrderOf (x : AddCircle (1 : ℚ)) :
   rw [Rat.cast_id, mul_one] at h
   rw [expCircle_coe, h]
   exact Complex.isPrimitiveRoot_exp_rat r
+
+/-- **The values of `expCircle` are the roots of unity**: a complex number is a value of
+`expCircle` exactly when some positive power of it is `1`. -/
+theorem mem_range_expCircle_iff {z : ℂ} : z ∈ Set.range expCircle ↔ ∃ n ≠ 0, z ^ n = 1 := by
+  refine ⟨?_, fun ⟨n, hn, hz⟩ ↦ ?_⟩
+  · rintro ⟨x, rfl⟩
+    induction x using QuotientAddGroup.induction_on with | H r =>
+    rw [expCircle_coe]
+    exact ⟨r.den, r.den_ne_zero, (Complex.isPrimitiveRoot_exp_rat r).pow_eq_one⟩
+  · have : NeZero n := ⟨hn⟩
+    obtain ⟨i, -, hi⟩ := (isPrimitiveRoot_expCircle n hn).eq_pow_of_pow_eq_one hz
+    exact ⟨i • ((1 / n : ℚ) : AddCircle (1 : ℚ)), by rw [AddChar.map_nsmul_eq_pow, hi]⟩
 
 end TauCeti
 
