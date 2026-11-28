@@ -108,7 +108,7 @@ theorem globalDimension_le_globalDimension_mulOpposite (A : Type u) [Ring A] [Is
       refine ((globalDimension_le_tfae.{u} A n).out 2 1).mp fun M hM ↦ ?_
       have := hM
       exact (hasInjectiveDimensionLE_characterModule_iff M n).mp
-        ((globalDimension_le_iff_hasInjectiveDimensionLE.{u} Aᵐᵒᵖ n).mp h.le _)
+        ((Abelian.globalDimension_le_iff_hasInjectiveDimensionLE (ModuleCat.{u} Aᵐᵒᵖ) n).mp h.le _)
 
 /-- **Auslander**: over a ring that is left and right Noetherian, the left and right global
 dimensions agree. Auslander, *On the dimension of modules and algebras III*, Cor. 5. -/
