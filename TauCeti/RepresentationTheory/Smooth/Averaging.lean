@@ -46,8 +46,8 @@ Bernstein's notes onto `V^U`.
   `e_K (σ k v) = e_K v` and `σ k (e_K v) = e_K v`.
 * `Representation.ker_smoothAverage`: the kernel of `e_K` is the span of the vectors `σ k x - x`.
 * `Representation.IntertwiningMap.map_smoothAverage`: `e_K` commutes with intertwining maps.
-* `Representation.map_smoothAverage_of_forall_apply_eq`: a linear map constant on orbits does not
-  see the average.
+* `Representation.map_smoothAverage_of_forall_apply_eq`: a linear map constant on the orbit of `v`
+  does not see the average of `v`.
 * `Representation.isSelfAdjoint_smoothAverage`: `e_K` is self-adjoint
   (`LinearMap.IsSelfAdjoint`) for every `σ`-invariant sesquilinear form.
 * `Representation.IntertwiningMap.invariantsMap_surjective`: a surjective intertwining map out of
@@ -275,17 +275,17 @@ theorem smoothAverage_subgroup_comp_smoothAverage (H : Subgroup K) [CompactSpace
     smoothAverage (σ.comp H.subtype) hH ∘ₗ σ.smoothAverage hK = σ.smoothAverage hK :=
   LinearMap.ext (σ.smoothAverage_subgroup_smoothAverage hK H hH)
 
-/-- A linear map that is constant on the orbits of `σ` takes the same value at a vector and at its
+/-- A linear map that is constant on the orbit of `v` takes the same value at `v` and at its
 average. -/
-theorem map_smoothAverage_of_forall_apply_eq (φ : V →ₗ[A] W) (hφ : ∀ k v, φ (σ k v) = φ v)
-    (v : V) : φ (σ.smoothAverage hK v) = φ v := by
-  -- `φ` intertwines `σ` with the trivial representation, on which averaging is the identity.
-  let φ' : σ.IntertwiningMap (trivial A K W) :=
-    LinearMap.intertwiningMap_of_isIntertwiningMap σ (trivial A K W) φ fun k v ↦ by
-      simpa using hφ k v
-  have h := IntertwiningMap.map_smoothAverage σ hK φ' v
-  rw [smoothAverage_apply_of_mem_invariants (trivial A K W) hK (v := φ' v) fun _ ↦ by simp] at h
-  simpa only [φ', LinearMap.toIntertwiningMap] using h
+theorem map_smoothAverage_of_forall_apply_eq (φ : V →ₗ[A] W) {v : V} (hφ : ∀ k, φ (σ k v) = φ v) :
+    φ (σ.smoothAverage hK v) = φ v := by
+  -- average over the cosets of the stabilizer `H` of `v`: each of the `[K : H]` terms is `φ v`
+  have hH := IsSmooth.isOpen_stabilizer (ρ := σ) v
+  have := (σ.stabilizer v).quotient_finite_of_isOpen hH
+  have := Fintype.ofFinite (K ⧸ σ.stabilizer v)
+  rw [smoothAverage_apply_of_le σ hK hH le_rfl, map_smul, finsum_eq_sum_of_fintype, map_sum]
+  simp only [hφ, Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card]
+  exact Ring.inverse_natCast_smul_nsmul (hK.isUnit_index hH) _
 
 /-- **The average is self-adjoint** for every `σ`-invariant sesquilinear form `B`:
 `B (e_K x) y = B x (e_K y)` for all `x y`, stated with `LinearMap.IsSelfAdjoint` for `B.flip`,
@@ -298,15 +298,15 @@ theorem isSelfAdjoint_smoothAverage [StarRing A] (B : V →ₗ⋆[A] V →ₗ[A]
   -- Both sides are `B (e_K x) (e_K y)`: in each variable `B` against an invariant vector is
   -- constant on orbits. In the first variable pass to the linear map `x ↦ star (B x (e_K y))`.
   have h_right : B (σ.smoothAverage hK x) (σ.smoothAverage hK y) = B (σ.smoothAverage hK x) y :=
-    σ.map_smoothAverage_of_forall_apply_eq hK (B (σ.smoothAverage hK x)) (fun k z ↦ by
+    σ.map_smoothAverage_of_forall_apply_eq hK (B (σ.smoothAverage hK x)) fun k ↦ by
       conv_lhs => rw [← σ.apply_smoothAverage_apply hK k x]
-      exact hB k _ z) y
+      exact hB k _ y
   let ψ : V →ₗ[A] A := (starLinearEquiv A).toLinearMap ∘ₛₗ B.flip (σ.smoothAverage hK y)
   have hψ (z : V) : ψ z = star (B z (σ.smoothAverage hK y)) := by simp [ψ]
-  have h_left := σ.map_smoothAverage_of_forall_apply_eq hK ψ (fun k z ↦ by
+  have h_left := σ.map_smoothAverage_of_forall_apply_eq hK ψ (v := x) fun k ↦ by
     rw [hψ, hψ]
     conv_lhs => rw [← σ.apply_smoothAverage_apply hK k y]
-    rw [hB k z]) x
+    rw [hB k x]
   rw [hψ, hψ, star_inj] at h_left
   rw [← h_right, h_left]
 

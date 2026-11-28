@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.CohenMacaulay.Basic
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 import TauCeti.Algebra.Module.SpanRank
+import TauCeti.Data.List.Finite
 import TauCeti.RingTheory.CohenMacaulay.Height
 import TauCeti.RingTheory.LocalRing.MaximalIdeal.Square
 import TauCeti.RingTheory.Regular.RegularSequence
@@ -26,6 +27,9 @@ regular local rings.
 
 * `TauCeti.IsRegularLocalRing.isRegular_of_ofList_eq_maximalIdeal`: a list of at most
   `spanFinrank 𝔪` elements generating `𝔪`, that is, a regular system of parameters, is an
+  `R`-regular sequence.
+* `TauCeti.IsRegularLocalRing.isRegular_map_of_span_range_eq_maximalIdeal`: any duplicate-free
+  selection from an indexed generating family of `𝔪` of size at most `spanFinrank 𝔪` is an
   `R`-regular sequence.
 * `TauCeti.IsRegularLocalRing.depth_eq_ringKrullDim`: the depth of a regular local ring over
   itself is its Krull dimension.
@@ -97,6 +101,25 @@ theorem isRegular_of_ofList_eq_maximalIdeal {rs : List R}
     (hspan : ofList rs = maximalIdeal R) (hlen : rs.length ≤ (maximalIdeal R).spanFinrank) :
     IsRegular R rs :=
   isRegular_of_ofList_eq_maximalIdeal_aux _ R rs rfl hspan hlen
+
+/-- Any duplicate-free selection from an indexed generating family of the maximal ideal of a
+regular local ring, with index type of cardinality at most `spanFinrank 𝔪`, forms an `R`-regular
+sequence. -/
+theorem isRegular_map_of_span_range_eq_maximalIdeal {ι : Type*} [Finite ι] {z : ι → R}
+    (hspan : span (Set.range z) = maximalIdeal R)
+    (hcard : Nat.card ι ≤ (maximalIdeal R).spanFinrank) {l : List ι} (hl : l.Nodup) :
+    IsRegular R (l.map z) := by
+  obtain ⟨l', hnodup, hmem⟩ := hl.exists_append_forall_mem
+  have hofList : ofList ((l ++ l').map z) = maximalIdeal R := by
+    rw [ofList, ← hspan]
+    exact congrArg span (Set.ext fun _ ↦ by
+      simp only [Set.mem_ofPred_eq, List.mem_map, Set.mem_range, hmem, true_and])
+  have hlen : ((l ++ l').map z).length ≤ (maximalIdeal R).spanFinrank := by
+    rw [List.length_map]
+    exact hnodup.length_le_natCard.trans hcard
+  have hfull := isRegular_of_ofList_eq_maximalIdeal hofList hlen
+  rw [List.map_append] at hfull
+  exact hfull.of_append_left
 
 /-- The depth of a regular local ring over itself equals its Krull dimension. -/
 theorem depth_eq_ringKrullDim :

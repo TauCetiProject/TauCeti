@@ -110,6 +110,12 @@ theorem newtonianStress_add (μ p q : ℝ) (A B : Matrix n n ℝ) :
   simp only [newtonianStress_def, transpose_add, add_smul, smul_add]
   abel
 
+/-- Linearity of the stress in the pair `(p, A)`: subtraction. -/
+theorem newtonianStress_sub (μ p q : ℝ) (A B : Matrix n n ℝ) :
+    newtonianStress μ (p - q) (A - B) = newtonianStress μ p A - newtonianStress μ q B := by
+  simp only [newtonianStress_def, transpose_sub, sub_smul, smul_add, smul_sub]
+  abel
+
 /-- Linearity of the stress in the pair `(p, A)`: homogeneity. -/
 theorem newtonianStress_smul (μ c p : ℝ) (A : Matrix n n ℝ) :
     newtonianStress μ (c * p) (c • A) = c • newtonianStress μ p A := by

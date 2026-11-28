@@ -183,11 +183,6 @@ theorem restrictScalars_eq_pow_inertiaDeg [Algebra.IsUnramifiedAt (𝓞 K) Q]
     -- No public lemma states this for the induced actions on `𝓞 L`; it is definitional because
     -- `AlgEquiv.restrictScalars` preserves the underlying ring equivalence.
     rfl
-  have hrestrictQ : (AlgEquiv.restrictScalars K τ) • Q = τ • Q := by
-    rw [Ideal.pointwise_smul_def, Ideal.pointwise_smul_def]
-    apply congrArg fun f ↦ Q.map f
-    ext x
-    exact congrArg (algebraMap (𝓞 L) L) (hrestrict x)
   have hcong (x : 𝓞 L) :
       (AlgEquiv.restrictScalars K τ) • x -
         (σ ^ (Q.under (𝓞 M)).inertiaDeg (𝓞 K)) • x ∈ Q := by
@@ -196,7 +191,7 @@ theorem restrictScalars_eq_pow_inertiaDeg [Algebra.IsUnramifiedAt (𝓞 K) Q]
     rw [← Ideal.Quotient.eq, hrestrict, hσ.mk_pow_smul, hres, hcard]
   have key : Ideal.Quotient.stabilizerHom Q (Q.under (𝓞 K)) (L ≃ₐ[K] L)
       ⟨AlgEquiv.restrictScalars K τ, by
-        rw [MulAction.mem_stabilizer_iff, hrestrictQ]
+        rw [MulAction.mem_stabilizer_iff, AlgEquiv.restrictScalars_smul_ideal]
         exact MulAction.mem_stabilizer_iff.mp hτ.mem_stabilizer⟩ =
       Ideal.Quotient.stabilizerHom Q (Q.under (𝓞 K)) (L ≃ₐ[K] L)
         ⟨σ ^ (Q.under (𝓞 M)).inertiaDeg (𝓞 K), pow_mem hσ.mem_stabilizer _⟩ := by

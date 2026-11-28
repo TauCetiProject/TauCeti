@@ -32,6 +32,7 @@ identity.
 * `TauCeti.tensorPowUnitIso`: tensor powers of the monoidal unit are isomorphic to the unit;
 * `TauCeti.tensorPowAddIso` and `TauCeti.tensorPowAddIso_assoc`: the block decomposition
   isomorphisms and their associativity;
+* `TauCeti.tensorPowMulIso`: iterated tensor powers `(X^{⊗m})^{⊗n} ≅ X^{⊗(m * n)}`;
 * `TauCeti.tensorPowSuccIso`: appending a factor on the right, with its compatibilities
   `TauCeti.tensorPowSuccIso_hom_whiskerRight_tensorPowAddIso_hom` and
   `TauCeti.tensorPowAddIso_hom_whiskerRight_tensorPowSuccIso_hom`.
@@ -192,6 +193,16 @@ theorem whiskerLeft_eqToHom_tensorPowAddIso_hom (X : C) (m : ℕ) {n n' : ℕ} (
     tensorPow X m ◁ eqToHom (congrArg (tensorPow X) h) ≫ (tensorPowAddIso X m n').hom =
       (tensorPowAddIso X m n).hom ≫ eqToHom (congrArg (fun k ↦ tensorPow X (k + m)) h) := by
   subst h; simp
+
+/-- Iterated tensor powers `(X^{⊗m})^{⊗n} ≅ X^{⊗(m * n)}`, built by recursion on `n` using
+`tensorPowAddIso`. -/
+def tensorPowMulIso (X : C) (m : ℕ) :
+    (n : ℕ) → tensorPow (tensorPow X m) n ≅ tensorPow X (m * n)
+  | 0 => Iso.refl _
+  | n + 1 =>
+    whiskerLeftIso (tensorPow X m) (tensorPowMulIso X m n) ≪≫
+      tensorPowAddIso X m (m * n) ≪≫
+      eqToIso (congrArg (tensorPow X) (by rw [Nat.mul_succ, Nat.add_comm]))
 
 /-- Appending a factor on the right: `tensorPow X n ⊗ X ≅ tensorPow X (n + 1)`, the block
 decomposition with a second block of length one. -/

@@ -15,7 +15,7 @@ import Mathlib.RingTheory.Localization.AtPrime.Basic
 import TauCeti.RingTheory.Flat.NonZeroDivisors
 import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.Valuation.IdealMap
-import TauCeti.RingTheory.Valuation.ValuationRing
+import TauCeti.RingTheory.Valuation.ValuationRing.Basic
 import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!

@@ -31,6 +31,10 @@ integration against it is a continuous linear functional on the Sobolev `(0,1)`-
   `TauCeti.SobolevSection.integralL` of the covector field `⟪η x, ·⟫`.
 * `TauCeti.zeroOneHilbertSchmidtL_apply`: its value `∫ ⟪η x, θ x⟫ dν`, for any one-form `θ` with
   the chart data of `w`.
+* `TauCeti.zeroOneHilbertSchmidtL_ofContMDiffSection`: its value `∫ ⟪η x, σ x⟫ dν` on a
+  continuous `(0,1)`-form `σ`.
+* `TauCeti.zeroOneHilbertSchmidtL_add`, `TauCeti.zeroOneHilbertSchmidtL_smul`: the pairing is linear
+  in `η`.
 
 ## References
 
@@ -117,5 +121,70 @@ theorem zeroOneHilbertSchmidtL_apply (hν : IsPositiveDensityMeasure 𝓘(ℝ, �
     SobolevSection.integralL_apply (A := A.tangentHom) hν _ fun i ↦
       (ae_image_tangentHom_iff A μ i).2 (hθ i)]
   simp only [ContinuousLinearMap.hilbertSchmidtInnerL_apply]
+
+/-- For a continuous one-form `η` and a one-form `θ` with the chart data of an element of
+`W^{k,p}` of one-forms, `x ↦ ⟪η x, θ x⟫` is `ν`-integrable. -/
+theorem integrable_hilbertSchmidtInner_of_ae_eq_coord (hν : IsPositiveDensityMeasure 𝓘(ℝ, ℂ) ν)
+    {η : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x}
+    (hη : Continuous fun x ↦ TotalSpace.mk' (ℂ →L[ℝ] F)
+      (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x (η x))
+    {w : SobolevSection A.tangentHom μ p k} {θ : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x}
+    (hθ : ∀ i, A.tangentHom.sectionChartData.chartValueL μ p k i w
+        =ᵐ[μ.restrict (A.image i)] A.tangentHom.coord i θ) :
+    Integrable (fun x ↦ (η x).hilbertSchmidtInner (θ x)) ν := by
+  simpa only [ContinuousLinearMap.hilbertSchmidtInnerL_apply] using
+    SobolevSection.integrable_apply (A := A.tangentHom) (L := fun x ↦ (η x).hilbertSchmidtInnerL) hν
+      (fun x₀ ↦ Bundle.Trivialization.continuousOn_hilbertSchmidtInnerL_comp_symmL _
+        (trivializationAt _ _ x₀).open_baseSet subset_rfl hη.continuousOn)
+      fun i ↦ (ae_image_tangentHom_iff A μ i).2 (hθ i)
+
+/-- The pairing `TauCeti.zeroOneHilbertSchmidtL` is additive in the form `η`. -/
+theorem zeroOneHilbertSchmidtL_add (hν : IsPositiveDensityMeasure 𝓘(ℝ, ℂ) ν)
+    {η η' : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x}
+    (hη : Continuous fun x ↦ TotalSpace.mk' (ℂ →L[ℝ] F)
+      (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x (η x))
+    (hη' : Continuous fun x ↦ TotalSpace.mk' (ℂ →L[ℝ] F)
+      (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x (η' x))
+    (hηη' : Continuous fun x ↦ TotalSpace.mk' (ℂ →L[ℝ] F)
+      (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x ((η + η') x)) :
+    zeroOneHilbertSchmidtL A μ p k hν (η + η') hηη' =
+      zeroOneHilbertSchmidtL A μ p k hν η hη + zeroOneHilbertSchmidtL A μ p k hν η' hη' := by
+  ext w
+  obtain ⟨θ, hθ⟩ := SobolevSection.exists_ae_eq_coord (w : SobolevSection A.tangentHom μ p k)
+  have hθ' (i : Fin A.n) := (ae_image_tangentHom_iff A μ i).1 (hθ i)
+  simp only [_root_.add_apply, zeroOneHilbertSchmidtL_apply hν _ hθ', Pi.add_apply,
+    ContinuousLinearMap.hilbertSchmidtInner_add_left]
+  exact integral_add (integrable_hilbertSchmidtInner_of_ae_eq_coord hν hη hθ')
+    (integrable_hilbertSchmidtInner_of_ae_eq_coord hν hη' hθ')
+
+/-- The pairing `TauCeti.zeroOneHilbertSchmidtL` is homogeneous in the form `η`. -/
+theorem zeroOneHilbertSchmidtL_smul (hν : IsPositiveDensityMeasure 𝓘(ℝ, ℂ) ν) (c : ℝ)
+    {η : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x}
+    (hη : Continuous fun x ↦ TotalSpace.mk' (ℂ →L[ℝ] F)
+      (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x (η x))
+    (hcη : Continuous fun x ↦ TotalSpace.mk' (ℂ →L[ℝ] F)
+      (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x ((c • η) x)) :
+    zeroOneHilbertSchmidtL A μ p k hν (c • η) hcη = c • zeroOneHilbertSchmidtL A μ p k hν η hη := by
+  ext w
+  obtain ⟨θ, hθ⟩ := SobolevSection.exists_ae_eq_coord (w : SobolevSection A.tangentHom μ p k)
+  have hθ' (i : Fin A.n) := (ae_image_tangentHom_iff A μ i).1 (hθ i)
+  simp only [_root_.smul_apply, zeroOneHilbertSchmidtL_apply hν _ hθ', Pi.smul_apply,
+    ContinuousLinearMap.hilbertSchmidtInner_smul_left, smul_eq_mul]
+  exact integral_const_mul c _
+
+/-- On the Sobolev form of a continuous `(0,1)`-form `σ`, the pairing
+`TauCeti.zeroOneHilbertSchmidtL` is `∫ ⟪η x, σ x⟫ dν`. -/
+theorem zeroOneHilbertSchmidtL_ofContMDiffSection
+    [ContMDiffVectorBundle k (ℂ →L[ℝ] F) (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) 𝓘(ℝ, ℂ)]
+    (hν : IsPositiveDensityMeasure 𝓘(ℝ, ℂ) ν)
+    {η : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x}
+    (hη : Continuous fun x ↦ TotalSpace.mk' (ℂ →L[ℝ] F)
+      (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x (η x))
+    {σ : Cₛ^k⟮𝓘(ℝ, ℂ); ℂ →L[ℝ] F, fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x⟯}
+    (hσ : SobolevSection.ofContMDiffSection A.tangentHom μ p k σ ∈
+      zeroOneSobolevSections A μ p k) :
+    zeroOneHilbertSchmidtL A μ p k hν η hη ⟨_, hσ⟩ = ∫ x, (η x).hilbertSchmidtInner (σ x) ∂ν :=
+  zeroOneHilbertSchmidtL_apply hν hη fun i ↦ (ae_image_tangentHom_iff A μ i).1
+    (SobolevSection.chartValueL_ofContMDiffSection_ae A.tangentHom μ p k σ i)
 
 end TauCeti

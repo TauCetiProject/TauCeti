@@ -8,6 +8,9 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Polynomial
 public import Mathlib.LinearAlgebra.Span.Defs
 public import Mathlib.SetTheory.Cardinal.Defs
+import Mathlib.Algebra.Group.Pi.Units
+import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import Mathlib.RingTheory.SimpleRing.Basic
 import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.LinearAlgebra.Span.Basic
 
@@ -18,6 +21,10 @@ For square matrices `A` and `B` of size `n` over an integral domain, `t ↦ det 
 polynomial in `t` of degree at most `n`, with constant coefficient `det A` and `n`-th coefficient
 `det B`. When `det A ≠ 0` it therefore vanishes at no more than `n` values of `t`, and at no more
 than `n - 1` values when moreover `det B = 0`.
+
+In particular, only finitely many parameters from a subfield make `1 + t • g`
+singular. Over a finite product of fields, one can choose a parameter in any infinite
+subset of the source field so that all components are invertible simultaneously.
 
 Over a field with more than `n` elements this shows that invertible matrices are spread through
 every subspace of matrices containing one: if a subspace `V` contains an invertible `X`, and
@@ -30,6 +37,8 @@ a small integral matrix (`TauCeti.LinearAlgebra.Matrix.ReductionKernel`).
 
 ## Main results
 
+* `Matrix.finite_setOf_det_smul_add_eq_zero`: if some member of a pencil `t • A + B` over a
+  domain has nonzero determinant, then only finitely many parameters `t` give zero determinant.
 * `Polynomial.eval_det_X_add_C`: `det (X • A + B)`, evaluated at `t`, is `det (t • A + B)`.
 * `Submodule.eq_span_singleton_of_mem_of_det_ne_zero`: over a field with more than `n` elements,
   a subspace of `n × n` matrices whose invertible elements are the nonzero multiples of one
@@ -54,6 +63,25 @@ theorem eval_det_X_add_C (A B : Matrix n n R) (t : R) :
   simp [mul_comm (A i j)]
 
 end Polynomial
+
+namespace Matrix
+
+variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] [IsDomain R]
+
+/-- If some member `t₀ • A + B` of a matrix pencil over a domain has nonzero determinant, then the
+parameters `t` with `det (t • A + B) = 0` form a finite set. -/
+theorem finite_setOf_det_smul_add_eq_zero (A B : Matrix n n R)
+    (h : ∃ t₀ : R, (t₀ • A + B).det ≠ 0) :
+    {t : R | (t • A + B).det = 0}.Finite := by
+  let q : Polynomial R := ((X : R[X]) • A.map C + B.map C).det
+  have hq (t : R) : q.eval t = (t • A + B).det := eval_det_X_add_C A B t
+  have hq0 : q ≠ 0 := by
+    obtain ⟨t₀, ht₀⟩ := h
+    intro hzero
+    exact ht₀ (by rw [← hq, hzero, eval_zero])
+  simpa only [Polynomial.IsRoot.def, hq] using finite_setOfPred_isRoot hq0
+
+end Matrix
 
 namespace Submodule
 
@@ -90,3 +118,43 @@ theorem eq_span_singleton_of_mem_of_det_ne_zero (V : Submodule K (Matrix n n K))
     exact ⟨c, rfl⟩
 
 end Submodule
+
+namespace Matrix
+
+variable {n K L : Type*} [Fintype n] [DecidableEq n] [Field K] [Field L]
+
+/-- Only finitely many scalars from a subfield make `1 + a • g` singular. -/
+theorem finite_setOf_not_isUnit_one_add_smul (f : K →+* L) (g : Matrix n n L) :
+    Set.Finite {a : K | ¬IsUnit (1 + f a • g)} := by
+  refine ((finite_setOf_det_smul_add_eq_zero g 1 ⟨0, by simp⟩).preimage
+    f.injective.injOn).subset fun a ha ↦ ?_
+  simpa only [Set.mem_preimage, Set.mem_ofPred_eq, add_comm, isUnit_iff_isUnit_det,
+    isUnit_iff_ne_zero, not_not] using ha
+
+/-- Over a finite product of fields, a matrix has a nonsingular scalar
+translate `1 + a • g` with `a` in any infinite subset of a common subfield. The
+identification with the product is algebraic; no topology is required. -/
+theorem exists_isUnit_one_add_smul {S I : Type*} [CommRing S] [Finite I]
+    {L : I → Type*} [∀ i, Field (L i)] (f : K →+* S)
+    (e : S ≃+* ∀ i, L i) {s : Set K} (hs : s.Infinite) (g : Matrix n n S) :
+    ∃ a ∈ s, IsUnit (1 + f a • g) := by
+  classical
+  let fi (i : I) : K →+* L i := (Pi.evalRingHom L i).comp (e.toRingHom.comp f)
+  let gi (i : I) : Matrix n n (L i) :=
+    g.map ((Pi.evalRingHom L i).comp e.toRingHom)
+  have hbad : (⋃ i, {a : K | ¬IsUnit (1 + fi i a • gi i)}).Finite :=
+    Set.finite_iUnion fun i ↦ finite_setOf_not_isUnit_one_add_smul (fi i) (gi i)
+  obtain ⟨a, ha, hgood⟩ := hs.exists_notMem_finite hbad
+  refine ⟨a, ha, (MulEquiv.isUnit_map (e.mapMatrix.trans (Matrix.piRingEquiv (n := n)))).1 ?_⟩
+  rw [Pi.isUnit_iff]
+  intro i
+  have hi : IsUnit (1 + fi i a • gi i) :=
+    not_not.mp (fun hi ↦ hgood (Set.mem_iUnion.2 ⟨i, hi⟩))
+  let ei : S →+* L i := (Pi.evalRingHom L i).comp e.toRingHom
+  have heval : (e.mapMatrix.trans Matrix.piRingEquiv) (1 + f a • g) i =
+      (1 + f a • g).map ei := rfl
+  rw [heval, Matrix.map_add ei ei.map_add, Matrix.map_one ei ei.map_zero ei.map_one,
+    Matrix.map_smul' ei _ _ ei.map_mul]
+  exact hi
+
+end Matrix

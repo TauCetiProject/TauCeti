@@ -10,8 +10,9 @@ public import Mathlib.Data.Set.Image
 /-!
 # Images of sets under compositions
 
-This file contains elementary lemmas about images of sets under composed functions, and about
-preimages under an injective function of the range of a composition or of a single value.
+This file contains elementary lemmas about images of sets under composed functions, about
+preimages under an injective function of the range of a composition or of a single value, and
+about the smallest set stable under an involution containing a given set.
 -/
 
 public section
@@ -51,3 +52,15 @@ theorem preimage_singleton (hf : Injective f) (a : β) : f ⁻¹' {f a} = {a} :=
   rw [← image_singleton, hf.preimage_image]
 
 end Function.Injective
+
+namespace Function.Involutive
+
+variable {α : Type*} {f : α → α}
+
+/-- For an involution `f`, the union of a set `s` with its preimage under `f` is stable under `f`:
+it is the smallest such set containing `s`. -/
+theorem preimage_union_preimage (hf : Involutive f) (s : Set α) :
+    f ⁻¹' (s ∪ f ⁻¹' s) = s ∪ f ⁻¹' s := by
+  rw [preimage_union, hf.preimage s, union_comm]
+
+end Function.Involutive
