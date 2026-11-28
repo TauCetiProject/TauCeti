@@ -162,10 +162,10 @@ theorem div_sub_log_le_multiplicity_factorial (p : ℕ) [hp : Fact p.Prime] (n :
 
 open Nat in
 /-- **Factorials against powers of a constant of norm `‖p‖^{-1/(p-1)}`.** In a normed ring with
-an ultrametric norm, let `‖c‖ ^ (p - 1) ≤ ‖p‖⁻¹`, for instance `c = π⁻¹` with
-`π ^ (p - 1) = -p` in a field. Then `‖s! c ^ s‖ ≤ ‖p‖⁻¹ ^ (⌊log_p s⌋ + 1)`: by Legendre's bound
-with the number of digits, `v_p(s!)` falls short of `s / (p - 1)` by at most the number of
-base-`p` digits of `s`. -/
+an ultrametric norm, `‖1‖ = 1` and `(p : K) ≠ 0`, let `‖c‖ ^ (p - 1) ≤ ‖p‖⁻¹`, for instance
+`c = π⁻¹` with `π ^ (p - 1) = -p` in a field. Then `‖s! c ^ s‖ ≤ ‖p‖⁻¹ ^ (⌊log_p s⌋ + 1)`: by
+Legendre's bound with the number of digits, `v_p(s!)` falls short of `s / (p - 1)` by at most the
+number of base-`p` digits of `s`. -/
 theorem norm_factorial_mul_pow_le {K : Type*} [NormedRing K] [NormOneClass K]
     [IsUltrametricDist K] (p : ℕ) [hp : Fact p.Prime] {c : K} (hp0 : (p : K) ≠ 0)
     (hc : ‖c‖ ^ (p - 1) ≤ ‖(p : K)‖⁻¹) (s : ℕ) :

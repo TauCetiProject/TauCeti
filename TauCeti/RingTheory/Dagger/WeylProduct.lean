@@ -91,6 +91,13 @@ noncomputable def weylMulTerm (c : K) (f g : MvPowerSeries (Fin 2) K) (m n s : �
     coeff (single 0 i + single 1 (j + s)) f * coeff (single 0 (m - i + s) + single 1 (n - j)) g *
       ((((j + s).choose s * (m - i + s).choose s * s ! : ℕ) : K) * c ^ s)
 
+/-- The defining double sum of `weylMulTerm`. -/
+theorem weylMulTerm_def (c : K) (f g : MvPowerSeries (Fin 2) K) (m n s : ℕ) :
+    weylMulTerm c f g m n s = ∑ i ∈ range (m + 1), ∑ j ∈ range (n + 1),
+      coeff (single 0 i + single 1 (j + s)) f * coeff (single 0 (m - i + s) + single 1 (n - j)) g *
+        ((((j + s).choose s * (m - i + s).choose s * s ! : ℕ) : K) * c ^ s) :=
+  (rfl)
+
 /-- **Reindexing the contractions of a product.** Fix the number `s` of contractions. The products
 `(x^i ∂^J) (x^k ∂^l)` with `J, k ≥ s` and all indices below `N` are in bijection with the data
 `m < 2N`, `n < 2N`, `i ≤ m`, `j ≤ n`, via `J = j + s`, `k = m - i + s` and `l = n - j`, so that
@@ -159,8 +166,12 @@ private theorem pow_mul_pow_mul_pow_mul_pow_eq_sum {c : K} {x d : A}
 variable [TopologicalSpace K]
 
 /-- The **product of differential operators in normal order**, on coefficient arrays: the
-coefficient of `x^m ∂^n` in the product of `∑ f_{ij} x^i ∂^j` and `∑ g_{kl} x^k ∂^l`, in the Weyl
-algebra with `∂ x - x ∂ = c`, is the series `∑_s weylMulTerm c f g m n s`. -/
+coefficient of `x^m ∂^n` in `weylMul c f g` is defined as the sum `∑' s, weylMulTerm c f g m n s`.
+When these series converge, it is the coefficient of `x^m ∂^n` in the product of
+`∑ f_{ij} x^i ∂^j` and `∑ g_{kl} x^k ∂^l` in the Weyl algebra with `∂ x - x ∂ = c`: for instance
+for polynomial arrays (`TauCeti.Dagger.sum_mul_sum_eq_sum_coeff_weylMul`), or for overconvergent
+arrays over a complete ring (`TauCeti.Dagger.summable_weylMulTerm`). Where a series diverges,
+`tsum` returns `0`. -/
 noncomputable def weylMul (c : K) (f g : MvPowerSeries (Fin 2) K) : MvPowerSeries (Fin 2) K :=
   fun ν ↦ ∑' s, weylMulTerm c f g (ν 0) (ν 1) s
 
@@ -251,27 +262,6 @@ private theorem degree_single_add_single (i j : ℕ) :
     (single 0 i + single 1 j : Fin 2 →₀ ℕ).degree = i + j := by
   simp [Finsupp.degree_eq_sum, Fin.sum_univ_two]
 
-/-- Two overconvergent arrays satisfy a common coefficient bound `‖a_ν‖ ≤ C η^{|ν|}` with
-`0 < η < 1`. -/
-private theorem exists_norm_coeff_le_of_mem (hf : f ∈ washnitzerAlgebra (Fin 2) K)
-    (hg : g ∈ washnitzerAlgebra (Fin 2) K) :
-    ∃ η : ℝ, 0 < η ∧ η < 1 ∧ ∃ C : ℝ, ∀ ν : Fin 2 →₀ ℕ,
-      ‖coeff ν f‖ ≤ C * η ^ ν.degree ∧ ‖coeff ν g‖ ≤ C * η ^ ν.degree := by
-  obtain ⟨ρ, hρ, C, hC⟩ := mem_washnitzerAlgebra_iff_norm_coeff_le.1 hf
-  obtain ⟨ρ', hρ', C', hC'⟩ := mem_washnitzerAlgebra_iff_norm_coeff_le.1 hg
-  have hρ0 : 0 < min ρ ρ' := lt_of_lt_of_le one_pos (le_min hρ.le hρ'.le)
-  -- Both bounds persist at the smaller radius `min ρ ρ'`, with the larger constant.
-  have hle {r D : ℝ} (hr : min ρ ρ' ≤ r) (hD : D ≤ max (max C C') 0) (ν : Fin 2 →₀ ℕ) :
-      D * (r ^ ν.degree)⁻¹ ≤ max (max C C') 0 * (min ρ ρ')⁻¹ ^ ν.degree := by
-    rw [← inv_pow]
-    exact mul_le_mul hD (pow_le_pow_left₀ (inv_nonneg.2 (hρ0.trans_le hr).le) (inv_anti₀ hρ0 hr) _)
-      (pow_nonneg (inv_nonneg.2 (hρ0.trans_le hr).le) _) (le_max_right _ _)
-  refine ⟨(min ρ ρ')⁻¹, inv_pos.2 hρ0, inv_lt_one_of_one_lt₀ (lt_min hρ hρ'), max (max C C') 0,
-    fun ν ↦ ⟨(hC ν).trans (hle (min_le_left _ _) ?_ ν),
-      (hC' ν).trans (hle (min_le_right _ _) ?_ ν)⟩⟩
-  · exact (le_max_left _ _).trans (le_max_left _ _)
-  · exact (le_max_right _ _).trans (le_max_left _ _)
-
 omit [IsUltrametricDist K] in
 /-- A coefficient bound `‖a_ν‖ ≤ C η^{|ν|}` forces `0 ≤ C`, and `0 ≤ η` unless `C = 0`. -/
 private theorem nonneg_and_nonneg_or_eq_zero_of_norm_coeff_le {η C : ℝ}
@@ -349,7 +339,7 @@ converge, for instance when `K` is complete (`TauCeti.Dagger.summable_weylMulTer
 theorem weylMul_mem_washnitzerAlgebra (hc : ‖c‖ ^ (p - 1) ≤ ‖(p : K)‖⁻¹)
     (hf : f ∈ washnitzerAlgebra (Fin 2) K) (hg : g ∈ washnitzerAlgebra (Fin 2) K) :
     weylMul c f g ∈ washnitzerAlgebra (Fin 2) K := by
-  obtain ⟨η, hη0, hη1, C, hfg⟩ := exists_norm_coeff_le_of_mem hf hg
+  obtain ⟨η, hη0, hη1, C, hfg⟩ := exists_norm_coeff_le_of_mem_washnitzerAlgebra hf hg
   have hη2 : |η ^ 2| < 1 := by
     rw [abs_of_nonneg (by positivity)]
     exact pow_lt_one₀ hη0.le hη1 two_ne_zero
@@ -369,7 +359,7 @@ and `f`, `g` are overconvergent coefficient arrays, then for every `m` and `n` t
 theorem summable_weylMulTerm (hc : ‖c‖ ^ (p - 1) ≤ ‖(p : K)‖⁻¹)
     (hf : f ∈ washnitzerAlgebra (Fin 2) K) (hg : g ∈ washnitzerAlgebra (Fin 2) K) (m n : ℕ) :
     Summable (weylMulTerm c f g m n) := by
-  obtain ⟨η, hη0, hη1, C, hfg⟩ := exists_norm_coeff_le_of_mem hf hg
+  obtain ⟨η, hη0, hη1, C, hfg⟩ := exists_norm_coeff_le_of_mem_washnitzerAlgebra hf hg
   have hη2 : |η ^ 2| < 1 := by
     rw [abs_of_nonneg (by positivity)]
     exact pow_lt_one₀ hη0.le hη1 two_ne_zero
