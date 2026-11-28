@@ -111,21 +111,16 @@ theorem adicCompletion :
     rw [hι.adicCompletionResidueMap_apply_map, hι.adicCompletionResidueMap_apply_map] at hxy
     rw [hι.injective hxy]
   · -- Restricting to `R`, `range ι̂` has the same elements as `range ι`, which is essential.
-    have hrange : LinearMap.range (hι.adicCompletionResidueMap.restrictScalars R) =
+    have hrange : (LinearMap.range hι.adicCompletionResidueMap).restrictScalars R =
         LinearMap.range ι := by
-      rw [hι.adicCompletionResidueMap_restrictScalars, LinearMap.range_comp_of_range_eq_top _
-        (LinearMap.range_eq_top.mpr (AdicCompletion.residueFieldEquiv R).symm.surjective)]
+      rw [← LinearMap.range_restrictScalars, hι.adicCompletionResidueMap_restrictScalars,
+        LinearMap.range_comp_of_range_eq_top _
+          (LinearMap.range_eq_top.mpr (AdicCompletion.residueFieldEquiv R).symm.surjective)]
     have hK' : LinearMap.range ι ⊓ K.restrictScalars R = ⊥ := by
-      refine (Submodule.eq_bot_iff _).mpr fun y ⟨hy1, hyK⟩ ↦ ?_
-      obtain ⟨x, hx⟩ := hrange.ge hy1
-      have hmem : hι.adicCompletionResidueMap x ∈
-          LinearMap.range hι.adicCompletionResidueMap ⊓ K :=
-        ⟨⟨x, rfl⟩, hx ▸ hyK⟩
-      rw [hK, Submodule.mem_bot] at hmem
-      exact hx.symm.trans hmem
-    have hbot : K.restrictScalars R = ⊥ := isEssential_iff.mp hι.isEssential_range _ hK'
-    exact Submodule.ext fun y ↦ by
-      simpa using Submodule.ext_iff.mp hbot y
+      simpa [hrange, Submodule.restrictScalars_inf] using
+        congrArg (Submodule.restrictScalars R) hK
+    exact (Submodule.restrictScalars_eq_bot_iff R _ _).mp
+      (isEssential_iff.mp hι.isEssential_range _ hK')
 
 end IsInjectiveEnvelope
 

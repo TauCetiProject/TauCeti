@@ -194,18 +194,12 @@ variable {R S M : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
 theorem restrictScalars_torsionBySet_map (I : Ideal R) :
     (torsionBySet S M ↑(I.map (algebraMap R S))).restrictScalars R = torsionBySet R M ↑I := by
   ext x
-  simp only [Submodule.restrictScalars_mem, mem_torsionBySet_iff]
-  constructor
-  · intro hx ⟨r, hr⟩
-    simpa only [algebraMap_smul] using hx ⟨algebraMap R S r, Ideal.mem_map_of_mem _ hr⟩
-  · rintro hx ⟨c, hc⟩
-    dsimp only
-    refine Submodule.span_induction ?_ (zero_smul _ x)
-      (fun a b _ _ ha hb ↦ by rw [add_smul, ha, hb, add_zero])
-      (fun a b _ hb ↦ by rw [smul_eq_mul, mul_smul, hb, smul_zero]) hc
-    rintro _ ⟨r, hr, rfl⟩
-    rw [algebraMap_smul]
-    exact hx ⟨r, hr⟩
+  have h1 : x ∈ (torsionBySet S M ↑(I.map (algebraMap R S))).restrictScalars R ↔
+      I.map (algebraMap R S) ≤ Ideal.torsionOf S M x := by
+    simp [Submodule.restrictScalars_mem, mem_torsionBySet_iff, IsConcreteLE.le_iff,
+      Ideal.mem_torsionOf_iff]
+  rw [h1, Ideal.map_le_iff_le_comap, mem_torsionBySet_iff]
+  simp [IsConcreteLE.le_iff, Ideal.mem_torsionOf_iff, algebraMap_smul]
 
 /-- An element is killed by the extended ideal `I.map (algebraMap R S)` iff it is killed by `I`. -/
 theorem mem_torsionBySet_map_iff (I : Ideal R) {x : M} :

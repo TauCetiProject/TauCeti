@@ -159,34 +159,33 @@ theorem ShortExact.op_map_of_lcomp {B : Type*} [Ring B] {E : Type t} [AddCommGro
   have hf := hS.moduleCat_injective_f
   have hg := hS.moduleCat_surjective_g
   have hex := (ShortExact.moduleCat_exact_iff_function_exact S).1 hS.exact
-  refine ModuleCat.shortComplex_shortExact _ ?_ ?_ ?_
-  · intro φ
-    constructor
-    · intro hφ
-      have hφ' : S.f.hom.lcomp B E (e S.X₂ φ) = 0 := by
-        ext x
-        simpa [ShortComplex.map_g, he] using congrArg (fun f ↦ e S.X₁ f x) hφ
-      obtain ⟨ψ, hψ⟩ := ((hex.lcomp_of_surjective E hg) (e S.X₂ φ)).mp hφ'
-      refine ⟨(e S.X₃).symm ψ, (e S.X₂).injective ?_⟩
-      ext x
-      simpa [ShortComplex.map_f, he] using LinearMap.congr_fun hψ x
-    · rintro ⟨ψ, rfl⟩
-      apply (e S.X₁).injective
-      ext x
-      have hfg : S.g (S.f x) = 0 := by
-        rw [← ConcreteCategory.comp_apply, S.zero]
-        simp
-      simp [ShortComplex.map_f, ShortComplex.map_g, he, hfg]
-  · intro φ₁ φ₂ hφ
-    apply (e S.X₃).injective
-    apply LinearMap.lcomp_injective_of_surjective (S := B) (N := E) S.g.hom hg
+  have h₁₂ : (S.op.map F).f.hom ∘ₗ (e S.X₃).symm.toLinearMap =
+      (e S.X₂).symm.toLinearMap ∘ₗ S.g.hom.lcomp B E := by
+    ext ψ
+    apply (e S.X₂).injective
     ext x
-    simpa [ShortComplex.map_f, he] using congrArg (fun f ↦ e S.X₂ f x) hφ
+    simpa [ShortComplex.map_f] using he S.g ((e S.X₃).symm ψ) x
+  have h₂₃ : (S.op.map F).g.hom ∘ₗ (e S.X₂).symm.toLinearMap =
+      (e S.X₁).symm.toLinearMap ∘ₗ S.f.hom.lcomp B E := by
+    ext ψ
+    apply (e S.X₁).injective
+    ext x
+    simpa [ShortComplex.map_g] using he S.f ((e S.X₂).symm ψ) x
+  refine ModuleCat.shortComplex_shortExact _
+    ((hex.lcomp_of_surjective E hg).of_ladder_linearEquiv_of_exact h₁₂ h₂₃) ?_ ?_
+  · have hinj : Function.Injective ((S.op.map F).f.hom ∘ₗ (e S.X₃).symm.toLinearMap) := by
+      rw [h₁₂]
+      exact (e S.X₂).symm.injective.comp (LinearMap.lcomp_injective_of_surjective _ hg)
+    intro φ₁ φ₂ hφ
+    obtain ⟨ψ₁, rfl⟩ := (e S.X₃).symm.surjective φ₁
+    obtain ⟨ψ₂, rfl⟩ := (e S.X₃).symm.surjective φ₂
+    exact congrArg (e S.X₃).symm (hinj hφ)
   · intro φ
     obtain ⟨ψ, hψ⟩ := Module.Injective.extension_property A E S.X₁ S.X₂ S.f.hom hf (e S.X₁ φ)
-    refine ⟨(e S.X₂).symm ψ, (e S.X₁).injective ?_⟩
-    ext x
-    simpa [ShortComplex.map_g, he] using LinearMap.congr_fun hψ x
+    refine ⟨(e S.X₂).symm ψ, ?_⟩
+    have h2 := LinearMap.congr_fun h₂₃ ψ
+    dsimp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap] at h2
+    rw [h2, LinearMap.lcomp_apply', hψ, LinearEquiv.symm_apply_apply]
 
 end OpDual
 

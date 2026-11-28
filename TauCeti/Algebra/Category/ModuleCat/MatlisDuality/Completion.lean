@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Artinian
 public import TauCeti.Algebra.Category.ModuleCat.Lcomp
 public import TauCeti.CategoryTheory.ObjectProperty.Kernels
 public import TauCeti.RingTheory.MatlisDuality.Completion.Basic
+import Mathlib.CategoryTheory.Abelian.ShortExact
 import Mathlib.CategoryTheory.Abelian.Subcategory
 import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.CategoryTheory.ObjectProperty.Equivalence
@@ -38,8 +39,8 @@ sequence (`TauCeti.IsInjectiveEnvelope.shortExact_map_matlisDualAdicCompletion` 
 Restricting to Artinian `R`-modules and finitely generated `R̂`-modules yields the exact Matlis
 anti-equivalence
 `TauCeti.IsInjectiveEnvelope.adicCompletionMatlisDuality`
-between `(ModuleCat.isArtinian R).FullSubcategoryᵒᵖ` and `FGModuleCat R̂`, together with
-short-exactness equivalences in both directions
+between `(CategoryTheory.isArtinianObject (C := ModuleCat R)).FullSubcategoryᵒᵖ` and
+`FGModuleCat R̂`, together with short-exactness equivalences in both directions
 (`TauCeti.IsInjectiveEnvelope.shortExact_map_adicCompletionMatlisDuality_functor_iff` and
 `TauCeti.IsInjectiveEnvelope.shortExact_map_adicCompletionMatlisDuality_inverse_iff`).
 
@@ -59,8 +60,7 @@ short-exactness equivalences in both directions
   functors reverse short exact sequences of modules.
 * `TauCeti.IsInjectiveEnvelope.shortExact_map_adicCompletionMatlisDuality_functor`,
   `TauCeti.IsInjectiveEnvelope.shortExact_map_adicCompletionMatlisDuality_inverse`, and their
-  `_iff` / `_leftOp` forms: the Matlis anti-equivalence reverses short exact sequences in both
-  directions.
+  `_iff` forms: the Matlis anti-equivalence reverses short exact sequences in both directions.
 
 ## References
 
@@ -350,14 +350,14 @@ variable [Small.{v} R]
 contravariant equivalence between Artinian `R`-modules and finitely generated `R̂`-modules, whose
 unit and counit are evaluation. -/
 def adicCompletionMatlisDuality :
-    (ModuleCat.isArtinian.{max v w} R).FullSubcategoryᵒᵖ ≌
+    (isArtinianObject (C := ModuleCat.{max v w} R)).FullSubcategoryᵒᵖ ≌
       FGModuleCat.{max v w} (_root_.AdicCompletion (maximalIdeal R) R) :=
-  ObjectProperty.antiEquivalence (ModuleCat.isArtinian.{max v w} R)
+  ObjectProperty.antiEquivalence (isArtinianObject (C := ModuleCat.{max v w} R))
     (ModuleCat.isFG.{max v w} (_root_.AdicCompletion (maximalIdeal R) R))
     hι.matlisDualAdicCompletion hι.matlisDualOfAdicCompletion
     (fun M hM ↦ by
       let := AdicCompletion.torsionModule hι.mem_primaryComponent
-      have : IsArtinian R M := (ModuleCat.isArtinian_iff _).mp hM
+      have : IsArtinian R M := (ModuleCat.isArtinianObject_iff _).mp hM
       have : Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) (M →ₗ[R] E) :=
         hι.finite_adicCompletion_linearMap_of_isArtinian
       exact (ModuleCat.isFG_iff _).mpr
@@ -368,16 +368,16 @@ def adicCompletionMatlisDuality :
       let := AdicCompletion.torsionModule hι.mem_primaryComponent
       have : IsArtinian R (N →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E) :=
         hι.isArtinian_adicCompletion_linearMap_of_finite N
-      exact (ModuleCat.isArtinian_iff _).mpr
+      exact (ModuleCat.isArtinianObject_iff _).mpr
         (isArtinian_of_linearEquiv (hι.matlisDualOfAdicCompletionObjEquiv N).symm))
-    (fun M hM ↦ hι.evalIsoAdicCompletionOfIsArtinian M ((ModuleCat.isArtinian_iff _).mp hM))
+    (fun M hM ↦ hι.evalIsoAdicCompletionOfIsArtinian M ((ModuleCat.isArtinianObject_iff _).mp hM))
     (fun hX hX' g ↦ hι.evalIsoAdicCompletionOfIsArtinian_hom_naturality g
-      ((ModuleCat.isArtinian_iff _).mp hX) ((ModuleCat.isArtinian_iff _).mp hX'))
+      ((ModuleCat.isArtinianObject_iff _).mp hX) ((ModuleCat.isArtinianObject_iff _).mp hX'))
     (fun N hN ↦ hι.evalIsoOfFiniteAdicCompletion N ((ModuleCat.isFG_iff _).mp hN))
     (fun hY hY' g ↦ hι.evalIsoOfFiniteAdicCompletion_hom_naturality g
       ((ModuleCat.isFG_iff _).mp hY) ((ModuleCat.isFG_iff _).mp hY'))
     (fun M hM ↦ by
-      have : IsArtinian R M := (ModuleCat.isArtinian_iff _).mp hM
+      have : IsArtinian R M := (ModuleCat.isArtinianObject_iff _).mp hM
       let := AdicCompletion.torsionModule hι.mem_primaryComponent
       have : Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) (M →ₗ[R] E) :=
         hι.finite_adicCompletion_linearMap_of_isArtinian
@@ -385,18 +385,18 @@ def adicCompletionMatlisDuality :
           (hι.matlisDualAdicCompletionObj M) :=
         Module.Finite.equiv (hι.matlisDualAdicCompletionObjEquiv M).symm
       exact hι.evalIsoOfFiniteAdicCompletion_matlisDualAdicCompletionObj_hom M
-        ((ModuleCat.isArtinian_iff _).mp hM) hM')
+        ((ModuleCat.isArtinianObject_iff _).mp hM) hM')
 
 @[simp]
 theorem adicCompletionMatlisDuality_functor_obj_obj
-    (M : (ModuleCat.isArtinian.{max v w} R).FullSubcategoryᵒᵖ) :
+    (M : (isArtinianObject (C := ModuleCat.{max v w} R)).FullSubcategoryᵒᵖ) :
     (hι.adicCompletionMatlisDuality.functor.obj M).obj =
       hι.matlisDualAdicCompletionObj M.unop.obj :=
   (rfl)
 
 @[simp]
 theorem adicCompletionMatlisDuality_functor_map_hom
-    {M M' : (ModuleCat.isArtinian.{max v w} R).FullSubcategoryᵒᵖ} (g : M ⟶ M') :
+    {M M' : (isArtinianObject (C := ModuleCat.{max v w} R)).FullSubcategoryᵒᵖ} (g : M ⟶ M') :
     (hι.adicCompletionMatlisDuality.functor.map g).hom =
       eqToHom (hι.adicCompletionMatlisDuality_functor_obj_obj M) ≫
         hι.matlisDualAdicCompletionMap g.unop.hom ≫
@@ -423,10 +423,10 @@ theorem adicCompletionMatlisDuality_inverse_map_unop_hom
 `M → Hom_{R̂}(Hom_R(M, E), E)`. -/
 @[simp]
 theorem adicCompletionMatlisDuality_unitIso_inv_app
-    (M : (ModuleCat.isArtinian.{max v w} R).FullSubcategoryᵒᵖ) :
+    (M : (isArtinianObject (C := ModuleCat.{max v w} R)).FullSubcategoryᵒᵖ) :
     (hι.adicCompletionMatlisDuality.unitIso.inv.app M).unop.hom =
       (hι.evalIsoAdicCompletionOfIsArtinian M.unop.obj
-        ((ModuleCat.isArtinian_iff _).mp M.unop.property)).hom ≫
+        ((ModuleCat.isArtinianObject_iff _).mp M.unop.property)).hom ≫
         eqToHom ((congrArg hι.matlisDualOfAdicCompletionObj
           (hι.adicCompletionMatlisDuality_functor_obj_obj M)).symm.trans
           (hι.adicCompletionMatlisDuality_inverse_obj_unop_obj _).symm) :=
@@ -447,20 +447,18 @@ theorem adicCompletionMatlisDuality_counitIso_inv_app
 /-- Applying `adicCompletionMatlisDuality.functor` reverses a short exact sequence of Artinian
 `R`-modules into a short exact sequence of finitely generated `R̂`-modules. -/
 theorem shortExact_map_adicCompletionMatlisDuality_functor
-    {S : ShortComplex (ModuleCat.isArtinian.{max v w} R).FullSubcategory} (hS : S.ShortExact) :
+    {S : ShortComplex (isArtinianObject (C := ModuleCat.{max v w} R)).FullSubcategory}
+    (hS : S.ShortExact) :
     (S.op.map hι.adicCompletionMatlisDuality.functor).ShortExact :=
   hS.op.map_of_exact hι.adicCompletionMatlisDuality.functor
 
 /-- A short complex of Artinian `R`-modules is short exact iff its image under
 `adicCompletionMatlisDuality.functor` is short exact. -/
 theorem shortExact_map_adicCompletionMatlisDuality_functor_iff
-    {S : ShortComplex (ModuleCat.isArtinian.{max v w} R).FullSubcategory} :
+    {S : ShortComplex (isArtinianObject (C := ModuleCat.{max v w} R)).FullSubcategory} :
     (S.op.map hι.adicCompletionMatlisDuality.functor).ShortExact ↔ S.ShortExact :=
-  ⟨fun h ↦ ShortComplex.ShortExact.unop
-    ((ShortComplex.shortExact_iff_of_iso
-      (S.op.mapNatIso hι.adicCompletionMatlisDuality.unitIso)).mpr
-      (h.map_of_exact hι.adicCompletionMatlisDuality.inverse)),
-   hι.shortExact_map_adicCompletionMatlisDuality_functor⟩
+  (CategoryTheory.ShortExact.shortExact_map_iff hι.adicCompletionMatlisDuality.functor).trans
+    S.shortExact_iff_op.symm
 
 /-- Applying `adicCompletionMatlisDuality.inverse` reverses a short exact sequence of finitely
 generated `R̂`-modules into a short exact sequence of Artinian `R`-modules. -/
@@ -470,23 +468,13 @@ theorem shortExact_map_adicCompletionMatlisDuality_inverse
     (T.map hι.adicCompletionMatlisDuality.inverse).unop.ShortExact :=
   (hT.map_of_exact hι.adicCompletionMatlisDuality.inverse).unop
 
-/-- Applying `adicCompletionMatlisDuality.inverse.leftOp` reverses a short exact sequence of
-finitely generated `R̂`-modules into a short exact sequence of Artinian `R`-modules. -/
-theorem shortExact_map_adicCompletionMatlisDuality_inverse_leftOp
-    {T : ShortComplex (FGModuleCat.{max v w} (_root_.AdicCompletion (maximalIdeal R) R))}
-    (hT : T.ShortExact) :
-    (T.op.map hι.adicCompletionMatlisDuality.inverse.leftOp).ShortExact :=
-  hι.shortExact_map_adicCompletionMatlisDuality_inverse hT
-
 /-- A short complex of finitely generated `R̂`-modules is short exact iff its dual under
 `adicCompletionMatlisDuality.inverse` is short exact. -/
 theorem shortExact_map_adicCompletionMatlisDuality_inverse_iff
     {T : ShortComplex (FGModuleCat.{max v w} (_root_.AdicCompletion (maximalIdeal R) R))} :
     (T.map hι.adicCompletionMatlisDuality.inverse).unop.ShortExact ↔ T.ShortExact :=
-  ⟨fun h ↦ (ShortComplex.shortExact_iff_of_iso
-    (T.mapNatIso hι.adicCompletionMatlisDuality.counitIso)).mp
-    (h.op.map_of_exact hι.adicCompletionMatlisDuality.functor),
-   hι.shortExact_map_adicCompletionMatlisDuality_inverse⟩
+  (ShortComplex.shortExact_iff_unop _).symm.trans
+    (CategoryTheory.ShortExact.shortExact_map_iff hι.adicCompletionMatlisDuality.inverse)
 
 end Equivalence
 
