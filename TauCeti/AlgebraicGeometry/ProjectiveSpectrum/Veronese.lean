@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Veronese
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.FiniteSet
 
 /-!
 # The projective spectrum of a Veronese subalgebra
@@ -315,10 +316,14 @@ theorem basicOpenIsoAway_hom_comp_veroneseIso_inv_appLE {f : veronese 𝒜 d} {k
     apply e.inv_comp_eq.mp
     simpa only [e, e', U, V, basicOpenIsoSpec_inv_ι, basicOpenIsoSpec_inv_ι_assoc] using
       awayι_veroneseIso_inv 𝒜 d hf hk
-  have hsections := congrArg Scheme.Hom.appTop (e'.eq_comp_inv.mp hres)
-  simp only [e, e', basicOpenIsoSpec_hom, Scheme.Hom.comp_appTop, basicOpenToSpec_app_top,
-    Scheme.Hom.resLE_app_top, Category.assoc, Scheme.ΓSpecIso_naturality_assoc] at hsections
-  exact (cancel_mono V.topIso.inv).mp ((cancel_epi (Scheme.ΓSpecIso _).hom).mp hsections)
+  have hV : IsAffineOpen V := isAffineOpen_basicOpen 𝒜 _ (mem_veroneseGrading.1 hf)
+    (Nat.mul_pos (NeZero.pos d) hk)
+  apply Spec.map_injective
+  apply (cancel_epi hV.isoSpec.hom).mp
+  rw [hV.isoSpec_hom, Spec.map_comp, Spec.map_comp,
+    Scheme.Opens.toSpecΓ_SpecMap_appLE_assoc _ U V h]
+  simpa only [e, e', basicOpenIsoSpec_hom, basicOpenToSpec, Category.assoc] using
+    e'.eq_comp_inv.mp hres
 
 /-- An element `f` of `A^{(d)}` lies in the homogeneous prime ideal of the point of
 `Proj A^{(d)}` corresponding to a point `x` of `Proj A` if and only if it lies in that of `x`. -/
@@ -357,7 +362,6 @@ theorem val_veroneseIso_inv_appLE_apply
   let hT : W ≤ (veroneseIso 𝒜 d).inv ⁻¹ᵁ T := (veroneseIso_inv_preimage_basicOpen 𝒜 d f).ge
   let xW : W := ⟨x.val, (veroneseIso_inv_preimage_basicOpen 𝒜 d f).le hfx⟩
   let aT := (Proj (veroneseGrading 𝒜 d)).presheaf.map (homOfLE hfU).op a
-  -- Both pullbacks agree on the intersection of their domains.
   have hres :
       (veroneseIso 𝒜 d).inv.appLE U V hUV ≫
           (Proj 𝒜).presheaf.map (homOfLE inf_le_left : V ⊓ W ⟶ V).op =
@@ -366,12 +370,14 @@ theorem val_veroneseIso_inv_appLE_apply
             (Proj 𝒜).presheaf.map (homOfLE inf_le_right : V ⊓ W ⟶ W).op := by
     rw [Scheme.Hom.appLE_map, Scheme.Hom.appLE_map, Scheme.Hom.map_appLE]
   let xVW : (V ⊓ W : (Proj 𝒜).Opens) := ⟨x.val, x.property, xW.property⟩
-  have heval :
-      (((veroneseIso 𝒜 d).inv.appLE U V hUV a).val x).val =
-        (((veroneseIso 𝒜 d).inv.appLE T W hT aT).val xW).val :=
-    congrArg (fun b : Γ(Proj 𝒜, V ⊓ W) ↦ (b.val xVW).val) (ConcreteCategory.congr_hom hres a)
-  refine heval.trans ?_
-  -- Write the restricted function as a homogeneous fraction.
+  have hrestrict := congrArg (fun b : Γ(Proj 𝒜, V ⊓ W) ↦ b.val xVW)
+    (ConcreteCategory.congr_hom hres a)
+  simp only [CommRingCat.comp_apply] at hrestrict
+  have heval : ((veroneseIso 𝒜 d).inv.appLE U V hUV a).val x =
+      ((veroneseIso 𝒜 d).inv.appLE T W hT aT).val xW :=
+    (res_apply (𝒜 := 𝒜) (homOfLE inf_le_left).op _ xVW).symm.trans
+      (hrestrict.trans (res_apply (𝒜 := 𝒜) (homOfLE inf_le_right).op _ xVW))
+  refine (congrArg HomogeneousLocalization.val heval).trans ?_
   obtain ⟨z, hz⟩ := (ConcreteCategory.bijective_of_isIso
     (basicOpenIsoAway (veroneseGrading 𝒜 d) f g.property k.pos).hom).surjective aT
   rw [basicOpenIsoAway_hom] at hz
@@ -379,19 +385,21 @@ theorem val_veroneseIso_inv_appLE_apply
       awayToSection 𝒜 (f : A) (awayVeroneseEquiv f z) :=
     ConcreteCategory.congr_hom (by simpa only [basicOpenIsoAway_hom] using
       basicOpenIsoAway_hom_comp_veroneseIso_inv_appLE 𝒜 d g.property k.pos) z
-  rw [← hz, h]
+  have hy := AlgebraicGeometry.Proj.res_apply (𝒜 := veroneseGrading 𝒜 d)
+    (homOfLE hfU).op a ⟨_, hfx⟩
+  have hy' : (a.val ⟨_, hUV x.property⟩).val = _ :=
+    ((congrArg HomogeneousLocalization.val hy).symm.trans
+      (congrArg (fun b : Γ(Proj (veroneseGrading 𝒜 d), T) ↦ (b.val ⟨_, hfx⟩).val) hz).symm).trans
+        (ProjectiveSpectrum.Proj.awayToSection_apply (veroneseGrading 𝒜 d) f z ⟨_, hfx⟩)
   have hx' : ((awayToSection 𝒜 (f : A) (awayVeroneseEquiv f z)).val xW).val = _ :=
     ProjectiveSpectrum.Proj.awayToSection_apply 𝒜 (f : A) (awayVeroneseEquiv f z) xW
-  have hy' : (a.val ⟨_, hUV x.property⟩).val = _ :=
-    (congrArg (fun b : Γ(Proj (veroneseGrading 𝒜 d), T) ↦ (b.val ⟨_, hfx⟩).val) hz).symm.trans
-      (ProjectiveSpectrum.Proj.awayToSection_apply (veroneseGrading 𝒜 d) f z ⟨_, hfx⟩)
-  rw [hx', hy', val_awayVeroneseEquiv]
-  -- View the map of prime localizations as the localization map induced by inclusion.
-  change _ = IsLocalization.map _ (veronese 𝒜 d).val.toRingHom _ (IsLocalization.map _ _ _ z.val)
+  rw [← hz, h, hx', hy', val_awayVeroneseEquiv]
+  unfold Localization.localRingHom
   rw [IsLocalization.map_map]
   have := ProjectiveSpectrum.isPrime x.val
-  have hxmem : (f : A) ∈ x.val.asHomogeneousIdeal.toIdeal.primeCompl.comap (RingHom.id A) :=
-    xW.property
+  have hxmem : (f : A) ∈ x.val.asHomogeneousIdeal.toIdeal.primeCompl.comap (RingHom.id A) := by
+    rw [Submonoid.mem_comap, RingHom.id_apply, Ideal.mem_primeCompl_iff]
+    exact (mem_basicOpen 𝒜 _ x.val).mp xW.property
   exact IsLocalization.map_map (T := Submonoid.powers (f : A)) (l := RingHom.id A)
     (Submonoid.powers_le_comap_powers (veronese 𝒜 d).val.toRingHom f)
     (Submonoid.powers_le.mpr hxmem) z.val

@@ -8,8 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.BasicOpen
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Functor
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Veronese
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.FiniteSet
 
 /-!
 # Twisting sheaves and Veronese subalgebras
@@ -265,8 +265,8 @@ def pullbackVeroneseTwistingSheafIso (n : ℤ) :
 theorem pullbackVeroneseTwistingSheafIso_hom (n : ℤ) :
     (pullbackVeroneseTwistingSheafIso 𝒜 d n).hom =
       ((pullbackPushforwardAdjunction (veroneseIso 𝒜 d).inv).homEquiv _ _).symm
-        (veroneseTwistingSheafMap 𝒜 d n) :=
-  (rfl)
+        (veroneseTwistingSheafMap 𝒜 d n) := by
+  rw [pullbackVeroneseTwistingSheafIso, asIso_hom, Adjunction.homEquiv_counit]
 
 end Proj
 
