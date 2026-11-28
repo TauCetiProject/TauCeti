@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.RootSystem.FiniteType.NumberOfRoots
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 import TauCeti.RingTheory.Polynomial.Cyclotomic.Exponents
+import TauCeti.RingTheory.Polynomial.Vieta
 import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
 
 /-!
@@ -518,24 +519,23 @@ theorem map_charpoly_coxeterElement_eq_prod {K : Type*} [CommRing K] [IsDomain K
   set p : ℚ[X] := (coxeterElement t.cartanMatrix).charpoly.map (Int.castRingHom ℚ)
   have hp_mapℂ : p.map (algebraMap ℚ ℂ) =
       ((coxeterElement t.cartanMatrix).map (Int.castRingHom ℂ)).charpoly := by
-    rw [Polynomial.map_map,
-      Subsingleton.elim ((algebraMap ℚ ℂ).comp (Int.castRingHom ℚ)) (Int.castRingHom ℂ),
-      Matrix.charpoly_map]
+    rw [Matrix.charpoly_map]
+    simpa [p, Polynomial.mapAlg_eq_map, algebraMap_int_eq] using
+      (Polynomial.mapAlg_comp ℚ ℂ (coxeterElement t.cartanMatrix).charpoly).symm
   have hp_mapK : p.map (algebraMap ℚ K) =
       (coxeterElement t.cartanMatrix).charpoly.map (Int.castRingHom K) := by
-    rw [Polynomial.map_map,
-      Subsingleton.elim ((algebraMap ℚ K).comp (Int.castRingHom ℚ)) (Int.castRingHom K)]
+    simpa [p, Polynomial.mapAlg_eq_map, algebraMap_int_eq] using
+      (Polynomial.mapAlg_comp ℚ K (coxeterElement t.cartanMatrix).charpoly).symm
   have hprodℂ : p.map (algebraMap ℚ ℂ) =
       ∏ i : Fin t.exponents.length, (X - Polynomial.C (ζ₀ ^ t.exponents[i])) := by
     have hroots := roots_charpoly_coxeterElement ht
     simp_rw [← exp_two_pi_I_div_pow (t.coxeterNumber : ℂ)] at hroots
-    rw [hp_mapℂ,
-      (IsAlgClosed.splits
-        ((coxeterElement t.cartanMatrix).map (Int.castRingHom ℂ)).charpoly).eq_prod_roots_of_monic
-        (Matrix.charpoly_monic _),
-      hroots, Multiset.map_coe, Multiset.prod_coe, List.map_map]
-    conv_lhs => rw [← List.ofFn_getElem (xs := t.exponents), List.map_ofFn, Fin.prod_ofFn]
-    rfl
+    rw [hp_mapℂ]
+    refine Polynomial.eq_prod_X_sub_C_of_monic_of_roots_eq (Matrix.charpoly_monic _) ?_ ?_
+    · simp [Matrix.charpoly_natDegree_eq_dim, t.length_exponents]
+    · rw [hroots, Fin.univ_val_map]
+      conv_lhs => rw [← List.ofFn_getElem (xs := t.exponents), List.map_ofFn]
+      rfl
   rw [← hp_mapK]
   exact hζ₀.map_eq_prod_of_map_eq_prod hh hζ hprodℂ
 
@@ -552,9 +552,9 @@ theorem DynkinType.mem_exponents_of_coprime {t : DynkinType} (ht : t.Valid) {a :
   set p : ℚ[X] := (coxeterElement t.cartanMatrix).charpoly.map (Int.castRingHom ℚ)
   have hprod : p.map (algebraMap ℚ ℂ) =
       ∏ i : Fin t.exponents.length, (X - Polynomial.C (ζ ^ t.exponents[i])) := by
-    rw [Polynomial.map_map,
-      Subsingleton.elim ((algebraMap ℚ ℂ).comp (Int.castRingHom ℚ)) (Int.castRingHom ℂ)]
-    exact Coxeter.map_charpoly_coxeterElement_eq_prod ht hζ
+    simpa [p, Polynomial.mapAlg_eq_map, algebraMap_int_eq] using
+      (Polynomial.mapAlg_comp ℚ ℂ (coxeterElement t.cartanMatrix).charpoly).symm.trans
+        (Coxeter.map_charpoly_coxeterElement_eq_prod ht hζ)
   have hp1 : (p.map (algebraMap ℚ ℂ)).IsRoot ζ := by
     obtain ⟨i, hlt, hi⟩ := List.mem_iff_getElem.mp (t.one_mem_exponents ht)
     rw [hprod, IsRoot.def, eval_prod]

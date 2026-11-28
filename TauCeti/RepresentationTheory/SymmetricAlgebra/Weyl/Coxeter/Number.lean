@@ -214,12 +214,13 @@ theorem map_sub_one_eq_exponents_classifiedDynkinType [Fintype κ] (b : P.Base)
     rw [Fin.univ_val_map]
     exact congrArg Multiset.ofList List.ofFn_getElem
   rw [← hs₂]
+  have hlt_bipartite :=
+    (P.natCard_eq_and_degree_sub_one_lt_orderOf_bipartiteCoxeterElement b c hf hbij).2
   have hlt₁ : ∀ a ∈ s₁, a < orderOf g := by
     intro a ha
     rw [Multiset.mem_map] at ha
     obtain ⟨k, -, rfl⟩ := ha
-    rw [← hw]
-    exact P.degree_sub_one_lt_orderOf_wordProd b hnd hall hf hbij k
+    exact hlt_bipartite k
   have hlt₂ : ∀ a ∈ s₂, a < orderOf g := by
     intro a ha
     rw [hs₂, Multiset.mem_coe] at ha
