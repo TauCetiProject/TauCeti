@@ -55,6 +55,8 @@ the Weyl element of `GL₂(R)` to a scalar multiple of `diag(1, πᵏ)`.
 * `TauCeti.natCard_image_mk_doubleCoset_mk_diagGL_pow`: for `k ≥ 1` the double coset contains
   `qᵏ⁻¹ (q + 1)` left cosets of `Γ`.
 * `TauCeti.natCard_image_mk_rightRel_doubleCoset_mk_diagGL_pow`: it contains as many right cosets.
+* `TauCeti.finite_image_mk_rightRel_doubleCoset_mk_diagGL_pow`: the right cosets in each double
+  coset form a finite set, including at `k = 0`.
 
 ## References
 
@@ -341,5 +343,26 @@ theorem natCard_image_mk_rightRel_doubleCoset_mk_diagGL_pow [Finite (ResidueFiel
     exact Set.image_congr fun x _ ↦ QuotientGroup.quotientRightRelEquivQuotientLeftRel_mk x
   rw [← Nat.card_image_of_injective (Equiv.injective _), himage,
     natCard_image_mk_doubleCoset_mk_diagGL_pow hϖ hπ hk]
+
+/-- With finite residue field, each Cartan double coset in `PGL₂(K)` contains only finitely
+many right cosets of the image of `GL₂(R)`. -/
+theorem finite_image_mk_rightRel_doubleCoset_mk_diagGL_pow [Finite (ResidueField R)]
+    (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ = π) (k : ℕ) :
+    (Quotient.mk (QuotientGroup.rightRel
+        (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage) ''
+        doubleCoset (ProjGenLinGroup.mk (diagGL ![1, π ^ k]))
+          (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage
+          (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage).Finite := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · rw [doubleCoset_mk_diagGL_pow_zero]
+    let Γ := (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage
+    apply (Set.finite_singleton (Quotient.mk (QuotientGroup.rightRel Γ) 1)).subset
+    rintro _ ⟨g, hg, rfl⟩
+    exact Set.mem_singleton_iff.mpr (Quotient.sound
+      (QuotientGroup.rightRel_apply.mpr (by simpa only [one_mul] using Γ.inv_mem hg)))
+  · have hcard := natCard_image_mk_rightRel_doubleCoset_mk_diagGL_pow hϖ hπ hk
+    have hq : Nat.card (ResidueField R) ≠ 0 := Nat.card_pos.ne'
+    exact Set.finite_coe_iff.mp (Nat.finite_of_card_ne_zero
+      (hcard.trans_ne (mul_ne_zero (pow_ne_zero _ hq) (by omega))))
 
 end TauCeti
