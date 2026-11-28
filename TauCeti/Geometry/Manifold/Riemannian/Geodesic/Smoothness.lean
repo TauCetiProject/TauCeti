@@ -208,7 +208,7 @@ theorem isGeodesicCurveOn_proj_of_isMIntegralCurveOn [I.Boundaryless] [IsManifol
   have : IsManifold I (2 + 1) M := IsManifold.of_le (n := 3) (by norm_num)
   let _ : ContMDiffVectorBundle 2 E (TangentSpace I : M → Type _) I :=
     TangentBundle.contMDiffVectorBundle
-  have hz2 := contMDiffOn_two_of_isMIntegralCurveOn hs hz
+  have hz2 := contMDiffOn_two_of_isMIntegralCurveOn hz
     (fun _ _ ↦ (contMDiff_one_geodesicSpray (I := I) (M := M)).contMDiffAt)
   have hbase : ContMDiffOn 𝓘(ℝ, ℝ) I 2 (fun t ↦ (z t).proj) s :=
     (Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x)

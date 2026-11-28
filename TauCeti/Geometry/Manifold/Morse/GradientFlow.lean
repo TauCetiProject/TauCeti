@@ -115,7 +115,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 theorem contMDiffOn_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2 f) :
     ContMDiffOn 𝓘(ℝ) I 1 (maximalIntegralCurve (-mgradient I f) x)
       (maximalIntegralCurveInterval (-mgradient I f) x) :=
-  (contMDiffOn_two_of_isMIntegralCurveOn isOpen_maximalIntegralCurveInterval.uniqueDiffOn
+  (contMDiffOn_two_of_isMIntegralCurveOn
     (isMIntegralCurveOn_maximalIntegralCurve (contMDiff_neg_mgradient_one hf))
     fun _ _ ↦ (contMDiff_neg_mgradient_one hf).contMDiffAt).of_le one_le_two
 
