@@ -44,6 +44,10 @@ over all triples, `(#s₀ * #s₁ * #s₂) * (p * q * r)`, as a sum of three one
 
 `Finset.sum_filter_mem_mul_eq`: when the weight `w` vanishes outside a set `U`, the weighted sum
 `∑ s ∈ S, w s * r s` only sees the points of `S` lying in `U`.
+
+## Weighted sums against a constant minus a function
+
+`Finset.sum_mul_const_sub`: `∑ i ∈ s, f i * (c - g i) = c * ∑ i ∈ s, f i - ∑ i ∈ s, f i * g i`.
 -/
 
 public section
@@ -116,6 +120,14 @@ theorem sum_filter_mem_mul_eq {α R : Type*} [NonUnitalNonAssocSemiring R] (S : 
     (U : Set α) [DecidablePred (· ∈ U)] {w r : α → R} (hw : ∀ s ∉ U, w s = 0) :
     ∑ s ∈ S.filter (· ∈ U), w s * r s = ∑ s ∈ S, w s * r s :=
   sum_filter_of_ne fun s _ hs ↦ by_contra fun hsU ↦ hs <| by rw [hw s hsU, zero_mul]
+
+/-- A weighted sum of `c - g i` splits as `c` times the total weight minus the weighted sum of
+`g`: `∑ i ∈ s, f i * (c - g i) = c * ∑ i ∈ s, f i - ∑ i ∈ s, f i * g i`. -/
+theorem sum_mul_const_sub {ι R : Type*} [NonUnitalNonAssocCommRing R] (s : Finset ι)
+    (f g : ι → R) (c : R) :
+    ∑ i ∈ s, f i * (c - g i) = c * ∑ i ∈ s, f i - ∑ i ∈ s, f i * g i := by
+  rw [mul_sum, ← sum_sub_distrib]
+  exact sum_congr rfl fun i _ ↦ by rw [mul_sub, mul_comm c]
 
 /-- If every factor is `1` modulo `r`, its product is `1 + ∑ (u i - 1)` modulo `r²`. -/
 theorem sq_dvd_prod_sub_one_sub_sum_add_card {R ι : Type*} [CommRing R] (s : Finset ι)
