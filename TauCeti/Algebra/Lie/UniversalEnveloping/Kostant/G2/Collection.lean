@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.DividedPowers.RootString.G2.Signed
 public import TauCeti.RingTheory.DividedPowers.RootString.G2.ShortPair
 public import TauCeti.LinearAlgebra.RootSystem.Finite.G2.Coordinates
 public import Mathlib.Algebra.Lie.BaseChange
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootCollection
 
 /-!
 # G₂ collection for the full cocharacter Chevalley algebra
@@ -150,20 +151,17 @@ private theorem g2_triple_brackets {α β γ δ ε ζ : ι}
       (e α * e δ = e δ * e α + 3 • ((c.structConst α δ).sign • e ε)) ∧
       (e δ * e γ = e γ * e δ + 3 • ((c.structConst δ γ).sign • e ζ)) := by
   let := c.isReduced
-  have hm {i j k : ι} (hk : P.root k = P.root i + P.root j) :
-      e i * e j = e j * e i + c.structConst i j • e k := by
-    apply TauCeti.UniversalEnvelopingAlgebra.mul_eq_mul_add_zsmul_of_lie_eq (RingHom.id U)
-    simp only [LieAlgebra.ExtendScalars.bracket_tmul, one_mul,
-      root_lie_root_of_root_eq_add c hk, TensorProduct.tmul_smul]
   have hm_signed {i j k : ι} (hk : P.root k = P.root i + P.root j)
       (n : ℕ) (hn : (c.structConst i j).natAbs = n) :
       e i * e j = e j * e i + n • ((c.structConst i j).sign • e k) := by
     have hs := Int.sign_mul_natAbs (c.structConst i j)
     rw [hn, mul_comm] at hs
     simpa only [mul_smul, Nat.cast_smul_eq_nsmul] using
-      (hm hk).trans (congrArg (fun z : ℤ ↦ e j * e i + z • e k) hs.symm)
+      (ι_root_mul_ι_root_of_root_eq_add c hk).trans
+        (congrArg (fun z : ℤ ↦ e j * e i + z • e k) hs.symm)
   obtain ⟨hb, hd, hf⟩ := g2_triple_natAbs c hγ hδ hε hζ
-  exact ⟨hm hγ, hm_signed hδ 2 hb, hm_signed hε 3 hd, hm_signed hζ 3 hf⟩
+  exact ⟨ι_root_mul_ι_root_of_root_eq_add c hγ,
+    hm_signed hδ 2 hb, hm_signed hε 3 hd, hm_signed hζ 3 hf⟩
 
 /-- Collection in the short–long G₂ configuration. The four additional root factors are
 `α + β`, `2α + β`, `3α + β` and `3α + 2β`. The last coefficient uses the sign of
