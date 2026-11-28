@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Form
 
 /-!
 # The unitary subgroup of the general linear group
@@ -33,6 +34,11 @@ subgroup is the orthogonal group: these are the matrices whose transpose is a tw
   invertible matrix is inverted by its transpose.
 * `Equiv.star_reindexGL`, `Equiv.map_reindexGL_unitarySubgroup`: reindexing rows and columns
   commutes with the star and maps the unitary subgroup onto the unitary subgroup.
+* `Equiv.map_reindexGL`: reindexing commutes with a change of coefficients.
+* `Equiv.star_reindexGL_mul_reindex_mul_reindexGL`: congruence commutes with reindexing.
+* `Equiv.reindexGL_mem_unitaryGroupOf_iff`, `Equiv.map_reindexGL_unitaryGroupOf`: more generally,
+  reindexing maps the unitary group `Matrix.unitaryGroupOf A` of a sesquilinear form onto that of
+  the reindexed Gram matrix.
 -/
 
 public section
@@ -101,13 +107,48 @@ theorem star_reindexGL (M : GL n R) : star (e.reindexGL R M) = e.reindexGL R (st
   Units.ext <| by
     simp [Matrix.star_eq_conjTranspose, Matrix.conjTranspose_submatrix]
 
+omit [StarRing R] in
+/-- **Congruence commutes with reindexing**: `M ↦ star M * A * M` computed after reindexing `M`
+and `A` along `e` is the reindexing of `star M * A * M`. -/
+theorem star_reindexGL_mul_reindex_mul_reindexGL [Star R] (M : GL n R) (A : Matrix n n R) :
+    star (e.reindexGL R M : Matrix p p R) * Matrix.reindex e e A *
+        (e.reindexGL R M : Matrix p p R) =
+      Matrix.reindex e e (star (M : Matrix n n R) * A * (M : Matrix n n R)) := by
+  simp only [coe_reindexGL, Matrix.reindex_apply, Matrix.star_eq_conjTranspose,
+    Matrix.conjTranspose_submatrix, Matrix.submatrix_mul_equiv]
+
+/-- **Reindexing commutes with a change of coefficients** applied entrywise. -/
+theorem map_reindexGL {S T : Type*} [CommRing S] [CommRing T] (f : S →+* T) (M : GL n S) :
+    GeneralLinearGroup.map f (e.reindexGL S M) = e.reindexGL T (GeneralLinearGroup.map f M) :=
+  Units.ext <| by simp [Matrix.submatrix_map]
+
+variable {e R} in
+/-- **Reindexing preserves the unitary group of a form**: reindexing an invertible matrix `M` along
+`e` gives an element of the unitary group of the reindexed Gram matrix exactly when `M` preserves
+the form of `A`. -/
+theorem reindexGL_mem_unitaryGroupOf_iff {A : Matrix n n R} {M : GL n R} :
+    e.reindexGL R M ∈ Matrix.unitaryGroupOf (Matrix.reindex e e A) ↔
+      M ∈ Matrix.unitaryGroupOf A := by
+  rw [Matrix.mem_unitaryGroupOf_iff, Matrix.mem_unitaryGroupOf_iff,
+    star_reindexGL_mul_reindex_mul_reindexGL]
+  exact (Matrix.reindex e e).injective.eq_iff
+
+/-- **Reindexing maps the unitary group of a form onto the unitary group of the reindexed form.**
+-/
+@[simp]
+theorem map_reindexGL_unitaryGroupOf (A : Matrix n n R) :
+    (Matrix.unitaryGroupOf A).map (e.reindexGL R) =
+      Matrix.unitaryGroupOf (Matrix.reindex e e A) := by
+  ext M
+  rw [mem_map_reindexGL_iff, ← reindexGL_mem_unitaryGroupOf_iff (e := e),
+    reindexGL_apply_symm_reindexGL]
+
 /-- **Reindexing preserves the unitary subgroup** of the general linear group. For a trivial star
 operation this is the orthogonal subgroup. -/
 @[simp]
 theorem map_reindexGL_unitarySubgroup :
     (unitarySubgroup (GL n R)).map (e.reindexGL R) = unitarySubgroup (GL p R) := by
-  ext M
-  rw [mem_map_reindexGL_iff]
-  simp [mem_unitarySubgroup_iff, Unitary.mem_iff, ← map_mul]
+  rw [← Matrix.unitaryGroupOf_one, ← Matrix.unitaryGroupOf_one, map_reindexGL_unitaryGroupOf,
+    Matrix.reindex_apply, Matrix.submatrix_one_equiv]
 
 end Equiv
