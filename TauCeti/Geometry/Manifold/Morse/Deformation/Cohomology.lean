@@ -288,7 +288,9 @@ compact bands with `s, s' < c < t, t'`, in each of which every critical point of
 level `c`. Then `Hⁿ({f ≤ t}, {f ≤ s})` and `Hⁿ({f ≤ t'}, {f ≤ s'})` are isomorphic: cutting off
 the regular collars identifies both with `Hⁿ({f ≤ min t t'}, {f ≤ max s s'})`
 (`TauCeti.singularCohomologySublevelPairIsoOfCollars`). So the relative cohomology of a band
-around an isolated critical value depends only on the value. -/
+around an isolated critical value depends only on the value; for a symmetric subband this agrees
+with `TauCeti.singularCohomologySublevelPairIsoSymmetricBand`
+(`TauCeti.singularCohomologySublevelPairIsoSymmetricBand_eq_ofCriticalValue`). -/
 def singularCohomologySublevelPairIsoOfCriticalValue (hf : ContMDiff I 𝓘(ℝ) ∞ f)
     {c s t s' t' : ℝ} (hsc : s < c) (hct : c < t) (hs'c : s' < c) (hct' : c < t')
     (hcompact : IsCompact (f ⁻¹' Icc s t)) (hcompact' : IsCompact (f ⁻¹' Icc s' t'))
@@ -303,6 +305,100 @@ def singularCohomologySublevelPairIsoOfCriticalValue (hf : ContMDiff I 𝓘(ℝ)
       hcompact hcrit R k N n ≪≫
     (singularCohomologySublevelPairIsoSubBand hf hs'c hct' (le_max_right s s') hu hv
       (min_le_right t t') hcompact' hcrit' R k N n).symm
+
+/-- When the inner band coincides with the outer band, `singularCohomologySublevelPairIsoSubBand`
+is the identity isomorphism. -/
+private lemma singularCohomologySublevelPairIsoSubBand_refl (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    {c s t u v : ℝ} (hsc : s < c) (hct : c < t) (hsu : s ≤ u) (huc : u < c) (hcv : c < v)
+    (hvt : v ≤ t) (hus : u = s) (hvt' : v = t) (hcompact : IsCompact (f ⁻¹' Icc s t))
+    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc s t → f x = c)
+    (R : C) (k : Type*) [Ring k] [Linear k C] (N : C) (n : ℕ) :
+    (singularCohomologySublevelPairIsoSubBand hf hsc hct hsu huc hcv hvt hcompact hcrit
+      R k N n).hom = eqToHom (by subst hus hvt'; rfl) := by
+  subst hus hvt'
+  have hfc := hf.continuous
+  have h := singularCohomologySublevelPairIsoOfCollars_hom_comp_singularCohomologyMap_totalToOuter
+    R k N hf hsu (huc.trans hcv).le hvt
+    (isCompact_preimage_Icc_of_subset hfc hcompact le_rfl (huc.trans hct).le)
+    (isCompact_preimage_Icc_of_subset hfc hcompact (hsc.trans hcv).le le_rfl)
+    (mfderiv_ne_zero_of_notMem_Icc hcrit le_rfl (huc.trans hct).le fun h ↦ huc.not_ge h.2)
+    (mfderiv_ne_zero_of_notMem_Icc hcrit (hsc.trans hcv).le le_rfl fun h ↦ hcv.not_ge h.1) n
+  have h1 : TopTriple.totalToOuter.app (TopTriple.ofInclusions (X := TopCat.of M)
+      (sublevel_mono f hsu) (sublevel_mono f (huc.trans hcv).le)) = 𝟙 _ := by
+    refine TopPair.hom_ext_of_fst _ ?_
+    rw [TopTriple.totalToOuter_app_fst, TopPair.Hom.fst_id]
+  have h2 : TopTriple.innerToTotal.app (TopTriple.ofInclusions (X := TopCat.of M)
+      (sublevel_mono f (hsu.trans (huc.trans hcv).le)) (sublevel_mono f hvt)) = 𝟙 _ := by
+    refine TopPair.hom_ext_of_fst _ ?_
+    rw [TopTriple.innerToTotal_app_fst, TopPair.Hom.fst_id]
+    rfl
+  have hT₁ : TopPair.singularCohomologyMap (R := R) (k := k) (M := N)
+      (TopTriple.totalToOuter.app (TopTriple.ofInclusions (X := TopCat.of M)
+        (sublevel_mono f hsu) (sublevel_mono f (huc.trans hcv).le))) n = 𝟙 _ := by
+    rw [h1]
+    exact TopPair.singularCohomologyMap_id _ _
+  have hT₂ : TopPair.singularCohomologyMap (R := R) (k := k) (M := N)
+      (TopTriple.innerToTotal.app (TopTriple.ofInclusions (X := TopCat.of M)
+        (sublevel_mono f (hsu.trans (huc.trans hcv).le)) (sublevel_mono f hvt))) n = 𝟙 _ := by
+    rw [h2]
+    exact TopPair.singularCohomologyMap_id _ _
+  rw [hT₁, hT₂] at h
+  exact (Category.comp_id _).symm.trans h
+
+/-- Replacing the inner endpoints of `singularCohomologySublevelPairIsoSubBand` by equal reals
+conjugates the isomorphism by `eqToHom`. -/
+private lemma singularCohomologySublevelPairIsoSubBand_hom_eq (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    {c s t u v u' v' : ℝ} (hsc : s < c) (hct : c < t)
+    (hsu : s ≤ u) (huc : u < c) (hcv : c < v) (hvt : v ≤ t)
+    (hsu' : s ≤ u') (hu'c : u' < c) (hcv' : c < v') (hv't : v' ≤ t)
+    (hu : u = u') (hv : v = v') (hcompact : IsCompact (f ⁻¹' Icc s t))
+    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc s t → f x = c)
+    (R : C) (k : Type*) [Ring k] [Linear k C] (N : C) (n : ℕ) :
+    (singularCohomologySublevelPairIsoSubBand hf hsc hct hsu huc hcv hvt hcompact hcrit
+        R k N n).hom ≫
+      eqToHom (by subst hu hv; rfl) =
+      (singularCohomologySublevelPairIsoSubBand hf hsc hct hsu' hu'c hcv' hv't hcompact hcrit
+        R k N n).hom := by
+  subst hu hv
+  simp
+
+/-- The narrowed-band identification `TauCeti.singularCohomologySublevelPairIsoSymmetricBand`
+agrees with `TauCeti.singularCohomologySublevelPairIsoOfCriticalValue` for the bands `f⁻¹[a, b]`
+and `f⁻¹[c - ε, c + ε]`, so the naturality lemma
+`TauCeti.singularCohomologySublevelPairIsoOfCriticalValue_hom_comp_singularCohomologyMap`
+applies to it. -/
+lemma singularCohomologySublevelPairIsoSymmetricBand_eq_ofCriticalValue
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) {c ε : ℝ} (hac : a < c) (hcb : c < b)
+    (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
+    (hε : 0 < ε) (hεδ : ε ≤ min (c - a) (b - c)) (R : C) (k : Type*) [Ring k] [Linear k C]
+    (N : C) (n : ℕ) :
+    singularCohomologySublevelPairIsoSymmetricBand R k N hf hac hcb hcompact hcrit hε hεδ n =
+      singularCohomologySublevelPairIsoOfCriticalValue hf hac hcb (by linarith : c - ε < c)
+        (by linarith : c < c + ε) hcompact
+        (Icc_subset_and_isCompact_preimage_Icc hf.continuous hcompact hεδ).2 hcrit
+        (fun x hx hfx ↦ hcrit x hx
+          ((Icc_subset_and_isCompact_preimage_Icc hf.continuous hcompact hεδ).1 hfx))
+        R k N n := by
+  have ha : a ≤ c - ε := by linarith [hεδ.trans (min_le_left _ _)]
+  have hb : c + ε ≤ b := by linarith [hεδ.trans (min_le_right _ _)]
+  have hu : max a (c - ε) = c - ε := max_eq_right ha
+  have hv : min b (c + ε) = c + ε := min_eq_right hb
+  apply Iso.ext
+  simp only [singularCohomologySublevelPairIsoSymmetricBand_def,
+    singularCohomologySublevelPairIsoOfCriticalValue, Iso.trans_hom, Iso.symm_hom]
+  have hR_hom := singularCohomologySublevelPairIsoSubBand_refl hf (by linarith : c - ε < c)
+    (by linarith : c < c + ε) (le_max_right a (c - ε)) (max_lt hac (by linarith : c - ε < c))
+    (lt_min hcb (by linarith : c < c + ε)) (min_le_right b (c + ε)) hu hv
+    (Icc_subset_and_isCompact_preimage_Icc hf.continuous hcompact hεδ).2
+    (fun x hx hfx ↦ hcrit x hx
+      ((Icc_subset_and_isCompact_preimage_Icc hf.continuous hcompact hεδ).1 hfx)) R k N n
+  symm
+  rw [Iso.comp_inv_eq, hR_hom]
+  exact (singularCohomologySublevelPairIsoSubBand_hom_eq hf hac hcb ha (by linarith : c - ε < c)
+    (by linarith : c < c + ε) hb (le_max_left a (c - ε)) (max_lt hac (by linarith : c - ε < c))
+    (lt_min hcb (by linarith : c < c + ε)) (min_le_left b (c + ε)) hu.symm hv.symm
+    hcompact hcrit R k N n).symm
 
 /-- The identification `TauCeti.singularCohomologySublevelPairIsoOfCollars` of
 `Hⁿ({f ≤ b}, {f ≤ a})` with `Hⁿ({f ≤ t}, {f ≤ s})` is compatible with inclusions of pairs: for
