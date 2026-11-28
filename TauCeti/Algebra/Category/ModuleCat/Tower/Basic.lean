@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
+public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.CategoryTheory.Category.Preorder
 public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.CategoryTheory.Limits.IsLimit
@@ -50,6 +51,7 @@ noncommutative ring are allowed.
   morphism of towers, with their identity, composition, zero and addition laws.
 * `TauCeti.ModuleTower.limEquivOfIso`, `TauCeti.ModuleTower.limOneEquivOfIso`: the linear
   equivalences on `lim` and `lim¹` induced by an isomorphism of towers.
+* `TauCeti.ModuleTower.limRestrictScalarsIso`: `lim` commutes with `ModuleCat.restrictScalars`.
 * `TauCeti.ModuleTower.limMap_inj`: a morphism out of a tower with surjective transitions is
   determined by the map it induces on `lim`.
 * `TauCeti.ModuleTower.limMap_injective`, `TauCeti.ModuleTower.limOneMap_surjective`: levelwise
@@ -624,6 +626,60 @@ theorem smulTower_transition (f : R) (n : ℕ) :
   rfl
 
 end SMulTower
+
+section RestrictScalars
+
+universe u₁ u₂
+
+/-- Restriction of scalars along a ring homomorphism `φ : R →+* S` commutes with taking the limit
+of a tower of `S`-modules. -/
+def limRestrictScalarsIso {R : Type u₁} {S : Type u₂} [Ring R] [Ring S] (φ : R →+* S)
+    (F : ModuleTower.{v} S) :
+    (ModuleCat.restrictScalars φ).obj (ModuleCat.of S F.lim) ≅
+      ModuleCat.of R (ModuleTower.lim (F ⋙ ModuleCat.restrictScalars φ)) where
+  hom := ModuleCat.ofHom (X := (ModuleCat.restrictScalars φ).obj (ModuleCat.of S F.lim))
+    { toFun := fun (x : F.lim) ↦ ⟨x.val,
+        (mem_lim (F := F ⋙ ModuleCat.restrictScalars φ)).2 fun n ↦
+          (LinearMap.congr_fun
+            (transition_def (F ⋙ ModuleCat.restrictScalars φ) n) _).trans
+            ((LinearMap.congr_fun (transition_def F n)
+              (x.val (n + 1))).symm.trans ((mem_lim (F := F)).1 x.property n))⟩
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ rfl }
+  inv := ModuleCat.ofHom (Y := (ModuleCat.restrictScalars φ).obj (ModuleCat.of S F.lim))
+    { toFun := fun (x : ModuleTower.lim (F ⋙ ModuleCat.restrictScalars φ)) ↦ ⟨x.val,
+        (mem_lim (F := F)).2 fun n ↦
+          (LinearMap.congr_fun (transition_def F n) _).trans
+            ((LinearMap.congr_fun
+              (transition_def (F ⋙ ModuleCat.restrictScalars φ) n)
+              (x.val (n + 1))).symm.trans
+              ((mem_lim
+                (F := F ⋙ ModuleCat.restrictScalars φ)).1 x.property n))⟩
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ rfl }
+  hom_inv_id := rfl
+  inv_hom_id := rfl
+
+/-- The forward map of `limRestrictScalarsIso` preserves limit projections. -/
+@[simp]
+theorem limπ_limRestrictScalarsIso_hom {R : Type u₁} {S : Type u₂} [Ring R] [Ring S]
+    (φ : R →+* S) (F : ModuleTower.{v} S) (n : ℕ) (x : F.lim) :
+    dsimp% only [CategoryTheory.Functor.comp_obj]
+      (limπ (F ⋙ ModuleCat.restrictScalars φ) n ((limRestrictScalarsIso φ F).hom x)) =
+      F.limπ n x :=
+  (limπ_apply _ n _).trans (limπ_apply F n x).symm
+
+/-- The inverse map of `limRestrictScalarsIso` preserves limit projections. -/
+@[simp]
+theorem limπ_limRestrictScalarsIso_inv {R : Type u₁} {S : Type u₂} [Ring R] [Ring S]
+    (φ : R →+* S) (F : ModuleTower.{v} S) (n : ℕ)
+    (x : ModuleTower.lim (F ⋙ ModuleCat.restrictScalars φ)) :
+    dsimp% only [CategoryTheory.Functor.comp_obj]
+      (F.limπ n ((limRestrictScalarsIso φ F).inv x)) =
+      limπ (F ⋙ ModuleCat.restrictScalars φ) n x :=
+  (limπ_apply F n _).trans (limπ_apply _ n x).symm
+
+end RestrictScalars
 
 end ModuleTower
 

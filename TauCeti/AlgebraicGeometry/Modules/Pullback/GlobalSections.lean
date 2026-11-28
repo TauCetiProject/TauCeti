@@ -37,6 +37,13 @@ The construction uses `tildeFunctorCompPullbackIso`, the tilde/global-sections a
 and the extension/restriction-of-scalars adjunction. The characteristic equation identifies
 it with the map adjoint to pulling back global sections.
 
+The file also records how pullback adjunction units act on global sections of `Spec` modules
+under `pullbackCongr`, `pullbackComp`, `pullbackCompIsoOfCommSq`, and `pullbackCompIsoId`,
+together with naturality and square-transition compatibility
+(`AlgebraicGeometry.moduleSpecΓFunctor_map_unit_naturality`,
+`AlgebraicGeometry.moduleSpecΓFunctor_map_square_transition`,
+`AlgebraicGeometry.moduleSpecΓFunctor_map_inv_hom_cancel`).
+
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, Proposition II.5.2(e).
@@ -270,3 +277,241 @@ lemma ker_moduleSpecΓFunctor_map_unit (hφ : Function.Surjective φ.hom)
 end
 
 end CommRingCat.Hom
+
+namespace AlgebraicGeometry
+
+open CategoryTheory Opposite
+
+universe u
+
+noncomputable section
+
+/-- Compatibility of the pullback adjunction unit on global sections with equality of scheme
+morphisms. -/
+lemma moduleSpecΓFunctor_map_unit_pullbackCongr
+    {R₀ S₀ : CommRingCat.{u}} {f g : Spec S₀ ⟶ Spec R₀} (h : f = g)
+    (M : (Spec R₀).Modules) (m : moduleSpecΓFunctor.obj M) :
+    moduleSpecΓFunctor.map ((Scheme.Modules.pullbackCongr h).hom.app M)
+        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app M)
+          m) =
+      moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction g).unit.app M) m := by
+  subst h
+  simp only [Scheme.Modules.pullbackCongr, eqToIso_refl, Iso.refl_hom, NatTrans.id_app,
+    CategoryTheory.Functor.map_id]
+  rfl
+
+/-- On global sections, the inverse composition comparison `(f ≫ g)^* ⟶ f^* g^*` sends the
+unit of `f ≫ g` to the composite of the units of `g` and `f`. -/
+lemma moduleSpecΓFunctor_map_pullbackComp_inv_unit
+    {R₀ S₀ T₀ : CommRingCat.{u}} (f : Spec T₀ ⟶ Spec S₀) (g : Spec S₀ ⟶ Spec R₀)
+    (M : (Spec R₀).Modules) (m : moduleSpecΓFunctor.obj M) :
+    moduleSpecΓFunctor.map ((Scheme.Modules.pullbackComp f g).inv.app M)
+        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction (f ≫ g)).unit.app M)
+          m) =
+      moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app
+        ((Scheme.Modules.pullback g).obj M))
+        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction g).unit.app M)
+          m) := by
+  have h := congrArg (fun k ↦ (moduleSpecΓFunctor (R := R₀)).map k m)
+    (Scheme.Modules.unit_comp_pushforward_map_pullbackComp_inv_app f g M)
+  simp only [CategoryTheory.Functor.map_comp, ModuleCat.comp_apply] at h
+  exact h
+
+/-- On global sections, the composition comparison `f^* g^* ⟶ (f ≫ g)^*` sends the composite
+of the units of `g` and `f` to the unit of `f ≫ g`. -/
+lemma moduleSpecΓFunctor_map_pullbackComp_hom_unit
+    {R₀ S₀ T₀ : CommRingCat.{u}} (f : Spec T₀ ⟶ Spec S₀) (g : Spec S₀ ⟶ Spec R₀)
+    (M : (Spec R₀).Modules) (m : moduleSpecΓFunctor.obj M) :
+    moduleSpecΓFunctor.map ((Scheme.Modules.pullbackComp f g).hom.app M)
+        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app
+          ((Scheme.Modules.pullback g).obj M))
+          (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction g).unit.app M)
+            m)) =
+      moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction (f ≫ g)).unit.app M)
+        m := by
+  let z : moduleSpecΓFunctor.obj ((Scheme.Modules.pullback (f ≫ g)).obj M) :=
+    moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction (f ≫ g)).unit.app M) m
+  have h2 := congrArg (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackComp f g).hom.app M))
+    (moduleSpecΓFunctor_map_pullbackComp_inv_unit f g M m).symm
+  refine h2.trans ?_
+  calc moduleSpecΓFunctor.map ((Scheme.Modules.pullbackComp f g).hom.app M)
+        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackComp f g).inv.app M) z)
+      = moduleSpecΓFunctor.map ((Scheme.Modules.pullbackComp f g).inv.app M ≫
+          (Scheme.Modules.pullbackComp f g).hom.app M) z :=
+        (moduleSpecΓFunctor_map_comp_apply _ _ z).symm
+    _ = z := by rw [Iso.inv_hom_id_app, CategoryTheory.Functor.map_id, ModuleCat.id_apply]
+
+/-- Around a commutative square of spectra, `pullbackCompIsoOfCommSq` intertwines the two
+composite pullback units on global sections. -/
+lemma moduleSpecΓFunctor_map_pullbackCompIsoOfCommSq_unit
+    {R₀ R₁ S₀ S₁ : CommRingCat.{u}}
+    {t : Spec S₀ ⟶ Spec S₁} {l : Spec S₀ ⟶ Spec R₀}
+    {r : Spec S₁ ⟶ Spec R₁} {b : Spec R₀ ⟶ Spec R₁}
+    (sq : CommSq t l r b) (M : (Spec R₁).Modules) (m : moduleSpecΓFunctor.obj M) :
+    moduleSpecΓFunctor.map ((Scheme.Modules.pullbackCompIsoOfCommSq sq).hom.app M)
+        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction t).unit.app
+          ((Scheme.Modules.pullback r).obj M))
+          (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction r).unit.app M)
+            m)) =
+      moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction l).unit.app
+        ((Scheme.Modules.pullback b).obj M))
+        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction b).unit.app M)
+          m) := by
+  rw [Scheme.Modules.pullbackCompIsoOfCommSq_hom_app]
+  refine (moduleSpecΓFunctor_map_comp_apply _ _ _).trans ?_
+  refine (congrArg (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackComp l b).inv.app M)) ?_).trans
+    (moduleSpecΓFunctor_map_pullbackComp_inv_unit l b M m)
+  refine (moduleSpecΓFunctor_map_comp_apply _ _ _).trans ?_
+  refine (congrArg (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackCongr sq.w).hom.app M))
+    (moduleSpecΓFunctor_map_pullbackComp_hom_unit t r M m)).trans ?_
+  exact moduleSpecΓFunctor_map_unit_pullbackCongr sq.w M m
+
+/-- Around a commutative square of spectra, the inverse of `pullbackCompIsoOfCommSq` intertwines
+the two composite pullback units on global sections. -/
+lemma moduleSpecΓFunctor_map_pullbackCompIsoOfCommSq_inv_unit
+    {R₀ R₁ S₀ S₁ : CommRingCat.{u}}
+    {t : Spec S₀ ⟶ Spec S₁} {l : Spec S₀ ⟶ Spec R₀}
+    {r : Spec S₁ ⟶ Spec R₁} {b : Spec R₀ ⟶ Spec R₁}
+    (sq : CommSq t l r b) (M : (Spec R₁).Modules) (m : moduleSpecΓFunctor.obj M) :
+    moduleSpecΓFunctor.map ((Scheme.Modules.pullbackCompIsoOfCommSq sq).inv.app M)
+        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction l).unit.app
+          ((Scheme.Modules.pullback b).obj M))
+          (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction b).unit.app M)
+            m)) =
+      moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction t).unit.app
+        ((Scheme.Modules.pullback r).obj M))
+        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction r).unit.app M)
+          m) := by
+  refine (congrArg (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackCompIsoOfCommSq sq).inv.app M))
+    (moduleSpecΓFunctor_map_pullbackCompIsoOfCommSq_unit sq M m).symm).trans ?_
+  refine (moduleSpecΓFunctor_map_comp_apply _ _ _).symm.trans ?_
+  rw [Iso.hom_inv_id_app, CategoryTheory.Functor.map_id]
+  rfl
+
+/-- For a section `f ≫ g = 𝟙` of spectra, `pullbackCompIsoId` cancels the composite pullback
+units on global sections. -/
+lemma moduleSpecΓFunctor_map_pullbackCompIsoId_unit
+    {R₀ S₀ : CommRingCat.{u}} {f : Spec R₀ ⟶ Spec S₀} {g : Spec S₀ ⟶ Spec R₀}
+    (h : f ≫ g = 𝟙 (Spec R₀)) (M : (Spec R₀).Modules) (m : moduleSpecΓFunctor.obj M) :
+    moduleSpecΓFunctor.map ((Scheme.Modules.pullbackCompIsoId h).hom.app M)
+        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app
+          ((Scheme.Modules.pullback g).obj M))
+          (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction g).unit.app M)
+            m)) =
+      m := by
+  have h1 := congrArg (fun k ↦ (k.app ⊤).hom m)
+    (Scheme.Modules.unit_comp_pushforwardCongr_hom_app_pushforwardId_hom_app
+      (rfl : 𝟙 (Spec R₀) = 𝟙 (Spec R₀)) M)
+  simp only [Scheme.Modules.Hom.comp_app,
+    Scheme.Modules.pushforwardId_hom_app_app, Scheme.Modules.pushforwardCongr_hom_app_app,
+    Scheme.Modules.pullbackCongr, eqToIso_refl, Iso.refl_hom, NatTrans.id_app,
+    eqToHom_refl, op_id, CategoryTheory.Functor.map_id, Category.comp_id] at h1
+  have hid : moduleSpecΓFunctor.map ((Scheme.Modules.pullbackId (Spec R₀)).hom.app M)
+      (moduleSpecΓFunctor.map
+        ((Scheme.Modules.pullbackPushforwardAdjunction (𝟙 (Spec R₀))).unit.app M) m) = m := by
+    refine (congrArg (((Scheme.Modules.pullbackId (Spec R₀)).hom.app M).app ⊤) h1).trans ?_
+    change (((Scheme.Modules.pullbackId (Spec R₀)).inv.app M ≫
+      (Scheme.Modules.pullbackId (Spec R₀)).hom.app M).app ⊤).hom m = m
+    rw [Iso.inv_hom_id_app]; rfl
+  rw [Scheme.Modules.pullbackCompIsoId_hom_app]
+  refine (moduleSpecΓFunctor_map_comp_apply _ _ _).trans ?_
+  refine (congrArg (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackId (Spec R₀)).hom.app M))
+    ?_).trans hid
+  refine (moduleSpecΓFunctor_map_comp_apply _ _ _).trans ?_
+  refine (congrArg (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackCongr h).hom.app M))
+    (moduleSpecΓFunctor_map_pullbackComp_hom_unit f g M m)).trans ?_
+  exact moduleSpecΓFunctor_map_unit_pullbackCongr h M m
+
+/-- Naturality of the pullback adjunction unit on global sections of `Spec` modules. -/
+lemma moduleSpecΓFunctor_map_unit_naturality
+    {R₀ S₀ : CommRingCat.{u}} (f : Spec S₀ ⟶ Spec R₀) {M N : (Spec R₀).Modules}
+    (u : M ⟶ N) (m : moduleSpecΓFunctor.obj M) :
+    moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app N)
+        (moduleSpecΓFunctor.map u m) =
+      moduleSpecΓFunctor.map ((Scheme.Modules.pullback f).map u)
+        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app M)
+          m) := by
+  let m' : Γ(M, ⊤) := m
+  have h := congrArg (fun k ↦ (k.app ⊤).hom m')
+    ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.naturality u)
+  simp only [CategoryTheory.Functor.id_map, CategoryTheory.Functor.comp_map,
+    Scheme.Modules.Hom.comp_app, AddCommGrpCat.hom_comp, AddMonoidHom.comp_apply] at h
+  rw [Scheme.Modules.pushforward_map_app] at h
+  change (((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app N).app ⊤).hom
+      ((u.app ⊤).hom m') =
+    (((Scheme.Modules.pullback f).map u).app (f ⁻¹ᵁ ⊤)).hom
+      ((((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app M).app ⊤).hom m')
+  exact h
+
+/-- Compatibility of pullback-unit actions on global sections around a commutative square of
+spectra with compatible transition and comparison morphisms. -/
+lemma moduleSpecΓFunctor_map_square_transition
+    {R₀ R₁ S₀ S₁ : CommRingCat.{u}}
+    {t : Spec S₀ ⟶ Spec S₁} {l : Spec S₀ ⟶ Spec R₀}
+    {r : Spec S₁ ⟶ Spec R₁} {b : Spec R₀ ⟶ Spec R₁}
+    (sq : CommSq t l r b)
+    {M₀_m : (Spec R₀).Modules} {M₀_m1 : (Spec R₁).Modules}
+    {M₁_m : (Spec S₀).Modules} {M₁_m1 : (Spec S₁).Modules}
+    (t₀ : (Scheme.Modules.pullback b).obj M₀_m1 ⟶ M₀_m)
+    (t₁ : (Scheme.Modules.pullback t).obj M₁_m1 ⟶ M₁_m)
+    (e₀ : (Scheme.Modules.pullback l).obj M₀_m ⟶ M₁_m)
+    (e₁ : (Scheme.Modules.pullback r).obj M₀_m1 ⟶ M₁_m1)
+    (hnat : (Scheme.Modules.pullback t).map e₁ ≫ t₁ =
+      (Scheme.Modules.pullbackCompIsoOfCommSq sq).hom.app M₀_m1 ≫
+        (Scheme.Modules.pullback l).map t₀ ≫ e₀)
+    (x : moduleSpecΓFunctor.obj M₀_m1) :
+    moduleSpecΓFunctor.map e₀
+        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction l).unit.app M₀_m)
+          (moduleSpecΓFunctor.map t₀
+            (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction b).unit.app
+              M₀_m1) x))) =
+      moduleSpecΓFunctor.map t₁
+        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction t).unit.app M₁_m1)
+          (moduleSpecΓFunctor.map e₁
+            (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction r).unit.app
+              M₀_m1) x))) := by
+  have hnat' : (Scheme.Modules.pullback l).map t₀ ≫ e₀ =
+      (Scheme.Modules.pullbackCompIsoOfCommSq sq).inv.app M₀_m1 ≫
+        (Scheme.Modules.pullback t).map e₁ ≫ t₁ :=
+    Eq.symm <|
+      (congrArg ((Scheme.Modules.pullbackCompIsoOfCommSq sq).inv.app M₀_m1 ≫ ·) hnat).trans
+        (Iso.inv_hom_id_app_assoc (Scheme.Modules.pullbackCompIsoOfCommSq sq) M₀_m1 _)
+  refine (congrArg (moduleSpecΓFunctor.map e₀)
+    (moduleSpecΓFunctor_map_unit_naturality l t₀ _)).trans ?_
+  refine (moduleSpecΓFunctor_map_comp_apply _ _ _).symm.trans ?_
+  refine (congrArg (fun k ↦ (moduleSpecΓFunctor.map k) _) hnat').trans ?_
+  refine (moduleSpecΓFunctor_map_comp_apply _ _ _).trans ?_
+  refine (moduleSpecΓFunctor_map_comp_apply _ _ _).trans ?_
+  refine (congrArg (fun z ↦ moduleSpecΓFunctor.map t₁
+    (moduleSpecΓFunctor.map ((Scheme.Modules.pullback t).map e₁) z))
+    (moduleSpecΓFunctor_map_pullbackCompIsoOfCommSq_inv_unit sq M₀_m1 x)).trans ?_
+  exact congrArg (moduleSpecΓFunctor.map t₁)
+    (moduleSpecΓFunctor_map_unit_naturality t e₁ _).symm
+
+/-- Cancellation of one-sided inverse module morphisms on global sections along a section
+`f ≫ g = 𝟙` of spectra. -/
+lemma moduleSpecΓFunctor_map_inv_hom_cancel
+    {R₀ S₀ : CommRingCat.{u}} {f : Spec R₀ ⟶ Spec S₀} {g : Spec S₀ ⟶ Spec R₀}
+    (h : f ≫ g = 𝟙 (Spec R₀)) {M₀ : (Spec R₀).Modules} {N : (Spec S₀).Modules}
+    (u : (Scheme.Modules.pullback g).obj M₀ ⟶ N)
+    (v : (Scheme.Modules.pullback f).obj N ⟶ M₀)
+    (huv : (Scheme.Modules.pullback f).map u ≫ v =
+      (Scheme.Modules.pullbackCompIsoId h).hom.app M₀)
+    (x : moduleSpecΓFunctor.obj N) (y : moduleSpecΓFunctor.obj M₀)
+    (hy : moduleSpecΓFunctor.map u
+        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction g).unit.app M₀) y) =
+      x) :
+    y = moduleSpecΓFunctor.map v
+      (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app N) x) := by
+  have h1 := congrArg (fun z ↦ moduleSpecΓFunctor.map v
+    (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app N) z))
+    hy.symm
+  refine Eq.trans ?_ h1.symm
+  refine (moduleSpecΓFunctor_map_pullbackCompIsoId_unit h M₀ y).symm.trans ?_
+  refine (congrArg (fun k ↦ moduleSpecΓFunctor.map k _) huv.symm).trans ?_
+  refine (moduleSpecΓFunctor_map_comp_apply _ _ _).trans ?_
+  exact congrArg (moduleSpecΓFunctor.map v) (moduleSpecΓFunctor_map_unit_naturality f u _).symm
+
+end
+
+end AlgebraicGeometry

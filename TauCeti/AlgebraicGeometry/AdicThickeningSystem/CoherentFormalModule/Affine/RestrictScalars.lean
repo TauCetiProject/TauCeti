@@ -42,155 +42,6 @@ noncomputable section
 
 variable {R : Type u} [CommRing R]
 
-private lemma moduleSpecΓFunctor_map_comp_apply {R₀ : CommRingCat.{u}}
-    {M N P : (Spec R₀).Modules} (u : M ⟶ N) (v : N ⟶ P) (x : moduleSpecΓFunctor.obj M) :
-    moduleSpecΓFunctor.map (u ≫ v) x =
-      moduleSpecΓFunctor.map v (moduleSpecΓFunctor.map u x) := by
-  rw [Functor.map_comp, ModuleCat.comp_apply]
-
-private lemma moduleSpecΓFunctor_map_unit_pullbackCongr
-    {R₀ S₀ : CommRingCat.{u}} {f g : Spec S₀ ⟶ Spec R₀} (h : f = g)
-    (M : (Spec R₀).Modules) (m : moduleSpecΓFunctor.obj M) :
-    moduleSpecΓFunctor.map ((Scheme.Modules.pullbackCongr h).hom.app M)
-        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app M)
-          m) =
-      moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction g).unit.app M) m := by
-  subst h
-  simp [Scheme.Modules.pullbackCongr]
-  rfl
-
-private lemma moduleSpecΓFunctor_map_pullbackComp_inv_unit
-    {R₀ S₀ T₀ : CommRingCat.{u}} (f : Spec T₀ ⟶ Spec S₀) (g : Spec S₀ ⟶ Spec R₀)
-    (M : (Spec R₀).Modules) (m : moduleSpecΓFunctor.obj M) :
-    moduleSpecΓFunctor.map ((Scheme.Modules.pullbackComp f g).inv.app M)
-        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction (f ≫ g)).unit.app M)
-          m) =
-      moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app
-        ((Scheme.Modules.pullback g).obj M))
-        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction g).unit.app M)
-          m) := by
-  have h := congrArg (fun k ↦ (moduleSpecΓFunctor (R := R₀)).map k m)
-    (Scheme.Modules.unit_comp_pushforward_map_pullbackComp_inv_app f g M)
-  simp only [Functor.map_comp, ModuleCat.comp_apply] at h
-  exact h
-
-private lemma moduleSpecΓFunctor_map_pullbackComp_hom_unit
-    {R₀ S₀ T₀ : CommRingCat.{u}} (f : Spec T₀ ⟶ Spec S₀) (g : Spec S₀ ⟶ Spec R₀)
-    (M : (Spec R₀).Modules) (m : moduleSpecΓFunctor.obj M) :
-    moduleSpecΓFunctor.map ((Scheme.Modules.pullbackComp f g).hom.app M)
-        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app
-          ((Scheme.Modules.pullback g).obj M))
-          (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction g).unit.app M)
-            m)) =
-      moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction (f ≫ g)).unit.app M)
-        m := by
-  let z : moduleSpecΓFunctor.obj ((Scheme.Modules.pullback (f ≫ g)).obj M) :=
-    moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction (f ≫ g)).unit.app M) m
-  have h2 := congrArg (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackComp f g).hom.app M))
-    (moduleSpecΓFunctor_map_pullbackComp_inv_unit f g M m).symm
-  refine h2.trans ?_
-  calc moduleSpecΓFunctor.map ((Scheme.Modules.pullbackComp f g).hom.app M)
-        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackComp f g).inv.app M) z)
-      = moduleSpecΓFunctor.map ((Scheme.Modules.pullbackComp f g).inv.app M ≫
-          (Scheme.Modules.pullbackComp f g).hom.app M) z :=
-        (moduleSpecΓFunctor_map_comp_apply _ _ z).symm
-    _ = z := by rw [Iso.inv_hom_id_app, CategoryTheory.Functor.map_id, ModuleCat.id_apply]
-
-private lemma moduleSpecΓFunctor_map_pullbackCompIsoOfCommSq_unit
-    {R₀ R₁ S₀ S₁ : CommRingCat.{u}}
-    {t : Spec S₀ ⟶ Spec S₁} {l : Spec S₀ ⟶ Spec R₀}
-    {r : Spec S₁ ⟶ Spec R₁} {b : Spec R₀ ⟶ Spec R₁}
-    (sq : CommSq t l r b) (M : (Spec R₁).Modules) (m : moduleSpecΓFunctor.obj M) :
-    moduleSpecΓFunctor.map ((Scheme.Modules.pullbackCompIsoOfCommSq sq).hom.app M)
-        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction t).unit.app
-          ((Scheme.Modules.pullback r).obj M))
-          (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction r).unit.app M)
-            m)) =
-      moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction l).unit.app
-        ((Scheme.Modules.pullback b).obj M))
-        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction b).unit.app M)
-          m) := by
-  rw [Scheme.Modules.pullbackCompIsoOfCommSq_hom_app]
-  refine (moduleSpecΓFunctor_map_comp_apply _ _ _).trans ?_
-  refine (congrArg (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackComp l b).inv.app M)) ?_).trans
-    (moduleSpecΓFunctor_map_pullbackComp_inv_unit l b M m)
-  refine (moduleSpecΓFunctor_map_comp_apply _ _ _).trans ?_
-  refine (congrArg (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackCongr sq.w).hom.app M))
-    (moduleSpecΓFunctor_map_pullbackComp_hom_unit t r M m)).trans ?_
-  exact moduleSpecΓFunctor_map_unit_pullbackCongr sq.w M m
-
-private lemma moduleSpecΓFunctor_map_pullbackCompIsoOfCommSq_inv_unit
-    {R₀ R₁ S₀ S₁ : CommRingCat.{u}}
-    {t : Spec S₀ ⟶ Spec S₁} {l : Spec S₀ ⟶ Spec R₀}
-    {r : Spec S₁ ⟶ Spec R₁} {b : Spec R₀ ⟶ Spec R₁}
-    (sq : CommSq t l r b) (M : (Spec R₁).Modules) (m : moduleSpecΓFunctor.obj M) :
-    moduleSpecΓFunctor.map ((Scheme.Modules.pullbackCompIsoOfCommSq sq).inv.app M)
-        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction l).unit.app
-          ((Scheme.Modules.pullback b).obj M))
-          (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction b).unit.app M)
-            m)) =
-      moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction t).unit.app
-        ((Scheme.Modules.pullback r).obj M))
-        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction r).unit.app M)
-          m) := by
-  refine (congrArg (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackCompIsoOfCommSq sq).inv.app M))
-    (moduleSpecΓFunctor_map_pullbackCompIsoOfCommSq_unit sq M m).symm).trans ?_
-  refine (moduleSpecΓFunctor_map_comp_apply _ _ _).symm.trans ?_
-  rw [Iso.hom_inv_id_app, CategoryTheory.Functor.map_id]
-  rfl
-
-private lemma moduleSpecΓFunctor_map_pullbackCompIsoId_unit
-    {R₀ S₀ : CommRingCat.{u}} {f : Spec R₀ ⟶ Spec S₀} {g : Spec S₀ ⟶ Spec R₀}
-    (h : f ≫ g = 𝟙 (Spec R₀)) (M : (Spec R₀).Modules) (m : moduleSpecΓFunctor.obj M) :
-    moduleSpecΓFunctor.map ((Scheme.Modules.pullbackCompIsoId h).hom.app M)
-        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app
-          ((Scheme.Modules.pullback g).obj M))
-          (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction g).unit.app M)
-            m)) =
-      m := by
-  have h1 := congrArg (fun k ↦ (k.app ⊤).hom m)
-    (Scheme.Modules.unit_comp_pushforwardCongr_hom_app_pushforwardId_hom_app
-      (rfl : 𝟙 (Spec R₀) = 𝟙 (Spec R₀)) M)
-  simp only [Scheme.Modules.Hom.comp_app,
-    Scheme.Modules.pushforwardId_hom_app_app, Scheme.Modules.pushforwardCongr_hom_app_app,
-    Scheme.Modules.pullbackCongr, eqToIso_refl, Iso.refl_hom, NatTrans.id_app,
-    eqToHom_refl, op_id, CategoryTheory.Functor.map_id, Category.comp_id] at h1
-  have hid : moduleSpecΓFunctor.map ((Scheme.Modules.pullbackId (Spec R₀)).hom.app M)
-      (moduleSpecΓFunctor.map
-        ((Scheme.Modules.pullbackPushforwardAdjunction (𝟙 (Spec R₀))).unit.app M) m) = m := by
-    refine (congrArg (((Scheme.Modules.pullbackId (Spec R₀)).hom.app M).app ⊤) h1).trans ?_
-    change (((Scheme.Modules.pullbackId (Spec R₀)).inv.app M ≫
-      (Scheme.Modules.pullbackId (Spec R₀)).hom.app M).app ⊤).hom m = m
-    rw [Iso.inv_hom_id_app]; rfl
-  rw [Scheme.Modules.pullbackCompIsoId_hom_app]
-  refine (moduleSpecΓFunctor_map_comp_apply _ _ _).trans ?_
-  refine (congrArg (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackId (Spec R₀)).hom.app M))
-    ?_).trans hid
-  refine (moduleSpecΓFunctor_map_comp_apply _ _ _).trans ?_
-  refine (congrArg (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackCongr h).hom.app M))
-    (moduleSpecΓFunctor_map_pullbackComp_hom_unit f g M m)).trans ?_
-  exact moduleSpecΓFunctor_map_unit_pullbackCongr h M m
-
-private lemma moduleSpecΓFunctor_map_unit_naturality
-    {R₀ S₀ : CommRingCat.{u}} (f : Spec S₀ ⟶ Spec R₀) {M N : (Spec R₀).Modules}
-    (u : M ⟶ N) (m : moduleSpecΓFunctor.obj M) :
-    moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app N)
-        (moduleSpecΓFunctor.map u m) =
-      moduleSpecΓFunctor.map ((Scheme.Modules.pullback f).map u)
-        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app M)
-          m) := by
-  let m' : Γ(M, ⊤) := m
-  have h := congrArg (fun k ↦ (k.app ⊤).hom m')
-    ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.naturality u)
-  simp only [Functor.id_map, Functor.comp_map, Scheme.Modules.Hom.comp_app,
-    AddCommGrpCat.hom_comp, AddMonoidHom.comp_apply] at h
-  rw [Scheme.Modules.pushforward_map_app] at h
-  change (((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app N).app ⊤).hom
-      ((u.app ⊤).hom m') =
-    (((Scheme.Modules.pullback f).map u).app (f ⁻¹ᵁ ⊤)).hom
-      ((((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app M).app ⊤).hom m')
-  exact h
-
 private lemma specIsoSpfCompletion_inv (J : Ideal R) (fg : J.FG) :
     (specIsoSpfCompletion J fg).inv = (Spf.completionIso J fg).hom ≫ (specIso J).inv := by
   ext n
@@ -312,49 +163,6 @@ private instance (J : Ideal R) (fg : J.FG)
     (ModuleCat.restrictScalarsComp'App φ (Ideal.Quotient.mk (A.ideal ^ (n + 1)))
       ((Ideal.Quotient.mk (A.ideal ^ (n + 1))).comp φ) rfl _).hom)
   infer_instance
-
-private lemma moduleSpecΓFunctor_map_square_transition
-    {R₀ R₁ S₀ S₁ : CommRingCat.{u}}
-    {t : Spec S₀ ⟶ Spec S₁} {l : Spec S₀ ⟶ Spec R₀}
-    {r : Spec S₁ ⟶ Spec R₁} {b : Spec R₀ ⟶ Spec R₁}
-    (sq : CommSq t l r b)
-    {M₀_m : (Spec R₀).Modules} {M₀_m1 : (Spec R₁).Modules}
-    {M₁_m : (Spec S₀).Modules} {M₁_m1 : (Spec S₁).Modules}
-    (t₀ : (Scheme.Modules.pullback b).obj M₀_m1 ⟶ M₀_m)
-    (t₁ : (Scheme.Modules.pullback t).obj M₁_m1 ⟶ M₁_m)
-    (e₀ : (Scheme.Modules.pullback l).obj M₀_m ⟶ M₁_m)
-    (e₁ : (Scheme.Modules.pullback r).obj M₀_m1 ⟶ M₁_m1)
-    (hnat : (Scheme.Modules.pullback t).map e₁ ≫ t₁ =
-      (Scheme.Modules.pullbackCompIsoOfCommSq sq).hom.app M₀_m1 ≫
-        (Scheme.Modules.pullback l).map t₀ ≫ e₀)
-    (x : moduleSpecΓFunctor.obj M₀_m1) :
-    moduleSpecΓFunctor.map e₀
-        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction l).unit.app M₀_m)
-          (moduleSpecΓFunctor.map t₀
-            (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction b).unit.app
-              M₀_m1) x))) =
-      moduleSpecΓFunctor.map t₁
-        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction t).unit.app M₁_m1)
-          (moduleSpecΓFunctor.map e₁
-            (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction r).unit.app
-              M₀_m1) x))) := by
-  have hnat' : (Scheme.Modules.pullback l).map t₀ ≫ e₀ =
-      (Scheme.Modules.pullbackCompIsoOfCommSq sq).inv.app M₀_m1 ≫
-        (Scheme.Modules.pullback t).map e₁ ≫ t₁ :=
-    Eq.symm <|
-      (congrArg ((Scheme.Modules.pullbackCompIsoOfCommSq sq).inv.app M₀_m1 ≫ ·) hnat).trans
-        (Iso.inv_hom_id_app_assoc (Scheme.Modules.pullbackCompIsoOfCommSq sq) M₀_m1 _)
-  refine (congrArg (moduleSpecΓFunctor.map e₀)
-    (moduleSpecΓFunctor_map_unit_naturality l t₀ _)).trans ?_
-  refine (moduleSpecΓFunctor_map_comp_apply _ _ _).symm.trans ?_
-  refine (congrArg (fun k ↦ (moduleSpecΓFunctor.map k) _) hnat').trans ?_
-  refine (moduleSpecΓFunctor_map_comp_apply _ _ _).trans ?_
-  refine (moduleSpecΓFunctor_map_comp_apply _ _ _).trans ?_
-  refine (congrArg (fun z ↦ moduleSpecΓFunctor.map t₁
-    (moduleSpecΓFunctor.map ((Scheme.Modules.pullback t).map e₁) z))
-    (moduleSpecΓFunctor_map_pullbackCompIsoOfCommSq_inv_unit sq M₀_m1 x)).trans ?_
-  exact congrArg (moduleSpecΓFunctor.map t₁)
-    (moduleSpecΓFunctor_map_unit_naturality t e₁ _).symm
 
 private lemma specSectionsTowerCompletionLevelHom_succ (J : Ideal R) (fg : J.FG)
     (M : CoherentFormalModule ((Spec (CommRingCat.of R)).formalCompletion
@@ -490,47 +298,6 @@ private lemma specSectionsTowerIsoCompletion_naturality (J : Ideal R) (fg : J.FG
                 ((Spf.completionIso J fg).hom.app n)).unit.app _) x)) :=
         moduleSpecΓFunctor_map_comp_apply _ _ _
 
-private def limRestrictScalarsIso {R₀ S₀ : Type u} [Ring R₀] [Ring S₀] (φ : R₀ →+* S₀)
-    (F : TauCeti.ModuleTower.{u} S₀) :
-    (ModuleCat.restrictScalars φ).obj (ModuleCat.of S₀ F.lim) ≅
-      ModuleCat.of R₀ (TauCeti.ModuleTower.lim (F ⋙ ModuleCat.restrictScalars φ)) where
-  hom := ModuleCat.ofHom (X := (ModuleCat.restrictScalars φ).obj (ModuleCat.of S₀ F.lim))
-    { toFun := fun (x : F.lim) ↦ ⟨x.val,
-        (TauCeti.ModuleTower.mem_lim (F := F ⋙ ModuleCat.restrictScalars φ)).2 fun n ↦
-          (LinearMap.congr_fun
-            (TauCeti.ModuleTower.transition_def (F ⋙ ModuleCat.restrictScalars φ) n) _).trans
-            ((LinearMap.congr_fun (TauCeti.ModuleTower.transition_def F n)
-              (x.val (n + 1))).symm.trans ((TauCeti.ModuleTower.mem_lim (F := F)).1 x.property n))⟩
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
-  inv := ModuleCat.ofHom (Y := (ModuleCat.restrictScalars φ).obj (ModuleCat.of S₀ F.lim))
-    { toFun := fun (x : TauCeti.ModuleTower.lim (F ⋙ ModuleCat.restrictScalars φ)) ↦ ⟨x.val,
-        (TauCeti.ModuleTower.mem_lim (F := F)).2 fun n ↦
-          (LinearMap.congr_fun (TauCeti.ModuleTower.transition_def F n) _).trans
-            ((LinearMap.congr_fun
-              (TauCeti.ModuleTower.transition_def (F ⋙ ModuleCat.restrictScalars φ) n)
-              (x.val (n + 1))).symm.trans
-              ((TauCeti.ModuleTower.mem_lim
-                (F := F ⋙ ModuleCat.restrictScalars φ)).1 x.property n))⟩
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
-  hom_inv_id := rfl
-  inv_hom_id := rfl
-
-private lemma limπ_limRestrictScalarsIso_hom {R₀ S₀ : Type u} [Ring R₀] [Ring S₀] (φ : R₀ →+* S₀)
-    (F : TauCeti.ModuleTower.{u} S₀) (n : ℕ) (x : F.lim) :
-    TauCeti.ModuleTower.limπ (F ⋙ ModuleCat.restrictScalars φ) n
-        ((limRestrictScalarsIso φ F).hom x) =
-      F.limπ n x :=
-  (TauCeti.ModuleTower.limπ_apply _ n _).trans (TauCeti.ModuleTower.limπ_apply F n x).symm
-
-private lemma limπ_limRestrictScalarsIso_inv {R₀ S₀ : Type u} [Ring R₀] [Ring S₀] (φ : R₀ →+* S₀)
-    (F : TauCeti.ModuleTower.{u} S₀) (n : ℕ)
-    (x : TauCeti.ModuleTower.lim (F ⋙ ModuleCat.restrictScalars φ)) :
-    F.limπ n ((limRestrictScalarsIso φ F).inv x) =
-      TauCeti.ModuleTower.limπ (F ⋙ ModuleCat.restrictScalars φ) n x :=
-  (TauCeti.ModuleTower.limπ_apply F n _).trans (TauCeti.ModuleTower.limπ_apply _ n x).symm
-
 /-- Under `coherentFormalModuleEquivSpecOfFG J fg`, the underlying `R`-module of the finite
 `AdicCompletion J R`-module corresponding to a coherent formal module `M` on `(Spec R)/V(J)` is
 naturally isomorphic to the inverse limit `specSectionsLim J` of global sections on
@@ -543,7 +310,7 @@ def coherentFormalModuleEquivSpecOfFGInverseCompRestrictScalarsIso (J : Ideal R)
       specSectionsLim J :=
   NatIso.ofComponents
     (fun M ↦
-      (limRestrictScalarsIso (algebraMap R (AdicCompletion J R))
+      (TauCeti.ModuleTower.limRestrictScalarsIso (algebraMap R (AdicCompletion J R))
         ((CoherentFormalModule.sectionsTower (AdicRing.completion J fg).ideal).obj
           ((CoherentFormalModule.pullback (specIsoSpfCompletion J fg).inv).obj M))) ≪≫
       (TauCeti.ModuleTower.limEquivOfIso
@@ -577,7 +344,7 @@ def coherentFormalModuleEquivSpecOfFGInverseCompRestrictScalarsIso (J : Ideal R)
       have hL : F_N.limπ n
           ((((coherentFormalModuleEquivSpecOfFG J fg).inverse ⋙
             (ModuleCat.isFG (AdicCompletion J R)).ι ⋙ ModuleCat.restrictScalars φ).map f ≫
-              (limRestrictScalarsIso φ G_N ≪≫
+              (TauCeti.ModuleTower.limRestrictScalarsIso φ G_N ≪≫
                 (TauCeti.ModuleTower.limEquivOfIso
                   (specSectionsTowerIsoCompletion J fg N).symm).toModuleIso).hom) x) =
           ((specSectionsTowerIsoCompletion J fg N).inv.app (op n)).hom
@@ -587,11 +354,11 @@ def coherentFormalModuleEquivSpecOfFGInverseCompRestrictScalarsIso (J : Ideal R)
         have heq :
             ((((coherentFormalModuleEquivSpecOfFG J fg).inverse ⋙
               (ModuleCat.isFG (AdicCompletion J R)).ι ⋙ ModuleCat.restrictScalars φ).map f ≫
-                (limRestrictScalarsIso φ G_N ≪≫
+                (TauCeti.ModuleTower.limRestrictScalarsIso φ G_N ≪≫
                   (TauCeti.ModuleTower.limEquivOfIso
                     (specSectionsTowerIsoCompletion J fg N).symm).toModuleIso).hom) x) =
             TauCeti.ModuleTower.limMap (specSectionsTowerIsoCompletion J fg N).inv
-              ((limRestrictScalarsIso φ G_N).hom
+              ((TauCeti.ModuleTower.limRestrictScalarsIso φ G_N).hom
                 (TauCeti.ModuleTower.limMap
                   ((CoherentFormalModule.sectionsTower (AdicRing.completion J fg).ideal).map
                     ((CoherentFormalModule.pullback (specIsoSpfCompletion J fg).inv).map f)) x)) :=
@@ -601,11 +368,11 @@ def coherentFormalModuleEquivSpecOfFGInverseCompRestrictScalarsIso (J : Ideal R)
           (TauCeti.ModuleTower.limπ_comp_limMap (specSectionsTowerIsoCompletion J fg N).inv n)
           _).trans ?_
         refine (congrArg (fun z ↦ ((specSectionsTowerIsoCompletion J fg N).inv.app (op n)).hom z)
-          (limπ_limRestrictScalarsIso_hom φ G_N n _)).trans ?_
+          (TauCeti.ModuleTower.limπ_limRestrictScalarsIso_hom φ G_N n _)).trans ?_
         exact congrArg (fun z ↦ ((specSectionsTowerIsoCompletion J fg N).inv.app (op n)).hom z)
           (LinearMap.congr_fun (TauCeti.ModuleTower.limπ_comp_limMap _ n) x)
       have hR : F_N.limπ n
-          (((limRestrictScalarsIso φ G_M ≪≫
+          (((TauCeti.ModuleTower.limRestrictScalarsIso φ G_M ≪≫
             (TauCeti.ModuleTower.limEquivOfIso
               (specSectionsTowerIsoCompletion J fg M).symm).toModuleIso).hom ≫
             (specSectionsLim J).map f) x) =
@@ -615,18 +382,19 @@ def coherentFormalModuleEquivSpecOfFGInverseCompRestrictScalarsIso (J : Ideal R)
           ((specSectionsTower J).map f) n) _).trans ?_
         refine congrArg (fun z ↦ (((specSectionsTower J).map f).app (op n)).hom z) ?_
         have heq :
-            (limRestrictScalarsIso φ G_M ≪≫
+            (TauCeti.ModuleTower.limRestrictScalarsIso φ G_M ≪≫
               (TauCeti.ModuleTower.limEquivOfIso
                 (specSectionsTowerIsoCompletion J fg M).symm).toModuleIso).hom x =
             TauCeti.ModuleTower.limMap (specSectionsTowerIsoCompletion J fg M).inv
-              ((limRestrictScalarsIso φ G_M).hom x) :=
+              ((TauCeti.ModuleTower.limRestrictScalarsIso φ G_M).hom x) :=
           TauCeti.ModuleTower.limEquivOfIso_apply
-            (specSectionsTowerIsoCompletion J fg M).symm ((limRestrictScalarsIso φ G_M).hom x)
+            (specSectionsTowerIsoCompletion J fg M).symm
+            ((TauCeti.ModuleTower.limRestrictScalarsIso φ G_M).hom x)
         refine (congrArg (TauCeti.ModuleTower.limπ ((specSectionsTower J).obj M) n) heq).trans ?_
         refine (LinearMap.congr_fun (TauCeti.ModuleTower.limπ_comp_limMap
           (specSectionsTowerIsoCompletion J fg M).inv n) _).trans ?_
         exact congrArg (fun z ↦ ((specSectionsTowerIsoCompletion J fg M).inv.app (op n)).hom z)
-          (limπ_limRestrictScalarsIso_hom φ G_M n x)
+          (TauCeti.ModuleTower.limπ_limRestrictScalarsIso_hom φ G_M n x)
       exact hL.trans (hval.symm.trans hR.symm)
 
 /-- On level-`n` projections, the inverse of
@@ -666,7 +434,7 @@ theorem coherentFormalModuleEquivSpecOfFGInverseCompRestrictScalarsIso_inv_app_l
             ModuleCat.restrictScalars (algebraMap R (AdicCompletion J R))) n
         ((TauCeti.ModuleTower.limEquivOfIso
           (specSectionsTowerIsoCompletion J fg M).symm).symm y) :=
-    limπ_limRestrictScalarsIso_inv _ _ n _
+    TauCeti.ModuleTower.limπ_limRestrictScalarsIso_inv _ _ n _
   refine h1.trans ?_
   rw [TauCeti.ModuleTower.limEquivOfIso_symm_apply]
   exact LinearMap.congr_fun (TauCeti.ModuleTower.limπ_comp_limMap _ n) y
@@ -769,28 +537,6 @@ private lemma pullbackCompletionIso_comp_eq_app (J : Ideal R) (fg : J.FG)
   have hn := congrArg (·.app n) (pullbackCompletionIso_comp_eq J fg M h_eq)
   simp only [CoherentFormalModule.comp_app, CoherentFormalModule.pullback_map_app] at hn
   exact hn.trans (coherentFormalModule_pullback_inv_hom_rhs (Spf.completionIso J fg) _ n)
-
-private lemma moduleSpecΓFunctor_map_inv_hom_cancel
-    {R₀ S₀ : CommRingCat.{u}} {f : Spec R₀ ⟶ Spec S₀} {g : Spec S₀ ⟶ Spec R₀}
-    (h : f ≫ g = 𝟙 (Spec R₀)) {M₀ : (Spec R₀).Modules} {N : (Spec S₀).Modules}
-    (u : (Scheme.Modules.pullback g).obj M₀ ⟶ N)
-    (v : (Scheme.Modules.pullback f).obj N ⟶ M₀)
-    (huv : (Scheme.Modules.pullback f).map u ≫ v =
-      (Scheme.Modules.pullbackCompIsoId h).hom.app M₀)
-    (x : moduleSpecΓFunctor.obj N) (y : moduleSpecΓFunctor.obj M₀)
-    (hy : moduleSpecΓFunctor.map u
-        (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction g).unit.app M₀) y) =
-      x) :
-    y = moduleSpecΓFunctor.map v
-      (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app N) x) := by
-  have h1 := congrArg (fun z ↦ moduleSpecΓFunctor.map v
-    (moduleSpecΓFunctor.map ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app N) z))
-    hy.symm
-  refine Eq.trans ?_ h1.symm
-  refine (moduleSpecΓFunctor_map_pullbackCompIsoId_unit h M₀ y).symm.trans ?_
-  refine (congrArg (fun k ↦ moduleSpecΓFunctor.map k _) huv.symm).trans ?_
-  refine (moduleSpecΓFunctor_map_comp_apply _ _ _).trans ?_
-  exact congrArg (moduleSpecΓFunctor.map v) (moduleSpecΓFunctor_map_unit_naturality f u _).symm
 
 /-- On level-`n` projections,
 `coherentFormalModuleEquivSpecOfFGInverseCompRestrictScalarsIso J fg` pulls a global section back

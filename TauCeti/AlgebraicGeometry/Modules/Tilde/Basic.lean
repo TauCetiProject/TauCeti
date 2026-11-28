@@ -512,6 +512,13 @@ theorem _root_.AlgebraicGeometry.moduleSpecΓFunctor_map_apply {M N : (Spec R).M
     (f : M ⟶ N) (x : moduleSpecΓFunctor.obj M) : moduleSpecΓFunctor.map f x = f.app ⊤ x :=
   (rfl)
 
+/-- Evaluating `moduleSpecΓFunctor.map` on a composition applies the maps sequentially. -/
+theorem _root_.AlgebraicGeometry.moduleSpecΓFunctor_map_comp_apply {M N P : (Spec R).Modules}
+    (u : M ⟶ N) (v : N ⟶ P) (x : moduleSpecΓFunctor.obj M) :
+    moduleSpecΓFunctor.map (u ≫ v) x =
+      moduleSpecΓFunctor.map v (moduleSpecΓFunctor.map u x) := by
+  rw [Functor.map_comp, ModuleCat.comp_apply]
+
 end GlobalSections
 
 end
