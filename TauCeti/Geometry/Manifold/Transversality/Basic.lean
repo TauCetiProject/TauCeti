@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Incidence.Basic
 public import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Coprod
 
@@ -27,6 +28,9 @@ On normed spaces the differentials are Fréchet derivatives
 `F : E' × P → V'` and a map `j : W → V'` that are differentiable at the incidence points of the
 slice at `p`, the slice `F(·, p)` is transverse to `j` at every point exactly when `p` is a
 regular incidence parameter (`TauCeti.isRegularIncidenceParameter_iff_forall_isTransverseAt`).
+On boundaryless `C¹` manifolds the defining surjectivity can be read in any charts around `x` and
+`y`, not only the preferred ones
+(`TauCeti.surjective_coprod_fderiv_comp_extChartAt_symm_iff`).
 Transversality at `x` depends only on the germ of `g` at `x`
 (`Filter.EventuallyEq.isTransverseAt_iff`); it is unchanged when `g` and `j` are both followed by
 one diffeomorphism of `V`, in particular by an affine isomorphism
@@ -43,6 +47,8 @@ diffeomorphism (`Diffeomorph.isTransverseAt_comp_diffeomorph_iff`,
   `TauCeti.isTransverseAt_of_surjective_mvfderiv_right`: the vacuous case and submersions.
 * `TauCeti.isRegularIncidenceParameter_iff_forall_isTransverseAt`: agreement with regular
   incidence parameters on normed spaces.
+* `TauCeti.surjective_coprod_fderiv_comp_extChartAt_symm_iff`: the transversality condition read
+  in arbitrary charts.
 * `Diffeomorph.isTransverseAt_diffeomorph_comp_iff`,
   `Diffeomorph.isTransverseAt_comp_diffeomorph_iff`,
   `Diffeomorph.isTransverseAt_comp_diffeomorph_right_iff`: invariance under diffeomorphisms.
@@ -183,6 +189,24 @@ theorem isRegularIncidenceParameter_iff_forall_isTransverseAt {F : E' × P → V
     isTransverseAt_modelWithCornersSelf_iff]
 
 end Incidence
+
+section Charts
+
+/-- **Transversality in charts.** On boundaryless `C¹` manifolds, the surjectivity condition
+defining `TauCeti.IsTransverseAt` at a pair `(x, y)` can be read in any extended charts whose
+sources contain `x` and `y`: it holds for the Fréchet derivatives of `g` and `j` in these charts
+exactly when it holds for their manifold differentials. -/
+theorem surjective_coprod_fderiv_comp_extChartAt_symm_iff [I.Boundaryless] [J.Boundaryless]
+    [IsManifold I 1 M] [IsManifold J 1 N] {g : M → V} {j : N → V} {a x : M} {b y : N}
+    (hx : x ∈ (extChartAt I a).source) (hy : y ∈ (extChartAt J b).source) :
+    Surjective ((fderiv 𝕜 (g ∘ (extChartAt I a).symm) (extChartAt I a x)).coprod
+        (-fderiv 𝕜 (j ∘ (extChartAt J b).symm) (extChartAt J b y))) ↔
+      Surjective ((mvfderiv I g x).coprod (-mvfderiv J j y)) := by
+  simp only [ContinuousLinearMap.surjective_coprod_neg_iff,
+    range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm_of_mem_source hx,
+    range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm_of_mem_source hy]
+
+end Charts
 
 end TauCeti
 

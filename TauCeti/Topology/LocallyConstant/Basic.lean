@@ -11,7 +11,9 @@ public import Mathlib.Topology.LocallyConstant.Basic
 # Locally constant functions with discrete codomain
 
 For a discrete codomain, locally constant functions are exactly continuous maps:
-`LocallyConstant.equivContinuousMap`.
+`LocallyConstant.equivContinuousMap`. More generally a continuous map to a `T₁` space whose range
+is finite is locally constant (`IsLocallyConstant.of_continuous_of_finite_range`), since its range
+is then a finite, hence discrete, subspace.
 -/
 
 public section
@@ -50,3 +52,20 @@ theorem toContinuousMap_equivContinuousMap_symm {X Y : Type*} [TopologicalSpace 
   (rfl)
 
 end LocallyConstant
+
+namespace IsLocallyConstant
+
+/-- A continuous map to a `T₁` space with finite range is locally constant. -/
+theorem of_continuous_of_finite_range {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    [T1Space Y] {f : X → Y} (hf : Continuous f) (hfin : (Set.range f).Finite) :
+    IsLocallyConstant f := by
+  refine iff_isOpen_fiber.2 fun y ↦ ?_
+  -- The fibre over `y` is the complement of the preimage of the finite, hence closed, set
+  -- `range f \ {y}`.
+  have hfib : f ⁻¹' {y} = (f ⁻¹' (Set.range f \ {y}))ᶜ := by
+    ext x
+    simp
+  rw [hfib]
+  exact (hfin.sdiff.isClosed.preimage hf).isOpen_compl
+
+end IsLocallyConstant

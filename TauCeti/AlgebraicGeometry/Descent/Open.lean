@@ -16,7 +16,10 @@ Let `p : S' ⟶ S` be a morphism of schemes and `D` a descent datum relative to 
 of `U` under the action and under the second projection `S' ×_S X ⟶ X` agree. The action then
 restricts to a descent datum `D.restrict U hU` on `U`, and the inclusion of `U` is a morphism of
 descent data `D.restrictHom U hU`; morphisms of descent data with image in `U` factor through it
-(`DescentDatum.Hom.codRestrict`).
+(`DescentDatum.Hom.codRestrict`). Since `x = π x · (s · x)`, an open is stable as soon as the
+action maps the points over `U` into `U` (`DescentDatum.isStable_of_forall_mem`); in particular the
+image of a morphism of descent data which is an open immersion is stable
+(`DescentDatum.Hom.isStable_opensRange`).
 
 For the canonical descent datum on a base change `X₀ ×_S S'`, the preimage of every open of `X₀` is
 stable. Conversely, if `p` is surjective, flat and quasi-compact, every stable open of
@@ -30,9 +33,11 @@ that `D.restrict U hU` is isomorphic to the canonical descent datum on `U₀ ×_
 the inclusions (`DescentDatum.exists_baseChange_hom_isIso_restrict`). In particular a descent
 datum on a stable open subscheme of a scheme affine over `S'`, relative to an affine, flat and
 surjective `p`, is effective (`DescentDatum.exists_baseChange_hom_isIso_restrict_of_isAffineHom`).
-This is how descent data are descended on schemes which are only open in a scheme whose descent
-is known, such as a quasi-projective scheme embedded as an open of the projective spectrum of its
-section ring.
+More generally, a descent datum admitting an open immersion, as a morphism of descent data, into
+the canonical descent datum on a base change `X₀ ×_S S'` is effective, with model an open of `X₀`
+(`DescentDatum.Hom.exists_baseChange_hom_isIso_of_isOpenImmersion`). This is how descent data are
+descended on schemes which are only open in a scheme whose descent is known, such as a
+quasi-projective scheme embedded as an open of the projective spectrum of its section ring.
 
 ## Main declarations
 
@@ -45,6 +50,9 @@ section ring.
   stable opens of `X₀ ×_S S'` are exactly the preimages of opens of `X₀`.
 * `TauCeti.DescentDatum.exists_baseChange_hom_isIso_restrict`: for such `p`, the restriction of an
   effective descent datum to a stable open is effective.
+* `TauCeti.DescentDatum.Hom.exists_baseChange_hom_isIso_of_isOpenImmersion`: for such `p`, a
+  descent datum which is open in the canonical descent datum on a base change `X₀ ×_S S'` is the
+  base change of an open of `X₀`.
 * `TauCeti.DescentDatum.Hom.exists_baseChange_hom_isIso_restrict_of_pullbackAlong`: effectivity
   of the base change of a descent datum to an open of the base gives effectivity of its restriction
   to the preimage of that open.
@@ -78,6 +86,17 @@ theorem isStable_iff {U : X.left.Opens} :
     D.IsStable U ↔ ∀ z, D.act z ∈ U ↔ pullback.snd p (X.hom ≫ p) z ∈ U :=
   SetLike.ext_iff
 
+variable {D} in
+/-- An open `U` is stable as soon as the action maps points over `U` into `U`: if `x ∈ U` always
+gives `s · x ∈ U`, then conversely `s · x ∈ U` gives `x = π x · (s · x) ∈ U`. -/
+theorem isStable_of_forall_mem {U : X.left.Opens}
+    (h : ∀ z, pullback.snd p (X.hom ≫ p) z ∈ U → D.act z ∈ U) : D.IsStable U := by
+  refine isStable_iff.mpr fun z ↦ ⟨fun hz ↦ ?_, h z⟩
+  have := h (pullback.lift (pullback.snd p (X.hom ≫ p) ≫ X.hom) D.act
+    (by rw [Category.assoc, D.act_comp_hom_comp]) z) (by rwa [← Scheme.Hom.comp_apply,
+      pullback.lift_snd])
+  rwa [← Scheme.Hom.comp_apply, lift_act_comp_act] at this
+
 @[simp]
 theorem isStable_top : D.IsStable ⊤ := by
   simp [IsStable]
@@ -101,6 +120,25 @@ theorem IsStable.preimage {Y : Over S'} {E : DescentDatum p Y} (f : Hom D E) {U 
   unfold IsStable at hU ⊢
   rw [← Scheme.Hom.comp_preimage, ← f.map_act, Scheme.Hom.comp_preimage, hU]
   simp only [← Scheme.Hom.comp_preimage, pullback.lift_snd]
+
+variable {D} in
+/-- The image of a morphism of descent data which is an open immersion is stable. -/
+theorem Hom.isStable_opensRange {Y : Over S'} {E : DescentDatum p Y} (f : Hom D E)
+    [IsOpenImmersion f.hom.left] : E.IsStable f.hom.left.opensRange := by
+  -- The action space `S' ×_S X` is the part of `S' ×_S Y` lying over the image of `f`.
+  have hpb : IsPullback (pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S') f.hom.left (𝟙 S)
+      (by simp) (by simp)) (pullback.snd p (X.hom ≫ p)) (pullback.snd p (Y.hom ≫ p))
+      f.hom.left := by
+    refine IsPullback.of_right ?_ (by simp) (IsPullback.of_hasPullback p (Y.hom ≫ p))
+    simpa using IsPullback.of_hasPullback p (X.hom ≫ p)
+  refine isStable_of_forall_mem fun z hz ↦ ?_
+  obtain ⟨x, hx⟩ := Scheme.Hom.mem_opensRange.mp hz
+  have hz' : z ∈ (pullback.snd p (Y.hom ≫ p)).base ⁻¹' (f.hom.left.base '' Set.univ) :=
+    ⟨x, trivial, hx⟩
+  rw [← Scheme.image_preimage_eq_of_isPullback hpb.flip] at hz'
+  obtain ⟨w, -, rfl⟩ := hz'
+  rw [← Scheme.Hom.comp_apply, f.map_act, Scheme.Hom.comp_apply]
+  exact Scheme.Hom.mem_opensRange.mpr ⟨_, rfl⟩
 
 /-- The preimage in `X` of an open of `S` is stable: the action `(s, x) ↦ s · x` does not change
 the image of a point in `S`. -/
@@ -204,6 +242,22 @@ theorem Hom.eq_codRestrict_iff {Y : Over S'} {E : DescentDatum p Y} (f : Hom E D
   rw [← cancel_mono U.ι, Hom.codRestrict_hom_left_ι, ← h]
   simp
 
+variable {D} in
+/-- A morphism of descent data into `D` which is an open immersion with image a stable open `U` is
+an isomorphism onto the restriction of `D` to `U`. -/
+theorem Hom.isIso_codRestrict_hom {Y : Over S'} {E : DescentDatum p Y} (f : Hom E D)
+    [IsOpenImmersion f.hom.left] (hU : D.IsStable U) (hf : Set.range f.hom.left = U) :
+    IsIso (f.codRestrict hU hf.subset).hom := by
+  suffices IsIso ((Over.forget S').map (f.codRestrict hU hf.subset).hom) from
+    isIso_of_reflects_iso _ (Over.forget S')
+  have hrange : Set.range f.hom.left = Set.range U.ι := hf.trans (Scheme.Opens.range_ι U).symm
+  -- The corestriction is the isomorphism between two open immersions with the same range.
+  have : (f.codRestrict hU hf.subset).hom.left =
+      (IsOpenImmersion.isoOfRangeEq _ _ hrange).hom := by
+    rw [← cancel_mono U.ι, Hom.codRestrict_hom_left_ι, IsOpenImmersion.isoOfRangeEq_hom_fac]
+  rw [Over.forget_map, this]
+  infer_instance
+
 end Restrict
 
 section BaseChange
@@ -293,15 +347,35 @@ theorem exists_baseChange_hom_isIso_restrict {X₀ : Over S} (f : Hom (baseChang
   -- `f` maps the image `pullback.fst X₀.hom p ⁻¹ᵁ U₀` of `U₀ ×_S S'` onto `U`.
   have hrange' : Set.range (f.comp m).hom.left = Set.range U.ι := by
     simp [Set.range_comp, hrange, hU₀, Set.image_preimage_eq _ f.hom.left.surjective]
-  let g := (f.comp m).codRestrict hU (hrange'.trans (Scheme.Opens.range_ι U)).subset
-  refine ⟨U₀, g, ?_, Hom.restrictHom_comp_codRestrict _ _ _⟩
-  suffices IsIso ((Over.forget S').map g.hom) from isIso_of_reflects_iso _ (Over.forget S')
   have : IsOpenImmersion m.hom.left := MorphismProperty.of_isPullback hm inferInstance
   have : IsOpenImmersion (f.comp m).hom.left := by
     rw [Hom.comp_hom, Over.comp_left]
     infer_instance
-  -- `g.hom.left` is the lift underlying the isomorphism of open immersions with equal ranges.
-  exact (IsOpenImmersion.isoOfRangeEq _ U.ι hrange').isIso_hom
+  exact ⟨U₀, _, (f.comp m).isIso_codRestrict_hom hU (hrange'.trans (Scheme.Opens.range_ι U)),
+    Hom.restrictHom_comp_codRestrict _ _ _⟩
+
+variable {D} in
+/-- **Descent of schemes open in a descended scheme.** Let `p` be surjective, flat and
+quasi-compact, and let `f : X ⟶ X₀ ×_S S'` be an open immersion which is a morphism of descent data
+from `D` to the canonical descent datum on a base change. Then `D` is effective: it is isomorphic
+to the canonical descent datum on `U₀ ×_S S'` for an open `U₀` of `X₀`, under an isomorphism which
+identifies `f` with the base change of the inclusion of `U₀`. -/
+theorem Hom.exists_baseChange_hom_isIso_of_isOpenImmersion {X₀ : Over S}
+    (f : Hom D (baseChange p X₀)) [IsOpenImmersion f.hom.left] :
+    ∃ (U₀ : X₀.left.Opens) (g : Hom (baseChange p (Over.mk (U₀.ι ≫ X₀.hom))) D),
+      IsIso g.hom ∧ f.comp g = baseChangeHom p (Over.homMk U₀.ι) := by
+  have hV := f.isStable_opensRange
+  obtain ⟨U₀, g, hg, hgf⟩ := exists_baseChange_hom_isIso_restrict (Hom.id _) hV
+  -- `f` identifies `D` with the restriction of the canonical descent datum to the image of `f`.
+  have hf : Set.range f.hom.left = f.hom.left.opensRange := (Scheme.Hom.coe_opensRange _).symm
+  have := f.isIso_codRestrict_hom hV hf
+  set e := f.codRestrict hV hf.subset
+  have he : ((baseChange p X₀).restrictHom _ hV).comp e = f :=
+    Hom.restrictHom_comp_codRestrict _ _ _
+  refine ⟨U₀, e.inv.comp g, by rw [Hom.comp_hom]; infer_instance, ?_⟩
+  calc f.comp (e.inv.comp g)
+      = (((baseChange p X₀).restrictHom _ hV).comp e).comp (e.inv.comp g) := by rw [he]
+    _ = _ := by simp [hgf]
 
 end Effective
 
@@ -348,19 +422,10 @@ with `Hom.ofPullbackAlong`. -/
 theorem Hom.exists_baseChange_hom_isIso_restrict_of_pullbackAlong :
     ∃ g : Hom (baseChange p ((Over.map U.ι).obj Y₀)) (D.restrict _ (D.isStable_comp_preimage U)),
       IsIso g.hom ∧ (D.restrictHom _ _).comp g = f.ofPullbackAlong := by
-  have hrange : Set.range f.ofPullbackAlong.hom.left = Set.range ((X.hom ≫ p) ⁻¹ᵁ U).ι := by
-    rw [← Scheme.Hom.coe_opensRange, f.opensRange_ofPullbackAlong_hom_left,
-      Scheme.Opens.range_ι]
-  let g := f.ofPullbackAlong.codRestrict (D.isStable_comp_preimage U)
-    (hrange.trans (Scheme.Opens.range_ι _)).subset
-  refine ⟨g, ?_, Hom.restrictHom_comp_codRestrict _ _ _⟩
-  suffices IsIso ((Over.forget S').map g.hom) from isIso_of_reflects_iso _ (Over.forget S')
-  -- `g.hom.left` is the isomorphism between two open immersions with the same range.
-  have : g.hom.left = (IsOpenImmersion.isoOfRangeEq _ _ hrange).hom := by
-    rw [← cancel_mono ((X.hom ≫ p) ⁻¹ᵁ U).ι, Hom.codRestrict_hom_left_ι,
-      IsOpenImmersion.isoOfRangeEq_hom_fac]
-  rw [Over.forget_map, this]
-  infer_instance
+  have hrange : Set.range f.ofPullbackAlong.hom.left = (X.hom ≫ p) ⁻¹ᵁ U := by
+    rw [← Scheme.Hom.coe_opensRange, f.opensRange_ofPullbackAlong_hom_left]
+  exact ⟨_, f.ofPullbackAlong.isIso_codRestrict_hom _ hrange,
+    Hom.restrictHom_comp_codRestrict _ _ _⟩
 
 end PullbackAlong
 

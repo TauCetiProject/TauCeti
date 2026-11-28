@@ -13,6 +13,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.InnerProductSpace.Positive
 
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Matrix.Vec
 
 /-!
@@ -188,9 +189,9 @@ theorem PosSemidef.norm_det_pairing_sq_le {G : Matrix m m 𝕜} (hG : G.PosSemid
         ‖(of fun i k : n ↦ star (w i) ⬝ᵥ G *ᵥ w k).det‖ := by
   have h_eq (x y : n → m → 𝕜) :
       (of x)ᵀᴴ * G * (of y)ᵀ = of fun i k : n ↦ star (x i) ⬝ᵥ G *ᵥ y k := by
-    rw [Matrix.mul_assoc]
     ext i k
-    simp [Matrix.mul_apply, dotProduct, mulVec]
+    rw [Matrix.conjTranspose_mul_mul_apply]
+    rfl
   simpa only [h_eq] using hG.norm_det_conjTranspose_mul_mul_sq_le (of v)ᵀ (of w)ᵀ
 
 variable [Fintype p] [DecidableEq p]

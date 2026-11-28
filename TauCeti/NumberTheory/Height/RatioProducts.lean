@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Height.FamilyOverPairs
+public import TauCeti.NumberTheory.Height.FamilyOverPairs.Basic
 
 /-!
 # Heights of products of inverse ratios

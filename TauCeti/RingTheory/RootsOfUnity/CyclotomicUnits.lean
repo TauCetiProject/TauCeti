@@ -38,6 +38,7 @@ Invertibility of `n` is needed: `1 - (-1) = 2` is not a unit of `ℤ_[2]`.
 
 * `IsPrimitiveRoot.associated_sub_one_pow_totient_prime_pow`: for a primitive `p ^ (k + 1)`-th
   root of unity, `(ζ - 1) ^ φ(p ^ (k + 1))` is associated to `p`.
+* `IsPrimitiveRoot.sub_one_dvd_natCast_of_prime_pow`: for such a root, `ζ - 1` divides `p`.
 * `IsPrimitiveRoot.isUnit_sub_one_iff_isUnit_natCast`: for a primitive `p ^ (k + 1)`-th root of
   unity, `ζ - 1` is a unit exactly when `p` is.
 * `IsPrimitiveRoot.not_isUnit_sub_one`: for a primitive `p ^ (k + 1)`-th root of unity in a
@@ -65,6 +66,14 @@ theorem IsPrimitiveRoot.associated_sub_one_pow_totient_prime_pow {A : Type*} [Co
   have : NeZero (p ^ (k + 1)) := ⟨pow_ne_zero _ hp.out.ne_zero⟩
   obtain ⟨i, -, hi, rfl⟩ := hζ.isPrimitiveRoot_iff.mp (isPrimitiveRoot_of_mem_primitiveRoots hη)
   simpa using (hζ.associated_sub_one_pow_sub_one_of_coprime hi).neg_right
+
+/-- If `ζ` is a primitive `p ^ (k + 1)`-th root of unity and `p` is prime, then `ζ - 1` divides
+`p` in the ambient domain. -/
+theorem IsPrimitiveRoot.sub_one_dvd_natCast_of_prime_pow {A : Type*} [CommRing A] [IsDomain A]
+    {p k : ℕ} [hp : Fact p.Prime] {ζ : A} (hζ : IsPrimitiveRoot ζ (p ^ (k + 1))) :
+    ζ - 1 ∣ (p : A) :=
+  (dvd_pow_self _ (Nat.totient_pos.mpr (pow_pos hp.out.pos _)).ne').trans
+    hζ.associated_sub_one_pow_totient_prime_pow.dvd
 
 /-- If `ζ` is a primitive `p ^ (k + 1)`-th root of unity in a domain `A` and `p` is prime, then
 `ζ - 1` is a unit exactly when `p` is. -/
