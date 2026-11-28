@@ -11,7 +11,7 @@ public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.ZHat
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.ZMod
 
-import TauCeti.Data.Rat.NumDenDvd
+import TauCeti.Algebra.Group.Hom.CompatibleRoots
 
 /-!
 # The prime-to-`p` Tate module of the roots of unity
@@ -539,58 +539,25 @@ end Action
 
 section RatChar
 
-/-- The value `ζ_{q.den} ^ q.num` of the character `TauCeti.PrimeToPTateModule.ratChar`, before
-bundling. -/
-private def ratCharFun (x : PrimeToPTateModule 1 E) (q : ℚ) : Eˣ :=
-  (proj ⟨q.den, q.den_nz, Nat.coprime_one_right _⟩ x : Eˣ) ^ q.num
-
-/-- `ζ_{q.den} ^ q.num = ζ_n ^ k` whenever `q = k / n`, by compatibility of the components. -/
-private theorem ratCharFun_eq_zpow (x : PrimeToPTateModule 1 E)
-    (n : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}) {q : ℚ} {k : ℤ} (h : (k : ℚ) = q * (n : ℕ)) :
-    ratCharFun x q = (proj n x : Eˣ) ^ k := by
-  have hdvd : q.den ∣ (n : ℕ) := Int.natCast_dvd_natCast.mp
-    (Rat.den_dvd_of_intCast_eq_mul_intCast q (by rw [h, Int.cast_natCast]))
-  obtain ⟨c, hc⟩ := hdvd
-  have hk : k = c * q.num := by
-    have : (k : ℚ) = c * q.num := by
-      rw [h, hc, Nat.cast_mul, ← mul_assoc, Rat.mul_den_eq_num, mul_comm]
-    exact_mod_cast this
-  have hpow := proj_pow_div x (m := n) (n := ⟨q.den, q.den_nz, Nat.coprime_one_right _⟩) ⟨c, hc⟩
-  have hdiv : (n : ℕ) / q.den = c := by rw [hc, Nat.mul_div_cancel_left _ q.den_pos]
-  rw [hdiv] at hpow
-  rw [ratCharFun, hk, zpow_mul, zpow_natCast, hpow]
-
 variable (E) in
 /-- The **character of rational exponents** attached to a point `ζ = (ζ_n)_n` of the Tate module
-`lim_n μ_n(E)`: the homomorphism `ℚ → Eˣ` sending `k / n` to `ζ_n ^ k`. It is well defined by
-compatibility of the components and trivial on `ℤ`
-(`TauCeti.PrimeToPTateModule.ratChar_ofAdd_intCast`), and it determines `ζ`
+`lim_n μ_n(E)`: the homomorphism `ℚ → Eˣ` sending `k / n` to `ζ_n ^ k`. It is the homomorphism
+`TauCeti.ratHomOfCompatibleRoots` of the compatible system of roots `n ↦ ζ_n`, and it is trivial
+on `ℤ` (`TauCeti.PrimeToPTateModule.ratChar_ofAdd_intCast`) and determines `ζ`
 (`TauCeti.PrimeToPTateModule.ratChar_injective`). -/
 def ratChar : PrimeToPTateModule 1 E →* (Multiplicative ℚ →* Eˣ) where
-  toFun x :=
-    { toFun q := ratCharFun x q.toAdd
-      map_one' := by simp [ratCharFun]
-      map_mul' q r := by
-        -- Compute all three values at the common level `q.den * r.den`.
-        set a := q.toAdd
-        set b := r.toAdd
-        let N : {m : ℕ // m ≠ 0 ∧ m.Coprime 1} :=
-          ⟨a.den * b.den, mul_ne_zero a.den_nz b.den_nz, Nat.coprime_one_right _⟩
-        have ha : ((a.num * b.den : ℤ) : ℚ) = a * (N : ℕ) := by
-          push_cast [N]
-          rw [← mul_assoc, Rat.mul_den_eq_num]
-        have hb : ((b.num * a.den : ℤ) : ℚ) = b * (N : ℕ) := by
-          push_cast [N]
-          rw [mul_left_comm, Rat.mul_den_eq_num, mul_comm]
-        rw [toAdd_mul, ratCharFun_eq_zpow x N ha, ratCharFun_eq_zpow x N hb,
-          ratCharFun_eq_zpow x N (k := a.num * b.den + b.num * a.den)
-            (by rw [Int.cast_add, ha, hb, add_mul]), zpow_add] }
+  toFun x := ratHomOfCompatibleRoots (fun n ↦ (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ x : Eˣ))
+    fun m n ↦ by
+      have h := proj_pow_div x (m := ⟨(m * n : ℕ+), (m * n).ne_zero, Nat.coprime_one_right _⟩)
+        (n := ⟨n, n.ne_zero, Nat.coprime_one_right _⟩) (PNat.dvd_iff.mp (dvd_mul_left n m))
+      have he : ((m * n : ℕ+) : ℕ) / n = m := by rw [PNat.mul_coe, Nat.mul_div_cancel _ n.pos]
+      rwa [he] at h
   map_one' := by
     ext q
-    simp [ratCharFun]
+    simp [ratHomOfCompatibleRoots_ofAdd]
   map_mul' x y := by
     ext q
-    simp [ratCharFun, mul_zpow]
+    simp [ratHomOfCompatibleRoots_ofAdd, mul_zpow]
 
 /-- The character attached to `ζ` sends `q` to `ζ_{q.den} ^ q.num`. -/
 theorem ratChar_ofAdd (x : PrimeToPTateModule 1 E) (q : ℚ) :
@@ -601,7 +568,7 @@ theorem ratChar_ofAdd (x : PrimeToPTateModule 1 E) (q : ℚ) :
 theorem ratChar_ofAdd_eq_zpow (x : PrimeToPTateModule 1 E) (n : {m : ℕ // m ≠ 0 ∧ m.Coprime 1})
     {q : ℚ} {k : ℤ} (h : (k : ℚ) = q * (n : ℕ)) :
     ratChar E x (.ofAdd q) = (proj n x : Eˣ) ^ k :=
-  ratCharFun_eq_zpow x n h
+  ratHomOfCompatibleRoots_ofAdd_eq_zpow _ _ ⟨n, Nat.pos_of_ne_zero n.property.1⟩ h
 
 /-- The character attached to `ζ` sends `k / n` to `ζ_n ^ k`. -/
 @[simp]
