@@ -23,6 +23,8 @@ The proof tests the second coordinate jet against the open set of bilinear forms
 complex subspace of codimension at most `q`. Compactness gives a uniform tolerance on each
 member of a locally finite compact chart cover; holomorphic chart invariance then transports the
 test back to the manifold. Strict plurisubharmonicity is the case `q = 0`.
+The same chart-jet test gives `TauCeti.isOpen_setOf_isManifoldStrictlyPlurisubharmonicAt`,
+openness of the strictly plurisubharmonic locus of a real `C²` function.
 
 ## References
 
@@ -90,6 +92,41 @@ theorem exists_isOpen_chartIteratedFDeriv_mem_iff_isManifoldStronglyPseudoconvex
       (isManifoldStronglyPseudoconvexAt_iff_of_mem_maximalAtlas
         (IsManifold.chart_mem_maximalAtlas a) hx (g.contMDiff.of_le hr).contMDiffAt).symm
   exact ⟨V, hV, htest⟩
+
+/-- The strictly plurisubharmonic locus of a `C²` function on a finite-dimensional complex
+manifold is open. -/
+theorem isOpen_setOf_isManifoldStrictlyPlurisubharmonicAt [IsManifold 𝓘(ℂ, E) 2 M]
+    {p : M → ℝ} (hp : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) 2 p) :
+    IsOpen {x | IsManifoldStrictlyPlurisubharmonicAt E p x} := by
+  have : IsManifold 𝓘(ℝ, E) 2 M := IsManifold.restrictScalars ℝ
+    (inferInstance : IsManifold 𝓘(ℂ, E) 2 M)
+  obtain ⟨V, hV, htest⟩ :=
+    exists_isOpen_chartIteratedFDeriv_mem_iff_isManifoldStronglyPseudoconvexAt
+      (E := E) (M := M) (r := 2) le_rfl 0
+  let f : C^2⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ := ⟨p, hp⟩
+  rw [isOpen_iff_mem_nhds]
+  intro x hx
+  let e := extChartAt 𝓘(ℝ, E) x
+  let A := (ContMDiffMap.chartIteratedFDeriv f x 2 le_rfl) ⁻¹' V
+  have hA : IsOpen A := hV.preimage (ContMDiffMap.chartIteratedFDeriv f x 2 le_rfl).continuous
+  have hB : IsOpen (Subtype.val '' A : Set E) :=
+    (isOpen_extChartAt_target (I := 𝓘(ℝ, E)) x).isOpenMap_subtypeVal _ hA
+  have hU := isOpen_extChartAt_preimage' (I := 𝓘(ℝ, E)) x hB
+  have hiff (z : e.target) :
+      z ∈ A ↔ IsManifoldStrictlyPlurisubharmonicAt E p (e.symm z) := by
+    have hf : (f : M → ℝ) = p := rfl
+    rw [← hf, ← isManifoldStronglyPseudoconvexAt_zero_iff]
+    exact htest f x z
+  have hz : e x ∈ e.target := mem_extChartAt_target x
+  have hxinv : e.symm (e x) = x := e.left_inv (mem_extChartAt_source x)
+  refine Filter.mem_of_superset (hU.mem_nhds ?_) ?_
+  · exact (mem_inter_iff _ _ _).2
+      ⟨mem_extChartAt_source x, ⟨⟨e x, hz⟩, (hiff _).mpr (hxinv.symm ▸ hx), rfl⟩⟩
+  · intro y hy
+    obtain ⟨hy, z, hz, heq⟩ := (mem_inter_iff _ _ _).1 hy
+    have he : e.symm (e y) = y := e.left_inv hy
+    rw [← he, ← heq]
+    exact (hiff z).mp hz
 
 /-- A globally strongly `q`-pseudoconvex `C^r` function, `r ≥ 2`, has a strong Whitney ball of
 order exactly two consisting of globally strongly `q`-pseudoconvex functions. The control uses a

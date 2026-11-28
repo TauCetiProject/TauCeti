@@ -43,24 +43,6 @@ namespace TauCeti
 variable {E M : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [TopologicalSpace M] [ChartedSpace E M] {p r : M → ℝ} {x : M}
 
-/-- At a zero of `p` with vanishing differential, the Levi form of `r * p` is `r(x)`
-times that of `p`. -/
-theorem manifoldLeviForm_mul_of_eq_zero_of_mvfderiv_eq_zero
-    (hr : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 r x) (hp : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 p x)
-    (h₀ : p x = 0) (h₁ : mvfderiv 𝓘(ℝ, E) p x = 0) :
-    manifoldLeviForm E (r * p) x = (r x : ℂ) • manifoldLeviForm E p x := by
-  ext v w
-  rw [manifoldLeviForm_def, manifoldLeviForm_def]
-  have hD := mvfderiv_comp_tangentSpaceCastModel_symm (I := 𝓘(ℝ, E)) p x
-  rw [h₁, ContinuousLinearMap.zero_comp, extChartAt_model_symm_eq_chartAt_symm,
-    extChartAt_model_apply_eq_chartAt_apply] at hD
-  have hprod := leviForm_mul_apply hr.contDiffAt_comp_chartAt_symm
-    hp.contDiffAt_comp_chartAt_symm v w
-  rw [← Pi.mul_comp] at hprod
-  rw [hprod, hD.symm]
-  simp [StrongDual.extendRCLike_apply, (chartAt E x).left_inv (mem_chart_source E x), h₀]
-
-
 /-- At a point where `p` is strictly plurisubharmonic, adding a sufficiently large constant
 multiple of `p` to a `C²` function makes the sum strictly plurisubharmonic. -/
 theorem IsManifoldStrictlyPlurisubharmonicAt.eventually_atTop_add_smul
@@ -104,40 +86,6 @@ theorem IsManifoldStrictlyPlurisubharmonicAt.eventually_atTop_add_smul
     (by simpa only [add_comm] using hdiag))
 
 variable [FiniteDimensional ℂ E]
-/-- The strictly plurisubharmonic locus of a `C²` function on a finite-dimensional complex
-manifold is open. -/
-theorem isOpen_setOf_isManifoldStrictlyPlurisubharmonicAt [IsManifold 𝓘(ℂ, E) 2 M]
-    (hp : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) 2 p) :
-    IsOpen {x | IsManifoldStrictlyPlurisubharmonicAt E p x} := by
-  have : IsManifold 𝓘(ℝ, E) 2 M := IsManifold.restrictScalars ℝ
-    (inferInstance : IsManifold 𝓘(ℂ, E) 2 M)
-  obtain ⟨V, hV, htest⟩ :=
-    exists_isOpen_chartIteratedFDeriv_mem_iff_isManifoldStronglyPseudoconvexAt
-      (E := E) (M := M) (r := 2) le_rfl 0
-  let f : C^2⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ := ⟨p, hp⟩
-  rw [isOpen_iff_mem_nhds]
-  intro x hx
-  let e := extChartAt 𝓘(ℝ, E) x
-  let A := (ContMDiffMap.chartIteratedFDeriv f x 2 le_rfl) ⁻¹' V
-  have hA : IsOpen A := hV.preimage (ContMDiffMap.chartIteratedFDeriv f x 2 le_rfl).continuous
-  have hB : IsOpen (Subtype.val '' A : Set E) :=
-    (isOpen_extChartAt_target (I := 𝓘(ℝ, E)) x).isOpenMap_subtypeVal _ hA
-  have hU := isOpen_extChartAt_preimage' (I := 𝓘(ℝ, E)) x hB
-  have hiff (z : e.target) :
-      z ∈ A ↔ IsManifoldStrictlyPlurisubharmonicAt E p (e.symm z) := by
-    have hf : (f : M → ℝ) = p := rfl
-    rw [← hf, ← isManifoldStronglyPseudoconvexAt_zero_iff]
-    exact htest f x z
-  have hz : e x ∈ e.target := mem_extChartAt_target x
-  have hxinv : e.symm (e x) = x := e.left_inv (mem_extChartAt_source x)
-  refine mem_of_superset (hU.mem_nhds ?_) ?_
-  · exact (mem_inter_iff _ _ _).2
-      ⟨mem_extChartAt_source x, ⟨⟨e x, hz⟩, (hiff _).mpr (hxinv.symm ▸ hx), rfl⟩⟩
-  · intro y hy
-    obtain ⟨hy, z, hz, heq⟩ := (mem_inter_iff _ _ _).1 hy
-    have he : e.symm (e y) = y := e.left_inv hy
-    rw [← he, ← heq]
-    exact (hiff z).mp hz
 
 /-- Let `p` and `r` be real `C²` functions on a finite-dimensional complex manifold. If `p`
 vanishes with its differential and is strictly plurisubharmonic on a closed subset `S`,
