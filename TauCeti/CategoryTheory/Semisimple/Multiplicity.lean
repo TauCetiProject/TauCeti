@@ -240,4 +240,50 @@ theorem simpleMultiplicities_apply_classOf_ne_zero_iff (X S : C) [Simple S] :
     have := isIso_of_hom_simple hi
     exact ⟨i, ⟨asIso (f ≫ e.hom ≫ biproduct.π A i)⟩⟩
 
+namespace IsFiniteSemisimpleCategory
+
+/-- For a simple object `S`, the chosen simple decomposition of `S` has a unique index. -/
+instance uniqueChosenSimpleIndex (S : C) [Simple S] : Unique (chosenSimpleIndex S) :=
+  (exists_equiv_of_iso_biproduct_simples (chosenSimpleFamily S)
+    (fun _ : Unit ↦ S) ((chosenSimpleIso S).symm ≪≫
+      (biproductUniqueIso (fun _ : Unit ↦ S)).symm)).choose.unique
+
+/-- For a simple object `S`, the decomposition projection and inclusion at the unique index of its
+chosen simple decomposition form an isomorphism
+`S ≅ (SimpleClasses.classOf (chosenSimpleFamily S default)).repr`. -/
+def chosenSimpleDecompIso (S : C) [Simple S] :
+    S ≅ (SimpleClasses.classOf (chosenSimpleFamily S default)).repr :=
+  chosenSimpleIso S ≪≫ biproductUniqueIso (chosenSimpleFamily S) ≪≫
+    (SimpleClasses.classOfReprIso _).symm
+
+/-- The forward morphism of `chosenSimpleDecompIso` is the decomposition projection at the unique
+index. -/
+@[simp]
+theorem chosenSimpleDecompIso_hom (S : C) [Simple S] :
+    (chosenSimpleDecompIso S).hom =
+      SimpleClasses.decompProj (chosenSimpleFamily S) (chosenSimpleIso S) default := by
+  simp only [chosenSimpleDecompIso, Iso.trans_hom, Iso.symm_hom, biproductUniqueIso_hom,
+    SimpleClasses.decompProj_def]
+  congr 2
+  refine biproduct.hom_ext' _ _ fun i ↦ ?_
+  obtain rfl := Subsingleton.elim i default
+  dsimp only [limitBiconeOfUnique]
+  simp
+
+/-- The inverse morphism of `chosenSimpleDecompIso` is the decomposition inclusion at the unique
+index. -/
+@[simp]
+theorem chosenSimpleDecompIso_inv (S : C) [Simple S] :
+    (chosenSimpleDecompIso S).inv =
+      SimpleClasses.decompIncl (chosenSimpleFamily S) (chosenSimpleIso S) default := by
+  simp only [chosenSimpleDecompIso, Iso.trans_inv, Iso.symm_inv, biproductUniqueIso_inv,
+    SimpleClasses.decompIncl_def, Category.assoc]
+  congr 1
+  refine congrArg (· ≫ (chosenSimpleIso S).inv) (biproduct.hom_ext _ _ fun j ↦ ?_)
+  obtain rfl := Subsingleton.elim j default
+  dsimp only [limitBiconeOfUnique]
+  simp
+
+end IsFiniteSemisimpleCategory
+
 end TauCeti

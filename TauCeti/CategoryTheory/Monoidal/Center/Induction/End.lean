@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Limits.Shapes.End
+public import Mathlib.CategoryTheory.Monoidal.Rigid.Functor
 public import TauCeti.CategoryTheory.Monoidal.Center.Induction.Basic
+import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
+import TauCeti.CategoryTheory.Semisimple.Multiplicity
 
 /-!
 # The universal end property of `Center.inductionObj`
@@ -39,12 +43,19 @@ adjunction `Center.forget C ⊣ Center.induction k C`.
   `CategoryTheory.Center.inductionMap_comp_inductionEndπ` in `X`;
 * `CategoryTheory.Center.inductionMapLift`,
   `CategoryTheory.Center.inductionMapLift_comp_map_π`,
-  `CategoryTheory.Center.inductionMapLift_comp_map_endπ`, and
-  `CategoryTheory.Center.inductionObj_map_hom_ext`: the universal end lift and uniqueness principle
-  under an additive functor `F : C ⥤ D`;
+  `CategoryTheory.Center.inductionMapLift_comp_map_endπ`,
+  `CategoryTheory.Center.inductionObj_map_hom_ext`, and
+  `CategoryTheory.Center.inductionObj_map_hom_ext_endπ`: the universal end lift and uniqueness
+  principles under an additive functor `F : C ⥤ D`;
 * `CategoryTheory.Center.inductionLift`, `CategoryTheory.Center.inductionLift_comp_endπ`, and
   `CategoryTheory.Center.inductionObj_hom_ext_endπ`: the universal end lift and uniqueness
-  principle in `C`.
+  principle in `C`;
+* `CategoryTheory.Center.inductionBifunctor`, `CategoryTheory.Center.inductionBifunctorMap`,
+  `CategoryTheory.Center.inductionWedge`, `CategoryTheory.Center.isLimitInductionWedge`,
+  `CategoryTheory.Center.hasEnd_inductionBifunctor`, and
+  `CategoryTheory.Center.inductionObjIsoEnd`: the bundled bifunctor `(Y', Y) ↦ Y ⊗ X ⊗ Y'ᘁ`
+  (functorial in `X` via `inductionBifunctorMap`), its wedge on `inductionObj X`, its `IsLimit`
+  and `HasEnd` witnesses, and its natural comparison isomorphism with Mathlib's `Limits.end_`.
 
 ## References
 
@@ -95,9 +106,8 @@ private def endπAux {Y : C} {ι : Type*} [Fintype ι] (a : ι → C) [∀ i, Si
     [HasBiproduct a] (e : Y ≅ ⨁ a) (X : C) : inductionObj X ⟶ Y ⊗ X ⊗ Yᘁ :=
   ∑ i : ι,
     biproduct.π (inductionSummand X) (SimpleClasses.classOf (a i)) ≫
-      ((SimpleClasses.classOfReprIso (a i)).hom ≫ biproduct.ι a i ≫ e.inv) ▷
-        (X ⊗ (SimpleClasses.classOf (a i)).reprᘁ) ≫
-      Y ◁ X ◁ (e.hom ≫ biproduct.π a i ≫ (SimpleClasses.classOfReprIso (a i)).inv)ᘁ
+      SimpleClasses.decompIncl a e i ▷ (X ⊗ (SimpleClasses.classOf (a i)).reprᘁ) ≫
+      Y ◁ X ◁ (SimpleClasses.decompProj a e i)ᘁ
 
 include k in
 /-- `endπAux` is dinatural with respect to any morphism `g : Y ⟶ Y'`, regardless of which
@@ -107,37 +117,21 @@ private theorem endπAux_dinatural {Y Y' : C} {ι ι' : Type*} [Fintype ι] [Fin
     (b : ι' → C) [∀ j, Simple (b j)] [HasBiproduct b] (e' : Y' ≅ ⨁ b)
     (X : C) (g : Y ⟶ Y') :
     endπAux a e X ≫ g ▷ (X ⊗ Yᘁ) = endπAux b e' X ≫ Y' ◁ X ◁ gᘁ := by
-  let p (i : ι) : Y ⟶ (SimpleClasses.classOf (a i)).repr :=
-    e.hom ≫ biproduct.π a i ≫ (SimpleClasses.classOfReprIso (a i)).inv
-  let q (i : ι) : (SimpleClasses.classOf (a i)).repr ⟶ Y :=
-    (SimpleClasses.classOfReprIso (a i)).hom ≫ biproduct.ι a i ≫ e.inv
-  let p' (j : ι') : Y' ⟶ (SimpleClasses.classOf (b j)).repr :=
-    e'.hom ≫ biproduct.π b j ≫ (SimpleClasses.classOfReprIso (b j)).inv
-  let q' (j : ι') : (SimpleClasses.classOf (b j)).repr ⟶ Y' :=
-    (SimpleClasses.classOfReprIso (b j)).hom ≫ biproduct.ι b j ≫ e'.inv
-  have hY : ∑ i, p i ≫ q i = 𝟙 Y := SimpleClasses.sum_comp_classOfReprIso_eq_id a e
-  have hY' : ∑ j, p' j ≫ q' j = 𝟙 Y' := SimpleClasses.sum_comp_classOfReprIso_eq_id b e'
-  have hgL (i : ι) : q i ≫ g = ∑ j, (q i ≫ g ≫ p' j) ≫ q' j := by
-    simp only [Category.assoc, ← Preadditive.comp_sum, hY', Category.comp_id]
-  have hgR (j : ι') : g ≫ p' j = ∑ i, p i ≫ (q i ≫ g ≫ p' j) := by
-    simp only [← Category.assoc, ← Preadditive.sum_comp, hY, Category.id_comp]
-  -- Fold the summands of `endπAux` in terms of `p`, `q`, `p'`, `q'`.
-  change (∑ i, biproduct.π (inductionSummand X) (SimpleClasses.classOf (a i)) ≫
-      q i ▷ (X ⊗ (SimpleClasses.classOf (a i)).reprᘁ) ≫ Y ◁ X ◁ (p i)ᘁ) ≫ g ▷ (X ⊗ Yᘁ) =
-    (∑ j, biproduct.π (inductionSummand X) (SimpleClasses.classOf (b j)) ≫
-      q' j ▷ (X ⊗ (SimpleClasses.classOf (b j)).reprᘁ) ≫ Y' ◁ X ◁ (p' j)ᘁ) ≫ Y' ◁ X ◁ gᘁ
-  calc (∑ i, biproduct.π (inductionSummand X) (SimpleClasses.classOf (a i)) ≫
-          q i ▷ (X ⊗ _) ≫ Y ◁ X ◁ (p i)ᘁ) ≫ g ▷ (X ⊗ Yᘁ)
+  let p := SimpleClasses.decompProj a e
+  let q := SimpleClasses.decompIncl a e
+  let p' := SimpleClasses.decompProj b e'
+  let q' := SimpleClasses.decompIncl b e'
+  calc endπAux a e X ≫ g ▷ (X ⊗ Yᘁ)
       = ∑ i, biproduct.π (inductionSummand X) (SimpleClasses.classOf (a i)) ≫
           (q i ≫ g) ▷ (X ⊗ _) ≫ Y' ◁ X ◁ (p i)ᘁ := by
-          simp only [Preadditive.sum_comp, Category.assoc, whisker_exchange,
-            ← comp_whiskerRight_assoc]
+          simp only [endπAux, Preadditive.sum_comp, Category.assoc, whisker_exchange,
+            ← comp_whiskerRight_assoc, p, q]
     _ = ∑ i, ∑ j, (biproduct.π (inductionSummand X) (SimpleClasses.classOf (a i)) ≫
           (q i ≫ g ≫ p' j) ▷ (X ⊗ _)) ≫ q' j ▷ (X ⊗ _) ≫ Y' ◁ X ◁ (p i)ᘁ := by
           refine Finset.sum_congr rfl fun i _ ↦ ?_
-          rw [hgL i]
+          rw [SimpleClasses.hom_eq_sum_comp_decompProj_comp_decompIncl b e' (q i ≫ g)]
           simp only [sum_whiskerRight, Preadditive.comp_sum, Preadditive.sum_comp,
-            Category.assoc, comp_whiskerRight]
+            Category.assoc, comp_whiskerRight, p', q']
     _ = ∑ i, ∑ j, biproduct.π (inductionSummand X) (SimpleClasses.classOf (b j)) ≫
           q' j ▷ (X ⊗ _) ≫ Y' ◁ X ◁ ((q i ≫ g ≫ p' j)ᘁ ≫ (p i)ᘁ) := by
           refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
@@ -147,12 +141,14 @@ private theorem endπAux_dinatural {Y Y' : C} {ι ι' : Type*} [Fintype ι] [Fin
           q' j ▷ (X ⊗ _) ≫ Y' ◁ X ◁ (g ≫ p' j)ᘁ := by
           rw [Finset.sum_comm]
           refine Finset.sum_congr rfl fun j _ ↦ ?_
-          conv_rhs => rw [hgR j, rightAdjointMate_sum]
-          simp only [comp_rightAdjointMate, whiskerLeft_sum, Preadditive.comp_sum, Category.assoc]
-    _ = (∑ j, biproduct.π (inductionSummand X) (SimpleClasses.classOf (b j)) ≫
-          q' j ▷ (X ⊗ _) ≫ Y' ◁ X ◁ (p' j)ᘁ) ≫ Y' ◁ X ◁ gᘁ := by
-          simp only [Preadditive.sum_comp, Category.assoc, ← whiskerLeft_comp,
-            comp_rightAdjointMate]
+          conv_rhs =>
+            rw [SimpleClasses.hom_eq_sum_decompProj_comp_decompIncl_comp a e (g ≫ p' j),
+              rightAdjointMate_sum]
+          simp only [comp_rightAdjointMate, whiskerLeft_sum, Preadditive.comp_sum, Category.assoc,
+            p, q]
+    _ = endπAux b e' X ≫ Y' ◁ X ◁ gᘁ := by
+          simp only [endπAux, Preadditive.sum_comp, Category.assoc, ← whiskerLeft_comp,
+            comp_rightAdjointMate, p', q']
 
 end EndWedge
 
@@ -165,33 +161,23 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [Monoida
 
 /-- The canonical dinatural end projection `inductionObj X ⟶ Y ⊗ X ⊗ Yᘁ`. -/
 def inductionEndπ (X Y : C) : inductionObj X ⟶ Y ⊗ X ⊗ Yᘁ :=
-  let h := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
-  let _ := h.choose_spec.choose
-  let a := h.choose_spec.choose_spec.choose
-  let _ := h.choose_spec.choose_spec.choose_spec.choose
-  let _ := h.choose_spec.choose_spec.choose_spec.choose_spec.choose
-  let e := h.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
-  endπAux a e X
+  endπAux (IsFiniteSemisimpleCategory.chosenSimpleFamily Y)
+    (IsFiniteSemisimpleCategory.chosenSimpleIso Y) X
+
+omit [MonoidalPreadditive C] in
+private theorem inductionEndπ_eq_endπAux (X Y : C) :
+    inductionEndπ X Y =
+      endπAux (IsFiniteSemisimpleCategory.chosenSimpleFamily Y)
+        (IsFiniteSemisimpleCategory.chosenSimpleIso Y) X :=
+  rfl
 
 include k in
 /-- Dinaturality of `inductionEndπ`: right-whiskering by `g : Y ⟶ Y'` on the first factor
 agrees with left-whiskering by `gᘁ : Y'ᘁ ⟶ Yᘁ` on the third factor. -/
 @[reassoc]
 theorem inductionEndπ_dinatural (X : C) {Y Y' : C} (g : Y ⟶ Y') :
-    inductionEndπ X Y ≫ g ▷ (X ⊗ Yᘁ) = inductionEndπ X Y' ≫ Y' ◁ X ◁ gᘁ := by
-  let h := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
-  let : Fintype h.choose := h.choose_spec.choose
-  let a := h.choose_spec.choose_spec.choose
-  let : ∀ i, Simple (a i) := h.choose_spec.choose_spec.choose_spec.choose
-  let : HasBiproduct a := h.choose_spec.choose_spec.choose_spec.choose_spec.choose
-  let e := h.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
-  let h' := IsFiniteSemisimpleCategory.exists_biproduct_simples Y'
-  let : Fintype h'.choose := h'.choose_spec.choose
-  let b := h'.choose_spec.choose_spec.choose
-  let : ∀ j, Simple (b j) := h'.choose_spec.choose_spec.choose_spec.choose
-  let : HasBiproduct b := h'.choose_spec.choose_spec.choose_spec.choose_spec.choose
-  let e' := h'.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
-  exact endπAux_dinatural k a e b e' X g
+    inductionEndπ X Y ≫ g ▷ (X ⊗ Yᘁ) = inductionEndπ X Y' ≫ Y' ◁ X ◁ gᘁ :=
+  endπAux_dinatural k _ _ _ _ X g
 
 include k in
 /-- On the chosen representative `S.repr` of a simple class `S`, `inductionEndπ` is the
@@ -199,30 +185,14 @@ biproduct projection onto the `S`-summand. -/
 @[reassoc] -- Not `@[simp]` because `k` cannot be inferred from the LHS.
 theorem inductionEndπ_repr (X : C) (S : SimpleClasses C) :
     inductionEndπ X S.repr = biproduct.π (inductionSummand X) S := by
-  let h := IsFiniteSemisimpleCategory.exists_biproduct_simples S.repr
-  let : Fintype h.choose := h.choose_spec.choose
-  let a := h.choose_spec.choose_spec.choose
-  let : ∀ i, Simple (a i) := h.choose_spec.choose_spec.choose_spec.choose
-  let : HasBiproduct a := h.choose_spec.choose_spec.choose_spec.choose_spec.choose
-  let e := h.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
-  let p (i : h.choose) : S.repr ⟶ (SimpleClasses.classOf (a i)).repr :=
-    e.hom ≫ biproduct.π a i ≫ (SimpleClasses.classOfReprIso (a i)).inv
-  let q (i : h.choose) : (SimpleClasses.classOf (a i)).repr ⟶ S.repr :=
-    (SimpleClasses.classOfReprIso (a i)).hom ≫ biproduct.ι a i ≫ e.inv
-  -- Unfold `inductionEndπ X S.repr` to `endπAux` for the chosen decomposition of `S.repr`.
-  change endπAux a e X = biproduct.π (inductionSummand X) S
-  symm
-  calc biproduct.π (inductionSummand X) S
-      = biproduct.π (inductionSummand X) S ≫ (∑ i, p i ≫ q i) ▷ (X ⊗ S.reprᘁ) := by
-          rw [SimpleClasses.sum_comp_classOfReprIso_eq_id a e, id_whiskerRight, Category.comp_id]
-    _ = ∑ i, (biproduct.π (inductionSummand X) S ≫ p i ▷ (X ⊗ S.reprᘁ)) ≫
-          q i ▷ (X ⊗ S.reprᘁ) := by
-          simp only [sum_whiskerRight, Preadditive.comp_sum, Category.assoc, comp_whiskerRight]
-    _ = ∑ i, biproduct.π (inductionSummand X) (SimpleClasses.classOf (a i)) ≫
-          q i ▷ (X ⊗ _) ≫ S.repr ◁ X ◁ (p i)ᘁ := by
-          refine Finset.sum_congr rfl fun i _ ↦ ?_
-          rw [repr_dinatural k X (p i), Category.assoc, whisker_exchange]
-    _ = endπAux a e X := rfl
+  let u := IsFiniteSemisimpleCategory.chosenSimpleDecompIso S.repr
+  have hmate : S.repr ◁ X ◁ (u.inv)ᘁ ≫ S.repr ◁ X ◁ (u.hom)ᘁ = 𝟙 _ := by
+    simpa using (whiskerLeftIso S.repr (whiskerLeftIso X u.rightAdjointMate)).inv_hom_id
+  rw [inductionEndπ_eq_endπAux]
+  dsimp only [endπAux]
+  rw [Fintype.sum_unique, ← IsFiniteSemisimpleCategory.chosenSimpleDecompIso_hom,
+    ← IsFiniteSemisimpleCategory.chosenSimpleDecompIso_inv, ← Category.assoc,
+    repr_dinatural k X u.inv, Category.assoc, hmate, Category.comp_id]
 
 omit [MonoidalPreadditive C] in
 /-- Naturality of `inductionEndπ` in `X` with respect to `inductionMap f`. -/
@@ -344,18 +314,11 @@ theorem inductionMapLift_comp_map_endπ {D : Type*} [Category* D] [Preadditive D
       w Y ≫ F.map (g ▷ (X ⊗ Yᘁ)) = w Y' ≫ F.map (Y' ◁ X ◁ gᘁ))
     (Y : C) :
     inductionMapLift w ≫ F.map (inductionEndπ X Y) = w Y := by
-  let h := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
-  let : Fintype h.choose := h.choose_spec.choose
-  let a := h.choose_spec.choose_spec.choose
-  let : ∀ i, Simple (a i) := h.choose_spec.choose_spec.choose_spec.choose
-  let : HasBiproduct a := h.choose_spec.choose_spec.choose_spec.choose_spec.choose
-  let e := h.choose_spec.choose_spec.choose_spec.choose_spec.choose_spec.some
-  let p (i : h.choose) : Y ⟶ (SimpleClasses.classOf (a i)).repr :=
-    e.hom ≫ biproduct.π a i ≫ (SimpleClasses.classOfReprIso (a i)).inv
-  let q (i : h.choose) : (SimpleClasses.classOf (a i)).repr ⟶ Y :=
-    (SimpleClasses.classOfReprIso (a i)).hom ≫ biproduct.ι a i ≫ e.inv
-  -- Unfold `inductionEndπ X Y` to `endπAux` for the chosen decomposition of `Y`.
-  change inductionMapLift w ≫ F.map (endπAux a e X) = w Y
+  let a := IsFiniteSemisimpleCategory.chosenSimpleFamily Y
+  let e := IsFiniteSemisimpleCategory.chosenSimpleIso Y
+  let p := SimpleClasses.decompProj a e
+  let q := SimpleClasses.decompIncl a e
+  rw [inductionEndπ_eq_endπAux]
   dsimp only [endπAux]
   rw [F.map_sum, Preadditive.comp_sum]
   calc ∑ i, inductionMapLift w ≫ F.map (biproduct.π (inductionSummand X)
@@ -372,7 +335,7 @@ theorem inductionMapLift_comp_map_endπ {D : Type*} [Category* D] [Preadditive D
             ← F.map_comp, ← comp_whiskerRight]
     _ = w Y := by
           rw [← Preadditive.comp_sum, ← F.map_sum, ← sum_whiskerRight,
-            SimpleClasses.sum_comp_classOfReprIso_eq_id a e, id_whiskerRight, F.map_id,
+            SimpleClasses.sum_decompProj_comp_decompIncl_eq_id a e, id_whiskerRight, F.map_id,
             Category.comp_id]
 
 /-- Composing `inductionLift w` with `inductionEndπ X Y` recovers `w Y` whenever `w` is
@@ -389,15 +352,192 @@ variable (k : Type w) [Field k] [IsAlgClosed k] [Linear k C] [MonoidalLinear k C
   [∀ S : SimpleClasses C, FiniteDimensional k (S.repr ⟶ S.repr)]
 
 include k in
+/-- Morphisms into `F.obj (inductionObj X)` for an additive functor `F : C ⥤ D` agree once they
+agree after every end projection `F.map (inductionEndπ X Y)`. -/
+theorem inductionObj_map_hom_ext_endπ {D : Type*} [Category* D] [Preadditive D]
+    {F : C ⥤ D} [F.Additive] {W : D} {X : C}
+    {f₁ f₂ : W ⟶ F.obj (inductionObj X)}
+    (h : ∀ Y : C, f₁ ≫ F.map (inductionEndπ X Y) = f₂ ≫ F.map (inductionEndπ X Y)) :
+    f₁ = f₂ :=
+  inductionObj_map_hom_ext fun S ↦ by
+    simpa [inductionEndπ_repr k X S] using h S.repr
+
+include k in
 /-- Two morphisms into `inductionObj X` agree once they agree after every end projection
 `inductionEndπ X Y`. -/
 theorem inductionObj_hom_ext_endπ {W X : C}
     {f₁ f₂ : W ⟶ inductionObj X}
     (h : ∀ Y : C, f₁ ≫ inductionEndπ X Y = f₂ ≫ inductionEndπ X Y) :
     f₁ = f₂ :=
-  inductionObj_map_hom_ext (F := 𝟭 C) fun S ↦ by
-    simpa [inductionEndπ_repr k X S] using h S.repr
+  inductionObj_map_hom_ext_endπ k (F := 𝟭 C) h
 
 end UniversalEnd
+
+section End
+
+section Bifunctor
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RightRigidCategory C]
+
+/-- The bifunctor `Cᵒᵖ ⥤ C ⥤ C` sending `(Y', Y)` to `Y ⊗ X ⊗ Y'ᘁ`. When `C` is a finite
+semisimple right rigid `k`-linear abelian monoidal category over an algebraically closed field `k`,
+with finitely many simple isomorphism classes and finite-dimensional simple endomorphism spaces,
+its end (`CategoryTheory.Center.isLimitInductionWedge`) and coend
+(`CategoryTheory.Center.isColimitInductionCowedge` in
+`TauCeti.CategoryTheory.Monoidal.Center.Induction.Coend`) are both `inductionObj X`. -/
+@[expose] def inductionBifunctor (X : C) : Cᵒᵖ ⥤ C ⥤ C :=
+  (rightDualFunctor C ⋙ unmopFunctor Cᵒᵖ).leftOp ⋙
+    tensorLeft X ⋙ (curriedTensor C).flip
+
+/-- The bifunctor `inductionBifunctor X` evaluates on `(op Y', Y)` to `Y ⊗ X ⊗ Y'ᘁ`. -/
+@[simp]
+theorem inductionBifunctor_obj_obj (X : C) (Y' : Cᵒᵖ) (Y : C) :
+    ((inductionBifunctor X).obj Y').obj Y = Y ⊗ X ⊗ Y'.unopᘁ :=
+  rfl
+
+/-- On covariant morphisms `f : Y₁ ⟶ Y₂`, `inductionBifunctor X` acts by `f ▷ (X ⊗ Y'ᘁ)`. -/
+@[simp]
+theorem inductionBifunctor_obj_map (X : C) (Y' : Cᵒᵖ) {Y₁ Y₂ : C} (f : Y₁ ⟶ Y₂) :
+    ((inductionBifunctor X).obj Y').map f = f ▷ (X ⊗ Y'.unopᘁ) :=
+  rfl
+
+/-- On contravariant morphisms `g : Y₁' ⟶ Y₂'`, `inductionBifunctor X` acts by
+`Y ◁ X ◁ g.unopᘁ`. -/
+@[simp]
+theorem inductionBifunctor_map_app (X : C) {Y₁' Y₂' : Cᵒᵖ} (g : Y₁' ⟶ Y₂') (Y : C) :
+    ((inductionBifunctor X).map g).app Y = Y ◁ X ◁ g.unopᘁ :=
+  rfl
+
+/-- The natural transformation `inductionBifunctor X ⟶ inductionBifunctor X'` induced by
+`f : X ⟶ X'`. -/
+@[expose] def inductionBifunctorMap {X X' : C} (f : X ⟶ X') :
+    inductionBifunctor X ⟶ inductionBifunctor X' where
+  app Y' :=
+    { app Y := Y ◁ f ▷ Y'.unopᘁ
+      naturality _ _ g := (whisker_exchange g (f ▷ Y'.unopᘁ)).symm }
+  naturality _ _ g := by
+    ext Y
+    exact (whiskerLeft_comp Y (X ◁ g.unopᘁ) (f ▷ _)).symm.trans <|
+      (congrArg (Y ◁ ·) (whisker_exchange f (rightAdjointMate g.unop))).trans
+        (whiskerLeft_comp Y (f ▷ _) (X' ◁ g.unopᘁ))
+
+/-- The component of `inductionBifunctorMap f` at `(op Y', Y)` is `Y ◁ f ▷ Y'ᘁ`. -/
+@[simp]
+theorem inductionBifunctorMap_app_app {X X' : C} (f : X ⟶ X') (Y' : Cᵒᵖ) (Y : C) :
+    ((inductionBifunctorMap f).app Y').app Y = Y ◁ f ▷ Y'.unopᘁ :=
+  rfl
+
+/-- `inductionBifunctorMap` preserves identities. -/
+@[simp]
+theorem inductionBifunctorMap_id (X : C) :
+    inductionBifunctorMap (𝟙 X) = 𝟙 (inductionBifunctor X) := by
+  ext Y' Y
+  simp
+
+/-- `inductionBifunctorMap` preserves composition. -/
+@[simp]
+theorem inductionBifunctorMap_comp {X₁ X₂ X₃ : C} (f : X₁ ⟶ X₂) (g : X₂ ⟶ X₃) :
+    inductionBifunctorMap (f ≫ g) = inductionBifunctorMap f ≫ inductionBifunctorMap g := by
+  ext Y' Y
+  exact (congrArg (Y ◁ ·) (comp_whiskerRight f g Y'.unopᘁ)).trans
+    (whiskerLeft_comp Y (f ▷ Y'.unopᘁ) (g ▷ Y'.unopᘁ))
+
+end Bifunctor
+
+section Wedge
+
+variable (k : Type w) [Field k] [IsAlgClosed k]
+variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C]
+  [Linear k C] [MonoidalLinear k C] [RightRigidCategory C] [IsFiniteSemisimpleCategory C]
+  [Fintype (SimpleClasses C)] [∀ S : SimpleClasses C, FiniteDimensional k (S.repr ⟶ S.repr)]
+
+include k
+
+/-- The wedge for `inductionBifunctor X` with point `inductionObj X` and projections
+`inductionEndπ X`. -/
+@[expose] def inductionWedge (X : C) : Limits.Wedge (inductionBifunctor X) :=
+  Limits.Wedge.mk (inductionObj X) (inductionEndπ X) fun _ _ g ↦
+    inductionEndπ_dinatural k X g
+
+/-- The cone point of `inductionWedge k X` is `inductionObj X`. -/
+@[simp]
+theorem inductionWedge_pt (X : C) : (inductionWedge k X).pt = inductionObj X :=
+  (rfl)
+
+/-- The `Y`-projection of `inductionWedge k X` is `inductionEndπ X Y`. -/
+@[simp]
+theorem inductionWedge_ι (X Y : C) : (inductionWedge k X).ι Y = inductionEndπ X Y :=
+  (rfl)
+
+/-- `inductionWedge k X` is a limit wedge, realizing `inductionObj X` as the categorical end
+`∫_{Y ∈ C} Y ⊗ X ⊗ Yᘁ`. -/
+def isLimitInductionWedge (X : C) : Limits.IsLimit (inductionWedge k X) :=
+  Limits.Multifork.IsLimit.mk (inductionWedge k X)
+    (fun s ↦ inductionLift fun Y : C ↦ s.ι Y)
+    (fun s Y ↦ inductionLift_comp_endπ (fun Y' : C ↦ s.ι Y')
+      (fun {Y₁ Y₂ : C} (g : Y₁ ⟶ Y₂) ↦ Limits.Wedge.condition s g) Y)
+    (fun s _m hm ↦ inductionObj_hom_ext_endπ k fun Y ↦
+      (hm Y).trans (inductionLift_comp_endπ (fun Y' : C ↦ s.ι Y')
+        (fun {Y₁ Y₂ : C} (g : Y₁ ⟶ Y₂) ↦ Limits.Wedge.condition s g) Y).symm)
+
+omit [Fintype (SimpleClasses C)] in
+/-- `inductionBifunctor X` admits a categorical end. -/
+theorem hasEnd_inductionBifunctor [Finite (SimpleClasses C)] (X : C) :
+    Limits.HasEnd (inductionBifunctor X) := by
+  let := Fintype.ofFinite (SimpleClasses C)
+  exact Limits.HasLimit.mk ⟨inductionWedge k X, isLimitInductionWedge k X⟩
+
+/-- Canonical comparison isomorphism between `inductionObj X` and Mathlib's chosen end
+`Limits.end_ (inductionBifunctor X)`. -/
+def inductionObjIsoEnd (X : C) [Limits.HasEnd (inductionBifunctor X)] :
+    inductionObj X ≅ Limits.end_ (inductionBifunctor X) :=
+  (isLimitInductionWedge k X).conePointUniqueUpToIso (Limits.limit.isLimit _)
+
+/-- Composing the forward comparison isomorphism with Mathlib's chosen end projection
+`Limits.end_.π (inductionBifunctor X) Y` recovers `inductionEndπ X Y`. -/
+@[reassoc (attr := simp)]
+theorem inductionObjIsoEnd_hom_comp_end_π (X Y : C)
+    [Limits.HasEnd (inductionBifunctor X)] :
+    (inductionObjIsoEnd k X).hom ≫ Limits.end_.π (inductionBifunctor X) Y =
+      inductionEndπ X Y :=
+  (isLimitInductionWedge k X).conePointUniqueUpToIso_hom_comp
+    (Limits.limit.isLimit _) (Limits.WalkingMulticospan.left Y)
+
+/-- Composing the inverse comparison isomorphism with `inductionEndπ X Y` recovers Mathlib's
+chosen end projection `Limits.end_.π (inductionBifunctor X) Y`. -/
+@[reassoc (attr := simp)]
+theorem inductionObjIsoEnd_inv_comp_inductionEndπ (X Y : C)
+    [Limits.HasEnd (inductionBifunctor X)] :
+    (inductionObjIsoEnd k X).inv ≫ inductionEndπ X Y =
+      Limits.end_.π (inductionBifunctor X) Y :=
+  (isLimitInductionWedge k X).conePointUniqueUpToIso_inv_comp
+    (Limits.limit.isLimit _) (Limits.WalkingMulticospan.left Y)
+
+/-- `inductionObjIsoEnd` is natural in `X`: `inductionMap f` corresponds to
+`Limits.end_.map (inductionBifunctorMap f)`. -/
+@[reassoc (attr := simp)]
+theorem inductionMap_comp_inductionObjIsoEnd_hom {X X' : C} (f : X ⟶ X')
+    [Limits.HasEnd (inductionBifunctor X)] [Limits.HasEnd (inductionBifunctor X')] :
+    inductionMap f ≫ (inductionObjIsoEnd k X').hom =
+      (inductionObjIsoEnd k X).hom ≫ Limits.end_.map (inductionBifunctorMap f) := by
+  refine Limits.end_.hom_ext fun Y ↦ ?_
+  rw [Category.assoc, inductionObjIsoEnd_hom_comp_end_π,
+    Category.assoc, Limits.end_.map_π, inductionObjIsoEnd_hom_comp_end_π_assoc,
+    inductionBifunctorMap_app_app]
+  exact inductionMap_comp_inductionEndπ f Y
+
+/-- Inverse comparison form of naturality for `inductionObjIsoEnd`:
+`Limits.end_.map (inductionBifunctorMap f)` corresponds to `inductionMap f`. -/
+@[reassoc (attr := simp)]
+theorem end_map_comp_inductionObjIsoEnd_inv {X X' : C} (f : X ⟶ X')
+    [Limits.HasEnd (inductionBifunctor X)] [Limits.HasEnd (inductionBifunctor X')] :
+    Limits.end_.map (inductionBifunctorMap f) ≫ (inductionObjIsoEnd k X').inv =
+      (inductionObjIsoEnd k X).inv ≫ inductionMap f := by
+  rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
+    inductionMap_comp_inductionObjIsoEnd_hom]
+
+end Wedge
+
+end End
 
 end CategoryTheory.Center

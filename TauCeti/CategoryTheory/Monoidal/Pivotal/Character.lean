@@ -45,7 +45,11 @@ structure, so its global dimension is `p = 0`.
 
 * `TauCeti.SplitK0.leftDimChar` and `TauCeti.SplitK0.rightDimChar`: the left and right dimension
   characters of the Grothendieck ring;
-* `TauCeti.globalDim_eq_sum_leftDimChar_smul`: the global dimension as a scalar;
+* `TauCeti.endAlgEquivOfSimple_leftDim_eq_sum` and `TauCeti.endAlgEquivOfSimple_rightDim_eq_sum`:
+  the left and right dimensions of an arbitrary object, read in `k`, expanded by simple
+  multiplicities;
+* `TauCeti.globalDim_eq_sum_leftDimChar_smul` and `TauCeti.endAlgEquivOfSimple_globalDim_eq_sum`:
+  the global dimension as a scalar;
 * `TauCeti.SplitK0.rightDimChar_apply_eq_conj` and `TauCeti.norm_rightDim_eq_norm_leftDim`: over
   `ℂ`, the right dimension character of a fusion category is the complex conjugate of the left
   one, so the two categorical dimensions of an object have the same absolute value;
@@ -75,9 +79,8 @@ section Character
 
 variable (k : Type w') [Field k] [IsAlgClosed k]
 variable (C : Type u) [Category.{v} C] [MonoidalCategory C] [RigidCategory C] [PivotalCategory C]
-  [Preadditive C] [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C] [HasKernels C]
-  [HasBinaryBiproducts C] [EssentiallySmall.{w} C] [Simple (𝟙_ C)]
-  [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)]
+  [Preadditive C] [MonoidalPreadditive C] [Linear k C] [HasKernels C] [HasBinaryBiproducts C]
+  [Simple (𝟙_ C)] [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)]
 
 /-- The left dimension, read in `k`, as a biproduct-additive invariant. -/
 private noncomputable def leftDimInvariant : AdditiveInvariant C k where
@@ -90,6 +93,8 @@ private noncomputable def rightDimInvariant : AdditiveInvariant C k where
   obj X := endAlgEquivOfSimple k (𝟙_ C) (End.of (rightDim X))
   map_iso _ _ e := by rw [rightDim_congr e]
   map_biprod X Y := by rw [rightDim_biprod, End.of_add, map_add]
+
+variable [MonoidalLinear k C] [EssentiallySmall.{w} C]
 
 /-- The *left dimension character* of a pivotal category whose tensor unit is simple with
 finite-dimensional endomorphisms over an algebraically closed field `k`: the ring homomorphism
@@ -178,6 +183,60 @@ theorem globalDim_eq_sum_leftDimChar_smul :
     Linear.smul_comp, Linear.comp_smul, Category.id_comp, smul_smul]
 
 end GlobalDim
+
+section GlobalDimScalar
+
+variable (k : Type w') [Field k] [IsAlgClosed k]
+variable (C : Type u) [Category.{v} C] [MonoidalCategory C] [RigidCategory C] [PivotalCategory C]
+  [Preadditive C] [Linear k C] [HasKernels C] [Simple (𝟙_ C)]
+  [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)] [Fintype (SimpleClasses C)]
+
+/-- The global dimension of a pivotal category, read in `k`, is the sum of the products of the
+left and right dimensions of its simple isomorphism classes. -/
+theorem endAlgEquivOfSimple_globalDim_eq_sum :
+    endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) =
+      ∑ S : SimpleClasses C,
+        endAlgEquivOfSimple k (𝟙_ C) (End.of (leftDim S.repr)) *
+          endAlgEquivOfSimple k (𝟙_ C) (End.of (rightDim S.repr)) := by
+  rw [globalDim_eq_sum_leftDim_comp_rightDim]
+  refine (map_sum (End.linearEquiv.symm.trans (endAlgEquivOfSimple k (𝟙_ C)).toLinearEquiv)
+    (fun S : SimpleClasses C ↦ leftDim S.repr ≫ rightDim S.repr) Finset.univ).trans ?_
+  refine Finset.sum_congr rfl fun S _ ↦ ?_
+  change endAlgEquivOfSimple k (𝟙_ C) (End.of _) = _
+  rw [End.of_comp, map_mul, mul_comm]
+
+end GlobalDimScalar
+
+section Multiplicity
+
+variable (k : Type w') [Field k] [IsAlgClosed k]
+variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C]
+  [RigidCategory C] [PivotalCategory C] [Linear k C] [IsFiniteSemisimpleCategory C]
+  [Simple (𝟙_ C)] [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)] [Fintype (SimpleClasses C)]
+
+/-- The left dimension of an object, read in `k`, is the multiplicity-weighted sum of the left
+dimensions of the simple classes. -/
+theorem endAlgEquivOfSimple_leftDim_eq_sum (X : C) :
+    endAlgEquivOfSimple k (𝟙_ C) (End.of (leftDim X)) =
+      ∑ S : SimpleClasses C,
+        (simpleMultiplicities X S : k) *
+          endAlgEquivOfSimple k (𝟙_ C) (End.of (leftDim S.repr)) := by
+  let := Abelian.hasFiniteBiproducts (C := C)
+  simpa [SplitK0.leftDimInvariant, Finsupp.sum_fintype, nsmul_eq_mul] using
+    (SplitK0.leftDimInvariant k C).obj_eq_sum X
+
+/-- The right dimension of an object, read in `k`, is the multiplicity-weighted sum of the right
+dimensions of the simple classes. -/
+theorem endAlgEquivOfSimple_rightDim_eq_sum (X : C) :
+    endAlgEquivOfSimple k (𝟙_ C) (End.of (rightDim X)) =
+      ∑ S : SimpleClasses C,
+        (simpleMultiplicities X S : k) *
+          endAlgEquivOfSimple k (𝟙_ C) (End.of (rightDim S.repr)) := by
+  let := Abelian.hasFiniteBiproducts (C := C)
+  simpa [SplitK0.rightDimInvariant, Finsupp.sum_fintype, nsmul_eq_mul] using
+    (SplitK0.rightDimInvariant k C).obj_eq_sum X
+
+end Multiplicity
 
 section Complex
 

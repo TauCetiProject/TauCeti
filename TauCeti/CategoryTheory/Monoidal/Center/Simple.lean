@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Simple
 public import Mathlib.CategoryTheory.Limits.Constructions.EpiMono
 public import TauCeti.CategoryTheory.Monoidal.Center.Preadditive
 public import TauCeti.CategoryTheory.Monoidal.Center.Limits
+public import TauCeti.CategoryTheory.Preadditive.Schur
 
 /-!
 # Simple objects in the Drinfeld centre
@@ -23,8 +24,12 @@ monoidal category. In particular, if the tensor unit of `C` is simple, the canon
 of `Center C` is simple. No semisimplicity, finiteness of the simple classes, or assumption on a
 coefficient field is needed.
 
-Together with `CategoryTheory.Center.instFiniteDimensionalHom`, this supplies the simple-unit
-and Hom-finiteness properties of the centre using its canonical monoidal and linear structures.
+Together with `CategoryTheory.Center.instFiniteDimensionalHom` and
+`CategoryTheory.Center.instFiniteDimensionalHomUnit`, this supplies the simple-unit and
+Hom-finiteness properties of the centre using its canonical monoidal and linear structures, and
+`CategoryTheory.Center.endAlgEquivOfSimple_tensorUnit_apply` shows that reading an endomorphism of
+`𝟙_ (Center C)` as a scalar in an algebraically closed field agrees with reading its underlying
+endomorphism of `𝟙_ C`.
 
 ## References
 
@@ -37,7 +42,7 @@ universe v u
 
 namespace CategoryTheory.Center
 
-open MonoidalCategory
+open MonoidalCategory TauCeti
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [Preadditive C]
   [MonoidalPreadditive C]
@@ -56,5 +61,25 @@ instance instSimpleUnit [(forget C).PreservesMonomorphisms]
   have : Simple ((forget C).obj (𝟙_ (Center C))) :=
     Simple.of_iso (Functor.Monoidal.εIso (forget C)).symm
   exact (forget C).simple_of_simple_obj _
+
+section UnitScalar
+
+variable (k : Type*) [Field k] [IsAlgClosed k]
+variable [Linear k C] [MonoidalLinear k C] [Limits.HasKernels C]
+  [Limits.HasKernels (Center C)] [(forget C).PreservesMonomorphisms]
+  [Simple (𝟙_ C)] [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)]
+
+/-- Reading an endomorphism of `𝟙_ (Center C)` as a scalar in `k` agrees with reading its
+underlying endomorphism of `𝟙_ C`. -/
+@[simp]
+theorem endAlgEquivOfSimple_tensorUnit_apply (f : 𝟙_ (Center C) ⟶ 𝟙_ (Center C)) :
+    endAlgEquivOfSimple k (𝟙_ (Center C)) (End.of f) =
+      endAlgEquivOfSimple k (𝟙_ C) (End.of f.f) := by
+  rw [endAlgEquivOfSimple_apply_eq_iff]
+  ext
+  simp only [smul_f, id_f]
+  exact (endAlgEquivOfSimple_smul_id (k := k) (X := 𝟙_ C) (End.of f.f)).symm
+
+end UnitScalar
 
 end CategoryTheory.Center

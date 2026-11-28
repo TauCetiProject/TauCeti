@@ -34,8 +34,15 @@ distinct simple classes hom orthogonal.
   representatives of distinct simple classes are hom orthogonal (Schur's lemma);
 * `TauCeti.SimpleClasses.classOf_eq_iff_exists_ne_zero`: two simple objects have the same class
   exactly when there is a nonzero morphism between them (Schur's lemma);
-* `TauCeti.SimpleClasses.sum_comp_classOfReprIso_eq_id`: a biproduct decomposition into simple
-  objects resolves the identity through the chosen representatives of their classes.
+* `TauCeti.SimpleClasses.decompProj`, `TauCeti.SimpleClasses.decompIncl`,
+  `TauCeti.SimpleClasses.decompProj_def`, `TauCeti.SimpleClasses.decompIncl_def`,
+  `TauCeti.SimpleClasses.decompIncl_comp_decompProj_self`,
+  `TauCeti.SimpleClasses.decompIncl_comp_decompProj_ne`,
+  `TauCeti.SimpleClasses.sum_decompProj_comp_decompIncl_eq_id`,
+  `TauCeti.SimpleClasses.hom_eq_sum_comp_decompProj_comp_decompIncl`, and
+  `TauCeti.SimpleClasses.hom_eq_sum_decompProj_comp_decompIncl_comp`: projections and inclusions
+  through the chosen representatives of a biproduct decomposition into simple objects, their
+  orthogonality, and the resolution of the identity.
 -/
 
 public section
@@ -173,18 +180,75 @@ theorem classOf_eq_iff_exists_ne_zero {D : Type u₁} [Category.{v₁} D] [Pread
     have := isIso_of_hom_simple hf
     exact ⟨asIso f⟩
 
+/-- Projection from `Y` onto the chosen representative `(classOf (a i)).repr` of the `i`-th
+summand in a biproduct decomposition `e : Y ≅ ⨁ a` into simple objects. -/
+noncomputable def decompProj {Y : C} {ι : Type*} (a : ι → C) [∀ i, Simple (a i)]
+    [HasBiproduct a] (e : Y ≅ ⨁ a) (i : ι) : Y ⟶ (classOf (a i)).repr :=
+  e.hom ≫ biproduct.π a i ≫ (classOfReprIso (a i)).inv
+
+/-- Inclusion from the chosen representative `(classOf (a i)).repr` of the `i`-th summand into
+`Y` in a biproduct decomposition `e : Y ≅ ⨁ a` into simple objects. -/
+noncomputable def decompIncl {Y : C} {ι : Type*} (a : ι → C) [∀ i, Simple (a i)]
+    [HasBiproduct a] (e : Y ≅ ⨁ a) (i : ι) : (classOf (a i)).repr ⟶ Y :=
+  (classOfReprIso (a i)).hom ≫ biproduct.ι a i ≫ e.inv
+
+/-- Defining equation of `TauCeti.SimpleClasses.decompProj`. -/
+theorem decompProj_def {Y : C} {ι : Type*} (a : ι → C) [∀ i, Simple (a i)]
+    [HasBiproduct a] (e : Y ≅ ⨁ a) (i : ι) :
+    decompProj a e i = e.hom ≫ biproduct.π a i ≫ (classOfReprIso (a i)).inv := by
+  rfl
+
+/-- Defining equation of `TauCeti.SimpleClasses.decompIncl`. -/
+theorem decompIncl_def {Y : C} {ι : Type*} (a : ι → C) [∀ i, Simple (a i)]
+    [HasBiproduct a] (e : Y ≅ ⨁ a) (i : ι) :
+    decompIncl a e i = (classOfReprIso (a i)).hom ≫ biproduct.ι a i ≫ e.inv := by
+  rfl
+
+/-- Composing the `i`-th decomposition inclusion with the `i`-th decomposition projection gives
+the identity of `(classOf (a i)).repr`. -/
+@[reassoc (attr := simp)]
+theorem decompIncl_comp_decompProj_self {Y : C} {ι : Type*} (a : ι → C) [∀ i, Simple (a i)]
+    [HasBiproduct a] (e : Y ≅ ⨁ a) (i : ι) :
+    decompIncl a e i ≫ decompProj a e i = 𝟙 (classOf (a i)).repr := by
+  simp [decompIncl_def, decompProj_def]
+
+/-- Composing the `i`-th decomposition inclusion with the `j`-th decomposition projection vanishes
+for `i ≠ j`. -/
+@[reassoc (attr := simp)]
+theorem decompIncl_comp_decompProj_ne {Y : C} {ι : Type*} (a : ι → C) [∀ i, Simple (a i)]
+    [HasBiproduct a] (e : Y ≅ ⨁ a) {i j : ι} (h : i ≠ j) :
+    decompIncl a e i ≫ decompProj a e j = 0 := by
+  simp [decompIncl_def, decompProj_def, biproduct.ι_π_ne_assoc a h]
+
 /-- A biproduct decomposition `e : Y ≅ ⨁ a` into simple objects resolves `𝟙 Y` through the chosen
 representatives `(classOf (a i)).repr` of their isomorphism classes. -/
-theorem sum_comp_classOfReprIso_eq_id {D : Type u₁} [Category.{v₁} D] [Preadditive D]
+theorem sum_decompProj_comp_decompIncl_eq_id {D : Type u₁} [Category.{v₁} D] [Preadditive D]
     {Y : D} {ι : Type*} [Fintype ι] (a : ι → D) [∀ i, Simple (a i)] [HasBiproduct a]
     (e : Y ≅ ⨁ a) :
-    ∑ i : ι, (e.hom ≫ biproduct.π a i ≫ (classOfReprIso (a i)).inv) ≫
-      ((classOfReprIso (a i)).hom ≫ biproduct.ι a i ≫ e.inv) = 𝟙 Y := by
-  simp only [Category.assoc, Iso.inv_hom_id_assoc]
+    ∑ i : ι, decompProj a e i ≫ decompIncl a e i = 𝟙 Y := by
+  simp only [decompProj_def, decompIncl_def, Category.assoc, Iso.inv_hom_id_assoc]
   calc ∑ i, e.hom ≫ biproduct.π a i ≫ biproduct.ι a i ≫ e.inv
       = e.hom ≫ (∑ i, biproduct.π a i ≫ biproduct.ι a i) ≫ e.inv := by
           simp only [Preadditive.sum_comp, Preadditive.comp_sum, Category.assoc]
     _ = 𝟙 Y := by rw [biproduct.total, Category.id_comp, e.hom_inv_id]
+
+/-- Factoring a morphism `f : Z ⟶ Y` through the chosen representatives `(classOf (a i)).repr`
+of a simple biproduct decomposition `e : Y ≅ ⨁ a`. -/
+theorem hom_eq_sum_comp_decompProj_comp_decompIncl {D : Type u₁} [Category.{v₁} D] [Preadditive D]
+    {Z Y : D} {ι : Type*} [Fintype ι] (a : ι → D) [∀ i, Simple (a i)] [HasBiproduct a]
+    (e : Y ≅ ⨁ a) (f : Z ⟶ Y) :
+    f = ∑ i : ι, (f ≫ decompProj a e i) ≫ decompIncl a e i := by
+  simp only [Category.assoc, ← Preadditive.comp_sum, sum_decompProj_comp_decompIncl_eq_id,
+    Category.comp_id]
+
+/-- Factoring a morphism `f : Y ⟶ Z` through the chosen representatives `(classOf (a i)).repr`
+of a simple biproduct decomposition `e : Y ≅ ⨁ a`. -/
+theorem hom_eq_sum_decompProj_comp_decompIncl_comp {D : Type u₁} [Category.{v₁} D] [Preadditive D]
+    {Y Z : D} {ι : Type*} [Fintype ι] (a : ι → D) [∀ i, Simple (a i)] [HasBiproduct a]
+    (e : Y ≅ ⨁ a) (f : Y ⟶ Z) :
+    f = ∑ i : ι, decompProj a e i ≫ (decompIncl a e i ≫ f) := by
+  simp only [← Category.assoc, ← Preadditive.sum_comp, sum_decompProj_comp_decompIncl_eq_id,
+    Category.id_comp]
 
 end SimpleClasses
 
