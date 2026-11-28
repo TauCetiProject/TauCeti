@@ -44,6 +44,7 @@ The proof reads `ε` off its Kronecker-symbol form (`etaMultiplier_eq_kroneckerS
 * `TauCeti.ModularForm.eta_smul_zpow_two_mul`:
   `η(γ τ) ^ (2 k) = ε(γ) ^ (2 k) (c τ + d) ^ k η(τ) ^ (2 k)`.
 * `TauCeti.ModularForm.eta_zpow_two_mul_slash`: `η ^ (2 k) ∣[k] γ = ε(γ) ^ (2 k) • η ^ (2 k)`.
+* `TauCeti.ModularForm.div_eta_smul_zpow_two_mul`: the transformation of `f / η ^ (2 k)`.
 * `TauCeti.ModularForm.etaMultiplier_mul_sq`: `ε(γ δ)² = ε(γ)² ε(δ)²`, so `ε²` is a character.
 * `TauCeti.ModularForm.etaMultiplier_zpow_eq_one_of_mem_Gamma`: `ε(γ) ^ r = 1` for `γ ∈ Γ(N)`,
   `r` even and `24 ∣ r N`.
@@ -89,6 +90,17 @@ theorem eta_zpow_two_mul_slash (k : ℤ) (γ : SL(2, ℤ)) :
   rw [ModularForm.SL_slash_apply, eta_smul_zpow_two_mul, ModularGroup.denom_apply,
     Pi.smul_apply, smul_eq_mul, zpow_neg, mul_right_comm,
     mul_inv_cancel_right₀ (zpow_ne_zero _ hden)]
+
+/-- **The transformation of a quotient by `η ^ (2 k)`**: for any `f : ℍ → ℂ` and
+`γ ∈ SL(2, ℤ)`, `f(γ τ) / η(γ τ) ^ (2 k) = ε(γ) ^ (-2 k) ((f ∣[k] γ)(τ) / η(τ) ^ (2 k))`. -/
+theorem div_eta_smul_zpow_two_mul (f : ℍ → ℂ) (γ : SL(2, ℤ)) (τ : ℍ) (k : ℤ) :
+    f (γ • τ) / η (γ • τ : ℍ) ^ (2 * k) =
+      (etaMultiplier γ ^ (2 * k))⁻¹ * ((f ∣[k] γ) τ / η τ ^ (2 * k)) := by
+  have hden : ((γ 1 0 : ℂ) * τ + γ 1 1) ≠ 0 := UpperHalfPlane.denom_ne_zero γ τ
+  have hη : η (τ : ℂ) ^ (2 * k) ≠ 0 := zpow_ne_zero _ (_root_.ModularForm.eta_ne_zero τ.im_pos)
+  have hε := zpow_ne_zero (2 * k) (etaMultiplier_ne_zero γ)
+  rw [eta_smul_zpow_two_mul, ModularForm.SL_slash_apply, ModularGroup.denom_apply, zpow_neg]
+  field_simp
 
 /-- **The square of the eta multiplier is a character**: `ε(γ δ)² = ε(γ)² ε(δ)²`, because `η²`
 transforms in weight one with the multiplier `ε²`. -/

@@ -39,7 +39,9 @@ endomorphism of `SL₂`.
   product of six transvections.
 * `Matrix.SpecialLinearGroup.diag2n_decompose`: a two-coordinate diagonal matrix over a field is
   a product of six transvections.
-* `Matrix.SpecialLinearGroup.conjDiagonal`: conjugation of `SL₂` by `diag(1, d)` for a unit `d`.
+* `Matrix.SpecialLinearGroup.conjDiagonal`: conjugation `g ↦ diag(1, d) g diag(1, d)⁻¹` of `SL₂`
+  for a unit `d`, with its inverse `conjDiagonal d⁻¹` and its naturality
+  (`Matrix.SpecialLinearGroup.map_conjDiagonal`).
 
 ## References
 
@@ -326,40 +328,62 @@ namespace Matrix.SpecialLinearGroup
 
 open scoped MatrixGroups
 
-/-- Conjugation `g ↦ diag(1, d)⁻¹ g diag(1, d)` of `SL(2, R)` by a diagonal matrix of
-`GL(2, R)`. -/
+/-- Conjugation `g ↦ diag(1, d) g diag(1, d)⁻¹` of `SL(2, R)` by a diagonal matrix of
+`GL(2, R)`, following the convention `x ↦ a x a⁻¹` of `MulAut.conj`. -/
 def conjDiagonal {R : Type*} [CommRing R] (d : Rˣ) : SL(2, R) →* SL(2, R) where
-  toFun g := .mk (diagonal ![1, ((d⁻¹ : Rˣ) : R)] * g * diagonal ![1, (d : R)]) <| by
+  toFun g := .mk (diagonal ![1, (d : R)] * g * diagonal ![1, ((d⁻¹ : Rˣ) : R)]) <| by
     simp [det_mul, det_diagonal, Fin.prod_univ_two]
   map_one' := by
     ext i j
-    simp only [coe_mk, coe_one, Matrix.mul_one, TauCeti.diagonal_vec2_one_mul_eq_one d.inv_mul]
+    simp only [coe_mk, coe_one, Matrix.mul_one, TauCeti.diagonal_vec2_one_mul_eq_one d.mul_inv]
   map_mul' g h := by
     ext i j
     simp only [coe_mk, coe_mul, Matrix.mul_assoc]
-    rw [← Matrix.mul_assoc (diagonal ![1, (d : R)]),
-      TauCeti.diagonal_vec2_one_mul_eq_one d.mul_inv, Matrix.one_mul]
+    rw [← Matrix.mul_assoc (diagonal ![1, ((d⁻¹ : Rˣ) : R)]),
+      TauCeti.diagonal_vec2_one_mul_eq_one d.inv_mul, Matrix.one_mul]
 
-/-- The matrix of `conjDiagonal d g` is `diag(1, d)⁻¹ g diag(1, d)`. -/
+/-- The matrix of `conjDiagonal d g` is `diag(1, d) g diag(1, d)⁻¹`. -/
 @[simp]
 theorem coe_conjDiagonal {R : Type*} [CommRing R] (d : Rˣ) (g : SL(2, R)) :
     (conjDiagonal d g : Matrix (Fin 2) (Fin 2) R) =
-      diagonal ![1, ((d⁻¹ : Rˣ) : R)] * g * diagonal ![1, (d : R)] :=
+      diagonal ![1, (d : R)] * g * diagonal ![1, ((d⁻¹ : Rˣ) : R)] :=
   (rfl)
 
+/-- Diagonal conjugation is natural in the ring: a ring homomorphism `f` sends the conjugate of
+`g` by `diag(1, d)` to the conjugate of `f g` by `diag(1, f d)`. -/
+theorem map_conjDiagonal {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S) (d : Rˣ)
+    (g : SL(2, R)) :
+    map f (conjDiagonal d g) = conjDiagonal (Units.map (f : R →* S) d) (map f g) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+
 /-- Diagonal conjugation sends `g` to `g'` exactly when their matrices satisfy
-`g diag(1, d) = diag(1, d) g'`. -/
+`g' diag(1, d) = diag(1, d) g`. -/
 theorem conjDiagonal_eq_iff {R : Type*} [CommRing R] (d : Rˣ) {g g' : SL(2, R)} :
     conjDiagonal d g = g' ↔
-      (g : Matrix (Fin 2) (Fin 2) R) * diagonal ![1, (d : R)] =
-        diagonal ![1, (d : R)] * g' := by
+      (g' : Matrix (Fin 2) (Fin 2) R) * diagonal ![1, (d : R)] =
+        diagonal ![1, (d : R)] * g := by
   constructor
   · intro h
-    rw [← h, coe_conjDiagonal, ← Matrix.mul_assoc, ← Matrix.mul_assoc,
-      TauCeti.diagonal_vec2_one_mul_eq_one d.mul_inv, Matrix.one_mul]
+    rw [← h, coe_conjDiagonal, Matrix.mul_assoc, TauCeti.diagonal_vec2_one_mul_eq_one d.inv_mul,
+      Matrix.mul_one]
   · intro h
     ext : 1
-    rw [coe_conjDiagonal, Matrix.mul_assoc, h, ← Matrix.mul_assoc,
+    rw [coe_conjDiagonal, ← h, Matrix.mul_assoc, TauCeti.diagonal_vec2_one_mul_eq_one d.mul_inv,
+      Matrix.mul_one]
+
+/-- Conjugation by `diag(1, d)⁻¹` undoes conjugation by `diag(1, d)`. -/
+@[simp]
+theorem conjDiagonal_inv_conjDiagonal {R : Type*} [CommRing R] (d : Rˣ) (g : SL(2, R)) :
+    conjDiagonal d⁻¹ (conjDiagonal d g) = g :=
+  (conjDiagonal_eq_iff d⁻¹).2 <| by
+    rw [coe_conjDiagonal, ← Matrix.mul_assoc, ← Matrix.mul_assoc,
       TauCeti.diagonal_vec2_one_mul_eq_one d.inv_mul, Matrix.one_mul]
+
+/-- Conjugation by `diag(1, d)` undoes conjugation by `diag(1, d)⁻¹`. -/
+@[simp]
+theorem conjDiagonal_conjDiagonal_inv {R : Type*} [CommRing R] (d : Rˣ) (g : SL(2, R)) :
+    conjDiagonal d (conjDiagonal d⁻¹ g) = g := by
+  simpa using conjDiagonal_inv_conjDiagonal d⁻¹ g
 
 end Matrix.SpecialLinearGroup

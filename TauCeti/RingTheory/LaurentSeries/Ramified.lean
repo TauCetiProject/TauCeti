@@ -196,6 +196,7 @@ theorem expand_expand (d e : ℕ+) (f : R⸨X⸩) :
   simp [mul_assoc]
 
 /-- Coefficient maps commute with the expansion `X ↦ X ^ d`. -/
+@[simp]
 theorem mapRingHom_expand {S : Type*} [CommSemiring S] (φ : R →+* S) (d : ℕ+) (f : R⸨X⸩) :
     mapRingHom φ (expand R d f) = expand S d (mapRingHom φ f) := by
   rw [mapRingHom_apply, expand_apply, map_embDomain, expand_apply, mapRingHom_apply]

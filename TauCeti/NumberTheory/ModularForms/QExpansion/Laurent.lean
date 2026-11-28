@@ -518,15 +518,10 @@ coefficient of that expansion. -/
 theorem tendsto_laurentQExpansion_coeff_zero (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
     (hf : MeromorphicAt (cuspFunction h f) 0) (h0 : 0 ≤ (laurentQExpansion h f).orderTop) :
     Tendsto f atImInfty (𝓝 ((laurentQExpansion h f).coeff 0)) := by
-  rw [orderTop_laurentQExpansion hf] at h0
-  have han : AnalyticAt ℂ (cuspFunction h f) 0 := by
-    simpa using analyticAt_cuspFunction_qParam_pow_mul hf (k := 0) (by simpa using h0)
-  -- `HahnSeries.ofPowerSeries_apply_coeff` reads off coefficients at natural-number casts
-  rw [laurentQExpansion_of_analyticAt han, show (0 : ℤ) = ((0 : ℕ) : ℤ) from rfl,
-    HahnSeries.ofPowerSeries_apply_coeff, qExpansion_coeff_zero hh han hfper,
-    ← cuspFunction_apply_zero hh han hfper]
-  refine (han.continuousAt.tendsto.comp (qParam_tendsto_atImInfty hh)).congr fun τ ↦ ?_
-  simpa using eq_cuspFunction τ hh.ne' hfper
+  have han := (analyticAt_cuspFunction_iff_orderTop_laurentQExpansion_nonneg hf).mpr h0
+  rw [laurentQExpansion_coeff_zero_of_analyticAt han]
+  exact (han.continuousAt.tendsto.comp (qParam_tendsto_atImInfty hh)).congr fun τ ↦
+    eq_cuspFunction τ hh.ne' hfper
 
 /-- Functions which agree sufficiently high in the upper half-plane have the same Laurent
 `q`-expansion. -/

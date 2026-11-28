@@ -1129,31 +1129,21 @@ theorem exists_map_mul_diagonal_eq {M : ℕ} (hNM : N ∣ M) (d : (ZMod M)ˣ) (�
           (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod M)) γ) := by
   set red : SL(2, ℤ) →* SL(2, ZMod M) :=
     Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod M))
-  set D := Matrix.diagonal ![1, (d : ZMod M)]
-  set D' := Matrix.diagonal ![1, ((d⁻¹ : (ZMod M)ˣ) : ZMod M)]
   obtain ⟨γ', hγ'⟩ := Matrix.SpecialLinearGroup.map_intCast_zmod_surjective (d := M)
-    (Matrix.SpecialLinearGroup.conjDiagonal d⁻¹ (red γ))
-  have hγ'm : (red γ' : Matrix (Fin 2) (Fin 2) (ZMod M)) = D * red γ * D' := by
-    rw [hγ', Matrix.SpecialLinearGroup.coe_conjDiagonal, inv_inv]
-  refine ⟨γ', fun hγ ↦ ?_, ?_⟩
-  · -- reducing modulo `N`, the conjugate of `γ ≡ 1` by `D` is `1`
-    let ρ := ZMod.castHom hNM (ZMod N)
-    have hred (δ : SL(2, ℤ)) :
-        ((Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) δ : SL(2, ZMod N)) :
-          Matrix (Fin 2) (Fin 2) (ZMod N)) = ρ.mapMatrix (red δ) := by
-      ext i j
-      simp [red, ρ]
-    refine Gamma_mem'.2 (Subtype.ext ?_)
-    rw [hred, hγ'm, map_mul, map_mul, ← hred,
-      congrArg Subtype.val (Gamma_mem'.1 hγ)]
-    simp only [Matrix.SpecialLinearGroup.coe_one, Matrix.mul_one, ← map_mul, D, D',
-      TauCeti.diagonal_vec2_one_mul_eq_one d.mul_inv, map_one]
-  · apply (Matrix.SpecialLinearGroup.conjDiagonal_eq_iff d).1
-    ext : 1
-    rw [Matrix.SpecialLinearGroup.coe_conjDiagonal, hγ'm, ← Matrix.mul_assoc,
-      ← Matrix.mul_assoc, TauCeti.diagonal_vec2_one_mul_eq_one d.inv_mul,
-      Matrix.one_mul, Matrix.mul_assoc,
-      TauCeti.diagonal_vec2_one_mul_eq_one d.inv_mul, Matrix.mul_one]
+    (Matrix.SpecialLinearGroup.conjDiagonal d (red γ))
+  refine ⟨γ', fun hγ ↦ ?_, (Matrix.SpecialLinearGroup.conjDiagonal_eq_iff d).1 hγ'.symm⟩
+  -- reducing modulo `N`, the conjugate of `γ ≡ 1` by `D` is `1`
+  let ρ := ZMod.castHom hNM (ZMod N)
+  have hred (δ : SL(2, ℤ)) :
+      ((Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) δ : SL(2, ZMod N)) :
+        Matrix (Fin 2) (Fin 2) (ZMod N)) = ρ.mapMatrix (red δ) := by
+    ext i j
+    simp [red, ρ]
+  refine Gamma_mem'.2 (Subtype.ext ?_)
+  rw [hred, hγ', Matrix.SpecialLinearGroup.coe_conjDiagonal, map_mul, map_mul, ← hred,
+    congrArg Subtype.val (Gamma_mem'.1 hγ)]
+  simp only [Matrix.SpecialLinearGroup.coe_one, Matrix.mul_one, ← map_mul,
+    TauCeti.diagonal_vec2_one_mul_eq_one d.mul_inv, map_one]
 
 /-! ### Entry congruences in `Γ₀` -/
 

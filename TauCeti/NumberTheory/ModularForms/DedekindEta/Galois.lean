@@ -24,9 +24,10 @@ divisible by `12`, let `σ (ζ_M) = ζ_M ^ d` with `ζ_M = e^{2πi/M}` and `d` a
 let `D = diag(1, d)`. If `γ D = D γ'` modulo `M`, then `ε(γ')² = σ(ε(γ)²)`
 (`TauCeti.ModularForm.etaMultiplier_sq_eq_of_mul_diagonal_eq`). Both sides are characters of `γ`:
 the left one because `ε²` factors through `SL(2, ℤ/Mℤ)` and `γ ↦ D⁻¹ γ D` is a homomorphism there
-(`Matrix.SpecialLinearGroup.conjDiagonal`). A character of `SL(2, ℤ)` with values in a commutative
-group is determined by its value at `T`, whose class generates the abelianization, and at `T` both
-sides are `e^{2πi d/12}`, since `D⁻¹ T D = T^d` and `ε(T)² = e^{2πi/12} = ζ_M^{M/12}`.
+(`Matrix.SpecialLinearGroup.conjDiagonal d⁻¹`). A character of `SL(2, ℤ)` with values in a
+commutative group is determined by its value at `T`, whose class generates the abelianization,
+and at `T` both sides are `e^{2πi d/12}`, since `D⁻¹ T D = T^d` and
+`ε(T)² = e^{2πi/12} = ζ_M^{M/12}`.
 
 This is the transformation rule that makes the Fourier-coefficient action of `σ` on modular
 functions compatible with division by powers of `η²`: the quotient `f / η^{2k}` of a modular form
@@ -86,9 +87,9 @@ theorem etaMultiplier_sq_eq_of_mul_diagonal_eq {M : ℕ} [NeZero M] (hM : 12 ∣
   have hχ (γ : SL(2, ℤ)) : χ (red γ) = etaMultiplierSqHom γ :=
     MonoidHom.liftOfRightInverse_comp_apply _ _ _ _ γ
   -- the two characters `γ ↦ ε²(D⁻¹ γ D)` and `σ ∘ ε²` agree at `T`, hence everywhere
-  have hT : SpecialLinearGroup.conjDiagonal d (red T) = red (T ^ ((d : ZMod M).val : ℤ)) := by
+  have hT : SpecialLinearGroup.conjDiagonal d⁻¹ (red T) = red (T ^ ((d : ZMod M).val : ℤ)) := by
     ext i j
-    rw [SpecialLinearGroup.coe_conjDiagonal]
+    rw [SpecialLinearGroup.coe_conjDiagonal, inv_inv]
     fin_cases i <;> fin_cases j <;>
       simp [red, -map_zpow, SpecialLinearGroup.map_apply_coe, coe_T, coe_T_zpow, Matrix.mul_apply,
         diagonal, ZMod.natCast_val]
@@ -104,16 +105,17 @@ theorem etaMultiplier_sq_eq_of_mul_diagonal_eq {M : ℕ} [NeZero M] (hM : 12 ∣
     rw [← h12]
     push_cast
     ring
-  have key : χ.comp ((SpecialLinearGroup.conjDiagonal d).comp red) = (Units.map σ.toMonoidHom).comp
-      etaMultiplierSqHom := by
+  have key : χ.comp ((SpecialLinearGroup.conjDiagonal d⁻¹).comp red) =
+      (Units.map σ.toMonoidHom).comp etaMultiplierSqHom := by
     refine TauCeti.ModularGroup.hom_ext_T (Units.ext ?_)
     simp only [MonoidHom.comp_apply, hT, hχ, coe_etaMultiplierSqHom, Units.coe_map,
       RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, etaMultiplier_T_zpow, etaMultiplier_T]
-    -- `ε(T)² = e^{π i / 12}²` is the case `n = 1` of `hζ`, whose exponent is written `π i n / 12`
-    rw [Int.cast_natCast, hζ, show π * I / 12 = π * I * ((1 : ℕ) : ℂ) / 12 by simp, hζ,
-      map_pow, Nat.cast_one, hσ, ZMod.natCast_zmod_val]
-  have hγ' : SpecialLinearGroup.conjDiagonal d (red γ) = red γ' :=
-    (SpecialLinearGroup.conjDiagonal_eq_iff d).2 h
+    have hζ₁ := hζ 1
+    rw [Nat.cast_one, Nat.cast_one, mul_one] at hζ₁
+    rw [Int.cast_natCast, hζ, hζ₁, map_pow, hσ, ZMod.natCast_zmod_val]
+  have hγ' : SpecialLinearGroup.conjDiagonal d⁻¹ (red γ) = red γ' := by
+    rw [← (SpecialLinearGroup.conjDiagonal_eq_iff d).2 h,
+      SpecialLinearGroup.conjDiagonal_inv_conjDiagonal]
   have := congrArg Units.val (DFunLike.congr_fun key γ)
   simpa [hγ', hχ, coe_etaMultiplierSqHom] using this
 

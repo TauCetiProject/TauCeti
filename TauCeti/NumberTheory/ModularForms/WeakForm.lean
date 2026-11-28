@@ -253,13 +253,9 @@ at `i∞` to the constant coefficient of that expansion. -/
 theorem tendsto_slash_atImInfty [Γ.FiniteIndex] (hf : IsWeakForm Γ k f) (g : SL(2, ℤ))
     (h0 : 0 ≤ (UpperHalfPlane.laurentQExpansion Γ.strictLevel (f ∣[k] g)).orderTop) :
     Tendsto (f ∣[k] g) atImInfty
-      (nhds ((UpperHalfPlane.laurentQExpansion Γ.strictLevel (f ∣[k] g)).coeff 0)) := by
-  have hN : (0 : ℝ) < Γ.strictLevel := by exact_mod_cast Γ.strictLevel_pos
-  have han := (UpperHalfPlane.analyticAt_cuspFunction_iff_orderTop_laurentQExpansion_nonneg
-    (hf.meromorphicAt_cuspFunction_slash g)).mpr h0
-  rw [UpperHalfPlane.laurentQExpansion_coeff_zero_of_analyticAt han]
-  exact (han.continuousAt.tendsto.comp (qParam_tendsto_atImInfty hN)).congr fun τ ↦
-    eq_cuspFunction τ hN.ne' (periodic_slash_comp_ofComplex hf.slash_eq g)
+      (nhds ((UpperHalfPlane.laurentQExpansion Γ.strictLevel (f ∣[k] g)).coeff 0)) :=
+  UpperHalfPlane.tendsto_laurentQExpansion_coeff_zero (by exact_mod_cast Γ.strictLevel_pos)
+    (periodic_slash_comp_ofComplex hf.slash_eq g) (hf.meromorphicAt_cuspFunction_slash g) h0
 
 end IsWeakForm
 
