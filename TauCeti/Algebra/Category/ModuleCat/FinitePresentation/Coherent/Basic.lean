@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Limits.WeakLimits.WeakKernels
 public import TauCeti.Algebra.Category.ModuleCat.FinitePresentation.Basic
+public import TauCeti.Algebra.Category.ModuleCat.WeakKernels
 public import TauCeti.RingTheory.Coherent.Basic
 
 /-!
@@ -114,35 +115,6 @@ weak kernels. -/
 instance [IsCoherentRing R] : HasWeakKernels (finiteProjectiveModules R).FullSubcategory :=
   hasWeakKernels_finiteProjectiveModules_of_hasKernels R
 
-/-- For a full subcategory `S` of `ModuleCat.{u} R` containing an object `R₀` linearly equivalent to
-`R`, the range of a weak kernel `weakKernel.ι φ` is the kernel of `φ`. -/
-private theorem range_weakKernel_ι_eq_ker {S : ObjectProperty (ModuleCat.{u} R)}
-    {R₀ : S.FullSubcategory} (eR : R₀.obj ≃ₗ[R] R)
-    {A B : S.FullSubcategory} (φ : A ⟶ B) [HasWeakKernel φ] :
-    LinearMap.range (weakKernel.ι φ).hom.hom = LinearMap.ker φ.hom.hom := by
-  apply le_antisymm
-  · rintro _ ⟨y, rfl⟩
-    have hw : (weakKernel.ι φ ≫ φ).hom.hom y = 0 := by
-      rw [weakKernel.condition φ, ObjectProperty.zero_hom, ModuleCat.hom_zero, LinearMap.zero_apply]
-    rw [ObjectProperty.FullSubcategory.comp_hom, ModuleCat.hom_comp, LinearMap.comp_apply] at hw
-    exact hw
-  · intro x hx
-    let g : R₀ ⟶ A := ObjectProperty.homMk
-      (ModuleCat.ofHom (LinearMap.toSpanSingleton R A.obj x ∘ₗ eR.toLinearMap))
-    have hg_hom : (g ≫ φ).hom = 0 := by
-      rw [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom]
-      refine ModuleCat.hom_ext (LinearMap.ext fun r ↦ ?_)
-      rw [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply, LinearMap.comp_apply,
-        LinearMap.toSpanSingleton_apply, map_smul, LinearMap.mem_ker.mp hx, smul_zero,
-        ModuleCat.hom_zero, LinearMap.zero_apply]
-    have hg : g ≫ φ = 0 := ObjectProperty.hom_ext _ hg_hom
-    have hu := congrArg (fun k ↦ k.hom.hom (eR.symm 1)) (weakKernel.lift_ι φ g hg)
-    rw [ObjectProperty.FullSubcategory.comp_hom, ModuleCat.hom_comp, LinearMap.comp_apply] at hu
-    have hgx : g.hom.hom (eR.symm 1) = x := by
-      rw [ObjectProperty.homMk_hom, ModuleCat.hom_ofHom, LinearMap.comp_apply,
-        LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, LinearMap.toSpanSingleton_apply_one]
-    exact ⟨(weakKernel.lift φ g hg).hom.hom (eR.symm 1), hu.trans hgx⟩
-
 /-- If `proj R` has weak kernels, then `R` is left coherent: for every linear map `f : Rⁿ →ₗ[R] R`,
 a weak kernel `w : W ⟶ Rⁿ` in `proj R` has image equal to `LinearMap.ker f`, which is therefore
 finitely generated. -/
@@ -161,7 +133,7 @@ theorem isCoherentRing_of_hasWeakKernels_finiteProjectiveModules
     rw [LinearMap.mem_ker, LinearMap.mem_ker, ObjectProperty.homMk_hom, ModuleCat.hom_comp,
       LinearMap.comp_apply, ModuleCat.hom_ofHom]
     exact eR.toLinearEquiv.symm.map_eq_zero_iff
-  rw [← hker, ← range_weakKernel_ι_eq_ker R eR.toLinearEquiv φ]
+  rw [← hker, ← (finiteProjectiveModules R).range_weakKernel_ι_eq_ker eR.toLinearEquiv φ]
   exact Submodule.fg_range (weakKernel.ι φ).hom.hom
 
 variable {R}

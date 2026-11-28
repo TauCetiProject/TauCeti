@@ -117,6 +117,10 @@ private def finiteProjectiveModulesRegularMulRight (r : R) :
     finiteProjectiveModulesRegular R ⟶ finiteProjectiveModulesRegular R :=
   ObjectProperty.homMk (ModuleCat.ofHom (LinearMap.mulRight R r))
 
+private theorem finiteProjectiveModulesRegularMulRight_hom_apply (r x : R) :
+    (finiteProjectiveModulesRegularMulRight R r).hom.hom x = x * r :=
+  rfl
+
 private theorem finiteProjectiveModulesRegularMulRight_one :
     finiteProjectiveModulesRegularMulRight R 1 = 𝟙 _ :=
   ObjectProperty.hom_ext _ <| ModuleCat.hom_ext <| LinearMap.ext fun (x : R) ↦ mul_one x
@@ -138,36 +142,45 @@ private theorem finiteProjectiveModulesRegularMulRight_zero :
     finiteProjectiveModulesRegularMulRight R 0 = 0 :=
   ObjectProperty.hom_ext _ <| ModuleCat.hom_ext <| LinearMap.ext fun (x : R) ↦ mul_zero x
 
-private def finitePresentationEvalModuleObj
+private instance finitePresentationEvalSMul
+    (F : (isFinitelyPresentedFunctor (finiteProjectiveModules R).FullSubcategory).FullSubcategory) :
+    SMul R (F.obj.obj (op (finiteProjectiveModulesRegular R))) where
+  smul r x := (F.obj.map (finiteProjectiveModulesRegularMulRight R r).op).hom x
+
+private theorem finitePresentationEvalSMul_def
+    (F : (isFinitelyPresentedFunctor (finiteProjectiveModules R).FullSubcategory).FullSubcategory)
+    (r : R) (x : F.obj.obj (op (finiteProjectiveModulesRegular R))) :
+    r • x = (F.obj.map (finiteProjectiveModulesRegularMulRight R r).op).hom x :=
+  rfl
+
+private instance finitePresentationEvalModuleInst
+    (F : (isFinitelyPresentedFunctor (finiteProjectiveModules R).FullSubcategory).FullSubcategory) :
+    Module R (F.obj.obj (op (finiteProjectiveModulesRegular R))) where
+  one_smul x := by
+    rw [finitePresentationEvalSMul_def, finiteProjectiveModulesRegularMulRight_one]
+    simp
+  mul_smul r s x := by
+    rw [finitePresentationEvalSMul_def, finitePresentationEvalSMul_def,
+      finitePresentationEvalSMul_def, finiteProjectiveModulesRegularMulRight_mul]
+    simp
+  smul_zero _ := by
+    rw [finitePresentationEvalSMul_def, map_zero]
+  smul_add _ _ _ := by
+    rw [finitePresentationEvalSMul_def, finitePresentationEvalSMul_def,
+      finitePresentationEvalSMul_def, map_add]
+  add_smul r s x := by
+    have := F.property.additive
+    rw [finitePresentationEvalSMul_def, finitePresentationEvalSMul_def,
+      finitePresentationEvalSMul_def, finiteProjectiveModulesRegularMulRight_add, op_add,
+      F.obj.map_add, AddCommGrpCat.hom_add, AddMonoidHom.add_apply]
+  zero_smul x := by
+    have := F.property.additive
+    rw [finitePresentationEvalSMul_def, finiteProjectiveModulesRegularMulRight_zero, op_zero,
+      F.obj.map_zero, AddCommGrpCat.hom_zero, AddMonoidHom.zero_apply]
+
+private abbrev finitePresentationEvalModuleObj
     (F : (isFinitelyPresentedFunctor (finiteProjectiveModules R).FullSubcategory).FullSubcategory) :
     ModuleCat.{u} R :=
-  letI : Module R (F.obj.obj (op (finiteProjectiveModulesRegular R))) :=
-    { smul := fun r x ↦
-        (F.obj.map (finiteProjectiveModulesRegularMulRight R r).op).hom x
-      one_smul := fun x ↦ by
-        change (F.obj.map (finiteProjectiveModulesRegularMulRight R 1).op).hom x = x
-        rw [finiteProjectiveModulesRegularMulRight_one]
-        simp
-      mul_smul := fun r s x ↦ by
-        change (F.obj.map (finiteProjectiveModulesRegularMulRight R (r * s)).op).hom x =
-          (F.obj.map (finiteProjectiveModulesRegularMulRight R r).op).hom
-            ((F.obj.map (finiteProjectiveModulesRegularMulRight R s).op).hom x)
-        rw [finiteProjectiveModulesRegularMulRight_mul]
-        simp
-      smul_zero := fun _ ↦ map_zero _
-      smul_add := fun _ _ _ ↦ map_add _ _ _
-      add_smul := fun r s x ↦ by
-        have := F.property.additive
-        change (F.obj.map (finiteProjectiveModulesRegularMulRight R (r + s)).op).hom x =
-          (F.obj.map (finiteProjectiveModulesRegularMulRight R r).op).hom x +
-            (F.obj.map (finiteProjectiveModulesRegularMulRight R s).op).hom x
-        rw [finiteProjectiveModulesRegularMulRight_add, op_add, F.obj.map_add]
-        rfl
-      zero_smul := fun x ↦ by
-        have := F.property.additive
-        change (F.obj.map (finiteProjectiveModulesRegularMulRight R 0).op).hom x = 0
-        rw [finiteProjectiveModulesRegularMulRight_zero, op_zero, F.obj.map_zero]
-        rfl }
   ModuleCat.of R (F.obj.obj (op (finiteProjectiveModulesRegular R)))
 
 private def finitePresentationEvalModule :
@@ -179,13 +192,9 @@ private def finitePresentationEvalModule :
     { toFun := fun x ↦ (θ.hom.app (op (finiteProjectiveModulesRegular R))).hom x
       map_add' := fun _ _ ↦ map_add _ _ _
       map_smul' := fun r x ↦ by
-        let x' : F.obj.obj (op (finiteProjectiveModulesRegular R)) := x
-        change (θ.hom.app (op (finiteProjectiveModulesRegular R))).hom
-            ((F.obj.map (finiteProjectiveModulesRegularMulRight R r).op).hom x') =
-          (G.obj.map (finiteProjectiveModulesRegularMulRight R r).op).hom
-            ((θ.hom.app (op (finiteProjectiveModulesRegular R))).hom x')
+        rw [RingHom.id_apply, finitePresentationEvalSMul_def, finitePresentationEvalSMul_def]
         have hn := ConcreteCategory.congr_hom
-          (θ.hom.naturality (finiteProjectiveModulesRegularMulRight R r).op) x'
+          (θ.hom.naturality (finiteProjectiveModulesRegularMulRight R r).op) x
         rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hn
         exact hn }
   map_id _ := ModuleCat.hom_ext (LinearMap.ext fun _ ↦ rfl)
@@ -196,34 +205,38 @@ private noncomputable def finitePresentationEquivalenceModCompEvalModuleIso :
       (finitePresentationModules R).ι :=
   NatIso.ofComponents
     (fun M ↦
-      let f : ((finitePresentationEquivalenceMod R).functor ⋙
-          finitePresentationEvalModule R).obj M →ₗ[R] M.obj :=
+      let f : finitePresentationEvalModuleObj R
+          ((finitePresentationEquivalenceMod R).functor.obj M) →ₗ[R] M.obj :=
         { toFun := fun x ↦ (finitePresentationEquivalenceModCompEvaluationIso R).hom.app M x
           map_add' := fun _ _ ↦ map_add _ _ _
           map_smul' := fun r x ↦ by
-            let x' : ((finitePresentationEquivalenceMod R).functor.obj M).obj.obj
-                (op (finiteProjectiveModulesRegular R)) := x
-            let lhs : M.obj :=
-              (finitePresentationEquivalenceModCompEvaluationIso R).hom.app M
-                ((((finitePresentationEquivalenceMod R).functor.obj M).obj.map
-                  (finiteProjectiveModulesRegularMulRight R r).op).hom x')
-            let rhs : M.obj :=
-              (finitePresentationEquivalenceModCompEvaluationIso R).hom.app M x'
-            change lhs = r • rhs
-            dsimp only [lhs, rhs]
-            rw [finitePresentationEquivalenceModCompEvaluationIso_hom_app_apply,
+            rw [RingHom.id_apply, finitePresentationEvalSMul_def,
+              finitePresentationEquivalenceModCompEvaluationIso_hom_app_apply,
               finitePresentationEquivalenceModCompEvaluationIso_hom_app_apply]
             have hn := ConcreteCategory.congr_hom
               (((finitePresentationEquivalenceModCompιIso R).hom.app M).naturality
-                (finiteProjectiveModulesRegularMulRight R r).op) x'
+                (finiteProjectiveModulesRegularMulRight R r).op) x
             rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hn
             dsimp only [Functor.comp_obj, ObjectProperty.ι_obj] at hn
-            rw [hn]
-            let ψ : ModuleCat.of R R ⟶ M.obj :=
+            let ψ : (finiteProjectiveModulesRegular R).obj ⟶ M.obj :=
               ((finitePresentationEquivalenceModCompιIso R).hom.app M).app
-                (op (finiteProjectiveModulesRegular R)) x'
-            change ψ.hom (LinearMap.mulRight R r 1) = r • ψ.hom 1
-            rw [show LinearMap.mulRight R r 1 = r • (1 : R) by simp, map_smul] }
+                (op (finiteProjectiveModulesRegular R)) x
+            have hy : ((finiteProjectiveModules R).restrictedPreadditiveYoneda.obj M.obj).map
+                (finiteProjectiveModulesRegularMulRight R r).op ψ =
+                (finiteProjectiveModulesRegularMulRight R r).hom ≫ ψ :=
+              ObjectProperty.restrictedPreadditiveYoneda_obj_map_apply _ _ _ _
+            have hmul : ((finiteProjectiveModulesRegularMulRight R r).hom ≫ ψ).hom (1 : R) =
+                r • ψ.hom (1 : R) := by
+              have hcomp : ((finiteProjectiveModulesRegularMulRight R r).hom ≫ ψ).hom =
+                  ψ.hom ∘ₗ (finiteProjectiveModulesRegularMulRight R r).hom.hom :=
+                ModuleCat.hom_comp _ _
+              have h1 := LinearMap.congr_fun hcomp (1 : R)
+              have h2 : (finiteProjectiveModulesRegularMulRight R r).hom.hom (1 : R) =
+                  r • (1 : R) := by
+                rw [finiteProjectiveModulesRegularMulRight_hom_apply, one_mul, smul_eq_mul,
+                  mul_one]
+              exact h1.trans <| (congrArg ψ.hom h2).trans (map_smul ψ.hom r (1 : R))
+            exact (congrArg (fun k ↦ k.hom (1 : R)) (hn.trans hy)).trans hmul }
       (LinearEquiv.ofBijective f
         (ConcreteCategory.bijective_of_isIso
           ((finitePresentationEquivalenceModCompEvaluationIso R).hom.app M))).toModuleIso)
@@ -255,6 +268,18 @@ noncomputable def finitePresentationEvaluationFunctorCompForgetIso :
     (fun _ ↦ AddEquiv.toAddCommGrpIso (AddEquiv.refl _))
     fun _ ↦ AddCommGrpCat.ext fun _ ↦ rfl
 
+private theorem finitePresentationEvaluationFunctorCompForgetIso_hom_app_apply
+    (F : (isFinitelyPresentedFunctor (finiteProjectiveModules R).FullSubcategory).FullSubcategory)
+    (x : ((finitePresentationEvaluationFunctor R).obj F).obj) :
+    (finitePresentationEvaluationFunctorCompForgetIso R).hom.app F x = x :=
+  rfl
+
+private theorem finitePresentationEvaluationFunctor_obj_smul
+    (F : (isFinitelyPresentedFunctor (finiteProjectiveModules R).FullSubcategory).FullSubcategory)
+    (r : R) (x : ((finitePresentationEvaluationFunctor R).obj F).obj) :
+    r • x = (F.obj.map (finiteProjectiveModulesRegularMulRight R r).op).hom x :=
+  finitePresentationEvalSMul_def R F r x
+
 /-- Under `TauCeti.finitePresentationEvaluationFunctorCompForgetIso`, scalar multiplication by
 `r : R` corresponds to the action of right multiplication by `r` on the regular module `R`. -/
 @[simp]
@@ -266,9 +291,9 @@ theorem finitePresentationEvaluationFunctorCompForgetIso_hom_app_smul
         (ModuleCat.ofHom (LinearMap.mulRight R r)) :
           finiteProjectiveModulesRegular R ⟶ finiteProjectiveModulesRegular R).op).hom
         ((finitePresentationEvaluationFunctorCompForgetIso R).hom.app F x) := by
-  dsimp [finitePresentationEvaluationFunctorCompForgetIso, finitePresentationEvaluationFunctor,
-    finitePresentationEvalModule, finitePresentationEvalModuleObj]
-  rfl
+  rw [finitePresentationEvaluationFunctorCompForgetIso_hom_app_apply,
+    finitePresentationEvaluationFunctorCompForgetIso_hom_app_apply,
+    finitePresentationEvaluationFunctor_obj_smul, finiteProjectiveModulesRegularMulRight]
 
 /-- Evaluation at the regular module `R`, equipped with its induced `R`-action, is naturally
 isomorphic to `(TauCeti.finitePresentationEquivalenceMod R).inverse`. -/
