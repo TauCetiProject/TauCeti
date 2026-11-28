@@ -181,25 +181,9 @@ theorem mul_log_natCast_div_le_log_of_pow_le_mul_pow {p q m N : ℕ} {a : ℝ}
 /-- Quadratic lower bound `u - u ^ 2 / 2 ≤ log (1 + u)` for all `u ≥ 0`. -/
 theorem sub_sq_div_two_le_log_one_add {u : ℝ} (hu : 0 ≤ u) :
     u - u ^ 2 / 2 ≤ log (1 + u) := by
-  let ψ (t : ℝ) : ℝ := log (1 + t) - (t - t ^ 2 / 2)
-  have hderiv : ∀ t ∈ Set.Icc (0 : ℝ) u, HasDerivAt ψ ((1 + t)⁻¹ - (1 - t)) t := by
-    intro t ht
-    have h1 : HasDerivAt (fun s : ℝ ↦ log (1 + s)) (1 + t)⁻¹ t := by
-      simpa using ((hasDerivAt_id t).const_add 1).log (by linarith [ht.1] : (1 : ℝ) + t ≠ 0)
-    have h2 : HasDerivAt (fun s : ℝ ↦ s - s ^ 2 / 2) (1 - t) t := by
-      simpa using (hasDerivAt_id t).fun_sub ((hasDerivAt_pow 2 t).div_const 2)
-    exact h1.fun_sub h2
-  have hψ_mono : MonotoneOn ψ (Set.Icc 0 u) := by
-    refine monotoneOn_of_deriv_nonneg (convex_Icc 0 u)
-      (fun t ht ↦ (hderiv t ht).continuousAt.continuousWithinAt)
-      (fun t ht ↦ (hderiv t (interior_subset ht)).differentiableAt.differentiableWithinAt)
-      fun t ht ↦ ?_
-    rw [interior_Icc] at ht
-    rw [(hderiv t ⟨ht.1.le, ht.2.le⟩).deriv, sub_nonneg, inv_eq_one_div,
-      le_div_iff₀ (by linarith [ht.1] : 0 < 1 + t)]
-    nlinarith [ht.1]
-  have hψ0 := hψ_mono (Set.left_mem_Icc.mpr hu) (Set.right_mem_Icc.mpr hu) hu
-  simpa [ψ] using hψ0
+  refine le_trans ?_ (le_log_one_add_of_nonneg hu)
+  rw [le_div_iff₀ (by linarith)]
+  nlinarith [sq_nonneg u]
 
 /-- The logarithm grows by at most `1 / m` over a step of length one: for `0 ≤ m` and
 `0 ≤ a ≤ m + 1`, `log a - 1 / m ≤ log m`. At `m = 0` this reads `log a ≤ 0`. -/

@@ -9,7 +9,7 @@ public import Mathlib.Data.Int.Interval
 public import Mathlib.MeasureTheory.Integral.IntervalAverage
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Function.Holder
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.MetricSpace.Equicontinuity
 import TauCeti.Analysis.Convex.Segment
 
@@ -427,23 +427,28 @@ open Filter Topology Interval in
 /-- If `f` is continuous on `[a, b]` (`a < b`) and agrees almost everywhere on `(a, b]` with `g`,
 then `∫ t in x..b, g t ∂μ → ∫ t in a..b, g t ∂μ` as `x → a⁺`. -/
 theorem tendsto_integral_left_nhdsGT {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {μ : Measure ℝ} [IsLocallyFiniteMeasure μ] [NullSingletonClass μ] {f g : ℝ → E}
+    {μ : Measure ℝ} [IsLocallyFiniteMeasure μ] {f g : ℝ → E}
     {a b : ℝ} (hab : a < b) (hf : ContinuousOn f (Icc a b))
     (hfg : ∀ᵐ t ∂μ, t ∈ Ioc a b → f t = g t) :
     Tendsto (fun x : ℝ ↦ ∫ t in x..b, g t ∂μ) (𝓝[>] a) (𝓝 (∫ t in a..b, g t ∂μ)) := by
   have hg_ioc : IntegrableOn g (Ioc a b) μ :=
     (integrableOn_congr_fun_ae ((ae_restrict_iff' measurableSet_Ioc).mpr hfg)).mp
       (hf.integrableOn_Icc.mono_set Ioc_subset_Icc_self)
-  have hg_int : IntegrableOn g (uIcc a b) μ := by
-    rw [uIcc_of_le hab.le, integrableOn_Icc_iff_integrableOn_Ioc]
-    exact hg_ioc
-  have hprim : ContinuousOn (fun x : ℝ ↦ ∫ t in x..b, g t ∂μ) (Icc a b) := by
-    simpa only [uIcc_of_le hab.le] using
-      _root_.intervalIntegral.continuousOn_primitive_interval_left hg_int
-  refine (hprim a ⟨le_rfl, hab.le⟩).tendsto.comp
-    (tendsto_nhdsWithin_iff.mpr ⟨nhdsWithin_le_nhds, ?_⟩)
+  have hg_ind : IntegrableOn ((Iic b).indicator g) (Ioi a) μ :=
+    (integrableOn_indicator_iff (measurableSet_Iic (a := b)).nullMeasurableSet).mpr
+      (by simpa only [inter_comm (Iic b), Ioi_inter_Iic] using hg_ioc)
+  have heq : ∀ {x : ℝ}, x ≤ b →
+      ∫ t in Ioi x, (Iic b).indicator g t ∂μ = ∫ t in x..b, g t ∂μ := fun {x} hxb ↦ by
+    rw [setIntegral_indicator measurableSet_Iic, Ioi_inter_Iic,
+      _root_.intervalIntegral.integral_of_le hxb]
+  have hc : Tendsto (fun x : ℝ ↦ ∫ t in Ioi x, (Iic b).indicator g t ∂μ)
+      (𝓝[>] a) (𝓝 (∫ t in a..b, g t ∂μ)) := by
+    simpa only [heq hab.le] using
+      hg_ind.continuousWithinAt_Ici_primitive_Ioi.tendsto.mono_left
+        (nhdsWithin_mono a Ioi_subset_Ici_self)
+  refine hc.congr' ?_
   filter_upwards [Ioo_mem_nhdsGT hab] with x hx
-  exact ⟨hx.1.le, hx.2.le⟩
+  exact heq hx.2.le
 
 open Filter Topology in
 /-- If the time averages `T⁻¹ ∫₀ᵀ c dt` of a constant `c` tend to `0` as `T → ∞`, then `c = 0`:
