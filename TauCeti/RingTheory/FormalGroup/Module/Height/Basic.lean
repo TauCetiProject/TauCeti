@@ -127,11 +127,17 @@ theorem order_act_pow [IsDomain R] (a : O) (n : ℕ) :
   | zero => simp
   | succ n ih => rw [pow_succ, ρ.order_act_mul, ih, pow_succ]
 
+/-- The special fibre of a formal module is its base change to the residue field. -/
+noncomputable def specialFibre [IsLocalRing R] :
+    FormalModule O (F.map (residue R)) :=
+  ρ.map (IsScalarTower.toAlgHom O R (ResidueField R))
+
 /-- The action series on the special fibre is the reduction of the original action series. -/
-theorem map_residue_act_toPowerSeries [IsLocalRing R] (a : O) :
-    ((ρ.map (IsScalarTower.toAlgHom O R (ResidueField R))).act a).toPowerSeries =
+@[simp]
+theorem specialFibre_act_toPowerSeries [IsLocalRing R] (a : O) :
+    (ρ.specialFibre.act a).toPowerSeries =
       PowerSeries.map (residue R) (ρ.act a).toPowerSeries := by
-  rw [map_act, FormalGroupHom.map_toPowerSeries, IsScalarTower.coe_toAlgHom,
+  rw [specialFibre, map_act, FormalGroupHom.map_toPowerSeries, IsScalarTower.coe_toAlgHom,
     ResidueField.algebraMap_eq]
 
 section Local
@@ -144,34 +150,30 @@ height `h` means that the reduced action has order `q ^ h`. -/
 noncomputable def height : ℕ∞ :=
   let π := (IsDiscreteValuationRing.exists_irreducible O).choose
   ENat.map (Nat.log (Nat.card (ResidueField O)))
-    (PowerSeries.map (residue R) (ρ.act π).toPowerSeries).order
+    (ρ.specialFibre.act π).toPowerSeries.order
 
 /-- Any uniformizer can be used to compute the height on the special fibre. -/
 theorem height_eq_of_irreducible {π : O} (hπ : Irreducible π) :
     ρ.height = ENat.map (Nat.log (Nat.card (ResidueField O)))
-      (PowerSeries.map (residue R) (ρ.act π).toPowerSeries).order := by
-  let τ := ρ.map (IsScalarTower.toAlgHom O R (ResidueField R))
-  have h := τ.order_act_eq_of_associated (IsDiscreteValuationRing.associated_of_irreducible O
-    (IsDiscreteValuationRing.exists_irreducible O).choose_spec hπ)
+      (ρ.specialFibre.act π).toPowerSeries.order := by
   unfold height
   apply congrArg (ENat.map (Nat.log (Nat.card (ResidueField O))))
-  simpa only [τ, map_residue_act_toPowerSeries] using h
+  exact ρ.specialFibre.order_act_eq_of_associated
+    (IsDiscreteValuationRing.associated_of_irreducible O
+      (IsDiscreteValuationRing.exists_irreducible O).choose_spec hπ)
 
 /-- Infinite height means that the uniformizer acts by zero on the special fibre. -/
 theorem height_eq_top_iff {π : O} (hπ : Irreducible π) :
-    ρ.height = ⊤ ↔ PowerSeries.map (residue R) (ρ.act π).toPowerSeries = 0 := by
+    ρ.height = ⊤ ↔ (ρ.specialFibre.act π).toPowerSeries = 0 := by
   rw [ρ.height_eq_of_irreducible hπ]
   exact ENat.map_eq_top_iff.trans PowerSeries.order_eq_top
 
 /-- Finite height is characterized by the first nonzero degree of the reduced uniformizer action. -/
 theorem height_eq_natCast_iff {π : O} (hπ : Irreducible π) {h : ℕ} :
-    ρ.height = h ↔ (PowerSeries.map (residue R) (ρ.act π).toPowerSeries).order =
+    ρ.height = h ↔ (ρ.specialFibre.act π).toPowerSeries.order =
       (Nat.card (ResidueField O) ^ h : ℕ) := by
-  let τ := ρ.map (IsScalarTower.toAlgHom O R (ResidueField R))
-  let φ : Hom τ τ := ⟨τ.act π, τ.act_comp_act_comm π⟩
-  have hφ : φ.toPowerSeries = PowerSeries.map (residue R) (ρ.act π).toPowerSeries :=
-    ρ.map_residue_act_toPowerSeries π
-  rw [ρ.height_eq_of_irreducible hπ, ← hφ]
+  rw [ρ.height_eq_of_irreducible hπ, ← actHom_toPowerSeries]
+  set φ := ρ.specialFibre.actHom π
   by_cases hz : φ.toPowerSeries = 0
   · rw [hz, PowerSeries.order_zero, ENat.map_top]
     exact iff_of_false (ENat.top_ne_natCast _) (ENat.top_ne_natCast _)
@@ -183,18 +185,24 @@ theorem height_eq_natCast_iff {π : O} (hπ : Irreducible π) {h : ℕ} :
       ENat.natCast_inj.symm)
   · have hn := PowerSeries.order_ne_zero_iff_constCoeff_eq_zero.mpr φ.zero_constantCoeff
     rw [Nat.card_eq_zero_of_infinite] at hi ⊢
-    obtain rfl : i = 0 := by cases i <;> simp_all
+    -- An infinite residue field forces order one, since a positive exponent gives order zero.
+    obtain rfl : i = 0 := by
+      cases i with
+      | zero => rfl
+      | succ i =>
+        exact (hn (by simpa only [pow_succ, mul_zero, Nat.cast_zero] using hi)).elim
     rw [hi, ENat.map_natCast]
     have heq : Nat.log 0 (0 ^ 0) = h ↔ 0 ^ 0 = (0 : ℕ) ^ h := by cases h <;> simp
     exact ENat.natCast_inj.trans (heq.trans ENat.natCast_inj.symm)
 
-/-- Local base change preserves height. The induced map of residue fields is injective. -/
+/-- Base change along a local algebra map preserves formal-module height. -/
 @[simp]
 theorem height_map {S : Type*} [CommRing S] [IsLocalRing S] [Algebra O S]
     (g : R →ₐ[O] S) [IsLocalHom g] : (ρ.map g).height = ρ.height := by
   unfold height
   apply congrArg (ENat.map _)
-  rw [map_act, FormalGroupHom.map_toPowerSeries, ← RingHom.comp_apply, ← PowerSeries.map_comp,
+  rw [specialFibre_act_toPowerSeries, specialFibre_act_toPowerSeries, map_act,
+    FormalGroupHom.map_toPowerSeries, ← RingHom.comp_apply, ← PowerSeries.map_comp,
     ← ResidueField.map_comp_residue, PowerSeries.map_comp, RingHom.comp_apply,
     PowerSeries.order_map_of_injective (ResidueField.map (g : R →+* S)).injective]
 
@@ -203,6 +211,7 @@ theorem Hom.height_eq {ρ : FormalModule O F} {τ : FormalModule O G} (f : Hom �
     (hf : PowerSeries.map (residue R) f.toPowerSeries ≠ 0) : ρ.height = τ.height := by
   unfold height
   apply congrArg (ENat.map _)
+  simp only [specialFibre_act_toPowerSeries]
   let π := (_root_.IsDiscreteValuationRing.exists_irreducible O).choose
   let g := f.toFormalGroupHom.map (residue R)
   have h := congrArg (fun k : FormalGroupHom F G ↦ (k.map (residue R)).toPowerSeries.order)
@@ -232,7 +241,8 @@ theorem one_le_height [IsLocalHom (algebraMap O R)] : 1 ≤ ρ.height := by
   have hz : ρ.height = 0 := Order.lt_one_iff.mp h
   obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible O
   have hord := (ρ.height_eq_natCast_iff (h := 0) hπ).mp hz
-  rw [pow_zero, Nat.cast_one, PowerSeries.order_eq_one_iff_of_constantCoeff_eq_zero
+  rw [specialFibre_act_toPowerSeries, pow_zero, Nat.cast_one,
+    PowerSeries.order_eq_one_iff_of_constantCoeff_eq_zero
     (by simp [(ρ.act π).zero_constantCoeff])] at hord
   apply hord
   rw [PowerSeries.coeff_map, ρ.coeff_one_act, residue_eq_zero_iff]

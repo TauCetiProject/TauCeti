@@ -54,11 +54,11 @@ theorem height_restrictScalars (ρ : FormalModule O F) :
     ((map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective A O)).mpr hπ.ne_zero) hϖ
   have hassoc : Associated (ϖ ^ e) (algebraMap A O π) := ⟨u, (mul_comm _ _).trans hu.symm⟩
   -- On the same special fibre, the two uniformizer actions have orders N^e and N.
-  let τ := ρ.map (IsScalarTower.toAlgHom O R (ResidueField R))
-  have hord : (PowerSeries.map (residue R) ((ρ.restrictScalars A).act π).toPowerSeries).order =
-      (PowerSeries.map (residue R) (ρ.act ϖ).toPowerSeries).order ^ e := by
-    simpa only [τ, restrictScalars_act, map_residue_act_toPowerSeries] using
-      (τ.order_act_eq_of_associated hassoc.symm).trans (τ.order_act_pow ϖ e)
+  have hord : ((ρ.restrictScalars A).specialFibre.act π).toPowerSeries.order =
+      (ρ.specialFibre.act ϖ).toPowerSeries.order ^ e := by
+    simpa only [specialFibre_act_toPowerSeries, restrictScalars_act] using
+      (ρ.specialFibre.order_act_eq_of_associated hassoc.symm).trans
+        (ρ.specialFibre.order_act_pow ϖ e)
   cases hρ : ρ.height with
   | top =>
     have hd : Module.finrank A O ≠ 0 := Module.finrank_pos.ne'
@@ -79,11 +79,12 @@ variable {p : ℕ} [Fact p.Prime]
 the formal group on the special fibre. -/
 theorem height_eq_formalGroup_height [Algebra ℤ_[p] R] (ρ : FormalModule ℤ_[p] F) :
     ρ.height = (F.map (residue R)).height p := by
-  rw [ρ.height_eq_of_irreducible PadicInt.irreducible_p, PadicInt.card_residueField,
+  rw [ρ.height_eq_of_irreducible PadicInt.irreducible_p, specialFibre_act_toPowerSeries,
+    PadicInt.card_residueField,
     ρ.act_natCast, F.map_nsmulSeries, FormalGroup.height_eq_log_order_nsmulSeries]
 
-/-- The p-height of a formal module with scalars finite over the p-adic integers is its
-formal-module height times the rank of the scalar ring over the p-adic integers. -/
+/-- The ordinary p-height of the special fibre of the underlying formal group is the rank of
+`O` over the p-adic integers times the formal-module height. -/
 theorem formalGroup_height_eq_finrank_mul_height [Algebra ℤ_[p] O] [Module.Finite ℤ_[p] O]
     (ρ : FormalModule O F) :
     (F.map (residue R)).height p = Module.finrank ℤ_[p] O * ρ.height := by
