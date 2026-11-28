@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.FiberBundle.Basic
+import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # Transporting fibre bundles along fibrewise homeomorphisms
@@ -23,9 +24,9 @@ to a fibrewise homeomorphic family `E'`.
   `FiberBundle.ofHomeomorph` (with preferred trivializations and atlas given by
   `FiberBundle.trivializationAt_ofHomeomorph` and `FiberBundle.trivializationAtlas_ofHomeomorph`).
 
-The trivialization pullback adapts Mathlib's `Bundle.Trivialization.compHomeomorph`. For the linear
-specialization to `VectorBundle` see `TauCeti.Topology.VectorBundle.Transfer`, and for empty base
-strata see `TauCeti.Topology.FiberBundle.Empty`.
+The trivialization pullback specializes `Bundle.Trivialization.compHomeomorphOfEq`. For the
+linear specialization to `VectorBundle` see `TauCeti.Topology.VectorBundle.Transfer`, and for empty
+base strata see `TauCeti.Topology.FiberBundle.Empty`.
 -/
 
 public section
@@ -100,26 +101,20 @@ inducing the total-space topology on `TotalSpace F E'`. -/
 def compFiberHomeomorph (t : Trivialization F (π F E)) (e : ∀ b : B, E' b ≃ₜ E b)
     (h_ind : IsInducing (fun p : TotalSpace F E' ↦ (⟨p.proj, e p.proj p.snd⟩ : TotalSpace F E))) :
     Trivialization F (π F E') :=
-  let h := TauCeti.totalSpaceHomeomorphOfHomeomorph F e h_ind
-  { t.compHomeomorph h with
-    source_eq := by
-      ext p; simp only [Trivialization.compHomeomorph, Homeomorph.transOpenPartialHomeomorph_source,
-        mem_preimage, t.mem_source, h, TauCeti.totalSpaceHomeomorphOfHomeomorph_apply]
-    proj_toFun := fun p hp ↦ by
-      simpa only [Function.comp_apply, h,
-        TauCeti.totalSpaceHomeomorphOfHomeomorph_apply] using
-        (t.compHomeomorph h).proj_toFun p hp }
+  t.compHomeomorphOfEq (TauCeti.totalSpaceHomeomorphOfHomeomorph F e h_ind)
+    (fun p ↦ by simp [TauCeti.totalSpaceHomeomorphOfHomeomorph_apply])
 
 @[simp] theorem compFiberHomeomorph_apply (t : Trivialization F (π F E))
     (e : ∀ b : B, E' b ≃ₜ E b)
     (h_ind : IsInducing (fun p : TotalSpace F E' ↦ (⟨p.proj, e p.proj p.snd⟩ : TotalSpace F E)))
     (p : TotalSpace F E') : t.compFiberHomeomorph e h_ind p = t ⟨p.proj, e p.proj p.snd⟩ :=
-  (rfl)
+  t.compHomeomorphOfEq_apply _ _ p
 
 @[simp] theorem compFiberHomeomorph_baseSet (t : Trivialization F (π F E))
     (e : ∀ b : B, E' b ≃ₜ E b)
     (h_ind : IsInducing (fun p : TotalSpace F E' ↦ (⟨p.proj, e p.proj p.snd⟩ : TotalSpace F E))) :
-    (t.compFiberHomeomorph e h_ind).baseSet = t.baseSet := (rfl)
+    (t.compFiberHomeomorph e h_ind).baseSet = t.baseSet :=
+  t.compHomeomorphOfEq_baseSet _ _
 
 @[simp] theorem compFiberHomeomorph_symm_apply (t : Trivialization F (π F E))
     (e : ∀ b : B, E' b ≃ₜ E b)
@@ -127,7 +122,8 @@ def compFiberHomeomorph (t : Trivialization F (π F E)) (e : ∀ b : B, E' b ≃
     (p : B × F) :
     (t.compFiberHomeomorph e h_ind).toOpenPartialHomeomorph.symm p =
       (TauCeti.totalSpaceHomeomorphOfHomeomorph F e h_ind).symm
-        (t.toOpenPartialHomeomorph.symm p) := (rfl)
+        (t.toOpenPartialHomeomorph.symm p) :=
+  t.compHomeomorphOfEq_toOpenPartialHomeomorph_symm_apply _ _ p
 
 /-- On `t.baseSet`, the fibrewise inverse of `t.compFiberHomeomorph e h_ind` applies `(e b).symm`
 to `t.symm b v`. -/
@@ -136,7 +132,9 @@ to `t.symm b v`. -/
     (h_ind : IsInducing (fun p : TotalSpace F E' ↦ (⟨p.proj, e p.proj p.snd⟩ : TotalSpace F E)))
     {b : B} (hb : b ∈ t.baseSet) (v : F) :
     (t.compFiberHomeomorph e h_ind).symm b v = (e b).symm (t.symm b v) :=
-  (TotalSpace.mk_inj (F := F)).mp <| ((t.compFiberHomeomorph e h_ind).mk_symm hb v).trans <| by
+  (TotalSpace.mk_inj (F := F)).mp <|
+    ((t.compFiberHomeomorph e h_ind).mk_symm ((t.compFiberHomeomorph_baseSet e h_ind).symm ▸ hb)
+      v).trans <| by
     rw [compFiberHomeomorph_symm_apply, ← t.mk_symm hb v,
       TauCeti.totalSpaceHomeomorphOfHomeomorph_symm_apply]
 
@@ -160,7 +158,9 @@ def FiberBundle.ofHomeomorph {B : Type*} [TopologicalSpace B] (F : Type*) [Topol
   trivializationAtlas' :=
     (fun t : Trivialization F (π F E) ↦ t.compFiberHomeomorph e h_ind) '' trivializationAtlas F E
   trivializationAt' b := (trivializationAt F E b).compFiberHomeomorph e h_ind
-  mem_baseSet_trivializationAt' := mem_baseSet_trivializationAt F E
+  mem_baseSet_trivializationAt' b := by
+    rw [Bundle.Trivialization.compFiberHomeomorph_baseSet]
+    exact mem_baseSet_trivializationAt F E b
   trivialization_mem_atlas' b := ⟨trivializationAt F E b, trivialization_mem_atlas F E b, rfl⟩
 
 /-- Under `FiberBundle.ofHomeomorph`, the preferred trivialization at `b` is pulled back from

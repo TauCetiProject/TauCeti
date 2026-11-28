@@ -266,6 +266,13 @@ theorem dividedPower_mul_dividedPower_of_commutator_eq {x y z : A}
   rw [Finset.mem_range, Nat.lt_succ_iff] at hk
   rw [classTwoSeries_eq_of_le (le_trans hk (min_le_right m n))]
 
+/-- Each nonleading central-bracket term has strictly smaller total degree. -/
+theorem centralBracket_degree_lt {m n k : ℕ}
+    (hk : k ∈ (range (min m n + 1)).erase 0) :
+    (n - k) + k + (m - k) < m + n := by
+  simp only [mem_erase, mem_range] at hk
+  omega
+
 /-- **Normal ordering with a natural-multiple central commutator.** If
 `x * y = y * x + c • z`, with `z` commuting with both `x` and `y`, then crossing the two
 divided powers releases `z⁽ᵏ⁾` with natural coefficient `c ^ k`. -/

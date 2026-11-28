@@ -56,10 +56,10 @@ fibre is a bijection onto the base.
   `Bundle.Trivialization.transFiberHomeomorph_symm_apply`: changing the fibre of a trivialization
   along a homeomorphism `h` keeps its base set, and its inverse applies `h.symm` to the fibre
   coordinate first.
-* `Bundle.Trivialization.op_smul_symm`, `Bundle.Trivialization.op_smul_symm_one`, and
-  `Bundle.Trivialization.op_snd_smul_symm_one`: for a right-equivariant trivialization, the
-  inverse turns right multiplication into the right action and recovers points over `e.baseSet`
-  from the unit section.
+* `Bundle.Trivialization.op_smul_symm`, `Bundle.Trivialization.op_smul_symm_one`,
+  `Bundle.Trivialization.op_snd_smul_symm_one`, and `Bundle.Trivialization.op_inv_mul_smul`: for a
+  right-equivariant trivialization, the inverse turns right multiplication into the right action,
+  recovers points over `e.baseSet` from the unit section, and transports points in the same fibre.
 * `Bundle.Trivialization.symm_mk_coordChange`: the inverse of `e₂` undoes the coordinate change
   from `e₁` to `e₂`, landing on the point with the original fibre coordinate in `e₁`.
 * `Bundle.Trivialization.equivAt`: a trivialization as an equivalence between the fibre over a
@@ -69,6 +69,8 @@ fibre is a bijection onto the base.
 * `Bundle.Trivialization.map_mem_sheet_iff`, `Bundle.Trivialization.map_symm_eq_of_mem_sheet`:
   a continuous map `g` over the base, between two trivialized maps with discrete target fibre,
   carries the sheets of `p` over a preconnected set onto sheets of `q`.
+* `Bundle.Trivialization.compHomeomorphOfEq`: pre-composing a trivialization with a homeomorphism
+  intertwining two projections.
 * `TauCeti.subsingleton_fiber_of_subsingleton`, `TauCeti.bijective_proj_of_subsingleton`: a fibre
   bundle whose model fibre is a point has point fibres, and with a chosen point in each fibre its
   projection is a bijection.
@@ -115,6 +117,60 @@ theorem continuousOn_coordChange (e₁ e₂ : Trivialization F proj) :
     (e₂.toOpenPartialHomeomorph.continuousOn.comp hsymm hmaps)).congr
     fun p hp ↦ ?_
   simp only [Function.comp_apply, e₂.coe_coe, ← e₁.mk_coordChange e₂ hp.1.1 hp.1.2 p.2]
+
+/-- Pre-compose a trivialization `t : Trivialization F proj` with a homeomorphism `h : Z' ≃ₜ Z`
+intertwining `proj` with another projection `proj' : Z' → B`. -/
+def compHomeomorphOfEq {Z' : Type*} [TopologicalSpace Z'] {proj' : Z' → B}
+    (t : Trivialization F proj) (h : Z' ≃ₜ Z) (hproj : ∀ p, proj (h p) = proj' p) :
+    Trivialization F proj' where
+  toOpenPartialHomeomorph := (t.compHomeomorph h).toOpenPartialHomeomorph
+  baseSet := t.baseSet
+  open_baseSet := t.open_baseSet
+  source_eq := by
+    ext p
+    -- `(t.compHomeomorph h).baseSet` is definitionally `t.baseSet`.
+    exact (t.compHomeomorph h).mem_source.trans
+      (by simp only [Function.comp_apply, hproj p, mem_preimage]; rfl)
+  target_eq := (t.compHomeomorph h).target_eq
+  proj_toFun p hp := ((t.compHomeomorph h).proj_toFun p hp).trans (hproj p)
+
+/-- Evaluating `t.compHomeomorphOfEq h hproj` at `p` applies `t` to `h p`. -/
+@[simp]
+theorem compHomeomorphOfEq_apply {Z' : Type*} [TopologicalSpace Z'] {proj' : Z' → B}
+    (t : Trivialization F proj) (h : Z' ≃ₜ Z) (hproj : ∀ p, proj (h p) = proj' p) (p : Z') :
+    t.compHomeomorphOfEq h hproj p = t (h p) := (rfl)
+
+/-- Base set of `t.compHomeomorphOfEq h hproj`. -/
+@[simp]
+theorem compHomeomorphOfEq_baseSet {Z' : Type*} [TopologicalSpace Z'] {proj' : Z' → B}
+    (t : Trivialization F proj) (h : Z' ≃ₜ Z) (hproj : ∀ p, proj (h p) = proj' p) :
+    (t.compHomeomorphOfEq h hproj).baseSet = t.baseSet := (rfl)
+
+/-- Source of `t.compHomeomorphOfEq h hproj`. -/
+@[simp]
+theorem compHomeomorphOfEq_source {Z' : Type*} [TopologicalSpace Z'] {proj' : Z' → B}
+    (t : Trivialization F proj) (h : Z' ≃ₜ Z) (hproj : ∀ p, proj (h p) = proj' p) :
+    (t.compHomeomorphOfEq h hproj).source = h ⁻¹' t.source := by
+  ext p
+  rw [mem_source, compHomeomorphOfEq_baseSet, ← hproj p, ← t.mem_source, mem_preimage]
+
+/-- Partial-homeomorphism inverse of `t.compHomeomorphOfEq h hproj`. -/
+@[simp]
+theorem compHomeomorphOfEq_toOpenPartialHomeomorph_symm_apply {Z' : Type*} [TopologicalSpace Z']
+    {proj' : Z' → B} (t : Trivialization F proj) (h : Z' ≃ₜ Z)
+    (hproj : ∀ p, proj (h p) = proj' p) (q : B × F) :
+    (t.compHomeomorphOfEq h hproj).toOpenPartialHomeomorph.symm q =
+      h.symm (t.toOpenPartialHomeomorph.symm q) := (rfl)
+
+/-- Coordinate changes between trivializations transported along the same homeomorphism equal the
+original coordinate changes. -/
+@[simp]
+theorem compHomeomorphOfEq_coordChange {Z' : Type*} [TopologicalSpace Z'] {proj' : Z' → B}
+    (t₁ t₂ : Trivialization F proj) (h : Z' ≃ₜ Z) (hproj : ∀ p, proj (h p) = proj' p) :
+    (t₁.compHomeomorphOfEq h hproj).coordChange (t₂.compHomeomorphOfEq h hproj) =
+      t₁.coordChange t₂ := by
+  ext b v
+  simp [Trivialization.coordChange]
 
 /-- The restriction of a trivialization to an open set has the original forward map. -/
 @[simp]
@@ -204,6 +260,21 @@ theorem op_snd_smul_symm_one {G : Type*} [TopologicalSpace G] [MulOneClass G] [S
     {p : Z} (hp : proj p ∈ e.baseSet) :
     op (e p).2 • e.toOpenPartialHomeomorph.symm (proj p, 1) = p :=
   (e.op_smul_symm_one hproj he hp (e p).2).trans (e.symm_apply_mk_proj (e.mem_source.2 hp))
+
+/-- Over the base set of a right-equivariant trivialization `e`, acting on `p` by
+`(e p).2⁻¹ * (e q).2` sends `p` to `q` whenever `proj p = proj q`. -/
+theorem op_inv_mul_smul {G : Type*} [TopologicalSpace G] [Group G] [SMul Gᵐᵒᵖ Z]
+    (e : Trivialization G proj)
+    (hproj : ∀ (g : G) (p : Z), proj (op g • p) = proj p)
+    (he : ∀ (g : G) (p : Z), proj p ∈ e.baseSet → (e (op g • p)).2 = (e p).2 * g)
+    {p q : Z} (hp : proj p ∈ e.baseSet) (hpq : proj p = proj q) :
+    op ((e p).2⁻¹ * (e q).2) • p = q := by
+  have hq : proj q ∈ e.baseSet := hpq ▸ hp
+  have hsrc : op ((e p).2⁻¹ * (e q).2) • p ∈ e.source :=
+    e.mem_source.2 (by rw [hproj]; exact hp)
+  refine e.toOpenPartialHomeomorph.injOn hsrc (e.mem_source.2 hq) (Prod.ext ?_ ?_)
+  · rw [e.coe_coe, e.coe_fst hsrc, e.coe_fst (e.mem_source.2 hq), hproj, hpq]
+  · rw [e.coe_coe, he _ p hp, mul_inv_cancel_left]
 
 end Equivariant
 

@@ -369,6 +369,13 @@ namespace Complex
 
 open ComplexConjugate
 
+/-- The imaginary part of a quotient is the imaginary part of the conjugate product divided
+by the squared norm of the denominator. -/
+theorem div_im_eq_im_mul_conj_div_normSq (z w : ℂ) :
+    (z / w).im = (z * conj w).im / normSq w := by
+  simp only [div_im, mul_im, conj_re, conj_im, mul_neg]
+  ring
+
 /-- The real part of `exp (θ * I) ^ j` is `cos (j θ)`: the real part of de Moivre's formula. -/
 @[simp]
 theorem re_exp_ofReal_mul_I_pow (θ : ℝ) (j : ℕ) : (exp (θ * I) ^ j).re = Real.cos (j * θ) := by

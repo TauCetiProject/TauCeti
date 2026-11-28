@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dimension.Localization
 public import TauCeti.Algebra.Homology.EulerCharacteristic.Shift
 public import TauCeti.KnotTheory.Khovanov.Homology
 public import TauCeti.KnotTheory.Khovanov.Unlink
-public import Mathlib.LinearAlgebra.Dimension.Localization
+import TauCeti.KnotTheory.Khovanov.EnhancedState.Evaluation
 
 /-!
 # Khovanov homology and its graded Euler characteristic
@@ -34,7 +35,9 @@ enhanced state sum (`TauCeti.OrientedPDCode.khovanovEulerChar_eq_enhancedStateSu
 nonempty diagram this is Khovanov's theorem that the graded Euler characteristic is `(q + q⁻¹)`
 times the Jones polynomial at `t ^ (1/2) = -q`
 (`TauCeti.OrientedPDCode.khovanovEulerChar_eq_mul_eval₂_jonesPolynomial`). The empty diagram has
-graded Euler characteristic `1`.
+graded Euler characteristic `1`. At `q = 1`, `χ_q Kh(D; R)` evaluates to `2 ^ c`, hence is nonzero
+and has a nonzero coefficient in some quantum degree `j ≡ c (mod 2)` for every planar diagram,
+including the empty diagram.
 
 ## Main definitions
 
@@ -48,6 +51,8 @@ graded Euler characteristic `1`.
   index.
 * `TauCeti.OrientedPDCode.coeff_khovanovEulerChar_eq_sum`: each coefficient is the finite
   alternating sum of homology ranks over the cochain interval `[-n₋, n₊]`.
+* `TauCeti.OrientedPDCode.coeff_khovanovEulerChar_eq_zero_of_mod_two_ne`: over any nontrivial
+  commutative ring, the coefficient of `qʲ` vanishes when `j % 2 ≠ D.componentCount % 2`.
 * `TauCeti.OrientedPDCode.homologyEulerChar_khovanovComplex`: Euler–Poincaré for each quantum
   component, whose Euler characteristic is the coefficient of `qʲ` in the enhanced state sum.
 * `TauCeti.OrientedPDCode.khovanovEulerChar_eq_enhancedStateSum`: `χ_q Kh(D; R)` is the enhanced
@@ -55,6 +60,11 @@ graded Euler characteristic `1`.
 * `TauCeti.OrientedPDCode.khovanovEulerChar_eq_mul_eval₂_jonesPolynomial`: for a nonempty diagram,
   `χ_q Kh(D; R) = (q + q⁻¹) J(D)|_{t ^ (1/2) = -q}`.
 * `TauCeti.OrientedPDCode.khovanovEulerChar_empty`: the empty diagram has `χ_q Kh = 1`.
+* `TauCeti.OrientedPDCode.eval₂_one_khovanovEulerChar`,
+  `TauCeti.OrientedPDCode.khovanovEulerChar_ne_zero`, and
+  `TauCeti.OrientedPDCode.exists_coeff_khovanovEulerChar_ne_zero`: `χ_q Kh(D; R)` evaluates
+  to `2 ^ c` at `q = 1`, is nonzero, and has a nonzero coefficient in some parity-compatible quantum
+  degree.
 
 ## References
 
@@ -72,6 +82,8 @@ open CategoryTheory CategoryTheory.Limits HomologicalComplex LaurentPolynomial
 namespace TauCeti.OrientedPDCode
 
 universe u
+
+section Ring
 
 variable {n : ℕ} (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar) (R : Type u) [CommRing R]
 
@@ -152,6 +164,16 @@ theorem coeff_khovanovEulerChar_eq_sum (j : ℤ) :
   intro i _
   simp only [ComplexShape.eulerCharSignsUpInt_χ]
 
+/-- Over any nontrivial commutative ring `R`, the coefficient of `q ^ j` in
+`D.khovanovEulerChar hD R` vanishes whenever `j % 2 ≠ D.componentCount % 2`. -/
+theorem coeff_khovanovEulerChar_eq_zero_of_mod_two_ne {j : ℤ}
+    (hj : j % 2 ≠ (D.componentCount : ℤ) % 2) :
+    (D.khovanovEulerChar hD R).coeff j = 0 := by
+  rw [D.coeff_khovanovEulerChar_eq_sum hD R j]
+  refine Finset.sum_eq_zero fun i _ ↦ ?_
+  rw [ModuleCat.finrank_eq_zero_of_isZero (D.isZero_khovanovHomology_of_mod_two_ne hD R i hj),
+    Nat.cast_zero, mul_zero]
+
 /-- The empty diagram has graded Euler characteristic `1` over every nontrivial
 commutative ring. -/
 @[simp]
@@ -204,5 +226,31 @@ theorem khovanovEulerChar_eq_mul_eval₂_jonesPolynomial (h : 0 < D.toPDCode.com
     D.khovanovEulerChar hD R =
       (T 1 + T (-1)) * eval₂ (Int.castRingHom ℤ[T;T⁻¹]) (-genericUnit ℤ) D.jonesPolynomial := by
   rw [khovanovEulerChar_eq_enhancedStateSum, enhancedStateSum_eq_mul_eval₂_jonesPolynomial D h]
+
+/-- **At `q = 1`, the graded Euler characteristic `χ_q Kh(D; R)` equals `2 ^ c`**, for every
+planar oriented diagram over any Noetherian commutative ring `R` satisfying rank-nullity. -/
+@[simp] theorem eval₂_one_khovanovEulerChar :
+    eval₂ (RingHom.id ℤ) 1 (D.khovanovEulerChar hD R) = (2 : ℤ) ^ D.componentCount := by
+  rw [D.khovanovEulerChar_eq_enhancedStateSum hD R, D.eval₂_one_enhancedStateSum_eq_two_pow hD]
+
+/-- **The graded Euler characteristic of Khovanov homology is nonzero** for every planar oriented
+diagram (including the empty diagram) over any Noetherian commutative ring `R` satisfying
+rank-nullity. -/
+theorem khovanovEulerChar_ne_zero : D.khovanovEulerChar hD R ≠ 0 := by
+  intro hzero
+  have heval := D.eval₂_one_khovanovEulerChar hD R
+  rw [hzero, map_zero] at heval
+  exact (by positivity : (0 : ℤ) < (2 : ℤ) ^ D.componentCount).ne heval
+
+/-- For every planar oriented PD-code `D`, some quantum degree `j ≡ D.componentCount (mod 2)` has a
+nonzero coefficient in `D.khovanovEulerChar hD R`. -/
+theorem exists_coeff_khovanovEulerChar_ne_zero :
+    ∃ j : ℤ, j % 2 = (D.componentCount : ℤ) % 2 ∧ (D.khovanovEulerChar hD R).coeff j ≠ 0 := by
+  have ⟨j, hj⟩ := Finsupp.ne_iff.mp
+    (AddMonoidAlgebra.coeff_eq_zero.not.mpr (D.khovanovEulerChar_ne_zero hD R))
+  simp only [Finsupp.zero_apply] at hj
+  exact ⟨j, by_contra fun hmod ↦ hj (D.coeff_khovanovEulerChar_eq_zero_of_mod_two_ne hD R hmod), hj⟩
+
+end Ring
 
 end TauCeti.OrientedPDCode
