@@ -52,7 +52,7 @@ For `1 < p < 2` let `p' > 2` be the Hölder conjugate exponent, and let `Φ` be 
 off a set of finite measure. The adjoint problem `-∂ᵢ((aᵀ)ⁱʲ ∂ⱼv) = -div Φ` has a finite-energy
 solution `v`. The transposed coefficients are uniformly elliptic with the same constants and have
 the same BMO seminorm as `a`, since transposition is the adjoint of operators, an `ℝ`-linear
-isometry (`TauCeti.bmoSeminorm_toEuclideanCLM_conjTranspose`). So the whole-space regularity
+isometry (`TauCeti.bmoSeminorm_toEuclideanCLM_transpose`). So the whole-space regularity
 theorem for `p' > 2` gives `‖∇v‖_{L^{p'}} ≤ C ‖Φ‖_{L^{p'}}`. Testing the equation of `v` with `u`
 and that of `u` with `v` gives `∫ ⟨∇u, Φ⟩ = ∫ ⟨G, ∇v⟩`
 (`TauCeti.PDE.integral_inner_eq_integral_inner_of_forall_transpose`), which Hölder's inequality
@@ -141,8 +141,7 @@ theorem exists_memLp_gradient_and_eLpNorm_le_of_bmoSeminorm_le_of_lt_two
     continuous_id.matrix_transpose.comp_aestronglyMeasurable ha
   -- Transposing the coefficients does not change the BMO seminorm.
   have hbmoT : bmoSeminorm (fun x => toEuclideanCLM (𝕜 := ℝ) (a x)ᵀ) volume ≤ ENNReal.ofReal δ := by
-    simpa only [← conjTranspose_eq_transpose_of_trivial,
-      bmoSeminorm_toEuclideanCLM_conjTranspose] using hbmo
+    rwa [bmoSeminorm_toEuclideanCLM_transpose]
   have hg2 : MemLp (u : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
       (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
         Set (EuclideanSpace ℝ (Fin (n + 1)))))) 2 volume := by

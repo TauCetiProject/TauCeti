@@ -415,6 +415,33 @@ theorem _root_.LipschitzWith.bmoSeminorm_comp_le
   exact iSup_le fun r => (hφ.vmoModulus_comp_le hf r).trans
     (le_iSup (fun s => 2 * (K : ℝ≥0∞) * vmoModulus f μ s) r)
 
+/-- Postcomposition with a real-linear isometry does not change the VMO modulus: the isometry
+commutes with averages and preserves distances. Unlike `LipschitzWith.vmoModulus_comp_le`, there
+is no loss of a factor of two. -/
+@[simp]
+theorem _root_.LinearIsometry.vmoModulus_comp [CompleteSpace F]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    (L : F →ₗᵢ[ℝ] G) (f : X → F) (r : ℝ) :
+    vmoModulus (fun x => L (f x)) μ r = vmoModulus f μ r := by
+  have hball (c : X) (s : ℝ) :
+      ⨍⁻ y in ball c s, ‖L (f y) - ⨍ z in ball c s, L (f z) ∂μ‖ₑ ∂μ =
+        ⨍⁻ y in ball c s, ‖f y - ⨍ z in ball c s, f z ∂μ‖ₑ ∂μ := by
+    simp only [setAverage_eq', L.integral_comp_comm, ← map_sub, LinearIsometry.eNorm_map]
+  exact le_antisymm
+    (vmoModulus_le fun c s hs => (hball c s).trans_le
+      (setLAverage_enorm_sub_setAverage_le_vmoModulus f μ c hs))
+    (vmoModulus_le fun c s hs => (hball c s).symm.trans_le
+      (setLAverage_enorm_sub_setAverage_le_vmoModulus _ μ c hs))
+
+/-- Postcomposition with a real-linear isometry does not change the BMO seminorm. Unlike
+`LipschitzWith.bmoSeminorm_comp_le`, there is no loss of a factor of two. -/
+@[simp]
+theorem _root_.LinearIsometry.bmoSeminorm_comp [CompleteSpace F]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    (L : F →ₗᵢ[ℝ] G) (f : X → F) :
+    bmoSeminorm (fun x => L (f x)) μ = bmoSeminorm f μ := by
+  simp only [← iSup_vmoModulus, L.vmoModulus_comp]
+
 /-- A Lipschitz function of a BMO function is again BMO. -/
 theorem MemBMO.comp_lipschitz [SecondCountableTopology X] [IsLocallyFiniteMeasure μ]
     {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]

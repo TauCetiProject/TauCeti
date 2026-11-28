@@ -8,17 +8,20 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 import TauCeti.Analysis.InnerProductSpace.Adjoint
-import TauCeti.MeasureTheory.Integral.Bochner.Star
 
 /-!
 # Mean oscillation of the conjugate transpose of a matrix field
 
 The operator of the conjugate transpose of a square matrix is the adjoint of its operator on
-Euclidean space, and taking adjoints is an `ℝ`-linear isometry, so it commutes with averages. So
-passing to the conjugate transpose does not change the mean oscillation of a field of operators:
-its VMO modulus (`TauCeti.vmoModulus_toEuclideanCLM_conjTranspose`) and its BMO seminorm
-(`TauCeti.bmoSeminorm_toEuclideanCLM_conjTranspose`). Over `ℝ` the conjugate transpose is the
-transpose, which is how the adjoint of a real coefficient field is controlled.
+Euclidean space, and taking adjoints is an `ℝ`-linear isometry. Postcomposition with such an
+isometry does not change mean oscillation (`LinearIsometry.vmoModulus_comp`,
+`LinearIsometry.bmoSeminorm_comp`). So passing to the conjugate transpose does not change the
+VMO modulus (`TauCeti.vmoModulus_toEuclideanCLM_conjTranspose`) or the BMO seminorm
+(`TauCeti.bmoSeminorm_toEuclideanCLM_conjTranspose`) of a field of operators. Over `ℝ` the
+conjugate transpose is the transpose, which is the simp normal form for real matrices; the real
+forms are `TauCeti.vmoModulus_toEuclideanCLM_transpose` and
+`TauCeti.bmoSeminorm_toEuclideanCLM_transpose`. They control the adjoint of a real coefficient
+field.
 -/
 
 public section
@@ -28,43 +31,43 @@ namespace TauCeti
 open Matrix MeasureTheory
 
 variable {𝕜 ι X : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι] [PseudoMetricSpace X]
-  [MeasurableSpace X] {μ : Measure X} {a : X → Matrix ι ι 𝕜}
+  [MeasurableSpace X] {μ : Measure X}
 
 /-- Passing to the conjugate transpose does not change the VMO modulus of a field of operators of
 matrices. -/
 @[simp]
-theorem vmoModulus_toEuclideanCLM_conjTranspose (r : ℝ) :
+theorem vmoModulus_toEuclideanCLM_conjTranspose {a : X → Matrix ι ι 𝕜} (r : ℝ) :
     vmoModulus (fun x => toEuclideanCLM (n := ι) (𝕜 := 𝕜) (a x)ᴴ) μ r =
       vmoModulus (fun x => toEuclideanCLM (n := ι) (𝕜 := 𝕜) (a x)) μ r := by
-  -- Taking adjoints is `ℝ`-linear, so it commutes with averages, and it is an isometry.
-  have hint (ν : Measure X) (f : X → EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) :
-      ∫ z, star (f z) ∂ν = star (∫ z, f z ∂ν) :=
-    integral_star f
-  have hn (A B : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) :
-      ‖star A - star B‖ₑ = ‖A - B‖ₑ := by
-    simpa only [eDist_eq_eNorm_sub] using star_isometry.edist_eq A B
-  -- So the mean oscillations on every ball agree.
-  have hball (c : X) (s : ℝ) :
-      ⨍⁻ y in Metric.ball c s, ‖star (toEuclideanCLM (n := ι) (𝕜 := 𝕜) (a y)) -
-          ⨍ z in Metric.ball c s, star (toEuclideanCLM (n := ι) (𝕜 := 𝕜) (a z)) ∂μ‖ₑ ∂μ =
-        ⨍⁻ y in Metric.ball c s, ‖toEuclideanCLM (n := ι) (𝕜 := 𝕜) (a y) -
-          ⨍ z in Metric.ball c s, toEuclideanCLM (n := ι) (𝕜 := 𝕜) (a z) ∂μ‖ₑ ∂μ := by
-    rw [setAverage_eq', setAverage_eq', hint]
-    congr 1 with y
-    exact hn _ _
+  -- Taking adjoints is an `ℝ`-linear isometry of operators.
+  let L : (EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) →ₗᵢ[ℝ]
+      (EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) :=
+    ⟨(starL' ℝ).toLinearEquiv.toLinearMap, norm_star⟩
   simp only [← star_eq_conjTranspose, map_star]
-  exact le_antisymm
-    (vmoModulus_le fun c s hs => (hball c s).trans_le
-      (setLAverage_enorm_sub_setAverage_le_vmoModulus _ μ c hs))
-    (vmoModulus_le fun c s hs => (hball c s).symm.trans_le
-      (setLAverage_enorm_sub_setAverage_le_vmoModulus _ μ c hs))
+  exact L.vmoModulus_comp _ r
 
 /-- Passing to the conjugate transpose does not change the BMO seminorm of a field of operators of
 matrices. -/
 @[simp]
-theorem bmoSeminorm_toEuclideanCLM_conjTranspose :
+theorem bmoSeminorm_toEuclideanCLM_conjTranspose {a : X → Matrix ι ι 𝕜} :
     bmoSeminorm (fun x => toEuclideanCLM (n := ι) (𝕜 := 𝕜) (a x)ᴴ) μ =
       bmoSeminorm (fun x => toEuclideanCLM (n := ι) (𝕜 := 𝕜) (a x)) μ := by
   simp only [← iSup_vmoModulus, vmoModulus_toEuclideanCLM_conjTranspose]
+
+/-- Transposing does not change the VMO modulus of a field of operators of real matrices. -/
+@[simp]
+theorem vmoModulus_toEuclideanCLM_transpose {a : X → Matrix ι ι ℝ} (r : ℝ) :
+    vmoModulus (fun x => toEuclideanCLM (n := ι) (𝕜 := ℝ) (a x)ᵀ) μ r =
+      vmoModulus (fun x => toEuclideanCLM (n := ι) (𝕜 := ℝ) (a x)) μ r := by
+  simpa only [conjTranspose_eq_transpose_of_trivial] using
+    vmoModulus_toEuclideanCLM_conjTranspose (μ := μ) (a := a) r
+
+/-- Transposing does not change the BMO seminorm of a field of operators of real matrices. -/
+@[simp]
+theorem bmoSeminorm_toEuclideanCLM_transpose {a : X → Matrix ι ι ℝ} :
+    bmoSeminorm (fun x => toEuclideanCLM (n := ι) (𝕜 := ℝ) (a x)ᵀ) μ =
+      bmoSeminorm (fun x => toEuclideanCLM (n := ι) (𝕜 := ℝ) (a x)) μ := by
+  simpa only [conjTranspose_eq_transpose_of_trivial] using
+    bmoSeminorm_toEuclideanCLM_conjTranspose (μ := μ) (a := a)
 
 end TauCeti
