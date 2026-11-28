@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.LapMatrix
+public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
@@ -15,6 +16,9 @@ The adjacency matrix `G.adjMatrix R` and the degree matrix `G.degMatrix R` of a 
 entries built from `0`, `1` and natural-number casts, so applying a coefficient map entrywise
 gives the same matrix over the target ring. The entries of the square of the adjacency matrix
 count common neighbours, and the row sums of the adjacency matrix of a `d`-regular graph are `d`.
+The adjacency matrix of the complement is `J - I - A`, with `J` the all-ones matrix. Adjacency
+matrices are integral, so two graphs with the same characteristic polynomial over `ℚ` have the same
+one over every commutative ring.
 
 The adjacency, degree and Laplacian matrices are additive over the union `G ⊔ H` of two
 edge-disjoint graphs on one vertex type. Consequently, for `G ≤ H` the Laplacian of the graph
@@ -32,6 +36,9 @@ spectra under adding edges rest on this decomposition.
 * `SimpleGraph.IsRegularOfDegree.adjMatrix_mul_of_one`: for a `d`-regular graph, `A J = d J`,
   where `J` is the all-ones matrix; equivalently `(A - d I) J = 0`
   (`SimpleGraph.IsRegularOfDegree.adjMatrix_sub_smul_one_mul_of_one`).
+* `SimpleGraph.adjMatrix_compl`: the adjacency matrix of the complement is `J - I - A`.
+* `SimpleGraph.charpoly_adjMatrix_eq_of_charpoly_rat_eq`: equality of the characteristic
+  polynomials of two adjacency matrices over `ℚ` gives equality over every commutative ring.
 * `SimpleGraph.adjMatrix_sup_of_disjoint`, `SimpleGraph.degMatrix_sup_of_disjoint`,
   `SimpleGraph.lapMatrix_sup_of_disjoint`: the matrices of the union of two edge-disjoint graphs
   are the sums of their matrices.
@@ -85,6 +92,25 @@ theorem IsRegularOfDegree.adjMatrix_sub_smul_one_mul_of_one [Fintype V] [Decidab
     {d : ℕ} (hd : G.IsRegularOfDegree d) :
     (G.adjMatrix R - (d : R) • 1) * Matrix.of (fun _ _ ↦ (1 : R)) = 0 := by
   simp [sub_mul, hd.adjMatrix_mul_of_one]
+
+/-- The adjacency matrix of the complement is `J - I - A`, where `J` is the all-ones matrix. -/
+theorem adjMatrix_compl [DecidableEq V] [AddGroup R] [One R] :
+    Gᶜ.adjMatrix R = Matrix.of (fun _ _ ↦ (1 : R)) - 1 - G.adjMatrix R :=
+  eq_sub_of_add_eq <| (IsCompl.adjMatrix_add_adjMatrix_eq_adjMatrix_completeGraph R
+    isCompl_compl.symm).trans (adjMatrix_completeGraph_eq_of_one_sub_one R V)
+
+/-- The characteristic polynomial of an adjacency matrix is determined over `ℚ`: two graphs whose
+rational adjacency matrices have the same characteristic polynomial have the same characteristic
+polynomial over every commutative ring. -/
+theorem charpoly_adjMatrix_eq_of_charpoly_rat_eq [Fintype V] [DecidableEq V] {W : Type*}
+    [Fintype W] [DecidableEq W] {H : SimpleGraph W} [DecidableRel H.Adj] [CommRing R]
+    (h : (G.adjMatrix ℚ).charpoly = (H.adjMatrix ℚ).charpoly) :
+    (G.adjMatrix R).charpoly = (H.adjMatrix R).charpoly := by
+  have hℤ : (G.adjMatrix ℤ).charpoly = (H.adjMatrix ℤ).charpoly := by
+    refine Polynomial.map_injective (Int.castRingHom ℚ) Int.cast_injective ?_
+    rw [← charpoly_map, ← charpoly_map, adjMatrix_map, adjMatrix_map, h]
+  rw [← adjMatrix_map (R := ℤ) (Int.castRingHom R), ← adjMatrix_map (R := ℤ) (G := H)
+    (Int.castRingHom R), charpoly_map, charpoly_map, hℤ]
 
 /-! ### Edge-disjoint unions -/
 
