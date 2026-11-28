@@ -28,8 +28,17 @@ public section
 namespace TauCeti.PadicComplexInt
 
 open IsLocalRing
+open scoped NNReal
 
 variable (p : ℕ) [Fact p.Prime]
+
+/-- The prime `p` lies in the maximal ideal of the ring of integers of `ℂ_p`. -/
+theorem natCast_mem_maximalIdeal : (p : 𝓞_ℂ_[p]) ∈ maximalIdeal 𝓞_ℂ_[p] := by
+  have hp : (1 : ℝ≥0) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
+  have hpv : Valued.v ((p : 𝓞_ℂ_[p]) : ℂ_[p]) < 1 := by
+    rw [SubringClass.coe_natCast, PadicComplex.valuation_p]
+    exact (div_lt_one (zero_lt_one.trans hp)).mpr hp
+  exact (Valuation.mem_maximalIdeal_iff (v := (PadicComplex.valued p).v)).mpr hpv
 
 /-- The maximal ideal of the ring of integers of `ℂ_p` is not finitely generated. -/
 theorem not_fg_maximalIdeal : ¬ (maximalIdeal 𝓞_ℂ_[p]).FG := by
