@@ -177,9 +177,7 @@ private theorem integral_indicator_Ici_eq_integral_max {𝕜 : Type*} [RCLike �
     {f : ℝ → 𝕜} {a b p : ℝ} (hab : a ≤ b) (hpb : p ≤ b) :
     (∫ t in a..b, (Ici p).indicator f t) = ∫ t in max a p..b, f t := by
   have hset : Icc a b ∩ Ici p = Icc (max a p) b := by
-    ext t
-    simp only [mem_inter_iff, mem_Icc, mem_Ici, max_le_iff]
-    tauto
+    rw [← Ici_inter_Iic, inter_right_comm, Ici_inter_Ici, Ici_inter_Iic]
   calc
     _ = ∫ t in Icc a b, (Ici p).indicator f t := by
       rw [intervalIntegral.integral_of_le hab, integral_Icc_eq_integral_Ioc]
@@ -202,9 +200,10 @@ theorem sum_mul_eq_sub_sub_integral_mul_of_hasDerivAt {𝕜 : Type*} [RCLike �
   let S := Finset.Icc 0 ⌊b⌋₊
   let F (k : ℕ) := (Ici (k : ℝ)).indicator (fun t ↦ g' t * c k)
   have hprefix (n : ℕ) (hn : n ≤ ⌊b⌋₊) : S.filter (· ≤ n) = Finset.Icc 0 n := by
-    ext k
-    simp only [S, mem_filter, Finset.mem_Icc, zero_le, true_and]
-    exact ⟨And.right, fun hk ↦ ⟨hk.trans hn, hk⟩⟩
+    dsimp only [S]
+    rw [← Nat.bot_eq_zero, Finset.Icc_bot, Finset.Icc_bot, ← Finset.coe_inj]
+    simp only [Finset.coe_filter, Finset.coe_Iic, Finset.mem_Iic]
+    exact Set.Iic_inter_Iic.trans (congrArg Set.Iic (min_eq_right hn))
   have hsum (t : ℝ) (ht : t ∈ uIcc a b) :
       g' t * (∑ k ∈ Icc 0 ⌊t⌋₊, c k) = ∑ k ∈ S, F k t := by
     have ht' : t ∈ Set.Icc a b := uIcc_of_le hab ▸ ht
@@ -215,8 +214,10 @@ theorem sum_mul_eq_sub_sub_integral_mul_of_hasDerivAt {𝕜 : Type*} [RCLike �
       (((intervalIntegrable_iff_integrableOn_Icc_of_le hab).mp hg').mul_const
         (c k) |>.indicator measurableSet_Ici)
   have hlate : S.filter (⌊a⌋₊ < ·) = Finset.Ioc ⌊a⌋₊ ⌊b⌋₊ := by
-    ext k
-    simp [S, and_comm]
+    dsimp only [S]
+    rw [← Nat.bot_eq_zero, Finset.Icc_bot, ← Finset.coe_inj]
+    simp only [Finset.coe_filter, Finset.mem_Iic, Finset.coe_Ioc]
+    exact (inter_comm (Set.Iic ⌊b⌋₊) (Set.Ioi ⌊a⌋₊)).trans Set.Ioi_inter_Iic
   rw [intervalIntegral.integral_congr hsum, intervalIntegral.integral_finsetSum hF,
     ← hlate, ← hprefix _ (Nat.floor_le_floor hab)]
   simp only [mul_sum, sum_filter]

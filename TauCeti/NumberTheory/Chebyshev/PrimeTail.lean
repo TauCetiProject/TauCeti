@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.NumberTheory.Chebyshev
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
 public import TauCeti.NumberTheory.Chebyshev.PowerTail
+import TauCeti.NumberTheory.Chebyshev.Integrability
 
 /-!
 # Prime tails from Chebyshev's bounds
@@ -132,16 +133,11 @@ theorem sum_primesLE_log_div_sq_eq {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
 private theorem intervalIntegrable_two_mul_theta_div_cube {a b : ℝ}
     (ha : 0 < a) (hab : a ≤ b) :
     IntervalIntegrable (fun t ↦ 2 * Chebyshev.theta t / t ^ 3) volume a b := by
-  rw [intervalIntegrable_iff_integrableOn_Icc_of_le hab]
-  have hint := integrableOn_mul_sum_Icc (m := 0)
-    (fun n : ℕ ↦ if n.Prime then Real.log n else 0) ha.le
-    (show IntegrableOn (fun t : ℝ ↦ 2 / t ^ 3) (Set.Icc a b) from
-      ContinuousOn.integrableOn_Icc (by
-        intro t ht
-        have : 0 < t := ha.trans_le ht.1
-        fun_prop (disch := positivity)))
-  simp_rw [sum_prime_log_eq_theta] at hint
-  exact hint.congr_fun (fun t _ ↦ by ring) measurableSet_Icc
+  have hw : ContinuousOn (fun t : ℝ ↦ 2 / t ^ 3) (Set.Icc a b) := by
+    intro t ht
+    have : 0 < t := ha.trans_le ht.1
+    fun_prop (disch := positivity)
+  exact (hw.intervalIntegrable_of_Icc hab).mul_chebyshev_theta.congr (fun t _ ↦ by ring)
 
 -- Chebyshev bounds the remainder by an elementary power integral.
 private theorem integral_two_mul_theta_div_cube_le {a b : ℝ}

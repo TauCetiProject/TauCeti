@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Chebyshev
 import TauCeti.NumberTheory.AbelSummation
+import TauCeti.NumberTheory.Chebyshev.Integrability
 
 /-!
 # Weighted prime sums and the Chebyshev remainder
@@ -61,16 +62,12 @@ theorem sum_primesLE_mul_log_eq_sub_integral {g g' : ℝ → ℝ} {x : ℝ} (hx 
   simp_rw [← Chebyshev.theta_eq_sum_Icc] at h
   have hfloor : ⌊(2 : ℝ)⌋₊ = 2 := by norm_num
   rw [hfloor] at h
-  have htwo : Nat.primesLE 2 = {2} := by decide
   have hθ₂ : Chebyshev.theta 2 = Real.log 2 := by
-    rw [Chebyshev.theta_eq_sum_primesLE, hfloor, htwo, sum_singleton]
-    rfl
-  rw [Nat.primesLE_eq_filter_Icc_two, Icc_eq_cons_Ioc (hfloor ▸ Nat.floor_le_floor hx),
-    cons_eq_insert, filter_insert, ite_eq_left Nat.prime_two, sum_insert]
-  · rw [h, hθ₂]
-    simp only [Nat.cast_ofNat]
-    ring
-  · exact fun hp ↦ left_notMem_Ioc (mem_filter.mp hp).1
+    simp only [Chebyshev.theta_eq_log_primorial, hfloor, primorial_two, Nat.cast_ofNat]
+  have htwo : 2 ≤ ⌊x⌋₊ := hfloor ▸ Nat.floor_le_floor hx
+  rw [Nat.primesLE_eq_filter_Icc_two, sum_filter, ← add_sum_Ioc_eq_sum_Icc htwo]
+  simp only [Nat.prime_two, ite_true, Nat.cast_ofNat, ← sum_filter, h, hθ₂]
+  ring
 
 /-- Partial summation with the Chebyshev main term removed. The sum includes the prime `2`
 and any prime at `x`. The term `2 * g 2` is the lower boundary contribution from
@@ -83,12 +80,6 @@ theorem sum_primesLE_mul_log_eq_integral_add {g g' : ℝ → ℝ} {x : ℝ} (hx 
         ∫ t in (2 : ℝ)..x, (Chebyshev.theta t - t) * g' t := by
   have ht : IntervalIntegrable (fun t : ℝ ↦ t * g' t) volume 2 x :=
     hg'.continuousOn_mul (continuousOn_id)
-  have hθ : IntervalIntegrable (fun t : ℝ ↦ g' t * Chebyshev.theta t) volume 2 x := by
-    rw [intervalIntegrable_iff_integrableOn_Icc_of_le hx]
-    simpa only [Chebyshev.theta_eq_sum_Icc, sum_filter] using
-      integrableOn_mul_sum_Icc (m := 0)
-        (fun n : ℕ ↦ if n.Prime then Real.log n else 0) (by norm_num : (0 : ℝ) ≤ 2)
-        ((intervalIntegrable_iff_integrableOn_Icc_of_le hx).mp hg')
   have hparts := intervalIntegral.integral_mul_deriv_eq_deriv_mul_of_hasDerivAt
     (u := fun t : ℝ ↦ t) (u' := fun _ ↦ (1 : ℝ)) continuousOn_id (uIcc_of_le hx ▸ hc)
     (fun t _ ↦ hasDerivAt_id t) (by simpa only [min_eq_left hx, max_eq_right hx] using hg)
@@ -96,7 +87,7 @@ theorem sum_primesLE_mul_log_eq_integral_add {g g' : ℝ → ℝ} {x : ℝ} (hx 
   simp only [one_mul] at hparts
   have hsplit : (∫ t in (2 : ℝ)..x, (Chebyshev.theta t - t) * g' t) =
       (∫ t in (2 : ℝ)..x, g' t * Chebyshev.theta t) - ∫ t in (2 : ℝ)..x, t * g' t := by
-    rw [← intervalIntegral.integral_sub hθ ht]
+    rw [← intervalIntegral.integral_sub hg'.mul_chebyshev_theta ht]
     exact intervalIntegral.integral_congr fun _ _ ↦ by ring
   rw [sum_primesLE_mul_log_eq_sub_integral hx hc hg hg', hsplit]
   linarith
@@ -137,9 +128,10 @@ theorem sum_primesLE_eq_integral_div_log_add_integral_Ioi {f g' : ℝ → ℝ} {
     ← intervalIntegral.integral_Ioi_sub_Ioi hE hx]
   ring
 
-/-- Under absolute integrability of `(θ(t) - t) g'(t)` on `(2, ∞)`, where `g = f / log`,
-the full-integral constant is the limit of the centered prime sum if the boundary
-remainder also tends to zero. -/
+/-- Assume `g = f / log` is continuous on `[2, ∞)` and has derivative `g'` on `(2, ∞)`,
+with `g'` interval integrable on every `[2, x]`. If `(θ(t) - t) g'(t)` is absolutely
+integrable on `(2, ∞)` and the boundary remainder tends to zero, then the centered prime
+sum tends to the full-integral constant. -/
 theorem tendsto_sum_primesLE_sub_integral_div_log {f g' : ℝ → ℝ}
     (hc : ContinuousOn (fun t ↦ f t / Real.log t) (Ici 2))
     (hg : ∀ t ∈ Ioi (2 : ℝ), HasDerivAt (fun u ↦ f u / Real.log u) (g' t) t)
