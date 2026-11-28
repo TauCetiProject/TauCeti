@@ -43,7 +43,7 @@ reversed equation.
   trace of the square root of the covariance sandwich.
 * `Matrix.PosDef.trace_one_sub_geometricMean_ringInverse_mul_mul_conjTranspose`: the trace of
   the covariance left by subtracting the standard positive map.
-* `TauCeti.isGreatest_geometricMean`: for complex matrices with `A` positive definite and `B`
+* `Matrix.PosDef.isGreatest_geometricMean`: for complex matrices with `A` positive definite and `B`
   positive semidefinite, `geometricMean A B` is the greatest positive semidefinite `X` making the
   block matrix `[[A, X], [X, B]]` positive semidefinite.
 
@@ -211,9 +211,7 @@ end Matrix
 
 /-! ### Block maximality -/
 
-namespace TauCeti
-
-open Matrix
+namespace Matrix.PosDef
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
@@ -238,4 +236,4 @@ theorem isGreatest_geometricMean {A B : Matrix n n ℂ} (hA : A.PosDef) (hB : B.
   open scoped Matrix.Norms.L2Operator in
   exact hA.isStrictlyPositive.isGreatest_geometricMean_setOf_mul_ringInverse_mul_le hB.nonneg
 
-end TauCeti
+end Matrix.PosDef
