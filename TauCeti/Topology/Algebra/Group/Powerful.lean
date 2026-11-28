@@ -53,6 +53,8 @@ separately where it is needed, as in `TauCeti.IsUniform`.
 * `TauCeti.commutator_le_closedPowerSubgroup_two`: the commutator subgroup always lies in `G²`.
 * `TauCeti.isPowerful_iff_isPowerfullyEmbedded_top`: equivalence with
   `Subgroup.IsPowerfullyEmbedded` on discrete groups.
+* `TauCeti.pow_ite_eq_ite_four`, `TauCeti.dvd_choose_two_ite_four`: arithmetic identities for the
+  powerful exponent `if p = 2 then 4 else p`.
 * `TauCeti.IsPowerful.closedPowerSubgroup_eq_pLowerCentralSeries_one`: in a powerful group,
   `Gᵖ = λ_1`.
 * `TauCeti.IsPowerful.of_surjective`, `TauCeti.IsPowerful.quotient`, `TauCeti.isPowerful_congr`,
@@ -282,6 +284,24 @@ variable {p G}
 theorem isPowerful_iff :
     IsPowerful p G ↔ commutator G ≤ closedPowerSubgroup (if p = 2 then 4 else p) G := by
   rw [IsPowerful]
+
+/-- The power `p ^ (if p = 2 then 2 else 1)` equals the exponent `if p = 2 then 4 else p` appearing
+in `TauCeti.IsPowerful`. -/
+theorem pow_ite_eq_ite_four (p : ℕ) : p ^ (if p = 2 then 2 else 1) = if p = 2 then 4 else p := by
+  split_ifs with hp2
+  · subst hp2; decide
+  · exact pow_one p
+
+/-- For every prime `p`, `p` divides `(if p = 2 then 4 else p).choose 2`. -/
+theorem dvd_choose_two_ite_four {p : ℕ} (hp : p.Prime) :
+    p ∣ (if p = 2 then 4 else p).choose 2 := by
+  rcases hp.eq_two_or_odd' with rfl | ⟨k, rfl⟩
+  · decide
+  · split_ifs with h
+    · omega
+    · rw [Nat.choose_two_right, Nat.add_sub_cancel, mul_comm (2 * k + 1), mul_assoc,
+        Nat.mul_div_cancel_left _ two_pos]
+      exact dvd_mul_left _ _
 
 /-- On a discrete group, `IsPowerful p G` agrees with `(⊤ : Subgroup G).IsPowerfullyEmbedded p`. -/
 theorem isPowerful_iff_isPowerfullyEmbedded_top [DiscreteTopology G] :

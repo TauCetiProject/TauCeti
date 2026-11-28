@@ -12,7 +12,6 @@ public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.GroupTheory.IsPerfect
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.Tactic.Group
-import Mathlib.Data.Nat.Choose.Dvd
 import Mathlib.Data.Nat.Dist
 
 /-!
@@ -53,9 +52,9 @@ which quantifies over both subgroups. Neither reduces a comparison to generators
   normalizing `U`.
 * `QuotientGroup.commute_mk_iff`: two classes in `G ⧸ N` commute exactly when the commutator of
   representatives lies in `N`.
-* `QuotientGroup.mk_mul_pow_eq_of_prime`: for a prime `p`, `((x * y : G) : G ⧸ N) ^ p` splits as
-  `(x : G ⧸ N) ^ p * (y : G ⧸ N) ^ p` when `⁅y, x⁆ ∈ N` for `p = 2`, and for odd `p` when
-  `⁅y, x⁆` commutes with `x` and `y` modulo `N` and `⁅y, x⁆ ^ p ∈ N`.
+* `QuotientGroup.mk_mul_pow_eq_of_odd`: for an odd natural number `n`, `((x * y : G) : G ⧸ N) ^ n`
+  splits as `(x : G ⧸ N) ^ n * (y : G ⧸ N) ^ n` when `⁅y, x⁆` commutes with `x` and `y` modulo
+  `N` and `⁅y, x⁆ ^ n ∈ N`.
 * `MonoidHom.commutatorElement_mem_ker_iff`: the images of two elements under a homomorphism
   into a monoid commute exactly when their commutator lies in the kernel.
 * `MonoidHom.commutator_top_ker_comp_le_ker`: if `p` has central kernel, then `φ` kills the
@@ -436,27 +435,26 @@ theorem _root_.QuotientGroup.commute_mk_iff [N.Normal] {a b : G} :
   rw [← QuotientGroup.mk'_apply N a, ← QuotientGroup.mk'_apply N b,
     ← MonoidHom.commutatorElement_mem_ker_iff, QuotientGroup.ker_mk']
 
-/-- For a prime `p`, if `x` and `y` commute modulo `N` when `p = 2`, and for odd `p` their
-commutator `⁅y, x⁆` commutes with `x` and `y` modulo `N` and has `p`-th power in `N`, then
-`((x * y : G) : G ⧸ N) ^ p = (x : G ⧸ N) ^ p * (y : G ⧸ N) ^ p`. -/
-theorem _root_.QuotientGroup.mk_mul_pow_eq_of_prime [N.Normal] {p : ℕ} (hp : p.Prime) {x y : G}
-    (h2 : p = 2 → ⁅y, x⁆ ∈ N)
-    (hx : p ≠ 2 → ⁅⁅y, x⁆, x⁆ ∈ N) (hy : p ≠ 2 → ⁅⁅y, x⁆, y⁆ ∈ N)
-    (hpow : p ≠ 2 → ⁅y, x⁆ ^ p ∈ N) :
-    ((x * y : G) : G ⧸ N) ^ p = (x : G ⧸ N) ^ p * (y : G ⧸ N) ^ p := by
+/-- For an odd natural number `n`, if the commutator `⁅y, x⁆` commutes with `x` and `y` modulo `N`
+and has `n`-th power in `N`, then
+`((x * y : G) : G ⧸ N) ^ n = (x : G ⧸ N) ^ n * (y : G ⧸ N) ^ n`. -/
+theorem _root_.QuotientGroup.mk_mul_pow_eq_of_odd [N.Normal] {n : ℕ} (hn : Odd n) {x y : G}
+    (hx : ⁅⁅y, x⁆, x⁆ ∈ N) (hy : ⁅⁅y, x⁆, y⁆ ∈ N) (hpow : ⁅y, x⁆ ^ n ∈ N) :
+    ((x * y : G) : G ⧸ N) ^ n = (x : G ⧸ N) ^ n * (y : G ⧸ N) ^ n := by
   rw [QuotientGroup.mk_mul]
-  by_cases hp2 : p = 2
-  · exact (QuotientGroup.commute_mk_iff.mpr (h2 hp2)).symm.mul_pow p
-  · have hmk_comm : ⁅(y : G ⧸ N), (x : G ⧸ N)⁆ = ((⁅y, x⁆ : G) : G ⧸ N) :=
-      (map_commutatorElement (QuotientGroup.mk' N) y x).symm
-    obtain ⟨c, hc⟩ := hp.dvd_choose_self two_ne_zero (lt_of_le_of_ne hp.two_le (Ne.symm hp2))
-    have hpow_mk : ((⁅y, x⁆ : G) : G ⧸ N) ^ p = 1 := by
-      rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
-      exact hpow hp2
-    rw [Commute.mul_pow_eq_pow_mul_pow_mul_commutatorElement_pow_choose_two
-        (hmk_comm.symm ▸ (QuotientGroup.commute_mk_iff.mpr (hx hp2)).symm)
-        (hmk_comm.symm ▸ (QuotientGroup.commute_mk_iff.mpr (hy hp2)).symm) p,
-      hmk_comm, hc, pow_mul, hpow_mk, one_pow, mul_one]
+  have hmk_comm : ⁅(y : G ⧸ N), (x : G ⧸ N)⁆ = ((⁅y, x⁆ : G) : G ⧸ N) :=
+    (map_commutatorElement (QuotientGroup.mk' N) y x).symm
+  have hdvd : n ∣ n.choose 2 := by
+    rw [Nat.choose_two_right, Nat.mul_div_assoc _ (Nat.Odd.sub_odd hn odd_one).two_dvd]
+    exact dvd_mul_right _ _
+  obtain ⟨c, hc⟩ := hdvd
+  have hpow_mk : ((⁅y, x⁆ : G) : G ⧸ N) ^ n = 1 := by
+    rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
+    exact hpow
+  rw [Commute.mul_pow_eq_pow_mul_pow_mul_commutatorElement_pow_choose_two
+      (hmk_comm.symm ▸ (QuotientGroup.commute_mk_iff.mpr hx).symm)
+      (hmk_comm.symm ▸ (QuotientGroup.commute_mk_iff.mpr hy).symm) n,
+    hmk_comm, hc, pow_mul, hpow_mk, one_pow, mul_one]
 
 /-- If `p` has central kernel, then a homomorphism `φ` kills the commutators of arbitrary elements
 with the elements of the kernel of `p ∘ φ`. -/

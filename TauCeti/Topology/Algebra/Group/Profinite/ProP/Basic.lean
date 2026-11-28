@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.PGroup
 public import Mathlib.Topology.Algebra.Group.TopologicalAbelianization
 public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
+import Mathlib.GroupTheory.OrderOfElement
 import TauCeti.GroupTheory.PGroup
 import TauCeti.Topology.Algebra.Group.Profinite.Basic
 
@@ -38,6 +39,9 @@ separate topological fact is supplied by `QuotientGroup.instTotallyDisconnectedS
 * `isProP_multiplicative_zmod_pow`: the discrete cyclic group `ℤ/pⁿ` is pro-`p`.
 * `IsProP.exists_forall_pow_pow_eq_one`: each finite quotient of a pro-`p` group is killed by
   a power of `p`.
+* `IsProP.exists_pow_eq_one_of_isOfFinOrder`, `IsProP.forall_eq_one_of_isOfFinOrder_iff`:
+  in a profinite pro-`p` group, every nontrivial torsion element has a power of order `p`, so
+  torsion-freeness is equivalent to having no elements of order `p`.
 * `IsProP.subsingleton_of_coprime`, `IsProP.subsingleton_of_ne`: a profinite group that is pro-`p`
   and pro-`q` for coprime `p`, `q`, in particular for distinct primes, is trivial.
 * `IsProP.of_surjective`: a continuous surjective image of a pro-`p` group is pro-`p`.
@@ -137,6 +141,30 @@ theorem exists_forall_pow_pow_eq_one (hG : IsProP p G)
     (U : OpenNormalSubgroup G) [Finite (G ⧸ U.toSubgroup)] :
     ∃ n : ℕ, ∀ g : G ⧸ U.toSubgroup, g ^ p ^ n = 1 :=
   isPGroup_iff_exists_pow_pow_eq_one.mp (isProP_iff.mp hG U)
+
+/-- In a profinite pro-`p` group, every nontrivial element of finite order has a power of order
+`p`. -/
+theorem exists_pow_eq_one_of_isOfFinOrder [hp : Fact p.Prime] [IsTopologicalGroup G]
+    [CompactSpace G] [TotallyDisconnectedSpace G] (hG : IsProP p G) {g : G} (hg : g ≠ 1)
+    (hfin : IsOfFinOrder g) : ∃ m : ℕ, g ^ m ≠ 1 ∧ (g ^ m) ^ p = 1 := by
+  obtain ⟨U, hU⟩ : ∃ U : OpenNormalSubgroup G, g ∉ U.toSubgroup := by
+    by_contra! h
+    exact hg (Subgroup.eq_one_of_mem_iInf_openNormalSubgroup h)
+  let q := QuotientGroup.mk' U.toSubgroup
+  have hqg : q g ≠ 1 := fun h1 ↦ hU ((QuotientGroup.eq_one_iff g).mp h1)
+  have hp_dvd : p ∣ orderOf g := ((isProP_iff.mp hG U).dvd_orderOf hqg).trans (orderOf_map_dvd q g)
+  have hord := orderOf_eq_prime_iff.mp (orderOf_pow_orderOf_div hfin.orderOf_pos.ne' hp_dvd)
+  exact ⟨orderOf g / p, hord.2, hord.1⟩
+
+/-- **Torsion-freeness in a profinite pro-`p` group** is equivalent to having no elements of order
+`p`. -/
+theorem forall_eq_one_of_isOfFinOrder_iff [hp : Fact p.Prime] [IsTopologicalGroup G]
+    [CompactSpace G] [TotallyDisconnectedSpace G] (hG : IsProP p G) :
+    (∀ g : G, IsOfFinOrder g → g = 1) ↔ (∀ g : G, g ^ p = 1 → g = 1) :=
+  ⟨fun h g hgp ↦ h g (isOfFinOrder_iff_pow_eq_one.mpr ⟨p, hp.out.pos, hgp⟩), fun h g hfin ↦ by
+    by_contra hg
+    obtain ⟨m, hmne, hmp⟩ := hG.exists_pow_eq_one_of_isOfFinOrder hg hfin
+    exact hmne (h (g ^ m) hmp)⟩
 
 /-- A profinite group that is pro-`p` and pro-`q` for coprime `p` and `q` is trivial: its finite
 quotients are simultaneously `p`-groups and `q`-groups. -/

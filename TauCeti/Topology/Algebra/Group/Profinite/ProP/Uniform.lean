@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Nat.Log
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Heisenberg
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentral.Powerful
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.CohomFp
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Product
@@ -14,9 +13,6 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Rank
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Torsion
 import Mathlib.Algebra.Group.Subgroup.Map
-import Mathlib.Data.Nat.Choose.Dvd
-import Mathlib.GroupTheory.Commutator.Basic
-import Mathlib.GroupTheory.OrderOfElement
 import TauCeti.Data.Nat.Pow
 import TauCeti.GroupTheory.Index.Basic
 
@@ -36,8 +32,10 @@ first term `λ_1 = Φ(U)` of the lower `p`-series; hence `[U : Uᵖ] = p ^ d`
 (`TauCeti.IsUniform.index_closedPowerSubgroup`) and `d = log_p [U : Uᵖ]`. Torsion-freeness makes
 every `p`-power operator `π : gr_k(U) → gr_{k+1}(U)` bijective, so every successive index
 `[λ_k : λ_{k+1}]` of the lower `p`-series is `p ^ d` and `[U : U^{p^k}] = p ^ (d * k)`. Conversely
-a topologically finitely generated powerful pro-`p` group with constant successive indices is
-torsion-free (`TauCeti.IsProP.forall_eq_one_of_isOfFinOrder_iff`), so the predicate agrees with the
+a topologically finitely generated powerful pro-`p` group with constant successive indices has
+surjective `π` (`TauCeti.IsPowerful.gradedPow_surjective_of_isProP`) between finite graded pieces of
+equal size, hence injective `π`, so it is torsion-free
+(`TauCeti.IsProP.isMulTorsionFree_of_gradedPow_injective`); thus the predicate agrees with the
 definition of uniformity by constant indices
 (`TauCeti.IsProP.isUniform_iff_isPowerful_and_relIndex_eq`). Uniformity and dimension are
 preserved under topological isomorphisms, trivial groups, binary and finite indexed products, and
@@ -52,10 +50,9 @@ any two open uniform subgroups of a compact group share an open uniform subgroup
 For commutative groups the notion is classical: a commutative profinite group is uniform exactly
 when it is topologically isomorphic to `ℤ_p ^ d` for some `d`
 (`TauCeti.isUniform_iff_exists_continuousMulEquiv_pi_padicInt`), and then `d` is its dimension.
-By contrast `ℤ/p` is powerful but not uniform, having indices `p, 1, 1, …`. Over `ℤ_p`, the
-congruence levels `HeisenbergGroup.level p m` for `(if p = 2 then 2 else 1) ≤ m` give nonabelian
-uniform pro-`p` groups of dimension `3`, while `level 2 1` is non-powerful and each uniform level
-contains an open non-powerful subgroup showing non-inheritance.
+By contrast `ℤ/p` is powerful but not uniform, having indices `p, 1, 1, …`. Nonabelian uniform
+witnesses and open non-powerful counterexamples from the `p`-adic Heisenberg group are developed in
+`TauCeti.Topology.Algebra.Group.Profinite.ProP.Uniform.Heisenberg`.
 
 ## Main definitions
 
@@ -64,8 +61,6 @@ contains an open non-powerful subgroup showing non-inheritance.
 
 ## Main results
 
-* `TauCeti.IsProP.forall_eq_one_of_isOfFinOrder_iff`: in a profinite pro-`p` group,
-  torsion-freeness is equivalent to having no elements of order `p`.
 * `TauCeti.IsPowerful.index_closedPowerSubgroup`, `TauCeti.IsUniform.index_closedPowerSubgroup`:
   for a topologically finitely generated powerful pro-`p` group, `[G : Gᵖ] = p ^ d(G)`.
 * `TauCeti.IsUniform.topologicalGeneratorRankNat_eq_log_index`: the dimension is
@@ -113,12 +108,6 @@ contains an open non-powerful subgroup showing non-inheritance.
   `TauCeti.index_pLowerCentralSeries_one_multiplicative_zmod`,
   `TauCeti.relIndex_pLowerCentralSeries_multiplicative_zmod`: `ℤ/p` is powerful but not uniform,
   with indices `p, 1, 1, …`.
-* `TauCeti.HeisenbergGroup.isPowerful_level`, `TauCeti.HeisenbergGroup.isUniform_level`,
-  `TauCeti.HeisenbergGroup.index_closedPowerSubgroup_level`,
-  `TauCeti.HeisenbergGroup.topologicalGeneratorRankNat_level`,
-  `TauCeti.HeisenbergGroup.not_isUniform_level_two_one`,
-  `TauCeti.HeisenbergGroup.exists_openSubgroup_not_isPowerful_and_not_isUniform_level`:
-  nonabelian uniform witnesses of dimension `3` and open non-powerful counterexamples.
 
 ## References
 
@@ -130,41 +119,10 @@ contains an open non-powerful subgroup showing non-inheritance.
 public section
 
 open Multiplicative Subgroup
-open scoped commutatorElement
 
 namespace TauCeti
 
 universe u v
-
-/-! ### Torsion in profinite pro-`p` groups -/
-
-section Torsion
-
-variable {p : ℕ} [hp : Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G]
-  [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
-
-/-- In a profinite pro-`p` group, every nontrivial element of finite order has a power of order
-`p`. -/
-theorem IsProP.exists_pow_eq_one_of_isOfFinOrder (hG : IsProP p G) {g : G} (hg : g ≠ 1)
-    (hfin : IsOfFinOrder g) : ∃ m : ℕ, g ^ m ≠ 1 ∧ (g ^ m) ^ p = 1 := by
-  obtain ⟨U, hU⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one
-    (isOpen_compl_singleton (x := g)) hg.symm
-  let q := QuotientGroup.mk' U.toSubgroup
-  have hqg : q g ≠ 1 := fun h1 ↦ hU ((QuotientGroup.eq_one_iff g).mp h1) rfl
-  have hp_dvd : p ∣ orderOf g := ((isProP_iff.mp hG U).dvd_orderOf hqg).trans (orderOf_map_dvd q g)
-  have hord := orderOf_eq_prime_iff.mp (orderOf_pow_orderOf_div hfin.orderOf_pos.ne' hp_dvd)
-  exact ⟨orderOf g / p, hord.2, hord.1⟩
-
-/-- **Torsion-freeness in a profinite pro-`p` group** is equivalent to having no elements of order
-`p`. -/
-theorem IsProP.forall_eq_one_of_isOfFinOrder_iff (hG : IsProP p G) :
-    (∀ g : G, IsOfFinOrder g → g = 1) ↔ (∀ g : G, g ^ p = 1 → g = 1) :=
-  ⟨fun h g hgp ↦ h g (isOfFinOrder_iff_pow_eq_one.mpr ⟨p, hp.out.pos, hgp⟩), fun h g hfin ↦ by
-    by_contra hg
-    obtain ⟨m, hmne, hmp⟩ := hG.exists_pow_eq_one_of_isOfFinOrder hg hfin
-    exact hmne (h (g ^ m) hmp)⟩
-
-end Torsion
 
 /-! ### Uniform pro-`p` groups -/
 
@@ -658,219 +616,6 @@ theorem relIndex_pLowerCentralSeries_multiplicative_zmod (k : ℕ) :
     le_bot_iff.mp ((pLowerCentralSeries_antitone hm).trans h1.le)
   rw [Subgroup.relIndex, hbot (k + 2) (by omega), hbot (k + 1) (by omega),
     Subgroup.bot_subgroupOf, Subgroup.index_bot, Nat.card_unique]
-
-/-! ### Nonabelian uniform witness: congruence levels of the `p`-adic Heisenberg group -/
-
-namespace HeisenbergGroup
-
-/-- For every prime `p` and every `m ≥ 1` (with `m ≥ 2` at `p = 2`), the congruence level
-`HeisenbergGroup.level p m` is powerful. -/
-theorem isPowerful_level {m : ℕ} (hm : (if p = 2 then 2 else 1) ≤ m) :
-    IsPowerful p (level p m).toSubgroup := by
-  set r : ℕ := if p = 2 then 2 else 1
-  have hr : p ^ r = if p = 2 then 4 else p := by by_cases hp2 : p = 2 <;> simp [r, hp2]
-  rw [isPowerful_iff, commutator_def, Subgroup.commutator_le]
-  rintro a _ b _
-  obtain ⟨⟨xa, hxa⟩, ⟨ya, hya⟩, -⟩ := (mem_level_iff p m).mp a.property
-  obtain ⟨⟨xb, hxb⟩, ⟨yb, hyb⟩, -⟩ := (mem_level_iff p m).mp b.property
-  let c : (level p m).toSubgroup :=
-    ⟨⟨0, 0, (p : ℤ_[p]) ^ (2 * m - r) * (xa * yb - xb * ya)⟩, (mem_level_iff p m).mpr
-      ⟨dvd_zero _, dvd_zero _, (pow_dvd_pow (p : ℤ_[p]) (by omega)).trans (dvd_mul_right _ _)⟩⟩
-  have hcomm : ⁅a, b⁆ = c ^ (if p = 2 then 4 else p) := Subtype.ext <| by
-    rw [Subgroup.coe_commutatorElement, commutatorElement_eq, Subgroup.coe_pow, ← hr, pow_eq]
-    refine HeisenbergGroup.ext (by simp [c]) (by simp [c]) ?_
-    simp only [c, nsmul_eq_mul, Nat.cast_pow, mul_zero, add_zero, hxa, hya, hxb, hyb]
-    rw [← mul_assoc ((p : ℤ_[p]) ^ r), ← pow_add, show r + (2 * m - r) = m + m by omega, pow_add]
-    ring
-  exact hcomm ▸ pow_mem_closedPowerSubgroup c
-
-/-- **Nonabelian uniform pro-`p` group of dimension `3`**: for every prime `p` and
-`(if p = 2 then 2 else 1) ≤ m`, `HeisenbergGroup.level p m` is uniform. -/
-theorem isUniform_level {m : ℕ} (hm : (if p = 2 then 2 else 1) ≤ m) :
-    IsUniform p (level p m).toSubgroup where
-  isProP := (isProP_padicInt p).subgroup _
-  isTopologicallyFinitelyGenerated :=
-    (isTopologicallyFinitelyGenerated_padicInt p).of_openSubgroup (level p m).toOpenSubgroup
-  isMulTorsionFree := IsMulTorsionFree.of_not_isOfFinOrder fun _ hne ha ↦
-    hne <| Subtype.ext <| eq_one_of_isOfFinOrder_padicInt p <|
-      (level p m).toSubgroup.subtype.isOfFinOrder ha
-  isPowerful := isPowerful_level p hm
-
-/-- For `1 ≤ m`, the closed `p`-th power subgroup of `HeisenbergGroup.level p m` is precisely
-`HeisenbergGroup.level p (m + 1)`. -/
-theorem closedPowerSubgroup_level {m : ℕ} (hm : 1 ≤ m) :
-    closedPowerSubgroup p (level p m).toSubgroup =
-      (level p (m + 1)).toSubgroup.subgroupOf (level p m).toSubgroup := by
-  refine le_antisymm ((closedPowerSubgroup_le_iff
-    ((level p (m + 1)).isClosed.preimage continuous_subtypeVal)).mpr fun a ↦ ?_) fun a ha ↦ ?_
-  · rw [Subgroup.mem_subgroupOf, Subgroup.coe_pow, pow_eq]
-    obtain ⟨hx, hy, hz⟩ := (mem_level_iff p m).mp a.property
-    have hmul : ∀ {w : ℤ_[p]}, (p : ℤ_[p]) ^ m ∣ w → (p : ℤ_[p]) ^ (m + 1) ∣ (p : ℤ_[p]) * w :=
-      fun ⟨c, hc⟩ ↦ ⟨c, by rw [hc, pow_succ', mul_assoc]⟩
-    have hxy : (p : ℤ_[p]) ^ (m + 1) ∣ (p.choose 2 : ℤ_[p]) * (a.val.x * a.val.y) :=
-      ((pow_dvd_pow (p : ℤ_[p]) (by omega : m + 1 ≤ m + m)).trans
-        (pow_add (p : ℤ_[p]) m m ▸ mul_dvd_mul hx hy)).trans (dvd_mul_left _ _)
-    exact (mem_level_iff p (m + 1)).mpr ⟨by simpa [nsmul_eq_mul] using hmul hx,
-      by simpa [nsmul_eq_mul] using hmul hy,
-      by simpa [nsmul_eq_mul] using dvd_add (hmul hz) hxy⟩
-  · obtain ⟨⟨x, hx⟩, ⟨y, hy⟩, ⟨z, hz⟩⟩ :=
-      (mem_level_iff p (m + 1)).mp (Subgroup.mem_subgroupOf.mp ha)
-    let u : (level p m).toSubgroup := ⟨⟨(p : ℤ_[p]) ^ m * x, 0, 0⟩,
-      (mem_level_iff p m).mpr ⟨dvd_mul_right _ _, dvd_zero _, dvd_zero _⟩⟩
-    let v : (level p m).toSubgroup := ⟨⟨0, (p : ℤ_[p]) ^ m * y, 0⟩,
-      (mem_level_iff p m).mpr ⟨dvd_zero _, dvd_mul_right _ _, dvd_zero _⟩⟩
-    let w : (level p m).toSubgroup :=
-      ⟨⟨0, 0, (p : ℤ_[p]) ^ m * (z - (p : ℤ_[p]) ^ (m + 1) * (x * y))⟩,
-        (mem_level_iff p m).mpr ⟨dvd_zero _, dvd_zero _, dvd_mul_right _ _⟩⟩
-    have hprod : w ^ p * u ^ p * v ^ p = a := Subtype.ext <| by
-      simp only [Subgroup.coe_mul, Subgroup.coe_pow, pow_eq, u, v, w]
-      refine HeisenbergGroup.ext ?_ ?_ ?_
-      · simp only [mul_x, mul_zero, zero_add, add_zero, nsmul_eq_mul, hx, pow_succ', mul_assoc]
-      · simp only [mul_y, mul_zero, zero_add, nsmul_eq_mul, hy, pow_succ', mul_assoc]
-      · simp only [mul_z, mul_zero, zero_add, add_zero, nsmul_eq_mul, hz, pow_succ', mul_assoc]
-        ring
-    exact hprod ▸ mul_mem (mul_mem (pow_mem_closedPowerSubgroup w)
-      (pow_mem_closedPowerSubgroup u)) (pow_mem_closedPowerSubgroup v)
-
-/-- For every `1 ≤ m`, `closedPowerSubgroup p (HeisenbergGroup.level p m)` has index `p ^ 3`. -/
-@[simp]
-theorem index_closedPowerSubgroup_level {m : ℕ} (hm : 1 ≤ m) :
-    (closedPowerSubgroup p (level p m).toSubgroup).index = p ^ 3 := by
-  have hmul := Subgroup.relIndex_mul_index (level_antitone p (Nat.le_succ m))
-  rw [index_level, index_level] at hmul
-  rw [closedPowerSubgroup_level p hm]
-  apply Nat.eq_of_mul_eq_mul_right (pow_pos hp.out.pos (3 * m))
-  rw [← Subgroup.relIndex, hmul, ← pow_add]
-  congr 1
-  omega
-
-/-- For every `(if p = 2 then 2 else 1) ≤ m`, `HeisenbergGroup.level p m` has topological
-generator rank `3`. -/
-@[simp]
-theorem topologicalGeneratorRankNat_level {m : ℕ} (hm : (if p = 2 then 2 else 1) ≤ m) :
-    topologicalGeneratorRankNat (level p m).toSubgroup
-        (isUniform_level p hm).isTopologicallyFinitelyGenerated = 3 := by
-  have hm1 : 1 ≤ m := by split_ifs at hm <;> omega
-  rw [(isUniform_level p hm).topologicalGeneratorRankNat_eq_log_index,
-    index_closedPowerSubgroup_level p hm1, Nat.log_pow hp.out.one_lt]
-
-/-- At `p = 2`, `HeisenbergGroup.level 2 1` is not powerful: every fourth power lies in `level 2 3`,
-whereas `⁅(2, 0, 0), (0, 2, 0)⁆ = (0, 0, 4) ∉ level 2 3`. -/
-theorem not_isPowerful_level_two_one : ¬ IsPowerful 2 (level 2 1).toSubgroup := fun hpow ↦ by
-  have hchoose : Nat.choose 4 2 = 6 := by decide
-  have hle : closedPowerSubgroup 4 (level 2 1).toSubgroup ≤
-      (level 2 3).toSubgroup.subgroupOf (level 2 1).toSubgroup :=
-    (closedPowerSubgroup_le_iff ((level 2 3).isClosed.preimage continuous_subtypeVal)).mpr
-      fun a ↦ by
-        rw [Subgroup.mem_subgroupOf, Subgroup.coe_pow, pow_eq]
-        obtain ⟨⟨x, hx⟩, ⟨y, hy⟩, ⟨z, hz⟩⟩ := (mem_level_iff 2 1).mp a.property
-        refine (mem_level_iff 2 3).mpr ⟨⟨x, ?_⟩, ⟨y, ?_⟩, ⟨z + 3 * (x * y), ?_⟩⟩
-        · simp only [nsmul_eq_mul, Nat.cast_ofNat, pow_one, hx]
-          ring
-        · simp only [nsmul_eq_mul, Nat.cast_ofNat, pow_one, hy]
-          ring
-        · simp only [nsmul_eq_mul, Nat.cast_ofNat, hchoose, pow_one, hx, hy, hz]
-          ring
-  let a : (level 2 1).toSubgroup :=
-    ⟨⟨2, 0, 0⟩, (mem_level_iff 2 1).mpr ⟨by simp, dvd_zero _, dvd_zero _⟩⟩
-  let b : (level 2 1).toSubgroup :=
-    ⟨⟨0, 2, 0⟩, (mem_level_iff 2 1).mpr ⟨dvd_zero _, by simp, dvd_zero _⟩⟩
-  have hz := ((mem_level_iff 2 3).mp (Subgroup.mem_subgroupOf.mp <|
-    hle ((isPowerful_two_iff.mp hpow) (_root_.commutator_def (level 2 1).toSubgroup ▸
-      commutator_mem_commutator (mem_top a) (mem_top b))))).2.2
-  rw [Subgroup.coe_commutatorElement, commutatorElement_eq] at hz
-  have hdvd : (2 : ℤ_[2]) ^ 3 ∣ (2 : ℤ_[2]) ^ 2 := by simpa [a, b, sq] using hz
-  exact absurd ((pow_dvd_pow_iff PadicInt.prime_p.ne_zero PadicInt.prime_p.not_isUnit).mp hdvd)
-    (by omega)
-
-/-- At `p = 2`, `HeisenbergGroup.level 2 1` is not uniform. -/
-theorem not_isUniform_level_two_one : ¬ IsUniform 2 (level 2 1).toSubgroup :=
-  fun hU ↦ not_isPowerful_level_two_one hU.isPowerful
-
-private def deepCenterSubgroup (r : ℕ) : Subgroup (level p r).toSubgroup where
-  carrier := {a | (p : ℤ_[p]) ^ (2 * r) ∣ a.val.z}
-  one_mem' := dvd_zero _
-  mul_mem' := fun {a b} ha hb ↦ dvd_add (dvd_add ha hb) <| two_mul r ▸ pow_add (p : ℤ_[p]) r r ▸
-    mul_dvd_mul ((mem_level_iff p r).mp a.property).1 ((mem_level_iff p r).mp b.property).2.1
-  inv_mem' := fun {a} ha ↦ dvd_add (dvd_neg.mpr ha) <| two_mul r ▸ pow_add (p : ℤ_[p]) r r ▸
-    mul_dvd_mul ((mem_level_iff p r).mp a.property).1 ((mem_level_iff p r).mp a.property).2.1
-
-private def deepCenterPowerBound (r : ℕ) (hr1 : 1 ≤ r) : Subgroup (HeisenbergGroup ℤ_[p]) where
-  carrier := {a | (p : ℤ_[p]) ^ (2 * r) ∣ a.x ∧ (p : ℤ_[p]) ^ (2 * r) ∣ a.y ∧
-    (p : ℤ_[p]) ^ (2 * r + 1) ∣ a.z}
-  one_mem' := ⟨dvd_zero _, dvd_zero _, dvd_zero _⟩
-  mul_mem' := fun {a b} ha hb ↦ ⟨dvd_add ha.1 hb.1, dvd_add ha.2.1 hb.2.1,
-    dvd_add (dvd_add ha.2.2 hb.2.2) ((pow_dvd_pow (p : ℤ_[p]) (by omega : 2 * r + 1 ≤
-      2 * r + 2 * r)).trans (pow_add (p : ℤ_[p]) (2 * r) (2 * r) ▸ mul_dvd_mul ha.1 hb.2.1))⟩
-  inv_mem' := fun {a} ha ↦ ⟨dvd_neg.mpr ha.1, dvd_neg.mpr ha.2.1,
-    dvd_add (dvd_neg.mpr ha.2.2) ((pow_dvd_pow (p : ℤ_[p]) (by omega : 2 * r + 1 ≤
-      2 * r + 2 * r)).trans (pow_add (p : ℤ_[p]) (2 * r) (2 * r) ▸ mul_dvd_mul ha.1 ha.2.1))⟩
-
-private theorem closedPowerSubgroup_deepCenterSubgroup_le :
-    let r : ℕ := if p = 2 then 2 else 1
-    let hr1 : 1 ≤ r := by dsimp [r]; split_ifs <;> omega
-    closedPowerSubgroup (if p = 2 then 4 else p) (deepCenterSubgroup p r) ≤
-      ((deepCenterPowerBound p r hr1).subgroupOf (level p r).toSubgroup).subgroupOf
-        (deepCenterSubgroup p r) := by
-  intro r hr1
-  set e : ℕ := if p = 2 then 4 else p
-  have hr : p ^ r = e := by by_cases hp2 : p = 2 <;> simp [r, e, hp2]
-  have hdvd_choose : p ∣ e.choose 2 := by
-    by_cases hp2 : p = 2
-    · subst hp2; decide
-    · simpa [e, hp2] using
-        hp.out.dvd_choose_self two_ne_zero (lt_of_le_of_ne hp.out.two_le (Ne.symm hp2))
-  have hM_closed : IsClosed (deepCenterPowerBound p r hr1 : Set (HeisenbergGroup ℤ_[p])) :=
-    Subgroup.isClosed_of_isOpen _ <| Subgroup.isOpen_mono (H₁ := (level p (2 * r + 1)).toSubgroup)
-      (fun a ha ↦ let ⟨hx, hy, hz⟩ := (mem_level_iff p (2 * r + 1)).mp ha
-        ⟨(pow_dvd_pow _ (Nat.le_succ _)).trans hx, (pow_dvd_pow _ (Nat.le_succ _)).trans hy, hz⟩)
-      (level p (2 * r + 1)).isOpen
-  refine (closedPowerSubgroup_le_iff
-    ((hM_closed.preimage continuous_subtypeVal).preimage continuous_subtypeVal)).mpr fun a ↦ ?_
-  rw [Subgroup.mem_subgroupOf, Subgroup.mem_subgroupOf, Subgroup.coe_pow, Subgroup.coe_pow,
-    pow_eq]
-  obtain ⟨hax, hay, -⟩ := (mem_level_iff p r).mp a.val.property
-  have he_eq : (e : ℤ_[p]) = (p : ℤ_[p]) ^ r := by rw [← hr, Nat.cast_pow]
-  have hxy : (p : ℤ_[p]) ^ (2 * r) ∣ a.val.val.x * a.val.val.y :=
-    two_mul r ▸ pow_add (p : ℤ_[p]) r r ▸ mul_dvd_mul hax hay
-  obtain ⟨c, hc⟩ := hdvd_choose
-  refine ⟨by simpa only [nsmul_eq_mul, he_eq, two_mul, pow_add] using mul_dvd_mul_left _ hax,
-    by simpa only [nsmul_eq_mul, he_eq, two_mul, pow_add] using mul_dvd_mul_left _ hay,
-    dvd_add ?_ ?_⟩
-  · rw [nsmul_eq_mul, he_eq]
-    exact (pow_dvd_pow (p : ℤ_[p]) (by omega : 2 * r + 1 ≤ r + 2 * r)).trans
-      (pow_add (p : ℤ_[p]) r (2 * r) ▸ mul_dvd_mul_left _ a.property)
-  · rw [nsmul_eq_mul, hc, Nat.cast_mul, mul_assoc, pow_succ']
-    exact mul_dvd_mul_left _ (dvd_mul_of_dvd_right hxy _)
-
-/-- **Uniformity does not pass to arbitrary open subgroups**: for every prime `p`, the uniform
-pro-`p` group `HeisenbergGroup.level p (if p = 2 then 2 else 1)` contains an open subgroup that is
-neither powerful nor uniform. -/
-theorem exists_openSubgroup_not_isPowerful_and_not_isUniform_level :
-    ∃ U : OpenSubgroup (level p (if p = 2 then 2 else 1)).toSubgroup,
-      ¬ IsPowerful p U.toSubgroup ∧ ¬ IsUniform p U.toSubgroup := by
-  set r : ℕ := if p = 2 then 2 else 1
-  let U : OpenSubgroup (level p r).toSubgroup := ⟨deepCenterSubgroup p r, Subgroup.isOpen_mono
-    (H₁ := (level p (2 * r)).toSubgroup.subgroupOf (level p r).toSubgroup)
-    (fun _ ha ↦ ((mem_level_iff p (2 * r)).mp (Subgroup.mem_subgroupOf.mp ha)).2.2)
-    ((level p (2 * r)).isOpen.preimage continuous_subtypeVal)⟩
-  have hnotpow : ¬ IsPowerful p U.toSubgroup := fun hpow ↦ by
-    let a : U.toSubgroup := ⟨⟨⟨(p : ℤ_[p]) ^ r, 0, 0⟩,
-      (mem_level_iff p r).mpr ⟨dvd_rfl, dvd_zero _, dvd_zero _⟩⟩, dvd_zero _⟩
-    let b : U.toSubgroup := ⟨⟨⟨0, (p : ℤ_[p]) ^ r, 0⟩,
-      (mem_level_iff p r).mpr ⟨dvd_zero _, dvd_rfl, dvd_zero _⟩⟩, dvd_zero _⟩
-    have hz := (Subgroup.mem_subgroupOf.mp (Subgroup.mem_subgroupOf.mp <|
-      closedPowerSubgroup_deepCenterSubgroup_le p
-        ((isPowerful_iff.mp hpow) (_root_.commutator_def U.toSubgroup ▸
-          commutator_mem_commutator (mem_top a) (mem_top b))))).2.2
-    rw [Subgroup.coe_commutatorElement, Subgroup.coe_commutatorElement, commutatorElement_eq] at hz
-    have hdvd : (p : ℤ_[p]) ^ (2 * r + 1) ∣ (p : ℤ_[p]) ^ (2 * r) := by
-      simpa only [a, b, mul_zero, sub_zero, ← pow_add, ← two_mul] using hz
-    exact absurd ((pow_dvd_pow_iff PadicInt.prime_p.ne_zero PadicInt.prime_p.not_isUnit).mp hdvd)
-      (by omega)
-  exact ⟨U, hnotpow, fun hU ↦ hnotpow hU.isPowerful⟩
-
-end HeisenbergGroup
 
 end Examples
 

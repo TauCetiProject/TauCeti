@@ -447,15 +447,16 @@ theorem IsPowerful.mk_mul_pow_of_isProP (hp : p.Prime) (hG : IsPowerful p G) (hP
     (((y * w) ^ p : G) : G ⧸ pLowerCentralSeries p G (j + 1 + 1)) =
       ((y ^ p * w ^ p : G) : G ⧸ _) := by
   have hwy := commutator_mem_pLowerCentralSeries hw (mem_pLowerCentralSeries_zero p y)
-  simpa only [QuotientGroup.mk_pow, QuotientGroup.mk_mul] using
-    QuotientGroup.mk_mul_pow_eq_of_prime hp
-      (fun hp2 ↦ by
-        subst hp2
-        exact hG.commutator_pLowerCentralSeries_top_le_add_two hP j
-          (commutator_mem_commutator hw (mem_top y)))
-      (fun _ ↦ commutator_mem_pLowerCentralSeries_succ hwy y)
-      (fun _ ↦ commutator_mem_pLowerCentralSeries_succ hwy w)
-      (fun _ ↦ pow_mem_pLowerCentralSeries hwy)
+  rcases hp.eq_two_or_odd' with rfl | hp_odd
+  · rw [QuotientGroup.mk_mul]
+    exact (QuotientGroup.commute_mk_iff.mpr
+      (hG.commutator_pLowerCentralSeries_top_le_add_two hP j
+        (commutator_mem_commutator hw (mem_top y)))).symm.mul_pow 2
+  · simpa only [QuotientGroup.mk_pow, QuotientGroup.mk_mul] using
+      QuotientGroup.mk_mul_pow_eq_of_odd hp_odd
+        (commutator_mem_pLowerCentralSeries_succ hwy y)
+        (commutator_mem_pLowerCentralSeries_succ hwy w)
+        (pow_mem_pLowerCentralSeries hwy)
 
 /-- **Lifting a `p`-th power that lies too deep to an element of order dividing `p`**
 (Dixon–du Sautoy–Mann–Segal, Lemma 4.2): in a profinite powerful pro-`p` group, for a prime `p`,
@@ -518,14 +519,9 @@ theorem IsPowerful.forall_eq_one_of_pow_eq_one_iff_injective_gradedPow (hp : p.P
     obtain rfl : z = 1 := htors z hzp
     rw [gradedMk_eq_zero_iff]
     simpa using hz
-  · refine mem_bot.mp ((hP.iInf_pLowerCentralSeries_eq_bot hp) ▸ mem_iInf.mpr fun k ↦ ?_)
-    induction k with
-    | zero => exact mem_pLowerCentralSeries_zero p g
-    | succ k ih =>
-      have hzero : gradedPow p G k (gradedMk p G k ⟨g, ih⟩) = gradedPow p G k 0 := by
-        rw [gradedPow_gradedMk, gradedPow_zero, gradedMk_eq_zero_iff]
-        simp [hgp]
-      exact gradedMk_eq_zero_iff.mp (hinj k hzero)
+  · have := hP.isMulTorsionFree_of_gradedPow_injective hp hinj
+    exact IsMulTorsionFree.eq_of_pow_eq_pow_of_commute hp.ne_zero (Commute.one_right g)
+      (hgp.trans (one_pow p).symm)
 
 /-- **In a torsion-free powerful group the `p`-power operator is injective**: `π` maps `gr_k(G)`
 injectively to `gr_{k+1}(G)` for a torsion-free, powerful profinite pro-`p` group and a prime `p`.

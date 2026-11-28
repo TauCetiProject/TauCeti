@@ -9,7 +9,6 @@ public import Mathlib.GroupTheory.SpecificGroups.Dihedral
 public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.Topology.Algebra.Group.Heisenberg.Basic
 public import TauCeti.Topology.Algebra.Group.Powerful
-import Mathlib.Data.Nat.Choose.Dvd
 import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
 
 /-!
@@ -72,14 +71,10 @@ theorem not_isPowerful_heisenbergGroup_zmod (p : ℕ) [hp : Fact p.Prime] :
     ¬ IsPowerful p (HeisenbergGroup (ZMod p)) := fun hpow ↦ by
   set e : ℕ := if p = 2 then 4 else p
   have hpe : p ∣ e := by
-    by_cases hp2 : p = 2
-    · subst hp2; decide
-    · simp [e, hp2]
-  have hpe2 : p ∣ e.choose 2 := by
-    by_cases hp2 : p = 2
-    · subst hp2; decide
-    · simpa [e, hp2] using
-        hp.out.dvd_choose_self two_ne_zero (lt_of_le_of_ne hp.out.two_le (Ne.symm hp2))
+    change p ∣ if p = 2 then 4 else p
+    rw [← pow_ite_eq_ite_four p]
+    exact dvd_pow_self p (by split_ifs <;> omega)
+  have hpe2 : p ∣ e.choose 2 := dvd_choose_two_ite_four hp.out
   have hzero : ∀ (m : ℕ) (r : ZMod p), p ∣ m → m • r = 0 := fun m r ⟨c, hc⟩ ↦ by
     rw [hc, nsmul_eq_mul, Nat.cast_mul, ZMod.natCast_self, zero_mul, zero_mul]
   have hbot : closedPowerSubgroup e (HeisenbergGroup (ZMod p)) = ⊥ :=

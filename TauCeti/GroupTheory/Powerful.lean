@@ -22,7 +22,6 @@ every element of `λ_k(G)` is a `p ^ k`-th power.
 ## Main results
 
 * `Subgroup.powClosure`, `Subgroup.IsPowerfullyEmbedded`: power subgroups and powerful embedding.
-* `IsPGroup.eq_bot_of_le_commutator_top`: nilpotency descent (`K ≤ ⁅K, ⊤⁆ → K = ⊥`).
 * `Subgroup.IsPowerfullyEmbedded.powClosure`: DDMS Theorem 2.7 (`N` powerfully embedded implies
   `N.powClosure p` powerfully embedded).
 * `Subgroup.IsPowerfullyEmbedded.pLowerCentralSeries`,
@@ -114,20 +113,27 @@ theorem powClosure_top (n : ℕ) :
     (⊤ : Subgroup G).powClosure n = closure (Set.range fun g : G ↦ g ^ n) := by
   rw [powClosure_def, coe_top, Set.image_univ]
 
-/-! ### Nilpotency descent in finite `p`-groups -/
+/-- The `1`-st power subgroup of `N` is `N` itself. -/
+@[simp]
+theorem powClosure_one (N : Subgroup G) : N.powClosure 1 = N :=
+  le_antisymm (N.powClosure_le 1) fun x hx ↦ pow_one x ▸ pow_mem_powClosure hx 1
 
-/-- **Nilpotency descent in a finite `p`-group**: a subgroup contained in its commutator with the
-whole group is trivial. -/
-theorem _root_.IsPGroup.eq_bot_of_le_commutator_top {p : ℕ} [Fact p.Prime] [Finite G]
-    (hG : IsPGroup p G) {K : Subgroup G} (hK : K ≤ ⁅K, (⊤ : Subgroup G)⁆) : K = ⊥ := by
-  have hle : ∀ n, K ≤ (⊤ : Subgroup G).lowerCentralSeries n := fun n ↦ by
-    induction n with
-    | zero => exact le_top
-    | succ n ih =>
-      exact lowerCentralSeries_succ (⊤ : Subgroup G) n ▸ hK.trans (commutator_mono ih le_rfl)
-  obtain ⟨n, hn⟩ := (hG.to_subgroup ⊤).exists_pLowerCentralSeries_eq_bot
-  exact le_bot_iff.mp
-    ((hle n).trans ((lowerCentralSeries_le_pLowerCentralSeries p ⊤ n).trans hn.le))
+/-- The `0`-th power subgroup of `N` is trivial. -/
+@[simp]
+theorem powClosure_zero (N : Subgroup G) : N.powClosure 0 = ⊥ :=
+  le_bot_iff.mp (powClosure_le_iff.mpr fun _ _ ↦ by simp)
+
+/-- The power subgroup of the trivial subgroup is trivial. -/
+@[simp]
+theorem powClosure_bot (n : ℕ) : (⊥ : Subgroup G).powClosure n = ⊥ :=
+  le_bot_iff.mp (powClosure_le ⊥ n)
+
+/-- The successor term of `Subgroup.pLowerCentralSeries`, written in terms of
+`Subgroup.powClosure`. -/
+theorem pLowerCentralSeries_succ_eq_powClosure_sup (p : ℕ) (S : Subgroup G) (n : ℕ) :
+    S.pLowerCentralSeries p (n + 1) =
+      (S.pLowerCentralSeries p n).powClosure p ⊔ ⁅S.pLowerCentralSeries p n, S⁆ := by
+  rw [pLowerCentralSeries_succ, powClosure_def]
 
 /-! ### Powerfully embedded subgroups -/
 
@@ -185,29 +191,30 @@ private theorem commutator_powClosure_eq_bot_of_odd (hp : Odd p) (hN : N.IsPower
   have := hN.1
   have hpow1 : ∀ u ∈ N.powClosure p, u ^ p = 1 := fun u hu ↦
     mem_bot.mp (hexp ▸ pow_mem_powClosure hu p)
-  obtain ⟨k, rfl⟩ := hp
-  have hp_dvd : 2 * k + 1 ∣ (2 * k + 1).choose 2 := ⟨k, by
-    rw [Nat.choose_two_right, Nat.add_sub_cancel, mul_comm (2 * k + 1), mul_assoc,
-      Nat.mul_div_cancel_left _ two_pos, mul_comm]⟩
-  have hle : N.powClosure (2 * k + 1) ≤ center G := powClosure_le_iff.mpr fun x hx ↦
+  have hle : N.powClosure p ≤ center G := powClosure_le_iff.mpr fun x hx ↦
     mem_center_iff.mpr fun g ↦ mul_inv_eq_iff_eq_mul.mp <| by
       set z : G := ⁅g, x⁆
-      have hz : z ∈ N.powClosure (2 * k + 1) := hN.commutator_top_le_powClosure
+      have hz : z ∈ N.powClosure p := hN.commutator_top_le_powClosure
         (commutator_comm ⊤ N ▸ commutator_mem_commutator (mem_top g) hx)
       have hxz_cent : ⁅x, z⁆ ∈ center G := hcent
-        (commutator_comm ⊤ (N.powClosure _) ▸ commutator_mem_commutator (mem_top x) hz)
-      have hxz_mem : ⁅x, z⁆ ∈ N.powClosure (2 * k + 1) :=
-        commutatorElement_def x z ▸ mul_mem ((powClosure_normal N _).conj_mem z hz x) (inv_mem hz)
-      obtain ⟨c, hc⟩ := hp_dvd
-      calc g * x ^ (2 * k + 1) * g⁻¹ = (z * x) ^ (2 * k + 1) := by
+        (commutator_comm ⊤ (N.powClosure p) ▸ commutator_mem_commutator (mem_top x) hz)
+      have hxz_mem : ⁅x, z⁆ ∈ N.powClosure p :=
+        commutatorElement_def x z ▸ mul_mem ((powClosure_normal N p).conj_mem z hz x) (inv_mem hz)
+      have hzx : (z * x) ^ p = z ^ p * x ^ p := by
+        have hmk := QuotientGroup.mk_mul_pow_eq_of_odd (N := (⊥ : Subgroup G)) hp
+          (mem_bot.mpr (commutatorElement_eq_one_iff_commute.mpr
+            (mem_center_iff.mp hxz_cent z).symm))
+          (mem_bot.mpr (commutatorElement_eq_one_iff_commute.mpr
+            (mem_center_iff.mp hxz_cent x).symm))
+          (mem_bot.mpr (hpow1 _ hxz_mem))
+        rw [← QuotientGroup.mk_pow, ← QuotientGroup.mk_pow, ← QuotientGroup.mk_pow,
+          ← QuotientGroup.mk_mul, QuotientGroup.eq] at hmk
+        exact inv_mul_eq_one.mp (mem_bot.mp hmk)
+      calc g * x ^ p * g⁻¹ = (z * x) ^ p := by
             rw [← conj_pow]; simp [z, commutatorElement_def, mul_assoc]
-        _ = z ^ (2 * k + 1) * x ^ (2 * k + 1) * ⁅x, z⁆ ^ (2 * k + 1).choose 2 :=
-            Commute.mul_pow_eq_pow_mul_pow_mul_commutatorElement_pow_choose_two
-              (mem_center_iff.mp hxz_cent z) (mem_center_iff.mp hxz_cent x) _
-        _ = x ^ (2 * k + 1) := by
-            rw [hpow1 z hz, one_mul, hc, pow_mul, hpow1 _ hxz_mem, one_pow, mul_one]
-  exact le_bot_iff.mp (commutator_le.mpr fun a ha g _ ↦
-    mem_bot.mpr (commutatorElement_eq_one_iff_commute.mpr (mem_center_iff.mp (hle ha) g).symm))
+        _ = z ^ p * x ^ p := hzx
+        _ = x ^ p := by rw [hpow1 z hz, one_mul]
+  exact commutator_eq_bot_iff_le_centralizer.mpr (hle.trans (center_le_centralizer _))
 
 /-- If `A` has exponent dividing `4` and `⁅A, ⊤⁆ ≤ center G`, every element of `A.powClosure 2`
 has square `1`. -/
@@ -260,8 +267,7 @@ private theorem commutator_powClosure_eq_bot_of_two (hN : N.IsPowerfullyEmbedded
             rw [← conj_pow]; simp [z, commutatorElement_def, mul_assoc]
         _ = z ^ 2 * x ^ 2 := Commute.mul_pow (mem_center_iff.mp (hA2_cent hz) x).symm 2
         _ = x ^ 2 := by rw [hA2_sq z hz, one_mul]
-  exact le_bot_iff.mp (commutator_le.mpr fun a ha g _ ↦
-    mem_bot.mpr (commutatorElement_eq_one_iff_commute.mpr (mem_center_iff.mp (hle ha) g).symm))
+  exact commutator_eq_bot_iff_le_centralizer.mpr (hle.trans (center_le_centralizer _))
 
 /-- Nilpotency reduction for `Subgroup.IsPowerfullyEmbedded.powClosure`. -/
 private theorem commutator_powClosure_eq_bot [hp : Fact p.Prime] [Finite G] (hG : IsPGroup p G)
@@ -326,7 +332,7 @@ theorem pLowerCentralSeries (hG : IsPGroup p G) (hpow : (⊤ : Subgroup G).IsPow
   induction k with
   | zero => rwa [Subgroup.pLowerCentralSeries_zero]
   | succ k ih =>
-    rw [Subgroup.pLowerCentralSeries_succ, ← powClosure_def,
+    rw [Subgroup.pLowerCentralSeries_succ_eq_powClosure_sup,
       sup_eq_left.mpr ih.commutator_top_le_powClosure]
     exact ih.powClosure hG
 
@@ -336,7 +342,7 @@ theorem pLowerCentralSeries_succ_eq_powClosure (hG : IsPGroup p G)
     (hpow : (⊤ : Subgroup G).IsPowerfullyEmbedded p) (k : ℕ) :
     (⊤ : Subgroup G).pLowerCentralSeries p (k + 1) =
       ((⊤ : Subgroup G).pLowerCentralSeries p k).powClosure p := by
-  rw [Subgroup.pLowerCentralSeries_succ, ← powClosure_def, sup_eq_left]
+  rw [Subgroup.pLowerCentralSeries_succ_eq_powClosure_sup, sup_eq_left]
   exact (hpow.pLowerCentralSeries hG k).commutator_top_le_powClosure
 
 /-- In a finite powerful `2`-group, `⁅λ_k, ⊤⁆ ≤ λ_{k+2}` for every `k`. -/
@@ -358,14 +364,15 @@ theorem mk_mul_pow_pLowerCentralSeries_add_two (hG : IsPGroup p G)
       (x : G ⧸ (⊤ : Subgroup G).pLowerCentralSeries p (m + 2)) ^ p *
         (y : G ⧸ (⊤ : Subgroup G).pLowerCentralSeries p (m + 2)) ^ p := by
   have hyx := Subgroup.commutator_mem_pLowerCentralSeries_succ p ⊤ hy (mem_top x)
-  exact QuotientGroup.mk_mul_pow_eq_of_prime hp.out
-    (fun hp2 ↦ by
-      subst hp2
-      exact hpow.commutator_pLowerCentralSeries_top_le_add_two hG m
-        (commutator_mem_commutator hy (mem_top x)))
-    (fun _ ↦ Subgroup.commutator_mem_pLowerCentralSeries_succ p ⊤ hyx (mem_top x))
-    (fun _ ↦ Subgroup.commutator_mem_pLowerCentralSeries_succ p ⊤ hyx (mem_top y))
-    (fun _ ↦ Subgroup.pow_mem_pLowerCentralSeries_succ p ⊤ hyx)
+  rcases hp.out.eq_two_or_odd' with rfl | hp_odd
+  · rw [QuotientGroup.mk_mul]
+    exact (QuotientGroup.commute_mk_iff.mpr
+      (hpow.commutator_pLowerCentralSeries_top_le_add_two hG m
+        (commutator_mem_commutator hy (mem_top x)))).symm.mul_pow 2
+  · exact QuotientGroup.mk_mul_pow_eq_of_odd hp_odd
+      (Subgroup.commutator_mem_pLowerCentralSeries_succ p ⊤ hyx (mem_top x))
+      (Subgroup.commutator_mem_pLowerCentralSeries_succ p ⊤ hyx (mem_top y))
+      (Subgroup.pow_mem_pLowerCentralSeries_succ p ⊤ hyx)
 
 /-- Every element of `λ_{m+1}` is congruent modulo `λ_{m+2}` to the `p`-th power of an element
 of `λ_m`. -/
