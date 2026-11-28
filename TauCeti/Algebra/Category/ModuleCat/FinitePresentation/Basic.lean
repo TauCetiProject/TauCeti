@@ -192,4 +192,41 @@ noncomputable def finitePresentationModulesRegularLinearEquiv :
     (finitePresentationModulesRegular R).obj ≃ₗ[R] R :=
   (eqToIso (finitePresentationModulesRegular_obj R)).toLinearEquiv
 
+/-- The forward map of `TauCeti.finitePresentationModulesRegularLinearEquiv R` as a morphism in
+`ModuleCat R` is `eqToHom` along `TauCeti.finitePresentationModulesRegular_obj R`. -/
+@[simp]
+theorem ofHom_finitePresentationModulesRegularLinearEquiv :
+    ModuleCat.ofHom (finitePresentationModulesRegularLinearEquiv R).toLinearMap =
+      eqToHom (finitePresentationModulesRegular_obj R) := by
+  unfold finitePresentationModulesRegularLinearEquiv
+  rfl
+
+/-- The inverse map of `TauCeti.finitePresentationModulesRegularLinearEquiv R` as a morphism in
+`ModuleCat R` is `eqToHom` along `(TauCeti.finitePresentationModulesRegular_obj R).symm`. -/
+@[simp]
+theorem ofHom_finitePresentationModulesRegularLinearEquiv_symm :
+    ModuleCat.ofHom (finitePresentationModulesRegularLinearEquiv R).symm.toLinearMap =
+      eqToHom (finitePresentationModulesRegular_obj R).symm := by
+  unfold finitePresentationModulesRegularLinearEquiv
+  rfl
+
+/-- Applying `TauCeti.finitePresentationModulesRegularLinearEquiv R` agrees with transport along
+`TauCeti.finitePresentationModulesRegular_obj R`. -/
+@[simp]
+theorem finitePresentationModulesRegularLinearEquiv_apply
+    (x : (finitePresentationModulesRegular R).obj) :
+    finitePresentationModulesRegularLinearEquiv R x =
+      eqToHom (finitePresentationModulesRegular_obj R) x := by
+  unfold finitePresentationModulesRegularLinearEquiv
+  rfl
+
+/-- Applying the inverse of `TauCeti.finitePresentationModulesRegularLinearEquiv R` agrees with
+transport along `(TauCeti.finitePresentationModulesRegular_obj R).symm`. -/
+@[simp]
+theorem finitePresentationModulesRegularLinearEquiv_symm_apply (r : R) :
+    (finitePresentationModulesRegularLinearEquiv R).symm r =
+      eqToHom (finitePresentationModulesRegular_obj R).symm r := by
+  unfold finitePresentationModulesRegularLinearEquiv
+  rfl
+
 end TauCeti

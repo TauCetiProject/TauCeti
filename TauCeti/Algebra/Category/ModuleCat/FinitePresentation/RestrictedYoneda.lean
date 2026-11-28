@@ -58,6 +58,23 @@ noncomputable def finitePresentationEquivalenceModCompιIso :
       (finitePresentationModules R).ι ⋙ (finiteProjectiveModules R).restrictedPreadditiveYoneda :=
   ObjectProperty.equivalenceModCompιIso _ _
 
+private def finitePresentationEvalComp (M : (finitePresentationModules R).FullSubcategory) :
+    ((finitePresentationModules R).ι ⋙
+        (finiteProjectiveModules R).restrictedPreadditiveYoneda ⋙
+        (evaluation _ _).obj (op (finiteProjectiveModulesRegular R))).obj M ≅
+      ((finitePresentationModules R).ι ⋙ forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}).obj M :=
+  (ModuleCat.homAddEquiv.trans
+    (LinearMap.ringLmapEquivSelf R ℕ M.obj).toAddEquiv).toAddCommGrpIso
+
+private theorem finitePresentationEvalComp_hom_apply
+    (M : (finitePresentationModules R).FullSubcategory)
+    (g : ((finiteProjectiveModules R).restrictedPreadditiveYoneda.obj M.obj).obj
+      (op (finiteProjectiveModulesRegular R))) :
+    (finitePresentationEvalComp R M).hom g =
+      (g : (finiteProjectiveModulesRegular R).obj ⟶ M.obj).hom
+        ((eqToHom (finiteProjectiveModulesRegular_obj R).symm).hom (1 : R)) :=
+  rfl
+
 /-- The functor attached to a finitely presented `R`-module `M` takes the value `(R, M)` at the
 regular module, and `(R, M)` is the underlying abelian group of `M`, naturally in `M`. -/
 noncomputable def finitePresentationEquivalenceModCompEvaluationIso :
@@ -65,15 +82,14 @@ noncomputable def finitePresentationEquivalenceModCompEvaluationIso :
         (evaluation _ _).obj (op (finiteProjectiveModulesRegular R)) ≅
       (finitePresentationModules R).ι ⋙ forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u} :=
   Functor.isoWhiskerRight (finitePresentationEquivalenceModCompιIso R) _ ≪≫
-    NatIso.ofComponents (fun M ↦
-      (ModuleCat.homAddEquiv.trans
-        (LinearMap.ringLmapEquivSelf R ℕ M.obj).toAddEquiv).toAddCommGrpIso) fun {M N} f ↦ by
-      ext (g : ModuleCat.of R R ⟶ M.obj)
-      -- Unfold `toAddCommGrpIso` and `restrictedPreadditiveYoneda`; both sides evaluate to
-      -- `f.hom (g.hom 1)`.
-      change
-        LinearMap.ringLmapEquivSelf R ℕ N.obj (ModuleCat.homAddEquiv (g ≫ f.hom)) =
-        f.hom (LinearMap.ringLmapEquivSelf R ℕ M.obj (ModuleCat.homAddEquiv g))
-      rfl
+    NatIso.ofComponents (finitePresentationEvalComp R) fun {M N} f ↦
+      AddCommGrpCat.ext fun g ↦ by
+        rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
+        dsimp only [Functor.comp_obj, Functor.comp_map, ObjectProperty.ι_obj, ObjectProperty.ι_map,
+          evaluation_obj_map]
+        rw [finitePresentationEvalComp_hom_apply, finitePresentationEvalComp_hom_apply,
+          (finiteProjectiveModules R).restrictedPreadditiveYoneda_map_app_apply f.hom
+            (op (finiteProjectiveModulesRegular R)) g]
+        exact ModuleCat.comp_apply (g : (finiteProjectiveModulesRegular R).obj ⟶ M.obj) f.hom _
 
 end TauCeti

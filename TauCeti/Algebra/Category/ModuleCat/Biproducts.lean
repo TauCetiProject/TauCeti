@@ -33,8 +33,10 @@ each summand of a finitely generated biproduct (`ModuleCat.finite_of_finite_bipr
 
 For a full subcategory `S.FullSubcategory` of `ModuleCat R`, the additive inclusion `S.ι` preserves
 finite biproducts, so `(⨁ f).obj` identifies with `∀ j, (f j).obj`
-(`CategoryTheory.ObjectProperty.biproductObjIsoPi`), transferring surjections and epimorphisms
-between the dependent product and the biproduct in `S.FullSubcategory`.
+(`CategoryTheory.ObjectProperty.biproductObjIsoPi`). Under this identification, surjective linear
+maps out of `∀ j, (f j).obj` induce epimorphisms out of `⨁ f` in `S.FullSubcategory`, while the
+reverse transfer from an epimorphism in `S.FullSubcategory` to a surjection requires `S.ι` to
+preserve epimorphisms.
 
 ## Main definitions
 
@@ -69,9 +71,13 @@ between the dependent product and the biproduct in `S.FullSubcategory`.
 * `CategoryTheory.ObjectProperty.biproductObjIsoPi_inv_comp_π`,
   `CategoryTheory.ObjectProperty.biproductObjIsoPi_hom_comp_proj`,
   `CategoryTheory.ObjectProperty.biproductObjIsoPi_hom_apply`,
+  `CategoryTheory.ObjectProperty.ι_comp_biproductObjIsoPi_hom`,
+  `CategoryTheory.ObjectProperty.single_comp_biproductObjIsoPi_inv`,
   `CategoryTheory.ObjectProperty.epi_homMk_biproductObjIsoPi_comp`, and
-  `CategoryTheory.ObjectProperty.surjective_biproductObjIsoPi_inv_comp`: projection compatibility
-  and epi/surjectivity transfer for finite biproducts in a full subcategory of `ModuleCat R`.
+  `CategoryTheory.ObjectProperty.surjective_biproductObjIsoPi_inv_comp`: projection and inclusion
+  compatibility, epimorphisms induced by surjections, and recovery of surjectivity from
+  epimorphisms when `S.ι` preserves epimorphisms, for finite biproducts in a full subcategory of
+  `ModuleCat R`.
 * `CategoryTheory.Functor.sum_map_ι_map_π_apply`: for an additive functor `F` to modules, an
   element of `F.obj (⨁ f)` is the sum of the images of its components.
 * `CategoryTheory.Functor.finite_obj_biproduct`: such a functor has finitely generated value on a
@@ -260,8 +266,8 @@ theorem biproductObjIsoPi_inv_comp_π {J : Type} [Finite J] (f : J → S.FullSub
     (S.biproductObjIsoPi f).inv ≫ (biproduct.π f j).hom =
       ModuleCat.ofHom (LinearMap.proj j : (∀ j, (f j).obj) →ₗ[R] (f j).obj) := by
   have h : (S.ι.mapBiproduct f).inv ≫ S.ι.map (biproduct.π f j) = biproduct.π _ j := by
-    rw [Iso.inv_comp_eq, Functor.mapBiproduct_hom]
-    exact (biproduct.lift_π (fun j ↦ S.ι.map (biproduct.π f j)) j).symm
+    rw [Iso.inv_comp_eq]
+    exact (S.ι.biproductComparison_π f j).symm
   simp only [biproductObjIsoPi, Iso.trans_inv, Category.assoc]
   rw [← ι_map, h]
   exact ModuleCat.biproductIsoPi_inv_comp_π (fun j ↦ (f j).obj) j
@@ -284,6 +290,30 @@ theorem biproductObjIsoPi_hom_apply {J : Type} [Finite J] (f : J → S.FullSubca
     (S.biproductObjIsoPi f).hom x j = (biproduct.π f j).hom x := by
   simpa [-biproductObjIsoPi_hom_comp_proj] using
     ConcreteCategory.congr_hom (S.biproductObjIsoPi_hom_comp_proj f j) x
+
+/-- The `j`-th biproduct inclusion followed by `biproductObjIsoPi` is `LinearMap.single`. -/
+@[reassoc (attr := simp)]
+theorem ι_comp_biproductObjIsoPi_hom {J : Type} [Finite J] [DecidableEq J]
+    (f : J → S.FullSubcategory) [HasBiproduct f] (j : J) :
+    (biproduct.ι f j).hom ≫ (S.biproductObjIsoPi f).hom =
+      ModuleCat.ofHom (LinearMap.single R (fun i ↦ (f i).obj) j) := by
+  ext x k
+  have h : (S.biproductObjIsoPi f).hom ((biproduct.ι f j).hom x) k =
+      ((biproduct.ι f j).hom ≫ (biproduct.π f k).hom) x := by
+    rw [biproductObjIsoPi_hom_apply, ModuleCat.comp_apply]
+  rw [← FullSubcategory.comp_hom, biproduct.ι_π] at h
+  rcases eq_or_ne j k with rfl | hne
+  · simpa using h
+  · simpa [hne] using h
+
+/-- `LinearMap.single` followed by the inverse of `biproductObjIsoPi` is the `j`-th biproduct
+inclusion. -/
+@[reassoc (attr := simp)]
+theorem single_comp_biproductObjIsoPi_inv {J : Type} [Finite J] [DecidableEq J]
+    (f : J → S.FullSubcategory) [HasBiproduct f] (j : J) :
+    ModuleCat.ofHom (LinearMap.single R (fun i ↦ (f i).obj) j) ≫ (S.biproductObjIsoPi f).inv =
+      (biproduct.ι f j).hom := by
+  rw [← S.ι_comp_biproductObjIsoPi_hom f j, Category.assoc, Iso.hom_inv_id, Category.comp_id]
 
 /-- A surjective linear map from the product `∀ j, (f j).obj` to `X.obj` induces an epimorphism
 `(⨁ f) ⟶ X` in `S.FullSubcategory`. -/

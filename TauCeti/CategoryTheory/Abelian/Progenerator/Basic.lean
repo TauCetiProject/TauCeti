@@ -123,9 +123,10 @@ theorem preadditiveCoyonedaObj_map_bijective (hP : IsProgenerator P) (X Y : C) :
   · obtain @⟨Q₀, Q₁, u, c, hc, hQ₀, hQ₁⟩ := hP.presented_additiveClosure X
     obtain ⟨h, hh⟩ := (TauCeti.preadditiveCoyonedaObj_map_bijective hQ₁ Y).2
       ((preadditiveCoyonedaObj P).map c.π ≫ φ)
+    have hzero : (preadditiveCoyonedaObj P).map u ≫ (preadditiveCoyonedaObj P).map c.π = 0 := by
+      rw [← Functor.map_comp, CokernelCofork.condition, Functor.map_zero]
     have huh : u ≫ h = 0 := (TauCeti.preadditiveCoyonedaObj_map_bijective hQ₀ Y).1 <| by
-      rw [Functor.map_comp, hh, ← Category.assoc, ← Functor.map_comp, CokernelCofork.condition,
-        Functor.map_zero, Limits.zero_comp, Functor.map_zero]
+      simp only [Functor.map_comp, hh, reassoc_of% hzero, Limits.zero_comp, Functor.map_zero]
     obtain ⟨f, hf⟩ := CokernelCofork.IsColimit.desc' hc h huh
     have : Epi c.π := Cofork.IsColimit.epi hc
     refine ⟨f, (cancel_epi ((preadditiveCoyonedaObj P).map c.π)).mp ?_⟩
@@ -149,7 +150,8 @@ theorem finitePresentationModules_le_essImage (hP : IsProgenerator P) :
   obtain ⟨u, hu⟩ := (TauCeti.preadditiveCoyonedaObj_map_bijective Q₀.property Q₁.obj).2
     (e₀.hom ≫ α ≫ e₁.inv)
   have hu' : (preadditiveCoyonedaObj P).map u ≫ e₁.hom = e₀.hom ≫ α := by
-    rw [hu, Category.assoc, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+    rw [hu]
+    simp [Category.assoc]
   refine ⟨cokernel u, ⟨?_⟩⟩
   exact PreservesCokernel.iso (preadditiveCoyonedaObj P) u ≪≫
     cokernel.mapIso _ α e₀ e₁ hu' ≪≫
@@ -195,18 +197,21 @@ theorem progeneratorFunctor_map_hom (hP : IsProgenerator P) {X Y : C} (f : X ⟶
   (NatIso.naturality_2 hP.progeneratorFunctorCompιIso f).symm
 
 instance additive_progeneratorFunctor (hP : IsProgenerator P) :
-    hP.progeneratorFunctor.Additive where
-  map_add {_ _ _ _} := ObjectProperty.hom_ext _ (preadditiveCoyonedaObj P).map_add
+    hP.progeneratorFunctor.Additive :=
+  have : (hP.progeneratorFunctor ⋙ (finitePresentationModules (End P)ᵐᵒᵖ).ι).Additive :=
+    Functor.additive_of_iso hP.progeneratorFunctorCompιIso.symm
+  Functor.additive_of_comp_faithful _ (finitePresentationModules (End P)ᵐᵒᵖ).ι
 
-instance full_progeneratorFunctor (hP : IsProgenerator P) : hP.progeneratorFunctor.Full where
-  map_surjective {X Y} φ :=
-    have ⟨f, hf⟩ := (hP.preadditiveCoyonedaObj_map_bijective X Y).2 φ.hom
-    ⟨f, ObjectProperty.hom_ext _ hf⟩
+instance full_progeneratorFunctor (hP : IsProgenerator P) : hP.progeneratorFunctor.Full :=
+  have : (preadditiveCoyonedaObj P).Full :=
+    { map_surjective := fun {X Y} φ ↦ (hP.preadditiveCoyonedaObj_map_bijective X Y).2 φ }
+  by unfold progeneratorFunctor; infer_instance
 
 instance faithful_progeneratorFunctor (hP : IsProgenerator P) :
-    hP.progeneratorFunctor.Faithful where
-  map_injective {X Y} _ _ h :=
-    (hP.preadditiveCoyonedaObj_map_bijective X Y).1 (congrArg (fun g ↦ g.hom) h)
+    hP.progeneratorFunctor.Faithful :=
+  have : (preadditiveCoyonedaObj P).Faithful :=
+    { map_injective := fun {X Y _ _} h ↦ (hP.preadditiveCoyonedaObj_map_bijective X Y).1 h }
+  by unfold progeneratorFunctor; infer_instance
 
 /-- **The progenerator equivalence.** For a progenerator `P` of an abelian category `C`, `Hom(P, -)`
 is an equivalence between `C` and the finitely presented right `End P`-modules. -/

@@ -109,6 +109,8 @@ theorem hasWeakKernels_finiteProjectiveModules_of_hasKernels
       w]
     rw [← Category.assoc, Projective.factorThru_comp, hu]
 
+/-- Over a left coherent ring `R`, the category of finitely generated projective `R`-modules has
+weak kernels. -/
 instance [IsCoherentRing R] : HasWeakKernels (finiteProjectiveModules R).FullSubcategory :=
   hasWeakKernels_finiteProjectiveModules_of_hasKernels R
 
@@ -145,10 +147,8 @@ theorem isCoherentRing_of_hasWeakKernels_finiteProjectiveModules
       congrArg (fun k ↦ k.hom.hom (eR.inv.hom (1 : R))) (weakKernel.lift_ι φ g hg)
     exact ⟨_, by simpa [g] using hu⟩
   · rintro _ ⟨y, rfl⟩
-    have hw : ((weakKernel.ι φ).hom ≫ φ.hom ≫ eR.hom).hom y = 0 := by
-      rw [← Category.assoc, ← ObjectProperty.FullSubcategory.comp_hom, weakKernel.condition,
-        ObjectProperty.zero_hom, Limits.zero_comp, ModuleCat.hom_zero, LinearMap.zero_apply]
-    simpa [LinearMap.mem_ker, φ] using hw
+    have hw := congrArg (fun k ↦ eR.hom.hom (k.hom.hom y)) (weakKernel.condition φ)
+    simpa [-weakKernel.condition, LinearMap.mem_ker, φ, ModuleCat.comp_apply] using hw
 
 variable {R}
 

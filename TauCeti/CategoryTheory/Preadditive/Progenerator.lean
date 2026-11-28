@@ -95,7 +95,6 @@ theorem isProgenerator_iff_exists_additiveClosure {P : C} :
     exact ⟨_, π, additiveClosure_biproduct n, hπ⟩
   · obtain ⟨Q, π, hQ, hπ⟩ := h X
     obtain ⟨n, ⟨r⟩⟩ := additiveClosure_iff.mp hQ
-    have : IsSplitEpi r.r := ⟨⟨r.i, r.retract⟩⟩
     exact ⟨n, r.r ≫ π, epi_comp _ _⟩
 
 namespace IsProgenerator
@@ -213,7 +212,6 @@ theorem IsAdditiveGenerator.isProgenerator {G : C} (hG : IsAdditiveGenerator G) 
     IsProgenerator G where
   exists_epi_biproduct X := by
     obtain ⟨n, ⟨r⟩⟩ := additiveClosure_iff.mp (hG.additiveClosure X)
-    have : IsSplitEpi r.r := ⟨⟨r.i, r.retract⟩⟩
     exact ⟨n, r.r, inferInstance⟩
 
 /-- When every object of `C` is projective, progenerators and additive generators coincide. -/
