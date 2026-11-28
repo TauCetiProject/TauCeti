@@ -145,13 +145,12 @@ theorem pbwHomogeneousComponentMap_ι_mul_ι (x y : L) :
         ⟨SymmetricAlgebra.ι R L x * SymmetricAlgebra.ι R L y,
           SetLike.mul_mem_graded
             (ι_mem_homogeneousSubmodule R L x) (ι_mem_homogeneousSubmodule R L y)⟩ =
-      (Submodule.Quotient.mk
-        ⟨_root_.UniversalEnvelopingAlgebra.ι R x * _root_.UniversalEnvelopingAlgebra.ι R y, by
-          rw [← pbwFiltration_def]
-          exact mul_mem_pbwFiltration R L (ι_mem_pbwFiltration_one R L x)
-            (ι_mem_pbwFiltration_one R L y)⟩ :
-        PBWGradedPiece R L 2) := by
-  simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one] using
+      pbwGradedPieceMk R L 2
+        ⟨_root_.UniversalEnvelopingAlgebra.ι R x * _root_.UniversalEnvelopingAlgebra.ι R y,
+          mul_mem_pbwFiltration R L (ι_mem_pbwFiltration_one R L x)
+            (ι_mem_pbwFiltration_one R L y)⟩ := by
+  simpa only [pbwGradedPieceMk_apply, List.map_cons, List.map_nil, List.prod_cons,
+    List.prod_nil, mul_one] using
     pbwHomogeneousComponentMap_prod_map_ι_of_length_eq (n := 2) R L [x, y] rfl
 
 /-- Every PBW graded piece has a homogeneous symmetric representative of the same degree. This

@@ -36,6 +36,10 @@ here.
 
 * `TauCeti.UniversalEnvelopingAlgebra.PBWGradedPiece`: the successive quotient in PBW degree
   `k`.
+* `TauCeti.UniversalEnvelopingAlgebra.pbwGradedPieceMk`: the canonical linear projection from
+  `pbwFiltration R L k` to `PBWGradedPiece R L k`.
+* `TauCeti.UniversalEnvelopingAlgebra.pbwGradedPieceMk_eq_zero_iff`: a filtered element maps to
+  zero in `PBWGradedPiece R L k` iff it lies in `pbwFiltrationPrevious R L k`.
 * `TauCeti.UniversalEnvelopingAlgebra.PBWAssociatedGraded`: the direct sum of the PBW graded
   pieces.
 * `TauCeti.UniversalEnvelopingAlgebra.pbwGradedGenerator`: the degree-one class of the canonical
@@ -80,14 +84,30 @@ abbrev PBWGradedPiece (R : Type u) (L : Type v) [CommRing R] [LieRing L]
     (_root_.UniversalEnvelopingAlgebra.ι R :
       L →ₗ⁅R⁆ _root_.UniversalEnvelopingAlgebra R L).toLinearMap k
 
-/-- A filtered element's class in the degree-`k` PBW graded piece vanishes exactly when the
+/-- The canonical linear projection from the `k`-th PBW filtration step to the degree-`k` PBW
+graded piece. -/
+noncomputable def pbwGradedPieceMk (k : ℕ) :
+    pbwFiltration R L k →ₗ[R] PBWGradedPiece R L k :=
+  (Submodule.mkQ
+    (previousRestricted
+      (_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U).toLinearMap k)).comp
+    (LinearEquiv.ofEq (pbwFiltration R L k) _ (pbwFiltration_def R L k)).toLinearMap
+
+/-- The canonical PBW projection sends a filtered element to its quotient class in
+`PBWGradedPiece`. -/
+theorem pbwGradedPieceMk_apply {k : ℕ} (x : pbwFiltration R L k) :
+    pbwGradedPieceMk R L k x =
+      Submodule.Quotient.mk
+        (⟨(x : U), pbwFiltration_def R L k ▸ x.property⟩ :
+          wordFiltration
+            (_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U).toLinearMap k) :=
+  by rfl
+
+/-- A filtered element's image in the degree-`k` PBW graded piece vanishes exactly when the
 element lies in the preceding PBW filtration step. -/
-theorem pbwGradedPiece_mk_eq_zero_iff {k : ℕ} {u : U} (hu : u ∈ pbwFiltration R L k) :
-    (Submodule.Quotient.mk (⟨u, (pbwFiltration_def R L k).symm ▸ hu⟩ : wordFiltration
-        (_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U).toLinearMap k) :
-        PBWGradedPiece R L k) = 0 ↔
-      u ∈ pbwFiltrationPrevious R L k := by
-  rw [gradedPiece_mk_eq_zero_iff, pbwFiltrationPrevious_def]
+theorem pbwGradedPieceMk_eq_zero_iff {k : ℕ} (x : pbwFiltration R L k) :
+    pbwGradedPieceMk R L k x = 0 ↔ (x : U) ∈ pbwFiltrationPrevious R L k := by
+  rw [pbwGradedPieceMk_apply, gradedPiece_mk_eq_zero_iff, pbwFiltrationPrevious_def]
 
 /-- The associated graded of the PBW filtration of `U(L)`. -/
 abbrev PBWAssociatedGraded (R : Type u) (L : Type v) [CommRing R] [LieRing L]

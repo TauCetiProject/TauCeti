@@ -28,9 +28,10 @@ the modes of the normally ordered Casimir field `∑ᵢ :J^{xᵢ}(z) J^{yᵢ}(z)
 under `κ_L`. They do not depend on the basis (`TauCeti.CurrentAlgebra.sugawaraMode_eq_sum`), have
 finite-window coordinates and smooth-module actions
 (`TauCeti.CurrentAlgebra.limπ_sugawaraMode`, `TauCeti.CurrentAlgebra.limSmul_sugawaraMode`),
-rescale inversely under rescaling the invariant form
-(`TauCeti.CurrentAlgebra.sugawaraMode_eq_inv_smul_sum_dualBasis`), and are preserved by the
-completed level comparison (`TauCeti.CurrentAlgebra.levelCompletedEnvelopingEquiv_sugawaraMode`).
+carry a factor `d⁻¹` when expanded along the `B`-dual basis of a nondegenerate invariant form `B`
+with `κ_L = d • B` and `d ≠ 0` (`TauCeti.CurrentAlgebra.sugawaraMode_eq_inv_smul_sum_dualBasis`),
+and are preserved by the completed level comparison for `Ψ = k • Φ`
+(`TauCeti.CurrentAlgebra.levelCompletedEnvelopingEquiv_sugawaraMode`).
 
 The main result is the commutator of a current with these modes
 (`TauCeti.CurrentAlgebra.toCompletedEnveloping_mul_sugawaraMode_sub_mul`): for the current
@@ -93,8 +94,8 @@ central characters on the Sugawara modes.
   Segal--Sugawara modes are central.
 * `TauCeti.CurrentAlgebra.limπ_sugawaraMode`, `TauCeti.CurrentAlgebra.limSmul_sugawaraMode`:
   finite-window formulas for the coordinates and smooth-module action of `Sₙ`.
-* `TauCeti.CurrentAlgebra.sugawaraMode_eq_inv_smul_sum_dualBasis`: expansion of `Sₙ` along the dual
-  basis of a rescaled invariant form.
+* `TauCeti.CurrentAlgebra.sugawaraMode_eq_inv_smul_sum_dualBasis`: expansion of `Sₙ` along the
+  `B`-dual basis when `κ_L = d • B`.
 * `TauCeti.CurrentAlgebra.levelCompletedEnvelopingEquiv_sugawaraMode`,
   `TauCeti.CurrentAlgebra.levelCompletedEnvelopingEquiv_sugawaraVirasoro`: compatibility with the
   completed level comparison, including at level zero.

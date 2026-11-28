@@ -35,9 +35,10 @@ This file connects those completed vector fields with the Segal--Sugawara constr
   Witt vector field `-t^{m+1} d/dt` (`TauCeti.CurrentAlgebra.innerDerivation_sugawaraVirasoro`).
 * **The Sugawara degree element.** Specialising to `m = 0` defines `D_κ = -L₀`
   (`TauCeti.CurrentAlgebra.sugawaraDegree`), which is homogeneous of degree `0` under `t d/dt` and
-  implements the completed degree derivation `t d/dt` as an inner derivation of `Û`
-  (`TauCeti.CurrentAlgebra.innerDerivation_sugawaraDegree`). Consequently, away from the critical
-  level, every element of the completed center `Z(Û)` is annihilated by `t d/dt`
+  for `Φ = c • κ_L` with `1 - 2 a c ≠ 0` implements the completed degree derivation `t d/dt` as an
+  inner derivation of `Û` (`TauCeti.CurrentAlgebra.innerDerivation_sugawaraDegree`). Consequently,
+  when `Φ = c • κ_L` and `1 - 2 a c ≠ 0`, every element of the completed center `Z(Û)` is
+  annihilated by `t d/dt`
   (`CurrentAlgebra.vectorFieldCompletedEnvelopingDerivation_single_one_eq_zero_of_mem_center`),
   in contrast to the critical level where `Sₙ ∈ Z(Û)` has degree `n`.
 
@@ -205,14 +206,18 @@ theorem sugawaraDegree_mul_toCompletedEnveloping_sub_mul {c : K}
     Int.cast_smul_eq_zsmul]
 
 /-- **The Sugawara degree element grades the Virasoro modes over any field**:
-`[D_κ, Lₙ] = n Lₙ` whenever `Φ = c • κ_L` and `1 - 2 a c ≠ 0`. -/
+`[D_κ, Lₙ] = n Lₙ` whenever `Φ = c • κ_L` (including at `1 - 2 a c = 0`, where both `D_κ` and
+`Lₙ` vanish). -/
 theorem sugawaraDegree_mul_sugawaraVirasoro_sub_mul {c : K}
-    (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) (n : ℤ) :
+    (h : Φ = c • killingForm K L) (n : ℤ) :
     sugawaraDegree Φ hΦ hΦs a c * sugawaraVirasoro Φ hΦ hΦs a c n -
         sugawaraVirasoro Φ hΦ hΦs a c n * sugawaraDegree Φ hΦ hΦs a c =
       (n : K) • sugawaraVirasoro Φ hΦ hΦs a c n := by
-  rw [sugawaraDegree_mul_sub_mul h hc,
-    vectorFieldCompletedEnvelopingDerivation_single_one_sugawaraVirasoro, Int.cast_smul_eq_zsmul]
+  by_cases hc : 1 - 2 * a * c = 0
+  · simp [sugawaraDegree_def, sugawaraVirasoro_def, hc]
+  · rw [sugawaraDegree_mul_sub_mul h hc,
+      vectorFieldCompletedEnvelopingDerivation_single_one_sugawaraVirasoro,
+      Int.cast_smul_eq_zsmul]
 
 /-- **For `Φ = c • κ_L` away from the critical level (`1 - 2 a c ≠ 0`), the completed center
 `Z(Û)` is killed by the degree derivation `t d/dt`**, because `t d/dt` is the inner derivation

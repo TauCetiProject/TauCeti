@@ -41,7 +41,7 @@ well as the quadratic Segal--Sugawara state `S₋₂ |0⟩` (`TauCeti.CurrentAlg
   (`TauCeti.CurrentAlgebra.envelopingι_single_one_smul_sugawaraVacuum_of_eq_smul_killingForm`).
   Hence `S₋₂ |0⟩` is killed by all nonnegative currents `L[[t]]` at the critical level `2 a Φ = κ_L`
   (`TauCeti.CurrentAlgebra.envelopingι_smul_sugawaraVacuum_eq_zero`), and is not killed by all of
-  `L[[t]]` away from the critical level whenever `L` is nontrivial
+  `L[[t]]` when `Φ = c • κ_L`, `1 - 2 a c ≠ 0`, and `L` is nontrivial
   (`TauCeti.CurrentAlgebra.not_forall_envelopingι_smul_sugawaraVacuum_eq_zero`), so
   `S₋₂ ∉ Z(Û)` (`TauCeti.CurrentAlgebra.sugawaraMode_neg_two_notMem_center`).
 
@@ -56,14 +56,15 @@ well as the quadratic Segal--Sugawara state `S₋₂ |0⟩` (`TauCeti.CurrentAlg
   `TauCeti.CurrentAlgebra.limSmul_sugawaraVirasoro_eq_vacuumVectorField`,
   `TauCeti.CurrentAlgebra.limSmul_sugawaraVirasoro_neg_one`,
   `TauCeti.CurrentAlgebra.limSmul_sugawaraVirasoro_zero`: for `Φ = c • κ_L` and `m ≥ -1`, `Sₘ`
-  acts on `V` as `(1 - 2 a c)` times the regular Witt vector field `-t^{m+1} d/dt`, and away from
-  the critical level (`1 - 2 a c ≠ 0`), `Lₘ` acts as `-t^{m+1} d/dt`, with `L₋₁ = T` and
-  `L₀ = -t d/dt` as special cases.
+  acts on `V` as `(1 - 2 a c)` times the regular Witt vector field `-t^{m+1} d/dt`, and when
+  additionally `1 - 2 a c ≠ 0`, `Lₘ` acts as `-t^{m+1} d/dt`, with `L₋₁ = T` and `L₀ = -t d/dt` as
+  special cases.
 * `TauCeti.CurrentAlgebra.sugawaraVacuum_eq_sum`: `S₋₂ |0⟩ = ∑ᵢ (bᵢ)₋₁ (b'ᵢ)₋₁ |0⟩`.
 * `TauCeti.CurrentAlgebra.envelopingι_smul_sugawaraVacuum_eq_zero`,
   `TauCeti.CurrentAlgebra.not_forall_envelopingι_smul_sugawaraVacuum_eq_zero`,
-  `TauCeti.CurrentAlgebra.sugawaraMode_neg_two_notMem_center`: critical vs noncritical
-  `L[[t]]`-invariance of `S₋₂ |0⟩` and non-centrality of `S₋₂` away from the critical level.
+  `TauCeti.CurrentAlgebra.sugawaraMode_neg_two_notMem_center`: `L[[t]]`-invariance of `S₋₂ |0⟩`
+  at the critical level `2 a Φ = κ_L`, and non-annihilation by `L[[t]]` and non-centrality of `S₋₂`
+  when `Φ = c • κ_L`, `1 - 2 a c ≠ 0`, and `L` is nontrivial.
 
 ## References
 
@@ -103,8 +104,8 @@ local notation "ι[" x ", " m "]" => envelopingι c₀ a (HahnSeries.single m (1
 /-- **The quadratic Segal--Sugawara vector** `S₋₂ |0⟩` in the vacuum module `V = U / I₀`, defined at
 every level `Φ` and central value `a`. When `Φ = c • κ_L` and `1 - 2 a c ≠ 0`, rescaling by
 `(1 - 2 a c)⁻¹` gives the normalised quadratic state `L₋₂ |0⟩` (the candidate Virasoro
-conformal vector); at the critical level `2 a Φ = κ_L`, it is a quadratic `L[[t]]`-singular
-vector in `V`. -/
+conformal vector); at the critical level `2 a Φ = κ_L`, it is annihilated by `L[[t]]` (making it
+a nonzero quadratic `L[[t]]`-singular vector when `2 ≠ 0` and `L` is nontrivial). -/
 def sugawaraVacuum : V :=
   ModuleTower.limSmul hV (sugawaraMode Φ hΦ hΦs a (-2)) (vacuum Φ hΦ hΦs a)
 
@@ -160,8 +161,8 @@ theorem limSmul_sugawaraMode_eq_smul_vacuumVectorField {c : K}
     ← vacuumVectorField_smul_vacuum] at hv
   exact hv
 
-/-- **Away from the critical level, `Lₘ` (`m ≥ -1`) acts on the vacuum module as the regular Witt
-vector field `-t^{m+1} d/dt`.** -/
+/-- **For `Φ = c • κ_L` away from the critical level (`1 - 2 a c ≠ 0`), `Lₘ` (`m ≥ -1`) acts on the
+vacuum module as the regular Witt vector field `-t^{m+1} d/dt`.** -/
 theorem limSmul_sugawaraVirasoro_eq_vacuumVectorField {c : K}
     (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) {m : ℤ} (hm : -1 ≤ m) (v : V) :
     ModuleTower.limSmul hV (sugawaraVirasoro Φ hΦ hΦs a c m) v =
@@ -171,36 +172,30 @@ theorem limSmul_sugawaraVirasoro_eq_vacuumVectorField {c : K}
   rw [sugawaraVirasoro_def, ModuleTower.smul_limSmul,
     limSmul_sugawaraMode_eq_smul_vacuumVectorField h hm, smul_smul, inv_mul_cancel₀ hc, one_smul]
 
-/-- **Away from the critical level, `L₋₁` acts on the vacuum module as the translation operator
-`T = -d/dt`.** -/
+/-- **For `Φ = c • κ_L` away from the critical level (`1 - 2 a c ≠ 0`), `L₋₁` acts on the vacuum
+module as the translation operator `T = -d/dt`.** -/
 theorem limSmul_sugawaraVirasoro_neg_one {c : K}
     (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) (v : V) :
     ModuleTower.limSmul hV (sugawaraVirasoro Φ hΦ hΦs a c (-1)) v =
       vacuumTranslation Φ hΦ hΦs a v := by
   have h1 : (-HahnSeries.single (-1 + 1 : ℤ) (1 : K)) = -1 := by
     rw [neg_add_cancel, HahnSeries.single_zero_one]
-  have hh : 0 ≤ (-1 : K⸨X⸩).orderTop := by
-    rw [HahnSeries.orderTop_neg]
-    exact HahnSeries.zero_le_orderTop_one
   rw [limSmul_sugawaraVirasoro_eq_vacuumVectorField h hc le_rfl,
-    vacuumVectorField_congr _ hh h1, ← vacuumTranslation_def]
+    vacuumVectorField_congr _ (by simp) h1, ← vacuumTranslation_def]
 
-/-- **Away from the critical level, `L₀` acts on the vacuum module as the degree operator
-`-t d/dt`.** -/
+/-- **For `Φ = c • κ_L` away from the critical level (`1 - 2 a c ≠ 0`), `L₀` acts on the vacuum
+module as the degree operator `-t d/dt`.** -/
 theorem limSmul_sugawaraVirasoro_zero {c : K}
     (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) (v : V) :
     ModuleTower.limSmul hV (sugawaraVirasoro Φ hΦ hΦs a c 0) v =
       vacuumDegreeOperator Φ hΦ hΦs a v := by
   have h1 : (-HahnSeries.single (0 + 1 : ℤ) (1 : K)) = -HahnSeries.single 1 1 := by
     rw [zero_add]
-  have hh : 0 ≤ (-HahnSeries.single 1 1 : K⸨X⸩).orderTop := by
-    rw [HahnSeries.orderTop_neg]
-    exact HahnSeries.zero_le_orderTop_single zero_le_one 1
   rw [limSmul_sugawaraVirasoro_eq_vacuumVectorField h hc (by omega),
-    vacuumVectorField_congr _ hh h1, ← vacuumDegreeOperator_def]
+    vacuumVectorField_congr _ (by simp) h1, ← vacuumDegreeOperator_def]
 
-/-- **Away from the critical level, `D_κ = -L₀` acts on the vacuum module as `-vacuumDegreeOperator`
-(`t d/dt`).** -/
+/-- **For `Φ = c • κ_L` away from the critical level (`1 - 2 a c ≠ 0`), `D_κ = -L₀` acts on the
+vacuum module as `-vacuumDegreeOperator` (`t d/dt`).** -/
 theorem limSmul_sugawaraDegree {c : K}
     (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) (v : V) :
     ModuleTower.limSmul hV (sugawaraDegree Φ hΦ hΦs a c) v =
@@ -300,15 +295,16 @@ theorem envelopingι_single_one_smul_sugawaraVacuum_of_eq_smul_killingForm {c : 
   module
 
 /-- **At the critical level `2 a Φ = κ_L`, every nonnegative current in `L[[t]]` annihilates
-`S₋₂ |0⟩`**, making `S₋₂ |0⟩` a singular vector for `L[[t]]`. -/
+`S₋₂ |0⟩`** (making it a nonzero `L[[t]]`-singular vector when `2 ≠ 0` in `K` and `L` is
+nontrivial). -/
 theorem envelopingι_smul_sugawaraVacuum_eq_zero (h : (2 * a) • Φ = killingForm K L)
     {u : currentAlgebra K L} (hu : u ∈ orderSubmodule K L 0) :
     envelopingι c₀ a u • sugawaraVacuum Φ hΦ hΦs a = 0 := by
   rw [sugawaraVacuum_def, ← limSmul_smul_of_mem_center hV (sugawaraMode_mem_center h (-2)),
     envelopingι_smul_vacuum hu, ModuleTower.limSmul_zero]
 
-/-- **Away from the critical level, `S₋₂ |0⟩` is not annihilated by `L[[t]]` whenever `L` is
-nontrivial**: if `z ≠ 0`, the mode `z₁` sends `S₋₂ |0⟩` to the nonzero vector
+/-- **When `Φ = c • κ_L`, `1 - 2 a c ≠ 0`, and `L` is nontrivial, `S₋₂ |0⟩` is not annihilated by
+`L[[t]]`**: if `z ≠ 0`, the mode `z₁` sends `S₋₂ |0⟩` to the nonzero vector
 `(1 - 2 a c) • z₋₁ |0⟩`. -/
 theorem not_forall_envelopingι_smul_sugawaraVacuum_eq_zero [Nontrivial L] {c : K}
     (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) :
@@ -321,8 +317,8 @@ theorem not_forall_envelopingι_smul_sugawaraVacuum_eq_zero [Nontrivial L] {c : 
   have hv0 : ι[z, -1] • vacuum Φ hΦ hΦs a = 0 := h1.resolve_left hc
   exact hz (envelopingι_single_smul_vacuum_injective neg_one_lt_zero (hv0.trans (by simp)))
 
-/-- **Away from the critical level, `S₋₂` does not lie in the completed center `Z(Û)`** when `L`
-is nontrivial. -/
+/-- **When `Φ = c • κ_L`, `1 - 2 a c ≠ 0`, and `L` is nontrivial, `S₋₂` does not lie in the
+completed center `Z(Û)`.** -/
 theorem sugawaraMode_neg_two_notMem_center [Nontrivial L] {c : K}
     (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) :
     sugawaraMode Φ hΦ hΦs a (-2) ∉ Subalgebra.center K Û := by

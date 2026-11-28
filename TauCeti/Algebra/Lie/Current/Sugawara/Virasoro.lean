@@ -40,14 +40,15 @@ over every field `K` (including characteristics `2` and `3`, where `(m ^ 3 - m) 
 evaluated in `ℤ` before casting to `K`), at every level including the critical level `1 - 2 a c = 0`
 and `a = 0`.
 
-Away from the critical level (`1 - 2 a c ≠ 0`), the **Segal--Sugawara Virasoro modes**
-`Lₘ = (1 - 2 a c)⁻¹ Sₘ` (`TauCeti.CurrentAlgebra.sugawaraVirasoro`) satisfy, when `2` and `3` are
-invertible in `K`, the Virasoro commutation relations
+When `Φ = c • κ_L` and `2` and `3` are invertible in `K`, the **Segal--Sugawara Virasoro modes**
+`Lₘ = (1 - 2 a c)⁻¹ Sₘ` (`TauCeti.CurrentAlgebra.sugawaraVirasoro`) satisfy the Virasoro commutation
+relations
 
 `[Lₘ, Lₙ] = (m - n) L_{m+n} + δ_{m+n, 0} ((m ^ 3 - m) / 12) c_{Vir}`
 
 with central charge `c_{Vir} = -(2 a c) / (1 - 2 a c) · dim L`
-(`TauCeti.CurrentAlgebra.sugawaraCentralCharge`).
+(`TauCeti.CurrentAlgebra.sugawaraCentralCharge`), reducing to `0 = 0` at `1 - 2 a c = 0` and giving
+the nontrivial Virasoro algebra away from the critical level (`1 - 2 a c ≠ 0`).
 
 ## Main results
 
@@ -232,22 +233,24 @@ variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
   {Φ : LinearMap.BilinForm K L} {hΦ : Φ.lieInvariant L} {hΦs : Φ.IsSymm} {a : K}
 
 /-- **The Virasoro commutation relations of the Segal--Sugawara modes** over any field `K` in which
-`2` and `3` are invertible: if `Φ = c • κ_L` and `1 - 2 a c ≠ 0`, then
+`2` and `3` are invertible: if `Φ = c • κ_L`, then
 
-`[Lₘ, Lₙ] = (m - n) L_{m+n} + δ_{m+n, 0} ((m ^ 3 - m) / 12) c_{Vir}`. -/
+`[Lₘ, Lₙ] = (m - n) L_{m+n} + δ_{m+n, 0} ((m ^ 3 - m) / 12) c_{Vir}`
+
+(totalised to `0 = 0` when `1 - 2 a c = 0`). -/
 theorem sugawaraVirasoro_mul_sugawaraVirasoro_sub_mul [NeZero (2 : K)] [NeZero (3 : K)] {c : K}
-    (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) (m n : ℤ) :
+    (h : Φ = c • killingForm K L) (m n : ℤ) :
     sugawaraVirasoro Φ hΦ hΦs a c m * sugawaraVirasoro Φ hΦ hΦs a c n -
         sugawaraVirasoro Φ hΦ hΦs a c n * sugawaraVirasoro Φ hΦ hΦs a c m =
       (m - n : K) • sugawaraVirasoro Φ hΦ hΦs a c (m + n) +
         algebraMap K (CompletedEnveloping Φ hΦ hΦs a)
           (if m + n = 0 then ((m : K) ^ 3 - m) / 12 * sugawaraCentralCharge K L a c else 0) := by
+  by_cases hc : 1 - 2 * a * c = 0
+  · simp [sugawaraVirasoro_def, sugawaraCentralCharge_def, hc]
   have h2 : (2 : K) ≠ 0 := NeZero.ne (2 : K)
   have h3 : (3 : K) ≠ 0 := NeZero.ne (3 : K)
   have h6 : (6 : K) ≠ 0 := by
-    have h23 : (2 : K) * 3 ≠ 0 := mul_ne_zero h2 h3
-    norm_num at h23
-    exact h23
+    simpa [show (6 : K) = 2 * 3 by norm_num] using mul_ne_zero h2 h3
   have hdiv6 : (((m ^ 3 - m) / 6 : ℤ) : K) = ((m : K) ^ 3 - m) / 6 := by
     have hdvd : (6 : ℤ) ∣ m ^ 3 - m :=
       ⟨_, (Finset.six_mul_sum_Ico_zero_mul_sub_sub_sum_Ico_zero_mul_sub m).symm⟩
@@ -269,10 +272,8 @@ theorem sugawaraVirasoro_mul_sugawaraVirasoro_sub_mul [NeZero (2 : K)] [NeZero (
     split_ifs
     · rw [hdiv6, sugawaraCentralCharge_def]
       have h12 : (12 : K) ≠ 0 := by
-        have h26 : (2 : K) * 6 ≠ 0 := mul_ne_zero h2 h6
-        norm_num at h26
-        exact h26
-      field_simp
+        simpa [show (12 : K) = 2 * 6 by norm_num] using mul_ne_zero h2 h6
+      field_simp [h12]
       ring
     · simp
   rw [hlin, sub_eq_add_neg, ← neg_smul, hcent]
