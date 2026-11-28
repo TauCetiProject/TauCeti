@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Order.Filter.AtTopBot.Basic
-import TauCeti.Analysis.SpecialFunctions.Log.PowerDecay
+import TauCeti.Analysis.SpecialFunctions.Log.Power.Decay
 
 /-!
 # One-sided estimates from a second cutoff
