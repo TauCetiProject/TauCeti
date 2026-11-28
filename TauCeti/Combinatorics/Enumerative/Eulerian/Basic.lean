@@ -315,6 +315,10 @@ private noncomputable def insertLastEquiv (n : ℕ) :
     Fin (n + 1) × Equiv.Perm (Fin n) ≃ Equiv.Perm (Fin (n + 1)) :=
   Equiv.ofBijective _ (insertLast_uncurry_bijective n)
 
+private lemma insertLastEquiv_apply {n : ℕ} (p : Fin (n + 1)) (σ : Equiv.Perm (Fin n)) :
+    insertLastEquiv n (p, σ) = insertLast p σ :=
+  rfl
+
 private lemma descentCount_insertLast_zero {m : ℕ} (σ : Equiv.Perm (Fin (m + 1))) :
     (insertLast 0 σ).descentCount = σ.descentCount + 1 := by
   rw [descentCount_succ, descentCount_succ]
@@ -446,8 +450,9 @@ private lemma filter_descent_insertLast_succ_castSucc {m : ℕ} (k : Fin m)
   · intro hi
     rcases lt_trichotomy i k.castSucc with hlt | heq | hgt
     · let j : Fin m := ⟨i.val, (Fin.lt_def.mp hlt).trans k.isLt⟩
+      have hjk : j < k := Fin.lt_def.mpr hlt
       have hf_eq : insertShift k j = i := by
-        dsimp [insertShift]; simp only [show j < k from hlt, ↓reduceIte]; exact Fin.ext rfl
+        dsimp [insertShift]; simp only [hjk, ↓reduceIte]; exact Fin.ext rfl
       refine ⟨j, ?_, hf_eq⟩
       rw [← descent_insertLast_succ_castSucc_insertShift_iff k σ j, hf_eq]
       exact hi
@@ -512,15 +517,13 @@ theorem eulerianNumber_eq_card_ascentCount (n q : ℕ) :
     eulerianNumber n q =
       (Finset.univ.filter fun σ : Equiv.Perm (Fin n) => σ.ascentCount = q).card := by
   rw [eulerianNumber]
+  have hrev : (Fin.revPerm * Fin.revPerm : Equiv.Perm (Fin n)) = 1 := by ext x; simp
   refine Finset.card_bij (fun σ _ => σ * Fin.revPerm) ?_ (fun _ _ _ _ h => mul_right_cancel h) ?_
   · intro σ hσ
     simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hσ ⊢
-    rw [← Equiv.Perm.descentCount_mul_revPerm (σ * Fin.revPerm), mul_assoc,
-      show (Fin.revPerm * Fin.revPerm : Equiv.Perm (Fin n)) = 1 by ext x; simp, mul_one, hσ]
+    rw [← Equiv.Perm.descentCount_mul_revPerm (σ * Fin.revPerm), mul_assoc, hrev, mul_one, hσ]
   · intro τ hτ
-    refine ⟨τ * Fin.revPerm, ?_, by
-      rw [mul_assoc, show (Fin.revPerm * Fin.revPerm : Equiv.Perm (Fin n)) = 1 by ext x; simp,
-        mul_one]⟩
+    refine ⟨τ * Fin.revPerm, ?_, by rw [mul_assoc, hrev, mul_one]⟩
     simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hτ ⊢
     simpa [Equiv.Perm.descentCount_mul_revPerm] using hτ
 
@@ -669,15 +672,19 @@ private lemma card_insertLast_fiber_descentCount (m q : ℕ) (σ : Equiv.Perm (F
       ∑ k : Fin m, if (if σ k.succ < σ k.castSucc then σ.descentCount
           else σ.descentCount + 1) = q + 1 then 1 else 0 := by
     rw [Finset.card_filter, Fin.sum_univ_succ, Fin.sum_univ_castSucc]
-    have h0' : (Equiv.Perm.insertLastEquiv (m + 1) (0, σ)).descentCount = σ.descentCount + 1 :=
-      Equiv.Perm.descentCount_insertLast_zero σ
+    have h0' : (Equiv.Perm.insertLastEquiv (m + 1) (0, σ)).descentCount = σ.descentCount + 1 := by
+      rw [Equiv.Perm.insertLastEquiv_apply]
+      exact Equiv.Perm.descentCount_insertLast_zero σ
     have hlast' : (Equiv.Perm.insertLastEquiv (m + 1) ((Fin.last m).succ, σ)).descentCount =
         σ.descentCount := by
-      rw [Fin.succ_last]; exact Equiv.Perm.descentCount_insertLast_last σ
+      rw [Equiv.Perm.insertLastEquiv_apply, Fin.succ_last]
+      exact Equiv.Perm.descentCount_insertLast_last σ
     have hmid' : ∀ k : Fin m,
         (Equiv.Perm.insertLastEquiv (m + 1) (k.castSucc.succ, σ)).descentCount =
-          if σ k.succ < σ k.castSucc then σ.descentCount else σ.descentCount + 1 := fun k =>
-      Equiv.Perm.descentCount_insertLast_succ_castSucc k σ
+          if σ k.succ < σ k.castSucc then σ.descentCount else σ.descentCount + 1 := by
+      intro k
+      rw [Equiv.Perm.insertLastEquiv_apply, Fin.succ_castSucc]
+      exact Equiv.Perm.descentCount_insertLast_succ_castSucc k σ
     simp_rw [h0', hlast', hmid']; ring
   rw [hcard_p, sum_insertLast_mid_descentCount]
   have htot := Equiv.Perm.descentCount_add_ascentCount σ
@@ -758,18 +765,20 @@ private lemma worpitzky_step (n q j : ℕ) (hjq : j ≤ q) :
   rcases le_or_gt j n with hjn | hnj
   · have h1 : (n + 1) * (n + 1 + q - j).choose (n + 1) =
         (n + 1 + q - j) * (n + q - j).choose n := by
-      rw [show n + 1 + q - j = (n + q - j) + 1 by omega,
-        Nat.add_one_mul_choose_eq, mul_comm (n + 1)]
+      have hsub : n + 1 + q - j = (n + q - j) + 1 := by omega
+      rw [hsub, Nat.add_one_mul_choose_eq, mul_comm (n + 1)]
     have h2 : (n + 1) * (n + q - j).choose (n + 1) = (q - j) * (n + q - j).choose n := by
       have hch := Nat.choose_succ_right_eq (n + q - j) n
-      rw [show n + q - j - n = q - j by omega] at hch
+      have hsub : n + q - j - n = q - j := by omega
+      rw [hsub] at hch
       linarith
+    have hjle : j ≤ n + 1 + q := by omega
     calc
       (q + 1) * ((n + 1) * (eulerianNumber n j * (n + q - j).choose n))
           = eulerianNumber n j * ((n + 1) * (q + 1) * (n + q - j).choose n) := by ring
       _ = eulerianNumber n j *
             (((j + 1) * (n + 1 + q - j) + (n - j) * (q - j)) * (n + q - j).choose n) := by
-          congr 2; zify [hjq, hjn, show j ≤ n + 1 + q by omega]; ring
+          congr 2; zify [hjq, hjn, hjle]; ring
       _ = (j + 1) * eulerianNumber n j * ((n + 1) * (n + 1 + q - j).choose (n + 1)) +
             (n - j) * eulerianNumber n j * ((n + 1) * (n + q - j).choose (n + 1)) := by
           rw [h1, h2]; ring
@@ -794,7 +803,8 @@ theorem pow_eq_sum_eulerianNumber_mul_choose (n q : ℕ) :
             (n + q - k).choose (n + 1) := by
       rw [Finset.sum_range_succ', eulerianNumber_zero_right, one_mul, Nat.sub_zero, add_comm]
       refine congrArg₂ (· + ·) rfl (Finset.sum_congr rfl fun k _ => ?_)
-      rw [eulerianNumber_succ_succ, show n + 1 + q - (k + 1) = n + q - k by omega]
+      have hsub : n + 1 + q - (k + 1) = n + q - k := by omega
+      rw [eulerianNumber_succ_succ, hsub]
     have hsum_split : ∑ k ∈ Finset.range q,
         ((k + 2) * eulerianNumber n (k + 1) + (n - k) * eulerianNumber n k) *
           (n + q - k).choose (n + 1) =
@@ -806,7 +816,8 @@ theorem pow_eq_sum_eulerianNumber_mul_choose (n q : ℕ) :
         (n - k) * eulerianNumber n k * (n + q - k).choose (n + 1) =
         ∑ j ∈ Finset.range (q + 1),
           (n - j) * eulerianNumber n j * (n + q - j).choose (n + 1) := by
-      rw [Finset.sum_range_succ, show n + q - q = n by omega,
+      have hsub : n + q - q = n := by omega
+      rw [Finset.sum_range_succ, hsub,
         Nat.choose_eq_zero_of_lt (Nat.lt_succ_self n), mul_zero, add_zero]
     have hhead : (n + 1 + q).choose (n + 1) +
         ∑ k ∈ Finset.range q, (k + 2) * eulerianNumber n (k + 1) * (n + q - k).choose (n + 1) =
@@ -816,7 +827,9 @@ theorem pow_eq_sum_eulerianNumber_mul_choose (n q : ℕ) :
       simp only [zero_add, one_mul, Nat.sub_zero]
       rw [add_comm ((n + 1 + q).choose (n + 1))]
       refine congrArg₂ (· + ·) (Finset.sum_congr rfl fun k _ => ?_) rfl
-      rw [show n + 1 + q - (k + 1) = n + q - k by omega, show k + 1 + 1 = k + 2 by ring]
+      have hsub : n + 1 + q - (k + 1) = n + q - k := by omega
+      have hadd : k + 1 + 1 = k + 2 := by ring
+      rw [hsub, hadd]
     rw [htail, ← add_assoc, hhead, ← Finset.sum_add_distrib, Finset.mul_sum]
     exact Finset.sum_congr rfl fun j hj =>
       worpitzky_step n q j (Nat.lt_succ_iff.mp (Finset.mem_range.mp hj))
@@ -824,9 +837,10 @@ theorem pow_eq_sum_eulerianNumber_mul_choose (n q : ℕ) :
 /-- Closed form for `eulerianNumber n 1`: `A(n, 1) = 2 ^ n - n - 1`. -/
 theorem eulerianNumber_one_right (n : ℕ) : eulerianNumber n 1 = 2 ^ n - n - 1 := by
   have hw := pow_eq_sum_eulerianNumber_mul_choose n 1
+  have htwo : 1 + 1 = 2 := by norm_num
   rw [Finset.sum_range_succ, Finset.sum_range_one, eulerianNumber_zero_right, one_mul,
     Nat.sub_zero, Nat.add_sub_cancel, Nat.choose_self, mul_one,
-    Nat.choose_succ_self_right, show 1 + 1 = 2 from rfl] at hw
+    Nat.choose_succ_self_right, htwo] at hw
   omega
 
 /-- Every entry `eulerianNumber n q` with `q < n` is strictly positive. -/
@@ -912,8 +926,11 @@ theorem eulerianNumber_le_succ_of_two_mul_le {n q : ℕ} (hq : 2 * (q + 1) ≤ n
           _ ≤ (k + 3) * eulerianNumber n (k + 2) + (n - (k + 1)) * eulerianNumber n (k + 1) :=
             Nat.add_le_add_right (Nat.mul_le_mul_left _ ih2) _
       · have hsym : eulerianNumber n (k + 2) = eulerianNumber n k := by
-          rw [eulerianNumber_symm (by omega), show n - 1 - (k + 2) = k by omega]
-        rw [hsym, show n - (k + 1) = k + 2 by omega, show n - k = k + 3 by omega]
+          have hsub1 : n - 1 - (k + 2) = k := by omega
+          rw [eulerianNumber_symm (by omega), hsub1]
+        have hsub2 : n - (k + 1) = k + 2 := by omega
+        have hsub3 : n - k = k + 3 := by omega
+        rw [hsym, hsub2, hsub3]
         ring_nf
         rfl
 

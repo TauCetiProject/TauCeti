@@ -76,8 +76,9 @@ theorem pow_le_eulerianNumber_add_mul_pow (n q : ℕ) :
   | zero =>
     rw [zero_add, one_pow, eulerianNumber_zero_right, zero_pow hn.ne', mul_zero, add_zero]
   | succ p =>
+    have hsub : n + (p + 1) - (p + 1) = n := by omega
     rw [pow_eq_sum_eulerianNumber_mul_choose n (p + 1), Finset.sum_range_succ,
-      show n + (p + 1) - (p + 1) = n by omega, Nat.choose_self, mul_one, add_comm]
+      hsub, Nat.choose_self, mul_one, add_comm]
     refine Nat.add_le_add_left ?_ _
     rw [pow_eq_sum_eulerianNumber_mul_choose n p, Finset.mul_sum]
     refine Finset.sum_le_sum fun j hj => ?_
@@ -89,15 +90,8 @@ theorem pow_le_eulerianNumber_add_mul_pow (n q : ℕ) :
       rw [hm_eq]
       apply Nat.le_of_mul_le_mul_left _ hpos
       have hrel : (p - j + 1) * (m + 1).choose n = (m + 1) * m.choose n := by
-        have hnm : n ≤ m := by omega
-        have h1 : m - n + 1 = p - j + 1 := by omega
-        have h2 : (m + 1) - (m - n + 1) = n := by omega
-        have hsym1 : m.choose (m - n) = m.choose n := Nat.choose_symm hnm
-        have hsym2 : (m + 1).choose (m - n + 1) = (m + 1).choose n := by
-          rw [← Nat.choose_symm (by omega : m - n + 1 ≤ m + 1), h2]
-        have hadd := Nat.add_one_mul_choose_eq m (m - n)
-        rw [hsym1, hsym2, h1] at hadd
-        linarith
+        have hsub' : m + 1 - n = p - j + 1 := by omega
+        simpa [hsub', Nat.mul_comm] using (Nat.choose_mul_succ_eq m n).symm
       rw [hrel]
       have hmul : m + 1 ≤ (p - j + 1) * (n + 1) := by
         have : m + 1 = n + (p - j + 1) := by omega
@@ -119,60 +113,16 @@ theorem pow_sub_mul_pow_le_eulerianNumber (n q : ℕ) :
     ((q : ℤ) + 1) ^ n - ((n : ℤ) + 1) * (q : ℤ) ^ n ≤ (eulerianNumber n q : ℤ) :=
   sub_le_iff_le_add.mpr (by exact_mod_cast pow_le_eulerianNumber_add_mul_pow n q)
 
-private lemma mul_pow_lt_exp_neg_one_mul_pow {n q : ℕ} (hn : 0 < n) (hq0 : 0 < q)
-    (hq : (q : ℝ) + 1 < (n : ℝ) / (Real.log ((n : ℝ) + 1) + 1)) :
-    ((n : ℝ) + 1) * (q : ℝ) ^ n < Real.exp (-1) * ((q : ℝ) + 1) ^ n := by
-  have hq1pos : (0 : ℝ) < (q : ℝ) + 1 := by positivity
-  have hn1gt : (1 : ℝ) < (n : ℝ) + 1 := by exact_mod_cast (by omega : 1 < n + 1)
-  have hlogpos : 0 < Real.log ((n : ℝ) + 1) + 1 := by linarith [Real.log_pos hn1gt]
-  have hdiv : Real.log ((n : ℝ) + 1) + 1 < (n : ℝ) / ((q : ℝ) + 1) := by
-    exact (lt_div_iff₀ hq1pos).mpr (by have := (lt_div_iff₀ hlogpos).mp hq; nlinarith)
-  have hadd : (q : ℝ) / ((q : ℝ) + 1) < Real.exp (-1 / ((q : ℝ) + 1)) := by
-    have hexp := Real.add_one_lt_exp (show (-1 / ((q : ℝ) + 1)) ≠ 0 by positivity)
-    have heq : -1 / ((q : ℝ) + 1) + 1 = (q : ℝ) / ((q : ℝ) + 1) := by field_simp; ring
-    rwa [heq] at hexp
-  have hpow : ((q : ℝ) / ((q : ℝ) + 1)) ^ n < Real.exp (-((n : ℝ) / ((q : ℝ) + 1))) := by
-    calc
-      ((q : ℝ) / ((q : ℝ) + 1)) ^ n < (Real.exp (-1 / ((q : ℝ) + 1))) ^ n :=
-        pow_lt_pow_left₀ hadd (by positivity) hn.ne'
-      _ = Real.exp ((n : ℝ) * (-1 / ((q : ℝ) + 1))) := by rw [← Real.exp_natCast_mul]
-      _ = Real.exp (-((n : ℝ) / ((q : ℝ) + 1))) := by ring_nf
-  have hexp_bound : Real.exp (-((n : ℝ) / ((q : ℝ) + 1))) < Real.exp (-1) / ((n : ℝ) + 1) := by
-    calc
-      Real.exp (-((n : ℝ) / ((q : ℝ) + 1))) < Real.exp (-(Real.log ((n : ℝ) + 1) + 1)) :=
-        Real.exp_lt_exp.mpr (by linarith)
-      _ = Real.exp (-1) * Real.exp (-Real.log ((n : ℝ) + 1)) := by rw [← Real.exp_add]; ring_nf
-      _ = Real.exp (-1) / ((n : ℝ) + 1) := by
-        rw [Real.exp_neg (Real.log _), Real.exp_log (by positivity), div_eq_mul_inv]
-  have hrat : ((q : ℝ) ^ n / ((q : ℝ) + 1) ^ n) * ((n : ℝ) + 1) < Real.exp (-1) := by
-    have hlt := hpow.trans hexp_bound
-    rw [div_pow, lt_div_iff₀ (by positivity)] at hlt
-    exact hlt
-  calc
-    ((n : ℝ) + 1) * (q : ℝ) ^ n
-        = (((q : ℝ) ^ n / ((q : ℝ) + 1) ^ n) * ((n : ℝ) + 1)) * ((q : ℝ) + 1) ^ n := by
-      field_simp
-    _ < Real.exp (-1) * ((q : ℝ) + 1) ^ n := mul_lt_mul_of_pos_right hrat (by positivity)
-
 /-- Real lower bound on Eulerian numbers with few descents (Lawrence–Sawin, Lemma C.3):
 for `(q : ℝ) + 1 < n / (Real.log (n + 1) + 1)`,
 `(1 - Real.exp (-1)) * ((q : ℝ) + 1) ^ n ≤ eulerianNumber n q`. -/
 theorem one_sub_exp_neg_one_mul_pow_le_eulerianNumber {n q : ℕ}
     (hq : (q : ℝ) + 1 < (n : ℝ) / (Real.log ((n : ℝ) + 1) + 1)) :
     (1 - Real.exp (-1)) * ((q : ℝ) + 1) ^ n ≤ (eulerianNumber n q : ℝ) := by
-  have hn_pos : 0 < n := by
-    by_contra hn0
-    have hnz : n = 0 := Nat.eq_zero_of_not_pos hn0
-    subst hnz
-    simp only [Nat.cast_zero, zero_div] at hq
-    linarith [Nat.cast_nonneg (α := ℝ) q]
-  rcases Nat.eq_zero_or_pos q with rfl | hq0
-  · simp only [Nat.cast_zero, zero_add, one_pow, mul_one, eulerianNumber_zero_right, Nat.cast_one]
-    linarith [Real.exp_pos (-1 : ℝ)]
-  · have hc1 : ((q : ℝ) + 1) ^ n ≤ (eulerianNumber n q : ℝ) + ((n : ℝ) + 1) * (q : ℝ) ^ n := by
-      exact_mod_cast pow_le_eulerianNumber_add_mul_pow n q
-    have hkey := mul_pow_lt_exp_neg_one_mul_pow hn_pos hq0 hq
-    linarith
+  have hc1 : ((q : ℝ) + 1) ^ n ≤ (eulerianNumber n q : ℝ) + ((n : ℝ) + 1) * (q : ℝ) ^ n := by
+    exact_mod_cast pow_le_eulerianNumber_add_mul_pow n q
+  have hkey := mul_pow_lt_exp_neg_one_mul_pow (Nat.cast_nonneg q) hq
+  linarith
 
 /-! ### Fast computable row table for finite base cases -/
 
@@ -253,7 +203,8 @@ private lemma eulerianNumber_ge_66_of_three_le {n r : ℕ} (hr : 3 ≤ r) (hrn :
       (eulerianNumber_monotoneOn n (Set.mem_Iic.mpr (by omega)) (Set.mem_Iic.mpr hle) (by omega))
   · have hle' : (n - 1) / 2 ≤ r - 1 := by omega
     have hsym : eulerianNumber n (n - 3) = eulerianNumber n 2 := by
-      rw [eulerianNumber_symm (by omega), show n - 1 - (n - 3) = 2 by omega]
+      have hsub : n - 1 - (n - 3) = 2 := by omega
+      rw [eulerianNumber_symm (by omega), hsub]
     calc
       66 ≤ eulerianNumber n 2 := eulerianNumber_two_ge_66 hn
       _ = eulerianNumber n (n - 3) := hsym.symm
@@ -271,25 +222,6 @@ private lemma pow_three_mul_27_64_lt {n : ℕ} (hn : 15 ≤ n) :
       _ ≤ 4 * (25 * 4 ^ m) := Nat.mul_le_mul_right _ (by omega)
       _ = 25 * 4 ^ (m + 1) := by rw [pow_succ']; ring
 
-private lemma two_lt_div_log_of_fifteen_le {n : ℕ} (hn : 15 ≤ n) :
-    (1 : ℝ) + 1 < (n : ℝ) / (Real.log ((n : ℝ) + 1) + 1) := by
-  set y : ℝ := (n : ℝ) / 2 - 1
-  have hn_real : (15 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
-  have hy_nonneg : 0 ≤ y := by dsimp [y]; linarith
-  have htay := Real.sum_le_exp_of_nonneg hy_nonneg 3
-  rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one] at htay
-  have hexp : (n : ℝ) + 1 < Real.exp y := by
-    have hpoly : (n : ℝ) + 1 <
-        y ^ 0 / (0).factorial + y ^ 1 / (1).factorial + y ^ 2 / (2).factorial := by
-      dsimp [y]; norm_num; nlinarith
-    exact hpoly.trans_le htay
-  have hlt : Real.log ((n : ℝ) + 1) < y := (Real.log_lt_iff_lt_exp (by positivity)).mpr hexp
-  have hn2 : Real.log ((n : ℝ) + 1) + 1 < (n : ℝ) / 2 := by dsimp [y] at hlt; linarith
-  have hlogpos : 0 < Real.log ((n : ℝ) + 1) + 1 := by
-    linarith [Real.log_pos (by linarith : (1 : ℝ) < (n : ℝ) + 1)]
-  rw [lt_div_iff₀ hlogpos]
-  linarith
-
 /-- For `11 ≤ n`, `27 * eulerianNumber n 2 < eulerianNumber n 1 ^ 2`
 (Lawrence–Sawin, Lemma C.5). -/
 theorem mul_eulerianNumber_two_lt_sq {n : ℕ} (hn : 11 ≤ n) :
@@ -300,15 +232,18 @@ theorem mul_eulerianNumber_two_lt_sq {n : ℕ} (hn : 11 ≤ n) :
       decide
     have := hcheck n (Finset.mem_Icc.mpr ⟨hn, by omega⟩)
     simpa only [eulerianRow_getD] using this
-  · have hlow := one_sub_exp_neg_one_mul_pow_le_eulerianNumber (n := n) (q := 1)
-      (by simpa using two_lt_div_log_of_fifteen_le h15)
+  · have h2lt : ((1 : ℕ) : ℝ) + 1 < (n : ℝ) / (Real.log ((n : ℝ) + 1) + 1) := by
+      norm_num
+      exact two_lt_div_log_of_six_le (by exact_mod_cast (by omega : 6 ≤ n))
+    have hlow := one_sub_exp_neg_one_mul_pow_le_eulerianNumber h2lt
     norm_num at hlow
     have hpow2 : (5 : ℝ) / 8 * 2 ^ n < (eulerianNumber n 1 : ℝ) :=
       (mul_lt_mul_of_pos_right five_eighths_lt_one_sub_exp_neg_one (by positivity)).trans_le hlow
+    have h4 : (4 : ℝ) = 2 ^ 2 := by norm_num
     have hsq : (25 : ℝ) / 64 * 4 ^ n < (eulerianNumber n 1 : ℝ) ^ 2 := by
       calc
         (25 : ℝ) / 64 * 4 ^ n = ((5 : ℝ) / 8 * 2 ^ n) ^ 2 := by
-          rw [mul_pow, show (4 : ℝ) = 2 ^ 2 by norm_num, ← pow_mul, mul_comm 2 n, pow_mul]
+          rw [mul_pow, h4, ← pow_mul, mul_comm 2 n, pow_mul]
           norm_num
         _ < (eulerianNumber n 1 : ℝ) ^ 2 := pow_lt_pow_left₀ hpow2 (by positivity) (by norm_num)
     have hup : (eulerianNumber n 2 : ℝ) ≤ 3 ^ n := by exact_mod_cast eulerianNumber_le_pow n 2
