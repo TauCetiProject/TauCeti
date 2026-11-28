@@ -269,6 +269,15 @@ theorem indicator_mem_compactlySupported (f : LocallyConstant X M) {K : Set X} (
     (hKc : IsCompact K) : f.indicator hK ∈ compactlySupported R X M :=
   HasCompactSupport.intro' hKc hK.isClosed fun _ hx => indicator_of_notMem f hK hx
 
+/-- Cutting a test function off along any clopen set `K`, compact or not, gives a test
+function. -/
+theorem indicator_mem_compactlySupported_of_mem {f : LocallyConstant X M}
+    (hf : f ∈ compactlySupported R X M) {K : Set X} (hK : IsClopen K) :
+    f.indicator hK ∈ compactlySupported R X M :=
+  (mem_compactlySupported.1 hf).mono fun x hx => by
+    rw [mem_support, indicator_apply] at hx
+    exact (Set.indicator_apply_ne_zero.1 hx).2
+
 /-- The indicator `1_K • m` of a compact open set has compact support. -/
 theorem compactOpenIndicator_mem_compactlySupported [T2Space X] (K : CompactOpens X) (m : M) :
     compactOpenIndicator K m ∈ compactlySupported R X M :=

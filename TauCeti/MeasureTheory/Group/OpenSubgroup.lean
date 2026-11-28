@@ -72,6 +72,10 @@ This file develops five families of results for `(H, μ.comap ((↑) : H → G))
   `OpenSubgroup.restrict_op_smul_eq_smul_map_comap`,
   `OpenSubgroup.setIntegral_op_smul_eq_integral_comap`: left- and right-coset measure and integral
   identities.
+* `OpenSubgroup.integral_eq_measureReal_smul_sum`, `OpenSubgroup.sum_eq_zero_of_integral_eq_zero`:
+  a function invariant under right translation by `H` and supported on finitely many cosets
+  integrates to `μ H` times the sum of its values at the coset representatives; against a Haar
+  measure, a vanishing integral forces that sum to vanish.
 * `OpenSubgroup.integral_smul_inv_mul_eq_comap`, `OpenSubgroup.integral_smul_inv_mul_comap_congr`,
   `OpenSubgroup.integral_smul_inv_mul_mul_eq_comap`,
   `OpenSubgroup.integral_smul_inv_mul_eq_zero_of_notMem`: pointwise convolution reduction and
@@ -276,6 +280,90 @@ theorem setIntegral_smul_eq_integral_comap {E : Type*} [NormedAddCommGroup E] [N
   rw [← H.map_mul_left_comap g, (H.measurableEmbedding_mul_left g).integral_map]
 
 end LeftCoset
+
+section CosetSum
+
+open scoped Classical in
+/-- If `f` vanishes off the cosets `a s` in a finite set `T`, then `f` is the sum over `q ∈ T` of
+its restrictions to the cosets `q`, each written through the representative `q.out`. -/
+theorem _root_.QuotientGroup.sum_ite_out_inv_mul_mem {G M : Type*} [Group G] [AddCommMonoid M]
+    {s : Subgroup G} {T : Finset (G ⧸ s)} {f : G → M} (hT : ∀ a, f a ≠ 0 → (a : G ⧸ s) ∈ T)
+    (a : G) : ∑ q ∈ T, (if q.out⁻¹ * a ∈ s then f a else 0) = f a := by
+  have hq (q : G ⧸ s) : q.out⁻¹ * a ∈ s ↔ (a : G ⧸ s) = q := by
+    rw [← QuotientGroup.eq, QuotientGroup.out_eq', eq_comm]
+  simp_rw [hq, Finset.sum_ite_eq]
+  split_ifs with h
+  · rfl
+  · by_contra hne
+    exact h (hT a (Ne.symm hne))
+
+/-- A function invariant under right translation by an open subgroup is continuous. -/
+private theorem continuous_of_forall_mul_eq {G E : Type*} [Group G] [TopologicalSpace G]
+    [ContinuousMul G] [TopologicalSpace E] (H : OpenSubgroup G) {f : G → E}
+    (hfH : ∀ a, ∀ u ∈ H, f (a * u) = f a) :
+    Continuous f :=
+  continuous_iff_continuousAt.2 fun a => by
+    -- Near `a`, every point is `a * u` with `u ∈ H`.
+    have ha : ∀ᶠ b in 𝓝 a, a⁻¹ * b ∈ H := (continuous_const_mul a⁻¹).continuousAt.preimage_mem_nhds
+      (by rw [inv_mul_cancel]; exact H.isOpen.mem_nhds H.one_mem)
+    exact tendsto_const_nhds.congr' (ha.mono fun b hb => by simpa using (hfH a _ hb).symm)
+
+variable {G E : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G] [OpensMeasurableSpace G]
+  [MeasurableMul G] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] (μ : Measure G)
+  (H : OpenSubgroup G) {f : G → E} {T : Finset (G ⧸ H.toSubgroup)}
+
+/-- **Integral of a function invariant under an open subgroup.** If `f` is invariant under right
+translation by an open subgroup `H` and vanishes off the cosets in a finite set `T`, its integral
+against a left invariant measure `μ` is `μ H` times the sum of the values of `f` at the
+representatives of these cosets. -/
+theorem integral_eq_measureReal_smul_sum [μ.IsMulLeftInvariant] (hf : Integrable f μ)
+    (hfH : ∀ a, ∀ u ∈ H, f (a * u) = f a) (hT : ∀ a, f a ≠ 0 → (a : G ⧸ H.toSubgroup) ∈ T) :
+    ∫ a, f a ∂μ = μ.real H • ∑ q ∈ T, f q.out := by
+  classical
+  set s : G ⧸ H.toSubgroup → Set G := fun q => (q.out⁻¹ * ·) ⁻¹' (H : Set G)
+  have hs (q : G ⧸ H.toSubgroup) : MeasurableSet (s q) :=
+    H.isOpen.measurableSet.preimage (measurable_const_mul _)
+  calc ∫ a, f a ∂μ = ∫ a, ∑ q ∈ T, (s q).indicator f a ∂μ := by
+        congr 1
+        funext a
+        conv_lhs => rw [← QuotientGroup.sum_ite_out_inv_mul_mem hT a]
+        rfl
+    _ = ∑ q ∈ T, ∫ a, (s q).indicator f a ∂μ :=
+        integral_finsetSum _ fun q _ => hf.indicator (hs q)
+    _ = ∑ q ∈ T, μ.real H • f q.out := by
+        refine Finset.sum_congr rfl fun q _ => ?_
+        -- On the coset `s q = q.out H`, the function `f` is the constant `f q.out`, and
+        -- `μ (q.out H) = μ H` by left invariance.
+        have hc : (s q).indicator f = (s q).indicator fun _ => f q.out :=
+          indicator_congr fun a ha => by rw [← hfH q.out _ ha, mul_inv_cancel_left]
+        have hμ : μ.real (s q) = μ.real H := by
+          simp only [s, measureReal_def, measure_preimage_mul]
+        rw [hc, integral_indicator_const _ (hs q), hμ]
+    _ = μ.real H • ∑ q ∈ T, f q.out := (Finset.smul_sum ..).symm
+
+/-- **Vanishing coset sums.** If a compactly supported `f` is invariant under right translation by
+an open subgroup `H`, vanishes off the cosets in a finite set `T` and integrates to zero against a
+Haar measure `μ`, then the values of `f` at the representatives of these cosets sum to zero. -/
+theorem sum_eq_zero_of_integral_eq_zero [IsTopologicalGroup G] [μ.IsHaarMeasure]
+    (hfc : HasCompactSupport f) (hfH : ∀ a, ∀ u ∈ H, f (a * u) = f a)
+    (hT : ∀ a, f a ≠ 0 → (a : G ⧸ H.toSubgroup) ∈ T) (h0 : ∫ a, f a ∂μ = 0) :
+    ∑ q ∈ T, f q.out = 0 := by
+  by_contra hne
+  obtain ⟨q, -, hq⟩ := Finset.exists_ne_zero_of_sum_ne_zero hne
+  -- The coset `q.out H` lies in the compact support of `f`, so `μ H < ∞`.
+  have hHK : (H : Set G) ⊆ (q.out * ·) ⁻¹' tsupport f := fun u hu =>
+    subset_tsupport f (by rwa [Function.mem_support, hfH _ _ hu])
+  have hfin : μ H ≠ ⊤ := ((measure_mono hHK).trans_lt (by
+    rw [measure_preimage_mul]
+    exact hfc.isCompact.measure_lt_top)).ne
+  have hpos : μ.real H ≠ 0 :=
+    (measureReal_ne_zero_iff hfin).2 (H.isOpen.measure_pos μ ⟨1, H.one_mem⟩).ne'
+  rw [integral_eq_measureReal_smul_sum μ H
+    ((continuous_of_forall_mul_eq H hfH).integrable_of_hasCompactSupport hfc) hfH hT,
+    smul_eq_zero] at h0
+  exact h0.elim hpos hne
+
+end CosetSum
 
 section RightCoset
 
