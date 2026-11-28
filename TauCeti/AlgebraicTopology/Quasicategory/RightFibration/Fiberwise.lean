@@ -36,17 +36,6 @@ open modelCategoryQuillen
 
 variable {X Y S : SSet.{u}}
 
-private theorem
-    rlp_monomorphisms_iff_forall_rlp_monomorphisms_fiber_map_of_isWeaklyContractible_fiber
-    (f : X ⟶ Y) (p : Y ⟶ S) {q : X ⟶ S} (hq : f ≫ p = q)
-    (hf : (∀ y : Y _⦋0⦌, IsWeaklyContractible (fiber f y : SSet.{u})) →
-      (monomorphisms SSet.{u}).rlp f) :
-    (monomorphisms SSet.{u}).rlp f ↔
-      ∀ s : S _⦋0⦌, (monomorphisms SSet.{u}).rlp (fiber.map f hq s) := by
-  refine ⟨fun h s ↦ (monomorphisms SSet.{u}).rlp.of_isPullback
-    (fiber.isPullback_map f hq s) h, fun h ↦ hf ?_⟩
-  exact fun y ↦ fiber.isWeaklyContractible_of_rlp_map f p hq y (h (p.app _ y))
-
 private theorem forall_rlp_monomorphisms_iff_forall_isWeakHomotopyEquivalence_fiber_map
     (f : X ⟶ Y) (p : Y ⟶ S) {q : X ⟶ S} (hq : f ≫ p = q)
     (hp : ∀ s : S _⦋0⦌, KanComplex (fiber p s : SSet.{u}))
