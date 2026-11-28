@@ -16,7 +16,6 @@ public import TauCeti.RingTheory.PowerSeries.Cartier
 import Mathlib.Algebra.CharP.Lemmas
 import TauCeti.LinearAlgebra.SModEq.Basic
 import TauCeti.LinearAlgebra.Submodule.CompleteFiltration
-import TauCeti.RingTheory.AdicCompletion.Pi
 import TauCeti.RingTheory.PowerSeries.AdicComplete
 import TauCeti.RingTheory.PowerSeries.Dvd
 import TauCeti.RingTheory.PowerSeries.Ideal
@@ -30,8 +29,9 @@ For a prime `p` and a commutative ring `R`, the Frobenius substitution
 `φ f = f ((1 + X) ^ p - 1)` is an `R`-algebra endomorphism of `R⟦X⟧`. Through `φ` the power
 series ring becomes an algebra over itself, `a • f = φ a * f`; this is not the ordinary
 self-module structure. When `R` is `p`-adically complete, for instance over `ℤ_[p]`, over the
-integers of a finite unramified extension of `ℚ_[p]`, or over `ZMod p`, this algebra is free of
-rank `p` with basis `1, 1 + X, …, (1 + X) ^ (p - 1)`: every series has a unique expansion
+integers of a finite unramified extension of `ℚ_[p]`, or over `ZMod p`, this algebra is finite
+free with basis `1, 1 + X, …, (1 + X) ^ (p - 1)` (and of rank `p` when `R` is nontrivial): every
+series has a unique expansion
 
   `f = ∑ i < p, (1 + X) ^ i * φ (a i)`.
 
@@ -73,8 +73,8 @@ alone when `p` is a nonzerodivisor.)
 * `PowerSeries.coeff_frobeniusCoord_mem_span_pow_of_coeff_mem_span_pow`: explicit `p`-adic
   modulus of continuity for Frobenius coordinates.
 * `PowerSeries.module_free_frobeniusAlgebra`, `PowerSeries.module_finite_frobeniusAlgebra`,
-  `PowerSeries.finrank_frobeniusAlgebra`: `R⟦X⟧` is finite free of rank `p` over itself through
-  `φ`.
+  `PowerSeries.finrank_frobeniusAlgebra`: `R⟦X⟧` is finite free over itself through `φ`, and
+  has rank `p` when `R` is nontrivial.
 
 ## References
 
@@ -143,17 +143,23 @@ theorem map_frobeniusSubst {S : Type*} [CommRing S] (h : R →+* S) (f : R⟦X�
   have : map h ((1 + X : R⟦X⟧) ^ p - 1) = (1 + X) ^ p - 1 := by simp
   exact (map_subst (hasSubst_one_add_X_pow_sub_one p) f).trans (congrArg (subst · (map h f)) this)
 
+private theorem coeff_frobeniusSubst_sub_expand_mem [Fact p.Prime] (J : Ideal R) {g : R⟦X⟧}
+    {n : ℕ} (hg : ∀ m ≤ n, coeff m g ∈ J) :
+    coeff n (frobeniusSubst R p g - expand p (Fact.out : p.Prime).ne_zero g) ∈
+      Ideal.span {(p : R)} * J := by
+  have hp : p ≠ 0 := (Fact.out : p.Prime).ne_zero
+  rw [frobeniusSubst_apply, expand_apply]
+  exact coeff_subst_sub_subst_mem_span_mul (by simp)
+    (by rw [map_pow, constantCoeff_X, zero_pow hp])
+    (C_dvd_one_add_X_pow_sub_one_sub_X_pow (Fact.out : p.Prime)) J hg
+
 /-- For prime `p`, `frobeniusSubst R p f` agrees with `PowerSeries.expand p` modulo `(p)`. -/
 theorem frobeniusSubst_sub_expand_mem_span_p [Fact p.Prime] (f : R⟦X⟧) :
     frobeniusSubst R p f - expand p (Fact.out : p.Prime).ne_zero f ∈ Ideal.span {(p : R⟦X⟧)} := by
-  have hp : p ≠ 0 := (Fact.out : p.Prime).ne_zero
   rw [← pow_one (Ideal.span {(p : R⟦X⟧)}), ← map_natCast (C : R →+* R⟦X⟧),
-    PowerSeries.mem_span_C_pow_iff]
+    PowerSeries.mem_span_C_pow_iff, pow_one]
   intro n
-  rw [pow_one, frobeniusSubst_apply, expand_apply]
-  simpa using PowerSeries.coeff_subst_sub_subst_mem_span_mul (r := (p : R)) (by simp)
-    (by rw [map_pow, constantCoeff_X, zero_pow hp])
-    (C_dvd_one_add_X_pow_sub_one_sub_X_pow (Fact.out : p.Prime)) ⊤ (fun _ _ ↦ trivial)
+  simpa only [Ideal.mul_top] using coeff_frobeniusSubst_sub_expand_mem p ⊤ fun _ _ ↦ trivial
 
 /-- If `p = 0` in `S`, the Frobenius substitution is the expansion `f ↦ f (X ^ p)`. -/
 theorem frobeniusSubst_eq_expand [hp : Fact p.Prime] {S : Type*} [CommRing S]
@@ -358,16 +364,6 @@ private theorem frobeniusAssembly_eq_expandOneAddXEquiv_add_neumannStep [Fact p.
     (expandOneAddXEquiv p (Fact.out : p.Prime).ne_zero R).apply_symm_apply]
   exact (add_sub_cancel _ _).symm
 
-private theorem coeff_frobeniusSubst_sub_expand_mem [Fact p.Prime] (J : Ideal R) {g : R⟦X⟧}
-    {n : ℕ} (hg : ∀ m ≤ n, coeff m g ∈ J) :
-    coeff n (frobeniusSubst R p g - expand p (Fact.out : p.Prime).ne_zero g) ∈
-      Ideal.span {(p : R)} * J := by
-  have hp : p ≠ 0 := (Fact.out : p.Prime).ne_zero
-  rw [frobeniusSubst_apply, expand_apply]
-  exact coeff_subst_sub_subst_mem_span_mul (by simp)
-    (by rw [map_pow, constantCoeff_X, zero_pow hp])
-    (C_dvd_one_add_X_pow_sub_one_sub_X_pow (Fact.out : p.Prime)) J hg
-
 private theorem coeff_neumannStep_mem [Fact p.Prime] (J : Ideal R) {a : Fin p → R⟦X⟧} {n : ℕ}
     (ha : ∀ i : Fin p, ∀ m < p * (n + 1), coeff m (a i) ∈ J) (j : Fin p) :
     coeff n (neumannStep R p a j) ∈ Ideal.span {(p : R)} * J := by
@@ -381,44 +377,14 @@ private theorem coeff_neumannStep_mem [Fact p.Prime] (J : Ideal R) {a : Fin p �
   exact coeff_frobeniusSubst_sub_expand_mem p J
     fun m hm ↦ ha i m (by rw [Finset.mem_antidiagonal] at hxy; omega)
 
-variable (R) in
-private def coeffIdealFiltration (m : ℕ) : Submodule R (Fin p → R⟦X⟧) where
-  carrier := {a | ∀ (i : Fin p) (n : ℕ), coeff n (a i) ∈ Ideal.span {(p : R)} ^ m}
-  zero_mem' _ _ := by simp
-  add_mem' ha hb i n := by
-    rw [Pi.add_apply, map_add]
-    exact add_mem (ha i n) (hb i n)
-  smul_mem' c a ha i n := by
-    rw [Pi.smul_apply, map_smul, smul_eq_mul]
-    exact Ideal.mul_mem_left _ c (ha i n)
-
-private theorem coeffIdealFiltration_zero : coeffIdealFiltration R p 0 = ⊤ :=
-  Submodule.eq_top_iff'.mpr fun _ _ _ ↦ by simp [pow_zero]
-
-private theorem isCompleteFiltration_coeffIdealFiltration
-    [IsAdicComplete (Ideal.span {(p : R)}) R] :
-    TauCeti.IsCompleteFiltration (coeffIdealFiltration R p) where
-  antitone _ _ hmn _ hx i n := Ideal.pow_le_pow_right hmn (hx i n)
-  eq_zero_of_forall_mem a hx := by
-    have hzero : (fun x : Fin p × ℕ ↦ coeff x.2 (a x.1)) = 0 :=
-      TauCeti.eq_zero_of_forall_pow_dvd (p : R) fun m ⟨i, n⟩ ↦ by
-        simpa only [Ideal.span_singleton_pow, Ideal.mem_span_singleton] using hx m i n
-    exact funext fun i ↦ PowerSeries.ext fun n ↦ congrFun hzero (i, n)
-  exists_limit seq hseq := by
-    obtain ⟨c, hc⟩ := TauCeti.exists_forall_pow_dvd_sub (p : R)
-      (fun m (x : Fin p × ℕ) ↦ coeff x.2 (seq m x.1)) fun m ⟨i, n⟩ ↦ by
-        simpa only [← map_sub, ← Pi.sub_apply, Ideal.span_singleton_pow,
-          Ideal.mem_span_singleton] using hseq m i n
-    refine ⟨fun i ↦ mk fun n ↦ c (i, n), fun m i n ↦ ?_⟩
-    simpa only [coeffIdealFiltration, Submodule.mem_mk, AddSubmonoid.mem_mk, AddSubsemigroup.mem_mk,
-      Set.mem_ofPred_eq, Pi.sub_apply, map_sub, coeff_mk, Ideal.span_singleton_pow,
-      Ideal.mem_span_singleton] using hc m (i, n)
-
 private theorem map_coeffIdealFiltration_neumannStep_le [Fact p.Prime] (m : ℕ) :
-    (coeffIdealFiltration R p m).map (neumannStep R p) ≤ coeffIdealFiltration R p (m + 1) := by
-  rintro _ ⟨a, ha, rfl⟩ i n
+    (coeffIdealFiltration (Ideal.span {(p : R)}) (Fin p) m).map (neumannStep R p) ≤
+      coeffIdealFiltration (Ideal.span {(p : R)}) (Fin p) (m + 1) := by
+  rintro _ ⟨a, ha, rfl⟩
+  refine (mem_coeffIdealFiltration _).mpr fun i n ↦ ?_
   rw [pow_succ']
-  exact coeff_neumannStep_mem p (Ideal.span {(p : R)} ^ m) (fun j s _ ↦ ha j s) i
+  exact coeff_neumannStep_mem p (Ideal.span {(p : R)} ^ m)
+    (fun j s _ ↦ (mem_coeffIdealFiltration _).mp ha j s) i
 
 end Neumann
 
@@ -427,8 +393,8 @@ end Neumann
 theorem frobeniusAssembly_bijective [Fact p.Prime] [IsAdicComplete (Ideal.span {(p : R)}) R] :
     Function.Bijective (frobeniusAssembly R p) := by
   have hunit : IsUnit ((LinearMap.id : Module.End R (Fin p → R⟦X⟧)) + neumannStep R p) :=
-    (isCompleteFiltration_coeffIdealFiltration (R := R) p).isUnit_one_add
-      (coeffIdealFiltration_zero (R := R) p)
+    (isCompleteFiltration_coeffIdealFiltration (Ideal.span {(p : R)}) (Fin p)).isUnit_one_add
+      (coeffIdealFiltration_zero (Ideal.span {(p : R)}) (Fin p))
       (map_coeffIdealFiltration_neumannStep_le (R := R) p)
   have hbij : Function.Bijective
       ((LinearMap.id : Module.End R (Fin p → R⟦X⟧)) + neumannStep R p) :=
@@ -487,7 +453,6 @@ theorem frobeniusBasis_equivFun_symm_apply (a : Fin p → R⟦X⟧) :
 variable (R) in
 /-- The `i`-th Frobenius coordinate `R⟦X⟧ →ₗ[R] R⟦X⟧` with respect to `frobeniusBasis R p`,
 satisfying `f = ∑ i < p, (1 + X) ^ i * frobeniusSubst R p (frobeniusCoord R p i f)`. -/
-@[expose]
 noncomputable def frobeniusCoord (i : Fin p) : R⟦X⟧ →ₗ[R] R⟦X⟧ where
   toFun f :=
     @Module.Basis.repr (Fin p) R⟦X⟧ R⟦X⟧ _ _ (frobeniusAlgebra R p).toModule
@@ -504,7 +469,7 @@ noncomputable def frobeniusCoord (i : Fin p) : R⟦X⟧ →ₗ[R] R⟦X⟧ where
 theorem frobeniusBasis_repr_apply (f : R⟦X⟧) (i : Fin p) :
     @Module.Basis.repr (Fin p) R⟦X⟧ R⟦X⟧ _ _ (frobeniusAlgebra R p).toModule
         (frobeniusBasis R p) f i = frobeniusCoord R p i f :=
-  rfl
+  (rfl)
 
 /-- Every series is the assembly of its Frobenius coordinates:
 `frobeniusAssembly R p (fun i ↦ frobeniusCoord R p i f) = f`. -/
@@ -512,14 +477,20 @@ theorem frobeniusBasis_repr_apply (f : R⟦X⟧) (i : Fin p) :
 theorem frobeniusAssembly_frobeniusCoord (f : R⟦X⟧) :
     frobeniusAssembly R p (fun i ↦ frobeniusCoord R p i f) = f := by
   let : Module R⟦X⟧ R⟦X⟧ := (frobeniusAlgebra R p).toModule
-  rw [← frobeniusBasis_equivFun_symm_apply p]
+  have hfun : (fun i ↦ frobeniusCoord R p i f) =
+      @Module.Basis.equivFun _ _ _ _ _ (frobeniusAlgebra R p).toModule _
+        (frobeniusBasis R p) f := by
+    ext i
+    rw [Module.Basis.equivFun_apply, frobeniusBasis_repr_apply]
+  rw [hfun, ← frobeniusBasis_equivFun_symm_apply p]
   exact (@Module.Basis.equivFun _ _ _ _ _ (frobeniusAlgebra R p).toModule _
     (frobeniusBasis R p)).symm_apply_apply f
 
 /-- **Frobenius basis expansion:** `∑ i < p, (1 + X) ^ i * φ(cᵢ(f)) = f`. -/
 theorem sum_one_add_X_pow_mul_frobeniusSubst_frobeniusCoord (f : R⟦X⟧) :
-    ∑ i : Fin p, (1 + X) ^ (i : ℕ) * frobeniusSubst R p (frobeniusCoord R p i f) = f :=
-  frobeniusAssembly_frobeniusCoord p f
+    ∑ i : Fin p, (1 + X) ^ (i : ℕ) * frobeniusSubst R p (frobeniusCoord R p i f) = f := by
+  rw [← frobeniusAssembly_apply]
+  exact frobeniusAssembly_frobeniusCoord p f
 
 /-- Uniqueness of coordinates in the Frobenius basis expansion. -/
 theorem frobeniusCoord_unique {a : Fin p → R⟦X⟧} {f : R⟦X⟧}
@@ -538,8 +509,9 @@ theorem frobeniusCoord_frobeniusAssembly (a : Fin p → R⟦X⟧) (i : Fin p) :
 /-- Extracting the `i`-th Frobenius coordinate from an assembled sum
 `∑ j, (1 + X) ^ j * φ(a j)` recovers `a i`. -/
 theorem frobeniusCoord_sum_one_add_X_pow_mul_frobeniusSubst (a : Fin p → R⟦X⟧) (i : Fin p) :
-    frobeniusCoord R p i (∑ j : Fin p, (1 + X) ^ (j : ℕ) * frobeniusSubst R p (a j)) = a i :=
-  frobeniusCoord_frobeniusAssembly p a i
+    frobeniusCoord R p i (∑ j : Fin p, (1 + X) ^ (j : ℕ) * frobeniusSubst R p (a j)) = a i := by
+  rw [← frobeniusAssembly_apply]
+  exact frobeniusCoord_frobeniusAssembly p a i
 
 /-- The Frobenius coordinates are linear over the Frobenius scalars: the coordinates of
 `φ a * f` are `a` times the coordinates of `f`. -/
@@ -608,6 +580,7 @@ theorem frobeniusSubst_mem_span_p_pow_iff (k : ℕ) {f : R⟦X⟧} :
       congrArg (frobeniusCoord R p ⟨0, (Fact.out : p.Prime).pos⟩) hg
 
 /-- Coefficientwise change of base ring commutes with Frobenius coordinates. -/
+@[simp]
 theorem map_frobeniusCoord {S : Type*} [CommRing S] [IsAdicComplete (Ideal.span {(p : S)}) S]
     (φ : R →+* S) (f : R⟦X⟧) (i : Fin p) :
     map φ (frobeniusCoord R p i f) = frobeniusCoord S p i (map φ f) :=

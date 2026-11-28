@@ -96,8 +96,9 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.X_pow_dvd_subst`: substitution preserves divisibility by `X ^ n`.
 * `PowerSeries.X_pow_dvd_subst_sub_subst`: substitution respects congruence modulo `X ^ n` of
   the substituted series.
-* `PowerSeries.coeff_subst_sub_subst_mem_span_mul`: if `C r ∣ a - b`, the coefficients of
-  `f (a) - f (b)` lie in `(r) * J` whenever the initial coefficients of `f` lie in `J`.
+* `PowerSeries.coeff_subst_sub_subst_mem_span_mul`: for `a` and `b` with zero constant term and
+  `C r ∣ a - b`, if the first `n + 1` coefficients of `f` mapped into `S` lie in `J`, then the
+  `n`-th coefficient of `f (a) - f (b)` lies in `(r) * J`.
 * `PowerSeries.homogeneousComponent_subst_of_le_order`: if `f` has order at least `n`, the
   degree-`n` homogeneous component of `f (φ)` is `c φ₁ ^ n`, for `c` the coefficient of `Xⁿ` in
   `f` and `φ₁` the linear part of `φ`.

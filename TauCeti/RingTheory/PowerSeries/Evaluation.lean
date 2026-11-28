@@ -51,9 +51,14 @@ topology; `PowerSeries.continuous_eval₂_of_continuous` specializes the multiva
 
 * `PowerSeries.continuous_eval₂_of_continuous`: continuity in the admissible evaluation point.
 * `PowerSeries.eval₂_map`, `PowerSeries.eval₂_C_X`,
-  `PowerSeries.hasEval_C_pow_mul_one_add_X_sub_one`: evaluation of a mapped power series,
-  evaluating a power series at `X` through `PowerSeries.C`, and admissibility of translated
-  arguments `C (ζ ^ i) * (1 + X) - 1` when `ζ - 1` is topologically nilpotent.
+  `PowerSeries.hasEval_C_pow_mul_one_add_X_sub_one`,
+  `PowerSeries.eval₂CPowMulOneAddXSubOneHom`,
+  `PowerSeries.eval₂CPowMulOneAddXSubOneHom_apply`,
+  `PowerSeries.eval₂CPowMulOneAddXSubOneHom_one_add_X`,
+  `PowerSeries.continuous_eval₂CPowMulOneAddXSubOneHom`: evaluation of a mapped power
+  series, evaluating a power series at `X` through `PowerSeries.C`, and admissibility, bundled
+  ring homomorphism, evaluation formulas, and continuity for translated arguments
+  `C (ζ ^ i) * (1 + X) - 1` when `ζ - 1` is topologically nilpotent.
 * `PowerSeries.algHom_coe_eq_aeval`: any algebra map out of `A⟦X⟧`, continuous or not, restricts
   on polynomials to the polynomial evaluation at the image of `X`.
 * `PowerSeries.constantCoeff_polynomial_aeval`: the constant coefficient of a polynomial evaluated
@@ -122,7 +127,10 @@ theorem eval₂_C_X {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup
       hasSum_eval₂ WithPiTopology.continuous_C HasEval.X f
   exact hsum.unique (hasSum_of_monomials_self f)
 
-open scoped PowerSeries.WithPiTopology in
+section AffineEval
+
+open scoped PowerSeries.WithPiTopology
+
 /-- In a linearly topologized commutative ring `S`, if `ζ - 1` is topologically nilpotent then
 `C (ζ ^ i) * (1 + X) - 1 : S⟦X⟧` is admissible for topological evaluation. -/
 theorem hasEval_C_pow_mul_one_add_X_sub_one
@@ -133,6 +141,48 @@ theorem hasEval_C_pow_mul_one_add_X_sub_one
   simpa only [← constantCoeff_eq, map_sub, map_mul, constantCoeff_C,
     map_add, map_one, constantCoeff_X, add_zero, mul_one, ← geom_sum_mul ζ i] using
     HasEval.mul_left (∑ j ∈ Finset.range i, ζ ^ j) hζ_nil
+
+/-- Topological evaluation `S⟦X⟧ →+* S⟦X⟧` at `C (ζ ^ i) * (1 + X) - 1` for `ζ - 1`
+topologically nilpotent. -/
+noncomputable def eval₂CPowMulOneAddXSubOneHom
+    {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [T2Space S]
+    [CompleteSpace S] [IsTopologicalRing S] [IsLinearTopology S S]
+    {ζ : S} (hζ_nil : IsTopologicallyNilpotent (ζ - 1)) (i : ℕ) : S⟦X⟧ →+* S⟦X⟧ :=
+  eval₂Hom PowerSeries.WithPiTopology.continuous_C
+    (hasEval_C_pow_mul_one_add_X_sub_one hζ_nil i)
+
+/-- Applying `eval₂CPowMulOneAddXSubOneHom` evaluates via
+`eval₂ C (C (ζ ^ i) * (1 + X) - 1)`. -/
+theorem eval₂CPowMulOneAddXSubOneHom_apply
+    {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [T2Space S]
+    [CompleteSpace S] [IsTopologicalRing S] [IsLinearTopology S S]
+    {ζ : S} (hζ_nil : IsTopologicallyNilpotent (ζ - 1)) (i : ℕ) (f : S⟦X⟧) :
+    eval₂CPowMulOneAddXSubOneHom hζ_nil i f =
+      eval₂ C (C (ζ ^ i) * (1 + X) - 1) f :=
+  congrFun (coe_eval₂Hom PowerSeries.WithPiTopology.continuous_C
+    (hasEval_C_pow_mul_one_add_X_sub_one hζ_nil i)) f
+
+/-- Evaluating `1 + X` via `eval₂CPowMulOneAddXSubOneHom` gives `C (ζ ^ i) * (1 + X)`. -/
+@[simp]
+theorem eval₂CPowMulOneAddXSubOneHom_one_add_X
+    {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [T2Space S]
+    [CompleteSpace S] [IsTopologicalRing S] [IsLinearTopology S S]
+    {ζ : S} (hζ_nil : IsTopologicallyNilpotent (ζ - 1)) (i : ℕ) :
+    eval₂CPowMulOneAddXSubOneHom hζ_nil i (1 + X) = C (ζ ^ i) * (1 + X) := by
+  rw [map_add, map_one, eval₂CPowMulOneAddXSubOneHom_apply, eval₂_X, add_sub_cancel]
+
+/-- `eval₂CPowMulOneAddXSubOneHom` is continuous for the coefficientwise topology on
+`S⟦X⟧`. -/
+theorem continuous_eval₂CPowMulOneAddXSubOneHom
+    {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [T2Space S]
+    [CompleteSpace S] [IsTopologicalRing S] [IsLinearTopology S S]
+    {ζ : S} (hζ_nil : IsTopologicallyNilpotent (ζ - 1)) (i : ℕ) :
+    Continuous (eval₂CPowMulOneAddXSubOneHom hζ_nil i) := by
+  simp_rw [funext (eval₂CPowMulOneAddXSubOneHom_apply hζ_nil i)]
+  exact continuous_eval₂ PowerSeries.WithPiTopology.continuous_C
+    (hasEval_C_pow_mul_one_add_X_sub_one hζ_nil i)
+
+end AffineEval
 
 section AlgHom
 

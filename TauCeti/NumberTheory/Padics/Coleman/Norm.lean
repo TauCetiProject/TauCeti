@@ -22,15 +22,15 @@ import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
 For a prime `p` and `(p)`-adically complete commutative ring `O`, Frobenius substitution
 `Φ = PowerSeries.frobeniusSubst O p` equips `O⟦X⟧` with the `@[instance_reducible]`
-`O⟦X⟧`-algebra `PowerSeries.frobeniusAlgebra O p` (free of rank `p` for `[Nontrivial O]` with basis
-`PowerSeries.frobeniusBasis O p` and isomorphic to `AdjoinRoot (X ^ p - C (1 + X))` via
+`O⟦X⟧`-algebra `PowerSeries.frobeniusAlgebra O p` (with basis `PowerSeries.frobeniusBasis O p`,
+and when `[Nontrivial O]` of rank `p` and isomorphic to `AdjoinRoot (X ^ p - C (1 + X))` via
 `TauCeti.Coleman.adjoinRootEquiv p O`). Mathlib's `Algebra.norm` and `Algebra.trace` yield
 Coleman's norm `N` and trace `τ`, with matrix, first-order, Kummer, and functoriality formulas.
 
 ## Main definitions and results
 
-* `TauCeti.Coleman.adjoinRootEquiv`: `AdjoinRoot (X ^ p - C (1 + X)) ≃ₐ[O⟦X⟧] O⟦X⟧` over
-  `PowerSeries.frobeniusAlgebra O p`.
+* `TauCeti.Coleman.adjoinRootEquiv`: for `[Nontrivial O]`,
+  `AdjoinRoot (X ^ p - C (1 + X)) ≃ₐ[O⟦X⟧] O⟦X⟧` over `PowerSeries.frobeniusAlgebra O p`.
 * `TauCeti.Coleman.norm`, `TauCeti.Coleman.normUnits`, `TauCeti.Coleman.trace`,
   `TauCeti.Coleman.leftMulMatrix`: Coleman's norm, unit norm, trace, and multiplication matrix.
 * `TauCeti.Coleman.norm_eq_det_leftMulMatrix`, `TauCeti.Coleman.trace_eq_trace_leftMulMatrix`,
@@ -148,7 +148,9 @@ private theorem overFrobeniusAdjoinRootHom_bijective [Nontrivial O] :
     pb.basis.ext fun i ↦ (overFrobeniusRingEquiv p O).injective <| by
       rw [AlgHom.toLinearMap_apply, LinearEquiv.coe_toLinearMap, Module.Basis.equiv_apply]
       simp [pb, overFrobeniusBasis_apply, overFrobeniusAdjoinRootHom_root]
-  rw [show ⇑(overFrobeniusAdjoinRootHom (p := p) (O := O)) = e from congrArg DFunLike.coe hEq]
+  have hFun : ⇑(overFrobeniusAdjoinRootHom (p := p) (O := O)) = e := by
+    simpa only [AlgHom.coe_toLinearMap, LinearEquiv.coe_toLinearMap] using congrArg DFunLike.coe hEq
+  rw [hFun]
   exact e.bijective
 
 private def overFrobeniusAdjoinRootEquiv [Nontrivial O] :
@@ -226,14 +228,10 @@ private theorem norm_eq_overFrobenius_norm (f : O⟦X⟧) :
 /-- `Coleman.norm p O` equals Mathlib's `Algebra.norm` for `frobeniusAlgebra O p`. -/
 theorem norm_eq_algebraNorm : norm p O = @Algebra.norm O⟦X⟧ O⟦X⟧ _ _ (frobeniusAlgebra O p) :=
   MonoidHom.ext fun f ↦ by
-    simpa only [norm_eq_overFrobenius_norm, RingEquiv.symm_refl, RingEquiv.refl_apply,
-      RingEquiv.apply_symm_apply] using
-      @Algebra.norm_eq_of_equiv_equiv O⟦X⟧ (OverFrobenius p O) O⟦X⟧ O⟦X⟧ _ _ _ _ inferInstance
-        (frobeniusAlgebra O p) (RingEquiv.refl _) (overFrobeniusRingEquiv p O)
-        (RingHom.ext fun c ↦ by
-          simp only [RingHom.comp_apply, RingEquiv.coe_toRingHom, RingEquiv.refl_apply,
-            overFrobeniusRingEquiv_algebraMap, algebraMap_frobeniusAlgebra_apply])
-        ((overFrobeniusRingEquiv p O).symm f)
+    rw [norm_eq_overFrobenius_norm, ← (@Algebra.norm_eq_of_algEquiv O⟦X⟧ (OverFrobenius p O) O⟦X⟧
+      _ _ _ _ (frobeniusAlgebra O p) overFrobeniusToScalarAlgEquiv
+      ((overFrobeniusRingEquiv p O).symm f)), ← overFrobeniusRingEquiv_eq_toScalarAlgEquiv,
+      RingEquiv.apply_symm_apply]
 
 /-- `Coleman.normUnits p O` equals `TauCeti.Algebra.normUnits` for `frobeniusAlgebra O p`. -/
 theorem normUnits_eq_algebraNormUnits :
@@ -257,14 +255,9 @@ theorem coe_normUnits (f : O⟦X⟧ˣ) :
 `frobeniusAlgebra O p`. -/
 theorem trace_eq_algebraTrace (f : O⟦X⟧) :
     trace p O f = @Algebra.trace O⟦X⟧ O⟦X⟧ _ _ (frobeniusAlgebra O p) f := by
-  rw [trace_def]
-  simpa only [RingEquiv.symm_refl, RingEquiv.refl_apply, RingEquiv.apply_symm_apply] using
-    @Algebra.trace_eq_of_equiv_equiv O⟦X⟧ (OverFrobenius p O) O⟦X⟧ O⟦X⟧ _ _ _ _ inferInstance
-      (frobeniusAlgebra O p) (RingEquiv.refl _) (overFrobeniusRingEquiv p O)
-      (RingHom.ext fun c ↦ by
-        simp only [RingHom.comp_apply, RingEquiv.coe_toRingHom, RingEquiv.refl_apply,
-          overFrobeniusRingEquiv_algebraMap, algebraMap_frobeniusAlgebra_apply])
-      ((overFrobeniusRingEquiv p O).symm f)
+  rw [trace_def, ← (@Algebra.trace_eq_of_algEquiv O⟦X⟧ (OverFrobenius p O) O⟦X⟧ _ _ _ _
+    (frobeniusAlgebra O p) overFrobeniusToScalarAlgEquiv ((overFrobeniusRingEquiv p O).symm f)),
+    ← overFrobeniusRingEquiv_eq_toScalarAlgEquiv, RingEquiv.apply_symm_apply]
 
 /-- Coleman's trace is `O⟦X⟧`-linear for `frobeniusSubst`: `τ(Φ(a) * f) = a * τ(f)`. -/
 @[simp]
@@ -467,6 +460,7 @@ theorem norm_X : norm p O X = (-1 : O⟦X⟧) ^ (p - 1) * X :=
     simpa using norm_frobeniusSubst_sub_one_add_X (p := p) (1 : O⟦X⟧)
 
 /-- Functoriality of Coleman's norm along any homomorphism between `(p)`-adically complete rings. -/
+@[simp]
 theorem map_norm {O' : Type*} [CommRing O'] [IsAdicComplete (Ideal.span {(p : O')}) O']
     (φ : O →+* O') (f : O⟦X⟧) :
     PowerSeries.map φ (norm p O f) = norm p O' (PowerSeries.map φ f) := by
@@ -476,6 +470,7 @@ theorem map_norm {O' : Type*} [CommRing O'] [IsAdicComplete (Ideal.span {(p : O'
   split_ifs <;> simp [map_frobeniusCoord]
 
 /-- Functoriality of Coleman's trace along any homomorphism of `(p)`-adically complete rings. -/
+@[simp]
 theorem map_trace {O' : Type*} [CommRing O'] [IsAdicComplete (Ideal.span {(p : O')}) O']
     (φ : O →+* O') (f : O⟦X⟧) :
     PowerSeries.map φ (trace p O f) = trace p O' (PowerSeries.map φ f) := by

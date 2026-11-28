@@ -60,32 +60,6 @@ open scoped PowerSeries.WithPiTopology
 
 namespace TauCeti.Coleman
 
-section RootEvalHelpers
-
-private def rootEvalHom
-    {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [T2Space S]
-    [CompleteSpace S] [IsTopologicalRing S] [IsLinearTopology S S]
-    {ζ : S} (hζ_nil : IsTopologicallyNilpotent (ζ - 1)) (i : ℕ) : S⟦X⟧ →+* S⟦X⟧ :=
-  eval₂Hom PowerSeries.WithPiTopology.continuous_C
-    (PowerSeries.hasEval_C_pow_mul_one_add_X_sub_one hζ_nil i)
-
-private theorem rootEvalHom_apply
-    {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [T2Space S]
-    [CompleteSpace S] [IsTopologicalRing S] [IsLinearTopology S S]
-    {ζ : S} (hζ_nil : IsTopologicallyNilpotent (ζ - 1)) (i : ℕ) (f : S⟦X⟧) :
-    rootEvalHom hζ_nil i f = eval₂ C (C (ζ ^ i) * (1 + X) - 1) f :=
-  congrFun (coe_eval₂Hom PowerSeries.WithPiTopology.continuous_C
-    (PowerSeries.hasEval_C_pow_mul_one_add_X_sub_one hζ_nil i)) f
-
-private theorem rootEvalHom_one_add_X
-    {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [T2Space S]
-    [CompleteSpace S] [IsTopologicalRing S] [IsLinearTopology S S]
-    {ζ : S} (hζ_nil : IsTopologicallyNilpotent (ζ - 1)) (i : ℕ) :
-    rootEvalHom hζ_nil i (1 + X) = C (ζ ^ i) * (1 + X) := by
-  rw [map_add, map_one, rootEvalHom_apply, eval₂_X, add_sub_cancel]
-
-end RootEvalHelpers
-
 /-- For a complete Hausdorff linearly topologized commutative ring `S`, `ζ ∈ S` with `ζ ^ p = 1`,
 and `ζ - 1` topologically nilpotent, topological evaluation at `ζ ^ i * (1 + X) - 1` fixes the
 image of `frobeniusSubst S p`. -/
@@ -94,23 +68,21 @@ theorem eval₂_frobeniusSubst
     [CompleteSpace S] [IsTopologicalRing S] [IsLinearTopology S S]
     {ζ : S} (hζp : ζ ^ p = 1) (hζ_nil : IsTopologicallyNilpotent (ζ - 1)) (i : ℕ) (g : S⟦X⟧) :
     eval₂ C (C (ζ ^ i) * (1 + X) - 1) (frobeniusSubst S p g) = frobeniusSubst S p g := by
-  rw [← rootEvalHom_apply hζ_nil i]
-  have hcont : Continuous (rootEvalHom hζ_nil i) := by
-    simp_rw [funext (rootEvalHom_apply hζ_nil i)]
-    exact continuous_eval₂ PowerSeries.WithPiTopology.continuous_C
-      (PowerSeries.hasEval_C_pow_mul_one_add_X_sub_one hζ_nil i)
+  rw [← eval₂CPowMulOneAddXSubOneHom_apply hζ_nil i]
   refine congrFun ((PowerSeries.WithPiTopology.denseRange_toPowerSeries S).equalizer
-    (hcont.comp (continuous_frobeniusSubst p)) (continuous_frobeniusSubst p) ?_) g
+    ((continuous_eval₂CPowMulOneAddXSubOneHom hζ_nil i).comp (continuous_frobeniusSubst p))
+    (continuous_frobeniusSubst p) ?_) g
   funext P; simp only [Function.comp_apply]
   induction P using Polynomial.induction_on' with
   | add P Q hP hQ => simp only [Polynomial.coe_add, map_add, hP, hQ]
   | monomial n a =>
     have hζ_pow : ((C ζ : S⟦X⟧) ^ i) ^ p = 1 := by
       rw [← pow_mul, mul_comm, pow_mul, ← map_pow, hζp, map_one, one_pow]
-    have hX : rootEvalHom hζ_nil i (frobeniusSubst S p X) = frobeniusSubst S p X := by
-      simp [rootEvalHom_one_add_X, mul_pow, hζ_pow]
-    have hC : rootEvalHom hζ_nil i (C a) = C a := by
-      rw [rootEvalHom_apply, eval₂_C]
+    have hX : eval₂CPowMulOneAddXSubOneHom hζ_nil i (frobeniusSubst S p X) =
+        frobeniusSubst S p X := by
+      simp [mul_pow, hζ_pow]
+    have hC : eval₂CPowMulOneAddXSubOneHom hζ_nil i (C a) = C a := by
+      rw [eval₂CPowMulOneAddXSubOneHom_apply, eval₂_C]
     rw [← Polynomial.C_mul_X_pow_eq_monomial]
     simp only [Polynomial.coe_mul, Polynomial.coe_C, Polynomial.coe_pow, Polynomial.coe_X,
       map_mul, map_pow, frobeniusSubst_C, hX, hC]
@@ -124,16 +96,18 @@ open TauCeti TauCeti.Coleman
 variable {p : ℕ} [Fact p.Prime]
 
 omit [Fact p.Prime] in
-private theorem rootEvalHom_map_frobeniusSubst_mul_pow
+private theorem eval₂Hom_map_frobeniusSubst_mul_pow
     {O S : Type*} [CommRing O] [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [T2Space S]
     [CompleteSpace S] [IsTopologicalRing S] [IsLinearTopology S S]
     {ζ : S} (hζp : ζ ^ p = 1) (hζ_nil : IsTopologicallyNilpotent (ζ - 1))
     (ρ : O →+* S) (i n : ℕ) (a : O⟦X⟧) :
-    rootEvalHom hζ_nil i (PowerSeries.map ρ ((1 + X) ^ n * frobeniusSubst O p a)) =
+    eval₂CPowMulOneAddXSubOneHom hζ_nil i
+        (PowerSeries.map ρ ((1 + X) ^ n * frobeniusSubst O p a)) =
       PowerSeries.map ρ (frobeniusSubst O p a) * (C (ζ ^ i) * (1 + X)) ^ n := by
   have h1 : PowerSeries.map ρ (1 + X) = 1 + X := by simp
-  simp only [map_mul, map_pow, h1, map_frobeniusSubst]
-  rw [rootEvalHom_one_add_X, rootEvalHom_apply, eval₂_frobeniusSubst hζp hζ_nil i]
+  simp only [map_mul, map_pow, h1, map_frobeniusSubst,
+    eval₂CPowMulOneAddXSubOneHom_one_add_X]
+  rw [eval₂CPowMulOneAddXSubOneHom_apply, eval₂_frobeniusSubst hζp hζ_nil i]
   simp [mul_comm]
 
 /-- **Root-of-unity sum equals Frobenius of Coleman's trace** (Sharifi, Lemma 5.4.14; RJW,
@@ -154,9 +128,9 @@ theorem sum_eval₂_map_eq_map_frobeniusSubst_trace
         ∑ j : Fin p, PowerSeries.map ρ (frobeniusSubst O p (frobeniusCoord O p j F)) *
           (1 + X) ^ (j : ℕ) * C ((ζ ^ (j : ℕ)) ^ (i : ℕ)) := by
     conv_lhs => rw [← sum_one_add_X_pow_mul_frobeniusSubst_frobeniusCoord p F]
-    rw [← rootEvalHom_apply hζ_nil (i : ℕ), map_sum, map_sum]
+    rw [← eval₂CPowMulOneAddXSubOneHom_apply hζ_nil (i : ℕ), map_sum, map_sum]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [rootEvalHom_map_frobeniusSubst_mul_pow hζ.pow_eq_one hζ_nil, mul_pow,
+    rw [eval₂Hom_map_frobeniusSubst_mul_pow hζ.pow_eq_one hζ_nil, mul_pow,
       ← map_pow, ← pow_mul, mul_comm (i : ℕ) (j : ℕ), pow_mul]
     ring
   simp_rw [hterm]
@@ -191,13 +165,14 @@ theorem prod_eval₂_map_eq_map_frobeniusSubst_norm
     refine Matrix.ext fun i j ↦ ?_
     have hcol := congrArg (PowerSeries.map ρ) (mul_one_add_X_pow_eq_sum_leftMulMatrix (p := p) F j)
     simp only [map_mul, map_pow, map_add, map_one, map_X, map_sum] at hcol
-    replace hcol := congrArg (rootEvalHom hζ_nil (i : ℕ)) hcol
-    simp only [map_mul, map_pow, map_sum] at hcol
-    simp_rw [rootEvalHom_one_add_X] at hcol
+    replace hcol := congrArg (eval₂CPowMulOneAddXSubOneHom hζ_nil (i : ℕ)) hcol
+    simp only [map_mul, map_pow, map_sum,
+      eval₂CPowMulOneAddXSubOneHom_one_add_X] at hcol
+    simp only [← map_pow (C : S →+* S⟦X⟧)] at hcol
     rw [Matrix.diagonal_mul, Matrix.mul_apply]; dsimp only [V]
-    rw [Matrix.vandermonde_apply, ← rootEvalHom_apply hζ_nil (i : ℕ), hcol]
+    rw [Matrix.vandermonde_apply, ← eval₂CPowMulOneAddXSubOneHom_apply hζ_nil (i : ℕ), hcol]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [Matrix.vandermonde_apply, rootEvalHom_apply, map_frobeniusSubst,
+    rw [Matrix.vandermonde_apply, eval₂CPowMulOneAddXSubOneHom_apply, map_frobeniusSubst,
       eval₂_frobeniusSubst hζ.pow_eq_one hζ_nil]
     simp [ψ]
   have hdet := congrArg Matrix.det hmat

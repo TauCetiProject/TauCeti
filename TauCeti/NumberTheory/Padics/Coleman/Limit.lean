@@ -39,6 +39,7 @@ For a prime `p` and `(p)`-adically complete commutative ring `O`, this file esta
   `TauCeti.Coleman.normProjectorToFixedUnits_comp_subtype`: corrected norm, fixed subgroup, and
   multiplicative retraction onto `fixedUnits p O σ`.
 * `TauCeti.Coleman.normProjector_sub_iterate_mem_span_pow`, `TauCeti.Coleman.eq_normProjector_iff`,
+  `TauCeti.Coleman.eq_normProjector_iff_mem_fixedUnits`,
   `TauCeti.Coleman.correctedNorm_normProjector`, `TauCeti.Coleman.normProjector_correctedNorm`,
   `TauCeti.Coleman.normProjector_eq_self`, `TauCeti.Coleman.range_normProjector`: precision,
   uniqueness, and algebraic projector properties.
@@ -274,6 +275,22 @@ theorem eq_normProjector_iff (σ : O ≃+* O)
         Ideal.span {(p : O⟦X⟧)} ^ (n + 1) :=
   ⟨fun h n ↦ h ▸ normProjector_sub_iterate_mem_span_pow σ hσ f n,
     fun h ↦ Units.ext (eq_normProjectorSeries_of_sub_iterate σ hσ h)⟩
+
+/-- **Uniqueness via fixed point and mod-`p` congruence:** `g = normProjector p O σ hσ f` iff `g`
+is fixed by `correctedNorm p O σ` and congruent to `f` modulo `(p)`. -/
+theorem eq_normProjector_iff_mem_fixedUnits (σ : O ≃+* O)
+    (hσ : ∀ c : O, σ c - c ^ p ∈ Ideal.span {(p : O)}) {f g : O⟦X⟧ˣ} :
+    g = normProjector p O σ hσ f ↔
+      g ∈ fixedUnits p O σ ∧ (g : O⟦X⟧) - (f : O⟦X⟧) ∈ Ideal.span {(p : O⟦X⟧)} := by
+  refine ⟨fun h ↦ h ▸ ⟨(normProjectorToFixedUnits p O σ hσ f).prop, ?_⟩, fun ⟨hg, hfg⟩ ↦ ?_⟩
+  · simpa using normProjector_sub_iterate_mem_span_pow σ hσ f 0
+  · refine (eq_normProjector_iff σ hσ).mpr fun n ↦ ?_
+    induction n with
+    | zero => simpa using hfg
+    | succ n ih =>
+      have hstep := correctedNorm_sub_correctedNorm_mem_span_pow_succ σ (Nat.succ_pos n) ih
+      rw [hg, ← Function.iterate_succ_apply' (correctedNorm p O σ) n f] at hstep
+      exact hstep
 
 /-- Every value of `normProjector` is fixed by `correctedNorm`. -/
 @[simp]

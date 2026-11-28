@@ -11,9 +11,8 @@ public import TauCeti.RingTheory.Huber.Padic.Basic
 /-!
 # The `p`-adic integers as a complete adic ring
 
-This bridge module combines `PadicInt.isAdic_maximalIdeal` with
-`TauCeti.IsAdicRing` so that clients needing `IsAdicRing ℤ_[p]` can import it without pulling
-`TauCeti.RingTheory.AdicRing.Basic` into `TauCeti.RingTheory.Huber.Padic.Basic`.
+This module supplies the complete separated adic-ring structure (`TauCeti.IsAdicRing`) on
+`ℤ_[p]`, with ideal of definition `(p)`, from `PadicInt.isAdic_maximalIdeal`.
 
 ## Main instances
 

@@ -116,15 +116,7 @@ theorem continuous_psiSeries : Continuous (psiSeries p) := by
 /-- Frobenius after psi, the projector onto the multiples of `p`, is continuous for
 the coefficientwise p-adic topology. -/
 theorem continuous_subst_psiSeries :
-    Continuous fun F : ℤ_[p]⟦X⟧ ↦ frobeniusSubst ℤ_[p] p (psiSeries p F) := by
-  let : TopologicalSpace D(ℤ_[p], ℤ_[p]) := WeakTopology
-  have h := isHomeomorph_amiceTransformEquiv_weak (p := p)
-  rw [LinearEquiv.isHomeomorph_iff] at h
-  have hφ := (ContinuousMap.mulLeft (p : ℤ_[p])).continuous_abstractMeasure_map_weak
-    (R := ℤ_[p]) (E := ℤ_[p])
-  have hcont := h.1.comp (hφ.comp (continuous_psiMeasure_weak.comp h.2))
-  exact hcont.congr fun F ↦ by
-    simp only [Function.comp_apply, ← phiMeasure_eq_map, amiceTransformEquiv_apply,
-      amiceTransform_phiMeasure, psiSeries_apply]
+    Continuous fun F : ℤ_[p]⟦X⟧ ↦ frobeniusSubst ℤ_[p] p (psiSeries p F) :=
+  (PowerSeries.continuous_frobeniusSubst p).comp continuous_psiSeries
 
 end TauCeti

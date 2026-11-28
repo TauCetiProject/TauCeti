@@ -20,6 +20,8 @@ coefficientwise topology with the `(X)`-adic topology over a discrete commutativ
 ## Main results
 
 * `PowerSeries.WithPiTopology.continuous_map`: `PowerSeries.map φ` is continuous whenever `φ` is.
+* `PowerSeries.WithPiTopology.continuous_mk`: `PowerSeries.mk` is continuous in the
+  coefficientwise topology.
 * `PowerSeries.WithPiTopology.instCompactSpace`: `R⟦X⟧` is compact in the coefficientwise topology
   when `R` is compact.
 * `PowerSeries.WithPiTopology.hasProd_of_X_pow_dvd_sub_one`: convergence and finite-cutoff
@@ -48,19 +50,19 @@ theorem continuous_map {R S : Type*} [Semiring R] [Semiring S]
   simpa only [coeff_map, Function.comp_def] using
     (hφ.continuousAt.comp (continuous_coeff R d).continuousAt).tendsto
 
+/-- Constructing a power series from its coefficient sequence is continuous in the coefficientwise
+topology. -/
+theorem continuous_mk {R : Type*} [TopologicalSpace R] :
+    Continuous (PowerSeries.mk : (ℕ → R) → R⟦X⟧) :=
+  continuous_pi fun s ↦ continuous_apply (s ())
+
 /-- Power series over a compact semiring form a compact space in the coefficientwise topology. -/
 @[scoped instance]
 theorem instCompactSpace {R : Type*} [Semiring R] [TopologicalSpace R] [CompactSpace R] :
     CompactSpace R⟦X⟧ := by
-  have hmk : Continuous (PowerSeries.mk : (ℕ → R) → R⟦X⟧) := by
-    rw [continuous_iff_continuousAt]
-    intro a
-    rw [ContinuousAt, tendsto_iff_coeff_tendsto]
-    intro d
-    simpa only [coeff_mk] using (continuous_apply d).continuousAt.tendsto
   refine ⟨?_⟩
   rw [← Set.range_eq_univ.mpr fun f : R⟦X⟧ ↦ ⟨fun n ↦ coeff n f, ext fun n ↦ coeff_mk n _⟩]
-  exact isCompact_range hmk
+  exact isCompact_range continuous_mk
 
 variable {R ι : Type*} [CommRing R] [TopologicalSpace R]
 
