@@ -95,6 +95,7 @@ def supportedOn (S : Set (HeightOneSpectrum (𝓞 E))) : Subgroup (finiteAdelicU
   ⨅ w ∈ Sᶜ, (proj E ι w).ker
 
 /-- `g` is supported on `S` exactly when `g_w = 1` at every finite place `w ∉ S`. -/
+@[simp low]
 theorem mem_supportedOn_iff {S : Set (HeightOneSpectrum (𝓞 E))}
     {g : finiteAdelicUnitaryGroup E ι} :
     g ∈ supportedOn E ι S ↔ ∀ w ∉ S, proj E ι w g = 1 := by
