@@ -342,6 +342,16 @@ lemma cardStabilizerOnOrbit_mul_weightedOrderOfVanishingOnSubgroupOrbit
   rw [weightedOrderOfVanishingOnSubgroupOrbit_def]
   exact mul_div_cancel₀ _ (by exact_mod_cast TauCeti.cardStabilizerOnOrbit_ne_zero o)
 
+/-- The general-level weighted order vanishes iff the plain vanishing order vanishes. -/
+@[simp]
+lemma weightedOrderOfVanishingOnSubgroupOrbit_eq_zero_iff
+    [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F)
+    (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) :
+    weightedOrderOfVanishingOnSubgroupOrbit f o = 0 ↔ orderOfVanishingOnSubgroupOrbit f o = 0 := by
+  rw [weightedOrderOfVanishingOnSubgroupOrbit_def, div_eq_zero_iff, mul_eq_zero,
+    Int.cast_eq_zero, Nat.cast_eq_zero]
+  simp [TauCeti.cardStabilizerOnOrbit_ne_zero o]
+
 /-- The general-level weighted order is nonnegative: a modular form is holomorphic and the
 weight is positive. -/
 lemma weightedOrderOfVanishingOnSubgroupOrbit_nonneg

@@ -19,7 +19,9 @@ import TauCeti.NumberTheory.Modular.ConjugateTranslation
 For `𝒢 ≤ GL(2, ℝ)`, the **cusp translation orbits** `CuspTranslationOrbit 𝒢` are the orbits of
 left translation by `T = [1, 1; 0, 1]` on the coset space `𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ`. Each orbit has a
 width `cuspTranslationOrbitWidth c`, the period of the `T`-action, which equals the least `m > 0`
-such that `x⁻¹ T ^ m x ∈ 𝒢` for any representative `x` when `[𝒢.IsFiniteRelIndex 𝒮ℒ]`.
+such that `x⁻¹ T ^ m x ∈ 𝒢` for any representative `x` when such an `m` exists (in particular under
+`[𝒢.IsFiniteRelIndex 𝒮ℒ]`), and `0` when there is no positive return time (an infinite translation
+orbit).
 
 These definitions and basic group-action, finiteness, and width identities live here ahead of
 `Norm/Cusps.lean` so that cusp-projection and congruence-width modules do not need to import the
@@ -33,6 +35,8 @@ norm and valence machinery.
 
 ## Main results
 
+* `TauCeti.ModularForm.cuspTranslationOrbit_mk_rangeRestrict_eq_iff`: equality of cusp translation
+  orbits at integral representatives.
 * `TauCeti.ModularForm.cuspTranslationOrbitWidth_mk`: the width at a representative coset.
 * `TauCeti.ModularForm.intCast_cuspTranslationOrbitWidth_mk_dvd_iff` and
   `TauCeti.ModularForm.cuspTranslationOrbitWidth_mk_dvd_iff`: integral membership criteria for
@@ -92,10 +96,41 @@ theorem CuspTranslationOrbit.induction_on {P : CuspTranslationOrbit 𝒢 → Pro
       rw [hx]
       exact h γ
 
-/-- The **width** of a cusp translation orbit of `𝒢`: the period of the `T`-action. Under
-`[𝒢.IsFiniteRelIndex 𝒮ℒ]`, `minimalPeriod_TSL_dvd_iff` and
-`cuspTranslationOrbitWidth_mk` identify it with the least `m > 0` such that
-`x⁻¹ T ^ m x ∈ 𝒢` for any representative `x` of the orbit. -/
+private lemma coe_inv_TSL_zpow_mul (j : ℤ) (α δ : SL(2, ℤ)) :
+    (((TSL ^ j * (Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict α)⁻¹ *
+        (Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict δ : 𝒮ℒ) : GL (Fin 2) ℝ) =
+      Matrix.SpecialLinearGroup.mapGL ℝ ((ModularGroup.T ^ j * α)⁻¹ * δ) := by
+  simp only [Subgroup.coe_mul, InvMemClass.coe_inv, coe_TSL_zpow,
+    Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, MonoidHom.coe_rangeRestrict, map_mul, map_inv]
+
+/-- **Equality of cusp translation orbits at integral representatives**: two integral matrices
+`δ, α ∈ SL(2, ℤ)` determine the same cusp translation orbit for `H.map (mapGL ℝ)` iff
+`δ = T ^ j * α * h₀` for some `j : ℤ` and `h₀ ∈ H`. -/
+theorem cuspTranslationOrbit_mk_rangeRestrict_eq_iff {H : Subgroup SL(2, ℤ)} {δ α : SL(2, ℤ)} :
+    (⟦QuotientGroup.mk ((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict δ)⟧ :
+        CuspTranslationOrbit (H.map (Matrix.SpecialLinearGroup.mapGL ℝ))) =
+      ⟦QuotientGroup.mk ((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict α)⟧ ↔
+      ∃ j : ℤ, ∃ h₀ ∈ H, δ = ModularGroup.T ^ j * α * h₀ := by
+  constructor
+  · intro h
+    obtain ⟨⟨_, hg⟩, hgq⟩ := MulAction.orbitRel_apply.mp (Quotient.exact h)
+    obtain ⟨j, rfl⟩ := Subgroup.mem_zpowers_iff.mp hg
+    simp only [Subgroup.mk_smul, MulAction.Quotient.smul_mk, smul_eq_mul] at hgq
+    obtain ⟨h₀, hh₀, he⟩ :=
+      Subgroup.mem_map.mp (Subgroup.mem_subgroupOf.mp (QuotientGroup.eq.mp hgq))
+    refine ⟨j, h₀, hh₀, ?_⟩
+    rw [Matrix.SpecialLinearGroup.mapGL_injective (he.trans (coe_inv_TSL_zpow_mul j α δ))]; group
+  · rintro ⟨j, h₀, hh₀, rfl⟩
+    refine Quotient.sound ⟨⟨TSL ^ j, Subgroup.mem_zpowers_iff.mpr ⟨j, rfl⟩⟩, ?_⟩
+    dsimp only; rw [Subgroup.mk_smul, MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.eq,
+      Subgroup.mem_subgroupOf, coe_inv_TSL_zpow_mul, inv_mul_cancel_left]
+    exact Subgroup.mem_map_of_mem _ hh₀
+
+/-- The **width** of a cusp translation orbit of `𝒢`: the period of the `T`-action. When there
+is a positive return time — in particular under `[𝒢.IsFiniteRelIndex 𝒮ℒ]` —
+`minimalPeriod_TSL_dvd_iff` and `cuspTranslationOrbitWidth_mk` identify it with the least `m > 0`
+such that `x⁻¹ T ^ m x ∈ 𝒢` for any representative `x` of the orbit; on an infinite translation
+orbit (when no such positive `m` exists), it takes the value `0`. -/
 noncomputable def cuspTranslationOrbitWidth (c : CuspTranslationOrbit 𝒢) : ℕ :=
   minimalPeriod (TSL • ·) c.out
 

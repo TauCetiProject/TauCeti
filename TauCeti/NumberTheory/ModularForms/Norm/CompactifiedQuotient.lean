@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.Cusps.TranslationOrbit.Projective
 public import TauCeti.NumberTheory.ModularForms.Norm.Cusps
+public import TauCeti.NumberTheory.ModularForms.Norm.Projective
 public import TauCeti.NumberTheory.ModularForms.Order.CompactifiedQuotient
 import TauCeti.NumberTheory.ModularForms.ArithmeticSubgroups
 
@@ -16,9 +17,11 @@ import TauCeti.NumberTheory.ModularForms.ArithmeticSubgroups
 For finite-index `Γ ≤ SL(2, ℤ)`, dividing every interior term (`Order/EffectiveOrbits.lean`), every
 cusp fibre over `Γ.cuspOrbitOfTranslationOrbit` (`Cusps/TranslationOrbit/Projective.lean`), and the
 index `[SL(2, ℤ) : Γ] = [±Γ : Γ] · [SL(2, ℤ) : ±Γ]` in `valence_formula_finiteIndex` by `[±Γ : Γ]`
-yields `valence_formula_effectiveOrbit`, its unified form `valence_formula_compactifiedQuotient`
-over `Order/CompactifiedQuotient.lean`'s `weightedOrderOnCompactifiedQuotient`, and projective
-vanishing bounds.
+yields `valence_formula_effectiveOrbit_add_cuspOrbit`, its unified form
+`valence_formula_compactifiedQuotient` over `Order/CompactifiedQuotient.lean`'s
+`weightedOrderOnCompactifiedQuotient`, and projective vanishing bounds. We also transport
+`Norm/Projective.lean`'s `geometricOrderAtCusp` to `orderAtCuspOrbit` under
+`Γ.cuspTranslationOrbitAdjoinNegOneEquivCuspOrbit`.
 
 ## References
 
@@ -37,6 +40,38 @@ section CuspOrderComparison
 
 variable {Γ : Subgroup SL(2, ℤ)} [Γ.FiniteIndex] {k : ℤ}
 variable {F : Type*} [FunLike F ℍ ℂ] [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
+
+/-- Under `Γ.cuspTranslationOrbitAdjoinNegOneEquivCuspOrbit`, `orderAtCuspOrbit` agrees with
+`Norm/Projective.lean`'s `geometricOrderAtCusp`. -/
+@[simp]
+theorem orderAtCuspOrbit_cuspTranslationOrbitAdjoinNegOneEquivCuspOrbit_eq_geometricOrderAtCusp
+    (f : F) (c : CuspTranslationOrbit (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ))) :
+    orderAtCuspOrbit f (Γ.cuspTranslationOrbitAdjoinNegOneEquivCuspOrbit c) =
+      geometricOrderAtCusp f c := by
+  induction c using CuspTranslationOrbit.induction_on with | h γ =>
+  rw [Subgroup.cuspTranslationOrbitAdjoinNegOneEquivCuspOrbit_mk, orderAtCuspOrbit_cuspOrbitOfSL2Z,
+    geometricOrderAtCusp_mk, MonoidHom.coe_rangeRestrict]
+  have hw : (minimalPeriod (TSL • ·) (QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ) :
+      𝒮ℒ ⧸ (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) : ℝ) =
+      (ConjAct.toConjAct (mapGL ℝ γ⁻¹)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).widthInfty := by
+    have hnat := natCast_cuspTranslationOrbitWidth_mk_inv_eq_strictWidthInfty
+      (Γ := Γ.adjoinNegOne) γ⁻¹
+    rw [inv_inv, cuspTranslationOrbitWidth_mk] at hnat
+    conv_rhs at hnat =>
+      rw [Subgroup.map_mapGL_adjoinNegOne, ← Subgroup.adjoinNegOne_conj, ← Subgroup.widthInfty]
+    exact hnat
+  rw [hw, map_inv (mapGL ℝ) γ]
+
+/-- Under `Γ.cuspTranslationOrbitAdjoinNegOneEquivCuspOrbit.symm`, `geometricOrderAtCusp` agrees
+with `orderAtCuspOrbit`. -/
+@[simp]
+theorem
+    geometricOrderAtCusp_cuspTranslationOrbitAdjoinNegOneEquivCuspOrbit_symm_eq_orderAtCuspOrbit
+    (f : F) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+    geometricOrderAtCusp f (Γ.cuspTranslationOrbitAdjoinNegOneEquivCuspOrbit.symm C) =
+      orderAtCuspOrbit f C := by
+  rw [← orderAtCuspOrbit_cuspTranslationOrbitAdjoinNegOneEquivCuspOrbit_eq_geometricOrderAtCusp,
+    Equiv.apply_symm_apply]
 
 /-- At a regular cusp, the translation orbit of `γ⁻¹` has the same order as the cusp orbit. -/
 theorem intCast_orderAtCuspTranslationOrbit_mk_inv_eq_orderAtCuspOrbit_of_isRegularCusp
@@ -113,18 +148,22 @@ theorem sum_orderAtCuspTranslationOrbit_eq_relIndex_withCenter_mul (f : F) :
 /-- **The projective valence formula on effective and cusp orbits**: for nonzero modular `f` of
 weight `k` on finite-index `Γ`,
 `∑ᶠ P, ord_P f / e_P + ∑ᶠ C, ord_C f = k · [SL(2, ℤ) : ±Γ] / 12`. -/
-theorem valence_formula_effectiveOrbit (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) :
+theorem valence_formula_effectiveOrbit_add_cuspOrbit (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) :
     (∑ᶠ P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ,
           weightedOrderOfVanishingOnEffectiveOrbit f P) +
         (∑ᶠ C : (Γ.map sl2zToPSL2R).CuspOrbit, orderAtCuspOrbit f C) =
-      (k : ℚ) * Γ.withCenter.index / 12 := by
+      (k : ℚ) * Γ.projectiveIndex / 12 := by
   have hval := valence_formula_finiteIndex f hf
   rw [finsum_weightedOrderOfVanishingOnSubgroupOrbit_eq_relIndex_withCenter_mul f,
     sum_orderAtCuspTranslationOrbit_eq_relIndex_withCenter_mul f, Γ.card_quotient_mapGL_eq_index,
     ← Subgroup.relIndex_mul_index Γ.le_withCenter, Nat.cast_mul, ← mul_add] at hval
   have := Subgroup.isFiniteRelIndex_of_finiteIndex (H := Γ) (K := Γ.withCenter)
-  exact mul_left_cancel₀ (by exact_mod_cast Subgroup.relIndex_ne_zero (H := Γ) (K := Γ.withCenter))
-    (hval.trans (by ring))
+  have hres := mul_left_cancel₀
+    (by exact_mod_cast Subgroup.relIndex_ne_zero (H := Γ) (K := Γ.withCenter))
+    (hval.trans (by ring :
+      (k : ℚ) * ((Γ.relIndex Γ.withCenter : ℚ) * Γ.withCenter.index) / 12 =
+        (Γ.relIndex Γ.withCenter : ℚ) * ((k : ℚ) * Γ.withCenter.index / 12)))
+  rwa [Subgroup.withCenter_eq_adjoinNegOne, ← Subgroup.projectiveIndex_def] at hres
 
 end CuspOrderComparison
 
@@ -142,16 +181,17 @@ variable [Γ.FiniteIndex]
 cusps. -/
 theorem valence_formula_compactifiedQuotient (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) :
     (∑ᶠ x : (Γ.map sl2zToPSL2R).CompactifiedQuotient, weightedOrderOnCompactifiedQuotient f x) =
-      (k : ℚ) * Γ.withCenter.index / 12 := by
-  rw [finsum_weightedOrderOnCompactifiedQuotient_eq_add, valence_formula_effectiveOrbit f hf]
+      (k : ℚ) * Γ.projectiveIndex / 12 := by
+  rw [finsum_weightedOrderOnCompactifiedQuotient_eq_add,
+    valence_formula_effectiveOrbit_add_cuspOrbit f hf]
 
 /-! ### Unified, single-orbit, and single-cusp vanishing bounds -/
 
 /-- For a nonzero modular form `f` on finite-index `Γ`, at every point `x` of the compactified
 quotient, `ord_x f / e_x ≤ k · [SL(2, ℤ) : ±Γ] / 12`. -/
-theorem weightedOrderOnCompactifiedQuotient_le_weight_mul_index_withCenter_div_twelve
+theorem weightedOrderOnCompactifiedQuotient_le_weight_mul_projectiveIndex_div_twelve
     (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) (x : (Γ.map sl2zToPSL2R).CompactifiedQuotient) :
-    weightedOrderOnCompactifiedQuotient f x ≤ (k : ℚ) * Γ.withCenter.index / 12 :=
+    weightedOrderOnCompactifiedQuotient f x ≤ (k : ℚ) * Γ.projectiveIndex / 12 :=
   (single_le_finsum x (hasFiniteSupport_weightedOrderOnCompactifiedQuotient f)
     (weightedOrderOnCompactifiedQuotient_nonneg f)).trans_eq
     (valence_formula_compactifiedQuotient f hf)
@@ -159,86 +199,87 @@ theorem weightedOrderOnCompactifiedQuotient_le_weight_mul_index_withCenter_div_t
 /-- **Unified projective vanishing bound** for a nonzero modular form `f` on finite-index `Γ`:
 `12 · ord_x f ≤ k · [SL(2, ℤ) : ±Γ] · e_x`. -/
 theorem
-  twelve_mul_orderOnCompactifiedQuotient_le_weight_mul_index_withCenter_mul_effectiveStabilizerOrder
+  twelve_mul_orderOnCompactifiedQuotient_le_weight_mul_projectiveIndex_mul_effectiveStabilizerOrder
     (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) (x : (Γ.map sl2zToPSL2R).CompactifiedQuotient) :
     12 * orderOnCompactifiedQuotient f x ≤
-      (k : ℚ) * Γ.withCenter.index * x.effectiveStabilizerOrder := by
-  have h := weightedOrderOnCompactifiedQuotient_le_weight_mul_index_withCenter_div_twelve f hf x
+      (k : ℚ) * Γ.projectiveIndex * x.effectiveStabilizerOrder := by
+  have h :=
+    weightedOrderOnCompactifiedQuotient_le_weight_mul_projectiveIndex_div_twelve f hf x
   rw [weightedOrderOnCompactifiedQuotient_def] at h
   linarith [(div_le_iff₀ (by exact_mod_cast x.effectiveStabilizerOrder_pos)).mp h]
 
 /-- **Projective interior vanishing bound** for a nonzero modular form `f` on finite-index `Γ`:
 `12 · ord_P f ≤ k · [SL(2, ℤ) : ±Γ] · e_P`. -/
 theorem
-    twelve_mul_orderOfVanishingOnEffectiveOrbit_le_weight_mul_index_withCenter_mul_cardStabilizer
+    twelve_mul_orderOfVanishingOnEffectiveOrbit_le_weight_mul_projectiveIndex_mul_cardStabilizer
     (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
     12 * orderOfVanishingOnEffectiveOrbit f P ≤
-      k * Γ.withCenter.index * cardStabilizerOnOrbit P :=
+      k * Γ.projectiveIndex * cardStabilizerOnOrbit P :=
   (fun h ↦ by
     rw [orderOnCompactifiedQuotient_ofQuotient,
       Subgroup.CompactifiedQuotient.effectiveStabilizerOrder_ofQuotient] at h
     exact_mod_cast h) <|
-  twelve_mul_orderOnCompactifiedQuotient_le_weight_mul_index_withCenter_mul_effectiveStabilizerOrder
+  twelve_mul_orderOnCompactifiedQuotient_le_weight_mul_projectiveIndex_mul_effectiveStabilizerOrder
     f hf (.ofQuotient P)
 
 /-- `k · [SL(2, ℤ) : ±Γ] · e_P < 12` forces vanishing order zero at the effective orbit `P`. -/
 theorem
-orderOfVanishingOnEffectiveOrbit_eq_zero_of_weight_mul_index_withCenter_mul_cardStabilizer_lt_twelve
+orderOfVanishingOnEffectiveOrbit_eq_zero_of_weight_mul_projectiveIndex_mul_cardStabilizer_lt_twelve
     (f : F) {P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ}
-    (hk : k * Γ.withCenter.index * cardStabilizerOnOrbit P < 12) :
+    (hk : k * Γ.projectiveIndex * cardStabilizerOnOrbit P < 12) :
     orderOfVanishingOnEffectiveOrbit f P = 0 := by
   rcases eq_or_ne (⇑f : ℍ → ℂ) 0 with hf | hf
   · induction P using Quotient.inductionOn' with | h z => simp [hf]
   · have :=
-      twelve_mul_orderOfVanishingOnEffectiveOrbit_le_weight_mul_index_withCenter_mul_cardStabilizer
+      twelve_mul_orderOfVanishingOnEffectiveOrbit_le_weight_mul_projectiveIndex_mul_cardStabilizer
         f hf P
     have := orderOfVanishingOnEffectiveOrbit_nonneg f P; omega
 
 /-- **Projective cusp vanishing bound** for a nonzero modular form `f` on finite-index `Γ`:
 `12 · ord_C f ≤ k · [SL(2, ℤ) : ±Γ]`. -/
-theorem twelve_mul_orderAtCuspOrbit_le_weight_mul_index_withCenter
+theorem twelve_mul_orderAtCuspOrbit_le_weight_mul_projectiveIndex
     (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
-    12 * orderAtCuspOrbit f C ≤ (k : ℚ) * Γ.withCenter.index := by
+    12 * orderAtCuspOrbit f C ≤ (k : ℚ) * Γ.projectiveIndex := by
   simpa using (
-  twelve_mul_orderOnCompactifiedQuotient_le_weight_mul_index_withCenter_mul_effectiveStabilizerOrder
+  twelve_mul_orderOnCompactifiedQuotient_le_weight_mul_projectiveIndex_mul_effectiveStabilizerOrder
     f hf (.ofCusp C))
 
 /-- Since `orderAtCuspOrbit` lies in `(1/2)ℕ`, `k · [SL(2, ℤ) : ±Γ] < 6` forces cusp order `0`. -/
-theorem orderAtCuspOrbit_eq_zero_of_weight_mul_index_withCenter_lt_six (f : F)
-    {C : (Γ.map sl2zToPSL2R).CuspOrbit} (hk : k * Γ.withCenter.index < 6) :
+theorem orderAtCuspOrbit_eq_zero_of_weight_mul_projectiveIndex_lt_six (f : F)
+    {C : (Γ.map sl2zToPSL2R).CuspOrbit} (hk : k * Γ.projectiveIndex < 6) :
     orderAtCuspOrbit f C = 0 := by
   rcases eq_or_ne (⇑f : ℍ → ℂ) 0 with hf | hf
   · obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
     simp [hf, SlashAction.zero_slash, TauCeti.orderAtCusp_def]
   · obtain ⟨m, hm⟩ := exists_orderAtCuspOrbit_eq_natCast_div_two f C
-    have hbound := hm ▸ twelve_mul_orderAtCuspOrbit_le_weight_mul_index_withCenter f hf C
-    have : (6 : ℤ) * m ≤ k * Γ.withCenter.index := by
-      exact_mod_cast (by linarith : (6 : ℚ) * m ≤ (k : ℚ) * Γ.withCenter.index)
+    have hbound := hm ▸ twelve_mul_orderAtCuspOrbit_le_weight_mul_projectiveIndex f hf C
+    have : (6 : ℤ) * m ≤ k * Γ.projectiveIndex := by
+      exact_mod_cast (by linarith : (6 : ℚ) * m ≤ (k : ℚ) * Γ.projectiveIndex)
     have hm0 : m = 0 := by omega
     simp [hm, hm0]
 
 private lemma orderAtCuspOrbit_eq_zero_of_exists_natCast (f : F)
     {C : (Γ.map sl2zToPSL2R).CuspOrbit} (hm : ∃ m : ℕ, orderAtCuspOrbit f C = m)
-    (hk : k * Γ.withCenter.index < 12) : orderAtCuspOrbit f C = 0 := by
+    (hk : k * Γ.projectiveIndex < 12) : orderAtCuspOrbit f C = 0 := by
   rcases eq_or_ne (⇑f : ℍ → ℂ) 0 with hf | hf
   · obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
     simp [hf, SlashAction.zero_slash, TauCeti.orderAtCusp_def]
   · obtain ⟨m, hm⟩ := hm
-    have : (12 : ℤ) * m ≤ k * Γ.withCenter.index := by
-      exact_mod_cast hm ▸ twelve_mul_orderAtCuspOrbit_le_weight_mul_index_withCenter f hf C
+    have : (12 : ℤ) * m ≤ k * Γ.projectiveIndex := by
+      exact_mod_cast hm ▸ twelve_mul_orderAtCuspOrbit_le_weight_mul_projectiveIndex f hf C
     have hm0 : m = 0 := by omega
     simp [hm, hm0]
 
 /-- At a regular cusp orbit `C`, `k · [SL(2, ℤ) : ±Γ] < 12` forces `orderAtCuspOrbit f C = 0`. -/
-theorem orderAtCuspOrbit_eq_zero_of_isRegularCusp_of_weight_mul_index_withCenter_lt_twelve (f : F)
+theorem orderAtCuspOrbit_eq_zero_of_isRegularCusp_of_weight_mul_projectiveIndex_lt_twelve (f : F)
     {C : (Γ.map sl2zToPSL2R).CuspOrbit} (hreg : Γ.IsRegularCusp C)
-    (hk : k * Γ.withCenter.index < 12) : orderAtCuspOrbit f C = 0 :=
+    (hk : k * Γ.projectiveIndex < 12) : orderAtCuspOrbit f C = 0 :=
   orderAtCuspOrbit_eq_zero_of_exists_natCast f
     (exists_orderAtCuspOrbit_eq_natCast_of_isRegularCusp f hreg) hk
 
 /-- In even weight, `k · [SL(2, ℤ) : ±Γ] < 12` forces `orderAtCuspOrbit f C = 0` at every cusp. -/
-theorem orderAtCuspOrbit_eq_zero_of_even_of_weight_mul_index_withCenter_lt_twelve (f : F)
-    (heven : Even k) {C : (Γ.map sl2zToPSL2R).CuspOrbit} (hk : k * Γ.withCenter.index < 12) :
+theorem orderAtCuspOrbit_eq_zero_of_even_of_weight_mul_projectiveIndex_lt_twelve (f : F)
+    (heven : Even k) {C : (Γ.map sl2zToPSL2R).CuspOrbit} (hk : k * Γ.projectiveIndex < 12) :
     orderAtCuspOrbit f C = 0 :=
   orderAtCuspOrbit_eq_zero_of_exists_natCast f
     (exists_orderAtCuspOrbit_eq_natCast_of_even f heven C) hk

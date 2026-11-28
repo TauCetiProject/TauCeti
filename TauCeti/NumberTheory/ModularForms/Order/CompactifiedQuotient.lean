@@ -99,6 +99,13 @@ theorem weightedOrderOnCompactifiedQuotient_def (f : F)
       orderOnCompactifiedQuotient f x :=
   mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr x.effectiveStabilizerOrder_ne_zero)
 
+/-- The weighted geometric order vanishes iff the geometric order vanishes. -/
+@[simp] theorem weightedOrderOnCompactifiedQuotient_eq_zero_iff (f : F)
+    (x : (Γ.map sl2zToPSL2R).CompactifiedQuotient) :
+    weightedOrderOnCompactifiedQuotient f x = 0 ↔ orderOnCompactifiedQuotient f x = 0 := by
+  rw [weightedOrderOnCompactifiedQuotient_def, div_eq_zero_iff, Nat.cast_eq_zero]
+  simp [x.effectiveStabilizerOrder_ne_zero]
+
 /-- The zero form has weighted geometric order `0` everywhere on the compactified quotient. -/
 @[simp] theorem weightedOrderOnCompactifiedQuotient_zero [Zero F] [IsZeroApply F]
     (x : (Γ.map sl2zToPSL2R).CompactifiedQuotient) :

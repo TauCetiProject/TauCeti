@@ -49,8 +49,9 @@ operations, so meromorphy at `q = 0` is preserved by the field operations, twist
 multiplies the cusp function by `q ^ k`, and the `q`-expansion only depends on the cusp function
 on a punctured neighbourhood of `0`. Constant functions have constant cusp functions, and for an
 analytic cusp function the cusp function and the `q`-expansion of a power are the powers.
-Slashing by a positive-determinant upper-triangular `GL(2, ℝ)` matrix scales the cusp function
-and rotates `q`, preserving analyticity at `0`.
+Slashing a periodic function by a positive-determinant upper-triangular `GL(2, ℝ)` matrix `M`
+relates its cusp function at the rescaled width `(M 1 1 / M 0 0) * h` to the original cusp
+function at width `h` (scaled and with `q` rotated), preserving analyticity at `0`.
 
 Finally, the `q`-parameter as a function on `ℍ`: it is periodic, its own `q`-expansion is `X`
 (and that of its `m`-th power is `X ^ m`),
@@ -353,8 +354,10 @@ section
 
 open scoped _root_.ModularForm
 
-/-- Near `q = 0`, slashing by positive-determinant upper-triangular `M ∈ GL(2, ℝ)` scales
-`cuspFunction` by `|det M|^(k-1) * M₁₁^(-k)` and rotates `q` by `exp (2πi (M 0 1 / M 1 1) / h)`. -/
+/-- Near `q = 0`, the cusp function at the rescaled width `(M 1 1 / M 0 0) * h` of `g ∣[k] M`
+(for positive-determinant upper-triangular `M ∈ GL(2, ℝ)`) equals
+`|det M|^(k-1) * M₁₁^(-k)` times `cuspFunction h g` evaluated at the rotated parameter
+`exp (2πi (M 0 1 / M 1 1) / h) * q`. -/
 lemma cuspFunction_slash_eventuallyEq_of_apply_one_zero_eq_zero (hh : 0 < h)
     {k : ℤ} {M : GL (Fin 2) ℝ} (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0)
     (hg_per : Function.Periodic (g ∘ ofComplex) h) (hg : ContinuousAt (cuspFunction h g) 0) :
@@ -379,7 +382,7 @@ lemma cuspFunction_slash_eventuallyEq_of_apply_one_zero_eq_zero (hh : 0 < h)
       (periodic_slash_of_apply_one_zero_eq_zero hdet hM hg_per),
     _root_.ModularForm.slash_apply_of_apply_one_zero_eq_zero hdet hM,
     ← _root_.UpperHalfPlane.eq_cuspFunction (M • τ) hh.ne' hg_per,
-    UpperHalfPlane.qParam_smul_of_apply_one_zero_eq_zero hdet hM τ]
+    _root_.UpperHalfPlane.qParam_smul_of_apply_one_zero_eq_zero hdet hM τ]
 
 /-- Analyticity at `q = 0` of `cuspFunction` is preserved under slashing by an upper-triangular
 matrix `M ∈ GL(2, ℝ)` with positive determinant: for `h > 0` and `h`-periodic `g ∘ ofComplex`,

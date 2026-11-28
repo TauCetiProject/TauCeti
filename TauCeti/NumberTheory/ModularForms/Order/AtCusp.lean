@@ -26,7 +26,10 @@ modular form all of them are supplied by the `ModularFormClass` machinery.
 at every cusp; `orderAtCusp` supplies the width-normalized `ℚ`-valued convention
 on top of it — the doubled-width exponent halved, which is the integral order for an
 `h`-periodic function and the conventional half-integer at an irregular cusp of odd
-weight. Both cusp orders are invariant under nonzero scalar multiples and under positive-determinant
+weight. When the corresponding cusp function (`cuspFunction h g` or `cuspFunction (2 * h) g`)
+is analytic at `0`, both cusp orders are invariant under nonzero scalar multiples; when in
+addition `0 < h` and `g ∘ ofComplex` is periodic (`h`-periodic for `qExpansionOrderAtCusp`,
+`(2 * h)`-periodic for `orderAtCusp`), they are invariant under positive-determinant
 upper-triangular `GL(2, ℝ)` scalings at the rescaled width `(M 1 1 / M 0 0) * h`.
 
 ## Main declarations

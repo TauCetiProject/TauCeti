@@ -102,6 +102,16 @@ theorem cardStabilizerOnOrbit_mul_weightedOrderOfVanishingOnEffectiveOrbit (f : 
       (orderOfVanishingOnEffectiveOrbit f P : ℚ) :=
   mul_div_cancel₀ _ (by exact_mod_cast TauCeti.cardStabilizerOnOrbit_ne_zero P)
 
+/-- The projective weighted order vanishes iff the plain vanishing order on `P` vanishes. -/
+@[simp]
+theorem weightedOrderOfVanishingOnEffectiveOrbit_eq_zero_iff (f : F)
+    (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    weightedOrderOfVanishingOnEffectiveOrbit f P = 0 ↔
+      orderOfVanishingOnEffectiveOrbit f P = 0 := by
+  rw [weightedOrderOfVanishingOnEffectiveOrbit_def, div_eq_zero_iff, Int.cast_eq_zero,
+    Nat.cast_eq_zero]
+  simp [TauCeti.cardStabilizerOnOrbit_ne_zero P]
+
 /-- The zero form has projective weighted vanishing order `0` on every effective orbit. -/
 @[simp]
 theorem weightedOrderOfVanishingOnEffectiveOrbit_zero [Zero F] [IsZeroApply F]
@@ -128,7 +138,9 @@ theorem weightedOrderOfVanishingOnSubgroupOrbit_eq_relIndex_withCenter_mul (f : 
   have hstab : (cardStabilizerOnOrbit o : ℚ) =
       Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) *
         cardStabilizerOnOrbit (Γ.subgroupOrbitEquivEffectiveOrbit o) := by
-    exact_mod_cast TauCeti.ModularGroup.cardStabilizerOnOrbit_eq_card_center_mul_effective o
+    exact_mod_cast
+      TauCeti.ModularGroup.cardStabilizerOnOrbit_eq_card_center_mul_cardStabilizerOnOrbit_effective
+        o
   have hprod : (Γ.relIndex Γ.withCenter : ℚ) *
       Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) = 2 := by
     exact_mod_cast Γ.relIndex_withCenter_mul_card_center_subgroupOf.trans

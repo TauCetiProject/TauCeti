@@ -158,6 +158,14 @@ lemma ellipticOrder_mul_weightedOrderOfVanishingOnOrbit
   rw [weightedOrderOfVanishingOnOrbit_def]
   exact mul_div_cancel₀ _ (by exact_mod_cast (ModularGroup.ellipticOrder_pos q).ne')
 
+/-- The weighted vanishing order vanishes iff the plain vanishing order vanishes. -/
+@[simp]
+lemma weightedOrderOfVanishingOnOrbit_eq_zero_iff [SlashInvariantFormClass F 𝒮ℒ k] (f : F)
+    (q : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ) :
+    weightedOrderOfVanishingOnOrbit f q = 0 ↔ orderOfVanishingOnOrbit f q = 0 := by
+  rw [weightedOrderOfVanishingOnOrbit_def, div_eq_zero_iff, Int.cast_eq_zero]
+  simp [(ModularGroup.ellipticOrder_pos q).ne']
+
 /-- Every elliptic-weighted order is nonnegative: a modular form is holomorphic and the
 weights are positive. -/
 lemma weightedOrderOfVanishingOnOrbit_nonneg [ModularFormClass F 𝒮ℒ k] (f : F)

@@ -35,8 +35,9 @@ in particular of an integral subgroup `Γ ≤ SL(2, ℤ)`, see
 `cuspOrbitOfTranslationOrbit_eq_cuspOrbitOfSL2Z_iff`) corresponds to one cusp translation orbit or
 two, according as its `⟨T⟩`-orbit is stable under `-I` or not. That is the **full**-coset
 convention that `Norm/Valence.lean` already makes on the interior term — the weight there is read
-on the matrix stabiliser, and the norm's weight is `k · [SL(2, ℤ) : 𝒢]` for the full index — so
-both halves of the identity are read for the full coset space, which is what makes them match.
+on the matrix stabiliser, and the norm's weight is `k · [𝒮ℒ : 𝒢 ⊓ 𝒮ℒ]` for the full relative index
+(equal to `k · [SL(2, ℤ) : Γ]` when `𝒢` is the image of `Γ ≤ SL(2, ℤ)`) — so both halves of the
+identity are read for the full coset space, which is what makes them match.
 
 The **width** of an orbit (`cuspTranslationOrbitWidth`) and its finiteness and index-sum
 properties live in `TauCeti/NumberTheory/ModularForms/Cusps/TranslationOrbit/Basic.lean`.

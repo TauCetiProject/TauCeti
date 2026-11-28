@@ -13,9 +13,9 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 # The period of a group element along its orbit
 
 For a group `G` acting on `α`, the period of `g : G` at a point (the least `n > 0` with
-`g ^ n • a = a`) is constant along the orbit of `a` under the powers of `g`
-(`MulAction.minimalPeriod_zpow_smul`), and any point `a` is a `g ^ j`-translate of its
-`Subgroup.zpowers g`-orbit representative `⟦a⟧.out` (`MulAction.exists_zpow_smul_eq_out`).
+`g ^ n • a = a`, or `0` if no such `n > 0` exists) is constant along the orbit of `a` under the
+powers of `g` (`MulAction.minimalPeriod_zpow_smul`), and any point `a` is a `g ^ j`-translate of
+its `Subgroup.zpowers g`-orbit representative `⟦a⟧.out` (`MulAction.exists_zpow_smul_eq_out`).
 Mathlib has `MulAction.period` and its divisibility API
 (`MulAction.pow_smul_eq_iff_minimalPeriod_dvd`) but not this invariance.
 -/
