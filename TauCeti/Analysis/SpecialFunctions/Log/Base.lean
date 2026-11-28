@@ -27,6 +27,12 @@ convergence estimates.
 * `Real.logb_zpow_self`: `logb b (b ^ n) = n` for `n : ℤ` and a base `b > 0`, `b ≠ 1`.
 * `Real.pow_natFloor_logb_le_self`: `b ^ ⌊logb b x⌋₊ ≤ x` for `1 < b` and `1 ≤ x`.
 * `Real.lt_pow_natFloor_logb_add_one`: `x < b ^ (⌊logb b x⌋₊ + 1)` for `1 < b` and `0 < x`.
+* `Real.le_natFloor_logb_iff_pow_le`, `Real.natFloor_logb_lt_iff_lt_pow`: threshold comparisons
+  between `⌊logb b x⌋₊` and `n ≠ 0` for `1 < b` and `0 ≤ x`.
+* `Real.natFloor_logb_eq_iff_mem_Ico`, `Real.natFloor_logb_eq_of_mem_Ico`,
+  `Real.mem_Ico_pow_natFloor_logb`: interval `[b ^ n, b ^ (n + 1))` characterizations of
+  `⌊logb b x⌋₊`.
+* `Real.natFloor_logb_pow_self`: `⌊logb b (b ^ n)⌋₊ = n` for `1 < b` and `n : ℕ`.
 * `Real.natFloor_logb_eq_natLog_natFloor`: `⌊logb b x⌋₊ = Nat.log b ⌊x⌋₊` for `b : ℕ` and
   `0 ≤ x`.
 * `Real.natLog_natFloor_exp`: `Nat.log b ⌊exp t⌋₊ = ⌊t / log b⌋₊` for `b : ℕ` and `t : ℝ`.
@@ -77,6 +83,42 @@ theorem lt_pow_natFloor_logb_add_one (hb : 1 < b) (hx : 0 < x) :
   apply (logb_lt_iff_lt_rpow hb hx).mp
   push_cast
   exact Nat.lt_floor_add_one (logb b x)
+
+/-- For `b > 1`, `x ≥ 0`, and `n ≠ 0`, `n ≤ ⌊logb b x⌋₊` if and only if `b ^ n ≤ x`. -/
+theorem le_natFloor_logb_iff_pow_le (hb : 1 < b) (hx : 0 ≤ x) (hn : n ≠ 0) :
+    n ≤ ⌊logb b x⌋₊ ↔ b ^ n ≤ x := by
+  rcases hx.eq_or_lt with rfl | hx0
+  · simp [hn, pow_pos (zero_lt_one.trans hb) n]
+  · rw [Nat.le_floor_iff' hn, le_logb_iff_rpow_le hb hx0, rpow_natCast]
+
+/-- For `b > 1`, `x ≥ 0`, and `n ≠ 0`, `⌊logb b x⌋₊ < n` if and only if `x < b ^ n`. -/
+theorem natFloor_logb_lt_iff_lt_pow (hb : 1 < b) (hx : 0 ≤ x) (hn : n ≠ 0) :
+    ⌊logb b x⌋₊ < n ↔ x < b ^ n := by
+  rw [← not_le, le_natFloor_logb_iff_pow_le hb hx hn, not_le]
+
+/-- For `b > 1` and `x ≥ 1`, `⌊logb b x⌋₊ = n` if and only if `x ∈ [b ^ n, b ^ (n + 1))`. -/
+theorem natFloor_logb_eq_iff_mem_Ico (hb : 1 < b) (hx : 1 ≤ x) :
+    ⌊logb b x⌋₊ = n ↔ x ∈ Set.Ico (b ^ n) (b ^ (n + 1)) := by
+  rw [Nat.floor_eq_iff (logb_nonneg hb hx), Set.mem_Ico,
+    le_logb_iff_rpow_le hb (zero_lt_one.trans_le hx),
+    logb_lt_iff_lt_rpow hb (zero_lt_one.trans_le hx), rpow_natCast, ← Nat.cast_add_one,
+    rpow_natCast]
+
+/-- If `b > 1` and `x ∈ [b ^ n, b ^ (n + 1))`, then `⌊logb b x⌋₊ = n`. -/
+theorem natFloor_logb_eq_of_mem_Ico (hb : 1 < b)
+    (hx : x ∈ Set.Ico (b ^ n) (b ^ (n + 1))) :
+    ⌊logb b x⌋₊ = n :=
+  (natFloor_logb_eq_iff_mem_Ico hb ((one_le_pow₀ hb.le).trans hx.1)).2 hx
+
+/-- For `b > 1` and `x ≥ 1`, `x` lies in `[b ^ ⌊logb b x⌋₊, b ^ (⌊logb b x⌋₊ + 1))`. -/
+theorem mem_Ico_pow_natFloor_logb (hb : 1 < b) (hx : 1 ≤ x) :
+    x ∈ Set.Ico (b ^ ⌊logb b x⌋₊) (b ^ (⌊logb b x⌋₊ + 1)) :=
+  (natFloor_logb_eq_iff_mem_Ico hb hx).mp rfl
+
+/-- For `b > 1` and `n : ℕ`, `⌊logb b (b ^ n)⌋₊ = n`. -/
+@[simp]
+theorem natFloor_logb_pow_self (hb : 1 < b) (n : ℕ) : ⌊logb b (b ^ n)⌋₊ = n := by
+  rw [← rpow_natCast, logb_rpow (zero_lt_one.trans hb) hb.ne', Nat.floor_natCast]
 
 /-- For a natural base `b` and `0 ≤ x`, the natural floor of `logb b x` equals `Nat.log b ⌊x⌋₊`.
 This extends `Real.natFloor_logb_natCast` from natural numbers to nonnegative reals. -/
