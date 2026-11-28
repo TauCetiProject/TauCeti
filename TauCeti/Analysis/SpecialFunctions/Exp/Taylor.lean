@@ -100,20 +100,15 @@ theorem exp_sub_sum_range_succ_eq_integral (n : ℕ) (x : ℝ) :
 every real `x`; for `0 ≤ x` every partial sum does (`Real.sum_le_exp_of_nonneg`). -/
 theorem sum_le_exp_of_even {n : ℕ} (hn : Even n) (x : ℝ) :
     ∑ i ∈ Finset.range n, x ^ i / i ! ≤ exp x := by
-  obtain ⟨m, rfl⟩ := hn
-  rcases m with _ | m
-  · simpa using (exp_pos x).le
-  -- The remainder `x ^ (2 m + 2) / (2 m + 1)! * ∫₀¹ (1 - s) ^ (2 m + 1) e^{x s} ds` is `≥ 0`.
-  have h := exp_sub_sum_range_succ_eq_integral (2 * m + 1) x
-  rw [show m + 1 + (m + 1) = 2 * m + 1 + 1 by ring]
-  have hint : 0 ≤ ∫ s in (0 : ℝ)..1, (1 - s) ^ (2 * m + 1) * exp (x * s) :=
-    intervalIntegral.integral_nonneg zero_le_one fun s hs ↦
-      mul_nonneg (pow_nonneg (by linarith [hs.2]) _) (exp_pos _).le
-  have hpow : 0 ≤ x ^ (2 * m + 1 + 1) := by
-    rw [show 2 * m + 1 + 1 = 2 * (m + 1) by ring, pow_mul]
-    positivity
-  have := mul_nonneg (div_nonneg hpow (Nat.cast_nonneg (2 * m + 1)!)) hint
-  linarith
+  cases n with
+  | zero => simpa using (exp_pos x).le
+  | succ n =>
+    have h := exp_sub_sum_range_succ_eq_integral n x
+    have hint : 0 ≤ ∫ s in (0 : ℝ)..1, (1 - s) ^ n * exp (x * s) :=
+      intervalIntegral.integral_nonneg zero_le_one fun s hs ↦
+        mul_nonneg (pow_nonneg (by linarith [hs.2]) _) (exp_pos _).le
+    have := mul_nonneg (div_nonneg (hn.pow_nonneg x) (Nat.cast_nonneg n !)) hint
+    linarith
 
 /-- If `-c ≤ x`, then `1 + x + x ^ 2 / 2 * (1 - c / 3) ≤ exp x`. Only a lower bound on `x` is
 needed. This is the lower companion of `Real.exp_le_one_add_add_sq_div_of_le`, and gives lower
