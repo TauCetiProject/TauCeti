@@ -248,6 +248,13 @@ theorem coacyclic_le_leftOrthogonal_gradedInjective :
     coacyclic R h ≤ (gradedInjective R h).leftOrthogonal :=
   coacyclic_le_iff.2 (totalizations_le_leftOrthogonal_gradedInjective R h)
 
+variable (R h) in
+/-- Graded-injective curved modules are right orthogonal to the coacyclic ones. -/
+theorem gradedInjective_le_rightOrthogonal_coacyclic :
+    gradedInjective R h ≤ (coacyclic R h).rightOrthogonal :=
+  (ObjectProperty.le_leftOrthogonal_iff_le_rightOrthogonal _ _).1
+    (coacyclic_le_leftOrthogonal_gradedInjective R h)
+
 /-- Localization to the coderived category is bijective on morphisms into a graded-injective
 curved module. -/
 theorem CoderivedCategory.map_bijective_of_gradedInjective
@@ -255,7 +262,6 @@ theorem CoderivedCategory.map_bijective_of_gradedInjective
     {I : DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)} (hI : gradedInjective R h I) :
     Function.Bijective ((CoderivedCategory.Q R h).map : (X ⟶ I) → _) :=
   ObjectProperty.rightOrthogonal.map_bijective_of_isTriangulated
-    ((ObjectProperty.le_leftOrthogonal_iff_le_rightOrthogonal _ _).1
-      (coacyclic_le_leftOrthogonal_gradedInjective R h) I hI) _ X
+    (gradedInjective_le_rightOrthogonal_coacyclic R h I hI) _ X
 
 end TauCeti.CurvedDGRightModuleCat
