@@ -33,7 +33,8 @@ Over a ring without zero divisors with a partial order compatible with the invol
 (`Matrix.posDef_mul_aeval_iff`): it holds exactly when every `b i * p (d i)` is positive. The
 matrix `β * δ(y)` is again a form of which `y` is a similitude with multiplier `ν`
 (`Matrix.conjTranspose_mul_mul_aeval_mul_eq_smul`), with diagonal entries `b i * δ (d i)`: passing
-from `β` to `β * δ(y)` multiplies the signs of the diagonal entries by those of the `δ (d i)`.
+from `β` to `β * δ(y)` multiplies the diagonal entries by the `δ (d i)`. When these are real, as
+for a Hermitian `β` and real-valued `δ (d i)`, this multiplies their signs.
 
 This is the linear algebra behind the change of signs of an elliptic similitude at the infinite
 places of a CM field (`Matrix.IsEllipticSimilitude`), where `y` has irreducible characteristic
@@ -45,18 +46,13 @@ polynomial and its complex eigenvalues all have absolute value `√ν`.
   `(diagonal d)ᴴ * B * diagonal d = ν • B` is diagonal when `star (d i) * d j ≠ ν` for `i ≠ j`.
 * `Matrix.isDiag_conjTranspose_mul_mul_of_mul_eq_mul_diagonal`: the Gram matrix of a form in an
   eigenbasis of a similitude is diagonal under the same condition on the eigenvalues.
-* `Matrix.charpoly_eq_prod_of_mul_eq_mul_diagonal`, `Matrix.injective_of_mul_eq_mul_diagonal`:
-  the eigenvalues of a diagonalisation are the roots of the characteristic polynomial, and they
-  are distinct when it is separable.
 * `Matrix.exists_mul_eq_mul_diagonal_and_conjTranspose_mul_mul_eq_diagonal`: a similitude with
   split separable characteristic polynomial whose eigenvalues all satisfy `star r * r = ν` has an
   eigenbasis in which the form is diagonal.
 * `Matrix.conjTranspose_mul_mul_aeval_mul_eq_diagonal`, `Matrix.posDef_mul_aeval_iff`: in such a
   basis, `β * p(y)` is diagonal with entries `b i * p (d i)`, and it is positive definite iff these
   are positive.
-* `Matrix.conjTranspose_mul_mul_aeval_mul_eq_smul`, `Matrix.posDef_mul_aeval_mul_aeval_iff`: `y` is
-  a similitude of `β * δ(y)`, and passing from `β` to `β * δ(y)` multiplies the diagonal entries
-  by the `δ (d i)`.
+* `Matrix.conjTranspose_mul_mul_aeval_mul_eq_smul`: `y` is a similitude of `β * δ(y)`.
 -/
 
 public section
@@ -142,40 +138,7 @@ theorem posDef_mul_aeval_iff [PartialOrder R] [StarOrderedRing R] [NoZeroDivisor
   rw [← IsUnit.posDef_star_left_conjugate_iff (Units.isUnit P), star_eq_conjTranspose,
     conjTranspose_mul_mul_aeval_mul_eq_diagonal hP hb, posDef_diagonal_iff]
 
-/-- **Changing the form by a polynomial in `y` changes the signs.** In a basis diagonalising both
-`y` and `β`, the form `β * δ(y) * p(y)` is positive definite if and only if
-`0 < b i * δ (d i) * p (d i)` for every `i`. -/
-theorem posDef_mul_aeval_mul_aeval_iff [PartialOrder R] [StarOrderedRing R] [NoZeroDivisors R]
-    [Nontrivial R] {y β : Matrix n n R} {P : GL n R} {d b : n → R} (hP : y * P = P * diagonal d)
-    (hb : (P : Matrix n n R)ᴴ * β * P = diagonal b) (δ p : R[X]) :
-    (β * aeval y δ * aeval y p).PosDef ↔ ∀ i, 0 < b i * δ.eval (d i) * p.eval (d i) := by
-  simp only [_root_.mul_assoc, ← map_mul, posDef_mul_aeval_iff hP hb, eval_mul]
-
 end StarRing
-
-/-- A matrix conjugate to `diagonal d` by `P` has characteristic polynomial `∏ i, (X - C (d i))`.
--/
-theorem charpoly_eq_prod_of_mul_eq_mul_diagonal {y : Matrix n n R} {P : GL n R} {d : n → R}
-    (hP : y * P = P * diagonal d) : y.charpoly = ∏ i, (X - C (d i)) := by
-  have hy : y = (P : Matrix n n R) * diagonal d * (P : Matrix n n R)⁻¹ := by
-    rw [← hP, ← coe_units_inv, Matrix.mul_assoc, ← Units.val_mul, mul_inv_cancel, Units.val_one,
-      Matrix.mul_one]
-  rw [hy, charpoly_units_conj, charpoly_diagonal]
-
-/-- The diagonal entries of a diagonalisation `y * P = P * diagonal d` are roots of the
-characteristic polynomial of `y`. -/
-theorem mem_roots_charpoly_of_mul_eq_mul_diagonal [IsDomain R] {y : Matrix n n R} {P : GL n R}
-    {d : n → R} (hP : y * P = P * diagonal d) (i : n) : d i ∈ y.charpoly.roots := by
-  rw [charpoly_eq_prod_of_mul_eq_mul_diagonal hP, ← charpoly_diagonal, roots_charpoly_diagonal]
-  exact Multiset.mem_map_of_mem d (Finset.mem_univ_val i)
-
-/-- The diagonal entries of a diagonalisation of a matrix with separable characteristic polynomial
-are distinct. -/
-theorem injective_of_mul_eq_mul_diagonal [Nontrivial R] {y : Matrix n n R}
-    (hsep : y.charpoly.Separable) {P : GL n R} {d : n → R} (hP : y * P = P * diagonal d) :
-    Function.Injective d := by
-  rw [charpoly_eq_prod_of_mul_eq_mul_diagonal hP] at hsep
-  exact fun i j hij ↦ hsep.inj_of_prod_X_sub_C (Finset.mem_univ i) (Finset.mem_univ j) hij
 
 end CommRing
 

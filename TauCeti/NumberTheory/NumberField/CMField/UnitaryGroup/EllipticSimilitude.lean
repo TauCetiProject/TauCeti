@@ -29,16 +29,16 @@ distinct, and the eigenvectors for two distinct eigenvalues are orthogonal for `
 eigenvalues have absolute value `√ν`
 (`Matrix.exists_mul_eq_mul_diagonal_and_conjTranspose_mul_mul_eq_diagonal`).
 In such a basis the form `β * p(y)` is diagonal with entries `b i * p (d i)`, where `d` are the
-eigenvalues and `b` the diagonal of the form `β`; so its positive definiteness is decided by the
-signs of the real numbers `b i * p (d i)` (`Matrix.posDef_mul_aeval_iff`). Replacing `β` by
-`β * δ(y)` for a polynomial `δ` over `E` keeps `y` an elliptic similitude with the same multiplier
+eigenvalues and `b` the diagonal of the form `β`; so it is positive definite exactly when every
+`b i * p (d i)` is positive (`Matrix.posDef_mul_aeval_iff`). Replacing `β` by `β * δ(y)` for a
+polynomial `δ` over `E` keeps `y` an elliptic similitude with the same multiplier
 (`Matrix.IsEllipticSimilitude.mul_aeval`), and multiplies these diagonal entries by the `δ (d i)`
-(`Matrix.posDef_mul_aeval_mul_aeval_iff`). This is how the signs of a form at the infinite places
-are changed while the elliptic similitude `y` is kept.
+(`Matrix.conjTranspose_mul_mul_aeval_mul_eq_diagonal`). When these entries are real, this
+multiplies their signs; this is how the signs of a form at the infinite places are changed while
+the elliptic similitude `y` is kept.
 
-The nonzero multiplier forces `y` to be invertible (`Matrix.IsEllipticSimilitude.isUnit`),
-as required in §7.9 of the roadmap. The general matrix identities used here also apply to zero
-multipliers.
+The nonzero multiplier forces `y` to be invertible (`Matrix.IsEllipticSimilitude.isUnit`). The
+general matrix identities used here also apply to zero multipliers.
 
 ## Main definitions
 

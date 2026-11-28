@@ -10,6 +10,7 @@ public import Mathlib.FieldTheory.Separable
 import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 import Mathlib.LinearAlgebra.Matrix.Basis
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Diagonal
 
 /-!
 # Matrices with separable characteristic polynomial
@@ -17,7 +18,9 @@ import Mathlib.LinearAlgebra.Matrix.Basis
 A square matrix over a field whose characteristic polynomial splits with distinct roots is
 diagonalizable: its eigenvectors for the distinct roots form a basis
 (`Matrix.exists_mul_eq_mul_diagonal_of_separable`). When the matrix is invertible, the diagonal
-entries of any such diagonalization are units (`Matrix.isUnit_of_mul_eq_mul_diagonal`).
+entries of any such diagonalization are units (`Matrix.isUnit_of_mul_eq_mul_diagonal`). Conversely,
+the diagonal entries of any diagonalization of a matrix with separable characteristic polynomial
+are distinct (`Matrix.injective_of_mul_eq_mul_diagonal`).
 
 ## Main results
 
@@ -25,6 +28,8 @@ entries of any such diagonalization are units (`Matrix.isUnit_of_mul_eq_mul_diag
   polynomial is conjugate to a diagonal matrix.
 * `Matrix.isUnit_of_mul_eq_mul_diagonal`: an invertible matrix conjugate to a diagonal matrix has
   unit diagonal entries.
+* `Matrix.injective_of_mul_eq_mul_diagonal`: a diagonalization of a matrix with separable
+  characteristic polynomial has distinct diagonal entries.
 -/
 
 public section
@@ -74,5 +79,13 @@ theorem isUnit_of_mul_eq_mul_diagonal {R : Type*} [CommRing R] {M : Matrix ι ι
   have hprod : IsUnit (∏ j, d j) := isUnit_of_mul_isUnit_right (hdet ▸
     ((isUnit_iff_isUnit_det _).1 (Units.isUnit P)).mul ((isUnit_iff_isUnit_det _).1 hM))
   exact isUnit_of_dvd_unit (Finset.dvd_prod_of_mem d (Finset.mem_univ i)) hprod
+
+/-- The diagonal entries of a diagonalization of a matrix with separable characteristic polynomial
+are distinct. -/
+theorem injective_of_mul_eq_mul_diagonal {R : Type*} [CommRing R] [Nontrivial R]
+    {M : Matrix ι ι R} (hsep : M.charpoly.Separable) {P : GL ι R} {d : ι → R}
+    (hP : M * P = P * diagonal d) : Function.Injective d := by
+  rw [charpoly_eq_prod_of_mul_eq_mul_diagonal hP] at hsep
+  exact fun i j hij ↦ hsep.inj_of_prod_X_sub_C (Finset.mem_univ i) (Finset.mem_univ j) hij
 
 end Matrix
