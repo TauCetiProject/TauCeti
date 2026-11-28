@@ -185,6 +185,19 @@ namespace LabeledClosedWeb
 
 variable [Add Λ] (W : LabeledClosedWeb.{u} Λ)
 
+/-- If the three labels at a vertex lie in `{1,2}`, the odd end has label `2` and the two
+other ends have label `1`. -/
+theorem edgeLabel_ends_of_one_or_two (W : LabeledClosedWeb.{u} ℕ) (v : W.Vertex)
+    (hl : ∀ i : Fin 3, W.edgeLabel (W.ends (v, i)).1 = 1 ∨
+      W.edgeLabel (W.ends (v, i)).1 = 2) :
+    W.edgeLabel (W.ends (v, 0)).1 = 2 ∧ W.edgeLabel (W.ends (v, 1)).1 = 1 ∧
+      W.edgeLabel (W.ends (v, 2)).1 = 1 := by
+  have h := W.isLabeling.add_eq v
+  have h0 := hl 0
+  have h1 := hl 1
+  have h2 := hl 2
+  omega
+
 /-- Labelled webs are equal when their underlying webs are equal and their labels agree. -/
 @[ext] theorem ext {W V : LabeledClosedWeb.{u} Λ} (h : W.toClosedWeb = V.toClosedWeb)
     (he : HEq W.edgeLabel V.edgeLabel) (hc : HEq W.circleLabel V.circleLabel) : W = V := by

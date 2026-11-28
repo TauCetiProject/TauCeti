@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Foam.ClosedWeb.Planar
 public import TauCeti.KnotTheory.Foam.ClosedWeb.Labeled
+import TauCeti.Dynamics.PeriodicPts.Bool
 
 /-!
 # Face lengths and small faces of closed webs
@@ -24,9 +25,10 @@ is a simple cycle or select an orientation type of square.
 
 The rotation-system conventions follow Goertz–Marino–Wedrich,
 *Monoidal 2-categories from foam evaluation*, arXiv:2602.11120v1, Definition 3.4.
-The small-face argument is the Euler-count step in planar trivalent-web reduction;
-compare Carpentier, *From planar graphs to embedded graphs*, arXiv:math/0005128v1,
-Lemma 2. The finite counts use the native permutation cycle and quotient APIs.
+The small-face argument follows directly from the Euler identity and trivalence.
+For background on four-valent planar reduction, see Carpentier,
+*From planar graphs to embedded graphs*, arXiv:math/0005128v1, Lemma 2.
+The finite counts use the native permutation cycle and quotient APIs.
 -/
 
 public section
@@ -63,7 +65,7 @@ theorem faceLength_def (f : W.Face) :
     Quotient.eq''.trans sameCycle_comm)
 
 /-- Every face contains at least one end. -/
-theorem faceLength_pos (f : W.Face) : 0 < W.faceLength f := by
+@[simp] theorem faceLength_pos (f : W.Face) : 0 < W.faceLength f := by
   obtain ⟨d, rfl⟩ := Quotient.mk''_surjective f
   rw [faceLength_def]
   exact Nat.card_pos_iff.mpr ⟨⟨⟨d, rfl⟩⟩, inferInstance⟩
@@ -77,9 +79,8 @@ theorem sum_faceLength : ∑ f : W.Face, W.faceLength f = 2 * Nat.card W.Edge :=
   classical
   have h := Nat.card_congr (Equiv.sigmaFiberEquiv (fun d : W.End =>
     (Quotient.mk'' d : W.Face)))
-  rw [Nat.card_sigma, Nat.card_prod, Nat.card_eq_fintype_card (α := Bool),
-    Fintype.card_bool] at h
-  simpa only [faceLength_def, mul_comm] using h
+  rw [Nat.card_sigma, W.card_end] at h
+  simpa only [faceLength_def] using h
 
 /-- The total face-degree defect of a trivalent rotation system is six times its Euler
 characteristic. The subtraction takes place in `ℤ`, so long faces contribute negatively. -/
@@ -97,19 +98,26 @@ theorem IsCompatiblyPlanar.sum_six_sub_faceLength (h : W.IsCompatiblyPlanar) :
   rw [W.sum_six_sub_faceLength, W.isCompatiblyPlanar_def.mp h]
   ring
 
+/-- A closed web with positive Euler characteristic has a face of length less than six. -/
+theorem exists_faceLength_lt_six_of_eulerChar_pos (h : 0 < W.eulerChar) :
+    ∃ f : W.Face, W.faceLength f < 6 := by
+  classical
+  by_contra! hn
+  have hs : ∑ f : W.Face, (6 - (W.faceLength f : ℤ)) ≤ 0 :=
+    Finset.sum_nonpos fun f _ => by have hf := hn f; omega
+  rw [W.sum_six_sub_faceLength] at hs
+  omega
+
 /-- Every compatibly planar closed web with a vertex has a face of length less than six.
 No connectedness or simplicity of the underlying graph is assumed. -/
 theorem IsCompatiblyPlanar.exists_faceLength_lt_six (h : W.IsCompatiblyPlanar)
     [Nonempty W.Vertex] : ∃ f : W.Face, W.faceLength f < 6 := by
-  classical
   obtain ⟨v⟩ := ‹Nonempty W.Vertex›
   have hc : 0 < Fintype.card W.Component :=
     Fintype.card_pos_iff.mpr ⟨Quotient.mk'' (W.ends (v, 0))⟩
-  by_contra! hn
-  have hs : ∑ f : W.Face, (6 - (W.faceLength f : ℤ)) ≤ 0 :=
-    Finset.sum_nonpos fun f _ => by have hf := hn f; omega
-  rw [h.sum_six_sub_faceLength] at hs
-  omega
+  apply W.exists_faceLength_lt_six_of_eulerChar_pos
+  rw [W.isCompatiblyPlanar_def.mp h]
+  positivity
 
 /-- A two-colouring of vertices which changes across every interval edge makes every face
 boundary even, including boundaries with repeated edges. -/
@@ -121,33 +129,24 @@ theorem even_faceLength_of_bipartition (c : W.Vertex → Bool)
   have hsemi : Semiconj (c ∘ W.incident) W.facePerm Bool.not := fun d => by
     simp only [comp_apply, facePerm_apply, incident_rotation, hc]
   have hp := (isPeriodicPt_minimalPeriod W.facePerm d).map hsemi
-  have hb : minimalPeriod Bool.not (c (W.incident d)) = 2 := by
-    have htwo : IsPeriodicPt Bool.not 2 (c (W.incident d)) := by
-      simp [IsPeriodicPt, IsFixedPt, comp_apply]
-    have hpos := htwo.minimalPeriod_pos (by decide)
-    have hle := htwo.minimalPeriod_le (by decide)
-    have hne : minimalPeriod Bool.not (c (W.incident d)) ≠ 1 := by
-      simp [minimalPeriod_eq_one_iff_isFixedPt, IsFixedPt]
-    omega
-  simpa only [comp_apply, hb] using hp.minimalPeriod_dvd
+  simpa only [comp_apply, Bool.minimalPeriod_not] using hp.minimalPeriod_dvd
+
+/-- A compatibly planar bipartite closed web with a vertex has a digon or square face
+boundary, counting occurrences even when the boundary is not simple. -/
+theorem IsCompatiblyPlanar.exists_faceLength_two_or_four (h : W.IsCompatiblyPlanar)
+    (c : W.Vertex → Bool)
+    (hc : ∀ d : W.End, c (W.incident (W.endSwap d)) = !(c (W.incident d)))
+    [Nonempty W.Vertex] : ∃ f : W.Face, W.faceLength f = 2 ∨ W.faceLength f = 4 := by
+  obtain ⟨f, hf⟩ := h.exists_faceLength_lt_six
+  have hpos := W.faceLength_pos f
+  obtain ⟨k, hk⟩ := W.even_faceLength_of_bipartition c hc f
+  exact ⟨f, by omega⟩
 
 end ClosedWeb
 
 namespace LabeledClosedWeb
 
 variable (W : LabeledClosedWeb.{u} ℕ)
-
-/-- At a vertex of a `{1,2}`-labelled web, the odd end has label `2` and the two other ends
-have label `1`. -/
-theorem labels_ends_of_one_or_two (hl : ∀ e, W.edgeLabel e = 1 ∨ W.edgeLabel e = 2)
-    (v : W.Vertex) :
-    W.edgeLabel (W.ends (v, 0)).1 = 2 ∧ W.edgeLabel (W.ends (v, 1)).1 = 1 ∧
-      W.edgeLabel (W.ends (v, 2)).1 = 1 := by
-  have h := W.isLabeling.add_eq v
-  have h0 := hl (W.ends (v, 0)).1
-  have h1 := hl (W.ends (v, 1)).1
-  have h2 := hl (W.ends (v, 2)).1
-  omega
 
 /-- The orientation of the odd end at the opposite endpoint of an interval is reversed in a
 `{1,2}`-labelled web. Thus every edge joins a merge to a split. -/
@@ -159,7 +158,7 @@ theorem oddOrientation_endSwap_of_one_or_two
       (W.ends (v, 0)).2 = if W.edgeLabel (W.ends (v, i)).1 = 2 then
         (W.ends (v, i)).2 else !(W.ends (v, i)).2 := by
     intro v i
-    obtain ⟨h0, h1, h2⟩ := W.labels_ends_of_one_or_two hl v
+    obtain ⟨h0, h1, h2⟩ := W.edgeLabel_ends_of_one_or_two v (fun i => hl _)
     fin_cases i <;> simp [h0, h1, h2]
   obtain ⟨⟨v, i⟩, hd⟩ := W.ends.surjective d
   obtain ⟨⟨v', j⟩, hd'⟩ := W.ends.surjective (W.toClosedWeb.endSwap d)
@@ -181,11 +180,10 @@ face boundary. This counts occurrences and makes no assertion that the boundary 
 theorem exists_faceLength_two_or_four (hl : ∀ e, W.edgeLabel e = 1 ∨ W.edgeLabel e = 2)
     (hp : W.toClosedWeb.IsCompatiblyPlanar) [Nonempty W.Vertex] :
     ∃ f : W.toClosedWeb.Face,
-      W.toClosedWeb.faceLength f = 2 ∨ W.toClosedWeb.faceLength f = 4 := by
-  obtain ⟨f, hf⟩ := hp.exists_faceLength_lt_six
-  have hpos := W.toClosedWeb.faceLength_pos f
-  obtain ⟨k, hk⟩ := W.even_faceLength_of_one_or_two hl f
-  exact ⟨f, by omega⟩
+      W.toClosedWeb.faceLength f = 2 ∨ W.toClosedWeb.faceLength f = 4 :=
+  ClosedWeb.IsCompatiblyPlanar.exists_faceLength_two_or_four W.toClosedWeb hp
+    (fun v => (W.ends (v, 0)).2)
+    (W.oddOrientation_endSwap_of_one_or_two hl)
 
 end LabeledClosedWeb
 
