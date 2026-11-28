@@ -13,11 +13,15 @@ import TauCeti.LinearAlgebra.Submodule.CardFinrank
 /-!
 # Counting matrices of fixed rank over finite fields
 
-`Matrix.natCard_rank_eq` counts matrices of rank `r` by their column spaces.
-`TauCeti.card_submodule_finrank_eq_gaussianBinomial` counts the possible column spaces
-and `LinearMap.natCard_surjective` counts the surjections onto each one.
-`Matrix.natCast_card_rank_eq_prod_div` expresses the same count as a rational product using
-`TauCeti.gaussianBinomial_mul_prod_pow_sub_pow`.
+`Matrix.natCard_rank_eq` gives the number of rectangular matrices of a given rank in terms of a
+Gaussian binomial coefficient. `Matrix.natCast_card_rank_eq_prod_div` gives the same count as a
+product of rational quotients. Dividing by `q^(m*n)` gives the rank distribution for uniform
+`m × n` matrices over a field of order `q`. Rank–nullity then gives the rectangular kernel law by
+taking rank `n - j` for right kernels of dimension `j` with `j ≤ n`.
+
+Related results are `TauCeti.card_submodule_finrank_eq_gaussianBinomial` for subspace counts,
+`LinearMap.natCard_surjective` for prescribed images, and
+`TauCeti.gaussianBinomial_mul_prod_pow_sub_pow` for the Gaussian product identity.
 
 See Koymans and Pagano, *Higher Rédei reciprocity and integral points on conics*,
 arXiv:2005.14157v2, equation (6.10), for the corresponding count over the field of two elements.

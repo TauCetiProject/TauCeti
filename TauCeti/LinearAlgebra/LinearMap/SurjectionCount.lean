@@ -12,9 +12,10 @@ import TauCeti.LinearAlgebra.Matrix.Rank
 /-!
 # Counting surjective linear maps over finite fields
 
-`LinearMap.natCard_surjective` counts surjections between finite-dimensional vector spaces.
-In coordinates, their matrices have independent rows, so Mathlib's `card_linearIndependent`
-gives the count.
+`LinearMap.natCard_surjective` gives a product formula for the number of surjections between
+finite-dimensional vector spaces. Taking the target to be a prescribed column space gives the
+number of matrices with that image. For the corresponding independent-row count, see Mathlib's
+`card_linearIndependent`.
 -/
 
 public section
