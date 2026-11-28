@@ -103,22 +103,30 @@ theorem ι_smoothSingularChainHomotopyEquivHalfLine_inv_f_zero
       (smoothSingularSubcomplex (𝓡∂ 1) (EuclideanHalfSpace 1) : SSet).ιChainComplex
         ((SmoothSimplex.equiv₀ (𝓡∂ 1) (EuclideanHalfSpace 1)).symm
           (EuclideanHalfSpace.normalRay 1)) := by
-  rw [smoothSingularChainHomotopyEquivHalfLine_inv, HomologicalComplex.comp_f,
-    HomologicalComplex.comp_f, SSet.ι_chainComplexMap_f_assoc,
-    ι_smoothSingularChainHomotopyEquivOfStarConvex_inv_f_zero_assoc R starConvex_openHalfLine
-      (Set.mem_Ioi.mpr zero_lt_one),
-    SSet.ι_chainComplexMap_f]
-  congr 1
-  refine (SmoothSimplex.smoothSingularSubcomplexMap_app_equiv₀_symm
-    contMDiff_openHalfLineInclusion _).trans (congrArg _ ?_)
-  rw [← EuclideanHalfSpace.normalRay_normalCoord (openHalfLineInclusion _),
-    coe_openHalfLineInclusion_apply]
-  simp
+  have hy : openHalfLineInclusion
+      (⟨𝓘(ℝ, ℝ).symm (1 : ℝ), by simp⟩ :
+        (⟨Ioi 0, isOpen_Ioi⟩ : TopologicalSpace.Opens ℝ)) =
+      EuclideanHalfSpace.normalRay 1 := by
+    rw [← EuclideanHalfSpace.normalRay_normalCoord (openHalfLineInclusion _),
+      coe_openHalfLineInclusion_apply]
+    simp
+  rw [smoothSingularChainHomotopyEquivHalfLine_inv,
+    smoothSingularChainHomotopyEquivOfStarConvex_inv R starConvex_openHalfLine
+      (by simp),
+    ← Functor.map_comp, ← Functor.map_comp,
+    constToSmoothSingularSubcomplex_comp_map, map_comp_constToSmoothSingularSubcomplex,
+    hy, SSet.ι_chainComplexMap_f, constToSmoothSingularSubcomplex_app_zero]
 
 /-- The smooth curve `t ↦ t²` in `[0, ∞)`, which stays in `[0, ∞)` for every real `t` because
 `t² ≥ 0`, bundled as a smooth `1`-simplex from `0` to `1`. -/
 def halfLineBridge : SmoothSimplex (𝓡∂ 1) (EuclideanHalfSpace 1) 1 :=
   SmoothSimplex.ofCurve ((contDiff_id.pow 2).contMDiff.normalRay sq_nonneg)
+
+/-- Read on `Δ¹`, `halfLineBridge` evaluates `t ↦ t²`. -/
+@[simp]
+theorem toContinuousMap_halfLineBridge_apply (x : fullSimplex 1) :
+    halfLineBridge.toContinuousMap x = EuclideanHalfSpace.normalRay (x.val 0 ^ 2) :=
+  SmoothSimplex.toContinuousMap_ofCurve_apply _ x
 
 /-- In the smooth singular chain complex of `[0, ∞)`, the boundary of `halfLineBridge` is
 `[1] - [0]`, witnessing that the transferred image `[1]` of the boundary vertex `[0]` is smoothly

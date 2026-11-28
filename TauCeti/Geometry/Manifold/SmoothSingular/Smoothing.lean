@@ -18,6 +18,7 @@ import TauCeti.Algebra.Homology.Homotopy
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Contraction
 import TauCeti.Geometry.Manifold.SmoothSingular.Additivity
+import TauCeti.Geometry.Manifold.SmoothSingular.ChainMap
 import TauCeti.Geometry.Manifold.SmoothSingular.Homotopy
 import TauCeti.Geometry.Manifold.Topology
 import TauCeti.Topology.MayerVietoris

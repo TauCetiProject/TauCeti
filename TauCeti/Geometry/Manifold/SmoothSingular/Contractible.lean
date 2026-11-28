@@ -18,21 +18,25 @@ import TauCeti.Geometry.Manifold.ContMDiff.Contraction
 
 Let `M` be a manifold whose identity is joined to a constant map `x ↦ c` by a smooth map
 `F : ℝ × M → M`, with `F (0, x) = x` and `F (1, x) = c`. The inclusion of smooth singular chains
-into singular chains, with coefficients in any object `R` of a preadditive category with coproducts,
-is a chain homotopy equivalence (`TauCeti.smoothSingularChainHomotopyEquivOfContMDiff`), and in
-particular a quasi-isomorphism
-(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff`). Homotopy invariance
-alone shows that the smooth singular homology of such a manifold vanishes in positive degrees
-(`TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`).
+into singular chains, with coefficients in any object `R` of a preadditive category with coproducts
+(`Preadditive C`, `HasCoproducts.{u} C`), is a chain homotopy equivalence
+(`TauCeti.smoothSingularChainHomotopyEquivOfContMDiff`). Assuming in addition a coefficient category
+with homology (`CategoryWithHomology C`), it is a quasi-isomorphism
+(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff`), and homotopy
+invariance alone shows that the smooth singular homology of such a manifold vanishes in positive
+degrees (`TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`).
 
-The same holds for the empty manifold, where both complexes vanish
+The same holds for the empty manifold, where both complexes vanish, giving a quasi-isomorphism
+whenever `CategoryWithHomology C` holds
 (`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty`). For an open set `U` of
 the model space `H` of a model with corners `I` whose image `I '' U` is star-convex about `c`:
-when `U` is nonempty, `TauCeti.exists_contMDiff_contraction_of_starConvex` provides a smooth
-contraction to `I.symm c`, so `TauCeti.smoothSingularChainHomotopyEquivOfContMDiff` yields the
-chain homotopy equivalence; when `U` is empty, `U` is a subsingleton and
+when `U` is nonempty, `TauCeti.exists_contMDiff_contraction_of_starConvex` (in
+`TauCeti.Geometry.Manifold.ContMDiff.Contraction`) provides a smooth contraction to `I.symm c`, so
+`TauCeti.smoothSingularChainHomotopyEquivOfContMDiff` yields the chain homotopy equivalence; when
+`U` is empty, `U` is a subsingleton and
 `ModelWithCorners.smoothSingularChainHomotopyEquivOfSubsingleton` applies instead. Combining the two
-cases gives `TauCeti.smoothSingularChainHomotopyEquivOfStarConvex`, hence the quasi-isomorphism
+cases gives `TauCeti.smoothSingularChainHomotopyEquivOfStarConvex` (requiring only `Preadditive C`
+and `HasCoproducts.{u} C`), and—under `[CategoryWithHomology C]`—the quasi-isomorphism
 `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex` and the vanishing of
 positive-degree smooth singular homology
 (`TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`). The model may have boundary
@@ -60,16 +64,14 @@ chain map induced by collapsing `U` to `I.symm c`, yielding the `0`-simplex comp
   open set, the homotopy inverse is induced by the constant map to `I.symm c`, sending every
   singular `0`-simplex to the smooth `0`-simplex at `I.symm c`.
 * `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty`,
-  `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex`: the inclusion is a
-  quasi-isomorphism on the empty manifold and on an open set of the model space with star-convex
-  image.
-* `TauCeti.exists_contMDiff_contraction_of_starConvex`: when nonempty, an open set of the model
-  space with star-convex image about `c` admits a smooth contraction to `I.symm c` (for empty
-  opens, the universal conditions hold vacuously).
-* `TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`: a smoothly contractible manifold
-  has no smooth singular homology in positive degrees.
-* `TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`: neither has an open set of
-  the model space with star-convex image.
+  `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex`: under
+  `[CategoryWithHomology C]`, the inclusion is a quasi-isomorphism on the empty manifold and on an
+  open set of the model space with star-convex image.
+* `TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`: under
+  `[CategoryWithHomology C]`, a smoothly contractible manifold has no smooth singular homology in
+  positive degrees.
+* `TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`: under
+  `[CategoryWithHomology C]`, neither has an open set of the model space with star-convex image.
 
 ## References
 
@@ -103,29 +105,7 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty [Categor
     (SSet.isZero_chainComplex _ R) (SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R)
   infer_instance
 
-/-! ### Open sets with star-convex image in the model -/
-
-/-- **The straight-line contraction of an open set with star-convex image in the model.** Let `U`
-be an open set of the model space `H` of a model with corners `I` whose image `I '' U` is
-star-convex about `c`. When `U` is nonempty, `(t, x) ↦ I.symm (c + (1 - ψ t) • (I x - c))`, with
-`ψ` the smooth transition function from `0` to `1`, is a smooth map `ℝ × U → U` joining the
-identity to the constant map with value `I.symm c ∈ U`. This is the case `M = H` of
-`exists_contMDiff_contraction_of_starConvex_image_extChartAt`, where the extended chart is `I`;
-when `U` is empty, the universal conditions over `U` hold vacuously. -/
-theorem exists_contMDiff_contraction_of_starConvex {U : TopologicalSpace.Opens H} {c : E}
-    (hU : StarConvex ℝ c (I '' U)) :
-    ∃ F : ℝ × U → U, ContMDiff (𝓘(ℝ).prod I) I ∞ F ∧ (∀ x, F (0, x) = x) ∧
-      ∀ x, (F (1, x) : H) = I.symm c := by
-  rcases (U : Set H).eq_empty_or_nonempty with hempty | hne
-  · have : IsEmpty U := ⟨fun x ↦ eq_empty_iff_forall_notMem.1 hempty x x.property⟩
-    exact ⟨fun p ↦ isEmptyElim p.2, fun p ↦ isEmptyElim p.2, isEmptyElim, isEmptyElim⟩
-  obtain ⟨y₀, hy₀, rfl⟩ := hU.mem (hne.image I)
-  obtain ⟨F, hF, h₀, h₁⟩ := exists_contMDiff_contraction_of_starConvex_image_extChartAt
-    (I := I) (M := H) (n := ⊤) (x := y₀) (by simp) ⟨y₀, hy₀⟩
-    (by simpa [extChartAt_self_eq] using hU)
-  exact ⟨F, hF, h₀, fun x ↦ by rw [h₁, I.left_inv]⟩
-
-/-! ### Smoothly contractible manifolds -/
+/-! ### Smoothly contractible manifolds and star-convex opens -/
 
 /-- **A smoothly contractible manifold has the smooth singular homology of a point.** If a smooth
 map `F : ℝ × M → M` joins the identity `F (0, ·) = id` to a constant map `F (1, ·) = c`, then the
@@ -137,17 +117,17 @@ theorem isZero_homology_smoothSingularSubcomplex_of_contMDiff [CategoryWithHomol
   let pt : TopCat.{u} := TopCat.of PUnit
   -- The constant map factors through the singular simplicial set of a point.
   let a : TopCat.of M ⟶ pt := TopCat.ofHom (ContinuousMap.const M PUnit.unit)
-  have hab : a ≫ TopCat.ofHom ⟨fun _ ↦ c, continuous_const⟩ =
+  have hab : a ≫ TopCat.ofHom (ContinuousMap.const pt c) =
       TopCat.ofHom ⟨fun _ ↦ c, continuous_const⟩ := by
     ext
     rfl
   let p : (smoothSingularSubcomplex I M : SSet) ⟶ TopCat.toSSet.obj pt :=
     (smoothSingularSubcomplex I M).ι ≫ TopCat.toSSet.map a
-  let s := smoothSingularSubcomplexConst I pt c
+  let s := constToSmoothSingularSubcomplex I pt c
   have hps : smoothSingularSubcomplexMap (fun _ ↦ c) (contMDiff_const : ContMDiff I I ∞ _) =
       p ≫ s := by
     rw [← cancel_mono (smoothSingularSubcomplex I M).ι, smoothSingularSubcomplexMap_ι,
-      Category.assoc, smoothSingularSubcomplexConst_comp_ι, Category.assoc, ← Functor.map_comp,
+      Category.assoc, constToSmoothSingularSubcomplex_ι, Category.assoc, ← Functor.map_comp,
       hab]
   have hpt : IsZero ((TopCat.toSSet.obj pt).homology R n) :=
     AlgebraicTopology.isZero_singularHomologyFunctor_of_totallyDisconnectedSpace C n R pt hn

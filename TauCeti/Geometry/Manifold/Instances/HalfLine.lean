@@ -74,14 +74,20 @@ theorem normalRay_normalCoord (t : EuclideanHalfSpace 1) : normalRay (t.val 0) =
   rw [Subsingleton.elim i 0]
   simp [normalRay, max_eq_left t.property]
 
-/-- The normal ray is the inverse of the model with corners of the half-line, applied to the
-reals viewed as `ℝ¹`. -/
+/-- `normalRay` agrees on all reals with the totalized inverse `(𝓡∂ 1).symm` (which clips
+negative coordinates to zero), and is a genuine inverse of `𝓡∂ 1` on the nonnegative reals. -/
 theorem normalRay_eq_symm (r : ℝ) :
     normalRay r = (𝓡∂ 1).symm ((PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm r) := by
   refine _root_.EuclideanHalfSpace.ext _ _ ?_
   ext i
   rw [Subsingleton.elim i 0]
   simp [modelWithCornersEuclideanHalfSpace_symm_apply]
+
+/-- The normal coordinate `t ↦ t.val 0` on the one-dimensional half-space model is `C^k`. -/
+theorem contMDiff_val_zero {k : WithTop ℕ∞} :
+    ContMDiff (𝓡∂ 1) 𝓘(ℝ) k (fun t : EuclideanHalfSpace 1 ↦ t.val 0) :=
+  ((EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0).contDiff.contMDiff.comp
+    (𝓡∂ 1).contMDiff).congr fun t ↦ by simp [modelWithCornersEuclideanHalfSpace_apply]
 
 /-- The normal ray is continuous. -/
 theorem continuous_normalRay : Continuous normalRay := by
@@ -162,7 +168,7 @@ theorem contMDiff_halfLineInwardTranslation :
     ContMDiff (𝓡∂ 1) 𝓘(ℝ, ℝ) ∞ halfLineInwardTranslation := by
   rw [← ContMDiff.subtypeVal_comp_iff]
   exact (contDiff_id.add contDiff_const).contMDiff.comp
-    ((EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0).contDiff.contMDiff.comp (𝓡∂ 1).contMDiff)
+    TauCeti.EuclideanHalfSpace.contMDiff_val_zero
 
 end EuclideanHalfSpace
 
@@ -193,8 +199,7 @@ theorem contMDiff_halfLineInwardDeformation :
     ContMDiff (𝓘(ℝ).prod (𝓡∂ 1)) (𝓡∂ 1) ∞ halfLineInwardDeformation := by
   have hx : ContMDiff (𝓘(ℝ).prod (𝓡∂ 1)) 𝓘(ℝ, ℝ) ∞
       (fun p : ℝ × EuclideanHalfSpace 1 ↦ p.2.val 0) :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0).contDiff.contMDiff.comp
-      (𝓡∂ 1).contMDiff).comp contMDiff_snd
+    EuclideanHalfSpace.contMDiff_val_zero.comp contMDiff_snd
   have hg : ContDiff ℝ ∞ (fun q : ℝ × ℝ ↦ q.2 + (1 - q.1) ^ 2) := by fun_prop
   exact (hg.contMDiff.comp (contMDiff_fst.prodMk_space hx)).normalRay
     fun p ↦ add_nonneg p.2.property (sq_nonneg (1 - p.1))

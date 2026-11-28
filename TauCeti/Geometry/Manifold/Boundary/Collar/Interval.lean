@@ -89,8 +89,7 @@ private theorem contMDiff_unitIntervalCollarFun {k : ℕ∞ω} :
     contMDiff_subtypeVal_Icc.comp
       (isSmoothEmbedding_subtypeVal_boundary (n := 0) (k := k) (Icc (0 : ℝ) 1)).contMDiff
   have ht : ContMDiff (𝓡∂ 1) 𝓘(ℝ) k (fun t : D ↦ (t : EuclideanHalfSpace 1).val 0) :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0).contDiff.contMDiff.comp
-      (𝓡∂ 1).contMDiff).comp (contMDiff_subtypeVal (U := D))
+    EuclideanHalfSpace.contMDiff_val_zero.comp (contMDiff_subtypeVal (U := D))
   have hxp : ContMDiff ((𝓡 0).prod (𝓡∂ 1)) 𝓘(ℝ) k
       (fun p : B × D ↦ ((p.1 : Icc (0 : ℝ) 1) : ℝ)) := hx.comp contMDiff_fst
   have htp : ContMDiff ((𝓡 0).prod (𝓡∂ 1)) 𝓘(ℝ) k

@@ -72,6 +72,18 @@ def pointTransferCandidate (c : M) (R : C)
     s ≫ SSet.chainComplexMap (smoothSingularSubcomplexMap (fun _ : PUnit.{u + 1} ↦ c)
       contMDiff_const) R
 
+/-- `pointTransferCandidate c R s` factors as pushing continuous singular chains to `PUnit`,
+applying `s`, and pushing smooth singular chains back along the constant map at `c`. -/
+theorem pointTransferCandidate_def (c : M) (R : C)
+    (s : ((TopCat.toSSet.obj (TopCat.of PUnit.{u + 1})).chainComplex R) ⟶
+      ((smoothSingularSubcomplex 𝓘(ℝ, PUnit.{u + 1}) PUnit.{u + 1} : SSet).chainComplex R)) :
+    pointTransferCandidate (I := I) c R s =
+      SSet.chainComplexMap
+          (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.const M PUnit.unit))) R ≫
+        s ≫ SSet.chainComplexMap (smoothSingularSubcomplexMap (fun _ : PUnit.{u + 1} ↦ c)
+          contMDiff_const) R :=
+  (rfl)
+
 /-- Because `PUnit` has vanishing positive-degree singular homology, `pointTransferCandidate`
 induces the zero map on homology in every positive degree `n ≠ 0`, for every choice of `s`. -/
 theorem homologyMap_pointTransferCandidate_eq_zero [CategoryWithHomology C] (c : M) (R : C)
@@ -87,8 +99,7 @@ theorem homologyMap_pointTransferCandidate_eq_zero [CategoryWithHomology C] (c :
       (SSet.chainComplexMap
         (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.const M PUnit.unit))) R) n = 0 :=
     hpt.eq_of_tgt _ 0
-  rw [pointTransferCandidate, HomologicalComplex.homologyMap_comp,
-    HomologicalComplex.homologyMap_comp, hconst, zero_comp]
+  simp [pointTransferCandidate_def, HomologicalComplex.homologyMap_comp, hconst]
 
 /-- Whenever `M` has non-zero smooth singular homology in positive degree `n`, no chain map `s` on
 `PUnit` can make `pointTransferCandidate c R s` a left homotopy inverse of the smooth-chain
@@ -101,11 +112,9 @@ theorem isEmpty_homotopy_pointTransferCandidate_hom_inv [CategoryWithHomology C]
     IsEmpty (Homotopy
       (SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R ≫
         pointTransferCandidate (I := I) c R s) (𝟙 _)) := by
-  refine ⟨fun h ↦ hH ?_⟩
-  have hid := h.homologyMap_eq n
-  rw [HomologicalComplex.homologyMap_comp, homologyMap_pointTransferCandidate_eq_zero c R s hn,
-    comp_zero, HomologicalComplex.homologyMap_id] at hid
-  exact (IsZero.iff_id_eq_zero _).mpr hid.symm
+  refine ⟨fun h ↦ hH ((IsZero.iff_id_eq_zero _).mpr ?_)⟩
+  simpa [HomologicalComplex.homologyMap_comp,
+    homologyMap_pointTransferCandidate_eq_zero c R s hn] using (h.homologyMap_eq n).symm
 
 /-- Whenever `M` has non-zero continuous singular homology in positive degree `n`, no chain map `s`
 on `PUnit` can make `pointTransferCandidate c R s` a right homotopy inverse of the smooth-chain
@@ -118,11 +127,9 @@ theorem isEmpty_homotopy_pointTransferCandidate_inv_hom [CategoryWithHomology C]
     IsEmpty (Homotopy
       (pointTransferCandidate (I := I) c R s ≫
         SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R) (𝟙 _)) := by
-  refine ⟨fun h ↦ hH ?_⟩
-  have hid := h.homologyMap_eq n
-  rw [HomologicalComplex.homologyMap_comp, homologyMap_pointTransferCandidate_eq_zero c R s hn,
-    zero_comp, HomologicalComplex.homologyMap_id] at hid
-  exact (IsZero.iff_id_eq_zero _).mpr hid.symm
+  refine ⟨fun h ↦ hH ((IsZero.iff_id_eq_zero _).mpr ?_)⟩
+  simpa [HomologicalComplex.homologyMap_comp,
+    homologyMap_pointTransferCandidate_eq_zero c R s hn] using (h.homologyMap_eq n).symm
 
 /-- **Failure of `r_* ≫ s ≫ j_*` without `j ∘ r ~ id_M` (left inverse).** On `Circle`, for any
 point `c` and any chain map `s` on `PUnit`, the point-retract candidate `r_* ≫ s ≫ j_*` is not a

@@ -28,13 +28,16 @@ the chart coordinates stay inside the star-convex image of `U`.
 
 * `TauCeti.exists_contMDiff_contraction_of_starConvex_image_extChartAt`: an open subset of an
   extended chart source with star-convex chart image admits a `C^n` contraction.
+* `TauCeti.exists_contMDiff_contraction_of_starConvex`: an open subset of the model space `H`
+  with star-convex image under `I` admits a smooth contraction to `I.symm c` (vacuously when
+  empty).
 -/
 
 public section
 
 noncomputable section
 
-open scoped Manifold
+open scoped Manifold ContDiff
 
 namespace TauCeti
 
@@ -87,5 +90,25 @@ theorem exists_contMDiff_contraction_of_starConvex_image_extChartAt [IsManifold 
     dsimp only [G, φ]
     rw [Real.smoothTransition.one, sub_self, zero_smul, add_zero]
     exact (extChartAt I x).left_inv (hU c.property)
+
+/-- **The straight-line contraction of an open set with star-convex image in the model.** Let `U`
+be an open set of the model space `H` of a model with corners `I` whose image `I '' U` is
+star-convex about `c`. When `U` is nonempty, `(t, x) ↦ I.symm (c + (1 - ψ t) • (I x - c))`, with
+`ψ` the smooth transition function from `0` to `1`, is a smooth map `ℝ × U → U` joining the
+identity to the constant map with value `I.symm c ∈ U`. This is the case `M = H` of
+`exists_contMDiff_contraction_of_starConvex_image_extChartAt`, where the extended chart is `I`;
+when `U` is empty, the universal conditions over `U` hold vacuously. -/
+theorem exists_contMDiff_contraction_of_starConvex {U : TopologicalSpace.Opens H} {c : E}
+    (hU : StarConvex ℝ c (I '' U)) :
+    ∃ F : ℝ × U → U, ContMDiff (𝓘(ℝ).prod I) I ∞ F ∧ (∀ x, F (0, x) = x) ∧
+      ∀ x, (F (1, x) : H) = I.symm c := by
+  rcases (U : Set H).eq_empty_or_nonempty with hempty | hne
+  · have : IsEmpty U := ⟨fun x ↦ Set.eq_empty_iff_forall_notMem.1 hempty x x.property⟩
+    exact ⟨fun p ↦ isEmptyElim p.2, fun p ↦ isEmptyElim p.2, isEmptyElim, isEmptyElim⟩
+  obtain ⟨y₀, hy₀, rfl⟩ := hU.mem (hne.image I)
+  obtain ⟨F, hF, h₀, h₁⟩ := exists_contMDiff_contraction_of_starConvex_image_extChartAt
+    (I := I) (M := H) (n := ⊤) (x := y₀) (by simp) ⟨y₀, hy₀⟩
+    (by simpa [extChartAt_self_eq] using hU)
+  exact ⟨F, hF, h₀, fun x ↦ by rw [h₁, I.left_inv]⟩
 
 end TauCeti

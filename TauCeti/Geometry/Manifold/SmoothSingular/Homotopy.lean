@@ -14,7 +14,6 @@ public import TauCeti.Geometry.Manifold.SmoothSingular.Basic
 public import TauCeti.Topology.Homotopy.RealProd
 
 import Mathlib.CategoryTheory.MorphismProperty.Retract
-import TauCeti.Geometry.Manifold.ContMDiff.Homotopy
 
 /-!
 # Homotopy invariance of smooth singular homology
@@ -32,11 +31,12 @@ smooth map `F` with a pair of smooth maps on the standard simplex, and it is smo
 Thus `H.toSSet` restricts to a simplicial homotopy between the maps of smooth singular subcomplexes
 induced by `f` and `g` (`TauCeti.smoothSingularSubcomplexHomotopy`). Mathlib's homotopy invariance
 of simplicial homology (`SSet.Homotopy.chainComplexMap`) turns it into a chain homotopy of smooth
-singular chain complexes, the smooth prism operator (`TauCeti.smoothSingularChainHomotopy`), so
-smoothly homotopic maps induce the same maps on smooth singular homology, with coefficients in any
-object of a preadditive category with coproducts
-(`TauCeti.homologyMap_smoothSingularSubcomplexMap_eq`). The homotopy of smooth subcomplexes is the
-restriction of the homotopy of singular simplicial sets
+singular chain complexes, the smooth prism operator (`TauCeti.smoothSingularChainHomotopy`, and
+directly from `F` as `ContMDiff.smoothSingularChainHomotopyOfRealProd`), so smoothly homotopic
+maps induce the same maps on smooth singular homology, with coefficients in any object of a
+preadditive category with coproducts (`TauCeti.homologyMap_smoothSingularSubcomplexMap_eq`,
+`TauCeti.homologyMap_smoothSingularSubcomplexMap_eq_of_contMDiff`). The homotopy of smooth
+subcomplexes is the restriction of the homotopy of singular simplicial sets
 (`TauCeti.smoothSingularSubcomplexHomotopy_h_ι`).
 
 The homotopy is required to be the restriction of a smooth map on all of `ℝ × M`
@@ -55,11 +55,17 @@ inverse of `f`, only a smooth homotopy from the identity to `g ∘ f`; for mutua
 maps, take the constant homotopy `Prod.snd`.
 
 On a subsingleton manifold, the inclusion of smooth singular chains is an isomorphism and hence a
-chain homotopy equivalence (`ModelWithCorners.smoothSingularChainHomotopyEquivOfSubsingleton`).
+chain homotopy equivalence (`ModelWithCorners.smoothSingularChainHomotopyEquivOfSubsingleton`) and a
+quasi-isomorphism (`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_subsingleton`).
+On a smoothly contractible manifold `M` with a smooth contraction `F : ℝ × M → M` from the identity
+to a constant map `c`, the inclusion is likewise a chain homotopy equivalence with inverse induced
+by collapsing `M` to `c` (`TauCeti.smoothSingularChainHomotopyEquivOfContMDiff`,
+`TauCeti.ι_smoothSingularChainHomotopyEquivOfContMDiff_inv_f_zero`), and hence a
+quasi-isomorphism (`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff`).
 
 Homotopy invariance is an input of the comparison of smooth with continuous singular homology by a
-Mayer–Vietoris induction; its consequences for smoothly contractible manifolds are in
-`TauCeti.Geometry.Manifold.SmoothSingular.Contractible`.
+Mayer–Vietoris induction; positive-degree smooth homology vanishing and the empty and star-convex
+open-set applications are in `TauCeti.Geometry.Manifold.SmoothSingular.Contractible`.
 
 ## Main definitions and results
 
@@ -69,13 +75,20 @@ Mayer–Vietoris induction; its consequences for smoothly contractible manifolds
 * `ContMDiff.smoothSingularChainHomotopyOfRealProd`: the smooth singular chain homotopy obtained
   directly from a jointly smooth map `F : ℝ × M → N` with prescribed endpoint slices
   `F (0, ·) = f` and `F (1, ·) = g`.
-* `TauCeti.homologyMap_smoothSingularSubcomplexMap_eq`: smoothly homotopic maps induce the same map
-  on smooth singular homology.
+* `TauCeti.homologyMap_smoothSingularSubcomplexMap_eq`,
+  `TauCeti.homologyMap_smoothSingularSubcomplexMap_eq_of_contMDiff`: smoothly homotopic maps induce
+  the same map on smooth singular homology.
 * `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy`: the inclusion of
   smooth singular chains into singular chains stays a quasi-isomorphism on smooth homotopy
   retracts.
-* `ModelWithCorners.smoothSingularChainHomotopyEquivOfSubsingleton`: chain homotopy equivalence on
-  a subsingleton manifold.
+* `TauCeti.smoothSingularChainHomotopyEquivOfContMDiff`,
+  `TauCeti.ι_smoothSingularChainHomotopyEquivOfContMDiff_inv_f_zero`,
+  `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff`: chain homotopy
+  equivalence, `0`-simplex inverse evaluation, and quasi-isomorphism for a smoothly contractible
+  charted space.
+* `ModelWithCorners.smoothSingularChainHomotopyEquivOfSubsingleton`,
+  `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_subsingleton`: chain homotopy
+  equivalence and quasi-isomorphism on a subsingleton manifold.
 
 ## References
 
@@ -190,7 +203,52 @@ theorem homologyMap_smoothSingularSubcomplexMap_eq [CategoryWithHomology C] (n :
       SSet.homologyMap (smoothSingularSubcomplexMap g hg) R n :=
   (smoothSingularSubcomplexHomotopy hf hg H hF hFH).congr_homologyMap R n
 
-omit hf hg in
+end Homotopy
+
+end TauCeti
+
+namespace ContMDiff
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
+  {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} {N : Type u} [TopologicalSpace N] [ChartedSpace H' N]
+  {f g : M → N} {F : ℝ × M → N}
+
+/-- **The smooth prism homotopy from a jointly smooth map on `ℝ × M`.** A smooth map
+`F : ℝ × M → N` with `F (0, ·) = f` and `F (1, ·) = g` induces a chain homotopy between the maps
+on smooth singular chain complexes induced by `f` and `g`. -/
+def smoothSingularChainHomotopyOfRealProd {C : Type*} [Category C] [Preadditive C]
+    [HasCoproducts.{u} C] (hF : ContMDiff (𝓘(ℝ).prod I) J ∞ F) (h₀ : ∀ x, F (0, x) = f x)
+    (h₁ : ∀ x, F (1, x) = g x) (R : C) :
+    Homotopy
+      (SSet.chainComplexMap
+        (TauCeti.smoothSingularSubcomplexMap f
+          ((hF.comp (contMDiff_const.prodMk contMDiff_id)).congr fun x ↦ (h₀ x).symm)) R)
+      (SSet.chainComplexMap
+        (TauCeti.smoothSingularSubcomplexMap g
+          ((hF.comp (contMDiff_const.prodMk contMDiff_id)).congr fun x ↦ (h₁ x).symm)) R) :=
+  let hf : ContMDiff I J ∞ f :=
+    (hF.comp (contMDiff_const.prodMk contMDiff_id)).congr fun x ↦ (h₀ x).symm
+  let hg : ContMDiff I J ∞ g :=
+    (hF.comp (contMDiff_const.prodMk contMDiff_id)).congr fun x ↦ (h₁ x).symm
+  TauCeti.smoothSingularChainHomotopy hf hg
+    (TauCeti.homotopyOfRealProd hF.continuous h₀ h₁)
+    hF (fun p ↦ (TauCeti.homotopyOfRealProd_apply hF.continuous h₀ h₁ p).symm) R
+
+end ContMDiff
+
+namespace TauCeti
+
+section HomotopyRealProd
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
+  {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} {N : Type u} [TopologicalSpace N] [ChartedSpace H' N]
+  {f g : M → N} {F : ℝ × M → N}
+  {C : Type*} [Category C] [Preadditive C] [HasCoproducts.{u} C] (R : C)
+
 /-- Smooth maps `f` and `g` joined by a smooth map `F : ℝ × M → N`, with `F (0, ·) = f` and
 `F (1, ·) = g`, induce the same map on smooth singular homology. -/
 theorem homologyMap_smoothSingularSubcomplexMap_eq_of_contMDiff [CategoryWithHomology C]
@@ -198,10 +256,9 @@ theorem homologyMap_smoothSingularSubcomplexMap_eq_of_contMDiff [CategoryWithHom
     (h₀ : ∀ x, F (0, x) = f x) (h₁ : ∀ x, F (1, x) = g x) (n : ℕ) :
     SSet.homologyMap (smoothSingularSubcomplexMap f hf) R n =
       SSet.homologyMap (smoothSingularSubcomplexMap g hg) R n :=
-  homologyMap_smoothSingularSubcomplexMap_eq hf hg (homotopyOfRealProd hF.continuous h₀ h₁) hF
-    (fun p ↦ (homotopyOfRealProd_apply hF.continuous h₀ h₁ p).symm) R n
+  (hF.smoothSingularChainHomotopyOfRealProd h₀ h₁ R).homologyMap_eq n
 
-end Homotopy
+end HomotopyRealProd
 
 /-! ### Smooth homotopy retracts -/
 
@@ -254,41 +311,6 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy {f : M 
 
 end Retract
 
-end TauCeti
-
-namespace ContMDiff
-
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
-  {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-  {J : ModelWithCorners ℝ E' H'} {N : Type u} [TopologicalSpace N] [ChartedSpace H' N]
-  {f g : M → N} {F : ℝ × M → N}
-
-/-- **The smooth prism homotopy from a jointly smooth map on `ℝ × M`.** A smooth map
-`F : ℝ × M → N` with `F (0, ·) = f` and `F (1, ·) = g` induces a chain homotopy between the maps
-on smooth singular chain complexes induced by `f` and `g`. -/
-def smoothSingularChainHomotopyOfRealProd {C : Type*} [Category C] [Preadditive C]
-    [HasCoproducts.{u} C] (hF : ContMDiff (𝓘(ℝ).prod I) J ∞ F) (h₀ : ∀ x, F (0, x) = f x)
-    (h₁ : ∀ x, F (1, x) = g x) (R : C) :
-    Homotopy
-      (SSet.chainComplexMap
-        (TauCeti.smoothSingularSubcomplexMap f
-          ((hF.comp (contMDiff_const.prodMk contMDiff_id)).congr fun x ↦ (h₀ x).symm)) R)
-      (SSet.chainComplexMap
-        (TauCeti.smoothSingularSubcomplexMap g
-          ((hF.comp (contMDiff_const.prodMk contMDiff_id)).congr fun x ↦ (h₁ x).symm)) R) :=
-  let hf : ContMDiff I J ∞ f :=
-    (hF.comp (contMDiff_const.prodMk contMDiff_id)).congr fun x ↦ (h₀ x).symm
-  let hg : ContMDiff I J ∞ g :=
-    (hF.comp (contMDiff_const.prodMk contMDiff_id)).congr fun x ↦ (h₁ x).symm
-  TauCeti.smoothSingularChainHomotopy hf hg
-    (TauCeti.topCatHomotopyOfContMDiff hf hg hF h₀ h₁)
-    hF (fun p ↦ (TauCeti.topCatHomotopyOfContMDiff_apply hf hg hF h₀ h₁ p).symm) R
-
-end ContMDiff
-
-namespace TauCeti
-
 /-! ### Chain homotopy equivalence for subsingleton and smoothly contractible spaces -/
 
 section Contractible
@@ -313,10 +335,7 @@ private def homotopy_ι_comp_constToSmoothSingularSubcomplex
         SSet.chainComplexMap (constToSmoothSingularSubcomplex I (TopCat.of M) c) R)
       (𝟙 _) := by
   refine (Homotopy.ofEq ?_).trans
-    (((smoothSingularChainHomotopy (contMDiff_id (I := I))
-      (contMDiff_const : ContMDiff I I ∞ _)
-      (topCatHomotopyOfContMDiff (contMDiff_id (I := I)) contMDiff_const hF h₀ h₁)
-      hF (fun p ↦ (topCatHomotopyOfContMDiff_apply _ _ _ _ _ p).symm) R).symm).trans
+    ((hF.smoothSingularChainHomotopyOfRealProd (f := id) (g := fun _ ↦ c) h₀ h₁ R).symm.trans
       (Homotopy.ofEq ?_))
   · rw [← Functor.map_comp, ι_comp_constToSmoothSingularSubcomplex]
   · rw [smoothSingularSubcomplexMap_id]
@@ -330,17 +349,11 @@ private def homotopy_constToSmoothSingularSubcomplex_comp_ι
       (SSet.chainComplexMap (constToSmoothSingularSubcomplex I (TopCat.of M) c) R ≫
         SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R)
       (𝟙 _) := by
-  refine (Homotopy.ofEq ?_).trans
-    ((((topCatHomotopyOfContMDiff (contMDiff_id (I := I))
-      (contMDiff_const : ContMDiff I I ∞ _) hF h₀ h₁).toSSet.chainComplexMap R).symm).trans
-      (Homotopy.ofEq ?_))
+  let K : TopCat.Homotopy (𝟙 (TopCat.of M)) (TopCat.ofHom (ContinuousMap.const M c)) :=
+    homotopyOfRealProd hF.continuous h₀ h₁
+  refine (Homotopy.ofEq ?_).trans ((K.toSSet.chainComplexMap R).symm.trans (Homotopy.ofEq ?_))
   · rw [← Functor.map_comp, constToSmoothSingularSubcomplex_ι]
-    exact congrArg (fun f ↦ SSet.chainComplexMap (TopCat.toSSet.map f) R) (by ext; simp)
-  · have hid : (TopCat.ofHom ⟨id, (contMDiff_id (I := I) (n := ∞)).continuous⟩ :
-        TopCat.of M ⟶ TopCat.of M) = 𝟙 (TopCat.of M) := by
-      ext
-      simp
-    rw [hid, CategoryTheory.Functor.map_id]
+  · rw [TopCat.toSSet.map_id]
     exact ((SSet.chainComplexFunctor C).obj R).map_id _
 
 /-- **Chain homotopy equivalence on a smoothly contractible charted space.** If `F : ℝ × M → M` is
@@ -380,22 +393,6 @@ theorem smoothSingularChainHomotopyEquivOfContMDiff_inv
       SSet.chainComplexMap (constToSmoothSingularSubcomplex I (TopCat.of M) c) R := by
   rfl
 
-/-- Collapsing `X` to the constant point `c` sends every singular `0`-simplex of `X` to the
-smooth `0`-simplex `(SmoothSimplex.equiv₀ I M).symm c`. -/
-@[simp]
-theorem constToSmoothSingularSubcomplex_app_zero (X : TopCat.{u}) (c : M)
-    (σ : (TopCat.toSSet.obj X) _⦋0⦌) :
-    (dsimp% only [Subfunctor.toFunctor_obj]
-      ((constToSmoothSingularSubcomplex I X c).app (Opposite.op ⦋0⦌) σ)) =
-      (SmoothSimplex.equiv₀ I M).symm c := by
-  refine (SmoothSimplex.equiv₀ I M).eq_symm_apply.2 ?_
-  rw [SmoothSimplex.equiv₀_apply, SmoothSimplex.toContinuousMap_apply]
-  change ((TopCat.of M).toSSetObjEquiv (Opposite.op ⦋0⦌)
-    (((constToSmoothSingularSubcomplex I X c ≫
-      (smoothSingularSubcomplex I M).ι).app (Opposite.op ⦋0⦌)) σ)) _ = c
-  rw [constToSmoothSingularSubcomplex_ι, TauCeti.TopCat.toSSetObjEquiv_toSSet_map_app]
-  rfl
-
 /-- On a smoothly contractible charted space with contraction centre `c`, the homotopy inverse of
 `smoothSingularChainHomotopyEquivOfContMDiff` sends the summand of every singular `0`-simplex to
 the summand of the smooth `0`-simplex at `c`. -/
@@ -426,33 +423,7 @@ end Contractible
 
 end TauCeti
 
-/-! ### Naturality and subsingleton equivalence -/
-
-section Naturality
-
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
-  {E₁ H₁ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [TopologicalSpace H₁]
-  {J₁ : ModelWithCorners ℝ E₁ H₁} {N₁ : Type u} [TopologicalSpace N₁] [ChartedSpace H₁ N₁]
-  {C : Type*} [Category* C] [Preadditive C] [HasCoproducts.{u} C]
-
-namespace TauCeti
-
-/-- Pushing smooth singular chains forward along a smooth map `f : M → N₁` and then including
-them into continuous singular chains is the same as including first and then pushing forward
-along `f`. -/
-@[reassoc]
-theorem chainComplexMap_smoothSingularSubcomplexMap_ι {f : M → N₁} (hf : ContMDiff I J₁ ∞ f)
-    (R : C) :
-    SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) R ≫
-        SSet.chainComplexMap (smoothSingularSubcomplex J₁ N₁).ι R =
-      SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R ≫
-        SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom ⟨f, hf.continuous⟩)) R := by
-  rw [← Functor.map_comp, ← Functor.map_comp, smoothSingularSubcomplexMap_ι hf]
-
-end TauCeti
-
-end Naturality
+/-! ### Subsingleton equivalence -/
 
 section Subsingleton
 

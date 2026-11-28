@@ -648,17 +648,16 @@ lemma ofHomotopyRetract_homotopyInvHomId_hom (e : HomotopyEquiv K₁ L₁) (i₂
         hL.hom p q := by
   simp [ofHomotopyRetract, add_assoc]
 
-/-- For the identity retract on `e`, the transferred inverse agrees with `e.inv`. -/
-lemma ofHomotopyRetract_id_inv (e : HomotopyEquiv K₁ L₁)
+/-- Sanity checks for the identity retract on `e`: the transferred inverse and both inverse
+homotopies (when the witness homotopies vanish) reduce to `e`. -/
+example (e : HomotopyEquiv K₁ L₁)
     (hK : Homotopy (𝟙 K₁ ≫ 𝟙 K₁) (𝟙 K₁)) (hL : Homotopy (𝟙 L₁ ≫ 𝟙 L₁) (𝟙 L₁))
     (hj : Homotopy (𝟙 K₁ ≫ e.hom) (e.hom ≫ 𝟙 L₁))
     (hr : Homotopy (e.hom ≫ 𝟙 L₁) (𝟙 K₁ ≫ e.hom)) :
     (e.ofHomotopyRetract e.hom hK hL hj hr).inv = e.inv := by
   simp
 
-/-- For the identity retract on `e` with zero witness homotopies, the transferred `hom ≫ inv ~ 𝟙`
-homotopy agrees componentwise with `e.homotopyHomInvId`. -/
-lemma ofHomotopyRetract_id_homotopyHomInvId_hom (e : HomotopyEquiv K₁ L₁)
+example (e : HomotopyEquiv K₁ L₁)
     (hK : Homotopy (𝟙 K₁ ≫ 𝟙 K₁) (𝟙 K₁)) (hL : Homotopy (𝟙 L₁ ≫ 𝟙 L₁) (𝟙 L₁))
     (hj : Homotopy (𝟙 K₁ ≫ e.hom) (e.hom ≫ 𝟙 L₁))
     (hr : Homotopy (e.hom ≫ 𝟙 L₁) (𝟙 K₁ ≫ e.hom))
@@ -667,9 +666,7 @@ lemma ofHomotopyRetract_id_homotopyHomInvId_hom (e : HomotopyEquiv K₁ L₁)
       e.homotopyHomInvId.hom p q := by
   simp [hhK, hhr]
 
-/-- For the identity retract on `e` with zero witness homotopies, the transferred `inv ≫ hom ~ 𝟙`
-homotopy agrees componentwise with `e.homotopyInvHomId`. -/
-lemma ofHomotopyRetract_id_homotopyInvHomId_hom (e : HomotopyEquiv K₁ L₁)
+example (e : HomotopyEquiv K₁ L₁)
     (hK : Homotopy (𝟙 K₁ ≫ 𝟙 K₁) (𝟙 K₁)) (hL : Homotopy (𝟙 L₁ ≫ 𝟙 L₁) (𝟙 L₁))
     (hj : Homotopy (𝟙 K₁ ≫ e.hom) (e.hom ≫ 𝟙 L₁))
     (hr : Homotopy (e.hom ≫ 𝟙 L₁) (𝟙 K₁ ≫ e.hom))
@@ -724,9 +721,8 @@ lemma homologyMap_comp_toHomologyIso_inv (e₁ : HomotopyEquiv K₁ L₁) (e₂ 
     [K₁.HasHomology i] [L₁.HasHomology i] [K₂.HasHomology i] [L₂.HasHomology i] :
     HomologicalComplex.homologyMap fL i ≫ (e₂.toHomologyIso i).inv =
       (e₁.toHomologyIso i).inv ≫ HomologicalComplex.homologyMap fK i := by
-  rw [toHomologyIso_inv, toHomologyIso_inv, ← HomologicalComplex.homologyMap_comp,
-    ← HomologicalComplex.homologyMap_comp]
-  exact ((e₁.invNaturality e₂ h.symm).homologyMap_eq i).symm
+  simpa only [toHomologyIso_inv, HomologicalComplex.homologyMap_comp] using
+    ((e₁.invNaturality e₂ h.symm).homologyMap_eq i).symm
 
 end InverseUniqueness
 

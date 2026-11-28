@@ -106,8 +106,7 @@ private theorem contMDiff_closedBallCollarFun {k : ℕ∞ω} :
     (contMDiff_subtypeVal_closedBall (n := n + 1)).comp
       (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := k) (closedBall (0 : E) 1)).contMDiff
   have ht : ContMDiff (𝓡∂ 1) 𝓘(ℝ) k (fun t : D ↦ (t : EuclideanHalfSpace 1).val 0) :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0).contDiff.contMDiff.comp
-      (𝓡∂ 1).contMDiff).comp (contMDiff_subtypeVal (U := D))
+    EuclideanHalfSpace.contMDiff_val_zero.comp (contMDiff_subtypeVal (U := D))
   have hxp : ContMDiff (𝓘(ℝ, EuclideanSpace ℝ (Fin n)).prod (𝓡∂ 1)) 𝓘(ℝ, E) k
       (fun p : B × D ↦ ((p.1 : closedBall (0 : E) 1) : E)) := hx.comp contMDiff_fst
   have htp : ContMDiff (𝓘(ℝ, EuclideanSpace ℝ (Fin n)).prod (𝓡∂ 1)) 𝓘(ℝ) k
