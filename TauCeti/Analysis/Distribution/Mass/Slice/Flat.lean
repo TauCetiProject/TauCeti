@@ -71,8 +71,7 @@ theorem lintegral_normalFlatMass_slice_sub_slice_le {K₁ K₂ : ℝ≥0}
     have hdecomp : slice T v t - slice T u t = Rt + St ∘L extDerivCLM := by
       ext φ; simp [St, Rt, slice_apply _ hu_meas, slice_apply _ hv_meas]; ring
     have hRt_normal : IsNormal Rt := by
-      have hRt_eq : Rt = (slice T v t - slice T u t) - St ∘L extDerivCLM := by
-        rw [hdecomp]; abel
+      have hRt_eq : Rt = (slice T v t - slice T u t) - St ∘L extDerivCLM := by rw [hdecomp]; abel
       rw [hRt_eq]
       exact (hNv_s.sub hNu_s).sub (hNv_r.sub hNu_r).comp_extDerivCLM
     refine ((slice T v t - slice T u t).normalFlatMass_le_of_eq_add_comp_extDerivCLM
@@ -84,17 +83,15 @@ theorem lintegral_normalFlatMass_slice_sub_slice_le {K₁ K₂ : ℝ≥0}
   -- negation (`v x < t ↔ -t < -v x`).
   refine (lintegral_mono_ae hae_bound).trans_eq ?_
   calc ∫⁻ t : ℝ, μ (Av t ∆ Au t)
-      = ∫⁻ t : ℝ, μ ({x : Ω | -t < -v x} ∆ {x : Ω | -t < -u x}) := by
-        refine lintegral_congr fun t => ?_
-        simp only [Av, Au, neg_lt_neg_iff]
+      = ∫⁻ t : ℝ, μ ({x : Ω | -t < -v x} ∆ {x : Ω | -t < -u x}) :=
+        lintegral_congr fun t => by simp only [Av, Au, neg_lt_neg_iff]
     _ = ∫⁻ s : ℝ, μ ({x : Ω | s < -v x} ∆ {x : Ω | s < -u x}) :=
         lintegral_neg_eq_self (fun s => μ ({x : Ω | s < -v x} ∆ {x : Ω | s < -u x}))
     _ = ∫⁻ x : Ω, ‖-v x - -u x‖ₑ ∂μ :=
         (Measure.lintegral_enorm_sub_eq_lintegral_measure_symmDiff_setOf_lt μ
           hv_meas.neg.aemeasurable hu_meas.neg.aemeasurable).symm
-    _ = ∫⁻ x : Ω, edist (v x) (u x) ∂μ := by
-        refine lintegral_congr fun x => ?_
-        rw [neg_sub_neg, ← eDist_eq_eNorm_sub, edist_comm]
+    _ = ∫⁻ x : Ω, edist (v x) (u x) ∂μ :=
+        lintegral_congr fun x => by rw [neg_sub_neg, ← eDist_eq_eNorm_sub, edist_comm]
 
 private theorem lintegral_normalFlatMass_slice_le_aux
     {N : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ} (hu : LipschitzOnWith K u Ω)

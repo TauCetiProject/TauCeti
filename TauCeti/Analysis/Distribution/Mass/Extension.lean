@@ -679,13 +679,11 @@ theorem massRestrict_add {T S : 𝓓^{n}(Ω, F) →L[ℝ] ℝ} (hT : HasLocallyF
     (hS : HasLocallyFiniteMass S) (hA : MeasurableSet A) :
     massRestrict (T + S) hA = massRestrict T hA + massRestrict S hA := by
   by_cases hE : FiniteDimensional ℝ E
-  swap
-  · ext φ; simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
+  swap; · ext φ; simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
   ext φ
   let μ := massMeasure (T + S) + massMeasure T + massMeasure S
-  have : IsFiniteMeasureOnCompacts μ :=
-    ⟨fun _ hC => ENNReal.add_lt_top.2
-      ⟨ENNReal.add_lt_top.2 ⟨hC.measure_lt_top, hC.measure_lt_top⟩, hC.measure_lt_top⟩⟩
+  have : IsFiniteMeasureOnCompacts μ := ⟨fun _ hC => ENNReal.add_lt_top.2
+    ⟨ENNReal.add_lt_top.2 ⟨hC.measure_lt_top, hC.measure_lt_top⟩, hC.measure_lt_top⟩⟩
   obtain ⟨χ, hχ⟩ := TestFunction.exists_tendsto_lintegral_indicator μ hA
     (TestFunction.isCompact_preimage_tsupport φ)
   have hTS : HasLocallyFiniteMass (T + S) := by simpa using hT.add hS
@@ -702,10 +700,8 @@ theorem massRestrict_add {T S : 𝓓^{n}(Ω, F) →L[ℝ] ℝ} (hT : HasLocallyF
 theorem massRestrict_smul (a : ℝ) (T : 𝓓^{n}(Ω, F) →L[ℝ] ℝ) (hA : MeasurableSet A) :
     massRestrict (a • T) hA = a • massRestrict T hA := by
   by_cases hE : FiniteDimensional ℝ E
-  swap
-  · ext φ; simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
-  by_cases ha : a = 0
-  · simp [ha]
+  swap; · ext φ; simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
+  by_cases ha : a = 0; · simp [ha]
   by_cases hT : HasLocallyFiniteMass T
   · ext φ
     let μ := massMeasure (a • T) + massMeasure T
@@ -729,8 +725,7 @@ theorem massRestrict_smul (a : ℝ) (T : 𝓓^{n}(Ω, F) →L[ℝ] ℝ) (hA : Me
 @[simp]
 theorem massRestrict_neg (T : 𝓓^{n}(Ω, F) →L[ℝ] ℝ) (hA : MeasurableSet A) :
     massRestrict (-T) hA = -massRestrict T hA := by
-  rw [← neg_one_smul ℝ T, massRestrict_smul]
-  exact neg_one_smul ℝ (massRestrict T hA)
+  rw [← neg_one_smul ℝ T, massRestrict_smul]; exact neg_one_smul ℝ (massRestrict T hA)
 
 /-- Borel restriction commutes with subtraction on currents of locally finite mass. -/
 @[simp]
@@ -762,8 +757,7 @@ theorem mass_massRestrict_sub_le (T : 𝓕) (hA : MeasurableSet A) (hB : Measura
 theorem massRestrict_massRestrict (hA : MeasurableSet A) (hB : MeasurableSet B) :
     massRestrict (massRestrict T hA) hB = massRestrict T (hA.inter hB) := by
   by_cases hE : FiniteDimensional ℝ E
-  swap
-  · ext φ; simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
+  swap; · ext φ; simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
   by_cases hT : HasLocallyFiniteMass T
   · ext φ
     obtain ⟨χ, hχ⟩ := TestFunction.exists_tendsto_lintegral_indicator (massMeasure T) hB
@@ -797,8 +791,7 @@ theorem massRestrict_comp_monoCLM {Ω' : Opens E} {T : 𝓓^{n}(Ω, F) →L[ℝ]
   -- Approximate `1_{A' ∩ supp φ}` in `L¹(‖T'‖)` by smooth scalar tests `χ m` on `Ω'`,
   -- then compare the limits of `T' (χ m • φ) = T (χΩ m • φΩ)` via `extendL1 T`.
   by_cases hE : FiniteDimensional ℝ E
-  swap
-  · ext φ; simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
+  swap; · ext φ; simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
   let A' : Set Ω' := Set.inclusion h ⁻¹' A
   have hA' : MeasurableSet A' := hA.preimage (continuous_inclusion h).measurable
   let T' : 𝓓^{n}(Ω', F) →L[ℝ] ℝ := T ∘L TestFunction.monoCLM ℝ
@@ -877,8 +870,7 @@ theorem measurable_massRestrict_lt_apply (S : 𝓓^{n}(Ω, F) →L[ℝ] ℝ) {u 
     linarith [Int.sub_one_lt_floor ((2 : ℝ) ^ m * t)]
   refine tendsto_massRestrict_apply (fun m => hA (step m t)) (hA t) (ae_of_all _ fun x => ?_) φ
   by_cases hxt : u x < t
-  · filter_upwards [(tendsto_order.1 hstep_tendsto).1 _ hxt] with m hm
-    exact ⟨fun _ => hxt, fun _ => hm⟩
+  · exact ((tendsto_order.1 hstep_tendsto).1 _ hxt).mono fun m hm => ⟨fun _ => hxt, fun _ => hm⟩
   · exact .of_forall fun m => ⟨fun h => (hxt (h.trans (hstep_lt m))).elim, fun h => (hxt h).elim⟩
 
 end Distribution

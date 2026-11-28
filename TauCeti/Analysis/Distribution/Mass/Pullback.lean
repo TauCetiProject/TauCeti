@@ -56,17 +56,16 @@ private theorem lintegral_pullbackCLM_smulLeftCLM_sub_indicator
           A.indicator (fun z : Ω => TestFunction.pullbackCLM Φ hΦ hΦp φ z) x‖ₑ ∂μ := by
   refine (setLIntegral_eq_of_support_subset fun x hx => ?_).symm
   by_contra hxC
-  have hx' : (x : E) ∉ (Ω : Set E) ∩ Φ ⁻¹' tsupport φ := fun h => hxC h
   have hP1 : TestFunction.pullbackCLM Φ hΦ hΦp (TestFunction.smulLeftCLM hχ φ) x = 0 :=
     image_eq_zero_of_notMem_tsupport fun h =>
-      hx' ((TestFunction.tsupport_pullbackCLM_subset _ h).imp_right fun hmem =>
+      hxC ((TestFunction.tsupport_pullbackCLM_subset _ h).imp_right fun hmem =>
         TestFunction.tsupport_smulLeftCLM_subset_right hχ φ hmem)
   have hP2 : TestFunction.pullbackCLM Φ hΦ hΦp φ x = 0 :=
-    image_eq_zero_of_notMem_tsupport fun h =>
-      hx' (TestFunction.tsupport_pullbackCLM_subset φ h)
+    image_eq_zero_of_notMem_tsupport fun h => hxC (TestFunction.tsupport_pullbackCLM_subset φ h)
+  rw [Function.mem_support] at hx
   by_cases hxA : x ∈ A
-  · exact hx (by dsimp only; rw [indicator_of_mem hxA, hP1, hP2, sub_self]; simp [← ofReal_norm])
-  · exact hx (by dsimp only; rw [indicator_of_notMem hxA, hP1, sub_zero]; simp [← ofReal_norm])
+  · rw [indicator_of_mem hxA, hP1, hP2, sub_self] at hx; simp [← ofReal_norm] at hx
+  · rw [indicator_of_notMem hxA, hP1, sub_zero] at hx; simp [← ofReal_norm] at hx
 
 omit [MeasurableSpace E] [BorelSpace E] [MeasurableSpace E'] [BorelSpace E'] in
 private theorem enorm_pullbackCLM_smulLeftCLM_sub_indicator_le
@@ -91,9 +90,7 @@ private theorem enorm_pullbackCLM_smulLeftCLM_sub_indicator_le
       (χ y - (B ∩ (↑) ⁻¹' tsupport φ).indicator (1 : Ω' → ℝ) y) •
         TestFunction.pullbackCLM Φ hΦ hΦp φ x := by
     rw [hP1]
-    by_cases hyB : y ∈ B
-    · simp [hxAB.2 hyB, hyB, hyK, sub_smul]
-    · simp [mt hxAB.1 hyB, hyB]
+    by_cases hyB : y ∈ B <;> simp [hxAB, hyB, hyK, sub_smul]
   rw [hsub, eNorm_smul]
   gcongr
   rw [← ofReal_norm, ← ofReal_norm]
@@ -122,7 +119,7 @@ theorem massRestrict_comp_pullbackCLM [FiniteDimensional ℝ E'] [CompleteSpace 
   have hΦc : Continuous fun x : Ω => Φ x := hΦ.continuousOn.domRestrict
   set A : Set Ω := (Ω : Set E).domRestrict Φ ⁻¹' ((↑) '' B : Set E')
   have hA : MeasurableSet A :=
-    (Ω'.isOpen.measurableSet.subtype_image hB).preimage hΦ.continuousOn.domRestrict.measurable
+    (Ω'.isOpen.measurableSet.subtype_image hB).preimage hΦc.measurable
   rw [massRestrict_congr_set (T := T) _ hA rfl]
   ext φ
   cases isEmpty_or_nonempty Ω' with
@@ -168,12 +165,9 @@ theorem massRestrict_comp_pullbackCLM [FiniteDimensional ℝ E'] [CompleteSpace 
       ‖P (TestFunction.smulLeftCLM (hχc m) φ) x - A.indicator (fun z : Ω => P φ z) x‖ₑ ≤
         ‖χ m (g x) - (B ∩ K').indicator (1 : Ω' → ℝ) (g x)‖ₑ *
           ‖(P φ : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ₑ := fun x hxC => by
-    have hxΩ' : Φ x ∈ Ω' := φ.tsupport_subset hxC.2
-    have hgx : (g x : E') = Φ x := by simp [g, hxΩ']
-    have hxAB : x ∈ A ↔ g x ∈ B := by
-      simp only [A, mem_preimage, Set.domRestrict_apply, ← hgx,
-        Subtype.val_injective.mem_set_image]
-    exact enorm_pullbackCLM_smulLeftCLM_sub_indicator_le (hχc m) φ hgx hxC.2 hxAB
+    have hgx : (g x : E') = Φ x := by simp [g, show Φ x ∈ Ω' from φ.tsupport_subset hxC.2]
+    exact enorm_pullbackCLM_smulLeftCLM_sub_indicator_le (hχc m) φ hgx hxC.2 (by
+      simp [A, mem_preimage, Set.domRestrict_apply, ← hgx, Subtype.val_injective.mem_set_image])
   have hf_meas : AEMeasurable (fun y : Ω' =>
       ‖χ m y - (B ∩ K').indicator (1 : Ω' → ℝ) y‖ₑ *
         ‖(P φ : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ₑ) ν :=

@@ -174,15 +174,13 @@ theorem slice_congr_of_eqOn (huv : EqOn u v Ω) : slice T u t = slice T v t := b
 @[simp]
 theorem slice_zero : slice (0 : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ) u t = 0 := by
   by_cases hu : Measurable fun x : Ω => u x
-  · ext φ
-    simp [slice_apply _ hu]
+  · ext φ; simp [slice_apply _ hu]
   · simp [hu]
 
 /-- If `E` is infinite-dimensional, every test form is zero, so every slice is zero. -/
 theorem slice_eq_zero_of_not_finiteDimensional (hE : ¬FiniteDimensional ℝ E) :
     slice T u t = 0 := by
-  ext φ
-  simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
+  ext φ; simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
 
 /-- Slicing commutes with scalar multiplication. -/
 @[simp]
@@ -196,8 +194,7 @@ theorem slice_smul (a : ℝ) : slice (a • T) u t = a • slice T u t := by
 /-- Slicing commutes with negation. -/
 @[simp]
 theorem slice_neg : slice (-T) u t = -slice T u t := by
-  rw [← neg_one_smul ℝ T, slice_smul]
-  exact neg_one_smul ℝ (slice T u t)
+  rw [← neg_one_smul ℝ T, slice_smul]; exact neg_one_smul ℝ (slice T u t)
 
 end Defs
 
@@ -206,20 +203,17 @@ end Defs
 theorem slice_const {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T)
     (c t : ℝ) : slice T (fun _ => c) t = 0 := by
   obtain ⟨hT₁, hT₂⟩ := isLocallyNormal_succ_iff.1 hT
-  have hm : Measurable fun _ : Ω => c := measurable_const
   ext φ
-  rw [slice_apply _ hm, zero_apply]
+  rw [slice_apply _ measurable_const, zero_apply]
   by_cases hct : c < t
   · have h : {_x : Ω | c < t} = univ := eq_univ_of_forall fun _ => hct
     rw [massRestrict_congr_set (T := T) _ MeasurableSet.univ h,
       massRestrict_congr_set (T := T ∘L extDerivCLM) _ MeasurableSet.univ h,
       massRestrict_univ_apply hT₁, massRestrict_univ_apply hT₂, comp_apply, sub_self]
   · have h : {_x : Ω | c < t} = ∅ := eq_empty_of_forall_notMem fun _ hx => hct hx
-    rw [massRestrict_congr_set (T := T) _ MeasurableSet.empty h,
+    simp [massRestrict_congr_set (T := T) _ MeasurableSet.empty h,
       massRestrict_congr_set (T := T ∘L extDerivCLM) _ MeasurableSet.empty h,
-      massRestrict_eq_zero MeasurableSet.empty (by simp),
       massRestrict_eq_zero MeasurableSet.empty (by simp)]
-    simp
 
 /-- Slicing is additive on locally normal currents. -/
 @[simp]
@@ -274,16 +268,14 @@ private theorem dsupport_slice_subset_of_open {T : 𝓓(Ω, E [⋀^Fin (k + 1)]�
           (dsupport_comp_extDerivCLM_subset T))))
     simp [slice_apply _ hum, h₁, h₂]
   have hv₂ : IsVanishingOn (slice T u t) U₁ := fun φ hφ => by
-    rw [slice_apply _ hum,
-      massRestrict_apply_eq_apply_of_ae hT₁ hA (ae_of_all _ fun x hx =>
+    rw [slice_apply _ hum, massRestrict_apply_eq_apply_of_ae hT₁ hA (ae_of_all _ fun x hx =>
         image_eq_zero_of_notMem_tsupport fun h =>
           hx (h1' _ (hφ (tsupport_extDerivCLM_subset φ h)))),
       massRestrict_apply_eq_apply_of_ae hT₂ hA (ae_of_all _ fun x hx =>
-        image_eq_zero_of_notMem_tsupport fun h => hx (h1' _ (hφ h)))]
-    simp
+        image_eq_zero_of_notMem_tsupport fun h => hx (h1' _ (hφ h))),
+      comp_apply, sub_self]
   have hv₃ : IsVanishingOn (slice T u t) U₂ := fun φ hφ => by
-    rw [slice_apply _ hum,
-      massRestrict_apply_eq_zero_of_ae hA (ae_of_all _ fun x hx =>
+    rw [slice_apply _ hum, massRestrict_apply_eq_zero_of_ae hA (ae_of_all _ fun x hx =>
         image_eq_zero_of_notMem_tsupport fun h =>
           lt_asymm (a := u x) (b := t) hx (h2' _ (hφ (tsupport_extDerivCLM_subset φ h)))),
       massRestrict_apply_eq_zero_of_ae hA (ae_of_all _ fun x hx =>
@@ -334,26 +326,23 @@ theorem slice_apply_eq_zero_of_notMem_Ioc {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[
     (hφ : ∀ x : Ω, (x : E) ∈ tsupport φ → |u x| < M) (ht : t ∉ Ioc (-M) M) :
     slice T u t φ = 0 := by
   by_cases hum : Measurable fun x : Ω => u x
-  · obtain ⟨hT₁, hT₂⟩ := isLocallyNormal_succ_iff.1 hT
-    let hA := measurableSet_lt hum (measurable_const (a := t))
-    rcases le_or_gt t (-M) with ht1 | ht1
-    · have hv {m : ℕ} {ψ : 𝓓(Ω, E [⋀^Fin m]→L[ℝ] F)}
-          (hψ : tsupport ψ ⊆ tsupport φ) : ∀ x : Ω, x ∈ {x : Ω | u x < t} → ψ x = 0 :=
-        fun x hx => image_eq_zero_of_notMem_tsupport fun h =>
-          (not_lt.2 ht1) ((neg_lt_of_abs_lt (hφ x (hψ h))).trans hx)
-      rw [slice_apply _ hum,
-        massRestrict_apply_eq_zero_of_ae hA (ae_of_all _ (hv (tsupport_extDerivCLM_subset φ))),
-        massRestrict_apply_eq_zero_of_ae hA (ae_of_all _ (hv Subset.rfl)), sub_zero]
-    · have htM : M < t := not_le.1 fun hle => ht ⟨ht1, hle⟩
-      have hv {m : ℕ} {ψ : 𝓓(Ω, E [⋀^Fin m]→L[ℝ] F)}
-          (hψ : tsupport ψ ⊆ tsupport φ) : ∀ x : Ω, x ∉ {x : Ω | u x < t} → ψ x = 0 :=
-        fun x hx => image_eq_zero_of_notMem_tsupport fun h =>
-          hx ((le_abs_self (u x)).trans_lt ((hφ x (hψ h)).trans htM))
-      rw [slice_apply _ hum,
-        massRestrict_apply_eq_apply_of_ae hT₁ hA (ae_of_all _ (hv (tsupport_extDerivCLM_subset φ))),
-        massRestrict_apply_eq_apply_of_ae hT₂ hA (ae_of_all _ (hv Subset.rfl))]
-      simp
-  · simp [hum]
+  swap; · simp [hum]
+  obtain ⟨hT₁, hT₂⟩ := isLocallyNormal_succ_iff.1 hT
+  let hA := measurableSet_lt hum (measurable_const (a := t))
+  rcases le_or_gt t (-M) with ht1 | ht1
+  · have hv {m : ℕ} {ψ : 𝓓(Ω, E [⋀^Fin m]→L[ℝ] F)} (hψ : tsupport ψ ⊆ tsupport φ) :
+        ∀ x : Ω, x ∈ {x : Ω | u x < t} → ψ x = 0 := fun x hx => image_eq_zero_of_notMem_tsupport
+      fun h => (not_lt.2 ht1) ((neg_lt_of_abs_lt (hφ x (hψ h))).trans hx)
+    rw [slice_apply _ hum,
+      massRestrict_apply_eq_zero_of_ae hA (ae_of_all _ (hv (tsupport_extDerivCLM_subset φ))),
+      massRestrict_apply_eq_zero_of_ae hA (ae_of_all _ (hv Subset.rfl)), sub_zero]
+  · have htM : M < t := not_le.1 fun hle => ht ⟨ht1, hle⟩
+    have hv {m : ℕ} {ψ : 𝓓(Ω, E [⋀^Fin m]→L[ℝ] F)} (hψ : tsupport ψ ⊆ tsupport φ) :
+        ∀ x : Ω, x ∉ {x : Ω | u x < t} → ψ x = 0 := fun x hx => image_eq_zero_of_notMem_tsupport
+      fun h => hx ((le_abs_self (u x)).trans_lt ((hφ x (hψ h)).trans htM))
+    rw [slice_apply _ hum,
+      massRestrict_apply_eq_apply_of_ae hT₁ hA (ae_of_all _ (hv (tsupport_extDerivCLM_subset φ))),
+      massRestrict_apply_eq_apply_of_ae hT₂ hA (ae_of_all _ (hv Subset.rfl)), comp_apply, sub_self]
 
 /-- If `T` is locally normal and `u` is continuous on `Ω`, then `t ↦ ⟨T, u, t⟩ φ` vanishes outside
 a bounded interval of levels `t`, hence has compact support. -/
@@ -384,12 +373,10 @@ theorem measurable_localMass_slice [SecondCountableTopology F]
     Measurable fun t : ℝ => localMass (slice T u t) U := by
   -- `SecondCountableTopology (E [⋀^Fin k]→L[ℝ] F)` requires `FiniteDimensional ℝ E`.
   by_cases hE : FiniteDimensional ℝ E
-  · exact measurable_localMass (fun t => (slice T u t).continuous)
-      (measurable_slice_apply T u) U
-  · have h0 (t : ℝ) : localMass (slice T u t) U = 0 :=
-      le_antisymm (localMass_le_iff.2 fun φ _ _ => by
-        simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]) bot_le
-    simp_rw [h0]
+  · exact measurable_localMass (fun t => (slice T u t).continuous) (measurable_slice_apply T u) U
+  · simp_rw [show ∀ t : ℝ, localMass (slice T u t) U = 0 from fun t => le_antisymm
+      (localMass_le_iff.2 fun φ _ _ => by simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE])
+      bot_le]
     exact measurable_const
 
 /-- For a second countable codomain `F`, `t ↦ mass ⟨T, u, t⟩` is Borel measurable. -/
@@ -455,24 +442,23 @@ theorem slice_comp_pullbackCLM_of_measurable_comp {E' : Type*} [NormedAddCommGro
     slice (T ∘L pullbackCLM Φ hΦ hΦp) u t =
       slice T (u ∘ Φ) t ∘L pullbackCLM Φ hΦ hΦp := by
   obtain ⟨hT₁, hT₂⟩ := isLocallyNormal_succ_iff.1 hT
-  let B : Set Ω' := {y : Ω' | u y < t}
-  have hB : MeasurableSet B := measurableSet_lt hu' (measurable_const (a := t))
-  let A₀ : Set Ω := (fun x : Ω => Φ x) ⁻¹' ((↑) '' B : Set E')
+  have hB : MeasurableSet {y : Ω' | u y < t} := measurableSet_lt hu' (measurable_const (a := t))
+  let A₀ : Set Ω := (fun x : Ω => Φ x) ⁻¹' ((↑) '' {y : Ω' | u y < t} : Set E')
   have hA₀ : MeasurableSet A₀ :=
     (Ω'.isOpen.measurableSet.subtype_image hB).preimage hΦ.continuousOn.domRestrict.measurable
-  let A₁ : Set Ω := {x : Ω | (u ∘ Φ) x < t}
-  have hA₁ : MeasurableSet A₁ := measurableSet_lt huΦ (measurable_const (a := t))
+  have hA₁ : MeasurableSet {x : Ω | (u ∘ Φ) x < t} := measurableSet_lt huΦ measurable_const
   have heq {m : ℕ} (S : 𝓓(Ω, E [⋀^Fin m]→L[ℝ] F) →L[ℝ] ℝ) (η : 𝓓(Ω', E' [⋀^Fin m]→L[ℝ] F)) :
       massRestrict S hA₀ (pullbackCLM Φ hΦ hΦp η) =
         massRestrict S hA₁ (pullbackCLM Φ hΦ hΦp η) := by
     simp only [massRestrict_apply, TestFunction.indicatorToLp_apply]
     refine congrArg (extendL1 S) (MemLp.toLp_congr _ _ (ae_of_all _ fun x => ?_))
     by_cases hxΩ' : Φ x ∈ Ω'
-    · have hiff : x ∈ A₀ ↔ x ∈ A₁ := by simp [A₀, A₁, B, Subtype.coe_image, hxΩ']
-      by_cases hx1 : x ∈ A₁ <;> simp [hiff, hx1]
-    · have h0 : pullbackCLM Φ hΦ hΦp η x = 0 :=
-        image_eq_zero_of_notMem_tsupport fun h =>
-          hxΩ' (η.tsupport_subset (tsupport_pullbackCLM_subset η h).2)
+    · have hiff : x ∈ A₀ ↔ (u ∘ Φ) x < t := by simp [A₀, Subtype.coe_image, hxΩ']
+      by_cases hx1 : (u ∘ Φ) x < t
+      · rw [Set.indicator_of_mem (hiff.2 hx1), Set.indicator_of_mem hx1]
+      · rw [Set.indicator_of_notMem (mt hiff.1 hx1), Set.indicator_of_notMem hx1]
+    · have h0 : pullbackCLM Φ hΦ hΦp η x = 0 := image_eq_zero_of_notMem_tsupport fun h =>
+        hxΩ' (η.tsupport_subset (tsupport_pullbackCLM_subset η h).2)
       refine Eq.trans (b := 0) ?_ (Eq.symm ?_) <;>
         (apply Set.indicator_apply_eq_zero.mpr; exact fun _ => h0)
   ext φ
@@ -534,8 +520,7 @@ theorem tendsto_slice_apply {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated
   -- Off the level set, membership in the sublevel sets of `vᵢ` eventually matches that of `u`.
   have hev (x : Ω) (hx : x ∉ {x : Ω | u x = t}) : ∀ᶠ i in l, (v i x < t ↔ u x < t) := by
     rcases lt_or_gt_of_ne hx with h | h
-    · filter_upwards [(hlim x x.property).eventually_lt_const h] with i hi
-      simp [hi, h]
+    · filter_upwards [(hlim x x.property).eventually_lt_const h] with i hi; simp [hi, h]
     · filter_upwards [(hlim x x.property).eventually_const_lt h] with i hi
       simp [hi.not_gt, h.not_gt]
   exact tendsto_slice_apply_of_eventually_iff T hv hu
@@ -615,13 +600,12 @@ theorem measurable_uncurry_slice_apply_of_contDiff {α : Type*} [MeasurableSpace
         (by positivity : (0 : ℝ) ≤ 2⁻¹) (by norm_num)).const_mul 2))
       tendsto_const_nhds (fun m => ?_) (fun m => (hstep_lt m).le)
     have hpow : (0 : ℝ) < (2 : ℝ) ^ m := by positivity
-    have hlhs : t - 2 * ((2 : ℝ) ^ m)⁻¹ = ((2 : ℝ) ^ m * t - 2) / (2 : ℝ) ^ m := by field_simp
-    rw [hlhs, div_le_div_iff_of_pos_right hpow]
+    rw [show t - 2 * ((2 : ℝ) ^ m)⁻¹ = ((2 : ℝ) ^ m * t - 2) / (2 : ℝ) ^ m by field_simp,
+      div_le_div_iff_of_pos_right hpow]
     linarith [Int.sub_one_lt_floor ((2 : ℝ) ^ m * t)]
   have hev (x : Ω) : ∀ᶠ m in atTop, (u x < step m t ↔ u x < t) := by
     by_cases hxt : u x < t
-    · filter_upwards [(tendsto_order.1 hstep_tendsto).1 _ hxt] with m hm
-      exact ⟨fun _ => hxt, fun _ => hm⟩
+    · exact ((tendsto_order.1 hstep_tendsto).1 _ hxt).mono fun m hm => ⟨fun _ => hxt, fun _ => hm⟩
     · exact .of_forall fun m => ⟨fun h => (hxt (h.trans (hstep_lt m))).elim, fun h => (hxt h).elim⟩
   simp_rw [slice_apply _ hum]
   exact (tendsto_massRestrict_apply _ _ (ae_of_all _ hev) (extDerivCLM φ)).sub
@@ -637,9 +621,8 @@ private theorem exists_measurable_mass_slice_le_aux
   by_cases hE : FiniteDimensional ℝ E
   swap
   · -- In infinite dimension every test form is zero, so every slice has mass zero.
-    refine ⟨0, measurable_const, fun t => ?_, by simp⟩
-    rw [Pi.zero_apply, nonpos_iff_eq_zero, mass_eq_zero_iff]
-    exact funext fun φ => by simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
+    exact ⟨0, measurable_const, fun t => by simp [slice_eq_zero_of_not_finiteDimensional _ hE],
+      by simp⟩
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
   have hum : Measurable fun x : Ω => u x := hu.continuous.measurable.comp measurable_subtypeVal
   have hdu : Measurable fun x : Ω => ‖fderiv ℝ u x‖ₑ := (continuous_eNorm.comp
@@ -649,8 +632,7 @@ private theorem exists_measurable_mass_slice_le_aux
     Real.smoothTransition.measurable_ofReal_mul_deriv_mul_sub_mul hum hdu ((m : ℝ) + 1)
   have hg (m : ℕ) : Measurable fun t => c *
       ∫⁻ x, ENNReal.ofReal (((m : ℝ) + 1) *
-        deriv Real.smoothTransition (((m : ℝ) + 1) * (t - u x))) * ‖fderiv ℝ u x‖ₑ
-        ∂massMeasure T :=
+        deriv Real.smoothTransition (((m : ℝ) + 1) * (t - u x))) * ‖fderiv ℝ u x‖ₑ ∂massMeasure T :=
     (hg' m).lintegral_prod_right'.const_mul c
   refine ⟨_, .liminf hg, fun t => ?_, (lintegral_liminf_le hg).trans_eq ?_⟩
   · refine (mass_le_liminf (fs := fun m =>
@@ -681,7 +663,7 @@ theorem exists_measurable_mass_slice_le {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[�
 theorem lintegral_mass_slice_le {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
     (hT : IsLocallyNormal T) (hu : ContDiff ℝ ∞ u) :
     ∫⁻ t, mass (slice T u t) ≤ (k + 1) * ∫⁻ x, ‖fderiv ℝ u x‖ₑ ∂massMeasure T := by
-  obtain ⟨G, -, hG, hGint⟩ := exists_measurable_mass_slice_le hT hu
+  obtain ⟨_, -, hG, hGint⟩ := exists_measurable_mass_slice_le hT hu
   exact (lintegral_mono hG).trans hGint
 
 /-- **The slicing inequality with a Lipschitz bound.** For a locally normal `(k + 1)`-current `T`
@@ -692,9 +674,8 @@ theorem lintegral_mass_slice_le_mul_mass {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[�
     (hdu : ∀ x ∈ Ω, ‖fderiv ℝ u x‖ₑ ≤ L) :
     ∫⁻ t, mass (slice T u t) ≤ (k + 1) * L * mass T := by
   rw [mul_assoc]
-  exact (lintegral_mass_slice_le hT hu).trans
-    (by gcongr
-        exact lintegral_massMeasure_le_mul_mass hT.hasLocallyFiniteMass fun x => hdu x x.property)
+  exact (lintegral_mass_slice_le hT hu).trans <| mul_le_mul_right
+    (lintegral_massMeasure_le_mul_mass hT.hasLocallyFiniteMass fun x => hdu x x.property) _
 
 /-- For a locally normal `(k + 1)`-current `T` and a smooth function `u : E → ℝ` on the ambient
 space with `∫ ‖du‖ d‖T‖ < ⊤`, almost every slice `⟨T, u, t⟩` has finite mass. -/
@@ -715,13 +696,10 @@ theorem ae_isNormal_slice_of_ae_mass_lt_top {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→
       ∀ᵐ t, mass (slice S u t) < ⊤) :
     ∀ᵐ t, IsNormal (slice T u t) := by
   cases k with
-  | zero =>
-    filter_upwards [h T hT] with t ht
-    exact isNormal_finZero_iff.2 ht.ne
+  | zero => exact (h T hT).mono fun t ht => isNormal_finZero_iff.2 ht.ne
   | succ j =>
     filter_upwards [h T hT, h _ hT.comp_extDerivCLM] with t ht ht'
-    refine isNormal_succ_iff.2 ⟨ht.ne, ?_⟩
-    simpa [slice_comp_extDerivCLM, mass_neg] using ht'.ne
+    exact isNormal_succ_iff.2 ⟨ht.ne, by simpa [slice_comp_extDerivCLM, mass_neg] using ht'.ne⟩
 
 /-- **Slices of normal currents are normal.** If `T` is a normal `(k + 1)`-current and `u` is
 smooth with `‖du‖ ≤ L < ⊤` on `Ω`, then almost every slice `⟨T, u, t⟩` is a normal current. -/
@@ -758,7 +736,7 @@ theorem lintegral_mass_slice_le_of_innerProductSpace {V : Type*}
     {T : 𝓓(U, V [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
     (hT : IsLocallyNormal T) (hw : ContDiff ℝ ∞ w) :
     ∫⁻ t, mass (slice T w t) ≤ ∫⁻ x, ‖fderiv ℝ w x‖ₑ ∂massMeasure T := by
-  obtain ⟨G, -, hG, hGint⟩ := exists_measurable_mass_slice_le_of_innerProductSpace hT hw
+  obtain ⟨_, -, hG, hGint⟩ := exists_measurable_mass_slice_le_of_innerProductSpace hT hw
   exact (lintegral_mono hG).trans hGint
 
 /-- **Sharp slicing inequality with a derivative bound on an inner product space.** For a locally
