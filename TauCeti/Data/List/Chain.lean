@@ -18,6 +18,9 @@ A list followed by itself is a chain for a relation exactly when the list is a c
 consecutive entries are related, and so is the last entry to the first. This cyclic condition is
 invariant under rotating the list, and it can be assembled from two chains, one leading from a
 nonempty block to another and one leading back.
+
+If any two entries of a list are related in one direction or the other, then some permutation of
+the list is a chain. This is the list form of the existence of a spanning path in a tournament.
 -/
 
 public section
@@ -68,5 +71,33 @@ theorem IsChain.append_self_of_overlap {l₁ l₂ l₃ l₄ : List α} (h : (l�
   have g : (l₁ ++ l₂ ++ l₃ ++ l₄ ++ l₁).IsChain R := by
     simpa using h.append_overlap (by simpa using h') h₃
   simpa using g.append_overlap (l₃ := l₂ ++ l₃ ++ l₄) (g.prefix ⟨l₁, by simp⟩) h₁
+
+/-- Inserting `x` into a chain `l` whose entries are each related to `x` in one direction or the
+other gives a chain that is a permutation of `x :: l` and that starts with `x` or with the first
+entry of `l`. -/
+private theorem exists_perm_cons_isChain_aux {x : α} :
+    ∀ {l : List α}, l.IsChain R → (∀ a ∈ l, R x a ∨ R a x) →
+      ∃ l', l' ~ x :: l ∧ l'.IsChain R ∧ (l'.head? = some x ∨ l'.head? = l.head?)
+  | [], _, _ => ⟨[x], Perm.refl _, isChain_singleton x, Or.inl rfl⟩
+  | a :: t, hl, h => by
+    rcases h a mem_cons_self with hxa | hax
+    · exact ⟨x :: a :: t, Perm.refl _, hl.cons (by simpa using hxa), Or.inl rfl⟩
+    · obtain ⟨t', ht', hct', hd⟩ := exists_perm_cons_isChain_aux (isChain_cons.1 hl).2
+        fun b hb => h b (mem_cons_of_mem a hb)
+      refine ⟨a :: t', (ht'.cons a).trans (Perm.swap x a t), hct'.cons ?_, Or.inr rfl⟩
+      rcases hd with hd | hd
+      · simpa [hd] using hax
+      · simpa [hd] using (isChain_cons.1 hl).1
+
+/-- If any two entries of a list are related by `R` in one direction or the other, then some
+permutation of the list is a chain for `R`. -/
+theorem Pairwise.exists_perm_isChain {l : List α} (hl : l.Pairwise fun a b => R a b ∨ R b a) :
+    ∃ l', l' ~ l ∧ l'.IsChain R := by
+  induction hl with
+  | nil => exact ⟨[], Perm.refl _, isChain_nil⟩
+  | @cons x t hx _ ih =>
+    obtain ⟨l, hlt, hl⟩ := ih
+    obtain ⟨l', hl', hcl', -⟩ := exists_perm_cons_isChain_aux hl fun a ha => hx a (hlt.subset ha)
+    exact ⟨l', hl'.trans (hlt.cons x), hcl'⟩
 
 end List
