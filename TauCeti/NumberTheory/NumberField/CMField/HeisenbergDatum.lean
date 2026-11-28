@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.HeisenbergModel.SkewHermitian
-public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
-public import TauCeti.NumberTheory.NumberField.Global.Adeles.AddChar
-import TauCeti.Algebra.Group.AddChar.Star
+public import TauCeti.NumberTheory.NumberField.CMField.AddChar
 
 /-!
 # The adelic Heisenberg datum of a CM field
@@ -55,7 +53,7 @@ is the datum `ψ_f (½ j α (conj α) · y* x)` on `𝔸_f^n`.
   under conjugation, and
   `TauCeti.GlobalNumberFields.finiteAdeleAddChar_eq_one_of_mem_skewAdjoint`,
   `TauCeti.GlobalNumberFields.infiniteAdeleAddChar_eq_one_of_mem_skewAdjoint`: they are trivial on
-  the skew-adjoint adeles.
+  the skew-adjoint adeles (see `TauCeti.NumberTheory.NumberField.CMField.AddChar`).
 * `TauCeti.finiteHeisenbergDatum_smul_smul`: the finite datum in finite coordinates.
 
 ## Provenance
@@ -79,48 +77,6 @@ open IsDedekindDomain NumberField Matrix
 open scoped NumberField.AdeleRing
 
 variable {E : Type*} [Field E] [NumberField E] [IsCMField E]
-
-namespace TauCeti.GlobalNumberFields
-
-/-! ### Invariance of the standard characters under conjugation -/
-
-/-- The standard character `ψ_f` of the finite adeles of a CM field is invariant under
-conjugation. -/
-@[simp]
-theorem finiteAdeleAddChar_star (a : 𝔸ᶠ[E]) :
-    finiteAdeleAddChar E (star a) = finiteAdeleAddChar E a := by
-  rw [← IsCMField.finiteAdeleConj_apply, IsCMField.finiteAdeleConj_def,
-    finiteAdeleAddChar_finiteAdeleEquiv]
-
-/-- The standard character `ψ_f` of the finite adeles of a CM field is trivial on the skew-adjoint
-finite adeles. -/
-theorem finiteAdeleAddChar_eq_one_of_mem_skewAdjoint {a : 𝔸ᶠ[E]} (ha : a ∈ skewAdjoint 𝔸ᶠ[E]) :
-    finiteAdeleAddChar E a = 1 :=
-  letI : Invertible (2 : E) := invertibleOfNonzero two_ne_zero
-  AddChar.map_eq_one_of_mem_skewAdjoint E _ finiteAdeleAddChar_star ha
-
-/-- The trace of the infinite adeles of a CM field is invariant under conjugation. -/
-@[simp]
-theorem infiniteAdeleTrace_star (a : InfiniteAdeleRing E) :
-    infiniteAdeleTrace E (star a) = infiniteAdeleTrace E a := by
-  simp only [infiniteAdeleTrace_apply, InfiniteAdeleRing.extensionEmbedding_star_apply,
-    Complex.conj_re]
-
-/-- The standard character `ψ_∞` of the infinite adeles of a CM field is invariant under
-conjugation. -/
-@[simp]
-theorem infiniteAdeleAddChar_star (a : InfiniteAdeleRing E) :
-    infiniteAdeleAddChar E (star a) = infiniteAdeleAddChar E a := by
-  rw [infiniteAdeleAddChar_apply, infiniteAdeleAddChar_apply, infiniteAdeleTrace_star]
-
-/-- The standard character `ψ_∞` of the infinite adeles of a CM field is trivial on the
-skew-adjoint infinite adeles. -/
-theorem infiniteAdeleAddChar_eq_one_of_mem_skewAdjoint {a : InfiniteAdeleRing E}
-    (ha : a ∈ skewAdjoint (InfiniteAdeleRing E)) : infiniteAdeleAddChar E a = 1 :=
-  letI : Invertible (2 : E) := invertibleOfNonzero two_ne_zero
-  AddChar.map_eq_one_of_mem_skewAdjoint E _ infiniteAdeleAddChar_star ha
-
-end TauCeti.GlobalNumberFields
 
 namespace TauCeti
 
