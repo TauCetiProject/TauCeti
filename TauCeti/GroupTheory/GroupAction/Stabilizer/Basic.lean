@@ -87,6 +87,12 @@ normality of it is equivalent to freeness of the action of the image.
   inverse map the set into itself.
 * `TauCeti.smul_eq_smul_iff_inv_mul_mem_stabilizer`: two group elements carry `x₀` to the same
   point exactly when they differ on the right by an element of the stabilizer of `x₀`.
+* `TauCeti.smul_left_inj_of_smul_eq_self_imp`,
+  `TauCeti.op_smul_left_inj_of_op_smul_eq_self_imp`: pointwise orbit cancellation from
+  trivial stabilizer at a point, for left and right (`Gᵐᵒᵖ`) actions.
+* `TauCeti.smul_eq_self_imp_of_smul`,
+  `TauCeti.op_smul_eq_self_imp_of_op_smul`: trivial stabilizer is preserved along an orbit, for
+  left and right (`Gᵐᵒᵖ`) actions.
 * `TauCeti.stabilizer_finset_eq_bot_of_prime_card_of_isPretransitive`: a transitive group of
   prime order acts freely on the nonempty proper finite subsets, with
   `TauCeti.stabilizer_finset_eq_bot_of_prime_card` the case of translation on the group itself.
@@ -243,9 +249,51 @@ theorem mul_inv_mem_stabilizer_of_smul_eq (g h : G) {x y : α}
 
 /-- Two group elements carry `x₀` to the same point exactly when they differ on the right by an
 element of the stabilizer of `x₀`. -/
+@[to_additive /-- Two additive-group elements carry `x₀` to the same point exactly when they differ
+by an element of the additive stabilizer of `x₀`. -/]
 theorem smul_eq_smul_iff_inv_mul_mem_stabilizer (x₀ : α) (a b : G) :
     a • x₀ = b • x₀ ↔ a⁻¹ * b ∈ MulAction.stabilizer G x₀ := by
   rw [MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff, eq_comm]
+
+/-- Pointwise cancellation: trivial stabilizer at `x` implies `g • x = h • x ↔ g = h`. -/
+@[to_additive /-- Pointwise additive cancellation: trivial stabilizer at `x` implies
+`g +ᵥ x = h +ᵥ x ↔ g = h`. -/]
+theorem smul_left_inj_of_smul_eq_self_imp {x : α}
+    (hfree : ∀ g : G, g • x = x → g = 1) {g h : G} : g • x = h • x ↔ g = h :=
+  (smul_eq_smul_iff_inv_mul_mem_stabilizer x g h).trans
+    ⟨fun hm ↦ inv_mul_eq_one.1 (hfree _ hm), fun e ↦ by simp [e]⟩
+
+/-- Right-action (`MulAction Gᵐᵒᵖ α`) pointwise cancellation: trivial stabilizer at `x` implies
+`op g • x = op h • x ↔ g = h`. -/
+@[to_additive /-- Right additive-action (`AddAction Gᵃᵒᵖ α`) pointwise cancellation: trivial
+stabilizer at `x` implies `op g +ᵥ x = op h +ᵥ x ↔ g = h`. -/]
+theorem op_smul_left_inj_of_op_smul_eq_self_imp {G α : Type*} [Group G] [MulAction Gᵐᵒᵖ α]
+    {x : α} (hfree : ∀ g : G, MulOpposite.op g • x = x → g = 1) {g h : G} :
+    MulOpposite.op g • x = MulOpposite.op h • x ↔ g = h :=
+  (smul_left_inj_of_smul_eq_self_imp (G := Gᵐᵒᵖ) fun k hk ↦ MulOpposite.unop_injective
+    ((hfree k.unop (k.op_unop.symm ▸ hk)).trans MulOpposite.unop_one.symm)).trans
+    MulOpposite.op_injective.eq_iff
+
+/-- Trivial stabilizer is preserved along an orbit: if `x` has trivial stabilizer under `G`,
+so does `h • x` for every `h : G`. -/
+@[to_additive /-- Trivial stabilizer is preserved along an orbit: if `x` has trivial stabilizer
+under `G`, so does `h +ᵥ x` for every `h : G`. -/]
+theorem smul_eq_self_imp_of_smul {x : α} (hfree : ∀ g : G, g • x = x → g = 1) (h : G) :
+    ∀ g : G, g • (h • x) = h • x → g = 1 :=
+  fun g hg ↦ conj_eq_one_iff.1
+    (hfree (h⁻¹ * g * (h⁻¹)⁻¹) (by rw [inv_inv, mul_smul, mul_smul, hg, inv_smul_smul]))
+
+/-- Trivial stabilizer is preserved along a right (`MulAction Gᵐᵒᵖ α`) orbit: if `x` has trivial
+stabilizer under `Gᵐᵒᵖ`, so does `op h • x` for every `h : G`. -/
+@[to_additive /-- Trivial stabilizer is preserved along a right (`AddAction Gᵃᵒᵖ α`) orbit:
+if `x` has trivial stabilizer under `Gᵃᵒᵖ`, so does `op h +ᵥ x` for every `h : G`. -/]
+theorem op_smul_eq_self_imp_of_op_smul {G α : Type*} [Group G] [MulAction Gᵐᵒᵖ α] {x : α}
+    (hfree : ∀ g : G, MulOpposite.op g • x = x → g = 1) (h : G) :
+    ∀ g : G, MulOpposite.op g • (MulOpposite.op h • x) = MulOpposite.op h • x → g = 1 :=
+  fun g hg ↦ MulOpposite.op_injective (smul_eq_self_imp_of_smul (G := Gᵐᵒᵖ)
+    (fun k hk ↦ MulOpposite.unop_injective
+      ((hfree k.unop (k.op_unop.symm ▸ hk)).trans MulOpposite.unop_one.symm))
+    (MulOpposite.op h) (MulOpposite.op g) hg)
 
 end TauCeti
 

@@ -30,8 +30,8 @@ On a seminormed group, as `‖s‖ → ∞`:
   `0 < c`, so a polynomial weight turns `O(exp (-c ‖s‖))` decay into `O(exp (-a ‖s‖))` decay for
   every `a < c`;
 * `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`
-  (so eventually `K * x ^ a ≤ x ^ b` for every constant `K`), and `O(‖s‖ ^ b)` whenever
-  `a ≤ b`; in particular `√‖s‖ = o(s)`, `‖s‖ ^ a` tends to `0` whenever `a < 0`, and
+  (so eventually `K * x ^ a ≤ x ^ b` for every constant `K`), and `O(‖s‖ ^ b)` (resp. `O(x ^ b)`)
+  whenever `a ≤ b`; in particular `√‖s‖ = o(s)`, `‖s‖ ^ a` tends to `0` whenever `a < 0`, and
   `√x / (x ^ a) ^ k → 0` for real `x → ∞` whenever `1 / 2 < a k`.
 
 These are the comparisons behind the order of growth of an entire function.
@@ -244,6 +244,13 @@ theorem isLittleO_rpow_rpow_atTop {a b : ℝ} (hab : a < b) :
     exact absurd h (Real.rpow_pos_of_pos hx b).ne'
   · filter_upwards [eventually_gt_atTop 0] with x hx
     rw [← Real.rpow_sub hx, neg_sub]
+
+/-- For `a ≤ b`, the real power `x ^ a` is `O(x ^ b)` as `x → ∞`. -/
+theorem isBigO_rpow_rpow_atTop_of_le {a b : ℝ} (hab : a ≤ b) :
+    (fun x : ℝ ↦ x ^ a) =O[atTop] fun x ↦ x ^ b := by
+  rcases eq_or_lt_of_le hab with rfl | hlt
+  · exact isBigO_refl _ _
+  · exact (isLittleO_rpow_rpow_atTop hlt).isBigO
 
 /-- The comparison `‖ρ‖ⁿ n^β = o(ρⁿ n^α)` for `β < Re α`. -/
 theorem isLittleO_norm_pow_mul_rpow_pow_mul_cpow (ρ : ℂ) {α : ℂ} {β : ℝ} (h : β < α.re) :

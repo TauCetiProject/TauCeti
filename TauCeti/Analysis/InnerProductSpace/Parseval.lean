@@ -30,6 +30,8 @@ coisometric contractions, and a Cauchy–Schwarz bound for Hilbert basis coordin
   (`Orthonormal.summable_norm_apply_sq`).
 * For a Hilbert basis `b`, the products `⟪x, b i⟫ ⟪b i, y⟫` are absolutely summable with sum of
   norms at most `‖x‖ ‖y‖` (`HilbertBasis.tsum_norm_inner_mul_inner_le`).
+* The coefficients of a convergent expansion `∑ⱼ cⱼ vⱼ = x` along an orthonormal family are the
+  inner products `⟪vᵢ, x⟫` (`Orthonormal.inner_eq_of_hasSum`).
 
 ## Main declarations
 
@@ -43,6 +45,7 @@ coisometric contractions, and a Cauchy–Schwarz bound for Hilbert basis coordin
   the products `⟪x, bᵢ⟫ ⟪bᵢ, y⟫` are absolutely summable, with sum of norms at most `‖x‖ ‖y‖`.
 * `Orthonormal.summable_norm_apply_sq` — Bessel's inequality for a functional: the squared values
   of a continuous linear functional on an orthonormal family are summable.
+* `Orthonormal.inner_eq_of_hasSum` — the coefficients of a convergent orthonormal expansion.
 -/
 
 public section
@@ -171,6 +174,16 @@ theorem _root_.Orthonormal.summable_norm_apply_sq {v : ι → E} (hv : Orthonorm
   have hv' := hv.comp_linearIsometry (UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜))
   simpa only [hu, Function.comp_apply, UniformSpace.Completion.coe_toComplₗᵢ] using
     hv'.inner_products_summable u
+
+/-- **Coefficients of a convergent orthonormal expansion.** If `∑ⱼ cⱼ vⱼ` converges to `x` along an
+orthonormal family `v`, then `⟪vᵢ, x⟫ = cᵢ`. -/
+theorem _root_.Orthonormal.inner_eq_of_hasSum {v : ι → E} (hv : Orthonormal 𝕜 v) {c : ι → 𝕜}
+    {x : E} (h : HasSum (fun j ↦ c j • v j) x) (i : ι) : inner 𝕜 (v i) x = c i := by
+  classical
+  have hi := h.mapL (innerSL 𝕜 (v i))
+  simp only [innerSL_apply_apply, inner_smul_right, orthonormal_iff_ite.1 hv i, mul_ite, mul_one,
+    mul_zero] at hi
+  exact hi.unique (hasSum_single i fun j hj ↦ ite_eq_right (Ne.symm hj)) |>.trans (ite_eq_left rfl)
 
 end Seminormed
 

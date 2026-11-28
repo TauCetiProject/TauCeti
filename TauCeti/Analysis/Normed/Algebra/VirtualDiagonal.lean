@@ -34,11 +34,16 @@ and `arensMulRev 𝕜 A (Δ** M) F = F`).
 
 Any weak-star cluster point in `(A ⊗̂π A)**` of an approximate diagonal is a virtual diagonal, so
 over a proper scalar field an approximate diagonal bounded by `C` yields a virtual diagonal of norm
-at most `C` by Banach–Alaoglu. Conversely, over `ℝ` or `ℂ`, Goldstine's theorem and convex
-weak-norm closure (`StrongDual.exists_norm_le_and_forall_norm_sub_lt`) approximate a virtual
+at most `C` by Banach–Alaoglu. Conversely, over `ℝ` or `ℂ`, bidual norm approximation
+(`StrongDual.exists_norm_le_and_forall_norm_sub_lt`) approximates a virtual
 diagonal `M` on every finite subset of `A` by tensors of norm at most `‖M‖`, producing an
 approximate diagonal bounded by `‖M‖`. Thus a Banach algebra over `ℝ` or `ℂ` has a virtual diagonal
 of norm at most `C` if and only if it has an approximate diagonal bounded by `C`.
+
+Moreover, pushing the operator `Φ : A ⊗̂π A →L[𝕜] E*` induced by `(a, b) ↦ a · D b` through a
+virtual diagonal `M` shows directly that every bounded derivation `D` into the dual `E*` of a
+seminormed `A`-bimodule `E` is inner (`IsVirtualDiagonal.exists_eq_dualAction_sub_dualAction`, and
+hence `IsApproximateDiagonal.exists_eq_dualAction_sub_dualAction`).
 
 ## Main definitions
 
@@ -61,6 +66,10 @@ of norm at most `C` if and only if it has an approximate diagonal bounded by `C`
 * `TauCeti.exists_isVirtualDiagonal_norm_le_iff_exists_isApproximateDiagonal` and
   `TauCeti.exists_isVirtualDiagonal_iff_exists_isApproximateDiagonal`: equivalence of virtual
   diagonals and bounded approximate diagonals.
+* `TauCeti.IsVirtualDiagonal.exists_eq_dualAction_sub_dualAction` and
+  `TauCeti.IsApproximateDiagonal.exists_eq_dualAction_sub_dualAction`: virtual diagonals (over a
+  complete field) and bounded approximate diagonals (over a proper field) force all bounded
+  derivations into dual bimodules to be inner.
 
 ## References
 
@@ -358,5 +367,113 @@ theorem isVirtualDiagonal_inclusionInDoubleDual_one_tmul_one [CompleteSpace 𝕜
 end Unital
 
 end Examples
+
+section Derivation
+
+variable {𝕜 A E : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
+  [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [CompleteSpace A]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {L R : A →L[𝕜] E →L[𝕜] E}
+
+/-- The bounded operator `A ⊗̂π A → E*` induced by the bounded bilinear map `(a, b) ↦ a · D b`. -/
+private abbrev leftDerivationLift [CompleteSpace 𝕜] (R : A →L[𝕜] E →L[𝕜] E)
+    (D : A →L[𝕜] StrongDual 𝕜 E) : CompletedProjectiveTensor 𝕜 A A →L[𝕜] StrongDual 𝕜 E :=
+  let : NormedAddCommGroup (StrongDual 𝕜 E) := ContinuousLinearMap.normedAddCommGroup
+  liftIsometry 𝕜 A A (StrongDual 𝕜 E) ((compL 𝕜 E E 𝕜).bilinearComp D R).flip
+
+/-- The commutator of `Φ m` with `a`, where `Φ` is induced by `(a, b) ↦ a · D b`:
+`a · Φ m - Φ m · a = Φ (a · m - m · a) + Δ m · D a`. -/
+private theorem dualAction_leftDerivationLift_sub [CompleteSpace 𝕜]
+    (hR : ∀ a b x, R (a * b) x = R b (R a x)) (hLR : ∀ a b x, L a (R b x) = R b (L a x))
+    {D : A →L[𝕜] StrongDual 𝕜 E}
+    (hD : ∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a))
+    (a : A) (m : CompletedProjectiveTensor 𝕜 A A) :
+    dualAction R a (leftDerivationLift R D m) - dualAction L a (leftDerivationLift R D m) =
+      leftDerivationLift R D (mulLeft 𝕜 A a m - mulRight 𝕜 A a m) +
+        dualAction R (mul' 𝕜 A m) (D a) := by
+  let : NormedAddCommGroup (StrongDual 𝕜 E) := ContinuousLinearMap.normedAddCommGroup
+  have key : (dualAction R a - dualAction L a) ∘L leftDerivationLift R D =
+      leftDerivationLift R D ∘L (mulLeft 𝕜 A a - mulRight 𝕜 A a) +
+        (compL 𝕜 E E 𝕜 (D a) ∘L R) ∘L mul' 𝕜 A := by
+    refine continuousLinearMap_ext fun x y ↦ ?_
+    ext z
+    simp [ProjectiveTensor.liftIsometry_apply_tmul, hD, hR, hLR]
+    ring
+  ext x
+  simpa using congr($key m x)
+
+/-- If a Banach algebra `A` over a complete scalar field has a virtual diagonal `M`, then every
+bounded derivation `D` of `A` into the dual `E*` of a seminormed `A`-bimodule `E` is inner:
+`D a = a · φ - φ · a` for some `φ ∈ E*`, where `E*` has left action `dualAction R` and right action
+`dualAction L`. Neither `A` nor the actions need to be unital or contractive, and `E` need not be
+complete or essential. -/
+theorem IsVirtualDiagonal.exists_eq_dualAction_sub_dualAction [CompleteSpace 𝕜]
+    {M : StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A))}
+    (hM : IsVirtualDiagonal 𝕜 M)
+    (hL : ∀ a b x, L (a * b) x = L a (L b x)) (hR : ∀ a b x, R (a * b) x = R b (R a x))
+    (hLR : ∀ a b x, L a (R b x) = R b (L a x)) (D : A →L[𝕜] StrongDual 𝕜 E)
+    (hD : ∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a)) :
+    ∃ φ : StrongDual 𝕜 E, ∀ a, D a = dualAction R a φ - dualAction L a φ := by
+  set Φ := leftDerivationLift R D
+  set J := inclusionInDoubleDual 𝕜 E
+  let φ : StrongDual 𝕜 E := M ∘L precomp 𝕜 Φ ∘L J
+  let ψ : StrongDual 𝕜 E := M ∘L precomp 𝕜 (D ∘L mul' 𝕜 A) ∘L J
+  let ρ : StrongDual 𝕜 E := M ∘L precomp 𝕜 ((dualAction R).flip ψ ∘L mul' 𝕜 A) ∘L J
+  -- Pushing `a · Φ m - Φ m · a = Φ (a · m - m · a) + D (Δ m * a) - D (Δ m) · a` through `M`
+  -- gives `D a = a · φ - φ · a + ψ · a`.
+  have hDφψ (a : A) (x : E) : D a x = φ (R a x) - φ (L a x) + ψ (L a x) := by
+    have hkey : (J (R a x)).comp Φ - (J (L a x)).comp Φ =
+        ((J x).comp Φ).comp (mulLeft 𝕜 A a) - ((J x).comp Φ).comp (mulRight 𝕜 A a) +
+          (((J x).comp D).comp ((ContinuousLinearMap.mul 𝕜 A).flip a)).comp (mul' 𝕜 A) -
+            (J (L a x)).comp (D ∘L mul' 𝕜 A) := by
+      refine ContinuousLinearMap.ext fun m ↦ ?_
+      have hm := congr($(dualAction_leftDerivationLift_sub hR hLR hD a m) x)
+      have hDm := congr($(hD (mul' 𝕜 A m) a) x)
+      simp only [Φ, J, map_sub, sub_apply, add_apply, comp_apply, dual_def, flip_apply,
+        mul_apply', dualAction_apply_apply] at hm hDm ⊢
+      linear_combination hm - hDm
+    have hMkey := congrArg M hkey
+    simp only [map_sub, map_add, hM.apply_comp_mulLeft_eq_mulRight, sub_self, zero_add,
+      hM.apply_comp_mul_flip_comp_mul', J, comp_apply, dual_def] at hMkey
+    simp only [φ, ψ, J, comp_apply, precomp_apply]
+    linear_combination -hMkey
+  -- Since `D` and the inner derivation of `φ` are derivations, `ψ (b · x · a) = 0`.
+  have hψLR (a b : A) (x : E) : ψ (R a (L b x)) = 0 := by
+    have := congr($(hD a b) x)
+    simp only [dualAction_apply_apply, add_apply, hDφψ, hL, hR, hLR] at this
+    linear_combination -this
+  -- Hence `a · ρ = a · ψ` and `ρ · a = 0`, so `φ + ρ - ψ` implements `D`.
+  have hρR (a : A) (x : E) : ρ (R a x) = ψ (R a x) := by
+    have hEq : (J (R a x)).comp ((dualAction R).flip ψ ∘L mul' 𝕜 A) =
+        ((ψ.comp (R.flip x)).comp (ContinuousLinearMap.mul 𝕜 A a)).comp (mul' 𝕜 A) :=
+      ContinuousLinearMap.ext fun m ↦ by simp [J, hR]
+    simpa only [ρ, comp_apply, precomp_apply, flip_apply, hEq] using
+      hM.apply_comp_mul_comp_mul' a (ψ.comp (R.flip x))
+  have hρL (a : A) (x : E) : ρ (L a x) = 0 := by
+    have hEq : (J (L a x)).comp ((dualAction R).flip ψ) = 0 := by
+      ext b
+      simp [J, hψLR]
+    simp [ρ, ← comp_assoc, hEq]
+  refine ⟨φ + ρ - ψ, fun a ↦ ?_⟩
+  ext x
+  simp only [dualAction_apply_apply, sub_apply, add_apply, hDφψ, hρR, hρL]
+  ring
+
+/-- If a Banach algebra `A` over a proper scalar field has a bounded approximate diagonal, then
+every bounded derivation `D` of `A` into the dual `E*` of a seminormed `A`-bimodule `E` is inner:
+`D a = a · φ - φ · a` for some `φ ∈ E*`, where `E*` has left action `dualAction R` and right action
+`dualAction L`. Neither `A` nor the actions need to be unital or contractive, and `E` need not be
+complete or essential. -/
+theorem IsApproximateDiagonal.exists_eq_dualAction_sub_dualAction [ProperSpace 𝕜]
+    {l : Filter (CompletedProjectiveTensor 𝕜 A A)} (h : IsApproximateDiagonal 𝕜 l) {C : ℝ}
+    (hC : ∀ᶠ m in l, ‖m‖ ≤ C)
+    (hL : ∀ a b x, L (a * b) x = L a (L b x)) (hR : ∀ a b x, R (a * b) x = R b (R a x))
+    (hLR : ∀ a b x, L a (R b x) = R b (L a x)) (D : A →L[𝕜] StrongDual 𝕜 E)
+    (hD : ∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a)) :
+    ∃ φ : StrongDual 𝕜 E, ∀ a, D a = dualAction R a φ - dualAction L a φ := by
+  obtain ⟨M, hM, -⟩ := h.exists_isVirtualDiagonal hC
+  exact hM.exists_eq_dualAction_sub_dualAction hL hR hLR D hD
+
+end Derivation
 
 end TauCeti
