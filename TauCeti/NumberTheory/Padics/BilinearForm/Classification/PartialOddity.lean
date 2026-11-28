@@ -9,7 +9,6 @@ public import Mathlib.Order.Interval.Finset.Nat
 public import TauCeti.NumberTheory.Padics.BilinearForm.Classification.Invariants
 public import TauCeti.NumberTheory.Padics.BilinearForm.JordanGaussSum
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
-import TauCeti.Order.Interval.Finset.Basic
 
 /-!
 # Algebraic partial signed oddity invariants of dyadic Jordan splittings

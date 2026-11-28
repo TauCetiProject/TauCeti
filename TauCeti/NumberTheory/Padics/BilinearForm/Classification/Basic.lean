@@ -9,14 +9,12 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import TauCeti.NumberTheory.Padics.BilinearForm.Classification.PartialOddity
 import TauCeti.Algebra.BigOperators.Ring.Finset
 import TauCeti.Algebra.Group.Basic
-import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Parity
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.NumberTheory.Padics.BilinearForm.Classification.Compartment
 import TauCeti.NumberTheory.Padics.BilinearForm.Classification.NoAdjacentOdd
 import TauCeti.NumberTheory.Padics.BilinearForm.SignWalking
 import TauCeti.NumberTheory.Padics.PadicIntegers
-import TauCeti.NumberTheory.Padics.SerreSigns
 import TauCeti.Order.Interval.Finset.Basic
 
 /-!

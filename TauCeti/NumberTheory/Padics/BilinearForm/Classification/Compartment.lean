@@ -10,20 +10,15 @@ public import TauCeti.NumberTheory.Padics.BilinearForm.Classification.Invariants
 import TauCeti.Algebra.BigOperators.Finset.Erase
 import TauCeti.Data.ZMod.Eight
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
-import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Parity
 import TauCeti.LinearAlgebra.BilinearForm.Odd.LocalRing
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
-import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.NumberTheory.Padics.BilinearForm.OddUnimodular
 import TauCeti.NumberTheory.Padics.BilinearForm.Oddity.Fusion
 import TauCeti.NumberTheory.Padics.BilinearForm.SignWalking
 import TauCeti.NumberTheory.Padics.BilinearForm.Unimodular
-import TauCeti.NumberTheory.Padics.DyadicUnits
-import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
-import TauCeti.NumberTheory.Padics.SerreSigns
 import TauCeti.Order.Interval.Finset.Basic
 
 /-!
