@@ -10,7 +10,7 @@ import Mathlib.Analysis.Real.Pi.Bounds
 import TauCeti.Algebra.Order.Field.OneAddInvPow
 
 /-!
-# Minkowski lower bounds for the root discriminant
+# Bounds on the root discriminant
 
 Minkowski's bound `NumberField.abs_discr_ge'` gives `n^{2n} / ((4/π)^{2r₂} (n!)²) ≤ |d_K|` for a
 number field `K` of degree `n` with `r₂` complex places. Since `4/π ≥ 1` and `2r₂ ≤ n`, the
@@ -35,6 +35,10 @@ small Galois number field once a local estimate bounds its root discriminant, as
 that there is no irreducible two-dimensional mod-`2` Galois representation of `ℚ` unramified
 outside `2`. The thresholds are not sharp: the analytic bounds of Odlyzko and Poitou are much
 stronger, but these follow from Minkowski's bound alone.
+
+The trivial lower bound `1 ≤ rd(K)` (`TauCeti.NumberField.one_le_rootDiscr`) holds because
+`d_K` is a nonzero integer. The upper bound `rd(K) ≤ √|d_K|`
+(`TauCeti.NumberField.rootDiscr_le_sqrt_abs_discr`) also holds in degree one, when `d_K = 1`.
 
 ## References
 
@@ -129,6 +133,31 @@ theorem pow_lt_minkowskiDiscrBound {c : ℝ} {n₀ n : ℕ} (hc : 0 ≤ c)
     rw [pow_succ, minkowskiDiscrBound_succ, mul_comm (π / 4 * _)]
     exact (mul_le_mul_of_nonneg_left hratio (pow_nonneg hc m)).trans_lt
       (mul_lt_mul_of_pos_right ih hpos)
+
+/-- A number field has root discriminant at least one, as its discriminant is a nonzero integer. -/
+theorem one_le_rootDiscr (K : Type*) [Field K] [NumberField K] : 1 ≤ rootDiscr K := by
+  simp only [rootDiscr_def, ← Int.natCast_natAbs, Int.cast_natCast]
+  have h : 1 ≤ (discr K).natAbs := Nat.one_le_iff_ne_zero.mpr (by simp [discr_ne_zero])
+  exact Real.one_le_rpow (by exact_mod_cast h) (by positivity)
+
+/-- The root discriminant of any number field is at most the square root of its absolute
+discriminant. In degree one both sides are one. -/
+theorem rootDiscr_le_sqrt_abs_discr (K : Type*) [Field K] [NumberField K] :
+    rootDiscr K ≤ √|(discr K : ℝ)| := by
+  rw [rootDiscr_def, Int.cast_abs]
+  by_cases h : finrank ℚ K = 1
+  · let e : ℚ ≃ₐ[ℚ] K := AlgEquiv.ofBijective (Algebra.ofId ℚ K)
+      (Algebra.finrank_eq_one_iff_bijective_algebraMap.mp h)
+    have hd : discr K = 1 := (discr_eq_discr_of_algEquiv ℚ e).symm.trans discr_rat
+    simp [hd]
+  · have h₂ : 2 ≤ finrank ℚ K := by
+      have := finrank_pos (R := ℚ) (M := K)
+      omega
+    have hd : (1 : ℝ) ≤ |(discr K : ℝ)| := by
+      exact_mod_cast Int.one_le_abs (discr_ne_zero K)
+    rw [Real.sqrt_eq_rpow, one_div]
+    refine Real.rpow_le_rpow_of_exponent_le hd (inv_anti₀ two_pos ?_)
+    exact_mod_cast h₂
 
 /-- A number field of degree `n` whose Minkowski bound `B_n` exceeds `cⁿ` has root discriminant
 greater than `c`. -/
