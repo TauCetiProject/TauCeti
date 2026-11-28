@@ -155,9 +155,13 @@ blocks `Δⱼ u`.
 * `ContDiffBump.integral_fourierInv_inhomogeneousLittlewoodPaley_succ`: the kernels `𝓕⁻ ψⱼ`,
   `j ≥ 1`, have integral zero.
 * `ContDiffBump.fourierInv_inhomogeneousLittlewoodPaley_neg`: the kernels `𝓕⁻ ψⱼ` are even.
-* `TemperedDistribution.littlewoodPaleyBlock_delta_zero` and
-  `TemperedDistribution.littlewoodPaleyBlock_delta_zero_eq_toLp`: the blocks of the Dirac mass `δ₀`
-  are the kernels `𝓕⁻ ψⱼ`.
+* `TemperedDistribution.littlewoodPaleyBlock_delta_zero`,
+  `TemperedDistribution.littlewoodPaleyBlock_delta_zero_eq_toLp`,
+  `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta`,
+  `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_norm_le`, and
+  `TemperedDistribution.littlewoodPaleyBlock_toTemperedDistribution_volume`: the blocks of the
+  Dirac mass `δ₀` are the kernels `𝓕⁻ ψⱼ`, the blocks of low-frequency plane waves `𝓕⁻ δ_ξ`
+  (`‖ξ‖ ≤ φ.rIn`), and the constant `1` has only the `Δ₀` block.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le` and
   `TemperedDistribution.exists_enlargedLittlewoodPaleyBlock_eq_and_norm_le`: the blocks and
   enlarged blocks are bounded on `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`; and so are the low-pass
@@ -165,6 +169,11 @@ blocks `Δⱼ u`.
   (`TemperedDistribution.exists_fourierMultiplierCLM_inv_smul_eq_and_norm_le`), in particular the
   truncations `S_{N+1} = ∑_{j ≤ N} Δⱼ`
   (`TemperedDistribution.exists_littlewoodPaleyLowPass_succ_eq_and_norm_le`).
+* `TemperedDistribution.littlewoodPaleyBlockLp` and
+  `TemperedDistribution.toTemperedDistribution_littlewoodPaleyBlockLp`: the blocks as bounded
+  operators on `Lᵖ`, `1 ≤ p ≤ ∞`.
+* `TemperedDistribution.littlewoodPaleyBlock_mem_closure_range_schwartz_toLp`: the blocks preserve
+  the `Lᵖ` closure of the Schwartz functions.
 * `TemperedDistribution.ae_eq_convolution_of_littlewoodPaleyBlock_eq`: on `Lᵖ`, the block `Δⱼ` is
   convolution with `𝓕⁻ ψⱼ`.
 * `TemperedDistribution.exists_eLpNorm_littlewoodPaleyBlock_smul_sub_smul_le`: the commutator of
@@ -1002,6 +1011,28 @@ theorem littlewoodPaleyBlock_delta_zero (j : ℕ) :
   ext u
   simp [φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j, mul_comm]
 
+/-- **The Littlewood–Paley blocks of a plane wave.** The block `Δⱼ` multiplies the plane wave
+`𝓕⁻ δ_ξ` by the value `ψⱼ(ξ)` of the `j`-th piece of the partition. -/
+@[simp]
+theorem littlewoodPaleyBlock_fourierInv_delta (j : ℕ) (ξ : E) :
+    littlewoodPaleyBlock ℂ φ j (𝓕⁻ (delta ξ)) =
+      (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) • 𝓕⁻ (delta ξ) := by
+  rw [littlewoodPaleyBlock_apply, fourierMultiplierCLM_fourierInv_delta
+    (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
+
+/-- **A plane wave of low frequency is its own low-frequency block.** If `‖ξ‖ ≤ φ.rIn`, then the
+plane wave `𝓕⁻ δ_ξ` is its block `Δ₀`, and all its other blocks vanish. -/
+theorem littlewoodPaleyBlock_fourierInv_delta_of_norm_le {ξ : E} (h : ‖ξ‖ ≤ φ.rIn) (k : ℕ) :
+    littlewoodPaleyBlock ℂ φ k (𝓕⁻ (delta ξ)) = if k = 0 then 𝓕⁻ (delta ξ) else 0 := by
+  rw [littlewoodPaleyBlock_fourierInv_delta]
+  rcases k with _ | k
+  · rw [φ.inhomogeneousLittlewoodPaley_zero,
+      φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 h)]
+    simp
+  · rw [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le
+      (h.trans (le_mul_of_one_le_left φ.rIn_pos.le (one_le_pow₀ one_le_two)))]
+    simp
+
 section Lp
 
 open MeasureTheory
@@ -1013,6 +1044,16 @@ theorem littlewoodPaleyBlock_delta_zero_eq_toLp (j : ℕ) (p : ℝ≥0∞) [Fact
       ((𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).toLp p (volume : Measure E) :
         𝓢'(E, ℂ)) := by
   rw [Lp.toTemperedDistribution_toLp_eq, littlewoodPaleyBlock_delta_zero]
+
+/-- **The Littlewood–Paley blocks of the constant `1`.** The constant function `1`, the tempered
+distribution `volume.toTemperedDistribution`, is its own low-frequency block `Δ₀`, and its blocks
+`Δⱼ`, `j ≥ 1`, vanish. -/
+@[simp]
+theorem littlewoodPaleyBlock_toTemperedDistribution_volume (k : ℕ) :
+    littlewoodPaleyBlock ℂ φ k (volume : Measure E).toTemperedDistribution =
+      if k = 0 then (volume : Measure E).toTemperedDistribution else 0 := by
+  rw [← fourierInv_delta_zero]
+  exact littlewoodPaleyBlock_fourierInv_delta_of_norm_le φ (by simpa using φ.rIn_pos.le) k
 
 variable {φ} in
 /-- If the `j`-th Littlewood–Paley block of `u` is the `Lᵖ` function `f`, then the `j`-th block of
@@ -1070,6 +1111,57 @@ theorem exists_enlargedLittlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] (L 
             (Nat.sub_le_sub_right (Nat.le_add_right j 1) L)
       _ = 2 * L * max C₀ 0 * ‖f‖ := by ring
 
+variable (F) in
+/-- The `j`-th Littlewood–Paley block as a bounded operator on `Lᵖ`, for `1 ≤ p ≤ ∞`. -/
+noncomputable def littlewoodPaleyBlockLp [CompleteSpace F] (p : ℝ≥0∞) [Fact (1 ≤ p)] (j : ℕ) :
+    Lp F p (volume : Measure E) →L[ℂ] Lp F p (volume : Measure E) :=
+  let hC := (exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ).choose_spec
+  let i : Lp F p (volume : Measure E) →ₗ[ℂ] 𝓢'(E, F) :=
+    (Lp.toTemperedDistributionCLM F volume p).toLinearMap
+  let B : Lp F p (volume : Measure E) →ₗ[ℂ] 𝓢'(E, F) :=
+    (littlewoodPaleyBlock F φ j).toLinearMap ∘ₗ i
+  have hmem : ∀ u, B u ∈ LinearMap.range i :=
+    fun u ↦ let ⟨g, hg, _⟩ := hC j u; ⟨g, hg.symm⟩
+  let T₀ := LinearMap.codRestrictOfInjective B i Lp.toTemperedDistribution_injective hmem
+  T₀.mkContinuous (exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ).choose fun u ↦ by
+    obtain ⟨g, hg, hgn⟩ := hC j u
+    have hT₀ : (T₀ u : 𝓢'(E, F)) = littlewoodPaleyBlock F φ j (u : 𝓢'(E, F)) :=
+      LinearMap.codRestrictOfInjective_comp_apply B i Lp.toTemperedDistribution_injective hmem u
+    have hug : T₀ u = g := Lp.toTemperedDistribution_injective (hT₀.trans hg)
+    simpa only [hug] using hgn
+
+/-- The tempered distribution of `littlewoodPaleyBlockLp F φ p j u` is
+`littlewoodPaleyBlock F φ j (u : 𝓢'(E, F))`. -/
+@[simp]
+theorem toTemperedDistribution_littlewoodPaleyBlockLp [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (j : ℕ) (u : Lp F p (volume : Measure E)) :
+    (littlewoodPaleyBlockLp F φ p j u : 𝓢'(E, F)) =
+      littlewoodPaleyBlock F φ j (u : 𝓢'(E, F)) := by
+  dsimp only [littlewoodPaleyBlockLp]
+  exact LinearMap.codRestrictOfInjective_comp_apply _
+    (Lp.toTemperedDistributionCLM F volume p).toLinearMap Lp.toTemperedDistribution_injective _ u
+
+/-- **Littlewood–Paley blocks preserve the `Lᵖ` closure of Schwartz functions.** If `f ∈ Lᵖ` lies in
+the `Lᵖ` closure of the Schwartz functions and its block `Δⱼ f` is represented by `v ∈ Lᵖ`, then
+`v` also lies in the `Lᵖ` closure of the Schwartz functions. -/
+theorem littlewoodPaleyBlock_mem_closure_range_schwartz_toLp [CompleteSpace F]
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] {f : Lp F p (volume : Measure E)}
+    (hf : f ∈ closure (Set.range fun g : 𝓢(E, F) ↦ g.toLp p)) {j : ℕ}
+    {v : Lp F p (volume : Measure E)}
+    (hv : littlewoodPaleyBlock F φ j (f : 𝓢'(E, F)) = v) :
+    v ∈ closure (Set.range fun g : 𝓢(E, F) ↦ g.toLp p) := by
+  have hvT : v = littlewoodPaleyBlockLp F φ p j f :=
+    Lp.toTemperedDistribution_injective
+      (hv.symm.trans (toTemperedDistribution_littlewoodPaleyBlockLp φ j f).symm)
+  rw [hvT]
+  refine map_mem_closure (littlewoodPaleyBlockLp F φ p j).continuous hf fun _ ⟨g, hg⟩ ↦ ?_
+  refine ⟨SchwartzMap.fourierMultiplierCLM F
+    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) g,
+    Lp.toTemperedDistribution_injective ?_⟩
+  dsimp only
+  rw [← hg, toTemperedDistribution_littlewoodPaleyBlockLp, Lp.toTemperedDistribution_toLp_eq,
+    Lp.toTemperedDistribution_toLp_eq, littlewoodPaleyBlock_toTemperedDistributionCLM_eq]
+
 /-- **The low-pass truncations are bounded on `Lᵖ` uniformly in the scale.** For every
 `1 ≤ p ≤ ∞`, every `R ≠ 0` and every `f ∈ Lᵖ`, the truncation `𝓕⁻ (φ (R⁻¹ ·) • 𝓕 f)` is a
 function in `Lᵖ` with norm at most `‖𝓕⁻ φ‖₁ ‖f‖_p`: its kernel is an `L¹`-normalised dilate of
@@ -1105,8 +1197,6 @@ theorem littlewoodPaleyLowPass_eq_sum [CompleteSpace F] {p : ℝ≥0∞} [Fact (
   rw [littlewoodPaleyLowPass_def, _root_.sum_apply, Lp.toTemperedDistribution_sum]
   exact Finset.sum_congr rfl fun k _ ↦ hz k
 
-open ContinuousLinearMap in
-open scoped Convolution in
 open ContinuousLinearMap in
 open scoped Convolution in
 /-- **The blocks of an `Lᵖ` function are convolutions.** For `1 ≤ p, q ≤ ∞` and `h ∈ Lᵖ`, if the

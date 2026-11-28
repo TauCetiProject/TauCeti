@@ -89,34 +89,13 @@ variable (R k M)
 For a real normed space `E` and `y : E`, the map `Hⁿ(E, E ∖ {y}) ⟶ Hⁿ_c(E)` is an isomorphism.
 -/
 instance isIso_compactSupportCohomologyι_singleton (y : E) (n : ℕ) :
-    IsIso (compactSupportCohomologyι (R := R) (k := k) (M := M) (X := of E) n {y}) := by
+    IsIso (compactSupportCohomologyι (R := R) (k := k) (M := M) (X := of E) n {y}) :=
   -- Every compact `K ⊆ E` lies in the compact union of the segments from `y` to the points of
   -- `K`, which is star-convex about `y`, and for such sets the restriction
   -- `Hⁿ(E, E ∖ {y}) ⟶ Hⁿ(E, E ∖ K)` is an isomorphism.
-  rw [ConcreteCategory.isIso_iff_bijective]
-  refine ⟨(injective_iff_map_eq_zero _).2 fun z hz ↦ ?_, fun x ↦ ?_⟩
-  · obtain ⟨L, hL, hzL⟩ := (compactSupportCohomologyι_eq_zero_iff z).1 hz
-    have := isIso_singularCohomologyMap_singleton_starHull (R := R) (k := k)
-      (M := M) y L n
-    refine (injective_iff_map_eq_zero _).1
-      ((ConcreteCategory.bijective_of_isIso (TopPair.singularCohomologyMap (R := R) (k := k)
-        (M := M) (TopPair.ofSubsetMap (𝟙 (of E))
-          (mapsTo_id_compl_compacts (Compacts.singleton_le_starHull (E := E) ℝ y L))) n)).1) z ?_
-    rw [← singularCohomologyMap_ofSubsetMap_id_trans hL (Compacts.le_starHull (E := E) ℝ y L),
-      ConcreteCategory.comp_apply, hzL, map_zero]
-  · obtain ⟨L, -, w, rfl⟩ := exists_compactSupportCohomologyι_eq x {y}
-    have := isIso_singularCohomologyMap_singleton_starHull (R := R) (k := k)
-      (M := M) y L n
-    obtain ⟨z, hz⟩ := (ConcreteCategory.bijective_of_isIso (TopPair.singularCohomologyMap
-      (R := R) (k := k) (M := M) (TopPair.ofSubsetMap (𝟙 (of E))
-        (mapsTo_id_compl_compacts (Compacts.singleton_le_starHull (E := E) ℝ y L))) n)).2
-      (TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 (of E))
-        (mapsTo_id_compl_compacts (Compacts.le_starHull (E := E) ℝ y L))) n w)
-    refine ⟨z, ?_⟩
-    rw [← singularCohomologyMap_comp_compactSupportCohomologyι_apply n
-      (Compacts.singleton_le_starHull (E := E) ℝ y L), hz,
-      singularCohomologyMap_comp_compactSupportCohomologyι_apply n
-        (Compacts.le_starHull (E := E) ℝ y L)]
+  isIso_compactSupportCohomologyι_of_forall_exists fun L ↦
+    ⟨Compacts.starHull ℝ y L, Compacts.singleton_le_starHull ℝ y L, Compacts.le_starHull ℝ y L,
+      isIso_singularCohomologyMap_singleton_starHull (R := R) (k := k) (M := M) y L n⟩
 
 /-- **Cohomology with compact supports of a real normed space**: `Hⁿ_c(E) ≅ Hⁿ(E, E ∖ {y})` for
 every point `y : E`, the inverse of the isomorphism `compactSupportCohomologyι` from the local

@@ -40,10 +40,13 @@ n x)` are all `1` for `φ = 0`.
 * `TauCeti.topologicalPressure_zero` — `P(T, 0)` is the topological entropy `coverEntropy T univ`.
 * `TauCeti.topologicalPressure_mono` — pressure is monotone in the potential.
 * `TauCeti.topologicalPressure_add_const` — `P(T, φ + c) = P(T, φ) + c`.
+* `TauCeti.topologicalPressure_const` — `P(T, c) = h(T) + c` for a constant potential `c`.
 * `TauCeti.pressureNetSum_monotone_time` — for a nonnegative potential the pressure sums are
   monotone in time.
 * `TauCeti.topologicalPressure_id` — for the identity of a nonempty finite space,
   `P(id, φ) = max_x φ x`.
+* `TauCeti.topologicalPressure_eq_iSup_basis` — the supremum may be taken over any basis of the
+  uniformity.
 
 The net-based definitions and their antitonicity lemmas are modelled on `netMaxcard` and
 `netEntropyEntourage` in Mathlib's `Mathlib/Dynamics/TopologicalEntropy/NetEntropy.lean`
@@ -134,6 +137,18 @@ theorem topologicalPressure_le_iff [UniformSpace X] {a : EReal} :
     topologicalPressure T φ ≤ a ↔ ∀ U ∈ 𝓤 X, netPressureEntourage T φ U ≤ a :=
   iSup₂_le_iff
 
+/-- The topological pressure is the supremum of the pressure at the entourages of any basis of
+the uniformity. The statement and proof follow Mathlib's `Dynamics.coverEntropy_eq_iSup_basis`
+and its net-entropy variant `Dynamics.coverEntropy_eq_iSup_basis_netEntropyEntourage`. -/
+theorem topologicalPressure_eq_iSup_basis [UniformSpace X] {ι : Sort*} {p : ι → Prop}
+    {s : ι → SetRel X X} (h : (𝓤 X).HasBasis p s) (T : X → X) (φ : X → ℝ) :
+    topologicalPressure T φ = ⨆ (i : ι) (_ : p i), netPressureEntourage T φ (s i) := by
+  refine (topologicalPressure_le_iff.2 fun U hU ↦ ?_).antisymm
+    (iSup₂_le fun i hi ↦ netPressureEntourage_le_topologicalPressure (h.mem_of_mem hi))
+  obtain ⟨i, hi, hsU⟩ := h.mem_iff.1 hU
+  exact (netPressureEntourage_antitone T φ hsU).trans
+    (le_iSup₂ (f := fun (i : ι) (_ : p i) ↦ netPressureEntourage T φ (s i)) i hi)
+
 /-- For the zero potential the pressure sum is the maximal cardinality `netMaxcard T univ U n` of a
 `(U, n)`-dynamical net. -/
 @[simp]
@@ -208,6 +223,13 @@ theorem topologicalPressure_add_const [UniformSpace X] (T : X → X) (φ : X →
     topologicalPressure T (fun x ↦ φ x + c) = topologicalPressure T φ + c := by
   simp only [topologicalPressure, netPressureEntourage_add_const, iSup_subtype',
     AddQuantale.iSup_add_distrib]
+
+/-- The pressure of a constant potential `c` is the topological entropy plus `c`. -/
+@[simp]
+theorem topologicalPressure_const [UniformSpace X] (T : X → X) (c : ℝ) :
+    topologicalPressure T (fun _ ↦ c) = coverEntropy T univ + c := by
+  simpa only [Pi.zero_apply, zero_add, topologicalPressure_zero] using
+    topologicalPressure_add_const T 0 c
 
 /-- The pressure of the identity of a nonempty finite uniform space is the maximum of the
 potential: `P(id, φ) = max_x φ x`. -/

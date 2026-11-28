@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import TauCeti.AlgebraicGeometry.Chow.Basic
+import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
+import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 import TauCeti.Topology.KrullDimension.Basic
 import TauCeti.Topology.LocallyFinsupp.Finsupp
 import TauCeti.Topology.Sober
@@ -51,6 +53,20 @@ open AlgebraicGeometry Order TopologicalSpace
 universe u
 
 namespace TauCeti.AlgebraicGeometry.Chow
+
+open AlgebraicGeometry.Scheme.IdealSheafData in
+/-- The reduced closure of a point of dimension `d` is a closed subscheme of Krull
+dimension `d`. -/
+theorem topologicalKrullDim_subscheme_vanishingIdeal_closure_of_mem_pointsOfDimension
+    {X : Scheme.{u}} {d : ℕ} {x : X} (hx : x ∈ pointsOfDimension X d) :
+    topologicalKrullDim (vanishingIdeal ⟨closure {x}, isClosed_closure⟩).subscheme = d := by
+  obtain ⟨n, hn, hn'⟩ := mem_pointsOfDimension.mp hx
+  obtain rfl : n = d := by omega
+  let I := vanishingIdeal (⟨closure {x}, isClosed_closure⟩ : Closeds X)
+  have h := I.subschemeι.height_apply_eq_height (genericPoint I.subscheme)
+  rw [subschemeι_genericPoint_vanishingIdeal_closure_singleton, hn] at h
+  rw [← (genericPoint_spec I.subscheme).height_eq_topologicalKrullDim, ← h]
+  norm_cast
 
 /-! ### Cycles on a quasi-compact scheme -/
 

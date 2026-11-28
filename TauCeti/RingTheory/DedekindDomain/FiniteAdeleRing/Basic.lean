@@ -77,6 +77,8 @@ approximates `a`.
   common denominator in `R`.
 * `IsDedekindDomain.FiniteAdeleRing.exists_forall_valued_sub_le_and_forall_valued_sub_le_one`:
   strong approximation with explicit precision at finitely many places and integrality everywhere.
+* `IsDedekindDomain.FiniteAdeleRing.exists_sub_algebraMap_mem_integralAdeles`: every finite adele
+  differs from a diagonal element by an integral finite adele.
 * `IsDedekindDomain.FiniteAdeleRing.denseRange_algebraMap`: `K` is dense in the finite adele ring.
 * `IsDedekindDomain.FiniteAdeleRing.closure_image_algebraMap_integer` and
   `IsDedekindDomain.FiniteAdeleRing.closure_range_algebraMap`: the closure of the `S`-integers in
@@ -448,6 +450,15 @@ theorem exists_forall_sub_algebraMap_mem_adicCompletionIntegers (a : FiniteAdele
     rw [mem_adicCompletionIntegers]
     exact hx v
   simpa only [neg_sub] using neg_mem hxa
+
+/-- Every finite adele differs from a diagonal element by an element of the subalgebra
+`integralAdeles` of integral finite adeles. -/
+theorem exists_sub_algebraMap_mem_integralAdeles (a : FiniteAdeleRing R K) :
+    ∃ x : K, a - algebraMap K (FiniteAdeleRing R K) x ∈ integralAdeles R K :=
+  (exists_forall_sub_algebraMap_mem_adicCompletionIntegers a).imp fun _ hx ↦
+    mem_integralAdeles.mpr fun v ↦ by
+      rw [sub_apply, algebraMap_apply]
+      exact hx v
 
 /-- **Every neighbourhood of `0` in the finite adele ring contains a basic congruence
 neighbourhood.**  There are a finite set `I` of places and exponents `n` such that every finite

@@ -8,21 +8,26 @@ module
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.ArithmeticFunction.CompletelyMultiplicative
 public import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.ArithmeticFunction.Misc
 
 /-!
-# Arithmetic functions of products of Dirichlet characters
+# Arithmetic functions of Dirichlet characters
 
 The product of characters of different levels is taken at their least common multiple. On
 natural numbers it is the pointwise product, including at primes dividing either level.
 These comparisons allow products of Dirichlet L-functions to be handled on their actual
 coefficient functions. A character's arithmetic function is completely multiplicative.
+The finite harmonic form of the twisted von Mangoldt convolution expresses the sum of
+`χ(n) log(n) / n` in terms of sums of `χ(n) / n`. The coefficients `χ(n) μ(n)` of the
+Möbius twist are bounded in norm by one.
 -/
 
 public section
 
 namespace DirichletCharacter
 
-open ArithmeticFunction
+open ArithmeticFunction Finset
+open scoped LSeries.notation ArithmeticFunction.Moebius
 
 section CommMonoidWithZero
 
@@ -57,6 +62,13 @@ theorem isCompletelyMultiplicative_toArithmeticFunction (χ : DirichletCharacter
 
 end CommMonoidWithZero
 
+/-- The coefficients of the Möbius-twisted Dirichlet character have norm at most one. -/
+theorem norm_mul_moebius_le_one {N : ℕ} (χ : DirichletCharacter ℂ N) (n : ℕ) :
+    ‖χ n * (μ n : ℂ)‖ ≤ 1 := by
+  rw [norm_mul]
+  have hμ : ‖(μ n : ℂ)‖ ≤ 1 := by exact_mod_cast ArithmeticFunction.abs_moebius_le_one (n := n)
+  exact (mul_le_of_le_one_right (norm_nonneg _) hμ).trans (χ.norm_le_one n)
+
 /-- On `Re s > 1`, a character's arithmetic function has an absolutely convergent
 Dirichlet series with sum equal to its continued L-function. -/
 theorem LSeriesHasSum_toArithmeticFunction {N : ℕ} [NeZero N]
@@ -65,5 +77,27 @@ theorem LSeriesHasSum_toArithmeticFunction {N : ℕ} [NeZero N]
   rw [χ.LFunction_eq_LSeries hs]
   exact (LSeriesHasSum_congr s _ χ.apply_eq_toArithmeticFunction_apply).mp
     (ZMod.LSeriesSummable_of_one_lt_re χ hs).LSeriesHasSum
+
+/-- The finite harmonic form of the twisted von Mangoldt convolution identity. -/
+theorem sum_mul_log_div_eq_sum_mul_vonMangoldt_div_mul_sum_div {N : ℕ}
+    (χ : DirichletCharacter ℂ N) (m : ℕ) :
+    ∑ n ∈ Ioc 0 m, χ n * (Real.log n : ℂ) / (n : ℂ) =
+      ∑ d ∈ Ioc 0 m, (χ d * (Λ d : ℂ) / (d : ℂ)) *
+        ∑ n ∈ Ioc 0 (m / d), χ n / (n : ℂ) := by
+  have h := ArithmeticFunction.sum_Ioc_mul_smul_eq_sum_sum
+    (toArithmeticFunction (↗χ * ↗Λ)) (toArithmeticFunction (↗χ))
+    (fun n : ℕ ↦ (n : ℂ)⁻¹) m
+  rw [← LSeries.convolution, χ.convolution_twist_vonMangoldt] at h
+  refine Eq.trans ?_ (h.trans ?_)
+  · refine sum_congr rfl fun n _ ↦ ?_
+    simp [div_eq_mul_inv, smul_eq_mul, mul_assoc, mul_left_comm]
+  · refine sum_congr rfl fun d hd ↦ ?_
+    have hd₀ : d ≠ 0 := (mem_Ioc.mp hd).1.ne'
+    simp only [smul_eq_mul, toArithmeticFunction, ArithmeticFunction.coe_mk,
+      hd₀, ite_false, Pi.mul_apply, Finset.mul_sum]
+    refine sum_congr rfl fun n hn ↦ ?_
+    have hn₀ : n ≠ 0 := (mem_Ioc.mp hn).1.ne'
+    simp [hn₀, Nat.cast_mul, div_eq_mul_inv]
+    ring
 
 end DirichletCharacter

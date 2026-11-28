@@ -65,10 +65,10 @@ theorem d24RootIsometry_apply
 /-- Inverting the root-coordinate map recovers the sole component. -/
 @[simp]
 theorem d24RootIsometry_symm_apply_zero (y : Fin 24 → ℚ) :
-    d24RootIsometry.symm y ⟨0, by decide⟩ =
+    d24RootIsometry.symm y 0 =
       (rootLatticeIsometryCheckerboard 24 (by decide) (isSimplyLaced_D 24)).symm y := by
   apply EquivLike.injective (rootLatticeIsometryCheckerboard 24 (by decide) (isSimplyLaced_D 24))
-  simpa only [IntegralLattice.Isometry.apply_symm_apply] using
+  simpa only [IntegralLattice.Isometry.apply_symm_apply, Fin.mk_zero'] using
     (d24RootIsometry_apply (d24RootIsometry.symm y)).symm
 
 private noncomputable def spinorWord : RootfulNiemeierType.d24.glueModule :=

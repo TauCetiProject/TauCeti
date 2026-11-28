@@ -21,6 +21,7 @@ supplies, divided by `f` generate `(I : f)`.
 The colon conditions `r I ⊆ J` compose under multiplication of the scalars, and a power
 `x ^ (j - i)` of an element of `I` carries `I ^ i` into `I ^ j`. These conditions say when
 multiplication by a scalar induces a map between the quotients `M ⧸ I M` and `M ⧸ J M`.
+Pullback along a surjective ring homomorphism commutes with colon of ideals.
 
 ## Main results
 
@@ -28,6 +29,8 @@ multiplication by a scalar induces a map between the quotients `M ⧸ I M` and `
   multiples of the ambient module lie in the submodule.
 * `Submodule.comap_colon_singleton`: the ideal `(N : x)` of `R` is the preimage of the ideal
   `(N : x)` of `S`.
+* `Ideal.comap_colon_of_surjective`: pullback along a surjective ring homomorphism commutes with
+  colon of ideals.
 * `Ideal.inf_span_singleton_eq_span_singleton_mul_colon`: `I ∩ (f) = f · (I : f)`.
 * `Ideal.colon_singleton_eq_of_inf_span_singleton_eq`: for regular `f`, if `I ∩ (f) = f · J`
   then `(I : f) = J`.
@@ -67,6 +70,18 @@ theorem Submodule.comap_colon_singleton (N : Submodule S M) (x : M) :
   simp [Submodule.mem_colon_singleton]
 
 namespace Ideal
+
+/-- Pullback along a surjective ring homomorphism commutes with colon of ideals. -/
+theorem comap_colon_of_surjective {R S F : Type*} [Semiring R] [Semiring S]
+    [FunLike F R S] [RingHomClass F R S] {f : F} (hf : Function.Surjective f)
+    (I J : Ideal S) :
+    (I.colon (J : Set S)).comap f = (I.comap f).colon (J.comap f : Set R) := by
+  ext x
+  simp only [mem_comap, Submodule.mem_colon, smul_eq_mul, SetLike.mem_coe]
+  refine ⟨fun h y hy ↦ ?_, fun h y hy ↦ ?_⟩
+  · simpa only [map_mul] using h (f y) hy
+  · obtain ⟨z, rfl⟩ := hf y
+    simpa only [map_mul] using h z hy
 
 variable {R : Type*} [CommSemiring R] {I J : Ideal R} {f : R}
 

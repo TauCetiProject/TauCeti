@@ -9,80 +9,83 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.Geometry.Manifold.Morse.Cell.Comparison
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
-public import TauCeti.Geometry.Sphere.Circle
+public import TauCeti.Topology.Algebra.Projectivization
+public import TauCeti.Topology.Sphere.StandardCircle
+import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
+import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Circle
 import TauCeti.Analysis.InnerProductSpace.Reflection
+import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Geometry.Manifold.Projectivization.Map
 
 /-!
-# Morse cells of the real projective plane
+# Morse cells of the real projective plane with attaching maps of degree `±2`
 
-The function `f[x : y : z] = (y² + 2z²) / (x² + y² + z²)` on `ℝℙ² = ℙ ℝ (Fin 3 → ℝ)` is the
-projective moment function `TauCeti.projectiveMomentFunction ℝ ![0, 1, 2]`. Its maximum is the
-point `[0 : 0 : 1]`, at the level `2`, of index `2`. This file works out the top cell of `ℝℙ²`
-attached there, for every width `0 < ε < 1`, in two normal-form charts, as a test of the attaching
-maps `OpenPartialHomeomorph.morseAttachingMap` and the cell attachments
-`TauCeti.morseCellAttachment` on a compact manifold whose lower sublevel is not simply connected.
+On the real projective plane `ℝP² = ℙ ℝ (Fin 3 → ℝ)` consider the height
+`f [x : y : z] = (y² + 2z²) / (x² + y² + z²)`, the projective moment function with weights
+`(0, 1, 2)` (`TauCeti.projectiveMomentFunction ℝ ![0, 1, 2]`), with minimum
+`[1 : 0 : 0]`, saddle `[0 : 1 : 0]` and maximum `[0 : 0 : 1]` at the values `0`, `1`, `2`. This
+file computes the cell attached when passing the maximum, as an example of how the attaching maps
+of Morse cells (`OpenPartialHomeomorph.morseAttachingMap`) and the cell attachments
+(`TauCeti.morseCellAttachment`) depend on the chosen normal-form chart, on a compact manifold whose
+lower sublevel is not simply connected.
 
-The normalized chart `TauCeti.realProjPlaneTopChart` sends `[x : y : z]`, `z ≠ 0`, to
-
-`w = (√2 x / z, y / z) / √(1 + (x / z)² + (y / z)²)`,
-
-an open partial homeomorphism onto the ellipse `{w₀² / 2 + w₁² < 1}` in which `f = 2 - w₀² - w₁²`.
-Its inverse is `w ↦ [w₀ / √2 : w₁ : √(1 - w₀² / 2 - w₁²)]`. For `ε < 1` the closed ball of radius
-`√ε` fits in the chart, and `[0 : 0 : 1]` is the only critical point in the band
-`f⁻¹[2 - ε, 2 + ε]`, which is compact since `ℝℙ²` is. The attaching map of this chart is
-
-`α₊(s) = [√ε s₀ / √2 : √ε s₁ : √(1 - ε (s₀² / 2 + s₁²))]`,
-
-a map of the circle `∂D²` into the lower sublevel `{f ≤ 2 - ε}`, a Möbius band around the
-projective line `{z = 0}`. The opposite chart `TauCeti.realProjPlaneTopReflChart` reflects
-the first coordinate, `r(w₀, w₁) = (-w₀, w₁)`. Its attaching and characteristic maps are strictly
-`α₋ = α₊ ∘ r` and `χ₋ = χ₊ ∘ r`, so the identity of `{f ≤ 2 - ε}` together with `r` on the disc is a
+In the affine coordinates `a = x / z`, `b = y / z` around the maximum, the chart
+`(a, b) ↦ (√2 a, b) / √(1 + a² + b²)` (`TauCeti.projectivePlaneTopChart`) has target the ellipse
+`u₀² / 2 + u₁² < 1` and puts `f` in the normal form `f = 2 - u₀² - u₁²` of index `2`. So does its
+composite with the reflection `r (u₀, u₁) = (-u₀, u₁)` of the first negative coordinate
+(`TauCeti.projectivePlaneTopChartReflect`), where `r` is the reflection of `ℝ²` in the axis
+spanned by `e₁`. For `0 ≤ ε < 1` the maximum is the only critical point in the compact band
+`f⁻¹[2 - ε, 2 + ε]` (`TauCeti.criticalPoints_projectiveMomentFunction_inter_preimage_Icc`) and
+both targets contain the closed disc of radius `√ε`, so the two charts give attaching maps
+`α₊, α₋ : ∂D² → {f ≤ 2 - ε}` of the `2`-cell (`TauCeti.projectivePlaneAttachingMap`,
+`TauCeti.projectivePlaneAttachingMapReflect`),
+`w ↦ [√ε w₀ / √2 : √ε w₁ : √(1 - ε (w₀² / 2 + w₁²))]` and its reflection. They are related
+strictly by the reflection `r` of the circle: `α₋ = α₊ ∘ r`
+(`TauCeti.projectivePlaneAttachingMapReflect_eq_comp`), and the characteristic maps satisfy
+`χ₋ = χ₊ ∘ r` on the disc. So the identity of `{f ≤ 2 - ε}` together with `r` on the disc is a
 homeomorphism between the two cell attachments relative to the lower sublevel, intertwining the
-handle-to-cell comparisons into `{f ≤ 2 + ε}`.
+handle-to-cell comparisons into `{f ≤ 2 + ε}`
+(`TauCeti.exists_iso_morseCellAttachment_projectivePlaneTopChartReflect_projectivePlaneTopChart`).
 
-The two attaching maps are nevertheless not homotopic. They are told apart by the **core angle**
-`ρ[x : y : z] = (x + i y)² / (x² + y²)` on `ℝℙ² \ {[0 : 0 : 1]} = {f < 2}`
-(`TauCeti.realProjPlaneCoreAngle`): the retraction onto the core `{z = 0} ≅ ℝℙ¹` followed by
-`ℝℙ¹ ≅ S¹`. The **core degree** of a map `∂D² → {f < 2}` is the degree of its composite with `ρ`,
-with `∂D²` run through counterclockwise in the normalized negative coordinates
-(`TauCeti.realProjPlaneCoreDegree`); it is a homotopy invariant. The core circle
-`θ ↦ [cos θ : sin θ : 0]`, `0 ≤ θ ≤ π`, has core degree `1`, while `α₊` has core degree `2` and
-`α₋` has core degree `-2`: going once around `∂D²`, the boundary of the top cell runs twice
-around the core of the Möbius band, in opposite directions for the two charts.
+The lower sublevel `{f ≤ c}`, `1 ≤ c < 2`, misses the maximum, and the flattening
+`[x : y : z] ↦ [x : y : (1 - t) z]` lowers `f`. So the projection `[x : y : z] ↦ [x : y]` is a
+homotopy equivalence onto the projective line `z = 0`
+(`TauCeti.projectivePlaneSublevelHomotopyEquiv`), which is a circle by
+`[x : y] ↦ (x + i y)² / (x² + y²)` (`TauCeti.projectivePlaneSublevelCircleEquiv`). The core circle
+`t ↦ [cos πt : sin πt : 0]` (`TauCeti.projectivePlaneCoreLoop`) has degree `1` in this circle, and
+so generates `π₁({f ≤ c})` (`TauCeti.zpowers_projectivePlaneCoreLoop_eq_top`). For `0 < ε < 1`
+(at `ε = 0` both attaching maps are constant), read along the counterclockwise loop of `∂D²`
+(`TauCeti.diskBoundaryTwoLoop`), the attaching map `α₊` has degree `2` and `α₋` has degree `-2`
+(`TauCeti.degree_projectivePlaneAttachingMap`, `TauCeti.degree_projectivePlaneAttachingMapReflect`):
+`α₊` is the core circle run twice and `α₋` the reversed core circle run twice, up to homotopy
+and conjugation (`TauCeti.homotopic_projectivePlaneAttachingMap`,
+`TauCeti.homotopic_projectivePlaneAttachingMapReflect`). In particular `α₊` and `α₋` are not
+homotopic with their labelled source fixed
+(`TauCeti.not_homotopic_projectivePlaneAttachingMap_reflect`), although they differ only by the
+reflection `r` of their source and give homeomorphic cell attachments.
 
 ## Main results
 
-* `TauCeti.realProjPlaneTopChart`, `TauCeti.realProjPlaneTopReflChart` and
-  `TauCeti.projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopChart`: the two
-  normalized charts at `[0 : 0 : 1]`, in which `f = 2 - w₀² - w₁²`.
+* `TauCeti.projectiveMomentFunction_eq_of_mem_projectivePlaneTopChart_source`: the normal form at
+  the maximum.
 * `TauCeti.criticalPoints_projectiveMomentFunction_inter_preimage_Icc`: every width `0 ≤ ε < 1` is
   admissible.
-* `TauCeti.coe_morseAttachingMap_realProjPlaneTopChart_apply` and
-  `TauCeti.realProjPlaneTopChart_symm_apply_of_lt`: the attaching map `α₊` explicitly.
-* `TauCeti.morseAttachingMap_realProjPlaneTopReflChart`,
-  `TauCeti.morseCharacteristicMap_realProjPlaneTopReflChart` and
-  `TauCeti.exists_iso_morseCellAttachment_realProjPlaneTopReflChart_realProjPlaneTopChart`:
-  `α₋ = α₊ ∘ r` and `χ₋ = χ₊ ∘ r` strictly, and the resulting homeomorphism of cell attachments
-  relative to `{f ≤ 2 - ε}`.
-* `TauCeti.realProjPlaneCoreDegree_eq_degree`: the core degree of `g` is the degree of any loop
-  `t ↦ ρ (g (cos 2πt, sin 2πt))`.
-* `TauCeti.realProjPlaneCoreDegree_eq_of_homotopic`,
-  `TauCeti.coe_realProjPlaneCoreMap_apply` and
-  `TauCeti.realProjPlaneCoreDegree_realProjPlaneCoreMap`: the core degree is a homotopy
-  invariant, and the core circle `(cos θ, sin θ) ↦ [cos (θ / 2) : sin (θ / 2) : 0]` has core
-  degree `1`.
-* `TauCeti.realProjPlaneCoreDegree_morseAttachingMap_realProjPlaneTopChart` and
-  `TauCeti.realProjPlaneCoreDegree_morseAttachingMap_realProjPlaneTopReflChart`: `α₊`
-  and `α₋` have core degrees `2` and `-2`.
-* `TauCeti.not_homotopic_morseAttachingMap_realProjPlaneTopChart_realProjPlaneTopReflChart`:
-  `α₊` and `α₋` are not homotopic.
+* `TauCeti.projectivePlaneAttachingMapReflect_eq_comp`: the strict relation `α₋ = α₊ ∘ r`.
+* `TauCeti.exists_iso_morseCellAttachment_projectivePlaneTopChartReflect_projectivePlaneTopChart`:
+  the resulting homeomorphism of cell attachments relative to `{f ≤ 2 - ε}`.
+* `TauCeti.projectivePlaneSublevelHomotopyEquiv`, `TauCeti.projectivePlaneSublevelCircleEquiv`:
+  the sublevels below the maximum are homotopy equivalent to the projective line and the circle.
+* `TauCeti.degree_projectivePlaneAttachingMap`, `TauCeti.degree_projectivePlaneAttachingMapReflect`:
+  for `0 < ε < 1` the attaching maps have degrees `2` and `-2`.
+* `TauCeti.not_homotopic_projectivePlaneAttachingMap_reflect`: for `0 < ε < 1` the two attaching
+  maps are not homotopic.
 
 ## References
 
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
-  Theorem 3.2 and Lemma 3.6.
+  §3 (Theorem 3.2, Remark 3.3 and Lemma 3.6).
 * A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Example 2.42 (cellular
-  homology of `ℝℙⁿ`: the attaching map of the top cell of `ℝℙ²` has degree `2` onto the core
+  homology of `ℝPⁿ`: the attaching map of the top cell of `ℝP²` has degree `2` onto the core
   circle).
 -/
 
@@ -90,15 +93,33 @@ public section
 
 noncomputable section
 
-open Set Metric Projectivization CategoryTheory Complex
-open scoped LinearAlgebra.Projectivization Manifold ComplexConjugate
+open Set Metric Projectivization unitInterval
+open scoped ContinuousMap Manifold Real
+open scoped LinearAlgebra.Projectivization
 
 namespace TauCeti
 
-/-! ### The normalized chart at the top point -/
+/-- The height `[x : y : z] ↦ (y² + 2z²) / (x² + y² + z²)`, the projective moment function with
+weights `(0, 1, 2)`, in homogeneous coordinates. -/
+theorem projectiveMomentFunction_zero_one_two_mk (v : Fin 3 → ℝ) (hv : v ≠ 0) :
+    projectiveMomentFunction ℝ ![0, 1, 2] (mk ℝ v hv) =
+      (v 1 ^ 2 + 2 * v 2 ^ 2) / (v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2) := by
+  simp [projectiveMomentFunction_mk, Fin.sum_univ_three]
+
+/-- The homogeneous coordinates `(u₀ / √2, u₁, √(1 - u₀² / 2 - u₁²))` of the inverse of the top
+chart `TauCeti.projectivePlaneTopChart` are nonzero everywhere: if the first two vanish then
+`u = 0` and the last one is `√1 = 1`. -/
+theorem projectivePlaneTopChart_symm_coords_ne_zero (u : EuclideanSpace ℝ (Fin 2)) :
+    ![u 0 / √2, u 1, √(1 - (u 0 ^ 2 / 2 + u 1 ^ 2))] ≠ 0 := by
+  intro h
+  have h0 : u 0 / √2 = 0 := congrFun h 0
+  have h1 : u 1 = 0 := congrFun h 1
+  have h2 : √(1 - (u 0 ^ 2 / 2 + u 1 ^ 2)) = 0 := congrFun h 2
+  have hu0 : u 0 = 0 := by simpa [Real.sqrt_ne_zero'] using h0
+  simp [hu0, h1] at h2
 
 /-- The stretch `(u₀, u₁) ↦ (√2 u₀, u₁)` of `ℝ²`, carrying the open unit disc onto the open
-ellipse `{w | w₀² / 2 + w₁² < 1}`. -/
+ellipse `u₀² / 2 + u₁² < 1`. -/
 private def stretchFirst : EuclideanSpace ℝ (Fin 2) ≃ₜ EuclideanSpace ℝ (Fin 2) where
   toFun u := !₂[√2 * u 0, u 1]
   invFun w := !₂[w 0 / √2, w 1]
@@ -111,105 +132,121 @@ private def stretchFirst : EuclideanSpace ℝ (Fin 2) ≃ₜ EuclideanSpace ℝ 
   continuous_toFun := (PiLp.continuous_toLp 2 _).comp (by fun_prop)
   continuous_invFun := (PiLp.continuous_toLp 2 _).comp (by fun_prop)
 
-/-- The change of coordinates `z ↦ (√2 z₀, z₁) / √(1 + z₀² + z₁²)` from the affine plane onto the
-open ellipse `{w | w₀² / 2 + w₁² < 1}` of `ℝ²`, with inverse
-`w ↦ (w₀ / √2, w₁) / √(1 - w₀² / 2 - w₁²)`: Mathlib's radial homeomorphism
-`OpenPartialHomeomorph.univUnitBall` onto the unit disc, followed by the stretch
-`(u₀, u₁) ↦ (√2 u₀, u₁)`. Read in the affine chart `z = (x / z, y / z)` of `ℝℙ²` at
-`[0 : 0 : 1]`, it gives the normalized coordinates in which
-`(y² + 2z²) / (x² + y² + z²) = 2 - w₀² - w₁²`. -/
-def realProjPlaneTopCoord : OpenPartialHomeomorph (Fin 2 → ℝ) (EuclideanSpace ℝ (Fin 2)) :=
+/-- The top chart in the affine coordinates `a = (x / z, y / z)`,
+`a ↦ (√2 a₀, a₁) / √(1 + a₀² + a₁²)`: Mathlib's radial homeomorphism
+`OpenPartialHomeomorph.univUnitBall` onto the open unit disc, followed by the stretch
+`(u₀, u₁) ↦ (√2 u₀, u₁)` onto the open ellipse `u₀² / 2 + u₁² < 1`. -/
+private def topChartCoord : OpenPartialHomeomorph (Fin 2 → ℝ) (EuclideanSpace ℝ (Fin 2)) :=
   ((EuclideanSpace.equiv (Fin 2) ℝ).symm.toHomeomorph.transOpenPartialHomeomorph
     OpenPartialHomeomorph.univUnitBall).transHomeomorph stretchFirst
 
-@[simp]
-theorem realProjPlaneTopCoord_apply (z : Fin 2 → ℝ) :
-    realProjPlaneTopCoord z = (√(1 + z 0 ^ 2 + z 1 ^ 2))⁻¹ • !₂[√2 * z 0, z 1] := by
+private theorem topChartCoord_apply (a : Fin 2 → ℝ) :
+    topChartCoord a = (√(1 + a 0 ^ 2 + a 1 ^ 2))⁻¹ • !₂[√2 * a 0, a 1] := by
   ext j
   fin_cases j <;>
-    simp [realProjPlaneTopCoord, stretchFirst, OpenPartialHomeomorph.univUnitBall_apply,
+    simp [topChartCoord, stretchFirst, OpenPartialHomeomorph.univUnitBall_apply,
       EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, add_assoc, mul_left_comm]
 
-@[simp]
-theorem realProjPlaneTopCoord_symm_apply (w : EuclideanSpace ℝ (Fin 2)) :
-    realProjPlaneTopCoord.symm w =
-      (√(1 - (w 0 ^ 2 / 2 + w 1 ^ 2)))⁻¹ • ![w 0 / √2, w 1] := by
+private theorem topChartCoord_symm_apply (u : EuclideanSpace ℝ (Fin 2)) :
+    topChartCoord.symm u = (√(1 - (u 0 ^ 2 / 2 + u 1 ^ 2)))⁻¹ • ![u 0 / √2, u 1] := by
   ext j
   fin_cases j <;>
-    simp [realProjPlaneTopCoord, stretchFirst, OpenPartialHomeomorph.univUnitBall_symm_apply,
+    simp [topChartCoord, stretchFirst, OpenPartialHomeomorph.univUnitBall_symm_apply,
       EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, div_pow]
 
-@[simp]
-theorem realProjPlaneTopCoord_source : realProjPlaneTopCoord.source = univ := by
-  simp [realProjPlaneTopCoord, OpenPartialHomeomorph.univUnitBall_source]
+private theorem topChartCoord_source : topChartCoord.source = univ := by
+  simp [topChartCoord, OpenPartialHomeomorph.univUnitBall_source]
 
-@[simp]
-theorem realProjPlaneTopCoord_target :
-    realProjPlaneTopCoord.target = {w | w 0 ^ 2 / 2 + w 1 ^ 2 < 1} := by
-  ext w
-  simp [realProjPlaneTopCoord, stretchFirst, OpenPartialHomeomorph.univUnitBall_target,
+private theorem topChartCoord_target :
+    topChartCoord.target = {u | u 0 ^ 2 / 2 + u 1 ^ 2 < 1} := by
+  ext u
+  simp [topChartCoord, stretchFirst, OpenPartialHomeomorph.univUnitBall_target,
     ← sq_lt_one_iff₀ (norm_nonneg _), EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, div_pow]
 
-/-- The normalized Morse chart of `f[x : y : z] = (y² + 2z²) / (x² + y² + z²)` on `ℝℙ²` at its
-maximum `[0 : 0 : 1]`: on the affine open `{z ≠ 0}` it is
-`[x : y : z] ↦ (√2 x / z, y / z) / √(1 + (x / z)² + (y / z)²)`, with values in the open ellipse
-`{w | w₀² / 2 + w₁² < 1}`. In it `f = 2 - w₀² - w₁²`
-(`TauCeti.projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopChart`). -/
-def realProjPlaneTopChart :
+private theorem affineChart_two_mk_zero (v : Fin 3 → ℝ) (hv : v ≠ 0) :
+    affineChart 2 (mk ℝ v hv) 0 = v 0 / v 2 := by
+  rw [affineChart_mk]
+  rfl
+
+private theorem affineChart_two_mk_one (v : Fin 3 → ℝ) (hv : v ≠ 0) :
+    affineChart 2 (mk ℝ v hv) 1 = v 1 / v 2 := by
+  rw [affineChart_mk]
+  rfl
+
+/-- The normalized Morse chart of `projectiveMomentFunction ℝ ![0, 1, 2]` at its maximum
+`[0 : 0 : 1]`: the affine chart `z ≠ 0` followed by the radial homeomorphism onto the unit disc
+and the stretch `(u₀, u₁) ↦ (√2 u₀, u₁)`. In the affine coordinates `a = x / z`, `b = y / z` it
+is `(√2 a, b) / √(1 + a² + b²)`. Its target is the open ellipse `u₀² / 2 + u₁² < 1`, and its
+inverse there is `u ↦ [u₀ / √2 : u₁ : √(1 - u₀² / 2 - u₁²)]`. -/
+def projectivePlaneTopChart :
     OpenPartialHomeomorph (ℙ ℝ (Fin 3 → ℝ)) (EuclideanSpace ℝ (Fin 2)) :=
-  (affineOpenPartialHomeomorph 2).trans realProjPlaneTopCoord
+  (affineOpenPartialHomeomorph 2).trans topChartCoord
 
-@[simp]
-theorem realProjPlaneTopChart_source :
-    realProjPlaneTopChart.source = affineOpen 2 := by
-  simp [realProjPlaneTopChart]
-
-@[simp]
-theorem realProjPlaneTopChart_target :
-    realProjPlaneTopChart.target = {w | w 0 ^ 2 / 2 + w 1 ^ 2 < 1} := by
-  simp [realProjPlaneTopChart]
-
-theorem realProjPlaneTopChart_apply (x : ℙ ℝ (Fin 3 → ℝ)) :
-    realProjPlaneTopChart x = realProjPlaneTopCoord (affineChart 2 x) := by
-  rw [realProjPlaneTopChart, OpenPartialHomeomorph.coe_trans, Function.comp_apply,
+/-- The top chart is `topChartCoord` read in the affine chart `z ≠ 0`. -/
+private theorem projectivePlaneTopChart_apply (y : ℙ ℝ (Fin 3 → ℝ)) :
+    projectivePlaneTopChart y = topChartCoord (affineChart 2 y) := by
+  rw [projectivePlaneTopChart, OpenPartialHomeomorph.coe_trans, Function.comp_apply,
     coe_affineOpenPartialHomeomorph]
 
-theorem realProjPlaneTopChart_symm_apply (w : EuclideanSpace ℝ (Fin 2)) :
-    realProjPlaneTopChart.symm w =
-      (affineChart 2).symm (realProjPlaneTopCoord.symm w) := by
-  rw [realProjPlaneTopChart, OpenPartialHomeomorph.coe_trans_symm, Function.comp_apply,
-    coe_affineOpenPartialHomeomorph_symm]
-
-/-- The centre of the chart is the maximum `[0 : 0 : 1]`. -/
 @[simp]
-theorem realProjPlaneTopChart_symm_zero :
-    realProjPlaneTopChart.symm 0 = mk ℝ (Pi.single 2 1) (by simp) := by
-  rw [realProjPlaneTopChart_symm_apply, ← affineChart_symm_zero]
-  congr 1
-  ext j
-  fin_cases j <;> simp
+theorem projectivePlaneTopChart_source : projectivePlaneTopChart.source = affineOpen 2 := by
+  simp [projectivePlaneTopChart, topChartCoord_source]
 
-/-- In the affine chart at `[0 : 0 : 1]` the function is `(2 + z₁²) / (1 + z₀² + z₁²)`. -/
-private theorem projectiveMomentFunction_affineChart_symm (z : Fin 2 → ℝ) :
-    projectiveMomentFunction ℝ ![0, 1, 2] ((affineChart 2).symm z) =
-      (2 + z 1 ^ 2) / (1 + z 0 ^ 2 + z 1 ^ 2) := by
+@[simp]
+theorem projectivePlaneTopChart_target :
+    projectivePlaneTopChart.target = {u | u 0 ^ 2 / 2 + u 1 ^ 2 < 1} := by
+  simp [projectivePlaneTopChart, topChartCoord_target]
+
+/-- The top chart in homogeneous coordinates: with `a = x / z` and `b = y / z`, it sends
+`[x : y : z]` to `(√2 a, b) / √(1 + a² + b²)`. -/
+theorem projectivePlaneTopChart_apply_mk (v : Fin 3 → ℝ) (hv : v ≠ 0) :
+    projectivePlaneTopChart (mk ℝ v hv) = (√(1 + (v 0 / v 2) ^ 2 + (v 1 / v 2) ^ 2))⁻¹ •
+      !₂[√2 * (v 0 / v 2), v 1 / v 2] := by
+  rw [projectivePlaneTopChart_apply, topChartCoord_apply, affineChart_two_mk_zero,
+    affineChart_two_mk_one]
+
+/-- The inverse of the top chart in homogeneous coordinates on its target ellipse:
+`u ↦ [u₀ / √2 : u₁ : √(1 - u₀² / 2 - u₁²)]`. -/
+theorem projectivePlaneTopChart_symm_apply {u : EuclideanSpace ℝ (Fin 2)}
+    (hu : u ∈ projectivePlaneTopChart.target) :
+    projectivePlaneTopChart.symm u = mk ℝ ![u 0 / √2, u 1, √(1 - (u 0 ^ 2 / 2 + u 1 ^ 2))]
+      (projectivePlaneTopChart_symm_coords_ne_zero u) := by
+  rw [projectivePlaneTopChart_target, mem_ofPred_eq] at hu
+  have hs : 0 < √(1 - (u 0 ^ 2 / 2 + u 1 ^ 2)) := Real.sqrt_pos.2 (sub_pos.2 hu)
+  rw [projectivePlaneTopChart, OpenPartialHomeomorph.coe_trans_symm, Function.comp_apply,
+    coe_affineOpenPartialHomeomorph_symm, topChartCoord_symm_apply, affineChart_symm_apply,
+    mk_eq_mk_iff']
+  refine ⟨(√(1 - (u 0 ^ 2 / 2 + u 1 ^ 2)))⁻¹, ?_⟩
+  ext j
+  fin_cases j <;> simp [Fin.insertNth, Fin.succAboveCases, hs.ne', mul_comm]
+
+/-- The inverse chart sends the origin to the maximum `[0 : 0 : 1]`. -/
+@[simp]
+theorem projectivePlaneTopChart_symm_zero :
+    projectivePlaneTopChart.symm 0 = mk ℝ ![0, 0, 1] (by simp) := by
+  rw [projectivePlaneTopChart_symm_apply (by simp)]
+  simp
+
+/-- In the affine chart at `[0 : 0 : 1]` the height is `(2 + a₁²) / (1 + a₀² + a₁²)`. -/
+private theorem projectiveMomentFunction_affineChart_symm (a : Fin 2 → ℝ) :
+    projectiveMomentFunction ℝ ![0, 1, 2] ((affineChart 2).symm a) =
+      (2 + a 1 ^ 2) / (1 + a 0 ^ 2 + a 1 ^ 2) := by
   rw [← Function.comp_apply (f := projectiveMomentFunction ℝ ![0, 1, 2]),
     projectiveMomentFunction_comp_affineChart_symm, ProjectiveMomentChart.model_apply]
   simp [Fin.sum_univ_two, Fin.succAbove]
   ring
 
-/-- **Normal form at the maximum.** In the chart `TauCeti.realProjPlaneTopChart`,
-`f[x : y : z] = (y² + 2z²) / (x² + y² + z²)` is `2 - w₀² - w₁²`, so `[0 : 0 : 1]` is a critical
-point of index `2` at the level `2`. -/
-theorem projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopChart :
-    ∀ y ∈ realProjPlaneTopChart.source, projectiveMomentFunction ℝ ![0, 1, 2] y =
-      2 + ∑ j : Fin 2, (if j.val < 2 then -1 else 1) * realProjPlaneTopChart y j ^ 2 := by
-  intro y hy
-  obtain ⟨z, rfl⟩ : ∃ z, (affineChart 2).symm z = y :=
+/-- **The normal form at the maximum.** In the top chart the height is
+`2 - u₀² - u₁²`, the normal form `c - Σ_{j < 2} uⱼ²` of index `2` at the value `c = 2`. -/
+theorem projectiveMomentFunction_eq_of_mem_projectivePlaneTopChart_source {y : ℙ ℝ (Fin 3 → ℝ)}
+    (hy : y ∈ projectivePlaneTopChart.source) :
+    projectiveMomentFunction ℝ ![0, 1, 2] y = 2 + ∑ j : Fin 2,
+      (if j.val < 2 then -1 else 1) * projectivePlaneTopChart y j ^ 2 := by
+  obtain ⟨a, rfl⟩ : ∃ a, (affineChart 2).symm a = y :=
     ⟨affineChart 2 y, (affineChart 2).left_inv (by simpa using hy)⟩
-  have hs : 0 < 1 + z 0 ^ 2 + z 1 ^ 2 := by positivity
-  simp only [realProjPlaneTopChart_apply, projectiveMomentFunction_affineChart_symm,
-    (affineChart 2).right_inv (by simp : z ∈ (affineChart 2).target), realProjPlaneTopCoord_apply,
+  have hs : 0 < 1 + a 0 ^ 2 + a 1 ^ 2 := by positivity
+  simp only [projectivePlaneTopChart_apply, projectiveMomentFunction_affineChart_symm,
+    (affineChart 2).right_inv (by simp : a ∈ (affineChart 2).target), topChartCoord_apply,
     Fin.sum_univ_two]
   simp only [PiLp.smul_apply, smul_eq_mul, Matrix.cons_val_zero, Matrix.cons_val_one, mul_pow,
     inv_pow, Real.sq_sqrt hs.le, Real.sq_sqrt zero_le_two]
@@ -217,69 +254,82 @@ theorem projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopChart :
   field_simp
   ring
 
-/-- For `ε < 1` the closed ball of radius `√ε` lies in the target ellipse of the chart, so every
-width `ε < 1` fits the chart. -/
-theorem closedBall_subset_realProjPlaneTopChart_target {ε : ℝ} (hε : ε < 1) :
-    closedBall 0 √ε ⊆ realProjPlaneTopChart.target := by
-  intro w hw
-  rw [mem_closedBall_zero_iff] at hw
-  have hn : w 0 ^ 2 + w 1 ^ 2 < 1 := by
-    have h := pow_le_pow_left₀ (norm_nonneg w) hw 2
-    rw [EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, Real.norm_eq_abs, Real.norm_eq_abs, sq_abs,
-      sq_abs] at h
-    exact h.trans_lt (by rw [Real.sq_sqrt']; exact max_lt hε one_pos)
-  rw [realProjPlaneTopChart_target, mem_ofPred_eq]
-  nlinarith [sq_nonneg (w 0)]
+/-- The target of the top chart contains the closed ball of radius `√ε` for `ε < 1`: the ellipse
+`u₀² / 2 + u₁² < 1` contains the open unit disc. -/
+theorem closedBall_subset_projectivePlaneTopChart_target {ε : ℝ} (hε : ε < 1) :
+    closedBall 0 √ε ⊆ projectivePlaneTopChart.target := fun u hu ↦ by
+  have h := EuclideanSpace.real_norm_sq_eq u
+  rw [Fin.sum_univ_two] at h
+  have hu' : ‖u‖ ^ 2 ≤ √ε ^ 2 := pow_le_pow_left₀ (norm_nonneg u) (mem_closedBall_zero_iff.1 hu) 2
+  have hε' : √ε ^ 2 < 1 := by
+    rcases le_or_gt ε 0 with h0 | h0
+    · simp [Real.sqrt_eq_zero'.2 h0]
+    · rwa [Real.sq_sqrt h0.le]
+  rw [projectivePlaneTopChart_target, mem_ofPred_eq]
+  nlinarith [sq_nonneg (u 0)]
 
-/-- The opposite normalized chart at `[0 : 0 : 1]`: `TauCeti.realProjPlaneTopChart` followed
-by the reflection `(w₀, w₁) ↦ (-w₀, w₁)` of the first negative coordinate. -/
-def realProjPlaneTopReflChart :
+/-- The top chart followed by the reflection `(u₀, u₁) ↦ (-u₀, u₁)` of its first negative
+coordinate, the reflection of `ℝ²` in the axis spanned by `e₁`: a second normalized Morse chart at
+the maximum `[0 : 0 : 1]`. -/
+def projectivePlaneTopChartReflect :
     OpenPartialHomeomorph (ℙ ℝ (Fin 3 → ℝ)) (EuclideanSpace ℝ (Fin 2)) :=
-  realProjPlaneTopChart.transHomeomorph
+  projectivePlaneTopChart.transHomeomorph
     (ℝ ∙ EuclideanSpace.single 1 (1 : ℝ)).reflection.toHomeomorph
 
+/-- The reflected chart has the same source as the top chart. -/
 @[simp]
-theorem realProjPlaneTopReflChart_source :
-    realProjPlaneTopReflChart.source = affineOpen 2 := by
-  simp [realProjPlaneTopReflChart]
+theorem projectivePlaneTopChartReflect_source :
+    projectivePlaneTopChartReflect.source = affineOpen 2 := by
+  simp [projectivePlaneTopChartReflect]
 
-theorem realProjPlaneTopReflChart_apply (x : ℙ ℝ (Fin 3 → ℝ)) :
-    realProjPlaneTopReflChart x =
-      (ℝ ∙ EuclideanSpace.single 1 (1 : ℝ)).reflection (realProjPlaneTopChart x) :=
+/-- The reflected chart has the same target as the top chart, the ellipse `u₀² / 2 + u₁² < 1`. -/
+@[simp]
+theorem projectivePlaneTopChartReflect_target :
+    projectivePlaneTopChartReflect.target = {u | u 0 ^ 2 / 2 + u 1 ^ 2 < 1} := by
+  ext u
+  simp [projectivePlaneTopChartReflect, Submodule.reflection_symm]
+
+/-- The reflected chart is the top chart followed by the reflection in the axis spanned by
+`e₁`. -/
+theorem projectivePlaneTopChartReflect_apply (y : ℙ ℝ (Fin 3 → ℝ)) :
+    projectivePlaneTopChartReflect y =
+      (ℝ ∙ EuclideanSpace.single 1 (1 : ℝ)).reflection (projectivePlaneTopChart y) :=
   (rfl)
 
-theorem realProjPlaneTopReflChart_symm_apply (w : EuclideanSpace ℝ (Fin 2)) :
-    realProjPlaneTopReflChart.symm w =
-      realProjPlaneTopChart.symm ((ℝ ∙ EuclideanSpace.single 1 (1 : ℝ)).reflection w) := by
-  simp [realProjPlaneTopReflChart, Submodule.reflection_symm]
+/-- The first coordinate of the reflected chart is the negative of that of the top chart. -/
+@[simp]
+theorem projectivePlaneTopChartReflect_apply_zero (y : ℙ ℝ (Fin 3 → ℝ)) :
+    projectivePlaneTopChartReflect y 0 = -projectivePlaneTopChart y 0 := by
+  simp [projectivePlaneTopChartReflect_apply]
 
-/-- **Normal form at the maximum in the opposite chart.** -/
-theorem projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopReflChart :
-    ∀ y ∈ realProjPlaneTopReflChart.source, projectiveMomentFunction ℝ ![0, 1, 2] y =
-      2 + ∑ j : Fin 2, (if j.val < 2 then -1 else 1) * realProjPlaneTopReflChart y j ^ 2 := by
-  intro y hy
-  rw [projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopChart y (by simpa using hy)]
-  simp [realProjPlaneTopReflChart_apply, Fin.sum_univ_two]
+/-- The second coordinate of the reflected chart is that of the top chart. -/
+@[simp]
+theorem projectivePlaneTopChartReflect_apply_one (y : ℙ ℝ (Fin 3 → ℝ)) :
+    projectivePlaneTopChartReflect y 1 = projectivePlaneTopChart y 1 := by
+  simp [projectivePlaneTopChartReflect_apply]
 
-/-- For `ε < 1` the closed ball of radius `√ε` lies in the target of the opposite chart. -/
-theorem closedBall_subset_realProjPlaneTopReflChart_target {ε : ℝ} (hε : ε < 1) :
-    closedBall 0 √ε ⊆ realProjPlaneTopReflChart.target := by
-  intro w hw
-  have h := closedBall_subset_realProjPlaneTopChart_target hε
-    (by simpa using hw : (ℝ ∙ EuclideanSpace.single 1 (1 : ℝ)).reflection w ∈ closedBall 0 √ε)
-  simpa [realProjPlaneTopReflChart, Submodule.reflection_symm] using h
+/-- The inverse of the reflected chart is the inverse of the top chart after the reflection
+`(u₀, u₁) ↦ (-u₀, u₁)` in the axis spanned by `e₁`. -/
+theorem projectivePlaneTopChartReflect_symm_apply (u : EuclideanSpace ℝ (Fin 2)) :
+    projectivePlaneTopChartReflect.symm u =
+      projectivePlaneTopChart.symm ((ℝ ∙ EuclideanSpace.single 1 (1 : ℝ)).reflection u) := by
+  simp [projectivePlaneTopChartReflect, Submodule.reflection_symm]
 
-/-- In homogeneous coordinates the inverse of the chart is
-`w ↦ [w₀ / √2 : w₁ : √(1 - w₀² / 2 - w₁²)]` on its target ellipse. -/
-theorem realProjPlaneTopChart_symm_apply_of_lt {w : EuclideanSpace ℝ (Fin 2)}
-    (hw : w 0 ^ 2 / 2 + w 1 ^ 2 < 1) :
-    realProjPlaneTopChart.symm w = mk ℝ ![w 0 / √2, w 1, √(1 - (w 0 ^ 2 / 2 + w 1 ^ 2))]
-      (fun h ↦ (Real.sqrt_pos.2 (sub_pos.2 hw)).ne' (by simpa using congrFun h 2)) := by
-  have hs : 0 < √(1 - (w 0 ^ 2 / 2 + w 1 ^ 2)) := Real.sqrt_pos.2 (sub_pos.2 hw)
-  rw [realProjPlaneTopChart_symm_apply, affineChart_symm_apply, mk_eq_mk_iff']
-  refine ⟨(√(1 - (w 0 ^ 2 / 2 + w 1 ^ 2)))⁻¹, ?_⟩
-  ext j
-  fin_cases j <;> simp [Fin.insertNth, Fin.succAboveCases, hs.ne', mul_comm]
+/-- The normal form at the maximum in the reflected chart. -/
+theorem projectiveMomentFunction_eq_of_mem_projectivePlaneTopChartReflect_source
+    {y : ℙ ℝ (Fin 3 → ℝ)}
+    (hy : y ∈ projectivePlaneTopChartReflect.source) :
+    projectiveMomentFunction ℝ ![0, 1, 2] y = 2 + ∑ j : Fin 2,
+      (if j.val < 2 then -1 else 1) * projectivePlaneTopChartReflect y j ^ 2 := by
+  rw [projectiveMomentFunction_eq_of_mem_projectivePlaneTopChart_source (by simpa using hy),
+    Fin.sum_univ_two, Fin.sum_univ_two, projectivePlaneTopChartReflect_apply_zero,
+    projectivePlaneTopChartReflect_apply_one, neg_sq]
+
+/-- The target of the reflected chart contains the closed ball of radius `√ε` for `ε < 1`. -/
+theorem closedBall_subset_projectivePlaneTopChartReflect_target {ε : ℝ} (hε : ε < 1) :
+    closedBall 0 √ε ⊆ projectivePlaneTopChartReflect.target := by
+  rw [projectivePlaneTopChartReflect_target, ← projectivePlaneTopChart_target]
+  exact closedBall_subset_projectivePlaneTopChart_target hε
 
 /-! ### Admissibility of the widths `0 ≤ ε < 1` -/
 
@@ -288,7 +338,7 @@ private theorem injective_weights : Function.Injective (![0, 1, 2] : Fin 3 → �
   fin_cases i <;> fin_cases j <;> norm_num at h <;> rfl
 
 /-- For `0 ≤ ε < 1` the only critical point of `f[x : y : z] = (y² + 2z²) / (x² + y² + z²)` in the
-band `f⁻¹[2 - ε, 2 + ε]` is the maximum `[0 : 0 : 1]`. (The band is compact, as `ℝℙ²` is.) -/
+band `f⁻¹[2 - ε, 2 + ε]` is the maximum `[0 : 0 : 1]`. (The band is compact, as `ℝP²` is.) -/
 theorem criticalPoints_projectiveMomentFunction_inter_preimage_Icc {ε : ℝ} (hε₀ : 0 ≤ ε)
     (hε₁ : ε < 1) :
     criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ ![0, 1, 2]) ∩
@@ -309,463 +359,505 @@ theorem criticalPoints_projectiveMomentFunction_inter_preimage_Icc {ε : ℝ} (h
     rw [projectiveMomentFunction_mk_single]
     constructor <;> simp <;> linarith
 
-/-! ### The attaching maps of the top cell -/
+/-! ### The attaching maps of the cell of the maximum -/
 
 section Attaching
 
 variable {ε : ℝ}
 
-/-- The cell parametrization of `TauCeti.realProjPlaneTopChart` is `w ↦ ψ⁻¹(√ε w)`. -/
-theorem morseCellMap_realProjPlaneTopChart (w : EuclideanSpace ℝ (Fin 2)) :
-    realProjPlaneTopChart.morseCellMap le_rfl ε w =
-      realProjPlaneTopChart.symm (√ε • w) := by
+/-- The cell parametrization of the top chart is `w ↦ ψ⁻¹(√ε • w)`. -/
+theorem morseCellMap_projectivePlaneTopChart (w : EuclideanSpace ℝ (Fin 2)) :
+    projectivePlaneTopChart.morseCellMap le_rfl ε w = projectivePlaneTopChart.symm (√ε • w) := by
   rw [OpenPartialHomeomorph.morseCellMap_def]
   congr 2
   ext j
   simp
 
-/-- The cell parametrization of the opposite chart is that of `TauCeti.realProjPlaneTopChart`
-precomposed with the reflection `(w₀, w₁) ↦ (-w₀, w₁)`. -/
-theorem morseCellMap_realProjPlaneTopReflChart (w : EuclideanSpace ℝ (Fin 2)) :
-    realProjPlaneTopReflChart.morseCellMap le_rfl ε w =
-      realProjPlaneTopChart.morseCellMap le_rfl ε
+/-- The cell parametrization of the reflected chart is that of the top chart precomposed with the
+reflection `(w₀, w₁) ↦ (-w₀, w₁)` in the axis spanned by `e₁`. -/
+theorem morseCellMap_projectivePlaneTopChartReflect (w : EuclideanSpace ℝ (Fin 2)) :
+    projectivePlaneTopChartReflect.morseCellMap le_rfl ε w =
+      projectivePlaneTopChart.morseCellMap le_rfl ε
         ((ℝ ∙ EuclideanSpace.single 1 (1 : ℝ)).reflection w) := by
-  rw [morseCellMap_realProjPlaneTopChart, OpenPartialHomeomorph.morseCellMap_def,
-    realProjPlaneTopReflChart_symm_apply, map_smul]
+  rw [morseCellMap_projectivePlaneTopChart, OpenPartialHomeomorph.morseCellMap_def,
+    projectivePlaneTopChartReflect_symm_apply, map_smul]
   congr 3
   ext j
   simp
 
-variable (hε₀ : 0 ≤ ε) (hε₁ : ε < 1)
+/-- The attaching map `α₊ : ∂D² → {f ≤ 2 - ε}` of the cell of the maximum in the top chart,
+`OpenPartialHomeomorph.morseAttachingMap` for `projectivePlaneTopChart`, at level `2 - ε`. -/
+abbrev projectivePlaneAttachingMap (hε : 0 ≤ ε) (hε1 : ε < 1) :
+    TopCat.diskBoundary.{0} 2 ⟶ TopCat.of {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ 2 - ε} :=
+  projectivePlaneTopChart.morseAttachingMap le_rfl hε
+    (closedBall_subset_projectivePlaneTopChart_target hε1)
+    (fun _ ↦ projectiveMomentFunction_eq_of_mem_projectivePlaneTopChart_source)
 
-/-- The attaching map `α₊ : ∂D² → {f ≤ 2 - ε}` of the top cell of `ℝℙ²` in the chart
-`ψ = TauCeti.realProjPlaneTopChart` is `s ↦ ψ⁻¹(√ε s)`; by
-`TauCeti.realProjPlaneTopChart_symm_apply_of_lt` this is the point
-`[√ε s₀ / √2 : √ε s₁ : √(1 - ε (s₀² / 2 + s₁²))]`. -/
-theorem coe_morseAttachingMap_realProjPlaneTopChart_apply (s : TopCat.diskBoundary.{0} 2) :
-    (realProjPlaneTopChart.morseAttachingMap le_rfl hε₀
-        (closedBall_subset_realProjPlaneTopChart_target hε₁)
-        projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopChart s :
-          ℙ ℝ (Fin 3 → ℝ)) =
-      realProjPlaneTopChart.symm (√ε • s.down) := by
-  rw [OpenPartialHomeomorph.coe_morseAttachingMap_apply, morseCellMap_realProjPlaneTopChart]
+/-- The attaching map `α₋ : ∂D² → {f ≤ 2 - ε}` of the cell of the maximum in the reflected chart,
+`OpenPartialHomeomorph.morseAttachingMap` for `projectivePlaneTopChartReflect`. -/
+abbrev projectivePlaneAttachingMapReflect (hε : 0 ≤ ε) (hε1 : ε < 1) :
+    TopCat.diskBoundary.{0} 2 ⟶ TopCat.of {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ 2 - ε} :=
+  projectivePlaneTopChartReflect.morseAttachingMap le_rfl hε
+    (closedBall_subset_projectivePlaneTopChartReflect_target hε1)
+    (fun _ ↦ projectiveMomentFunction_eq_of_mem_projectivePlaneTopChartReflect_source)
 
-/-- The attaching maps of the two charts differ strictly by the reflection
-`r : (w₀, w₁) ↦ (-w₀, w₁)` of the disc: `α₋ = α₊ ∘ r` on `∂D²`. -/
-theorem morseAttachingMap_realProjPlaneTopReflChart :
-    realProjPlaneTopReflChart.morseAttachingMap le_rfl hε₀
-        (closedBall_subset_realProjPlaneTopReflChart_target hε₁)
-        projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopReflChart =
-      (ℝ ∙ EuclideanSpace.single 1 (1 : ℝ)).reflection.diskBoundaryIso.hom ≫
-        realProjPlaneTopChart.morseAttachingMap le_rfl hε₀
-          (closedBall_subset_realProjPlaneTopChart_target hε₁)
-          projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopChart := by
-  ext s
-  rw [ConcreteCategory.comp_apply, OpenPartialHomeomorph.coe_morseAttachingMap_apply,
-    OpenPartialHomeomorph.coe_morseAttachingMap_apply, morseCellMap_realProjPlaneTopReflChart,
+/-- The attaching map `∂D² → {f ≤ 2 - ε}` of the top chart is `w ↦ ψ⁻¹(√ε • w)`. -/
+theorem coe_projectivePlaneAttachingMap_apply (hε : 0 ≤ ε) (hε1 : ε < 1)
+    (w : TopCat.diskBoundary.{0} 2) :
+    (projectivePlaneAttachingMap hε hε1 w : ℙ ℝ (Fin 3 → ℝ)) =
+      projectivePlaneTopChart.symm (√ε • (w.down : EuclideanSpace ℝ (Fin 2))) := by
+  rw [OpenPartialHomeomorph.coe_morseAttachingMap_apply, morseCellMap_projectivePlaneTopChart]
+
+/-- The attaching map of the reflected chart at `w` is the attaching map of the top chart at the
+reflection `r w = (-w₀, w₁)` of `w` in the axis spanned by `e₁`. -/
+theorem projectivePlaneAttachingMapReflect_apply (hε : 0 ≤ ε) (hε1 : ε < 1)
+    (w : TopCat.diskBoundary.{0} 2) :
+    projectivePlaneAttachingMapReflect hε hε1 w = projectivePlaneAttachingMap hε hε1
+      ((ℝ ∙ EuclideanSpace.single 1 (1 : ℝ)).reflection.diskBoundaryIso.hom w) := by
+  refine Subtype.ext ?_
+  rw [OpenPartialHomeomorph.coe_morseAttachingMap_apply,
+    OpenPartialHomeomorph.coe_morseAttachingMap_apply, morseCellMap_projectivePlaneTopChartReflect,
     LinearIsometryEquiv.coe_diskBoundaryIso_hom_apply_down]
 
-/-- The characteristic maps of the two charts differ strictly by the same reflection:
-`χ₋ = χ₊ ∘ r` on `D²`. -/
-theorem morseCharacteristicMap_realProjPlaneTopReflChart :
-    realProjPlaneTopReflChart.morseCharacteristicMap le_rfl hε₀
-        (closedBall_subset_realProjPlaneTopReflChart_target hε₁)
-        projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopReflChart =
+open CategoryTheory in
+/-- **The two attaching maps differ strictly by a reflection.** The attaching map of the reflected
+chart is the attaching map of the top chart precomposed with the reflection
+`r (w₀, w₁) = (-w₀, w₁)` of the boundary circle in the axis spanned by `e₁`: `α₋ = α₊ ∘ r`. -/
+theorem projectivePlaneAttachingMapReflect_eq_comp (hε : 0 ≤ ε) (hε1 : ε < 1) :
+    projectivePlaneAttachingMapReflect hε hε1 =
+      (ℝ ∙ EuclideanSpace.single 1 (1 : ℝ)).reflection.diskBoundaryIso.hom ≫
+        projectivePlaneAttachingMap hε hε1 :=
+  TopCat.ext (projectivePlaneAttachingMapReflect_apply hε hε1)
+
+open CategoryTheory in
+/-- The characteristic maps `D² → {f ≤ 2 + ε}` of the two charts differ strictly by the same
+reflection: `χ₋ = χ₊ ∘ r` on `D²`. -/
+theorem morseCharacteristicMap_projectivePlaneTopChartReflect (hε : 0 ≤ ε) (hε1 : ε < 1) :
+    projectivePlaneTopChartReflect.morseCharacteristicMap le_rfl hε
+        (closedBall_subset_projectivePlaneTopChartReflect_target hε1)
+        (fun _ ↦ projectiveMomentFunction_eq_of_mem_projectivePlaneTopChartReflect_source) =
       (ℝ ∙ EuclideanSpace.single 1 (1 : ℝ)).reflection.diskIso.hom ≫
-        realProjPlaneTopChart.morseCharacteristicMap le_rfl hε₀
-          (closedBall_subset_realProjPlaneTopChart_target hε₁)
-          projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopChart := by
+        projectivePlaneTopChart.morseCharacteristicMap le_rfl hε
+          (closedBall_subset_projectivePlaneTopChart_target hε1)
+          (fun _ ↦ projectiveMomentFunction_eq_of_mem_projectivePlaneTopChart_source) := by
   ext w
   rw [ConcreteCategory.comp_apply, OpenPartialHomeomorph.coe_morseCharacteristicMap_apply,
     OpenPartialHomeomorph.coe_morseCharacteristicMap_apply,
-    morseCellMap_realProjPlaneTopReflChart, LinearIsometryEquiv.coe_diskIso_hom_apply_down]
+    morseCellMap_projectivePlaneTopChartReflect, LinearIsometryEquiv.coe_diskIso_hom_apply_down]
 
-/-- Since `α₋ = α₊ ∘ r` strictly, the map which is the identity on the lower sublevel
-`{f ≤ 2 - ε}` and the reflection `r` on the disc is a homeomorphism between the two cell
-attachments `{f ≤ 2 - ε} ∪_{α₋} D² ≅ {f ≤ 2 - ε} ∪_{α₊} D²`, relative to the lower sublevel. Since
-also `χ₋ = χ₊ ∘ r`, it intertwines the handle-to-cell comparisons into `{f ≤ 2 + ε}`. -/
-theorem exists_iso_morseCellAttachment_realProjPlaneTopReflChart_realProjPlaneTopChart :
-    ∃ Φ : morseCellAttachment (fun _ : Unit ↦ realProjPlaneTopReflChart) (fun _ ↦ 2)
-        (fun _ ↦ le_rfl) hε₀ (fun _ ↦ closedBall_subset_realProjPlaneTopReflChart_target hε₁)
-        (fun _ ↦ projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopReflChart) ≅
-      morseCellAttachment (fun _ : Unit ↦ realProjPlaneTopChart) (fun _ ↦ 2)
-        (fun _ ↦ le_rfl) hε₀ (fun _ ↦ closedBall_subset_realProjPlaneTopChart_target hε₁)
-        (fun _ ↦ projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopChart),
-      morseCellAttachmentIncl (fun _ : Unit ↦ realProjPlaneTopReflChart) (fun _ ↦ 2)
-          (fun _ ↦ le_rfl) hε₀
-          (fun _ ↦ closedBall_subset_realProjPlaneTopReflChart_target hε₁)
-          (fun _ ↦ projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopReflChart) ≫
+open CategoryTheory in
+/-- **The two cell attachments are homeomorphic.** Since `α₋ = α₊ ∘ r` strictly, the map which is
+the identity on the lower sublevel `{f ≤ 2 - ε}` and the reflection `r` on the disc is a
+homeomorphism between the two cell attachments `{f ≤ 2 - ε} ∪_{α₋} D² ≅ {f ≤ 2 - ε} ∪_{α₊} D²`,
+relative to the lower sublevel. Since also `χ₋ = χ₊ ∘ r`, it intertwines the handle-to-cell
+comparisons into `{f ≤ 2 + ε}`. -/
+theorem exists_iso_morseCellAttachment_projectivePlaneTopChartReflect_projectivePlaneTopChart
+    (hε : 0 ≤ ε) (hε1 : ε < 1) :
+    ∃ Φ : morseCellAttachment (fun _ : Unit ↦ projectivePlaneTopChartReflect) (fun _ ↦ 2)
+        (fun _ ↦ le_rfl) hε (fun _ ↦ closedBall_subset_projectivePlaneTopChartReflect_target hε1)
+        (fun _ _ ↦ projectiveMomentFunction_eq_of_mem_projectivePlaneTopChartReflect_source) ≅
+      morseCellAttachment (fun _ : Unit ↦ projectivePlaneTopChart) (fun _ ↦ 2)
+        (fun _ ↦ le_rfl) hε (fun _ ↦ closedBall_subset_projectivePlaneTopChart_target hε1)
+        (fun _ _ ↦ projectiveMomentFunction_eq_of_mem_projectivePlaneTopChart_source),
+      morseCellAttachmentIncl (fun _ : Unit ↦ projectivePlaneTopChartReflect) (fun _ ↦ 2)
+          (fun _ ↦ le_rfl) hε
+          (fun _ ↦ closedBall_subset_projectivePlaneTopChartReflect_target hε1)
+          (fun _ _ ↦ projectiveMomentFunction_eq_of_mem_projectivePlaneTopChartReflect_source) ≫
           Φ.hom =
-        morseCellAttachmentIncl (fun _ : Unit ↦ realProjPlaneTopChart) (fun _ ↦ 2)
-          (fun _ ↦ le_rfl) hε₀ (fun _ ↦ closedBall_subset_realProjPlaneTopChart_target hε₁)
-          (fun _ ↦ projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopChart) ∧
-      morseCellAttachmentCell (fun _ : Unit ↦ realProjPlaneTopReflChart) (fun _ ↦ 2)
-          (fun _ ↦ le_rfl) hε₀
-          (fun _ ↦ closedBall_subset_realProjPlaneTopReflChart_target hε₁)
-          (fun _ ↦ projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopReflChart) () ≫
+        morseCellAttachmentIncl (fun _ : Unit ↦ projectivePlaneTopChart) (fun _ ↦ 2)
+          (fun _ ↦ le_rfl) hε (fun _ ↦ closedBall_subset_projectivePlaneTopChart_target hε1)
+          (fun _ _ ↦ projectiveMomentFunction_eq_of_mem_projectivePlaneTopChart_source) ∧
+      morseCellAttachmentCell (fun _ : Unit ↦ projectivePlaneTopChartReflect) (fun _ ↦ 2)
+          (fun _ ↦ le_rfl) hε
+          (fun _ ↦ closedBall_subset_projectivePlaneTopChartReflect_target hε1)
+          (fun _ _ ↦ projectiveMomentFunction_eq_of_mem_projectivePlaneTopChartReflect_source) () ≫
           Φ.hom =
         (ℝ ∙ EuclideanSpace.single 1 (1 : ℝ)).reflection.diskIso.hom ≫
-          morseCellAttachmentCell (fun _ : Unit ↦ realProjPlaneTopChart) (fun _ ↦ 2)
-            (fun _ ↦ le_rfl) hε₀ (fun _ ↦ closedBall_subset_realProjPlaneTopChart_target hε₁)
-            (fun _ ↦ projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopChart) () ∧
-      Φ.hom ≫ morseCellComparison (fun _ : Unit ↦ realProjPlaneTopChart) (fun _ ↦ 2)
-          (fun _ ↦ le_rfl) hε₀ (fun _ ↦ closedBall_subset_realProjPlaneTopChart_target hε₁)
-          (fun _ ↦ projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopChart) =
-        morseCellComparison (fun _ : Unit ↦ realProjPlaneTopReflChart) (fun _ ↦ 2)
-          (fun _ ↦ le_rfl) hε₀
-          (fun _ ↦ closedBall_subset_realProjPlaneTopReflChart_target hε₁)
-          (fun _ ↦ projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopReflChart) := by
+          morseCellAttachmentCell (fun _ : Unit ↦ projectivePlaneTopChart) (fun _ ↦ 2)
+            (fun _ ↦ le_rfl) hε (fun _ ↦ closedBall_subset_projectivePlaneTopChart_target hε1)
+            (fun _ _ ↦ projectiveMomentFunction_eq_of_mem_projectivePlaneTopChart_source) () ∧
+      Φ.hom ≫ morseCellComparison (fun _ : Unit ↦ projectivePlaneTopChart) (fun _ ↦ 2)
+          (fun _ ↦ le_rfl) hε (fun _ ↦ closedBall_subset_projectivePlaneTopChart_target hε1)
+          (fun _ _ ↦ projectiveMomentFunction_eq_of_mem_projectivePlaneTopChart_source) =
+        morseCellComparison (fun _ : Unit ↦ projectivePlaneTopChartReflect) (fun _ ↦ 2)
+          (fun _ ↦ le_rfl) hε
+          (fun _ ↦ closedBall_subset_projectivePlaneTopChartReflect_target hε1)
+          (fun _ _ ↦ projectiveMomentFunction_eq_of_mem_projectivePlaneTopChartReflect_source) := by
   set r : EuclideanSpace ℝ (Fin 2) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 2) :=
     (ℝ ∙ EuclideanSpace.single 1 (1 : ℝ)).reflection
-  have hα : ∀ _ : Unit, realProjPlaneTopReflChart.morseAttachingMap le_rfl hε₀
-        (closedBall_subset_realProjPlaneTopReflChart_target hε₁)
-        projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopReflChart =
-      r.diskBoundaryIso.hom ≫ realProjPlaneTopChart.morseAttachingMap le_rfl hε₀
-          (closedBall_subset_realProjPlaneTopChart_target hε₁)
-          projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopChart :=
-    fun _ ↦ morseAttachingMap_realProjPlaneTopReflChart hε₀ hε₁
-  refine ⟨morseCellAttachmentIso (fun _ : Unit ↦ realProjPlaneTopChart)
-    (fun _ : Unit ↦ realProjPlaneTopReflChart) (fun _ ↦ 2) (fun _ ↦ le_rfl) hε₀
-    (fun _ ↦ closedBall_subset_realProjPlaneTopChart_target hε₁)
-    (fun _ ↦ closedBall_subset_realProjPlaneTopReflChart_target hε₁)
-    (fun _ ↦ projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopChart)
-    (fun _ ↦ projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopReflChart)
+  refine ⟨morseCellAttachmentIso (fun _ : Unit ↦ projectivePlaneTopChart)
+    (fun _ : Unit ↦ projectivePlaneTopChartReflect) (fun _ ↦ 2) (fun _ ↦ le_rfl) hε
+    (fun _ ↦ closedBall_subset_projectivePlaneTopChart_target hε1)
+    (fun _ ↦ closedBall_subset_projectivePlaneTopChartReflect_target hε1)
+    (fun _ _ ↦ projectiveMomentFunction_eq_of_mem_projectivePlaneTopChart_source)
+    (fun _ _ ↦ projectiveMomentFunction_eq_of_mem_projectivePlaneTopChartReflect_source)
     (fun _ ↦ r.diskIso) (fun _ ↦ r.diskBoundaryIso)
-    (fun _ ↦ LinearIsometryEquiv.diskBoundaryIso_hom_comp_diskBoundaryInclusion _) hα,
-    by simp, by simp, ?_⟩
+    (fun _ ↦ LinearIsometryEquiv.diskBoundaryIso_hom_comp_diskBoundaryInclusion _)
+    (fun _ ↦ projectivePlaneAttachingMapReflect_eq_comp hε hε1), by simp, by simp, ?_⟩
   exact morseCellAttachmentIso_hom_comp_morseCellComparison _ _ _ _ _ _ _ _ _ _ _ _ _
-    fun _ ↦ morseCharacteristicMap_realProjPlaneTopReflChart hε₀ hε₁
+    fun _ ↦ morseCharacteristicMap_projectivePlaneTopChartReflect hε hε1
 
 end Attaching
 
-/-! ### Squared directions in the plane -/
+/-! ### The lower sublevels are homotopy equivalent to the projective line `z = 0` -/
 
-/-- The squared direction `(x + i y)² / (x² + y²)` of a nonzero vector `(x, y)` of the plane, a
-point of the unit circle which does not change when `(x, y)` is rescaled by a nonzero real. -/
-private def sqDir (x y : ℝ) : ℂ :=
-  ((x : ℂ) + y * I) ^ 2 / ((x ^ 2 + y ^ 2 : ℝ) : ℂ)
+section Sublevel
 
-private theorem norm_sqDir {x y : ℝ} (h : 0 < x ^ 2 + y ^ 2) : ‖sqDir x y‖ = 1 := by
-  rw [sqDir, norm_div, norm_pow, Complex.sq_norm, normSq_add_mul_I, norm_real,
-    Real.norm_of_nonneg h.le, div_self h.ne']
+/-- The linear map `(x, y, z) ↦ (x, y)`. -/
+private def dropLast : (Fin 3 → ℝ) →ₗ[ℝ] Fin 2 → ℝ :=
+  LinearMap.funLeft ℝ ℝ Fin.castSucc
 
-private theorem sqDir_mul {t : ℝ} (ht : t ≠ 0) (x y : ℝ) : sqDir (t * x) (t * y) = sqDir x y := by
-  have ht' : ((t : ℂ) ^ 2) ≠ 0 := pow_ne_zero 2 (ofReal_ne_zero.2 ht)
-  rw [sqDir, sqDir, ← mul_div_mul_left _ (((x ^ 2 + y ^ 2 : ℝ) : ℂ)) ht']
-  push_cast
-  ring_nf
+/-- The linear map `(x, y) ↦ (x, y, 0)`. -/
+private def addLast : (Fin 2 → ℝ) →ₗ[ℝ] Fin 3 → ℝ :=
+  Function.ExtendByZero.linearMap ℝ ℝ Fin.castSucc
 
-private theorem sqDir_neg_left (x y : ℝ) : sqDir (-x) y = conj (sqDir x y) := by
-  simp only [sqDir, map_div₀, map_pow, map_add, map_mul, conj_ofReal, conj_I]
-  congr 1
-  · push_cast; ring
-  · push_cast; ring
+private theorem dropLast_apply (v : Fin 3 → ℝ) : dropLast v = ![v 0, v 1] := by
+  ext i
+  fin_cases i <;> rfl
 
-private theorem continuousAt_sqDir {X : Type*} [TopologicalSpace X] {x y : X → ℝ} {p : X}
-    (hx : Continuous x) (hy : Continuous y) (hp : 0 < x p ^ 2 + y p ^ 2) :
-    ContinuousAt (fun q ↦ sqDir (x q) (y q)) p := by
-  have hnum : Continuous fun q ↦ ((x q : ℂ) + y q * I) ^ 2 :=
-    ((continuous_ofReal.comp hx).add ((continuous_ofReal.comp hy).mul continuous_const)).pow 2
-  have hden : Continuous fun q ↦ ((x q ^ 2 + y q ^ 2 : ℝ) : ℂ) :=
-    continuous_ofReal.comp ((hx.pow 2).add (hy.pow 2))
-  exact hnum.continuousAt.div hden.continuousAt (ofReal_ne_zero.2 hp.ne')
+private theorem addLast_apply (w : Fin 2 → ℝ) : addLast w = ![w 0, w 1, 0] := by
+  ext i
+  fin_cases i
+  · exact (Fin.castSucc_injective 2).extend_apply w 0 0
+  · exact (Fin.castSucc_injective 2).extend_apply w 0 1
+  · exact Function.extend_apply' _ _ _ fun ⟨a, ha⟩ ↦ (Fin.castSucc_lt_last a).ne ha
 
-/-- The squared direction of the point `(a cos θ, sin θ)` of an ellipse. -/
-private def ellipseAngle (a θ : ℝ) : ℂ :=
-  sqDir (a * Real.cos θ) (Real.sin θ)
+private theorem addLast_injective : Function.Injective addLast :=
+  Function.extend_injective (Fin.castSucc_injective 2) 0
 
-private theorem ellipseAngle_one (θ : ℝ) : ellipseAngle 1 θ = Circle.exp (2 * θ) := by
-  rw [ellipseAngle, sqDir, Circle.coe_exp, one_mul, Real.cos_sq_add_sin_sq, ofReal_one, div_one,
-    ofReal_cos, ofReal_sin, ← exp_mul_I, ← exp_natCast_mul]
-  push_cast
-  ring_nf
+private theorem dropLast_addLast (w : Fin 2 → ℝ) : dropLast (addLast w) = w := by
+  rw [addLast_apply, dropLast_apply]
+  ext i
+  fin_cases i <;> rfl
 
-/-- A loop in the circle which follows the squared direction of the ellipse
-`θ ↦ (a cos θ, sin θ)`, `a > 0`, once around has degree `2`. -/
-private theorem degree_eq_two_of_ellipseAngle {a : ℝ} (ha : 0 < a) {x : Circle} (γ : Path x x)
-    (hγ : ∀ t : unitInterval, (γ t : ℂ) = ellipseAngle a (2 * Real.pi * t)) :
-    Circle.degree γ = 2 := by
-  -- Deform the ellipse to the unit circle through the ellipses with `b = (1 - s) a + s > 0`.
-  have hb (s : unitInterval) : (1 - (s : ℝ)) * a + s ≠ 0 := by
-    have h₀ : (0 : ℝ) ≤ s := s.property.1
-    have h₁ : (s : ℝ) ≤ 1 := s.property.2
-    rcases le_or_gt (s : ℝ) (1 / 2) with h | h <;> nlinarith
-  -- The point `(b cos θ, sin θ)` of each ellipse is nonzero.
-  have hpos {b : ℝ} (hb : b ≠ 0) (θ : ℝ) : 0 < (b * Real.cos θ) ^ 2 + Real.sin θ ^ 2 := by
-    rcases eq_or_ne (Real.sin θ) 0 with hs | hs
-    · have hc : Real.cos θ ^ 2 = 1 := by nlinarith [Real.sin_sq_add_cos_sq θ]
-      rw [hs, mul_pow, hc]
-      positivity
-    · have := pow_pos (abs_pos.2 hs) 2
-      rw [sq_abs] at this
-      positivity
-  let F : C(unitInterval × unitInterval, Circle) :=
-    { toFun p := ⟨ellipseAngle ((1 - (p.1 : ℝ)) * a + p.1) (2 * Real.pi * p.2),
-        mem_sphere_zero_iff_norm.2 (norm_sqDir (hpos (hb p.1) _))⟩
-      continuous_toFun := by
-        refine Continuous.subtype_mk (continuous_iff_continuousAt.2 fun p ↦
-          continuousAt_sqDir (x := fun p : unitInterval × unitInterval ↦
-            ((1 - (p.1 : ℝ)) * a + p.1) * Real.cos (2 * Real.pi * p.2))
-            (y := fun p : unitInterval × unitInterval ↦ Real.sin (2 * Real.pi * p.2))
-            (by fun_prop) (by fun_prop) (hpos (hb p.1) _)) _ }
-  have hF (p : unitInterval × unitInterval) :
-      (F p : ℂ) = ellipseAngle ((1 - (p.1 : ℝ)) * a + p.1) (2 * Real.pi * p.2) := (rfl)
-  let γ₁ := Circle.expLoop.map (continuous_pow 2)
-  have h₁ (t : unitInterval) : (γ₁ t : ℂ) = Circle.exp (4 * Real.pi * t) := by
-    simp only [γ₁, Path.map_coe, Function.comp_apply, Circle.expLoop_apply]
-    rw [← Circle.exp_nsmul]
-    congr 2
-    simp
-    ring
-  rw [Circle.degree_eq_of_homotopy γ γ₁ F (fun t ↦ Subtype.ext ?_) (fun t ↦ Subtype.ext ?_)
-    (fun s ↦ Subtype.ext ?_)]
-  · exact Circle.degree_eq_of_sub_eq γ₁ (θ := fun t ↦ 4 * Real.pi * t) (by fun_prop)
-      (fun t ↦ Circle.coe_inj.1 (h₁ t).symm) (by push_cast; ring)
-  · rw [hF, hγ]
-    simp
-  · rw [hF, h₁]
-    simp only [Set.Icc.coe_one, sub_self, zero_mul, zero_add, ellipseAngle_one]
-    congr 2
-    ring
-  · simp [hF, ellipseAngle]
+private theorem sum_sq_pos {v : Fin 3 → ℝ} (hv : v ≠ 0) :
+    0 < v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2 := by
+  simpa [Fin.sum_univ_three] using sum_norm_sq_pos hv
 
-/-! ### The core angle of `ℝℙ² \ {[0 : 0 : 1]}` -/
+/-- A point lies below the maximum value `2` exactly when it is off the maximum `[0 : 0 : 1]`,
+that is, when its first two homogeneous coordinates do not both vanish. -/
+private theorem mk_lt_two_iff_dropLast_ne_zero (v : Fin 3 → ℝ) (hv : v ≠ 0) :
+    projectiveMomentFunction ℝ ![0, 1, 2] (mk ℝ v hv) < 2 ↔ dropLast v ≠ 0 := by
+  rw [projectiveMomentFunction_zero_one_two_mk, div_lt_iff₀ (sum_sq_pos hv), dropLast_apply]
+  simp only [ne_eq, Matrix.cons_eq_zero_iff, Matrix.zero_empty, and_true, not_and_or]
+  constructor
+  · intro h
+    by_contra hc
+    push Not at hc
+    rw [hc.1, hc.2] at h
+    nlinarith
+  · rintro (h | h)
+    · nlinarith [sq_pos_of_ne_zero h, sq_nonneg (v 1), sq_nonneg (v 2)]
+    · nlinarith [sq_pos_of_ne_zero h, sq_nonneg (v 0), sq_nonneg (v 2)]
 
-/-- `f[x : y : z] = (y² + 2z²) / (x² + y² + z²)` in homogeneous coordinates. -/
-private theorem projectiveMomentFunction_mk_eq (v : Fin 3 → ℝ) (hv : v ≠ 0) :
-    projectiveMomentFunction ℝ ![0, 1, 2] (mk ℝ v hv) =
-      (v 1 ^ 2 + 2 * v 2 ^ 2) / (v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2) := by
-  rw [projectiveMomentFunction_mk]
-  simp [Fin.sum_univ_three]
+/-- The linear maps `(x, y, z) ↦ (x, y, (1 - t) z)`, flattening the plane onto `z = 0` as `t`
+goes from `0` to `1`. -/
+private def flatten (t : ℝ) : (Fin 3 → ℝ) →ₗ[ℝ] Fin 3 → ℝ where
+  toFun v := ![v 0, v 1, (1 - t) * v 2]
+  map_add' v w := by
+    ext i
+    fin_cases i <;> simp [mul_add]
+  map_smul' c v := by
+    ext i
+    fin_cases i <;> simp [mul_left_comm]
 
-/-- The function `f[x : y : z] = (y² + 2z²) / (x² + y² + z²)` is below its maximum `2` exactly off
-the point `[0 : 0 : 1]`, where `x² + y² > 0`. -/
-theorem projectiveMomentFunction_mk_lt_two_iff (v : Fin 3 → ℝ) (hv : v ≠ 0) :
-    projectiveMomentFunction ℝ ![0, 1, 2] (mk ℝ v hv) < 2 ↔ 0 < v 0 ^ 2 + v 1 ^ 2 := by
-  obtain ⟨j, hj⟩ := Function.ne_iff.1 hv
-  have hv' : 0 < ∑ i, v i ^ 2 :=
-    Finset.sum_pos' (fun i _ ↦ sq_nonneg (v i)) ⟨j, Finset.mem_univ j, sq_pos_of_ne_zero hj⟩
-  rw [Fin.sum_univ_three] at hv'
-  rw [projectiveMomentFunction_mk_eq, div_lt_iff₀ hv']
-  constructor <;> intro h <;> nlinarith [sq_nonneg (v 0), sq_nonneg (v 1)]
-
-/-- The squared direction of the first two homogeneous coordinates, `[x : y : z] ↦ (x + i y)² /
-(x² + y²)`, well defined on projective space (with value `0` at `[0 : 0 : 1]`). -/
-private def coreAngleFun : ℙ ℝ (Fin 3 → ℝ) → ℂ :=
-  Projectivization.lift (fun v ↦ sqDir (v.val 0) (v.val 1)) fun a b t h ↦ by
-    have ht : t ≠ 0 := by
-      rintro rfl
-      exact a.property (by simpa using h)
-    rw [h]
-    exact sqDir_mul ht _ _
-
-private theorem coreAngleFun_mk (v : Fin 3 → ℝ) (hv : v ≠ 0) :
-    coreAngleFun (mk ℝ v hv) = sqDir (v 0) (v 1) :=
+private theorem flatten_apply (t : ℝ) (v : Fin 3 → ℝ) :
+    flatten t v = ![v 0, v 1, (1 - t) * v 2] :=
   (rfl)
 
-private theorem norm_coreAngleFun {x : ℙ ℝ (Fin 3 → ℝ)}
-    (hx : projectiveMomentFunction ℝ ![0, 1, 2] x < 2) : ‖coreAngleFun x‖ = 1 := by
-  induction x using Projectivization.ind with | h v hv =>
-  rw [coreAngleFun_mk]
-  exact norm_sqDir ((projectiveMomentFunction_mk_lt_two_iff v hv).1 hx)
-
-private theorem continuousAt_coreAngleFun {x : ℙ ℝ (Fin 3 → ℝ)}
-    (hx : projectiveMomentFunction ℝ ![0, 1, 2] x < 2) : ContinuousAt coreAngleFun x := by
-  obtain ⟨v, rfl⟩ := isOpenQuotientMap_mk'.surjective x
-  rw [mk'_eq_mk, projectiveMomentFunction_mk_lt_two_iff] at hx
-  rw [← isOpenQuotientMap_mk'.continuousAt_comp_iff]
-  exact continuousAt_sqDir (x := fun v : {v : Fin 3 → ℝ // v ≠ 0} ↦ v.val 0)
-    (y := fun v : {v : Fin 3 → ℝ // v ≠ 0} ↦ v.val 1)
-    ((continuous_apply 0).comp continuous_subtypeVal)
-    ((continuous_apply 1).comp continuous_subtypeVal) hx
-
-/-- The **core angle** `ρ[x : y : z] = (x + i y)² / (x² + y²)` of `ℝℙ²` minus the maximum
-`[0 : 0 : 1]` of `f[x : y : z] = (y² + 2z²) / (x² + y² + z²)`, that is of the open set
-`{f < 2}`. It is the retraction `[x : y : z] ↦ [x : y : 0]` onto the core circle
-`{z = 0} ≅ ℝℙ¹` followed by the identification `ℝℙ¹ ≅ S¹`, `[x : y] ↦ (x + i y)² / (x² + y²)`.
-It measures how often a loop winds around the core of the Möbius band `{f ≤ 2 - ε}`; see
-`TauCeti.realProjPlaneCoreDegree`. -/
-def realProjPlaneCoreAngle :
-    C({x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ ![0, 1, 2] x < 2}, Circle) where
-  toFun x := ⟨coreAngleFun x, mem_sphere_zero_iff_norm.2 (norm_coreAngleFun x.property)⟩
-  continuous_toFun := (continuousOn_of_forall_continuousAt (fun _ hx ↦ continuousAt_coreAngleFun hx)
-    |>.comp_continuous continuous_subtypeVal fun x ↦ x.property).subtype_mk _
-
-@[simp]
-theorem coe_realProjPlaneCoreAngle_mk (v : Fin 3 → ℝ) (hv : v ≠ 0)
-    (h : projectiveMomentFunction ℝ ![0, 1, 2] (mk ℝ v hv) < 2) :
-    (realProjPlaneCoreAngle ⟨mk ℝ v hv, h⟩ : ℂ) =
-      ((v 0 : ℂ) + v 1 * I) ^ 2 / ((v 0 ^ 2 + v 1 ^ 2 : ℝ) : ℂ) :=
-  (rfl)
-
-private theorem coe_realProjPlaneCoreAngle
-    (x : {x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ ![0, 1, 2] x < 2}) :
-    (realProjPlaneCoreAngle x : ℂ) = coreAngleFun x :=
-  (rfl)
-
-/-- The counterclockwise parametrization `(cos θ, sin θ) ↦ e^{iθ}` of the boundary circle
-`∂D² = TopCat.sphere 1`: `TauCeti.sphereOneHomeomorphCircle`, typed on `TopCat.diskBoundary 2`. -/
-private def diskBoundaryHomeomorphCircle : TopCat.diskBoundary.{0} 2 ≃ₜ Circle :=
-  sphereOneHomeomorphCircle.trans Homeomorph.ulift
-
-private theorem diskBoundaryHomeomorphCircle_apply (s : TopCat.diskBoundary.{0} 2) :
-    diskBoundaryHomeomorphCircle s = EuclideanSpace.sphereHomeomorphCircle s.down :=
-  sphereOneHomeomorphCircle_apply_down s
-
-private theorem diskBoundaryHomeomorphCircle_symm_apply_down (z : Circle) :
-    (diskBoundaryHomeomorphCircle.symm z).down = EuclideanSpace.sphereHomeomorphCircle.symm z :=
-  sphereOneHomeomorphCircle_symm_apply_down (ULift.up z)
-
-/-- The **core degree** of a map `g : ∂D² → ℝℙ² \ {[0 : 0 : 1]}`: the degree of the loop
-`θ ↦ ρ (g (cos θ, sin θ))` in the circle, where `ρ` is the core angle
-`TauCeti.realProjPlaneCoreAngle` and `∂D²` is run through once counterclockwise. It is
-invariant under homotopy (`TauCeti.realProjPlaneCoreDegree_eq_of_homotopic`), and the core
-circle `θ ↦ [cos θ : sin θ : 0]`, `0 ≤ θ ≤ π`, has core degree `1`
-(`TauCeti.realProjPlaneCoreDegree_realProjPlaneCoreMap`). -/
-def realProjPlaneCoreDegree
-    (g : C(TopCat.diskBoundary.{0} 2,
-      {x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ ![0, 1, 2] x < 2})) : ℤ :=
-  Circle.degree (Circle.expLoop.map
-    (realProjPlaneCoreAngle.comp (g.comp diskBoundaryHomeomorphCircle.symm)).continuous)
-
-/-- The loop whose degree is the core degree, evaluated. -/
-private theorem coreDegreeLoop_apply
-    (g : C(TopCat.diskBoundary.{0} 2,
-      {x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ ![0, 1, 2] x < 2})) (t : unitInterval) :
-    Circle.expLoop.map
-        (realProjPlaneCoreAngle.comp (g.comp diskBoundaryHomeomorphCircle.symm)).continuous t =
-      realProjPlaneCoreAngle
-        (g (diskBoundaryHomeomorphCircle.symm (Circle.exp (2 * Real.pi * t)))) := by
-  simp only [Path.map_coe, Function.comp_apply, Circle.expLoop_apply, ContinuousMap.comp_apply,
-    ContinuousMap.coe_ofClass]
-
-/-- The defining equation of the core degree, through the parametrization
-`TauCeti.sphereOneHomeomorphCircle` of the boundary circle `∂D²`. -/
-theorem realProjPlaneCoreDegree_def
-    (g : C(TopCat.diskBoundary.{0} 2,
-      {x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ ![0, 1, 2] x < 2})) :
-    realProjPlaneCoreDegree g = Circle.degree (Circle.expLoop.map
-      (realProjPlaneCoreAngle.comp (g.comp
-        (ContinuousMap.ofClass
-          (sphereOneHomeomorphCircle.trans Homeomorph.ulift).symm))).continuous) := by
-  rw [realProjPlaneCoreDegree]
+private theorem dropLast_flatten (t : ℝ) (v : Fin 3 → ℝ) :
+    dropLast (flatten t v) = dropLast v := by
+  rw [dropLast_apply, dropLast_apply, flatten_apply]
   rfl
 
-/-- **Characteristic formula for the core degree.** The core degree of `g` is the degree of any
-loop `γ` in the circle with `γ t = ρ (g (cos 2πt, sin 2πt))` for all `t`, where `ρ` is the core
-angle `TauCeti.realProjPlaneCoreAngle`. -/
-theorem realProjPlaneCoreDegree_eq_degree
-    (g : C(TopCat.diskBoundary.{0} 2,
-      {x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ ![0, 1, 2] x < 2}))
-    {x : Circle} (γ : Path x x)
-    (hγ : ∀ (t : unitInterval) (s : TopCat.diskBoundary.{0} 2),
-      (s.down : EuclideanSpace ℝ (Fin 2)) =
-          !₂[Real.cos (2 * Real.pi * t), Real.sin (2 * Real.pi * t)] →
-        γ t = realProjPlaneCoreAngle (g s)) :
-    realProjPlaneCoreDegree g = Circle.degree γ :=
-  Circle.degree_congr _ _ fun t ↦ by
-    rw [coreDegreeLoop_apply]
-    exact (hγ t _ (by rw [diskBoundaryHomeomorphCircle_symm_apply_down,
-      EuclideanSpace.coe_sphereHomeomorphCircle_symm_exp])).symm
+private theorem flatten_ne_zero {v : Fin 3 → ℝ} (hv : dropLast v ≠ 0) (t : ℝ) :
+    flatten t v ≠ 0 := fun h ↦ hv (by rw [← dropLast_flatten t, h, map_zero])
 
-/-- **The core degree is a homotopy invariant.** -/
-theorem realProjPlaneCoreDegree_eq_of_homotopic
-    {g₀ g₁ : C(TopCat.diskBoundary.{0} 2,
-      {x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ ![0, 1, 2] x < 2})}
-    (h : g₀.Homotopic g₁) :
-    realProjPlaneCoreDegree g₀ = realProjPlaneCoreDegree g₁ := by
-  obtain ⟨H⟩ := h
-  exact Circle.degree_eq_of_homotopy _ _
-    (realProjPlaneCoreAngle.comp (H.toContinuousMap.comp
-      ((ContinuousMap.id _).prodMap
-        ((diskBoundaryHomeomorphCircle.symm : C(Circle, TopCat.diskBoundary.{0} 2)).comp
-          Circle.expLoop.toContinuousMap))))
-    (fun t ↦ by simp) (fun t ↦ by simp) (fun s ↦ by simp)
+private theorem flatten_zero (v : Fin 3 → ℝ) : flatten 0 v = v := by
+  ext i
+  fin_cases i <;> simp [flatten_apply]
 
-/-- The unit vector `(cos θ, sin θ, 0)` of `ℝ³` is nonzero. -/
-theorem cos_sin_zero_ne_zero (θ : ℝ) : (![Real.cos θ, Real.sin θ, 0] : Fin 3 → ℝ) ≠ 0 :=
-  fun h ↦ by
-    have h₀ := congrFun h 0
-    have h₁ := congrFun h 1
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Pi.zero_apply] at h₀ h₁
-    nlinarith [Real.sin_sq_add_cos_sq θ]
+private theorem flatten_one (v : Fin 3 → ℝ) : flatten 1 v = addLast (dropLast v) := by
+  rw [flatten_apply, addLast_apply, dropLast_apply]
+  ext i
+  fin_cases i <;> simp
 
-private theorem projectiveMomentFunction_mk_cos_sin_zero_lt_two (θ : ℝ) :
-    projectiveMomentFunction ℝ ![0, 1, 2] (mk ℝ _ (cos_sin_zero_ne_zero θ)) < 2 := by
-  rw [projectiveMomentFunction_mk_lt_two_iff]
-  simp [Real.cos_sq_add_sin_sq]
-
-/-- The **core circle** of the Möbius band `{f ≤ 2 - ε}`, `t ↦ [cos πt : sin πt : 0]`, `0 ≤ t ≤ 1`:
-the projective line `{z = 0}` run through once, as a loop in `{f < 2}` at `[1 : 0 : 0]`. -/
-def realProjPlaneCoreLoop :
-    Path (⟨mk ℝ ![1, 0, 0] (by simp),
-        (projectiveMomentFunction_mk_lt_two_iff ![1, 0, 0] (by simp)).2 (by simp)⟩ :
-        {x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ ![0, 1, 2] x < 2})
-      ⟨mk ℝ ![1, 0, 0] (by simp),
-        (projectiveMomentFunction_mk_lt_two_iff ![1, 0, 0] (by simp)).2 (by simp)⟩ where
-  toFun t := ⟨mk ℝ _ (cos_sin_zero_ne_zero (Real.pi * t)),
-    projectiveMomentFunction_mk_cos_sin_zero_lt_two _⟩
-  continuous_toFun := by
-    refine Continuous.subtype_mk
-      (continuous_mk (K := ℝ) ?_ fun t : unitInterval ↦ cos_sin_zero_ne_zero (Real.pi * t)) _
+private theorem continuous_flatten :
+    Continuous fun p : ℝ × (Fin 3 → ℝ) ↦ flatten p.1 p.2 := by
+  simp only [flatten_apply]
+  refine continuous_pi fun i ↦ ?_
+  fin_cases i <;>
+    simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons] <;>
     fun_prop
-  source' := by simp
-  target' := by
-    refine Subtype.ext ?_
-    simp only [Set.Icc.coe_one, mul_one, Real.cos_pi, Real.sin_pi]
-    rw [mk_eq_mk_iff']
-    exact ⟨-1, by ext j; fin_cases j <;> simp⟩
 
-theorem coe_realProjPlaneCoreLoop_apply (t : unitInterval) :
-    (realProjPlaneCoreLoop t : ℙ ℝ (Fin 3 → ℝ)) =
-      mk ℝ _ (cos_sin_zero_ne_zero (Real.pi * t)) :=
+/-- Flattening towards the line `z = 0` lowers the height. -/
+private theorem projectiveMomentFunction_flatten_le {v : Fin 3 → ℝ} (hv : v ≠ 0)
+    (hd : dropLast v ≠ 0) {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) :
+    projectiveMomentFunction ℝ ![0, 1, 2] (mk ℝ (flatten t v) (flatten_ne_zero hd t)) ≤
+      projectiveMomentFunction ℝ ![0, 1, 2] (mk ℝ v hv) := by
+  have hd' : 0 < 2 * v 0 ^ 2 + v 1 ^ 2 := by
+    have h := (mk_lt_two_iff_dropLast_ne_zero v hv).2 hd
+    rw [projectiveMomentFunction_zero_one_two_mk, div_lt_iff₀ (sum_sq_pos hv)] at h
+    linarith
+  have hs₁ : (1 - t) ^ 2 ≤ 1 := by nlinarith
+  simp only [projectiveMomentFunction_zero_one_two_mk, flatten_apply, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, mul_pow]
+  rw [div_le_div_iff₀ (by nlinarith [sq_nonneg (v 0), sq_nonneg (v 1)]) (sum_sq_pos hv)]
+  nlinarith [mul_nonneg (mul_nonneg (sub_nonneg.2 hs₁) (sq_nonneg (v 2))) hd'.le]
+
+/-- The family of projections `[v] ↦ [x : y : (1 - t) z]` is jointly continuous off the
+maximum `[0 : 0 : 1]`. -/
+private theorem continuousOn_linearProjection_flatten :
+    ContinuousOn (fun p : I × ℙ ℝ (Fin 3 → ℝ) ↦ linearProjection (flatten p.1) p.2)
+      (univ ×ˢ linearProjectionDomain dropLast) := by
+  rintro ⟨t, y⟩ ⟨-, hy⟩
+  refine (continuousAt_linearProjection (G := fun t : I ↦ flatten t)
+    (continuous_flatten.comp (continuous_subtypeVal.prodMap continuous_id)) ?_).continuousWithinAt
+  induction y using ind with | h v hv =>
+  rw [mk_mem_linearProjectionDomain_iff] at hy ⊢
+  exact flatten_ne_zero hy t
+
+variable {c : ℝ}
+
+private theorem mem_linearProjectionDomain_of_le (hc : c < 2) {y : ℙ ℝ (Fin 3 → ℝ)}
+    (hy : projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c) : y ∈ linearProjectionDomain dropLast := by
+  induction y using ind with | h v hv =>
+  rw [mk_mem_linearProjectionDomain_iff, ← mk_lt_two_iff_dropLast_ne_zero v hv]
+  exact hy.trans_lt hc
+
+private theorem projectiveMomentFunction_linearProjection_flatten_le (hc : c < 2)
+    {y : ℙ ℝ (Fin 3 → ℝ)} (hy : projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c) {t : ℝ} (ht₀ : 0 ≤ t)
+    (ht₁ : t ≤ 1) : projectiveMomentFunction ℝ ![0, 1, 2] (linearProjection (flatten t) y) ≤ c := by
+  induction y using ind with | h v hv =>
+  have hd : dropLast v ≠ 0 := (mk_lt_two_iff_dropLast_ne_zero v hv).1 (hy.trans_lt hc)
+  rw [linearProjection_mk _ _ (flatten_ne_zero hd t)]
+  exact (projectiveMomentFunction_flatten_le hv hd ht₀ ht₁).trans hy
+
+private theorem projectiveMomentFunction_map_addLast_le_one (x : ℙ ℝ (Fin 2 → ℝ)) :
+    projectiveMomentFunction ℝ ![0, 1, 2] (map addLast addLast_injective x : ℙ ℝ (Fin 3 → ℝ)) ≤
+      1 := by
+  induction x using ind with | h w hw =>
+  have hs : 0 < w 0 ^ 2 + w 1 ^ 2 := by
+    obtain ⟨i, hi⟩ := Function.ne_iff.1 hw
+    simpa [Fin.sum_univ_two] using
+      Finset.sum_pos' (fun j _ ↦ sq_nonneg (w j)) ⟨i, Finset.mem_univ i, sq_pos_of_ne_zero hi⟩
+  rw [map_mk, projectiveMomentFunction_zero_one_two_mk]
+  simp only [addLast_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+    Matrix.head_cons, Matrix.tail_cons]
+  rw [div_le_one (by simpa using hs)]
+  nlinarith [sq_nonneg (w 0)]
+
+/-- The projection `[x : y : z] ↦ [x : y]` of a sublevel below `2` onto the projective line. -/
+private def sublevelToLine (hc : c < 2) :
+    C({y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c}, ℙ ℝ (Fin 2 → ℝ)) where
+  toFun y := linearProjection dropLast y.val
+  continuous_toFun := (contMDiffOn_linearProjection dropLast 0).continuousOn.comp_continuous
+    continuous_subtypeVal fun y ↦ mem_linearProjectionDomain_of_le hc y.property
+
+/-- The inclusion `[x : y] ↦ [x : y : 0]` of the projective line into a sublevel above `1`. -/
+private def lineToSublevel (hc : 1 ≤ c) :
+    C(ℙ ℝ (Fin 2 → ℝ), {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c}) where
+  toFun x := ⟨map addLast addLast_injective x,
+    (projectiveMomentFunction_map_addLast_le_one x).trans hc⟩
+  continuous_toFun := (continuous_map addLast_injective
+    addLast.continuous_of_finiteDimensional).subtype_mk _
+
+/-- The deformation `[x : y : z] ↦ [x : y : (1 - t) z]` of a sublevel onto the line `z = 0`. -/
+private def flattenHomotopy (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
+    ContinuousMap.Homotopy (ContinuousMap.id _) ((lineToSublevel hc₁).comp (sublevelToLine hc₂))
+    where
+  toFun p := ⟨linearProjection (flatten p.1) p.2.val,
+    projectiveMomentFunction_linearProjection_flatten_le hc₂ p.2.property p.1.property.1
+        p.1.property.2⟩
+  continuous_toFun := (continuousOn_linearProjection_flatten.comp_continuous
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
+    fun p ↦ ⟨mem_univ _, mem_linearProjectionDomain_of_le hc₂ p.2.property⟩).subtype_mk _
+  map_zero_left y := by
+    obtain ⟨y, hy⟩ := y
+    refine Subtype.ext ?_
+    induction y using ind with | h v hv =>
+    have hd : dropLast v ≠ 0 := (mk_lt_two_iff_dropLast_ne_zero v hv).1 (hy.trans_lt hc₂)
+    simp only [Icc.coe_zero, ContinuousMap.id_apply]
+    rw [linearProjection_mk _ _ (flatten_ne_zero hd 0)]
+    exact mk_eq_mk_of_eq (flatten_zero v)
+  map_one_left y := by
+    obtain ⟨y, hy⟩ := y
+    refine Subtype.ext ?_
+    induction y using ind with | h v hv =>
+    have hd : dropLast v ≠ 0 := (mk_lt_two_iff_dropLast_ne_zero v hv).1 (hy.trans_lt hc₂)
+    simp only [Icc.coe_one, ContinuousMap.comp_apply, sublevelToLine, lineToSublevel,
+      ContinuousMap.coe_mk]
+    rw [linearProjection_mk _ _ (flatten_ne_zero hd 1), linearProjection_mk _ _ hd, map_mk]
+    exact mk_eq_mk_of_eq (flatten_one v)
+
+/-- **The lower sublevels are homotopy equivalent to the projective line.** For `1 ≤ c < 2` the
+projection `[x : y : z] ↦ [x : y]` is a homotopy equivalence from the sublevel `{f ≤ c}` onto
+the projective line, with homotopy inverse the inclusion `[x : y] ↦ [x : y : 0]` of the line
+`z = 0`. One of the two homotopies is constructed by the flattening
+`[x : y : z] ↦ [x : y : (1 - t) z]`, from the identity of the sublevel to the composite of the
+projection with the inclusion. -/
+def projectivePlaneSublevelHomotopyEquiv (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
+    {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c} ≃ₕ ℙ ℝ (Fin 2 → ℝ) where
+  toFun := sublevelToLine hc₂
+  invFun := lineToSublevel hc₁
+  left_inv := ⟨(flattenHomotopy hc₁ hc₂).symm⟩
+  right_inv := by
+    have h : (sublevelToLine hc₂).comp (lineToSublevel hc₁) = ContinuousMap.id _ := by
+      ext x
+      induction x using ind with | h w hw =>
+      simp only [ContinuousMap.comp_apply, sublevelToLine, lineToSublevel, ContinuousMap.coe_mk,
+        map_mk, ContinuousMap.id_apply]
+      rw [linearProjection_mk _ _ (by rwa [dropLast_addLast])]
+      exact mk_eq_mk_of_eq (dropLast_addLast w)
+    rw [h]
+
+private theorem projectivePlaneSublevelHomotopyEquiv_apply (hc₁ : 1 ≤ c) (hc₂ : c < 2)
+    (y : {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c}) :
+    projectivePlaneSublevelHomotopyEquiv hc₁ hc₂ y = linearProjection dropLast y.val :=
   (rfl)
 
-/-- The core circle as a map from `∂D²`: `(cos θ, sin θ) ↦ [cos (θ / 2) : sin (θ / 2) : 0]`
-(`TauCeti.coe_realProjPlaneCoreMap_apply`). -/
-def realProjPlaneCoreMap :
-    C(TopCat.diskBoundary.{0} 2,
-      {x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ ![0, 1, 2] x < 2}) :=
-  realProjPlaneCoreLoop.toCircle.comp diskBoundaryHomeomorphCircle
+/-- A point `[x : y : z]` below the maximum value `2` has `(x, y) ≠ 0`. -/
+theorem coords_ne_zero_of_projectiveMomentFunction_lt_two {y : ℙ ℝ (Fin 3 → ℝ)}
+    (hy : projectiveMomentFunction ℝ ![0, 1, 2] y < 2) {v : Fin 3 → ℝ} {hv : v ≠ 0}
+    (hyv : y = mk ℝ v hv) :
+    ![v 0, v 1] ≠ 0 := by
+  subst hyv
+  rw [← dropLast_apply]
+  exact (mk_lt_two_iff_dropLast_ne_zero v hv).1 hy
 
-/-- The core circle sends the boundary point `(cos θ, sin θ)`, `0 ≤ θ ≤ 2π`, to
-`[cos (θ / 2) : sin (θ / 2) : 0]`. -/
-theorem coe_realProjPlaneCoreMap_apply {s : TopCat.diskBoundary.{0} 2} {θ : ℝ}
-    (hθ : θ ∈ Icc 0 (2 * Real.pi))
-    (hs : (s.down : EuclideanSpace ℝ (Fin 2)) = !₂[Real.cos θ, Real.sin θ]) :
-    (realProjPlaneCoreMap s : ℙ ℝ (Fin 3 → ℝ)) = mk ℝ _ (cos_sin_zero_ne_zero (θ / 2)) := by
-  have hπ : 0 < 2 * Real.pi := by positivity
-  let t : unitInterval := ⟨θ / (2 * Real.pi), div_nonneg hθ.1 hπ.le, (div_le_one hπ).2 hθ.2⟩
-  have ht : 2 * Real.pi * t = θ := mul_div_cancel₀ θ hπ.ne'
-  have hs' : EuclideanSpace.sphereHomeomorphCircle s.down = Circle.exp (2 * Real.pi * t) := by
-    rw [ht, ← EuclideanSpace.sphereHomeomorphCircle.apply_symm_apply (Circle.exp θ)]
-    congr 1
-    exact Subtype.ext (hs.trans (EuclideanSpace.coe_sphereHomeomorphCircle_symm_exp θ).symm)
-  have h2 : Real.pi * t = θ / 2 := by
-    rw [← ht]
-    ring
-  rw [realProjPlaneCoreMap, ContinuousMap.comp_apply, ContinuousMap.coe_ofClass,
-    diskBoundaryHomeomorphCircle_apply, hs', Path.toCircle_exp, coe_realProjPlaneCoreLoop_apply]
-  congr 1
-  rw [h2]
+/-- The projection of the sublevel onto the line in homogeneous coordinates:
+`[x : y : z] ↦ [x : y]`. -/
+theorem projectivePlaneSublevelHomotopyEquiv_apply_of_eq (hc₁ : 1 ≤ c) (hc₂ : c < 2)
+    {y : {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c}} {v : Fin 3 → ℝ} {hv : v ≠ 0}
+    (hy : (y : ℙ ℝ (Fin 3 → ℝ)) = mk ℝ v hv) :
+    projectivePlaneSublevelHomotopyEquiv hc₁ hc₂ y = mk ℝ ![v 0, v 1]
+      (coords_ne_zero_of_projectiveMomentFunction_lt_two (lt_of_le_of_lt y.property hc₂) hy) := by
+  have hd := coords_ne_zero_of_projectiveMomentFunction_lt_two (lt_of_le_of_lt y.property hc₂) hy
+  rw [projectivePlaneSublevelHomotopyEquiv_apply]
+  refine (congrArg (linearProjection dropLast) hy).trans ?_
+  rw [linearProjection_mk _ _ (by rwa [dropLast_apply])]
+  exact mk_eq_mk_of_eq (dropLast_apply v)
 
-/-- **The core circle has core degree `1`.** The core angle sends
-`[cos θ : sin θ : 0]` to `e^{2iθ}`, which runs once around the circle for `0 ≤ θ ≤ π`. -/
-theorem realProjPlaneCoreDegree_realProjPlaneCoreMap :
-    realProjPlaneCoreDegree realProjPlaneCoreMap = 1 := by
-  refine Circle.degree_eq_of_sub_eq _ (θ := fun t ↦ 2 * Real.pi * t) (by fun_prop) (fun t ↦ ?_)
-    (by push_cast; ring)
-  rw [coreDegreeLoop_apply]
-  apply Circle.ext
-  rw [coe_realProjPlaneCoreAngle,
-    coe_realProjPlaneCoreMap_apply (s := diskBoundaryHomeomorphCircle.symm _)
-      (θ := 2 * Real.pi * t)
-      ⟨mul_nonneg (by positivity) t.property.1, mul_le_of_le_one_right (by positivity) t.property.2⟩
-      (by rw [diskBoundaryHomeomorphCircle_symm_apply_down,
-        EuclideanSpace.coe_sphereHomeomorphCircle_symm_exp]), coreAngleFun_mk]
+/-- The homotopy inverse of the projection is the inclusion `[x : y] ↦ [x : y : 0]`. -/
+theorem coe_projectivePlaneSublevelHomotopyEquiv_symm_apply_mk (hc₁ : 1 ≤ c) (hc₂ : c < 2)
+    (w : Fin 2 → ℝ) (hw : w ≠ 0) :
+    ((projectivePlaneSublevelHomotopyEquiv hc₁ hc₂).symm (mk ℝ w hw) : ℙ ℝ (Fin 3 → ℝ)) =
+      mk ℝ ![w 0, w 1, 0]
+        (fun h ↦ hw (funext (Fin.forall_fin_two.2 ⟨congrFun h 0, congrFun h 1⟩))) :=
+  (map_mk addLast addLast_injective w hw).trans
+    (mk_eq_mk_of_eq (addLast_apply w))
+
+end Sublevel
+
+/-! ### The sublevels as circles -/
+
+section Circle
+
+variable {c : ℝ}
+
+/-- **The lower sublevels are homotopy equivalent to the circle.** For `1 ≤ c < 2` the map
+`[x : y : z] ↦ (x + i y)² / (x² + y²)` from the sublevel `{f ≤ c}` to the circle is a homotopy
+equivalence: the composite of the homotopy equivalence of the sublevel with the line `z = 0`
+(`TauCeti.projectivePlaneSublevelHomotopyEquiv`) with the identification of the projective line
+with the circle. -/
+def projectivePlaneSublevelCircleEquiv (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
+    {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c} ≃ₕ Circle :=
+  (projectivePlaneSublevelHomotopyEquiv hc₁ hc₂).trans lineHomeomorphCircle.toHomotopyEquiv
+
+-- This holds by definition of `ContinuousMap.HomotopyEquiv.trans` and
+-- `Homeomorph.toHomotopyEquiv`.
+private theorem projectivePlaneSublevelCircleEquiv_apply (hc₁ : 1 ≤ c) (hc₂ : c < 2)
+    (y : {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c}) :
+    projectivePlaneSublevelCircleEquiv hc₁ hc₂ y =
+      lineHomeomorphCircle (projectivePlaneSublevelHomotopyEquiv hc₁ hc₂ y) :=
+  (rfl)
+
+/-- The circle map of the sublevel in homogeneous coordinates:
+`[x : y : z] ↦ (x + i y)² / (x² + y²)`. -/
+theorem coe_projectivePlaneSublevelCircleEquiv_apply_of_eq (hc₁ : 1 ≤ c) (hc₂ : c < 2)
+    {y : {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c}} {v : Fin 3 → ℝ} {hv : v ≠ 0}
+    (hy : (y : ℙ ℝ (Fin 3 → ℝ)) = mk ℝ v hv) :
+    (projectivePlaneSublevelCircleEquiv hc₁ hc₂ y : ℂ) =
+      (v 0 + v 1 * Complex.I) ^ 2 / (v 0 ^ 2 + v 1 ^ 2 : ℝ) := by
+  rw [projectivePlaneSublevelCircleEquiv_apply,
+    projectivePlaneSublevelHomotopyEquiv_apply_of_eq hc₁ hc₂ hy, coe_lineHomeomorphCircle_mk]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
-  rw [← one_mul (Real.cos _), ← ellipseAngle, ellipseAngle_one]
-  ring_nf
+
+/-- The point `[1 : 0 : 0]`, the minimum of the height, as a point of a sublevel. -/
+def projectivePlaneSublevelBase (hc : 0 ≤ c) : {y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c} :=
+  ⟨mk ℝ ![1, 0, 0] (by simp), by simpa [Fin.sum_univ_three] using hc⟩
+
+/-- The base point of the sublevel is `[1 : 0 : 0]`. -/
+@[simp]
+theorem coe_projectivePlaneSublevelBase (hc : 0 ≤ c) :
+    (projectivePlaneSublevelBase hc : ℙ ℝ (Fin 3 → ℝ)) = mk ℝ ![1, 0, 0] (by simp) :=
+  (rfl)
+
+/-- The homogeneous coordinates `(cos θ, sin θ, 0)` of the core circle
+`TauCeti.projectivePlaneCoreLoop` are nonzero. -/
+theorem projectivePlaneCoreLoop_coords_ne_zero (θ : ℝ) :
+    ![Real.cos θ, Real.sin θ, 0] ≠ 0 := fun h ↦ by
+  have h0 : Real.cos θ = 0 := congrFun h 0
+  have h1 : Real.sin θ = 0 := congrFun h 1
+  simpa [h0, h1] using Real.cos_sq_add_sin_sq θ
+
+private theorem projectiveMomentFunction_core (θ : ℝ) :
+    projectiveMomentFunction ℝ ![0, 1, 2]
+      (mk ℝ ![Real.cos θ, Real.sin θ, 0] (projectivePlaneCoreLoop_coords_ne_zero θ)) =
+        Real.sin θ ^ 2 := by
+  rw [projectiveMomentFunction_zero_one_two_mk]
+  simp [Real.cos_sq_add_sin_sq]
+
+private theorem projectiveMomentFunction_core_le (hc : 1 ≤ c) (θ : ℝ) :
+    projectiveMomentFunction ℝ ![0, 1, 2]
+      (mk ℝ ![Real.cos θ, Real.sin θ, 0] (projectivePlaneCoreLoop_coords_ne_zero θ)) ≤ c := by
+  rw [projectiveMomentFunction_core]
+  exact (Real.sin_sq_le_one _).trans hc
+
+private theorem mk_core_pi :
+    mk ℝ ![Real.cos π, Real.sin π, 0] (projectivePlaneCoreLoop_coords_ne_zero π) =
+      mk ℝ ![1, 0, 0] (by simp) := by
+  refine (mk_eq_mk_iff' ℝ _ _ _ _).2 ⟨-1, ?_⟩
+  ext i
+  fin_cases i <;> simp
+
+/-- The core circle `t ↦ [cos πt : sin πt : 0]` of a sublevel: the projective line `z = 0`, run
+once from `[1 : 0 : 0]` back to `[-1 : 0 : 0] = [1 : 0 : 0]`. -/
+def projectivePlaneCoreLoop (hc : 1 ≤ c) :
+    Path (projectivePlaneSublevelBase (zero_le_one.trans hc))
+      (projectivePlaneSublevelBase (zero_le_one.trans hc)) where
+  toFun t := ⟨mk ℝ ![Real.cos (π * t), Real.sin (π * t), 0]
+      (projectivePlaneCoreLoop_coords_ne_zero _),
+    projectiveMomentFunction_core_le hc _⟩
+  continuous_toFun := (continuous_mk (by fun_prop) _).subtype_mk _
+  source' := Subtype.ext (by simp)
+  target' := Subtype.ext (by simpa using mk_core_pi)
+
+/-- The core circle at time `t` is `[cos πt : sin πt : 0]`. -/
+@[simp]
+theorem coe_projectivePlaneCoreLoop_apply (hc : 1 ≤ c) (t : I) :
+    (projectivePlaneCoreLoop hc t : ℙ ℝ (Fin 3 → ℝ)) =
+      mk ℝ ![Real.cos (π * t), Real.sin (π * t), 0] (projectivePlaneCoreLoop_coords_ne_zero _) :=
+  (rfl)
+
+/-- The core circle has degree `1` in the circle `TauCeti.projectivePlaneSublevelCircleEquiv`. -/
+theorem degree_projectivePlaneCoreLoop_map (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
+    Circle.degree ((projectivePlaneCoreLoop hc₁).map
+      (projectivePlaneSublevelCircleEquiv hc₁ hc₂).continuous) = 1 := by
+  refine Circle.degree_eq_of_sub_eq _ (θ := fun t ↦ 2 * π * t) (by fun_prop) (fun t ↦ ?_)
+    (by simp)
+  refine Circle.coe_injective ?_
+  rw [Path.map_coe, Function.comp_apply,
+    coe_projectivePlaneSublevelCircleEquiv_apply_of_eq hc₁ hc₂ rfl, Circle.coe_exp]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Real.cos_sq_add_sin_sq,
+    Complex.ofReal_one, div_one]
+  rw [Complex.ofReal_cos, Complex.ofReal_sin, ← Complex.exp_mul_I, ← Complex.exp_natCast_mul]
+  congr 1
+  push_cast
+  ring
+
+end Circle
 
 /-! ### The degrees of the attaching maps -/
 
@@ -773,91 +865,171 @@ section Degree
 
 variable {ε : ℝ}
 
-/-- The core angle of the point `ψ⁻¹(√ε w)` of the cell, for a unit vector `w`. -/
-private theorem coreAngleFun_realProjPlaneTopChart_symm_smul (hε₀ : 0 < ε) (hε₁ : ε < 1)
-    {w : EuclideanSpace ℝ (Fin 2)} (hw : ‖w‖ = 1) :
-    coreAngleFun (realProjPlaneTopChart.symm (√ε • w)) = sqDir (w 0 / √2) (w 1) := by
-  replace hw : w 0 ^ 2 + w 1 ^ 2 = 1 := by
-    simpa [hw, Fin.sum_univ_two, eq_comm] using EuclideanSpace.norm_sq_eq w
-  have hq : (√ε • w) 0 ^ 2 / 2 + (√ε • w) 1 ^ 2 < 1 := by
-    simp only [PiLp.smul_apply, smul_eq_mul, mul_pow, Real.sq_sqrt hε₀.le]
-    nlinarith [sq_nonneg (w 0)]
-  rw [realProjPlaneTopChart_symm_apply_of_lt hq, coreAngleFun_mk]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, PiLp.smul_apply, smul_eq_mul, mul_div_assoc]
-  exact sqDir_mul (Real.sqrt_pos.2 hε₀).ne' _ _
+/-- Scaling `(x, y)` does not change `(x + i y)² / (x² + y²)`. -/
+private theorem sq_div_sq_add_sq_mul (r x y : ℝ) (hr : r ≠ 0) :
+    (((r * x : ℝ) : ℂ) + ((r * y : ℝ) : ℂ) * Complex.I) ^ 2 /
+        (((r * x) ^ 2 + (r * y) ^ 2 : ℝ) : ℂ) =
+      ((x : ℂ) + (y : ℂ) * Complex.I) ^ 2 / ((x ^ 2 + y ^ 2 : ℝ) : ℂ) := by
+  have h₁ : ((r * x : ℝ) : ℂ) + ((r * y : ℝ) : ℂ) * Complex.I =
+      (r : ℂ) * ((x : ℂ) + (y : ℂ) * Complex.I) := by
+    push_cast
+    ring
+  have h₂ : (((r * x) ^ 2 + (r * y) ^ 2 : ℝ) : ℂ) = (r : ℂ) ^ 2 * ((x ^ 2 + y ^ 2 : ℝ) : ℂ) := by
+    push_cast
+    ring
+  rw [h₁, h₂, mul_pow, mul_div_mul_left _ _ (pow_ne_zero 2 (Complex.ofReal_ne_zero.2 hr))]
 
-/-- **The attaching map `α₊` has core degree `2`.** Going once counterclockwise around `∂D²` in the
-normalized negative coordinates, the attaching map `α₊ : ∂D² → {f ≤ 2 - ε}` of the chart
-`TauCeti.realProjPlaneTopChart` winds twice around the core of the Möbius band
-`{f ≤ 2 - ε}`. -/
-theorem realProjPlaneCoreDegree_morseAttachingMap_realProjPlaneTopChart
-    (hε₀ : 0 < ε) (hε₁ : ε < 1) :
-    realProjPlaneCoreDegree ((ContinuousMap.inclusion
-        (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans_lt (sub_lt_self 2 hε₀))).comp
-      (realProjPlaneTopChart.morseAttachingMap le_rfl hε₀.le
-        (closedBall_subset_realProjPlaneTopChart_target hε₁)
-        projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopChart).hom) = 2 := by
-  refine degree_eq_two_of_ellipseAngle (a := 1 / √2) (by positivity) _ fun t ↦ ?_
-  rw [coreDegreeLoop_apply, coe_realProjPlaneCoreAngle]
-  -- The attaching map is applied through its underlying continuous map `TopCat.Hom.hom`;
-  -- unfolding it exposes the categorical application used by the evaluation lemma.
-  rw [ContinuousMap.comp_apply, ContinuousMap.inclusion_apply_coe, TopCat.Hom.hom,
-    coe_morseAttachingMap_realProjPlaneTopChart_apply hε₀.le hε₁]
-  rw [coreAngleFun_realProjPlaneTopChart_symm_smul hε₀ hε₁
-    (mem_sphere_zero_iff_norm.1 (Subtype.prop _)), diskBoundaryHomeomorphCircle_symm_apply_down,
-    EuclideanSpace.coe_sphereHomeomorphCircle_symm_exp, ellipseAngle]
-  simp [div_eq_inv_mul]
+/-- The value of the circle map on the attaching map of the top chart. -/
+private theorem coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingMap (hε : 0 < ε)
+    (hε1 : ε < 1) (w : TopCat.diskBoundary.{0} 2) :
+    (projectivePlaneSublevelCircleEquiv (c := 2 - ε) (by linarith) (by linarith)
+      (projectivePlaneAttachingMap hε.le hε1 w) : ℂ) =
+      (((√2)⁻¹ * (w.down : EuclideanSpace ℝ (Fin 2)) 0 : ℝ) +
+        ((w.down : EuclideanSpace ℝ (Fin 2)) 1 : ℝ) * Complex.I) ^ 2 /
+      (((√2)⁻¹ * (w.down : EuclideanSpace ℝ (Fin 2)) 0) ^ 2 +
+        (w.down : EuclideanSpace ℝ (Fin 2)) 1 ^ 2 : ℝ) := by
+  rw [coe_projectivePlaneSublevelCircleEquiv_apply_of_eq _ _
+    ((coe_projectivePlaneAttachingMap_apply hε.le hε1 w).trans
+      (projectivePlaneTopChart_symm_apply (closedBall_subset_projectivePlaneTopChart_target hε1
+        (by rw [mem_closedBall_zero_iff, norm_smul, mem_sphere_zero_iff_norm.1 w.down.property,
+          Real.norm_of_nonneg (Real.sqrt_nonneg ε), mul_one]))))]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, PiLp.smul_apply, smul_eq_mul]
+  rw [show √ε * (w.down : EuclideanSpace ℝ (Fin 2)) 0 / √2 =
+    √ε * ((√2)⁻¹ * (w.down : EuclideanSpace ℝ (Fin 2)) 0) by ring,
+    sq_div_sq_add_sq_mul √ε _ _ (Real.sqrt_pos.2 hε).ne']
 
-/-- **The attaching map `α₋` has core degree `-2`.** The attaching map
-`α₋ = α₊ ∘ r : ∂D² → {f ≤ 2 - ε}` of the opposite chart `TauCeti.realProjPlaneTopReflChart`
-winds twice around the core of the Möbius band `{f ≤ 2 - ε}`, in the opposite direction. -/
-theorem realProjPlaneCoreDegree_morseAttachingMap_realProjPlaneTopReflChart
-    (hε₀ : 0 < ε) (hε₁ : ε < 1) :
-    realProjPlaneCoreDegree ((ContinuousMap.inclusion
-        (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans_lt (sub_lt_self 2 hε₀))).comp
-      (realProjPlaneTopReflChart.morseAttachingMap le_rfl hε₀.le
-        (closedBall_subset_realProjPlaneTopReflChart_target hε₁)
-        projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopReflChart).hom) = -2 := by
-  have hpos := realProjPlaneCoreDegree_morseAttachingMap_realProjPlaneTopChart hε₀ hε₁
-  unfold realProjPlaneCoreDegree at hpos ⊢
-  rw [Circle.degree_congr _ (Path.inv _) fun t ↦ Circle.ext ?_, Circle.degree_inv, hpos]
-  rw [Path.inv_apply, Circle.coe_inv_eq_conj, coreDegreeLoop_apply, coreDegreeLoop_apply,
-    coe_realProjPlaneCoreAngle, coe_realProjPlaneCoreAngle]
-  -- As above, unfold `TopCat.Hom.hom` to reach the categorical application of the attaching maps.
-  simp only [ContinuousMap.comp_apply, ContinuousMap.inclusion_apply_coe, TopCat.Hom.hom]
-  rw [OpenPartialHomeomorph.coe_morseAttachingMap_apply,
-    OpenPartialHomeomorph.coe_morseAttachingMap_apply, morseCellMap_realProjPlaneTopReflChart,
-    morseCellMap_realProjPlaneTopChart, morseCellMap_realProjPlaneTopChart,
-    coreAngleFun_realProjPlaneTopChart_symm_smul hε₀ hε₁
-      (mem_sphere_zero_iff_norm.1 (Subtype.prop _)),
-    coreAngleFun_realProjPlaneTopChart_symm_smul hε₀ hε₁
-      ((LinearIsometryEquiv.norm_map _ _).trans (mem_sphere_zero_iff_norm.1 (Subtype.prop _)))]
-  simp only [EuclideanSpace.reflection_singleton_single_apply, Fin.isValue, zero_ne_one,
-    ite_false, ite_true, neg_div, sqDir_neg_left]
+/-- **The attaching map of the top chart has degree `2`.** Read in the circle
+`TauCeti.projectivePlaneSublevelCircleEquiv`, in which the core circle has degree `1`, the
+attaching map `α₊` along the counterclockwise loop of `∂D²` has degree `2`. -/
+theorem degree_projectivePlaneAttachingMap (hε : 0 < ε) (hε1 : ε < 1) :
+    Circle.degree ((diskBoundaryTwoLoop.map
+      (projectivePlaneAttachingMap hε.le hε1).hom.continuous).map
+      (projectivePlaneSublevelCircleEquiv (c := 2 - ε) (by linarith) (by linarith)).continuous) =
+      2 := by
+  refine Circle.degree_eq_of_forall_eq_pow _ (a := (√2)⁻¹) (b := 1) (by positivity) 2 fun t ↦ ?_
+  simp only [Path.map_coe, Function.comp_apply, one_mul, div_pow, ← Complex.ofReal_pow,
+    Complex.sq_norm, Complex.normSq_add_mul_I]
+  rw [coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingMap hε hε1,
+    diskBoundaryTwoLoop_apply_zero, diskBoundaryTwoLoop_apply_one]
 
-/-- **The two attaching maps of the top cell of `ℝℙ²` are not homotopic.** For `0 < ε < 1` the
-attaching maps `α₊, α₋ : ∂D² → {f ≤ 2 - ε}` of the two normalized charts
-`TauCeti.realProjPlaneTopChart` and `TauCeti.realProjPlaneTopReflChart` at the maximum
-`[0 : 0 : 1]` of `f[x : y : z] = (y² + 2z²) / (x² + y² + z²)` are not homotopic with their source
-`∂D²` fixed, since their core degrees `2` and `-2` differ. They still give homeomorphic cell
-attachments relative to `{f ≤ 2 - ε}`
-(`TauCeti.exists_iso_morseCellAttachment_realProjPlaneTopReflChart_realProjPlaneTopChart`),
-since `α₋ = α₊ ∘ r` for the reflection `r` of the disc. -/
-theorem not_homotopic_morseAttachingMap_realProjPlaneTopChart_realProjPlaneTopReflChart
-    (hε₀ : 0 < ε) (hε₁ : ε < 1) :
-    ¬ (realProjPlaneTopChart.morseAttachingMap le_rfl hε₀.le
-        (closedBall_subset_realProjPlaneTopChart_target hε₁)
-        projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopChart).hom.Homotopic
-      (realProjPlaneTopReflChart.morseAttachingMap le_rfl hε₀.le
-        (closedBall_subset_realProjPlaneTopReflChart_target hε₁)
-        projectiveMomentFunction_eq_two_add_sum_realProjPlaneTopReflChart).hom := fun h ↦ by
-  have := realProjPlaneCoreDegree_eq_of_homotopic
-    ((ContinuousMap.Homotopic.refl (ContinuousMap.inclusion
-      (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans_lt (sub_lt_self 2 hε₀)))).comp h)
-  rw [realProjPlaneCoreDegree_morseAttachingMap_realProjPlaneTopChart hε₀ hε₁,
-    realProjPlaneCoreDegree_morseAttachingMap_realProjPlaneTopReflChart hε₀ hε₁] at this
-  norm_num at this
+/-- The value of the circle map on the attaching map of the reflected chart, read off from the
+strict relation `α₋ = α₊ ∘ r`. -/
+private theorem coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingMapReflect
+    (hε : 0 < ε) (hε1 : ε < 1) (w : TopCat.diskBoundary.{0} 2) :
+    (projectivePlaneSublevelCircleEquiv (c := 2 - ε) (by linarith) (by linarith)
+      (projectivePlaneAttachingMapReflect hε.le hε1 w) : ℂ) =
+      ((-((√2)⁻¹ * (w.down : EuclideanSpace ℝ (Fin 2)) 0) : ℝ) +
+        ((w.down : EuclideanSpace ℝ (Fin 2)) 1 : ℝ) * Complex.I) ^ 2 /
+      ((-((√2)⁻¹ * (w.down : EuclideanSpace ℝ (Fin 2)) 0)) ^ 2 +
+        (w.down : EuclideanSpace ℝ (Fin 2)) 1 ^ 2 : ℝ) := by
+  rw [projectivePlaneAttachingMapReflect_apply hε.le hε1,
+    coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingMap hε hε1,
+    LinearIsometryEquiv.coe_diskBoundaryIso_hom_apply_down]
+  simp only [EuclideanSpace.reflection_singleton_single_apply, zero_ne_one, ↓reduceIte, mul_neg]
+
+/-- **The attaching map of the reflected chart has degree `-2`.** Read in the circle
+`TauCeti.projectivePlaneSublevelCircleEquiv`, the attaching map `α₋ = α₊ ∘ r` along the
+counterclockwise loop of `∂D²` has degree `-2`: its values are the complex conjugates of those of
+`α₊`. -/
+theorem degree_projectivePlaneAttachingMapReflect (hε : 0 < ε) (hε1 : ε < 1) :
+    Circle.degree ((diskBoundaryTwoLoop.map
+      (projectivePlaneAttachingMapReflect hε.le hε1).hom.continuous).map
+      (projectivePlaneSublevelCircleEquiv (c := 2 - ε) (by linarith) (by linarith)).continuous) =
+      -2 := by
+  rw [Circle.degree_congr _ ((diskBoundaryTwoLoop.map
+      (projectivePlaneAttachingMap hε.le hε1).hom.continuous).map
+      (projectivePlaneSublevelCircleEquiv (c := 2 - ε) (by linarith)
+        (by linarith)).continuous).inv fun t ↦ ?_, Circle.degree_inv,
+    degree_projectivePlaneAttachingMap hε hε1]
+  refine Circle.coe_injective ?_
+  simp only [Path.inv_apply, Path.map_coe, Function.comp_apply, Circle.coe_inv_eq_conj]
+  rw [coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingMapReflect hε hε1,
+    coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingMap hε hε1]
+  simp only [map_div₀, map_pow, map_add, map_mul, Complex.conj_ofReal, Complex.conj_I, neg_sq]
+  push_cast
+  ring
 
 end Degree
+
+/-! ### The attaching maps in the fundamental group of the sublevel -/
+
+section FundamentalGroup
+
+variable {ε c : ℝ}
+
+/-- **The core circle generates the fundamental group of the sublevel.** For `1 ≤ c < 2`,
+`π₁({f ≤ c}, [1 : 0 : 0])` is generated by the class of the core circle
+`t ↦ [cos πt : sin πt : 0]`: the sublevel retracts onto the line `z = 0`, a circle. -/
+theorem zpowers_projectivePlaneCoreLoop_eq_top (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
+    Subgroup.zpowers (FundamentalGroup.fromPath
+      (Path.Homotopic.Quotient.mk (projectivePlaneCoreLoop hc₁))) = ⊤ :=
+  Circle.zpowers_fromPath_eq_top_of_degree_map_eq_one
+    (d := (projectivePlaneSublevelCircleEquiv hc₁ hc₂).toFun)
+    ((projectivePlaneSublevelCircleEquiv hc₁ hc₂).fundamentalGroup_map_bijective _).1
+    (degree_projectivePlaneCoreLoop_map hc₁ hc₂)
+
+/-- **The attaching map of the top chart is twice the core circle.** Along the counterclockwise
+loop of `∂D²`, the attaching map `α₊` of the cell of the maximum is homotopic, through loops based
+at its basepoint, to the core circle run twice, conjugated by any path from that basepoint to
+`[1 : 0 : 0]`. -/
+theorem homotopic_projectivePlaneAttachingMap (hε : 0 < ε) (hε1 : ε < 1)
+    (p : Path (projectivePlaneAttachingMap hε.le hε1 diskBoundaryTwoBase)
+      (projectivePlaneSublevelBase (c := 2 - ε) (by linarith))) :
+    (diskBoundaryTwoLoop.map (projectivePlaneAttachingMap hε.le hε1).hom.continuous).Homotopic
+      (p.trans (((projectivePlaneCoreLoop (c := 2 - ε) (by linarith)).trans
+        (projectivePlaneCoreLoop (c := 2 - ε) (by linarith))).trans p.symm)) := by
+  have hc₁ : 1 ≤ 2 - ε := by linarith
+  have hc₂ : 2 - ε < 2 := by linarith
+  refine Circle.homotopic_trans_of_degree_map_eq
+    (d := (projectivePlaneSublevelCircleEquiv hc₁ hc₂).toFun)
+    ((projectivePlaneSublevelCircleEquiv hc₁ hc₂).fundamentalGroup_map_bijective _).1 ?_ p
+  rw [Path.map_trans, Circle.degree_trans]
+  exact (degree_projectivePlaneAttachingMap hε hε1).trans
+    (by rw [degree_projectivePlaneCoreLoop_map hc₁ hc₂]; norm_num)
+
+/-- **The attaching map of the reflected chart is twice the reversed core circle.** Along the
+counterclockwise loop of `∂D²`, the attaching map `α₋` of the cell of the maximum is homotopic,
+through loops based at its basepoint, to the reversed core circle run twice, conjugated by any
+path from that basepoint to `[1 : 0 : 0]`. -/
+theorem homotopic_projectivePlaneAttachingMapReflect (hε : 0 < ε) (hε1 : ε < 1)
+    (p : Path (projectivePlaneAttachingMapReflect hε.le hε1 diskBoundaryTwoBase)
+      (projectivePlaneSublevelBase (c := 2 - ε) (by linarith))) :
+    (diskBoundaryTwoLoop.map
+        (projectivePlaneAttachingMapReflect hε.le hε1).hom.continuous).Homotopic
+      (p.trans (((projectivePlaneCoreLoop (c := 2 - ε) (by linarith)).symm.trans
+        (projectivePlaneCoreLoop (c := 2 - ε) (by linarith)).symm).trans p.symm)) := by
+  have hc₁ : 1 ≤ 2 - ε := by linarith
+  have hc₂ : 2 - ε < 2 := by linarith
+  refine Circle.homotopic_trans_of_degree_map_eq
+    (d := (projectivePlaneSublevelCircleEquiv hc₁ hc₂).toFun)
+    ((projectivePlaneSublevelCircleEquiv hc₁ hc₂).fundamentalGroup_map_bijective _).1 ?_ p
+  rw [Path.map_trans, Circle.degree_trans, ← Path.map_symm, Circle.degree_symm]
+  exact (degree_projectivePlaneAttachingMapReflect hε hε1).trans
+    (by rw [degree_projectivePlaneCoreLoop_map hc₁ hc₂]; norm_num)
+
+/-- **The two attaching maps are not homotopic.** The attaching maps `α₊` and `α₋ = α₊ ∘ r` of the
+cell of the maximum in the top chart and in its reflection are not homotopic as maps
+`∂D² → {f ≤ 2 - ε}`, with their labelled source fixed: their degrees `2` and `-2` differ. -/
+theorem not_homotopic_projectivePlaneAttachingMap_reflect (hε : 0 < ε) (hε1 : ε < 1) :
+    ¬ (projectivePlaneAttachingMap hε.le hε1).hom.Homotopic
+      (projectivePlaneAttachingMapReflect hε.le hε1).hom := by
+  rintro ⟨H⟩
+  set e := projectivePlaneSublevelCircleEquiv (c := 2 - ε) (by linarith) (by linarith)
+  let F : C(I × I, Circle) := e.toFun.comp (H.toContinuousMap.comp
+    (ContinuousMap.prodMap (ContinuousMap.id I) diskBoundaryTwoLoop.toContinuousMap))
+  have h := Circle.degree_eq_of_homotopy ((diskBoundaryTwoLoop.map
+      (projectivePlaneAttachingMap hε.le hε1).hom.continuous).map e.continuous)
+    ((diskBoundaryTwoLoop.map
+      (projectivePlaneAttachingMapReflect hε.le hε1).hom.continuous).map e.continuous)
+    F (fun t ↦ ?_) (fun t ↦ ?_) (fun s ↦ ?_)
+  · rw [degree_projectivePlaneAttachingMap hε hε1,
+      degree_projectivePlaneAttachingMapReflect hε hε1] at h
+    norm_num at h
+  all_goals simp only [F, ContinuousMap.comp_apply, ContinuousMap.prodMap_apply,
+    ContinuousMap.coe_id, Path.coe_toContinuousMap, Prod.map_apply, id_eq, Path.source, Path.target,
+    ContinuousMap.Homotopy.coe_toContinuousMap, ContinuousMap.Homotopy.apply_zero,
+    ContinuousMap.Homotopy.apply_one, Path.map_coe, Function.comp_apply]
+
+end FundamentalGroup
 
 end TauCeti

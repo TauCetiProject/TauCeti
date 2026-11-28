@@ -88,6 +88,8 @@ vanishes identically near `z₀`, of order `⊤`, is its own `n`-th root.
   logarithmic derivative, and so does not depend on which branch was chosen.
 * `ContinuousOn.eqOn_of_eqOn_exp_comp` — on a preconnected set, a continuous lift along
   `Complex.exp` is determined by its value at one point.
+* `AnalyticOnNhd.exists_eqOn_exp_comp_ball` — a function analytic and zero-free on an open disc
+  `ball c R` admits an analytic logarithm on `ball c R` with prescribed value at the centre.
 * `AnalyticOnNhd.exists_eqOn_exp_comp_closedBall` — a function analytic and zero-free near a closed
   disc `closedBall c R` admits an analytic logarithm near `closedBall c R` with prescribed value at
   the centre.
@@ -460,6 +462,32 @@ theorem exists_differentiableOn_eqOn_exp_comp_le_re {a : ℝ} {V : Set ℂ} {f g
 end TauCeti
 
 open Complex Metric Set
+
+/-- **Existence of an analytic logarithm on an open disc.** If `g` is analytic and zero-free on
+`ball c R` and `Complex.exp w₀ = g c`, there exists `L` analytic on `ball c R` with `L c = w₀` and
+`Complex.exp ∘ L = g` on `ball c R`. -/
+theorem AnalyticOnNhd.exists_eqOn_exp_comp_ball {g : ℂ → ℂ} {c w₀ : ℂ} {R : ℝ}
+    (hg : AnalyticOnNhd ℂ g (ball c R)) (hn : ∀ z ∈ ball c R, g z ≠ 0)
+    (hw₀ : Complex.exp w₀ = g c) :
+    ∃ L : ℂ → ℂ, AnalyticOnNhd ℂ L (ball c R) ∧ L c = w₀ ∧
+      EqOn (Complex.exp ∘ L) g (ball c R) := by
+  rcases le_or_gt R 0 with hR | hR
+  · exact ⟨fun _ ↦ w₀, analyticOnNhd_const, rfl, by simp [ball_eq_empty.mpr hR]⟩
+  have hsc : IsSimplyConnected (ball c R) := by
+    have : ContractibleSpace (ball c R) := Metric.contractibleSpace_ball hR
+    exact SimplyConnectedSpace.ofContractible _
+  have hg₀ : (0 : ℂ) ∉ g '' ball c R := by
+    rintro ⟨z, hz, hz0⟩
+    exact hn z hz hz0
+  obtain ⟨L₀, hL₀d, hL₀exp⟩ :=
+    TauCeti.exists_differentiableOn_eqOn_exp_comp hsc isOpen_ball hg.differentiableOn hg₀
+  have hL₀a : AnalyticOnNhd ℂ L₀ (ball c R) := hL₀d.analyticOnNhd isOpen_ball
+  refine ⟨fun z ↦ L₀ z - L₀ c + w₀, (hL₀a.sub analyticOnNhd_const).add analyticOnNhd_const,
+    by ring, fun z hz ↦ ?_⟩
+  have hexpc : Complex.exp (L₀ c) = g c := hL₀exp (mem_ball_self hR)
+  have hexpz : Complex.exp (L₀ z) = g z := hL₀exp hz
+  simp only [Function.comp_apply, Complex.exp_add, Complex.exp_sub, hexpz, hexpc, hw₀]
+  exact div_mul_cancel₀ (g z) (hn c (mem_ball_self hR))
 
 /-- **Existence of an analytic logarithm on a closed disc.** If `g` is analytic and zero-free on a
 neighbourhood of `closedBall c R` and `Complex.exp w₀ = g c`, there exists `L` analytic on a
