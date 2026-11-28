@@ -234,18 +234,22 @@ instance projective_gradedArrowSum : Projective (gradedArrowSum k Q i) :=
 
 variable [Finite ((j : Q) × (i ⟶ j))]
 
+/-- The arrow kernel `⨁_{a : i ⟶ j} (kQ eⱼ){1}` is a finite graded projective `kQ`-module. -/
+theorem gradedFiniteProjectiveModules_gradedArrowSum :
+    gradedFiniteProjectiveModules (integerGrade k Q) (gradedArrowSum k Q i) :=
+  let _ := integerGradedAlgebra k Q
+  gradedFiniteProjectiveModules_directSumObj
+    (fun a : (j : Q) × (i ⟶ j) => (gradedVertexProjective k Q a.1).shiftObj 1)
+    fun a => gradedFiniteProjectiveModules_shiftObj
+      (gradedFiniteProjectiveModules_gradedVertexProjective k Q a.1) 1
+
 /-- The direct sum of the shifted vertex projectives indexed by arrows out of a vertex
 is finitely generated as a graded module. -/
 theorem gradedFiniteModules_gradedArrowSum :
-    gradedFiniteModules (integerGrade k Q) (gradedArrowSum k Q i) := by
-  let _ := integerGradedAlgebra k Q
-  let _ : Fintype ((j : Q) × (i ⟶ j)) := Fintype.ofFinite _
-  let _ : ∀ a : (j : Q) × (i ⟶ j),
-      Module.Finite (pathAlgebra k Q) ((gradedVertexProjective k Q a.1).shiftObj 1) :=
-    fun a => (gradedFiniteProjectiveModules_iff.mp
-      (gradedFiniteProjectiveModules_shiftObj
-        (gradedFiniteProjectiveModules_gradedVertexProjective k Q a.1) 1)).1
-  exact gradedFiniteModules_iff.mpr inferInstance
+    gradedFiniteModules (integerGrade k Q) (gradedArrowSum k Q i) :=
+  gradedFiniteModules_iff.mpr
+    (gradedFiniteProjectiveModules_iff.mp
+      (gradedFiniteProjectiveModules_gradedArrowSum k Q i)).1
 
 /-- **The kernel of `kQ eᵢ ↠ Sᵢ` as a direct sum**: the graded map
 `⨁_{a : i ⟶ j} (kQ eⱼ){1} ⟶ kQ eᵢ` whose component at `a` is the morphism
@@ -374,16 +378,6 @@ theorem isGeneratedInDegree_one_gradedArrowSum (i : Q) :
   rw [InternalGrading.isGeneratedInDegree_shift_iff, add_neg_cancel]
   exact isGeneratedInDegree_zero_gradedVertexProjective k Q a.1
 
-/-- The arrow kernel `⨁_{a : i ⟶ j} (kQ eⱼ){1}` is a finite graded projective `kQ`-module. -/
-theorem gradedFiniteProjectiveModules_gradedArrowSum (i : Q) [Finite ((j : Q) × (i ⟶ j))] :
-    gradedFiniteProjectiveModules (integerGrade k Q) (gradedArrowSum k Q i) := by
-  refine gradedFiniteProjectiveModules_iff.mpr
-    ⟨gradedFiniteModules_iff.mp (gradedFiniteModules_gradedArrowSum k Q i), ?_⟩
-  let _ : ∀ a : (j : Q) × (i ⟶ j),
-      Module.Projective (pathAlgebra k Q) ((gradedVertexProjective k Q a.1).shiftObj 1) :=
-    fun a => moduleProjective_gradedVertexProjective k Q a.1
-  infer_instance
-
 private abbrev gradedVertexSimpleZeroTerm (i : Q) :
     GradedModuleCat.{max u v w} (integerGrade k Q) :=
   GradedModuleCat.directSumObj fun _ : Fin 0 => gradedVertexProjective k Q i
@@ -424,10 +418,7 @@ def gradedVertexSimpleProjectiveResolution (i : Q) [Finite ((j : Q) × (i ⟶ j)
     isHomogeneous_π := (gradedVertexProjectiveToSimple k Q i).isHomogeneous
     surjective_π := (GradedModuleCat.epi_iff_surjective _).mp
       (epi_gradedVertexProjectiveToSimple k Q i)
-    exact_d_π := by
-      have hex := GradedModuleCat.exact_iff.mp (shortExact_gradedVertexSimpleResolution k Q i).exact
-      rw [gradedVertexSimpleResolution_def] at hex
-      exact hex
+    exact_d_π := exact_gradedArrowSumToVertexProjective k Q i
     exact_d_d
       | 0 => (LinearMap.exact_zero_iff_injective _ _).mpr <|
         (GradedModuleCat.mono_iff_injective _).mp (mono_gradedArrowSumToVertexProjective k Q i)
@@ -453,6 +444,7 @@ theorem gradedVertexSimpleProjectiveResolution_termObj_one (i : Q)
 
 /-- The augmentation of the first-arrow resolution of `Sᵢ` is `gradedVertexProjectiveToSimple`,
 transported along `gradedVertexSimpleProjectiveResolution_termObj_zero`. -/
+@[simp]
 theorem gradedVertexSimpleProjectiveResolution_augmentation (i : Q)
     [Finite ((j : Q) × (i ⟶ j))] :
     (gradedVertexSimpleProjectiveResolution k Q i).augmentation =
@@ -463,6 +455,7 @@ theorem gradedVertexSimpleProjectiveResolution_augmentation (i : Q)
 /-- The degree-zero differential of the first-arrow resolution of `Sᵢ` is
 `gradedArrowSumToVertexProjective`, transported along the degree-zero and degree-one term
 identifications. -/
+@[simp]
 theorem gradedVertexSimpleProjectiveResolution_differential_zero (i : Q)
     [Finite ((j : Q) × (i ⟶ j))] :
     (gradedVertexSimpleProjectiveResolution k Q i).differential 0 =

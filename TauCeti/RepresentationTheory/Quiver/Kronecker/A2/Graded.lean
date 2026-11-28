@@ -192,21 +192,25 @@ end Categorical
 /-- The `t = -1` evaluation of the Betti Poincaré matrix of `1 ⟶ 2` is a left inverse of the
 graded Cartan matrix. -/
 @[simp]
-theorem gradedBettiMatrixA2_map_trunc_two_eval_neg_one_mul_gradedCartanMatrixA2 :
+theorem gradedBettiMatrixA2_map_eval_neg_one_trunc_two_mul_gradedCartanMatrixA2 :
     gradedBettiMatrixA2.map (fun P => (PowerSeries.trunc 2 P).eval (-1)) *
       gradedCartanMatrixA2 = 1 := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Matrix.mul_apply, Fin.sum_univ_two, PowerSeries.trunc_C_mul, PowerSeries.trunc_X,
-      PowerSeries.trunc_one]
+  rw [Matrix.eta_fin_two (gradedBettiMatrixA2.map _), Matrix.eta_fin_two gradedCartanMatrixA2]
+  simp only [Matrix.map_apply, gradedBettiMatrixA2_apply, gradedCartanMatrixA2_apply,
+    Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
+    PowerSeries.trunc_one, map_zero, PowerSeries.trunc_C_mul, PowerSeries.trunc_X,
+    Polynomial.eval_one, Polynomial.eval_mul, Polynomial.eval_C, Polynomial.eval_X, mul_neg,
+    mul_one]
+  rw [Matrix.mul_fin_two, Matrix.one_fin_two]
+  simp
 
 /-- The graded Cartan matrix and the `t = -1` evaluation of the Betti Poincaré matrix of `1 ⟶ 2`
 satisfy `C(q) · B(q, -1) = I`. -/
 @[simp]
-theorem gradedCartanMatrixA2_mul_gradedBettiMatrixA2_map_trunc_two_eval_neg_one :
+theorem gradedCartanMatrixA2_mul_gradedBettiMatrixA2_map_eval_neg_one_trunc_two :
     gradedCartanMatrixA2 *
       gradedBettiMatrixA2.map (fun P => (PowerSeries.trunc 2 P).eval (-1)) = 1 :=
-  mul_eq_one_comm.mp gradedBettiMatrixA2_map_trunc_two_eval_neg_one_mul_gradedCartanMatrixA2
+  mul_eq_one_comm.mp gradedBettiMatrixA2_map_eval_neg_one_trunc_two_mul_gradedCartanMatrixA2
 
 variable {A : Type v} [Unique A] (k : Type u) [Field k]
 variable [HasExt.{max u v}

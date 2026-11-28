@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Quiver.Star
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedSimple
 
 /-!
@@ -47,9 +48,7 @@ theorem laurentK0_gradedArrowSum_eq_sum (j : Q) [Finite ((i : Q) × (j ⟶ i))] 
       ∑ i : Q, ((Nat.card (j ⟶ i) : LaurentPolynomial ℤ) * T 1) •
         gradedVertexProjectiveClass k Q i := by
   classical
-  let _ (i : Q) : Finite (j ⟶ i) :=
-    Finite.of_injective (fun f : j ⟶ i => (⟨i, f⟩ : (i : Q) × (j ⟶ i)))
-      fun _ _ h => eq_of_heq (Sigma.mk.inj h).2
+  let _ (i : Q) : Finite (j ⟶ i) := Quiver.finiteHomOfFiniteStar j i
   let _ (i : Q) : Fintype (j ⟶ i) := Fintype.ofFinite (j ⟶ i)
   rw [laurentK0_projective_of_directSumObj
     (M := fun a : (i : Q) × (j ⟶ i) => (gradedVertexProjective k Q a.1).shiftObj 1)

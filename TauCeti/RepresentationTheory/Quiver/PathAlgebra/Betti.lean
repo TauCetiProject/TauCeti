@@ -25,7 +25,7 @@ arrows `i ⟶ j`. Setting `t = -1` recovers `I - q Aᵀ`, the inverse of the gra
 * `TauCeti.PathAlgebra.bettiPoincarePowerSeriesMatrix_gradedVertexSimple_apply`: the `(i, j)`
   entry of the Betti Poincaré matrix of any minimal resolutions of the graded vertex simples of a
   finite acyclic path algebra is `δᵢⱼ + |j ⟶ i| q t`.
-* `TauCeti.PathAlgebra.bettiPoincarePowerSeriesMatrix_map_trunc_two_eval_neg_one`: evaluating
+* `TauCeti.PathAlgebra.bettiPoincarePowerSeriesMatrix_map_eval_neg_one_trunc_two`: evaluating
   the truncated Betti Poincaré matrix at `t = -1` gives `1 - q Aᵀ`.
 
 ## References
@@ -130,7 +130,7 @@ theorem bettiPoincarePowerSeriesMatrix_gradedVertexSimple_apply [DecidableEq Q]
 
 /-- **Evaluation of the Betti Poincaré matrix of a finite acyclic path algebra at `t = -1`**
 gives `1 - q Aᵀ`, the left and right inverse of the graded Cartan matrix `C(q)`. -/
-theorem bettiPoincarePowerSeriesMatrix_map_trunc_two_eval_neg_one [DecidableEq Q]
+theorem bettiPoincarePowerSeriesMatrix_map_eval_neg_one_trunc_two [DecidableEq Q]
     (r : ∀ l, GradedProjectiveResolution.{w, max u v w, max u v w, max u v w}
       (integerGrade k Q) (gradedVertexSimple k Q l).grading)
     [∀ l n, Module.Finite (pathAlgebra k Q) ((r l).X n)]
