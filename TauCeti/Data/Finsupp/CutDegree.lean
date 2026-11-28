@@ -18,14 +18,14 @@ import TauCeti.Algebra.Group.Ideal
 # Uniform cut-off degree for cardinality bounds on monomial ideals
 
 Specializing `TauCeti.eventually_forall_ncard_sdiff_le` to `α = J →₀ ℕ` (with `Finite J`) and
-`S i = Finsupp.degree ⁻¹' {f i}` for any degree sequence `f : ℕ → ℕ` yields the uniform cut-off
-index for monomial ideals in finitely many variables.
+`S i = Finsupp.degree ⁻¹' {f i}` for any degree family `f : ι → ℕ` indexed by a preorder `ι` yields
+the uniform cut-off index for monomial ideals in finitely many variables.
 
 ## Main results
 
 * `TauCeti.eventually_forall_ncard_degree_sdiff_le`: uniform cut-off index for monomial ideals
-  `AddSemigroupIdeal (J →₀ ℕ)` in finitely many variables `J` and arbitrary degree sequence
-  `f : ℕ → ℕ`.
+  `AddSemigroupIdeal (J →₀ ℕ)` in finitely many variables `J` and arbitrary degree family
+  `f : ι → ℕ`.
 
 ## Provenance
 
@@ -40,14 +40,15 @@ open Filter Set
 
 namespace TauCeti
 
-/-- For finitely many variables `J`, any degree sequence `f : ℕ → ℕ`, and any count bounds
-`σ : ℕ → ℕ`, every sufficiently large `d : ℕ` is a uniform cut-off for monomial ideals
-`M : AddSemigroupIdeal (J →₀ ℕ)`: omitting at most `σ i` monomials of degree `f i` for all
-`i ≤ d` forces the same bound for all `i : ℕ`. -/
-theorem eventually_forall_ncard_degree_sdiff_le {J : Type*} [Finite J] (f σ : ℕ → ℕ) :
-    ∀ᶠ d : ℕ in atTop, ∀ M : AddSemigroupIdeal (J →₀ ℕ),
+/-- For finitely many variables `J`, a preordered index type `ι`, any degree family `f : ι → ℕ`,
+and any count bounds `σ : ι → ℕ`, every sufficiently large `d : ι` is a uniform cut-off for
+monomial ideals `M : AddSemigroupIdeal (J →₀ ℕ)`: omitting at most `σ i` monomials of degree `f i`
+for all `i ≤ d` forces the same bound for all `i : ι`. -/
+theorem eventually_forall_ncard_degree_sdiff_le {J ι : Type*} [Finite J] [Preorder ι]
+    (f σ : ι → ℕ) :
+    ∀ᶠ d : ι in atTop, ∀ M : AddSemigroupIdeal (J →₀ ℕ),
       (∀ i ≤ d, (Finsupp.degree ⁻¹' {f i} \ M.carrier).ncard ≤ σ i) →
-        ∀ i : ℕ, (Finsupp.degree ⁻¹' {f i} \ M.carrier).ncard ≤ σ i :=
+        ∀ i : ι, (Finsupp.degree ⁻¹' {f i} \ M.carrier).ncard ≤ σ i :=
   eventually_forall_ncard_sdiff_le
     (fun i ↦ Finsupp.degree ⁻¹' {f i}) (fun i ↦ Finsupp.finite_of_degree_eq (f i)) σ
 
