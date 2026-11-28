@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.Regular.RegularSequence
 public import Mathlib.RingTheory.WittVector.Complete
+import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.Regular.RegularSequence
 import TauCeti.RingTheory.WittVector.Teichmuller.Coeff
 
 /-!
@@ -14,9 +16,9 @@ import TauCeti.RingTheory.WittVector.Teichmuller.Coeff
 
 Let `S` be a perfect ring of characteristic `p` and `W(S) = WittVector p S` its ring of `p`-typical
 Witt vectors. Since `W(S)` is `p`-torsion-free and `p`-adically separated with
-`W(S) ⧸ (p) ≃+* S`, regularity of multiplication by `x : W(S)` and of the two-element sequence
-`(p, x)` in either order is governed entirely by whether the zeroth Witt coordinate `x.coeff 0`
-is a nonzerodivisor of `S`:
+`W(S) ⧸ (p) ≃+* S`, regularity of multiplication by `x` on `W(S) ⧸ (p)` is equivalent to
+`x.coeff 0` being a nonzerodivisor of `S`, and this condition gives a sufficient criterion for
+regularity of `x` on `W(S)` and of the two-element sequences `(p, x)` and `(x, p)`:
 
 * `p` is a nonzerodivisor of `W(S)`.
 * Multiplication by `x` on `W(S) ⧸ (p)` is regular iff `x.coeff 0 ∈ S⁰`.
@@ -60,10 +62,6 @@ theorem isSMulRegular_natCast : IsSMulRegular (𝕎 S) (p : 𝕎 S) :=
   IsSMulRegular.of_right_eq_zero_of_smul fun {_} h ↦
     eq_zero_of_p_mul_eq_zero _ (by simpa [smul_eq_mul, mul_comm] using h)
 
-private noncomputable def quotSMulTopEquivQuotientSpan (x : 𝕎 S) :
-    QuotSMulTop x (𝕎 S) ≃ₗ[𝕎 S] 𝕎 S ⧸ span {x} :=
-  Submodule.quotEquivOfEq _ _ (by rw [← Submodule.ideal_span_singleton_smul, smul_eq_mul, mul_top])
-
 /-- Multiplication by `x` on `W(S) ⧸ (p)` is regular iff `x.coeff 0` is a nonzerodivisor of `S`. -/
 theorem isSMulRegular_quotientP_iff (x : 𝕎 S) :
     IsSMulRegular (𝕎 S ⧸ span {(p : 𝕎 S)}) x ↔ x.coeff 0 ∈ S⁰ := by
@@ -83,7 +81,7 @@ theorem isSMulRegular_quotientP_iff (x : 𝕎 S) :
 /-- Multiplication by `x` on `W(S) ⧸ p W(S)` is regular iff `x.coeff 0 ∈ S⁰`. -/
 theorem isSMulRegular_quotSMulTop_natCast_iff (x : 𝕎 S) :
     IsSMulRegular (QuotSMulTop (p : 𝕎 S) (𝕎 S)) x ↔ x.coeff 0 ∈ S⁰ :=
-  ((quotSMulTopEquivQuotientSpan (p : 𝕎 S)).isSMulRegular_congr x).trans
+  (((QuotSMulTop.equivQuotientSpan (p : 𝕎 S)).restrictScalars (𝕎 S)).isSMulRegular_congr x).trans
     (isSMulRegular_quotientP_iff x)
 
 /-- If the zeroth Witt coordinate of `x` is a nonzerodivisor of `S`, then `x` is a nonzerodivisor
@@ -130,8 +128,8 @@ theorem isSMulRegular_quotient_natCast_of_coeff_zero {x : 𝕎 S} (hx : x.coeff 
 /-- If `x.coeff 0 ∈ S⁰`, then `p` is regular on `W(S) ⧸ x W(S)`. -/
 theorem isSMulRegular_quotSMulTop_natCast_of_coeff_zero {x : 𝕎 S} (hx : x.coeff 0 ∈ S⁰) :
     IsSMulRegular (QuotSMulTop x (𝕎 S)) (p : 𝕎 S) :=
-  ((quotSMulTopEquivQuotientSpan x).isSMulRegular_congr (p : 𝕎 S)).mpr
-    (isSMulRegular_quotient_natCast_of_coeff_zero hx)
+  (((QuotSMulTop.equivQuotientSpan x).restrictScalars (𝕎 S)).isSMulRegular_congr
+    (p : 𝕎 S)).mpr (isSMulRegular_quotient_natCast_of_coeff_zero hx)
 
 /-- If `x.coeff 0 ∈ S⁰`, then `[p, x]` is a weakly regular sequence on `W(S)`. -/
 theorem isWeaklyRegular_pair_natCast_of_coeff_zero {x : 𝕎 S} (hx : x.coeff 0 ∈ S⁰) :
@@ -165,20 +163,11 @@ theorem span_pair_natCast_ne_top_iff (x : 𝕎 S) :
   · have : span {x.coeff 0} = ⊤ := by rw [← hmap, htop, Ideal.map_top]
     exact Ideal.span_singleton_eq_top.mp this
 
-omit [CharP S p] [PerfectRing S p] in
-private theorem isRegular_pair_iff_isWeaklyRegular_of_not_isUnit (a b : 𝕎 S)
-    (h : span {a, b} ≠ ⊤) :
-    IsRegular (𝕎 S) [a, b] ↔ IsWeaklyRegular (𝕎 S) [a, b] := by
-  rw [isRegular_iff, Ideal.ofList_cons, Ideal.ofList_cons, Ideal.ofList_nil, sup_bot_eq,
-    smul_eq_mul, Ideal.mul_top, ← Ideal.span_insert, Set.insert_eq, Set.union_singleton,
-    Set.pair_comm b a]
-  exact and_iff_left h.symm
-
 /-- If `x.coeff 0 ∈ S⁰` and `¬ IsUnit (x.coeff 0)`, then `[p, x]` is a regular sequence on `W(S)`.
 -/
 theorem isRegular_pair_natCast_of_coeff_zero {x : 𝕎 S} (hx : x.coeff 0 ∈ S⁰)
     (hnu : ¬ IsUnit (x.coeff 0)) : IsRegular (𝕎 S) [(p : 𝕎 S), x] :=
-  (isRegular_pair_iff_isWeaklyRegular_of_not_isUnit _ _
+  (isRegular_pair_iff_isWeaklyRegular_of_span_ne_top
     ((span_pair_natCast_ne_top_iff x).mpr hnu)).mpr
       (isWeaklyRegular_pair_natCast_of_coeff_zero hx)
 
@@ -186,7 +175,7 @@ theorem isRegular_pair_natCast_of_coeff_zero {x : 𝕎 S} (hx : x.coeff 0 ∈ S�
 -/
 theorem isRegular_pair_of_coeff_zero {x : 𝕎 S} (hx : x.coeff 0 ∈ S⁰)
     (hnu : ¬ IsUnit (x.coeff 0)) : IsRegular (𝕎 S) [x, (p : 𝕎 S)] :=
-  (isRegular_pair_iff_isWeaklyRegular_of_not_isUnit x (p : 𝕎 S)
+  (isRegular_pair_iff_isWeaklyRegular_of_span_ne_top
     (by rw [Set.pair_comm]; exact (span_pair_natCast_ne_top_iff x).mpr hnu)).mpr
       (isWeaklyRegular_pair_of_coeff_zero hx)
 

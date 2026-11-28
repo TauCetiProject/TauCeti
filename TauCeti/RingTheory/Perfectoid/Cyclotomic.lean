@@ -119,9 +119,8 @@ theorem fontaineTheta_cyclotomicXiTilde_eq_natCast {ε : A♭} (hε : ε.untilt 
 coordinate of `ε - 1` in `A ⧸ p` vanishes; hence `ε - 1` lies in the Jacobson radical of `A♭` and
 `ξ` is distinguished. -/
 theorem isDistinguished_cyclotomicXi_of_untilt_eq_one {ε : A♭} (hε : ε.untilt = 1) :
-    (cyclotomicXi p ε).IsDistinguished := by
-  refine isDistinguished_cyclotomicXi p (RingHom.ker_le_jacobson_of_isLocalHom (PreTilt.coeff 0) ?_)
-  rw [RingHom.mem_ker, map_sub, map_one, ← PreTilt.mk_untilt_eq_coeff_zero, hε, map_one, sub_self]
+    (cyclotomicXi p ε).IsDistinguished :=
+  isDistinguished_cyclotomicXi p (PreTilt.sub_one_mem_jacobson_of_untilt_eq_one hε)
 
 /-- If `ζ = (ε ^ (1 / p))♯` satisfies `∑_{j < p} ζ ^ j = 0`, then `ξ` lies in the kernel of
 Fontaine's map. -/

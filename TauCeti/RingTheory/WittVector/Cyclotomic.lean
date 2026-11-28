@@ -8,7 +8,8 @@ module
 public import TauCeti.RingTheory.WittVector.Frobenius
 public import TauCeti.RingTheory.WittVector.Primitive.Basic
 public import TauCeti.RingTheory.WittVector.Regular
--- Proof-only: `ε ^ (1 / p) - 1` is a `p`-th root of `ε - 1`.
+-- Proof-only: `ε ^ (1 / p) - 1` is a `p`-th root of `ε - 1`, and Jacobson elements are nonunits.
+import TauCeti.RingTheory.Jacobson.Basic
 import TauCeti.RingTheory.Perfect.Basic
 
 /-!
@@ -47,8 +48,9 @@ lies in the Jacobson radical of `S`, then modulo the Jacobson radical `ξ` becom
 `ξ'` are distinguished: their first Witt coordinates are units. Note that `ξ_r` and `ξ'_r` are not
 distinguished for `r ≥ 2`, since their `coeff 1` vanishes modulo the Jacobson radical; nevertheless,
 whenever `ε - 1 ∈ S⁰`, their zeroth Witt coordinates lie in `S⁰`, making all of `μ`, `ξ`, `ξ'`,
-`ξ_r`, and `ξ'_r` nonzerodivisors with `p`-torsion-free quotients and regular sequences with `p`
-when `ε - 1 ∈ Ring.jacobson S` and `Nontrivial S`.
+`ξ_r`, and `ξ'_r` nonzerodivisors with `p`-torsion-free quotients, and making `[p, x]` and `[x, p]`
+regular sequences when `ε - 1 ∈ Ring.jacobson S` and `Nontrivial S` (requiring `r ≥ 1` for `ξ_r`
+and `ξ'_r`).
 
 ## Main definitions
 
@@ -74,9 +76,12 @@ when `ε - 1 ∈ Ring.jacobson S` and `Nontrivial S`.
 * `TauCeti.WittVector.cyclotomicMu_eq_cyclotomicXiLevel_mul`,
   `TauCeti.WittVector.iterate_frobeniusEquiv_cyclotomicMu_eq_cyclotomicXiTildeLevel_mul`:
   `μ = ξ_r · φ⁻ʳ(μ)` and `φʳ(μ) = ξ'_r · μ`.
-* `TauCeti.WittVector.isDistinguished_cyclotomicXi`,
+* `TauCeti.WittVector.span_cyclotomicXiLevel_eq_of_span_cyclotomicXi_eq`: equality of `(ξ)`
+  propagates to equality of `(ξ_r)` for all `r`.
+* `TauCeti.WittVector.map_mk_jacobson_cyclotomicXi_eq_natCast`,
+  `TauCeti.WittVector.isDistinguished_cyclotomicXi`,
   `TauCeti.WittVector.isDistinguished_cyclotomicXiTilde`: if `ε - 1` lies in the Jacobson radical
-  of `S`, then `ξ` and `ξ'` are distinguished.
+  of `S`, then `ξ` reduces to `p` modulo the Jacobson radical, so `ξ` and `ξ'` are distinguished.
 * Regularity lemmas (`mem_nonZeroDivisors`, `isSMulRegular_quotient_natCast`, `isRegular_pair`)
   for `cyclotomicMu`, `cyclotomicXi`, `cyclotomicXiTilde`, `cyclotomicXiLevel`, and
   `cyclotomicXiTildeLevel`.
@@ -249,22 +254,29 @@ theorem frobenius_cyclotomicMu_eq_cyclotomicXiTilde_mul (ε : S) :
   rw [map_mul, cyclotomicXiTilde_def, ← _root_.WittVector.frobeniusEquiv_apply,
     RingEquiv.apply_symm_apply]
 
-/-- **`ξ` is distinguished** (Bhatt–Morrow–Scholze, Example 3.16). If `ε - 1` lies in the
-Jacobson radical of `S`, then the first Witt coordinate of `ξ = ∑_{j < p} [ε ^ (1 / p)] ^ j` is a
-unit: modulo the Jacobson radical, `ε ^ (1 / p)` becomes `1` and `ξ` becomes `p`. -/
-theorem isDistinguished_cyclotomicXi {ε : S} (hε : ε - 1 ∈ Ring.jacobson S) :
-    (cyclotomicXi p ε).IsDistinguished := by
+/-- Modulo the Jacobson radical of `S`, `W(q)` sends `ξ` to `p` whenever `ε - 1` lies in the
+Jacobson radical of `S`. -/
+theorem map_mk_jacobson_cyclotomicXi_eq_natCast {ε : S} (hε : ε - 1 ∈ Ring.jacobson S) :
+    map (Ideal.Quotient.mk (Ring.jacobson S)) (cyclotomicXi p ε) = p := by
   set x := (_root_.frobeniusEquiv S p).symm ε
   -- `x - 1` is a `p`-th root of `ε - 1`, and the Jacobson radical is a radical ideal
   have hx : x - 1 ∈ Ring.jacobson S := by
     rw [← Ideal.jacobson_bot] at hε ⊢
     exact Ideal.isRadical_jacobson ⊥ ⟨p, by rwa [frobeniusEquiv_symm_sub_one_pow]⟩
+  have hx1 : Ideal.Quotient.mk (Ring.jacobson S) x = 1 := by
+    rw [← map_one (Ideal.Quotient.mk (Ring.jacobson S)), Ideal.Quotient.eq]
+    exact hx
+  simp [cyclotomicXi_def, map_teichmuller, x, hx1]
+
+/-- **`ξ` is distinguished** (Bhatt–Morrow–Scholze, Example 3.16). If `ε - 1` lies in the
+Jacobson radical of `S`, then the first Witt coordinate of `ξ = ∑_{j < p} [ε ^ (1 / p)] ^ j` is a
+unit: modulo the Jacobson radical, `ε ^ (1 / p)` becomes `1` and `ξ` becomes `p`. -/
+theorem isDistinguished_cyclotomicXi {ε : S} (hε : ε - 1 ∈ Ring.jacobson S) :
+    (cyclotomicXi p ε).IsDistinguished := by
   let q := Ideal.Quotient.mk (Ring.jacobson S)
   have : IsLocalHom q := isLocalHom_of_le_jacobson le_rfl
-  have hq : map q (cyclotomicXi p ε) = p := by
-    have hx1 : q x = 1 := by rw [← map_one q, Ideal.Quotient.eq]; exact hx
-    simp [cyclotomicXi_def, map_teichmuller, x, hx1]
-  rw [isDistinguished_iff, ← isUnit_map_iff q, ← map_coeff, hq]
+  rw [isDistinguished_iff, ← isUnit_map_iff q, ← map_coeff,
+    map_mk_jacobson_cyclotomicXi_eq_natCast p hε]
   rcases subsingleton_or_nontrivial (S ⧸ Ring.jacobson S) with _ | _
   · exact isUnit_of_subsingleton _
   · have : CharP (S ⧸ Ring.jacobson S) p := (CharP.charP_iff_prime_eq_zero hp.out).mpr <| by
@@ -451,6 +463,27 @@ theorem cyclotomicXiTildeLevel_dvd_cyclotomicXiTildeLevel_of_le (ε : S) {r s : 
     cyclotomicXiTildeLevel p ε r ∣ cyclotomicXiTildeLevel p ε s :=
   Finset.prod_dvd_prod_of_subset _ _ _ (Finset.range_mono hrs)
 
+/-- If `cyclotomicXi p ε` and `cyclotomicXi p ε'` generate the same ideal of `W(S)`, then so do
+`cyclotomicXiLevel p ε r` and `cyclotomicXiLevel p ε' r` for every `r : ℕ`. -/
+theorem span_cyclotomicXiLevel_eq_of_span_cyclotomicXi_eq {ε ε' : S}
+    (h : Ideal.span {cyclotomicXi p ε} = Ideal.span {cyclotomicXi p ε'}) (r : ℕ) :
+    Ideal.span {cyclotomicXiLevel p ε r} = Ideal.span {cyclotomicXiLevel p ε' r} := by
+  have hdvd (a b : S)
+      (hab : Ideal.span {cyclotomicXi p a} ≤ Ideal.span {cyclotomicXi p b}) (j : ℕ) :
+      ((frobeniusEquiv p S).symm^[j]) (cyclotomicXi p b) ∣
+        ((frobeniusEquiv p S).symm^[j]) (cyclotomicXi p a) := by
+    have h0 : cyclotomicXi p b ∣ cyclotomicXi p a :=
+      Ideal.mem_span_singleton.mp (hab (Ideal.mem_span_singleton_self _))
+    induction j with
+    | zero => exact h0
+    | succ j ih =>
+      rw [Function.iterate_succ_apply', Function.iterate_succ_apply']
+      exact map_dvd _ ih
+  refine le_antisymm ?_ ?_ <;> rw [Ideal.span_singleton_le_span_singleton,
+    cyclotomicXiLevel_def, cyclotomicXiLevel_def]
+  · exact Finset.prod_dvd_prod_of_dvd _ _ fun j _ ↦ hdvd ε ε' h.le j
+  · exact Finset.prod_dvd_prod_of_dvd _ _ fun j _ ↦ hdvd ε' ε h.ge j
+
 /-- **`μ = ξ_r · φ⁻ʳ(μ)`**: the iterated geometric sum factorisation in `W(S)`. -/
 theorem cyclotomicMu_eq_cyclotomicXiLevel_mul (ε : S) (r : ℕ) :
     cyclotomicMu p ε =
@@ -573,18 +606,10 @@ theorem cyclotomicXiLevel_coeff_zero_mul (ε : S) (r : ℕ) :
     cyclotomicMu_coeff_zero] at h
   exact h
 
-private theorem coeff_iterate_frobeniusEquiv_zero (r : ℕ) (w : 𝕎 S) :
-    (((frobeniusEquiv p S)^[r]) w).coeff 0 = w.coeff 0 ^ p ^ r := by
-  induction r generalizing w with
-  | zero => simp
-  | succ r ih =>
-    rw [Function.iterate_succ_apply, ih, _root_.WittVector.frobeniusEquiv_apply,
-      coeff_frobenius_charP, ← pow_mul, pow_succ']
-
 /-- The zeroth Witt coordinate of `ξ'_r` is the `p ^ r`-th power of that of `ξ_r`. -/
 theorem cyclotomicXiTildeLevel_coeff_zero (ε : S) (r : ℕ) :
     (cyclotomicXiTildeLevel p ε r).coeff 0 = (cyclotomicXiLevel p ε r).coeff 0 ^ p ^ r := by
-  rw [← iterate_frobeniusEquiv_cyclotomicXiLevel, coeff_iterate_frobeniusEquiv_zero]
+  rw [← iterate_frobeniusEquiv_cyclotomicXiLevel, coeff_iterate_frobeniusEquiv]
 
 /-- If `ε - 1 ∈ S⁰`, then `ξ.coeff 0 ∈ S⁰`. -/
 theorem cyclotomicXi_coeff_zero_mem_nonZeroDivisors {ε : S} (hε : ε - 1 ∈ S⁰) :
@@ -612,23 +637,9 @@ theorem cyclotomicXiTildeLevel_coeff_zero_mem_nonZeroDivisors {ε : S} (hε : ε
 /-- If `ε - 1 ∈ Ring.jacobson S`, then `ξ.coeff 0 ∈ Ring.jacobson S`. -/
 theorem cyclotomicXi_coeff_zero_mem_jacobson {ε : S} (hε : ε - 1 ∈ Ring.jacobson S) :
     (cyclotomicXi p ε).coeff 0 ∈ Ring.jacobson S := by
-  set x := (_root_.frobeniusEquiv S p).symm ε
-  have hx : x - 1 ∈ Ring.jacobson S := by
-    rw [← Ideal.jacobson_bot] at hε ⊢
-    exact Ideal.isRadical_jacobson ⊥ ⟨p, by rwa [frobeniusEquiv_symm_sub_one_pow]⟩
   let q := Ideal.Quotient.mk (Ring.jacobson S)
-  have hq : map q (cyclotomicXi p ε) = p := by
-    have hx1 : q x = 1 := by rw [← map_one q, Ideal.Quotient.eq]; exact hx
-    simp [cyclotomicXi_def, map_teichmuller, x, hx1]
-  rw [← Ideal.Quotient.eq_zero_iff_mem]
-  have h0 := congrArg (·.coeff 0) hq
-  rw [map_coeff] at h0
-  rw [h0, ← constantCoeff_apply, map_natCast]
-  rcases subsingleton_or_nontrivial (S ⧸ Ring.jacobson S) with _ | _
-  · exact Subsingleton.elim _ _
-  · have : CharP (S ⧸ Ring.jacobson S) p := (CharP.charP_iff_prime_eq_zero hp.out).mpr <| by
-      rw [← map_natCast q, CharP.cast_eq_zero, map_zero]
-    exact CharP.cast_eq_zero _ p
+  rw [← Ideal.Quotient.eq_zero_iff_mem, ← map_coeff, map_mk_jacobson_cyclotomicXi_eq_natCast p hε,
+    ← constantCoeff_apply, map_natCast, ← map_natCast q, CharP.cast_eq_zero, map_zero]
 
 /-- If `ε - 1 ∈ Ring.jacobson S` and `1 ≤ r`, then `ξ_r.coeff 0 ∈ Ring.jacobson S`. -/
 theorem cyclotomicXiLevel_coeff_zero_mem_jacobson {ε : S} (hε : ε - 1 ∈ Ring.jacobson S)
@@ -649,10 +660,6 @@ theorem cyclotomicXiTildeLevel_coeff_zero_mem_jacobson {ε : S} (hε : ε - 1 �
   rw [cyclotomicXiTildeLevel_coeff_zero]
   exact Ideal.pow_mem_of_mem _ (cyclotomicXiLevel_coeff_zero_mem_jacobson p hε hr) _
     (pow_pos hp.out.pos r)
-
-private theorem not_isUnit_of_mem_jacobson [Nontrivial S] {a : S} (ha : a ∈ Ring.jacobson S) :
-    ¬ IsUnit a :=
-  fun hu ↦ (Ring.jacobson_lt_top (R := S)).ne (Ideal.eq_top_of_isUnit_mem _ ha hu)
 
 /-- If `ε - 1 ∈ S⁰`, then `μ = [ε] - 1` is a nonzerodivisor in `W(S)`. -/
 theorem cyclotomicMu_mem_nonZeroDivisors {ε : S} (hε : ε - 1 ∈ S⁰) :
@@ -718,35 +725,35 @@ theorem isRegular_pair_natCast_cyclotomicMu {ε : S} (hε : ε - 1 ∈ S⁰)
     (hJ : ε - 1 ∈ Ring.jacobson S) :
     IsRegular (𝕎 S) [(p : 𝕎 S), cyclotomicMu p ε] :=
   isRegular_pair_natCast_of_coeff_zero (by simpa using hε)
-    (not_isUnit_of_mem_jacobson (by simpa using hJ))
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson (by simpa using hJ))
 
 /-- If `ε - 1 ∈ S⁰` and `ε - 1 ∈ Ring.jacobson S`, then `[μ, p]` is regular on `W(S)`. -/
 theorem isRegular_pair_cyclotomicMu_natCast {ε : S} (hε : ε - 1 ∈ S⁰)
     (hJ : ε - 1 ∈ Ring.jacobson S) :
     IsRegular (𝕎 S) [cyclotomicMu p ε, (p : 𝕎 S)] :=
   isRegular_pair_of_coeff_zero (by simpa using hε)
-    (not_isUnit_of_mem_jacobson (by simpa using hJ))
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson (by simpa using hJ))
 
 /-- If `ε - 1 ∈ S⁰` and `ε - 1 ∈ Ring.jacobson S`, then `[p, ξ]` is regular on `W(S)`. -/
 theorem isRegular_pair_natCast_cyclotomicXi {ε : S} (hε : ε - 1 ∈ S⁰)
     (hJ : ε - 1 ∈ Ring.jacobson S) :
     IsRegular (𝕎 S) [(p : 𝕎 S), cyclotomicXi p ε] :=
   isRegular_pair_natCast_of_coeff_zero (cyclotomicXi_coeff_zero_mem_nonZeroDivisors p hε)
-    (not_isUnit_of_mem_jacobson (cyclotomicXi_coeff_zero_mem_jacobson p hJ))
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson (cyclotomicXi_coeff_zero_mem_jacobson p hJ))
 
 /-- If `ε - 1 ∈ S⁰` and `ε - 1 ∈ Ring.jacobson S`, then `[ξ, p]` is regular on `W(S)`. -/
 theorem isRegular_pair_cyclotomicXi_natCast {ε : S} (hε : ε - 1 ∈ S⁰)
     (hJ : ε - 1 ∈ Ring.jacobson S) :
     IsRegular (𝕎 S) [cyclotomicXi p ε, (p : 𝕎 S)] :=
   isRegular_pair_of_coeff_zero (cyclotomicXi_coeff_zero_mem_nonZeroDivisors p hε)
-    (not_isUnit_of_mem_jacobson (cyclotomicXi_coeff_zero_mem_jacobson p hJ))
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson (cyclotomicXi_coeff_zero_mem_jacobson p hJ))
 
 /-- If `ε - 1 ∈ S⁰` and `ε - 1 ∈ Ring.jacobson S`, then `[p, ξ']` is regular on `W(S)`. -/
 theorem isRegular_pair_natCast_cyclotomicXiTilde {ε : S} (hε : ε - 1 ∈ S⁰)
     (hJ : ε - 1 ∈ Ring.jacobson S) :
     IsRegular (𝕎 S) [(p : 𝕎 S), cyclotomicXiTilde p ε] :=
   isRegular_pair_natCast_of_coeff_zero (cyclotomicXiTilde_coeff_zero_mem_nonZeroDivisors p hε)
-    (not_isUnit_of_mem_jacobson (by
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson (by
       simpa [← cyclotomicXiTildeLevel_one] using
         cyclotomicXiTildeLevel_coeff_zero_mem_jacobson p hJ le_rfl))
 
@@ -755,7 +762,7 @@ theorem isRegular_pair_cyclotomicXiTilde_natCast {ε : S} (hε : ε - 1 ∈ S⁰
     (hJ : ε - 1 ∈ Ring.jacobson S) :
     IsRegular (𝕎 S) [cyclotomicXiTilde p ε, (p : 𝕎 S)] :=
   isRegular_pair_of_coeff_zero (cyclotomicXiTilde_coeff_zero_mem_nonZeroDivisors p hε)
-    (not_isUnit_of_mem_jacobson (by
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson (by
       simpa [← cyclotomicXiTildeLevel_one] using
         cyclotomicXiTildeLevel_coeff_zero_mem_jacobson p hJ le_rfl))
 
@@ -765,7 +772,7 @@ theorem isRegular_pair_natCast_cyclotomicXiLevel {ε : S} (hε : ε - 1 ∈ S⁰
     (hJ : ε - 1 ∈ Ring.jacobson S) {r : ℕ} (hr : 1 ≤ r) :
     IsRegular (𝕎 S) [(p : 𝕎 S), cyclotomicXiLevel p ε r] :=
   isRegular_pair_natCast_of_coeff_zero (cyclotomicXiLevel_coeff_zero_mem_nonZeroDivisors p hε r)
-    (not_isUnit_of_mem_jacobson (cyclotomicXiLevel_coeff_zero_mem_jacobson p hJ hr))
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson (cyclotomicXiLevel_coeff_zero_mem_jacobson p hJ hr))
 
 /-- If `ε - 1 ∈ S⁰`, `ε - 1 ∈ Ring.jacobson S`, and `1 ≤ r`, then `[ξ_r, p]` is regular on
 `W(S)`. -/
@@ -773,7 +780,7 @@ theorem isRegular_pair_cyclotomicXiLevel_natCast {ε : S} (hε : ε - 1 ∈ S⁰
     (hJ : ε - 1 ∈ Ring.jacobson S) {r : ℕ} (hr : 1 ≤ r) :
     IsRegular (𝕎 S) [cyclotomicXiLevel p ε r, (p : 𝕎 S)] :=
   isRegular_pair_of_coeff_zero (cyclotomicXiLevel_coeff_zero_mem_nonZeroDivisors p hε r)
-    (not_isUnit_of_mem_jacobson (cyclotomicXiLevel_coeff_zero_mem_jacobson p hJ hr))
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson (cyclotomicXiLevel_coeff_zero_mem_jacobson p hJ hr))
 
 /-- If `ε - 1 ∈ S⁰`, `ε - 1 ∈ Ring.jacobson S`, and `1 ≤ r`, then `[p, ξ'_r]` is regular on
 `W(S)`. -/
@@ -782,7 +789,8 @@ theorem isRegular_pair_natCast_cyclotomicXiTildeLevel {ε : S} (hε : ε - 1 ∈
     IsRegular (𝕎 S) [(p : 𝕎 S), cyclotomicXiTildeLevel p ε r] :=
   isRegular_pair_natCast_of_coeff_zero
     (cyclotomicXiTildeLevel_coeff_zero_mem_nonZeroDivisors p hε r)
-    (not_isUnit_of_mem_jacobson (cyclotomicXiTildeLevel_coeff_zero_mem_jacobson p hJ hr))
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson
+      (cyclotomicXiTildeLevel_coeff_zero_mem_jacobson p hJ hr))
 
 /-- If `ε - 1 ∈ S⁰`, `ε - 1 ∈ Ring.jacobson S`, and `1 ≤ r`, then `[ξ'_r, p]` is regular on
 `W(S)`. -/
@@ -791,7 +799,8 @@ theorem isRegular_pair_cyclotomicXiTildeLevel_natCast {ε : S} (hε : ε - 1 ∈
     IsRegular (𝕎 S) [cyclotomicXiTildeLevel p ε r, (p : 𝕎 S)] :=
   isRegular_pair_of_coeff_zero
     (cyclotomicXiTildeLevel_coeff_zero_mem_nonZeroDivisors p hε r)
-    (not_isUnit_of_mem_jacobson (cyclotomicXiTildeLevel_coeff_zero_mem_jacobson p hJ hr))
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson
+      (cyclotomicXiTildeLevel_coeff_zero_mem_jacobson p hJ hr))
 
 end RegularPair
 

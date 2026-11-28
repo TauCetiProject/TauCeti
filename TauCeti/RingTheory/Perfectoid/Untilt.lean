@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Perfectoid.Untilt
+public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.Algebra.Ring.NonZeroDivisors
 public import TauCeti.RingTheory.AdicCompletion.Frobenius
 public import TauCeti.RingTheory.Jacobson.Associated
@@ -39,12 +40,13 @@ same holds without the nonzerodivisor hypothesis, and the sharp map induces
 * `PreTilt.coeff_eq_mk_untilt_iterate`, `PreTilt.untilt_iterate_frobeniusEquiv_symm_succ_pow`:
   the `n`-th `ModP A p` coordinate of `x : PreTilt A p` is the reduction modulo `p` of
   `untilt ((frobeniusEquiv.symm^[n]) x)`, whose `p`-th powers step along the root tower.
-* `PreTilt.untilt_eq_one_of_geom_sum_eq_zero`: if `ζ = (ε ^ (1 / p))♯` satisfies
-  `∑_{j < p} ζ ^ j = 0`, then `ε♯ = 1`.
+* `PreTilt.untilt_eq_one_of_geom_sum_eq_zero`, `PreTilt.sub_one_mem_jacobson_of_untilt_eq_one`,
+  `PreTilt.untilt_eq_one_and_ne_one_of_isPrimitiveRoot`: cyclotomic untilt identities.
 * `PreTilt.mem_nonZeroDivisors_of_untilt`: `ϖ` is a nonzerodivisor of `PreTilt A p` whenever
   `ϖ.untilt` is a nonzerodivisor of `A`.
-* `PreTilt.untilt_eq_zero_iff`, `PreTilt.untilt_ne_zero_iff`, `PreTilt.instIsDomain`: for reduced
-  `A`, `x.untilt = 0` if and only if `x = 0`, so `PreTilt A p` is a domain when `A` is.
+* `PreTilt.untilt_eq_zero_iff`, `PreTilt.untilt_ne_zero_iff`, `PreTilt.isUnit_untilt_iff`,
+  `PreTilt.instIsDomain`: zero and unit detection by `untilt`, and `PreTilt A p` is a domain when
+  `A` is.
 * `PreTilt.exists_mul_natCast_dvd_sub_untilt`, `PreTilt.exists_associated_untilt`: every element of
   `A` is congruent modulo `π p` to an untilt, and `π` is associated to an untilt.
 * `PreTilt.dvd_iff_untilt_dvd`: `ϖ ∣ f` in `PreTilt A p` iff `ϖ.untilt ∣ f.untilt` in `A`.
@@ -88,6 +90,26 @@ theorem untilt_eq_one_of_geom_sum_eq_zero {ε : PreTilt A p}
     ε.untilt = 1 := by
   rw [← sub_eq_zero, ← untilt_iterate_frobeniusEquiv_symm_pow ε 1, pow_one,
     Function.iterate_one, ← mul_geom_sum, hε, mul_zero]
+
+/-- If `ε♯ = 1`, then `ε - 1` lies in the Jacobson radical of `A♭`. -/
+theorem sub_one_mem_jacobson_of_untilt_eq_one {ε : PreTilt A p} (hε : ε.untilt = 1) :
+    ε - 1 ∈ Ring.jacobson (PreTilt A p) := by
+  refine RingHom.ker_le_jacobson_of_isLocalHom (coeff 0) ?_
+  rw [RingHom.mem_ker, map_sub, map_one, ← mk_untilt_eq_coeff_zero, hε, map_one, sub_self]
+
+/-- If `ζ = (ε ^ (1 / p))♯` is a primitive `p`-th root of unity in `A`, then `ε♯ = 1` and
+`ε ≠ 1`. -/
+theorem untilt_eq_one_and_ne_one_of_isPrimitiveRoot {ε : PreTilt A p}
+    (hζ : IsPrimitiveRoot ((frobeniusEquiv (PreTilt A p) p).symm ε).untilt p) :
+    ε.untilt = 1 ∧ ε ≠ 1 := by
+  refine ⟨?_, fun h ↦ ?_⟩
+  · have hpow : (((frobeniusEquiv (PreTilt A p) p).symm ε) ^ p).untilt =
+        ((frobeniusEquiv (PreTilt A p) p).symm ε).untilt ^ p := map_pow _ _ _
+    rw [frobeniusEquiv_symm_pow_p, hζ.pow_eq_one] at hpow
+    exact hpow
+  · have h1 : (frobeniusEquiv (PreTilt A p) p).symm ε = 1 := by simp [h]
+    rw [h1, map_one] at hζ
+    exact hζ.ne_one hp.out.one_lt rfl
 
 /-- `PreTilt.untilt` on `equivPerfection.symm x` is `Perfection.teichmuller₀` on `x`. -/
 @[simp]
@@ -140,6 +162,15 @@ theorem untilt_eq_zero_iff [IsReduced A] {x : PreTilt A p} : x.untilt = 0 ↔ x 
 /-- For reduced `A`, `x♯ ≠ 0` if and only if `x ≠ 0`. -/
 theorem untilt_ne_zero_iff [IsReduced A] {x : PreTilt A p} : x.untilt ≠ 0 ↔ x ≠ 0 :=
   untilt_eq_zero_iff.not
+
+/-- **Units in the tilt are detected by the sharp map.** For a `p`-adically complete ring `A` and
+`x ∈ A♭`, `x♯` is a unit of `A` if and only if `x` is a unit of `A♭`. -/
+@[simp]
+theorem isUnit_untilt_iff {x : PreTilt A p} : IsUnit x.untilt ↔ IsUnit x :=
+  ⟨fun hx ↦ isUnit_of_map_unit (coeff 0) x
+    (by simpa only [mk_untilt_eq_coeff_zero] using
+      hx.map (Ideal.Quotient.mk (span {(p : A)}))),
+    fun hx ↦ hx.map untilt⟩
 
 /-- **The tilt of a `p`-adically complete domain is a domain.** -/
 instance instIsDomain [IsDomain A] : IsDomain (PreTilt A p) :=

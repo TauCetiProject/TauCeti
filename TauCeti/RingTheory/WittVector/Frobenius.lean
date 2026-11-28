@@ -40,6 +40,9 @@ inverse of `V`, a frame in the sense of displays.
 * `WittVector.isFrobeniusLift_frobenius` : `φ x ≡ x ^ p` modulo `p` for perfect `R`.
 * `WittVector.frobeniusEquiv_symm_frobenius`, `WittVector.frobenius_frobeniusEquiv_symm` :
   `φ⁻¹ (φ x) = x` and `φ (φ⁻¹ x) = x` for perfect `R`, with `φ` written as `WittVector.frobenius`.
+* `WittVector.iterate_frobeniusEquiv_apply`, `WittVector.coeff_iterate_frobeniusEquiv` :
+  iterates of `WittVector.frobeniusEquiv` agree with `WittVector.frobenius^[r]` and raise each
+  coordinate to the `p ^ r`-th power.
 * `WittVector.verschiebung_eq_frobeniusEquiv_symm_mul` : `V x = φ⁻¹ x * p` for perfect `R`.
 * `WittVector.mem_span_p_iff_exists_verschiebung` : `p 𝕎 R = V (𝕎 R)` for perfect `R`.
 * `TauCeti.WittVector.continuous_frobenius` : `φ` is continuous for the `(p, [ϖ])`-adic topology.
@@ -108,6 +111,21 @@ Witt-vector Frobenius. -/
 theorem frobenius_frobeniusEquiv_symm [PerfectRing R p] (x : WittVector p R) :
     frobenius ((frobeniusEquiv p R).symm x) = x :=
   (frobeniusEquiv p R).apply_symm_apply x
+
+/-- For a perfect ring of characteristic `p`, the `r`-th iterate of `WittVector.frobeniusEquiv`
+agrees with `WittVector.frobenius^[r]`. -/
+theorem iterate_frobeniusEquiv_apply [PerfectRing R p] (r : ℕ) (x : WittVector p R) :
+    ((frobeniusEquiv p R)^[r]) x = frobenius^[r] x := by
+  induction r generalizing x with
+  | zero => rfl
+  | succ r ih =>
+    rw [Function.iterate_succ_apply, Function.iterate_succ_apply, ih, frobeniusEquiv_apply]
+
+/-- For a perfect ring of characteristic `p`, the `k`-th Witt coordinate of `φʳ(x)` is
+`x.coeff k ^ p ^ r`. -/
+theorem coeff_iterate_frobeniusEquiv [PerfectRing R p] (r : ℕ) (x : WittVector p R) (k : ℕ) :
+    (((frobeniusEquiv p R)^[r]) x).coeff k = x.coeff k ^ p ^ r := by
+  rw [iterate_frobeniusEquiv_apply, iterate_frobenius_coeff]
 
 variable (p R) in
 /-- For a perfect ring of characteristic `p`, the Witt-vector Frobenius lifts the `p`-power map:

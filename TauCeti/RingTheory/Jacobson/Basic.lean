@@ -37,6 +37,8 @@ mechanism behind the left-right symmetry of the radical, proved in
 * `TauCeti.Ring.isLocalHom_mk_jacobson`: units lift modulo the Jacobson radical.
 * `TauCeti.Ring.instNontrivialQuotientJacobson`: the quotient of a nontrivial ring by its Jacobson
   radical is nontrivial.
+* `TauCeti.Ring.not_isUnit_of_mem_jacobson`: elements of the Jacobson radical of a nontrivial
+  ring are nonunits.
 * `Ideal.subsingleton_of_le_jacobson`: a commutative ring is trivial if its quotient by some
   ideal in the Jacobson radical is.
 * `Ideal.isUnit_one_sub_mul_of_le_jacobson`: `1 - r * s` is a unit when `r` or `s` lies in an
@@ -127,6 +129,11 @@ proper by `Ring.jacobson_lt_top`. -/
 instance instNontrivialQuotientJacobson [Nontrivial R] :
     Nontrivial (R ⧸ Ring.jacobson R) :=
   Ideal.Quotient.nontrivial_iff.mpr (Ring.jacobson_lt_top R).ne
+
+/-- An element of the Jacobson radical of a nontrivial ring is not a unit. -/
+theorem not_isUnit_of_mem_jacobson [Nontrivial R] {a : R} (ha : a ∈ Ring.jacobson R) :
+    ¬ IsUnit a :=
+  fun hu ↦ (Ring.jacobson_lt_top R).ne (Ideal.eq_top_of_isUnit_mem _ ha hu)
 
 variable (R) in
 /-- **Units lift modulo the Jacobson radical**: the quotient map `R → R ⧸ J(R)` is a local

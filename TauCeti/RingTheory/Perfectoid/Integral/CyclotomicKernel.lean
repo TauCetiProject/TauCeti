@@ -22,8 +22,10 @@ for a complete algebraically closed extension `C` of `ℚ_p`), with tilt `V♭ =
 1. **Regularity of integral periods.** Whenever `ε : V♭` satisfies `ε♯ = 1` and `ε ≠ 1` (in
    particular whenever `ζ = (ε ^ (1 / p))♯` is a primitive `p`-th root of unity), `ε - 1` is a
    nonzerodivisor in the Jacobson radical of `V♭`. Consequently `p`, `μ = [ε] - 1`, `ξ`, `ξ'`,
-   `ξ_r`, and `ξ'_r` are all nonzerodivisors in `A_inf(V)`, their quotients are `p`-torsion-free,
-   and `[p, x]` and `[x, p]` are regular sequences on `A_inf(V)` for each period element `x`.
+   `ξ_r`, and `ξ'_r` are all nonzerodivisors in `A_inf(V)`, the quotients of `A_inf(V)` by each of
+   the cyclotomic elements `μ`, `ξ`, `ξ'`, `ξ_r`, and `ξ'_r` are `p`-torsion-free, and `[p, x]` and
+   `[x, p]` are regular sequences on `A_inf(V)` for `x ∈ {μ, ξ, ξ'}` and for `x ∈ {ξ_r, ξ'_r}`
+   with `r ≥ 1`.
 
 2. **Infinite Witt kernel intersection.** When `V` is a ring of integers for a valuation of rank at
    most one (e.g. `𝒪[K]` or `K°` for an ultrametric normed field `K`), the countable intersection of
@@ -48,8 +50,7 @@ for a complete algebraically closed extension `C` of `ℚ_p`), with tilt `V♭ =
 * `TauCeti.WittVector.span_cyclotomicMu_eq_of_span_cyclotomicXi_eq` and
   `TauCeti.WittVector.span_cyclotomicMu_eq_of_geom_sum_eq_zero`: independence of `(μ)` from `ε`.
 * Regularity theorems (`mem_nonZeroDivisors`, `isSMulRegular_quotient_natCast`, `isRegular_pair`)
-  for `μ`, `ξ`, `ξ'`, `ξ_r`, `ξ'_r` in `W(V♭)` when `ε.untilt = 1` and `ε ≠ 1` (and from
-  `IsPrimitiveRoot`).
+  for `μ`, `ξ`, `ξ'`, `ξ_r`, `ξ'_r` in `W(V♭)` when `ε.untilt = 1` and `ε ≠ 1`.
 
 ## References
 
@@ -61,72 +62,7 @@ public section
 open Ideal _root_.WittVector RingTheory.Sequence
 open scoped nonZeroDivisors
 
-namespace PreTilt
-
-section JacobsonAndPrimitive
-
-variable {p : ℕ} [hp : Fact p.Prime] {V : Type*} [CommRing V]
-  [Fact ¬IsUnit (p : V)] [IsAdicComplete (span {(p : V)}) V]
-
-/-- If `ε♯ = 1`, then `ε - 1` lies in the Jacobson radical of `V♭`. -/
-theorem sub_one_mem_jacobson_of_untilt_eq_one {ε : PreTilt V p} (hε : ε.untilt = 1) :
-    ε - 1 ∈ Ring.jacobson (PreTilt V p) := by
-  refine RingHom.ker_le_jacobson_of_isLocalHom (PreTilt.coeff 0) ?_
-  rw [RingHom.mem_ker, map_sub, map_one, ← PreTilt.mk_untilt_eq_coeff_zero, hε, map_one,
-    sub_self]
-
-/-- If `ζ = (ε ^ (1 / p))♯` is a primitive `p`-th root of unity in `V`, then `ε♯ = 1` and
-`ε ≠ 1`. -/
-theorem untilt_eq_one_and_ne_one_of_isPrimitiveRoot {ε : PreTilt V p}
-    (hζ : IsPrimitiveRoot (((_root_.frobeniusEquiv (PreTilt V p) p).symm ε).untilt) p) :
-    ε.untilt = 1 ∧ ε ≠ 1 := by
-  refine ⟨?_, fun h ↦ ?_⟩
-  · have hpow : (((_root_.frobeniusEquiv (PreTilt V p) p).symm ε) ^ p).untilt =
-        (((_root_.frobeniusEquiv (PreTilt V p) p).symm ε).untilt) ^ p := map_pow _ _ _
-    rw [frobeniusEquiv_symm_pow_p, hζ.pow_eq_one] at hpow
-    exact hpow
-  · have h1 : (_root_.frobeniusEquiv (PreTilt V p) p).symm ε = 1 := by simp [h]
-    rw [h1, map_one] at hζ
-    exact hζ.ne_one hp.out.one_lt rfl
-
-end JacobsonAndPrimitive
-
-end PreTilt
-
 namespace TauCeti.WittVector
-
-section IdealEquality
-
-variable {p : ℕ} [Fact p.Prime] {S : Type*} [CommRing S] [CharP S p] [PerfectRing S p]
-
-/-- If `cyclotomicXi p ε` and `cyclotomicXi p ε'` generate the same ideal of `W(S)`, then so do
-`cyclotomicXiLevel p ε r` and `cyclotomicXiLevel p ε' r` for every `r : ℕ`. -/
-theorem span_cyclotomicXiLevel_eq_of_span_cyclotomicXi_eq {ε ε' : S}
-    (h : span {cyclotomicXi p ε} = span {cyclotomicXi p ε'}) (r : ℕ) :
-    span {cyclotomicXiLevel p ε r} = span {cyclotomicXiLevel p ε' r} := by
-  have hdvd (a b : S) (hab : span {cyclotomicXi p a} ≤ span {cyclotomicXi p b}) (j : ℕ) :
-      ((frobeniusEquiv p S).symm^[j]) (cyclotomicXi p b) ∣
-        ((frobeniusEquiv p S).symm^[j]) (cyclotomicXi p a) := by
-    have h0 : cyclotomicXi p b ∣ cyclotomicXi p a :=
-      mem_span_singleton.mp (hab (mem_span_singleton_self _))
-    induction j with
-    | zero => exact h0
-    | succ j ih =>
-      rw [Function.iterate_succ_apply', Function.iterate_succ_apply']
-      exact map_dvd _ ih
-  refine le_antisymm ?_ ?_ <;> rw [span_singleton_le_span_singleton, cyclotomicXiLevel_def,
-    cyclotomicXiLevel_def]
-  · exact Finset.prod_dvd_prod_of_dvd _ _ fun j _ ↦ hdvd ε ε' h.le j
-  · exact Finset.prod_dvd_prod_of_dvd _ _ fun j _ ↦ hdvd ε' ε h.ge j
-
-private theorem iterate_frobeniusEquiv_symm_sub_one_pow (ε : S) (r : ℕ) :
-    (((_root_.frobeniusEquiv S p).symm^[r]) ε - 1) ^ p ^ r = ε - 1 := by
-  induction r with
-  | zero => simp
-  | succ r ih =>
-    rw [Function.iterate_succ_apply', pow_succ', pow_mul, frobeniusEquiv_symm_sub_one_pow, ih]
-
-end IdealEquality
 
 section RankLeOne
 
@@ -182,8 +118,11 @@ theorem iInf_span_coeff_zero_cyclotomicXiLevel_eq_span_sub {ε : PreTilt V p} (h
     norm_untilt_le_div_of_mul_eq hv hnormw hmul
   have hpow : v.norm (algebraMap V K (ε - 1).untilt) =
       v.norm (algebraMap V K d.untilt) ^ p ^ (r + 1) := by
-    rw [← iterate_frobeniusEquiv_symm_sub_one_pow (p := p) ε (r + 1)]
-    simp only [Valuation.norm_def, map_pow, NNReal.coe_pow, d]
+    have hd : d ^ p ^ (r + 1) = ε - 1 := by
+      simpa [d, iterate_map_sub, iterate_map_one] using
+        iterate_frobeniusEquiv_symm_pow_p_pow (PreTilt V p) p (ε - 1) (r + 1)
+    rw [← hd]
+    simp only [Valuation.norm_def, map_pow, NNReal.coe_pow]
   have hle : v.norm (algebraMap V K (ε - 1).untilt) ≤ q ^ r := by
     rw [hpow]
     calc v.norm (algebraMap V K d.untilt) ^ p ^ (r + 1)
@@ -215,7 +154,7 @@ theorem span_cyclotomicMu_eq_of_span_cyclotomicXi_eq {ε ε' : PreTilt V p}
   rw [← iInf_span_cyclotomicXiLevel_eq_span_cyclotomicMu hv ε,
     ← iInf_span_cyclotomicXiLevel_eq_span_cyclotomicMu hv ε']
   refine iInf_congr fun r ↦ iInf_congr fun _ ↦ ?_
-  exact span_cyclotomicXiLevel_eq_of_span_cyclotomicXi_eq h r
+  exact span_cyclotomicXiLevel_eq_of_span_cyclotomicXi_eq p h r
 
 /-- **Independence of `(μ)` for integral perfectoid valuation rings.** If `V` is integral
 perfectoid and a rank `≤ 1` ring of integers, and both `ζ = (ε ^ (1 / p))♯` and
