@@ -11,6 +11,8 @@ public import Mathlib.Topology.ContinuousMap.Basic
 public import Mathlib.Topology.Order.Compact
 public import TauCeti.Analysis.Normed.Ring.Completion
 
+import TauCeti.Analysis.Normed.Group.Seminorm
+
 /-!
 # The Berkovich spectrum of a seminormed ring
 
@@ -31,6 +33,10 @@ it directly.
 ## Main definitions and results
 
 * `TauCeti.Spectrum A`: the norm-dominated multiplicative seminorms on `A`.
+* `TauCeti.Spectrum.isEmpty_of_norm_one_eq_zero`: if `‖1‖ = 0`, `M(A)` is empty.
+* `TauCeti.Spectrum.eq_zero_of_isNilpotent`, `TauCeti.Spectrum.map_add_eq_left_of_isNilpotent`,
+  `TauCeti.Spectrum.not_exists_apply_eq_norm_of_isNilpotent`: spectrum points vanish on
+  nilpotents and are invariant under nilpotent perturbations.
 * `TauCeti.Spectrum.ofIsBoundedWrt`: a multiplicative seminorm bounded by a constant
   multiple of the norm is a point; by the power trick
   (`RingHom.isBoundedWrt_norm_iff`) the bounded points of Berkovich's definition are exactly
@@ -49,9 +55,12 @@ it directly.
   extends a point by continuity, which is possible since every point is `1`-Lipschitz
   (`TauCeti.Spectrum.lipschitzWith_one`). Statements about the spectra of complete
   normed rings thus transfer to arbitrary seminormed rings.
-* `TauCeti.Spectrum.normPoint`: the norm of a seminormed ring with multiplicative norm
-  and `‖1‖ = 1` is a point, and for a normed division ring it is the only point
-  (`TauCeti.Spectrum.eq_normPoint`).
+* `TauCeti.Spectrum.retractHomeomorph`: homeomorphism `M(B) ≃ₜ M(A)` for a bounded retraction
+  modulo nilpotents.
+* `TauCeti.Spectrum.normPoint`, `TauCeti.Spectrum.instPartialOrder`,
+  `TauCeti.Spectrum.instOrderTop`: the norm of a seminormed ring with multiplicative norm and
+  `‖1‖ = 1` is the top point for the pointwise domination order, and for a normed division ring it
+  is the only point (`TauCeti.Spectrum.eq_normPoint`).
 
 ## References
 
@@ -123,6 +132,10 @@ theorem apply_le_norm (x : Spectrum A) (a : A) : x a ≤ ‖a‖ :=
 theorem one_le_norm_one (x : Spectrum A) : 1 ≤ ‖(1 : A)‖ := by
   simpa using x.apply_le_norm 1
 
+/-- If `‖(1 : A)‖ = 0`, then `Spectrum A` is empty. -/
+theorem isEmpty_of_norm_one_eq_zero (h : ‖(1 : A)‖ = 0) : IsEmpty (Spectrum A) :=
+  ⟨fun x ↦ absurd (h ▸ x.one_le_norm_one) (not_le_of_gt zero_lt_one)⟩
+
 /-- A ring whose Berkovich spectrum has a point is nontrivial. -/
 theorem nontrivial (x : Spectrum A) : Nontrivial A :=
   ⟨⟨1, 0, fun h => by simpa [h] using map_one x⟩⟩
@@ -130,6 +143,22 @@ theorem nontrivial (x : Spectrum A) : Nontrivial A :=
 /-- The zero ring has empty Berkovich spectrum. -/
 instance [Subsingleton A] : IsEmpty (Spectrum A) :=
   ⟨fun x => not_nontrivial A x.nontrivial⟩
+
+/-- Every point of `Spectrum A` vanishes on nilpotent elements. -/
+theorem eq_zero_of_isNilpotent (x : Spectrum A) {a : A} (ha : IsNilpotent a) : x a = 0 :=
+  x.toMulRingSeminorm.eq_zero_of_isNilpotent ha
+
+/-- Adding a nilpotent element leaves every point of `Spectrum A` unchanged. -/
+theorem map_add_eq_left_of_isNilpotent (x : Spectrum A) (a : A) {b : A} (hb : IsNilpotent b) :
+    x (a + b) = x a :=
+  map_add_eq_left_of_map_eq_zero x a (x.eq_zero_of_isNilpotent hb)
+
+/-- If a seminormed ring contains a nilpotent element of nonzero norm, no point of `Spectrum A`
+equals the ambient norm. -/
+theorem not_exists_apply_eq_norm_of_isNilpotent {a : A} (ha : IsNilpotent a)
+    (ha_norm : ‖a‖ ≠ 0) : ¬∃ x : Spectrum A, ∀ b, x b = ‖b‖ := by
+  rintro ⟨x, hx⟩
+  exact ha_norm (by rw [← hx a, x.eq_zero_of_isNilpotent ha])
 
 /-! ### Bounded points -/
 
@@ -318,6 +347,39 @@ theorem completionHomeomorph_symm_apply_coe (x : Spectrum A) (a : A) :
     completionHomeomorph.symm x a = x a := by
   simp
 
+/-- If `φ : A →+* B` and `ψ : B →+* A` are bounded ring homomorphisms with `ψ ∘ φ = id` such that
+`b - φ (ψ b)` is nilpotent for every `b : B`, then `comap φ` and `comap ψ` form a homeomorphism
+`Spectrum B ≃ₜ Spectrum A`. -/
+noncomputable def retractHomeomorph (φ : A →+* B) (hφ : φ.IsBounded) (ψ : B →+* A)
+    (hψ : ψ.IsBounded) (hψφ : ∀ a : A, ψ (φ a) = a)
+    (hnil : ∀ b : B, IsNilpotent (b - φ (ψ b))) :
+    Spectrum B ≃ₜ Spectrum A where
+  toFun := comap φ hφ
+  invFun := comap ψ hψ
+  left_inv y := ext fun b ↦ by
+    simp only [comap_apply]
+    conv_rhs => rw [(add_sub_cancel (φ (ψ b)) b).symm]
+    exact (y.map_add_eq_left_of_isNilpotent (φ (ψ b)) (hnil b)).symm
+  right_inv x := ext fun a ↦ by simp [hψφ a]
+  continuous_toFun := (comap φ hφ).continuous
+  continuous_invFun := (comap ψ hψ).continuous
+
+/-- Applying `retractHomeomorph` pulls back along `φ`. -/
+@[simp]
+theorem retractHomeomorph_apply (φ : A →+* B) (hφ : φ.IsBounded) (ψ : B →+* A)
+    (hψ : ψ.IsBounded) (hψφ : ∀ a : A, ψ (φ a) = a)
+    (hnil : ∀ b : B, IsNilpotent (b - φ (ψ b))) (y : Spectrum B) (a : A) :
+    retractHomeomorph φ hφ ψ hψ hψφ hnil y a = y (φ a) :=
+  comap_apply φ hφ y a
+
+/-- Applying `(retractHomeomorph ...).symm` pulls back along `ψ`. -/
+@[simp]
+theorem retractHomeomorph_symm_apply (φ : A →+* B) (hφ : φ.IsBounded) (ψ : B →+* A)
+    (hψ : ψ.IsBounded) (hψφ : ∀ a : A, ψ (φ a) = a)
+    (hnil : ∀ b : B, IsNilpotent (b - φ (ψ b))) (x : Spectrum A) (b : B) :
+    (retractHomeomorph φ hφ ψ hψ hψφ hnil).symm x b = x (ψ b) :=
+  comap_apply ψ hψ x b
+
 end SeminormedRing
 
 /-! ### The norm point -/
@@ -353,6 +415,56 @@ theorem eq_normPoint_iff {x : Spectrum A} : x = normPoint ↔ ∀ a, x a = ‖a�
   ⟨fun h a => h ▸ normPoint_apply a, fun h => ext fun a => (h a).trans (normPoint_apply a).symm⟩
 
 end NormPoint
+
+/-! ### Pointwise order -/
+
+section Order
+
+variable {A : Type*} [SeminormedRing A]
+
+/-- The pointwise domination order on `Spectrum A`, given by `x ≤ y ↔ ∀ a, x a ≤ y a`
+(distinct from the trivial topological specialization order of the Hausdorff topology on
+`Spectrum A`). -/
+instance instPartialOrder : PartialOrder (Spectrum A) :=
+  PartialOrder.lift (⇑·) DFunLike.coe_injective
+
+/-- Pointwise characterization of the order on `Spectrum A`. -/
+@[simp]
+theorem le_def {x y : Spectrum A} : x ≤ y ↔ ∀ a, x a ≤ y a :=
+  Iff.rfl
+
+section NormMulClass
+
+variable [NormOneClass A] [NormMulClass A]
+
+/-- When the ambient norm is multiplicative and normalized, `normPoint` is the greatest element
+of `Spectrum A`. -/
+noncomputable instance instOrderTop : OrderTop (Spectrum A) where
+  top := normPoint
+  le_top x := le_def.2 fun a ↦ by
+    rw [normPoint_apply]
+    exact x.apply_le_norm a
+
+/-- The top element of `Spectrum A` is `normPoint`. -/
+@[simp]
+theorem top_eq_normPoint : (⊤ : Spectrum A) = normPoint :=
+  (rfl)
+
+/-- When the ambient norm is multiplicative and normalized, `normPoint` attains the maximum of
+`x a` over `Spectrum A` for every `a : A` simultaneously. -/
+theorem isGreatest_range_eval_of_normMulClass (a : A) :
+    IsGreatest (Set.range fun x : Spectrum A ↦ x a) ‖a‖ :=
+  ⟨⟨normPoint, normPoint_apply a⟩, by rintro _ ⟨x, rfl⟩; exact x.apply_le_norm a⟩
+
+/-- When the ambient norm is multiplicative and normalized, the supremum over `Spectrum A` at `a`
+equals `‖a‖`. -/
+theorem sSup_range_eval_of_normMulClass (a : A) :
+    sSup (Set.range fun x : Spectrum A ↦ x a) = ‖a‖ :=
+  (isGreatest_range_eval_of_normMulClass a).csSup_eq
+
+end NormMulClass
+
+end Order
 
 section NormedDivisionRing
 

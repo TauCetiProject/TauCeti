@@ -38,6 +38,9 @@ case of the measure `n ω_n r ^ (n - 1)` of spheres.
   `2 * μHE[1] (sphere c |R|)`.
 * `TauCeti.smul_map_volume_restrict_circleMap`: `|R|` times the image of Lebesgue measure on
   `[a, a + 2π]` under `circleMap c R` is `μHE[1]` restricted to `sphere c |R|`.
+* `TauCeti.euclideanHausdorffMeasure_sphere_inter_eq_volume_preimage_circleMap`: the length of a
+  measurable part of the circle `sphere c |R|` is `|R|` times the measure of its parameters on a
+  full turn.
 * `Complex.euclideanHausdorffMeasure_sphere_inter_ball`: for `0 < r ≤ 2ρ`, the arc of the circle
   `sphere c ρ` within distance `r` of a point on it has length `4ρ arcsin (r / (2ρ))`.
 -/
@@ -176,6 +179,17 @@ theorem smul_map_volume_restrict_circleMap (c : ℂ) (R a : ℝ) :
   rwa [hd, withDensity_const, Measure.map_smul, himage] at h
   exact (continuous_circleMap c R).aemeasurable
 
+/-- The length of a measurable part `sphere c |R| ∩ T` of a circle is `|R|` times the Lebesgue
+measure of its parameters on a full turn `[a, a + 2π]`. -/
+theorem euclideanHausdorffMeasure_sphere_inter_eq_volume_preimage_circleMap (c : ℂ) (R a : ℝ)
+    {T : Set ℂ} (hT : MeasurableSet T) :
+    μHE[1] (sphere c |R| ∩ T) =
+      ENNReal.ofReal |R| * volume (Icc a (a + 2 * π) ∩ circleMap c R ⁻¹' T) := by
+  rw [inter_comm, ← Measure.restrict_apply hT, ← smul_map_volume_restrict_circleMap c R a,
+    smul_apply, Measure.map_apply (continuous_circleMap c R).measurable hT,
+    Measure.restrict_apply (hT.preimage (continuous_circleMap c R).measurable), smul_eq_mul,
+    inter_comm]
+
 /-- **The length of a short arc.** For `0 < r ≤ 2ρ`, the arc of the circle `sphere c ρ` within
 distance `r` of a point `x` on it has length `4ρ arcsin (r / (2ρ))`. -/
 theorem _root_.Complex.euclideanHausdorffMeasure_sphere_inter_ball (c : ℂ) {ρ r : ℝ} (hρ : 0 < ρ)
@@ -184,12 +198,10 @@ theorem _root_.Complex.euclideanHausdorffMeasure_sphere_inter_ball (c : ℂ) {ρ
   obtain ⟨φ, rfl⟩ : ∃ φ, circleMap c ρ φ = x := by
     rw [← mem_range, range_circleMap, abs_of_pos hρ]
     exact hx
-  have hμ := smul_map_volume_restrict_circleMap c ρ (φ - π)
-  rw [abs_of_pos hρ, show φ - π + 2 * π = φ + π by ring] at hμ
-  rw [inter_comm, ← Measure.restrict_apply measurableSet_ball, ← hμ, smul_apply,
-    Measure.map_apply (continuous_circleMap c ρ).measurable measurableSet_ball,
-    Measure.restrict_apply (measurableSet_ball.preimage (continuous_circleMap c ρ).measurable),
-    preimage_circleMap_ball_inter_Icc c hρ hr hr2, Real.volume_Ioo, smul_eq_mul,
+  have h := euclideanHausdorffMeasure_sphere_inter_eq_volume_preimage_circleMap c ρ (φ - π)
+    (measurableSet_ball (x := circleMap c ρ φ) (ε := r))
+  rw [abs_of_pos hρ, show φ - π + 2 * π = φ + π by ring] at h
+  rw [h, inter_comm, preimage_circleMap_ball_inter_Icc c hρ hr hr2, Real.volume_Ioo,
     ← ENNReal.ofReal_mul hρ.le]
   congr 1
   ring

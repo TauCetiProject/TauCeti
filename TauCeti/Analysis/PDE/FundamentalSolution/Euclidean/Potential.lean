@@ -36,7 +36,7 @@ For `f : ℝⁿ → F` with compact support, the **Newtonian potential** of `f` 
   the Hessian of `Gₙ` (for this, too, any `n`);
 * `u` decays like `‖x‖ ^ (2 - n)` (this does need `n ≥ 3`; for a non-integrable `f` the potential
   vanishes outside the ball containing the support, so the bound holds trivially there), and so
-  tends to zero at infinity;
+  tends to zero at infinity; in dimension one `u` grows at most linearly;
 * for `n ≥ 3`, `u` is bounded when `f` is bounded and vanishes outside a ball, and for smooth `f`
   with compact support all derivatives of `u` are bounded;
 * for `n ≥ 3`, `u` is the **unique** `C²` solution of `-Δv = f` that tends to zero at infinity.
@@ -58,6 +58,8 @@ from `f` onto the kernel, which is smooth there. Uniqueness holds because a harm
   `‖(Gₙ ⋆ f) x‖ ≤ C (‖x‖ - R) ^ (2 - n) ∫ ‖f‖` off the ball `closedBall 0 R` containing the
   support of `f`, and the companion bound `TauCeti.norm_fderiv_newtonianKernel_convolution_le`,
   `‖D(Gₙ ⋆ f) x‖ ≤ C' (‖x‖ - R) ^ (1 - n) ∫ ‖f‖`, on its derivative.
+* `TauCeti.norm_newtonianKernel_one_convolution_le`: for `n = 1`, the linear growth bound
+  `‖(G₁ ⋆ f) x‖ ≤ ‖x‖ ∫ ‖f‖` off the ball `closedBall 0 R` containing the support of `f`.
 * `TauCeti.tendsto_newtonianKernel_convolution_cocompact`: for `n ≥ 3`, `Gₙ ⋆ f → 0` at
   infinity.
 * `TauCeti.exists_norm_newtonianKernel_convolution_le`: for `n ≥ 3`, the potential of data bounded
@@ -379,6 +381,24 @@ theorem norm_fderiv_newtonianKernel_convolution_le {R : ℝ}
   exact mul_le_mul_of_nonneg_right (norm_fderiv_newtonianKernel_le n hn (by linarith)
     (by linarith [norm_sub_norm_le x y])) (norm_nonneg _)
 
+/-- **Growth of the Newtonian potential in dimension one.** For integrable `f` vanishing off
+`closedBall 0 R`, at every point `x` with `R ≤ ‖x‖`,
+
+`‖(G₁ ⋆ f) x‖ ≤ ‖x‖ ∫ ‖f‖`,
+
+because `G₁(z) = -‖z‖ / 2` and `‖x - y‖ ≤ 2 ‖x‖` for `y` in the support of `f`. -/
+theorem norm_newtonianKernel_one_convolution_le {f : EuclideanSpace ℝ (Fin 1) → F}
+    (hf : Integrable f) {R : ℝ} (hR : Function.support f ⊆ closedBall 0 R)
+    {x : EuclideanSpace ℝ (Fin 1)} (hx : R ≤ ‖x‖) :
+    ‖(newtonianKernel 1 ⋆ f) x‖ ≤ ‖x‖ * ∫ y, ‖f y‖ := by
+  rw [convolution_lsmul_swap, ← integral_const_mul]
+  refine norm_integral_le_of_norm_le (hf.norm.const_mul _) (ae_of_all _ fun y => ?_)
+  by_cases hy : f y = 0
+  · simp [hy]
+  have hyR : ‖y‖ ≤ R := mem_closedBall_zero_iff.1 (hR hy)
+  simp only [norm_smul, newtonianKernel_one, norm_neg, norm_div, norm_norm, Real.norm_ofNat]
+  gcongr
+  linarith [norm_sub_le x y]
 
 /-- **The Newtonian potential vanishes at infinity.** For `n ≥ 3` and `f` with compact
 support on `ℝⁿ`, `(Gₙ ⋆ f) x → 0` as `x → ∞`. -/

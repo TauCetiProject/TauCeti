@@ -31,6 +31,10 @@ in an arbitrary universe `u` and the coefficients in any ring `R : Type u`.
   the base point to a prescribed base point of the target.
 * `TauCeti.HurewiczOne.hurewicz₁_fundamentalGroupMulEquivOfPath`: the Hurewicz map is invariant
   under the change of base point along a path.
+* `ContinuousMap.singularHomologyMap_one_surjective` and
+  `ContinuousMap.ker_singularHomologyMap_one_toAddSubgroup`: a continuous map of path-connected
+  spaces that is surjective on fundamental groups is surjective on first integral homology, and
+  its kernel there is spanned by the Hurewicz classes of the loops it kills.
 
 ## References
 
@@ -172,5 +176,45 @@ theorem singularHomologyMap_loopClass {R : Type u} [Ring R] {Y Z : Type u} [Topo
     singularHomologyMap R 1 g (H₁AddEquivHomology R (TopCat.of Y) (loopClass R γ)) =
       H₁AddEquivHomology R (TopCat.of Z) (loopClass R (γ.map g.continuous)) :=
   homologyMap_H₁AddEquivHomology_loopClass (TopCat.ofHom g) γ
+
+section Surjective
+
+variable {R : Type u} [Ring R] {Y Z : Type u} [TopologicalSpace Y] [TopologicalSpace Z]
+  [PathConnectedSpace Y] [PathConnectedSpace Z] (e : R ≃+* ℤ) (g : C(Y, Z)) {y : Y}
+
+include e
+
+/-- **A map surjective on `π₁` is surjective on `H₁`.** A continuous map of path-connected spaces
+that is surjective on fundamental groups at some base point is surjective on first singular
+homology with integer coefficients, read through a ring `R ≃+* ℤ`. -/
+theorem singularHomologyMap_one_surjective
+    (hg : Function.Surjective (FundamentalGroup.map g y)) :
+    Function.Surjective (singularHomologyMap R 1 g) := by
+  intro c
+  obtain ⟨b, rfl⟩ := (hurewiczHomologyAddEquiv (X := TopCat.of Z) (g y) e).surjective c
+  obtain ⟨a, rfl⟩ := Group.Abelianization.exists_eq_ofMul_of b
+  obtain ⟨k, rfl⟩ := hg a
+  refine ⟨hurewiczHomologyAddEquiv (X := TopCat.of Y) y e (.ofMul (.of k)), ?_⟩
+  rw [singularHomologyMap, homologyMap_hurewiczHomologyAddEquiv (TopCat.ofHom g) e, toMul_ofMul,
+    Group.Abelianization.map_of]
+  simp only [TopCat.hom_ofHom]
+
+/-- **The kernel on `H₁` of a map surjective on `π₁`.** For a continuous map `g` of path-connected
+spaces that is surjective on fundamental groups at `y`, the kernel of the induced map on first
+singular homology with integer coefficients, read through a ring `R ≃+* ℤ`, is the image under the
+Hurewicz isomorphism of the kernel of `g` on `π₁(Y, y)`: a class dies in `H₁` exactly when it is
+the Hurewicz class of a loop that `g` makes null-homotopic. -/
+theorem ker_singularHomologyMap_one_toAddSubgroup
+    (hg : Function.Surjective (FundamentalGroup.map g y)) :
+    (LinearMap.ker (singularHomologyMap R 1 g)).toAddSubgroup =
+      (Subgroup.toAddSubgroup ((FundamentalGroup.map g y).ker.map Group.Abelianization.of)).map
+        (hurewiczHomologyAddEquiv (X := TopCat.of Y) y e).toAddMonoidHom := by
+  ext c
+  obtain ⟨b, rfl⟩ := (hurewiczHomologyAddEquiv (X := TopCat.of Y) y e).surjective c
+  rw [Submodule.mem_toAddSubgroup, LinearMap.mem_ker, singularHomologyMap,
+    homologyMap_hurewiczHomologyAddEquiv (TopCat.ofHom g) e]
+  simp [Group.Abelianization.map_ker_eq_ker_map _ hg]
+
+end Surjective
 
 end ContinuousMap

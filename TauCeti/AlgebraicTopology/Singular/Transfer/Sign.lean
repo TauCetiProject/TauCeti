@@ -53,7 +53,9 @@ coefficient long exact sequence. It shows that a class `c ∈ Hₖ(E; R)` with `
 `Hₖ(B; sign)`
 (`IsCoveringMap.exists_twistedHomologyCoefficientMap_signLocalSystemToPermutation_eq`), from a
 unique class when `Hₖ₊₁(B; R) = 0`
-(`IsCoveringMap.injective_twistedHomologyCoefficientMap_signLocalSystemToPermutation`).
+(`IsCoveringMap.injective_twistedHomologyCoefficientMap_signLocalSystemToPermutation`). So in a
+degree `k` with `Hₖ(B; R) = 0` and `Hₖ₊₁(B; R) = 0`, reading sign classes on the cover is a
+bijection `Hₖ(B; sign) ≅ Hₖ(E; R)` (`IsCoveringMap.bijective_signHomologyToCover_of_isZero`).
 
 For the orientation double cover of a manifold with its deck involution, the sign local system is
 the orientation local system, and the class of the fundamental class of the orientation cover is
@@ -83,6 +85,8 @@ the fundamental class of the manifold with orientation-twisted coefficients
   `IsCoveringMap.injective_twistedHomologyCoefficientMap_signLocalSystemToPermutation`: classes of
   a double cover killed by `p_*` come from the sign local system, uniquely when
   `Hₖ₊₁(B; R) = 0`.
+* `IsCoveringMap.bijective_signHomologyToCover_of_isZero`: in a degree where `Hₖ(B; R)` and
+  `Hₖ₊₁(B; R)` vanish, the sign-twisted homology of the base is the homology of the cover.
 
 ## References
 
@@ -293,6 +297,29 @@ theorem exists_twistedHomologyCoefficientMap_signLocalSystemToPermutation_eq (k 
   refine (ModuleCat.mono_iff_injective
     (twistedHomologyConstantIso B (ModuleCat.of R R) k).hom).1 inferInstance ?_
   exact h.trans (hc.trans (map_zero _).symm)
+
+include hσσ hfix hfib hsurj in
+/-- **Sign-twisted homology is the homology of the cover where the base is acyclic**: for a double
+cover, if `Hₖ(B; R) = 0` and `Hₖ₊₁(B; R) = 0`, then reading classes of `Hₖ(B; sign)` as classes of
+the cover is a bijection onto `Hₖ(E; R)`. This is the coefficient long exact sequence of
+`0 ⟶ sign ⟶ R[p⁻¹ b] ⟶ R ⟶ 0` at `Hₖ(B; sign)` and at `Hₖ(B; R[p⁻¹ b])`. -/
+theorem bijective_signHomologyToCover_of_isZero (k : ℕ)
+    (hk : Limits.IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj
+      (ModuleCat.of R R)).obj B))
+    (hk' : Limits.IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) (k + 1)).obj
+      (ModuleCat.of R R)).obj B)) :
+    Function.Bijective (hp.signHomologyToCover R hσ hfin k).hom := by
+  rw [signHomologyToCover_def, ModuleCat.hom_comp, LinearMap.coe_comp]
+  refine ⟨((ModuleCat.mono_iff_injective (hp.singularHomologyPermutationIso R k).inv).1
+    inferInstance).comp
+      (hp.injective_twistedHomologyCoefficientMap_signLocalSystemToPermutation R hσ hσσ hfin hfix
+        hfib hsurj k hk'), fun c ↦ ?_⟩
+  -- Every class of the cover is killed by `p_*`, since `Hₖ(B; R) = 0`.
+  rw [TauCeti.singularHomologyFunctor_obj_obj_eq_toSSet_homology] at hk
+  have := ModuleCat.isZero_iff_subsingleton.1 hk
+  obtain ⟨g, hg⟩ := hp.exists_twistedHomologyCoefficientMap_signLocalSystemToPermutation_eq R hσ hσσ
+    hfin hfix hfib hsurj k c (Subsingleton.elim _ _)
+  exact ⟨g, by simp [hg]⟩
 
 end DoubleCover
 

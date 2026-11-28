@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Ring.Action.End
 public import Mathlib.Algebra.SkewMonoidAlgebra.Basic
 public import Mathlib.RingTheory.WittVector.Complete
-public import TauCeti.RingTheory.WittVector.Frobenius
+public import TauCeti.RingTheory.WittVector.Frobenius.Basic
 
 /-!
 # The Dieudonné ring
