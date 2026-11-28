@@ -33,8 +33,13 @@ open scoped NNReal
 
 namespace TauCeti.OneSidedBound.Parameters
 
-/-- The enlarged constant for the fixed parameters, allowing `vacuumBound` for the vacuum
-vector and including the logarithmic derivative of the quadratic `L`-function at one. -/
+/-- The fixed parameter constant `C_P` is the sum of:
+* `vacuumBound`, the exponent coefficient in the bound for conjugates of the integral vacuum;
+* `2d + 6` and `q₀`, which cover the quadratic prime, `64`, the base modulus and its totient;
+* `|γ − Re (L′/L)(1, χ_K)|`, the correction for the archimedean scale from Euler's constant
+  and the quadratic `L`-function;
+* `∑_ζ |log ‖Φ′_{q₀}(ζ)‖|` over the primitive `q₀`-th roots of unity, which bounds the
+  placewise logarithmic error of the different generator. -/
 noncomputable def constantBound (P : Parameters) (vacuumBound : ℝ≥0) : ℝ :=
   (vacuumBound : ℝ) + (2 * (P.d : ℝ) + 6) + (P.q₀ : ℝ) +
     |eulerMascheroniConstant -
@@ -50,6 +55,16 @@ theorem constantBound_def (P : Parameters) (vacuumBound : ℝ≥0) :
         (logDeriv (DirichletCharacter.LFunction
           ((quadraticChar (ZMod P.d)).ringHomComp (Int.castRingHom ℂ))) 1).re| +
       ∑ ζ ∈ primitiveRoots P.q₀ ℂ, |log ‖(cyclotomic P.q₀ ℂ).derivative.eval ζ‖| := (rfl)
+
+/-- The fixed parameter constant dominates the vacuum budget. -/
+theorem vacuumBound_le_constantBound (P : Parameters) (vacuumBound : ℝ≥0) :
+    (vacuumBound : ℝ) ≤ P.constantBound vacuumBound := by
+  rw [P.constantBound_def]
+  calc
+    _ ≤ (vacuumBound : ℝ) + (2 * (P.d : ℝ) + 6) := le_add_of_nonneg_right (by positivity)
+    _ ≤ _ + (P.q₀ : ℝ) := le_add_of_nonneg_right (by positivity)
+    _ ≤ _ + _ := le_add_of_nonneg_right (abs_nonneg _)
+    _ ≤ _ := le_add_of_nonneg_right (Finset.sum_nonneg fun _ _ ↦ abs_nonneg _)
 
 /-- The bound dominates the quadratic prime and the modulus, and is at least `64`. -/
 theorem max_le_constantBound (P : Parameters) (vacuumBound : ℝ≥0) :
@@ -102,16 +117,15 @@ theorem constantBound_le_log (P : Parameters) (vacuumBound : ℝ≥0) {b : ℕ}
     (le_max_left _ _).trans (P.max_le_constantBound vacuumBound)
   linarith [Real.log_le_self (Real.log_natCast_nonneg b)]
 
-/-- A positive factor whose absolute logarithm fits the parameter bound preserves the
-`[x¹⁰, x¹²]` budget for a norm of scale `towerDeg s * √d`. The tower and cutoff bounds allow
-this comparison to be made before choosing an embedding or a generator of the different. -/
-theorem mul_towerDeg_sqrt_mem_Icc (P : Parameters) (vacuumBound : ℝ≥0) {s b : ℕ} {x A : ℝ}
+/-- A positive factor `A` whose absolute logarithm fits the parameter bound preserves the
+`[x¹⁰, x¹²]` budget for a norm of scale `T * √d` under the cutoff and scale inequalities.
+For the placewise size of a different generator, take `T = towerDeg s`. -/
+theorem mul_sqrt_mem_Icc (P : Parameters) (vacuumBound : ℝ≥0) {b : ℕ} {x A T : ℝ}
     (hb : 10 ^ 12 * P.constantBound vacuumBound ≤ log (log (b : ℝ)))
     (hx : log (b : ℝ) ^ 100 ≤ x)
-    (hT₁ : x ^ 11 ≤ (towerDeg s : ℝ))
-    (hT₂ : (towerDeg s : ℝ) ≤ x ^ 11 * log (b : ℝ) ^ (1 / 5 : ℝ))
+    (hT₁ : x ^ 11 ≤ T) (hT₂ : T ≤ x ^ 11 * log (b : ℝ) ^ (1 / 5 : ℝ))
     (hA : 0 < A) (hlog : |log A| ≤ P.constantBound vacuumBound) :
-    A * (towerDeg s : ℝ) * √(P.d : ℝ) ∈ Set.Icc (x ^ 10) (x ^ 12) := by
+    A * T * √(P.d : ℝ) ∈ Set.Icc (x ^ 10) (x ^ 12) := by
   have hC := P.max_le_constantBound vacuumBound
   have h64 : (64 : ℝ) ≤ P.constantBound vacuumBound := (le_max_left _ _).trans hC
   have hlogb : 0 < log (b : ℝ) := lt_of_le_of_ne (Real.log_natCast_nonneg b) (by
@@ -131,15 +145,14 @@ theorem mul_towerDeg_sqrt_mem_Icc (P : Parameters) (vacuumBound : ℝ≥0) {s b 
     rw [Real.log_sqrt (by positivity)]
     linarith
   -- The logarithmic bounds turn the three factors of the norm into additive errors.
-  have hT : 0 < (towerDeg s : ℝ) := by exact_mod_cast towerDeg_pos s
+  have hT : 0 < T := (pow_pos hxpos 11).trans_le hT₁
   have hlo := Real.log_le_log (pow_pos hxpos 11) hT₁
   have hhi := Real.log_le_log hT hT₂
   simp only [Real.log_pow, Nat.cast_ofNat] at hlo
   rw [Real.log_mul (pow_ne_zero _ hxpos.ne') (Real.rpow_pos_of_pos hlogb _).ne',
     Real.log_pow, Nat.cast_ofNat, Real.log_rpow hlogb] at hhi
-  have hprod : 0 < A * (towerDeg s : ℝ) * √(P.d : ℝ) := mul_pos (mul_pos hA hT) hsqrt
-  have heq : log (A * (towerDeg s : ℝ) * √(P.d : ℝ)) =
-      log A + log (towerDeg s : ℝ) + log (√(P.d : ℝ)) := by
+  have hprod : 0 < A * T * √(P.d : ℝ) := mul_pos (mul_pos hA hT) hsqrt
+  have heq : log (A * T * √(P.d : ℝ)) = log A + log T + log (√(P.d : ℝ)) := by
     rw [Real.log_mul (mul_ne_zero hA.ne' hT.ne') hsqrt.ne', Real.log_mul hA.ne' hT.ne']
   refine ⟨(Real.log_le_log_iff (pow_pos hxpos _) hprod).1 ?_,
     (Real.log_le_log_iff hprod (pow_pos hxpos _)).1 ?_⟩ <;>
