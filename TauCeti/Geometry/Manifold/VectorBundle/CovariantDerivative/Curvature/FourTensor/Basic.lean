@@ -22,9 +22,11 @@ Its algebraic Ricci and scalar contractions match `CovariantDerivative.ricciTens
 * `CovariantDerivative.curvatureFourTensor`
 * `CovariantDerivative.curvatureFourTensor_eq_riemannCurvatureTensor`
 * `CovariantDerivative.curvatureFourTensor_apply`
+* `CovariantDerivative.curvatureFourTensor_antisymm_first`
 * `CovariantDerivative.ricci_curvatureFourTensor`
 * `CovariantDerivative.scalar_curvatureFourTensor`
 * `CovariantDerivative.curvatureFourTensor_eq_smul_constantCurvature`
+* `CovariantDerivative.IsMetricCompatible.curvatureFourTensor_antisymm_last`
 * `CovariantDerivative.IsMetricCompatible.isAlgebraicCurvature_curvatureFourTensor`
 * `CovariantDerivative.IsMetricCompatible.algebraicCurvature`
 * `CovariantDerivative.IsMetricCompatible.coe_algebraicCurvature`
@@ -70,6 +72,12 @@ theorem curvatureFourTensor_apply (x : M) (u v z w : TangentSpace I x) :
     cov.curvatureFourTensor x ![u, v, z, w] = inner ℝ (cov.curvatureTensor x u v w) z := by
   rw [cov.curvatureFourTensor_eq_riemannCurvatureTensor, cov.riemannCurvatureTensor_apply]
 
+/-- `curvatureFourTensor` is antisymmetric in its first pair of arguments. -/
+theorem curvatureFourTensor_antisymm_first (x : M) (u v z w : TangentSpace I x) :
+    cov.curvatureFourTensor x ![u, v, z, w] = -cov.curvatureFourTensor x ![v, u, z, w] := by
+  simpa only [cov.curvatureFourTensor_eq_riemannCurvatureTensor] using
+    cov.riemannCurvatureTensor_antisymm_first x u v w z
+
 /-- The algebraic Ricci contraction of `curvatureFourTensor` is `ricciTensor`. -/
 @[simp]
 theorem ricci_curvatureFourTensor (x : M) :
@@ -101,17 +109,22 @@ section MetricCompatible
 
 variable [IsContMDiffRiemannianBundle I 2 E (fun x : M ↦ TangentSpace I x)]
 
+/-- For a metric-compatible connection, `curvatureFourTensor` is antisymmetric in its last pair
+of arguments. -/
+theorem IsMetricCompatible.curvatureFourTensor_antisymm_last
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun y : M ↦ TangentSpace I y) cov)
+    (x : M) (u v z w : TangentSpace I x) :
+    cov.curvatureFourTensor x ![u, v, z, w] = -cov.curvatureFourTensor x ![u, v, w, z] := by
+  simpa only [cov.curvatureFourTensor_eq_riemannCurvatureTensor] using
+    hcov.riemannCurvatureTensor_antisymm_last cov x u v w z
+
 /-- For a metric-compatible torsion-free connection, `curvatureFourTensor x` satisfies the
 algebraic curvature symmetries. -/
 theorem IsMetricCompatible.isAlgebraicCurvature_curvatureFourTensor
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun y : M ↦ TangentSpace I y) cov)
     (ht : cov.torsion = 0) (x : M) : IsAlgebraicCurvature (cov.curvatureFourTensor x) where
-  antisymm_first u v z w := by
-    simpa only [cov.curvatureFourTensor_eq_riemannCurvatureTensor] using
-      cov.riemannCurvatureTensor_antisymm_first x u v w z
-  antisymm_last u v z w := by
-    simpa only [cov.curvatureFourTensor_eq_riemannCurvatureTensor] using
-      hcov.riemannCurvatureTensor_antisymm_last cov x u v w z
+  antisymm_first := cov.curvatureFourTensor_antisymm_first x
+  antisymm_last := hcov.curvatureFourTensor_antisymm_last cov x
   swap_pairs u v z w := by
     simp only [cov.curvatureFourTensor_eq_riemannCurvatureTensor]
     rw [hcov.riemannCurvatureTensor_swap_pairs cov ht x u v w z,

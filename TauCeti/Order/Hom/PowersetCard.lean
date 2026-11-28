@@ -20,7 +20,7 @@ import TauCeti.Order.Hom.Basic
 /-!
 # Fixed-cardinality subsets of linear orders
 
-This file collects two enumerations of fixed-cardinality subsets through Mathlib's
+This file collects enumerations of fixed-cardinality subsets through Mathlib's
 `Set.powersetCard.ofFinEmbEquiv`, together with the sum and product formulas for its increasing
 enumeration.
 

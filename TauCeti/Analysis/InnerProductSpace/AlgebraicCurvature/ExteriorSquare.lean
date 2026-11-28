@@ -43,6 +43,8 @@ LinearMap.BilinMap.metricTrace ((ricci r).compLeft A)`.
 
 * `TauCeti.FourTensor.inner_curvatureEndomorphism_ιMulti_of_antisymm`,
   `TauCeti.FourTensor.curvatureEndomorphism_eq_iff_inner_ιMulti_two_of_antisymm`,
+  `TauCeti.FourTensor.ofBivectorEnd_antisymm_first`,
+  `TauCeti.FourTensor.ofBivectorEnd_antisymm_last`,
   `TauCeti.FourTensor.isBivectorSymmetric_ofBivectorEnd_iff`,
   `TauCeti.FourTensor.curvatureEndomorphism_ofBivectorEnd`,
   `TauCeti.FourTensor.coe_bivectorSymmetricEquivSelfAdjoint`,
@@ -172,6 +174,20 @@ theorem ofBivectorEnd_apply (T : Module.End ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
       ⟪T (exteriorPower.ιMulti ℝ 2 ![u, v]), exteriorPower.ιMulti ℝ 2 ![z, w]⟫ := by
   simp [ofBivectorEnd]
 
+/-- Every four-tensor pulled back from an endomorphism of `⋀[ℝ]^2 V` is antisymmetric in its
+first pair. -/
+theorem ofBivectorEnd_antisymm_first (T : Module.End ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
+    ofBivectorEnd T ![u, v, z, w] = -ofBivectorEnd T ![v, u, z, w] := by
+  rw [ofBivectorEnd, LinearMap.comp_apply, LinearEquiv.coe_coe]
+  exact ofExteriorSquareBilin_antisymm_first (bilinFormToEnd.symm T) u v z w
+
+/-- Every four-tensor pulled back from an endomorphism of `⋀[ℝ]^2 V` is antisymmetric in its
+last pair. -/
+theorem ofBivectorEnd_antisymm_last (T : Module.End ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
+    ofBivectorEnd T ![u, v, z, w] = -ofBivectorEnd T ![u, v, w, z] := by
+  rw [ofBivectorEnd, LinearMap.comp_apply, LinearEquiv.coe_coe]
+  exact ofExteriorSquareBilin_antisymm_last (bilinFormToEnd.symm T) u v z w
+
 /-- `ofBivectorEnd T` is bivector-symmetric if and only if `T` is symmetric. -/
 @[simp]
 theorem isBivectorSymmetric_ofBivectorEnd_iff {T : Module.End ℝ (⋀[ℝ]^2 V)} :
@@ -184,9 +200,8 @@ theorem isBivectorSymmetric_ofBivectorEnd_iff {T : Module.End ℝ (⋀[ℝ]^2 V)
 @[simp]
 theorem curvatureEndomorphism_ofBivectorEnd (T : Module.End ℝ (⋀[ℝ]^2 V)) :
     curvatureEndomorphism (ofBivectorEnd T) = T :=
-  (curvatureEndomorphism_eq_iff_inner_ιMulti_two_of_antisymm (r := ofBivectorEnd T)
-    (ofExteriorSquareBilin_antisymm_first (bilinFormToEnd.symm T))
-    (ofExteriorSquareBilin_antisymm_last (bilinFormToEnd.symm T)) T).2 fun u v z w ↦
+  (curvatureEndomorphism_eq_iff_inner_ιMulti_two_of_antisymm
+    (ofBivectorEnd_antisymm_first T) (ofBivectorEnd_antisymm_last T) T).2 fun u v z w ↦
       (ofBivectorEnd_apply T u v z w).symm
 
 /-- On pair-antisymmetric four-tensors, `ofBivectorEnd ∘ curvatureEndomorphism` is the identity. -/
@@ -460,9 +475,8 @@ theorem IsAlgebraicCurvature.scalar_eq_two_mul_trace_curvatureEndomorphism {r : 
 /-- The scalar contraction of `ofBivectorEnd T` is `2 * tr T`. -/
 @[simp] theorem scalar_ofBivectorEnd (T : Module.End ℝ (⋀[ℝ]^2 V)) :
     scalar (ofBivectorEnd T) = 2 * LinearMap.trace ℝ (⋀[ℝ]^2 V) T :=
-  (scalar_eq_two_mul_trace_curvatureEndomorphism_of_antisymm (r := ofBivectorEnd T)
-    (ofExteriorSquareBilin_antisymm_first (bilinFormToEnd.symm T))
-    (ofExteriorSquareBilin_antisymm_last (bilinFormToEnd.symm T))).trans <| by
+  (scalar_eq_two_mul_trace_curvatureEndomorphism_of_antisymm
+    (ofBivectorEnd_antisymm_first T) (ofBivectorEnd_antisymm_last T)).trans <| by
       rw [curvatureEndomorphism_ofBivectorEnd]
 
 end TauCeti.FourTensor

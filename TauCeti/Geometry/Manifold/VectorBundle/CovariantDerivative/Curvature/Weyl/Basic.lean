@@ -34,8 +34,8 @@ particular a space of constant curvature has vanishing Weyl tensor.
 ## Main declarations
 
 * `CovariantDerivative.weylTensor`: the Weyl curvature tensor.
-* `CovariantDerivative.weyl_curvatureFourTensor_apply`: algebraic Weyl tensor of
-  `curvatureFourTensor` agrees with `weylTensor`.
+* `CovariantDerivative.weyl_curvatureFourTensor_apply`: away from dimension `2`, the algebraic
+  Weyl tensor of `curvatureFourTensor` agrees with `weylTensor` with the last two slots swapped.
 * `CovariantDerivative.IsMetricCompatible.weylTensor_swap_pairs` and
   `CovariantDerivative.IsMetricCompatible.weylTensor_cyclic_eq_zero`: pair interchange and the
   first Bianchi identity.
@@ -229,12 +229,8 @@ theorem IsMetricCompatible.riemannCurvatureTensor_eq_kulkarniNomizu_of_finrank_e
       kulkarniNomizu (cov.schoutenTensor x) (innerₗ _) u v w z := by
   have h := TauCeti.FourTensor.eq_kulkarniNomizu_schouten_of_finrank_eq_three_of_antisymm
     (r := cov.curvatureFourTensor x) hn
-    (fun a b c d ↦ by
-      simpa only [cov.curvatureFourTensor_eq_riemannCurvatureTensor] using
-        cov.riemannCurvatureTensor_antisymm_first x a b d c)
-    (fun a b c d ↦ by
-      simpa only [cov.curvatureFourTensor_eq_riemannCurvatureTensor] using
-        hcov.riemannCurvatureTensor_antisymm_last cov x a b d c)
+    (cov.curvatureFourTensor_antisymm_first x)
+    (hcov.curvatureFourTensor_antisymm_last cov x)
   have hval := congr($h ![u, v, z, w])
   rwa [cov.curvatureFourTensor_eq_riemannCurvatureTensor,
     TauCeti.FourTensor.kulkarniNomizu_apply_eq, cov.schouten_curvatureFourTensor x] at hval

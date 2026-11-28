@@ -95,9 +95,8 @@ theorem metricTrace_schoutenTensor (x : M)
     LinearMap.BilinMap.metricTrace (cov.schoutenTensor x) =
       cov.scalarCurvature x / (2 * ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 1)) := by
   rw [← cov.schouten_curvatureFourTensor x, ← cov.scalar_curvatureFourTensor x]
-  exact TauCeti.FourTensor.metricTrace_schouten_of_antisymm_first hn fun a b c d ↦ by
-    simpa only [cov.curvatureFourTensor_eq_riemannCurvatureTensor] using
-      cov.riemannCurvatureTensor_antisymm_first x a b d c
+  exact TauCeti.FourTensor.metricTrace_schouten_of_antisymm_first hn
+    (cov.curvatureFourTensor_antisymm_first x)
 
 /-- Away from dimension `2`, Ricci curvature decomposes as `Ric = (n - 2) P + (tr_g P) g` in
 terms of the Schouten tensor `P`. -/

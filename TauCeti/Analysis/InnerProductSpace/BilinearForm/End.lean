@@ -41,7 +41,8 @@ of `g` regarded as a map to the dual.
   `LinearMap.bilinFormToEnd_symm_apply`,
   `LinearMap.BilinForm.innerₗ_comp_bilinFormToEnd`, `LinearMap.bilinFormToEnd_innerₗ_comp`, and
   `TauCeti.bilinFormToEnd_innerₗ`: pairing and inverse laws.
-* `TauCeti.isSymmetric_bilinFormToEnd_iff`, `TauCeti.coe_symmBilinEquivSelfAdjoint`,
+* `TauCeti.isSymmetric_bilinFormToEnd_iff`, `TauCeti.mem_selfAdjoint_submodule_iff_isSymmetric`,
+  `TauCeti.coe_symmBilinEquivSelfAdjoint`,
   `TauCeti.coe_symmBilinEquivSelfAdjoint_symm`, `LinearMap.BilinForm.trace_bilinFormToEnd`,
   `LinearMap.BilinForm.trace_bilinFormToEnd_comp_bilinFormToEnd`,
   `LinearMap.BilinForm.bilinFormToEnd_compl₁₂`, `LinearIsometryEquiv.comp_bilinFormToEnd_compl₁₂`,
@@ -150,6 +151,12 @@ namespace TauCeti
    fun h u v ↦ by
     rw [B.inner_bilinFormToEnd_left, real_inner_comm, B.inner_bilinFormToEnd_left, h.eq]⟩
 
+/-- An endomorphism of `E` lies in `selfAdjoint.submodule ℝ (Module.End ℝ E)` if and only if
+it is symmetric. -/
+@[simp] theorem mem_selfAdjoint_submodule_iff_isSymmetric {T : Module.End ℝ E} :
+    T ∈ selfAdjoint.submodule ℝ (Module.End ℝ E) ↔ T.IsSymmetric :=
+  (LinearMap.isSymmetric_iff_isSelfAdjoint T).symm
+
 /-- Metric index raising restricts to a linear equivalence between symmetric bilinear forms and
 self-adjoint endomorphisms. -/
 def symmBilinEquivSelfAdjoint :
@@ -157,10 +164,7 @@ def symmBilinEquivSelfAdjoint :
   bilinFormToEnd.ofSubmodules (BilinForm.symmSubmodule ℝ E)
     (selfAdjoint.submodule ℝ (Module.End ℝ E)) <| by
     ext T
-    rw [Submodule.mem_map_equiv, BilinForm.mem_symmSubmodule,
-      ← Submodule.mem_toAddSubgroup, selfAdjoint.toAddSubgroup_submodule,
-      selfAdjoint.mem_iff, ← isSelfAdjoint_iff, ← LinearMap.isSymmetric_iff_isSelfAdjoint,
-      ← isSymmetric_bilinFormToEnd_iff, LinearEquiv.apply_symm_apply]
+    simpa using (isSymmetric_bilinFormToEnd_iff (B := bilinFormToEnd.symm T)).symm
 
 /-- Coercion of `symmBilinEquivSelfAdjoint` is `bilinFormToEnd`. -/
 @[simp] theorem coe_symmBilinEquivSelfAdjoint (B : BilinForm.symmSubmodule ℝ E) :
