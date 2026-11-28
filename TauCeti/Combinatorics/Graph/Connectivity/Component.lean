@@ -394,10 +394,7 @@ theorem connectedComponentOf_eq_induce_singleton_of_isIsolated {x : α} (hx : x 
     (hxi : G.toSimpleGraph.IsIsolated ⟨x, hx⟩) :
     (G.connectedComponentOf x hx).val = G.induce {x} := by
   rw [connectedComponentOf_eq_induce_reachable hx]
-  congr 1
-  ext y
-  rw [Set.mem_ofPred_eq, Set.mem_singleton_iff, reachable_iff_eq_of_isIsolated hx hxi]
-  exact eq_comm
+  simp_rw [reachable_iff_eq_of_isIsolated hx hxi, Set.ofPred_eq_eq_singleton']
 
 /-- For an actual vertex, the induced singleton is a connected component exactly when the vertex
 is isolated in the underlying simple graph. Loops are retained by the induced subgraph and ignored
