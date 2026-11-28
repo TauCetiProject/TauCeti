@@ -57,7 +57,7 @@ def echelonRows : Finset (Fin N → k) :=
 
 /-- A vector `u : Fin N → k` belongs to `echelonRows k r` iff `u r = 1` and `u i = 0` for all
 `i < r`. -/
-@[simp]
+@[simp, grind =]
 theorem mem_echelonRows {u : Fin N → k} :
     u ∈ echelonRows k r ↔ u r = 1 ∧ ∀ i < r, u i = 0 := by
   simp only [echelonRows, Fintype.mem_piFinset]
