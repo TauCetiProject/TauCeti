@@ -42,6 +42,9 @@ statements are what the elliptic conjugacy classes of `GL₂(𝔽_q)` are read o
   as equalities of units, the form in which a character of `Lˣ` consumes them, with
   `TauCeti.FiniteField.units_powMonoidHom_comp_powMonoidHom` the involution as an equality of
   monoid homomorphisms.
+* `TauCeti.FiniteField.splits_of_forall_aeval_eq_zero_pow_natCard_eq` and
+  `TauCeti.FiniteField.splits_iff_forall_aeval_eq_zero_pow_natCard_eq`: Frobenius-fixed-point
+  splitting criteria for polynomials over a base field.
 
 Mathlib has the easy direction (`FiniteField.pow_card`) but not the equivalence.
 `IsGalois.mem_range_algebraMap_iff_fixed` characterises the base field of a Galois extension by
@@ -69,6 +72,12 @@ nonzero polynomial that splits over `K` comes from `K`), applied to `X ^ q - X`,
 over `K` by `FiniteField.isSplittingField_sub`. And the source's other public theorem is stated
 in terms of its own `private` finsets, so it cannot be applied from outside; it is not
 reproduced. Nine declarations become one.
+
+The splitting criteria (`TauCeti.FiniteField.splits_of_forall_aeval_eq_zero_pow_natCard_eq` and
+`TauCeti.FiniteField.splits_iff_forall_aeval_eq_zero_pow_natCard_eq`) are adapted from grh-lean
+(https://github.com/lsernau/grh-lean at commit `72fead102f663d5c7a407964a13dc0cf9d977207`,
+Apache 2.0, Copyright 2026 Anthropic, PBC), file
+`src/Lib/LocalGL/Green/LabelCharacters.lean` (`New.splits_of_forall_root_pow_card_eq`).
 -/
 
 public section
@@ -153,6 +162,60 @@ theorem units_map_algebraMap_pow_natCard (a : Kˣ) :
   simp only [Units.coe_map, MonoidHom.coe_ofClass, ← map_pow, FiniteField.pow_card]
 
 end Finite
+
+/-- If `p : k[X]` splits in a nontrivial commutative `k`-algebra `K` over a field `k` and every
+root `x : K` of `p` satisfies `x ^ |k| = x`, then `p` splits over `k`. -/
+theorem splits_of_forall_aeval_eq_zero_pow_natCard_eq {k K : Type*} [Field k] [CommRing K]
+    [Nontrivial K] [Algebra k K] {p : k[X]} (hp : (p.map (algebraMap k K)).Splits)
+    (h_roots : ∀ x : K, aeval x p = 0 → x ^ Nat.card k = x) : p.Splits := by
+  by_cases hp0 : p = 0
+  · subst hp0; simp
+  obtain ⟨M, _⟩ := Ideal.exists_maximal K
+  let _ : Algebra k (K ⧸ M) := ((Ideal.Quotient.mk M).comp (algebraMap k K)).toAlgebra
+  have hmk : RingHom.comp (Ideal.Quotient.mk M) (algebraMap k K) = algebraMap k (K ⧸ M) := rfl
+  have hlift : ∀ q : K[X], q.Splits → q.map (Ideal.Quotient.mk M) ≠ 0 →
+      ∀ y ∈ (q.map (Ideal.Quotient.mk M)).roots,
+        ∃ x : K, q.IsRoot x ∧ Ideal.Quotient.mk M x = y := by
+    intro q hq
+    induction hq using Submonoid.closure_induction with
+    | mem x hx =>
+      rcases hx with ⟨a, rfl⟩ | ⟨a, rfl⟩
+      · simp
+      · intro _ y hy
+        exact ⟨-a, by simp, by simpa [add_eq_zero_iff_eq_neg, eq_comm] using hy⟩
+    | one => simp
+    | mul x y _ _ ihx ihy =>
+      intro hxy z hz
+      rw [Polynomial.map_mul] at hxy hz
+      rcases mem_roots'.mp hz with ⟨_, hrt⟩
+      rw [IsRoot, eval_mul, mul_eq_zero] at hrt
+      rcases hrt with h | h
+      · obtain ⟨r, hr, rfl⟩ :=
+          ihx (left_ne_zero_of_mul hxy) z (mem_roots'.mpr ⟨left_ne_zero_of_mul hxy, h⟩)
+        exact ⟨r, by simp [IsRoot.def.mp hr], rfl⟩
+      · obtain ⟨r, hr, rfl⟩ :=
+          ihy (right_ne_zero_of_mul hxy) z (mem_roots'.mpr ⟨right_ne_zero_of_mul hxy, h⟩)
+        exact ⟨r, by simp [IsRoot.def.mp hr], rfl⟩
+  refine Splits.of_splits_map_of_injective (algebraMap k (K ⧸ M)).injective
+    (by simpa [Polynomial.map_map, hmk] using hp.map (Ideal.Quotient.mk M)) fun y hy ↦ ?_
+  have hne : (p.map (algebraMap k K)).map (Ideal.Quotient.mk M) ≠ 0 := by
+    rw [Polynomial.map_map, hmk]; exact Polynomial.map_ne_zero hp0
+  obtain ⟨x, hx, rfl⟩ := hlift _ hp hne y (by simpa [Polynomial.map_map, hmk] using hy)
+  by_contra hmem
+  exact pow_natCard_ne hmem
+    (by rw [← map_pow, h_roots x (by simpa [IsRoot, eval_map_algebraMap] using hx)])
+
+/-- For a nonzero polynomial `p : k[X]` over a finite field `k` that splits in an integral domain
+`K` over `k`, `p` splits over `k` if and only if every root `x : K` of `p` satisfies
+`x ^ |k| = x`. -/
+theorem splits_iff_forall_aeval_eq_zero_pow_natCard_eq {k K : Type*} [Field k] [Finite k]
+    [CommRing K] [IsDomain K] [Algebra k K] {p : k[X]} (hp0 : p ≠ 0)
+    (hp : (p.map (algebraMap k K)).Splits) :
+    p.Splits ↔ ∀ x : K, aeval x p = 0 → x ^ Nat.card k = x := by
+  refine ⟨fun hs x hx ↦ ?_, splits_of_forall_aeval_eq_zero_pow_natCard_eq hp⟩
+  have hmem : x ∈ (algebraMap k K).range := hs.mem_range_of_isRoot hp0
+    (by simpa [Polynomial.IsRoot, Polynomial.eval_map_algebraMap] using hx)
+  exact (pow_natCard_eq_self_iff_mem_range_algebraMap x).mpr hmem
 
 /-! ### Quadratic extensions -/
 

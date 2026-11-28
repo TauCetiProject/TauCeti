@@ -64,6 +64,8 @@ its conclusion, so instance search could not find it.
   Galois.
 * `SeparableClosure.neZero_two`: `2` stays nonzero in `SeparableClosure K`.
 * `IsSepClosed.of_ringEquiv`: separable closedness transfers along ring isomorphisms.
+* `IsSepClosed.splits_codomain_of_perfectField`: every polynomial over a perfect field splits in
+  any separably closed extension field.
 -/
 
 public section
@@ -98,6 +100,15 @@ theorem IsSepClosed.of_ringEquiv {k K : Type*} [Field k] [Field K] [IsSepClosed 
   splits_of_separable p hp := by
     simpa [Polynomial.map_map] using
       IsSepClosed.splits_domain (f := (e : k →+* K)) _ (hp.map (f := (e.symm : K →+* k)))
+
+/-- Every polynomial over a perfect field splits in any separably closed extension field. -/
+theorem IsSepClosed.splits_codomain_of_perfectField {k : Type*} [Field k] [PerfectField k]
+    {K : Type*} [Field K] [IsSepClosed K] {f : k →+* K} (p : Polynomial k) :
+    (p.map f).Splits := by
+  let _ : Algebra k K := f.toAlgebra
+  let ι : AlgebraicClosure k →ₐ[k] K := IsSepClosed.lift
+  have h := (IsAlgClosed.splits (p.map (algebraMap k (AlgebraicClosure k)))).map ι.toRingHom
+  simpa [Polynomial.map_map, ι.comp_algebraMap, RingHom.algebraMap_toAlgebra] using h
 
 /-- **Separable elements come from any separably closed field.** In a field `Ω` over `k`, the
 elements separable over `k` lie in the image of any embedding over `k` of a separably closed
