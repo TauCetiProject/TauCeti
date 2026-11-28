@@ -29,6 +29,10 @@ It also defines the *gamma multiset* of the LMFDB, which lists `n` with multipli
 `γ(n) > 0` and `-n` with multiplicity `-γ(n)` when `γ(n) < 0`, and proves that it has no zero
 entry and sum `0`; the latter is the comparison of degrees in the defining identity.
 
+The positive and negative entries are counted with multiplicity by `gammaPosCount` and
+`gammaNegCount`. The rational scale `gammaScale` is the product of the powers `n ^ (n γ(n))`
+that normalize the hypergeometric coefficients.
+
 ## Main declarations
 
 * `TauCeti.Hypergeometric.CyclotomicData.gamma`: the gamma vector, supported in
@@ -67,6 +71,9 @@ variable (D : CyclotomicData)
 /-- The finite set of indices at which the gamma vector can be nonzero: the divisors of the
 elements of `A` and `B`. -/
 def gammaSupport : Finset ℕ := (D.A + D.B).toFinset.biUnion Nat.divisors
+
+theorem gammaSupport_eq_biUnion_divisors :
+    D.gammaSupport = (D.A + D.B).toFinset.biUnion Nat.divisors := (rfl)
 
 theorem mem_gammaSupport {n : ℕ} : n ∈ D.gammaSupport ↔ ∃ m ∈ D.A + D.B, n ∣ m := by
   simp only [gammaSupport, Finset.mem_biUnion, Multiset.mem_toFinset, Nat.mem_divisors]
@@ -121,6 +128,63 @@ theorem gamma_swap (n : ℕ) : D.swap.gamma n = -D.gamma n := by
 theorem gamma_default (n : ℕ) : (default : CyclotomicData).gamma n = 0 := by
   simp [gamma_def]
 
+/-- For weights `f` on cyclotomic indices, the quotient of products on the two
+sides equals the product of their divisor products with exponents given by `γ`. -/
+theorem prod_map_div_prod_map_eq_prod_zpow_gamma {G : Type*} [CommGroup G]
+    (f : ℕ → G) :
+    (D.A.map f).prod / (D.B.map f).prod =
+      ∏ m ∈ D.gammaSupport, (∏ d ∈ m.divisors, f d) ^ D.gamma m := by
+  let g (m : ℕ) := ∏ d ∈ m.divisors, f d
+  have hinv := (ArithmeticFunction.prod_eq_iff_prod_pow_moebius_eq (f := f) (g := g)).1
+    (fun _ _ ↦ rfl)
+  have hindex (a : ℕ) (ha : a ∈ D.A + D.B) :
+      f a = ∏ m ∈ D.gammaSupport, g m ^ (if m ∣ a then μ (a / m) else 0) := by
+    rw [← hinv a (D.pos a ha), Nat.prod_divisorsAntidiagonal' (fun i j ↦ g j ^ μ i)]
+    have hsub : a.divisors ⊆ D.gammaSupport := fun d hd ↦
+      D.mem_gammaSupport.2 ⟨a, ha, Nat.dvd_of_mem_divisors hd⟩
+    rw [← Finset.prod_subset hsub (fun m _ hm ↦ by
+      rw [ite_eq_right (fun h ↦ hm (Nat.mem_divisors.2 ⟨h, (D.pos a ha).ne'⟩)), zpow_zero])]
+    exact Finset.prod_congr rfl fun d hd ↦ by simp [Nat.dvd_of_mem_divisors hd]
+  have hside (S : Multiset ℕ) (hS : S ≤ D.A + D.B) :
+      (S.map f).prod = ∏ m ∈ D.gammaSupport,
+        g m ^ ((S.filter (m ∣ ·)).map fun a ↦ μ (a / m)).sum := by
+    rw [Multiset.map_congr rfl (fun a ha ↦ hindex a (Multiset.mem_of_le hS ha)),
+      Multiset.prod_map_prod]
+    refine Finset.prod_congr rfl fun m _ ↦ ?_
+    have hpow := map_multiset_prod (zpowersHom G (g m))
+      (((S.filter (m ∣ ·)).map fun a ↦ μ (a / m)).map Multiplicative.ofAdd)
+    rw [← ofAdd_multiset_prod] at hpow
+    simp only [Multiset.map_map, Function.comp_def, zpowersHom_apply, toAdd_ofAdd] at hpow
+    rw [hpow]
+    obtain ⟨l, rfl⟩ := Quotient.exists_rep S
+    simp only [Multiset.quot_mk_to_coe, Multiset.map_coe, Multiset.prod_coe, Multiset.filter_coe,
+      pow_ite, zpow_zero, List.prod_map_ite, List.map_const', List.prod_replicate,
+      one_pow, mul_one]
+  rw [hside _ (Multiset.le_add_right _ _), hside _ (Multiset.le_add_left _ _),
+    ← Finset.prod_div_distrib]
+  exact Finset.prod_congr rfl fun m _ ↦ by rw [gamma_def, zpow_sub, div_eq_mul_inv]
+
+/-- The gamma product formula in a commutative group with zero, for weights nonzero on
+`gammaSupport`. -/
+theorem prod_map_div_prod_map_eq_prod_zpow_gamma_of_ne_zero {G : Type*} [CommGroupWithZero G]
+    (f : ℕ → G) (hf : ∀ a ∈ D.gammaSupport, f a ≠ 0) :
+    (D.A.map f).prod / (D.B.map f).prod =
+      ∏ m ∈ D.gammaSupport, (∏ d ∈ m.divisors, f d) ^ D.gamma m := by
+  let u (a : ℕ) : Gˣ := if ha : a ∈ D.gammaSupport then Units.mk0 (f a) (hf a ha) else 1
+  have hu (a : ℕ) (ha : a ∈ D.gammaSupport) : (u a : G) = f a := by simp [u, ha]
+  have hprod (S : Multiset ℕ) (hS : S ≤ D.A + D.B) :
+      ((S.map u).prod : G) = (S.map f).prod := by
+    rw [← Units.coeHom_apply, map_multiset_prod, Multiset.map_map]
+    exact congrArg Multiset.prod (Multiset.map_congr rfl fun a ha ↦
+      hu a (D.mem_gammaSupport.2 ⟨a, Multiset.mem_of_le hS ha, dvd_rfl⟩))
+  have h := congrArg (Units.val : Gˣ → G) (D.prod_map_div_prod_map_eq_prod_zpow_gamma u)
+  simp only [Units.val_div_eq_div_val, Units.coe_prod, Units.val_zpow_eq_zpow_val,
+    hprod D.A (Multiset.le_add_right _ _), hprod D.B (Multiset.le_add_left _ _)] at h
+  refine h.trans (Finset.prod_congr rfl fun m hm ↦ ?_)
+  obtain ⟨a, ha, hma⟩ := D.mem_gammaSupport.1 hm
+  rw [Finset.prod_congr rfl fun d hd ↦
+    hu d (D.mem_gammaSupport.2 ⟨a, ha, (Nat.dvd_of_mem_divisors hd).trans hma⟩)]
+
 /-! ### The defining identity -/
 
 section RatFunc
@@ -130,15 +194,12 @@ variable {K : Type*} [Field K]
 /-- The defining rational function of a cyclotomic datum is `∏_n (X ^ n - 1) ^ γ(n)`. -/
 theorem ratFunc_eq_prod_zpow :
     D.ratFunc K = ∏ n ∈ D.gammaSupport, algebraMap K[X] (RatFunc K) (X ^ n - 1) ^ D.gamma n := by
-  have hS {S : Multiset ℕ} (hS : S ≤ D.A + D.B) : ∀ a ∈ S, a.divisors ⊆ D.gammaSupport :=
-    fun a ha n hn ↦ D.mem_gammaSupport.2 ⟨a, Multiset.mem_of_le hS ha, Nat.dvd_of_mem_divisors hn⟩
-  rw [ratFunc_def, phiA_def, phiB_def,
-    algebraMap_prod_cyclotomic_eq_prod_zpow _ (hS (Multiset.le_add_right _ _)),
-    algebraMap_prod_cyclotomic_eq_prod_zpow _ (hS (Multiset.le_add_left _ _)),
-    ← Finset.prod_div_distrib]
+  simp only [ratFunc_def, phiA_def, phiB_def, map_multiset_prod, Multiset.map_map,
+    Function.comp_def]
+  rw [D.prod_map_div_prod_map_eq_prod_zpow_gamma_of_ne_zero _
+    (fun a _ ↦ RatFunc.algebraMap_ne_zero (cyclotomic_ne_zero a K))]
   refine Finset.prod_congr rfl fun n hn ↦ ?_
-  rw [gamma_def,
-    zpow_sub₀ (RatFunc.algebraMap_ne_zero (X_pow_sub_C_ne_zero (D.pos_of_mem_gammaSupport hn) 1))]
+  rw [← map_prod, prod_cyclotomic_eq_X_pow_sub_one (D.pos_of_mem_gammaSupport hn)]
 
 end RatFunc
 
@@ -335,6 +396,73 @@ theorem gammaMultiset_swap : D.swap.gammaMultiset = D.gammaMultiset.map Neg.neg 
 @[simp]
 theorem gammaMultiset_default : (default : CyclotomicData).gammaMultiset = 0 := by
   simp [gammaMultiset_def]
+
+/-- The number `r` of positive entries in the signed gamma multiset. -/
+def gammaPosCount : ℕ := D.gammaMultiset.countP (0 < ·)
+
+/-- The number `s` of negative entries in the signed gamma multiset. -/
+def gammaNegCount : ℕ := D.gammaMultiset.countP (· < 0)
+
+theorem gammaPosCount_eq_countP : D.gammaPosCount = D.gammaMultiset.countP (0 < ·) := (rfl)
+
+theorem gammaNegCount_eq_countP : D.gammaNegCount = D.gammaMultiset.countP (· < 0) := (rfl)
+
+@[simp]
+theorem gammaPosCount_swap : D.swap.gammaPosCount = D.gammaNegCount := by
+  rw [gammaPosCount_eq_countP, gammaNegCount_eq_countP, gammaMultiset_swap, Multiset.countP_map,
+    Multiset.countP_eq_card_filter]
+  simp
+
+@[simp]
+theorem gammaNegCount_swap : D.swap.gammaNegCount = D.gammaPosCount := by
+  simpa only [swap_swap] using D.swap.gammaPosCount_swap.symm
+
+/-- The number of positive entries is the sum of the positive parts of the exponents. -/
+theorem gammaPosCount_eq_sum : D.gammaPosCount = ∑ m ∈ D.gammaSupport, (D.gamma m).toNat := by
+  rw [gammaPosCount_eq_countP, gammaMultiset_def, ← Multiset.coe_countPAddMonoidHom, map_sum]
+  refine Finset.sum_congr rfl fun m hm ↦ ?_
+  simp [← Multiset.nsmul_singleton, map_nsmul, map_add, Multiset.countP_eq_card_filter,
+    Multiset.filter_singleton, D.pos_of_mem_gammaSupport hm]
+
+/-- The number of negative entries is the sum of the negative parts of the exponents. -/
+theorem gammaNegCount_eq_sum : D.gammaNegCount = ∑ m ∈ D.gammaSupport, (-D.gamma m).toNat := by
+  simpa using D.swap.gammaPosCount_eq_sum
+
+@[simp]
+theorem gammaPosCount_default : (default : CyclotomicData).gammaPosCount = 0 := by
+  simp [gammaPosCount_eq_sum]
+
+@[simp]
+theorem gammaNegCount_default : (default : CyclotomicData).gammaNegCount = 0 := by
+  simp [gammaNegCount_eq_sum]
+
+/-- The sums of the positive and absolute negative gamma entries agree. -/
+theorem sum_mul_gamma_toNat_eq :
+    ∑ m ∈ D.gammaSupport, m * (D.gamma m).toNat =
+      ∑ m ∈ D.gammaSupport, m * (-D.gamma m).toNat := by
+  zify
+  rw [← sub_eq_zero, ← Finset.sum_sub_distrib, ← D.sum_mul_gamma_eq_zero]
+  exact Finset.sum_congr rfl fun m _ ↦ by rw [← mul_sub, Int.toNat_sub_toNat_neg]
+
+/-- The positive rational scale `M = ∏ m ^ (m γ(m))` in the factorial
+formula for the hypergeometric coefficients. -/
+def gammaScale : ℚ := ∏ m ∈ D.gammaSupport, (m : ℚ) ^ ((m : ℤ) * D.gamma m)
+
+theorem gammaScale_def : D.gammaScale =
+    ∏ m ∈ D.gammaSupport, (m : ℚ) ^ ((m : ℤ) * D.gamma m) := (rfl)
+
+@[simp]
+theorem gammaScale_pos : 0 < D.gammaScale := by
+  rw [gammaScale_def]
+  exact Finset.prod_pos fun m hm ↦ zpow_pos (by exact_mod_cast D.pos_of_mem_gammaSupport hm) _
+
+@[simp]
+theorem gammaScale_swap : D.swap.gammaScale = D.gammaScale⁻¹ := by
+  simp [gammaScale_def, Finset.prod_inv_distrib]
+
+@[simp]
+theorem gammaScale_default : (default : CyclotomicData).gammaScale = 1 := by
+  simp [gammaScale_def]
 
 end CyclotomicData
 

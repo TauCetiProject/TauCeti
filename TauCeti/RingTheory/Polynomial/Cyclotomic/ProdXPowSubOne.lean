@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.RatFunc.Basic
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
 import Mathlib.FieldTheory.Separable
 import Mathlib.RingTheory.RootsOfUnity.Complex
@@ -34,8 +33,6 @@ data by their gamma vector. Every product of cyclotomic polynomials has this for
   primitive `N`-th root of unity in the product is `∑_{N ∣ n} e(n)`.
 * `Polynomial.eq_of_prod_X_pow_sub_one_pow_eq`: in characteristic zero, equal products have equal
   exponents.
-* `Polynomial.algebraMap_prod_cyclotomic_eq_prod_zpow`: a product of cyclotomic polynomials is
-  `∏_n (X ^ n - 1) ^ (∑_{a, n ∣ a} μ(a / n))` in `RatFunc R`.
 
 ## References
 
@@ -149,49 +146,5 @@ theorem eq_of_prod_X_pow_sub_one_pow_eq [CharZero R] (he : e 0 = 0) (he' : e' 0 
     ← map_prod_X_pow_sub_one_pow (R := ℤ) (Int.castRingHom ℂ)]
   refine congr_arg _ (Polynomial.map_injective (Int.castRingHom R) Int.cast_injective ?_)
   rwa [map_prod_X_pow_sub_one_pow, map_prod_X_pow_sub_one_pow]
-
-section RatFunc
-
-open scoped ArithmeticFunction.Moebius
-
-variable [IsDomain R]
-
-/-- Möbius inversion for one cyclotomic polynomial in `RatFunc R`,
-`Φ_a = ∏_{n ∣ a} (X ^ n - 1) ^ μ(a / n)`, with the product spread over a finite set `S` of indices
-containing the divisors of `a`. -/
-theorem algebraMap_cyclotomic_eq_prod_zpow {a : ℕ} {S : Finset ℕ} (hS : a.divisors ⊆ S) :
-    algebraMap R[X] (RatFunc R) (cyclotomic a R) =
-      ∏ n ∈ S, algebraMap R[X] (RatFunc R) (X ^ n - 1) ^ (if n ∣ a then μ (a / n) else 0) := by
-  rw [cyclotomic_eq_prod_X_pow_sub_one_pow_moebius,
-    Nat.prod_divisorsAntidiagonal' fun i j ↦ algebraMap R[X] (RatFunc R) (X ^ j - 1) ^ μ i,
-    ← Finset.prod_subset hS fun n _ hn ↦ by
-      rcases eq_or_ne a 0 with rfl | ha
-      · simp
-      rw [ite_eq_right fun h ↦ hn (Nat.mem_divisors.2 ⟨h, ha⟩), zpow_zero]]
-  exact Finset.prod_congr rfl fun n hn ↦ by rw [ite_eq_left (Nat.dvd_of_mem_divisors hn)]
-
-/-- Möbius inversion for a product of cyclotomic polynomials in `RatFunc R`:
-`∏_{a ∈ A} Φ_a = ∏_{n ∈ S} (X ^ n - 1) ^ (∑_{a ∈ A, n ∣ a} μ(a / n))` for a finite set `S` of
-indices containing the divisors of the elements of `A`. -/
-theorem algebraMap_prod_cyclotomic_eq_prod_zpow (A : Multiset ℕ) {S : Finset ℕ}
-    (hS : ∀ a ∈ A, a.divisors ⊆ S) :
-    algebraMap R[X] (RatFunc R) (A.map fun a ↦ cyclotomic a R).prod =
-      ∏ n ∈ S, algebraMap R[X] (RatFunc R) (X ^ n - 1) ^
-        ((A.filter (n ∣ ·)).map fun a ↦ μ (a / n)).sum := by
-  induction A using Multiset.induction_on with
-  | empty => simp
-  | cons a A ih =>
-    rw [Multiset.map_cons, Multiset.prod_cons, map_mul,
-      algebraMap_cyclotomic_eq_prod_zpow (hS a (Multiset.mem_cons_self a A)),
-      ih fun b hb ↦ hS b (Multiset.mem_cons_of_mem hb), ← Finset.prod_mul_distrib]
-    refine Finset.prod_congr rfl fun n _ ↦ ?_
-    -- The exponents at `n = 0` are values `μ (a / 0) = μ 0 = 0`.
-    rcases Nat.eq_zero_or_pos n with rfl | hn₀
-    · simp
-    rw [← zpow_add₀ (RatFunc.algebraMap_ne_zero (X_pow_sub_C_ne_zero hn₀ 1)),
-      Multiset.filter_cons]
-    split_ifs <;> simp
-
-end RatFunc
 
 end Polynomial

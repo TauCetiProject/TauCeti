@@ -88,6 +88,13 @@ theorem primitiveClasses_cons (a : ℕ) (A : Multiset ℕ) :
     primitiveClasses (a ::ₘ A) = primitiveClasses {a} + primitiveClasses A := by
   rw [← Multiset.singleton_add, primitiveClasses_add]
 
+/-- A product over primitive classes factors into the products for each index. -/
+theorem prod_map_primitiveClasses {M : Type*} [CommMonoid M] (A : Multiset ℕ)
+    (f : AddCircle (1 : ℚ) → M) :
+    ((primitiveClasses A).map f).prod =
+      (A.map fun a ↦ ((primitiveClasses {a}).map f).prod).prod := by
+  simp only [primitiveClasses, Multiset.map_bind, Multiset.prod_bind, Multiset.singleton_bind]
+
 /-- The class `k / a` with `1 ≤ k ≤ a` is represented by `k / a` itself in `(0, 1]`. -/
 private theorem div_mem_Ioc {a k : ℕ} (hk : k ∈ Finset.Icc 1 a) :
     (k : ℚ) / a ∈ Set.Ioc (0 : ℚ) 1 := by
@@ -161,6 +168,35 @@ theorem card_primitiveClasses (A : Multiset ℕ) :
     omega
   rw [Function.comp_apply, Multiset.card_map, Finset.card_val, h,
     Nat.filter_coprime_Ico_eq_totient]
+
+/-- Taking the primitive classes for all divisors of `m` gives each fraction
+`1/m, …, m/m` once, using representatives in `(0,1]`. -/
+theorem map_rep_primitiveClasses_divisors (m : ℕ) :
+    (primitiveClasses m.divisors.val).map rep =
+      (Finset.range m).val.map (fun i : ℕ ↦ (1 + i : ℚ) / m) := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp
+  have hm' : (m : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hm
+  symm
+  apply Multiset.eq_of_le_of_card_le
+  · refine (Multiset.le_iff_subset <| (Finset.range m).nodup.map ?_).2 ?_
+    · intro i j h
+      simpa [div_left_inj₀ hm'] using h
+    · intro q hq
+      obtain ⟨i, hi, rfl⟩ := Multiset.mem_map.1 hq
+      have hi' := Finset.mem_range.1 hi
+      let q : ℚ := (1 + i : ℚ) / m
+      refine Multiset.mem_map.2 ⟨(q : AddCircle (1 : ℚ)), ?_, rep_coe_of_mem ?_⟩
+      · rw [mem_primitiveClasses, Finset.mem_val, Nat.mem_divisors]
+        have hsmul : (q : AddCircle (1 : ℚ)) = (i + 1) • ((1 / m : ℚ) : AddCircle (1 : ℚ)) := by
+          rw [← AddCircle.coe_nsmul]
+          simp [q, nsmul_eq_mul, add_comm, div_eq_mul_inv]
+        have horder := addOrderOf_smul_dvd (x := ((1 / m : ℚ) : AddCircle (1 : ℚ))) (i + 1)
+        rw [← hsmul, AddCircle.addOrderOf_period_div (Nat.pos_of_ne_zero hm)] at horder
+        exact ⟨horder, hm⟩
+      · simpa [q, add_comm] using div_mem_Ioc (a := m) (k := i + 1)
+          (Finset.mem_Icc.2 ⟨by omega, by omega⟩)
+  · simpa [← Finset.sum_eq_multiset_sum] using (Nat.sum_totient m).le
 
 /-- Multisets of positive indices are determined by their primitive classes. -/
 theorem primitiveClasses_inj {A B : Multiset ℕ} (hA : 0 ∉ A) (hB : 0 ∉ B) :
@@ -280,12 +316,8 @@ the arguments of the roots of the cyclotomic product, with multiplicity. -/
 theorem prod_X_sub_C_expCircle_primitiveClasses (A : Multiset ℕ) :
     ((primitiveClasses A).map fun x ↦ X - C (expCircle x)).prod =
       (A.map fun a ↦ cyclotomic a ℂ).prod := by
-  induction A using Multiset.induction_on with
-  | empty => simp
-  | cons a A ih =>
-    rw [primitiveClasses_cons, Multiset.map_add, Multiset.prod_add,
-      prod_X_sub_C_expCircle_primitiveClasses_singleton, ih, Multiset.map_cons,
-      Multiset.prod_cons]
+  rw [prod_map_primitiveClasses]
+  simp only [prod_X_sub_C_expCircle_primitiveClasses_singleton]
 
 /-! ### The dictionary -/
 
