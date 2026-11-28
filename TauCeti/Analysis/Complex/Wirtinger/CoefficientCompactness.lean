@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Wirtinger.Compactness
 public import TauCeti.Analysis.Complex.Wirtinger.Weak
 public import TauCeti.Analysis.Polynomial.SymmetricPower
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
+import TauCeti.Analysis.Complex.Wirtinger.NewtonIdentities
 import TauCeti.Analysis.Complex.Wirtinger.Precompact
 import TauCeti.Analysis.Polynomial.Monic.RootBound
 import TauCeti.Order.Filter.AtTopBot
@@ -16,6 +17,7 @@ import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.UniformConvergence
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import Mathlib.Analysis.Complex.Polynomial.Basic
 
 /-!
@@ -62,9 +64,11 @@ where `R₀(z)` is the multiset of the `m` roots of `Wᵐ - c₁ Wᵐ⁻¹ + ⋯
 (`TauCeti.exists_hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn_esymm`). This is the
 equation of the elementary symmetric functions of `m` solutions of `D`, which the root branches of
 `TauCeti.Analysis.Complex.Wirtinger.Root.Branch` and their normalization across collisions take
-as input, there for `C¹` coefficients solving it classically; the regularity of the limits that
-this requires is not treated here. The zeroth-order term `∑_{V ∈ R} \bar V e_{j-1}(R ∖ V)` is
-a continuous function of the unordered tuple `R ∈ Sym ℂ m`
+as input, there for `C¹` coefficients solving it classically; when the limit forms `ν₀` and `μ₀`
+are Hölder of exponent `(1 - 2 / p) / m` on compact sets, that the limits have this regularity is
+`TauCeti.exists_strictMono_contDiffOn_of_esymm`, in
+`TauCeti.Analysis.Complex.Wirtinger.Regularity.CoefficientEquation`. The zeroth-order term
+`∑_{V ∈ R} \bar V e_{j-1}(R ∖ V)` is a continuous function of the unordered tuple `R ∈ Sym ℂ m`
 (`TauCeti.continuous_sum_map_conj_mul_esymm_erase`), hence of the coefficients, through the
 elementary symmetric chart `Sym.coeffHomeomorph`; so it converges
 locally uniformly with them (`TauCeti.tendstoLocallyUniformlyOn_sum_map_conj_mul_esymm_erase`).
@@ -74,12 +78,23 @@ term of the limit, and the weak equation passes to the limit
 compactness above, a subsequence of the coefficients converges to Hölder continuous solutions of
 the limiting equation (`TauCeti.exists_strictMono_hasWeakConjWirtingerDerivOn_of_esymm`).
 
+**Change of frame.** The `Lᵖ(K)` norms of the remainders in two frames of the normal line are
+comparable. Under a change of frame `W ↦ g W` with `c ≤ |g| ≤ G` on a measurable set `K`, the
+remainders in the two frames, related by the factor `gʲ`
+(`TauCeti.conjWirtingerDeriv_pow_mul_add_add_esymm_erase_eq_pow_smul`), have `Lᵖ(K)` norms within
+the factors `Gʲ` and `c⁻ʲ` of each other
+(`TauCeti.eLpNorm_conjWirtingerDeriv_pow_mul_add_add_esymm_erase_le`,
+`TauCeti.eLpNorm_conjWirtingerDeriv_add_add_esymm_erase_le`). For a frame continuous and
+nonvanishing on a neighbourhood of a compact set such bounds hold on it.
+
 ## Main results
 
 * `TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_esymm`: locally uniform convergence of
   a subsequence of the coefficients, with Hölder continuous limits of exponent `1 - 2 / p`.
 * `TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_esymm_of_eq`: the same for
   `p = 2 + 2 / m`, with Hölder exponent `1 / (m + 1)`.
+* `TauCeti.norm_sum_map_conj_mul_esymm_erase_le`: the zeroth-order term of the equation is
+  bounded by the roots.
 * `TauCeti.continuous_sum_map_conj_mul_esymm_erase`: the zeroth-order term of the equation is
   continuous on `Sym ℂ m`.
 * `TauCeti.continuousOn_sum_map_conj_mul_esymm_erase`,
@@ -89,6 +104,9 @@ the limiting equation (`TauCeti.exists_strictMono_hasWeakConjWirtingerDerivOn_of
   uniform limits of the coefficients solve the limiting equation weakly.
 * `TauCeti.exists_strictMono_hasWeakConjWirtingerDerivOn_of_esymm`: a subsequence converges to
   Hölder continuous weak solutions of the limiting equation.
+* `TauCeti.eLpNorm_conjWirtingerDeriv_pow_mul_add_add_esymm_erase_le`,
+  `TauCeti.eLpNorm_conjWirtingerDeriv_add_add_esymm_erase_le`: the `Lᵖ` norms of the remainders
+  in two frames are comparable.
 
 ## References
 
@@ -103,6 +121,24 @@ open MeasureTheory Set Filter
 
 namespace TauCeti
 
+/-- **The zeroth-order term is bounded by the roots.** If a multiset `s` has at most `m` elements,
+all of norm at most `ρ`, then `‖∑_{w ∈ s} \bar w e_k(s ∖ w)‖ ≤ m ρ C(m, k) ρᵏ`. -/
+theorem norm_sum_map_conj_mul_esymm_erase_le {m k : ℕ} {ρ : ℝ} (hρ0 : 0 ≤ ρ) {s : Multiset ℂ}
+    (hcard : Multiset.card s ≤ m) (hρ : ∀ w ∈ s, ‖w‖ ≤ ρ) :
+    ‖(s.map fun w ↦ conj w * (s.erase w).esymm k).sum‖ ≤ m * ρ * (m.choose k * ρ ^ k) := by
+  refine (norm_multiset_sum_le _).trans ?_
+  rw [Multiset.map_map]
+  refine (Multiset.sum_le_card_nsmul _ (ρ * (m.choose k * ρ ^ k)) fun r hr ↦ ?_).trans ?_
+  · obtain ⟨w, hw, rfl⟩ := Multiset.mem_map.1 hr
+    rw [Function.comp_apply, norm_mul, Complex.norm_conj]
+    -- the elementary symmetric functions of `s ∖ w` are bounded by the roots
+    refine mul_le_mul (hρ w hw) ((Multiset.norm_esymm_le (fun v hv ↦
+      hρ v (Multiset.mem_of_mem_erase hv)) k).trans ?_) (norm_nonneg _) hρ0
+    gcongr
+    exact Multiset.card_erase_le.trans hcard
+  · rw [Multiset.card_map, nsmul_eq_mul, mul_assoc]
+    gcongr
+
 /-- The zeroth-order terms of the equation of the elementary symmetric functions are bounded by
 the roots: if `R` has at most `m` elements, all of norm at most `ρ`, `b z = e_j(R)` with
 `1 ≤ j ≤ m`, and `‖ν‖, ‖μ‖ ≤ Λ`, then `\bar∂b` differs from
@@ -114,22 +150,7 @@ private theorem norm_conjWirtingerDeriv_sub_le_of_esymm {m j : ℕ} {ρ Λ : ℝ
     ‖conjWirtingerDeriv b z 1 - (conjWirtingerDeriv b z + (j * b z) • ν +
       (R.map fun w ↦ conj w * (R.erase w).esymm (j - 1)).sum • μ) 1‖ ≤
         j * (m.choose j * ρ ^ j) * Λ + m * ρ * (m.choose (j - 1) * ρ ^ (j - 1)) * Λ := by
-  -- The elementary symmetric functions of submultisets of `R` are bounded by the roots.
-  have hE : ∀ S : Multiset ℂ, Multiset.card S ≤ m → (∀ w ∈ S, ‖w‖ ≤ ρ) → ∀ k,
-      ‖S.esymm k‖ ≤ m.choose k * ρ ^ k := fun S hS hSρ k ↦
-    (Multiset.norm_esymm_le hSρ k).trans (by gcongr)
-  have hsum : ‖(R.map fun w ↦ conj w * (R.erase w).esymm (j - 1)).sum‖ ≤
-      m * ρ * (m.choose (j - 1) * ρ ^ (j - 1)) := by
-    refine (norm_multiset_sum_le _).trans ?_
-    rw [Multiset.map_map]
-    refine (Multiset.sum_le_card_nsmul _ ((ρ : ℝ) * (m.choose (j - 1) * ρ ^ (j - 1)))
-      fun r hr ↦ ?_).trans ?_
-    · obtain ⟨w, hw, rfl⟩ := Multiset.mem_map.1 hr
-      rw [Function.comp_apply, norm_mul, Complex.norm_conj]
-      exact mul_le_mul (hρ w hw) (hE _ (Multiset.card_erase_le.trans hcard)
-        (fun v hv ↦ hρ v (Multiset.mem_of_mem_erase hv)) _) (norm_nonneg _) ρ.coe_nonneg
-    · rw [Multiset.card_map, nsmul_eq_mul, mul_assoc]
-      gcongr
+  have hsum := norm_sum_map_conj_mul_esymm_erase_le (k := j - 1) ρ.coe_nonneg hcard hρ
   have hν1 : ‖ν 1‖ ≤ Λ := by simpa using ν.le_opNorm 1 |>.trans (by simpa using hν)
   have hμ1 : ‖μ 1‖ ≤ Λ := by simpa using μ.le_opNorm 1 |>.trans (by simpa using hμ)
   calc ‖conjWirtingerDeriv b z 1 - (conjWirtingerDeriv b z + (j * b z) • ν +
@@ -142,7 +163,7 @@ private theorem norm_conjWirtingerDeriv_sub_le_of_esymm {m j : ℕ} {ρ Λ : ℝ
         refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
         · rw [norm_mul, norm_mul, Complex.norm_natCast, hbR]
           gcongr
-          exact hE R hcard hρ j
+          exact (Multiset.norm_esymm_le hρ j).trans (by gcongr)
         · rw [norm_mul]
           gcongr
 
@@ -451,5 +472,73 @@ theorem exists_strictMono_hasWeakConjWirtingerDerivOn_of_esymm {m : ℕ} {p : �
     (hμ.comp_tendsto hφ.tendsto_atTop) hμ₀ (fun j hj ↦ (hc j hj).1)
     fun K hKU hK j hj ↦ (hr₀ K hKU hK j hj).comp hφ.tendsto_atTop
   exact ⟨φ, hφ, c, R₀, hc, hR₀, hweak⟩
+
+
+/-! ### Comparison of the remainder bounds in two frames -/
+
+section Frame
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [MeasurableSpace V]
+  [OpensMeasurableSpace V] {j : ℕ} {g b : V → ℂ} {ν μ : V → V →L⋆[ℂ] ℂ} {R : V → Multiset ℂ}
+  {K : Set V}
+
+/-- **Comparison of the remainders in two frames, from above.** Under a change of frame
+`W ↦ g W` of the normal line over a measurable set `K` of the base, as in
+`TauCeti.conjWirtingerDeriv_pow_mul_add_add_esymm_erase_eq_pow_smul`, the remainder
+
+`r_j = \bar∂ b_j + j ν b_j + μ ∑_{V ∈ R} \bar V e_{j-1}(R ∖ V)`
+
+of the equation of the elementary symmetric functions in the new frame has `Lᵖ(K)` norm at most
+`Gʲ` times that of `r_j` in the old frame, where `|g| ≤ G` on `K`. -/
+theorem eLpNorm_conjWirtingerDeriv_pow_mul_add_add_esymm_erase_le (hK : MeasurableSet K)
+    (hg : ∀ x ∈ K, DifferentiableAt ℝ g x) (hgK : ∀ x ∈ K, g x ≠ 0)
+    (hb : ∀ x ∈ K, DifferentiableAt ℝ b x) (hj : 0 < j) {G : ℝ} (hG : ∀ x ∈ K, ‖g x‖ ≤ G)
+    (p : ℝ≥0∞) (ρ : Measure V) :
+    eLpNorm (fun x ↦ conjWirtingerDeriv (fun y ↦ g y ^ j * b y) x +
+        (j * (g x ^ j * b x)) • (ν x - (g x)⁻¹ • conjWirtingerDeriv g x) +
+        (((R x).map (g x * ·)).map fun w ↦
+          conj w * (((R x).map (g x * ·)).erase w).esymm (j - 1)).sum •
+          ((g x / conj (g x)) • μ x)) p (ρ.restrict K) ≤
+      ENNReal.ofReal (G ^ j) * eLpNorm (fun x ↦ conjWirtingerDeriv b x + (j * b x) • ν x +
+        ((R x).map fun w ↦ conj w * ((R x).erase w).esymm (j - 1)).sum • μ x) p (ρ.restrict K) := by
+  rw [eLpNorm_congr_ae ((ae_restrict_mem hK).mono fun x hx ↦
+    conjWirtingerDeriv_pow_mul_add_add_esymm_erase_eq_pow_smul (hg x hx) (hgK x hx) (hb x hx) hj
+      (ν x) (μ x) (R x))]
+  exact ContinuousOn.eLpNorm_smul_restrict_le_of_norm_le
+    (fun x hx ↦ ((hg x hx).continuousAt.pow j).continuousWithinAt) hK
+    (fun x hx ↦ (norm_pow (g x) j).trans_le (pow_le_pow_left₀ (norm_nonneg _) (hG x hx) j)) _ p ρ
+
+/-- **Comparison of the remainders in two frames, from below.** Under a change of frame
+`W ↦ g W` over a measurable set `K` of the base with `c ≤ |g|` on `K`, `0 < c`, the remainder
+
+`r_j = \bar∂ b_j + j ν b_j + μ ∑_{V ∈ R} \bar V e_{j-1}(R ∖ V)`
+
+of the equation of the elementary symmetric functions in the old frame has `Lᵖ(K)` norm at most
+`c⁻ʲ` times that of the remainder in the new frame. Together with
+`TauCeti.eLpNorm_conjWirtingerDeriv_pow_mul_add_add_esymm_erase_le`, the `Lᵖ` norms of the
+remainders in two frames are equivalent on every compact set of the base on which `g` and `b`
+are real-differentiable and `g` does not vanish. -/
+theorem eLpNorm_conjWirtingerDeriv_add_add_esymm_erase_le (hK : MeasurableSet K)
+    (hg : ∀ x ∈ K, DifferentiableAt ℝ g x) (hb : ∀ x ∈ K, DifferentiableAt ℝ b x) (hj : 0 < j)
+    {c : ℝ} (hc : 0 < c) (hcK : ∀ x ∈ K, c ≤ ‖g x‖) (p : ℝ≥0∞) (ρ : Measure V) :
+    eLpNorm (fun x ↦ conjWirtingerDeriv b x + (j * b x) • ν x +
+        ((R x).map fun w ↦ conj w * ((R x).erase w).esymm (j - 1)).sum • μ x) p (ρ.restrict K) ≤
+      ENNReal.ofReal (c ^ j)⁻¹ * eLpNorm (fun x ↦ conjWirtingerDeriv (fun y ↦ g y ^ j * b y) x +
+        (j * (g x ^ j * b x)) • (ν x - (g x)⁻¹ • conjWirtingerDeriv g x) +
+        (((R x).map (g x * ·)).map fun w ↦
+          conj w * (((R x).map (g x * ·)).erase w).esymm (j - 1)).sum •
+          ((g x / conj (g x)) • μ x)) p (ρ.restrict K) := by
+  have hgK (x : V) (hx : x ∈ K) : g x ≠ 0 := norm_pos_iff.1 (hc.trans_le (hcK x hx))
+  rw [eLpNorm_congr_ae ((ae_restrict_mem hK).mono fun x hx ↦
+    (eq_inv_smul_iff₀ (pow_ne_zero j (hgK x hx))).2
+      (conjWirtingerDeriv_pow_mul_add_add_esymm_erase_eq_pow_smul (hg x hx) (hgK x hx) (hb x hx)
+        hj (ν x) (μ x) (R x)).symm)]
+  refine ContinuousOn.eLpNorm_smul_restrict_le_of_norm_le (φ := fun x ↦ (g x ^ j)⁻¹)
+    (ContinuousOn.inv₀ (fun x hx ↦ ((hg x hx).continuousAt.pow j).continuousWithinAt)
+      fun x hx ↦ pow_ne_zero j (hgK x hx)) hK (fun x hx ↦ ?_) _ p ρ
+  rw [norm_inv, norm_pow]
+  exact inv_anti₀ (pow_pos hc j) (pow_le_pow_left₀ hc.le (hcK x hx) j)
+
+end Frame
 
 end TauCeti

@@ -39,6 +39,8 @@ groups `GL n` over each of the three adele rings for every finite `n`.
 * `NumberField.InfiniteAdeleRing.instPolishSpace`, `NumberField.InfiniteAdeleRing.instBorelSpace`:
   the infinite adele ring is a Polish Borel space. Its second countability is
   `NumberField.InfiniteAdeleRing.instSecondCountableTopology`.
+* `NumberField.InfiniteAdeleRing.sigmaFinite_map_ringEquiv_mixedSpace_symm`: Lebesgue measure on
+  the mixed space, transported to the infinite adele ring, is σ-finite.
 * `NumberField.AdeleRing.instPolishSpace`, `NumberField.AdeleRing.instBorelSpace`: so is the
   adele ring, with the product σ-algebra. Its second countability is
   `NumberField.AdeleRing.instSecondCountableTopology`.
@@ -73,6 +75,15 @@ variable [NumberField K]
 /-- The infinite adele ring of a number field is Polish. -/
 instance InfiniteAdeleRing.instPolishSpace : PolishSpace (InfiniteAdeleRing K) :=
   TauCeti.polishSpace_of_weaklyLocallyCompactSpace _
+
+open Classical in
+/-- Lebesgue measure on the Minkowski mixed space, transported to the infinite adele ring by the
+standard ring equivalence, is σ-finite. -/
+instance InfiniteAdeleRing.sigmaFinite_map_ringEquiv_mixedSpace_symm :
+    MeasureTheory.SigmaFinite ((MeasureTheory.volume : MeasureTheory.Measure
+      (mixedEmbedding.mixedSpace K)).map (InfiniteAdeleRing.ringEquiv_mixedSpace K).symm) := by
+  rw [← InfiniteAdeleRing.coe_homeomorphMixedSpace_symm]
+  exact (InfiniteAdeleRing.homeomorphMixedSpace K).symm.measurableEmbedding.sigmaFinite_map
 
 end Infinite
 

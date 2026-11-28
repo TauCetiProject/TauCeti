@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.Separable.FixedField
 public import TauCeti.FieldTheory.Separable.GeometricallyReduced
 import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 import TauCeti.FieldTheory.RatFunc.Transcendental
@@ -21,7 +22,9 @@ This is the one-variable form of Mathlib's
 `exists_isTranscendenceBasis_and_isSeparable_of_perfectField`.  It is useful for passing from
 abstract separable generation to constructions that require a single separating parameter.
 The same holds over an imperfect base field when the extension is geometrically reduced, by
-`TauCeti.exists_isTranscendenceBasis_and_isSeparable_of_isGeometricallyReduced`.
+`TauCeti.exists_isTranscendenceBasis_and_isSeparable_of_isGeometricallyReduced`, or when the
+automorphisms of the extension fix only the base field, by
+`TauCeti.exists_isTranscendenceBasis_and_isSeparable_of_fixedField_eq_bot`.
 
 An element outside the image of the base field with an exponential-characteristic power in
 that image rules out every separating element, even over an imperfect base field.
@@ -85,6 +88,19 @@ theorem exists_transcendental_and_isSeparable_adjoin_of_isGeometricallyReduced
     (htr : Algebra.trdeg k F = 1) :
     ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F :=
   have ⟨_, hs, hsep⟩ := exists_isTranscendenceBasis_and_isSeparable_of_isGeometricallyReduced k F
+  exists_transcendental_and_isSeparable_adjoin_of_finset htr hs hsep
+
+/-- A finitely generated extension of transcendence degree one whose automorphisms fix only the
+base field has a separating element: an element `x` transcendental over the base such that the
+extension is separable algebraic over `k(x)`. The base field may be imperfect.
+
+This is the singleton form of
+`TauCeti.exists_isTranscendenceBasis_and_isSeparable_of_fixedField_eq_bot`. -/
+theorem exists_transcendental_and_isSeparable_adjoin_of_fixedField_eq_bot
+    [Algebra.EssFiniteType k F] (htr : Algebra.trdeg k F = 1)
+    (h : fixedField (⊤ : Subgroup (F ≃ₐ[k] F)) = ⊥) :
+    ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F :=
+  have ⟨_, hs, hsep⟩ := exists_isTranscendenceBasis_and_isSeparable_of_fixedField_eq_bot h
   exists_transcendental_and_isSeparable_adjoin_of_finset htr hs hsep
 
 /-- **A purely inseparable element outside `k` rules out separating elements**: if `α ∈ F` is not

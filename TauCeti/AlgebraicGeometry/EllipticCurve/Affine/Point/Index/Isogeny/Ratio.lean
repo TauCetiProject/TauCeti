@@ -7,11 +7,14 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.KummerRatio
+public import TauCeti.NumberTheory.NumberField.Global.Places.Completion
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Real
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.AlmostEverywhere
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 import Mathlib.Algebra.BigOperators.Finprod
+import TauCeti.Algebra.BigOperators.Finprod
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.Transport
 
 /-!
 # The product of local Kummer ratios
@@ -31,6 +34,11 @@ index identity at each place; in particular it does not require choices of minim
 differentials, or embeddings of separable closures. A finite set containing the nontrivial
 factors computes the product exactly.
 
+The local ratios only depend on the completions up to isomorphism. So the product is also the
+finitary product, over all places `v` of `ℚ`, of the Kummer ratios over Mathlib's completions
+`ℚ_v` (`TauCeti.Isogeny.kummerRatioProduct_eq_finprod_place`). Families of local conditions over
+all places, such as those of the Selmer groups of `φ`, are indexed in that way.
+
 ## References
 
 * J. W. S. Cassels, *Arithmetic on curves of genus 1. VIII. On conjectures of Birch and
@@ -40,7 +48,7 @@ factors computes the product exactly.
 
 public noncomputable section
 
-open IsDedekindDomain WeierstrassCurve ValuativeRel
+open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum WeierstrassCurve ValuativeRel NumberField
 
 namespace TauCeti.Isogeny
 
@@ -149,6 +157,28 @@ theorem finiteKummerRatio_variableChangeIsogeny (C : VariableChange K)
     (variableChangeIsogeny C h).finiteKummerRatio v = 1 :=
   finiteKummerRatio_eq_one_of_degree_eq_one _ v (degree_variableChangeIsogeny C h)
 
+/-- **The finite local Kummer ratio depends only on the place of `K`**: if `e : R ≃+* R'` is an
+isomorphism of Dedekind domains with fraction field `K`, compatible with the maps to `K`, then
+the local ratio at a height one prime `v` of `R` equals the one at its image in `R'`. -/
+theorem finiteKummerRatio_equivOfRingEquiv {R' : Type*} [CommRing R'] [IsDedekindDomain R']
+    [Algebra R' K] [IsFractionRing R' K] (e : R ≃+* R')
+    (he : ∀ r, algebraMap R' K (e r) = algebraMap R K r)
+    (φ : Isogeny W₁.toAffine W₂.toAffine) (v : HeightOneSpectrum R) :
+    φ.finiteKummerRatio (equivOfRingEquiv e v) = φ.finiteKummerRatio v := by
+  set w := equivOfRingEquiv e v
+  set σ : K ≃+* K := IsFractionRing.ringEquivOfRingEquiv e
+  -- `e` is compatible with the maps to `K`, so the induced automorphism of `K` is the identity
+  have hσ (x : K) : σ x = x := by
+    have h : (σ : K →+* K) = RingHom.id K := IsFractionRing.ringHom_ext (A := R) fun r ↦ by
+      simp [σ, he]
+    exact congr($h x)
+  let c : v.adicCompletion K ≃ₐ[K] w.adicCompletion K :=
+    AlgEquiv.ofRingEquiv (f := adicCompletionCongr v w σ
+      (valuation_ringEquivOfRingEquiv e (asIdeal_equivOfRingEquiv e v))) fun x ↦ by
+      rw [adicCompletionCongr_algebraMap, hσ]
+  rw [finiteKummerRatio, finiteKummerRatio, ← kummerRatio_baseChange, ← kummerRatio_baseChange]
+  exact (kummerRatio_baseChange_congr φ c).symm
+
 end Finite
 
 section Rational
@@ -210,6 +240,19 @@ theorem realKummerRatio_variableChangeIsogeny (C : VariableChange ℚ)
     (variableChangeIsogeny C h).realKummerRatio = 1 :=
   realKummerRatio_eq_one_of_degree_eq_one _ (degree_variableChangeIsogeny C h)
 
+/-- **The real local Kummer ratio is the Kummer ratio at the infinite place of `ℚ`**: it may be
+computed over Mathlib's completion `w.Completion` of `ℚ` at its infinite place `w` instead of
+over `ℝ`. -/
+theorem realKummerRatio_eq_kummerRatio_baseChange_completion
+    (φ : Isogeny W₁.toAffine W₂.toAffine) (w : InfinitePlace ℚ) :
+    φ.realKummerRatio = (φ.baseChange w.Completion).kummerRatio := by
+  have hw : w.IsReal := Subsingleton.elim Rat.infinitePlace w ▸ Rat.isReal_infinitePlace
+  let c : w.Completion ≃ₐ[ℚ] ℝ :=
+    AlgEquiv.ofRingEquiv (f := InfinitePlace.Completion.ringEquivRealOfIsReal hw) fun x ↦ by
+      rw [eq_ratCast (algebraMap ℚ w.Completion), map_ratCast, eq_ratCast (algebraMap ℚ ℝ)]
+  rw [realKummerRatio_def, ← kummerRatio_baseChange]
+  exact (kummerRatio_baseChange_congr φ c).symm
+
 /-- The product of local Kummer ratios, including the real place and every finite prime. -/
 def kummerRatioProduct (φ : Isogeny W₁.toAffine W₂.toAffine) : ℚ :=
   φ.realKummerRatio * ∏ᶠ v : HeightOneSpectrum ℤ, φ.finiteKummerRatio v
@@ -226,6 +269,36 @@ theorem kummerRatioProduct_eq_mul_prod (φ : Isogeny W₁.toAffine W₂.toAffine
     φ.kummerRatioProduct = φ.realKummerRatio * ∏ v ∈ S, φ.finiteKummerRatio v := by
   rw [kummerRatioProduct_def, finprod_eq_prod_of_mulSupport_subset]
   exact fun v hv => by_contra fun h => hv (hS v h)
+
+/-- **The product of local Kummer ratios over all places of `ℚ`**: `φ.kummerRatioProduct` is the
+finitary product, over the finite and infinite places `v` of `ℚ`, of the Kummer ratios
+`[E₂(ℚ_v) : φ E₁(ℚ_v)] / #E₁(ℚ_v)[φ]` over the completions `ℚ_v` of
+`TauCeti.GlobalNumberFields.Place.Completion`. -/
+theorem kummerRatioProduct_eq_finprod_place (φ : Isogeny W₁.toAffine W₂.toAffine) :
+    φ.kummerRatioProduct =
+      ∏ᶠ v : GlobalNumberFields.Place ℚ, (φ.baseChange v.Completion).kummerRatio := by
+  set g := fun v : GlobalNumberFields.Place ℚ ↦ (φ.baseChange v.Completion).kummerRatio
+  -- at a finite place `v`, `Place.Completion` and its `ℚ`-algebra reduce by their defining matches
+  -- to `v.adicCompletion ℚ` and its own algebra (named below, since `ℚ` has a second algebra
+  -- instance); `kummerRatio_baseChange` turns the factor into a map of `φ` along a ring map out of
+  -- `ℚ`, and such maps are unique, so it is `finiteKummerRatio` for the primes of `𝓞 ℚ`
+  have hfin (v : HeightOneSpectrum (𝓞 ℚ)) : g (.inl v) = φ.finiteKummerRatio v := by
+    rw [finiteKummerRatio]
+    exact (@kummerRatio_baseChange _ _ _ _
+      (GlobalNumberFields.Place.instAlgebraCompletion (K := ℚ) (.inl v)) _ _ _ _ φ).trans
+      (congrArg (fun σ ↦ (φ.map σ).kummerRatio) (RingHom.ext_rat _ _))
+  -- and at the infinite place it is `realKummerRatio`
+  have hinf (w : InfinitePlace ℚ) : g (.inr w) = φ.realKummerRatio :=
+    (realKummerRatio_eq_kummerRatio_baseChange_completion φ w).symm
+  have hsupp : (φ.finiteKummerRatio (R := 𝓞 ℚ)).HasFiniteMulSupport :=
+    φ.hasFiniteMulSupport_finiteKummerRatio (Nat.cast_ne_zero.mpr φ.degree_pos.ne')
+  rw [finprod_sum_type g (by rwa [show g ∘ Sum.inl = _ from funext hfin]) (Set.toFinite _),
+    finprod_unique (α := InfinitePlace ℚ), hinf, kummerRatioProduct_def, mul_comm,
+    finprod_congr hfin]
+  -- the finite places of `ℚ` are the height one primes of `ℤ` or of `𝓞 ℚ`
+  rw [← finprod_comp_equiv (equivOfRingEquiv Rat.ringOfIntegersEquiv.symm)]
+  exact congrArg (· * _) (finprod_congr fun v ↦
+    (φ.finiteKummerRatio_equivOfRingEquiv _ (fun r ↦ by simp) v).symm)
 
 /-- The product of local Kummer ratios over `ℚ` is positive. -/
 theorem kummerRatioProduct_pos (φ : Isogeny W₁.toAffine W₂.toAffine) :

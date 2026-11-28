@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Conformal.Monodromy
+public import TauCeti.Analysis.Complex.Conformal.UniversalCoverBranch
 public import TauCeti.Topology.Homotopy.Path
 import Mathlib.Topology.MetricSpace.Thickening
 
@@ -42,10 +42,8 @@ The branch produced is unique as soon as `U` is preconnected, by the identity pr
 
 Path independence is monodromy plus simple connectivity: two paths in `U` with the same endpoints
 are joined by a homotopy whose every intermediate path is again inside `U`
-(`Path.exists_homotopy_forall_mem_of_isSimplyConnected`), so the hypothesis supplies a continuation
-along each of them and `TauCeti.monodromy_theorem` applies. Uniqueness of continuation along a
-*fixed* path (`TauCeti.IsAnalyticContinuationAlong.eventuallyEq`, over the preconnected parameter
-interval) then matches the two given continuations with the two extreme members of that family.
+(`Path.exists_homotopy_forall_mem_of_isSimplyConnected`), which lifts into `↥U` so
+`TauCeti.ContinuesInside.eventuallyEq_of_homotopic` applies directly.
 
 The global branch is `F w = (value at w of the terminal germ of a continuation to w)`, chosen once
 per point of `U` by path connectedness; path independence says the choice does not matter. The
@@ -102,7 +100,7 @@ namespace TauCeti
 
 open Filter Metric Set Topology unitInterval
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {U : Set ℂ} {z₀ : ℂ} {f₀ : ℂ → E} {γ δ : I → ℂ} {f g : I → ℂ → E}
 
 /-! ### Path independence and the global branch -/
@@ -118,33 +116,25 @@ theorem eventuallyEq_at_one (hUc : IsSimplyConnected U) (H : ContinuesInside f�
     (hf : IsAnalyticContinuationAlong f γ univ) (hf0 : f 0 =ᶠ[𝓝 z₀] f₀)
     (hg : IsAnalyticContinuationAlong g δ univ) (hg0 : g 0 =ᶠ[𝓝 z₀] f₀) :
     f 1 =ᶠ[𝓝 (γ 1)] g 1 := by
-  -- Simple connectivity joins the two paths by a homotopy that stays in `U`, so the hypothesis
-  -- continues the germ along every intermediate path and `TauCeti.monodromy_theorem` applies to
-  -- the resulting family. The two given continuations are then matched with the extreme members
-  -- of that family by uniqueness along a fixed path.
+  -- Simple connectivity joins the two paths by a homotopy that stays in `U`, which lifts into
+  -- `↥U` so `eventuallyEq_of_homotopic` applies.
   let P : Path z₀ (γ 1) := { toFun := γ, continuous_toFun := hγ, source' := hγ0, target' := rfl }
   let Q : Path z₀ (γ 1) := { toFun := δ, continuous_toFun := hδ, source' := hδ0, target' := hend }
   obtain ⟨K, hKmem⟩ :=
     Path.exists_homotopy_forall_mem_of_isSimplyConnected hUc (p := P) (q := Q) hγU hδU
-  have hKzero : ∀ t : I, K (t, 0) = z₀ := fun t => by simp
-  have hKp : (fun x => K (0, x)) = γ := funext fun x => by simp [P]
-  have hKq : (fun x => K (1, x)) = δ := funext fun x => by simp [Q]
-  -- A continuation along every intermediate path, all starting from the germ of `f₀`.
-  have hcont : ∀ t : I, ContinuesAlong f₀ fun x => K (t, x) := fun t =>
-    H.continuesAlong (by fun_prop) (hKmem t) (hKzero t)
-  choose F hF hF₀ using fun t => continuesAlong_iff_exists.1 (hcont t)
-  have hF₀' : ∀ t : I, F t 0 =ᶠ[𝓝 z₀] f₀ := fun t => by
-    rw [← hKzero t]; exact hF₀ t
-  have hmono := monodromy_theorem K hF (fun t => (hF₀' t).trans (hF₀' 0).symm) 1
-  -- Match the two given continuations with the extremes of the family.
-  have e₀ : f 1 =ᶠ[𝓝 (γ 1)] F 0 1 :=
-    hf.eventuallyEq (hKp ▸ hF 0) isPreconnected_univ (mem_univ 0) (mem_univ 1)
-      (by rw [hγ0]; exact hf0.trans (hF₀' 0).symm)
-  have e₁ : g 1 =ᶠ[𝓝 (δ 1)] F 1 1 :=
-    hg.eventuallyEq (hKq ▸ hF 1) isPreconnected_univ (mem_univ 0) (mem_univ 1)
-      (by rw [hδ0]; exact hg0.trans (hF₀' 1).symm)
-  rw [hend] at e₁
-  exact (e₀.trans hmono.symm).trans e₁.symm
+  let P' : Path (⟨z₀, hγ0 ▸ hγU 0⟩ : U) ⟨γ 1, hγU 1⟩ :=
+    { toFun := fun t => ⟨γ t, hγU t⟩, continuous_toFun := hγ.subtype_mk _,
+      source' := Subtype.ext hγ0, target' := rfl }
+  let Q' : Path (⟨z₀, hγ0 ▸ hγU 0⟩ : U) ⟨γ 1, hγU 1⟩ :=
+    { toFun := fun t => ⟨δ t, hδU t⟩, continuous_toFun := hδ.subtype_mk _,
+      source' := Subtype.ext hδ0, target' := Subtype.ext hend }
+  have hPQ : Path.Homotopic P' Q' := ⟨{
+    toFun := fun p => ⟨K p, hKmem p.1 p.2⟩
+    continuous_toFun := K.continuous.subtype_mk _
+    map_zero_left := fun x => Subtype.ext (by simp [P, P'])
+    map_one_left := fun x => Subtype.ext (by simp [Q, Q'])
+    prop' := fun t x hx => by rcases hx with rfl | rfl <;> exact Subtype.ext (by simp [P', hγ0]) }⟩
+  exact H.eventuallyEq_of_homotopic hPQ hf hf0 hg hg0
 
 /-- **A nearby path with a prescribed endpoint.** Given a point `w` within `r` of the endpoint of a
 path, there is a continuous path with the same start, ending at `w`, staying everywhere within `r`
@@ -172,8 +162,8 @@ with that continuation's terminal germ.
 
 This is what makes the branch well defined: it says the value produced by the chosen paths does not
 depend on the choice. -/
-private theorem eventuallyEq_terminal_germ (hUo : IsOpen U) (hUc : IsSimplyConnected U)
-    (H : ContinuesInside f₀ U z₀) {γ : ℂ → I → ℂ} {f : ℂ → I → ℂ → E}
+private theorem eventuallyEq_terminal_germ [CompleteSpace E] (hUo : IsOpen U)
+    (hUc : IsSimplyConnected U) (H : ContinuesInside f₀ U z₀) {γ : ℂ → I → ℂ} {f : ℂ → I → ℂ → E}
     (hγc : ∀ w ∈ U, Continuous (γ w)) (hγU : ∀ w ∈ U, ∀ x, γ w x ∈ U)
     (hγ0 : ∀ w ∈ U, γ w 0 = z₀) (hγ1 : ∀ w ∈ U, γ w 1 = w)
     (hf : ∀ w ∈ U, IsAnalyticContinuationAlong (f w) (γ w) univ)
@@ -210,8 +200,8 @@ analytic on all of `U`.
 
 So on a simply connected domain analytic continuation produces no new branches, and a
 "multi-valued analytic function" there is single-valued after all. -/
-theorem exists_analyticOnNhd (hUo : IsOpen U) (hUc : IsSimplyConnected U) (hz₀ : z₀ ∈ U)
-    (H : ContinuesInside f₀ U z₀) :
+theorem exists_analyticOnNhd [CompleteSpace E] (hUo : IsOpen U) (hUc : IsSimplyConnected U)
+    (hz₀ : z₀ ∈ U) (H : ContinuesInside f₀ U z₀) :
     ∃ F : ℂ → E, AnalyticOnNhd ℂ F U ∧ F =ᶠ[𝓝 z₀] f₀ := by
   -- A path from `z₀` to each point of `U`, and a continuation of the germ along it.
   have hpath : ∀ w ∈ U, ∃ γ : I → ℂ,
@@ -245,8 +235,8 @@ function analytic on all of `U`.
 
 The forward direction is `TauCeti.ContinuesInside.exists_analyticOnNhd`; the reverse is the
 observation that a holomorphic function is its own continuation. -/
-theorem continuesInside_iff_exists_analyticOnNhd (hUo : IsOpen U) (hUc : IsSimplyConnected U)
-    (hz₀ : z₀ ∈ U) :
+theorem continuesInside_iff_exists_analyticOnNhd [CompleteSpace E] (hUo : IsOpen U)
+    (hUc : IsSimplyConnected U) (hz₀ : z₀ ∈ U) :
     ContinuesInside f₀ U z₀ ↔ ∃ F : ℂ → E, AnalyticOnNhd ℂ F U ∧ F =ᶠ[𝓝 z₀] f₀ := by
   refine ⟨fun H => H.exists_analyticOnNhd hUo hUc hz₀, ?_⟩
   rintro ⟨F, hF, hFeq⟩

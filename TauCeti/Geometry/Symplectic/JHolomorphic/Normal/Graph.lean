@@ -69,15 +69,6 @@ open scoped Topology
 
 variable {ν μ : ℂ → ℂ} {u : ℂ → ℂ × ℂ}
 
-/-- The projection to the base of a curve that is `J_N`-holomorphic at `y`, for the standard
-structure on the source, is complex differentiable at `y`. -/
-theorem IsJHolomorphicAt.differentiableAt_fst_of_normalModelStructure {y : ℂ}
-    (hu : IsJHolomorphicAt (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ)
-      (normalModelStructure ν μ) u y) :
-    DifferentiableAt ℂ (fun y ↦ (u y).1) y :=
-  isConstStructureJHolomorphicAt_ofComplexModule_iff.1
-    ((isJHolomorphicAt_constStructure_iff _ _ _ _).1 hu.fst_of_normalModelStructure)
-
 /-- The projection to the base of a curve that is `J_N`-holomorphic on an open set `U`, for the
 standard structure on the source, is holomorphic on `U`. -/
 theorem IsJHolomorphicOn.differentiableOn_fst_of_normalModelStructure {U : Set ℂ}

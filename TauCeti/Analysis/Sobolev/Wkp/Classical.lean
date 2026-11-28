@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Calculus.IteratedGradient.Multilinear
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.MeasureTheory.Measure.Restrict
@@ -24,7 +26,12 @@ Conversely, a function that is `Cᵏ` on the domain and whose classical derivati
 `k` lie in `Lᵖ` represents an element of `W^{k,p}` (`TauCeti.Wkp.exists_value_ae_eq_of_contDiffOn`),
 whose norm is at most the sum of the `Lᵖ` seminorms of these derivatives
 (`TauCeti.Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn`); on the whole space the two
-combine into `TauCeti.Wkp.exists_value_ae_eq_and_norm_le`. On a domain in `ℝⁿ`, the weak
+combine into `TauCeti.Wkp.exists_value_ae_eq_and_norm_le`. So a `Cᵏ` function on the domain is a
+Sobolev function exactly when these derivatives lie in `Lᵖ`
+(`TauCeti.Wkp.exists_value_ae_eq_iff_of_contDiffOn`). In particular every constant `c` lies in
+`W^{k,∞}(Ω)` with norm at most `|c|` (`TauCeti.Wkp.exists_value_ae_eq_const`), while for finite
+`p` no nonzero constant lies in `W^{k,p}` of a space of positive dimension
+(`TauCeti.Wkp.not_value_ae_eq_const_top_of_ne_top`). On a domain in `ℝⁿ`, the weak
 Hessian of a `W^{2,p}` function with a `C²` representative `f` has entries `∂ᵢ∂ⱼf` almost
 everywhere (`TauCeti.Wkp.iteratedGradient_one_single_apply_ae_eq_of_contDiffOn`). Consequently,
 for `u ∈ W^{2,p}(U)` and a function `w` that is `C²` near the closure of a bounded open `Ω ⊆ U`,
@@ -126,11 +133,8 @@ theorem Wkp.lpNorm_iteratedFDeriv_le_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p
       subst i
       have he : eLpNorm (iteratedFDeriv ℝ 0 f) p (mu.restrict Omega) =
           eLpNorm (value 0 u) p (mu.restrict Omega) := by
-        refine eLpNorm_congr_norm_ae
-          ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen (by simp)).aestronglyMeasurable
-            Omega.isOpen.measurableSet) (Lp.aestronglyMeasurable _) ?_
-        filter_upwards [hu] with x hx
-        rw [norm_iteratedFDeriv_zero, hx]
+        rw [eLpNorm_iteratedFDeriv_zero]
+        exact eLpNorm_congr_ae hu.symm
       simpa only [lpNorm, he, ← Lp.norm_def, value_zero] using le_rfl (a := ‖u‖)
   | succ k ih =>
       intro i hi
@@ -153,10 +157,7 @@ theorem Wkp.memLp_iteratedFDeriv_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p k)
       intro i hi
       have hi0 : i = 0 := by omega
       subst i
-      refine (MemLp.ae_eq hu (Lp.memLp (value 0 u))).congr_norm
-        ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen
-          (by simp)).aestronglyMeasurable Omega.isOpen.measurableSet) ?_
-      exact .of_forall fun x => (norm_iteratedFDeriv_zero (f := f) (x := x)).symm
+      exact memLp_iteratedFDeriv_zero_iff.2 (MemLp.ae_eq hu (Lp.memLp (value 0 u)))
   | succ k ih =>
       intro i hi
       by_cases hik : i ≤ k
@@ -175,13 +176,7 @@ derivative seminorm for any almost-everywhere representative on the domain. -/
 theorem Wkp.norm_value_eq_lpNorm_iteratedFDeriv_zero (k : ℕ) (u : Wkp mu Omega p k)
     {f : E → ℝ} (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
     ‖value k u‖ = lpNorm (iteratedFDeriv ℝ 0 f) p (mu.restrict Omega) := by
-  rw [Lp.norm_def, lpNorm]
-  congr 1
-  refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
-    ((continuousMultilinearCurryFin0 ℝ E ℝ).symm.continuous.comp_aestronglyMeasurable
-      ((Lp.aestronglyMeasurable _).congr hu)) ?_
-  filter_upwards [hu] with x hx
-  rw [hx, norm_iteratedFDeriv_zero]
+  rw [lpNorm_iteratedFDeriv_zero, Lp.norm_def, lpNorm, eLpNorm_congr_ae hu]
 
 /-- **The Sobolev norm of a `Cᵏ` representative.** If `u ∈ W^{k,p}(Ω)` is represented by a
 function `f` that is `Cᵏ` on `Ω`, then `‖u‖` is at most the sum of the `Lᵖ` seminorms of the
@@ -214,15 +209,13 @@ theorem Wkp.exists_value_ae_eq_of_contDiffOn :
     ∀ (k : ℕ) {f : E → ℝ}, ContDiffOn ℝ k f Omega →
       (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) p (mu.restrict Omega)) →
       ∃ u : Wkp mu Omega p k, (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f
-  | 0, f, hf, hmem => by
+  | 0, f, _, hmem => by
       have hv : MemLp f p (mu.restrict Omega) :=
-        (hmem 0 le_rfl).congr_norm (hf.continuousOn.aestronglyMeasurable
-          Omega.isOpen.measurableSet) (.of_forall fun x => norm_iteratedFDeriv_zero)
+        memLp_iteratedFDeriv_zero_iff.1 (hmem 0 le_rfl)
       exact ⟨hv.toLp f, by rw [value_zero]; exact hv.coeFn_toLp⟩
   | 1, f, hf, hmem => by
       have hv : MemLp f p (mu.restrict Omega) :=
-        (hmem 0 (by simp)).congr_norm (hf.continuousOn.aestronglyMeasurable
-          Omega.isOpen.measurableSet) (.of_forall fun x => norm_iteratedFDeriv_zero)
+        memLp_iteratedFDeriv_zero_iff.1 (hmem 0 (by simp))
       have hg : MemLp (gradient f) p (mu.restrict Omega) :=
         (hmem 1 le_rfl).congr_norm
           (((InnerProductSpace.toDual ℝ E).symm.continuous.comp_continuousOn
@@ -256,6 +249,55 @@ theorem Wkp.exists_value_ae_eq_of_contDiffOn :
             (hf.of_le (by exact_mod_cast (by omega : k + 1 ≤ k + 2))) hu).symm).congr_ae_deriv
           (by rw [← iteratedGradientChain_succ]; exact hD.coeFn_toLp.symm)
       exact ⟨mk k u _ hweak, by rw [value_mk]; exact hu⟩
+
+/-- A function that is `Cᵏ` on the open set `Ω` represents an element of `W^{k,p}(Ω)` if and only
+if its classical derivatives of orders `0` through `k` lie in `Lᵖ(Ω)`. -/
+theorem Wkp.exists_value_ae_eq_iff_of_contDiffOn {k : ℕ} {f : E → ℝ}
+    (hf : ContDiffOn ℝ k f Omega) :
+    (∃ u : Wkp mu Omega p k, (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) ↔
+      ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) p (mu.restrict Omega) :=
+  ⟨fun ⟨u, hu⟩ => memLp_iteratedFDeriv_of_contDiffOn k u hf hu,
+    exists_value_ae_eq_of_contDiffOn k hf⟩
+
+/-- **Constants are `W^{k,∞}` functions.** On every open set `Ω`, the constant function `c`
+represents an element of `W^{k,∞}(Ω)` of norm at most `|c|`. -/
+theorem Wkp.exists_value_ae_eq_const (k : ℕ) (c : ℝ) :
+    ∃ u : Wkp mu Omega ∞ k, (value k u : E → ℝ) =ᵐ[mu.restrict Omega] (fun _ ↦ c) ∧ ‖u‖ ≤ |c| := by
+  have hf : ContDiffOn ℝ k (fun _ : E ↦ c) Omega := contDiffOn_const
+  obtain ⟨u, hu⟩ := Wkp.exists_value_ae_eq_of_contDiffOn (mu := mu) (p := ∞) k hf fun i _ ↦ by
+    rcases eq_or_ne i 0 with rfl | hi
+    · rw [iteratedFDeriv_zero_eq_comp]
+      exact memLp_top_const _
+    · rw [iteratedFDeriv_const_of_ne hi]
+      exact memLp_top_const _
+  refine ⟨u, hu, ?_⟩
+  rcases (Omega : Set E).eq_empty_or_nonempty with hempty | hne
+  · rw [Subsingleton.elim u 0 (h := Wkp.subsingleton_of_eq_empty k hempty), norm_zero]
+    exact abs_nonneg c
+  have hμ : mu.restrict Omega ≠ 0 := by
+    rw [Ne, Measure.restrict_eq_zero]
+    exact Omega.isOpen.measure_ne_zero mu hne
+  -- The jet of `c` is `c` in degree zero and `0` in every positive degree, so the sum of the
+  -- `L^∞` norms of its components is `|c|`.
+  have hjet : ∀ i, lpNorm (iteratedFDeriv ℝ i fun _ : E ↦ c) ∞ (mu.restrict Omega) =
+      if i = 0 then |c| else 0 := fun i ↦ by
+    split_ifs with hi
+    · subst hi
+      rw [iteratedFDeriv_zero_eq_comp]
+      simp [Function.comp_def, lpNorm_const ENNReal.top_ne_zero hμ]
+    · simp [iteratedFDeriv_const_of_ne hi]
+  refine (Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn k u hf hu).trans_eq ?_
+  simp [hjet, Finset.sum_ite_eq']
+
+/-- **For finite `p` no nonzero constant is a Sobolev function on the whole space.** In a space of
+positive dimension, no `u ∈ W^{k,p}(E)` with `p < ∞` is represented by a constant `c ≠ 0`, since
+the Haar measure of `E` is infinite. -/
+theorem Wkp.not_value_ae_eq_const_top_of_ne_top [Nontrivial E] {k : ℕ} (hp : p ≠ ⊤)
+    (u : Wkp mu ⊤ p k) {c : ℝ} (hc : c ≠ 0) : ¬(value k u : E → ℝ) =ᵐ[mu] fun _ ↦ c :=
+  fun hu ↦ by
+    have hmem : MemLp (fun _ : E ↦ c) p mu := (Wkp.memLp_value k u).ae_eq hu
+    rw [memLp_const_iff (zero_lt_one.trans_le Fact.out).ne' hp] at hmem
+    simp [hc, measure_univ_of_isAddLeftInvariant mu] at hmem
 
 /-- **`Cᵏ` functions on the whole space with `Lᵖ` derivatives are Sobolev functions.** If `f` is
 `Cᵏ` on `E` and its classical derivatives of orders `0` through `k` lie in `Lᵖ`, then `f` represents

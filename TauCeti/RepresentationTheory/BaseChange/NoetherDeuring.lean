@@ -18,10 +18,9 @@ semisimple representations are determined by such dimensions
 (`Representation.nonempty_equiv_of_finrank_intertwiningMap_eq`), two finite-dimensional
 semisimple representations over `K` that become equivalent over `L` are already equivalent over
 `K` (`Representation.nonempty_equiv_of_nonempty_equiv_baseChange`). This is the
-Noether–Deuring theorem for semisimple representations, in the form used to descend the
-Brauer–Nesbitt theorem from an algebraic closure of `K` to `K`: `V ≅ W` over `K` if and only
-if `AlgebraicClosure K ⊗ V ≅ AlgebraicClosure K ⊗ W`. The version for continuous representations
-is `TauCeti.ContinuousRep.nonempty_iso_of_nonempty_equiv_baseChange`, in
+Noether–Deuring theorem for semisimple representations; for instance `V ≅ W` over `K` if and
+only if `AlgebraicClosure K ⊗ V ≅ AlgebraicClosure K ⊗ W`. The version for continuous
+representations is `TauCeti.ContinuousRep.nonempty_iso_of_nonempty_equiv_baseChange`, in
 `TauCeti.RepresentationTheory.Continuous.NoetherDeuring`.
 
 ## Main results

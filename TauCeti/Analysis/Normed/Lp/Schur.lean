@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Dual
-import TauCeti.Topology.Algebra.Module.WeakSpace
+import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
 
 /-!
 # Schur's theorem for ℓ¹

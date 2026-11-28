@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.PrincipalPart
-public import TauCeti.Analysis.PDE.Vortex.SobolevRealization
+public import TauCeti.Analysis.PDE.Vortex.Sobolev.Realization
 public import TauCeti.Geometry.Symplectic.AlmostComplex.Lp
 
 /-!
@@ -61,7 +61,8 @@ Consequences:
   By the above, this identification respects the complex structures.
 * **The Sobolev realization is complex linear.** On `H¹(ℂ)⁴`, `J` acts by the same signed
   permutation of coordinates, an almost complex structure
-  (`TauCeti.Vortex.sobolevVariationAlmostComplexStructure`), and the
+  (`TauCeti.Vortex.sobolevVariationAlmostComplexStructure`) whose `L²` values are `J` applied
+  pointwise (`TauCeti.Vortex.sobolevFieldValues_sobolevVariationAlmostComplexStructure`), and the
   realization `TauCeti.Vortex.sobolevGaugeFixedOperator a : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` intertwines it with
   `J'` (`TauCeti.Vortex.sobolevGaugeFixedOperator_sobolevVariationAlmostComplexStructure`), which
   acts pointwise on `L²(ℂ; ℝ⁴)` as an almost complex structure
@@ -225,25 +226,31 @@ theorem inner_targetComplexStructure_left (v w : EuclideanSpace ℝ (Fin 4)) :
   simp
   ring
 
+/-- `J v` is orthogonal to `v`, as `J` is skew-adjoint. -/
+theorem inner_variationComplexStructure_self (v : EuclideanSpace ℝ (Fin 4)) :
+    ⟪v, variationComplexStructure v⟫ = 0 := by
+  have h := inner_variationComplexStructure_left v v
+  rw [real_inner_comm] at h
+  linarith
+
+/-- `J' v` is orthogonal to `v`, as `J'` is skew-adjoint. -/
+theorem inner_targetComplexStructure_self (v : EuclideanSpace ℝ (Fin 4)) :
+    ⟪v, targetComplexStructure v⟫ = 0 := by
+  have h := inner_targetComplexStructure_left v v
+  rw [real_inner_comm] at h
+  linarith
+
 /-- The pairing `⟪v, J w⟫` is alternating, as `J` is skew-adjoint. -/
 theorem isAlt_compl₂_variationComplexStructure :
     ((innerₗ (EuclideanSpace ℝ (Fin 4))).compl₂
-      variationComplexStructure.toLinearEquiv.toLinearMap).IsAlt := fun v ↦ by
-  have h := inner_variationComplexStructure_left v v
-  rw [real_inner_comm] at h
-  simp only [LinearMap.compl₂_apply, innerₗ_apply_apply, LinearEquiv.coe_coe,
-    LinearIsometryEquiv.coe_toLinearEquiv]
-  linarith
+      variationComplexStructure.toLinearEquiv.toLinearMap).IsAlt :=
+  inner_variationComplexStructure_self
 
 /-- The pairing `⟪v, J' w⟫` is alternating, as `J'` is skew-adjoint. -/
 theorem isAlt_compl₂_targetComplexStructure :
     ((innerₗ (EuclideanSpace ℝ (Fin 4))).compl₂
-      targetComplexStructure.toLinearEquiv.toLinearMap).IsAlt := fun v ↦ by
-  have h := inner_targetComplexStructure_left v v
-  rw [real_inner_comm] at h
-  simp only [LinearMap.compl₂_apply, innerₗ_apply_apply, LinearEquiv.coe_coe,
-    LinearIsometryEquiv.coe_toLinearEquiv]
-  linarith
+      targetComplexStructure.toLinearEquiv.toLinearMap).IsAlt :=
+  inner_targetComplexStructure_self
 
 /-- **`J` multiplies the section variation by `i`**: `δα (J y) = i δα (y)`. -/
 @[simp]
@@ -442,6 +449,21 @@ theorem values_sobolevVariationAlmostComplexStructure_ae
   filter_upwards [W1p.value_neg_ae (y 1), W1p.value_neg_ae (y 3)] with z h₁ h₃
   ext j
   fin_cases j <;> simp [h₁, h₃]
+
+/-- The `L²` values of `J y`, for `y ∈ H¹(ℂ)⁴`, are `J` applied pointwise to the values of `y`. -/
+theorem sobolevFieldValues_sobolevVariationAlmostComplexStructure
+    (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevFieldValues (sobolevVariationAlmostComplexStructure y) =
+      variationComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap.compLp
+        (sobolevFieldValues y) := by
+  refine Lp.ext ?_
+  filter_upwards [sobolevFieldValues_ae_eq (sobolevVariationAlmostComplexStructure y),
+    sobolevFieldValues_ae_eq y, ContinuousLinearMap.coeFn_compLp
+      variationComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap
+      (sobolevFieldValues y), values_sobolevVariationAlmostComplexStructure_ae y]
+    with z h₁ h₂ h₃ h₄
+  rw [h₁, h₃, h₂, h₄]
+  simp
 
 /-- The almost complex structure `J` on `H¹(ℂ)⁴` is continuous. -/
 theorem continuous_sobolevVariationAlmostComplexStructure :

@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Metric
 public import TauCeti.Geometry.Symplectic.AlmostComplex.Quotient
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Topology.VectorBundle.Complex.Structure
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 import TauCeti.Topology.VectorBundle.Hom
 
