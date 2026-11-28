@@ -148,23 +148,15 @@ private def zeroSumDiffMap (m : ℕ) : singleParityCheckCode K (Fin (m + 1)) →
   map_add' _ _ := funext fun _ ↦ by simp; ring
   map_smul' _ _ := funext fun _ ↦ by simp [mul_sub]
 
-omit [CharZero K] in
-private lemma zeroSumDiffMap_apply (m : ℕ) (u : singleParityCheckCode K (Fin (m + 1))) (k : Fin m) :
-    zeroSumDiffMap K m u k =
-      (u : Fin (m + 1) → K) k.castSucc - (u : Fin (m + 1) → K) k.succ := rfl
-
 private lemma zeroSumDiffMap_injective (m : ℕ) : Injective (zeroSumDiffMap K m) := by
   rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]; intro u hu
-  have hker : zeroSumDiffMap K m u = 0 := LinearMap.mem_ker.mp hu
   have hc (a : Fin (m + 1)) : (u : Fin (m + 1) → K) a = (u : Fin (m + 1) → K) 0 :=
-    Fin.induction rfl (fun k ih ↦ by
-      have hk := congrFun hker k
-      rw [zeroSumDiffMap_apply, Pi.zero_apply, sub_eq_zero] at hk
-      exact hk.symm.trans ih) a
+    Fin.induction rfl (fun k ih ↦
+      (sub_eq_zero.mp (congrFun (LinearMap.mem_ker.mp hu) k)).symm.trans ih) a
   have hsum := (mem_singleParityCheckCode K (Fin (m + 1))).mp u.property
   simp_rw [hc, sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul] at hsum
-  have hu0 := (mul_eq_zero.mp hsum).resolve_left (Nat.cast_ne_zero.mpr (Nat.succ_ne_zero m))
-  exact Subtype.ext (funext fun a ↦ (hc a).trans hu0)
+  exact Subtype.ext (funext fun a ↦ (hc a).trans
+    ((mul_eq_zero.mp hsum).resolve_left (Nat.cast_ne_zero.mpr (Nat.succ_ne_zero m))))
 
 private noncomputable def zeroSumWeightEquiv (m : ℕ) :
     singleParityCheckCode K (Fin (m + 1)) ≃ₗ[K] (Fin m → K) :=
@@ -176,18 +168,12 @@ private noncomputable def zeroSumWeightEquiv (m : ℕ) :
 private lemma zeroSumWeightEquiv_apply (m : ℕ)
     (u : singleParityCheckCode K (Fin (m + 1))) (k : Fin m) :
     zeroSumWeightEquiv K m u k =
-      (u : Fin (m + 1) → K) k.castSucc - (u : Fin (m + 1) → K) k.succ :=
-  zeroSumDiffMap_apply K m u k
+      (u : Fin (m + 1) → K) k.castSucc - (u : Fin (m + 1) → K) k.succ := rfl
 
 omit [CharZero K] in
 private noncomputable def zeroSumCoweightEquiv (m : ℕ) :
     (Fin m → K) ≃ₗ[K] singleParityCheckCode K (Fin (m + 1)) :=
   (Finsupp.linearEquivFunOnFinite K K (Fin m)).symm.trans (singleParityCheckCodeBasis K m).repr.symm
-
-omit [CharZero K] in
-private lemma zeroSumCoweightEquiv_symm_apply (m : ℕ)
-    (v : singleParityCheckCode K (Fin (m + 1))) (k : Fin m) :
-    (zeroSumCoweightEquiv K m).symm v k = (singleParityCheckCodeBasis K m).repr v k := rfl
 
 private lemma zeroSumWeightEquiv_dotProduct (m : ℕ)
     (u v : singleParityCheckCode K (Fin (m + 1))) :
@@ -196,9 +182,8 @@ private lemma zeroSumWeightEquiv_dotProduct (m : ℕ)
   conv_rhs => rw [← (singleParityCheckCodeBasis K m).sum_repr v]
   rw [Submodule.coe_sum, dotProduct_sum, dotProduct]
   exact sum_congr rfl fun k _ ↦ by
-    rw [SetLike.val_smul, dotProduct_smul, smul_eq_mul, coe_singleParityCheckCodeBasis_apply,
-      dotProduct_sub, dotProduct_single, dotProduct_single, mul_one, mul_one, mul_comm,
-      zeroSumWeightEquiv_apply, zeroSumCoweightEquiv_symm_apply]
+    simp [SetLike.val_smul, dotProduct_sub, mul_comm, zeroSumWeightEquiv_apply,
+      zeroSumCoweightEquiv]
 
 private lemma zeroSumWeightEquiv_vec (m : ℕ) (p : TypeAIndex m) :
     zeroSumWeightEquiv K m (typeAZeroSumVec K p.val.1 p.val.2) =
@@ -212,9 +197,8 @@ private lemma zeroSumCoweightEquiv_coroot (m : ℕ) (p : TypeAIndex m) :
     zeroSumCoweightEquiv K m ((typeABaseChangeRootSystem K m).coroot (typeAIndexEquiv m p)) =
       typeAZeroSumVec K p.val.1 p.val.2 := by
   apply (zeroSumCoweightEquiv K m).symm.injective; rw [LinearEquiv.symm_apply_apply]; ext k
-  rw [zeroSumCoweightEquiv_symm_apply, singleParityCheckCodeBasis_repr_typeAZeroSumVec,
-    coroot_typeABaseChangeRootSystem, piAlgebraMap_apply, coroot_typeAIndexEquiv]
-  simp [algebraMap_int_eq, apply_ite Int.cast]
+  simp [zeroSumCoweightEquiv, coroot_typeABaseChangeRootSystem, coroot_typeAIndexEquiv,
+    apply_ite Int.cast]
 
 /-- **The classical sum-zero root system of type `Aₘ` over `K`.** -/
 noncomputable def typeAZeroSumRootPairing (m : ℕ) :
@@ -223,25 +207,20 @@ noncomputable def typeAZeroSumRootPairing (m : ℕ) :
   (typeABaseChangeRootSystem K m).map (typeAIndexEquiv m).symm
     (zeroSumWeightEquiv K m).symm (zeroSumCoweightEquiv K m)
 
-private lemma typeAZeroSumRootPairing_eq_map (m : ℕ) :
-    typeAZeroSumRootPairing K m =
-      (typeABaseChangeRootSystem K m).map (typeAIndexEquiv m).symm
-        (zeroSumWeightEquiv K m).symm (zeroSumCoweightEquiv K m) := rfl
-
 /-- `typeAZeroSumRootPairing K m` is a root system. -/
 instance instIsRootSystemTypeAZeroSumRootPairing (m : ℕ) :
-    (typeAZeroSumRootPairing K m).IsRootSystem := by
-  rw [typeAZeroSumRootPairing_eq_map]; infer_instance
+    (typeAZeroSumRootPairing K m).IsRootSystem :=
+  inferInstanceAs ((typeABaseChangeRootSystem K m).map _ _ _).IsRootSystem
 
 /-- `typeAZeroSumRootPairing K m` is crystallographic. -/
 instance instIsCrystallographicTypeAZeroSumRootPairing (m : ℕ) :
-    (typeAZeroSumRootPairing K m).IsCrystallographic := by
-  rw [typeAZeroSumRootPairing_eq_map]; infer_instance
+    (typeAZeroSumRootPairing K m).IsCrystallographic :=
+  inferInstanceAs ((typeABaseChangeRootSystem K m).map _ _ _).IsCrystallographic
 
 /-- `typeAZeroSumRootPairing K m` is reduced. -/
 instance instIsReducedTypeAZeroSumRootPairing (m : ℕ) :
-    (typeAZeroSumRootPairing K m).IsReduced := by
-  rw [typeAZeroSumRootPairing_eq_map]; infer_instance
+    (typeAZeroSumRootPairing K m).IsReduced :=
+  inferInstanceAs ((typeABaseChangeRootSystem K m).map _ _ _).IsReduced
 
 /-- Canonical equivalence from `typeABaseChangeRootSystem K m` to `typeAZeroSumRootPairing K m`. -/
 noncomputable def typeABaseChangeEquivZeroSum (m : ℕ) :
@@ -303,18 +282,6 @@ theorem reflectionPerm_typeAZeroSumRootPairing_val (m : ℕ) (p q : TypeAIndex m
     (typeAZeroSumRootPairing K m).reflectionPerm p p = ⟨(p.val.2, p.val.1), p.property.symm⟩ :=
   Subtype.ext (by simp [reflectionPerm_typeAZeroSumRootPairing_val])
 
--- `typeABaseChangeEquivZeroSum` has dependent target type `typeAZeroSumRootPairing K m`, so
--- `rw [typeAZeroSumRootPairing_eq_map]` cannot rewrite its codomain directly; the `equivMap`
--- simp lemmas apply directly to the definitional `equivMap` expression.
-private lemma typeABaseChangeEquivZeroSum_weightEquiv (m : ℕ) :
-    (typeABaseChangeEquivZeroSum K m).weightEquiv = (zeroSumWeightEquiv K m).symm :=
-  RootPairing.weightEquiv_equivMap ..
-
-private lemma typeABaseChangeEquivZeroSum_coweightMap_apply (m : ℕ)
-    (v : singleParityCheckCode K (Fin (m + 1))) :
-    (typeABaseChangeEquivZeroSum K m).coweightMap v = (zeroSumCoweightEquiv K m).symm v :=
-  RootPairing.coweightMap_equivMap_apply ..
-
 /-- The index equivalence of `typeABaseChangeEquivZeroSum K m` is `(typeAIndexEquiv m).symm`. -/
 @[simp] theorem indexEquiv_typeABaseChangeEquivZeroSum (m : ℕ) :
     (typeABaseChangeEquivZeroSum K m).indexEquiv = (typeAIndexEquiv m).symm :=
@@ -325,7 +292,8 @@ private lemma typeABaseChangeEquivZeroSum_coweightMap_apply (m : ℕ)
     (u : singleParityCheckCode K (Fin (m + 1))) (k : Fin m) :
     (typeABaseChangeEquivZeroSum K m).weightEquiv.symm u k =
       (u : Fin (m + 1) → K) k.castSucc - (u : Fin (m + 1) → K) k.succ := by
-  rw [typeABaseChangeEquivZeroSum_weightEquiv, LinearEquiv.symm_symm, zeroSumWeightEquiv_apply]
+  rw [show (typeABaseChangeEquivZeroSum K m).weightEquiv = (zeroSumWeightEquiv K m).symm from
+    RootPairing.weightEquiv_equivMap .., LinearEquiv.symm_symm, zeroSumWeightEquiv_apply]
 
 /-- The contravariant coweight map of `typeABaseChangeEquivZeroSum K m` takes coordinates in
 `singleParityCheckCodeBasis K m`. -/
@@ -333,7 +301,7 @@ private lemma typeABaseChangeEquivZeroSum_coweightMap_apply (m : ℕ)
     (v : singleParityCheckCode K (Fin (m + 1))) (k : Fin m) :
     (typeABaseChangeEquivZeroSum K m).coweightMap v k =
       (singleParityCheckCodeBasis K m).repr v k := by
-  rw [typeABaseChangeEquivZeroSum_coweightMap_apply, zeroSumCoweightEquiv_symm_apply]
+  rw [typeABaseChangeEquivZeroSum, RootPairing.coweightMap_equivMap_apply]; rfl
 
 /-- The `i`-th consecutive pair `(i, i + 1)` indexing the `i`-th Bourbaki simple root. -/
 def typeAZeroSumSimplePair (m : ℕ) (i : Fin m) : TypeAIndex m :=
@@ -358,15 +326,14 @@ theorem mem_support_typeAZeroSumBase_iff {m : ℕ} {p : TypeAIndex m} :
     p ∈ (typeAZeroSumBase K m).support ↔ ∃ i : Fin m, p = typeAZeroSumSimplePair m i := by
   classical
   rw [typeAZeroSumBase, RootPairing.Base.support_map_eq, mem_image]
-  refine ⟨?_, fun ⟨i, hi⟩ ↦ ⟨typeASimpleIndex m i,
-    (mem_support_typeABaseChangeBase_iff K m _).mpr ((typeASimpleIndex_val i).symm ▸ i.isLt),
-    by rw [hi, indexEquiv_typeABaseChangeEquivZeroSum,
-      typeAIndexEquiv_symm_typeASimpleIndex_eq_typeAZeroSumSimplePair]⟩⟩
-  rintro ⟨k, hk, rfl⟩; rw [mem_support_typeABaseChangeBase_iff] at hk
-  exact ⟨⟨k, hk⟩, by
-    rw [indexEquiv_typeABaseChangeEquivZeroSum,
-      ← typeAIndexEquiv_symm_typeASimpleIndex_eq_typeAZeroSumSimplePair]
-    exact congrArg _ (Fin.ext (by simp))⟩
+  refine ⟨fun ⟨k, hk, h⟩ ↦ ⟨⟨k, (mem_support_typeABaseChangeBase_iff K m _).mp hk⟩, ?_⟩,
+    fun ⟨i, hi⟩ ↦ ⟨typeASimpleIndex m i,
+      (mem_support_typeABaseChangeBase_iff K m _).mpr ((typeASimpleIndex_val i).symm ▸ i.isLt),
+      by rw [hi, indexEquiv_typeABaseChangeEquivZeroSum,
+        typeAIndexEquiv_symm_typeASimpleIndex_eq_typeAZeroSumSimplePair]⟩⟩
+  rw [← h, indexEquiv_typeABaseChangeEquivZeroSum,
+    ← typeAIndexEquiv_symm_typeASimpleIndex_eq_typeAZeroSumSimplePair]
+  exact congrArg _ (Fin.ext (by simp))
 
 /-- `typeAZeroSumBase K m` has Cartan type `A m`. -/
 theorem hasCartanType_typeAZeroSumBase (m : ℕ) :
@@ -417,10 +384,8 @@ theorem isPos_typeAZeroSumBase_iff {m : ℕ} {p : TypeAIndex m} :
       root_typeAZeroSumRootPairing, typeAZeroSumSimplePair_val,
       singleParityCheckCodeBasis_eq_typeAZeroSumVec]
   refine ⟨fun hpos ↦ (lt_or_gt_of_ne p.property).resolve_right fun hgt ↦ ?_, hfwd p⟩
-  have hq : _ ∈ posRoots _ _ :=
-    (mem_posRoots _ _ _).mpr (hfwd ⟨(p.val.2, p.val.1), p.property.symm⟩ hgt)
-  rw [← reflectionPerm_self_typeAZeroSumRootPairing K m p] at hq
-  exact reflectionPerm_self_notMem_posRoots _ _ ((mem_posRoots _ _ _).mpr hpos) hq
+  exact reflectionPerm_self_notMem_posRoots _ _ ((mem_posRoots _ _ _).mpr hpos) <| by
+    rw [reflectionPerm_self_typeAZeroSumRootPairing]; exact (mem_posRoots _ _ _).mpr (hfwd _ hgt)
 
 /-- **The diagram-reversal automorphism of `typeAZeroSumRootPairing K m`.** -/
 noncomputable def typeAZeroSumRevAut (m : ℕ) : RootPairing.Aut (typeAZeroSumRootPairing K m) :=
@@ -463,9 +428,8 @@ theorem indexEquiv_typeAZeroSumRevAut_mem_support {m : ℕ} {p : TypeAIndex m}
 theorem autCongr_typeABaseChangeEquivZeroSum_typeABaseChangeGraphAut (m : ℕ) :
     (typeABaseChangeEquivZeroSum K m).autCongr (typeABaseChangeGraphAut K m) =
       typeAZeroSumRevAut K m := by
-  apply RootPairing.Equiv.weightHom_injective
-  refine LinearEquiv.ext fun u ↦
-    (typeABaseChangeEquivZeroSum K m).weightEquiv.symm.injective (funext fun k ↦ ?_)
+  refine RootPairing.Equiv.weightHom_injective _ <| LinearEquiv.ext fun u ↦
+    (typeABaseChangeEquivZeroSum K m).weightEquiv.symm.injective <| funext fun k ↦ ?_
   rw [RootPairing.Equiv.weightHom_apply, RootPairing.Equiv.weightHom_apply,
     RootPairing.Equiv.weightEquiv_autCongr_apply, LinearEquiv.symm_apply_apply]
   simp only [RootPairing.Equiv.weightEquiv_apply, weightMap_typeABaseChangeGraphAut_apply,
