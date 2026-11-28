@@ -14,7 +14,7 @@ public import TauCeti.LinearAlgebra.RootSystem.HighestRoot.Basic
 import Mathlib.LinearAlgebra.RootSystem.Finite.CanonicalBilinear
 import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Basic
-import TauCeti.LinearAlgebra.RootSystem.Isomorphism
+import TauCeti.LinearAlgebra.RootSystem.Isomorphism.Basic
 
 /-!
 # The untwisted affine Cartan matrix of a base

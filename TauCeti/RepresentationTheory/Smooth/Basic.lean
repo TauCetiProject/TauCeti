@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import TauCeti.RepresentationTheory.Stabilizer
 public import TauCeti.RepresentationTheory.Subrepresentation
+public import TauCeti.RepresentationTheory.TorsionBy
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
 import Mathlib.RepresentationTheory.Rep.Basic
 import TauCeti.RepresentationTheory.Intertwining
@@ -143,6 +144,25 @@ instance [IsSmooth ρ] (ρ' : Subrepresentation ρ) : IsSmooth ρ'.toRepresentat
 instance [IsSmooth ρ] (W : Submodule A V) (le_comap : ∀ g, W ≤ W.comap (ρ g)) :
     IsSmooth (ρ.subrepresentation W le_comap) :=
   IsSmooth.of_injective (σ := ρ) ⟨W.subtype, fun _ ↦ rfl⟩ W.injective_subtype
+
+section IdealTorsion
+
+variable {A V : Type*} [CommRing A] [AddCommGroup V] [Module A V]
+  (ρ : Representation A G V) (I : Ideal A)
+
+omit [TopologicalSpace G] in
+/-- Passing to ideal torsion preserves each vector's stabilizer. -/
+@[simp]
+theorem stabilizer_torsionByIdeal (v : Submodule.torsionBySet A V I) :
+    (ρ.torsionByIdeal I).stabilizer v = ρ.stabilizer (v : V) := by
+  ext
+  simp [Subtype.ext_iff]
+
+/-- Ideal torsion of a smooth representation is smooth over the quotient ring. -/
+instance [IsSmooth ρ] : IsSmooth (ρ.torsionByIdeal I) :=
+  ⟨fun v ↦ ρ.stabilizer_torsionByIdeal I v ▸ IsSmooth.isOpen_stabilizer (v : V)⟩
+
+end IdealTorsion
 
 /-- The restriction of a smooth representation along a continuous homomorphism is smooth. -/
 theorem IsSmooth.comp [IsSmooth ρ] {H : Type*} [Group H] [TopologicalSpace H] {φ : H →* G}

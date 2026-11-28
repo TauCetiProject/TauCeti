@@ -12,44 +12,44 @@ public import TauCeti.FieldTheory.IsAlgClosed.Automorphism
 
 Let `E` be a domain containing `R`, with transcendence basis `v`, and let `Ω` be an
 algebraically closed `R`-algebra. Any algebraically independent family `w` in `Ω`, indexed like
-`v`, is the image of `v` under an `R`-algebra homomorphism `E →ₐ[R] Ω`: first send the polynomial
-ring on `v` to the polynomial ring on `w`, then extend along the algebraic extension
+`v`, is the image of `v` under an injective `R`-algebra homomorphism `E →ₐ[R] Ω`: first send the
+polynomial ring on `v` to the polynomial ring on `w`, then extend along the algebraic extension
 `E / R[v]` to the algebraically closed field `Ω`.
 
-Over a base field `k`, comparing transcendence degrees gives the existence results:
+Over a commutative ring `R` acting faithfully on `E` and `Ω`, comparing transcendence degrees
+gives the existence results:
 
-* a domain `E` containing `k` maps to `Ω` over `k` as soon as `trdeg k E ≤ trdeg k Ω`; when `E`
-  is a field such a map is a field embedding;
-* two algebraically closed fields of the same transcendence degree over `k` are isomorphic over
-  `k`;
-* in either situation, a prescribed element `α ∈ E` transcendental over `k` may be sent to any
-  prescribed element `z ∈ Ω` transcendental over `k`.
+* a domain `E` containing `R` embeds into `Ω` over `R` as soon as `trdeg R E ≤ trdeg R Ω`;
+* two algebraically closed fields of the same transcendence degree over `R` are isomorphic over
+  `R`.
 
-Over a countable field `k`, an uncountable algebraically closed field has transcendence degree
-equal to its cardinality. Applied to `Ω = ℂ`, these statements extend a given embedding of a
-countable field into `ℂ` to a field of cardinality at most the continuum.
+Either construction can send a prescribed element `α ∈ E` transcendental over the commutative
+base ring to any prescribed element `z ∈ Ω` transcendental over that ring.
+
+The cardinality result imported from
+`TauCeti.RingTheory.AlgebraicIndependent.TranscendenceBasis` says that over a countable
+commutative ring acting faithfully, an uncountable integral domain has transcendence degree
+equal to its cardinality. Applied to `Ω = ℂ`, these statements extend a given injective
+homomorphism from a countable commutative ring into `ℂ` to any domain containing that ring
+of cardinality at most the continuum.
 
 ## Main results
 
-* `IsTranscendenceBasis.exists_algHom_apply_eq`: an algebra homomorphism sending a transcendence
-  basis to a given algebraically independent family.
+* `IsTranscendenceBasis.exists_algHom_apply_eq`: an injective algebra homomorphism sending a
+  transcendence basis to a given algebraically independent family.
 * `IsTranscendenceBasis.exists_algEquiv_apply_eq`: between algebraically closed fields, an
   isomorphism realising a bijection of transcendence bases.
-* `IsTranscendenceBasis.cardinalMk_eq_of_aleph0_lt`: a transcendence basis of an uncountable
-  algebraically closed field over a countable nontrivial ring has the field's cardinality.
-* `TauCeti.IsAlgClosed.nonempty_algHom_of_lift_trdeg_le`,
-  `TauCeti.IsAlgClosed.nonempty_algEquiv_of_lift_trdeg_eq`: homomorphisms and isomorphisms from
-  transcendence degrees.
+* `TauCeti.IsAlgClosed.exists_algHom_injective_of_lift_trdeg_le`,
+  `TauCeti.IsAlgClosed.nonempty_algEquiv_of_lift_trdeg_eq`: injective homomorphisms and
+  isomorphisms from transcendence degrees over a commutative ring with faithful actions.
 * `Transcendental.exists_algHom_apply_eq`, `Transcendental.exists_algEquiv_apply_eq`: the same,
   sending a transcendental element to a prescribed transcendental element.
-* `TauCeti.IsAlgClosed.trdeg_eq_cardinalMk`: the transcendence degree of an uncountable
-  algebraically closed field over a countable field is its cardinality.
 * `TauCeti.IsAlgClosed.exists_ringEquiv_extend`: Steinitz extension of injective embeddings of a
   countable commutative ring into two uncountable algebraically closed fields of the same
   cardinality.
 * `TauCeti.IsAlgClosed.exists_ringHom_extend_of_cardinal_le`: extension of an embedding of a
   countable commutative ring into an uncountable algebraically closed field `E` along an embedding
-  into an integral domain `K` with `#K ≤ #E`.
+  into an integral domain `K` with `#K ≤ #E`, yielding an injective ring homomorphism `K →+* E`.
 
 The isomorphism statements specialise `IsTranscendenceBasis.exists_ringEquiv_comp_algebraMap`,
 which follows Mathlib's `IsAlgClosed.equivOfTranscendenceBasis`; the homomorphism statements
@@ -80,10 +80,10 @@ variable {R Ω : Type*} [CommRing R] [Field Ω] [Algebra R Ω] [IsAlgClosed Ω]
 
 /-- If `v` is a transcendence basis of a domain `E` over `R` and `w` is an algebraically
 independent family, indexed like `v`, in an algebraically closed `R`-algebra `Ω`, then some
-`R`-algebra homomorphism `E →ₐ[R] Ω` sends each `v i` to `w i`. -/
+injective `R`-algebra homomorphism `E →ₐ[R] Ω` sends each `v i` to `w i`. -/
 theorem exists_algHom_apply_eq {E : Type*} [CommRing E] [IsDomain E] [Algebra R E] {ι : Type*}
     {v : ι → E} {w : ι → Ω} (hv : IsTranscendenceBasis R v) (hw : AlgebraicIndependent R w) :
-    ∃ φ : E →ₐ[R] Ω, ∀ i, φ (v i) = w i := by
+    ∃ φ : E →ₐ[R] Ω, Function.Injective φ ∧ ∀ i, φ (v i) = w i := by
   have : Nontrivial R := RingHom.domain_nontrivial (algebraMap R E)
   -- Evaluation at `w` on the subalgebra `R[v]`, identified with the polynomial ring on `v`.
   let ψ : Algebra.adjoin R (Set.range v) →ₐ[R] Ω := (aeval w).comp hv.1.repr
@@ -91,13 +91,19 @@ theorem exists_algHom_apply_eq {E : Type*} [CommRing E] [IsDomain E] [Algebra R 
     (algebraicIndependent_iff_injective_aeval.1 hw).comp hv.1.aevalEquiv.symm.injective
   let : Algebra (Algebra.adjoin R (Set.range v)) Ω := ψ.toRingHom.toAlgebra
   have : Module.IsTorsionFree (Algebra.adjoin R (Set.range v)) Ω :=
-    Module.isTorsionFree_iff_algebraMap_injective.2 hψ
+    Module.isTorsionFree_iff_algebraMap_injective.2 (by
+      simpa only [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
+        AlgHom.coe_toRingHom] using hψ)
   have := hv.isAlgebraic
   -- `E` is algebraic over `R[v]`, so `ψ` extends to `E`.
   let f : E →ₐ[Algebra.adjoin R (Set.range v)] Ω := IsAlgClosed.lift
+  let : Algebra E Ω := f.toRingHom.toAlgebra
+  have hf_inj : Function.Injective f := by
+    simpa only [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
+      AlgHom.coe_toRingHom] using Algebra.IsAlgebraic.injective_tower_top E hψ
   have hf (a : Algebra.adjoin R (Set.range v)) : f a = ψ a := f.commutes a
   refine ⟨{ f.toRingHom with commutes' := fun r ↦ (hf (algebraMap R _ r)).trans (ψ.commutes r) },
-    fun i ↦ ?_⟩
+    hf_inj, fun i ↦ ?_⟩
   have hvi : v i ∈ Algebra.adjoin R (Set.range v) := Algebra.subset_adjoin (Set.mem_range_self i)
   have hrepr : hv.1.repr ⟨v i, hvi⟩ = X i :=
     algebraicIndependent_iff_injective_aeval.1 hv.1 (by simp)
@@ -113,47 +119,38 @@ theorem exists_algEquiv_apply_eq {E : Type*} [Field E] [Algebra R E] [IsAlgClose
   obtain ⟨τ, hτ, hτv⟩ := hv.exists_ringEquiv_comp_algebraMap hw (RingEquiv.refl R) e
   exact ⟨AlgEquiv.ofRingEquiv (f := τ) fun r ↦ by simpa using RingHom.congr_fun hτ r, hτv⟩
 
-/-- A transcendence basis of an uncountable algebraically closed field `Ω` over a countable
-nontrivial commutative ring `R` has the same cardinality as `Ω`. -/
-theorem cardinalMk_eq_of_aleph0_lt [Nontrivial R] [Countable R] {s : Set Ω}
-    (hs : IsTranscendenceBasis R ((↑) : s → Ω)) (hΩ : ℵ₀ < #Ω) : #s = #Ω :=
-  (lift_inj.1 (_root_.IsAlgClosed.cardinal_eq_cardinal_transcendence_basis_of_aleph0_lt _ hs
-    (mk_le_aleph0 (α := R)) hΩ)).symm
-
 end IsTranscendenceBasis
-
-variable {k : Type*} {Ω : Type v} [Field k] [Field Ω] [Algebra k Ω] [IsAlgClosed Ω]
 
 namespace TauCeti.IsAlgClosed
 
-/-- A domain `E` containing a field `k` maps over `k` to an algebraically closed extension
-`Ω` of `k` whose transcendence degree over `k` is at least that of `E`. -/
-theorem nonempty_algHom_of_lift_trdeg_le {E : Type u} [CommRing E] [IsDomain E] [Algebra k E]
-    (h : Cardinal.lift.{v} (trdeg k E) ≤ Cardinal.lift.{u} (trdeg k Ω)) :
-    Nonempty (E →ₐ[k] Ω) := by
-  obtain ⟨s, hs⟩ := exists_isTranscendenceBasis k E
-  obtain ⟨t, ht⟩ := exists_isTranscendenceBasis k Ω
+/-- A domain `E` over a commutative ring `R` acting faithfully on `E` and an algebraically closed
+field `Ω` embeds over `R` into `Ω` whenever `trdeg R E ≤ trdeg R Ω`. -/
+theorem exists_algHom_injective_of_lift_trdeg_le {R : Type*} {E : Type u} {Ω : Type v}
+    [CommRing R] [CommRing E] [IsDomain E] [Algebra R E] [FaithfulSMul R E]
+    [Field Ω] [Algebra R Ω] [IsAlgClosed Ω] [FaithfulSMul R Ω]
+    (h : Cardinal.lift.{v} (trdeg R E) ≤ Cardinal.lift.{u} (trdeg R Ω)) :
+    ∃ φ : E →ₐ[R] Ω, Function.Injective φ := by
+  have : Nontrivial R := RingHom.domain_nontrivial (algebraMap R E)
+  obtain ⟨s, hs⟩ := exists_isTranscendenceBasis R E
+  obtain ⟨t, ht⟩ := exists_isTranscendenceBasis R Ω
   obtain ⟨f⟩ := hs.nonempty_embedding_of_lift_trdeg_le ht h
-  obtain ⟨φ, -⟩ := hs.exists_algHom_apply_eq (ht.1.comp f f.injective)
-  exact ⟨φ⟩
+  have hw : AlgebraicIndependent R (((↑) : t → Ω) ∘ f) := ht.1.comp f f.injective
+  obtain ⟨φ, hφ, -⟩ := hs.exists_algHom_apply_eq hw
+  exact ⟨φ, hφ⟩
 
-/-- Two algebraically closed extensions of `k` with the same transcendence degree over `k` are
-isomorphic over `k`. -/
-theorem nonempty_algEquiv_of_lift_trdeg_eq {E : Type u} [Field E] [Algebra k E] [IsAlgClosed E]
-    (h : Cardinal.lift.{v} (trdeg k E) = Cardinal.lift.{u} (trdeg k Ω)) :
-    Nonempty (E ≃ₐ[k] Ω) := by
-  obtain ⟨s, hs⟩ := exists_isTranscendenceBasis k E
-  obtain ⟨t, ht⟩ := exists_isTranscendenceBasis k Ω
+/-- Two algebraically closed fields over a commutative ring `R` acting faithfully on both with the
+same transcendence degree over `R` are isomorphic over `R`. -/
+theorem nonempty_algEquiv_of_lift_trdeg_eq {R : Type*} {E : Type u} {Ω : Type v}
+    [CommRing R] [Field E] [Algebra R E] [IsAlgClosed E] [FaithfulSMul R E]
+    [Field Ω] [Algebra R Ω] [IsAlgClosed Ω] [FaithfulSMul R Ω]
+    (h : Cardinal.lift.{v} (trdeg R E) = Cardinal.lift.{u} (trdeg R Ω)) :
+    Nonempty (E ≃ₐ[R] Ω) := by
+  have : Nontrivial R := RingHom.domain_nontrivial (algebraMap R E)
+  obtain ⟨s, hs⟩ := exists_isTranscendenceBasis R E
+  obtain ⟨t, ht⟩ := exists_isTranscendenceBasis R Ω
   obtain ⟨e⟩ := hs.nonempty_equiv_of_lift_trdeg_eq ht h
   obtain ⟨φ, -⟩ := hs.exists_algEquiv_apply_eq ht e
   exact ⟨φ⟩
-
-/-- The transcendence degree of an uncountable algebraically closed field `Ω` over a countable
-field `k` is the cardinality of `Ω`. -/
-theorem trdeg_eq_cardinalMk [Countable k] (hΩ : ℵ₀ < #Ω) : trdeg k Ω = #Ω := by
-  obtain ⟨t, ht⟩ := exists_isTranscendenceBasis k Ω
-  rw [← ht.cardinalMk_eq_trdeg]
-  exact ht.cardinalMk_eq_of_aleph0_lt hΩ
 
 /-- **Steinitz extension for countable subrings.** Let `K` be a countable commutative ring, `E` and
 `L` uncountable algebraically closed fields of the same cardinality, and `f : K →+* E`,
@@ -165,59 +162,59 @@ theorem exists_ringEquiv_extend {E : Type u} {L : Type v} {K : Type*} [Field E] 
     (f : K →+* E) (g : K →+* L) (hf : Function.Injective f) (hg : Function.Injective g) :
     ∃ σ : E ≃+* L, ∀ a : K, σ (f a) = g a := by
   algebraize [f, g]
-  have : FaithfulSMul K E := (faithfulSMul_iff_algebraMap_injective K E).2 hf
-  have : FaithfulSMul K L := (faithfulSMul_iff_algebraMap_injective K L).2 hg
-  have : Nontrivial K := f.domain_nontrivial
-  obtain ⟨s, hs⟩ := exists_isTranscendenceBasis K E
-  obtain ⟨t, ht⟩ := exists_isTranscendenceBasis K L
-  have hL : ℵ₀ < #L := by
-    have hE' : Cardinal.lift.{v} (ℵ₀ : Cardinal.{u}) < Cardinal.lift.{v} #E :=
-      Cardinal.lift_lt.2 hE
-    rwa [h_mk, lift_aleph0, ← lift_aleph0.{u}, lift_lt] at hE'
-  obtain ⟨e⟩ : Nonempty (s ≃ t) := Cardinal.lift_mk_eq'.1 <| by
-    rw [hs.cardinalMk_eq_of_aleph0_lt hE, ht.cardinalMk_eq_of_aleph0_lt hL, h_mk]
-  obtain ⟨φ, -⟩ := hs.exists_algEquiv_apply_eq ht e
-  exact ⟨φ.toRingEquiv, φ.commutes⟩
+  have : FaithfulSMul K E := (faithfulSMul_iff_algebraMap_injective K E).2 <| by
+    simpa only [RingHom.algebraMap_toAlgebra] using hf
+  have : FaithfulSMul K L := (faithfulSMul_iff_algebraMap_injective K L).2 <| by
+    simpa only [RingHom.algebraMap_toAlgebra] using hg
+  have hL : ℵ₀ < #L := Cardinal.aleph0_lt_lift.1 (h_mk ▸ Cardinal.aleph0_lt_lift.2 hE)
+  obtain ⟨φ⟩ := nonempty_algEquiv_of_lift_trdeg_eq (R := K) (E := E) (Ω := L) <| by
+    rw [TauCeti.trdeg_eq_cardinalMk hE, TauCeti.trdeg_eq_cardinalMk hL, h_mk]
+  exact ⟨φ.toRingEquiv, fun a ↦ by
+    simpa only [AlgEquiv.coe_toRingEquiv, RingHom.algebraMap_toAlgebra] using φ.commutes a⟩
 
 /-- Let `D` be a countable commutative ring, `E` an uncountable algebraically closed field, `K` an
 integral domain with `#K ≤ #E`, and `f : D →+* K`, `φ : D →+* E` injective ring homomorphisms.
-Then `φ` extends along `f` to a ring homomorphism `ψ : K →+* E`. -/
+Then `φ` extends along `f` to an injective ring homomorphism `ψ : K →+* E`. -/
 theorem exists_ringHom_extend_of_cardinal_le {D : Type*} {K : Type u} {E : Type v} [CommRing D]
     [Countable D] [CommRing K] [IsDomain K] [Field E] [IsAlgClosed E] (hE : ℵ₀ < #E)
     {f : D →+* K} {φ : D →+* E} (hf : Function.Injective f) (hφ : Function.Injective φ)
     (h_le : Cardinal.lift.{v} #K ≤ Cardinal.lift.{u} #E) :
-    ∃ ψ : K →+* E, ψ.comp f = φ := by
+    ∃ ψ : K →+* E, Function.Injective ψ ∧ ψ.comp f = φ := by
   algebraize [f, φ]
-  have : FaithfulSMul D K := (faithfulSMul_iff_algebraMap_injective D K).2 hf
-  have : FaithfulSMul D E := (faithfulSMul_iff_algebraMap_injective D E).2 hφ
-  have : Nontrivial D := f.domain_nontrivial
-  obtain ⟨s, hs⟩ := exists_isTranscendenceBasis D K
-  obtain ⟨t, ht⟩ := exists_isTranscendenceBasis D E
-  have hst : Cardinal.lift.{v} #s ≤ Cardinal.lift.{u} #t :=
-    (lift_le.2 (mk_set_le s)).trans
-      (h_le.trans_eq (congrArg Cardinal.lift (ht.cardinalMk_eq_of_aleph0_lt hE).symm))
-  obtain ⟨g⟩ : Nonempty (s ↪ t) := Cardinal.lift_mk_le'.1 hst
-  obtain ⟨ψ, -⟩ := hs.exists_algHom_apply_eq (ht.1.comp g g.injective)
-  exact ⟨ψ.toRingHom, RingHom.ext ψ.commutes⟩
+  have : FaithfulSMul D K := (faithfulSMul_iff_algebraMap_injective D K).2 <| by
+    simpa only [RingHom.algebraMap_toAlgebra] using hf
+  have : FaithfulSMul D E := (faithfulSMul_iff_algebraMap_injective D E).2 <| by
+    simpa only [RingHom.algebraMap_toAlgebra] using hφ
+  have htr : Cardinal.lift.{v} (trdeg D K) ≤ Cardinal.lift.{u} (trdeg D E) := by
+    rw [TauCeti.trdeg_eq_cardinalMk hE]
+    exact (lift_le.2 (TauCeti.trdeg_le_cardinalMk D K)).trans h_le
+  obtain ⟨ψ, hψ_inj⟩ := exists_algHom_injective_of_lift_trdeg_le htr
+  exact ⟨ψ.toRingHom, hψ_inj, RingHom.ext fun d ↦ by
+    simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      RingHom.algebraMap_toAlgebra] using ψ.commutes d⟩
 
 end TauCeti.IsAlgClosed
 
 namespace Transcendental
 
+variable {k : Type*} {Ω : Type v} [CommRing k] [Field Ω] [Algebra k Ω] [IsAlgClosed Ω]
+
 /-- If `trdeg k E ≤ trdeg k Ω` for a domain `E` containing `k`, then for elements `α ∈ E` and
-`z ∈ Ω` transcendental over `k`, some `k`-algebra homomorphism `E →ₐ[k] Ω` sends `α` to `z`. -/
+`z ∈ Ω` transcendental over `k`, some injective `k`-algebra homomorphism `E →ₐ[k] Ω` sends `α` to
+`z`. -/
 theorem exists_algHom_apply_eq {E : Type u} [CommRing E] [IsDomain E] [Algebra k E] {α : E}
     {z : Ω} (hα : Transcendental k α) (hz : Transcendental k z)
     (h : Cardinal.lift.{v} (trdeg k E) ≤ Cardinal.lift.{u} (trdeg k Ω)) :
-    ∃ φ : E →ₐ[k] Ω, φ α = z := by
+    ∃ φ : E →ₐ[k] Ω, Function.Injective φ ∧ φ α = z := by
   classical
+  have : Nontrivial k := RingHom.domain_nontrivial (algebraMap k E)
   obtain ⟨s, hαs, hs⟩ := hα.exists_isTranscendenceBasis_mem
   obtain ⟨t, hzt, ht⟩ := hz.exists_isTranscendenceBasis_mem
   obtain ⟨f⟩ := hs.nonempty_embedding_of_lift_trdeg_le ht h
   -- Redefine the embedding of bases at `α` so that it sends `α` to `z`.
   let g : s ↪ t := f.setValue ⟨α, hαs⟩ ⟨z, hzt⟩
-  obtain ⟨φ, hφ⟩ := hs.exists_algHom_apply_eq (ht.1.comp g g.injective)
-  exact ⟨φ, (hφ ⟨α, hαs⟩).trans (congrArg Subtype.val (f.setValue_eq _ _))⟩
+  obtain ⟨φ, hφ_inj, hφ⟩ := hs.exists_algHom_apply_eq (ht.1.comp g g.injective)
+  exact ⟨φ, hφ_inj, (hφ ⟨α, hαs⟩).trans (congrArg Subtype.val (f.setValue_eq _ _))⟩
 
 /-- If the algebraically closed extensions `E` and `Ω` of `k` have the same transcendence degree
 over `k`, then for elements `α ∈ E` and `z ∈ Ω` transcendental over `k`, some isomorphism
@@ -227,6 +224,7 @@ theorem exists_algEquiv_apply_eq {E : Type u} [Field E] [Algebra k E] [IsAlgClos
     (h : Cardinal.lift.{v} (trdeg k E) = Cardinal.lift.{u} (trdeg k Ω)) :
     ∃ φ : E ≃ₐ[k] Ω, φ α = z := by
   classical
+  have : Nontrivial k := RingHom.domain_nontrivial (algebraMap k E)
   obtain ⟨s, hαs, hs⟩ := hα.exists_isTranscendenceBasis_mem
   obtain ⟨t, hzt, ht⟩ := hz.exists_isTranscendenceBasis_mem
   obtain ⟨e⟩ := hs.nonempty_equiv_of_lift_trdeg_eq ht h

@@ -31,14 +31,16 @@ class whose image under a map `Sⁿ ⟶ Y` computes local degrees.
   generates the local homology `Hₙ(Sⁿ, Sⁿ ∖ {x})`, since `Sⁿ ∖ {x}` is contractible.
 * `TauCeti.singularHomologyToLocalHomology_singularHomologyTopCatSphereGenerator`: for `n ≥ 1`, the
   standard generator of `Hₙ(Sⁿ; k)` maps to this class in the local homology at each point.
+* `TauCeti.bijective_singularHomologyToLocalHomology_topCatSphere`: for `n ≥ 1`, the map from
+  `Hₙ(Sⁿ; N)` to the local homology at any point is bijective.
 * `TauCeti.isFundamentalClass_singularHomologyTopCatSphereGenerator`: consequently the standard
   generator of `Hₙ(Sⁿ; k)`, `n ≥ 1`, is a fundamental class of `Sⁿ` in the sense of
   `TauCeti.IsFundamentalClass`, for every ring `k`.
 * `TauCeti.exists_isFundamentalClass_sphere`: so the unit sphere of every real normed space of
   finite dimension at least `2` has a fundamental class.
 
-Coefficients are an object `R` of an abelian category with coproducts, except in the last three
-results, which are about `k`-modules.
+Coefficients are an object `R` of an abelian category with coproducts, except in the last four
+results, which are about modules.
 -/
 
 public section
@@ -162,6 +164,18 @@ lemma singularHomologyToLocalHomology_singularHomologyTopCatSphereGenerator (k :
   refine (singularHomologyToLocalHomology_eq_singularHomologyπ _ x _).trans ?_
   rw [singularHomologyTopCatSphereGenerator_def, diskBoundaryFundamentalClass_def]
   rfl
+
+/-- In positive dimension the map `Hₙ(Sⁿ; N) → Hₙ(Sⁿ, Sⁿ ∖ {x}; N)` from the homology of the sphere
+to its local homology at any point `x` is bijective: `Sⁿ ∖ {x}` is contractible. -/
+theorem bijective_singularHomologyToLocalHomology_topCatSphere {Λ : Type*} [Ring Λ]
+    (N : ModuleCat.{w} Λ) (d : ℕ) (x : TopCat.sphere.{w} (d + 1)) :
+    Function.Bijective (singularHomologyToLocalHomology N x (d + 1)) := by
+  have : ContractibleSpace (TopPair.ofSubset ({x}ᶜ : Set (TopCat.sphere.{w} (d + 1)))).snd :=
+    contractibleSpace_diskBoundary_compl_singleton x
+  rw [show ⇑(singularHomologyToLocalHomology N x (d + 1)) = _ from
+    funext (singularHomologyToLocalHomology_eq_singularHomologyπ N x)]
+  exact ConcreteCategory.bijective_of_isIso
+    ((TopPair.ofSubset ({x}ᶜ : Set (TopCat.sphere.{w} (d + 1)))).singularHomologyπ N (d + 1))
 
 /-- **The standard generator of `Hₙ(Sⁿ; k)` is a fundamental class.** For every ring `k` and
 `n ≥ 1`, the image of the standard generator `TauCeti.singularHomologyTopCatSphereGenerator` of
