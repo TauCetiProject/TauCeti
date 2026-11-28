@@ -100,8 +100,8 @@ leaving the Sobolev space.
   against the weight `t ^ q`.
 * `TauCeti.lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul`: the layer cake formula for an
   `ℝ≥0∞`-valued function.
-* `TauCeti.lintegral_rpow_le_lintegral_meas_ofReal_lt_mul`: the upper layer-cake inequality
-  for an `ℝ≥0∞`-valued function without a measurability assumption.
+* `MeasureTheory.Measure.lintegral_rpow_le_lintegral_meas_ofReal_lt_mul`:
+  the upper layer-cake inequality for an `ℝ≥0∞`-valued function without a measurability assumption.
 * `TauCeti.lintegral_ofReal_rpow_le_lintegral_meas_lt_mul`: the upper layer-cake inequality
   specialized to an almost everywhere nonnegative real function.
 * `TauCeti.lintegral_rpow_le_of_measure_lt_le_rpow_mul`: a power tail bound
@@ -637,19 +637,19 @@ theorem lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul (ν : Measure β) {u : β
 /-- For any `u : β → ℝ≥0∞` and `0 < p`, the lower integral of `u ^ p` is at most
 `p` times the integral over `t > 0` of the measure of `{x | ENNReal.ofReal t < u x}`
 weighted by `t ^ (p - 1)`. The function may take the value `∞` and need not be measurable. -/
-theorem lintegral_rpow_le_lintegral_meas_ofReal_lt_mul (ν : Measure β) {u : β → ℝ≥0∞}
-    {p : ℝ} (hp : 0 < p) :
+theorem _root_.MeasureTheory.Measure.lintegral_rpow_le_lintegral_meas_ofReal_lt_mul
+    (ν : Measure β) {u : β → ℝ≥0∞} {p : ℝ} (hp : 0 < p) :
     ∫⁻ x, u x ^ p ∂ν ≤ ENNReal.ofReal p *
       ∫⁻ t in Ioi (0 : ℝ), ν {x | ENNReal.ofReal t < u x} * ENNReal.ofReal (t ^ (p - 1)) := by
   obtain ⟨g, hg, hgu, hint⟩ := exists_measurable_le_lintegral_eq ν (fun x ↦ u x ^ p)
   let v := fun x ↦ g x ^ p⁻¹
+  have hv : Measurable v := hg.pow_const _
   have hpow (x) : v x ^ p = g x := by simp [v, ← ENNReal.rpow_mul, hp.ne']
   have hle (x) : v x ≤ u x :=
     (ENNReal.rpow_le_rpow_iff hp).1 ((hpow x).trans_le (hgu x))
   calc
     ∫⁻ x, u x ^ p ∂ν = ∫⁻ x, v x ^ p ∂ν := by simpa only [hpow] using hint
-    _ = _ := lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul ν
-      (show AEMeasurable v ν by dsimp [v]; fun_prop) hp
+    _ = _ := lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul ν hv.aemeasurable hp
     _ ≤ _ := by
       gcongr ENNReal.ofReal p * ?_
       refine setLIntegral_mono' measurableSet_Ioi fun t _ ↦ ?_
@@ -658,7 +658,8 @@ theorem lintegral_rpow_le_lintegral_meas_ofReal_lt_mul (ν : Measure β) {u : β
       exact mul_le_mul_left (measure_mono hsub) _
 
 /-- The upper layer-cake bound for an almost everywhere nonnegative real function, obtained by
-applying `lintegral_rpow_le_lintegral_meas_ofReal_lt_mul` to `ENNReal.ofReal ∘ f`. -/
+applying `MeasureTheory.Measure.lintegral_rpow_le_lintegral_meas_ofReal_lt_mul`
+to `ENNReal.ofReal ∘ f`. -/
 theorem lintegral_ofReal_rpow_le_lintegral_meas_lt_mul {ν : Measure β} {f : β → ℝ}
     (hf : 0 ≤ᵐ[ν] f)
     {p : ℝ} (hp : 0 < p) :
@@ -668,11 +669,11 @@ theorem lintegral_ofReal_rpow_le_lintegral_meas_lt_mul {ν : Measure β} {f : β
     ∫⁻ x, ENNReal.ofReal (f x ^ p) ∂ν = ∫⁻ x, (ENNReal.ofReal (f x)) ^ p ∂ν := by
       refine lintegral_congr_ae (hf.mono fun x hx ↦ ?_)
       exact (ENNReal.ofReal_rpow_of_nonneg hx hp.le).symm
-    _ ≤ _ := lintegral_rpow_le_lintegral_meas_ofReal_lt_mul ν (u := ENNReal.ofReal ∘ f) hp
+    _ ≤ _ := ν.lintegral_rpow_le_lintegral_meas_ofReal_lt_mul (u := ENNReal.ofReal ∘ f) hp
     _ = _ := by
       refine congrArg _ (setLIntegral_congr_fun measurableSet_Ioi fun t ht ↦ congrArg₂ _ ?_ rfl)
       apply congrArg ν
-      exact Set.ext fun _ ↦ ENNReal.ofReal_lt_ofReal_iff_of_nonneg (show 0 < t from ht).le
+      exact Set.ext fun _ ↦ ENNReal.ofReal_lt_ofReal_iff_of_nonneg (Set.mem_Ioi.mp ht).le
 
 /-- **A power tail bound gives integrability below its exponent.** Let `0 ≤ p < ε` and `m > 0`,
 and suppose that the superlevel sets of `u` above `m` decay like a power,
