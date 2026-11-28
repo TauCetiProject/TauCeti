@@ -22,8 +22,11 @@ The orbit factors are restrictions along `mackeyToH` of the original coinduced r
 not the coinduced resolutions of the conjugated coefficient modules. This comparison feeds the
 double-coset formula for the Evens norm. Its augmentation applies the original augmentation in
 every factor, as recorded by `smoothTensorInducedMackeyIso_resolutionAugmentation`.
-`Subgroup.mackey_tprod_diagonal_isCocycle` computes the degree, invariance and differential of
-the tensor of the orbitwise diagonals using the inverse smooth Mackey comparison.
+For a `U`-invariant degree-`n` cocycle, the tensor of its orbitwise diagonals has degree
+`[G : U] * n`, is `V`-invariant, and has zero differential. The three computation rules are
+`Subgroup.tprod_diagonal_mem_mackeyResolutionPiece`, `Subgroup.mackey_ρ_tprod_diagonal`, and
+`Subgroup.mackeyDifferential_tprod_diagonal_eq_zero`. They use algebraic regrouping,
+the factorwise action, and the iterated slot-sum formula, respectively.
 
 ## References
 
@@ -155,6 +158,18 @@ theorem smoothTensorInducedMackeyResolutionDifferential_apply_smoothTensorInduce
   change e.inv.hom.hom ((smoothTensorInducedGradedResolutionDifferential U hU s A).hom.hom
     (e.hom.hom.hom (e.inv.hom.hom z))) = _
   rw [he]
+
+/-- Inverse Mackey regrouping sends a vector killed by the ambient differential to a vector
+killed by the orbitwise differential. -/
+theorem _root_.Subgroup.smoothTensorInducedMackeyIso_inv_differential_eq_zero
+    {z : ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.V}
+    (hz : (smoothTensorInducedGradedResolutionDifferential U hU s A).hom.hom z = 0) :
+    (smoothTensorInducedMackeyResolutionDifferential U V hU r hr t s A).hom.hom
+        ((smoothTensorInducedMackeyIso U V hU r hr t s
+          (smoothGradedResolutionFunctor.obj A)).inv.hom.hom z) = 0 := by
+  rw [smoothTensorInducedMackeyResolutionDifferential_apply_smoothTensorInducedMackeyIso_inv,
+    hz]
+  exact map_zero _
 
 /-- The Mackey differential intertwines the comparison with the ambient differential. -/
 private theorem mackeyResolutionDifferential_comp_hom :
@@ -409,46 +424,82 @@ theorem smoothTensorInducedMackeyIso_resolutionAugmentation
   rw [hf] at h
   exact h
 
+/-- Inverse Mackey regrouping preserves fixedness by each element of the restricting subgroup. -/
+theorem _root_.Subgroup.smoothTensorInducedMackeyIso_inv_ρ_eq_self
+    {z : ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.V} (g : V)
+    (hz : ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.ρ g.val z = z) :
+    (smoothTensorInducedMackeyResolutionModule U V hU r t A).obj.ρ g
+        ((smoothTensorInducedMackeyIso U V hU r hr t s
+          (smoothGradedResolutionFunctor.obj A)).inv.hom.hom z) =
+      (smoothTensorInducedMackeyIso U V hU r hr t s
+        (smoothGradedResolutionFunctor.obj A)).inv.hom.hom z := by
+  let e := smoothTensorInducedMackeyIso U V hU r hr t s (smoothGradedResolutionFunctor.obj A)
+  let X := (smoothTensorInducedGradedResolutionFunctor U hU s).obj A
+  let B := DiscreteRep.res V.subtype continuous_subtypeVal ((ofSmoothDiscrete R G).obj X)
+  have hres : ((toSmoothDiscrete R V).obj B).obj.ρ g z = z :=
+    (toSmoothDiscrete_obj_obj_ρ_apply B g z).trans
+      ((DiscreteRep.res_ρ_apply V.subtype continuous_subtypeVal ((ofSmoothDiscrete R G).obj X)
+        g z).trans ((ofSmoothDiscrete_obj_ρ_apply R G X g.val z).trans hz))
+  have hcomm := (TopRep.hom_comm_apply ((smoothDiscreteι R V).map e.inv) g z).symm
+  rw [ObjectProperty.ι_map] at hcomm
+  exact hcomm.trans (congrArg e.inv.hom.hom hres)
+
+/-- The tensor of orbitwise diagonals of a `U`-invariant vector is fixed by each `g : V`. -/
+theorem _root_.Subgroup.mackey_ρ_tprod_diagonal
+    {z : A.obj.gradedResolutionModule} (hinv : ∀ u, A.obj.gradedResolutionTopRep.ρ u z = z)
+    (g : V) :
+    (smoothTensorInducedMackeyResolutionModule U V hU r t A).obj.ρ g
+        (PiTensorProduct.tprod R (fun D ↦ PiTensorProduct.tprod R
+          (fun _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V ↦ z))) =
+      PiTensorProduct.tprod R (fun D ↦ PiTensorProduct.tprod R
+        (fun _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V ↦ z)) := by
+  let B := (ofSmoothDiscrete R U).obj (smoothGradedResolutionFunctor.obj A)
+  let M D := DiscreteRep.tensorInduced _ (U.isOpen_mackeySubgroup_subgroupOf V hU (r D))
+    (t D) (DiscreteRep.res (mackeyToH (r D) U V) (U.continuous_mackeyToH V (r D)) B)
+  have hB (u : U) : B.ρ u z = z :=
+    (ofSmoothDiscrete_obj_ρ_apply R U (smoothGradedResolutionFunctor.obj A) u z).trans
+      ((smoothGradedResolutionFunctor_obj_obj_ρ_apply A u z).trans (hinv u))
+  refine (DiscreteRep.piTensorProduct_ρ_apply_tprod M g _).trans ?_
+  congr 1
+  funext D
+  let C := DiscreteRep.res (mackeyToH (r D) U V) (U.continuous_mackeyToH V (r D)) B
+  refine (DiscreteRep.tensorInduced_ρ_apply_tprod _ _ (t D) C g _).trans ?_
+  congr 1
+  funext q
+  exact (DiscreteRep.res_ρ_apply _ _ B _ z).trans (hB _)
+
 variable [Fintype (DoubleCoset.Quotient (V : Set G) (U : Set G))]
   [∀ D, Fintype (V ⧸ (mackeySubgroup (r D) U V).subgroupOf V)] [Fintype (G ⧸ U)]
 
-/-- The tensor of the orbitwise diagonals of a `U`-invariant homogeneous cocycle is a
-`V`-invariant cocycle in the Mackey resolution, of the same total degree as the ambient diagonal. -/
-theorem _root_.Subgroup.mackey_tprod_diagonal_isCocycle {n : ℕ}
-    {z : A.obj.gradedResolutionModule} (hdz : A.obj.gradedResolutionDifferential z = 0)
-    (hinv : ∀ u, A.obj.gradedResolutionTopRep.ρ u z = z)
-    (hz : z ∈ A.obj.gradedResolutionPiece n) :
+include hr in
+/-- Orbitwise diagonals of a degree-`n` vector have total degree `[G : U] * n`. -/
+theorem _root_.Subgroup.tprod_diagonal_mem_mackeyResolutionPiece {n : ℕ}
+    {z : A.obj.gradedResolutionModule} (hz : z ∈ A.obj.gradedResolutionPiece n) :
     (PiTensorProduct.tprod R (fun D ↦ PiTensorProduct.tprod R
-        (fun _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V ↦ z))) ∈
-        smoothTensorInducedMackeyResolutionPiece U V hU r t A (Fintype.card (G ⧸ U) * n : ℕ) ∧
-      (∀ g, (smoothTensorInducedMackeyResolutionModule U V hU r t A).obj.ρ g
-          (PiTensorProduct.tprod R (fun D ↦ PiTensorProduct.tprod R
-            (fun _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V ↦ z))) =
-          PiTensorProduct.tprod R (fun D ↦ PiTensorProduct.tprod R
-            (fun _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V ↦ z))) ∧
-      (smoothTensorInducedMackeyResolutionDifferential U V hU r hr t s A).hom.hom
-        (PiTensorProduct.tprod R (fun D ↦ PiTensorProduct.tprod R
-          (fun _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V ↦ z))) = 0 := by
-  let F := (smoothDiscreteι R V).map (smoothTensorInducedMackeyIso
-    U V hU r hr t s (smoothGradedResolutionFunctor.obj A)).inv
-  let w : ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.V :=
-    PiTensorProduct.tprod R (fun _ : G ⧸ U ↦ z)
-  have hregroup : F.hom w = PiTensorProduct.tprod R (fun D ↦ PiTensorProduct.tprod R
-      (fun _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V ↦ z)) :=
-    U.smoothTensorInducedMackeyIso_inv_tprod_const V hU r hr t s
-      (smoothGradedResolutionFunctor.obj A)
-      (fun u ↦ (smoothGradedResolutionFunctor_obj_obj_ρ_apply A u z).trans (hinv u))
-  refine hregroup ▸ ⟨?_, ?_, ?_⟩
-  · exact smoothTensorInducedMackeyIso_inv_mem_resolutionPiece U V hU r hr t s A _
-      w (tprod_const_mem_smoothTensorInducedGradedResolutionPiece U hU s A hz)
-  · intro g
-    exact (TopRep.hom_comm_apply F g w).symm.trans
-      (congrArg F.hom (smoothTensorInducedGradedResolutionFunctor_obj_ρ_tprod_const U hU s A
-        hinv g.val))
-  · exact (smoothTensorInducedMackeyResolutionDifferential_apply_smoothTensorInducedMackeyIso_inv
-      U V hU r hr t s A w).trans <|
-      (congrArg F.hom
-        (smoothTensorInducedGradedResolutionDifferential_tprod_const_eq_zero
-          U hU s A hdz)).trans (map_zero _)
+      (fun _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V ↦ z))) ∈
+        smoothTensorInducedMackeyResolutionPiece U V hU r t A (Fintype.card (G ⧸ U) * n : ℕ) := by
+  apply (U.tensorInducedDoubleCosetLinearEquiv_mem_totalDegreePiece_iff V r hr
+    A.obj.gradedResolutionPiece _ _).1
+  rw [Subgroup.tensorInducedDoubleCosetLinearEquiv_tprod]
+  have h := PiTensorProduct.tprod_mem_totalDegreePiece_const (ι := G ⧸ U) (R := R)
+    (ℳ := fun _ ↦ A.obj.gradedResolutionPiece) (n : ℤ) (m := fun _ ↦ z) (fun _ ↦ hz)
+  rwa [nsmul_eq_mul, ← Nat.cast_mul] at h
+
+omit [Fintype (DoubleCoset.Quotient (V : Set G) (U : Set G))]
+  [∀ D, Fintype (V ⧸ (mackeySubgroup (r D) U V).subgroupOf V)] in
+/-- The tensor of orbitwise diagonals of a vector killed by the differential is also killed
+by the differential. -/
+theorem _root_.Subgroup.mackeyDifferential_tprod_diagonal_eq_zero
+    {z : A.obj.gradedResolutionModule} (hdz : A.obj.gradedResolutionDifferential z = 0) :
+    (smoothTensorInducedMackeyResolutionDifferential U V hU r hr t s A).hom.hom
+      (PiTensorProduct.tprod R (fun D ↦ PiTensorProduct.tprod R
+        (fun _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V ↦ z))) = 0 := by
+  classical
+  let _ := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
+  let _ (D : DoubleCoset.Quotient (V : Set G) (U : Set G)) :=
+    Fintype.ofFinite (V ⧸ (mackeySubgroup (r D) U V).subgroupOf V)
+  exact (smoothTensorInducedMackeyResolutionDifferential_apply U V hU r hr t s A _).trans
+    (PiTensorProduct.slotSum_tprod_eq_zero _ _ fun _ ↦
+      PiTensorProduct.slotSum_tprod_eq_zero _ _ fun _ ↦ hdz)
 
 end TauCeti
