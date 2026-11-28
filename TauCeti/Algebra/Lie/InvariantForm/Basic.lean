@@ -47,8 +47,6 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
   commutative ring, the centre is contained in the orthogonal complement of the derived ideal.
 * `LinearMap.BilinForm.orthogonal_derivedSeries_one_eq_center`: for a right-separating invariant
   form, the orthogonal complement of the derived ideal is the centre.
-* `LieSubalgebra.killingForm_eq_zero_of_mem_center_of_mem_derivedSeries`: the centre and derived
-  ideal of any Lie subalgebra are orthogonal for the ambient Killing form.
 * `LinearMap.BilinForm.lie_le_orthogonal_of_lie_eq_bot`: if `⁅I, J⁆ = 0` then `⁅I, I⁆ ⊥ J`.
 * `LinearMap.BilinForm.le_orthogonal_of_isAtom`: a non-abelian atom of the ideals is orthogonal to
   every ideal meeting it trivially.
@@ -237,20 +235,6 @@ theorem le_orthogonal_of_isAtom_of_ne [LieAlgebra.IsSemisimple K L] (B : LinearM
     (hI.disjoint_of_ne hJ hIJ)
 
 end LinearMap.BilinForm
-
-/-- For any Lie subalgebra `H` over a commutative ring `R`, the centre and derived ideal of `H`
-are orthogonal for the ambient Killing form `killingForm R L`. -/
-theorem LieSubalgebra.killingForm_eq_zero_of_mem_center_of_mem_derivedSeries
-    {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] (H : LieSubalgebra R L)
-    {z d : H} (hz : z ∈ LieAlgebra.center R H) (hd : d ∈ LieAlgebra.derivedSeries R H 1) :
-    killingForm R L (z : L) (d : L) = 0 := by
-  let B : LinearMap.BilinForm R H :=
-    (killingForm R L).compl₁₂ H.incl.toLinearMap H.incl.toLinearMap
-  have hinv : B.lieInvariant H :=
-    (_root_.LieModule.traceForm_lieInvariant R L L).compl₁₂ H.incl
-  have hz' := LinearMap.BilinForm.center_le_orthogonal_derivedSeries_one B hinv hz
-  rw [LieAlgebra.InvariantForm.mem_orthogonal] at hz'
-  simpa [B, _root_.LieModule.traceForm_comm] using hz' d hd
 
 namespace TauCeti.LieModule
 

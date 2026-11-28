@@ -79,7 +79,7 @@ private theorem derivedComponent_mem_cartanP {R L' : Type*} [CommRing R] [LieRin
   set z := (e.symm x).1
   set d := (e.symm x).2
   have hx_eq : x = (z : L') + (d : L') :=
-    (e.apply_symm_apply x).symm.trans (LieIdeal.prodEquivOfIsCompl_apply _ _ hc (z, d))
+    (LieIdeal.prodEquivOfIsCompl_symm_fst_add_snd (center R L') (derivedSeries R L' 1) hc x).symm
   have hdD : θ (d : L') + (d : L') ∈ derivedSeries R L' 1 :=
     (derivedSeries R L' 1).add_mem ((θ.apply_mem_derivedSeries_iff 1).mpr d.property) d.property
   have hzZ : θ (z : L') + (z : L') ∈ center R L' :=
@@ -107,8 +107,7 @@ theorem iSup_eigenspace_ad_eq_top {θ : L ≃ₗ⁅ℝ⁆ L} (hθ : θ.IsReducti
   set d := p.2
   -- Split `x = z + d`; `ad x` agrees with `ad d`, and `d` lies in `cartanP` of `[L, L]`.
   have hx_eq : x = (z : L) + (d : L) :=
-    ((LieIdeal.prodEquivOfIsCompl _ _ hc).apply_symm_apply x).symm.trans
-      (LieIdeal.prodEquivOfIsCompl_apply _ _ hc p)
+    (LieIdeal.prodEquivOfIsCompl_symm_fst_add_snd (center ℝ L) (derivedSeries ℝ L 1) hc x).symm
   have hd_mem : d ∈ (θ.derivedSeriesCongr 1).cartanP :=
     derivedComponent_mem_cartanP θ hc hx
   have had_comp : (ad ℝ L x).comp (derivedSeries ℝ L 1).incl.toLinearMap =

@@ -391,10 +391,8 @@ def derivedSeriesTopEquiv {k : ℕ} (htop : derivedSeries R L k = ⊤) :
 theorem coe_derivedSeriesTopEquiv {k : ℕ} (htop : derivedSeries R L k = ⊤)
     (x : derivedSeries R L k) :
     derivedSeriesTopEquiv htop x = (x : L) :=
-  (LieEquiv.trans_apply
-    (LieEquiv.ofEq (derivedSeries R L k).toLieSubalgebra (⊤ : LieSubalgebra R L) _)
-    LieSubalgebra.topEquiv x).trans <|
-    (LieSubalgebra.topEquiv_apply _).trans <|
-      LieEquiv.ofEq_apply (derivedSeries R L k).toLieSubalgebra (⊤ : LieSubalgebra R L) _ x
+  (LieEquiv.trans_apply _ LieSubalgebra.topEquiv x).trans
+    ((LieSubalgebra.topEquiv_apply _).trans
+      (LieEquiv.ofEq_apply (derivedSeries R L k).toLieSubalgebra _ _ x))
 
 end LieEquiv

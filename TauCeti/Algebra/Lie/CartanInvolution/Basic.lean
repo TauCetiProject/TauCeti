@@ -245,8 +245,7 @@ fixed subalgebra `𝔨`. -/
 theorem orthogonal_fixedSubalgebra_eq_cartanP (hθ : θ.IsCartanInvolution) :
     (killingForm K L).orthogonal θ.toLieHom.fixedSubalgebra.toSubmodule = θ.cartanP := by
   refine le_antisymm (fun x hx ↦ ?_) fun x hx ↦ ?_
-  · have hsup := (θ.isCompl_fixedSubalgebra_cartanP two_ne_zero.isUnit
-      hθ.involutive).sup_eq_top
+  · have hsup := hθ.isCompl_fixedSubalgebra_cartanP.sup_eq_top
     obtain ⟨k, hk, p, hp, rfl⟩ := Submodule.mem_sup.mp (hsup ▸ Submodule.mem_top (x := x))
     have hk' := (LieSubalgebra.mem_toSubmodule _).mp hk
     have hkk : killingForm K L k k = 0 := by
@@ -267,8 +266,7 @@ theorem eq_of_fixedSubalgebra_eq {θ' : L ≃ₗ⁅K⁆ L} (hθ : θ.IsCartanInv
     (h : θ.toLieHom.fixedSubalgebra = θ'.toLieHom.fixedSubalgebra) : θ = θ' := by
   have hp : θ.cartanP = θ'.cartanP := by
     rw [← hθ.orthogonal_fixedSubalgebra_eq_cartanP, ← hθ'.orthogonal_fixedSubalgebra_eq_cartanP, h]
-  exact LinearMap.ext_on_codisjoint
-    (θ.isCompl_fixedSubalgebra_cartanP two_ne_zero.isUnit hθ.involutive).codisjoint
+  exact LinearMap.ext_on_codisjoint hθ.isCompl_fixedSubalgebra_cartanP.codisjoint
     (fun k hk ↦ (LieHom.mem_fixedSubalgebra.mp ((LieSubalgebra.mem_toSubmodule _).mp hk)).trans
       (LieHom.mem_fixedSubalgebra.mp (h ▸ (LieSubalgebra.mem_toSubmodule _).mp hk)).symm)
     fun p hp' ↦ (mem_cartanP.mp hp').trans (mem_cartanP.mp (hp ▸ hp')).symm
