@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import Mathlib.Algebra.Homology.Additive
+public import TauCeti.CategoryTheory.Monoidal.ProjectionFormula
 
 /-!
 # The projection formula for homological complexes
@@ -52,8 +53,9 @@ variable (K : HomologicalComplex C c) (E : HomologicalComplex D c)
 
 include G e in
 omit [HasTensor K ((L.mapHomologicalComplex c).obj E)] [DecidableEq I] in
-/-- A projection formula and preservation of the source diagonal coproducts give the target
-tensor product, without requiring a chosen target tensor instance. -/
+/-- If the source tensor product exists, a projection formula and preservation by `L` of its
+diagonal coproducts give existence of the target tensor product. No chosen target tensor
+instance is required. -/
 lemma hasTensor_of_projectionFormula :
     HasTensor K ((L.mapHomologicalComplex c).obj E) := by
   intro n
@@ -94,17 +96,6 @@ private lemma ι_projectionFormulaHomologicalComplexXIso_inv (p q n : I) (h : p 
   dsimp only [projectionFormulaHomologicalComplexXIso]
   exact IsColimit.comp_coconePointsIsoOfNatIso_inv _ _ _
     (Discrete.mk (⟨(p, q), h⟩ : { pq : I × I // pq.1 + pq.2 = n }))
-
-omit [(curriedTensor C).Additive] [∀ X : C, ((curriedTensor C).obj X).Additive]
-  [(curriedTensor D).Additive] [∀ X : D, ((curriedTensor D).obj X).Additive]
-  [L.Additive] [G.PreservesZeroMorphisms] [Preadditive C] [Preadditive D] in
-@[reassoc]
-private lemma projectionFormula_inv_naturality {X X' : C} {Y Y' : D}
-    (f : X ⟶ X') (g : Y ⟶ Y') :
-    (f ⊗ₘ L.map g) ≫ (e.app (X', Y')).inv =
-      (e.app (X, Y)).inv ≫ L.map (G.map f ⊗ₘ g) := by
-  simpa only [comp_obj, prod_obj, id_obj, comp_map, prod_map, id_map, tensor_map,
-    Iso.app_inv] using e.inv.naturality (X := (X, Y)) (Y := (X', Y')) (f, g)
 
 private lemma projectionFormulaHomologicalComplexXIso_inv_d₁ (p q m : I) :
     mapBifunctor.d₁ K ((L.mapHomologicalComplex c).obj E) (curriedTensor C) c p q m ≫
