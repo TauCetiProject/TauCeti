@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Data.Finset.Max
 
 import Mathlib.Analysis.Calculus.LocalExtr.Rolle
@@ -31,6 +31,11 @@ zero estimate for real exponential polynomials `∑ pₖ(x) exp(γₖ x)`.
 * `TauCeti.exists_card_le_card_add_of_hasDerivAt`: if `F (n + 1)` is the derivative of `F n` for
   `n < k`, a finite set `Z` of zeros of `F 0` gives a finite set `Z'` of zeros of `F k` with
   `#Z ≤ #Z' + k`.
+* `Set.OrdConnected.exists_card_le_card_add_of_continuousOn_of_deriv_eq`: the same count on an
+  order-connected set, assuming `deriv (F n) x = F (n + 1) x` only in the interior.
+* `ContDiffOn.exists_iteratedDerivWithin_eq_zero_of_lt_card`: the `k`-th derivative within
+  an order-connected set has a zero there if the function is `C^k` on the set and has more
+  than `k` zeros there.
 
 ## References
 
@@ -90,6 +95,33 @@ theorem exists_finset_deriv_eq_zero {f : ℝ → ℝ} {Z : Finset ℝ} (hZ : Z.N
       · obtain ⟨z, hz, hxz, hzy⟩ := hsep x hx y hy hxy
         exact ⟨z, Or.inr hz, hxz, hzy⟩
 
+/-- On an order-connected set `s`, suppose `F n` is continuous and `F (n + 1)` agrees with its
+Lean derivative `deriv (F n)` in the interior for each `n < k`. A finite set `Z` of zeros of
+`F 0` in `s` then has at most `k` more points than some finite set of zeros of `F k` in `s`. -/
+theorem _root_.Set.OrdConnected.exists_card_le_card_add_of_continuousOn_of_deriv_eq {s : Set ℝ}
+    (hs : s.OrdConnected) {F : ℕ → ℝ → ℝ} {k : ℕ}
+    (hF : ∀ n < k, ContinuousOn (F n) s)
+    (hD : ∀ n < k, ∀ x ∈ interior s, deriv (F n) x = F (n + 1) x)
+    {Z : Finset ℝ} (hZs : ↑Z ⊆ s) (hZ : ∀ x ∈ Z, F 0 x = 0) :
+    ∃ Z' : Finset ℝ, ↑Z' ⊆ s ∧ (∀ x ∈ Z', F k x = 0) ∧ #Z ≤ #Z' + k := by
+  induction k with
+  | zero => exact ⟨Z, hZs, hZ, le_rfl⟩
+  | succ k ih =>
+    obtain ⟨Z', hZ's, hZ', hcard⟩ := ih
+      (fun n hn ↦ hF n (hn.trans k.lt_succ_self)) (fun n hn ↦ hD n (hn.trans k.lt_succ_self))
+    rcases Z'.eq_empty_or_nonempty with rfl | hne
+    · exact ⟨∅, by simp, by simp, by simp only [card_empty, zero_add] at hcard ⊢; omega⟩
+    have hinterval := hs.out (hZ's (Z'.min'_mem hne)) (hZ's (Z'.max'_mem hne))
+    obtain ⟨Z'', hcard', hderiv, hbetween, -⟩ := exists_finset_deriv_eq_zero hne
+      ((hF k k.lt_succ_self).mono hinterval) hZ'
+    have hZ''s : ↑Z'' ⊆ interior s := by
+      intro z hz
+      obtain ⟨x, hx, y, hy, hxz, hzy⟩ := hbetween z hz
+      exact interior_maximal (Set.Ioo_subset_Icc_self.trans (hs.out (hZ's hx) (hZ's hy)))
+        isOpen_Ioo ⟨hxz, hzy⟩
+    refine ⟨Z'', hZ''s.trans interior_subset, fun x hx ↦ ?_, by omega⟩
+    rw [← hD k k.lt_succ_self x (hZ''s hx), hderiv x hx]
+
 /-- **Iterated Rolle's theorem.** Let `F (n + 1)` be the derivative of `F n` for every `n < k`.
 Then every finite set `Z` of zeros of `F 0` has at most `k` more points than some finite set of
 zeros of `F k`. -/
@@ -97,16 +129,32 @@ theorem exists_card_le_card_add_of_hasDerivAt {F : ℕ → ℝ → ℝ} {k : ℕ
     (hF : ∀ n < k, ∀ x, HasDerivAt (F n) (F (n + 1) x) x) {Z : Finset ℝ}
     (hZ : ∀ x ∈ Z, F 0 x = 0) :
     ∃ Z' : Finset ℝ, (∀ x ∈ Z', F k x = 0) ∧ #Z ≤ #Z' + k := by
-  induction k with
-  | zero => exact ⟨Z, hZ, le_rfl⟩
-  | succ k ih =>
-    obtain ⟨Z', hZ', hcard⟩ := ih fun n hn ↦ hF n (hn.trans k.lt_succ_self)
-    rcases Z'.eq_empty_or_nonempty with rfl | hne
-    · exact ⟨∅, by simp, by simp only [card_empty, zero_add] at hcard; omega⟩
-    have hk := hF k k.lt_succ_self
-    obtain ⟨Z'', hcard', hderiv, -, -⟩ := exists_finset_deriv_eq_zero hne
-      (fun x _ ↦ (hk x).continuousAt.continuousWithinAt) hZ'
-    refine ⟨Z'', fun x hx ↦ (hk x).deriv ▸ hderiv x hx, ?_⟩
-    omega
+  obtain ⟨Z', -, hZ', hcard⟩ :=
+    Set.ordConnected_univ.exists_card_le_card_add_of_continuousOn_of_deriv_eq
+    (F := F) (k := k) (fun n hn x _ ↦ (hF n hn x).continuousAt.continuousWithinAt)
+    (fun n hn x _ ↦ (hF n hn x).deriv) (Z := Z) (Set.subset_univ _) hZ
+  exact ⟨Z', hZ', hcard⟩
+
+/-- A `C^k` function with more than `k` distinct zeros on an order-connected set has a zero of
+its `k`-th derivative within that set. -/
+theorem _root_.ContDiffOn.exists_iteratedDerivWithin_eq_zero_of_lt_card {s : Set ℝ}
+    {f : ℝ → ℝ} {k : ℕ} (hf : ContDiffOn ℝ k f s) (hs : s.OrdConnected)
+    {Z : Finset ℝ} (hZs : ↑Z ⊆ s) (hZ : ∀ x ∈ Z, f x = 0) (hk : k < #Z) :
+    ∃ x ∈ s, iteratedDerivWithin k f s x = 0 := by
+  by_cases hk₀ : k = 0
+  · obtain ⟨x, hx⟩ := card_pos.mp ((Nat.zero_le k).trans_lt hk)
+    exact ⟨x, hZs hx, by simpa only [hk₀, iteratedDerivWithin_zero] using hZ x hx⟩
+  have htwo : (↑Z : Set ℝ).Nontrivial := one_lt_card_iff_nontrivial.mp (by omega)
+  have hu := uniqueDiffOn_convex hs.convex
+    (hs.convex.nontrivial_iff_nonempty_interior.mp (htwo.mono hZs))
+  obtain ⟨Z', hZ's, hZ', hcard⟩ := hs.exists_card_le_card_add_of_continuousOn_of_deriv_eq
+    (F := fun n ↦ iteratedDerivWithin n f s) (k := k)
+    (fun n hn ↦ hf.continuousOn_iteratedDerivWithin (by exact_mod_cast hn.le) hu)
+    (fun n _ x hx ↦ by
+      rw [iteratedDerivWithin_succ, derivWithin_of_mem_nhds (mem_interior_iff_mem_nhds.mp hx)])
+    hZs (by simpa only [iteratedDerivWithin_zero] using hZ)
+  have hne : Z'.Nonempty := card_pos.mp (by omega)
+  obtain ⟨x, hx⟩ := hne
+  exact ⟨x, hZ's hx, hZ' x hx⟩
 
 end TauCeti
