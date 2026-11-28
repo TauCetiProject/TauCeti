@@ -68,7 +68,7 @@ def weightHistogram (w : Fin m → ℤ) (s : Finset (Fin m)) : WeightHistogram w
     (Finset.card_le_card (Finset.filter_subset_filter _ (Finset.subset_univ s)))⟩
 
 /-- The occupancy of a subset at a weight is its number of selected indices of that weight. -/
-theorem weightHistogram_apply (w : Fin m → ℤ) (s : Finset (Fin m)) (j : weightSupport w) :
+@[simp] theorem weightHistogram_apply (w : Fin m → ℤ) (s : Finset (Fin m)) (j : weightSupport w) :
     (weightHistogram w s j : ℕ) = (s.filter fun i => w i = j.val).card := by
   rfl
 
@@ -85,14 +85,15 @@ private theorem indexWeight_eq_iff {w : Fin m → ℤ} {i : Fin m} {j : weightSu
 
 private theorem indexWeight_val (w : Fin m → ℤ) (i : Fin m) : (indexWeight w i).val = w i := rfl
 
+-- Simplify both totals before individual occupancies expand to filtered cardinalities.
 /-- The sum of the occupancies recovers the selected cardinality. -/
-theorem sum_weightHistogram (w : Fin m → ℤ) (s : Finset (Fin m)) :
+@[simp↓] theorem sum_weightHistogram (w : Fin m → ℤ) (s : Finset (Fin m)) :
     ∑ j, (weightHistogram w s j : ℕ) = s.card := by
   have h := Finset.sum_card_fiberwise_eq_card_filter s Finset.univ (indexWeight w)
   simpa [weightHistogram_apply, indexWeight_eq_iff] using h
 
 /-- Weighting each occupancy by its weight recovers the sum over the selected indices. -/
-theorem sum_weight_mul_weightHistogram (w : Fin m → ℤ) (s : Finset (Fin m)) :
+@[simp↓] theorem sum_weight_mul_weightHistogram (w : Fin m → ℤ) (s : Finset (Fin m)) :
     ∑ j, (weightHistogram w s j : ℤ) * j.val = ∑ i ∈ s, w i := by
   have h := Finset.sum_fiberwise_of_maps_to' (s := s) (t := Finset.univ) (g := indexWeight w)
     (fun i _ => Finset.mem_univ _) (fun j => j.val)
