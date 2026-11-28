@@ -50,15 +50,10 @@ theorem closure_inter_selfAdjoint_inter_closedBall (s : S) (r : ℝ) :
     rw [star_trivial c, RCLike.real_smul_eq_coe_smul (K := 𝕜),
       RCLike.real_smul_eq_coe_smul (K := 𝕜), star_smul, RCLike.star_def, RCLike.conj_ofReal]⟩
   have : SMulMemClass S ℝ A := SMulMemClass.ofIsScalarTower S ℝ 𝕜 A
-  let p : Submodule ℝ A :=
-    { carrier := (s : Set A) ∩ selfAdjoint A
-      zero_mem' := ⟨zero_mem s, (selfAdjoint.submodule ℝ A).zero_mem⟩
-      add_mem' := fun ha hb => ⟨add_mem ha.1 hb.1, (selfAdjoint.submodule ℝ A).add_mem ha.2 hb.2⟩
-      smul_mem' := fun c _ ha =>
-        ⟨SMulMemClass.smul_mem c ha.1, (selfAdjoint.submodule ℝ A).smul_mem c ha.2⟩ }
-  have h := Submodule.closure_inter_closedBall_zero p r
-  change closure ((s : Set A) ∩ selfAdjoint A ∩ closedBall 0 r) =
-      closure ((s : Set A) ∩ selfAdjoint A) ∩ closedBall 0 r at h
+  have h := Submodule.closure_inter_closedBall_zero
+    (Submodule.ofClass s ⊓ selfAdjoint.submodule ℝ A) r
+  rw [Submodule.coe_inf, Submodule.coe_ofClass, ← Submodule.coe_toAddSubgroup,
+    selfAdjoint.toAddSubgroup_submodule] at h
   rwa [StarMemClass.closure_inter_selfAdjoint ℝ s] at h
 
 end TauCeti
