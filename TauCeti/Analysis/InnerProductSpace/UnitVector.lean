@@ -12,13 +12,21 @@ public import Mathlib.Analysis.InnerProductSpace.Basic
 
 For a unit vector `ξ` in an inner product space over `ℝ` or `ℂ`, the coefficient `⟪ξ, x⟫` lies
 within `‖x - ξ‖` of `1 = ⟪ξ, ξ⟫`. For instance, a matrix coefficient `g ↦ ⟪ξ, ρ g ξ⟫` of a unitary
-representation is close to `1` wherever `ρ g` moves `ξ` little.
+representation is close to `1` wherever `ρ g` moves `ξ` little. For real unit vectors with
+`⟪ξ, x⟫ ≥ 0`, the distance `‖x - ξ‖` is at most `√2` times the sine `‖x - ⟪ξ, x⟫ ξ‖` of the
+angle between them.
+
+Over `ℝ`, splitting `d` into its component `⟪d, e⟫ e` along a vector `e` of norm at most `1` and
+the remainder `d - ⟪d, e⟫ e` does not increase length: `⟪d, e⟫² + ‖d - ⟪d, e⟫ e‖² ≤ ‖d‖²`.
 
 ## Main results
 
 * `TauCeti.norm_inner_sub_one_le`: `‖⟪ξ, x⟫ - 1‖ ≤ ‖x - ξ‖` for a unit vector `ξ`.
 * `TauCeti.norm_sub_sq_eq_two_mul_one_sub_re_inner`: `‖x - ξ‖ ^ 2 = 2 * (1 - re ⟪ξ, x⟫)` for unit
   vectors `x` and `ξ`.
+* `TauCeti.norm_sub_le_sqrt_two_mul_norm_sub_inner_smul`: for real unit vectors with
+  `⟪ξ, x⟫ ≥ 0`, the chord `‖x - ξ‖` is at most `√2` times the sine `‖x - ⟪ξ, x⟫ ξ‖`.
+* `TauCeti.inner_sq_add_norm_sub_sq_le`: `⟪d, e⟫² + ‖d - ⟪d, e⟫ e‖² ≤ ‖d‖²` for `‖e‖ ≤ 1`.
 -/
 
 public section
@@ -39,5 +47,31 @@ theorem norm_sub_sq_eq_two_mul_one_sub_re_inner {x ξ : E} (hx : ‖x‖ = 1) (h
     ‖x - ξ‖ ^ 2 = 2 * (1 - RCLike.re ⟪ξ, x⟫_𝕜) := by
   rw [norm_sub_sq (𝕜 := 𝕜), hx, hξ, inner_re_symm]
   ring
+
+/-- For real unit vectors `ξ` and `x` with `⟪ξ, x⟫ ≥ 0`, the chord `‖x - ξ‖` is at most `√2`
+times the sine `‖x - ⟪ξ, x⟫ ξ‖` of their angle: with `ρ = ⟪ξ, x⟫ ∈ [0, 1]`,
+`‖x - ξ‖² = 2 (1 - ρ) ≤ 2 (1 - ρ²) = 2 ‖x - ρ ξ‖²`. -/
+theorem norm_sub_le_sqrt_two_mul_norm_sub_inner_smul {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] {ξ x : F} (hξ : ‖ξ‖ = 1) (hx : ‖x‖ = 1) (h : 0 ≤ ⟪ξ, x⟫_ℝ) :
+    ‖x - ξ‖ ≤ √2 * ‖x - ⟪ξ, x⟫_ℝ • ξ‖ := by
+  have hρ : ⟪ξ, x⟫_ℝ ≤ 1 := by simpa [hξ, hx] using real_inner_le_norm ξ x
+  have h₁ : ‖x - ξ‖ ^ 2 = 2 - 2 * ⟪ξ, x⟫_ℝ := by
+    rw [norm_sub_sq_real, hx, hξ, real_inner_comm]
+    ring
+  have h₂ : ‖x - ⟪ξ, x⟫_ℝ • ξ‖ ^ 2 = 1 - ⟪ξ, x⟫_ℝ ^ 2 := by
+    simp only [norm_sub_sq_real, inner_smul_right, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs,
+      hx, hξ, real_inner_comm x ξ]
+    ring
+  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp ?_
+  rw [mul_pow, Real.sq_sqrt zero_le_two, h₁, h₂]
+  nlinarith
+
+/-- For `‖e‖ ≤ 1`, the component `⟪d, e⟫` of `d` along `e` and the remainder `d - ⟪d, e⟫ e`
+together have length at most `‖d‖`. -/
+theorem inner_sq_add_norm_sub_sq_le {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (d : F) {e : F} (he : ‖e‖ ≤ 1) : ⟪d, e⟫_ℝ ^ 2 + ‖d - ⟪d, e⟫_ℝ • e‖ ^ 2 ≤ ‖d‖ ^ 2 := by
+  rw [norm_sub_sq_real, inner_smul_right, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
+  have : ‖e‖ ^ 2 ≤ 1 := pow_le_one₀ (norm_nonneg e) he
+  nlinarith [mul_le_mul_of_nonneg_left this (sq_nonneg ⟪d, e⟫_ℝ)]
 
 end TauCeti

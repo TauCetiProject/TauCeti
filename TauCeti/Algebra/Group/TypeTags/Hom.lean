@@ -30,6 +30,10 @@ which Mathlib's duality theory for finite abelian groups states its results, wit
 * `AddMonoidHom.toMultiplicativeLeftAddEquiv_apply`: applying
   `AddMonoidHom.toMultiplicativeLeftAddEquiv` evaluates to `Additive.ofMul` of
   `AddMonoidHom.toMultiplicativeLeft`.
+* `MonoidHom.toAdditive_surjective_iff`: a monoid homomorphism read additively, through
+  `MonoidHom.toAdditive`, is surjective exactly when the homomorphism is.
+* `MonoidHom.toAdditive_comp`: viewing a composite of monoid homomorphisms additively gives the
+  composite of their additive homomorphisms.
 -/
 
 public section
@@ -72,3 +76,21 @@ theorem toMultiplicativeLeftAddEquiv_apply {M N : Type*} [AddMonoid M] [CommMono
   (rfl)
 
 end AddMonoidHom
+
+namespace MonoidHom
+
+/-- A monoid homomorphism read additively, through `MonoidHom.toAdditive`, is surjective exactly
+when the homomorphism is. -/
+theorem toAdditive_surjective_iff {α β : Type*} [MulOneClass α] [MulOneClass β] {f : α →* β} :
+    Function.Surjective f.toAdditive ↔ Function.Surjective f := by
+  rw [coe_toAdditive, Equiv.comp_surjective, Equiv.surjective_comp]
+
+/-- Viewing a composite of monoid homomorphisms additively gives the composite of their additive
+homomorphisms. -/
+@[simp]
+theorem toAdditive_comp {α β γ : Type*} [MulOneClass α] [MulOneClass β] [MulOneClass γ]
+    (g : β →* γ) (f : α →* β) :
+    (g.comp f).toAdditive = g.toAdditive.comp f.toAdditive :=
+  AddMonoidHom.ext fun _ ↦ rfl
+
+end MonoidHom

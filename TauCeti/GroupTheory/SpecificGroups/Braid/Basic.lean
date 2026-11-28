@@ -130,6 +130,13 @@ theorem sigma_eq_gen (i : Fin (n - 1)) :
     sigma i = ArtinGroup.gen (CoxeterMatrix.A (n - 1)) i :=
   (rfl)
 
+/-- Transport along an equality of strand counts sends each generator to the same crossing. -/
+theorem cast_sigma {k : ℕ} (h : n = k) (i : Fin (n - 1)) :
+    MulEquiv.cast (M := BraidGroup) h (sigma i) =
+      sigma (Fin.cast (congrArg (· - 1) h) i) := by
+  subst k
+  simp [MulEquiv.cast_apply]
+
 /-- Disjoint crossings commute. -/
 theorem sigma_mul_sigma_comm {i j : Fin (n - 1)} (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
     sigma i * sigma j = sigma j * sigma i := by
@@ -316,6 +323,12 @@ theorem val_transposition_apply (i : Fin (n - 1)) (x : Fin n) :
       if (x : ℕ) = i then (i : ℕ) + 1 else if (x : ℕ) = (i : ℕ) + 1 then (i : ℕ) else (x : ℕ) := by
   rw [transposition_eq_swap, Equiv.swap_apply_def]
   split_ifs <;> simp_all [Fin.ext_iff]
+
+/-- The inverse equivalence of an adjacent transposition is itself. -/
+@[simp]
+theorem symm_transposition (i : Fin (n - 1)) :
+    (transposition i).symm = transposition i := by
+  rw [transposition_eq_swap, Equiv.symm_swap]
 
 /-- An adjacent transposition is an involution. -/
 @[simp]

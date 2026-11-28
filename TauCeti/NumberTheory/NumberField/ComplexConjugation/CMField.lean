@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.NumberTheory.NumberField.CMField
 public import TauCeti.NumberTheory.NumberField.ComplexConjugation.Basic
 
@@ -31,12 +32,22 @@ place-free complex conjugation, and Mathlib's `IsCMField.complexConj` is the ele
 on a CM field the place index may simply be dropped, and any statement about
 `complexConjugationAt` there transfers to `complexConj`. The extension over `ℚ` need not be finite.
 
+The file also records a criterion for being CM in these terms: an algebraic field with one
+automorphism, not the identity, conjugating every complex embedding is CM.
+
 ## Main results
 
 * `TauCeti.NumberField.complexConjugationAt_eq_complexConj`: the conjugation at any place is
   `IsCMField.complexConj`.
 * `TauCeti.NumberField.complexConjugationAt_eq_complexConjugationAt`: consequently it does not
   depend on the place.
+* `TauCeti.NumberField.isCMField_of_forall_isConj`: a field algebraic over `ℚ` with one
+  automorphism conjugating every complex embedding, not the identity, is CM. Mathlib's
+  `NumberField.IsCMField.of_forall_isConj` assumes that the field is Galois over `ℚ` and totally
+  complex; this criterion assumes only that the field is algebraic over `ℚ` and has one
+  automorphism, not the identity, conjugating every complex embedding.
+* `RingHom.star_comp`: on a CM field, every ring endomorphism of `ℂ` commutes with complex
+  conjugation on embeddings.
 
 ## References
 
@@ -48,6 +59,38 @@ public section
 open NumberField NumberField.InfinitePlace
 
 namespace TauCeti.NumberField
+
+section General
+
+open NumberField.ComplexEmbedding
+
+variable {K : Type*} [Field K] [CharZero K] [Algebra.IsIntegral ℚ K]
+
+open IntermediateField in
+/-- **A field with a single nontrivial conjugation of all its complex embeddings is CM.** If `K`
+is algebraic over `ℚ` and one automorphism `σ ≠ 1` of `K` satisfies `IsConj φ σ` for every
+embedding `φ : K →+* ℂ`, then `K` is a CM field. Mathlib's `NumberField.IsCMField.of_forall_isConj`
+proves this for `K` Galois over `ℚ` and totally complex; neither assumption is needed. -/
+theorem isCMField_of_forall_isConj {σ : Gal(K/ℚ)} (hσ1 : σ ≠ 1)
+    (hσ : ∀ φ : K →+* ℂ, IsConj φ σ) : IsCMField K := by
+  have : IsTotallyComplex K := ⟨fun w ↦ isComplex_iff.mpr ((isConj_ne_one_iff (hσ _)).mp hσ1)⟩
+  let φ : K →+* ℂ := Classical.choice (inferInstance : Nonempty _)
+  have hσ' : Nat.card (Subgroup.zpowers σ) = 2 := by
+    rw [Nat.card_zpowers, orderOf_isConj_two_of_ne_one (hσ φ) hσ1]
+  have : Finite (Subgroup.zpowers σ) := Nat.finite_of_card_ne_zero (by positivity)
+  let L := FixedPoints.subfield (Subgroup.zpowers σ) K
+  have : IsTotallyReal L := ⟨fun w ↦ by
+    obtain ⟨W, rfl⟩ := w.comap_surjective (K := K)
+    dsimp only
+    rw [← mk_embedding W, comap_mk, isReal_mk_iff]
+    exact ComplexEmbedding.IsConj.isReal_comp
+      (σ := IsGaloisGroup.mulEquivAlgEquiv (Subgroup.zpowers σ) L K ⟨σ, Subgroup.mem_zpowers σ⟩)
+      (hσ W.embedding)⟩
+  have : Algebra.IsQuadraticExtension L K := ⟨by
+    rw [← IsGaloisGroup.card_eq_finrank (Subgroup.zpowers σ), hσ']⟩
+  exact IsCMField.ofCMExtension L K
+
+end General
 
 variable (K : Type*) [Field K] [CharZero K] [Algebra.IsIntegral ℚ K] [NumberField.IsCMField K]
 
@@ -69,5 +112,20 @@ theorem complexConjugationAt_eq_complexConjugationAt (w w' : InfinitePlace K)
   simp
 
 end TauCeti.NumberField
+
+namespace RingHom
+
+variable {K : Type*} [Field K] [CharZero K] [Algebra.IsIntegral ℚ K] [NumberField.IsCMField K]
+
+/-- On a CM field, every ring endomorphism `σ` of `ℂ` commutes with complex conjugation on the
+image of an embedding: `conj ∘ σ ∘ φ = σ ∘ conj ∘ φ` (Milne, *Complex Multiplication*, p.13,
+footnote 3). -/
+theorem star_comp (σ : ℂ →+* ℂ) (φ : K →+* ℂ) : star (σ.comp φ) = σ.comp (star φ) := by
+  ext x
+  have h := NumberField.IsCMField.complexEmbedding_complexConj K (σ.comp φ) x
+  simpa only [star_apply, comp_apply, Complex.star_def,
+    NumberField.IsCMField.complexEmbedding_complexConj K φ x] using h.symm
+
+end RingHom
 
 end

@@ -27,9 +27,9 @@ Its continuity comes from the closed graph theorem rather than from a norm compu
 continuous as soon as its composite with this embedding is
 (`BesselPotentialSpace.continuous_of_continuous_toDistr`). The same argument restricts every
 continuous linear operator `A` on tempered distributions that maps `H^{s,p}(E, G)` into
-`H^{r,p}(E, G')` to a bounded operator between these spaces (`BesselPotentialSpace.mapCLM`); the
-inclusion is the restriction of the identity. Taking `r = 0` gives the continuous
-inclusion `H^{s,p}(E, G) ⊆ H^{0,p}(E, G) = Lᵖ(E, G)` for `0 ≤ s`.
+`H^{r,q}(E, G')` to a bounded operator between these spaces (`BesselPotentialSpace.mapCLM`), for
+any two exponents `p` and `q`; the inclusion is the restriction of the identity. Taking `r = 0`
+gives the continuous inclusion `H^{s,p}(E, G) ⊆ H^{0,p}(E, G) = Lᵖ(E, G)` for `0 ≤ s`.
 
 For `p = 2` and a complex Hilbert space `F` the inclusion `H^s(E, F) ⊆ H^r(E, F)` has norm at most
 `1`. This is Plancherel's theorem: the `H^s` norm of `u` is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`
@@ -45,10 +45,12 @@ common compact support, are statements about this map.
 
 * `BesselPotentialSpace.continuous_toLp`: the `Lᵖ` function `J^s u` depends continuously on `u`.
 * `BesselPotentialSpace.continuous_toDistr`: `H^{s,p}(E, G)` embeds continuously in `𝓢'(E, G)`.
+* `BesselPotentialSpace.toDistr_real_smul`: the real action on `H^{s,p}(E, G)` obtained from its
+  complex structure acts on the underlying tempered distribution.
 * `BesselPotentialSpace.continuous_of_continuous_toDistr`: the closed graph criterion for linear
   maps into `H^{s,p}`.
-* `BesselPotentialSpace.mapCLM`: the restriction `H^{s,p}(E, G) →L[ℂ] H^{r,p}(E, G')` of an
-  operator on tempered distributions that maps `H^{s,p}` into `H^{r,p}`.
+* `BesselPotentialSpace.mapCLM`: the restriction `H^{s,p}(E, G) →L[ℂ] H^{r,q}(E, G')` of an
+  operator on tempered distributions that maps `H^{s,p}` into `H^{r,q}`.
 * `BesselPotentialSpace.inclusion`: the inclusion `H^{s,p}(E, G) →L[ℂ] H^{r,p}(E, G)` for
   `r ≤ s`.
 * `BesselPotentialSpace.toDistr_inclusion`: it does not change the tempered distribution, and
@@ -83,7 +85,8 @@ common compact support, are statements about this map.
 * `BesselPotentialSpace.norm_inclusion_le`, `BesselPotentialSpace.norm_inclusionLp_le`: for `p = 2`
   the operator norms of `inclusion` and `inclusionLp` are at most `1`, and
   `BesselPotentialSpace.norm_le_of_toDistr_eq`: an element of `H^r` with the tempered distribution
-  of `u ∈ H^s` has norm at most `‖u‖`.
+  of `u ∈ H^s` has norm at most `‖u‖`; `BesselPotentialSpace.norm_inclusion_le_and_ae_eq`: a
+  finite family of elements of `H^s` with given `L²` functions serves at every lower order.
 * `BesselPotentialSpace.norm_le_of_toDistr_eq_fourierMultiplierCLM`: for `p = 2`, the norm bound
   `‖v‖ ≤ C ‖u‖` when `v ∈ H^r` is the image of `u ∈ H^s` under a Fourier multiplier with symbol
   bounded by `C ⟨ξ⟩ ^ (s - r)`.
@@ -116,6 +119,17 @@ theorem continuous_toDistr : Continuous fun u : H^{s, p}(E, G) ↦ u.toDistr := 
     (toLpₗᵢ E G s p).toContinuousLinearEquiv.toContinuousLinearMap)).continuous
   exact h.congr fun u ↦ by simp
 
+/-- The real action on `H^{s,p}(E, G)` obtained from its complex structure, which is the one
+carried by real-linear structures such as products and their submodules, acts on the underlying
+tempered distribution. The expression `a • u` instead elaborates to Mathlib's direct real action,
+for which `BesselPotentialSpace.toDistr_smul` holds; the two actions agree, but only after
+unfolding more than `simp` and `rw` do, so this lemma names the action explicitly. -/
+@[simp]
+theorem toDistr_real_smul (a : ℝ) (u : H^{s, p}(E, G)) :
+    (@HSMul.hSMul ℝ _ _ (@instHSMul _ _ (Module.complexToReal H^{s, p}(E, G)).toSMul) a u).toDistr =
+      a • u.toDistr :=
+  (rfl)
+
 /-- **Closed graph criterion.** A real-linear map `L` from a Banach space into `H^{s,p}(E, G)` is
 continuous as soon as `x ↦ (L x).toDistr` is continuous into the tempered distributions. -/
 theorem continuous_of_continuous_toDistr {X : Type*} [NormedAddCommGroup X]
@@ -127,16 +141,17 @@ theorem continuous_of_continuous_toDistr {X : Type*} [NormedAddCommGroup X]
 section mapCLM
 
 variable {G' : Type*} [NormedAddCommGroup G'] [NormedSpace ℂ G'] [CompleteSpace G']
+  {q : ℝ≥0∞} [Fact (1 ≤ q)]
 
 /-- **Restriction of an operator on tempered distributions to Bessel-potential spaces.** A
 continuous linear map `A : 𝓢'(E, G) →L[ℂ] 𝓢'(E, G')` that maps `H^{s,p}(E, G)` into
-`H^{r,p}(E, G')` restricts to a bounded operator between these spaces; its continuity is the
-closed graph theorem. The restriction keeps the action of `A` on the underlying tempered
-distributions (`BesselPotentialSpace.toDistr_mapCLM`). -/
+`H^{r,q}(E, G')` restricts to a bounded operator between these spaces; its continuity is the
+closed graph theorem. The exponents `p` and `q` may differ. The restriction keeps the action of
+`A` on the underlying tempered distributions (`BesselPotentialSpace.toDistr_mapCLM`). -/
 def mapCLM (A : 𝓢'(E, G) →L[ℂ] 𝓢'(E, G'))
-    (hA : ∀ u : H^{s, p}(E, G), MemSobolev r p (A u.toDistr)) :
-    H^{s, p}(E, G) →L[ℂ] H^{r, p}(E, G') :=
-  let L : H^{s, p}(E, G) →ₗ[ℂ] H^{r, p}(E, G') :=
+    (hA : ∀ u : H^{s, p}(E, G), MemSobolev r q (A u.toDistr)) :
+    H^{s, p}(E, G) →L[ℂ] H^{r, q}(E, G') :=
+  let L : H^{s, p}(E, G) →ₗ[ℂ] H^{r, q}(E, G') :=
     { toFun u := (hA u).toBesselPotentialSpace
       map_add' u v := ext (by simp)
       map_smul' c u := ext (by simp) }
@@ -147,7 +162,7 @@ def mapCLM (A : 𝓢'(E, G) →L[ℂ] 𝓢'(E, G'))
 /-- `mapCLM A hA` acts on the underlying tempered distributions by `A`. -/
 @[simp]
 theorem toDistr_mapCLM (A : 𝓢'(E, G) →L[ℂ] 𝓢'(E, G'))
-    (hA : ∀ u : H^{s, p}(E, G), MemSobolev r p (A u.toDistr)) (u : H^{s, p}(E, G)) :
+    (hA : ∀ u : H^{s, p}(E, G), MemSobolev r q (A u.toDistr)) (u : H^{s, p}(E, G)) :
     (mapCLM A hA u).toDistr = A u.toDistr :=
   MemSobolev.toBesselPotentialSpace_toDistr _
 
@@ -427,6 +442,18 @@ theorem norm_inclusionLp_le (hs : 0 ≤ s) :
     ‖(inclusionLp hs : H^{s}(E, F) →L[ℂ] Lp F 2 (volume : Measure E))‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u ↦ by
     simpa only [one_mul] using norm_inclusionLp_apply_le hs u
+
+/-- A finite family `u` of elements of `H^s(E, F)` with `L²` functions `g` (for `0 ≤ r ≤ s`) also
+serves, through the inclusion, at the lower order `r`: the included family has the same `L²`
+functions and no larger norm. -/
+theorem norm_inclusion_le_and_ae_eq {ι : Type*} [Fintype ι] (h : r ≤ s) (hr : 0 ≤ r)
+    {u : ι → H^{s}(E, F)} {g : ι → E → F}
+    (hu : ∀ a, ⇑(inclusionLp (hr.trans h) (u a)) =ᵐ[volume] g a) :
+    ‖fun a ↦ inclusion h (u a)‖ ≤ ‖u‖ ∧
+      ∀ a, ⇑(inclusionLp hr (inclusion h (u a))) =ᵐ[volume] g a :=
+  ⟨(pi_norm_le_iff_of_nonneg (norm_nonneg u)).2 fun a ↦
+      (norm_inclusion_apply_le h _).trans (norm_le_pi_norm u a),
+    fun a ↦ by rw [inclusionLp_inclusion]; exact hu a⟩
 
 /-- An element of `H^r` with the tempered distribution of `u ∈ H^s`, `r ≤ s`, is the image of `u`
 under the inclusion, so its norm is at most `‖u‖`. -/

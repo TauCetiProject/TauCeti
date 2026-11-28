@@ -14,7 +14,6 @@ import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Chart
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
 # The Rellich–Kondrachov theorem on a closed Riemannian manifold
@@ -79,47 +78,6 @@ section Local
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   [MeasureSpace F] [BorelSpace F] [(volume : Measure F).IsAddHaarMeasure]
 
-omit [I.Boundaryless] [FiniteDimensional ℝ F] in
-/-- **Integrals over a chart neighbourhood in coordinates.** Let `L` identify the model space
-with `F`, and let `V` be an open subset of a compact set `K` of `F` that `L⁻¹` maps into the chart
-target at `p`. The integral of a function `g ≥ 0` over the corresponding open set of `M` is at
-most a constant multiple, independent of `g`, of the integral over `V` of `g` read in the chart. -/
-private theorem exists_setLIntegral_le_mul_setLIntegral_comp (L : E ≃L[ℝ] F) (p : M) {V K : Set F}
-    (hV : IsOpen V) (hK : IsCompact K) (hVK : V ⊆ K)
-    (hKt : MapsTo L.symm K (extChartAt I p).target) :
-    ∃ C : ℝ≥0∞, C ≠ ⊤ ∧ ∀ g : M → ℝ≥0∞,
-      ∫⁻ x in (extChartAt I p).source ∩ extChartAt I p ⁻¹' (L.symm '' V), g x
-          ∂riemannianVolume I M ≤
-        C * ∫⁻ y in V, g ((extChartAt I p).symm (L.symm y)) ∂volume := by
-  let _ : MeasurableSpace E := borel E
-  have : BorelSpace E := ⟨rfl⟩
-  set W := L.symm '' V
-  have hWo : IsOpen W := L.symm.toHomeomorph.isOpenMap _ hV
-  have hWt : W ⊆ (extChartAt I p).target := (image_mono hVK).trans (mapsTo_iff_image_subset.1 hKt)
-  -- The chart density is bounded by `D` over `W`.
-  obtain ⟨D, hD⟩ := (hK.image L.symm.continuous).exists_bound_of_continuousOn
-    ((continuousOn_chartVolumeDensity_extChartAt_symm (I := I) p).mono
-      (mapsTo_iff_image_subset.1 hKt))
-  -- The image of the Haar measure of `F` is a positive multiple `c` of the Haar measure of `E`.
-  obtain ⟨c, hc0, hc⟩ := L.symm.exists_map_restrict_preimage_eq_smul_addHaar (volume : Measure F)
-  replace hc0 : (c : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.2 hc0
-  refine ⟨ENNReal.ofReal D * (c : ℝ≥0∞)⁻¹,
-    ENNReal.mul_ne_top ENNReal.ofReal_ne_top (ENNReal.inv_ne_top.2 hc0), fun g ↦ ?_⟩
-  -- Changing variables along `L⁻¹`, the integral over `W` is `c⁻¹` times that over `V`.
-  have hcoord : (c : ℝ≥0∞) * ∫⁻ z in W, g ((extChartAt I p).symm z)
-      ∂(Module.finBasis ℝ E).addHaar = ∫⁻ y in V, g ((extChartAt I p).symm (L.symm y)) := by
-    have hL : MeasurableEmbedding L.symm := L.symm.toHomeomorph.measurableEmbedding
-    rw [← smul_eq_mul, ← ENNReal.smul_def, ← lintegral_smul_measure, ← hc, hL.lintegral_map,
-      L.symm.injective.preimage_image]
-  calc ∫⁻ x in (extChartAt I p).source ∩ extChartAt I p ⁻¹' W, g x ∂riemannianVolume I M
-      ≤ ENNReal.ofReal D * ∫⁻ z in W, g ((extChartAt I p).symm z)
-          ∂(Module.finBasis ℝ E).addHaar :=
-        setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm p hWo hWt
-          (fun z hz ↦ (Real.le_norm_self _).trans (hD z (image_mono hVK hz))) g
-    _ = ENNReal.ofReal D * (c : ℝ≥0∞)⁻¹ *
-          ∫⁻ y in V, g ((extChartAt I p).symm (L.symm y)) := by
-        rw [← hcoord, mul_assoc, ENNReal.inv_mul_cancel_left hc0 ENNReal.coe_ne_top]
-
 /-- **Rellich compactness near a point.** Around every point `p` of `M` there are an open set
 `U ∋ p` and a compact operator `R` from `H¹(M)` into an `L²` space of coordinates whose norm
 controls the `L²` norm on `U` of elements of `H¹(M)`. -/
@@ -147,8 +105,9 @@ private theorem exists_isCompactOperator_setLIntegral_le (L : E ≃L[ℝ] F) (p 
     simp only [R, ContinuousLinearMap.comp_apply, W1p.valueL_apply]
     exact (W1p.value_restrictL_ae hVΩ' (T w)).trans
       ((hT w).filter_mono (ae_mono (Measure.restrict_mono_set _ (subset_closure.trans hVΩ))))
-  obtain ⟨C, hC, hle⟩ := exists_setLIntegral_le_mul_setLIntegral_comp (I := I) L p V.isOpen
-    (isCompact_closedBall y₀ (r / 2)) ball_subset_closedBall fun y hy ↦ hΩt (hKΩ hy)
+  obtain ⟨C, hC, hle⟩ := exists_setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm
+    (I := I) L p V.isOpen (isCompact_closedBall y₀ (r / 2)) ball_subset_closedBall
+    fun y hy ↦ hΩt (hKΩ hy)
   refine ⟨_, isOpen_extChartAt_preimage' p (L.symm.toHomeomorph.isOpenMap _ V.isOpen),
     ⟨mem_extChartAt_source p, y₀, mem_ball_self (half_pos hr), L.symm_apply_apply _⟩, V, R, C,
     hC, hR, fun w ↦ (hle _).trans_eq ?_⟩

@@ -55,12 +55,12 @@ private theorem linearIndependent_cartanGenerator_subtype (n : ℕ) (hn : 4 ≤ 
       (⟨cartanGenerator (K := K) n hn i,
         cartanGenerator_mem_typeDDiagonalCartan n hn i⟩ : typeDDiagonalCartan K (Fin n))) := by
   have hrows : LinearIndependent K (fun i j =>
-      (DynkinType.typeDSimpleRoot n hn i j : K)) :=
+      (DynkinType.typeDSimpleRoot n (by omega) i j : K)) :=
     DynkinType.linearIndependent_typeDSimpleRoot_cast
-      (IsRegular.of_ne_zero (NeZero.ne (2 : K))).right hn
+      (IsRegular.of_ne_zero (NeZero.ne (2 : K))).right (by omega)
   have hcoord : LinearIndependent K (fun i =>
       typeDDiagonalEquiv (K := K) (ι := Fin n)
-        (fun j => (DynkinType.typeDSimpleRoot n hn i j : K))) :=
+        (fun j => (DynkinType.typeDSimpleRoot n (by omega) i j : K))) :=
     hrows.map' (typeDDiagonalEquiv (K := K) (ι := Fin n)).toLinearMap
       (typeDDiagonalEquiv (K := K) (ι := Fin n)).ker
   convert hcoord using 1
@@ -84,7 +84,7 @@ variable {K : Type*} [CommRing K] [Invertible (2 : K)]
 /-- The Bourbaki simple coroots as a basis of the split type-`Dₙ` diagonal Cartan. -/
 noncomputable def typeDSimpleCorootBasis (n : ℕ) (hn : 4 ≤ n) :
     Module.Basis (Fin n) K (typeDDiagonalCartan K (Fin n)) :=
-  (DynkinType.typeDSimpleRootBasis K n hn).map typeDDiagonalEquiv
+  (DynkinType.typeDSimpleRootBasis K n (by omega)).map typeDDiagonalEquiv
 
 /-- The simple-coroot basis consists of the numbered Cartan generators. -/
 @[simp]
@@ -106,7 +106,7 @@ theorem typeDSimpleCorootBasis_repr_apply (n : ℕ) (hn : 4 ≤ n)
       else ⅟ (2 : K) * (∑ j, A.val.val (Sum.inl j) (Sum.inl j)) := by
   rw [typeDSimpleCorootBasis, Module.Basis.map_repr, LinearEquiv.trans_apply]
   simpa only [typeDDiagonalEquiv_symm_apply] using
-    DynkinType.typeDSimpleRootBasis_repr_apply K hn
+    DynkinType.typeDSimpleRootBasis_repr_apply K (by omega)
       ((typeDDiagonalEquiv (K := K) (ι := Fin n)).symm A) k
 
 /-- The explicit simple-root Cartan generators span the diagonal Cartan whenever two is

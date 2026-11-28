@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Kernel.Dimension
 public import Mathlib.RingTheory.Polynomial.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Meromorphic.PrincipalPart
 import TauCeti.Analysis.PDE.Vortex.AmplitudeForm
+public import TauCeti.Analysis.PDE.Vortex.Gauge.ComplexStructure
 import TauCeti.Analysis.PDE.Vortex.Kernel.Existence
 import TauCeti.Data.Multiset.Fintype
 import TauCeti.RingTheory.Polynomial.DegreeLT
@@ -68,13 +70,27 @@ transformation into the gauge-fixing slice, and its divisor variation is
 (`TauCeti.Vortex.isDivisorVariation_covariantTranslation`,
 `TauCeti.Vortex.coe_gaugeFixedKernelEquivDegreeLT_covariantTranslation`). Writing `α = h P_D` with
 `h` smooth and nowhere zero, `∇_v α = α (∂_v h / h + i b(v)) + h v P_D'`, which is the defining
-identity with `G = ∂_v h / h + i b(v)`.
+identity with `G = ∂_v h / h + i b(v)`. In the same way, the velocity of a family of fields whose
+sections factor as `α_q = H_q Q_q` through polynomials `Q_q`, with `H` jointly `C¹` and `H_p`
+nowhere zero, has divisor variation `∂_v Q_p`
+(`TauCeti.Vortex.isDivisorVariation_fderiv_of_sectionValue_eq_mul`), while infinitesimal gauge
+transformations have divisor variation zero (`TauCeti.Vortex.isDivisorVariation_gaugeDirection`).
+
+The isomorphism is complex linear for the complex structure `J` of the kernel
+(`TauCeti.Vortex.gaugeFixedKernelAlmostComplexStructure`): the section variation of `J y` is
+`i δα`, so its divisor variation is `i R`
+(`TauCeti.Vortex.gaugeFixedKernelEquivDegreeLT_gaugeFixedKernelAlmostComplexStructure`). Followed by
+the coefficients of polynomials of degree less than `m`, it gives divisor coordinates
+`TauCeti.Vortex.gaugeFixedKernelEquivCoeff : ker L_x ≃ ℂ^m`, in which `J` is multiplication by `i`
+(`TauCeti.Vortex.gaugeFixedKernelEquivCoeff_symm_I_smul`).
 
 ## Main definitions
 
 * `TauCeti.Vortex.IsDivisorVariation x y D R`: `R` is a divisor variation of the variation `y`.
 * `TauCeti.Vortex.gaugeFixedKernelEquivDegreeLT`: the real-linear isomorphism from the kernel of
   `L_x` to `ℂ[X]_{<m}`.
+* `TauCeti.Vortex.gaugeFixedKernelEquivCoeff`: the same isomorphism followed by the coefficients,
+  onto `ℂ^m`.
 
 ## Main results
 
@@ -83,6 +99,10 @@ identity with `G = ∂_v h / h + i b(v)`.
   its divisor variation.
 * `TauCeti.Vortex.coe_gaugeFixedKernelEquivDegreeLT_covariantTranslation`: it sends the covariant
   translation `y_v` to `v P_D'`.
+* `TauCeti.Vortex.gaugeFixedKernelEquivDegreeLT_gaugeFixedKernelAlmostComplexStructure`: it is
+  complex linear for the complex structure `J` of the kernel.
+* `TauCeti.Vortex.gaugeFixedKernelEquivCoeff_symm_I_smul`: in divisor coordinates `J` is
+  multiplication by `i`.
 
 ## References
 
@@ -139,6 +159,58 @@ theorem IsDivisorVariation.smul (hy : IsDivisorVariation x y D R) (t : ℝ) :
   refine ⟨fun w ↦ t * G w, continuous_const.mul hG, fun w ↦ ?_⟩
   rw [sectionValue_smul, eval_smul, Complex.real_smul, mul_left_comm, h w]
   ring
+
+/-- **Divisor variations are complex linear.** The divisor variation of `J y`, for the complex
+structure `J = TauCeti.Vortex.variationComplexStructure` of variations, is `i` times that of `y`,
+since the section variation of `J y` is `i δα`. -/
+theorem IsDivisorVariation.variationComplexStructure (hy : IsDivisorVariation x y D R) :
+    IsDivisorVariation x (fun w ↦ Vortex.variationComplexStructure (y w)) D (I • R) := by
+  obtain ⟨G, hG, h⟩ := hy
+  refine ⟨fun w ↦ I * G w, continuous_const.mul hG, fun w ↦ ?_⟩
+  rw [sectionValue_variationComplexStructure, eval_smul, smul_eq_mul]
+  linear_combination I * h w
+
+/-- **Infinitesimal gauge transformations do not move the zeros.** The variation `d₀ u`, with
+section variation `i u α`, has divisor variation zero. -/
+theorem isDivisorVariation_gaugeDirection (x : ℂ → EuclideanSpace ℝ (Fin 4)) {u : ℂ → ℝ}
+    (hu : Continuous u) (D : Multiset ℂ) : IsDivisorVariation x (gaugeDirection x u) D 0 := by
+  refine ⟨fun w ↦ I * u w, continuous_const.mul (continuous_ofReal.comp hu), fun w ↦ ?_⟩
+  simp only [sectionValue_apply, gaugeDirection_apply_two, gaugeDirection_apply_three, eval_zero,
+    add_zero, ofReal_mul, ofReal_neg]
+  linear_combination (-2 * (D.map fun a ↦ X - C a).prod.eval w * u w * (x w 3 : ℂ)) * I_sq
+
+/-- **The divisor variation of the velocity of a family of fields.** Let `F` be a family of fields
+whose sections factor as `α_q = H_q Q_q` through polynomials `Q_q` and functions `H` jointly `C¹`
+in the parameter and the point, with `H_p` nowhere zero. If the zero divisor `D` has polynomial
+`Q_p` and the velocity of the polynomials in the direction `v` is `R`, then `R` is a divisor
+variation of the velocity `w ↦ ∂_v F_p (w)` of the fields. -/
+theorem isDivisorVariation_fderiv_of_sectionValue_eq_mul {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] {F : P → ℂ → EuclideanSpace ℝ (Fin 4)} {p : P} {H : P → ℂ → ℂ}
+    {Q : P → ℂ[X]} {v : P} (hF : ∀ w, DifferentiableAt ℝ (fun q ↦ F q w) p)
+    (hH : ContDiff ℝ 1 (Function.uncurry H)) (hH₀ : ∀ w, H p w ≠ 0)
+    (hsec : ∀ q w, sectionValue (F q) w = H q w * (Q q).eval w)
+    (hQ : ∀ w, DifferentiableAt ℝ (fun q ↦ (Q q).eval w) p)
+    (hR : ∀ w, fderiv ℝ (fun q ↦ (Q q).eval w) p v = R.eval w)
+    (hD : (D.map fun a ↦ X - C a).prod = Q p) :
+    IsDivisorVariation (F p) (fun w ↦ fderiv ℝ (fun q ↦ F q w) p v) D R := by
+  -- The derivative of `H` along the parameter, as a function of the point.
+  have hHd (w : ℂ) : HasFDerivAt (fun q ↦ H q w)
+      ((fderiv ℝ (Function.uncurry H) (p, w)).comp (ContinuousLinearMap.inl ℝ P ℂ)) p :=
+    (hH.differentiable one_ne_zero (p, w)).hasFDerivAt_slice_fst
+  refine isDivisorVariation_iff.2 ⟨fun w ↦ fderiv ℝ (fun q ↦ H q w) p v / H p w, ?_, fun w ↦ ?_⟩
+  · have hc : Continuous fun w ↦ fderiv ℝ (Function.uncurry H) (p, w) (v, 0) :=
+      ((hH.continuous_fderiv one_ne_zero).comp (continuous_const.prodMk continuous_id)).clm_apply
+        continuous_const
+    refine Continuous.div ?_ ((hH.continuous).comp (continuous_const.prodMk continuous_id)) hH₀
+    convert hc using 2 with w
+    simp [(hHd w).fderiv]
+  · rw [sectionValue_fderiv (hF w) v,
+      show (fun q ↦ sectionValue (F q) w) = fun q ↦ H q w * (Q q).eval w from
+        funext fun q ↦ hsec q w,
+      fderiv_fun_mul (hHd w).differentiableAt (hQ w), hsec p w, hD]
+    simp only [add_apply, smul_apply, smul_eq_mul, hR]
+    field_simp [hH₀ w]
+    ring
 
 /-- **Uniqueness of the divisor variation.** If the section of `x` has zero divisor `D`, a
 variation has at most one divisor variation of degree less than `|D|`. -/
@@ -367,6 +439,71 @@ theorem gaugeFixedKernelEquivDegreeLT_eq_iff {y : gaugeFixedKernel x} {R : degre
   refine ⟨fun h ↦ h ▸ isDivisorVariation_gaugeFixedKernelEquivDegreeLT hx hhol hlim hD y,
     fun h ↦ Subtype.ext ((isDivisorVariation_gaugeFixedKernelEquivDegreeLT hx hhol hlim hD y).unique
       hD h (degree_lt_card_of_mem (Subtype.prop _)) (degree_lt_card_of_mem R.property))⟩
+
+/-- **The divisor variation is complex linear on the kernel.** The isomorphism
+`gaugeFixedKernelEquivDegreeLT` sends `J y`, for the complex structure
+`TauCeti.Vortex.gaugeFixedKernelAlmostComplexStructure` of the kernel of `L_x`, to `i` times the
+divisor variation of `y`. So it identifies the kernel of `L_x`, with this complex structure, with
+the complex tangent space `ℂ[X]_{<m}` of `Sym^m ℂ`. -/
+@[simp]
+theorem gaugeFixedKernelEquivDegreeLT_gaugeFixedKernelAlmostComplexStructure
+    (y : gaugeFixedKernel x) :
+    gaugeFixedKernelEquivDegreeLT hx hhol hlim hD (gaugeFixedKernelAlmostComplexStructure x y) =
+      I • gaugeFixedKernelEquivDegreeLT hx hhol hlim hD y := by
+  rw [gaugeFixedKernelEquivDegreeLT_eq_iff, Submodule.coe_smul_of_tower]
+  convert (isDivisorVariation_gaugeFixedKernelEquivDegreeLT hx hhol hlim hD
+    y).variationComplexStructure using 1
+  exact funext (coe_gaugeFixedKernelAlmostComplexStructure_apply x y)
+
+/-- **Divisor coordinates on the kernel of `L_x`.** The real-linear isomorphism from the kernel
+of `L_x` onto `ℂ^m` sending a kernel element to the coefficients of its divisor variation, a
+polynomial of degree less than `m` (`Polynomial.degreeLTEquiv`). -/
+def gaugeFixedKernelEquivCoeff : gaugeFixedKernel x ≃ₗ[ℝ] (Fin m → ℂ) :=
+  (gaugeFixedKernelEquivDegreeLT hx hhol hlim hD).trans ((degreeLTEquiv ℂ m).restrictScalars ℝ)
+
+theorem gaugeFixedKernelEquivCoeff_apply (y : gaugeFixedKernel x) :
+    gaugeFixedKernelEquivCoeff hx hhol hlim hD y =
+      degreeLTEquiv ℂ m (gaugeFixedKernelEquivDegreeLT hx hhol hlim hD y) :=
+  (rfl)
+
+/-- The kernel element with divisor coordinates `v` is the kernel element whose divisor variation
+is the polynomial with coefficients `v`. -/
+theorem gaugeFixedKernelEquivCoeff_symm_apply (v : Fin m → ℂ) :
+    (gaugeFixedKernelEquivCoeff hx hhol hlim hD).symm v =
+      (gaugeFixedKernelEquivDegreeLT hx hhol hlim hD).symm ((degreeLTEquiv ℂ m).symm v) :=
+  (rfl)
+
+/-- The divisor coordinates are complex linear for the complex structure `J` of the kernel. -/
+@[simp]
+theorem gaugeFixedKernelEquivCoeff_gaugeFixedKernelAlmostComplexStructure
+    (y : gaugeFixedKernel x) :
+    gaugeFixedKernelEquivCoeff hx hhol hlim hD (gaugeFixedKernelAlmostComplexStructure x y) =
+      I • gaugeFixedKernelEquivCoeff hx hhol hlim hD y := by
+  rw [gaugeFixedKernelEquivCoeff_apply,
+    gaugeFixedKernelEquivDegreeLT_gaugeFixedKernelAlmostComplexStructure, map_smul,
+    gaugeFixedKernelEquivCoeff_apply]
+
+/-- The inverse of `gaugeFixedKernelEquivDegreeLT` is complex linear: the kernel element with
+divisor variation `i • R` is `J` applied to the kernel element with divisor variation `R`. -/
+@[simp]
+theorem gaugeFixedKernelEquivDegreeLT_symm_I_smul (R : degreeLT ℂ m) :
+    (gaugeFixedKernelEquivDegreeLT hx hhol hlim hD).symm (I • R) =
+      gaugeFixedKernelAlmostComplexStructure x
+        ((gaugeFixedKernelEquivDegreeLT hx hhol hlim hD).symm R) := by
+  rw [LinearEquiv.symm_apply_eq,
+    gaugeFixedKernelEquivDegreeLT_gaugeFixedKernelAlmostComplexStructure,
+    LinearEquiv.apply_symm_apply]
+
+/-- In divisor coordinates `J` is multiplication by `i`: the kernel element with coordinates
+`i • v` is `J` applied to the kernel element with coordinates `v`. -/
+@[simp]
+theorem gaugeFixedKernelEquivCoeff_symm_I_smul (v : Fin m → ℂ) :
+    (gaugeFixedKernelEquivCoeff hx hhol hlim hD).symm (I • v) =
+      gaugeFixedKernelAlmostComplexStructure x
+        ((gaugeFixedKernelEquivCoeff hx hhol hlim hD).symm v) := by
+  rw [LinearEquiv.symm_apply_eq,
+    gaugeFixedKernelEquivCoeff_gaugeFixedKernelAlmostComplexStructure,
+    LinearEquiv.apply_symm_apply]
 
 /-- **Covariant translations move the divisor rigidly.** At a smooth vortex with `|α|² → 1` at
 infinity and zero divisor `D ∈ Sym^m ℂ`, the isomorphism `gaugeFixedKernelEquivDegreeLT` sends the

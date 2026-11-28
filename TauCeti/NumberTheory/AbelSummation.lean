@@ -13,7 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.InvLog
 import Mathlib.MeasureTheory.Function.Floor
 import TauCeti.Algebra.BigOperators.Intervals
-import TauCeti.Analysis.SpecialFunctions.LogIntegral
+import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
 
 /-!
 # Consequences of Abel summation for partial sums
@@ -21,7 +21,7 @@ import TauCeti.Analysis.SpecialFunctions.LogIntegral
 Mathlib's `Mathlib/NumberTheory/AbelSummation.lean` proves the summation-by-parts identity
 `∑_{k ≤ x} f k c k = f x ∑_{k ≤ x} c k - ∫ f' (t) ∑_{k ≤ t} c k dt` and derives convergence
 criteria from it. This file records the elementary properties of the partial-sum step function
-`t ↦ ∑_{1 ≤ k ≤ t} c k` that such arguments need, and draws three further consequences from growth
+`t ↦ ∑_{1 ≤ k ≤ t} c k` that such arguments need, and draws further consequences from growth
 hypotheses on partial sums; the last of them, for the weight `1 / log t`, starts its partial sums
 at `k = 2`, where `log k > 0`.
 
@@ -29,6 +29,9 @@ at `k = 2`, where `log k > 0`.
   is locally integrable on `[0, ∞)`. Together with a bound `O(t ^ r)` at infinity (see
   `Asymptotics.IsBigO.comp_natFloor_rpow`) these are the hypotheses of Mathlib's Mellin-transform
   criteria, through which the partial-summation integral of an `L`-series is studied.
+* **Bounded partial sums.** For a weight that tends to zero with integrable derivative, the
+  norm of the weighted sum is at most the partial-sum bound times the integral of the absolute
+  derivative. The weight need not be monotone.
 * **A logarithmic weight.** Mathlib's `summable_mul_of_bigO_atTop'` converts a bound on the partial
   sums of a sequence into the convergence of a weighted series, provided the weight is
   differentiable and the derivative of the weight against the partial sums admits an integrable
@@ -56,11 +59,15 @@ at `k = 2`, where `log k > 0`.
 ## Main declarations
 
 * `TauCeti.sum_Icc_one_natFloor_eq_zero`: `∑_{1 ≤ k ≤ t} c k = 0` for `t < 1`.
+* `TauCeti.abs_sum_Icc_one_natFloor_le`: the trivial bound `|∑_{1 ≤ k ≤ t} c k| ≤ t` for
+  `t ≥ 0` when `|c k| ≤ 1`.
 * `TauCeti.isBigO_sum_Icc_natFloor_nhdsGT_zero`: the step function is `O(g)` as `t → 0⁺`.
 * `TauCeti.locallyIntegrableOn_sum_Icc_natFloor`: the step function is locally integrable on
   `[0, ∞)`.
 * `TauCeti.intervalIntegrable_mul_sum_Icc`: weighted by a function locally integrable on
   `[1, ∞)`, the step function is interval integrable between any two reals.
+* `TauCeti.exists_tendsto_sum_mul_and_norm_le`: the limit and norm bound for a decaying weight
+  with integrable derivative against bounded coefficient partial sums.
 * `TauCeti.summable_div_mul_one_add_log_cube`: if the partial sums `∑_{1 ≤ k ≤ t} u k` of a
   nonnegative sequence are `O(t log t)`, then `∑ u n / (n (1 + log n) ^ 3)` converges.
 * `TauCeti.sum_Icc_rpow_mul_eq`: the exact Abel-summation identity for the weight `t ^ τ`.
@@ -94,6 +101,15 @@ theorem sum_Icc_one_natFloor_eq_zero {M : Type*} [AddCommMonoid M] (c : ℕ → 
     ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k = 0 := by
   simp [Nat.floor_eq_zero.mpr ht]
 
+/-- The trivial bound on the partial-sum step function: if `|c k| ≤ 1` for every `k`, then
+`|∑ k ∈ Icc 1 ⌊t⌋₊, c k| ≤ t` for `t ≥ 0`. -/
+theorem abs_sum_Icc_one_natFloor_le {c : ℕ → ℝ} (hc : ∀ k, |c k| ≤ 1) (ht : 0 ≤ t) :
+    |∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k| ≤ t := by
+  calc |∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k| ≤ ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, |c k| :=
+        Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ _k ∈ Finset.Icc 1 ⌊t⌋₊, (1 : ℝ) := Finset.sum_le_sum fun k _ ↦ hc k
+    _ ≤ t := by simpa using Nat.floor_le ht
+
 /-- The partial-sum step function `t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, c k` vanishes near `0`, so it is `O(g)`
 as `t → 0⁺` for every `g`. -/
 theorem isBigO_sum_Icc_natFloor_nhdsGT_zero {E F : Type*} [SeminormedAddCommGroup E] [Norm F]
@@ -125,6 +141,33 @@ theorem intervalIntegrable_mul_sum_Icc {𝕜 : Type*} [RCLike 𝕜] (c : ℕ →
         integrableOn_zero.congr_fun (fun t ht ↦ by simp [Nat.floor_eq_zero.mpr ht.2])
           measurableSet_Ioo
   exact (key a).symm.trans (key b)
+
+/-! ### Bounded partial sums -/
+
+open Finset in
+/-- For a weight tending to zero at infinity, a bound on the coefficient partial sums times the
+integral of the norm of the weight's derivative bounds the norm of the weighted sum. -/
+theorem exists_tendsto_sum_mul_and_norm_le {𝕜 : Type*} [RCLike 𝕜] {c : ℕ → 𝕜} {f : ℝ → 𝕜}
+    {B : ℝ} (hc : ∀ n, ‖∑ k ∈ Icc 0 n, c k‖ ≤ B)
+    (hf : ∀ t ∈ Set.Ici 0, DifferentiableAt ℝ f t)
+    (hdf : IntegrableOn (deriv f) (Set.Ici 0)) (hlim : Tendsto f atTop (𝓝 0)) :
+    ∃ L, Tendsto (fun n : ℕ ↦ ∑ k ∈ Icc 0 n, c k * f k) atTop (𝓝 L) ∧
+      ‖L‖ ≤ B * ∫ t in Ioi 0, ‖deriv f t‖ := by
+  have hzero : Tendsto (fun n : ℕ ↦ f n * ∑ k ∈ Icc 0 n, c k) atTop (𝓝 0) := by
+    refine (hlim.comp tendsto_natCast_atTop_atTop).op_zero_isBoundedUnder_le
+      (isBoundedUnder_of ⟨B, hc⟩) (· * ·) norm_mul_le
+  have hbound (t : ℝ) : ‖deriv f t * ∑ k ∈ Icc 0 ⌊t⌋₊, c k‖ ≤ B * ‖deriv f t‖ := by
+    rw [norm_mul, mul_comm B]
+    exact mul_le_mul_of_nonneg_left (hc _) (norm_nonneg _)
+  have hbig : (fun t ↦ deriv f t * ∑ k ∈ Icc 0 ⌊t⌋₊, c k) =O[atTop] deriv f :=
+    IsBigO.of_bound B (Eventually.of_forall hbound)
+  have hsum := tendsto_sum_mul_atTop_nhds_one_sub_integral c hf hdf.locallyIntegrableOn
+    hzero hbig (integrableAtFilter_atTop_iff.mpr ⟨0, hdf⟩)
+  simp_rw [mul_comm (f _) (c _)] at hsum
+  refine ⟨_, hsum, ?_⟩
+  rw [zero_sub, norm_neg, ← integral_const_mul]
+  exact norm_integral_le_of_norm_le ((hdf.mono_set Ioi_subset_Ici_self).norm.const_mul B)
+    (Eventually.of_forall hbound)
 
 /-! ### The comparison weight -/
 

@@ -15,7 +15,9 @@ A function bounded by `C` and supported in a set `s` has `eLpNorm f p μ ≤ μ 
 (`MeasureTheory.eLpNorm_le_of_ae_bound_of_support_subset`). This sharpens Mathlib's
 `MeasureTheory.eLpNorm_le_of_ae_bound`, which has the measure of the whole space in place of
 `μ s`, and is the usual way to bound the `Lᵖ` norm of a compactly supported function. The same
-bound for the norm of the class in `Lᵖ(μ)` is `MeasureTheory.MemLp.norm_toLp_le_of_support_subset`.
+bound for the real-valued norm `MeasureTheory.lpNorm`, when `μ s` is finite, is
+`MeasureTheory.lpNorm_le_of_ae_bound_of_support_subset`, and for the norm of the class in `Lᵖ(μ)`
+it is `MeasureTheory.MemLp.norm_toLp_le_of_support_subset`.
 
 A function vanishing almost everywhere outside a set `s` has the same `Lᵖ` norm for `μ` and for
 `μ.restrict s` (`MeasureTheory.eLpNorm_restrict_eq_of_ae_compl_eq_zero`), the almost-everywhere
@@ -40,16 +42,25 @@ theorem eLpNorm_le_of_ae_bound_of_support_subset {f : α → F} {s : Set α} {C 
   rw [← eLpNorm_restrict_eq_of_support_subset hf hfs, ← Measure.restrict_apply_univ]
   exact eLpNorm_le_of_ae_bound hf.restrict (ae_restrict_of_ae hfC)
 
+/-- A function bounded by `C ≥ 0` almost everywhere and supported in a set `s` of finite measure
+has real `Lᵖ` norm at most `μ(s)^(1/p) C`. -/
+theorem lpNorm_le_of_ae_bound_of_support_subset {f : α → F} {s : Set α} {C : ℝ} {p : ℝ≥0∞}
+    (hf : AEStronglyMeasurable f μ) (hs : μ s ≠ ⊤) (hfs : Function.support f ⊆ s) (hC : 0 ≤ C)
+    (hfC : ∀ᵐ x ∂μ, ‖f x‖ ≤ C) :
+    lpNorm f p μ ≤ (μ s ^ p.toReal⁻¹).toReal * C := by
+  rw [lpNorm, ← ENNReal.toReal_ofReal hC, ← ENNReal.toReal_mul]
+  exact ENNReal.toReal_mono
+    (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity) hs) ENNReal.ofReal_ne_top)
+    (eLpNorm_le_of_ae_bound_of_support_subset hf hfs hfC)
+
 /-- The `Lᵖ(μ)` class of a function supported in a set `s` of finite measure and bounded by `C`
 almost everywhere has norm at most `μ(s)^(1/p) C`. -/
 theorem MemLp.norm_toLp_le_of_support_subset {f : α → F} {p : ℝ≥0∞} (hf : MemLp f p μ)
     {s : Set α} (hs : μ s ≠ ⊤) (hfs : Function.support f ⊆ s) {C : ℝ} (hC : 0 ≤ C)
     (hfC : ∀ᵐ x ∂μ, ‖f x‖ ≤ C) :
     ‖hf.toLp f‖ ≤ (μ s ^ p.toReal⁻¹).toReal * C := by
-  rw [Lp.norm_toLp, ← ENNReal.toReal_ofReal hC, ← ENNReal.toReal_mul]
-  exact ENNReal.toReal_mono
-    (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity) hs) ENNReal.ofReal_ne_top)
-    (eLpNorm_le_of_ae_bound_of_support_subset hf.aestronglyMeasurable hfs hfC)
+  rw [Lp.norm_toLp]
+  exact lpNorm_le_of_ae_bound_of_support_subset hf.aestronglyMeasurable hs hfs hC hfC
 
 /-- A function vanishing almost everywhere outside a set `s` has the same `Lᵖ` seminorm for `μ` and
 for `μ.restrict s`. -/

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Distribution.LinearEquiv
 public import TauCeti.Analysis.Distribution.Restriction
+public import TauCeti.Analysis.Distribution.TemperedDistribution.ChangeOfVariables
+public import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 public import TauCeti.Analysis.Distribution.TestFunction.ChangeOfVariables
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.MeasureTheory.Function.Jacobian
@@ -32,7 +34,11 @@ test functions. For a continuous linear automorphism it is
 `Distribution.compCLMOfContinuousLinearEquiv`.
 
 Pullback along changes of variables is how operations on distributions are transported between
-coordinate charts: chart transitions of a manifold are such maps.
+coordinate charts: chart transitions of a manifold are such maps. Near a point, `e` agrees with a
+global bijection `Φ` of `E`, and there `e^* T` is the pullback `Φ^* (χ T)` of the tempered
+distribution `χ T` for a cutoff `χ` equal to `1` near the image
+(`Distribution.restrictCLM_compCLMOfOpenPartialHomeomorph_eq_toDistribution`), which reduces local
+regularity of pullbacks to global estimates for `TemperedDistribution.compCLM`.
 
 ## Main declarations
 
@@ -55,6 +61,8 @@ coordinate charts: chart transitions of a manifold are such maps.
   `e^* T` to complex test functions is computed by the same formula.
 * `Distribution.compCLMOfOpenPartialHomeomorph_eq_compCLMOfContinuousLinearEquiv`: along a
   continuous linear automorphism, the pullback is `Distribution.compCLMOfContinuousLinearEquiv`.
+* `Distribution.restrictCLM_compCLMOfOpenPartialHomeomorph_eq_toDistribution`: near a point, the
+  pullback of a complex distribution is a tempered pullback of a cut-off.
 
 ## References
 
@@ -66,8 +74,8 @@ public section
 
 noncomputable section
 
-open Set TopologicalSpace TestFunction MeasureTheory
-open scoped Distributions
+open Filter Set TopologicalSpace TestFunction MeasureTheory
+open scoped Distributions Topology
 
 namespace Distribution
 
@@ -219,7 +227,7 @@ theorem compCLMOfOpenPartialHomeomorph_ofFun [MeasurableSpace E] [BorelSpace E]
   have hdet (x : E) (hx : x ∈ (U : Set E)) : (fderiv ℝ e x).det ≠ 0 :=
     e.det_fderiv_ne_zero_of_contDiffOn he he' (by simp) (hU hx)
   have hfe : LocallyIntegrableOn (fun x ↦ f (e x)) U μ :=
-    hf.comp_contDiffOn_diffeo U.isOpen ((he.mono hU).of_le (by simp)) (e.injOn.mono hU) hdet hUΩ
+    hf.comp_contDiffOn_diffeo U.isOpen ((he.mono hU).of_le (by simp)) hdet hUΩ
   ext φ
   rw [compCLMOfOpenPartialHomeomorph_apply, ofFun_apply hf, ofFun_apply hfe,
     integral_pushforwardCLM_smul]
@@ -231,5 +239,55 @@ theorem complexPairing_compCLMOfOpenPartialHomeomorph (T : 𝓓'(Ω, ℂ)) (φ :
       T.complexPairing (pushforwardCLM e he he' hU hUΩ φ) := by
   simp only [complexPairing_apply, compCLMOfOpenPartialHomeomorph_apply,
     postcompCLM_pushforwardCLM]
+
+section Tempered
+
+variable {he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source} {he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target}
+  {hU : (U : Set E) ⊆ e.source} {hUΩ : MapsTo e U Ω}
+
+/-- **Localized tempered comparison.** Let `Φ` be a bijection of `E` such that `Φ` and `Φ⁻¹` have
+temperate growth, and which agrees with `e` on an open set `N ⊆ U`. If the test function `χ` equals
+`1` on `e '' N`, then on `N` the pullback `e^* T` is the pullback `Φ^* (χ T)` of the tempered
+distribution `χ T`. -/
+theorem restrictCLM_compCLMOfOpenPartialHomeomorph_eq_toDistribution {N : Opens E}
+    (hNU : N ≤ U) {Φ : E ≃ E} (hΦ : (Φ : E → E).HasTemperateGrowth)
+    (hΨ : (Φ.symm : E → E).HasTemperateGrowth) (hΦe : EqOn Φ e N) (T : 𝓓'(Ω, ℂ))
+    {χ : 𝓓(Ω, ℂ)} (hχ : EqOn χ 1 (e '' N)) :
+    (restrictCLM (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T) : 𝓓'(N, ℂ)) =
+      TemperedDistribution.toDistribution N
+        (TemperedDistribution.compCLM ℂ Φ hΦ hΨ (T.cutoffTempered χ)) := by
+  ext φ
+  rw [restrictCLM_apply, compCLMOfOpenPartialHomeomorph_apply,
+    TemperedDistribution.toDistribution_apply, TemperedDistribution.compCLM_apply_apply,
+    ← complexPairing_postcompCLM_ofRealCLM]
+  refine (cutoffTempered_apply T χ fun y ↦ ?_).symm
+  -- `φ` vanishes off `N`, and `Φ⁻¹ = e⁻¹` on the open set `e '' N`.
+  have hφ (z : E) (hz : z ∉ (N : Set E)) : φ z = 0 :=
+    image_eq_zero_of_notMem_tsupport fun h ↦ hz (φ.tsupport_subset h)
+  have hNs : (N : Set E) ⊆ e.source := fun z hz ↦ hU (hNU hz)
+  have hopen : IsOpen (e '' N) := (e.isOpen_image_iff_of_subset_source hNs).2 N.isOpen
+  have hsymm : EqOn Φ.symm e.symm (e '' N) := by
+    rintro _ ⟨z, hz, rfl⟩
+    rw [e.left_inv (hNs hz), Equiv.symm_apply_eq, hΦe hz]
+  simp only [postcompCLM_apply, Function.comp_apply, Complex.ofRealCLM_apply,
+    SchwartzMap.pushforwardCLM_apply, toSchwartzMapCLM_apply, smul_eq_mul]
+  by_cases hy : y ∈ e '' N
+  · obtain ⟨z, hz, rfl⟩ := hy
+    have hev : (Φ.symm : E → E) =ᶠ[𝓝 (e z)] e.symm :=
+      eventually_of_mem (hopen.mem_nhds ⟨z, hz, rfl⟩) hsymm
+    have hd : fderiv ℝ Φ.symm (e z) = fderiv ℝ e.symm (e z) := hev.fderiv_eq
+    rw [pushforwardCLM_apply_of_mem _ (e.map_source (hNs hz)), hχ ⟨z, hz, rfl⟩, hd,
+      hsymm ⟨z, hz, rfl⟩]
+    simp [hNU]
+  · have h₁ : Φ.symm y ∉ (N : Set E) := fun h ↦ hy ⟨_, h, by rw [← hΦe h, Equiv.apply_symm_apply]⟩
+    have h₂ : pushforwardCLM e he he' hU hUΩ (monoCLM ℝ φ) y = 0 := by
+      by_cases hyt : y ∈ e.target
+      · rw [pushforwardCLM_apply_of_mem _ hyt]
+        have : e.symm y ∉ (N : Set E) := fun h ↦ hy ⟨_, h, e.right_inv hyt⟩
+        simp [hNU, hφ _ this]
+      · exact pushforwardCLM_apply_of_notMem _ hyt
+    simp [h₂, hφ _ h₁]
+
+end Tempered
 
 end Distribution

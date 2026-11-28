@@ -7,7 +7,10 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.MeasureTheory.Integral.Indicator
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
+import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 import TauCeti.MeasureTheory.OuterMeasure.AE
 import TauCeti.Probability.Moments.Chebyshev
 
@@ -49,10 +52,23 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
   vanishing upper tails of extended nonnegative functions
   (`MeasureTheory.tendsto_measure_le_enorm_mul`), such as square energies in probability.
 
+Convergence in measure transfers to an absolutely continuous finite measure, and is unchanged
+between equivalent finite measures.
+
 ## Main results
 
+* `MeasureTheory.TendstoInMeasure.bdd_smul`: pointwise scalar multiplication by a uniformly
+  bounded function preserves convergence in measure without measurability or finiteness.
 * `MeasureTheory.tendstoInMeasure_of_tendsto_integral_norm_sq`: convergence in mean square
   implies convergence in measure for any measure and filter.
+* `MeasureTheory.tendsto_measure_ge_of_ae_eventually_le`: fixed-threshold tail convergence to
+  zero of measurable `ℝ≥0∞`-valued errors transfers along a countably generated filter on a
+  finite measure space to a measurable family dominated eventually in the filter for almost every
+  sample point.
+* `MeasureTheory.tendsto_measure_lintegral_mono`,
+  `MeasureTheory.tendsto_measure_lintegral_enorm_sq_bdd_mul`, and
+  `MeasureTheory.tendsto_measure_lintegral_enorm_add_sq`: inner-measure monotonicity transfer
+  and algebraic stability for convergence in measure of slice square lower integrals.
 * `MeasureTheory.exists_subseq_ae_tendsto_of_tendsto_integral_norm_sub_sq`: a sequence converging
   in mean square has an almost everywhere convergent subsequence.
 * `MeasureTheory.ae_le_of_tendsto_integral_norm_sub_sq`: almost everywhere bounds
@@ -104,7 +120,7 @@ public section
 namespace TauCeti
 
 open Filter MeasureTheory
-open scoped ENNReal Topology
+open scoped ENNReal NNReal Topology
 
 variable {α ι E : Type*} {m : MeasurableSpace α} {μ : Measure α} {l : Filter ι}
 
@@ -317,6 +333,25 @@ theorem tendstoInMeasure_prod_of_ae_tendstoInMeasure
     (Eventually.of_forall fun _ ↦ ae_of_all _ fun _ ↦ measure_mono (Set.subset_univ _))
     (by rw [lintegral_const]; finiteness) hlim
 
+/-- Convergence in measure transfers to an absolutely continuous finite measure. No
+measurability of the functions, finiteness of the original measure, or countability of the
+index filter is required. In particular, convergence in probability survives an absolutely
+continuous change of probability measure. -/
+theorem TendstoInMeasure.mono_ac {α E ι : Type*} {_ : MeasurableSpace α}
+    {μ ν : Measure α} [IsFiniteMeasure ν] [EDist E] {l : Filter ι}
+    {f : ι → α → E} {g : α → E} (hf : TendstoInMeasure μ f l g) (hνμ : ν ≪ μ) :
+    TendstoInMeasure ν f l g :=
+  fun ε hε ↦ hνμ.tendsto_measure_zero (hf ε hε)
+
+/-- Equivalent finite measures have the same convergent-in-measure families. This does not
+assert preservation of any Lᵖ moment. -/
+theorem tendstoInMeasure_iff_of_mutuallyAbsolutelyContinuous {α E ι : Type*}
+    {_ : MeasurableSpace α} {μ ν : Measure α} [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    [EDist E] {l : Filter ι} {f : ι → α → E} {g : α → E}
+    (hμν : μ ≪ ν) (hνμ : ν ≪ μ) :
+    TendstoInMeasure μ f l g ↔ TendstoInMeasure ν f l g :=
+  ⟨fun h ↦ h.mono_ac hνμ, fun h ↦ h.mono_ac hμν⟩
+
 /-- If the mean norms tend to zero, every positive norm tail has vanishing measure, even
 on varying measure spaces. Integrability of the norms is only needed eventually. -/
 theorem tendsto_measure_norm_ge_of_tendsto_integral_norm {ι E : Type*}
@@ -453,6 +488,21 @@ theorem TendstoInMeasure.const_smul [SMul 𝕜 E] [PseudoEMetricSpace E]
     (hf : TendstoInMeasure μ f l g) (c : 𝕜) :
     TendstoInMeasure μ (fun i x ↦ c • f i x) l (fun x ↦ c • g x) :=
   hf.uniformContinuous_comp (uniformContinuous_const_smul c)
+
+/-- Pointwise scalar multiplication by a uniformly bounded function preserves convergence in
+measure, with no measurability or finite-measure assumptions. -/
+theorem TendstoInMeasure.bdd_smul [SeminormedAddCommGroup 𝕜] [PseudoMetricSpace E] [Zero E]
+    [SMul 𝕜 E] [IsBoundedSMul 𝕜 E] {c : α → 𝕜} {C : ℝ} {f : ι → α → E} {g : α → E}
+    (hc : ∀ x, ‖c x‖ ≤ C) (hf : TendstoInMeasure μ f l g) :
+    TendstoInMeasure μ (fun i x ↦ c x • f i x) l (fun x ↦ c x • g x) :=
+  tendstoInMeasure_iff_dist.2 fun ε hε ↦ by
+    have hM : 0 < max C 1 := zero_lt_one.trans_le (le_max_right C 1)
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+      (tendstoInMeasure_iff_dist.1 hf (ε / max C 1) (div_pos hε hM))
+      (fun _ ↦ zero_le) fun i ↦ measure_mono fun x hx ↦ (div_le_iff₀' hM).2 <|
+        hx.trans ((dist_smul_pair (c x) (f i x) (g x)).trans <| by
+          rw [dist_zero_right]
+          exact mul_le_mul_of_nonneg_right ((hc x).trans (le_max_left C 1)) dist_nonneg)
 
 /-- Finite sums preserve convergence in measure in any uniform additive commutative group and on
 any measure space. -/
@@ -623,6 +673,102 @@ theorem TendstoInMeasure.mul [Zero R] [Mul R] [PseudoMetricSpace R] [IsBoundedSM
   hf₁.smul hg₁ hg₂ hf₂
 
 end Algebra
+
+/-- On a finite measure space, fixed-threshold tail convergence to `0` of measurable `ℝ≥0∞`-valued
+errors transfers along any countably generated filter to another measurable error family that is
+dominated by it eventually in the filter for almost every sample point. -/
+theorem tendsto_measure_ge_of_ae_eventually_le {α ι : Type*} {mα : MeasurableSpace α}
+    {μ : Measure α} [IsFiniteMeasure μ] {l : Filter ι} [l.IsCountablyGenerated]
+    {E F : ι → α → ℝ≥0∞} (hE : ∀ i, Measurable (E i)) (hF : ∀ i, Measurable (F i))
+    {ε : ℝ≥0∞} (hlim : Tendsto (fun i ↦ μ {x | ε ≤ F i x}) l (𝓝 0))
+    (hle : ∀ᵐ x ∂μ, ∀ᶠ i in l, E i x ≤ F i x) :
+    Tendsto (fun i ↦ μ {x | ε ≤ E i x}) l (𝓝 0) := by
+  let B (i : ι) : Set α := {x | ε ≤ E i x} \ {x | ε ≤ F i x}
+  have hB : Tendsto (fun i ↦ μ (B i)) l (𝓝 0) := by
+    simpa using tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure (As := B) l
+      MeasurableSet.empty
+      (fun i ↦ (measurableSet_le measurable_const (hE i)).diff
+        (measurableSet_le measurable_const (hF i)))
+      (hle.mono fun x hx ↦ hx.mono fun i hi ↦ by
+        simp only [B, Set.mem_sdiff, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
+          not_and, not_not]
+        exact fun hεE ↦ hεE.trans hi)
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa only [add_zero] using hlim.add hB) (fun _ ↦ zero_le) fun i ↦
+    (measure_mono fun x hx ↦ by simp only [B, Set.mem_union, Set.mem_sdiff]; tauto).trans
+      (measure_union_le _ _)
+
+/-- Monotonicity in the inner measure transfers convergence to `0` in `ν`-measure of lower
+integrals `y ↦ ∫⁻ x, f i x y ∂μ₂` to any dominated inner measure `μ₁ ≤ μ₂`, with no
+measurability or finiteness assumptions. -/
+theorem tendsto_measure_lintegral_mono {α β ι : Type*}
+    [MeasurableSpace α] [MeasurableSpace β] {μ₁ μ₂ : Measure α} {ν : Measure β}
+    (hμ : μ₁ ≤ μ₂) {l : Filter ι} {f : ι → α → β → ℝ≥0∞}
+    (he : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, f i x y ∂μ₂}) l (𝓝 0))
+    {ε : ℝ≥0∞} (hε : 0 < ε) :
+    Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, f i x y ∂μ₁}) l (𝓝 0) :=
+  tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (he ε hε)
+    (fun _ ↦ zero_le) fun _ ↦ measure_mono fun _ hω ↦ hω.trans (lintegral_mono' hμ le_rfl)
+
+/-- If `‖f i x y‖ₑ ≤ ‖ξ y‖ₑ * ‖g i x y‖ₑ` with `ξ` uniformly norm-bounded and the slice square
+lower integrals `y ↦ ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ` converge to `0` in `ν`-measure along `l`, then so
+do the slice square lower integrals of `f i`. Neither measurability nor finiteness of `μ` or `ν`
+is needed. -/
+theorem tendsto_measure_lintegral_enorm_sq_bdd_mul {α β ι E F G : Type*}
+    {mα : MeasurableSpace α} {mβ : MeasurableSpace β} {μ : Measure α} {ν : Measure β}
+    [ENorm E] [ENorm F] [SeminormedAddCommGroup G] {l : Filter ι}
+    {f : ι → α → β → E} {g : ι → α → β → F} {ξ : β → G} {C : ℝ}
+    (hC : ∀ y, ‖ξ y‖ ≤ C)
+    (he : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ}) l (𝓝 0))
+    (hle : ∀ i x y, ‖f i x y‖ₑ ≤ ‖ξ y‖ₑ * ‖g i x y‖ₑ) {ε : ℝ≥0∞} (hε : 0 < ε) :
+    Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ}) l (𝓝 0) := by
+  let M : NNReal := ⟨max C 1, by positivity⟩
+  have hM0 : (M : ℝ≥0∞) ≠ 0 :=
+    ENNReal.coe_ne_zero.mpr (NNReal.coe_pos.mp (lt_of_lt_of_le zero_lt_one (le_max_right _ _))).ne'
+  have hξM (y : β) : ‖ξ y‖ₑ ≤ M := by
+    rw [eNorm_le_coe, ← NNReal.coe_le_coe, coe_nnNorm]; exact (hC y).trans (le_max_left _ _)
+  have hM2_pos : (0 : ℝ≥0∞) < (M : ℝ≥0∞) ^ 2 := sq (M : ℝ≥0∞) ▸ ENNReal.mul_pos hM0 hM0
+  have hM2_top : (M : ℝ≥0∞) ^ 2 ≠ ∞ := ENNReal.pow_ne_top ENNReal.coe_ne_top
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (he (ε / (M : ℝ≥0∞) ^ 2) (ENNReal.div_pos hε.ne' hM2_top))
+    (fun _ ↦ zero_le) fun i ↦ measure_mono fun y hy ↦ ?_
+  rw [Set.mem_ofPred_eq, ENNReal.div_le_iff_le_mul (Or.inl hM2_pos.ne') (Or.inl hM2_top), mul_comm]
+  exact hy.trans <| (lintegral_mono fun x ↦ ((pow_le_pow_left' (hle i x y) 2).trans_eq
+    (mul_pow _ _ 2)).trans (mul_le_mul_of_nonneg_right (pow_le_pow_left' (hξM y) 2)
+      zero_le)).trans_eq (lintegral_const_mul' _ _ hM2_top)
+
+/-- If eventually in `l`, for every `y`, the squared norm `x ↦ ‖f i x y‖ₑ ^ 2` of the first
+slice is `μ`-almost-everywhere measurable, and the slice square lower integrals
+`y ↦ ∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ` and `y ↦ ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ` both converge to `0` in
+`ν`-measure along `l`, then so does the slice square lower integral of `f i + g i`. -/
+theorem tendsto_measure_lintegral_enorm_add_sq {α β ι E : Type*}
+    {mα : MeasurableSpace α} {mβ : MeasurableSpace β} {μ : Measure α} {ν : Measure β}
+    [SeminormedAddCommGroup E] {l : Filter ι} {f g : ι → α → β → E}
+    (hf : ∀ᶠ i in l, ∀ y, AEMeasurable (fun x ↦ ‖f i x y‖ₑ ^ 2) μ)
+    (he₁ : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ}) l (𝓝 0))
+    (he₂ : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ}) l (𝓝 0))
+    {ε : ℝ≥0∞} (hε : 0 < ε) :
+    Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, ‖f i x y + g i x y‖ₑ ^ 2 ∂μ}) l (𝓝 0) := by
+  have hδ : 0 < ε / 4 := ENNReal.div_pos hε.ne' (by norm_num)
+  have hsum : Tendsto (fun i ↦ ν {y | ε / 4 ≤ ∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ} +
+      ν {y | ε / 4 ≤ ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ}) l (𝓝 0) := by
+    simpa using (he₁ _ hδ).add (he₂ _ hδ)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
+    (.of_forall fun _ ↦ zero_le) (hf.mono fun i hi ↦ (measure_mono fun y hy ↦ ?_).trans
+      (measure_union_le _ _))
+  have hbd : (∫⁻ x, ‖f i x y + g i x y‖ₑ ^ 2 ∂μ) ≤
+      2 * ((∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ) + ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ) := by
+    simpa only [Pi.zero_apply, sub_zero, sub_neg_eq_add, eNorm_neg] using
+      TauCeti.lintegral_enorm_sub_sq_le_two_mul (f := (f i · y)) (g := fun x ↦ -g i x y)
+        (h := 0) (by simpa only [Pi.zero_apply, sub_zero] using hi y)
+  by_contra hnot
+  simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
+  have h4 : (2 : ℝ≥0∞) * (ε / 4 + ε / 4) ≤ ε := by
+    calc (2 : ℝ≥0∞) * (ε / 4 + ε / 4) = 4 * (ε / 4) := by ring
+      _ ≤ ε := ENNReal.mul_div_le
+  exact (hy.trans hbd).not_gt <|
+    (ENNReal.mul_lt_mul_right (by norm_num) (by norm_num)
+      (ENNReal.add_lt_add hnot.1 hnot.2)).trans_le h4
 
 /-- **A finite union bound along a filter.** If each of finitely many events `A j i` has measure
 tending to zero along `l` and every `B i` is covered by them, then `P i (B i)` tends to zero. The

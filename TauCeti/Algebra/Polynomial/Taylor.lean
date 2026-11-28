@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.RingTheory.Ideal.Span
+import TauCeti.Algebra.Polynomial.LinearFactor
 
 /-!
 # Taylor coefficients at a root and in subleading degree
@@ -49,6 +50,8 @@ idempotent, while that of `(X - C r) ^ 2` has coordinate `0` in order `1`.
 
 * `Polynomial.coeff_taylor_eq_sum`: the coefficients of the Taylor expansion as finite sums of
   binomial multiples of the coefficients of `p` times powers of `r`.
+* `Polynomial.coeff_taylor_eq_coeff_of_natDegree_le`: for `p.natDegree ≤ d`, the degree-`d`
+  coefficient of `taylor r p` equals `p.coeff d`.
 * `Polynomial.taylor_mul_X_sub_C`, `Polynomial.taylor_mul_X_sub_C_pow`,
   `Polynomial.taylor_X_sub_C_pow`: the Taylor expansion at `r` of `p * (X - C r) ^ m` is
   `taylor r p * X ^ m`, and that of `(X - C r) ^ m` is `X ^ m`, over any ring.
@@ -70,6 +73,9 @@ idempotent, while that of `(X - C r) ^ 2` has coordinate `0` in order `1`.
   `Polynomial.le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero`: `(X - r) ^ n` divides `p`
   (and for `p ≠ 0`, `n ≤ p.rootMultiplicity r`) if and only if the Hasse derivatives of `p` of
   order less than `n` vanish at `r`.
+* `Polynomial.coeff_taylor_map_algebraMap`, `Polynomial.aeval_hasseDeriv_eq_zero_of_pow_dvd`: the
+  Taylor coefficients at a point `ζ` of an `R`-algebra are the values at `ζ` of Hasse derivatives,
+  and those of order less than `m` vanish on multiples of `g ^ m` when `g(ζ) = 0`.
 * `Polynomial.eval_hasseDeriv_X_sub_C_pow`: the Hasse derivatives of `(X - r) ^ m` at `r`, over any
   ring.
 * `Polynomial.taylor_comp_C_mul_X`, `Polynomial.eval_hasseDeriv_comp_C_mul_X`: the Taylor
@@ -99,6 +105,14 @@ theorem coeff_taylor_eq_sum {R : Type*} [Semiring R] {p : R[X]} {N : ℕ} (hN : 
     ((Nat.sub_le _ _).trans_lt hN))]
   refine Finset.sum_congr rfl fun k _ => ?_
   rw [hasseDeriv_coeff, nsmul_eq_mul, mul_assoc]
+
+/-- If `p.natDegree ≤ d`, the degree-`d` coefficient of `taylor r p` equals `p.coeff d`. -/
+theorem coeff_taylor_eq_coeff_of_natDegree_le {R : Type*} [Semiring R] {p : R[X]} {d : ℕ}
+    (hp : p.natDegree ≤ d) (r : R) : (taylor r p).coeff d = p.coeff d := by
+  rcases hp.eq_or_lt with rfl | hlt
+  · rw [coeff_taylor_natDegree, coeff_natDegree]
+  · rw [coeff_eq_zero_of_natDegree_lt ((natDegree_taylor _ _).trans_lt hlt),
+      coeff_eq_zero_of_natDegree_lt hlt]
 
 /-- Translating `p * (X - r)` by `r` gives `taylor r p * X`. Unlike `Polynomial.taylor_mul`, this
 does not need commutativity: the coefficients of `X - C r` commute with `X + C r`. -/
@@ -191,6 +205,21 @@ theorem mem_span_X_sub_C_pow_iff_forall_eval_hasseDeriv_eq_zero {R : Type*} [Rin
     refine ⟨taylor (-r) g, taylor_injective r ?_⟩
     rw [taylor_mul_X_sub_C_pow, hg, (commute_X_pow g n).eq]
     simpa using congr_arg (· * X ^ n) (taylor_neg_taylor (-r) g)
+
+/-- The Taylor coefficients at `ζ` of the image of `p` in an `R`-algebra are the values at `ζ` of
+the Hasse derivatives of `p`. -/
+theorem coeff_taylor_map_algebraMap {R B : Type*} [CommSemiring R] [CommSemiring B] [Algebra R B]
+    (ζ : B) (p : R[X]) (k : ℕ) :
+    (taylor ζ (p.map (algebraMap R B))).coeff k = aeval ζ (hasseDeriv k p) := by
+  rw [taylor_coeff, hasseDeriv_map, eval_map_algebraMap]
+
+/-- If `ζ` is a root of `g` in an `R`-algebra and `g ^ m ∣ p`, then the Hasse derivatives of `p` of
+order less than `m` vanish at `ζ`. -/
+theorem aeval_hasseDeriv_eq_zero_of_pow_dvd {R B : Type*} [CommSemiring R] [CommSemiring B]
+    [Algebra R B] {ζ : B} {g p : R[X]} (hg : aeval ζ g = 0) {m : ℕ} (h : g ^ m ∣ p) {k : ℕ}
+    (hk : k < m) : aeval ζ (hasseDeriv k p) = 0 := by
+  obtain ⟨c, hc⟩ := pow_sub_dvd_hasseDeriv_of_pow_dvd k h
+  rw [hc, map_mul, map_pow, hg, zero_pow (by omega), zero_mul]
 
 variable {R : Type*} [CommRing R]
 

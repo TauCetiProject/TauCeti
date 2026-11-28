@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
+public import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 
 import Mathlib.MeasureTheory.Function.FactorsThrough
 
@@ -32,9 +33,13 @@ one-sided inverse has that inverse on both sides.
   linear isometry. Mathlib's `@[simps!]` generates only `compMeasurePreservingₗᵢ_apply_coe`,
   which unfolds one level too far to rewrite with. `MeasureTheory.Lp.coe_compMeasurePreservingₗᵢ`
   is its unapplied form, for statements about the map itself.
+* `MeasureTheory.Lp.compMeasurePreserving_castLpₗᵢ_eq`: precomposition commutes with
+  transporting the target measure along `TauCeti.castLpₗᵢ`.
 * `MeasureTheory.Lp.compMeasurePreserving_monotone` and
   `MeasureTheory.Lp.compMeasurePreserving_nonneg`: for ordered values, precomposition is monotone
   and hence positive, since the order on `Lp` is almost everywhere pointwise.
+* `MeasureTheory.Lp.ae_compMeasurePreserving_eq_zero_iff`: precomposition by `f` carries the
+  almost-everywhere zero set on `S` to the one on `f⁻¹(S)`.
 * `MeasureTheory.Lp.exists_compMeasurePreservingₗᵢ_eq_of_stronglyMeasurable_comap` factors
   a comap-measurable `Lp` function through any measure-preserving map, for complete value spaces.
 * `MeasureTheory.Lp.mem_range_compMeasurePreservingₗᵢ_iff` characterizes its range by
@@ -102,6 +107,24 @@ theorem compMeasurePreserving_nonneg [PartialOrder E] (hf : MeasurePreserving f 
     {g : Lp E p μb} (hg : 0 ≤ g) : 0 ≤ compMeasurePreserving f hf g := by
   simpa only [map_zero] using compMeasurePreserving_monotone hf hg
 
+/-- Precomposition by a measure-preserving map `f` transports zero sets: `u ∘ f` vanishes almost
+everywhere on `f⁻¹(S)` if and only if `u` vanishes almost everywhere on `S`. -/
+theorem ae_compMeasurePreserving_eq_zero_iff (hf : MeasurePreserving f μ μb) {S : Set β}
+    (hS : MeasurableSet S) (u : Lp E p μb) :
+    (∀ᵐ x ∂μ, f x ∈ S → compMeasurePreserving f hf u x = 0) ↔ ∀ᵐ y ∂μb, y ∈ S → u y = 0 := by
+  have hmeas : MeasurableSet {y | y ∈ S → u y = 0} := by
+    have h := hS.compl.union
+      ((Lp.stronglyMeasurable u).measurableSet_eq_fun (stronglyMeasurable_const (b := 0)))
+    convert h using 1
+    ext y
+    simp [imp_iff_not_or]
+  have key := ae_map_iff (μ := μ) hf.measurable.aemeasurable hmeas
+  rw [hf.map_eq] at key
+  rw [key]
+  refine Filter.eventually_congr ?_
+  filter_upwards [coeFn_compMeasurePreserving u hf] with x hx
+  rw [hx, Function.comp_apply]
+
 variable (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [Fact (1 ≤ p)]
 
 /-- The application lemma for `MeasureTheory.Lp.compMeasurePreservingₗᵢ`.
@@ -124,6 +147,15 @@ isometry induces. -/
 theorem coe_compMeasurePreservingₗᵢ (hf : MeasurePreserving f μ μb) :
     ⇑(compMeasurePreservingₗᵢ 𝕜 f hf : Lp E p μb →ₗᵢ[𝕜] Lp E p μ) = compMeasurePreserving f hf :=
   funext (compMeasurePreservingₗᵢ_apply 𝕜 hf)
+
+/-- Precomposition on `Lp` commutes with transporting the target measure along
+`TauCeti.castLpₗᵢ`. -/
+theorem compMeasurePreserving_castLpₗᵢ_eq {ν₁ ν₂ : Measure β} (h : ν₁ = ν₂) (f : α → β)
+    (hf₁ : MeasurePreserving f μ ν₁) (hf₂ : MeasurePreserving f μ ν₂) (x : Lp E p ν₁) :
+    compMeasurePreserving f hf₁ x =
+      compMeasurePreserving f hf₂ (_root_.TauCeti.castLpₗᵢ (𝕜 := 𝕜) h x) := by
+  subst h
+  simp only [_root_.TauCeti.castLpₗᵢ_apply, cast_eq]
 
 section CompleteSpace
 

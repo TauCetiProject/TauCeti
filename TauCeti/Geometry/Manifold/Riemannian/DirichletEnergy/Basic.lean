@@ -126,7 +126,7 @@ energy of `φ`. -/
 theorem dirichletEnergyOn_eq_of_tsupport_subset {φ : M → ℝ} {s : Set M}
     (hs : tsupport φ ⊆ s) : dirichletEnergyOn I φ s = dirichletEnergy I φ := by
   refine setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ ?_
-  rw [mgradient_eq_zero_iff.2 ((notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hx (hs h)).mvfderiv_eq
-    |>.trans mvfderiv_zero), norm_zero, zero_pow two_ne_zero]
+  rw [mgradient_eq_zero_of_notMem_tsupport (fun h ↦ hx (hs h)), norm_zero,
+    zero_pow two_ne_zero]
 
 end TauCeti.Manifold

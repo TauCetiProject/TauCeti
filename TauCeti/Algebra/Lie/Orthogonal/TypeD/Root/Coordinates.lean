@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.AllGenerators
 public import Mathlib.LinearAlgebra.Basis.Defs
-public import TauCeti.LinearAlgebra.Matrix.Alternating
+public import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
 
 /-!
 # Native matrix coordinates for the split even orthogonal Lie algebra
