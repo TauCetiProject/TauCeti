@@ -244,6 +244,8 @@ lemma fixedPointsTriangle_mor₁ (M : Algebra (𝟭 (CochainComplex C ℤ))) :
 @[simp]
 lemma fixedPointsTriangle_mor₂ (M : Algebra (𝟭 (CochainComplex C ℤ))) :
     M.fixedPointsTriangle.mor₂ = DerivedCategory.Q.map (id (α := M.a ⟶ M.a) M.str) - 𝟙 _ := by
+  -- The mapping cocone's second arrow is its defining map. Unfold the localized
+  -- triangle's second arrow so that additivity of Q applies to the cochain difference.
   change DerivedCategory.Q.map (id (α := M.a ⟶ M.a) M.str - 𝟙 M.a) = _
   calc
     _ = DerivedCategory.Q.map (id (α := M.a ⟶ M.a) M.str) -
@@ -336,6 +338,8 @@ example (X : C) :
     DerivedCategory.isZero_of_isLE _ 0 1 (by omega)
   have hφ : (DerivedCategory.homologyFunctor C 0).map M.fixedPointsTriangle.mor₂ = 0 := by
     rw [M.fixedPointsTriangle_mor₂]
+    -- The local algebra M was constructed with identity structure map. Reduce that
+    -- projection to the identity on M.a so that Functor.map_id matches.
     change (DerivedCategory.homologyFunctor C 0).map
       (DerivedCategory.Q.map (𝟙 M.a) - 𝟙 (DerivedCategory.Q.obj M.a)) = 0
     rw [Functor.map_id, sub_self, Functor.map_zero]
