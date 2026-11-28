@@ -13,8 +13,8 @@ import Mathlib.Tactic.Linarith
 /-!
 # Farthest-first sequences
 
-A list `l` of points of a pseudometric space is farthest-first when each entry after the first
-is a point whose distance to the set of earlier entries is the largest possible. A
+A list `l` of points of a space with a distance `dist` is farthest-first when each entry after
+the first is a point whose distance to the set of earlier entries is the largest possible. A
 farthest-first list of length `k` is a choice of centres by the farthest-first traversal of
 Gonzalez for the `k`-centre problem. The main result is the approximation guarantee of this
 method: if at most `l.length` points cover the space with radius `r`, then the entries of a
@@ -48,7 +48,11 @@ public section
 
 namespace List
 
-variable {V : Type*} [PseudoMetricSpace V]
+variable {V : Type*}
+
+section Dist
+
+variable [Dist V]
 
 /-- A list `l` is farthest-first when, for each position `i ≥ 1`, every point `x` has an entry
 `c` before position `i` with `dist x c ≤ dist l[i] c'` for every entry `c'` before position `i`:
@@ -73,7 +77,7 @@ theorem isFarthestFirst_nil : ([] : List V).IsFarthestFirst := by
 @[simp]
 theorem isFarthestFirst_singleton (a : V) : [a].IsFarthestFirst := by
   intro i hi h0
-  simp at hi
+  simp only [length_singleton] at hi
   omega
 
 /-- `l ++ [z]` is farthest-first exactly when `l` is farthest-first and, if `l` is nonempty,
@@ -85,7 +89,7 @@ theorem isFarthestFirst_append_singleton_iff {l : List V} {z : V} :
   constructor
   · intro h
     refine ⟨fun i hi h0 x ↦ ?_, fun hl x ↦ ?_⟩
-    · obtain ⟨c, hc, hc'⟩ := h i (by simp; omega) h0 x
+    · obtain ⟨c, hc, hc'⟩ := h i (by simp only [length_append, length_singleton]; omega) h0 x
       rw [List.take_append_of_le_length hi.le] at hc hc'
       refine ⟨c, hc, fun c' h' ↦ ?_⟩
       simpa [List.getElem_append_left hi] using hc' c' h'
@@ -119,6 +123,10 @@ private theorem IsFarthestFirst.lt_dist_getElem {l : List V} (hl : l.IsFarthestF
   have hi : l[i] ∈ l.take j := List.mem_take_iff_getElem.2 ⟨i, by omega, by simp⟩
   exact (hx c (List.mem_of_mem_take hc)).trans_le (hc' _ hi)
 
+end Dist
+
+variable [PseudoMetricSpace V]
+
 /-- The approximation guarantee of the farthest-first traversal (Gonzalez): if at most
 `l.length` points `C` cover the space with radius `r`, then the entries of a farthest-first
 list `l` cover it with radius `2 * r`. -/
@@ -127,7 +135,7 @@ theorem IsFarthestFirst.exists_dist_le_two_mul {l : List V} (hl : l.IsFarthestFi
     ∃ c ∈ l, dist x c ≤ 2 * r := by
   by_contra! hx
   -- The point `x` together with the entries of `l`, indexed by `Option (Fin l.length)`.
-  let p : Option (Fin l.length) → V := fun a ↦ a.elim x fun i ↦ l[i]
+  let p : Option (Fin l.length) → V := fun a ↦ a.elim x fun i ↦ l[(i : ℕ)]
   choose g hgC hg using fun a ↦ hr (p a)
   obtain ⟨a, b, hab, he⟩ := Fintype.exists_ne_map_eq_of_card_lt (fun a ↦ (⟨g a, hgC a⟩ : C))
     (by simpa using Nat.lt_succ_of_le hC)
@@ -135,15 +143,14 @@ theorem IsFarthestFirst.exists_dist_le_two_mul {l : List V} (hl : l.IsFarthestFi
     have ha := hg a
     rw [show g a = g b from congrArg Subtype.val he] at ha
     linarith [hg b, dist_triangle_right (p a) (p b) (g b)]
-  -- Any two of these `l.length + 1` points are at distance more than `2 * r`.
-  have hsep : ∀ i j : Fin l.length, i < j → 2 * r < dist l[j] l[i] := fun i j hij ↦
-    hl.lt_dist_getElem hx hij j.isLt
-  rcases a with _ | i <;> rcases b with _ | j
+  -- Two different ones of these `l.length + 1` points are at distance more than `2 * r`:
+  -- by `hx` when one of them is `x`, and by `lt_dist_getElem` when both are entries of `l`.
+  rcases a with _ | i <;> rcases b with _ | j <;> simp only [p, Option.elim] at hpq
   · exact hab rfl
   · exact (hx _ (List.getElem_mem _)).not_ge hpq
   · exact (hx _ (List.getElem_mem _)).not_ge (by rwa [dist_comm] at hpq)
   · rcases lt_or_gt_of_ne (fun h ↦ hab (congrArg some h)) with hij | hij
-    · exact (hsep i j hij).not_ge (by rwa [dist_comm] at hpq)
-    · exact (hsep j i hij).not_ge hpq
+    · exact (hl.lt_dist_getElem hx (Fin.lt_def.1 hij) j.isLt).not_ge (by rwa [dist_comm] at hpq)
+    · exact (hl.lt_dist_getElem hx (Fin.lt_def.1 hij) i.isLt).not_ge hpq
 
 end List
