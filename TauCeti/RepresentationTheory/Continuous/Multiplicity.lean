@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.Fredholm.ClosedRange
 public import TauCeti.Analysis.Fredholm.ContinuousFamily
+public import TauCeti.RepresentationTheory.Continuous.Basic
 public import TauCeti.RepresentationTheory.Continuous.Intertwining
-public import TauCeti.RepresentationTheory.Continuous.Invariants
 public import TauCeti.RepresentationTheory.Continuous.KernelCokernel
 public import TauCeti.RepresentationTheory.Continuous.LinHom
 

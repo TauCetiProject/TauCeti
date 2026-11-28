@@ -91,8 +91,11 @@ private theorem relativePropertyT_of_exists_invariant_norm_sub_quarter {K Λ : S
     fun V _ _ _ ρ hρ ξ hξ hξF ↦ ?_).relativePropertyT hδ
   obtain ⟨v, hvK, hvξ⟩ := hF₁ V ρ hρ ξ hξ fun g hg ↦
     (hξF g (Finset.mem_union_left _ hg)).trans_le (min_le_left _ _)
-  have hvK' : v ∈ ((ρ.restrict Λ.subtype).restrict (K.subgroupOf Λ).subtype).invariants :=
-    fun h ↦ hvK ⟨_, mem_subgroupOf.mp h.property⟩
+  have hvK' : v ∈ ((ρ.restrict Λ.subtype).restrict (K.subgroupOf Λ).subtype).invariants := by
+    rw [mem_invariants_restrict] at hvK ⊢
+    intro h hh
+    rw [restrict_apply_apply, coe_subtype]
+    exact hvK h (mem_subgroupOf.mp hh)
   have hmove (q : Q) : ‖ρ.restrict Λ.subtype q.out v - v‖ < 3 / 4 := by
     have hq : ‖ρ (q.out : Γ) ξ - ξ‖ < 1 / 4 :=
       (hξF _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ (Finset.mem_univ q)))).trans_le
@@ -223,9 +226,12 @@ private theorem forall_posSemidef_norm_sub_one_lt_subgroupOf {𝕜 : Type*} [RCL
   let x₀ : Γ ⧸ H := ((1 : Γ) : Γ ⧸ H)
   let s : Γ ⧸ H → Γ := Function.update Quotient.out x₀ 1
   have hs (x : Γ ⧸ H) : (s x : Γ ⧸ H) = x := by
-    by_cases hx : x = x₀
-    · subst hx; simp [s, x₀]
-    · simp [s, hx]
+    have hcomp : ((↑) : Γ → Γ ⧸ H) ∘ s = id := by
+      dsimp only [s]
+      rw [Function.comp_update, show QuotientGroup.mk ∘ Quotient.out = id from
+        funext Quotient.out_eq, Function.update_eq_self_iff]
+      rfl
+    exact congrFun hcomp x
   have hs1 : s x₀ = 1 := Function.update_self x₀ 1 Quotient.out
   intro ε hε
   obtain ⟨F, δ, hδ, hFδ⟩ := hΛ (ε ^ 2 / (2 * N)) (by positivity)

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Topology
-public import TauCeti.RepresentationTheory.Continuous.Invariants
+public import TauCeti.RepresentationTheory.Continuous.Basic
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 import TauCeti.Analysis.InnerProductSpace.Projection.Minimal
 

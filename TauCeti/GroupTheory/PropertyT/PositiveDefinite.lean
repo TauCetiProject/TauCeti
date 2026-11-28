@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import TauCeti.GroupTheory.PropertyT.KazhdanPair
 public import TauCeti.RepresentationTheory.Continuous.Unitary.PositiveDefinite

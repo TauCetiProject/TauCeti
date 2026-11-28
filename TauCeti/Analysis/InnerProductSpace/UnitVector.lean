@@ -55,15 +55,13 @@ theorem norm_sub_le_sqrt_two_mul_norm_sub_inner_smul {F : Type*} [NormedAddCommG
     [InnerProductSpace ℝ F] {ξ x : F} (hξ : ‖ξ‖ = 1) (hx : ‖x‖ = 1) (h : 0 ≤ ⟪ξ, x⟫_ℝ) :
     ‖x - ξ‖ ≤ √2 * ‖x - ⟪ξ, x⟫_ℝ • ξ‖ := by
   have hρ : ⟪ξ, x⟫_ℝ ≤ 1 := by simpa [hξ, hx] using real_inner_le_norm ξ x
-  have h₁ : ‖x - ξ‖ ^ 2 = 2 - 2 * ⟪ξ, x⟫_ℝ := by
-    rw [norm_sub_sq_real, hx, hξ, real_inner_comm]
-    ring
   have h₂ : ‖x - ⟪ξ, x⟫_ℝ • ξ‖ ^ 2 = 1 - ⟪ξ, x⟫_ℝ ^ 2 := by
     simp only [norm_sub_sq_real, inner_smul_right, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs,
       hx, hξ, real_inner_comm x ξ]
     ring
   refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp ?_
-  rw [mul_pow, Real.sq_sqrt zero_le_two, h₁, h₂]
+  rw [mul_pow, Real.sq_sqrt zero_le_two,
+    norm_sub_sq_eq_two_mul_one_sub_re_inner (𝕜 := ℝ) hx hξ, RCLike.re_to_real, h₂]
   nlinarith
 
 /-- For `‖e‖ ≤ 1`, the component `⟪d, e⟫` of `d` along `e` and the remainder `d - ⟪d, e⟫ e`

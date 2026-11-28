@@ -120,7 +120,8 @@ theorem IsKazhdanPair.mono_subgroup {Λ K : Subgroup Γ} {F : Finset Γ} {δ : �
     K.IsKazhdanPair.{u} F δ := by
   intro H _ _ _ ρ hρ hξ
   obtain ⟨v, hv0, hv⟩ := h H ρ hρ hξ
-  exact ⟨v, hv0, fun g ↦ hv ⟨g, hK g.property⟩⟩
+  rw [mem_invariants_restrict] at hv
+  exact ⟨v, hv0, mem_invariants_restrict.mpr fun g hg ↦ hv g (hK hg)⟩
 
 /-- Pushing forward along a group homomorphism carries Kazhdan pairs to the image subgroup. -/
 theorem IsKazhdanPair.map {G' : Type w} [Group G'] [DecidableEq G'] {Λ : Subgroup Γ}
@@ -129,9 +130,11 @@ theorem IsKazhdanPair.map {G' : Type w} [Group G'] [DecidableEq G'] {Λ : Subgro
   rintro H _ _ _ ρ hρ ⟨ξ, hξ, hF⟩
   obtain ⟨v, hv0, hv⟩ := h H (ρ.restrict f) (hρ.restrict f)
     ⟨ξ, hξ, fun g hg ↦ hF (f g) (Finset.mem_image_of_mem f hg)⟩
-  refine ⟨v, hv0, fun g ↦ ?_⟩
-  obtain ⟨x, hx, hfx⟩ := g.property
-  simpa [hfx] using hv ⟨x, hx⟩
+  rw [mem_invariants_restrict] at hv
+  refine ⟨v, hv0, mem_invariants_restrict.mpr fun g hg ↦ ?_⟩
+  obtain ⟨x, hx, rfl⟩ := hg
+  rw [← restrict_apply_apply ρ f]
+  exact hv x hx
 
 /-- Kazhdan pairs are preserved and reflected by group isomorphisms. -/
 theorem isKazhdanPair_map_mulEquiv_iff {G' : Type w} [Group G'] {Λ : Subgroup Γ}
@@ -223,15 +226,17 @@ theorem IsKazhdanPair.of_universe [Small.{u} Γ] {Λ : Subgroup Γ} {F : Finset 
   have hTξ₀ : T ξ₀ = ξ := by simp [T, ξ₀]
   have hξ₀_norm : ‖ξ₀‖ = 1 := by rw [← T.norm_map, hTξ₀, hξ]
   have hTσ (g : Γ) (x : hφ.gnsSpace) : T (σ g x) = ρ g (T x) := by
-    simpa [σ, ρ₀, e, T] using
-      hφ.gnsIsometry_gnsRepresentation hρ₀ (fun _ ↦ rfl) (e.symm g) x
+    dsimp only [σ, T, ρ₀]
+    rw [restrict_apply_apply, hφ.gnsIsometry_gnsRepresentation, restrict_apply_apply,
+      MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom, e.apply_symm_apply]
   have hξ₀_F (g : Γ) (hg : g ∈ F) : ‖σ g ξ₀ - ξ₀‖ < δ := by
     rw [← T.norm_map, map_sub, hTσ, hTξ₀]
     exact hF g hg
   obtain ⟨v₀, hv₀, hv₀Λ⟩ := h hφ.gnsSpace σ hσ ⟨ξ₀, hξ₀_norm, hξ₀_F⟩
-  refine ⟨T v₀, fun h0 ↦ hv₀ (T.injective (by simpa using h0)), fun k ↦ ?_⟩
-  rw [restrict_apply_apply, ← hTσ]
-  exact congrArg T (hv₀Λ k)
+  rw [mem_invariants_restrict] at hv₀Λ
+  refine ⟨T v₀, fun h0 ↦ hv₀ (T.injective (by simpa using h0)),
+    mem_invariants_restrict.mpr fun g hg ↦ ?_⟩
+  rw [← hTσ, hv₀Λ g hg]
 
 /-- **Universe independence of Kazhdan pairs.** When the ambient group `Γ` is small in both `u` and
 `w` (for example whenever `Γ` is countable), whether `(F, δ)` is a Kazhdan pair for `Λ` is

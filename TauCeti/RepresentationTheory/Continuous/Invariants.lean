@@ -7,8 +7,8 @@ module
 
 public import Mathlib.RepresentationTheory.Continuous.TopRep
 public import Mathlib.CategoryTheory.Adjunction.Basic
+public import TauCeti.RepresentationTheory.Continuous.Basic
 public import TauCeti.RepresentationTheory.Continuous.Subrepresentation
-import Mathlib.Dynamics.FixedPoints.Topology
 
 /-!
 # Invariants of continuous representations
@@ -49,8 +49,6 @@ homomorphism `G → G ⧸ S` together with the inclusion `Xˢ ↪ X`.
 
 ## Main results
 
-* `ContRepresentation.isClosed_invariants`: the invariants of a representation on a Hausdorff
-  space are closed, hence complete in a complete ambient space.
 * `TopRep.invariantsFunctor_map`, `TopRep.invariantsFunctor_map_hom`: taking invariants restricts a
   morphism to invariant vectors, as a bundled morphism and as a continuous linear map.
 * `ContRepresentation.apply_mem_invariants_restrict`: the invariants of `π|_S` are a
@@ -100,29 +98,6 @@ theorem continuousLinearEquivInvariants_symm_val (S : AddSubgroup M)
 end AddSubgroup
 
 namespace ContRepresentation
-
-section Closed
-
-variable {R G V : Type*} [Ring R] [Monoid G] [AddCommGroup V] [Module R V]
-
-/-- The invariants of a continuous representation on a Hausdorff space form a closed subspace: they
-are the intersection of the closed fixed-point sets of the operators `π g`. -/
-theorem isClosed_invariants [TopologicalSpace V] [IsTopologicalAddGroup V] [T2Space V]
-    (π : ContRepresentation R G V) :
-    IsClosed (π.invariants : Set V) := by
-  have h : (π.invariants : Set V) = ⋂ g, Function.fixedPoints (π g) := by
-    ext
-    simp [Function.IsFixedPt]
-  rw [h]
-  exact isClosed_iInter fun g ↦ isClosed_fixedPoints (π g).continuous
-
-/-- The invariants of a continuous representation on a complete Hausdorff space are complete. -/
-instance [UniformSpace V] [IsTopologicalAddGroup V] [CompleteSpace V] [T2Space V]
-    (π : ContRepresentation R G V) :
-    CompleteSpace π.invariants :=
-  π.isClosed_invariants.completeSpace_coe
-
-end Closed
 
 variable {R G V : Type*} [Ring R] [Group G] [AddCommGroup V] [TopologicalSpace V]
   [IsTopologicalAddGroup V] [Module R V]

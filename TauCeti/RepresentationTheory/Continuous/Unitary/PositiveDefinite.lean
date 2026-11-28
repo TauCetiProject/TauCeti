@@ -198,9 +198,8 @@ theorem norm_gnsVector_eq_one (h1 : φ 1 = 1) (g : G) : ‖hφ.gnsVector g‖ = 
 theorem norm_gnsVector_sub_sq (g h : G) :
     ‖hφ.gnsVector g - hφ.gnsVector h‖ ^ 2 =
       2 * (RCLike.re (φ 1) - RCLike.re (φ (g⁻¹ * h))) := by
-  rw [gnsVector, gnsVector, hφ.norm_kolmogorovFeature_sub_sq g h]
-  simp only [Matrix.of_apply, inv_mul_cancel]
-  ring
+  simpa [gnsVector] using
+    hφ.norm_kolmogorovFeature_sub_sq_of_diag_eq (c := φ 1) (by simp) (by simp)
 
 /-- For a normalized (`φ 1 = 1`) positive-definite function, the squared distance between two GNS
 vectors is at most `2 * ‖φ (g⁻¹ * h) - 1‖`. -/

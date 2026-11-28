@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.SemidirectProduct
 public import Mathlib.RepresentationTheory.Continuous.Basic
+import Mathlib.Dynamics.FixedPoints.Topology
 
 /-!
 # Basic facts about continuous representations
@@ -25,6 +26,8 @@ on each vector unchanged.
   `ρ' g ∘ T ∘ ρ g⁻¹ = S`.
 * `ContRepresentation.apply_inr_apply_inl`: in a representation of a semidirect product
   `N ⋊[φ] K`, the operator of `k : K` intertwines the action of `n : N` with that of `φ k n`.
+* `ContRepresentation.isClosed_invariants`: the invariants of a representation on a Hausdorff
+  space are closed, hence complete in a complete ambient space.
 
 ## References
 
@@ -85,5 +88,28 @@ theorem apply_inr_apply_inl {R N K V : Type*} [Ring R] [Group N] [Group K] [AddC
     ρ (inr k) (ρ (inl n) v) = ρ (inl (φ k n)) (ρ (inr k) v) := by
   rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul, ← map_mul, inl_aut,
     map_inv, inv_mul_cancel_right]
+
+section Closed
+
+variable {R G V : Type*} [Ring R] [Monoid G] [AddCommGroup V] [Module R V]
+
+/-- The invariants of a continuous representation on a Hausdorff space form a closed subspace: they
+are the intersection of the closed fixed-point sets of the operators `π g`. -/
+theorem isClosed_invariants [TopologicalSpace V] [IsTopologicalAddGroup V] [T2Space V]
+    (π : ContRepresentation R G V) :
+    IsClosed (π.invariants : Set V) := by
+  have h : (π.invariants : Set V) = ⋂ g, Function.fixedPoints (π g) := by
+    ext
+    simp [Function.IsFixedPt]
+  rw [h]
+  exact isClosed_iInter fun g ↦ isClosed_fixedPoints (π g).continuous
+
+/-- The invariants of a continuous representation on a complete Hausdorff space are complete. -/
+instance [UniformSpace V] [IsTopologicalAddGroup V] [CompleteSpace V] [T2Space V]
+    (π : ContRepresentation R G V) :
+    CompleteSpace π.invariants :=
+  π.isClosed_invariants.completeSpace_coe
+
+end Closed
 
 end ContRepresentation

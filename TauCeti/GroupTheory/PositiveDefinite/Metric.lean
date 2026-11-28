@@ -52,12 +52,9 @@ theorem sqrt_re_one_sub_re_mul_le {φ : G → 𝕜}
   have hdist (a b : G) :
       dist (hφ.kolmogorovFeature a) (hφ.kolmogorovFeature b) =
         Real.sqrt 2 * Real.sqrt (RCLike.re (φ 1) - RCLike.re (φ (a⁻¹ * b))) := by
-    rw [dist_eq_norm, ← Real.sqrt_sq (norm_nonneg _), hφ.norm_kolmogorovFeature_sub_sq a b]
-    simp only [of_apply, inv_mul_cancel]
-    have hmul :
-        RCLike.re (φ 1) - 2 * RCLike.re (φ (a⁻¹ * b)) + RCLike.re (φ 1) =
-          2 * (RCLike.re (φ 1) - RCLike.re (φ (a⁻¹ * b))) := by ring
-    rw [hmul, Real.sqrt_mul (by norm_num)]
+    rw [dist_eq_norm, ← Real.sqrt_sq (norm_nonneg _),
+      hφ.norm_kolmogorovFeature_sub_sq_of_diag_eq (c := φ 1) (by simp) (by simp),
+      of_apply, Real.sqrt_mul (by norm_num)]
   have htri := dist_triangle (hφ.kolmogorovFeature 1) (hφ.kolmogorovFeature g)
     (hφ.kolmogorovFeature (g * h))
   rw [hdist 1 (g * h), hdist 1 g, hdist g (g * h)] at htri
