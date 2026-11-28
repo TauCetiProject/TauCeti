@@ -45,12 +45,11 @@ the vectors `v` and `J v` are `g`-orthogonal of equal length, so `σ(v, J v) = |
 therefore holds with `K` the maximal comass of `θ`: the integral `∫_C u^* θ` over a closed
 pseudoholomorphic curve is bounded by the comass of `θ` times the symplectic area `∫_C u^* σ`.
 
-The intended application bounds, for a basis of closed two-forms, every real pairing of the
-homology class of a curve of bounded area, and then uses
-`TauCeti.IsComassBounded.finite_setOf_area_le`, with injectivity from
-`TauCeti.liftBaseChange_pi_injective_of_span_eq_top`, to leave only finitely many possible
-classes. That step depends on identifying `∫_C u^* θ` with
-the pairing of `[θ]` with the class of the curve, a de Rham comparison not provided here.
+The application bounds, for closed two-forms whose periods span, every real pairing of the
+homology class of a curve of bounded area, which leaves only finitely many possible classes
+(`TauCeti.SmoothTwoForm.Tames.finite_setOf_isCurveClass_closedFormHomologyPeriod_le`). That step
+identifies `∫_C u^* θ` with the pairing of `[θ]` with the class of the curve, and uses de Rham's
+theorem on periods (`TauCeti.exists_closedFormHomologyPeriod_eq`).
 
 If `θ` tames `J` strictly along `u`, that is `θ(v, J v) > 0` for every nonzero tangent vector `v`
 at a point of the image, the pairing also detects whether `u` is constant: the integrand

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Killing.Duality
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Lie.Module
 
 /-!
 # The Killing identification of `S(L)` with the polynomial functions on `L`
