@@ -396,6 +396,14 @@ theorem contractNth_castSucc_window_apply {m c : ℕ} (a : Fin (m + 1) → α) {
 
 end ContractNth
 
+/-- Deleting an entry before the last commutes with appending a last entry. -/
+theorem removeNth_castSucc_snoc {n : ℕ} (i : Fin (n + 1)) (a : Fin (n + 1) → α) (x : α) :
+    removeNth (α := fun _ => α) i.castSucc (snoc a x) = snoc (removeNth i a) x := by
+  funext j
+  refine Fin.lastCases ?_ (fun k ↦ ?_) j
+  · simp [removeNth_apply, succAbove_ne_last_last i.castSucc_lt_last.ne]
+  · simp [removeNth_apply, castSucc_succAbove_castSucc]
+
 /-- Deleting entry `j + 1` and then overwriting entry `j` by the deleted entry is deleting
 entry `j`. -/
 theorem update_removeNth_succ_eq_removeNth_castSucc {n : ℕ} (j : Fin (n + 1))
