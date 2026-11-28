@@ -15,6 +15,7 @@ import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Positivity
 import TauCeti.Algebra.Order.BigOperators.Sum.Alternating
+import TauCeti.Geometry.Convex.Cone.Farkas
 
 /-!
 # The flow programme of height-two Lubin–Tate letters
@@ -39,6 +40,12 @@ supremum of the totals `∑ₛ ∑ᵢ x s i` of the flows.
 * `TauCeti.le_flowProgramme`: `ρ_LT(p) ∑ₛ D s ≤ 𝔉_p(D)` for `D ≥ 0` and `p ≠ 1`.
 * `TauCeti.flowProgramme_eq_of_max_le_mul_min`: `𝔉_p(D) = ρ_LT(p) ∑ₛ D s` when `p > 1`, `n ≥ 2`
   and `D s ≤ p D t` for all letters `s`, `t`.
+* `TauCeti.IsDualRadiusVector`: dual radius vectors `σ : ZMod n → ℝ` with `0 ≤ σ s ≤ 1` and
+  `1 ≤ pⁱ σ s + σ (s + i)` for all odd `i < n`.
+* `TauCeti.IsFlow.sum_sum_le_sum_mul`, `TauCeti.IsDualRadiusVector.sum_mul_sub_le_flowProgramme`:
+  weak duality between flows and dual radius vectors.
+* `TauCeti.flowProgramme_duality`: strong LP duality and attainment of `𝔉_p(D)` by a dual radius
+  vector satisfying `1 ≤ pⁱ σ s + σ (s + i)` for every odd `i : ℕ`, for even `n > 0` and `D ≥ 0`.
 
 ## References
 
@@ -230,5 +237,204 @@ theorem flowProgramme_eq_of_max_le_mul_min (hp : 1 < p) (hn : 1 < n)
     sum_congr rfl fun s _ ↦ by simp only [sum_ite_eq', h1, ↓reduceIte]
   rw [one_div_sq_sub_one_mul_sum hp.ne', ← hsum, ← htotal]
   exact flowProgramme_le_sub_of_isFlow hflow
+
+/-! ### Linear-programming duality -/
+
+/-- A *dual radius vector* for the flow programme at `p` on `ZMod n`: a vector `σ : ZMod n → ℝ`
+with `0 ≤ σ s ≤ 1` for every `s`, and `1 ≤ pⁱ σ s + σ (s + i)` for every `s` and every odd
+`i < n`. -/
+def IsDualRadiusVector (p n : ℕ) (σ : ZMod n → ℝ) : Prop :=
+  (∀ s, 0 ≤ σ s ∧ σ s ≤ 1) ∧
+    ∀ s, ∀ i ∈ (range n).filter Odd, 1 ≤ (p : ℝ) ^ i * σ s + σ (s + i)
+
+/-- For an even cycle length `n > 0`, a dual radius vector satisfies `1 ≤ pⁱ σ s + σ (s + i)` for
+every odd `i : ℕ`, not only for `i < n`. -/
+theorem IsDualRadiusVector.one_le_of_odd {σ : ZMod n → ℝ} (hσ : IsDualRadiusVector p n σ)
+    (hn : Even n) (s : ZMod n) {i : ℕ} (hi : Odd i) :
+    1 ≤ (p : ℝ) ^ i * σ s + σ (s + i) := by
+  have hmod_odd : Odd (i % n) := by
+    rw [Nat.odd_iff, Nat.mod_mod_of_dvd i (even_iff_two_dvd.mp hn)]
+    exact Nat.odd_iff.mp hi
+  have hmem : i % n ∈ (range n).filter Odd :=
+    mem_filter.mpr ⟨mem_range.mpr (Nat.mod_lt i (Nat.pos_of_ne_zero (NeZero.ne n))), hmod_odd⟩
+  have hpow : (p : ℝ) ^ (i % n) ≤ (p : ℝ) ^ i := by
+    rcases Nat.eq_zero_or_pos p with rfl | hp
+    · rw [Nat.cast_zero, zero_pow hmod_odd.pos.ne', zero_pow hi.pos.ne']
+    · exact pow_le_pow_right₀ (by exact_mod_cast hp) (Nat.mod_le i n)
+  calc (1 : ℝ) ≤ (p : ℝ) ^ (i % n) * σ s + σ (s + (i % n : ℕ)) := hσ.2 s (i % n) hmem
+    _ = (p : ℝ) ^ (i % n) * σ s + σ (s + i) := by rw [ZMod.natCast_mod]
+    _ ≤ (p : ℝ) ^ i * σ s + σ (s + i) :=
+      add_le_add (mul_le_mul_of_nonneg_right hpow (hσ.1 s).1) le_rfl
+
+/-- **Weak duality** for a flow and a dual radius vector: the total of any flow for `D` is at most
+`∑ₛ D s * σ s`. -/
+theorem IsFlow.sum_sum_le_sum_mul {σ : ZMod n → ℝ} (hx : IsFlow p D x)
+    (hσ : IsDualRadiusVector p n σ) :
+    ∑ s, ∑ i ∈ (range n).filter Odd, x s i ≤ ∑ s, D s * σ s := by
+  have hshift : ∀ i : ℕ, ∑ s, x s i * σ (s + i) = ∑ s, x (s - i) i * σ s := fun i ↦
+    Fintype.sum_equiv (Equiv.addRight (i : ZMod n)) _ _ fun s ↦ by simp
+  calc ∑ s, ∑ i ∈ (range n).filter Odd, x s i
+      ≤ ∑ s, ∑ i ∈ (range n).filter Odd, ((p : ℝ) ^ i * σ s + σ (s + i)) * x s i :=
+        sum_le_sum fun s _ ↦ sum_le_sum fun i hi ↦
+          le_mul_of_one_le_left (hx.nonneg s i) (hσ.2 s i hi)
+    _ = ∑ i ∈ (range n).filter Odd, ∑ s, ((p : ℝ) ^ i * x s i * σ s + x s i * σ (s + i)) := by
+        rw [sum_comm]
+        exact sum_congr rfl fun i _ ↦ sum_congr rfl fun s _ ↦ by ring
+    _ = ∑ i ∈ (range n).filter Odd, ∑ s, ((p : ℝ) ^ i * x s i + x (s - i) i) * σ s :=
+        sum_congr rfl fun i _ ↦ by
+          rw [sum_add_distrib, hshift i, ← sum_add_distrib]
+          exact sum_congr rfl fun s _ ↦ by ring
+    _ = ∑ s, (∑ i ∈ (range n).filter Odd, ((p : ℝ) ^ i * x s i + x (s - i) i)) * σ s := by
+        rw [sum_comm]
+        exact sum_congr rfl fun s _ ↦ (sum_mul ..).symm
+    _ ≤ ∑ s, D s * σ s :=
+        sum_le_sum fun s _ ↦ mul_le_mul_of_nonneg_right (hx.sum_le s) (hσ.1 s).1
+
+/-- Algebraic expansion of the dual objective `∑ₛ D s * (γ_LT(p) - σ s)`. -/
+private theorem sum_mul_sub_eq (σ : ZMod n → ℝ) :
+    ∑ s, D s * ((p : ℝ) / ((p : ℝ) ^ 2 - 1) - σ s) =
+      (p : ℝ) / ((p : ℝ) ^ 2 - 1) * ∑ s, D s - ∑ s, D s * σ s := by
+  simp_rw [mul_sub, sum_sub_distrib, ← sum_mul, mul_comm (∑ s, D s)]
+
+/-- **Weak duality** for the flow programme: every dual radius vector `σ` gives a lower bound
+`∑ₛ D s * (γ_LT(p) - σ s) ≤ 𝔉_p(D)` for a nonnegative demand `D`. -/
+theorem IsDualRadiusVector.sum_mul_sub_le_flowProgramme {σ : ZMod n → ℝ}
+    (hσ : IsDualRadiusVector p n σ) (hD : ∀ s, 0 ≤ D s) :
+    ∑ s, D s * ((p : ℝ) / ((p : ℝ) ^ 2 - 1) - σ s) ≤ flowProgramme p n D := by
+  rw [sum_mul_sub_eq]
+  exact sub_le_flowProgramme hD fun _ hx ↦ hx.sum_sum_le_sum_mul hσ
+
+omit [NeZero n] in
+/-- Clamping a nonnegative dual certificate to `[0, 1]` preserves the odd-shift inequalities
+`1 ≤ pⁱ σ s + σ (s + i)`. -/
+private theorem isDualRadiusVector_min_one {σ : ZMod n → ℝ} (h0 : ∀ s, 0 ≤ σ s)
+    (h1 : ∀ s, ∀ i ∈ (range n).filter Odd, 1 ≤ (p : ℝ) ^ i * σ s + σ (s + i)) :
+    IsDualRadiusVector p n fun s ↦ min (σ s) 1 := by
+  refine ⟨fun s ↦ ⟨le_min (h0 s) zero_le_one, min_le_right _ _⟩, fun s i hi ↦ ?_⟩
+  dsimp only
+  rcases le_total (σ (s + i)) 1 with hsi | hsi
+  · rw [min_eq_left hsi]
+    rcases le_total (σ s) 1 with hs | hs
+    · rw [min_eq_left hs]
+      exact h1 s i hi
+    · rw [min_eq_right hs, mul_one]
+      rcases Nat.eq_zero_or_pos p with rfl | hp
+      · have hi0 : i ≠ 0 := (mem_filter.mp hi).2.pos.ne'
+        have h := h1 s i hi
+        rw [Nat.cast_zero, zero_pow hi0, zero_mul, zero_add] at h
+        rw [Nat.cast_zero, zero_pow hi0, zero_add]
+        exact h
+      · have hp1 : (1 : ℝ) ≤ (p : ℝ) ^ i := one_le_pow₀ (by exact_mod_cast hp)
+        linarith [h0 (s + i)]
+  · rw [min_eq_right hsi]
+    have hnonneg : 0 ≤ (p : ℝ) ^ i * min (σ s) 1 :=
+      mul_nonneg (by positivity) (le_min (h0 s) zero_le_one)
+    linarith
+
+/-- Constraint matrix of the flow programme LP: rows `.inl s` encode the demand inequalities
+`∑ᵢ (pⁱ x s i + x (s - i) i) ≤ D s` and rows `.inr k` encode nonnegativity `-x k ≤ 0`. -/
+private noncomputable def flowMatrix (p n : ℕ) :
+    Matrix (ZMod n ⊕ ZMod n × {i // i ∈ (range n).filter Odd})
+      (ZMod n × {i // i ∈ (range n).filter Odd}) ℝ :=
+  fun r k ↦ match r with
+    | .inl s => (if k.1 = s then (p : ℝ) ^ (k.2 : ℕ) else 0) +
+        (if k.1 = s - (k.2 : ℕ) then 1 else 0)
+    | .inr k₀ => if k = k₀ then -1 else 0
+
+/-- A vector `v` satisfying `flowMatrix p n *ᵥ v ≤ Sum.elim D 0` extends by zero to a flow for `D`
+whose total equals `∑ k, v k`. -/
+private theorem isFlow_of_flowMatrix_mulVec_le
+    {v : ZMod n × {i // i ∈ (range n).filter Odd} → ℝ}
+    (hv : (flowMatrix p n).mulVec v ≤ Sum.elim D 0) :
+    IsFlow p D (fun s i ↦ if hi : i ∈ (range n).filter Odd then v (s, ⟨i, hi⟩) else 0) ∧
+      dotProduct (fun _ ↦ 1) v = ∑ s, ∑ i ∈ (range n).filter Odd,
+        if hi : i ∈ (range n).filter Odd then v (s, ⟨i, hi⟩) else 0 := by
+  classical
+  refine ⟨⟨fun s i ↦ ?_, fun s ↦ ?_⟩, ?_⟩
+  · split_ifs with hi
+    · have h := hv (.inr (s, ⟨i, hi⟩))
+      simp only [Matrix.mulVec, dotProduct, flowMatrix, Sum.elim_inr, Pi.zero_apply, ite_mul,
+        neg_mul, one_mul, zero_mul, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte] at h
+      linarith
+    · exact le_rfl
+  · have h := hv (.inl s)
+    simp only [Matrix.mulVec, dotProduct, flowMatrix, Sum.elim_inl] at h
+    refine le_trans ?_ h
+    rw [← Finset.sum_attach ((range n).filter Odd), Fintype.sum_prod_type, Finset.sum_comm]
+    exact le_of_eq (Finset.sum_congr rfl fun i _ ↦ by
+      simp only [add_mul, ite_mul, zero_mul, one_mul, Finset.sum_add_distrib,
+        Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, i.property, ↓reduceDIte])
+  · simp only [dotProduct, one_mul, Fintype.sum_prod_type]
+    refine Finset.sum_congr rfl fun s _ ↦ ?_
+    rw [← Finset.sum_attach ((range n).filter Odd)]
+    exact Finset.sum_congr rfl fun i _ ↦ by simp [i.property]
+
+/-- Farkas certificate for an upper bound `M` on the total of every flow for `D ≥ 0`: produces a
+nonnegative dual vector `σ` with `1 ≤ pⁱ σ s + σ (s + i)` for all odd `i < n` and
+`∑ₛ D s * σ s ≤ M`. -/
+private theorem exists_nonneg_dual_of_flow_le {M : ℝ} (hD : ∀ s, 0 ≤ D s)
+    (hM : ∀ x, IsFlow p D x → ∑ s, ∑ i ∈ (range n).filter Odd, x s i ≤ M) :
+    ∃ σ : ZMod n → ℝ, (∀ s, 0 ≤ σ s) ∧
+      (∀ s, ∀ i ∈ (range n).filter Odd, 1 ≤ (p : ℝ) ^ i * σ s + σ (s + i)) ∧
+      ∑ s, D s * σ s ≤ M := by
+  classical
+  let ι := ZMod n × {i // i ∈ (range n).filter Odd}
+  have hfeas : ∃ v : ι → ℝ,
+      (flowMatrix p n).mulVec v ≤ Sum.elim D 0 ∧ (0 : Matrix (Fin 0) ι ℝ).mulVec v = 0 :=
+    ⟨0, fun r ↦ by rcases r with s | k <;> simp [hD], by simp⟩
+  have hvalid : ∀ v : ι → ℝ, (flowMatrix p n).mulVec v ≤ Sum.elim D 0 →
+      (0 : Matrix (Fin 0) ι ℝ).mulVec v = 0 → dotProduct (fun _ ↦ 1) v ≤ M := fun v hv _ ↦ by
+    obtain ⟨hx, hcv⟩ := isFlow_of_flowMatrix_mulVec_le hv
+    exact hcv ▸ hM _ hx
+  obtain ⟨y, hy, _, hyA, hyb⟩ :=
+    (Matrix.forall_dotProduct_le_iff_exists_vecMul_add_vecMul_eq (flowMatrix p n) (Sum.elim D 0)
+      (0 : Matrix (Fin 0) ι ℝ) 0 (fun _ ↦ 1) M hfeas).mp hvalid
+  simp only [Matrix.vecMul_zero, add_zero, dotProduct_zero] at hyA hyb
+  refine ⟨fun s ↦ y (.inl s), fun s ↦ hy (.inl s), fun t i hi ↦ ?_, ?_⟩
+  · have h := congrFun hyA (t, ⟨i, hi⟩)
+    simp only [Matrix.vecMul, dotProduct, flowMatrix, Fintype.sum_sum_type, mul_add, mul_ite,
+      mul_zero, mul_one, Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ,
+      ↓reduceIte] at h
+    have hshift : ∑ s : ZMod n, (if t = s - (i : ZMod n) then y (.inl s) else 0) =
+        y (.inl (t + i)) := by
+      rw [Finset.sum_eq_single (t + (i : ZMod n))]
+      · simp
+      · exact fun s _ hs ↦ ite_eq_right_iff.mpr fun heq ↦ (hs (eq_add_of_sub_eq heq.symm)).elim
+      · simp
+    rw [hshift] at h
+    have hyk : 0 ≤ y (.inr (t, ⟨i, hi⟩)) := hy _
+    linarith
+  · have h : dotProduct y (Sum.elim D 0) = ∑ s, D s * y (.inl s) := by
+      simp only [dotProduct, Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr, Pi.zero_apply,
+        mul_zero, Finset.sum_const_zero, add_zero]
+      exact Finset.sum_congr rfl fun s _ ↦ mul_comm _ _
+    linarith
+
+/-- **Strong duality** for the flow programme: for any nonnegative demand `D`, `𝔉_p(D)` is
+attained by a dual radius vector `σ`. -/
+theorem exists_isDualRadiusVector_flowProgramme_eq (hD : ∀ s, 0 ≤ D s) :
+    ∃ σ : ZMod n → ℝ, IsDualRadiusVector p n σ ∧
+      flowProgramme p n D = ∑ s, D s * ((p : ℝ) / ((p : ℝ) ^ 2 - 1) - σ s) := by
+  set M : ℝ := sSup {t : ℝ | ∃ x, IsFlow p D x ∧ t = ∑ s, ∑ i ∈ (range n).filter Odd, x s i}
+  have hM : ∀ x, IsFlow p D x → ∑ s, ∑ i ∈ (range n).filter Odd, x s i ≤ M := fun x hx ↦
+    le_csSup ⟨(∑ s, D s) / (p + 1), by rintro _ ⟨y, hy, rfl⟩; exact hy.sum_sum_le_div⟩ ⟨x, hx, rfl⟩
+  obtain ⟨σ₀, hσ₀_nonneg, hσ₀_odd, hσ₀_sum⟩ := exists_nonneg_dual_of_flow_le hD hM
+  let σ : ZMod n → ℝ := fun s ↦ min (σ₀ s) 1
+  have hσ : IsDualRadiusVector p n σ := isDualRadiusVector_min_one hσ₀_nonneg hσ₀_odd
+  refine ⟨σ, hσ, le_antisymm ?_ (hσ.sum_mul_sub_le_flowProgramme hD)⟩
+  have hσ_sum : ∑ s, D s * σ s ≤ M :=
+    (Finset.sum_le_sum fun s _ ↦ mul_le_mul_of_nonneg_left (min_le_left _ _) (hD s)).trans hσ₀_sum
+  rw [flowProgramme_eq_sub_sSup, sum_mul_sub_eq]
+  exact sub_le_sub_left hσ_sum _
+
+/-- **Strong LP duality for the flow programme**: for even `n > 0` and any nonnegative demand `D`,
+`𝔉_p(D)` is attained by a dual radius vector `σ : ZMod n → ℝ` that also satisfies
+`1 ≤ pⁱ σ s + σ (s + i)` for every odd `i : ℕ`. -/
+theorem flowProgramme_duality (hn : Even n) (hD : ∀ s, 0 ≤ D s) :
+    ∃ σ : ZMod n → ℝ, IsDualRadiusVector p n σ ∧
+      (∀ s, ∀ i : ℕ, Odd i → 1 ≤ (p : ℝ) ^ i * σ s + σ (s + i)) ∧
+      flowProgramme p n D = ∑ s, D s * ((p : ℝ) / ((p : ℝ) ^ 2 - 1) - σ s) := by
+  obtain ⟨σ, hσ, heq⟩ := exists_isDualRadiusVector_flowProgramme_eq (p := p) hD
+  exact ⟨σ, hσ, fun s _ hi ↦ hσ.one_le_of_odd hn s hi, heq⟩
 
 end TauCeti
