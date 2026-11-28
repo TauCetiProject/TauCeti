@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.CohenMacaulay
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 public import TauCeti.RingTheory.CohenMacaulay.Ring
 
-import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Stalk
+import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Stalk.Basic
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 import TauCeti.RingTheory.RegularLocalRing.Maximal
 

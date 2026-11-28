@@ -70,6 +70,8 @@ topology, not on the chosen ideal of definition.
 * `TauCeti.AdicRing.CompletedAway.denseRange_algebraMap`: the image of `A_f` is dense.
 * `TauCeti.AdicRing.CompletedAway.exists_sub_mem_map`: every element of `A_{f}` is congruent
   modulo `I A_{f}` to an element of `A_f`.
+* `TauCeti.AdicRing.CompletedAway.exists_sub_algebraMap_mem_map_pow`: every element of `A_{f}`
+  is congruent modulo `I ^ n A_{f}` to an element of `A_f`.
 * `TauCeti.AdicRing.CompletedAway.ringHom_ext`: continuous ring homomorphisms out of `A_{f}` into
   a Hausdorff ring agreeing on `A` are equal.
 * `TauCeti.AdicRing.CompletedAway.existsUnique_lift`: the universal property of `A_{f}`.
@@ -94,6 +96,8 @@ topology, not on the chosen ideal of definition.
   laws.
 * `TauCeti.AdicRing.CompletedAway.nonempty_algHom_iff`: there is an `A`-algebra homomorphism
   `A_{f} → A_{g}` if and only if `g` lies in the radical of `f A + I`.
+* `TauCeti.AdicRing.CompletedAway.algebraMap_bijective_of_isUnit`: when `f` is a unit in `A`,
+  the canonical map `A → A_{f}` is bijective.
 
 ## References
 
@@ -202,13 +206,20 @@ theorem denseRange_algebraMap :
     inferInstanceAs (TopologicalSpace (CompletedAway A f))
   AdicCompletion.denseRange_algebraMap (fg_map A f) (map_algebraMap_eq A f ▸ isAdic A f)
 
+/-- Every element of the completed localisation `A_{f}` is congruent modulo `I ^ n A_{f}` to the
+image of an element of `A_f`. -/
+theorem exists_sub_algebraMap_mem_map_pow (n : ℕ) (x : CompletedAway A f) :
+    ∃ y : Localization.Away f, x - algebraMap (Localization.Away f) (CompletedAway A f) y ∈
+      (IsAdicRing.ideal A ^ n).map (algebraMap A (CompletedAway A f)) := by
+  rw [Ideal.map_pow, map_algebraMap_eq, ← Ideal.map_pow]
+  exact AdicCompletion.exists_sub_algebraMap_mem_map_pow (fg_map A f) n x
+
 /-- Every element of the completed localisation `A_{f}` is congruent modulo `I A_{f}` to the image
 of an element of `A_f`. -/
 theorem exists_sub_mem_map (x : CompletedAway A f) :
     ∃ y : Localization.Away f, x - algebraMap (Localization.Away f) (CompletedAway A f) y ∈
       (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) := by
-  rw [map_algebraMap_eq, ← pow_one (Ideal.map _ (IsAdicRing.ideal A))]
-  exact AdicCompletion.exists_sub_algebraMap_mem_map_pow (fg_map A f) 1 x
+  simpa only [pow_one] using exists_sub_algebraMap_mem_map_pow A f 1 x
 
 /-- Two continuous ring homomorphisms out of the completed localisation `A_{f}` into a Hausdorff
 ring are equal as soon as they agree on the image of `A`. -/
@@ -624,6 +635,27 @@ theorem isHomeomorph_idealEquiv :
   · rfl
 
 end IdealIndependence
+
+/-- When `f` is a unit in `A`, the canonical map `A → A_{f}` into the completed localisation is
+bijective. -/
+theorem algebraMap_bijective_of_isUnit {A : Type*} [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] {f : A} (hf : IsUnit f) :
+    Function.Bijective (algebraMap A (CompletedAway A f)) := by
+  let eAway : A ≃ₐ[A] Localization.Away f :=
+    IsLocalization.atUnits A (Submonoid.powers f) fun _ ⟨n, hn⟩ ↦ hn ▸ hf.pow n
+  have he : (eAway.toRingEquiv : A →+* Localization.Away f) = algebraMap A _ :=
+    RingHom.ext eAway.commutes
+  have : IsAdicComplete ((IsAdicRing.ideal A).map (algebraMap A (Localization.Away f)))
+      (Localization.Away f) :=
+    congrArg (IsAdicRing.ideal A).map he ▸
+      (IsAdicComplete.congr_ringEquiv (IsAdicRing.ideal A) eAway.toRingEquiv).mpr
+        (IsAdicRing.ideal_spec A).2.2
+  have h1 : Function.Bijective (algebraMap (Localization.Away f) (CompletedAway A f)) := by
+    convert (CompletedAway.equivAdicCompletion A f).symm.bijective.comp
+      (AdicCompletion.of_bijective _ _)
+    exact funext fun y ↦ ((CompletedAway.equivAdicCompletion A f).symm.commutes y).symm
+  convert h1.comp (bijective_algebraMap_of_linearEquiv eAway.toLinearEquiv)
+  exact funext (IsScalarTower.algebraMap_apply A (Localization.Away f) (CompletedAway A f))
 
 end CompletedAway
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FormalScheme.Basic
-public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Stalk
+public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Stalk.Basic
 public import Mathlib.AlgebraicGeometry.Noetherian
 import TauCeti.AlgebraicGeometry.FormalScheme.SectionsTopology
 import TauCeti.RingTheory.AdicCompletion.Noetherian

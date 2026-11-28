@@ -8,11 +8,13 @@ module
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.CompletedNeighbourhood
+public import TauCeti.RingTheory.CohenMacaulay.Basic
 
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 import Mathlib.RingTheory.Localization.LocalizationLocalization
 import TauCeti.RingTheory.AdicCompletion.Localization
 import TauCeti.RingTheory.AdicCompletion.LocalRing
+import TauCeti.RingTheory.AdicCompletion.Topology
 import TauCeti.RingTheory.Flat.Colimit
 import TauCeti.RingTheory.Ideal.Maps
 
@@ -35,8 +37,9 @@ corresponding to a prime ideal `𝔭 ⊇ I`. This file defines the completed loc
   (`AdicCompletion.flat_mapₐ_of_isLocalization`), hence over the colimit, because every finite
   family of elements of the colimit comes from a single `A_{f}` (`RingHom.Flat.of_isColimit`).
   Its maximal ideal maps into the kernel of the residue map of `Â_𝔭`, so it is faithfully flat.
-* Since `I ⊆ 𝔭`, the ring `Â_𝔭` is local with maximal ideal `𝔭 Â_𝔭`, and for noetherian `A` it has
-  the Krull dimension of `A_𝔭` and is regular exactly when `A_𝔭` is.
+* Since `I ⊆ 𝔭`, the ring `Â_𝔭` is local with maximal ideal `𝔭 Â_𝔭`, `A_𝔭 → Â_𝔭` is local, `Â_𝔭`
+  is adically complete for every ideal of definition, and for noetherian `A` it has the Krull
+  dimension of `A_𝔭` and shares regularity and the Cohen–Macaulay property with `A_𝔭`.
 
 ## Main definitions
 
@@ -52,19 +55,28 @@ corresponding to a prime ideal `𝔭 ⊇ I`. This file defines the completed loc
   `colim_{f ∉ 𝔭} A_{f} → Â_𝔭` is a local homomorphism.
 * `TauCeti.FormalScheme.Spf.faithfullyFlat_colimitToCompletedAtPrime`: for noetherian `A`, the
   completed localisation `Â_𝔭` is faithfully flat over `colim_{f ∉ 𝔭} A_{f}`.
+* `TauCeti.FormalScheme.Spf.ideal_map_le_maximalIdeal_localization`,
+  `TauCeti.FormalScheme.Spf.isLocalHom_algebraMap_completedAtPrime`: for any ideal of
+  definition `I`, `I A_𝔭 ⊆ 𝔪_{A_𝔭}`, and `A_𝔭 → Â_𝔭` is a local homomorphism.
 * `TauCeti.FormalScheme.Spf.maximalIdeal_completedAtPrime`: `Â_𝔭` is a local ring with maximal
   ideal `𝔭 Â_𝔭`.
+* `TauCeti.FormalScheme.Spf.isAdicComplete_completedAtPrime`: `Â_𝔭` is adically complete for every
+  ideal of definition of `A`.
 * `TauCeti.FormalScheme.Spf.ringKrullDim_completedAtPrime`,
-  `TauCeti.FormalScheme.Spf.isRegularLocalRing_completedAtPrime_iff`: for noetherian `A`, the rings
-  `Â_𝔭` and `A_𝔭` have the same Krull dimension, and one is regular if and only if the other is.
+  `TauCeti.FormalScheme.Spf.isRegularLocalRing_completedAtPrime_iff`,
+  `TauCeti.FormalScheme.Spf.isCohenMacaulay_completedAtPrime_iff`: for noetherian `A`, the rings
+  `Â_𝔭` and `A_𝔭` have the same Krull dimension, and regularity and the Cohen–Macaulay property
+  agree for both.
 
 ## References
 
 * A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, 7.6.15–7.6.17,
   and Ch. I, 10.1.6.
-* [Stacks Project, Lemma 15.44.1](https://stacks.math.columbia.edu/tag/07NV) and
-  [Stacks Project, Lemma 15.44.4](https://stacks.math.columbia.edu/tag/07NY), the dimension and
-  regularity of the completion of a noetherian local ring along an ideal.
+* [Stacks Project, Lemma 15.44.1](https://stacks.math.columbia.edu/tag/07NV),
+  [Stacks Project, Lemma 15.44.2](https://stacks.math.columbia.edu/tag/07NX), and
+  [Stacks Project, Lemma 15.44.4](https://stacks.math.columbia.edu/tag/07NY), the dimension,
+  Cohen–Macaulay property, and regularity of the completion of a noetherian local ring along an
+  ideal.
 -/
 
 public section
@@ -259,38 +271,65 @@ theorem faithfullyFlat_colimitToCompletedAtPrime [IsNoetherianRing A] :
 
 /-! ### The completed localisation as a local ring -/
 
-/-- The ideal of definition of `A_𝔭` lies in its maximal ideal, since `I ⊆ 𝔭`. -/
-private theorem map_ideal_le_maximalIdeal :
-    (IsAdicRing.ideal A).map (algebraMap A (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)) ≤
+omit [IsTopologicalRing A] [IsAdicRing A] in
+/-- The extension of any ideal of definition `I` to `A_𝔭` lies in the maximal ideal of `A_𝔭`. -/
+theorem ideal_map_le_maximalIdeal_localization {I : Ideal A} (hI : IsAdic I) :
+    I.map (algebraMap A (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)) ≤
       maximalIdeal (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) := by
   rw [← Localization.AtPrime.map_eq_maximalIdeal]
-  exact Ideal.map_mono ((mem_carrier_iff_le (IsAdicRing.ideal_spec A).2.1).mp p.property)
+  exact Ideal.map_mono ((mem_carrier_iff_le hI).mp p.property)
 
 /-- The completed localisation `Â_𝔭` is a local ring. -/
 instance isLocalRing_completedAtPrime : IsLocalRing (CompletedAtPrime p) :=
-  TauCeti.AdicCompletion.isLocalRing_of_le (map_ideal_le_maximalIdeal p)
-    ((IsAdicRing.ideal_spec A).1.map _)
+  TauCeti.AdicCompletion.isLocalRing_of_le
+    (ideal_map_le_maximalIdeal_localization p (IsAdicRing.ideal_spec A).2.1)
+
+/-- The canonical completion map `A_𝔭 → Â_𝔭` is a local homomorphism. -/
+instance isLocalHom_algebraMap_completedAtPrime :
+    IsLocalHom
+      (algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) (CompletedAtPrime p)) :=
+  TauCeti.AdicCompletion.isLocalHom_algebraMap_of_le_maximalIdeal
+    (ideal_map_le_maximalIdeal_localization p (IsAdicRing.ideal_spec A).2.1)
 
 /-- The maximal ideal of the completed localisation `Â_𝔭` is generated by `𝔭`. -/
 theorem maximalIdeal_completedAtPrime :
     maximalIdeal (CompletedAtPrime p) =
       (p : PrimeSpectrum A).asIdeal.map (algebraMap A (CompletedAtPrime p)) := by
-  rw [TauCeti.AdicCompletion.maximalIdeal_eq_map_of_le (map_ideal_le_maximalIdeal p)
-    ((IsAdicRing.ideal_spec A).1.map _), ← Localization.AtPrime.map_eq_maximalIdeal, Ideal.map_map,
-    ← IsScalarTower.algebraMap_eq]
+  rw [TauCeti.AdicCompletion.maximalIdeal_eq_map_of_le
+      (ideal_map_le_maximalIdeal_localization p (IsAdicRing.ideal_spec A).2.1)
+      ((IsAdicRing.ideal_spec A).1.map _),
+    ← Localization.AtPrime.map_eq_maximalIdeal, Ideal.map_map, ← IsScalarTower.algebraMap_eq]
+
+/-- For every ideal of definition `I` of `A`, `Â_𝔭` is `I Â_𝔭`-adically complete. -/
+theorem isAdicComplete_completedAtPrime {I : Ideal A} (hI : IsAdic I) :
+    IsAdicComplete (I.map (algebraMap A (CompletedAtPrime p))) (CompletedAtPrime p) :=
+  (IsAdicComplete.map_algebraMap_iff I (CompletedAtPrime p)).mpr <|
+    ((IsAdicRing.ideal_spec A).2.1.isAdicComplete_iff_of_isAdic hI).mp <|
+      (IsAdicComplete.map_algebraMap_iff (IsAdicRing.ideal A) (CompletedAtPrime p)).mp
+        (AdicCompletion.isAdicComplete ((IsAdicRing.ideal_spec A).1.map _))
 
 /-- For a noetherian adic ring `A`, the completed localisation `Â_𝔭` has the Krull dimension of
 `A_𝔭`. -/
 theorem ringKrullDim_completedAtPrime [IsNoetherianRing A] :
     ringKrullDim (CompletedAtPrime p) =
       ringKrullDim (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) :=
-  TauCeti.AdicCompletion.ringKrullDim_eq (map_ideal_le_maximalIdeal p)
+  TauCeti.AdicCompletion.ringKrullDim_eq
+    (ideal_map_le_maximalIdeal_localization p (IsAdicRing.ideal_spec A).2.1)
 
 /-- For a noetherian adic ring `A`, the completed localisation `Â_𝔭` is a regular local ring if
 and only if `A_𝔭` is. -/
 theorem isRegularLocalRing_completedAtPrime_iff [IsNoetherianRing A] :
     IsRegularLocalRing (CompletedAtPrime p) ↔
       IsRegularLocalRing (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) :=
-  TauCeti.AdicCompletion.isRegularLocalRing_iff (map_ideal_le_maximalIdeal p)
+  TauCeti.AdicCompletion.isRegularLocalRing_iff
+    (ideal_map_le_maximalIdeal_localization p (IsAdicRing.ideal_spec A).2.1)
+
+/-- For a noetherian adic ring `A`, `Â_𝔭` is Cohen–Macaulay if and only if `A_𝔭` is. -/
+theorem isCohenMacaulay_completedAtPrime_iff [IsNoetherianRing A] :
+    Module.IsCohenMacaulay (CompletedAtPrime p) (CompletedAtPrime p) ↔
+      Module.IsCohenMacaulay (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)
+        (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) :=
+  TauCeti.AdicCompletion.isCohenMacaulay_self_iff
+    (ideal_map_le_maximalIdeal_localization p (IsAdicRing.ideal_spec A).2.1)
 
 end TauCeti.FormalScheme.Spf

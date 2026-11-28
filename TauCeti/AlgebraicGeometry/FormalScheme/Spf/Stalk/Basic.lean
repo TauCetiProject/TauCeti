@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Basic
-public import TauCeti.RingTheory.CohenMacaulay.Basic
 public import Mathlib.RingTheory.Ideal.Height
 public import Mathlib.RingTheory.RegularLocalRing.Defs
+public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import Mathlib.RingTheory.RingHom.Flat
+public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Basic
+public import TauCeti.RingTheory.CohenMacaulay.Basic
+public import TauCeti.RingTheory.Localization.AtPrime.Basic
 
+import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.Flat.Localization
 import TauCeti.AlgebraicGeometry.FormalScheme.Spf.CompletedNeighbourhood.Noetherian
 import TauCeti.RingTheory.CohenMacaulay.Flat
@@ -25,8 +28,8 @@ Let `A` be a noetherian adic ring and `p` a point of `Spf A`, an open prime `�
 `O_{Spf A, p}` is the colimit of the completed localisations `A_{f}` over the basic open
 neighbourhoods `D(f)` of `p`, and the elements of `A ∖ 𝔭` become units in it, so it receives a
 canonical map from the local ring `A_𝔭` (EGA I, Ch. 0, 7.6.17; Ch. I, 10.1.6). This file shows
-that this map is a flat local homomorphism of noetherian local rings under which `𝔭 A_𝔭`
-generates the maximal ideal of the stalk:
+that `A_𝔭 → O_{Spf A, p}` is a faithfully flat local homomorphism of noetherian local rings under
+which `𝔭 A_𝔭` generates the maximal ideal of the stalk:
 
 * flatness holds because every `A_{f}` is flat over `A`, and a filtered colimit of flat
   `A`-algebras is flat (`RingHom.Flat.of_isColimit_codomain`); flatness over `A` and over its
@@ -41,11 +44,14 @@ Cohen–Macaulay condition at a point of a formal spectrum are computed from its
 
 ## Main definitions
 
+* `TauCeti.FormalScheme.Spf.toStalk p`: the canonical map `A → O_{Spf A, p}`.
 * `TauCeti.FormalScheme.Spf.localizationToStalk p`: the canonical map `A_𝔭 → O_{Spf A, p}`.
 
 ## Main results
 
-* `TauCeti.FormalScheme.Spf.flat_localizationToStalk`: the map `A_𝔭 → O_{Spf A, p}` is flat.
+* `TauCeti.FormalScheme.Spf.flat_localizationToStalk`,
+  `TauCeti.FormalScheme.Spf.faithfullyFlat_localizationToStalk`: the map `A_𝔭 → O_{Spf A, p}` is
+  flat and faithfully flat.
 * `TauCeti.FormalScheme.Spf.map_maximalIdeal_localizationToStalk`: the maximal ideal of `A_𝔭`
   generates the maximal ideal of the stalk.
 * `TauCeti.FormalScheme.Spf.ringKrullDim_stalk`: the stalk `O_{Spf A, p}` and `A_𝔭` have the same
@@ -236,6 +242,131 @@ theorem localizationToStalk_algebraMap (f : BasicNeighbourhood p) (a : A) :
     fromLocalization_comp_algebraMap, ← leg_algebraMap p f]
   exact ConcreteCategory.congr_hom (completedNeighbourhoodColimitIso_germ p _ _ f) _
 
+/-- The canonical ring homomorphism `A →+* 𝒪_{Spf A, p}` sending `a ∈ A` to the germ at `p` of the
+corresponding global section of `Spf A`. -/
+noncomputable def toStalk : A →+* (Spf A).presheaf.stalk p :=
+  have := (IsAdicRing.ideal_spec A).2.1.isAdicComplete
+  ((globalSectionsIso (IsAdicRing.ideal_spec A).2.1).inv ≫
+    (Spf A).presheaf.germ ⊤ p trivial).hom
+
+/-- Defining formula for `toStalk p`: the germ at `p` of the global section corresponding to
+`a ∈ A`. -/
+theorem toStalk_def (a : A) :
+    toStalk p a =
+      have := (IsAdicRing.ideal_spec A).2.1.isAdicComplete
+      (Spf A).presheaf.germ ⊤ p trivial
+        ((globalSectionsIso (IsAdicRing.ideal_spec A).2.1).inv a) := by
+  rfl
+
+/-- On any basic open neighbourhood `D(f)` of `p`, `toStalk p a` is the germ at `p` of the image
+of `a` in `A_{f}`. -/
+theorem toStalk_eq_germ (f : BasicNeighbourhood p) (a : A) :
+    toStalk p a = (Spf A).presheaf.germ (basicOpen f.elem) p (mem_basicOpen.mpr f.notMem)
+      ((basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 f.elem).inv
+        (algebraMap A (CompletedAway A f.elem) a)) := by
+  have := (IsAdicRing.ideal_spec A).2.1.isAdicComplete
+  have h1 := globalSectionsIso_inv_comp_basicOpenSectionsIso_hom
+    (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 f.elem
+  have h2 : (globalSectionsIso (IsAdicRing.ideal_spec A).2.1).inv ≫
+      TopCat.Presheaf.germ (structureSheaf (IsAdicRing.ideal_spec A).2.1).obj ⊤ p trivial =
+      CommRingCat.ofHom (algebraMap A (CompletedAway A f.elem)) ≫
+        (basicOpenSectionsIso _ (IsAdicRing.ideal_spec A).1 f.elem).inv ≫
+        TopCat.Presheaf.germ (structureSheaf _).obj (basicOpen f.elem) p
+          (mem_basicOpen.mpr f.notMem) := by
+    rw [← h1, Category.assoc, Category.assoc, Iso.hom_inv_id_assoc]
+    exact congrArg ((globalSectionsIso _).inv ≫ ·)
+      (TopCat.Presheaf.germ_res (structureSheaf _).obj (homOfLE (le_top : basicOpen f.elem ≤ ⊤)) p
+        (mem_basicOpen.mpr f.notMem)).symm
+  exact ConcreteCategory.congr_hom h2 a
+
+/-- Through the identification of the stalk with `colim_{f ∉ 𝔭} A_{f}`, `toStalk p a` is the image
+of `a ∈ A` from any completed localisation `A_{f}` with `f ∉ 𝔭`. -/
+theorem toStalk_eq_completedNeighbourhoodColimitIso (f : BasicNeighbourhood p) (a : A) :
+    toStalk p a =
+      (completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1
+        (IsAdicRing.ideal_spec A).1).hom
+        (colimit.ι (completedNeighbourhoodDiagram p) f
+          (algebraMap A (CompletedAway A f.elem) a)) :=
+  (toStalk_eq_germ p f a).trans
+    (ConcreteCategory.congr_hom (completedNeighbourhoodColimitIso_germ p _ _ f) _).symm
+
+/-- Every germ in the stalk `𝒪_{Spf A, p}` is represented by an element of `CompletedAway A f.elem`
+for some basic open neighbourhood `f` of `p`. -/
+theorem exists_completedAway_rep (s : (Spf A).presheaf.stalk p) :
+    ∃ (f : BasicNeighbourhood p) (x : CompletedAway A f.elem),
+      (completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1
+        (IsAdicRing.ideal_spec A).1).hom
+        (colimit.ι (completedNeighbourhoodDiagram p) f x) = s := by
+  obtain ⟨f, x, hx⟩ := Concrete.colimit_exists_rep (completedNeighbourhoodDiagram p)
+    ((completedNeighbourhoodColimitIso p _ _).inv s)
+  exact ⟨f, x, hx ▸ ConcreteCategory.congr_hom
+    (completedNeighbourhoodColimitIso p _ _).inv_hom_id s⟩
+
+/-- Every element of `A ∖ 𝔭` maps to a unit in the stalk `𝒪_{Spf A, p}`. -/
+theorem isUnit_toStalk {a : A} (ha : a ∉ (p : PrimeSpectrum A).asIdeal) :
+    IsUnit (toStalk p a) := by
+  rw [toStalk_eq_germ p ⟨a, ha⟩ a]
+  exact ((CompletedAway.isUnit_algebraMap_self A a).map _).map _
+
+/-- `localizationToStalk p` extends `toStalk p` along `A → A_𝔭`. -/
+@[simp]
+theorem localizationToStalk_algebraMap_eq_toStalk (a : A) :
+    localizationToStalk p (algebraMap A (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) a) =
+      toStalk p a := by
+  rw [localizationToStalk_algebraMap p ⊥ a, toStalk_eq_germ p ⊥ a]
+
+/-- The composite `A → A_𝔭 → 𝒪_{Spf A, p}` is `toStalk p`. -/
+@[simp]
+theorem localizationToStalk_comp_algebraMap :
+    (localizationToStalk p).comp
+        (algebraMap A (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)) =
+      toStalk p :=
+  RingHom.ext (localizationToStalk_algebraMap_eq_toStalk p)
+
+/-- Through the identification of the stalk with `colim_{f ∉ 𝔭} A_{f}`, `localizationToStalk p`
+sends an element of `A_f` (`f ∉ 𝔭`) to its image from the completed localisation `A_{f}`. -/
+theorem localizationToStalk_away (f : BasicNeighbourhood p)
+    (y : Localization.Away f.elem) :
+    localizationToStalk p
+        ((p : PrimeSpectrum A).asIdeal.localizationAwayToAtPrime f.elem f.notMem y) =
+      (completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1
+        (IsAdicRing.ideal_spec A).1).hom
+        (colimit.ι (completedNeighbourhoodDiagram p) f
+          (algebraMap (Localization.Away f.elem) (CompletedAway A f.elem) y)) := by
+  let lhs : Localization.Away f.elem →+* (Spf A).presheaf.stalk p :=
+    (localizationToStalk p).comp
+      ((p : PrimeSpectrum A).asIdeal.localizationAwayToAtPrime f.elem f.notMem)
+  let rhs : Localization.Away f.elem →+* (Spf A).presheaf.stalk p :=
+    ((completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1
+      (IsAdicRing.ideal_spec A).1).hom.hom.comp
+      (colimit.ι (completedNeighbourhoodDiagram p) f).hom).comp
+      (algebraMap (Localization.Away f.elem) (CompletedAway A f.elem))
+  refine RingHom.congr_fun
+    (IsLocalization.ringHom_ext (Submonoid.powers f.elem) (j := lhs) (k := rhs)
+      (RingHom.ext fun a ↦ ?_)) y
+  have hl : lhs (algebraMap A _ a) = toStalk p a := by
+    simp only [lhs, RingHom.comp_apply, Ideal.localizationAwayToAtPrime_algebraMap,
+      localizationToStalk_algebraMap_eq_toStalk]
+  have hr : rhs (algebraMap A _ a) =
+      (completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1
+        (IsAdicRing.ideal_spec A).1).hom
+        (colimit.ι (completedNeighbourhoodDiagram p) f
+          (algebraMap A (CompletedAway A f.elem) a)) :=
+    congrArg ((completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1
+        (IsAdicRing.ideal_spec A).1).hom.hom.comp
+        (colimit.ι (completedNeighbourhoodDiagram p) f).hom)
+      (IsScalarTower.algebraMap_apply A (Localization.Away f.elem) (CompletedAway A f.elem) a).symm
+  exact hl.trans ((toStalk_eq_completedNeighbourhoodColimitIso p f a).trans hr.symm)
+
+/-- Pushing an ideal of `A` to `A_𝔭` and then along `localizationToStalk p` agrees with pushing
+it along `toStalk p`. -/
+@[simp]
+theorem map_localizationToStalk_map (J : Ideal A) :
+    (J.map (algebraMap A (Localization.AtPrime (p : PrimeSpectrum A).asIdeal))).map
+        (localizationToStalk p) =
+      J.map (toStalk p) := by
+  rw [Ideal.map_map, localizationToStalk_comp_algebraMap]
+
 /-- The stalks of the formal spectrum of a noetherian adic ring are noetherian (EGA I, Ch. 0,
 7.6.17; Ch. I, 10.1.6). -/
 instance isNoetherianRing_stalk [IsNoetherianRing A] :
@@ -260,6 +391,14 @@ theorem map_maximalIdeal_localizationToStalk :
 instance isLocalHom_localizationToStalk : IsLocalHom (localizationToStalk p) :=
   ((local_hom_tfae (localizationToStalk p)).out 1 3).mpr
     (map_maximalIdeal_localizationToStalk p).le
+
+/-- For noetherian `A`, `A_𝔭 → 𝒪_{Spf A, p}` is faithfully flat. -/
+theorem faithfullyFlat_localizationToStalk [IsNoetherianRing A] :
+    (localizationToStalk p).FaithfullyFlat := by
+  algebraize [localizationToStalk p]
+  have : Module.Flat _ _ := flat_localizationToStalk p
+  have : IsLocalHom (algebraMap _ ((Spf A).presheaf.stalk p)) := isLocalHom_localizationToStalk p
+  exact Module.FaithfullyFlat.of_flat_of_isLocalHom
 
 /-- The map `A_𝔭 → O_{Spf A, p}` as an algebra structure, used to apply results about flat
 algebras to it. -/
