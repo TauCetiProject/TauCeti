@@ -529,22 +529,6 @@ theorem bijective_diagramDivisionEnd_iff_span_eq {D : Set (σ →₀ ℕ)} (hD_u
     OrzechProperty.bijective_of_surjective_endomorphism _
       ((surjective_diagramDivisionEnd_iff_span_eq hD_up hH).mpr h)⟩
 
-omit [Finite σ] [LinearOrder σ] [OrzechProperty A] in
-private def qrSubtypeEquiv {ι M : Type*} [AddCommMonoid M] [Module A M]
-    (Q : ι → Submodule A M) (R : Submodule A M) :
-    ((∀ i, Q i) × R) ≃ {qr : (ι → M) × M // (∀ i, qr.1 i ∈ Q i) ∧ qr.2 ∈ R} :=
-  (Equiv.subtypeProdEquivProd.trans (Equiv.prodCongr Equiv.subtypePiEquivPi (Equiv.refl _))).symm
-
-omit [Finite σ] [LinearOrder σ] [OrzechProperty A] in
-private theorem qrSubtypeEquiv_val_fst {ι M : Type*} [AddCommMonoid M] [Module A M]
-    (Q : ι → Submodule A M) (R : Submodule A M) (p : (∀ i, Q i) × R) (i : ι) :
-    (qrSubtypeEquiv Q R p).val.1 i = (p.1 i : M) := rfl
-
-omit [Finite σ] [LinearOrder σ] [OrzechProperty A] in
-private theorem qrSubtypeEquiv_val_snd {ι M : Type*} [AddCommMonoid M] [Module A M]
-    (Q : ι → Submodule A M) (R : Submodule A M) (p : (∀ i, Q i) × R) :
-    (qrSubtypeEquiv Q R p).val.2 = (p.2 : M) := rfl
-
 /-- For an upward-closed diagram `D` over a commutative semiring with `OrzechProperty A`, spanning
 in degree `ℓ` is equivalent to unique homogeneous supported division in degree `ℓ`. -/
 theorem existsUnique_homogeneous_division_iff_span_eq {D : Set (σ →₀ ℕ)} (hD_up : IsUpperSet D)
@@ -560,13 +544,21 @@ theorem existsUnique_homogeneous_division_iff_span_eq {D : Set (σ →₀ ℕ)} 
   let Q (v : D.diagramVertices) :=
     restrictSupport A {β ∈ D.diagramBox v.val | v.val.degree + β.degree = ℓ}
   let R := restrictSupport A {γ | γ ∉ D ∧ γ.degree = ℓ}
+  let hsupp : ((∀ v, Q v) × R) ≃
+      {qr : (D.diagramVertices → MvPolynomial σ A) × MvPolynomial σ A //
+        (∀ v, qr.1 v ∈ Q v) ∧ qr.2 ∈ R} :=
+    (Equiv.subtypeProdEquivProd.trans
+      (Equiv.prodCongr Equiv.subtypePiEquivPi (Equiv.refl _))).symm
+  have hsupp_fst (p : (∀ v, Q v) × R) (v : D.diagramVertices) :
+      (hsupp p).val.1 v = (p.1 v : MvPolynomial σ A) := rfl
+  have hsupp_snd (p : (∀ v, Q v) × R) :
+      (hsupp p).val.2 = (p.2 : MvPolynomial σ A) := rfl
   let heqv (G : homogeneousSubmodule σ A ℓ) :=
-    (((D.diagramQREquiv hD_up ℓ).toEquiv.trans (qrSubtypeEquiv Q R)).subtypeEquiv
+    (((D.diagramQREquiv hD_up ℓ).toEquiv.trans hsupp).subtypeEquiv
       (p := fun P ↦ D.diagramDivisionEnd H hH ℓ P = G)
       (q := fun qr ↦ ∑ v, qr.val.1 v * H v + qr.val.2 = G.val) fun P ↦ by
         simp only [Subtype.ext_iff, coe_diagramDivisionEnd_eq_diagramQREquiv hD_up hH,
-          Equiv.trans_apply, LinearEquiv.coe_toEquiv, qrSubtypeEquiv_val_fst,
-          qrSubtypeEquiv_val_snd]).trans <|
+          Equiv.trans_apply, LinearEquiv.coe_toEquiv, hsupp_fst, hsupp_snd]).trans <|
       (Equiv.subtypeSubtypeEquivSubtypeInter _
         (fun qr : (D.diagramVertices → MvPolynomial σ A) × MvPolynomial σ A ↦
           ∑ v, qr.1 v * H v + qr.2 = G.val)).trans (Equiv.subtypeEquivRight fun _ ↦ and_assoc)

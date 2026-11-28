@@ -424,36 +424,6 @@ section BoundaryCases
 
 variable {σ A : Type*} [CommSemiring A] [Finite σ] [LinearOrder σ]
 
-private theorem span_singleton_smul_eq_iff_isUnit {M : Type*} [AddCommMonoid M] [Module A M]
-    {v : M} (hv : ∀ a : A, a • v = v → a = 1) (c : A) :
-    Submodule.span A {c • v} = Submodule.span A {v} ↔ IsUnit c := by
-  rw [isUnit_iff_exists_inv']
-  refine ⟨fun h ↦ ?_, fun ⟨u, hu⟩ ↦ le_antisymm
-    (Submodule.span_le.mpr (Set.singleton_subset_iff.mpr (Submodule.smul_mem _ c
-      (Submodule.subset_span (Set.mem_singleton v)))))
-    (Submodule.span_le.mpr (Set.singleton_subset_iff.mpr (by
-      have huc : v = u • (c • v) := by rw [smul_smul, hu, one_smul]
-      exact Set.mem_of_eq_of_mem huc
-        (Submodule.smul_mem _ u (Submodule.subset_span (Set.mem_singleton (c • v)))))))⟩
-  obtain ⟨u, hu⟩ := Submodule.mem_span_singleton.mp
-    (h.symm ▸ Submodule.subset_span (Set.mem_singleton v))
-  exact ⟨u, hv (u * c) (by rwa [mul_smul])⟩
-
-omit [Finite σ] [LinearOrder σ] in
-private theorem span_singleton_smul_monomial_eq_homogeneousSubmodule_iff {ℓ : ℕ} {μ : σ →₀ ℕ}
-    (hμ : μ.degree = ℓ) (huniq : ∀ γ : σ →₀ ℕ, γ.degree = ℓ → γ = μ) (c : A) :
-    Submodule.span A {c • monomial μ (1 : A)} = homogeneousSubmodule σ A ℓ ↔ IsUnit c := by
-  have hhom : homogeneousSubmodule σ A ℓ = Submodule.span A {monomial μ (1 : A)} :=
-    le_antisymm (homogeneousSubmodule_le_iff.mpr fun γ hγ ↦
-      huniq γ hγ ▸ Submodule.subset_span (Set.mem_singleton _))
-      (Submodule.span_le.mpr (Set.singleton_subset_iff.mpr
-        ((mem_homogeneousSubmodule ℓ _).mpr (isHomogeneous_monomial 1 hμ))))
-  rw [hhom]
-  exact span_singleton_smul_eq_iff_isUnit
-    (fun a ha ↦ by
-      classical
-      simpa [smul_monomial] using congrArg (fun q : MvPolynomial σ A ↦ q.coeff μ) ha) c
-
 /-- For `D = Set.univ`, `D.diagramSpanSet H ℓ` consists precisely of the multiples
 `monomial β 1 * H ⟨0, _⟩` with `β.degree = ℓ`. -/
 theorem diagramSpanSet_univ

@@ -17,6 +17,7 @@ import TauCeti.RingTheory.RootsOfUnity.Basic
 import TauCeti.RingTheory.MvPolynomial.Initial.Weight
 import TauCeti.Algebra.MvPolynomial.Rename
 import TauCeti.Data.Finsupp.Weight
+import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # Scaling the variables of a homogeneous polynomial
@@ -57,8 +58,10 @@ most `m` is the sum of its components of degree at most `m`
 (`MvPolynomial.sum_homogeneousComponent_of_totalDegree_le`). With no variables every homogeneous
 polynomial of positive degree is zero (`MvPolynomial.homogeneousSubmodule_succ_eq_bot_of_isEmpty`),
 a submodule contains `homogeneousSubmodule σ R d` iff it contains every degree-`d` monomial
-(`MvPolynomial.homogeneousSubmodule_le_iff`), and in one variable a homogeneous polynomial of
-degree `d` is a multiple of the unique degree-`d` monomial
+(`MvPolynomial.homogeneousSubmodule_le_iff`), when `μ` is the unique exponent of degree `ℓ` then
+`{c • monomial μ 1}` spans `homogeneousSubmodule σ R ℓ` iff `c` is a unit
+(`MvPolynomial.span_singleton_smul_monomial_eq_homogeneousSubmodule_iff`), and in one variable a
+homogeneous polynomial of degree `d` is a multiple of the unique degree-`d` monomial
 (`MvPolynomial.IsHomogeneous.eq_monomial_single_default`). Killing variables outside the range of
 an injection preserves homogeneity (`MvPolynomial.IsHomogeneous.killCompl`), and when the
 injection omits a single variable `i`, every homogeneous polynomial of degree `d + 1` splits as
@@ -372,6 +375,21 @@ theorem homogeneousSubmodule_le_iff {d : ℕ} {N : Submodule R (MvPolynomial σ 
     Submodule.span_le]
   exact ⟨fun h α hα ↦ h ⟨α, hα, (single_eq_monomial (R := R) α 1).symm⟩,
     fun h _ ⟨α, hα, hp⟩ ↦ hp ▸ by simpa [single_eq_monomial] using h α hα⟩
+
+/-- If `μ` is the unique exponent vector of degree `ℓ`, then `{c • monomial μ 1}` spans
+`homogeneousSubmodule σ R ℓ` if and only if `c` is a unit in `R`. -/
+theorem span_singleton_smul_monomial_eq_homogeneousSubmodule_iff {ℓ : ℕ} {μ : σ →₀ ℕ}
+    (hμ : μ.degree = ℓ) (huniq : ∀ γ : σ →₀ ℕ, γ.degree = ℓ → γ = μ) (c : R) :
+    Submodule.span R {c • monomial μ (1 : R)} = homogeneousSubmodule σ R ℓ ↔ IsUnit c := by
+  have hhom : homogeneousSubmodule σ R ℓ = Submodule.span R {monomial μ (1 : R)} :=
+    le_antisymm (homogeneousSubmodule_le_iff.mpr fun γ hγ ↦
+      huniq γ hγ ▸ Submodule.subset_span (Set.mem_singleton _))
+      (Submodule.span_le.mpr (Set.singleton_subset_iff.mpr
+        ((mem_homogeneousSubmodule ℓ _).mpr (isHomogeneous_monomial 1 hμ))))
+  rw [hhom]
+  exact Submodule.span_singleton_smul_eq_iff_isUnit (fun a ha ↦ by
+    classical
+    simpa [smul_monomial] using congrArg (fun q : MvPolynomial σ R ↦ q.coeff μ) ha) c
 
 /-- Every homogeneous polynomial of degree `0` is the constant polynomial of its constant
 coefficient. -/
