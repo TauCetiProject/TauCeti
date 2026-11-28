@@ -32,6 +32,8 @@ natural primes, which is the form in which `t` is counted.
   to the discriminant.
 * `AlgEquiv.ramifiedPrimes_eq`: isomorphic number fields have the same ramified primes.
 * `NumberField.ramifiedPrimes_rat`: no prime ramifies in `ℚ`.
+* `NumberField.ramifiedPrimes_eq_primeFactors_discr`, `NumberField.ncard_ramifiedPrimes`: the
+  ramified primes are the prime factors of the discriminant, so `t` is their number.
 * `NumberField.finite_ramifiedPrimes`: only finitely many primes ramify.
 * `NumberField.ramifiedPrimes_nonempty_iff`: some prime ramifies iff `K` is not `ℚ`
   (Minkowski, via `NumberField.exists_not_isUnramifiedIn`).
@@ -112,14 +114,27 @@ theorem coprime_natAbs_discr_iff_isUnramifiedIn {p : ℕ} (hp : p.Prime) :
   rw [Nat.coprime_comm, hp.coprime_iff_not_dvd, ← Int.natCast_dvd,
     not_dvd_discr_iff_isUnramifiedIn K (𝓞 K) (Nat.prime_iff_prime_int.mp hp)]
 
+/-- **The ramified primes are the prime factors of the discriminant**, by
+`NumberField.mem_ramifiedPrimes_iff_dvd_discr` and since `NumberField.discr K ≠ 0`. -/
+theorem ramifiedPrimes_eq_primeFactors_discr :
+    ramifiedPrimes K = (discr K).natAbs.primeFactors := by
+  ext p
+  by_cases hp : p.Prime
+  · rw [mem_ramifiedPrimes_iff_dvd_discr hp, Finset.mem_coe, Nat.mem_primeFactors,
+      ← Int.natCast_dvd]
+    simp [hp, discr_ne_zero K]
+  · simp [hp, Nat.mem_primeFactors]
+
+/-- **The number `t` of ramified primes is the number of prime factors of the discriminant.** -/
+theorem ncard_ramifiedPrimes :
+    (ramifiedPrimes K).ncard = (discr K).natAbs.primeFactors.card := by
+  rw [ramifiedPrimes_eq_primeFactors_discr, Set.ncard_coe_finset]
+
 /-- **Only finitely many primes ramify**, since they all divide the nonzero integer
 `NumberField.discr K`. -/
-theorem finite_ramifiedPrimes : (ramifiedPrimes K).Finite :=
-  (discr K).natAbs.primeFactors.finite_toSet.subset fun _ hp =>
-    have hp' := prime_of_mem_ramifiedPrimes hp
-    Nat.mem_primeFactors.mpr ⟨hp',
-      Int.natCast_dvd.mp ((mem_ramifiedPrimes_iff_dvd_discr hp').mp hp),
-      Int.natAbs_ne_zero.mpr (discr_ne_zero K)⟩
+theorem finite_ramifiedPrimes : (ramifiedPrimes K).Finite := by
+  rw [ramifiedPrimes_eq_primeFactors_discr]
+  exact Finset.finite_toSet _
 
 /-- **Some prime ramifies in a number field iff it is not `ℚ`**, i.e. iff its degree over `ℚ` is
 not `1`. The nontrivial direction is Minkowski's bound in the form
