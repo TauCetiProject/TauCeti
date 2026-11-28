@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.MDeriv.Basic
-import TauCeti.Analysis.Complex.CoordinateDivision.MDeriv
+import TauCeti.Analysis.Complex.CoordinateDivision.Multivariate.MDeriv
 import TauCeti.Analysis.Complex.CoordinateDivision.Multivariate.Basic
 import TauCeti.Analysis.Complex.CoordinateDivision.Multivariate.Estimate
 import TauCeti.Analysis.Polynomial.OfMultiset

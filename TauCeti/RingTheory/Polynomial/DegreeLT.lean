@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.DegreeLT
-public import TauCeti.Algebra.Polynomial.Eval.Linear
 import TauCeti.Algebra.Polynomial.Degree.Operations
 import Mathlib.Tactic.LinearCombination
 
@@ -30,16 +29,9 @@ For `g` monic and coprime to `h`, the same division solves the Bézout equation
 map of `g` and `h` on these degree bounds, in the explicit form consumed by Hensel's lemma
 (`TauCeti.RingTheory.PowerSeries.Hensel`).
 
-It also exposes `Polynomial.evalDegreeLT R n`, the `R`-submodule of functions `R → R` obtained by
-evaluating polynomials of degree `< n`.
-
 ## Main results
 
 * `Polynomial.mem_degreeLT_natDegree_iff`: membership in `R[X]_(g.natDegree)` is `degree < degree`.
-* `Polynomial.evalDegreeLT`, `Polynomial.evalDegreeLT_def`, `Polynomial.mem_evalDegreeLT`,
-  `Polynomial.mem_evalDegreeLT_natDegree_iff`,
-  `Polynomial.exists_mem_evalDegreeLT_of_exists_degree_lt`: the `R`-submodule of functions `R → R`
-  represented by polynomials of degree `< n`, and extracting `n : ℕ` from a `WithBot ℕ` bound.
 * `Polynomial.mem_degreeLT_succ_iff_natDegree_le`: membership in `R[X]_(n + 1)` is
   `natDegree ≤ n`.
 * `Polynomial.modByMonic_mem_degreeLT`, `Polynomial.divByMonic_mem_degreeLT`: where `%ₘ` and `/ₘ`
@@ -61,10 +53,9 @@ evaluating polynomials of degree `< n`.
   existence and uniqueness of degree-bounded solutions of `g * b + h * a = c`.
 
 Stated over an arbitrary commutative ring, with the trivial ring dispatched by `nontriviality`
-rather than excluded by hypothesis; `mem_degreeLT_natDegree_iff`,
-`mem_degreeLT_succ_iff_natDegree_le`, and `evalDegreeLT` need only a semiring,
-`finrank_degreeLT` a semiring with the strong rank condition, and `Monic.sub_mem_degreeLT` and
-`divByMonic_mem_degreeLT` only a ring.
+rather than excluded by hypothesis; `mem_degreeLT_natDegree_iff` and
+`mem_degreeLT_succ_iff_natDegree_le` need only a semiring, `finrank_degreeLT` a semiring with the
+strong rank condition, and `Monic.sub_mem_degreeLT` and `divByMonic_mem_degreeLT` only a ring.
 
 ## Provenance
 
@@ -89,38 +80,6 @@ variable {R : Type*} [Semiring R] {g q : R[X]}
 theorem mem_degreeLT_natDegree_iff (hg : g ≠ 0) :
     q ∈ degreeLT R g.natDegree ↔ q.degree < g.degree := by
   rw [mem_degreeLT, degree_eq_natDegree hg]
-
-/-- The `R`-submodule of functions `R → R` induced by evaluating polynomials of degree `< n`. -/
-noncomputable def evalDegreeLT (R : Type*) [Semiring R] (n : ℕ) : Submodule R (R → R) :=
-  (degreeLT R n).map (evalLinearMap R)
-
-/-- Defining formula for `evalDegreeLT` as the image of `degreeLT R n` under
-`evalLinearMap R`. -/
-theorem evalDegreeLT_def (R : Type*) [Semiring R] (n : ℕ) :
-    evalDegreeLT R n = (degreeLT R n).map (evalLinearMap R) := (rfl)
-
-/-- A function `R → R` lies in `evalDegreeLT R n` iff it is evaluation of some polynomial of
-degree `< n`. -/
-theorem mem_evalDegreeLT {n : ℕ} {f : R → R} :
-    f ∈ evalDegreeLT R n ↔ ∃ Q : R[X], Q.degree < n ∧ ∀ w, f w = Q.eval w := by
-  simp only [evalDegreeLT, Submodule.mem_map, mem_degreeLT, funext_iff, evalLinearMap_apply]
-  refine exists_congr fun Q ↦ and_congr_right fun _ ↦ forall_congr' fun _ ↦ eq_comm
-
-/-- A function `R → R` lies in `evalDegreeLT R g.natDegree` iff it is evaluation of a polynomial of
-degree `< g.degree`, for `g ≠ 0`. -/
-theorem mem_evalDegreeLT_natDegree_iff (hg : g ≠ 0) {f : R → R} :
-    f ∈ evalDegreeLT R g.natDegree ↔ ∃ Q : R[X], Q.degree < g.degree ∧ ∀ w, f w = Q.eval w := by
-  rw [mem_evalDegreeLT, degree_eq_natDegree hg]
-
-/-- If `f` agrees with some polynomial of degree `< d` (`d : WithBot ℕ`), then `d = (n : ℕ)` and
-`f ∈ evalDegreeLT R n`. -/
-theorem exists_mem_evalDegreeLT_of_exists_degree_lt {d : WithBot ℕ} {f : R → R}
-    (h : ∃ Q : R[X], Q.degree < d ∧ ∀ w, f w = Q.eval w) :
-    ∃ n : ℕ, d = n ∧ f ∈ evalDegreeLT R n := by
-  obtain ⟨Q, hQ, hfe⟩ := h
-  obtain ⟨n, hn⟩ := WithBot.ne_bot_iff_exists.mp (bot_le.trans_lt hQ).ne'
-  have hdn : d = n := by rw [← hn, Nat.cast_withBot]
-  exact ⟨n, hdn, mem_evalDegreeLT.mpr ⟨Q, hdn ▸ hQ, hfe⟩⟩
 
 /-- Membership in `R[X]_(n + 1)` is the bound `natDegree ≤ n`. -/
 theorem mem_degreeLT_succ_iff_natDegree_le {n : ℕ} {p : R[X]} :

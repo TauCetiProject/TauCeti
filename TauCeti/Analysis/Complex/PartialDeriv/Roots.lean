@@ -27,8 +27,9 @@ function `f₀` that agrees along the `k`-th coordinate line through `z` with a 
 
 ## Main results
 
-* `TauCeti.iterate_partialDeriv_mul_eval_eq_zero_of_lt_rootMultiplicity`: derivatives of order
-  below `P.rootMultiplicity (z k)` annihilate `y ↦ g y * P.eval (y k)`.
+* `TauCeti.iterate_partialDeriv_mul_eval_eq_zero_of_lt_rootMultiplicity`: for entire `g`, partial
+  derivatives along coordinate `k` of order below `P.rootMultiplicity (z k)` annihilate
+  `y ↦ g y * P.eval (y k)` at `z`.
 * `TauCeti.eq_zero_of_degree_lt_of_iterate_partialDeriv_eq_zero`: Hermite-type uniqueness on a
   coordinate line for entire functions with a coordinate polynomial degree bound.
 -/

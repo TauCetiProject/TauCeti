@@ -8,13 +8,15 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Eval.Defs
-import TauCeti.RingTheory.Polynomial.DegreeLT
+public import Mathlib.LinearAlgebra.Lagrange
+import TauCeti.Algebra.Polynomial.Eval.DegreeLT
 
 /-!
 # Coordinate-line polynomial degree bounds
 
 Closure properties of functions `f : (ι → R) → R` whose restrictions along coordinate lines
-`w ↦ f (Function.update z j w)` agree with polynomials of degree `< d` (`d : WithBot ℕ`).
+`w ↦ f (Function.update z j w)` agree with polynomials of degree `< d` (`d : WithBot ℕ`), and
+Lagrange expansion along another coordinate line over a field.
 
 ## Main results
 
@@ -26,6 +28,9 @@ Closure properties of functions `f : (ι → R) → R` whose restrictions along 
 * `TauCeti.exists_degree_lt_and_add_mul_eval_eq_eval`: adding a single term
   `gᵢ z * Pᵢ.eval (z i)` with `i ≠ j` preserves a coordinate-`j` polynomial degree bound `< d`
   when `f₀` and `gᵢ` already satisfy that bound.
+* `TauCeti.update_update_eq_sum_lagrange_basis`: over a field, a function of polynomial degree
+  `< #s` in coordinate `j` expands along any other coordinate line `i ≠ j` via Lagrange
+  interpolation on `s`.
 -/
 
 public section
@@ -83,5 +88,23 @@ theorem exists_degree_lt_and_add_mul_eval_eq_eval [CommSemiring R] {f₀ gᵢ : 
   simpa only [Finset.sum_singleton] using exists_degree_lt_and_add_sum_mul_eval_eq_eval
     (g := fun _ ↦ gᵢ) (P := fun _ ↦ Pᵢ) (t := {i}) (Finset.notMem_singleton.mpr hij.symm) hf₀
     (fun _ _ ↦ hgᵢ) z
+
+/-- Over a field `K`, a function `f : (ι → K) → K` whose `j`-th coordinate lines agree with
+polynomials of degree `< #s` expands along any other coordinate line `i ≠ j` via Lagrange
+interpolation on `s` at injective nodes `v : ι' → K`. -/
+theorem update_update_eq_sum_lagrange_basis {K ι' : Type*} [Field K] [DecidableEq ι']
+    {f : (ι → K) → K} {i j : ι} (hij : j ≠ i) {s : Finset ι'} {v : ι' → K}
+    (hv : Set.InjOn v s)
+    (hdeg : ∀ y, ∃ Q : K[X], Q.degree < s.card ∧ ∀ w, f (update y j w) = Q.eval w)
+    (z : ι → K) (w : K) :
+    (fun u ↦ f (update (update z j w) i u)) =
+      fun u ↦ ∑ m ∈ s, (Lagrange.basis s v m).eval w * f (update (update z j (v m)) i u) := by
+  ext u
+  obtain ⟨Qu, hQu_deg, hQu⟩ := hdeg (update z i u)
+  have hQu_eq : Qu = Lagrange.interpolate s v (fun m ↦ f (update (update z i u) j (v m))) :=
+    Lagrange.eq_interpolate_of_eval_eq _ hv hQu_deg fun m _ ↦ (hQu (v m)).symm
+  rw [update_comm hij, hQu w, hQu_eq, Lagrange.interpolate_apply, Polynomial.eval_finsetSum]
+  refine Finset.sum_congr rfl fun m _ ↦ ?_
+  rw [Polynomial.eval_mul, Polynomial.eval_C, mul_comm, update_comm (Ne.symm hij)]
 
 end TauCeti

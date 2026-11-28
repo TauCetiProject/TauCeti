@@ -11,6 +11,8 @@ public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Algebra.Polynomial.Degree.CoordinateLine
 import TauCeti.Analysis.Complex.CoordinateDivision.Basic
+import TauCeti.Analysis.Complex.CoordinateDivision.Degree
+import TauCeti.Topology.Algebra.Polynomial.Root.Isolated
 import TauCeti.Topology.Algebra.Polynomial.Root.Multiplicity
 
 /-!

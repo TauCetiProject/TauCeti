@@ -32,12 +32,12 @@ not matter, since second derivatives of `C²` functions are symmetric.
 * `TauCeti.mDeriv_single`, `TauCeti.mDeriv_mDeriv`: `D^{k eᵢ} f = ∂ᵢ^k f`, and
   `D^σ (D^τ f) = D^{σ + τ} f` for entire `f`.
 * `TauCeti.mDeriv_eq_iterate_partialDeriv_mDeriv_update_zero`: splitting off the `i`-th
-  coordinate `D^σ f = ∂ᵢ^{σᵢ} (D^{update σ i 0} f)`.
+  coordinate `D^σ f = ∂ᵢ^{σᵢ} (D^{update σ i 0} f)` for entire `f`.
 * `TauCeti.differentiable_mDeriv`, `TauCeti.mDeriv_add`, `TauCeti.mDeriv_sub`,
   `TauCeti.mDeriv_const_mul`, `TauCeti.mDeriv_sum`, `TauCeti.mDeriv_mul_of_update_eq`: `D^σ`
   preserves entire functions, is linear on them, and commutes with multiplication by entire factors
   independent of the differentiated coordinates.
-* `TauCeti.mDeriv_prod`: `D^σ (z ↦ ∏ᵢ gᵢ(zᵢ)) = z ↦ ∏ᵢ gᵢ^{(σᵢ)}(zᵢ)`.
+* `TauCeti.mDeriv_prod`: `D^σ (z ↦ ∏ᵢ gᵢ(zᵢ)) = z ↦ ∏ᵢ gᵢ^{(σᵢ)}(zᵢ)` for entire `gᵢ`.
 
 ## References
 

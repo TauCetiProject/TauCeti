@@ -9,9 +9,10 @@ public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import TauCeti.Analysis.Complex.PartialDeriv.Basic
 import Mathlib.LinearAlgebra.Lagrange
+import TauCeti.Algebra.Polynomial.Degree.CoordinateLine
+import TauCeti.Algebra.Polynomial.Eval.DegreeLT
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Complex.Liouville
-import TauCeti.RingTheory.Polynomial.DegreeLT
 
 /-!
 # Polynomial degree preservation under partial derivatives
@@ -68,16 +69,9 @@ theorem exists_degree_lt_and_partialDeriv_eq_eval {ι : Type*} [DecidableEq ι] 
     · simpa only [s, Finset.card_range] using
         Lagrange.degree_interpolate_lt (fun m ↦ partialDeriv i f (update z j (v m))) hv
     · have hline (w : ℂ) : (fun u ↦ f (update (update z j w) i u)) =
-          fun u ↦ ∑ m ∈ s, (Lagrange.basis s v m).eval w * f (update (update z j (v m)) i u) := by
-        ext u
-        obtain ⟨Qu, hQu_deg, hQu⟩ := hdeg (update z i u)
-        have hQu_eq : Qu = Lagrange.interpolate s v (fun m ↦ f (update (update z i u) j (v m))) :=
-          Lagrange.eq_interpolate_of_eval_eq _ hv
-            (by simpa only [s, Finset.card_range] using hQu_deg)
-            fun m _ ↦ (hQu (v m)).symm
-        rw [update_comm hij, hQu w, hQu_eq, Lagrange.interpolate_apply, eval_finsetSum]
-        refine Finset.sum_congr rfl fun m _ ↦ ?_
-        rw [eval_mul, eval_C, mul_comm, update_comm (Ne.symm hij)]
+          fun u ↦ ∑ m ∈ s, (Lagrange.basis s v m).eval w * f (update (update z j (v m)) i u) :=
+        update_update_eq_sum_lagrange_basis hij hv
+          (by simpa only [s, Finset.card_range] using hdeg) z w
       have hdiff (m : ℕ) (_ : m ∈ s) : DifferentiableAt ℂ
           (fun u ↦ (Lagrange.basis s v m).eval w * f (update (update z j (v m)) i u)) (z i) :=
         (differentiable_comp_update hf (update z j (v m)) i (z i)).const_mul _

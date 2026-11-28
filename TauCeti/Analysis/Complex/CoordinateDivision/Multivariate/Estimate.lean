@@ -11,7 +11,6 @@ public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 import TauCeti.Algebra.Polynomial.Degree.CoordinateLine
-import TauCeti.Analysis.Complex.CoordinateDivision.Basic
 import TauCeti.Analysis.Complex.CoordinateDivision.Estimate
 import TauCeti.Analysis.Complex.PartialDeriv.Degree
 
