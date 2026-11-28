@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Basic
+public import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
+public import Mathlib.CategoryTheory.Preadditive.Yoneda.Basic
 public import Mathlib.Algebra.Module.Shrink
 public import Mathlib.CategoryTheory.Limits.Yoneda
 public import Mathlib.LinearAlgebra.Span.Basic
@@ -26,6 +27,11 @@ sheaf condition on a large site such as the small étale site of a scheme, so a 
 (`CategoryTheory.GrothendieckTopology.HasSheafCompose`).
 Mathlib's `ModuleCat.forget_preservesLimitsOfSize` only covers limits whose index category is
 no larger than the universe of the modules.
+
+When `R` and its modules have the same universe, evaluation at one is also an additive natural
+isomorphism to the underlying abelian-group functor
+(`TauCeti.moduleCatPreadditiveCoyonedaRingIso`). Its inverse sends an element `m` to the map
+`r ↦ r • m`.
 -/
 
 public section
@@ -74,5 +80,52 @@ lemma coyonedaObjIsoForget_inv_app (M : ModuleCat.{v} R) (m : M) :
 
 instance forget_isCorepresentable : (forget (ModuleCat.{v} R)).IsCorepresentable :=
   Functor.IsCorepresentable.mk' (coyonedaObjIsoForget R)
+
+end ModuleCat
+
+namespace TauCeti
+
+/-- Evaluation at `1` identifies additive Hom from the regular module with the underlying
+abelian-group functor. -/
+noncomputable def moduleCatPreadditiveCoyonedaRingIso (R : Type u) [Ring R] :
+    preadditiveCoyoneda.obj (op (ModuleCat.of R R)) ≅
+      forget₂ (ModuleCat.{u} R) AddCommGrpCat :=
+  NatIso.ofComponents (fun M ↦ (ModuleCat.homSelfLinearEquiv ℤ M).toAddEquiv.toAddCommGrpIso)
+    (fun f ↦ by
+      ext g
+      -- Expose the morphism type hidden in the bundled additive Hom object, then use
+      -- the coyoneda map and evaluation formulas rather than unfolding evaluation at one.
+      change ModuleCat.of R R ⟶ _ at g
+      change ModuleCat.homSelfLinearEquiv ℤ _
+          ((preadditiveCoyonedaObj (ModuleCat.of R R)).map f g) =
+        f.hom (ModuleCat.homSelfLinearEquiv ℤ _ g)
+      rw [preadditiveCoyonedaObj_map]
+      -- Evaluate the displayed linear map while leaving the evaluation equivalence opaque.
+      change ModuleCat.homSelfLinearEquiv ℤ _ (g ≫ f) =
+        f.hom (ModuleCat.homSelfLinearEquiv ℤ _ g)
+      rw [ModuleCat.homSelfLinearEquiv_apply, ModuleCat.homSelfLinearEquiv_apply]
+      exact ModuleCat.comp_apply (R := R) g f 1)
+
+
+end TauCeti
+
+namespace ModuleCat
+
+/-- The additive Hom comparison for the regular module is evaluation at `1`. -/
+@[simp]
+lemma preadditiveCoyonedaRingIso_hom_app_apply {R : Type u} [Ring R]
+    (M : ModuleCat.{u} R) (f : of R R ⟶ M) :
+    DFunLike.coe (F := (of R R ⟶ M) →+ M)
+      ((TauCeti.moduleCatPreadditiveCoyonedaRingIso R).hom.app M).hom f = f.hom 1 :=
+  homSelfLinearEquiv_apply f
+
+/-- The inverse additive Hom comparison sends an element to the map taking `1` to it. -/
+@[simp]
+lemma preadditiveCoyonedaRingIso_inv_app_apply {R : Type u} [Ring R]
+    (M : ModuleCat.{u} R) (m : M) :
+    DFunLike.coe (F := M →+ (of R R ⟶ M))
+      ((TauCeti.moduleCatPreadditiveCoyonedaRingIso R).inv.app M).hom m =
+      ofHom (LinearMap.toSpanSingleton R M m) :=
+  homSelfLinearEquiv_symm_apply m
 
 end ModuleCat

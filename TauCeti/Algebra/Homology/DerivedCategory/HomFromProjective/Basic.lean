@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.FullyFaithful
 public import Mathlib.Algebra.Homology.DerivedCategory.SingleTriangle
+public import Mathlib.CategoryTheory.Generator.Preadditive
 public import TauCeti.Algebra.Homology.DerivedCategory.KProjective
 public import TauCeti.Algebra.Homology.Single.Projective
 public import TauCeti.CategoryTheory.Triangulated.Orthogonal.Basic
@@ -32,6 +33,10 @@ form in which the projective dimension of `X₃`, at most one, enters into deriv
 
 * `DerivedCategory.homologyFunctor_map_bijective_of_projective`: for a projective `P`, `Hⁿ` is a
   bijection from morphisms `P[-n] ⟶ M` to morphisms `P ⟶ Hⁿ(M)`.
+* `TauCeti.homFromProjectiveSingleAddEquiv`: the additive comparison with source `P`, for
+  arbitrary ordinary and derived hom universes.
+* `DerivedCategory.isZero_of_forall_shift_projective_hom_eq_zero`: shifts of a projective
+  separator detect zero objects.
 * `CategoryTheory.ShortComplex.ShortExact.forall_singleFunctor_hom_eq_zero_iff`: the
   corresponding statement in `D(C)` for a projective presentation of length one, in terms of the
   cohomology of `M`.
@@ -39,7 +44,7 @@ form in which the projective dimension of `X₃`, at most one, enters into deriv
 
 public section
 
-open CategoryTheory Limits Pretriangulated
+open CategoryTheory Limits Pretriangulated ZeroObject
 
 universe w v u
 
@@ -90,6 +95,57 @@ theorem homologyFunctor_map_bijective_of_projective (P : C) [Projective P]
 
 end DerivedCategory
 
+namespace TauCeti
+
+open DerivedCategory
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
+
+/-- Taking cohomology identifies morphisms from a projective stalk with morphisms from the
+original projective object, as additive groups, independently of the two hom universes. -/
+noncomputable def homFromProjectiveSingleAddEquiv (P : C) [Projective P]
+    (M : DerivedCategory C) (n : ℤ) :
+    ((singleFunctor C n).obj P ⟶ M) ≃+ (P ⟶ (homologyFunctor C n).obj M) :=
+  AddEquiv.ofBijective
+    ((Preadditive.leftComp _ ((singleFunctorCompHomologyFunctorIso C n).inv.app P)).comp
+      (homologyFunctor C n).mapAddHom)
+    (((singleFunctorCompHomologyFunctorIso C n).app P).homFromEquiv.bijective.comp
+      (homologyFunctor_map_bijective_of_projective P M n))
+
+/-- The projective-stalk comparison is the cohomology map preceded by the stalk identification. -/
+@[simp]
+lemma homFromProjectiveSingleAddEquiv_apply (P : C) [Projective P]
+    (M : DerivedCategory C) (n : ℤ) (f : (singleFunctor C n).obj P ⟶ M) :
+    homFromProjectiveSingleAddEquiv P M n f =
+      (singleFunctorCompHomologyFunctorIso C n).inv.app P ≫ (homologyFunctor C n).map f := by
+  simp [homFromProjectiveSingleAddEquiv, Preadditive.leftComp]
+
+end TauCeti
+
+namespace DerivedCategory
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
+
+/-- The shifts of a projective separator placed in degree zero detect zero objects in the
+unbounded derived category. -/
+lemma isZero_of_forall_shift_projective_hom_eq_zero (E : DerivedCategory C)
+    (P : C) [Projective P] (hP : IsSeparator P)
+    (h : ∀ (k : ℤ) (f : ((singleFunctor C 0).obj P)⟦k⟧ ⟶ E), f = 0) : IsZero E := by
+  have hH (n : ℤ) : IsZero ((homologyFunctor C n).obj E) := by
+    have hz (f : (singleFunctor C n).obj P ⟶ E) : f = 0 := by
+      let s := ((singleFunctors C).shiftIso (-n) n 0 (by omega)).app P
+      exact (cancel_epi s.hom).1 (by simpa using h (-n) (s.hom ≫ f))
+    have hm (g : P ⟶ (homologyFunctor C n).obj E) : g = 0 := by
+      obtain ⟨f, rfl⟩ := (TauCeti.homFromProjectiveSingleAddEquiv P E n).surjective g
+      rw [hz f, map_zero]
+    apply (IsZero.iff_id_eq_zero _).2
+    exact (Preadditive.isSeparator_iff P).1 hP (𝟙 _) (by simp [hm])
+  have hi : IsIso (0 : E ⟶ 0) := (isIso_iff C _).2 fun n ↦
+    (hH n).isIso ((homologyFunctor C n).map_isZero (isZero_zero _)) _
+  exact (isZero_zero _).of_iso (asIso (0 : E ⟶ 0))
+
+end DerivedCategory
+
 namespace CategoryTheory.ShortComplex.ShortExact
 
 open DerivedCategory
@@ -107,17 +163,15 @@ theorem forall_singleFunctor_hom_eq_zero_iff {S : ShortComplex C} (hS : S.ShortE
         fun g : S.X₂ ⟶ (DerivedCategory.homologyFunctor C 0).obj (M⟦n⟧) ↦ S.f ≫ g := by
   refine (forall_hom_shift_eq_zero_iff hS.singleTriangle_distinguished M).trans
     (forall_congr' fun n ↦ ?_)
-  let H := DerivedCategory.homologyFunctor C 0
   let ε := singleFunctorCompHomologyFunctorIso C 0
   -- Under `H⁰`, precomposition with `X₁[0] ⟶ X₂[0]` is precomposition with `X₁ ⟶ X₂`.
-  let Φ (X : C) : ((singleFunctor C 0).obj X ⟶ M⟦n⟧) → (X ⟶ H.obj (M⟦n⟧)) :=
-    fun φ ↦ (ε.app X).symm.hom ≫ H.map φ
-  have hΦ (X : C) [Projective X] : Function.Bijective (Φ X) :=
-    (ε.app X).homFromEquiv.bijective.comp (homologyFunctor_map_bijective_of_projective X _ 0)
+  let Φ (X : C) [Projective X] := TauCeti.homFromProjectiveSingleAddEquiv X (M⟦n⟧) 0
+  have hΦ (X : C) [Projective X] : Function.Bijective (Φ X) := (Φ X).bijective
   have hcomm : Φ S.X₁ ∘ (fun g ↦ (singleFunctor C 0).map S.f ≫ g) =
       (fun g ↦ S.f ≫ g) ∘ Φ S.X₂ := by
     ext g
-    simp only [Function.comp_apply, Φ, H.map_comp]
+    simp only [Function.comp_apply, Φ, TauCeti.homFromProjectiveSingleAddEquiv_apply,
+      Functor.map_comp]
     rw [← Category.assoc, ← Category.assoc]
     congr 1
     exact (ε.inv.naturality S.f).symm
