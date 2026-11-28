@@ -15,7 +15,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Conformal
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.AlgebraicTopology.Sphere.Zero
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Sphere.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Hausdorff
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Isometry
@@ -128,40 +127,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [LindelofSpace (sphere (0 : E) 1)]
   [MeasurableSpace (sphere (0 : E) 1)] [BorelSpace (sphere (0 : E) 1)]
 
-omit [LindelofSpace (sphere (0 : E) 1)] [MeasurableSpace (sphere (0 : E) 1)]
-  [BorelSpace (sphere (0 : E) 1)] in
-private def stereographic'SymmPartialDiffeomorph (v : sphere (0 : E) 1) :
-    PartialDiffeomorph 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡 n)
-      (EuclideanSpace ℝ (Fin n)) (sphere (0 : E) 1) 1 :=
-  ((stereographic' n v).toPartialDiffeomorphOfMemMaximalAtlas
-    (stereographic'_mem_maximalAtlas (k := 1) v)).symm
-
-omit [LindelofSpace (sphere (0 : E) 1)] [MeasurableSpace (sphere (0 : E) 1)]
-  [BorelSpace (sphere (0 : E) 1)] in
-private theorem coe_stereographic'SymmPartialDiffeomorph (v : sphere (0 : E) 1) :
-    (stereographic'SymmPartialDiffeomorph (n := n) v :
-      EuclideanSpace ℝ (Fin n) → sphere (0 : E) 1) = (stereographic' n v).symm :=
-  funext ((stereographic' n v).toPartialDiffeomorphOfMemMaximalAtlas_symm_apply
-    (stereographic'_mem_maximalAtlas (k := 1) v))
-
-omit [LindelofSpace (sphere (0 : E) 1)] [MeasurableSpace (sphere (0 : E) 1)]
-  [BorelSpace (sphere (0 : E) 1)] in
-private theorem source_stereographic'SymmPartialDiffeomorph (v : sphere (0 : E) 1) :
-    (stereographic'SymmPartialDiffeomorph (n := n) v).source = univ := by
-  rw [stereographic'SymmPartialDiffeomorph, PartialDiffeomorph.symm_toPartialEquiv,
-    PartialEquiv.symm_source]
-  exact (OpenPartialHomeomorph.toPartialDiffeomorphOfMemMaximalAtlas_target _ _).trans <| by
-    rw [stereographic'_target, preimage_univ]
-
-omit [LindelofSpace (sphere (0 : E) 1)] [MeasurableSpace (sphere (0 : E) 1)]
-  [BorelSpace (sphere (0 : E) 1)] in
-private theorem target_stereographic'SymmPartialDiffeomorph (v : sphere (0 : E) 1) :
-    (stereographic'SymmPartialDiffeomorph (n := n) v).target = {v}ᶜ := by
-  rw [stereographic'SymmPartialDiffeomorph, PartialDiffeomorph.symm_toPartialEquiv,
-    PartialEquiv.symm_target]
-  exact (OpenPartialHomeomorph.toPartialDiffeomorphOfMemMaximalAtlas_source _ _).trans
-    (stereographic'_source v)
-
 /-- **Stereographic pushforward onto the punctured sphere.** The inverse stereographic chart from
 `v` pushes Lebesgue measure on `ℝⁿ` weighted by `(4 / (‖y‖² + 4)) ^ n` forward to the Riemannian
 volume of the unit sphere restricted to `{v}ᶜ`. -/
@@ -172,13 +137,15 @@ theorem map_stereographic'_symm_withDensity_eq_restrict_riemannianVolume
           ENNReal.ofReal ((4 / (‖y‖ ^ 2 + 4)) ^ n)) =
       (riemannianVolume (𝓡 n) (sphere (0 : E) 1)).restrict {v}ᶜ := by
   let b := EuclideanSpace.basisFun (Fin n) ℝ
-  have hmap := (stereographic'SymmPartialDiffeomorph (n := n) v).map_withDensity_riemannianJacobian
-    one_ne_zero b.toBasis
-  rw [coe_stereographic'SymmPartialDiffeomorph v,
-    source_stereographic'SymmPartialDiffeomorph v,
-    target_stereographic'SymmPartialDiffeomorph v,
-    Measure.restrict_univ, b.addHaar_eq_volume,
-    funext (riemannianJacobian_stereographic'_symm v)] at hmap
+  have hmap := b.toBasis.map_withDensity_riemannianJacobian_of_injOn (I := 𝓡 n)
+    (M := sphere (0 : E) 1) (f := (stereographic' n v).symm) rfl MeasurableSet.univ
+    (isSmoothEmbedding_stereographic'_symm (n := n) (k := 1) v).isEmbedding.injective.injOn
+    fun y _ ↦ (isSmoothEmbedding_stereographic'_symm (n := n) (k := 1) v).contMDiff.mdifferentiable
+      one_ne_zero y
+  rw [Measure.restrict_univ, b.addHaar_eq_volume,
+    funext (riemannianJacobian_stereographic'_symm v),
+    ← stereographic'_target (n := n) v, (stereographic' n v).symm_image_target_eq_source,
+    stereographic'_source] at hmap
   exact hmap
 
 /-- **Stereographic pushforward of the round-sphere volume.** In positive dimension `n > 0`, the
@@ -392,8 +359,7 @@ theorem riemannianTotalVolume_sphereRoundMetricOfRadius
       rw [WithMetric.coe_homeomorph, WithMetric.inner_def, ContMDiffRiemannianMetric.ofLE_inner,
         sphereRoundMetric_inner, inner_tangentSpace_sphere]
   rw [sphereRoundMetricOfRadius_def, WithMetric.riemannianTotalVolume_rescale, hrpow,
-    integral_const, smul_eq_mul, ← riemannianTotalVolume_def, hbase,
-    riemannianTotalVolume_sphere, mul_comm]
+    integral_const_riemannianVolume, hbase, riemannianTotalVolume_sphere]
 
 end TotalVolume
 

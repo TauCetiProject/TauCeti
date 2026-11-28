@@ -209,15 +209,15 @@ theorem integral_abs_rpow_criticalExponent_roundSphereVolume_rpow_neg_inv
     ∫ _ : sphere (0 : E) 1,
         |roundSphereVolume n ^ (-(1 / criticalExponent n))| ^ criticalExponent n
         ∂riemannianVolume (𝓡 n) (sphere (0 : E) 1) = 1 := by
+  have := FiniteDimensional.of_fact_finrank_eq_succ (K := ℝ) (V := E) n
   have hp : criticalExponent n ≠ 0 := by
     rw [criticalExponent_def]
     exact div_ne_zero (mul_ne_zero two_ne_zero (Nat.cast_ne_zero.mpr hn₀))
       (sub_ne_zero.mpr (by exact_mod_cast hn₂))
-  rw [integral_const, smul_eq_mul, measureReal_def, riemannianVolume_sphere_univ,
-    ENNReal.toReal_ofReal (roundSphereVolume_pos n).le,
+  rw [integral_const_riemannianVolume, riemannianTotalVolume_sphere,
     abs_of_pos (Real.rpow_pos_of_pos (roundSphereVolume_pos n) _),
     ← Real.rpow_mul (roundSphereVolume_pos n).le, neg_mul, one_div_mul_cancel hp,
-    Real.rpow_neg_one, mul_inv_cancel₀ (roundSphereVolume_pos n).ne']
+    Real.rpow_neg_one, inv_mul_cancel₀ (roundSphereVolume_pos n).ne']
 
 /-- **The Yamabe quotient of `1` on the unit round sphere is `Y(Sⁿ)`.** This holds in every
 dimension `n ≥ 0`. -/
@@ -228,9 +228,7 @@ theorem yamabeQuotient_sphere_one
     yamabeQuotient (𝓡 n) (fun _ : sphere (0 : E) 1 ↦ (1 : ℝ)) = sphereYamabeConstant n := by
   have := FiniteDimensional.of_fact_finrank_eq_succ (K := ℝ) (V := E) n
   rw [yamabeQuotient_one, finrank_euclideanSpace_fin]
-  simp only [scalarCurvature_sphere, integral_const, smul_eq_mul, measureReal_def,
-    riemannianVolume_sphere_univ, riemannianTotalVolume_sphere,
-    ENNReal.toReal_ofReal (roundSphereVolume_pos n).le, mul_comm (roundSphereVolume n),
+  simp only [scalarCurvature_sphere, integral_const_riemannianVolume, riemannianTotalVolume_sphere,
     sphereYamabeConstant_eq_div]
 
 /-- **The Yamabe quotient of any nonzero constant on `Sⁿ` (`n ≠ 2`) is `Y(Sⁿ)`.** -/

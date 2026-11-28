@@ -67,18 +67,19 @@ examples, and the transformation law of scalar curvature:
   of `ĝ = u ^ (4 / (n - 2)) g` is `u ^ (-(n + 2) / (n - 2)) L_g u`.
 * `TauCeti.Yamabe.scalarCurvature_rescale_eq_iff_conformalLaplacian_eq`: `ĝ` has scalar
   curvature `c` exactly where `L_g u = c u ^ (pₙ - 1)`.
-* `TauCeti.Yamabe.conformalLaplacian_rescale`: the conformal covariance
-  `L_ĝ v = u ^ (-(n + 2) / (n - 2)) L_g (u v)`.
+* `TauCeti.Yamabe.conformalLaplacian_rescale`: pointwise conformal covariance
+  `L_ĝ v x = u x ^ (-(n + 2) / (n - 2)) L_g (u v) x` at any point `x` where `v` is `C²`.
 * `Bundle.ContMDiffRiemannianMetric.conformalLaplacian_eq_of_riemannianBundle_eq`: transports
   `conformalLaplacian` along an equality of installed fibre metrics.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_of_conformalLaplacian_eq_mul`: if
   `L_g u = λ u`, then `Scal_ĝ = λ u ^ (-4 / (n - 2))`, and
   `Bundle.ContMDiffRiemannianMetric.sign_scalarCurvature_rescale_of_conformalLaplacian_eq_mul`: its
   sign is that of `λ`.
-* `TauCeti.IsLocalRiemannianIsometry.conformalLaplacian_comp`: naturality under local Riemannian
-  isometries, `L_M (u ∘ f) = (L_N u) ∘ f`.
-* `TauCeti.WithMetric.conformalLaplacian_comp_ofWithMetric`: transport from a metric-indexed copy
-  `WithMetric g` to `M`.
+* `TauCeti.IsLocalRiemannianIsometry.conformalLaplacian_comp`: pointwise naturality under local
+  Riemannian isometries, `L_M (u ∘ f) x = L_N u (f x)` at any point `x` where `u` is `C²` at
+  `f x`.
+* `TauCeti.WithMetric.conformalLaplacian_comp_ofWithMetric`: pointwise transport from a
+  metric-indexed copy `WithMetric g` to `M` at any point `x` where the function is `C²`.
 
 ## References
 
@@ -440,7 +441,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
 
-/-- Transport of the conformal Laplacian from a metric-indexed copy `WithMetric g` to `M`. -/
+/-- Pointwise transport of the conformal Laplacian from a metric-indexed copy `WithMetric g` to
+`M`, at any point `x` where `w` is `C²`. -/
 theorem conformalLaplacian_comp_ofWithMetric
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
     {w : M → ℝ} {x : M} (hw : ContMDiffAt I 𝓘(ℝ) 2 w x) :
