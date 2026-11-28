@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RepresentationTheory.Coinduced
 public import Mathlib.RepresentationTheory.Stabilizer
-public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain

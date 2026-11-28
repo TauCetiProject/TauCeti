@@ -132,14 +132,13 @@ def algebraicModularForms :
     Subrepresentation (coind V.finiteRationalEmbedding (V.coefficientRep ρ)) :=
   (coind V.finiteRationalEmbedding (V.coefficientRep ρ)).smoothVectors
 
-/-- A coinduced function is an algebraic modular form exactly when its stabilizer under right
-translation is open. -/
+/-- A coinduced function is an algebraic modular form exactly when the right-translation stabilizer
+`{u | ∀ g, φ(g u) = φ(g)}` of its underlying function is open. -/
 theorem mem_algebraicModularForms_iff_isOpen
     {φ : coindV V.finiteRationalEmbedding (V.coefficientRep ρ)} :
     φ ∈ V.algebraicModularForms ρ ↔
-      IsOpen ((coind V.finiteRationalEmbedding (V.coefficientRep ρ)).stabilizer φ :
-        Set (finiteAdelicUnitaryGroup E ι)) := by
-  rw [algebraicModularForms, mem_smoothVectors_iff]
+      IsOpen (rightTranslationStabilizer φ.val : Set (finiteAdelicUnitaryGroup E ι)) := by
+  rw [algebraicModularForms, mem_smoothVectors_iff, stabilizer_coind_eq]
 
 /-- A coinduced function is an algebraic modular form exactly when it is invariant under right
 translation by some open subgroup of `G_f`. -/
@@ -157,17 +156,7 @@ theorem isLocallyConstant_val_of_mem_algebraicModularForms
     {φ : coindV V.finiteRationalEmbedding (V.coefficientRep ρ)}
     (hφ : φ ∈ V.algebraicModularForms ρ) : IsLocallyConstant φ.val :=
   isLocallyConstant_of_isOpen_rightTranslationStabilizer <|
-    stabilizer_coind_eq φ ▸ (V.mem_algebraicModularForms_iff_isOpen ρ).1 hφ
-
--- Not `@[simp]`: simp unfolds the action through `Subrepresentation.coe_toRepresentation_apply`
--- and `Representation.coind_apply`, so the left-hand side is not in simp-normal form (`simpNF`).
-/-- The action of `g ∈ G_f` on algebraic modular forms is right translation by `g`. -/
-theorem algebraicModularForms_toRepresentation_apply_val_apply
-    (g h : finiteAdelicUnitaryGroup E ι) (φ : V.algebraicModularForms ρ) :
-    ((V.algebraicModularForms ρ).toRepresentation g φ :
-      coindV V.finiteRationalEmbedding (V.coefficientRep ρ)).val h =
-        (φ : coindV V.finiteRationalEmbedding (V.coefficientRep ρ)).val (h * g) := by
-  simp only [Subrepresentation.coe_toRepresentation_apply, coind_apply_coe_apply]
+    (V.mem_algebraicModularForms_iff_isOpen ρ).1 hφ
 
 /-! ### Forms of a level -/
 
@@ -241,11 +230,9 @@ on `G(s)`, `φ_L(g) = L(ρ(g_∞)⁻¹ φ(g_f))`. For an algebraic modular form 
 under the rational points (`adelicFunction_rationalPoint_mul`) and right invariant under the
 stabilizer of `φ` (`adelicFunction_mul_ofFinite`). -/
 def adelicFunction (L : W →ₗ[A] A) :
-    (finiteAdelicUnitaryGroup E ι → W) →ₗ[A] adelicUnitaryGroup E s → A where
-  toFun φ g :=
-    L (ρ (adelicUnitaryGroup.infinitePart E s g)⁻¹ (φ (adelicUnitaryGroup.finitePart E s g)))
-  map_add' _ _ := by ext; simp
-  map_smul' _ _ := by ext; simp
+    (finiteAdelicUnitaryGroup E ι → W) →ₗ[A] adelicUnitaryGroup E s → A :=
+  LinearMap.pi fun g ↦ L ∘ₗ ρ (adelicUnitaryGroup.infinitePart E s g)⁻¹ ∘ₗ
+    LinearMap.proj (adelicUnitaryGroup.finitePart E s g)
 
 /-- `φ_L(g) = L(ρ(g_∞)⁻¹ φ(g_f))`. -/
 @[simp]
@@ -301,17 +288,15 @@ theorem continuous_adelicFunction [TopologicalSpace A] (L : W →ₗ[A] A)
   refine ContinuousAt.congr ?_ hev.symm
   exact ((hL _).comp ((adelicUnitaryGroup.continuous_infinitePart s).inv)).continuousAt
 
-/-- **The `φ_L` determine `φ`**: for a projective module `W` over a commutative ring, two functions
-`φ, ψ : G_f → W` are equal exactly when `φ_L = ψ_L` for every linear form `L`, as
+/-- **The `φ_L` determine `φ`**: for a projective module `W` over a commutative semiring, two
+functions `φ, ψ : G_f → W` are equal exactly when `φ_L = ψ_L` for every linear form `L`, as
 `φ_L(1, g) = L(φ(g))` and linear forms separate points of a projective module. -/
-theorem forall_adelicFunction_eq_iff {A W : Type*} [CommRing A] [AddCommGroup W] [Module A W]
-    [Module.Projective A W] (ρ : Representation A (infiniteAdelicUnitaryGroup E s) W)
+theorem forall_adelicFunction_eq_iff [Module.Projective A W]
     {φ ψ : finiteAdelicUnitaryGroup E ι → W} :
     (∀ L : W →ₗ[A] A, adelicFunction ρ L φ = adelicFunction ρ L ψ) ↔ φ = ψ := by
-  refine ⟨fun h ↦ funext fun g ↦ sub_eq_zero.1 ?_, fun h _ ↦ h ▸ rfl⟩
-  refine (Module.forall_dual_apply_eq_zero_iff A _).1 fun L ↦ ?_
-  have := congrFun (h L) (adelicUnitaryGroup.ofFinite E s g)
-  rw [adelicFunction_ofFinite, adelicFunction_ofFinite] at this
-  rw [map_sub, this, sub_self]
+  refine ⟨fun h ↦ funext fun g ↦ Module.eval_apply_injective A <| LinearMap.ext fun L ↦ ?_,
+    fun h _ ↦ h ▸ rfl⟩
+  simpa only [Module.Dual.eval_apply, adelicFunction_ofFinite] using
+    congrFun (h L) (adelicUnitaryGroup.ofFinite E s g)
 
 end Representation
