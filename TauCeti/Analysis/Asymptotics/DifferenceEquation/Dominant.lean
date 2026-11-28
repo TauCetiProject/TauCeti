@@ -146,7 +146,7 @@ theorem isBigO_div_pow_of_tendsto_div {𝕜 : Type*} [NormedField 𝕜] {f g w v
   have hxle (k : ℕ) : ‖x (k + n₁)‖ ≤ A * θ ^ k / (1 - θ) := by
     simpa using dist_le_of_le_geometric_of_tendsto θ A hθ1 (f := fun k ↦ x (k + n₁))
       (fun k ↦ by
-        rw [dist_comm, dist_eq_norm, show k + 1 + n₁ = n₁ + k + 1 by omega, add_comm k n₁]
+        rw [dist_comm, dist_eq_norm, add_right_comm k 1 n₁, add_comm k n₁]
         exact hΔ k)
       (hvw.comp (tendsto_add_atTop_nat n₁)) k
   refine IsBigO.of_bound (A / (1 - θ) * (θ ^ n₁)⁻¹) ?_
@@ -286,8 +286,7 @@ private theorem exists_solution_of_forward_bounds {f g u : ℕ → ℂ} {φ : �
     ring
   -- the solution is `v / L`
   refine ⟨fun k ↦ v k / L, fun k ↦ ?_, fun k ↦ ?_⟩
-  · rw [show v (k + 2) / L + f k * (v (k + 1) / L) + g k * (v k / L) =
-      (v (k + 2) + f k * v (k + 1) + g k * v k) / L by ring, hv k, zero_div]
+  · linear_combination hv k / L
   · have heq : v k / L - u k = u k * (x k - L) / L := by
       simp only [hx_def]
       field_simp [hu k, norm_pos_iff.1 (by linarith : (0 : ℝ) < ‖L‖)]
@@ -326,98 +325,30 @@ private theorem exists_eventually_solution_near {f g u : ℕ → ℂ} {q θ B : 
   obtain ⟨v, hv, hvu⟩ := exists_solution_of_forward_bounds (f := fun j ↦ f (j + n₀))
     (g := fun j ↦ g (j + n₀)) (u := fun j ↦ u (j + n₀)) (φ := fun j ↦ φ (j + n₀))
     (fun j ↦ (hkj j).1.1)
-    (fun j ↦ by simpa only [show j + n₀ + 2 = j + 2 + n₀ by omega] using (hkj j).1.2.1)
-    (fun j ↦ by
-      simpa only [show j + n₀ + 2 = j + 2 + n₀ by omega, show j + n₀ + 1 = j + 1 + n₀ by omega]
-        using (hkj j).1.2.2.1)
+    (fun j ↦ by simpa only [add_right_comm j n₀] using (hkj j).1.2.1)
+    (fun j ↦ by simpa only [add_right_comm j n₀] using (hkj j).1.2.2.1)
     (fun j ↦ by positivity)
-    (fun j ↦ by simpa only [show j + n₀ + 1 = j + 1 + n₀ by omega] using (hkj j).1.2.2.2)
+    (fun j ↦ by simpa only [add_right_comm j n₀] using (hkj j).1.2.2.2)
     ((summable_nat_add_iff n₀).2 hφs) hqθ hB hsm
   refine ⟨fun k ↦ v (k - n₀), eventually_atTop.2 ⟨n₀, fun k hk ↦ ?_⟩, ?_⟩
-  · obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le hk
-    simp only [show n₀ + j + 2 - n₀ = j + 2 by omega, show n₀ + j + 1 - n₀ = j + 1 by omega,
-      show n₀ + j - n₀ = j by omega]
-    simpa only [show j + n₀ = n₀ + j by omega] using hv j
+  · obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hk
+    simpa only [add_right_comm j n₀, Nat.add_sub_cancel] using hv j
   · refine IsBigO.of_bound (4 * B / (θ - q) * ∑' i : ℕ, (((i : ℝ) + 1) ^ 2)⁻¹) ?_
     filter_upwards [eventually_ge_atTop n₀] with k hk
-    obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le hk
+    obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hk
     have hj := hvu j
-    simp only [show j + n₀ = n₀ + j by omega, add_assoc] at hj
-    simp only [show n₀ + j - n₀ = j by omega, norm_mul, norm_norm, norm_inv, norm_pow,
-      Real.norm_natCast]
-    have hT := tsum_inv_natCast_add_pow_le N (k := n₀ + j) (by have := (hkj j).2; omega)
-    have hB' : 0 ≤ 4 * B / (θ - q) * ‖u (n₀ + j)‖ := by positivity
-    calc ‖v j - u (n₀ + j)‖ ≤ 4 * B / (θ - q) * ‖u (n₀ + j)‖ * ∑' i, φ (i + (n₀ + j)) := hj
-      _ ≤ 4 * B / (θ - q) * ‖u (n₀ + j)‖ *
-          ((∑' i : ℕ, (((i : ℝ) + 1) ^ 2)⁻¹) * (((n₀ + j : ℕ) : ℝ) ^ N)⁻¹) :=
+    simp only [add_assoc] at hj
+    simp only [Nat.add_sub_cancel, norm_mul, norm_norm, norm_inv, norm_pow, Real.norm_natCast]
+    have hT := tsum_inv_natCast_add_pow_le N (k := j + n₀) (by have := (hkj j).2; omega)
+    have hB' : 0 ≤ 4 * B / (θ - q) * ‖u (j + n₀)‖ := by positivity
+    calc ‖v j - u (j + n₀)‖ ≤ 4 * B / (θ - q) * ‖u (j + n₀)‖ * ∑' i, φ (i + (j + n₀)) := hj
+      _ ≤ 4 * B / (θ - q) * ‖u (j + n₀)‖ *
+          ((∑' i : ℕ, (((i : ℝ) + 1) ^ 2)⁻¹) * (((j + n₀ : ℕ) : ℝ) ^ N)⁻¹) :=
           mul_le_mul_of_nonneg_left hT hB'
       _ = 4 * B / (θ - q) * (∑' i : ℕ, (((i : ℝ) + 1) ^ 2)⁻¹) *
-          (‖u (n₀ + j)‖ * (((n₀ + j : ℕ) : ℝ) ^ N)⁻¹) := by ring
+          (‖u (j + n₀)‖ * (((j + n₀ : ℕ) : ℝ) ^ N)⁻¹) := by ring
 
 /-! ### Solutions to a given order -/
-
-/-- If `u n ∼ ρⁿ n^α` with `ρ ≠ 0`, then `|ρ|ᵏ k^{Re α} / ‖u (k + 2)‖ → |ρ|⁻²`. -/
-private lemma tendsto_div_norm_add_two {u : ℕ → ℂ} {ρ α : ℂ} (hρ : ρ ≠ 0)
-    (hu : u ~[atTop] fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α) :
-    Tendsto (fun k : ℕ ↦ ‖ρ‖ ^ k * (k : ℝ) ^ α.re / ‖u (k + 2)‖) atTop (𝓝 (‖ρ‖ ^ 2)⁻¹) := by
-  have he := (tendsto_norm_div_of_isEquivalent_pow_mul_cpow hρ hu).comp (tendsto_add_atTop_nat 2)
-  have hc : Tendsto (fun k : ℕ ↦ ((k : ℝ) / (k + 2)) ^ α.re) atTop (𝓝 1) := by
-    simpa using (tendsto_natCast_div_add_atTop (2 : ℝ)).rpow_const (Or.inl one_ne_zero)
-  have h := (hc.div he one_ne_zero).div_const (‖ρ‖ ^ 2)
-  rw [div_one, one_div] at h
-  refine h.congr' ?_
-  filter_upwards [eventually_ge_atTop 1] with k hk
-  have hk' : (0 : ℝ) < k := by exact_mod_cast hk
-  have hR : ‖ρ‖ ≠ 0 := norm_ne_zero_iff.2 hρ
-  have hk₂ : ((k : ℝ) + 2) ^ α.re ≠ 0 := (Real.rpow_pos_of_pos (by positivity) _).ne'
-  simp only [Pi.div_apply, Function.comp_apply]
-  push_cast
-  rw [Real.div_rpow hk'.le (by positivity)]
-  rcases eq_or_ne ‖u (k + 2)‖ 0 with h0 | h0
-  · simp [h0]
-  · field_simp [hR, hk₂, h0]
-    ring
-
-/-- If `u n ∼ ρⁿ n^α` and `g n → g₀` with `‖g₀‖ < q ‖ρ‖²`, then
-`‖g k‖ ‖u k‖ ≤ q ‖u (k + 2)‖` for large `k`. -/
-private lemma eventually_norm_mul_norm_le {g u : ℕ → ℂ} {ρ α g₀ : ℂ} {q : ℝ} (hρ : ρ ≠ 0)
-    (hu : u ~[atTop] fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α) (hg : Tendsto g atTop (𝓝 g₀))
-    (hq : ‖g₀‖ < q * ‖ρ‖ ^ 2) : ∀ᶠ k in atTop, ‖g k‖ * ‖u k‖ ≤ q * ‖u (k + 2)‖ := by
-  have hlim : ‖g₀‖ * 1 * (‖ρ‖ ^ 2)⁻¹ < q := by
-    rwa [mul_one, ← div_eq_mul_inv, div_lt_iff₀ (pow_pos (norm_pos_iff.2 hρ) 2)]
-  have h := (hg.norm.mul (tendsto_norm_div_of_isEquivalent_pow_mul_cpow hρ hu)).mul
-    (tendsto_div_norm_add_two hρ hu)
-  filter_upwards [h.eventually (eventually_lt_nhds hlim), eventually_ge_atTop 1,
-    (tendsto_add_atTop_nat 2).eventually
-      (hu.eventually_ne_zero (eventually_pow_mul_cpow_ne_zero α hρ))]
-    with k hk hk1 hu₂
-  have hP : 0 < ‖ρ‖ ^ k * (k : ℝ) ^ α.re :=
-    mul_pos (pow_pos (norm_pos_iff.2 hρ) k) (Real.rpow_pos_of_pos (by exact_mod_cast hk1) _)
-  have hlt : ‖g k‖ * ‖u k‖ / ‖u (k + 2)‖ < q := by
-    refine lt_of_eq_of_lt ?_ hk
-    field_simp [hP.ne', norm_ne_zero_iff.2 hu₂]
-  exact ((div_lt_iff₀ (norm_pos_iff.2 hu₂)).1 hlt).le
-
-/-- If `u n ∼ ρⁿ n^α` and `r k = O(|ρ|ᵏ k^{Re α} φ k)` with `φ ≥ 0`, then
-`‖r k‖ ≤ B φ k ‖u (k + 2)‖` for some `B ≥ 0` and all large `k`. -/
-private lemma exists_eventually_norm_le_mul_norm {u r : ℕ → ℂ} {φ : ℕ → ℝ} {ρ α : ℂ}
-    (hρ : ρ ≠ 0) (hu : u ~[atTop] fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α) (hφ : ∀ k, 0 ≤ φ k)
-    (hr : r =O[atTop] fun k : ℕ ↦ ‖ρ‖ ^ k * (k : ℝ) ^ α.re * φ k) :
-    ∃ B, 0 ≤ B ∧ ∀ᶠ k in atTop, ‖r k‖ ≤ B * φ k * ‖u (k + 2)‖ := by
-  obtain ⟨C, hC0, hC⟩ := hr.exists_nonneg
-  refine ⟨C * (‖ρ‖ ^ 2)⁻¹ + 1, by positivity, ?_⟩
-  have hs := (tendsto_div_norm_add_two hρ hu).const_mul C
-  filter_upwards [hC.bound, hs.eventually (eventually_le_nhds (lt_add_one _)),
-    (tendsto_add_atTop_nat 2).eventually
-      (hu.eventually_ne_zero (eventually_pow_mul_cpow_ne_zero α hρ))]
-    with k hk hsk hu₂
-  rw [Real.norm_of_nonneg (mul_nonneg (by positivity) (hφ k))] at hk
-  calc ‖r k‖ ≤ C * (‖ρ‖ ^ k * (k : ℝ) ^ α.re * φ k) := hk
-    _ = C * (‖ρ‖ ^ k * (k : ℝ) ^ α.re / ‖u (k + 2)‖) * φ k * ‖u (k + 2)‖ := by
-        field_simp [norm_ne_zero_iff.2 hu₂]
-    _ ≤ (C * (‖ρ‖ ^ 2)⁻¹ + 1) * φ k * ‖u (k + 2)‖ := by
-        gcongr
-        exact hφ k
 
 /-- **Bounds for the root of larger modulus.** Let `u n ∼ ρⁿ n^α`, let `g n → g₀` with
 `‖g₀‖ < ‖ρ‖²`, and let the residual of `u` be `O(|ρ|ⁿ n^{Re α - N - 2})`. Then for some `q < θ`
@@ -443,13 +374,14 @@ private lemma exists_eventually_forward_bounds {f g u : ℕ → ℂ} {ρ α g₀
       fun k : ℕ ↦ ‖ρ‖ ^ k * (k : ℝ) ^ α.re * ((k : ℝ) ^ (N + 2))⁻¹ := by
     refine hr.congr' EventuallyEq.rfl ?_
     filter_upwards [eventually_ge_atTop 1] with k hk
-    rw [Real.rpow_sub (by exact_mod_cast hk), div_eq_mul_inv, mul_assoc,
-      show (N : ℝ) + 2 = ((N + 2 : ℕ) : ℝ) by push_cast; ring, Real.rpow_natCast]
-  obtain ⟨B, hB, hrB⟩ := exists_eventually_norm_le_mul_norm hρ hu (fun k ↦ by positivity) hr'
+    rw [Real.rpow_sub (by exact_mod_cast hk), div_eq_mul_inv, mul_assoc]
+    norm_cast
+  obtain ⟨B, hB, hrB⟩ := exists_eventually_norm_le_mul_norm_of_isEquivalent_pow_mul_cpow hρ hu
+    (fun k ↦ by positivity) hr'
   have hθ : θ < 1 := (div_lt_one (by positivity)).2 (by linarith)
   refine ⟨q, θ, B, div_lt_div_of_pos_right (by linarith) (by positivity), hB, ?_⟩
   filter_upwards [hu.eventually_ne_zero (eventually_pow_mul_cpow_ne_zero α hρ),
-    eventually_norm_mul_norm_le hρ hu hg hq, hrB,
+    eventually_norm_mul_norm_le_of_isEquivalent_pow_mul_cpow hρ hu hg hq, hrB,
     eventually_mul_inv_pow_le_inv_add_one_pow hθ (N + 2)] with k h₁ h₂ h₃ h₄
   exact ⟨h₁, h₂, h₃, h₄⟩
 
@@ -472,9 +404,9 @@ private theorem exists_eventually_solution_isBigO_of_norm_sq_gt {f g fs gs : ℕ
   have hres := isBigO_formalDifferenceSolution_residual (a := a) (N := N + 1) hρ hα
     (fun s _ ↦ mul_differenceCoeff hρ₀ α s) (by simpa [inv_pow] using hf.isBigO (N + 1 + 1))
     (by simpa [inv_pow] using hg.isBigO (N + 1 + 1))
-  rw [← hu_def, show ((N + 1 : ℕ) : ℝ) + 1 = (N : ℝ) + 2 by push_cast; ring] at hres
+  rw [← hu_def, Nat.cast_add_one, add_assoc (N : ℝ), one_add_one_eq_two] at hres
   have hequiv := isEquivalent_formalDifferenceSolution (differenceCoeff_zero fs gs ρ α) ρ α
-    (show 1 ≤ N + 1 by omega)
+    (Nat.le_add_left 1 N)
   rw [← hu_def] at hequiv
   obtain ⟨q, θ, B, hqθ, hB, hbounds⟩ := exists_eventually_forward_bounds hequiv hg₀ hgt hres
   obtain ⟨w, hw, hwu⟩ := exists_eventually_solution_near hqθ hB hbounds
@@ -495,7 +427,7 @@ private theorem exists_eventually_solution_isBigO_of_norm_sq_gt {f g fs gs : ℕ
     rw [norm_pow_mul_cpow ρ α (by omega), one_mul, Real.norm_of_nonneg (by positivity),
       Real.norm_of_nonneg (by positivity), mul_assoc]
     exact mul_le_mul_of_nonneg_left hpow (by positivity)
-  have hut := isBigO_formalDifferenceSolution_sub a ρ α (show N' ≤ N + 1 by omega)
+  have hut := isBigO_formalDifferenceSolution_sub a ρ α (hN'.trans N.le_succ)
   rw [← hu_def] at hut
   exact ((hwu.trans hun).add hut).congr_left fun n ↦ by ring
 
