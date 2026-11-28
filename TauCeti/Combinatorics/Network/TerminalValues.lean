@@ -23,9 +23,16 @@ an additive subgroup, the realizing assignment can be chosen in that subgroup. I
 subgroup-valued extrema exist even if the supplied feasible starting assignment is not
 subgroup-valued. Values and bounds may all be negative.
 
+The extremal assignments can also be obtained directly from any feasible starting assignment:
+apply a maximum ordinary flow in its residual network to reach the maximum, or update by a maximum
+reverse residual flow with its terminals exchanged to reach the minimum. The forward update adds
+the residual flow's value to the starting value, while the reverse update subtracts it.
+
 ## References
 
 * D. P. Bertsekas, *Linear Network Optimization*, Section 1.1.3 and Exercises 2.4–2.6.
+* J. Bang-Jensen, G. Gutin, *Digraphs: Theory, Algorithms and Applications*, second edition,
+  Theorem 3.4.2 and the proof of Theorem 3.9.1.
 * A. Schrijver, *Combinatorial Optimization: Polyhedra and Efficiency*, Volume A, Chapter 10.
 -/
 

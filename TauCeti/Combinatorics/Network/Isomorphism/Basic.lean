@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Quiver.Prefunctor
-public import TauCeti.Combinatorics.Network.AugmentingPath
 public import TauCeti.Combinatorics.Network.Flow
 public import TauCeti.Combinatorics.Network.Shift
 public import TauCeti.Combinatorics.Network.Walk
