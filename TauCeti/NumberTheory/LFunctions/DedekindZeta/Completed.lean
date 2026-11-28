@@ -489,46 +489,31 @@ theorem analyticAt_toMeromorphicNFOn_invDedekindZetaCompletionFactor_mul {Z : �
   swap
   · rw [toMeromorphicNFOn_of_not_meromorphicOn (meromorphicOn_univ.not.mpr hm)]
     exact analyticAt_const
-  -- The reciprocal factor is entire and nonzero at `1`, so it vanishes identically near no point
-  -- and `Z` is the meromorphic quotient of `invDedekindZetaCompletionFactor K * Z` by it.
-  have hmero : MeromorphicOn (invDedekindZetaCompletionFactor K) univ := fun w _ ↦
-    (analyticAt_invDedekindZetaCompletionFactor K w).meromorphicAt
-  have hinv1 : invDedekindZetaCompletionFactor K 1 ≠ 0 :=
-    left_ne_zero_of_mul_eq_one (invDedekindZetaCompletionFactor_mul_eq_one K (by norm_num))
-  have hne (z : ℂ) : ∀ᶠ w in 𝓝[≠] z, invDedekindZetaCompletionFactor K w ≠ 0 := by
-    refine (meromorphicOrderAt_ne_top_iff_eventually_ne_zero (hmero z (mem_univ z))).mp
-      (hmero.meromorphicOrderAt_ne_top_of_isPreconnected isPreconnected_univ (mem_univ 1)
-        (mem_univ z) ?_)
-    exact (meromorphicOrderAt_ne_top_iff_eventually_ne_zero (hmero 1 (mem_univ 1))).mpr
-      (nhdsWithin_le_nhds
-        ((analyticAt_invDedekindZetaCompletionFactor K 1).continuousAt.eventually_ne hinv1))
-  have hZ : Meromorphic Z := fun z ↦
-    ((hmero z (mem_univ z)).inv.mul (hm z)).congr (by
-      filter_upwards [hne z] with w hw
-      exact inv_mul_cancel_left₀ hw (Z w))
+  -- The reciprocal factor is entire and nonzero at `1`, so it has finite order everywhere and
+  -- multiplying by it does not change meromorphy.
+  have hfin (z : ℂ) : meromorphicOrderAt (invDedekindZetaCompletionFactor K) z ≠ ⊤ :=
+    AnalyticOnNhd.meromorphicOrderAt_ne_top_of_exists_ne_zero
+      (fun w _ ↦ analyticAt_invDedekindZetaCompletionFactor K w) isConnected_univ
+      ⟨1, mem_univ 1, left_ne_zero_of_mul_eq_one
+        (invDedekindZetaCompletionFactor_mul_eq_one K (by norm_num))⟩ (mem_univ z)
   rw [← (meromorphicNFOn_toMeromorphicNFOn _ univ
       (mem_univ s)).meromorphicOrderAt_nonneg_iff_analyticAt,
     meromorphicOrderAt_toMeromorphicNFOn hm.meromorphicOn (mem_univ s)]
   by_cases h0 : s = 0
   · subst h0
-    have hpos : 0 < meromorphicOrderAt (invDedekindZetaCompletionFactor K) 0 := by
-      have h := (analyticAt_invDedekindZetaCompletionFactor K 0).continuousAt.tendsto.mono_left
-        (nhdsWithin_le_nhds (s := {0}ᶜ))
-      rw [invDedekindZetaCompletionFactor_zero] at h
-      exact (tendsto_zero_iff_meromorphicOrderAt_pos
-        (analyticAt_invDedekindZetaCompletionFactor K 0).meromorphicAt).mp h
-    rw [meromorphicOrderAt_mul (analyticAt_invDedekindZetaCompletionFactor K 0).meromorphicAt
-      (hZ 0)]
-    generalize meromorphicOrderAt (invDedekindZetaCompletionFactor K) 0 = n at hpos ⊢
+    have hA := analyticAt_invDedekindZetaCompletionFactor K 0
+    have hpos : 0 < meromorphicOrderAt (invDedekindZetaCompletionFactor K) 0 :=
+      hA.meromorphicOrderAt_pos_iff_eq_zero.mpr (invDedekindZetaCompletionFactor_zero K)
+    rw [meromorphicOrderAt_mul hA.meromorphicAt
+      ((hA.meromorphicAt.meromorphicAt_mul_iff_of_meromorphicOrderAt_ne_top (hfin 0)).mp (hm 0))]
+    obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp (hfin 0)
+    rw [← hn] at hpos ⊢
     generalize meromorphicOrderAt Z 0 = m at hZ0 ⊢
-    induction n using WithTop.recTopCoe with
+    induction m using WithTop.recTopCoe with
     | top => simp
-    | coe n =>
-      induction m using WithTop.recTopCoe with
-      | top => simp
-      | coe m =>
-        norm_cast at hpos hZ0 ⊢
-        omega
+    | coe m =>
+      norm_cast at hpos hZ0 ⊢
+      omega
   · exact ((analyticAt_invDedekindZetaCompletionFactor K s).mul
       (hZan h0 hs)).meromorphicOrderAt_nonneg
 
