@@ -49,6 +49,11 @@ theorem placeLocalPrimeSum_nonneg (p : ℕ) : 0 ≤ placeLocalPrimeSum d A κ ne
   rw [placeLocalPrimeSum_def]
   exact localPrimeSum_nonneg fun _ _ ↦ ite_nonneg (le_max_right _ _) le_rfl
 
+/-- The local sum at a place is zero when the Legendre symbol at `p` is `1`. -/
+@[simp] theorem placeLocalPrimeSum_eq_zero_of_legendreSym_eq_one {p : ℕ}
+    (hp : legendreSym d p = 1) : placeLocalPrimeSum d A κ next y σ p = 0 := by
+  rw [placeLocalPrimeSum_def, localPrimeSum_eq_zero_of_legendreSym_eq_one hp]
+
 /-- The local sum vanishes at `p ≥ X` if the weights reached by the powers of `p` up to `A`
 are at least `y / X`. -/
 theorem placeLocalPrimeSum_eq_zero_of_le {X : ℝ} {p : ℕ} (hXp : X ≤ p)
@@ -87,6 +92,12 @@ theorem localPrimeSumTotal_nonneg (p : ℕ) : 0 ≤ localPrimeSumTotal d A κ ne
   rw [localPrimeSumTotal_def]
   exact sum_nonneg fun _ _ ↦ placeLocalPrimeSum_nonneg d p
 
+/-- The total over direction places is zero when the Legendre symbol at `p` is `1`. -/
+@[simp] theorem localPrimeSumTotal_eq_zero_of_legendreSym_eq_one {p : ℕ}
+    (hp : legendreSym d p = 1) : localPrimeSumTotal d A κ next p = 0 := by
+  simp only [localPrimeSumTotal_def, placeLocalPrimeSum_eq_zero_of_legendreSym_eq_one d hp,
+    sum_const_zero]
+
 /-- The gain at `p` for `m` lifts, each with an order-`a` row at every place in `S` and `k`
 direction rows of order `κ σ` at every `σ`. Each row uses `placeLocalPrimeSum`: the positive
 parts on powers up to `A` carry the Legendre half-weight `(1 - χ(p^e)) / 2`. -/
@@ -114,8 +125,8 @@ theorem chainPrimeGain_nonneg (p : ℕ) : 0 ≤ chainPrimeGain d A m k S a κ ne
 /-- A split prime contributes no gain, since its local prime sums vanish. -/
 @[simp] theorem chainPrimeGain_eq_zero_of_legendreSym_eq_one {p : ℕ} (hp : legendreSym d p = 1) :
     chainPrimeGain d A m k S a κ next p = 0 := by
-  simp only [chainPrimeGain_def, localPrimeSumTotal_def, placeLocalPrimeSum_def,
-    localPrimeSum_eq_zero_of_legendreSym_eq_one hp, sum_const_zero, mul_zero, add_zero]
+  simp only [chainPrimeGain_def, placeLocalPrimeSum_eq_zero_of_legendreSym_eq_one d hp,
+    localPrimeSumTotal_eq_zero_of_legendreSym_eq_one d hp, sum_const_zero, mul_zero, add_zero]
 
 /-- A uniform lower bound on the weights forces the positive parts in the gain to vanish
 at primes at or above the second cutoff `X`. -/
