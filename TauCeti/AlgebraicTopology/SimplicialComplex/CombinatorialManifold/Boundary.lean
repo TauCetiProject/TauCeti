@@ -236,6 +236,20 @@ theorem IsCombinatorialManifold.mem_manifoldBoundary_iff
       Finset.Subset.rfl⟩,
     fun ⟨hσ, hb⟩ => ⟨hσ, n - σ.card, hb⟩⟩
 
+private theorem sdiff_eq_singleton_and_mem_link_of_subset_card
+    {K : PreAbstractSimplicialComplex ι} {σ τ : Finset ι} {n : ℕ}
+    (hτK : τ ∈ K) (hστ : σ ⊆ τ) (hσcard : σ.card = n) (hτcard : τ.card = n + 1) :
+    ∃ w, τ \ σ = {w} ∧ ({w} : Finset ι) ∈ link K σ := by
+  have hdiff : (τ \ σ).card = 1 := by
+    rw [Finset.card_sdiff_of_subset hστ, hτcard, hσcard]
+    omega
+  obtain ⟨w, hw⟩ := Finset.card_eq_one.mp hdiff
+  refine ⟨w, hw, mem_link_nonempty.mpr ⟨Finset.singleton_nonempty w, ?_, ?_⟩⟩
+  · have hdisj : Disjoint (τ \ σ) σ := Finset.sdiff_disjoint
+    rwa [hw] at hdisj
+  · rw [← hw, Finset.sdiff_union_of_subset hστ]
+    exact hτK
+
 /-- A codimension-one face (`σ.card = n`) of a combinatorial `n`-manifold belongs to
 `manifoldBoundary K` precisely when it is contained in a unique `n`-simplex (`τ.card = n + 1`) of
 `K`. -/
@@ -254,16 +268,7 @@ theorem IsCombinatorialManifold.codimOne_mem_manifoldBoundary_iff
     have hw : w ∉ σ := Finset.disjoint_singleton_left.mp hdisj
     refine ⟨?_, Finset.subset_insert w σ, by rw [Finset.card_insert_of_notMem hw, hcard]⟩
     rwa [← Finset.singleton_union]
-  · have hdiff : (τ \ σ).card = 1 := by
-      rw [Finset.card_sdiff_of_subset hστ, hτcard, hcard]
-      omega
-    obtain ⟨u, hu⟩ := Finset.card_eq_one.mp hdiff
-    have hulink : ({u} : Finset ι) ∈ link K σ := by
-      refine mem_link_nonempty.mpr ⟨Finset.singleton_nonempty u, ?_, ?_⟩
-      · have hdisj : Disjoint (τ \ σ) σ := Finset.sdiff_disjoint
-        rwa [hu] at hdisj
-      · rw [← hu, Finset.sdiff_union_of_subset hστ]
-        exact hτK
+  · obtain ⟨u, hu, hulink⟩ := sdiff_eq_singleton_and_mem_link_of_subset_card hτK hστ hcard hτcard
     rw [hlink, mem_simplex] at hulink
     obtain rfl : u = w :=
       Finset.singleton_injective ((Finset.subset_singleton_iff.mp hulink.2).resolve_left
@@ -272,10 +277,7 @@ theorem IsCombinatorialManifold.codimOne_mem_manifoldBoundary_iff
       τ = (τ \ σ) ∪ σ := (Finset.sdiff_union_of_subset hστ).symm
       _ = {u} ∪ σ := by rw [hu]
       _ = insert u σ := Finset.singleton_union u σ
-  · have hdiff : (τ \ σ).card = 1 := by
-      rw [Finset.card_sdiff_of_subset hστ, hτcard, hcard]
-      omega
-    obtain ⟨w, hw⟩ := Finset.card_eq_one.mp hdiff
+  · obtain ⟨w, hw, hwlink⟩ := sdiff_eq_singleton_and_mem_link_of_subset_card hτK hστ hcard hτcard
     refine ⟨w, PreAbstractSimplicialComplex.ext ?_⟩
     ext ρ
     rw [faces_simplex_singleton]
@@ -297,12 +299,7 @@ theorem IsCombinatorialManifold.codimOne_mem_manifoldBoundary_iff
       rw [hw, Finset.mem_singleton] at huτ
       rw [huτ]
     · rw [Set.mem_singleton_iff] at hρ
-      subst hρ
-      refine mem_link_nonempty.mpr ⟨Finset.singleton_nonempty w, ?_, ?_⟩
-      · have hdisj : Disjoint (τ \ σ) σ := Finset.sdiff_disjoint
-        rwa [hw] at hdisj
-      · rw [← hw, Finset.sdiff_union_of_subset hστ]
-        exact hτK
+      rwa [hρ]
 
 /-- A zero-dimensional combinatorial manifold has void boundary. -/
 theorem IsCombinatorialManifold.manifoldBoundary_eq_bot_of_zero

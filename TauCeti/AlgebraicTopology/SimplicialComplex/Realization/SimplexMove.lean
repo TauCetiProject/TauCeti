@@ -248,6 +248,25 @@ private theorem simplexMoveHomeomorph_apply {σ : Finset ι}
     simplexMoveHomeomorph K b x hb hx y = simplexMoveFun K b x hb hx y :=
   (rfl)
 
+/-- Barycentric value of `simplexMoveHomeomorph` at an arbitrary point `y`: it shifts `y` along
+`x - b` by the radial scale factor `min_{i ∈ σ} y i / b i`. -/
+theorem simplexMoveHomeomorph_val {σ : Finset ι}
+    (b x : Realization K) (hb : b.val.support = σ) (hx : x.val.support = σ)
+    (y : Realization K) :
+    (simplexMoveHomeomorph K b x hb hx y).val =
+      y.val + (σ.inf' (hb ▸ K.isRelLowerSet_faces.prop_of_mem (support_mem K b))
+        fun i => y.val i / b.val i) • (x.val - b.val) :=
+  (rfl)
+
+/-- Barycentric coordinates of `simplexMoveHomeomorph` at an arbitrary point `y`. -/
+theorem simplexMoveHomeomorph_val_apply {σ : Finset ι}
+    (b x : Realization K) (hb : b.val.support = σ) (hx : x.val.support = σ)
+    (y : Realization K) (i : ι) :
+    (simplexMoveHomeomorph K b x hb hx y).val i =
+      y.val i + (σ.inf' (hb ▸ K.isRelLowerSet_faces.prop_of_mem (support_mem K b))
+        fun j => y.val j / b.val j) * (x.val i - b.val i) :=
+  (rfl)
+
 /-- Inverting `simplexMoveHomeomorph` swaps the two open-simplex endpoints `b` and `x`. -/
 @[simp]
 theorem simplexMoveHomeomorph_symm {σ : Finset ι}

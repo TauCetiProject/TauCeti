@@ -48,7 +48,7 @@ public section
 noncomputable section
 
 open AbstractSimplicialComplex Metric Set Topology TauCeti
-open scoped Manifold RealInnerProductSpace
+open scoped Manifold
 
 namespace PreAbstractSimplicialComplex
 
@@ -106,90 +106,6 @@ private theorem mem_manifoldBoundary_of_openStar_lt_one {K : AbstractSimplicialC
     rw [Finset.union_singleton, Finset.insert_erase hvsup]
   rw [hunion]
   exact ⟨fun hxbd => ⟨hne, hdisj, hxbd⟩, fun h3 => h3.2.2⟩
-
-/-- Identification of the open half-ball `ball 0 1 ∩ {z | 0 ≤ ⟪z, e₀⟫}` in
-`EuclideanSpace ℝ (Fin (m + 2))` with `{z : EuclideanHalfSpace (m + 2) | ‖z.val‖ < 1}`. -/
-private def halfBallUnitBallHomeomorph (m : ℕ) :
-    let p : sphere (0 : EuclideanSpace ℝ (Fin (m + 2))) 1 :=
-      ⟨EuclideanSpace.single 0 1, mem_sphere_zero_iff_norm.mpr (by
-        simpa only [EuclideanSpace.single, norm_one] using
-          (PiLp.norm_single 2 (fun _ : Fin (m + 2) => ℝ) 0 1))⟩
-    ↥(ball (0 : EuclideanSpace ℝ (Fin (m + 2))) 1 ∩
-        {z | 0 ≤ ⟪z, (p : EuclideanSpace ℝ (Fin (m + 2)))⟫}) ≃ₜ
-      {z : EuclideanHalfSpace (m + 2) | ‖z.val‖ < 1} :=
-  { toFun z := ⟨⟨z.val, by
-      simpa [EuclideanSpace.inner_single_right] using z.property.2⟩,
-      mem_ball_zero_iff.mp z.property.1⟩
-    invFun z := ⟨z.val.val, mem_ball_zero_iff.mpr z.property, by
-      simp [EuclideanSpace.inner_single_right]⟩
-    left_inv _ := rfl
-    right_inv _ := rfl
-    continuous_toFun := by fun_prop
-    continuous_invFun := by fun_prop }
-
-/-- Given a combinatorial `(m + 1)`-ball link at `v` and a homeomorphism `a` from the link
-polyhedron to the closed `(m + 1)`-ball, build a half-space chart on `openStarRealization K v`
-whose boundary hyperplane `c x 0 = 0` detects the sphere `‖a (starLinkProjection ...)‖ = 1`. -/
-private theorem exists_openStar_halfSpace_chart_of_ball {K : AbstractSimplicialComplex ι}
-    {m : ℕ} {v : ι}
-    (hball : IsCombinatorialBall (link K.toPreAbstractSimplicialComplex {v}) (m + 1))
-    (a : {y : Realization K | y.val.support ∈ K.link {v}} ≃ₜ
-      closedBall (0 : EuclideanSpace ℝ (Fin (m + 1))) 1) :
-    ∃ c : OpenPartialHomeomorph (Realization K) (EuclideanHalfSpace (m + 2)),
-      c.source = openStarRealization K v ∧
-      ∀ (x : Realization K) (hx : x ∈ K.openStarRealization v) (hlt : x.val v < 1),
-        (c x).val 0 = 0 ↔
-          ‖(a ⟨(starLinkProjection K v ⟨x, (K.mem_puncturedClosedStar v x).mpr
-            ⟨K.openStarRealization_subset_closedStarRealization v hx, hlt⟩⟩).val,
-            (mem_geometricLink_iff K v _).mp (starLinkProjection K v _).property⟩ :
-              EuclideanSpace ℝ (Fin (m + 1)))‖ = 1 := by
-  let E := EuclideanSpace ℝ (Fin (m + 2))
-  let p : sphere (0 : E) 1 := ⟨EuclideanSpace.single 0 1,
-    mem_sphere_zero_iff_norm.mpr (by
-      simpa only [E, EuclideanSpace.single, norm_one] using
-        (PiLp.norm_single 2 (fun _ : Fin (m + 2) => ℝ) 0 1))⟩
-  have hp : (p : E) ≠ 0 := ne_zero_of_mem_unit_sphere p
-  let : Fact (Module.finrank ℝ E = m + 2) := ⟨by simp [E]⟩
-  let b := (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) (m + 1) hp).repr.symm
-  let d : closedBall (0 : EuclideanSpace ℝ (Fin (m + 1))) 1 ≃ₜ
-      closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1 :=
-    b.toHomeomorph.subtype fun z => by simp
-  let r := Homeomorph.setCongr (s := K.geometricLink v)
-    (t := {y : Realization K | y.val.support ∈ K.link {v}})
-    (Set.ext (mem_geometricLink_iff K v))
-  let l := r.trans (a.trans (d.trans (TauCeti.hemisphereHomeomorph p).symm))
-  have hcomp := K.isCompact_closedStarRealization
-    (finite_faces_closedStar_iff.mpr hball.finite_faces)
-  let f := openStarHomeomorphHalfBall hcomp l
-  have hinner (z : E) : ⟪z, (p : E)⟫ = z 0 := by
-    simp [p, E, EuclideanSpace.inner_single_right]
-  have hU : IsOpen {z : EuclideanHalfSpace (m + 2) | ‖z.val‖ < 1} :=
-    isOpen_lt continuous_subtypeVal.norm continuous_const
-  obtain ⟨c, hc_src, -, hc_apply⟩ :=
-    OpenPartialHomeomorph.exists_source_eq_target_eq_of_homeomorph
-      (K.isOpen_openStarRealization v) hU (f.trans (halfBallUnitBallHomeomorph m))
-      ⟨vertex K v, by simp [mem_openStarRealization]⟩
-  refine ⟨c, hc_src, fun x hx hlt => ?_⟩
-  let p₀ : puncturedClosedStar K v := ⟨x, (K.mem_puncturedClosedStar v x).mpr
-    ⟨K.openStarRealization_subset_closedStarRealization v hx, hlt⟩⟩
-  let y : geometricLink K v := starLinkProjection K v p₀
-  have hzero : (c x).val 0 = 0 ↔ ⟪((l y : sphere (0 : E) 1) : E), (p : E)⟫ = 0 := by
-    have hcx : (c x).val = ((openStarHomeomorphHalfBall hcomp l ⟨x, hx⟩ : _) : E) :=
-      congrArg (fun z : EuclideanHalfSpace (m + 2) => z.val) (hc_apply ⟨x, hx⟩)
-    have h0eq : (c x).val 0 = ⟪(c x).val, (p : E)⟫ := (hinner _).symm
-    rw [h0eq, hcx, coe_openStarHomeomorphHalfBall_apply,
-      coe_closedStarHomeomorphHalfBall_of_lt hcomp l _ hlt, real_inner_smul_left,
-      mul_eq_zero]
-    have hne : 1 - x.val v ≠ 0 := (sub_pos.mpr hlt).ne'
-    exact ⟨fun hor => hor.resolve_left hne, fun hir => Or.inr hir⟩
-  have hhemi : ⟪((l y : sphere (0 : E) 1) : E), (p : E)⟫ = 0 ↔
-      ‖(a (r y) : EuclideanSpace ℝ (Fin (m + 1)))‖ = 1 := by
-    have h1 := TauCeti.norm_hemisphereHomeomorph_apply_eq_one_iff p (l y)
-    have hl : TauCeti.hemisphereHomeomorph p (l y) = d (a (r y)) := by
-      simp [l]
-    rw [← h1, hl]
-    simp [d, b]
-  exact hzero.trans hhemi
 
 /-- Pointwise boundary characterization for the realization of a combinatorial `(n + 1)`-manifold:
 a point lies on the manifold boundary iff its support lies in `manifoldBoundary`. -/
@@ -261,10 +177,14 @@ theorem IsCombinatorialManifold.isBoundaryPoint_realizationChartedSpace_iff :
         by_cases hlt : x.val v < 1
         · -- Away from the vertex `v`, reduce radially to the `(m + 1)`-dimensional link.
           obtain ⟨a⟩ := hball.nonempty_homeomorph_closedBall (A := K) link_le
-          obtain ⟨c, hc_src, hc_zero⟩ := exists_openStar_halfSpace_chart_of_ball hball a
+          have hc_comp := K.isCompact_closedStarRealization
+            (finite_faces_closedStar_iff.mpr hball.finite_faces)
+          obtain ⟨c, hc_src, -, -, -, hc_apply⟩ :=
+            exists_openPartialHomeomorph_openStar_halfBall_of_link hc_comp a
           have hxs : x ∈ c.source := hc_src ▸ hx
           rw [ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional hxs,
-            TauCeti.modelWithCornersEuclideanHalfSpace_mem_frontier_range_iff, hc_zero x hx hlt]
+            TauCeti.modelWithCornersEuclideanHalfSpace_mem_frontier_range_iff, hc_apply ⟨x, hx⟩,
+            openStarHomeomorphHalfBallOfLink_apply_zero_eq_zero_iff hc_comp a ⟨x, hx⟩ hlt]
           let Labs := (link K.toPreAbstractSimplicialComplex {v}).restrictToVertices
           have hLman : IsCombinatorialManifold Labs.toPreAbstractSimplicialComplex (m + 1) := by
             rw [← isCombinatorialManifold_map_iff (Subtype.val_injective (p := fun w : ι =>
