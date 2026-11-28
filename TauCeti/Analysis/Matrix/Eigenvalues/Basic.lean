@@ -562,7 +562,7 @@ theorem orderedEigenvalues_antitone (A : selfAdjoint.submodule ℝ (Matrix (Fin 
       ((isHermitian_coe A).eigenvalues₀_mul_mul_star U.property hA))
 
 /-- The ordered eigenvalues of a decreasing real diagonal are its diagonal entries. -/
-theorem orderedEigenvalues_selfAdjointDiagonal {d : Fin n → ℝ} (hd : Antitone d) :
+@[simp] theorem orderedEigenvalues_selfAdjointDiagonal {d : Fin n → ℝ} (hd : Antitone d) :
     orderedEigenvalues (TauCeti.selfAdjointDiagonal (𝕜 := 𝕜) d) = d := by
   let D := TauCeti.selfAdjointDiagonal (𝕜 := 𝕜) d
   have hD : (D : Matrix (Fin n) (Fin n) 𝕜) = diagonal (fun i ↦ (d i : 𝕜)) :=

@@ -15,6 +15,7 @@ import TauCeti.Topology.Algebra.Module.Determinant
 import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix.ChangeOfVariables
 import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix.SimpleSpectrum
 import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.Topology.Instances.Matrix
 import TauCeti.Topology.Order.FiniteFamily
 
 /-!
@@ -47,9 +48,6 @@ local notation "Herm" => selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)
 local notation "Frames" => unitaryGroup (Fin n) 𝕜
 local notation "Angles" => FinStrictUpper n → 𝕜
 local notation "chamber" => Set.ofPred (fun d : Fin n → ℝ ↦ StrictAnti d)
-
-private theorem strictAnti_neg_fin_val : StrictAnti (fun i : Fin n ↦ -((i : ℕ) : ℝ)) :=
-  fun _ _ hij ↦ neg_lt_neg (Nat.cast_lt.mpr hij)
 
 section Measure
 
@@ -185,7 +183,7 @@ theorem exists_lintegral_orderedEigenvalues_eq :
           c * ∫⁻ d in chamber,
             ENNReal.ofReal (|(vandermonde d).det| ^ Module.finrank ℝ 𝕜) * g d ∂volume := by
   let d₀ (i : Fin n) := -((i : ℕ) : ℝ)
-  have hd₀ : StrictAnti d₀ := strictAnti_neg_fin_val
+  have hd₀ : StrictAnti d₀ := (Nat.strictMono_cast.comp (Fin.valOrderEmb n).strictMono).neg
   obtain ⟨r, hr, hslice, hD⟩ := exists_spectralMatrix_angularBall (𝕜 := 𝕜) d₀ hd₀
   let B := Metric.ball (0 : Angles) r
   let J : Set Herm := spectralMatrix 1 '' (chamber ×ˢ B)

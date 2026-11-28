@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Matrix.Exponential.SkewAdjoint
 public import TauCeti.Analysis.Matrix.SelfAdjoint
 import TauCeti.Analysis.Calculus.FDeriv.Unitary
 import Mathlib.Topology.OpenPartialHomeomorph.Constructions
+import TauCeti.LinearAlgebra.Vandermonde
 import TauCeti.Topology.Order.FiniteFamily
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 import TauCeti.Topology.Algebra.Module.Determinant
@@ -173,26 +174,6 @@ theorem hasFDerivAt_spectralCoordinates (x : SelfAdjointCoordinates n 𝕜) :
 
 end Differentiation
 
-/-- The absolute Vandermonde determinant to any natural power is the corresponding product
-of powered absolute gaps. -/
-theorem abs_det_vandermonde_pow_eq_prod (d : Fin n → ℝ) (k : ℕ) :
-    |(vandermonde d).det| ^ k = ∏ ij : FinStrictUpper n, |d ij.val.2 - d ij.val.1| ^ k := by
-  let e : FinStrictUpper n ≃ (i : Fin n) × {j : Fin n // i < j} :=
-    ⟨fun ij ↦ ⟨ij.val.1, ij.val.2, ij.property⟩,
-      fun ij ↦ ⟨(ij.1, ij.2.val), ij.2.property⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩
-  have h : (vandermonde d).det = ∏ ij : FinStrictUpper n, (d ij.val.2 - d ij.val.1) := by
-    rw [det_vandermonde]
-    simp_rw [Finset.prod_subtype _ (fun _ ↦ Finset.mem_Ioi)]
-    rw [← Fintype.prod_sigma']
-    exact (Fintype.prod_equiv e _ _ fun _ ↦ rfl).symm
-  rw [h, Finset.abs_prod, Finset.prod_pow]
-
-/-- The absolute Vandermonde determinant raised to a fixed natural power is continuous. -/
-theorem continuous_abs_det_vandermonde_pow (k : ℕ) :
-    Continuous (fun d : Fin n → ℝ ↦ |(vandermonde d).det| ^ k) := by
-  simp_rw [abs_det_vandermonde_pow_eq_prod]
-  exact continuous_finsetProd _ fun _ _ ↦ by fun_prop
-
 /-- The absolute Jacobian factors as the angular Jacobian times the Vandermonde in the
 diagonal, raised to the real dimension of the scalar field. -/
 theorem abs_det_fderiv_spectralCoordinates (x : SelfAdjointCoordinates n 𝕜) :
@@ -290,7 +271,7 @@ theorem coe_spectralMatrix (U : unitaryGroup (Fin n) 𝕜) (x : SelfAdjointCoord
     coe_selfAdjointDiagonal, Unitary.conjStarAlgAut_apply, star_eq_conjTranspose]
 
 /-- In the decreasing chamber the diagonal coordinate is the ordered eigenvalue vector. -/
-theorem orderedEigenvalues_spectralMatrix (U : unitaryGroup (Fin n) 𝕜)
+@[simp] theorem orderedEigenvalues_spectralMatrix (U : unitaryGroup (Fin n) 𝕜)
     (x : SelfAdjointCoordinates n 𝕜) (hd : Antitone x.1) :
     selfAdjoint.orderedEigenvalues (spectralMatrix U x) = x.1 := by
   rw [spectralMatrix_eq_selfAdjointConj, selfAdjoint.orderedEigenvalues_selfAdjointConj]
