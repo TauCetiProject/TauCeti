@@ -24,7 +24,8 @@ open half-plane `{a < im}` (`TauCeti.setOfPred_le_im_mem_nhds`). A relatively op
 (`TauCeti.interior_inter_setOf_im_nonneg`), which as an open set is the upper half of `Ω`
 (`TopologicalSpace.Opens.interior_inter_setOf_im_nonneg_eq_upperHalf`), and every point of
 `Ω ∩ {0 ≤ im}` is a limit of interior points
-(`TauCeti.subset_closure_interior_inter_setOf_im_nonneg`). The set `Ω ∩ {0 ≤ im}` is also the
+(`TauCeti.subset_closure_interior_inter_setOf_im_nonneg`), also after removing any one point
+(`TauCeti.subset_closure_inter_setOf_im_nonneg_diff_singleton`). The set `Ω ∩ {0 ≤ im}` is also the
 closed upper part of a conjugation-invariant open set
 (`TauCeti.exists_isOpen_mapsTo_conj_inter_setOf_im_nonneg_eq`), and a compact subset of a
 conjugation-invariant open set lies in a conjugation-invariant open set with compact closure inside
@@ -97,6 +98,16 @@ theorem subset_closure_interior_inter_setOf_im_nonneg {Ω : Set ℂ} (hΩ : IsOp
   intro x hx
   rw [interior_inter_setOf_im_nonneg hΩ]
   exact hΩ.inter_closure ⟨hx.1, by rw [Complex.closure_setOfPred_lt_im]; exact hx.2⟩
+
+/-- For `Ω` open, removing a point `x` from `Ω ∩ {0 ≤ im}` does not change its closure: every
+point of `Ω ∩ {0 ≤ im}`, `x` included, is a limit of points of `(Ω ∩ {0 ≤ im}) \ {x}`. -/
+theorem subset_closure_inter_setOf_im_nonneg_diff_singleton {Ω : Set ℂ} (hΩ : IsOpen Ω) (x : ℂ) :
+    Ω ∩ {z : ℂ | 0 ≤ z.im} ⊆ closure ((Ω ∩ {z : ℂ | 0 ≤ z.im}) \ {x}) := by
+  refine (subset_closure_interior_inter_setOf_im_nonneg hΩ).trans
+    (closure_minimal ?_ isClosed_closure)
+  -- The interior is open, and the complement of a point is dense in it.
+  exact ((dense_compl_singleton x).open_subset_closure_inter isOpen_interior).trans
+    (closure_mono fun z hz ↦ ⟨interior_subset hz.1, hz.2⟩)
 
 /-- **A conjugation-invariant open set with the same closed upper part.** For `Ω` open, the open
 set `Ω' = {z | re z + i |im z| ∈ Ω}` is invariant under conjugation and has the same closed upper

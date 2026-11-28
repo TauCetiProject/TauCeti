@@ -51,6 +51,9 @@ the cokernel `M ⧸ ∑ᵢ range (D i)` of the family (`TauCeti.koszulTopCohomol
 * `TauCeti.koszulCochainDifferential_mem_koszulCochains`: `d` raises the degree by one.
 * `TauCeti.koszulCochainDifferential_koszulCochainDifferential`: `d ∘ d = 0` for a commuting
   family.
+* `TauCeti.koszulCochainDifferential_mem_pi`: if each `D j` maps `P (J.erase j)` into `Q J`,
+  the Koszul differential maps cochains with coefficients in `P` to cochains with coefficients in
+  `Q`; this is how a filtration of `M` compatible with the `D j` filters the Koszul complex.
 * `TauCeti.koszulCoboundaries_le_koszulCocycles`: coboundaries are cocycles.
 * `TauCeti.map_koszulCoboundaries_card`: the coefficients of the top-degree coboundaries on the
   full index set are exactly the elements of `∑ᵢ range (D i)`.
@@ -121,6 +124,12 @@ theorem koszulCochainDifferential_mem_koszulCochains {q : ℕ} {ω : Finset ι �
   refine sum_eq_zero fun j hj ↦ ?_
   have := card_pos.mpr ⟨j, hj⟩
   rw [hω (J.erase j) (by rw [card_erase_of_mem hj]; omega), map_zero, smul_zero]
+
+/-- The Koszul differential is additive in the family of endomorphisms. -/
+theorem koszulCochainDifferential_add (D' : ι → Module.End R M) :
+    koszulCochainDifferential (D + D') =
+      koszulCochainDifferential D + koszulCochainDifferential D' :=
+  LinearMap.ext fun ω ↦ funext fun J ↦ by simp [sum_add_distrib]
 
 /-- **The Koszul differential of a commuting family squares to zero.** Only distinct members of
 the family need to commute. -/
@@ -273,8 +282,26 @@ end Semiring
 
 section Ring
 
-variable {R ι M : Type*} [Ring R] [AddCommGroup M] [Module R M] [LinearOrder ι] [Fintype ι]
+variable {R ι M : Type*} [Ring R] [AddCommGroup M] [Module R M] [LinearOrder ι]
   (D : ι → Module.End R M)
+
+/-- **The Koszul differential respects coefficientwise conditions.** If, for every `j ∈ J`, the
+endomorphism `D j` maps the submodule `P (J.erase j)` into `Q J`, then the Koszul differential
+maps a cochain whose coefficient on every `I` lies in `P I` to one whose coefficient on every `J`
+lies in `Q J`. This is how a filtration of the coefficients compatible with the `D j` passes to
+the Koszul complex. -/
+theorem koszulCochainDifferential_mem_pi {P Q : Finset ι → Submodule R M}
+    (hD : ∀ J, ∀ j ∈ J, ∀ x ∈ P (J.erase j), D j x ∈ Q J) {ω : Finset ι → M}
+    (hω : ω ∈ Submodule.pi Set.univ P) :
+    koszulCochainDifferential D ω ∈ Submodule.pi Set.univ Q := by
+  rw [Submodule.mem_pi] at hω ⊢
+  intro J _
+  rw [koszulCochainDifferential_apply]
+  refine sum_mem fun j hj ↦ ?_
+  rw [Units.smul_def]
+  exact zsmul_mem (hD J j hj _ (hω _ trivial)) _
+
+variable [Fintype ι]
 
 /-- **The top Koszul cohomology is the cokernel of the family**: for a finite index type, the
 quotient of the top-degree cocycles by the coboundaries is `M ⧸ ∑ᵢ range (D i)`, through the

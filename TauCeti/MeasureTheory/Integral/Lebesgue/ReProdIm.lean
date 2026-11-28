@@ -41,6 +41,9 @@ periodic functions on half-strips.
   `TauCeti.tendsto_setLIntegral_of_eventually_subset` transported along `ℂ ≃ ℝ × ℝ`. For the
   energy density of a map on a cylindrical end, it says that a finite-energy end carries less and
   less energy far out.
+* **Tonelli on a band.** If `∫_s f(x + iy) dx ≤ C` for every `y ∈ t`, then the integral of `f`
+  over `s ×ℂ t` is at most `volume t * C` (`TauCeti.setLIntegral_reProdIm_le`). No measurability
+  is assumed.
 -/
 
 public section
@@ -181,5 +184,22 @@ theorem tendsto_setLIntegral_reProdIm_Ioi_atTop {t : Set ℝ} {a : ℝ}
   have h₁ : max a R < p.1 := hR'.trans_lt hp.1
   exact ⟨⟨(le_max_left _ _).trans_lt h₁, hp.2⟩,
     ((le_max_right _ _).trans h₁.le).trans (le_abs_self _)⟩
+
+/-- **Tonelli on a band.** If `∫_s f(x + iy) dx ≤ C` for every `y ∈ t`, then the integral of `f`
+over the band `s ×ℂ t` is at most `volume t * C`. No measurability of `f`, `s` or `t` is
+assumed. -/
+theorem setLIntegral_reProdIm_le {s t : Set ℝ} {C : ℝ≥0∞}
+    (hC : ∀ y ∈ t, ∫⁻ x in s, f (x + y * I) ≤ C) :
+    ∫⁻ z in s ×ℂ t, f z ≤ volume t * C := by
+  -- Transport to `ℝ × ℝ`, integrate over `y` last, and bound each horizontal slice.
+  have h : ∫⁻ z in s ×ℂ t, f z = ∫⁻ p in s ×ˢ t, f (measurableEquivRealProd.symm p) :=
+    (volume_preserving_equiv_real_prod.symm.setLIntegral_comp_preimage_emb
+      measurableEquivRealProd.symm.measurableEmbedding f (s ×ℂ t)).symm
+  rw [h, Measure.volume_eq_prod, ← Measure.prod_restrict, ← lintegral_prod_swap]
+  refine (lintegral_prod_le _).trans ?_
+  simp only [Prod.swap_prod_mk, measurableEquivRealProd_symm_apply, mk_eq_add_mul_I]
+  calc ∫⁻ y in t, ∫⁻ x in s, f (x + y * I) ≤ ∫⁻ _ in t, C :=
+        setLIntegral_mono_ae aemeasurable_const (.of_forall hC)
+    _ = volume t * C := by rw [setLIntegral_const, mul_comm]
 
 end TauCeti

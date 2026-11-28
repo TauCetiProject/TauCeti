@@ -33,8 +33,13 @@ greatest lower bound of any indexed family of subobjects whose cokernel product 
   subobject of `X` along `p` is that subobject.
 * `CategoryTheory.Subobject.pullback_exists_eq_self_of_kernelSubobject_le`: the preimage of the
   image of a subobject of `Y` containing the kernel of `p` is that subobject.
+* `CategoryTheory.Subobject.pullback_exists_eq_kernelSubobject_sup`: for an arbitrary subobject,
+  taking its image and then its preimage joins it with the kernel.
 * `CategoryTheory.Subobject.isGLB_range_kernelSubobject_piLift`: the greatest lower bound of a
   family of subobjects as a kernel subobject into the product of their cokernels.
+* `CategoryTheory.epi_comp_iff_kernelSubobject_sup_imageSubobject_eq_top` says that for an
+  epimorphism `p`, the composite `f ≫ p` is epic exactly when
+  `kernelSubobject p ⊔ imageSubobject f = ⊤`.
 * `CategoryTheory.Limits.kernelSubobject_cokernel_π`: the kernel of the cokernel of a
   monomorphism `f` is the subobject represented by `f`.
 * `CategoryTheory.ShortComplex.Exact.imageSubobject_comp_inv_eq_kernelSubobject_hom_comp`: the
@@ -101,6 +106,18 @@ lemma pullback_exists_eq_self_of_kernelSubobject_le (p : Y ⟶ X) {S : Subobject
         rw [imageSubobject_comp_eq_of_epi, imageSubobject_mono, mk_arrow]
     _ ≤ S := imageSubobject_le _ (S.factorThru _ hS') (factorThru_arrow _ _ _)
 
+/-- The preimage of the image of a subobject is its join with the kernel. -/
+lemma pullback_exists_eq_kernelSubobject_sup (p : Y ⟶ X) (S : Subobject Y) :
+    (pullback p).obj ((«exists» p).obj S) = kernelSubobject p ⊔ S := by
+  refine le_antisymm ?_ (sup_le ?_ (le_pullback_exists p S))
+  · calc
+      (pullback p).obj ((«exists» p).obj S) ≤
+          (pullback p).obj ((«exists» p).obj (kernelSubobject p ⊔ S)) :=
+        (pullback p).monotone ((«exists» p).monotone le_sup_right)
+      _ = _ := pullback_exists_eq_self_of_kernelSubobject_le p le_sup_left
+  · apply ((existsPullbackAdj p).gc _ _).mp
+    simp [exists_eq_imageSubobject]
+
 /-- In an abelian category, the kernel subobject of the map into the product of the cokernels of
 a `J`-indexed family of subobjects of `X` is the greatest lower bound of the family, whenever that
 product exists. -/
@@ -124,3 +141,16 @@ lemma isGLB_range_kernelSubobject_piLift {J : Type*} {X : C} (S : J → Subobjec
   exact (hle _).1 le_rfl j
 
 end CategoryTheory.Subobject
+
+namespace CategoryTheory
+
+/-- A composite with an epimorphism is epic exactly when the image of the first map and the
+kernel of the epimorphism together generate the middle object. -/
+lemma epi_comp_iff_kernelSubobject_sup_imageSubobject_eq_top {W : C} (f : W ⟶ Y)
+    (p : Y ⟶ X) [Epi p] :
+    Epi (f ≫ p) ↔ kernelSubobject p ⊔ imageSubobject f = ⊤ := by
+  rw [← imageSubobject_eq_top_iff_epi, ← Subobject.exists_obj_imageSubobject,
+    ← Subobject.pullback_exists_eq_kernelSubobject_sup, ← Subobject.pullback_top p]
+  exact (Function.LeftInverse.injective (Subobject.exists_pullback_eq_self_of_epi p)).eq_iff.symm
+
+end CategoryTheory

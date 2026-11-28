@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Generator
 public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Line
+public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Unitary
 public import TauCeti.Geometry.Symplectic.Manifold.Energy.Sphere
+public import TauCeti.Topology.ComplexProjectiveSpace.Hopf.Unitary
 
 /-!
 # Holomorphic spheres in complex projective space and the line class
@@ -18,11 +20,14 @@ area `1` on the class of a line
 generates `π₂(CPⁿ⁺¹) ≅ ℤ`. This file draws the consequences for the areas of sphere classes and of
 holomorphic spheres.
 
-* **Areas of sphere classes.** At the base point `[e₁]`, the area of a class is its image under
-  the isomorphism `π₂(CPⁿ⁺¹) ≃ ℤ` of the Hopf fibration
-  (`TauCeti.ComplexProjectiveSpace.sphereIntegral_fubiniStudyForm_eq_toAdd_pi2MulEquivInt`). The
-  integral over spheres does not change under base-point change, so at every base point the area
-  of a sphere class is an integer
+* **Areas of sphere classes.** At every base point `[v]`, the area of a class is its image under
+  the isomorphism `π₂(CPⁿ⁺¹, [v]) ≃ ℤ` of the Hopf fibration
+  (`TauCeti.ComplexProjectiveSpace.sphereIntegral_fubiniStudyForm_eq_toAdd_pi2MulEquivInt`). At
+  `[e₁]` this holds because every class is a power of the line class; a unitary matrix carrying
+  `[e₁]` to `[v]` preserves both the area
+  (`TauCeti.ComplexProjectiveSpace.sphereIntegral_fubiniStudyForm_homotopyGroupMap_smul`) and the
+  isomorphism with `ℤ` (`TauCeti.ComplexProjectiveSpace.pi2MulEquivInt_homotopyGroupMap_smul`). So
+  at every base point the area of a sphere class is an integer
   (`TauCeti.ComplexProjectiveSpace.exists_sphereIntegral_fubiniStudyForm_eq_intCast`) and a sphere
   class is determined by its area
   (`TauCeti.ComplexProjectiveSpace.sphereIntegral_fubiniStudyForm_injective`). In particular a
@@ -76,15 +81,12 @@ theorem sphereIntegral_fubiniStudyForm_lineClass :
   rw [← pi2MulEquivInt_symm_ofAdd_one]
   exact sphereIntegral_fubiniStudyForm_pi2MulEquivInt_symm_ofAdd_one
 
-/-- **The area of a sphere class of `CPⁿ⁺¹` is its degree.** At the base point
-`[e₁] = mk (n + 1) (affineUnitVector 1 0)`, the integral of the Fubini–Study form over a class of
-`π₂(CPⁿ⁺¹)` is its image in `ℤ` under the isomorphism
-`TauCeti.ComplexProjectiveSpace.pi2MulEquivInt` of the Hopf fibration. -/
-theorem sphereIntegral_fubiniStudyForm_eq_toAdd_pi2MulEquivInt
+/-- At the base point `[e₁] = mk (n + 1) (affineUnitVector 1 0)` the area of a class is its
+degree: every class is a power of the line class, of area `1`, and the area is additive. -/
+private theorem sphereIntegral_fubiniStudyForm_eq_toAdd_pi2MulEquivInt_affineUnitVector
     (a : π_ 2 (ComplexProjectiveSpace (n + 1)) (mk (n + 1) (affineUnitVector 1 0))) :
     sphereIntegral (fubiniStudyForm (n + 1)).val (mk (n + 1) (affineUnitVector 1 0)) a =
       Multiplicative.toAdd (pi2MulEquivInt (affineUnitVector 1 0) n.add_one_ne_zero a) := by
-  -- Every class is a power `lineClass n ^ k` of the line class, and the integral is additive.
   set e := pi2MulEquivInt (affineUnitVector 1 0) n.add_one_ne_zero
   set k := Multiplicative.toAdd (e a)
   have ha : a = lineClass n ^ k := by
@@ -94,30 +96,47 @@ theorem sphereIntegral_fubiniStudyForm_eq_toAdd_pi2MulEquivInt
       (isSmoothForm_fubiniStudyForm (n + 1)) (mextDeriv_fubiniStudyForm (n + 1))) k
       (Additive.ofMul (lineClass n))
 
+/-- **The area of a sphere class of `CPⁿ⁺¹` is its degree.** At every base point `[v]`, for a unit
+vector `v` of `ℂⁿ⁺²`, the integral of the Fubini–Study form over a class of `π₂(CPⁿ⁺¹, [v])` is its
+image in `ℤ` under the isomorphism `TauCeti.ComplexProjectiveSpace.pi2MulEquivInt v` of the Hopf
+fibration. -/
+theorem sphereIntegral_fubiniStudyForm_eq_toAdd_pi2MulEquivInt
+    (v : Metric.sphere (0 : EuclideanSpace ℂ (Fin (n + 2))) 1)
+    (a : π_ 2 (ComplexProjectiveSpace (n + 1)) (mk (n + 1) v)) :
+    sphereIntegral (fubiniStudyForm (n + 1)).val (mk (n + 1) v) a =
+      Multiplicative.toAdd (pi2MulEquivInt v n.add_one_ne_zero a) := by
+  -- A unitary matrix `A` carries `[e₁]` to `[v]`. It preserves both the area and the degree, so
+  -- the statement at `[v]` is the statement at `[e₁]`.
+  obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq
+    (EuclideanSpace ℂ (Fin (n + 2)) ≃ₗᵢ[ℂ] EuclideanSpace ℂ (Fin (n + 2)))
+    (affineUnitVector 1 0) v
+  obtain ⟨A, rfl⟩ := Matrix.UnitaryGroup.toLinearIsometryEquiv.surjective g
+  have hb : A⁻¹ • mk (n + 1)
+      (Matrix.UnitaryGroup.toLinearIsometryEquiv A • affineUnitVector 1 0) =
+        mk (n + 1) (affineUnitVector 1 0) := by
+    rw [← smul_mk, inv_smul_smul]
+  rw [← HomotopyGroup.map_map_of_comp_eq_id ⟨(A • ·), continuous_const_smul A⟩
+      ⟨(A⁻¹ • ·), continuous_const_smul A⁻¹⟩ hb (smul_mk A _)
+      (ContinuousMap.ext fun x ↦ smul_inv_smul A x) a,
+    sphereIntegral_fubiniStudyForm_homotopyGroupMap_smul, pi2MulEquivInt_homotopyGroupMap_smul,
+    sphereIntegral_fubiniStudyForm_eq_toAdd_pi2MulEquivInt_affineUnitVector]
+
 /-- **Sphere classes of `CPⁿ⁺¹` have integral area.** At every base point `x`, the integral of the
 Fubini–Study form over a class of `π₂(CPⁿ⁺¹, x)` is an integer. -/
 theorem exists_sphereIntegral_fubiniStudyForm_eq_intCast {x : ComplexProjectiveSpace (n + 1)}
     (a : π_ 2 (ComplexProjectiveSpace (n + 1)) x) :
-    ∃ k : ℤ, sphereIntegral (fubiniStudyForm (n + 1)).val x a = k :=
-  ⟨_, (sphereIntegral_homotopyGroupTransport (isSmoothForm_fubiniStudyForm (n + 1))
-    (mextDeriv_fubiniStudyForm (n + 1)) (PathConnectedSpace.somePath _ _) a).symm.trans
-    (sphereIntegral_fubiniStudyForm_eq_toAdd_pi2MulEquivInt _)⟩
+    ∃ k : ℤ, sphereIntegral (fubiniStudyForm (n + 1)).val x a = k := by
+  obtain ⟨v, rfl⟩ := mk_surjective (n + 1) x
+  exact ⟨_, sphereIntegral_fubiniStudyForm_eq_toAdd_pi2MulEquivInt v a⟩
 
 /-- **A sphere class of `CPⁿ⁺¹` is determined by its area.** At every base point `x`, the integral
 of the Fubini–Study form is injective on `π₂(CPⁿ⁺¹, x)`. -/
 theorem sphereIntegral_fubiniStudyForm_injective (x : ComplexProjectiveSpace (n + 1)) :
     Function.Injective (sphereIntegral (fubiniStudyForm (n + 1)).val x) := by
-  let γ : Path x (mk (n + 1) (affineUnitVector 1 0)) := PathConnectedSpace.somePath _ _
+  obtain ⟨v, rfl⟩ := mk_surjective (n + 1) x
   intro a b hab
-  -- Transport both classes to `[e₁]`, where the area is the degree.
-  rw [← sphereIntegral_homotopyGroupTransport (isSmoothForm_fubiniStudyForm (n + 1))
-      (mextDeriv_fubiniStudyForm (n + 1)) γ a,
-    ← sphereIntegral_homotopyGroupTransport (isSmoothForm_fubiniStudyForm (n + 1))
-      (mextDeriv_fubiniStudyForm (n + 1)) γ b,
-    sphereIntegral_fubiniStudyForm_eq_toAdd_pi2MulEquivInt,
+  rw [sphereIntegral_fubiniStudyForm_eq_toAdd_pi2MulEquivInt,
     sphereIntegral_fubiniStudyForm_eq_toAdd_pi2MulEquivInt, Int.cast_inj] at hab
-  refine (homotopyGroupEquivOfPath γ).injective ?_
-  rw [homotopyGroupEquivOfPath_apply, homotopyGroupEquivOfPath_apply]
   exact (pi2MulEquivInt _ _).injective (Multiplicative.toAdd.injective hab)
 
 /-- **The classes of area one are the line class.** A class of `π₂(CPⁿ⁺¹, x)` is carried to the
