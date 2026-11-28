@@ -113,6 +113,8 @@ theorem formDiscr_congr {n : ℕ} {G H : R[X]} (h : ∀ i ≤ n, G.coeff i = H.c
     _root_.funext fun i : Fin (n + 1) ↦ h i (Nat.lt_succ_iff.mp i.isLt)
   rw [formDiscr, formDiscr, hGH]
 
+/-- The degree-`n` binary-form discriminant of `Polynomial.freePoly ℤ n` recovers
+`TauCeti.universalDiscr n`. -/
 @[simp]
 theorem formDiscr_freePoly (n : ℕ) : (freePoly ℤ n).formDiscr n = universalDiscr n := by
   simp only [formDiscr, coeff_freePoly_fin]

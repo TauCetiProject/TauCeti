@@ -376,9 +376,9 @@ theorem not_prime_depressedDiscr_three_of_three_eq_zero {R : Type*} [CommRing R]
   omega
 
 /-- Over `ℤ`, `depressedDiscr ℤ 2 = -4 X₀` is not prime because `2` is not a unit in `ℤ`
-(witnessing that in degree `m = 2`, unlike `3 ≤ m` in `TauCeti.prime_depressedDiscr_of_three_le`,
-`IsUnit (2 : R)` cannot be weakened to `(2 : R) ≠ 0` in
-`TauCeti.depressedDiscr_prime`). -/
+(witnessing that at `m = 2`, replacing `IsUnit (m : R)` by `(m : R) ≠ 0` in
+`TauCeti.depressedDiscr_prime` fails even though the separate `(2 : R) ≠ 0` hypothesis holds over
+`ℤ`, unlike `3 ≤ m` in `TauCeti.prime_depressedDiscr_of_three_le`). -/
 theorem not_prime_depressedDiscr_int_two : ¬ Prime (depressedDiscr ℤ 2) :=
   fun hp ↦ (Int.isUnit_iff.not.mpr (by decide)) (prime_depressedDiscr_two_iff.mp hp)
 
