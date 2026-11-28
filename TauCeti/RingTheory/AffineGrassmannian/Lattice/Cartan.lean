@@ -9,6 +9,9 @@ public import TauCeti.Algebra.Module.ProjectiveLattice
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Cartan.DiscreteValuationRing
 public import TauCeti.RingTheory.AffineGrassmannian.Lattice.Filtration
 import TauCeti.Algebra.Algebra.IsUnit
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
+import Mathlib.GroupTheory.GroupAction.SubMulAction
+import Mathlib.Algebra.Group.Action.End
 
 /-!
 # The orbits of `GLₙ` of the integers on lattices
@@ -60,6 +63,42 @@ orbits of the positive loop group by the dominant coweights. Moreover, the latti
 public section
 
 open Matrix DoubleCoset
+
+namespace TauCeti
+
+section Displacement
+
+variable {B K : Type*} [CommRing B] [CommRing K] [Algebra B K]
+  {n : Type*} [Fintype n] {ξ : B}
+
+/-- A matrix divisible entrywise by `ξ ^ m` raises the constant diagonal bound by `m`. -/
+theorem mulVec_mem_diagonalLattice_const_add (hξ : IsUnit (algebraMap B K ξ)) (a : ℤ) (m : ℕ)
+    {A : Matrix n n B} (hA : ∀ i j, ξ ^ m ∣ A i j) {v : n → K}
+    (hv : v ∈ diagonalLattice (fun _ : n ↦ a) hξ) :
+    A.map (algebraMap B K) *ᵥ v ∈ diagonalLattice (fun _ : n ↦ a + m) hξ := by
+  choose C hC using hA
+  choose w hw using mem_diagonalLattice.mp hv
+  refine mem_diagonalLattice.mpr fun i ↦ ⟨∑ j, C i j * w j, ?_⟩
+  have hp := hξ.val_unit_zpow_eq_mul_algebraMap_pow_of_le
+    (m := a) (n := a + m) (by omega)
+  simp only [add_sub_cancel_left, Int.toNat_natCast] at hp
+  simp only [mulVec, dotProduct, Matrix.map_apply, hC, hw, map_mul, map_sum, Finset.mul_sum, hp]
+  exact Finset.sum_congr rfl fun j _ ↦ by ring
+
+/-- A matrix congruent to the identity modulo `ξ ^ m` displaces vectors of `ξ ^ a Bⁿ` into
+`ξ ^ (a + m) Bⁿ`. Invertibility is not required for this estimate. -/
+theorem mulVec_sub_mem_diagonalLattice_const_add [DecidableEq n]
+    (hξ : IsUnit (algebraMap B K ξ)) (a : ℤ) (m : ℕ)
+    {A : Matrix n n B} (hA : ∀ i j, ξ ^ m ∣ (A - 1) i j)
+    {v : n → K} (hv : v ∈ diagonalLattice (fun _ : n ↦ a) hξ) :
+    A.map (algebraMap B K) *ᵥ v - v ∈
+      diagonalLattice (fun _ : n ↦ a + m) hξ := by
+  have h := mulVec_mem_diagonalLattice_const_add hξ a m hA hv
+  simpa [Matrix.map_sub, Matrix.map_one, sub_mulVec] using h
+
+end Displacement
+
+end TauCeti
 
 namespace TauCeti.ProjectiveLattice
 
@@ -121,12 +160,21 @@ theorem map_smul_diagonal_const (A : GL n B) (m : ℤ) (hξ : IsUnit (algebraMap
   rw [diagonal_const, smul_smul, ← GeneralLinearGroup.scalar_commute, mul_smul,
     map_smul_standard]
 
+/-- Increasing the exponents decreases the diagonal lattice, even when `ξ` is a unit. -/
+theorem diagonal_antitone (hξ : IsUnit (algebraMap B K ξ)) :
+    Antitone (fun k : n → ℤ ↦ diagonal k hξ) := by
+  intro a b hab v hv
+  refine mem_diagonal.mpr fun i ↦ ?_
+  obtain ⟨c, hc⟩ := mem_diagonal.mp hv i
+  exact ⟨ξ ^ (b i - a i).toNat * c, by
+    rw [hc, IsUnit.val_unit_zpow_eq_mul_algebraMap_pow_of_le hξ (hab i), mul_assoc, map_mul]⟩
+
 /-- If `ξ` is not a unit of `B`, then `diag(ξ^a) Bⁿ ⊆ diag(ξ^b) Bⁿ` exactly when `b ≤ a`
 pointwise. -/
 @[simp]
 theorem diagonal_le_diagonal_iff (hξ' : ¬IsUnit ξ) {a b : n → ℤ}
     (hξ : IsUnit (algebraMap B K ξ)) : diagonal a hξ ≤ diagonal b hξ ↔ b ≤ a := by
-  refine ⟨fun h i ↦ ?_, fun h v hv ↦ mem_diagonal.mpr fun i ↦ ?_⟩
+  refine ⟨fun h i ↦ ?_, fun h ↦ diagonal_antitone hξ h⟩
   · by_contra hlt
     rw [not_le] at hlt
     -- `ξ^{a i} e_i` lies in `diag(ξ^a) Bⁿ`, hence `ξ^{a i} ∈ ξ^{b i} B`, making `ξ` a unit.
@@ -143,9 +191,6 @@ theorem diagonal_le_diagonal_iff (hξ' : ¬IsUnit ξ) {a b : n → ℤ}
     have hlt' : a i < b i := hlt
     have hm : (b i - a i).toNat ≠ 0 := by omega
     exact hξ' ((isUnit_pow_iff hm).mp (.of_mul_eq_one _ h1))
-  · obtain ⟨c, hc⟩ := mem_diagonal.mp hv i
-    exact ⟨ξ ^ (a i - b i).toNat * c, by
-      rw [hc, IsUnit.val_unit_zpow_eq_mul_algebraMap_pow_of_le hξ (h i), mul_assoc, map_mul]⟩
 
 /-- If `ξ` is not a unit of `B`, a diagonal lattice determines its exponent vector. -/
 @[simp]
@@ -171,6 +216,60 @@ theorem map_smul_le_diagonal_const_iff (A : GL n B) (m : ℤ) (hξ : IsUnit (alg
       Λ ≤ diagonal (fun _ : n ↦ m) hξ := by
   rw [← map_smul_diagonal_const A m hξ, ProjectiveLattice.smul_le_smul_iff,
     map_smul_diagonal_const]
+
+/-- The integral general linear group acts on the interval between constant diagonal lattices.
+The endpoints need not be distinct, and an empty interval is allowed. -/
+noncomputable def diagonalIntervalAction (hξ : IsUnit (algebraMap B K ξ)) (a b : ℤ) :
+    GL n B →* Equiv.Perm
+      (Set.Icc (diagonal (fun _ : n ↦ b) hξ) (diagonal (fun _ : n ↦ a) hξ)) := by
+  letI := MulAction.compHom (ProjectiveLattice B K (n → K))
+    (GeneralLinearGroup.map (n := n) (algebraMap B K))
+  let S : SubMulAction (GL n B) (ProjectiveLattice B K (n → K)) :=
+    { carrier := Set.Icc (diagonal (fun _ : n ↦ b) hξ) (diagonal (fun _ : n ↦ a) hξ)
+      smul_mem' := fun g L hL ↦
+        ⟨(diagonal_const_le_map_smul_iff g b hξ L).2 hL.1,
+          (map_smul_le_diagonal_const_iff g a hξ L).2 hL.2⟩ }
+  exact MulAction.toPermHom (GL n B) S
+
+/-- The action on the interval is the usual matrix action on its underlying lattice. -/
+@[simp]
+theorem val_diagonalIntervalAction_apply (hξ : IsUnit (algebraMap B K ξ)) (a b : ℤ)
+    (g : GL n B) (L : Set.Icc (diagonal (fun _ : n ↦ b) hξ)
+      (diagonal (fun _ : n ↦ a) hξ)) :
+    (diagonalIntervalAction hξ a b g L).val =
+      GeneralLinearGroup.map (algebraMap B K) g • L.val := (rfl)
+
+/-- A congruence element fixes a lattice between constant diagonal bounds when its level is
+at least the width of the interval. -/
+theorem map_smul_eq_of_congruent (hξ : IsUnit (algebraMap B K ξ)) {a b : ℤ} {m : ℕ}
+    (hm : b ≤ a + m) {g : GL n B}
+    (hg : ∀ i j, ξ ^ m ∣ ((g : Matrix n n B) - 1) i j)
+    {L : ProjectiveLattice B K (n → K)}
+    (hL : L ∈ Set.Icc (diagonal (fun _ : n ↦ b) hξ) (diagonal (fun _ : n ↦ a) hξ)) :
+    GeneralLinearGroup.map (algebraMap B K) g • L = L := by
+  have preserves (u : GL n B) (hu : ∀ i j, ξ ^ m ∣ ((u : Matrix n n B) - 1) i j)
+      {v : n → K} (hv : v ∈ L) : (u : Matrix n n B).map (algebraMap B K) *ᵥ v ∈ L := by
+    have hd := TauCeti.mulVec_sub_mem_diagonalLattice_const_add hξ a m hu
+      (by simpa only [← toSubmodule_diagonal, mem_toSubmodule] using hL.2 hv)
+    rw [← toSubmodule_diagonal, mem_toSubmodule] at hd
+    have hd := hL.1 (diagonal_antitone hξ (fun _ ↦ hm) hd)
+    simpa using add_mem hd hv
+  let I : Ideal B := Ideal.span {ξ ^ m}
+  have kernel_iff (u : GL n B) :
+      u ∈ (GeneralLinearGroup.map (Ideal.Quotient.mk I)).ker ↔
+        ∀ i j, ξ ^ m ∣ ((u : Matrix n n B) - 1) i j := by
+    simp only [GeneralLinearGroup.mem_ker_map_quotientMk_iff, I, Ideal.mem_span_singleton,
+      Matrix.sub_apply]
+  have hgi := (kernel_iff g⁻¹).1 (((GeneralLinearGroup.map (Ideal.Quotient.mk I)).ker).inv_mem
+    ((kernel_iff g).2 hg))
+  apply le_antisymm
+  · intro v hv
+    have hi : (g⁻¹ : GL n B).val.map (algebraMap B K) *ᵥ v ∈ L := by
+      rwa [mem_GL_smul, ← map_inv, GeneralLinearGroup.val_map_apply] at hv
+    simpa [mulVec_mulVec, ← Matrix.map_mul] using preserves g hg hi
+  · intro v hv
+    rw [mem_GL_smul, ← map_inv, GeneralLinearGroup.val_map_apply]
+    exact preserves g⁻¹ hgi hv
 
 /-- **Bounded lattices.** If `ξ` is not a unit of `B` and `g ∈ GLₙ(B)`, the lattice
 `g diag(ξ^a) Bⁿ` lies between `ξ^N Bⁿ` and `ξ^{-N} Bⁿ` exactly when every `|a_i| ≤ N`. -/

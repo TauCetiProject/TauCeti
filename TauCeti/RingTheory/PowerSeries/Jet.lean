@@ -109,6 +109,16 @@ theorem jet_coe (p : R[X]) : jet R N (p : R⟦X⟧) = AdjoinRoot.mk _ p :=
 theorem jet_X : jet R N X = AdjoinRoot.root (Polynomial.X ^ N : R[X]) := by
   rw [← Polynomial.coe_X, jet_coe, AdjoinRoot.mk_X]
 
+/-- The first-jet map factors through the constant coefficient and the inclusion of constants. -/
+theorem jet_one_comp_C_constantCoeff :
+    (↑(jet R 1) : R⟦X⟧ →+* AdjoinRoot (Polynomial.X ^ 1 : R[X])).comp
+      ((C : R →+* R⟦X⟧).comp constantCoeff) = ↑(jet R 1) := by
+  ext f
+  apply jet_eq_jet_iff.mpr
+  intro d hd
+  obtain rfl : d = 0 := by omega
+  simp [coeff_zero_eq_constantCoeff]
+
 /-- Every element of `R[X]/(X ^ N)` is the jet of a power series, for instance of a polynomial. -/
 theorem jet_surjective : Function.Surjective (jet R N) := fun y ↦ by
   obtain ⟨p, rfl⟩ := AdjoinRoot.mk_surjective y

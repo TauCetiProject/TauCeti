@@ -7,9 +7,9 @@ module
 
 public import TauCeti.RingTheory.AffineGrassmannian.Lattice.Cartan
 public import TauCeti.RingTheory.PowerSeries.Jet
-public import TauCeti.RingTheory.LaurentSeries.Basic
+public import Mathlib.RingTheory.LaurentSeries
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Lift
-import TauCeti.Algebra.Algebra.IsUnit
 import Mathlib.Algebra.Group.Action.End
 
 /-!
@@ -37,100 +37,14 @@ open scoped Polynomial PowerSeries LaurentSeries
 
 namespace TauCeti.ProjectiveLattice
 
-section General
-
-variable {B K : Type*} [CommRing B] [CommRing K] [Algebra B K] [FaithfulSMul B K]
-  {n : Type*} [Fintype n] [DecidableEq n] {ξ : B}
-
-/-- The integral general linear group acts on the interval between constant diagonal lattices.
-The endpoints need not be distinct, and an empty interval is allowed. -/
-noncomputable def diagonalIntervalAction (hξ : IsUnit (algebraMap B K ξ)) (a b : ℤ) :
-    GL n B →* Equiv.Perm
-      (Set.Icc (diagonal (fun _ : n ↦ b) hξ) (diagonal (fun _ : n ↦ a) hξ)) where
-  toFun g :=
-    { toFun L := ⟨GeneralLinearGroup.map (algebraMap B K) g • L.val,
-        (diagonal_const_le_map_smul_iff g b hξ L.val).2 L.property.1,
-        (map_smul_le_diagonal_const_iff g a hξ L.val).2 L.property.2⟩
-      invFun L := ⟨GeneralLinearGroup.map (algebraMap B K) g⁻¹ • L.val,
-        (diagonal_const_le_map_smul_iff g⁻¹ b hξ L.val).2 L.property.1,
-        (map_smul_le_diagonal_const_iff g⁻¹ a hξ L.val).2 L.property.2⟩
-      left_inv L := Subtype.ext (by simp)
-      right_inv L := Subtype.ext (by simp) }
-  map_one' := by ext L : 2; simp
-  map_mul' g h := by ext L : 2; simp [mul_smul]
-
-/-- The action on the interval is the usual matrix action on its underlying lattice. -/
-@[simp]
-theorem coe_diagonalIntervalAction (hξ : IsUnit (algebraMap B K ξ)) (a b : ℤ)
-    (g : GL n B) (L : Set.Icc (diagonal (fun _ : n ↦ b) hξ)
-      (diagonal (fun _ : n ↦ a) hξ)) :
-    (diagonalIntervalAction hξ a b g L).val =
-      GeneralLinearGroup.map (algebraMap B K) g • L.val := (rfl)
-
-/-- A matrix divisible entrywise by `ξ ^ m` raises the constant diagonal bound by `m`. -/
-theorem mulVec_mem_diagonal_const_add (hξ : IsUnit (algebraMap B K ξ)) (a : ℤ) (m : ℕ)
-    {A : Matrix n n B} (hA : ∀ i j, ξ ^ m ∣ A i j) {v : n → K}
-    (hv : v ∈ diagonal (fun _ : n ↦ a) hξ) :
-    A.map (algebraMap B K) *ᵥ v ∈ diagonal (fun _ : n ↦ a + m) hξ := by
-  choose C hC using hA
-  choose w hw using mem_diagonal.mp hv
-  refine mem_diagonal.mpr fun i ↦ ⟨∑ j, C i j * w j, ?_⟩
-  have hp := hξ.val_unit_zpow_eq_mul_algebraMap_pow_of_le
-    (m := a) (n := a + m) (by omega)
-  simp only [add_sub_cancel_left, Int.toNat_natCast] at hp
-  simp only [mulVec, dotProduct, Matrix.map_apply, hC, hw, map_mul, map_sum, Finset.mul_sum, hp]
-  exact Finset.sum_congr rfl fun j _ ↦ by ring
-
-/-- A matrix congruent to the identity modulo `ξ ^ m` displaces vectors of `ξ ^ a Bⁿ` into
-`ξ ^ (a + m) Bⁿ`. Invertibility is not required for this estimate. -/
-theorem mulVec_sub_mem_diagonal_const_add (hξ : IsUnit (algebraMap B K ξ)) (a : ℤ) (m : ℕ)
-    {A : Matrix n n B} (hA : ∀ i j, ξ ^ m ∣ (A - 1) i j)
-    {v : n → K} (hv : v ∈ diagonal (fun _ : n ↦ a) hξ) :
-    A.map (algebraMap B K) *ᵥ v - v ∈
-      diagonal (fun _ : n ↦ a + m) hξ := by
-  have h := mulVec_mem_diagonal_const_add hξ a m hA hv
-  simpa [Matrix.map_sub, Matrix.map_one, sub_mulVec] using h
-
-/-- A congruence element fixes a lattice between constant diagonal bounds when its level is
-at least the width of the interval. -/
-theorem map_smul_eq_of_congruent (hξ : IsUnit (algebraMap B K ξ)) {a b : ℤ} {m : ℕ}
-    (hm : b ≤ a + m) {g : GL n B}
-    (hg : ∀ i j, ξ ^ m ∣ ((g : Matrix n n B) - 1) i j)
-    {L : ProjectiveLattice B K (n → K)}
-    (hL : L ∈ Set.Icc (diagonal (fun _ : n ↦ b) hξ) (diagonal (fun _ : n ↦ a) hξ)) :
-    GeneralLinearGroup.map (algebraMap B K) g • L = L := by
-  have lower : diagonal (fun _ : n ↦ a + m) hξ ≤ diagonal (fun _ : n ↦ b) hξ := by
-    intro v hv
-    choose w hw using mem_diagonal.mp hv
-    exact mem_diagonal.mpr fun i ↦ ⟨ξ ^ (a + m - b).toNat * w i, by
-      rw [hw, hξ.val_unit_zpow_eq_mul_algebraMap_pow_of_le hm, map_mul, mul_assoc]⟩
-  have preserves (u : GL n B) (hu : ∀ i j, ξ ^ m ∣ ((u : Matrix n n B) - 1) i j)
-      {v : n → K} (hv : v ∈ L) : (u : Matrix n n B).map (algebraMap B K) *ᵥ v ∈ L := by
-    have hd := hL.1 (lower (mulVec_sub_mem_diagonal_const_add hξ a m hu (hL.2 hv)))
-    simpa using add_mem hd hv
-  have hgi : ∀ i j, ξ ^ m ∣ ((g⁻¹ : GL n B) - 1 : Matrix n n B) i j := by
-    have heq : (g⁻¹ : GL n B).val - 1 = -((g⁻¹ : GL n B).val * (g.val - 1)) := by
-      rw [mul_sub, Units.inv_mul, mul_one, neg_sub]
-    intro i j
-    rw [heq, Matrix.neg_apply, dvd_neg, Matrix.mul_apply]
-    exact Finset.dvd_sum fun k _ ↦ dvd_mul_of_dvd_right (hg k j) _
-  apply le_antisymm
-  · intro v hv
-    have hi : (g⁻¹ : GL n B).val.map (algebraMap B K) *ᵥ v ∈ L := by
-      rwa [mem_GL_smul, ← map_inv, GeneralLinearGroup.val_map_apply] at hv
-    simpa [mulVec_mulVec, ← Matrix.map_mul] using preserves g hg hi
-  · intro v hv
-    rw [mem_GL_smul, ← map_inv, GeneralLinearGroup.val_map_apply]
-    exact preserves g⁻¹ hgi hv
-
-end General
-
 section PowerSeries
 
 variable (R n : Type*) [CommRing R] [Fintype n] [DecidableEq n]
 
 local instance : FaithfulSMul R⟦X⟧ R⸨X⸩ :=
-  (faithfulSMul_iff_algebraMap_injective R⟦X⟧ R⸨X⸩).2 HahnSeries.ofPowerSeries_injective
+  (faithfulSMul_iff_algebraMap_injective R⟦X⟧ R⸨X⸩).2 (by
+    rw [LaurentSeries.coe_algebraMap]
+    exact HahnSeries.ofPowerSeries_injective)
 
 /-- The lattices between `X ^ b R⟦X⟧ⁿ` and `X ^ a R⟦X⟧ⁿ`, with the localization algebra
 structure on Laurent series. The bounds may coincide, and the coefficient ring may be nonreduced. -/
@@ -150,12 +64,10 @@ theorem map_smul_eq_of_jet_eq_one {a b : ℤ} {m : ℕ} (hm : b ≤ a + m)
     (L : powerSeriesInterval R n a b) :
     GeneralLinearGroup.map (algebraMap R⟦X⟧ R⸨X⸩) g • L.val = L.val := by
   apply map_smul_eq_of_congruent _ hm ?_ L.property
-  intro i j
-  apply PowerSeries.jet_eq_zero_iff.mp
-  have he := congrArg (fun u : GL n (AdjoinRoot (Polynomial.X ^ m : R[X])) ↦
-    u.val i j) hg
-  simpa [map_sub, Matrix.sub_apply, GeneralLinearGroup.val_map_apply, Matrix.one_apply] using
-    sub_eq_zero.mpr he
+  have hk := (GeneralLinearGroup.mem_ker_map_iff
+    (↑(PowerSeries.jet R m) : R⟦X⟧ →+* AdjoinRoot (Polynomial.X ^ m : R[X]))).1
+      (MonoidHom.mem_ker.mpr hg)
+  simpa only [RingHom.ker_coe_toRingHom, PowerSeries.ker_jet, Ideal.mem_span_singleton] using hk
 
 variable (R n)
 
@@ -170,7 +82,8 @@ noncomputable def jetAction (a b : ℤ) (m : ℕ) [NeZero m] (hm : b ≤ a + m) 
         (PowerSeries.X : R⟦X⟧)) a b, fun g hg ↦ by
       apply MonoidHom.mem_ker.mpr
       ext L : 2
-      exact map_smul_eq_of_jet_eq_one hm hg L⟩
+      simpa only [val_diagonalIntervalAction_apply, Equiv.Perm.one_apply] using
+        map_smul_eq_of_jet_eq_one hm hg L⟩
 
 /-- The finite-jet action as a `MulAction`, for use as a local instance after choosing the
 jet level and its width bound. -/
@@ -182,13 +95,13 @@ variable {R n}
 
 /-- Reducing an arc to its jet and applying the jet action gives the original lattice action. -/
 @[simp]
-theorem coe_jetAction_map {a b : ℤ} {m : ℕ} [NeZero m] (hm : b ≤ a + m)
+theorem val_jetAction_map {a b : ℤ} {m : ℕ} [NeZero m] (hm : b ≤ a + m)
     (g : GL n R⟦X⟧) (L : powerSeriesInterval R n a b) :
     (jetAction R n a b m hm (GeneralLinearGroup.map (↑(PowerSeries.jet R m)) g) L).val =
       GeneralLinearGroup.map (algebraMap R⟦X⟧ R⸨X⸩) g • L.val := by
   dsimp only [jetAction, MonoidHom.liftOfSurjective]
   rw [MonoidHom.liftOfRightInverse_comp_apply]
-  exact coe_diagonalIntervalAction _ a b g L
+  exact val_diagonalIntervalAction_apply _ a b g L
 
 /-- The jet action is the unique action homomorphism extending the arc action on the interval. -/
 theorem jetAction_unique {a b : ℤ} {m : ℕ} [NeZero m] (hm : b ≤ a + m)
@@ -198,13 +111,32 @@ theorem jetAction_unique {a b : ℤ} {m : ℕ} [NeZero m] (hm : b ≤ a + m)
       (ρ (GeneralLinearGroup.map (↑(PowerSeries.jet R m)) g) L).val =
         GeneralLinearGroup.map (algebraMap R⟦X⟧ R⸨X⸩) g • L.val) :
     ρ = jetAction R n a b m hm := by
-  ext q L : 3
-  obtain ⟨g, rfl⟩ := GeneralLinearGroup.map_surjective
+  apply (MonoidHom.cancel_right (GeneralLinearGroup.map_surjective
     (↑(PowerSeries.jet R m) : R⟦X⟧ →+* AdjoinRoot (Polynomial.X ^ m : R[X]))
-    PowerSeries.jet_surjective q
-  exact (hρ g L).trans (coe_jetAction_map hm g L).symm
+    PowerSeries.jet_surjective)).1
+  ext g L : 3
+  exact (hρ g L).trans (val_jetAction_map hm g L).symm
 
-/-- On a singleton interval every jet acts trivially. -/
+/-- Once the smaller jet level bounds the interval width, reducing from a larger jet level
+does not change the lattice action. -/
+theorem jetAction_comp_algHomOfDvd {a b : ℤ} {m M : ℕ} [NeZero m] [NeZero M]
+    (hm : b ≤ a + m) (h : m ≤ M) :
+    (jetAction R n a b m hm).comp
+      (GeneralLinearGroup.map (AdjoinRoot.algHomOfDvd R (Polynomial.X ^ M : R[X])
+        (Polynomial.X ^ m) (pow_dvd_pow Polynomial.X h)).toRingHom) =
+      jetAction R n a b M (by omega) := by
+  apply jetAction_unique
+  intro g L
+  have hmap : GeneralLinearGroup.map
+      (AdjoinRoot.algHomOfDvd R (Polynomial.X ^ M : R[X]) (Polynomial.X ^ m)
+        (pow_dvd_pow Polynomial.X h)).toRingHom
+      (GeneralLinearGroup.map (↑(PowerSeries.jet R M)) g) =
+        GeneralLinearGroup.map (↑(PowerSeries.jet R m)) g := by
+    ext i j
+    exact PowerSeries.algHomOfDvd_jet h _
+  simpa only [MonoidHom.comp_apply, hmap] using val_jetAction_map hm g L
+
+/-- Every jet fixes every lattice in the interval with equal exponent bounds `a, a`. -/
 @[simp]
 theorem jetAction_self (a : ℤ) (m : ℕ) [NeZero m]
     (q : GL n (AdjoinRoot (Polynomial.X ^ m : R[X])))
@@ -216,7 +148,7 @@ theorem jetAction_self (a : ℤ) (m : ℕ) [NeZero m]
 
 /-- On any lattice interval of width at most one, an arc acts in the same way as its constant
 matrix. In particular this identifies the first-jet action on `XL₀ ⊆ L ⊆ L₀`. -/
-theorem map_smul_eq_constantCoeff {a b : ℤ} (hab : b ≤ a + 1)
+theorem map_smul_eq_constantCoeff_smul {a b : ℤ} (hab : b ≤ a + 1)
     (L : powerSeriesInterval R n a b) (g : GL n R⟦X⟧) :
     GeneralLinearGroup.map (algebraMap R⟦X⟧ R⸨X⸩) g • L.val =
       GeneralLinearGroup.map (algebraMap R⟦X⟧ R⸨X⸩)
@@ -228,12 +160,27 @@ theorem map_smul_eq_constantCoeff {a b : ℤ} (hab : b ≤ a + 1)
         (↑(PowerSeries.jet R 1) : R⟦X⟧ →+* AdjoinRoot (Polynomial.X ^ 1 : R[X]))
         (GeneralLinearGroup.map (PowerSeries.C : R →+* R⟦X⟧)
           (GeneralLinearGroup.map (PowerSeries.constantCoeff : R⟦X⟧ →+* R) g)) := by
-    ext i j
-    apply PowerSeries.jet_eq_jet_iff.mpr
-    intro d hd
-    obtain rfl : d = 0 := by omega
-    simp [PowerSeries.coeff_zero_eq_constantCoeff]
-  rw [← coe_jetAction_map (m := 1) hab g L, ← coe_jetAction_map (m := 1) hab _ L, hj]
+    simpa only [GeneralLinearGroup.map_comp, MonoidHom.comp_apply] using
+      (congrArg (fun f : R⟦X⟧ →+* AdjoinRoot (Polynomial.X ^ 1 : R[X]) ↦
+        GeneralLinearGroup.map f g) PowerSeries.jet_one_comp_C_constantCoeff).symm
+  rw [← val_jetAction_map (m := 1) hab g L, ← val_jetAction_map (m := 1) hab _ L, hj]
+
+/-- The first-jet action on an interval of width at most one is the action of its matrix
+evaluated at zero. -/
+@[simp]
+theorem val_jetAction_one {a b : ℤ} (hab : b ≤ a + 1)
+    (q : GL n (AdjoinRoot (Polynomial.X ^ 1 : R[X]))) (L : powerSeriesInterval R n a b) :
+    (jetAction R n a b 1 hab q L).val =
+      GeneralLinearGroup.map (algebraMap R⟦X⟧ R⸨X⸩)
+        (GeneralLinearGroup.map (PowerSeries.C : R →+* R⟦X⟧)
+          (GeneralLinearGroup.map (AdjoinRoot.lift (RingHom.id R) 0 (by simp)) q)) • L.val := by
+  obtain ⟨g, rfl⟩ := GeneralLinearGroup.map_surjective
+    (↑(PowerSeries.jet R 1) : R⟦X⟧ →+* AdjoinRoot (Polynomial.X ^ 1 : R[X]))
+    PowerSeries.jet_surjective q
+  rw [val_jetAction_map, map_smul_eq_constantCoeff_smul hab L g]
+  congr 2
+  ext i j
+  simp [PowerSeries.jet_apply, PowerSeries.coeff_zero_eq_constantCoeff]
 
 end PowerSeries
 
