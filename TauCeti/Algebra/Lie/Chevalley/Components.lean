@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Chevalley.Basic
+public import TauCeti.Algebra.Lie.Chevalley.Transport
 public import TauCeti.LinearAlgebra.RootSystem.Component.RootString
 
 /-!
@@ -17,8 +17,9 @@ each model with its component; entries on different components are zero. The res
 lives on the original root indices and retains the full cocharacter lattice. In particular,
 no integral splitting of the cocharacter lattice is needed.
 
-The root-string and coroot-relation comparisons use the perfect ambient pairing. Mixed-component
-terms in the root-coordinate Jacobi identity vanish individually.
+Each component table is transported to `RootPairing.ambientComponentPairing` using
+`RootPairing.ChevalleyConstants.reindex`. The ambient perfect pairing is unchanged, and
+mixed-component terms in the root-coordinate Jacobi identity vanish individually.
 
 ## References
 
@@ -42,6 +43,10 @@ variable {ι X Y : Type*} [Finite ι] [AddCommGroup X] [AddCommGroup Y]
 
 variable (c : ∀ C, (Q C).ChevalleyConstants)
 
+private noncomputable def componentTable (C : P.Component) :
+    (P.ambientComponentPairing C).ChevalleyConstants :=
+  (c C).reindex (e C).symm fun i j ↦ by simpa using (he C ((e C).symm i) ((e C).symm j)).symm
+
 open Classical in
 private noncomputable def componentConst (i j : ι) : ℤ :=
   if h : P.componentOf j = P.componentOf i then
@@ -53,13 +58,9 @@ omit [Finite ι] in
 private theorem componentConst_of_mem (C : P.Component) (i j : C.supp) :
     componentConst Q e c i j = (c C).structConst (e C i) (e C j) := by
   obtain ⟨i, hi⟩ := i
-  revert j
-  -- Membership in a component support is equality with the component of the root.
-  change P.componentOf i = C at hi
-  subst C
-  rintro ⟨j, hj⟩
-  have hj' : P.componentOf j = P.componentOf i := hj
-  simp [componentConst, hj']
+  obtain ⟨j, hj⟩ := j
+  rcases (C.mem_supp_iff i).mp hi with rfl
+  simp [componentConst, (SimpleGraph.ConnectedComponent.mem_supp_iff _ _).mp hj]
 
 omit [Finite ι] in
 private theorem componentConst_of_ne {i j : ι} (h : P.componentOf i ≠ P.componentOf j) :
@@ -74,8 +75,9 @@ private theorem componentConst_eq_zero_of_notMem {i j : ι}
     let i' : C.supp := ⟨i, rfl⟩
     let j' : C.supp := ⟨j, hij⟩
     rw [componentConst_of_mem Q e c C i' j']
-    exact (c C).structConst_eq_zero_of_notMem_range _ _
-      (mt (root_add_mem_range_iff_of_component P (e C) (he C) i' j').mp h)
+    simpa only [componentTable, reindex_structConst_apply, Equiv.symm_symm] using
+      (componentTable Q e he c C).structConst_eq_zero_of_notMem_range i' j'
+        (mt (P.ambientComponentPairing_root_add_mem_range_iff C i' j').mp h)
   · exact componentConst_of_ne Q e c (Ne.symm hij)
 
 omit [Finite ι] in
@@ -96,9 +98,11 @@ private theorem natAbs_componentConst {i j k : ι} (hk : P.root k = P.root i + P
   let i' : C.supp := ⟨i, rfl⟩
   let j' : C.supp := ⟨j, (P.componentOf_eq_of_root_eq_add hk).symm⟩
   let k' : C.supp := ⟨k, P.componentOf_eq_left_of_root_eq_add hk⟩
-  rw [componentConst_of_mem Q e c C i' j',
-    (c C).natAbs_structConst ((root_eq_add_iff_of_component P (e C) (he C) i' j' k').mpr hk),
-    chainBotCoeff_eq_of_component P (e C) (he C) i' j']
+  rw [componentConst_of_mem Q e c C i' j']
+  simpa only [componentTable, reindex_structConst_apply, Equiv.symm_symm,
+    ambientComponentPairing_chainBotCoeff] using
+    (componentTable Q e he c C).natAbs_structConst (i := i') (j := j') (k := k')
+      (by simpa only [ambientComponentPairing_root] using hk)
 
 include he in
 private theorem componentConst_reflectionPerm (i j : ι) :
@@ -108,11 +112,11 @@ private theorem componentConst_reflectionPerm (i j : ι) :
   · let C := P.componentOf i
     let i' : C.supp := ⟨i, rfl⟩
     let j' : C.supp := ⟨j, hij⟩
-    let ni : C.supp := ⟨P.reflectionPerm i i, P.componentOf_reflectionPerm i i⟩
-    let nj : C.supp := ⟨P.reflectionPerm j j, (P.componentOf_reflectionPerm j j).trans hij⟩
-    rw [componentConst_of_mem Q e c C ni nj, componentConst_of_mem Q e c C i' j']
-    rw [map_reflectionPerm_of_component P (e C) (he C) i' i',
-      map_reflectionPerm_of_component P (e C) (he C) j' j', (c C).structConst_reflectionPerm]
+    rw [← P.coe_ambientComponentPairing_reflectionPerm C i' i',
+      ← P.coe_ambientComponentPairing_reflectionPerm C j' j',
+      componentConst_of_mem Q e c C _ _, componentConst_of_mem Q e c C i' j']
+    simpa only [componentTable, reindex_structConst_apply, Equiv.symm_symm] using
+      (componentTable Q e he c C).structConst_reflectionPerm i' j'
   · rw [componentConst_of_ne Q e c (by
       simpa only [P.componentOf_reflectionPerm] using Ne.symm hij),
       componentConst_of_ne Q e c (Ne.symm hij), neg_zero]
@@ -130,15 +134,12 @@ private theorem componentConst_coroot_jacobi {i j k : ι}
   let i' : C.supp := ⟨i, rfl⟩
   let j' : C.supp := ⟨j, hji⟩
   let k' : C.supp := ⟨k, hjk.symm.trans hji⟩
-  have hQ := (c C).coroot_jacobi
-    ((root_add_add_eq_zero_iff_of_component P (e C) (he C) i' j' k').mpr h)
-  have htransfer := sum_zsmul_coroot_eq_zero_iff_of_component P (e C) (he C)
-    ![(c C).structConst (e C j') (e C k'), (c C).structConst (e C k') (e C i'),
-      (c C).structConst (e C i') (e C j')] ![i', j', k']
   rw [componentConst_of_mem Q e c C j' k', componentConst_of_mem Q e c C k' i',
     componentConst_of_mem Q e c C i' j']
-  simpa [Fin.sum_univ_three, add_assoc] using htransfer.mp (by
-    simpa [Fin.sum_univ_three, add_assoc] using hQ)
+  simpa only [componentTable, reindex_structConst_apply, Equiv.symm_symm,
+    ambientComponentPairing_coroot] using
+    (componentTable Q e he c C).coroot_jacobi (i := i') (j := j') (k := k')
+      (by simpa only [ambientComponentPairing_root] using h)
 
 omit [Finite ι] in
 private theorem tripleRootCoeff_componentConst_eq_zero {i j k : ι}
@@ -164,26 +165,28 @@ private theorem tripleRootCoeff_componentConst_eq_zero {i j k : ι}
 include he in
 private theorem tripleRootCoeff_componentConst (C : P.Component) (i j k l : C.supp) :
     P.tripleRootCoeff (componentConst Q e c) i j k l =
-      (Q C).tripleRootCoeff (c C).structConst (e C i) (e C j) (e C k) (e C l) := by
+      (P.ambientComponentPairing C).tripleRootCoeff (componentTable Q e he c C).structConst
+        i j k l := by
   classical
+  let A := P.ambientComponentPairing C
   by_cases hjk0 : P.root j + P.root k = 0
-  · rw [P.tripleRootCoeff_of_add_eq_zero _ hjk0,
-      (Q C).tripleRootCoeff_of_add_eq_zero _
-        ((root_add_eq_zero_iff_of_component P (e C) (he C) j k).mpr hjk0), he]
-    simp only [Equiv.apply_eq_iff_eq, Subtype.ext_iff]
-  · have hjkQ0 := mt (root_add_eq_zero_iff_of_component P (e C) (he C) j k).mp hjk0
-    by_cases hmem : P.root j + P.root k ∈ range P.root
+  · rw [P.tripleRootCoeff_of_add_eq_zero _ hjk0, A.tripleRootCoeff_of_add_eq_zero _
+      (by simpa only [A, ambientComponentPairing_root] using hjk0)]
+    simp only [A, ambientComponentPairing_pairing, Subtype.ext_iff]
+  · by_cases hmem : P.root j + P.root k ∈ range P.root
     · obtain ⟨m, hm⟩ := hmem
       have hmC := (P.componentOf_eq_left_of_root_eq_add hm).trans j.property
       let m' : C.supp := ⟨m, hmC⟩
       rw [P.tripleRootCoeff_of_root_eq_add _ hm,
-        (Q C).tripleRootCoeff_of_root_eq_add _
-          ((root_eq_add_iff_of_component P (e C) (he C) j k m').mpr hm),
-        root_eq_add_iff_of_component P (e C) (he C) i m' l,
+        A.tripleRootCoeff_of_root_eq_add _ (j := j) (k := k) (m := m')
+          (by simpa only [A, ambientComponentPairing_root] using hm),
         componentConst_of_mem Q e c C i m', componentConst_of_mem Q e c C j k]
+      simp only [A, ambientComponentPairing_root, m', componentTable, reindex_structConst_apply,
+        Equiv.symm_symm]
     · rw [P.tripleRootCoeff_of_notMem_of_add_ne_zero _ hmem hjk0,
-        (Q C).tripleRootCoeff_of_notMem_of_add_ne_zero _
-          (mt (root_add_mem_range_iff_of_component P (e C) (he C) j k).mp hmem) hjkQ0]
+        A.tripleRootCoeff_of_notMem_of_add_ne_zero _
+          (mt (P.ambientComponentPairing_root_add_mem_range_iff C j k).mp hmem)
+          (by simpa only [A, ambientComponentPairing_root] using hjk0)]
 
 omit [Finite ι] in
 private theorem tripleRootCoeff_componentConst_eq_zero_of_outside
@@ -213,7 +216,7 @@ private theorem componentConst_root_jacobi (i j k l : ι) :
       rw [tripleRootCoeff_componentConst Q e he c C i' j' k' l',
         tripleRootCoeff_componentConst Q e he c C j' k' i' l',
         tripleRootCoeff_componentConst Q e he c C k' i' j' l']
-      exact (c C).root_jacobi _ _ _ _
+      exact (componentTable Q e he c C).root_jacobi _ _ _ _
     · rw [tripleRootCoeff_componentConst_eq_zero_of_outside Q e c C i' j' k' hl,
         tripleRootCoeff_componentConst_eq_zero_of_outside Q e c C j' k' i' hl,
         tripleRootCoeff_componentConst_eq_zero_of_outside Q e c C k' i' j' hl]
@@ -244,7 +247,8 @@ noncomputable def ofComponents : P.ChevalleyConstants where
   componentConst_of_mem Q e c C i j
 
 /-- Entries of the assembled table on different components are zero. -/
-@[simp] theorem ofComponents_structConst_of_ne {i j : ι} (h : P.componentOf i ≠ P.componentOf j) :
+@[simp] theorem ofComponents_structConst_eq_zero_of_componentOf_ne {i j : ι}
+    (h : P.componentOf i ≠ P.componentOf j) :
     (ofComponents Q e he c).structConst i j = 0 :=
   componentConst_of_ne Q e c h
 
