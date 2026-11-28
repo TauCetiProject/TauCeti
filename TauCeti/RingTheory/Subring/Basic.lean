@@ -16,12 +16,19 @@ The inclusion of a subring into itself is the identity homomorphism. In a field,
 denominator `a` of an element and its inverse clears the denominators of all integer powers of the
 element: `a ^ N xⁿ` lies in the subring whenever `|n| ≤ N`, and the same holds for finite
 products of integer powers. Moving elements past an element `z` to the right extends from
-generators to the subring they generate, and then to powers of `z * w`.
+generators to the subring they generate, and then to powers of `z * w`. For a unital additive
+homomorphism `h : R →+ S` (`h 1 = 1`), the elements `x` satisfying `h (x * y) = h x * h y` for
+all `y` form the multiplier subring `AddMonoidHom.multiplierSubring`, to which `h` restricts as a
+ring homomorphism `AddMonoidHom.multiplierRingHom`.
 
 ## Main definitions
 
 * `Subring.algebraOfMem`: the `Algebra S A` structure on a subring `A : Subring B` containing
   `algebraMap S B s` for all `s : S`.
+* `AddMonoidHom.multiplierSubring`: the subring of left multipliers on which a unital additive
+  homomorphism acts multiplicatively.
+* `AddMonoidHom.multiplierRingHom`: the restriction of a unital additive homomorphism to its
+  multiplier subring as a ring homomorphism.
 
 ## Main results
 
@@ -39,6 +46,9 @@ generators to the subring they generate, and then to powers of `z * w`.
   `closure s * z ⊆ z * closure s`.
 * `TauCeti.Subring.exists_mul_pow_eq_pow_mul_of_mem_closure_insert`: if `s * z ⊆ z * s` and
   `w ∈ closure (insert z s)`, then `(z * w) ^ n ∈ z ^ n * closure (insert z s)`.
+* `AddMonoidHom.mem_multiplierSubring`, `AddMonoidHom.le_multiplierSubring_iff`: membership and
+  maximality of the multiplier subring.
+* `AddMonoidHom.multiplierRingHom_apply`: pointwise evaluation of `AddMonoidHom.multiplierRingHom`.
 -/
 
 public section
@@ -178,3 +188,48 @@ theorem exists_mul_pow_eq_pow_mul_of_mem_closure_insert {s : Set R} {z w : R}
     (fun _ ha ↦ exists_mul_eq_mul_of_mem_closure_insert hz ha) hw n
 
 end TauCeti.Subring
+
+namespace AddMonoidHom
+
+/-- The subring of left multipliers `x` on which a unital additive homomorphism `h : R →+ S`
+(`h 1 = 1`) acts multiplicatively on all right factors, `h (x * y) = h x * h y`. -/
+def multiplierSubring {R S : Type*} [Ring R] [Ring S] (h : R →+ S) (hh1 : h 1 = 1) :
+    Subring R where
+  carrier := {x : R | ∀ y : R, h (x * y) = h x * h y}
+  one_mem' y := by rw [one_mul, hh1, one_mul]
+  mul_mem' {x₁ x₂} hx₁ hx₂ y := by rw [mul_assoc, hx₁, hx₂, hx₁, mul_assoc]
+  zero_mem' y := by rw [zero_mul, map_zero, zero_mul]
+  add_mem' {x₁ x₂} hx₁ hx₂ y := by rw [add_mul, map_add, hx₁, hx₂, map_add, add_mul]
+  neg_mem' {x} hx y := by rw [neg_mul, map_neg, hx, map_neg, neg_mul]
+
+/-- Membership in `h.multiplierSubring hh1` is left-multiplicativity
+`∀ y, h (x * y) = h x * h y`. -/
+@[simp] theorem mem_multiplierSubring {R S : Type*} [Ring R] [Ring S] (h : R →+ S)
+    (hh1 : h 1 = 1) {x : R} :
+    x ∈ h.multiplierSubring hh1 ↔ ∀ y : R, h (x * y) = h x * h y :=
+  Iff.rfl
+
+/-- A subring `E` is contained in `h.multiplierSubring hh1` iff `h (x * y) = h x * h y` for all
+`x ∈ E` and `y : R`. -/
+theorem le_multiplierSubring_iff {R S : Type*} [Ring R] [Ring S] (h : R →+ S)
+    (hh1 : h 1 = 1) {E : Subring R} :
+    E ≤ h.multiplierSubring hh1 ↔ ∀ x ∈ E, ∀ y : R, h (x * y) = h x * h y :=
+  Iff.rfl
+
+/-- Restriction of a unital additive homomorphism `h : R →+ S` to its multiplier subring
+`h.multiplierSubring hh1` as a ring homomorphism. -/
+def multiplierRingHom {R S : Type*} [Ring R] [Ring S] (h : R →+ S) (hh1 : h 1 = 1) :
+    h.multiplierSubring hh1 →+* S where
+  toFun x := h x.val
+  map_one' := hh1
+  map_mul' x y := x.property y.val
+  map_zero' := h.map_zero
+  map_add' x y := h.map_add x.val y.val
+
+/-- Pointwise evaluation of `h.multiplierRingHom hh1`. -/
+@[simp] theorem multiplierRingHom_apply {R S : Type*} [Ring R] [Ring S] (h : R →+ S)
+    (hh1 : h 1 = 1) (x : h.multiplierSubring hh1) :
+    h.multiplierRingHom hh1 x = h x.val :=
+  (rfl)
+
+end AddMonoidHom

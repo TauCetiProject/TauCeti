@@ -57,8 +57,8 @@ along field and completion isomorphisms.
 * `RingHom.toMonoidHom_comp`: converting a composite ring homomorphism to a monoid homomorphism
   gives the composite of the converted monoid homomorphisms.
 * `RingHom.isDomain_of_forall_map_pow_mul_map_pow_eq_one`: a nontrivial ring admitting two
-  homomorphisms into a nontrivial commutative semiring satisfying `g x ^ d * g' x ^ n = 1` on
-  nonzero elements is a domain.
+  homomorphisms into a nontrivial commutative semiring satisfying `g x ^ d * g' x ^ n = 1`
+  (`d ≠ 0 ∨ n ≠ 0`) on nonzero elements is a domain.
 -/
 
 public section
