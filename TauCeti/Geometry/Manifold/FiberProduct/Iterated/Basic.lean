@@ -5,68 +5,145 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.FiberProduct.IteratedSubmersion
+public import Mathlib.Topology.Constructions
+public import Mathlib.Topology.Separation.Hausdorff
 import Mathlib.AlgebraicTopology.SimplexCategory.Basic
-import TauCeti.Geometry.Manifold.Immersion.Differential
-import TauCeti.Geometry.Manifold.IsManifold.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.Pi
 
 /-!
-# Simplicial structure of iterated submersion fibre products
+# Iterated fibre products of a map
 
-For a map `π : Y → M`, contravariant reindexing along any map `α : Fin k₁ → Fin k₂` defines a map
-`TauCeti.IteratedFiberProduct.reindex α : IteratedFiberProduct π k₂ → IteratedFiberProduct π k₁`
-sending `(y₀, …, y_{k₂ - 1})` to `(y_{α 0}, …, y_{α (k₁ - 1)})`. Specializing `α` to the standard
-coface and codegeneracy maps `Fin.succAbove` and `Fin.predAbove` gives the Čech nerve of `π`:
+For any map `π : Y → M`, the `k`-fold iterated fibre product `Y^[k]` is the subtype
+`TauCeti.IteratedFiberProduct π k = {y : Fin k → Y // ∀ i j, π (y i) = π (y j)}`, equipped with its
+subspace topology in `Fin k → Y`.
 
-* `TauCeti.IteratedFiberProduct.face i : Y^[m + 2] → Y^[m + 1]`, omitting the `i`-th factor; for
-  `m = 0`, `face 0` and `face 1` recover the second and first projections `Y^[2] → Y^[1]`, so the
-  alternating pullback differential `∑ᵢ (-1)ⁱ (face i)*` on `Y^[2]` is `pr₂* - pr₁*`;
-* `TauCeti.IteratedFiberProduct.degeneracy i : Y^[m + 1] → Y^[m + 2]`, repeating the `i`-th factor
-  along the corresponding partial diagonal;
-* `TauCeti.IteratedFiberProduct.cons z y h : Y^[m + 2]`, prepending a point `z` over `baseProj y`
-  to `y : Y^[m + 1]`; omitting the prepended point recovers `y` (`face_zero_cons`), and omitting a
-  later coordinate commutes with prepending (`face_succ_cons`);
-* all five simplicial identities (`face_comp_face`,
-  `face_castSucc_comp_degeneracy_succ_of_le`, `face_castSucc_comp_degeneracy` and
-  `face_succ_comp_degeneracy`, `face_succ_comp_degeneracy_castSucc_of_gt`, and
-  `degeneracy_castSucc_comp_degeneracy`), transferred from `SimplexCategory` via contravariant
-  functoriality `reindex (β ∘ α) = reindex α ∘ reindex β`.
-
-When `π` is a `C^n` submersion (`1 ≤ n`) between finite-dimensional boundaryless real manifolds and
-each `IteratedFiberProduct π (m + 1)` carries `TauCeti.iteratedFiberProductChartedSpace`:
-
-* every reindexing map `reindex α` is `C^{m'}` (`m' ≤ n`), and a bijection `α : Fin k₁ ≃ Fin k₂`
-  induces a `C^n` diffeomorphism (`TauCeti.iteratedFiberProductReindexDiffeomorph`);
-* reindexing along any injective map `α : Fin (m₁ + 1) → Fin (m₂ + 1)` is a surjective `C^n`
-  submersion (`TauCeti.isSubmersion_reindex_of_injective`); in particular, every face map `face i`
-  is a surjective `C^n` submersion (`TauCeti.isSubmersion_face`,
-  `TauCeti.IteratedFiberProduct.surjective_face`);
-* every degeneracy map `degeneracy i` is a `C^n` smooth embedding (`TauCeti.contMDiff_degeneracy`,
-  `TauCeti.isSmoothEmbedding_degeneracy`), and a closed topological embedding when `Y` is
-  Hausdorff (`TauCeti.IteratedFiberProduct.isClosedEmbedding_degeneracy`);
-* for a section `s` of `π`, prepending `s (baseProj y)` to `y` is `C^{m'}` at every `y` where `s`
-  is `C^{m'}` at `baseProj y` (`TauCeti.contMDiffAt_cons_section`).
-
-## References
-
-* J.-L. Brylinski, *Loop Spaces, Characteristic Classes and Geometric Quantization*,
-  Progress in Mathematics 107, Birkhäuser (1993), Chapter V (smooth Čech nerves of submersions).
-* M. K. Murray, *Bundle gerbes*, J. London Math. Soc. (2) **54** (1996), 403–416.
+This file collects the manifold-free set-theoretic and topological API:
+* the factor projections `TauCeti.IteratedFiberProduct.eval`, the diagonal map
+  `TauCeti.IteratedFiberProduct.const`, and for positive `k = m + 1`, the common base projection
+  `TauCeti.IteratedFiberProduct.baseProj`;
+* contravariant reindexing `TauCeti.IteratedFiberProduct.reindex` along `α : Fin k₁ → Fin k₂`,
+  yielding the Čech nerve face maps `TauCeti.IteratedFiberProduct.face`, diagonal degeneracies
+  `TauCeti.IteratedFiberProduct.degeneracy`, prepending `TauCeti.IteratedFiberProduct.cons`, and all
+  five simplicial identities (`face_comp_face`, `face_castSucc_comp_degeneracy_succ_of_le`,
+  `face_castSucc_comp_degeneracy`, `face_succ_comp_degeneracy`,
+  `face_succ_comp_degeneracy_castSucc_of_gt`, and `degeneracy_castSucc_comp_degeneracy`);
+* continuity of `eval`, `const`, `baseProj`, `reindex`, `face`, and `degeneracy`, together with the
+  embedding properties of `const (m + 1)`, surjective-reindex maps, and `degeneracy`
+  (`TauCeti.IteratedFiberProduct.isEmbedding_const`,
+  `TauCeti.IteratedFiberProduct.isClosedEmbedding_const`,
+  `TauCeti.IteratedFiberProduct.isEmbedding_reindex_of_surjective`,
+  `TauCeti.IteratedFiberProduct.isClosedEmbedding_reindex_of_surjective`,
+  `TauCeti.IteratedFiberProduct.isEmbedding_degeneracy`,
+  `TauCeti.IteratedFiberProduct.isClosedEmbedding_degeneracy`);
+* when `M` is Hausdorff and `π` is continuous, the subtype inclusion into `Fin k → Y` is a closed
+  topological embedding (`TauCeti.isClosedEmbedding_coe_iteratedFiberProduct`).
 -/
 
 public section
 
-open Function Set Module Topology
-open scoped Manifold ContDiff
+open Function Set Topology
 
 namespace TauCeti
-
-namespace IteratedFiberProduct
 
 section Set
 
 variable {Y M : Type*} {π : Y → M}
+
+/-- The `k`-fold fibre product `Y^[k]` of a map `π : Y → M` over `M`: the subtype of tuples
+`y : Fin k → Y` whose coordinates share a common image under `π`. It is an abbreviation so that it
+inherits the subspace topology and `Subtype.val` coercion from `Fin k → Y` directly. -/
+abbrev IteratedFiberProduct (π : Y → M) (k : ℕ) : Type _ :=
+  {y : Fin k → Y // ∀ i j, π (y i) = π (y j)}
+
+/-- The underlying set of `IteratedFiberProduct π k` in `Fin k → Y` is the set of tuples whose
+entries have equal images under `π`. -/
+theorem range_coe_iteratedFiberProduct (π : Y → M) (k : ℕ) :
+    range (Subtype.val : IteratedFiberProduct π k → (Fin k → Y)) =
+      {y : Fin k → Y | ∀ i j, π (y i) = π (y j)} :=
+  Subtype.range_coe_subtype
+
+/-- A tuple in `Fin k → Y` belongs to the image of `IteratedFiberProduct π k` if and only if all
+its coordinates have the same image under `π`. -/
+theorem mem_range_coe_iteratedFiberProduct_iff {k : ℕ} {y : Fin k → Y} :
+    y ∈ range (Subtype.val : IteratedFiberProduct π k → (Fin k → Y)) ↔
+      ∀ i j, π (y i) = π (y j) := by
+  rw [range_coe_iteratedFiberProduct]
+  rfl
+
+namespace IteratedFiberProduct
+
+/-- The zero-fold fibre product consists of the unique empty tuple. -/
+instance instUniqueZero : Unique (IteratedFiberProduct π 0) where
+  default := ⟨Fin.elim0, fun i ↦ i.elim0⟩
+  uniq _ := Subtype.ext (funext fun i ↦ i.elim0)
+
+/-- The `i`-th factor projection `Y^[k] → Y`. -/
+def eval {k : ℕ} (i : Fin k) (y : IteratedFiberProduct π k) : Y :=
+  y.val i
+
+/-- Evaluation at `i` reads the `i`-th coordinate of the underlying tuple. -/
+@[simp]
+theorem eval_apply {k : ℕ} (i : Fin k) (y : IteratedFiberProduct π k) :
+    eval i y = y.val i := (rfl)
+
+/-- Two points of `IteratedFiberProduct π k` are equal when all their factor projections agree. -/
+theorem ext {k : ℕ} {y₁ y₂ : IteratedFiberProduct π k} (h : ∀ i, eval i y₁ = eval i y₂) :
+    y₁ = y₂ :=
+  Subtype.ext (funext h)
+
+/-- Any two factor projections of `y : IteratedFiberProduct π k` have equal images under `π`. -/
+theorem map_eval_eq {k : ℕ} (y : IteratedFiberProduct π k) (i j : Fin k) :
+    π (eval i y) = π (eval j y) :=
+  y.property i j
+
+/-- The diagonal map `Y → Y^[k]` sending `z` to the constant tuple `(z, …, z)`. -/
+def const (k : ℕ) (z : Y) : IteratedFiberProduct π k :=
+  ⟨fun _ ↦ z, fun _ _ ↦ rfl⟩
+
+/-- The underlying tuple of `const k z` is the constant function `Function.const (Fin k) z`. -/
+@[simp]
+theorem coe_const (k : ℕ) (z : Y) :
+    (const (π := π) k z : Fin k → Y) = Function.const (Fin k) z := (rfl)
+
+/-- Evaluating the diagonal tuple `const k z` at any index returns `z`. -/
+theorem eval_const {k : ℕ} (i : Fin k) (z : Y) :
+    eval i (const (π := π) k z) = z := (rfl)
+
+/-- Every factor projection `eval i : Y^[k] → Y` is surjective, split by the diagonal `const k`. -/
+theorem surjective_eval {k : ℕ} (i : Fin k) :
+    Surjective (eval i : IteratedFiberProduct π k → Y) :=
+  fun z ↦ ⟨const k z, rfl⟩
+
+/-- For positive `k = m + 1`, the diagonal inclusion `const (m + 1) : Y → Y^[m + 1]` is
+injective, split by `eval 0`. -/
+theorem injective_const (m : ℕ) :
+    Injective (const (π := π) (m + 1)) :=
+  Function.LeftInverse.injective (fun z ↦ eval_const (π := π) (0 : Fin (m + 1)) z)
+
+/-- The common projection `Y^[m + 1] → M` to the base, defined via the `0`-th factor and equal to
+`π ∘ eval i` for every `i : Fin (m + 1)`. -/
+def baseProj {m : ℕ} (y : IteratedFiberProduct π (m + 1)) : M :=
+  π (y.val 0)
+
+/-- The base projection agrees with `π (y.1 i)` at every coordinate `i : Fin (m + 1)`. -/
+theorem baseProj_eq_apply {m : ℕ} (y : IteratedFiberProduct π (m + 1)) (i : Fin (m + 1)) :
+    baseProj y = π (y.val i) :=
+  y.property 0 i
+
+/-- Composing `π` with any factor projection `eval i` yields `baseProj`. -/
+theorem map_eval_eq_baseProj {m : ℕ} (y : IteratedFiberProduct π (m + 1)) (i : Fin (m + 1)) :
+    π (eval i y) = baseProj y :=
+  (y.property 0 i).symm
+
+/-- On a diagonal tuple `const (m + 1) z`, the base projection is `π z`. -/
+@[simp]
+theorem baseProj_const (m : ℕ) (z : Y) :
+    baseProj (const (π := π) (m + 1) z) = π z := (rfl)
+
+/-- The base projection `Y^[m + 1] → M` is surjective if and only if `π` is surjective. -/
+theorem surjective_baseProj_iff {m : ℕ} :
+    Surjective (baseProj : IteratedFiberProduct π (m + 1) → M) ↔ Surjective π :=
+  ⟨fun h b ↦ by obtain ⟨y, rfl⟩ := h b; exact ⟨y.val 0, rfl⟩,
+    fun h b ↦ by obtain ⟨z, rfl⟩ := h b; exact ⟨const (m + 1) z, rfl⟩⟩
 
 /-- Contravariant reindexing of `IteratedFiberProduct π` along `α : Fin k₁ → Fin k₂`, sending
 `y` to `y ∘ α`. -/
@@ -148,6 +225,12 @@ theorem injective_reindex_of_surjective {k₁ k₂ : ℕ} {α : Fin k₁ → Fin
   refine ext fun j ↦ ?_
   obtain ⟨i, rfl⟩ := hα j
   simpa only [eval_reindex] using congrArg (eval i) h
+
+/-- Reindexing along a right inverse `surjInv hα` of a surjective map `α` is a left inverse to
+`reindex α`. -/
+theorem leftInverse_reindex_surjInv {k₁ k₂ : ℕ} {α : Fin k₁ → Fin k₂} (hα : Surjective α) :
+    LeftInverse (reindex (π := π) (surjInv hα)) (reindex (π := π) α) :=
+  fun y ↦ ext fun i ↦ by rw [eval_reindex, eval_reindex, surjInv_eq hα]
 
 /-- The `i`-th face map `Y^[m + 2] → Y^[m + 1]`, omitting coordinate `i` via `Fin.succAbove i`. -/
 def face {m : ℕ} (i : Fin (m + 2)) :
@@ -415,17 +498,66 @@ theorem face_one_cons (z : Y) (y : IteratedFiberProduct π 1) (h : π z = basePr
     face 1 (cons z y h) = const 1 z :=
   ext fun j ↦ by simp [eval_apply, Fin.fin_one_eq_zero j]
 
+end IteratedFiberProduct
+
 end Set
 
 section Topology
 
 variable {Y M : Type*} [TopologicalSpace Y] {π : Y → M}
 
+namespace IteratedFiberProduct
+
+/-- Every factor projection `eval i : Y^[k] → Y` is continuous. -/
+theorem continuous_eval {k : ℕ} (i : Fin k) :
+    Continuous (eval i : IteratedFiberProduct π k → Y) :=
+  (continuous_apply i).comp continuous_subtypeVal
+
+/-- The diagonal map `const k : Y → Y^[k]` is continuous. -/
+theorem continuous_const (k : ℕ) :
+    Continuous (const (π := π) k) :=
+  (continuous_pi fun _ ↦ continuous_id).subtype_mk _
+
+/-- For positive `k = m + 1`, the diagonal inclusion `const (m + 1) : Y → Y^[m + 1]` is a
+topological embedding, split by `eval 0`. -/
+theorem isEmbedding_const (m : ℕ) :
+    IsEmbedding (const (π := π) (m + 1)) :=
+  Function.LeftInverse.isEmbedding (fun z ↦ eval_const (π := π) (0 : Fin (m + 1)) z)
+    (continuous_eval 0) (continuous_const (m + 1))
+
+/-- When `Y` is Hausdorff, the diagonal inclusion `const (m + 1) : Y → Y^[m + 1]` is a closed
+topological embedding. -/
+theorem isClosedEmbedding_const [T2Space Y] (m : ℕ) :
+    IsClosedEmbedding (const (π := π) (m + 1)) :=
+  Function.LeftInverse.isClosedEmbedding (fun z ↦ eval_const (π := π) (0 : Fin (m + 1)) z)
+    (continuous_eval 0) (continuous_const (m + 1))
+
+/-- When `π` is continuous, the base projection `baseProj : Y^[m + 1] → M` is continuous. -/
+theorem continuous_baseProj [TopologicalSpace M] (hπ : Continuous π) (m : ℕ) :
+    Continuous (baseProj : IteratedFiberProduct π (m + 1) → M) :=
+  hπ.comp (continuous_eval 0)
+
 /-- Contravariant reindexing of `IteratedFiberProduct π` is continuous. -/
 theorem continuous_reindex {k₁ k₂ : ℕ} (α : Fin k₁ → Fin k₂) :
     Continuous (reindex (π := π) α) :=
   Continuous.subtype_mk
     (continuous_pi fun i ↦ (continuous_eval (π := π) (α i)).congr fun a ↦ eval_apply (α i) a) _
+
+/-- Any surjective index map `α : Fin k₁ → Fin k₂` induces a topological embedding
+`reindex α : Y^[k₂] → Y^[k₁]`. -/
+theorem isEmbedding_reindex_of_surjective {k₁ k₂ : ℕ} {α : Fin k₁ → Fin k₂}
+    (hα : Surjective α) :
+    IsEmbedding (reindex (π := π) α) :=
+  (leftInverse_reindex_surjInv hα).isEmbedding
+    (continuous_reindex (surjInv hα)) (continuous_reindex α)
+
+/-- When `Y` is Hausdorff, any surjective index map `α : Fin k₁ → Fin k₂` induces a closed
+topological embedding `reindex α : Y^[k₂] → Y^[k₁]`. -/
+theorem isClosedEmbedding_reindex_of_surjective [T2Space Y] {k₁ k₂ : ℕ}
+    {α : Fin k₁ → Fin k₂} (hα : Surjective α) :
+    IsClosedEmbedding (reindex (π := π) α) :=
+  (leftInverse_reindex_surjInv hα).isClosedEmbedding
+    (continuous_reindex (surjInv hα)) (continuous_reindex α)
 
 /-- Every face map `face i : Y^[m + 2] → Y^[m + 1]` is continuous. -/
 theorem continuous_face {m : ℕ} (i : Fin (m + 2)) :
@@ -441,257 +573,43 @@ theorem continuous_degeneracy {m : ℕ} (i : Fin (m + 1)) :
 by `face i.castSucc`. -/
 theorem isEmbedding_degeneracy {m : ℕ} (i : Fin (m + 1)) :
     IsEmbedding (degeneracy (π := π) i) :=
-  (leftInverse_face_castSucc_degeneracy i).isEmbedding
-    (continuous_face i.castSucc) (continuous_degeneracy i)
+  degeneracy_eq_reindex i ▸ isEmbedding_reindex_of_surjective (Fin.predAbove_surjective i)
 
 /-- When `Y` is Hausdorff, every degeneracy map `degeneracy i : Y^[m + 1] → Y^[m + 2]` is a closed
 topological embedding. -/
 theorem isClosedEmbedding_degeneracy [T2Space Y] {m : ℕ} (i : Fin (m + 1)) :
     IsClosedEmbedding (degeneracy (π := π) i) :=
-  (leftInverse_face_castSucc_degeneracy i).isClosedEmbedding
-    (continuous_face i.castSucc) (continuous_degeneracy i)
-
-end Topology
+  degeneracy_eq_reindex i ▸ isClosedEmbedding_reindex_of_surjective (Fin.predAbove_surjective i)
 
 end IteratedFiberProduct
 
-section Manifold
+/-- When the base `M` is Hausdorff and `π` is continuous, the equal-fibre locus in `Fin k → Y` is
+closed as the preimage of the closed multidiagonal of `Fin k → M` under `Pi.map fun _ ↦ π`. -/
+theorem isClosed_setOf_map_eq [TopologicalSpace M] [T2Space M] (hπ : Continuous π) (k : ℕ) :
+    IsClosed {y : Fin k → Y | ∀ i j, π (y i) = π (y j)} := by
+  have hdiag : IsClosed {z : Fin k → M | ∀ i j, z i = z j} := by
+    have hEq : {z : Fin k → M | ∀ i j, z i = z j} = ⋂ i, ⋂ j, {z : Fin k → M | z i = z j} := by
+      ext z; simp
+    rw [hEq]
+    exact isClosed_iInter fun i ↦ isClosed_iInter fun j ↦
+      isClosed_eq (continuous_apply i) (continuous_apply j)
+  exact hdiag.preimage (continuous_pi fun i ↦ hπ.comp (continuous_apply i))
 
-variable {EY HY Y EM HM M : Type*}
-  [NormedAddCommGroup EY] [NormedSpace ℝ EY] [TopologicalSpace HY]
-  [NormedAddCommGroup EM] [NormedSpace ℝ EM] [TopologicalSpace HM]
-  {IY : ModelWithCorners ℝ EY HY} {IM : ModelWithCorners ℝ EM HM}
-  [TopologicalSpace Y] [ChartedSpace HY Y]
-  [TopologicalSpace M] [ChartedSpace HM M]
-  {n : ℕ∞ω}
-  [IsManifold IY n Y] [IsManifold IM n M]
-  [IY.Boundaryless] [IM.Boundaryless]
-  [FiniteDimensional ℝ EY] [FiniteDimensional ℝ EM]
-  {π : Y → M} (hn : 1 ≤ n) (hπ : Manifold.IsSubmersion IY IM n π)
+/-- When `M` is Hausdorff and `π` is continuous, the image of `IteratedFiberProduct π k` in
+`Fin k → Y` is closed. -/
+theorem isClosed_range_coe_iteratedFiberProduct [TopologicalSpace M] [T2Space M]
+    (hπ : Continuous π) (k : ℕ) :
+    IsClosed (range (Subtype.val : IteratedFiberProduct π k → (Fin k → Y))) := by
+  rw [range_coe_iteratedFiberProduct]
+  exact isClosed_setOf_map_eq hπ k
 
-/-- Contravariant reindexing `reindex α : Y^[m₂ + 1] → Y^[m₁ + 1]` is `C^{m'}` for `m' ≤ n`. -/
-theorem contMDiff_reindex {m₁ m₂ : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n)
-    (α : Fin (m₁ + 1) → Fin (m₂ + 1)) :
-    letI := iteratedFiberProductChartedSpace hn hπ m₂
-    letI := iteratedFiberProductChartedSpace hn hπ m₁
-    ContMDiff
-      𝓘(ℝ, Fin ((m₂ + 1) * finrank ℝ EY - m₂ * finrank ℝ EM) → ℝ)
-      𝓘(ℝ, Fin ((m₁ + 1) * finrank ℝ EY - m₁ * finrank ℝ EM) → ℝ) m'
-      (IteratedFiberProduct.reindex α :
-        IteratedFiberProduct π (m₂ + 1) → IteratedFiberProduct π (m₁ + 1)) := by
-  let := iteratedFiberProductChartedSpace hn hπ m₂
-  let := iteratedFiberProductChartedSpace hn hπ m₁
-  refine (contMDiff_iteratedFiberProduct_iff hn hπ hm').2 fun i ↦ ?_
-  simp only [IteratedFiberProduct.eval_reindex]
-  exact contMDiff_eval hn hπ hm' (α i)
+/-- When `M` is Hausdorff and `π` is continuous, the subtype inclusion of
+`IteratedFiberProduct π k` into `Fin k → Y` is a closed topological embedding. -/
+theorem isClosedEmbedding_coe_iteratedFiberProduct [TopologicalSpace M] [T2Space M]
+    (hπ : Continuous π) (k : ℕ) :
+    IsClosedEmbedding (Subtype.val : IteratedFiberProduct π k → (Fin k → Y)) :=
+  .subtypeVal (isClosed_setOf_map_eq hπ k)
 
-/-- Reindexing along an equivalence `α : Fin (m₁ + 1) ≃ Fin (m₂ + 1)` induces a `C^n`
-diffeomorphism `Y^[m₂ + 1] ≃ₘ^n Y^[m₁ + 1]`. In particular, permuting the factors of `Y^[k]` is a
-`C^n` diffeomorphism. -/
-noncomputable def iteratedFiberProductReindexDiffeomorph {m₁ m₂ : ℕ}
-    (α : Fin (m₁ + 1) ≃ Fin (m₂ + 1)) :
-    letI := iteratedFiberProductChartedSpace hn hπ m₂
-    letI := iteratedFiberProductChartedSpace hn hπ m₁
-    IteratedFiberProduct π (m₂ + 1) ≃ₘ^n⟮
-      𝓘(ℝ, Fin ((m₂ + 1) * finrank ℝ EY - m₂ * finrank ℝ EM) → ℝ),
-      𝓘(ℝ, Fin ((m₁ + 1) * finrank ℝ EY - m₁ * finrank ℝ EM) → ℝ)⟯
-      IteratedFiberProduct π (m₁ + 1) := by
-  letI := iteratedFiberProductChartedSpace hn hπ m₂
-  letI := iteratedFiberProductChartedSpace hn hπ m₁
-  exact
-    { toFun := IteratedFiberProduct.reindex α
-      invFun := IteratedFiberProduct.reindex α.symm
-      left_inv := fun y ↦ IteratedFiberProduct.ext fun j ↦ by simp
-      right_inv := fun x ↦ IteratedFiberProduct.ext fun i ↦ by simp
-      contMDiff_toFun := contMDiff_reindex hn hπ le_rfl α
-      contMDiff_invFun := contMDiff_reindex hn hπ le_rfl α.symm }
-
-/-- `iteratedFiberProductReindexDiffeomorph` acts by `IteratedFiberProduct.reindex α`. -/
-@[simp]
-theorem iteratedFiberProductReindexDiffeomorph_apply {m₁ m₂ : ℕ}
-    (α : Fin (m₁ + 1) ≃ Fin (m₂ + 1)) (y : IteratedFiberProduct π (m₂ + 1)) :
-    letI := iteratedFiberProductChartedSpace hn hπ m₂
-    letI := iteratedFiberProductChartedSpace hn hπ m₁
-    iteratedFiberProductReindexDiffeomorph hn hπ α y = IteratedFiberProduct.reindex α y := (rfl)
-
-/-- The inverse of `iteratedFiberProductReindexDiffeomorph` acts by
-`IteratedFiberProduct.reindex α.symm`. -/
-@[simp]
-theorem iteratedFiberProductReindexDiffeomorph_symm_apply {m₁ m₂ : ℕ}
-    (α : Fin (m₁ + 1) ≃ Fin (m₂ + 1)) (x : IteratedFiberProduct π (m₁ + 1)) :
-    letI := iteratedFiberProductChartedSpace hn hπ m₂
-    letI := iteratedFiberProductChartedSpace hn hπ m₁
-    (iteratedFiberProductReindexDiffeomorph hn hπ α).symm x =
-      IteratedFiberProduct.reindex α.symm x := (rfl)
-
-/-- **Reindexing along an injective map is a submersion.** For any injective map
-`α : Fin (m₁ + 1) → Fin (m₂ + 1)`, `reindex α : Y^[m₂ + 1] → Y^[m₁ + 1]` is a `C^n` submersion. -/
-theorem isSubmersion_reindex_of_injective {m₁ m₂ : ℕ} {α : Fin (m₁ + 1) → Fin (m₂ + 1)}
-    (hα : Injective α) :
-    letI := iteratedFiberProductChartedSpace hn hπ m₂
-    letI := iteratedFiberProductChartedSpace hn hπ m₁
-    Manifold.IsSubmersion
-      𝓘(ℝ, Fin ((m₂ + 1) * finrank ℝ EY - m₂ * finrank ℝ EM) → ℝ)
-      𝓘(ℝ, Fin ((m₁ + 1) * finrank ℝ EY - m₁ * finrank ℝ EM) → ℝ) n
-      (IteratedFiberProduct.reindex α :
-        IteratedFiberProduct π (m₂ + 1) → IteratedFiberProduct π (m₁ + 1)) := by
-  let := iteratedFiberProductChartedSpace hn hπ m₂
-  let := iteratedFiberProductChartedSpace hn hπ m₁
-  have := isManifold_iteratedFiberProduct hn hπ m₂
-  have := isManifold_iteratedFiberProduct hn hπ m₁
-  let K₁ := 𝓘(ℝ, Fin ((m₁ + 1) * finrank ℝ EY - m₁ * finrank ℝ EM) → ℝ)
-  let PI₁ := ModelWithCorners.pi fun _ : Fin (m₁ + 1) ↦ IY
-  have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
-  refine ((contMDiff_reindex hn hπ le_rfl α).isSubmersionOfComplement_of_surjective_mfderiv hn
-    fun y η ↦ ?_).isSubmersion
-  let x : IteratedFiberProduct π (m₁ + 1) := IteratedFiberProduct.reindex α y
-  let u := mfderiv K₁ PI₁ Subtype.val x η
-  have hu : ∀ i₁ i₂ : Fin (m₁ + 1),
-      mfderiv IY IM π (y.val (α i₁)) (u i₁) =
-        tangentSpaceCast IM (π (y.val (α i₂))) (π (y.val (α i₁)))
-          (mfderiv IY IM π (y.val (α i₂)) (u i₂)) :=
-    (mem_range_mfderiv_coe_iteratedFiberProduct_iff hn hπ m₁ x u).1 ⟨η, rfl⟩
-  let w₀ : TangentSpace IM (π (y.val (α 0))) := mfderiv IY IM π (y.val (α 0)) (u 0)
-  have hsurj : ∀ j : Fin (m₂ + 1),
-      ∃ v_j : TangentSpace IY (y.val j),
-        (∀ i : Fin (m₁ + 1), α i = j →
-          tangentSpaceCast IY (y.val j) (y.val (α i)) v_j = u i) ∧
-        tangentSpaceCast IM (π (y.val j)) (π (y.val (α 0))) (mfderiv IY IM π (y.val j) v_j) = w₀
-            := by
-    intro j
-    by_cases hj : ∃ i, α i = j
-    · obtain ⟨i₀, rfl⟩ := hj
-      refine ⟨u i₀, fun i hi ↦ ?_, (hu 0 i₀).symm⟩
-      cases hα hi
-      rfl
-    · obtain ⟨v_j, hv_j⟩ :=
-        ((tangentSpaceCast IM (π (y.val j)) (π (y.val (α 0)))).surjective.comp
-          (hπ.surjective_mfderiv hn0 (y.val j))) w₀
-      exact ⟨v_j, fun i hi ↦ (hj ⟨i, hi⟩).elim, hv_j⟩
-  choose v hv_hit hv_map using hsurj
-  have hcompat : ∀ j₁ j₂ : Fin (m₂ + 1),
-      mfderiv IY IM π (y.val j₁) (v j₁) =
-        tangentSpaceCast IM (π (y.val j₂)) (π (y.val j₁)) (mfderiv IY IM π (y.val j₂) (v j₂)) :=
-    fun j₁ j₂ ↦
-      (eq_tangentSpaceCast_iff_tangentSpaceCast_eq (y.property j₁ (α 0)) (y.property j₂ (α 0))).2
-        ((hv_map j₁).trans (hv_map j₂).symm)
-  have hemb₁ := isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m₁
-  have hemb₂ := isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m₂
-  obtain ⟨ξ, hξ⟩ := (mem_range_mfderiv_coe_iteratedFiberProduct_iff hn hπ m₂ y v).2 hcompat
-  refine ⟨ξ, (hemb₁.isImmersion.isImmersionAt x).mfderiv_injective hn0 ?_⟩
-  have hc_lhs := mfderiv_comp y ((hemb₁.contMDiff x).mdifferentiableAt hn0)
-    (((contMDiff_reindex hn hπ le_rfl α) y).mdifferentiableAt hn0)
-  rw [← ContinuousLinearMap.comp_apply, ← hc_lhs]
-  funext i
-  have hc₁ := mfderiv_comp y (TauCeti.hasMFDerivAt_apply i x.val).mdifferentiableAt
-    (((hemb₁.contMDiff.comp (contMDiff_reindex hn hπ le_rfl α)) y).mdifferentiableAt hn0)
-  rw [TauCeti.mfderiv_apply] at hc₁
-  have hfn : ((fun f : Fin (m₁ + 1) → Y ↦ f i) ∘
-      (Subtype.val ∘ IteratedFiberProduct.reindex α :
-        IteratedFiberProduct π (m₂ + 1) → (Fin (m₁ + 1) → Y))) =
-      (fun g : Fin (m₂ + 1) → Y ↦ g (α i)) ∘ Subtype.val := rfl
-  have hc₂ := mfderiv_comp y (TauCeti.hasMFDerivAt_apply (α i) y.val).mdifferentiableAt
-    ((hemb₂.contMDiff y).mdifferentiableAt hn0)
-  rw [TauCeti.mfderiv_apply] at hc₂
-  have hlhs := (DFunLike.congr_fun hc₁ ξ).symm
-  rw [hfn, hc₂] at hlhs
-  exact hlhs.trans ((congrFun hξ (α i)).trans (hv_hit (α i) i rfl))
-
-/-- Every face map `face i : Y^[m + 2] → Y^[m + 1]` is `C^{m'}` for `m' ≤ n`. -/
-theorem contMDiff_face {m : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) (i : Fin (m + 2)) :
-    letI := iteratedFiberProductChartedSpace hn hπ (m + 1)
-    letI := iteratedFiberProductChartedSpace hn hπ m
-    ContMDiff
-      𝓘(ℝ, Fin ((m + 2) * finrank ℝ EY - (m + 1) * finrank ℝ EM) → ℝ)
-      𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ) m'
-      (IteratedFiberProduct.face i :
-        IteratedFiberProduct π (m + 2) → IteratedFiberProduct π (m + 1)) := by
-  let := iteratedFiberProductChartedSpace hn hπ (m + 1)
-  let := iteratedFiberProductChartedSpace hn hπ m
-  exact contMDiff_reindex hn hπ hm' i.succAbove
-
-/-- **Every face map is a surjective submersion.** On `IteratedFiberProduct π (m + 2)`, each face
-map `face i : Y^[m + 2] → Y^[m + 1]` omitting the `i`-th factor is a `C^n` submersion. -/
-theorem isSubmersion_face {m : ℕ} (i : Fin (m + 2)) :
-    letI := iteratedFiberProductChartedSpace hn hπ (m + 1)
-    letI := iteratedFiberProductChartedSpace hn hπ m
-    Manifold.IsSubmersion
-      𝓘(ℝ, Fin ((m + 2) * finrank ℝ EY - (m + 1) * finrank ℝ EM) → ℝ)
-      𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ) n
-      (IteratedFiberProduct.face i :
-        IteratedFiberProduct π (m + 2) → IteratedFiberProduct π (m + 1)) := by
-  let := iteratedFiberProductChartedSpace hn hπ (m + 1)
-  let := iteratedFiberProductChartedSpace hn hπ m
-  exact isSubmersion_reindex_of_injective hn hπ Fin.succAbove_right_injective
-
-/-- Every diagonal degeneracy map `degeneracy i : Y^[m + 1] → Y^[m + 2]` is `C^{m'}` for
-`m' ≤ n`. -/
-theorem contMDiff_degeneracy {m : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) (i : Fin (m + 1)) :
-    letI := iteratedFiberProductChartedSpace hn hπ m
-    letI := iteratedFiberProductChartedSpace hn hπ (m + 1)
-    ContMDiff
-      𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ)
-      𝓘(ℝ, Fin ((m + 2) * finrank ℝ EY - (m + 1) * finrank ℝ EM) → ℝ) m'
-      (IteratedFiberProduct.degeneracy i :
-        IteratedFiberProduct π (m + 1) → IteratedFiberProduct π (m + 2)) := by
-  let := iteratedFiberProductChartedSpace hn hπ m
-  let := iteratedFiberProductChartedSpace hn hπ (m + 1)
-  exact contMDiff_reindex hn hπ hm' i.predAbove
-
-/-- For a section `s` of `π`, prepending `s (baseProj y)` to `y`, a map `Y^[m + 1] → Y^[m + 2]`,
-is `C^{m'}` at `y` whenever `s` is `C^{m'}` at `baseProj y`. -/
-theorem contMDiffAt_cons_section {m : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) {s : M → Y}
-    (hs : ∀ x, π (s x) = x) {y : IteratedFiberProduct π (m + 1)}
-    (hsy : ContMDiffAt IM IY m' s (IteratedFiberProduct.baseProj y)) :
-    letI := iteratedFiberProductChartedSpace hn hπ m
-    letI := iteratedFiberProductChartedSpace hn hπ (m + 1)
-    ContMDiffAt 𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ)
-      𝓘(ℝ, Fin ((m + 2) * finrank ℝ EY - (m + 1) * finrank ℝ EM) → ℝ) m'
-      (fun y ↦ IteratedFiberProduct.cons (s (IteratedFiberProduct.baseProj y)) y (hs _)) y := by
-  let := iteratedFiberProductChartedSpace hn hπ m
-  let := iteratedFiberProductChartedSpace hn hπ (m + 1)
-  refine (contMDiffAt_iteratedFiberProduct_iff hn hπ hm').2 fun i ↦ ?_
-  cases i using Fin.cases with
-  | zero =>
-    simp only [IteratedFiberProduct.eval_zero_cons]
-    exact hsy.comp y (contMDiff_baseProj hn hπ hm' y)
-  | succ j =>
-    simp only [IteratedFiberProduct.eval_succ_cons]
-    exact contMDiff_eval hn hπ hm' j y
-
-/-- Every diagonal degeneracy map `degeneracy i : Y^[m + 1] → Y^[m + 2]` is a `C^n` immersion,
-split on the left by `face i.castSucc`. -/
-theorem isImmersion_degeneracy {m : ℕ} (i : Fin (m + 1)) :
-    letI := iteratedFiberProductChartedSpace hn hπ m
-    letI := iteratedFiberProductChartedSpace hn hπ (m + 1)
-    Manifold.IsImmersion
-      𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ)
-      𝓘(ℝ, Fin ((m + 2) * finrank ℝ EY - (m + 1) * finrank ℝ EM) → ℝ) n
-      (IteratedFiberProduct.degeneracy i :
-        IteratedFiberProduct π (m + 1) → IteratedFiberProduct π (m + 2)) := by
-  let := iteratedFiberProductChartedSpace hn hπ m
-  let := iteratedFiberProductChartedSpace hn hπ (m + 1)
-  have := isManifold_iteratedFiberProduct hn hπ m
-  have := isManifold_iteratedFiberProduct hn hπ (m + 1)
-  have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
-  exact (contMDiff_degeneracy hn hπ le_rfl i).isImmersion_of_leftInverse hn
-    (fun _ ↦ ((contMDiff_face hn hπ le_rfl i.castSucc) _).mdifferentiableAt hn0)
-    (IteratedFiberProduct.leftInverse_face_castSucc_degeneracy i)
-
-/-- **Every diagonal degeneracy map is a smooth embedding.** On `IteratedFiberProduct π (m + 1)`,
-`degeneracy i : Y^[m + 1] → Y^[m + 2]` is a `C^n` smooth embedding. -/
-theorem isSmoothEmbedding_degeneracy {m : ℕ} (i : Fin (m + 1)) :
-    letI := iteratedFiberProductChartedSpace hn hπ m
-    letI := iteratedFiberProductChartedSpace hn hπ (m + 1)
-    Manifold.IsSmoothEmbedding
-      𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ)
-      𝓘(ℝ, Fin ((m + 2) * finrank ℝ EY - (m + 1) * finrank ℝ EM) → ℝ) n
-      (IteratedFiberProduct.degeneracy i :
-        IteratedFiberProduct π (m + 1) → IteratedFiberProduct π (m + 2)) := by
-  let := iteratedFiberProductChartedSpace hn hπ m
-  let := iteratedFiberProductChartedSpace hn hπ (m + 1)
-  exact ⟨isImmersion_degeneracy hn hπ i, IteratedFiberProduct.isEmbedding_degeneracy i⟩
-
-end Manifold
+end Topology
 
 end TauCeti

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.FiberProduct.Simplicial
+public import TauCeti.Geometry.Manifold.FiberProduct.Iterated.Simplicial
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import Mathlib.AlgebraicTopology.AlternatingFaceMapComplex
 public import Mathlib.Algebra.Category.ModuleCat.Basic

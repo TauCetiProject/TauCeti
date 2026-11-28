@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Topology.Maps.LocalSections
 
 -- Access the body of `Manifold.IsSubmersionOfComplement`, which Mathlib does not expose, to supply
@@ -279,6 +280,93 @@ theorem mfderiv_eq_zero_iff (hn : n ≠ 0) {y : M} (hy : y ∈ h.domChart.source
     congrArg (· v) (h.mfderiv_extend_comp_mfderiv hn hy)
   rw [← (h.isInvertible_mfderiv_codChart_extend hn hy).injective.eq_iff, map_zero, hv]
   exact iff_of_eq (congrArg (· = 0) (h.projection_apply _))
+
+/-- The retargeted domain chart on `M`, conjugating the lifted codomain chart transition
+`h.codChart → ψ` through `h.domChart` and `I`. -/
+private noncomputable def retargetDomChart [I.Boundaryless] [J.Boundaryless]
+    (h : IsSubmersionAtOfComplement F I J n f x) (ψ : OpenPartialHomeomorph N G) :
+    OpenPartialHomeomorph M H :=
+  ((h.domChart.transHomeomorph I.toHomeomorph).trans
+    (h.equiv.liftCodTransition
+      ((h.codChart.extendTrans J (Homeomorph.refl E'')).symm ≫ₕ
+        ψ.extendTrans J (Homeomorph.refl E'')))).transHomeomorph I.toHomeomorph.symm
+
+private theorem retargetDomChart_mem_maximalAtlas [I.Boundaryless] [J.Boundaryless]
+    [IsManifold I n M] (h : IsSubmersionAtOfComplement F I J n f x)
+    {ψ : OpenPartialHomeomorph N G} (hψ : ψ ∈ IsManifold.maximalAtlas J n N) :
+    retargetDomChart h ψ ∈ IsManifold.maximalAtlas I n M := by
+  set τ := (h.codChart.extendTrans J (Homeomorph.refl E'')).symm ≫ₕ
+    ψ.extendTrans J (Homeomorph.refl E'')
+  have hτ : ContMDiffOn 𝓘(𝕜, E'') 𝓘(𝕜, E'') n τ τ.source :=
+    ((OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm J h.codChart_mem_maximalAtlas hψ
+      contDiff_id contDiff_id).congr fun _ _ ↦ OpenPartialHomeomorph.trans_apply _ _).contMDiffOn
+  have hτ_symm : ContMDiffOn 𝓘(𝕜, E'') 𝓘(𝕜, E'') n τ.symm τ.symm.source := by
+    rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.symm_symm]
+    exact ((OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm J hψ
+      h.codChart_mem_maximalAtlas contDiff_id contDiff_id).congr fun _ _ ↦
+        OpenPartialHomeomorph.trans_apply _ _).contMDiffOn
+  exact TauCeti.conj_mem_maximalAtlas h.domChart_mem_maximalAtlas
+    (h.equiv.liftCodTransition_mem_maximalAtlas
+      (τ.mem_maximalAtlas_of_contMDiffOn hτ hτ_symm))
+
+private theorem codChart_extendTrans_symm_equiv_fst [J.Boundaryless]
+    (h : IsSubmersionAtOfComplement F I J n f x) {z : M} (hz : z ∈ h.domChart.source) :
+    (h.codChart.extendTrans J (Homeomorph.refl E'')).symm
+        (h.equiv (h.domChart.extend I z)).1 = f z := by
+  rw [← h.projection_apply, ← h.codChart_extend_apply hz]
+  simp [J.left_inv, h.codChart.left_inv (h.source_subset_preimage_source hz)]
+
+private theorem mem_retargetDomChart_source_iff' [I.Boundaryless] [J.Boundaryless]
+    (h : IsSubmersionAtOfComplement F I J n f x) (ψ : OpenPartialHomeomorph N G) (z : M) :
+    z ∈ (retargetDomChart h ψ).source ↔
+      z ∈ h.domChart.source ∧
+        (h.equiv (h.domChart.extend I z)).1 ∈
+          ((h.codChart.extendTrans J (Homeomorph.refl E'')).symm ≫ₕ
+            ψ.extendTrans J (Homeomorph.refl E'')).source := by
+  simp only [retargetDomChart, OpenPartialHomeomorph.transHomeomorph_source,
+    OpenPartialHomeomorph.trans_source, Set.mem_inter_iff, Set.mem_preimage,
+    ContinuousLinearEquiv.mem_liftCodTransition_source_iff,
+    OpenPartialHomeomorph.transHomeomorph_apply, ModelWithCorners.toHomeomorph_apply,
+    OpenPartialHomeomorph.extend_coe, Function.comp_apply]
+
+private theorem mem_retargetDomChart_source_iff [I.Boundaryless] [J.Boundaryless]
+    (h : IsSubmersionAtOfComplement F I J n f x) (ψ : OpenPartialHomeomorph N G) (z : M) :
+    z ∈ (retargetDomChart h ψ).source ↔ z ∈ h.domChart.source ∧ f z ∈ ψ.source := by
+  rw [mem_retargetDomChart_source_iff']
+  refine and_congr_right fun hz ↦ ?_
+  rw [← h.projection_apply, ← h.codChart_extend_apply hz]
+  have hfcod := h.source_subset_preimage_source hz
+  simp [J.left_inv, h.codChart.left_inv hfcod, h.codChart.map_source hfcod]
+
+private theorem retargetDomChart_extend_apply [I.Boundaryless] [J.Boundaryless]
+    (h : IsSubmersionAtOfComplement F I J n f x) (ψ : OpenPartialHomeomorph N G) (z : M) :
+    (retargetDomChart h ψ).extend I z =
+      h.equiv.liftCodTransition
+        ((h.codChart.extendTrans J (Homeomorph.refl E'')).symm ≫ₕ
+          ψ.extendTrans J (Homeomorph.refl E''))
+        (h.domChart.extend I z) := by
+  simp [retargetDomChart, I.right_inv (I.range_eq_univ ▸ Set.mem_univ _)]
+
+/-- For boundaryless source and target models, retarget a submersion normal form at `x` onto any
+prescribed chart `ψ` of the maximal atlas around `f x`, keeping the same complement and linear
+equivalence. -/
+theorem exists_domChart_of_codChart [I.Boundaryless] [J.Boundaryless] [IsManifold I n M]
+    (h : IsSubmersionAtOfComplement F I J n f x)
+    {ψ : OpenPartialHomeomorph N G} (hψ : ψ ∈ IsManifold.maximalAtlas J n N)
+    (hx : f x ∈ ψ.source) :
+    ∃ φ : OpenPartialHomeomorph M H,
+      φ ∈ IsManifold.maximalAtlas I n M ∧
+      x ∈ φ.source ∧
+      φ.source ⊆ f ⁻¹' ψ.source ∧
+      ∀ z ∈ φ.source, ψ.extend J (f z) = (h.equiv (φ.extend I z)).1 := by
+  refine ⟨retargetDomChart h ψ, retargetDomChart_mem_maximalAtlas h hψ, ?_, ?_, ?_⟩
+  · exact (mem_retargetDomChart_source_iff h ψ x).2 ⟨h.mem_domChart_source, hx⟩
+  · exact fun z hz ↦ ((mem_retargetDomChart_source_iff h ψ z).1 hz).2
+  · intro z hz
+    have hzd : z ∈ h.domChart.source := ((mem_retargetDomChart_source_iff h ψ z).1 hz).1
+    rw [retargetDomChart_extend_apply, ContinuousLinearEquiv.liftCodTransition_apply_fst,
+      OpenPartialHomeomorph.trans_apply, codChart_extendTrans_symm_equiv_fst h hzd]
+    simp
 
 end IsSubmersionAtOfComplement
 

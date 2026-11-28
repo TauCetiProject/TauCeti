@@ -34,8 +34,9 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
 
 ## Main results
 
-* `TauCeti.conj_chartAt_mem_maximalAtlas`: a chart of the model vector space, read through the
-  preferred chart at a point, is a chart of the manifold's maximal atlas.
+* `TauCeti.conj_mem_maximalAtlas`, `TauCeti.conj_chartAt_mem_maximalAtlas`: a chart of the model
+  vector space, read through a chart of the manifold's maximal atlas (or the preferred chart at a
+  point), is a chart of the manifold's maximal atlas.
 * `TauCeti.contMDiffAt_prodMap_id_of_mem_maximalAtlas`,
   `TauCeti.contMDiffAt_prodMap_symm_id_of_mem_maximalAtlas`: a chart times the identity, and its
   inverse, are smooth.
@@ -57,6 +58,10 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
   transported by `OpenPartialHomeomorph.extendTrans` and of its inverse.
 * `OpenPartialHomeomorph.contMDiffAt_extend_symm`: the inverse of an extended chart `e.extend I`
   of the maximal atlas is `C^n` at the model coordinate `I (e x)` of a point of its source.
+* `ContinuousLinearEquiv.liftCodTransition`, `ContinuousLinearEquiv.contMDiffOn_liftCodTransition`,
+  and `ContinuousLinearEquiv.liftCodTransition_mem_maximalAtlas`: lifting a partial homeomorphism
+  of `E''` along `L : E ≃L[𝕜] E'' × F` by the identity on `F`, and preserving maximal-atlas
+  membership.
 -/
 
 public section
@@ -86,39 +91,45 @@ theorem comp_conj_chartAt [I.Boundaryless] (x : M) (c : OpenPartialHomeomorph E 
   ext y
   simp [extChartAt, I.right_inv (I.range_eq_univ ▸ Set.mem_univ _)]
 
+/-- A chart of the model vector space, read through any chart `c₀` of the maximal atlas of a
+manifold with a boundaryless model, is a chart of the manifold's maximal atlas. -/
+theorem conj_mem_maximalAtlas [I.Boundaryless] [IsManifold I n M]
+    {c₀ : OpenPartialHomeomorph M H} (hc₀ : c₀ ∈ IsManifold.maximalAtlas I n M)
+    {c : OpenPartialHomeomorph E E} (hc : c ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n E) :
+    ((c₀.transHomeomorph I.toHomeomorph).trans c).transHomeomorph
+      I.toHomeomorph.symm ∈ IsManifold.maximalAtlas I n M := by
+  apply OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn
+  · have h1 : ContMDiffOn I 𝓘(𝕜, E) n (I ∘ c₀)
+        (((c₀.transHomeomorph I.toHomeomorph).trans c).transHomeomorph
+          I.toHomeomorph.symm).source :=
+      (I.contMDiff.comp_contMDiffOn (contMDiffOn_of_mem_maximalAtlas hc₀)).mono fun y hy => by
+        simp only [mfld_simps] at hy
+        exact hy.1
+    have h2 := (contMDiffOn_of_mem_maximalAtlas hc).comp h1 fun y hy => by
+      simp only [mfld_simps] at hy
+      exact hy.2
+    refine (I.contMDiffOn_symm.comp h2 fun y _ => by simp [I.range_eq_univ]).congr ?_
+    intro y _
+    simp [mfld_simps, ModelWithCorners.toHomeomorph_apply, ModelWithCorners.toHomeomorph_symm_apply]
+  · have hmem : ∀ y ∈ (((c₀.transHomeomorph I.toHomeomorph).trans c).transHomeomorph
+        I.toHomeomorph.symm).target,
+        I y ∈ c.target ∧ I.symm (c.symm (I y)) ∈ c₀.target := fun y hy => by
+      simpa [ModelWithCorners.toHomeomorph_apply, ModelWithCorners.toHomeomorph_symm_apply] using hy
+    have h1 := (contMDiffOn_symm_of_mem_maximalAtlas hc).comp I.contMDiff.contMDiffOn
+      fun y hy => (hmem y hy).1
+    have h2 := I.contMDiffOn_symm.comp h1 fun y _ => by simp [I.range_eq_univ]
+    refine ((contMDiffOn_symm_of_mem_maximalAtlas hc₀).comp h2 fun y hy =>
+      (hmem y hy).2).congr ?_
+    intro y _
+    simp [mfld_simps, ModelWithCorners.toHomeomorph_apply, ModelWithCorners.toHomeomorph_symm_apply]
+
 /-- A chart of the model vector space, read through the preferred chart at `x` of a manifold with
 a boundaryless model, is a chart of the manifold's maximal atlas. -/
 theorem conj_chartAt_mem_maximalAtlas [I.Boundaryless] [IsManifold I n M] (x : M)
     {c : OpenPartialHomeomorph E E} (hc : c ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n E) :
     (((chartAt H x).transHomeomorph I.toHomeomorph).trans c).transHomeomorph
-      I.toHomeomorph.symm ∈ IsManifold.maximalAtlas I n M := by
-  -- As a map, the chart is `I.symm ∘ c ∘ extChartAt I x`, with inverse
-  -- `(extChartAt I x).symm ∘ c.symm ∘ I`.
-  apply OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn
-  · have h1 : ContMDiffOn I 𝓘(𝕜, E) n (extChartAt I x)
-        ((((chartAt H x).transHomeomorph I.toHomeomorph).trans c).transHomeomorph
-          I.toHomeomorph.symm).source :=
-      contMDiffOn_extChartAt.mono fun y hy => by
-        simp only [mfld_simps] at hy
-        exact hy.1
-    have h2 := (contMDiffOn_of_mem_maximalAtlas hc).comp h1 fun y hy => by
-      simp only [mfld_simps] at hy
-      simpa [extChartAt] using hy.2
-    refine (I.contMDiffOn_symm.comp h2 fun y _ => by simp [I.range_eq_univ]).congr ?_
-    intro y _
-    simp [extChartAt]
-  · have h2 := (contMDiffOn_symm_of_mem_maximalAtlas hc).comp I.contMDiff.contMDiffOn
-      (s := ((((chartAt H x).transHomeomorph I.toHomeomorph).trans c).transHomeomorph
-        I.toHomeomorph.symm).target) fun y hy => by
-      have hy' : I y ∈ c.target ∧ I.symm (c.symm (I y)) ∈ (chartAt H x).target := by
-        simpa using hy
-      exact hy'.1
-    refine ((contMDiffOn_extChartAt_symm x).comp h2 fun y hy => ?_).congr ?_
-    · have hy' : I y ∈ c.target ∧ I.symm (c.symm (I y)) ∈ (chartAt H x).target := by
-        simpa using hy
-      simpa [extChartAt, I.range_eq_univ] using hy'.2
-    · intro y _
-      simp [extChartAt]
+      I.toHomeomorph.symm ∈ IsManifold.maximalAtlas I n M :=
+  conj_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas x) hc
 
 section ProdMap
 
@@ -166,6 +177,84 @@ theorem _root_.ContMDiffAt.contDiffAt_comp_symm_of_mem_maximalAtlas {f : M' → 
 end CompSymm
 
 end TauCeti
+
+namespace ContinuousLinearEquiv
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E E'' F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Lift a partial homeomorphism `σ` of `E''` along `L : E ≃L[𝕜] E'' × F` by acting as the
+identity on `F`. -/
+def liftCodTransition (L : E ≃L[𝕜] E'' × F) (σ : OpenPartialHomeomorph E'' E'') :
+    OpenPartialHomeomorph E E :=
+  (L.toHomeomorph.transOpenPartialHomeomorph
+    (σ.prod (OpenPartialHomeomorph.refl F))).transHomeomorph L.symm.toHomeomorph
+
+/-- A point `u` lies in `(L.liftCodTransition σ).source` if and only if `(L u).1` lies in
+`σ.source`. -/
+@[simp]
+theorem mem_liftCodTransition_source_iff (L : E ≃L[𝕜] E'' × F)
+    (σ : OpenPartialHomeomorph E'' E'') (u : E) :
+    u ∈ (L.liftCodTransition σ).source ↔ (L u).1 ∈ σ.source := by
+  simp [liftCodTransition]
+
+/-- A point `u` lies in `(L.liftCodTransition σ).target` if and only if `(L u).1` lies in
+`σ.target`. -/
+@[simp]
+theorem mem_liftCodTransition_target_iff (L : E ≃L[𝕜] E'' × F)
+    (σ : OpenPartialHomeomorph E'' E'') (u : E) :
+    u ∈ (L.liftCodTransition σ).target ↔ (L u).1 ∈ σ.target := by
+  simp [liftCodTransition]
+
+/-- The inverse of `L.liftCodTransition σ` is `L.liftCodTransition σ.symm`. -/
+@[simp]
+theorem liftCodTransition_symm (L : E ≃L[𝕜] E'' × F) (σ : OpenPartialHomeomorph E'' E'') :
+    (L.liftCodTransition σ).symm = L.liftCodTransition σ.symm := by
+  refine OpenPartialHomeomorph.ext _ _ (fun _ ↦ by simp [liftCodTransition])
+    (fun _ ↦ by simp [liftCodTransition]) ?_
+  ext u
+  simp [mem_liftCodTransition_source_iff, mem_liftCodTransition_target_iff]
+
+/-- Application formula for `L.liftCodTransition` in terms of `L`, `σ`, and `L.symm`. -/
+@[simp]
+theorem liftCodTransition_apply (L : E ≃L[𝕜] E'' × F) (σ : OpenPartialHomeomorph E'' E'')
+    (u : E) :
+    L.liftCodTransition σ u = L.symm (σ (L u).1, (L u).2) := by
+  simp [liftCodTransition]
+
+/-- Applying `L` to `L.liftCodTransition σ u` gives `σ (L u).1` in the first component. -/
+theorem liftCodTransition_apply_fst (L : E ≃L[𝕜] E'' × F) (σ : OpenPartialHomeomorph E'' E'')
+    (u : E) :
+    (L (L.liftCodTransition σ u)).1 = σ (L u).1 := by
+  simp
+
+/-- Lifting a partial homeomorphism `σ` that is `C^n` on its source along `L : E ≃L[𝕜] E'' × F`
+gives a partial homeomorphism that is `C^n` on its source. -/
+theorem contMDiffOn_liftCodTransition (L : E ≃L[𝕜] E'' × F) {n : ℕ∞ω}
+    {σ : OpenPartialHomeomorph E'' E''}
+    (hσ : ContMDiffOn 𝓘(𝕜, E'') 𝓘(𝕜, E'') n σ σ.source) :
+    ContMDiffOn 𝓘(𝕜, E) 𝓘(𝕜, E) n (L.liftCodTransition σ)
+      (L.liftCodTransition σ).source :=
+  L.symm.contDiff.contMDiff.comp_contMDiffOn <|
+    ((hσ.comp ((ContinuousLinearMap.fst 𝕜 E'' F).contMDiff.contMDiffOn
+        (s := (σ.prod (OpenPartialHomeomorph.refl F)).source))
+      fun _ hp ↦ hp.1).prodMk_space
+      (ContinuousLinearMap.snd 𝕜 E'' F).contMDiff.contMDiffOn).comp
+      L.contDiff.contMDiff.contMDiffOn fun _ hu ↦ hu
+
+/-- Lifting a chart `σ` of the maximal `C^n` atlas of `E''` along `L : E ≃L[𝕜] E'' × F` gives a
+chart of the maximal `C^n` atlas of `E`. -/
+theorem liftCodTransition_mem_maximalAtlas (L : E ≃L[𝕜] E'' × F) {n : ℕ∞ω}
+    {σ : OpenPartialHomeomorph E'' E''} (hσ : σ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E'') n E'') :
+    L.liftCodTransition σ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n E :=
+  (L.liftCodTransition σ).mem_maximalAtlas_of_contMDiffOn
+    (L.contMDiffOn_liftCodTransition (contMDiffOn_of_mem_maximalAtlas hσ))
+    ((L.liftCodTransition_symm σ).symm ▸
+      L.contMDiffOn_liftCodTransition (contMDiffOn_symm_of_mem_maximalAtlas hσ))
+
+end ContinuousLinearEquiv
 
 namespace OpenPartialHomeomorph
 

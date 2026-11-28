@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.FiberProduct.Submersion
 import TauCeti.LinearAlgebra.Submodule.FiberProduct
 
 /-!
-# Transversality of iterated fibre products
+# Transversality of associative binary fibre products
 
 Let `f : X → B`, `g : Y → B`, `h : Y → C` and `k : Z → C` be smooth maps, with `f` and `g`
 transverse and `h` and `k` transverse. Then `X ×_B Y` and `Y ×_C Z` are manifolds
