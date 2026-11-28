@@ -201,16 +201,19 @@ theorem finsum_hiveCount_smul_diagramSchurPoly_eq_zero {n N : ℕ} {R : Type*}
 
 private theorem shape_eq_of_one_two (w₁ : DominantWeight 1) (w₂ : DominantWeight 2)
     (h0 : w₁.val 0 = w₂.val 0) (h1 : w₂.val 1 = 0) : w₁.shape = w₂.shape := by
-  refine YoungDiagram.rowLen_injective (funext fun i => ?_)
-  match i with
-  | 0 =>
-    have a := w₁.rowLen_shape 0; have b := w₂.rowLen_shape 0
-    simp only [Fin.val_zero, h0] at a b; omega
-  | 1 =>
-    have b := w₂.rowLen_shape 1
-    rw [w₁.rowLen_shape_eq_zero_of_le le_rfl]; simp only [Fin.val_one, h1] at b; omega
-  | i + 2 =>
-    rw [w₁.rowLen_shape_eq_zero_of_le (by omega), w₂.rowLen_shape_eq_zero_of_le (by omega)]
+  have hw₂ : w₂.shape.colLen 0 ≤ 1 := YoungDiagram.rowLen_eq_zero_iff.mp <| by
+    have := w₂.rowLen_shape 1
+    simp only [Fin.val_one, h1] at this
+    omega
+  rw [← YoungDiagram.ofRowLensFin_rowLen w₁.shape w₁.colLen_zero_shape_le,
+    ← YoungDiagram.ofRowLensFin_rowLen w₂.shape hw₂]
+  congr 1
+  funext i
+  have hi : (i : ℕ) = 0 := congrArg Fin.val (Fin.fin_one_eq_zero i)
+  have a := w₁.rowLen_shape 0
+  have b := w₂.rowLen_shape 0
+  simp only [hi, Fin.val_zero, h0] at a b ⊢
+  omega
 
 /-- Sharpness of the `N ≤ n` alphabet bound in
 `diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount`: for rank `1` weights

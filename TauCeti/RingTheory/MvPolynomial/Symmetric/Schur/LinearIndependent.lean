@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basic
+import TauCeti.Algebra.BigOperators.Finset.SDiff
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Symmetric
 
 /-!
 # Linear independence of Schur polynomials
 
-This file proves that the Schur polynomials are linearly independent over any additively
-cancellative commutative semiring `R` (`[CommSemiring R] [IsCancelAdd R]`), and derives
-`ℕ`-coefficient uniqueness over any characteristic-zero commutative semiring (`[CharZero R]`).
+This file proves that the Schur polynomials of shapes with at most as many rows (or parts) as
+alphabet letters are linearly independent over any additively cancellative commutative semiring `R`
+(`[CommSemiring R] [IsCancelAdd R]`), and derives `ℕ`-coefficient uniqueness for those bounded-row
+Schur polynomials over any characteristic-zero commutative semiring (`[CharZero R]`).
 
 Unlike the basis construction in `TauCeti/RingTheory/MvPolynomial/Symmetric/Schur/Basis.lean`
 (which inverts the unitriangular Kostka matrix and therefore requires a commutative ring), linear
@@ -31,9 +33,12 @@ independence needs only upper-triangularity of the Kostka matrix (`K_{μν} = 0`
 * `TauCeti.linearIndependent_diagramSchurPoly_of_colLen_le`: in `N` variables, the diagram Schur
   polynomials of the partitions of `n` with at most `N` rows are linearly independent over any
   additively cancellative commutative semiring.
+* `TauCeti.eq_of_sum_nsmul_schurPoly_eq_of_card_le` and `TauCeti.eq_of_sum_nsmul_schurPoly_eq`:
+  uniqueness of `ℕ`-coefficients in a bounded-part Schur expansion over any finite alphabet `σ` and
+  any characteristic-zero commutative semiring.
 * `TauCeti.eq_of_sum_nsmul_diagramSchurPoly_eq_of_colLen_le` and
-  `TauCeti.eq_of_sum_nsmul_diagramSchurPoly_eq`: uniqueness of `ℕ`-coefficients in a Schur expansion
-  over any characteristic-zero commutative semiring.
+  `TauCeti.eq_of_sum_nsmul_diagramSchurPoly_eq`: uniqueness of `ℕ`-coefficients in a bounded-row
+  diagram Schur expansion over any characteristic-zero commutative semiring.
 * `TauCeti.linearIndependent_diagramSchurPoly`: in `N` variables, the Schur polynomials of all
   Young diagrams with at most `N` rows, of every degree, are linearly independent over any
   additively cancellative commutative semiring.
@@ -76,13 +81,10 @@ theorem linearIndependent_schurPoly_of_card_le {σ : Type*} [Fintype σ] [IsCanc
     coeff_schurPoly_partWeight ν.val ξ.val
       (by rw [YoungDiagram.colLen_zero_ofPartition]; exact ξ.property)
   simp_rw [hterm] at hcoeff
-  rw [← Finset.sum_filter_add_sum_filter_not s (fun ν => g ν ≠ g' ν),
-    ← Finset.sum_filter_add_sum_filter_not s (fun ν => g ν ≠ g' ν)] at hcoeff
-  have hrest :
-      ∑ ν ∈ s.filter (fun ν => ¬(g ν ≠ g' ν)), g ν * (kostkaNumber ν.val ξ.val : R) =
-      ∑ ν ∈ s.filter (fun ν => ¬(g ν ≠ g' ν)), g' ν * (kostkaNumber ν.val ξ.val : R) :=
-    Finset.sum_congr rfl fun ν hν => by
-      rw [not_not.mp (Finset.mem_filter.mp hν).2]
+  rw [Finset.sum_eq_sum_iff_sdiff (Finset.filter_subset (fun ν => g ν = g' ν) s)
+      (Finset.filter_subset (fun ν => g ν = g' ν) s)
+      (Finset.sum_congr rfl fun ν hν => by rw [(Finset.mem_filter.mp hν).2]),
+    ← Finset.filter_not] at hcoeff
   have htop (f : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ} → R) :
       ∑ ν ∈ t, f ν * (kostkaNumber ν.val ξ.val : R) = f ξ := by
     refine (Finset.sum_eq_single ξ (fun ν hν hνξ => ?_) fun hξ' => absurd hξt hξ').trans ?_
@@ -92,9 +94,10 @@ theorem linearIndependent_schurPoly_of_card_le {σ : Type*} [Fintype σ] [IsCanc
         absurd (Nat.Partition.lex_le_of_dominates hdom) (not_le.mpr hlt),
         Nat.cast_zero, mul_zero]
     · rw [kostkaNumber_self, Nat.cast_one, mul_one]
-  refold_let t at hcoeff
-  rw [htop g, htop g', hrest] at hcoeff
-  exact hξne (add_right_cancel hcoeff)
+  change ∑ ν ∈ t, g ν * (kostkaNumber ν.val ξ.val : R) =
+      ∑ ν ∈ t, g' ν * (kostkaNumber ν.val ξ.val : R) at hcoeff
+  rw [htop g, htop g'] at hcoeff
+  exact hξne hcoeff
 
 /-- Over an additively cancellative commutative semiring, in an alphabet with at least `n` letters,
 the Schur polynomials of all partitions of `n` are linearly independent. -/
@@ -129,6 +132,38 @@ theorem linearIndependent_diagramSchurPoly_of_colLen_le [IsCancelAdd R] {N : ℕ
     e.injective
 
 /-- Over a characteristic-zero commutative semiring, a natural-number linear combination of the
+Schur polynomials of the partitions of `n` with at most `Fintype.card σ` parts in the alphabet `σ`
+determines its coefficients uniquely. -/
+theorem eq_of_sum_nsmul_schurPoly_eq_of_card_le {σ : Type*} [Fintype σ] [CharZero R]
+    {c c' : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ} → ℕ}
+    (heq :
+      ∑ ν : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}, c ν • schurPoly σ R ν.val =
+      ∑ ν : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}, c' ν • schurPoly σ R ν.val) :
+    c = c' := by
+  have hℕ :
+      ∑ ν : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}, c ν • schurPoly σ ℕ ν.val =
+      ∑ ν : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}, c' ν • schurPoly σ ℕ ν.val :=
+    MvPolynomial.map_injective (Nat.castRingHom R) Nat.cast_injective <| by
+      simpa only [map_sum, map_nsmul, map_schurPoly] using heq
+  funext ν
+  exact linearIndependent_iff'ₛ.mp
+    (linearIndependent_schurPoly_of_card_le (R := ℕ))
+    Finset.univ c c' hℕ ν (Finset.mem_univ ν)
+
+/-- Over a characteristic-zero commutative semiring, a natural-number linear combination of the
+Schur polynomials of the partitions of `n` in an alphabet `σ` with at least `n` letters determines
+its coefficients uniquely. -/
+theorem eq_of_sum_nsmul_schurPoly_eq {σ : Type*} [Fintype σ] [CharZero R]
+    (h : n ≤ Fintype.card σ) {c c' : n.Partition → ℕ}
+    (heq : ∑ ν : n.Partition, c ν • schurPoly σ R ν =
+      ∑ ν : n.Partition, c' ν • schurPoly σ R ν) :
+    c = c' := by
+  rw [sum_smul_schurPoly_eq_sum_card_le le_rfl,
+    sum_smul_schurPoly_eq_sum_card_le le_rfl] at heq
+  funext ν
+  exact congrFun (eq_of_sum_nsmul_schurPoly_eq_of_card_le heq) ⟨ν, ν.card_parts_le.trans h⟩
+
+/-- Over a characteristic-zero commutative semiring, a natural-number linear combination of the
 diagram Schur polynomials of the partitions of `n` with at most `N` rows in `N` variables determines
 its coefficients uniquely. -/
 theorem eq_of_sum_nsmul_diagramSchurPoly_eq_of_colLen_le [CharZero R] {N : ℕ}
@@ -139,17 +174,23 @@ theorem eq_of_sum_nsmul_diagramSchurPoly_eq_of_colLen_le [CharZero R] {N : ℕ}
       ∑ ν : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N},
         c' ν • diagramSchurPoly N R (YoungDiagram.ofPartition ν.val)) :
     c = c' := by
-  have hℕ :
-      ∑ ν : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N},
-        c ν • diagramSchurPoly N ℕ (YoungDiagram.ofPartition ν.val) =
-      ∑ ν : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N},
-        c' ν • diagramSchurPoly N ℕ (YoungDiagram.ofPartition ν.val) :=
-    MvPolynomial.map_injective (Nat.castRingHom R) Nat.cast_injective <| by
-      simpa only [map_sum, map_nsmul, map_diagramSchurPoly] using heq
+  let e : {ν : n.Partition // ν.parts.card ≤ Fintype.card (Fin N)} ≃
+      {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N} :=
+    Equiv.subtypeEquivRight fun ν => by
+      rw [YoungDiagram.colLen_zero_ofPartition, Fintype.card_fin]
+  have heq' :
+      ∑ ν : {ν : n.Partition // ν.parts.card ≤ Fintype.card (Fin N)},
+        c (e ν) • schurPoly (Fin N) R ν.val =
+      ∑ ν : {ν : n.Partition // ν.parts.card ≤ Fintype.card (Fin N)},
+        c' (e ν) • schurPoly (Fin N) R ν.val := by
+    have hterm (ν : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N}) :
+        diagramSchurPoly N R (YoungDiagram.ofPartition ν.val) = schurPoly (Fin N) R ν.val := by
+      rw [schurPoly_eq_rename, rename_diagramSchurPoly]
+    simp only [hterm] at heq
+    exact (Fintype.sum_equiv e _ _ fun _ => rfl).trans
+      (heq.trans (Fintype.sum_equiv e _ _ fun _ => rfl).symm)
   funext ν
-  exact linearIndependent_iff'ₛ.mp
-    (linearIndependent_diagramSchurPoly_of_colLen_le (R := ℕ))
-    Finset.univ c c' hℕ ν (Finset.mem_univ ν)
+  simpa using congrFun (eq_of_sum_nsmul_schurPoly_eq_of_card_le heq') (e.symm ν)
 
 /-- Over a characteristic-zero commutative semiring, a natural-number linear combination of the
 diagram Schur polynomials of the partitions of `n` in `N ≥ n` variables determines its

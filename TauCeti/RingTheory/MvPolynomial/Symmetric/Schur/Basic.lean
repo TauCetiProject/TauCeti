@@ -481,10 +481,11 @@ theorem sum_smul_schurPoly_eq_sum_card_le {M : Type*} [SMulZeroClass M (MvPolyno
     {b : ℕ} (hσ : Fintype.card σ ≤ b) (c : n.Partition → M) :
     ∑ ν, c ν • schurPoly σ R ν =
       ∑ ν : {ν : n.Partition // ν.parts.card ≤ b}, c ν.val • schurPoly σ R ν.val := by
-  rw [← Fintype.sum_subtype_add_sum_subtype fun ν : n.Partition => ν.parts.card ≤ b,
-    Fintype.sum_eq_zero (fun ν : {ν : n.Partition // ¬_} => _) fun ν => by
-      rw [schurPoly_eq_zero_of_card_lt _ (hσ.trans_lt (not_le.mp ν.property)), smul_zero],
-    add_zero]
+  rw [← Finset.subtype_univ,
+    Finset.sum_subtype_eq_sum_filter (f := fun ν : n.Partition => c ν • schurPoly σ R ν),
+    Finset.sum_filter_of_ne fun ν _ hν => by
+      by_contra hlt
+      exact hν (by rw [schurPoly_eq_zero_of_card_lt _ (hσ.trans_lt (not_le.mp hlt)), smul_zero])]
 
 /-- A sum of Schur polynomials in the alphabet `Fin N` over the partitions of `n` only sees the
 partitions with at most `b` rows whenever `N ≤ b`: the Schur polynomials of the others vanish. -/
@@ -492,28 +493,13 @@ theorem sum_nsmul_diagramSchurPoly_eq_sum_colLen_le {b : ℕ} (hN : N ≤ b) (c 
     ∑ ν, c ν • diagramSchurPoly N R (ofPartition ν) =
       ∑ ν : {ν : n.Partition // (ofPartition ν).colLen 0 ≤ b},
         c ν.val • diagramSchurPoly N R (ofPartition ν.val) := by
-  have h :
-      ∑ ν : n.Partition, c ν • diagramSchurPoly (Fintype.card (Fin N)) R (ofPartition ν) =
-        ∑ ν : {ν : n.Partition // (ofPartition ν).colLen 0 ≤ b},
-          c ν.val • diagramSchurPoly (Fintype.card (Fin N)) R (ofPartition ν.val) := by
-    have h1 := congrArg (rename (Fintype.equivFin (Fin N)))
-      (sum_smul_schurPoly_eq_sum_card_le (σ := Fin N) (R := R) (n := n)
-        (by simpa only [Fintype.card_fin] using hN) c)
-    have hren (μ : n.Partition) :
-        rename (Fintype.equivFin (Fin N)) (schurPoly (Fin N) R μ) =
-          diagramSchurPoly (Fintype.card (Fin N)) R (ofPartition μ) := by
-      rw [schurPoly_eq_rename, rename_rename, Equiv.self_comp_symm, rename_id, AlgHom.coe_id,
-        id_eq]
-    simp only [map_sum, map_nsmul, hren] at h1
-    exact h1.trans (Fintype.sum_equiv
-      (Equiv.subtypeEquivRight (q := fun ν : n.Partition => (ofPartition ν).colLen 0 ≤ b)
-        fun ν => by rw [YoungDiagram.colLen_zero_ofPartition])
-      _ (fun ν => c ν.val • diagramSchurPoly (Fintype.card (Fin N)) R (ofPartition ν.val))
-      fun _ => rfl)
-  have hcard : Fintype.card (Fin N) = N := Fintype.card_fin N
-  generalize Fintype.card (Fin N) = M at h hcard
-  subst hcard
-  exact h
+  rw [← Finset.subtype_univ,
+    Finset.sum_subtype_eq_sum_filter
+      (f := fun ν : n.Partition => c ν • diagramSchurPoly N R (ofPartition ν)),
+    Finset.sum_filter_of_ne fun ν _ hν => by
+      by_contra hlt
+      exact hν (by rw [diagramSchurPoly_eq_zero_of_lt_colLen (hN.trans_lt (not_le.mp hlt)),
+        smul_zero])]
 
 /-- **A Schur polynomial vanishes exactly for a partition with more parts than the alphabet has
 letters.** -/
