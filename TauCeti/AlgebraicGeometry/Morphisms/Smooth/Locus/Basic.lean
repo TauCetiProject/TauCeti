@@ -33,7 +33,7 @@ localizations of affine source charts as `R`-algebras.
   locus is smooth.
 * `AlgebraicGeometry.Scheme.Hom.smooth_ι_comp_iff_le_smoothLocus`: `f` is smooth on an open `U`
   exactly when `U` lies in the smooth locus of `f`.
-* `AlgebraicGeometry.Scheme.Hom.preimage_le_smoothLocus_of_smooth_restrict`: the inverse image
+* `Scheme.Hom.preimage_le_smoothLocus_of_smooth_morphismRestrict`: the inverse image
   of a base open over which `f` is smooth lies in its smooth locus.
 * `TauCeti.AlgebraicGeometry.smooth_smoothLocus_over`: the same for the smooth locus of a
   scheme over `S`, regarded as a scheme over `S`.
@@ -70,7 +70,7 @@ theorem smooth_ι_comp_iff_le_smoothLocus (f : X ⟶ S) [LocallyOfFinitePresenta
 
 /-- The inverse image of an open in the base lies in the smooth locus if the restriction
 of the morphism to that open is smooth. -/
-theorem preimage_le_smoothLocus_of_smooth_restrict (f : X ⟶ S)
+theorem preimage_le_smoothLocus_of_smooth_morphismRestrict (f : X ⟶ S)
     [LocallyOfFinitePresentation f] (V : S.Opens) (h : Smooth (f ∣_ V)) :
     f ⁻¹ᵁ V ≤ f.smoothLocus := by
   apply (f.smooth_ι_comp_iff_le_smoothLocus _).mp

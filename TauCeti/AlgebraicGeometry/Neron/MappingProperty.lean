@@ -8,9 +8,6 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Pullbacks
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
-public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
-import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
-import TauCeti.CategoryTheory.Comma.Over.Pullback
 
 /-!
 # The Néron mapping property
@@ -42,9 +39,6 @@ change along `j` is Mathlib's functor `CategoryTheory.Over.pullback j : Over S �
 
 * `MappingProperty.existsUnique`, `MappingProperty.hom_ext`: each generic morphism from a test
   object extends uniquely, and two morphisms from a test object agreeing generically are equal.
-* `MappingProperty.isSplitEpi_of_isSplitEpi_pullback_map`: a section after base change extends
-  if the source has the mapping property and the target is a separated test object with
-  schematically dense base change. This uses schematic-density extensionality.
 * `mappingProperty_iff_existsUnique`: the property is unique extension of generic morphisms.
 * `mappingProperty_iff_bijective_counit_comp`: the property is bijectivity of precomposition
   with the projection `Y ×_S η ⟶ Y`, viewed in `Over S`.
@@ -115,23 +109,6 @@ theorem injective (h : MappingProperty P j X) (Y : Over S) (hY : P Y.hom) :
 theorem surjective (h : MappingProperty P j X) (Y : Over S) (hY : P Y.hom) :
     Function.Surjective ((Over.pullback j).map : (Y ⟶ X) → _) :=
   (h.bijective Y hY).2
-
-/-- Under the mapping property for `P`, a morphism whose base change along `j` admits a section
-itself admits a section if its target is a separated test object with schematically dense
-base change. -/
-theorem isSplitEpi_of_isSplitEpi_pullback_map {Y : Over S} (h : MappingProperty P j X)
-    (f : X ⟶ Y) (hY : P Y.hom)
-    [IsSeparated Y.hom] [IsSchemeTheoreticallyDominant (pullback.fst Y.hom j)]
-    [IsSplitEpi ((Over.pullback j).map f)] : IsSplitEpi f := by
-  obtain ⟨g, hg⟩ := h.surjective Y hY (section_ ((Over.pullback j).map f))
-  refine IsSplitEpi.mk' ⟨g, ?_⟩
-  have heq : (Over.pullback j).map (g ≫ f) = (Over.pullback j).map (𝟙 Y) := by
-    rw [Functor.map_comp, hg, IsSplitEpi.id]
-    exact ((Over.pullback j).map_id Y).symm
-  apply Over.OverMorphism.ext
-  exact ext_of_isSchemeTheoreticallyDominant (pullback.fst Y.hom j) Y.hom
-    (by simp only [Over.comp_left, Category.assoc, Over.w, Over.id_left, Category.id_comp])
-    ((Over.pullback_map_eq_map_iff j _ _).mp heq)
 
 /-- Every morphism from the base change of a test object `Y` to the base change of `X` extends
 uniquely to an `S`-morphism `Y ⟶ X`. -/

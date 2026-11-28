@@ -7,11 +7,14 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
+public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
+public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
 public import Mathlib.AlgebraicGeometry.Pullbacks
 import TauCeti.AlgebraicGeometry.Morphisms.OpenImmersion
+import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 import TauCeti.AlgebraicGeometry.Restrict
-import TauCeti.CategoryTheory.Comma.Over
+import TauCeti.CategoryTheory.Comma.Over.Pullback
 
 /-!
 # Base change in the over category of schemes
@@ -30,33 +33,54 @@ morphisms of schemes.
   morphism of schemes preserves `LocallyOfFiniteType` on structure morphisms in `Over`.
 * `TauCeti.AlgebraicGeometry.compactSpace_over_pullback_obj_left`: base change along a
   quasi-compact morphism of schemes preserves `CompactSpace` on underlying schemes in `Over`.
-* `CategoryTheory.Over.Hom.morphismRestrictPullbackMapIso`: the cartesian square for base
-  change along an open immersion identifies the base-changed map with the open restriction.
-* `CategoryTheory.Over.Hom.isIso_pullback_map_iff_of_isOpenImmersion`: the corresponding
-  isomorphism criterion, using reflection of isomorphisms by `Over.forget`.
+* `Over.Hom.morphismRestrictPullbackMapIso` identifies open restriction with base change.
+* `Over.pullback_map_injective_of_isSchemeTheoreticallyDominant` uses schematic density and
+  separatedness, and `Over.Hom.isSplitEpi_of_surjective_pullback_map` lifts sections.
 -/
 
 public section
 
 open CategoryTheory Limits AlgebraicGeometry
 
+universe u
+
 namespace CategoryTheory.Over.Hom
 
-universe u
+variable {T S : Scheme.{u}} {X Y : Over S} (m : X ⟶ Y) (j : T ⟶ S) [IsOpenImmersion j]
+
+/-- The arrow comparison together with its projection equations. -/
+private noncomputable def morphismRestrictPullbackMapIsoWithProjections :
+    {e : Arrow.mk (m.left ∣_ Y.hom ⁻¹ᵁ j.opensRange) ≅ Arrow.mk ((Over.pullback j).map m).left //
+      e.hom.left ≫ pullback.fst X.hom j = (m.left ⁻¹ᵁ (Y.hom ⁻¹ᵁ j.opensRange)).ι ∧
+      e.hom.right ≫ pullback.fst Y.hom j = (Y.hom ⁻¹ᵁ j.opensRange).ι} := by
+  have sq := Over.isPullback_pullback_map_left j m
+  rw [Scheme.preimage_opensRange_of_isPullback (IsPullback.of_hasPullback Y.hom j).flip]
+  refine ⟨m.left.morphismRestrictArrowIso _ sq.w.symm
+    (Scheme.preimage_opensRange_of_isPullback sq), ?_, ?_⟩ <;> simp
 
 /-- Base change of `m` along the open immersion `j` identifies its underlying arrow with
 the restriction of `m.left` to the inverse image of `j.opensRange`. -/
-noncomputable def morphismRestrictPullbackMapIso {T S : Scheme.{u}} {X Y : Over S}
-    (m : X ⟶ Y) (j : T ⟶ S) [IsOpenImmersion j] :
-    Arrow.mk (m.left ∣_ Y.hom ⁻¹ᵁ j.opensRange) ≅ Arrow.mk ((Over.pullback j).map m).left := by
-  have sq := Over.isPullback_pullback_map_left j m
-  rw [Scheme.preimage_opensRange_of_isPullback (IsPullback.of_hasPullback Y.hom j).flip]
-  exact m.left.morphismRestrictArrowIso _ sq.w.symm (Scheme.preimage_opensRange_of_isPullback sq)
+noncomputable def morphismRestrictPullbackMapIso :
+    Arrow.mk (m.left ∣_ Y.hom ⁻¹ᵁ j.opensRange) ≅ Arrow.mk ((Over.pullback j).map m).left :=
+  (morphismRestrictPullbackMapIsoWithProjections m j).val
+
+/-- The source comparison commutes with the first pullback projection. -/
+@[reassoc (attr := simp)]
+theorem morphismRestrictPullbackMapIso_hom_left_fst :
+    (m.morphismRestrictPullbackMapIso j).hom.left ≫ pullback.fst X.hom j =
+      (m.left ⁻¹ᵁ (Y.hom ⁻¹ᵁ j.opensRange)).ι :=
+  (morphismRestrictPullbackMapIsoWithProjections m j).property.1
+
+/-- The target comparison commutes with the first pullback projection. -/
+@[reassoc (attr := simp)]
+theorem morphismRestrictPullbackMapIso_hom_right_fst :
+    (m.morphismRestrictPullbackMapIso j).hom.right ≫ pullback.fst Y.hom j =
+      (Y.hom ⁻¹ᵁ j.opensRange).ι :=
+  (morphismRestrictPullbackMapIsoWithProjections m j).property.2
 
 /-- Base change of `m` along the open immersion `j` is an isomorphism exactly when its
 underlying morphism restricts to an isomorphism over the inverse image of `j.opensRange`. -/
-theorem isIso_pullback_map_iff_of_isOpenImmersion {T S : Scheme.{u}} {X Y : Over S}
-    (m : X ⟶ Y) (j : T ⟶ S) [IsOpenImmersion j] :
+theorem isIso_pullback_map_iff_of_isOpenImmersion :
     IsIso ((Over.pullback j).map m) ↔ IsIso (m.left ∣_ Y.hom ⁻¹ᵁ j.opensRange) :=
   (isIso_iff_of_reflects_iso ((Over.pullback j).map m) (Over.forget _)).symm.trans
     ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
@@ -64,11 +88,31 @@ theorem isIso_pullback_map_iff_of_isOpenImmersion {T S : Scheme.{u}} {X Y : Over
 
 end CategoryTheory.Over.Hom
 
+/-- Base change is injective on morphisms from a scheme with schematically dense pullback
+to a separated target over the same base. -/
+theorem CategoryTheory.Over.pullback_map_injective_of_isSchemeTheoreticallyDominant
+    {T S : Scheme.{u}} (j : T ⟶ S) {X Y : Over S} [IsSeparated Y.hom]
+    [IsSchemeTheoreticallyDominant (pullback.fst X.hom j)] :
+    Function.Injective ((Over.pullback j).map : (X ⟶ Y) → _) := by
+  intro f g h
+  exact Over.OverMorphism.ext (TauCeti.ext_of_isSchemeTheoreticallyDominant (pullback.fst X.hom j)
+    Y.hom ((Over.w f).trans (Over.w g).symm) ((Over.pullback_map_eq_map_iff j f g).mp h))
+
+/-- A section after base change gives a section over the base if base change is surjective
+on morphisms in the reverse direction and the target is separated with schematically dense
+pullback. -/
+theorem CategoryTheory.Over.Hom.isSplitEpi_of_surjective_pullback_map {η S : Scheme.{u}}
+    {X Y : Over S} (f : X ⟶ Y) {j : η ⟶ S} [IsSeparated Y.hom]
+    [IsSchemeTheoreticallyDominant (pullback.fst Y.hom j)]
+    [IsSplitEpi ((Over.pullback j).map f)]
+    (h : Function.Surjective ((Over.pullback j).map : (Y ⟶ X) → _)) : IsSplitEpi f := by
+  obtain ⟨g, hg⟩ := h (section_ ((Over.pullback j).map f))
+  refine IsSplitEpi.mk' ⟨g, Over.pullback_map_injective_of_isSchemeTheoreticallyDominant j ?_⟩
+  rw [Functor.map_comp, hg, IsSplitEpi.id, Functor.map_id]
+
 namespace TauCeti
 
 namespace AlgebraicGeometry
-
-universe u
 
 /-- Base change along any morphism of schemes preserves `LocallyOfFiniteType` of the structure
 morphism of an object in `Over S`. -/
@@ -91,8 +135,6 @@ end AlgebraicGeometry
 end TauCeti
 
 namespace AlgebraicGeometry.Scheme.Hom
-
-universe u
 
 /-- The canonical comparison for two successive base changes is a pullback square. -/
 theorem isPullback_pullbackLeftPullbackSndIso_inv_fst
