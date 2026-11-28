@@ -61,8 +61,7 @@ threshold `δ > 0` and integrable weight `w`:
 `∫ Real.log (max ‖f s‖ δ) * w s ∂μ = (∫ Real.log δ * w s ∂μ) + (∫ f.logMaxDiv δ s * w s ∂μ)`. -/
 theorem integral_log_max_mul_eq {Ω E : Type*} [TopologicalSpace Ω] [MeasurableSpace Ω]
     [OpensMeasurableSpace Ω] {μ : Measure Ω} [SeminormedAddCommGroup E] (f : C₀(Ω, E)) {δ : ℝ}
-    (hδ : 0 < δ) {w : Ω → ℝ} (hw_int : Integrable w μ) :
-    (∫ s, Real.log (max ‖f s‖ δ) * w s ∂μ) =
+    (hδ : 0 < δ) {w : Ω → ℝ} (hw_int : Integrable w μ) : (∫ s, Real.log (max ‖f s‖ δ) * w s ∂μ) =
       (∫ s, Real.log δ * w s ∂μ) + (∫ s, logMaxDiv f δ s * w s ∂μ) := by
   rw [show (fun s ↦ Real.log (max ‖f s‖ δ) * w s) =
       fun s ↦ Real.log δ * w s + logMaxDiv f δ s * w s from
@@ -95,9 +94,8 @@ private theorem inv_mul_integral_log_max_le {Ω E : Type*} [TopologicalSpace Ω]
       FiniteMeasure.toMeasure_smul, FiniteMeasure.toMeasure_mk]
   -- Translate integrability and integrals from `ν.normalize` back to `w`-weighted `μ`-integrals.
   have hint_norm {u : Ω → ℝ} (hu : Integrable (fun s ↦ u s * w s) μ) :
-      Integrable u (ν.normalize : Measure Ω) :=
-    hnorm_meas ▸ ((TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff
-      hw_int.aemeasurable hw_nonneg).2
+      Integrable u (ν.normalize : Measure Ω) := hnorm_meas ▸
+    ((TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff hw_int.aemeasurable hw_nonneg).2
       (hu.congr (ae_of_all _ fun _ ↦ mul_comm _ _))).smul_measure ENNReal.coe_ne_top
   have hintegral_norm (u : Ω → ℝ) :
       ∫ s, u s ∂(ν.normalize : Measure Ω) = α⁻¹ * ∫ s, u s * w s ∂μ := by
@@ -111,8 +109,7 @@ private theorem inv_mul_integral_log_max_le {Ω E : Type*} [TopologicalSpace Ω]
   rw [← hintegral_norm, ← hintegral_norm]
   exact (strictConcaveOn_log_Ioi.concaveOn.subset (Set.Ici_subset_Ioi.2 hδ)
     (convex_Ici δ)).le_map_integral (Real.continuousOn_log.mono fun _ hx ↦ (hδ.trans_le hx).ne')
-    isClosed_Ici (ae_of_all _ fun _ ↦ le_max_right _ _)
-    (hint_norm hmax_int) (hint_norm hlog_int)
+    isClosed_Ici (ae_of_all _ fun _ ↦ le_max_right _ _) (hint_norm hmax_int) (hint_norm hlog_int)
 
 /-- Weighted logarithmic mean bound for a clipped `C₀(Ω, E)` function: for a threshold `δ > 0`
 and an almost everywhere nonnegative integrable weight `w` of total mass `∫ w ∂μ = α > 0`,

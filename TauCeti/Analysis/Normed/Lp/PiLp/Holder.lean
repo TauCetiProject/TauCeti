@@ -36,9 +36,8 @@ theorem norm_toLp_rpow_mul_rpow_le {q₀ q₁ q : ℝ≥0∞} (hq₀ : q₀ ≠ 
     ‖WithLp.toLp q (fun i ↦ a i ^ (1 - θ) * b i ^ θ)‖ ≤
       ‖WithLp.toLp q₀ a‖ ^ (1 - θ) * ‖WithLp.toLp q₁ b‖ ^ θ := by
   have h1θ : 0 ≤ 1 - θ := sub_nonneg.2 hθ.2
-  have hq_ne : q ≠ 0 := fun h ↦
-    (hq.symm ▸ ENNReal.add_ne_top.2 ⟨by simp [ENNReal.mul_ne_top, hq₀],
-      by simp [ENNReal.mul_ne_top, hq₁]⟩) (by simp [h])
+  have hq_ne : q ≠ 0 := fun h ↦ (hq.symm ▸ ENNReal.add_ne_top.2
+    ⟨by simp [ENNReal.mul_ne_top, hq₀], by simp [ENNReal.mul_ne_top, hq₁]⟩) (by simp [h])
   let _ : MeasurableSpace ι := ⊤; have _ : MeasurableSingletonClass ι := ⟨fun _ ↦ trivial⟩
   have h : ENNReal.ofReal ‖WithLp.toLp q (fun i ↦ a i ^ (1 - θ) * b i ^ θ)‖ ≤
       ENNReal.ofReal ‖WithLp.toLp q₀ a‖ ^ (1 - θ) * ENNReal.ofReal ‖WithLp.toLp q₁ b‖ ^ θ := by

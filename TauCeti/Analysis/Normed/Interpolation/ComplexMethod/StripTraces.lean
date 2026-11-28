@@ -33,14 +33,10 @@ traces of admissible functions on the vertical strip `0 ≤ re z ≤ 1`, togethe
 
 public noncomputable section
 
-open Complex Complex.HadamardThreeLines Filter Set Topology
+open Complex Complex.HadamardThreeLines Filter Set TauCeti.Complex.HadamardThreeLines Topology
 open scoped BoundedContinuousFunction ZeroAtInfty
 
-namespace TauCeti
-
-open Complex.HadamardThreeLines
-
-namespace CompatibleCouple
+namespace TauCeti.CompatibleCouple
 
 variable {X₀ X₁ V : Type*}
   [NormedAddCommGroup X₀] [NormedSpace ℂ X₀] [NormedAddCommGroup X₁] [NormedSpace ℂ X₁]
@@ -66,8 +62,7 @@ variable {C} {F G : ℂ → C.SumSpace} {g h : (ℝ →ᵇ X₀) × (ℝ →ᵇ 
 
 theorem exists_norm_le (hF : C.IsBoundedStripFunction F g) :
     ∃ M, ∀ z ∈ verticalClosedStrip 0 1, ‖F z‖ ≤ M :=
-  let ⟨M, hM⟩ := isBounded_iff_forall_norm_le.1 hF.isBounded
-  ⟨M, fun _ hz => hM _ (mem_image_of_mem F hz)⟩
+  let ⟨M, hM⟩ := isBounded_iff_forall_norm_le.1 hF.isBounded; ⟨M, fun _ hz => hM _ ⟨_, hz, rfl⟩⟩
 
 theorem zero : C.IsBoundedStripFunction 0 0 :=
   ⟨diffContOnCl_const (c := 0), (Bornology.isBounded_singleton (x := 0)).subset
@@ -106,8 +101,8 @@ theorem smul (hF : C.IsBoundedStripFunction F g) {c : ℂ → ℂ}
     fun _ => by simp [hF.apply_mul_I, hg'₀], fun _ => by simp [hF.apply_one_add_mul_I, hg'₁]⟩
 
 theorem sub (hF : C.IsBoundedStripFunction F g) (hG : C.IsBoundedStripFunction G h) :
-    C.IsBoundedStripFunction (F - G) (g - h) :=
-  by simpa [sub_eq_add_neg] using hF.add (hG.const_smul (-1))
+    C.IsBoundedStripFunction (F - G) (g - h) := by
+  simpa [sub_eq_add_neg] using hF.add (hG.const_smul (-1))
 
 /-- **Three-lines bound** for bounded-boundary strip functions. -/
 theorem norm_le_rpow_mul_rpow (hF : C.IsBoundedStripFunction F g) {z : ℂ}
@@ -188,8 +183,7 @@ theorem smul (hF : C.IsStripFunction F g) {c : ℂ → ℂ} (hc : DiffContOnCl �
   isBoundedStripFunction_iff.2 (hF.isBoundedStripFunction.smul hc hK hg'₀ hg'₁)
 
 theorem sub (hF : C.IsStripFunction F g) (hG : C.IsStripFunction G h) :
-    C.IsStripFunction (F - G) (g - h) := by
-  simpa [sub_eq_add_neg] using hF.add (hG.const_smul (-1))
+    C.IsStripFunction (F - G) (g - h) := by simpa [sub_eq_add_neg] using hF.add (hG.const_smul (-1))
 
 /-- **Three-lines bound.** On the closed strip, an admissible function with boundary traces
 `(g₀, g₁)` satisfies `‖F z‖ ≤ ‖g₀‖ ^ (1 - re z) * ‖g₁‖ ^ re z`. -/
@@ -215,8 +209,7 @@ continuous and bounded on its closure, with values `f₀ t ∈ X₀` on the line
 `f₁ t ∈ X₁` on the line `re z = 1` for bounded continuous `f₀`, `f₁`. For `δ > 0` the function
 `exp (δ (z - θ)²) Φ z` is admissible, with the damped boundary values as traces. -/
 theorem isStripFunction_stripGaussian_smul {Φ : ℂ → C.SumSpace} {f₀ : ℝ →ᵇ X₀} {f₁ : ℝ →ᵇ X₁}
-    {δ : ℝ} (hδ : 0 < δ) (θ : ℝ)
-    (hΦ : DiffContOnCl ℂ Φ (verticalStrip 0 1))
+    {δ : ℝ} (hδ : 0 < δ) (θ : ℝ) (hΦ : DiffContOnCl ℂ Φ (verticalStrip 0 1))
     (hb : Bornology.IsBounded (Φ '' verticalClosedStrip 0 1))
     (h₀ : ∀ t : ℝ, Φ (t * I) = C.fstToSum (f₀ t))
     (h₁ : ∀ t : ℝ, Φ (1 + t * I) = C.sndToSum (f₁ t)) :
@@ -291,8 +284,7 @@ theorem isStripFunction_stripFunction (g : C.stripTraces) :
   ⟨⟨hF.diffContOnCl.differentiableOn.congr
         (hEq.mono (verticalStrip_subset_verticalClosedStrip 0 1)),
       hF.diffContOnCl.continuousOn.congr (hEq.mono (closure_verticalStrip_subset 0 1))⟩,
-    hEq.image_eq ▸ hF.isBounded,
-    fun t => (hEq (by simp)).trans (hF.apply_mul_I t),
+    hEq.image_eq ▸ hF.isBounded, fun t => (hEq (by simp)).trans (hF.apply_mul_I t),
     fun t => (hEq (by simp)).trans (hF.apply_one_add_mul_I t)⟩
 
 variable {C} in
@@ -372,6 +364,7 @@ theorem isClosed_stripTraces [CompleteSpace X₀] [CompleteSpace X₁] :
   have hdist (n m : ℕ) {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
       ‖F n z - F m z‖ ≤ ‖u n - u m‖ := ((hF n).sub (hF m)).norm_le hz
   let F' : ℂ → C.SumSpace := fun z => limUnder atTop fun n => F n z
+  -- on the closed strip, `F n` converges pointwise, since the traces form a Cauchy sequence
   have hlimz {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
       Tendsto (fun n => F n z) atTop (𝓝 (F' z)) :=
     (Metric.cauchySeq_iff'.2 fun ε hε =>
@@ -379,6 +372,7 @@ theorem isClosed_stripTraces [CompleteSpace X₀] [CompleteSpace X₁] :
       ⟨N, fun n hn => by
         rw [dist_eq_norm]
         exact (hdist n N hz).trans_lt (dist_eq_norm (u n) (u N) ▸ hN n hn)⟩).tendsto_limUnder
+  -- the convergence is uniform on the closed strip, with rate `‖u n - g‖`
   have hunif : TendstoUniformlyOn F F' atTop (verticalClosedStrip 0 1) := by
     refine Metric.tendstoUniformlyOn_iff.2 fun ε hε => ?_
     filter_upwards [(tendsto_iff_norm_sub_tendsto_zero.1 hlim).eventually (gt_mem_nhds hε)] with
@@ -386,6 +380,7 @@ theorem isClosed_stripTraces [CompleteSpace X₀] [CompleteSpace X₁] :
     rw [dist_eq_norm, norm_sub_rev]
     exact lt_of_le_of_lt (le_of_tendsto_of_tendsto' (tendsto_const_nhds.sub (hlimz hz)).norm
       (tendsto_const_nhds.sub hlim).norm fun m => hdist n m hz) hn
+  -- the limit `F'` is admissible with traces `g`
   refine ⟨F', ⟨⟨(hunif.mono (verticalStrip_subset_verticalClosedStrip 0 1))
       |>.tendstoLocallyUniformlyOn.differentiableOn (.of_forall fun n =>
         (hF n).diffContOnCl.differentiableOn) (isOpen_verticalStrip 0 1),
@@ -408,6 +403,4 @@ instance [CompleteSpace X₀] [CompleteSpace X₁] : CompleteSpace C.stripTraces
 instance (z : ℂ) : IsClosed ((C.stripEval z).ker : Set C.stripTraces) :=
   (C.stripEval z).isClosed_ker
 
-end CompatibleCouple
-
-end TauCeti
+end TauCeti.CompatibleCouple

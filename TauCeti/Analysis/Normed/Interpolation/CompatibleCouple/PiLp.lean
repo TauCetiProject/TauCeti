@@ -16,6 +16,11 @@ forms the product compatible couple `TauCeti.CompatibleCouple.piLpFamily C q₀ 
 `(PiLp q₀ X₀, PiLp q₁ X₁)` inside the ambient product `∀ i, V i`, together with the canonical
 continuous linear equivalence `TauCeti.CompatibleCouple.piLpFamilySumEquiv` identifying its sum
 space with `∀ i, (C i).SumSpace`.
+
+For a single compatible couple `C`, `TauCeti.CompatibleCouple.piLp C ι q₀ q₁` is the
+constant-family specialization `piLpFamily (fun _ : ι => C) q₀ q₁`, with coordinate inclusions
+`TauCeti.CompatibleCouple.sumSingle` and projections `TauCeti.CompatibleCouple.sumProj` obtained
+directly from `piLpFamilySumEquiv`.
 -/
 
 public noncomputable section
@@ -48,13 +53,11 @@ def piLpFamily (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ 
 
 @[simp] theorem piLpFamily_embed₀_apply (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i))
     (q₀ q₁ : ℝ≥0∞) (x : PiLp q₀ X₀) (i : ι) :
-    (piLpFamily C q₀ q₁).embed₀ x i = (C i).embed₀ (x i) := by
-  simp [piLpFamily]
+    (piLpFamily C q₀ q₁).embed₀ x i = (C i).embed₀ (x i) := by simp [piLpFamily]
 
 @[simp] theorem piLpFamily_embed₁_apply (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i))
     (q₀ q₁ : ℝ≥0∞) (x : PiLp q₁ X₁) (i : ι) :
-    (piLpFamily C q₀ q₁).embed₁ x i = (C i).embed₁ (x i) := by
-  simp [piLpFamily]
+    (piLpFamily C q₀ q₁).embed₁ x i = (C i).embed₁ (x i) := by simp [piLpFamily]
 
 end CoupleDef
 
@@ -65,9 +68,17 @@ variable {X₀ X₁ V : ι → Type*}
   [∀ i, NormedAddCommGroup (X₀ i)] [∀ i, NormedSpace 𝕜 (X₀ i)]
   [∀ i, NormedAddCommGroup (X₁ i)] [∀ i, NormedSpace 𝕜 (X₁ i)]
   [∀ i, AddCommGroup (V i)] [∀ i, Module 𝕜 (V i)]
-  [∀ i, TopologicalSpace (V i)] [∀ i, ContinuousAdd (V i)]
+  [∀ i, TopologicalSpace (V i)]
+
+/-- A pair of families lies in the intersection `(piLpFamily C q₀ q₁).inter` exactly when each
+pair of coordinates lies in `(C i).inter`. -/
+theorem mem_piLpFamily_inter_iff (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i))
+    {q₀ q₁ : ℝ≥0∞} [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] {x : PiLp q₀ X₀ × PiLp q₁ X₁} :
+    x ∈ (piLpFamily C q₀ q₁).inter ↔ ∀ i, (x.1 i, x.2 i) ∈ (C i).inter := by
+  simp [funext_iff]
 
 section
+variable [∀ i, ContinuousAdd (V i)]
 variable (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞)
   [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)]
 
@@ -156,8 +167,7 @@ theorem piLpFamilySumEquiv_apply_eq_sumLift (u : (piLpFamily C q₀ q₁).SumSpa
   simp [piLpFamilySumEquiv, piLpFamilySumFwd, sumLift_sndToSum]
 
 @[simp] theorem sumSpaceEmbed_piLpFamilySumEquiv_apply (u : (piLpFamily C q₀ q₁).SumSpace)
-    (i : ι) :
-    (C i).sumSpaceEmbed (piLpFamilySumEquiv C q₀ q₁ u i) =
+    (i : ι) : (C i).sumSpaceEmbed (piLpFamilySumEquiv C q₀ q₁ u i) =
       (piLpFamily C q₀ q₁).sumSpaceEmbed u i := by
   obtain ⟨x₀, x₁, rfl⟩ := (piLpFamily C q₀ q₁).exists_fstToSum_add_sndToSum_eq u; simp
 
@@ -169,5 +179,104 @@ theorem piLpFamilySumEquiv_apply_eq_sumLift (u : (piLpFamily C q₀ q₁).SumSpa
 end
 
 end Couple
+
+section ConstantCouple
+
+variable {𝕜 X₀ X₁ V : Type*} [Semiring 𝕜]
+  [AddCommGroup X₀] [Module 𝕜 X₀] [TopologicalSpace X₀]
+  [AddCommGroup X₁] [Module 𝕜 X₁] [TopologicalSpace X₁]
+  [AddCommMonoid V] [Module 𝕜 V] [TopologicalSpace V]
+
+/-- The couple `(ℓ^{q₀}(ι; X₀), ℓ^{q₁}(ι; X₁))` of finite `ℓ^q` sums of the spaces of a compatible
+couple `(X₀, X₁)`, embedded coordinatewise into `ι → V` as `piLpFamily (fun _ : ι => C) q₀ q₁`. -/
+abbrev piLp (C : CompatibleCouple 𝕜 X₀ X₁ V) (ι : Type*) (q₀ q₁ : ℝ≥0∞) :
+    CompatibleCouple 𝕜 (PiLp q₀ fun _ : ι => X₀) (PiLp q₁ fun _ : ι => X₁) (ι → V) :=
+  piLpFamily (fun _ : ι => C) q₀ q₁
+
+theorem piLp_embed₀_apply (C : CompatibleCouple 𝕜 X₀ X₁ V) (ι : Type*) (q₀ q₁ : ℝ≥0∞)
+    (x : PiLp q₀ fun _ : ι => X₀) (k : ι) : (C.piLp ι q₀ q₁).embed₀ x k = C.embed₀ (x k) :=
+  piLpFamily_embed₀_apply (fun _ : ι => C) q₀ q₁ x k
+
+theorem piLp_embed₁_apply (C : CompatibleCouple 𝕜 X₀ X₁ V) (ι : Type*) (q₀ q₁ : ℝ≥0∞)
+    (x : PiLp q₁ fun _ : ι => X₁) (k : ι) : (C.piLp ι q₀ q₁).embed₁ x k = C.embed₁ (x k) :=
+  piLpFamily_embed₁_apply (fun _ : ι => C) q₀ q₁ x k
+
+end ConstantCouple
+
+section ConstantCoordinate
+
+variable {𝕜 X₀ X₁ V : Type*} [NormedField 𝕜]
+  [NormedAddCommGroup X₀] [NormedSpace 𝕜 X₀] [NormedAddCommGroup X₁] [NormedSpace 𝕜 X₁]
+  [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V]
+
+/-- A pair of families lies in the intersection `ℓ^{q₀}(X₀) ∩ ℓ^{q₁}(X₁)` exactly when each pair
+of coordinates lies in `X₀ ∩ X₁`. -/
+theorem mem_piLp_inter_iff {C : CompatibleCouple 𝕜 X₀ X₁ V} {ι : Type*} [Fintype ι]
+    {q₀ q₁ : ℝ≥0∞} [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)]
+    {x : (PiLp q₀ fun _ : ι => X₀) × PiLp q₁ fun _ : ι => X₁} :
+    x ∈ (C.piLp ι q₀ q₁).inter ↔ ∀ k, (x.1 k, x.2 k) ∈ C.inter :=
+  mem_piLpFamily_inter_iff (fun _ : ι => C)
+
+section
+variable [ContinuousAdd V]
+  (C : CompatibleCouple 𝕜 X₀ X₁ V) {ι : Type*} [Fintype ι] (q₀ q₁ : ℝ≥0∞)
+  [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)]
+
+/-- The inclusion `X₀ + X₁ → ℓ^{q₀}(X₀) + ℓ^{q₁}(X₁)` of the `k`-th coordinate of the sum spaces:
+`x₀ + x₁ ↦ single k x₀ + single k x₁`, obtained by composing `(piLpFamilySumEquiv _ q₀ q₁).symm`
+with `ContinuousLinearMap.single`. -/
+def sumSingle [DecidableEq ι] (k : ι) : C.SumSpace →L[𝕜] (C.piLp ι q₀ q₁).SumSpace :=
+  (piLpFamilySumEquiv (fun _ : ι => C) q₀ q₁).symm.toContinuousLinearMap.comp
+    (ContinuousLinearMap.single 𝕜 (fun _ : ι => C.SumSpace) k)
+
+@[simp] theorem sumSingle_fstToSum [DecidableEq ι] (k : ι) (x : X₀) :
+    C.sumSingle q₀ q₁ k (C.fstToSum x) = (C.piLp ι q₀ q₁).fstToSum (PiLp.single q₀ k x) := by
+  refine (piLpFamilySumEquiv (fun _ : ι => C) q₀ q₁).injective (funext fun j => ?_)
+  rcases eq_or_ne j k with rfl | hjk <;> simp [sumSingle, PiLp.single_eq_of_ne, *]
+
+@[simp] theorem sumSingle_sndToSum [DecidableEq ι] (k : ι) (x : X₁) :
+    C.sumSingle q₀ q₁ k (C.sndToSum x) = (C.piLp ι q₀ q₁).sndToSum (PiLp.single q₁ k x) := by
+  refine (piLpFamilySumEquiv (fun _ : ι => C) q₀ q₁).injective (funext fun j => ?_)
+  rcases eq_or_ne j k with rfl | hjk <;> simp [sumSingle, PiLp.single_eq_of_ne, *]
+
+/-- The coordinate inclusion of the sum spaces lies over `Pi.single k : V → (ι → V)`. -/
+@[simp] theorem sumSpaceEmbed_sumSingle [DecidableEq ι] (k : ι) (u : C.SumSpace) :
+    (C.piLp ι q₀ q₁).sumSpaceEmbed (C.sumSingle q₀ q₁ k u) = Pi.single k (C.sumSpaceEmbed u) := by
+  ext j; rw [sumSingle, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    sumSpaceEmbed_piLpFamilySumEquiv_symm]
+  rcases eq_or_ne j k with rfl | hjk <;> simp [*]
+
+/-- The projection `ℓ^{q₀}(X₀) + ℓ^{q₁}(X₁) → X₀ + X₁` onto the `k`-th coordinate of the sum
+spaces: `x₀ + x₁ ↦ x₀ k + x₁ k`, obtained by composing `ContinuousLinearMap.proj k` with
+`piLpFamilySumEquiv`. -/
+def sumProj (k : ι) : (C.piLp ι q₀ q₁).SumSpace →L[𝕜] C.SumSpace :=
+  (ContinuousLinearMap.proj k).comp
+    (piLpFamilySumEquiv (fun _ : ι => C) q₀ q₁).toContinuousLinearMap
+
+@[simp] theorem sumProj_fstToSum (k : ι) (x : PiLp q₀ fun _ : ι => X₀) :
+    C.sumProj q₀ q₁ k ((C.piLp ι q₀ q₁).fstToSum x) = C.fstToSum (x k) := by simp [sumProj]
+
+@[simp] theorem sumProj_sndToSum (k : ι) (x : PiLp q₁ fun _ : ι => X₁) :
+    C.sumProj q₀ q₁ k ((C.piLp ι q₀ q₁).sndToSum x) = C.sndToSum (x k) := by simp [sumProj]
+
+/-- The coordinate projection of the sum spaces lies over the evaluation at `k`. -/
+@[simp] theorem sumSpaceEmbed_sumProj (k : ι) (u : (C.piLp ι q₀ q₁).SumSpace) :
+    C.sumSpaceEmbed (C.sumProj q₀ q₁ k u) = (C.piLp ι q₀ q₁).sumSpaceEmbed u k :=
+  sumSpaceEmbed_piLpFamilySumEquiv_apply (fun _ : ι => C) q₀ q₁ u k
+
+@[simp] theorem sumProj_sumSingle [DecidableEq ι] (k j : ι) (u : C.SumSpace) :
+    C.sumProj q₀ q₁ k (C.sumSingle q₀ q₁ j u) = Pi.single (M := fun _ : ι => C.SumSpace) j u k :=
+  by simp [sumProj, sumSingle]
+
+/-- The sum space of `(ℓ^{q₀}(X₀), ℓ^{q₁}(X₁))` is the product of copies of `X₀ + X₁`: every
+element is the sum of the coordinate inclusions of its coordinate projections. -/
+theorem sum_sumSingle_sumProj [DecidableEq ι] (u : (C.piLp ι q₀ q₁).SumSpace) :
+    ∑ k, C.sumSingle q₀ q₁ k (C.sumProj q₀ q₁ k u) = u := by
+  refine (piLpFamilySumEquiv (fun _ : ι => C) q₀ q₁).injective (funext fun j => ?_)
+  simp [sumProj, sumSingle, map_sum]
+
+end
+
+end ConstantCoordinate
 
 end TauCeti.CompatibleCouple

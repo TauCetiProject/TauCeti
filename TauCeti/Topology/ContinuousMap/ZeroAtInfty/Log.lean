@@ -30,16 +30,14 @@ variable {α E : Type*} [TopologicalSpace α] [SeminormedAddCommGroup E]
 /-- The clipped logarithmic envelope `x ↦ Real.log (max ‖f x‖ δ / δ)` of `f : C₀(α, E)` above
 threshold `δ > 0`. It is continuous and nonnegative, and compactly supported when `[R1Space α]`
 holds (`ZeroAtInftyContinuousMap.hasCompactSupport_logMaxDiv`). -/
-noncomputable def logMaxDiv (f : C₀(α, E)) (δ : ℝ) (x : α) : ℝ :=
-  Real.log (max ‖f x‖ δ / δ)
+noncomputable def logMaxDiv (f : C₀(α, E)) (δ : ℝ) (x : α) : ℝ := Real.log (max ‖f x‖ δ / δ)
 
 /-- Defining formula for `logMaxDiv`. -/
 theorem logMaxDiv_def (f : C₀(α, E)) (δ : ℝ) (x : α) :
     logMaxDiv f δ x = Real.log (max ‖f x‖ δ / δ) := (rfl)
 
 /-- For `δ > 0`, `logMaxDiv f δ x = 0` exactly when `‖f x‖ ≤ δ`. -/
-@[simp]
-theorem logMaxDiv_eq_zero_iff (f : C₀(α, E)) {δ : ℝ} (hδ : 0 < δ) (x : α) :
+@[simp] theorem logMaxDiv_eq_zero_iff (f : C₀(α, E)) {δ : ℝ} (hδ : 0 < δ) (x : α) :
     logMaxDiv f δ x = 0 ↔ ‖f x‖ ≤ δ := by
   have hpos : 0 < max ‖f x‖ δ / δ := div_pos (hδ.trans_le (le_max_right _ _)) hδ
   rw [logMaxDiv_def, Real.log_eq_zero]

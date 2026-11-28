@@ -807,8 +807,10 @@ private theorem norm_analyticFamilyMap_le_of_pos (hT : IsBoundedAnalyticFamily T
     (h₀ : ∀ t x, ‖T₀ t x‖ ≤ M₀ * ‖x‖) (h₁ : ∀ t x, ‖T₁ t x‖ ≤ M₁ * ‖x‖)
     (u : C.ComplexMethodSpace θ) : ‖analyticFamilyMap θ hT u‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖ := by
   set K := M₀ ^ (1 - θ) * M₁ ^ θ
+  -- every representative `g` of `u` gives `‖analyticFamilyMap u‖ ≤ K * ‖g‖`
   refine (analyticFamilyMap θ hT).le_of_opNorm_le
     (opNorm_le_of_norm_apply_mk_le (by positivity) fun g => ?_) u
+  -- bound the scaled boundary traces and apply the three-lines bound on `scaleFactor • T(g)`
   have hsmul := norm_smul_mk_le_of_diffContOnCl θ (hT.stripTracesMap g)
     (differentiable_scaleFactor M₀ M₁).diffContOnCl (fun _ hz => norm_scaleFactor_le hz)
     (fun t => (norm_smul _ _).trans_le (norm_scaleFactor_mul_I hM₀ t ▸
@@ -830,6 +832,7 @@ theorem norm_analyticFamilyMap_le (hT : IsBoundedAnalyticFamily T T₀ T₁) (h�
     {M₀ M₁ : ℝ} (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁) (h₀ : ∀ t x, ‖T₀ t x‖ ≤ M₀ * ‖x‖)
     (h₁ : ∀ t x, ‖T₁ t x‖ ≤ M₁ * ‖x‖) (u : C.ComplexMethodSpace θ) :
     ‖analyticFamilyMap θ hT u‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖ :=
+  -- apply the bound for the positive constants `M₀ + ε`, `M₁ + ε` and let `ε → 0`
   le_rpow_mul_rpow_mul_of_forall_pos hθ fun _ _ => norm_analyticFamilyMap_le_of_pos hT
     (by positivity) (by positivity) (fun t x => (h₀ t x).trans (by gcongr; linarith))
     (fun t x => (h₁ t x).trans (by gcongr; linarith)) u

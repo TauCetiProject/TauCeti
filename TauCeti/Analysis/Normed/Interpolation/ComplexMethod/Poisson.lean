@@ -43,6 +43,9 @@ public noncomputable section
 
 open Complex Complex.HadamardThreeLines TauCeti.Complex.HadamardThreeLines
 open Filter MeasureTheory Metric Real Set Topology
+open ZeroAtInftyContinuousMap (logMaxDiv logMaxDiv_nonneg continuous_logMaxDiv
+  hasCompactSupport_logMaxDiv integrable_logMaxDiv integral_log_max_mul_eq log_add_logMaxDiv
+  exp_integral_log_max_le_rpow exists_forall_norm_le_of_le_abs)
 open scoped ZeroAtInfty
 
 namespace TauCeti.CompatibleCouple.ComplexMethodSpace
@@ -54,37 +57,34 @@ variable {X₀ X₁ V : Type*}
 
 private def holoPotential (g : C.stripTraces) (δ : ℝ) (ζ : ℂ) : ℂ :=
   (Real.log δ : ℂ) +
-    ((∫ s, (ZeroAtInftyContinuousMap.logMaxDiv g.val.1 δ s : ℂ) * holoPoisson₀ (ζ - s * I)) +
-      ∫ s, (ZeroAtInftyContinuousMap.logMaxDiv g.val.2 δ s : ℂ) * holoPoisson₁ (ζ - s * I))
+    ((∫ s, (logMaxDiv g.val.1 δ s : ℂ) * holoPoisson₀ (ζ - s * I)) +
+      ∫ s, (logMaxDiv g.val.2 δ s : ℂ) * holoPoisson₁ (ζ - s * I))
 
 private theorem differentiableOn_holoPotential (g : C.stripTraces) {δ : ℝ} (hδ : 0 < δ) :
     DifferentiableOn ℂ (holoPotential g δ) (verticalStrip 0 1) :=
   (differentiableOn_const _).add
-    ((differentiableOn_integral_holoPoisson₀ (Complex.ofRealCLM.integrable_comp
-        (ZeroAtInftyContinuousMap.integrable_logMaxDiv g.val.1 hδ))).add
-      (differentiableOn_integral_holoPoisson₁ (Complex.ofRealCLM.integrable_comp
-        (ZeroAtInftyContinuousMap.integrable_logMaxDiv g.val.2 hδ))))
+    ((differentiableOn_integral_holoPoisson₀
+        (Complex.ofRealCLM.integrable_comp (integrable_logMaxDiv g.val.1 hδ))).add
+      (differentiableOn_integral_holoPoisson₁
+        (Complex.ofRealCLM.integrable_comp (integrable_logMaxDiv g.val.2 hδ))))
 
 private theorem re_holoPotential (g : C.stripTraces) {δ : ℝ} (hδ : 0 < δ) {ζ : ℂ}
-    (hζ : ζ ∈ verticalStrip 0 1) :
-    (holoPotential g δ ζ).re = Real.log δ +
-      ((∫ s, ZeroAtInftyContinuousMap.logMaxDiv g.val.1 δ s * stripPoisson₀ ζ.re (ζ.im - s)) +
-        ∫ s, ZeroAtInftyContinuousMap.logMaxDiv g.val.2 δ s * stripPoisson₁ ζ.re (ζ.im - s)) := by
+    (hζ : ζ ∈ verticalStrip 0 1) : (holoPotential g δ ζ).re = Real.log δ +
+      ((∫ s, logMaxDiv g.val.1 δ s * stripPoisson₀ ζ.re (ζ.im - s)) +
+        ∫ s, logMaxDiv g.val.2 δ s * stripPoisson₁ ζ.re (ζ.im - s)) := by
   simp only [holoPotential, add_re, ofReal_re,
-    re_integral_holoPoisson₀ (ZeroAtInftyContinuousMap.integrable_logMaxDiv g.val.1 hδ) hζ,
-    re_integral_holoPoisson₁ (ZeroAtInftyContinuousMap.integrable_logMaxDiv g.val.2 hδ) hζ]
+    re_integral_holoPoisson₀ (integrable_logMaxDiv g.val.1 hδ) hζ,
+    re_integral_holoPoisson₁ (integrable_logMaxDiv g.val.2 hδ) hζ]
 
 private theorem integral_logMaxDiv_mul_stripPoisson₀_nonneg {E : Type*} [NormedAddCommGroup E]
     (f : C₀(ℝ, E)) {δ r y : ℝ} (hδ : 0 < δ) (hr : r ∈ Ioo 0 1) :
-    0 ≤ ∫ s, ZeroAtInftyContinuousMap.logMaxDiv f δ s * stripPoisson₀ r (y - s) :=
-  integral_nonneg fun _ =>
-    mul_nonneg (ZeroAtInftyContinuousMap.logMaxDiv_nonneg f hδ _) (stripPoisson₀_pos hr _).le
+    0 ≤ ∫ s, logMaxDiv f δ s * stripPoisson₀ r (y - s) :=
+  integral_nonneg fun _ => mul_nonneg (logMaxDiv_nonneg f hδ _) (stripPoisson₀_pos hr _).le
 
 private theorem integral_logMaxDiv_mul_stripPoisson₁_nonneg {E : Type*} [NormedAddCommGroup E]
     (f : C₀(ℝ, E)) {δ r y : ℝ} (hδ : 0 < δ) (hr : r ∈ Ioo 0 1) :
-    0 ≤ ∫ s, ZeroAtInftyContinuousMap.logMaxDiv f δ s * stripPoisson₁ r (y - s) :=
-  integral_nonneg fun _ =>
-    mul_nonneg (ZeroAtInftyContinuousMap.logMaxDiv_nonneg f hδ _) (stripPoisson₁_pos hr _).le
+    0 ≤ ∫ s, logMaxDiv f δ s * stripPoisson₁ r (y - s) :=
+  integral_nonneg fun _ => mul_nonneg (logMaxDiv_nonneg f hδ _) (stripPoisson₁_pos hr _).le
 
 private theorem norm_exp_neg_holoPotential_le (g : C.stripTraces) {δ : ℝ} (hδ : 0 < δ) {ζ : ℂ}
     (hζ : ζ ∈ verticalStrip 0 1) : ‖Complex.exp (-holoPotential g δ ζ)‖ ≤ δ⁻¹ := by
@@ -119,64 +119,58 @@ private theorem norm_contractedExpNegHoloPotential_le (g : C.stripTraces) {δ ε
 private theorem norm_contracted_smul_le_of_tail_and_core {δ T κ ε : ℝ} (hδ : 0 < δ)
     (hκ : 0 < κ) (hε : ε ∈ Ioo (0 : ℝ) 2⁻¹) (g : C.stripTraces) {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℂ E] (z : ℂ) (hz : z ∈ verticalClosedStrip 0 1)
-    (t : ℝ) (x : E) (htail_le : T ≤ |t| → ‖x‖ ≤ δ)
-    (hcore : ¬ T ≤ |t| → Real.log (max ‖x‖ δ) - κ ≤
-      (holoPotential g δ ((1 - 2 * (ε : ℂ)) * z + ε)).re) :
+    (t : ℝ) (x : E) (htail_le : T ≤ |t| → ‖x‖ ≤ δ) (hcore : ¬ T ≤ |t| →
+      Real.log (max ‖x‖ δ) - κ ≤ (holoPotential g δ ((1 - 2 * (ε : ℂ)) * z + ε)).re) :
     ‖contractedExpNegHoloPotential g δ ε z • x‖ ≤ Real.exp κ := by
-  rw [norm_smul]
-  by_cases ht : T ≤ |t|
+  rw [norm_smul]; by_cases ht : T ≤ |t|
   · exact (mul_le_mul (norm_contractedExpNegHoloPotential_le g hδ hε hz) (htail_le ht)
-      (norm_nonneg x) (inv_pos.2 hδ).le).trans
-      ((inv_mul_cancel₀ hδ.ne').trans_le (Real.one_le_exp hκ.le))
+      (norm_nonneg x) (inv_pos.2 hδ).le).trans ((inv_mul_cancel₀ hδ.ne').trans_le
+      (Real.one_le_exp hκ.le))
   · rw [contractedExpNegHoloPotential, Complex.norm_exp, neg_re]
     exact exp_neg_mul_le_exp_of_log_sub_le (norm_nonneg x) (le_max_left _ _)
       (hδ.trans_le (le_max_right _ _)) (hcore ht)
 
 private theorem norm_contracted_smul_fst_le {δ T κ ε : ℝ} (hδ : 0 < δ) (hκ : 0 < κ)
     (hε : ε ∈ Ioo (0 : ℝ) 2⁻¹) (g : C.stripTraces) (hg₀ : ∀ s, T ≤ |s| → ‖g.val.1 s‖ ≤ δ)
-    (happrox₀ : ∀ t ∈ Icc (-T) T, ZeroAtInftyContinuousMap.logMaxDiv g.val.1 δ t - κ ≤
-      ∫ s, ZeroAtInftyContinuousMap.logMaxDiv g.val.1 δ s *
-        stripPoisson₀ ε ((1 - 2 * ε) * t - s))
+    (happrox₀ : ∀ t ∈ Icc (-T) T, logMaxDiv g.val.1 δ t - κ ≤
+      ∫ s, logMaxDiv g.val.1 δ s * stripPoisson₀ ε ((1 - 2 * ε) * t - s))
     (t : ℝ) : ‖contractedExpNegHoloPotential g δ ε (t * I) • g.val.1 t‖ ≤ Real.exp κ := by
   refine norm_contracted_smul_le_of_tail_and_core hδ hκ hε g (t * I)
     (by simp [verticalClosedStrip]) t _ (hg₀ t) fun ht => ?_
-  rw [re_holoPotential g hδ (mapsTo_contracted_verticalStrip hε
-    (by simp only [mem_verticalStrip_iff, mem_Ioo, mul_I_re, ofReal_im, neg_zero]
-        exact ⟨by linarith [hε.1], by linarith [hε.1]⟩)),
+  rw [re_holoPotential g hδ (mapsTo_contracted_verticalStrip hε (by
+      simp only [mem_verticalStrip_iff, mem_Ioo, mul_I_re, ofReal_im, neg_zero]
+      exact ⟨by linarith [hε.1], by linarith [hε.1]⟩)),
     show (fun z : ℂ => (1 - 2 * (ε : ℂ)) * z + ε) (t * I) = (ε : ℂ) + ((1 - 2 * ε) * t : ℝ) * I by
       dsimp only; push_cast; ring]
   simp only [add_re, ofReal_re, mul_I_re, ofReal_im, neg_zero, add_zero, add_im, mul_I_im, zero_add]
-  linarith [happrox₀ t (abs_le.1 (not_le.1 ht).le), ZeroAtInftyContinuousMap.log_add_logMaxDiv
-    g.val.1 hδ t, integral_logMaxDiv_mul_stripPoisson₁_nonneg g.val.2 hδ
+  linarith [happrox₀ t (abs_le.1 (not_le.1 ht).le), log_add_logMaxDiv g.val.1 hδ t,
+    integral_logMaxDiv_mul_stripPoisson₁_nonneg g.val.2 hδ
       (r := ε) (y := (1 - 2 * ε) * t) ⟨hε.1, by linarith [hε.2]⟩]
 
 private theorem norm_contracted_smul_snd_le {δ T κ ε : ℝ} (hδ : 0 < δ) (hκ : 0 < κ)
     (hε : ε ∈ Ioo (0 : ℝ) 2⁻¹) (g : C.stripTraces) (hg₁ : ∀ s, T ≤ |s| → ‖g.val.2 s‖ ≤ δ)
-    (happrox₁ : ∀ t ∈ Icc (-T) T, ZeroAtInftyContinuousMap.logMaxDiv g.val.2 δ t - κ ≤
-      ∫ s, ZeroAtInftyContinuousMap.logMaxDiv g.val.2 δ s *
-        stripPoisson₁ (1 - ε) ((1 - 2 * ε) * t - s))
+    (happrox₁ : ∀ t ∈ Icc (-T) T, logMaxDiv g.val.2 δ t - κ ≤
+      ∫ s, logMaxDiv g.val.2 δ s * stripPoisson₁ (1 - ε) ((1 - 2 * ε) * t - s))
     (t : ℝ) : ‖contractedExpNegHoloPotential g δ ε (1 + t * I) • g.val.2 t‖ ≤ Real.exp κ := by
   refine norm_contracted_smul_le_of_tail_and_core hδ hκ hε g (1 + t * I)
     (by simp [verticalClosedStrip]) t _ (hg₁ t) fun ht => ?_
-  rw [re_holoPotential g hδ (mapsTo_contracted_verticalStrip hε
-    (by simp only [mem_verticalStrip_iff, mem_Ioo, add_re, one_re, mul_I_re, ofReal_im, neg_zero,
-          add_zero]; exact ⟨by linarith [hε.1], by linarith [hε.1]⟩)),
+  rw [re_holoPotential g hδ (mapsTo_contracted_verticalStrip hε (by
+      simp only [mem_verticalStrip_iff, mem_Ioo, add_re, one_re, mul_I_re, ofReal_im, neg_zero,
+        add_zero]; exact ⟨by linarith [hε.1], by linarith [hε.1]⟩)),
     show (fun z : ℂ => (1 - 2 * (ε : ℂ)) * z + ε) (1 + t * I) =
       ((1 - ε : ℝ) : ℂ) + ((1 - 2 * ε) * t : ℝ) * I by dsimp only; push_cast; ring]
   simp only [add_re, ofReal_re, mul_I_re, ofReal_im, neg_zero, add_zero, add_im, mul_I_im, zero_add]
-  linarith [happrox₁ t (abs_le.1 (not_le.1 ht).le), ZeroAtInftyContinuousMap.log_add_logMaxDiv
-    g.val.2 hδ t, integral_logMaxDiv_mul_stripPoisson₀_nonneg g.val.1 hδ
+  linarith [happrox₁ t (abs_le.1 (not_le.1 ht).le), log_add_logMaxDiv g.val.2 hδ t,
+    integral_logMaxDiv_mul_stripPoisson₀_nonneg g.val.1 hδ
       (r := 1 - ε) (y := (1 - 2 * ε) * t) ⟨by linarith [hε.2], by linarith [hε.1]⟩]
 
 private theorem norm_mk_le_exp_mul_exp_re_contracted_holoPotential {θ δ T κ ε : ℝ}
     (hδ : 0 < δ) (hκ : 0 < κ) (hε : ε ∈ Ioo (0 : ℝ) 2⁻¹) (g : C.stripTraces)
     (hg₀ : ∀ s, T ≤ |s| → ‖g.val.1 s‖ ≤ δ) (hg₁ : ∀ s, T ≤ |s| → ‖g.val.2 s‖ ≤ δ)
-    (happrox₀ : ∀ t ∈ Icc (-T) T, ZeroAtInftyContinuousMap.logMaxDiv g.val.1 δ t - κ ≤
-      ∫ s, ZeroAtInftyContinuousMap.logMaxDiv g.val.1 δ s *
-        stripPoisson₀ ε ((1 - 2 * ε) * t - s))
-    (happrox₁ : ∀ t ∈ Icc (-T) T, ZeroAtInftyContinuousMap.logMaxDiv g.val.2 δ t - κ ≤
-      ∫ s, ZeroAtInftyContinuousMap.logMaxDiv g.val.2 δ s *
-        stripPoisson₁ (1 - ε) ((1 - 2 * ε) * t - s)) :
+    (happrox₀ : ∀ t ∈ Icc (-T) T, logMaxDiv g.val.1 δ t - κ ≤
+      ∫ s, logMaxDiv g.val.1 δ s * stripPoisson₀ ε ((1 - 2 * ε) * t - s))
+    (happrox₁ : ∀ t ∈ Icc (-T) T, logMaxDiv g.val.2 δ t - κ ≤
+      ∫ s, logMaxDiv g.val.2 δ s * stripPoisson₁ (1 - ε) ((1 - 2 * ε) * t - s)) :
     ‖mk θ g‖ ≤ Real.exp κ *
       Real.exp ((holoPotential g δ (((1 - 2 * ε) * θ + ε : ℝ) : ℂ)).re) := by
   by_cases hθ : θ ∈ Icc (0 : ℝ) 1
@@ -194,20 +188,20 @@ private theorem norm_mk_le_exp_mul_exp_re_contracted_holoPotential {θ δ T κ �
 
 private theorem norm_mk_le_exp_re_holoPotential {θ δ : ℝ} (hθ : θ ∈ Ioo 0 1) (hδ : 0 < δ)
     (g : C.stripTraces) : ‖mk θ g‖ ≤ Real.exp (holoPotential g δ θ).re := by
-  obtain ⟨T₀, _, hg₀⟩ := ZeroAtInftyContinuousMap.exists_forall_norm_le_of_le_abs g.val.1 hδ
-  obtain ⟨T₁, _, hg₁⟩ := ZeroAtInftyContinuousMap.exists_forall_norm_le_of_le_abs g.val.2 hδ
+  obtain ⟨T₀, _, hg₀⟩ := exists_forall_norm_le_of_le_abs g.val.1 hδ
+  obtain ⟨T₁, _, hg₁⟩ := exists_forall_norm_le_of_le_abs g.val.2 hδ
   let T := max T₀ T₁; let Φ := holoPotential g δ
   refine Real.le_of_forall_pos_le_exp_mul (c := 1) fun κ hκ => ?_; rw [mul_one]
-  have hs₀ := ZeroAtInftyContinuousMap.hasCompactSupport_logMaxDiv g.val.1 hδ
-  have hs₁ := ZeroAtInftyContinuousMap.hasCompactSupport_logMaxDiv g.val.2 hδ
-  have hc₀ := ZeroAtInftyContinuousMap.continuous_logMaxDiv g.val.1 hδ
-  have hc₁ := ZeroAtInftyContinuousMap.continuous_logMaxDiv g.val.2 hδ
+  have hs₀ := hasCompactSupport_logMaxDiv g.val.1 hδ
+  have hs₁ := hasCompactSupport_logMaxDiv g.val.2 hδ
+  have hc₀ := continuous_logMaxDiv g.val.1 hδ
+  have hc₁ := continuous_logMaxDiv g.val.2 hδ
   obtain ⟨ε₀, hε₀, happrox₀⟩ := exists_forall_sub_le_integral_mul_contracted_stripPoisson₀
     (hs₀.uniformContinuous_of_continuous hc₀) (hs₀.exists_bound_of_continuous hc₀)
-    (ZeroAtInftyContinuousMap.logMaxDiv_nonneg _ hδ) T hκ
+    (logMaxDiv_nonneg _ hδ) T hκ
   obtain ⟨ε₁, hε₁, happrox₁⟩ := exists_forall_sub_le_integral_mul_contracted_stripPoisson₁
     (hs₁.uniformContinuous_of_continuous hc₁) (hs₁.exists_bound_of_continuous hc₁)
-    (ZeroAtInftyContinuousMap.logMaxDiv_nonneg _ hδ) T hκ
+    (logMaxDiv_nonneg _ hδ) T hκ
   have hΦ_cont : ContinuousAt Φ (θ : ℂ) :=
     (differentiableOn_holoPotential g hδ).continuousOn.continuousAt
       ((isOpen_Ioo.preimage continuous_re).mem_nhds (by simpa [verticalStrip] using hθ))
@@ -219,8 +213,7 @@ private theorem norm_mk_le_exp_re_holoPotential {θ δ : ℝ} (hθ : θ ∈ Ioo 
         ((by fun_prop : Continuous fun ε : ℝ => (((1 - 2 * ε) * θ + ε : ℝ) : ℂ)).continuousAt
           (x := 0)) (by simp)).tendsto)).const_mul (Real.exp κ)).mono_left nhdsWithin_le_nhds
   refine ge_of_tendsto htend ?_
-  filter_upwards [Ioo_mem_nhdsGT (lt_min (lt_min hε₀ hε₁) (by norm_num : (0 : ℝ) < 2⁻¹))]
-    with ε hε
+  filter_upwards [Ioo_mem_nhdsGT (lt_min (lt_min hε₀ hε₁) (by norm_num : (0 : ℝ) < 2⁻¹))] with ε hε
   exact norm_mk_le_exp_mul_exp_re_contracted_holoPotential hδ hκ
     ⟨hε.1, hε.2.trans_le (min_le_right _ _)⟩ g (fun s hs => hg₀ s ((le_max_left _ _).trans hs))
     (fun s hs => hg₁ s ((le_max_right _ _).trans hs))
@@ -230,45 +223,41 @@ private theorem norm_mk_le_exp_re_holoPotential {θ δ : ℝ} (hθ : θ ∈ Ioo 
 /-- **Clipped logarithmic Poisson estimate for the complex method.** For `0 < θ < 1`, `δ > 0`, and
 any admissible trace pair `g = (g₀, g₁)`, the quotient norm in `[X₀, X₁]_θ` is bounded by the
 exponential of the strip Poisson integrals of `log (max ‖g₀ s‖ δ)` and `log (max ‖g₁ s‖ δ)`. -/
-theorem norm_mk_le_exp_integral_log_max_of_pos {θ δ : ℝ} (hθ : θ ∈ Ioo 0 1)
-    (hδ : 0 < δ) (g : C.stripTraces) :
-    ‖mk θ g‖ ≤ Real.exp
+theorem norm_mk_le_exp_integral_log_max_of_pos {θ δ : ℝ} (hθ : θ ∈ Ioo 0 1) (hδ : 0 < δ)
+    (g : C.stripTraces) : ‖mk θ g‖ ≤ Real.exp
       ((∫ s, Real.log (max ‖(g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1 s‖ δ) * stripPoisson₀ θ s) +
         ∫ s, Real.log (max ‖(g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2 s‖ δ) * stripPoisson₁ θ s) := by
   have hre := (norm_mk_le_exp_re_holoPotential hθ hδ g).trans_eq
     (congrArg Real.exp (re_holoPotential g hδ (by simpa [verticalStrip] using hθ)))
   simp only [ofReal_re, ofReal_im, zero_sub, stripPoisson₀_neg, stripPoisson₁_neg] at hre
   refine hre.trans_eq (congrArg Real.exp ?_)
-  have hlogδ : Real.log δ =
-      (∫ s, Real.log δ * stripPoisson₀ θ s) + ∫ s, Real.log δ * stripPoisson₁ θ s := by
+  have hlogδ : Real.log δ = (∫ s, Real.log δ * stripPoisson₀ θ s) +
+      ∫ s, Real.log δ * stripPoisson₁ θ s := by
     rw [integral_const_mul, integral_const_mul, integral_stripPoisson₀ ⟨hθ.1, hθ.2.le⟩,
       integral_stripPoisson₁ ⟨hθ.1.le, hθ.2⟩]; ring
-  linarith [ZeroAtInftyContinuousMap.integral_log_max_mul_eq g.val.1 hδ
-      (integrable_stripPoisson₀ θ),
-    ZeroAtInftyContinuousMap.integral_log_max_mul_eq g.val.2 hδ (integrable_stripPoisson₁ θ)]
+  linarith [integral_log_max_mul_eq g.val.1 hδ (integrable_stripPoisson₀ θ),
+    integral_log_max_mul_eq g.val.2 hδ (integrable_stripPoisson₁ θ)]
 
 /-- **Bergh–Löfström Lemma 4.3.2 (Poisson log-convexity of the complex method norm).**
 For `0 < θ < 1` and any admissible trace pair `g = (g₀, g₁)`, the quotient norm in `[X₀, X₁]_θ` is
 bounded by the geometric mean of the Poisson averages of `‖g₀‖` and `‖g₁‖`, normalized by the
 kernel masses `1 - θ` and `θ`, with exponents `1 - θ` and `θ`. -/
 theorem norm_mk_le_integral_stripPoisson_rpow_mul_rpow {θ : ℝ} (hθ : θ ∈ Ioo 0 1)
-    (g : C.stripTraces) :
-    ‖mk θ g‖ ≤
+    (g : C.stripTraces) : ‖mk θ g‖ ≤
       ((1 - θ)⁻¹ * ∫ t, ‖(g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1 t‖ * stripPoisson₀ θ t) ^ (1 - θ) *
         (θ⁻¹ * ∫ t, ‖(g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2 t‖ * stripPoisson₁ θ t) ^ θ := by
   have h1θ : 0 < 1 - θ := sub_pos.2 hθ.2
-  refine (le_rpow_mul_rpow_mul_of_forall_pos (C := 1) (Ioo_subset_Icc_self hθ)
-    fun δ hδ => ?_).trans_eq (mul_one _)
+  refine (le_rpow_mul_rpow_mul_of_forall_pos (C := 1) (Ioo_subset_Icc_self hθ) fun δ hδ => ?_)
+    |>.trans_eq (mul_one _)
   have hI₀ : 0 ≤ (1 - θ)⁻¹ * (∫ t, ‖g.val.1 t‖ * stripPoisson₀ θ t) + δ := add_nonneg (mul_nonneg
     (inv_pos.2 h1θ).le (integral_nonneg fun s => mul_nonneg (norm_nonneg _)
       (stripPoisson₀_pos hθ s).le)) hδ.le
   exact (norm_mk_le_exp_integral_log_max_of_pos hθ hδ g).trans (((Real.exp_add _ _).trans_le
-    (mul_le_mul
-      (ZeroAtInftyContinuousMap.exp_integral_log_max_le_rpow g.val.1 h1θ hδ
-        (integrable_stripPoisson₀ θ) (ae_of_all _ fun s => (stripPoisson₀_pos hθ s).le)
+    (mul_le_mul (exp_integral_log_max_le_rpow g.val.1 h1θ hδ (integrable_stripPoisson₀ θ)
+        (ae_of_all _ fun s => (stripPoisson₀_pos hθ s).le)
         (integral_stripPoisson₀ ⟨hθ.1, hθ.2.le⟩))
-      (ZeroAtInftyContinuousMap.exp_integral_log_max_le_rpow g.val.2 hθ.1 hδ
-        (integrable_stripPoisson₁ θ) (ae_of_all _ fun s => (stripPoisson₁_pos hθ s).le)
+      (exp_integral_log_max_le_rpow g.val.2 hθ.1 hδ (integrable_stripPoisson₁ θ)
+        (ae_of_all _ fun s => (stripPoisson₁_pos hθ s).le)
         (integral_stripPoisson₁ ⟨hθ.1.le, hθ.2⟩))
       (Real.exp_nonneg _) (Real.rpow_nonneg hI₀ _))).trans_eq (mul_one _).symm)
 

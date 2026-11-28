@@ -31,8 +31,7 @@ open scoped ZeroAtInfty
 `s ↦ max ‖f s‖ δ * w s` is integrable. -/
 theorem integrable_max_norm_mul {Ω E : Type*} [TopologicalSpace Ω] [MeasurableSpace Ω]
     [OpensMeasurableSpace Ω] {μ : Measure Ω} [SeminormedAddCommGroup E] (f : C₀(Ω, E)) (δ : ℝ)
-    {w : Ω → ℝ} (hw_int : Integrable w μ) :
-    Integrable (fun s ↦ max ‖f s‖ δ * w s) μ :=
+    {w : Ω → ℝ} (hw_int : Integrable w μ) : Integrable (fun s ↦ max ‖f s‖ δ * w s) μ :=
   hw_int.bdd_mul ((map_continuous f).norm.max continuous_const).aestronglyMeasurable
     (ae_of_all _ fun s ↦ Real.norm_of_nonneg ((norm_nonneg (f s)).trans (le_max_left _ _)) ▸
       max_le_max (norm_coe_le_norm f s) le_rfl)

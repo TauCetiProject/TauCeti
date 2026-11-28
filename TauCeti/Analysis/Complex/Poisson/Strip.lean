@@ -149,8 +149,7 @@ private theorem hasDerivAt_stripPoisson₀_primitive {θ : ℝ} (hsin : Real.sin
 
 /-- For every real `θ`, the left strip Poisson kernel is integrable on `ℝ`. -/
 theorem integrable_stripPoisson₀ (θ : ℝ) : Integrable (stripPoisson₀ θ) := by
-  by_cases hsin : Real.sin (π * θ) = 0
-  · simp [stripPoisson₀_eq_zero_of_sin_eq_zero hsin]
+  by_cases hsin : Real.sin (π * θ) = 0; · simp [stripPoisson₀_eq_zero_of_sin_eq_zero hsin]
   have hc : 0 < 1 - |Real.cos (π * θ)| := sub_pos.2 (abs_cos_lt_one_of_sin_ne_zero hsin)
   have hIoi : IntegrableOn (stripPoisson₀ θ) (Ioi 0) := by
     refine ((exp_neg_integrableOn_Ioi 0 pi_pos).const_mul
@@ -166,9 +165,9 @@ theorem integrable_stripPoisson₀ (θ : ℝ) : Integrable (stripPoisson₀ θ) 
     exact (div_le_div_of_nonneg_left (abs_nonneg _) (mul_pos hc (Real.exp_pos _)) hden).trans_eq
       (by rw [neg_mul, Real.exp_neg]; field_simp [hc.ne'])
   have hIic : IntegrableOn (stripPoisson₀ θ) (Iic 0) := by
-    simpa [Function.comp_def, stripPoisson₀_neg,
-      show Homeomorph.neg ℝ ⁻¹' Ici (0 : ℝ) = Iic 0 by ext; simp]
-      using ((Measure.measurePreserving_neg (volume : Measure ℝ)).integrableOn_comp_preimage
+    simpa [Function.comp_def, stripPoisson₀_neg, show Homeomorph.neg ℝ ⁻¹' Ici (0 : ℝ) = Iic 0 by
+      ext; simp] using
+      ((Measure.measurePreserving_neg (volume : Measure ℝ)).integrableOn_comp_preimage
         (Homeomorph.neg ℝ).measurableEmbedding (f := stripPoisson₀ θ) (s := Ici 0)).2
         ((integrableOn_Ici_iff_integrableOn_Ioi (by simp)).2 hIoi)
   exact integrableOn_univ.1 (Iic_union_Ioi (a := (0 : ℝ)) ▸ hIic.union hIoi)
@@ -183,9 +182,8 @@ private theorem inv_pi_mul_pi_div_two : π⁻¹ * (π / 2) = (2⁻¹ : ℝ) := b
 theorem integral_stripPoisson₀ {θ : ℝ} (hθ : θ ∈ Ioc 0 1) : ∫ t, stripPoisson₀ θ t = 1 - θ := by
   rcases eq_or_lt_of_le hθ.2 with rfl | h1; · simp
   have hsin := sin_pi_mul_pos_of_pos_of_lt_one hθ.1 h1
-  have htop : Tendsto
-      (fun s => π⁻¹ * Real.arctan ((Real.exp (π * s) - Real.cos (π * θ)) / Real.sin (π * θ)))
-      atTop (𝓝 (2⁻¹ : ℝ)) := inv_pi_mul_pi_div_two ▸
+  have htop : Tendsto (fun s => π⁻¹ * Real.arctan ((Real.exp (π * s) - Real.cos (π * θ)) /
+      Real.sin (π * θ))) atTop (𝓝 (2⁻¹ : ℝ)) := inv_pi_mul_pi_div_two ▸
     ((Real.tendsto_arctan_atTop.mono_right nhdsWithin_le_nhds).comp
       (((Real.tendsto_exp_atTop.comp (tendsto_id.const_mul_atTop pi_pos)).atTop_add
         tendsto_const_nhds).atTop_div_const hsin)).const_mul π⁻¹
@@ -194,9 +192,8 @@ theorem integral_stripPoisson₀ {θ : ℝ} (hθ : θ ∈ Ioc 0 1) : ∫ t, stri
       rw [Real.tan_eq_sin_div_cos, Real.sin_sub_pi_div_two, Real.cos_sub_pi_div_two],
       Real.arctan_tan (by nlinarith [pi_pos, hθ.1]) (by nlinarith [pi_pos, h1])]
     field_simp [pi_ne_zero]
-  have hbot := hval ▸ ((Real.continuous_arctan.tendsto _).comp
-    (((Real.tendsto_exp_atBot.comp (tendsto_id.const_mul_atBot pi_pos)).sub_const _).div_const
-      _)).const_mul π⁻¹
+  have hbot := hval ▸ ((Real.continuous_arctan.tendsto _).comp (((Real.tendsto_exp_atBot.comp
+    (tendsto_id.const_mul_atBot pi_pos)).sub_const _).div_const _)).const_mul π⁻¹
   rw [integral_of_hasDerivAt_of_tendsto (hasDerivAt_stripPoisson₀_primitive hsin.ne')
     (integrable_stripPoisson₀ θ) hbot htop]; ring
 
@@ -240,13 +237,11 @@ theorem one_add_exp_I_pi_mul_ne_zero {ζ : ℂ} (hζ : ζ ∈ verticalStrip 0 1)
     1 + Complex.exp (I * π * ζ) ≠ 0 := by
   have hsin : 0 < Real.sin (π * ζ.re) := sin_pi_mul_pos_of_pos_of_lt_one hζ.1 hζ.2
   refine normSq_pos.1 ?_
-  rw [Complex.normSq_one_add_exp, show (I * (π : ℂ) * ζ).im = π * ζ.re by simp]
-  positivity
+  rw [Complex.normSq_one_add_exp, show (I * (π : ℂ) * ζ).im = π * ζ.re by simp]; positivity
 
 /-- Complex derivative of `holoPoisson₁` away from the zeros of `1 + exp (I * π * ζ)`. -/
-theorem hasDerivAt_holoPoisson₁ {ζ : ℂ} (hζ : 1 + Complex.exp (I * π * ζ) ≠ 0) :
-    HasDerivAt holoPoisson₁
-      (π * Complex.exp (I * π * ζ) / (1 + Complex.exp (I * π * ζ)) ^ 2) ζ := by
+theorem hasDerivAt_holoPoisson₁ {ζ : ℂ} (hζ : 1 + Complex.exp (I * π * ζ) ≠ 0) : HasDerivAt
+    holoPoisson₁ (π * Complex.exp (I * π * ζ) / (1 + Complex.exp (I * π * ζ)) ^ 2) ζ := by
   have h1 : HasDerivAt (fun w : ℂ => 1 + Complex.exp (I * π * w))
       (Complex.exp (I * π * ζ) * (I * π)) ζ := by
     simpa using (((hasDerivAt_id ζ).const_mul (I * π)).cexp).const_add 1
@@ -318,8 +313,8 @@ theorem integrable_mul_holoPoisson₁ {u : ℝ → ℂ} (hu : Integrable u) {ζ 
   have hden : Real.sin (π * ζ.re) ≤ ‖1 + Complex.exp (I * π * (ζ - s * I))‖ := by
     refine le_of_sq_le_sq ?_ (norm_nonneg _)
     rw [← Complex.normSq_eq_norm_sq, Complex.normSq_one_add_exp]
-    simpa [mul_im] using
-      sq_nonneg (Real.exp (I * π * (ζ - s * I)).re + Real.cos (π * (ζ - s * I).re))
+    simpa [mul_im] using sq_nonneg (Real.exp (I * π * (ζ - s * I)).re +
+      Real.cos (π * (ζ - s * I).re))
   rw [norm_mul, holoPoisson₁_def, norm_div, Complex.norm_I, mul_comm]
   exact mul_le_mul_of_nonneg_right ((one_div_le_one_div_of_le hsin hden).trans_eq (one_div _))
     (norm_nonneg _)
@@ -345,9 +340,8 @@ private theorem integral_holoPoisson₀_eq (u : ℝ → ℂ) (ζ : ℂ) :
 
 /-- Convolving an integrable function `u : ℝ → ℂ` with `holoPoisson₁` produces a holomorphic
 function on the open vertical strip `0 < re ζ < 1`. -/
-theorem differentiableOn_integral_holoPoisson₁ {u : ℝ → ℂ} (hu : Integrable u) :
-    DifferentiableOn ℂ (fun ζ => ∫ s, u s * holoPoisson₁ (ζ - s * I))
-      (verticalStrip 0 1) := by
+theorem differentiableOn_integral_holoPoisson₁ {u : ℝ → ℂ} (hu : Integrable u) : DifferentiableOn ℂ
+    (fun ζ => ∫ s, u s * holoPoisson₁ (ζ - s * I)) (verticalStrip 0 1) := by
   intro ζ₀ hζ₀
   let r := min (ζ₀.re / 2) ((1 - ζ₀.re) / 2); let a := ζ₀.re - r; let b := ζ₀.re + r
   have hr : 0 < r := lt_min (half_pos hζ₀.1) (half_pos (sub_pos.2 hζ₀.2))
@@ -383,19 +377,18 @@ theorem differentiableOn_integral_holoPoisson₁ {u : ℝ → ℂ} (hu : Integra
 
 /-- Convolving an integrable function `u : ℝ → ℂ` with `holoPoisson₀` produces a holomorphic
 function on the open vertical strip `0 < re ζ < 1`. -/
-theorem differentiableOn_integral_holoPoisson₀ {u : ℝ → ℂ} (hu : Integrable u) :
-    DifferentiableOn ℂ (fun ζ => ∫ s, u s * holoPoisson₀ (ζ - s * I))
-      (verticalStrip 0 1) := by
+theorem differentiableOn_integral_holoPoisson₀ {u : ℝ → ℂ} (hu : Integrable u) : DifferentiableOn ℂ
+    (fun ζ => ∫ s, u s * holoPoisson₀ (ζ - s * I)) (verticalStrip 0 1) := by
   simp_rw [integral_holoPoisson₀_eq]
   exact (differentiableOn_integral_holoPoisson₁ hu.comp_neg).comp
-    (by fun_prop : Differentiable ℂ fun ζ : ℂ => 1 - ζ).differentiableOn
-    fun _ hζ => one_sub_mem_verticalStrip_iff.2 hζ
+    (by fun_prop : Differentiable ℂ fun ζ : ℂ => 1 - ζ).differentiableOn fun _ hζ =>
+      one_sub_mem_verticalStrip_iff.2 hζ
 
 /-- The real part of the `holoPoisson₁` convolution of an integrable function `u` at
 `ζ ∈ verticalStrip 0 1` is the `stripPoisson₁` integral of `u`. -/
 theorem re_integral_holoPoisson₁ {u : ℝ → ℝ} (hu : Integrable u) {ζ : ℂ}
-    (hζ : ζ ∈ verticalStrip 0 1) :
-    (∫ s, (u s : ℂ) * holoPoisson₁ (ζ - s * I)).re = ∫ s, u s * stripPoisson₁ ζ.re (ζ.im - s) :=
+    (hζ : ζ ∈ verticalStrip 0 1) : (∫ s, (u s : ℂ) * holoPoisson₁ (ζ - s * I)).re =
+      ∫ s, u s * stripPoisson₁ ζ.re (ζ.im - s) :=
   (Complex.reCLM.integral_comp_comm
     (integrable_mul_holoPoisson₁ (Complex.ofRealCLM.integrable_comp hu) hζ)).symm.trans
     (integral_congr_ae (ae_of_all _ fun s => by simp [re_holoPoisson₁]))
@@ -403,8 +396,8 @@ theorem re_integral_holoPoisson₁ {u : ℝ → ℝ} (hu : Integrable u) {ζ : �
 /-- The real part of the `holoPoisson₀` convolution of an integrable function `u` at
 `ζ ∈ verticalStrip 0 1` is the `stripPoisson₀` integral of `u`. -/
 theorem re_integral_holoPoisson₀ {u : ℝ → ℝ} (hu : Integrable u) {ζ : ℂ}
-    (hζ : ζ ∈ verticalStrip 0 1) :
-    (∫ s, (u s : ℂ) * holoPoisson₀ (ζ - s * I)).re = ∫ s, u s * stripPoisson₀ ζ.re (ζ.im - s) := by
+    (hζ : ζ ∈ verticalStrip 0 1) : (∫ s, (u s : ℂ) * holoPoisson₀ (ζ - s * I)).re =
+      ∫ s, u s * stripPoisson₀ ζ.re (ζ.im - s) := by
   have hre : (∫ s, (u (-s) : ℂ) * holoPoisson₁ ((1 - ζ) - s * I)).re =
       ∫ s, u (-s) * stripPoisson₁ (1 - ζ).re ((1 - ζ).im - s) := by
     simpa only [Function.comp_apply] using
@@ -419,9 +412,8 @@ theorem re_integral_holoPoisson₀ {u : ℝ → ℝ} (hu : Integrable u) {ζ : �
 /-- For fixed `r > 0`, the mass `∫ y in (-r)..r, stripPoisson₀ ε y` converges to `1` as `ε → 0⁺`. -/
 theorem tendsto_intervalIntegral_stripPoisson₀_nhdsGT {r : ℝ} (hr : 0 < r) :
     Tendsto (fun ε => ∫ y in (-r)..r, stripPoisson₀ ε y) (𝓝[>] 0) (𝓝 1) := by
-  have hsin_pos : ∀ᶠ ε in 𝓝[>] (0 : ℝ), 0 < Real.sin (π * ε) := by
-    filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with ε hε
-    exact sin_pi_mul_pos_of_pos_of_lt_one hε.1 hε.2
+  have hsin_pos : ∀ᶠ ε in 𝓝[>] (0 : ℝ), 0 < Real.sin (π * ε) := Filter.mem_of_superset
+    (Ioo_mem_nhdsGT zero_lt_one) fun _ hε => sin_pi_mul_pos_of_pos_of_lt_one hε.1 hε.2
   have hinv : Tendsto (fun ε : ℝ => (Real.sin (π * ε))⁻¹) (𝓝[>] 0) atTop :=
     tendsto_inv_nhdsGT_zero.comp (tendsto_nhdsWithin_iff.2 ⟨((Real.continuous_sin.comp
       (continuous_const_mul π)).tendsto' 0 0 (by simp)).mono_left nhdsWithin_le_nhds, hsin_pos⟩)
@@ -443,8 +435,8 @@ theorem tendsto_intervalIntegral_stripPoisson₀_nhdsGT {r : ℝ} (hr : 0 < r) :
         (sub_pos.2 (Real.exp_lt_one_iff.2 (neg_neg_of_pos (mul_pos pi_pos hr)))) hinv
   refine ((by norm_num : (2⁻¹ : ℝ) - -(2⁻¹ : ℝ) = 1) ▸ hF_top.sub hF_bot).congr' ?_
   filter_upwards [hsin_pos] with ε hsin
-  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt
-    (fun y _ => hasDerivAt_stripPoisson₀_primitive hsin.ne' y)
+  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun y _ =>
+    hasDerivAt_stripPoisson₀_primitive hsin.ne' y)
     (integrable_stripPoisson₀ ε).intervalIntegrable]; simp [mul_neg]
 
 /-- For fixed `r > 0`, the mass `∫ y in (-r)..r, stripPoisson₁ θ y` converges to `1` as `θ → 1⁻`. -/
