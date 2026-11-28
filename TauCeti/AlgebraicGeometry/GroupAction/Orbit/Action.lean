@@ -37,6 +37,8 @@ namespace TauCeti.SchemeAction
 
 universe u
 
+section
+
 variable {k : Type u} [Field k]
   (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
   [LocallyOfFiniteType G.hom] [CompactSpace G.left]
@@ -179,5 +181,52 @@ theorem forget_mapIso_translation_orbitOver (g : 𝟙_ (Over (Spec (.of k))) ⟶
   rw [orbitTranslation_hom_ι]
   simpa only [Over.comp_left, orbitInclusion_left, Functor.mapIso_hom, Over.forget_map] using
     congrArg Over.Hom.left (translation_hom_comp g (orbitInclusion G x))
+
+end
+
+section FullOrbit
+
+variable {k : Type u} [Field k]
+  (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
+  [LocallyOfFiniteType G.hom] [CompactSpace G.left]
+  [LocallyOfFiniteType X.hom] [CompactSpace X.left]
+  (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
+
+/-- When a single orbit covers a reduced finite-type scheme `X`, the orbit inclusion over `Spec k`
+is an isomorphism. -/
+theorem isIso_orbitInclusion_of_orbit_eq_univ [IsReduced X.left] (h : orbit G x = Set.univ) :
+    IsIso (orbitInclusion G x) := by
+  have : IsIso ((Over.forget _).map (orbitInclusion G x)) := by
+    rw [Over.forget_map, orbitInclusion_left]
+    exact isIso_orbitι_of_orbit_eq_univ G x h
+  exact isIso_of_reflects_iso (orbitInclusion G x) (Over.forget _)
+
+/-- The canonical equivariant isomorphism between the orbit scheme `orbitOver G x` and a reduced
+homogeneous scheme `X`. -/
+def orbitInclusionIso [IsReduced X.left] (h : orbit G x = Set.univ) :
+    orbitOver G x ≅ X :=
+  have : IsIso (orbitInclusion G x) := isIso_orbitInclusion_of_orbit_eq_univ G x h
+  asIso (orbitInclusion G x)
+
+/-- The forward direction of `orbitInclusionIso` is the orbit inclusion. -/
+@[simp]
+theorem orbitInclusionIso_hom [IsReduced X.left] (h : orbit G x = Set.univ) :
+    (orbitInclusionIso G x h).hom = orbitInclusion G x := (rfl)
+
+/-- Composing the orbit morphism with the inverse of `orbitInclusionIso` recovers the orbit
+projection. -/
+@[reassoc (attr := simp)]
+theorem orbitMap_comp_orbitInclusionIso_inv [IsReduced X.left] (h : orbit G x = Set.univ) :
+    orbitMap G x ≫ (orbitInclusionIso G x h).inv = orbitProjection G x := by
+  rw [← orbitProjection_inclusion G x, ← orbitInclusionIso_hom G x h, Category.assoc,
+    Iso.hom_inv_id, Category.comp_id]
+
+/-- `orbitInclusionIso` is equivariant. -/
+instance [IsReduced X.left] (h : orbit G x = Set.univ) :
+    IsModHom G (orbitInclusionIso G x h).hom := by
+  rw [orbitInclusionIso_hom]
+  infer_instance
+
+end FullOrbit
 
 end TauCeti.SchemeAction

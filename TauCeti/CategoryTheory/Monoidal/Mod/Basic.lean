@@ -142,3 +142,27 @@ theorem modObjObj_isModHom (f : X ⟶ Y) [IsModHom M f] :
   exact congrArg (fun k ↦ LaxMonoidal.μ F M X ≫ F.map k) (IsModHom.smul_hom (A := M) (f := f))
 
 end CategoryTheory.Functor
+
+namespace CategoryTheory
+
+open CategoryTheory MonoidalCategory MonObj
+open scoped Obj
+
+/-- If `G ◁ p` is an epimorphism and `p` and `p ≫ f` are `G`-equivariant, then `f` is
+`G`-equivariant. -/
+theorem isModHom_of_epi_whiskerLeft_comp {C : Type*} [Category C] [MonoidalCategory C]
+    {G Z X Y : C} [MonObj G] [ModObj G Z] [ModObj G X] [ModObj G Y]
+    (p : Z ⟶ X) [Epi (G ◁ p)] [IsModHom G p] (f : X ⟶ Y) [IsModHom G (p ≫ f)] :
+    IsModHom G f where
+  smul_hom := by
+    have hp := IsModHom.smul_hom (A := G) (f := p)
+    have hpf := IsModHom.smul_hom (A := G) (f := p ≫ f)
+    simp only [selfLeftAction_actionHomRight] at hp hpf ⊢
+    apply (cancel_epi (G ◁ p)).mp
+    calc
+      (G ◁ p) ≫ γ[G, X] ≫ f = γ[G, Z] ≫ p ≫ f := by
+        simpa only [Category.assoc] using congrArg (· ≫ f) hp.symm
+      _ = (G ◁ p) ≫ (G ◁ f) ≫ γ[G, Y] := by
+        simpa only [whiskerLeft_comp, Category.assoc] using hpf
+
+end CategoryTheory

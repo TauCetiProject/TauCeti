@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
+public import Mathlib.CategoryTheory.Monoidal.Cartesian.Mod
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.SchemePoints
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.RationalPoints
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.LeftTranslation
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.SchemeMap
 import Mathlib.CategoryTheory.Comma.Over.Pullback
 import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Torsor
+import TauCeti.Algebra.Category.CommAlgCat.PointsSheaf
 
 /-!
 # Universal property and functoriality of represented homogeneous quotients
@@ -32,7 +34,8 @@ to schemes over `Spec R`:
   representing `G/N` (`fppfHomogeneousQuotientIsoPointsSheaf`, `isIso_representedQuotientDesc`).
 * The surjective morphisms `fppfHomogeneousQuotientSchemeMap H hJI eI eJ` induced by subgroup
   inclusions `P ⊆ Q` (`J ≤ I`) commute with the projections from `Spec H`, give canonical
-  comparison isomorphisms `representedQuotientIso`, and intertwine left translations
+  comparison isomorphisms `representedQuotientIso` (which are equivariant whenever both representing
+  schemes carry actions compatible with their projections), and intertwine left translations
   (`representedQuotientTranslation`).
 * Over an algebraically closed field `k`, `k`-rational points of `X` correspond to `G(k)/N(k)`
   compatibly with quotient maps and translations (`representedQuotientRationalPointsEquiv`).
@@ -46,12 +49,17 @@ No smoothness, reducedness, finite-type, or normality hypothesis is imposed on `
   `Spec H ⟶ X` and its left-coset point-fibre characterization.
 * `CommHopfAlgCat.representedQuotientHomEquiv`, `CommHopfAlgCat.representedQuotientDesc`: universal
   property and descent for `N`-invariant `R`-scheme morphisms out of `Spec H`.
+* `CommHopfAlgCat.fppfHomogeneousQuotientDesc`,
+  `CommHopfAlgCat.isIso_fppfHomogeneousQuotientDesc`: sheaf-level descent and recognition of
+  schemes representing `G/N`.
 * `CommHopfAlgCat.fppfHomogeneousQuotientIsoPointsSheaf`,
   `CommHopfAlgCat.isIso_representedQuotientDesc`: recognition of schemes representing `G/N`.
 * `CommHopfAlgCat.eq_fppfHomogeneousQuotientSchemeMap_iff_comp`: the subgroup-induced morphism
   `CommHopfAlgCat.fppfHomogeneousQuotientSchemeMap` is the unique morphism compatible with the
   projections from `Spec H`.
-* `CommHopfAlgCat.representedQuotientIso`: canonical comparison isomorphisms.
+* `CommHopfAlgCat.representedQuotientIso`,
+  `CommHopfAlgCat.isModHom_representedQuotientIso_hom`: canonical comparison isomorphisms and their
+  equivariance.
 * `CommHopfAlgCat.universallyClosed_overHom_iff_of_fppfHomogeneousQuotient_iso`,
   `CommHopfAlgCat.isProper_overHom_iff_of_fppfHomogeneousQuotient_iso`: invariance of
   universal closedness and properness over `Spec R`.
@@ -67,7 +75,7 @@ No smoothness, reducedness, finite-type, or normality hypothesis is imposed on `
 
 public section
 
-open CategoryTheory AlgebraicGeometry Opposite
+open CategoryTheory AlgebraicGeometry Opposite MonoidalCategory
 open scoped CategoryTheory.MonObj
 
 namespace CommHopfAlgCat
@@ -153,6 +161,69 @@ theorem mapMulEquiv_comp_representedQuotientProjection_eq_iff
     (ConcreteCategory.bijective_of_isIso (e.hom.hom.app (op (op A)))).injective.eq_iff).trans
     (fppfHomogeneousQuotientProjection_eq_iff H I (op (op A)) g g')
 
+private theorem specPointsHomEquiv_invariant_iff {Y : Over (Spec (CommRingCat.of R))}
+    (q : (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R)) ⟶ Y) :
+    (∀ (A : CommAlgCat.{u} R) (g : HopfAlgebra.points (R := R) (H := H) A)
+        (n : quotientPointsSubgroup H I A),
+        Spec.mapMulEquiv (g * n.val) ≫ q = Spec.mapMulEquiv g ≫ q) ↔
+      (∀ (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ) (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop)
+          (n : quotientPointsSubgroup H I A.unop.unop),
+          (specPointsHomEquiv H Y q).app A (ULift.up (g * n.val)) =
+            (specPointsHomEquiv H Y q).app A (ULift.up g)) := by
+  exact ⟨fun h A g n ↦
+      (specPointsHomEquiv_apply_app_apply_eq_iff H q A (g * n.val) g).mpr (h A.unop.unop g n),
+   fun h A g n ↦
+      (specPointsHomEquiv_apply_app_apply_eq_iff H q (op (op A)) (g * n.val) g).mp
+        (h (op (op A)) g n)⟩
+
+private def specPointsHomInvariantEquiv (Y : Over (Spec (CommRingCat.of R))) :
+    {q : (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R)) ⟶ Y //
+      ∀ (A : CommAlgCat.{u} R) (g : HopfAlgebra.points (R := R) (H := H) A)
+        (n : quotientPointsSubgroup H I A),
+        Spec.mapMulEquiv (g * n.val) ≫ q = Spec.mapMulEquiv g ≫ q} ≃
+      {f : HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶
+          (CommAlgCat.pointsSheaf Y).obj //
+        ∀ (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ) (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop)
+          (n : quotientPointsSubgroup H I A.unop.unop),
+          f.app A (ULift.up (g * n.val)) = f.app A (ULift.up g)} :=
+  Equiv.subtypeEquiv (specPointsHomEquiv H Y) (specPointsHomEquiv_invariant_iff H I)
+
+@[simp]
+private theorem specPointsHomInvariantEquiv_symm_apply_val {Y : Over (Spec (CommRingCat.of R))}
+    (ψ : {f : HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶
+        (CommAlgCat.pointsSheaf Y).obj //
+      ∀ (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ) (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop)
+        (n : quotientPointsSubgroup H I A.unop.unop),
+        f.app A (ULift.up (g * n.val)) = f.app A (ULift.up g)}) :
+    ((specPointsHomInvariantEquiv H I Y).symm ψ).val = (specPointsHomEquiv H Y).symm ψ.val :=
+  (rfl)
+
+private def sheafQuotientHomEquiv (Y : Over (Spec (CommRingCat.of R))) :
+    (CommAlgCat.pointsSheaf X ⟶ CommAlgCat.pointsSheaf Y) ≃
+      {f : HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶
+          (CommAlgCat.pointsSheaf Y).obj //
+        ∀ (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ) (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop)
+          (n : quotientPointsSubgroup H I A.unop.unop),
+          f.app A (ULift.up (g * n.val)) = f.app A (ULift.up g)} :=
+  (Iso.homCongr e (Iso.refl (CommAlgCat.pointsSheaf Y))).symm.trans
+    (fppfHomogeneousQuotientHomEquiv H I (CommAlgCat.pointsSheaf Y))
+
+private theorem sheafQuotientHomEquiv_apply {Y : Over (Spec (CommRingCat.of R))}
+    (φ : CommAlgCat.pointsSheaf X ⟶ CommAlgCat.pointsSheaf Y) :
+    (sheafQuotientHomEquiv H I e Y φ).val =
+      fppfHomogeneousQuotientProjection H I ≫ e.hom.hom ≫ φ.hom := by
+  simp [sheafQuotientHomEquiv, fppfHomogeneousQuotientHomEquiv_apply]
+
+private theorem sheafQuotientHomEquiv_symm_apply {Y : Over (Spec (CommRingCat.of R))}
+    (ψ : {f : HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶
+        (CommAlgCat.pointsSheaf Y).obj //
+      ∀ (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ) (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop)
+        (n : quotientPointsSubgroup H I A.unop.unop),
+        f.app A (ULift.up (g * n.val)) = f.app A (ULift.up g)}) :
+    (sheafQuotientHomEquiv H I e Y).symm ψ =
+      e.inv ≫ (fppfHomogeneousQuotientHomEquiv H I (CommAlgCat.pointsSheaf Y)).symm ψ := by
+  simp [sheafQuotientHomEquiv]
+
 /-- **Universal property of a represented homogeneous quotient (Milne, Proposition 5.22).**
 Morphisms `X ⟶ Y` over `Spec R` correspond bijectively, via precomposition with
 `representedQuotientProjection H I e`, to right `N`-invariant `R`-scheme morphisms `Spec H ⟶ Y`. -/
@@ -163,28 +234,17 @@ def representedQuotientHomEquiv (Y : Over (Spec (CommRingCat.of R))) :
           (n : quotientPointsSubgroup H I A),
           Spec.mapMulEquiv (g * n.val) ≫ q = Spec.mapMulEquiv g ≫ q} :=
   ((CommAlgCat.fullyFaithfulPointsSheafFunctor R).homEquiv).trans <|
-    (Iso.homCongr e (Iso.refl (CommAlgCat.pointsSheaf Y))).symm.trans <|
-      (fppfHomogeneousQuotientHomEquiv H I (CommAlgCat.pointsSheaf Y)).trans
-        { toFun f := ⟨(specPointsHomEquiv H Y).symm f.val, fun A g n ↦ by
-            rw [comp_specPointsHomEquiv_symm, comp_specPointsHomEquiv_symm]
-            exact congrArg ULift.down (f.property (op (op A)) g n)⟩
-          invFun q := ⟨specPointsHomEquiv H Y q.val, fun A g n ↦ by
-            rw [specPointsHomEquiv_apply_app_apply, specPointsHomEquiv_apply_app_apply,
-              q.property A.unop.unop g n]⟩
-          left_inv f := Subtype.ext ((specPointsHomEquiv H Y).apply_symm_apply f.val)
-          right_inv q := Subtype.ext ((specPointsHomEquiv H Y).symm_apply_apply q.val) }
+    (sheafQuotientHomEquiv H I e Y).trans (specPointsHomInvariantEquiv H I Y).symm
 
 /-- Forward evaluation of `representedQuotientHomEquiv` precomposes with
 `representedQuotientProjection`. -/
 @[simp] theorem representedQuotientHomEquiv_apply {Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y) :
     (representedQuotientHomEquiv H I e Y f).val = representedQuotientProjection H I e ≫ f := by
   apply (specPointsHomEquiv H Y).injective
-  rw [specPointsHomEquiv_comp, specPointsHomEquiv_representedQuotientProjection]
-  unfold representedQuotientHomEquiv
-  simp only [Equiv.trans_apply, Equiv.coe_fn_mk, (specPointsHomEquiv H Y).apply_symm_apply,
-    Functor.FullyFaithful.homEquiv_apply, Iso.homCongr_symm, Iso.homCongr_apply, Iso.symm_inv,
-    Iso.refl_symm, Iso.refl_hom, Category.comp_id, fppfHomogeneousQuotientHomEquiv_apply,
-    ObjectProperty.FullSubcategory.comp_hom, Category.assoc]
+  rw [representedQuotientHomEquiv, Equiv.trans_apply, Equiv.trans_apply,
+    specPointsHomInvariantEquiv_symm_apply_val, Equiv.apply_symm_apply,
+    Functor.FullyFaithful.homEquiv_apply, sheafQuotientHomEquiv_apply,
+    specPointsHomEquiv_comp, specPointsHomEquiv_representedQuotientProjection, Category.assoc]
 
 /-- Morphisms out of a scheme representing `G/N` are determined by their composites with
 `representedQuotientProjection`. -/
@@ -202,6 +262,45 @@ instance epi_representedQuotientProjection : Epi (representedQuotientProjection 
 underlying schemes. -/
 instance epi_representedQuotientProjection_left : Epi (representedQuotientProjection H I e).left :=
   inferInstanceAs (Epi ((Over.forget _).map (representedQuotientProjection H I e)))
+
+section SheafDesc
+
+variable {Y : Over (Spec (CommRingCat.of R))}
+  (q : (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R)) ⟶ Y)
+  (hq : ∀ (A : CommAlgCat.{u} R) (g : HopfAlgebra.points (R := R) (H := H) A)
+    (n : quotientPointsSubgroup H I A),
+    Spec.mapMulEquiv (g * n.val) ≫ q = Spec.mapMulEquiv g ≫ q)
+
+/-- **Sheaf-level descent of an `N`-invariant scheme morphism to `G/N`.** Every `R`-scheme
+morphism `q : Spec H ⟶ Y` invariant under right multiplication by `N` descends to a morphism of
+fppf sheaves `fppfHomogeneousQuotient H I ⟶ CommAlgCat.pointsSheaf Y`. -/
+def fppfHomogeneousQuotientDesc :
+    fppfHomogeneousQuotient H I ⟶ CommAlgCat.pointsSheaf Y :=
+  (fppfHomogeneousQuotientHomEquiv H I (CommAlgCat.pointsSheaf Y)).symm
+    (specPointsHomInvariantEquiv H I Y ⟨q, hq⟩)
+
+/-- Restricting `fppfHomogeneousQuotientDesc` along the quotient projection recovers `q` on
+convolution points. -/
+@[reassoc (attr := simp)] theorem fppfHomogeneousQuotientProjection_comp_desc :
+    fppfHomogeneousQuotientProjection H I ≫ (fppfHomogeneousQuotientDesc H I q hq).hom =
+      specPointsHomEquiv H Y q :=
+  fppfHomogeneousQuotientHomEquiv_symm_apply H I (CommAlgCat.pointsSheaf Y) _ _
+
+/-- **Sheaf-level quotient recognition.** If `q : Spec H ⟶ Y` is right `N`-invariant, locally
+surjective on fppf point sheaves, and has left cosets of `N` as its point-level fibres, then
+`fppfHomogeneousQuotientDesc H I q hq` is an isomorphism of fppf sheaves. -/
+theorem isIso_fppfHomogeneousQuotientDesc
+    [Sheaf.IsLocallySurjective ((CommAlgCat.pointsSheafFunctor R).map q)]
+    (hcoset : ∀ (A : CommAlgCat.{u} R) (g g' : HopfAlgebra.points (R := R) (H := H) A),
+      Spec.mapMulEquiv g ≫ q = Spec.mapMulEquiv g' ≫ q → g⁻¹ * g' ∈ quotientPointsSubgroup H I A) :
+    IsIso (fppfHomogeneousQuotientDesc H I q hq) := by
+  have : Presheaf.IsLocallySurjective (CommAlgCat.fppfTopology R) (specPointsHomEquiv H Y q) := by
+    rw [specPointsHomEquiv_eq_comp]; infer_instance
+  exact isIso_fppfHomogeneousQuotientHomEquiv_symm H I (CommAlgCat.pointsSheaf Y)
+    (specPointsHomEquiv H Y q) _ fun A g g' hgg' ↦
+      hcoset A.unop.unop g g' <| (specPointsHomEquiv_apply_app_apply_eq_iff H q A g g').mp hgg'
+
+end SheafDesc
 
 section Desc
 
@@ -221,17 +320,15 @@ def representedQuotientDesc : X ⟶ Y :=
 of `specPointsHomEquiv H Y q` precomposed with `e.inv`. -/
 @[simp] theorem pointsSheafFunctor_map_representedQuotientDesc :
     (CommAlgCat.pointsSheafFunctor R).map (representedQuotientDesc H I e q hq) =
-      e.inv ≫ (fppfHomogeneousQuotientHomEquiv H I (CommAlgCat.pointsSheaf Y)).symm
-        ⟨specPointsHomEquiv H Y q, fun A g n ↦ by
-          rw [specPointsHomEquiv_apply_app_apply, specPointsHomEquiv_apply_app_apply,
-            hq A.unop.unop g n]⟩ := by
-  unfold representedQuotientDesc representedQuotientHomEquiv; simp
+      e.inv ≫ fppfHomogeneousQuotientDesc H I q hq := by
+  dsimp [representedQuotientDesc, representedQuotientHomEquiv]
+  rw [Functor.FullyFaithful.homEquiv_symm_apply, Functor.FullyFaithful.map_preimage]
+  exact sheafQuotientHomEquiv_symm_apply H I e _
 
 /-- Composing `representedQuotientProjection` with `representedQuotientDesc` recovers `q`. -/
 @[reassoc (attr := simp)] theorem representedQuotientProjection_comp_desc :
-    representedQuotientProjection H I e ≫ representedQuotientDesc H I e q hq = q :=
-  (representedQuotientHomEquiv_apply H I e (representedQuotientDesc H I e q hq)).symm.trans
-    (congrArg Subtype.val ((representedQuotientHomEquiv H I e Y).apply_symm_apply ⟨q, hq⟩))
+    representedQuotientProjection H I e ≫ representedQuotientDesc H I e q hq = q := by
+  rw [← representedQuotientHomEquiv_apply, representedQuotientDesc, Equiv.apply_symm_apply]
 
 /-- Postcomposing `representedQuotientDesc` with `f : Y ⟶ Z` descends `q ≫ f`. -/
 @[reassoc] theorem representedQuotientDesc_comp {Z : Over (Spec (CommRingCat.of R))} (f : Y ⟶ Z) :
@@ -257,7 +354,8 @@ end Desc
         (n : quotientPointsSubgroup H I A),
         Spec.mapMulEquiv (g * n.val) ≫ q = Spec.mapMulEquiv g ≫ q}) :
     (representedQuotientHomEquiv H I e Y).symm q =
-      representedQuotientDesc H I e q.val q.property := (rfl)
+      representedQuotientDesc H I e q.val q.property :=
+  (rfl)
 
 /-- Descending `representedQuotientProjection` recovers the identity morphism on `X`. -/
 @[simp] theorem representedQuotientDesc_projection
@@ -290,28 +388,14 @@ fibres on `A`-valued points are the left cosets of `N(A)` exhibits `Y` as repres
 `fppfHomogeneousQuotient H I`. -/
 def fppfHomogeneousQuotientIsoPointsSheaf :
     fppfHomogeneousQuotient H I ≅ CommAlgCat.pointsSheaf Y :=
-  @asIso _ _ _ _
-    ((fppfHomogeneousQuotientHomEquiv H I (CommAlgCat.pointsSheaf Y)).symm
-      ⟨specPointsHomEquiv H Y q, fun A g n ↦ by
-        rw [specPointsHomEquiv_apply_app_apply, specPointsHomEquiv_apply_app_apply,
-          hq A.unop.unop g n]⟩)
-    (by
-      have : Presheaf.IsLocallySurjective (CommAlgCat.fppfTopology R)
-          (specPointsHomEquiv H Y q) := by
-        rw [specPointsHomEquiv_eq_comp]; infer_instance
-      exact isIso_fppfHomogeneousQuotientHomEquiv_symm H I (CommAlgCat.pointsSheaf Y)
-        (specPointsHomEquiv H Y q) _ fun A g g' hgg' ↦ hcoset A.unop.unop g g' <|
-          ULift.up_inj.mp <| (specPointsHomEquiv_apply_app_apply H q A g).symm.trans
-            (hgg'.trans (specPointsHomEquiv_apply_app_apply H q A g')))
+  @asIso _ _ _ _ (fppfHomogeneousQuotientDesc H I q hq)
+    (isIso_fppfHomogeneousQuotientDesc H I q hq hcoset)
 
-/-- The forward morphism of `fppfHomogeneousQuotientIsoPointsSheaf` is the sheaf-level quotient
-descent of `specPointsHomEquiv H Y q`. -/
+/-- The forward morphism of `fppfHomogeneousQuotientIsoPointsSheaf` is
+`fppfHomogeneousQuotientDesc`. -/
 @[simp] theorem fppfHomogeneousQuotientIsoPointsSheaf_hom :
     (fppfHomogeneousQuotientIsoPointsSheaf H I q hq hcoset).hom =
-      (fppfHomogeneousQuotientHomEquiv H I (CommAlgCat.pointsSheaf Y)).symm
-        ⟨specPointsHomEquiv H Y q, fun A g n ↦ by
-          rw [specPointsHomEquiv_apply_app_apply, specPointsHomEquiv_apply_app_apply,
-            hq A.unop.unop g n]⟩ := (rfl)
+      fppfHomogeneousQuotientDesc H I q hq := (rfl)
 
 /-- Under `fppfHomogeneousQuotientIsoPointsSheaf`, `representedQuotientProjection` is `q`. -/
 @[simp] theorem representedQuotientProjection_fppfHomogeneousQuotientIsoPointsSheaf :
@@ -319,7 +403,7 @@ descent of `specPointsHomEquiv H Y q`. -/
       q := by
   apply (specPointsHomEquiv H Y).injective
   rw [specPointsHomEquiv_representedQuotientProjection,
-    fppfHomogeneousQuotientIsoPointsSheaf_hom, fppfHomogeneousQuotientHomEquiv_symm_apply]
+    fppfHomogeneousQuotientIsoPointsSheaf_hom, fppfHomogeneousQuotientProjection_comp_desc]
 
 end Iso
 
@@ -427,6 +511,36 @@ theorem isProper_overHom_iff_of_fppfHomogeneousQuotient_iso :
     inferInstanceAs (IsIso ((Over.forget _).map (representedQuotientIso H I e₁ e₂).hom))
   rw [← Over.w (representedQuotientIso H I e₁ e₂).hom]
   exact MorphismProperty.cancel_left_of_respectsIso @IsProper _ _
+
+/-- When two schemes representing `fppfHomogeneousQuotient H I` carry `G`-actions making their
+quotient projections equivariant, the canonical comparison isomorphism `representedQuotientIso`
+between them is `G`-equivariant. -/
+theorem isModHom_representedQuotientIso_hom
+    [ModObj ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) X]
+    [ModObj ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) Y]
+    (hX : μ[(Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))] ≫
+        representedQuotientProjection H I e₁ =
+      ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) ◁
+          representedQuotientProjection H I e₁ ≫
+        γ[(Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R)),X])
+    (hY : μ[(Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))] ≫
+        representedQuotientProjection H I e₂ =
+      ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) ◁
+          representedQuotientProjection H I e₂ ≫
+        γ[(Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R)),Y]) :
+    IsModHom ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R)))
+      (representedQuotientIso H I e₁ e₂).hom := by
+  let G := (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))
+  let _ : ModObj G G := ModObj.regular G
+  have : IsModHom G (representedQuotientProjection H I e₁) := ⟨hX⟩
+  have : IsModHom G
+      (representedQuotientProjection H I e₁ ≫ (representedQuotientIso H I e₁ e₂).hom) :=
+    ⟨by
+      rw [representedQuotientIso_hom,
+        representedQuotientProjection_comp_fppfHomogeneousQuotientSchemeMap]
+      exact hY⟩
+  exact CommAlgCat.isModHom_of_isLocallySurjective_comp
+    (representedQuotientProjection H I e₁) (representedQuotientIso H I e₁ e₂).hom
 
 end IsoLemmas
 

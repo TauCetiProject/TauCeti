@@ -104,4 +104,18 @@ instance smooth_orbitToBase {k : Type u} [Field k] (G : Over (Spec (.of k)))
     (isPullback_orbitToBase_baseChange f G x)
     (smooth_orbitToBase_of_isAlgClosed ((Over.pullback f).obj G) _)
 
+/-- Every reduced finite-type homogeneous scheme for a geometrically reduced finite-type group
+over a field is smooth. -/
+theorem smooth_of_orbit_eq_univ {k : Type u} [Field k] (G : Over (Spec (.of k)))
+    {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X] [LocallyOfFiniteType G.hom]
+    [CompactSpace G.left] [LocallyOfFiniteType X.hom] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
+    [GeometricallyReduced G.hom] [IsReduced X.left] (h : orbit G x = Set.univ) :
+    Smooth X.hom := by
+  have : CompactSpace X.left := compactSpace_of_orbit_eq_univ G x h
+  have : IsIso (orbitι G x) := isIso_orbitι_of_orbit_eq_univ G x h
+  have hcomp : inv (orbitι G x) ≫ orbitToBase G x = X.hom := by
+    rw [orbitToBase_def, IsIso.inv_hom_id_assoc]
+  rw [← hcomp]
+  infer_instance
+
 end TauCeti.SchemeAction

@@ -5,9 +5,9 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import TauCeti.AlgebraicGeometry.Geometrically.Reduced
+public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Action
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Scheme
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyReduced
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
@@ -45,24 +45,13 @@ namespace TauCeti.SchemeAction
 
 universe u
 
+section CompactTarget
+
 variable {k : Type u} [Field k]
   (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
   [LocallyOfFiniteType G.hom] [CompactSpace G.left]
   [LocallyOfFiniteType X.hom] [CompactSpace X.left]
   (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
-
-/-- The orbit projection is locally of finite type, without a reducedness hypothesis. -/
-instance locallyOfFiniteType_toOrbit : LocallyOfFiniteType (toOrbit G x) := by
-  have : LocallyOfFiniteType (toOrbit G x ≫ orbitToBase G x) := by
-    rw [toOrbit_toBase]
-    infer_instance
-  exact locallyOfFiniteType_of_comp _ (orbitToBase G x)
-
-/-- The orbit projection is locally of finite presentation, without a reducedness hypothesis. -/
-instance locallyOfFinitePresentation_toOrbit : LocallyOfFinitePresentation (toOrbit G x) := by
-  have : IsLocallyNoetherian (orbitScheme G x) :=
-    LocallyOfFiniteType.isLocallyNoetherian (orbitToBase G x)
-  infer_instance
 
 private theorem flat_toOrbit_of_isAlgClosed [IsAlgClosed k] [IsReduced G.left] :
     Flat (toOrbit G x) := by
@@ -83,5 +72,26 @@ instance flat_toOrbit [GeometricallyReduced G.hom] : Flat (toOrbit G x) := by
   exact MorphismProperty.of_isPullback_of_surjective_of_flat_of_quasiCompact
     (isPullback_toOrbit_baseChange f G x)
     (flat_toOrbit_of_isAlgClosed ((Over.pullback f).obj G) _)
+
+end CompactTarget
+
+section Homogeneous
+
+variable {k : Type u} [Field k]
+  (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
+  [LocallyOfFiniteType G.hom] [CompactSpace G.left]
+  [LocallyOfFiniteType X.hom] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
+
+/-- The orbit morphism onto a reduced finite-type homogeneous scheme for a geometrically reduced
+finite-type group over a field is flat. -/
+theorem flat_orbitMap_of_orbit_eq_univ [GeometricallyReduced G.hom] [IsReduced X.left]
+    (h : orbit G x = Set.univ) :
+    Flat (orbitMap G x).left := by
+  have : CompactSpace X.left := compactSpace_of_orbit_eq_univ G x h
+  have : IsIso (orbitι G x) := isIso_orbitι_of_orbit_eq_univ G x h
+  rw [← toOrbit_ι G x]
+  infer_instance
+
+end Homogeneous
 
 end TauCeti.SchemeAction

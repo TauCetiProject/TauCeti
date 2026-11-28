@@ -5,15 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
-public import Mathlib.AlgebraicGeometry.Noetherian
-public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Basic
+public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Transitivity
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.UniversallyOpen
 import TauCeti.AlgebraicGeometry.Pullback.Over
-import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 import TauCeti.Topology.Algebra.MulAction.Orbit
 import TauCeti.Topology.Maps.OpenQuotient
@@ -68,11 +65,7 @@ theorem isConstructible_orbit {S : Scheme.{u}} (G : Over S) {X : Over S} [MonObj
     [LocallyOfFiniteType G.hom] [CompactSpace G.left] [IsLocallyNoetherian X.left]
     [CompactSpace X.left] (x : 𝟙_ (Over S) ⟶ X) :
     IsConstructible (orbit G x) := by
-  have : LocallyOfFiniteType ((orbitMap G x).left ≫ X.hom) := by
-    rw [Over.w]
-    infer_instance
-  have : LocallyOfFiniteType (orbitMap G x).left :=
-    locallyOfFiniteType_of_comp (orbitMap G x).left X.hom
+  have : LocallyOfFiniteType (orbitMap G x).left := locallyOfFiniteType_orbitMap G x
   have h : orbit G x = Set.range (orbitMap G x).left := Set.ext (mem_orbit G x)
   simpa [h] using (orbitMap G x).left.isConstructible_image IsConstructible.univ
 
@@ -80,67 +73,6 @@ section AlgClosed
 
 variable {k : Type u} [Field k] [IsAlgClosed k] (G : Over (Spec (.of k)))
   {X : Over (Spec (.of k))}
-
-section RationalPoints
-
-variable [MonObj G] [ModObj G X] [LocallyOfFiniteType G.hom]
-
-/-- Over an algebraically closed field, with `G` locally of finite type, the orbit morphism sends
-every closed point of `G` to a translate of `x` by a rational point of `G`. -/
-theorem exists_orbitMap_left_apply_eq_smul_left_apply (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
-    {c : G.left} (hc : IsClosed {c}) (a : (𝟙_ (Over (Spec (.of k)))).left) :
-    ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, (orbitMap G x).left c = (g • x).left a := by
-  let g : 𝟙_ (Over (Spec (.of k))) ⟶ G :=
-    Over.homMk (U := 𝟙_ _) (V := G) (pointOfClosedPoint G.hom c hc)
-      (pointOfClosedPoint_comp G.hom c _)
-  refine ⟨g, ?_⟩
-  rw [← left_comp_orbitMap_left, Scheme.Hom.comp_apply]
-  exact congrArg _ (pointOfClosedPoint_apply G.hom c hc a).symm
-
-/-- Over an algebraically closed field, with `G` locally of finite type, the closed points of the
-geometric orbit of `x` are exactly the points underlying its translates by rational points of
-`G`. -/
-theorem orbit_inter_closedPoints (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
-    orbit G x ∩ closedPoints X.left =
-      ⋃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, Set.range (g • x).left := by
-  refine Set.Subset.antisymm (fun p ⟨hpo, hpc⟩ ↦ ?_) ?_
-  · -- A closed point of the orbit is the image of a closed point of the Jacobson scheme `G`,
-    -- which is a rational point of `G`.
-    have : JacobsonSpace G.left := LocallyOfFiniteType.jacobsonSpace G.hom
-    obtain ⟨c, hc, hfc⟩ := (orbitMap G x).left.continuous.exists_isClosed_singleton_of_mem_range
-      (mem_closedPoints_iff.mp hpc).isLocallyClosed ((mem_orbit G x p).mp hpo)
-    obtain ⟨g, hg⟩ :=
-      exists_orbitMap_left_apply_eq_smul_left_apply G x hc (IsLocalRing.closedPoint k)
-    exact Set.mem_iUnion.mpr ⟨g, _, hg.symm.trans hfc⟩
-  simp only [Set.iUnion_subset_iff]
-  rintro g _ ⟨a, rfl⟩
-  refine ⟨smul_left_apply_mem_orbit G x g a, ?_⟩
-  obtain rfl : a = IsLocalRing.closedPoint k := Subsingleton.elim (α := Spec (.of k)) _ _
-  exact mem_closedPoints_iff.mpr
-    (TauCeti.AlgebraicGeometry.isClosed_singleton_of_section (Over.w (g • x)))
-
-/-- Over an algebraically closed field, with `G` locally of finite type, a rational point of `X`
-lies in the geometric orbit of `x` exactly when it is a translate of `x` by a rational point of
-`G`. -/
-theorem left_apply_mem_orbit_iff (x y : 𝟙_ (Over (Spec (.of k))) ⟶ X)
-    (a : (𝟙_ (Over (Spec (.of k)))).left) :
-    y.left a ∈ orbit G x ↔ ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, g • x = y := by
-  refine ⟨fun h ↦ ?_, fun ⟨g, hg⟩ ↦ hg ▸ smul_left_apply_mem_orbit G x g a⟩
-  -- The rational point `y` is a closed point of the orbit, hence a translate `g • x` at the
-  -- underlying point; two sections agreeing at a point of `Spec k` are equal.
-  obtain rfl : a = IsLocalRing.closedPoint k := Subsingleton.elim (α := Spec (.of k)) _ _
-  have hy : y.left (IsLocalRing.closedPoint k) ∈ orbit G x ∩ closedPoints X.left :=
-    ⟨h, mem_closedPoints_iff.mpr
-      (TauCeti.AlgebraicGeometry.isClosed_singleton_of_section (Over.w y))⟩
-  rw [orbit_inter_closedPoints] at hy
-  obtain ⟨g, b, hb⟩ := Set.mem_iUnion.mp hy
-  obtain rfl : b = IsLocalRing.closedPoint k := Subsingleton.elim (α := Spec (.of k)) _ _
-  refine ⟨g, Over.OverMorphism.ext ?_⟩
-  simpa only [Category.id_comp] using
-    (TauCeti.AlgebraicGeometry.comp_eq_comp_iff_of_section (Over.w (g • x)) (Over.w y) (𝟙 _)
-      (IsLocalRing.closedPoint k)).mpr hb
-
-end RationalPoints
 
 section Transitivity
 

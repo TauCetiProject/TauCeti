@@ -49,13 +49,6 @@ section FiniteType
 
 variable [LocallyOfFiniteType X.hom] [CompactSpace X.left]
 
-/-- The orbit model is a closed subscheme exactly when the full geometric orbit is closed. -/
-@[simp]
-theorem isClosedImmersion_orbitι_iff :
-    IsClosedImmersion (orbitι G x) ↔ IsClosed (orbit G x) := by
-  rw [IsClosedImmersion.iff_isPreimmersion, range_orbitι]
-  exact and_iff_right (inferInstance : IsPreimmersion (orbitι G x))
-
 /-- A proper orbit in a separated scheme has closed geometric image. Properness of the
 ambient scheme is not required for this direction. -/
 theorem isClosed_orbit_of_isProper [IsSeparated X.hom] [IsProper (orbitToBase G x)] :

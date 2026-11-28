@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyOpen
+public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.AlgebraicGeometry.Pullbacks
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.Action
@@ -29,9 +30,10 @@ The translation homeomorphisms assemble into an action of the sections of `G`
 on the underlying space of `X`, under which the orbit is invariant.
 Equivariant morphisms carry orbit images onto orbit images. Lifts of ambient
 translations through a monomorphism give automorphisms with the same group laws
-and preserve the induced base morphism.
+and preserve the induced base morphism. We also record general-base surjectivity,
+local finite-type, and local finite-presentation properties of the orbit morphism.
 
-No finite-type, smoothness, reducedness or connectedness assumption is needed.
+No global smoothness, reducedness or connectedness assumption is needed.
 These statements supply the invariant sets on which local closedness and
 orbit-dimension arguments can be made with additional geometric hypotheses;
 no subscheme structure or comparison with rational-point orbits is asserted here.
@@ -130,6 +132,37 @@ theorem image_orbit (x : 𝟙_ (Over S) ⟶ X) (f : X ⟶ Y) [IsModHom G f] :
   have h := congrArg (fun k : G ⟶ Y ↦ k.left) (orbitMap_comp G x f)
   simpa only [orbit, Over.comp_left, Scheme.Hom.comp_base, TopCat.coe_comp,
     Set.range_comp] using congrArg (fun k : G.left ⟶ Y.left ↦ Set.range k) h
+
+/-- The orbit morphism is surjective on underlying points if and only if the geometric orbit is
+all of `X`. -/
+theorem surjective_orbitMap_iff_orbit_eq_univ (x : 𝟙_ (Over S) ⟶ X) :
+    Surjective (orbitMap G x).left ↔ orbit G x = Set.univ :=
+  ⟨fun ⟨h⟩ ↦ orbit_def G x ▸ Set.range_eq_univ.mpr h,
+    fun h ↦ ⟨Set.range_eq_univ.mp (orbit_def G x ▸ h)⟩⟩
+
+/-- When a single orbit of a quasi-compact acting monoid scheme covers `X`, `X` is
+quasi-compact. -/
+theorem compactSpace_of_orbit_eq_univ [CompactSpace G.left] (x : 𝟙_ (Over S) ⟶ X)
+    (h : orbit G x = Set.univ) : CompactSpace X.left :=
+  Function.Surjective.compactSpace (orbitMap G x).left.continuous
+    ((surjective_iff _).mp ((surjective_orbitMap_iff_orbit_eq_univ G x).mpr h))
+
+/-- The orbit morphism is locally of finite type when `G` is locally of finite type over the
+base. -/
+theorem locallyOfFiniteType_orbitMap [LocallyOfFiniteType G.hom] (x : 𝟙_ (Over S) ⟶ X) :
+    LocallyOfFiniteType (orbitMap G x).left := by
+  have : LocallyOfFiniteType ((orbitMap G x).left ≫ X.hom) := by
+    rw [Over.w]
+    infer_instance
+  exact locallyOfFiniteType_of_comp _ X.hom
+
+/-- The orbit morphism is locally of finite presentation when `G` is locally of finite type over
+the base and `X` is locally Noetherian. -/
+theorem locallyOfFinitePresentation_orbitMap [LocallyOfFiniteType G.hom]
+    [IsLocallyNoetherian X.left] (x : 𝟙_ (Over S) ⟶ X) :
+    LocallyOfFinitePresentation (orbitMap G x).left := by
+  have : LocallyOfFiniteType (orbitMap G x).left := locallyOfFiniteType_orbitMap G x
+  infer_instance
 
 /-- Base change along any morphism of base schemes takes the geometric orbit of a section to the
 preimage of the original orbit under the first projection. -/

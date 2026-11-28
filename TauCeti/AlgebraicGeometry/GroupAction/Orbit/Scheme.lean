@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import TauCeti.AlgebraicGeometry.GroupAction.LocallyClosed
 public import TauCeti.AlgebraicGeometry.Morphisms.Immersion
 public import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.LocallyClosed
@@ -39,6 +40,8 @@ open CategoryTheory MonoidalCategory CartesianMonoidalCategory MonObj AlgebraicG
 namespace TauCeti.SchemeAction
 
 universe u
+
+section
 
 variable {k : Type u} [Field k]
   (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
@@ -84,6 +87,13 @@ instance : IsImmersion (orbitι G x) := by
 theorem range_orbitι : Set.range (orbitι G x) = orbit G x := by
   rw [orbitι_def, Scheme.Hom.range_locallyClosedImageι, orbit_def]
 
+/-- The orbit model is a closed subscheme exactly when the full geometric orbit is closed. -/
+@[simp]
+theorem isClosedImmersion_orbitι_iff :
+    IsClosedImmersion (orbitι G x) ↔ IsClosed (orbit G x) := by
+  rw [IsClosedImmersion.iff_isPreimmersion, range_orbitι]
+  exact and_iff_right (inferInstance : IsPreimmersion (orbitι G x))
+
 /-- The orbit morphism factors through its locally closed scheme image. -/
 def toOrbit : G.left ⟶ orbitScheme G x :=
   (orbitMap G x).left.toLocallyClosedImage
@@ -121,6 +131,18 @@ instance : IsSchemeTheoreticallyDominant (toOrbit G x) := by
 
 instance : LocallyOfFiniteType (orbitToBase G x) := by
   rw [orbitToBase_def]
+  infer_instance
+
+/-- The orbit projection is locally of finite type, without a reducedness hypothesis. -/
+instance locallyOfFiniteType_toOrbit : LocallyOfFiniteType (toOrbit G x) := by
+  have : LocallyOfFiniteType (orbitMap G x).left := locallyOfFiniteType_orbitMap G x
+  rw [toOrbit_def]
+  infer_instance
+
+/-- The orbit projection is locally of finite presentation, without a reducedness hypothesis. -/
+instance locallyOfFinitePresentation_toOrbit : LocallyOfFinitePresentation (toOrbit G x) := by
+  have : IsLocallyNoetherian (orbitScheme G x) :=
+    LocallyOfFiniteType.isLocallyNoetherian (orbitToBase G x)
   infer_instance
 
 instance : CompactSpace (orbitScheme G x) :=
@@ -213,5 +235,26 @@ theorem exists_orbitTranslation_eq [IsAlgClosed k] {y z : orbitScheme G x}
     ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, (orbitTranslation G x g).hom y = z := by
   exact exists_eq_of_equivariant_of_range_subset_orbit G x (orbitι G x)
     (range_orbitι G x).le (orbitTranslation G x) (orbitTranslation_hom_ι G x) hy hz
+
+end
+
+section FullOrbit
+
+variable {k : Type u} [Field k]
+  (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
+  [LocallyOfFiniteType G.hom] [CompactSpace G.left]
+  [LocallyOfFiniteType X.hom] [CompactSpace X.left]
+  (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
+
+/-- When a single orbit covers a reduced finite-type scheme `X`, the orbit immersion is an
+isomorphism of schemes. -/
+theorem isIso_orbitι_of_orbit_eq_univ [IsReduced X.left] (h : orbit G x = Set.univ) :
+    IsIso (orbitι G x) := by
+  have : IsClosedImmersion (orbitι G x) :=
+    (isClosedImmersion_orbitι_iff G x).mpr (h ▸ isClosed_univ)
+  have : Surjective (orbitι G x) := ⟨Set.range_eq_univ.mp ((range_orbitι G x).trans h)⟩
+  exact isIso_of_isClosedImmersion_of_surjective (orbitι G x)
+
+end FullOrbit
 
 end TauCeti.SchemeAction

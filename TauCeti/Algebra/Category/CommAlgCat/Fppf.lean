@@ -16,6 +16,7 @@ public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import Mathlib.RingTheory.RingHom.FinitePresentation
 import Mathlib.RingTheory.FiniteStability
 import TauCeti.AlgebraicGeometry.Sites.Fpqc
+import TauCeti.CategoryTheory.Sites.Canonical
 
 /-!
 # The affine fppf site
@@ -44,8 +45,10 @@ points is fppf locally surjective is surjective, because fppf covers are jointly
   `A`-valued fppf sheaves on schemes over `Spec R`.
 * `TauCeti.CommAlgCat.pointsSheaf`: the fppf sheaf of points of a scheme over `Spec R`.
 * `TauCeti.CommAlgCat.pointsSheafFunctor` and `TauCeti.CommAlgCat.fullyFaithfulPointsSheafFunctor`:
-  the functor of points to affine fppf sheaves is fully faithful, so a morphism of sheaves of
-  points is a morphism of schemes over `Spec R`.
+  the functor of points to affine fppf sheaves is fully faithful, so morphisms between schemes
+  over `Spec R` are morphisms of sheaves of points.
+* `TauCeti.CommAlgCat.isLocallySurjective_pointsSheafFunctor_map`: fppf morphisms over
+  `Spec R` induce locally surjective maps on affine fppf sheaves of points.
 * `TauCeti.CommAlgCat.surjective_of_isLocallySurjective_pointsSheafFunctor_map`: a morphism
   inducing a locally surjective map of fppf sheaves of points is surjective.
 * `TauCeti.CommAlgCat.generate_singleton_op_mem_fppfTopology`: a faithfully flat, finitely
@@ -367,6 +370,34 @@ noncomputable def fullyFaithfulPointsSheafFunctor : (pointsSheafFunctor R).Fully
 instance : (pointsSheafFunctor R).Full := (fullyFaithfulPointsSheafFunctor R).full
 
 instance : (pointsSheafFunctor R).Faithful := (fullyFaithfulPointsSheafFunctor R).faithful
+
+variable {R} in
+/-- **Fppf morphisms induce locally surjective maps on affine points sheaves.** Every
+affine-valued point of the target lifts after a faithfully flat, finitely presented extension of
+the value algebra. -/
+instance isLocallySurjective_pointsSheafFunctor_map
+    {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y)
+    [Flat f.left] [Surjective f.left] [LocallyOfFinitePresentation f.left] :
+    Presheaf.IsLocallySurjective (fppfTopology R) ((pointsSheafFunctor R).map f).hom := by
+  have hcov : Sieve.generate (Presieve.singleton f) ∈
+      Scheme.fppfTopology.over (Spec (CommRingCat.of R)) Y := by
+    rw [← Presieve.ofArrows_pUnit.{0}, ← Sieve.ofArrows, GrothendieckTopology.mem_over_iff,
+      Sieve.overEquiv_ofArrows]
+    refine Precoverage.generate_mem_toGrothendieck ?_
+    rw [Presieve.ofArrows_pUnit]
+    exact f.left.singleton_mem_fppfPrecoverage
+  have : Sheaf.IsLocallySurjective ((GrothendieckTopology.uliftYoneda.{u + 1}
+      (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))).map f) :=
+    Sheaf.isLocallySurjective_uliftYoneda_map_of_mem hcov
+  have hepi : Epi ((GrothendieckTopology.uliftYoneda.{u + 1}
+      (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))).map f) :=
+    Sheaf.epi_of_isLocallySurjective _
+  have hepi' : Epi ((fppfSheafEquiv R (Type (u + 1))).inverse.map
+      ((GrothendieckTopology.uliftYoneda.{u + 1}
+        (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))).map f)) :=
+    (fppfSheafEquiv R (Type (u + 1))).inverse.map_epi _
+  have : Epi ((pointsSheafFunctor R).map f) := hepi'
+  exact (Sheaf.isLocallySurjective_iff_epi ((pointsSheafFunctor R).map f)).mpr ‹_›
 
 variable {R} in
 /-- **Locally surjective maps of points come from surjective morphisms.** If a morphism of

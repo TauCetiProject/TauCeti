@@ -5,10 +5,14 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.Stabilizer.Preservation
 public import TauCeti.CategoryTheory.Comma.Over
 public import TauCeti.AlgebraicGeometry.Group.Cartier
 public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
+import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Descent
+public import TauCeti.CategoryTheory.Monoidal.Cartesian.Stabilizer.KernelPair
 
 /-!
 # Geometry of scheme-theoretic stabilizers
@@ -25,9 +29,13 @@ The stabilizer and its group structure are `TauCeti.stabilizer`, constructed fro
 the native action on all test-scheme points. Its closed immersion follows from
 its defining pullback square. The isomorphism
 `TauCeti.stabilizer.fiberSmulIso` transports these properties to the orbit fibre
-over every translate of the base section. This supplies smooth fibres for the
-characteristic-zero study of orbit maps; it does not assert that an arbitrary
-orbit map to the ambient scheme is smooth.
+over every translate of the base section. Over an arbitrary base scheme, smoothness
+of an orbit map always descends to its stabilizer
+(`TauCeti.SchemeAction.smooth_stabilizer_of_smooth_orbitMap`), and a faithfully flat
+quasi-compact orbit map is smooth iff its stabilizer is smooth
+(`TauCeti.SchemeAction.smooth_orbitMap_iff`); this supplies smooth fibres for the
+characteristic-zero study of orbit maps without asserting that an arbitrary orbit map
+to the ambient scheme is smooth.
 
 ## References
 
@@ -136,5 +144,51 @@ instance smooth_orbitFiber_smul (h : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
   infer_instance
 
 end CharZero
+
+section Smoothness
+
+variable {S : Scheme.{u}} (G : Over S) {X : Over S} [GrpObj G] [ModObj G X]
+  (x : 𝟙_ (Over S) ⟶ X)
+
+private theorem isPullback_orbitMap_left :
+    IsPullback (stabilizer.incl G x).left (stabilizer G x).hom
+      (orbitMap G x).left x.left := by
+  simpa only [Over.forget_map, Over.toUnit_left] using
+    (orbitFiber.isPullback G x x).map (Over.forget S)
+
+/-- Over an arbitrary base scheme, a faithfully flat and quasi-compact morphism `f : G.left ⟶ Y`
+whose fibre over a base section `y` is the stabilizer and whose kernel pair is right
+multiplication by the stabilizer is smooth if and only if the stabilizer is smooth over the base
+scheme. -/
+theorem smooth_iff_smooth_stabilizer {Y : Scheme.{u}} (f : G.left ⟶ Y)
+    [Flat f] [Surjective f] [QuasiCompact f] {y : (𝟙_ (Over S)).left ⟶ Y}
+    (hfib : IsPullback (stabilizer.incl G x).left (stabilizer G x).hom f y)
+    (hkp : IsPullback (fst G (stabilizer G x)).left (stabilizer.rightMul G x).left f f) :
+    Smooth f ↔ Smooth (stabilizer G x).hom := by
+  refine ⟨fun h ↦ MorphismProperty.of_isPullback hfib h, fun hs ↦ ?_⟩
+  let := hs
+  have hp : Smooth (fst G (stabilizer G x)).left := by
+    rw [Over.fst_left]
+    infer_instance
+  exact MorphismProperty.of_isPullback_of_surjective_of_flat_of_quasiCompact hkp hp
+
+/-- Smoothness of the orbit morphism implies smoothness of its scheme-theoretic stabilizer, over an
+arbitrary base scheme and in every characteristic. -/
+theorem smooth_stabilizer_of_smooth_orbitMap (h : Smooth (orbitMap G x).left) :
+    Smooth (stabilizer G x).hom :=
+  MorphismProperty.of_isPullback (isPullback_orbitMap_left G x) h
+
+/-- Over an arbitrary base scheme, a faithfully flat and quasi-compact orbit morphism is smooth if
+and only if its scheme-theoretic stabilizer is smooth over the base scheme. -/
+theorem smooth_orbitMap_iff [Flat (orbitMap G x).left] [Surjective (orbitMap G x).left]
+    [QuasiCompact (orbitMap G x).left] :
+    Smooth (orbitMap G x).left ↔ Smooth (stabilizer G x).hom :=
+  smooth_iff_smooth_stabilizer G x (orbitMap G x).left
+    (isPullback_orbitMap_left G x)
+    (by
+      simpa only [Over.forget_map] using
+        (stabilizer.isPullback_rightMul G x).map (Over.forget S))
+
+end Smoothness
 
 end TauCeti.SchemeAction

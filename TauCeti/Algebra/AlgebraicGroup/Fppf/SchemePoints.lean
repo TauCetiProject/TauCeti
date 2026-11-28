@@ -107,6 +107,17 @@ theorem specPointsHomEquiv_eq_comp {Y : Over (Spec (CommRingCat.of R))}
     pointsPresheafUliftIsoPointsSheaf_hom_app_apply]
   exact CommAlgCat.pointsSheafFunctor_map_hom_app q A (Spec.mapMulEquiv g)
 
+/-- Point equality under `specPointsHomEquiv` reduces to equality of the underlying
+`Spec.mapMulEquiv` composites. -/
+theorem specPointsHomEquiv_apply_app_apply_eq_iff {Y : Over (Spec (CommRingCat.of R))}
+    (q : (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R)) ⟶ Y)
+    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ) (g g' : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
+    dsimp% (specPointsHomEquiv H Y q).app A (ULift.up g) =
+        (specPointsHomEquiv H Y q).app A (ULift.up g') ↔
+      Spec.mapMulEquiv g ≫ q = Spec.mapMulEquiv g' ≫ q := by
+  rw [specPointsHomEquiv_apply_app_apply, specPointsHomEquiv_apply_app_apply]
+  exact ⟨congrArg ULift.down, congrArg ULift.up⟩
+
 /-- Precomposing `(specPointsHomEquiv H Y).symm f` with `Spec.mapMulEquiv g` evaluates `f`. -/
 @[reassoc (attr := simp)] theorem comp_specPointsHomEquiv_symm {Y : Over (Spec (CommRingCat.of R))}
     (f : HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶ (CommAlgCat.pointsSheaf Y).obj)
