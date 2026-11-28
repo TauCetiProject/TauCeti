@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Subadditive
 public import Mathlib.Analysis.SpecificLimits.Basic
+
+import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Fekete's lemma with an error term
@@ -21,6 +24,9 @@ into comparable parts, and only up to the error `f`.
 
 * `TauCeti.tendsto_div_of_superadditive_error`: if `a n / n` is bounded above, it converges.
 * `TauCeti.tendsto_div_atTop_of_superadditive_error`: otherwise `a n / n` tends to `+∞`.
+* `Submultiplicative.one_le_apply_zero`: if `0 < c q` for some `q`, then `1 ≤ c 0`.
+* `Submultiplicative.pow_le_apply`: for a nonnegative submultiplicative sequence `c : ℕ → ℝ` and
+  `0 < b`, if `b ^ q ≤ c q` for arbitrarily large `q`, then `b ^ n ≤ c n` for every `n : ℕ`.
 
 ## Implementation notes
 
@@ -31,6 +37,12 @@ parts are `u, v ≥ m` loses `f x`. The losses are absorbed by the invariant
 most `2x / 3`, the at least `2x / 3` terms `f n / n ^ 2 ≥ f x / (2x) ^ 2` with `max u v ≤ n / 2 < x`
 pay for `f x`. Since `E (x)` is at most a tail of the convergent series, this gives
 `a N ≥ N (a m / m - δ m) + C` with `δ m → 0`, which yields `liminf ≥ limsup`.
+
+The final results are consequences of Mathlib's Fekete lemma for submultiplicative sequences
+(`Submultiplicative.eventually_rpow_lt_of_rpow_lt`), adapted from `New.pow_le_of_submultiplicative`
+in `src/New/Derivatives/Sharpness/OneCurve.lean` of
+[lsernau/grh-lean](https://github.com/lsernau/grh-lean), commit
+`72fead102f663d5c7a407964a13dc0cf9d977207` (Apache 2.0, Copyright 2026 Anthropic, PBC).
 
 ## References
 
@@ -272,3 +284,30 @@ theorem tendsto_div_atTop_of_superadditive_error (hf : Monotone f)
   linarith
 
 end TauCeti
+
+namespace Submultiplicative
+
+/-- A submultiplicative sequence `c : ℕ → ℝ` with at least one positive value satisfies
+`1 ≤ c 0`. -/
+theorem one_le_apply_zero {c : ℕ → ℝ} (hsub : Submultiplicative c) {q : ℕ} (hq : 0 < c q) :
+    1 ≤ c 0 := by
+  simpa using one_le_of_le_mul_left₀ hq (by simpa using hsub q 0)
+
+/-- If a nonnegative submultiplicative sequence `c : ℕ → ℝ` satisfies `b ^ q ≤ c q` for
+arbitrarily large `q`, where `0 < b`, then `b ^ n ≤ c n` for every `n : ℕ`. -/
+theorem pow_le_apply {c : ℕ → ℝ} (hsub : Submultiplicative c) {b : ℝ} (hb : 0 < b)
+    (hc : ∀ n, 0 ≤ c n) (h_freq : ∃ᶠ q : ℕ in atTop, b ^ q ≤ c q) (n : ℕ) :
+    b ^ n ≤ c n := by
+  obtain rfl | hn := n.eq_zero_or_pos
+  · obtain ⟨q, -, hq⟩ := frequently_atTop.mp h_freq 0
+    simpa using hsub.one_le_apply_zero ((pow_pos hb q).trans_le hq)
+  have hroot {k : ℕ} (hk : 0 < k) : c k ^ (k : ℝ)⁻¹ < b ↔ c k < b ^ k := by
+    simpa only [Real.rpow_natCast] using
+      Real.rpow_inv_lt_iff_of_pos (hc k) hb.le (Nat.cast_pos.mpr hk : (0 : ℝ) < k)
+  by_contra! h
+  obtain ⟨M, hM⟩ := eventually_atTop.mp
+    (hsub.eventually_rpow_lt_of_rpow_lt hc hn.ne' ((hroot hn).mpr h))
+  obtain ⟨q, hq, h_large_q⟩ := frequently_atTop.mp h_freq (max M 1)
+  exact h_large_q.not_gt ((hroot (by omega : 0 < q)).mp (hM q (by omega)))
+
+end Submultiplicative
