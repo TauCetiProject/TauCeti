@@ -106,6 +106,27 @@ variable {M' N' : Type*}
   [AddCommGroup M'] [Module R M'] [Module A M'] [Module Aᵐᵒᵖ M'] [IsCentralScalar A M']
   [SMulCommClass A R M'] [AddCommGroup N'] [Module R N'] [Module A N']
   [TensorProduct.CompatibleSMul A R M' N']
+
+private theorem tensorProductEquiv_map_of_coe_eq
+    (fR : M →ₗ[R] M') (gR : N →ₗ[R] N')
+    (hf : ∀ (a : A) m, fR (MulOpposite.op a • m) = MulOpposite.op a • fR m)
+    (hg : ∀ (a : A) n, gR (a • n) = a • gR n)
+    (f : M →ₗ[A] M') (g : N →ₗ[A] N') (hfR : (fR : M → M') = f) (hgR : (gR : N → N') = g)
+    (z : BalancedTensorProduct R A M N) :
+    tensorProductEquiv R A M' N' (map fR gR hf hg z) =
+      TensorProduct.map f g (tensorProductEquiv R A M N z) := by
+  let tensorMap : M ⊗[A] N →ₗ[R] M' ⊗[A] N' :=
+    { __ := TensorProduct.map f g
+      map_smul' := fun r w ↦ by
+        refine w.inductionOn (fun m n ↦ ?_) (fun x y hx hy ↦ ?_)
+        · simp [TensorProduct.smul_tmul', ← hfR]
+        · simp_all [smul_add] }
+  have h : (tensorProductEquiv R A M' N').toLinearMap ∘ₗ map fR gR hf hg =
+      tensorMap ∘ₗ (tensorProductEquiv R A M N).toLinearMap :=
+    hom_ext fun _ _ ↦ by simp [tensorMap, hfR, hgR]
+  exact LinearMap.congr_fun h z
+
+variable
   [LinearMap.CompatibleSMul M M' R A] [LinearMap.CompatibleSMul N N' R A]
 
 /-- The commutative comparison intertwines the maps induced by linear maps in both factors. -/
@@ -119,23 +140,9 @@ theorem tensorProductEquiv_map (f : M →ₗ[A] M') (g : N →ₗ[A] N')
             simp only [op_smul_eq_smul, map_smul])
           (fun a n ↦ by
             rw [LinearMap.coe_restrictScalars, map_smul]) z) =
-      TensorProduct.map f g (tensorProductEquiv R A M N z) := by
-  let tensorMap : M ⊗[A] N →ₗ[R] M' ⊗[A] N' :=
-    { __ := TensorProduct.map f g
-      map_smul' := fun r w ↦ by
-        refine w.inductionOn (fun m n ↦ ?_) (fun x y hx hy ↦ ?_)
-        · simp [TensorProduct.smul_tmul']
-        · simp_all [smul_add] }
-  have h : (tensorProductEquiv R A M' N').toLinearMap ∘ₗ
-      map (f.restrictScalars R) (g.restrictScalars R)
-        (fun a m ↦ by
-          rw [LinearMap.coe_restrictScalars]
-          simp only [op_smul_eq_smul, map_smul])
-        (fun a n ↦ by
-          rw [LinearMap.coe_restrictScalars, map_smul]) =
-      tensorMap ∘ₗ (tensorProductEquiv R A M N).toLinearMap :=
-    hom_ext fun _ _ ↦ by simp [tensorMap]
-  exact LinearMap.congr_fun h z
+      TensorProduct.map f g (tensorProductEquiv R A M N z) :=
+  tensorProductEquiv_map_of_coe_eq _ _ _ _ f g
+    (LinearMap.coe_restrictScalars R f) (LinearMap.coe_restrictScalars R g) z
 
 /-- The maps induced on the balanced and ordinary tensor products commute with the comparison
 as a square of ground-ring linear maps. -/
@@ -168,20 +175,17 @@ theorem tensorProductEquiv_symm_map (f : M →ₗ[A] M') (g : N →ₗ[A] N')
 /-- Naturality when the map on the left factor is the identity. -/
 @[simp]
 theorem tensorProductEquiv_map_id_left [TensorProduct.CompatibleSMul A R M N']
-    [LinearMap.CompatibleSMul M M R A]
     (g : N →ₗ[A] N') (z : BalancedTensorProduct R A M N) :
     tensorProductEquiv R A M N'
         (map LinearMap.id (g.restrictScalars R) (fun _ _ ↦ rfl)
           (fun a n ↦ by
             rw [LinearMap.coe_restrictScalars, map_smul]) z) =
-      TensorProduct.map LinearMap.id g (tensorProductEquiv R A M N z) := by
-  simpa only [LinearMap.restrictScalars_id] using
-    tensorProductEquiv_map (LinearMap.id : M →ₗ[A] M) g z
+      TensorProduct.map LinearMap.id g (tensorProductEquiv R A M N z) :=
+  tensorProductEquiv_map_of_coe_eq _ _ _ _ LinearMap.id g rfl (LinearMap.coe_restrictScalars R g) z
 
 /-- Naturality when the map on the right factor is the identity. -/
 @[simp]
 theorem tensorProductEquiv_map_id_right [TensorProduct.CompatibleSMul A R M' N]
-    [LinearMap.CompatibleSMul N N R A]
     (f : M →ₗ[A] M') (z : BalancedTensorProduct R A M N) :
     tensorProductEquiv R A M' N
         (map (f.restrictScalars R) LinearMap.id
@@ -189,13 +193,13 @@ theorem tensorProductEquiv_map_id_right [TensorProduct.CompatibleSMul A R M' N]
             rw [LinearMap.coe_restrictScalars]
             simp only [op_smul_eq_smul, map_smul])
           (fun _ _ ↦ rfl) z) =
-      TensorProduct.map f LinearMap.id (tensorProductEquiv R A M N z) := by
-  simpa only [LinearMap.restrictScalars_id] using
-    tensorProductEquiv_map f (LinearMap.id : N →ₗ[A] N) z
+      TensorProduct.map f LinearMap.id (tensorProductEquiv R A M N z) :=
+  tensorProductEquiv_map_of_coe_eq _ _ _ _ f LinearMap.id (LinearMap.coe_restrictScalars R f) rfl z
 
 section LTensor
 
-variable [Module R A] [IsScalarTower R A M] [IsScalarTower R A N] [IsScalarTower R A N']
+variable [Module R A] [IsScalarTower R A N] [IsScalarTower R A N']
+  [TensorProduct.CompatibleSMul A R M N']
 
 /-- The comparison commutes with tensoring a linear map on the left with a fixed module. -/
 @[simp]
