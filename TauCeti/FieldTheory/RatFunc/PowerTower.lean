@@ -111,18 +111,19 @@ theorem expand_C {K : Type*} [CommRing K] [IsDomain K] (N : ℕ+) (c : K) :
 /-- Expanding by `1` is the identity on `K(X)`. -/
 @[simp]
 theorem expand_one (K : Type*) [CommRing K] [IsDomain K] :
-    expand K 1 = AlgHom.id K (RatFunc K) := by
-  ext r
-  induction r using RatFunc.induction_on with | _ p q _ =>
-  simp [expand_algebraMap]
+    expand K 1 = AlgHom.id K (RatFunc K) :=
+  AlgHom.toRingHom_injective <| IsLocalization.ringHom_ext (K[X])⁰ <| RingHom.ext fun p ↦ by
+    simp [expand_algebraMap]
 
 /-- Expanding by `e` and then by `d` is expanding by `d * e`. -/
 theorem expand_expand {K : Type*} [CommRing K] [IsDomain K] (d e : ℕ+) (r : RatFunc K) :
     expand K d (expand K e r) = expand K (d * e) r := by
-  induction r using RatFunc.induction_on with | _ p q _ =>
-  simp only [map_div₀, expand_algebraMap]
-  congr 1 <;> rw [← Polynomial.expand_eq_comp_X_pow, ← Polynomial.expand_eq_comp_X_pow,
-    ← Polynomial.expand_eq_comp_X_pow, ← Polynomial.expand_mul, PNat.mul_coe]
+  have hcomp : ((expand K d).comp (expand K e)).toRingHom = (expand K (d * e)).toRingHom :=
+    IsLocalization.ringHom_ext (K[X])⁰ <| RingHom.ext fun p ↦ by
+      simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+        AlgHom.comp_apply, expand_algebraMap, ← Polynomial.expand_eq_comp_X_pow,
+        ← Polynomial.expand_mul, PNat.mul_coe]
+  exact RingHom.congr_fun hcomp r
 
 end RatFunc
 

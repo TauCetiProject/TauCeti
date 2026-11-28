@@ -77,37 +77,26 @@ end RatFunc
 
 namespace LaurentSeries
 
-open scoped Polynomial RatFunc
-
-/-- Evaluating `r(X ^ N)` in `K⸨X⸩` agrees with applying `LaurentSeries.expand K N` to `r`. -/
-@[simp]
-theorem expand_algebraMap_ratFunc {K : Type*} [Field K] (N : ℕ+) (r : K⟮X⟯) :
-    expand K N (algebraMap K⟮X⟯ K⸨X⸩ r) = algebraMap K⟮X⟯ K⸨X⸩ (RatFunc.expand K N r) := by
-  have hpoly : ∀ p : K[X],
-      expand K N (algebraMap K⟮X⟯ K⸨X⸩ (algebraMap K[X] K⟮X⟯ p)) =
-        algebraMap K⟮X⟯ K⸨X⸩ (RatFunc.expand K N (algebraMap K[X] K⟮X⟯ p)) := by
-    have hring :
-        ((expand K N).toRingHom.comp (algebraMap K⟮X⟯ K⸨X⸩)).comp
-            (algebraMap K[X] K⟮X⟯) =
-          ((algebraMap K⟮X⟯ K⸨X⸩).comp (RatFunc.expand K N).toRingHom).comp
-            (algebraMap K[X] K⟮X⟯) := by
-      refine Polynomial.ringHom_ext' ?_ ?_
-      · refine RingHom.ext fun a ↦ ?_
-        simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-          RatFunc.algebraMap_C, RatFunc.expand_C, RatFunc.coe_C, ← algebraMap_apply,
-          AlgHom.commutes]
-      · simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-          RatFunc.algebraMap_X, RatFunc.expand_X, map_pow, RatFunc.coe_X, expand_single,
-          HahnSeries.single_pow, one_pow, nsmul_eq_mul, mul_one]
-    exact RingHom.congr_fun hring
-  induction r using RatFunc.induction_on with | _ p q _ =>
-    simp only [map_div₀, hpoly p, hpoly q]
+open scoped Polynomial RatFunc nonZeroDivisors
 
 /-- Composition form of `LaurentSeries.expand_algebraMap_ratFunc`. -/
 theorem expand_comp_algebraMap_ratFunc {K : Type*} [Field K] (N : ℕ+) :
     (expand K N).toRingHom.comp (algebraMap K⟮X⟯ K⸨X⸩) =
-      (algebraMap K⟮X⟯ K⸨X⸩).comp (RatFunc.expand K N).toRingHom :=
-  RingHom.ext (expand_algebraMap_ratFunc N)
+      (algebraMap K⟮X⟯ K⸨X⸩).comp (RatFunc.expand K N).toRingHom := by
+  refine IsLocalization.ringHom_ext (K[X])⁰ (Polynomial.ringHom_ext' ?_ ?_)
+  · refine RingHom.ext fun a ↦ ?_
+    simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      RatFunc.algebraMap_C, RatFunc.expand_C, RatFunc.coe_C, ← algebraMap_apply,
+      AlgHom.commutes]
+  · simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      RatFunc.algebraMap_X, RatFunc.expand_X, map_pow, RatFunc.coe_X, expand_single,
+      HahnSeries.single_pow, one_pow, nsmul_eq_mul, mul_one]
+
+/-- Evaluating `r(X ^ N)` in `K⸨X⸩` agrees with applying `LaurentSeries.expand K N` to `r`. -/
+@[simp]
+theorem expand_algebraMap_ratFunc {K : Type*} [Field K] (N : ℕ+) (r : K⟮X⟯) :
+    expand K N (algebraMap K⟮X⟯ K⸨X⸩ r) = algebraMap K⟮X⟯ K⸨X⸩ (RatFunc.expand K N r) :=
+  RingHom.congr_fun (expand_comp_algebraMap_ratFunc N) r
 
 /-- The power series part `g.powerSeriesPart` of a Laurent series `g` algebraic over `K(X)` is
 again algebraic over `K(X)`. -/

@@ -175,7 +175,7 @@ theorem exists_pos_nat_mem_scaledIntegralSeries_of_isIntegral {x : puiseuxField 
     have hc0 : ((levelEmbedding K N (f : K⸨X⸩) : puiseuxField K) : HahnSeries ℚ K).coeff 0 =
         PowerSeries.constantCoeff f := by
       rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply]
-      simpa using coeff_levelEmbedding_coe_natCast_div N f 0
+      simpa using coeff_ramifiedEmbedding_coe_natCast_div N f 0
     exact hc0 ▸ hx₀
   obtain ⟨M, hM, hmem⟩ := TauCeti.exists_pos_nat_mem_scaledIntegralSeries_of_isIntegral hf hf₀
   exact ⟨N, M, f, hM, rfl, hmem⟩
@@ -199,7 +199,7 @@ theorem exists_pos_nat_mul_isIntegral_coeff {x : puiseuxField K} (hx : 0 ≤ add
     exact ⟨n, by simp⟩
   · have hint := TauCeti.mem_scaledIntegralSeries_integralClosure_iff.mp hmem n
     rw [PowerSeries.coeff_smul, smul_eq_mul, ← mul_assoc, mul_comm ((M : K) ^ n) (c : K)] at hint
-    rwa [coeff_levelEmbedding_coe_natCast_div]
+    rwa [coe_levelEmbedding, coeff_ramifiedEmbedding_coe_natCast_div]
 
 /-- Specialization of `TauCeti.puiseuxField.exists_pos_nat_smul_mem_scaledIntegralSeries` to
 rational Puiseux series: if `x ∈ puiseuxField ℚ` has `0 ≤ addVal ℚ x` and is algebraic over `ℚ(X)`,
@@ -212,6 +212,22 @@ theorem exists_pos_nat_smul_mem_scaledIntegralSeries_rat {x : puiseuxField ℚ}
   obtain ⟨N, f, rfl, hf⟩ := exists_levelEmbedding_powerSeries_isAlgebraic hx halg
   obtain ⟨c, M, hc, hM, hmem⟩ := TauCeti.exists_pos_nat_smul_mem_scaledIntegralSeries_rat hf
   exact ⟨N, c, M, f, hc, hM, rfl, hmem⟩
+
+/-- Specialization of `TauCeti.puiseuxField.exists_pos_nat_mem_scaledIntegralSeries_of_isIntegral`
+to rational Puiseux series: if `x ∈ puiseuxField ℚ` has `0 ≤ addVal ℚ x`, is algebraic over
+`ℚ(X)`, and its constant coefficient `(x : HahnSeries ℚ ℚ).coeff 0` is an integer, then
+`x = levelEmbedding ℚ N (f : ℚ⸨X⸩)` for some `N : ℕ+` and `f ∈ scaledIntegralSeries ℤ M` with
+`M > 0`. -/
+theorem exists_pos_nat_mem_scaledIntegralSeries_rat {x : puiseuxField ℚ}
+    (hx : 0 ≤ addVal ℚ x) (halg : IsAlgebraic ℚ⟮X⟯ x)
+    (hx₀ : ∃ a : ℤ, (a : ℚ) = (x : HahnSeries ℚ ℚ).coeff 0) :
+    ∃ (N : ℕ+) (M : ℕ) (f : ℚ⟦X⟧), 0 < M ∧ x = levelEmbedding ℚ N (f : ℚ⸨X⸩) ∧
+      f ∈ TauCeti.scaledIntegralSeries ℤ (M : ℚ) := by
+  obtain ⟨a, ha⟩ := hx₀
+  obtain ⟨N, M, f, hM, rfl, hmem⟩ :=
+    exists_pos_nat_mem_scaledIntegralSeries_of_isIntegral hx halg (ha ▸ isIntegral_intCast a)
+  rw [TauCeti.scaledIntegralSeries_integralClosure] at hmem
+  exact ⟨N, M, f, hM, rfl, hmem⟩
 
 end Eisenstein
 
@@ -228,13 +244,7 @@ example {K : Type*} [Field K] [CharZero K] :
     0 ≤ addVal K y ∧ IsAlgebraic K⟮X⟯ y ∧ y ∉ (levelEmbedding K 1).range ∧
       f ∈ TauCeti.scaledIntegralSeries (integralClosure ℤ K) (1 : K) := by
   intro f y
-  have h0 : 0 ≤ addVal K y := by
-    have hf_ord : (0 : WithTop ℤ) ≤ (f : K⸨X⸩).orderTop := by
-      rw [PowerSeries.orderTop_coe]
-      cases f.order with
-      | top => simp
-      | coe n => exact WithTop.coe_le_coe.mpr (Nat.cast_nonneg n)
-    simpa [y] using (div_le_addVal_levelEmbedding_iff 2 (f : K⸨X⸩) 0).mpr hf_ord
+  have h0 : 0 ≤ addVal K y := addVal_levelEmbedding_powerSeries_nonneg 2 f
   have hsq : f ^ 2 = 1 + 4 * PowerSeries.X := by
     rw [← map_pow, sqrtOneAddFour_sq, map_add, map_one, map_mul, map_X]; simp [map_ofNat]
   have hy_sq : y ^ 2 - 1 = 4 * levelEmbedding K 2 (HahnSeries.single 1 1) := by
@@ -263,12 +273,12 @@ example {K : Type*} [Field K] [CharZero K] :
   have hnot1 : y ∉ (levelEmbedding K 1).range := by
     rintro ⟨g, hg⟩
     have hc := congrArg (fun z : puiseuxField K ↦ (z : HahnSeries ℚ K).coeff (1 / 2 : ℚ)) hg
-    have hdiv := coeff_levelEmbedding_coe_natCast_div 2 f 1
-    rw [show ((1 : ℕ) : ℚ) / ((2 : ℕ+) : ℚ) = 1 / 2 by norm_num] at hdiv
+    have hdiv := coeff_ramifiedEmbedding_coe_natCast_div (R := K) 2 f 1
+    norm_num at hdiv
     simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, coe_levelEmbedding] at hc
     rw [coeff_ramifiedEmbedding_of_not_den_dvd 1 g (by norm_num)] at hc
     dsimp [y] at hc
-    rw [hdiv] at hc
+    rw [coe_levelEmbedding, hdiv] at hc
     simp [f] at hc
   refine ⟨h0, halg, hnot1, TauCeti.mem_scaledIntegralSeries_integralClosure_iff.mpr fun n ↦ ?_⟩
   simp [f, isIntegral_intCast]
