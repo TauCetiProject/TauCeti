@@ -43,6 +43,15 @@ variable {C D : Type*} [Category* C] [Category* D]
 
 variable {I : Type*} [AddMonoid I] [DecidableEq I] {c : ComplexShape I} [c.TensorSigns]
 
+/-- The supplied projection formula on one tensor diagonal. -/
+private def projectionFormulaDiagonalIso
+    (K : HomologicalComplex C c) (E : HomologicalComplex D c) (n : I) :
+    Discrete.functor (fun pq : { pq : I × I // pq.1 + pq.2 = n } ↦
+      L.obj (G.obj (K.X pq.val.1) ⊗ E.X pq.val.2)) ≅
+    Discrete.functor (fun pq : { pq : I × I // pq.1 + pq.2 = n } ↦
+      K.X pq.val.1 ⊗ L.obj (E.X pq.val.2)) :=
+  Discrete.natIso (fun pq ↦ e.app (K.X pq.as.val.1, E.X pq.as.val.2))
+
 section Pair
 
 variable (K : HomologicalComplex C c) (E : HomologicalComplex D c)
@@ -65,10 +74,8 @@ lemma hasTensor_of_projectionFormula :
     (inferInstance : HasTensor ((G.mapHomologicalComplex c).obj K) E) n
   let : HasCoproduct (fun pq ↦ L.obj (f pq)) :=
     HasColimit.mk ⟨_, isColimitOfHasCoproductOfPreservesColimit L f⟩
-  let α : Discrete.functor (fun pq ↦ L.obj (f pq)) ≅ Discrete.functor
-      (fun pq : { pq : I × I // pq.1 + pq.2 = n } ↦ K.X pq.val.1 ⊗ L.obj (E.X pq.val.2)) :=
-    Discrete.natIso (fun pq ↦ e.app (K.X pq.as.val.1, E.X pq.as.val.2))
-  exact hasColimit_of_iso (F := Discrete.functor (fun pq ↦ L.obj (f pq))) α.symm
+  exact hasColimit_of_iso (F := Discrete.functor (fun pq ↦ L.obj (f pq)))
+    (L.projectionFormulaDiagonalIso G e K E n).symm
 
 /-- The degreewise projection isomorphism, obtained from the diagonal coproduct comparison. -/
 private def projectionFormulaHomologicalComplexXIso (n : I) :
@@ -78,14 +85,13 @@ private def projectionFormulaHomologicalComplexXIso (n : I) :
     G.obj (K.X pq.val.1) ⊗ E.X pq.val.2
   let g := fun pq : { pq : I × I // pq.1 + pq.2 = n } ↦
     K.X pq.val.1 ⊗ L.obj (E.X pq.val.2)
-  let α : Discrete.functor (fun pq ↦ L.obj (f pq)) ≅ Discrete.functor g :=
-    Discrete.natIso (fun pq ↦ e.app (K.X pq.as.val.1, E.X pq.as.val.2))
   letI : HasCoproduct f :=
     (inferInstance : HasTensor ((G.mapHomologicalComplex c).obj K) E) n
   letI : HasCoproduct g :=
     (inferInstance : HasTensor K ((L.mapHomologicalComplex c).obj E)) n
   exact IsColimit.coconePointsIsoOfNatIso
-    (isColimitOfHasCoproductOfPreservesColimit L f) (colimit.isColimit (Discrete.functor g)) α
+    (isColimitOfHasCoproductOfPreservesColimit L f) (colimit.isColimit (Discrete.functor g))
+    (L.projectionFormulaDiagonalIso G e K E n)
 
 @[reassoc]
 private lemma ι_projectionFormulaHomologicalComplexXIso_inv (p q n : I) (h : p + q = n) :
@@ -93,7 +99,7 @@ private lemma ι_projectionFormulaHomologicalComplexXIso_inv (p q n : I) (h : p 
         (L.projectionFormulaHomologicalComplexXIso G e K E n).inv =
       (e.app (K.X p, E.X q)).inv ≫
         L.map (ιTensorObj ((G.mapHomologicalComplex c).obj K) E p q n h) := by
-  dsimp only [projectionFormulaHomologicalComplexXIso]
+  dsimp only [projectionFormulaHomologicalComplexXIso, projectionFormulaDiagonalIso]
   exact IsColimit.comp_coconePointsIsoOfNatIso_inv _ _ _
     (Discrete.mk (⟨(p, q), h⟩ : { pq : I × I // pq.1 + pq.2 = n }))
 
@@ -166,8 +172,10 @@ lemma ι_projectionFormulaHomologicalComplexIso_inv_f (p q n : I) (h : p + q = n
     ιTensorObj K ((L.mapHomologicalComplex c).obj E) p q n h ≫
         (L.projectionFormulaHomologicalComplexIso G e K E).inv.f n =
       (e.app (K.X p, E.X q)).inv ≫
-        L.map (ιTensorObj ((G.mapHomologicalComplex c).obj K) E p q n h) :=
-  L.ι_projectionFormulaHomologicalComplexXIso_inv G e K E p q n h
+        L.map (ιTensorObj ((G.mapHomologicalComplex c).obj K) E p q n h) := by
+  simpa only [projectionFormulaHomologicalComplexIso, Iso.symm_inv,
+    Hom.isoOfComponents_hom_f, Iso.symm_hom] using
+    L.ι_projectionFormulaHomologicalComplexXIso_inv G e K E p q n h
 
 /-- On a homogeneous tensor summand the projection formula for complexes is the supplied
 projection formula on the two terms. -/
@@ -221,5 +229,41 @@ lemma projectionFormulaHomologicalComplexIso_hom_naturality (f : K ⟶ K') (g : 
   simp
 
 end Pair
+
+/-- The identity projection formula agrees with the native identity-functor comparison on
+homological complexes of any shape with tensor signs. -/
+theorem _root_.HomologicalComplex.projectionFormulaHomologicalComplexIso_id_hom
+    (K E : HomologicalComplex C c) [HasTensor K E]
+    [HasTensor (((𝟭 C).mapHomologicalComplex c).obj K) E]
+    [HasTensor K (((𝟭 C).mapHomologicalComplex c).obj E)] :
+    let t := Functor.mapHomologicalComplexIdIso C c
+    ((𝟭 C).projectionFormulaHomologicalComplexIso (𝟭 _)
+      (Functor.isoWhiskerLeft _ (Functor.rightUnitor _)) K E).hom ≫
+        tensorHom (L₂ := E) (𝟙 K) (t.hom.app E) =
+      t.hom.app _ ≫ tensorHom (L₁ := K) (t.hom.app K) (𝟙 E) := by
+  dsimp only
+  apply (cancel_epi
+    ((𝟭 C).projectionFormulaHomologicalComplexIso (𝟭 _)
+      (Functor.isoWhiskerLeft _ (Functor.rightUnitor _)) K E).inv).1
+  rw [Iso.inv_hom_id_assoc]
+  apply Hom.ext
+  funext n
+  refine mapBifunctor.hom_ext fun p q hpq ↦ ?_
+  simp only [comp_f, ι_tensorHom, Functor.ι_projectionFormulaHomologicalComplexIso_inv_f_assoc,
+    Functor.mapHomologicalComplexIdIso_hom_app_f, Functor.mapHomologicalComplex_obj_X,
+    Functor.id_obj, curriedTensor_obj_obj, id_f, tensorHom_id, id_whiskerRight,
+    Iso.app_inv, Functor.isoWhiskerLeft_inv, Functor.whiskerLeft_app,
+    Functor.rightUnitor_inv_app, Functor.prod_obj, Functor.id_map,
+    tensor_obj, Category.id_comp]
+  have h := ι_tensorHom
+    (L₁ := K) ((Functor.mapHomologicalComplexIdIso C c).hom.app K) (𝟙 E) p q n hpq
+  simp only [Functor.mapHomologicalComplexIdIso_hom_app_f, Functor.id_obj,
+    Functor.mapHomologicalComplex_obj_X, id_f, tensorHom_id,
+    id_whiskerRight, Category.id_comp] at h
+  refine (Eq.trans ?_ h).symm
+  -- Cancel the native identity component without unfolding the tensor degree object.
+  exact congrArg (fun f ↦
+    ιTensorObj (((𝟭 C).mapHomologicalComplex c).obj K) E p q n hpq ≫ f)
+    (Category.id_comp _)
 
 end CategoryTheory.Functor
