@@ -134,6 +134,19 @@ theorem lie_quantumMinor (E : Matrix ι ι A) {p q : ι} (u : K) (a b : Fin n �
     intro j _
     by_cases h : p = b j <;> simp [h, P]
 
+/-- When the acting entry's row label is absent from the columns, its commutator with a
+quantum minor has only row replacements. Each replacement is moved to the first row with
+the corresponding sign. -/
+theorem lie_quantumMinor_of_notMem_range (E : Matrix ι ι A) (u : K)
+    (a b : Fin (n + 1) → ι) {r c : ι} (hr : r ∉ Set.range b)
+    (hE : ∀ i j, ⁅E r c, E (a i) (b j)⁆ = if c = a i then E r (b j) else 0) :
+    ⁅E r c, E.quantumMinor u a b⁆ = ∑ i,
+      if c = a i then (-1 : ℤ) ^ i.val • E.quantumMinor u (Fin.cons r (i.removeNth a)) b
+      else 0 := by
+  have hne (j : Fin (n + 1)) : r ≠ b j := fun h ↦ hr ⟨j, h.symm⟩
+  rw [E.lie_quantumMinor u a b (fun i j ↦ by simpa [hne j] using hE i j)]
+  simp [hne, ← Fin.insertNth_removeNth, quantumMinor_insertNth_left]
+
 /-- Diagonal matrix units commute with every principal quantum minor, including the full
 quantum determinant. The principal tuple may repeat indices. -/
 theorem lie_diagonal_quantumMinor_self (E : Matrix ι ι A) {p : ι} (u : K) (a : Fin n → ι)

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.WordFiltration.Ordered
 public import TauCeti.RingTheory.DividedPowers.Filtration
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.MixedBasis
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.MixedBasis.Basic
 
 /-!
 # Conditional integral straightening for mixed PBW monomials

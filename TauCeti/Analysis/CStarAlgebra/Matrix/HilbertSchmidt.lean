@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Matrix.EuclideanCLM
-public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
+public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace.Basic
 public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Basic
 
 /-!

@@ -30,6 +30,8 @@ with all three vertices in `V`, which is Aggarwal's induced-subgraph convention.
 * `TauCeti.boundaryGraph`: the graph on the boundary vertices `∂R` whose edges are the boundary
   edges of `R`.
 * `TauCeti.IsConnectedRegion`: any two vertices of `R` are joined in `regionGraph R`.
+* `TauCeti.latticeToReal`, `TauCeti.TriFace.triangle`: the point of `ℝ²` of a vertex, and the
+  closed triangle of a face, the convex hull of its vertices.
 * `TauCeti.regionUnion`: the union `F(R) ⊆ ℝ²` of the closed triangles of the faces of `R`.
 * `TauCeti.facesOf`: the faces with all three vertices in a set `V`.
 
@@ -106,10 +108,49 @@ def boundaryGraph (R : Set TriFace) : SimpleGraph (boundaryVertices R) :=
 def IsConnectedRegion (R : Set TriFace) : Prop :=
   ∀ u ∈ regionVertices R, ∀ u' ∈ regionVertices R, (regionGraph R).Reachable u u'
 
-/-- The union `F(R) ⊆ ℝ²` of the closed triangles of the faces of a region, the convex hulls of
-their vertices under `ℤ² ⊆ ℝ²`. -/
+/-- The point of `ℝ²` of a vertex of the lattice `ℤ²`. -/
+def latticeToReal (u : ℤ × ℤ) : ℝ × ℝ :=
+  ((u.1 : ℝ), (u.2 : ℝ))
+
+@[simp] theorem latticeToReal_fst (u : ℤ × ℤ) : (latticeToReal u).1 = u.1 := (rfl)
+
+@[simp] theorem latticeToReal_snd (u : ℤ × ℤ) : (latticeToReal u).2 = u.2 := (rfl)
+
+@[simp] theorem latticeToReal_mk (a b : ℤ) : latticeToReal (a, b) = ((a : ℝ), (b : ℝ)) := (rfl)
+
+@[simp] theorem latticeToReal_add (u v : ℤ × ℤ) :
+    latticeToReal (u + v) = latticeToReal u + latticeToReal v := by
+  ext <;> simp
+
+/-- `latticeToReal` intertwines `latticeRot` with the linear map `(x, y) ↦ (-y, x - y)`. -/
+theorem latticeToReal_latticeRot (u : ℤ × ℤ) :
+    latticeToReal (latticeRot u) = (-(u.2 : ℝ), (u.1 : ℝ) - u.2) := by
+  simp
+
+namespace TriFace
+
+/-- The closed triangle of a face: the convex hull of its three vertices in `ℝ²`. -/
+def triangle (f : TriFace) : Set (ℝ × ℝ) :=
+  convexHull ℝ (latticeToReal '' f.vertices)
+
+theorem triangle_def (f : TriFace) :
+    f.triangle = convexHull ℝ (latticeToReal '' f.vertices) :=
+  (rfl)
+
+/-- The vertices of a face, as points of `ℝ²`, lie in its triangle. -/
+theorem latticeToReal_mem_triangle {f : TriFace} {u : ℤ × ℤ} (hu : u ∈ f.vertices) :
+    latticeToReal u ∈ f.triangle :=
+  subset_convexHull ℝ _ (Set.mem_image_of_mem _ hu)
+
+/-- The triangle of a face is convex. -/
+theorem convex_triangle (f : TriFace) : Convex ℝ f.triangle :=
+  convex_convexHull ℝ _
+
+end TriFace
+
+/-- The union `F(R) ⊆ ℝ²` of the closed triangles of the faces of a region. -/
 def regionUnion (R : Set TriFace) : Set (ℝ × ℝ) :=
-  ⋃ f ∈ R, convexHull ℝ ((fun u : ℤ × ℤ => ((u.1 : ℝ), (u.2 : ℝ))) '' f.vertices)
+  ⋃ f ∈ R, f.triangle
 
 /-- The region `Faces(V)` spanned by a set `V` of vertices: the faces with all three vertices in
 `V`. -/
@@ -139,12 +180,10 @@ theorem mem_facesOf {V : Set (ℤ × ℤ)} : f ∈ facesOf V ↔ ∀ u ∈ f.ver
 theorem isConnectedRegion_def : IsConnectedRegion R ↔
     ∀ u ∈ regionVertices R, ∀ u' ∈ regionVertices R, (regionGraph R).Reachable u u' := Iff.rfl
 
-theorem mem_regionUnion {x : ℝ × ℝ} : x ∈ regionUnion R ↔
-    ∃ f ∈ R, x ∈ convexHull ℝ ((fun u : ℤ × ℤ => ((u.1 : ℝ), (u.2 : ℝ))) '' f.vertices) := by
+theorem mem_regionUnion {x : ℝ × ℝ} : x ∈ regionUnion R ↔ ∃ f ∈ R, x ∈ f.triangle := by
   simp only [regionUnion, Set.mem_iUnion, exists_prop]
 
-theorem regionUnion_def (R : Set TriFace) : regionUnion R =
-    ⋃ f ∈ R, convexHull ℝ ((fun u : ℤ × ℤ => ((u.1 : ℝ), (u.2 : ℝ))) '' f.vertices) := (rfl)
+theorem regionUnion_def (R : Set TriFace) : regionUnion R = ⋃ f ∈ R, f.triangle := (rfl)
 
 theorem mem_regionEdges_iff : e ∈ regionEdges R ↔ e.whiteFace ∈ R ∨ e.blackFace ∈ R := by
   simp only [mem_regionEdges, TriFace.mem_edges_iff]
@@ -303,6 +342,14 @@ theorem reachable_of_mem_regionEdges (he : e ∈ regionEdges R) :
     (regionGraph R).Reachable e.v e.target :=
   (adj_of_mem_regionEdges he).reachable
 
+/-- The vertices of a face of a region are joined in its edge graph. -/
+theorem reachable_of_mem_vertices (hf : f ∈ R) (hu : u ∈ f.vertices) (hu' : u' ∈ f.vertices) :
+    (regionGraph R).Reachable u u' := by
+  rcases eq_or_ne u u' with rfl | h
+  · rfl
+  obtain ⟨e, he, hee⟩ := TriFace.exists_mem_edges_endpoints_eq hu hu' h
+  exact (regionGraph_adj.2 ⟨e, mem_regionEdges.2 ⟨f, hf, he⟩, hee⟩).reachable
+
 theorem regionGraph_edgeSet (R : Set TriFace) :
     (regionGraph R).edgeSet = TriEdge.endpoints '' regionEdges R := by
   rw [regionGraph, SimpleGraph.edgeSet_fromEdgeSet, sdiff_eq_left, Set.disjoint_left]
@@ -369,10 +416,7 @@ theorem isConnectedRegion_singleton (f : TriFace) : IsConnectedRegion {f} := by
   rintro u ⟨g, hg, hu⟩ u' ⟨g', hg', hu'⟩
   rw [Set.mem_singleton_iff] at hg hg'
   subst hg hg'
-  by_cases h : u = u'
-  · exact h ▸ SimpleGraph.Reachable.refl _
-  · obtain ⟨e, he, hee⟩ := TriFace.exists_mem_edges_endpoints_eq hu hu' h
-    exact (regionGraph_adj.2 ⟨e, ⟨_, Set.mem_singleton _, he⟩, hee⟩).reachable
+  exact reachable_of_mem_vertices rfl hu hu'
 
 /-- Adding to a connected region a face that shares a vertex with it keeps it connected. -/
 theorem IsConnectedRegion.insert_of_mem_regionVertices (hR : IsConnectedRegion R)
@@ -381,8 +425,7 @@ theorem IsConnectedRegion.insert_of_mem_regionVertices (hR : IsConnectedRegion R
     intro u' hu'
     rw [regionVertices_insert] at hu'
     rcases hu' with hu' | hu'
-    · exact (isConnectedRegion_singleton f u ⟨f, rfl, hu⟩ u' ⟨f, rfl, hu'⟩).mono
-        (regionGraph_mono (Set.singleton_subset_iff.2 (Set.mem_insert _ _)))
+    · exact reachable_of_mem_vertices (Set.mem_insert _ _) hu hu'
     · exact (hR u huR u' hu').mono (regionGraph_mono (Set.subset_insert _ _))
   exact fun v hv v' hv' => (h v hv).symm.trans (h v' hv')
 
@@ -431,10 +474,10 @@ theorem regionUnion_mono (h : R ⊆ S) : regionUnion R ⊆ regionUnion S :=
   Set.biUnion_subset_biUnion_left h
 
 /-- The vertices of `R`, as points of `ℝ²`, lie in `F(R)`. -/
-theorem mk_mem_regionUnion (hu : u ∈ regionVertices R) :
-    ((u.1 : ℝ), (u.2 : ℝ)) ∈ regionUnion R := by
+theorem latticeToReal_mem_regionUnion (hu : u ∈ regionVertices R) :
+    latticeToReal u ∈ regionUnion R := by
   obtain ⟨f, hf, hu⟩ := hu
-  exact Set.mem_biUnion hf (subset_convexHull ℝ _ ⟨u, hu, rfl⟩)
+  exact Set.mem_biUnion hf (TriFace.latticeToReal_mem_triangle hu)
 
 /-! ### Counting edges of a finite region -/
 
@@ -666,14 +709,14 @@ private theorem isConnectedRegion_image : IsConnectedRegion (φ '' R) ↔ IsConn
 
 include hφ in
 private theorem regionUnion_image (L : (ℝ × ℝ) →ᵃ[ℝ] ℝ × ℝ)
-    (hL : ∀ u : ℤ × ℤ, L ((u.1 : ℝ), (u.2 : ℝ)) = (((χ u).1 : ℝ), ((χ u).2 : ℝ))) :
+    (hL : ∀ u : ℤ × ℤ, L (latticeToReal u) = latticeToReal (χ u)) :
     regionUnion (φ '' R) = L '' regionUnion R := by
   have hv (f : TriFace) : ((φ f).vertices : Set (ℤ × ℤ)) = χ '' f.vertices := by
     ext u
     obtain ⟨u, rfl⟩ := χ.surjective u
     simp [hφ]
-  simp only [regionUnion_def, Set.biUnion_image, Set.image_iUnion₂, AffineMap.image_convexHull,
-    hv, Set.image_image, hL]
+  simp only [regionUnion_def, TriFace.triangle_def, Set.biUnion_image, Set.image_iUnion₂,
+    AffineMap.image_convexHull, hv, Set.image_image, hL]
 
 end Transfer
 
@@ -737,12 +780,17 @@ theorem boundaryGraph_adj_vadd {R : Set TriFace} {p p' : boundaryVertices R}
 
 /-- Translating a region by `w` translates `F(R)` by `w ∈ ℤ² ⊆ ℝ²`. -/
 @[simp] theorem regionUnion_vadd (R : Set TriFace) :
-    regionUnion (w +ᵥ R) = ((w.1 : ℝ), (w.2 : ℝ)) +ᵥ regionUnion R := by
+    regionUnion (w +ᵥ R) = latticeToReal w +ᵥ regionUnion R := by
   refine (regionUnion_image (AddAction.toPerm w) (AddAction.toPerm w) (vadd_mem_vertices_vadd w)
-    (AffineEquiv.constVAdd ℝ (ℝ × ℝ) ((w.1 : ℝ), (w.2 : ℝ))).toAffineMap
+    (AffineEquiv.constVAdd ℝ (ℝ × ℝ) (latticeToReal w)).toAffineMap
     (fun u => by simp [vadd_eq_add])).trans ?_
   rw [← Set.image_vadd]
   exact congrArg (· '' _) (funext fun p => by simp)
+
+/-- Translating a face by `w` translates its triangle by `w ∈ ℤ² ⊆ ℝ²`. -/
+@[simp] theorem TriFace.triangle_vadd (f : TriFace) :
+    (w +ᵥ f).triangle = latticeToReal w +ᵥ f.triangle := by
+  simpa [regionUnion_def] using regionUnion_vadd w {f}
 
 end Translation
 
@@ -804,6 +852,11 @@ theorem facesOf_rot (V : Set (ℤ × ℤ)) : facesOf (latticeRot '' V) = TriFace
   (regionUnion_image (χ := latticeRot.toEquiv) _ latticeRot_mem_vertices_rot
     ((-LinearMap.snd ℝ ℝ ℝ).prod (LinearMap.fst ℝ ℝ ℝ - LinearMap.snd ℝ ℝ ℝ)).toAffineMap
     (fun u => by simp)).trans (congrArg (· '' _) (funext fun p => by simp))
+
+/-- The rotation `ρ` acts on the triangle of a face by the linear map `(x, y) ↦ (-y, x - y)`. -/
+@[simp] theorem TriFace.triangle_rot (f : TriFace) :
+    (TriFace.rot f).triangle = (fun p : ℝ × ℝ => (-p.2, p.1 - p.2)) '' f.triangle := by
+  simpa [regionUnion_def] using regionUnion_rot {f}
 
 end Rotation
 
