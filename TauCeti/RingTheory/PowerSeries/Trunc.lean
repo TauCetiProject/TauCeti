@@ -67,6 +67,8 @@ This file collects facts used to compare power series to a finite order `m`:
   the truncation below `n` evaluates like any polynomial with the same coefficients below `n`.
 * `PowerSeries.coeff_eval_trunc`: low coefficients of `Q.eval (trunc N f)` agree with those of
   `Polynomial.aeval f Q`.
+* `PowerSeries.coeff_eq_of_eq_trunc_add_X_pow_mul`: coefficient formula for a truncation-plus-tail
+  decomposition `f = trunc N f + X ^ N * (C g₀ + u)`.
 * `PowerSeries.exists_mul_toPowerSeries_shift`: shifting the starting index of a generating series
   preserves polynomiality after right multiplication by a fixed polynomial.
 -/
@@ -187,6 +189,21 @@ theorem constantCoeff_val_zpow (u : R⟦X⟧ˣ) (k : ℤ) :
 theorem eval_trunc (n : ℕ) (f : R⟦X⟧) (x : R) :
     (trunc n f).eval x = ∑ i ∈ Finset.range n, coeff i f * x ^ i := by
   simp only [Polynomial.eval, eval₂_trunc_eq_sum_range, RingHom.id_apply]
+
+/-- Coefficient formula for `f = (trunc N f : R⟦X⟧) + X ^ N * (C g₀ + u)` with `coeff 0 u = 0`. -/
+theorem coeff_eq_of_eq_trunc_add_X_pow_mul {f u : R⟦X⟧} {N : ℕ} {g₀ : R}
+    (hfg : f = (trunc N f : R⟦X⟧) + X ^ N * (C g₀ + u)) (hu₀ : coeff 0 u = 0) (n : ℕ) :
+    coeff n f = if n < N then (trunc N f).coeff n else if n = N then g₀ else coeff (n - N) u := by
+  conv_lhs => rw [hfg]
+  rw [map_add, Polynomial.coeff_coe, coeff_X_pow_mul']
+  by_cases hlt : n < N
+  · rw [ite_eq_left hlt, ite_eq_right (not_le.mpr hlt), add_zero]
+  · have hle : N ≤ n := not_lt.mp hlt
+    rw [ite_eq_right hlt, coeff_trunc, ite_eq_right hlt, zero_add, ite_eq_left hle,
+      map_add, coeff_C]
+    rcases eq_or_ne n N with rfl | hne
+    · simp [hu₀]
+    · rw [ite_eq_right hne, ite_eq_right (by omega), zero_add]
 
 end Semiring
 
@@ -383,24 +400,19 @@ theorem mk_span_X_pow_eq_sum (n : ℕ) (p : R⟦X⟧) :
 `i < N`. -/
 theorem coeff_eval_trunc (Q : Polynomial (Polynomial R)) (f : R⟦X⟧) {N i : ℕ} (hi : i < N) :
     (Q.eval (trunc N f)).coeff i = coeff i (Polynomial.aeval f Q) := by
-  let b : Polynomial R := trunc N f
-  let g : R⟦X⟧ := mk fun n ↦ coeff (n + N) f
-  have hfb : X ^ N ∣ f - (b : R⟦X⟧) :=
-    ⟨g, by rw [PowerSeries.eq_X_pow_mul_shift_add_trunc N f]; ring⟩
-  obtain ⟨w, hw⟩ :=
-    Polynomial.sub_dvd_eval_sub f (b : R⟦X⟧) (Q.map (algebraMap (Polynomial R) R⟦X⟧))
-  obtain ⟨v, hv⟩ := hfb.trans ⟨w, by
-    simpa only [Polynomial.aeval_def, Polynomial.eval_map] using hw⟩
-  have hQb_eval : ((Q.eval b : Polynomial R) : R⟦X⟧) = Polynomial.aeval (b : R⟦X⟧) Q := by
-    have hring : Polynomial.coeToPowerSeries.ringHom.comp (RingHom.id (Polynomial R)) =
-        algebraMap (Polynomial R) R⟦X⟧ :=
-      RingHom.ext fun p ↦ by simp [PowerSeries.algebraMap_apply']
-    rw [Polynomial.eval, ← Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.hom_eval₂,
-      hring, Polynomial.coeToPowerSeries.ringHom_apply, ← Polynomial.aeval_def]
-  have hci := congrArg (coeff i) hv
-  rw [map_sub, coeff_X_pow_mul', ite_eq_right (not_le.mpr hi), sub_eq_zero,
-    ← Polynomial.aeval_def, ← Polynomial.aeval_def, ← hQb_eval, Polynomial.coeff_coe] at hci
-  exact hci.symm
+  have hdvd : X ^ N ∣ Polynomial.aeval f Q - ((Q.eval (trunc N f) : Polynomial R) : R⟦X⟧) := by
+    refine (X_pow_dvd_sub_trunc N f).trans ?_
+    have hsub := Polynomial.sub_dvd_eval_sub f (trunc N f : R⟦X⟧)
+      (Q.map (algebraMap (Polynomial R) R⟦X⟧))
+    have hQb : ((Q.eval (trunc N f) : Polynomial R) : R⟦X⟧) =
+        Polynomial.aeval (trunc N f : R⟦X⟧) Q := by
+      have heval :=
+        (Polynomial.eval₂_hom (algebraMap (Polynomial R) R⟦X⟧) (trunc N f) (p := Q)).symm
+      simpa [PowerSeries.algebraMap_apply', Polynomial.aeval_def] using heval
+    simpa only [Polynomial.eval_map, ← Polynomial.aeval_def, ← hQb] using hsub
+  have h0 := X_pow_dvd_iff.mp hdvd i hi
+  rw [map_sub, Polynomial.coeff_coe, sub_eq_zero] at h0
+  exact h0.symm
 
 end CommRing
 

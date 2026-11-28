@@ -20,6 +20,10 @@ If `p` has smaller degree than `q`, then the largest degree at which the coeffic
 `q` differ is the degree of `q`, where `p` has coefficient `0`.
 `Polynomial.exists_coeff_iff_of_degree_lt` records this in the form in which it decides a
 lexicographic comparison of coefficient sequences, starting from the top degree.
+
+For a bivariate polynomial `P : R[X][X]`, every coefficient `(P.coeff j).coeff i` is either zero
+or lies in the finite union `P.support.biUnion fun j ↦ (P.coeff j).coeffs`
+(`Polynomial.coeff_eq_zero_or_mem_biUnion_coeffs`).
 -/
 
 public section
@@ -60,5 +64,17 @@ theorem exists_coeff_iff_of_degree_lt {R : Type*} [Semiring R] {r : R → R → 
   · rwa [hp, coeff_natDegree] at hpqi
   · rw [hpq i hgt] at hpqi
     exact absurd hpqi (hr _)
+
+/-- Every coefficient `(P.coeff j).coeff i` of a bivariate polynomial `P : R[X][X]` is either `0`
+or belongs to the finite set `P.support.biUnion fun j ↦ (P.coeff j).coeffs`. -/
+theorem coeff_eq_zero_or_mem_biUnion_coeffs {R : Type*} [Semiring R] [DecidableEq R]
+    (P : R[X][X]) (j i : ℕ) :
+    (P.coeff j).coeff i = 0 ∨
+      (P.coeff j).coeff i ∈ P.support.biUnion fun j ↦ (P.coeff j).coeffs := by
+  by_cases hj : j ∈ P.support
+  · by_cases hi : (P.coeff j).coeff i = 0
+    · exact Or.inl hi
+    · exact Or.inr (Finset.mem_biUnion.mpr ⟨j, hj, Polynomial.coeff_mem_coeffs hi⟩)
+  · simp [Polynomial.notMem_support_iff.mp hj]
 
 end Polynomial

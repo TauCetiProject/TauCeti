@@ -13,6 +13,7 @@ import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.FieldTheory.Separable
 import Mathlib.RingTheory.Algebraic.Integral
 import Mathlib.RingTheory.Localization.Integral
+import TauCeti.Algebra.Polynomial.Coeff.Basic
 import TauCeti.RingTheory.Algebraic.Denominator
 import TauCeti.RingTheory.LaurentSeries.Basic
 import TauCeti.RingTheory.PowerSeries.Basic
@@ -116,37 +117,44 @@ end PowerSeries
 
 section Helpers
 
-/-- Coefficient divisibility for the shifted Taylor polynomial `T = (P.taylor b)(X ^ N * Y)`:
-setting `N = s + 1` where `s = order (P'(f))` makes `X ^ (N + s)` divide `T.coeff 1` and
-`X ^ (N + s + 1)` divide `T.coeff k` for `k ≥ 2`. -/
+/-- Coefficient divisibility and evaluation properties for the shifted Taylor polynomial
+`T = (P.taylor (trunc N f))(X ^ N * Y)` where `N = s + 1` and `s = order (P'(f))`. -/
 private theorem taylor_comp_X_pow_dvd {K : Type*} [Field K] {f : K⟦X⟧} {P : K[X][X]}
     (hf : Polynomial.aeval f P = 0) (hfd : Polynomial.aeval f P.derivative ≠ 0) :
-    let s : ℕ := (Polynomial.aeval f P.derivative).order.toNat
-    let N : ℕ := s + 1
-    let T : K[X][X] := (P.taylor (trunc N f)).comp (Polynomial.C (Polynomial.X ^ N) * Polynomial.X)
-    (Polynomial.X ^ (N + s) ∣ T.coeff 1) ∧
+    ∃ (s : ℕ) (T : K[X][X]),
+      let N : ℕ := s + 1
+      s = (Polynomial.aeval f P.derivative).order.toNat ∧
+      Polynomial.aeval (mk fun n ↦ coeff (n + N) f) T = 0 ∧
+      (T.coeff 1).coeff (N + s) = coeff s (Polynomial.aeval f P.derivative) ∧
       (∀ {k : ℕ}, 2 ≤ k → Polynomial.X ^ (N + s + 1) ∣ T.coeff k) ∧
       (∀ k, Polynomial.X ^ (N + s) ∣ T.coeff k) := by
-  intro s N T
+  let s : ℕ := (Polynomial.aeval f P.derivative).order.toNat
+  let N : ℕ := s + 1
   let b : K[X] := trunc N f
   let g : K⟦X⟧ := mk fun n ↦ coeff (n + N) f
+  let T : K[X][X] := (P.taylor b).comp (Polynomial.C (Polynomial.X ^ N) * Polynomial.X)
   have hT_eval : Polynomial.aeval g T = 0 := by
     dsimp [T, b, g]
     rw [aeval_taylor_comp_X_pow_mul, add_comm, ← PowerSeries.eq_X_pow_mul_shift_add_trunc N f, hf]
   have hT_coeff (k : ℕ) : T.coeff k = (P.taylor b).coeff k * Polynomial.X ^ (N * k) := by
     dsimp [T, b]; rw [Polynomial.comp_C_mul_X_coeff, pow_mul]
+  have hT1_eq : T.coeff 1 = Polynomial.eval b P.derivative * Polynomial.X ^ N := by
+    rw [hT_coeff 1, mul_one, Polynomial.taylor_coeff_one]
   have hT1_dvd : Polynomial.X ^ (N + s) ∣ T.coeff 1 := by
-    rw [hT_coeff 1, mul_one, Polynomial.taylor_coeff_one, pow_add, mul_comm (Polynomial.X ^ N)]
+    rw [hT1_eq, pow_add, mul_comm (Polynomial.X ^ N)]
     refine mul_dvd_mul_right (Polynomial.X_pow_dvd_iff.mpr fun i hi ↦ ?_) _
     rw [coeff_eval_trunc P.derivative f (hi.trans (Nat.lt_succ_self s))]
     exact coeff_of_lt_order i (by
       rw [← ENat.natCast_toNat_eq_self.mpr (order_eq_top.not.mpr hfd)]
       exact Nat.cast_lt.mpr hi)
+  have hT1_coeff : (T.coeff 1).coeff (N + s) = coeff s (Polynomial.aeval f P.derivative) := by
+    rw [hT1_eq, mul_comm, Polynomial.coeff_X_pow_mul', ite_eq_left (Nat.le_add_right N s),
+      add_comm N s, Nat.add_sub_cancel, coeff_eval_trunc P.derivative f (Nat.lt_succ_self s)]
   have hT_ge_dvd {k : ℕ} (hk : 2 ≤ k) : Polynomial.X ^ (N + s + 1) ∣ T.coeff k := by
     rw [hT_coeff k]
     have hNs : N + s + 1 ≤ N * k := by dsimp [N]; nlinarith
     exact dvd_mul_of_dvd_right (pow_dvd_pow Polynomial.X hNs) _
-  refine ⟨hT1_dvd, fun hk ↦ hT_ge_dvd hk, fun k ↦ ?_⟩
+  refine ⟨s, T, rfl, hT_eval, hT1_coeff, fun hk ↦ hT_ge_dvd hk, fun k ↦ ?_⟩
   rcases lt_trichotomy k 1 with hk0 | rfl | hk2
   · rw [Nat.lt_one_iff.mp hk0]
     exact X_pow_dvd_coeff_zero_of_aeval_eq_zero hT_eval fun j hj ↦ by
@@ -164,16 +172,11 @@ private theorem exists_div_X_pow_eq_zero_of_aeval_eq_zero {K : Type*} [Field K] 
       1 ≤ N ∧ f = (trunc N f : K⟦X⟧) + X ^ N * mk (fun n ↦ coeff (n + N) f) ∧
         Polynomial.aeval (mk fun n ↦ coeff (n + N) f) Q = 0 ∧
         (Q.coeff 1).coeff 0 ≠ 0 ∧ ∀ k, 2 ≤ k → (Q.coeff k).coeff 0 = 0 := by
-  let s : ℕ := (Polynomial.aeval f P.derivative).order.toNat
+  obtain ⟨s, T, hs, hT_eval, hT1_coeff, hT_ge_dvd, hTdvd⟩ := taylor_comp_X_pow_dvd hf hfd
   let N : ℕ := s + 1
-  let b : K[X] := trunc N f
   let g : K⟦X⟧ := mk fun n ↦ coeff (n + N) f
-  have hfg : f = (b : K⟦X⟧) + X ^ N * g := by
+  have hfg : f = (trunc N f : K⟦X⟧) + X ^ N * g := by
     simpa only [add_comm] using PowerSeries.eq_X_pow_mul_shift_add_trunc N f
-  let T : K[X][X] := (P.taylor b).comp (Polynomial.C (Polynomial.X ^ N) * Polynomial.X)
-  have hT_eval : Polynomial.aeval g T = 0 := by
-    dsimp [T]; rw [aeval_taylor_comp_X_pow_mul, ← hfg, hf]
-  obtain ⟨-, hT_ge_dvd, hTdvd⟩ := taylor_comp_X_pow_dvd hf hfd
   obtain ⟨Q, hTQ⟩ := (Polynomial.C_dvd_iff_dvd_coeff (Polynomial.X ^ (N + s)) T).mpr hTdvd
   have hQcoeff (k : ℕ) : Polynomial.X ^ (N + s) * Q.coeff k = T.coeff k := by
     rw [← Polynomial.coeff_C_mul, ← hTQ]
@@ -185,11 +188,7 @@ private theorem exists_div_X_pow_eq_zero_of_aeval_eq_zero {K : Type*} [Field K] 
     exact (mul_eq_zero.mp hmul).resolve_left (pow_ne_zero _ PowerSeries.X_ne_zero)
   refine ⟨N, Q, by omega, hfg, hQ_eval, ?_, ?_⟩
   · have h1 := congrArg (fun p : K[X] ↦ p.coeff (N + s)) (hQcoeff 1)
-    rw [Polynomial.coeff_X_pow_mul', ite_eq_left le_rfl, Nat.sub_self] at h1
-    dsimp [T] at h1
-    rw [Polynomial.comp_C_mul_X_coeff, pow_one, Polynomial.taylor_coeff_one, mul_comm,
-      Polynomial.coeff_X_pow_mul', ite_eq_left (Nat.le_add_right N s), add_comm N s,
-      Nat.add_sub_cancel, coeff_eval_trunc P.derivative f (Nat.lt_succ_self s)] at h1
+    rw [Polynomial.coeff_X_pow_mul', ite_eq_left le_rfl, Nat.sub_self, hT1_coeff, hs] at h1
     exact h1 ▸ coeff_order hfd
   · intro k hk
     obtain ⟨q, hq⟩ := hT_ge_dvd hk
@@ -291,32 +290,27 @@ private theorem exists_tail_eq_X_mul_aeval_of_aeval_eq_zero {K : Type*} [Field K
   refine ⟨N, constantCoeff g, g - C (constantCoeff g), R, hN, ?_, by simp, huR⟩
   simpa [sub_add_cancel] using hfg
 
-/-- Every coefficient `(R.coeff j).coeff i` of a bivariate polynomial `R ∈ K[X][Y]` is either `0`
-or belongs to the finite set `R.support.biUnion fun j ↦ (R.coeff j).coeffs`. -/
-private lemma coeff_eq_zero_or_mem_biUnion_coeffs {K : Type*} [Semiring K] [DecidableEq K]
-    (R : K[X][X]) (j i : ℕ) : (R.coeff j).coeff i = 0 ∨
-      (R.coeff j).coeff i ∈ R.support.biUnion fun j ↦ (R.coeff j).coeffs := by
-  by_cases hj : j ∈ R.support
-  · by_cases hi : (R.coeff j).coeff i = 0
-    · exact Or.inl hi
-    · exact Or.inr (Finset.mem_biUnion.mpr ⟨j, hj, Polynomial.coeff_mem_coeffs hi⟩)
-  · simp [Polynomial.notMem_support_iff.mp hj]
+/-- Finite set of coefficients for the tail reduction `f = b + X ^ N * (C g₀ + u)` with
+`u = X * R(X, u)`, including `0` so all truncation and recurrence coefficients lie in the set. -/
+private noncomputable def tailCoeffSet {K : Type*} [Semiring K] [DecidableEq K] (g₀ : K)
+    (b : K[X]) (R : K[X][X]) : Finset K :=
+  {0, g₀} ∪ b.coeffs ∪ (R.support.biUnion fun j ↦ (R.coeff j).coeffs)
 
-/-- Coefficient formula for `f = (trunc N f : K⟦X⟧) + X ^ N * (C g₀ + u)` with `coeff 0 u = 0`. -/
-private lemma coeff_eq_of_eq_trunc_add_X_pow_mul {K : Type*} [CommRing K] {f u : K⟦X⟧}
-    {N : ℕ} {g₀ : K} (hfg : f = (trunc N f : K⟦X⟧) + X ^ N * (C g₀ + u))
-    (hu₀ : coeff 0 u = 0) (n : ℕ) :
-    coeff n f = if n < N then (trunc N f).coeff n else if n = N then g₀ else coeff (n - N) u := by
-  conv_lhs => rw [hfg]
-  rw [map_add, Polynomial.coeff_coe, coeff_X_pow_mul']
-  by_cases hlt : n < N
-  · rw [ite_eq_left hlt, ite_eq_right (not_le.mpr hlt), add_zero]
-  · have hle : N ≤ n := not_lt.mp hlt
-    rw [ite_eq_right hlt, coeff_trunc, ite_eq_right hlt, zero_add, ite_eq_left hle,
-      map_add, coeff_C]
-    rcases eq_or_ne n N with rfl | hne
-    · simp [hu₀]
-    · rw [ite_eq_right hne, ite_eq_right (by omega), zero_add]
+private lemma mem_tailCoeffSet_self {K : Type*} [Semiring K] [DecidableEq K] (g₀ : K) (b : K[X])
+    (R : K[X][X]) : g₀ ∈ tailCoeffSet g₀ b R := by
+  simp [tailCoeffSet]
+
+private lemma coeff_mem_tailCoeffSet {K : Type*} [Semiring K] [DecidableEq K] (g₀ : K)
+    (b : K[X]) (R : K[X][X]) (k : ℕ) : b.coeff k ∈ tailCoeffSet g₀ b R := by
+  by_cases hk : b.coeff k = 0
+  · simp [tailCoeffSet, hk]
+  · exact Finset.mem_union_left _ (Finset.mem_union_right _ (Polynomial.coeff_mem_coeffs hk))
+
+private lemma coeff_coeff_mem_tailCoeffSet {K : Type*} [Semiring K] [DecidableEq K] (g₀ : K)
+    (b : K[X]) (R : K[X][X]) (j i : ℕ) : (R.coeff j).coeff i ∈ tailCoeffSet g₀ b R := by
+  rcases Polynomial.coeff_eq_zero_or_mem_biUnion_coeffs R j i with h0 | hmem
+  · simp [tailCoeffSet, h0]
+  · exact Finset.mem_union_right _ hmem
 
 end Helpers
 
@@ -334,28 +328,20 @@ theorem exists_finiteDimensional_intermediateField_of_isAlgebraic {F K : Type*} 
   obtain ⟨N, g₀, u, R, -, hfg, hu₀, huR⟩ :=
     exists_tail_eq_X_mul_aeval_of_aeval_eq_zero hP hPd
   let b : K[X] := trunc N f
-  let T : Finset K := {g₀} ∪ b.coeffs ∪ (R.support.biUnion fun j ↦ (R.coeff j).coeffs)
+  let T : Finset K := tailCoeffSet g₀ b R
   have hTint : ∀ x ∈ (T : Set K), IsIntegral F x := fun x _ ↦
     (Algebra.IsAlgebraic.isAlgebraic x).isIntegral
   let E : IntermediateField F K := IntermediateField.adjoin F (T : Set K)
   have hfd : FiniteDimensional F E := IntermediateField.finiteDimensional_adjoin hTint
   have hmemT {x : K} (hx : x ∈ T) : x ∈ E := IntermediateField.subset_adjoin F (T : Set K) hx
-  have hg₀E : g₀ ∈ E := hmemT (by simp [T])
-  have hbE (k : ℕ) : b.coeff k ∈ E := by
-    by_cases hk : b.coeff k = 0
-    · exact hk ▸ E.zero_mem
-    · exact hmemT (Finset.mem_union_left _ (Finset.mem_union_right _
-        (Polynomial.coeff_mem_coeffs hk)))
-  have hRE (j i : ℕ) : (R.coeff j).coeff i ∈ E := by
-    rcases coeff_eq_zero_or_mem_biUnion_coeffs R j i with h0 | hmem
-    · exact h0 ▸ E.zero_mem
-    · exact hmemT (Finset.mem_union_right _ hmem)
   have huE (n : ℕ) : coeff n u ∈ E :=
-    coeff_mem_subring_of_eq_X_mul_aeval (R := E.toSubring) huR hRE n
+    coeff_mem_subring_of_eq_X_mul_aeval (R := E.toSubring) huR
+      (fun j i ↦ hmemT (coeff_coeff_mem_tailCoeffSet g₀ b R j i)) n
   refine ⟨E, hfd, fun n ↦ ?_⟩
   rw [coeff_eq_of_eq_trunc_add_X_pow_mul hfg hu₀ n]
   split_ifs
-  exacts [hbE n, hg₀E, huE (n - N)]
+  exacts [hmemT (coeff_mem_tailCoeffSet g₀ b R n),
+    hmemT (mem_tailCoeffSet_self g₀ b R), huE (n - N)]
 
 /-- If `K / ℚ` is an algebraic extension and `f ∈ K⟦X⟧` is algebraic over `K(X)`, then all
 coefficients of `f` lie in a single intermediate number field of `K`. -/
@@ -381,15 +367,11 @@ theorem exists_pos_nat_sub_C_mem_scaledIntegralSeries {K : Type*} [Field K] [Cha
   obtain ⟨P, hP, hPd⟩ := exists_aeval_eq_zero_aeval_derivative_ne_zero_of_isAlgebraic hf
   obtain ⟨N, g₀, u, R, hN, hfg, hu₀, huR⟩ :=
     exists_tail_eq_X_mul_aeval_of_aeval_eq_zero hP hPd
-  let T : Finset K :=
-    {g₀} ∪ (trunc N f).coeffs ∪ (R.support.biUnion fun j ↦ (R.coeff j).coeffs)
+  let T : Finset K := tailCoeffSet g₀ (trunc N f) R
   obtain ⟨M, hMpos, hM_int⟩ :=
     Algebra.exists_pos_nat_mul_isIntegral T (fun x _ ↦ Algebra.IsAlgebraic.isAlgebraic x)
-  have hRM (j i : ℕ) : IsIntegral ℤ ((M : K) * (R.coeff j).coeff i) := by
-    rcases coeff_eq_zero_or_mem_biUnion_coeffs R j i with h0 | hmem
-    · simp [h0, isIntegral_zero]
-    · exact hM_int _ (Finset.mem_union_right _ hmem)
-  have huM_int := isIntegral_pow_mul_coeff_of_eq_X_mul_aeval huR M hRM
+  have huM_int := isIntegral_pow_mul_coeff_of_eq_X_mul_aeval huR M
+    (fun j i ↦ hM_int _ (coeff_coeff_mem_tailCoeffSet g₀ (trunc N f) R j i))
   refine ⟨M, hMpos, mem_scaledIntegralSeries_integralClosure_iff.mpr fun n ↦ ?_⟩
   rcases eq_or_ne n 0 with rfl | hn0
   · simp [isIntegral_zero]
@@ -397,14 +379,11 @@ theorem exists_pos_nat_sub_C_mem_scaledIntegralSeries {K : Type*} [Field K] [Cha
   split_ifs with hlt hEq
   · obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero hn0
     rw [hk, pow_succ, mul_assoc]
-    by_cases h0 : (trunc N f).coeff k.succ = 0
-    · simp [h0, isIntegral_zero]
-    · exact ((isIntegral_natCast M).pow k).mul
-        (hM_int _ (Finset.mem_union_left _ (Finset.mem_union_right _
-          (Polynomial.coeff_mem_coeffs h0))))
+    exact ((isIntegral_natCast M).pow k).mul
+      (hM_int _ (coeff_mem_tailCoeffSet g₀ (trunc N f) R k.succ))
   · obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : N ≠ 0)
     rw [hEq, hk, pow_succ, mul_assoc]
-    exact ((isIntegral_natCast M).pow k).mul (hM_int g₀ (by simp [T]))
+    exact ((isIntegral_natCast M).pow k).mul (hM_int _ (mem_tailCoeffSet_self g₀ (trunc N f) R))
   · have hpow : (M : K) ^ n = (M : K) ^ N * (M : K) ^ (n - N) := by
       rw [← pow_add, Nat.add_sub_of_le (le_of_not_gt hlt)]
     rw [hpow, mul_assoc]

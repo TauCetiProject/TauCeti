@@ -45,6 +45,7 @@ namespace RatFunc
 variable {K : Type*} [Field K]
 
 /-- The constant rational function `RatFunc.C c` embeds into `K⸨X⸩` as `HahnSeries.C c`. -/
+@[simp]
 theorem coe_C (c : K) : algebraMap (RatFunc K) K⸨X⸩ (C c) = HahnSeries.C c := by
   rw [← RatFunc.algebraMap_C, ← RatFunc.coePolynomial_eq_algebraMap, ← RatFunc.coe_coe,
     Polynomial.coe_C, PowerSeries.coe_C]
