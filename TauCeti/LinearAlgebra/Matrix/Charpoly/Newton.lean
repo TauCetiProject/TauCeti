@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.NewtonPolynomial
-import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.LinearAlgebra.Matrix.MvPolynomial
 import TauCeti.Algebra.Regular.NatCast
 import TauCeti.LinearAlgebra.Charpoly.Nilpotent
@@ -135,12 +135,14 @@ an algebraically closed field, in which the characteristic polynomial of the uni
 splits. Identities in the coefficients of `det (1 - X A)` and the traces of the powers of `A`
 proved in the split case pull back along this embedding, then specialise to every matrix along
 `Xᵢⱼ ↦ Aᵢⱼ` (`Matrix.mvPolynomialX_map_eval₂`). -/
-private noncomputable def universalEmbedding (n : Type*) :
+noncomputable def universalEmbedding (n : Type*) :
     MvPolynomial (n × n) ℤ →+* AlgebraicClosure (FractionRing (MvPolynomial (n × n) ℤ)) :=
   (algebraMap (FractionRing (MvPolynomial (n × n) ℤ)) _).comp
     (algebraMap (MvPolynomial (n × n) ℤ) (FractionRing (MvPolynomial (n × n) ℤ)))
 
-private theorem universalEmbedding_injective (n : Type*) :
+/-- The embedding `Matrix.universalEmbedding` of `ℤ[Xᵢⱼ]` into an algebraically closed field is
+injective. -/
+theorem universalEmbedding_injective (n : Type*) :
     Function.Injective (universalEmbedding n) :=
   (algebraMap (FractionRing (MvPolynomial (n × n) ℤ)) _).injective.comp
     (IsFractionRing.injective _ _)
