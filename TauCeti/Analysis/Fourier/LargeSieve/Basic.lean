@@ -256,42 +256,9 @@ theorem norm_inner_taperedFourierVec_le (N L : ℕ) {x y : ℝ}
   · simp
   have hsin_pos : 0 < Real.sin (Real.pi * (x - y)) ^ 2 := sq_pos_of_ne_zero hxy
   have hL_pos : (0 : ℝ) < (L : ℝ) := Nat.cast_pos.mpr hL
-  have hnorm : ∀ m : ℤ,
-      ‖fourier (T := (1 : ℝ)) m ((x - y : ℝ) : UnitAddCircle) - 1‖ =
-        2 * |Real.sin (Real.pi * (m : ℝ) * (x - y))| := by
-    intro m
-    have hexp : fourier (T := (1 : ℝ)) m ((x - y : ℝ) : UnitAddCircle) =
-        Complex.exp (Complex.I * ((2 * (Real.pi * (m : ℝ) * (x - y)) : ℝ) : ℂ)) := by
-      rw [fourier_coe_apply]
-      congr 1; push_cast; ring
-    rw [hexp, Complex.norm_exp_I_mul_ofReal_sub_one, Real.norm_eq_abs,
-      mul_div_cancel_left₀ _ two_ne_zero, abs_mul, abs_two]
-  have hfejer : ∀ M : ℕ,
-      (M : ℝ) * fejerKernel M ((x - y : ℝ) : UnitAddCircle) =
-        (Real.sin (Real.pi * (M : ℝ) * (x - y)) / Real.sin (Real.pi * (x - y))) ^ 2 := by
-    intro M
-    rcases Nat.eq_zero_or_pos M with rfl | hM
-    · simp
-    have hmul := fejerKernel_mul_norm_sq (T := (1 : ℝ)) M ((x - y : ℝ) : UnitAddCircle)
-    have hMne : (M : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hM.ne'
-    have h1 := hnorm 1
-    have hMnorm := hnorm M
-    simp only [Int.cast_one, mul_one, Int.cast_natCast] at h1 hMnorm
-    rw [h1, hMnorm, mul_pow, mul_pow, sq_abs, sq_abs] at hmul
-    have hmul' : (M : ℝ) * fejerKernel M ((x - y : ℝ) : UnitAddCircle) *
-        (4 * Real.sin (Real.pi * (x - y)) ^ 2) =
-        4 * Real.sin (Real.pi * (M : ℝ) * (x - y)) ^ 2 := by
-      calc
-        (M : ℝ) * fejerKernel M ((x - y : ℝ) : UnitAddCircle) *
-            (4 * Real.sin (Real.pi * (x - y)) ^ 2)
-            = (M : ℝ) * (fejerKernel M ((x - y : ℝ) : UnitAddCircle) *
-                (2 ^ 2 * Real.sin (Real.pi * (x - y)) ^ 2)) := by ring
-        _ = (M : ℝ) * ((M : ℝ)⁻¹ * (2 ^ 2 * Real.sin (Real.pi * (M : ℝ) * (x - y)) ^ 2)) := by
-              rw [hmul]
-        _ = 4 * Real.sin (Real.pi * (M : ℝ) * (x - y)) ^ 2 := by
-              rw [← mul_assoc, mul_inv_cancel₀ hMne]; ring
-    rw [div_pow, eq_div_iff hsin_pos.ne']
-    linarith
+  have hfejer (M : ℕ) : (M : ℝ) * fejerKernel M ((x - y : ℝ) : UnitAddCircle) =
+      (Real.sin (Real.pi * (M : ℝ) * (x - y)) / Real.sin (Real.pi * (x - y))) ^ 2 := by
+    simpa only [div_one] using natCast_mul_fejerKernel_coe (T := (1 : ℝ)) M (by simpa using hxy)
   rw [inner_taperedFourierVec, Complex.norm_real, Real.norm_eq_abs, hfejer (N + L), hfejer N]
   have hrew :
       ((Real.sin (Real.pi * ((N + L : ℕ) : ℝ) * (x - y)) / Real.sin (Real.pi * (x - y))) ^ 2 -

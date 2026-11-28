@@ -88,6 +88,42 @@ theorem fejerKernel_mul_norm_sq (N : ℕ) (x : AddCircle T) :
   simp only [fejerKernel_def, ← fourier_one_pow_apply]
   rw [mul_assoc, hg]
 
+/-- Away from zeros of `sin (π * t / T)`, `(M : ℝ) * fejerKernel M (t : AddCircle T)` equals
+`(sin (π * M * t / T) / sin (π * t / T)) ^ 2`. -/
+theorem natCast_mul_fejerKernel_coe (M : ℕ) {t : ℝ} (ht : Real.sin (Real.pi * t / T) ≠ 0) :
+    (M : ℝ) * fejerKernel M (t : AddCircle T) =
+      (Real.sin (Real.pi * (M : ℝ) * t / T) / Real.sin (Real.pi * t / T)) ^ 2 := by
+  rcases Nat.eq_zero_or_pos M with rfl | hM
+  · simp
+  have hnorm (m : ℤ) :
+      ‖fourier (T := T) m (t : AddCircle T) - 1‖ =
+        2 * |Real.sin (Real.pi * (m : ℝ) * t / T)| := by
+    have hexp : fourier (T := T) m (t : AddCircle T) =
+        Complex.exp (Complex.I * ((2 * (Real.pi * (m : ℝ) * t / T) : ℝ) : ℂ)) := by
+      rw [fourier_coe_apply]
+      congr 1; push_cast; ring
+    rw [hexp, Complex.norm_exp_I_mul_ofReal_sub_one, Real.norm_eq_abs,
+      mul_div_cancel_left₀ _ two_ne_zero, abs_mul, abs_two]
+  have hmul := fejerKernel_mul_norm_sq (T := T) M (t : AddCircle T)
+  have h1 := hnorm 1
+  have hMnorm := hnorm M
+  simp only [Int.cast_one, mul_one, Int.cast_natCast] at h1 hMnorm
+  rw [h1, hMnorm, mul_pow, mul_pow, sq_abs, sq_abs] at hmul
+  have hMne : (M : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hM.ne'
+  have hmul' : (M : ℝ) * fejerKernel M (t : AddCircle T) * (4 * Real.sin (Real.pi * t / T) ^ 2) =
+      4 * Real.sin (Real.pi * (M : ℝ) * t / T) ^ 2 := by
+    calc
+      (M : ℝ) * fejerKernel M (t : AddCircle T) * (4 * Real.sin (Real.pi * t / T) ^ 2)
+          = (M : ℝ) *
+              (fejerKernel M (t : AddCircle T) * (2 ^ 2 * Real.sin (Real.pi * t / T) ^ 2)) := by
+            ring
+      _ = (M : ℝ) * ((M : ℝ)⁻¹ * (2 ^ 2 * Real.sin (Real.pi * (M : ℝ) * t / T) ^ 2)) := by
+            rw [hmul]
+      _ = 4 * Real.sin (Real.pi * (M : ℝ) * t / T) ^ 2 := by
+            rw [← mul_assoc, mul_inv_cancel₀ hMne]; ring
+  rw [div_pow, eq_div_iff (sq_pos_of_ne_zero ht).ne']
+  linarith
+
 /-- Away from the identity, the Fejér kernels satisfy a bound of order `1 / N`. -/
 theorem fejerKernel_le (N : ℕ) (x : AddCircle T) (hx : fourier 1 x ≠ 1) :
     fejerKernel N x ≤ (4 / N : ℝ) / ‖fourier 1 x - 1‖ ^ 2 := by
