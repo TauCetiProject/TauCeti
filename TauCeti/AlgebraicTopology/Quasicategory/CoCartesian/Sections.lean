@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.CoCartesian.Basic
 public import TauCeti.AlgebraicTopology.Quasicategory.FullyFaithful
-public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
+public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom.Basic
 
 /-!
 # CoCartesian sections

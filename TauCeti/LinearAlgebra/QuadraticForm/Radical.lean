@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Invertible
+public import Mathlib.FieldTheory.Perfect
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Quotient.Basic
@@ -117,6 +118,11 @@ namespace QuadraticMap
 
 variable {R M P : Type*} [CommRing R] [AddCommGroup M] [AddCommGroup P]
   [Module R M] [Module R P]
+
+/-- A vector belongs to the radical precisely when the quadratic map vanishes on it and
+its polar pairing with every vector vanishes. -/
+theorem mem_radical_iff {Q : QuadraticMap R M P} {x : M} :
+    x ∈ Q.radical ↔ Q x = 0 ∧ Q.polarBilin x = 0 := (Iff.rfl)
 
 /-- Polarization commutes with restricting a quadratic map to a submodule. -/
 @[simp]
@@ -916,6 +922,39 @@ end RegularPart
 end QuadraticMap
 
 namespace QuadraticForm
+
+section PerfectField
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+
+/-- Over a perfect field the quadratic radical detects nondegeneracy, even in
+characteristic two and in odd dimension. -/
+theorem nondegenerate_iff_radical_eq_bot_of_perfectField [PerfectField K]
+    (Q : QuadraticForm K V) : Q.Nondegenerate ↔ Q.radical = ⊥ := by
+  by_cases h₂ : (2 : K) ≠ 0
+  · let := invertibleOfNonzero h₂
+    exact QuadraticMap.nondegenerate_iff_radical_eq_bot
+  let : CharP K 2 := CharTwo.of_one_ne_zero_of_two_eq_zero one_ne_zero (not_ne_iff.mp h₂)
+  refine ⟨fun h ↦ h.radical_eq_bot, fun h ↦ ⟨h, ?_⟩⟩
+  have hzero {v : V} (hv : v ∈ Q.polarBilin.ker) (hq : Q v = 0) : v = 0 :=
+    (Submodule.eq_bot_iff _).mp h v (QuadraticMap.mem_radical_iff.mpr ⟨hq, LinearMap.mem_ker.mp hv⟩)
+  by_cases hker : Q.polarBilin.ker = ⊥
+  · rw [hker, rank_bot]
+    exact zero_le_one
+  obtain ⟨v, hv, hv₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hker
+  have hqv : Q v ≠ 0 := fun h ↦ hv₀ (hzero hv h)
+  refine (rank_submodule_le_one_iff _).mpr ⟨v, hv, fun w hw ↦ ?_⟩
+  obtain ⟨c, hc⟩ := surjective_frobenius K 2 (-Q w / Q v)
+  have hc' : c * c * Q v = -Q w :=
+    (eq_div_iff hqv).mp (by simpa [frobenius_def, pow_two] using hc)
+  have hp : QuadraticMap.polar Q w (c • v) = 0 :=
+    DFunLike.congr_fun (LinearMap.mem_ker.mp hw) _
+  have hwc := hzero (Q.polarBilin.ker.add_mem hw (Q.polarBilin.ker.smul_mem c hv))
+  have heq : w + c • v = 0 := hwc (by
+    simp [QuadraticMap.map_add, QuadraticMap.map_smul, hp, hc'])
+  exact Submodule.mem_span_singleton.mpr ⟨-c, by simpa using (eq_neg_of_add_eq_zero_left heq).symm⟩
+
+end PerfectField
 
 universe u
 

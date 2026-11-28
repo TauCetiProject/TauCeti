@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.VectorMeasure.WithDensityVec
 public import TauCeti.MeasureTheory.VectorMeasure.ScalarIntegral
+import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
+import TauCeti.MeasureTheory.Integral.Bochner.RelativelyCompact
 
 /-!
 # Integration against a vector measure with density
@@ -45,12 +47,29 @@ density `c` gives `c • μ`. A change of `g` on a `|μ|`-null set does not chan
 matrix elements of a Borel functional calculus: the scalar measure of `⟪ξ, g(a) ψ⟫` is `g` times
 that of `⟪ξ, ψ⟫`.
 
+Densities glue along countable measurable covers. If a vector measure `m` restricted to a
+measurable set `s` is `(ν.restrict s).withDensityᵥ f` for an `f` integrable on `s`, then
+`m t = ∫ x in t, f x ∂ν` and `|m| t = ∫⁻ x in t, ‖f x‖ₑ ∂ν` for measurable `t ⊆ s`.
+Consequently, a vector measure of finite variation that has a density on each set `S n` of a
+countable measurable cover of `X` has a single integrable density on `X`. A local density that
+is not integrable on `S n` gives the zero vector measure there, so it is first replaced by `0`.
+The resulting integrable local densities are glued on the disjoint pieces
+`S n \ (S 0 ∪ ⋯ ∪ S (n - 1))`, and the norm of the glued density integrates to the total
+variation of `m`. This is how densities obtained on pieces of finite measure combine
+on a σ-finite measure space.
+
 ## Main declarations
 
 * `MeasureTheory.VectorMeasure.integral_withDensityᵥ`: integration against `ν.withDensityᵥ g`
   through a bilinear pairing is the Bochner integral of the pairing against `ν`.
 * `MeasureTheory.VectorMeasure.integral_mul_withDensityᵥ`: the scalar form
   `∫ᵛ x, f x ∂[mul ℝ 𝕜; ν.withDensityᵥ g] = ∫ x, f x * g x ∂ν` for every `f`.
+* `MeasureTheory.withDensityᵥ_of_not_integrable`: the junk value of `ν.withDensityᵥ g`.
+* `MeasureTheory.Integrable.range_withDensityᵥ`: for integrable `g`, the values of
+  `ν.withDensityᵥ g` are exactly the set integrals of `g` over all sets.
+* `MeasureTheory.Measure.totallyBounded_range_withDensityᵥ` and
+  `MeasureTheory.Measure.isCompact_closure_range_withDensityᵥ`: a vector measure with a density
+  has relatively norm compact range.
 * `MeasureTheory.withDensityᵥ_one_apply`, `MeasureTheory.Measure.variation_withDensityᵥ_one` and
   `MeasureTheory.VectorMeasure.integral_mul_withDensityᵥ_one`: a finite positive measure as a
   scalar measure, its values, its variation, and integration against it.
@@ -68,10 +87,18 @@ that of `⟪ξ, ψ⟫`.
 * `MeasureTheory.VectorMeasure.withDensity_withDensity_mul` and
   `MeasureTheory.VectorMeasure.withDensity_const_mul`: composition of densities and constant
   densities.
+* `MeasureTheory.VectorMeasure.apply_eq_setIntegral_of_restrict_eq_withDensityᵥ` and
+  `MeasureTheory.VectorMeasure.variation_apply_eq_setLIntegral_of_restrict_eq_withDensityᵥ`: values
+  and variation of a vector measure on subsets of a set on which it has a density.
+* `MeasureTheory.VectorMeasure.exists_integrable_eq_withDensityᵥ_of_restrict`: gluing of densities
+  along a countable measurable cover.
 
 ## References
 
 * W. Rudin, *Real and Complex Analysis*, 3rd ed., McGraw–Hill, 1987, Chapter 6.
+* J. Diestel and J. J. Uhl, *Vector Measures*, Chapter II, §2, for the compactness of the range.
+* T. Hytönen, J. van Neerven, M. Veraar and L. Weis, *Analysis in Banach Spaces, Volume I*,
+  Springer, 2016, proof of Theorem 1.3.10, for gluing densities along an exhaustion.
 -/
 
 public section
@@ -84,6 +111,12 @@ namespace MeasureTheory
 variable {X E F G : Type*} [MeasurableSpace X] {ν : Measure X}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup G] [NormedSpace ℝ G]
+
+/-- A density that is not integrable against `ν` gives the zero vector measure. -/
+@[simp]
+theorem withDensityᵥ_of_not_integrable {g : X → F} (hg : ¬Integrable g ν) :
+    ν.withDensityᵥ g = 0 := by
+  rw [Measure.withDensityᵥ, dite_eq_right hg]
 
 /-- The variation of a vector measure with density `g` with respect to `ν` is at most the measure
 with density `‖g‖ₑ` with respect to `ν`. This is an equality when the space is complete and `g` is
@@ -221,6 +254,55 @@ theorem integral_mul_withDensityᵥ {g : X → 𝕜} (hg : Integrable g ν) {f :
   · simp [norm_smul, norm_mul, mul_comm]
 
 end VectorMeasure
+
+section Range
+
+/-! ### The range of a vector measure with density -/
+
+/-- Every value of the vector measure `ν.withDensityᵥ g` is a set integral of `g`. -/
+theorem Measure.range_withDensityᵥ_subset (ν : Measure X) (g : X → F) :
+    Set.range (ν.withDensityᵥ g) ⊆ Set.range fun A : Set X ↦ ∫ x in A, g x ∂ν := by
+  rintro - ⟨A, rfl⟩
+  by_cases hA : MeasurableSet A
+  · by_cases hg : Integrable g ν
+    · exact ⟨A, (withDensityᵥ_apply hg hA).symm⟩
+    · exact ⟨∅, by simp [withDensityᵥ_of_not_integrable hg]⟩
+  · exact ⟨∅, by simp [VectorMeasure.not_measurable _ hA]⟩
+
+/-- For an integrable density `g`, the values of the vector measure `ν.withDensityᵥ g` are exactly
+the set integrals of `g` over all sets, measurable or not. -/
+theorem Integrable.range_withDensityᵥ {g : X → F} (hg : Integrable g ν) :
+    Set.range (ν.withDensityᵥ g) = Set.range fun A : Set X ↦ ∫ x in A, g x ∂ν := by
+  refine (ν.range_withDensityᵥ_subset g).antisymm (Set.range_subset_iff.2 fun A ↦ ?_)
+  -- `g` vanishes off a measurable set `t` on which `ν` is σ-finite, and there `A` may be
+  -- replaced by a measurable hull.
+  set t := hg.aefinStronglyMeasurable.sigmaFiniteSet
+  have ht : MeasurableSet t := hg.aefinStronglyMeasurable.measurableSet
+  have hB : MeasurableSet (toMeasurable (ν.restrict t) A ∩ t) :=
+    (measurableSet_toMeasurable _ _).inter ht
+  refine ⟨toMeasurable (ν.restrict t) A ∩ t, ?_⟩
+  have hdiff : ∫ x in A \ t, g x ∂ν = 0 := integral_eq_zero_of_ae
+    (ae_mono (Measure.restrict_mono (Set.sdiff_subset_compl A t) le_rfl)
+      hg.aefinStronglyMeasurable.ae_eq_zero_compl)
+  rw [withDensityᵥ_apply hg hB, ← integral_inter_add_sdiff (s := A) ht hg.integrableOn, hdiff,
+    add_zero, ← Measure.restrict_restrict' ht, ← Measure.restrict_restrict' ht,
+    Measure.restrict_toMeasurable_of_sfinite]
+
+/-- The range of the vector measure `ν.withDensityᵥ g` is totally bounded. -/
+theorem Measure.totallyBounded_range_withDensityᵥ (ν : Measure X) (g : X → F) :
+    TotallyBounded (Set.range (ν.withDensityᵥ g)) := by
+  by_cases hg : Integrable g ν
+  · exact hg.range_withDensityᵥ ▸ hg.totallyBounded_range_setIntegral
+  · simp [withDensityᵥ_of_not_integrable hg]
+
+/-- The range of the vector measure `ν.withDensityᵥ g` is relatively compact. -/
+theorem Measure.isCompact_closure_range_withDensityᵥ (ν : Measure X) (g : X → F) :
+    IsCompact (closure (Set.range (ν.withDensityᵥ g))) := by
+  by_cases hg : Integrable g ν
+  · exact hg.range_withDensityᵥ ▸ hg.isCompact_closure_range_setIntegral
+  · simp [withDensityᵥ_of_not_integrable hg]
+
+end Range
 
 variable {𝕜 : Type*} [RCLike 𝕜] [IsFiniteMeasure ν]
 
@@ -426,6 +508,100 @@ theorem withDensity_const_mul (c : 𝕜) :
     smul_apply, smul_eq_mul]
 
 end Scalar
+
+section Gluing
+
+omit [IsFiniteMeasure ν]
+
+variable {m : VectorMeasure X F} {s t : Set X} {f : X → F}
+
+/-- If a vector measure `m` restricted to a measurable set `s` has density `f` with respect to
+`ν`, where `f` is integrable on `s`, then `m t = ∫ x in t, f x ∂ν` for every measurable `t ⊆ s`. -/
+theorem apply_eq_setIntegral_of_restrict_eq_withDensityᵥ (hs : MeasurableSet s)
+    (hm : m.restrict s = (ν.restrict s).withDensityᵥ f) (hf : IntegrableOn f s ν)
+    (ht : MeasurableSet t) (hts : t ⊆ s) : m t = ∫ x in t, f x ∂ν := by
+  rw [← Set.inter_eq_left.2 hts, ← restrict_apply m hs ht, hm, withDensityᵥ_apply hf ht,
+    Measure.restrict_restrict ht]
+
+/-- If a vector measure `m` restricted to a measurable set `s` has the integrable density `f` with
+respect to `ν`, then the variation of `m` on every measurable `t ⊆ s` is `∫⁻ x in t, ‖f x‖ₑ ∂ν`. -/
+theorem variation_apply_eq_setLIntegral_of_restrict_eq_withDensityᵥ [CompleteSpace F]
+    (hs : MeasurableSet s) (hm : m.restrict s = (ν.restrict s).withDensityᵥ f)
+    (hf : IntegrableOn f s ν) (ht : MeasurableSet t) (hts : t ⊆ s) :
+    m.variation t = ∫⁻ x in t, ‖f x‖ₑ ∂ν := by
+  calc m.variation t = m.variation.restrict s t := by
+        rw [Measure.restrict_apply ht, Set.inter_eq_left.2 hts]
+    _ = ∫⁻ x in t, ‖f x‖ₑ ∂ν := by
+        rw [← variation_restrict hs, hm, Measure.variation_withDensityᵥ hf,
+          MeasureTheory.withDensity_apply _ ht,
+          Measure.restrict_restrict ht, Set.inter_eq_left.2 hts]
+
+/-- `MeasureTheory.VectorMeasure.exists_integrable_eq_withDensityᵥ_of_restrict` for densities that
+are integrable on their pieces. -/
+private theorem exists_integrable_eq_withDensityᵥ_of_restrict_of_integrableOn [CompleteSpace F]
+    [IsFiniteMeasure m.variation]
+    {S : ℕ → Set X} (hS : ∀ n, MeasurableSet (S n)) (hcover : ⋃ n, S n = Set.univ)
+    {f : ℕ → X → F} (hf : ∀ n, IntegrableOn (f n) (S n) ν)
+    (hm : ∀ n, m.restrict (S n) = (ν.restrict (S n)).withDensityᵥ (f n)) :
+    ∃ g : X → F, Integrable g ν ∧ m = ν.withDensityᵥ g := by
+  -- Glue the densities along the disjoint pieces `D n = S n \ (S 0 ∪ ⋯ ∪ S (n - 1))`.
+  set D := disjointed S
+  have hD (n : ℕ) : MeasurableSet (D n) := MeasurableSet.disjointed hS n
+  have hDS (n : ℕ) : D n ⊆ S n := disjointed_subset S n
+  have hDd : Pairwise (Function.onFun Disjoint D) := disjoint_disjointed S
+  have hDcover : ⋃ n, D n = Set.univ := iUnion_disjointed.trans hcover
+  set g : X → F := fun x ↦ ∑' n, (D n).indicator (f n) x
+  have hg (n : ℕ) : Set.EqOn g (f n) (D n) := fun x hx ↦ by
+    simp only [g]
+    rw [tsum_eq_single n fun k hk ↦
+        Set.indicator_of_notMem (fun hxk ↦ Set.disjoint_left.1 (hDd hk) hxk hx) _,
+      Set.indicator_of_mem hx]
+  have hgm : AEStronglyMeasurable g ν := by
+    rw [← Measure.restrict_univ (μ := ν), ← hDcover, aestronglyMeasurable_iUnion_iff]
+    exact fun n ↦ ((hf n).aestronglyMeasurable.mono_set (hDS n)).congr
+      ((ae_restrict_mem (hD n)).mono fun x hx ↦ (hg n hx).symm)
+  -- The norm of `g` integrates to the total variation of `m`.
+  have hlint : ∫⁻ x, ‖g x‖ₑ ∂ν = m.variation Set.univ := by
+    rw [← setLIntegral_univ, ← hDcover, lintegral_iUnion hD hDd, measure_iUnion hDd hD]
+    refine tsum_congr fun n ↦ ?_
+    rw [setLIntegral_congr_fun (hD n) fun x hx ↦ by rw [hg n hx],
+      variation_apply_eq_setLIntegral_of_restrict_eq_withDensityᵥ (hS n) (hm n) (hf n) (hD n)
+        (hDS n)]
+  have hgi : Integrable g ν :=
+    ⟨hgm, by rw [hasFiniteIntegral_def, hlint]; exact measure_lt_top _ _⟩
+  -- Both vector measures are countably additive over the pieces `A ∩ D n`.
+  refine ⟨g, hgi, ext fun A hA ↦ ?_⟩
+  have hAD (n : ℕ) : MeasurableSet (A ∩ D n) := hA.inter (hD n)
+  have hdisj : Pairwise (Function.onFun Disjoint fun n ↦ A ∩ D n) := fun i j hij ↦
+    (hDd hij).mono Set.inter_subset_right Set.inter_subset_right
+  have hA_eq : A = ⋃ n, A ∩ D n := by rw [← Set.inter_iUnion, hDcover, Set.inter_univ]
+  rw [hA_eq, m.of_disjoint_iUnion hAD hdisj, (ν.withDensityᵥ g).of_disjoint_iUnion hAD hdisj]
+  refine tsum_congr fun n ↦ ?_
+  rw [apply_eq_setIntegral_of_restrict_eq_withDensityᵥ (hS n) (hm n) (hf n) (hAD n)
+    (Set.inter_subset_right.trans (hDS n)), withDensityᵥ_apply hgi (hAD n)]
+  exact MeasureTheory.setIntegral_congr_fun (hAD n) fun x hx ↦ (hg n hx.2).symm
+
+/-- **Gluing of densities.** Let `S n` be measurable sets covering `X`. If a vector measure `m` of
+finite variation has a density `f n` with respect to `ν` on each `S n`, then it has a single
+integrable density with respect to `ν` on all of `X`. -/
+theorem exists_integrable_eq_withDensityᵥ_of_restrict [CompleteSpace F]
+    [IsFiniteMeasure m.variation]
+    {S : ℕ → Set X} (hS : ∀ n, MeasurableSet (S n)) (hcover : ⋃ n, S n = Set.univ)
+    {f : ℕ → X → F} (hm : ∀ n, m.restrict (S n) = (ν.restrict (S n)).withDensityᵥ (f n)) :
+    ∃ g : X → F, Integrable g ν ∧ m = ν.withDensityᵥ g := by
+  classical
+  -- A density that is not integrable on `S n` gives the zero vector measure there, which also has
+  -- the density `0`.
+  refine exists_integrable_eq_withDensityᵥ_of_restrict_of_integrableOn hS hcover
+    (f := fun n ↦ if Integrable (f n) (ν.restrict (S n)) then f n else 0) (fun n ↦ ?_) fun n ↦ ?_
+  · split_ifs with h
+    exacts [h, integrable_zero _ _ _]
+  · split_ifs with h
+    · exact hm n
+    · rw [hm n, withDensityᵥ_zero]
+      simp only [Measure.withDensityᵥ, h, dite_false]
+
+end Gluing
 
 end VectorMeasure
 

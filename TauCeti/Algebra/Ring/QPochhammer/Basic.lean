@@ -60,6 +60,11 @@ factorial.
 * `TauCeti.qPochhammer_base_one`: at base `q = 1`, `(x; 1)_n = (1 - x) ^ n`.
 * `TauCeti.qPochhammer_eq_zero_iff`: without zero divisors, `(x; q)_n = 0` exactly when
   `x q ^ i = 1` for some `i < n`.
+* `TauCeti.qFactorial_base_zero`, `TauCeti.qFactorial_dvd_of_le`, `TauCeti.isUnit_qFactorial_iff`:
+  `q = 0` specialization, divisibility by index, and unit characterization for `[n]_q!`.
+* `TauCeti.qPochhammer_base_zero`, `TauCeti.qPochhammer_dvd_of_le`,
+  `TauCeti.isUnit_qPochhammer_iff`, `TauCeti.isUnit_qPochhammer_self_iff`: `q = 0` specialization,
+  divisibility by index, and unit characterizations for `(x; q)_n` and `(q; q)_n`.
 * `TauCeti.qPochhammer_inv`, `TauCeti.qPochhammer_inv_self`: for units `x` and `q`,
   `(x⁻¹; q⁻¹)_n = (-1) ^ n x⁻ⁿ q^{-n(n-1)/2} (x; q)_n`, and in particular
   `(q⁻¹; q⁻¹)_n = (-1) ^ n q^{-n(n+1)/2} (q; q)_n`.
@@ -74,7 +79,9 @@ factorial.
 * G. Gasper, M. Rahman, *Basic Hypergeometric Series*, 2nd ed., Encyclopedia of Mathematics and
   its Applications 96, Cambridge University Press, 2004, §1.2 and Appendix I.
 * W. J. G. Ong, notes of P. Scholze's course *V5A2 – The Habiro Ring of a Number Field*, Bonn,
-  winter 2024/25, Definition 1.1, Table 1 and Proposition 2.1.
+  winter 2024/25 (6 March 2025 version,
+  https://wgabrielong.github.io/academic-writing/notes/bonn-winter-24-25/V5A2-Habiro-Rings/Habiro_Rings_Notes.pdf),
+  Definition 1.1, Table 1 and Proposition 2.1.
 -/
 
 public section
@@ -125,6 +132,21 @@ theorem qFactorial_base_one (n : ℕ) : qFactorial (1 : R) n = n ! := by
 theorem map_qFactorial {F : Type*} [FunLike F R S] [RingHomClass F R S] (f : F) (q : R)
     (n : ℕ) : f (qFactorial q n) = qFactorial (f q) n := by
   simp [qFactorial_def, map_prod, map_sum]
+
+/-- Specializing the `q`-factorial at `q = 0` gives `1`. -/
+@[simp] theorem qFactorial_base_zero (n : ℕ) : qFactorial (0 : R) n = 1 := by
+  simp [qFactorial_def, zero_geom_sum]
+
+/-- If `m ≤ n`, then `[m]_q!` divides `[n]_q!`. -/
+theorem qFactorial_dvd_of_le (q : R) {m n : ℕ} (h : m ≤ n) :
+    qFactorial q m ∣ qFactorial q n := by
+  rw [qFactorial_def, qFactorial_def]
+  exact prod_dvd_prod_of_subset _ _ _ (range_mono h)
+
+/-- `[n]_q!` is a unit if and only if `[k]_q` is a unit for all `1 ≤ k ≤ n`. -/
+theorem isUnit_qFactorial_iff (q : R) (n : ℕ) :
+    IsUnit (qFactorial q n) ↔ ∀ k < n, IsUnit (∑ j ∈ range (k + 1), q ^ j) := by
+  simp [qFactorial_def, IsUnit.prod_iff]
 
 end CommSemiring
 
@@ -238,6 +260,32 @@ theorem qPochhammer_inv_self (q : Rˣ) (n : ℕ) :
   have hexp : n * (n + 1) / 2 = n + n * (n - 1) / 2 := by
     simpa [mul_comm, add_comm] using Nat.triangle_succ n
   rw [qPochhammer_inv, hexp, pow_add, mul_assoc ((-1 : R) ^ n)]
+
+/-- At `q = 0`, `(x; 0)_{n + 1} = 1 - x`. -/
+@[simp]
+theorem qPochhammer_base_zero_succ (x : R) (n : ℕ) : qPochhammer x (0 : R) (n + 1) = 1 - x := by
+  simp [qPochhammer_succ']
+
+/-- At `q = 0` and `n ≠ 0`, `(x; 0)_n = 1 - x`. -/
+theorem qPochhammer_base_zero (x : R) {n : ℕ} (hn : n ≠ 0) : qPochhammer x (0 : R) n = 1 - x := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  exact qPochhammer_base_zero_succ x k
+
+/-- If `m ≤ n`, then `(x; q)_m` divides `(x; q)_n`. -/
+theorem qPochhammer_dvd_of_le (x q : R) {m n : ℕ} (h : m ≤ n) :
+    qPochhammer x q m ∣ qPochhammer x q n := by
+  rw [qPochhammer_def, qPochhammer_def]
+  exact prod_dvd_prod_of_subset _ _ _ (range_mono h)
+
+/-- `(x; q)_n` is a unit if and only if each factor `1 - x q ^ i` (`i < n`) is a unit. -/
+theorem isUnit_qPochhammer_iff (x q : R) (n : ℕ) :
+    IsUnit (qPochhammer x q n) ↔ ∀ i < n, IsUnit (1 - x * q ^ i) := by
+  simp [qPochhammer_def, IsUnit.prod_iff]
+
+/-- `(q; q)_n` is a unit if and only if each `1 - q ^ (i + 1)` (`i < n`) is a unit. -/
+theorem isUnit_qPochhammer_self_iff (q : R) (n : ℕ) :
+    IsUnit (qPochhammer q q n) ↔ ∀ i < n, IsUnit (1 - q ^ (i + 1)) := by
+  simp [qPochhammer_self, IsUnit.prod_iff]
 
 end CommRing
 

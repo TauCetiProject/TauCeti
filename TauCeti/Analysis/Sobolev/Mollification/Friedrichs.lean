@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Calculus.BumpFunction.Rescale
 public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 public import TauCeti.Analysis.Convolution.Commutator
 public import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
-import TauCeti.Analysis.Calculus.ContDiff.FDerivApply
+import TauCeti.Analysis.Calculus.ContDiff.FDeriv.Apply
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.LpSeminorm.FDeriv
 import TauCeti.Topology.Algebra.Support
