@@ -8,7 +8,12 @@ module
 public import Mathlib.RingTheory.FractionalIdeal.Basic
 
 /-!
-# Fractional ideals of a domain have no zero divisors
+# Basic facts about fractional ideals
+
+Mathlib does not register fractional ideals as additive subgroups of the ambient algebra, so the
+closure of a fractional ideal under addition and negation is recorded here as
+`FractionalIdeal.add_mem` and `FractionalIdeal.neg_mem`, transported from the underlying
+submodule.
 
 Mathlib proves that the submodules of an algebra without zero divisors have no zero divisors and
 that the fractional ideals of a Dedekind domain form a cancellative monoid with zero. Between the
@@ -24,6 +29,15 @@ public section
 namespace FractionalIdeal
 
 variable {R : Type*} [CommRing R] {S : Submonoid R} {P : Type*} [CommRing P] [Algebra R P]
+
+/-- A fractional ideal is closed under addition. -/
+protected theorem add_mem {I : FractionalIdeal S P} {x y : P} (hx : x ∈ I) (hy : y ∈ I) :
+    x + y ∈ I :=
+  mem_coeToSubmodule.mp (add_mem (mem_coeToSubmodule.mpr hx) (mem_coeToSubmodule.mpr hy))
+
+/-- A fractional ideal is closed under negation. -/
+protected theorem neg_mem {I : FractionalIdeal S P} {x : P} (hx : x ∈ I) : -x ∈ I :=
+  mem_coeToSubmodule.mp (neg_mem (mem_coeToSubmodule.mpr hx))
 
 /-- A product of fractional ideals is zero only if a factor is, when the ambient algebra has no
 zero divisors. -/
