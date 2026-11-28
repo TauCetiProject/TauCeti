@@ -209,6 +209,16 @@ instance instFiniteDimensionalHom [Preadditive C] [MonoidalPreadditive C]
     ‹FiniteDimensional k (X.1 ⟶ Y.1)›
   exact FiniteDimensional.of_injective ((forget C).mapLinearMap k) (forget C).map_injective
 
+/-- Endomorphisms of the tensor unit in the centre are finite-dimensional whenever those of the
+tensor unit in `C` are. -/
+-- Instance search does not unfold `𝟙_ (Center C)` to `⟨𝟙_ C, ...⟩`.
+instance instFiniteDimensionalHomUnit [Preadditive C] [MonoidalPreadditive C]
+    {k : Type*} [DivisionRing k] [Linear k C] [MonoidalLinear k C]
+    [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)] :
+    FiniteDimensional k (𝟙_ (Center C) ⟶ 𝟙_ (Center C)) :=
+  @instFiniteDimensionalHom C _ _ _ _ k _ _ _ (𝟙_ (Center C)) (𝟙_ (Center C))
+    (by change FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C); infer_instance)
+
 section Biproduct
 
 variable [Preadditive C] [MonoidalPreadditive C] [HasFiniteBiproducts C] {J : Type} [Finite J]

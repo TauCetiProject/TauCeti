@@ -48,11 +48,6 @@ Etingof–Nikshych–Ostrik):
 
 ## Main declarations
 
-* `CategoryTheory.Center.endAlgEquivOfSimple_tensorUnit_apply`: reading an endomorphism of
-  `𝟙_ (Center C)` in `k` agrees with reading its underlying endomorphism of `𝟙_ C`;
-* `CategoryTheory.Center.finite_simpleClasses_of_isFiniteSemisimpleCategory`: if `C` has finitely
-  many simple isomorphism classes and `Center C` is finite semisimple, then `Center C` has finitely
-  many simple isomorphism classes;
 * `CategoryTheory.Center.simpleMultiplicities_induction_obj`: Frobenius reciprocity for simple
   multiplicities between `C` and `Center C`;
 * `Center.forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_eq_smul` and
@@ -93,42 +88,13 @@ namespace CategoryTheory.Center
 
 attribute [local instance] Abelian.hasFiniteBiproducts
 
-section UnitScalar
-
-variable (k : Type w) [Field k] [IsAlgClosed k]
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [Abelian C] [MonoidalPreadditive C]
-  [Linear k C] [MonoidalLinear k C] [RigidCategory C] [Simple (𝟙_ C)]
-  [∀ X Y : C, FiniteDimensional k (X ⟶ Y)]
-
-/-- Reading an endomorphism of `𝟙_ (Center C)` as a scalar in `k` agrees with reading its
-underlying endomorphism of `𝟙_ C`. -/
-@[simp]
-theorem endAlgEquivOfSimple_tensorUnit_apply (f : 𝟙_ (Center C) ⟶ 𝟙_ (Center C)) :
-    endAlgEquivOfSimple k (𝟙_ (Center C)) (End.of f) =
-      endAlgEquivOfSimple k (𝟙_ C) (End.of f.f) := by
-  rw [endAlgEquivOfSimple_apply_eq_iff]
-  ext
-  simp only [smul_f, id_f]
-  exact (endAlgEquivOfSimple_smul_id (k := k) (X := 𝟙_ C) (End.of f.f)).symm
-
-end UnitScalar
-
 section SemisimpleCenter
 
 variable (k : Type w) [Field k] [IsAlgClosed k]
-variable (C : Type u) [Category.{v} C] [Abelian C] [Linear k C] [MonoidalCategory C]
+variable {C : Type u} [Category.{v} C] [Abelian C] [Linear k C] [MonoidalCategory C]
   [MonoidalPreadditive C] [MonoidalLinear k C] [RigidCategory C]
   [IsFiniteSemisimpleCategory C] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)]
 
-include k in
-/-- If `C` has finitely many isomorphism classes of simple objects and `Center C` is finite
-semisimple, then `Center C` also has finitely many isomorphism classes of simple objects. -/
-theorem finite_simpleClasses_of_isFiniteSemisimpleCategory [Finite (SimpleClasses C)]
-    [IsFiniteSemisimpleCategory (Center C)] : Finite (SimpleClasses (Center C)) := by
-  let := Fintype.ofFinite (SimpleClasses C)
-  exact (forget C).finite_simpleClasses_of_faithful_leftAdjoint (forgetInductionAdjunction k C)
-
-variable {C} in
 /-- **Frobenius reciprocity for multiplicities in the Drinfeld centre**: the multiplicity of a
 simple class `Z` of `Center C` in `(induction k C).obj S.repr` equals the multiplicity of `S` in
 the underlying object `Z.repr.1`. -/

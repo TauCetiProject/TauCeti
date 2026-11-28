@@ -36,6 +36,9 @@ characteristic `2` the global dimension is `0` and the centre is not semisimple.
 
 ## Main declarations
 
+* `CategoryTheory.Center.finite_simpleClasses_of_isFiniteSemisimpleCategory`: if `C` has finitely
+  many simple classes and `Center C` is finite semisimple, then `Center C` has finitely many
+  simple classes;
 * `CategoryTheory.Center.isSplitMono_forgetInductionAdjunction_unit_app`: the unit of the right
   adjunction `Center.forget C ⊣ Center.induction k C` is a split monomorphism when the global
   dimension is nonzero;
@@ -65,6 +68,16 @@ variable (k : Type w) [Field k] [IsAlgClosed k]
 variable {C : Type u} [Category.{v} C] [Abelian C] [Linear k C] [MonoidalCategory C]
   [MonoidalPreadditive C] [MonoidalLinear k C] [RigidCategory C] [IsFiniteSemisimpleCategory C]
   [Simple (𝟙_ C)] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)]
+
+omit [Simple (𝟙_ C)] in
+include k in
+variable (C) in
+/-- If `C` has finitely many isomorphism classes of simple objects and `Center C` is finite
+semisimple, then `Center C` also has finitely many isomorphism classes of simple objects. -/
+theorem finite_simpleClasses_of_isFiniteSemisimpleCategory [Finite (SimpleClasses C)]
+    [IsFiniteSemisimpleCategory (Center C)] : Finite (SimpleClasses (Center C)) := by
+  let := Fintype.ofFinite (SimpleClasses C)
+  exact (forget C).finite_simpleClasses_of_faithful_leftAdjoint (forgetInductionAdjunction k C)
 
 section GlobalDim
 
@@ -106,7 +119,7 @@ theorem finite_simpleClasses_of_normGlobalDim_ne_zero
     (a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ) (ha : normGlobalDim C a ≠ 0) :
     Finite (SimpleClasses (Center C)) :=
   have := isFiniteSemisimpleCategory_of_normGlobalDim_ne_zero k a ha
-  (forget C).finite_simpleClasses_of_faithful_leftAdjoint (forgetInductionAdjunction k C)
+  finite_simpleClasses_of_isFiniteSemisimpleCategory k C
 
 end GlobalDim
 
