@@ -11,7 +11,6 @@ public import TauCeti.GroupTheory.Coxeter.ExchangeCondition
 public import TauCeti.GroupTheory.Perm.Inversion
 public import TauCeti.GroupTheory.SpecificGroups.Braid.Basic
 import TauCeti.Data.List.Rotate
-import TauCeti.GroupTheory.Perm.Fin
 
 /-!
 # The symmetric group as the Coxeter group of type `A`
@@ -478,20 +477,35 @@ theorem orderOf_wordProd_permCoxeterSystem {ω : List (Fin (n - 1))}
   · rw [(isCycle_wordProd_permCoxeterSystem hω hn').orderOf,
       support_wordProd_permCoxeterSystem hω hn', Finset.card_univ, Fintype.card_fin]
 
+/-- The product `s 0 * ⋯ * s (k - 1)` of the first `k` adjacent transpositions is the cycle
+`(0 1 ⋯ k)`. -/
+private theorem val_prod_map_transposition_take_finRange {k : ℕ} (hk : k ≤ n - 1) (x : Fin n) :
+    ((((List.finRange (n - 1)).take k).map transposition).prod x : ℕ) =
+      if (x : ℕ) < k then (x : ℕ) + 1 else if (x : ℕ) = k then 0 else x := by
+  induction k generalizing x with
+  | zero =>
+    simp only [List.take_zero, List.map_nil, List.prod_nil, Equiv.Perm.coe_one, id_eq]
+    split_ifs <;> omega
+  | succ k ih =>
+    rw [List.take_add_one, List.getElem?_eq_getElem (by simp; omega), List.getElem_finRange,
+      Option.toList_some, List.map_append,
+      List.prod_append, List.map_singleton, List.prod_singleton, Equiv.Perm.mul_apply,
+      ih (by omega), val_transposition_apply]
+    simp only [Fin.val_cast]
+    split_ifs <;> omega
+
 /-- **The Coxeter cycle of `S_n`.** The Coxeter element `s 0 * s 1 * ⋯ * s (n - 2)`, the product
 of the adjacent transpositions in their natural order, is the cycle `(0 1 ⋯ n-1)`, that is
 `finRotate n : i ↦ i + 1` modulo `n`. -/
 theorem permCoxeterSystem_wordProd_finRange :
     (permCoxeterSystem n).wordProd (List.finRange (n - 1)) = finRotate n := by
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · exact Subsingleton.elim _ _
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  rw [permCoxeterSystem_wordProd, ← Fin.cycleRange_last m]
-  refine Eq.trans ?_ (Fin.prod_finRange_swap_eq_cycleRange m (Nat.lt_succ_self m))
-  congr 1
-  refine List.map_congr_left fun i _ ↦ ?_
-  rw [transposition_eq_swap]
-  congr 1 <;> exact Fin.ext (by simp)
+  ext x
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by have := x.pos; omega⟩
+  have h := val_prod_map_transposition_take_finRange (n := m + 1) (k := m) le_rfl x
+  rw [List.take_of_length_le (by simp)] at h
+  rw [permCoxeterSystem_wordProd, h, coe_finRotate]
+  simp only [Fin.ext_iff, Fin.val_last]
+  split_ifs <;> omega
 
 end TauCeti
 

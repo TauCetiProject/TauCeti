@@ -15,7 +15,6 @@ public import TauCeti.Algebra.Polynomial.Reverse
 public import TauCeti.GroupTheory.Perm.Partition
 public import TauCeti.LinearAlgebra.Finsupp.LMapDomain
 import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
-import TauCeti.LinearAlgebra.Charpoly.Cyclic
 import TauCeti.LinearAlgebra.Matrix.Permutation
 
 /-!
@@ -93,22 +92,37 @@ theorem charpoly_lmapDomain_of_forall_sameCycle (π : Perm α) {x : α}
   have hTn : Finsupp.lmapDomain R R π ^ n = 1 := by
     have : π^[n] = id := funext fun y ↦ by rw [← hn y, Function.iterate_minimalPeriod, id_eq]
     rw [Finsupp.lmapDomain_pow, this, Finsupp.lmapDomain_id, Module.End.one_eq_id]
-  have hfin : Module.finrank R (α →₀ R) = n := Module.finrank_finsupp_self R
-  have hinj : Function.Injective fun i : Fin (Module.finrank R (α →₀ R)) ↦ π^[i] x :=
-    fun i j hij ↦ Fin.ext <| Function.iterate_injOn_Iio_minimalPeriod
-      (by simpa [hn, hfin] using i.isLt) (by simpa [hn, hfin] using j.isLt) hij
-  have hli : LinearIndependent R fun i : Fin (Module.finrank R (α →₀ R)) ↦
-      ((Finsupp.lmapDomain R R π) ^ (i : ℕ)) (Finsupp.single x 1) := by
-    have hvec : (fun i : Fin (Module.finrank R (α →₀ R)) ↦
-        ((Finsupp.lmapDomain R R π) ^ (i : ℕ)) (Finsupp.single x 1)) =
-        (fun y ↦ Finsupp.single y (1 : R)) ∘
-          fun i : Fin (Module.finrank R (α →₀ R)) ↦ π^[i] x := by
-      ext i; simp [Finsupp.lmapDomain_pow]
-    rw [hvec]
-    exact (Finsupp.linearIndependent_single_one R α).comp _ hinj
-  exact LinearMap.charpoly_eq_of_isMonicOfDegree_of_aeval_eq_zero_of_linearIndependent_pow
-    (by rw [hfin]; exact (isMonicOfDegree_X_pow R n).sub (by simpa [natDegree_one] using hpos))
-    (by simp [hTn]) hli
+  -- `single x 1` is a cyclic vector: its translates under the first `n` powers of the map are
+  -- the distinct basis vectors `single (π^[i] x) 1`, so no nonzero polynomial of degree
+  -- below `n` annihilates it.
+  have hind : ∀ q : R[X], q.natDegree < n →
+      aeval (Finsupp.lmapDomain R R π) q (Finsupp.single x 1) = 0 → q = 0 := by
+    classical
+    intro q hq h0
+    ext j
+    rw [coeff_zero]
+    rcases lt_or_ge j n with hj | hj
+    · have := congrArg (fun f ↦ f (π^[j] x)) h0
+      simp only [aeval_eq_sum_range' hq, LinearMap.sum_apply, LinearMap.smul_apply,
+        Finsupp.lmapDomain_pow, Finsupp.lmapDomain_apply, Finsupp.mapDomain_single,
+        Finset.sum_apply', Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one,
+        mul_zero, Finsupp.coe_zero, Pi.zero_apply] at this
+      rw [Finset.sum_eq_single_of_mem j (Finset.mem_range.mpr hj)] at this
+      · simpa using this
+      · intro i hi hij
+        refine ite_eq_right_iff.mpr fun h ↦ (hij ?_).elim
+        exact Function.iterate_injOn_Iio_minimalPeriod (by simpa [hn] using hi)
+          (by simpa [hn] using hj) h
+    · exact coeff_eq_zero_of_natDegree_lt (hq.trans_le hj)
+  -- The characteristic polynomial and `X ^ n - 1` are monic of degree `n`, and both annihilate
+  -- the map, so their difference is such a polynomial.
+  have hdeg : (Finsupp.lmapDomain R R π).charpoly.natDegree = n := by
+    rw [LinearMap.charpoly_natDegree, Module.finrank_finsupp_self]
+  rw [← sub_eq_zero]
+  apply hind
+  · exact IsMonicOfDegree.natDegree_sub_lt hpos.ne' ⟨hdeg, LinearMap.charpoly_monic _⟩
+      ((isMonicOfDegree_X_pow R n).sub (by simpa using hpos))
+  · simp [LinearMap.aeval_self_charpoly, hTn]
 
 variable [DecidableEq α]
 

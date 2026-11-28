@@ -30,8 +30,6 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
   are stated on natural numbers, ready for `omega`.
 * `List.formPerm_finRange`, `Fin.formPerm_sort_univ`: the cycle through the points of `Fin n` in
   increasing order is the rotation `finRotate n`, that is `i ↦ i + 1` modulo `n`.
-* `Fin.cycleRange_mul_swap`, `Fin.prod_finRange_swap_eq_cycleRange`: products of consecutive
-  adjacent transpositions `Equiv.swap i.castSucc i.succ` equal `Fin.cycleRange`.
 * `Fin.swap_apply_lt_swap_apply`: an adjacent transposition `(a a+1)` of `Fin n` keeps every
   strict pair in order except `a < a + 1` itself.
 * `Fin.cons_comp_perm`: prepending a fixed first entry commutes with permuting the other entries,
@@ -89,36 +87,6 @@ the rotation `i ↦ i + 1` modulo `n`. -/
 theorem formPerm_sort_univ (n : ℕ) :
     (Finset.univ : Finset (Fin n)).sort.formPerm = finRotate n := by
   rw [sort_univ, List.formPerm_finRange]
-
-/-- Multiplying the `(k + 1)`-cycle `Fin.cycleRange k` on the right by the adjacent transposition
-`(k, k + 1)` extends it to the `(k + 2)`-cycle `Fin.cycleRange (k + 1)`. -/
-theorem cycleRange_mul_swap {N k : ℕ} (hk : k + 1 < N) :
-    cycleRange (⟨k, by omega⟩ : Fin N) * Equiv.swap ⟨k, by omega⟩ ⟨k + 1, hk⟩ =
-      cycleRange ⟨k + 1, hk⟩ := by
-  ext j
-  simp only [Equiv.Perm.mul_apply, Fin.ext_iff, coe_cycleRange, Equiv.swap_apply_def]
-  split_ifs <;> (try dsimp only at *) <;> omega
-
-/-- The product of the first `k` adjacent transpositions `(0, 1), (1, 2), …, (k - 1, k)` in
-`Equiv.Perm (Fin N)` is the `(k + 1)`-cycle `Fin.cycleRange k`. -/
-theorem prod_finRange_swap_eq_cycleRange {N : ℕ} (k : ℕ) (hk : k < N) :
-    ((List.finRange k).map fun i : Fin k =>
-        Equiv.swap (⟨i.val, by omega⟩ : Fin N) ⟨i.val + 1, by omega⟩).prod =
-      cycleRange ⟨k, hk⟩ := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [List.finRange_succ_last, List.map_append, List.prod_append, List.map_map,
-      List.map_singleton, List.prod_singleton]
-    have hpre : ((List.finRange k).map
-        ((fun i : Fin (k + 1) =>
-            Equiv.swap (⟨i.val, by omega⟩ : Fin N) ⟨i.val + 1, by omega⟩) ∘
-          Fin.castSucc)).prod =
-        cycleRange ⟨k, by omega⟩ := by
-      simp only [Function.comp_def, Fin.val_castSucc]
-      exact ih (by omega)
-    rw [hpre]
-    simp only [Fin.val_last, cycleRange_mul_swap hk]
 
 /-- An adjacent transposition `(a b)`, with `b = a + 1`, preserves the strict order of every pair
 of elements of `Fin n` other than the pair `a < b` itself. -/
