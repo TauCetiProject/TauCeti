@@ -180,14 +180,9 @@ theorem apply_gradient_self_of_mem_homogeneousSubmodule
     {n : ℕ} {p : SymmetricAlgebra R M}
     (hp : p ∈ TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n) (ξ : Module.Dual R M) :
     ξ (p.gradient ξ) = n • lift ξ p := by
-  induction hp using Submodule.pow_induction_on_left' with
-  | algebraMap r => simp
-  | add x y _ _ _ ihx ihy => simp [ihx, ihy, smul_add]
-  | mem_mul m hm i x _ ih =>
-    obtain ⟨y, rfl⟩ := hm
-    simp only [gradient_mul, map_add, LinearMap.map_smul, gradient_ι, map_mul, lift_ι_apply,
-      smul_eq_mul, ih, nsmul_eq_mul, Nat.cast_succ]
-    ring
+  simpa [nsmul_eq_mul] using
+    (ξ.comp (gradientLinear ξ)).apply_eq_mul_of_mem_homogeneousSubmodule (lift ξ)
+      (by simp) (fun a b ↦ by simp [smul_eq_mul]) (c := 1) (fun x ↦ by simp) hp
 
 /-- **Naturality (chain rule) of `gradient` along a linear map.** -/
 theorem gradient_map {N : Type*} [AddCommMonoid N] [Module R N] (g : M →ₗ[R] N)
