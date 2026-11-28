@@ -12,7 +12,8 @@ public import Mathlib.RingTheory.Regular.IsSMulRegular
 # Basic facts about quotient modules
 
 A surjective linear map `f : M → M₂` sending `p` into `q` induces a surjective map
-`M ⧸ p → M₂ ⧸ q`, and the induced map is injective exactly when `f⁻¹(q) ≤ p`. The quotient by a
+`M ⧸ p → M₂ ⧸ q`, and the induced map is injective exactly when `f⁻¹(q) ≤ p`.
+`Submodule.factor` commutes with `Submodule.quotEquivOfEq`. The quotient by a
 submodule is torsion-free exactly when the submodule is saturated, that is, contains every element
 of which it contains a multiple by a regular scalar. A linear map that vanishes at every `v` with
 `Φ v ∈ N` vanishes on the inverse image `Φ⁻¹(N)`, and so descends through the quotient by that
@@ -24,6 +25,7 @@ multiple `p • v` into `N`.
 * `Submodule.mapQ_surjective`: induced maps on quotients preserve surjectivity.
 * `Submodule.mapQ_injective_iff`: the map `M ⧸ p → M₂ ⧸ q` induced by `f` is injective exactly
   when `f⁻¹(q) ≤ p`.
+* `Submodule.factor_quotEquivOfEq`: `Submodule.factor` commutes with `Submodule.quotEquivOfEq`.
 * `Submodule.isTorsionFree_quotient_iff`: a submodule has torsion-free quotient if and only if
   it is saturated.
 * `Submodule.surjective_mkQ_comp_comp_subtype_of_map_sup_eq_top`: a linear map restricted to `W`,
@@ -53,6 +55,14 @@ under `f` lies in `p`. -/
 theorem mapQ_injective_iff (f : M →ₛₗ[τ₁₂] M₂) (h : p ≤ comap f q) :
     Function.Injective (p.mapQ q f h) ↔ comap f q ≤ p := by
   rw [← LinearMap.ker_eq_bot, ker_mapQ, ← le_bot_iff, map_le_iff_le_comap, comap_bot, ker_mkQ]
+
+/-- `Submodule.factor` commutes with `Submodule.quotEquivOfEq`. -/
+theorem factor_quotEquivOfEq {p₁ p₂ q₁ q₂ : Submodule R M}
+    (hp : p₁ = p₂) (hq : q₁ = q₂) (h₁ : p₁ ≤ q₁) (h₂ : p₂ ≤ q₂) (x : M ⧸ p₁) :
+    Submodule.factor h₂ (Submodule.quotEquivOfEq p₁ p₂ hp x) =
+      Submodule.quotEquivOfEq q₁ q₂ hq (Submodule.factor h₁ x) := by
+  obtain ⟨m, rfl⟩ := p₁.mkQ_surjective x
+  simp [Submodule.quotEquivOfEq_mk]
 
 /-- The quotient by a submodule is torsion-free if and only if the submodule contains every
 element of which it contains a multiple by a regular scalar. Over a domain the regular scalars

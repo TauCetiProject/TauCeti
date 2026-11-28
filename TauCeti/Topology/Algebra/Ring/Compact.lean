@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.Ring.Compact
+public import TauCeti.RingTheory.AdicCompletion.Topology
 import Mathlib.RingTheory.Filtration
 import Mathlib.Topology.Algebra.Module.Compact
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
@@ -32,6 +32,9 @@ residue field, being constant on the open cosets of the maximal ideal.
 
 * `IsLocalRing.isAdic_maximalIdeal`: the topology of a compact Hausdorff noetherian local ring is
   its `m`-adic topology.
+* `IsLocalRing.totallyDisconnectedSpace_of_compactSpace`,
+  `IsLocalRing.isAdicComplete_maximalIdeal_of_compactSpace`: `R` is totally disconnected and
+  `m`-adically complete.
 * `IsLocalRing.continuous_residue`: the residue map of a local ring with continuous translations
   and open maximal ideal is continuous for every topology on its residue field.
 -/
@@ -57,6 +60,14 @@ theorem isAdic_maximalIdeal : IsAdic (maximalIdeal R) := by
     (fun n ↦ Ideal.isCompact_of_fg (IsNoetherian.noetherian _)) (by rwa [hinter, nhdsSet_singleton])
   · exact Ideal.pow_le_pow_right (le_max_left i j)
   · exact Ideal.pow_le_pow_right (le_max_right i j)
+
+/-- A compact Hausdorff noetherian local ring is totally disconnected. -/
+theorem totallyDisconnectedSpace_of_compactSpace : TotallyDisconnectedSpace R :=
+  (isAdic_maximalIdeal R).totallyDisconnectedSpace
+
+/-- **A compact Hausdorff noetherian local ring is `m`-adically complete and separated.** -/
+theorem isAdicComplete_maximalIdeal_of_compactSpace : IsAdicComplete (maximalIdeal R) R :=
+  (isAdic_maximalIdeal R).isAdicComplete_of_compactSpace
 
 /-- **The residue map is continuous when translations are continuous and the maximal ideal is
 open**, for every topology on the residue field. -/

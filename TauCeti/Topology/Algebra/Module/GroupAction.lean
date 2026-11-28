@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.Algebra.Module.Submodule.GroupAction
-public import TauCeti.Topology.Algebra.Module.Compact
+public import TauCeti.Topology.Algebra.Module.Compact.Basic
 
 /-!
 # Continuous actions on a topological module

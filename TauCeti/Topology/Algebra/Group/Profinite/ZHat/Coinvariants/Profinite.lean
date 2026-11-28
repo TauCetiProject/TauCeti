@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Coinvariants.Basic
-public import TauCeti.Topology.Algebra.Module.Compact
+public import TauCeti.Topology.Algebra.Module.Compact.Basic
 import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.MetricSpace.Ultra.Pi

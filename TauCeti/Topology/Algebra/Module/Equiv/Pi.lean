@@ -38,6 +38,10 @@ identifies the image of the unit cube under positive coordinatewise scaling.
 sigma index. Its underlying homeomorphism is `TauCeti.piSigmaConstHomeomorph`, which is linear
 coordinatewise, so coordinate calculations can use both the homeomorphism and the linear API.
 
+`TauCeti.isEmpty_continuousLinearEquiv_pi_of_indiscreteTopology` shows that a nontrivial
+indiscretely topologized module cannot be continuously linearly equivalent to a product over a `T₂`
+ring.
+
 Over an empty index type, `ContinuousLinearMap.piMap T` is a continuous linear equivalence
 between zero spaces (`ContinuousLinearMap.piMap_eq_of_isEmpty`), and
 `ContinuousLinearMap.piCongrLeft_symm_comp_piMap` reindexes a product operator along an
@@ -397,5 +401,17 @@ theorem coe_piSigmaConstContinuousLinearEquiv_symm (R : Type*) [Semiring R] (E :
     ((piSigmaConstContinuousLinearEquiv R E e).symm : (ι' → E) → ∀ i, κ i → E) =
       (piSigmaConstHomeomorph E e).symm :=
   (rfl)
+
+/-- A nontrivial module `M` equipped with the indiscrete topology admits no continuous linear
+equivalence `M ≃L[R] (I → R)` over a `T₂` ring `R` (even when `M` is compact, linearly
+topologized, and flat). -/
+theorem isEmpty_continuousLinearEquiv_pi_of_indiscreteTopology (R M I : Type*)
+    [Ring R] [TopologicalSpace R] [T2Space R] [AddCommGroup M] [Module R M]
+    [TopologicalSpace M] [IndiscreteTopology M] [Nontrivial M] :
+    IsEmpty (M ≃L[R] (I → R)) := by
+  refine ⟨fun e ↦ ?_⟩
+  have := T2Space.of_injective_continuous e.injective e.continuous
+  have := subsingleton_iff_indiscreteTopology.mpr ‹IndiscreteTopology M›
+  exact false_of_nontrivial_of_subsingleton M
 
 end TauCeti

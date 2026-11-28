@@ -6,23 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.PiTopology
+public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import TauCeti.RingTheory.PowerSeries.CoeffProd
+import TauCeti.Topology.Algebra.Module.Equiv.Pi
 
 /-!
-# Infinite products and the `(X)`-adic topology on power series
+# Power series in the coefficientwise topology
 
-If all but finitely many factors agree with `1` to each prescribed degree, their product
-converges coefficientwise. Each coefficient is computed from any finite cutoff containing all
-factors that can affect it. Over a discrete commutative ring, the coefficientwise topology on
-`R⟦X⟧` coincides with the `(X)`-adic topology.
+Tools for `S⟦X⟧` under `open scoped PowerSeries.WithPiTopology`:
 
-## Main results
-
-* `PowerSeries.WithPiTopology.hasProd_of_X_pow_dvd_sub_one`: convergence and finite-cutoff
-  coefficients for products whose factors approach `1` modulo increasing powers of `X`.
+* `PowerSeries.WithPiTopology.continuousLinearEquivPi`: topological `R`-linear isomorphism
+  `S⟦X⟧ ≃L[R] (ℕ → S)` via `PowerSeries.coeff` and `PowerSeries.mk`.
+* `PowerSeries.WithPiTopology.hasProd_of_X_pow_dvd_sub_one`: infinite products through finite
+  cutoffs when factors converge to `1` `(X)`-adically.
 * `PowerSeries.WithPiTopology.isAdic_span_X`: over a discrete commutative ring, the
-  coefficientwise topology on `R⟦X⟧` is `(X)`-adic.
+  coefficientwise topology on `R⟦X⟧` coincides with the `(X)`-adic topology.
 -/
 
 public section
@@ -32,6 +31,33 @@ open Finset
 namespace PowerSeries.WithPiTopology
 
 open scoped PowerSeries.WithPiTopology Topology
+
+section Semiring
+
+variable (R S : Type*) [Semiring R] [Semiring S] [Module R S] [TopologicalSpace S]
+
+/-- With the product topology on coefficients (`open scoped PowerSeries.WithPiTopology`), `S⟦X⟧` is
+continuously `R`-linearly isomorphic to `ℕ → S` via `PowerSeries.coeff` and `PowerSeries.mk`. -/
+noncomputable def continuousLinearEquivPi : S⟦X⟧ ≃L[R] (ℕ → S) :=
+  ContinuousLinearEquiv.piCongrLeft R (fun _ : ℕ ↦ S) (Finsupp.uniqueEquiv ())
+
+@[simp, grind =]
+theorem continuousLinearEquivPi_apply (f : S⟦X⟧) (n : ℕ) :
+    continuousLinearEquivPi R S f n = PowerSeries.coeff n f := by
+  have h := ContinuousLinearEquiv.piCongrLeft_const_apply R S (Finsupp.uniqueEquiv ()) f n
+  rw [Finsupp.uniqueEquiv_symm_apply] at h
+  exact h.trans (PowerSeries.coeff_coeToMvPowerSeries n)
+
+@[simp, grind =]
+theorem continuousLinearEquivPi_symm_apply (c : ℕ → S) :
+    (continuousLinearEquivPi R S).symm c = PowerSeries.mk c := by
+  ext n
+  rw [← continuousLinearEquivPi_apply R S, ContinuousLinearEquiv.apply_symm_apply,
+    PowerSeries.coeff_mk]
+
+end Semiring
+
+section CommRing
 
 variable {R ι : Type*} [CommRing R] [TopologicalSpace R]
 
@@ -74,5 +100,7 @@ theorem isAdic_span_X [DiscreteTopology R] :
       ⟨max i j, Filter.principal_mono.mpr (hf_anti (le_max_left _ _)),
         Filter.principal_mono.mpr (hf_anti (le_max_right _ _))⟩
     simpa only [Filter.mem_principal] using (Filter.mem_iInf_of_directed hdir s).mp (hle hs)
+
+end CommRing
 
 end PowerSeries.WithPiTopology
