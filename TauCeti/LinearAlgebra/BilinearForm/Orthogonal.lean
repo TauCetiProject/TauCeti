@@ -17,6 +17,7 @@ import Mathlib.LinearAlgebra.Projection
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.SesquilinearForm.Isotropic
 
 /-!
 # Orthogonal complements of bilinear forms
@@ -446,20 +447,12 @@ theorem eq_of_apply_eq_of_forall_ker_orthogonal {B : LinearMap.BilinForm R M}
   exact sub_eq_zero.mp (Submodule.coe_eq_zero.mp (hB _ hdd))
 
 /-- Adjoining an orthogonal vector to an isotropic submodule preserves isotropy for an
-alternating form. No nondegeneracy or characteristic assumption is needed. -/
+alternating form. No nondegeneracy or characteristic assumption is needed. This is the case of
+scalar values of `LinearMap.IsAlt.sup_span_singleton_le_orthogonalBilin`. -/
 theorem IsAlt.sup_span_singleton_le_orthogonal {B : LinearMap.BilinForm R M} (hB : B.IsAlt)
     {W : Submodule R M} (hW : W ≤ B.orthogonal W) {v : M} (hv : v ∈ B.orthogonal W) :
     W ⊔ R ∙ v ≤ B.orthogonal (W ⊔ R ∙ v) := by
-  have hspan : R ∙ v ≤ B.orthogonal W := Submodule.span_le.mpr (by simpa using hv)
-  rw [orthogonal, Submodule.orthogonalBilin_sup]
-  refine sup_le (le_inf hW ?_) (le_inf hspan ?_)
-  · intro w hw
-    rw [Submodule.mem_orthogonalBilin_span]
-    intro x hx
-    obtain rfl := Set.mem_singleton_iff.mp hx
-    exact hB.isRefl.eq_zero ((mem_orthogonal_iff.mp hv) w hw)
-  · apply Submodule.span_le.mpr
-    simpa [Submodule.mem_orthogonalBilin_span] using hB v
+  simpa only [orthogonal] using LinearMap.IsAlt.sup_span_singleton_le_orthogonalBilin hB hW hv
 
 /-- For a reflexive form, the restriction to a submodule is nondegenerate exactly when the
 submodule meets its orthogonal complement only in zero. Unlike
