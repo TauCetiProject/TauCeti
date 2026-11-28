@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.ProperSpace
+public import Mathlib.RingTheory.PowerSeries.Binomial
 public import TauCeti.Algebra.MonoidAlgebra.PowerSeries
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Filtration
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Prod
+import TauCeti.Algebra.MonoidAlgebra.Basic
+import TauCeti.RingTheory.PowerSeries.Binomial
 
 /-!
 # The power-series coordinate of `ℤ_p[[C × Γ]]`
@@ -52,10 +55,11 @@ coordinate over which Labute's argument for the even-rank Demushkin groups with 
 ## Main definitions
 
 * `TauCeti.completedGroupAlgebra.prodPowerSeriesCoordinate C hΓ hγ`: the isomorphism
-  `ℤ_p[C]⟦X⟧ ≃ₐ[ℤ_p] ℤ_p[[C × Γ]]`, with `prodPowerSeriesCoordinate_X` and
-  `prodPowerSeriesCoordinate_C_single` as its values on `X` and on the group ring, and
-  `prodPowerSeriesCoordinate_symm_of_inl` and `prodPowerSeriesCoordinate_symm_of_inr` as the
-  values of its inverse on the group elements `(c, 1)` and `(1, γ)`.
+  `ℤ_p[C]⟦X⟧ ≃ₐ[ℤ_p] ℤ_p[[C × Γ]]`, with `prodPowerSeriesCoordinate_X`,
+  `prodPowerSeriesCoordinate_C_single`, `prodPowerSeriesCoordinate_map_singleOneRingHom`, and
+  `prodPowerSeriesCoordinate_binomialSeries` as its values on `X`, on the group ring, on scalar
+  series, and on binomial series `(1 + X) ^ u`, and `prodPowerSeriesCoordinate_symm_of_inl` and
+  `prodPowerSeriesCoordinate_symm_of_inr` as the values of its inverse on `(c, 1)` and `(1, γ)`.
 
 ## Main results
 
@@ -142,6 +146,25 @@ theorem prodPowerSeriesCoordinate_C_single_one (c : C) :
     prodPowerSeriesCoordinate C hΓ hγ (PowerSeries.C (MonoidAlgebra.single c 1)) =
       of ℤ_[p] (C × Γ) (c, 1) := by
   rw [prodPowerSeriesCoordinate_C_single, map_one, one_mul]
+
+/-- On a scalar power series over `ℤ_p` embedded via `MonoidAlgebra.singleOneRingHom`, the product
+coordinate applies `powerSeriesCoordinate` on the `Γ`-factor and pushes forward along
+`Γ → C × Γ`. -/
+theorem prodPowerSeriesCoordinate_map_singleOneRingHom (φ : PowerSeries ℤ_[p]) :
+    prodPowerSeriesCoordinate C hΓ hγ
+        (PowerSeries.map (MonoidAlgebra.singleOneRingHom : ℤ_[p] →+* MonoidAlgebra ℤ_[p] C) φ) =
+      map ℤ_[p] (MonoidHom.inr C Γ) (continuous_inr C Γ) (powerSeriesCoordinate hΓ hγ φ) := by
+  simp [prodPowerSeriesCoordinate]
+
+/-- The product coordinate sends the binomial series `(1 + X) ^ u` over `ℤ_p[C]` to the group
+element `(1, γ ^ u)` in `ℤ_p[[C × Γ]]`. -/
+@[simp]
+theorem prodPowerSeriesCoordinate_binomialSeries (u : ℤ_[p]) :
+    prodPowerSeriesCoordinate C hΓ hγ (PowerSeries.binomialSeries (MonoidAlgebra ℤ_[p] C) u) =
+      of ℤ_[p] (C × Γ) (1, hΓ.padicPow γ u) := by
+  rw [← PowerSeries.map_algHom_binomialSeries
+      (MonoidAlgebra.singleOneAlgHom (R := ℤ_[p]) (A := ℤ_[p]) (M := C))]
+  simp [prodPowerSeriesCoordinate_map_singleOneRingHom]
 
 /-- The inverse coordinate sends the group element `(c, 1)` to the group element `c` of the
 group ring. -/

@@ -89,6 +89,14 @@ theorem amiceTransform_dirac (x : ℤ_[p]) :
   ext n
   simp [coeff_amiceTransform, mahler_apply]
 
+/-- The multiplicative Amice transform of a Dirac measure is the binomial series
+`(1 + X) ^ x.toAdd`. -/
+@[simp]
+theorem amiceTransformₐ_dirac (x : Multiplicative ℤ_[p]) :
+    amiceTransformₐ (dirac R x) = PowerSeries.binomialSeries R x.toAdd := by
+  ext n
+  simp [coeff_amiceTransformₐ, mulMahler_apply, mahler_apply]
+
 /-- The Amice transform of the measure `μ` multiplied by the coordinate function is the Mahler
 derivation `(1 + T) d/dT` of the Amice transform of `μ`. -/
 theorem amiceTransform_weight_id_smul_one (μ : D(ℤ_[p], R)) :

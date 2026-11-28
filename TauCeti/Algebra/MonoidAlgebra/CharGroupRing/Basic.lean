@@ -108,6 +108,13 @@ theorem charEval_one :
       MonoidAlgebra.augmentation O G :=
   RingHom.ext MonoidAlgebra.charEval_one_apply
 
+/-- Over a finite group `G`, evaluating `x ∈ O[G]` at a character `ψ : G →* Oˣ` is the finite
+sum `∑ g, x.coeff g * ψ g`. -/
+theorem charEval_eq_sum [Fintype G] (ψ : G →* Oˣ) (x : MonoidAlgebra O G) :
+    ψ.charEval x = ∑ g : G, x.coeff g * (ψ g : O) := by
+  rw [← MonoidAlgebra.sum_coeff_single x, Finsupp.sum_fintype _ _ (fun _ ↦ by simp), map_sum]
+  simp [TauCeti.DiagonalizableGroup.point_single]
+
 /-- The value of a character `ψ` on the character sum `∑_{h ∈ H} χ(h) h` over a finite subgroup
 `H` is `#H` when `χ ψ` is trivial on `H`. -/
 theorem charEval_subgroupCharSum_of_le_ker (χ ψ : G →* Oˣ) (H : Subgroup G) [Fintype H]

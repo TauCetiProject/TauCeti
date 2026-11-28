@@ -5,14 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.IsSepClosed
+public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import TauCeti.NumberTheory.Padics.Measure.FiniteAlgebra
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Map
 import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.NumberTheory.Padics.ProperSpace
 import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Topology.UniformSpace.UniformApproximation
+import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+import TauCeti.Algebra.MonoidAlgebra.CharGroupRing.Basic
+import TauCeti.Algebra.MonoidAlgebra.PowerSeries
 import TauCeti.Analysis.Normed.Operator.Extend
 import TauCeti.NumberTheory.Padics.Measure.Norm
 import TauCeti.Topology.Algebra.Group.LocallyConstant
@@ -51,10 +57,16 @@ the integral measures on a profinite group are weakly compact because `ℤ_p[[Γ
 ## Main results
 
 * `AbstractMeasure.toCompletedGroupAlgebra_dirac`: the Dirac measure at `γ` goes to `γ`.
+* `AbstractMeasure.toCompletedGroupAlgebra_mapAlgHom`: naturality of `toCompletedGroupAlgebra`
+  under pushforward along a continuous group homomorphism.
 * `AbstractMeasure.apply_eq_sum_coeff_proj_toCompletedGroupAlgebra`: integration of a function
   factoring through `Γ ⧸ U` is the finite sum of its values against the coefficients at level `U`.
 * `AbstractMeasure.toCompletedGroupAlgebra_injective`: for profinite `Γ` and Hausdorff `R`, a
   measure is determined by its image in the completed group algebra.
+* `AbstractMeasure.eq_of_forall_isOfFinOrder_characterIntegralAlgHom_eq`,
+  `AbstractMeasure.eq_of_forall_isOfFinOrder_characterIntegralAlgHom_eq_of_isSepClosed`: for a
+  profinite commutative group `Γ`, finite-order continuous characters separate measures in `D(Γ, K)`
+  by separating their finite-quotient projections.
 * `AbstractMeasure.toCompletedGroupAlgebra_surjective`: every element of `ℤ_p[[Γ]]` is the image
   of a unique integral measure.
 * `AbstractMeasure.completedGroupAlgebraEquiv`: the resulting `ℤ_p`-algebra equivalence between
@@ -134,6 +146,31 @@ theorem toCompletedGroupAlgebra_dirac (γ : Γ) :
     toCompletedGroupAlgebra (dirac R γ) = completedGroupAlgebra.of R Γ γ := by
   ext U
   simp
+
+/-- Pushing a measure forward along `f : Γ →ₜ* Δ` commutes with `toCompletedGroupAlgebra`. -/
+theorem toCompletedGroupAlgebra_mapAlgHom {Δ : Type*} [Group Δ] [TopologicalSpace Δ]
+    [CompactSpace Δ] [ContinuousMul Δ] [LocallyCompactSpace Δ] (f : Γ →ₜ* Δ) (μ : D(Γ, R)) :
+    toCompletedGroupAlgebra (f.mapAlgHom μ) =
+      completedGroupAlgebra.map R f.toMonoidHom f.continuous (toCompletedGroupAlgebra μ) := by
+  refine completedGroupAlgebra.ext fun V ↦ ?_
+  let U := V.comap f.toMonoidHom f.continuous
+  let q := QuotientGroup.map U.toSubgroup V.toSubgroup f.toMonoidHom
+    (V.toSubgroup_comap f.toMonoidHom f.continuous).le
+  have hq : (V.toSubgroup.quotientMkContinuousMonoidHom : C(Δ, Δ ⧸ V.toSubgroup)).comp (f : C(Γ, Δ))
+      = (⟨q, continuous_of_discreteTopology⟩ : C(_, _)).comp
+        U.toSubgroup.quotientMkContinuousMonoidHom := by ext; simp [q]
+  rw [proj_toCompletedGroupAlgebra, completedGroupAlgebra.proj_map, proj_toCompletedGroupAlgebra]
+  refine MonoidAlgebra.coeff_injective ?_
+  simp only [MonoidAlgebra.coeff_mapDomain, ContinuousMonoidHom.finiteProjectionAlgHom_apply,
+    MonoidAlgebra.coeff_ofCoeff, ContinuousMonoidHom.mapAlgHom_apply, finiteProjection_map, hq,
+    finiteProjection_comp, ContinuousMap.coe_mk, q, U]
+
+/-- Pushing a measure forward along a topological group isomorphism corresponds to `domCongr`. -/
+theorem toCompletedGroupAlgebra_continuousMulEquiv {Δ : Type*} [Group Δ] [TopologicalSpace Δ]
+    [CompactSpace Δ] [ContinuousMul Δ] [LocallyCompactSpace Δ] (e : Γ ≃ₜ* Δ) (μ : D(Γ, R)) :
+    toCompletedGroupAlgebra ((e : Γ →ₜ* Δ).mapAlgHom μ) =
+      completedGroupAlgebra.domCongr R e (toCompletedGroupAlgebra μ) :=
+  completedGroupAlgebra.coe_domCongr R e ▸ toCompletedGroupAlgebra_mapAlgHom (e : Γ →ₜ* Δ) μ
 
 /-- Integrating a function that factors through `Γ ⧸ U` as `g` is the finite sum of the values
 of `g` against the coefficients of the projection of `toCompletedGroupAlgebra μ` at level `U`,
@@ -478,6 +515,15 @@ theorem isHomeomorph_toCompletedGroupAlgebra_weak :
     ⟨⟨hind, toCompletedGroupAlgebra_injective⟩, toCompletedGroupAlgebra_surjective⟩
 
 open Topology in
+/-- The inverse of `completedGroupAlgebraEquiv` is continuous to `WeakTopology`. -/
+theorem continuous_completedGroupAlgebraEquiv_symm_weak :
+    @Continuous _ _ _ (WeakTopology (X := Γ) (R := ℤ_[p]) (E := ℤ_[p]))
+      (completedGroupAlgebraEquiv (Γ := Γ) (p := p)).symm := by
+  let : TopologicalSpace D(Γ, ℤ_[p]) := WeakTopology
+  exact isHomeomorph_toCompletedGroupAlgebra_weak.isInducing.continuous_iff.mpr <|
+    continuous_id.congr fun _ ↦ by simp
+
+open Topology in
 /-- Integral measures on a profinite group form a topological ring for the weak topology. -/
 theorem _root_.TauCeti.isTopologicalRing_integralMeasures_weak :
     @IsTopologicalRing D(Γ, ℤ_[p]) WeakTopology _ := by
@@ -509,5 +555,105 @@ example [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [Nontrivial R]
   simpa using (completedGroupAlgebra.of_injective R Γ).ne hxy
 
 end TopologicalGroup
+
+section CharacterSeparation
+
+variable {Γ K : Type*} [CommGroup Γ] [TopologicalSpace Γ] [IsTopologicalGroup Γ]
+  [CompactSpace Γ] [TotallyDisconnectedSpace Γ]
+  [CommRing K] [IsDomain K] [TopologicalSpace K] [IsTopologicalRing K] [T2Space K]
+
+/-- Inflate a character of a finite open-normal quotient `Γ ⧸ U` to a continuous character
+of `Γ`. -/
+private def inflate {Γ R : Type*} [Group Γ] [TopologicalSpace Γ] [ContinuousMul Γ]
+    [CommMonoid R] [TopologicalSpace R] {U : OpenNormalSubgroup Γ}
+    (ψ : (Γ ⧸ U.toSubgroup) →* Rˣ) : Γ →ₜ* Rˣ where
+  toMonoidHom := ψ.comp U.toSubgroup.quotientMkContinuousMonoidHom.toMonoidHom
+  continuous_toFun :=
+    (continuous_of_discreteTopology (f := ⇑ψ)).comp
+      U.toSubgroup.quotientMkContinuousMonoidHom.continuous
+
+private theorem inflate_apply {Γ R : Type*} [Group Γ] [TopologicalSpace Γ] [ContinuousMul Γ]
+    [CommMonoid R] [TopologicalSpace R] {U : OpenNormalSubgroup Γ}
+    (ψ : (Γ ⧸ U.toSubgroup) →* Rˣ) (x : Γ) :
+    inflate ψ x = ψ (x : Γ ⧸ U.toSubgroup) := by
+  simp [inflate]
+
+private theorem isOfFinOrder_inflate {Γ R : Type*} [Group Γ] [TopologicalSpace Γ]
+    [CompactSpace Γ] [ContinuousMul Γ] [CommMonoid R] [TopologicalSpace R] [ContinuousMul R]
+    {U : OpenNormalSubgroup Γ} (ψ : (Γ ⧸ U.toSubgroup) →* Rˣ) :
+    IsOfFinOrder (inflate ψ) :=
+  isOfFinOrder_iff_pow_eq_one.mpr
+    ⟨Monoid.exponent (Γ ⧸ U.toSubgroup), Monoid.ExponentExists.of_finite.exponent_pos, by
+      ext x
+      simp [inflate_apply, ← map_pow, Monoid.pow_exponent_eq_one]⟩
+
+/-- Integrating a continuous character that factors through a finite quotient `Γ ⧸ U` against `μ`
+equals evaluating `ψ.charEval` on the finite projection of `μ` at level `U`. -/
+private theorem characterIntegralAlgHom_comp_quotientMk_eq_charEval_finiteProjection
+    {Γ R : Type*} [CommGroup Γ] [TopologicalSpace Γ] [CompactSpace Γ]
+    [ContinuousMul Γ] [LocallyCompactSpace Γ] [CommRing R] [TopologicalSpace R]
+    [IsTopologicalRing R]
+    {U : OpenNormalSubgroup Γ} (ψ : (Γ ⧸ U.toSubgroup) →* Rˣ) (μ : D(Γ, R)) :
+    (ContinuousMonoidHom.comp ⟨Units.coeHom R, Units.continuous_val⟩
+      (inflate ψ)).characterIntegralAlgHom μ =
+      ψ.charEval (U.toSubgroup.quotientMkContinuousMonoidHom.finiteProjectionAlgHom μ) := by
+  let _ := Fintype.ofFinite (Γ ⧸ U.toSubgroup)
+  rw [ψ.charEval_eq_sum, ← proj_toCompletedGroupAlgebra,
+    ContinuousMonoidHom.characterIntegralAlgHom_apply,
+    apply_eq_sum_coeff_proj_toCompletedGroupAlgebra (R := R) (U := U) μ
+      (g := fun a ↦ (ψ a : R))
+      (funext fun x ↦ by
+        simp only [Function.comp_apply, ContinuousMap.coe_mk, ContinuousMonoidHom.comp_toFun]
+        rw [inflate_apply]
+        exact (Units.coeHom_apply _).symm)]
+  exact Finset.sum_congr rfl fun a _ ↦ mul_comm _ _
+
+/-- A measure on a profinite commutative group valued in a Hausdorff domain with enough roots of
+unity for every open normal quotient is determined by its integrals against finite-order
+continuous characters. -/
+theorem eq_of_forall_isOfFinOrder_characterIntegralAlgHom_eq
+    (hroots : ∀ U : OpenNormalSubgroup Γ,
+      HasEnoughRootsOfUnity K (Monoid.exponent (Γ ⧸ U.toSubgroup)))
+    {μ ν : D(Γ, K)}
+    (h : ∀ κ : Γ →ₜ* Kˣ, IsOfFinOrder κ →
+      (ContinuousMonoidHom.comp ⟨Units.coeHom K, Units.continuous_val⟩
+        κ).characterIntegralAlgHom μ =
+      (ContinuousMonoidHom.comp ⟨Units.coeHom K, Units.continuous_val⟩
+        κ).characterIntegralAlgHom ν) :
+    μ = ν := by
+  refine toCompletedGroupAlgebra_injective (completedGroupAlgebra.ext fun U ↦ ?_)
+  rw [proj_toCompletedGroupAlgebra, proj_toCompletedGroupAlgebra]
+  have := hroots U
+  refine TauCeti.eq_of_forall_charEval_eq fun ψ ↦ ?_
+  rw [← characterIntegralAlgHom_comp_quotientMk_eq_charEval_finiteProjection ψ μ,
+    ← characterIntegralAlgHom_comp_quotientMk_eq_charEval_finiteProjection ψ ν]
+  exact h (inflate ψ) (isOfFinOrder_inflate ψ)
+
+end CharacterSeparation
+
+section IsSepClosedCharacterSeparation
+
+/-- Over a separably closed topological field `K` of characteristic zero, a measure on a profinite
+commutative group is determined by its integrals against finite-order continuous characters. -/
+theorem eq_of_forall_isOfFinOrder_characterIntegralAlgHom_eq_of_isSepClosed
+    {Γ K : Type*} [CommGroup Γ] [TopologicalSpace Γ] [IsTopologicalGroup Γ]
+    [CompactSpace Γ] [TotallyDisconnectedSpace Γ]
+    [Field K] [TopologicalSpace K] [IsTopologicalRing K] [T2Space K]
+    [CharZero K] [IsSepClosed K]
+    {μ ν : D(Γ, K)}
+    (h : ∀ κ : Γ →ₜ* Kˣ, IsOfFinOrder κ →
+      (ContinuousMonoidHom.comp ⟨Units.coeHom K, Units.continuous_val⟩
+        κ).characterIntegralAlgHom μ =
+      (ContinuousMonoidHom.comp ⟨Units.coeHom K, Units.continuous_val⟩
+        κ).characterIntegralAlgHom ν) :
+    μ = ν :=
+  eq_of_forall_isOfFinOrder_characterIntegralAlgHom_eq (fun U ↦ by
+    have : NeZero (Monoid.exponent (Γ ⧸ U.toSubgroup)) :=
+      ⟨Monoid.ExponentExists.of_finite.exponent_ne_zero⟩
+    have : NeZero ((Monoid.exponent (Γ ⧸ U.toSubgroup) : ℕ) : K) :=
+      ⟨Nat.cast_ne_zero.mpr (NeZero.ne _)⟩
+    exact IsSepClosed.hasEnoughRootsOfUnity K _) h
+
+end IsSepClosedCharacterSeparation
 
 end AbstractMeasure

@@ -9,10 +9,12 @@ public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.RingTheory.PowerSeries.GaussNorm
+public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.RingTheory.PowerSeries.Restricted
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Module
+import Mathlib.Topology.UniformSpace.UniformApproximation
 import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.RingTheory.PowerSeries.GaussNorm
 import TauCeti.RingTheory.PowerSeries.Restricted
@@ -90,6 +92,12 @@ coefficient rings here may have nilpotents.
   `PowerSeries.IsRestricted.evalAt_sum` record the compatibility with scalars and finite sums.
 * `PowerSeries.IsRestricted.evalAtHom`: evaluation at such `b` as a ring homomorphism on the
   restricted series.
+* `PowerSeries.summable_smul_pow_of_norm_algebraMap_le`,
+  `PowerSeries.continuous_evalAt_of_norm_algebraMap_le`, `PowerSeries.evalAtAlgHom`,
+  `PowerSeries.continuous_evalAtAlgHom`, and `PowerSeries.tendsto_evalAtAlgHom_pow`: `A`-algebra
+  evaluation of `A⟦X⟧` at a topologically nilpotent element of a complete ultrametric normed
+  `A`-algebra `R` when `algebraMap A R` is uniformly norm-bounded, continuous when `algebraMap A R`
+  is continuous.
 * `PowerSeries.evalAt_eq_zero_iff_of_isUnit_X_pow_mul_finprod_eq`: zeros in the closed disc of a
   series factored as `u * (X ^ a * ∏ᶠ m, g m)` with `u` a restricted unit.
 * `PowerSeries.evalScalar_monomial`, `PowerSeries.evalScalar_at_zero`,
@@ -667,5 +675,130 @@ theorem evalAt_eq_zero_iff_of_isUnit_X_pow_mul_finprod_eq {R A ι : Type*} [Norm
   refine or_congr ⟨fun ⟨hx0, ha0⟩ => ⟨hx0, Nat.pos_of_ne_zero ha0⟩,
     fun ⟨hx0, ha0⟩ => ⟨hx0, ha0.ne'⟩⟩ ?_
   simp only [Set.Finite.mem_toFinset]
+
+section TopologicallyNilpotent
+
+open Filter Topology
+open scoped PowerSeries.WithPiTopology
+
+variable {A R : Type*} [CommSemiring A] [NormedRing R] [Algebra A R] [IsUltrametricDist R]
+
+omit [IsUltrametricDist R] in
+private theorem norm_coeff_smul_pow_le_of_norm_algebraMap_le {C : ℝ}
+    (hA : ∀ a : A, ‖algebraMap A R a‖ ≤ C) (f : A⟦X⟧) (t : R) (n : ℕ) :
+    ‖coeff n f • t ^ n‖ ≤ C * ‖t ^ n‖ := by
+  rw [Algebra.smul_def]
+  exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (hA _) (norm_nonneg _))
+
+variable [CompleteSpace R]
+
+/-- For a topologically nilpotent `t ∈ R` and a coefficient ring `A` with uniformly norm-bounded
+`algebraMap A R`, `∑ n, coeff n f • t ^ n` is summable for every `f ∈ A⟦X⟧`. -/
+theorem summable_smul_pow_of_norm_algebraMap_le {C : ℝ}
+    (hA : ∀ a : A, ‖algebraMap A R a‖ ≤ C) {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0))
+    (f : A⟦X⟧) : Summable fun n : ℕ ↦ coeff n f • t ^ n :=
+  NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <| by
+    rw [Nat.cofinite_eq_atTop, tendsto_zero_iff_norm_tendsto_zero]
+    exact squeeze_zero (fun _ ↦ norm_nonneg _)
+      (norm_coeff_smul_pow_le_of_norm_algebraMap_le hA f t)
+      (by simpa using (tendsto_zero_iff_norm_tendsto_zero.mp ht).const_mul C)
+
+/-- When `algebraMap A R` is continuous and uniformly norm-bounded, evaluating `f ∈ A⟦X⟧` at a
+topologically nilpotent `t ∈ R` is continuous for the coefficientwise topology on `A⟦X⟧`. -/
+theorem continuous_evalAt_of_norm_algebraMap_le [TopologicalSpace A]
+    (hAc : Continuous (algebraMap A R)) {C : ℝ} (hA : ∀ a : A, ‖algebraMap A R a‖ ≤ C)
+    {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) :
+    Continuous fun f : A⟦X⟧ ↦ f.evalAt t := by
+  refine continuous_of_uniform_approx_of_continuous fun u hu ↦ ?_
+  obtain ⟨ε, hε, hεu⟩ := Metric.mem_uniformity_dist.mp hu
+  have hC' : 0 < max C 1 := zero_lt_one.trans_le (le_max_right _ _)
+  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.mp ht (ε / (2 * max C 1))
+    (div_pos hε (mul_pos two_pos hC'))
+  refine ⟨fun f ↦ ∑ n ∈ Finset.range N, algebraMap A R (coeff n f) * t ^ n,
+    continuous_finsetSum _ fun n _ ↦
+      (hAc.comp (WithPiTopology.continuous_coeff A n)).mul continuous_const,
+    fun f ↦ hεu ?_⟩
+  simp_rw [← Algebra.smul_def]
+  rw [dist_eq_norm, evalAt_def,
+    ← (summable_smul_pow_of_norm_algebraMap_le hA ht f).sum_add_tsum_nat_add N,
+    add_sub_cancel_left]
+  refine (IsUltrametricDist.norm_tsum_le_of_forall_le (C := ε / 2) fun k ↦ ?_).trans_lt
+    (half_lt_self hε)
+  calc ‖coeff (k + N) f • t ^ (k + N)‖
+      ≤ C * ‖t ^ (k + N)‖ := norm_coeff_smul_pow_le_of_norm_algebraMap_le hA f t (k + N)
+    _ ≤ max C 1 * ‖t ^ (k + N)‖ := by gcongr; exact le_max_left _ _
+    _ ≤ max C 1 * (ε / (2 * max C 1)) := by
+        gcongr
+        exact le_of_lt (by simpa [dist_zero_right] using hN (k + N) (Nat.le_add_left N k))
+    _ = ε / 2 := by
+        rw [mul_div_assoc', mul_comm (max C 1) ε, mul_div_mul_right _ _ hC'.ne']
+
+/-- **Evaluation of power series at a topologically nilpotent element** of a complete
+ultrametric normed `A`-algebra `R`, when `algebraMap A R` is uniformly norm-bounded. -/
+noncomputable def evalAtAlgHom {C : ℝ} (hA : ∀ a : A, ‖algebraMap A R a‖ ≤ C)
+    {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) :
+    A⟦X⟧ →ₐ[A] R where
+  toFun f := f.evalAt t
+  map_one' := evalAt_one t
+  map_zero' := evalAt_zero t
+  commutes' a := by rw [← C_eq_algebraMap, evalAt_C]
+  map_add' f g := evalAt_add_of_summable
+    (summable_smul_pow_of_norm_algebraMap_le hA ht f)
+    (summable_smul_pow_of_norm_algebraMap_le hA ht g)
+  map_mul' f g :=
+    letI : TopologicalSpace A := ⊥
+    haveI : DiscreteTopology A := ⟨rfl⟩
+    have hcont := continuous_evalAt_of_norm_algebraMap_le continuous_of_discreteTopology hA ht
+    congrFun (((WithPiTopology.denseRange_toPowerSeries A).prodMap
+      (WithPiTopology.denseRange_toPowerSeries A)).equalizer
+      (hcont.comp continuous_mul) ((hcont.comp continuous_fst).mul (hcont.comp continuous_snd))
+      (funext fun ⟨P, Q⟩ ↦ by simp [← Polynomial.coe_mul, evalAt_coe])) (f, g)
+
+variable {C : ℝ} {hA : ∀ a : A, ‖algebraMap A R a‖ ≤ C} {t : R} {ht : Tendsto (t ^ ·) atTop (𝓝 0)}
+
+/-- `evalAtAlgHom` evaluates a power series via `PowerSeries.evalAt`. -/
+theorem evalAtAlgHom_apply (f : A⟦X⟧) : evalAtAlgHom hA ht f = f.evalAt t := (rfl)
+
+/-- `evalAtAlgHom` is the sum of the monomial series `coeff n f • t ^ n`. -/
+theorem hasSum_evalAtAlgHom (hA : ∀ a : A, ‖algebraMap A R a‖ ≤ C)
+    {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) (f : A⟦X⟧) :
+    HasSum (fun n : ℕ ↦ coeff n f • t ^ n) (evalAtAlgHom hA ht f) := by
+  rw [evalAtAlgHom_apply, evalAt_def]
+  exact (summable_smul_pow_of_norm_algebraMap_le hA ht f).hasSum
+
+/-- `evalAtAlgHom` is continuous for the coefficientwise topology on `A⟦X⟧` when `algebraMap A R`
+is continuous. -/
+theorem continuous_evalAtAlgHom [TopologicalSpace A] (hAc : Continuous (algebraMap A R))
+    (hA : ∀ a : A, ‖algebraMap A R a‖ ≤ C) {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) :
+    Continuous (evalAtAlgHom hA ht) :=
+  continuous_evalAt_of_norm_algebraMap_le hAc hA ht
+
+/-- Evaluating `X` under `evalAtAlgHom` returns the evaluation point `t`. -/
+@[simp]
+theorem evalAtAlgHom_X (hA : ∀ a : A, ‖algebraMap A R a‖ ≤ C)
+    {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) :
+    evalAtAlgHom hA ht X = t :=
+  evalAt_X t
+
+/-- Evaluating a constant series `C a` under `evalAtAlgHom` returns `algebraMap A R a`. -/
+@[simp]
+theorem evalAtAlgHom_C (hA : ∀ a : A, ‖algebraMap A R a‖ ≤ C)
+    {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) (a : A) :
+    evalAtAlgHom hA ht (PowerSeries.C a) = algebraMap A R a :=
+  evalAt_C a t
+
+/-- Evaluating a power series whose constant coefficient is nilpotent at a topologically nilpotent
+element produces a topologically nilpotent element. -/
+theorem tendsto_evalAtAlgHom_pow (hA : ∀ a : A, ‖algebraMap A R a‖ ≤ C)
+    {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) {b : A⟦X⟧} (hb : IsNilpotent (constantCoeff b)) :
+    Tendsto ((evalAtAlgHom hA ht b) ^ ·) atTop (𝓝 0) := by
+  let : TopologicalSpace A := ⊥
+  have : DiscreteTopology A := ⟨rfl⟩
+  simpa only [Function.comp_def, map_pow, map_zero] using
+    ((continuous_evalAtAlgHom continuous_of_discreteTopology hA ht).tendsto' 0 0
+      (map_zero _)).comp
+      (WithPiTopology.isTopologicallyNilpotent_of_constantCoeff_isNilpotent hb)
+
+end TopologicallyNilpotent
 
 end PowerSeries

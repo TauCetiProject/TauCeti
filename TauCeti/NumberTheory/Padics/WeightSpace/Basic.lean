@@ -373,8 +373,8 @@ of a weight has norm less than one. The `ℤ_p`-algebra structure and the ultram
 `K` needed by `TauCeti.WeightSpace.norm_coord_lt_one` come from the `ℚ_p`-algebra structure. -/
 theorem norm_coord_lt_one_of_normedAlgebra {K : Type*} [NormedDivisionRing K]
     [NormedAlgebra ℚ_[p] K] (κ : WeightSpace p K) : ‖κ.coord‖ < 1 := by
-  let : Algebra ℤ_[p] K := Algebra.compHom K (algebraMap ℤ_[p] ℚ_[p])
-  have : IsBoundedSMul ℤ_[p] K := .of_norm_smul_le fun r x ↦ norm_smul_le (r : ℚ_[p]) x
+  let _ := padicIntAlgebra p K
+  have _ := isBoundedSMul_padicIntAlgebra p K
   have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := K)
   exact norm_coord_lt_one κ
 
@@ -445,6 +445,14 @@ theorem ofCoord_finiteChar_coord (κ : WeightSpace p R) :
   ext x
   rw [coe_ofCoord_apply, ← principalChar_eq_addChar_of_value_at_one,
     apply_eq_finiteChar_mul_principalChar]
+
+/-- **The normed universal property of the weights of `ℤ_pˣ`.** Over a complete ultrametric normed
+commutative `ℤ_p`-algebra `R` with contractive scalar action, every finite part `η` and
+topologically nilpotent coordinate `t` determine a unique weight. -/
+theorem existsUnique_character_of_tendsto_pow (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Rˣ) {t : R}
+    (ht : Tendsto (t ^ ·) atTop (𝓝 0)) : ∃! κ : WeightSpace p R, κ.finiteChar = η ∧ κ.coord = t :=
+  ⟨ofCoord η t ht, ⟨by simp, by simp⟩, fun κ ⟨hη, ht'⟩ ↦
+    ext_finiteChar_coord (by rw [hη, finiteChar_ofCoord]) (by rw [ht', coord_ofCoord])⟩
 
 end Construction
 
@@ -546,6 +554,27 @@ theorem ofHasEval_eq_ofCoord (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Sˣ) {z
     ((coord_ofHasEval η hz).trans (coord_ofCoord η z hz).symm)
 
 end AdicNormed
+
+section NormedPadicAlgebra
+
+/-- Over an ultrametric normed `ℚ_p`-algebra `K`, the coordinate of a weight is topologically
+nilpotent, without requiring an `Algebra ℤ_[p] K` instance. -/
+theorem tendsto_coord_pow_of_normedAlgebra {K : Type*} [NormedRing K] [NormedAlgebra ℚ_[p] K]
+    [IsUltrametricDist K] (κ : WeightSpace p K) :
+    Tendsto (κ.coord ^ ·) atTop (𝓝 0) :=
+  letI := padicIntAlgebra p K; haveI := isBoundedSMul_padicIntAlgebra p K; κ.tendsto_coord_pow
+
+variable {K : Type*} [NormedCommRing K] [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K]
+  [CompleteSpace K]
+
+/-- **Universal property of weights in a complete ultrametric normed `ℚ_p`-algebra.** -/
+theorem existsUnique_character_of_tendsto_pow_of_normedAlgebra
+    (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Kˣ) {t : K} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) :
+    ∃! κ : WeightSpace p K, κ.finiteChar = η ∧ κ.coord = t :=
+  letI := padicIntAlgebra p K; haveI := isBoundedSMul_padicIntAlgebra p K
+  existsUnique_character_of_tendsto_pow η ht
+
+end NormedPadicAlgebra
 
 end WeightSpace
 

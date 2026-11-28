@@ -12,11 +12,14 @@ public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import Mathlib.RingTheory.PowerSeries.Trunc
+public import TauCeti.RingTheory.PowerSeries.EvalAt
 public import TauCeti.RingTheory.PowerSeries.Jet
 -- Proof-only: lowest homogeneous components of powers.
 import TauCeti.RingTheory.MvPowerSeries.Order
 -- Proof-only: algebra maps out of `R⟦X⟧` agree with `aeval` on polynomials.
 import TauCeti.RingTheory.PowerSeries.Evaluation
+-- Proof-only: continuous algebra-hom extensionality on `R⟦X⟧`.
+import TauCeti.RingTheory.PowerSeries.PiTopology
 import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 import Mathlib.RingTheory.PowerSeries.Inverse
 
@@ -72,6 +75,10 @@ of a completed group algebra attached to two topological generators.
   has zero constant coefficient.
 * `Continuous.powerSeries_subst`: substitution is jointly continuous in coefficientwise
   continuous families whose inner series have zero constant coefficient.
+* `PowerSeries.HasSubst.continuous_subst`: substituting a fixed substitutable series is
+  continuous for the coefficientwise topology.
+* `PowerSeries.evalAtAlgHom_subst`: substituting a substitutable series before `evalAtAlgHom`
+  agrees with evaluating at the image of that series.
 * `PowerSeries.HasSubst.C`: a nilpotent constant can be substituted.
 * `PowerSeries.HasSubst.sub_one`: `f - 1` can be substituted when `constantCoeff f = 1`.
 * `PowerSeries.constantCoeff_subst_of_constantCoeff_zero'`: univariate `PowerSeries.constantCoeff`
@@ -683,6 +690,49 @@ theorem exists_subst_add_X_pow_mul (f : R⟦X⟧) {a : S⟦X⟧} (ha : constantC
     linear_combination -h
 
 end Perturbation
+
+open Filter Topology in
+open scoped PowerSeries.WithPiTopology in
+/-- Substituting a fixed substitutable power series is continuous for the coefficientwise
+topology. -/
+theorem HasSubst.continuous_subst {A S : Type*} [CommRing A] [CommRing S] [Algebra A S]
+    [TopologicalSpace A] [TopologicalSpace S] [ContinuousAdd S] [ContinuousSMul A S]
+    {b : S⟦X⟧} (hb : HasSubst b) :
+    Continuous fun f : A⟦X⟧ ↦ f.subst b := by
+  refine continuous_iff_continuousAt.mpr fun f ↦
+    (WithPiTopology.tendsto_iff_coeff_tendsto _ _ _ _).mpr fun n ↦ ?_
+  obtain ⟨N, hN⟩ := (hb.eventually_coeff_pow_eq_zero n).exists_forall_of_atTop
+  have hsum (g : A⟦X⟧) :
+      coeff n (g.subst b) = ∑ d ∈ Finset.range N, coeff d g • coeff n (b ^ d) := by
+    rw [coeff_subst' hb]
+    refine finsum_eq_sum_of_support_subset _ fun d hd ↦ ?_
+    simp only [Finset.coe_range, Set.mem_Iio]
+    by_contra! hdN
+    exact hd (by dsimp only; rw [hN d hdN n le_rfl, smul_zero])
+  simp_rw [hsum]
+  exact (continuous_finsetSum _ fun d _ ↦
+    (WithPiTopology.continuous_coeff A d).smul continuous_const).continuousAt
+
+open Filter Topology in
+open scoped PowerSeries.WithPiTopology in
+/-- Substituting a substitutable series `b` before evaluating via `evalAtAlgHom` at a
+topologically nilpotent element `t` agrees with evaluating at `evalAtAlgHom ... b`. -/
+theorem evalAtAlgHom_subst {A R : Type*} [CommRing A]
+    [NormedRing R] [Algebra A R] [IsUltrametricDist R] [CompleteSpace R]
+    {C : ℝ} (hA : ∀ a : A, ‖algebraMap A R a‖ ≤ C)
+    {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) {b : A⟦X⟧} (hb : HasSubst b) (f : A⟦X⟧) :
+    evalAtAlgHom hA ht (f.subst b) =
+      evalAtAlgHom hA (tendsto_evalAtAlgHom_pow hA ht hb) f := by
+  let : TopologicalSpace A := ⊥
+  have : DiscreteTopology A := ⟨rfl⟩
+  simpa [coe_substAlgHom] using AlgHom.congr_fun (WithPiTopology.algHom_ext
+    (φ := (evalAtAlgHom hA ht).comp (substAlgHom hb))
+    (ψ := evalAtAlgHom hA (tendsto_evalAtAlgHom_pow hA ht hb))
+    (((continuous_evalAtAlgHom continuous_of_discreteTopology hA ht).comp
+      (hb.continuous_subst (A := A))).congr fun _ ↦ by simp [coe_substAlgHom])
+    (continuous_evalAtAlgHom continuous_of_discreteTopology hA
+      (tendsto_evalAtAlgHom_pow hA ht hb))
+    (fun a ↦ by simp [C_eq_algebraMap]) (by simp [coe_substAlgHom, subst_X hb])) f
 
 end PowerSeries
 

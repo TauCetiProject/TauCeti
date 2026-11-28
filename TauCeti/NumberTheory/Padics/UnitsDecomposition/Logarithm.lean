@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.Normed.Algebra.Logarithm
+public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
 import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
 import TauCeti.NumberTheory.Padics.DyadicUnits
 import TauCeti.NumberTheory.Padics.Exp.Disc
+import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.UnitFiltration
 import TauCeti.NumberTheory.Padics.UnitsDecomposition.Basic
 import TauCeti.Topology.Algebra.Group.Generation
@@ -55,8 +57,10 @@ At `p = 2` the modulus `q = 4` cannot be lowered to `2`: `-1` has order two, so
   `TauCeti.coe_padicUnitsGenerator_zpow`, `γ ^ k = exp (q k)`,
   `TauCeti.coe_padicUnitsGenerator_pow_prime_pow`, `γ ^ (p ^ j) = exp (p ^ (k + j))`, and
   `TauCeti.not_isOfFinOrder_padicUnitsGenerator`.
-* `TauCeti.padicUnitsSection p`: the section `ω`, with `TauCeti.eq_padicUnitsSection` and
-  `TauCeti.padicUnitsSection_pow_totient`.
+* `TauCeti.padicUnitsSection p`: the section `ω`, with `TauCeti.eq_padicUnitsSection`,
+  `TauCeti.padicUnitsSection_pow_totient`, `TauCeti.padicUnitsSection_injective`,
+  `TauCeti.hasEnoughRootsOfUnity_zmodUnits_padicUnitsDepth`, and
+  `TauCeti.isUnit_card_zmodUnits_padicUnitsDepth`.
 * `TauCeti.padicIntUnitsEquivZModUnitsProd p`: the decomposition `ℤ_pˣ ≃ₜ* (ℤ/qℤ)ˣ × ℤ_p`, with
   `TauCeti.padicIntUnitsEquivZModUnitsProd_padicUnitsGenerator`,
   `TauCeti.padicIntUnitsEquivZModUnitsProd_padicUnitsSection` and the uniqueness theorem
@@ -418,6 +422,34 @@ theorem eq_padicUnitsSection {ω : (ZMod (p ^ padicUnitsDepth p))ˣ →* ℤ_[p]
   exact not_isOfFinOrder_of_mem_unitsPrincipal (padicUnitsDepth_pos p)
     two_le_padicUnitsDepth hmem (by rwa [ne_eq, inv_mul_eq_one, eq_comm])
     (((padicUnitsSection p).isOfFinOrder hδ).inv.mul (ω.isOfFinOrder hδ))
+
+variable (p) in
+/-- The multiplicative section `ω : (ℤ/qℤ)ˣ →* ℤ_pˣ` is injective. -/
+theorem padicUnitsSection_injective : Function.Injective (padicUnitsSection p) :=
+  Function.LeftInverse.injective unitsToZModPow_padicUnitsSection
+
+variable (p) in
+/-- `ℤ_p` contains enough roots of unity of exponent `exp((ℤ/qℤ)ˣ)`, via `padicUnitsSection p`. -/
+theorem hasEnoughRootsOfUnity_zmodUnits_padicUnitsDepth :
+    HasEnoughRootsOfUnity ℤ_[p] (Monoid.exponent (ZMod (p ^ padicUnitsDepth p))ˣ) := by
+  set G := (ZMod (p ^ padicUnitsDepth p))ˣ
+  have : NeZero (Nat.card G) := ⟨Nat.card_pos.ne'⟩
+  have : HasEnoughRootsOfUnity ℤ_[p] (Nat.card G) := HasEnoughRootsOfUnity.of_card_le <|
+    Nat.card_le_card_of_injective
+      (fun δ : G ↦ (⟨padicUnitsSection p δ, by
+        rw [mem_rootsOfUnity, ← map_pow, pow_card_eq_one', map_one]⟩ :
+          rootsOfUnity (Nat.card G) ℤ_[p]))
+      fun _ _ h ↦ padicUnitsSection_injective p (Subtype.mk.inj h)
+  exact HasEnoughRootsOfUnity.of_dvd ℤ_[p] Group.exponent_dvd_nat_card
+
+/-- For an odd prime `p`, the order `p - 1` of `(ℤ/pℤ)ˣ` is a unit in `ℤ_p`. -/
+theorem isUnit_card_zmodUnits_padicUnitsDepth (hp : p ≠ 2) :
+    IsUnit (Nat.card (ZMod (p ^ padicUnitsDepth p))ˣ : ℤ_[p]) := by
+  have hp2 : 2 < p := lt_of_le_of_ne (Fact.out : p.Prime).two_le hp.symm
+  rw [padicUnitsDepth_of_ne_two hp, pow_one, Nat.card_eq_fintype_card, ZMod.card_units_eq_totient,
+    Nat.totient_prime Fact.out]
+  exact PadicInt.isUnit_natCast_of_coprime <| (Fact.out : p.Prime).coprime_iff_not_dvd.mpr
+    fun hdvd ↦ by have := Nat.le_of_dvd (by omega : 0 < p - 1) hdvd; omega
 
 /-! ### The decomposition `ℤ_pˣ ≃ (ℤ/qℤ)ˣ × ℤ_p` -/
 

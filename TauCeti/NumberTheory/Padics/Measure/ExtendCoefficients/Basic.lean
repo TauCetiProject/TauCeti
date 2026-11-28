@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import TauCeti.NumberTheory.Padics.Measure.CoefficientRestriction
 public import TauCeti.NumberTheory.Padics.Measure.FiniteProjection
+import Mathlib.Topology.UniformSpace.UniformApproximation
 import TauCeti.Analysis.Normed.Operator.Extend
+import TauCeti.Topology.ContinuousMap.LocallyConstant
 import TauCeti.Topology.DiscreteQuotient
 
 /-!
@@ -457,5 +459,43 @@ theorem mem_range_extendCoefficients_iff (hje : Topology.IsEmbedding j)
       hjr (mem_closedBall_zero_iff.mpr (norm_apply_comp_le_one hj hje.continuous hν f))
 
 end OperatorNorm
+
+section WeakContinuity
+
+variable [CompactSpace X] [T2Space X] [TotallyDisconnectedSpace X] {K O : Type*}
+  [NormedCommRing K] [CompleteSpace K] [IsUltrametricDist K] [NormedCommRing O]
+
+open Topology in
+/-- For a continuous uniformly norm-bounded `j : O →+* K`, `μ ↦ extendCoefficients j hj μ f` is
+weakly continuous on `D(X, O)` for every `f : C(X, K)`. -/
+theorem continuous_extendCoefficients_apply_weak {B : ℝ} {j : O →+* K} (hj : ∀ a, ‖j a‖ ≤ B)
+    (hjc : Continuous j) (f : C(X, K)) :
+    @Continuous _ _ (WeakTopology (X := X) (R := O) (E := O)) _ fun μ : D(X, O) ↦
+      extendCoefficients j hj μ f := by
+  let : TopologicalSpace D(X, O) := WeakTopology
+  have hloc (φ : LocallyConstant X K) :
+      Continuous fun μ : D(X, O) ↦ extendCoefficients j hj μ φ := by
+    classical
+    let q : C(X, φ.discreteQuotient) := ⟨_, φ.discreteQuotient.proj_continuous⟩
+    let := Fintype.ofFinite φ.discreteQuotient
+    have hφ : (φ : C(X, K)) = (ContinuousMap.equivFnOfDiscrete.symm φ.lift).comp q :=
+      ContinuousMap.ext fun x ↦ (congrFun φ.lift_comp_proj x).symm
+    simp_rw [hφ, extendCoefficients_apply_comp_eq_sum]
+    exact continuous_finsetSum _ fun a _ ↦ continuous_const.mul <|
+      hjc.comp <| (continuous_apply a).comp (continuous_finiteProjection q)
+  refine continuous_of_uniform_approx_of_continuous fun u hu ↦ ?_
+  obtain ⟨ε, hε, hεu⟩ := Metric.mem_uniformity_dist.mp hu
+  have hB' : 0 < max B 1 := zero_lt_one.trans_le (le_max_right _ _)
+  obtain ⟨φ, hφf⟩ := LocallyConstant.denseRange_toContinuousMap.exists_dist_lt f (div_pos hε hB')
+  refine ⟨_, hloc φ, fun μ ↦ hεu ?_⟩
+  rw [dist_eq_norm, ← map_sub]
+  calc ‖extendCoefficients j hj μ (f - (φ : C(X, K)))‖
+      ≤ B * ‖f - (φ : C(X, K))‖ := norm_extendCoefficients_apply_le μ j hj _
+    _ ≤ max B 1 * ‖f - (φ : C(X, K))‖ := by gcongr; exact le_max_left _ _
+    _ < max B 1 * (ε / max B 1) := by
+        gcongr; rwa [← dist_eq_norm]
+    _ = ε := mul_div_cancel₀ _ hB'.ne'
+
+end WeakContinuity
 
 end AbstractMeasure

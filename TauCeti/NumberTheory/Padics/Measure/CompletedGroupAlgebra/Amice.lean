@@ -191,6 +191,37 @@ theorem powerSeriesCoordinate_amiceTransformEquiv (μ : D(ℤ_[p], ℤ_[p])) :
   ext
   simp
 
+/-- **Compatibility of `amiceTransformₐ` with `powerSeriesCoordinate`.** On
+`D(Multiplicative ℤ_p, ℤ_p)`, `powerSeriesCoordinate` at `ofAdd 1` composed with `amiceTransformₐ`
+equals `toCompletedGroupAlgebra`. -/
+theorem _root_.TauCeti.powerSeriesCoordinate_amiceTransformₐ
+    (μ : D(Multiplicative ℤ_[p], ℤ_[p])) :
+    powerSeriesCoordinate (isProP_multiplicative_padicInt p)
+        (topologicallyGenerates_ofAdd_one_padicInt p) (amiceTransformₐ μ) =
+      toCompletedGroupAlgebra μ := by
+  have hamice : amiceTransformₐ μ =
+      amiceTransformEquiv (map ⟨Multiplicative.toAdd, continuous_toAdd⟩ μ) := by
+    refine PowerSeries.ext fun n ↦ ?_
+    rw [coeff_amiceTransformₐ, amiceTransformEquiv_apply, coeff_amiceTransform, map_apply]
+    exact congrArg μ (ContinuousMap.ext fun x ↦ by simp [mulMahler_apply])
+  rw [hamice, powerSeriesCoordinate_amiceTransformEquiv, completedGroupAlgebraEquiv_apply,
+    AbstractMeasure.map_map]
+  have hid : (ContinuousMap.mk Multiplicative.ofAdd continuous_ofAdd :
+      C(ℤ_[p], Multiplicative ℤ_[p])).comp ⟨Multiplicative.toAdd, continuous_toAdd⟩ =
+      ContinuousMap.id (Multiplicative ℤ_[p]) :=
+    ContinuousMap.ext fun _ ↦ by simp
+  rw [hid, AbstractMeasure.map_id]
+
+/-- Inverse `powerSeriesCoordinate` at `ofAdd 1` on `toCompletedGroupAlgebra μ` is
+`amiceTransformₐ μ`. -/
+@[simp] theorem _root_.TauCeti.powerSeriesCoordinate_symm_toCompletedGroupAlgebra
+    (μ : D(Multiplicative ℤ_[p], ℤ_[p])) :
+    (powerSeriesCoordinate (isProP_multiplicative_padicInt p)
+      (topologicallyGenerates_ofAdd_one_padicInt p)).symm (toCompletedGroupAlgebra μ) =
+        amiceTransformₐ μ :=
+  (powerSeriesCoordinate _ _).symm_apply_eq.mpr
+    (TauCeti.powerSeriesCoordinate_amiceTransformₐ μ).symm
+
 /-- **The Amice coordinate on the principal units.** Transport of
 `powerSeriesCoordinate_amiceTransformEquiv` to the principal units `1 + qℤ_p` of `ℤ_pˣ`, where
 `q = p ^ padicUnitsDepth p`, along the isomorphism `a ↦ γ ^ a = exp (q a)` from `ℤ_p`: the

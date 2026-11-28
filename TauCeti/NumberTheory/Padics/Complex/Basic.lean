@@ -42,6 +42,8 @@ nilpotence of `ζ - 1` for `p`-th roots of unity.
 * `PadicComplex.instIsLinearTopologyInt`, `PadicComplex.instCompleteSpaceInt`: the integers
   of `ℂ_p` are complete and linearly topologized.
 * `PadicComplex.integralCoefficientMap`: the continuous, injective inclusion `ℤ_[p] →+* 𝓞_ℂ_[p]`.
+* `PadicComplex.padicIntAlgebra`, `PadicComplex.continuousSMul_padicIntAlgebra`: the explicit
+  `ℤ_p`-algebra structure on `𝓞_ℂ_[p]` induced by `integralCoefficientMap` and its continuity.
 * `PadicComplex.isTopologicallyNilpotent_sub_one`: `ζ - 1` is topologically nilpotent
   if `ζ ^ p = 1`.
 * `PadicComplex.norm_p`: `‖p‖ = p⁻¹` in `ℂ_[p]`.
@@ -134,6 +136,31 @@ theorem integralCoefficientMap_injective : Function.Injective (integralCoefficie
   intro x y h
   apply Subtype.ext
   exact (algebraMap ℚ_[p] ℂ_[p]).injective (congrArg Subtype.val h)
+
+/-- The `ℤ_p`-algebra structure on `𝓞_ℂ_[p]` obtained by restricting scalars along
+`PadicComplex.integralCoefficientMap p`. Defined as an explicit helper rather than a global
+instance to avoid diamonds. -/
+@[instance_reducible]
+noncomputable def padicIntAlgebra : Algebra ℤ_[p] 𝓞_ℂ_[p] :=
+  Algebra.compHom 𝓞_ℂ_[p] (integralCoefficientMap p)
+
+/-- The structure map of `PadicComplex.padicIntAlgebra p` is
+`PadicComplex.integralCoefficientMap p`. -/
+theorem algebraMap_padicIntAlgebra_apply (a : ℤ_[p]) :
+    letI := padicIntAlgebra p
+    algebraMap ℤ_[p] 𝓞_ℂ_[p] a = integralCoefficientMap p a :=
+  let _ := padicIntAlgebra p
+  Algebra.compHom_algebraMap_apply ..
+
+/-- Scalar multiplication by `ℤ_p` on `𝓞_ℂ_[p]` via `PadicComplex.padicIntAlgebra p` is
+continuous. -/
+theorem continuousSMul_padicIntAlgebra :
+    letI := padicIntAlgebra p
+    ContinuousSMul ℤ_[p] 𝓞_ℂ_[p] :=
+  letI := padicIntAlgebra p
+  ⟨by
+    simp_rw [Algebra.smul_def, algebraMap_padicIntAlgebra_apply]
+    exact ((continuous_integralCoefficientMap p).comp continuous_fst).mul continuous_snd⟩
 
 /-- The translated constant term of a `p`-th root of unity is topologically nilpotent. -/
 theorem isTopologicallyNilpotent_sub_one (ζ : 𝓞_ℂ_[p]) (hζ : ζ ^ p = 1) :

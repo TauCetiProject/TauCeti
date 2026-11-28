@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.DyadicCoordinate
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
+import TauCeti.Topology.Algebra.MonoidAlgebra.PowerSeries
 
 /-!
 # Topology of the power-series coordinates with finite group-ring coefficients
@@ -48,19 +49,6 @@ theorem continuous_prodPowerSeriesCoordinate :
   classical
   let := Fintype.ofFinite C
   let s := (MonoidAlgebra.powerSeriesAlgEquiv ℤ_[p] ℤ_[p] C).symm
-  have hc (c : C) : Continuous fun ψ : PowerSeries (MonoidAlgebra ℤ_[p] C) ↦
-      (s ψ).coeff c := by
-    rw [continuous_iff_continuousAt]
-    intro ψ
-    apply (PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto ℤ_[p] _ _ _).mpr
-    intro n
-    let l : MonoidAlgebra ℤ_[p] C →ₗ[ℤ_[p]] ℤ_[p] :=
-      (Finsupp.lapply c).comp (MonoidAlgebra.coeffLinearEquiv ℤ_[p]).toLinearMap
-    have hl (a : MonoidAlgebra ℤ_[p] C) : l a = a.coeff c := rfl
-    simpa only [s, MonoidAlgebra.coeff_coeff_powerSeriesAlgEquiv_symm, ContinuousAt,
-      Function.comp_def, hl] using
-      ((IsModuleTopology.continuous_of_linearMap l).comp
-        (PowerSeries.WithPiTopology.continuous_coeff (MonoidAlgebra ℤ_[p] C) n)).continuousAt
   have hs (ψ : PowerSeries (MonoidAlgebra ℤ_[p] C)) :
       s ψ = ∑ c : C, MonoidAlgebra.single c ((s ψ).coeff c) := by
     rw [← Finsupp.sum_fintype _ _ (fun c ↦ MonoidAlgebra.single_zero c),
@@ -83,7 +71,8 @@ theorem continuous_prodPowerSeriesCoordinate :
         (powerSeriesCoordinate hΓ hγ ((s ψ).coeff c)) * of ℤ_[p] (C × Γ) (c, 1) :=
     continuous_finsetSum _ fun c _ ↦
       ((continuous_map ℤ_[p] (MonoidHom.inr C Γ) (continuous_inr C Γ)).comp
-        ((continuous_powerSeriesCoordinate hΓ hγ).comp (hc c))).mul continuous_const
+        ((continuous_powerSeriesCoordinate hΓ hγ).comp
+          (continuous_coeff_powerSeriesAlgEquiv_symm c))).mul continuous_const
   exact hcont.congr fun ψ ↦ (he ψ).symm
 
 /-- The inverse product coordinate is continuous. Thus the algebraic identification with power

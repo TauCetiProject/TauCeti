@@ -35,9 +35,13 @@ by `r` on a set is bounded by `r` on its `ℤ_[p]`-span
 
 For a `ℚ_[p]`-algebra `K`, the composite structure map
 `TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is injective when `K` is nontrivial, and continuous
-when the structure map `ℚ_[p] → K` is. For a seminormed `ℚ_[p]`-algebra `K` with `‖1‖ ≤ 1`
-(including the zero seminorm) it maps `ℤ_[p]` into the closed unit ball of `K`; when `‖1‖ = 1` it
-is an isometry (`TauCeti.isometry_padicIntAlgebraMap`), the norm of a natural number in `K` is its
+when the structure map `ℚ_[p] → K` is. Restricting scalars along `ℤ_[p] → ℚ_[p]` gives the
+explicit `ℤ_[p]`-algebra helper `TauCeti.padicIntAlgebra p K` with bounded scalar action
+`TauCeti.isBoundedSMul_padicIntAlgebra p K` on a seminormed `ℚ_[p]`-algebra (kept out of the
+global instance cache to avoid diamonds on types already carrying an `Algebra ℤ_[p]` instance).
+For a seminormed `ℚ_[p]`-algebra `K` with `‖1‖ ≤ 1` (including the zero seminorm)
+`padicIntAlgebraMap` maps `ℤ_[p]` into the closed unit ball of `K`; when `‖1‖ = 1` it is an
+isometry (`TauCeti.isometry_padicIntAlgebraMap`), the norm of a natural number in `K` is its
 `p`-adic norm (`TauCeti.norm_natCast_eq_norm_padic`), so `p` itself has norm `p⁻¹`
 (`TauCeti.norm_natCast_p`), and a nonzero integer `n` has norm at least
 `1 / |n|` in `K` (`TauCeti.inv_abs_le_norm_intCast`; for natural numbers in a normed division
@@ -202,6 +206,46 @@ theorem norm_inv_natCast_le (p : ℕ) [Fact (Nat.Prime p)] {K : Type*} [NormedDi
   exact inv_le_of_inv_le₀ (by positivity) (Padic.inv_natCast_le_norm_natCast n)
 
 end NormedAlgebra
+
+section PadicIntAlgebra
+
+/-- The `ℤ_p`-algebra structure on a `ℚ_p`-algebra `K` obtained by restricting scalars along
+`ℤ_p → ℚ_p`. Defined as an explicit helper rather than a global instance to avoid diamonds on
+types that already carry an `Algebra ℤ_[p]` instance (such as `ℚ_p` itself). -/
+@[instance_reducible]
+def padicIntAlgebra (p : ℕ) [Fact (Nat.Prime p)] (K : Type*) [Semiring K] [Algebra ℚ_[p] K] :
+    Algebra ℤ_[p] K :=
+  Algebra.compHom K (algebraMap ℤ_[p] ℚ_[p])
+
+/-- The structure map of `TauCeti.padicIntAlgebra p K` is the composite `ℤ_p → ℚ_p → K`. -/
+theorem algebraMap_padicIntAlgebra_apply {p : ℕ} [Fact (Nat.Prime p)] {K : Type*} [Semiring K]
+    [Algebra ℚ_[p] K] (a : ℤ_[p]) :
+    letI := padicIntAlgebra p K
+    algebraMap ℤ_[p] K a = algebraMap ℚ_[p] K a := by
+  let _ := padicIntAlgebra p K
+  simp [Algebra.compHom_algebraMap_apply, PadicInt.algebraMap_apply]
+
+/-- Scalar multiplication for `TauCeti.padicIntAlgebra p K` acts through the coercion
+`ℤ_p → ℚ_p`. -/
+theorem smul_padicIntAlgebra {p : ℕ} [Fact (Nat.Prime p)] {K : Type*} [Semiring K]
+    [Algebra ℚ_[p] K] (a : ℤ_[p]) (x : K) :
+    letI := padicIntAlgebra p K
+    a • x = (a : ℚ_[p]) • x := by
+  let _ := padicIntAlgebra p K
+  rw [Algebra.smul_def, algebraMap_padicIntAlgebra_apply, ← Algebra.smul_def]
+
+/-- The restricted `ℤ_p`-scalar action `TauCeti.padicIntAlgebra p K` on a normed `ℚ_p`-algebra `K`
+is bounded (contractive). -/
+theorem isBoundedSMul_padicIntAlgebra (p : ℕ) [Fact (Nat.Prime p)] (K : Type*) [SeminormedRing K]
+    [NormedAlgebra ℚ_[p] K] :
+    letI := padicIntAlgebra p K
+    IsBoundedSMul ℤ_[p] K :=
+  letI := padicIntAlgebra p K
+  .of_norm_smul_le fun r x ↦ by
+    rw [smul_padicIntAlgebra]
+    exact norm_smul_le (r : ℚ_[p]) x
+
+end PadicIntAlgebra
 
 end TauCeti
 
