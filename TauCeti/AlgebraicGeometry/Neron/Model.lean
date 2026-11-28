@@ -128,6 +128,12 @@ theorem genericIso_hom_left_genericι :
     M.genericIso.hom.left ≫ M.genericι = pullback.fst M.model.hom j := by
   simp [genericι]
 
+/-- The inverse marking followed by the base change projection is the map to the total space. -/
+@[reassoc (attr := simp)]
+theorem genericIso_inv_left_fst :
+    M.genericIso.inv.left ≫ pullback.fst M.model.hom j = M.genericι :=
+  (rfl)
+
 /-- The marked fibre sits over the given base morphism. -/
 @[reassoc (attr := simp)]
 theorem genericι_comp_hom : M.genericι ≫ M.model.hom = A.hom ≫ j := by
@@ -202,7 +208,7 @@ theorem existsUnique_section (hP : P (𝟙 S)) (x : Over.mk (𝟙 η) ⟶ A) :
         (congrArg (· ≫ s.left) hi_fst).symm
     _ = (i ≫ q.left) ≫ x.left ≫ M.genericι := by
       rw [hs]
-      simp only [Over.comp_left, Category.assoc, genericι]
+      simp only [Over.comp_left, Category.assoc, genericIso_inv_left_fst]
     _ = _ := by rw [hi, Category.id_comp]
   refine ⟨s, hs', fun s' h' ↦ ?_⟩
   apply M.mappingProperty.hom_ext hP
