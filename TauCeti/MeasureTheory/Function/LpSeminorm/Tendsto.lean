@@ -118,18 +118,15 @@ theorem tendsto_eLpNorm_one_integral_sq_sub {β R : Type*} [MeasurableSpace β]
     (hlim : Tendsto (fun i ↦ eLpNorm (f i - g) 2 (μ.prod ν)) l (𝓝 0)) :
     Tendsto (fun i ↦ eLpNorm (fun y ↦ (∫ x, f i (x, y) ^ 2 ∂μ) - ∫ x, g (x, y) ^ 2 ∂μ) 1 ν)
       l (𝓝 0) := by
-  have hg_sq : Integrable (fun p ↦ g p ^ 2) (μ.prod ν) :=
-    hg.norm.integrable_sq.mono' (hg.aestronglyMeasurable.pow 2)
-      (.of_forall fun p ↦ by
-        simpa only [Real.norm_eq_abs, sq_abs, sq] using norm_mul_le (g p) (g p))
+  let : ENNReal.HolderTriple 2 2 1 := ⟨by simp [ENNReal.inv_two_add_inv_two]⟩
+  have hg_sq : Integrable (fun p ↦ g p ^ 2) (μ.prod ν) := by
+    simpa only [sq, Pi.mul_def] using hg.integrable_mul hg
   have hg_ae : ∀ᵐ y ∂ν, Integrable (fun x ↦ g (x, y) ^ 2) μ := hg_sq.prod_left_ae
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
     (tendsto_eLpNorm_one_sq_sub_sq hg.eLpNorm_ne_top hlim)
     (.of_forall fun _ ↦ bot_le) (hf.mono fun i hfi ↦ ?_)
-  have hfi_sq : Integrable (fun p ↦ f i p ^ 2) (μ.prod ν) :=
-    hfi.norm.integrable_sq.mono' (hfi.aestronglyMeasurable.pow 2)
-      (.of_forall fun p ↦ by
-        simpa only [Real.norm_eq_abs, sq_abs, sq] using norm_mul_le (f i p) (f i p))
+  have hfi_sq : Integrable (fun p ↦ f i p ^ 2) (μ.prod ν) := by
+    simpa only [sq, Pi.mul_def] using hfi.integrable_mul hfi
   have hcongr : (fun y ↦ (∫ x, f i (x, y) ^ 2 ∂μ) - ∫ x, g (x, y) ^ 2 ∂μ) =ᵐ[ν]
       fun y ↦ ∫ x, (f i (x, y) ^ 2 - g (x, y) ^ 2) ∂μ := by
     filter_upwards [hfi_sq.prod_left_ae, hg_ae] with y hfy hgy

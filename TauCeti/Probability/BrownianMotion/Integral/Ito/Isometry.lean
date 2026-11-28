@@ -9,6 +9,7 @@ public import TauCeti.Probability.BrownianMotion.Integral.Deterministic
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
 public import TauCeti.Probability.BrownianMotion.Integral.L2
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
+import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Basic
@@ -92,6 +93,7 @@ private structure SimpleHoldingApprox {Ω : Type*} {mΩ : MeasurableSpace Ω}
   tau_zero : ∀ m, τ m 0 = 0
   strictMonoOn : ∀ m, StrictMonoOn (τ m) (Iic (n m))
   stronglyMeasurable : ∀ m j, j < n m → StronglyMeasurable[ℱ (τ m j)] (a m j)
+  height_memLp : ∀ m j, j < n m → MemLp (a m j) 2 P
   norm_le : ∀ m j, j < n m → ∀ ω, ‖a m j ω‖ ≤ C m
   martingale : ∀ m, Martingale (Finance.simpleGains (τ m) (n m) (a m) W) ℱ P
   memLp : ∀ m T, MemLp (Finance.simpleGains (τ m) (n m) (a m) W T) 2 P
@@ -129,7 +131,7 @@ private theorem exists_simpleHoldingApprox
   have ha₂ (m j : ℕ) (hj : j < n m) : MemLp (a m j) 2 P :=
     MemLp.of_bound ((ha m j hj).mono (ℱ.le _)).aestronglyMeasurable (C m)
       (.of_forall (hb m j hj))
-  refine ⟨⟨n, τ, a, C, hτ₀, hτ, ha, hb,
+  refine ⟨⟨n, τ, a, C, hτ₀, hτ, ha, ha₂, hb,
     fun m ↦ hW.martingale.simpleGains_of_bdd (hτ m).monotoneOn (ha m) fun j hj ↦
       ⟨C m, .of_forall fun ω ↦ by simpa [Real.norm_eq_abs] using hb m j hj ω⟩,
     fun m T ↦ hW.memLp_simpleGains (hτ m).monotoneOn (ha m) (ha₂ m) T, herr, fun T ↦ ?_⟩⟩
@@ -387,35 +389,35 @@ theorem martingale_sq_sub_integral (hI : IsItoIntegral ℱ P W H I)
     (hIa : StronglyAdapted ℱ I) :
     Martingale (fun t ω ↦ I t ω ^ 2 - ∫ s, H s ω ^ 2 ∂timeMeasure t) ℱ P := by
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n, τ, a, C, _, hτ, ha, hb, herr⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
-  have ha₂ (m j : ℕ) (hj : j < n m) : MemLp (a m j) 2 P :=
-    MemLp.of_bound ((ha m j hj).mono (ℱ.le _)).aestronglyMeasurable (C m)
-      (.of_forall (hb m j hj))
+  obtain ⟨h⟩ := exists_simpleHoldingApprox hW hH
   let M (m : ℕ) (t : ℝ≥0) (ω : Ω) : ℝ :=
-    Finance.simpleGains (τ m) (n m) (a m) W t ω ^ 2 -
-      ∫ s, Finance.simpleHolding (τ m) (n m) (a m) s ω ^ 2 ∂timeMeasure t
+    Finance.simpleGains (h.τ m) (h.n m) (h.a m) W t ω ^ 2 -
+      ∫ s, Finance.simpleHolding (h.τ m) (h.n m) (h.a m) s ω ^ 2 ∂timeMeasure t
   have hM (m : ℕ) : Martingale (M m) ℱ P := by
-    convert hW.martingale_sq_simpleGains_sub (hτ m).monotoneOn (ha m) (ha₂ m) using 1
+    convert hW.martingale_sq_simpleGains_sub (h.strictMonoOn m).monotoneOn
+      (h.stronglyMeasurable m) (h.height_memLp m) using 1
     ext t ω; dsimp only [M]
-    rw [Finance.integral_sq_simpleHolding_timeMeasure (hτ m).monotoneOn t ω]
+    rw [Finance.integral_sq_simpleHolding_timeMeasure (h.strictMonoOn m).monotoneOn t ω]
   have hcomp_adapt : StronglyAdapted ℱ (fun t ω ↦ ∫ s, H s ω ^ 2 ∂timeMeasure t) := by
     simpa only [sq] using (hH.isStronglyPredictable.mul
       hH.isStronglyPredictable).isStronglyProgressive.integral_timeMeasure.stronglyAdapted
   refine martingale_of_tendsto_eLpNorm_one hM (fun t ↦ ((hIa t).pow 2).sub (hcomp_adapt t))
     fun t ↦ ?_
   have hG_lim : Tendsto (fun m ↦ eLpNorm
-      (fun ω ↦ Finance.simpleGains (τ m) (n m) (a m) W t ω ^ 2 - I t ω ^ 2) 1 P) atTop (𝓝 0) :=
+      (fun ω ↦ Finance.simpleGains (h.τ m) (h.n m) (h.a m) W t ω ^ 2 - I t ω ^ 2) 1 P)
+      atTop (𝓝 0) :=
     TauCeti.tendsto_eLpNorm_one_sq_sub_sq (hI.memLp hW hH t).eLpNorm_ne_top <|
-      (herr t).congr fun m ↦ (hI.eLpNorm_simpleGains_sub_eq hW hH
-        (hτ m).monotoneOn (ha m) (ha₂ m) t).symm
+      (h.tendsto_holding t).congr fun m ↦ (hI.eLpNorm_simpleGains_sub_eq hW hH
+        (h.strictMonoOn m).monotoneOn (h.stronglyMeasurable m) (h.height_memLp m) t).symm
   have hA_lim := TauCeti.tendsto_eLpNorm_one_integral_sq_sub (hH.memLp_timeMeasure t)
-    (.of_forall fun m ↦ (BrownianIntegrable.simpleHolding (ha m) (ha₂ m)).memLp_timeMeasure t)
-    (herr t)
+    (.of_forall fun m ↦ (BrownianIntegrable.simpleHolding
+      (h.stronglyMeasurable m) (h.height_memLp m)).memLp_timeMeasure t)
+    (h.tendsto_holding t)
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (by simpa only [zero_add] using hG_lim.add hA_lim) (fun _ ↦ bot_le) fun m ↦ ?_
   have heq : (M m t - fun ω ↦ I t ω ^ 2 - ∫ s, H s ω ^ 2 ∂timeMeasure t) =
-      (fun ω ↦ Finance.simpleGains (τ m) (n m) (a m) W t ω ^ 2 - I t ω ^ 2) -
-        fun ω ↦ (∫ s, Finance.simpleHolding (τ m) (n m) (a m) s ω ^ 2 ∂timeMeasure t) -
+      (fun ω ↦ Finance.simpleGains (h.τ m) (h.n m) (h.a m) W t ω ^ 2 - I t ω ^ 2) -
+        fun ω ↦ (∫ s, Finance.simpleHolding (h.τ m) (h.n m) (h.a m) s ω ^ 2 ∂timeMeasure t) -
           ∫ s, H s ω ^ 2 ∂timeMeasure t := by
     ext ω; dsimp only [M, Pi.sub_apply]; ring
   rw [heq]
@@ -464,23 +466,11 @@ theorem _root_.TauCeti.BrownianIntegrable.predictableMeasure_withDensity_apply
   rw [withDensity_apply _ hS]
   have hint : IntegrableOn (fun p : ℝ≥0 × Ω ↦ H p.1 p.2 ^ 2) S (ℱ.predictableMeasure P T) :=
     ((hH.memLp_predictableMeasure T).integrable_sq).integrableOn
-  have hpt (p : ℝ≥0 × Ω) : ‖H p.1 p.2‖ₑ ^ 2 = ENNReal.ofReal (H p.1 p.2 ^ 2) := by
-    rw [Real.eNorm_eq_ofReal_abs, ← ENNReal.ofReal_pow (abs_nonneg _), sq_abs]
-  simp_rw [hpt]
+  simp_rw [Real.enorm_sq_eq_ofReal_sq]
   rw [← ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun _ ↦ sq_nonneg _)]
   congr 1
   rw [← integral_indicator hS, ← integral_indicator (ℱ.predictable_le_prod S hS)]
   exact ℱ.integral_predictableMeasure P ((hH.isStronglyPredictable.pow 2).indicator hS) T
-
-/-- For any `BrownianIntegrable` integrand `H`, weighting `ℱ.predictableMeasure P T` by `H²`
-gives a finite measure on `ℱ.predictable`. -/
-theorem _root_.TauCeti.BrownianIntegrable.isFiniteMeasure_predictableMeasure_withDensity
-    (hH : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
-    @IsFiniteMeasure (ℝ≥0 × Ω) ℱ.predictable
-      ((ℱ.predictableMeasure P T).withDensity (fun p ↦ ‖H p.1 p.2‖ₑ ^ 2)) :=
-  @IsFiniteMeasure.mk _ ℱ.predictable _ <| by
-    rw [hH.predictableMeasure_withDensity_apply T (@MeasurableSet.univ _ ℱ.predictable)]
-    exact ENNReal.ofReal_lt_top
 
 /-- **Predictable-measure characterization of the Brownian Itô integral**: on the predictable
 σ-algebra up to horizon `T`, `(ℱ.predictableMeasure P T).withDensity (fun p ↦ ‖H p.1 p.2‖ₑ ^ 2)`
@@ -498,25 +488,21 @@ theorem eq_predictableMeasure_withDensity_iff (hI : IsItoIntegral ℱ P W H I)
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
   let ν : @Measure (ℝ≥0 × Ω) ℱ.predictable :=
     (ℱ.predictableMeasure P T).withDensity (fun p ↦ ‖H p.1 p.2‖ₑ ^ 2)
-  have : IsFiniteMeasure ν := hH.isFiniteMeasure_predictableMeasure_withDensity T
+  have : IsFiniteMeasure ν := by
+    simpa only [ν, Real.enorm_sq_eq_ofReal_sq, Function.uncurry_def] using
+      isFiniteMeasure_withDensity_ofReal
+        (hH.memLp_predictableMeasure T).integrable_sq.hasFiniteIntegral
+  have hν_compl : ν (Ioc 0 T ×ˢ (univ : Set Ω))ᶜ = 0 :=
+    mem_ae_iff.1 <| (withDensity_absolutelyContinuous _ _).ae_le
+      (ℱ.ae_mem_Ioc_prod_predictableMeasure P T)
   have hν0 : ν ({0} ×ˢ univ) = 0 := by
-    have h0meas : MeasurableSet[ℱ.predictable] ({0} ×ˢ (univ : Set Ω)) := by
-      simpa only [NNReal.bot_eq_zero] using
-        measurableSet_predictable_singleton_bot_prod (𝓕 := ℱ) MeasurableSet.univ
-    rw [withDensity_apply _ h0meas,
-      Measure.restrict_eq_zero.mpr
-        (ℱ.predictableMeasure_singleton_zero_prod P T MeasurableSet.univ),
-      lintegral_zero_measure]
+    refine measure_mono_null ?_ hν_compl
+    rintro ⟨r, _⟩ ⟨hr, _⟩ ⟨hr', _⟩
+    exact hr'.1.ne' hr
   have hνT : ν (Ioi T ×ˢ univ) = 0 := by
-    have hTmeas : MeasurableSet[ℱ.predictable] (Ioi T ×ˢ (univ : Set Ω)) :=
-      measurableSet_predictable_Ioi_prod MeasurableSet.univ
-    have hnull : ℱ.predictableMeasure P T (Ioi T ×ˢ univ) = 0 := by
-      have hempty : Ioi T ∩ Ioc 0 T = ∅ :=
-        Set.eq_empty_of_forall_notMem fun _ hx ↦ hx.1.not_ge hx.2.2
-      rw [ℱ.predictableMeasure_apply P T hTmeas, Measure.prod_prod,
-        timeMeasure_def, Measure.restrict_apply measurableSet_Ioi,
-        hempty, measure_empty, zero_mul]
-    rw [withDensity_apply _ hTmeas, Measure.restrict_eq_zero.mpr hnull, lintegral_zero_measure]
+    refine measure_mono_null ?_ hν_compl
+    rintro ⟨r, _⟩ ⟨hr, _⟩ ⟨hr', _⟩
+    exact hr.not_ge hr'.2
   have hνIoc : ∀ ⦃s t : ℝ≥0⦄, s ≤ t → t ≤ T → ∀ ⦃A : Set Ω⦄, MeasurableSet[ℱ s] A →
       ν (Ioc s t ×ˢ A) = ENNReal.ofReal (∫ ω in A, (I t ω - I s ω) ^ 2 ∂P) := by
     intro s t hst ht A hA
@@ -532,73 +518,18 @@ theorem eq_predictableMeasure_withDensity_iff (hI : IsItoIntegral ℱ P W H I)
   · rintro rfl
     exact ⟨hν0, hνT, hνIoc⟩
   · rintro ⟨hμ0, hμT, hμIoc⟩
-    symm
-    refine MeasureTheory.ext_of_generate_finite ℱ.elementarySets
-      ℱ.predictable_eq_generateFrom_elementarySets ℱ.isPiSystem_elementarySets ?_ ?_
-    · rintro u hu
-      rcases (ℱ.mem_elementarySets_iff).1 hu with ⟨A, _, rfl⟩ | ⟨s, t, A, hA, rfl⟩
-      · have hsub : ({⊥} ×ˢ A : Set (ℝ≥0 × Ω)) ⊆ {0} ×ˢ univ :=
-          prod_mono (by simp) (subset_univ A)
-        have h1 : ν ({⊥} ×ˢ A) = 0 := measure_mono_null hsub hν0
-        have h2 : μ ({⊥} ×ˢ A) = 0 := measure_mono_null hsub hμ0
-        exact h1.trans h2.symm
-      · by_cases hst : s ≤ t
-        · by_cases hsT : s ≤ T
-          · have hsplit : Ioc s t ×ˢ A = (Ioc s (min t T) ×ˢ A) ∪ (Ioc (min t T) t ×ˢ A) := by
-              ext ⟨r, ω⟩
-              simp only [mem_prod, mem_Ioc, mem_union]
-              grind
-            have hdisj : Disjoint (Ioc s (min t T) ×ˢ A) (Ioc (min t T) t ×ˢ A) :=
-              disjoint_prod.mpr (Or.inl (Set.disjoint_iff.mpr fun _ ⟨h1, h2⟩ ↦ h2.1.not_ge h1.2))
-            have h2 : MeasurableSet[ℱ.predictable] (Ioc (min t T) t ×ˢ A) :=
-              measurableSet_predictable_Ioc_prod (min t T) t
-                (ℱ.mono (le_min hst hsT) _ hA)
-            have hsub2 : Ioc (min t T) t ×ˢ A ⊆ Ioi T ×ˢ (univ : Set Ω) := by
-              rintro ⟨r, ω⟩ ⟨hr, _⟩
-              refine ⟨?_, trivial⟩
-              by_cases htT : t ≤ T
-              · rw [min_eq_left htT] at hr
-                exact (hr.1.trans_le hr.2).false.elim
-              · rw [min_eq_right (not_le.mp htT).le] at hr
-                exact hr.1
-            have hν1 : ν (Ioc s t ×ˢ A) = ν (Ioc s (min t T) ×ˢ A) := by
-              rw [hsplit, measure_union hdisj h2, measure_mono_null hsub2 hνT, add_zero]
-            have hμ1 : μ (Ioc s t ×ˢ A) = μ (Ioc s (min t T) ×ˢ A) := by
-              rw [hsplit, measure_union hdisj h2, measure_mono_null hsub2 hμT, add_zero]
-            rw [hν1, hμ1, hνIoc (le_min hst hsT) (min_le_right t T) hA,
-              hμIoc (le_min hst hsT) (min_le_right t T) hA]
-          · have hsub : Ioc s t ×ˢ A ⊆ Ioi T ×ˢ (univ : Set Ω) :=
-              prod_mono (Ioc_subset_Ioi_self.trans (Ioi_subset_Ioi (not_le.mp hsT).le))
-                (subset_univ A)
-            exact (measure_mono_null hsub hνT).trans (measure_mono_null hsub hμT).symm
-        · rw [Ioc_eq_empty (lt_asymm (not_le.mp hst)), empty_prod, measure_empty, measure_empty]
-    · have huniv : (univ : Set (ℝ≥0 × Ω)) =
-          ({0} ×ˢ univ) ∪ (Ioc 0 T ×ˢ univ) ∪ (Ioi T ×ˢ univ) := by
-        ext ⟨r, ω⟩
-        simp only [mem_univ, mem_union, mem_prod, mem_singleton_iff, mem_Ioc, mem_Ioi,
-          and_true, true_iff]
+    have hμ_compl : μ (Ioc 0 T ×ˢ (univ : Set Ω))ᶜ = 0 := by
+      have hsub : (Ioc 0 T ×ˢ (univ : Set Ω))ᶜ ⊆ ({0} ×ˢ univ) ∪ (Ioi T ×ˢ univ) := by
+        rintro ⟨r, _⟩ hr
+        simp only [mem_compl_iff, mem_prod, mem_Ioc, mem_univ, and_true, not_and, not_le] at hr
         rcases eq_or_ne r 0 with rfl | hr0
-        · exact Or.inl (Or.inl rfl)
-        · by_cases hrT : r ≤ T
-          · exact Or.inl (Or.inr ⟨bot_lt_iff_ne_bot.mpr hr0, hrT⟩)
-          · exact Or.inr (not_le.mp hrT)
-      have hm1 : MeasurableSet[ℱ.predictable] (Ioc 0 T ×ˢ (univ : Set Ω)) :=
-        measurableSet_predictable_Ioc_prod 0 T MeasurableSet.univ
-      have hm2 : MeasurableSet[ℱ.predictable] (Ioi T ×ˢ (univ : Set Ω)) :=
-        measurableSet_predictable_Ioi_prod MeasurableSet.univ
-      have hd1 : Disjoint ({0} ×ˢ (univ : Set Ω)) (Ioc 0 T ×ˢ (univ : Set Ω)) :=
-        disjoint_prod.mpr (Or.inl (by simp))
-      have hd2 : Disjoint (({0} ×ˢ (univ : Set Ω)) ∪ (Ioc 0 T ×ˢ (univ : Set Ω)))
-          (Ioi T ×ˢ (univ : Set Ω)) :=
-        Disjoint.union_left
-          (disjoint_prod.mpr (Or.inl (by simp)))
-          (disjoint_prod.mpr (Or.inl Ioc_disjoint_Ioi_same))
-      have hνu : ν univ = ν (Ioc 0 T ×ˢ univ) := by
-        rw [huniv, measure_union hd2 hm2, measure_union hd1 hm1, hν0, hνT, zero_add, add_zero]
-      have hμu : μ univ = μ (Ioc 0 T ×ˢ univ) := by
-        rw [huniv, measure_union hd2 hm2, measure_union hd1 hm1, hμ0, hμT, zero_add, add_zero]
-      rw [hνu, hμu, hνIoc zero_le le_rfl MeasurableSet.univ,
-        hμIoc zero_le le_rfl MeasurableSet.univ]
+        · exact Or.inl ⟨rfl, trivial⟩
+        · exact Or.inr ⟨hr (bot_lt_iff_ne_bot.mpr hr0), trivial⟩
+      exact le_antisymm ((measure_mono hsub).trans
+        ((measure_union_le _ _).trans_eq (by rw [hμ0, hμT, zero_add]))) bot_le
+    symm
+    exact ℱ.ext_predictable_of_Ioc_prod hν_compl hμ_compl fun s t hst ht A hA ↦
+      (hνIoc hst ht hA).trans (hμIoc hst ht hA).symm
 
 /-- **Conditional increment isometry of the Brownian Itô integral**: for `s ≤ t`,
 `E[(I t - I s)² | ℱ s] = E[∫_(s, t] H u ^ 2 du | ℱ s]` almost surely, without assuming path

@@ -208,8 +208,7 @@ theorem _root_.MeasureTheory.IsStronglyProgressive.exists_isItoIntegral
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
     (hH : IsStronglyProgressive ℱ H)
     (henergy : ∀ n : ℕ, ∀ᵐ ω ∂P,
-      (∫⁻ t, ‖H t ω‖ₑ ^ 2 ∂((volume.restrict (Ioc 0 (n : ℝ))).comap
-        ((↑) : ℝ≥0 → ℝ))) < ∞) :
+      (∫⁻ t, ‖H t ω‖ₑ ^ 2 ∂Probability.timeMeasure n) < ∞) :
     ∃ G I : ℝ≥0 → Ω → ℝ, LocallyBrownianIntegrable ℱ P G ∧
       (∀ T : ℝ≥0, Function.uncurry G =ᵐ[(Probability.timeMeasure T).prod P]
         Function.uncurry H) ∧
@@ -220,7 +219,12 @@ theorem _root_.MeasureTheory.IsStronglyProgressive.exists_isItoIntegral
           Function.uncurry H) →
         Probability.IsItoIntegral ℱ P W G' I' → I ≡ᵐ[P] I' := by
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨G, hG, hGH⟩ := hH.exists_locallyBrownianIntegrable_ae_prod henergy
+  have henergy' (n : ℕ) : ∀ᵐ ω ∂P,
+      (∫⁻ t, ‖H t ω‖ₑ ^ 2 ∂((volume.restrict (Ioc 0 (n : ℝ))).comap
+        ((↑) : ℝ≥0 → ℝ))) < ∞ := by
+    simpa only [← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc,
+      ← Probability.timeMeasure_def] using henergy n
+  obtain ⟨G, hG, hGH⟩ := hH.exists_locallyBrownianIntegrable_ae_prod henergy'
   have hGH' (T : ℝ≥0) : Function.uncurry G =ᵐ[(Probability.timeMeasure T).prod P]
       Function.uncurry H := by
     simpa only [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def] using hGH T

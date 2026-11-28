@@ -230,4 +230,21 @@ theorem stoppedProcess_indist_of_ae_eq (hW : IsFilteredPreBrownianReal ℱ W P)
     MeasureTheory.stoppedProcess I σ ≡ᵐ[P] MeasureTheory.stoppedProcess J σ :=
   (hI.stoppedProcess hW hσ).indist_of_ae_eq hW hHK (hJ.stoppedProcess hW hσ)
 
+/-- **Bounded local congruence of the Brownian Itô integral**: if `σ ≤ T` almost surely and two
+integrands agree `(timeMeasure T).prod P`-almost everywhere on `⟦0, σ⟧`, their Itô integrals are
+indistinguishable when stopped at `σ`, without assuming path continuity of `W`. -/
+theorem stoppedProcess_indist_of_ae_eq_of_le (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hσ : IsStoppingTime ℱ σ) {T : ℝ≥0} (hσT : ∀ᵐ ω ∂P, σ ω ≤ T)
+    (hI : IsItoIntegral ℱ P W H I) {K J : ℝ≥0 → Ω → ℝ} (hJ : IsItoIntegral ℱ P W K J)
+    (hHK :
+      Function.uncurry (fun s : ℝ≥0 ↦ fun ω ↦ if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0) =ᵐ[
+        (timeMeasure T).prod P]
+      Function.uncurry (fun s : ℝ≥0 ↦ fun ω ↦ if (s : WithTop ℝ≥0) ≤ σ ω then K s ω else 0)) :
+    MeasureTheory.stoppedProcess I σ ≡ᵐ[P] MeasureTheory.stoppedProcess J σ := by
+  have hEq := (hI.stoppedProcess hW hσ).ae_eqOn_Iic_of_ae_eq hW hHK (hJ.stoppedProcess hW hσ)
+  filter_upwards [hEq, hσT] with ω hω hT t
+  have hmin : min (t : WithTop ℝ≥0) (σ ω) = min ((min t T : ℝ≥0) : WithTop ℝ≥0) (σ ω) := by
+    rw [WithTop.coe_min, min_assoc, min_eq_right hT]
+  simpa only [MeasureTheory.stoppedProcess_apply, hmin] using hω (min_le_right t T)
+
 end TauCeti.Probability.IsItoIntegral

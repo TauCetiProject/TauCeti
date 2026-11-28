@@ -267,6 +267,21 @@ theorem congr_integrator (hI : IsItoIntegral ℱ P W H I) (hWB : ∀ s, W s =ᵐ
     exact ((ae_ball_iff (finite_Iic (n k)).countable).2 fun j _ ↦ hWB (min (τ k j) t)).mono
       Finance.simpleGains_congr_price
 
+private theorem tendsto_measure_lintegral_congr_ae [SFinite P] {t : ℝ≥0}
+    {K₀ : ℕ → ℝ≥0 → Ω → ℝ}
+    (hHK : Function.uncurry H =ᵐ[(timeMeasure t).prod P] Function.uncurry K)
+    (h : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
+      ∫⁻ s, ‖K₀ k s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t}) atTop (𝓝 0))
+    (ε : ℝ≥0∞) (hε : 0 < ε) :
+    Tendsto (fun k ↦ P {ω | ε ≤
+      ∫⁻ s, ‖K₀ k s ω - K s ω‖ₑ ^ 2 ∂timeMeasure t}) atTop (𝓝 0) := by
+  have hsec : ∀ᵐ ω ∂P, (fun s ↦ H s ω) =ᵐ[timeMeasure t] fun s ↦ K s ω :=
+    Measure.ae_ae_of_ae_prod <| (Measure.measurePreserving_swap (μ := P)
+      (ν := timeMeasure t)).quasiMeasurePreserving.ae_eq_comp hHK
+  refine (h ε hε).congr fun k ↦ measure_congr ?_
+  filter_upwards [hsec] with ω hω
+  rw [lintegral_congr_ae (hω.mono fun s hs ↦ congrArg (‖K₀ k s ω - ·‖ₑ ^ 2) hs)]
+
 /-- For an `SFinite` measure `P`, replacing the integrand by a predictable process agreeing
 `(dt × P)`-a.e. on each finite horizon preserves `IsItoIntegral`. -/
 theorem congr_integrand [SFinite P] (hI : IsItoIntegral ℱ P W H I)
@@ -278,13 +293,7 @@ theorem congr_integrand [SFinite P] (hI : IsItoIntegral ℱ P W H I)
   ae_continuous := hI.ae_continuous
   exists_approx t := by
     obtain ⟨n, τ, a, hτ, ha, henergy, hgains⟩ := hI.exists_approx t
-    have hsec : ∀ᵐ ω ∂P, (fun s ↦ H s ω) =ᵐ[timeMeasure t] fun s ↦ K s ω :=
-      Measure.ae_ae_of_ae_prod <| (Measure.measurePreserving_swap (μ := P)
-        (ν := timeMeasure t)).quasiMeasurePreserving.ae_eq_comp (hHK t)
-    refine ⟨n, τ, a, hτ, ha, fun ε hε ↦ (henergy ε hε).congr fun k ↦ measure_congr ?_, hgains⟩
-    filter_upwards [hsec] with ω hω
-    rw [lintegral_congr_ae (hω.mono fun s hs ↦
-      congrArg (‖Finance.simpleHolding (τ k) (n k) (a k) s ω - ·‖ₑ ^ 2) hs)]
+    exact ⟨n, τ, a, hτ, ha, tendsto_measure_lintegral_congr_ae (hHK t) henergy, hgains⟩
 
 /-- Enlarging the filtration preserves `IsItoIntegral`. -/
 theorem mono_filtration {𝒢 : Filtration ℝ≥0 mΩ} (hI : IsItoIntegral ℱ P W H I) (hle : ℱ ≤ 𝒢) :
@@ -450,6 +459,25 @@ theorem isItoIntegral_iff_indist (hW : IsFilteredPreBrownianReal ℱ W P)
   ⟨isItoIntegral_unique hW hI, hI.congr⟩
 
 namespace IsItoIntegral
+
+/-- **Fixed-horizon integrand congruence**: predictable integrands agreeing
+`(timeMeasure T).prod P`-almost everywhere have Itô integrals against `W` that agree
+`P`-almost surely simultaneously on `[0, T]`. -/
+theorem ae_eqOn_Iic_of_ae_eq (hW : IsFilteredPreBrownianReal ℱ W P) {T : ℝ≥0}
+    (hHK : Function.uncurry H =ᵐ[(timeMeasure T).prod P] Function.uncurry K)
+    (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) :
+    ∀ᵐ ω ∂P, EqOn (I · ω) (J · ω) (Iic T) := by
+  let : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
+  have hpoint {t : ℝ≥0} (ht : t ≤ T) : I t =ᵐ[P] J t := by
+    obtain ⟨n, τ, a, hτ, ha, henergy, hgains⟩ := hI.exists_approx t
+    have henergyK := tendsto_measure_lintegral_congr_ae
+      (ae_mono (Measure.prod_mono (timeMeasure_mono ht) le_rfl) hHK) henergy
+    exact (hJ.ae_eq_of_tendstoInMeasure hW hτ ha henergyK hgains).symm
+  obtain ⟨D, hDc, hDd⟩ := TopologicalSpace.exists_countable_dense (Iic T)
+  filter_upwards [hI.ae_continuous, hJ.ae_continuous,
+    (ae_ball_iff hDc).2 fun t _ ↦ hpoint t.property] with ω hIω hJω hD t ht
+  exact congr_fun (Continuous.ext_on hDd
+    (hIω.comp continuous_subtypeVal) (hJω.comp continuous_subtypeVal) hD) ⟨t, ht⟩
 
 /-- **Integrand congruence**: predictable integrands agreeing `(dt × P)`-a.e. on every finite
 horizon have `P`-indistinguishable continuous Itô integrals against `W`. -/
