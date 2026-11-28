@@ -41,6 +41,8 @@ The estimate `Complex.norm_log_le_of_re_mem_Icc` bounds the principal logarithm 
 in the real part on a positive vertical strip, with logarithmic growth in the imaginary part.
 Its proof adapts Robby Sneiderman’s strip argument from
 [PrimeNumberTheoremAnd](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/83f85e91fccdeecc8248fe6d51c30edfb3a07d15/PrimeNumberTheoremAnd/Mathlib/Analysis/SpecialFunctions/Gamma/DigammaBounds.lean).
+Off the real axis, `|Real.log ‖z‖ - Real.log |im z||` is bounded above by
+`(re z / im z) ^ 2 / 2`; the lower half-plane follows from the upper one by conjugation.
 Away from the branch cut, on any vertical line `Re z = x` with `x ≥ 2`, the real part
 `Real.log ‖x + t I‖` of `Complex.log (x + t I)` differs from `Real.log (1 + |t|)` by at most
 `Real.log x`, comparing holomorphic logarithmic strip weights with the real height scale
@@ -48,7 +50,8 @@ Away from the branch cut, on any vertical line `Re z = x` with `x ≥ 2`, the re
 
 Finally, Mathlib's `Complex.hasSum_taylorSeries_log` has a vanishing constant term; dropping it
 re-indexes the Taylor series of `log (1 + z)` from `0`, the form a power series without constant
-term takes.
+term takes.  Away from the disc, factoring `1 - t z = -z (t - z⁻¹)` isolates the logarithmic
+singularity of `log (1 - t z)` along a real ray into `|log |t - Re(z⁻¹)||`.
 
 ## Main results
 
@@ -70,10 +73,14 @@ term takes.
   `‖z‖ < 1`.
 * `Complex.norm_neg_one_pow_div_add_one`: the coefficients of that series have norm
   `(n + 1)⁻¹`.
+* `Complex.norm_log_one_sub_ofReal_mul_le`: for `z : ℂ` and real `t ≠ Re(z⁻¹)`, bounds
+  `‖log (1 - t * z)‖` in terms of `|log |t - Re(z⁻¹)||`.
 * `Complex.norm_log_le_of_re_mem_Icc`: an explicit principal-log norm bound on every
   positive vertical strip, including empty and singleton strips.
 * `Complex.abs_log_norm_ofReal_add_mul_I_sub_le`: for `2 ≤ x` and `t : ℝ`,
   `|Real.log ‖(x : ℂ) + t * I‖ - Real.log (1 + |t|)| ≤ Real.log x`.
+* `Complex.abs_log_norm_sub_log_abs_im_le`: off the real axis,
+  `|Real.log ‖z‖ - Real.log |im z|| ≤ (re z / im z) ^ 2 / 2`.
 -/
 
 public section
@@ -241,6 +248,47 @@ theorem norm_log_le_of_re_mem_Icc {a b : ℝ} (ha : 0 < a) {s : ℂ}
   rw [Complex.log_re, Complex.log_im] at h
   linarith
 
+/-- Away from `t = Re(z⁻¹)`, the principal logarithm `log (1 - t * z)` has norm at most
+`log (1 + |t| * ‖z‖) + |log ‖z‖| + π + |log |t - Re(z⁻¹)||`, isolating the logarithmic singularity
+near `t = z⁻¹` into a single translated real logarithm. -/
+theorem norm_log_one_sub_ofReal_mul_le (z : ℂ) {t : ℝ} (ht : t ≠ (z⁻¹).re) :
+    ‖log (1 - t * z)‖ ≤
+      Real.log (1 + |t| * ‖z‖) + |Real.log ‖z‖| + Real.pi + |Real.log (|t - (z⁻¹).re|)| := by
+  obtain rfl | hz := eq_or_ne z 0
+  · simp only [mul_zero, sub_zero, log_one, norm_zero, Real.log_zero, abs_zero, add_zero]
+    positivity
+  have hz_pos : 0 < ‖z‖ := norm_pos_iff.mpr hz
+  have hfac : (1 : ℂ) - (t : ℂ) * z = -z * ((t : ℂ) - z⁻¹) := by
+    field_simp
+    ring
+  have hsub : |t - (z⁻¹).re| ≤ ‖(t : ℂ) - z⁻¹‖ := by
+    simpa [sub_re] using abs_re_le_norm ((t : ℂ) - z⁻¹)
+  have hlow : ‖z‖ * |t - (z⁻¹).re| ≤ ‖1 - (t : ℂ) * z‖ := by
+    rw [hfac, norm_mul, norm_neg]
+    exact mul_le_mul_of_nonneg_left hsub hz_pos.le
+  have hhigh : ‖1 - (t : ℂ) * z‖ ≤ 1 + |t| * ‖z‖ := by
+    calc ‖1 - (t : ℂ) * z‖ ≤ ‖(1 : ℂ)‖ + ‖(t : ℂ) * z‖ := norm_sub_le _ _
+      _ = 1 + |t| * ‖z‖ := by rw [norm_one, norm_mul, norm_real, Real.norm_eq_abs]
+  have hpos_abs : 0 < |t - (z⁻¹).re| := abs_pos.mpr (sub_ne_zero.mpr ht)
+  have hpos_low : 0 < ‖z‖ * |t - (z⁻¹).re| := mul_pos hz_pos hpos_abs
+  have hlog_low : Real.log ‖z‖ + Real.log (|t - (z⁻¹).re|) ≤ Real.log ‖1 - (t : ℂ) * z‖ := by
+    rw [← Real.log_mul hz_pos.ne' hpos_abs.ne']
+    exact Real.log_le_log hpos_low hlow
+  have hlog_high : Real.log ‖1 - (t : ℂ) * z‖ ≤ Real.log (1 + |t| * ‖z‖) :=
+    Real.log_le_log (hpos_low.trans_le hlow) hhigh
+  have hlog_nonneg : 0 ≤ Real.log (1 + |t| * ‖z‖) :=
+    Real.log_nonneg (by linarith [mul_nonneg (abs_nonneg t) hz_pos.le])
+  have hlog_abs : |Real.log ‖1 - (t : ℂ) * z‖| ≤
+      Real.log (1 + |t| * ‖z‖) + |Real.log ‖z‖| + |Real.log (|t - (z⁻¹).re|)| := by
+    rw [abs_le]
+    constructor <;> linarith [neg_abs_le (Real.log ‖z‖), neg_abs_le (Real.log (|t - (z⁻¹).re|)),
+      abs_nonneg (Real.log ‖z‖), abs_nonneg (Real.log (|t - (z⁻¹).re|))]
+  calc ‖log (1 - t * z)‖
+      ≤ |(log (1 - t * z)).re| + |(log (1 - t * z)).im| := norm_le_abs_re_add_abs_im _
+    _ ≤ Real.log (1 + |t| * ‖z‖) + |Real.log ‖z‖| + Real.pi + |Real.log (|t - (z⁻¹).re|)| := by
+        rw [log_re, log_im]
+        linarith [abs_arg_le_pi (1 - t * z)]
+
 /-- For `x ≥ 2`, the real part `Real.log ‖(x : ℂ) + t * I‖` of `Complex.log (x + t * I)` differs
 from `Real.log (1 + |t|)` by at most `Real.log x`, with equality at `t = 0`. The integer threshold
 `2` is sharp, since the bound fails at `x = t = 1`. -/
@@ -269,5 +317,27 @@ theorem abs_log_norm_ofReal_add_mul_I_sub_le {x : ℝ} (hx : 2 ≤ x) (t : ℝ) 
   · have h := Real.log_le_log hz0 hhi
     rw [Real.log_mul hx0.ne' ht1.ne'] at h
     linarith
+
+/-- Off the real axis, `Real.log ‖z‖` differs from `Real.log |im z|` by at most
+`(re z / im z) ^ 2 / 2`, since `(‖z‖ / |im z|) ^ 2 = 1 + (re z / im z) ^ 2`. -/
+theorem abs_log_norm_sub_log_abs_im_le {z : ℂ} (hz : z.im ≠ 0) :
+    abs (Real.log ‖z‖ - Real.log |z.im|) ≤ (z.re / z.im) ^ 2 / 2 := by
+  have upper {w : ℂ} (hw : 0 < w.im) :
+      Real.log ‖w‖ - Real.log w.im ≤ (w.re / w.im) ^ 2 / 2 := by
+    have hw0 : 0 < ‖w‖ := hw.trans_le (im_le_norm w)
+    have hq : (‖w‖ / w.im) ^ 2 = 1 + (w.re / w.im) ^ 2 := by
+      rw [div_pow, div_pow, ← normSq_eq_norm_sq, normSq_apply]
+      field_simp
+      ring
+    have h := Real.log_le_sub_one_of_pos (pow_pos (div_pos hw0 hw) 2)
+    rw [Real.log_pow, Real.log_div hw0.ne' hw.ne', hq] at h
+    push_cast at h
+    linarith
+  rw [abs_of_nonneg (sub_nonneg.mpr
+    (Real.log_le_log (abs_pos.mpr hz) (abs_im_le_norm z)))]
+  rcases hz.lt_or_gt with hz | hz
+  · simpa [abs_of_neg hz, div_neg] using
+      (upper (w := (starRingEnd ℂ) z) (by simpa using hz))
+  · simpa [abs_of_pos hz] using upper hz
 
 end Complex

@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.MultiplicativeDomain
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 public import TauCeti.Analysis.InnerProductSpace.Positive.VectorFunctional
-public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
+public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace.Basic
 
 /-!
 # The multiplicative domains of a vector state and of the normalized trace

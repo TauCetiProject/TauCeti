@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Nat.PrimeFin
 public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 public import TauCeti.Data.Nat.ModEq
 import Mathlib.Tactic.NormNum.Prime
@@ -41,13 +42,17 @@ This file proves the elementary facts about them: `d ≡ 7 (mod 8)` and `d > 64`
 
 ## Main results
 
+* `coprime_div_two_sub_one_of_dvd`, `div_two_sub_one_modEq_seven`: the designated residue
+  class at every positive multiple of `18480` is reduced and is `7` modulo `8`.
 * `TauCeti.OneSidedBound.Parameters.modEq_div_two_sub_one`, `Parameters.ofModEq`.
 * `Parameters.q₀_pos`, `Parameters.d_mod_eight`, `Parameters.sixty_four_lt_d`.
 * `TauCeti.OneSidedBound.towerDeg_eq`: `towerDeg s = 3 ^ (⌊log₃ s⌋ + 5) · 2 ^ s`.
+* `TauCeti.OneSidedBound.two_pow_le_towerDeg`: `2 ^ s ≤ towerDeg s`.
 * `TauCeti.OneSidedBound.lt_l₀`, `TauCeti.OneSidedBound.l₀_le`, `Parameters.two_pow_succ_dvd_q₁`.
-* `Parameters.dvd_q₀_of_dvd_q₁`, `Parameters.four_mul_dvd_d_add_one`,
-  `Parameters.dvd_d_add_one_div_four`, `Parameters.legendreSym_eq_one_of_dvd_q₁`,
-  `Parameters.thirteen_le_of_legendreSym_ne_one`.
+* `Parameters.dvd_q₀_of_dvd_q₁`, `Parameters.primeFactors_q₁`,
+  `Parameters.primeFactors_towerDeg_subset`, `Parameters.four_mul_dvd_d_add_one`,
+  `Parameters.dvd_d_add_one_div_four`, `Parameters.q₁_dvd_norm_pow`,
+  `Parameters.legendreSym_eq_one_of_dvd_q₁`, `Parameters.thirteen_le_of_legendreSym_ne_one`.
 * `Parameters.coprime_q₁_d`, `Parameters.q₁_mul_d_dvd_q₂`.
 * `Parameters.d_pow_ne_neg_one`.
 
@@ -101,6 +106,11 @@ theorem towerDeg_pos (s : ℕ) : 0 < towerDeg s := by
   rw [towerDeg_eq]
   positivity
 
+/-- The tower degree is at least its dyadic factor. -/
+theorem two_pow_le_towerDeg (s : ℕ) : 2 ^ s ≤ towerDeg s := by
+  rw [towerDeg_def]
+  exact Nat.le_mul_of_pos_left _ (Nat.mul_pos (by decide) (by simp [l₀_def]))
+
 /-- **Parameters** `(q₀, d)`: a natural number `q₀` divisible by `18480 = 16 · 3 · 5 · 7 · 11`
 and a prime `d` with `q₀ ∣ 2 (d + 1)` and `q₀ ∤ d + 1`, that is `d ≡ q₀ / 2 - 1 (mod q₀)`
 (`Parameters.modEq_div_two_sub_one`). The character `χ_K = (· / d)` is `legendreSym P.d`.
@@ -119,6 +129,17 @@ structure Parameters where
   q₀_dvd_two_mul_d_add_one : q₀ ∣ 2 * (d + 1)
   /-- `q₀ ∤ d + 1`: with `q₀_dvd_two_mul_d_add_one`, the congruence `d ≡ q₀ / 2 - 1`. -/
   not_q₀_dvd_d_add_one : ¬ q₀ ∣ d + 1
+
+/-- The residue `q₀ / 2 - 1` is prime to `q₀` at every positive multiple of `18480`. -/
+theorem coprime_div_two_sub_one_of_dvd {q₀ : ℕ} (hq₀ : q₀ ≠ 0) (hq : 18480 ∣ q₀) :
+    (q₀ / 2 - 1).Coprime q₀ :=
+  (Nat.coprime_div_two_sub_one_iff (even_iff_two_dvd.mpr ((by norm_num : 2 ∣ 18480).trans hq))
+    hq₀).mpr ((by norm_num : 4 ∣ 18480).trans hq)
+
+/-- The residue `q₀ / 2 - 1` is `7` modulo `8` at every positive multiple of `18480`. -/
+theorem div_two_sub_one_modEq_seven {q₀ : ℕ} (hq₀ : q₀ ≠ 0) (hq : 18480 ∣ q₀) :
+    q₀ / 2 - 1 ≡ 7 [MOD 8] :=
+  Nat.div_two_sub_one_modEq_of_mul_dvd hq₀ ((by decide : 2 * 8 ∣ 18480).trans hq)
 
 namespace Parameters
 
@@ -197,8 +218,9 @@ theorem four_dvd_d_add_one : 4 ∣ P.d + 1 := (by norm_num : 4 ∣ 8).trans P.ei
 
 /-- `d ≡ 7 (mod 8)`. -/
 theorem d_mod_eight : P.d % 8 = 7 := by
-  have := P.eight_dvd_d_add_one
-  omega
+  have hd := P.modEq_div_two_sub_one.of_dvd ((by decide : 8 ∣ 18480).trans P.dvd_q₀)
+  have h₇ := div_two_sub_one_modEq_seven P.q₀_ne_zero P.dvd_q₀
+  simp_all [Nat.ModEq]
 
 /-- `d` is odd. -/
 theorem odd_d : Odd P.d := Nat.odd_iff.2 (by have := P.d_mod_eight; omega)
@@ -227,6 +249,18 @@ theorem dvd_q₀_of_dvd_q₁ {p s : ℕ} (hp : p.Prime) (h : p ∣ P.q₁ s) : p
   · rw [(Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).1 (hp.dvd_of_dvd_pow h)]
     exact P.two_dvd_q₀
 
+/-- The cyclotomic tower introduces no new prime factors of the level. -/
+@[simp] theorem primeFactors_q₁ (s : ℕ) : (P.q₁ s).primeFactors = P.q₀.primeFactors := by
+  refine Finset.Subset.antisymm (fun p hp ↦ ?_) (Nat.primeFactors_mono (P.q₀_dvd_q₁ s)
+    (P.q₁_pos s).ne')
+  obtain ⟨hp, hdvd, _⟩ := Nat.mem_primeFactors.mp hp
+  exact Nat.mem_primeFactors.mpr ⟨hp, P.dvd_q₀_of_dvd_q₁ hp hdvd, P.q₀_ne_zero⟩
+
+/-- The tower degree introduces no prime factors outside the base modulus. -/
+theorem primeFactors_towerDeg_subset (s : ℕ) : (towerDeg s).primeFactors ⊆ P.q₀.primeFactors := by
+  rw [← P.primeFactors_q₁ s]
+  exact Nat.primeFactors_mono (by rw [P.q₁_def]; exact dvd_mul_left _ _) (P.q₁_pos s).ne'
+
 /-- Every prime factor `p` of `q₀` satisfies `d ≡ -1 (mod 4 p)`. -/
 theorem four_mul_dvd_d_add_one {p : ℕ} (hp : p.Prime) (h : p ∣ P.q₀) : 4 * p ∣ P.d + 1 := by
   rcases hp.eq_two_or_odd with rfl | hodd
@@ -240,6 +274,14 @@ theorem dvd_d_add_one_div_four {p s : ℕ} (hp : p.Prime) (h : p ∣ P.q₁ s) :
     p ∣ (P.d + 1) / 4 :=
   (Nat.dvd_div_iff_mul_dvd P.four_dvd_d_add_one).2
     (P.four_mul_dvd_d_add_one hp (P.dvd_q₀_of_dvd_q₁ hp h))
+
+/-- Every cyclotomic-level prime divides the norm of the trace-one integer of `ℚ(√−d)`.
+Consequently the level divides a power of that norm. -/
+theorem q₁_dvd_norm_pow (s : ℕ) : P.q₁ s ∣ ((P.d + 1) / 4) ^ P.q₁ s := by
+  have hd : (P.d + 1) / 4 ≠ 0 := by have := P.sixty_four_lt_d; omega
+  refine (Nat.dvd_pow_self_iff (P.q₁_pos s).ne' hd).mpr fun p hp ↦ ?_
+  obtain ⟨hp, hq, _⟩ := Nat.mem_primeFactors.mp hp
+  exact hp.mem_primeFactors (P.dvd_d_add_one_div_four hp hq) hd
 
 /-- Every divisor `n` of `q₁ s` has `(n / d) = 1`; in particular `(p / d) = 1` for every prime
 factor `p` of `q₁ s`. -/

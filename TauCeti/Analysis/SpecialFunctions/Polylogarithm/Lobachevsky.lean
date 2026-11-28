@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.ClosedDisc
+import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Continuity
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Holomorphy
 
 /-!

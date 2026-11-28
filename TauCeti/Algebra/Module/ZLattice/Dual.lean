@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.DualLattice
 public import Mathlib.NumberTheory.Real.Irrational
 public import TauCeti.Algebra.Module.ZLattice.Basic
 public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
+import TauCeti.LinearAlgebra.Basis.RestrictScalars
 
 /-!
 # The dual lattice in a real inner product space
@@ -53,6 +54,8 @@ defined from it.
 ## Main definitions
 
 * `ZLattice.dual L`: the dual of `L : Submodule ℤ E` with respect to the inner product.
+* `OrthonormalBasis.latticeEquiv` converts between integer coordinates and lattice vectors
+  using `Module.Basis.restrictScalars`.
 * `ZLattice.basisSpanOrthonormalBasis b`: an orthonormal basis `b` as a `ℤ`-basis of its
   `ℤ`-span.
 * `ZLattice.dualComapEquiv L e`: the `ℤ`-linear equivalence `(e⁻¹ L)^∨ ≃ₗ[ℤ] L^∨` induced by a
@@ -189,6 +192,42 @@ theorem coe_basisSpanOrthonormalBasis_apply {ι : Type*} [Fintype ι]
   simp only [basisSpanOrthonormalBasis, Basis.map_apply, LinearEquiv.coe_ofEq_apply,
     Basis.restrictScalars_apply]
   exact congrFun b.coe_toBasis i
+
+section
+
+variable {ι : Type*} [Fintype ι]
+
+/-- The linear equivalence from integer coordinates to the lattice spanned by `o`. -/
+noncomputable def _root_.OrthonormalBasis.latticeEquiv (o : OrthonormalBasis ι ℝ E) :
+    (ι → ℤ) ≃ₗ[ℤ] Submodule.span ℤ (Set.range o.toBasis) :=
+  (o.toBasis.restrictScalars ℤ).equivFun.symm
+
+/-- The lattice equivalence is the inverse coordinate map of the restricted basis. -/
+theorem _root_.OrthonormalBasis.latticeEquiv_def (o : OrthonormalBasis ι ℝ E) :
+    o.latticeEquiv = (o.toBasis.restrictScalars ℤ).equivFun.symm := (rfl)
+
+/-- The lattice vector with coordinates `n` in the basis `o` is `∑ i, n i • o i`. -/
+theorem _root_.OrthonormalBasis.coe_latticeEquiv (o : OrthonormalBasis ι ℝ E) (n : ι → ℤ) :
+    (o.latticeEquiv n : E) = ∑ i, (n i : ℝ) • o i := by
+  rw [o.latticeEquiv_def, Basis.coe_restrictScalars_equivFun_symm, Basis.equivFun_symm_apply,
+    o.coe_toBasis]
+  simp only [eq_intCast]
+
+/-- The real coordinates of an integer lattice vector are its integer coordinates cast to `ℝ`. -/
+@[simp↓]
+theorem _root_.OrthonormalBasis.repr_latticeEquiv (o : OrthonormalBasis ι ℝ E)
+    (n : ι → ℤ) (i : ι) : o.repr (o.latticeEquiv n : E) i = (n i : ℝ) := by
+  rw [← o.coe_toBasis_repr_apply, o.latticeEquiv_def, Basis.repr_restrictScalars_equivFun_symm,
+    eq_intCast]
+
+/-- The integer coordinates of a lattice vector agree with its real coordinates. -/
+@[simp↓]
+theorem _root_.OrthonormalBasis.intCast_latticeEquiv_symm (o : OrthonormalBasis ι ℝ E)
+    (v : Submodule.span ℤ (Set.range o.toBasis)) (i : ι) :
+    (o.latticeEquiv.symm v i : ℝ) = o.repr (v : E) i := by
+  rw [← o.repr_latticeEquiv, LinearEquiv.apply_symm_apply]
+
+end
 
 /-- The `ℤ`-span of an orthonormal basis is its own dual. -/
 @[simp]

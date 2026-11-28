@@ -29,6 +29,10 @@ By infinite Galois theory the closure of a subgroup `H` of `G_{ℚ_p}` is the gr
 the fixed field of `H`, and `H` has the same fixed points as its closure, so the theorem also
 computes the fixed points of every subgroup.
 
+Every neighbourhood of `1` in `G_{ℚ_p}` contains `G_K` for some finite extension `K` of `ℚ_p`, and
+every element of `PadicAlgCl p` has an open stabilizer, so the elements of `ℂ_p` fixed by all
+`σ` near `1` are exactly those of `PadicAlgCl p`.
+
 These are the specializations to `E = PadicAlgCl p`, whose completion is `ℂ_p`, of the general
 Ax–Sen–Tate theorems `TauCeti.fixedPoints_algEquiv_completion_eq_closure`,
 `TauCeti.fixedPoints_completion_eq_closure_fixedField` and
@@ -44,6 +48,8 @@ conjugates are close to them, hence by elements of `L`.
   `G_{ℚ_p}` are the closure of the fixed field of `H`.
 * `PadicComplex.fixedPoints_algEquiv_eq_range`: for `K` finite over `ℚ_p`, the fixed points of
   `G_K` in `ℂ_p` are `K`.
+* `PadicComplex.mem_range_coe_iff_eventually_smul_eq`: an element of `ℂ_p` lies in
+  `PadicAlgCl p` exactly when it is fixed by all `σ` near `1`.
 
 ## References
 
@@ -59,7 +65,7 @@ conjugates are close to them, hence by elements of `L`.
 
 public section
 
-open UniformSpace.Completion
+open UniformSpace.Completion Topology
 
 namespace PadicComplex
 
@@ -87,5 +93,23 @@ theorem fixedPoints_algEquiv_eq_range (K : IntermediateField ℚ_[p] (PadicAlgCl
     MulAction.fixedPoints (PadicAlgCl p ≃ₐ[K] PadicAlgCl p) ℂ_[p] =
       Set.range fun a : K ↦ ((a : PadicAlgCl p) : ℂ_[p]) :=
   TauCeti.fixedPoints_algEquiv_completion_eq_range ℚ_[p] hp.out (PadicAlgCl.norm_p_lt_one p)
+
+/-- **The elements of `ℂ_p` fixed near `1` are the algebraic ones.** An element of `ℂ_p` lies in
+`PadicAlgCl p` exactly when it is fixed by every `σ` in some neighbourhood of `1` in
+`Gal(PadicAlgCl p / ℚ_p)`, that is, by some open subgroup. -/
+theorem mem_range_coe_iff_eventually_smul_eq {x : ℂ_[p]} :
+    x ∈ Set.range ((↑) : PadicAlgCl p → ℂ_[p]) ↔
+      ∀ᶠ σ in 𝓝 (1 : PadicAlgCl p ≃ₐ[ℚ_[p]] PadicAlgCl p), σ • x = x := by
+  refine ⟨?_, fun hx ↦ ?_⟩
+  · rintro ⟨y, rfl⟩
+    filter_upwards [(stabilizer_isOpen_of_isIntegral y).mem_nhds (one_mem _)] with σ hσ
+    rw [algEquiv_smul_coe, ← AlgEquiv.smul_def, MulAction.mem_stabilizer_iff.mp hσ]
+  · -- Some finite extension `E` of `ℚ_p` has all of `Gal(PadicAlgCl p / E)` fixing `x`.
+    obtain ⟨E, _, hE⟩ := (krullTopology_mem_nhds_one_iff ℚ_[p] (PadicAlgCl p) _).mp hx
+    have hxE : x ∈ MulAction.fixedPoints (PadicAlgCl p ≃ₐ[E] PadicAlgCl p) ℂ_[p] := fun σ ↦ by
+      rw [← algEquiv_restrictScalars_smul (R := ℚ_[p])]
+      exact hE ((E.mem_fixingSubgroup_iff _).2 fun a ha ↦ σ.commutes ⟨a, ha⟩)
+    obtain ⟨a, rfl⟩ := (fixedPoints_algEquiv_eq_range E).subset hxE
+    exact ⟨a, rfl⟩
 
 end PadicComplex

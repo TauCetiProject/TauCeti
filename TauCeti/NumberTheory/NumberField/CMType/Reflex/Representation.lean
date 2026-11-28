@@ -12,6 +12,8 @@ public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Basic
 import Mathlib.Algebra.Algebra.Hom.Rat
 import Mathlib.RingTheory.Unramified.Field
 import Mathlib.RingTheory.Unramified.Pi
+import TauCeti.NumberTheory.NumberField.CMType.Reflex.SelectedFactor
+import TauCeti.RingTheory.Etale.Trace
 import TauCeti.RingTheory.Unramified.TraceRepresentation
 
 /-!
@@ -24,17 +26,22 @@ type trace, `Tr_k(a | V) = typeTrace_Φ(a)`. Such a representation exists exactl
 contains the reflex field `E*`, and it is then unique up to isomorphism (Milne, *Complex
 Multiplication*, Proposition 1.21, p.15).
 
-This file proves three parts of that statement.
+This file proves that statement when `E` is a finite-dimensional formally unramified `ℚ`-algebra,
+such as a finite product of CM fields. Necessity holds for every `E` with finitely many complex
+embeddings.
 
 * **Necessity.** If such a representation exists over `k`, then every type trace lies in `k`, so
   `E* ⊆ k` (`TauCeti.CMType.reflexField_le_of_trace_eq`).
+* **Existence.** When `E` is a finite-dimensional formally unramified `ℚ`-algebra and `E* ⊆ k`,
+  such a representation exists (`TauCeti.CMType.exists_trace_eq_typeTrace`). The complex
+  embeddings of `E` are the `k`-algebra maps `k ⊗_ℚ E → ℂ`; those in `Φ` have `k`-valued partial
+  trace, so they are cut out by an idempotent `c` of the étale `k`-algebra `k ⊗_ℚ E`, and the
+  ideal `c (k ⊗_ℚ E)` is the representation.
 * **Uniqueness.** When `E` is a finite-dimensional formally unramified `ℚ`-algebra, such as a
   finite product of CM fields, two representations with the type trace are isomorphic
   (`TauCeti.CMType.exists_linearEquiv_of_trace_eq_typeTrace`).
 * **Existence over `ℂ`.** `E` acts on `ℂ^Φ` through the embeddings in `Φ`, with trace the type
   trace (`TauCeti.CMType.typeRepresentation`, `TauCeti.CMType.trace_typeRepresentation`).
-
-Existence over a subfield `k` with `E* ⊆ k ⊊ ℂ`, the descent of `ℂ^Φ` to `k`, is not done here.
 
 ## Main definitions
 
@@ -48,6 +55,11 @@ Existence over a subfield `k` with `E* ⊆ k ⊊ ℂ`, the descent of `ℂ^Φ` t
 * `TauCeti.CMType.exists_linearEquiv_of_trace_eq_typeTrace`: representations with the type trace
   are unique up to isomorphism; `TauCeti.CMType.exists_linearEquiv_of_trace_eq_typeTrace_pi`
   states it for a finite product of number fields.
+* `TauCeti.CMType.exists_trace_eq_typeTrace`: a representation with the type trace exists over
+  every `k ⊇ E*`.
+* `TauCeti.CMType.exists_trace_eq_typeTrace_iff`: a representation over `k` with the type trace
+  exists iff `E* ⊆ k`; `TauCeti.CMType.exists_trace_eq_typeTrace_iff_pi` states it for a finite
+  product of number fields.
 * `TauCeti.CMType.trace_typeRepresentation`: `ℂ^Φ` has the type trace.
 
 ## References
@@ -56,6 +68,8 @@ Existence over a subfield `k` with `E* ⊆ k ⊊ ℂ`, the descent of `ℂ^Φ` t
 -/
 
 public section
+
+open scoped TensorProduct
 
 namespace TauCeti.CMType
 
@@ -107,6 +121,57 @@ theorem exists_linearEquiv_of_trace_eq_typeTrace_pi {ι : Type*} [Finite ι] (F 
   exact exists_linearEquiv_of_trace_eq_typeTrace Φ k ρ ρ' h h'
 
 end Finite
+
+section Existence
+
+variable [Algebra ℚ E] [Module.Finite ℚ E]
+
+/-- **Existence of the representation with the type trace.** Let `E` be a finite-dimensional
+formally unramified `ℚ`-algebra, such as a finite product of CM fields, and `k ⊆ ℂ` a subfield
+containing the reflex field of `Φ`. Then `E` has a representation on a finite-dimensional
+`k`-vector space whose trace is the type trace of `Φ`. -/
+theorem exists_trace_eq_typeTrace [Algebra.FormallyUnramified ℚ E] (Φ : CMType E)
+    {k : IntermediateField ℚ ℂ} (hk : Φ.reflexField ≤ k) :
+    ∃ (n : ℕ) (ρ : E →+* Module.End k (Fin n → k)),
+      ∀ a, (LinearMap.trace k (Fin n → k) (ρ a) : ℂ) = Φ.typeTrace a := by
+  classical
+  have : Algebra.FormallyEtale ℚ E := .of_formallyUnramified_of_field ℚ E
+  have : Algebra.Etale ℚ E :=
+    { finitePresentation := Algebra.FinitePresentation.of_finiteType.mp inferInstance }
+  -- The selected idempotent gives a module with the descended partial trace.
+  obtain ⟨n, ρ, hρ⟩ := TauCeti.Algebra.Etale.exists_trace_eq_finsum (K := k)
+    (A := k ⊗[ℚ] E) (Ω := ℂ) _
+    (Φ.finsum_ratTensorProductAlgHomEquiv_image_mem_range hk)
+  refine ⟨n, ρ.toRingHom.comp Algebra.TensorProduct.includeRight.toRingHom, fun a ↦ ?_⟩
+  have h := hρ (1 ⊗ₜ a)
+  rw [finsum_mem_image (ratTensorProductAlgHomEquiv k E ℂ).injective.injOn] at h
+  simpa [typeTrace_apply] using h
+
+/-- **Representations with the type trace (Milne, *Complex Multiplication*, Proposition 1.21).**
+Let `E` be a finite-dimensional formally unramified `ℚ`-algebra, such as a finite product of CM
+fields, and `k ⊆ ℂ` a subfield. Then `E` has a representation on a finite-dimensional `k`-vector
+space whose trace is the type trace of `Φ` exactly when `k` contains the reflex field of `Φ`. Such
+a representation is unique up to isomorphism
+(`TauCeti.CMType.exists_linearEquiv_of_trace_eq_typeTrace`). -/
+theorem exists_trace_eq_typeTrace_iff [Algebra.FormallyUnramified ℚ E] (Φ : CMType E)
+    (k : IntermediateField ℚ ℂ) :
+    (∃ (n : ℕ) (ρ : E →+* Module.End k (Fin n → k)),
+      ∀ a, (LinearMap.trace k (Fin n → k) (ρ a) : ℂ) = Φ.typeTrace a) ↔ Φ.reflexField ≤ k :=
+  ⟨fun ⟨_, ρ, h⟩ ↦ Φ.reflexField_le_of_trace_eq k ρ h, Φ.exists_trace_eq_typeTrace⟩
+
+/-- **Representations with the type trace, for a product of number fields**, such as a CM algebra
+`E = ∏ Fᵢ`: `E` has a representation over a subfield `k ⊆ ℂ` with the type trace of `Φ` exactly
+when `k` contains the reflex field of `Φ`. -/
+theorem exists_trace_eq_typeTrace_iff_pi {ι : Type*} [Finite ι] (F : ι → Type*)
+    [∀ i, Field (F i)] [∀ i, NumberField (F i)] (Φ : CMType (∀ i, F i))
+    (k : IntermediateField ℚ ℂ) :
+    (∃ (n : ℕ) (ρ : (∀ i, F i) →+* Module.End k (Fin n → k)),
+      ∀ a, (LinearMap.trace k (Fin n → k) (ρ a) : ℂ) = Φ.typeTrace a) ↔ Φ.reflexField ≤ k := by
+  have := Fintype.ofFinite ι
+  have (i : ι) := Algebra.FormallyUnramified.of_isSeparable ℚ (F i)
+  exact exists_trace_eq_typeTrace_iff Φ k
+
+end Existence
 
 /-- **The representation of `E` on `ℂ^Φ`**: `a` acts by the diagonal matrix
 `diag (φ a)_{φ ∈ Φ}`. Its trace is the type trace (`TauCeti.CMType.trace_typeRepresentation`). -/

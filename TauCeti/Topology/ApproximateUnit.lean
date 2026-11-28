@@ -97,4 +97,22 @@ theorem tendsto_mul_star_of_tendsto_mul {ι R : Type*} [Mul R] [StarMul R] [Topo
     (hz : Tendsto (fun i ↦ z * e i) l (𝓝 z)) : Tendsto (fun i ↦ e i * star z) l (𝓝 (star z)) :=
   hz.star.congr' (he.mono fun _ he ↦ by rw [star_mul, he.star_eq])
 
+/-- A right approximate identity on `α` pushes forward along `MulOpposite.op` to a left
+approximate identity on `αᵐᵒᵖ`. -/
+theorem tendsto_mul_right_map_op {α : Type*} [TopologicalSpace α] [Mul α]
+    {l : Filter α} (hl : ∀ a, Tendsto (a * ·) l (𝓝 a)) (a : αᵐᵒᵖ) :
+    Tendsto (· * a) (l.map MulOpposite.op) (𝓝 a) := by
+  rw [tendsto_map'_iff]
+  simpa only [Function.comp_def, MulOpposite.op_mul, MulOpposite.op_unop] using
+    (MulOpposite.continuous_op.tendsto a.unop).comp (hl a.unop)
+
+/-- A left approximate identity on `α` pushes forward along `MulOpposite.op` to a right
+approximate identity on `αᵐᵒᵖ`. -/
+theorem tendsto_mul_left_map_op {α : Type*} [TopologicalSpace α] [Mul α]
+    {l : Filter α} (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) (a : αᵐᵒᵖ) :
+    Tendsto (a * ·) (l.map MulOpposite.op) (𝓝 a) := by
+  rw [tendsto_map'_iff]
+  simpa only [Function.comp_def, MulOpposite.op_mul, MulOpposite.op_unop] using
+    (MulOpposite.continuous_op.tendsto a.unop).comp (hl a.unop)
+
 end TauCeti

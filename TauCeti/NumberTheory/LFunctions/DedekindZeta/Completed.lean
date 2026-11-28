@@ -13,6 +13,7 @@ import Mathlib.Analysis.Meromorphic.RCLike
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import TauCeti.Analysis.Meromorphic.Conj
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!
@@ -70,7 +71,9 @@ pole of `Λ_K` there), and has a simple pole at `s = 1` whose residue is Mathlib
   (Chapter VII, §5).
 * `TauCeti.LFunctions.completedDedekindZeta_one_sub`: the functional equation
   `Λ_K(1 - s) = Λ_K(s)` for every `s : ℂ`.
-* `TauCeti.LFunctions.dedekindZetaC_eq_mul_completedDedekindZeta`: away from `0` and `1`,
+* `TauCeti.LFunctions.dedekindZetaC_eq_mul_completedDedekindZeta`,
+  `TauCeti.LFunctions.dedekindZetaC_eventuallyEq_invDedekindZetaCompletionFactor_mul`: away from
+  `0` and `1` (and as punctured germs everywhere),
   `ζ_K(s) = |d_K| ^ (-s / 2) Γ_ℝ(s)⁻¹ ^ r₁ Γ_ℂ(s)⁻¹ ^ r₂ Λ_K(s)`.
 * `meromorphicContinuation_eq_toMeromorphicNFOn_invDedekindZetaCompletionFactor_mul` and
   `TauCeti.LFunctions.meromorphicContinuation_eqOn_of_eq_completionFactor_mul`: a function that is
@@ -272,9 +275,13 @@ private theorem classNumber_mul_two_mul_mellinConstant :
     (classNumber K * (2 * mellinConstant K) : ℂ) =
       (2 ^ (nrRealPlaces K + nrComplexPlaces K) * classNumber K * regulator K /
         torsionOrder K : ℝ) := by
-  rw [mellinConstant_def, ← Nat.sub_add_cancel (nrRealPlaces_add_nrComplexPlaces_pos K), pow_succ]
-  push_cast
-  ring
+  -- Perform the arithmetic in `ℝ` because `two_mul_mellinConstant` is stated over `ℝ`, then cast.
+  have h : (classNumber K : ℝ) * (2 * mellinConstant K) =
+      2 ^ (nrRealPlaces K + nrComplexPlaces K) * classNumber K * regulator K /
+        torsionOrder K := by
+    rw [two_mul_mellinConstant]
+    ring
+  exact_mod_cast h
 
 /-- **Residue of `Λ_K` at `s = 1`**:
 `lim_{s → 1} (s - 1) Λ_K(s) = 2 ^ (r₁ + r₂) h R / w`. -/
@@ -411,6 +418,16 @@ theorem toMeromorphicNFOn_mul_completedDedekindZeta_one :
     isUnitFundamentalDomain_unitFundamentalDomain rep hrep, Finset.sum_apply]
   simp [classNumber]
 
+/-- Away from `0` and `1`, the repaired product `s(s - 1) Λ_K(s)` is the pointwise product. -/
+theorem toMeromorphicNFOn_mul_completedDedekindZeta_eq {s : ℂ} (h₀ : s ≠ 0) (h₁ : s ≠ 1) :
+    toMeromorphicNFOn (fun s : ℂ ↦ s * (s - 1) * completedDedekindZeta K s) univ s =
+      s * (s - 1) * completedDedekindZeta K s :=
+  toMeromorphicNFOn_apply_of_analyticAt
+    (fun z ↦ (by fun_prop : AnalyticAt ℂ (fun w : ℂ ↦ w * (w - 1)) z).meromorphicAt.mul
+      (meromorphic_completedDedekindZeta K z))
+    ((by fun_prop : AnalyticAt ℂ (fun w : ℂ ↦ w * (w - 1)) s).mul
+      (analyticAt_completedDedekindZeta K h₀ h₁))
+
 /-! ### Functional equation -/
 
 /-- **The functional equation of the completed Dedekind zeta function**:
@@ -450,11 +467,9 @@ theorem invDedekindZetaCompletionFactor_def (s : ℂ) :
 /-- The reciprocal of the Dedekind zeta completion factor is entire. -/
 @[fun_prop]
 theorem analyticAt_invDedekindZetaCompletionFactor (s : ℂ) :
-    AnalyticAt ℂ (invDedekindZetaCompletionFactor K) s := by
-  have hd : ((|discr K| : ℤ) : ℂ) ∈ slitPlane := by
-    rw [← ofReal_intCast]
-    exact ofReal_mem_slitPlane.mpr (by exact_mod_cast abs_pos.mpr (discr_ne_zero K))
-  exact ((AnalyticAt.cpow analyticAt_const (by fun_prop) hd).mul
+    AnalyticAt ℂ (invDedekindZetaCompletionFactor K) s :=
+  have hd : ((|discr K| : ℤ) : ℂ) ≠ 0 := by exact_mod_cast (abs_discr_pos K).ne'
+  (((by fun_prop : AnalyticAt ℂ (fun z : ℂ ↦ -z / 2) s).const_cpow (.inl hd)).mul
     ((differentiable_Gammaℝ_inv.analyticAt s).pow _)).mul
     ((differentiable_Gammaℂ_inv.analyticAt s).pow _)
 
@@ -605,6 +620,14 @@ theorem dedekindZetaC_eq_dedekindZeta {s : ℂ} (hs : 1 < s.re) :
     (meromorphic_completedDedekindZeta K) (analyticOnNhd_completedDedekindZeta_of_one_lt_re K)
     (fun _ hs ↦ completedDedekindZeta_eq_mul_dedekindZeta K hs) hs
 
+/-- The continued Dedekind zeta function agrees with its Dirichlet series on a neighborhood
+of every point in the open half-plane of absolute convergence. -/
+theorem dedekindZetaC_eventuallyEq_dedekindZeta {s : ℂ} (hs : 1 < s.re) :
+    dedekindZetaC K =ᶠ[𝓝 s] dedekindZeta K := by
+  have hopen : IsOpen {z : ℂ | 1 < z.re} := isOpen_lt continuous_const continuous_re
+  filter_upwards [hopen.mem_nhds hs] with z hz
+  exact dedekindZetaC_eq_dedekindZeta K hz
+
 /-- **`ζ_K` is analytic away from `s = 1`.** At `s = 0` the simple pole of `Λ_K` is cancelled by
 the zero of the reciprocal completion factor. -/
 @[fun_prop]
@@ -682,6 +705,16 @@ theorem analyticAt_dedekindZetaC_iff {s : ℂ} : AnalyticAt ℂ (dedekindZetaC K
   have hnonneg := han.meromorphicOrderAt_nonneg
   rw [meromorphicOrderAt_dedekindZetaC_one] at hnonneg
   exact absurd hnonneg (by decide)
+
+/-- **Relation between `ζ_K` and `Λ_K`, as germs.** At every complex number `s` (including `0`
+and `1`), `dedekindZetaC K` has the punctured germ of
+`invDedekindZetaCompletionFactor K z * completedDedekindZeta K z`. -/
+theorem dedekindZetaC_eventuallyEq_invDedekindZetaCompletionFactor_mul (s : ℂ) :
+    dedekindZetaC K =ᶠ[𝓝[≠] s]
+      fun z ↦ invDedekindZetaCompletionFactor K z * completedDedekindZeta K z := by
+  rw [dedekindZetaC_eq_toMeromorphicNFOn]
+  exact (meromorphic_invDedekindZetaCompletionFactor_mul K (meromorphic_completedDedekindZeta K))
+    |>.meromorphicOn.toMeromorphicNFOn_eq_self_on_nhdsNE (mem_univ s)
 
 end Continued
 

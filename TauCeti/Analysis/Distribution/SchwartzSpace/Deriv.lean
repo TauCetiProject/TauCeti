@@ -25,6 +25,8 @@ For a Schwartz function valued in a finite `L^p` product, such as Euclidean spac
 coordinate commutes with differentiation along any direction
 (`SchwartzMap.fderiv_apply_eq_lineDerivOp_apply`).
 On the plane `ℂ`, the Laplacian is the sum of the second derivatives along `1` and `I`.
+On `𝓢(ℝ, F)`, the `m`-th power of `SchwartzMap.derivCLM` is the `m`-th iterated derivative
+(`SchwartzMap.coe_derivCLM_pow`).
 
 Applying a continuous real- or complex-linear map to the values of a Schwartz function commutes
 with directional differentiation, and hence with the Laplacian. In particular, real and imaginary
@@ -113,6 +115,17 @@ theorem lineDerivOp_compSubConstCLM (f : 𝓢(V, F)) (a v : V) :
   ext x
   rw [lineDerivOp_apply_eq_fderiv, funext (compSubConstCLM_apply f a), fderiv_comp_sub,
     compSubConstCLM_apply, lineDerivOp_apply_eq_fderiv]
+
+/-- The `m`-th power of the one-dimensional derivative on Schwartz space is the `m`-th iterated
+derivative. -/
+@[simp]
+theorem coe_derivCLM_pow (m : ℕ) (f : 𝓢(ℝ, F)) :
+    ⇑((derivCLM 𝕜 F ^ m) f) = iteratedDeriv m f := by
+  induction m generalizing f with
+  | zero => simp
+  | succ m ih =>
+    rw [pow_succ, mul_apply_eq_comp, ih, iteratedDeriv_succ',
+      show ⇑(derivCLM 𝕜 F f) = deriv f from funext (derivCLM_apply 𝕜 f)]
 
 end RCLike
 

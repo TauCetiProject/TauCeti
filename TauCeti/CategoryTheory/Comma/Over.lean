@@ -33,14 +33,22 @@ to the source is a strong epimorphism. This uses Mathlib's `StrongEpi.llp` and `
 
 * `CategoryTheory.Over.isIso_left`: the underlying morphism of an isomorphism over a base is
   an isomorphism.
+* `CategoryTheory.Over.isIso_of_isIso_left`: a morphism over a base whose underlying morphism is
+  an isomorphism is an isomorphism.
 * `CategoryTheory.Over.mapMkIso`: an object `Z` over `S` is the image under `Over.map p` of
-  `Over.mk a`, for a lift `a` of its structure morphism through `p : S' ⟶ S`.
+  `Over.mk a`, for a lift `a` of its structure morphism through `p : S' ⟶ S`, with its forward
+  morphism `Over.homMk (𝟙 Z.left)` (`CategoryTheory.Over.mapMkIso_hom`), and
+  `CategoryTheory.Over.mapObjMkIdHom` its forward morphism for the identity lift.
+* `CategoryTheory.Over.mapCompOfHom`: for `p : Z' ⟶ Z` over `U`, the identification of
+  `Over.map Z'.hom` with `Over.map p.left ⋙ Over.map Z.hom`.
 * `CategoryTheory.Over.isPullback_pullback_map_left`: base change of a morphism over `S` is a
   pullback of it.
 * `CategoryTheory.Over.exists_comp_pullback_map_eq_iff`: factorization through a monomorphism
   can be checked after base change if the projection to the source is a strong epimorphism.
 * `CategoryTheory.Over.pullbackRightPullbackFstIso_inv_comp_pullback_map`: the identification
   `T ×_S X ≅ T ×_{S'} (S' ×_S X)` is natural in `T` over `S'`.
+* `CategoryTheory.Over.mapSection`: a section of a presheaf on `Over S` over `T` restricts to a
+  section of its restriction along `Over.map T.hom`.
 * `CategoryTheory.isPullback_overPost_iff`: for `F : C ⥤ D` and `X : C`, a square in
   `Over (F.obj X)` with a side `(Over.post F).map snd` is a pullback square exactly when the
   underlying square in `D` is.
@@ -63,11 +71,26 @@ instance isIso_left {T : Type u} [Category.{v} T] {X : T} {f g : Over X} (φ : f
     [IsIso φ] : IsIso φ.left :=
   (Over.forget X).map_isIso φ
 
+/-- A morphism in `Over X` is an isomorphism if its underlying morphism is an isomorphism. -/
+theorem isIso_of_isIso_left {T : Type u} [Category.{v} T] {X : T} {f g : Over X} (φ : f ⟶ g)
+    [IsIso φ.left] : IsIso φ :=
+  have : IsIso ((Over.forget X).map φ) := by rw [Over.forget_map]; infer_instance
+  isIso_of_reflects_iso φ (Over.forget X)
+
 /-- An object `Z` over `S` is the image under `Over.map p` of `Over.mk a`, for a lift
 `a : Z.left ⟶ S'` of its structure morphism through `p : S' ⟶ S`. -/
 def mapMkIso {T : Type u} [Category.{v} T] {S S' : T} {p : S' ⟶ S} {Z : Over S}
     (a : Z.left ⟶ S') (ha : a ≫ p = Z.hom) : (Over.map p).obj (Over.mk a) ≅ Z :=
   Over.isoMk (Iso.refl Z.left) (by simp [ha])
+
+/-- The forward morphism of `mapMkIso` is the morphism over `S` given by the identity of
+`Z.left`. -/
+theorem mapMkIso_hom {T : Type u} [Category.{v} T] {S S' : T} {p : S' ⟶ S} {Z : Over S}
+    (a : Z.left ⟶ S') (ha : a ≫ p = Z.hom) :
+    (mapMkIso a ha).hom =
+      Over.homMk (U := (Over.map p).obj (Over.mk a)) (𝟙 Z.left) (by simp [ha]) := by
+  ext
+  simp [mapMkIso]
 
 /-- The isomorphism `mapMkIso` is the identity on underlying objects. -/
 @[simp]
@@ -80,6 +103,19 @@ theorem mapMkIso_hom_left {T : Type u} [Category.{v} T] {S S' : T} {p : S' ⟶ S
 theorem mapMkIso_inv_left {T : Type u} [Category.{v} T] {S S' : T} {p : S' ⟶ S} {Z : Over S}
     (a : Z.left ⟶ S') (ha : a ≫ p = Z.hom) : (mapMkIso a ha).inv.left = 𝟙 Z.left := by
   simp [mapMkIso]
+
+/-- The forward morphism of `mapMkIso` for the identity lift: the morphism
+`(Over.map Z.hom).obj (Over.mk (𝟙 Z.left)) ⟶ Z` of `Over U` whose underlying morphism is the
+identity of `Z.left`. -/
+abbrev mapObjMkIdHom {T : Type u} [Category.{v} T] {U : T} (Z : Over U) :
+    (Over.map Z.hom).obj (Over.mk (𝟙 Z.left)) ⟶ Z :=
+  (mapMkIso (𝟙 Z.left) (Category.id_comp Z.hom)).hom
+
+/-- For `p : Z' ⟶ Z` in `Over U`, the identification of `Over.map Z'.hom` with the composite of
+`Over.map p.left` and `Over.map Z.hom`. -/
+abbrev mapCompOfHom {T : Type u} [Category.{v} T] {U : T} {Z Z' : Over U} (p : Z' ⟶ Z) :
+    Over.map Z'.hom ≅ Over.map p.left ⋙ Over.map Z.hom :=
+  Over.mapCongr Z'.hom (p.left ≫ Z.hom) (Over.w p).symm ≪≫ Over.mapComp p.left Z.hom
 
 /-- Base change along `f : T ⟶ S` of a morphism `g : A ⟶ B` over `S` is the pullback of `g.left`
 along the projection `B ×_S T ⟶ B`: the square formed by `A ×_S T ⟶ B ×_S T`, the two first
@@ -126,6 +162,27 @@ theorem exists_comp_pullback_map_eq_iff {C : Type u} [Category.{v} C]
       simpa only [comp_left, homMk_left] using sq.fac_right
   · rintro ⟨g, rfl⟩
     exact ⟨(Over.pullback p).map g, ((Over.pullback p).map_comp g i).symm⟩
+
+/-- A section `ξ` of a presheaf `F` on `Over S` over an object `T` restricts to every object
+`(Over.map T.hom).obj T'` for `T'` over `T.left`, along the morphism `T'` itself; these
+restrictions form a section of the presheaf `(Over.map T.hom).op ⋙ F` on `Over T.left`. -/
+def mapSection {C : Type u} [Category.{v} C] {S : C} (F : (Over S)ᵒᵖ ⥤ Type*) {T : Over S}
+    (ξ : F.obj (Opposite.op T)) : ((Over.map T.hom).op ⋙ F).sections where
+  val T' := F.map (Over.homMk T'.unop.hom : (Over.map T.hom).obj T'.unop ⟶ T).op ξ
+  property {T₁ T₂} f := by
+    dsimp
+    rw [← Functor.map_comp_apply, ← op_comp]
+    congr 3
+    ext
+    simp
+
+/-- The section `mapSection F ξ` over `T'` is the restriction of `ξ` along `T'`. -/
+@[simp]
+lemma mapSection_coe {C : Type u} [Category.{v} C] {S : C} (F : (Over S)ᵒᵖ ⥤ Type*) {T : Over S}
+    (ξ : F.obj (Opposite.op T)) (T' : (Over T.left)ᵒᵖ) :
+    (mapSection F ξ).val T' =
+      F.map (Over.homMk T'.unop.hom : (Over.map T.hom).obj T'.unop ⟶ T).op ξ :=
+  (rfl)
 
 end Over
 

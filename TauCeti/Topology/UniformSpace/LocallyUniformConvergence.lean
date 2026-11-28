@@ -33,12 +33,21 @@ continuous function by `m` gives a sequence tending to `0` locally uniformly
 Families converging locally uniformly converge jointly, as families of tuples
 (`TauCeti.tendstoLocallyUniformlyOn_pi`).
 
+A map on a product `s ×ˢ t` whose slices are continuous on `t` and converge uniformly on `t` as
+the first variable converges within `s` is jointly continuous
+(`TauCeti.continuousOn_prod_of_tendstoUniformlyOn`). In particular, a map on
+`(S ×ˢ B) ×ˢ D` into a normed group is continuous when its slices on `D` are continuous and move,
+uniformly on `D`, by at most `M (‖ξ - ξ₀‖ + e)` for parameters `(p, ξ)` with `p` near enough
+`p₀` and any `e > 0` (`TauCeti.continuousOn_prod_of_eventually_norm_sub_le`).
+
 Uniform and locally uniform convergence along a filter `l` pass to any family of indices tending
 to `l`, for instance to a subsequence (`TendstoUniformlyOn.comp_tendsto`,
 `TendstoLocallyUniformlyOn.comp_tendsto`, `TendstoLocallyUniformly.comp_tendsto`); along an image
 filter `map g q` locally uniform convergence is convergence of the reindexed family along `q`
-(`TauCeti.tendstoLocallyUniformlyOn_map_iff`). A family that does not depend on its index
-converges locally uniformly to its constant value
+(`TauCeti.tendstoLocallyUniformlyOn_map_iff`). On an open subset of a locally compact space, a
+sequence converges locally uniformly when every subsequence has a further subsequence converging
+to the same limit (`TauCeti.tendstoLocallyUniformlyOn_of_forall_exists_subseq`). A family that
+does not depend on its index converges locally uniformly to its constant value
 (`TauCeti.tendstoLocallyUniformly_const`).
 Locally uniform convergence on the whole space gives pointwise convergence
 (`TendstoLocallyUniformly.tendsto_at`).
@@ -48,7 +57,9 @@ locally uniform convergence on the union to the pointwise limit
 
 On an open set on which the limit is continuous, locally uniform convergence is the same as
 continuous convergence at every point of the set
-(`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`). Convergence of
+(`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`). In a topological additive
+group it therefore survives translations of the domain that converge, to the translated limit on the
+translated set (`TendstoLocallyUniformlyOn.comp_sub_of_tendsto`). Convergence of
 `Fᵢ ∘ g` on an open set `s`, for an open map `g` injective on `s`, is convergence of `Fᵢ` on
 `g '' s` (`TendstoLocallyUniformlyOn.image_of_isOpenMap`). Locally uniform limits on open windows
 `Uᵢ \ Zᵢ` glue to a locally uniform limit on `(⋃ᵢ Uᵢ) \ Z` for every closed set `Z` containing
@@ -66,7 +77,8 @@ A family `Φ : α → δ → γ` that is jointly continuous at every point of `�
 uniformly in its first argument as the second tends to `q`
 (`TauCeti.tendstoLocallyUniformly_of_forall_continuousAt`), with no local compactness assumption
 on `α` or `δ`. For a flow, this gives locally uniform convergence of orbits from convergent
-initial points.
+initial points. In particular, a jointly continuous family converges locally uniformly along any
+parameter family tending to a point (`Continuous.tendstoLocallyUniformly_of_tendsto`).
 -/
 
 public section
@@ -110,6 +122,28 @@ theorem IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn {ι 
     ((hf.continuousAt (hs.mem_nhds hx)).tendsto).comp tendsto_snd
   refine ⟨fun h ↦ hfx.congr_uniformity h, fun h ↦ ?_⟩
   exact (hfx.prodMk_nhds h).mono_right (nhds_le_uniformity (f x))
+
+/-- **Locally uniform convergence along converging translations.** If `Fᵢ → f` locally uniformly
+on an open set `s` of a topological additive group, with `f` continuous on `s`, and the
+translations `oᵢ` tend to `o`, then `y ↦ Fᵢ (y - oᵢ)` converges to `y ↦ f (y - o)` locally
+uniformly on the translate `s + o`. -/
+theorem TendstoLocallyUniformlyOn.comp_sub_of_tendsto {ι α β : Type*} [AddGroup α]
+    [TopologicalSpace α] [IsTopologicalAddGroup α] [UniformSpace β] {F : ι → α → β} {f : α → β}
+    {l : Filter ι} {s : Set α} (hs : IsOpen s) (hf : ContinuousOn f s)
+    (h : TendstoLocallyUniformlyOn F f l s) {o : ι → α} {o₀ : α} (ho : Tendsto o l (𝓝 o₀)) :
+    TendstoLocallyUniformlyOn (fun i y ↦ F i (y - o i)) (fun y ↦ f (y - o₀)) l
+      ((· + o₀) '' s) := by
+  have hs' : IsOpen ((· + o₀) '' s) := (Homeomorph.addRight o₀).isOpenMap _ hs
+  have hf' : ContinuousOn (fun y ↦ f (y - o₀)) ((· + o₀) '' s) :=
+    hf.comp (continuous_sub_right o₀).continuousOn (by rintro _ ⟨y, hy, rfl⟩; simpa using hy)
+  rw [hs'.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn hf']
+  rw [hs.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn hf] at h
+  rintro _ ⟨x, hx, rfl⟩
+  simp only [add_sub_cancel_right]
+  -- The map `(i, y) ↦ (i, y - oᵢ)` sends `l ×ˢ 𝓝 (x + o)` to `l ×ˢ 𝓝 x`.
+  have hsub : Tendsto (fun p : ι × α ↦ p.2 - o p.1) (l ×ˢ 𝓝 (x + o₀)) (𝓝 x) := by
+    simpa using (tendsto_snd (f := l) (g := 𝓝 (x + o₀))).sub (ho.comp tendsto_fst)
+  exact (h x hx).comp (tendsto_fst.prodMk hsub)
 
 /-- A locally uniform limit `w` of maps `e ∘ uᵢ`, where the `uᵢ` take values in a set
 `K ⊆ e.source` and `w` takes values in `e '' K`, is read back through the inverse of `e`:
@@ -214,6 +248,21 @@ theorem tendstoLocallyUniformlyOn_map_iff {ι' γ : Type*} [UniformSpace γ] {F 
   ⟨fun h ↦ h.comp_tendsto tendsto_map, fun h u hu x hx ↦
     (h u hu x hx).imp fun _ ⟨ht, hev⟩ ↦ ⟨ht, eventually_map.2 hev⟩⟩
 
+/-- **Subsequence principle for locally uniform convergence.** On an open subset of a locally
+compact space, a sequence converges locally uniformly to `f` when every subsequence has a further
+subsequence that does. -/
+theorem tendstoLocallyUniformlyOn_of_forall_exists_subseq [LocallyCompactSpace α]
+    {γ : Type*} [UniformSpace γ] {F : ℕ → α → γ} {f : α → γ} (hs : IsOpen s)
+    (h : ∀ ψ : ℕ → ℕ, StrictMono ψ → ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧
+      TendstoLocallyUniformlyOn (fun n ↦ F (ψ (ψ' n))) f atTop s) :
+    TendstoLocallyUniformlyOn F f atTop s := by
+  refine (tendstoLocallyUniformlyOn_iff_forall_isCompact hs).2 fun K hKs hK u hu ↦ ?_
+  by_contra hne
+  obtain ⟨ψ, hψ, hψu⟩ := extraction_of_frequently_atTop (not_eventually.1 hne)
+  obtain ⟨ψ', -, hψ'⟩ := h ψ hψ
+  obtain ⟨n, hn⟩ := ((tendstoLocallyUniformlyOn_iff_forall_isCompact hs).1 hψ' K hKs hK u hu).exists
+  exact hψu (ψ' n) hn
+
 /-- A family that does not depend on its index converges locally uniformly to its constant
 value. -/
 theorem tendstoLocallyUniformly_const {γ : Type*} [UniformSpace γ] (g : α → γ) :
@@ -285,4 +334,52 @@ theorem exists_tendstoLocallyUniformlyOn_iUnion_sdiff {γ κ : Type*} [UniformSp
   rw [iUnion_sdiff]
   exact ⟨v, hv⟩
 
+/-- **Joint continuity from uniformly convergent slices.** A map `g` on `s ×ˢ t` is continuous if
+each slice `g (a, ·)`, `a ∈ s`, is continuous on `t` and the slices `g (b, ·)` converge to
+`g (a, ·)` uniformly on `t` as `b` tends to `a` within `s`. -/
+theorem continuousOn_prod_of_tendstoUniformlyOn {X Y Z : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [UniformSpace Z] {g : X × Y → Z} {s : Set X} {t : Set Y}
+    (hslice : ∀ a ∈ s, ContinuousOn (fun y ↦ g (a, y)) t)
+    (hunif : ∀ a ∈ s, TendstoUniformlyOn (fun b y ↦ g (b, y)) (fun y ↦ g (a, y)) (𝓝[s] a) t) :
+    ContinuousOn g (s ×ˢ t) := by
+  rintro ⟨a, y⟩ ⟨ha, hy⟩
+  have h1 : Tendsto Prod.fst (𝓝[s ×ˢ t] (a, y)) (𝓝[s] a) :=
+    continuous_fst.continuousWithinAt.tendsto_nhdsWithin fun x hx ↦ hx.1
+  have h2 : Tendsto Prod.snd (𝓝[s ×ˢ t] (a, y)) (𝓝[t] y) :=
+    continuous_snd.continuousWithinAt.tendsto_nhdsWithin fun x hx ↦ hx.2
+  exact ((hunif a ha).comp_tendsto h1).tendsto_comp (hslice a ha y hy) h2
+
+/-- **Joint continuity from a uniform modulus of continuity in the parameters.** A map `g` on
+`(S ×ˢ B) ×ˢ D`, with values in a normed group, is continuous if each slice `g ((p, ξ), ·)` is
+continuous on `D` and, for every `e > 0` and `p` near `p₀` within `S`, `g ((p, ξ), z)` is within
+`M (‖ξ - ξ₀‖ + e)` of `g ((p₀, ξ₀), z)` for all `ξ ∈ B`, uniformly in `z ∈ D`. -/
+theorem continuousOn_prod_of_eventually_norm_sub_le {P Y Z E : Type*} [TopologicalSpace P]
+    [NormedAddCommGroup Y] [TopologicalSpace Z] [NormedAddCommGroup E] {S : Set P} {B : Set Y}
+    {D : Set Z} {g : (P × Y) × Z → E} {M : ℝ} (hM : 0 ≤ M)
+    (hslice : ∀ a ∈ S ×ˢ B, ContinuousOn (fun z ↦ g (a, z)) D)
+    (hlip : ∀ p₀ ∈ S, ∀ ξ₀ ∈ B, ∀ e > 0, ∀ᶠ p in 𝓝[S] p₀, ∀ ξ ∈ B, ∀ z ∈ D,
+      ‖g ((p, ξ), z) - g ((p₀, ξ₀), z)‖ ≤ M * (‖ξ - ξ₀‖ + e)) :
+    ContinuousOn g ((S ×ˢ B) ×ˢ D) := by
+  refine continuousOn_prod_of_tendstoUniformlyOn hslice ?_
+  rintro ⟨p₀, ξ₀⟩ ⟨hp₀, hξ₀⟩
+  rw [Metric.tendstoUniformlyOn_iff]
+  intro e he
+  set e' := e / (2 * (M + 1))
+  have he' : 0 < e' := by positivity
+  have h2 : e' * (2 * (M + 1)) = e := div_mul_cancel₀ e (by positivity)
+  rw [nhdsWithin_prod_eq]
+  filter_upwards [(hlip p₀ hp₀ ξ₀ hξ₀ e' he').prod_mk (eventually_mem_nhdsWithin.and
+    (nhdsWithin_le_nhds (Metric.ball_mem_nhds ξ₀ he')))] with ⟨p, ξ⟩ ⟨hp, hξ, hξd⟩ z hz
+  rw [dist_comm, dist_eq_norm]
+  refine (hp ξ hξ z hz).trans_lt ?_
+  nlinarith [mul_le_mul_of_nonneg_left (mem_ball_iff_norm.1 hξd).le hM]
+
 end TauCeti
+
+/-- A jointly continuous family `Φ` converges locally uniformly to `Φ q` along any parameter
+family `p` tending to `q`. -/
+theorem Continuous.tendstoLocallyUniformly_of_tendsto {δ γ : Type*} [TopologicalSpace δ]
+    [UniformSpace γ] {Φ : δ → α → γ} (hΦ : Continuous (Function.uncurry Φ)) {p : ι → δ} {q : δ}
+    (hp : Tendsto p l (𝓝 q)) : TendstoLocallyUniformly (fun i ↦ Φ (p i)) (Φ q) l :=
+  TauCeti.tendstoLocallyUniformly_of_forall_continuousAt (Φ := fun x d ↦ Φ d x)
+    (fun _ ↦ (hΦ.comp continuous_swap).continuousAt) hp

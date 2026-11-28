@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.FinitePresentation
 public import TauCeti.Algebra.Colimit.Ring.Basic
 public import TauCeti.RingTheory.TensorProduct.DirectLimit
 import Mathlib.Data.Fintype.Order
+import TauCeti.Algebra.Category.Ring.DirectLimit
+import TauCeti.Algebra.Colimit.Ring.Cofinal
 
 /-!
 # Algebra maps from finitely presented algebras into directed colimits
@@ -57,6 +59,15 @@ the concrete colimit `DirectLimit` of a directed system of algebras.
   `TauCeti.DirectLimit.Algebra.exists_rTensor_comp_restrictScalars_eq_of_finiteType`: descent
   and eventual equality of maps between base changes `R ⊗[A] S → R ⊗[A] M`, for `S` finitely
   presented.
+
+* `RingHom.exists_of_comp_eq_of_finitePresentation_of_comp_algebraMap` descends a map from a
+  finitely presented algebra over a chosen stage, compatibly with the base. It adapts the
+  factorization over `ℤ` in `RingHom.exists_of_comp_eq_of_finitePresentation` by restricting
+  to the cofinal tail over the chosen stage. Compatibility over the base gives a section after
+  base change to that later stage, and the factorization equation recovers the section over
+  the colimit.
+* `AlgHom.exists_section_of_finitePresentation` states this descent for sections of base changes,
+  with the compatibility square on pure tensors.
 
 ## References
 
@@ -260,3 +271,97 @@ theorem exists_of_comp_eq_of_finitePresentation {S : Type*} [CommRing S]
   simpa [he] using (congr($hψ a)).symm
 
 end RingHom
+
+section Stage
+
+open Ring.DirectLimit CategoryTheory
+open TauCeti.Ring.DirectLimit (diagram ringEquivOfIsCofinal
+  ringEquivOfIsCofinal_symm_apply_of ringEquivOfEq ringEquivOfEq_of)
+
+variable {ι : Type*} [Preorder ι] [IsDirectedOrder ι] {G : ι → Type*}
+  [∀ i, CommRing (G i)] {f : ∀ i j, i ≤ j → G i →+* G j} [DirectedSystem G (f · · ·)]
+  {i : ι} {S : Type*} [Semiring S] [Algebra (G i) S] [Algebra.FinitePresentation (G i) S]
+
+/-- A map from a finitely presented algebra over stage `i` to the direct limit that extends
+the canonical map from stage `i` factors through a later stage `j`, extending the transition
+map from `i` to `j`. This gives section descent as in Kedlaya and Liu, *Relative p-adic Hodge
+theory: foundations*, Remark 1.2.9. -/
+theorem RingHom.exists_of_comp_eq_of_finitePresentation_of_comp_algebraMap
+    (g : S →+* Ring.DirectLimit G (f · · ·))
+    (hg : g.comp (algebraMap (G i) S) = of G (f · · ·) i) :
+    ∃ j, ∃ hij : i ≤ j, ∃ g' : S →+* G j,
+      (of G (f · · ·) j).comp g' = g ∧ g'.comp (algebraMap (G i) S) = f i j hij := by
+  let F := diagram f
+  let (j : Set.Ici i) : Algebra (G i) (G j) := F.tailAlgebra i j
+  let T := F.tailTransition i
+  have : DirectedSystem (fun j : Set.Ici i ↦ F.obj j) (F.tailTransition i · · ·) :=
+    inferInstance
+  have hT (j k : Set.Ici i) (hjk : j ≤ k) (x : G j) : T j k hjk x = f j k hjk x := by
+    rw [Functor.tailTransition_apply]
+    exact DFunLike.congr_fun (CommRingCat.hom_ofHom (f j k hjk)) x
+  have hcofinal : IsCofinal (Set.Ici i) := fun j ↦
+    let ⟨k, hik, hjk⟩ := exists_ge_ge i j
+    ⟨k, hik, hjk⟩
+  let e := (ringEquivOfIsCofinal (f := f) hcofinal).symm.trans (ringEquivOfEq hT)
+  have he (j : Set.Ici i) (x : G j) :
+      e (of G (f · · ·) j x) = DirectLimit.Algebra.of _ T j x := by
+    rw [RingEquiv.trans_apply, ringEquivOfIsCofinal_symm_apply_of, ringEquivOfEq_of]
+    simp only [DirectLimit.Ring.of_apply, DirectLimit.Algebra.of_apply]
+  have halg (j : Set.Ici i) : algebraMap (G i) (G j) = f i j j.property :=
+    RingHom.algebraMap_toAlgebra _
+  have hg₀ (a : G i) : (e.toRingHom.comp g) (algebraMap (G i) S a) = algebraMap (G i) _ a := by
+    have ha : g (algebraMap (G i) S a) = of G (f · · ·) i a :=
+      (RingHom.comp_apply ..).symm.trans (DFunLike.congr_fun hg a)
+    -- Compute the two scalar maps in the tail colimit using its initial stage.
+    simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+      ha, he ⟨i, le_rfl⟩]
+    rw [← (DirectLimit.Algebra.of _ T ⟨i, le_rfl⟩).commutes, halg]
+    exact congrArg _ (DirectedSystem.map_self' f a).symm
+  let g₀ : S →ₐ[G i] _ := ⟨e.toRingHom.comp g, hg₀⟩
+  obtain ⟨j, g', h⟩ := TauCeti.DirectLimit.Algebra.exists_eq_comp_of_finitePresentation g₀
+  refine ⟨j, j.property, g'.toRingHom, RingHom.ext fun x ↦ e.injective ?_, ?_⟩
+  · have hx := DFunLike.congr_fun h x
+    have h₀ : g₀ x = e (g x) := by
+      simp only [g₀, AlgHom.coe_mk, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
+        RingEquiv.coe_toRingHom]
+    rw [h₀, AlgHom.comp_apply] at hx
+    rw [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, he]
+    exact hx.symm
+  · exact RingHom.ext fun x ↦ (g'.commutes x).trans (DFunLike.congr_fun (halg j) x)
+
+open Algebra.TensorProduct
+
+local notation "R∞" => Ring.DirectLimit G (f · · ·)
+
+/-- For `S` finitely presented over `G i`, every algebra section of its base change to the
+colimit descends to a stage `j ≥ i`. The two composites in the base-change square agree on
+pure tensors, which additively generate the base change. This is section descent in
+Kedlaya and Liu, *Relative p-adic Hodge theory: foundations*, Remark 1.2.9. -/
+theorem AlgHom.exists_section_of_finitePresentation :
+    (fun [_base : Algebra (G i) R∞] ↦
+      ∀ σ : R∞ ⊗[G i] S →ₐ[R∞] R∞, ∃ j, ∃ hij : i ≤ j,
+        (fun [_stage : Algebra (G i) (G j)] ↦
+          ∃ σ' : G j ⊗[G i] S →ₐ[G j] G j, ∀ (a : G j) (x : S),
+            of G (f · · ·) j (σ' (a ⊗ₜ x)) = σ (of G (f · · ·) j a ⊗ₜ x))
+          (_stage := (f i j hij).toAlgebra))
+      (_base := (of G (f · · ·) i).toAlgebra) := by
+  let : Algebra (G i) R∞ := (of G (f · · ·) i).toAlgebra
+  intro σ
+  let ψ := (AlgHom.liftEquiv (G i) R∞ S R∞).symm σ
+  have hψ : ψ.toRingHom.comp (algebraMap (G i) S) = of G (f · · ·) i :=
+    RingHom.ext fun x ↦ (RingHom.comp_apply ..).trans
+      ((ψ.commutes x).trans (DFunLike.congr_fun (RingHom.algebraMap_toAlgebra _) x))
+  obtain ⟨j, hij, g, hg, hgbase⟩ := ψ.toRingHom
+    |>.exists_of_comp_eq_of_finitePresentation_of_comp_algebraMap hψ
+  let : Algebra (G i) (G j) := (f i j hij).toAlgebra
+  let ψ' : S →ₐ[G i] G j := ⟨g, fun x ↦ by
+    rw [RingHom.algebraMap_toAlgebra]
+    exact (RingHom.comp_apply ..).symm.trans (DFunLike.congr_fun hgbase x)⟩
+  refine ⟨j, hij, AlgHom.liftEquiv (G i) (G j) S (G j) ψ', fun a x ↦ ?_⟩
+  have hσ : AlgHom.liftEquiv (G i) R∞ S R∞ ψ = σ := Equiv.apply_symm_apply _ _
+  have hx : of G (f · · ·) j (ψ' x) = ψ x :=
+    (RingHom.comp_apply ..).symm.trans (DFunLike.congr_fun hg x)
+  rw [← hσ, AlgHom.liftEquiv_tmul, AlgHom.liftEquiv_tmul]
+  simp only [Algebra.smul_def, Algebra.algebraMap_self_apply, map_mul, hx]
+
+end Stage

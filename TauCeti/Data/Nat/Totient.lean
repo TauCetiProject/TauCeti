@@ -15,15 +15,21 @@ Mathlib's `Nat.totient_eq_one_iff` says that `φ(n) = 1` exactly for `n = 1` and
 specialises it to prime powers: `φ(p ^ k) = 1` exactly when `k = 0`, or `p = 2` and `k = 1`. It
 also lists the `n` with `φ(n) ≤ 2`, which are the orders of the roots of unity of degree at most
 two over `ℚ`. It also writes Mathlib's product formula `Nat.totient_eq_mul_prod_factors` in
-the reciprocal form used for Euler products over a field of characteristic zero.
+the reciprocal form used for Euler products over a field of characteristic zero. The totients
+of the positive powers of a prime are strictly increasing.
 
 ## Main results
 
+* `Nat.strictMono_totient_prime_pow_succ`: `φ(p ^ (k + 1))` strictly increases with `k`
+  for prime `p`.
 * `TauCeti.Nat.totient_prime_pow_eq_one_iff`: for a prime `p`, `φ(p ^ k) = 1` iff `k = 0`, or
   `p = 2` and `k = 1`.
 * `TauCeti.Nat.totient_le_two_iff`: `φ(n) ≤ 2` iff `n ∈ {0, 1, 2, 3, 4, 6}`.
 * `TauCeti.Nat.prod_inv_one_sub_inv_eq_div_totient`: for `n ≠ 0`,
   `∏_{p ∣ n} (1 - 1 / p)⁻¹ = n / φ(n)`.
+* `TauCeti.Nat.pow_dvd_totient_pow_succ`: `ℓ ^ m ∣ φ(ℓ ^ (m + 1))` for every `ℓ`.
+* `Nat.totient_mul_of_primeFactors_subset`: if `k` introduces no new prime factors into `n`,
+  then `φ(nk) = k φ(n)`.
 -/
 
 public section
@@ -75,4 +81,43 @@ theorem prod_inv_one_sub_inv_eq_div_totient {K : Type*} [Field K] [CharZero K] {
   push_cast at h
   rw [Finset.prod_inv_distrib, h, div_mul_cancel_left₀ (Nat.cast_ne_zero.mpr hn)]
 
+/-- `ℓ ^ m ∣ φ(ℓ ^ (m + 1))` for every `ℓ`, not only for primes as in Mathlib's
+`Nat.totient_prime_pow_succ`. -/
+theorem pow_dvd_totient_pow_succ (ℓ m : ℕ) : ℓ ^ m ∣ (ℓ ^ (m + 1)).totient := by
+  induction m with
+  | zero => exact one_dvd _
+  | succ m ih =>
+    rw [pow_succ' ℓ (m + 1), Nat.totient_mul_of_dvd (dvd_pow_self ℓ m.succ_ne_zero)]
+    simpa only [pow_succ'] using mul_dvd_mul_left ℓ ih
+
 end TauCeti.Nat
+
+namespace Nat
+
+/-- The totients of the positive powers of a prime are strictly increasing. -/
+theorem strictMono_totient_prime_pow_succ {p : ℕ} (hp : p.Prime) :
+    StrictMono fun k : ℕ ↦ (p ^ (k + 1)).totient := by
+  simp only [totient_prime_pow_succ hp]
+  exact (pow_right_strictMono₀ hp.one_lt).mul_const (Nat.sub_pos_of_lt hp.one_lt)
+
+/-- Multiplying `n` by a factor `k` supported on the primes of `n` multiplies its totient by `k`.
+The formula includes `n = 0` and `k = 0`. -/
+theorem totient_mul_of_primeFactors_subset {n k : ℕ} (h : k.primeFactors ⊆ n.primeFactors) :
+    (n * k).totient = k * n.totient := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  have hs : (n * k).primeFactors = n.primeFactors := by
+    rw [Nat.primeFactors_mul hn hk, Finset.union_eq_left.mpr h]
+  have hpos : 0 < ∏ p ∈ n.primeFactors, p :=
+    Nat.pos_of_dvd_of_pos (Nat.prod_primeFactors_dvd n) (Nat.pos_of_ne_zero hn)
+  apply Nat.eq_of_mul_eq_mul_right hpos
+  calc
+    (n * k).totient * ∏ p ∈ n.primeFactors, p = (n * k) * ∏ p ∈ n.primeFactors, (p - 1) := by
+      simpa only [hs] using Nat.totient_mul_prod_primeFactors (n * k)
+    _ = k * (n * ∏ p ∈ n.primeFactors, (p - 1)) := by ac_rfl
+    _ = (k * n.totient) * ∏ p ∈ n.primeFactors, p := by
+      rw [mul_assoc k, Nat.totient_mul_prod_primeFactors]
+
+end Nat

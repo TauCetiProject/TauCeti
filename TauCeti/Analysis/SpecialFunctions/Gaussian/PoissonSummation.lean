@@ -5,12 +5,18 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.Analysis.Fourier.ZMod
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.PoissonSummation
+public import Mathlib.NumberTheory.LSeries.HurwitzZeta
 public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 public import TauCeti.Analysis.SpecialFunctions.Gaussian.LatticeSum
+import TauCeti.Analysis.Fourier.Poisson.Periodic
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Harmonic
+import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
-# Poisson summation for Gaussian lattice sums
+# Poisson summation for Gaussian sums
 
 This file rewrites the shifted Gaussian lattice sum as its Fourier series.  The identity is the
 Poisson summation formula for a translated Gaussian and is the analytic bridge from
@@ -24,6 +30,11 @@ The Fourier series converges absolutely, and uniformly in the centre `c`.  Split
 sum into its zero term and paired positive and negative terms gives the corresponding one-sided
 cosine series used for wrapped normal densities.  The proof specializes Mathlib's
 `Complex.tsum_exp_neg_quadratic`.
+
+`ZMod.tsum_periodic_gaussian_eq_invDFT` applies Schwartz Poisson summation with periodic
+coefficients to Gaussians of degree zero or one and uses the Fourier transform of a Gaussian
+monomial. `ZMod.hasSum_periodic_gaussian_residue_sum` expresses the same input sum through
+Mathlib’s Hurwitz theta kernels.
 
 ## References
 
@@ -226,3 +237,103 @@ theorem hasSumUniformly_gaussianLatticeCosineSeries (s : ℝ) :
     (norm_mul_le_of_le (norm_of_nonneg (by positivity)).le (abs_cos_le_one _)).trans_eq (mul_one _)
 
 end Real
+
+open Finset HurwitzZeta
+open scoped Real ZMod
+
+local notation "W" j:arg t:arg => ((t ^ j * Real.exp (-Real.pi * t ^ 2) : ℝ) : ℂ)
+
+namespace ZMod
+
+/-- A Gaussian of positive width times a monomial is summable against periodic coefficients. -/
+theorem summable_periodic_gaussian {N : ℕ} [NeZero N] (Φ : ZMod N → ℂ)
+    (j : ℕ) {t : ℝ} (ht : t ≠ 0) :
+    Summable fun n : ℤ ↦ Φ n * W j ((n : ℝ) * t) := by
+  have hsum : Summable fun n : ℤ ↦ |(n : ℝ)| ^ j * Real.exp (-π * (t ^ 2 * (n : ℝ) ^ 2)) := by
+    simpa using summable_pow_mul_jacobiTheta₂_term_bound 0 (sq_pos_of_ne_zero ht) j
+  obtain ⟨B, hB⟩ := (Set.finite_range (fun a ↦ ‖Φ a‖)).bddAbove
+  refine (hsum.mul_left (B * |t| ^ j)).of_norm_bounded fun n ↦ ?_
+  have hexp : -π * ((n : ℝ) * t) ^ 2 = -π * (t ^ 2 * (n : ℝ) ^ 2) := by ring
+  rw [norm_mul, norm_real, Real.norm_eq_abs, abs_mul, abs_pow, abs_mul, mul_pow,
+    abs_of_nonneg (Real.exp_pos _).le, hexp]
+  have hcoeff := hB (Set.mem_range_self (n : ZMod N))
+  refine (mul_le_mul_of_nonneg_right hcoeff (by positivity)).trans_eq ?_
+  ring
+
+/-- For degrees zero and one, group a bilateral Gaussian sum with periodic coefficients into
+residue classes, expressed using the even or odd Hurwitz theta kernel. -/
+theorem hasSum_periodic_gaussian_residue_sum {N : ℕ} [NeZero N] (Φ : ZMod N → ℂ)
+    {j : ℕ} (hj : j ≤ 1) {t : ℝ} (ht : t ≠ 0) :
+    HasSum (fun n : ℤ ↦ Φ n * W j ((n : ℝ) * t))
+      (((N : ℝ) * t : ℂ) ^ j * ∑ a : ZMod N, Φ a *
+        ((if j = 0 then evenKernel else oddKernel) (toAddCircle a) (((N : ℝ) * t) ^ 2) : ℂ)) := by
+  have hN : (N : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  have hsq : 0 < ((N : ℝ) * t) ^ 2 := sq_pos_of_ne_zero (mul_ne_zero hN ht)
+  have hsummable := summable_periodic_gaussian Φ j ht
+  convert hsummable.hasSum using 1
+  symm
+  rw [hsummable.tsum_int_eq_sum_zmod_tsum N, mul_sum]
+  refine sum_congr rfl fun a _ ↦ ?_
+  have hcast (n : ℤ) : ((n * N + (a.val : ℤ) : ℤ) : ZMod N) = a := by simp
+  have hs (n : ℤ) : (n + (a.val / (N : ℝ))) * (N * t) =
+      ((n * (N : ℤ) + (a.val : ℤ) : ℤ) : ℝ) * t := by
+    push_cast
+    field_simp
+  simp only [hcast, toAddCircle_apply]
+  interval_cases j
+  · simp only [pow_zero, ite_true, one_mul]
+    rw [← (hasSum_ofReal.mpr (hasSum_int_evenKernel (a.val / (N : ℝ)) hsq)).tsum_eq,
+      ← tsum_mul_left]
+    refine tsum_congr fun n ↦ ?_
+    rw [← hs n, mul_pow, ofReal_exp]
+    simp [mul_assoc]
+  · simp only [pow_one, one_ne_zero, ite_false]
+    rw [← (hasSum_ofReal.mpr (hasSum_int_oddKernel (a.val / (N : ℝ)) hsq)).tsum_eq,
+      ← tsum_mul_left, ← tsum_mul_left]
+    refine tsum_congr fun n ↦ ?_
+    rw [← hs n, mul_pow]
+    push_cast
+    simp [mul_assoc, mul_left_comm, mul_comm]
+
+open scoped SchwartzMap FourierTransform
+
+/-- Poisson summation for a periodic Gaussian sum of degree zero or one. The inverse finite
+Fourier transform includes the factor `1 / N`; degree one has the additional factor `−i`. -/
+theorem tsum_periodic_gaussian_eq_invDFT {N : ℕ} [NeZero N] (Φ : ZMod N → ℂ)
+    {j : ℕ} (hj : j ≤ 1) {t : ℝ} (ht : 0 < t) :
+    (∑' n : ℤ, Φ n * W j ((n : ℝ) * t)) =
+      (-(I : ℂ)) ^ j / (t : ℂ) *
+        ∑' n : ℤ, dft.symm Φ n * W j ((n : ℝ) * (1 / (N * t))) := by
+  have hb : 0 < (π : ℂ).re := Real.pi_pos
+  let f : 𝓢(ℝ, ℂ) := if j = 0 then SchwartzMap.gaussian hb else SchwartzMap.innerMulGaussian hb 1
+  have hw (x : ℝ) : W j x = (x : ℂ) ^ j * cexp (-(π : ℂ) * ‖x‖ ^ 2) := by
+    simp only [ofReal_mul, ofReal_exp, ofReal_neg, Real.norm_eq_abs, ← ofReal_pow, sq_abs]
+  have hf (x : ℝ) : f x = W j x := by
+    rw [hw]
+    by_cases h : j = 0
+    · simp only [f, ite_eq_left h, SchwartzMap.gaussian_apply, h, pow_zero, one_mul]
+    · have h₁ : j = 1 := by lia
+      simp only [f, ite_eq_right h, SchwartzMap.innerMulGaussian_apply,
+        h₁, pow_one, Real.inner_apply,
+        mul_one]
+  have hfourier (x : ℝ) : (𝓕 f) x = (-I) ^ j * W j x := by
+    rw [SchwartzMap.fourier_coe, funext hf, funext hw,
+      TauCeti.fourier_pow_mul_cexp_neg_mul_norm_sq_real hb hj]
+    have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
+    have harg : -(π : ℂ) ^ 2 * ‖x‖ ^ 2 / π = -(π : ℂ) * ‖x‖ ^ 2 := by field_simp
+    -- The normalized Gaussian has parameter `π` on both sides, so the power factor is one.
+    rw [div_self hπ, one_cpow, one_mul, harg, hw, mul_assoc]
+  have h := (f.dilate ht.ne').tsum_mul_periodic_eq_tsum_invDFT_fourier Φ
+  -- Substitute the Gaussian transform and express real dilations by division.
+  simp_rw [SchwartzMap.dilate_apply, SchwartzMap.fourier_dilate_apply, hfourier, hf,
+    Module.finrank_self, pow_one, Complex.real_smul, abs_of_pos ht, ofReal_inv,
+    smul_eq_mul, ← div_eq_inv_mul] at h
+  calc
+    _ = ∑' n : ℤ, Φ n * W j (t * (n : ℝ)) := tsum_congr fun n ↦ by rw [mul_comm t]
+    _ = _ := h.trans ?_
+  rw [← tsum_mul_left]
+  refine tsum_congr fun n ↦ ?_
+  rw [div_div, div_eq_mul_one_div ((n : ℝ))]
+  ring
+
+end ZMod

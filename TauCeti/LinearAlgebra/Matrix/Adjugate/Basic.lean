@@ -33,7 +33,8 @@ In particular, such scalar quasi-inverses commute: `A * B = c • 1 ↔ B * A = 
 a form with its `c`-scaled dual, whose Gram matrix is `c` times the inverse Gram matrix. Such
 inverses up to `c` are transported by congruence: if `B₁ = Pᵀ * B₂ * P` where `P` has a right
 inverse `P'`, and `B₁ * D₁ = B₂ * D₂ = c • 1`, then `D₁ = P' * D₂ * P'ᵀ`
-(`Matrix.mul_mul_transpose_eq_of_mul_eq_smul_one`).
+(`Matrix.mul_mul_transpose_eq_of_mul_eq_smul_one`), and they transport along ring homomorphisms
+(`Matrix.map_mul_eq_smul_one`, `Matrix.map_mul_eq_smul_one_iff`).
 
 Cramer's rule expresses the determinant of `A` with one row or one column replaced through the
 adjugate. Summing over the replaced row, or over the replaced column, gives in both cases
@@ -182,5 +183,32 @@ theorem adjugate_last_last_eq_det_submatrix_castSucc {n : ℕ}
     (Z : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
     Z.adjugate (Fin.last n) (Fin.last n) = (Z.submatrix Fin.castSucc Fin.castSucc).det := by
   simp [adjugate_fin_succ_eq_det_submatrix, ← two_mul, pow_mul]
+
+end Matrix
+
+namespace Matrix
+
+/-- Mapping a scalar multiple of the identity matrix along a ring homomorphism `f : R →+* S`
+gives `(f a) • 1`. -/
+theorem map_smul_one {n R S : Type*} [DecidableEq n]
+    [NonAssocSemiring R] [NonAssocSemiring S] (f : R →+* S) (a : R) :
+    (a • (1 : Matrix n n R)).map f = f a • (1 : Matrix n n S) := by
+  rw [Matrix.map_smul' _ _ _ (map_mul f), Matrix.map_one _ (map_zero f) (map_one f)]
+
+/-- Mapping both factors of `M * J = a • 1` along a ring homomorphism `f : R →+* S` gives
+`M.map f * J.map f = f a • 1`. -/
+theorem map_mul_eq_smul_one {n R S : Type*} [Fintype n] [DecidableEq n]
+    [NonAssocSemiring R] [NonAssocSemiring S] (f : R →+* S) {M J : Matrix n n R} {a : R}
+    (h : M * J = a • 1) : M.map f * J.map f = f a • 1 := by
+  rw [← Matrix.map_mul, h, Matrix.map_smul_one]
+
+/-- Along an injective ring homomorphism `f : R →+* S`, `M * J = a • 1` is equivalent to
+`M.map f * J.map f = f a • 1`. -/
+theorem map_mul_eq_smul_one_iff {n R S : Type*} [Fintype n] [DecidableEq n]
+    [NonAssocSemiring R] [NonAssocSemiring S] {f : R →+* S} (hf : Function.Injective f)
+    (M J : Matrix n n R) (a : R) :
+    M.map f * J.map f = f a • 1 ↔ M * J = a • 1 :=
+  ⟨fun h ↦ Matrix.map_injective hf <| by dsimp only; rw [Matrix.map_mul, h, Matrix.map_smul_one],
+   map_mul_eq_smul_one f⟩
 
 end Matrix

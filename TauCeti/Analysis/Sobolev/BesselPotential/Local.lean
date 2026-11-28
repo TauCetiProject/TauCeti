@@ -124,7 +124,8 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 for every Schwartz function `ψ`. -/
 theorem MemSobolev.memSobolev_neg_two_mul_smulLeftCLM (hp : 1 < p) (hp_top : p ≠ ∞) {s : ℝ}
     {k : ℕ} (hk : finrank ℝ E < 2 * (s + 2 * k)) {f : 𝓢'(E, F)} (hf : MemSobolev s 2 f)
-    (ψ : 𝓢(E, ℂ)) : MemSobolev (-(2 * k)) p (smulLeftCLM F (ψ : E → ℂ) f) := by
+    (ψ : 𝓢(E, ℂ)) :
+    MemSobolev (-(2 * k)) p (TemperedDistribution.smulLeftCLM F (ψ : E → ℂ) f) := by
   -- `v = J^{-2k} f` lies in `H^{s + 2k}` with `2 (s + 2k) > n`, so it is an `L²` function with a
   -- bounded continuous representative.
   set v := besselPotential E F (-(2 * k)) f
@@ -139,7 +140,8 @@ theorem MemSobolev.memSobolev_neg_two_mul_smulLeftCLM (hp : 1 < p) (hp_top : p �
   have hgb : MemLp (g : E → F) ∞ volume := g.toBCF.memLp_top
   -- Each factor `J²` of `f = (J²)^k v` costs two orders.
   have key (j : ℕ) (ψ : 𝓢(E, ℂ)) :
-      MemSobolev (-(2 * j)) p (smulLeftCLM F (ψ : E → ℂ) (besselPotential E F (2 * j) v)) := by
+      MemSobolev (-(2 * j)) p
+        (TemperedDistribution.smulLeftCLM F (ψ : E → ℂ) (besselPotential E F (2 * j) v)) := by
     induction j generalizing ψ with
     | zero =>
       simpa [besselPotential_zero, hu] using memSobolev_zero_smulLeftCLM_of_ae_eq hgb hg ψ
