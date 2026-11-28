@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 import TauCeti.Analysis.InnerProductSpace.Comass
+import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 import Mathlib.Algebra.Module.TransferInstance
 
 /-!
@@ -241,15 +242,13 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 /-- Pullback by a linear isometric equivalence acts isometrically on the Gram norm. -/
 def pullback (e : V ≃ₗᵢ[ℝ] W) : Covector W k ≃ₗᵢ[ℝ] Covector V k :=
   (toExteriorPower W k).trans
-    (((e.symm.toLinearEquiv.exteriorPower k).isometryOfInner
-      (fun x y ↦ exteriorPower.inner_map_map e.symm.toLinearIsometry x y)).trans
-        (toExteriorPower V k).symm)
+    ((e.symm.exteriorPower k).trans (toExteriorPower V k).symm)
 
 /-- Musical identification sends pullback to the exterior power of the inverse isometry. -/
 theorem toExteriorPower_pullback (e : V ≃ₗᵢ[ℝ] W) (α : Covector W k) :
     toExteriorPower V k (pullback k e α) =
       exteriorPower.map k e.symm.toLinearMap (toExteriorPower W k α) := by
-  simp [pullback, LinearEquiv.exteriorPower]
+  simp [pullback, LinearIsometryEquiv.exteriorPower_apply]
 
 /-- Pullback of a covector is precomposition of its native form with the isometry. -/
 @[simp] theorem ofCovector_pullback (e : V ≃ₗᵢ[ℝ] W) (α : Covector W k) :

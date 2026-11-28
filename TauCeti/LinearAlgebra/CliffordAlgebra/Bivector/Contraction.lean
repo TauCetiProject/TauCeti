@@ -36,7 +36,7 @@ public section
 
 namespace TauCeti
 
-open CliffordAlgebra exteriorPower
+open CliffordAlgebra _root_.exteriorPower
 open scoped RealInnerProductSpace
 
 /-- **The commutator of a Clifford two-vector with a generator**: over a commutative ring in which

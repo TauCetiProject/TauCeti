@@ -214,8 +214,7 @@ private def exteriorBilinOfAntisymm {r : FourTensor V}
     BilinForm ℝ (⋀[ℝ]^2 V) :=
   (toLinearMap₄ r).exteriorSquareBilinear
     (fun u v z ↦ by rw [toLinearMap₄_apply]; exact CharZero.eq_neg_self_iff.mp (h₁ u u v z))
-    (fun u v ↦ show (toLinearMap₄ r u v).IsAlt from
-      fun z ↦ by rw [toLinearMap₄_apply]; exact CharZero.eq_neg_self_iff.mp (h₂ u v z z))
+    (fun u v z ↦ by rw [toLinearMap₄_apply]; exact CharZero.eq_neg_self_iff.mp (h₂ u v z z))
 
 private theorem exteriorBilinOfAntisymm_ιMulti_ιMulti {r : FourTensor V}
     (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
@@ -287,6 +286,12 @@ theorem ofExteriorBilin_injective : Function.Injective (ofExteriorBilin (V := V)
 theorem ofExteriorBilin_inj {B₁ B₂ : BilinForm ℝ (⋀[ℝ]^2 V)} :
     ofExteriorBilin B₁ = ofExteriorBilin B₂ ↔ B₁ = B₂ :=
   ofExteriorBilin_injective.eq_iff
+
+/-- The four-tensor of an exterior-square bilinear form vanishes iff the form does. -/
+@[simp]
+theorem ofExteriorBilin_eq_zero_iff {B : BilinForm ℝ (⋀[ℝ]^2 V)} :
+    ofExteriorBilin B = 0 ↔ B = 0 :=
+  map_eq_zero_iff ofExteriorBilin ofExteriorBilin_injective
 
 /-- The four-tensor associated to a bilinear form on `⋀[ℝ]^2 V` is antisymmetric in its
 first pair. -/

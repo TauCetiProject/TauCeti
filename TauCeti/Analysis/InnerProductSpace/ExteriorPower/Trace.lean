@@ -105,7 +105,7 @@ end OrthonormalBasis
 
 namespace TauCeti
 
-open exteriorPower
+open _root_.exteriorPower
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 

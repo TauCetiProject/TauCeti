@@ -48,6 +48,7 @@ LinearMap.BilinMap.metricTrace ((ricci r).compLeft A)`.
   `TauCeti.FourTensor.curvatureEndomorphism_eq_iff_of_antisymm`,
   `TauCeti.FourTensor.isSymmetric_curvatureEndomorphism_of_swap_pairs`,
   `TauCeti.FourTensor.isAlgebraicCurvature_ofExteriorEnd_iff`,
+  `TauCeti.FourTensor.ofExteriorEnd_eq_ofExteriorBilin`,
   `TauCeti.FourTensor.curvatureEndomorphism_ofExteriorEnd`,
   `TauCeti.FourTensor.ofExteriorEnd_injective`, `TauCeti.FourTensor.ofExteriorEnd_inj`,
   `TauCeti.FourTensor.ofExteriorEnd_eq_zero_iff`,
@@ -223,16 +224,17 @@ exterior square `⋀[ℝ]^2 V`. With this convention the identity on `⋀[ℝ]^2
 def ofExteriorEnd : Module.End ℝ (⋀[ℝ]^2 V) →ₗ[ℝ] FourTensor V :=
   ofExteriorBilin.comp TauCeti.bilinFormToEnd.symm.toLinearMap
 
-private theorem ofExteriorEnd_eq_ofExteriorBilin (T : Module.End ℝ (⋀[ℝ]^2 V)) :
-    ofExteriorEnd T = ofExteriorBilin (TauCeti.bilinFormToEnd.symm T) :=
-  rfl
-
 /-- Evaluation of the four-tensor associated to an endomorphism of `⋀[ℝ]^2 V`. -/
 @[simp]
 theorem ofExteriorEnd_apply (T : Module.End ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
     ofExteriorEnd T ![u, v, z, w] =
       ⟪T (exteriorPower.ιMulti ℝ 2 ![u, v]), exteriorPower.ιMulti ℝ 2 ![z, w]⟫ := by
   simp [ofExteriorEnd]
+
+/-- Express `ofExteriorEnd T` via `ofExteriorBilin` and `TauCeti.bilinFormToEnd.symm`. -/
+theorem ofExteriorEnd_eq_ofExteriorBilin (T : Module.End ℝ (⋀[ℝ]^2 V)) :
+    ofExteriorEnd T = ofExteriorBilin (TauCeti.bilinFormToEnd.symm T) :=
+  ext_vec fun _ _ _ _ ↦ by simp
 
 /-- The four-tensor of an endomorphism of `⋀[ℝ]^2 V` is antisymmetric in its first pair. -/
 theorem ofExteriorEnd_antisymm_first (T : Module.End ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
@@ -301,10 +303,10 @@ and last pairs. -/
 theorem mem_range_ofExteriorEnd_iff {r : FourTensor V} :
     r ∈ LinearMap.range (ofExteriorEnd (V := V)) ↔
       (∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) ∧
-        (∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) :=
-  ⟨fun ⟨T, hT⟩ ↦ hT ▸ ⟨ofExteriorEnd_antisymm_first T, ofExteriorEnd_antisymm_last T⟩,
-   fun ⟨h₁, h₂⟩ ↦ ⟨curvatureEndomorphism r,
-     ofExteriorEnd_curvatureEndomorphism_of_antisymm h₁ h₂⟩⟩
+        (∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) := by
+  rw [ofExteriorEnd, LinearMap.range_comp_of_range_eq_top _
+    (LinearMap.range_eq_top.mpr TauCeti.bilinFormToEnd.symm.surjective),
+    mem_range_ofExteriorBilin_iff]
 
 /-- On bivector-symmetric four-tensors, `ofExteriorEnd (curvatureEndomorphism r) = r`. -/
 @[simp]
@@ -384,11 +386,11 @@ theorem planeCurvature_eq_ofExteriorEnd (u v : V) :
     planeCurvature u v =
       ofExteriorEnd
         (InnerProductSpace.rankOne ℝ (exteriorPower.ιMulti ℝ 2 ![u, v])
-          (exteriorPower.ιMulti ℝ 2 ![u, v])).toLinearMap := by
-  refine ext_vec fun a b c d ↦ ?_
-  rw [planeCurvature_apply, ofExteriorEnd_apply, ContinuousLinearMap.coe_coe,
-    InnerProductSpace.rankOne_apply, real_inner_smul_left, exteriorPower.inner_ιMulti_two,
-    exteriorPower.inner_ιMulti_two]
+          (exteriorPower.ιMulti ℝ 2 ![u, v])).toLinearMap :=
+  ext_vec fun a b c d ↦ by
+    simp only [planeCurvature_apply, ofExteriorEnd_apply, ContinuousLinearMap.coe_coe,
+      InnerProductSpace.inner_left_rankOne_apply, exteriorPower.inner_ιMulti_two,
+      real_inner_comm a, real_inner_comm b, mul_comm ⟪b, u⟫]
 
 /-- The bivector endomorphism of `planeCurvature u v` is the rank-one operator
 `ξ ↦ ⟪u ∧ v, ξ⟫ • (u ∧ v)`. -/

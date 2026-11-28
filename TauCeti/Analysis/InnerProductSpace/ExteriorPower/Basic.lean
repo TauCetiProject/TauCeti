@@ -12,12 +12,12 @@ public import TauCeti.Algebra.Lie.ExteriorPower
 public import TauCeti.Analysis.InnerProductSpace.Dual
 public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 public import TauCeti.LinearAlgebra.BilinearForm.ExteriorSquare
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
-import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
@@ -52,8 +52,8 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 
 * `exteriorPower.inner_map_map`: `⟪⋀ⁿ f x, ⋀ⁿ f y⟫ = ⟪x, y⟫` for a linear isometry `f`.
 * `LinearIsometryEquiv.exteriorPower`: the linear isometric equivalence on `⋀ⁿ E` induced by
-  `e : E ≃ₗᵢ[ℝ] F`, with `LinearIsometryEquiv.exteriorPower_refl` and
-  `LinearIsometryEquiv.exteriorPower_trans`.
+  `e : E ≃ₗᵢ[ℝ] F`, with `LinearIsometryEquiv.exteriorPower_toLinearEquiv`,
+  `LinearIsometryEquiv.exteriorPower_refl`, and `LinearIsometryEquiv.exteriorPower_trans`.
 * `LinearIsometryEquiv.adjoint_exteriorPower_map` and
   `LinearIsometryEquiv.exteriorPower_map_comp_adjoint`:
   `LinearMap.adjoint (⋀ⁿ e) = ⋀ⁿ e.symm` and `⋀ⁿ e ∘ₗ LinearMap.adjoint (⋀ⁿ e) = id` for a
@@ -332,14 +332,18 @@ noncomputable def exteriorPower (e : E ≃ₗᵢ[ℝ] F) (n : ℕ) :
     simp only [← LinearEquiv.coe_coe, LinearEquiv.exteriorPower_toLinearMap]
     exact _root_.exteriorPower.inner_map_map e.toLinearIsometry x y
 
-/-- The underlying linear map of `e.exteriorPower n` is `exteriorPower.map n e.toLinearMap`. -/
+/-- The underlying linear equivalence of `e.exteriorPower n` is
+`e.toLinearEquiv.exteriorPower n`. -/
 @[simp]
+theorem exteriorPower_toLinearEquiv (e : E ≃ₗᵢ[ℝ] F) (n : ℕ) :
+    (e.exteriorPower n).toLinearEquiv = e.toLinearEquiv.exteriorPower n :=
+  LinearEquiv.isometryOfInner_toLinearEquiv _ _
+
+/-- The underlying linear map of `e.exteriorPower n` is `exteriorPower.map n e.toLinearMap`. -/
 theorem exteriorPower_toLinearMap (e : E ≃ₗᵢ[ℝ] F) (n : ℕ) :
     (e.exteriorPower n).toLinearMap = map n e.toLinearMap :=
-  LinearMap.ext fun x ↦ by
-    change ((e.exteriorPower n).toLinearEquiv : (⋀[ℝ]^n E) →ₗ[ℝ] ⋀[ℝ]^n F) x = _
-    rw [exteriorPower, LinearEquiv.isometryOfInner_toLinearEquiv,
-      LinearEquiv.exteriorPower_toLinearMap]
+  (congrArg LinearEquiv.toLinearMap (e.exteriorPower_toLinearEquiv n)).trans
+    (LinearEquiv.exteriorPower_toLinearMap e.toLinearEquiv n)
 
 /-- Evaluation of `e.exteriorPower n` agrees with `exteriorPower.map n e.toLinearMap`. -/
 @[simp]
