@@ -317,13 +317,13 @@ theorem degrees_def (t : DynkinType) : t.degrees = t.exponents.map (· + 1) := (
 
 /-- The sum of the exponents of any Dynkin type is half its number of roots (`|Φ| / 2`, equal to
 `|Φ⁺|` for valid types). -/
-@[simp] theorem sum_exponents (t : DynkinType) : t.exponents.sum = t.numRoots / 2 := by
+theorem sum_exponents (t : DynkinType) : t.exponents.sum = t.numRoots / 2 := by
   rw [← t.two_mul_sum_exponents_eq_numRoots, Nat.mul_div_right _ (by norm_num)]
 
 /-- The sum of the fundamental degrees of any Dynkin type is `|Φ| / 2 + r` (`|Φ⁺| + r` for valid
 types). -/
-@[simp] theorem sum_degrees (t : DynkinType) : t.degrees.sum = t.numRoots / 2 + t.rank := by
-  simp [degrees_def, List.sum_map_add]
+theorem sum_degrees (t : DynkinType) : t.degrees.sum = t.numRoots / 2 + t.rank := by
+  simp [degrees_def, List.sum_map_add, sum_exponents]
 
 /-- Every fundamental degree of a valid Dynkin type is at least `2`. -/
 theorem two_le_of_mem_degrees {t : DynkinType} (ht : t.Valid) {d : ℕ} (hd : d ∈ t.degrees) :
