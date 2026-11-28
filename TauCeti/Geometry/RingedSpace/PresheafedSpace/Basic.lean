@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.RingedSpace.PresheafedSpace
+public import Mathlib.Geometry.RingedSpace.Stalks
 import Mathlib.Topology.Category.TopCat.EpiMono
 import TauCeti.Topology.Sheaves.Presheaf
 
@@ -94,6 +94,15 @@ def appLE {X Y : PresheafedSpace.{v, u, w} C} (f : X ⟶ Y) (U : Opens Y) (V : O
 theorem appLE_def {X Y : PresheafedSpace.{v, u, w} C} (f : X ⟶ Y) (U : Opens Y) (V : Opens X)
     (e : V ≤ (Opens.map f.base).obj U) :
     f.appLE U V e = f.c.app (op U) ≫ X.presheaf.map (homOfLE e).op := (rfl)
+
+/-- The stalk map sends a germ over `U` to the germ of its image on any neighbourhood `V`
+contained in the preimage of `U`. -/
+theorem germ_stalkMap_appLE [Limits.HasColimits C] {X Y : PresheafedSpace.{v, u, v} C}
+    (f : X ⟶ Y) (U : Opens Y) (V : Opens X) (e : V ≤ (Opens.map f.base).obj U)
+    (x : X) (hx : x ∈ V) :
+    Y.presheaf.germ U (f.base x) (Opens.mem_map.mp (e hx)) ≫ f.stalkMap x =
+      f.appLE U V e ≫ X.presheaf.germ V x hx := by
+  rw [stalkMap_germ, appLE_def, Category.assoc, TopCat.Presheaf.germ_res]
 
 @[reassoc (attr := simp)]
 theorem appLE_map {X Y : PresheafedSpace.{v, u, w} C} (f : X ⟶ Y) {U : Opens Y} {V V' : Opens X}
