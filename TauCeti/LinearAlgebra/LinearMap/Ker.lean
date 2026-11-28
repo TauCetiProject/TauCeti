@@ -19,6 +19,8 @@ this is how a chain map acts on cycles. If moreover `e ∘ e' = 0` and `f'` is i
 is surjective and whose target side `e₂` is injective, `e₁` carries the kernel of `f` onto the
 kernel of `g`. The restriction of an injective linear map to submodules is injective. If a linear
 form `φ` takes the value `1` at `w`, the projection `z ↦ φ z • w` has the same kernel as `φ`.
+The kernels of finitely many nonzero semilinear maps are finitely many proper submodules covering
+every point at which one of the maps vanishes.
 -/
 
 public section
@@ -80,3 +82,20 @@ theorem ker_smulRight_of_apply_eq_one {φ : M →ₗ[R] R} {w : M} (hw : φ w = 
   simpa [hw] using congrArg φ h
 
 end LinearMap
+
+namespace Finset
+
+/-- The kernels of finitely many nonzero semilinear maps are finitely many proper submodules
+covering every point at which one of the maps vanishes. -/
+theorem exists_finset_ne_top_forall_exists_mem_of_apply_eq_zero
+    {R S M N P : Type*} [Semiring R] [Semiring S] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module S N] {σ : R →+* S} (s : Finset P)
+    (f : P → M →ₛₗ[σ] N) (hf : ∀ p ∈ s, f p ≠ 0) :
+    ∃ U : Finset (Submodule R M), (∀ W ∈ U, W ≠ ⊤) ∧
+      ∀ x : M, ∀ p ∈ s, f p x = 0 → ∃ W ∈ U, x ∈ W := by
+  classical
+  exact ⟨s.image fun p ↦ LinearMap.ker (f p),
+    Finset.forall_mem_image.mpr fun p hp ↦ LinearMap.ker_eq_top.not.mpr (hf p hp),
+    fun x p hp hx ↦ ⟨_, Finset.mem_image_of_mem _ hp, LinearMap.mem_ker.mpr hx⟩⟩
+
+end Finset
