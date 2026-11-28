@@ -20,9 +20,9 @@ A compact exhaustion also gives a countable criterion for local finiteness and f
 on compact sets. This criterion is useful when checking these properties simultaneously
 almost surely for a random measure.
 
-Finiteness on compact sets passes to smaller measures, a sum of two measures is finite on
-compact sets exactly when both summands are, and multiplication by a nonzero nonnegative real
-both preserves and reflects it.
+A sum of two locally finite measures is locally finite. Finiteness on compact sets passes to
+smaller measures, a sum of two measures is finite on compact sets exactly when both summands
+are, and multiplication by a nonzero nonnegative real both preserves and reflects it.
 
 ## Main results
 
@@ -30,6 +30,7 @@ both preserves and reflects it.
 * `MeasureTheory.measure_Ici_lt_top`
 * `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Iic_lt_top`
 * `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Ici_lt_top`
+* `MeasureTheory.IsLocallyFiniteMeasure.add`: a sum of locally finite measures is locally finite.
 * `MeasureTheory.isFiniteMeasureOnCompacts_of_le`: finiteness on compact sets passes to smaller
   measures.
 * `MeasureTheory.isFiniteMeasureOnCompacts_add_iff`: a sum is finite on compact sets if and only
@@ -83,6 +84,18 @@ instance isLocallyFiniteMeasureSMulCoeNNReal {α : Type*} [TopologicalSpace α]
     [MeasurableSpace α] (μ : Measure α) [IsLocallyFiniteMeasure μ] (c : ℝ≥0) :
     IsLocallyFiniteMeasure ((c : ℝ≥0∞) • μ) :=
   μ.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
+
+/-- The sum of two locally finite measures is locally finite. -/
+instance IsLocallyFiniteMeasure.add {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    (μ ν : Measure α) [IsLocallyFiniteMeasure μ] [IsLocallyFiniteMeasure ν] :
+    IsLocallyFiniteMeasure (μ + ν) := by
+  refine ⟨fun x ↦ ?_⟩
+  obtain ⟨U, hU, hμU⟩ := μ.finiteAt_nhds x
+  obtain ⟨W, hW, hνW⟩ := ν.finiteAt_nhds x
+  refine ⟨U ∩ W, Filter.inter_mem hU hW, ?_⟩
+  rw [add_apply]
+  exact ENNReal.add_lt_top.mpr ⟨(measure_mono inter_subset_left).trans_lt hμU,
+    (measure_mono inter_subset_right).trans_lt hνW⟩
 
 /-- The sum of two measures that are finite on compact sets is finite on compact sets. -/
 instance IsFiniteMeasureOnCompacts.add {α : Type*} [TopologicalSpace α] [MeasurableSpace α]

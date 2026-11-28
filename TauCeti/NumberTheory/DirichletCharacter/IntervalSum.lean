@@ -5,12 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.NumberTheory.DirichletCharacter.Bounds
 public import Mathlib.NumberTheory.MulChar.Lemmas
 public import Mathlib.Order.Interval.Finset.Defs
 import Mathlib.Algebra.Order.Interval.Finset.Basic
 import Mathlib.Data.Int.Interval
 import Mathlib.Data.Nat.Periodic
+import Mathlib.NumberTheory.AbelSummation
 import TauCeti.NumberTheory.DirichletCharacter.PartialSum
 
 /-!
@@ -55,6 +60,8 @@ Pólya–Vinogradov inequality*, arXiv:1107.0381, equation (1)).
   with values in an `RCLike` field, `M_χ = 2 max_{0 ≤ N < q} ‖∑_{0 < n ≤ N} χ n‖`;
   `maxIntervalSum_le_two_mul` is the inequality for every nonprincipal character with values in a
   normed field.
+* `DirichletCharacter.integral_Ioc_one_level_sum_mul_eq`: Abel summation against the partial sums
+  of a nonprincipal character over one period, `∫_{(1, N]} S(t) g'(t) dt = -∑_{k=1}^N χ(k) g(k)`.
 -/
 
 public section
@@ -392,5 +399,45 @@ theorem Even.maxIntervalSum_eq_two_mul_sup' (hχe : χ.Even) (hχ : χ ≠ 1) :
   exact hχe.two_mul_norm_intervalSum_zero_le hχ N
 
 end ParityRCLike
+
+section AbelSummation
+
+/-! ### Abel summation against the partial sums -/
+
+open MeasureTheory
+
+variable {F : Type*} [RCLike F] {N : ℕ} (χ : DirichletCharacter F N)
+
+/-- **Abel summation over one period.** For a nonprincipal character `χ` of level `N` and a
+function `g` with derivative `g'` on `[1, N]`, `g'` integrable there, integrating `g'` against
+the partial sums `S(t) = ∑_{k=1}^{⌊t⌋} χ(k)` over `(1, N]` gives `-∑_{k=1}^N χ(k) g(k)`: Abel's
+summation formula has the boundary term `S(N) g(N)`, which vanishes since `S(N) = 0`
+(`intervalSum_level_eq_zero`). -/
+theorem integral_Ioc_one_level_sum_mul_eq (hχ : χ ≠ 1) {g g' : ℝ → F}
+    (hg : ∀ t ∈ Set.Icc (1 : ℝ) N, HasDerivAt g (g' t) t)
+    (hint : IntegrableOn g' (Set.Icc (1 : ℝ) N)) :
+    ∫ t in Set.Ioc (1 : ℝ) (N : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * g' t =
+      -∑ k ∈ Icc 1 N, χ k * g (k : ℕ) := by
+  let c : ℕ → F := fun k ↦ if k = 0 then 0 else χ k
+  have hsum (w : ℕ → F) (m : ℕ) : ∑ k ∈ Icc 0 m, w k * c k = ∑ k ∈ Icc 1 m, χ k * w k := by
+    rw [Icc_eq_cons_Ioc (Nat.zero_le m), sum_cons, ← Icc_add_one_left_eq_Ioc]
+    simp only [c, ↓reduceIte, mul_zero, zero_add]
+    refine sum_congr rfl fun k hk ↦ ?_
+    simp [Nat.ne_of_gt (mem_Icc.mp hk).1, mul_comm]
+  have hsum1 (m : ℕ) : ∑ k ∈ Icc 0 m, c k = ∑ k ∈ Icc 1 m, χ k := by
+    simpa using hsum (fun _ ↦ 1) m
+  have hdiff : ∀ t ∈ Set.Icc (1 : ℝ) N, DifferentiableAt ℝ g t :=
+    fun t ht ↦ (hg t ht).differentiableAt
+  have hderiv_eq : Set.EqOn (deriv g) g' (Set.Icc (1 : ℝ) N) :=
+    fun t ht ↦ (hg t ht).deriv
+  have habel := sum_mul_eq_sub_integral_mul₀' c rfl N hdiff
+    (hint.congr_fun hderiv_eq.symm measurableSet_Icc)
+  rw [hsum, hsum1, ← χ.intervalSum_zero_eq_sum_Icc, χ.intervalSum_level_eq_zero hχ, mul_zero,
+    zero_sub] at habel
+  refine (setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ ?_).trans
+    (neg_eq_iff_eq_neg.mp habel.symm)
+  rw [(hg t (Set.Ioc_subset_Icc_self ht)).deriv, hsum1, mul_comm]
+
+end AbelSummation
 
 end DirichletCharacter

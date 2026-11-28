@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Immersion.SecondFundamentalForm.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Immersion.SecondFundamentalForm.Norm
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongMap.Metric
 
 /-!
@@ -26,10 +27,15 @@ For a torsion-free connection the second fundamental form is symmetric
 (`TauCeti.immersionSecondFundamentalForm_comm`), so the shape operator is self-adjoint:
 `⟪S_ν X, df Y⟫ = ⟪df X, S_ν Y⟫`. Both apply to the Levi-Civita connection of `N`.
 
+For a map which is `C²` at `x`, extending tangent vectors at `x` to local fields gives the
+pointwise form `⟪∇_v ν, df w⟫ = -⟪B_x(v, w), ν⟫` with the pointwise second fundamental form
+`B_x` (`TauCeti.immersionSecondFundamentalFormAt`).
+
 ## Main results
 
 * `TauCeti.inner_immersionShapeOperator_mfderiv`: the Weingarten equation.
 * `TauCeti.inner_immersionShapeOperator_mfderiv_comm`: self-adjointness of the shape operator.
+* `TauCeti.inner_alongMap_mfderiv_of_eventually_mem`: the pointwise Weingarten equation.
 
 ## References
 
@@ -103,5 +109,37 @@ theorem inner_immersionShapeOperator_mfderiv_comm [CompleteSpace E] [IsManifold 
     real_inner_comm (immersionShapeOperator cov f ν Y x),
     inner_immersionShapeOperator_mfderiv hcov hf1 hν hνn Y hdX,
     immersionSecondFundamentalForm_comm ht hf hX hY]
+
+/-- **The Weingarten equation, pointwise.** For a metric-compatible connection, a map `f` which is
+`C²` at `x` and a field `ν` along `f` which is normal near `x` with differentiable reading at `x`,
+`⟪∇_v ν, df w⟫ = -⟪B_x(v, w), ν⟫`. -/
+theorem inner_alongMap_mfderiv_of_eventually_mem [FiniteDimensional ℝ E] [IsManifold I 2 M]
+    (hcov : CovariantDerivative.IsMetricCompatible (I := J) (V := fun y : N ↦ TangentSpace J y) cov)
+    (hf : ContMDiffAt I J 2 f x) {ν : Π y : M, TangentSpace J (f y)}
+    (hν : MDifferentiableAt I 𝓘(ℝ, F) (sectionCoord ℝ (F := F) f ν (f x)) x)
+    (hνn : ∀ᶠ y in 𝓝 x, ν y ∈ orthogonalNormalSpace I J f y) (v w : TangentSpace I x) :
+    inner ℝ (cov.alongMap I f ν x v) (mfderiv I J f x w) =
+      -inner ℝ (immersionSecondFundamentalFormAt cov f x v w) (ν x) := by
+  set V : Π y : M, TangentSpace I y := FiberBundle.extend E v
+  set W : Π y : M, TangentSpace I y := FiberBundle.extend E w
+  have hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x :=
+    FiberBundle.mdifferentiableAt_extend I E w
+  have hdW : MDifferentiableAt I 𝓘(ℝ, F)
+      (sectionCoord ℝ (F := F) f (fun y ↦ mfderiv I J f y (W y)) (f x)) x := by
+    have h := hf.contMDiffAt_tangentMap (X := (W x : TangentBundle I M)) (m := 1) (by norm_num)
+    exact mdifferentiableAt_sectionCoord f _ ((h.mdifferentiableAt one_ne_zero).comp
+      x hW) (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (f x))
+  have hB : immersionSecondFundamentalFormAt cov f x v w =
+      immersionSecondFundamentalForm cov f V W x := by
+    simpa only [V, W, FiberBundle.extend_apply_self] using
+      immersionSecondFundamentalFormAt_apply hf (FiberBundle.mdifferentiableAt_extend I E v) hW
+  have hN : inner ℝ (immersionNormalConnection cov f ν V x) (mfderiv I J f x (W x)) = 0 :=
+    inner_coe_orthogonalNormalSpace_mfderiv ⟨_, immersionNormalConnection_mem ν V x⟩ (W x)
+  have h := inner_immersionShapeOperator_mfderiv hcov (hf.mdifferentiableAt (by norm_num)) hν
+    hνn V hdW
+  have hv : V x = v := FiberBundle.extend_apply_self E v
+  have hw : W x = w := FiberBundle.extend_apply_self E w
+  rw [hB, ← h, ← hv, ← hw, ← neg_immersionShapeOperator_add_immersionNormalConnection ν V x]
+  simp [inner_add_left, hN]
 
 end TauCeti

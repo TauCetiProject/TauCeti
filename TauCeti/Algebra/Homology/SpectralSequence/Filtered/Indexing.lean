@@ -42,7 +42,11 @@ bijection of `ℤ × ℤ`.
   (`CochainComplex.homologicalFiltrationSpectralSequenceFirstPageXIso`), and its first differential
   is the connecting map of `F_{p-1}/F_{p-2} ⟶ F_p/F_{p-2} ⟶ F_p/F_{p-1}`
   (`CochainComplex.homologicalFiltrationSpectralSequence_first_page_d_eq`). Its page `r` has at
-  `(p, q)` the object of page `r + 1` of the spectral sequence of `F` at `(1 - 2p - q, p - 1)`.
+  `(p, q)` the object of page `r + 1` of the spectral sequence of `F` at `(1 - 2p - q, p - 1)`,
+  with the same differentials
+  (`CochainComplex.homologicalFiltrationSpectralSequencePageXIso_hom_d`) and the same passage to
+  the next page on cycles
+  (`CochainComplex.homologicalFiltrationSpectralSequence_liftCycles_homologyπ_iso_hom`).
 
 For finite filtrations both converge strongly, to the graded pieces of the induced filtration of
 the cohomology of `K`
@@ -416,6 +420,75 @@ noncomputable def homologicalFiltrationSpectralSequenceFirstPageXIso (p q : ℤ)
     (HomologicalComplex.homologyFunctor C _ (-(p + q))).mapIso
       (cokernelFiltrationFunctorMapIso _ _ _ ≪≫
         Subobject.cokernelOfLEIsoOfEq (filtrationEInt_coe F (p - 1)) (filtrationEInt_coe F p) _ _)
+
+/-- `CochainComplex.homologicalFiltrationSpectralSequenceFirstPageXIso` is the identification
+`CochainComplex.homologicalFiltrationSpectralSequencePageXIso` with page `2` of the spectral
+sequence of `F`, followed by the identification of that first page with the cohomology of its
+graded pieces. -/
+lemma homologicalFiltrationSpectralSequenceFirstPageXIso_hom (p q : ℤ) :
+    (homologicalFiltrationSpectralSequenceFirstPageXIso F hF p q).hom =
+      (homologicalFiltrationSpectralSequencePageXIso F hF 1 2 le_rfl rfl p q _ _ rfl rfl).hom ≫
+        (spectralSequenceFirstPageXIsoCokernel _ (1 - 2 * p - q, p - 1) (p - 1) p rfl (by lia)
+          (-(p + q)) (by dsimp; lia)).hom ≫
+        HomologicalComplex.homologyMap (cokernelFiltrationFunctorMapIso _ _ _ ≪≫
+          Subobject.cokernelOfLEIsoOfEq (filtrationEInt_coe F (p - 1)) (filtrationEInt_coe F p)
+            _ _).hom (-(p + q)) :=
+  (rfl)
+
+/-- Under the identifications `CochainComplex.homologicalFiltrationSpectralSequencePageXIso`, the
+differentials of the homological spectral sequence of `F` are those of
+`CochainComplex.spectralSequence`. -/
+@[reassoc]
+lemma homologicalFiltrationSpectralSequencePageXIso_hom_d (r r' : ℤ) (hr : 1 ≤ r)
+    (hr' : r + 1 = r') (p q p' q' : ℤ) :
+    (homologicalFiltrationSpectralSequencePageXIso F hF r r' hr hr' p q _ _ rfl rfl).hom ≫
+        ((spectralSequence (filtrationFunctor F hF)).page r' (by lia)).d (1 - 2 * p - q, p - 1)
+          (1 - 2 * p' - q', p' - 1) =
+      ((homologicalFiltrationSpectralSequence F hF).page r).d (p, q) (p', q') ≫
+        (homologicalFiltrationSpectralSequencePageXIso F hF r r' hr hr' p' q' _ _ rfl
+          rfl).hom := by
+  subst hr'
+  -- The homological spectral sequence is a reindexing of `CochainComplex.spectralSequence`.
+  have h : ((homologicalFiltrationSpectralSequence F hF).page r).d (p, q) (p', q') =
+      (homologicalFiltrationSpectralSequencePageXIso F hF r (r + 1) hr rfl p q _ _ rfl rfl).hom ≫
+        ((spectralSequence (filtrationFunctor F hF)).page (r + 1)).d (1 - 2 * p - q, p - 1)
+          (1 - 2 * p' - q', p' - 1) ≫
+        (homologicalFiltrationSpectralSequencePageXIso F hF r (r + 1) hr rfl p' q' _ _ rfl
+          rfl).inv :=
+    SpectralSequence.reindex_page_d_eq _ _ _ _ _ r (r + 1) hr rfl (p, q) (p', q') _ _ rfl rfl
+  rw [h, Category.assoc, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+
+/-- On cycles, the identification of the homology of page `r` of the homological spectral sequence
+of `F` with page `s = r + 1` is that of `CochainComplex.spectralSequence` on the pages `r' = r + 1`
+and `r'' = r + 2`, through the identifications
+`CochainComplex.homologicalFiltrationSpectralSequencePageXIso`: the class of a cycle `x` at `(p, q)`
+is sent to the image of the class of the same cycle at `(1 - 2p - q, p - 1)`. -/
+@[reassoc]
+lemma homologicalFiltrationSpectralSequence_liftCycles_homologyπ_iso_hom {A : C} (r s r' r'' : ℤ)
+    (hr : 1 ≤ r) (hs : r + 1 = s) (hr' : r + 1 = r') (hr'' : r + 2 = r'') (p q : ℤ)
+    (x : A ⟶ ((homologicalFiltrationSpectralSequence F hF).page r).X (p, q))
+    (hx : x ≫ ((homologicalFiltrationSpectralSequence F hF).page r).d (p, q) (p - r, q + r - 1) =
+      0) :
+    ((homologicalFiltrationSpectralSequence F hF).page r).liftCycles x (p - r, q + r - 1)
+          ((ComplexShape.up' _).next_eq' (by simp; lia)) hx ≫
+        ((homologicalFiltrationSpectralSequence F hF).page r).homologyπ (p, q) ≫
+        ((homologicalFiltrationSpectralSequence F hF).iso r s (p, q) hs hr).hom ≫
+        (homologicalFiltrationSpectralSequencePageXIso F hF s r'' (by lia) (by lia) p q
+          _ _ rfl rfl).hom =
+      ((spectralSequence (filtrationFunctor F hF)).page r' (by lia)).liftCycles
+          (x ≫ (homologicalFiltrationSpectralSequencePageXIso F hF r r' hr hr' p q _ _ rfl
+            rfl).hom) (1 - 2 * (p - r) - (q + r - 1), p - r - 1)
+          ((ComplexShape.up' _).next_eq' (by simp; lia))
+          (by rw [Category.assoc, homologicalFiltrationSpectralSequencePageXIso_hom_d,
+                reassoc_of% hx, Limits.zero_comp]) ≫
+        ((spectralSequence (filtrationFunctor F hF)).page r' (by lia)).homologyπ
+          (1 - 2 * p - q, p - 1) ≫
+        ((spectralSequence (filtrationFunctor F hF)).iso r' r'' (1 - 2 * p - q, p - 1)
+          (by lia) (by lia)).hom := by
+  subst hs hr' hr''
+  exact SpectralSequence.liftCycles_homologyπ_reindex_iso_hom _ _ _ _ _ r (r + 1) rfl hr (r + 1)
+    (r + 2) rfl (by lia) (p, q) (p - r, q + r - 1) (1 - 2 * p - q, p - 1)
+    (1 - 2 * (p - r) - (q + r - 1), p - r - 1) _ rfl _ x hx
 
 /-- **The first differential of the homological spectral sequence of an increasing filtration.**
 Under the identifications `CochainComplex.homologicalFiltrationSpectralSequenceFirstPageXIso` of the

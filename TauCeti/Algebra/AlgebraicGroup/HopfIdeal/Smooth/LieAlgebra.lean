@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Cotangent
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.Containment
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.IdentityComponent
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Dimension
+import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
 import TauCeti.RingTheory.Derivation.Idempotent
 
 /-!
@@ -23,12 +25,19 @@ connected, and has the same Lie algebra as `H`: a tangent vector at the identity
 idempotent, in particular the one cutting out `H°`. The coordinate map `O(G) → O(H°)` is then
 surjective with surjective differential, so it is injective.
 
+Over any field of characteristic zero, Cartier's theorem supplies smoothness automatically, and
+`HopfIdeal.finrank_quotientLie_lt` yields the same conclusion for any geometrically connected
+finite-type affine group without requiring an algebraically closed base field.
+
 ## Main declarations
 
 * `TauCeti.HopfIdeal.lieSubalgebra_identityComponentHopfIdeal_eq_top`: the identity component
   has the same Lie algebra as the group.
 * `TauCeti.HopfIdeal.eq_bot_of_lieSubalgebra_eq_top`: a smooth closed subgroup of a
   connected group with the full Lie algebra is the whole group.
+* `TauCeti.HopfIdeal.eq_bot_of_lieSubalgebra_eq_top_of_geometricallyConnected`: over any
+  characteristic-zero field, a closed subgroup scheme of a geometrically connected finite-type
+  affine group with the full Lie algebra is the whole group.
 
 ## References
 
@@ -41,7 +50,9 @@ public section
 
 namespace TauCeti.HopfIdeal
 
-universe u
+universe u v
+
+section AlgClosed
 
 variable {k : Type u} [Field k] [IsAlgClosed k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
 
@@ -111,5 +122,27 @@ theorem eq_bot_of_lieSubalgebra_eq_top [ConnectedSpace (PrimeSpectrum H)]
     rw [Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.eq_zero_iff_mem]
     exact hx
   simp only [f, BialgHom.comp_apply, hx0, map_zero]
+
+end AlgClosed
+
+section CharZero
+
+/-- Over any field of characteristic zero, a closed subgroup scheme of a geometrically connected
+finite-type affine group with the full ambient Lie algebra is the whole group (`I = ⊥`). -/
+theorem eq_bot_of_lieSubalgebra_eq_top_of_geometricallyConnected
+    {k : Type u} [Field k] [CharZero k] {K : _root_.CommHopfAlgCat.{v} k} [Algebra.FiniteType k K]
+    (hK : geometricallyConnectedCommHopfAlgProperty k K) (I : HopfIdeal k K)
+    (hI : I.lieSubalgebra (B := k) = ⊤) : I = ⊥ := by
+  by_contra hne
+  let _ : Algebra.Smooth k K :=
+    (smoothCommHopfAlgProperty_iff K).mp (smoothCommHopfAlgProperty_of_charZero k K)
+  let _ : Algebra.Smooth k (K ⧸ I.toIdeal) := (smoothCommHopfAlgProperty_iff _).mp
+    (smoothCommHopfAlgProperty_of_charZero k (_root_.CommHopfAlgCat.of k (K ⧸ I.toIdeal)))
+  have hlt := I.finrank_quotientLie_lt hK hne
+  rw [(quotientLieEquiv (B := k) I).toLinearEquiv.finrank_eq, hI,
+    LieSubalgebra.topEquiv.toLinearEquiv.finrank_eq] at hlt
+  exact lt_irrefl _ hlt
+
+end CharZero
 
 end TauCeti.HopfIdeal

@@ -29,6 +29,7 @@ orbit-space topology for that action with hypotheses on `ρ` itself.
 
 * When every `ρ g` is continuous, the quotient map `V → V / G` is open
   (`Representation.isOpenQuotientMap_orbitRel_mk`), by `MulAction.isOpenQuotientMap_quotientMk`.
+  If moreover `G` is finite, it is also closed (`Representation.isClosedMap_orbitRel_mk_of_finite`).
 * When `G` is a compact space and the action `(g, v) ↦ ρ g v` is jointly continuous, the quotient
   map is also closed and proper (`Representation.isClosedMap_orbitRel_mk`,
   `Representation.isProperMap_orbitRel_mk`), by `MulAction.isClosedMap_quotientMk_of_compactSpace`
@@ -96,6 +97,8 @@ theorem isOpenQuotientMap_orbitRel_mk (hρ : ∀ g : G, Continuous (ρ g)) :
   haveI : ContinuousConstSMul G V := ⟨hρ⟩
   MulAction.isOpenQuotientMap_quotientMk
 
+section Compact
+
 variable [TopologicalSpace G] [CompactSpace G]
 
 /-- **The orbit map of a compact group is closed.** For a jointly continuous representation of a
@@ -123,6 +126,17 @@ theorem t2Space_quotient_orbitRel [T2Space V] (hρ : Continuous fun p : G × V �
   haveI : ContinuousSMul G V := ⟨hρ⟩
   haveI := TauCeti.properSMul_of_compactSpace G V
   t2Space_quotient_mulAction_of_properSMul
+
+end Compact
+
+/-- **The orbit map of a finite group is closed.** For a representation of a finite group by
+continuous operators, the quotient map `V → V / G` is closed. This is the compact case
+`Representation.isClosedMap_orbitRel_mk` for the discrete topology on `G`. -/
+theorem isClosedMap_orbitRel_mk_of_finite [Finite G] (hρ : ∀ g : G, Continuous (ρ g)) :
+    IsClosedMap (Quotient.mk ρ.orbitRel) :=
+  letI : TopologicalSpace G := ⊥
+  haveI : DiscreteTopology G := ⟨rfl⟩
+  ρ.isClosedMap_orbitRel_mk (continuous_prod_of_discrete_left.2 hρ)
 
 end Topology
 
