@@ -124,23 +124,18 @@ private lemma homSingle_comm {k} [Ring k] [Linear k C] (i : ℤ)
   rw [← cancel_epi (K.restrictionXIso ComplexShape.embeddingDownIntUpInt
       (ComplexShape.embeddingDownIntUpInt_f (i + 1))).inv,
     K.restriction_d_eq ComplexShape.embeddingDownIntUpInt
-      (ComplexShape.embeddingDownIntUpInt_f (i + 1)) (ComplexShape.embeddingDownIntUpInt_f i),
-    Category.assoc, Category.assoc, Iso.inv_hom_id_assoc]
-  simp only [Units.smul_def, Preadditive.comp_zsmul]
-  rw [HomComplex.Cochain.restrictionXIso_inv_comp_toSingleEquiv K Y
-      ComplexShape.embeddingDownIntUpInt (ComplexShape.embeddingDownIntUpInt_f i)
-      (neg_add_cancel i) (ComplexShape.embeddingDownIntUpInt_f_add_self i),
+      (ComplexShape.embeddingDownIntUpInt_f (i + 1)) (ComplexShape.embeddingDownIntUpInt_f i)]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc, Units.smul_def, Preadditive.comp_zsmul,
     HomComplex.Cochain.restrictionXIso_inv_comp_toSingleEquiv K Y
-      ComplexShape.embeddingDownIntUpInt (ComplexShape.embeddingDownIntUpInt_f (i + 1))
-      (neg_add_cancel (i + 1)) (ComplexShape.embeddingDownIntUpInt_f_add_self (i + 1))]
-  have hd := toSingleLinearEquiv_linearHomComplex_d_apply (k := k) K Y i α
-  rw [linearHomComplex_d_hom_apply] at hd
-  simp only [Cochain.toSingleLinearEquiv_apply, AddEquiv.toFun_eq_coe] at hd
+      ComplexShape.embeddingDownIntUpInt _ (neg_add_cancel _)
+      (ComplexShape.embeddingDownIntUpInt_f_add_self _)]
+  have hd : Cochain.toSingleEquiv (neg_add_cancel (i + 1)) (δ i (i + 1) α) =
+      (i + 1).negOnePow • (K.d (-(i + 1)) (-i) ≫ Cochain.toSingleEquiv (neg_add_cancel i) α) := by
+    simpa [linearHomComplex_d_hom_apply] using
+      toSingleLinearEquiv_linearHomComplex_d_apply (k := k) K Y i α
   rw [hd]
-  simp only [homSingleSign, Int.negOnePow_mul_succ_div_two_succ, Units.smul_def, smul_smul,
-    ← Units.val_mul]
-  rw [mul_right_comm]
-  simp
+  simp [homSingleSign, Int.negOnePow_mul_succ_div_two_succ, Units.smul_def, smul_smul,
+    mul_right_comm]
 
 variable (k) in
 /-- **The Hom complex into an object placed in degree zero is its linear Yoneda complex.** The
@@ -351,6 +346,8 @@ theorem homologyMap_precomp_linearHomComplexSingleHomologyIso_hom
   rw [linearHomComplexSingleHomologyIso_hom, linearHomComplexSingleHomologyIso_hom,
     Linear.comp_units_smul, Linear.units_smul_comp, ← homologyMap_comp, ← hcomp,
     linearHomComplexPrecomp_linearHomComplexSingleIso_hom]
+  -- `linearHomComplexPrecomp_linearHomComplexSingleIso_hom` types the target in
+  -- `(linearYonedaFunctor k Y).obj (op ...)`, which is definitionally `linearYonedaObj`.
   rfl
 
 /-- The inverse of `CochainComplex.linearHomComplexSingleHomologyIso` is natural with respect to
