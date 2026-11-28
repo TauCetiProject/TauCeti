@@ -16,7 +16,7 @@ import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
 
 At a place distinct from its conjugate, any residue unit lifts to an integral norm-one finite
 idele that is `1` away from the pair. The lift uses `FiniteAdeleRing.unitsOfAdicCompletion`
-and `FiniteAdeleRing.star_apply_conjPlace`. Choosing a generator of the residue unit group
+and `HeightOneSpectrum.unitsProj_star_eq_one_iff`. Choosing a generator of the residue unit group
 then gives a scaling whose residue has order `Nm(w) - 1`. By `orderOf_dvd_iff_pow_eq_one`,
 its `i`-th power reduces to `1` exactly when `Nm(w) - 1` divides `i`.
 
@@ -33,19 +33,6 @@ open scoped NumberField.AdeleRing
 namespace IsDedekindDomain.HeightOneSpectrum
 
 open FiniteAdeleRing
-
-/-- A conjugate finite idele has component `1` at a place if and only if the original
-idele has component `1` at the conjugate place. -/
-@[simp]
-theorem unitsProj_star_eq_one_iff {E : Type*} [Field E] [NumberField E] [IsCMField E]
-    {v : HeightOneSpectrum (𝓞 E)} {a : (𝔸ᶠ[E])ˣ} :
-    unitsProj E v (star a) = 1 ↔ unitsProj E v.conjPlace a = 1 := by
-  have h (w : HeightOneSpectrum (𝓞 E)) :
-      unitsProj E w.conjPlace (star a) = 1 ↔ unitsProj E w a = 1 := by
-    simp only [← Units.val_eq_one, coe_unitsProj_apply, Units.coe_star, star_apply_conjPlace,
-      RingEquiv.map_eq_one_iff]
-  exact (congrArg (fun w ↦ unitsProj E w (star a) = 1 ↔ unitsProj E v.conjPlace a = 1)
-    (conjPlace_conjPlace v)).mp (h v.conjPlace)
 
 /-- Every residue unit at a split place of a CM number field lifts to an integral finite idele
 of norm one that is `1` away from the place and its conjugate. -/
