@@ -82,6 +82,10 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 ## Main results
 
 * `Submodule.starProjection_starProjection_apply`: `P_U (P_U x) = P_U x`.
+* `Submodule.starProjection_def`: `U.starProjection` is `U.subtypeL ∘L U.orthogonalProjectionOnto`.
+* `Submodule.subtypeL_comp_adjoint_subtypeL`: `U.subtypeL ∘L U.subtypeL† = U.starProjection`.
+* `Submodule.starProjection_eq_zero_iff`, `Submodule.starProjection_ne_zero_iff`:
+  `U.starProjection = 0 ↔ U = ⊥` and `U.starProjection ≠ 0 ↔ Nontrivial U`.
 * `Submodule.orthogonalProjectionOnto_comp_subtypeL`: restricting the orthogonal projection
   onto `U` to `U` itself gives the identity map.
 * `Submodule.preimage_orthogonalProjectionOnto_eq`: the preimage of `s ⊆ U` under the
@@ -469,6 +473,30 @@ theorem range_one_sub_starProjection :
     LinearMap.range (1 - (U.starProjection : E →ₗ[𝕜] E)) = Uᗮ := by
   rw [← ContinuousLinearMap.toLinearMap_one, ← ContinuousLinearMap.toLinearMap_sub,
     ← starProjection_orthogonal', range_starProjection]
+
+/-- `U.starProjection` is the composition `U.subtypeL ∘L U.orthogonalProjectionOnto`. -/
+theorem starProjection_def :
+    U.starProjection = U.subtypeL ∘L U.orthogonalProjectionOnto :=
+  (rfl)
+
+/-- For a complete subspace `U` of a Hilbert space `E`, `U.subtypeL ∘L U.subtypeL†` is the
+orthogonal projection `U.starProjection`. -/
+@[simp]
+theorem subtypeL_comp_adjoint_subtypeL [CompleteSpace E] [CompleteSpace U] :
+    U.subtypeL ∘L ContinuousLinearMap.adjoint U.subtypeL = U.starProjection := by
+  rw [U.adjoint_subtypeL, ← U.starProjection_def]
+
+/-- The orthogonal projection onto `U` is zero if and only if `U` is `⊥`. -/
+@[simp]
+theorem starProjection_eq_zero_iff :
+    U.starProjection = 0 ↔ U = ⊥ := by
+  conv_rhs => rw [← U.range_starProjection]
+  rw [LinearMap.range_eq_bot, ← ContinuousLinearMap.toLinearMap_zero, ContinuousLinearMap.coe_inj]
+
+/-- The orthogonal projection onto `U` is nonzero if and only if `U` is nontrivial. -/
+theorem starProjection_ne_zero_iff :
+    U.starProjection ≠ 0 ↔ Nontrivial U := by
+  rw [ne_eq, U.starProjection_eq_zero_iff, Submodule.nontrivial_iff_ne_bot]
 
 /-- Restricting the orthogonal projection onto `U` to `U` itself gives the identity map. -/
 @[simp]

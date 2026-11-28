@@ -26,8 +26,10 @@ them (`ContinuousLinearMap.apply_eq_sum_piLpEntry`), so it is determined by them
 (`ContinuousLinearMap.piLpEntry_mul`) and adjoints as conjugate transposes
 (`ContinuousLinearMap.piLpEntry_star`), and are bounded in norm by the operator
 (`ContinuousLinearMap.norm_piLpEntry_le`); the adjoint formula reads coordinates off through
-`PiLp.inner_single_left`. The amplification of `s` has `s` on the diagonal
-and `0` off it (`ContinuousLinearMap.piLpEntry_diagStarAlgHom`).
+`PiLp.inner_single_left`. The amplification of `s` has `s` on the diagonal and `0` off it
+(`ContinuousLinearMap.piLpEntry_diagStarAlgHom`), so an operator on the Hilbert sum commutes with
+it if and only if each matrix entry commutes with `s`
+(`ContinuousLinearMap.commute_diagStarAlgHom_iff`).
 
 Amplification turns statements about finitely many vectors of `H` into statements about a single
 vector of the Hilbert sum; in particular, `PiLp.diagStarAlgHom_mem_centralizer_centralizer` sends
@@ -245,5 +247,14 @@ theorem piLpEntry_diagStarAlgHom_mul
     (PiLp.diagStarAlgHom 𝕜 H ι s * T).piLpEntry i j = s * T.piLpEntry i j := by
   ext h
   simp [mul_apply_eq_comp]
+
+/-- An operator `T` on the finite Hilbert sum commutes with the diagonal amplification
+`PiLp.diagStarAlgHom 𝕜 H ι s` if and only if each of its matrix entries commutes with `s`. -/
+theorem commute_diagStarAlgHom_iff
+    (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (s : H →L[𝕜] H) :
+    Commute T (PiLp.diagStarAlgHom 𝕜 H ι s) ↔ ∀ i j, Commute (T.piLpEntry i j) s := by
+  simp only [Commute, SemiconjBy]
+  exact ⟨fun h i j => by rw [← piLpEntry_mul_diagStarAlgHom, ← piLpEntry_diagStarAlgHom_mul, h],
+    fun h => ext_piLpEntry fun i j => by simpa using h i j⟩
 
 end ContinuousLinearMap
