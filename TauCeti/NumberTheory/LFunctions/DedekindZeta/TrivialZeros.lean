@@ -87,6 +87,7 @@ theorem meromorphicOrderAt_dedekindZetaData_gammaFactor_zero :
 /-- The order of Dedekind zeta at zero is the unit rank: the gamma poles contribute
 one for each infinite place, the pole of the completed function subtracts one, and
 `r₁ + r₂ - 1 = Units.rank K`. -/
+@[simp]
 theorem meromorphicOrderAt_dedekindZetaC_zero :
     meromorphicOrderAt (dedekindZetaC K) 0 = (NumberField.Units.rank K : ℤ) := by
   have hrank : (nrRealPlaces K : ℤ) + nrComplexPlaces K = NumberField.Units.rank K + 1 := by
