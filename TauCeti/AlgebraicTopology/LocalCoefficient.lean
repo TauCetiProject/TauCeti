@@ -540,6 +540,19 @@ theorem transport_naturality {x y : X} {L K : LocalCoefficientSystem.{u, v, w} R
       transport K p (η.app (FundamentalGroupoid.mk x) a) := by
   exact η.naturality_apply p a
 
+open MonoidalCategory in
+open scoped TensorProduct in
+/-- **Transport in a tensor product** of local coefficient systems is the tensor product of the
+transports: on the fibre `L(x) ⊗ K(x)` of the pointwise tensor product, a path class acts on
+`a ⊗ b` by acting on `a` and on `b`. -/
+theorem transport_tensor_tmul {S : Type w} [CommRing S] {x y : X}
+    (L K : LocalCoefficientSystem.{w, v, w} S X) (p : Path.Homotopic.Quotient x y)
+    (a : L.obj (FundamentalGroupoid.mk x)) (b : K.obj (FundamentalGroupoid.mk x)) :
+    transport (L ⊗ K) p (a ⊗ₜ[S] b) = transport L p a ⊗ₜ[S] transport K p b := by
+  -- The pointwise tensor product acts on a path class by the tensor product of the actions.
+  exact (transport_apply (L ⊗ K) p (a ⊗ₜ[S] b)).trans
+    (ModuleCat.MonoidalCategory.tensorHom_tmul (L.map p) (K.map p) a b)
+
 /-- Pullback transport is transport along the image path. -/
 @[simp]
 theorem pullback_transport {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
