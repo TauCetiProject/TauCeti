@@ -18,9 +18,10 @@ involving sums of principal roots. The file also records the values `√i = e^{�
 `√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, the splitting `√(r z) = √r √z`
 for real `r ≥ 0` and the identification of the real square root of `x ≥ 0` with the complex
 half-power `x ^ (1 / 2)`, records that the real square root of a nonnegative real, cast to `ℂ`,
-squares back to it, and packages the principal square root of a nonzero complex number as a unit,
-`Complex.sqrtUnit`. On the open upper half-plane the principal square root lies in the open
-first quadrant (`Complex.sqrt_re_pos_iff`, `Complex.sqrt_im_pos`). A complex unit of absolute
+squares back to it, proves the negation law `Complex.sqrt_neg` and inversion product law
+`Complex.sqrt_inv_mul_sqrt`, and packages the principal square root of a nonzero complex number
+as a unit, `Complex.sqrtUnit`. On the open upper half-plane the principal square root lies in the
+open first quadrant (`Complex.sqrt_re_pos_iff`, `Complex.sqrt_im_pos`). A complex unit of absolute
 value one has a square root of absolute value one, `Complex.exists_sq_eq_and_star_mul_self_eq_one`.
 
 The real square root of a positive real, cast to `ℂ`, is nonzero, and that of a nonnegative
@@ -82,6 +83,22 @@ theorem sqrt_neg_I_mul {τ : ℂ} (hτ : 0 < τ.im) : sqrt (-I * τ) = (sqrt I)�
   congr 1
   ring
 
+/-- Negating the input multiplies the principal square root by `-i` when `z.im > 0` or `z` is a
+negative real number, and by `i` otherwise. -/
+theorem sqrt_neg (z : ℂ) :
+    sqrt (-z) = if 0 < z.im ∨ (z.im = 0 ∧ z.re < 0) then -I * sqrt z else I * sqrt z := by
+  have hiff : π < (-1 : ℂ).arg + z.arg ↔ 0 < z.im ∨ (z.im = 0 ∧ z.re < 0) := by
+    rw [← arg_mul_eq_add_arg_sub_two_pi_iff, neg_one_mul, arg_neg_one,
+      show π + z.arg - 2 * π = z.arg - π by ring, arg_neg_eq_arg_sub_pi_iff]
+  rw [sqrt, neg_eq_neg_one_mul]
+  split_ifs with h
+  · rw [mul_cpow_of_pi_lt (hiff.mpr h), show (-2 * π * I * (2⁻¹ : ℂ)) = -(π * I) by ring,
+      exp_neg_pi_mul_I, ← sqrt, sqrt_neg_one, ← sqrt]
+    ring
+  · have harg : (-1 : ℂ).arg + z.arg ∈ Set.Ioc (-π) π :=
+      ⟨by linarith [arg_neg_one, neg_pi_lt_arg z, Real.pi_pos], not_lt.mp (mt hiff.mp h)⟩
+    rw [mul_cpow harg, ← sqrt, sqrt_neg_one, ← sqrt]
+
 /-- The principal square root has nonnegative real part. -/
 @[simp]
 theorem sqrt_re_nonneg (z : ℂ) : 0 ≤ (sqrt z).re := by
@@ -128,6 +145,21 @@ theorem sqrt_add_sqrt_re_pos_iff (x y : ℂ) :
     by_contra! hn
     linarith
   · rintro (h | h) <;> linarith
+
+/-- Multiplying `√(z⁻¹)` by `√z` for `z ≠ 0` gives `-1` on the negative real branch cut
+(`z.arg = π`) and `1` elsewhere. -/
+theorem sqrt_inv_mul_sqrt {z : ℂ} (hz : z ≠ 0) :
+    sqrt z⁻¹ * sqrt z = if z.arg = π then -1 else 1 := by
+  have hne : sqrt z ≠ 0 := sqrt_eq_zero_iff.not.2 hz
+  rw [sqrt, inv_cpow_eq_ite, show (starRingEnd ℂ) (2⁻¹ : ℂ) = 2⁻¹ by simp [map_ofNat], ← sqrt]
+  split_ifs with h
+  · have hre : (sqrt z).re = 0 :=
+      le_antisymm
+        (not_lt.mp fun hpos ↦ (mem_slitPlane_iff_arg.mp ((sqrt_re_pos_iff z).mp hpos)).1 h)
+        (sqrt_re_nonneg z)
+    have hconj : starRingEnd ℂ (sqrt z) = -sqrt z := Complex.ext (by simp [hre]) (by simp)
+    rw [map_inv₀, hconj, inv_neg, neg_mul, inv_mul_cancel₀ hne]
+  · exact inv_mul_cancel₀ hne
 
 /-- The principal square root of a nonzero complex number, as a unit. -/
 noncomputable def sqrtUnit {z : ℂ} (hz : z ≠ 0) : ℂˣ :=
