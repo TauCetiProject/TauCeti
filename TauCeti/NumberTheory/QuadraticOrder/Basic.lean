@@ -6,6 +6,8 @@ Authors: Wentao Li
 module
 public import Mathlib.RingTheory.QuadraticAlgebra
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
+public import Mathlib.NumberTheory.FundamentalDiscriminant
+import Mathlib.Algebra.QuadraticAlgebra.Int
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -20,6 +22,11 @@ parameters; it does not require an ambient field.
 The embedding uses the integral model `QuadraticAlgebra ℤ ((D - D²)/4) D` and Mathlib's
 universal algebra homomorphism. The range description characterizes every order element
 by its two integral coefficients.
+
+The equivalence `algEquivRat` sends the generator of the rationalized integral model to
+`(D + √D)/2` via Mathlib's `QuadraticAlgebra.changeGeneratorEquiv`. It transports Mathlib's
+`QuadraticAlgebra.Int.isIntegralClosure_iff` to `toSubalgebra_eq_integralClosure_iff`,
+which characterizes the embedded order as the integral closure exactly for fundamental `D`.
 
 ## References
 
@@ -136,6 +143,10 @@ theorem lift_injective (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) :
 def toSubalgebra (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) :
     Subalgebra ℤ (QuadraticAlgebra ℚ (D : ℚ) 0) := (lift D hD).range
 
+/-- The range of the integral-model embedding is the concrete quadratic order. -/
+@[simp] theorem range_lift (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) :
+    (lift D hD).range = toSubalgebra D hD := (rfl)
+
 /-- Every element of the order has two integral coefficients in the basis `1, (D + √D)/2`. -/
 theorem mem_toSubalgebra_iff (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1)
     (z : QuadraticAlgebra ℚ (D : ℚ) 0) :
@@ -231,5 +242,61 @@ theorem span_toSubalgebra_eq_top (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) :
   rw [basis, Module.Basis.map_apply, QuadraticAlgebra.basis_apply_one]
   rw [AlgEquiv.coe_toLinearEquiv, coe_equivToSubalgebra_apply]
   simp [lift]
+
+/-- For `D ≡ 0, 1 mod 4`, the rationalized integral model is isomorphic to the
+square-root model via the change of generator `ω ↦ (D + √D)/2`. -/
+def algEquivRat (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) :
+    QuadraticAlgebra ℚ (((D - D ^ 2) / 4 : ℤ) : ℚ) (D : ℚ) ≃ₐ[ℚ]
+      QuadraticAlgebra ℚ (D : ℚ) 0 :=
+  changeGeneratorEquiv (D : ℚ) 0 (Units.mk0 (1 / 2 : ℚ) (by norm_num)) ((D : ℚ) / 2)
+    (by
+      have hd := congrArg (Int.cast : ℤ → ℚ) (parameter_discr D hD)
+      simp only [QuadraticAlgebra.discr_def, Int.cast_add, Int.cast_mul, Int.cast_pow,
+        Int.cast_ofNat] at hd
+      simp only [Units.val_mk0, mul_zero, zero_mul, sub_zero]
+      linear_combination (1 / 4 : ℚ) * hd)
+    (by
+      simp only [Units.val_mk0, mul_zero, zero_add]
+      ring)
+
+/-- The rational change of generator sends the integral-model generator to `(D + √D)/2`. -/
+@[simp] theorem algEquivRat_omega (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) :
+    algEquivRat D hD ω = generator D := by
+  rw [algEquivRat, changeGeneratorEquiv_apply, changeGenerator_omega]
+  ext <;> simp [smul_eq_mul, Algebra.algebraMap_eq_smul_one]
+
+/-- The inverse rational change of generator sends the square root to `2 • ω - D`. -/
+@[simp] theorem algEquivRat_symm_omega (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) :
+    (algEquivRat D hD).symm ω = (2 : ℚ) • ω - (D : ℚ) • 1 := by
+  rw [algEquivRat, changeGeneratorEquiv_symm_apply, changeGenerator_omega]
+  ext <;> norm_num [smul_eq_mul, Algebra.algebraMap_eq_smul_one]; ring
+
+/-- Rational base change followed by the change of generator is the integral-model embedding. -/
+theorem algEquivRat_comp_baseChange (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) :
+    ((algEquivRat D hD).restrictScalars ℤ).toAlgHom.comp
+      (baseChange ℚ ((D - D ^ 2) / 4) D) = lift D hD := by
+  apply QuadraticAlgebra.algHom_ext
+  have hω : baseChange ℚ ((D - D ^ 2) / 4) D ω = ω :=
+    mapRingHom_omega (algebraMap ℤ ℚ) _ _
+  simp only [AlgHom.comp_apply, hω, AlgEquiv.coe_toAlgHom, AlgEquiv.restrictScalars_apply,
+    algEquivRat_omega, lift_omega]
+
+/-- The concrete order `ℤ[(D + √D)/2]` is the integral closure of `ℤ` in the rational
+quadratic algebra exactly when `D` is a fundamental discriminant. -/
+@[simp] theorem toSubalgebra_eq_integralClosure_iff {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1) :
+    toSubalgebra D hD = integralClosure ℤ (QuadraticAlgebra ℚ (D : ℚ) 0) ↔
+      Int.IsFundamentalDiscr D := by
+  let e := (algEquivRat D hD).restrictScalars ℤ
+  let f := baseChange ℚ ((D - D ^ 2) / 4) D
+  have hrange : f.range.map e.toAlgHom = toSubalgebra D hD := by
+    rw [← AlgHom.range_comp, algEquivRat_comp_baseChange D hD, range_lift]
+  have hclosure : f.range = integralClosure ℤ _ ↔ Int.IsFundamentalDiscr D := by
+    have h := QuadraticAlgebra.Int.isIntegralClosure_iff (a := (D - D ^ 2) / 4) (b := D)
+    rw [parameter_discr D hD] at h
+    rw [← h, isIntegralClosure_iff, SetLike.ext_iff]
+    simp only [AlgHom.mem_range, mem_integralClosure_iff]
+    exact forall_congr' fun _ ↦ iff_comm
+  rw [← hclosure, ← hrange, ← integralClosure_map_algEquiv e]
+  exact (Subalgebra.map_injective (f := e.toAlgHom) e.injective).eq_iff
 
 end TauCeti.QuadraticOrder
