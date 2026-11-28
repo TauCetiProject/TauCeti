@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Group.Subgroup.Basic
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.GroupTheory.Subgroup.Centralizer
-public import Mathlib.GroupTheory.QuotientGroup.Defs
+public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Data.ZMod.Defs
 public import TauCeti.GroupTheory.GroupAlgGeom.VarSubgroup
 import Mathlib.Data.ZMod.Basic
@@ -1215,6 +1215,21 @@ induced by the identity on the variables. -/
 theorem evalGHom_comp_homOfVSubset (h : V ι S ⊆ V ι T) (hv : v ∈ V ι S) :
     (evalGHom v hv).comp (homOfVSubset h) = evalGHom v (h hv) := by
   ext; simp
+
+variable {K : Type*} [Group K] {κ : G →* K} (h : Rad ι S = Rad κ T)
+
+/-- The isomorphism `QuotientGroup.quotientMulEquivOfEq` of coordinate groups with the same
+radical, over groups `H` and `K` receiving `G`, fixes the coefficients. -/
+theorem quotientMulEquivOfEq_coeff (g : G) :
+    QuotientGroup.quotientMulEquivOfEq h (coeff ι S g) = coeff κ T g :=
+  QuotientGroup.quotientMulEquivOfEq_mk h _
+
+/-- The isomorphism `QuotientGroup.quotientMulEquivOfEq` of coordinate groups with the same
+radical, over groups `H` and `K` receiving `G`, fixes the generic point. -/
+@[simp]
+theorem quotientMulEquivOfEq_genericPoint (x : X) :
+    QuotientGroup.quotientMulEquivOfEq h (genericPoint ι S x) = genericPoint κ T x :=
+  QuotientGroup.quotientMulEquivOfEq_mk h _
 
 end CoordGroup
 
