@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.PowerSeries.Exp.Derivative
 public import TauCeti.RingTheory.PowerSeries.Exp.Padic.Polynomial
 import Mathlib.Analysis.Normed.Algebra.Ultra
 import TauCeti.Analysis.Normed.Group.Ultra
+import TauCeti.Analysis.Polynomial.Ultra
 
 /-!
 # Baker's auxiliary series on the diagonal
@@ -36,7 +37,8 @@ exponential arguments `ψ t * x` lie in the open `p`-adic convergence disc, usin
 `PowerSeries.hasSum_coeff_coe_mul_rescale_exp`.
 
 `TauCeti.Baker.norm_coeff_diagonalAuxiliarySeries_mul_pow_le` bounds the coefficients
-at a common radius, using `Polynomial.norm_coeff_expDerivFactor_le` and
+at a common radius, using `Polynomial.norm_coeff_expDerivFactor_le`,
+`Polynomial.norm_coeff_mul_pow_le_of_natDegree_le`, and
 `PowerSeries.norm_coeff_coe_mul_rescale_exp_mul_pow_le`. The bound supplies the input
 to the ultrametric Schwarz estimate in Baker's extrapolation.
 
@@ -154,18 +156,15 @@ theorem norm_coeff_diagonalAuxiliarySeries_mul_pow_le {p : ℕ} [Fact p.Prime] {
     fun t _ ↦ ?_
   have hpoly (j : ℕ) :
       ‖(Polynomial.expDerivFactor (a t) m₀ (Q t)).coeff j‖ * r ^ j ≤ B ^ m₀ * M * r ^ D := by
-    by_cases hj : j ≤ D
-    · calc
-        _ ≤ (max 1 ‖a t‖ ^ m₀ * M) * r ^ j := by
-          gcongr
-          exact Polynomial.norm_coeff_expDerivFactor_le (a t) (hQ t) m₀ j
-        _ ≤ _ := by
-          gcongr
-          exact max_le hB (ha t)
-    · have hdeg := (Polynomial.natDegree_expDerivFactor_le (a t) m₀ (Q t)).trans (hD t)
-      rw [Polynomial.coeff_eq_zero_of_natDegree_lt (hdeg.trans_lt (lt_of_not_ge hj)),
-        norm_zero, zero_mul]
-      positivity
+    have hdeg := (Polynomial.natDegree_expDerivFactor_le (a t) m₀ (Q t)).trans (hD t)
+    have hcoeff :
+        ‖(Polynomial.expDerivFactor (a t) m₀ (Q t)).coeff j‖ ≤ B ^ m₀ * M := by
+      refine (Polynomial.norm_coeff_expDerivFactor_le (a t) (hQ t) m₀ j).trans ?_
+      gcongr
+      exact max_le hB (ha t)
+    simpa only [div_one] using
+      Polynomial.norm_coeff_mul_pow_le_of_natDegree_le zero_lt_one hr hdeg
+        (by simpa only [one_pow, mul_one] using hcoeff)
   have hscale : ‖∏ i, c t i ^ m i‖ ≤ B ^ ∑ i, m i := by
     rw [norm_prod, ← Finset.prod_pow_eq_pow_sum]
     simp only [norm_pow]
