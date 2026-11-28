@@ -15,7 +15,7 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 /-!
 # Ultrapowers of pre-valuation rings and surjectivity of the telescope map
 
-An ultrapower `(U : Filter ι).Germ R` of a commutative ring `R` in which divisibility is total
+An ultrapower `(U : Filter ι).Germ R` of a multiplicative type `R` in which divisibility is total
 (`PreValuationRing R`) along any ultrafilter `U : Ultrafilter ι` is again a `PreValuationRing`:
 for any two sequences `a, b : ι → R`, at every index either `a i ∣ b i` or `b i ∣ a i`, so one
 of the two holds almost everywhere along `U` (`TauCeti.preValuationRing_ultrafilter_germ`). In
@@ -53,19 +53,21 @@ public section
 namespace TauCeti
 
 /-- An ultrapower of a `PreValuationRing` along any ultrafilter is again a `PreValuationRing`. -/
-theorem preValuationRing_ultrafilter_germ {ι R : Type*} [CommRing R] [PreValuationRing R]
+theorem preValuationRing_ultrafilter_germ {ι R : Type*} [Mul R] [PreValuationRing R]
     (U : Ultrafilter ι) : PreValuationRing ((U : Filter ι).Germ R) := by
-  let γ : (ι → R) →+* (U : Filter ι).Germ R := Filter.Germ.coeRingHom _
-  have hγ : Function.Surjective γ := Quotient.exists_rep
+  have hγ : Function.Surjective ((↑) : (ι → R) → (U : Filter ι).Germ R) := Quotient.exists_rep
   refine ⟨hγ.forall₂.mpr fun a b ↦ ?_⟩
   choose c hc using fun i ↦ PreValuationRing.cond (a i) (b i)
   have h_ae : (∀ᶠ i in (U : Filter ι), a i * c i = b i) ∨
       ∀ᶠ i in (U : Filter ι), b i * c i = a i :=
     Ultrafilter.eventually_or.mp (Filter.Eventually.of_forall hc)
-  exact ⟨γ c, h_ae.imp Filter.Germ.coe_eq.mpr Filter.Germ.coe_eq.mpr⟩
+  refine ⟨(c : (U : Filter ι).Germ R), ?_⟩
+  exact h_ae.imp
+    (fun h ↦ by rw [← Filter.Germ.coe_mul]; exact Filter.Germ.coe_eq.mpr h)
+    (fun h ↦ by rw [← Filter.Germ.coe_mul]; exact Filter.Germ.coe_eq.mpr h)
 
 /-- The hyperfilter ultrapower of a `PreValuationRing` is again a `PreValuationRing`. -/
-theorem preValuationRing_hyperfilter_germ {ι R : Type*} [Infinite ι] [CommRing R]
+theorem preValuationRing_hyperfilter_germ {ι R : Type*} [Infinite ι] [Mul R]
     [PreValuationRing R] :
     PreValuationRing (((Filter.hyperfilter ι : Ultrafilter ι) : Filter ι).Germ R) :=
   preValuationRing_ultrafilter_germ (Filter.hyperfilter ι)
