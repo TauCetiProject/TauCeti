@@ -264,6 +264,75 @@ noncomputable instance : Category (DGFunctor R C D) where
           ForgetEnrichment.homOf _ (γ.app X))
     exact Category.assoc _ _ _
 
+namespace DGFunctor
+
+/-- Pointwise isomorphisms of closed morphisms that commute with all homogeneous maps
+assemble into a DG natural isomorphism. -/
+noncomputable def isoOfComponents
+    {F G : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
+    (e : ∀ X, ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) (F.obj X) ≅
+      ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) (G.obj X))
+    (naturality : ∀ {X Y : C} (n : ℤ) (f : DGHom R n X Y),
+      dgComp R (F.dgMap n f) (dgClosedHom R (e Y).hom) (add_zero n) =
+        dgComp R (dgClosedHom R (e X).hom) (G.dgMap n f) (zero_add n)) :
+    (⟨F⟩ : DGFunctor R C D) ≅ ⟨G⟩ where
+  hom := DGNatTrans.ofDGApp (fun X ↦ dgClosedHom R (e X).hom)
+    (fun X ↦ dgClosedHom_mem_dgCycles R _) naturality
+  inv := DGNatTrans.ofDGApp (fun X ↦ dgClosedHom R (e X).inv)
+    (fun X ↦ dgClosedHom_mem_dgCycles R _) (fun {X Y} n f ↦ by
+      apply dgComp_inv_naturality R _ _ _ _ _ _ _ _ (naturality n f)
+      · simpa only [dgClosedHom_comp, dgClosedHom_id, dgCompZero_def, ForgetEnrichment.to_of] using
+          congrArg (dgClosedHom R) (e X).inv_hom_id
+      · simpa only [dgClosedHom_comp, dgClosedHom_id, dgCompZero_def, ForgetEnrichment.to_of] using
+          congrArg (dgClosedHom R) (e Y).hom_inv_id)
+  hom_inv_id := by
+    -- Morphisms of DGFunctor compose by DGNatTrans.comp.
+    change DGNatTrans.comp _ _ = DGNatTrans.id _
+    apply DGNatTrans.ext_dgApp
+    intro X
+    simp only [DGNatTrans.dgApp_comp, DGNatTrans.dgApp_ofDGApp, DGNatTrans.dgApp_id]
+    exact (dgClosedHom_comp R _ _).symm.trans
+      ((congrArg (dgClosedHom R) (e X).hom_inv_id).trans (dgClosedHom_id R _))
+  inv_hom_id := by
+    -- Morphisms of DGFunctor compose by DGNatTrans.comp.
+    change DGNatTrans.comp _ _ = DGNatTrans.id _
+    apply DGNatTrans.ext_dgApp
+    intro X
+    simp only [DGNatTrans.dgApp_comp, DGNatTrans.dgApp_ofDGApp, DGNatTrans.dgApp_id]
+    exact (dgClosedHom_comp R _ _).symm.trans
+      ((congrArg (dgClosedHom R) (e X).inv_hom_id).trans (dgClosedHom_id R _))
+
+/-- The forward components of the pointwise DG isomorphism are the prescribed closed maps. -/
+@[simp]
+theorem dgApp_isoOfComponents_hom
+    {F G : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
+    (e : ∀ X, ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) (F.obj X) ≅
+      ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) (G.obj X))
+    (naturality : ∀ {X Y : C} (n : ℤ) (f : DGHom R n X Y),
+      dgComp R (F.dgMap n f) (dgClosedHom R (e Y).hom) (add_zero n) =
+        dgComp R (dgClosedHom R (e X).hom) (G.dgMap n f) (zero_add n)) (X : C) :
+    (isoOfComponents e naturality).hom.dgApp X = dgClosedHom R (e X).hom := by
+  unfold isoOfComponents
+  exact DGNatTrans.dgApp_ofDGApp _ _ naturality X
+
+/-- The inverse components of the pointwise DG isomorphism are the prescribed inverses. -/
+@[simp]
+theorem dgApp_isoOfComponents_inv
+    {F G : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
+    (e : ∀ X, ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) (F.obj X) ≅
+      ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) (G.obj X))
+    (naturality : ∀ {X Y : C} (n : ℤ) (f : DGHom R n X Y),
+      dgComp R (F.dgMap n f) (dgClosedHom R (e Y).hom) (add_zero n) =
+        dgComp R (dgClosedHom R (e X).hom) (G.dgMap n f) (zero_add n)) (X : C) :
+    (isoOfComponents e naturality).inv.dgApp X = dgClosedHom R (e X).inv := by
+  unfold isoOfComponents
+  -- Keep the constructor’s inverse-naturality proof available to the component lemma.
+  generalize_proofs
+  apply DGNatTrans.dgApp_ofDGApp
+  assumption
+
+end DGFunctor
+
 namespace DGNatTrans
 
 /-- The component of a DG natural transformation on the homotopy category is the

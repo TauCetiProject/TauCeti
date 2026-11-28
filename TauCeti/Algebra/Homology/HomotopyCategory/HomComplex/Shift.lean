@@ -43,6 +43,19 @@ public section
 
 open CategoryTheory CochainComplex.HomComplex
 
+namespace CochainComplex.HomComplex.Cochain
+
+/-- Simultaneous shift takes the cochain of a map to the cochain of its shift. -/
+@[simp]
+theorem shift_ofHom {V : Type*} [Category V] [Preadditive V]
+    {K L : CochainComplex V ℤ} (f : K ⟶ L) (a : ℤ) :
+    (ofHom f).shift a = ofHom (f⟦a⟧') := by
+  refine Cochain.ext _ _ fun i j hij ↦ ?_
+  obtain rfl : j = i := by omega
+  rw [shift_v', ofHom_v, ofHom_v, CochainComplex.shiftFunctor_map_f']
+
+end CochainComplex.HomComplex.Cochain
+
 namespace TauCeti
 
 universe v u

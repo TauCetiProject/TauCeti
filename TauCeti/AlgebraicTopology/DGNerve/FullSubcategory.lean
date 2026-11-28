@@ -122,6 +122,17 @@ end dgNerve
 
 namespace DGFullSubcategory
 
+/-- The native dg nerve of a restriction commutes with the full-subcategory inclusion. -/
+theorem restrict_mapDGNerve_comp_inclusion
+    {D : Type u} [DGCategory R D] {Q : D → Prop}
+    (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D)
+    (hF : ∀ X, P X → Q (F.obj X)) :
+    (restrict R F hF).mapDGNerve ≫ (inclusion (R := R)).mapDGNerve =
+      (inclusion (R := R)).mapDGNerve ≫ F.mapDGNerve := by
+  rw [← EnrichedFunctor.comp_mapDGNerve, restrict_comp_inclusion,
+    EnrichedFunctor.comp_mapDGNerve]
+
+
 variable (R P)
 
 /-- The dg nerve of a full dg subcategory is the full enhanced subcategory of the ambient
