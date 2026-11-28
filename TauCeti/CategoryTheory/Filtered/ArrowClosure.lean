@@ -9,8 +9,8 @@ public import Mathlib.CategoryTheory.Comma.Arrow
 public import Mathlib.CategoryTheory.Filtered.Basic
 public import Mathlib.SetTheory.Cardinal.Order
 import Mathlib.Data.Fin.VecNotation
-import Mathlib.ModelTheory.Substructures
 import Mathlib.Tactic.FinCases
+import TauCeti.ModelTheory.Substructures.Cardinality
 
 /-!
 # Cardinal-bounded cofiltered closure of arrows
@@ -18,12 +18,13 @@ import Mathlib.Tactic.FinCases
 `Set.cofilteredArrowClosure` enlarges a set of arrows in a cofiltered category
 by adding endpoint identities, composites, and chosen cone and equalizing arrows. Unlike
 full subcategory closure, it need not add all morphisms between its objects. It is monotone
-in the generating set and `Set.mk_cofilteredArrowClosure_le` bounds its cardinal
-by the maximum of the generator cardinal and `ℵ₀`.
+in the generating set. `Set.mem_cofilteredArrowClosure_iff` characterizes membership by closed
+supersets, `Set.cofilteredArrowClosure_idem` gives idempotence, and
+`Set.mk_cofilteredArrowClosure_le` bounds the cardinal by `max ℵ₀ #s` for generators `s`.
 
 The construction uses Mathlib's `IsCofiltered.minToLeft`, `IsCofiltered.minToRight`,
-`IsCofiltered.eqHom` and `FirstOrder.Language.Substructure.lift_card_closure_le`. It gives
-the closure step for the cardinal induction on cofiltered diagrams in Scholze,
+`IsCofiltered.eqHom` and Tau Ceti's `FirstOrder.Language.Substructure.lift_mk_closure_le`.
+It gives the closure step for the cardinal induction on cofiltered diagrams in Scholze,
 *Étale cohomology of diamonds*, Lemma 11.22 and Proposition 11.23.
 -/
 
@@ -172,6 +173,34 @@ theorem cofilteredArrowClosure_subset {t : Set (Arrow C)} (hst : s ⊆ t)
   have hT : s ⊆ T := hst
   exact FirstOrder.Language.Substructure.closure_le.mpr hT
 
+/-- An arrow belongs to the cofiltered closure of `s` exactly when it belongs to every superset
+of `s` closed under target identities, composition, and the chosen cone and equalizing arrows. -/
+theorem mem_cofilteredArrowClosure_iff {a : Arrow C} : a ∈ s.cofilteredArrowClosure ↔
+    ∀ t : Set (Arrow C), s ⊆ t →
+      (∀ b ∈ t, Arrow.mk (𝟙 b.right) ∈ t) →
+      (∀ {X Y Z : C} {f : X ⟶ Y} {g : Y ⟶ Z},
+        Arrow.mk f ∈ t → Arrow.mk g ∈ t → Arrow.mk (f ≫ g) ∈ t) →
+      (∀ X Y : C, Arrow.mk (𝟙 X) ∈ t → Arrow.mk (𝟙 Y) ∈ t → Arrow.mk (minToLeft X Y) ∈ t) →
+      (∀ X Y : C, Arrow.mk (𝟙 X) ∈ t → Arrow.mk (𝟙 Y) ∈ t → Arrow.mk (minToRight X Y) ∈ t) →
+      (∀ {X Y : C} {f g : X ⟶ Y},
+        Arrow.mk f ∈ t → Arrow.mk g ∈ t → Arrow.mk (eqHom f g) ∈ t) → a ∈ t := by
+  constructor
+  · intro ha t hst hright hcomp hminLeft hminRight heq
+    exact cofilteredArrowClosure_subset hst hright hcomp hminLeft hminRight heq ha
+  · intro ha
+    exact ha _ subset_cofilteredArrowClosure (fun _ h ↦ id_right_mem_cofilteredArrowClosure h)
+      comp_mem_cofilteredArrowClosure (fun _ _ ↦ minToLeft_mem_cofilteredArrowClosure)
+      (fun _ _ ↦ minToRight_mem_cofilteredArrowClosure) eqHom_mem_cofilteredArrowClosure
+
+/-- Applying cofiltered arrow closure twice gives the same set as applying it once. -/
+@[simp]
+theorem cofilteredArrowClosure_idem (s : Set (Arrow C)) :
+    s.cofilteredArrowClosure.cofilteredArrowClosure = s.cofilteredArrowClosure := by
+  open FirstOrder.Language.Substructure in
+  have h : closure arrowLanguage (closure arrowLanguage s : Set (Arrow C)) =
+      closure arrowLanguage s := closure_eq_of_le Subset.rfl subset_closure
+  exact congrArg SetLike.coe h
+
 /-- The closure of the empty set of arrows is empty. -/
 @[simp]
 theorem cofilteredArrowClosure_empty : (∅ : Set (Arrow C)).cofilteredArrowClosure = ∅ := by
@@ -188,12 +217,12 @@ theorem mk_cofilteredArrowClosure_le (s : Set (Arrow C)) :
     rfl
   have hsym : #(Σ n, arrowLanguage.Functions n) ≤ ℵ₀ :=
     (mk_le_of_injective hinj).trans mk_le_aleph0
-  have hc := FirstOrder.Language.Substructure.lift_card_closure_le (L := arrowLanguage) (s := s)
-  have hc' : #s.cofilteredArrowClosure ≤ max ℵ₀ (#s + lift #(Σ n, arrowLanguage.Functions n)) := by
-    simp only [lift_uzero] at hc
-    exact hc
-  refine hc'.trans (max_le (le_max_left _ _) ?_)
-  exact add_le_of_le (le_max_left _ _) (le_max_right _ _)
-    ((lift_le_aleph0.mpr hsym).trans (le_max_left _ _))
+  have hs : lift.{0} #s ≤ max ℵ₀ #s := by
+    rw [lift_uzero]
+    exact le_max_right _ _
+  have hc : lift.{0} #s.cofilteredArrowClosure ≤ max ℵ₀ #s :=
+    FirstOrder.Language.Substructure.lift_mk_closure_le (L := arrowLanguage) (le_max_left _ _)
+      ((lift_le_aleph0.mpr hsym).trans (le_max_left _ _)) hs
+  rwa [lift_uzero] at hc
 
 end Set
