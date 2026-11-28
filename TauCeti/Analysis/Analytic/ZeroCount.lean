@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Order
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Meromorphic.Basic
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.Analysis.RCLike.Basic
@@ -13,6 +14,7 @@ import Mathlib.Analysis.Meromorphic.Divisor
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.Analytic.IsolatedZeros
+import TauCeti.Analysis.Analytic.Order
 import TauCeti.Analysis.Meromorphic.Order
 
 /-!
@@ -41,7 +43,9 @@ count does not see such a point. That is why detecting a zero from a vanishing c
 (`AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_zero_iff`) needs a hypothesis ruling infinite
 order out. One point of the closed disc at which `f` is nonzero is enough: the disc is convex, hence
 preconnected, so `AnalyticOnNhd.analyticOrderAt_ne_top_of_isPreconnected` propagates the finite
-order there to every point.
+order there to every point. A count of `1`, by contrast, already witnesses a point of finite
+order, so `AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_one_iff` needs no extra nonvanishing
+hypothesis.
 
 ## Main results
 
@@ -57,6 +61,9 @@ order there to every point.
 * `AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_zero_iff` — conversely, given a point of the
   closed disc where `f` does not vanish, a count of `0` means there is no zero in the open disc at
   all.
+* `AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_one_iff`,
+  `AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_one_iff_deriv_ne_zero` — a count of `1` means
+  there is a unique zero in the open disc, and `f` has a simple zero (`deriv f z ≠ 0`) there.
 * `AnalyticOnNhd.zeroMultiset` — the zeros in a set, counted with multiplicity. On the open disc,
   `AnalyticOnNhd.count_zeroMultiset`, `AnalyticOnNhd.mem_zeroMultiset` and
   `AnalyticOnNhd.card_zeroMultiset` compute its multiplicities, members and cardinality.
@@ -241,6 +248,67 @@ theorem AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_zero_iff
   rw [hsum] at hle
   simp [analyticOrderNatAt, ENat.toNat_eq_zero, htop,
     (hf z₀ (ball_subset_closedBall hz₀)).analyticOrderAt_eq_zero, h0] at hle
+
+/-- **A zero count of `1` characterizes a unique simple zero.** For `f` analytic on
+`closedBall c R`, the count `∑ᶠ z ∈ ball c R, analyticOrderNatAt f z` equals `1` if and only if `f`
+has a zero `z₀` of order `1` in `ball c R` and no other zeros in `ball c R`. Unlike
+`AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_zero_iff`, no auxiliary nonvanishing witness is
+needed: either side already supplies a point of finite order in the convex closed disc. -/
+theorem AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_one_iff
+    (hf : AnalyticOnNhd 𝕜 f (closedBall c R)) :
+    (∑ᶠ z ∈ ball c R, analyticOrderNatAt f z) = 1 ↔
+      ∃ z₀ ∈ ball c R, analyticOrderAt f z₀ = 1 ∧ ∀ z ∈ ball c R, f z = 0 → z = z₀ := by
+  classical
+  rw [← hf.card_zeroMultiset, Multiset.card_eq_one]
+  constructor
+  · rintro ⟨z₀, hz₀_eq⟩
+    have hmem : z₀ ∈ AnalyticOnNhd.zeroMultiset f (ball c R) := by simp [hz₀_eq]
+    obtain ⟨hz₀, hpos⟩ := (hf.mem_zeroMultiset).1 hmem
+    have hcnt : analyticOrderNatAt f z₀ = 1 := by
+      have h := (hf.count_zeroMultiset z₀).symm
+      rwa [hz₀_eq, Multiset.count_singleton_self, Set.indicator_of_mem hz₀] at h
+    have htop₀ : analyticOrderAt f z₀ ≠ ⊤ := by
+      intro htop
+      simp [analyticOrderNatAt, htop] at hpos
+    refine ⟨z₀, hz₀, by rw [← Nat.cast_analyticOrderNatAt htop₀, hcnt, Nat.cast_one],
+      fun z hz hfz => ?_⟩
+    have htop : analyticOrderAt f z ≠ ⊤ :=
+      hf.analyticOrderAt_ne_top_of_isPreconnected (convex_closedBall c R).isPreconnected
+        (ball_subset_closedBall hz₀) (ball_subset_closedBall hz) htop₀
+    have hne0 : analyticOrderAt f z ≠ 0 :=
+      (hf z (ball_subset_closedBall hz)).analyticOrderAt_ne_zero.2 hfz
+    have hz_pos : 0 < analyticOrderNatAt f z := Nat.pos_iff_ne_zero.2 fun h0 => hne0 <| by
+      rw [← Nat.cast_analyticOrderNatAt htop, h0, Nat.cast_zero]
+    have hz_mem : z ∈ AnalyticOnNhd.zeroMultiset f (ball c R) :=
+      (hf.mem_zeroMultiset).2 ⟨hz, hz_pos⟩
+    rwa [hz₀_eq, Multiset.mem_singleton] at hz_mem
+  · rintro ⟨z₀, hz₀, hd, honly⟩
+    refine ⟨z₀, ?_⟩
+    simpa using hf.zeroMultiset_eq_replicate (d := 1) hz₀ (by simpa using hd)
+      fun z hz hne hfz => hne (honly z hz hfz)
+
+/-- Derivative form of `AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_one_iff`: for `f` analytic
+on `closedBall c R`, the zero count in `ball c R` equals `1` if and only if `f` has a unique zero in
+`ball c R` and its derivative does not vanish there. -/
+theorem AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_one_iff_deriv_ne_zero
+    (hf : AnalyticOnNhd 𝕜 f (closedBall c R)) :
+    (∑ᶠ z ∈ ball c R, analyticOrderNatAt f z) = 1 ↔
+      (∃! z, z ∈ ball c R ∧ f z = 0) ∧ ∀ z ∈ ball c R, f z = 0 → deriv f z ≠ 0 := by
+  rw [hf.finsum_analyticOrderNatAt_ball_eq_one_iff]
+  constructor
+  · rintro ⟨z₀, hz₀, hd, honly⟩
+    have hfz₀ : f z₀ = 0 :=
+      (hf z₀ (ball_subset_closedBall hz₀)).analyticOrderAt_ne_zero.1 (by simp [hd])
+    have hdz₀ : deriv f z₀ ≠ 0 :=
+      (hf z₀ (ball_subset_closedBall hz₀)).analyticOrderAt_sub_eq_one_iff_deriv_ne_zero.1
+        (by simpa [hfz₀] using hd)
+    exact ⟨⟨z₀, ⟨hz₀, hfz₀⟩, fun z ⟨hz, hfz⟩ => honly z hz hfz⟩,
+      fun z hz hfz => honly z hz hfz ▸ hdz₀⟩
+  · rintro ⟨⟨z₀, ⟨hz₀, hfz₀⟩, huniq⟩, hderiv⟩
+    exact ⟨z₀, hz₀,
+      (hf z₀ (ball_subset_closedBall hz₀)).analyticOrderAt_eq_one_of_zero_deriv_ne_zero
+        hfz₀ (hderiv z₀ hz₀ hfz₀),
+      fun z hz hfz => huniq z ⟨hz, hfz⟩⟩
 
 /-- If `g` is analytic on a closed disc and does not vanish at some point of it, then it has
 finitely many zeros in the open disc, and the sum over the open disc of the orders of vanishing of

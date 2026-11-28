@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Floor.Semiring
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 
 /-!
@@ -28,6 +29,10 @@ summatory functions of the Liouville and Möbius functions.
 * `ArithmeticFunction.mul_dilateSq_apply`: `(f * g_□)(n) = ∑_{d² ∣ n} f(n / d²) g(d)`.
 * `ArithmeticFunction.sum_Ioc_dilateSq_mul`:
   `∑_{0 < n ≤ N} (g_□ * f)(n) = ∑_{0 < d ≤ √N} g(d) ∑_{0 < k ≤ N / d²} f(k)`.
+* `ArithmeticFunction.sum_Ioc_dilateSq`: `∑_{0 < m ≤ N} g_□(m) = ∑_{0 < d ≤ √N} g(d)`.
+* `ArithmeticFunction.sum_Icc_natFloor_mul_dilateSq`: the same grouping up to a bound `x` in a
+  linearly ordered division ring with a floor,
+  `∑_{n ≤ x} (f * g_□)(n) = ∑_{w ≤ √x} g(w) ∑_{k ≤ x / w²} f(k)`.
 -/
 
 public section
@@ -66,6 +71,22 @@ theorem exists_eq_sq_of_dilateSq_apply_ne_zero {n : ℕ} (hn : f.dilateSq n ≠ 
   exact h ⟨m, (sq m).symm⟩
 
 end Zero
+
+/-- The summatory function of a dilated function is a sum over `d ≤ √N`:
+`∑_{0 < m ≤ N} g_□(m) = ∑_{0 < d ≤ √N} g(d)`. -/
+theorem sum_Ioc_dilateSq [AddCommMonoid R] (g : ArithmeticFunction R) (N : ℕ) :
+    ∑ m ∈ Ioc 0 N, g.dilateSq m = ∑ d ∈ Ioc 0 N.sqrt, g d := by
+  have himg : (Ioc 0 N.sqrt).image (· ^ 2) ⊆ Ioc 0 N := fun m hm ↦ by
+    obtain ⟨d, hd, rfl⟩ := mem_image.1 hm
+    rw [mem_Ioc] at hd ⊢
+    exact ⟨pow_pos hd.1 2, Nat.le_sqrt'.1 hd.2⟩
+  rw [← sum_subset himg fun m hmN hm ↦ ?_,
+    sum_image fun a _ b _ h ↦ Nat.pow_left_injective two_ne_zero h]
+  · exact sum_congr rfl fun d _ ↦ g.dilateSq_apply_sq d
+  refine g.dilateSq_apply_of_not_isSquare fun ⟨r, hr⟩ ↦ hm (mem_image.2 ⟨r, ?_, by rw [hr, sq]⟩)
+  rw [mem_Ioc] at hmN ⊢
+  subst hr
+  exact ⟨Nat.pos_of_ne_zero (by rintro rfl; simp at hmN), Nat.le_sqrt.2 hmN.2⟩
 
 section Semiring
 
@@ -169,5 +190,27 @@ theorem sum_Ioc_dilateSq_mul (f g : ArithmeticFunction R) (N : ℕ) :
     rw [dilateSq_apply_sq]
 
 end Semiring
+
+/-- Summing `f * g_□` over `n ≤ x` and grouping by the square divisor `w²`:
+`∑_{n ≤ x} (f * g_□)(n) = ∑_{w ≤ √x} g(w) ∑_{k ≤ x / w²} f(k)`, for integer-valued `f` and `g`
+and `x` in a linearly ordered division ring with a floor. -/
+theorem sum_Icc_natFloor_mul_dilateSq {K : Type*} [DivisionRing K] [LinearOrder K]
+    [IsStrictOrderedRing K] [FloorSemiring K] (f g : ArithmeticFunction ℤ) (x : K) :
+    ∑ n ∈ Icc 1 ⌊x⌋₊, ((f * g.dilateSq) n : K) =
+      ∑ w ∈ Icc 1 (Nat.sqrt ⌊x⌋₊), (g w : K) * ∑ k ∈ Icc 1 ⌊x / w ^ 2⌋₊, (f k : K) := by
+  have h := congrArg (Int.cast : ℤ → K) (sum_Ioc_dilateSq_mul f g ⌊x⌋₊)
+  rw [mul_comm g.dilateSq f] at h
+  push_cast at h
+  simp only [← Icc_add_one_left_eq_Ioc, zero_add] at h
+  rw [h]
+  refine sum_congr rfl fun w hw ↦ ?_
+  have hw2 : 0 < w ^ 2 := pow_pos (mem_Icc.1 hw).1 2
+  have hfloor : ⌊x / (w : K) ^ 2⌋₊ = ⌊x⌋₊ / w ^ 2 := by
+    refine eq_of_forall_le_iff fun n ↦ ?_
+    rcases n.eq_zero_or_pos with rfl | hn
+    · simp
+    rw [Nat.le_div_iff_mul_le hw2, Nat.le_floor_iff' hn.ne', Nat.le_floor_iff' (by positivity),
+      ← Nat.cast_pow, le_div_iff₀ (by exact_mod_cast hw2), Nat.cast_mul]
+  rw [hfloor]
 
 end ArithmeticFunction

@@ -31,6 +31,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   is evaluation at `u`.
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
   between normed spaces.
+* `TauCeti.mvfderiv_comp_chartAt_apply`: the chain rule through a chart, with the tangent vector
+  read in the tangent trivialization.
 * `TauCeti.mvfderiv_scalar_comp`: the chain rule `d(φ ∘ g) = φ'(g x) • dg` for scalar `φ`.
 * `ContinuousLinearMap.mvfderiv_comp_apply`: the chain rule when the outer map is continuous
   linear. For a continuous linear equivalence, `ContinuousLinearEquiv.mvfderiv_comp_apply`
@@ -209,6 +211,30 @@ theorem mvfderiv_comp_apply_of_differentiableAt {g : M → F} {φ : F → F'} {x
   rw [mvfderiv_comp_apply x hφ.mdifferentiableAt hg, mvfderiv_eq_fderiv,
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     NormedSpace.fromTangentSpace_apply, mvfderiv_apply_eq_mfderiv_apply]
+
+/-- **The chain rule through a chart.** On a manifold modelled on a normed space `E` without
+boundary, the derivative at `x` of a function read in the chart at `c` is the derivative of its
+reading at the chart point, applied to the tangent vector read in the tangent trivialization at
+`c`. -/
+theorem mvfderiv_comp_chartAt_apply {M' : Type*} [TopologicalSpace M'] [ChartedSpace E M']
+    [IsManifold 𝓘(𝕜, E) 1 M'] {g : E → F} {c x : M'} (hx : x ∈ (chartAt E c).source)
+    (hg : DifferentiableAt 𝕜 g (chartAt E c x)) (w : TangentSpace 𝓘(𝕜, E) x) :
+    mvfderiv 𝓘(𝕜, E) (fun x' ↦ g (chartAt E c x')) x w =
+      fderiv 𝕜 g (chartAt E c x)
+        ((trivializationAt E (TangentSpace 𝓘(𝕜, E) : M' → Type _) c).continuousLinearMapAt 𝕜 x
+          w) := by
+  have hfun : (fun x' ↦ g (chartAt E c x')) = g ∘ extChartAt 𝓘(𝕜, E) c := by
+    funext x'
+    simp
+  have hch : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, E) (extChartAt 𝓘(𝕜, E) c) x :=
+    mdifferentiableAt_extChartAt hx
+  have hg' : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) g (extChartAt 𝓘(𝕜, E) c x) := by
+    simpa using hg.mdifferentiableAt
+  rw [hfun, mvfderiv_comp_apply x hg' hch, mvfderiv_eq_fderiv,
+    TangentBundle.continuousLinearMapAt_trivializationAt hx, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, NormedSpace.fromTangentSpace_apply]
+  -- For the trivial model, `extChartAt 𝓘(𝕜, E) c` is `chartAt E c` as a function.
+  rfl
 
 /-- The chain rule for a scalar function on a manifold followed by a scalar function
 differentiable at the relevant point: the derivative is scaled by `φ'(g x)`. -/

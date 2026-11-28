@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Sites.Fpqc
 public import TauCeti.AlgebraicGeometry.Descent.Fpqc
+public import TauCeti.AlgebraicGeometry.Morphisms.Affine.BaseChange
 public import TauCeti.AlgebraicGeometry.Sites.Big.Representability
 public import TauCeti.CategoryTheory.Adjunction.Representable
 public import TauCeti.CategoryTheory.EffectiveEpi.Representable
@@ -39,13 +40,19 @@ and locally of finite presentation. The representing schemes over these neighbou
 (`AlgebraicGeometry.Scheme.OpenCover.exists_hom_mem_nonempty_representableBy`), so that every
 `𝒢`-torsor is represented by a scheme affine over `S`
 (`CategoryTheory.Sheaf.Torsor.exists_isAffineHom_nonempty_representableBy`), with no Noetherian
-or other hypothesis on `S`.
+or other hypothesis on `S`. The argument only uses that `P` is isomorphic to a presheaf
+represented by a scheme affine over `S` wherever `P` has sections, so it applies to every sheaf
+with this property, for instance to a contracted product of `P` with a scheme affine over `S`
+(`CategoryTheory.Sheaf.Torsor.exists_isAffineHom_nonempty_representableBy_of_iso`).
 
 ## Main results
 
 * `AlgebraicGeometry.Scheme.Hom.exists_isAffineHom_nonempty_representableBy`: an fppf sheaf which
   is represented by a scheme affine over `S'` after base change along `p` is represented by a
   scheme affine over `S`.
+* `CategoryTheory.Sheaf.Torsor.exists_isAffineHom_nonempty_representableBy_of_iso`: a sheaf which
+  is isomorphic to the functor of points of a scheme affine over `S` over every scheme over which
+  a torsor has sections, an fppf form of that scheme, is represented by a scheme affine over `S`.
 * `CategoryTheory.Sheaf.Torsor.exists_isAffineHom_nonempty_representableBy`: every torsor under a
   sheaf of groups represented by a scheme affine over `S` is represented by a scheme affine
   over `S`.
@@ -94,34 +101,27 @@ variable {S S' : Scheme.{u}} {𝒢 : Sheaf (Scheme.fppfTopology.over S) GrpCat.{
 
 /-- Let `ι : W ⟶ S` be a morphism, for instance the inclusion of an open subscheme, and let `P` be
 a `𝒢`-torsor with a section over `p ≫ ι`, for a surjective, flat, quasi-compact morphism
-`p : S' ⟶ W` locally of finite presentation. Then the restriction of `P` to schemes over `W` is
-represented by a scheme affine over `W`. This is the local step of
-`exists_isAffineHom_nonempty_representableBy`, which shows that no section is needed. -/
-private theorem exists_isAffineHom_nonempty_representableBy_overMap (P : Torsor 𝒢) {G : Over S}
-    [IsAffineHom G.hom] (eG : (𝒢.obj ⋙ forget GrpCat).RepresentableBy G) {W : Scheme.{u}}
-    (ι : W ⟶ S) (p : S' ⟶ W) [Surjective p] [Flat p] [QuasiCompact p]
+`p : S' ⟶ W` locally of finite presentation. Let `F` be a sheaf which, over every scheme over
+which `P` has compatible sections, is isomorphic to a presheaf `F₀` represented by a scheme `X`
+affine over `S`. Then the restriction of `F` to schemes over `W` is represented by a scheme affine
+over `W`. This is the local step of `exists_isAffineHom_nonempty_representableBy_of_iso`. -/
+private theorem exists_isAffineHom_nonempty_representableBy_overMap (P : Torsor 𝒢)
+    (F : Sheaf (Scheme.fppfTopology.over S) (Type w)) {F₀ : (Over S)ᵒᵖ ⥤ Type w} {X : Over S}
+    [IsAffineHom X.hom] (eX : F₀.RepresentableBy X)
+    (hF : ∀ ⦃T : Over S⦄, ((Over.map T.hom).op ⋙ P.sheaf.obj).sections →
+      Nonempty ((Over.map T.hom).op ⋙ F.obj ≅ (Over.map T.hom).op ⋙ F₀))
+    {W : Scheme.{u}} (ι : W ⟶ S) (p : S' ⟶ W) [Surjective p] [Flat p] [QuasiCompact p]
     [LocallyOfFinitePresentation p] (ξ : P.sheaf.obj.obj (op (Over.mk (p ≫ ι)))) :
     ∃ X₀ : Over W, IsAffineHom X₀.hom ∧
-      Nonempty (((Over.map ι).op ⋙ P.sheaf.obj).RepresentableBy X₀) := by
-  -- The section `ξ`, restricted to every scheme over `S'`.
-  let s (T : Over S') : P.sheaf.obj.obj (op ((Over.map p ⋙ Over.map ι).obj T)) :=
-    P.sheaf.obj.map
-      (Over.homMk T.hom : (Over.map p ⋙ Over.map ι).obj T ⟶ Over.mk (p ≫ ι)).op ξ
-  have hs ⦃T T' : Over S'⦄ (f : T ⟶ T') :
-      P.sheaf.obj.map ((Over.map p ⋙ Over.map ι).map f).op (s T') = s T := by
-    simp only [s, ← Functor.map_comp_apply, ← op_comp]
-    congr 3
-    ext
-    simp
-  have : IsAffineHom ((Over.pullback ι).obj G).hom :=
-    isAffineHom_isStableUnderBaseChange.of_isPullback (IsPullback.of_hasPullback _ _) ‹_›
-  have : IsAffineHom ((Over.pullback p).obj ((Over.pullback ι).obj G)).hom :=
-    isAffineHom_isStableUnderBaseChange.of_isPullback (IsPullback.of_hasPullback _ _) ‹_›
+      Nonempty (((Over.map ι).op ⋙ F.obj).RepresentableBy X₀) := by
+  -- The isomorphism over `p ≫ ι`, transported to the composite `Over.map p ⋙ Over.map ι`.
+  let c : (Over.map p ⋙ Over.map ι).op ≅ (Over.map (p ≫ ι)).op := NatIso.op (Over.mapComp p ι)
   exact p.exists_isAffineHom_nonempty_representableBy
-    ((Scheme.fppfTopology.overMapPullback (Type w) ι).obj P.sheaf)
+    ((Scheme.fppfTopology.overMapPullback (Type w) ι).obj F)
     (((Over.mapPullbackAdj p).representableByComp
-      ((Over.mapPullbackAdj ι).representableByComp eG)).ofIso
-        (P.isoOfSection (Over.map p ⋙ Over.map ι) s hs))
+      ((Over.mapPullbackAdj ι).representableByComp eX)).ofIso
+        (Functor.isoWhiskerRight c F₀ ≪≫ (hF (Over.mapSection _ ξ)).some.symm ≪≫
+          Functor.isoWhiskerRight c.symm F.obj))
 
 /-- Every point `s` of `S` lies in the image of a morphism `f : Y ⟶ S`, flat and locally of
 finite presentation, over which the torsor `P` has a section. -/
@@ -175,24 +175,27 @@ private lemma exists_open_section (P : Torsor 𝒢) (s : S) :
   rw [← Scheme.Hom.comp_apply p W.ι, Scheme.Hom.resLE_comp_ι, Scheme.Hom.comp_apply]
   exact hvw
 
-/-- **Torsors under an affine group are representable.** Let `𝒢` be a sheaf of groups on the big
-fppf site of `S` whose underlying sheaf of sets is represented by a scheme `G` affine over `S`,
-for instance the sheaf of points of a group scheme affine over `S`. Then every `𝒢`-torsor `P` is
-represented by a scheme affine over `S` (Poonen, Theorem 6.5.10 (i), here without Noetherian
-hypotheses on `S` and without flatness of `G`). -/
-theorem exists_isAffineHom_nonempty_representableBy (P : Torsor 𝒢) {G : Over S}
-    [IsAffineHom G.hom] (eG : (𝒢.obj ⋙ forget GrpCat).RepresentableBy G) :
-    ∃ X₀ : Over S, IsAffineHom X₀.hom ∧ Nonempty (P.sheaf.obj.RepresentableBy X₀) := by
+/-- **Fppf forms of affine schemes are representable.** Let `P` be a `𝒢`-torsor, and let `F` be
+a sheaf on the big fppf site of `S` which, over every scheme `T` over `S` over which `P` has
+compatible sections (for instance the restrictions `Over.mapSection` of a section over `T`), is
+isomorphic to a presheaf `F₀` represented by a scheme `X` affine over `S`. Then `F` is represented
+by a scheme affine over `S`. -/
+theorem exists_isAffineHom_nonempty_representableBy_of_iso (P : Torsor 𝒢)
+    (F : Sheaf (Scheme.fppfTopology.over S) (Type w)) {F₀ : (Over S)ᵒᵖ ⥤ Type w} {X : Over S}
+    [IsAffineHom X.hom] (eX : F₀.RepresentableBy X)
+    (hF : ∀ ⦃T : Over S⦄, ((Over.map T.hom).op ⋙ P.sheaf.obj).sections →
+      Nonempty ((Over.map T.hom).op ⋙ F.obj ≅ (Over.map T.hom).op ⋙ F₀)) :
+    ∃ X₀ : Over S, IsAffineHom X₀.hom ∧ Nonempty (F.obj.RepresentableBy X₀) := by
   -- Around every point of `S`, `P` has a section over a single surjective, flat, quasi-compact
-  -- morphism of finite presentation to an open neighbourhood `W`, so its restriction to schemes
-  -- over `W` is represented by a scheme affine over `W`; these schemes glue.
+  -- morphism of finite presentation to an open neighbourhood `W`, so the restriction of `F` to
+  -- schemes over `W` is represented by a scheme affine over `W`; these schemes glue.
   choose W V p hW _ _ _ _ ξ using exists_open_section P
   choose Y hY e using fun s ↦
-    P.exists_isAffineHom_nonempty_representableBy_overMap eG (W s).ι (p s) (ξ s).some
-  have hF : Presieve.IsSheaf (Scheme.zariskiTopology.over S) P.sheaf.obj :=
+    P.exists_isAffineHom_nonempty_representableBy_overMap F eX hF (W s).ι (p s) (ξ s).some
+  have hF : Presieve.IsSheaf (Scheme.zariskiTopology.over S) F.obj :=
     Presieve.isSheaf_of_le _ (GrothendieckTopology.over_mono
       (Precoverage.toGrothendieck_mono Scheme.zariskiPrecoverage_le_fppfPrecoverage) S)
-      ((isSheaf_iff_isSheaf_of_type _ _).1 P.sheaf.property)
+      ((isSheaf_iff_isSheaf_of_type _ _).1 F.property)
   have : IsZariskiLocalAtTarget @IsAffineHom.{u} :=
     @HasAffineProperty.instIsZariskiLocalAtTarget _ _
       instHasAffinePropertyIsAffineHomIsAffine
@@ -200,5 +203,16 @@ theorem exists_isAffineHom_nonempty_representableBy (P : Torsor 𝒢) {G : Over 
     (S.openCoverOfIsOpenCover W
       (top_le_iff.1 fun s _ ↦ TopologicalSpace.Opens.mem_iSup.2 ⟨s, hW s⟩))
     hF (fun s ↦ (e s).some) @IsAffineHom hY
+
+/-- **Torsors under an affine group are representable.** Let `𝒢` be a sheaf of groups on the big
+fppf site of `S` whose underlying sheaf of sets is represented by a scheme `G` affine over `S`,
+for instance the sheaf of points of a group scheme affine over `S`. Then every `𝒢`-torsor `P` is
+represented by a scheme affine over `S` (Poonen, Theorem 6.5.10 (i), here without Noetherian
+hypotheses on `S` and without flatness of `G`). -/
+theorem exists_isAffineHom_nonempty_representableBy (P : Torsor 𝒢) {G : Over S}
+    [IsAffineHom G.hom] (eG : (𝒢.obj ⋙ forget GrpCat).RepresentableBy G) :
+    ∃ X₀ : Over S, IsAffineHom X₀.hom ∧ Nonempty (P.sheaf.obj.RepresentableBy X₀) :=
+  P.exists_isAffineHom_nonempty_representableBy_of_iso P.sheaf eG fun _ σ ↦
+    ⟨(P.isoOfSection _ (fun T' ↦ σ.val (op T')) fun _ _ f ↦ σ.property f.op).symm⟩
 
 end CategoryTheory.Sheaf.Torsor

@@ -54,14 +54,12 @@ private noncomputable def toGroupAlgebra (hq : q = q⁻¹) :
   lift (fun i ↦ MonoidAlgebra.single (cs.simple i) 1)
     (fun i ↦ by simp [← hq, MonoidAlgebra.one_def])
     (fun {i j} h ↦ by
-      have hb := cs.wordProd_braidWord_eq i j
-      simp only [wordProd, braidWord, coxeterMatrixA_eq_three (.inl h),
-        coxeterMatrixA_eq_three (.inr h), prod_map_alternatingWord_three] at hb
+      have hb := mul_mul_eq_of_prod_map_braidWord (f := cs.simple) (cs.wordProd_braidWord_eq i j)
+        (coxeterMatrixA_eq_three (.inl h))
       simp only [MonoidAlgebra.single_mul_single, one_mul, hb])
     (fun {i j} h ↦ by
-      have hb := cs.wordProd_braidWord_eq i j
-      simp only [wordProd, braidWord, coxeterMatrixA_eq_two (.inl h),
-        coxeterMatrixA_eq_two (.inr h), prod_map_alternatingWord_two] at hb
+      have hb := (commute_of_prod_map_braidWord (f := cs.simple) (cs.wordProd_braidWord_eq i j)
+        (coxeterMatrixA_eq_two (.inl h))).eq
       simp only [MonoidAlgebra.single_mul_single, one_mul, hb])
 
 private theorem toGroupAlgebra_T (hq : q = q⁻¹) (i : Fin (n - 1)) :

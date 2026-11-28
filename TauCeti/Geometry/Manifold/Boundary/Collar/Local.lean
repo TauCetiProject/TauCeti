@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Chart
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 
 /-!
 # Local collars of a manifold with boundary
@@ -56,6 +59,8 @@ boundary, which is what Hirsch's bump-function argument does and what this file 
 * `TauCeti.EuclideanHalfSpace.exists_normalIio_subset`: the segments `[0, ε)` are a neighbourhood
   basis of the origin of the one-dimensional half-space model.
 * `TauCeti.EuclideanHalfSpace.contMDiffOn_normalRay`: the normal ray is smooth on `[0, ∞)`.
+* `TauCeti.EuclideanHalfSpace.isLocalDiffeomorphAt_normalRay`: the normal ray is a local
+  diffeomorphism at every positive parameter.
 * `TauCeti.EuclideanHalfSpace.contMDiff_interiorEmbedding` and
   `TauCeti.EuclideanHalfSpace.contMDiffOn_interiorEmbedding_symm`: `interiorEmbedding` is smooth,
   and so is its inverse on the open half-space, so charts of a boundaryless manifold followed by it
@@ -367,6 +372,25 @@ theorem contMDiffOn_normalRay {k : WithTop ℕ∞} :
     fun r hr ↦ ?_).congr fun r _ ↦ normalRay_eq_symm r
   rw [mem_preimage, range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq]
   simpa using hr
+
+/-- At a positive parameter `r`, the normal ray is a local diffeomorphism from `ℝ` to the
+half-line: near `r` it is the identification of `ℝ` with `EuclideanSpace ℝ (Fin 1)`, read in the
+half-line. -/
+theorem isLocalDiffeomorphAt_normalRay {k : WithTop ℕ∞} {r : ℝ} (hr : 0 < r) :
+    IsLocalDiffeomorphAt 𝓘(ℝ) (𝓡∂ 1) k normalRay r := by
+  let L : ℝ ≃L[ℝ] EuclideanSpace ℝ (Fin 1) := (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm
+  have hL {u : ℝ} (hu : 0 < u) : (normalRay u).val = L u := by
+    ext i
+    rw [Subsingleton.elim i 0]
+    simp [L, max_eq_left hu.le]
+  refine isLocalDiffeomorphAt_of_writtenInExtChartAt BoundarylessManifold.isInteriorPoint ?_
+    continuous_normalRay.continuousAt ?_
+  · rw [ModelWithCorners.IsInteriorPoint, interior_range_modelWithCornersEuclideanHalfSpace]
+    simpa using hr
+  · refine (isLocalDiffeomorphAt_of_eqOn (Φ := L.toPartialDiffeomorph) (by simp)
+      fun _ _ ↦ by rw [L.coe_toPartialDiffeomorph]).congr_of_eventuallyEq ?_
+    filter_upwards [Ioi_mem_nhds hr] with u hu
+    simpa [writtenInExtChartAt] using hL hu
 
 /-- `interiorEmbedding` is `C^k`, from `ℝⁿ⁺¹` to the half-space with its model with corners. -/
 theorem contMDiff_interiorEmbedding (n : ℕ) {k : WithTop ℕ∞} :

@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DeRham.Presentation
+public import TauCeti.RingTheory.Kaehler.DeRham.Basic
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
+public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 import TauCeti.LinearAlgebra.Alternating.ConsCons
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -35,6 +38,11 @@ along the differential-symbol presentation `Sₙ ⧸ Rₙ ≃ₗ[A] Ωⁿ`
 * `TauCeti.DeRham.d_unique`: the elementary-form rule determines `d`.
 * `TauCeti.DeRham.d_comp_d`: `d ∘ d = 0`.
 * `TauCeti.DeRham.oneEquiv_d_zeroEquiv_symm`: in degree zero, `d` is the universal derivation.
+* `TauCeti.DeRham.coe_d`: inside `ExteriorAlgebra B Ω[B⁄A]`, `d` agrees with
+  `TauCeti.KaehlerDeRham.extDeriv`.
+* `TauCeti.DeRham.d_algebraMap`: `d` in degree zero annihilates base-ring constants.
+* `TauCeti.DeRham.d_leibniz`: graded Leibniz rule in `ExteriorAlgebra B Ω[B⁄A]`.
+* `TauCeti.DeRham.d_smul`: scalar Leibniz rule `d (b • ω) = Db ∧ ω + b • d ω`.
 
 ## References
 
@@ -43,7 +51,7 @@ along the differential-symbol presentation `Sₙ ⧸ Rₙ ≃ₗ[A] Ωⁿ`
 
 namespace TauCeti.DeRham
 
-open KaehlerDifferential exteriorPower Function
+open _root_.KaehlerDifferential _root_.exteriorPower Function
 
 variable (A B : Type*) [CommRing A] [CommRing B] [Algebra A B] (n : ℕ)
 
@@ -163,6 +171,55 @@ theorem oneEquiv_d_zeroEquiv_symm (b : B) :
     rw [LinearEquiv.symm_apply_eq, elementary_def, map_smul, exteriorPower.zeroEquiv_ιMulti,
       smul_eq_mul, mul_one]
   rw [h, d_elementary, exteriorPower.oneEquiv_ιMulti, Fin.cons_zero]
+
+/-- Inside `ExteriorAlgebra B Ω[B⁄A]`, the de Rham differential `d` agrees with
+`TauCeti.KaehlerDeRham.extDeriv A B`. -/
+@[simp]
+theorem coe_d (ω : Forms A B n) :
+    (d A B n ω : ExteriorAlgebra B Ω[B⁄A]) = KaehlerDeRham.extDeriv A B ω := by
+  have hext (m : ℕ) (w : Fin m → B) :
+      KaehlerDeRham.extDeriv A B (ExteriorAlgebra.ιMulti B m fun i => D A B (w i)) = 0 := by
+    induction m with
+    | zero => simp
+    | succ m ih =>
+      rw [ExteriorAlgebra.ιMulti_succ_apply, KaehlerDeRham.extDeriv_mul,
+        KaehlerDeRham.extDeriv_ι_D, zero_mul, zero_add]
+      simp [Matrix.vecTail, Function.comp_def, ih]
+  induction ω using induction_elementary with
+  | zero => simp
+  | add ω₁ ω₂ h₁ h₂ => simp [h₁, h₂]
+  | elem c v =>
+    rw [d_elementary, exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_succ_apply,
+      elementary_def, Submodule.coe_smul_of_tower, exteriorPower.ιMulti_apply_coe,
+      KaehlerDeRham.extDeriv_smul, hext n v, smul_zero, add_zero]
+    simp [Matrix.vecTail]
+
+/-- The degree-`0` de Rham differential annihilates constants from the base ring `A`. -/
+@[simp]
+theorem d_algebraMap (a : A) :
+    d A B 0 ((exteriorPower.zeroEquiv B Ω[B⁄A]).symm (algebraMap A B a)) = 0 := by
+  apply Subtype.ext
+  rw [coe_d, exteriorPower.coe_eq_algebraMap_zeroEquiv, LinearEquiv.apply_symm_apply,
+    ← IsScalarTower.algebraMap_apply, KaehlerDeRham.extDeriv_algebraMap_base,
+    ZeroMemClass.coe_zero]
+
+/-- **Graded Leibniz rule**: inside `ExteriorAlgebra B Ω[B⁄A]`,
+`d (α ∧ β) = d α ∧ β + (-1) ^ m • (α ∧ d β)` for `α : Forms A B m` and `β : Forms A B n`. -/
+theorem d_leibniz {m n : ℕ} (α : Forms A B m) (β : Forms A B n) :
+    (d A B (m + n) (exteriorPower.wedge B Ω[B⁄A] m n α β) :
+      ExteriorAlgebra B Ω[B⁄A]) =
+      (d A B m α : ExteriorAlgebra B Ω[B⁄A]) * β +
+        (-1 : ℤ) ^ m • ((α : ExteriorAlgebra B Ω[B⁄A]) * d A B n β) := by
+  rw [coe_d, coe_d, coe_d, exteriorPower.coe_wedge,
+    KaehlerDeRham.extDeriv_mul_of_mem_exteriorPower α.property, ← Int.cast_smul_eq_zsmul B]
+  simp
+
+/-- **Scalar Leibniz rule**: for `b : B` and `ω : Forms A B n`,
+`d (b • ω) = Db ∧ ω + b • d ω`. -/
+theorem d_smul (b : B) (ω : Forms A B n) :
+    d A B n (b • ω) =
+      TauCeti.ExteriorAlgebra.wedgeLeft (D A B b) n ω + b • d A B n ω :=
+  Subtype.ext (by simp [coe_d, KaehlerDeRham.extDeriv_smul])
 
 end
 
