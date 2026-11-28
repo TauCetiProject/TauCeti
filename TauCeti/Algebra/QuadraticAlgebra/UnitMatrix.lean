@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.QuadraticAlgebra.PeriodMatrix
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import TauCeti.Algebra.QuadraticAlgebra.Discriminant
 import Mathlib.Algebra.Group.Subgroup.Ker
 
 /-!
@@ -24,6 +25,10 @@ for `periodUnitMatrix` identifies reduction of actual integral units inside this
 not replace their image by the scalar signs. Over `(a, b) = (0, 0)`, `unipotentPeriodMatrixHom`
 embeds `Multiplicative R` as the lower-triangular unipotent matrices `!![1, 0; s, 1]`.
 
+Over `ℤ` with `discr a b ≤ 0`, every unit has norm `1`, so the representation takes values in
+`SL(2, ℤ)` (`periodUnitSLMatrix`). These are the integral matrices that act on the upper
+half-plane by Möbius transformations fixing a quadratic point.
+
 ## References
 
 * D. H. Shin, *Generation of class fields by Siegel-Ramachandra invariants*, §2.
@@ -34,6 +39,7 @@ public section
 noncomputable section
 
 open Matrix
+open scoped MatrixGroups
 
 namespace QuadraticAlgebra
 
@@ -189,5 +195,47 @@ theorem val_periodUnitMatrixEquiv_symm_unipotentPeriodMatrixHom (s : Multiplicat
     ((periodUnitMatrixEquiv.symm (unipotentPeriodMatrixHom R s) :
       (QuadraticAlgebra R 0 0)ˣ) : QuadraticAlgebra R 0 0) = ⟨1, s.toAdd⟩ := by
   simp
+
+/-! ### Integral units of nonpositive discriminant -/
+
+section SpecialLinear
+
+variable {a b : ℤ}
+
+/-- When `discr a b ≤ 0`, every integral unit has norm `1`
+(`QuadraticAlgebra.norm_eq_one_of_discr_nonpos`), so its multiplication matrix lies in
+`SL(2, ℤ)`. -/
+def periodUnitSLMatrix (hd : discr a b ≤ 0) : (QuadraticAlgebra ℤ a b)ˣ →* SL(2, ℤ) where
+  toFun u := ⟨(u : QuadraticAlgebra ℤ a b).periodMulMatrix, by
+    rw [det_periodMulMatrix, norm_eq_one_of_discr_nonpos hd]⟩
+  map_one' := Subtype.ext (by simp)
+  map_mul' u v := Subtype.ext <| by simp only [Units.val_mul, periodMulMatrix_mul]; rfl
+
+/-- The matrix underlying `periodUnitSLMatrix hd u` is the multiplication matrix of `u`. -/
+@[simp]
+theorem coe_periodUnitSLMatrix (hd : discr a b ≤ 0) (u : (QuadraticAlgebra ℤ a b)ˣ) :
+    ((periodUnitSLMatrix hd u : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
+      (u : QuadraticAlgebra ℤ a b).periodMulMatrix :=
+  (rfl)
+
+/-- In `GL(2, ℤ)`, `periodUnitSLMatrix` is the period representation `periodUnitMatrix`. -/
+@[simp]
+theorem toGL_periodUnitSLMatrix (hd : discr a b ≤ 0) (u : (QuadraticAlgebra ℤ a b)ˣ) :
+    SpecialLinearGroup.toGL (periodUnitSLMatrix hd u) = periodUnitMatrix u :=
+  Units.ext (by simp)
+
+/-- The representation of integral units in `SL(2, ℤ)` is faithful. -/
+theorem periodUnitSLMatrix_injective (hd : discr a b ≤ 0) :
+    Function.Injective (periodUnitSLMatrix hd) := fun u v h ↦
+  periodUnitMatrix_injective (by rw [← toGL_periodUnitSLMatrix hd, h, toGL_periodUnitSLMatrix])
+
+/-- `periodUnitSLMatrix` commutes with negation. -/
+@[simp]
+theorem periodUnitSLMatrix_neg (hd : discr a b ≤ 0) (u : (QuadraticAlgebra ℤ a b)ˣ) :
+    periodUnitSLMatrix hd (-u) = -periodUnitSLMatrix hd u := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [periodMulMatrix_eq, add_comm]
+
+end SpecialLinear
 
 end QuadraticAlgebra

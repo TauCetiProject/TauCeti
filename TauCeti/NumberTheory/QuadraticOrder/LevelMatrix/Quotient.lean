@@ -28,6 +28,9 @@ this induces a canonical group isomorphism (`residueUnitsQuotientPeriodMatrixEqu
 When `discr a b < -4`, the only integral units of `ℤ[ω]` are `±1`
 (`units_eq_one_or_neg_one_of_discr_lt_neg_four`), so `unitPeriodMatrixSubgroup a b N` collapses to
 the scalar sign subgroup `Subgroup.zpowers (-1)` (`unitPeriodMatrixSubgroup_eq_zpowers_neg_one`).
+For every negative discriminant and `N ≥ 3`, reduction of units is injective
+(`unitPeriodMatrixHom_injective`), so `unitPeriodMatrixSubgroup a b N` has as many elements as
+`(ℤ[ω])ˣ` (`natCard_unitPeriodMatrixSubgroup_of_three_le`).
 For equal discriminants, `unitPeriodMatrixSubgroup_eq_top_of_discr_eq` transports surjectivity
 (`= ⊤`) across models. For the level-`2` specializations (including the Gaussian and Eisenstein
 exceptions), see `TauCeti.NumberTheory.QuadraticOrder.LevelMatrix.Two.Quotient`; for the level-`3`
@@ -68,6 +71,15 @@ theorem coe_unitPeriodMatrixHom (a b : ℤ) (N : ℕ) (u : (QuadraticAlgebra ℤ
       GeneralLinearGroup.map (Int.castRingHom (ZMod N)) (periodUnitMatrix u) := by
   simpa [unitPeriodMatrixHom] using periodUnitMatrix_mapRingHom (Int.castRingHom (ZMod N)) u
 
+/-- For `discr a b ≤ 0`, `unitPeriodMatrixHom a b N u` is the reduction modulo `N` of the
+`SL(2, ℤ)` matrix `periodUnitSLMatrix hd u`. -/
+theorem coe_unitPeriodMatrixHom_eq_toGL_map {a b : ℤ} (hd : discr a b ≤ 0) (N : ℕ)
+    (u : (QuadraticAlgebra ℤ a b)ˣ) :
+    (unitPeriodMatrixHom a b N u : GL (Fin 2) (ZMod N)) =
+      SpecialLinearGroup.toGL
+        (SpecialLinearGroup.map (Int.castRingHom (ZMod N)) (periodUnitSLMatrix hd u)) :=
+  Units.ext (by simp)
+
 /-- `unitPeriodMatrixHom` commutes with negation. -/
 @[simp]
 theorem unitPeriodMatrixHom_neg (a b : ℤ) (N : ℕ) (u : (QuadraticAlgebra ℤ a b)ˣ) :
@@ -91,6 +103,41 @@ theorem mem_unitPeriodMatrixSubgroup_iff {a b : ℤ} {N : ℕ}
     {M : periodMatrixGroup (a : ZMod N) (b : ZMod N)} :
     M ∈ unitPeriodMatrixSubgroup a b N ↔ ∃ u, unitPeriodMatrixHom a b N u = M :=
   Iff.rfl
+
+/-- **Reduction of units is injective at levels `N ≥ 3`**: for a negative discriminant, the only
+integral unit whose multiplication matrix is the identity modulo `N` is `1`. -/
+theorem unitPeriodMatrixHom_injective {a b : ℤ} (hd : discr a b < 0) {N : ℕ} (hN : 3 ≤ N) :
+    Function.Injective (unitPeriodMatrixHom a b N) := by
+  rw [injective_iff_map_eq_one]
+  intro u hu
+  have h := congrArg (fun M : periodMatrixGroup (a : ZMod N) (b : ZMod N) ↦
+    ((M : GL (Fin 2) (ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N))) hu
+  have him : (N : ℤ) ∣ (u : QuadraticAlgebra ℤ a b).im :=
+    (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp <| by
+      simpa [periodMulMatrix_eq, GeneralLinearGroup.map] using congrFun (congrFun h 1) 0
+  have hre : (N : ℤ) ∣ (u : QuadraticAlgebra ℤ a b).re - 1 :=
+    (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp <| by
+      simpa [periodMulMatrix_eq, GeneralLinearGroup.map, sub_eq_zero] using
+        congrFun (congrFun h 1) 1
+  -- a unit is `±1` or has `im = ±1`, and neither `-1` nor `im = ±1` is `1` modulo `N ≥ 3`
+  rcases units_re_or_im_of_discr_lt_zero hd u with (h1 | h1) | h1
+  · exact h1
+  · subst h1
+    have h2 : (N : ℤ) ∣ 2 := by
+      rw [← dvd_neg]
+      simpa using hre
+    have := Int.le_of_dvd two_pos h2
+    omega
+  · have := Int.le_of_dvd one_pos (by rcases h1 with h1 | h1 <;> simpa [h1] using him)
+    omega
+
+/-- For a negative discriminant and `N ≥ 3`, the reduced global-unit subgroup
+`unitPeriodMatrixSubgroup a b N` has as many elements as the unit group of
+`QuadraticAlgebra ℤ a b`. -/
+theorem natCard_unitPeriodMatrixSubgroup_of_three_le {a b : ℤ} (hd : discr a b < 0) {N : ℕ}
+    (hN : 3 ≤ N) :
+    Nat.card (unitPeriodMatrixSubgroup a b N) = Nat.card (QuadraticAlgebra ℤ a b)ˣ :=
+  (Nat.card_congr (MonoidHom.ofInjective (unitPeriodMatrixHom_injective hd hN)).toEquiv).symm
 
 /-- The units of `ℤ[ω]/(N)` are canonically isomorphic to the level-`N` multiplication-matrix
 group `periodMatrixGroup (a : ZMod N) (b : ZMod N)`. -/
