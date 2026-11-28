@@ -61,6 +61,8 @@ there only through sections of faithfully flat covers and roots of separable pol
   split algebra, and so every finite étale algebra over a ring without nonsplit finite étale
   covers, is `R`-isomorphic to `Fin n → R`.
 * `TauCeti.Algebra.IsTotallySplit.baseChange`: total splitting is stable under base change.
+* `TauCeti.Algebra.IsTotallySplit.tensorProduct_of_isScalarTower`: an algebra that becomes totally
+  split over `B` stays totally split over every `B`-algebra.
 * `TauCeti.Algebra.IsTotallySplit.of_surjective`: an étale quotient of a totally split algebra is
   totally split.
 * `Algebra.IsFiniteSplit.of_surjective`: over a field, a quotient of a totally split algebra is
@@ -285,6 +287,15 @@ theorem baseChange (S : Type*) [CommRing S] [Algebra R S] (h : IsTotallySplit R 
     (Algebra.TensorProduct.piRight R S S _).trans <| AlgEquiv.piCongrRight fun j ↦ ?_
   exact (Algebra.TensorProduct.quotIdealMapEquivTensorQuot S (Ideal.span {1 - e j})).symm.trans
     (Ideal.quotientEquivAlgOfEq S (by simp [Ideal.map_span]))
+
+open TensorProduct in
+/-- If an `R`-algebra `S` becomes totally split over an `R`-algebra `B`, then it stays totally
+split over every `B`-algebra `C` compatible with `R`: `C ⊗[R] S` is the base change of `B ⊗[R] S`
+from `B` to `C`. -/
+theorem tensorProduct_of_isScalarTower {B C S : Type*} [CommRing B] [CommRing C] [CommRing S]
+    [Algebra R B] [Algebra R C] [Algebra B C] [IsScalarTower R B C] [Algebra R S]
+    (h : IsTotallySplit B (B ⊗[R] S)) : IsTotallySplit C (C ⊗[R] S) :=
+  (h.baseChange C).of_algEquiv (Algebra.TensorProduct.cancelBaseChange R B C C S)
 
 /-- **An étale quotient of a totally split algebra is totally split.** If `T` is totally split
 over `R` and `g : T →ₐ[R] T'` is surjective with `T'` étale over `R`, then `T'` is totally split:
