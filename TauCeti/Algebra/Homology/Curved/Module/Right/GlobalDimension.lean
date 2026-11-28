@@ -175,26 +175,14 @@ private theorem absolutelyAcyclic_of_coacyclic_of_hasInjectiveDimensionLT_succ :
     exact (absolutelyAcyclic R h).prop_of_isZero ((IsZero.iff_id_eq_zero _).2
       (coacyclic_le_leftOrthogonal_gradedInjective R h _ hMc (𝟙 _) hMi))
   | m + 1, M, hMc, hM => by
-    obtain ⟨I, _, g, _⟩ := exists_mono_to_coinducedObj_injective (R := R) M
-    let S : ShortComplex
-        (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)) :=
-      ShortComplex.mk g (cokernel.π g) (cokernel.condition g)
-    have hS : S.ShortExact := { exact := ShortComplex.exact_cokernel g }
-    have hIinj : Injective ((forgetDifferential (h := h)).obj
-        (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (coinducedObj h I))) := by
-      rw [forgetDifferential_obj_of]
-      infer_instance
-    have hCdim : HasInjectiveDimensionLT (toGradedModuleCat (ForgetEnrichment.to _ S.X₃)) (m + 1) :=
-      ((hS.map_of_exact (forgetDifferential (h := h))).hasInjectiveDimensionLT_X₃_iff m
-        hIinj).2 hM
-    have hI₀ : IsZero (DGHomotopyCategory.of R (coinducedObj h I)) :=
-      isZero_homotopy_coinducedObj h I
-    have hCc : coacyclic R h (DGHomotopyCategory.of R (ForgetEnrichment.to _ S.X₃)) :=
+    obtain ⟨J, C, f, g, hfg, hS, hJ0, hCdim⟩ :=
+      exists_shortExact_contractible_of_hasInjectiveDimensionLT (R := R) M hM
+    have hCc : coacyclic R h (DGHomotopyCategory.of R C) :=
       prop_X₃_of_shortExact (coacyclic R h) (totalizations_le_coacyclic R h) hS hMc
-        ((coacyclic R h).prop_of_isZero hI₀)
+        ((coacyclic R h).prop_of_isZero hJ0)
     exact prop_X₁_of_shortExact (absolutelyAcyclic R h) (totalizations_le_absolutelyAcyclic R h) hS
-      ((absolutelyAcyclic R h).prop_of_isZero hI₀)
-      (absolutelyAcyclic_of_coacyclic_of_hasInjectiveDimensionLT_succ m _ hCc hCdim)
+      ((absolutelyAcyclic R h).prop_of_isZero hJ0)
+      (absolutelyAcyclic_of_coacyclic_of_hasInjectiveDimensionLT_succ m C hCc hCdim)
 
 /-- A coacyclic curved right module whose underlying graded right module has finite injective
 dimension is absolutely acyclic. -/

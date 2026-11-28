@@ -8,7 +8,7 @@ module
 public import Mathlib.CategoryTheory.Abelian.Injective.Dimension
 public import TauCeti.Algebra.Category.GradedModuleCat.Coinduced
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Free
-public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Injective
+public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Injective.Basic
 
 /-!
 # Coinduced curved right modules from graded right modules
@@ -27,7 +27,7 @@ contractible in the curved homotopy category (`isZero_homotopy_coinducedObj`, vi
 `isZero_homotopy_freeObj h (N.shiftObj (-1))`) and sits in a graded short exact sequence
 $0 \longrightarrow N\{-1\} \longrightarrow G^- N \longrightarrow N \longrightarrow 0$. Thus $G^- I$
 is graded-injective when $I$ is injective, giving closed monomorphisms into contractible
-graded-injectives.
+graded-injectives, whose cokernels have smaller graded injective dimension.
 
 ## Main definitions
 
@@ -49,6 +49,8 @@ graded-injectives.
 * `TauCeti.CurvedDGRightModuleCat.isZero_homotopy_coinducedObj` and
   `TauCeti.CurvedDGRightModuleCat.exists_mono_to_coinducedObj_injective`: contractibility of $G^- N$
   and closed monomorphisms into contractible graded-injective curved modules.
+* `TauCeti.CurvedDGRightModuleCat.exists_shortExact_contractible_of_hasInjectiveDimensionLT`:
+  dimension shifting of graded injective dimension along such a monomorphism.
 
 ## References
 
@@ -531,6 +533,33 @@ theorem exists_mono_to_coinducedObj_injective {h : IsCurvedDGAlgebra 𝒜 d w}
   obtain ⟨I⟩ := EnoughInjectives.presentation (toGradedModuleCat M)
   exact ⟨I.J, inferInstance, (forgetDifferentialCoinducedAdj h).homEquiv
     (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M) I.J I.f, inferInstance⟩
+
+/-- **Dimension shifting along a contractible graded-injective envelope.** If the underlying
+graded module of a curved right module `M` has injective dimension `< m + 2`, then `M` is the
+kernel of a short exact sequence `M ⟶ J ⟶ C` of curved modules whose middle term `J` is zero in
+the curved homotopy category and whose cokernel `C` has underlying graded module of injective
+dimension `< m + 1`. -/
+theorem exists_shortExact_contractible_of_hasInjectiveDimensionLT {h : IsCurvedDGAlgebra 𝒜 d w}
+    {m : ℕ} (M : CurvedDGRightModuleCat.{u, u, u} h)
+    (hM : HasInjectiveDimensionLT (toGradedModuleCat M) (m + 2)) :
+    ∃ (J C : CurvedDGRightModuleCat.{u, u, u} h)
+      (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+        ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) J)
+      (g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) J ⟶
+        ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) C)
+      (hfg : f ≫ g = 0),
+      (ShortComplex.mk f g hfg).ShortExact ∧ IsZero (DGHomotopyCategory.of R J) ∧
+        HasInjectiveDimensionLT (toGradedModuleCat C) (m + 1) := by
+  obtain ⟨I, _, f, _⟩ := exists_mono_to_coinducedObj_injective (R := R) M
+  have hS : (ShortComplex.mk f (cokernel.π f) (cokernel.condition f)).ShortExact :=
+    { exact := ShortComplex.exact_cokernel f }
+  have hJ : Injective ((forgetDifferential (h := h)).obj
+      (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (coinducedObj h I))) := by
+    rw [forgetDifferential_obj_of]
+    infer_instance
+  exact ⟨coinducedObj h I, ForgetEnrichment.to _ (cokernel f), f, cokernel.π f,
+    cokernel.condition f, hS, isZero_homotopy_coinducedObj h I,
+    ((hS.map_of_exact (forgetDifferential (h := h))).hasInjectiveDimensionLT_X₃_iff m hJ).2 hM⟩
 
 end Functor
 
