@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Expect
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 import Mathlib.RingTheory.IntegralDomain
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Conductor
+import TauCeti.RepresentationTheory.LinearCharacter.QuadraticCoset
 
 /-!
 # Reading primitive Dirichlet characters on Frobenius cosets
@@ -22,6 +24,9 @@ to level `N`.
 In particular, at a ramified prime the primitive value is not in general the value of the
 character at level `N` (which vanishes at primes dividing `N`).
 
+The coset API also isolates the elements outside a quadratic kernel. This gives the local
+contributions to a Frobenius-restricted prime sum, including the inertia mean at a ramified prime.
+
 The inertia-mean statement is the cyclotomic character calculation in L. Alpöge's Lean
 formalization of the Riemann hypothesis for Dirichlet L-functions,
 `UpperTheory.Comparison₂.prim_read` in
@@ -32,7 +37,7 @@ criterion for factoring through a reduction of units and character orthogonality
 
 public section
 
-open scoped Pointwise
+open scoped BigOperators Pointwise
 
 namespace MonoidHom
 
@@ -48,6 +53,13 @@ def cyclotomicInertia (f : (ZMod N)ˣ →* G) (p : ℕ) : Subgroup G :=
     g ∈ f.cyclotomicInertia p ↔
       ∃ u : (ZMod N)ˣ, ZMod.unitsMap (Nat.ordCompl_dvd N p) u = 1 ∧ f u = g := by
   simp [cyclotomicInertia, Subgroup.mem_map]
+
+/-- Inertia whose image is a pair `{1, σ}` with `σ ≠ 1` is nontrivial. -/
+theorem cyclotomicInertia_ne_bot_of_coe_eq_pair (f : (ZMod N)ˣ →* G) {σ : G}
+    (hI : (f.cyclotomicInertia p : Set G) = {1, σ}) (hσ : σ ≠ 1) :
+    f.cyclotomicInertia p ≠ ⊥ := by
+  rintro he
+  exact hσ (by simpa [he] using hI.symm.subset (Set.mem_insert_of_mem 1 rfl))
 
 variable [NeZero N]
 
@@ -129,6 +141,16 @@ theorem coe_frobeniusCoset_eq_leftCoset (f : (ZMod N)ˣ →* G) (hp : p.Prime)
   · rintro ⟨a, ha, hfa⟩
     exact ⟨u * a, by simp [ha], by simp [hfa]⟩
 
+/-- A representative of the first Frobenius coset gives representatives at all powers,
+including at primes dividing the level. -/
+theorem coe_frobeniusCoset_eq_pow_smul (f : (ZMod N)ˣ →* G) (hp : p.Prime)
+    {g : G} (hg : g ∈ f.frobeniusCoset hp 1) (k : ℕ) :
+    (f.frobeniusCoset hp k : Set G) = g ^ k • (f.cyclotomicInertia p : Set G) := by
+  obtain ⟨u, hu, rfl⟩ := (f.mem_frobeniusCoset_iff hp).mp hg
+  rw [pow_one] at hu
+  rw [← map_pow]
+  exact f.coe_frobeniusCoset_eq_leftCoset hp (by rw [map_pow, hu])
+
 /-- The Frobenius coset is nonempty, even when the prime divides the level. -/
 theorem frobeniusCoset_nonempty (f : (ZMod N)ˣ →* G) (hp : p.Prime) (i : ℕ) :
     (f.frobeniusCoset hp i).Nonempty := by
@@ -145,6 +167,86 @@ theorem card_frobeniusCoset (f : (ZMod N)ˣ →* G) (hp : p.Prime) (i : ℕ) :
     _ = _ := by
       rw [f.coe_frobeniusCoset_eq_leftCoset hp hu]
       exact Nat.card_congr (Subgroup.leftCosetEquivSubgroup (f u))
+
+section Quadratic
+
+variable {K : Type*} [CommRing K] [IsDomain K]
+
+open scoped Classical in
+/-- When inertia has two elements and the nonidentity element is outside the quadratic kernel,
+there is just one element outside the kernel in every Frobenius coset. This element is independent
+of the representative `g` used to compute it. -/
+theorem filter_frobeniusCoset_apply_ne_one_eq_singleton (f : (ZMod N)ˣ →* G) (q : G →* Kˣ)
+    (hq : q * q = 1) (hp : p.Prime) {g σ : G}
+    (hg : g ∈ f.frobeniusCoset hp 1) (hI : (f.cyclotomicInertia p : Set G) = {1, σ})
+    (hσ : q σ ≠ 1) (k : ℕ) :
+    (f.frobeniusCoset hp k).filter (fun t ↦ q t ≠ 1) =
+      {if q (g ^ k) = 1 then g ^ k * σ else g ^ k} := by
+  classical
+  have hpair : f.frobeniusCoset hp k = {g ^ k, g ^ k * σ} := by
+    apply Finset.coe_injective
+    rw [f.coe_frobeniusCoset_eq_pow_smul hp hg k, hI]
+    simp [Set.smul_set_insert, smul_eq_mul]
+  rw [hpair]
+  rcases q.apply_eq_one_or_eq_neg_one_of_mul_self_eq_one hq (g ^ k) with h | h
+  · simp [Finset.filter_insert, h, hσ]
+  · have hσ' := (q.apply_eq_one_or_eq_neg_one_of_mul_self_eq_one hq σ).resolve_left hσ
+    have hneg : (-1 : Kˣ) ≠ 1 := hσ' ▸ hσ
+    have hmul : q (g ^ k * σ) = 1 := by rw [map_mul, h, hσ', neg_one_mul, neg_neg]
+    simp [Finset.filter_insert, Finset.filter_singleton, h, hneg, hmul]
+
+open scoped Classical in
+/-- At a prime with two inertia elements, one outside the quadratic kernel, twice the mean
+of a function restricted to the complement of the kernel is its value at the unique element
+outside the kernel. -/
+theorem two_nsmul_expect_frobeniusCoset_of_coe_cyclotomicInertia_eq_pair {V : Type*}
+    [AddCommMonoid V] [Module ℚ≥0 V]
+    (f : (ZMod N)ˣ →* G) (q : G →* Kˣ) (hq : q * q = 1) (hp : p.Prime)
+    {g σ : G} (hg : g ∈ f.frobeniusCoset hp 1)
+    (hI : (f.cyclotomicInertia p : Set G) = {1, σ}) (hσ : q σ ≠ 1) (k : ℕ) (W : G → V) :
+    2 • (𝔼 t ∈ f.frobeniusCoset hp k, if q t ≠ 1 then W t else 0) =
+      W (if q (g ^ k) = 1 then g ^ k * σ else g ^ k) := by
+  classical
+  have hne : (1 : G) ≠ σ := fun h ↦ hσ (by rw [← h, map_one])
+  have hc : (f.frobeniusCoset hp k).card = 2 := by
+    rw [f.card_frobeniusCoset hp k, ← SetLike.coe_sort_coe, Nat.card_coe_set_eq, hI]
+    exact Set.ncard_pair hne
+  rw [← hc, Finset.card_smul_expect, ← Finset.sum_filter,
+    f.filter_frobeniusCoset_apply_ne_one_eq_singleton q hq hp hg hI hσ k, Finset.sum_singleton]
+
+open scoped Classical in
+/-- At a prime with trivial inertia, the mean off the quadratic kernel is the value at
+`g ^ k` if `g` is outside the kernel and `k` is odd, and zero otherwise. -/
+theorem expect_frobeniusCoset_apply_ne_one_of_cyclotomicInertia_eq_bot {V : Type*}
+    [AddCommMonoid V] [Module ℚ≥0 V]
+    (f : (ZMod N)ˣ →* G) (q : G →* Kˣ) (hq : q * q = 1) (hp : p.Prime) {g : G}
+    (hg : g ∈ f.frobeniusCoset hp 1) (hI : f.cyclotomicInertia p = ⊥) (k : ℕ) (W : G → V) :
+    (𝔼 t ∈ f.frobeniusCoset hp k, if q t ≠ 1 then W t else 0) =
+      if q g ≠ 1 ∧ Odd k then W (g ^ k) else 0 := by
+  classical
+  have hsingle : f.frobeniusCoset hp k = {g ^ k} := by
+    apply Finset.coe_injective
+    rw [f.coe_frobeniusCoset_eq_pow_smul hp hg k, hI]
+    simp
+  rw [hsingle, Finset.expect_singleton, map_pow]
+  rcases q.apply_eq_one_or_eq_neg_one_of_mul_self_eq_one hq g with h | h
+  · simp [h]
+  · by_cases hneg : (-1 : Kˣ) = 1
+    · simp [h, hneg]
+    · simp [h, hneg, neg_one_pow_eq_one_iff_even hneg, Nat.not_even_iff_odd]
+
+end Quadratic
+
+/-- If inertia and a first Frobenius representative lie in the kernel of `q`, then every
+Frobenius coset at that prime is contained in the kernel. -/
+theorem coe_frobeniusCoset_subset_ker {H : Type*} [Monoid H]
+    (f : (ZMod N)ˣ →* G) (q : G →* H) (hp : p.Prime) {g : G} (hg : g ∈ f.frobeniusCoset hp 1)
+    (hI : f.cyclotomicInertia p ≤ q.ker) (hqg : q g = 1) (k : ℕ) :
+    (f.frobeniusCoset hp k : Set G) ⊆ q.ker := by
+  rw [f.coe_frobeniusCoset_eq_pow_smul hp hg k]
+  intro t ht
+  obtain ⟨s, hs, rfl⟩ := Set.mem_smul_set.mp ht
+  simp [smul_eq_mul, hqg, q.mem_ker.mp (hI hs)]
 
 /-- The sum of a character over a Frobenius coset is its value at a lift of `p ^ i` times its sum
 over the image of inertia. -/

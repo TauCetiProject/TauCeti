@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Length
+public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Length.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Piecewise
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential.Variation
 public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongCurve.Piecewise

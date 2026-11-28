@@ -471,13 +471,29 @@ theorem transition_ofBaseSet (i i' : Fin A.n) :
   funext y
   rfl
 
-/-- The charts of `A.ofBaseSet h`, taken back as an atlas of the original bundle, are `A`. -/
+/-- The charts of `A` taken as an atlas of the same bundle are `A`. -/
 @[simp]
-theorem ofBaseSet_ofBaseSet
-    (h' : ∀ i, closure ((A.ofBaseSet h).dom i) ⊆
-      (trivializationAt F V ((A.ofBaseSet h).center i)).baseSet) :
-    (A.ofBaseSet h).ofBaseSet h' = A :=
+theorem ofBaseSet_self
+    (h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F V (A.center i)).baseSet) :
+    A.ofBaseSet h = A :=
   (rfl)
+
+/-- The charts of `A.ofBaseSet h`, taken as an atlas of a third bundle `V''`, are the charts of
+`A` taken as an atlas of `V''`. -/
+@[simp]
+theorem ofBaseSet_ofBaseSet {F'' : Type*} [TopologicalSpace F''] {V'' : M → Type*}
+    [TopologicalSpace (TotalSpace F'' V'')] [∀ x, TopologicalSpace (V'' x)] [FiberBundle F'' V'']
+    (h' : ∀ i, closure ((A.ofBaseSet h).dom i) ⊆
+      (trivializationAt F'' V'' ((A.ofBaseSet h).center i)).baseSet) :
+    (A.ofBaseSet h).ofBaseSet h' = A.ofBaseSet h' :=
+  (rfl)
+
+variable (A) in
+/-- The chart domains of a finite bundle atlas lie in the base sets of the trivial bundle with any
+fibre, so its charts are also an atlas of that bundle (`TauCeti.FiniteBundleAtlas.ofBaseSet`). -/
+theorem closure_dom_subset_baseSet_trivial (G : Type*) [TopologicalSpace G] (i : Fin A.n) :
+    closure (A.dom i) ⊆ (trivializationAt G (Bundle.Trivial M G) (A.center i)).baseSet := by
+  simp [Bundle.Trivial.fiberBundle_trivializationAt']
 
 end OfBaseSet
 
@@ -805,6 +821,29 @@ theorem symmL_coord {i : Fin A.n} {y : E} (hb : (A.chart i).symm y ∈ (A.triv i
     (s : ∀ x, V x) :
     (A.triv i).symmL ℝ ((A.chart i).symm y) (A.coord i s y) = s ((A.chart i).symm y) := by
   rw [coord_def, Trivialization.symmL_apply _ hb, Trivialization.symm_apply_apply_mk _ hb]
+
+/-- At a point of the chart source and the base set of bundle chart `i`, a section is recovered
+from its reading at the chart point by the inverse of the trivialization. -/
+theorem symmL_coord_chart {i : Fin A.n} {x : M} (hx : x ∈ (A.chart i).source)
+    (hb : x ∈ (A.triv i).baseSet) (s : ∀ x, V x) :
+    (A.triv i).symmL ℝ x (A.coord i s (A.chart i x)) = s x := by
+  have hxy : (A.chart i).symm (A.chart i x) = x := (A.chart i).left_inv hx
+  have h := A.symmL_coord (i := i) (hxy.symm ▸ hb) s
+  rwa [hxy] at h
+
+/-- At the points read from the base set of bundle chart `i`, the reading of a section is the
+trivialization at the point applied to its value. -/
+theorem coord_eq_continuousLinearMapAt {i : Fin A.n} {y : E}
+    (hb : (A.chart i).symm y ∈ (A.triv i).baseSet) (s : ∀ x, V x) :
+    A.coord i s y = (A.triv i).continuousLinearMapAt ℝ ((A.chart i).symm y)
+      (s ((A.chart i).symm y)) := by
+  rw [coord_def, (A.triv i).continuousLinearMapAt_apply_of_mem (R := ℝ) hb]
+
+/-- At the points read from the base set of bundle chart `i`, the section given by a constant
+vector in the trivialization reads as that vector. -/
+theorem coord_symmL {i : Fin A.n} {y : E} (hb : (A.chart i).symm y ∈ (A.triv i).baseSet)
+    (v : F) : A.coord i (fun x ↦ (A.triv i).symmL ℝ x v) y = v := by
+  rw [coord_def, Trivialization.symmL_apply _ hb, Trivialization.apply_mk_symm _ hb]
 
 /-- At a point over the domain of chart `i` of `A` and the base set of bundle chart `i'` of another
 atlas `A'`, the reading of a section in chart `i'` of `A'` is the coordinate change of the bundle

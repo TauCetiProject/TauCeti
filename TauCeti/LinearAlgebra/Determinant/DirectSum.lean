@@ -412,7 +412,7 @@ variable {K : Type*} [Field K]
 /-- If `b₁` and `b₂` are the exterior products of the appended families `p₁, q₁` and `p₂, q₂`, then
 `(-1) ^ (m₂ * n₁)` times the image of `b₁ ⊗ b₂` in `det (V₁ × V₂)` is the exterior product of the
 families `p₁, p₂` followed by `q₁, q₂`: the blocks `q₁` and `p₂` are exchanged. -/
-private theorem coe_smul_detLineProdEquiv_tmul {V₁ V₂ : Type*} [AddCommGroup V₁] [Module K V₁]
+theorem coe_smul_detLineProdEquiv_tmul {V₁ V₂ : Type*} [AddCommGroup V₁] [Module K V₁]
     [AddCommGroup V₂] [Module K V₂] [FiniteDimensional K V₁] [FiniteDimensional K V₂]
     {m₁ n₁ m₂ n₂ M N : ℕ} {b₁ : detLine K V₁} {b₂ : detLine K V₂} {p₁ : Fin m₁ → V₁}
     {q₁ : Fin n₁ → V₁} {p₂ : Fin m₂ → V₂} {q₂ : Fin n₂ → V₂}

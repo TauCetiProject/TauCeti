@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.FieldTheory.Minpoly.Basic
 import Mathlib.RingTheory.Spectrum.Prime.Noetherian
-import TauCeti.RingTheory.Valuation.Polynomial
+import TauCeti.RingTheory.Valuation.Polynomial.Basic
 
 /-!
 # Fibres of the valuation spectrum of a finite algebra over a field

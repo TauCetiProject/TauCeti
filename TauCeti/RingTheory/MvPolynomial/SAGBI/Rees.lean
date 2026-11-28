@@ -10,6 +10,7 @@ public import TauCeti.Data.Finsupp.MonomialOrder.Weight
 public import TauCeti.RingTheory.MvPolynomial.ToricIdeal.Basic
 public import TauCeti.RingTheory.MvPolynomial.WeightFiltration
 import TauCeti.Data.Finsupp.Weight
+import TauCeti.RingTheory.MvPolynomial.ToricIdeal.WeightedHomogeneous
 
 /-!
 # The Rees presentation of a weight degeneration of a subalgebra
@@ -176,10 +177,8 @@ theorem ker_weightReesAeval_eq_span
     RingHom.ker (weightReesAeval c d) =
       Ideal.span (Set.range fun j ↦ weightHomogenization R d (e j) (r j - Q j)) := by
   classical
-  have hF (j : J) : r j - Q j ∈ weightFiltration R d (e j) := by
-    rw [← weightFiltrationLT_sup_weightedHomogeneousSubmodule]
-    exact sub_mem (Submodule.mem_sup_right ((mem_weightedHomogeneousSubmodule R d _ _).2 (hr j)))
-      (Submodule.mem_sup_left (hQ j))
+  have hF (j : J) : r j - Q j ∈ weightFiltration R d (e j) :=
+    sub_mem_weightFiltration_of_isWeightedHomogeneous (hr j) (hQ j)
   refine le_antisymm (fun f hf ↦ ?_) (Ideal.span_le.2 ?_)
   · -- Decompose `f` by the weight `weight d x + k` of its monomials `Y^x tᵏ`: its part of weight
     -- `n` is the homogenization in degree `n` of the coefficient of `tⁿ` in `weightReesHom R d f`.
@@ -245,19 +244,11 @@ theorem ker_weightReesAeval_eq_span_of_toricIdeal_eq_span
     RingHom.ker (weightReesAeval c fun i ↦ Finsupp.weight w (a i)) =
       Ideal.span (Set.range fun j ↦ weightHomogenization R (fun i ↦ Finsupp.weight w (a i))
         (Finsupp.weight (fun i ↦ Finsupp.weight w (a i)) (u j))
-        (monomial (u j) 1 - monomial (v j) 1 - Q j)) := by
-  refine ker_weightReesAeval_eq_span hc ha
-    (by rw [← TauCeti.toricIdeal_eq_ker_aeval_monomial, hJ]) (fun j ↦ ?_) hQ hQc
-  -- The binomial `Y^(u j) - Y^(v j)` is weighted homogeneous, as `A (u j) = A (v j)`.
-  rcases subsingleton_or_nontrivial R with hR | hR
-  · rw [Subsingleton.elim (monomial (u j) (1 : R) - monomial (v j) 1) 0]
-    exact isWeightedHomogeneous_zero R _ _
-  have huv := TauCeti.linearCombination_eq_of_toricIdeal_eq_span hJ j
-  have hw (x : ι →₀ ℕ) : Finsupp.weight (fun i ↦ Finsupp.weight w (a i)) x =
-      Finsupp.weight w (Finsupp.linearCombination ℕ a x) :=
-    Finsupp.weight_comp_eq_apply_linearCombination (Finsupp.weight w) a x
-  exact (isWeightedHomogeneous_monomial _ _ _ rfl).sub
-    (isWeightedHomogeneous_monomial _ _ _ (by rw [hw, hw, huv]))
+        (monomial (u j) 1 - monomial (v j) 1 - Q j)) :=
+  ker_weightReesAeval_eq_span hc ha
+    (by rw [← TauCeti.toricIdeal_eq_ker_aeval_monomial, hJ])
+    (fun j ↦ TauCeti.isWeightedHomogeneous_monomial_sub_monomial_of_mem_toricIdeal
+      (deg := Finsupp.weight w) (hJ ▸ Ideal.subset_span ⟨j, rfl⟩)) hQ hQc
 
 end TauCeti.MvPolynomial
 
