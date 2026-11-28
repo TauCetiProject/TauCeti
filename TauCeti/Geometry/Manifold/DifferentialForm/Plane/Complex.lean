@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.DifferentialForm.Complex
 public import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
-public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 
 /-!
@@ -19,7 +19,8 @@ The real coordinate forms `dx = d(Re)` (`TauCeti.SmoothForm.complexDx`) and `dy 
 (`TauCeti.SmoothForm.complexDz`) and `dbar z = d(conj)` (`TauCeti.SmoothForm.complexDzBar`) on
 the real manifold `ℂ` use the existing `SmoothForm` carrier, with real tangent spaces. All four
 are constant (hence closed) one-forms realized as exterior derivatives of the corresponding
-coordinate functions, and their wedge products satisfy `dz ∧ dbar z = -2i dx ∧ dy`.
+coordinate functions, and their wedge products satisfy `dz ∧ dbar z = -2i dx ∧ dy` (evaluating
+on the positively oriented real frame `(1, I)` to `-2 i`).
 
 Pullback of `dz` by a real-differentiable map has the usual Wirtinger coefficients:
 `f⁎dz = f_z dz + f_barz dbar z`.
@@ -210,6 +211,25 @@ theorem complexDz_wedgeWith_complexDzBar_apply (z : ℂ) (v w : TangentSpace �
   set a := NormedSpace.fromTangentSpace z v
   set b := NormedSpace.fromTangentSpace z w
   apply Complex.ext <;> simp [a, b] <;> ring
+
+/-- On the positively oriented real frame `(1, I)`, the complex-multiplied wedge `dz ∧ dbar z`
+evaluates to `-2 * I`, recording the area-form identity `dz ∧ dbar z = -2 i dA`. -/
+theorem wedgeWith_complexDz_complexDzBar_apply_one_I (z : ℂ) :
+    (wedgeWith (ContinuousLinearMap.mul ℝ ℂ) complexDz complexDzBar).val z
+        ![(NormedSpace.fromTangentSpace z).symm 1,
+          (NormedSpace.fromTangentSpace z).symm I] = -2 * I := by
+  rw [coe_wedgeWith, complexDz_wedgeWith_complexDzBar_apply, complexDx_wedge_complexDy_apply]
+  simp
+
+/-- On the positively oriented real frame `(1, I)`, the complex-multiplied wedge `dbar z ∧ dz`
+evaluates to `2 * I`, recording `dbar z ∧ dz = 2 i dA`. -/
+theorem wedgeWith_complexDzBar_complexDz_apply_one_I (z : ℂ) :
+    (wedgeWith (ContinuousLinearMap.mul ℝ ℂ) complexDzBar complexDz).val z
+        ![(NormedSpace.fromTangentSpace z).symm 1,
+          (NormedSpace.fromTangentSpace z).symm I] = 2 * I := by
+  rw [wedgeWith_comm (ContinuousLinearMap.mul ℝ ℂ) mul_comm]
+  simp only [Fin.cast_refl, Function.comp_id, wedgeWith_complexDz_complexDzBar_apply_one_I]
+  norm_num
 
 end SmoothForm
 

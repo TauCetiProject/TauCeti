@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Connected.Basic
 public import Mathlib.Topology.Instances.Real.Lemmas
+import TauCeti.Topology.Closure
 
 /-!
 # Elementary frontier lemmas
@@ -123,6 +124,9 @@ let alone a holomorphic map.
   set where it is continuous.
 * `TauCeti.nonneg_of_forall_abs_le_frontier` — a bound for the absolute value of a function on the
   frontier of a nonempty compact set in a preconnected noncompact space is nonnegative.
+* `IsOpen.frontier_sdiff_of_isClosed` — the frontier of an open set with a closed subset removed.
+* `IsOpen.frontier_sdiff_biUnion` — the frontier of an open set with finitely many
+  pairwise-disjoint closed subsets removed.
 -/
 
 public section
@@ -400,5 +404,55 @@ theorem nonneg_of_forall_abs_le_frontier {K : Set X} (hK : IsCompact K) (hne : K
   exact (abs_nonneg _).trans (hbdry hy)
 
 end Bound
+
+section FiniteHoles
+
+variable {X ι : Type*} [TopologicalSpace X]
+
+/-- Removing a closed subset `K ⊆ U` from an open set `U` gives a set whose frontier is
+`frontier U ∪ frontier K`. -/
+theorem _root_.IsOpen.frontier_sdiff_of_isClosed {U K : Set X} (hU : IsOpen U) (hK : IsClosed K)
+    (hKU : K ⊆ U) : frontier (U \ K) = frontier U ∪ frontier K := by
+  refine Subset.antisymm ?_ ?_
+  · rw [sdiff_eq]
+    exact (frontier_inter_subset U Kᶜ).trans
+      (union_subset_union inter_subset_left (inter_subset_right.trans (frontier_compl K).le))
+  · simp only [frontier, (hU.sdiff hK).interior_eq, hU.closure_sdiff_of_isClosed hK hKU]
+    rintro x (⟨hxUcl, hxUint⟩ | ⟨hxKcl, hxKint⟩)
+    · have hxU : x ∉ U := hU.interior_eq ▸ hxUint
+      exact ⟨⟨hxUcl, fun h ↦ hxU (hKU (interior_subset h))⟩, fun h ↦ hxU h.1⟩
+    · have hxK : x ∈ K := hK.closure_eq ▸ hxKcl
+      exact ⟨⟨subset_closure (hKU hxK), hxKint⟩, fun h ↦ h.2 hxK⟩
+
+/-- The frontier of a finite union of pairwise-disjoint closed sets is the union of their
+frontiers. -/
+theorem frontier_biUnion_of_isClosed_of_pairwiseDisjoint {s : Finset ι} {K : ι → Set X}
+    (hK : ∀ i ∈ s, IsClosed (K i)) (hdisj : (s : Set ι).PairwiseDisjoint K) :
+    frontier (⋃ i ∈ s, K i) = ⋃ i ∈ s, frontier (K i) := by
+  refine Subset.antisymm (s.frontier_biUnion_subset K) ?_
+  intro x hxfr
+  obtain ⟨i, hi, hxi_fr⟩ := mem_iUnion₂.mp hxfr
+  rw [frontier] at hxi_fr ⊢
+  obtain ⟨hxicl, hxiint⟩ := hxi_fr
+  have hxi : x ∈ K i := (hK i hi).closure_eq ▸ hxicl
+  refine ⟨subset_closure (mem_iUnion₂.mpr ⟨i, hi, hxi⟩), fun h ↦ ?_⟩
+  rw [interior_biUnion_of_isClosed_of_pairwiseDisjoint hK hdisj] at h
+  obtain ⟨j, hj, hxjint⟩ := mem_iUnion₂.mp h
+  by_cases hji : j = i
+  · exact hxiint (hji ▸ hxjint)
+  · exact Set.disjoint_left.mp (hdisj hi hj (Ne.symm hji)) hxi (interior_subset hxjint)
+
+/-- **Frontier of an open set with finitely many pairwise-disjoint closed holes.** For an open set
+`U` and finitely many pairwise-disjoint closed subsets `K i ⊆ U` (`i ∈ s`), the frontier of
+`U \ ⋃ i ∈ s, K i` is `frontier U ∪ ⋃ i ∈ s, frontier (K i)`. -/
+theorem _root_.IsOpen.frontier_sdiff_biUnion {U : Set X} (hU : IsOpen U) (s : Finset ι)
+    {K : ι → Set X} (hK : ∀ i ∈ s, IsClosed (K i)) (hsub : ∀ i ∈ s, K i ⊆ U)
+    (hdisj : (s : Set ι).PairwiseDisjoint K) :
+    frontier (U \ ⋃ i ∈ s, K i) = frontier U ∪ ⋃ i ∈ s, frontier (K i) := by
+  have hcl : IsClosed (⋃ i ∈ s, K i) := s.finite_toSet.isClosed_biUnion hK
+  rw [hU.frontier_sdiff_of_isClosed hcl (iUnion₂_subset hsub),
+    frontier_biUnion_of_isClosed_of_pairwiseDisjoint hK hdisj]
+
+end FiniteHoles
 
 end TauCeti

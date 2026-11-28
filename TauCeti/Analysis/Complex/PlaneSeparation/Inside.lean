@@ -11,6 +11,7 @@ import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.PlaneSeparation.RiemannSphere
 import TauCeti.Analysis.Normed.Field.Inversion
+import TauCeti.Topology.Closure
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Compactification.OnePoint.FilledHull
 import TauCeti.Topology.Frontier
@@ -61,6 +62,9 @@ components of `Jᶜ`.
   is a Jordan curve is the inside of the curve, hence connected.
 * `TauCeti.IsJordanCurve.natCard_connectedComponents_compl_eq_two` — **the Jordan curve theorem**:
   the complement of a Jordan curve in the plane has exactly two connected components.
+* `TauCeti.IsJordanCurve.closure_filledHull_sdiff_biUnion` and
+  `TauCeti.IsJordanCurve.frontier_filledHull_sdiff_biUnion` — closure and frontier of a finitely
+  connected Jordan region `(filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i)`.
 
 ## References
 
@@ -282,5 +286,42 @@ theorem IsJordanCurve.natCard_connectedComponents_compl_eq_two {C : Set ℂ}
     rw [← hC.filledHull_sdiff_eq_connectedComponentIn hx,
       ← compl_filledHull_eq_connectedComponentIn hrank hC.isCompact.isBounded hw]
     exact hC.connectedComponentIn_eq_filledHull_sdiff_or_compl hz
+
+/-! ### Finitely connected Jordan regions -/
+
+section JordanRegionTopology
+
+variable {ι : Type*} {C₀ : Set ℂ} {s : Finset ι} {C : ι → Set ℂ}
+
+/-- For a Jordan curve `C₀` and finitely many Jordan curves `C i` (`i ∈ s`) whose filled hulls are
+pairwise disjoint and contained in the inside `filledHull C₀ \ C₀`, the closure of
+`(filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i)` is `filledHull C₀` minus the open hole
+interiors `filledHull (C i) \ C i`. -/
+theorem IsJordanCurve.closure_filledHull_sdiff_biUnion (hC₀ : IsJordanCurve C₀)
+    (hC : ∀ i ∈ s, IsJordanCurve (C i))
+    (hsub : ∀ i ∈ s, filledHull (C i) ⊆ filledHull C₀ \ C₀)
+    (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (C i)) :
+    closure ((filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i)) =
+      filledHull C₀ \ ⋃ i ∈ s, (filledHull (C i) \ C i) := by
+  have hU₀ : IsOpen (filledHull C₀ \ C₀) := hC₀.isClosed.isOpen_filledHull_sdiff
+  rw [hU₀.closure_sdiff_biUnion s (fun i hi ↦ (hC i hi).isClosed.isClosed_filledHull) hsub hdisj,
+    hC₀.closure_filledHull_sdiff]
+  exact congrArg _ (iUnion₂_congr fun i hi ↦ (hC i hi).interior_filledHull)
+
+/-- **Frontier of a finitely connected Jordan region.** For a Jordan curve `C₀` and finitely many
+Jordan curves `C i` (`i ∈ s`) whose filled hulls are pairwise disjoint and contained in the inside
+`filledHull C₀ \ C₀`, the frontier of `(filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i)` is the
+union `C₀ ∪ ⋃ i ∈ s, C i` of the outer and inner Jordan curves. -/
+theorem IsJordanCurve.frontier_filledHull_sdiff_biUnion (hC₀ : IsJordanCurve C₀)
+    (hC : ∀ i ∈ s, IsJordanCurve (C i))
+    (hsub : ∀ i ∈ s, filledHull (C i) ⊆ filledHull C₀ \ C₀)
+    (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (C i)) :
+    frontier ((filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i)) = C₀ ∪ ⋃ i ∈ s, C i := by
+  have hU₀ : IsOpen (filledHull C₀ \ C₀) := hC₀.isClosed.isOpen_filledHull_sdiff
+  rw [hU₀.frontier_sdiff_biUnion s (fun i hi ↦ (hC i hi).isClosed.isClosed_filledHull) hsub hdisj,
+    hC₀.frontier_filledHull_sdiff]
+  exact congrArg (C₀ ∪ ·) (iUnion₂_congr fun i hi ↦ (hC i hi).frontier_filledHull)
+
+end JordanRegionTopology
 
 end TauCeti

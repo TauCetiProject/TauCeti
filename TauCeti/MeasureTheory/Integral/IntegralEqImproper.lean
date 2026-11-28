@@ -69,6 +69,10 @@ these preimages converge as the radii `r i` tend to infinity has the limit as it
 over the whole space (`TauCeti.lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall`). For
 example, the plane `ℝ × ℝ` is exhausted by the Euclidean discs `{‖w‖ ≤ r}` of `ℂ`.
 
+For a function integrable on a set `Δ`, excising a shrinking closed ball around a point `ξ` that
+is null for `μ.restrict Δ` recovers `∫ z in Δ, h z ∂μ` as `ε → 0⁺`
+(`MeasureTheory.IntegrableOn.tendsto_integral_sdiff_closedBall_nhdsGT`).
+
 For improper interval integrals on a ray `[a, ∞)`,
 `MeasureTheory.LocallyIntegrableOn.tendsto_intervalIntegral_sub` shifts the lower endpoint between
 any two points of `[a, ∞)`, while
@@ -486,3 +490,19 @@ theorem MeasureTheory.LocallyIntegrableOn.tendsto_intervalIntegral_sub {E : Type
       (hg.intervalIntegrable (ordConnected_Ici.uIcc_subset hb hx))
       (hg.intervalIntegrable (ordConnected_Ici.uIcc_subset hx hR)),
     add_sub_cancel_left]
+
+open Filter MeasureTheory Topology Set Metric in
+/-- Excising a shrinking closed ball around a point `ξ` with `(μ.restrict Δ) {ξ} = 0` recovers the
+set integral over `Δ` as the radius tends to `0⁺`. -/
+theorem MeasureTheory.IntegrableOn.tendsto_integral_sdiff_closedBall_nhdsGT {X E : Type*}
+    [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure X} {Δ : Set X} {h : X → E}
+    (hh : IntegrableOn h Δ μ) {ξ : X} (hξ : (μ.restrict Δ) {ξ} = 0) :
+    Tendsto (fun ε ↦ ∫ z in Δ \ closedBall ξ ε, h z ∂μ) (𝓝[>] 0) (𝓝 (∫ z in Δ, h z ∂μ)) := by
+  have hcov : AECover (μ.restrict Δ) (𝓝[>] (0 : ℝ)) (fun ε ↦ (closedBall ξ ε)ᶜ) :=
+    ⟨by filter_upwards [compl_mem_ae_iff.mpr hξ] with z hz
+        filter_upwards [Ioo_mem_nhdsGT (dist_pos.mpr hz)] with ε hε
+        simpa [mem_closedBall] using hε.2,
+     fun _ ↦ isClosed_closedBall.measurableSet.compl⟩
+  simpa only [Measure.restrict_restrict isClosed_closedBall.measurableSet.compl,
+    Set.inter_comm, ← Set.sdiff_eq] using hcov.integral_tendsto_of_countably_generated hh
