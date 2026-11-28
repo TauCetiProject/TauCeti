@@ -13,6 +13,7 @@ import TauCeti.Analysis.InnerProductSpace.Orthonormal.Extension
 import TauCeti.LinearAlgebra.Matrix.Triangular.Intertwining
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 import TauCeti.RingTheory.Polynomial.RootEnumeration
+import TauCeti.RingTheory.Polynomial.Vieta
 
 /-!
 # Unitary Schur triangularization
@@ -25,10 +26,18 @@ gives the same ordered diagonal. This is the triangular representation used in t
 change of variables for complex Ginibre matrices. Existence also holds for real matrices with
 split characteristic polynomial.
 
+The same holds for an operator `T` on a finite-dimensional inner product space: its matrix in
+some orthonormal basis is upper triangular with a prescribed diagonal exactly when that diagonal
+lists the characteristic roots of `T`
+(`LinearMap.exists_orthonormalBasis_isUpperTriangular_diag_iff`), and over `ℂ` every enumeration
+of the roots occurs (`LinearMap.exists_orthonormalBasis_isUpperTriangular_diag`).
+
 ## References
 
 * J. B. Hough, M. Krishnapur, Y. Peres and B. Virág,
   *Zeros of Gaussian Analytic Functions and Determinantal Point Processes*, §6.3.
+* R. A. Horn and C. R. Johnson, *Matrix Analysis*, Cambridge University Press, 1985:
+  Theorem 2.3.1 (p. 79).
 -/
 
 public section
@@ -284,3 +293,54 @@ theorem existsUnique_schurFlag {ι : Type*} [Fintype ι] [LinearOrder ι]
   exact (QuotientGroup.eq.mpr h).symm
 
 end Matrix
+
+namespace LinearMap
+
+variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [FiniteDimensional 𝕜 E] [Fintype ι] [LinearOrder ι]
+
+/-- **Schur triangularization of an operator.** A tuple `d` is the diagonal of an upper
+triangular matrix of `T` in some orthonormal basis exactly when it lists the characteristic roots
+of `T` with their multiplicities. -/
+theorem exists_orthonormalBasis_isUpperTriangular_diag_iff (T : E →ₗ[𝕜] E) (d : ι → 𝕜) :
+    (∃ e : OrthonormalBasis ι 𝕜 E, (toMatrix e.toBasis e.toBasis T).IsUpperTriangular ∧
+      (toMatrix e.toBasis e.toBasis T).diag = d) ↔
+    T.charpoly = ∏ i, (X - C (d i)) := by
+  constructor
+  · rintro ⟨e, he, hdiag⟩
+    rw [← charpoly_toMatrix T e.toBasis, Matrix.charpoly_of_isUpperTriangular _ he]
+    exact Finset.prod_congr rfl fun i _ ↦ congrArg (fun z ↦ X - C z) (congrFun hdiag i)
+  · intro hd
+    have hcard : Fintype.card ι = Module.finrank 𝕜 E := by
+      rw [← T.charpoly_natDegree, hd, natDegree_finsetProd_X_sub_C_eq_card, Finset.card_univ]
+    let b : OrthonormalBasis ι 𝕜 E :=
+      (stdOrthonormalBasis 𝕜 E).reindex (Fintype.equivFinOfCardEq hcard).symm
+    obtain ⟨U, hU, hdU⟩ := (Matrix.exists_unitary_isUpperTriangular_diag_iff
+      (toMatrix b.toBasis b.toBasis T) d).mpr (by rwa [charpoly_toMatrix])
+    -- The orthonormal basis whose coordinate columns in `b` are the columns of `U`.
+    let e : OrthonormalBasis ι 𝕜 E := (EuclideanSpace.basisFun ι 𝕜).map
+      ((Matrix.UnitaryGroup.toLinearIsometryEquiv U).trans b.repr.symm)
+    have hbe : b.toBasis.toMatrix e.toBasis = U.val := by
+      ext i j
+      simp [e, Module.Basis.toMatrix_apply]
+    have heb : e.toBasis.toMatrix b.toBasis = star U.val :=
+      (left_inv_eq_right_inv (Unitary.coe_star_mul_self U)
+        (hbe ▸ b.toBasis.toMatrix_mul_toMatrix_flip e.toBasis)).symm
+    have hmatrix : toMatrix e.toBasis e.toBasis T =
+        star U.val * toMatrix b.toBasis b.toBasis T * U.val := by
+      rw [← heb, ← hbe, basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix]
+    exact ⟨e, hmatrix ▸ hU, hmatrix ▸ hdU⟩
+
+/-- **Schur triangularization of a complex operator.** For every enumeration `α` of the
+characteristic roots of `T`, with their multiplicities, the matrix of `T` in some orthonormal
+basis is upper triangular with diagonal `α`. -/
+theorem exists_orthonormalBasis_isUpperTriangular_diag {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℂ E] [FiniteDimensional ℂ E] (T : E →ₗ[ℂ] E) {α : ι → ℂ}
+    (hα : Multiset.map α Finset.univ.val = T.charpoly.roots) :
+    ∃ e : OrthonormalBasis ι ℂ E, (toMatrix e.toBasis e.toBasis T).IsUpperTriangular ∧
+      (toMatrix e.toBasis e.toBasis T).diag = α := by
+  refine (T.exists_orthonormalBasis_isUpperTriangular_diag_iff α).mpr <|
+    eq_prod_X_sub_C_of_monic_of_roots_eq T.charpoly_monic ?_ hα.symm
+  rw [← IsAlgClosed.card_roots_eq_natDegree, ← hα, Multiset.card_map, Finset.card_val]
+
+end LinearMap
