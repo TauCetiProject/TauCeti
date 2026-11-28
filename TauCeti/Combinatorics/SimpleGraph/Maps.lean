@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Action.Hom
 public import Mathlib.Algebra.Order.Group.End
 public import Mathlib.Combinatorics.SimpleGraph.Maps
+import Mathlib.Algebra.Group.Action.Basic
 
 /-!
 # Pulling simple graphs back and pushing them forward
@@ -22,14 +23,16 @@ on edges.
 The window of a graph on `ℕ` spanned by the first `n` labels is the pullback along `Fin.val`; it
 is how a graph on an infinite label set is read as a finite sample. A graph is also recorded by
 its Boolean adjacency array. The automorphism group `G ≃g G` acts on the edges of `G` by
-`SimpleGraph.Iso.mapEdgeSet`.
+`SimpleGraph.Iso.mapEdgeSet` and on its darts by `SimpleGraph.Hom.mapDart`.
 
 ## Main definitions
 
 * `SimpleGraph.restrictFin` — the initial `n`-label window of a graph on `ℕ`;
 * `SimpleGraph.adjArray` — the Boolean adjacency array of a graph;
 * `SimpleGraph.Iso.instMulActionEdgeSet` — the action of `G ≃g G` on `G.edgeSet`, with
-  `SimpleGraph.Iso.smul_eq_mapEdgeSet` evaluating it.
+  `SimpleGraph.Iso.smul_eq_mapEdgeSet` evaluating it;
+* `SimpleGraph.Iso.instMulActionDart` — the action of `G ≃g G` on `G.Dart`, with
+  `SimpleGraph.Iso.smul_dart_eq_mapDart` evaluating it.
 
 ## Main results
 
@@ -41,7 +44,9 @@ its Boolean adjacency array. The automorphism group `G ≃g G` acts on the edges
 * `SimpleGraph.comap_restrictFin_castLE` — a window of a longer window is the shorter window;
 * `SimpleGraph.adjArray_injective` — a graph is determined by its adjacency array;
 * `SimpleGraph.Embedding.isoInduceRange_apply` — evaluating `isoInduceRange` at a vertex gives the
-  corresponding range subtype vertex.
+  corresponding range subtype vertex;
+* `SimpleGraph.Iso.card_filter_dart_fst_apply` — automorphisms preserve the number of darts at a
+  vertex with an automorphism-invariant property.
 -/
 
 public section
@@ -146,6 +151,12 @@ theorem coe_mapEdgeSet_symm {G : SimpleGraph V} {G' : SimpleGraph W} (φ : G ≃
     (e : G'.edgeSet) : ((φ.mapEdgeSet.symm e : G.edgeSet) : Sym2 V) = Sym2.map φ.symm e :=
   (rfl)
 
+/-- The isomorphism of complete graphs induced by an equivalence of vertex types is that
+equivalence. -/
+@[simp]
+theorem coe_completeGraph (f : V ≃ W) : ⇑(Iso.completeGraph f) = f :=
+  (rfl)
+
 variable {G : SimpleGraph V}
 
 /-- An automorphism of `G` moves its edges by `SimpleGraph.Iso.mapEdgeSet`. -/
@@ -177,6 +188,49 @@ theorem exists_compHom_smul_eq_mapEdgeSet {Γ : Type*} [Monoid Γ] (τ : Γ →*
     letI := MulAction.compHom G.edgeSet τ
     ∀ g : Γ, ∃ φ : G ≃g G, ∀ e, g • e = φ.mapEdgeSet e :=
   fun g => ⟨τ g, fun _ => rfl⟩
+
+/-- An automorphism of `G` moves its darts by `SimpleGraph.Hom.mapDart`. -/
+instance instSMulDart : SMul (G ≃g G) G.Dart :=
+  ⟨fun φ d => φ.toHom.mapDart d⟩
+
+/-- An automorphism acts on a dart by `SimpleGraph.Hom.mapDart`. -/
+theorem smul_dart_eq_mapDart (φ : G ≃g G) (d : G.Dart) : φ • d = φ.toHom.mapDart d :=
+  (rfl)
+
+/-- The tail of the image of a dart under an automorphism. -/
+@[simp]
+theorem fst_smul_dart (φ : G ≃g G) (d : G.Dart) : (φ • d).fst = φ d.fst :=
+  (rfl)
+
+/-- The head of the image of a dart under an automorphism. -/
+@[simp]
+theorem snd_smul_dart (φ : G ≃g G) (d : G.Dart) : (φ • d).snd = φ d.snd :=
+  (rfl)
+
+/-- Automorphisms commute with reversing a dart. -/
+@[simp]
+theorem symm_smul_dart (φ : G ≃g G) (d : G.Dart) : (φ • d).symm = φ • d.symm :=
+  (rfl)
+
+/-- The edge of the image of a dart under an automorphism is the image of its edge. -/
+@[simp]
+theorem edge_smul_dart (φ : G ≃g G) (d : G.Dart) : (φ • d).edge = Sym2.map φ d.edge :=
+  (rfl)
+
+/-- The automorphism group of `G` acts on its darts by `SimpleGraph.Hom.mapDart`. -/
+instance instMulActionDart : MulAction (G ≃g G) G.Dart where
+  one_smul _ := rfl
+  mul_smul _ _ _ := rfl
+
+open Finset in
+/-- For a property of darts invariant under automorphisms, the number of darts with that property
+starting at a vertex is unchanged when an automorphism moves the vertex. -/
+theorem card_filter_dart_fst_apply [Fintype V] [DecidableRel G.Adj] [DecidableEq V]
+    (P : G.Dart → Prop) [DecidablePred P] (hP : ∀ (φ : G ≃g G) d, P (φ • d) ↔ P d)
+    (φ : G ≃g G) (x : V) :
+    #{d : G.Dart | d.fst = φ x ∧ P d} = #{d : G.Dart | d.fst = x ∧ P d} := by
+  refine (card_equiv (MulAction.toPerm φ) fun d => ?_).symm
+  simp [hP]
 
 end Iso
 
