@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Spectrum.Prime.RingHom
+public import TauCeti.RingTheory.Spectrum.Prime.RingHom
 
 /-!
 # Rings of closed intervals in the prime spectrum
@@ -27,15 +27,6 @@ Bhatt–Mathew, *The arc-topology*, Definition 4.6, for the spectrum of a valuat
 -/
 
 public section
-
-/-- The quotient spectrum order isomorphism sends a prime to its contraction along
-`Ideal.Quotient.mk`. -/
-theorem Ideal.primeSpectrumQuotientOrderIsoZeroLocus_apply_coe {R : Type*} [CommRing R]
-    (I : Ideal R) (r : PrimeSpectrum (R ⧸ I)) :
-    (I.primeSpectrumQuotientOrderIsoZeroLocus r : PrimeSpectrum R) =
-      r.comap (Ideal.Quotient.mk I) := by
-  simp only [Ideal.primeSpectrumQuotientOrderIsoZeroLocus.eq_1,
-    Ideal.primeSpectrumOrderIsoZeroLocusOfSurj.eq_1, RelIso.coe_fn_mk, Equiv.coe_fn_mk]
 
 namespace PrimeSpectrum
 
@@ -118,14 +109,8 @@ noncomputable def intervalRingOrderIso (p q : PrimeSpectrum R) :
       comap_asIdeal, disjoint_comm]
     exact Ideal.disjoint_map_primeCompl_iff_comap_le
   (IsLocalization.primeSpectrumOrderIso M (IntervalRing p q)).trans
-    { toFun := fun r ↦ ⟨e r, (e r).property, (hdisj r).mp r.property⟩
-      invFun := fun r ↦ ⟨e.symm ⟨r, r.property.1⟩, (hdisj _).mpr (by
-        rw [e.apply_symm_apply]
-        exact r.property.2)⟩
-      left_inv := fun r ↦ Subtype.ext (e.symm_apply_apply r)
-      right_inv := fun r ↦ by
-        have hr := e.apply_symm_apply ⟨r, r.property.1⟩
-        exact Subtype.ext (congrArg (fun t : zeroLocus (p.asIdeal : Set R) ↦ t.val) hr)
+    { toEquiv := (e.toEquiv.subtypeEquiv hdisj).trans
+        (Equiv.subtypeSubtypeEquivSubtypeInter (fun x => p ≤ x) (fun x => x ≤ q))
       map_rel_iff' := e.le_iff_le }
 
 /-- The spectrum identification acts by contraction to the ambient ring.
@@ -172,7 +157,8 @@ theorem isUnit_intervalRing_algebraMap_iff {p q : PrimeSpectrum R} (h : p ≤ q)
   rw [← hr, comap_asIdeal, Ideal.mem_comap]
   exact r.asIdeal.notMem_of_isUnit hx
 
-/-- Restrict from `[p,q]` to an interval `[p',q']` whose endpoints lie inside it. -/
+/-- Restrict from `[p,q]` to `[p',q']` by raising the lower endpoint (`p ≤ p'`)
+and lowering the upper endpoint (`q' ≤ q`). -/
 noncomputable def intervalRingMap (p q : PrimeSpectrum R) {p' q' : PrimeSpectrum R}
     (hp : p ≤ p') (hq : q' ≤ q) : IntervalRing p q →+* IntervalRing p' q' :=
   p.intervalRingLift q (algebraMap R (IntervalRing p' q'))
