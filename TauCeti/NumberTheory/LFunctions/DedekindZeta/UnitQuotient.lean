@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
-public import TauCeti.NumberTheory.LFunctions.DedekindZeta.PartialZeta
+public import TauCeti.NumberTheory.LFunctions.DedekindZeta.PartialZeta.Basic
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.FundamentalCone
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
