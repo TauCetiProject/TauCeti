@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Finite
 public import Mathlib.GroupTheory.GroupAction.Basic
+public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
 public import Mathlib.Topology.Algebra.ConstMulAction
 
 import Mathlib.Topology.GDelta.Basic
+import TauCeti.GroupTheory.GroupAction.FixingSubgroup
 import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
@@ -35,6 +37,11 @@ fixed set of some element, and a finite union of such frontiers is closed with e
 the presentation `[X/G]`, this is the dense open principal part, on which the isotropy reduces to
 its ineffective kernel. No smoothness or linearity is needed for this statement.
 
+Intersecting germ kernels over a set `s` gives `TauCeti.MulAction.nhdsFixingSubgroup G s`, the
+elements acting as the identity on a neighbourhood of `s`. It refines the pointwise fixing subgroup
+`fixingSubgroup G s` and gives, for instance, the diffeomorphisms equal to the identity near the
+boundary of a manifold.
+
 ## Main declarations
 
 * `TauCeti.MulAction.germKernel G x`: the elements of `G` acting as the identity near `x`.
@@ -44,6 +51,13 @@ its ineffective kernel. No smoothness or linearity is needed for this statement.
   the germ kernel contains the kernel of the action and is contained in the stabilizer.
 * `TauCeti.MulAction.germKernel_smul_eq_germKernel_map_conj`: the germ kernel at `h • x` is the
   conjugate by `h` of the germ kernel at `x`.
+* `TauCeti.MulAction.nhdsFixingSubgroup G s`: the elements of `G` acting as the identity on a
+  neighbourhood of `s`, with `TauCeti.MulAction.mem_nhdsFixingSubgroup_iff`.
+* `TauCeti.MulAction.nhdsFixingSubgroup_antitone`, `TauCeti.MulAction.nhdsFixingSubgroup_union`:
+  being the identity near a larger set, or near a union, gives a smaller subgroup, or the
+  intersection.
+* `TauCeti.MulAction.nhdsFixingSubgroup_le_fixingSubgroup`: acting as the identity near `s`
+  implies fixing `s` pointwise.
 * `TauCeti.MulAction.orbitCardGermKernel G`: the order of the germ kernel as a function on the
   orbit space, well defined by `TauCeti.MulAction.card_germKernel_smul`.
 * `TauCeti.MulAction.stabilizer_eq_germKernel_iff_of_stabilizer_le`: at a point whose stabilizer
@@ -185,6 +199,59 @@ theorem stabilizer_smul_eq_germKernel_iff [ContinuousConstSMul G X] (g : G) (x :
     stabilizer G (g • x) = germKernel G (g • x) ↔ stabilizer G x = germKernel G x := by
   rw [stabilizer_smul_eq_stabilizer_map_conj, germKernel_smul_eq_germKernel_map_conj]
   exact (Subgroup.map_injective (MulAut.conj g).injective).eq_iff
+
+section NhdsFixingSubgroup
+
+variable (G) in
+/-- The subgroup of the elements of `G` acting as the identity on a neighbourhood of `s`: the
+intersection over `x ∈ s` of the germ kernels at `x`. -/
+def nhdsFixingSubgroup (s : Set X) : Subgroup G :=
+  ⨅ x ∈ s, germKernel G x
+
+/-- Membership in `nhdsFixingSubgroup G s` is acting as the identity on a neighbourhood of `s`. -/
+@[simp]
+theorem mem_nhdsFixingSubgroup_iff {s : Set X} {g : G} :
+    g ∈ nhdsFixingSubgroup G s ↔ ∀ᶠ y in 𝓝ˢ s, g • y = y := by
+  simp only [nhdsFixingSubgroup, Subgroup.mem_iInf, mem_germKernel, eventually_nhdsSet_iff_forall]
+
+variable (G X) in
+/-- Acting as the identity near a larger set gives a smaller subgroup. -/
+theorem nhdsFixingSubgroup_antitone : Antitone (nhdsFixingSubgroup G : Set X → Subgroup G) :=
+  fun _ _ hst _ hg ↦ mem_nhdsFixingSubgroup_iff.mpr
+    ((mem_nhdsFixingSubgroup_iff.mp hg).filter_mono (nhdsSet_mono hst))
+
+variable (G X) in
+/-- Every element acts as the identity near the empty set. -/
+@[simp]
+theorem nhdsFixingSubgroup_empty : nhdsFixingSubgroup G (∅ : Set X) = ⊤ :=
+  Subgroup.eq_top_iff' _ |>.mpr fun _ ↦ by
+    rw [mem_nhdsFixingSubgroup_iff, nhdsSet_empty]
+    exact eventually_bot
+
+/-- Acting as the identity near `s ∪ t` is the same as acting as the identity near `s` and near
+`t`. -/
+@[simp]
+theorem nhdsFixingSubgroup_union (s t : Set X) :
+    nhdsFixingSubgroup G (s ∪ t) = nhdsFixingSubgroup G s ⊓ nhdsFixingSubgroup G t :=
+  Subgroup.ext fun _ ↦ by
+    rw [Subgroup.mem_inf, mem_nhdsFixingSubgroup_iff, mem_nhdsFixingSubgroup_iff,
+      mem_nhdsFixingSubgroup_iff, nhdsSet_union, eventually_sup]
+
+/-- An element acting as the identity near `s` fixes `s` pointwise. -/
+theorem nhdsFixingSubgroup_le_fixingSubgroup (s : Set X) :
+    nhdsFixingSubgroup G s ≤ fixingSubgroup G s :=
+  fun _ hg ↦ (mem_fixingSubgroup_iff G).mpr fun x hx ↦
+    mem_stabilizer_iff.mp
+      (germKernel_le_stabilizer x (Subgroup.mem_iInf.mp (Subgroup.mem_iInf.mp hg x) hx))
+
+variable (G X) in
+/-- For a faithful action, only the identity acts as the identity near every point. -/
+@[simp]
+theorem nhdsFixingSubgroup_univ [FaithfulSMul G X] : nhdsFixingSubgroup G (univ : Set X) = ⊥ :=
+  eq_bot_iff.mpr <| (nhdsFixingSubgroup_le_fixingSubgroup univ).trans
+    (TauCeti.fixingSubgroup_univ (G := G) (α := X)).le
+
+end NhdsFixingSubgroup
 
 section Hausdorff
 

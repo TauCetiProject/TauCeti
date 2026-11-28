@@ -20,7 +20,10 @@ Let `A` be a subspace of a topological space `X`. Restriction of functions from 
 `A^{n+1}` extends by zero to `X^{n+1}`. Its kernel is the **relative Alexander–Spanier cochain
 complex** `C^*(X, A; M)` (`TauCeti.AlexanderSpanier.relativeCochainComplex`): in degree `n` it
 consists of the classes of the functions `φ : X^{n+1} → M` whose restriction to `A^{n+1}` is
-locally zero on `A` (`TauCeti.AlexanderSpanier.mem_range_relativeCochainComplexι_f_iff`). Its
+locally zero on `A` (`TauCeti.AlexanderSpanier.mem_range_relativeCochainComplexι_f_iff`). When
+`A` is closed, every relative cochain is the class of a function vanishing on all tuples of points
+of `A`
+(`TauCeti.AlexanderSpanier.exists_relativeCochainComplexι_f_eq_cochainClass_of_isClosed`). Its
 cohomology is the **relative Alexander–Spanier cohomology** `H^n(X, A; M)`
 (`TauCeti.AlexanderSpanier.relativeCohomology`).
 
@@ -36,6 +39,14 @@ exact at each of its three kinds of terms
 (`TauCeti.AlexanderSpanier.exact_cohomologyMap_subtypeVal`,
 `TauCeti.AlexanderSpanier.exact_connectingHom` and
 `TauCeti.AlexanderSpanier.exact_relativeCohomologyMap`).
+
+A **map of pairs** `f : (Y, B) → (X, A)`, a continuous map `f : Y → X` sending `B` into `A`, pulls
+relative cochains back to relative cochains
+(`TauCeti.AlexanderSpanier.relativeCochainComplexMap`), compatibly with the pullback of absolute
+cochains along `f`
+(`TauCeti.AlexanderSpanier.relativeCochainComplexMap_comp_relativeCochainComplexι`, elementwise
+`TauCeti.AlexanderSpanier.relativeCochainComplexι_f_relativeCochainComplexMap_f_apply`) and
+functorially in `f`.
 
 ## References
 
@@ -126,6 +137,35 @@ lemma mem_range_relativeCochainComplexι_f_iff {n : ℕ} {φ : (Fin (n + 1) → 
   rw [range_relativeCochainComplexι_f, LinearMap.mem_ker, restriction_f_cochainClass,
     cochainClass_eq_zero_iff]
 
+variable {R M A} in
+/-- For a closed subspace `A`, every relative cochain of `(X, A)` is the class of a function that
+vanishes on all tuples of points of `A`. -/
+lemma exists_relativeCochainComplexι_f_eq_cochainClass_of_isClosed (hA : IsClosed A) {n : ℕ}
+    (c : (relativeCochainComplex R M A).X n) :
+    ∃ φ : (Fin (n + 1) → X) → M,
+      ((relativeCochainComplexι R M A).f n).hom c = cochainClass R X M n φ ∧
+        ∀ x : Fin (n + 1) → X, (∀ i, x i ∈ A) → φ x = 0 := by
+  classical
+  obtain ⟨φ, hφ⟩ := cochainClass_surjective (R := R) (M := M) n
+    (((relativeCochainComplexι R M A).f n).hom c)
+  have hloc : IsLocallyZero fun y : Fin (n + 1) → A ↦ φ (Subtype.val ∘ y) :=
+    mem_range_relativeCochainComplexι_f_iff.1 (hφ ▸ LinearMap.mem_range_self _ c)
+  refine ⟨fun x ↦ if ∀ i, x i ∈ A then 0 else φ x, ?_,
+    fun x hx ↦ ite_eq_left_iff.2 fun h ↦ (h hx).elim⟩
+  rw [← hφ, cochainClass_eq_cochainClass_iff]
+  -- The difference is `φ` on tuples of points of `A` and zero elsewhere. Near a point of `A` it
+  -- vanishes because `φ` is locally zero on `A`, and off `A` because `A` is closed.
+  refine isLocallyZero_iff.2 fun y ↦ ?_
+  by_cases hy : y ∈ A
+  · obtain ⟨U, hU, hφU⟩ := isLocallyZero_iff.1 hloc ⟨y, hy⟩
+    obtain ⟨V, hV, hVU⟩ := (mem_nhds_subtype A ⟨y, hy⟩ U).1 hU
+    refine ⟨V, hV, fun x hx ↦ ?_⟩
+    by_cases hxA : ∀ i, x i ∈ A
+    · simpa [hxA, Function.comp_def] using hφU (fun i ↦ ⟨x i, hxA i⟩) fun i ↦ hVU (hx i)
+    · simp [hxA]
+  · refine ⟨Aᶜ, hA.isOpen_compl.mem_nhds hy, fun x hx ↦ ?_⟩
+    simp [show ¬∀ i, x i ∈ A from fun h ↦ hx 0 (h 0)]
+
 /-- The relative cochain inclusion is injective in every degree. -/
 lemma relativeCochainComplexι_f_injective (n : ℕ) :
     Function.Injective ((relativeCochainComplexι R M A).f n).hom :=
@@ -193,5 +233,58 @@ theorem exact_relativeCohomologyMap (n : ℕ) :
     (ShortComplex.mk (connectingHom R M A n) (relativeCohomologyMap R M A (n + 1))
       (connectingHom_comp_relativeCohomologyMap R M A n)).Exact :=
   (shortExact_shortComplex R M A).homology_exact₁ n (n + 1) (by simp)
+
+section MapOfPairs
+
+variable {Y Z : Type u} [TopologicalSpace Y] [TopologicalSpace Z] (B : Set Y) (C : Set Z)
+
+/-- The cochain map `C^*(X, A; M) ⟶ C^*(Y, B; M)` induced by a **map of pairs**
+`f : (Y, B) → (X, A)`: the pullback of cochains along `f`, which sends relative cochains of
+`(X, A)` to relative cochains of `(Y, B)` since it commutes with restriction to `B` and to `A`. -/
+def relativeCochainComplexMap (f : C(Y, X)) (hf : Set.MapsTo f B A) :
+    relativeCochainComplex R M A ⟶ relativeCochainComplex R M B :=
+  kernel.map (restriction R M A) (restriction R M B) (cochainComplexMap R M f)
+    (cochainComplexMap R M ⟨hf.restrict f B A, f.continuous.restrict hf⟩) (by
+      simp only [restriction, ← cochainComplexMap_comp]
+      congr 1)
+
+/-- The pullback of relative cochains along a map of pairs is the pullback of the underlying
+absolute cochains. -/
+@[reassoc (attr := simp)]
+lemma relativeCochainComplexMap_comp_relativeCochainComplexι (f : C(Y, X))
+    (hf : Set.MapsTo f B A) :
+    relativeCochainComplexMap R M A B f hf ≫ relativeCochainComplexι R M B =
+      relativeCochainComplexι R M A ≫ cochainComplexMap R M f :=
+  kernel.lift_ι _ _ _
+
+/-- Elementwise form of `relativeCochainComplexMap_comp_relativeCochainComplexι`: a relative cochain
+pulled back along a map of pairs, viewed as an absolute cochain, is the pullback of the underlying
+absolute cochain. -/
+@[simp]
+lemma relativeCochainComplexι_f_relativeCochainComplexMap_f_apply (f : C(Y, X))
+    (hf : Set.MapsTo f B A) (n : ℕ) (c : (relativeCochainComplex R M A).X n) :
+    ((relativeCochainComplexι R M B).f n).hom
+        (((relativeCochainComplexMap R M A B f hf).f n).hom c) =
+      ((cochainComplexMap R M f).f n).hom (((relativeCochainComplexι R M A).f n).hom c) := by
+  rw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply, ← HomologicalComplex.comp_f,
+    ← HomologicalComplex.comp_f, relativeCochainComplexMap_comp_relativeCochainComplexι]
+
+/-- The pullback of relative cochains along the identity map of pairs is the identity. -/
+@[simp]
+lemma relativeCochainComplexMap_id (h : Set.MapsTo (ContinuousMap.id X) A A) :
+    relativeCochainComplexMap R M A A (ContinuousMap.id X) h = 𝟙 _ := by
+  rw [← cancel_mono (relativeCochainComplexι R M A),
+    relativeCochainComplexMap_comp_relativeCochainComplexι, cochainComplexMap_id,
+    Category.comp_id, Category.id_comp]
+
+/-- The pullback of relative cochains along a composite of maps of pairs is the composite of the
+pullbacks, in the opposite order. -/
+lemma relativeCochainComplexMap_comp (f : C(Y, X)) (hf : Set.MapsTo f B A) (g : C(Z, Y))
+    (hg : Set.MapsTo g C B) :
+    relativeCochainComplexMap R M A C (f.comp g) (hf.comp hg) =
+      relativeCochainComplexMap R M A B f hf ≫ relativeCochainComplexMap R M B C g hg := by
+  simp [← cancel_mono (relativeCochainComplexι R M C), cochainComplexMap_comp]
+
+end MapOfPairs
 
 end TauCeti.AlexanderSpanier
