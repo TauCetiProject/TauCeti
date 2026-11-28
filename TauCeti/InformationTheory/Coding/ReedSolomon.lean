@@ -27,6 +27,7 @@ polynomials, and every nonzero word of the code has weight at least `n - k + 1`.
 * `TauCeti.grsCode a v k`: the generalized Reed–Solomon code.
 * `TauCeti.grsCode_zero`: with parameter `0` the code is zero.
 * `TauCeti.finrank_grsCode`: for `k ≤ n` the code has dimension `k`.
+* `TauCeti.grsCode_eq_top`: for `n ≤ k` the code is the whole space.
 * `TauCeti.le_hammingMinDist_grsCode`: for `1 ≤ k ≤ n` the minimum distance is at least
   `n - k + 1`.
 
@@ -117,6 +118,15 @@ theorem finrank_grsCode (ha : Function.Injective a) (hv : ∀ i, v i ≠ 0) {k :
   rw [grsCode_def, ← LinearMap.range_domRestrict, LinearMap.finrank_range_of_inj,
     (degreeLTEquiv F k).finrank_eq, Module.finrank_fin_fun]
   exact fun p q hpq ↦ Subtype.ext (injOn_grsEval ha hv hk p.property q.property hpq)
+
+/-- For `n ≤ k` the generalized Reed–Solomon code is the whole space, when the points are distinct
+and the multipliers nonzero. -/
+theorem grsCode_eq_top (ha : Function.Injective a) (hv : ∀ i, v i ≠ 0) {k : ℕ}
+    (hk : Fintype.card ι ≤ k) : grsCode a v k = ⊤ := by
+  have hn : grsCode a v (Fintype.card ι) = ⊤ := Submodule.eq_top_of_finrank_eq <| by
+    rw [finrank_grsCode ha hv le_rfl, Module.finrank_fintype_fun_eq_card]
+  rw [eq_top_iff, ← hn, grsCode_def, grsCode_def]
+  exact Submodule.map_mono (degreeLT_mono hk)
 
 /-- For `1 ≤ k ≤ n` every nonzero word of the generalized Reed–Solomon code has weight at least
 `n - k + 1`, so its minimum distance is at least `n - k + 1`. -/
