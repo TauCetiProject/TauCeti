@@ -51,6 +51,8 @@ integration-by-parts arguments:
 * `TauCeti.eNorm_integral_smul_sub_integral_smul_le`: against an integrable weight, the integrals
   of two products `a • b` and `f • g` of `L^∞` functions differ by at most
   `‖b‖_∞ ∫ |ψ| ‖a - f‖ + ‖f‖_∞ ∫ |ψ| ‖b - g‖`.
+* `TauCeti.lintegral_enorm_mul_enorm_le`: Hölder's inequality `∫ ‖f‖ ‖g‖ ≤ ‖f‖_p ‖g‖_q` for
+  the lower integral of a product of norms, for `1/p + 1/q = 1`.
 * `TauCeti.lintegral_enorm_mul_enorm_mul_enorm_le`, its Bochner form
   `TauCeti.integral_norm_mul_norm_mul_norm_le` and
   `MeasureTheory.MemLp.integrable_norm_mul_norm_mul_norm`: Hölder's inequality in three factors,
@@ -408,6 +410,17 @@ theorem eNorm_integral_smul_sub_integral_smul_le {α 𝕜 F : Type*} [Measurable
         · exact eNorm_smul_le.trans (by gcongr)
         · exact eNorm_smul_le.trans (by gcongr)
     _ = ‖b‖ₑ * (‖ψ x‖ₑ * ‖a x - f x‖ₑ) + ‖f‖ₑ * (‖ψ x‖ₑ * ‖b x - g x‖ₑ) := by ring
+
+/-- **Hölder's inequality** for the lower integral of a product of norms:
+`∫ ‖f‖ ‖g‖ ≤ ‖f‖_p ‖g‖_q` for `1/p + 1/q = 1`. -/
+theorem lintegral_enorm_mul_enorm_le {α E F : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] [NormedAddCommGroup F] {p q : ℝ≥0∞} [p.HolderTriple q 1]
+    {f : α → E} {g : α → F} (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g μ) :
+    ∫⁻ x, ‖f x‖ₑ * ‖g x‖ₑ ∂μ ≤ eLpNorm f p μ * eLpNorm g q μ := by
+  have h := eLpNorm_smul_le_mul_eLpNorm (p := p) (q := q) (r := 1) hf.norm hg.norm (μ := μ)
+  rw [eLpNorm_norm _ hf, eLpNorm_norm _ hg,
+    eLpNorm_one_eq_lintegral_eNorm (hf.norm.smul hg.norm)] at h
+  simpa only [Pi.smul_apply', smul_eq_mul, eNorm_mul, eNorm_norm] using h
 
 /-- **Hölder's inequality in three factors**: `∫ |w| |g| |f| ≤ ‖w‖_p ‖g‖_r ‖f‖_q` for
 `1/p + 1/q = 1/s` and `1/r + 1/s = 1`, by Hölder's inequality applied twice. -/
