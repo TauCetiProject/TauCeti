@@ -15,7 +15,8 @@ import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 The discriminant `Matrix.discr` of a matrix is the discriminant of its characteristic polynomial.
 Over an integral domain, a diagonal matrix has nonzero discriminant exactly when its diagonal
-entries are distinct (`Matrix.discr_diagonal_ne_zero_iff`).
+entries are distinct (`Matrix.discr_diagonal_ne_zero_iff`). The discriminant commutes with ring
+maps (`Matrix.discr_map`).
 
 Let `S` be a commutative `R`-algebra. The entries of an `R`-affine family `x ↦ M + L x` of
 matrices over `S` are affine in the parameters, so the discriminant is a polynomial in them with
@@ -42,6 +43,11 @@ theorem discr_diagonal_ne_zero_iff [CommRing R] [IsDomain R] {d : ι → R} :
   rw [discr, charpoly_diagonal, Finset.prod_eq_multiset_prod]
   exact h.trans (by simp [Function.Injective])
 
+/-- **The discriminant of a matrix commutes with ring maps.** -/
+theorem discr_map [CommRing R] [CommRing S] (M : Matrix ι ι R) (φ : R →+* S) :
+    (M.map φ).discr = φ M.discr := by
+  rw [discr, discr, charpoly_map, M.charpoly_monic.discr_map]
+
 variable [CommSemiring R] [CommRing S] [Algebra R S]
 
 /-- Along an `R`-affine family `x ↦ M + L x` of matrices over an `R`-algebra `S`, every
@@ -63,7 +69,7 @@ theorem exists_eval_eq_linearMap_discr {κ : Type*} [Finite κ] (M : Matrix ι �
       MvPolynomial.eval_X, Function.comp_apply, Matrix.add_apply, Matrix.sum_apply,
       Matrix.smul_apply]
     simp only [Algebra.smul_def, mul_comm]
-  rw [← hN, discr, charpoly_map, N.charpoly_monic.discr_map]
+  rw [← hN, discr_map]
   exact hq x
 
 end Matrix

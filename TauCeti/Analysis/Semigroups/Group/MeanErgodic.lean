@@ -36,6 +36,10 @@ the shift invariance of the time averages.
   bound `‖∫ t in a..b, U t v‖ ≤ ‖v‖ * |b - a|` for unitary C₀-groups.
 * `TauCeti.Semigroups.StronglyContinuousGroup.IsUnitary.tendsto_average_starProjection`:
   continuous-time von Neumann mean ergodic theorem for unitary C₀-groups.
+* `TauCeti.Semigroups.StronglyContinuousGroup.IsUnitary.tendsto_average_inner`: the averaged
+  correlations `T⁻¹ ∫₀ᵀ ⟪g, U t f⟫ dt` converge to the inner product of `g` with the projection of
+  `f`; `TauCeti.Semigroups.StronglyContinuousGroup.IsUnitary.average_inner_of_forall_eq`: they are
+  constant when `g` is a fixed vector.
 * `TauCeti.Semigroups.StronglyContinuousGroup.IsUnitary.tendsto_twistedAverage_starProjection`:
   twisted continuous-time mean ergodic projection onto `eigenspace`.
 
@@ -161,21 +165,27 @@ private theorem norm_map_average_sub_average_le [CompleteSpace H] (hU : U.IsUnit
       ≤ ‖∫ t in T..(T + s), U t v‖ + ‖∫ t in (0 : ℝ)..s, U t v‖ := norm_sub_le _ _
     _ ≤ 2 * (‖v‖ * |s|) := by linarith
 
+/-- The averaged correlations `T⁻¹ ∫₀ᵀ ⟪F, U t G⟫ dt` with a vector `F` fixed by a unitary group
+`U` are equal to `⟪F, G⟫`, for every `T ≠ 0`. -/
+theorem average_inner_of_forall_eq (hU : U.IsUnitary) {F : H} (hF : ∀ t, U t F = F)
+    (G : H) {T : ℝ} (hT : T ≠ 0) :
+    (T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, ⟪F, U t G⟫_ℂ = ⟪F, G⟫_ℂ := by
+  have h : ∀ t, ⟪F, U t G⟫_ℂ = ⟪F, G⟫_ℂ := fun t ↦ by
+    conv_lhs => rw [← hF t]
+    exact hU.inner_map_map t F G
+  have hT' : (T : ℂ) ≠ 0 := by exact_mod_cast hT
+  simp only [h, intervalIntegral.integral_const, sub_zero, Complex.real_smul]
+  field_simp
+
 /-- Every vector fixed by `U` is orthogonal to `v - T⁻¹ • ∫ t in (0 : ℝ)..T, U t v` for
 `T > 0`. -/
 private theorem inner_sub_average_eq_zero_of_mem_fixedSubmodule [CompleteSpace H]
     (hU : U.IsUnitary) {y v : H} (hy : y ∈ U.fixedSubmodule hU.isComplexLinear)
     {T : ℝ} (hT : 0 < T) :
     ⟪y, v - T⁻¹ • ∫ t in (0 : ℝ)..T, U t v⟫_ℂ = 0 := by
-  have hy_fix : ∀ t : ℝ, U t y = y := (mem_fixedSubmodule_iff U hU.isComplexLinear y).mp hy
-  have hinner_const : (fun t : ℝ ↦ ⟪y, U t v⟫_ℂ) = fun _ : ℝ ↦ ⟪y, v⟫_ℂ := by
-    funext t
-    rw [← hy_fix t, hU.inner_map_map, hy_fix t]
-  have havg : ⟪y, T⁻¹ • ∫ t in (0 : ℝ)..T, U t v⟫_ℂ = ⟪y, v⟫_ℂ := by
-    rw [inner_smul_right_eq_smul, U.inner_intervalIntegral_orbit, hinner_const,
-      intervalIntegral.integral_const]
-    simp [Complex.real_smul, hT.ne']
-  rw [inner_sub_right, havg, sub_self]
+  rw [inner_sub_right, inner_smul_right_eq_smul, U.inner_intervalIntegral_orbit, Complex.real_smul,
+    Complex.ofReal_inv, hU.average_inner_of_forall_eq
+      ((mem_fixedSubmodule_iff U hU.isComplexLinear y).mp hy) v hT.ne', sub_self]
 
 /-- **Continuous-time von Neumann mean ergodic theorem.** For a unitary C₀-group `U` on a complete
 complex Hilbert space `H` and any `v : H`, the time averages `T⁻¹ • ∫ t in (0 : ℝ)..T, U t v`
@@ -235,6 +245,17 @@ theorem tendsto_average_starProjection [CompleteSpace H] (hU : U.IsUnitary) (v :
   have hL_proj : L = (U.fixedSubmodule hU.isComplexLinear).starProjection v :=
     (Submodule.eq_starProjection_of_mem_orthogonal hL_mem hL_orth).symm
   rwa [hL_proj] at hA
+
+/-- **Averaged correlations of a unitary group.** For a unitary C₀-group `U` on a complete complex
+Hilbert space `H`, the averaged correlations `T⁻¹ ∫₀ᵀ ⟪g, U t f⟫ dt` converge to `⟪g, P f⟫`, where
+`P` is the orthogonal projection onto the common fixed subspace. -/
+theorem tendsto_average_inner [CompleteSpace H] (hU : U.IsUnitary) (f g : H) :
+    Tendsto (fun T : ℝ ↦ (T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, ⟪g, U t f⟫_ℂ) atTop
+      (𝓝 ⟪g, (U.fixedSubmodule hU.isComplexLinear).starProjection f⟫_ℂ) := by
+  refine (((innerSL ℂ g).continuous.tendsto _).comp (hU.tendsto_average_starProjection f)).congr
+    fun T ↦ ?_
+  rw [Function.comp_apply, innerSL_apply_apply, inner_smul_right_eq_smul,
+    U.inner_intervalIntegral_orbit, Complex.real_smul, Complex.ofReal_inv]
 
 /-- **Twisted continuous-time mean ergodic projection.** For a unitary C₀-group `U` on a complete
 complex Hilbert space `H`, an angular frequency `ω : ℝ`, and `v : H`, the twisted averages

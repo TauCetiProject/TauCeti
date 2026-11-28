@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import Mathlib.Data.Nat.GCD.BigOperators
 import TauCeti.Algebra.GroupWithZero.Divisibility
 import TauCeti.Data.Nat.GCD
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 /-!
 # Dirichlet character conductors
@@ -31,8 +32,13 @@ that level.
 * `DirichletCharacter.IsPrimitive.eq_one_iff`, `DirichletCharacter.primitiveCharacter_eq_one_iff`:
   a primitive character at nonzero level is principal iff the level is `1`, and
   `χ.primitiveCharacter = 1 ↔ χ = 1`.
+* `DirichletCharacter.three_le_conductor_of_ne_one`, `DirichletCharacter.conductor_le_level`: a
+  nonprincipal character at a nonzero level has conductor at least `3`, and the conductor is at
+  most a nonzero level.
 * `DirichletCharacter.primitiveCharacter_apply_prime_eq_zero`: `χ.primitiveCharacter p = 0` when
   `p` is prime and `p ∣ χ.conductor`.
+* `DirichletCharacter.natCast_eq_ite_coprime_primitiveCharacter`: `χ m = χ.primitiveCharacter m`
+  for `m` prime to `n / χ.conductor`, and `χ m = 0` otherwise.
 * `DirichletCharacter.factorsThrough_iff_not_dvd_conductor`: for `n = p ^ k * m` with `p` prime and
   `¬ p ∣ m`, `χ.FactorsThrough m ↔ ¬ p ∣ χ.conductor`.
 * `DirichletCharacter.dvd_conductor_iff_ne_one_of_prime_pow`: for `χ` modulo `p ^ k`,
@@ -83,11 +89,29 @@ theorem primitiveCharacter_eq_one_iff {R : Type*} [CommMonoidWithZero R] {n : �
       χ.changeLevel_primitiveCharacter, map_one]
   · exact χ.primitiveCharacter_isPrimitive.eq_one_iff.trans χ.eq_one_iff_conductor_eq_one.symm
 
+/-- Any nonprincipal Dirichlet character at a nonzero level has conductor at least `3`. -/
+theorem three_le_conductor_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 3 ≤ χ.conductor :=
+  three_le_level_of_ne_one ((primitiveCharacter_eq_one_iff χ).not.mpr hχ)
+
+/-- The conductor of a Dirichlet character at a nonzero level is at most the level. -/
+theorem conductor_le_level {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter R N) : χ.conductor ≤ N :=
+  Nat.le_of_dvd (NeZero.pos N) χ.conductor_dvd_level
+
 /-- The primitive character associated to `χ` vanishes at every prime dividing `χ.conductor`. -/
 theorem primitiveCharacter_apply_prime_eq_zero {R : Type*} [CommMonoidWithZero R] {n p : ℕ}
     (χ : DirichletCharacter R n) (hp : p.Prime) (h : p ∣ χ.conductor) :
     χ.primitiveCharacter p = 0 :=
   χ.primitiveCharacter.map_nonunit fun hu ↦ (ZMod.isUnit_prime_iff_not_dvd hp).mp hu h
+
+/-- A Dirichlet character modulo `n` takes the value of its primitive character at a natural
+number `m` prime to `n / χ.conductor`, and the value `0` at the others. -/
+theorem natCast_eq_ite_coprime_primitiveCharacter {R : Type*} [CommMonoidWithZero R] {n : ℕ}
+    (χ : DirichletCharacter R n) (m : ℕ) :
+    χ m = if m.Coprime (n / χ.conductor) then χ.primitiveCharacter m else 0 := by
+  conv_lhs => rw [← χ.changeLevel_primitiveCharacter]
+  exact changeLevel_natCast_eq_ite_coprime_div _ _ m
 
 /-- **Factoring through the prime-to-`p` part of the level.** If `n = p ^ k * m` with `p` prime and
 `¬ p ∣ m`, a Dirichlet character `χ` modulo `n` factors through `m` if and only if `p` does not

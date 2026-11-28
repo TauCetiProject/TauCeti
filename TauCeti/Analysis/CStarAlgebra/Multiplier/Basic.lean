@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.Analysis.Calculus.Deriv.Star
 public import TauCeti.Algebra.Star.Basic
 public import TauCeti.Analysis.CStarAlgebra.Hom
-public import TauCeti.Analysis.Normed.Algebra.DoubleCentralizer
+public import TauCeti.Analysis.Normed.Algebra.Multiplier.DoubleCentralizer
 
 /-!
 # Functoriality of multiplier algebras of C⋆-algebras
@@ -19,7 +19,8 @@ public import TauCeti.Analysis.Normed.Algebra.DoubleCentralizer
 Mathlib's multiplier algebra `𝓜(𝕜, A)` consists of double centralizers `(L, R)`. The basic
 API for algebras with zero left and right annihilators (the module laws `DoubleCentralizer.fst_mul`
 and `DoubleCentralizer.snd_mul`, injectivity of `A → 𝓜(𝕜, A)`, and `DoubleCentralizer.ext_fst`)
-is in `TauCeti.Analysis.Normed.Algebra.DoubleCentralizer`. It applies to every C⋆-ring, since a
+is in `TauCeti.Analysis.Normed.Algebra.Multiplier.Basic` (and `Multiplier.DoubleCentralizer` for
+complete algebras and approximate units). It applies to every C⋆-ring, since a
 proper involution makes both annihilators zero (`TauCeti.faithfulSMul_mulOpposite_of_isProperStar`
 and `TauCeti.faithfulSMul_of_isProperStar`). For regular normed algebras
 (`RegularNormedAlgebra`), including real and complex C⋆-algebras, the canonical map is isometric,

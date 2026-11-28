@@ -75,8 +75,14 @@ approximates `a`.
   finite adele if and only if `x` lies in `R`.
 * `IsDedekindDomain.FiniteAdeleRing.mul_nonZeroDivisor_mem_integralAdeles`: a finite adele has a
   common denominator in `R`.
+* `IsDedekindDomain.FiniteAdeleRing.exists_mem_nonZeroDivisors_forall_mul_mem_integralAdeles`: so
+  has a finite family of finite adeles.
+* `IsDedekindDomain.FiniteAdeleRing.mul_nonZeroDivisor_mem_integralAdeles_of_isCompact`: so has a
+  compact set of finite adeles.
 * `IsDedekindDomain.FiniteAdeleRing.exists_forall_valued_sub_le_and_forall_valued_sub_le_one`:
   strong approximation with explicit precision at finitely many places and integrality everywhere.
+* `IsDedekindDomain.FiniteAdeleRing.exists_sub_algebraMap_mem_integralAdeles`: every finite adele
+  differs from a diagonal element by an integral finite adele.
 * `IsDedekindDomain.FiniteAdeleRing.denseRange_algebraMap`: `K` is dense in the finite adele ring.
 * `IsDedekindDomain.FiniteAdeleRing.closure_image_algebraMap_integer` and
   `IsDedekindDomain.FiniteAdeleRing.closure_range_algebraMap`: the closure of the `S`-integers in
@@ -84,6 +90,8 @@ approximates `a`.
   the subalgebra of integral finite adeles.
 * `IsDedekindDomain.FiniteAdeleRing.quotientEquivQuotientIntegralAdeles`: the `R`-linear
   isomorphism `K / R ≃ 𝔸ᶠ / ∏_v 𝒪_v` induced by the diagonal embedding.
+* `IsDedekindDomain.FiniteAdeleRing.AdeleQuotient`: the quotient `𝔸ᶠ / ∏_v 𝒪_v` as an
+  `R`-module.
 
 ## References
 
@@ -383,6 +391,37 @@ theorem mul_nonZeroDivisor_mem_integralAdeles (a : FiniteAdeleRing R K) :
     exact mul_mem (hb v) (v.coe_mem_adicCompletionIntegers _)
   · exact mul_mem (by simpa using hv) (v.coe_mem_adicCompletionIntegers _)
 
+/-- **A finite family of finite adeles has a common denominator**: some nonzero divisor `b` of `R`
+makes every `a i * b` an integral finite adele. -/
+theorem exists_mem_nonZeroDivisors_forall_mul_mem_integralAdeles {ι : Type*} [Finite ι]
+    (a : ι → FiniteAdeleRing R K) :
+    ∃ b ∈ nonZeroDivisors R, ∀ i, a i * algebraMap R (FiniteAdeleRing R K) b ∈
+      integralAdeles R K := by
+  classical
+  cases nonempty_fintype ι
+  choose b hb0 hb using fun i ↦ mul_nonZeroDivisor_mem_integralAdeles (a i)
+  refine ⟨∏ i, b i, prod_mem fun i _ ↦ hb0 i, fun i ↦ ?_⟩
+  rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ i), map_mul, ← mul_assoc]
+  exact mul_mem (hb i) (Subalgebra.algebraMap_mem _ _)
+
+/-- **A compact set of finite adeles has a common denominator**: some nonzero divisor `b` of `R`
+makes `a * b` an integral finite adele for every `a` in the set. -/
+theorem mul_nonZeroDivisor_mem_integralAdeles_of_isCompact {s : Set (FiniteAdeleRing R K)}
+    (hs : IsCompact s) : ∃ b ∈ nonZeroDivisors R,
+      ∀ a ∈ s, a * algebraMap R (FiniteAdeleRing R K) b ∈ integralAdeles R K := by
+  classical
+  choose d hd0 hd using mul_nonZeroDivisor_mem_integralAdeles (R := R) (K := K)
+  -- the open sets on which a single denominator `d a` works cover `s`
+  obtain ⟨t, hst⟩ := hs.elim_finite_subcover
+    (fun a ↦ (· * algebraMap R (FiniteAdeleRing R K) (d a)) ⁻¹'
+      (integralAdeles R K : Set (FiniteAdeleRing R K)))
+    (fun a ↦ (isOpen_integralAdeles R K).preimage (continuous_id.mul continuous_const))
+    fun a _ ↦ Set.mem_iUnion.mpr ⟨a, Set.mem_preimage.mpr (hd a)⟩
+  refine ⟨∏ a ∈ t, d a, prod_mem fun a _ ↦ hd0 a, fun y hy ↦ ?_⟩
+  obtain ⟨a, ha, hya⟩ := Set.mem_iUnion₂.mp (hst hy)
+  rw [← Finset.mul_prod_erase _ _ ha, map_mul, ← mul_assoc]
+  exact mul_mem hya ((integralAdeles R K).algebraMap_mem _)
+
 /-- **Strong approximation for the finite adeles, in explicit form.** Every finite adele `a` is
 approximated by an element `x` of `K` to any prescribed precision at finitely many places, while
 `x - a` is integral at every place. -/
@@ -448,6 +487,15 @@ theorem exists_forall_sub_algebraMap_mem_adicCompletionIntegers (a : FiniteAdele
     rw [mem_adicCompletionIntegers]
     exact hx v
   simpa only [neg_sub] using neg_mem hxa
+
+/-- Every finite adele differs from a diagonal element by an element of the subalgebra
+`integralAdeles` of integral finite adeles. -/
+theorem exists_sub_algebraMap_mem_integralAdeles (a : FiniteAdeleRing R K) :
+    ∃ x : K, a - algebraMap K (FiniteAdeleRing R K) x ∈ integralAdeles R K :=
+  (exists_forall_sub_algebraMap_mem_adicCompletionIntegers a).imp fun _ hx ↦
+    mem_integralAdeles.mpr fun v ↦ by
+      rw [sub_apply, algebraMap_apply]
+      exact hx v
 
 /-- **Every neighbourhood of `0` in the finite adele ring contains a basic congruence
 neighbourhood.**  There are a finite set `I` of places and exponents `n` such that every finite
@@ -542,12 +590,18 @@ theorem denseRange_algebraMap_integralAdeles :
   simpa only [Function.comp_def, Subalgebra.coe_algebraMap] using (closure_range_algebraMap R K).ge
 
 variable (R K) in
+/-- The quotient `𝔸ᶠ / ∏_v 𝒪_v` of the finite adeles by the integral finite adeles, as an
+`R`-module. -/
+abbrev AdeleQuotient : Type _ :=
+  FiniteAdeleRing R K ⧸ Subalgebra.toSubmodule (integralAdeles R K)
+
+variable (R K) in
 /-- **`K / R` is the quotient of the finite adeles by the integral finite adeles.** The diagonal
 embedding of `K` induces an isomorphism of `R`-modules `K / R ≃ 𝔸ᶠ / ∏_v 𝒪_v`: it is surjective
 by strong approximation, and injective because the integral finite adeles meet `K` in `R`. -/
 noncomputable def quotientEquivQuotientIntegralAdeles :
     (K ⧸ (1 : Submodule R K)) ≃ₗ[R]
-      FiniteAdeleRing R K ⧸ Subalgebra.toSubmodule (integralAdeles R K) :=
+      AdeleQuotient R K :=
   let f : K →ₗ[R] FiniteAdeleRing R K ⧸ Subalgebra.toSubmodule (integralAdeles R K) :=
     (Subalgebra.toSubmodule (integralAdeles R K)).mkQ ∘ₗ
       (Algebra.linearMap K (FiniteAdeleRing R K)).restrictScalars R

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Basic
+public import TauCeti.Topology.Convenient.Category
 public import TauCeti.Topology.Convenient.CompactlyGenerated
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 

@@ -78,10 +78,6 @@ private theorem kostantTripleMap_injective (e : I → L) (h : J → L) :
     Function.Injective (kostantTripleMap e h) := by
   let : HasUniqueDiv U := .of_module_rat U
   let : HasUniqueDiv (U ⊗[ℚ] U) := .of_module_rat (U ⊗[ℚ] U)
-  let : HasUniqueDiv (K e h) :=
-    Function.Injective.hasUniqueDiv (K e h).subtype.toAddMonoidHom
-      (K e h).subtype_injective
-  let : Module.Flat ℤ (K e h) := inferInstance
   let f : K e h →ₗ[ℤ] U := (K e h).subtype.toIntAlgHom.toLinearMap
   let g : K e h ⊗[ℤ] K e h →ₗ[ℤ] U ⊗[ℚ] U := (kostantTensorMap e h).toLinearMap
   have hinjective : Function.Injective (TensorProduct.map f g) :=

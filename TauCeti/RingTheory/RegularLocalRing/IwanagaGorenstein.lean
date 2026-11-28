@@ -33,7 +33,8 @@ universe u
 theorem of_isRegularRing_of_ringKrullDim_lt_top (R : Type u) [CommRing R] [IsRegularRing R]
     (h : ringKrullDim R < ⊤) : IsIwanagaGorenstein R :=
   of_globalDimension_lt_top R <|
-    ((globalDimension_le_iff R _).mpr ModuleCat.projectiveDimension_le_ringKrullDim).trans_lt h
+    ((CategoryTheory.Abelian.globalDimension_le_iff (ModuleCat R) _).mpr
+      ModuleCat.projectiveDimension_le_ringKrullDim).trans_lt h
 
 /-- A commutative regular ring with `[Ring.KrullDimLE d R]` is Iwanaga–Gorenstein. -/
 theorem of_isRegularRing_of_krullDimLE (R : Type u) [CommRing R] [IsRegularRing R] (d : ℕ)

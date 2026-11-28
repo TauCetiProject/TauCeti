@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.LocalRing.RingHom
+public import TauCeti.RingTheory.LocalRing.RingHom.Basic
 public import TauCeti.RingTheory.StableRange
 public import Mathlib.RingTheory.HopkinsLevitzki
 

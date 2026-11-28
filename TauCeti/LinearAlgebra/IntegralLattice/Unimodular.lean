@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Finiteness
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
-public import TauCeti.Algebra.Module.Primitive
+public import TauCeti.Algebra.Module.Primitive.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Examples
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Sum
 public import TauCeti.LinearAlgebra.IntegralLattice.Scaling

@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.Star.Unitary
 public import Mathlib.Topology.MetricSpace.ProperSpace
 
 /-!
-# Normed star subgroups, unit and unitary norms, and compact unitary groups
+# Unit and unitary norms and compact unitary groups
 
 In a C⋆-ring, left and right multiplication by a unitary element preserve the norm
 (`CStarRing.norm_coe_unitary_mul`, `CStarRing.norm_mul_coe_unitary`), so unitary conjugation
@@ -23,12 +23,8 @@ finite-dimensional C⋆-algebra such as the operators on a finite-dimensional in
 its unitary group is compact. In particular the orthogonal and unitary groups of a
 finite-dimensional real or complex inner product space are compact.
 
-Any additive subgroup closed under the involution of a `NormedStarGroup` inherits the restricted
-`NormedStarGroup` structure.
-
 ## Main results
 
-* `StarMemClass.instNormedStarGroup`: `NormedStarGroup` instance on star-closed additive subgroups.
 * `IsStarProjection.norm_eq_one`: a nonzero star projection of a C⋆-ring has norm `1`.
 * `CStarRing.norm_one_le`: `‖1‖ ≤ 1` in any unital C⋆-ring, including the trivial one, where
   Mathlib's `CStarRing.norm_one` (which needs `Nontrivial`) does not apply.
@@ -37,18 +33,13 @@ Any additive subgroup closed under the involution of a `NormedStarGroup` inherit
 * `CStarRing.norm_unitary_conj`: unitary conjugation preserves the norm in a C⋆-ring.
 * `CStarRing.norm_unitary_conj_sub`: unitary conjugation preserves the norm of a difference in a
   C⋆-ring.
+* `CStarRing.norm_inv_norm_sq_smul_star_mul_self`: normalizing `x⋆ x` by `‖x‖ ^ 2` gives an
+  element of norm `1`.
 * `CStarRing.isCompact_unitary`: the unitary elements of a proper C⋆-ring form a compact set.
 * `CStarRing.instCompactSpaceUnitary`: the unitary group of a proper C⋆-ring is compact.
 -/
 
 public section
-
-/-- Any additive subgroup closed under the involution of a `NormedStarGroup` inherits the
-`NormedStarGroup` structure. -/
-instance StarMemClass.instNormedStarGroup {S E : Type*} [SeminormedAddCommGroup E]
-    [StarAddMonoid E] [NormedStarGroup E] [SetLike S E] [AddSubgroupClass S E] [StarMemClass S E]
-    (s : S) : NormedStarGroup s where
-  norm_star_le x := NormedStarGroup.norm_star_le (x : E)
 
 /-- A nonzero star projection of a C⋆-ring has norm `1`: `‖e‖ = ‖e⋆ e‖ = ‖e‖ ^ 2`. -/
 theorem IsStarProjection.norm_eq_one {E : Type*} [NonUnitalNormedRing E] [StarRing E]
@@ -85,6 +76,11 @@ theorem norm_unitary_conj (u : unitary E) (x : E) :
 theorem norm_unitary_conj_sub (u : unitary E) (x y : E) :
     ‖(u : E) * x * star (u : E) - (u : E) * y * star (u : E)‖ = ‖x - y‖ := by
   rw [← sub_mul, ← mul_sub, norm_unitary_conj]
+
+/-- Normalizing `x⋆ x` by `‖x‖ ^ 2` gives an element of norm `1`. -/
+theorem norm_inv_norm_sq_smul_star_mul_self [NormedSpace ℝ E] {x : E} (hx : x ≠ 0) :
+    ‖(‖x‖ ^ 2)⁻¹ • (star x * x)‖ = 1 := by
+  simp [norm_smul, norm_star_mul_self, ← sq, hx]
 
 variable [ProperSpace E]
 

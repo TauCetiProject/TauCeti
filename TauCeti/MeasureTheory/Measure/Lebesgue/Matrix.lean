@@ -14,7 +14,9 @@ import TauCeti.MeasureTheory.Constructions.Pi
 # Lebesgue measure under matrix vectorization
 
 Matrices over a measure space inherit the product measure on their entries via
-`Matrix.ofMeasurableEquiv`. This measure is sigma-finite whenever the entry measure is.
+`Matrix.ofMeasurableEquiv`. It is sigma-finite when the entry measure is and inherits additive
+Haar volume from its entries. The volume of the matrices with entries in a set is the volume
+of that set raised to the number of entries.
 
 Column-stacking vectorization preserves product Lebesgue measure, also when either index type
 is empty. Thus a density on Euclidean vector coordinates transfers to a matrix density without
@@ -45,6 +47,31 @@ instance instSigmaFiniteVolume {m n α : Type*} [Fintype m] [Fintype n] [Measure
     [SigmaFinite (volume : Measure α)] : SigmaFinite (volume : Measure (Matrix m n α)) := by
   rw [← (volume_preserving_ofMeasurableEquiv m n α).map_eq]
   exact (Matrix.ofMeasurableEquiv m n α).sigmaFinite_map
+
+variable {r s A : Type*} [Fintype r] [Fintype s] [MeasureSpace A]
+  [SigmaFinite (volume : Measure A)]
+
+/-- The product volume of the matrices with entries in a set is its volume raised to the number
+of entries. -/
+@[simp]
+theorem _root_.Set.volume_matrix (S : Set A) :
+    volume (S.matrix : Set (Matrix r s A)) = volume S ^ (Fintype.card r * Fintype.card s) := by
+  rw [← (volume_preserving_ofMeasurableEquiv r s A).map_eq, MeasurableEquiv.map_apply,
+    Set.matrix_eq_pi, ← Set.preimage_comp]
+  simp [volume_pi_pi, Function.comp_def, pow_mul, Nat.mul_comm (Fintype.card r)]
+
+/-- Matrices over a group with additive Haar volume inherit additive Haar volume on their
+entries. -/
+instance instIsAddHaarMeasureVolume [AddGroup A] [TopologicalSpace A] [MeasurableAdd A]
+    [Measure.IsAddHaarMeasure (volume : Measure A)] :
+    (volume : Measure (Matrix r s A)).IsAddHaarMeasure := by
+  have : (volume : Measure (s → A)).IsAddHaarMeasure := Measure.pi.isAddHaarMeasure _
+  have : (volume : Measure (r → s → A)).IsAddHaarMeasure := Measure.pi.isAddHaarMeasure _
+  rw [← (volume_preserving_ofMeasurableEquiv r s A).map_eq]
+  -- The matrix and array instances for addition, topology and measurable space coincide.
+  -- On arrays the map underlying `Matrix.ofMeasurableEquiv` is the identity.
+  change ((volume : Measure (r → s → A)).map id).IsAddHaarMeasure
+  rwa [Measure.map_id]
 
 end Matrix
 
