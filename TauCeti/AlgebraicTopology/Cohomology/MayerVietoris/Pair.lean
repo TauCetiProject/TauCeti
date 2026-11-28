@@ -67,10 +67,6 @@ cochains (`SSetPair.quasiIso_cochainComplexMap`).
   maps `f : X ⟶ Y` carrying `A`, `B`, `C` and `D` into `A'`, `B'`, `C'` and `D'`, and
   `TopCat.singularCohomologyPairMayerVietorisδ_naturality_of_subset` is the case of the inclusions
   for `A ⊆ A'`, `B ⊆ B'`, `C ⊆ C'` and `D ⊆ D'` in `X`.
-* `TopCat.quasiIso_cochainComplexMap_smallSingularSubcomplexPairToUnion` and
-  `TopCat.isIso_homologyMap_cochainComplexMap_smallSingularSubcomplexPairToUnion`: for `U` and `V`
-  open in `U ∪ V`, the cochains of `X` relative to its singular simplices lying in `U` or in `V`
-  compute the cohomology of `(X, U ∪ V)`.
 * `SSetPair.mayerVietorisCochainδ_comp_homologyMap_cochainComplexπ`: the quotient maps from ambient
   to relative chains carry the relative cochain Mayer–Vietoris connecting morphism of a square of
   pairs of simplicial sets to the absolute one of its square of ambient simplicial sets.
@@ -336,65 +332,6 @@ namespace TopCat
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
   (k : Type*) [Ring k] [Linear k C] (M : C) {X : TopCat.{w}}
-
-/-! ### The small-chain comparison on cochains -/
-
-/-- The singular simplices of `X` lying in `U` or in `V` compute the cohomology of `U ∪ V`, by the
-small-chain theorem for the cover of `U ∪ V` by `U` and `V`, which only needs to be open in
-`U ∪ V`. -/
-lemma quasiIso_cochainComplexMap_smallSingularSubcomplexToUnion (U V : Set X)
-    (hU : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V))) (hV : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V))) :
-    QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
-      (smallSingularSubcomplexToUnion U V)) := by
-  obtain ⟨e, he⟩ := exists_iso_comp_smallSingularSubcomplexToUnion U V
-  have hcover : ∀ i, IsOpen (ofHom (ContinuousMap.subtypeVal (U ∪ V)) ⁻¹' ![U, V] i) := by
-    intro i
-    fin_cases i
-    exacts [hU, hV]
-  have hcov : ⋃ i, ofHom (ContinuousMap.subtypeVal (U ∪ V)) ⁻¹' ![U, V] i = Set.univ := by
-    rw [← Set.preimage_iUnion, Set.iUnion_vecCons_pair]
-    exact Set.eq_univ_of_forall fun x ↦ x.property
-  -- Restricting cochains to the small simplices of `U ∪ V` is an isomorphism on cohomology.
-  have hq : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
-      ((of ↥(U ∪ V)).smallSingularSubcomplex
-        (fun i ↦ ofHom (ContinuousMap.subtypeVal (U ∪ V)) ⁻¹' ![U, V] i)).ι) :=
-    TauCeti.quasiIso_cochainComplexMap_smallSingularSubcomplex_ι R k M _ hcover hcov
-  rw [← he, SSet.cochainComplexMap_comp] at hq
-  have : IsIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) e.hom) :=
-    ⟨SSet.cochainComplexMap e.inv, by simp [← SSet.cochainComplexMap_comp],
-      by simp [← SSet.cochainComplexMap_comp]⟩
-  exact quasiIso_of_comp_right _ (SSet.cochainComplexMap e.hom)
-
-/-- The cohomology of `X` relative to its singular simplices lying in `U` or in `V` is that of
-`(X, U ∪ V)`, by the small-chain theorem for the cover of `U ∪ V` by `U` and `V`, which only needs
-to be open in `U ∪ V`. -/
-lemma quasiIso_cochainComplexMap_smallSingularSubcomplexPairToUnion (U V : Set X)
-    (hU : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V))) (hV : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V))) :
-    QuasiIso (SSetPair.cochainComplexMap (R := R) (k := k) (M := M)
-      (smallSingularSubcomplexPairToUnion U V)) := by
-  have : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
-      (smallSingularSubcomplexPairToUnion U V).left) := by
-    rw [smallSingularSubcomplexPairToUnion_left]
-    exact quasiIso_cochainComplexMap_smallSingularSubcomplexToUnion R k M U V hU hV
-  have : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
-      (smallSingularSubcomplexPairToUnion U V).right) := by
-    have : IsIso (SSet.chainComplexMap (smallSingularSubcomplexPairToUnion U V).right R) := by
-      rw [chainComplexMap_smallSingularSubcomplexPairToUnion_right]
-      exact IsIso.id _
-    have : IsIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
-        (smallSingularSubcomplexPairToUnion U V).right) :=
-      Functor.map_isIso (linearYonedaFunctor k M) _
-    exact quasiIso_of_isIso _
-  exact SSetPair.quasiIso_cochainComplexMap _
-
-/-- For `U` and `V` open in `U ∪ V`, restricting cochains of `(X, U ∪ V)` to the chains of `X`
-relative to its singular simplices lying in `U` or in `V` is an isomorphism on cohomology. -/
-lemma isIso_homologyMap_cochainComplexMap_smallSingularSubcomplexPairToUnion (U V : Set X)
-    (hU : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V))) (hV : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V))) (n : ℕ) :
-    IsIso (HomologicalComplex.homologyMap (SSetPair.cochainComplexMap (R := R) (k := k) (M := M)
-      (smallSingularSubcomplexPairToUnion U V)) n) := by
-  have := quasiIso_cochainComplexMap_smallSingularSubcomplexPairToUnion R k M U V hU hV
-  infer_instance
 
 /-! ### The Mayer–Vietoris sequence of two pairs -/
 

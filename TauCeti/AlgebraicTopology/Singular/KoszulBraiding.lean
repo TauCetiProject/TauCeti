@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.KoszulBraiding
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Basic
-public import TauCeti.AlgebraicTopology.Singular.Shuffle
+public import TauCeti.AlgebraicTopology.Singular.Shuffle.Basic
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.Basic
 
 /-!

@@ -22,9 +22,11 @@ forms a natural transformation `SSetPair.homologyδNatTrans`.
 It also records that the quotient maps from ambient to relative chains and homology are natural in
 the pair: they commute with morphisms of simplicial-set pairs. The short exact sequence of chain
 complexes of a pair is split in each degree, because the map `C(X) ⟶ C(Y)` is induced by the
-injection of the `n`-simplices of `X` into those of `Y` (`SSetPair.chainComplexXSplitting`); so
-the relative chains are a retract of the ambient chains (`SSetPair.chainComplexXRetract`), and are
-projective when those are (`SSetPair.projective_chainComplex_X`). The splitting computes the
+injection of the `n`-simplices of `X` into those of `Y` (`SSetPair.chainComplexXSplitting`); so the
+quotient map to relative chains is a split epimorphism in each degree
+(`SSetPair.isSplitEpi_chainComplexπ_f`), the relative chains are a retract of the ambient chains
+(`SSetPair.chainComplexXRetract`), and are projective when those are
+(`SSetPair.projective_chainComplex_X`). The splitting computes the
 connecting morphism on a relative cycle: lift it by the section, take the boundary and retract it
 onto the chains of `X` (`SSetPair.homologyπ_homologyδ`). A morphism of pairs which is a
 quasi-isomorphism on subcomplexes and ambient simplicial sets is a quasi-isomorphism on relative
@@ -111,6 +113,13 @@ chains of the ambient simplicial set is a split monomorphism. -/
 instance (R : C) (P : SSetPair.{w}) (n : ℕ) : IsSplitMono ((SSet.chainComplexMap P.hom R).f n) :=
   TauCeti.isSplitMono_sigmaMap' (fun _ ↦ R) (P.hom.app (op ⦋n⦌))
     ((mono_iff_injective _).1 inferInstance)
+
+/-- In each degree, the quotient map from the chains of the ambient simplicial set of a pair to
+its relative chains is a split epimorphism. -/
+instance isSplitEpi_chainComplexπ_f (R : C) (P : SSetPair.{w}) (n : ℕ) :
+    IsSplitEpi ((P.chainComplexπ R).f n) :=
+  let b := binaryBiconeOfIsSplitMonoOfCokernel (P.isColimitCokernelCoforkChainComplexX R n)
+  inferInstanceAs (IsSplitEpi b.snd)
 
 variable {A : Type*} [Category* A] [HasCoproducts.{w} A] [Abelian A]
 

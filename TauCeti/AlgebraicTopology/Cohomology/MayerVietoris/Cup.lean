@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.ModuleCat.Biprod
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Relative
+public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Pair
 
 /-!
 # Mayer–Vietoris connecting morphisms and cup products

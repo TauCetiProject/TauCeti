@@ -16,6 +16,8 @@ This file adds to Mathlib's API for graphs of functions over a set and for the f
 
 ## Main results
 
+* `Set.compl_singleton_prodMk_eq_union`: the complement of `{(a, b)}` in `α × β` is the union of
+  the preimages of `{a}ᶜ` and `{b}ᶜ`.
 * `Set.graphOn_const`: the graph of a constant function over `s` is a horizontal slice `s ×ˢ {b}`.
 * `Set.range_prodMk_const`, `Set.range_const_prodMk`: the ranges of `x ↦ (f x, b)` and
   `x ↦ (b, f x)` are the slices `range f ×ˢ {b}` and `{b} ×ˢ range f`.
@@ -33,6 +35,12 @@ This file adds to Mathlib's API for graphs of functions over a set and for the f
 public section
 
 open Function
+
+/-- The complement of `{(a, b)}` in `α × β` is the union of the preimages of `{a}ᶜ` and `{b}ᶜ`
+under the two projections. -/
+theorem Set.compl_singleton_prodMk_eq_union {α β : Type*} (a : α) (b : β) :
+    ({(a, b)}ᶜ : Set (α × β)) = Prod.fst ⁻¹' {a}ᶜ ∪ Prod.snd ⁻¹' {b}ᶜ := by
+  rw [← Set.singleton_prod_singleton, Set.compl_prod_eq_union, Set.prod_univ, Set.univ_prod]
 
 /-- The graph of a constant function over a set `s` is the slice `s ×ˢ {b}`. -/
 @[simp]

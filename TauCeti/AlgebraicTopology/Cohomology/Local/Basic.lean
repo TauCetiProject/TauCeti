@@ -46,6 +46,8 @@ mirroring `TauCeti.isIso_singularHomologyMap_compl_of_starConvex`.
   `n ≠ d`.
 * `TauCeti.singularCohomologyComplSingletonFinrankEquiv`:
   `Hᵈ(M, M ∖ {x}; R, N) ≃ₗ[k] (R ⟶ N)`.
+* `OpenPartialHomeomorph.singularCohomologyComplSingletonFinrankEquivOfLinearEquiv`:
+  `Hᵈ(M, M ∖ {x}; R, N) ≃ₗ[k] k` for `eR : R ≃ₗ[k] k` and `eN : N ≃ₗ[k] k`.
 * `TauCeti.singularCohomologyComplSingletonFinrankEquivSelf`:
   `Hᵈ(M, M ∖ {x}; k, N) ≃ₗ[k] N`.
 * `TauCeti.exists_span_singularCohomology_complSingleton_eq_top`: `Hᵈ(M, M ∖ {x}; k, k)` is
@@ -282,3 +284,55 @@ theorem exists_singularKronecker_complSingleton_eq_one {d : ℕ} (hd : finrank �
   exact e.symm_apply_eq.2 (one_smul k y).symm
 
 end TauCeti
+
+namespace OpenPartialHomeomorph
+
+open TauCeti (singularCohomologyComplSingletonFinrankEquiv
+  singularCohomologyComplSingletonFinrankEquiv_apply singularHomologyComplSingletonFinrankIso)
+
+section LinearEquiv
+
+variable {k : Type*} [CommRing k] {R N : ModuleCat.{w} k}
+  {M : Type w} [TopologicalSpace M] [T1Space M] {E : Type w} [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [FiniteDimensional ℝ E] (φ : OpenPartialHomeomorph M E) {x : M}
+  (hx : x ∈ φ.source)
+
+/-- **Local cohomology in the top degree for modules isomorphic to the base ring**: at a point
+`x ∈ φ.source` in a `T₁` space `M` with a chart `φ` to a real normed space `E` of dimension `d`,
+linear equivalences `eR : R ≃ₗ[k] k` and `eN : N ≃ₗ[k] k` identify `Hᵈ(M, M ∖ {x}; R, N)` with
+`k`. -/
+def singularCohomologyComplSingletonFinrankEquivOfLinearEquiv (eR : R ≃ₗ[k] k) (eN : N ≃ₗ[k] k) :
+    (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularCohomology R k N (finrank ℝ E) ≃ₗ[k] k :=
+  haveI : Module.Projective k R := .of_equiv eR.symm
+  singularCohomologyComplSingletonFinrankEquiv R N φ hx ≪≫ₗ ModuleCat.homLinearEquiv ≪≫ₗ
+    eR.arrowCongr eN ≪≫ₗ LinearMap.ringLmapEquivSelf k k k
+
+/-- `OpenPartialHomeomorph.singularCohomologyComplSingletonFinrankEquivOfLinearEquiv` evaluates the
+relative Kronecker map of a class on
+`(singularHomologyComplSingletonFinrankIso R φ hx).inv (eR.symm 1)` and applies `eN`. -/
+lemma singularCohomologyComplSingletonFinrankEquivOfLinearEquiv_apply (eR : R ≃ₗ[k] k)
+    (eN : N ≃ₗ[k] k)
+    (α : (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularCohomology R k N (finrank ℝ E)) :
+    φ.singularCohomologyComplSingletonFinrankEquivOfLinearEquiv hx eR eN α =
+      eN (((TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularKronecker k (finrank ℝ E) α).hom
+        ((singularHomologyComplSingletonFinrankIso R φ hx).inv.hom (eR.symm 1))) := by
+  have : Module.Projective k R := .of_equiv eR.symm
+  simp [singularCohomologyComplSingletonFinrankEquivOfLinearEquiv,
+    singularCohomologyComplSingletonFinrankEquiv_apply R N φ hx]
+
+/-- Evaluating the relative Kronecker map of
+`(φ.singularCohomologyComplSingletonFinrankEquivOfLinearEquiv hx eR eN).symm r` on the local
+homology generator `(singularHomologyComplSingletonFinrankIso R φ hx).inv (eR.symm 1)` gives
+`eN.symm r`. -/
+lemma singularKronecker_singularCohomologyComplSingletonFinrankEquivOfLinearEquiv_symm
+    (eR : R ≃ₗ[k] k) (eN : N ≃ₗ[k] k) (r : k) :
+    ((TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularKronecker k (finrank ℝ E)
+      ((φ.singularCohomologyComplSingletonFinrankEquivOfLinearEquiv hx eR eN).symm r)).hom
+        ((singularHomologyComplSingletonFinrankIso R φ hx).inv.hom (eR.symm 1)) = eN.symm r :=
+  eN.injective (by rw [eN.apply_symm_apply,
+    ← φ.singularCohomologyComplSingletonFinrankEquivOfLinearEquiv_apply hx eR eN,
+    LinearEquiv.apply_symm_apply])
+
+end LinearEquiv
+
+end OpenPartialHomeomorph

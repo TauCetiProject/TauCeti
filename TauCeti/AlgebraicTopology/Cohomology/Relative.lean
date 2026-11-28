@@ -265,6 +265,50 @@ lemma singularCohomologyMap_comp {P P' P'' : TopPair.{w}} (f : P ⟶ P') (g : P'
   simp [TopPair.singularCohomologyMap, singularCochainComplexMap_comp,
     HomologicalComplex.homologyMap_comp]
 
+section ChainCoefficients
+
+/-- The map `Hⁿ(P; R, M) ⟶ Hⁿ(P; R', M)` on relative singular cohomology induced by a morphism
+`f : R' ⟶ R` of chain coefficients: precomposition with `P.singularChainComplexCoefficientMap f`. -/
+abbrev singularCohomologyChainCoefficientMap (P : TopPair.{w}) (k : Type*) [Ring k] [Linear k C]
+    (M : C) {R R' : C} (f : R' ⟶ R) (n : ℕ) :
+    P.singularCohomology R k M n ⟶ P.singularCohomology R' k M n :=
+  HomologicalComplex.homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k M).map
+    (P.singularChainComplexCoefficientMap f).op) n
+
+@[simp]
+lemma singularCohomologyChainCoefficientMap_id (P : TopPair.{w}) (k : Type*) [Ring k]
+    [Linear k C] (M : C) (R : C) (n : ℕ) :
+    P.singularCohomologyChainCoefficientMap k M (𝟙 R) n = 𝟙 _ := by
+  simp only [singularCohomologyChainCoefficientMap, singularChainComplexCoefficientMap_id, op_id,
+    CategoryTheory.Functor.map_id]
+  exact HomologicalComplex.homologyMap_id _ _
+
+@[reassoc]
+lemma singularCohomologyChainCoefficientMap_comp (P : TopPair.{w}) (k : Type*) [Ring k]
+    [Linear k C] (M : C) {R R' R'' : C} (f : R'' ⟶ R') (g : R' ⟶ R) (n : ℕ) :
+    P.singularCohomologyChainCoefficientMap k M (f ≫ g) n =
+      P.singularCohomologyChainCoefficientMap k M g n ≫
+        P.singularCohomologyChainCoefficientMap k M f n := by
+  simp only [singularCohomologyChainCoefficientMap, singularChainComplexCoefficientMap_comp,
+    op_comp, Functor.map_comp]
+  exact HomologicalComplex.homologyMap_comp _ _ _
+
+/-- The change of chain coefficients on relative cohomology commutes with maps of topological
+pairs. -/
+@[reassoc]
+lemma singularCohomologyChainCoefficientMap_naturality {P P' : TopPair.{w}} (g : P ⟶ P')
+    (k : Type*) [Ring k] [Linear k C] (M : C) {R R' : C} (f : R' ⟶ R) (n : ℕ) :
+    TopPair.singularCohomologyMap g n ≫ P.singularCohomologyChainCoefficientMap k M f n =
+      P'.singularCohomologyChainCoefficientMap k M f n ≫ TopPair.singularCohomologyMap g n := by
+  have h := congrArg (fun φ ↦ (TauCeti.ChainComplex.linearYonedaFunctor k M).map φ.op)
+    (singularChainComplexCoefficientMap_naturality (f := g) f)
+  simp only [op_comp, Functor.map_comp] at h
+  exact (HomologicalComplex.homologyMap_comp _ _ _).symm.trans
+    ((congrArg (HomologicalComplex.homologyMap · n) h.symm).trans
+      (HomologicalComplex.homologyMap_comp _ _ _))
+
+end ChainCoefficients
+
 /-- `TopPair.singularCohomologyMap_comp` evaluated at a class: the map induced by a composite of
 maps of pairs is the composite of the induced maps. -/
 lemma singularCohomologyMap_comp_apply {P P' P'' : TopPair.{w}} (f : P ⟶ P') (g : P' ⟶ P'')

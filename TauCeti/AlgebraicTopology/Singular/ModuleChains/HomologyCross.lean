@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.AlgebraicTopology.Singular.Contractible
-public import TauCeti.AlgebraicTopology.Singular.CrossProduct
+public import TauCeti.AlgebraicTopology.Singular.CrossProduct.Basic
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 
 /-!

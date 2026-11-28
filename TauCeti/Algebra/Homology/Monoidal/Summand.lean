@@ -42,6 +42,10 @@ totalizations of morphisms, on which these formulas rest, is in
   the two factors of a homogeneous summand along equalities of indices.
 * `HomologicalComplex.ιTensorObj_comp_XIsoOfEq_hom`: identifying the total degree of a homogeneous
   summand along an equality of indices.
+* `HomologicalComplex.isSplitEpi_tensorHom_f`, `HomologicalComplex.epi_tensorHom_of_isSplitEpi_f`,
+  `HomologicalComplex.isSplitEpi_monoidalTensorHom_f`, and
+  `HomologicalComplex.epi_monoidalTensorHom_of_isSplitEpi_f`: the tensor product of two degreewise
+  split epimorphisms is a degreewise split epimorphism, hence an epimorphism of complexes.
 * `HomologicalComplex.ι_whiskerLeft` and `HomologicalComplex.ι_whiskerRight`: the two whiskerings
   on a homogeneous summand.
 * `HomologicalComplex.leftUnitor_inv_f` and `HomologicalComplex.rightUnitor_inv_f`: the degreewise
@@ -108,6 +112,26 @@ lemma XIsoOfEq_hom_tensorHom_XIsoOfEq_hom_ιTensorObj (K L : HomologicalComplex 
   subst hp hq
   simp
 
+/-- The tensor product of two morphisms of homological complexes that are split epimorphisms in
+each degree is a split epimorphism in each degree. -/
+instance isSplitEpi_tensorHom_f {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁)
+    (f₂ : K₂ ⟶ L₂) [HasTensor K₁ K₂] [HasTensor L₁ L₂]
+    [∀ i₁, IsSplitEpi (f₁.f i₁)] [∀ i₂, IsSplitEpi (f₂.f i₂)] (j : I) :
+    IsSplitEpi ((tensorHom f₁ f₂).f j) :=
+  ⟨⟨mapBifunctorDesc fun p q h ↦
+      (section_ (f₁.f p) ⊗ₘ section_ (f₂.f q)) ≫ ιTensorObj K₁ K₂ p q j h, by
+    refine mapBifunctor.hom_ext fun p q h ↦ ?_
+    rw [ι_mapBifunctorDesc_assoc, Category.assoc, ι_tensorHom, tensorHom_comp_tensorHom_assoc]
+    simp⟩⟩
+
+/-- The tensor product of two morphisms of homological complexes that are split epimorphisms in
+each degree is an epimorphism. -/
+instance epi_tensorHom_of_isSplitEpi_f {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁)
+    (f₂ : K₂ ⟶ L₂) [HasTensor K₁ K₂] [HasTensor L₁ L₂]
+    [∀ i₁, IsSplitEpi (f₁.f i₁)] [∀ i₂, IsSplitEpi (f₂.f i₂)] :
+    Epi (tensorHom f₁ f₂) :=
+  epi_of_epi_f _ fun _ ↦ inferInstance
+
 /-- Identifying the degree of a summand of a tensor product along an equality of indices does not
 change the inclusion of the summand. -/
 @[reassoc (attr := simp)]
@@ -138,6 +162,22 @@ lemma ι_tensorHom_f {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁
       (f₁.f i₁ ⊗ₘ f₂.f i₂) ≫ ιTensorObj L₁ L₂ i₁ i₂ j h := by
   rw [tensorHom_eq_mapBifunctorMap]
   exact ι_tensorHom f₁ f₂ i₁ i₂ j h
+
+/-- In the monoidal category of homological complexes, `f₁ ⊗ₘ f₂` is a split epimorphism in each
+degree when `f₁` and `f₂` are. -/
+instance isSplitEpi_monoidalTensorHom_f {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁)
+    (f₂ : K₂ ⟶ L₂) [∀ i₁, IsSplitEpi (f₁.f i₁)] [∀ i₂, IsSplitEpi (f₂.f i₂)] (j : I) :
+    IsSplitEpi ((f₁ ⊗ₘ f₂).f j) := by
+  rw [tensorHom_eq_mapBifunctorMap]
+  exact isSplitEpi_tensorHom_f f₁ f₂ j
+
+/-- In the monoidal category of homological complexes, `f₁ ⊗ₘ f₂` is an epimorphism when `f₁` and
+`f₂` are degreewise split epimorphisms. -/
+instance epi_monoidalTensorHom_of_isSplitEpi_f {K₁ K₂ L₁ L₂ : HomologicalComplex C c}
+    (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂)
+    [∀ i₁, IsSplitEpi (f₁.f i₁)] [∀ i₂, IsSplitEpi (f₂.f i₂)] :
+    Epi (f₁ ⊗ₘ f₂) :=
+  epi_of_epi_f _ fun _ ↦ inferInstance
 
 /-- Left whiskering of homological complexes, restricted to a homogeneous summand, is left
 whiskering of the summand. -/

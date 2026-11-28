@@ -295,4 +295,12 @@ lemma singularKronecker_singularCohomologyπ (P : TopPair.{w}) (k : Type*) [Ring
       P.singularHomologyπ R n ≫ P.singularKronecker k n α :=
   TauCeti.ChainComplex.kronecker_naturality (P.singularChainComplexπ R) n α
 
+/-- Evaluating the pull-back along a chain-coefficient morphism `f : R' ⟶ R` is precomposing the
+relative Kronecker map with `P.singularHomologyCoefficientMap f n`. -/
+lemma singularKronecker_singularCohomologyChainCoefficientMap (P : TopPair.{w}) (k : Type*) [Ring k]
+    [Linear k C] {R' : C} (f : R' ⟶ R) (n : ℕ) (α : P.singularCohomology R k M n) :
+    P.singularKronecker k n (P.singularCohomologyChainCoefficientMap k M f n α) =
+      P.singularHomologyCoefficientMap f n ≫ P.singularKronecker k n α :=
+  TauCeti.ChainComplex.kronecker_naturality (P.singularChainComplexCoefficientMap f) n α
+
 end TopPair

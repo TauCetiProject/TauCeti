@@ -159,21 +159,6 @@ theorem isPushout_toSSet_inter_smallSingularSubcomplex :
       ((Matrix.cons_val_one U ![V]).trans (Matrix.cons_val_zero V ![])).superset ≫ D.ι
     exact (toSmallSingularSubcomplex_ι _ _).symm
 
-/-- Restricting `f` to a set `A` lying in a member of the family `S` and then passing to the small
-singular subcomplex of `T` agrees with passing to the small singular subcomplex of `S` first and
-then mapping by `f`. -/
-@[reassoc]
-lemma toSmallSingularSubcomplex_comp_smallSingularSubcomplexMap {Y : TopCat.{w}} {ι κ : Type*}
-    (S : ι → Set X) (T : κ → Set Y) (f : X ⟶ Y) (r : ι → κ)
-    (hf : ∀ i, Set.MapsTo f (S i) (T (r i))) {A : Set X} {B : Set Y} {i : ι} {j : κ}
-    (hA : A ⊆ S i) (hB : B ⊆ T j) (hAB : Set.MapsTo f A B) :
-    toSmallSingularSubcomplex S hA ≫ X.smallSingularSubcomplexMap S T f r hf =
-      toSSet.map (ofHom ⟨hAB.restrict, f.hom.continuous.restrict hAB⟩) ≫
-        toSmallSingularSubcomplex T hB := by
-  rw [← cancel_mono (Y.smallSingularSubcomplex T).ι, Category.assoc, Category.assoc,
-    smallSingularSubcomplexMap_ι, toSmallSingularSubcomplex_ι_assoc, toSmallSingularSubcomplex_ι,
-    ← Functor.map_comp, ← Functor.map_comp, ofHom_subtypeVal_comp f hAB]
-
 /-! ### The Mayer–Vietoris sequence of an open cover by two sets -/
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)

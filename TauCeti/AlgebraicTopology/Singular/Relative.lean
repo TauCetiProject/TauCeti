@@ -172,6 +172,37 @@ lemma toSSetPair_map_ofInclusionMap_restrict_right :
 
 end ofInclusionMapRestrict
 
+section ofSubsetMap
+
+/-- On singular simplicial sets of subspaces, the map of pairs `(X, A) ⟶ (X, B)` induced by the
+identity of `X` is the map induced by the inclusion `A ⊆ B`. -/
+lemma toSSetPair_map_ofSubsetMap_id_left {X : TopCat.{w}} {A B : Set X} (h : A ⊆ B) :
+    (toSSetPair.map (ofSubsetMap (𝟙 X) h)).left =
+      TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.inclusion h)) := by
+  rw [toSSetPair_map_left]
+  congr 1
+  ext x
+  exact Subtype.ext (ofSubsetMap_snd_apply _ _ x)
+
+/-- On the ambient singular simplicial set of `X`, the map of pairs `(X, A) ⟶ (X, B)` induced by
+the identity of `X` is the identity. -/
+lemma toSSetPair_map_ofSubsetMap_id_right {X : TopCat.{w}} {A B : Set X} (h : A ⊆ B) :
+    (toSSetPair.map (ofSubsetMap (𝟙 X) h)).right = 𝟙 (TopCat.toSSet.obj X) :=
+  (congrArg TopCat.toSSet.map (ofSubsetMap_fst (𝟙 X) h)).trans (TopCat.toSSet.map_id X)
+
+/-- On singular simplicial sets of subspaces, the map of pairs `(X, A) ⟶ (Y, A')` induced by `f`
+is the map induced by the restriction of `f`. -/
+lemma toSSetPair_map_ofSubsetMap_left {X Y : TopCat.{w}} (f : X ⟶ Y) {A : Set X} {A' : Set Y}
+    (hA : Set.MapsTo f A A') :
+    (toSSetPair.map (ofSubsetMap f hA)).left =
+      TopCat.toSSet.map (TopCat.ofHom ⟨hA.restrict, f.hom.continuous.restrict hA⟩) := by
+  rw [toSSetPair_map_left]
+  congr 1
+  ext x
+  exact Subtype.ext (ofSubsetMap_snd_apply _ _ x)
+
+end ofSubsetMap
+
 variable (C : Type u) [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
 
 /-- The relative singular chain complex functor on topological pairs. -/
@@ -251,6 +282,36 @@ lemma singularChainComplexFunctor_obj_map :
     (singularChainComplexFunctor_obj_obj (C := C) P' R)).2
   rw [singularChainComplexFunctor.eq_def, Functor.comp_obj,
     Functor.whiskeringLeft_obj_obj, Functor.comp_map, singularChainComplexMap.eq_def]
+
+variable {R} in
+/-- The map on relative singular chains induced by a morphism of coefficient objects. -/
+noncomputable abbrev singularChainComplexCoefficientMap {R' : C} (φ : R ⟶ R') :
+    P.singularChainComplex R ⟶ P.singularChainComplex R' :=
+  ((SSetPair.chainComplexFunctor C).map φ).app (toSSetPair.obj P)
+
+/-- Relative singular chains send the identity morphism of coefficients to the identity chain
+map. -/
+@[simp]
+lemma singularChainComplexCoefficientMap_id :
+    P.singularChainComplexCoefficientMap (𝟙 R) = 𝟙 _ := by
+  simp [singularChainComplexCoefficientMap]
+
+variable {R} in
+/-- Relative singular chains send a composite of coefficient morphisms to the composite of the
+induced chain maps. -/
+@[reassoc]
+lemma singularChainComplexCoefficientMap_comp {R' R'' : C} (φ : R ⟶ R') (ψ : R' ⟶ R'') :
+    P.singularChainComplexCoefficientMap (φ ≫ ψ) =
+      P.singularChainComplexCoefficientMap φ ≫ P.singularChainComplexCoefficientMap ψ := by
+  simp [singularChainComplexCoefficientMap]
+
+variable {P P' R} in
+/-- Naturality of the relative singular chain coefficient map in maps of topological pairs. -/
+@[reassoc]
+lemma singularChainComplexCoefficientMap_naturality {R' : C} (φ : R ⟶ R') :
+    singularChainComplexMap f R ≫ P'.singularChainComplexCoefficientMap φ =
+      P.singularChainComplexCoefficientMap φ ≫ singularChainComplexMap f R' :=
+  ((SSetPair.chainComplexFunctor C).map φ).naturality (toSSetPair.map f)
 
 variable {P P'} in
 /-- Read in the relative singular chain complexes, the relative singular chain functor sends a map
@@ -334,6 +395,17 @@ lemma singularChainComplexπ_coefficient_naturality
       ((SSetPair.chainComplexFunctorπ C).naturality φ)
   simp only [toSSetPair_obj_right] at h
   exact h
+
+variable {R} in
+/-- The quotient map from ambient to relative singular chains commutes with coefficient
+morphisms. -/
+@[reassoc]
+lemma singularChainComplexπ_comp_singularChainComplexCoefficientMap {R' : C} (φ : R ⟶ R') :
+    P.singularChainComplexπ R ≫ P.singularChainComplexCoefficientMap φ =
+      ((SSet.chainComplexFunctor C).map φ).app (TopCat.toSSet.obj P.fst) ≫
+        P.singularChainComplexπ R' := by
+  rw [← TauCeti.singularChainComplexFunctor_map_app]
+  exact (P.singularChainComplexπ_coefficient_naturality φ).symm
 
 @[simp]
 lemma chainComplexMap_comp_singularChainComplexπ :
@@ -445,6 +517,13 @@ protected noncomputable abbrev singularHomologyMap (n : ℕ) :
     P.singularHomology R n ⟶ P'.singularHomology R n :=
   SSetPair.homologyMap (toSSetPair.map f) R n
 
+variable {P P'} in
+/-- The relative singular homology map induced by a map of pairs is the homology map of the
+induced map on relative singular chain complexes. -/
+lemma singularHomologyMap_def (n : ℕ) :
+    P.singularHomologyMap f R n = HomologicalComplex.homologyMap (singularChainComplexMap f R) n :=
+  (rfl)
+
 /-- Relative singular homology sends the identity map of a pair to the identity. -/
 @[simp]
 lemma singularHomologyMap_id (n : ℕ) : P.singularHomologyMap (𝟙 P) R n = 𝟙 _ := by
@@ -458,6 +537,47 @@ lemma singularHomologyMap_comp {P'' : TopPair.{w}} (g : P' ⟶ P'') (n : ℕ) :
     P.singularHomologyMap (f ≫ g) R n =
       P.singularHomologyMap f R n ≫ P'.singularHomologyMap g R n := by
   rw [TopPair.singularHomologyMap, Functor.map_comp, SSetPair.homologyMap_comp]
+
+variable {R} in
+/-- The map on relative singular homology induced by a morphism of coefficient objects. -/
+protected noncomputable abbrev singularHomologyCoefficientMap {R' : C} (φ : R ⟶ R') (n : ℕ) :
+    P.singularHomology R n ⟶ P.singularHomology R' n :=
+  HomologicalComplex.homologyMap (P.singularChainComplexCoefficientMap φ) n
+
+variable {R} in
+/-- The relative homology coefficient map is the homology map of the relative chain coefficient
+map. -/
+lemma singularHomologyCoefficientMap_def {R' : C} (φ : R ⟶ R') (n : ℕ) :
+    P.singularHomologyCoefficientMap φ n =
+      HomologicalComplex.homologyMap (P.singularChainComplexCoefficientMap φ) n :=
+  (rfl)
+
+/-- Relative singular homology sends the identity morphism of coefficients to the identity. -/
+@[simp]
+lemma singularHomologyCoefficientMap_id (n : ℕ) :
+    P.singularHomologyCoefficientMap (𝟙 R) n = 𝟙 _ := by
+  simp [TopPair.singularHomologyCoefficientMap]
+
+variable {R} in
+/-- Relative singular homology sends a composite of coefficient morphisms to the composite of the
+induced maps. -/
+@[reassoc]
+lemma singularHomologyCoefficientMap_comp {R' R'' : C} (φ : R ⟶ R') (ψ : R' ⟶ R'') (n : ℕ) :
+    P.singularHomologyCoefficientMap (φ ≫ ψ) n =
+      P.singularHomologyCoefficientMap φ n ≫ P.singularHomologyCoefficientMap ψ n := by
+  simp [TopPair.singularHomologyCoefficientMap, singularChainComplexCoefficientMap_comp,
+    HomologicalComplex.homologyMap_comp]
+
+variable {P P' R} in
+/-- Naturality of the relative singular homology coefficient map in maps of topological pairs. -/
+@[reassoc]
+lemma singularHomologyCoefficientMap_naturality {R' : C} (φ : R ⟶ R') (n : ℕ) :
+    P.singularHomologyMap f R n ≫ P'.singularHomologyCoefficientMap φ n =
+      P.singularHomologyCoefficientMap φ n ≫ P.singularHomologyMap f R' n := by
+  rw [singularHomologyMap_def, singularHomologyMap_def,
+    singularHomologyCoefficientMap_def, singularHomologyCoefficientMap_def,
+    ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp,
+    singularChainComplexCoefficientMap_naturality]
 
 variable {P P'} in
 /-- An isomorphism of topological pairs induces an isomorphism on relative singular homology. -/

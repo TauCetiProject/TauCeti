@@ -6,16 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Category.TopCat.Monoidal
+import TauCeti.Data.Set.Prod
 
 /-!
-# Fibre inclusions and discrete-factor products in `TopCat`
+# Fibre inclusions, projections, and discrete-factor products in `TopCat`
 
 For spaces `X` and `F` and a point `x : X`, `TopCat.prodFiberInclusion X F x : F ⟶ X ⊗ F` is the
 inclusion `f ↦ (x, f)` of the fibre of the first projection over `x`, built from the cartesian
 monoidal structure of `TopCat`. Its composites with the projections are the constant map at `x`
 and the identity, so it is a split monomorphism, and it is natural in `X` and in `F`.
 
-When `X` has the discrete topology, `TopCat.sigmaConstIsoProd X Y` identifies the disjoint union
+We also record `TopCat.ofHom_fst` and `TopCat.ofHom_snd`, identifying
+`TopCat.ofHom ContinuousMap.fst` and `TopCat.ofHom ContinuousMap.snd` with the cartesian
+projections `fst` and `snd`, `TopCat.mapsTo_tensorHom_preimage_fst`,
+`TopCat.mapsTo_tensorHom_preimage_snd`, and `TopCat.mapsTo_tensorHom_preimage_union` for
+preimages under projections, and `TopCat.mapsTo_tensorHom_compl_singleton` showing that a product of
+maps preserving singleton complements preserves the complement of the pair. When `X` has the
+discrete topology, `TopCat.sigmaConstIsoProd X Y` identifies the disjoint union
 `TopCat.of (Σ _ : X, Y)` with the product `X ⊗ Y`, matching each summand inclusion `TopCat.sigmaι`
 with `TopCat.prodFiberInclusion`.
 -/
@@ -27,6 +34,58 @@ open CategoryTheory MonoidalCategory CartesianMonoidalCategory
 universe u
 
 namespace TopCat
+
+/-- `TopCat.ofHom ContinuousMap.fst` is the cartesian first projection `fst (of X) (of Y)`. -/
+@[simp]
+lemma ofHom_fst {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] :
+    TopCat.ofHom (ContinuousMap.fst : C(X × Y, X)) = fst (of X) (of Y) :=
+  TopCat.ext fun _ ↦ rfl
+
+/-- `TopCat.ofHom ContinuousMap.snd` is the cartesian second projection `snd (of X) (of Y)`. -/
+@[simp]
+lemma ofHom_snd {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] :
+    TopCat.ofHom (ContinuousMap.snd : C(X × Y, Y)) = snd (of X) (of Y) :=
+  TopCat.ext fun _ ↦ rfl
+
+/-- The product of two maps carries the preimage of `A` under the first projection into the
+preimage of `A'` when the first map carries `A` into `A'`. -/
+lemma mapsTo_tensorHom_preimage_fst {X Y X' Y' : TopCat.{u}} {A : Set X} {A' : Set X'}
+    (f : X ⟶ X') (g : Y ⟶ Y') (hf : Set.MapsTo f A A') :
+    Set.MapsTo (f ⊗ₘ g) (fst X Y ⁻¹' A) (fst X' Y' ⁻¹' A') :=
+  fun x hx ↦ by
+    rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, tensorHom_fst,
+      ConcreteCategory.comp_apply]
+    exact hf hx
+
+/-- The product of two maps carries the preimage of `B` under the second projection into the
+preimage of `B'` when the second map carries `B` into `B'`. -/
+lemma mapsTo_tensorHom_preimage_snd {X Y X' Y' : TopCat.{u}} {B : Set Y} {B' : Set Y'}
+    (f : X ⟶ X') (g : Y ⟶ Y') (hg : Set.MapsTo g B B') :
+    Set.MapsTo (f ⊗ₘ g) (snd X Y ⁻¹' B) (snd X' Y' ⁻¹' B') :=
+  fun x hx ↦ by
+    rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, tensorHom_snd,
+      ConcreteCategory.comp_apply]
+    exact hg hx
+
+/-- The product of two maps carrying `A` into `A'` and `B` into `B'` carries the union of the
+preimages of `A` and `B` under the projections into the union of the preimages of `A'` and
+`B'`. -/
+lemma mapsTo_tensorHom_preimage_union {X Y X' Y' : TopCat.{u}} {A : Set X} {B : Set Y}
+    {A' : Set X'} {B' : Set Y'} (f : X ⟶ X') (g : Y ⟶ Y')
+    (hf : Set.MapsTo f A A') (hg : Set.MapsTo g B B') :
+    Set.MapsTo (f ⊗ₘ g) (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B) (fst X' Y' ⁻¹' A' ∪ snd X' Y' ⁻¹' B') :=
+  (mapsTo_tensorHom_preimage_fst f g hf).union_union (mapsTo_tensorHom_preimage_snd f g hg)
+
+/-- The product of two continuous maps carrying `{x₁}ᶜ` into `{y₁}ᶜ` and `{x₂}ᶜ` into `{y₂}ᶜ`
+carries `{(x₁, x₂)}ᶜ` into `{(y₁, y₂)}ᶜ`. -/
+lemma mapsTo_tensorHom_compl_singleton {V₁ V₂ W₁ W₂ : Type u} [TopologicalSpace V₁]
+    [TopologicalSpace V₂] [TopologicalSpace W₁] [TopologicalSpace W₂] {x₁ : V₁} {x₂ : V₂}
+    {y₁ : W₁} {y₂ : W₂} (g₁ : TopCat.of V₁ ⟶ TopCat.of W₁) (g₂ : TopCat.of V₂ ⟶ TopCat.of W₂)
+    (hg₁ : Set.MapsTo g₁ ({x₁}ᶜ : Set V₁) ({y₁}ᶜ : Set W₁))
+    (hg₂ : Set.MapsTo g₂ ({x₂}ᶜ : Set V₂) ({y₂}ᶜ : Set W₂)) :
+    Set.MapsTo (g₁ ⊗ₘ g₂) ({(x₁, x₂)}ᶜ : Set (V₁ × V₂)) ({(y₁, y₂)}ᶜ : Set (W₁ × W₂)) := by
+  rw [Set.compl_singleton_prodMk_eq_union, Set.compl_singleton_prodMk_eq_union]
+  exact mapsTo_tensorHom_preimage_union g₁ g₂ hg₁ hg₂
 
 variable (X F : TopCat.{u})
 

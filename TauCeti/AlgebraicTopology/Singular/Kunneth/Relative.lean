@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Connecting
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 public import TauCeti.AlgebraicTopology.Singular.Relative
+public import TauCeti.AlgebraicTopology.Singular.Shuffle.Relative
 public import TauCeti.AlgebraicTopology.Singular.Triple
 
 /-!
@@ -16,8 +17,7 @@ public import TauCeti.AlgebraicTopology.Singular.Triple
 Let `X` and `Y` be topological spaces and `B ⊆ X`. The product pair `(X, B) × Y` is
 `(X × Y, B × Y)`; here `B × Y` is written as the preimage `fst⁻¹(B)` of `B` under the first
 projection, so that the pair is `TopPair.ofSubset (Prod.fst ⁻¹' B)`. The shuffle map
-`C(X; R) ⊗ C(Y; S) ⟶ C(X × Y; R ⊗ S)` (`TopCat.shuffle`) carries `C(B; R) ⊗ C(Y; S)` into the
-singular chains of `fst⁻¹(B)`, so it descends to the **relative shuffle map**
+`C(X; R) ⊗ C(Y; S) ⟶ C(X × Y; R ⊗ S)` (`TopCat.shuffle`) descends to the **relative shuffle map**
 (`TopCat.shuffleRel`)
 
 `C(X, B; R) ⊗ C(Y; S) ⟶ C(X × Y, fst⁻¹(B); R ⊗ S)`.
@@ -66,7 +66,6 @@ second factor, to the simplicial shuffle map, with the pair in the first factor.
 
 ## Main definitions
 
-* `TopCat.shuffleRel`: the relative shuffle map `C(X, B; R) ⊗ C(Y; S) ⟶ C(X × Y, fst⁻¹(B))`.
 * `TopCat.singularHomologyCrossRel`: the relative cross product in singular homology, and
   `TopCat.singularHomologyCrossRelOfInclusion`: its version for nested subspaces.
 * `TopCat.singularHomologyKunnethRel`: the relative Künneth map, and
@@ -76,8 +75,8 @@ second factor, to the simplicial shuffle map, with the pair in the first factor.
 ## Main results
 
 * `TopCat.quasiIso_shuffleRel`: the relative Eilenberg–Zilber theorem.
-* `TopCat.shuffleRel_naturality`, `TopCat.singularHomologyCrossRel_naturality`: naturality in maps
-  of pairs `(X, B) ⟶ (X', B')` and in maps `Y ⟶ Y'`.
+* `TopCat.singularHomologyCrossRel_naturality`: naturality in maps of pairs
+  `(X, B) ⟶ (X', B')` and in maps `Y ⟶ Y'`.
 * `TopCat.singularHomologyCross_comp_singularHomologyπ`: the absolute cross product followed by
   the map to relative homology is the relative cross product of the image of the first factor.
 * `TopCat.singularHomologyCrossRel_comp_singularHomologyδ`: the connecting morphism of the pair
@@ -123,122 +122,6 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [Monoida
   [∀ (T : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorLeft T)]
   [∀ (T : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorRight T)]
   (X Y : TopCat.{w}) (B : Set X) (R S : C)
-
-omit [∀ (T : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorLeft T)]
-  [∀ (T : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorRight T)] in
-/-- Tensoring on the right with `C(Y; S)` preserves the short exact sequence
-`C(B; R) ⟶ C(X; R) ⟶ C(X, B; R)` of singular chains of the pair `(X, B)`, since the inclusion of
-the singular chains of `B` splits in each degree. -/
-theorem shortExact_tensorRightShortComplex_singularChainComplexShortComplex :
-    (tensorRightShortComplex ((toSSet.obj Y).chainComplex S)
-      ((TopPair.ofSubset B).singularChainComplexShortComplex R)).ShortExact :=
-  shortExact_tensorRightShortComplex _ _
-    ((TopPair.ofSubset B).shortExact_singularChainComplexShortComplex R)
-
-/-- On `C(B; R) ⊗ C(Y; S)` the shuffle map is the shuffle map of `B` and `Y` followed by the map
-induced by `B × Y ≅ fst⁻¹(B)` and the inclusion of `fst⁻¹(B)` into `X × Y`. -/
-@[reassoc]
-theorem chainComplexMap_tensorHom_id_shuffle :
-    (SSet.chainComplexMap (toSSet.map (TopPair.ofSubset B).map) R ⊗ₘ
-        𝟙 ((toSSet.obj Y).chainComplex S)) ≫ shuffle X Y R S =
-      shuffle (TopPair.ofSubset B).snd Y R S ≫
-        SSet.chainComplexMap (toSSet.map (prodPreimageFstIso X Y B).hom) (R ⊗ S) ≫
-          SSet.chainComplexMap
-            (toSSet.map (TopPair.ofSubset (fst X Y ⁻¹' B)).map) (R ⊗ S) := by
-  have h := shuffle_naturality (TopPair.ofSubset B).map (𝟙 Y) R S
-  simp only [CategoryTheory.Functor.map_id] at h
-  refine h.trans (congrArg (_ ≫ ·) ?_)
-  simp only [← CategoryTheory.Functor.map_comp, prodPreimageFstIso_hom_comp_map]
-  rfl
-
-/-- The shuffle map carries `C(B; R) ⊗ C(Y; S)` into the chains of `fst⁻¹(B)`, which vanish in
-the relative chains of `(X × Y, fst⁻¹(B))`. -/
-private theorem shuffle_cokernel_condition :
-    (SSet.chainComplexMap (toSSet.map (TopPair.ofSubset B).map) R ⊗ₘ
-        𝟙 ((toSSet.obj Y).chainComplex S)) ≫ shuffle X Y R S ≫
-      (TopPair.ofSubset (fst X Y ⁻¹' B)).singularChainComplexπ (R ⊗ S) = 0 := by
-  -- The composite factors through the singular chains of `fst⁻¹(B)`, which `π` kills. The
-  -- composites are reassociated by hand: the singular chains of `X × Y` appear both as those of
-  -- the ambient space of the pair and as `(toSSet.obj (X ⊗ Y)).chainComplex`, which agree only up
-  -- to unfolding `TopPair.ofSubset`, so `rw [Category.assoc]` does not apply.
-  refine (Category.assoc _ _ _).symm.trans
-    ((chainComplexMap_tensorHom_id_shuffle X Y B R S =≫ _).trans
-    ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
-      ((congrArg (_ ≫ ·) (TopPair.chainComplexMap_comp_singularChainComplexπ _ _)).trans
-        comp_zero))).trans comp_zero)))
-
-/-- **The relative shuffle map** `C(X, B; R) ⊗ C(Y; S) ⟶ C(X × Y, fst⁻¹(B); R ⊗ S)`, induced by
-the shuffle map `C(X; R) ⊗ C(Y; S) ⟶ C(X × Y; R ⊗ S)` on the cokernels; it is characterized by
-`TopCat.singularChainComplexπ_tensorHom_id_shuffleRel`. -/
-def shuffleRel :
-    (TopPair.ofSubset B).singularChainComplex R ⊗ (toSSet.obj Y).chainComplex S ⟶
-      (TopPair.ofSubset (fst X Y ⁻¹' B)).singularChainComplex (R ⊗ S) :=
-  have hS := shortExact_tensorRightShortComplex_singularChainComplexShortComplex X Y B R S
-  have := hS.epi_g
-  hS.exact.gIsCokernel.desc (CokernelCofork.ofπ _ (shuffle_cokernel_condition X Y B R S))
-
-/-- The relative shuffle map is induced by the shuffle map: on `C(X; R) ⊗ C(Y; S)` it is the
-shuffle map followed by the projection to the relative chains of `(X × Y, fst⁻¹(B))`. -/
-@[reassoc (attr := simp)]
-theorem singularChainComplexπ_tensorHom_id_shuffleRel :
-    ((TopPair.ofSubset B).singularChainComplexπ R ⊗ₘ
-        𝟙 ((toSSet.obj Y).chainComplex S)) ≫ shuffleRel X Y B R S =
-      shuffle X Y R S ≫
-        (TopPair.ofSubset (fst X Y ⁻¹' B)).singularChainComplexπ (R ⊗ S) :=
-  have hS := shortExact_tensorRightShortComplex_singularChainComplexShortComplex X Y B R S
-  have := hS.epi_g
-  hS.exact.gIsCokernel.fac _ WalkingParallelPair.one
-
-/-- **Naturality of the relative shuffle map** in maps of pairs `(X, B) ⟶ (X', B')` and in maps
-`Y ⟶ Y'`. -/
-@[reassoc]
-theorem shuffleRel_naturality {X' Y' : TopCat.{w}} {B' : Set X'} (f : X ⟶ X')
-    (hf : Set.MapsTo f B B') (g : Y ⟶ Y') :
-    (TopPair.singularChainComplexMap (TopPair.ofSubsetMap f hf) R ⊗ₘ
-        SSet.chainComplexMap (toSSet.map g) S) ≫ shuffleRel X' Y' B' R S =
-      shuffleRel X Y B R S ≫ TopPair.singularChainComplexMap
-        (TopPair.ofSubsetMap (f ⊗ₘ g) (mapsTo_tensorHom_preimage_fst f g hf)) (R ⊗ S) := by
-  have hS := shortExact_tensorRightShortComplex_singularChainComplexShortComplex X Y B R S
-  have : Epi ((TopPair.ofSubset B).singularChainComplexπ R ⊗ₘ
-      𝟙 ((toSSet.obj Y).chainComplex S)) := hS.epi_g
-  refine (cancel_epi ((TopPair.ofSubset B).singularChainComplexπ R ⊗ₘ
-      𝟙 ((toSSet.obj Y).chainComplex S))).1 ?_
-  -- Both sides are the shuffle map followed by the map of pairs induced by `f × g`.
-  have hπ := TopPair.singularChainComplexπ_pair_naturality (TopPair.ofSubsetMap f hf) R
-  simp only [TopPair.ofSubsetMap_fst] at hπ
-  have h₁ : ((TopPair.ofSubset B).singularChainComplexπ R ⊗ₘ
-        𝟙 ((toSSet.obj Y).chainComplex S)) ≫
-          (TopPair.singularChainComplexMap (TopPair.ofSubsetMap f hf) R ⊗ₘ
-            SSet.chainComplexMap (toSSet.map g) S) =
-      (SSet.chainComplexMap (toSSet.map f) R ⊗ₘ SSet.chainComplexMap (toSSet.map g) S) ≫
-        ((TopPair.ofSubset B').singularChainComplexπ R ⊗ₘ
-          𝟙 ((toSSet.obj Y').chainComplex S)) :=
-    -- The tensor product of chain complexes is `mapBifunctorMap`, which is bifunctorial; the full
-    -- monoidal structure on chain complexes is not available over a general `C`.
-    (mapBifunctorMap_comp _ _ _ _ _ _).symm.trans <| (congrArg₂ (· ⊗ₘ ·)
-      hπ.symm ((Category.id_comp _).trans (Category.comp_id _).symm)).trans
-        (mapBifunctorMap_comp _ _ _ _ _ _)
-  have h₂ := TopPair.singularChainComplexπ_pair_naturality
-    (TopPair.ofSubsetMap (f ⊗ₘ g) (mapsTo_tensorHom_preimage_fst f g hf)) (R ⊗ S)
-  have hfst := TopPair.ofSubsetMap_fst (B := fst X Y ⁻¹' B) (B' := fst X' Y' ⁻¹' B') (f ⊗ₘ g)
-    (mapsTo_tensorHom_preimage_fst f g hf)
-  -- `rw [Category.assoc]` does not see through the wrappers: the chain complexes of the pairs
-  -- appear both as `TopPair.singularChainComplex` and as the singular chain complexes of their
-  -- ambient spaces, which agree only up to unfolding, so the composites are reassociated by `calc`.
-  calc _ = (SSet.chainComplexMap (toSSet.map f) R ⊗ₘ SSet.chainComplexMap (toSSet.map g) S) ≫
-        ((TopPair.ofSubset B').singularChainComplexπ R ⊗ₘ
-          𝟙 ((toSSet.obj Y').chainComplex S)) ≫ shuffleRel X' Y' B' R S :=
-        (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) h₁).trans (Category.assoc _ _ _))
-    _ = shuffle X Y R S ≫ SSet.chainComplexMap (toSSet.map (f ⊗ₘ g)) (R ⊗ S) ≫
-        (TopPair.ofSubset (fst X' Y' ⁻¹' B')).singularChainComplexπ (R ⊗ S) :=
-        (congrArg (_ ≫ ·) (singularChainComplexπ_tensorHom_id_shuffleRel X' Y' B' R S)).trans
-          ((Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _)
-            (shuffle_naturality f g R S)).trans (Category.assoc _ _ _)))
-    _ = _ := (congrArg (fun φ ↦ shuffle X Y R S ≫ SSet.chainComplexMap (toSSet.map φ) (R ⊗ S) ≫
-        (TopPair.ofSubset (fst X' Y' ⁻¹' B')).singularChainComplexπ (R ⊗ S)) hfst.symm).trans <|
-      (congrArg (_ ≫ ·) h₂).trans ((Category.assoc _ _ _).symm.trans
-        ((congrArg (· ≫ _) (singularChainComplexπ_tensorHom_id_shuffleRel X Y B R S).symm).trans
-          (Category.assoc _ _ _)))
 
 /-- The morphism of short exact sequences from `(C(B) ⟶ C(X) ⟶ C(X, B)) ⊗ C(Y)` to
 `C(fst⁻¹(B)) ⟶ C(X × Y) ⟶ C(X × Y, fst⁻¹(B))` given by the shuffle maps, the first one followed
