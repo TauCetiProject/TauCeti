@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.IsSepClosed
 -- Proof-only: the quadratic formula, which solves the equation once the discriminant is a square.
 import Mathlib.Algebra.QuadraticDiscriminant
 import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 
 /-!
 # Separably closed fields
@@ -64,6 +65,8 @@ its conclusion, so instance search could not find it.
   Galois.
 * `SeparableClosure.neZero_two`: `2` stays nonzero in `SeparableClosure K`.
 * `IsSepClosed.of_ringEquiv`: separable closedness transfers along ring isomorphisms.
+* `IsSepClosed.isAlgClosed_iff_perfectField`: a separably closed separable extension of `K` is
+  algebraically closed iff `K` is perfect.
 -/
 
 public section
@@ -98,6 +101,15 @@ theorem IsSepClosed.of_ringEquiv {k K : Type*} [Field k] [Field K] [IsSepClosed 
   splits_of_separable p hp := by
     simpa [Polynomial.map_map] using
       IsSepClosed.splits_domain (f := (e : k →+* K)) _ (hp.map (f := (e.symm : K →+* k)))
+
+/-- A separably closed separable extension `Ω` of a field `K` is algebraically closed if and only
+if `K` is perfect. -/
+theorem IsSepClosed.isAlgClosed_iff_perfectField (K Ω : Type*) [Field K] [Field Ω] [Algebra K Ω]
+    [IsSepClosed Ω] [Algebra.IsSeparable K Ω] :
+    IsAlgClosed Ω ↔ PerfectField K := by
+  refine ⟨fun _ ↦ perfectField_of_isSeparable_of_perfectField_top K Ω, fun _ ↦ ?_⟩
+  have : IsSepClosure K Ω := ⟨inferInstance, inferInstance⟩
+  exact IsAlgClosure.isAlgClosed K
 
 /-- **Separable elements come from any separably closed field.** In a field `Ω` over `k`, the
 elements separable over `k` lie in the image of any embedding over `k` of a separably closed

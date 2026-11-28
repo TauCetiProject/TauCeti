@@ -8,6 +8,8 @@ module
 public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 public import Mathlib.FieldTheory.RatFunc.IntermediateField
 public import Mathlib.FieldTheory.Relrank
+-- Proof-only: `X` is not an `n`-th power in `K(X)` for `1 < n`.
+import TauCeti.FieldTheory.RatFunc.Valuation
 
 /-!
 # Power subfields of a rational function field
@@ -23,6 +25,8 @@ extension of `K`.
 * `TauCeti.RatFunc.finrank_adjoin_X_pow`: `[K(X) : K(X ^ n)] = n`.
 * `TauCeti.RatFunc.isPurelyInseparable_adjoin_X_pow`: `K(X) / K(X ^ q)` is purely inseparable
   for `q` the exponential characteristic of `K`.
+* `TauCeti.RatFunc.perfectField_iff_charZero`: `K(X)` is perfect if and only if `K` has
+  characteristic zero.
 * `Transcendental.relfinrank_adjoin_pow_adjoin`: `[K(x) : K(x ^ n)] = n` for `x` transcendental.
 
 ## Mathematical context
@@ -66,6 +70,22 @@ instance isPurelyInseparable_adjoin_X_pow (K : Type*) [Field K] (q : ℕ) [ExpCh
     (isPurelyInseparable_adjoin_simple_iff_pow_mem E (_root_.RatFunc K) q).mpr
       ⟨1, AdjoinSimple.gen K _, by rw [pow_one, AdjoinSimple.algebraMap_gen]⟩
   exact (_root_.RatFunc.IntermediateField.adjoinXEquiv E).isPurelyInseparable
+
+/-- The rational function field `K(X)` is perfect if and only if `K` has characteristic zero. -/
+theorem perfectField_iff_charZero (K : Type*) [Field K] :
+    PerfectField (_root_.RatFunc K) ↔ CharZero K := by
+  refine ⟨fun _ ↦ ?_, fun _ ↦ PerfectField.ofCharZero⟩
+  by_contra h0
+  have hpos : ringChar K ≠ 0 := fun h ↦ by
+    have : CharP K 0 := h ▸ ringChar.charP K
+    exact h0 (CharP.charP_to_charZero K)
+  have hp : (ringChar K).Prime := (CharP.char_is_prime_or_zero K (ringChar K)).resolve_right hpos
+  have : CharP (_root_.RatFunc K) (ringChar K) :=
+    charP_of_injective_algebraMap (algebraMap K (_root_.RatFunc K)).injective (ringChar K)
+  have : ExpChar (_root_.RatFunc K) (ringChar K) := .prime hp
+  have := PerfectField.toPerfectRing (K := _root_.RatFunc K) (ringChar K)
+  obtain ⟨y, hy⟩ := surjective_frobenius (_root_.RatFunc K) (ringChar K) _root_.RatFunc.X
+  exact TauCeti.ratFunc_pow_ne_X hp.one_lt y (by simpa [frobenius_def] using hy)
 
 end TauCeti.RatFunc
 
