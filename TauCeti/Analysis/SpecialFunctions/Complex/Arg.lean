@@ -104,6 +104,8 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
   from the origin, across the negative real axis too.
 * `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
   eventually, then `arg (f x) → arg Q`.
+* `Complex.arg_one_sub_ofReal_mul_ne_pi`: for `z` off `(1, ∞)` and `t ∈ [0, 1]`,
+  `arg (1 - t * z) ≠ π`.
 * `Complex.im_zpow`: `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.sin_arg_sub_arg_one_sub`: `sin (arg ξ - arg (1 - ξ)) = Im ξ / (|ξ| |1 - ξ|)`; for `ξ`
   in the upper half-plane, the sine of the angle at `ξ` of the triangle `0, 1, ξ`.
@@ -430,6 +432,18 @@ theorem tendsto_arg_of_tendsto_ofReal_mul {α : Type*} {l : Filter α} {c : α �
     (h : Tendsto (fun x ↦ (c x : ℂ) * f x) l (𝓝 Q)) :
     Tendsto (fun x ↦ arg (f x)) l (𝓝 (arg Q)) :=
   ((continuousAt_arg hQ).tendsto.comp h).congr' (hc.mono fun _ hx ↦ arg_ofReal_mul hx _)
+
+/-- For `z` off the open ray `(1, ∞)` (i.e. `z.im ≠ 0 ∨ z.re ≤ 1`) and `t ∈ [0, 1]`, the radial
+point `1 - t * z` never lies on the open negative real axis, so its principal argument is not
+`π`. -/
+theorem arg_one_sub_ofReal_mul_ne_pi (z : ℂ) (hz : z.im ≠ 0 ∨ z.re ≤ 1) {t : ℝ}
+    (ht : t ∈ Set.Icc (0 : ℝ) 1) : ((1 : ℂ) - (t : ℂ) * z).arg ≠ π := by
+  rcases eq_or_ne z 1 with rfl | hz1
+  · have hsub : (1 : ℂ) - (t : ℂ) * 1 = ((1 - t : ℝ) : ℂ) := by push_cast; ring
+    rw [hsub, arg_ofReal_of_nonneg (sub_nonneg.mpr ht.2)]
+    exact Real.pi_ne_zero.symm
+  · exact slitPlane_arg_ne_pi
+      (one_sub_ofReal_mul_mem_slitPlane ((one_sub_mem_slitPlane_iff z).mpr ⟨hz, hz1⟩) ht)
 
 /-- Rotating `1 + r * exp (θ * I)` by `exp (-(θ / 2) * I)` projects onto the bisecting direction,
 giving `(1 + r) * cos (θ / 2) ≤ ‖1 + r * exp (θ * I)‖` for all real `θ` and `r`. -/
