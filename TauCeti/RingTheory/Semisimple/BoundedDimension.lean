@@ -39,7 +39,7 @@ theorem exists_finite_module_family_of_rank_le (k : Type*) (A : Type u)
     [Field k] [Ring A] [Algebra k A] [IsSemisimpleRing A] (d : ℕ) :
     ∃ (ι : Type u) (_ : Finite ι) (S : ι → ModuleCat.{u} A),
       (∀ i, Module.rank k ((ModuleCat.restrictScalars (algebraMap k A)).obj (S i)) ≤ d) ∧
-      ∀ (M : Type v) [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M],
+      ∀ (M : Type v) [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M],
         Module.rank k M ≤ d → ∃ i, Nonempty (M ≃ₗ[A] S i) := by
   classical
   obtain ⟨ι, _, T, _, _, hT, _⟩ := IsSemisimpleModule.exists_simple_family (R := A) A A
@@ -49,6 +49,7 @@ theorem exists_finite_module_family_of_rank_le (k : Type*) (A : Type u)
   refine ⟨{x // Module.rank k ((ModuleCat.restrictScalars (algebraMap k A)).obj (S x)) ≤ d},
     inferInstance, fun x ↦ S x.val, fun x ↦ x.property, ?_⟩
   intro M _ _ _ _ hM
+  let : AddCommGroup M := Module.addCommMonoidToAddCommGroup A
   have : Module.Finite k M :=
     rank_lt_aleph0_iff.mp (hM.trans_lt Cardinal.natCast_lt_aleph0)
   have : Module.Finite A M := Module.Finite.of_restrictScalars_finite k A M
