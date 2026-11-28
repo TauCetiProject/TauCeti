@@ -63,6 +63,9 @@ arbitrary `S` by Dickson's lemma.
   `MvPowerSeries.residue_C_constantCoeff`, `MvPowerSeries.monomial_mem_maximalIdeal_pow`,
   `MvPowerSeries.mem_maximalIdeal_pow_of_le_order`: maximal-ideal membership, residue reduction,
   and monomial/order inclusion into powers of `𝔪` over a local commutative ring.
+* `MvPowerSeries.isLocalHom_C`, `MvPowerSeries.isLocalHom_algebraMap`: the constant-series
+  embedding `C : R →+* MvPowerSeries σ R` is a local homomorphism unconditionally, and
+  `algebraMap R (MvPowerSeries σ A)` is local whenever `algebraMap R A` is local.
 * `MvPowerSeries.maximalIdeal_eq_ker_constantCoeff`: over a field, the maximal ideal is the
   kernel of the constant-coefficient map.
 * `MvPowerSeries.bijective_algebraMap_residueField`: over a field `k`, the residue field is `k`.
@@ -169,6 +172,23 @@ theorem mem_span_range_X_iff {f : MvPowerSeries σ R} :
     (mem_pow_span_range_X_iff_le_order (f := f) (n := 1))
 
 end CommRing
+
+section IsLocalHom
+
+/-- The constant-series embedding `C : R →+* MvPowerSeries σ R` is a local homomorphism. -/
+instance isLocalHom_C {σ R : Type*} [Semiring R] : IsLocalHom (C (σ := σ) (R := R)) :=
+  isLocalHom_of_leftInverse constantCoeff constantCoeff_C
+
+/-- For any local algebra `R → A`, the canonical algebra map `R →+* MvPowerSeries σ A` is a local
+homomorphism. -/
+instance isLocalHom_algebraMap {σ R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [IsLocalHom (algebraMap R A)] :
+    IsLocalHom (algebraMap R (MvPowerSeries σ A)) := by
+  rw [show algebraMap R (MvPowerSeries σ A) = C.comp (algebraMap R A) from
+    RingHom.ext fun _ ↦ algebraMap_apply]
+  exact RingHom.isLocalHom_comp C (algebraMap R A)
+
+end IsLocalHom
 
 section LocalRing
 

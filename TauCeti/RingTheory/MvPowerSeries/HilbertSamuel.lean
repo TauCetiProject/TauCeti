@@ -34,9 +34,10 @@ in `n` variables (`MvPowerSeries.localQuotientHilbertSamuel_bot_eq_choose`). Exp
 hold for coordinate ideals `Ideal.span (X '' S)`, coordinate hyperplanes `Ideal.span {X i}`, and
 univariate monomial powers `Ideal.span {X i ^ k}`.
 
-Applying Dickson-lemma stabilization of degree-bounded complement counts for sequences of upper
-sets in `σ →₀ ℕ` (`TauCeti.exists_forall_ge_ncard_sdiff_eq_of_antitone`) to graded
-lexicographic initial diagrams yields lexicographic stabilization
+In finitely many variables `σ` (`[Finite σ]`), applying Dickson-lemma stabilization of
+degree-bounded complement counts for sequences of upper sets in `σ →₀ ℕ`
+(`TauCeti.exists_forall_ge_ncard_sdiff_eq_of_antitone`) to graded lexicographic initial diagrams
+yields lexicographic stabilization
 (`TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_toLex_le`, `TauCeti.hsLexStabilization`)
 and hence pointwise stabilization (`TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_le`)
 for Hilbert–Samuel functions of ideals in `MvPowerSeries σ (K j)` across possibly varying
@@ -57,15 +58,16 @@ invariant that decreases under blowing up.
 
 * `Ideal.localQuotientHilbertSamuel_eq_ncard_diff_initialDiagram`: the Hilbert–Samuel function of
   `K[[X]] ⧸ I` at `ℓ` counts the exponents of degree at most `ℓ` outside `D(I)`.
-* `Ideal.localQuotientHilbertSamuel_eq_of_initialDiagram_degLex_eq`: ideals over possibly
-  distinct fields with equal `degLex.initialDiagram` have equal Hilbert–Samuel functions.
+* `Ideal.localQuotientHilbertSamuel_eq_of_initialDiagram_degLex_eq`: in finitely many variables
+  `σ`, ideals over possibly distinct fields with equal `degLex.initialDiagram` have equal
+  Hilbert–Samuel functions.
 * `MvPowerSeries.localQuotientHilbertSamuel_bot_eq_choose`: the Hilbert–Samuel function of
   `K[[X]]` is `ℓ ↦ (ℓ + n).choose n`.
-* `MvPowerSeries.localQuotientHilbertSamuel_span_image_X`,
-  `MvPowerSeries.localQuotientHilbertSamuel_span_X`,
-  `MvPowerSeries.localQuotientHilbertSamuel_span_X_pow_of_subsingleton`: explicit evaluations for
-  coordinate ideals `Ideal.span (X '' S)`, coordinate hyperplanes `(X i)`, and univariate monomial
-  powers `(X i ^ k)`.
+* `TauCeti.localQuotientHilbertSamuel_span_image_X`,
+  `TauCeti.localQuotientHilbertSamuel_span_singleton_X`,
+  `TauCeti.localQuotientHilbertSamuel_span_singleton_X_pow_of_subsingleton`: explicit evaluations
+  for coordinate ideals `Ideal.span (X '' S)`, coordinate hyperplanes `(X i)`, and univariate
+  monomial powers `(X i ^ k)`.
 * `MvPowerSeries.isWF_range_toLex_localQuotientHilbertSamuel`: in finitely many variables, the
   realized Hilbert–Samuel functions form a well-founded subset of the lexicographic order.
 * `TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_toLex_le`,
@@ -115,8 +117,8 @@ theorem localQuotientHilbertSamuel_eq_ncard_diff_initialDiagram {σ K : Type*} [
   rw [hlen, ← localQuotientHilbertSamuel_def,
     ENat.natCast_toNat (I.localQuotientHilbertSamuel_ne_top ℓ)]
 
-/-- Two ideals of `MvPowerSeries σ K₁` and `MvPowerSeries σ K₂` with the same graded lexicographic
-initial diagram have the same Hilbert–Samuel function. -/
+/-- In finitely many variables `σ`, two ideals of `MvPowerSeries σ K₁` and `MvPowerSeries σ K₂`
+with the same graded lexicographic initial diagram have the same Hilbert–Samuel function. -/
 theorem localQuotientHilbertSamuel_eq_of_initialDiagram_degLex_eq
     {σ K₁ K₂ : Type*} [Field K₁] [Field K₂] [Finite σ] [LinearOrder σ] [WellFoundedGT σ]
     {I : Ideal (MvPowerSeries σ K₁)} {J : Ideal (MvPowerSeries σ K₂)}
@@ -141,7 +143,45 @@ theorem localQuotientHilbertSamuel_bot_eq_choose {σ K : Type*} [Fintype σ] [Fi
   let : LinearOrder σ := LinearOrder.lift' _ (Fintype.equivFin σ).injective
   rw [Ideal.localQuotientHilbertSamuel_eq_ncard_diff_initialDiagram,
     MonomialOrder.initialDiagram_bot, Set.sdiff_empty, ← Nat.card_coe_set_eq, Set.coe_ofPred,
-    Finsupp.natCard_degree_le, Nat.card_eq_fintype_card, add_comm]
+    TauCeti.natCard_degree_le, Nat.card_eq_fintype_card, add_comm]
+
+/-- The Hilbert–Samuel function of `K[[X]] ⧸ I` is the coercion to `ℕ∞` of the counting function
+of an upper set of exponents, namely of the graded lexicographic diagram of initial exponents of
+`I`. -/
+private theorem exists_localQuotientHilbertSamuel_eq_ncard_sdiff {σ K : Type*} [Finite σ]
+    [Field K] (I : Ideal (MvPowerSeries σ K)) :
+    ∃ D : UpperSet (σ →₀ ℕ), I.localQuotientHilbertSamuel =
+      fun ℓ ↦ (({α : σ →₀ ℕ | α.degree ≤ ℓ} \ (D : Set (σ →₀ ℕ))).ncard : ℕ∞) := by
+  -- The count does not depend on the choice of a linear order on the variables.
+  have := Fintype.ofFinite σ
+  let : LinearOrder σ := LinearOrder.lift' _ (Fintype.equivFin σ).injective
+  exact ⟨⟨_, MonomialOrder.degLex.isUpperSet_initialDiagram I⟩,
+    funext (Ideal.localQuotientHilbertSamuel_eq_ncard_diff_initialDiagram I)⟩
+
+/-- Coercing the values of a counting function from `ℕ` to `ℕ∞` is strictly monotone for the
+lexicographic orders. -/
+private theorem strictMono_toLex_natCast :
+    StrictMono fun c : Lex (ℕ → ℕ) ↦ toLex fun ℓ ↦ (ofLex c ℓ : ℕ∞) :=
+  fun _ _ ⟨i, hi, hlt⟩ ↦ ⟨i, fun j hj ↦ congrArg ((↑) : ℕ → ℕ∞) (hi j hj), Nat.cast_lt.2 hlt⟩
+
+/-- **Lexicographic well-foundedness of Hilbert–Samuel functions.** In finitely many variables
+over a field, the Hilbert–Samuel functions `ℓ ↦ ℓ(K[[X]] ⧸ (I + 𝔪 ^ (ℓ + 1)))` of the ideals `I`
+of `K[[X]]` form a well-founded subset of `Lex (ℕ → ℕ∞)`. -/
+theorem isWF_range_toLex_localQuotientHilbertSamuel (σ K : Type*) [Finite σ] [Field K] :
+    (Set.range fun I : Ideal (MvPowerSeries σ K) ↦ toLex I.localQuotientHilbertSamuel).IsWF := by
+  refine ((TauCeti.isWF_range_toLex_ncard_sdiff (σ := σ)).isPWO.image_of_monotone
+    strictMono_toLex_natCast.monotone).isWF.mono ?_
+  rintro _ ⟨I, rfl⟩
+  obtain ⟨D, hD⟩ := exists_localQuotientHilbertSamuel_eq_ncard_sdiff I
+  exact ⟨_, ⟨D, rfl⟩, by simp only [hD, ofLex_toLex]⟩
+
+end MvPowerSeries
+
+namespace TauCeti
+
+section CoordinateIdeals
+
+open MvPowerSeries
 
 /-- For any subset `S : Set σ` of finitely many variables, the Hilbert–Samuel value of the
 coordinate ideal `Ideal.span (MvPowerSeries.X '' S)` at degree `n` is
@@ -179,13 +219,13 @@ theorem localQuotientHilbertSamuel_span_image_X {σ : Type*} (K : Type*) [Field 
           Finsupp.embDomain_eq_mapDomain, Finsupp.degree_mapDomain]
       rw [Equiv.symm_apply_apply] at hdeg
       rw [hdeg]
-  rw [Nat.card_congr (e₁.trans e₂), Finsupp.natCard_degree_le]
+  rw [Nat.card_congr (e₁.trans e₂), TauCeti.natCard_degree_le]
 
 /-- For any variable `i : σ` in finitely many variables, the Hilbert–Samuel value of
 `Ideal.span {MvPowerSeries.X i}` at degree `n` is
 `((Nat.card σ - 1 + n).choose (Nat.card σ - 1) : ℕ∞)`. -/
 @[simp]
-theorem localQuotientHilbertSamuel_span_X {σ : Type*} (K : Type*) [Field K]
+theorem localQuotientHilbertSamuel_span_singleton_X {σ : Type*} (K : Type*) [Field K]
     [Finite σ] (i : σ) (n : ℕ) :
     (Ideal.span {X i} : Ideal (MvPowerSeries σ K)).localQuotientHilbertSamuel n =
       ((Nat.card σ - 1 + n).choose (Nat.card σ - 1) : ℕ∞) := by
@@ -194,60 +234,28 @@ theorem localQuotientHilbertSamuel_span_X {σ : Type*} (K : Type*) [Field K]
     Set.ncard_compl, Set.ncard_singleton]
 
 /-- In a univariate power series ring `MvPowerSeries σ K` (`[Subsingleton σ]`, `i : σ`), the
-Hilbert–Samuel value of `Ideal.span {X i ^ k}` at degree `n` equals `(↑(min (n + 1) k) : ℕ∞)`. -/
-theorem localQuotientHilbertSamuel_span_X_pow_of_subsingleton {σ : Type*}
+Hilbert–Samuel value of `Ideal.span {MvPowerSeries.X i ^ k}` at degree `n` equals
+`(↑(min (n + 1) k) : ℕ∞)`. -/
+theorem localQuotientHilbertSamuel_span_singleton_X_pow_of_subsingleton {σ : Type*}
     (K : Type*) [Field K] [Subsingleton σ] (i : σ) (k n : ℕ) :
     (Ideal.span {X i ^ k} : Ideal (MvPowerSeries σ K)).localQuotientHilbertSamuel n =
       ↑(min (n + 1) k) := by
-  let _ : LinearOrder σ := LinearOrder.lift' (Finite.equivFin σ) (Finite.equivFin σ).injective
-  rw [Ideal.localQuotientHilbertSamuel_eq_ncard_diff_initialDiagram, ← Nat.card_coe_set_eq]
-  have hspan : ({X i ^ k} : Set (MvPowerSeries σ K)) =
-      (fun α ↦ monomial α (1 : K)) '' {Finsupp.single i k} := by
-    simp [X_pow_eq]
-  rw [hspan, MonomialOrder.degLex.initialDiagram_span_monomial, Set.biUnion_singleton]
-  have hdeg : ∀ α : σ →₀ ℕ, α.degree = α i := fun α ↦ by
-    have hEq : α = Finsupp.single i (α i) := ((Finsupp.uniqueEquiv i).symm_apply_apply α).symm
-    conv_lhs => rw [hEq, Finsupp.degree_single]
-  let hbij : ↥({α : σ →₀ ℕ | α.degree ≤ n} \ Set.Ici (Finsupp.single i k)) ≃
-      Fin (min (n + 1) k) :=
-    (Equiv.subtypeEquiv (Finsupp.uniqueEquiv i) fun α ↦ by
-      rw [Set.mem_sdiff, Set.mem_ofPred_eq, Set.mem_Ici, Finsupp.single_le_iff, hdeg α,
-        Finsupp.uniqueEquiv_apply, not_le, ← Nat.lt_succ_iff, ← lt_min_iff]).trans
-      Fin.equivSubtype.symm
-  rw [Nat.card_congr hbij, Nat.card_fin]
+  let : Unique σ := uniqueOfSubsingleton i
+  have hmax : IsLocalRing.maximalIdeal (MvPowerSeries σ K) = Ideal.span {X i} := by
+    rw [maximalIdeal_eq_span_range_X,
+      show (X : σ → MvPowerSeries σ K) = fun _ ↦ X i from
+        funext fun j ↦ congrArg X (Subsingleton.elim j i),
+      Set.range_const]
+  rw [← Ideal.span_singleton_pow, ← hmax]
+  cases k with
+  | zero =>
+    rw [pow_zero, Ideal.one_eq_top, Ideal.localQuotientHilbertSamuel_top, min_zero, Nat.cast_zero]
+  | succ k =>
+    rw [Ideal.localQuotientHilbertSamuel_maximalIdeal_pow_succ,
+      localQuotientHilbertSamuel_bot_eq_choose, Fintype.card_unique, Nat.choose_one_right]
+    exact congrArg Nat.cast (by omega)
 
-/-- The Hilbert–Samuel function of `K[[X]] ⧸ I` is the coercion to `ℕ∞` of the counting function
-of an upper set of exponents, namely of the graded lexicographic diagram of initial exponents of
-`I`. -/
-private theorem exists_localQuotientHilbertSamuel_eq_ncard_sdiff {σ K : Type*} [Finite σ]
-    [Field K] (I : Ideal (MvPowerSeries σ K)) :
-    ∃ D : UpperSet (σ →₀ ℕ), I.localQuotientHilbertSamuel =
-      fun ℓ ↦ (({α : σ →₀ ℕ | α.degree ≤ ℓ} \ (D : Set (σ →₀ ℕ))).ncard : ℕ∞) := by
-  -- The count does not depend on the choice of a linear order on the variables.
-  have := Fintype.ofFinite σ
-  let : LinearOrder σ := LinearOrder.lift' _ (Fintype.equivFin σ).injective
-  exact ⟨⟨_, MonomialOrder.degLex.isUpperSet_initialDiagram I⟩,
-    funext (Ideal.localQuotientHilbertSamuel_eq_ncard_diff_initialDiagram I)⟩
-
-/-- **Lexicographic well-foundedness of Hilbert–Samuel functions.** In finitely many variables
-over a field, the Hilbert–Samuel functions `ℓ ↦ ℓ(K[[X]] ⧸ (I + 𝔪 ^ (ℓ + 1)))` of the ideals `I`
-of `K[[X]]` form a well-founded subset of `Lex (ℕ → ℕ∞)`. -/
-theorem isWF_range_toLex_localQuotientHilbertSamuel (σ K : Type*) [Finite σ] [Field K] :
-    (Set.range fun I : Ideal (MvPowerSeries σ K) ↦ toLex I.localQuotientHilbertSamuel).IsWF := by
-  -- Coercing the values from `ℕ` to `ℕ∞` is strictly monotone for the lexicographic orders.
-  -- Mathlib has no unfolding lemma for `<` on `Lex (ℕ → β)`, which is `Pi.Lex` by definition, so
-  -- the first difference is destructured directly.
-  let g : Lex (ℕ → ℕ) → Lex (ℕ → ℕ∞) := fun c ↦ toLex fun ℓ ↦ (ofLex c ℓ : ℕ∞)
-  have hg : Monotone g := StrictMono.monotone fun c c' ⟨i, hi, hlt⟩ ↦
-    ⟨i, fun j hj ↦ congrArg ((↑) : ℕ → ℕ∞) (hi j hj), Nat.cast_lt.2 hlt⟩
-  refine ((TauCeti.isWF_range_toLex_ncard_sdiff (σ := σ)).isPWO.image_of_monotone hg).isWF.mono ?_
-  rintro _ ⟨I, rfl⟩
-  obtain ⟨D, hD⟩ := exists_localQuotientHilbertSamuel_eq_ncard_sdiff I
-  exact ⟨_, ⟨D, rfl⟩, by simp only [hD, g, ofLex_toLex]⟩
-
-end MvPowerSeries
-
-namespace TauCeti
+end CoordinateIdeals
 
 section Stabilization
 
@@ -267,15 +275,9 @@ theorem exists_forall_ge_localQuotientHilbertSamuel_eq_of_toLex_le
   let c (j ℓ : ℕ) : ℕ := ({α : σ →₀ ℕ | α.degree ≤ ℓ} \ D j).ncard
   have hval : ∀ j ℓ, (I j).localQuotientHilbertSamuel ℓ = (c j ℓ : ℕ∞) := fun j ℓ ↦
     Ideal.localQuotientHilbertSamuel_eq_ncard_diff_initialDiagram (I j) ℓ
-  have hanti : Antitone fun j ↦ toLex (c j) := antitone_nat_of_succ_le fun j ↦ by
-    rw [Pi.Lex.toLex_le_toLex]
-    rcases Pi.Lex.toLex_le_toLex.mp (h j) with heq | ⟨m, hprev, hltm⟩
-    · refine Or.inl (funext fun ℓ ↦ ?_)
-      exact Nat.cast_inj.mp ((hval (j + 1) ℓ).symm.trans ((congr_fun heq ℓ).trans (hval j ℓ)))
-    · refine Or.inr ⟨m, fun k hk ↦ ?_, ?_⟩
-      · exact Nat.cast_inj.mp ((hval (j + 1) k).symm.trans ((hprev k hk).trans (hval j k)))
-      · rw [hval (j + 1) m, hval j m] at hltm
-        exact Nat.cast_lt.mp hltm
+  have hanti : Antitone fun j ↦ toLex (c j) := antitone_nat_of_succ_le fun j ↦
+    MvPowerSeries.strictMono_toLex_natCast.le_iff_le.mp <| by
+      simpa only [ofLex_toLex, ← hval] using h j
   obtain ⟨j₀, hj₀⟩ := exists_forall_ge_ncard_sdiff_eq_of_antitone
     (fun j ↦ MonomialOrder.degLex.isUpperSet_initialDiagram (I j)) hanti
   refine ⟨j₀, fun j hj ↦ funext fun ℓ ↦ ?_⟩

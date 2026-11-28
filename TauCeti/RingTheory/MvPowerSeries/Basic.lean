@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import Mathlib.RingTheory.MvPowerSeries.Basic
 
 import Mathlib.Algebra.MvPolynomial.Coeff
@@ -25,12 +24,8 @@ records that every coordinate variable `X s` is nonzero over a nontrivial semiri
 `R⟦X, Y⟧` (the power-series counterpart of `MvPolynomial.coeff_add_pow`, over any semiring), and
 `MvPowerSeries.mem_support` together with `support_zero`, `support_add`, `support_smul_subset`,
 `support_neg`, and `support_sub` bridges `Function.support` with `MvPowerSeries.coeff` and the
-algebraic operations on `MvPowerSeries`, `MvPowerSeries.coeff_map_mul_mem` shows that left
+algebraic operations on `MvPowerSeries`, and `MvPowerSeries.coeff_map_mul_mem` shows that left
 multiplication by a scalar power series preserves membership of coefficients in a submodule.
-`MvPowerSeries.isLocalHom_C` shows that the constant-series embedding
-`C : R →+* MvPowerSeries σ R` is a local homomorphism unconditionally, while
-`MvPowerSeries.isLocalHom_algebraMap` shows that the induced algebra map `R →+* MvPowerSeries σ A`
-is local whenever `algebraMap R A` is local.
 -/
 
 public section
@@ -136,18 +131,5 @@ theorem coeff_map_mul_mem {σ R A : Type*} [CommSemiring R] [Semiring A] [Algebr
   refine E.sum_mem fun uv _ ↦ ?_
   rw [coeff_map, ← Algebra.smul_def]
   exact E.smul_mem _ (hU uv.2)
-
-/-- The constant-series embedding `C : R →+* MvPowerSeries σ R` is a local homomorphism. -/
-instance isLocalHom_C {σ R : Type*} [Semiring R] : IsLocalHom (C (σ := σ) (R := R)) :=
-  isLocalHom_of_leftInverse constantCoeff constantCoeff_C
-
-/-- For any local algebra `R → A`, the canonical algebra map `R →+* MvPowerSeries σ A` is a local
-homomorphism. -/
-instance isLocalHom_algebraMap {σ R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-    [IsLocalHom (algebraMap R A)] :
-    IsLocalHom (algebraMap R (MvPowerSeries σ A)) := by
-  rw [show algebraMap R (MvPowerSeries σ A) = C.comp (algebraMap R A) from
-    RingHom.ext fun _ ↦ algebraMap_apply]
-  exact RingHom.isLocalHom_comp C (algebraMap R A)
 
 end MvPowerSeries

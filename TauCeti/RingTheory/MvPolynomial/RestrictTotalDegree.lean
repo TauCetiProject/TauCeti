@@ -152,7 +152,7 @@ theorem _root_.TauCeti.finrank_restrictTotalDegree (σ R : Type*) [Fintype σ] [
       (m + Fintype.card σ).choose (Fintype.card σ) := by
   classical
   rw [Module.finrank_eq_nat_card_basis (basisRestrictTotalDegree σ R m),
-    Finsupp.natCard_degree_le, Nat.card_eq_fintype_card, add_comm]
+    TauCeti.natCard_degree_le, Nat.card_eq_fintype_card, add_comm]
 
 section Coordinates
 

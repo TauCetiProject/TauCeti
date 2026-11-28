@@ -130,7 +130,7 @@ theorem finrank_homogeneousSubmodule (σ R : Type*) [CommSemiring R]
 theorem finrank_homogeneousSubmodule_eq_multichoose (σ R : Type*) [Fintype σ]
     [CommSemiring R] [StrongRankCondition R] (n : ℕ) :
     Module.finrank R (homogeneousSubmodule σ R n) = (Fintype.card σ).multichoose n := by
-  rw [finrank_homogeneousSubmodule, Set.coe_ofPred, Finsupp.natCard_degree_eq,
+  rw [finrank_homogeneousSubmodule, Set.coe_ofPred, TauCeti.natCard_degree_eq,
     Nat.card_eq_fintype_card]
 
 /-- The degree-`w` homogeneous polynomials in two variables have dimension `w + 1`. -/

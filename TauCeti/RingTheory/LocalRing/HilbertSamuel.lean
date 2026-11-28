@@ -71,7 +71,7 @@ power series rings over a field.
   `Ideal.localQuotientHilbertSamuel_quotient_map`,
   `Ideal.localQuotientHilbertSamuel_bot_quotient`,
   `Ideal.localQuotientHilbertSamuel_map_equiv`, `Ideal.localQuotientHilbertSamuel_comap_equiv`,
-  `Ideal.localQuotientHilbertSamuel_bot_of_equiv`: compatibility with surjective local ring
+  `TauCeti.localQuotientHilbertSamuel_bot_of_equiv`: compatibility with surjective local ring
   homomorphisms, local quotients `A ⧸ I`, and ring/algebra equivalences.
 * `TauCeti.length_quotient_sup_maximalIdeal_pow_eq_mul_length_residueField`: comparison between
   `A`-length and local base-ring length via the residue-field length.
@@ -212,7 +212,7 @@ theorem localQuotientHilbertSamuel_succ (I : Ideal A) (n : ℕ) :
 `RingHom.ker f ⊔ I`. -/
 theorem localQuotientHilbertSamuel_map_eq_ker_sup_of_surjective {B F : Type*}
     [CommRing B] [IsLocalRing B] [FunLike F A B] [RingHomClass F A B]
-    {f : F} (hf : Function.Surjective f) (I : Ideal A) (n : ℕ) :
+    (I : Ideal A) {f : F} (hf : Function.Surjective f) (n : ℕ) :
     (I.map f).localQuotientHilbertSamuel n =
       (RingHom.ker f ⊔ I).localQuotientHilbertSamuel n := by
   have hmap : I.map f ⊔ maximalIdeal B ^ (n + 1) =
@@ -228,7 +228,7 @@ agrees with computing it on `A` at `I ⊔ J`. -/
 theorem localQuotientHilbertSamuel_quotient_map (I J : Ideal A) [IsLocalRing (A ⧸ I)] (n : ℕ) :
     (J.map (Quotient.mk I)).localQuotientHilbertSamuel n =
       (I ⊔ J).localQuotientHilbertSamuel n := by
-  rw [localQuotientHilbertSamuel_map_eq_ker_sup_of_surjective Quotient.mk_surjective, mk_ker]
+  rw [localQuotientHilbertSamuel_map_eq_ker_sup_of_surjective J Quotient.mk_surjective, mk_ker]
 
 /-- For a proper ideal `I`, the Hilbert–Samuel function of `I` is that of the local ring
 `A ⧸ I`, measured by lengths over `A ⧸ I`. -/
@@ -238,32 +238,25 @@ theorem localQuotientHilbertSamuel_bot_quotient (I : Ideal A) [IsLocalRing (A �
   simpa only [Ideal.map_bot, sup_bot_eq] using
     localQuotientHilbertSamuel_quotient_map I (⊥ : Ideal A) n
 
-/-- Any ring or algebra equivalence `e : A ≃ B` between local rings preserves
-`localQuotientHilbertSamuel` under `Ideal.map e`. -/
+/-- Any ring equivalence `e : A ≃+* B` (or algebra equivalence, via `RingEquivClass`) between
+local rings preserves `localQuotientHilbertSamuel` under `Ideal.map e`. -/
 @[simp]
 theorem localQuotientHilbertSamuel_map_equiv {B E : Type*}
     [CommRing B] [IsLocalRing B] [EquivLike E A B] [RingEquivClass E A B]
-    (e : E) (I : Ideal A) (n : ℕ) :
+    (I : Ideal A) (e : E) (n : ℕ) :
     (I.map e).localQuotientHilbertSamuel n = I.localQuotientHilbertSamuel n := by
-  rw [localQuotientHilbertSamuel_map_eq_ker_sup_of_surjective (EquivLike.surjective e),
+  rw [localQuotientHilbertSamuel_map_eq_ker_sup_of_surjective I (EquivLike.surjective e),
     RingHom.ker_equiv, bot_sup_eq]
 
-/-- Any ring or algebra equivalence `e : A ≃ B` between local rings preserves
-`localQuotientHilbertSamuel` under `Ideal.comap e`. -/
+/-- Any ring equivalence `e : A ≃+* B` (or algebra equivalence, via `RingEquivClass`) between
+local rings preserves `localQuotientHilbertSamuel` under `Ideal.comap e`. -/
 @[simp]
 theorem localQuotientHilbertSamuel_comap_equiv {B E : Type*}
     [CommRing B] [IsLocalRing B] [EquivLike E A B] [RingEquivClass E A B]
-    (e : E) (J : Ideal B) (n : ℕ) :
+    (J : Ideal B) (e : E) (n : ℕ) :
     (J.comap e).localQuotientHilbertSamuel n = J.localQuotientHilbertSamuel n := by
-  rw [← localQuotientHilbertSamuel_map_equiv e (J.comap e) n,
+  rw [← localQuotientHilbertSamuel_map_equiv (J.comap e) e n,
     map_comap_of_surjective e (EquivLike.surjective e)]
-
-/-- Isomorphic local rings have the same intrinsic Hilbert–Samuel function (`I = ⊥`). -/
-theorem localQuotientHilbertSamuel_bot_of_equiv {B E : Type*}
-    [CommRing B] [IsLocalRing B] [EquivLike E A B] [RingEquivClass E A B]
-    (e : E) (n : ℕ) :
-    (⊥ : Ideal A).localQuotientHilbertSamuel n = (⊥ : Ideal B).localQuotientHilbertSamuel n := by
-  rw [← comap_bot_of_injective e (EquivLike.injective e), localQuotientHilbertSamuel_comap_equiv]
 
 /-- **Invariance under maps inducing isomorphisms of jets.** Let `f : A → B` be a ring
 homomorphism into a local ring such that the composite `A → B ⧸ 𝔪_B ^ (n + 1)` is surjective with
@@ -318,9 +311,8 @@ section Flat
 preserves every value of `localQuotientHilbertSamuel`. -/
 theorem localQuotientHilbertSamuel_map_of_flat_of_map_maximalIdeal_eq
     {A B : Type*} [CommRing A] [IsLocalRing A] [CommRing B] [IsLocalRing B]
-    [Algebra A B] [Module.Flat A B]
-    (hm : (maximalIdeal A).map (algebraMap A B) = maximalIdeal B)
-    (I : Ideal A) (n : ℕ) :
+    [Algebra A B] [Module.Flat A B] (I : Ideal A)
+    (hm : (maximalIdeal A).map (algebraMap A B) = maximalIdeal B) (n : ℕ) :
     (I.map (algebraMap A B)).localQuotientHilbertSamuel n = I.localQuotientHilbertSamuel n := by
   have : IsLocalHom (algebraMap A B) :=
     ((local_hom_tfae (algebraMap A B)).out 1 3).mpr hm.le
@@ -340,6 +332,14 @@ end Flat
 end Ideal
 
 namespace TauCeti
+
+/-- Isomorphic local rings have the same intrinsic Hilbert–Samuel function (`I = ⊥`). -/
+theorem localQuotientHilbertSamuel_bot_of_equiv {A B E : Type*}
+    [CommRing A] [IsLocalRing A] [CommRing B] [IsLocalRing B]
+    [EquivLike E A B] [RingEquivClass E A B] (e : E) (n : ℕ) :
+    (⊥ : Ideal A).localQuotientHilbertSamuel n = (⊥ : Ideal B).localQuotientHilbertSamuel n := by
+  rw [← Ideal.comap_bot_of_injective e (EquivLike.injective e),
+    Ideal.localQuotientHilbertSamuel_comap_equiv]
 
 /-- Over a local extension `K → A`, the `K`-length of `A ⧸ (I + 𝔪_A ^ (n + 1))` equals
 `I.localQuotientHilbertSamuel n * Module.length K (ResidueField A)`. In particular, this applies

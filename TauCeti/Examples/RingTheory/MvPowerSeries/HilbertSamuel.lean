@@ -15,8 +15,8 @@ in multivariate power series rings `MvPowerSeries σ K` and `TauCeti.hsLexStabil
 
 * the univariate fat point `K⟦X⟧ ⧸ (X²)` with Hilbert–Samuel function `(1, 2, 2, …)`;
 * the ascending chain of univariate ideals `(X ^ max (N - j) 1)`, whose Hilbert–Samuel
-  functions are nonincreasing both pointwise and lexicographically and stabilize at
-  `K⟦X⟧ ⧸ (X)`;
+  functions are pointwise nonincreasing (and hence lexicographically nonincreasing) and stabilize
+  at `K⟦X⟧ ⧸ (X)`;
 * in `K⟦X₀, X₁⟧`, the fat point `𝔪²` (`(1, 3, 3, …)`) and the smooth line `(X₀)`
   (`(1, 2, 3, 4, …)`), which are pointwise incomparable while the line is strictly smaller
   lexicographically;
@@ -35,14 +35,15 @@ example (K : Type*) [Field K] :
       ∀ ℓ, 1 ≤ ℓ →
         (Ideal.span {MvPowerSeries.X (0 : Fin 1) ^ 2} :
             Ideal (MvPowerSeries (Fin 1) K)).localQuotientHilbertSamuel ℓ = 2 := by
-  refine ⟨by simp [MvPowerSeries.localQuotientHilbertSamuel_span_X_pow_of_subsingleton],
+  refine ⟨by simp [localQuotientHilbertSamuel_span_singleton_X_pow_of_subsingleton],
     fun ℓ hℓ ↦ ?_⟩
-  rw [MvPowerSeries.localQuotientHilbertSamuel_span_X_pow_of_subsingleton,
+  rw [localQuotientHilbertSamuel_span_singleton_X_pow_of_subsingleton,
     min_eq_right (by omega)]
   norm_num
 
-/-- For `I_j = (X ^ max (N - j) 1) ⊆ K⟦X⟧`, the Hilbert–Samuel functions are nonincreasing in
-both orders and stabilize at the constant function `1` of `K⟦X⟧ ⧸ (X)` for `j ≥ N`. -/
+/-- For `I_j = (X ^ max (N - j) 1) ⊆ K⟦X⟧`, the Hilbert–Samuel functions are pointwise
+nonincreasing (and hence lexicographically nonincreasing) and stabilize at the constant function
+`1` of `K⟦X⟧ ⧸ (X)` for `j ≥ N`. -/
 example (K : Type*) [Field K] (N : ℕ) :
     let I : ℕ → Ideal (MvPowerSeries (Fin 1) K) :=
       fun j ↦ Ideal.span {MvPowerSeries.X 0 ^ max (N - j) 1}
@@ -53,7 +54,7 @@ example (K : Type*) [Field K] (N : ℕ) :
             Ideal (MvPowerSeries (Fin 1) K)).localQuotientHilbertSamuel := by
   intro I
   refine ⟨fun j ℓ ↦ ?_, fun j hj ↦ ?_⟩
-  · simp only [I, MvPowerSeries.localQuotientHilbertSamuel_span_X_pow_of_subsingleton, Nat.cast_le]
+  · simp only [I, localQuotientHilbertSamuel_span_singleton_X_pow_of_subsingleton, Nat.cast_le]
     omega
   · have hmax : max (N - j) 1 = 1 := by omega
     simp [I, hmax]
