@@ -48,6 +48,9 @@ Baker--Campbell--Hausdorff expansion.
   (`TauCeti.norm_exp_le_exp_norm`, with the scalar-multiple form `TauCeti.norm_exp_smul_le`), and
   power-bounded elements satisfy `‖exp (s • b)‖ ≤ M * Real.exp ‖s‖`
   (`TauCeti.norm_exp_smul_le_mul_exp_of_norm_pow_le`).
+* `TauCeti.norm_exp_sub_sum_le_exp_norm_sub_sum`: in a complete normed algebra with no bound on
+  `‖1‖`, the tail of the exponential series after `n ≥ 1` terms is bounded by the same tail of the
+  real exponential series at `‖x‖`.
 * `TauCeti.norm_exp_smul_le_mul_exp_norm_of_norm_exp_pow_le`: if the powers of `exp x` are
   bounded by `C`, then `‖exp (t • x)‖ ≤ C * Real.exp ‖x‖` uniformly in `t ≥ 0`.
 * `TauCeti.norm_exp_smul_one_le`: `‖exp (c • 1)‖ ≤ Real.exp c` for real `c` when `‖1‖ ≤ 1`.
@@ -218,6 +221,22 @@ theorem norm_exp_smul_le (h_one : ‖(1 : 𝔸)‖ ≤ 1) (a : 𝔸) (t : 𝕜) 
   let +nondep : NormedAlgebra ℚ 𝔸 := .restrictScalars ℚ 𝕜 𝔸
   rw [mul_comm, ← norm_smul]
   exact norm_exp_le_exp_norm h_one _
+
+/-- In a complete normed algebra, the exponential series with its first `n ≥ 1` terms removed is
+bounded by the same tail of the real exponential series at `‖x‖`:
+`‖exp x - ∑ m < n, x ^ m / m!‖ ≤ Real.exp ‖x‖ - ∑ m < n, ‖x‖ ^ m / m!`. No bound on `‖1‖` is
+needed, since every remaining term is a power of `x` of positive degree; this covers the
+Frobenius norm on matrices, for which `‖1‖` is the square root of the dimension. -/
+theorem norm_exp_sub_sum_le_exp_norm_sub_sum [CompleteSpace 𝔸] (x : 𝔸) {n : ℕ} (hn : 0 < n) :
+    ‖exp x - ∑ m ∈ Finset.range n, (m !⁻¹ : 𝕜) • x ^ m‖ ≤
+      Real.exp ‖x‖ - ∑ m ∈ Finset.range n, ‖x‖ ^ m / m ! := by
+  have hx := (hasSum_nat_add_iff' n).mpr (exp_series_hasSum_exp' (𝕂 := 𝕜) x)
+  have hr := (hasSum_nat_add_iff' n).mpr (expSeries_div_hasSum_exp ‖x‖)
+  rw [← Real.exp_eq_exp_ℝ] at hr
+  refine hx.norm_le_of_bounded hr fun m ↦ ?_
+  rw [norm_smul, norm_inv, RCLike.norm_natCast, div_eq_inv_mul]
+  gcongr
+  exact norm_pow_le' x (by omega)
 
 /-- If every power of `b` has norm at most `M`, then `‖exp (s • b)‖ ≤ M * Real.exp ‖s‖`. -/
 theorem norm_exp_smul_le_mul_exp_of_norm_pow_le {b : 𝔸} {M : ℝ} (s : 𝕜)

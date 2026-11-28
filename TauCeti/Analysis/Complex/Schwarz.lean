@@ -33,7 +33,9 @@ At a single centre `c` on an open disc `ball c ρ`, no continuity up to the boun
 required: if `g` is holomorphic and bounded by `M` on `ball c ρ` and vanishes to order at least `T`
 at `c`, then `‖g w‖ ≤ M * (‖w - c‖ / ρ) ^ T` throughout `ball c ρ`
 (`Complex.norm_le_mul_div_pow_of_le_analyticOrderAt`), deduced from Mathlib's higher-order Schwarz
-lemma `Complex.dist_le_mul_div_pow_of_mapsTo_ball_of_isLittleO`.
+lemma `Complex.dist_le_mul_div_pow_of_mapsTo_ball_of_isLittleO`. An even function vanishing at
+the centre `0` vanishes to second order, so the same lemma bounds it by `M * (‖w‖ / ρ) ^ 2`
+(`Complex.norm_le_mul_div_sq_of_even`).
 
 ## Main results
 
@@ -43,6 +45,8 @@ lemma `Complex.dist_le_mul_div_pow_of_mapsTo_ball_of_isLittleO`.
   at a zero `a ∈ s`.
 * `Complex.norm_le_mul_div_pow_of_le_analyticOrderAt`: the bound `M * (‖w - c‖ / ρ) ^ T` on an
   open disc for a zero of order at least `T` at the centre.
+* `Complex.norm_le_mul_div_sq_of_even`: the bound `M * (‖w‖ / ρ) ^ 2` on an open disc for an even
+  function vanishing at the centre.
 * `TauCeti.norm_le_half_of_eq_zero_on_net`: a vector-valued sampling bound from zeros
   on a metric net.
 
@@ -279,3 +283,30 @@ theorem Complex.norm_le_mul_div_pow_of_le_analyticOrderAt {V : Type*} [NormedAdd
   have hlittle := TauCeti.isLittleO_sub_pow_sub_one_of_le_analyticOrderAt hTpos hT
   have hest := Complex.dist_le_mul_div_pow_of_mapsTo_ball_of_isLittleO hd hmaps hlittle hw
   rwa [hgc, dist_zero_right, dist_eq_norm, Nat.sub_add_cancel hTpos] at hest
+
+/-- **Schwarz's lemma for an even function.** If `g` is holomorphic and bounded by `M` on the open
+disc `Metric.ball 0 ρ`, even, and vanishes at `0`, then it vanishes to second order there, and
+`‖g w‖ ≤ M * (‖w‖ / ρ) ^ 2` throughout `Metric.ball 0 ρ`. -/
+theorem Complex.norm_le_mul_div_sq_of_even {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+    {g : ℂ → V} {ρ M : ℝ} (hd : DifferentiableOn ℂ g (Metric.ball 0 ρ))
+    (heven : Function.Even g) (h0 : g 0 = 0) (hM : ∀ w ∈ Metric.ball (0 : ℂ) ρ, ‖g w‖ ≤ M)
+    {w : ℂ} (hw : w ∈ Metric.ball (0 : ℂ) ρ) : ‖g w‖ ≤ M * (‖w‖ / ρ) ^ 2 := by
+  have hd0 : DifferentiableAt ℂ g 0 :=
+    hd.differentiableAt (ball_mem_nhds 0 (nonempty_ball.mp ⟨w, hw⟩))
+  -- the derivative of an even function vanishes at `0`
+  have hderiv : deriv g 0 = 0 := by
+    have h := deriv_comp_neg (f := g) (x := 0)
+    simp only [heven _, neg_zero] at h
+    have h2 : (2 : ℂ) • deriv g 0 = 0 := by
+      rw [two_smul]
+      nth_rw 1 [h]
+      exact neg_add_cancel _
+    exact (smul_eq_zero.mp h2).resolve_left two_ne_zero
+  have hlittle : (fun x ↦ g x - g 0) =o[nhds 0] fun x ↦ ‖x - 0‖ ^ 1 := by
+    have h := hd0.hasDerivAt
+    rw [hderiv, hasDerivAt_iff_isLittleO] at h
+    simpa using h.norm_right
+  have hmaps : Set.MapsTo g (ball 0 ρ) (closedBall (g 0) M) := fun z hz ↦ by
+    simpa [h0] using hM z hz
+  simpa [h0, dist_eq_norm] using
+    Complex.dist_le_mul_div_pow_of_mapsTo_ball_of_isLittleO hd hmaps hlittle hw

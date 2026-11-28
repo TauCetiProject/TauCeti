@@ -37,6 +37,8 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
   unitary exactly when it preserves the Hermitian norm of every vector `(z, 1)`.
 * `Matrix.star_dotProduct_eq_zero_of_mem_unitaryGroup`: eigenvectors of a unitary matrix over
   `ℝ` or `ℂ` for distinct eigenvalues are orthogonal for the Hermitian dot product.
+* `Matrix.sum_norm_sq_row_of_mem_unitaryGroup`, `Matrix.sum_norm_sq_col_of_mem_unitaryGroup`: the
+  rows and the columns of a unitary matrix over `ℝ` or `ℂ` are unit vectors.
 * `Matrix.UnitaryGroup.transpose_mul_map_star`: the inverse of the transpose of a unitary matrix
   `U` is its entrywise conjugate, `Uᵀ conj(U) = 1`.
 
@@ -149,6 +151,20 @@ theorem star_dotProduct_eq_zero_of_mem_unitaryGroup {𝕜 : Type*} [RCLike 𝕜]
   calc α = α * (star α * β) := by rw [hαβ', mul_one]
     _ = (star α * α) * β := by ring
     _ = β := by rw [hαα, one_mul]
+
+/-- The rows of a unitary matrix over `ℝ` or `ℂ` are unit vectors: `∑ j, ‖U i j‖ ^ 2 = 1`. -/
+theorem sum_norm_sq_row_of_mem_unitaryGroup {𝕜 : Type*} [RCLike 𝕜] {U : Matrix n n 𝕜}
+    (hU : U ∈ unitaryGroup n 𝕜) (i : n) : ∑ j, ‖U i j‖ ^ 2 = 1 := by
+  have h : (U * star U) i i = 1 := by rw [mem_unitaryGroup_iff.mp hU, one_apply_eq]
+  simp only [Matrix.mul_apply, star_apply, RCLike.star_def, RCLike.mul_conj] at h
+  exact_mod_cast h
+
+/-- The columns of a unitary matrix over `ℝ` or `ℂ` are unit vectors: `∑ i, ‖U i j‖ ^ 2 = 1`. -/
+theorem sum_norm_sq_col_of_mem_unitaryGroup {𝕜 : Type*} [RCLike 𝕜] {U : Matrix n n 𝕜}
+    (hU : U ∈ unitaryGroup n 𝕜) (j : n) : ∑ i, ‖U i j‖ ^ 2 = 1 := by
+  have h : (star U * U) j j = 1 := by rw [mem_unitaryGroup_iff'.mp hU, one_apply_eq]
+  simp only [Matrix.mul_apply, star_apply, RCLike.star_def, RCLike.conj_mul] at h
+  exact_mod_cast h
 
 /-- `U(n) = Circle · SU(n)`: every complex unitary matrix becomes special unitary after
 multiplication by a suitable scalar of modulus one. The scalar is a `card n`-th root of the inverse

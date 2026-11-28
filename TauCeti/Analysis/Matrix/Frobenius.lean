@@ -61,6 +61,11 @@ and the inner product together.
   the squared norms of the entries.
 * `Matrix.frobenius_norm_sq_conj_unitary` — unitary conjugation preserves the squared norm.
 * `Matrix.frobenius_norm_sq_of_mem_unitaryGroup` — a unitary matrix has squared norm `card ι`.
+* `Matrix.UnitaryGroup.frobenius_norm_mul_left` and `Matrix.UnitaryGroup.frobenius_norm_mul_right`
+  — left and right unitary multiplication preserve the Frobenius norm.
+* `Matrix.frobenius_norm_trace_mul_le` — `‖tr (A * B)‖ ≤ ‖A‖ * ‖B‖`, independently of the size.
+* `Matrix.frobenius_norm_mul_le_of_isStarProjection` — left multiplication by an orthogonal
+  projection does not increase the Frobenius norm.
 * `Matrix.abs_apply_le_sqrt_trace_mul_transpose` — each entry of a real matrix is bounded in
   absolute value by the square root of the trace of its Gram matrix `L * Lᵀ`.
 * `TauCeti.reTraceForm`, `TauCeti.isSymm_reTraceForm`, `TauCeti.posDef_reTraceForm`: the real
@@ -371,6 +376,43 @@ theorem frobenius_norm_sq_of_mem_unitaryGroup {ι : Type*} [Fintype ι] [Decidab
   rw [frobenius_inner_eq_trace_conjTranspose_mul, ← star_eq_conjTranspose,
     mem_unitaryGroup_iff'.mp hU, trace_one] at h
   exact_mod_cast h.symm
+
+/-- Left multiplication by a unitary matrix preserves the Frobenius norm. -/
+@[simp]
+theorem UnitaryGroup.frobenius_norm_mul_left [DecidableEq m]
+    (U : Matrix.unitaryGroup m 𝕜) (X : Matrix m n 𝕜) : ‖(U : Matrix m m 𝕜) * X‖ = ‖X‖ := by
+  have h := UnitaryGroup.frobenius_real_inner_mul_left U X X
+  rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq] at h
+  exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp h
+
+/-- Right multiplication by a unitary matrix preserves the Frobenius norm. -/
+@[simp]
+theorem UnitaryGroup.frobenius_norm_mul_right [DecidableEq n]
+    (U : Matrix.unitaryGroup n 𝕜) (X : Matrix m n 𝕜) : ‖X * (U : Matrix n n 𝕜)‖ = ‖X‖ := by
+  have h := UnitaryGroup.frobenius_real_inner_mul_right U X X
+  rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq] at h
+  exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp h
+
+/-- **The trace pairing is bounded by the Frobenius norms**: `‖tr (A * B)‖ ≤ ‖A‖ * ‖B‖`. Unlike a
+bound through the operator norm, it does not depend on the size of the matrices. -/
+theorem frobenius_norm_trace_mul_le (A : Matrix m n 𝕜) (B : Matrix n m 𝕜) :
+    ‖(A * B).trace‖ ≤ ‖A‖ * ‖B‖ := by
+  have h := frobenius_inner_eq_trace_conjTranspose_mul Aᴴ B
+  rw [conjTranspose_conjTranspose] at h
+  rw [← h, ← frobenius_norm_conjTranspose A]
+  exact norm_inner_le_norm _ _
+
+/-- Left multiplication by an orthogonal projection does not increase the Frobenius norm. -/
+theorem frobenius_norm_mul_le_of_isStarProjection {Q : Matrix m m 𝕜} (X : Matrix m n 𝕜)
+    (hQ : IsStarProjection Q) : ‖Q * X‖ ≤ ‖X‖ := by
+  -- `‖Q X‖² = Re tr (Xᴴ Q Q X) = Re tr (Xᴴ Q X) = ⟪X, Q X⟫_ℝ ≤ ‖X‖ ‖Q X‖`
+  have h : ⟪Q * X, Q * X⟫_ℝ = ⟪X, Q * X⟫_ℝ := by
+    have hQ' : Qᴴ = Q := hQ.isSelfAdjoint
+    simp only [frobenius_real_inner_eq_re_inner (𝕜 := 𝕜),
+      frobenius_inner_eq_trace_conjTranspose_mul, conjTranspose_mul, hQ', Matrix.mul_assoc,
+      ← Matrix.mul_assoc Q Q X, hQ.isIdempotentElem.eq]
+  rw [real_inner_self_eq_norm_sq] at h
+  nlinarith [real_inner_le_norm X (Q * X), norm_nonneg X, norm_nonneg (Q * X)]
 
 open scoped Matrix.Norms.Frobenius in
 /-- Each entry of a real matrix is bounded in absolute value by the square root of the trace of
