@@ -62,6 +62,9 @@ infinite adeles only needs `E` to be an algebraic CM field.
   finite adele.
 * `IsDedekindDomain.FiniteAdeleRing.unitsProj_star_eq_one_iff`: the corresponding criterion
   for a conjugate finite idele to have component `1` at a place, via `coe_unitsProj_apply`.
+* `IsDedekindDomain.FiniteAdeleRing.star_indicatorOne`: the conjugate of the indicator of a set
+  of finite places is the indicator of the set of their conjugates, so the indicator of a set
+  stable under conjugation is self-adjoint.
 * `NumberField.InfiniteAdeleRing.extensionEmbedding_star_apply`: the components of the conjugate
   of an infinite adele.
 
@@ -229,6 +232,21 @@ lemma joining them. -/
 theorem algebraMap_complexConj (x : E) :
     algebraMap E 𝔸ᶠ[E] (complexConj E x) = star (algebraMap E 𝔸ᶠ[E] x) := by
   rw [← finiteAdeleConj_apply, finiteAdeleConj_algebraMap]
+
+/-- **Conjugating the indicator of a set of places.** The conjugate of the indicator of a set `S`
+of finite places is the indicator of the set of places whose conjugate lies in `S`; in particular
+the indicator of a set stable under conjugation is self-adjoint. This is the case of complex
+conjugation of `TauCeti.GlobalNumberFields.finiteAdeleEquiv_indicatorOne`. -/
+@[simp]
+theorem star_indicatorOne (S : Set (HeightOneSpectrum (𝓞 E))) :
+    star (indicatorOne (K := E) S) = indicatorOne (HeightOneSpectrum.conjPlace ⁻¹' S) := by
+  -- The bijection of places induced by complex conjugation is `conjPlace`, an involution.
+  have h : ⇑(HeightOneSpectrum.equivOfRingEquiv
+      (RingOfIntegers.mapRingEquiv (complexConj E).toRingEquiv)) = HeightOneSpectrum.conjPlace :=
+    funext fun w ↦ HeightOneSpectrum.eq_conjPlace_iff.2
+      ((complexConj E).toRingEquiv.valuation_equivOfRingEquiv w)
+  rw [← finiteAdeleConj_apply, finiteAdeleConj_def, finiteAdeleEquiv_indicatorOne, h,
+    Function.Involutive.image_eq_preimage_symm HeightOneSpectrum.conjPlace_conjPlace]
 
 end IsDedekindDomain.FiniteAdeleRing
 
