@@ -14,7 +14,9 @@ import TauCeti.Analysis.Holder.IsBigO
 
 Let `τ` be `C^{k+1}` near a point `z₀` and `g` be `C^k`, with `k`th derivative `α`-Hölder near
 `τ z₀`, for some `α ≤ 1`. Then the `k`th derivative of `g ∘ τ` is `α`-Hölder on a ball around
-`z₀` (`TauCeti.exists_holderOnWith_iteratedFDerivWithin_comp`).
+`z₀` (`TauCeti.exists_holderOnWith_iteratedFDerivWithin_comp`). For `k = 1` on open sets this
+gives that `g ∘ τ` is `C¹` with `α`-Hölder first derivative near `z₀`
+(`TauCeti.exists_mem_nhds_holderOnWith_iteratedFDeriv_comp`).
 
 By the Faà di Bruno formula (`iteratedFDerivWithin_comp`), the `k`th derivative of `g ∘ τ` is a
 sum of multilinear expressions in the derivatives of `g` at `τ z` of order at most `k` and in the
@@ -114,5 +116,29 @@ theorem exists_holderOnWith_iteratedFDerivWithin_comp (hα : α ≤ 1) (hs : s �
         (eventuallyEqSet_univ.mpr (mem_interior_iff_mem_nhds.mp hz)).symm) k
   filter_upwards [prod_mem_prod hs' hs'] with a ha
   rw [hint _ ha.1, hint _ ha.2]
+
+/-- **The Hölder chain rule for the first derivative on open sets.** Let `τ` be `C²` on an open set
+`s ∋ z₀`, mapping it into an open set `t` on which `g` is `C¹`. If the derivative of `g` is
+`α`-Hölder on a neighbourhood of `τ z₀` within `t`, with `α ≤ 1`, then `g ∘ τ` is `C¹` with
+`α`-Hölder first derivative on a neighbourhood of `z₀`. -/
+theorem exists_mem_nhds_holderOnWith_iteratedFDeriv_comp (hα : α ≤ 1) (hs : IsOpen s)
+    (hz₀ : z₀ ∈ s) (hτ : ContDiffOn 𝕜 2 τ s) (ht : IsOpen t) (hg : ContDiffOn 𝕜 1 g t)
+    (hst : MapsTo τ s t) {K : Set F} (hK : K ∈ 𝓝[t] τ z₀) {C : ℝ≥0}
+    (hH : HolderOnWith C α (fderiv 𝕜 g) K) :
+    ∃ S ∈ 𝓝 z₀, ContDiffOn 𝕜 1 (fun z => g (τ z)) S ∧
+      ∃ C' : ℝ≥0, HolderOnWith C' α (iteratedFDeriv 𝕜 1 fun z => g (τ z)) S := by
+  -- On the open set `t`, the first derivative within `t` is the curried derivative of `g`.
+  have hH' : HolderOnWith C α (iteratedFDerivWithin 𝕜 1 g t) (K ∩ t) :=
+    (((continuousMultilinearCurryFin1 𝕜 F G).symm.isometry.comp_holderOnWith
+      (hH.mono inter_subset_left))).congr fun z hz => by
+        ext m
+        rw [iteratedFDerivWithin_one_apply (ht.uniqueDiffWithinAt hz.2),
+          fderivWithin_of_isOpen ht hz.2, Function.comp_apply,
+          continuousMultilinearCurryFin1_symm_apply]
+  obtain ⟨r, hr, C', hC'⟩ := exists_holderOnWith_iteratedFDerivWithin_comp (k := 1) hα
+    (hs.mem_nhds hz₀) ht.uniqueDiffOn hτ hg hst (inter_mem hK self_mem_nhdsWithin) hH'
+  exact ⟨Metric.ball z₀ r ∩ s, inter_mem (Metric.ball_mem_nhds z₀ hr) (hs.mem_nhds hz₀),
+    (hg.comp (hτ.of_le one_le_two) hst).mono inter_subset_right, C',
+    (hC'.mono inter_subset_left).congr fun z hz => iteratedFDerivWithin_of_isOpen 1 hs hz.2⟩
 
 end TauCeti

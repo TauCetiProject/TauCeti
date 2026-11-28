@@ -20,7 +20,6 @@ import TauCeti.Analysis.Calculus.FDeriv.EuclideanMatrix
 import TauCeti.Analysis.Calculus.FDeriv.Homothety
 import TauCeti.Analysis.Holder.CompLinear
 import TauCeti.Analysis.Holder.FaaDiBruno
-import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.Holder.Leibniz
 import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.InnerProductSpace.Adjoint
@@ -1041,27 +1040,6 @@ open scoped NNReal Topology
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {U U' W : Opens (EuclideanSpace ℝ ι)}
   {Φ Ψ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {L L' : ℝ} {α : ℝ≥0}
-
-omit [DecidableEq ι] in
-/-- A function `g` that is `C¹` on an open set `t`, with first derivative `α`-Hölder on a
-neighbourhood of `Φ x` within `t`, composed with a map `Φ` that is `C²` on an open set `s ∋ x` and
-maps `s` into `t`, is `C¹` with `α`-Hölder first derivative on a neighbourhood of `x`. -/
-private theorem exists_mem_nhds_holderOnWith_iteratedFDeriv_comp {F : Type*}
-    [NormedAddCommGroup F] [NormedSpace ℝ F] (hα1 : α ≤ 1) {s t K : Set (EuclideanSpace ℝ ι)}
-    (hs : IsOpen s) {x : EuclideanSpace ℝ ι} (hx : x ∈ s) (hΦ : ContDiffOn ℝ 2 Φ s)
-    {g : EuclideanSpace ℝ ι → F} (ht : IsOpen t) (hg : ContDiffOn ℝ 1 g t) (hst : MapsTo Φ s t)
-    (hK : K ∈ 𝓝[t] Φ x) {C : ℝ≥0} (hgH : HolderOnWith C α (fderiv ℝ g) K) :
-    ∃ S ∈ 𝓝 x, ContDiffOn ℝ 1 (fun y => g (Φ y)) S ∧
-      ∃ C' : ℝ≥0, HolderOnWith C' α (iteratedFDeriv ℝ 1 fun y => g (Φ y)) S := by
-  have hH : HolderOnWith C α (iteratedFDerivWithin ℝ 1 g t) (K ∩ t) :=
-    ((holderOnWith_iteratedFDeriv_succ_iff.trans holderOnWith_iteratedFDeriv_zero_iff).2
-      (hgH.mono inter_subset_left)).congr fun z hz =>
-        (iteratedFDerivWithin_of_isOpen 1 ht hz.2).symm
-  obtain ⟨r, hr, C', hC'⟩ := exists_holderOnWith_iteratedFDerivWithin_comp (k := 1) hα1
-    (hs.mem_nhds hx) ht.uniqueDiffOn hΦ hg hst (inter_mem hK self_mem_nhdsWithin) hH
-  exact ⟨ball x r ∩ s, inter_mem (ball_mem_nhds x hr) (hs.mem_nhds hx),
-    (hg.comp (hΦ.of_le one_le_two) hst).mono inter_subset_right, C',
-    (hC'.mono inter_subset_left).congr fun y hy => iteratedFDerivWithin_of_isOpen 1 hs hy.2⟩
 
 /-- Each term `(DΨ(Φ ·) eₖ)ᵢ aₖₗ(Φ ·) (DΨ(Φ ·) eₗ)ⱼ` of the entries of the pulled-back principal
 coefficient is `C¹` with `α`-Hölder first derivative on a neighbourhood of every point `x ∈ U'`
