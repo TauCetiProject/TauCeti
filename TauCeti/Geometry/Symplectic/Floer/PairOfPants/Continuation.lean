@@ -533,7 +533,7 @@ private theorem setLIntegral_image_endChart_le (ω : SmoothTwoForm I M)
     (fun w hw x v ↦ ((hJ hw x).comp (f := fun y : M ↦ (w, y)) x
       (mdifferentiableAt_const.prodMk mdifferentiableAt_id)).clm_apply mdifferentiableAt_const)
     (K := pairOfPantsContinuationPerturbation G H L) (f := f) (u := u) (q := q)
-    (fun z hz x ↦ ?_)).trans_eq ?_
+    (fun z hz ↦ ?_)).trans_eq ?_
   · -- In the coordinates of the end the curvature is
     -- `±(β'(σ - 1) C_q + β(σ - 1) β'(σ - L_q) (H_q - G_q))`.
     rw [hamiltonianCurvature_perturbationPullback_endChart ω hG hH hGs hHs
@@ -541,8 +541,8 @@ private theorem setLIntegral_image_endChart_le (ω : SmoothTwoForm I M)
       one_mul]
     simp only [hf]
     rw [← ENNReal.ofReal_mul (hψ _), ← ENNReal.ofReal_mul (hψ _),
-      ← ENNReal.ofReal_add (mul_nonneg (hψ _) ((abs_nonneg _).trans (hGB q 0 x)))
-        (mul_nonneg (hψ _) ((abs_nonneg _).trans (hD q 0 x)))]
+      ← ENNReal.ofReal_add (mul_nonneg (hψ _) ((abs_nonneg _).trans (hGB q 0 (u (endChart q z)))))
+        (mul_nonneg (hψ _) ((abs_nonneg _).trans (hD q 0 (u (endChart q z)))))]
     refine ENNReal.ofReal_le_ofReal ((abs_add_le _ _).trans (add_le_add ?_ ?_))
     · rw [abs_mul, abs_of_nonneg (hψ _)]
       exact mul_le_mul_of_nonneg_left

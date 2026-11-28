@@ -212,7 +212,7 @@ theorem exists_pos_eventually_norm_sub_le_exp_endChart_of_floer
     (fun z hz ↦ hC z (hab z hz.1))
     (periodic_comp_endSign_mul hyper) (hasDerivAt_comp_endSign_mul_positiveEndHamiltonian hy)
     (fun v hv ↦ eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self hL (hHs q) (hH q)
-      hy hyper hnd hv) (tendstoUniformly_comp_positiveEndChart hconv)
+      hy hyper hnd hv) (tendstoUniformly_positiveEndChart_of_endChart (r := id) hconv)
   refine ⟨κ, hκ, A, hdecay.mono fun s hs t ↦ ?_⟩
   -- The end loop at the height `±s` is the loop of `u ∘ φ'_q` at the height `s`, read with the
   -- time `±t` of the end.
@@ -283,7 +283,7 @@ theorem exists_pos_eventually_norm_fderiv_comp_positiveEndChart_sub_le_exp_of_cy
     (periodic_comp_endSign_mul hyper) (hasDerivAt_comp_endSign_mul_positiveEndHamiltonian hy)
     (fun v hv ↦ eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self hL
       ((hHs q).of_le (by norm_num)) (hH q) hy hyper hnd hv)
-    (tendstoUniformly_comp_positiveEndChart hconv)
+    (tendstoUniformly_positiveEndChart_of_endChart (r := id) hconv)
 
 /-- **The ends of a Floer pair of pants with cylindrical ends converge exponentially in `C¹`.** Let
 `K` be equal to `H_q(t) dt` beyond `T₀` on each end `q`, for `1`-periodic `C³` Hamiltonians `H_q`,

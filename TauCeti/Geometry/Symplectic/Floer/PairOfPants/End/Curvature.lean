@@ -263,24 +263,23 @@ theorem hamiltonianCurvature_perturbationPullback_endChart_of_eq (ω : SmoothTwo
     hβ.deriv]
   ring
 
-/-- **The integrated curvature over an end strip, from a pointwise bound.** Let `K` be a
-perturbation one-form on `ℂ` which is differentiable on `S` separately in the domain point and in
-the target point. If the curvature of its pullback along the end chart of `q` is at most `f(s)` at
-every point `(s, t)` of the strip of `q`, for any function `f`, then for every map `u` into the
-target, the integral of `|R_K(z, u(z))|` over the image of the strip of `q` is at most
-`∫ f(s) ds`. -/
+/-- **The integrated curvature over an end strip, from a pointwise bound along `u`.** Let `K` be
+a perturbation one-form on `ℂ` which is differentiable on `S` separately in the domain point and
+in the target point. If for a map `u` into the target the extended norm (absolute value) of the
+curvature of its pullback along the end chart of `q` is at most `f(s)` at
+`(s, t, u (endChart q (s, t)))` for every `(s, t)` in the strip of `q`, for any function `f`, then
+the integral of `|R_K(z, u(z))|` over the image of the strip of `q` is at most `∫ f(s) ds`. -/
 theorem setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral
     (ω : SmoothTwoForm I M) {q : Puncture}
     (hKd : ∀ w : ℂ, w ≠ 0 ∧ w ≠ 1 → ∀ x v, DifferentiableAt ℝ (fun w' ↦ K w' x v) w)
     (hKx : ∀ w : ℂ, w ≠ 0 ∧ w ≠ 1 → ∀ x v, MDifferentiableAt I 𝓘(ℝ) (fun y ↦ K w y v) x)
-    {f : ℝ → ℝ≥0∞}
-    (hR : ∀ z ∈ endStrip q, ∀ x, ‖ω.hamiltonianCurvature
+    {f : ℝ → ℝ≥0∞} (u : ℝ × ℝ → M)
+    (hR : ∀ z ∈ endStrip q, ‖ω.hamiltonianCurvature
       (perturbationPullback (endChart q) (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineReal)
       (perturbationPullback (endChart q) (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineImag) z x‖ₑ ≤
-      f z.1)
-    (u : ℝ × ℝ → M) :
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineImag)
+      z (u (endChart q z))‖ₑ ≤ f z.1) :
     ∫⁻ z in endChart q '' endStrip q,
         ‖ω.hamiltonianCurvature (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)‖ₑ ≤
@@ -296,8 +295,7 @@ theorem setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral
   rw [ω.lintegral_enorm_hamiltonianCurvature_image (measurableSet_endStrip q) (injOn_endChart q)
     (fun w _ ↦ (contDiff_endChart q _).contDiffAt) (fun w hw ↦ hdom (hS hw) _ 1)
     (fun w hw ↦ hdom (hS hw) _ _) (fun w hw ↦ hKx _ (hS hw) _ 1) (fun w hw ↦ hKx _ (hS hw) _ _)]
-  calc _ ≤ ∫⁻ z in endStrip q, f z.1 :=
-        setLIntegral_mono' (measurableSet_endStrip q) fun z hz ↦ hR z hz _
+  calc _ ≤ ∫⁻ z in endStrip q, f z.1 := setLIntegral_mono' (measurableSet_endStrip q) hR
     _ ≤ ∫⁻ s in {s | 1 / 2 < q.endSign * s}, f s := setLIntegral_endStrip_fst_le q f
     _ ≤ _ := setLIntegral_le_lintegral _ _
 
@@ -319,8 +317,8 @@ theorem setLIntegral_image_endChart_enorm_hamiltonianCurvature_le (ω : SmoothTw
         ‖ω.hamiltonianCurvature (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)‖ₑ ≤
       (∫⁻ s, ‖deriv P (q.endSign * s)‖ₑ) * ENNReal.ofReal B := by
-  refine (ω.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral hKd hKx
-    (fun z hz x ↦ ?_) u).trans_eq (lintegral_mul_const' _ _ ENNReal.ofReal_ne_top)
+  refine (ω.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral hKd hKx u
+    fun z hz ↦ ?_).trans_eq (lintegral_mul_const' _ _ ENNReal.ofReal_ne_top)
   rw [ω.hamiltonianCurvature_perturbationPullback_endChart_of_eq hK
     (endSign_mul_pos_of_mem_endStrip hz) (hP _) (hh _ _), eNorm_mul, eNorm_mul,
     Real.eNorm_eq_ofReal_abs q.endSign, abs_endSign, ENNReal.ofReal_one, one_mul,

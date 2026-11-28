@@ -13,6 +13,7 @@ import TauCeti.Geometry.Symplectic.Floer.Tameness
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.Rectangle
+import TauCeti.Order.Filter.Basic
 
 /-!
 # Floer cylinders of small energy in a closed manifold stay near a single orbit
@@ -125,8 +126,10 @@ theorem exists_pos_forall_exists_mem_periodicSolutions_forall_dist_lt_of_floer_o
   obtain ⟨Y, hYc, hYper, hYe⟩ := hω.exists_continuous_periodic_extension hH hHper he hK he_inj
   have hKe : IsCompact (e '' K) := hK.image he.continuous
   obtain ⟨δ₀, hδ₀, η, hη, hneck⟩ := exists_pos_forall_exists_periodic_hasDerivAt_forall_dist_lt
-    hKe hYc hYper (fun _ ↦ exists_pos_forall_eq_of_forall_dist_lt_of_mem_image hK he_inj hde hYe
-      hiso) C hε
+    hKe hYc hYper (fun _ hyper hy hyK ↦ by
+      simpa using exists_pos_forall_eq_of_forall_dist_lt_of_mem_image hK he_inj hde hYe
+        (R := fun _ ↦ True) (forall_mem_eventually_eq_of_forall_eventually_eq hiso)
+        hyper hy hyK trivial) C hε
   refine ⟨δ₀ * c, by positivity, η, hη, fun u a b hab hu hper huK J hJc hfl hC hE ↦ ?_⟩
   have hU : IsOpen (Ioo a b ×ˢ (univ : Set ℝ)) := isOpen_Ioo.prod isOpen_univ
   have hsub : Ioo a b ×ˢ Icc (0 : ℝ) 1 ⊆ Ioo a b ×ˢ univ := prod_mono le_rfl (subset_univ _)

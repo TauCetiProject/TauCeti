@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Integrable
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 
@@ -55,6 +56,11 @@ specializations to the constant form `SymplecticForm.constSmooth`.
   integrals over its truncations, with the output end recentred at any `c` or not, and integrals
   of a Hamiltonian along the end loops converge to its integral along their pointwise limits,
   either when the Hamiltonian is globally bounded or when the map takes values in a compact set.
+* `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact`
+  gives the manifold pair-of-pants energy identity for `C¹` maps into a compact set `B` with
+  nonnegative energy density, integrable area density and curvature, `K = H_q(t) dt` beyond `T₀` on
+  each end, and pointwise end limits, without finite energy or global bounds on `H_q` a priori
+  (using `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Integrable`).
 * `SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_ne_top_of_isCompact`: when `u` maps
   `S` into a compact set `B`, a nonnegative Floer energy density has finite integral as soon as the
   area density and curvature term are integrable, without assuming convergence of the end integrals
@@ -66,8 +72,10 @@ specializations to the constant form `SymplecticForm.constSmooth`.
   `SymplecticForm.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_sub_le`: the resulting
   energy bound.
 * `SmoothTwoForm.IsNondegenerate.neg_sum_le_integral_add_sum_of_isComplexLinearMap`,
+  `SmoothTwoForm.neg_sum_le_integral_add_sum_of_pairOfPantsPerturbation_of_mapsTo`,
   `SymplecticForm.neg_sum_le_integral_add_sum_of_isComplexLinearMap`: the lower bound on the
-  topological energy of a Floer solution.
+  topological energy of a Floer solution (globally bounded, or on a target subset from the energy
+  identity and energy nonnegativity).
 * `SmoothTwoForm.IsNondegenerate.setIntegral_floerEnergyDensity_pairOfPantsPerturbation_le`: the
   energy of a Floer solution over any part of the pair of pants is at most its topological energy
   plus `B₀ + B₁ + B_∞`, the energy bound of compactness.
@@ -221,23 +229,62 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_ne_top_of_isCompact
     ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤ := by
-  choose C hC using fun q ↦ (isCompact_Icc.prod hB).exists_bound_of_continuousOn
-    (s := Icc (0 : ℝ) 1 ×ˢ B) (hHc q).continuousOn
-  refine ne_of_lt ((hω.lintegral_floerEnergyDensity_le_of_eq_smul_endAngularForm hK hKH hH hu he
-    hA hR (C := fun q ↦ max (C q) 0) fun q s hs ↦ ?_).trans_lt ENNReal.ofReal_lt_top)
-  have hs_pos : 0 < q.endSign * s := by linarith [le_max_left 2 T₀]
-  refine (Real.norm_eq_abs _).symm.trans_le ((intervalIntegral.norm_integral_le_of_norm_le_const
-    (C := max (C q) 0) fun t ht ↦ ?_).trans_eq (by norm_num))
-  rw [uIoc_of_le zero_le_one] at ht
-  exact (hC q (t, u (endChart q (s, t)))
-    ⟨⟨ht.1.le, ht.2⟩, huB _ (endChart_mem_thricePuncturedSphereReal hs_pos.le)⟩).trans
-    (le_max_left _ _)
+  have hE := (hω.integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact hK hKH hH
+    hHc hB hu huB he hA.integrableOn hR.integrableOn).hasFiniteIntegral
+  rw [HasFiniteIntegral, volume_restrict_thricePuncturedSphereReal, lintegral_congr_ae
+    (ae_mem_thricePuncturedSphereReal.mono fun z hz ↦ Real.eNorm_eq_ofReal (he z hz))] at hE
+  exact hE.ne
 
 end
 
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
   [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M} {H : Puncture → ℝ → M → ℝ}
+
+/-- **The manifold pair-of-pants energy identity on a compact target set.** For `K` equal to
+`H_q(t) dt` beyond `T₀` on each end `q` with `1`-periodic continuous Hamiltonians `H_q`, if `u` is
+`C¹` on `S` taking values in a compact set `B` with nonnegative Floer energy density, integrable
+symplectic area density and curvature over `S`, and `t ↦ u(φ_q(±s, t))` converges pointwise to
+`y_q` as `s → ∞` on each end `q`, then
+`∫_S E = ∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, y_q(t)) dt - ∫_S R_K(u)` without finite energy a priori. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact
+    {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {B : Set M} {u : ℝ × ℝ → M}
+    (hω : ω.IsNondegenerate)
+    (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+      (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) (hHc : ∀ q, Continuous (uncurry (H q))) (hB : IsCompact B)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
+    (he : ∀ z ∈ thricePuncturedSphereReal, 0 ≤ ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
+      thricePuncturedSphereReal)
+    {y : Puncture → ℝ → M}
+    (hy : ∀ q t, Tendsto (fun s ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y q t))) :
+    ∫ z in thricePuncturedSphereReal, ω.floerEnergyDensity
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
+      (∫ z in thricePuncturedSphereReal, (SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (y q t)) -
+        ∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
+  have hEint := hω.integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact
+    hK hKH hH hHc hB hu huB he hA hR
+  rw [IntegrableOn, volume_restrict_thricePuncturedSphereReal] at hEint hA hR
+  simp only [volume_restrict_thricePuncturedSphereReal]
+  exact hω.integral_floerEnergyDensity_of_eq_smul_endAngularForm hK hKH hH hu hEint hA hR
+    fun q ↦ tendsto_intervalIntegral_endChart_of_isCompact (hHc q) hB hu.continuousOn huB (hy q)
 
 /-- **The energy identity on the pair of pants, for a manifold target.** Let `K` be the
 pair-of-pants perturbation of bounded period-one `C¹` Hamiltonians `H_q` on a finite-dimensional
@@ -359,6 +406,41 @@ theorem IsNondegenerate.neg_sum_le_integral_add_sum_of_isComplexLinearMap
   have h := abs_le.1
     (hω.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_sub_le hH hHs hB hu hx hE hA)
   linarith [h.2]
+
+omit [FiniteDimensional ℝ E] in
+/-- **Topological energy lower bound from the energy identity on a target subset.** Let `H_q` be
+period-one `C¹` Hamiltonians bounded by `|H_q(t, x)| ≤ B_q` on a subset `S₀ ⊆ M`, and let `u` map
+`S` into `S₀` with nonnegative integrated Floer energy for `pairOfPantsPerturbation H`. If `u`
+satisfies the pair-of-pants energy identity against loops `y_q`, then
+`-(B₀ + B₁ + B_∞) ≤ ∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, y_q(t)) dt`. -/
+theorem neg_sum_le_integral_add_sum_of_pairOfPantsPerturbation_of_mapsTo
+    (ω : SmoothTwoForm I M) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {S₀ : Set M} {B : Puncture → ℝ} (hB : ∀ q t, ∀ x ∈ S₀, |H q t x| ≤ B q)
+    {u : ℝ × ℝ → M} (hu : MapsTo u thricePuncturedSphereReal S₀)
+    (hpos : 0 ≤ ∫ z in thricePuncturedSphereReal, ω.floerEnergyDensity
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
+    {y : Puncture → ℝ → M}
+    (hid : ∫ z in thricePuncturedSphereReal, ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
+      (∫ z in thricePuncturedSphereReal,
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (y q t)) -
+        ∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          z (u z)) :
+    -∑ q, B q ≤
+      (∫ z in thricePuncturedSphereReal,
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (y q t) := by
+  have hcurv := abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le_of_mapsTo ω hH hHs
+    hB hu thricePuncturedSphereReal
+  linarith [(abs_le.1 hcurv).1]
 
 /-- **The energy of a Floer pair of pants over any part of the domain, for a manifold target.**
 Under the hypotheses of

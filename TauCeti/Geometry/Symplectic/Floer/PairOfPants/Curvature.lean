@@ -106,11 +106,13 @@ integrable, this is the estimate of Schwarz.
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le`: the
-  integrated curvature of the pair-of-pants perturbation along any map into a manifold is at most
-  the sum of bounds for the three end Hamiltonians.
-* `SmoothTwoForm.abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le`: hence the
-  integral of the curvature over any set has absolute value at most the same sum.
+* `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le_of_mapsTo`
+  and `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le`: the
+  integrated curvature of the pair-of-pants perturbation along a map into a set `S ⊆ M` (or into
+  `M`) is at most `B₀ + B₁ + B_∞` when `|H_q| ≤ B_q` on `S`.
+* `TauCeti.SmoothTwoForm.abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le_of_mapsTo`
+  and `TauCeti.SmoothTwoForm.abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le`: the
+  corresponding bound on `|∫ R_K(z, u(z))|` over any subset of `ℝ × ℝ`.
 * `SmoothTwoForm.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt`: the curvature
   vanishes where the perturbation is cylindrical, beyond the collars `1 ≤ ±s ≤ 2` of the ends.
 * `SymplecticForm.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le`,
@@ -319,43 +321,56 @@ private theorem det_mul_hamiltonianCurvature_pairOfPantsPerturbation_endChart
   rw [hamiltonianCurvature_perturbationPullback_endChart ω hH hHs hζ] at k
   exact k.symm
 
-/-- The curvature of the perturbation over the image of the strip of the end `q` is at most a
-bound `B_q` for the Hamiltonian of that end: the cutoff `β(±s - 1)` has total increase one. -/
+/-- The curvature of the perturbation over the image of the strip of the end `q` along a map `u`
+sending the punctured plane `ℂ ∖ {0, 1}` into `S ⊆ M` is at most a bound `B_q` for `|H_q|` on `S`:
+the cutoff `β(±s - 1)` has total increase one. -/
 private theorem setLIntegral_image_endChart_le (ω : SmoothTwoForm I M)
     (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
-    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (u : ℝ × ℝ → M) (q : Puncture) :
+    {S : Set M} {B : Puncture → ℝ} (hB : ∀ q t, ∀ x ∈ S, |H q t x| ≤ B q)
+    {u : ℝ × ℝ → M} (hu : MapsTo u thricePuncturedSphereReal S) (q : Puncture) :
     ∫⁻ z in endChart q '' endStrip q, ‖ω.hamiltonianCurvature
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal (B q) := by
-  have hβ : ∫⁻ s, ‖deriv (fun σ ↦ smoothTransition (σ - 1)) (q.endSign * s)‖ₑ = 1 := by
-    simp_rw [deriv_comp_sub_const, Real.eNorm_eq_ofReal smoothTransition.monotone.deriv_nonneg]
-    rw [smoothTransition.lintegral_ofReal_deriv_mul_sub _ q.endSign_ne_zero, abs_endSign, inv_one,
-      ENNReal.ofReal_one]
-  -- The datum is differentiable jointly, hence separately, in the domain and target points.
-  have hK {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : M) :=
-    (contMDiffAt_pairOfPantsPerturbation (n := 1) hH hHs ⟨w, hw⟩ x).mdifferentiableAt
-      one_ne_zero
-  have hdom {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : M) (v : ℂ) :
-      DifferentiableAt ℝ (fun w' ↦ pairOfPantsPerturbation H w' x v) w :=
-    ((hK hw x).comp (f := fun w' : ℂ ↦ (w', x)) w
-      (mdifferentiableAt_id.prodMk mdifferentiableAt_const)).differentiableAt.clm_apply
-        (differentiableAt_const v)
-  have htgt {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : M) (v : ℂ) :
-      MDifferentiableAt I 𝓘(ℝ) (fun y ↦ pairOfPantsPerturbation H w y v) x :=
-    ((hK hw x).comp (f := fun y : M ↦ (w, y)) x
-      (mdifferentiableAt_const.prodMk mdifferentiableAt_id)).clm_apply mdifferentiableAt_const
-  have hHt (x : M) : Differentiable ℝ fun t ↦ H q t x :=
-    (((hHs q).comp (f := fun t : ℝ ↦ (t, x)) (contMDiff_id.prodMk contMDiff_const)).contDiff
-      ).differentiable one_ne_zero
-  refine (ω.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le
-    (P := fun σ ↦ smoothTransition (σ - 1)) (fun w hw x v ↦ hdom hw x v)
-    (fun w hw x v ↦ htgt hw x v)
-    (fun z hz x v ↦ pairOfPantsPerturbation_cylindricalEndLift_of_pos (hH q) hz x v)
-    (fun σ ↦ (smoothTransition.contDiff (n := 1)).differentiable one_ne_zero _ |>.comp σ
-      (differentiableAt_id.sub_const 1)) hHt (hB q) u).trans_eq ?_
-  rw [hβ, one_mul]
+  refine (ω.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral
+    (K := pairOfPantsPerturbation H)
+    (fun w hw x v ↦ ((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨w, hw⟩ x).comp w
+      (contMDiffAt_id.prodMk contMDiffAt_const)).contDiffAt.differentiableAt one_ne_zero
+      |>.clm_apply (differentiableAt_const v))
+    (fun w hw x v ↦ ((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨w, hw⟩ x).comp x
+      (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply contMDiffAt_const
+      |>.mdifferentiableAt one_ne_zero)
+    (f := fun s ↦ ‖deriv smoothTransition (q.endSign * s - 1)‖ₑ * ENNReal.ofReal (B q))
+    u fun z hz ↦ ?_).trans_eq ?_
+  · rw [hamiltonianCurvature_perturbationPullback_endChart ω hH hHs
+      (endSign_mul_pos_of_mem_endStrip hz), eNorm_mul, eNorm_mul,
+      Real.eNorm_eq_ofReal_abs q.endSign, abs_endSign, ENNReal.ofReal_one, one_mul,
+      Real.eNorm_eq_ofReal_abs (H _ _ _)]
+    gcongr
+    exact hB q z.2 _
+      (hu (endChart_mem_thricePuncturedSphereReal (endSign_mul_pos_of_mem_endStrip hz).le))
+  · rw [lintegral_mul_const' _ _ ENNReal.ofReal_ne_top]
+    simp_rw [Real.eNorm_eq_ofReal smoothTransition.monotone.deriv_nonneg]
+    rw [smoothTransition.lintegral_ofReal_deriv_mul_sub _ q.endSign_ne_zero, abs_endSign,
+      inv_one, ENNReal.ofReal_one, one_mul]
+
+/-- **The integrated curvature of the pair-of-pants perturbation on a subset of a manifold.** If
+`u` maps the punctured plane `ℂ ∖ {0, 1}` into a target subset `S ⊆ M` on which `|H_q(t, x)| ≤ B_q`,
+then the integral of `|R_K(z, u(z))|` over the plane is at most `B₀ + B₁ + B_∞`, without assuming
+any bound on `H_q` outside `S`. -/
+theorem lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le_of_mapsTo
+    (ω : SmoothTwoForm I M) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {S : Set M} {B : Puncture → ℝ} (hB : ∀ q t, ∀ x ∈ S, |H q t x| ≤ B q)
+    {u : ℝ × ℝ → M} (hu : MapsTo u thricePuncturedSphereReal S) :
+    ∫⁻ z, ‖ω.hamiltonianCurvature
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)‖ₑ ≤ ∑ q, ENNReal.ofReal (B q) :=
+  (ω.lintegral_enorm_hamiltonianCurvature_le_sum_endStrip
+    (fun _ hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y) u).trans
+    (Finset.sum_le_sum fun q _ ↦ setLIntegral_image_endChart_le ω hH hHs hB hu q)
 
 /-- **The integrated curvature of the pair-of-pants perturbation, for a manifold target.** Let `K`
 be the pair-of-pants perturbation of period-one `C¹` Hamiltonians `H_q` on a manifold `M` with a
@@ -371,9 +386,28 @@ theorem lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le (ω : Sm
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ∑ q, ENNReal.ofReal (B q) :=
-  (ω.lintegral_enorm_hamiltonianCurvature_le_sum_endStrip
-    (fun _ hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y) u).trans
-    (Finset.sum_le_sum fun q _ ↦ setLIntegral_image_endChart_le ω hH hHs hB u q)
+  lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le_of_mapsTo ω hH hHs
+    (fun q t x _ ↦ hB q t x) (mapsTo_univ _ _)
+
+/-- The integral of the curvature of the pair-of-pants perturbation along a map `u` sending the
+punctured plane `ℂ ∖ {0, 1}` into a target subset `S ⊆ M`, over any set, has absolute value at most
+`B₀ + B₁ + B_∞` when `|H_q| ≤ B_q` on `S`. -/
+theorem abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le_of_mapsTo
+    (ω : SmoothTwoForm I M) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {S : Set M} {B : Puncture → ℝ} (hB : ∀ q t, ∀ x ∈ S, |H q t x| ≤ B q)
+    {u : ℝ × ℝ → M} (hu : MapsTo u thricePuncturedSphereReal S) (s : Set (ℝ × ℝ)) :
+    |∫ z in s, ω.hamiltonianCurvature
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)| ≤ ∑ q, B q := by
+  have hp := endChart_mem_thricePuncturedSphereReal (q := .zero) (z := (Puncture.zero.endSign, 0))
+    (by simp)
+  have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 _ (hu hp))
+  rw [← ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun q _ ↦ hB₀ q),
+    ← Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_sum_of_nonneg fun q _ ↦ hB₀ q]
+  exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
+    (lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le_of_mapsTo ω hH hHs hB hu))
 
 /-- The integral of the curvature of the pair-of-pants perturbation along any map into a manifold,
 over any set, has absolute value at most `B₀ + B₁ + B_∞` when `|H_q| ≤ B_q`. -/
@@ -384,12 +418,9 @@ theorem abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le (ω : Sm
     |∫ z in s, ω.hamiltonianCurvature
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        z (u z)| ≤ ∑ q, B q := by
-  have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 (u 0))
-  rw [← ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun q _ => hB₀ q),
-    ← Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_sum_of_nonneg fun q _ => hB₀ q]
-  exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
-    (lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u))
+        z (u z)| ≤ ∑ q, B q :=
+  abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le_of_mapsTo ω hH hHs
+    (fun q t x _ ↦ hB q t x) (mapsTo_univ _ _) s
 
 /-- **The curvature vanishes on the cylindrical parts of the ends, for a manifold target.** At a
 point of `S` where the signed longitudinal coordinate of some end is greater than `2`, the

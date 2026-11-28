@@ -69,8 +69,9 @@ the comparison of the Floer homology of a `C²`-small Morse function with its Mo
 * `TauCeti.SmoothTwoForm.IsNondegenerate.finite_periodicSolutions_hamiltonianVectorField`: a
   time-dependent Hamiltonian on a closed manifold whose 1-periodic orbits are all nondegenerate has
   finitely many 1-periodic orbits.
-* `SmoothTwoForm.IsNondegenerate.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq`:
-  a nondegenerate 1-periodic orbit is isolated among the 1-periodic orbits.
+* `SmoothTwoForm.IsNondegenerate.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq`
+  and `forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq`: a nondegenerate
+  1-periodic orbit is isolated among the 1-periodic orbits (and within any subset).
 * `exists_pos_forall_periodicSolutions_hamiltonianVectorField_smul_eq_image_criticalPoints`
   (in `TauCeti.SmoothTwoForm.IsNondegenerate`): for small `ε > 0`, the 1-periodic orbits of `ε F`
   are the constant curves at the critical points of `F`.
@@ -141,23 +142,23 @@ theorem eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq
     (h.contMDiff_hamiltonianVectorField_uncurry (n := 1) (by simp) (hH.of_le (by norm_num)))
     hγ (by simpa only [zero_add] using hnd)
 
-/-- **Nondegenerate 1-periodic orbits in a set are isolated among orbits in that set.** Let `σ` be
-a nondegenerate two-form on a Hausdorff boundaryless manifold modelled on a finite-dimensional
-space, `H` a time-dependent Hamiltonian, jointly `C²`, and `K ⊆ M`. If
-every `1`-periodic orbit `γ` of `H` in `K` is nondegenerate — `γ 0` is a nondegenerate fixed point
-of the time-one map `timeDependentFlowOf X_H 0 1` — then every `1`-periodic orbit `γ` of `H` in `K`
-is isolated at `t = 0` among the `1`-periodic orbits of `H` in `K`. -/
+/-- **Nondegenerate 1-periodic orbits in a subset are isolated among orbits in that subset.** Let
+`σ` be a nondegenerate two-form on a Hausdorff boundaryless manifold modelled on a
+finite-dimensional space, `H` a time-dependent Hamiltonian, jointly `C²`, `P` a subset of the
+`1`-periodic orbits of `H`, and `K ⊆ M`. If every orbit `γ ∈ P` in `K` is nondegenerate — `γ 0` is
+a nondegenerate fixed point of the time-one map `timeDependentFlowOf X_H 0 1` — then every orbit
+`γ ∈ P` in `K` is isolated at `t = 0` among the orbits in `P` in `K`. -/
 theorem forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq
-    (h : σ.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 (uncurry H)) {K : Set M}
-    (hnd : ∀ γ ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1, (∀ t, γ t ∈ K) →
-      IsNondegenerateFixedPt I
-        (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) 0 1) (γ 0)) :
-    ∀ γ ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1, (∀ t, γ t ∈ K) →
-      ∀ᶠ y in 𝓝 (γ 0), ∀ γ' ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1,
-        (∀ t, γ' t ∈ K) → γ' 0 = y → γ' = γ :=
+    (h : σ.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 (uncurry H))
+    {P : Set (ℝ → M)}
+    (hP : P ⊆ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1) {K : Set M}
+    (hnd : ∀ γ ∈ P, (∀ t, γ t ∈ K) → IsNondegenerateFixedPt I
+      (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) 0 1) (γ 0)) :
+    ∀ γ ∈ P, (∀ t, γ t ∈ K) →
+      ∀ᶠ y in 𝓝 (γ 0), ∀ γ' ∈ P, (∀ t, γ' t ∈ K) → γ' 0 = y → γ' = γ :=
   fun γ hγ hγK ↦
-    (h.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq hH hγ
-      (hnd γ hγ hγK)).mono fun _ hy γ' hγ' _ ↦ hy γ' hγ'
+    (h.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq hH (hP hγ)
+      (hnd γ hγ hγK)).mono fun _ hy γ' hγ' _ ↦ hy γ' (hP hγ')
 
 /-- **Finiteness of nondegenerate 1-periodic orbits.** Let `σ` be a nondegenerate two-form on a
 compact boundaryless manifold modelled on a finite-dimensional space, and `H` a jointly `C²`

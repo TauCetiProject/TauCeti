@@ -134,6 +134,9 @@ orbit at that end.
   whose `T`-periodic solutions are all nondegenerate has finitely many of them.
 * `TauCeti.finite_contractiblePeriodicSolutions`: the same for the contractible `T`-periodic
   solutions, assuming only that they are nondegenerate.
+* `TauCeti.forall_mem_periodicSolutions_eventually_eq_of_forall_mem`: isolation within a subset
+  containing all periodic solutions satisfying a side predicate implies isolation among all
+  periodic solutions satisfying that predicate.
 
 ## References
 
@@ -148,8 +151,8 @@ public section
 
 noncomputable section
 
-open Filter Function Set
-open scoped Manifold Topology
+open Filter Function Set Topology
+open scoped Manifold
 
 namespace TauCeti
 
@@ -259,31 +262,47 @@ theorem exists_mem_periodicSolutions_comp_eq {F : Type*} [NormedAddCommGroup F] 
 
 /-- **Isolated periodic solutions read through `e`.** In the setting of
 `TauCeti.exists_mem_periodicSolutions_comp_eq`, suppose that the `T`-periodic solutions of `X` in
-`K` are isolated: for each such solution `x`, every `T`-periodic solution in `K` starting close
-enough to `x 0` is `x`. Then every `T`-periodic solution `y` of `y' = Y(t, y)` with values in
-`e(K)` is isolated in the uniform distance among the `T`-periodic solutions with values in
-`e(K)`. -/
+`K` satisfying a side condition `R (e ∘ x)` are isolated: for each such solution `x`, every
+`T`-periodic solution in `K` satisfying `R (e ∘ x')` and starting close enough to `x 0` is `x`.
+Then every `T`-periodic solution `y` of `y' = Y(t, y)` with values in `e(K)` satisfying `R y` is
+isolated in the uniform distance among the `T`-periodic solutions with values in `e(K)` satisfying
+`R`. -/
 theorem exists_pos_forall_eq_of_forall_dist_lt_of_mem_image {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] [FiniteDimensional ℝ F] {e : M → F} {K : Set M} (hK : IsCompact K)
     (he_inj : InjOn e K) (hde : ∀ p ∈ K, Injective (mvfderiv I e p))
     {Y : ℝ → F → F} (hY : ∀ t, ∀ p ∈ K, Y t (e p) = mvfderiv I e p (X t p))
-    (hiso : ∀ x ∈ periodicSolutions X T, (∀ t, x t ∈ K) →
-      ∀ᶠ p in 𝓝 (x 0), ∀ x' ∈ periodicSolutions X T, (∀ t, x' t ∈ K) → x' 0 = p → x' = x)
+    {R : (ℝ → F) → Prop}
+    (hiso : ∀ x ∈ periodicSolutions X T, (∀ t, x t ∈ K) → R (e ∘ x) →
+      ∀ᶠ p in 𝓝 (x 0), ∀ x' ∈ periodicSolutions X T, (∀ t, x' t ∈ K) → R (e ∘ x') →
+        x' 0 = p → x' = x)
     {y : ℝ → F} (hyper : Periodic y T) (hy : ∀ t, HasDerivAt y (Y t (y t)) t)
-    (hyK : ∀ t, y t ∈ e '' K) :
+    (hyK : ∀ t, y t ∈ e '' K) (hRy : R y) :
     ∃ ε > 0, ∀ y' : ℝ → F, Periodic y' T → (∀ t, HasDerivAt y' (Y t (y' t)) t) →
-      (∀ t, y' t ∈ e '' K) → (∀ t, dist (y' t) (y t) < ε) → y' = y := by
+      (∀ t, y' t ∈ e '' K) → R y' → (∀ t, dist (y' t) (y t) < ε) → y' = y := by
   have he : ContinuousOn e K := fun p hp ↦ (mdifferentiableAt_of_mfderiv_injective
     (injective_mvfderiv_iff.1 (hde p hp))).continuousAt.continuousWithinAt
   obtain ⟨x, hx, hxK, rfl⟩ := exists_mem_periodicSolutions_comp_eq hK he_inj hde hY hyper hy hyK
   -- Inside `K`, the neighbourhoods of `x 0` are read through `e`.
   obtain ⟨V, hV, hVx⟩ := hK.exists_mem_nhds_inter_preimage_subset he he_inj (hxK 0)
-    (mem_nhdsWithin_of_mem_nhds (hiso x hx hxK))
+    (mem_nhdsWithin_of_mem_nhds (hiso x hx hxK hRy))
   obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.1 hV
-  refine ⟨ε, hε, fun y' hy'per hy' hy'K hdist ↦ ?_⟩
+  refine ⟨ε, hε, fun y' hy'per hy' hy'K hRy' hdist ↦ ?_⟩
   obtain ⟨x', hx', hx'K, rfl⟩ :=
     exists_mem_periodicSolutions_comp_eq hK he_inj hde hY hy'per hy' hy'K
-  rw [hVx ⟨hx'K 0, hεV (Metric.mem_ball.2 (hdist 0))⟩ x' hx' hx'K rfl]
+  rw [hVx ⟨hx'K 0, hεV (Metric.mem_ball.2 (hdist 0))⟩ x' hx' hx'K hRy' rfl]
+
+/-- If every `T`-periodic solution in `K` satisfying a side predicate `R` belongs to a subset `P`,
+then isolation at time `t₀` within `P` under `R` implies isolation at time `t₀` within
+`periodicSolutions X T` under `R`. -/
+theorem forall_mem_periodicSolutions_eventually_eq_of_forall_mem
+    {P : Set (ℝ → M)} {K : Set M} {R : (ℝ → M) → Prop} {t₀ : ℝ}
+    (hP : ∀ x ∈ periodicSolutions X T, (∀ t, x t ∈ K) → R x → x ∈ P)
+    (hiso : ∀ x ∈ P, (∀ t, x t ∈ K) → R x →
+      ∀ᶠ p in 𝓝 (x t₀), ∀ y ∈ P, (∀ t, y t ∈ K) → R y → y t₀ = p → y = x) :
+    ∀ x ∈ periodicSolutions X T, (∀ t, x t ∈ K) → R x →
+      ∀ᶠ p in 𝓝 (x t₀), ∀ y ∈ periodicSolutions X T, (∀ t, y t ∈ K) → R y → y t₀ = p → y = x :=
+  fun x hx hxK hRx ↦ (hiso x (hP x hx hxK hRx) hxK hRx).mono fun _ hp y hy hyK hRy ↦
+    hp y (hP y hy hyK hRy) hyK hRy
 
 /-- The **contractible** `T`-periodic solutions of `X`: the `T`-periodic solutions `γ` whose loop
 `ℝ ⧸ Tℤ → M`, `t ↦ γ t`, is null-homotopic. -/

@@ -96,7 +96,6 @@ theorem exists_pos_forall_eq_of_isNondegenerateFixedPt_positiveEndHamiltonian
     exact ω.exists_pos_forall_eq_of_isNondegenerateFixedPt hL hx hnd
   · rw [positiveEndHamiltonian_of_endSign_eq_neg_one H h] at hx ⊢
     exact ω.exists_pos_forall_eq_of_isNondegenerateFixedPt_reverse hL hx hnd
-
 /-- **The ends of a Floer pair of pants converge to nondegenerate orbits.** Let `K` be equal to
 `H_q(t) dt` beyond `T₀` on each end `q`, for `1`-periodic `C¹` Hamiltonians `H_q`, and let `u` be
 `C¹` on `S`, with image in a compact set `B`, solving the Floer equation `(du - X_K)^{0,1} = 0` on
@@ -166,7 +165,7 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_endChart_atTop_of_floer
         fun t ↦ hxB _
       rw [mul_zero] at hnd₀
       obtain ⟨ε, hε, h⟩ :=
-        exists_pos_forall_eq_of_isNondegenerateFixedPt_positiveEndHamiltonian hL hx hnd₀
+        ω.exists_pos_forall_eq_of_isNondegenerateFixedPt_positiveEndHamiltonian hL hx hnd₀
       exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hyper hy (hyx 0)⟩
   refine ⟨fun t ↦ x (q.endSign * t), periodic_comp_endSign_mul hxper,
     hasDerivAt_comp_endSign_mul hx, ?_⟩

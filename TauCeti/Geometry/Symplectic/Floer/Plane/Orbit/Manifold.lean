@@ -650,7 +650,7 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_pssPlanePerturbation
     hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_pssPlanePerturbation_of_isCompact p hH
       (hHs.of_le one_le_two) he isCompact_univ he_inj.injOn (fun q _ ↦ hde q) hu
       (fun _ _ ↦ mem_univ _) J hc hJc hfloer hE hC
-      (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq hHs
+      (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq hHs Subset.rfl
         fun x hx _ ↦ hnd x hx)
   exact ⟨x, hx, h⟩
 
