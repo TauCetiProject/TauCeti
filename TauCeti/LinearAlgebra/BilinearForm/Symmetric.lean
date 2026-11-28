@@ -16,7 +16,8 @@ import Mathlib.Tactic.Ring
 
 On any module `M` over a commutative semiring `R`, symmetric bilinear forms form an `R`-submodule
 `LinearMap.BilinForm.symmSubmodule R M`, and alternating ones an `R`-submodule
-`LinearMap.BilinForm.altSubmodule R M`. When `R` is a commutative ring with `Invertible (2 : R)`,
+`LinearMap.BilinForm.altSubmodule R M`; over a commutative ring, so do skew-symmetric ones,
+`LinearMap.BilinForm.skewSubmodule R M`. When `R` is a commutative ring with `Invertible (2 : R)`,
 splitting a bilinear form into symmetric and alternating parts identifies
 `symmSubmodule R M × Module.Dual R (⋀[R]^2 M)` with `BilinForm R M` without choosing a basis. On a
 finite free module `M` over a commutative semiring `R`, `Module.finrank R (symmSubmodule R M) =
@@ -26,6 +27,7 @@ Module.finrank R M * (Module.finrank R M + 1) / 2` in arbitrary characteristic.
 
 * `LinearMap.BilinForm.symmSubmodule`: the submodule of symmetric bilinear forms.
 * `LinearMap.BilinForm.altSubmodule`: the submodule of alternating bilinear forms.
+* `LinearMap.BilinForm.skewSubmodule`: the submodule of skew-symmetric bilinear forms.
 * `LinearMap.BilinForm.symmProdExteriorDualEquiv`: the canonical linear equivalence
   `(symmSubmodule R M × Module.Dual R (⋀[R]^2 M)) ≃ₗ[R] BilinForm R M` when `2` is invertible.
 
@@ -79,7 +81,23 @@ end CommSemiring
 
 section CommRing
 
-variable {R M : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
+variable (R M : Type*) [CommRing R] [AddCommMonoid M] [Module R M]
+
+/-- The submodule of skew-symmetric bilinear forms on `M`, `B y x = -B x y`. These are the fixed
+points of the involution `B ↦ -B.flip`. -/
+def skewSubmodule : Submodule R (BilinForm R M) where
+  carrier := {B | ∀ x y, B y x = -B x y}
+  add_mem' {B₁ B₂} h₁ h₂ x y := by simp [h₁ x y, h₂ x y, add_comm]
+  zero_mem' := by simp
+  smul_mem' c B h x y := by simp [h x y]
+
+variable {R M}
+
+/-- Membership in `skewSubmodule R M` is `B y x = -B x y` for all `x` and `y`. -/
+@[simp]
+theorem mem_skewSubmodule {B : BilinForm R M} :
+    B ∈ skewSubmodule R M ↔ ∀ x y, B y x = -B x y :=
+  Iff.rfl
 
 /-- Subtracting the flip of a bilinear form produces an alternating bilinear form. -/
 theorem isAlt_sub_flip (B : BilinForm R M) : (B - B.flip).IsAlt := fun _ ↦ by

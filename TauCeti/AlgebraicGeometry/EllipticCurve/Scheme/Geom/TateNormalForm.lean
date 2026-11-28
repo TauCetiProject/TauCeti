@@ -68,6 +68,9 @@ schemes in an arbitrary universe the universal Tate normal form is read over its
   universal property, with the universal Tate normal form read as the elliptic curve `curveGeom`.
 * `WeierstrassCurve.UniversalTate.smoothOfRelativeDimension_terminal_from`: the base
   `Spec ℤ[A, B][Δ⁻¹]` of the universal Tate normal form is smooth of relative dimension two over
+  `Spec ℤ`, and hence smooth (`WeierstrassCurve.UniversalTate.smooth_terminal_from`).
+* `WeierstrassCurve.UniversalGammaOneFour.smoothOfRelativeDimension_terminal_from`: the base
+  `Spec ℤ[B, (B(1 - 16B))⁻¹]` of the `A = 1` specialization is smooth of relative dimension `1` over
   `Spec ℤ`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isTatePoint_iff`: a Tate point is a section `P`
   such that none of `P`, `2P` and `3P` meets the zero section.
@@ -82,6 +85,9 @@ schemes in an arbitrary universe the universal Tate normal form is read over its
   `WeierstrassCurve.UniversalTate.point_projModelMulBy_two_ne_projModelZero` and
   `WeierstrassCurve.UniversalTate.point_projModelMulBy_three_ne_projModelZero`: the universal point
   satisfies the three conditions.
+* `TauCeti.AlgebraicGeometry.UniversalTate.pointHom_pow_left` and
+  `TauCeti.AlgebraicGeometry.UniversalTate.specMap_comp_pointHom_pow_four_eq_zero_iff`: the `k`-th
+  multiple of `pointHom` on the projective model and the affine criterion `A = 1` for `4`-torsion.
 
 ## References
 
@@ -156,26 +162,8 @@ theorem point_projModelMulBy_three_ne_projModelZero (s) :
 /-- The base `Spec ℤ[A, B][Δ⁻¹]` of the universal Tate normal form is smooth of relative dimension
 two over `Spec ℤ`, the terminal scheme: it is an open subscheme of the affine plane. -/
 instance smoothOfRelativeDimension_terminal_from :
-    SmoothOfRelativeDimension 2 (terminal.from (Spec (.of (ULift.{u} Ring)))) := by
-  let e₁ : ULift.{u} ℤ ≃+* ℤ := ULift.ringEquiv
-  let e₂ : Ring ≃+* ULift.{u} Ring := ULift.ringEquiv.symm
-  let f : ULift.{u} ℤ →+* ULift.{u} Ring :=
-    (e₂ : Ring →+* ULift.{u} Ring).comp ((algebraMap ℤ Ring).comp (e₁ : ULift.{u} ℤ →+* ℤ))
-  -- `ℤ[A, B][Δ⁻¹]` is a localisation away from one element of the polynomial ring `ℤ[A, B]`
-  have : Algebra.IsStandardSmoothOfRelativeDimension 0 (MvPolynomial (Fin 2) ℤ) Ring :=
-    .localization_away polyCurve.Δ
-  have : Algebra.IsStandardSmoothOfRelativeDimension 2 ℤ Ring :=
-    .trans (n := 2) (m := 0) ℤ (MvPolynomial (Fin 2) ℤ) Ring
-  have hf : f.IsStandardSmoothOfRelativeDimension (0 + (2 + 0)) :=
-    (RingHom.IsStandardSmoothOfRelativeDimension.equiv e₂).comp
-      (((RingHom.isStandardSmoothOfRelativeDimension_algebraMap 2).mpr inferInstance).comp
-        (RingHom.IsStandardSmoothOfRelativeDimension.equiv e₁))
-  have : SmoothOfRelativeDimension 2 (Spec.map (CommRingCat.ofHom f)) := by
-    rw [HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension 2)]
-    exact RingHom.locally_of RingHom.isStandardSmoothOfRelativeDimension_respectsIso _ hf
-  have e := specULiftZIsTerminal.{u}.uniqueUpToIso terminalIsTerminal
-  rw [terminal.hom_ext (terminal.from _) (Spec.map (CommRingCat.ofHom f) ≫ e.hom)]
-  exact inferInstanceAs (SmoothOfRelativeDimension (2 + 0) _)
+    SmoothOfRelativeDimension 2 (terminal.from (Spec (.of (ULift.{u} Ring)))) :=
+  SmoothOfRelativeDimension.terminal_from_Spec_ulift 2
 
 /-- The base `Spec ℤ[A, B][Δ⁻¹]` of the universal Tate normal form is smooth over `Spec ℤ`, the
 terminal scheme. -/
@@ -184,9 +172,19 @@ instance smooth_terminal_from : Smooth (terminal.from (Spec (.of (ULift.{u} Ring
 
 end WeierstrassCurve.UniversalTate
 
+namespace WeierstrassCurve.UniversalGammaOneFour
+
+/-- The base `Spec ℤ[B, (B(1 - 16B))⁻¹]` is smooth of relative dimension `1` over `Spec ℤ`, the
+terminal scheme. -/
+instance smoothOfRelativeDimension_terminal_from :
+    SmoothOfRelativeDimension 1 (terminal.from (Spec (.of (ULift.{u} Ring)))) :=
+  SmoothOfRelativeDimension.terminal_from_Spec_ulift 1
+
+end WeierstrassCurve.UniversalGammaOneFour
+
 namespace TauCeti.AlgebraicGeometry.UniversalTate
 
-open WeierstrassCurve MonoidalCategory
+open WeierstrassCurve MonoidalCategory MonObj
 
 /-! ### The universal Tate normal form as an elliptic curve -/
 
@@ -208,6 +206,73 @@ theorem pointHom_left :
     pointHom.{u}.left =
       UniversalTate.point ≫ (toEllipticCurveGeomIso UniversalTate.curveULift).inv :=
   (rfl)
+
+/-- On the projective model, the `k`-th multiple of the point `(0, 0)` of `curveGeom` is `point`
+followed by `curveULift.projModelMulBy k`. -/
+theorem pointHom_pow_left (k : ℕ) :
+    (pointHom.{u} ^ k).left =
+      UniversalTate.point ≫ UniversalTate.curveULift.projModelMulBy k ≫
+        (toEllipticCurveGeomIso UniversalTate.curveULift).inv := by
+  have hk : (pointHom.{u} ^ k).left = pointHom.{u}.left ≫ (curveGeom.mulBy k).left := by
+    rw [← Over.comp_left, EllipticCurveGeom.comp_mulBy, zpow_natCast]
+  rw [hk, pointHom_left, Category.assoc, projModelMulBy_eq]
+  simp
+
+/-- The zero section of `curveGeom` is the zero section of `curveULift`'s projective model,
+transferred along `toEllipticCurveGeomIso`. -/
+@[simp]
+theorem curveGeom_zero_eq :
+    curveGeom.{u}.zero =
+      UniversalTate.curveULift.projModelZero ≫
+        (toEllipticCurveGeomIso UniversalTate.curveULift).inv := by
+  simp [← zero_toEllipticCurveGeomIso_hom]
+
+/-- On the universal Tate normal form, the `k`-th multiple of `(0, 0)` in `curveGeom` meets the
+zero section at `t` if and only if the projective-model multiple meets `projModelZero` at `t`. -/
+theorem pointHom_pow_left_apply_eq_zero_iff (k : ℕ)
+    (t : Spec (.of (ULift.{u} UniversalTate.Ring))) :
+    (pointHom.{u} ^ k).left t = curveGeom.{u}.zero t ↔
+      (UniversalTate.point ≫ UniversalTate.curveULift.projModelMulBy k) t =
+        UniversalTate.curveULift.projModelZero t := by
+  simp only [pointHom_pow_left, curveGeom_zero_eq, ← Category.assoc, Scheme.Hom.comp_apply]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
+  have h' := congrArg (toEllipticCurveGeomIso UniversalTate.curveULift.{u}).hom h
+  rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, Iso.inv_hom_id] at h'
+  simpa using h'
+
+-- Apply the 4-torsion criterion after rewriting a base-changed curve to `tateNormalForm`.
+private theorem tateNormalForm_projModelAffinePoint_mulBy_four_eq_zero_iff {R : Type u}
+    [CommRing R] {W : WeierstrassCurve R} [W.IsElliptic] {a b : R} (hW : W = tateNormalForm a b)
+    (h₀ : W.toAffine.Equation 0 0) :
+    W.projModelAffinePoint h₀ ≫ W.projModelMulBy 4 = W.projModelZero ↔ a = 1 := by
+  subst hW
+  exact tateNormalForm_projModelMulBy_four_eq_projModelZero_iff
+
+/-- Along `Spec.map φ`, the fourth multiple of the universal point `(0, 0)` vanishes if and only
+if `φ` maps `A` to `1`. -/
+theorem specMap_comp_pointHom_pow_four_eq_zero_iff {R : Type u} [CommRing R]
+    (φ : ULift.{u} UniversalTate.Ring →+* R) :
+    Spec.map (CommRingCat.ofHom φ) ≫ (pointHom.{u} ^ 4).left =
+        Spec.map (CommRingCat.ofHom φ) ≫ curveGeom.zero ↔
+      φ UniversalTate.curveULift.a₁ = 1 := by
+  -- Cancel `(toEllipticCurveGeomIso curveULift).inv`, rewrite to `(curveULift.map φ).projModel`,
+  -- and cancel `projModelBaseChange φ` via its pullback square.
+  rw [pointHom_pow_left, Nat.cast_ofNat, curveGeom_zero_eq]
+  simp only [← Category.assoc, cancel_mono (toEllipticCurveGeomIso UniversalTate.curveULift).inv]
+  rw [UniversalTate.point_def,
+    ← UniversalTate.curveULift.projModelAffinePoint_projModelBaseChange φ,
+    Category.assoc, ← UniversalTate.curveULift.projModelMulBy_projModelBaseChange φ 4,
+    ← Category.assoc, ← UniversalTate.curveULift.projModelZero_projModelBaseChange φ,
+    UniversalTate.curveULift.comp_projModelBaseChange_eq_iff φ (by simp)]
+  -- Identify `(φ 0, φ 0)` with `(0, 0)` and `curveULift.map φ` with `tateNormalForm (φ a₁) (φ a₃)`.
+  have hpt : (UniversalTate.curveULift.map φ).projModelAffinePoint
+        (UniversalTate.equation_curveULift_zero.map φ) =
+      (UniversalTate.curveULift.map φ).projModelAffinePoint
+        (by simp : (UniversalTate.curveULift.map φ).toAffine.Equation 0 0) :=
+    (projModelAffinePoint_inj _).mpr ⟨map_zero φ, map_zero φ⟩
+  rw [hpt]
+  exact tateNormalForm_projModelAffinePoint_mulBy_four_eq_zero_iff
+    (UniversalTate.map_curveULift φ) _
 
 end TauCeti.AlgebraicGeometry.UniversalTate
 
@@ -253,22 +318,6 @@ private theorem isTate_eqToHom_projModelBaseChange (φ : ULift.{u} UniversalTate
       (curveULift.map φ).projModelAffinePoint (equation_curveULift_zero.map φ) :=
     (projModelAffinePoint_inj h).mpr ⟨(map_zero φ).symm, (map_zero φ).symm⟩
   rw [h', point_def, eqToHom_refl, Category.id_comp, projModelAffinePoint_projModelBaseChange]
-
--- A ring homomorphism out of `ULift ℤ[A, B][Δ⁻¹]` is the classifying homomorphism of the Tate
--- normal form with the images of `A` and `B` as coefficients.
-private theorem eq_liftULift (φ : ULift.{u} UniversalTate.Ring →+* R) :
-    ∃ h : IsUnit (tateNormalForm (φ curveULift.a₁) (φ curveULift.a₃)).Δ, φ = liftULift h := by
-  have hφ : curveULift.map φ = tateNormalForm (φ curveULift.a₁) (φ curveULift.a₃) := by simp
-  have h : IsUnit (tateNormalForm (φ curveULift.a₁) (φ curveULift.a₃)).Δ := by
-    rw [← hφ, map_Δ]
-    exact curveULift.isUnit_Δ.map φ
-  refine ⟨h, ringHom_ext_uLift ?_ ?_⟩ <;> simp
-
-private theorem liftULift_congr {a b a' b' : R} (h : IsUnit (tateNormalForm a b).Δ)
-    (h' : IsUnit (tateNormalForm a' b').Δ) (ha : a = a') (hb : b = b') :
-    liftULift h = liftULift h' := by
-  subst ha hb
-  rfl
 
 variable {W : WeierstrassCurve R} {P : Spec (.of R) ⟶ W.projModel}
 
@@ -364,9 +413,7 @@ private theorem IsTate.base_eq {f f' : Spec (.of R) ⟶ Spec (.of (ULift.{u} Uni
   have hab := (W.existsUnique_tateNormalForm hP h₁ h₂ h₃).unique
     (y₁ := (φ curveULift.a₁, φ curveULift.a₃)) (y₂ := (φ' curveULift.a₁, φ' curveULift.a₃))
     ⟨e, he, he₀, heP⟩ ⟨e', he', he₀', heP'⟩
-  obtain ⟨hΔ, hφ⟩ := eq_liftULift φ
-  obtain ⟨hΔ', hφ'⟩ := eq_liftULift φ'
-  rw [hφ, hφ', liftULift_congr hΔ hΔ' (congrArg Prod.fst hab) (congrArg Prod.snd hab)]
+  rw [UniversalTate.ringHom_ext_uLift (congrArg Prod.fst hab) (congrArg Prod.snd hab)]
 
 end Affine
 

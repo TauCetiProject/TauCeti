@@ -45,6 +45,9 @@ of genus two has gonality exactly two. Gonality one characterizes rational funct
   `TauCeti.gonality_pos`: every transcendental element bounds the gonality, and for a function
   field some transcendental element attains it, which is then positive.
 * `TauCeti.gonality_pos_iff`: the gonality is positive exactly for function fields.
+* `TauCeti.exists_finrank_adjoin_eq_gonality_of_transcendental`,
+  `TauCeti.gonality_eq_zero_of_isAlgebraic`: the infimum is attained as soon as some element is
+  transcendental, and is the junk value `0` for an algebraic extension.
 * `AlgEquiv.gonality_eq`: isomorphic extensions have the same gonality.
 * `TauCeti.gonality_eq_sInf_degree`: **the pencil description** of the gonality.
 * `TauCeti.Divisor.dim_sub_ofPoint_lt_of_degree_eq_gonality`: a divisor of least degree with
@@ -92,13 +95,26 @@ theorem gonality_le_finrank_adjoin {x : F} (hx : Transcendental k x) :
     gonality k F ≤ Module.finrank k⟮x⟯ F :=
   Nat.sInf_le ⟨x, hx, rfl⟩
 
+/-- As soon as some element is transcendental, the gonality is attained: some transcendental `y`
+has `[F : k(y)] = gonality k F`. -/
+theorem exists_finrank_adjoin_eq_gonality_of_transcendental {x : F} (hx : Transcendental k x) :
+    ∃ y : F, Transcendental k y ∧ Module.finrank k⟮y⟯ F = gonality k F :=
+  Nat.sInf_mem (s := {n : ℕ | ∃ y : F, Transcendental k y ∧ Module.finrank k⟮y⟯ F = n})
+    ⟨_, x, hx, rfl⟩
+
 /-- **The gonality of a function field is attained**: some transcendental `x` has
 `[F : k(x)] = gonality k F`. -/
 theorem exists_finrank_adjoin_eq_gonality (hF : IsFunctionField k F) :
     ∃ x : F, Transcendental k x ∧ Module.finrank k⟮x⟯ F = gonality k F := by
   obtain ⟨x, hx⟩ := hF.exists_transcendental
-  exact Nat.sInf_mem (s := {n : ℕ | ∃ x : F, Transcendental k x ∧ Module.finrank k⟮x⟯ F = n})
-    ⟨_, x, hx, rfl⟩
+  exact exists_finrank_adjoin_eq_gonality_of_transcendental hx
+
+/-- An algebraic extension has no transcendental element, so its gonality is the junk value `0`
+of an infimum over the empty set. -/
+@[simp]
+theorem gonality_eq_zero_of_isAlgebraic [Algebra.IsAlgebraic k F] : gonality k F = 0 :=
+  Nat.sInf_eq_zero.mpr <| .inr <| Set.eq_empty_of_forall_notMem
+    fun _ ⟨x, hx, _⟩ ↦ hx (Algebra.IsAlgebraic.isAlgebraic x)
 
 /-- The gonality of a function field is a lower bound for every index `[F : k(x)]`, and it is the
 largest one. -/

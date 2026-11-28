@@ -51,6 +51,10 @@ middle and back faces.  The unit is the class of the constant `0`-cocycle
   coefficients `TopCat.singularCohomologyChainCoefficientMap`, and
   `TopCat.singularCup_comp_tensorHom` its compatibility with the changes of chain coefficients of
   the two factors.
+* `TopCat.singularCup_homologyMap_linearYonedaObjMap_left`,
+  `TopCat.singularCup_homologyMap_linearYonedaObjMap_right` and
+  `TopCat.homologyMap_linearYonedaObjMap_singularCup`: changing the cochain values of either factor,
+  or of the product, is changing the pairing.
 * `TopCat.cupCochain_alexanderWhitneyDiagonal_assoc` and `TopCat.singularCup_assoc`:
   associativity of the cup product of cochains and on cohomology, with
   `TopCat.singularCup_assoc_unit` the commutative-ring case and
@@ -352,6 +356,42 @@ lemma singularCup_comp_tensorHom (X : TopCat.{w}) (k : Type*) [CommRing k] [Line
   rw [op_id, CategoryTheory.Functor.map_id]
   exact (ConcreteCategory.congr_hom (HomologicalComplex.homologyMap_id
     (((toSSet.obj X).chainComplex T).linearYonedaObj k P) n) _).symm
+
+/-- Changing the cochain values of the first factor along `f : M ⟶ M'` and cupping along
+`μ' : M' ⊗ N ⟶ P` is cupping along the pairing `(f ▷ N) ≫ μ'`. -/
+lemma singularCup_homologyMap_linearYonedaObjMap_left (X : TopCat.{w}) (k : Type*) [CommRing k]
+    [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) {M' : C} (f : M ⟶ M') (μ' : M' ⊗ N ⟶ P)
+    (p q n : ℕ) (h : p + q = n) (a : X.singularCohomology R k M p)
+    (b : X.singularCohomology S k N q) :
+    X.singularCup k u μ' p q n h
+        (homologyMap (((toSSet.obj X).chainComplex R).linearYonedaObjMap k f) p a) b =
+      X.singularCup k u ((f ▷ N) ≫ μ') p q n h a b := by
+  rw [singularCup, singularCup]
+  exact TauCeti.ChainComplex.cup_homologyMap_linearYonedaObjMap_left _ f μ' p q n h a b
+
+/-- Changing the cochain values of the second factor along `f : N ⟶ N'` and cupping along
+`μ' : M ⊗ N' ⟶ P` is cupping along the pairing `(M ◁ f) ≫ μ'`. -/
+lemma singularCup_homologyMap_linearYonedaObjMap_right (X : TopCat.{w}) (k : Type*) [CommRing k]
+    [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) {N' : C} (f : N ⟶ N') (μ' : M ⊗ N' ⟶ P)
+    (p q n : ℕ) (h : p + q = n) (a : X.singularCohomology R k M p)
+    (b : X.singularCohomology S k N q) :
+    X.singularCup k u μ' p q n h a
+        (homologyMap (((toSSet.obj X).chainComplex S).linearYonedaObjMap k f) q b) =
+      X.singularCup k u ((M ◁ f) ≫ μ') p q n h a b := by
+  rw [singularCup, singularCup]
+  exact TauCeti.ChainComplex.cup_homologyMap_linearYonedaObjMap_right _ f μ' p q n h a b
+
+/-- Changing the cochain values of a cup product along `g : P ⟶ P'` is cupping along the pairing
+`μ ≫ g`. -/
+lemma homologyMap_linearYonedaObjMap_singularCup (X : TopCat.{w}) (k : Type*) [CommRing k]
+    [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ P) {P' : C} (g : P ⟶ P')
+    (p q n : ℕ) (h : p + q = n) (a : X.singularCohomology R k M p)
+    (b : X.singularCohomology S k N q) :
+    homologyMap (((toSSet.obj X).chainComplex T).linearYonedaObjMap k g) n
+        (X.singularCup k u μ p q n h a b) =
+      X.singularCup k u (μ ≫ g) p q n h a b := by
+  rw [singularCup, singularCup]
+  exact TauCeti.ChainComplex.homologyMap_linearYonedaObjMap_cup _ μ g p q n h a b
 
 section Laws
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Basis
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+import TauCeti.Data.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Matrix.Alternating.ModIdeal
 
 /-!
@@ -42,6 +43,8 @@ holds in characteristic two, where `q` is not determined by its polar form.
   `M + Mᵀ`, with no assumption on `2`.
 * `QuadraticForm.baseChangeForm`, `QuadraticForm.baseChangeForm_apply` and
   `QuadraticForm.baseChangeForm_self`: the form with the same coefficients over an `R`-algebra.
+* `QuadraticForm.baseChangeForm_algebraMap_comp`: `q_A` restricts to `q` on vectors with
+  coordinates in `R`.
 * `QuadraticForm.baseChangeForm_map_mulVec`: a matrix carrying `q` to `q'` over `R` carries `q_A`
   to `q'_A` over every `R`-algebra `A`.
 * `QuadraticForm.baseChangeForm_add` and `QuadraticForm.baseChangeForm_proj`: `q ↦ q_A` is
@@ -151,6 +154,15 @@ theorem baseChangeForm_self (q : QuadraticForm R (ι → R)) : baseChangeForm q 
     Matrix.map_id, Matrix.toQuadraticForm', LinearMap.toMatrix₂_basisFun,
     Matrix.toLinearMap₂'_toMatrix', QuadraticMap.toQuadraticMap_toBilin]
 
+/-- **The form `q_A` restricts to `q`**: on a vector with coordinates in `R`, `q_A` takes the value
+of `q`. -/
+theorem baseChangeForm_algebraMap_comp (q : QuadraticForm R (ι → R)) (A : Type*) [CommRing A]
+    [Algebra R A] (x : ι → R) :
+    baseChangeForm q A (algebraMap R A ∘ x) = algebraMap R A (q x) := by
+  conv_rhs => rw [← baseChangeForm_self q]
+  simp only [baseChangeForm_apply, RingHom.map_dotProduct_mulVec, Algebra.algebraMap_self,
+    RingHom.coe_id, Matrix.map_id]
+
 /-- **A matrix carrying `q` to `q'` over `R` does so over every `R`-algebra.** If `q'(P x) = q(x)`
 for every `x ∈ R^ι`, then `q'_A(P x) = q_A(x)` for every `x ∈ A^ι`, with `P` read in `A`. -/
 theorem baseChangeForm_map_mulVec {κ : Type*} [Fintype κ] [LinearOrder κ]
@@ -216,6 +228,16 @@ theorem coefficientMatrix_baseChangeForm (q : QuadraticForm R (ι → R)) (A : T
       dotProduct_add, add_dotProduct, hsingle, hlow j i hlt, map_zero, Matrix.map_apply]
     ring
   · rw [Matrix.map_apply, hlow i j (lt_of_le_of_ne (not_lt.mp hlt) (Ne.symm hij)), map_zero]
+
+/-- **Base change of forms is transitive**: for a tower `R → A → B`, the form on `B^ι` with the
+coefficients of `q_A` is the form with the coefficients of `q`. -/
+@[simp]
+theorem baseChangeForm_baseChangeForm (q : QuadraticForm R (ι → R)) (A B : Type*) [CommRing A]
+    [CommRing B] [Algebra R A] [Algebra A B] [Algebra R B] [IsScalarTower R A B] :
+    baseChangeForm (baseChangeForm q A) B = baseChangeForm q B := by
+  ext x
+  rw [baseChangeForm_apply, baseChangeForm_apply, coefficientMatrix_baseChangeForm, Matrix.map_map,
+    ← RingHom.coe_comp, ← IsScalarTower.algebraMap_eq]
 
 end Coefficients
 

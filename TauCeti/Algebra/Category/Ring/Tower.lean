@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.Ring.Constructions
-public import TauCeti.RingTheory.LocalRing.RingHom
+public import TauCeti.RingTheory.LocalRing.RingHom.Basic
 import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 import Mathlib.RingTheory.Jacobson.Ideal
 

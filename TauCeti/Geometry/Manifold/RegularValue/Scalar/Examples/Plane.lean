@@ -29,7 +29,8 @@ the diffeomorphism with `ℝ`, the inclusion is `y ↦ (c, y)`, with derivative 
 **The squared norm.** On a real inner product space every nonzero value of `x ↦ ‖x‖²` is regular
 (`TauCeti.isRegularValue_norm_sq`). So in dimension `n + 1` the closed unit ball `{‖x‖² ≤ 1}`
 carries the half-space atlas `TauCeti.scalarRegularSublevelChartedSpace`, and its manifold boundary
-is the unit sphere (`TauCeti.boundary_scalarRegularSublevel_norm_sq`). For the plane, `n = 1`, the
+is the unit sphere (the case `c = 1` of `TauCeti.boundary_normSqSublevel`, in
+`TauCeti.Geometry.Manifold.RegularValue.Scalar.Examples.Sphere`). For the plane, `n = 1`, the
 boundary is the unit circle. Its boundary atlas is modelled on `EuclideanSpace ℝ (Fin 1)`, its
 regular-level atlas on `Fin 1 → ℝ`, and `TauCeti.scalarRegularSublevelBoundaryDiffeomorph`
 identifies the two by the identity of points. At a point of the circle such as `(1, 0)` the
@@ -110,27 +111,6 @@ theorem fderiv_coe_regularLevelFstDiffeomorph_symm (y : ℝ) :
 end Coordinate
 
 /-! ### The sublevels of the squared norm -/
-
-section NormSq
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {n : ℕ} (hn : finrank ℝ E = n + 1)
-
-/-- **The boundary of the unit ball is the unit sphere.** For the half-space atlas of the regular
-sublevel `{x | ‖x‖² ≤ 1}` of the squared norm on a real inner product space of dimension `n + 1`,
-the manifold boundary consists of the points of the unit sphere. -/
-theorem boundary_scalarRegularSublevel_norm_sq :
-    letI := scalarRegularSublevelChartedSpace (contDiff_norm_sq ℝ).contMDiff
-      (isRegularValue_norm_sq (E := E) one_ne_zero) hn
-    (𝓡∂ (n + 1)).boundary {x : E | ‖x‖ ^ 2 ≤ 1} =
-      {x : {x : E | ‖x‖ ^ 2 ≤ 1} | (x : E) ∈ sphere 0 1} := by
-  rw [boundary_scalarRegularSublevel (isRegularValue_norm_sq one_ne_zero) hn le_rfl
-    (contDiff_norm_sq ℝ).contMDiff]
-  ext x
-  simp only [mem_ofPred_eq, mem_sphere_zero_iff_norm]
-  exact pow_eq_one_iff_of_nonneg (norm_nonneg (x : E)) two_ne_zero
-
-end NormSq
 
 /- At the point `(1, 0)` of the unit circle, the preferred chart of the closed unit disc
 `{x | ‖x‖² ≤ 1}` of the Euclidean plane is a face chart: on its whole source its zeroth coordinate

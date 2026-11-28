@@ -55,16 +55,13 @@ theorem graphOfProd_eq_comp (h : ℝ × ℝ → ℝ) :
 the height. -/
 theorem fderiv_graphOfProd {h : ℝ × ℝ → ℝ} {q : ℝ × ℝ} (hh : DifferentiableAt ℝ h q)
     (v : ℝ × ℝ) : fderiv ℝ (graphOfProd h) q v =
-      WithLp.toLp 2 (Complex.equivRealProdCLM.symm (fderivPolarCoordSymm q v), fderiv ℝ h q v) := by
-  have hπ : HasFDerivAt Complex.polarCoord.symm
-      (Complex.equivRealProdCLM.symm.toContinuousLinearMap.comp (fderivPolarCoordSymm q)) q := by
-    simpa only [zero_add] using hasFDerivAt_add_polarCoord_symm q 0
+      WithLp.toLp 2 (fderivComplexPolarCoordSymm q v, fderiv ℝ h q v) := by
   rw [graphOfProd_eq_comp]
   have hD := (WithLp.prodContinuousLinearEquiv 2 ℝ ℂ ℝ).symm.hasFDerivAt.comp q
-    (hπ.prodMk hh.hasFDerivAt)
+    ((hasFDerivAt_complexPolarCoord_symm q).prodMk hh.hasFDerivAt)
   simp only [Function.comp_def] at hD ⊢
   rw [hD.fderiv]
-  simp
+  simp [-fderivComplexPolarCoordSymm_apply]
 
 /-- The Gram matrix of the actual graph differential on the radial and angular coordinate
 vectors, in that order. -/
@@ -93,8 +90,8 @@ theorem gram_eq {h : ℝ × ℝ → ℝ} {q : ℝ × ℝ} (hh : DifferentiableAt
   simp only [gram_apply, fderiv_graphOfProd hh,
     WithLp.prod_inner_apply, Real.inner_apply]
   fin_cases i <;> fin_cases j <;>
-    simp [equivRealProd_symm_fderivPolarCoordSymm_apply_one_zero,
-      equivRealProd_symm_fderivPolarCoordSymm_apply_zero_one, horth, real_inner_comm] <;> ring
+    simp [-fderivComplexPolarCoordSymm_apply, fderivComplexPolarCoordSymm_apply_one_zero,
+      fderivComplexPolarCoordSymm_apply_zero_one, horth, real_inner_comm] <;> ring
 
 /-- The Gram determinant of a polar graph at a point of differentiability of the height. -/
 theorem det_gram {h : ℝ × ℝ → ℝ} {q : ℝ × ℝ} (hh : DifferentiableAt ℝ h q) :
