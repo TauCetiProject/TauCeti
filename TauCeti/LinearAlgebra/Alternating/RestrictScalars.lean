@@ -75,7 +75,21 @@ variable (R : Type*) [CommSemiring R] {A M N : Type*} [CommSemiring A] [SMul R A
   [IsScalarTower R A M] [IsScalarTower R A N]
 @[simp] theorem restrictScalars_curryLeft {n : ℕ} (f : M [⋀^Fin (n + 1)]→ₗ[A] N) (m : M) :
     (f.curryLeft m).restrictScalars R = (f.restrictScalars R).curryLeft m := (rfl)
+
+/-- Currying an `A`-multilinear alternating map after scalar restriction commutes with `A`-scalar
+multiplication in the first argument. -/
+theorem restrictScalars_curryLeft_smul [SMulCommClass R A N] {n : ℕ}
+    (f : M [⋀^Fin (n + 1)]→ₗ[A] N) (a : A) (m : M) :
+    (f.restrictScalars R).curryLeft (a • m) = a • (f.curryLeft m).restrictScalars R := by
+  rw [← restrictScalars_curryLeft, map_smul, restrictScalars_smul]
 end RestrictScalarsCommSemiring
+
+/-- Currying an `R`-multilinear alternating map commutes with scalar multiplication by any monoid
+acting compatibly on the codomain. -/
+theorem curryLeft_smul_of_tower {R S M N : Type*} [CommSemiring R] [AddCommMonoid M]
+    [AddCommMonoid N] [Module R M] [Module R N] [Monoid S] [DistribMulAction S N]
+    [SMulCommClass R S N] {n : ℕ} (c : S) (f : M [⋀^Fin (n + 1)]→ₗ[R] N) :
+    (c • f).curryLeft = c • f.curryLeft := (rfl)
 
 section OfCurryLeftSMul
 

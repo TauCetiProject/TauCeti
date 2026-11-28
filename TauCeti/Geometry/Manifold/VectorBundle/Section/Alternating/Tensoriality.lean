@@ -121,12 +121,12 @@ private lemma contMDiff_fiberContinuousAlternatingMap
   refine ((contMDiffAt_totalSpace_iff.mp ((Φ s).contMDiff x₀)).2).congr_of_eventuallyEq ?_
   filter_upwards [ρ.eventuallyEq_one, hnhds,
     eV.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt FV V x₀)] with y hρ1 hyW hyV
+  have hs : (fun i ↦ eW.symmL ℝ y (v i)) = fun i ↦ s i y :=
+    funext fun i ↦ by simp [s, hρ1, Trivialization.symmL_apply _ hyW]
   simp only [ContinuousAlternatingMap.inCoordinates,
     ContinuousAlternatingMap.compContinuousLinearMap_apply,
     ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_def, ← heW, ← heV,
-    show (fun i ↦ eW.symmL ℝ y (v i)) = fun i ↦ s i y from
-      funext fun i ↦ by simp [s, hρ1, Trivialization.symmL_apply _ hyW],
-    fiberContinuousAlternatingMap_apply_sections, eV.continuousLinearMapAt_apply_of_mem ℝ hyV]
+    hs, fiberContinuousAlternatingMap_apply_sections, eV.continuousLinearMapAt_apply_of_mem ℝ hyV]
 /-- Smooth sections of `x ↦ W x [⋀^ι]→L[ℝ] V x` are `C^∞(M, ℝ)`-linearly equivalent to alternating
 `C^∞(M, ℝ)`-multilinear maps `Γ(W) [⋀^ι]→ₗ[C^∞(M, ℝ)] Γ(V)`. -/
 def alternatingEquiv :

@@ -136,8 +136,9 @@ theorem lieModule_d_smul_apply :
       rw [Fin.sum_univ_succ]; simp [Matrix.vecCons, removeNth_succ_cons, pow_succ, sub_eq_add_neg]
     rw [← curryLeft_apply_apply, LieModule.Cohomology.curryLeft_d_succ, ← curryLeft_apply_apply,
       LieModule.Cohomology.curryLeft_d_succ, sub_apply, sub_apply, hlie,
-      show (a • η).curryLeft x = a • η.curryLeft x by ext u; simp,
-      lieModule_d_smul_apply a (η.curryLeft x) w, hsum, mul_sub]; abel
+      curryLeft_smul_of_tower a η, LinearMap.smul_apply,
+      lieModule_d_smul_apply a (η.curryLeft x) w, hsum, mul_sub]
+    abel
 variable {R A L} in
 private theorem curryLeft_d_restrictScalars_smul :
     ∀ {n : ℕ} (ω : L [⋀^Fin n]→ₗ[A] A) (a : A) (x : L) (w : Fin n → L),
@@ -159,8 +160,7 @@ private theorem curryLeft_d_restrictScalars_smul :
           mul_comm (⁅w k, a⁆), smul_mul_assoc, mul_comm _ (⁅w k, a⁆)]
       simp only [restrictScalars_apply, LieRinehartRing.lie_smul_eq_mul, hterm, sub_eq_add_neg,
         Finset.sum_add_distrib, Finset.sum_neg_distrib, ← Finset.mul_sum]; ring
-    rw [hlie, show (ω.restrictScalars R).curryLeft (a • x) = a • (ω.curryLeft x).restrictScalars R
-        by ext u; simp [ω.map_vecCons_smul],
+    rw [hlie, restrictScalars_curryLeft_smul R ω a x,
       lieModule_d_smul_apply a ((ω.curryLeft x).restrictScalars R) w, ← restrictScalars_curryLeft]
     simp only [restrictScalars_apply, smul_eq_mul, mul_sub]; abel
 

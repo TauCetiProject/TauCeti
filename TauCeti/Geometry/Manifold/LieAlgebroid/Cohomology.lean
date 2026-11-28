@@ -246,16 +246,17 @@ abbrev cohomology (k : ℕ) : ModuleCat ℝ := A.cochainComplex.homology k
 theorem extDeriv_one_apply_sections (α : A.Cochain 1) (a b : Cₛ^∞⟮I; F, V⟯) (x : M) :
     (A.extDeriv 1 α) x ![a x, b x] = A.anchorDeriv a (scalarAlternatingEquiv α ![b]) x -
       A.anchorDeriv b (scalarAlternatingEquiv α ![a]) x - α x ![A.bracket a b x] := by
-  have hb : (![b x] : Fin 1 → V x) = fun i ↦ (![b] i) x := funext fun i ↦ by fin_cases i; rfl
+  have hb : (![b x] : Fin 1 → V x) = fun i ↦ (![b] i) x :=
+    funext fun i ↦ by simp [Fin.eq_zero i]
   have hco : A.cochainZeroEquiv (interior a α) = scalarAlternatingEquiv α ![a] := by
-    ext y; simpa using congr_arg (α y) (funext fun i ↦ by fin_cases i; rfl)
+    ext y; simpa using congr_arg (α y) (funext fun i ↦ by simp [Fin.eq_zero i])
   -- `![a x, b x]` is `Matrix.vecCons (a x) ![b x]` by definition of the vector-cons notation.
   have hvec : (![a x, b x] : Fin 2 → V x) = Matrix.vecCons (a x) ![b x] := rfl
+  have hupd : (fun j : Fin 1 ↦ Function.update ![b] 0 (A.bracket a (![b] 0)) j x) =
+      ![A.bracket a b x] := funext fun i ↦ by simp [Fin.eq_zero i]
   rw [hvec, ← ContMDiffSection.interior_apply a, A.interior_extDeriv_succ, ContMDiffSection.coe_sub,
     Pi.sub_apply, ContinuousAlternatingMap.sub_apply, hb, A.lieDeriv_apply_sections a α ![b] x,
-    ← hb, A.extDeriv_zero_apply_section, Fin.sum_univ_one, hco]
-  rw [show (fun j : Fin 1 ↦ Function.update ![b] 0 (A.bracket a (![b] 0)) j x) =
-    ![A.bracket a b x] from funext fun i ↦ by fin_cases i; rfl]; ring
+    ← hb, A.extDeriv_zero_apply_section, Fin.sum_univ_one, hco, hupd]; ring
 
 /-- Cartan's magic formula written for `L_a η = ι_a (d_A η) + d_A (ι_a η)`. -/
 theorem lieDeriv_eq_interior_extDeriv_add {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (η : A.Cochain (k + 1)) :
