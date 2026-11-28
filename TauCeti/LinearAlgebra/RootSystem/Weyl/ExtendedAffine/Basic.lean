@@ -304,6 +304,16 @@ theorem latticeAffineWeylGroup_le_extendedAffineWeylGroup :
   have hf := (P.mem_latticeAffineWeylGroup_iff hQ hP).1 hf
   P.mem_extendedAffineWeylGroup_iff.2 ⟨hf.1, hP hf.2⟩
 
+variable {P} [P.IsCrystallographic] in
+/-- Inclusion through an intermediate lattice agrees with direct inclusion of an affine element. -/
+@[simp]
+theorem inclusion_inclusion_affineWeylGroup (w : P.affineWeylGroup) :
+    Subgroup.inclusion (P.latticeAffineWeylGroup_le_extendedAffineWeylGroup hQ hP)
+        (Subgroup.inclusion (P.affineWeylGroup_le_latticeAffineWeylGroup hQ hP) w) =
+      Subgroup.inclusion P.affineWeylGroup_le_extendedAffineWeylGroup w := by
+  apply Subtype.ext
+  simp
+
 /-- `Y ↦ W_Y` is monotone. -/
 theorem latticeAffineWeylGroup_mono {Y' : Submodule ℤ N} (hQ' : P.corootSpan ℤ ≤ Y')
     (hP' : Y' ≤ P.coweightLattice) (hY : Y ≤ Y') :

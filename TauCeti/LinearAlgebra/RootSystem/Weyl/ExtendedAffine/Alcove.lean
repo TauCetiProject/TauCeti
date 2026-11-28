@@ -73,9 +73,54 @@ isomorphism `Ω ≃ P∨ / Q∨` (`RootPairing.fundamentalAlcoveStabilizerEquivQ
 
 public section
 
-open Set
+open Set Function
 
 namespace RootPairing
+
+section SeparatingRoots
+
+variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
+  [Module R N] (P : RootPairing ι R M N) [PartialOrder R] [IsOrderedAddMonoid R]
+
+/-- The extended affine Weyl group preserves the number of affine roots separating two points.
+This counts indexed affine roots and does not require the root pairing to be reduced. -/
+theorem ncard_separatingAffineRoots_apply_of_mem_extendedAffineWeylGroup
+    {f : N ≃ᵃ[R] N} (hf : f ∈ P.extendedAffineWeylGroup) (x y : N) :
+    (P.separatingAffineRoots (f x) (f y)).ncard = (P.separatingAffineRoots x y).ncard := by
+  classical
+  obtain ⟨π, hπ, hπc⟩ :=
+    P.exists_root'_apply_eq_and_apply_coroot_eq_of_mem_closure_range_coreflection
+      (P.mem_extendedAffineWeylGroup_iff.mp hf).1
+  have hπinj : Injective π := fun i j hij ↦ P.coroot.injective <| by
+    rw [← hπc i, ← hπc j, hij]
+  have hπsurj : Surjective π := by
+    obtain ⟨ρ, _, hρc⟩ :=
+      P.exists_root'_apply_eq_and_apply_coroot_eq_of_mem_closure_range_coreflection
+        (inv_mem (P.mem_extendedAffineWeylGroup_iff.mp hf).1)
+    intro j
+    refine ⟨ρ j, P.coroot.injective (f.linear.injective ?_)⟩
+    rw [hπc]
+    simpa using congrArg f.linear (hρc j)
+  have hm := P.mem_coweightLattice.mp (P.mem_extendedAffineWeylGroup_iff.mp hf).2
+  choose m hm using hm
+  have hroot (j : ι) (z : N) : P.root' j (f z) = P.root' (π j) z + (m j : R) := by
+    rw [AffineEquiv.apply_eq_linear_add f z, map_add, hπ, hm]
+  have hmem (j : ι) (k : ℤ) :
+      (j, k) ∈ P.separatingAffineRoots (f x) (f y) ↔
+        (π j, k - m j) ∈ P.separatingAffineRoots x y := by
+    simp only [mem_separatingAffineRoots, hroot, Int.cast_sub, sub_lt_iff_lt_add,
+      lt_sub_iff_add_lt]
+  refine Set.ncard_congr (fun p _ ↦ (π p.1, p.2 - m p.1))
+    (fun p hp ↦ (hmem p.1 p.2).mp hp) ?_ ?_
+  · rintro ⟨i, k⟩ ⟨j, l⟩ _ _ h
+    have hij : i = j := hπinj (congrArg Prod.fst h)
+    subst j
+    exact Prod.ext rfl (by simpa using congrArg Prod.snd h)
+  · rintro ⟨j, k⟩ hk
+    obtain ⟨i, rfl⟩ := hπsurj j
+    exact ⟨(i, k + m i), (hmem i _).mpr (by simpa using hk), by simp⟩
+
+end SeparatingRoots
 
 section CommRing
 
