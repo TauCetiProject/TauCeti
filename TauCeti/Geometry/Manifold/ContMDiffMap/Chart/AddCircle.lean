@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Topology
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.Deriv.AddCircle
 import TauCeti.Analysis.Calculus.Equicontinuity
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
@@ -72,19 +73,6 @@ theorem iteratedFDerivWithin_extChartAt_comp_of_lift {f : AddCircle p → AddCir
   rw [iteratedFDerivWithin_of_isOpen _ (isOpen_extChartAt_target x) hz,
     (Filter.EventuallyEq.iteratedFDeriv ℝ hk _).eq_of_nhds,
     TauCeti.iteratedFDeriv_succ_add_const]
-
-omit [Fact (0 < p)] [Fact (0 < q)] in
-/-- The iterated derivatives of positive order of a continuous lift `F` of a circle map are
-periodic: `F (· + j • p)` differs from `F` by a constant. -/
-theorem iteratedFDeriv_lift_add_zsmul {f : AddCircle p → AddCircle q} {F : ℝ → ℝ}
-    (hF : Continuous F) (hfF : ∀ x : ℝ, f x = F x) {m : ℕ} (hm : m ≠ 0) (j : ℤ) (v : ℝ) :
-    iteratedFDeriv ℝ m F (v + j • p) = iteratedFDeriv ℝ m F v := by
-  obtain ⟨c, hc⟩ := exists_forall_eq_add_of_lift (T := q) (F₁ := fun v ↦ F (v + j • p))
-    (by fun_prop) hF fun v ↦ by rw [← hfF, ← hfF, coe_add, coe_zsmul, coe_period, smul_zero,
-      add_zero]
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hm
-  have hshift : (fun v ↦ F (v + j • p)) = fun v ↦ F v + c := funext hc
-  rw [← iteratedFDeriv_comp_add_right, hshift, TauCeti.iteratedFDeriv_succ_add_const]
 
 end AddCircle
 
