@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Basic
 public import TauCeti.RingTheory.MatlisDuality.Basic
 
-import TauCeti.CategoryTheory.Preadditive.Projectivization
+import TauCeti.CategoryTheory.Preadditive.Projectivization.Basic
 
 /-!
 # Projectivization and the Matlis dual

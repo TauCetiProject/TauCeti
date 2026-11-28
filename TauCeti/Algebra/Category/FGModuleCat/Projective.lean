@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.TensorProduct.Projective
 public import TauCeti.CategoryTheory.Exact.Projective
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Projective.FullSubcategory
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Module.Shrink
@@ -76,10 +77,8 @@ instance projective_tensorObj {S : Type u} [CommRing S]
 
 /-- A finitely generated projective module is a projective object of `FGModuleCat R`. -/
 theorem projective_of_moduleProjective (X : FGModuleCat.{v} R)
-    [Module.Projective R X] : Projective X := by
-  apply (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).projective_of_map_projective
-  have hP : Module.Projective R X.obj := inferInstanceAs (Module.Projective R X)
-  exact @ModuleCat.projective_of_categoryTheory_projective R _ X.obj hP
+    [Module.Projective R X] : Projective X :=
+  (ModuleCat.isFG.{v} R).projective_of_moduleProjective X
 
 /-- Every finite free module is a projective object. -/
 theorem projective_of_free (X : FGModuleCat.{v} R) [Module.Free R X] :
@@ -91,16 +90,11 @@ variable {R} in
 /-- A projective object among the finitely generated modules is projective as an `R`-module. The
 smallness hypothesis holds automatically when the modules live in a universe containing `R`. -/
 theorem moduleProjective_of_projective [Small.{v} R]
-    (X : FGModuleCat.{v} R) [Projective X] : Module.Projective R X := by
-  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R X
-  let e := Shrink.linearEquiv.{v} R (Fin n → R)
-  let p : FGModuleCat.of R (Shrink.{v} (Fin n → R)) ⟶ X := FGModuleCat.ofHom (f ∘ₗ e.toLinearMap)
-  let _ : Epi p := ConcreteCategory.epi_of_surjective p (hf.comp e.surjective)
-  let s := Projective.factorThru (𝟙 X) p
-  apply Module.Projective.of_split s.hom.hom p.hom.hom
-  apply LinearMap.ext
-  intro x
-  exact congrArg (fun g : X ⟶ X ↦ g.hom.hom x) (Projective.factorThru_comp (𝟙 X) p)
+    (X : FGModuleCat.{v} R) [Projective X] : Module.Projective R X :=
+  let eR := Shrink.linearEquiv.{v} R R
+  have : Module.Finite R (Shrink.{v} R) := Module.Finite.equiv eR.symm
+  (ModuleCat.isFG.{v} R).moduleProjective_of_projective
+    (R₀ := FGModuleCat.of R (Shrink.{v} R)) eR X
 
 variable {R} in
 /-- A finitely generated module is projective among all modules exactly when it is a projective

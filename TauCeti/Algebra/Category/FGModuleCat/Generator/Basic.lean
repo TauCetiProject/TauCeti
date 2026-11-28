@@ -16,6 +16,7 @@ public import TauCeti.CategoryTheory.Generator.GeneratorCogenerator
 -- as a projective object of `FGModuleCat R`, and finite intersections in Artinian modules.
 import Mathlib.Algebra.Category.ModuleCat.AB
 import TauCeti.Algebra.Category.FGModuleCat.Projective
+import TauCeti.Algebra.Category.ModuleCat.Biproducts
 import TauCeti.Algebra.Category.ModuleCat.Generator
 import TauCeti.RingTheory.Artinian.Module
 
@@ -134,12 +135,9 @@ theorem _root_.FGModuleCat.additiveClosure_of_isGenerator_of_projective (M P : F
   -- A surjection `Mⁿ → P` gives an epimorphism from a finite sum of copies of `M`, which splits
   -- since `P` is projective.
   obtain ⟨n, f, hf⟩ := Module.IsGenerator.exists_surjective_of_finite (R := R) (M := M) P
-  let p : (⨁ fun _ : Fin n ↦ M) ⟶ P := biproduct.desc fun i ↦
-    ObjectProperty.homMk (ModuleCat.ofHom (f ∘ₗ LinearMap.single R (fun _ ↦ M) i))
-  have : Epi p := Preadditive.epi_of_cancel_zero p fun {Z} g hg ↦ by
-    refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext ((LinearMap.cancel_right hf).1 ?_))
-    refine LinearMap.pi_ext' fun i ↦ ?_
-    simpa [p, LinearMap.comp_assoc] using congr((biproduct.ι _ i ≫ $hg).hom.hom)
+  let p : (⨁ fun _ : Fin n ↦ M) ⟶ P :=
+    ObjectProperty.homMk (((ModuleCat.isFG R).biproductObjIsoPi _).hom ≫ ModuleCat.ofHom f)
+  have : Epi p := (ModuleCat.isFG R).epi_homMk_biproductObjIsoPi_comp hf
   exact (additiveClosure M).prop_of_retract ⟨Projective.factorThru (𝟙 P) p, p, by simp⟩
     ((additiveClosure M).prop_of_isLimit (biproduct.isLimit _) fun _ ↦ additiveClosure_self M)
 
