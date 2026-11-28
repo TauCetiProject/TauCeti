@@ -32,6 +32,9 @@ Mathlib's `localizationAlgebra`. On `R`-algebra homomorphisms `f : A →ₐ[R] B
 numerators, assembling into `CommAlgCat.localizationFunctor M : CommAlgCat R ⥤ CommAlgCat
 (Localization M)` and agreeing as an `R`-linear map with the localized module map of `f`
 (`CommAlgCat.localizationFunctor_map_toLinearMap`).
+
+A map of commutative `R`-algebras `A ⟶ B` sending `a ∈ A` to a unit factors through the principal
+localization `A[1/a]` (`CommAlgCat.exists_away_comp_eq`).
 -/
 
 public section
@@ -368,5 +371,14 @@ theorem localizationFunctorObjAlgEquivOfIsUnit_apply {M : Submonoid R} (A : Comm
     localizationFunctorObjAlgEquivOfIsUnit A hM a =
       algebraMap A ((localizationFunctor M).obj A) a :=
   (rfl)
+
+/-- A map of commutative `R`-algebras `f : A ⟶ B` sending `a` to a unit factors through the
+localization `A[1/a]`, by the universal property of localization. -/
+theorem exists_away_comp_eq {A B : CommAlgCat.{v} R} (f : A ⟶ B) {a : A} (ha : IsUnit (f a)) :
+    ∃ g : CommAlgCat.of R (Localization.Away a) ⟶ B,
+      ofHom (IsScalarTower.toAlgHom R A (Localization.Away a)) ≫ g = f :=
+  ⟨ofHom (IsLocalization.Away.liftAlgHom (f := f.hom) a ha), by
+    ext b
+    exact IsLocalization.Away.lift_eq a ha b⟩
 
 end CommAlgCat

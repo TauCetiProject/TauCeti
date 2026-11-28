@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.CommAlgCat.Basic
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Basic facts about commutative algebras
@@ -19,11 +20,17 @@ It also records that the forgetful functor from commutative `k`-algebras in any 
 commutative rings reflects isomorphisms. Mathlib's `CommAlgCat.reflectsIsomorphisms_forget` covers
 only algebras in the universe of `k`.
 
+Finally, it reads the extension of ideals along morphisms of commutative `k`-algebras through the
+underlying ring maps: along the image under the forgetful functor to commutative rings, along the
+quotient map `R ⟶ R ⧸ J`, and along a composite.
+
 ## Main statements
 
 * `CommAlgCat.isScalarTower_toAlgebra_of_comp`: the scalar tower `R → S → T`.
 * `CommAlgCat.reflectsIsomorphisms_forget₂CommRingCat`: the forgetful functor to commutative rings
   reflects isomorphisms.
+* `CommAlgCat.ideal_map_forget₂_map`, `CommAlgCat.ideal_map_ofHom_mkₐ`, `CommAlgCat.ideal_map_comp`:
+  extension of ideals along morphisms of commutative `k`-algebras.
 -/
 
 public section
@@ -58,5 +65,26 @@ instance reflectsIsomorphisms_forget₂CommRingCat :
   reflects f _ :=
     let i := asIso ((forget CommRingCat.{v}).map ((forget₂ (CommAlgCat.{v} k) _).map f))
     (isoMk { f.hom, i.toEquiv with }).isIso_hom
+
+/-! ### Extension of ideals -/
+
+/-- The ring map that the forgetful functor to commutative rings makes of a morphism `f` of
+commutative `k`-algebras extends ideals as `f` does. -/
+lemma ideal_map_forget₂_map (f : R ⟶ S) (I : Ideal R) :
+    I.map ((forget₂ (CommAlgCat.{v} k) CommRingCat.{v}).map f).hom = I.map f.hom :=
+  (rfl)
+
+/-- The quotient map `R ⟶ R ⧸ J` of commutative `k`-algebras extends ideals as
+`Ideal.Quotient.mk J` does. -/
+lemma ideal_map_ofHom_mkₐ (I J : Ideal R) :
+    I.map (ofHom (Ideal.Quotient.mkₐ k J)).hom = I.map (Ideal.Quotient.mk J) := by
+  rw [hom_ofHom, ← Ideal.map_coe, ← AlgHom.toRingHom_eq_coe, Ideal.Quotient.mkₐ_toRingHom]
+
+/-- Extending an ideal along a composite of morphisms of commutative `k`-algebras extends it in
+two steps. -/
+lemma ideal_map_comp (f : R ⟶ S) (g : S ⟶ T) (I : Ideal R) :
+    I.map (f ≫ g).hom = (I.map f.hom).map g.hom := by
+  rw [hom_comp, ← Ideal.map_coe (g.hom.comp f.hom), AlgHom.comp_toRingHom, ← Ideal.map_map,
+    Ideal.map_coe, Ideal.map_coe]
 
 end CommAlgCat
