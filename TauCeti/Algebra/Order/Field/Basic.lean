@@ -126,6 +126,10 @@ zero only at `0`. For `0 ≤ w` the truncation `w / (1 + ε w)` lies between `0`
   `TauCeti.div_one_add_mul_le_one_div`: for `0 ≤ w`, the truncation `w / (1 + ε w)` lies between
   `0` and `w` when `0 ≤ ε`, and is at most `1 / ε` when `0 < ε`.
 * `TauCeti.two_mul_sq_inv_mul_lt_one_iff`: `2 * (r ^ 2)⁻¹ * t < 1` iff `t < r ^ 2 / 2` for `r ≠ 0`.
+* `TauCeti.exists_mem_Ioo_zero_one_sub_ne_intCast`: every element `r` of a linearly ordered field
+  admits `δ ∈ (0, 1)` such that `r - δ` is not an integer.
+* `TauCeti.ne_intCast_of_mem_Ioo_zero_one`, `TauCeti.neg_ne_intCast_of_mem_Ioo_zero_one`: neither
+  an element of `(0, 1)` nor its negation is an integer.
 * `TauCeti.add_mul_div_le_add`: `t + m * M / t ≤ m + M` for `0 < t` and `m ≤ t ≤ M`.
 * `TauCeti.mul_le_sq_div_of_add_mul_le`: `a * b ≤ c ^ 2 / (4 * k)` for `0 < k` and
   `0 ≤ a + k * b ≤ c`.
@@ -535,6 +539,33 @@ theorem mul_div_one_add_mul_le {α : Type*} [Semifield α] [LinearOrder α]
 theorem div_one_add_eq_zero_iff {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
     {t : α} (ht : 0 ≤ t) : t / (1 + t) = 0 ↔ t = 0 :=
   div_eq_zero_iff.trans (or_iff_left (add_pos_of_pos_of_nonneg zero_lt_one ht).ne')
+
+/-- An element of `(0, 1)` is never an integer. -/
+theorem ne_intCast_of_mem_Ioo_zero_one {R : Type*} [AddCommGroupWithOne R] [PartialOrder R]
+    [AddLeftMono R] [ZeroLEOneClass R] [NeZero (1 : R)] {δ : R} (hδ : δ ∈ Set.Ioo (0 : R) 1)
+    (m : ℤ) : δ ≠ m := fun hm ↦ by
+  have h1 : 0 < m := Int.cast_pos.mp (hm ▸ hδ.1)
+  have h2 : m < (1 : ℤ) := Int.cast_lt (R := R).mp (by rw [Int.cast_one, ← hm]; exact hδ.2)
+  omega
+
+/-- The negation of an element of `(0, 1)` is never an integer. -/
+theorem neg_ne_intCast_of_mem_Ioo_zero_one {R : Type*} [AddCommGroupWithOne R] [PartialOrder R]
+    [AddLeftMono R] [ZeroLEOneClass R] [NeZero (1 : R)] {δ : R} (hδ : δ ∈ Set.Ioo (0 : R) 1)
+    (m : ℤ) : -δ ≠ m := fun hm ↦
+  ne_intCast_of_mem_Ioo_zero_one hδ (-m) (by rw [Int.cast_neg, ← hm, neg_neg])
+
+/-- For any element `r` of a linearly ordered field, there exists `δ ∈ (0, 1)` such that
+`r - δ` is not an integer. -/
+theorem exists_mem_Ioo_zero_one_sub_ne_intCast {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] (r : K) :
+    ∃ δ ∈ Set.Ioo (0 : K) 1, ∀ m : ℤ, r - δ ≠ m := by
+  by_cases h : ∃ m : ℤ, r = (m : K) + 1 / 2
+  · obtain ⟨m₀, hm₀⟩ := h
+    have h14 : (1 / 4 : K) < 1 := by linarith [zero_lt_one' K]
+    refine ⟨1 / 4, ⟨by positivity, h14⟩, fun m hm ↦ ?_⟩
+    exact ne_intCast_of_mem_Ioo_zero_one ⟨by positivity, h14⟩ (m - m₀) (by push_cast; linarith)
+  · have h12 : (1 / 2 : K) < 1 := by linarith [zero_lt_one' K]
+    exact ⟨1 / 2, ⟨by positivity, h12⟩, fun m hm ↦ h ⟨m, by linarith⟩⟩
 
 /-- For `0 < t` with `m ≤ t ≤ M`, `t + m * M / t ≤ m + M`: this is `(t - m) * (t - M) ≤ 0`
 divided by `t`. -/

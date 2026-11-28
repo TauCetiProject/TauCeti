@@ -14,7 +14,7 @@ import TauCeti.Analysis.MellinInversion
 import TauCeti.Analysis.SpecialFunctions.Beta.Complex
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
-import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes
+import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex

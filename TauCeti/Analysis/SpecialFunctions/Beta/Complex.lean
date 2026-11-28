@@ -11,7 +11,7 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
-import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes
+import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes.Basic
 
 /-!
 # Euler's second beta integral with complex parameters
