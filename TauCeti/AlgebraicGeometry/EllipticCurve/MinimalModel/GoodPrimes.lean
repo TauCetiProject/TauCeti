@@ -77,8 +77,11 @@ theorem HasGoodReductionAt.isElliptic {E : WeierstrassCurve ℚ} {p : Nat.Primes
     simpa only [baseChange, map_Δ] using hlocal.isUnit)⟩
 
 /-- At a prime of good reduction, the rational `j`-invariant has nonnegative valuation. -/
-theorem HasGoodReductionAt.padicValRat_j_nonneg {E : WeierstrassCurve ℚ} [E.IsElliptic]
-    {p : Nat.Primes} (h : E.HasGoodReductionAt p) : 0 ≤ padicValRat p E.j := by
+theorem HasGoodReductionAt.padicValRat_j_nonneg {E : WeierstrassCurve ℚ}
+    {p : Nat.Primes} (h : E.HasGoodReductionAt p) :
+    let hE := h.isElliptic
+    0 ≤ padicValRat p E.j := by
+  intro hE
   have hgood := E.hasGoodReductionAt_iff.mp h
   obtain ⟨C, hC⟩ := (E.baseChange ℚ_[p]).exists_smul_eq_minimal ℤ_[p]
   have hpot : (E.baseChange ℚ_[p]).HasPotentialGoodReduction ℤ_[p] :=

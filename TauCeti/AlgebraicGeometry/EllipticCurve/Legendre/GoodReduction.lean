@@ -35,10 +35,13 @@ variable (p : Nat.Primes) {l : ℚ}
 
 /-- Write `s = vₚ(l (1 - l))`. If `s ≠ 0` at an odd prime, the valuation of the Legendre
 `j`-invariant is `s` when `s < 0` and `-2 * s` when `s > 0`. -/
-theorem padicValRat_legendre_j_of_nonunit [(legendre l).IsElliptic] (hp : (p : ℕ) ≠ 2)
+theorem padicValRat_legendre_j_of_nonunit (hp : (p : ℕ) ≠ 2)
     (hs : padicValRat p (l * (1 - l)) ≠ 0) :
+    let hE : (legendre l).IsElliptic := (isElliptic_legendre_iff_ne_zero l (by norm_num)).2
+      ⟨fun h ↦ hs (by simp [h]), fun h ↦ hs (by simp [h])⟩
     padicValRat p (legendre l).j =
       min (padicValRat p (l * (1 - l))) (-2 * padicValRat p (l * (1 - l))) := by
+  intro hE
   set t := l * (1 - l)
   have ht : t ≠ 0 := fun h ↦ hs (by simp only [h, padicValRat.zero])
   have ht' : 1 - t ≠ 0 := by
@@ -95,11 +98,12 @@ theorem exists_isElliptic_legendre_padicInt (hp : (p : ℕ) ≠ 2) (h₀ : l ≠
   have hcoe : (lp : ℚ_[p]) = (l : ℚ_[p]) := PadicInt.coe_lift hn.le
   have hsubcoe : ((1 - lp : ℤ_[p]) : ℚ_[p]) = ((1 - l : ℚ) : ℚ_[p]) := by
     simp [hcoe]
-  have hu : IsUnit lp := by
-    rw [PadicInt.isUnit_iff, ← PadicInt.norm_coe, hcoe, hn]
-  have husub : IsUnit (1 - lp) := by
-    rw [PadicInt.isUnit_iff, ← PadicInt.norm_coe, hsubcoe]
-    exact Padic.norm_ratCast_eq_one_of_padicValRat_eq_zero (sub_ne_zero.mpr h₁.symm) hsub
+  have isUnit_of_ratCast {z : ℤ_[p]} {q : ℚ} (h : (z : ℚ_[p]) = (q : ℚ_[p]))
+      (hq : q ≠ 0) (hv : padicValRat p q = 0) : IsUnit z := by
+    rw [PadicInt.isUnit_iff, ← PadicInt.norm_coe, h]
+    exact Padic.norm_ratCast_eq_one_of_padicValRat_eq_zero hq hv
+  have hu := isUnit_of_ratCast hcoe h₀ hl
+  have husub := isUnit_of_ratCast hsubcoe (sub_ne_zero.mpr h₁.symm) hsub
   exact ⟨lp, hcoe, (isElliptic_legendre_iff lp).mpr
     ((PadicInt.isUnit_two hp).mul hu |>.mul (by simpa only [neg_sub] using husub.neg))⟩
 
