@@ -35,6 +35,8 @@ the `k`-th, embedded through it.
 * `TauCeti.GradedPair.imageModel P`: a chosen image model.
 * `TauCeti.GradedPair.SubmoduleModel.image`: the image model of a model of `W`, embedded onto
   `W.map P.operator`.
+* `TauCeti.GradedPair.SubmoduleModel.map`: push a model forward along a graded equivalence.
+* `TauCeti.GradedPairEquiv.imageEquiv`: the induced graded equivalence between image models.
 * `TauCeti.GradedPair.iteratedImage P k`: the `k`-th iterated image, embedded onto the range of
   `P.operator ^ k`.
 
@@ -44,6 +46,8 @@ the `k`-th, embedded through it.
   grades and stable under the operator has a coordinate model.
 * `TauCeti.GradedPair.SubmoduleModel.map_grade`: a model maps each of its grades onto the
   corresponding grade intersection `W ⊓ S.grade a`.
+* `TauCeti.GradedPair.range_inf_grade_eq_map`: the degree-`a` piece of the range of `P.operator`
+  is the image of `S.grade (a - d.step)`.
 * `TauCeti.GradedPair.SubmoduleModel.isomorphic`: models of the same submodule are
   graded-isomorphic.
 * `TauCeti.GradedPair.SubmoduleModel.n_eq_zero_iff`: a model is zero-dimensional exactly when
@@ -290,6 +294,34 @@ theorem map_range_operator (M : P.SubmoduleModel W) :
   have h : M.embed ∘ₗ M.pair.operator = P.operator ∘ₗ M.embed := LinearMap.ext M.embed_operator
   rw [← LinearMap.range_comp, h, LinearMap.range_comp, M.range_embed]
 
+/-- Push a model of `W` forward along a graded equivalence `e : GradedPairEquiv P Q`. -/
+@[expose] def map {T : GradedCoordSpace} {Q : GradedPair T d} (M : P.SubmoduleModel W)
+    (e : GradedPairEquiv P Q) :
+    Q.SubmoduleModel (W.map (e.toLinearEquiv : S.Carrier →ₗ[ℂ] T.Carrier)) where
+  space := M.space
+  pair := M.pair
+  embed := (e.toLinearEquiv : S.Carrier →ₗ[ℂ] T.Carrier) ∘ₗ M.embed
+  embed_injective := e.toLinearEquiv.injective.comp M.embed_injective
+  range_embed := by rw [LinearMap.range_comp, M.range_embed]
+  embed_mem_grade_iff := by simp
+  embed_operator v := by simp
+
+@[simp]
+theorem map_space {T : GradedCoordSpace} {Q : GradedPair T d} (M : P.SubmoduleModel W)
+    (e : GradedPairEquiv P Q) : (M.map e).space = M.space :=
+  (rfl)
+
+@[simp]
+theorem map_pair {T : GradedCoordSpace} {Q : GradedPair T d} (M : P.SubmoduleModel W)
+    (e : GradedPairEquiv P Q) : (M.map e).pair = M.pair :=
+  (rfl)
+
+@[simp]
+theorem map_embed {T : GradedCoordSpace} {Q : GradedPair T d} (M : P.SubmoduleModel W)
+    (e : GradedPairEquiv P Q) :
+    (M.map e).embed = (e.toLinearEquiv : S.Carrier →ₗ[ℂ] T.Carrier) ∘ₗ M.embed :=
+  (rfl)
+
 end SubmoduleModel
 
 /-! ### Existence of models -/
@@ -332,6 +364,22 @@ theorem nonempty_submoduleModel (P : GradedPair S d) {W : Submodule ℂ S.Carrie
 theorem iSup_range_inf_grade (P : GradedPair S d) :
     ⨆ a, LinearMap.range P.operator ⊓ S.grade a = LinearMap.range P.operator :=
   P.isHomogeneous.iSup_range_inf_eq S.isInternal_grade.submodule_iSup_eq_top
+
+/-- The degree-`a` piece of the range of `P.operator` is the image of `S.grade (a - d.step)`. -/
+theorem range_inf_grade_eq_map (P : GradedPair S d) (a : ℤ) :
+    LinearMap.range P.operator ⊓ S.grade a = (S.grade (a - d.step)).map P.operator := by
+  classical
+  let _ : DirectSum.Decomposition S.grade := S.isInternal_grade.chooseDecomposition
+  refine le_antisymm ?_ (le_inf (LinearMap.map_le_range)
+    (Submodule.map_le_iff_le_comap.2 fun x hx ↦ ?_))
+  · rintro _ ⟨⟨v, rfl⟩, hva⟩
+    have hproj := DirectSum.map_decompose_shift S.grade S.grade P.operator.toAddMonoidHom
+      (· + d.step) (add_left_injective d.step) (fun _ _ hx ↦ P.isHomogeneous.map_mem hx)
+      (a - d.step) v
+    rw [sub_add_cancel, LinearMap.toAddMonoidHom_coe,
+      DirectSum.decompose_of_mem_same S.grade hva] at hproj
+    exact ⟨_, (DirectSum.decompose S.grade v (a - d.step)).property, hproj⟩
+  · simpa only [Submodule.mem_comap, sub_add_cancel] using P.isHomogeneous.map_mem hx
 
 /-- Every pair has an image model. -/
 theorem nonempty_imageModel (P : GradedPair S d) : Nonempty P.ImageModel :=
@@ -454,5 +502,66 @@ theorem isomorphic_shift_iteratedImage (P : GradedPair S d) (c : ℤ) (k : ℕ) 
   rwa [SubmoduleModel.congr_pair] at h
 
 end GradedPair
+
+namespace GradedPairEquiv
+
+variable {S T U : GradedCoordSpace} {d : StepDirection}
+  {P : GradedPair S d} {Q : GradedPair T d} {R : GradedPair U d}
+
+/-- A graded equivalence sends the range of `P.operator` onto the range of `Q.operator`. -/
+theorem map_range_operator (e : GradedPairEquiv P Q) :
+    (LinearMap.range P.operator).map (e.toLinearEquiv : S.Carrier →ₗ[ℂ] T.Carrier) =
+      LinearMap.range Q.operator := by
+  have h : (e.toLinearEquiv : S.Carrier →ₗ[ℂ] T.Carrier) ∘ₗ P.operator =
+      Q.operator ∘ₗ (e.toLinearEquiv : S.Carrier →ₗ[ℂ] T.Carrier) :=
+    LinearMap.ext fun v ↦ e.map_operator v
+  rw [← LinearMap.range_comp, h, LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)]
+
+/-- A graded equivalence between pairs induces a graded equivalence between any image models. -/
+noncomputable def imageEquiv (e : GradedPairEquiv P Q)
+    (M : P.ImageModel) (N : Q.ImageModel) :
+    GradedPairEquiv M.pair N.pair :=
+  ((M.map e).congr e.map_range_operator).gradedPairEquiv N
+
+/-- The induced image equivalence forms a commuting square with the embeddings into the ambient
+spaces. -/
+@[simp]
+theorem embed_imageEquiv_apply (e : GradedPairEquiv P Q)
+    (M : P.ImageModel) (N : Q.ImageModel) (v : M.space.Carrier) :
+    N.embed (e.imageEquiv M N v) = e (M.embed v) :=
+  ((M.map e).congr e.map_range_operator).embed_gradedPairEquiv_apply N v
+
+/-- The image equivalence induced by the identity graded equivalence on a shared image model is
+the identity. -/
+@[simp]
+theorem imageEquiv_refl (P : GradedPair S d) (M : P.ImageModel) :
+    (refl P).imageEquiv M M = refl M.pair := by
+  refine ext fun v ↦ M.embed_injective ?_
+  rw [embed_imageEquiv_apply, refl_apply, refl_apply]
+
+/-- Inverting an induced image equivalence yields the image equivalence of the inverse graded
+equivalence between the swapped image models. -/
+@[simp]
+theorem imageEquiv_symm (e : GradedPairEquiv P Q) (M : P.ImageModel) (N : Q.ImageModel) :
+    (e.imageEquiv M N).symm = e.symm.imageEquiv N M := by
+  refine ext fun w ↦ M.embed_injective ?_
+  calc
+    M.embed ((e.imageEquiv M N).symm w)
+      = e.symm (e (M.embed ((e.imageEquiv M N).symm w))) := (e.symm_apply_apply _).symm
+    _ = e.symm (N.embed (e.imageEquiv M N ((e.imageEquiv M N).symm w))) := by
+        rw [embed_imageEquiv_apply]
+    _ = e.symm (N.embed w) := by rw [apply_symm_apply]
+    _ = M.embed (e.symm.imageEquiv N M w) := (embed_imageEquiv_apply e.symm N M w).symm
+
+/-- Induced image equivalences compose functorially across any shared intermediate image model
+`N`. -/
+theorem imageEquiv_trans (e : GradedPairEquiv P Q) (f : GradedPairEquiv Q R)
+    (M : P.ImageModel) (N : Q.ImageModel) (K : R.ImageModel) :
+    (e.trans f).imageEquiv M K = (e.imageEquiv M N).trans (f.imageEquiv N K) := by
+  refine ext fun v ↦ K.embed_injective ?_
+  rw [embed_imageEquiv_apply, trans_apply, trans_apply, embed_imageEquiv_apply,
+    embed_imageEquiv_apply]
+
+end GradedPairEquiv
 
 end TauCeti

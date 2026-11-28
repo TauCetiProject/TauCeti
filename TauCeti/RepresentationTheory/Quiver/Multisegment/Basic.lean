@@ -36,6 +36,7 @@ occurrence while dropping singletons, `shift` translates every occurrence, and
 * `TauCeti.IntInterval`: nonempty closed integer intervals (`NonemptyInterval ℤ`).
 * `TauCeti.IntInterval.length`: positive point count `e - b + 1` of an integral interval.
 * `TauCeti.IntInterval.shift`: integer translation of an integral interval.
+* `TauCeti.IntInterval.Precedes`: strict precedence `s.fst < t.fst ≤ s.snd + 1 ≤ t.snd`.
 * `TauCeti.IntInterval.shorten`: optional right shortening deleting singletons.
 * `TauCeti.IntInterval.extendRight`: right extension `[b, e] ↦ [b, e + 1]`, the unique preimage
   under `shorten`.
@@ -194,6 +195,64 @@ theorem shift_le_shift_iff {s t : IntInterval} {c : ℤ} : s.shift c ≤ t.shift
 theorem shift_injective (c : ℤ) : Function.Injective (fun s : IntInterval => s.shift c) := by
   intro s t h
   simpa using congrArg (·.shift (-c)) h
+
+/-! ### Precedence -/
+
+/-- An integral interval `s = [b, e]` precedes `t = [b', e']` when `b < b' ≤ e + 1 ≤ e'`. -/
+def Precedes (s t : IntInterval) : Prop :=
+  s.fst < t.fst ∧ t.fst ≤ s.snd + 1 ∧ s.snd + 1 ≤ t.snd
+
+instance : DecidableRel Precedes := fun s t ↦
+  inferInstanceAs (Decidable (s.fst < t.fst ∧ t.fst ≤ s.snd + 1 ∧ s.snd + 1 ≤ t.snd))
+
+/-- Endpoint characterization of `IntInterval.Precedes`. -/
+theorem precedes_def {s t : IntInterval} :
+    s.Precedes t ↔ s.fst < t.fst ∧ t.fst ≤ s.snd + 1 ∧ s.snd + 1 ≤ t.snd :=
+  Iff.rfl
+
+/-- No integral interval precedes itself. -/
+theorem precedes_irrefl (s : IntInterval) : ¬ s.Precedes s := by
+  intro h
+  exact lt_irrefl _ h.1
+
+/-- `IntInterval.Precedes` is asymmetric. -/
+theorem precedes_asymm {s t : IntInterval} (h : s.Precedes t) : ¬ t.Precedes s := by
+  intro h'
+  exact lt_asymm h.1 h'.1
+
+namespace Precedes
+
+/-- If `s` precedes `t`, then `s.fst < t.fst`. -/
+theorem fst_lt {s t : IntInterval} (h : s.Precedes t) : s.fst < t.fst :=
+  h.1
+
+/-- If `s` precedes `t`, then `s.snd < t.snd`. -/
+theorem snd_lt {s t : IntInterval} (h : s.Precedes t) : s.snd < t.snd := by
+  have := h.2.2
+  omega
+
+/-- The cut degree `t.fst - 1` lies in `s` whenever `s` precedes `t`. -/
+theorem fst_sub_one_mem {s t : IntInterval} (h : s.Precedes t) : t.fst - 1 ∈ s := by
+  rw [NonemptyInterval.mem_def]
+  have := h.1
+  have := h.2.1
+  omega
+
+/-- The step above `s.snd` lies in `t` whenever `s` precedes `t`. -/
+theorem snd_add_one_mem {s t : IntInterval} (h : s.Precedes t) : s.snd + 1 ∈ t := by
+  rw [NonemptyInterval.mem_def]
+  have := h.2.1
+  have := h.2.2
+  omega
+
+end Precedes
+
+/-- Integer translation preserves and reflects interval precedence. -/
+@[simp]
+theorem precedes_shift_iff {s t : IntInterval} {c : ℤ} :
+    (s.shift c).Precedes (t.shift c) ↔ s.Precedes t := by
+  simp only [precedes_def, fst_shift, snd_shift]
+  omega
 
 /-! ### Right shortening and extension -/
 
