@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors, Jon Crall, Claude Fable 5
+Authors: The Tau Ceti contributors, Jon Crall, Claude Fable 5, Codex
 -/
 module
 
@@ -78,8 +78,9 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   `Matrix.OrthogonalIdempotents.rank_sum`: over a field, the ranks of `e` and `1 - e` add up to
   the size of the matrix, and the rank of a sum of orthogonal idempotent matrices is the sum of
   their ranks.
-* `Matrix.rank_fromBlocks_zero₁₂_zero₂₁`: over a field, the rank of a block-diagonal matrix is the
-  sum of the ranks of its diagonal blocks.
+* `Matrix.rank_fromBlocks_zero₁₂_zero₂₁` and `Matrix.rank_fromBlocks_zero₁₁_zero₂₂`: over a
+  field with finite column index types, the ranks of block-diagonal and off-diagonal block
+  matrices are the sums of the ranks of their respective blocks.
 * `Matrix.rank_conjTranspose_of_field` and
   `Matrix.rank_mul_conjTranspose_self_sub_mul_conjTranspose_self_le`: over a field with a star ring
   structure, the conjugate transpose preserves the rank and `rank (X Xᴴ - Y Yᴴ) ≤ 2 * rank (X - Y)`.
@@ -99,6 +100,65 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 public section
 
 namespace Matrix
+
+/-- **The kernel shrinks**: let `β, δ` satisfy the isotropy relation `βᴴ δ + δᴴ β = 0`, and let
+`w` be in the kernel of `δ` with `(β w)ᵢ ≠ 0`. Replacing the `i`-th row of `δ` by `c` times the
+`i`-th row of `β`, for `c ≠ 0`, gives a matrix whose kernel is strictly contained in that of `δ`. -/
+theorem ker_mulVecLin_row_replacement_lt {K p q : Type*} [CommRing K] [IsDomain K] [StarRing K]
+    [Fintype p] [DecidableEq p] [Fintype q] {β δ : Matrix p q K} (hiso : βᴴ * δ + δᴴ * β = 0)
+    {w : q → K}
+    (hw : δ *ᵥ w = 0) {i : p} (hi : (β *ᵥ w) i ≠ 0) {c : K} (hc : c ≠ 0) :
+    LinearMap.ker ((1 - single i i (1 : K)) * δ + c • single i i (1 : K) * β).mulVecLin <
+      LinearMap.ker δ.mulVecLin := by
+  -- The isotropy relation, tested on `w` and a vector `v`.
+  have hiso_v (v : q → K) : star (β *ᵥ w) ⬝ᵥ (δ *ᵥ v) + star (δ *ᵥ w) ⬝ᵥ (β *ᵥ v) = 0 := by
+    have h := congrArg (fun M ↦ star w ⬝ᵥ (M *ᵥ v)) hiso
+    simp only [Matrix.add_mulVec, ← Matrix.mulVec_mulVec, dotProduct_add, dotProduct_mulVec,
+      ← star_mulVec, Matrix.zero_mulVec, dotProduct_zero] at h
+    rwa [← dotProduct_mulVec, ← dotProduct_mulVec] at h
+  have hmulVec (v : q → K) : ((1 - single i i (1 : K)) * δ + c • single i i (1 : K) * β) *ᵥ v =
+      δ *ᵥ v - Function.update (0 : p → K) i ((δ *ᵥ v) i) +
+        Function.update (0 : p → K) i (c * (β *ᵥ v) i) := by
+    simp [Matrix.add_mulVec, Matrix.sub_mulVec, ← Matrix.mulVec_mulVec, single_mulVec]
+  refine IsConcreteLE.lt_iff_le_and_exists.mpr ⟨fun v hv ↦ ?_, w, by simpa using hw, fun hw' ↦ ?_⟩
+  · simp only [LinearMap.mem_ker, mulVecLin_apply, hmulVec] at hv ⊢
+    -- Off `i` the new matrix agrees with `δ`, and at `i` it reads `c (β v)ᵢ`.
+    have hoff (m : p) (hm : m ≠ i) : (δ *ᵥ v) m = 0 := by
+      simpa [Function.update_apply, hm] using congrFun hv m
+    have hβv : (β *ᵥ v) i = 0 := by
+      simpa [hc] using congrFun hv i
+    -- So `δ v` is supported at `i`, and the isotropy relation with `w` kills its value there.
+    have hδv : δ *ᵥ v = Pi.single i ((δ *ᵥ v) i) := by
+      ext m
+      by_cases hm : m = i
+      · subst hm; simp
+      · simp [hoff m hm, hm]
+    have h := hiso_v v
+    rw [hw, star_zero, zero_dotProduct, add_zero, hδv, dotProduct_single, Pi.star_apply,
+      mul_eq_zero, star_eq_zero] at h
+    rw [hδv, h.resolve_left hi, Pi.single_zero]
+  · simp only [LinearMap.mem_ker, mulVecLin_apply, hmulVec, hw] at hw'
+    simpa [hc, hi] using congrFun hw' i
+
+/-- A matrix supported at a single entry has rank at most one. -/
+theorem rank_single_le_one.{u} {R : Type u} {m n : Type*} [CommSemiring R]
+    [DecidableEq m] [DecidableEq n]
+    (i : m) (j : n) (a : R) : (single i j a).rank ≤ 1 := by
+  have hspan : Submodule.span R (Set.range (single i j a).col) ≤
+      Submodule.span R {Pi.single i a} := by
+    rw [Submodule.span_le, Set.range_subset_iff]
+    intro k
+    rw [← row_transpose, transpose_single, row_single, Pi.single_apply]
+    split_ifs
+    · exact Submodule.subset_span (Set.mem_singleton _)
+    · exact Submodule.zero_mem _
+  rw [← finrank_span_range_col]
+  apply Module.finrank_le_of_rank_le
+  rw [Nat.cast_one]
+  refine (Submodule.rank_mono hspan).trans ?_
+  rw [← LinearMap.range_toSpanSingleton, ← Cardinal.lift_le.{u}]
+  simpa only [CommSemiring.rank_self, Cardinal.lift_one] using
+    lift_rank_range_le (LinearMap.toSpanSingleton R (m → R) (Pi.single i a))
 
 /-- The difference of matrices that agree outside one column has rank at most one. -/
 theorem rank_sub_le_one_of_col_eq {R m n : Type*} [CommRing R] [StrongRankCondition R]
@@ -537,6 +597,16 @@ theorem rank_fromBlocks_zero₁₂_zero₂₁ {l l' m' : Type*} [Finite l] [Fini
   rw [hr, LinearEquiv.finrank_map_eq]
   exact (Submodule.prodEquiv _ _).finrank_eq.trans Module.finrank_prod
 
+/-- Over a field with finite column index types, an off-diagonal block matrix has rank equal
+to the sum of the ranks of its two blocks. -/
+@[simp]
+theorem rank_fromBlocks_zero₁₁_zero₂₂ {K m n p q : Type*} [Field K] [Finite n] [Finite q]
+    (B : Matrix m q K) (C : Matrix p n K) :
+    (fromBlocks 0 B C 0).rank = B.rank + C.rank := by
+  rw [← rank_submatrix (fromBlocks 0 B C 0) (Equiv.refl _) (Equiv.sumComm q n)]
+  simpa only [Equiv.coe_refl, Equiv.sumComm_apply, fromBlocks_submatrix_sum_swap_right,
+    submatrix_id_id] using rank_fromBlocks_zero₁₂_zero₂₁ B C
+
 /-- Over a field, if `P + e + Q = 1` then the ranks of `P`, `e` and `Q` add up to at least the
 size of the matrices. -/
 lemma card_le_rank_add_rank_add_rank [Fintype m] [DecidableEq m] (P e Q : Matrix m m K)
@@ -757,6 +827,15 @@ theorem rank_conjTranspose_of_field {R : Type*} [Field R] [StarRing R] {m n : Ty
     [Finite n] (A : Matrix m n R) : Aᴴ.rank = A.rank := by
   have h : Aᴴ = (A.map (starRingEnd R))ᵀ := rfl
   rw [h, rank_transpose, rank_map]
+
+/-- The difference of two Hermitian dilations has twice the rank of the difference of the
+underlying rectangular matrices. -/
+theorem rank_fromBlocks_zero_conjTranspose_zero_sub {R : Type*} [Field R] [StarRing R]
+    {m n : Type*} [Finite m] [Finite n] (A B : Matrix m n R) :
+    (fromBlocks 0 A Aᴴ 0 - fromBlocks 0 B Bᴴ 0).rank = 2 * (A - B).rank := by
+  simp only [sub_eq_add_neg, fromBlocks_neg, fromBlocks_add, neg_zero, add_zero,
+    ← conjTranspose_neg, ← conjTranspose_add, rank_fromBlocks_zero₁₁_zero₂₂,
+    rank_conjTranspose_of_field, two_mul]
 
 section StarField
 

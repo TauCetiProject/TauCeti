@@ -131,4 +131,17 @@ theorem isPullback_of_forall_spec {P Z : Scheme.{u}} {fst : P ⟶ X} {snd : P �
         exact pullback.hom_ext (by simp [(hL c).1]) (by simp [(hL c).2]) }
   exact .of_iso_pullback ⟨w⟩ e (pullback.lift_fst _ _ _) (pullback.lift_snd _ _ _)
 
+/-- A morphism of schemes inducing a bijection on points with values in every commutative
+ring is an isomorphism. -/
+theorem isIso_of_forall_spec_bijective (f : X ⟶ Y)
+    (h : ∀ A : CommRingCat.{u}, Function.Bijective (fun a : Spec A ⟶ X ↦ a ≫ f)) :
+    IsIso f := by
+  have hp : IsPullback f f (𝟙 Y) (𝟙 Y) := isPullback_of_forall_spec (by simp) <| by
+    intro A a b hab
+    simp only [Category.comp_id] at hab
+    subst b
+    obtain ⟨c, hc⟩ := (h A).surjective a
+    exact ⟨c, ⟨hc, hc⟩, fun d hd ↦ (h A).injective (hd.1.trans hc.symm)⟩
+  exact hp.isIso_fst_of_isIso
+
 end AlgebraicGeometry.Scheme

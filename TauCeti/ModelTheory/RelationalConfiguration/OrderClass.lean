@@ -47,6 +47,8 @@ tree of finite sequences of natural numbers, relabelled along a bijection with `
   exactly when its relation is a linear order.
 * `TauCeti.RelationalConfiguration.isClosed_linearOrderClass`,
   `TauCeti.RelationalConfiguration.isomorphismInvariant_linearOrderClass`.
+* `Equiv.encodeVia_mem_linearOrderClass`: encoding a linearly ordered type along a bijection of
+  carriers gives a coded linear order.
 * `TauCeti.RelationalConfiguration.addDiag_mem_linearOrderClass`: adding the diagonal to a coded
   strict total order gives a coded linear order.
 * `TauCeti.RelationalConfiguration.type_eq_of_isoSetoid_addDiag`: isomorphic codes with the
@@ -363,3 +365,18 @@ theorem exists_mem_treeClass_relIso {T : tree ℕ} (hT : (T : Set (List ℕ)).In
 end RelationalConfiguration
 
 end TauCeti
+
+namespace Equiv
+
+open TauCeti RelationalConfiguration
+
+/-- Encoding a linearly ordered type along a bijection of carriers gives a coded linear order. -/
+theorem encodeVia_mem_linearOrderClass {M V : Type*} [LinearOrder M] (e : M ≃ V) :
+    @encodeVia Language.order M V (orderStructure M) e ∈ linearOrderClass := by
+  let := orderStructure M
+  -- `orderStructure M` reads `leSymb` as `≤` by definition.
+  have : Language.order.OrderedStructure M := ⟨fun _ ↦ Iff.rfl⟩
+  rw [linearOrderClass, e.encodeVia_mem_modelsOfTheory_iff]
+  infer_instance
+
+end Equiv

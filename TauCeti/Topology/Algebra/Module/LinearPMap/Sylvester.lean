@@ -109,6 +109,14 @@ theorem smul [SMulCommClass 𝕜 𝕜 E] [ContinuousConstSMul 𝕜 E]
     rw [hsmul, A.map_smul]
     simpa [smul_sub] using congr(c • $(hX.equation x))
 
+/-- Two continuous right-hand sides of the same domain-aware Sylvester equation agree if the
+source operator's domain is dense. -/
+theorem eq_of_dense [T2Space E] {C₁ C₂ : F →L[𝕜] E}
+    (h₁ : SylvesterEquation A B X C₁) (h₂ : SylvesterEquation A B X C₂)
+    (hd : Dense (B.domain : Set F)) : C₁ = C₂ :=
+  ContinuousLinearMap.ext <| congrFun <| Continuous.ext_on hd
+    C₁.continuous C₂.continuous fun y hy ↦ (h₁.equation ⟨y, hy⟩).symm.trans (h₂.equation ⟨y, hy⟩)
+
 end SylvesterEquation
 
 /-- The homogeneous domain-aware Sylvester equation `A X - X B = 0` says exactly that `X`

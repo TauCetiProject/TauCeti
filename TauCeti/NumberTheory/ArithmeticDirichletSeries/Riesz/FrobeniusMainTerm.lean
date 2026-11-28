@@ -46,11 +46,8 @@ theorem expect_filter_apply_ne_one_mul_log_div_sub_sum_conj_mul_eq {G : Type*} [
   have hc₁ : q c ≠ 1 := (q.apply_ne_one_iff_of_mul_self_eq_one hq c).mpr hc
   have hq₁ : q ≠ 1 := fun h ↦ hc₁ (by simp [h])
   have hmem (g : G) : q g ≠ 1 ↔ q (c * g * τ) = 1 := by
-    rcases q.apply_eq_one_or_eq_neg_one_of_mul_self_eq_one hq g with hg | hg
-    · simp [hg, hτ, hc₁]
-    · have hc' : q c = -1 := Units.val_eq_neg_one.mp hc
-      exact ⟨fun _ ↦ by simp [hg, hc', hτ],
-        fun _ ↦ (q.apply_ne_one_iff_of_mul_self_eq_one hq g).mpr (by simp [hg])⟩
+    rw [map_mul q (c * g), hτ, mul_one]
+    exact q.apply_ne_one_iff_apply_mul_eq_one hq hc₁ g
   let t := Finset.univ.filter fun g ↦ q g ≠ 1
   have ht : t.Nonempty := ⟨c, by simp [t, hc₁]⟩
   have hlog : (𝔼 g ∈ t, (Real.log (w (c * g * τ)) : ℂ)) =

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.HomMultiplication
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 
 /-!
 # Conjugation as a compact rough bundle multiplier
@@ -31,16 +32,8 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M]
 
 private def conjSection :
     Cₛ^0⟮𝓘(ℝ, ℂ); ℂ →L[ℝ] ℂ, fun x ↦ Trivial M ℂ x →L[ℝ] Trivial M ℂ x⟯ :=
-  ⟨fun _ ↦ Complex.conjCLE.toContinuousLinearMap, by
-    apply contMDiff_zero_iff.2
-    apply continuous_iff_continuousAt.2
-    intro x
-    apply (continuousAt_hom_bundle (RingHom.id ℝ) _).2
-    refine ⟨continuousAt_id, ?_⟩
-    simpa only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
-      Trivial.continuousLinearMapAt_trivialization, Trivial.symmL_trivialization,
-      ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_id] using
-        (continuousAt_const (y := Complex.conjCLE.toContinuousLinearMap))⟩
+  ⟨fun _ ↦ Complex.conjCLE.toContinuousLinearMap,
+    contMDiff_const_trivialHom Complex.conjCLE.toContinuousLinearMap⟩
 
 private theorem conjSection_apply (x : M) :
     conjSection x = Complex.conjCLE.toContinuousLinearMap := by

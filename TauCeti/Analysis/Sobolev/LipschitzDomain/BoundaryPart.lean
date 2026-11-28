@@ -16,6 +16,7 @@ import TauCeti.Analysis.Sobolev.Trace.Epigraph.AdmissibleBoundaryPart
 import TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.W1p.BoundaryPart.Localization
 import TauCeti.Geometry.Euclidean.Volume.Measure
+import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
@@ -65,17 +66,18 @@ The hypothesis `σ(Γ) > 0` cannot be dropped: for `Γ = ∅` the constant `1` h
 nonzero norm. Neither can connectedness: on two disjoint balls with `Γ` on the frontier of the
 first, the function equal to `0` on the first ball and `1` on the second is a counterexample.
 
-Beyond the empty case, stated above in that generality, three facts also hold on a bounded
+Beyond the empty case, stated above in that generality, the other facts also hold on a bounded
 Lipschitz domain `U` of a finite-dimensional inner product space `F` such as `EuclideanSpace ℝ ι`,
 where boundary-value problems are stated: zero trace on `Γ`, the trace characterization when the
-relative boundary of `Γ` is empty, and the Poincaré–Friedrichs inequality. They use the trace
-`TauCeti.W1p.frontierTraceOfIsLipschitzDomain` and `(dim F - 1)`-dimensional surface measure.
-Both traces vanish on `Γ` by `TauCeti.W1p.apply_ae_eq_zero_of_mem_w1pVanishingOnSubmodule`, the
-intrinsic one for every additive Haar measure. The trace characterization for a boundary part
-with empty relative boundary and the Poincaré–Friedrichs inequality are transported from the model
-space along a boundary chart of `U`, an affine isometry onto a Lipschitz domain of `ℝ × E`; in its
-coordinates the trace of `U` is the model-space trace
-(`TauCeti.W1p.frontierTraceOfIsLipschitzDomain_ae_eq_frontierTrace_compAffineIsometryEquivL`).
+relative boundary of `Γ` is empty and for every admissible boundary part, and the
+Poincaré–Friedrichs inequality. They use the trace `TauCeti.W1p.frontierTraceOfIsLipschitzDomain`
+and `(dim F - 1)`-dimensional surface measure. Both traces vanish on `Γ` by
+`TauCeti.W1p.apply_ae_eq_zero_of_mem_w1pVanishingOnSubmodule`, the intrinsic one for every
+additive Haar measure. The trace characterizations and the Poincaré–Friedrichs inequality are
+transported from the model space along a boundary chart of `U`, an affine isometry onto a Lipschitz
+domain of `ℝ × E`; in its coordinates the trace of `U` is the model-space trace
+(`TauCeti.W1p.frontierTraceOfIsLipschitzDomain_ae_eq_frontierTrace_compAffineIsometryEquivL`), and
+an admissible boundary part of `U` is one of the image (`Set.IsAdmissibleBoundaryPart.image`).
 
 ## Main declarations
 
@@ -106,6 +108,10 @@ coordinates the trace of `U` is the model-space trace
 * `mem_w1pVanishingOnSubmodule_iff_frontierTraceOfIsLipschitzDomain_ae_eq_zero_of_disjoint_closure`,
   in the namespace `TauCeti.W1p`: the trace characterization on a Lipschitz domain of a Euclidean
   space when the relative boundary of `Γ` is empty.
+* `mem_w1pVanishingOnSubmodule_iff_frontierTraceOfIsLipschitzDomain_ae_eq_zero` and
+  `sub_mem_w1pVanishingOnSubmodule_iff_frontierTraceOfIsLipschitzDomain_ae_eq`, in the namespace
+  `Set.IsAdmissibleBoundaryPart`: the trace characterization on a Lipschitz domain of a Euclidean
+  space for an admissible boundary part, and its form as the Dirichlet condition on `Γ`.
 
 ## References
 
@@ -124,6 +130,8 @@ noncomputable section
 
 open Filter MeasureTheory Module Set TopologicalSpace
 open scoped ENNReal NNReal Distributions Gradient ContDiff Topology
+
+universe u
 
 namespace TauCeti
 
@@ -448,8 +456,7 @@ theorem W1p.sub_mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_of_isAdmissi
         (frontier (Ω : Set (WithLp 2 (ℝ × E))))).restrict Γ] W1p.frontierTrace hp hΩ hb g := by
   rw [W1p.mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_zero_of_isAdmissibleBoundaryPart hp
     hΩ hb hΓ, map_sub]
-  exact (EventuallyEq.congr_left (ae_restrict_of_ae (Lp.coeFn_sub (W1p.frontierTrace hp hΩ hb u)
-    (W1p.frontierTrace hp hΩ hb g)))).trans eventuallyEq_iff_sub.symm
+  exact Lp.coeFn_sub_ae_eq_zero_iff _ _
 
 /-! ### Bounded Lipschitz domains of a Euclidean space -/
 
@@ -457,7 +464,7 @@ section Intrinsic
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   [MeasurableSpace F] [BorelSpace F] {U : Opens F} {Γ' : Set F}
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {E' : Type u} [NormedAddCommGroup E'] [NormedSpace ℝ E']
 
 /-- **Functions vanishing on `Γ` have zero trace on `Γ`, on a Lipschitz domain of a Euclidean
 space.** Let `U` be a bounded open subset of a nontrivial finite-dimensional real inner product
@@ -489,10 +496,7 @@ theorem W1p.frontierTraceOfIsLipschitzDomain_ae_eq_of_sub_mem_w1pVanishingOnSubm
   have h0 := W1p.frontierTraceOfIsLipschitzDomain_ae_eq_zero_of_mem_w1pVanishingOnSubmodule hp hU
     hb hug
   rw [map_sub] at h0
-  filter_upwards [h0, ae_restrict_of_ae (Lp.coeFn_sub
-    (W1p.frontierTraceOfIsLipschitzDomain (mu := mu) hp hU hb u)
-    (W1p.frontierTraceOfIsLipschitzDomain (mu := mu) hp hU hb g))] with y h1 h2
-  rwa [h2, Pi.sub_apply, Pi.zero_apply, sub_eq_zero] at h1
+  exact (Lp.coeFn_sub_ae_eq_zero_iff _ _).1 h0
 
 /-- Zero trace on `Γ'` in a Euclidean Lipschitz domain `U` gives zero model-space trace of
 `u ∘ g⁻¹` on `g Γ'`, in the coordinates of an affine isometry `g` onto a Lipschitz domain of the
@@ -524,6 +528,63 @@ private theorem frontierTrace_compAffineIsometryEquivL_ae_eq_zero [Nontrivial F]
   rw [Pi.zero_apply] at h2 ⊢
   rw [← h1, h2]
 
+omit [MeasurableSpace F] [BorelSpace F] in
+/-- **A boundary chart of a Lipschitz domain of a Euclidean space.** A bounded Lipschitz domain
+`U` with nonempty frontier is carried by an affine isometry `g` onto a bounded Lipschitz domain `W`
+of the model space `ℝ × E'`, once `E'` has the inner product, finite dimension and Borel structure
+of its image in `F`. These structures are built in the proof, so this is stated as an eliminator,
+which carries a property `Q E'` of the fibre over to them. -/
+private theorem boundaryChart_elim (hU : (U : Set F).IsLipschitzDomain E')
+    (hb : Bornology.IsBounded (U : Set F)) (hne : (frontier (U : Set F)).Nonempty)
+    {Q : ∀ (E₀ : Type u) [NormedAddCommGroup E₀] [NormedSpace ℝ E₀], Prop} (hQ : Q E') {P : Prop}
+    (k : ∀ (E₀ : Type u) [NormedAddCommGroup E₀] [InnerProductSpace ℝ E₀] [FiniteDimensional ℝ E₀]
+      [MeasurableSpace E₀] [BorelSpace E₀], Q E₀ → ∀ (g : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E₀))
+      (W : Opens (WithLp 2 (ℝ × E₀))) (L : ℝ≥0),
+      (W : Set (WithLp 2 (ℝ × E₀))).IsLipschitzDomainWith L →
+      Bornology.IsBounded (W : Set (WithLp 2 (ℝ × E₀))) →
+      (W : Set (WithLp 2 (ℝ × E₀))) = g.symm ⁻¹' U → P) : P := by
+  obtain ⟨g, L, hL⟩ := hU.exists_isLipschitzDomainWith_image hb hne
+  -- Give `E'` the inner product, finite dimension and Borel structure of its image in `F`.
+  let e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E') := g.linearIsometryEquiv
+  let _ : InnerProductSpace ℝ E' := .ofLinearIsometry e.symmInr
+  have _ : FiniteDimensional ℝ E' := e.finiteDimensional_snd
+  let _ : MeasurableSpace E' := borel E'
+  have _ : BorelSpace E' := ⟨rfl⟩
+  exact k E' hQ g ⟨g '' (U : Set F), ((isLipschitzDomainWith_iff _ _).1 hL).1⟩ L hL
+    (g.lipschitzWith.isBounded_image hb) (g.toHomeomorph.image_eq_preimage_symm _)
+
+/-- **Transport of a trace characterization from the model space.** On a bounded Lipschitz domain
+`U` of a Euclidean space and for `p < ∞`, `u ∈ W^{1,p}_{Γ'}(U)` whenever its trace vanishes almost
+everywhere on `Γ'`, provided that in the coordinates of every boundary chart `g` of `U` (as in
+`boundaryChart_elim`), zero model-space trace on `g Γ'` gives vanishing on `g Γ'`. -/
+private theorem mem_w1pVanishingOnSubmodule_of_frontierTraceOfIsLipschitzDomain_ae_eq_zero
+    [Nontrivial F] (hp : p ≠ (∞ : ℝ≥0∞)) (hU : (U : Set F).IsLipschitzDomain E')
+    (hb : Bornology.IsBounded (U : Set F))
+    {Q : ∀ (E₀ : Type u) [NormedAddCommGroup E₀] [NormedSpace ℝ E₀], Prop} (hQ : Q E')
+    (H : ∀ (E₀ : Type u) [NormedAddCommGroup E₀] [InnerProductSpace ℝ E₀] [FiniteDimensional ℝ E₀]
+      [MeasurableSpace E₀] [BorelSpace E₀], Q E₀ → ∀ (g : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E₀))
+      (W : Opens (WithLp 2 (ℝ × E₀))) (L : ℝ≥0)
+      (hW : (W : Set (WithLp 2 (ℝ × E₀))).IsLipschitzDomainWith L)
+      (hbW : Bornology.IsBounded (W : Set (WithLp 2 (ℝ × E₀)))),
+      (W : Set (WithLp 2 (ℝ × E₀))) = g.symm ⁻¹' U → ∀ v : W1p volume W p,
+      W1p.frontierTrace hp hW hbW v =ᵐ[((μHE[finrank ℝ E₀] : Measure (WithLp 2 (ℝ × E₀))).restrict
+        (frontier (W : Set (WithLp 2 (ℝ × E₀))))).restrict (g.symm ⁻¹' Γ')] 0 →
+      v ∈ w1pVanishingOnSubmodule volume W p (g.symm ⁻¹' Γ'))
+    {u : W1p volume U p}
+    (hu : W1p.frontierTraceOfIsLipschitzDomain hp hU hb u =ᵐ[((μHE[finrank ℝ F - 1] :
+      Measure F).restrict (frontier (U : Set F))).restrict Γ'] 0) :
+    u ∈ w1pVanishingOnSubmodule volume U p Γ' := by
+  rcases (frontier (U : Set F)).eq_empty_or_nonempty with hfr | hne
+  · -- With empty frontier `U` is empty, and `u = 0`.
+    have hUe := hb.eq_empty_of_frontier_eq_empty hfr
+    rw [show u = 0 from W1p.ext_value (Lp.ext (by simp [hUe, Filter.EventuallyEq]))]
+    exact zero_mem _
+  refine boundaryChart_elim hU hb hne hQ fun E₀ _ _ _ _ _ hQ₀ g W L hL hbW hWU => ?_
+  -- In the coordinates of `g`, the model-space hypothesis applies to `u ∘ g⁻¹` and `g Γ'`.
+  rw [← W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff g.symm hWU]
+  exact H E₀ hQ₀ g W L hL hbW hWU _
+    (frontierTrace_compAffineIsometryEquivL_ae_eq_zero hp hU hb g hL hbW hWU hu)
+
 namespace W1p
 
 /-- **The trace characterization on a Lipschitz domain of a Euclidean space, for a boundary part
@@ -542,35 +603,15 @@ theorem
       W1p.frontierTraceOfIsLipschitzDomain hp hU hb u =ᵐ[((μHE[finrank ℝ F - 1] :
         Measure F).restrict (frontier (U : Set F))).restrict Γ'] 0 := by
   refine ⟨W1p.frontierTraceOfIsLipschitzDomain_ae_eq_zero_of_mem_w1pVanishingOnSubmodule hp hU hb,
-    fun hu => ?_⟩
-  rcases (frontier (U : Set F)).eq_empty_or_nonempty with hfr | hne
-  · -- With empty frontier `U` is empty, and `u = 0`.
-    have hUe := hb.eq_empty_of_frontier_eq_empty hfr
-    rw [show u = 0 from W1p.ext_value (Lp.ext (by simp [hUe, Filter.EventuallyEq]))]
-    exact zero_mem _
-  obtain ⟨g, L, hL⟩ := hU.exists_isLipschitzDomainWith_image hb hne
-  -- Give `E'` the inner product, finite dimension and Borel structure of its image in `F`.
-  let e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E') := g.linearIsometryEquiv
-  let _ : InnerProductSpace ℝ E' := .ofLinearIsometry e.symmInr
-  have _ : FiniteDimensional ℝ E' := e.finiteDimensional_snd
-  let _ : MeasurableSpace E' := borel E'
-  have _ : BorelSpace E' := ⟨rfl⟩
-  -- `g` carries `U` onto a bounded Lipschitz domain `W` of the model space.
-  let W : Opens (WithLp 2 (ℝ × E')) :=
-    ⟨g '' (U : Set F), ((isLipschitzDomainWith_iff _ _).1 hL).1⟩
-  have hWU : (W : Set (WithLp 2 (ℝ × E'))) = g.symm ⁻¹' U :=
-    g.toHomeomorph.image_eq_preimage_symm _
-  have hbW : Bornology.IsBounded (W : Set (WithLp 2 (ℝ × E'))) :=
-    g.lipschitzWith.isBounded_image hb
+    mem_w1pVanishingOnSubmodule_of_frontierTraceOfIsLipschitzDomain_ae_eq_zero hp hU hb
+      (Q := fun _ _ _ => True) trivial fun E₀ _ _ _ _ _ _ g W L hL hbW hWU => ?_⟩
   have hcl (s : Set F) : closure (g.symm ⁻¹' s) = g.symm ⁻¹' closure s :=
     (g.symm.toHomeomorph.preimage_closure s).symm
-  have hfrW : frontier (W : Set (WithLp 2 (ℝ × E'))) = g.symm ⁻¹' frontier (U : Set F) := by
+  have hfrW : frontier (W : Set (WithLp 2 (ℝ × E₀))) = g.symm ⁻¹' frontier (U : Set F) := by
     rw [hWU]
     exact (g.symm.toHomeomorph.preimage_frontier _).symm
-  -- In the coordinates of `g`, the model-space characterization applies to `u ∘ g⁻¹` and `g Γ'`.
-  rw [← W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff g.symm hWU]
-  refine (W1p.mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_zero_of_disjoint_closure hp hL
-    hbW ?_ ?_ _).2 (frontierTrace_compAffineIsometryEquivL_ae_eq_zero hp hU hb g hL hbW hWU hu)
+  refine fun v => (W1p.mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_zero_of_disjoint_closure
+    hp hL hbW ?_ ?_ v).2
   · rw [hWU]
     exact hΓU.preimage _
   · rw [hfrW, ← preimage_sdiff, hcl, hcl]
@@ -594,23 +635,72 @@ theorem
   have hne : (frontier (U : Set F)).Nonempty := by
     by_contra h
     simp [not_nonempty_iff_eq_empty.1 h] at hΓ
-  obtain ⟨g, L, hL⟩ := hU.exists_isLipschitzDomainWith_image hb hne
-  -- Give `E'` the inner product, finite dimension and Borel structure of its image in `F`.
-  let e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E') := g.linearIsometryEquiv
-  let _ : InnerProductSpace ℝ E' := .ofLinearIsometry e.symmInr
-  have _ : FiniteDimensional ℝ E' := e.finiteDimensional_snd
-  let _ : MeasurableSpace E' := borel E'
-  have _ : BorelSpace E' := ⟨rfl⟩
-  -- `g` carries `U` onto a bounded Lipschitz domain of the model space.
-  let W : Opens (WithLp 2 (ℝ × E')) :=
-    ⟨g '' (U : Set F), ((isLipschitzDomainWith_iff _ _).1 hL).1⟩
-  have hWU : (W : Set (WithLp 2 (ℝ × E'))) = g.symm ⁻¹' U :=
-    g.toHomeomorph.image_eq_preimage_symm _
-  rw [← e.finrank_snd] at hΓ
+  refine boundaryChart_elim hU hb hne (Q := fun _ _ _ => True) trivial
+    fun E₀ _ _ _ _ _ _ g W L hL hbW hWU => ?_
+  rw [← g.linearIsometryEquiv.finrank_snd] at hΓ
   exact
     W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_affineIsometryEquiv
-      hp hL (g.lipschitzWith.isBounded_image hb) g hWU hconn hΓ
+      hp hL hbW g hWU hconn hΓ
 
 end Intrinsic
 
 end TauCeti
+
+/-! ### Admissible boundary parts of Lipschitz domains of a Euclidean space -/
+
+namespace Set.IsAdmissibleBoundaryPart
+
+open TauCeti
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F] [Nontrivial F] {U : Opens F} {Γ' : Set F}
+  {E' : Type u} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {E'' : Type*} [NormedAddCommGroup E''] [InnerProductSpace ℝ E''] [MeasurableSpace E'']
+  [BorelSpace E''] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- **The trace characterization on a Lipschitz domain of a Euclidean space, for an admissible
+boundary part.** Let `U` be a bounded open subset of a nontrivial finite-dimensional real inner
+product space, let `Γ'` be an admissible boundary part of `U` (`Set.IsAdmissibleBoundaryPart`), so
+that `U` is a Lipschitz domain, and let `1 ≤ p < ∞`. Then `u ∈ W^{1,p}(U)` lies in
+`W^{1,p}_{Γ'}(U)` exactly when its trace vanishes almost everywhere on `Γ'` for surface measure on
+the frontier. -/
+theorem mem_w1pVanishingOnSubmodule_iff_frontierTraceOfIsLipschitzDomain_ae_eq_zero
+    (hp : p ≠ (∞ : ℝ≥0∞)) (hΓ : (U : Set F).IsAdmissibleBoundaryPart Γ' E' E'')
+    (hb : Bornology.IsBounded (U : Set F))
+    (u : W1p volume U p) :
+    u ∈ w1pVanishingOnSubmodule volume U p Γ' ↔
+      W1p.frontierTraceOfIsLipschitzDomain hp hΓ.isLipschitzDomain hb u =ᵐ[((μHE[finrank ℝ F - 1] :
+        Measure F).restrict (frontier (U : Set F))).restrict Γ'] 0 := by
+  have hU := hΓ.isLipschitzDomain
+  refine ⟨W1p.frontierTraceOfIsLipschitzDomain_ae_eq_zero_of_mem_w1pVanishingOnSubmodule hp hU hb,
+    mem_w1pVanishingOnSubmodule_of_frontierTraceOfIsLipschitzDomain_ae_eq_zero hp hU hb
+      (Q := fun E₀ _ _ => (U : Set F).IsAdmissibleBoundaryPart Γ' E₀ E'') hΓ
+      fun E₀ _ _ _ _ _ hΓ₀ g W L hL hbW hWU => ?_⟩
+  -- `g` carries `Γ'` onto an admissible boundary part of `W`.
+  have hΓW : (W : Set (WithLp 2 (ℝ × E₀))).IsAdmissibleBoundaryPart (g.symm ⁻¹' Γ') E₀ E'' := by
+    have hgU : g '' (U : Set F) = g.symm ⁻¹' U := g.toHomeomorph.image_eq_preimage_symm _
+    have hgΓ : g '' Γ' = g.symm ⁻¹' Γ' := g.toHomeomorph.image_eq_preimage_symm _
+    rw [hWU, ← hgU, ← hgΓ]
+    exact hΓ₀.image g
+  exact fun v =>
+    (W1p.mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_zero_of_isAdmissibleBoundaryPart hp hL
+      hbW hΓW v).2
+
+/-- **The Dirichlet condition on an admissible boundary part of a Lipschitz domain of a Euclidean
+space.** On a bounded open subset `U` of a nontrivial finite-dimensional real inner product space,
+for an admissible boundary part `Γ'` of `U` and `1 ≤ p < ∞`, `u - g ∈ W^{1,p}_{Γ'}(U)` holds exactly
+when the traces of `u` and `g` agree almost everywhere on `Γ'` for surface measure on the
+frontier. -/
+theorem sub_mem_w1pVanishingOnSubmodule_iff_frontierTraceOfIsLipschitzDomain_ae_eq
+    (hp : p ≠ (∞ : ℝ≥0∞)) (hΓ : (U : Set F).IsAdmissibleBoundaryPart Γ' E' E'')
+    (hb : Bornology.IsBounded (U : Set F))
+    (u g : W1p volume U p) :
+    u - g ∈ w1pVanishingOnSubmodule volume U p Γ' ↔
+      W1p.frontierTraceOfIsLipschitzDomain hp hΓ.isLipschitzDomain hb u =ᵐ[((μHE[finrank ℝ F - 1] :
+        Measure F).restrict (frontier (U : Set F))).restrict Γ']
+          W1p.frontierTraceOfIsLipschitzDomain hp hΓ.isLipschitzDomain hb g := by
+  rw [hΓ.mem_w1pVanishingOnSubmodule_iff_frontierTraceOfIsLipschitzDomain_ae_eq_zero hp hb,
+    map_sub]
+  exact Lp.coeFn_sub_ae_eq_zero_iff _ _
+
+end Set.IsAdmissibleBoundaryPart

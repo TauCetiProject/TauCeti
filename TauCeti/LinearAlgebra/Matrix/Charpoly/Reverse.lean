@@ -34,12 +34,16 @@ the dimension.
 * `Matrix.coeff_charpolyRev`: the `k`-th coefficient is `(-1) ^ k` times the sum of the `k × k`
   principal minors. In particular the constant coefficient is `1` and the coefficient in degree
   `Fintype.card ι` is `(-1) ^ Fintype.card ι * det A`.
+* `Matrix.natDegree_charpolyRev_of_det_ne_zero`: if `det A ≠ 0`, then `det (1 - X A)` has degree
+  exactly `Fintype.card ι`.
 * `Matrix.coeff_charpolyRev_card_sub`: the coefficient in degree `Fintype.card ι - k` is the
   coefficient of `X ^ k` in the characteristic polynomial.
 * `Matrix.coeff_charpolyRev_card_sub_of_mem_unitaryGroup`: for a unitary matrix, the coefficients
   in degrees `Fintype.card ι - k` and `k` are related by `(-1) ^ Fintype.card ι * det A` and `star`.
 * `Matrix.eval_charpolyRev_eq_det_one_sub_smul`: the value of `det (1 - X A)` at `X = t` is
   `det (1 - t A)`; at `X = 1` this is `Matrix.eval_one_charpolyRev`.
+* `Matrix.eval_charpoly_eq_pow_mul_eval_charpolyRev`: if `t s = 1`, then
+  `χ_A (t) = t ^ n det (1 - s A)`.
 * `Matrix.charpolyRev_map`, `Matrix.charpolyRev_transpose`, `Matrix.charpolyRev_reindex`:
   functoriality in the coefficient ring and invariance under transposition and relabelling.
 * `Matrix.charpolyRev_smul`: `det (1 - X (c A))` is `det (1 - X A)` evaluated at `c X`.
@@ -126,6 +130,14 @@ theorem coeff_charpolyRev_card (A : Matrix ι ι R) :
   simpa [det_eq_sign_charpoly_coeff, ← mul_assoc, ← mul_pow] using
     A.coeff_charpolyRev_card_sub (Nat.zero_le _)
 
+/-- For a matrix with nonzero determinant, `det (1 - X A)` has degree equal to its size. -/
+theorem natDegree_charpolyRev_of_det_ne_zero {A : Matrix ι ι R} (hA : A.det ≠ 0) :
+    A.charpolyRev.natDegree = Fintype.card ι := by
+  apply le_antisymm (natDegree_charpolyRev_le A)
+  apply le_natDegree_of_ne_zero
+  rw [coeff_charpolyRev_card]
+  exact (isUnit_neg_one.pow _).mul_right_eq_zero.not.mpr hA
+
 /-- **Reciprocity for unitary matrices.** For a unitary `A` and `k ≤ Fintype.card ι`, the
 coefficient of `det (1 - X A)` in degree `Fintype.card ι - k` is `(-1) ^ Fintype.card ι * det A`
 times the conjugate of the coefficient in degree `k`: the inverse of `A` is its conjugate
@@ -160,6 +172,14 @@ theorem eval_charpolyRev_eq_det_one_sub_smul (A : Matrix ι ι R) (t : R) :
 @[simp]
 theorem eval_one_charpolyRev (A : Matrix ι ι R) : A.charpolyRev.eval 1 = (1 - A).det := by
   rw [eval_charpolyRev_eq_det_one_sub_smul, one_smul]
+
+/-- **Evaluating the characteristic polynomial through `det (1 - X A)`.** If `t * s = 1`, then
+`det (t - A) = t ^ n det (1 - s A)` in dimension `n = Fintype.card ι`. Over a field this is
+`χ_A (t) = t ^ n det (1 - t⁻¹ A)` for `t ≠ 0`. -/
+theorem eval_charpoly_eq_pow_mul_eval_charpolyRev (A : Matrix ι ι R) {t s : R} (h : t * s = 1) :
+    A.charpoly.eval t = t ^ Fintype.card ι * A.charpolyRev.eval s := by
+  rw [eval_charpoly, eval_charpolyRev_eq_det_one_sub_smul, ← det_smul, smul_sub, smul_smul, h,
+    one_smul, smul_one_eq_diagonal, scalar_apply]
 
 /-- **The Fredholm resolvent of a matrix.** The `m`-th coefficient of the adjugate of `1 - X A`
 is `∑ k ∈ range (m + 1), c k • A ^ (m - k)`, where `c k` is the `k`-th coefficient of

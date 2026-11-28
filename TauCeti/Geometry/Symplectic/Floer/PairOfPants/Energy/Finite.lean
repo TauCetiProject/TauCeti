@@ -85,7 +85,7 @@ private theorem floerEnergyDensity_endChart_nonneg (ω : SymplecticForm V)
       u (endChart q ζ) : ℝ × ℝ →ₗ[ℝ] V)) :
     0 ≤ ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H q w.2) (u ∘ endChart q) ζ := by
   have hpos : 0 < q.endSign * ζ.1 := by linarith
-  have hS := endChart_mem_thricePuncturedSphereReal hpos
+  have hS := endChart_mem_thricePuncturedSphereReal hpos.le
   have hpb := ω.floerEnergyDensity_perturbationPullback
     (Ks := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
     (Kt := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)

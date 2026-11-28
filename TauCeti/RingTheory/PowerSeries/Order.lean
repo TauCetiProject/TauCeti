@@ -24,7 +24,11 @@ Multiplication on either side works, and neither form needs commutativity.
 
 An injective map of coefficient semirings preserves the order of a power series: it sends
 nonzero coefficients to nonzero coefficients. Mathlib records only the inequality
-`PowerSeries.le_order_map`.
+`PowerSeries.le_order_map`. Along a surjection `φ : R → S`, a ring endomorphism of `R⟦X⟧` that
+preserves the kernel of reduction and sends `X` to a series whose reduction has no constant term
+cannot lower the order of reductions. Applied to an automorphism and its inverse, it shows that
+such automorphisms preserve the order of the reduction, the Weierstrass degree over a complete
+local ring.
 
 Power series constructed degree by degree are limits of approximations whose consecutive terms
 agree in more and more low degrees; `PowerSeries.exists_forall_le_order_sub` supplies the limit.
@@ -42,7 +46,9 @@ of `X ^ n` in `f`.
   degree `N` iff the mapped series has order at least `N`.
 * `PowerSeries.exists_forall_le_order_sub`: a sequence whose consecutive terms agree below degree
   `n` has a limit agreeing with its `n`-th term below degree `n`.
-
+* `PowerSeries.order_map_le_order_map_apply`: an endomorphism of `R⟦X⟧` that preserves the kernel
+  of reduction along a surjection `R → S`, and sends `X` into that kernel modulo `X`, does not
+  lower the order of reductions.
 * `PowerSeries.order_X_pow_mul_of_constantCoeff_ne_zero`: `X ^ k * f` has order `k` when `f` has
   nonzero constant coefficient.
 * `PowerSeries.coeff_pow_mul_of_le_order`: the coefficient of `X ^ (n * k)` in `f ^ k` is
@@ -51,6 +57,8 @@ of `X ^ n` in `f`.
   constant coefficient is nonzero.
 * `PowerSeries.order_eq_one_iff_of_constantCoeff_eq_zero`: when `constantCoeff f = 0`, `f` has
   order `1` exactly when `coeff 1 f ≠ 0`.
+* `PowerSeries.coeff_eval_eq_sum_range`: evaluating a polynomial over `R⟦X⟧` at a series without
+  constant term only uses terms of degree at most `k` for the `k`-th coefficient.
 
 ## Provenance
 
@@ -121,6 +129,28 @@ section Ring
 
 variable {R : Type*} [Ring R]
 
+/-- **Endomorphisms preserving reduction do not lower the reduced order.** Let `φ : R → S` be a
+surjective ring homomorphism, and let `σ` be a ring endomorphism of `R⟦X⟧` that preserves the
+kernel of reduction of coefficients along `φ` and sends `X` to a series whose constant coefficient
+reduces to zero. Then the order of the reduction of `σ f` is at least that of the reduction of
+`f`. -/
+theorem order_map_le_order_map_apply {S : Type*} [Ring S] {φ : R →+* S}
+    (hφ : Function.Surjective φ) {σ : R⟦X⟧ →+* R⟦X⟧} (hσ : ∀ f, map φ f = 0 → map φ (σ f) = 0)
+    (hX : φ (constantCoeff (σ X)) = 0) (f : R⟦X⟧) :
+    (map φ f).order ≤ (map φ (σ f)).order := by
+  refine ENat.forall_natCast_le_iff_le.mp fun m hm ↦ ?_
+  -- Write the reduction of `f` as `X ^ m * map φ G` and that of `σ X` as `X * u`.
+  obtain ⟨g, hg⟩ := X_pow_dvd_iff.mpr fun i hi ↦
+    coeff_of_lt_order i ((Nat.cast_lt.mpr hi).trans_le hm)
+  obtain ⟨G, rfl⟩ := map_surjective φ hφ g
+  obtain ⟨u, hu⟩ := (X_dvd_iff (φ := map φ (σ X))).mpr (by
+    rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply, hX])
+  have h := hσ (f - X ^ m * G) (by simp [hg])
+  rw [map_sub, map_sub, sub_eq_zero, map_mul, map_mul, map_pow, map_pow, hu,
+    (commute_X u).symm.mul_pow, mul_assoc] at h
+  rw [h]
+  exact nat_le_order _ _ fun i hi ↦ by simp [coeff_X_pow_mul', not_le.mpr hi]
+
 /-- **Limits of `X`-adic Cauchy sequences.** If consecutive terms of a sequence of power series
 agree below degree `n`, then there is a power series agreeing with its `n`-th term below degree `n`
 for every `n`. -/
@@ -162,5 +192,20 @@ theorem order_eq_one_iff_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantC
   refine ⟨fun h ↦ h.1, fun h ↦ ⟨h, fun i hi ↦ ?_⟩⟩
   rw [Nat.lt_one_iff.mp hi, coeff_zero_eq_constantCoeff_apply]
   exact hf
+
+/-- Evaluating a polynomial over `R⟦X⟧` at a series `g` without constant term only uses terms of
+degree at most `k` for the `k`-th coefficient. -/
+theorem coeff_eval_eq_sum_range (p : Polynomial R⟦X⟧) {g : R⟦X⟧}
+    (hg : constantCoeff g = 0) (k : ℕ) :
+    coeff k (p.eval g) = ∑ n ∈ Finset.range (k + 1), coeff k (p.coeff n * g ^ n) := by
+  rw [Polynomial.eval_eq_sum_range' (lt_of_lt_of_le (Nat.lt_succ_self _) (le_max_left _ (k + 1))),
+    map_sum]
+  symm
+  refine Finset.sum_subset (Finset.range_mono (le_max_right _ _)) fun n _ hn ↦ ?_
+  have hlt : k < n := by simp only [Finset.mem_range, not_lt] at hn; omega
+  exact coeff_of_lt_order k
+    ((Nat.cast_lt.mpr hlt).trans_le
+      ((le_order_pow_of_constantCoeff_eq_zero n hg).trans
+        (le_add_self.trans (le_order_mul (p.coeff n) (g ^ n)))))
 
 end PowerSeries

@@ -41,7 +41,11 @@ noncomputable def zigzagLegendre : Parameters where
     rintro _ rfl _ rfl
     exact coe_ne_coe (by norm_num) (by norm_num) (by norm_num)
 
-private theorem rep_half : rep ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) = 1 / 2 :=
+theorem zigzagLegendre_α :
+    zigzagLegendre.α = {((1 / 2 : ℚ) : AddCircle (1 : ℚ)), ((1 / 2 : ℚ) : AddCircle (1 : ℚ))} :=
+  (rfl)
+
+theorem rep_half : rep ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) = 1 / 2 :=
   rep_coe_of_mem (by norm_num)
 
 private theorem rep_one : rep ((1 : ℚ) : AddCircle (1 : ℚ)) = 1 :=
@@ -101,6 +105,14 @@ noncomputable def zigzagHalfQuarter : Parameters where
       Multiset.mem_singleton, or_self]
     rintro _ rfl _ (rfl | rfl) <;> exact coe_ne_coe (by norm_num) (by norm_num) (by norm_num)
 
+theorem zigzagHalfQuarter_α :
+    zigzagHalfQuarter.α = {((1 / 2 : ℚ) : AddCircle (1 : ℚ)), ((1 / 2 : ℚ) : AddCircle (1 : ℚ))} :=
+  (rfl)
+
+theorem zigzagHalfQuarter_β :
+    zigzagHalfQuarter.β = {((1 / 4 : ℚ) : AddCircle (1 : ℚ)), ((3 / 4 : ℚ) : AddCircle (1 : ℚ))} :=
+  (rfl)
+
 theorem sortedReps_zigzagHalfQuarter :
     zigzagHalfQuarter.sortedReps = [1 / 4, 1 / 2, 1 / 2, 3 / 4] := by
   rw [Parameters.sortedReps_eq_iff, List.sortedLE_iff_pairwise]
@@ -111,6 +123,13 @@ theorem sortedReps_zigzagHalfQuarter :
     rep_coe_of_mem (show (3 / 4 : ℚ) ∈ Ioc 0 1 by norm_num)]
   simp only [← Multiset.coe_singleton, Multiset.cons_coe, Multiset.coe_eq_coe]
   exact (List.perm_middle (l₁ := [1 / 2, 1 / 2])).symm
+
+theorem countingFunction_zigzagHalfQuarter : zigzagHalfQuarter.countingFunction (1 / 2) = 1 := by
+  simp only [Parameters.countingFunction_def, zigzagHalfQuarter_α, zigzagHalfQuarter_β,
+    Multiset.insert_eq_cons, Multiset.filter_cons, Multiset.filter_singleton, rep_half,
+    rep_coe_of_mem (show (1 / 4 : ℚ) ∈ Ioc 0 1 by norm_num),
+    rep_coe_of_mem (show (3 / 4 : ℚ) ∈ Ioc 0 1 by norm_num)]
+  norm_num
 
 -- The walk `0, -1, 0, 1, 0`.
 example : (List.range 5).map zigzagHalfQuarter.height = [0, -1, 0, 1, 0] := by

@@ -162,6 +162,18 @@ theorem erase_eq_self_of_notMem (h : c ∉ μ) : erase μ c = μ := by
   refine ⟨fun hd => mem_of_mem_erase hd, fun hd => mem_erase.mpr ⟨hd, fun hcd => h ?_⟩⟩
   exact μ.isLowerSet hcd hd
 
+/-- Erasing a cell `c` of `μ` gives a diagram that no other cell erases to. -/
+theorem erase_inj (hc : c ∈ μ) : erase μ c = erase μ d ↔ c = d := by
+  refine ⟨fun h => by_contra fun hne => ?_, fun h => h ▸ rfl⟩
+  by_cases hd : d ∈ μ
+  swap
+  · rw [erase_eq_self_of_notMem hd] at h
+    exact notMem_erase (μ := μ) (c := c) (h.symm ▸ hc)
+  by_cases hdc : d ≤ c
+  · have hcd : ¬ c ≤ d := fun hcd => hne (le_antisymm hcd hdc)
+    exact notMem_erase (μ := μ) (c := d) (h ▸ mem_erase.mpr ⟨hd, hcd⟩)
+  · exact notMem_erase (μ := μ) (c := c) (h ▸ mem_erase.mpr ⟨hc, hdc⟩)
+
 namespace IsCorner
 
 theorem mem_erase_iff (h : IsCorner μ c) : d ∈ erase μ c ↔ d ∈ μ ∧ d ≠ c := by
