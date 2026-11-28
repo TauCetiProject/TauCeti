@@ -15,6 +15,7 @@ import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 -- `IsPrimitiveRoot.sum_zpow_pow_eq`, the orthogonality of the characters of `ℤ ⧸ n`.
 import TauCeti.RingTheory.RootsOfUnity.Basic
 import TauCeti.RingTheory.MvPolynomial.Initial.Weight
+import TauCeti.Algebra.MvPolynomial.Division
 import TauCeti.Algebra.MvPolynomial.Rename
 import TauCeti.Data.Finsupp.Weight
 import TauCeti.LinearAlgebra.Span.Basic
@@ -402,12 +403,9 @@ theorem IsHomogeneous.eq_C_constantCoeff {p : MvPolynomial σ R} (hp : p.IsHomog
 unique degree-`d` monomial `monomial (Finsupp.single default d) 1`. -/
 theorem IsHomogeneous.eq_monomial_single_default [Unique σ] {d : ℕ} {p : MvPolynomial σ R}
     (hp : p.IsHomogeneous d) :
-    p = monomial (Finsupp.single (default : σ) d) (p.coeff (Finsupp.single default d)) := by
-  ext γ; rw [coeff_monomial]; split_ifs with h
-  · rw [h]
-  · by_contra hc
-    have hdeg : γ.degree = d := by rw [Finsupp.degree_eq_weight_one]; exact hp hc
-    exact h (hdeg ▸ (Finsupp.unique_single_degree γ).symm)
+    p = monomial (Finsupp.single (default : σ) d) (p.coeff (Finsupp.single default d)) :=
+  hp.eq_monomial_of_unique_weight fun γ hγ ↦
+    (Finsupp.unique_single_degree γ).trans (by rw [Finsupp.degree_eq_weight_one, ← Pi.one_def, hγ])
 
 /-- Killing the variables outside the range of an injective index map `f : σ → τ` preserves
 homogeneity of degree `d`. -/
@@ -435,10 +433,8 @@ theorem IsHomogeneous.divMonomial {d e : ℕ} {p : MvPolynomial σ R}
 /-- Taking the monomial remainder `p.modMonomial μ` (discarding terms divisible by `monomial μ 1`)
 preserves homogeneity of degree `d` for any monomial exponent `μ`. -/
 theorem IsHomogeneous.modMonomial {d : ℕ} {p : MvPolynomial σ R}
-    (hp : p.IsHomogeneous d) (μ : σ →₀ ℕ) : (p.modMonomial μ).IsHomogeneous d := fun s hs ↦ by
-  by_cases h : μ ≤ s
-  · simp [coeff_modMonomial_of_le _ h] at hs
-  · exact hp (by rwa [coeff_modMonomial_of_not_le _ h] at hs)
+    (hp : p.IsHomogeneous d) (μ : σ →₀ ℕ) : (p.modMonomial μ).IsHomogeneous d := fun _ hs ↦
+  hp (coeff_modMonomial_of_mem_support (mem_support_iff.mpr hs) ▸ hs)
 
 /-- If an injective map `f : σ → τ` has image `{i}ᶜ` (omitting only the variable `i : τ`), every
 homogeneous polynomial `p` of degree `d + 1` in `τ` decomposes as

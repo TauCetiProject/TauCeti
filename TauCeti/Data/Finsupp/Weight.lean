@@ -13,9 +13,8 @@ public import Mathlib.Data.Finsupp.Option
 public import Mathlib.Data.Set.Card
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Data.Finsupp.Order
-import TauCeti.Data.Finsupp.Fin
-
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.BigOperators.Finsupp.Fin
 import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 import Mathlib.Data.Nat.Choose.Sum
 
@@ -44,10 +43,9 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
 * `Finsupp.prod_pow_eq_pow_degree`: `∏ a ^ tᵢ = a ^ degree t`.
 * `Finsupp.degree_optionElim`: extending by `y` at `none` adds `y` to the degree.
-* `Finsupp.degree_cons`, `Finsupp.degree_eq_zero_add_tail`, `Finsupp.degree_tail_of_apply_zero`,
-  `Finsupp.unique_single_degree`: prepending `c` at `0` adds `c` to the degree,
-  `degree α = α 0 + degree α.tail`, vanishing at `0` preserves degree under `tail`, and in one
-  variable `γ = single default γ.degree`.
+* `Finsupp.degree_eq_zero_add_tail`, `Finsupp.degree_tail_of_apply_zero`,
+  `Finsupp.unique_single_degree`: `degree α = α 0 + degree α.tail`, vanishing at `0` preserves
+  degree under `tail`, and in one variable `γ = single default γ.degree`.
 * `Finsupp.mapDomain_apply_eq_degree`: pushed forward to a type with a single element,
   a finitely supported function takes its degree as value.
 * `Finsupp.prod_pow_sumElim`: splitting variables splits the weighted product into two factors.
@@ -126,19 +124,12 @@ theorem degree_optionElim {σ R : Type*} [AddCommMonoid R] (f : σ →₀ R) (y 
   rw [h, sum_option_index _ _ (fun _ ↦ rfl) fun _ _ _ ↦ rfl, optionElim_apply_none,
     some_optionElim, degree_apply, Finsupp.sum]
 
-/-- Prepending `c` at coordinate `0` adds `c` to the degree. -/
-@[simp] theorem degree_cons {n : ℕ} {M : Type*} [AddCommMonoid M] (c : M) (α' : Fin n →₀ M) :
-    (cons c α').degree = c + α'.degree := by
-  have hsplit : cons c α' = cons c 0 + cons 0 α' := by simp [cons_add_cons]
-  calc (cons c α').degree = (cons c 0 + cons 0 α').degree := congrArg degree hsplit
-    _ = (cons c (0 : Fin n →₀ M)).degree + (cons 0 α').degree := map_add _ _ _
-    _ = c + α'.degree := by
-      rw [cons_zero_eq_single_zero, degree_single, ← mapDomain_finSucc, degree_mapDomain]
-
 /-- The degree of a finitely supported function on `Fin (n + 1)` splits into its head at `0`
 plus the degree of its tail. -/
 theorem degree_eq_zero_add_tail {n : ℕ} {M : Type*} [AddCommMonoid M] (γ : Fin (n + 1) →₀ M) :
-    γ.degree = γ 0 + γ.tail.degree := by conv_lhs => rw [← cons_tail γ, degree_cons]
+    γ.degree = γ 0 + γ.tail.degree := by
+  conv_lhs => rw [← cons_tail γ]
+  simpa only [degree_apply, Finsupp.sum] using Finsupp.sum_cons n γ.tail (γ 0)
 
 /-- If `α : Fin (n + 1) →₀ M` vanishes at coordinate `0`, then `α.tail` has the same degree as
 `α`. -/

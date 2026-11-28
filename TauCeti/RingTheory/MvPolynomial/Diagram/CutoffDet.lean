@@ -117,8 +117,8 @@ private noncomputable instance fintypeDiagramRemElem (D : Set (σ →₀ ℕ)) (
 
 private noncomputable def diagramIndexEquivInvFun (D : Set (σ →₀ ℕ)) (ℓ : ℕ) :
     ((v : D.diagramVertices) ×
-      {β : σ →₀ ℕ // β ∈ D.diagramBox v.val ∧ v.val.degree + β.degree = ℓ}) ⊕
-      {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ} →
+      ↥{β ∈ D.diagramBox v.val | v.val.degree + β.degree = ℓ}) ⊕
+      ↥{γ | γ ∉ D ∧ γ.degree = ℓ} →
     {δ : σ →₀ ℕ // δ.degree = ℓ}
   | Sum.inl ⟨v, β⟩ => ⟨v.val + β.val, by rw [map_add, β.property.2]⟩
   | Sum.inr γ => ⟨γ.val, γ.property.2⟩
@@ -142,12 +142,12 @@ open scoped Classical in
 noncomputable def diagramIndexEquiv {D : Set (σ →₀ ℕ)} (hD_up : IsUpperSet D) (ℓ : ℕ) :
     {δ : σ →₀ ℕ // δ.degree = ℓ} ≃
       ((v : D.diagramVertices) ×
-        {β : σ →₀ ℕ // β ∈ D.diagramBox v.val ∧ v.val.degree + β.degree = ℓ}) ⊕
-        {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ} :=
+        ↥{β ∈ D.diagramBox v.val | v.val.degree + β.degree = ℓ}) ⊕
+        ↥{γ | γ ∉ D ∧ γ.degree = ℓ} :=
   let toFun (s : {δ : σ →₀ ℕ // δ.degree = ℓ}) :
       ((v : D.diagramVertices) ×
-        {β : σ →₀ ℕ // β ∈ D.diagramBox v.val ∧ v.val.degree + β.degree = ℓ}) ⊕
-        {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ} :=
+        ↥{β ∈ D.diagramBox v.val | v.val.degree + β.degree = ℓ}) ⊕
+        ↥{γ | γ ∉ D ∧ γ.degree = ℓ} :=
     if hs : s.val ∈ D then let h := existsUnique_mem_diagramCell_of_mem hD_up hs
       Sum.inl ⟨h.choose, ⟨s.val - h.choose.val, tsub_mem_diagramBox_of_mem_diagramCell
         h.choose_spec.1, by rw [← map_add, add_tsub_cancel_of_le
@@ -164,13 +164,13 @@ noncomputable def diagramIndexEquiv {D : Set (σ →₀ ℕ)} (hD_up : IsUpperSe
 `v + β`. -/
 @[simp] theorem diagramIndexEquiv_symm_inl {D : Set (σ →₀ ℕ)} (hD_up : IsUpperSet D) (ℓ : ℕ)
     (v : D.diagramVertices)
-    (β : {β : σ →₀ ℕ // β ∈ D.diagramBox v.val ∧ v.val.degree + β.degree = ℓ}) :
+    (β : ↥{β ∈ D.diagramBox v.val | v.val.degree + β.degree = ℓ}) :
     (D.diagramIndexEquiv hD_up ℓ).symm (Sum.inl ⟨v, β⟩) =
       ⟨v.val + β.val, by rw [map_add, β.property.2]⟩ := by rfl
 
 /-- The inverse of `Set.diagramIndexEquiv` sends a remainder index `γ ∉ D` to `γ`. -/
 @[simp] theorem diagramIndexEquiv_symm_inr {D : Set (σ →₀ ℕ)} (hD_up : IsUpperSet D) (ℓ : ℕ)
-    (γ : {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ}) :
+    (γ : ↥{γ | γ ∉ D ∧ γ.degree = ℓ}) :
     (D.diagramIndexEquiv hD_up ℓ).symm (Sum.inr γ) = ⟨γ.val, γ.property.2⟩ := by rfl
 
 /-- For a degree-`ℓ` exponent `s` in the cell of `v`, `Set.diagramIndexEquiv` maps `s` to the
@@ -205,7 +205,7 @@ basis vector `(v, β)`: `monomial β.val 1 * H v`. -/
 theorem coe_diagramDivisionEnd_diagramIndexEquiv_symm_inl {D : Set (σ →₀ ℕ)}
     (hD_up : IsUpperSet D) {H : D.diagramVertices → MvPolynomial σ A}
     (hH : ∀ v, (H v).IsHomogeneous v.val.degree) {ℓ : ℕ} (v : D.diagramVertices)
-    (β : {β : σ →₀ ℕ // β ∈ D.diagramBox v.val ∧ v.val.degree + β.degree = ℓ}) :
+    (β : ↥{β ∈ D.diagramBox v.val | v.val.degree + β.degree = ℓ}) :
     (D.diagramDivisionEnd H hH ℓ (TauCeti.homogeneousMonomialBasis ℓ
       ((D.diagramIndexEquiv hD_up ℓ).symm (Sum.inl ⟨v, β⟩))) : MvPolynomial σ A) =
       monomial β.val 1 * H v := by
@@ -218,7 +218,7 @@ theorem coe_diagramDivisionEnd_diagramIndexEquiv_symm_inl {D : Set (σ →₀ �
 theorem diagramDivisionEnd_diagramIndexEquiv_symm_inr {D : Set (σ →₀ ℕ)}
     (hD_up : IsUpperSet D) {H : D.diagramVertices → MvPolynomial σ A}
     (hH : ∀ v, (H v).IsHomogeneous v.val.degree) {ℓ : ℕ}
-    (γ : {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ}) :
+    (γ : ↥{γ | γ ∉ D ∧ γ.degree = ℓ}) :
     D.diagramDivisionEnd H hH ℓ (TauCeti.homogeneousMonomialBasis ℓ
       ((D.diagramIndexEquiv hD_up ℓ).symm (Sum.inr γ))) =
       TauCeti.homogeneousMonomialBasis ℓ ⟨γ.val, γ.property.2⟩ := by
@@ -230,7 +230,7 @@ vector `γ ∉ D`: `monomial γ.val 1`. -/
 theorem coe_diagramDivisionEnd_diagramIndexEquiv_symm_inr {D : Set (σ →₀ ℕ)}
     (hD_up : IsUpperSet D) {H : D.diagramVertices → MvPolynomial σ A}
     (hH : ∀ v, (H v).IsHomogeneous v.val.degree) {ℓ : ℕ}
-    (γ : {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ}) :
+    (γ : ↥{γ | γ ∉ D ∧ γ.degree = ℓ}) :
     (D.diagramDivisionEnd H hH ℓ (TauCeti.homogeneousMonomialBasis ℓ
       ((D.diagramIndexEquiv hD_up ℓ).symm (Sum.inr γ))) : MvPolynomial σ A) =
       monomial γ.val 1 := by
@@ -242,7 +242,7 @@ supported quotient column `(v, β)`: `(H v).coeff (s - β)` when `β ≤ s`, and
 theorem coeff_diagramDivisionEnd_symm_inl {D : Set (σ →₀ ℕ)} (hD_up : IsUpperSet D)
     {H : D.diagramVertices → MvPolynomial σ A} (hH : ∀ v, (H v).IsHomogeneous v.val.degree)
     {ℓ : ℕ} (s : σ →₀ ℕ) (v : D.diagramVertices)
-    (β : {β : σ →₀ ℕ // β ∈ D.diagramBox v.val ∧ v.val.degree + β.degree = ℓ}) :
+    (β : ↥{β ∈ D.diagramBox v.val | v.val.degree + β.degree = ℓ}) :
     (D.diagramDivisionEnd H hH ℓ (TauCeti.homogeneousMonomialBasis ℓ
       ((D.diagramIndexEquiv hD_up ℓ).symm (Sum.inl ⟨v, β⟩))) : MvPolynomial σ A).coeff s =
       if β.val ≤ s then (H v).coeff (s - β.val) else 0 := by
@@ -252,7 +252,7 @@ theorem coeff_diagramDivisionEnd_symm_inl {D : Set (σ →₀ ℕ)} (hD_up : IsU
 remainder column `γ ∉ D`: `1` if `γ = s` and `0` otherwise. -/
 theorem coeff_diagramDivisionEnd_symm_inr {D : Set (σ →₀ ℕ)} (hD_up : IsUpperSet D)
     {H : D.diagramVertices → MvPolynomial σ A} (hH : ∀ v, (H v).IsHomogeneous v.val.degree)
-    {ℓ : ℕ} (s : σ →₀ ℕ) (γ : {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ}) :
+    {ℓ : ℕ} (s : σ →₀ ℕ) (γ : ↥{γ | γ ∉ D ∧ γ.degree = ℓ}) :
     (D.diagramDivisionEnd H hH ℓ (TauCeti.homogeneousMonomialBasis ℓ
       ((D.diagramIndexEquiv hD_up ℓ).symm (Sum.inr γ))) : MvPolynomial σ A).coeff s =
       if γ.val = s then 1 else 0 := by
@@ -265,7 +265,7 @@ theorem toMatrix_diagramDivisionEnd_symm_inl [Fintype {δ : σ →₀ ℕ // δ.
     {D : Set (σ →₀ ℕ)} (hD_up : IsUpperSet D)
     {H : D.diagramVertices → MvPolynomial σ A} (hH : ∀ v, (H v).IsHomogeneous v.val.degree)
     (s : {δ : σ →₀ ℕ // δ.degree = ℓ}) (v : D.diagramVertices)
-    (β : {β : σ →₀ ℕ // β ∈ D.diagramBox v.val ∧ v.val.degree + β.degree = ℓ}) :
+    (β : ↥{β ∈ D.diagramBox v.val | v.val.degree + β.degree = ℓ}) :
     LinearMap.toMatrix (TauCeti.homogeneousMonomialBasis ℓ)
         (TauCeti.homogeneousMonomialBasis ℓ) (D.diagramDivisionEnd H hH ℓ) s
         ((D.diagramIndexEquiv hD_up ℓ).symm (Sum.inl ⟨v, β⟩)) =
@@ -286,32 +286,19 @@ theorem toMatrix_diagramDivisionEnd_of_notMem [Fintype {δ : σ →₀ ℕ // δ
     diagramDivisionEnd_homogeneousMonomialBasis_of_notMem hD_up hH ht,
     TauCeti.coe_homogeneousMonomialBasis, coeff_monomial]
 
-/-- Matrix entry of `D.diagramDivisionEnd H hH ℓ` in the monomial basis at row `s` and remainder
-column `γ ∉ D`: `1` if `γ = s` and `0` otherwise. -/
-theorem toMatrix_diagramDivisionEnd_symm_inr [Fintype {δ : σ →₀ ℕ // δ.degree = ℓ}]
-    {D : Set (σ →₀ ℕ)} (hD_up : IsUpperSet D)
-    {H : D.diagramVertices → MvPolynomial σ A} (hH : ∀ v, (H v).IsHomogeneous v.val.degree)
-    (s : {δ : σ →₀ ℕ // δ.degree = ℓ}) (γ : {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ}) :
-    LinearMap.toMatrix (TauCeti.homogeneousMonomialBasis ℓ)
-        (TauCeti.homogeneousMonomialBasis ℓ) (D.diagramDivisionEnd H hH ℓ) s
-        ((D.diagramIndexEquiv hD_up ℓ).symm (Sum.inr γ)) =
-      if γ.val = s.val then 1 else 0 := by
-  rw [LinearMap.toMatrix_apply, TauCeti.homogeneousMonomialBasis_repr_apply,
-    coeff_diagramDivisionEnd_symm_inr]
-
 /-- The square restriction of the matrix of `D.diagramDivisionEnd H hH ℓ` (in the homogeneous
 monomial basis) to degree-`ℓ` exponents lying in `D`. -/
 noncomputable def diagramDivisionMatrix (D : Set (σ →₀ ℕ))
     (H : D.diagramVertices → MvPolynomial σ A) (hH : ∀ v, (H v).IsHomogeneous v.val.degree)
     (ℓ : ℕ) :
-    Matrix {δ : σ →₀ ℕ // δ ∈ D ∧ δ.degree = ℓ} {δ : σ →₀ ℕ // δ ∈ D ∧ δ.degree = ℓ} A :=
+    Matrix ↥{δ ∈ D | δ.degree = ℓ} ↥{δ ∈ D | δ.degree = ℓ} A :=
   fun s t ↦ (D.diagramDivisionEnd H hH ℓ
     (TauCeti.homogeneousMonomialBasis ℓ ⟨t.val, t.property.2⟩) : MvPolynomial σ A).coeff s.val
 
 /-- Entry formula for `Set.diagramDivisionMatrix`. -/
 theorem diagramDivisionMatrix_apply (D : Set (σ →₀ ℕ))
     (H : D.diagramVertices → MvPolynomial σ A) (hH : ∀ v, (H v).IsHomogeneous v.val.degree)
-    (ℓ : ℕ) (s t : {δ : σ →₀ ℕ // δ ∈ D ∧ δ.degree = ℓ}) :
+    (ℓ : ℕ) (s t : ↥{δ ∈ D | δ.degree = ℓ}) :
     D.diagramDivisionMatrix H hH ℓ s t =
       (D.diagramDivisionEnd H hH ℓ
         (TauCeti.homogeneousMonomialBasis ℓ ⟨t.val, t.property.2⟩) : MvPolynomial σ A).coeff
@@ -335,7 +322,7 @@ open scoped Classical in
 /-- Entry formula for `Set.diagramDivisionMatrix` when column `t` lies in `D.diagramCell v.val`. -/
 theorem diagramDivisionMatrix_of_mem_diagramCell {D : Set (σ →₀ ℕ)}
     {H : D.diagramVertices → MvPolynomial σ A} (hH : ∀ v, (H v).IsHomogeneous v.val.degree)
-    {ℓ : ℕ} (s t : {δ : σ →₀ ℕ // δ ∈ D ∧ δ.degree = ℓ}) (v : D.diagramVertices)
+    {ℓ : ℕ} (s t : ↥{δ ∈ D | δ.degree = ℓ}) (v : D.diagramVertices)
     (ht : t.val ∈ D.diagramCell v.val) :
     D.diagramDivisionMatrix H hH ℓ s t =
       if t.val - v.val ≤ s.val then (H v).coeff (s.val - (t.val - v.val)) else 0 := by
@@ -448,9 +435,9 @@ theorem coe_diagramDivisionEnd_eq_diagramQREquiv {D : Set (σ →₀ ℕ)} (hD_u
         ((D.diagramQREquiv hD_up ℓ P).2 : MvPolynomial σ A) := by
   classical
   let (v : D.diagramVertices) :
-      Fintype {β // β ∈ D.diagramBox v.val ∧ v.val.degree + β.degree = ℓ} :=
+      Fintype ↥{β ∈ D.diagramBox v.val | v.val.degree + β.degree = ℓ} :=
     D.fintypeDiagramBoxElem v ℓ
-  let : Fintype {γ // γ ∉ D ∧ γ.degree = ℓ} := D.fintypeDiagramRemElem ℓ
+  let : Fintype ↥{γ | γ ∉ D ∧ γ.degree = ℓ} := D.fintypeDiagramRemElem ℓ
   conv_lhs => rw [← (TauCeti.homogeneousMonomialBasis (σ := σ) (R := A) ℓ).sum_repr P,
     map_sum, Submodule.coe_sum]
   simp_rw [map_smul, SetLike.val_smul, TauCeti.homogeneousMonomialBasis_repr_apply]
@@ -571,60 +558,44 @@ section CommRing
 
 variable {σ A : Type*} [Finite σ] [LinearOrder σ] [CommRing A]
 
-open scoped Classical in
-private noncomputable def degreeSplitEquiv (D : Set (σ →₀ ℕ)) (ℓ : ℕ) :
-    {δ : σ →₀ ℕ // δ.degree = ℓ} ≃
-      {δ : σ →₀ ℕ // δ ∈ D ∧ δ.degree = ℓ} ⊕ {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ} where
-  toFun s :=
-    if hs : s.val ∈ D then Sum.inl ⟨s.val, hs, s.property⟩ else Sum.inr ⟨s.val, hs, s.property⟩
-  invFun
-    | Sum.inl s => ⟨s.val, s.property.2⟩
-    | Sum.inr γ => ⟨γ.val, γ.property.2⟩
-  left_inv s := by by_cases hs : s.val ∈ D <;> simp [hs]
-  right_inv
-    | Sum.inl s => by simp [s.property.1]
-    | Sum.inr γ => by simp [γ.property.1]
-
-omit [Finite σ] [LinearOrder σ] in
-private theorem degreeSplitEquiv_symm_inl (D : Set (σ →₀ ℕ)) (ℓ : ℕ)
-    (s : {δ : σ →₀ ℕ // δ ∈ D ∧ δ.degree = ℓ}) :
-    (degreeSplitEquiv D ℓ).symm (Sum.inl s) = ⟨s.val, s.property.2⟩ := rfl
-
-omit [Finite σ] [LinearOrder σ] in
-private theorem degreeSplitEquiv_symm_inr (D : Set (σ →₀ ℕ)) (ℓ : ℕ)
-    (γ : {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ}) :
-    (degreeSplitEquiv D ℓ).symm (Sum.inr γ) = ⟨γ.val, γ.property.2⟩ := rfl
-
 /-- For an upward-closed diagram `D` over a commutative ring `A`, the determinant of the square
 restriction `D.diagramDivisionMatrix H hH ℓ` equals
 `LinearMap.det (D.diagramDivisionEnd H hH ℓ)`. -/
 theorem det_diagramDivisionMatrix {D : Set (σ →₀ ℕ)} (hD_up : IsUpperSet D)
     {H : D.diagramVertices → MvPolynomial σ A} (hH : ∀ v, (H v).IsHomogeneous v.val.degree)
-    (ℓ : ℕ) [Fintype {δ : σ →₀ ℕ // δ ∈ D ∧ δ.degree = ℓ}]
-    [DecidableEq {δ : σ →₀ ℕ // δ ∈ D ∧ δ.degree = ℓ}] :
+    (ℓ : ℕ) [Fintype ↥{δ ∈ D | δ.degree = ℓ}]
+    [DecidableEq ↥{δ ∈ D | δ.degree = ℓ}] :
     (D.diagramDivisionMatrix H hH ℓ).det = LinearMap.det (D.diagramDivisionEnd H hH ℓ) := by
   classical
   let b := TauCeti.homogeneousMonomialBasis (σ := σ) (R := A) ℓ
-  let : Fintype {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ} := D.fintypeDiagramRemElem ℓ
-  let e := degreeSplitEquiv D ℓ
+  let : Fintype ↥{γ | γ ∉ D ∧ γ.degree = ℓ} := D.fintypeDiagramRemElem ℓ
+  let e : {δ : σ →₀ ℕ // δ.degree = ℓ} ≃
+      ↥{δ ∈ D | δ.degree = ℓ} ⊕ ↥{γ | γ ∉ D ∧ γ.degree = ℓ} :=
+    (Equiv.sumCompl (fun s : {δ : σ →₀ ℕ // δ.degree = ℓ} ↦ s.val ∈ D)).symm.trans
+      (Equiv.sumCongr
+        ((Equiv.subtypeSubtypeEquivSubtypeInter (fun δ : σ →₀ ℕ ↦ δ.degree = ℓ) (· ∈ D)).trans
+          (Equiv.subtypeEquivRight fun _ ↦ and_comm))
+        ((Equiv.subtypeSubtypeEquivSubtypeInter (fun γ : σ →₀ ℕ ↦ γ.degree = ℓ) (· ∉ D)).trans
+          (Equiv.subtypeEquivRight fun _ ↦ and_comm)))
   let M := LinearMap.toMatrix b b (D.diagramDivisionEnd H hH ℓ)
-  let C : Matrix {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ}
-      {δ : σ →₀ ℕ // δ ∈ D ∧ δ.degree = ℓ} A :=
+  let C : Matrix ↥{γ | γ ∉ D ∧ γ.degree = ℓ} ↥{δ ∈ D | δ.degree = ℓ} A :=
     fun s t ↦ M ⟨s.val, s.property.2⟩ ⟨t.val, t.property.2⟩
+  have he_inl (s : ↥{δ ∈ D | δ.degree = ℓ}) : e.symm (Sum.inl s) = ⟨s.val, s.property.2⟩ := rfl
+  have he_inr (s : ↥{γ | γ ∉ D ∧ γ.degree = ℓ}) : e.symm (Sum.inr s) = ⟨s.val, s.property.2⟩ := rfl
   have hre : Matrix.reindex e e M = Matrix.fromBlocks (D.diagramDivisionMatrix H hH ℓ) 0 C 1 := by
     ext i j
     rcases i with s | s <;> rcases j with t | t
-    · simp [M, b, e, degreeSplitEquiv_symm_inl, diagramDivisionMatrix, LinearMap.toMatrix_apply,
+    · simp [M, b, he_inl, diagramDivisionMatrix, LinearMap.toMatrix_apply,
         TauCeti.homogeneousMonomialBasis_repr_apply]
     · have hne : t.val ≠ s.val := fun h ↦ t.property.1 (h ▸ s.property.1)
       simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.fromBlocks_apply₁₂,
-        Matrix.zero_apply, M, b, e, degreeSplitEquiv_symm_inl, degreeSplitEquiv_symm_inr]
+        Matrix.zero_apply, M, b, he_inl, he_inr]
       rw [toMatrix_diagramDivisionEnd_of_notMem hD_up hH _ _ t.property.1, ite_eq_right hne]
     · simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.fromBlocks_apply₂₁,
-        e, degreeSplitEquiv_symm_inr, degreeSplitEquiv_symm_inl]
-      dsimp only [C]
+        he_inl, he_inr]
+      rfl
     · simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.fromBlocks_apply₂₂,
-        Matrix.one_apply, M, b, e, degreeSplitEquiv_symm_inr]
+        Matrix.one_apply, M, b, he_inr]
       rw [toMatrix_diagramDivisionEnd_of_notMem hD_up hH _ _ t.property.1]
       simp [Subtype.ext_iff, eq_comm]
   rw [← LinearMap.det_toMatrix b, ← Matrix.det_reindex_self e M, hre,

@@ -126,11 +126,8 @@ theorem transferExp_le_iff {α γ : σ →₀ ℕ} {i j : σ} (hij : i ≠ j) :
 /-- Pushing forward along an injective index map commutes with `Finsupp.transferExp`. -/
 theorem mapDomain_transferExp {f : σ → τ} (hf : Function.Injective f) (α : σ →₀ ℕ) (i j : σ) :
     (α.transferExp i j).mapDomain f = (α.mapDomain f).transferExp (f i) (f j) := by
-  classical
-  ext k; rcases em (k ∈ Set.range f) with ⟨r, rfl⟩ | hk
-  · simp [hf, transferExp_apply, hf.eq_iff]
-  · simp [mapDomain_of_notMem_range _ _ hk,
-      transferExp_apply_of_ne _ (fun h ↦ hk ⟨i, h.symm⟩) (fun h ↦ hk ⟨j, h.symm⟩)]
+  rw [transferExp_def, transferExp_def, mapDomain_add, mapDomain_tsub hf,
+    mapDomain_single, mapDomain_single, mapDomain_apply_of_injective hf]
 
 theorem equivMapDomain_transferExp (e : σ ≃ τ) (α : σ →₀ ℕ) (i j : σ) :
     equivMapDomain e (α.transferExp i j) = (equivMapDomain e α).transferExp (e i) (e j) := by
@@ -250,26 +247,14 @@ theorem finite_minimal_diagram (D : Set (σ →₀ ℕ)) : {α : σ →₀ ℕ |
   WellQuasiOrderedLE.finite_of_isAntichain (setOfPred_minimal_antichain _)
 
 /-- In finitely many variables, there are finitely many degree-`ℓ` exponent vectors inside `D`. -/
-instance finite_mem_degree (D : Set (σ →₀ ℕ)) (ℓ : ℕ) :
-    Finite {δ : σ →₀ ℕ // δ ∈ D ∧ δ.degree = ℓ} :=
-  Finite.of_injective (fun δ ↦ (⟨δ.val, δ.property.2⟩ : {δ' : σ →₀ ℕ // δ'.degree = ℓ}))
-    fun _ _ h ↦ Subtype.ext (Subtype.mk.inj h)
-
-/-- In finitely many variables, there are finitely many degree-`ℓ` exponent vectors outside `D`. -/
-instance finite_notMem_degree (D : Set (σ →₀ ℕ)) (ℓ : ℕ) :
-    Finite {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ} :=
-  Finite.of_injective (fun γ ↦ (⟨γ.val, γ.property.2⟩ : {δ : σ →₀ ℕ // δ.degree = ℓ}))
-    fun _ _ h ↦ Subtype.ext (Subtype.mk.inj h)
-
-/-- Set-coercion form of `Set.finite_mem_degree`, for `restrictSupport`. -/
 instance finite_setOf_mem_degree (D : Set (σ →₀ ℕ)) (ℓ : ℕ) :
     Finite ↥{δ ∈ D | δ.degree = ℓ} :=
-  inferInstanceAs (Finite {δ : σ →₀ ℕ // δ ∈ D ∧ δ.degree = ℓ})
+  Set.Finite.to_subtype <| (Finsupp.finite_of_degree_eq ℓ).subset fun _ h ↦ h.2
 
-/-- Set-coercion form of `Set.finite_notMem_degree`, for `restrictSupport`. -/
+/-- In finitely many variables, there are finitely many degree-`ℓ` exponent vectors outside `D`. -/
 instance finite_setOf_notMem_degree (D : Set (σ →₀ ℕ)) (ℓ : ℕ) :
     Finite ↥{γ | γ ∉ D ∧ γ.degree = ℓ} :=
-  inferInstanceAs (Finite {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ})
+  Set.Finite.to_subtype <| (Finsupp.finite_of_degree_eq ℓ).subset fun _ h ↦ h.2
 
 /-- For finitely many variables `σ`, the `Finset` of componentwise minimal vertices of an exponent
 diagram `D : Set (σ →₀ ℕ)`. -/
@@ -375,16 +360,11 @@ theorem mem_diagramBox_iff {D : Set (σ →₀ ℕ)} {α β : σ →₀ ℕ} :
 
 /-- In finitely many variables, the degree-matching slice of a quotient box `D.diagramBox α` is
 finite. -/
-instance finite_diagramBox_degree (D : Set (σ →₀ ℕ)) (α : σ →₀ ℕ) (ℓ : ℕ) :
-    Finite {β : σ →₀ ℕ // β ∈ D.diagramBox α ∧ α.degree + β.degree = ℓ} :=
+instance finite_setOf_diagramBox_degree (D : Set (σ →₀ ℕ)) (α : σ →₀ ℕ) (ℓ : ℕ) :
+    Finite ↥{β ∈ D.diagramBox α | α.degree + β.degree = ℓ} :=
   Finite.of_injective
     (fun β ↦ (⟨α + β.val, by rw [map_add, β.property.2]⟩ : {δ : σ →₀ ℕ // δ.degree = ℓ}))
     fun _ _ h ↦ Subtype.ext (add_left_cancel (Subtype.mk.inj h))
-
-/-- Set-coercion form of `Set.finite_diagramBox_degree`, for `restrictSupport`. -/
-instance finite_setOf_diagramBox_degree (D : Set (σ →₀ ℕ)) (α : σ →₀ ℕ) (ℓ : ℕ) :
-    Finite ↥{β ∈ D.diagramBox α | α.degree + β.degree = ℓ} :=
-  inferInstanceAs (Finite {β : σ →₀ ℕ // β ∈ D.diagramBox α ∧ α.degree + β.degree = ℓ})
 
 theorem mem_diagramCell_iff {D : Set (σ →₀ ℕ)} {α γ : σ →₀ ℕ} :
     γ ∈ D.diagramCell α ↔ α ≤ γ ∧ ∀ α' ∈ D.diagramVertices, toDegLex α' < toDegLex α → ¬ α' ≤ γ :=
@@ -455,13 +435,12 @@ theorem biUnion_diagramCell_eq {D : Set (σ →₀ ℕ)} (hD : IsUpperSet D) :
   classical
   ext γ; simp only [mem_iUnion, exists_prop]
   refine ⟨fun ⟨_, hα, hc⟩ ↦ diagramCell_subset hD hα hc, fun hγ ↦ ?_⟩
-  let s := (D.diagramVertices.filter (· ≤ γ)).image toDegLex
-  obtain ⟨α, hαf, hmin⟩ := Finset.mem_image.mp (s.min'_mem (by
+  obtain ⟨α, hαf, hmin⟩ := (D.diagramVertices.filter (· ≤ γ)).exists_min_image toDegLex <| by
     obtain ⟨α, hα, hle⟩ := exists_mem_diagramVertices_le hγ
-    exact ⟨toDegLex α, Finset.mem_image_of_mem _ (Finset.mem_filter.mpr ⟨hα, hle⟩)⟩))
+    exact ⟨α, Finset.mem_filter.mpr ⟨hα, hle⟩⟩
   obtain ⟨hα, hle⟩ := Finset.mem_filter.mp hαf
-  exact ⟨α, hα, hle, fun α' hα' hlt hle' ↦ hlt.not_ge
-    (hmin ▸ s.min'_le _ (Finset.mem_image_of_mem _ (Finset.mem_filter.mpr ⟨hα', hle'⟩)))⟩
+  exact ⟨α, hα, hle, fun α' hα' hlt hle' ↦
+    hlt.not_ge (hmin α' (Finset.mem_filter.mpr ⟨hα', hle'⟩))⟩
 
 /-- Every element of an upward-closed diagram `D` belongs to the division cell of a unique vertex
 of `D`. -/

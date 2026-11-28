@@ -293,7 +293,8 @@ private theorem rename_succ_mem_span_diagramSpanSet {n m : ℕ} {D : Set (Fin (n
   rcases hg' with ⟨v', β', hβ', hdeg', rfl⟩ | ⟨γ', hγ', hdeg', rfl⟩
   · have hQ : monomial (Finsupp.cons 0 β') 1 * H ⟨Finsupp.cons 0 v'.val,
         mem_diagramVertices_diagramSliceZero_iff.mp v'.property⟩ ∈ D.diagramSpanSet H (m + 1) :=
-      monomial_mul_mem_diagramSpanSet _ (cons_zero_mem_diagramBox_iff.mpr hβ') (by simpa)
+      monomial_mul_mem_diagramSpanSet _ (cons_zero_mem_diagramBox_iff.mpr hβ')
+        (by simpa [← Finsupp.mapDomain_finSucc])
     obtain ⟨R, hR, hsplit⟩ :=
       (isHomogeneous_of_mem_diagramSpanSet hH hQ).exists_eq_rename_succ_add_X_zero_mul
     conv_rhs at hsplit => rw [map_mul, ← Finsupp.mapDomain_finSucc, killCompl_monomial_mapDomain]
@@ -301,15 +302,17 @@ private theorem rename_succ_mem_span_diagramSpanSet {n m : ℕ} {D : Set (Fin (n
     exact eq_sub_of_add_eq hsplit.symm ▸ sub_mem (Submodule.subset_span hQ)
       (X_zero_mul_mem_span_diagramSpanSet hD_up hD_mono hm ihm hR)
   · rw [rename_monomial, Finsupp.mapDomain_finSucc]; exact Submodule.subset_span
-      (monomial_mem_diagramSpanSet (mt D.mem_diagramSliceZero_iff.mpr hγ') (by simpa using hdeg'))
+      (monomial_mem_diagramSpanSet (mt D.mem_diagramSliceZero_iff.mpr hγ')
+        (by simpa [← Finsupp.mapDomain_finSucc] using hdeg'))
 
 private theorem isHomogeneous_sliceGenerators {n : ℕ} {D : Set (Fin (n + 1) →₀ ℕ)}
     {H : D.diagramVertices → MvPolynomial (Fin (n + 1)) A}
     (hH : ∀ v, (H v).IsHomogeneous v.val.degree)
     (v' : D.diagramSliceZero.diagramVertices) :
     (sliceGenerators H v').IsHomogeneous v'.val.degree := by
-  simpa [sliceGenerators] using (hH ⟨_, mem_diagramVertices_diagramSliceZero_iff.mp
-    v'.property⟩).killCompl (Fin.succ_injective n)
+  simpa [sliceGenerators, ← Finsupp.mapDomain_finSucc] using
+    (hH ⟨_, mem_diagramVertices_diagramSliceZero_iff.mp v'.property⟩).killCompl
+      (Fin.succ_injective n)
 
 private theorem homogeneousSubmodule_le_span_fin :
     ∀ {d : ℕ} {D : Set (Fin d →₀ ℕ)} (_hD_up : IsUpperSet D) (_hD_mono : D.IsMonotoneDiagram)
