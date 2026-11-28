@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Matrix.Vec
 public import TauCeti.LinearAlgebra.Matrix.BlockSucc
+public import TauCeti.LinearAlgebra.Matrix.Triangular.Coordinates
 
 /-!
 # Measurability of matrix operations
@@ -27,11 +28,13 @@ of scalars is measurable even at zero.
 
 * `TauCeti.measurable_matrix_vec` — vectorization is measurable.
 * `TauCeti.matrixVecMeasurableEquiv` — vectorization as a measurable equivalence.
+* `TauCeti.instMeasurableAddMatrix` — entrywise addition of matrices is measurable.
 * `TauCeti.measurable_matrix_mul` — matrix multiplication is measurable, and the
   `MeasurableMul₂` instance it supplies for square matrices.
 * `TauCeti.measurable_matrix_mul_conjTranspose` — the Gram matrix `X * Xᴴ` is measurable.
 * `TauCeti.measurable_matrix_blockSucc` — the upper-left block extension `Matrix.blockSucc` is
   measurable.
+* `Measurable.matrix_det` — the determinant of a measurable family of matrices is measurable.
 * `TauCeti.measurable_matrix_inv` — matrix inversion is measurable, and the `MeasurableInv`
   instance it supplies.
 -/
@@ -72,6 +75,66 @@ theorem matrixVecMeasurableEquiv_symm_apply {m n α : Type*} [MeasurableSpace α
     (x : WithLp p (n × m → α)) :
     (matrixVecMeasurableEquiv p).symm x = Matrix.of fun i j => x.ofLp (j, i) :=
   (rfl)
+
+section Triangular
+
+variable {ι R : Type*} [LinearOrder ι] [MeasurableSpace R]
+
+/-- Assemble a matrix from its upper triangular and strict lower entries as a measurable
+equivalence. -/
+def schurMatrixMeasurableEquiv :
+    SchurCoordinates ι R ≃ᵐ Matrix ι ι R :=
+  ((Matrix.ofMeasurableEquiv ι ι R).symm.trans <|
+    (MeasurableEquiv.curry ι ι R).symm.trans <|
+      (MeasurableEquiv.piEquivPiSubtypeProd (fun _ ↦ R)
+        (fun ij : ι × ι ↦ ij.1 ≤ ij.2)).trans <|
+        (MeasurableEquiv.refl _).prodCongr
+          (MeasurableEquiv.piCongrLeft (fun _ ↦ R) (schurLowerIndexEquiv ι)).symm).symm
+
+/-- The first coordinate of the measurable split reads the upper triangular entries. -/
+@[simp] theorem _root_.Matrix.schurMatrixMeasurableEquiv_symm_fst (A : Matrix ι ι R)
+    (ij : {ij : ι × ι // ij.1 ≤ ij.2}) :
+    (schurMatrixMeasurableEquiv.symm A).1 ij = A ij.val.1 ij.val.2 := by
+  simp [schurMatrixMeasurableEquiv, MeasurableEquiv.prodCongr,
+    MeasurableEquiv.coe_curry_symm, Function.uncurry]
+
+/-- The second coordinate of the measurable split reads the strict lower entries. -/
+@[simp] theorem _root_.Matrix.schurMatrixMeasurableEquiv_symm_snd (A : Matrix ι ι R)
+    (ij : SchurLowerIndex ι) :
+    (schurMatrixMeasurableEquiv.symm A).2 ij = A ij.val.2 ij.val.1 := by
+  simp [schurMatrixMeasurableEquiv, MeasurableEquiv.prodCongr, MeasurableEquiv.piCongrLeft,
+    MeasurableEquiv.coe_curry_symm, Function.uncurry]
+
+/-- Measurable assembly reads the first coordinate at an upper triangular position. -/
+@[simp] theorem schurMatrixMeasurableEquiv_apply_of_le (x : SchurCoordinates ι R) {i j : ι}
+    (h : i ≤ j) : schurMatrixMeasurableEquiv x i j = x.1 ⟨(i, j), h⟩ := by
+  have he := Matrix.schurMatrixMeasurableEquiv_symm_fst (schurMatrixMeasurableEquiv x) ⟨(i, j), h⟩
+  rwa [MeasurableEquiv.symm_apply_apply, eq_comm] at he
+
+/-- Measurable assembly reads the second coordinate at a strict lower position. -/
+@[simp] theorem schurMatrixMeasurableEquiv_apply_of_gt (x : SchurCoordinates ι R) {i j : ι}
+    (h : j < i) : schurMatrixMeasurableEquiv x i j = x.2 ⟨(j, i), h⟩ := by
+  have he := Matrix.schurMatrixMeasurableEquiv_symm_snd (schurMatrixMeasurableEquiv x) ⟨(j, i), h⟩
+  rwa [MeasurableEquiv.symm_apply_apply, eq_comm] at he
+
+/-- Reading the entries with the measurable equivalence agrees with the linear split. -/
+theorem _root_.Matrix.schurMatrixMeasurableEquiv_symm_apply [Semiring R] (A : Matrix ι ι R) :
+    schurMatrixMeasurableEquiv.symm A = schurMatrixEquiv.symm A := by
+  apply Prod.ext <;> funext ij <;> simp
+
+/-- The measurable and linear assembly maps agree pointwise. -/
+theorem schurMatrixMeasurableEquiv_apply [Semiring R] (x : SchurCoordinates ι R) :
+    schurMatrixMeasurableEquiv x = schurMatrixEquiv x := by
+  apply schurMatrixMeasurableEquiv.symm.injective
+  rw [MeasurableEquiv.symm_apply_apply, Matrix.schurMatrixMeasurableEquiv_symm_apply,
+    LinearEquiv.symm_apply_apply]
+
+end Triangular
+
+/-- Entrywise addition of matrices is measurable when addition of the entries is. -/
+instance instMeasurableAddMatrix {m n α : Type*} [MeasurableSpace α] [Add α] [MeasurableAdd α] :
+    MeasurableAdd (Matrix m n α) :=
+  inferInstanceAs (MeasurableAdd (m → n → α))
 
 /-- Matrix multiplication is measurable: each entry of a product is a finite sum of products of
 entries. -/
@@ -114,6 +177,15 @@ theorem measurable_matrix_blockSucc {n : ℕ} {R : Type*} [Semiring R] [Measurab
   refine Measurable.of_eval_matrix _ fun i j ↦ ?_
   induction i using Fin.lastCases <;> induction j using Fin.lastCases <;>
     simp [Matrix.measurable_apply]
+
+/-- The determinant of a measurable family of square matrices is measurable, since the determinant
+is a polynomial in the entries. -/
+@[fun_prop]
+theorem _root_.Measurable.matrix_det {m R α : Type*} [Fintype m] [DecidableEq m] [CommRing R]
+    [TopologicalSpace R] [IsTopologicalRing R] [MeasurableSpace R] [BorelSpace R]
+    [SecondCountableTopology R] [MeasurableSpace α] {A : α → Matrix m m R} (hA : Measurable A) :
+    Measurable fun x ↦ (A x).det :=
+  (Continuous.matrix_det continuous_id).measurable.comp hA
 
 variable {m : Type*} [Fintype m] [DecidableEq m] {𝕜 : Type*} [Field 𝕜] [TopologicalSpace 𝕜]
   [IsTopologicalRing 𝕜] [MeasurableSpace 𝕜] [BorelSpace 𝕜] [SecondCountableTopology 𝕜]

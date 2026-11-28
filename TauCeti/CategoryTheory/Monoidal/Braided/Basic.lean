@@ -10,12 +10,18 @@ public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
 /-!
 # Braiding coherence and naturality lemmas
 
-In a braided monoidal category, braiding an object `Z` past a morphism `f : A ⊗ A' ⟶ 𝟙_ C`
-or `g : 𝟙_ C ⟶ A ⊗ A'` moves `Z` from one side of the morphism to the other. Splitting the
+In a braided monoidal category, braiding an object `Z` past a morphism `f : A ⊗ A' ⟶ B`
+or `g : B ⟶ A ⊗ A'` moves `Z` from one side of the morphism to the other. Splitting the
 braiding of `Z` with `A ⊗ A'` into crossings with `A` and `A'` by the hexagon identities, the
-crossing with one factor can be traded for the inverse crossing with the other factor. These
-identities are used to move objects past evaluations and coevaluations of exact pairings, for
-which no rigidity is needed.
+crossing with one factor can be traded for the inverse crossing with the other factor, together
+with a crossing of `Z` and `B`. With `B = 𝟙_ C` these identities move objects past evaluations
+and coevaluations of exact pairings, for which no rigidity is needed; the crossing with `𝟙_ C`
+is then given by unitors (`braiding_tensorUnit_left`, `braiding_tensorUnit_right`).
+
+Two further identities in three objects trade a crossing of two factors followed by a braiding of
+the third past one of them for a braiding past their tensor product followed by an inverse crossing
+(`TauCeti.whiskerLeft_braiding_inv_comp_braiding_whiskerRight` and
+`TauCeti.braiding_inv_whiskerRight_comp_whiskerLeft_braiding`).
 
 This file also records naturality of the re-associated crossing
 `(α_ X Y Z).inv ≫ (β_ X Y).hom ▷ Z ≫ (α_ Y X Z).hom : X ⊗ (Y ⊗ Z) ⟶ Y ⊗ (X ⊗ Z)` of the first
@@ -37,55 +43,59 @@ namespace TauCeti
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
 
-/-- Braiding `A` past `Z` and then applying `f : A ⊗ A' ⟶ 𝟙_ C` after `Z` is braiding `A'` back
-under `Z` and then applying `f` before `Z`. -/
+/-- Braiding `A` past `Z` and then applying `f : A ⊗ A' ⟶ B` after `Z` is braiding `A'` back
+under `Z`, applying `f` before `Z`, and then braiding `B` past `Z`. -/
 @[reassoc]
-theorem braiding_whiskerRight_comp_whiskerLeft {A A' : C} (Z : C) (f : A ⊗ A' ⟶ 𝟙_ C) :
+theorem braiding_whiskerRight_comp_whiskerLeft {A A' B : C} (Z : C) (f : A ⊗ A' ⟶ B) :
     (β_ A Z).hom ▷ A' ≫ (α_ Z A A').hom ≫ Z ◁ f =
-      (α_ A Z A').hom ≫ A ◁ (β_ A' Z).inv ≫ (α_ A A' Z).inv ≫ f ▷ Z ≫ (λ_ Z).hom ≫
-        (ρ_ Z).inv := by
-  have h := braiding_naturality_left f Z
-  rw [braiding_tensorUnit_left, braiding_tensor_left_hom] at h
-  simp only [Category.assoc] at h ⊢
-  rw [h]
-  simp only [Iso.inv_hom_id_assoc, whiskerLeft_inv_hom_assoc, Iso.hom_inv_id_assoc]
+      (α_ A Z A').hom ≫ A ◁ (β_ A' Z).inv ≫ (α_ A A' Z).inv ≫ f ▷ Z ≫ (β_ B Z).hom := by
+  rw [braiding_naturality_left, braiding_tensor_left_hom]
+  simp
 
-/-- Braiding `Z` past `A` and then applying `f : A' ⊗ A ⟶ 𝟙_ C` before `Z` is braiding `Z` back
-under `A'` and then applying `f` after `Z`. -/
+/-- Braiding `Z` past `A` and then applying `f : A' ⊗ A ⟶ B` before `Z` is braiding `Z` back
+under `A'`, applying `f` after `Z`, and then braiding `Z` past `B`. -/
 @[reassoc]
-theorem whiskerLeft_braiding_comp_whiskerRight {A A' : C} (Z : C) (f : A' ⊗ A ⟶ 𝟙_ C) :
+theorem whiskerLeft_braiding_comp_whiskerRight {A A' B : C} (Z : C) (f : A' ⊗ A ⟶ B) :
     A' ◁ (β_ Z A).hom ≫ (α_ A' A Z).inv ≫ f ▷ Z =
-      (α_ A' Z A).inv ≫ (β_ Z A').inv ▷ A ≫ (α_ Z A' A).hom ≫ Z ◁ f ≫ (ρ_ Z).hom ≫
-        (λ_ Z).inv := by
-  have h := braiding_naturality_right Z f
-  rw [braiding_tensorUnit_right, braiding_tensor_right_hom] at h
-  simp [h]
+      (α_ A' Z A).inv ≫ (β_ Z A').inv ▷ A ≫ (α_ Z A' A).hom ≫ Z ◁ f ≫ (β_ Z B).hom := by
+  rw [braiding_naturality_right, braiding_tensor_right_hom]
+  simp
 
-/-- Applying `g : 𝟙_ C ⟶ A ⊗ A'` after `Z` and then braiding `Z` past `A` is applying `g` before
-`Z` and then braiding `Z` back under `A'`. -/
+/-- Applying `g : B ⟶ A ⊗ A'` after `Z` and then braiding `Z` past `A` is braiding `Z` past `B`,
+applying `g` before `Z`, and then braiding `Z` back under `A'`. -/
 @[reassoc]
-theorem whiskerLeft_comp_braiding_whiskerRight {A A' : C} (Z : C) (g : 𝟙_ C ⟶ A ⊗ A') :
+theorem whiskerLeft_comp_braiding_whiskerRight {A A' B : C} (Z : C) (g : B ⟶ A ⊗ A') :
     Z ◁ g ≫ (α_ Z A A').inv ≫ (β_ Z A).hom ▷ A' =
-      (ρ_ Z).hom ≫ (λ_ Z).inv ≫ g ▷ Z ≫ (α_ A A' Z).hom ≫ A ◁ (β_ Z A').inv ≫
-        (α_ A Z A').inv := by
-  have h := braiding_naturality_right Z g
-  rw [braiding_tensorUnit_right, braiding_tensor_right_hom] at h
-  simp only [Category.assoc] at h
-  rw [← reassoc_of% h]
+      (β_ Z B).hom ≫ g ▷ Z ≫ (α_ A A' Z).hom ≫ A ◁ (β_ Z A').inv ≫ (α_ A Z A').inv := by
+  rw [← braiding_naturality_right_assoc, braiding_tensor_right_hom]
   simp
 
-/-- Applying `g : 𝟙_ C ⟶ A' ⊗ A` before `Z` and then braiding `A` past `Z` is applying `g` after
-`Z` and then braiding `A'` back under `Z`. -/
+/-- Applying `g : B ⟶ A' ⊗ A` before `Z` and then braiding `A` past `Z` is braiding `B` past `Z`,
+applying `g` after `Z`, and then braiding `A'` back under `Z`. -/
 @[reassoc]
-theorem whiskerRight_comp_whiskerLeft_braiding {A A' : C} (Z : C) (g : 𝟙_ C ⟶ A' ⊗ A) :
+theorem whiskerRight_comp_whiskerLeft_braiding {A A' B : C} (Z : C) (g : B ⟶ A' ⊗ A) :
     g ▷ Z ≫ (α_ A' A Z).hom ≫ A' ◁ (β_ A Z).hom =
-      (λ_ Z).hom ≫ (ρ_ Z).inv ≫ Z ◁ g ≫ (α_ Z A' A).inv ≫ (β_ A' Z).inv ▷ A ≫
-        (α_ A' Z A).hom := by
-  have h := braiding_naturality_left g Z
-  rw [braiding_tensorUnit_left, braiding_tensor_left_hom] at h
-  simp only [Category.assoc] at h
-  rw [← reassoc_of% h]
+      (β_ B Z).hom ≫ Z ◁ g ≫ (α_ Z A' A).inv ≫ (β_ A' Z).inv ▷ A ≫ (α_ A' Z A).hom := by
+  rw [← braiding_naturality_left_assoc, braiding_tensor_left_hom]
   simp
+
+/-- Crossing `Y` back under `X` behind `Z` and then braiding `Z` past `Y` is braiding `Z` past
+`X ⊗ Y` and then crossing `X` back under `Y ⊗ Z`. -/
+@[reassoc]
+theorem whiskerLeft_braiding_inv_comp_braiding_whiskerRight (X Y Z : C) :
+    Z ◁ (β_ Y X).inv ≫ (α_ Z Y X).inv ≫ (β_ Z Y).hom ▷ X =
+      (β_ Z (X ⊗ Y)).hom ≫ (α_ X Y Z).hom ≫ (β_ (Y ⊗ Z) X).inv := by
+  rw [← cancel_epi (Z ◁ (β_ Y X).hom), braiding_naturality_right_assoc]
+  simp [braiding_tensor_right_hom, braiding_tensor_left_inv]
+
+/-- Crossing `Y` back under `X` before `Z` and then braiding `X` past `Z` is braiding `X ⊗ Y` past
+`Z` and then crossing `Z ⊗ X` back under `Y`. -/
+@[reassoc]
+theorem braiding_inv_whiskerRight_comp_whiskerLeft_braiding (X Y Z : C) :
+    (β_ Y X).inv ▷ Z ≫ (α_ Y X Z).hom ≫ Y ◁ (β_ X Z).hom =
+      (β_ (X ⊗ Y) Z).hom ≫ (α_ Z X Y).inv ≫ (β_ Y (Z ⊗ X)).inv := by
+  rw [← cancel_epi ((β_ Y X).hom ▷ Z), braiding_naturality_left_assoc]
+  simp [braiding_tensor_left_hom, braiding_tensor_right_inv]
 
 /-- Whiskering a morphism on the first factor of `X ⊗ (Y ⊗ Z)` commutes with swapping the first
 two factors via `(α_ _ Y Z).inv ≫ (β_ _ Y).hom ▷ Z ≫ (α_ Y _ Z).hom`, moving the morphism onto
@@ -110,6 +120,15 @@ theorem whiskerLeft_tensorHom_comp_associator_inv_braiding_associator_hom (X : C
     associator_inv_naturality_right_assoc, whisker_exchange_assoc, associator_naturality_right,
     associator_inv_naturality_middle_assoc, ← comp_whiskerRight_assoc, braiding_naturality_right,
     comp_whiskerRight_assoc, associator_naturality_left_assoc]
+
+/-- Whiskering `g` on the third factor of `X ⊗ (Y ⊗ Z)` commutes with swapping the first two
+factors via `(α_ X _ _).inv ≫ (β_ X _).hom ▷ _ ≫ (α_ _ X _).hom`. -/
+@[reassoc]
+theorem whiskerLeft_whiskerLeft_comp_associator_inv_braiding_associator_hom (X Y : C)
+    {Z Z' : C} (g : Z ⟶ Z') :
+    X ◁ Y ◁ g ≫ (α_ X Y Z').inv ≫ (β_ X Y).hom ▷ Z' ≫ (α_ Y X Z').hom =
+      (α_ X Y Z).inv ≫ (β_ X Y).hom ▷ Z ≫ (α_ Y X Z).hom ≫ Y ◁ X ◁ g := by
+  simpa using whiskerLeft_tensorHom_comp_associator_inv_braiding_associator_hom X (𝟙 Y) g
 
 /-- **Unitors through the braiding with the unit.** The two ways of mapping
 `(𝟙_ C ⊗ X) ⊗ 𝟙_ C` to `X` agree: whiskering the left unitor and applying the right unitor, or

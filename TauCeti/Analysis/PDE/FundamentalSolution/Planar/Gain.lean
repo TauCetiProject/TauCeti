@@ -9,8 +9,8 @@ public import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Potential
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.MeasureTheory.Measure.Haar.Unique
-import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 import TauCeti.Analysis.Sobolev.WeakDeriv.Classical
 import TauCeti.Analysis.Sobolev.WeakDeriv.Convolution
@@ -55,18 +55,15 @@ open scoped Convolution ContDiff
 
 variable {g : ℂ → ℝ}
 
-/-- **The Newtonian potential of a continuous source solves Poisson's equation weakly.** For `g`
-continuous with compact support on `ℂ` and every `C²` function `φ` with compact support,
-`∫ Δφ · (G ⋆ g) = -∫ φ g`; that is, `-Δ (G ⋆ g) = g` in the sense of distributions. -/
-theorem integral_laplacian_mul_planarNewtonianKernel_convolution (hg : Continuous g)
+/-- **The Newtonian potential solves Poisson's equation weakly.** For `g` integrable with compact
+support on `ℂ` and every `C²` function `φ` with compact support, `∫ Δφ · (G ⋆ g) = -∫ φ g`; that
+is, `-Δ (G ⋆ g) = g` in the sense of distributions. -/
+theorem integral_laplacian_mul_planarNewtonianKernel_convolution (hg : Integrable g)
     (hgc : HasCompactSupport g) {φ : ℂ → ℝ} (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
-    ∫ x, Δ φ x * (planarNewtonianKernel ⋆ g) x = -∫ x, φ x * g x := by
-  rw [integral_mul_convolution_eq_integral_mul_integral_left_comp_sub hφ.continuous_laplacian
-    hφc.laplacian locallyIntegrable_planarNewtonianKernel (hg.integrable_of_hasCompactSupport hgc)
-    hgc, ← integral_neg]
-  refine integral_congr_ae (.of_forall fun t ↦ ?_)
-  simp only [integral_laplacian_mul_planarNewtonianKernel_sub hφ hφc t]
-  ring
+    ∫ x, Δ φ x * (planarNewtonianKernel ⋆ g) x = -∫ x, φ x * g x :=
+  integral_laplacian_mul_convolution_of_forall_integral_laplacian_mul_sub
+    locallyIntegrable_planarNewtonianKernel hφ hφc
+    (integral_laplacian_mul_planarNewtonianKernel_sub hφ hφc) hg hgc
 
 /-- **The weak derivative of the Newtonian potential of a continuous source.** For `g` continuous
 with compact support on `ℂ`, the potential `G ⋆ g` has weak derivative `(∂G) ⋆ g`, the convolution

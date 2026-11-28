@@ -51,6 +51,8 @@ characteristics two and three and rings with nilpotents.
 
 * `WeierstrassCurve.VariableChange.formalCoordinate`: the transition `ψ`, with
   `formalCoordinate_mul` (the cocycle identity) and `map_formalCoordinate` (base change).
+* `WeierstrassCurve.VariableChange.formalCoordinate_mk`: for the scaling `(u, 0, 0, 0)` the
+  transition is the homothety `z ↦ u⁻¹ z`.
 * `WeierstrassCurve.VariableChange.subst_formalCoordinate_formalInvariantDifferentialDenom`:
   `G_W(ψ(z)) = u ψ'(z) G_{C • W}(z)` for the denominators `G` of the invariant differentials.
 * `WeierstrassCurve.VariableChange.subst_formalCoordinate_invariantDifferential_formalGroup`:
@@ -60,9 +62,11 @@ characteristics two and three and rings with nilpotents.
   `C • W` is the transport of that of `W` along `ψ⁻¹`.
 * `WeierstrassCurve.VariableChange.subst_formalCoordinate_log_formalGroup`: over a `ℚ`-algebra,
   `log_W ∘ ψ = u⁻¹ log_{C • W}`.
-* `WeierstrassCurve.VariableChange.heightIdeal_formalGroup_variableChange` and
-  `WeierstrassCurve.VariableChange.height_formalGroup_variableChange`: the height ideals, and over
-  a field the height, are unchanged by a change of variables.
+* `WeierstrassCurve.VariableChange.heightIdeal_formalGroup_variableChange`,
+  `WeierstrassCurve.VariableChange.height_formalGroup_variableChange`, and
+  `WeierstrassCurve.VariableChange.order_nsmulSeries_formalGroup_variableChange`: the height
+  ideals, over a field the height, and the orders of `[m]_Ê` are unchanged by a change of
+  variables.
 
 ## Implementation notes
 
@@ -177,6 +181,23 @@ theorem formalCoordinate_one (W : WeierstrassCurve R) :
     simpa using mul_invOfUnit (1 : PowerSeries R) 1 (by simp)
   apply TauCeti.FormalCoordinate.ext
   simp [formalCoordinate_toPowerSeries, formalDenom_def, one_def, h]
+
+/-- The formal parameter transition of the scaling `(x, y) ↦ (u²x, u³y)`, the change of variables
+`(u, 0, 0, 0)`, is the homothety `z ↦ u⁻¹ z`. -/
+@[simp]
+theorem formalCoordinate_mk (W : WeierstrassCurve R) (u : Rˣ) :
+    (⟨u, 0, 0, 0⟩ : VariableChange R).formalCoordinate W =
+      TauCeti.FormalCoordinate.homothety u⁻¹ := by
+  -- The denominator `u³ - su²z - t w(z)` of the transition is the constant `u³`.
+  have hinv : invOfUnit (PowerSeries.C (u : R) ^ 3) (u ^ 3) = PowerSeries.C (↑u⁻¹ ^ 3 : R) :=
+    left_inv_eq_right_inv (invOfUnit_mul _ _ (by simp))
+      (by simp [← map_pow, ← map_mul, ← mul_pow])
+  have hu : (u : R) ^ 2 * ↑u⁻¹ ^ 3 = ↑u⁻¹ := by
+    simp [pow_succ, ← mul_assoc]
+  refine TauCeti.FormalCoordinate.ext ?_
+  simp only [formalCoordinate_toPowerSeries, formalDenom_def, map_zero, zero_mul, add_zero,
+    sub_zero, hinv, TauCeti.FormalCoordinate.toPowerSeries_homothety, smul_eq_C_mul]
+  simp [mul_right_comm _ X, ← map_pow, ← map_mul, hu]
 
 /-- Substitution into the old `w`-expansion gives the new `w`-expansion divided
 by `u³ - su²z - t w(z)`. This identifies the formal neighbourhoods in the two
@@ -367,9 +388,7 @@ private theorem coords_subst_formalCoordinate_formalW (C : VariableChange R)
   rw [map_mul, map_one] at hDe
   nth_rw 1 [formalDenom_def] at hDe
   simp only [map_sub, map_mul, map_pow, hC] at hDe
-  have ha0 : ι (formalW (C • W)) ≠ 0 := by
-    simpa [X_subst] using
-      algebraMap_subst_formalW_ne_zero (C • W) (σ := Unit) (KK := K) constantCoeff_X X_ne_zero
+  have ha0 : ι (formalW (C • W)) ≠ 0 := by simp
   have he0 := right_ne_zero_of_mul_eq_one hDe
   rw [subst_formalCoordinate_formalW, formalCoordinate_toPowerSeries]
   simp only [map_mul, map_add, map_pow, hC]
@@ -559,5 +578,13 @@ theorem height_formalGroup_variableChange {K : Type*} [Field K] (C : VariableCha
     (W : WeierstrassCurve K) (p : ℕ) :
     (formalGroup (C • W)).height p = (formalGroup W).height p := by
   rw [formalGroup_smul, FormalGroup.height_smul]
+
+/-- The order of `[m]_Ê` for the formal group of a Weierstrass curve does not depend on the
+chosen Weierstrass equation. -/
+@[simp]
+theorem order_nsmulSeries_formalGroup_variableChange (C : VariableChange R)
+    (W : WeierstrassCurve R) (m : ℕ) :
+    ((formalGroup (C • W)).nsmulSeries m).order = ((formalGroup W).nsmulSeries m).order := by
+  rw [formalGroup_smul, FormalGroup.order_nsmulSeries_smul]
 
 end WeierstrassCurve.VariableChange

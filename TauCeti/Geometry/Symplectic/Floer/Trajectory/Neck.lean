@@ -46,7 +46,8 @@ this is the step that separates levels. Assembling the levels themselves is not 
   (`SymplecticForm.tendsto_setLIntegral_floerEnergyDensity_of_tendsto_hamiltonianAction_sub`).
 * **The neck orbit lies between the two loops in action.** If moreover the actions of the loops
   `u_k(σ_k, ·)` and `u_k(σ'_k, ·)` tend to `b` and `b'`, the orbit has action in `[b, b']`
-  (`SymplecticForm.exists_hamiltonianAction_mem_Icc_of_tendsto_sub_atTop`).
+  (`SymplecticForm.exists_subseq_tendstoLocallyUniformly_comp_add_hamiltonianAction_mem_Icc`, and
+  `SymplecticForm.exists_hamiltonianAction_mem_Icc_of_tendsto_sub_atTop` for the orbit alone).
 * **Loops normalized at actions with no orbit between them stay together.** Consequently, if no
   `1`-periodic orbit in `K` has its action in `[b, b']`, the shifts `σ'_k - σ_k` are bounded
   above (`SymplecticForm.isBoundedUnder_le_sub_of_forall_hamiltonianAction_notMem_Icc`). When
@@ -54,8 +55,8 @@ this is the step that separates levels. Assembling the levels themselves is not 
   `[b', b] ⊆ [b, b']`, bounds them below, so the loops of actions near `b` and `b'` stay a bounded
   distance apart.
 
-As in `TauCeti.Geometry.Symplectic.Floer.Trajectory.Level`, the uniform bound on the derivatives
-excludes bubbling; it is assumed, not proved. The almost complex structures `J_k` may vary with
+As in `TauCeti.Geometry.Symplectic.Floer.Trajectory.Level`, the uniform bound on the derivatives,
+which excludes bubbling, is a hypothesis. The almost complex structures `J_k` may vary with
 `k`, and no convergence of the derivatives of the trajectories is used.
 
 ## References
@@ -190,6 +191,49 @@ theorem exists_subseq_tendstoLocallyUniformly_comp_add_of_tendsto_sub_atTop
 /-- **The orbit of a neck lies between the two loops in action.** Under the hypotheses of
 `TauCeti.SymplecticForm.exists_subseq_tendstoLocallyUniformly_comp_add_of_tendsto_sub_atTop`, if
 `σ' k - σ k → ∞` and the actions of the loops `u k (σ k, ·)` and `u k (σ' k, ·)` tend to `b` and
+`b'`, then along a subsequence `u (φ n)` there are shifts `τ n` with `τ n - σ (φ n) → ∞` and
+`σ' (φ n) - τ n → ∞` such that the translates `(s, t) ↦ u (φ n) (s + τ n, t)` converge locally
+uniformly to the stationary cylinder `(s, t) ↦ x(t)` over a `1`-periodic orbit `x` of the
+Hamiltonian vector field with values in `K` whose action lies in `[b, b']`. -/
+theorem exists_subseq_tendstoLocallyUniformly_comp_add_hamiltonianAction_mem_Icc
+    (hH : ContDiff ℝ 1 (uncurry H)) (hHper : Periodic H 1) (hK : IsCompact K)
+    {u : ℕ → ℝ × ℝ → V} (hu : ∀ k, ContDiff ℝ 2 (u k))
+    (hper : ∀ k s, Periodic (fun t ↦ u k (s, t)) 1) (huK : ∀ k z, u k z ∈ K) (hc : 0 < c)
+    (hJc : ∀ k, ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J k z v))
+    (hJM : ∀ k, ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ∀ v, ‖J k z v‖ ≤ M * ‖v‖)
+    (hfloer : ∀ k, ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J k z)
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z : ℝ × ℝ →ₗ[ℝ] V))
+    (hL : ∀ k, LipschitzWith L (u k)) {σ σ' : ℕ → ℝ}
+    (hσ : Tendsto (fun k ↦ σ' k - σ k) atTop atTop) {b b' : ℝ}
+    (hb : Tendsto (fun k ↦ ω.hamiltonianAction H (fun t ↦ u k (σ k, t))) atTop (𝓝 b))
+    (hb' : Tendsto (fun k ↦ ω.hamiltonianAction H (fun t ↦ u k (σ' k, t))) atTop (𝓝 b')) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ τ : ℕ → ℝ, ∃ x : ℝ → V, Periodic x 1 ∧
+      (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧ (∀ t, x t ∈ K) ∧
+      Tendsto (fun n ↦ τ n - σ (φ n)) atTop atTop ∧ Tendsto (fun n ↦ σ' (φ n) - τ n) atTop atTop ∧
+      TendstoLocallyUniformly (fun n z ↦ u (φ n) (z + (τ n, 0))) (fun z ↦ x z.2) atTop ∧
+      ω.hamiltonianAction H x ∈ Icc b b' := by
+  obtain ⟨φ, hφ, τ, x, hxper, hxd, hxK, hτσ, hσ'τ, hux, hA⟩ :=
+    exists_subseq_tendstoLocallyUniformly_comp_add_of_tendsto_sub_atTop hH hHper hK hu hper huK
+      hc hJc hJM hfloer hL hσ
+  have hmono (k : ℕ) := ω.monotone_hamiltonianAction_of_floer hH (hu k) (hper k)
+    (fun z hz ↦ tames_of_mul_norm_sq_le hc (hJc k z hz)) (hfloer k)
+  -- The actions of the loops at `τ` tend to the action of `x`, and lie between those at `σ` and
+  -- at `σ'`, eventually.
+  have hτA : Tendsto (fun n ↦ ω.hamiltonianAction H (fun t ↦ u (φ n) (τ n, t))) atTop
+      (𝓝 (ω.hamiltonianAction H x)) := by
+    simpa using hA.add_const (ω.hamiltonianAction H x)
+  refine ⟨φ, hφ, τ, x, hxper, hxd, hxK, hτσ, hσ'τ, hux,
+    le_of_tendsto_of_tendsto (hb.comp hφ.tendsto_atTop) hτA ?_,
+    le_of_tendsto_of_tendsto hτA (hb'.comp hφ.tendsto_atTop) ?_⟩
+  · filter_upwards [hτσ.eventually_ge_atTop 0] with n hn
+    exact hmono (φ n) (by linarith)
+  · filter_upwards [hσ'τ.eventually_ge_atTop 0] with n hn
+    exact hmono (φ n) (by linarith)
+
+/-- **An orbit lies between two far apart loops in action.** Under the hypotheses of
+`TauCeti.SymplecticForm.exists_subseq_tendstoLocallyUniformly_comp_add_of_tendsto_sub_atTop`, if
+`σ' k - σ k → ∞` and the actions of the loops `u k (σ k, ·)` and `u k (σ' k, ·)` tend to `b` and
 `b'`, then some `1`-periodic orbit of the Hamiltonian vector field with values in `K` has its action
 in `[b, b']`. -/
 theorem exists_hamiltonianAction_mem_Icc_of_tendsto_sub_atTop
@@ -207,22 +251,10 @@ theorem exists_hamiltonianAction_mem_Icc_of_tendsto_sub_atTop
     (hb' : Tendsto (fun k ↦ ω.hamiltonianAction H (fun t ↦ u k (σ' k, t))) atTop (𝓝 b')) :
     ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
       (∀ t, x t ∈ K) ∧ ω.hamiltonianAction H x ∈ Icc b b' := by
-  obtain ⟨φ, hφ, τ, x, hxper, hxd, hxK, hτσ, hσ'τ, -, hA⟩ :=
-    exists_subseq_tendstoLocallyUniformly_comp_add_of_tendsto_sub_atTop hH hHper hK hu hper huK
-      hc hJc hJM hfloer hL hσ
-  have hmono (k : ℕ) := ω.monotone_hamiltonianAction_of_floer hH (hu k) (hper k)
-    (fun z hz ↦ tames_of_mul_norm_sq_le hc (hJc k z hz)) (hfloer k)
-  -- The actions of the loops at `τ` tend to the action of `x`, and lie between those at `σ` and
-  -- at `σ'`, eventually.
-  have hτA : Tendsto (fun n ↦ ω.hamiltonianAction H (fun t ↦ u (φ n) (τ n, t))) atTop
-      (𝓝 (ω.hamiltonianAction H x)) := by
-    simpa using hA.add_const (ω.hamiltonianAction H x)
-  refine ⟨x, hxper, hxd, hxK, le_of_tendsto_of_tendsto (hb.comp hφ.tendsto_atTop) hτA ?_,
-    le_of_tendsto_of_tendsto hτA (hb'.comp hφ.tendsto_atTop) ?_⟩
-  · filter_upwards [hτσ.eventually_ge_atTop 0] with n hn
-    exact hmono (φ n) (by linarith)
-  · filter_upwards [hσ'τ.eventually_ge_atTop 0] with n hn
-    exact hmono (φ n) (by linarith)
+  obtain ⟨-, -, -, x, hxper, hxd, hxK, -, -, -, hx⟩ :=
+    exists_subseq_tendstoLocallyUniformly_comp_add_hamiltonianAction_mem_Icc hH hHper hK hu hper
+      huK hc hJc hJM hfloer hL hσ hb hb'
+  exact ⟨x, hxper, hxd, hxK, hx⟩
 
 /-- **Loops normalized at actions with no orbit between them are boundedly far apart in one
 direction.** Under the hypotheses of

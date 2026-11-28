@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.BracketNorm
 public import TauCeti.Geometry.Lie.Subgroup.Unitary.Matrix
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
@@ -25,6 +26,11 @@ symmetric positive-definite `Ad`-invariant bilinear form on its Lie algebra
 the data: it implies that every `ad X` is skew-adjoint, but the converse fails for disconnected
 groups.
 
+The structure constant `γ₀ = max {|⁅X, Y⁆| : |X| ≤ 1, |Y| ≤ 1}` of a structure group is the norm
+`S.innerForm.toQuadraticMap.lieBracketNorm` of the bracket of `𝔤` for its inner product
+(`QuadraticMap.lieBracketNorm`). It does not increase under restriction, and the structure
+constant of a block-diagonal product is the larger of those of the factors.
+
 ## Main definitions
 
 * `TauCeti.CompactMatrixStructureGroup`: a closed subgroup of `U(n)` with an `Ad`-invariant inner
@@ -41,6 +47,10 @@ groups.
   isometry of the inner product.
 * `TauCeti.CompactMatrixStructureGroup.innerForm_lie_left`: each `ad X` is skew-adjoint,
   `⟨[X, Y], Z⟩ = -⟨Y, [X, Z]⟩`.
+* `TauCeti.CompactMatrixStructureGroup.lieBracketNorm_restrict_le`: restriction does not increase
+  the structure constant.
+* `TauCeti.CompactMatrixStructureGroup.lieBracketNorm_prod`: the structure constant of a
+  block-diagonal product is the maximum of those of the factors.
 
 ## References
 
@@ -237,6 +247,46 @@ theorem prod_innerForm_apply (S₁ : CompactMatrixStructureGroup n)
   (rfl)
 
 end Prod
+
+section LieBracketNorm
+
+/-! ### The structure constant
+
+The structure constant `γ₀(𝔤, ⟨·,·⟩)` of a structure group is the norm
+`S.innerForm.toQuadraticMap.lieBracketNorm` of the Lie bracket of `𝔤` for its inner product. -/
+
+variable {m : Type*} [Fintype m] [DecidableEq m]
+
+/-- The structure constant does not increase under restriction to a closed subgroup. -/
+theorem lieBracketNorm_restrict_le {H : ClosedSubgroup (Matrix.unitaryGroup n ℂ)}
+    (hH : H ≤ S.group) :
+    (S.restrict hH).innerForm.toQuadraticMap.lieBracketNorm ≤
+      S.innerForm.toQuadraticMap.lieBracketNorm :=
+  QuadraticMap.lieBracketNorm_comp_le S.posDef_innerForm
+    (LieSubalgebra.inclusion (ClosedSubgroup.matrixLieAlgebra_mono hH))
+
+/-- **The structure constant of a block-diagonal product** is the larger of the structure
+constants of the factors: `γ₀(𝔤₁ ⊕ 𝔤₂) = max (γ₀(𝔤₁)) (γ₀(𝔤₂))`. -/
+theorem lieBracketNorm_prod (S₁ : CompactMatrixStructureGroup n)
+    (S₂ : CompactMatrixStructureGroup m) :
+    (S₁.prod S₂).innerForm.toQuadraticMap.lieBracketNorm =
+      max S₁.innerForm.toQuadraticMap.lieBracketNorm
+        S₂.innerForm.toQuadraticMap.lieBracketNorm := by
+  have h : (S₁.prod S₂).innerForm.toQuadraticMap =
+      (S₁.innerForm.toQuadraticMap.prod S₂.innerForm.toQuadraticMap).comp
+        (S₁.group.matrixLieAlgebraFromBlocksProdEquiv S₂.group).toLinearEquiv.toLinearMap := by
+    ext X
+    -- The right side is a quadratic map on the carrier of `S₁.group.fromBlocksProd S₂.group`,
+    -- which is that of `(S₁.prod S₂).group` only after unfolding `prod` (`prod_group` is `rfl`),
+    -- so `QuadraticMap.comp_apply` and `QuadraticMap.prod_apply` cannot rewrite it. Pointwise,
+    -- `toQuadraticMap`, `QuadraticMap.comp` and `QuadraticMap.prod` unfold both sides to the two
+    -- sides of `prod_innerForm_apply` at `X X`.
+    exact prod_innerForm_apply S₁ S₂ X X
+  rw [h]
+  exact (QuadraticMap.lieBracketNorm_comp_lieEquiv _).trans
+    (QuadraticMap.lieBracketNorm_prod S₁.posDef_innerForm S₂.posDef_innerForm)
+
+end LieBracketNorm
 
 end CompactMatrixStructureGroup
 

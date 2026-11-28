@@ -68,7 +68,7 @@ theorem contMDiffEval_reesZeroFiberBracket_apply
   let := Fintype.ofFinite (Module.Basis.ofVectorSpaceIndex 𝕜 E)
   let b := Module.Basis.ofVectorSpace 𝕜 E
   let bL := b.map e.symm
-  rw [SymmetricAlgebra.contMDiffEval_apply, SymmetricAlgebra.lift_map,
+  rw [SymmetricAlgebra.contMDiffEval_apply, SymmetricAlgebra.lift_map_apply,
     lift_reesZeroFiberBracket_apply L bL p q (ξ.toLinearMap ∘ₗ e.toLinearMap),
     b.evalEquiv_symm_fderiv_contMDiffEval n (SymmetricAlgebra.map 𝕜 e.toLinearMap p) ξ,
     b.evalEquiv_symm_fderiv_contMDiffEval n (SymmetricAlgebra.map 𝕜 e.toLinearMap q) ξ,

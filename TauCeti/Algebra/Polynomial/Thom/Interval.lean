@@ -54,9 +54,7 @@ theorem derivativeSign_eq_of_forall_eval_ne_zero (p : R[X]) {a b : R}
   simp only [derivativeSign_def]
   by_cases hk : derivative^[k] p = 0
   · simp [hk]
-  rcases le_total a b with hab | hba
-  · exact sign_eval_const _ hab fun z hz ↦ h z (Icc_subset_uIcc hz) k hk
-  · exact (sign_eval_const _ hba fun z hz ↦ h z (Icc_subset_uIcc' hz) k hk).symm
+  exact sign_eval_eq_of_forall_mem_uIcc _ fun z hz ↦ h z hz k hk
 
 /-- **Thom's lemma.** For any signs `σ k` prescribed for the derivatives of every order of `p`,
 including order zero, the set of points where `p` realizes them is empty, a single point, or an

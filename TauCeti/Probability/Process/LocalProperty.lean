@@ -29,8 +29,10 @@ continuity, transfers along this simultaneous-time equality. This does not by it
 assert that the new representative satisfies the original local property: stopping a
 merely adapted replacement at a general stopping time requires additional measurability.
 
-For any native local property, the stopped stages converge almost surely at each fixed time
-to the original process (`ProbabilityTheory.Locally.ae_tendsto_stoppedProcess_localSeq`).
+For any pre-localizing sequence or native local property, the stopped stages converge almost
+surely at each fixed time to the original process
+(`ProbabilityTheory.IsPreLocalizingSequence.ae_tendsto_stoppedProcess`,
+`ProbabilityTheory.Locally.ae_tendsto_stoppedProcess_localSeq`).
 
 Cutting localizing times off at the initial time outside increasing, exhausting initial events
 preserves localization (`ProbabilityTheory.IsLocalizingSequence.piecewise_bot`). The corresponding
@@ -42,6 +44,9 @@ adding these regularity requirements to any local property does not change local
 
 Enlarging a filtration preserves its localizing sequences. The stopping-time property
 transports to the larger filtration, while monotonicity and divergence are unchanged.
+An absolutely continuous change of measure also preserves localizing sequences, since their
+stopping-time conditions do not involve the measure and their path conditions hold almost surely.
+This does not assert preservation of the martingale property of stopped processes.
 
 ## References
 
@@ -55,6 +60,24 @@ open MeasureTheory Filter TopologicalSpace
 open scoped Topology
 
 namespace ProbabilityTheory
+
+/-- An absolutely continuous change of measure preserves a pre-localizing sequence. No
+finiteness of either measure is needed. -/
+theorem IsPreLocalizingSequence.mono_ac {ι Ω : Type*} [Preorder ι]
+    [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ι mΩ} {P Q : Measure Ω} {τ : ℕ → Ω → WithTop ι}
+    (hτ : IsPreLocalizingSequence ℱ τ P) (hQP : Q ≪ P) :
+    IsPreLocalizingSequence ℱ τ Q :=
+  ⟨hτ.isStoppingTime, hQP.ae_le hτ.tendsto_top⟩
+
+/-- An absolutely continuous change of measure preserves a native localizing sequence,
+including its almost-sure monotonicity. It need not preserve any localized martingale identities. -/
+theorem IsLocalizingSequence.mono_ac {ι Ω : Type*} [Preorder ι]
+    [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ι mΩ} {P Q : Measure Ω} {τ : ℕ → Ω → WithTop ι}
+    (hτ : IsLocalizingSequence ℱ τ P) (hQP : Q ≪ P) :
+    IsLocalizingSequence ℱ τ Q :=
+  ⟨hτ.toIsPreLocalizingSequence.mono_ac hQP, hQP.ae_le hτ.mono⟩
 
 /-- Cutting a localizing sequence off at the initial time outside increasing initial-measurable
 events which eventually contain almost every sample point preserves localization. -/
@@ -166,6 +189,23 @@ theorem mono_filtration {ι Ω : Type*} [Preorder ι] [TopologicalSpace ι] [Ord
 
 end ProbabilityTheory.IsLocalizingSequence
 
+namespace ProbabilityTheory.IsPreLocalizingSequence
+
+open Filter MeasureTheory
+
+/-- The native stopped stages of a pre-localizing sequence converge almost surely at each
+fixed time. Eventually both the stopping and the positive-stopping-time indicator disappear. -/
+theorem ae_tendsto_stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace ι] [OrderTopology ι] [Zero E] [TopologicalSpace E]
+    {mΩ : MeasurableSpace Ω} {P : Measure Ω} {ℱ : Filtration ι mΩ} {τ : ℕ → Ω → WithTop ι}
+    (hτ : IsPreLocalizingSequence ℱ τ P) (X : ι → Ω → E) (t : ι) :
+    ∀ᵐ ω ∂P, Tendsto (fun n ↦ stoppedProcess
+      (fun s ↦ {ω | ⊥ < τ n ω}.indicator (X s)) (τ n) t ω) atTop (𝓝 (X t ω)) :=
+  (hτ.ae_eventually_eqOn_stoppedProcess (X := X)).mono fun _ hω ↦
+    tendsto_const_nhds.congr' ((hω t).mono fun _ hn ↦ (hn Set.self_mem_Iic).symm)
+
+end ProbabilityTheory.IsPreLocalizingSequence
+
 namespace ProbabilityTheory.Locally
 
 open Filter MeasureTheory
@@ -180,13 +220,8 @@ to the original process, including the indicator of a strictly positive localizi
 theorem ae_tendsto_stoppedProcess_localSeq (hX : Locally p ℱ X P) (t : ι) :
     ∀ᵐ ω ∂P, Tendsto (fun n ↦ stoppedProcess
       (fun u ↦ {ω | ⊥ < hX.localSeq n ω}.indicator (X u)) (hX.localSeq n) t ω)
-      atTop (𝓝 (X t ω)) := by
-  filter_upwards [hX.isLocalizingSequence_localSeq.tendsto_top] with ω hω
-  have ht := hω.eventually (eventually_gt_nhds (WithTop.coe_lt_top t))
-  apply tendsto_const_nhds.congr'
-  filter_upwards [ht] with n hn
-  rw [stoppedProcess_eq_of_le hn.le, Set.indicator_of_mem]
-  exact lt_of_le_of_lt (WithTop.coe_le_coe.mpr bot_le) hn
+      atTop (𝓝 (X t ω)) :=
+  hX.isLocalizingSequence_localSeq.toIsPreLocalizingSequence.ae_tendsto_stoppedProcess X t
 
 end ProbabilityTheory.Locally
 

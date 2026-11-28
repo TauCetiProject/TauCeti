@@ -11,6 +11,7 @@ import TauCeti.Topology.Sheaves.Stalks
 import Mathlib.Data.ZMod.Basic
 import Mathlib.LinearAlgebra.TensorProduct.Tower
 import Mathlib.RingTheory.Localization.FractionRing
+import Mathlib.Topology.Sheaves.Skyscraper
 
 /-!
 # Checks for scalar extension of module sheaves

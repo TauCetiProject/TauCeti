@@ -215,7 +215,7 @@ theorem symmetricGradient_map {N ι' : Type*} [AddCommMonoid N] [Module R N] [Fi
     b'.symmetricGradient (SymmetricAlgebra.map R g p) ξ =
       g (b.symmetricGradient p (ξ ∘ₗ g)) :=
   b'.ext_elem fun j ↦ by
-    rw [b'.repr_symmetricGradient, SymmetricAlgebra.pderiv_map, SymmetricAlgebra.lift_map,
+    rw [b'.repr_symmetricGradient, SymmetricAlgebra.pderiv_map, SymmetricAlgebra.lift_map_apply,
       ← b.apply_symmetricGradient, LinearMap.comp_apply, b'.coord_apply]
 
 end CommSemiring

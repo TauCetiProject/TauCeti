@@ -5,15 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
-# Positive integrals and non-concentration on zero sets
+# Lower integrals of functions controlled on their support
+
+This file collects lower Lebesgue integral facts about a function in terms of its support.
+
+## Positive integrals and non-concentration on zero sets
 
 For a zero or probability measure, a function with positive lower Lebesgue integral
 has a zero set of mass strictly less than one. In particular, no zero of the function
 can carry all the mass. No measurability assumption on the function is needed.
+
+## Norm-bounded functions supported in a set
+
+A function supported in a measurable set `s` and bounded in norm by `ε` has lower integral of its
+norm at most `ε μ(s)` (`MeasureTheory.lintegral_enorm_le_ofReal_mul_measure`).
 -/
 
 public section
@@ -45,3 +55,22 @@ theorem measure_singleton_lt_one_of_lintegral_pos {f : α → ℝ≥0∞} {a : �
   simpa [Function.support] using ha
 
 end MeasureTheory.Measure
+
+namespace MeasureTheory
+
+/-- A function supported in a measurable set `s` and bounded in norm by `ε` has
+`∫⁻ ‖f‖ₑ ∂μ ≤ ε μ(s)`. -/
+theorem lintegral_enorm_le_ofReal_mul_measure {α G : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup G] (μ : Measure α) {f : α → G} {s : Set α} (hs : MeasurableSet s)
+    (hfs : Function.support f ⊆ s) {ε : ℝ} (hf : ∀ x, ‖f x‖ ≤ ε) :
+    ∫⁻ x, ‖f x‖ₑ ∂μ ≤ ENNReal.ofReal ε * μ s := by
+  rw [← lintegral_indicator_const hs]
+  refine lintegral_mono fun x => ?_
+  by_cases hx : x ∈ s
+  · rw [Set.indicator_of_mem hx, ← ofReal_norm]
+    exact ENNReal.ofReal_le_ofReal (hf x)
+  · rw [Function.notMem_support.1 fun h => hx (hfs h), ← ofReal_norm, norm_zero,
+      ENNReal.ofReal_zero]
+    exact zero_le
+
+end MeasureTheory

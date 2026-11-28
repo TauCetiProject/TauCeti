@@ -9,7 +9,10 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Christoffel
 public import Mathlib.Topology.Instances.Matrix
+public import Mathlib.Analysis.Asymptotics.Defs
+import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.Calculus.FDeriv.Mul
+import TauCeti.Analysis.Matrix.Normed
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -51,6 +54,13 @@ point (`TauCeti.Manifold.continuousAt_scalarCurvature_of_continuousAt_chartMetri
 This is the input for the openness of positive scalar curvature under `C²` perturbations and for
 uniform scalar-curvature bounds over compact families of metrics.
 
+Near the Euclidean jet `(1, 0, 0)` the scalar curvature is linear up to quadratic terms: along any
+filter on which `g - 1 = O(a)`, `∂g = O(b)` and `∂²g = O(c)` with `g → 1` and the second
+derivatives symmetric in the two differentiation indices, the scalar curvature differs from its
+linearization `Σ_j Σ_i (∂_j ∂_i g_ij - ∂_j ∂_j g_ii)` by `O(|a| |c| + |b|²)`
+(`TauCeti.Manifold.isBigO_scalarCurvatureOfJet_sub`). For asymptotically Euclidean metrics this
+is the estimate by which integrability of the scalar curvature controls the ADM flux.
+
 The coordinate identifications hold at points of a chart domain whose chart image is an interior
 point of the model, hence everywhere on a manifold without boundary. Jets of fields of bilinear
 forms are taken through their scalar coefficients `z ↦ G z (b i) (b j)`, so that no iterated
@@ -84,12 +94,16 @@ J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (20
   of a smooth Riemannian metric in a chart.
 * `TauCeti.Manifold.continuousAt_scalarCurvature_of_continuousAt_chartMetric`: joint continuity
   of scalar curvature along a `C²`-continuous family of metrics.
+* `TauCeti.Manifold.isBigO_scalarCurvatureOfJet_sub`: the scalar curvature of a jet near the
+  Euclidean jet is its linearization up to quadratic terms.
 
 ## References
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (2018),
   Chapters 5 and 7: the Christoffel symbols and the curvature of a metric in coordinates.
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser (1992), Chapter 4.
+* J. M. Lee, T. H. Parker, *The Yamabe problem*, Bull. Amer. Math. Soc. 17 (1987), §9 (the
+  scalar curvature of an asymptotically flat metric as its linearization plus quadratic terms).
 -/
 
 public section
@@ -153,6 +167,13 @@ theorem riemannOfJet_def (g : Matrix ι ι ℝ) (dg : ι → ι → ι → ℝ) 
         ∑ m, (christoffelOfJet g dg j k m * christoffelOfJet g dg i m l -
           christoffelOfJet g dg i k m * christoffelOfJet g dg j m l) :=
   (rfl)
+
+/-- The curvature coefficients of a coordinate jet vanish when the two differentiation indices
+agree. -/
+@[simp]
+theorem riemannOfJet_self (g : Matrix ι ι ℝ) (dg : ι → ι → ι → ℝ) (ddg : ι → ι → ι → ι → ℝ)
+    (i k l : ι) : riemannOfJet g dg ddg i i k l = 0 := by
+  simp [riemannOfJet_def]
 
 /-- The **scalar curvature of a coordinate jet** `(g, ∂g, ∂²g)`: the contraction
 `Σⱼₖ g^(jk) Σᵢ Rⁱᵢⱼₖ` of the curvature coefficients `riemannOfJet` against the inverse of the
@@ -223,6 +244,139 @@ theorem ContinuousAt.scalarCurvatureOfJet (hg : ContinuousAt g x) (hdet : (g x).
       (tendsto_finsetSum _ fun i _ ↦ hg.riemannOfJet hdet hdg hddg i j k i)
 
 end Continuity
+
+/-! ### Linearization at the Euclidean jet -/
+
+namespace TauCeti.Manifold
+
+open Asymptotics
+
+section Linearization
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {α : Type*} {L : Filter α}
+  {g : α → Matrix ι ι ℝ} {dg : α → ι → ι → ι → ℝ} {ddg : α → ι → ι → ι → ι → ℝ} {a b c : α → ℝ}
+  {f h : α → ℝ}
+
+/-- The linear part `(∂ₘ∂ᵢ g_jk + ∂ₘ∂ⱼ g_ik - ∂ₘ∂ₖ g_ij) / 2` of `christoffelDerivOfJet` at the
+Euclidean jet. -/
+private def christoffelDerivLin (ddg : ι → ι → ι → ι → ℝ) (m i j k : ι) : ℝ :=
+  2⁻¹ * (ddg m i j k + ddg m j i k - ddg m k i j)
+
+/-- A product of a bounded function with a `O(φ)` function is `O(φ)`. -/
+private lemma isBigO_one_mul {φ : α → ℝ} (hf : f =O[L] fun _ ↦ (1 : ℝ)) (hh : h =O[L] φ) :
+    (fun x ↦ f x * h x) =O[L] φ := by
+  simpa using hf.mul hh
+
+/-- A product of `O(a)` and `O(c)` terms is `O(|a| |c| + |b|²)`. -/
+private lemma isBigO_mul_of_left (hf : f =O[L] a) (hh : h =O[L] c) :
+    (fun x ↦ f x * h x) =O[L] fun x ↦ ‖a x‖ * ‖c x‖ + ‖b x‖ ^ 2 :=
+  (hf.mul hh).trans <| isBigO_of_le L fun x ↦ by
+    rw [norm_mul]
+    exact (le_add_of_nonneg_right (by positivity)).trans (Real.le_norm_self _)
+
+/-- A product of two `O(b)` terms is `O(|a| |c| + |b|²)`. -/
+private lemma isBigO_mul_of_right (hf : f =O[L] b) (hh : h =O[L] b) :
+    (fun x ↦ f x * h x) =O[L] fun x ↦ ‖a x‖ * ‖c x‖ + ‖b x‖ ^ 2 :=
+  (hf.mul hh).trans <| isBigO_of_le L fun x ↦ by
+    rw [norm_mul, ← sq]
+    exact (le_add_of_nonneg_left (by positivity)).trans (Real.le_norm_self _)
+
+/-- The Christoffel symbols of jets with `g → 1` and `dg = O(b)` are `O(b)`. -/
+private lemma isBigO_christoffelOfJet (hg : Tendsto g L (𝓝 1))
+    (hdg : ∀ k i j, (fun x ↦ dg x k i j) =O[L] b) (i j k : ι) :
+    (fun x ↦ christoffelOfJet (g x) (dg x) i j k) =O[L] b := by
+  simp only [christoffelOfJet_def]
+  exact (IsBigO.fun_sum (s := .univ) fun l _ ↦
+    isBigO_one_mul (Matrix.isBigO_inv_apply_of_tendsto_one hg k l)
+      (((hdg i j l).add (hdg j i l)).sub (hdg l i j))).const_mul_left _
+
+omit [Fintype ι] [DecidableEq ι] in
+private lemma isBigO_christoffelDerivLin (hddg : ∀ m k i j, (fun x ↦ ddg x m k i j) =O[L] c)
+    (m i j k : ι) : (fun x ↦ christoffelDerivLin (ddg x) m i j k) =O[L] c :=
+  (((hddg m i j k).add (hddg m j i k)).sub (hddg m k i j)).const_mul_left _
+
+/-- The derivatives of the Christoffel symbols differ from their linear part by
+`O(|a| |c| + |b|²)`. -/
+private lemma isBigO_christoffelDerivOfJet_sub (hg : Tendsto g L (𝓝 1))
+    (hga : ∀ i j, (fun x ↦ (g x - 1) i j) =O[L] a) (hdg : ∀ k i j, (fun x ↦ dg x k i j) =O[L] b)
+    (hddg : ∀ m k i j, (fun x ↦ ddg x m k i j) =O[L] c) (m i j k : ι) :
+    (fun x ↦ christoffelDerivOfJet (g x) (dg x) (ddg x) m i j k -
+        christoffelDerivLin (ddg x) m i j k) =O[L] fun x ↦ ‖a x‖ * ‖c x‖ + ‖b x‖ ^ 2 := by
+  -- Split `g⁻¹ = 1 + (g⁻¹ - 1)` in the linear term; the other term is quadratic in `dg`.
+  refine ((IsBigO.fun_sum (s := .univ) fun l _ ↦
+    isBigO_mul_of_left (Matrix.isBigO_inv_sub_one_apply_of_tendsto_one hg hga k l)
+    (isBigO_christoffelDerivLin hddg m i j l)).sub
+      (IsBigO.fun_sum (s := .univ) fun l _ ↦
+        isBigO_one_mul (Matrix.isBigO_inv_apply_of_tendsto_one hg k l)
+          (IsBigO.fun_sum (s := .univ) fun q _ ↦ isBigO_mul_of_right (hdg m q l)
+            (isBigO_christoffelOfJet hg hdg i j q)))).congr_left fun x ↦ ?_
+  simp only [christoffelDerivOfJet_def, christoffelDerivLin, Matrix.sub_apply, Matrix.one_apply,
+    sub_mul, mul_sub, ite_mul, one_mul, zero_mul, Finset.sum_sub_distrib, Finset.sum_ite_eq,
+    Finset.mem_univ, ite_true]
+  ring
+
+/-- The contracted curvature coefficients `Σᵢ Rⁱᵢⱼₖ` differ from their linear part by
+`O(|a| |c| + |b|²)`. -/
+private lemma isBigO_sum_riemannOfJet_sub (hg : Tendsto g L (𝓝 1))
+    (hga : ∀ i j, (fun x ↦ (g x - 1) i j) =O[L] a) (hdg : ∀ k i j, (fun x ↦ dg x k i j) =O[L] b)
+    (hddg : ∀ m k i j, (fun x ↦ ddg x m k i j) =O[L] c) (j k : ι) :
+    (fun x ↦ ∑ i, riemannOfJet (g x) (dg x) (ddg x) i j k i -
+        ∑ i, (christoffelDerivLin (ddg x) i j k i - christoffelDerivLin (ddg x) j i k i)) =O[L]
+      fun x ↦ ‖a x‖ * ‖c x‖ + ‖b x‖ ^ 2 := by
+  have hΓ := isBigO_christoffelOfJet hg hdg
+  have hDΓ := isBigO_christoffelDerivOfJet_sub hg hga hdg hddg
+  simp only [← Finset.sum_sub_distrib, riemannOfJet_def]
+  exact IsBigO.fun_sum (s := .univ) fun i _ ↦ (((hDΓ i j k i).sub (hDΓ j i k i)).add
+    (IsBigO.fun_sum (s := .univ) fun m _ ↦ (isBigO_mul_of_right (hΓ j k m) (hΓ i m i)).sub
+      (isBigO_mul_of_right (hΓ i k m) (hΓ j m i)))).congr_left fun x ↦ by ring
+
+omit [DecidableEq ι] in
+/-- When the second derivatives are symmetric in the two differentiation indices, the trace of
+the linear part of the contracted curvature coefficients is the linearized scalar curvature
+`Σ_j Σ_i (∂_j ∂_i g_ij - ∂_j ∂_j g_ii)`. -/
+private lemma sum_sum_christoffelDerivLin_sub (ddg : ι → ι → ι → ι → ℝ)
+    (hsymm : ∀ m k i j, ddg m k i j = ddg k m i j) :
+    ∑ j, ∑ i, (christoffelDerivLin ddg i j j i - christoffelDerivLin ddg j i j i) =
+      ∑ j, ∑ i, (ddg j i i j - ddg j j i i) := by
+  have h₁ : ∑ j, ∑ i, ddg i j j i = ∑ j, ∑ i, ddg j i i j := Finset.sum_comm
+  have h₂ : ∑ j, ∑ i, ddg i i j j = ∑ j, ∑ i, ddg j j i i := Finset.sum_comm
+  have h₃ : ∑ j, ∑ i, ddg j i j i = ∑ j, ∑ i, ddg i j j i :=
+    Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ hsymm j i j i
+  simp only [christoffelDerivLin, ← Finset.mul_sum, Finset.sum_sub_distrib,
+    Finset.sum_add_distrib] at h₁ h₂ h₃ ⊢
+  linarith
+
+/-- **The scalar curvature of a jet near the Euclidean jet is linear up to quadratic terms.**
+Along a filter, let `g` be Gram matrices tending to the identity, with `g - 1 = O(a)`, and let the
+first and second derivatives `dg` and `ddg` be `O(b)` and `O(c)`, the second derivatives symmetric
+in the two differentiation indices. Then the scalar curvature of the jet differs from its
+linearization `Σ_j Σ_i (∂_j ∂_i g_ij - ∂_j ∂_j g_ii)` at the Euclidean jet by
+`O(|a| |c| + |b|²)`. -/
+theorem isBigO_scalarCurvatureOfJet_sub (hg : Tendsto g L (𝓝 1))
+    (hga : ∀ i j, (fun x ↦ (g x - 1) i j) =O[L] a) (hdg : ∀ k i j, (fun x ↦ dg x k i j) =O[L] b)
+    (hddg : ∀ m k i j, (fun x ↦ ddg x m k i j) =O[L] c)
+    (hsymm : ∀ᶠ x in L, ∀ m k i j, ddg x m k i j = ddg x k m i j) :
+    (fun x ↦ scalarCurvatureOfJet (g x) (dg x) (ddg x) -
+        ∑ j, ∑ i, (ddg x j i i j - ddg x j j i i)) =O[L]
+      fun x ↦ ‖a x‖ * ‖c x‖ + ‖b x‖ ^ 2 := by
+  -- Contract the curvature coefficients with `g⁻¹ = 1 + (g⁻¹ - 1)`: the identity picks out the
+  -- trace of their linear part, and the other terms are quadratic.
+  refine (IsBigO.fun_sum (s := .univ) fun j _ ↦ IsBigO.fun_sum (s := .univ) fun k _ ↦
+    (isBigO_mul_of_left (Matrix.isBigO_inv_sub_one_apply_of_tendsto_one hg hga j k)
+      (IsBigO.fun_sum (s := .univ) fun i _ ↦ (isBigO_christoffelDerivLin hddg i j k i).sub
+        (isBigO_christoffelDerivLin hddg j i k i))).add
+    (isBigO_one_mul (Matrix.isBigO_inv_apply_of_tendsto_one hg j k)
+      (isBigO_sum_riemannOfJet_sub hg hga hdg hddg j k))).congr' ?_ .rfl
+  filter_upwards [hsymm] with x hx
+  rw [← sum_sum_christoffelDerivLin_sub (ddg x) hx]
+  simp only [scalarCurvatureOfJet_def, Matrix.sub_apply, Matrix.one_apply, sub_mul, mul_sub,
+    ite_mul, one_mul, zero_mul, Finset.sum_add_distrib, Finset.sum_sub_distrib, Finset.sum_ite_eq,
+    Finset.mem_univ, ite_true]
+  ring
+
+end Linearization
+
+end TauCeti.Manifold
 
 namespace TauCeti.Manifold
 
@@ -485,9 +639,9 @@ theorem scalarCurvature_eq_scalarCurvatureOfJet (hy : y ∈ (extChartAt I x₀).
     -- `T_y M` is `g.toRiemannianMetric` applied to the two vectors, by definition.
     rfl
   rw [scalarCurvature_def, CovariantDerivative.scalarCurvature_apply,
-    TauCeti.bilinFormTrace_eq_sum_inv_gram _ B, hgram, scalarCurvatureOfJet]
+    LinearMap.BilinMap.metricTrace_eq_sum_inv_gram _ B, hgram, scalarCurvatureOfJet]
   refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [CovariantDerivative.ricciTensor_eq_sum _ y B]
+  rw [smul_eq_mul, CovariantDerivative.ricciTensor_eq_sum _ y B]
   congr 1
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have : IsManifold I (1 + 1) M := IsManifold.of_le (n := ∞) (by simp)

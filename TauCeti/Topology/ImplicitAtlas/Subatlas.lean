@@ -114,12 +114,6 @@ variable [DecidableEq A] [DecidableEq A'] {Γ : A → Type*} [∀ α, Group (Γ 
   {act : ∀ I : Finset A, ((α : I) → Γ α) →* (T I ≃ₜ T I)}
   {X : Type*} [TopologicalSpace X] {d : ℤ} (𝒜 : ImplicitAtlas Γ E ρ T act X d)
 
-/-- The images `U_IJ` of footprint maps with equal targets `J = J'` agree. -/
-private theorem range_footprintMap_eq_of_eq {I J J' : Finset A} (h : I ⊆ J) (h' : I ⊆ J')
-    (hJ : J = J') : range (𝒜.footprintMap h) = range (𝒜.footprintMap h') := by
-  subst hJ
-  rfl
-
 /-- The footprint map `ψ_IJ` of the relabelled atlas: the footprint map `ψ_(f I)(f J)` of `𝒜`,
 on the zero set `Z_IJ = Z_(f I)(f J)`. -/
 private noncomputable def relabelFootprintMap {I J : Finset A'} (h : I ⊆ J) :
@@ -167,7 +161,7 @@ noncomputable def relabel (hf : ⋃ I : Finset A', 𝒜.footprint (I.map f) = un
   range_footprintMap_inter I J₁ J₂ h₁ h₂ := by
     simp only [range_relabelFootprintMap]
     rw [𝒜.range_footprintMap_inter]
-    exact range_footprintMap_eq_of_eq 𝒜 _ _ (map_union J₁ J₂).symm
+    exact 𝒜.range_footprintMap_eq_of_eq _ _ (map_union J₁ J₂).symm
   footprintMap_mem_range_iff I J K hIJ hJK x := by
     simp only [range_relabelFootprintMap]
     exact 𝒜.footprintMap_mem_range_iff (map_subset_map.2 hIJ) (map_subset_map.2 hJK) ⟨x.val, _⟩
@@ -206,7 +200,9 @@ noncomputable def relabel (hf : ⋃ I : Finset A', 𝒜.footprint (I.map f) = un
       (Homeomorph.piCongrLeft (Y := fun α : ↥(J.map f \ I.map f) ↦ E α) σ).symm), hxe,
       fun y hy ↦ ?_⟩
     -- Both sides are `s_(f α)(y)` for `α ∈ J \ I`, since `σ α` is `f α` by definition.
-    exact funext fun α ↦ congrFun (he y hy) (σ α)
+    refine funext fun α ↦ ?_
+    rw [kuranishiSdiff_apply, relabelKuranishi_apply]
+    exact (congrFun (he y hy) (σ α)).trans (kuranishiSdiff_apply _ _ _ _ _)
   exists_footprintMap_eq y := by
     obtain ⟨I, hI⟩ := mem_iUnion.1 (hf.ge (mem_univ y))
     obtain ⟨x, hx, hxy⟩ := 𝒜.mem_footprint.1 hI
@@ -253,7 +249,7 @@ theorem footprintMap_relabel {I J : Finset A'} (h : I ⊆ J)
 theorem footprint_relabel (I : Finset A') :
     (𝒜.relabel f hf).footprint I = 𝒜.footprint (I.map f) := by
   ext y
-  simp only [mem_footprint]
+  simp only [Core.mem_footprint]
   -- The footprint maps `ψ_∅I` and `ψ_∅(f I)` agree on the equal zero sets `Z_∅I = Z_∅(f I)`.
   constructor
   · rintro ⟨x, hx, rfl⟩
@@ -282,6 +278,13 @@ noncomputable def restrict (S : Set A)
     classical
     obtain ⟨I, hIS, hy⟩ := mem_iUnion₂.1 (hS.ge (mem_univ y))
     exact mem_iUnion.2 ⟨I.subtype (· ∈ S), by rwa [subtype_map_of_mem fun α hα ↦ hIS hα]⟩
+
+/-- The subatlas on `S` is the relabelling of `𝒜` along the inclusion `S ↪ A`. -/
+theorem restrict_eq_relabel (S : Set A)
+    (hS : ⋃ (I : Finset A) (_ : (I : Set A) ⊆ S), 𝒜.footprint I = univ)
+    (hS' : ⋃ I : Finset S, 𝒜.footprint (I.map (.subtype (· ∈ S))) = univ) :
+    𝒜.restrict S hS = 𝒜.relabel (.subtype (· ∈ S)) hS' :=
+  (rfl)
 
 /-- The footprints of the subatlas on `S` are those of `𝒜`. -/
 @[simp]

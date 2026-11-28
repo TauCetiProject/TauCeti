@@ -12,9 +12,11 @@ import Mathlib.Algebra.Order.Star.Real
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.SquaredDistance
+import TauCeti.Analysis.Matrix.QuadraticBounds
 import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Basic
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
@@ -231,8 +233,8 @@ private theorem neg_sum_mul_fderiv_fderiv_cutoff_mul_le {lam Lam R : ℝ}
   -- `-2 (m + 2) n Λ R⁻² s^m u`.
   have h₂ : -(2 * (m + 2) * n * Lam / R ^ 2 * s ^ m * u y) ≤ u y * T₂ := by
     have hT₂ := neg_le_sum_mul_fderiv_fderiv_cutoff (ha.quadraticForm_nonneg hy) c y R m hs0.le
-    have htr0 : 0 ≤ (a y).trace := Finset.sum_nonneg fun i _ => by
-      simpa [toQuadraticForm'_apply] using ha.quadraticForm_nonneg hy (EuclideanSpace.single i 1)
+    have htr0 : 0 ≤ (a y).trace :=
+      trace_nonneg_of_toQuadraticForm'_nonneg fun ξ ↦ ha.quadraticForm_nonneg hy (WithLp.toLp 2 ξ)
     have htr := ha.trace_le hy
     have hsm : s ^ (m + 1) ≤ s ^ m := pow_le_pow_of_le_one hs0.le hs1 (Nat.le_succ m)
     have hkey : -(2 * (m + 2) * n * Lam / R ^ 2 * s ^ m) ≤ T₂ := by
@@ -306,8 +308,11 @@ private theorem abs_det_hessianOperator_cutoff_mul_le {lam Lam R M : ℝ}
       (EuclideanSpace.single j 1) ≤ G := by
     refine (neg_sum_mul_fderiv_fderiv_cutoff_mul_le m ha hyB
       (hu.contDiffAt (isOpen_ball.mem_nhds hyB)) (hsub y hyB) hu0 hgrad).trans ?_
-    have hpow := Real.pow_mul_le_rpow_mul_rpow (b := 2) two_pos hs0.le hu0 (hmax y hyB)
-    push_cast at hpow
+    -- Split `s ^ m u` as `(s ^ (m + 2) u) ^ θ u ^ (1 - θ)` with `θ = m / (m + 2)`.
+    have hpow := Real.rpow_mul_mul_le_rpow_mul_rpow hs0.le hu0
+      (by positivity : (0 : ℝ) ≤ m / (m + 2)) (p := m + 2) (by exact_mod_cast hmax y hyB)
+    have hm2 : (m : ℝ) + 2 ≠ 0 := by positivity
+    rw [mul_div_cancel₀ _ hm2, Real.rpow_natCast, one_sub_div hm2, add_sub_cancel_left] at hpow
     calc (f y)⁻ + 2 * (m + 2) * (4 * m + 12 + (N : ℝ)) * Lam / R ^ 2 *
           (1 - ‖y - c‖ ^ 2 / R ^ 2) ^ m * u y
         = (f y)⁻ + 2 * (m + 2) * (4 * m + 12 + (N : ℝ)) * Lam / R ^ 2 *

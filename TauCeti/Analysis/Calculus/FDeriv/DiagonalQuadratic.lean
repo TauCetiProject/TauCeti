@@ -29,11 +29,17 @@ derivatives are `aᵢ xᵢ`; over `ℝ` its second derivative is the diagonal bi
 
 ## Main results
 
+* `TauCeti.hasFDerivAt_sum_sq`: the derivative of `∑ᵢ xᵢ²` is `v ↦ ∑ᵢ 2 xᵢ vᵢ`.
 * `TauCeti.hasFDerivAt_diagonalQuadratic`: the derivative of `∑ᵢ aᵢ xᵢ² / 2` is
   `v ↦ ∑ᵢ aᵢ xᵢ vᵢ`.
 * `TauCeti.fderiv_diagonalQuadratic_apply_single`: the partial derivatives of
   `∑ᵢ aᵢ xᵢ² / 2` are `aᵢ xᵢ`.
 * `TauCeti.fderiv_fderiv_diagonalQuadratic_apply`: its second derivative is diagonal.
+* `TauCeti.fderiv_fderiv_diagonalQuadratic_apply_single_single`: its second partial derivatives
+  are `aᵢ δᵢⱼ`.
+* `TauCeti.fderiv_diagonalQuadratic_comp_sub_apply_single` and
+  `TauCeti.fderiv_fderiv_diagonalQuadratic_comp_sub_apply_single`: the first and second partial
+  derivatives of the translated model `y ↦ ∑ᵢ aᵢ (yᵢ - pᵢ)² / 2`.
 -/
 
 public section
@@ -61,6 +67,14 @@ theorem contDiff_diagonalQuadratic (a : ι → 𝕜) {n : WithTop ℕ∞} :
     ContDiff 𝕜 n (diagonalQuadratic a) := by
   unfold diagonalQuadratic
   fun_prop
+
+/-- The sum of squares `∑ᵢ xᵢ²` on `𝕜^ι` has derivative `v ↦ ∑ᵢ 2 xᵢ vᵢ` at `x`. -/
+theorem hasFDerivAt_sum_sq (x : ι → 𝕜) :
+    HasFDerivAt (fun y : ι → 𝕜 ↦ ∑ i, y i ^ 2)
+      (∑ i, (2 * x i) • ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : ι ↦ 𝕜) i) x := by
+  refine HasFDerivAt.fun_sum fun i _ ↦ ?_
+  convert (hasFDerivAt_apply (𝕜 := 𝕜) i x).pow 2 using 1
+  simp
 
 /-- The diagonal quadratic function `∑ᵢ aᵢ xᵢ² / 2` has derivative `v ↦ ∑ᵢ aᵢ xᵢ vᵢ` at `x`. -/
 theorem hasFDerivAt_diagonalQuadratic [NeZero (2 : 𝕜)] (a x : ι → 𝕜) :
@@ -105,6 +119,39 @@ theorem fderiv_fderiv_diagonalQuadratic_apply (a x v w : ι → ℝ) :
   unfold diagonalQuadratic
   rw [fderiv_fderiv_sum_comp_eval_apply (φ := fun i y ↦ a i * y ^ 2 / 2) fun i ↦ by fun_prop]
   simp [deriv_deriv_mul_sq_div_two]
+
+/-- The Hessian of `∑ᵢ aᵢ xᵢ² / 2` in the coordinate directions `i`, `j` is the diagonal entry `aᵢ`
+when `i = j` and `0` otherwise. -/
+theorem fderiv_fderiv_diagonalQuadratic_apply_single_single [DecidableEq ι] (a x : ι → ℝ)
+    (i j : ι) :
+    fderiv ℝ (fderiv ℝ (diagonalQuadratic a)) x (Pi.single i 1) (Pi.single j 1) =
+      if i = j then a i else 0 := by
+  by_cases h : i = j
+  · subst h
+    simp [Pi.single_apply]
+  · -- Every term `aₖ δᵢₖ δⱼₖ` vanishes, since `k` cannot be both `i` and `j`.
+    simp only [h, ↓reduceIte, fderiv_fderiv_diagonalQuadratic_apply]
+    refine Finset.sum_eq_zero fun k _ ↦ ?_
+    by_cases hk : k = i
+    · simp [hk, h]
+    · simp [hk]
+
+/-- The partial derivatives of the translated quadratic model `y ↦ ∑ᵢ aᵢ (yᵢ - pᵢ)² / 2` are
+`aᵢ (xᵢ - pᵢ)`. -/
+@[simp]
+theorem fderiv_diagonalQuadratic_comp_sub_apply_single [DecidableEq ι] (a p x : ι → ℝ) (i : ι) :
+    fderiv ℝ (fun y ↦ diagonalQuadratic a (y - p)) x (Pi.single i 1) = a i * (x i - p i) := by
+  rw [fderiv_comp_sub, fderiv_diagonalQuadratic_apply_single, Pi.sub_apply]
+
+/-- The Hessian of the translated quadratic model `y ↦ ∑ᵢ aᵢ (yᵢ - pᵢ)² / 2` is `diag(a)`. -/
+@[simp]
+theorem fderiv_fderiv_diagonalQuadratic_comp_sub_apply_single [DecidableEq ι] (a p x : ι → ℝ)
+    (i j : ι) :
+    fderiv ℝ (fderiv ℝ fun y ↦ diagonalQuadratic a (y - p)) x (Pi.single i 1) (Pi.single j 1) =
+      if i = j then a i else 0 := by
+  have h : fderiv ℝ (fun y ↦ diagonalQuadratic a (y - p)) =
+      fun y ↦ fderiv ℝ (diagonalQuadratic a) (y - p) := funext fun y ↦ fderiv_comp_sub p
+  rw [h, fderiv_comp_sub, fderiv_fderiv_diagonalQuadratic_apply_single_single]
 
 end DiagonalQuadratic
 

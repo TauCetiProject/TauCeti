@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Exponential.Classification
 public import TauCeti.Geometry.Lie.Exponential.Smoothness
 public import TauCeti.Geometry.Lie.Exponential.Trotter
+public import TauCeti.Geometry.Lie.Tangent.Differential
 import TauCeti.Geometry.Lie.Exponential.Homomorphism
 
 /-!
@@ -39,8 +40,14 @@ The linear map `L` is not exposed: once `f` is known to be smooth, it is the dif
 
 * `TauCeti.Lie.contMDiff_of_continuous_monoidHom`: **automatic smoothness.** A continuous
   homomorphism between finite-dimensional real Lie groups is smooth.
+* `TauCeti.Lie.contMDiff_of_groupLieAlgebraMap_ne_zero`: a homomorphism whose differential at the
+  identity is nonzero is smooth; no continuity is assumed. In particular so is one whose
+  differential is surjective onto a nonzero Lie algebra
+  (`TauCeti.Lie.contMDiff_of_surjective_groupLieAlgebraMap`).
 * `ContinuousMonoidHom.toContMDiffMonoidMorphism`: a continuous homomorphism of such Lie groups,
   bundled as a smooth monoid morphism.
+* `ContinuousMulEquiv.toDiffeomorph`: an isomorphism of topological groups between such Lie groups,
+  as a diffeomorphism.
 
 ## References
 
@@ -145,6 +152,32 @@ theorem contMDiff_of_continuous_monoidHom {F : Type*} [FunLike F G G'] [MonoidHo
   simpa only [homGeneratorLinearMap_apply, one_smul, hφ] using
     map_lieExp_smul (I' := I') φ X 1
 
+/-- **A homomorphism with nonzero differential is smooth.** Its differential at the identity is
+nonzero, so it is differentiable, hence continuous, at the identity. It is therefore continuous,
+hence smooth by automatic smoothness. -/
+theorem contMDiff_of_groupLieAlgebraMap_ne_zero {f : G →* G'}
+    (hf : f.groupLieAlgebraMap I I' ≠ 0) : ContMDiff I I' ∞ f := by
+  have hd : MDifferentiableAt I I' f 1 := by
+    by_contra h
+    refine hf (ContinuousLinearMap.ext fun ξ ↦ ?_)
+    rw [MonoidHom.groupLieAlgebraMap_apply, mfderiv_zero_of_not_mdifferentiableAt h, zero_apply,
+      zero_apply]
+    -- The zero of `TangentSpace I' (f 1)` is the zero of `GroupLieAlgebra I' G'`: both are `E'`.
+    rfl
+  have := topologicalGroup_of_lieGroup (G := G) I ∞
+  have := topologicalGroup_of_lieGroup (G := G') I' ∞
+  exact contMDiff_of_continuous_monoidHom f (continuous_of_continuousAt_one f hd.continuousAt)
+
+/-- **A homomorphism with surjective differential onto a nonzero Lie algebra is smooth**, since its
+differential is then nonzero (`TauCeti.Lie.contMDiff_of_groupLieAlgebraMap_ne_zero`). -/
+theorem contMDiff_of_surjective_groupLieAlgebraMap [Nontrivial E'] {f : G →* G'}
+    (hf : Surjective (f.groupLieAlgebraMap I I')) : ContMDiff I I' ∞ f :=
+  contMDiff_of_groupLieAlgebraMap_ne_zero fun h ↦ by
+    obtain ⟨ξ, hξ⟩ := exists_ne (0 : E')
+    obtain ⟨η, hη⟩ := hf ξ
+    -- The zero of `GroupLieAlgebra I' G'` is the zero of the model space `E'`.
+    exact hξ (by rw [← hη, h, zero_apply]; rfl)
+
 end TauCeti.Lie
 
 namespace ContinuousMonoidHom
@@ -164,3 +197,31 @@ theorem coe_toContMDiffMonoidMorphism (f : G →ₜ* G') :
   (rfl)
 
 end ContinuousMonoidHom
+
+namespace ContinuousMulEquiv
+
+variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [LieGroup I ∞ G] [LieGroup I' ∞ G']
+
+variable (I I') in
+/-- **A topological group isomorphism of Lie groups is a diffeomorphism.** An isomorphism of
+topological groups between finite-dimensional real Lie groups is smooth in both directions
+(`TauCeti.Lie.contMDiff_of_continuous_monoidHom`), so any two Lie group structures on one
+topological group have the same smooth maps. -/
+def toDiffeomorph (e : G ≃ₜ* G') : G ≃ₘ⟮I, I'⟯ G' where
+  toEquiv := e.toEquiv
+  contMDiff_toFun := TauCeti.Lie.contMDiff_of_continuous_monoidHom e e.continuous
+  contMDiff_invFun := TauCeti.Lie.contMDiff_of_continuous_monoidHom e.symm e.symm.continuous
+
+@[simp]
+theorem coe_toDiffeomorph (e : G ≃ₜ* G') : ⇑(e.toDiffeomorph I I') = e :=
+  (rfl)
+
+@[simp]
+theorem toDiffeomorph_symm (e : G ≃ₜ* G') :
+    (e.toDiffeomorph I I').symm = e.symm.toDiffeomorph I' I :=
+  (rfl)
+
+theorem coe_toDiffeomorph_symm (e : G ≃ₜ* G') : ⇑(e.toDiffeomorph I I').symm = e.symm :=
+  (rfl)
+
+end ContinuousMulEquiv

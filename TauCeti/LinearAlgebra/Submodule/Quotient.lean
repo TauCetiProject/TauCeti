@@ -43,7 +43,16 @@ packages this as an additive equivalence. For `I = Ring.jacobson R` it applies t
 
 The images of a set `S` span `M ⧸ p` exactly when `p ⊔ span S = ⊤`
 (`Submodule.span_image_mkQ_eq_top_iff`). When the quotient is finitely generated, finitely many
-vectors of `S` already suffice (`Submodule.exists_finset_subset_sup_span_eq_top`).
+vectors of `S` already suffice (`Submodule.exists_finset_subset_sup_span_eq_top`). For the range
+of a linear map `f`, this says that finitely many vectors `vᵢ` of `S` make
+`(x, c) ↦ f x + ∑ cᵢ vᵢ` onto (`LinearMap.exists_surjective_coprod_fintypeLinearCombination`),
+the form in which transversality arguments enlarge an operator with finite cokernel by finitely
+many parameter directions.
+
+If an `R`-submodule `P` of an `S`-module `M` equals the scalar restriction `Q.restrictScalars R`
+of an `S`-submodule `Q`, composing `Submodule.quotEquivOfEq` with
+`Submodule.Quotient.restrictScalarsEquiv` gives a canonical `R`-linear equivalence
+`Submodule.quotEquivOfEqRestrictScalars : (M ⧸ P) ≃ₗ[R] M ⧸ Q`.
 -/
 
 public section
@@ -152,6 +161,34 @@ theorem exists_finset_subset_sup_span_eq_top {p : Submodule R M} [Module.Finite 
   refine ⟨t, htS, ?_⟩
   rw [← span_image_mkQ_eq_top_iff, ← Finset.coe_image, ← hbspan, h]
 
+section RestrictScalars
+
+variable {S : Type*} [Ring S] [SMul R S] [Module S M] [IsScalarTower R S M]
+
+/-- If an `R`-submodule `P` equals the scalar restriction of an `S`-submodule `Q`, the quotients
+`M ⧸ P` and `M ⧸ Q` are canonically `R`-linearly equivalent. -/
+def quotEquivOfEqRestrictScalars (P : Submodule R M) (Q : Submodule S M)
+    (h : P = Q.restrictScalars R) : (M ⧸ P) ≃ₗ[R] M ⧸ Q :=
+  (quotEquivOfEq P (Q.restrictScalars R) h).trans (Quotient.restrictScalarsEquiv R Q)
+
+/-- `Submodule.quotEquivOfEqRestrictScalars` sends a quotient class to the class of the same
+representative. -/
+@[simp]
+theorem quotEquivOfEqRestrictScalars_mk (P : Submodule R M) (Q : Submodule S M)
+    (h : P = Q.restrictScalars R) (x : M) :
+    P.quotEquivOfEqRestrictScalars Q h (Quotient.mk x) = Quotient.mk x := by
+  simp [quotEquivOfEqRestrictScalars]
+
+/-- The inverse of `Submodule.quotEquivOfEqRestrictScalars` sends a quotient class to the class of
+the same representative. -/
+@[simp]
+theorem quotEquivOfEqRestrictScalars_symm_mk (P : Submodule R M) (Q : Submodule S M)
+    (h : P = Q.restrictScalars R) (x : M) :
+    (P.quotEquivOfEqRestrictScalars Q h).symm (Quotient.mk x) = Quotient.mk x := by
+  rw [LinearEquiv.symm_apply_eq, quotEquivOfEqRestrictScalars_mk]
+
+end RestrictScalars
+
 end Submodule
 
 namespace LinearMap
@@ -205,6 +242,21 @@ theorem coe_mapMkQKerEquiv_mk (f : M₁ →ₗ[R] M₂) (g : M₂ →ₗ[R] M₃
   simp [mapMkQKerEquiv]
 
 end MapMkQKer
+
+/-- **Finitely many vectors make a map with finitely generated cokernel onto.** If the cokernel
+`N ⧸ range f` of `f : P → N` is finitely generated and `range f` and the span of `S` together
+span `N`, then finitely many vectors `v₁, …, vₙ` of `S` make `(x, c) ↦ f x + ∑ cᵢ vᵢ` onto. -/
+theorem exists_surjective_coprod_fintypeLinearCombination {P : Type*} [AddCommMonoid P]
+    [Module R P] {f : P →ₗ[R] N}
+    [Module.Finite R (N ⧸ range f)] {S : Set N} (hS : range f ⊔ Submodule.span R S = ⊤) :
+    ∃ (n : ℕ) (v : Fin n → N), (∀ i, v i ∈ S) ∧
+      Function.Surjective (f.coprod (Fintype.linearCombination R v)) := by
+  classical
+  obtain ⟨t, htS, htop⟩ := Submodule.exists_finset_subset_sup_span_eq_top hS
+  refine ⟨t.card, fun i ↦ t.equivFin.symm i, fun i ↦ htS (t.equivFin.symm i).property, ?_⟩
+  rw [← range_eq_top, range_coprod, Fintype.range_linearCombination, ← htop]
+  congr
+  exact (EquivLike.range_comp (Subtype.val : t → N) t.equivFin.symm).trans Subtype.range_coe
 
 end LinearMap
 

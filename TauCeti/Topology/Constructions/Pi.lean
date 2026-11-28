@@ -9,6 +9,7 @@ public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.Algebra.Ring.Real
 
 public import Mathlib.Topology.Separation.Hausdorff
+public import TauCeti.Data.Finset.Pi
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Basic.Finite.Sigma
 
@@ -29,6 +30,11 @@ proof of Mycielski's theorem.
 In a Hausdorff space the injective tuples indexed by a finite type form an open subset of the
 product, such as the ordered triples of distinct points of the Riemann sphere.
 
+Repeating the first entry of a finite tuple, `(q₀, …, qₙ) ↦ (q₀, q₀, q₁, …, qₙ)`, is an embedding.
+
+Density in a product only has to be checked on finitely many coordinates at a time, which is how
+approximation theorems at finitely many places give density in a product of completions.
+
 ## Main results
 
 * `TauCeti.isOpen_setOf_forall_abs_lt_one`: the finite-dimensional open unit cube is open.
@@ -39,11 +45,16 @@ product, such as the ordered triples of distinct points of the Riemann sphere.
   set.
 * `TauCeti.continuous_extend_subtypeVal`: extending functions on a subset along `Subtype.val`,
   with a fixed fallback, is continuous.
+* `TauCeti.isEmbedding_cons_apply_zero`: repeating the first entry of a tuple is an embedding.
+* `TauCeti.denseRange_pi_subtype_of_forall_finset`: a map into a product over a set `T` has dense
+  range if it hits finitely many nonempty open sets at finitely many coordinates in `T`.
+* `Finset.continuous_extendByZero₂`: extension by zero of dependent functions on a finite set
+  `s` to a finite set `t` is continuous.
 -/
 
 public section
 
-open Set Function
+open Set Function Topology
 
 namespace TauCeti
 
@@ -77,6 +88,16 @@ theorem isOpen_setOf_injective [T2Space X] {κ : Type*} [Finite κ] :
   rw [this]
   exact isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun j ↦
     isOpen_iInter_of_finite fun _ ↦ isOpen_ne_fun (continuous_apply i) (continuous_apply j)
+
+/-- Repeating the first entry, `(q₀, …, qₙ) ↦ (q₀, q₀, q₁, …, qₙ)`, is an embedding of tuples:
+forgetting the first entry is a continuous left inverse. -/
+theorem isEmbedding_cons_apply_zero {n : ℕ} :
+    IsEmbedding fun q : Fin (n + 1) → X ↦ (Fin.cons (q 0) q : Fin (n + 2) → X) :=
+  IsEmbedding.of_comp ((continuous_apply 0).finCons (A := fun _ ↦ X) continuous_id)
+    continuous_id.finTail <| by
+      -- forgetting the repeated first entry gives back the tuple
+      simp only [Function.comp_def, id_eq, Fin.tail_cons]
+      exact IsEmbedding.id
 
 /-- Shrinking along one injective tuple: nonempty open sets `V i` can be shrunk to nonempty open
 sets `W i ⊆ V i` so that the box `∏ j, W (t j)` along an injective finite tuple `t` of indices
@@ -153,4 +174,37 @@ theorem not_discreteTopology_pi {ι : Type*} {Y : ι → Type*} [∀ i, Topologi
   simp only [Function.update_self] at this
   exact hxy j this.symm
 
+/-- A map into the product of spaces `Y i` over the points of a set `T` has dense range if, for
+every finite subset `J` of `T` and all nonempty open sets `u i ⊆ Y i` for `i ∈ J`, some value of
+the map lies in `u i` at every coordinate `i ∈ J`. The sets `u i` for `i ∉ J` are unconstrained. -/
+theorem denseRange_pi_subtype_of_forall_finset {ι α : Type*} {Y : ι → Type*}
+    [∀ i, TopologicalSpace (Y i)] {T : Set ι} {f : α → ∀ i : T, Y i}
+    (h : ∀ (J : Finset ι), (J : Set ι) ⊆ T → ∀ u : ∀ i, Set (Y i),
+      (∀ i ∈ J, IsOpen (u i) ∧ (u i).Nonempty) → ∃ x, ∀ i : T, i.val ∈ J → f x i ∈ u i) :
+    DenseRange f := by
+  classical
+  rw [DenseRange, dense_iff_inter_open]
+  rintro U hU ⟨g, hg⟩
+  -- `U` contains a basic open set, a product of opens `u i` over a finite set `I ⊆ T`.
+  obtain ⟨I, u, hu, hIU⟩ := isOpen_pi_iff.1 hU g hg
+  have hI (i : ι) : i ∈ I.map (Embedding.subtype (· ∈ T)) ↔ ∃ h : i ∈ T, ⟨i, h⟩ ∈ I := by simp
+  obtain ⟨x, hx⟩ := h (I.map (Embedding.subtype (· ∈ T))) (fun i hi ↦ ((hI i).1 hi).1)
+    (fun i ↦ if h : i ∈ T then u ⟨i, h⟩ else univ) fun i hi ↦ by
+      obtain ⟨hiT, hiI⟩ := (hI i).1 hi
+      simp only [hiT, ↓reduceDIte]
+      exact ⟨(hu _ hiI).1, _, (hu _ hiI).2⟩
+  refine ⟨f x, hIU fun i hi ↦ ?_, x, rfl⟩
+  simpa only [i.property, ↓reduceDIte] using hx i ((hI i).2 ⟨i.property, hi⟩)
+
 end TauCeti
+
+/-- Extension by zero of dependent functions on a finite set `s` to a finite set `t` is continuous
+for the product topologies. -/
+@[continuity, fun_prop]
+theorem Finset.continuous_extendByZero₂ {ι : Type*} [DecidableEq ι] {π : ι → Type*}
+    [∀ i, Zero (π i)] [∀ i, TopologicalSpace (π i)] {s : Finset ι} (t : Finset ι) :
+    Continuous (Finset.extendByZero₂ (π := π) (s := s) t) :=
+  continuous_pi fun i ↦ by
+    by_cases h : i.val ∈ s
+    · simpa only [Finset.extendByZero₂_of_mem _ _ h] using continuous_apply (⟨i, h⟩ : s)
+    · simpa only [Finset.extendByZero₂_of_notMem _ _ h] using continuous_const

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Period.Lattice
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.CoordinateCover
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # The section map of a regular Lagrangian torus fibration
@@ -154,6 +155,13 @@ theorem sectionMap_mk_eq_sectionMap_mk_iff (b : B) (α β : F →L[ℝ] ℝ) :
   Subtype.ext_iff.symm.trans ((h.fiberAction_eq_fiberAction_iff hσc b _).trans
     (Iff.of_eq (congrArg (· ∈ h.periodLattice hσc b)
       (by rw [neg_neg, ← sub_eq_add_neg] : - -α + -β = α - β))))
+
+/-- **Periods do not move the section map.** Translating a covector at `b` by an element of the
+period lattice `Λ_b` does not change its image under the section map. -/
+theorem sectionMap_mk_add_of_mem (b : B) (α β : F →L[ℝ] ℝ) (hβ : β ∈ h.periodLattice hσc b) :
+    h.sectionMap hσc hs (TotalSpace.mk' (F →L[ℝ] ℝ) b (α + β)) =
+      h.sectionMap hσc hs (TotalSpace.mk' (F →L[ℝ] ℝ) b α) :=
+  (h.sectionMap_mk_eq_sectionMap_mk_iff hσc hs b _ _).2 (by rwa [add_sub_cancel_left])
 
 /-- **The section map is surjective.** -/
 theorem surjective_sectionMap : Surjective (h.sectionMap hσc hs) := fun y ↦ by

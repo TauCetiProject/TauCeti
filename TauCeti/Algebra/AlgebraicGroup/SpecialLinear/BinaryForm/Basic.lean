@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Coaction
 public import TauCeti.Algebra.Polynomial.Homogenize
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Basic
+public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Polynomial
 public import TauCeti.Algebra.Coalgebra.Comodule.SymmetricAlgebra.Polynomial
 public import Mathlib.Data.Nat.Digits.Defs
 import Mathlib.Algebra.MvPolynomial.Coeff
@@ -121,7 +122,7 @@ attribute [local instance] GeneralLinear.standardComodule standardComodule
 /-- The comodule of polynomial functions on the standard representation of `SLₙ`, in the
 coordinates `X i` of the standard basis. Points act contragrediently, `(g • f)(v) = f(g⁻¹ v)`
 (`algebraTensorAlgEquiv_endOfPoint_polynomialComodule`). -/
-@[implicit_reducible]
+@[expose, implicit_reducible]
 noncomputable def polynomialComodule :
     Comodule R (coordinateHopfAlgebra R n) (MvPolynomial (Fin n) R) :=
   Comodule.polynomial (coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n))
@@ -133,6 +134,13 @@ theorem polynomialComodule_coact :
     Comodule.coact (R := R) (C := coordinateHopfAlgebra R n) (M := MvPolynomial (Fin n) R) =
       (Comodule.polynomialCoact (coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n))).toLinearMap :=
   Comodule.polynomial_coact _
+
+/-- The polynomial functions on the standard representation of `SLₙ` form a comodule algebra
+over `O(SLₙ)`, extending `polynomialComodule R n`. -/
+@[expose, implicit_reducible]
+noncomputable def polynomialComoduleAlgebra :
+    ComoduleAlgebra R (coordinateHopfAlgebra R n) (MvPolynomial (Fin n) R) :=
+  ComoduleAlgebra.polynomial (coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n))
 
 section Column
 
@@ -212,6 +220,18 @@ theorem mem_binaryForms {d : ℕ} {f : MvPolynomial (Fin 2) R} :
 theorem X_zero_pow_mem_binaryForms {d : ℕ} :
     (MvPolynomial.X 0 ^ d : MvPolynomial (Fin 2) R) ∈ binaryForms R d :=
   mem_binaryForms.mpr (MvPolynomial.isHomogeneous_X_pow 0 d)
+
+/-- The monomial `yᵈ` is a binary form of degree `d`. -/
+theorem X_one_pow_mem_binaryForms {d : ℕ} :
+    (MvPolynomial.X 1 ^ d : MvPolynomial (Fin 2) R) ∈ binaryForms R d :=
+  mem_binaryForms.mpr (MvPolynomial.isHomogeneous_X_pow 1 d)
+
+/-- The underlying submodule of `binaryForms R d` is the degree-`d` homogeneous submodule. -/
+@[simp]
+theorem binaryForms_toSubmodule (R : Type u) [CommRing R] (d : ℕ) :
+    letI := polynomialComodule R 2
+    (binaryForms R d).toSubmodule = MvPolynomial.homogeneousSubmodule (Fin 2) R d :=
+  SetLike.ext fun p ↦ mem_binaryForms.trans (MvPolynomial.mem_homogeneousSubmodule d p).symm
 
 /-- **The rational action of `SL₂` on binary forms.** A point with matrix `[[a, b], [c, d]]` acts
 by `(g • f)(x, y) = f(d x - b y, a y - c x)`. -/
@@ -300,8 +320,9 @@ theorem exists_lTensor_coact_eq_tmul_iff_mem_span [IsDomain R] {d : ℕ} {f : Mv
   let _ := polynomialComodule R 2
   refine ⟨fun ⟨h, hfh⟩ ↦ ?_, fun hmem ↦ ?_⟩
   · -- The universal upper unitriangular point over `R[t]`, as a point of the Borel subgroup.
+    -- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
     let u : Matrix.SpecialLinearGroup (Fin 2) R[X] :=
-      ⟨!![1, X; 0, 1], by simp [Matrix.det_fin_two]⟩
+      .mk !![1, X; 0, 1] (by simp [Matrix.det_fin_two])
     have hu : u ∈ (upperTriangularGroup (Fin 2) R[X]).comap Matrix.SpecialLinearGroup.toGL := by
       rw [UpperTriangularGroup.mem_comap_toGL_iff]
       intro i j hij

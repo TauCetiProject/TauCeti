@@ -25,10 +25,11 @@ subsequence have been realigned, this result supplies the limiting strict grapho
 ## Main results
 
 * `TauCeti.DenseGraphLimits.exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound` constructs a
-  strict graphon `L¹` limit from an `L¹` Cauchy modulus tending to zero.
+  strict graphon `L¹` limit from an `L¹` Cauchy modulus tending to zero, at the rate of the
+  modulus.
 * `TauCeti.DenseGraphLimits.cutDist_le_eLpNorm_one_toReal` bounds cut distance by `L¹` distance.
 * `TauCeti.DenseGraphLimits.exists_graphon_tendsto_cutDist_of_tendsto_eLpNorm_bound` is the
-  resulting cut-distance convergence.
+  resulting cut-distance convergence, with the same rate.
 
 ## References
 
@@ -49,10 +50,11 @@ namespace TauCeti.DenseGraphLimits
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
 
 /-- A graphon sequence with an `L¹` Cauchy modulus tending to zero has a strict graphon limit in
-`L¹`.
+`L¹`, at rate `B`.
 
-The bound `B N` controls every pair of terms whose indices are at least `N`. This is the graphon
-form of `TauCeti.exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound`: the limit is again symmetric and
+The bound `B N` controls every pair of terms whose indices are at least `N`, and it passes to the
+limit: every term of index at least `N` is within `B N` of the limit. This is the graphon form of
+`TauCeti.exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound`: the limit is again symmetric and
 `[0, 1]`-valued, and so is represented by a strict graphon. -/
 theorem exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound
     (W : ℕ → Graphon Ω μ) {B : ℕ → ℝ≥0∞} (hB : Tendsto B atTop (𝓝 0))
@@ -61,13 +63,16 @@ theorem exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound
         ((fun z : Ω × Ω ↦ W n z.1 z.2) - fun z : Ω × Ω ↦ W m z.1 z.2)
         1 (μ.prod μ) ≤ B N) :
     ∃ Wlim : Graphon Ω μ,
+      (∀ N n, N ≤ n → eLpNorm
+          ((fun z : Ω × Ω ↦ W n z.1 z.2) - fun z : Ω × Ω ↦ Wlim z.1 z.2)
+          1 (μ.prod μ) ≤ B N) ∧
       Tendsto
         (fun n ↦ eLpNorm
           ((fun z : Ω × Ω ↦ W n z.1 z.2) - fun z : Ω × Ω ↦ Wlim z.1 z.2)
           1 (μ.prod μ)) atTop (𝓝 0) := by
   let f : ℕ → Ω × Ω → ℝ := fun n z ↦ W n z.1 z.2
-  obtain ⟨fLim, hfLimMeas, hLp⟩ := exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound le_rfl
-    (fun n ↦ (W n).measurable.aestronglyMeasurable) hB (f := f) hCauchy
+  obtain ⟨fLim, hfLimMeas, hrate, hLp⟩ := exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound
+    (.of_forall fun n ↦ (W n).measurable.aestronglyMeasurable) hB (f := f) hCauchy
   -- A subsequence converges almost everywhere; along it, symmetry and the range `[0, 1]` pass to
   -- the limit.
   obtain ⟨φ, -, hfLim⟩ :=
@@ -106,10 +111,11 @@ theorem exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound
         (Graphon.coeFn_toAEEqFun Wlim).symm
       _ =ᵐ[μ.prod μ] ⇑fLimAE := by rw [hWlim]
       _ =ᵐ[μ.prod μ] fLim := hfLimAE_coe
-  refine ⟨Wlim, hLp.congr' (Eventually.of_forall fun n ↦ ?_)⟩
-  apply eLpNorm_congr_ae
-  filter_upwards [hWlimAE] with z hz
-  simp only [Pi.sub_apply, f, hz]
+  have hdist (n : ℕ) : eLpNorm (f n - fun z : Ω × Ω ↦ Wlim z.1 z.2) 1 (μ.prod μ) =
+      eLpNorm (f n - fLim) 1 (μ.prod μ) :=
+    eLpNorm_congr_ae (EventuallyEq.rfl.sub hWlimAE)
+  exact ⟨Wlim, fun N n hn ↦ (hdist n).trans_le (hrate N n hn),
+    hLp.congr fun n ↦ (hdist n).symm⟩
 
 /-- The cut distance between two graphons on the same probability space is bounded by the real
 `L¹` seminorm of the difference of their uncurried functions. -/
@@ -121,7 +127,8 @@ theorem cutDist_le_eLpNorm_one_toReal (U W : Graphon Ω μ) :
   simp only [SymmKernel.coe_sub, Pi.sub_apply, Graphon.coe_toSymmKernel, Pi.sub_def]
 
 /-- A graphon sequence with an `L¹` Cauchy modulus tending to zero converges in cut distance to a
-strict graphon. This is the cut-distance consequence of
+strict graphon, at rate `B`: every term of index at least `N` is within cut distance `B N` of the
+limit, compared in `ℝ≥0∞` since `B N` may be `∞`. This is the cut-distance consequence of
 `exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound`. -/
 theorem exists_graphon_tendsto_cutDist_of_tendsto_eLpNorm_bound
     (W : ℕ → Graphon Ω μ) {B : ℕ → ℝ≥0∞} (hB : Tendsto B atTop (𝓝 0))
@@ -129,14 +136,17 @@ theorem exists_graphon_tendsto_cutDist_of_tendsto_eLpNorm_bound
       eLpNorm
         ((fun z : Ω × Ω ↦ W n z.1 z.2) - fun z : Ω × Ω ↦ W m z.1 z.2)
         1 (μ.prod μ) ≤ B N) :
-    ∃ Wlim : Graphon Ω μ, Tendsto (fun n ↦ cutDist (W n) Wlim) atTop (𝓝 0) := by
-  obtain ⟨Wlim, hLp⟩ :=
+    ∃ Wlim : Graphon Ω μ, (∀ N n, N ≤ n → ENNReal.ofReal (cutDist (W n) Wlim) ≤ B N) ∧
+      Tendsto (fun n ↦ cutDist (W n) Wlim) atTop (𝓝 0) := by
+  obtain ⟨Wlim, hrate, hLp⟩ :=
     exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound W hB hCauchy
-  refine ⟨Wlim, squeeze_zero
+  refine ⟨Wlim, fun N n hn ↦ ?_, squeeze_zero
     (g := fun n ↦ (eLpNorm
       ((fun z : Ω × Ω ↦ W n z.1 z.2) - fun z : Ω × Ω ↦ Wlim z.1 z.2)
       1 (μ.prod μ)).toReal)
     (fun n ↦ cutDist_nonneg (W n) Wlim) ?_ ?_⟩
+  · exact (ENNReal.ofReal_le_of_le_toReal (cutDist_le_eLpNorm_one_toReal (W n) Wlim)).trans
+      (hrate N n hn)
   · intro n
     exact cutDist_le_eLpNorm_one_toReal (W n) Wlim
   · exact (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hLp

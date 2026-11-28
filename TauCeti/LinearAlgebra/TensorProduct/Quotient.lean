@@ -14,9 +14,11 @@ public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.TensorProduct.Finite
+public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 import TauCeti.LinearAlgebra.Dual.Divisibility
+import TauCeti.LinearAlgebra.Isomorphisms
 
 /-!
 # Cokernels commute with tensor products, heterobasically
@@ -53,9 +55,13 @@ relations, for instance the rationalisation of a module over an integral group r
   `N ⊗[R] (R ⧸ I) ≃ N ⧸ I S • N` for an `S`-module `N`.
 * `LinearMap.cokernelBaseChangeEquiv`: the `S`-linear isomorphism
   `S ⊗[R] cokernel f ≃ₗ[S] cokernel (S ⊗[R] f)`.
+* `TensorProduct.quotTensorQuotEquivQuotSup`: the `R`-linear isomorphism
+  `(R ⧸ I) ⊗[R] (R ⧸ J) ≃ₗ[R] R ⧸ (I ⊔ J)`, with its values on representatives.
 
 ## Main results
 
+* `IsBaseChange.quotient_iff`: scalar change to `R ⧸ I` is equivalent to surjectivity with
+  kernel `I • M`.
 * `TensorProduct.quotientScalarEquiv`: compare tensor products over `R / I` and `R` when
   both factors carry the quotient action, with pure-tensor and naturality laws.
 * `TensorProduct.quotient_tensor_bijective` and `TensorProduct.quotient_map_tensor_bijective`:
@@ -67,9 +73,14 @@ relations, for instance the rationalisation of a module over an integral group r
   `x ↦ 1 ⊗ x` from `M` to `S ⊗[R] M` has kernel `I M`.
 * `TensorProduct.mk_one_bijective_of_ker_le_annihilator`: if `R → S` is surjective and its
   kernel annihilates `M`, then `x ↦ 1 ⊗ x` is a bijection `M → S ⊗[R] M`.
+* `LinearMap.cokernel_baseChange_square` and
+  `LinearMap.liftQ_baseChange_comp_cokernelBaseChangeEquiv_symm`: `cokernelBaseChangeEquiv` is
+  compatible with the quotient maps and with maps induced out of the cokernel.
 * `LinearMap.exact_lTensor_quotient_span_singleton`: if `a : M → N` and `b : N → M` compose in
   both orders to multiplication by `r`, and `r` is regular on `M`, then the reductions of `b` and
   `a` modulo `r` form an exact pair.
+* `LinearMap.exact_lTensor_of_ker_eq_span_singleton`: the same exactness after scalar extension
+  to any quotient of `R` by `(r)`, such as the residue field of a discrete valuation ring.
 * `LinearMap.exact_comp_baseChange_quotient_span_singleton`: under the same hypotheses, with `r`
   regular on `R` and `N` projective, the `R ⧸ (r)`-duals of these reductions form an exact pair.
 * `TensorProduct.AlgebraTensorModule.ker_rTensor_mkQ`: the kernel of the tensored
@@ -112,6 +123,33 @@ theorem one_tmul_eq_zero_iff_exists_smul_eq (r : R) (x : M) :
     Submodule.Quotient.mk_eq_zero, Submodule.ideal_span_singleton_smul,
     Submodule.mem_smul_pointwise_iff_exists]
   exact ⟨fun ⟨y, _, hy⟩ ↦ ⟨y, hy⟩, fun ⟨y, hy⟩ ↦ ⟨y, Submodule.mem_top, hy⟩⟩
+
+/-- The tensor product of two quotients of a commutative ring is the quotient by the sum of the
+two ideals: `(R ⧸ I) ⊗[R] (R ⧸ J) ≃ₗ[R] R ⧸ (I ⊔ J)`, sending `[a] ⊗ [b]` to `[a * b]`. -/
+noncomputable def quotTensorQuotEquivQuotSup (I J : Ideal R) :
+    ((R ⧸ I) ⊗[R] (R ⧸ J)) ≃ₗ[R] R ⧸ (I ⊔ J) :=
+  quotTensorEquivQuotSMul (R ⧸ J) I ≪≫ₗ
+    Submodule.quotEquivOfEq _ _ (by
+      ext x
+      obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+      simp [Ideal.smul_top_eq_map, Ideal.mem_map_iff_of_surjective _ Ideal.Quotient.mk_surjective])
+    ≪≫ₗ Submodule.quotientQuotientEquivQuotientSup J I ≪≫ₗ
+    Submodule.quotEquivOfEq _ _ (sup_comm J I)
+
+/-- `TensorProduct.quotTensorQuotEquivQuotSup` sends `[a] ⊗ [b]` to `[a * b]`. -/
+@[simp]
+theorem quotTensorQuotEquivQuotSup_mk_tmul_mk (I J : Ideal R) (a b : R) :
+    quotTensorQuotEquivQuotSup I J (Ideal.Quotient.mk I a ⊗ₜ Ideal.Quotient.mk J b) =
+      Ideal.Quotient.mk (I ⊔ J) (a * b) := by
+  simp only [quotTensorQuotEquivQuotSup, LinearEquiv.trans_apply, quotTensorEquivQuotSMul_mk_tmul]
+  simp [← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul]
+
+/-- The inverse of `TensorProduct.quotTensorQuotEquivQuotSup` sends `[a]` to `[a] ⊗ [1]`. -/
+@[simp]
+theorem quotTensorQuotEquivQuotSup_symm_mk (I J : Ideal R) (a : R) :
+    (quotTensorQuotEquivQuotSup I J).symm (Ideal.Quotient.mk (I ⊔ J) a) =
+      Ideal.Quotient.mk I a ⊗ₜ Ideal.Quotient.mk J 1 := by
+  rw [LinearEquiv.symm_apply_eq, quotTensorQuotEquivQuotSup_mk_tmul_mk, mul_one]
 
 /-- **Base change along a surjective ring map.** If `R → S` is surjective with kernel `I`, then
 `x ↦ 1 ⊗ x` from `M` to `S ⊗[R] M` has kernel `I M`: writing `S = R ⧸ I`, the tensor product is
@@ -170,6 +208,26 @@ theorem exact_lTensor_quotient_span_singleton {R M N : Type*} [CommRing R] [AddC
     refine ⟨n - a m, ?_⟩
     rw [smul_sub, ← map_smul, hm, map_sub, ← comp_apply, hab]
     simp
+
+/-- **Reductions of a factorization of a regular scalar are exact.** Let `a : M → N` and
+`b : N → M` compose in both orders to multiplication by `r`, with `r` regular on `M`, and let `S`
+be an `R`-algebra whose structure map is surjective with kernel `(r)`. Then `S ⊗ b` and `S ⊗ a`
+form an exact pair. This generalizes `LinearMap.exact_lTensor_quotient_span_singleton`, the case
+`S = R ⧸ (r)`, to the residue field of a discrete valuation ring and a uniformizer, for
+instance. -/
+theorem exact_lTensor_of_ker_eq_span_singleton {R M N S : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] [CommRing S] [Algebra R S] {r : R}
+    (hS : Function.Surjective (algebraMap R S))
+    (hker : RingHom.ker (algebraMap R S) = Ideal.span {r}) (a : M →ₗ[R] N) (b : N →ₗ[R] M)
+    (hab : a ∘ₗ b = r • id) (hba : b ∘ₗ a = r • id) (hr : IsSMulRegular M r) :
+    Function.Exact (b.lTensor S) (a.lTensor S) := by
+  let e : (R ⧸ Ideal.span {r}) ≃ₗ[R] S :=
+    ((Ideal.quotientEquivAlgOfEq R hker).symm.trans
+      (Ideal.quotientKerAlgEquivOfSurjective (f := Algebra.ofId R S) hS)).toLinearEquiv
+  refine (Function.Exact.iff_of_ladder_linearEquiv (e₁ := e.rTensor N) (e₂ := e.rTensor M)
+    (e₃ := e.rTensor N) ?_ ?_).mpr (exact_lTensor_quotient_span_singleton a b hab hba hr) <;>
+  · rw [LinearEquiv.coe_rTensor, LinearEquiv.coe_rTensor, lTensor_comp_rTensor,
+      rTensor_comp_lTensor]
 
 /-- **Reductions of a factorization of a regular scalar are dually exact.** Let `a : M → N` and
 `b : N → M` satisfy `a ∘ b = r • id` and `b ∘ a = r • id`, with `r` regular on `R` and `N`
@@ -431,6 +489,17 @@ theorem cokernel_baseChange_square (f : M →ₗ[R] N) :
   ext n
   simp
 
+/-- For maps `f : M → N` and `g : N → P` with `g ∘ f = 0`, the base change of the map
+`N ⧸ range f → P` induced by `g`, precomposed with the quotient map of `S ⊗[R] N` and the inverse
+of `cokernelBaseChangeEquiv`, is `g.baseChange S`. -/
+theorem liftQ_baseChange_comp_cokernelBaseChangeEquiv_symm {P : Type*} [AddCommGroup P]
+    [Module R P] {f : M →ₗ[R] N} {g : N →ₗ[R] P} (hfg : g ∘ₗ f = 0) :
+    ((range f).liftQ g (range_le_ker_iff.2 hfg)).baseChange S ∘ₗ
+        (f.cokernelBaseChangeEquiv (S := S)).symm.toLinearMap ∘ₗ (range (f.baseChange S)).mkQ =
+      g.baseChange S := by
+  ext m
+  simp
+
 end LinearMap
 
 namespace Submodule
@@ -612,3 +681,35 @@ theorem quotientScalarEquiv_rTensor (f : M →ₗ[R ⧸ I] M') (t : M ⊗[R ⧸ 
 end QuotientScalars
 
 end TensorProduct
+
+namespace IsBaseChange
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] (I : Ideal R)
+  [Module (R ⧸ I) N] [IsScalarTower R (R ⧸ I) N] (f : M →ₗ[R] N)
+
+/-- A map exhibits scalar change to a quotient ring exactly when it is surjective and its
+kernel is `I • ⊤`, the submodule of `I`-multiples in the source module. -/
+theorem quotient_iff :
+    IsBaseChange (R ⧸ I) f ↔ Function.Surjective f ∧ LinearMap.ker f = I • ⊤ := by
+  constructor
+  · intro h
+    have he : (h.equiv.restrictScalars R).toLinearMap.comp
+        (TensorProduct.mk R (R ⧸ I) M 1) = f := by
+      ext x
+      simp
+    rw [← he]
+    exact ⟨h.equiv.surjective.comp
+        (TensorProduct.mk_surjective R M (R ⧸ I) Ideal.Quotient.mk_surjective), by
+      rw [LinearEquiv.ker_comp, LinearMap.ker_tensorProductMk]⟩
+  · rintro ⟨hs, hk⟩
+    let e : (M ⧸ (I • ⊤ : Submodule R M)) ≃ₗ[R] N :=
+      (Submodule.quotEquivOfEq _ _ hk.symm).trans (f.quotKerEquivOfSurjective hs)
+    let t : (R ⧸ I) ⊗[R] M ≃ₗ[R] N := (TensorProduct.quotTensorEquivQuotSMul M I).trans e
+    let ts : (R ⧸ I) ⊗[R] M ≃ₗ[R ⧸ I] N :=
+      t.extendScalarsOfSurjective Ideal.Quotient.mk_surjective
+    apply IsBaseChange.of_equiv ts
+    intro x
+    simp [ts, t, e]
+
+end IsBaseChange

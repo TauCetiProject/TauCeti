@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Ungraded
 public import TauCeti.LowDimTopology.Bordered.TypeD
+import TauCeti.Data.Matrix.Block
 
 /-!
 # The box tensor product of a type `A` module with a type `D` structure
@@ -134,6 +135,8 @@ an `A`-linear chain map `g` of differential modules induces `φ ↦ g ∘ φ`.
   over paths of generators; under either boundedness hypothesis, see
   `TauCeti.TypeDStructure.typeABoxDifferential_apply_eq_sum_of_act_eq_zero` and
   `TauCeti.TypeDStructure.typeABoxDifferential_apply_eq_sum_of_lt`.
+* `TauCeti.TypeDStructure.typeABoxDifferential_eq_zero_of_forall_act_eq_zero`: the differential
+  vanishes when the operations of `M` vanish along every path of coefficients of `N`.
 * `TauCeti.TypeDStructure.typeABoxDifferential_apply_eq_sum_lift_iteratedCoeff`: the differential
   is `∂ (m ⊗ x) = ∑_k (m_{k+1} ⊗ 1) (m ⊗ δ^k (x))`, with the iterates of the structure map. Its
   variant `typeABoxDifferential_apply_eq_sum_lift_iteratedCoeff_of_iteratedCoeff_eq_zero` (in the
@@ -256,6 +259,18 @@ theorem typeABoxDifferential_apply_eq_sum_of_lt (N : TypeDStructure d ι X)
       else 0 :=
   N.typeABoxDifferential_apply_eq_sum Mm
     (fun _ hn => Mm.matrixAct_eq_zero_of_lt X h hn fun _ => hh) φ z
+
+/-- **A box tensor differential vanishing along every path.** If the operations of `M` vanish on
+the coefficients `δ x₀ x₁, …, δ xₙ₋₁ xₙ` along every path `x₀ → ⋯ → xₙ` of generators of `N`, the
+box tensor differential vanishes, whether or not `M` or `N` is bounded. -/
+theorem typeABoxDifferential_eq_zero_of_forall_act_eq_zero (N : TypeDStructure d ι X)
+    (Mm : UngradedAInfinityRightModule d M)
+    (h : ∀ n (x : Fin (n + 1) → X), Mm.act n (fun l => N.coeff (x l.castSucc) (x l.succ)) = 0) :
+    N.typeABoxDifferential Mm = 0 := by
+  refine LinearMap.ext fun φ => funext fun z => ?_
+  rw [N.typeABoxDifferential_apply_eq_sum Mm (K := 0) fun n _ => LinearMap.ext fun ψ => funext
+    fun y => by simp [UngradedAInfinityRightModule.matrixAct_apply, h]]
+  simp
 
 /-- **The box tensor differential of a bounded module squares to zero.** If the operations
 `m_{k+1}` of `M` vanish for `k ≥ K`, then `∂ ∘ ∂ = 0` on the row vectors `X → M`, over a ring of
@@ -660,11 +675,6 @@ theorem typeABoxMap_add_typeABoxMap_of_act_eq_zero [CharP R 2] (N : TypeDStructu
   rw [typeABoxDifferential_typeABoxMap_of_act_eq_zero N N' Mm hK, hH,
     typeABoxMap_add_of_act_eq_zero N N' Mm hK, LinearMap.add_apply]
 
-/-- The height on `X ⊕ X'` of two heights on `X` and `X'`, that of `X'` shifted above that of
-`X`. -/
-private def sumHeight (h : X → ℕ) (h' : X' → ℕ) : X ⊕ X' → ℕ :=
-  Sum.elim h fun y => univ.sup h + 1 + h' y
-
 /-- The block upper-triangular matrices increase `sumHeight h h'` when `δ` and `δ'` increase `h`
 and `h'`. -/
 private theorem bound_of_lt {N : TypeDStructure d ι X} {N' : TypeDStructure d ι X'}
@@ -673,30 +683,10 @@ private theorem bound_of_lt {N : TypeDStructure d ι X} {N' : TypeDStructure d �
     Bound N N' Mm {P | ∀ a b, P a b ≠ 0 → sumHeight h h' a < sumHeight h h' b}
       (univ.sup h + univ.sup h' + 2) where
   act_eq_zero n hn u hu := by
-    have hsup : univ.sup (sumHeight h h') ≤ univ.sup h + univ.sup h' + 1 :=
-      Finset.sup_le fun a _ => by
-        rcases a with x | y
-        · have := le_sup (f := h) (mem_univ x)
-          simp only [sumHeight, Sum.elim_inl]
-          omega
-        · have := le_sup (f := h') (mem_univ y)
-          simp only [sumHeight, Sum.elim_inr]
-          omega
+    have := univ_sup_sumHeight_le h h'
     exact Mm.matrixAct_eq_zero_of_lt _ _ (by omega) fun l => hu l
-  fromBlocks_mem G a b hab := by
-    have hle (x : X) : h x ≤ univ.sup h := le_sup (f := h) (mem_univ x)
-    rcases a with x | x <;> rcases b with y | y <;>
-      simp only [sumHeight, Sum.elim_inl, Sum.elim_inr, Matrix.fromBlocks_apply₁₁,
-        Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₁, Matrix.fromBlocks_apply₂₂] at hab ⊢
-    · exact hh x y hab
-    · have := hle x; omega
-    · simp at hab
-    · have := hh' x y hab; omega
-  fromBlocks_zero_mem G a b hab := by
-    have hle (x : X) : h x ≤ univ.sup h := le_sup (f := h) (mem_univ x)
-    rcases a with x | x <;> rcases b with y | y <;> simp at hab
-    simp only [sumHeight, Sum.elim_inl, Sum.elim_inr]
-    have := hle x; omega
+  fromBlocks_mem G _ _ := sumHeight_lt_of_fromBlocks h hh h' hh' G
+  fromBlocks_zero_mem G _ _ := sumHeight_lt_of_fromBlocks h (by simp) h' (by simp) G
   map_mem P hP a b hab := hP a b fun h0 => hab (by simp [h0])
 
 /-- **The induced maps with bounded type `D` structures.** Over a ring of characteristic two, if
@@ -1059,6 +1049,19 @@ theorem coe_typeABoxTensorDifferential_apply [CharP R 2] (hMm : Mm.IsStrictlyUni
     (hι : ∀ s, d (ι s) = 0) (φ : N.typeABoxTensor Mm) :
     (N.typeABoxTensorDifferential hMm hι φ : X → M) = N.typeABoxDifferential Mm φ :=
   (rfl)
+
+/-- The box tensor differential vanishes on `M ⊗ N` when it vanishes on all row vectors. -/
+theorem typeABoxTensorDifferential_eq_zero_of_typeABoxDifferential_eq_zero [CharP R 2]
+    (hMm : Mm.IsStrictlyUnital ι) (hι : ∀ s, d (ι s) = 0) (h : N.typeABoxDifferential Mm = 0) :
+    N.typeABoxTensorDifferential hMm hι = 0 :=
+  LinearMap.ext fun φ => Subtype.ext (by simp [h])
+
+/-- The box tensor differential squares to zero on `M ⊗ N` when it vanishes on all row vectors. -/
+theorem typeABoxTensorDifferential_comp_self_eq_zero_of_typeABoxDifferential_eq_zero [CharP R 2]
+    (hMm : Mm.IsStrictlyUnital ι) (hι : ∀ s, d (ι s) = 0) (h : N.typeABoxDifferential Mm = 0) :
+    N.typeABoxTensorDifferential hMm hι ∘ₗ N.typeABoxTensorDifferential hMm hι = 0 := by
+  rw [typeABoxTensorDifferential_eq_zero_of_typeABoxDifferential_eq_zero hMm hι h,
+    LinearMap.zero_comp]
 
 /-- The box tensor differential of a bounded module squares to zero on `M ⊗ N`. -/
 theorem typeABoxTensorDifferential_typeABoxTensorDifferential_of_act_eq_zero [CharP R 2]

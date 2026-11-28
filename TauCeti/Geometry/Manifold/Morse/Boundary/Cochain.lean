@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Boundary.ChainComplex
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Opposite
 public import TauCeti.Algebra.Homology.Kronecker
 import TauCeti.Algebra.Category.ModuleCat.Injective.Semisimple
+import TauCeti.Algebra.Homology.CochainComplex.Antidiagonal
 import TauCeti.Geometry.Manifold.Morse.Boundary.Duality
 
 /-!
@@ -36,8 +37,9 @@ index reversal `TauCeti.IsMorse.criticalPointsIndexNegEquiv`
 `IsMorseSmale.toDual_comp_morseBoundaryAt_neg` shows that it carries the Morse coboundary of `f`
 to the Morse boundary of `-f` (`IsMorseSmale.morseCochainToNegChain_d_comp`). Hence the Morse
 cohomology of `f` in degree `i` is isomorphic to the Morse homology of `-f` in degree `n - i`
-(`IsMorseSmale.morseCohomologyEquivNegHomology`): the Morse complex of `-f` is the dual of the
-Morse complex of `f`, reindexed by `k ↦ n - k`. This refines the equality of dimensions
+(`IsMorseSmale.morseCohomologyEquivNegHomology`, an instance of
+`CochainComplex.homologyIsoOfAntidiagonal`): the Morse complex of `-f` is the dual of the Morse
+complex of `f`, reindexed by `k ↦ n - k`. This refines the equality of dimensions
 `IsMorseSmale.finrank_homology_morseComplex_neg` of
 `TauCeti.Geometry.Manifold.Morse.Boundary.Duality`, proved there by rank–nullity, to an explicit
 isomorphism with the Morse cohomology of `f`. This comparison of `-f` with `f` needs no
@@ -313,75 +315,30 @@ theorem morseCochainComplex_d_comp_ofHom (i k : ℕ) :
 
 /-! ### Morse cohomology of `f` is Morse homology of `-f` -/
 
-/-- The morphism of short complexes, from the coboundaries of `f` into and out of index `i` to the
-boundaries of `-f` into and out of index `k`, given by reading cochains of `f` as chains of `-f`.
-For `i + k = n` it is an isomorphism in the middle, and it is an epimorphism on the left and a
-monomorphism on the right, also at the ends `i = 0` and `k = 0` of the complexes. -/
-private noncomputable def morseCochainToNegChainSc {i k : ℕ} (hik : i + k = finrank ℝ E) :
-    (h.morseCochainComplex hf).sc' (i - 1) i (i + 1) ⟶
-      ((h.neg hf).morseComplex hf.neg).sc' (k + 1) k (k - 1) where
-  τ₁ := ModuleCat.ofHom (h.morseCochainToNegChain hf (i - 1) (k + 1))
-  τ₂ := ModuleCat.ofHom (h.morseCochainToNegChain hf i k)
-  τ₃ := ModuleCat.ofHom (h.morseCochainToNegChain hf (i + 1) (k - 1))
-  comm₁₂ := by
-    rcases i with _ | i
-    · -- At `i = 0` no coboundary enters index `0`, and `-f` has no critical point of index `n + 1`.
-      have hd : ((h.morseCochainComplex hf).sc' (0 - 1) 0 (0 + 1)).f = 0 :=
-        (h.morseCochainComplex hf).shape _ _ (by simp)
-      rw [hd, h.morseCochainToNegChain_eq_zero hf (by omega), ModuleCat.ofHom_zero]
-      exact zero_comp.trans zero_comp.symm
-    · exact (h.morseCochainComplex_d_comp_ofHom hf i k).symm
-  comm₂₃ := by
-    rcases k with _ | k
-    · -- At `k = 0` no boundary leaves index `0`, and `f` has no critical point of index `n + 1`.
-      have hd : (((h.neg hf).morseComplex hf.neg).sc' (0 + 1) 0 (0 - 1)).g = 0 :=
-        ((h.neg hf).morseComplex hf.neg).shape _ _ (by simp)
-      rw [hd, h.morseCochainToNegChain_eq_zero hf (i := i + 1) (k := 0 - 1) (by omega),
-        ModuleCat.ofHom_zero]
-      exact comp_zero.trans comp_zero.symm
-    · exact (h.morseCochainComplex_d_comp_ofHom hf i k).symm
-
 /-- **Morse cohomology of `f` is Morse homology of `-f`.** For `i + k = n`, reading cochains of `f`
 as chains of `-f` identifies the mod-two Morse cohomology of `f` in degree `i` with the mod-two
 Morse homology of `-f`, for the pseudo-gradient `-X`, in degree `k`. -/
 noncomputable def morseCohomologyEquivNegHomology {i k : ℕ} (hik : i + k = finrank ℝ E) :
     (h.morseCochainComplex hf).homology i ≃ₗ[ZMod 2]
       ((h.neg hf).morseComplex hf.neg).homology k :=
-  haveI : Epi (h.morseCochainToNegChainSc hf hik).τ₁ := by
-    rcases i with _ | i
-    · -- The chains of `-f` of index `n + 1` vanish.
-      exact IsZero.epi ((h.neg hf).isZero_morseComplex_X_of_finrank_lt hf.neg (by omega)) _
-    · exact (ModuleCat.epi_iff_surjective _).2 (h.bijective_morseCochainToNegChain hf
-        (by omega)).2
-  haveI : IsIso (h.morseCochainToNegChainSc hf hik).τ₂ :=
-    (ConcreteCategory.isIso_iff_bijective _).2 (h.bijective_morseCochainToNegChain hf hik)
-  haveI : Mono (h.morseCochainToNegChainSc hf hik).τ₃ := by
-    rcases k with _ | k
-    · -- The cochains of `f` of index `n + 1` vanish, since its chains of index `n + 1` do.
-      refine IsZero.mono ?_ _
+  ((h.morseCochainComplex hf).homologyIsoOfAntidiagonal ((h.neg hf).morseComplex hf.neg)
+    (fun i k ↦ ModuleCat.ofHom (h.morseCochainToNegChain hf i k))
+    (h.morseCochainComplex_d_comp_ofHom hf)
+    (fun _ _ hik ↦
+      (ConcreteCategory.isIso_iff_bijective _).2 (h.bijective_morseCochainToNegChain hf hik))
+    (by
+      -- The cochains of `f` of index `n + 1` vanish, since its chains of index `n + 1` do.
       rw [ModuleCat.isZero_iff_subsingleton]
-      exact ⟨fun a b ↦ (h.isZero_morseComplex_X_of_finrank_lt hf (by omega)).eq_of_src a b⟩
-    · exact (ModuleCat.mono_iff_injective _).2 (h.bijective_morseCochainToNegChain hf
-        (by omega)).1
-  ((h.morseCochainComplex hf).homologyIsoSc' (i - 1) i (i + 1)
-      (by rcases i with _ | i <;> simp) (by simp) ≪≫
-    asIso (ShortComplex.homologyMap (h.morseCochainToNegChainSc hf hik)) ≪≫
-    (((h.neg hf).morseComplex hf.neg).homologyIsoSc' (k + 1) k (k - 1)
-      (by simp) (by rcases k with _ | k <;> simp)).symm).toLinearEquiv
+      exact ⟨fun a b ↦ (h.isZero_morseComplex_X_of_finrank_lt hf (by omega)).eq_of_src a b⟩)
+    ((h.neg hf).isZero_morseComplex_X_of_finrank_lt hf.neg (by omega)) hik).toLinearEquiv
 
-/-- A cocycle of `f` of index `i`, read as a chain of `-f` of index `k`, is a cycle of `-f`, for
-`i + k = n`. -/
-theorem iCycles_comp_ofHom_morseCochainToNegChain_comp_d {i k : ℕ}
-    (hik : i + k = finrank ℝ E) :
+/-- A cocycle of `f` of index `i`, read as a chain of `-f` of index `k`, is a cycle of `-f`. -/
+theorem iCycles_comp_ofHom_morseCochainToNegChain_comp_d (i k : ℕ) :
     ((h.morseCochainComplex hf).iCycles i ≫ ModuleCat.ofHom (h.morseCochainToNegChain hf i k)) ≫
-      ((h.neg hf).morseComplex hf.neg).d k (k - 1) = 0 := by
-  -- Reading cochains as chains commutes with the differentials leaving index `i` and `k`.
-  calc _ = (h.morseCochainComplex hf).iCycles i ≫ (h.morseCochainToNegChainSc hf hik).τ₂ ≫
-        (((h.neg hf).morseComplex hf.neg).sc' (k + 1) k (k - 1)).g := Category.assoc _ _ _
-    _ = (h.morseCochainComplex hf).iCycles i ≫
-        ((h.morseCochainComplex hf).sc' (i - 1) i (i + 1)).g ≫
-          (h.morseCochainToNegChainSc hf hik).τ₃ := by rw [ShortComplex.Hom.comm₂₃]
-    _ = 0 := ((h.morseCochainComplex hf).iCycles_d_assoc _ _ _).trans zero_comp
+      ((h.neg hf).morseComplex hf.neg).d k (k - 1) = 0 :=
+  (h.morseCochainComplex hf).iCycles_comp_comp_d_of_comm ((h.neg hf).morseComplex hf.neg)
+    (fun i k ↦ ModuleCat.ofHom (h.morseCochainToNegChain hf i k))
+    (h.morseCochainComplex_d_comp_ofHom hf) i k
 
 /-- **The identification of Morse cohomology of `f` with Morse homology of `-f` on classes.** For
 `i + k = n`, it sends the class of a cocycle of `f` to the class of the same cocycle read as a
@@ -394,21 +351,11 @@ theorem morseCohomologyEquivNegHomology_homologyπ {i k : ℕ} (hik : i + k = fi
           ((h.morseCochainComplex hf).iCycles i ≫
             ModuleCat.ofHom (h.morseCochainToNegChain hf i k))
           (k - 1) (by rcases k with _ | k <;> simp)
-          (h.iCycles_comp_ofHom_morseCochainToNegChain_comp_d hf hik) x) := by
+          (h.iCycles_comp_ofHom_morseCochainToNegChain_comp_d hf i k) x) := by
   rw [morseCohomologyEquivNegHomology, Iso.toLinearEquiv_apply, ← ConcreteCategory.comp_apply,
     ← ConcreteCategory.comp_apply]
-  refine ConcreteCategory.congr_hom ?_ x
-  -- Each step of the composite is induced on cycles, where it acts as `morseCochainToNegChain`.
-  simp only [Iso.trans_hom, asIso_hom, Iso.symm_hom]
-  rw [HomologicalComplex.π_homologyIsoSc'_hom_assoc, ShortComplex.homologyπ_naturality_assoc,
-    HomologicalComplex.π_homologyIsoSc'_inv, ← Category.assoc, ← Category.assoc]
-  congr 1
-  rw [← cancel_mono (((h.neg hf).morseComplex hf.neg).iCycles k)]
-  simp only [Category.assoc, HomologicalComplex.cyclesIsoSc'_inv_iCycles,
-    ShortComplex.cyclesMap_i, HomologicalComplex.cyclesIsoSc'_hom_iCycles_assoc,
-    HomologicalComplex.liftCycles_i]
-  -- The middle component of `morseCochainToNegChainSc` is `morseCochainToNegChain`.
-  simp [morseCochainToNegChainSc]
+  exact ConcreteCategory.congr_hom (CochainComplex.homologyπ_comp_homologyIsoOfAntidiagonal_hom
+    _ _ _ _ _ _ _ hik) x
 
 end IsMorseSmale
 

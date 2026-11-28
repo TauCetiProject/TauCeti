@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
+public import TauCeti.Analysis.Calculus.ContDiff.BoundedDerivatives
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 public import TauCeti.Analysis.Normed.Operator.Holder
 public import Mathlib.Analysis.Calculus.ContDiff.RCLike
@@ -27,6 +28,11 @@ field `χ ā + (1 - χ) λ I` is bounded and Lipschitz on the whole space, it ag
 `λ, Λ` on any prescribed set `T` with `T ∩ U ⊆ S`, such as a half-space that coincides with `S`
 near `C`.
 
+When `a` has entries of class `Cᵏ` near `C`, for some `k ≥ 1`, the same cutoff gives a field `a'`
+whose entries are of class `Cᵏ`, with derivatives of every order at most `k` bounded on the whole
+space, since `a' - λ I` has compact support. This is the form needed by the higher regularity
+theorems on a half-space.
+
 The case of a field that is locally Lipschitz and uniformly elliptic on an open set `Ω`, with
 `C ⊆ Ω` and `T` the whole space, is a corollary: apply the construction with `S` a compact
 neighbourhood of `C` in `Ω`, on which `a` is Lipschitz.
@@ -42,6 +48,9 @@ subsolution on `Ω` to its zero extension on the whole space.
   and Lipschitz on a set `S` agrees, near a compact set `C` that may meet the boundary of `S`,
   with a bounded Lipschitz field on the whole space that is uniformly elliptic on a prescribed
   set `T`, such as a half-space that coincides with `S` near `C`.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_contDiff_eqOn_inter`: the same for a field with entries
+  of class `Cᵏ` near `C`, giving a field with entries of class `Cᵏ` whose derivatives of every
+  order at most `k` are bounded.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_lipschitzWith_eqOn`: near a compact subset of `Ω`, a
   locally Lipschitz uniformly elliptic field agrees with a Lipschitz uniformly elliptic field on
   the whole space.
@@ -60,7 +69,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set TopologicalSpace
-open scoped NNReal
+open scoped ContDiff NNReal
 
 namespace TauCeti
 
@@ -117,6 +126,36 @@ private theorem exists_lipschitzWith_and_norm_le_matrixBilinearForm_smul_add_one
       exact NNReal.coe_nonneg _
   linarith [norm_add_le C0 (χ x • F x)]
 
+/-- **Blending a uniformly elliptic field with `λ I` by a cutoff that is one near `C`.** Let `a`
+be uniformly elliptic on `S` with constants `λ, Λ`, and let `T ∩ U ⊆ S`. If `χ` takes values in
+`[0, 1]`, is supported in `U` and equals one near `C`, then `χ a + (1 - χ) λ I` is uniformly
+elliptic on `T`, and `χ = 1` on an open `W` with `C ⊆ W ⊆ U`. -/
+private theorem exists_uniformlyEllipticOn_smul_add_one_sub_smul [DecidableEq ι] {lam Lam : ℝ}
+    {S T C : Set (EuclideanSpace ℝ ι)} {U : Opens (EuclideanSpace ℝ ι)}
+    (ha : UniformlyEllipticOn S a lam Lam) (hTU : T ∩ U ⊆ S) {χ : EuclideanSpace ℝ ι → ℝ}
+    (hχr : range χ ⊆ Icc 0 1) (hχ1 : C ⊆ interior (χ ⁻¹' {1})) (hχs : tsupport χ ⊆ U) :
+    ∃ W : Opens (EuclideanSpace ℝ ι), C ⊆ W ∧ W ≤ U ∧
+      UniformlyEllipticOn T (fun x => χ x • a x + (1 - χ x) • (lam • 1)) lam Lam ∧
+        ∀ x ∈ W, χ x = 1 := by
+  classical
+  have hχI : ∀ x, χ x ∈ Icc (0 : ℝ) 1 := fun x => hχr (mem_range_self x)
+  have hχ0 : ∀ x ∉ tsupport χ, χ x = 0 := fun x hx => image_eq_zero_of_notMem_tsupport hx
+  refine ⟨⟨interior (χ ⁻¹' {1}), isOpen_interior⟩, hχ1, fun x hx => ?_, ?_,
+    fun x hx => interior_subset hx⟩
+  · have hχx : χ x = 1 := interior_subset hx
+    exact hχs (subset_tsupport _ (by simp [hχx]))
+  · -- On `T`, the weight vanishes off `S`, since `T ∩ U ⊆ S` and `tsupport χ ⊆ U`.
+    have hT := ha.smul_add_one_sub_smul
+      (uniformlyEllipticOn_const_smul_one univ ha.pos le_rfl ha.le)
+      (χ := fun x => if x ∈ T then χ x else 0)
+      (fun x => by split_ifs <;> simp [hχI x])
+      (fun x hx => by
+        split_ifs with hxT
+        · exact hχ0 x fun h => hx (hTU ⟨hxT, hχs h⟩)
+        · rfl)
+    refine (hT.mono_set (subset_univ T)).congr fun x hx => ?_
+    simp only [hx, ite_true]
+
 /-- **A uniformly elliptic field, Lipschitz up to part of the boundary, agrees near a compact set
 with a Lipschitz field on the whole space.** Let `a` be uniformly elliptic on a set `S` with
 constants `λ, Λ`, with `x ↦ a(x)` Lipschitz on `S` in the operator norm of its bilinear forms. Let
@@ -141,30 +180,12 @@ theorem UniformlyEllipticOn.exists_lipschitzWith_eqOn_inter [DecidableEq ι] {la
   classical
   obtain ⟨abar, _, habar, hLbar⟩ := exists_lipschitzWith_matrixBilinearForm_eqOn hK
   obtain ⟨χ, hχ, hχr, hχ1, hχc, hχs⟩ := hC.exists_contDiff_cutoff U.isOpen hCU
-  have hχI : ∀ x, χ x ∈ Icc (0 : ℝ) 1 := fun x => hχr (mem_range_self x)
-  have hχ0 : ∀ x ∉ tsupport χ, χ x = 0 := fun x hx => image_eq_zero_of_notMem_tsupport hx
+  obtain ⟨W, hCW, hWU, hT, hW1⟩ :=
+    exists_uniformlyEllipticOn_smul_add_one_sub_smul (ha.congr habar) hTU hχr hχ1 hχs
   obtain ⟨K', M, hK', hM⟩ :=
     exists_lipschitzWith_and_norm_le_matrixBilinearForm_smul_add_one_sub_smul hLbar
-    (hχ.of_le (by simp)) hχc hχI (lam • 1)
-  refine ⟨fun x => χ x • abar x + (1 - χ x) • (lam • 1), K', M,
-    ⟨interior (χ ⁻¹' {1}), isOpen_interior⟩, hχ1, fun x hx => ?_, ?_, hK', fun x => ?_,
-    fun x hx => ?_⟩
-  · have hχx : χ x = 1 := interior_subset hx
-    exact hχs (subset_tsupport _ (by simp [hχx]))
-  · -- On `T`, the weight vanishes off `S`, since `T ∩ U ⊆ S` and `tsupport χ ⊆ U`.
-    have hT := (ha.congr habar).smul_add_one_sub_smul
-      (uniformlyEllipticOn_const_smul_one univ ha.pos le_rfl ha.le)
-      (χ := fun x => if x ∈ T then χ x else 0)
-      (fun x => by split_ifs <;> simp [hχI x])
-      (fun x hx => by
-        split_ifs with hxT
-        · exact hχ0 x fun h => hx (hTU ⟨hxT, hχs h⟩)
-        · rfl)
-    refine (hT.mono_set (subset_univ T)).congr fun x hx => ?_
-    simp [hx]
-  · exact hM x
-  · have hχx : χ x = 1 := interior_subset hx.2
-    simp [hχx, habar hx.1]
+    (hχ.of_le (by simp)) hχc (fun x => hχr (mem_range_self x)) (lam • 1)
+  exact ⟨_, K', M, W, hCW, hWU, hT, hK', hM, fun x hx => by simp [hW1 x hx.2, habar hx.1]⟩
 
 /-- **A locally Lipschitz uniformly elliptic field agrees near a compact set with a Lipschitz
 uniformly elliptic field on the whole space.** Let `a` be uniformly elliptic on `Ω` with
@@ -196,6 +217,81 @@ theorem UniformlyEllipticOn.exists_lipschitzWith_eqOn [DecidableEq ι] {lam Lam 
   have hWL' : (W : Set (EuclideanSpace ℝ ι)) ⊆ L := fun x hx => interior_subset (hWL hx)
   exact ⟨a', K', W, hSW, fun x hx => hLΩ (hWL' hx), ha', hK',
     fun x hx => haa' ⟨hWL' hx, hx⟩⟩
+
+/-- **Blending a `Cᵏ` field on `U` with a constant one by a cutoff supported in `U`.** If
+`k ≠ 0`, the entries of `a` are of class `Cᵏ` on an open `U` and `χ` is smooth with compact support
+in `U`, then `χ a + (1 - χ) c` has entries of class `Cᵏ` whose derivatives of every order at most
+`k` are bounded, and its bilinear forms are bounded and Lipschitz, for every constant matrix `c`. -/
+private theorem exists_lipschitzWith_contDiff_smul_add_one_sub_smul {k : ℕ} (hk : k ≠ 0)
+    {U : Opens (EuclideanSpace ℝ ι)} (hsmooth : ∀ i j, ContDiffOn ℝ k (fun x => a x i j) U)
+    {χ : EuclideanSpace ℝ ι → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
+    (hχs : tsupport χ ⊆ U) (c : Matrix ι ι ℝ) :
+    ∃ K : ℝ≥0, ∃ M : ℝ, (∀ i j, ContDiff ℝ k fun x => (χ x • a x + (1 - χ x) • c) i j) ∧
+      LipschitzWith K (fun x => matrixBilinearForm (χ x • a x + (1 - χ x) • c)) ∧
+      (∀ i j, BddDerivOn ℝ k (fun x => (χ x • a x + (1 - χ x) • c) i j) univ) ∧
+      ∀ x, ‖matrixBilinearForm (χ x • a x + (1 - χ x) • c)‖ ≤ M := by
+  set a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ := fun x => χ x • a x + (1 - χ x) • c
+  -- Each entry of `a'` is a constant plus the compactly supported `Cᵏ` function `χ (aᵢⱼ - cᵢⱼ)`.
+  set g : ι → ι → EuclideanSpace ℝ ι → ℝ := fun i j x => χ x • (a x i j - c i j)
+  have hg : ∀ i j, ContDiff ℝ k (g i j) := fun i j =>
+    ((hsmooth i j).sub contDiffOn_const).contDiff_smul_of_tsupport_subset U.isOpen
+      (hχ.of_le (by exact_mod_cast le_top)).contDiffOn hχs
+  have hgc : ∀ i j, HasCompactSupport (g i j) := fun i j => hχc.smul_right
+  have ha'g : ∀ i j, (fun x => a' x i j) = fun x => g i j x + c i j := fun i j => by
+    funext x
+    simp only [a', g, Matrix.add_apply, Matrix.smul_apply, smul_eq_mul]
+    ring
+  -- Lipschitz bounds and bounds for the entries.
+  choose L hL using fun i j =>
+    (hg i j).lipschitzWith_of_hasCompactSupport (hgc i j) (by exact_mod_cast hk)
+  choose B hB using fun i j => (hgc i j).exists_bound_of_continuous (hg i j).continuous
+  have hLa : ∀ i j, LipschitzWith (L i j) fun x => a' x i j := fun i j => by
+    rw [ha'g]
+    simpa using (hL i j).add (LipschitzWith.const (c i j))
+  refine ⟨∑ i, ∑ j, L i j, ∑ i, ∑ j, (B i j + |c i j|), fun i j => ?_,
+    lipschitzOnWith_univ.1 (holderOnWith_one.1 (holderOnWith_matrixBilinearForm_of_forall
+      fun i j => (holderWith_one.2 (hLa i j)).holderOnWith univ)), fun i j => ?_, fun x => ?_⟩
+  · rw [ha'g]
+    exact (hg i j).add contDiff_const
+  · -- The derivatives of `g i j` are bounded, and the constant `c i j` only adds to the value.
+    rw [ha'g]
+    exact ((hgc i j).bddDerivOn (hg i j) univ).add_const _
+  · refine (norm_matrixBilinearForm_le_sum_abs (a' x)).trans
+      (Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => ?_)
+    rw [show a' x i j = g i j x + c i j from congrFun (ha'g i j) x]
+    exact (abs_add_le _ _).trans (add_le_add_left (hB i j x) _)
+
+/-- **A uniformly elliptic field of class `Cᵏ` near part of the boundary agrees near a compact set
+with a `Cᵏ` field on the whole space.** Let `k ≠ 0`, and let `a` be uniformly elliptic on a
+set `S` with constants `λ, Λ`, with entries of class `Cᵏ` on an open set `U`. Let `T` be a set with
+`T ∩ U ⊆ S`, and let `C ⊆ U` be compact. Then there is a field `a'` on the whole space, uniformly
+elliptic on `T` with the same constants, that agrees with `a` on an open `W` with `C ⊆ W ⊆ U`; its
+entries are of class `Cᵏ` with derivatives of every order at most `k` bounded on the whole space,
+and its bilinear forms are bounded and Lipschitz.
+
+As in `TauCeti.PDE.UniformlyEllipticOn.exists_lipschitzWith_eqOn_inter`, `C` need not lie in `S`:
+typically `S = Ω ∩ U` for a domain `Ω` and a half-space `T` with `Ω ∩ U = T ∩ U`. One may take
+`a' = χ a + (1 - χ) λ I` for a smooth cutoff `χ` equal to one near `C` and supported in `U`; then
+`a' - λ I` has compact support, which bounds its derivatives of order at most `k`. -/
+theorem UniformlyEllipticOn.exists_contDiff_eqOn_inter [DecidableEq ι] {lam Lam : ℝ}
+    {S T C : Set (EuclideanSpace ℝ ι)} {U : Opens (EuclideanSpace ℝ ι)}
+    (ha : UniformlyEllipticOn S a lam Lam) {k : ℕ} (hk : k ≠ 0)
+    (hsmooth : ∀ i j, ContDiffOn ℝ k (fun x => a x i j) U)
+    (hTU : T ∩ U ⊆ S) (hC : IsCompact C) (hCU : C ⊆ U) :
+    ∃ a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ, ∃ K : ℝ≥0, ∃ M : ℝ,
+      ∃ W : Opens (EuclideanSpace ℝ ι), C ⊆ W ∧ W ≤ U ∧ UniformlyEllipticOn T a' lam Lam ∧
+        (∀ i j, ContDiff ℝ k fun x => a' x i j) ∧
+        LipschitzWith K (fun x => matrixBilinearForm (a' x)) ∧
+        (∀ i j, BddDerivOn ℝ k (fun x => a' x i j) univ) ∧
+        (∀ x, ‖matrixBilinearForm (a' x)‖ ≤ M) ∧ EqOn a' a (W : Set (EuclideanSpace ℝ ι)) := by
+  classical
+  obtain ⟨χ, hχ, hχr, hχ1, hχc, hχs⟩ := hC.exists_contDiff_cutoff U.isOpen hCU
+  obtain ⟨W, hCW, hWU, hT, hW1⟩ :=
+    exists_uniformlyEllipticOn_smul_add_one_sub_smul ha hTU hχr hχ1 hχs
+  obtain ⟨K, M, hsm, hK, hbd, hM⟩ :=
+    exists_lipschitzWith_contDiff_smul_add_one_sub_smul hk hsmooth hχ hχc hχs (lam • 1)
+  exact ⟨_, K, M, W, hCW, hWU, hT, hsm, hK, hbd, hM, fun x hx => by
+    simp only [hW1 x hx, one_smul, sub_self, zero_smul, add_zero]⟩
 
 /-- **Extending a measurable uniformly elliptic field by `λ I`.** A field `a`, measurable and
 uniformly elliptic on `Ω` with constants `λ, Λ`, agrees on `Ω` with a field that is measurable and

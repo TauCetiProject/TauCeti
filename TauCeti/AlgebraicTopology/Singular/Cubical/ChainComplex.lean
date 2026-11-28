@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Topology.Category.TopCat.Basic
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalization
 
 /-!
@@ -19,12 +20,16 @@ The normalized cubical chains of a topological space, with their boundary, form 
 of modules over the coefficient ring, and continuous maps induce chain maps.  This packages the
 concrete normalized cubical chains of `TauCeti.AlgebraicTopology.Singular.Cubical.Normalized` as a
 functor `TopCat ⥤ ChainComplex (ModuleCat R) ℕ`, the form in which they are compared with the
-simplicial singular chain complex.
+simplicial singular chain complex. The raw cubical chains, degenerate cubes included, likewise form
+a functor, with the normalization quotient a natural chain map onto the normalized chains.
 
 ## Main definitions
 
 * `TauCeti.normalizedCubicalChainComplex R`: the functor sending a space to its normalized cubical
   chain complex with coefficients in `R`.
+* `TauCeti.rawCubicalChainComplex k`: the raw cubical chain complex functor.
+* `TauCeti.rawCubicalChainComplexπ k`: the normalization quotient, a natural chain map to the
+  normalized cubical chains.
 
 ## Main results
 
@@ -32,6 +37,8 @@ simplicial singular chain complex.
   an empty space vanish.
 * `TauCeti.NormalizedCubicalChain.exists_boundary_eq_of_isZero_homology`: if the normalized
   cubical homology vanishes in dimension `n + 1`, every `(n + 1)`-cycle is a boundary.
+* `TauCeti.normalizedCubicalChainComplex_homologyπ_eq_iff`: two cycles have the same homology
+  class exactly when the difference of their chains is a boundary.
 -/
 
 @[expose] public section
@@ -114,6 +121,19 @@ theorem normalizedCubicalChainComplexXEquiv_d_apply (X : TopCat.{u}) (n : ℕ)
         (normalizedCubicalChainComplexXEquiv X (n + 1) g) :=
   normalizedCubicalChainComplex_obj_d_apply X n g
 
+/-- The boundary of a cycle of the normalized cubical chain complex vanishes, for every
+reindexing of its degree `q` as `p + 1`. -/
+theorem NormalizedCubicalChain.boundary_cast_iCycles_eq_zero {X : TopCat.{u}} {q : ℕ}
+    (z : ((normalizedCubicalChainComplex R).obj X).cycles q) (p : ℕ) (hp : q = p + 1) :
+    NormalizedCubicalChain.boundary X R p
+      (NormalizedCubicalChain.cast R hp
+        ((((normalizedCubicalChainComplex R).obj X).iCycles q).hom z)) = 0 := by
+  subst hp
+  exact (congrArg (NormalizedCubicalChain.boundary X R p)
+    (NormalizedCubicalChain.cast_rfl R _)).trans
+      ((normalizedCubicalChainComplex_obj_d_apply X p _).symm.trans
+        (ConcreteCategory.congr_hom (((normalizedCubicalChainComplex R).obj X).iCycles_d _ _) z))
+
 /-- In each degree, the map of normalized cubical chain complexes induced by a map of spaces is
 the push-forward of normalized cubical chains. -/
 theorem normalizedCubicalChainComplex_map_f {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ) :
@@ -165,6 +185,27 @@ theorem NormalizedCubicalChain.exists_boundary_eq_of_isZero_homology {X : TopCat
   obtain ⟨c', hc'⟩ := hex c ((normalizedCubicalChainComplex_obj_d_apply X n c).trans hc)
   exact ⟨c', (normalizedCubicalChainComplex_obj_d_apply X (n + 1) c').symm.trans hc'⟩
 
+/-- Two cycles of the normalized cubical chain complex have the same homology class exactly when
+the difference of the chains they represent is a boundary. -/
+theorem normalizedCubicalChainComplex_homologyπ_eq_iff {X : TopCat.{u}} (q : ℕ)
+    (z z' : ((normalizedCubicalChainComplex R).obj X).cycles q) :
+    ((normalizedCubicalChainComplex R).obj X).homologyπ q z =
+        ((normalizedCubicalChainComplex R).obj X).homologyπ q z' ↔
+      ∃ c : NormalizedCubicalChain X R (q + 1), NormalizedCubicalChain.boundary X R q c =
+        normalizedCubicalChainComplexXEquiv X q
+            (((normalizedCubicalChainComplex R).obj X).iCycles q z) -
+          normalizedCubicalChainComplexXEquiv X q
+            (((normalizedCubicalChainComplex R).obj X).iCycles q z') := by
+  rw [HomologicalComplex.moduleCat_homologyπ_eq_iff _ (m := q + 1) (by simp)]
+  constructor
+  · rintro ⟨c, hc⟩
+    exact ⟨normalizedCubicalChainComplexXEquiv _ _ c,
+      (normalizedCubicalChainComplexXEquiv_d_apply _ q c).symm.trans (by rw [hc, map_sub])⟩
+  · rintro ⟨c, hc⟩
+    refine ⟨(normalizedCubicalChainComplexXEquiv _ _).symm c,
+      (normalizedCubicalChainComplexXEquiv (R := R) _ q).injective ?_⟩
+    exact (normalizedCubicalChainComplexXEquiv_d_apply _ q _).trans (hc.trans (map_sub _ _ _).symm)
+
 end Normalized
 
 
@@ -194,5 +235,123 @@ lemma rawCubicalChainComplexObj_d_apply {R : Type r} [Ring R] (X : TopCat.{w})
       CubicalChain.boundary X R M n c := by
   simp only [rawCubicalChainComplexObj, ChainComplex.of_d]
   rfl
+
+
+/-! ### The raw cubical chain complex functor -/
+
+section Raw
+
+open Finsupp
+
+variable (k : Type u) [Ring k]
+
+/-- The **raw cubical chain complex functor** with coefficients in `k`: the formal combinations of
+all singular cubes, degenerate ones included, with the cubical boundary. -/
+def rawCubicalChainComplex : TopCat.{u} ⥤ ChainComplex (ModuleCat.{u} k) ℕ where
+  obj X := rawCubicalChainComplexObj X (ModuleCat.of k k)
+  map {X Y} f := ChainComplex.ofHom
+    (fun _ ↦ ModuleCat.ofHom (lmapDomain (ModuleCat.of k k) k f.hom.comp)) fun n ↦
+      ModuleCat.hom_ext <| LinearMap.ext fun x ↦
+        (rawCubicalChainComplexObj_d_apply Y _ n _).trans
+          ((LinearMap.congr_fun (CubicalChain.lmapDomain_comp_boundary k _ f.hom n) x).symm.trans
+            (congrArg (lmapDomain (ModuleCat.of k k) k f.hom.comp)
+              (rawCubicalChainComplexObj_d_apply X _ n x).symm))
+  map_id _ := HomologicalComplex.hom_ext _ _ fun _ ↦
+    ModuleCat.hom_ext (LinearMap.ext fun _ ↦ mapDomain_id)
+  map_comp f g := HomologicalComplex.hom_ext _ _ fun _ ↦
+    ModuleCat.hom_ext (LinearMap.ext fun x ↦
+      mapDomain_comp (f := f.hom.comp) (g := g.hom.comp) (v := x))
+
+variable {k}
+
+/-- The raw cubical chain complex of a space is the native raw complex with coefficients in `k`. -/
+theorem rawCubicalChainComplex_obj (X : TopCat.{u}) :
+    (rawCubicalChainComplex k).obj X = rawCubicalChainComplexObj X (ModuleCat.of k k) :=
+  (rfl)
+
+/-- In each degree, the map of raw cubical chain complexes induced by a map of spaces is the
+push-forward of raw cubical chains along composition with the map. -/
+theorem rawCubicalChainComplex_map_f {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ) :
+    ((rawCubicalChainComplex k).map f).f n =
+      ModuleCat.ofHom (lmapDomain (ModuleCat.of k k) k f.hom.comp) :=
+  (rfl)
+
+/-- The map of raw cubical chains induced by a map of spaces acts by `Finsupp.mapDomain`. -/
+@[simp]
+theorem rawCubicalChainComplex_map_f_apply {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ)
+    (x : SingularCube X n →₀ k) :
+    ((rawCubicalChainComplex k).map f).f n x = mapDomain f.hom.comp x :=
+  (rfl)
+
+/-- A singular cube, as a raw cubical chain with coefficient one. -/
+def rawCubicalChainOfCube {X : TopCat.{u}} {n : ℕ} (c : SingularCube X n) :
+    ((rawCubicalChainComplex k).obj X).X n :=
+  single c (1 : k)
+
+theorem rawCubicalChainOfCube_def {X : TopCat.{u}} {n : ℕ} (c : SingularCube X n) :
+    rawCubicalChainOfCube (k := k) c = single c 1 :=
+  (rfl)
+
+/-- Two linear maps out of the raw cubical `n`-chains agree if they agree on every cube. -/
+@[ext]
+theorem rawCubicalChainComplex_X_linearMap_ext {X : TopCat.{u}} {n : ℕ} {M : Type*}
+    [AddCommGroup M] [Module k M] {f₁ f₂ : ((rawCubicalChainComplex k).obj X).X n →ₗ[k] M}
+    (h : ∀ c : SingularCube X n, f₁ (rawCubicalChainOfCube c) = f₂ (rawCubicalChainOfCube c)) :
+    f₁ = f₂ := by
+  simp only [rawCubicalChainOfCube_def] at h
+  exact lhom_ext' (φ := f₁) (ψ := f₂) fun c ↦ LinearMap.ext_ring (h c)
+
+/-- A continuous map sends the raw chain of a cube `c` to that of `f ∘ c`. -/
+@[simp]
+theorem rawCubicalChainComplex_map_f_rawCubicalChainOfCube {X Y : TopCat.{u}} (f : X ⟶ Y) {n : ℕ}
+    (c : SingularCube X n) :
+    ((rawCubicalChainComplex k).map f).f n (rawCubicalChainOfCube c) =
+      rawCubicalChainOfCube (f.hom.comp c) :=
+  (rawCubicalChainComplex_map_f_apply f n _).trans mapDomain_single
+
+/-- The boundary of the raw chain of a cube is the signed sum of the raw chains of its faces. -/
+@[simp]
+theorem rawCubicalChainComplex_d_rawCubicalChainOfCube {X : TopCat.{u}} {n : ℕ}
+    (c : SingularCube X (n + 1)) :
+    ((rawCubicalChainComplex k).obj X).d (n + 1) n (rawCubicalChainOfCube c) =
+      ∑ i : Fin (n + 1), (-1 : k) ^ (i : ℕ) •
+        (rawCubicalChainOfCube (SingularCube.face i 0 c) -
+          rawCubicalChainOfCube (SingularCube.face i 1 c)) := by
+  simp only [rawCubicalChainOfCube_def]
+  refine (rawCubicalChainComplexObj_d_apply X (ModuleCat.of k k) n (single c (1 : k))).trans
+    ((CubicalChain.boundary_single (M := ModuleCat.of k k) k c (1 : k)).trans
+      (Finset.sum_congr rfl fun i _ ↦ ?_))
+  rw [← Int.cast_smul_eq_zsmul k, Int.cast_pow, Int.cast_neg, Int.cast_one]
+  -- The two sides differ only in the module structure: `ModuleCat.of k k` versus `k`.
+  rfl
+
+variable (k)
+
+/-- The normalization quotient from the raw to the normalized cubical chains, as a natural chain
+map. -/
+def rawCubicalChainComplexπ : rawCubicalChainComplex k ⟶ normalizedCubicalChainComplex k where
+  app X := ChainComplex.ofHom (fun n ↦ ModuleCat.ofHom (CubicalChain.degenerate X k n).mkQ)
+    fun n ↦ ModuleCat.hom_ext <| LinearMap.ext fun x ↦
+      (normalizedCubicalChainComplex_obj_d_apply X n _).trans
+        ((NormalizedCubicalChain.boundary_mk k x).trans
+          (congrArg Submodule.Quotient.mk (rawCubicalChainComplexObj_d_apply X _ n x).symm))
+  naturality _ Y f := HomologicalComplex.hom_ext _ _ fun n ↦ ModuleCat.hom_ext <|
+    rawCubicalChainComplex_X_linearMap_ext fun c ↦
+      (congrArg (CubicalChain.degenerate Y k n).mkQ
+        (rawCubicalChainComplex_map_f_rawCubicalChainOfCube f c)).trans
+      ((congrArg Submodule.Quotient.mk (CubicalChain.map_single k f.hom c (1 : k))).symm.trans
+        (NormalizedCubicalChain.map_mk k f.hom _).symm)
+
+variable {k}
+
+/-- The normalization quotient sends the raw chain of a cube to its normalized class. -/
+@[simp]
+theorem rawCubicalChainComplexπ_app_f_rawCubicalChainOfCube {X : TopCat.{u}} {n : ℕ}
+    (c : SingularCube X n) :
+    ((rawCubicalChainComplexπ k).app X).f n (rawCubicalChainOfCube c) =
+      (normalizedCubicalChainComplexXEquiv X n).symm (NormalizedCubicalChain.ofCube X k c) :=
+  (NormalizedCubicalChain.ofCube_def k c).symm
+
+end Raw
 
 end TauCeti

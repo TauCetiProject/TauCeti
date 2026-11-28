@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
+import TauCeti.Geometry.Symplectic.JHolomorphic.ComplexDifferentiable
 
 /-!
 # Pseudoholomorphic maps between almost complex manifolds

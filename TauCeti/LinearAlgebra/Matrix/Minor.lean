@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Regular.Defs
 public import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 import Mathlib.Algebra.Regular.Pow
+import TauCeti.Data.Matrix.Mul
 
 /-!
 # Pair minors and principal minors
@@ -48,7 +49,15 @@ determinant of its restriction to the rows and columns indexed by a finite set o
   matrix.
 * `Matrix.pairMinor_mul`: Cauchy--Binet, expanding a minor of a product over the increasing pairs
   of the middle index type.
-* `Matrix.principalMinor_empty`: the empty principal minor is `1`.
+* `Matrix.principalMinor_empty`, `Matrix.principalMinor_univ`: the empty principal minor is `1`,
+  and the principal minor on all indices is the determinant.
+* `Matrix.principalMinor_mul_of_apply_eq_zero_right`,
+  `Matrix.principalMinor_mul_of_apply_eq_zero_left`: the principal minor on `s` is multiplicative
+  when the right factor preserves the coordinates in `s`, or the left factor preserves the
+  coordinates outside `s`.
+* `Matrix.principalMinor_one`, `Matrix.principalMinor_diagonal`: every principal minor of the
+  identity matrix is `1`, and a principal minor of a diagonal matrix is the product of the
+  chosen diagonal entries.
 * `Matrix.principalMinor_submatrix`: principal minors of a restriction along an embedding of
   index types, in particular their invariance under reindexing.
 * `Matrix.principalMinor_transpose`, `Matrix.principalMinor_map`, `Matrix.principalMinor_smul`,
@@ -236,6 +245,45 @@ product of the chosen diagonal entries. -/
 theorem det_submatrix_diagonal [Fintype ι] (d : κ → R) {e : ι → κ}
     (he : Function.Injective e) : ((diagonal d).submatrix e e).det = ∏ i, d (e i) := by
   rw [submatrix_diagonal _ _ he, det_diagonal, Function.comp_def]
+
+/-- A principal minor of a diagonal matrix is the product of the chosen diagonal entries. -/
+@[simp]
+theorem principalMinor_diagonal (d : ι → R) (s : Finset ι) :
+    (diagonal d).principalMinor s = ∏ i ∈ s, d i := by
+  rw [principalMinor_def, det_submatrix_diagonal d Subtype.val_injective,
+    Finset.prod_coe_sort s d]
+
+/-- Every principal minor of the identity matrix is `1`. -/
+@[simp]
+theorem principalMinor_one (s : Finset ι) : (1 : Matrix ι ι R).principalMinor s = 1 := by
+  rw [← diagonal_one, principalMinor_diagonal, Finset.prod_const_one]
+
+/-- The principal minor on all indices is the determinant. -/
+@[simp]
+theorem principalMinor_univ [Fintype ι] (A : Matrix ι ι R) :
+    A.principalMinor Finset.univ = A.det := by
+  rw [principalMinor_def]
+  exact det_submatrix_equiv_self (Equiv.subtypeUnivEquiv Finset.mem_univ) A
+
+/-- If the right factor `B` has no entry from a column in `s` to a row outside `s`, the principal
+minor of `A * B` on `s` is the product of the principal minors of `A` and `B` on `s`. -/
+theorem principalMinor_mul_of_apply_eq_zero_right [Fintype ι] (A B : Matrix ι ι R)
+    {s : Finset ι} (h : ∀ i ∉ s, ∀ j ∈ s, B i j = 0) :
+    (A * B).principalMinor s = A.principalMinor s * B.principalMinor s := by
+  rw [principalMinor_def, principalMinor_def, principalMinor_def,
+    submatrix_mul_of_injective_right A B (Subtype.val : s → ι) Subtype.val Subtype.val
+      Subtype.val_injective fun i j hij ↦
+      ⟨⟨i, by_contra fun hi ↦ hij (h i hi j j.property)⟩, rfl⟩, det_mul]
+
+/-- If the left factor `A` has no entry from a row in `s` to a column outside `s`, the principal
+minor of `A * B` on `s` is the product of the principal minors of `A` and `B` on `s`. -/
+theorem principalMinor_mul_of_apply_eq_zero_left [Fintype ι] (A B : Matrix ι ι R)
+    {s : Finset ι} (h : ∀ i ∈ s, ∀ j ∉ s, A i j = 0) :
+    (A * B).principalMinor s = A.principalMinor s * B.principalMinor s := by
+  rw [principalMinor_def, principalMinor_def, principalMinor_def,
+    submatrix_mul_of_injective A B (Subtype.val : s → ι) Subtype.val Subtype.val
+      Subtype.val_injective fun i j hij ↦
+      ⟨⟨j, by_contra fun hj ↦ hij (h i i.property j hj)⟩, rfl⟩, det_mul]
 
 end Principal
 

@@ -23,11 +23,39 @@ elimination.
 
 * `TauCeti.LinearContraction.homologyEquiv`: the isomorphism of homologies induced by the
   inclusion of a contraction.
+
+## Main results
+
+* `TauCeti.LinearContraction.mem_range_of_incl_mem_range` and
+  `TauCeti.LinearContraction.exists_mem_ker_sub_incl_mem_range`: the inclusion detects boundaries,
+  and every cycle of `dM` is the inclusion of a cycle of `dN` up to a boundary, without any
+  square-zero hypothesis.
 -/
 
 public section
 
 namespace TauCeti.LinearContraction
+
+section Semiring
+
+variable {R M N : Type*} [Semiring R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {dM : Module.End R M} {dN : Module.End R N}
+
+/-- An element of the retract whose inclusion is a boundary of `dM` is a boundary of `dN`. -/
+theorem mem_range_of_incl_mem_range (c : LinearContraction dM dN) {y : N}
+    (hy : c.incl y ∈ LinearMap.range dM) : y ∈ LinearMap.range dN := by
+  obtain ⟨x, hx⟩ := hy
+  exact ⟨c.proj x, by rw [← c.proj_dM_apply, hx, c.proj_incl_apply]⟩
+
+/-- Every cycle of `dM` differs from the inclusion of a cycle of `dN` by a boundary of `dM`. -/
+theorem exists_mem_ker_sub_incl_mem_range (c : LinearContraction dM dN) {x : M}
+    (hx : x ∈ LinearMap.ker dM) : ∃ y ∈ LinearMap.ker dN, x - c.incl y ∈ LinearMap.range dM := by
+  refine ⟨c.proj x, ?_, ?_⟩
+  · rw [LinearMap.mem_ker, ← c.proj_dM_apply, LinearMap.mem_ker.1 hx, map_zero]
+  · rw [c.incl_proj_apply, LinearMap.mem_ker.1 hx, map_zero, sub_zero, sub_sub_cancel]
+    exact ⟨c.homotopy x, rfl⟩
+
+end Semiring
 
 variable {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {dM : Module.End R M} {dN : Module.End R N}

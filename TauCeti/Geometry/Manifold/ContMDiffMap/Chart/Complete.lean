@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.WithSeminorms
 public import TauCeti.Geometry.Manifold.ExtChartAt
-public import TauCeti.Topology.ContinuousMap.CompactConvergence
+public import TauCeti.Topology.ContinuousMap.CompactConvergence.Group
 
 /-!
 # Completeness of the weak Whitney topology on a manifold

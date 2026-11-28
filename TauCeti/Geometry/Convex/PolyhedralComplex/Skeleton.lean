@@ -14,7 +14,8 @@ Cells of ambient codimension at least `k` form a subcomplex. Near a relative int
 an exact-codimension cell, the support of this skeleton agrees with that cell. One ball avoids
 its relative boundary and every other cell in the skeleton, and meets only cells containing it.
 This isolates one wall or joint for studying local crossings or small loops around a joint.
-No boundedness or salience is required.
+The same ball isolates the center in every complementary affine slice, whose dimension is
+the cell codimension. No boundedness or salience is required.
 
 Adapted from `Mei/Geometry/Convex/PolyhedralComplex/Strata.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
@@ -80,6 +81,7 @@ theorem codimensionGE_codimensionGE (C : FinitePolyhedralComplex h) (k l : ℕ) 
   simp only [mem_cells_codimensionGE, ← Nat.add_max_add_left, max_le_iff, and_assoc]
 
 /-- The skeleton retains every exact-codimension stratum at or above its threshold. -/
+@[simp]
 theorem cellsOfCodimension_codimensionGE_of_le (C : FinitePolyhedralComplex h) {k l : ℕ}
     (hkl : k ≤ l) : (C.codimensionGE k).cellsOfCodimension l = C.cellsOfCodimension l := by
   ext P
@@ -87,12 +89,12 @@ theorem cellsOfCodimension_codimensionGE_of_le (C : FinitePolyhedralComplex h) {
   exact ⟨fun hP => ⟨hP.1.1, hP.2⟩, fun ⟨hP, hd⟩ => ⟨⟨hP, by omega⟩, hd⟩⟩
 
 /-- At the threshold the exact-codimension cells of the skeleton are those of the complex. -/
-@[simp]
 theorem cellsOfCodimension_codimensionGE_self (C : FinitePolyhedralComplex h) (k : ℕ) :
     (C.codimensionGE k).cellsOfCodimension k = C.cellsOfCodimension k :=
   C.cellsOfCodimension_codimensionGE_of_le le_rfl
 
 /-- A skeleton has no cells of exact codimension below its threshold. -/
+@[simp]
 theorem cellsOfCodimension_codimensionGE_of_lt (C : FinitePolyhedralComplex h) {k l : ℕ}
     (hlk : l < k) : (C.codimensionGE k).cellsOfCodimension l = ∅ := by
   apply Finset.eq_empty_iff_forall_notMem.mpr
@@ -155,6 +157,7 @@ theorem support_codimensionGE_antitone (C : FinitePolyhedralComplex h) :
   fun _ _ hkl => (C.codimensionGE_isSubcomplex_codimensionGE hkl).isWeakRefinement.support_subset
 
 /-- No cells can have codimension greater than the ambient dimension. -/
+@[simp]
 theorem cells_codimensionGE_eq_empty (C : FinitePolyhedralComplex h) {k : ℕ}
     (hk : Module.finrank ℝ V < k) : (C.codimensionGE k).cells = ∅ := by
   apply Finset.eq_empty_iff_forall_notMem.mpr
@@ -163,6 +166,7 @@ theorem cells_codimensionGE_eq_empty (C : FinitePolyhedralComplex h) {k : ℕ}
   omega
 
 /-- Above the ambient dimension the support of the skeleton is empty. -/
+@[simp]
 theorem support_codimensionGE_eq_empty (C : FinitePolyhedralComplex h) {k : ℕ}
     (hk : Module.finrank ℝ V < k) : (C.codimensionGE k).support = ∅ := by
   ext x
@@ -229,5 +233,42 @@ theorem exists_ball_inter_support_codimensionGE_eq (C : FinitePolyhedralComplex 
     exact hne ((hball hy).2.2.1 Q hQ hyQ)
   · rintro Q hQ ⟨y, hy, hyQ⟩
     exact (hball hy).2.2.2 Q hQ hyQ
+
+/-- If the skeleton in a ball lies in the span of an exact-codimension cell,
+a complementary affine slice meets the skeleton in the ball only at its center.
+The slice has dimension equal to the codimension of the cell.
+
+Adapted from `Mei/Geometry/Convex/PolyhedralComplex/Joint.lean`, commit
+`bf3986029ff4d3eb4025d4067489511b0724374e` (Apache 2.0; Mei contributors, author Codex). -/
+theorem finrank_eq_and_ball_inter_slice_inter_support_eq_singleton
+    (C : FinitePolyhedralComplex h) {P : Set V} {k : ℕ}
+    (hP : P ∈ C.cellsOfCodimension k) {x : V} (hx : x ∈ P) {r : ℝ} (hr : 0 < r)
+    (hskeleton : Metric.ball x r ∩ (C.codimensionGE k).support ⊆ (affineSpan ℝ P : Set V))
+    (W : Submodule ℝ V) (hW : IsCompl (affineSpan ℝ P).direction W) :
+    Module.finrank ℝ W = k ∧
+      (Metric.ball x r ∩ (AffineSubspace.mk' x W : Set V)) ∩
+        (C.codimensionGE k).support = {x} := by
+  let := h.finiteDimensional
+  have hdimP := (mem_cellsOfCodimension.mp hP).2
+  have hdimW := Submodule.finrank_add_eq_of_isCompl hW
+  have hxA := subset_affineSpan ℝ P hx
+  have hxW : x ∈ (AffineSubspace.mk' x W : Set V) := AffineSubspace.self_mem_mk' x W
+  obtain ⟨p, hp⟩ := AffineSubspace.inter_eq_singleton_of_nonempty_of_isCompl
+    (s₁ := affineSpan ℝ P) (s₂ := AffineSubspace.mk' x W) ⟨x, hxA⟩ ⟨x, hxW⟩
+    (by simpa only [AffineSubspace.direction_mk'] using hW)
+  have hxp : x = p := Set.mem_singleton_iff.mp (hp ▸ ⟨hxA, hxW⟩)
+  subst p
+  refine ⟨by omega, ?_⟩
+  ext y
+  constructor
+  · rintro ⟨⟨hyball, hyW⟩, hys⟩
+    exact hp ▸ ⟨hskeleton ⟨hyball, hys⟩, hyW⟩
+  · intro hy
+    have hyx := Set.mem_singleton_iff.mp hy
+    subst y
+    have hxball : x ∈ Metric.ball x r := Metric.mem_ball_self hr
+    have hPs : P ∈ (C.codimensionGE k).cells :=
+      mem_cells_codimensionGE.mpr ⟨(mem_cellsOfCodimension.mp hP).1, hdimP.le⟩
+    exact ⟨⟨hxball, hxW⟩, subset_support hPs hx⟩
 
 end TauCeti.FinitePolyhedralComplex

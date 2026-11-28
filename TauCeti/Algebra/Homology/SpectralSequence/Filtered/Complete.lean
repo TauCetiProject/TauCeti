@@ -51,7 +51,8 @@ sequence is degreewise bounded:
 The degreewise boundedness of the spectral sequence is imposed through the vanishing of the
 graded cohomology at all indices beyond a bound, as in the exhaustive case. The successive
 approximation above is elementwise and uses no `lim¹` sequence. The weak convergence of a regular
-spectral sequence that is not degreewise bounded is not treated here.
+spectral sequence that is not degreewise bounded is in
+`TauCeti.Algebra.Homology.SpectralSequence.Filtered.Regular`.
 
 ## References
 
@@ -341,10 +342,7 @@ noncomputable def decreasingFiltrationSpectralSequencePageXIsoGradedOfFirstQuadr
       -- Below the filtration index `0` the graded pieces are `K/K = 0`.
       refine IsZero.of_iso ?_ ((HomologicalComplex.homologyFunctor _ _ _).mapIso
         (Subobject.cokernelOfLEIsoOfEq (hF_top (j + 1) (by lia)) (hF_top j (by lia)) _ le_rfl))
-      have : IsIso (Subobject.ofLE (⊤ : Subobject K) ⊤ le_rfl) := by
-        rw [Subobject.ofLE_refl]
-        infer_instance
-      exact (HomologicalComplex.acyclic_of_isZero _ (isZero_cokernel_of_epi _) _).isZero_homology
+      exact Subobject.isZero_homology_cokernel_ofLE_of_eq rfl _
 
 end Decreasing
 

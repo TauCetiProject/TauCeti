@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.AdicRing.CompletedTensorProduct.Restricted
-public import TauCeti.RingTheory.Huber.Restricted.Comparison
+public import TauCeti.RingTheory.Huber.Restricted.Comparison.Basic
 
 /-!
 # Completed-tensor base change on Gauss-normed restricted power series

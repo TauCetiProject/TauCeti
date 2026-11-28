@@ -8,9 +8,9 @@ module
 public import TauCeti.Analysis.Holder.CompLinear
 public import TauCeti.Analysis.Holder.Inclusion
 public import TauCeti.Analysis.Holder.LowOrder
-public import TauCeti.Analysis.Holder.Zygmund
+public import TauCeti.Analysis.Holder.Zygmund.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
-public import TauCeti.Analysis.Sobolev.BesselPotential.NormEquivalence
+public import TauCeti.Analysis.Sobolev.BesselPotential.NormEquivalence.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
 /-!
@@ -259,9 +259,8 @@ theorem value_ae_eq_toCkHolderSpace (u : Wkp (volume : Measure E) ⊤ p m) :
       fun φ ↦ ?_
     rw [BesselPotentialSpace.toTemperedDistribution_inclusionLp,
       ← BesselPotentialSpace.toLpTop_toCkHolderSpace (hα0 := hα0) (hα1 := hα1) (h := h) v,
-      Lp.toTemperedDistribution_apply]
-    exact integral_congr_ae ((coeFn_toLpTop volume (𝕜 := ℂ) f.toBoundedContinuousFunction).mono
-      fun x hx ↦ by simp [hx, f])
+      toTemperedDistribution_toLpTop_apply]
+    simp [f]
   filter_upwards [hf, coeFn_inclusionLp_toBesselPotentialSpace hp hp_top m u] with x hx hu
   rw [toCkHolderSpace, ContinuousLinearMap.comp_apply, CkHolderSpace.compLeftL_apply,
     ContinuousLinearMap.comp_apply, ← hx, hu, Complex.reCLM_apply, Complex.ofReal_re]

@@ -1,0 +1,135 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Topology.LocallyConstant.CompactSupport
+public import TauCeti.RepresentationTheory.Smooth.Basic
+public import Mathlib.Data.Set.Pointwise.Support
+public import Mathlib.Topology.Algebra.ConstMulAction
+public import TauCeti.Topology.Algebra.Group.CompactOpens
+
+/-!
+# The translation representation on locally constant functions with compact support
+
+Let a topological group `G` act on a topological space `X`, by homeomorphisms. Then `G` acts on
+the `R`-module `C_c^∞(X, M)` of locally constant functions with compact support
+(`LocallyConstant.compactlySupported`) by translation, `(g • f)(x) = f(g⁻¹ • x)`. When the action
+on `X` is jointly continuous this representation is smooth: for a test function `f`, uniform
+local constancy over the compact support of `f` gives a neighbourhood `U` of `1` with
+`f(g • y) = f(y)` and `f(g⁻¹ • y) = f(y)` for every `g ∈ U` and every `y` in the support, and then
+`U` fixes `f`.
+
+## Main definitions
+
+* `TauCeti.compactlySupportedRep R G X M`: the translation representation of `G` on
+  `C_c^∞(X, M)`.
+
+## Main results
+
+* `TauCeti.compactlySupportedRep_apply_coe`: `(g • f)(x) = f(g⁻¹ • x)`.
+* `TauCeti.isSmooth_compactlySupportedRep`: for a continuous action, the translation
+  representation is smooth.
+* `TauCeti.support_compactlySupportedRep_apply`: translation by `g` moves the support by `g`.
+* `TauCeti.compactlySupportedRep_apply_compactOpenIndicator`: translating the indicator `1_K • m`
+  by `g` gives `1_{gK} • m`.
+
+## References
+
+* J. Bernstein, *Representations of p-adic groups*, Harvard lectures 1992, written by
+  K. Rumelhart, Chapter I, §1.2, Proposition 2, p. 8.
+-/
+
+public section
+
+noncomputable section
+
+open Function Pointwise
+
+namespace TauCeti
+
+variable (R G X M : Type*) [Semiring R] [AddCommMonoid M] [Module R M] [Group G]
+  [TopologicalSpace X] [MulAction G X] [ContinuousConstSMul G X]
+
+/-- **The translation representation** of `G` on `C_c^∞(X, M)`: `(g • f)(x) = f(g⁻¹ • x)`. -/
+def compactlySupportedRep : Representation R G (LocallyConstant.compactlySupported R X M) where
+  toFun g := (LocallyConstant.comapₗ R ⟨(g⁻¹ • ·), continuous_const_smul _⟩).restrict
+    fun _ hf ↦ LocallyConstant.mem_compactlySupported.2 <|
+      (LocallyConstant.mem_compactlySupported.1 hf).comp_homeomorph (Homeomorph.smul g⁻¹)
+  map_one' := LinearMap.ext fun _ ↦ Subtype.ext <| LocallyConstant.ext fun x ↦ by simp
+  map_mul' g h := LinearMap.ext fun f ↦ Subtype.ext <| LocallyConstant.ext fun x ↦ by
+    simp [mul_smul]
+
+variable {R G X M}
+
+@[simp]
+theorem compactlySupportedRep_apply_coe (g : G) (f : LocallyConstant.compactlySupported R X M)
+    (x : X) : (compactlySupportedRep R G X M g f : LocallyConstant X M) x = f.val (g⁻¹ • x) :=
+  (rfl)
+
+/-- Translation by `g` sends the value at `x` to the value at `g • x`. -/
+theorem compactlySupportedRep_apply_smul (g : G) (f : LocallyConstant.compactlySupported R X M)
+    (x : X) : (compactlySupportedRep R G X M g f : LocallyConstant X M) (g • x) = f.val x := by
+  simp
+
+/-- **Translation by `g` moves the support by `g`.** -/
+theorem support_compactlySupportedRep_apply (g : G)
+    (f : LocallyConstant.compactlySupported R X M) :
+    support (compactlySupportedRep R G X M g f : LocallyConstant X M) = g • support f.val := by
+  rw [show ⇑(compactlySupportedRep R G X M g f : LocallyConstant X M) = fun x ↦ f.val (g⁻¹ • x)
+    from funext (compactlySupportedRep_apply_coe g f)]
+  exact support_comp_inv_smul g f.val
+
+/-- Translating the indicator `1_K • m` of a compact open set by `g` gives the indicator
+`1_{gK} • m` of its translate. -/
+@[simp]
+theorem compactlySupportedRep_apply_compactOpenIndicator [T2Space X] (g : G)
+    (K : TopologicalSpace.CompactOpens X) (m : M) :
+    compactlySupportedRep R G X M g ⟨LocallyConstant.compactOpenIndicator K m,
+        LocallyConstant.compactOpenIndicator_mem_compactlySupported K m⟩ =
+      ⟨LocallyConstant.compactOpenIndicator (g • K) m,
+        LocallyConstant.compactOpenIndicator_mem_compactlySupported _ m⟩ := by
+  classical
+  ext x
+  by_cases hx : g⁻¹ • x ∈ K
+  · rw [compactlySupportedRep_apply_coe, LocallyConstant.compactOpenIndicator_of_mem hx,
+      LocallyConstant.compactOpenIndicator_of_mem
+        (TopologicalSpace.CompactOpens.mem_smul_iff_inv_smul_mem.2 hx)]
+  · rw [compactlySupportedRep_apply_coe, LocallyConstant.compactOpenIndicator_of_notMem hx,
+      LocallyConstant.compactOpenIndicator_of_notMem
+        (mt TopologicalSpace.CompactOpens.mem_smul_iff_inv_smul_mem.1 hx)]
+
+/-- An element acting trivially on `X` acts trivially on `C_c^∞(X, M)`. -/
+theorem compactlySupportedRep_apply_eq_one {g : G} (hg : ∀ x : X, g • x = x) :
+    compactlySupportedRep R G X M g = 1 := by
+  have hg' (x : X) : g⁻¹ • x = x := by
+    rw [inv_smul_eq_iff, hg]
+  exact LinearMap.ext fun f ↦ Subtype.ext <| LocallyConstant.ext fun x ↦ by simp [hg']
+
+/-- For a continuous action of a topological group, every test function is fixed by a
+neighbourhood of `1`: **the translation representation is smooth**. -/
+instance isSmooth_compactlySupportedRep [TopologicalSpace G] [IsTopologicalGroup G]
+    [ContinuousSMul G X] : (compactlySupportedRep R G X M).IsSmooth where
+  isOpen_stabilizer f := by
+    set φ : LocallyConstant X M := f.val
+    -- Uniform local constancy of `(y, g) ↦ φ (g • y)` on the compact support, near `1`.
+    obtain ⟨V, hVopen, hV1, hV⟩ := (φ.isLocallyConstant.comp_continuous
+      (continuous_snd.smul continuous_fst)).exists_isOpen_forall_mem_eq
+        (LocallyConstant.mem_compactlySupported.1 f.property).isCompact (1 : G)
+    have hVn : V ∈ nhds (1 : G) := hVopen.mem_nhds hV1
+    refine Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (Filter.inter_mem hVn
+      (inv_mem_nhds_one G hVn)) fun g hg ↦ ?_)
+    rw [SetLike.mem_coe, Representation.mem_stabilizer]
+    refine Subtype.ext <| LocallyConstant.ext fun y ↦ ?_
+    rw [compactlySupportedRep_apply_coe]
+    -- If `y` or `g⁻¹ • y` lies in the support, translate from that point; otherwise both values
+    -- vanish.
+    by_cases hy : y ∈ tsupport φ
+    · simpa using hV g⁻¹ hg.2 y hy
+    by_cases hy' : g⁻¹ • y ∈ tsupport φ
+    · simpa using (hV g hg.1 (g⁻¹ • y) hy').symm
+    rw [image_eq_zero_of_notMem_tsupport hy, image_eq_zero_of_notMem_tsupport hy']
+
+end TauCeti
