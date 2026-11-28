@@ -17,7 +17,9 @@ public import TauCeti.Analysis.Normed.Lp.ProdLp
 For inner product spaces `E` and `F` over `𝕜` (`[RCLike 𝕜]`), `WithLp.inlL2 𝕜 E F` and
 `WithLp.inrL2 𝕜 E F` are the coordinate embeddings `x ↦ (x, 0)` and `y ↦ (0, y)` into
 `WithLp 2 (E × F)`. These are linear isometries (`WithLp.isometry_inlL2`, `WithLp.isometry_inrL2`)
-of operator norm `1` on nontrivial spaces (`WithLp.norm_inlL2`, `WithLp.norm_inrL2`). When `E` and
+of operator norm `1` on nontrivial spaces (`WithLp.norm_inlL2`, `WithLp.norm_inrL2`), and right
+inverses of the coordinate projections, which are therefore surjective (`WithLp.fstL_surjective`,
+`WithLp.sndL_surjective`). When `E` and
 `F` are complete, they are the Hilbert-space adjoints of the coordinate projections
 `WithLp.fstL 2 𝕜 E F` and `WithLp.sndL 2 𝕜 E F` (`WithLp.adjoint_fstL`, `WithLp.adjoint_sndL`,
 `WithLp.adjoint_inlL2`, `WithLp.adjoint_inrL2`). The diagonal embedding `WithLp.diagL2 𝕜 E`,
@@ -32,6 +34,12 @@ three siblings). Block operators multiply as matrices (`WithLp.blockL2_mul_block
 adjoint is the conjugate transpose (`WithLp.adjoint_blockL2`), and a block operator with compact
 entries is compact (`WithLp.isCompactOperator_blockL2`). The block diagonal operators are the
 block sums `ContinuousLinearMap.withLpProdMap` (`WithLp.blockL2_zero_zero`).
+
+The orthogonal complement of the diagonal `WithLp.diagonal 2 𝕜 E` of `WithLp 2 (E × E)` consists
+of the antidiagonal vectors `(η, -η)` (`WithLp.mem_orthogonal_diagonal_iff`). The product
+`p × q` of two subspaces with orthogonal projections, the subspace
+`(p.prod q).comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap`, has an orthogonal projection,
+which projects each component (`WithLp.starProjection_comap_prod`).
 -/
 
 public section
@@ -59,6 +67,14 @@ def inrL2 : F →L[𝕜] WithLp 2 (E × F) :=
 @[simp] theorem fstL_comp_inlL2 : (WithLp.fstL 2 𝕜 E F).comp (inlL2 𝕜 E F) = 1 := by ext; simp
 
 @[simp] theorem sndL_comp_inrL2 : (WithLp.sndL 2 𝕜 E F).comp (inrL2 𝕜 E F) = 1 := by ext; simp
+
+/-- The projection `WithLp.fstL 2 𝕜 E F` is surjective, with right inverse `WithLp.inlL2 𝕜 E F`. -/
+theorem fstL_surjective : Function.Surjective (WithLp.fstL 2 𝕜 E F) :=
+  fun x ↦ ⟨inlL2 𝕜 E F x, by simp⟩
+
+/-- The projection `WithLp.sndL 2 𝕜 E F` is surjective, with right inverse `WithLp.inrL2 𝕜 E F`. -/
+theorem sndL_surjective : Function.Surjective (WithLp.sndL 2 𝕜 E F) :=
+  fun y ↦ ⟨inrL2 𝕜 E F y, by simp⟩
 
 @[simp] theorem fstL_comp_inrL2 : (WithLp.fstL 2 𝕜 E F).comp (inrL2 𝕜 E F) = 0 := by ext; simp
 
@@ -121,6 +137,60 @@ theorem adjoint_diagL2 : (diagL2 𝕜 E).adjoint = WithLp.fstL 2 𝕜 E E + With
   simp [adjoint_diagL2]
 
 end Adjoint
+
+/-! ### The diagonal -/
+
+variable {𝕜 E} in
+/-- The vectors orthogonal to the diagonal of `WithLp 2 (E × E)` are the `(η, -η)`. -/
+@[simp]
+theorem mem_orthogonal_diagonal_iff {ζ : WithLp 2 (E × E)} :
+    ζ ∈ (diagonal 2 𝕜 E)ᗮ ↔ ζ.snd = -ζ.fst := by
+  rw [Submodule.mem_orthogonal]
+  refine ⟨fun h ↦ ?_, fun h u hu ↦ ?_⟩
+  · have h' := h (toLp 2 (ζ.fst + ζ.snd, ζ.fst + ζ.snd)) (mem_diagonal_iff.2 rfl)
+    rw [prod_inner_apply] at h'
+    simp only [ofLp_fst, ofLp_snd] at h'
+    rw [← inner_add_right, inner_self_eq_zero] at h'
+    exact eq_neg_iff_add_eq_zero.2 (by rwa [add_comm])
+  · simp [prod_inner_apply, mem_diagonal_iff.1 hu, h]
+
+/-! ### Product subspaces -/
+
+section ProdSubmodule
+
+variable {𝕜 E F} (p : Submodule 𝕜 E) (q : Submodule 𝕜 F) [p.HasOrthogonalProjection]
+  [q.HasOrthogonalProjection]
+
+/-- Projecting the two components of `x` gives a vector of `p × q` whose difference with `x` is
+orthogonal to `p × q`. -/
+private theorem toLp_starProjection_mem_and_sub_mem_orthogonal (x : WithLp 2 (E × F)) :
+    toLp 2 (p.starProjection x.fst, q.starProjection x.snd) ∈
+        (p.prod q).comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap ∧
+      x - toLp 2 (p.starProjection x.fst, q.starProjection x.snd) ∈
+        ((p.prod q).comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap)ᗮ := by
+  refine ⟨Submodule.mem_prod.2 ⟨p.starProjection_apply_mem _, q.starProjection_apply_mem _⟩,
+    fun w hw ↦ ?_⟩
+  rw [Submodule.mem_comap, Submodule.mem_prod] at hw
+  simpa [prod_inner_apply] using congrArg₂ (· + ·)
+    (p.sub_starProjection_mem_orthogonal x.fst w.fst hw.1)
+    (q.sub_starProjection_mem_orthogonal x.snd w.snd hw.2)
+
+/-- The product `p × q` of two subspaces with orthogonal projections, as a subspace of
+`WithLp 2 (E × F)`, has an orthogonal projection. -/
+instance : ((p.prod q).comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap).HasOrthogonalProjection
+    where
+  exists_orthogonal x := ⟨_, toLp_starProjection_mem_and_sub_mem_orthogonal p q x⟩
+
+/-- The orthogonal projection onto the product subspace `p × q` of `WithLp 2 (E × F)` projects
+each component: `P_{p × q} (x, y) = (P_p x, P_q y)`. -/
+theorem starProjection_comap_prod (x : WithLp 2 (E × F)) :
+    ((p.prod q).comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap).starProjection x =
+      toLp 2 (p.starProjection x.fst, q.starProjection x.snd) :=
+  Submodule.eq_starProjection_of_mem_orthogonal
+    (toLp_starProjection_mem_and_sub_mem_orthogonal p q x).1
+    (toLp_starProjection_mem_and_sub_mem_orthogonal p q x).2
+
+end ProdSubmodule
 
 /-! ### Block operators -/
 

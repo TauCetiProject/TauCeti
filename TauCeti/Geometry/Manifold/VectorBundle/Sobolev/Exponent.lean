@@ -36,7 +36,9 @@ For a finite bundle atlas `A`, every chart image has compact closure, so it has 
 * `TauCeti.SectionChartData.lowerOrdersL_ofExponentLEL`: order and exponent inclusions commute,
   including an infinite source exponent; the loss-one case uses the explicit
   `TauCeti.SectionChartData.lowerOrdersL_one` rewrite.
-* `TauCeti.SectionChartData.chartValueL_ofExponentLEL`: the chart data are their `Lᵖ` copies.
+* `TauCeti.SectionChartData.chartValueL_ofExponentLEL`,
+  `TauCeti.SectionChartData.coeFn_chartValueL_ofExponentLEL`: the chart data are their `Lᵖ` copies,
+  the same functions.
 * `TauCeti.SectionChartData.ofExponentLEL_injective`: the inclusion is injective.
 * `TauCeti.SectionChartData.ofExponentLEL_self`,
   `TauCeti.SectionChartData.ofExponentLEL_ofExponentLEL`: the identity at `p = q` and
@@ -120,6 +122,13 @@ theorem chartValueL_ofExponentLEL (hpq : p ≤ q) (w : C.sobolevSections μ q k)
     C.chartValueL μ p k i (C.ofExponentLEL μ k hpq w) =
       Lp.ofExponentLEL ℝ F hpq (C.chartValueL μ q k i w) := by
   rw [coe_ofExponentLEL, chartValueL_mapL_ofExponentLEL]
+
+/-- The chart data of `C.ofExponentLEL μ k hpq w` are those of `w`, as functions. Not `@[simp]`:
+`simp` proves it from `chartValueL_ofExponentLEL` and `Lp.coeFn_ofExponentLEL`. -/
+theorem coeFn_chartValueL_ofExponentLEL (hpq : p ≤ q) (w : C.sobolevSections μ q k)
+    (i : Fin C.n) :
+    ⇑(C.chartValueL μ p k i (C.ofExponentLEL μ k hpq w)) = C.chartValueL μ q k i w := by
+  rw [chartValueL_ofExponentLEL, Lp.coeFn_ofExponentLEL]
 
 /-- Lowering the exponent is injective. -/
 theorem ofExponentLEL_injective (hpq : p ≤ q) :

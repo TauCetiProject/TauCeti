@@ -9,8 +9,8 @@ public import Mathlib.Algebra.DualNumber
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.Basis.Fin
 public import Mathlib.RingTheory.Artinian.Module
+public import Mathlib.RingTheory.DualNumber
 import Mathlib.LinearAlgebra.Basis.Prod
-import Mathlib.RingTheory.DualNumber
 import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
@@ -32,8 +32,9 @@ Algebra maps on dual numbers evaluate in terms of their restriction to constants
 their value on `ε`. In particular an `R`-algebra endomorphism `f` of `R[ε]` multiplies
 `ε`-coefficients by that of `f ε`, and over a reduced semiring `f ε` has zero `R`-component, so
 `f ε = (f ε).snd • ε`. Over a nontrivial semiring `ε` is a nonzero nilpotent, so the dual numbers
-are neither reduced nor a field. The dual numbers are free of rank two on the basis `1, ε`, so
-linear maps out of them are determined by their values on `1` and `ε`.
+are neither reduced nor a field; over a field, the maximal ideal `(ε)` squares to zero. The dual
+numbers are free of rank two on the basis `1, ε`, so linear maps out of them are determined by
+their values on `1` and `ε`.
 -/
 
 public section
@@ -199,6 +200,13 @@ theorem not_isReduced : ¬IsReduced R[ε] := fun _ ↦ eps_ne_zero (R := R) isNi
 theorem not_isField : ¬IsField R[ε] := fun h ↦ by
   have := h.isDomain
   exact not_isReduced (R := R) inferInstance
+
+/-- Over a field `k`, the square of the maximal ideal of the dual numbers `k[ε]` is zero. -/
+@[simp]
+theorem maximalIdeal_sq_eq_bot {k : Type*} [Field k] :
+    IsLocalRing.maximalIdeal (DualNumber k) ^ 2 = ⊥ := by
+  rw [maximalIdeal_eq_span_singleton_eps, Ideal.span_singleton_pow, sq, eps_mul_eps,
+    Ideal.span_singleton_zero]
 
 end DualNumber
 

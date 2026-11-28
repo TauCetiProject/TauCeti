@@ -75,8 +75,9 @@ root multigraph at `x`, with the cycle lengths `k` as multiplicities
 
 So near the collision the root multigraph is the union of the images of finitely many injective
 continuous maps `t ↦ (x + tᵏ, v(t))` of discs, disjoint off the fibre over `x`: its normalization
-there. The regularity of the branches at the centre beyond the distributional equation is not
-treated here.
+there. When `ν` and `μ` are Hölder continuous, the branches are `C¹` across the centre as well
+(`TauCeti.exists_eq_sum_map_nthRoots_contDiffOn`, in
+`TauCeti.Analysis.Complex.Wirtinger.Root.Regularity`).
 
 The proof first extends continuous roots over the punctured disc across the centre
 (`TauCeti.Polynomial.exists_continuousOn_prod_X_sub_C_add_pow`). Off the centre a branch agrees
@@ -554,6 +555,7 @@ to `m`:
   `vₐ(t)` at the `kₐ`-th roots `t` of `s`, over all branches `a`, and these roots lie in `ball 0 δ`;
 * each branch parametrization `t ↦ (t^(kₐ), vₐ(t))` is injective on `ball 0 δ`, and the
   parametrizations of distinct branches meet only over `s = 0`;
+* each branch lies over the disc: `t ↦ x + t^(kₐ)` maps `ball 0 δ` into `ball x r`;
 * each `vₐ` is continuous on `ball 0 δ`, and off `t = 0` it is `C¹` and solves the pulled-back
   equation `\bar∂v + \overline{kₐ t^(kₐ-1)} (v ν(x + t^(kₐ)) + \bar v μ(x + t^(kₐ))) = 0`;
 * each `vₐ` solves the same equation distributionally on the whole disc `ball 0 δ`, centre
@@ -577,6 +579,7 @@ theorem exists_eq_sum_map_nthRoots_hasWeakConjWirtingerDerivOn (hr : 0 < r)
       (∀ a, Set.InjOn (fun t ↦ (t ^ k a, v a t)) (ball 0 δ)) ∧
       (∀ a a', a ≠ a' → ∀ t ∈ ball (0 : ℂ) δ, ∀ t' ∈ ball (0 : ℂ) δ, t ≠ 0 →
         (t ^ k a, v a t) ≠ (t' ^ k a', v a' t')) ∧
+      (∀ a, Set.MapsTo (fun t ↦ x + t ^ k a) (ball 0 δ) (ball x r)) ∧
       (∀ a, ContinuousOn (v a) (ball 0 δ)) ∧
       (∀ a, ∀ t ∈ ball (0 : ℂ) δ, t ≠ 0 → ContDiffAt ℝ 1 (v a) t ∧
         conjWirtingerDeriv (v a) t + conj (k a * t ^ (k a - 1)) •
@@ -596,6 +599,10 @@ theorem exists_eq_sum_map_nthRoots_hasWeakConjWirtingerDerivOn (hr : 0 < r)
   have hδ : 0 < δ := by positivity
   have hδ1 : δ ≤ 1 := (half_le_self (by positivity)).trans (pow_le_one₀ hρ.le hρ1)
   have hδρ : ball (0 : ℂ) δ ⊆ ball 0 (ρ ^ n) := ball_subset_ball (half_le_self (by positivity))
+  -- the branches lie over `ball x r`, since `δ ≤ 1` and `δ ≤ ρⁿ ≤ ρ ≤ r`
+  have hδr (i : Fin m) : δ ^ Function.minimalPeriod σ i ≤ r :=
+    (pow_le_of_le_one hδ.le hδ1 (hper i).2.1.ne').trans ((half_le_self (by positivity)).trans
+      ((pow_le_of_le_one hρ.le hρ1 hn).trans hρr))
   have hbr (a : Fin m) := descendPow_hasWeakConjWirtingerDerivOn hb hR hsimple hν hμ heq hρ hρ1
     hρr hc hn huc hroots hσ hinj a
   refine ⟨Quotient (Equiv.Perm.SameCycle.setoid σ), inferInstance,
@@ -603,7 +610,10 @@ theorem exists_eq_sum_map_nthRoots_hasWeakConjWirtingerDerivOn (hr : 0 < r)
     fun q ↦ descendPow (n / Function.minimalPeriod σ q.out) (u q.out),
     δ ^ (m + 1), by positivity, δ, hδ, fun q ↦ (hper q.out).2.1, ?_,
     fun s hs ↦ ?_, fun q s hs t ht ↦ ?_, fun q t ht t' ht' htt' ↦ ?_,
-    fun q q' hqq' t ht t' ht' ht0 htt' ↦ ?_, fun q ↦ (hbr q.out).1.mono hδρ,
+    fun q q' hqq' t ht t' ht' ht0 htt' ↦ ?_,
+    fun q t ht ↦ by
+      simpa [mem_ball_iff_norm] using mapsTo_pow_ball_zero (hper q.out).2.1.ne' (hδr q.out) ht,
+    fun q ↦ (hbr q.out).1.mono hδρ,
     fun q t ht ↦ (hbr q.out).2.1 t (hδρ ht), fun q ↦ (hbr q.out).2.2⟩
   · -- the multiplicities are the lengths of the cycles of `σ`, which partition the `m` labels
     simpa using σ.sum_quotient_sameCycle_sum_range fun _ ↦ (1 : ℕ)

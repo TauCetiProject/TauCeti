@@ -38,6 +38,12 @@ abelian group without `p`-torsion for every prime `p` is torsion-free, and by Na
 * `TauCeti.finrank_zmod_quotSMulTop_two`: its dimension is the rank of a finite free `M`.
 * `AddEquiv.isTorsion'_iff`: for a submonoid `S` of `ℤ`, being `S`-torsion is invariant under
   additive equivalences.
+* `AddMonoidHom.map_mem_torsion'`: an additive homomorphism maps `S`-torsion elements to
+  `S`-torsion elements.
+* `AddMonoidHom.zero_mem_of_injective_of_isTorsion'`: if an `S`-torsion `ℤ`-module contains a
+  copy of `ℤ`, then `0 ∈ S`.
+* `Module.isTorsion'_of_intModule`: `S`-torsion is preserved between any two `ℤ`-module
+  structures on the same abelian group.
 * `TauCeti.span_range_mk_ofMul_eq_top_iff`: a family generates a commutative group modulo torsion
   exactly when its classes span the torsion-free quotient of the associated `ℤ`-module.
 * `TauCeti.hasUniqueDiv_of_forall_prime`: an abelian group on which every prime acts injectively
@@ -175,3 +181,38 @@ theorem _root_.AddEquiv.isTorsion'_iff {G H : Type*} [AddCommGroup G] [AddCommGr
   e.toIntLinearEquiv.isTorsion'_iff
 
 end TauCeti
+
+namespace AddMonoidHom
+
+/-- An additive homomorphism sends an `S`-torsion element to an `S`-torsion element. -/
+theorem map_mem_torsion' {M N : Type*} [AddCommGroup M] [AddCommGroup N]
+    (f : M →+ N) {S : Submonoid ℤ} {x : M} (hx : x ∈ Submodule.torsion' ℤ M S) :
+    f x ∈ Submodule.torsion' ℤ N S :=
+  let ⟨s, hs⟩ := hx
+  ⟨s, by rw [Submonoid.smul_def, ← map_zsmul]; exact (congrArg f hs).trans (map_zero f)⟩
+
+/-- If an `S`-torsion `ℤ`-module admits an injective additive homomorphism from `ℤ`, then
+`0 ∈ S`. -/
+theorem zero_mem_of_injective_of_isTorsion' {M : Type*} [AddCommGroup M]
+    {S : Submonoid ℤ} (f : ℤ →+ M) (hf : Function.Injective f) (hM : Module.IsTorsion' M S) :
+    (0 : ℤ) ∈ S := by
+  obtain ⟨s, hs⟩ := @hM (f 1)
+  have hs0 : (s : ℤ) = 0 := hf <| by
+    have hmap : f (s : ℤ) = (s : ℤ) • f 1 := by
+      simpa [zsmul_eq_mul] using map_zsmul f (s : ℤ) 1
+    rw [hmap, ← Submonoid.smul_def, hs, map_zero]
+  exact hs0 ▸ s.property
+
+end AddMonoidHom
+
+namespace Module
+
+/-- Transport `S`-torsion between two `ℤ`-module structures on the same abelian group. -/
+theorem isTorsion'_of_intModule {G : Type*} [AddCommGroup G]
+    (m₁ m₂ : Module ℤ G) {S : Submonoid ℤ}
+    (h : @Module.IsTorsion' G _ S (@Submonoid.smul ℤ G _ m₁.toSMul S)) :
+    @Module.IsTorsion' G _ S (@Submonoid.smul ℤ G _ m₂.toSMul S) := by
+  obtain rfl := Subsingleton.elim m₁ m₂
+  exact h
+
+end Module

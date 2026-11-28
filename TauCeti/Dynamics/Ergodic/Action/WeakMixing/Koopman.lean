@@ -8,7 +8,9 @@ module
 public import TauCeti.Dynamics.Ergodic.Action.Eigenfunction
 public import TauCeti.Dynamics.Ergodic.Action.WeakMixing.Basic
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
+import TauCeti.Analysis.Semigroups.Group.SpectralMeasure.Correlation
 import TauCeti.Analysis.SpecificLimits.Cesaro.Integral
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
@@ -34,6 +36,17 @@ frequency `a ≠ 0` it is in `L²(μ)`, has integral `0` because `∫ f = exp(2�
 centered correlation `⟪f, U_t f⟫ = exp(2πiat) ‖f‖²` has constant absolute value `‖f‖²`, which
 must therefore vanish. This is the easy half of the eigenfunction criterion for weak mixing.
 
+Conversely, for a probability measure, if every measurable eigenfunction is almost everywhere
+constant then the action is weakly mixing
+(`MeasureTheory.Measure.isWeaklyMixing_of_forall_eigenfunction`), so weak mixing is equivalent to
+the triviality of eigenfunctions (`MeasureTheory.Measure.isWeaklyMixing_iff_forall_eigenfunction`).
+Every Koopman eigenvector is then a multiple of `1`, so the centered parts `f - (∫ f) 1` and
+`g - (∫ g) 1` are orthogonal to every eigenspace of the Koopman group, and their correlation is
+the centered correlation of `f` and `g`. Its Cesàro averages vanish by the spectral theory of
+unitary groups: Bochner's theorem, Wiener's lemma and the atomic-mass identity, then
+polarization (`IsUnitary.tendsto_average_norm_inner_sub_of_forall_mem_eigenspace` in the namespace
+`TauCeti.Semigroups.StronglyContinuousGroup`).
+
 ## Main results
 
 * `MeasureTheory.Measure.IsWeaklyMixing.tendsto_average_norm_inner_koopmanGroup`: the `L²` form
@@ -41,7 +54,9 @@ must therefore vanish. This is the easy half of the eigenfunction criterion for 
 * `MeasureTheory.Measure.isWeaklyMixing_iff_tendsto_average_norm_inner_koopmanGroup`: weak mixing
   is equivalent to its `L²` form;
 * `MeasureTheory.Measure.IsWeaklyMixing.exists_ae_eq_const_of_eigenfunction`: every measurable
-  eigenfunction of a weakly mixing action is almost everywhere constant.
+  eigenfunction of a weakly mixing action is almost everywhere constant;
+* `MeasureTheory.Measure.isWeaklyMixing_iff_forall_eigenfunction`: the eigenfunction criterion,
+  for a probability measure.
 
 ## References
 
@@ -68,6 +83,10 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
 `e`. For the Koopman group and `e = 1`, it is `⟪g, U_t f⟫ - (∫ f) conj (∫ g)`. -/
 private def corr (f g : H) (t : ℝ) : ℂ :=
   ⟪g, U t f⟫_ℂ - ⟪e, f⟫_ℂ * ⟪g, e⟫_ℂ
+
+private theorem corr_apply (f g : H) (t : ℝ) :
+    corr U e f g t = ⟪g, U t f⟫_ℂ - ⟪e, f⟫_ℂ * ⟪g, e⟫_ℂ :=
+  rfl
 
 private theorem continuous_corr (f g : H) : Continuous (corr U e f g) :=
   (continuous_const.inner (U.continuous_orbit f)).sub continuous_const
@@ -104,25 +123,20 @@ end Correlation
 
 variable {X : Type*} [MeasurableSpace X] {μ : Measure X} [IsFiniteMeasure μ]
 
-/-- The constant function `1` in complex `L²(μ)`. -/
-private def one : Lp ℂ 2 μ :=
-  indicatorConstLp 2 MeasurableSet.univ (measure_ne_top μ univ) 1
-
-private theorem inner_one_left (f : Lp ℂ 2 μ) : ⟪(one : Lp ℂ 2 μ), f⟫_ℂ = ∫ x, f x ∂μ := by
-  rw [one, L2.inner_indicatorConstLp_one, Measure.restrict_univ]
-
-private theorem inner_one_right (g : Lp ℂ 2 μ) :
-    ⟪g, (one : Lp ℂ 2 μ)⟫_ℂ = conj (∫ x, g x ∂μ) := by
-  rw [← inner_conj_symm, inner_one_left]
+private theorem inner_const_one_const_one [IsProbabilityMeasure μ] :
+    ⟪Lp.const 2 μ (1 : ℂ), Lp.const 2 μ (1 : ℂ)⟫_ℂ = 1 := by
+  rw [L2.inner_const_left, integral_congr_ae (Lp.coeFn_const 2 μ (1 : ℂ))]
+  simp
 
 variable [AddAction ℝ X] [MeasurableVAdd₂ ℝ X] [VAddInvariantMeasure ℝ X μ]
 
 private theorem corr_koopmanGroup (f g : Lp ℂ 2 μ) (t : ℝ) :
-    corr (koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top) one f g t =
+    corr (koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top) (Lp.const 2 μ (1 : ℂ)) f g t =
       ⟪g, koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top t f⟫_ℂ -
         (∫ x, f x ∂μ) * conj (∫ x, g x ∂μ) := by
   unfold corr
-  rw [inner_one_left, inner_one_right]
+  rw [L2.inner_const_left, L2.inner_const_right, RCLike.inner_apply, RCLike.inner_apply, map_one,
+    one_mul, mul_one]
   -- `corr` reaches `Lp ℂ 2 μ` through its `InnerProductSpace ℂ` structure, so the inner product
   -- is `InnerProductSpace.toInner` of `L2.innerProductSpace` and the real scalars of the group
   -- come from `InnerProductSpace.toNormedSpace`; the right side uses the `L2` inner product and
@@ -132,20 +146,20 @@ private theorem corr_koopmanGroup (f g : Lp ℂ 2 μ) (t : ℝ) :
 /-- The centered correlation of two indicator functions. -/
 private theorem corr_indicatorConstLp {A B : Set X} (hA : MeasurableSet A) (hB : MeasurableSet B)
     (c d : ℂ) (t : ℝ) :
-    corr (koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top) one
+    corr (koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top) (Lp.const 2 μ (1 : ℂ))
         (indicatorConstLp 2 hA (measure_ne_top μ A) c)
         (indicatorConstLp 2 hB (measure_ne_top μ B) d) t =
       (conj d * c) * ((μ.real ((fun x => t +ᵥ x) ⁻¹' A ∩ B) - μ.real A * μ.real B : ℝ) : ℂ) := by
-  rw [corr_koopmanGroup, koopmanGroup_indicatorConstLp μ ℂ 2, ← inner_one_left, ← inner_one_right,
-    one, L2.inner_indicatorConstLp_indicatorConstLp, L2.inner_indicatorConstLp_indicatorConstLp,
-    L2.inner_indicatorConstLp_indicatorConstLp, univ_inter, inter_univ, inter_comm B]
-  simp only [RCLike.inner_apply, map_one, one_mul, mul_one, Complex.real_smul]
+  rw [corr_koopmanGroup, koopmanGroup_indicatorConstLp μ ℂ 2,
+    L2.inner_indicatorConstLp_indicatorConstLp, integral_indicatorConstLp,
+    integral_indicatorConstLp, inter_comm B]
+  simp only [RCLike.inner_apply, map_mul, Complex.real_smul, Complex.conj_ofReal]
   push_cast
   ring
 
 private theorem norm_corr_indicatorConstLp {A B : Set X} (hA : MeasurableSet A)
     (hB : MeasurableSet B) (c d : ℂ) (t : ℝ) :
-    ‖corr (koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top) one
+    ‖corr (koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top) (Lp.const 2 μ (1 : ℂ))
         (indicatorConstLp 2 hA (measure_ne_top μ A) c)
         (indicatorConstLp 2 hB (measure_ne_top μ B) d) t‖ =
       ‖d‖ * ‖c‖ * |μ.real ((fun x => t +ᵥ x) ⁻¹' A ∩ B) - μ.real A * μ.real B| := by
@@ -163,40 +177,41 @@ theorem IsWeaklyMixing.tendsto_average_norm_inner_koopmanGroup (h : IsWeaklyMixi
           (∫ x, f x ∂μ) * conj (∫ x, g x ∂μ)‖) atTop (𝓝 0) := by
   set U := koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top
   have hU : U.IsUnitary := koopmanGroup_isUnitary μ ℂ
-  suffices hfg : Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, ‖corr U one f g t‖) atTop (𝓝 0) by
-    simpa only [U, corr_koopmanGroup] using hfg
+  set e : Lp ℂ 2 μ := Lp.const 2 μ (1 : ℂ)
+  suffices hfg : Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, ‖corr U e f g t‖) atTop (𝓝 0) by
+    simpa only [U, e, corr_koopmanGroup] using hfg
   -- Indicator functions.
   have hind : ∀ {A B : Set X} (hA : MeasurableSet A) (hB : MeasurableSet B) (c d : ℂ),
       Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T,
-        ‖corr U one (indicatorConstLp 2 hA (measure_ne_top μ A) c)
+        ‖corr U e (indicatorConstLp 2 hA (measure_ne_top μ A) c)
           (indicatorConstLp 2 hB (measure_ne_top μ B) d) t‖) atTop (𝓝 0) := by
     intro A B hA hB c d
-    simp only [U, norm_corr_indicatorConstLp, intervalIntegral.integral_const_mul]
+    simp only [U, e, norm_corr_indicatorConstLp, intervalIntegral.integral_const_mul]
     simpa [mul_left_comm _ (‖d‖ * ‖c‖)] using
       (isWeaklyMixing_def.1 h A B hA hB).const_mul (‖d‖ * ‖c‖)
   -- The first variable.
   have hleft : ∀ {B : Set X} (hB : MeasurableSet B) (d : ℂ) (f : Lp ℂ 2 μ),
       Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T,
-        ‖corr U one f (indicatorConstLp 2 hB (measure_ne_top μ B) d) t‖) atTop (𝓝 0) := by
+        ‖corr U e f (indicatorConstLp 2 hB (measure_ne_top μ B) d) t‖) atTop (𝓝 0) := by
     intro B hB d f
     induction f using Lp.induction (ENNReal.ofNat_ne_top : (2 : ℝ≥0∞) ≠ ∞) with
     | indicatorConst c hA _ => exact hind hA hB c d
     | add _ _ _ h₁ h₂ =>
-      exact tendsto_average_norm_apply_add (continuous_corr U one · _)
-        (corr_add_left U one · · _) h₁ h₂
+      exact tendsto_average_norm_apply_add (continuous_corr U e · _)
+        (corr_add_left U e · · _) h₁ h₂
     | isClosed =>
-      exact isClosed_setOf_tendsto_average_norm (continuous_corr U one · _)
-        (corr_add_left U one · · _)
-        (C := (1 + ‖one‖ ^ 2) * ‖indicatorConstLp 2 hB (measure_ne_top μ B) d‖)
-        fun f t => (norm_corr_le one hU f _ t).trans_eq (by ring)
+      exact isClosed_setOf_tendsto_average_norm (continuous_corr U e · _)
+        (corr_add_left U e · · _)
+        (C := (1 + ‖e‖ ^ 2) * ‖indicatorConstLp 2 hB (measure_ne_top μ B) d‖)
+        fun f t => (norm_corr_le e hU f _ t).trans_eq (by ring)
   -- The second variable.
   induction g using Lp.induction (ENNReal.ofNat_ne_top : (2 : ℝ≥0∞) ≠ ∞) with
   | indicatorConst d hB _ => exact hleft hB d f
   | add _ _ _ h₁ h₂ =>
-    exact tendsto_average_norm_apply_add (continuous_corr U one f) (corr_add_right U one f) h₁ h₂
+    exact tendsto_average_norm_apply_add (continuous_corr U e f) (corr_add_right U e f) h₁ h₂
   | isClosed =>
-    exact isClosed_setOf_tendsto_average_norm (continuous_corr U one f) (corr_add_right U one f)
-      (C := (1 + ‖one‖ ^ 2) * ‖f‖) fun g t => (norm_corr_le one hU f g t).trans_eq (by ring)
+    exact isClosed_setOf_tendsto_average_norm (continuous_corr U e f) (corr_add_right U e f)
+      (C := (1 + ‖e‖ ^ 2) * ‖f‖) fun g t => (norm_corr_le e hU f g t).trans_eq (by ring)
 
 /-- **Weak mixing is equivalent to its `L²` form.** A jointly measurable action of `ℝ` preserving
 a finite measure `μ` is weakly mixing exactly when, for all `f g` in complex `L²(μ)`, the
@@ -236,13 +251,10 @@ theorem IsWeaklyMixing.exists_ae_eq_const_of_eigenfunction (h : IsWeaklyMixing �
   set F := hF.toLp f
   -- The integral of `f` vanishes: it is multiplied by `exp(2πia t) = -1` at `t = 1/(2a)`.
   have hint : ∫ x, f x ∂μ = 0 := by
-    have ha' : (a : ℂ) ≠ 0 := by exact_mod_cast ha
     have hcomp := (measurePreserving_vadd (1 / (2 * a)) μ).integral_comp
       (MeasurableEquiv.vadd (1 / (2 * a)) : X ≃ᵐ X).measurableEmbedding f
     rw [integral_congr_ae (heig _), integral_const_mul,
-      show 2 * (Real.pi : ℂ) * a * ((1 / (2 * a) : ℝ) : ℂ) * Complex.I = Real.pi * Complex.I by
-        push_cast; field_simp] at hcomp
-    simp only [Complex.exp_pi_mul_I] at hcomp
+      exp_two_pi_mul_one_div_two_mul_mul_I_eq_neg_one ha] at hcomp
     linear_combination -hcomp / 2
   have hFint : ∫ x, F x ∂μ = 0 := by
     rw [integral_congr_ae hF.coeFn_toLp, hint]
@@ -265,5 +277,50 @@ theorem IsWeaklyMixing.exists_ae_eq_const_of_eigenfunction (h : IsWeaklyMixing �
   have hF0 : F = 0 := by simpa using TauCeti.intervalIntegral.eq_zero_of_tendsto_average_const hlim
   filter_upwards [hF.coeFn_toLp, (Lp.ext_iff.1 hF0).trans (Lp.coeFn_zero ℂ 2 μ)] with x h₁ h₂
   rw [← h₁, h₂, Pi.zero_apply, Function.const_apply]
+
+/-! ### The eigenfunction criterion -/
+
+/-- **Trivial eigenfunctions imply weak mixing.** For a jointly measurable action of `ℝ`
+preserving a probability measure `μ`, if every a.e. strongly measurable `f : X → ℂ` with, for some
+`a` and every `t`, `f(t +ᵥ x) = exp(2πiat) f(x)` for almost every `x`, is almost everywhere
+constant, then the action is weakly mixing. -/
+theorem isWeaklyMixing_of_forall_eigenfunction [IsProbabilityMeasure μ]
+    (h : ∀ f : X → ℂ, AEStronglyMeasurable f μ → ∀ a : ℝ,
+      (∀ t : ℝ, (fun x => f (t +ᵥ x)) =ᵐ[μ]
+        fun x => Complex.exp (2 * Real.pi * a * t * Complex.I) * f x) →
+      ∃ c : ℂ, f =ᵐ[μ] Function.const X c) :
+    IsWeaklyMixing μ := by
+  set U := koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top
+  have hU : U.IsUnitary := koopmanGroup_isUnitary μ ℂ
+  refine isWeaklyMixing_iff_tendsto_average_norm_inner_koopmanGroup.2 fun f g => ?_
+  have hfg := hU.tendsto_average_norm_inner_sub_of_forall_mem_eigenspace
+    inner_const_one_const_one (koopmanGroup_const μ ℂ 2 ENNReal.ofNat_ne_top 1) ?_ f g
+  · simp only [← corr_apply U (Lp.const 2 μ (1 : ℂ))] at hfg
+    simpa only [U, corr_koopmanGroup] using hfg
+  -- every Koopman eigenvector is a multiple of `1`
+  · intro ω u hu
+    obtain ⟨c, hc⟩ := h u (Lp.aestronglyMeasurable u) (ω / (2 * Real.pi)) fun t => by
+      filter_upwards [(mem_eigenspace_koopmanGroup_iff ω u).1 hu t] with x hx
+      rw [hx]
+      congr 2
+      push_cast
+      field_simp
+    refine ⟨c, Lp.ext ?_⟩
+    filter_upwards [hc, Lp.coeFn_smul c (Lp.const 2 μ (1 : ℂ)), Lp.coeFn_const 2 μ (1 : ℂ)]
+      with x h₁ h₂ h₃
+    rw [h₁, h₂, Pi.smul_apply, h₃]
+    simp only [Function.const_apply, smul_eq_mul, mul_one]
+
+/-- **The eigenfunction criterion for weak mixing.** A jointly measurable action of `ℝ` preserving
+a probability measure `μ` is weakly mixing exactly when every a.e. strongly measurable
+`f : X → ℂ` with, for some `a` and every `t`, `f(t +ᵥ x) = exp(2πiat) f(x)` for almost every
+`x`, is almost everywhere constant. -/
+theorem isWeaklyMixing_iff_forall_eigenfunction [IsProbabilityMeasure μ] :
+    IsWeaklyMixing μ ↔ ∀ f : X → ℂ, AEStronglyMeasurable f μ → ∀ a : ℝ,
+      (∀ t : ℝ, (fun x => f (t +ᵥ x)) =ᵐ[μ]
+        fun x => Complex.exp (2 * Real.pi * a * t * Complex.I) * f x) →
+      ∃ c : ℂ, f =ᵐ[μ] Function.const X c :=
+  ⟨fun h _ hf _ heig => h.exists_ae_eq_const_of_eigenfunction hf heig,
+    isWeaklyMixing_of_forall_eigenfunction⟩
 
 end MeasureTheory.Measure

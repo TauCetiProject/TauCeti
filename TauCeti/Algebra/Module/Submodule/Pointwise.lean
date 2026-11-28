@@ -22,12 +22,14 @@ import TauCeti.GroupTheory.Index.Exact
 # Pointwise scalar actions on submodules
 
 This file also records how scalar products that fix or annihilate a scalar control its
-pointwise image of the whole module, and that `b M ≤ a M` when `a` divides `b`. The
-image-membership result needs only a distributive monoid action. Over a ring of scalars, negating
-the scalar does not change the pointwise image of a submodule, since a submodule is closed under
-negation, and when `I` has finite quotient `M ⧸ I`, finiteness of `a • (I ⊓ D)` implies finiteness
-of `a • D`. A unit of a ring stabilizes an additive subgroup, viewed as a `ℤ`-submodule, exactly
-when multiplication by the unit and by its inverse both preserve it.
+pointwise image of the whole module, and that `b M ≤ a M` when `a` divides `b`. If `P + I M = M`,
+then `P + Iⁿ M = M` for every `n`; if `P + r M = M`, then `r` acts surjectively on `M ⧸ S` for
+every `S ≥ P`. The image-membership result needs only a distributive monoid action. Over a ring
+of scalars, negating the scalar does not change the pointwise image of a submodule, since a
+submodule is closed under negation, and when `I` has finite quotient `M ⧸ I`, finiteness of
+`a • (I ⊓ D)` implies finiteness of `a • D`. A unit of a ring stabilizes an additive subgroup,
+viewed as a `ℤ`-submodule, exactly when multiplication by the unit and by its inverse both
+preserve it.
 
 Membership in a pointwise translate under a group action is tested by the inverse action, and a
 group acts on submodules by order automorphisms. Pointwise actions of commuting monoids on
@@ -49,6 +51,8 @@ this file to restate both.
 
 * `Submodule.mem_pointwise_smul_iff_inv_smul_mem`: membership in `g • N` is equivalent to
   membership of `g⁻¹ • x` in `N`.
+* `Submodule.comap_restrictScalars_units_smul`: pulling back along a `K`-linear map commutes with
+  the homothety by `t ∈ Kˣ`.
 * `Submodule.finite_pointwise_smul_of_finite_quotient`: if `M ⧸ I` and `a • (I ⊓ D)` are finite,
   then `a • D` is finite.
 * `Submodule.smul_eq_self_of_finite`: an `M`-regular scalar in a tower fixes any finite submodule
@@ -71,6 +75,9 @@ this file to restate both.
 * `Submodule.pow_smul_antitone`: the family is antitone in the exponent.
 * `Submodule.pow_add_smul_mem`: `M₀` absorbs further powers of a scalar drawn from `S`.
 * `Submodule.smul_top_le_smul_top_of_dvd`: `b M ≤ a M` when `a ∣ b`.
+* `Submodule.sup_pow_smul_top_eq_top`: `P + I M = M` implies `P + Iⁿ M = M`.
+* `Submodule.surjective_smul_quotient_of_sup_smul_top_eq_top`: if `P + r M = M`, then `r` acts
+  surjectively on `M ⧸ S` for every `S ≥ P`.
 * `Submodule.neg_smul_eq_smul`: over a ring of scalars, `(-a) • N = a • N`.
 * `Ideal.span_singleton_eq_op_smul_top`: the left ideal `A e` is `MulOpposite.op e • ⊤`.
 * `Submodule.mem_stabilizer_units_iff`: a unit `u` of a ring stabilizes an additive subgroup `L`
@@ -89,6 +96,24 @@ theorem mem_pointwise_smul_iff_inv_smul_mem {R M G : Type*} [Semiring R] [AddCom
     [Module R M] [Group G] [DistribMulAction G M] [SMulCommClass G R M]
     {N : Submodule R M} {g : G} {x : M} : x ∈ g • N ↔ g⁻¹ • x ∈ N := by
   rw [← SetLike.mem_coe, coe_pointwise_smul, Set.mem_smul_set_iff_inv_smul_mem, SetLike.mem_coe]
+
+/-- Pulling back along a `K`-linear map commutes with homotheties: `f⁻¹(tS) = t · f⁻¹(S)` for an
+`O`-submodule `S` and `t ∈ Kˣ`. -/
+theorem comap_restrictScalars_units_smul {O K V V' : Type*} [CommRing O] [Field K]
+    [Algebra O K] [AddCommGroup V] [Module K V] [Module O V] [IsScalarTower O K V]
+    [AddCommGroup V'] [Module K V'] [Module O V'] [IsScalarTower O K V'] (f : V' →ₗ[K] V)
+    (t : Kˣ) (S : Submodule O V) :
+    (t • S).comap (f.restrictScalars O) = t • S.comap (f.restrictScalars O) := by
+  ext x
+  -- `t • S` is the action of the scalar `(t : K)`; test membership with its preimage `(t : K)⁻¹`.
+  simp only [Units.smul_def, mem_comap, mem_smul_pointwise_iff_exists,
+    LinearMap.restrictScalars_apply]
+  constructor
+  · rintro ⟨s, hs, hsx⟩
+    refine ⟨(t : K)⁻¹ • x, ?_, smul_inv_smul₀ t.ne_zero x⟩
+    rwa [map_smul, ← hsx, inv_smul_smul₀ t.ne_zero]
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨f y, hy, (map_smul f _ y).symm⟩
 
 /-- If `I` has finite quotient `M ⧸ I` and `a • (I ⊓ D)` is finite, then `a • D` is finite:
 `D ⧸ (I ⊓ D)` embeds into `M ⧸ I` and surjects onto `(a • D) ⧸ (a • (I ⊓ D))`. -/
@@ -247,6 +272,34 @@ theorem smul_top_le_smul_top_of_dvd {R M : Type*} [CommSemiring R] [AddCommMonoi
   obtain ⟨m, -, rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).1 hm
   rw [mul_smul]
   exact smul_mem_pointwise_smul _ _ ⊤ mem_top
+
+/-- If `P` and `I M` together span `M`, then so do `P` and `Iⁿ M`, for every `n`. -/
+theorem sup_pow_smul_top_eq_top {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    {I : Ideal R} {P : Submodule R M} (h : P ⊔ I • ⊤ = ⊤)
+    (n : ℕ) : P ⊔ I ^ n • ⊤ = ⊤ := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    refine eq_top_iff.mpr ?_
+    calc (⊤ : Submodule R M) = P ⊔ I ^ n • (P ⊔ I • ⊤) := by rw [h, ih]
+      _ ≤ P ⊔ I ^ (n + 1) • ⊤ := by
+        rw [smul_sup, ← sup_assoc, pow_succ, Submodule.mul_smul]
+        exact sup_le_sup_right (sup_le le_rfl smul_le_right) _
+
+/-- If `P` and `r M` together span `M`, then multiplication by `r` is surjective on `M ⧸ S` for
+every `S ≥ P`. -/
+theorem surjective_smul_quotient_of_sup_smul_top_eq_top {R M : Type*} [CommRing R]
+    [AddCommGroup M] [Module R M] {r : R} {P S : Submodule R M} (h : P ⊔ r • ⊤ = ⊤)
+    (hPS : P ≤ S) : Function.Surjective fun x : M ⧸ S ↦ r • x := by
+  intro x
+  obtain ⟨x, rfl⟩ := Quotient.mk_surjective _ x
+  have hx : x ∈ P ⊔ r • ⊤ := by rw [h]; exact mem_top
+  obtain ⟨a, ha, z, hz, rfl⟩ := mem_sup.mp hx
+  obtain ⟨y, -, rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).mp hz
+  refine ⟨Quotient.mk y, ?_⟩
+  beta_reduce
+  rw [← Quotient.mk_smul, eq_comm, Quotient.eq, add_sub_cancel_right]
+  exact hPS ha
 
 section Ring
 

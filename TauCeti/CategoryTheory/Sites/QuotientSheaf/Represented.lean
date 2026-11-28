@@ -27,6 +27,9 @@ fppf topology, Stacks, Lemma 39.20.3 (03C5)).
   `U/R ≅ h_M`.
 * `TauCeti.CategoryTheory.quotientSheaf.isIso_desc_kernelPair`: for `q` whose singleton sieve
   covers `M`, the quotient sheaf of the kernel pair `U ×_M U ⇉ U` is `h_M`.
+* `TauCeti.CategoryTheory.quotientSheaf.exists_comp_eq_id_of_isSheaf`: if `U/R ≅ h_M` through
+  `q` and the presheaf quotient is already a sheaf, then `q` has a section; so for `q` without a
+  section the presheaf quotient is not a sheaf.
 * `TauCeti.CategoryTheory.quotientSheaf.isIso_desc_of_epi`: if `p : h_U ⟶ F` is an epimorphism to
   a `J`-sheaf and `π : h_U ⟶ U/R` coequalises the kernel pair of `p`, then
   `quotientSheaf.desc p : U/R ⟶ F` is an isomorphism.
@@ -166,6 +169,33 @@ theorem quotientSheaf.uliftYoneda_map_isoOfIsLocallySurjective_inv (hq : t ≫ q
     J.uliftYoneda.{w}.map q ≫ (quotientSheaf.isoOfIsLocallySurjective hq hU hR).inv =
       quotientSheaf.π J s t :=
   (Iso.comp_inv_eq _).2 (quotientSheaf.π_isoOfIsLocallySurjective_hom hq hU hR).symm
+
+/-- **A presheaf quotient that is already a sheaf.** Let `q : U ⟶ M` be invariant for the
+pre-relation `(t, s)`, with factorisation `U/R ⟶ h_M` through the quotient sheaf an isomorphism.
+If the presheaf quotient `T ↦ U(T)/R(T)` is a `J`-sheaf, then it is its sheafification `U/R`, so
+its section over `M` lying over the identity is the class of a section of `q`. Contrapositively,
+if `q` has no section, the presheaf quotient is not a `J`-sheaf. -/
+theorem quotientSheaf.exists_comp_eq_id_of_isSheaf (hq : t ≫ q = s ≫ q)
+    [IsIso (quotientSheaf.desc (J.uliftYoneda.{w}.map q)
+      (quotientSheaf.uliftYoneda_map_condition hq))]
+    (hP : Presheaf.IsSheaf J (quotientPresheaf s t ⋙ uliftFunctor.{w})) :
+    ∃ a : M ⟶ U, a ≫ q = 𝟙 M := by
+  have := isIso_toSheafify J hP
+  let D := quotientPresheaf.uliftDesc.{w} (J.uliftYoneda.{w}.map q).hom
+    (congrArg (·.hom) (quotientSheaf.uliftYoneda_map_condition.{w} (J := J) hq))
+  have hD : D = toSheafify J _ ≫ (quotientSheaf.desc (J.uliftYoneda.{w}.map q)
+      (quotientSheaf.uliftYoneda_map_condition hq)).hom := by
+    rw [quotientSheaf.desc_def, ObjectProperty.homMk_hom, toSheafify_sheafifyLift]
+  have : IsIso D := by rw [hD]; infer_instance
+  obtain ⟨⟨z⟩, hz⟩ := ((isIso_iff_bijective _).1
+    (inferInstance : IsIso (D.app (op M)))).2 (J.uliftYonedaEquiv (𝟙 (J.uliftYoneda.{w}.obj M)))
+  obtain ⟨a, rfl⟩ := quotientPresheaf.π_app_surjective _ _ _ z
+  refine ⟨a, (GrothendieckTopology.fullyFaithfulUliftYoneda.{w} J).map_injective ?_⟩
+  rw [CategoryTheory.Functor.map_comp, CategoryTheory.Functor.map_id]
+  apply J.uliftYonedaEquiv.injective
+  rw [← hz, GrothendieckTopology.uliftYonedaEquiv_comp,
+    GrothendieckTopology.uliftYonedaEquiv_uliftYoneda_map]
+  exact (quotientPresheaf.uliftDesc_app_apply _ _ _ a).symm
 
 variable (q) in
 /-- The quotient sheaf of the kernel pair `U ×_M U ⇉ U` of a morphism `q : U ⟶ M` whose singleton
