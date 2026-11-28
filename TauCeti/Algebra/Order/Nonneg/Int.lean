@@ -28,18 +28,19 @@ def intOrderAddMonoidIsoNat : Nonneg ℤ ≃+o ℕ :=
       toFun := fun n ↦ (n : Nonneg ℤ)
       invFun := fun n ↦ n.val.toNat
       left_inv := fun n ↦ by simp
-      right_inv := fun n ↦ Subtype.ext (Int.toNat_of_nonneg n.property)
-      map_add' := fun a b ↦ Subtype.ext (Nat.cast_add a b)
-      map_le_map_iff' := Int.ofNat_le
+      right_inv := fun n ↦ by
+        ext
+        simp [Int.toNat_of_nonneg n.property]
+      map_add' := fun a b ↦ Nat.cast_add a b
+      map_le_map_iff' := fun {a b} ↦ by
+        rw [← Subtype.coe_le_coe, Nonneg.coe_natCast, Nonneg.coe_natCast, Nat.cast_le]
     }
   e.symm
 
-@[simp]
 theorem intOrderAddMonoidIsoNat_apply (n : Nonneg ℤ) :
     intOrderAddMonoidIsoNat n = n.val.toNat :=
   (rfl)
 
-@[simp]
 theorem intOrderAddMonoidIsoNat_symm_apply (n : ℕ) :
     intOrderAddMonoidIsoNat.symm n = (Nat.cast n : Nonneg ℤ) :=
   (rfl)
