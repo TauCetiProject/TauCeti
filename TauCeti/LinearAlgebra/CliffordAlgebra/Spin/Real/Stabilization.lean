@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.Fin.Tuple.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Prod
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Stabilizer
 import TauCeti.LinearAlgebra.QuadraticForm.Isometry
@@ -78,8 +77,8 @@ coherences of both block-sum homomorphisms, as well as the kernel and quotient d
 * `TauCeti.spinGroupEquiv_realCliffordBlockSwapIsometry_realCliffordSpinBlockSum`: permutation
   coherence of the Spin block sum under swapping the two coordinate blocks.
 * `TauCeti.spinGroupEquiv_realCliffordMiddleSwapIsometry_realCliffordSpinBlockSum` and
-  `TauCeti.specialOrthogonalGroupCongr_realCliffordMiddleSwapIsometry_blockSum`: middle-block
-  exchange coherences of the Spin and special-orthogonal block sums.
+  `specialOrthogonalGroupCongr_realCliffordMiddleSwapIsometry_realCliffordSpecialOrthogonalBlockSum`
+  (in `TauCeti`): middle-block exchange coherences of the Spin and special-orthogonal block sums.
 
 ## References
 
@@ -779,7 +778,9 @@ theorem spinGroupEquiv_realCliffordMiddleSwapIsometry_realCliffordSpinBlockSum (
 four-block special-orthogonal sum along `realCliffordMiddleSwapIsometry p q` swaps the middle two
 blocks. -/
 @[simp]
-theorem specialOrthogonalGroupCongr_realCliffordMiddleSwapIsometry_blockSum (p q : ℕ)
+theorem
+    specialOrthogonalGroupCongr_realCliffordMiddleSwapIsometry_realCliffordSpecialOrthogonalBlockSum
+    (p q : ℕ)
     (g₁ g₃ : specialOrthogonalGroup (realCliffordForm p 0))
     (g₂ g₄ : specialOrthogonalGroup (realCliffordForm q 0)) :
     (realCliffordMiddleSwapIsometry p q).specialOrthogonalGroupCongr

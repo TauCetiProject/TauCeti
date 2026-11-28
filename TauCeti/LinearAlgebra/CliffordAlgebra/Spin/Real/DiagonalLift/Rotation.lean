@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.DiagonalLift.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Rotation
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Coordinate-plane rotations for the compact real diagonal Spin lift
