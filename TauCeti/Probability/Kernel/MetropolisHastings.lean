@@ -56,6 +56,21 @@ theorem metropolisHastings_apply (Q : Kernel X X) [IsSFiniteKernel Q]
   rw [metropolisHastings, add_apply, Kernel.withDensity_apply _ hr, id_apply,
     dirac_withDensity' measurable_const]
 
+/-- Changing jointly measurable acceptance weights on proposal-null sets leaves the
+Metropolis–Hastings kernel unchanged. -/
+theorem metropolisHastings_congr_ae (Q : Kernel X X) [IsSFiniteKernel Q]
+    {a b : X → X → ℝ≥0∞} (ha : Measurable (Function.uncurry a))
+    (hb : Measurable (Function.uncurry b)) (hab : ∀ x, a x =ᵐ[Q x] b x) :
+    Q.metropolisHastings a = Q.metropolisHastings b := by
+  simp only [metropolisHastings_def, withDensity_congr_ae Q ha hb hab]
+
+/-- Away from the current state, only accepted proposals contribute to a transition. -/
+@[simp]
+theorem metropolisHastings_apply_of_not_mem (Q : Kernel X X) [IsSFiniteKernel Q]
+    (a : X → X → ℝ≥0∞) (x : X) {B : Set X} (hB : MeasurableSet B) (hxB : x ∉ B) :
+    Q.metropolisHastings a x B = Q.withDensity a x B := by
+  simp [metropolisHastings_apply, Measure.dirac_apply' _ hB, hxB]
+
 /-- For jointly measurable `a`, the mass of a measurable set is the accepted proposal
 integral over that set, plus the rejection probability if the set contains `x`. -/
 theorem metropolisHastings_apply_of_measurable (Q : Kernel X X) [IsSFiniteKernel Q]
@@ -120,8 +135,7 @@ theorem isReversible_metropolisHastings_iff (Q : Kernel X X) [IsSFiniteKernel Q]
       (hAB : Disjoint A B) :
       ∫⁻ x in A, Q.metropolisHastings a x B ∂π = ∫⁻ x in A, Q.withDensity a x B ∂π := by
     refine setLIntegral_congr_fun hA fun x hx ↦ ?_
-    have hxB : x ∉ B := fun hxB ↦ Set.disjoint_left.mp hAB hx hxB
-    simp [metropolisHastings_apply, Measure.dirac_apply' _ hB, hxB]
+    exact metropolisHastings_apply_of_not_mem Q a x hB (Set.disjoint_left.mp hAB hx)
   simp_rw [isReversible_iff_on_disjoint]
   constructor <;> intro h A B hA hB hAB <;>
     simpa only [offDiagonal hA hB hAB, offDiagonal hB hA hAB.symm] using h hA hB hAB
