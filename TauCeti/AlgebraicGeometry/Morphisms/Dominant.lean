@@ -69,6 +69,8 @@ the generic point, and a dominant one by its pullback of rational functions.
   injective for nonempty `V`.
 * `AlgebraicGeometry.Scheme.Hom.functionFieldMap_id` and
   `AlgebraicGeometry.Scheme.Hom.functionFieldMap_comp`: functoriality.
+* `AlgebraicGeometry.Scheme.Hom.stalkCongr_hom_stalkMap_genericPoint`: the stalk map at the
+  generic point, after identifying its source with the generic stalk of the target.
 * `AlgebraicGeometry.Scheme.Hom.isIso_functionFieldMap`: along a dominant morphism whose stalk map
   at the generic point is an isomorphism (for instance an open immersion), `f^*` is an isomorphism.
 * `AlgebraicGeometry.Scheme.Hom.isIso_functionFieldMap_iff_isIso_stalkMap`: `f^*` is an
@@ -226,6 +228,13 @@ noncomputable def functionFieldMap (f : X ⟶ Y) [IsDominant f] :
   Y.presheaf.stalkSpecializes (specializes_of_eq f.genericPoint_eq_of_isDominant) ≫
     f.stalkMap (genericPoint X)
 
+/-- Identifying the target's generic stalk with the stalk at the image of the source's generic
+point, then applying the stalk map, gives the pullback of rational functions. -/
+theorem stalkCongr_hom_stalkMap_genericPoint (f : X ⟶ Y) [IsDominant f] :
+    (Y.presheaf.stalkCongr (.of_eq f.genericPoint_eq_of_isDominant.symm)).hom ≫
+      f.stalkMap (genericPoint X) = f.functionFieldMap := by
+  rw [TopCat.Presheaf.stalkCongr_hom, functionFieldMap]
+
 /-- **The pullback of rational functions describes the image of the generic point**: for a
 dominant morphism `f : X ⟶ Y` of irreducible schemes, the canonical morphism `Spec K(X) ⟶ X`
 followed by `f` is `Spec f^*` followed by the canonical morphism `Spec K(Y) ⟶ Y`. -/
@@ -300,10 +309,7 @@ theorem functionFieldMap_comp [IrreducibleSpace Z] (f : X ⟶ Y) (g : Y ⟶ Z) [
 isomorphism exactly when the stalk map at the generic point of the source is. -/
 theorem isIso_functionFieldMap_iff_isIso_stalkMap (f : X ⟶ Y) [IsDominant f] :
     IsIso f.functionFieldMap ↔ IsIso (f.stalkMap (genericPoint X)) := by
-  have h : (Y.presheaf.stalkCongr (.of_eq f.genericPoint_eq_of_isDominant.symm)).hom ≫
-      f.stalkMap (genericPoint X) = f.functionFieldMap := by
-    rw [TopCat.Presheaf.stalkCongr_hom, functionFieldMap]
-  rw [← h, isIso_comp_left_iff]
+  rw [← f.stalkCongr_hom_stalkMap_genericPoint, isIso_comp_left_iff]
 
 /-- The pullback of rational functions along a dominant morphism of irreducible schemes whose stalk
 map at the generic point is an isomorphism, for instance a dominant open immersion, is an
