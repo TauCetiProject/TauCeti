@@ -8,6 +8,8 @@ module
 public import Mathlib.CategoryTheory.GradedObject.Monoidal
 public import Mathlib.CategoryTheory.Monoidal.Linear
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.DegreeThree
+import Mathlib.Algebra.CharP.Two
+import TauCeti.Data.ZMod.Two
 
 /-!
 # Graded objects with a cocycle-twisted associator
@@ -29,7 +31,10 @@ whose finite-dimensional, finitely supported objects form the pointed category `
 ## Main definitions
 
 * `TauCeti.GradedObject.TwistingCocycle I R`: a normalized `3`-cocycle on `I` with values in `Rˣ`
-  for the trivial action, bundled.
+  for the trivial action, bundled, with trivial cocycle `1`, grading pullback
+  `TwistingCocycle.comap` and equivalence `TwistingCocycle.domCongr`, coefficient pushforward
+  `TwistingCocycle.map`, and complete `ZMod 2` classification `TwistingCocycle.zmod2` /
+  `TwistingCocycle.zmod2Equiv`.
 * `CategoryTheory.GradedObject.Monoidal.scaleTensorObj₃`: the endomorphism of
   `X₁ ⊗ (X₂ ⊗ X₃)` acting on the summand `X₁ i₁ ⊗ X₂ i₂ ⊗ X₃ i₃` by a scalar `u i₁ i₂ i₃`.
 * `TauCeti.TwistedGradedObject c C`: a type synonym for `GradedObject I C`, carrying the monoidal
@@ -84,6 +89,12 @@ attribute [simp] ω_zero
 
 variable {I : Type*} [AddMonoid I] {R : Type*} [Monoid R] (c : TwistingCocycle I R)
 
+/-- The trivial normalized `3`-cocycle with `ω _ _ _ = 1`. -/
+instance : One (TwistingCocycle I R) where
+  one := ⟨fun _ _ _ ↦ 1, fun _ _ _ _ ↦ by simp, fun _ _ ↦ rfl⟩
+
+@[simp] lemma one_ω (i₁ i₂ i₃ : I) : (1 : TwistingCocycle I R).ω i₁ i₂ i₃ = 1 := (rfl)
+
 /-- A twisting cocycle is normalized in the first variable. -/
 @[simp]
 lemma ω_zero_left (i₂ i₃ : I) : c.ω 0 i₂ i₃ = 1 := by
@@ -93,6 +104,117 @@ lemma ω_zero_left (i₂ i₃ : I) : c.ω 0 i₂ i₃ = 1 := by
 @[simp]
 lemma ω_zero_right (i₁ i₂ : I) : c.ω i₁ i₂ 0 = 1 := by
   simpa using c.cocycle i₁ i₂ 0 0
+
+/-- Pull a twisting cocycle back along an additive monoid homomorphism `f : J →+ I`. -/
+def comap {J : Type*} [AddMonoid J] (f : J →+ I) (c : TwistingCocycle I R) :
+    TwistingCocycle J R where
+  ω j₁ j₂ j₃ := c.ω (f j₁) (f j₂) (f j₃)
+  cocycle j₁ j₂ j₃ j₄ := by simpa only [map_add] using c.cocycle (f j₁) (f j₂) (f j₃) (f j₄)
+  ω_zero _ _ := by simp
+
+@[simp] lemma comap_ω {J : Type*} [AddMonoid J] (f : J →+ I) (c : TwistingCocycle I R)
+    (j₁ j₂ j₃ : J) : (c.comap f).ω j₁ j₂ j₃ = c.ω (f j₁) (f j₂) (f j₃) := (rfl)
+
+@[simp] lemma comap_id (c : TwistingCocycle I R) : c.comap (AddMonoidHom.id I) = c := by ext; rfl
+
+@[simp] lemma comap_comp {J K : Type*} [AddMonoid J] [AddMonoid K] (f : J →+ I) (g : K →+ J)
+    (c : TwistingCocycle I R) : (c.comap f).comap g = c.comap (f.comp g) := by ext; rfl
+
+@[simp] lemma comap_one {J : Type*} [AddMonoid J] (f : J →+ I) :
+    (1 : TwistingCocycle I R).comap f = 1 := by ext; simp
+
+lemma comap_symm_comap {J : Type*} [AddMonoid J] (e : I ≃+ J) (c : TwistingCocycle I R) :
+    (c.comap (e.symm : J →+ I)).comap (e : I →+ J) = c := by
+  ext; simp
+
+lemma comap_comap_symm {J : Type*} [AddMonoid J] (e : I ≃+ J) (c : TwistingCocycle J R) :
+    (c.comap (e : I →+ J)).comap (e.symm : J →+ I) = c := by
+  ext; simp
+
+/-- Equivalence of normalized `3`-cocycles induced by an additive isomorphism `e : I ≃+ J`. -/
+def domCongr {J : Type*} [AddMonoid J] (e : I ≃+ J) :
+    TwistingCocycle I R ≃ TwistingCocycle J R where
+  toFun := comap (e.symm : J →+ I)
+  invFun := comap (e : I →+ J)
+  left_inv := comap_symm_comap e
+  right_inv := comap_comap_symm e
+
+@[simp] lemma domCongr_apply {J : Type*} [AddMonoid J] (e : I ≃+ J) (c : TwistingCocycle I R) :
+    domCongr e c = c.comap (e.symm : J →+ I) := (rfl)
+
+@[simp] lemma domCongr_symm {J : Type*} [AddMonoid J] (e : I ≃+ J) :
+    (domCongr e : TwistingCocycle I R ≃ TwistingCocycle J R).symm = domCongr e.symm := (rfl)
+
+@[simp] lemma domCongr_refl :
+    (domCongr (AddEquiv.refl I) : TwistingCocycle I R ≃ TwistingCocycle I R) = Equiv.refl _ := by
+  ext; simp
+
+lemma domCongr_trans {J K : Type*} [AddMonoid J] [AddMonoid K] (e₁ : I ≃+ J) (e₂ : J ≃+ K) :
+    (domCongr e₁ : TwistingCocycle I R ≃ TwistingCocycle J R).trans (domCongr e₂) =
+      domCongr (e₁.trans e₂) := by
+  ext; simp
+
+lemma domCongr_one {J : Type*} [AddMonoid J] (e : I ≃+ J) :
+    domCongr e (1 : TwistingCocycle I R) = 1 := by simp
+
+/-- Push a twisting cocycle forward along a monoid homomorphism `f : R →* S`. -/
+def map {S : Type*} [Monoid S] (f : R →* S) (c : TwistingCocycle I R) : TwistingCocycle I S where
+  ω i₁ i₂ i₃ := Units.map f (c.ω i₁ i₂ i₃)
+  cocycle i₁ i₂ i₃ i₄ := by
+    simpa only [← map_mul] using congrArg (Units.map f) (c.cocycle i₁ i₂ i₃ i₄)
+  ω_zero _ _ := by simp
+
+@[simp] lemma map_ω {S : Type*} [Monoid S] (f : R →* S) (c : TwistingCocycle I R) (i₁ i₂ i₃ : I) :
+    (c.map f).ω i₁ i₂ i₃ = Units.map f (c.ω i₁ i₂ i₃) := (rfl)
+
+@[simp] lemma map_id (c : TwistingCocycle I R) : c.map (MonoidHom.id R) = c := by ext; simp
+
+@[simp] lemma map_comp {S T : Type*} [Monoid S] [Monoid T] (f : R →* S) (g : S →* T)
+    (c : TwistingCocycle I R) : (c.map f).map g = c.map (g.comp f) := by ext; simp
+
+@[simp] protected lemma map_one {S : Type*} [Monoid S] (f : R →* S) :
+    (1 : TwistingCocycle I R).map f = 1 := by ext; simp
+
+/-- The normalized `3`-cocycle on `ZMod 2` with `ω 1 1 1 = u` (`u * u = 1`) and `1` elsewhere. -/
+def zmod2 (u : Rˣ) (hu : u * u = 1) : TwistingCocycle (ZMod 2) R where
+  ω a b d := if a = 1 ∧ b = 1 ∧ d = 1 then u else 1
+  cocycle i₁ i₂ i₃ i₄ := by
+    rcases i₁.eq_zero_or_eq_one with rfl | rfl <;> rcases i₂.eq_zero_or_eq_one with rfl | rfl <;>
+      rcases i₃.eq_zero_or_eq_one with rfl | rfl <;> rcases i₄.eq_zero_or_eq_one with rfl | rfl <;>
+      simp [CharTwo.add_self_eq_zero, hu]
+  ω_zero _ _ := by simp
+
+@[simp] lemma zmod2_ω (u : Rˣ) (hu : u * u = 1) (a b d : ZMod 2) :
+    (zmod2 u hu).ω a b d = if a = 1 ∧ b = 1 ∧ d = 1 then u else 1 := (rfl)
+
+@[simp] lemma zmod2_one (hu : (1 : Rˣ) * 1 = 1 := mul_one 1) :
+    zmod2 (1 : Rˣ) hu = 1 := by ext; simp
+
+/-- Normalized `3`-cocycles on `ZMod 2` are in bijection with `{ u : Rˣ // u * u = 1 }` via
+`c ↦ c.ω 1 1 1`. -/
+def zmod2Equiv : TwistingCocycle (ZMod 2) R ≃ { u : Rˣ // u * u = 1 } where
+  toFun c' := ⟨c'.ω 1 1 1, by
+    have hc := c'.cocycle 1 1 1 1; rw [CharTwo.add_self_eq_zero (1 : ZMod 2)] at hc
+    simpa using hc.symm⟩
+  invFun u := zmod2 u.val u.property
+  left_inv c' := by
+    ext a b d; rcases a.eq_zero_or_eq_one with rfl | rfl <;>
+      rcases b.eq_zero_or_eq_one with rfl | rfl <;> rcases d.eq_zero_or_eq_one with rfl | rfl <;>
+      simp
+  right_inv := fun ⟨_, _⟩ ↦ by ext1; simp
+
+@[simp] lemma coe_zmod2Equiv_apply (c' : TwistingCocycle (ZMod 2) R) :
+    (zmod2Equiv c' : Rˣ) = c'.ω 1 1 1 := (rfl)
+
+@[simp] lemma zmod2Equiv_symm_apply (u : { u : Rˣ // u * u = 1 }) :
+    zmod2Equiv.symm u = zmod2 u.val u.property := (rfl)
+
+@[simp] lemma zmod2Equiv_zmod2 (u : Rˣ) (hu : u * u = 1) :
+    zmod2Equiv (zmod2 u hu) = ⟨u, hu⟩ := zmod2Equiv.apply_symm_apply ⟨u, hu⟩
+
+@[simp] lemma zmod2_ω_eq_self (c' : TwistingCocycle (ZMod 2) R)
+    (hc : c'.ω 1 1 1 * c'.ω 1 1 1 = 1) : zmod2 (c'.ω 1 1 1) hc = c' :=
+  zmod2Equiv.symm_apply_apply c'
 
 end TwistingCocycle
 

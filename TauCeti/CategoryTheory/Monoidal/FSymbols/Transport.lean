@@ -34,8 +34,10 @@ F-symbols and R-symbols can be transported in two independent directions.
 * `TauCeti.FusionRules.Equiv.finCongr`, `TauCeti.FusionRules.Equiv.leftCongr` and
   `TauCeti.FusionRules.Equiv.rightCongr`: the identifications of index types induced by an
   isomorphism of fusion rules.
-* `TauCeti.FSymbols.reindex σ P` and `TauCeti.RSymbols.reindex σ Q`: relabeling.
-* `TauCeti.FSymbols.map f P` and `TauCeti.RSymbols.map f Q`: base change.
+* `TauCeti.FSymbols.reindex σ P` and `TauCeti.RSymbols.reindex σ Q`: relabeling, upgraded to
+  equivalences `TauCeti.FSymbols.reindexEquiv` and `TauCeti.RSymbols.reindexEquiv`.
+* `TauCeti.FSymbols.map f P` and `TauCeti.RSymbols.map f Q`: base change, upgraded along ring
+  isomorphisms to `TauCeti.FSymbols.mapRingEquiv` and `TauCeti.RSymbols.mapRingEquiv`.
 
 ## Main results
 
@@ -230,6 +232,9 @@ def ofMulEquiv (e : M ≃* M') : (ofMul M).Equiv (ofMul M') where
 @[simp]
 theorem ofMulEquiv_apply (e : M ≃* M') (a : M) : ofMulEquiv e a = e a := (rfl)
 
+@[simp]
+theorem ofMulEquiv_symm (e : M ≃* M') : (ofMulEquiv e).symm = ofMulEquiv e.symm := (rfl)
+
 end ofMul
 
 end Equiv
@@ -395,6 +400,36 @@ theorem map_reindex (f : R →+* S) (σ : N.Equiv N') (P : FSymbols R N) :
     (P.reindex σ).map f = (P.map f).reindex σ := by
   ext
   simp
+
+/-- Relabeling of F-symbols along an isomorphism of fusion rules as an equivalence. -/
+def reindexEquiv (σ : N.Equiv N') : FSymbols R N ≃ FSymbols R N' where
+  toFun := reindex σ
+  invFun := reindex σ.symm
+  left_inv := reindex_symm_reindex σ
+  right_inv := reindex_reindex_symm σ
+
+@[simp]
+theorem reindexEquiv_apply (σ : N.Equiv N') (P : FSymbols R N) :
+    reindexEquiv σ P = P.reindex σ := (rfl)
+
+@[simp]
+theorem reindexEquiv_symm (σ : N.Equiv N') :
+    (reindexEquiv σ : FSymbols R N ≃ FSymbols R N').symm = reindexEquiv σ.symm := (rfl)
+
+/-- Base change of F-symbols along a ring isomorphism as an equivalence. -/
+def mapRingEquiv (e : R ≃+* S) : FSymbols R N ≃ FSymbols S N where
+  toFun := map (e : R →+* S)
+  invFun := map (e.symm : S →+* R)
+  left_inv P := by simp
+  right_inv P := by simp
+
+@[simp]
+theorem mapRingEquiv_apply (e : R ≃+* S) (P : FSymbols R N) :
+    mapRingEquiv e P = P.map (e : R →+* S) := (rfl)
+
+@[simp]
+theorem mapRingEquiv_symm (e : R ≃+* S) :
+    (mapRingEquiv e : FSymbols R N ≃ FSymbols S N).symm = mapRingEquiv e.symm := (rfl)
 
 section ofMul
 
@@ -568,6 +603,48 @@ theorem map_reindex_R (f : K →+* L) (σ : N.Equiv N') (Q : RSymbols P) :
     ((Q.reindex σ).map f).R = ((Q.map f).reindex σ).R := by
   ext
   simp
+
+@[simp]
+theorem reindex_cast {P₁ P₂ : FSymbols K N} (h : P₁ = P₂) (σ : N.Equiv N') (Q : RSymbols P₁) :
+    (Q.cast h).reindex σ = (Q.reindex σ).cast (congrArg (FSymbols.reindex σ) h) := by
+  ext; simp
+
+@[simp]
+theorem map_cast {P₁ P₂ : FSymbols K N} (h : P₁ = P₂) (f : K →+* L) (Q : RSymbols P₁) :
+    (Q.cast h).map f = (Q.map f).cast (congrArg (FSymbols.map f) h) := by
+  ext; simp
+
+/-- Relabeling of R-symbols along an isomorphism of fusion rules as an equivalence. -/
+def reindexEquiv (σ : N.Equiv N') (P : FSymbols K N) : RSymbols P ≃ RSymbols (P.reindex σ) where
+  toFun := reindex σ
+  invFun Q := (Q.reindex σ.symm).cast (P.reindex_symm_reindex σ)
+  left_inv Q := ext <| by rw [cast_R, reindex_symm_reindex_R]
+  right_inv Q := ext <| by rw [reindex_cast, cast_R, reindex_reindex_symm_R]
+
+@[simp]
+theorem reindexEquiv_apply (σ : N.Equiv N') (P : FSymbols K N) (Q : RSymbols P) :
+    reindexEquiv σ P Q = Q.reindex σ := (rfl)
+
+@[simp]
+theorem reindexEquiv_symm_apply (σ : N.Equiv N') (P : FSymbols K N) (Q : RSymbols (P.reindex σ)) :
+    (reindexEquiv σ P).symm Q = (Q.reindex σ.symm).cast (P.reindex_symm_reindex σ) := (rfl)
+
+/-- Base change of R-symbols along a ring isomorphism as an equivalence. -/
+def mapRingEquiv (e : K ≃+* L) (P : FSymbols K N) :
+    RSymbols P ≃ RSymbols (P.map (e : K →+* L)) where
+  toFun := map (e : K →+* L)
+  invFun Q := (Q.map (e.symm : L →+* K)).cast (by ext; simp)
+  left_inv Q := by ext; simp
+  right_inv Q := by ext; simp
+
+@[simp]
+theorem mapRingEquiv_apply (e : K ≃+* L) (P : FSymbols K N) (Q : RSymbols P) :
+    mapRingEquiv e P Q = Q.map (e : K →+* L) := (rfl)
+
+@[simp]
+theorem mapRingEquiv_symm_apply (e : K ≃+* L) (P : FSymbols K N)
+    (Q : RSymbols (P.map (e : K →+* L))) :
+    (mapRingEquiv e P).symm Q = (Q.map (e.symm : L →+* K)).cast (by ext; simp) := (rfl)
 
 end RSymbols
 

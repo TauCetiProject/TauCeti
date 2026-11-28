@@ -44,6 +44,9 @@ its entry covariance `∑ p, E p a b * E p c d`. If a rectangular matrix `U` int
 `g a` for every entry `a` of a list `L`, then `U` intertwines the ordered list products
 `(L.map f).prod` and `(L.map g).prod`.
 
+Reindexing the rows and columns of a two-sided invertible rectangular matrix to a common finite
+index type gives a unit in the square matrix ring.
+
 ## Main results
 
 * `Matrix.pow_apply_pos_of_le`: if `A` is entrywise nonnegative and `A ^ k` is strictly positive
@@ -80,6 +83,8 @@ its entry covariance `∑ p, E p a b * E p c d`. If a rectangular matrix `U` int
 * `Matrix.sum_mul_mul_apply`: the entries of `∑ p, E p * M * E p` through the entry covariance
   `∑ p, E p a b * E p c d` of the family `E`.
 * `Matrix.list_prod_map_mul_eq_mul_list_prod_map`: list products preserve rectangular intertwiners.
+* `Matrix.isUnit_submatrix_equiv_of_mul_eq_one`: reindexing a two-sided invertible rectangular
+  matrix to a common finite index type yields a unit square matrix.
 -/
 
 public section
@@ -348,5 +353,20 @@ theorem list_prod_map_mul_eq_mul_list_prod_map (L : List α) (U : Matrix m k R)
       ← Matrix.mul_assoc, h a (.head t), Matrix.mul_assoc, ← List.prod_cons, ← List.map_cons]
 
 end Semiring
+
+section RectangularInverse
+
+variable {R m p : Type*} [Semiring R] [Fintype m] [Fintype p] [DecidableEq m] [DecidableEq p]
+
+/-- Reindexing the rows and columns of a two-sided invertible rectangular matrix to a common
+finite index type produces a unit in the square matrix ring. -/
+theorem isUnit_submatrix_equiv_of_mul_eq_one {A : Matrix m p R} {B : Matrix p m R}
+    (hAB : A * B = 1) (hBA : B * A = 1) (e₁ : n ≃ m) (e₂ : n ≃ p) :
+    IsUnit (A.submatrix e₁ e₂) :=
+  ⟨⟨A.submatrix e₁ e₂, B.submatrix e₂ e₁,
+    by rw [submatrix_mul_equiv, hAB, submatrix_one_equiv],
+    by rw [submatrix_mul_equiv, hBA, submatrix_one_equiv]⟩, rfl⟩
+
+end RectangularInverse
 
 end Matrix
