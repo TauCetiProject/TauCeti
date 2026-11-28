@@ -204,7 +204,7 @@ theorem mem_range_substAlgEquivHom (N : ℕ)
         AlgEquiv.apply_symm_apply, PowerSeries.jet_X]
     have hc := PowerSeries.jet_eq_jet_iff.mp hcomp 1 (Nat.succ_lt_succ (Nat.pos_of_ne_zero hN))
     rw [coeff_one_subst hg0, Algebra.algebraMap_self_apply, coeff_one_X] at hc
-    let φ : FormalCoordinate R := ⟨g, hg0, isUnit_iff_exists_inv'.mpr ⟨coeff 1 f, hc⟩⟩
+    let φ : FormalCoordinate R := ⟨g, hg0, isUnit_iff_exists_inv'.mpr ⟨PowerSeries.coeff 1 f, hc⟩⟩
     have hφ : φ.toPowerSeries = g := rfl
     refine ⟨jet N φ, ?_⟩
     rw [substAlgEquivHom_jet]
