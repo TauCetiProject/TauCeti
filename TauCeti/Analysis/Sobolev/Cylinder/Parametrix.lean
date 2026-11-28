@@ -169,15 +169,13 @@ theorem cutoffL_add_cutoffL {γ₁ γ₂ : ℝ → ℝ} {B₁ B₂ : ℝ} (hγ�
 
 /-- Multiplying by a cutoff `β(s)` that is locally constant, equal to `b`, on the first
 coordinates of a measurable set `A` is multiplication by `b` on `A`. -/
-theorem multiplicationOperator_linftyIndicator_cutoffL {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β)
+theorem indicatorMultiplication_cutoffL {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β)
     {B : ℝ} (hβB : ∀ s, |β s| ≤ B) (hβ'B : ∀ s, |deriv β s| ≤ B) {A : Set (ℝ × ℝ)}
     (hA : MeasurableSet A) {b : ℝ} (h : ∀ z ∈ A, β =ᶠ[𝓝 z.1] fun _ ↦ b) (x : W1p V p) :
-    Lp.multiplicationOperator (linftyIndicator stripMeasure ℝ A hA)
+    Lp.indicatorMultiplication ℝ p hA
         (cutoffL p hβ hβB hβ'B x : Lp (V × V × V) p stripMeasure) =
-      b • Lp.multiplicationOperator (linftyIndicator stripMeasure ℝ A hA)
-        (x : Lp (V × V × V) p stripMeasure) := by
+      b • Lp.indicatorMultiplication ℝ p hA (x : Lp (V × V × V) p stripMeasure) := by
   refine Lp.ext ?_
-  simp only [Lp.multiplicationOperator_linftyIndicator]
   filter_upwards [Lp.indicatorMultiplication_ae (𝕜 := ℝ) hA
       (cutoffL p hβ hβB hβ'B x : Lp (V × V × V) p stripMeasure),
     Lp.coeFn_smul b (Lp.indicatorMultiplication ℝ p hA

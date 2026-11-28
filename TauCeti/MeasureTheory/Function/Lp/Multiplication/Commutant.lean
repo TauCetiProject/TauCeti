@@ -175,14 +175,16 @@ private theorem isLocal_comp_extendByZero {s : Set α} (hs : MeasurableSet s)
             (Set.subset_univ s))).toContinuousLinearMap)) g x = 0 := by
   set ext₂ : Lp ℂ 2 (μ.restrict s) →ₗᵢ[ℂ] Lp ℂ 2 μ :=
     (TauCeti.castLpₗᵢ Measure.restrict_univ).toLinearIsometry.comp
-      (TauCeti.extendByZeroLpₗᵢ ℂ μ hs.nullMeasurableSet (Set.subset_univ s))
+      (TauCeti.extendByZeroLpₗᵢ ℂ μ hs.nullMeasurableSet (Set.subset_univ s)) with hext
+  have hι : (ext₂ g : α → ℂ) =ᵐ[μ] s.indicator g := by
+    rw [hext, LinearIsometry.coe_comp, LinearIsometryEquiv.coe_toLinearIsometry,
+      Function.comp_apply]
+    exact TauCeti.coeFn_castLpₗᵢ_extendByZeroLpₗᵢ ℂ hs.nullMeasurableSet g
   set r := t ∩ s
   have hr : MeasurableSet r := ht.inter hs
   have hι_fix : indicatorMultiplication ℂ 2 hr (ext₂ g) = ext₂ g := by
     refine indicatorMultiplication_eq_self_of_ae_notMem hr ?_
-    filter_upwards [TauCeti.coeFn_castLpₗᵢ_extendByZeroLpₗᵢ ℂ hs.nullMeasurableSet g,
-      (ae_restrict_iff' hs).mp hg] with x hιx hgx hxr
-    change (ext₂ g : α → ℂ) x = _ at hιx
+    filter_upwards [hι, (ae_restrict_iff' hs).mp hg] with x hιx hgx hxr
     rw [hιx]
     by_cases hxs : x ∈ s
     · rw [Set.indicator_of_mem hxs, hgx hxs fun hxt ↦ hxr ⟨hxt, hxs⟩]
@@ -353,7 +355,7 @@ theorem exists_multiplicationOperator_eq_of_forall_commute_indicatorMultiplicati
     set sₙ : ℕ → Set α := fun n ↦ spanningSets μ n ∩ s
     have hsₙ (n : ℕ) : MeasurableSet (sₙ n) := (measurableSet_spanningSets μ n).inter hs
     have hμsₙ (n : ℕ) : μ (sₙ n) ≠ ∞ :=
-      ((measure_mono Set.inter_subset_left).trans_lt (measure_spanningSets_lt_top μ n)).ne
+      measure_ne_top_of_subset Set.inter_subset_left (measure_spanningSets_lt_top μ n).ne
     have hfs : indicatorMultiplication ℂ 2 hs f = f :=
       indicatorMultiplication_eq_self_of_ae_notMem hs hf
     let fₙ (n : ℕ) : Lp ℂ 2 μ := indicatorMultiplication ℂ 2 (hsₙ n) f

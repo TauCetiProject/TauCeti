@@ -92,10 +92,10 @@ glues trajectory operators on the line, and it uses the same glued coefficient a
 
 **Cut-offs beyond the neck.** Translating the cut-off of an `Lᵖ` section to a set is cutting off
 its translate to the translated set
-(`TauCeti.CylinderSobolev.translateLp_multiplicationOperator_linftyIndicator`), and the parts on
+(`TauCeti.CylinderSobolev.translateLp_indicatorMultiplication`), and the parts on
 `s ≥ R` and on `s ≤ -R` of the sections of a finite-dimensional space of `Lᵖ` sections, `p < ∞`,
 are uniformly small for large `R`
-(`TauCeti.CylinderSobolev.eventually_forall_norm_multiplicationOperator_le`). These control the
+(`TauCeti.CylinderSobolev.eventually_forall_norm_indicatorMultiplication_le`). These control the
 tails of kernel elements of the pieces beyond the neck when comparing kernels of glued operators.
 
 ## References
@@ -485,13 +485,12 @@ theorem ae_translateLp_eq_zero_of_lt_neg_sub {S : Type*} [NormedAddCommGroup S]
 
 /-- Translating the cut-off of an `Lᵖ` class to `A` by `a` is cutting off its translate to the set
 `B` of the points that `z ↦ z + (a, 0)` maps into `A`. -/
-theorem translateLp_multiplicationOperator_linftyIndicator {E : Type*} [NormedAddCommGroup E]
+theorem translateLp_indicatorMultiplication {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {A B : Set (ℝ × ℝ)} (hA : MeasurableSet A) (hB : MeasurableSet B) (a : ℝ)
     (hAB : ∀ z, z ∈ B ↔ z + (a, 0) ∈ A) (f : Lp E p stripMeasure) :
-    translateLp a (Lp.multiplicationOperator (linftyIndicator stripMeasure ℝ A hA) f) =
-      Lp.multiplicationOperator (linftyIndicator stripMeasure ℝ B hB) (translateLp a f) := by
+    translateLp a (Lp.indicatorMultiplication ℝ p hA f) =
+      Lp.indicatorMultiplication ℝ p hB (translateLp a f) := by
   refine Lp.ext ?_
-  simp only [Lp.multiplicationOperator_linftyIndicator]
   filter_upwards [coeFn_translateLp a (Lp.indicatorMultiplication ℝ p hA f),
     Lp.indicatorMultiplication_ae (𝕜 := ℝ) hB (translateLp a f), coeFn_translateLp a f,
     (measurePreserving_add_strip a).quasiMeasurePreserving.ae
@@ -504,26 +503,25 @@ theorem translateLp_multiplicationOperator_linftyIndicator {E : Type*} [NormedAd
 /-- **Uniformly small tails.** For a finite exponent `p`, the parts on `s ≥ R` and on `s ≤ -R` of
 the sections in a finite-dimensional space `K` of `Lᵖ` sections are, for large `R`, at most `θ`
 times the norms of the sections. -/
-theorem eventually_forall_norm_multiplicationOperator_le {E : Type*} [NormedAddCommGroup E]
+theorem eventually_forall_norm_indicatorMultiplication_le {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (hp : p ≠ ∞) (K : Submodule ℝ (Lp E p stripMeasure)) [FiniteDimensional ℝ K]
     {θ : ℝ}
     (hθ : 0 < θ) :
-    (∀ᶠ R in atTop, ∀ f ∈ K, ‖Lp.multiplicationOperator (linftyIndicator stripMeasure ℝ
-        {z : ℝ × ℝ | R ≤ z.1} (measurableSet_le measurable_const measurable_fst)) f‖ ≤ θ * ‖f‖) ∧
-      ∀ᶠ R in atTop, ∀ f ∈ K, ‖Lp.multiplicationOperator (linftyIndicator stripMeasure ℝ
-        {z : ℝ × ℝ | z.1 ≤ -R} (measurableSet_le measurable_fst measurable_const)) f‖ ≤
-          θ * ‖f‖ := by
+    (∀ᶠ R in atTop, ∀ f ∈ K, ‖Lp.indicatorMultiplication ℝ p (s := {z : ℝ × ℝ | R ≤ z.1})
+        (measurableSet_le measurable_const measurable_fst) f‖ ≤ θ * ‖f‖) ∧
+      ∀ᶠ R in atTop, ∀ f ∈ K, ‖Lp.indicatorMultiplication ℝ p (s := {z : ℝ × ℝ | z.1 ≤ -R})
+        (measurableSet_le measurable_fst measurable_const) f‖ ≤ θ * ‖f‖ := by
   -- The cut-offs to a decreasing family of sets with empty intersection, as operators on `K`,
   -- tend to zero in operator norm.
   have key {s : ℝ → Set (ℝ × ℝ)} (hs : ∀ R, MeasurableSet (s R)) (hanti : Antitone s)
-      (hempty : ⋂ R, s R = ∅) : ∀ᶠ R in atTop, ∀ f ∈ K, ‖Lp.multiplicationOperator
-        (linftyIndicator stripMeasure ℝ (s R) (hs R)) f‖ ≤ θ * ‖f‖ := by
+      (hempty : ⋂ R, s R = ∅) : ∀ᶠ R in atTop, ∀ f ∈ K,
+        ‖Lp.indicatorMultiplication ℝ p (hs R) f‖ ≤ θ * ‖f‖ := by
     let T (R : ℝ) : K →L[ℝ] Lp E p stripMeasure :=
-      (Lp.multiplicationOperator (linftyIndicator stripMeasure ℝ (s R) (hs R))).comp K.subtypeL
+      (Lp.indicatorMultiplication ℝ p (hs R)).comp K.subtypeL
     have hT : Tendsto (fun R ↦ ‖T R‖) atTop (𝓝 0) :=
       ContinuousLinearMap.tendsto_opNorm_zero_of_forall_tendsto_zero fun f ↦
         tendsto_zero_iff_norm_tendsto_zero.2
-          (Lp.tendsto_norm_multiplicationOperator_linftyIndicator hp hs hanti hempty _)
+          (Lp.tendsto_norm_indicatorMultiplication hp hs hanti hempty _)
     filter_upwards [hT.eventually (ge_mem_nhds hθ)] with R hR f hf
     exact ((T R).le_opNorm ⟨f, hf⟩).trans (mul_le_mul_of_nonneg_right hR (norm_nonneg _))
   refine ⟨key _ (fun _ _ hab _ h ↦ by simp only [mem_ofPred_eq] at h ⊢; linarith) ?_,

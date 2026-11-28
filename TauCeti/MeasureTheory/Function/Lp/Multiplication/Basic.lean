@@ -260,12 +260,11 @@ open Filter Topology in
 /-- **Cut-offs to shrinking sets.** Cutting an `Lᵖ` class, `p < ∞`, off to the sets of a decreasing
 family with empty intersection gives classes whose norms tend to zero: the `p`-th powers of the
 norms are the measures of the sets for the finite measure `‖f‖ᵖ μ`. -/
-theorem tendsto_norm_multiplicationOperator_linftyIndicator {ι : Type*} [Preorder ι]
+theorem tendsto_norm_indicatorMultiplication {ι : Type*} [Preorder ι]
     [IsCountablyGenerated (atTop : Filter ι)] (hp : p ≠ ∞) {s : ι → Set α}
     (hs : ∀ i, MeasurableSet (s i)) (hanti : Antitone s) (hempty : ⋂ i, s i = ∅)
     (f : Lp E p μ) :
-    Tendsto (fun i ↦ ‖multiplicationOperator (TauCeti.linftyIndicator μ 𝕜 (s i) (hs i)) f‖) atTop
-      (𝓝 0) := by
+    Tendsto (fun i ↦ ‖indicatorMultiplication 𝕜 p (hs i) f‖) atTop (𝓝 0) := by
   rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
   · rw [atTop.filter_eq_bot_of_isEmpty]
     exact tendsto_bot
@@ -274,10 +273,8 @@ theorem tendsto_norm_multiplicationOperator_linftyIndicator {ι : Type*} [Preord
   -- The `p`-th powers of the norms are the measures of the sets for `‖f‖ᵖ μ`.
   set ν := μ.withDensity fun x ↦ ‖f x‖ₑ ^ p.toReal
   have hν (i : ι) :
-      ‖multiplicationOperator (TauCeti.linftyIndicator μ 𝕜 (s i) (hs i)) f‖ =
-        (ν (s i) ^ (1 / p.toReal)).toReal := by
-    rw [multiplicationOperator_linftyIndicator, Lp.norm_def,
-      eLpNorm_congr_ae (indicatorMultiplication_ae (hs i) f),
+      ‖indicatorMultiplication 𝕜 p (hs i) f‖ = (ν (s i) ^ (1 / p.toReal)).toReal := by
+    rw [Lp.norm_def, eLpNorm_congr_ae (indicatorMultiplication_ae (hs i) f),
       eLpNorm_indicator_eq_eLpNorm_restrict (hs i).nullMeasurableSet,
       eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp (Lp.aestronglyMeasurable f).restrict,
       withDensity_apply _ (hs i)]
