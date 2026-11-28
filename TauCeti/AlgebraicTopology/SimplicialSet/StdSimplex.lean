@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
 public import Mathlib.Data.Finset.Sort
+import Mathlib.CategoryTheory.Functor.KanExtension.DenseAtYoneda
 
 /-!
 # Complements on standard simplices
@@ -293,6 +294,9 @@ lemma contraction_h_app_apply {n d : ℕ}
     dsimp% (contraction n).h.app _ p k =
       if asOrderHom p.2 k = 0 then 0 else asOrderHom p.1 k :=
   (rfl)
+
+/-- The standard simplex functor `SimplexCategory ⥤ SSet` is dense. -/
+instance isDense : stdSimplex.{u}.IsDense := inferInstanceAs uliftYoneda.{u}.IsDense
 
 end SSet.stdSimplex
 

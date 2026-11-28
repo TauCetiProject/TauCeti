@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.L2.Product
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Basic
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.Lp.Star
@@ -43,6 +45,12 @@ The Hilbert–Schmidt norm of `T_K` is computed in
 * `TauCeti.inner_integralOperatorL2`: `⟪h, T_K f⟫ = ⟪h ⊗ star f, K⟫`.
 * `TauCeti.integralOperatorL2_prodMul_star`: the kernel `w ⊗ star u` gives the rank-one operator
   `InnerProductSpace.rankOne 𝕜 w u = ⟪u, ·⟫ • w`.
+* `TauCeti.adjointKernel`, `TauCeti.adjoint_integralOperatorL2`: the conjugate transpose kernel
+  `K⋆ (x, y) = conj (K (y, x))` (`TauCeti.coeFn_adjointKernel`) and `T_K† = T_{K⋆}`. The
+  conjugate transpose is conjugate linear (`TauCeti.adjointKernel_add`,
+  `TauCeti.adjointKernel_smul`), an involution (`TauCeti.adjointKernel_adjointKernel`), preserves
+  norms (`TauCeti.norm_adjointKernel`) and conjugates inner products
+  (`TauCeti.inner_adjointKernel`).
 
 ## References
 
@@ -218,5 +226,115 @@ theorem integralOperatorL2_prodMul_star (w : Lp 𝕜 2 μ) (u : Lp 𝕜 2 ν) :
   filter_upwards [hK, coeFn_star u] with y hy hs
   simp only [hy, hs, Pi.star_apply, RCLike.star_def, RCLike.inner_apply]
   ring
+
+/-! ### The conjugate transpose kernel -/
+
+section Adjoint
+
+variable [SFinite μ]
+
+/-- The conjugate transpose `K⋆ (x, y) = conj (K (y, x))` of a kernel `K ∈ L²(ν ⊗ μ)`, an element
+of `L²(μ ⊗ ν)`. Its integral operator is the adjoint of that of `K`
+(`TauCeti.adjoint_integralOperatorL2`). -/
+def adjointKernel (K : Lp 𝕜 2 (ν.prod μ)) : Lp 𝕜 2 (μ.prod ν) :=
+  star (Lp.compMeasurePreserving Prod.swap Measure.measurePreserving_swap K)
+
+/-- The conjugate transpose computes `K⋆ p = conj (K p.swap)` almost everywhere. -/
+theorem coeFn_adjointKernel (K : Lp 𝕜 2 (ν.prod μ)) :
+    adjointKernel K =ᵐ[μ.prod ν] fun p ↦ conj (K p.swap) := by
+  filter_upwards [coeFn_star (Lp.compMeasurePreserving Prod.swap
+      Measure.measurePreserving_swap K),
+    coeFn_compMeasurePreserving K (Measure.measurePreserving_swap (μ := μ) (ν := ν))]
+    with p hs hc
+  rw [adjointKernel, hs, Pi.star_apply, hc, Function.comp_apply, RCLike.star_def]
+
+/-- The conjugate transpose bundled as a conjugate-linear isometry: `star` after the swap
+`Lp.compMeasurePreservingₗᵢ`. Its algebra and norm lemmas below are instances of `map_*` and
+`LinearIsometry.norm_map`. -/
+private def adjointKernelₗᵢ : Lp 𝕜 2 (ν.prod μ) →ₗᵢ⋆[𝕜] Lp 𝕜 2 (μ.prod ν) :=
+  (starₗᵢ 𝕜).toLinearIsometry.comp
+    (Lp.compMeasurePreservingₗᵢ 𝕜 Prod.swap Measure.measurePreserving_swap)
+
+private theorem adjointKernelₗᵢ_apply (K : Lp 𝕜 2 (ν.prod μ)) :
+    adjointKernelₗᵢ K = adjointKernel K := by
+  rw [adjointKernelₗᵢ, LinearIsometry.coe_comp, Function.comp_apply,
+    LinearIsometryEquiv.coe_toLinearIsometry, starₗᵢ_apply, compMeasurePreservingₗᵢ_apply,
+    adjointKernel]
+
+/-- The conjugate transpose preserves the `L²` norm: `‖K⋆‖ = ‖K‖`. -/
+@[simp]
+theorem norm_adjointKernel (K : Lp 𝕜 2 (ν.prod μ)) : ‖adjointKernel K‖ = ‖K‖ := by
+  rw [← adjointKernelₗᵢ_apply, LinearIsometry.norm_map]
+
+/-- The conjugate transpose is an involution: `K⋆⋆ = K`. -/
+@[simp]
+theorem adjointKernel_adjointKernel (K : Lp 𝕜 2 (ν.prod μ)) :
+    adjointKernel (adjointKernel K) = K := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_adjointKernel (adjointKernel K),
+    Measure.measurePreserving_swap.quasiMeasurePreserving.ae_eq_comp
+      (coeFn_adjointKernel (μ := μ) K)] with q hq hK
+  simp only [Function.comp_apply] at hK
+  rw [hq, hK, Prod.swap_swap, RCLike.conj_conj]
+
+/-- The conjugate transpose of the zero kernel is zero. -/
+@[simp]
+theorem adjointKernel_zero : adjointKernel (0 : Lp 𝕜 2 (ν.prod μ)) = 0 := by
+  rw [← adjointKernelₗᵢ_apply, map_zero]
+
+/-- The conjugate transpose is additive. -/
+@[simp]
+theorem adjointKernel_add (K L : Lp 𝕜 2 (ν.prod μ)) :
+    adjointKernel (K + L) = adjointKernel K + adjointKernel L := by
+  simp only [← adjointKernelₗᵢ_apply, map_add]
+
+/-- The conjugate transpose commutes with negation. -/
+@[simp]
+theorem adjointKernel_neg (K : Lp 𝕜 2 (ν.prod μ)) :
+    adjointKernel (-K) = -adjointKernel K := by
+  simp only [← adjointKernelₗᵢ_apply, map_neg]
+
+/-- The conjugate transpose commutes with subtraction. -/
+@[simp]
+theorem adjointKernel_sub (K L : Lp 𝕜 2 (ν.prod μ)) :
+    adjointKernel (K - L) = adjointKernel K - adjointKernel L := by
+  simp only [← adjointKernelₗᵢ_apply, map_sub]
+
+/-- The conjugate transpose is conjugate linear: `(c • K)⋆ = conj c • K⋆`. -/
+@[simp]
+theorem adjointKernel_smul (c : 𝕜) (K : Lp 𝕜 2 (ν.prod μ)) :
+    adjointKernel (c • K) = conj c • adjointKernel K := by
+  simp only [← adjointKernelₗᵢ_apply, map_smulₛₗ]
+
+/-- The conjugate transpose preserves the `L²` pairing up to conjugation:
+`⟪K⋆, L⋆⟫ = conj ⟪K, L⟫ = ⟪L, K⟫`. -/
+@[simp]
+theorem inner_adjointKernel (K L : Lp 𝕜 2 (ν.prod μ)) :
+    ⟪adjointKernel K, adjointKernel L⟫_𝕜 = ⟪L, K⟫_𝕜 := by
+  rw [L2.inner_def, L2.inner_def, ← integral_prod_swap (μ := ν) (ν := μ)]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_adjointKernel K, coeFn_adjointKernel L] with p hK hL
+  rw [hK, hL, RCLike.inner_apply, RCLike.inner_apply, RCLike.conj_conj, mul_comm]
+
+/-- **The kernel of the adjoint.** The adjoint of the integral operator of `K ∈ L²(ν ⊗ μ)` is the
+integral operator of the conjugate transpose kernel `(x, y) ↦ conj (K (y, x))`. -/
+@[simp]
+theorem adjoint_integralOperatorL2 (K : Lp 𝕜 2 (ν.prod μ)) :
+    ContinuousLinearMap.adjoint (integralOperatorL2 ν μ K) =
+      integralOperatorL2 μ ν (adjointKernel K) := by
+  refine ((ContinuousLinearMap.eq_adjoint_iff _ _).2 fun f g ↦ ?_).symm
+  rw [← inner_conj_symm, inner_integralOperatorL2, inner_integralOperatorL2, L2.inner_def,
+    L2.inner_def, ← integral_conj, ← integral_prod_swap (μ := ν) (ν := μ)]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_prodMul g (star f), coeFn_adjointKernel K,
+    Measure.measurePreserving_swap.quasiMeasurePreserving.ae_eq_comp (coeFn_prodMul f (star g)),
+    Measure.quasiMeasurePreserving_fst.ae_eq_comp (coeFn_star g),
+    Measure.quasiMeasurePreserving_snd.ae_eq_comp (coeFn_star f)] with p h₁ h₂ h₃ hg hf
+  simp only [Function.comp_apply, Pi.star_apply, RCLike.star_def, Prod.fst_swap,
+    Prod.snd_swap] at h₃ hg hf
+  simp only [h₁, h₂, h₃, hg, hf, RCLike.inner_apply, map_mul, RCLike.conj_conj]
+  ring
+
+end Adjoint
 
 end TauCeti

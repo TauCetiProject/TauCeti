@@ -61,6 +61,8 @@ reindexing the three-variable ambient ring as well, along
   coefficient at `t` to the exponent `t` transported along the equivalence.
 * `MvPowerSeries.weightedCoeff_renameEquiv`: renaming along an equivalence reindexes the
   weighted coefficient norms `‖coeff t f‖ * ∏ cᵢ ^ tᵢ` along the induced equivalence of exponents.
+* `MvPowerSeries.killCompl_rename_of_disjoint`: restricting a renamed series to a disjoint
+  block of variables gives its constant term.
 * `MvPowerSeries.eq_C_of_rename_eq_rename` and
   `MvPowerSeries.right_eq_C_of_rename_eq_rename`: renamings along embeddings with disjoint images
   agree only when both series are the same constant.
@@ -135,10 +137,30 @@ theorem weightedCoeff_renameEquiv [Norm R] (e : σ ≃ τ) (c : τ → ℝ) (f :
   funext t
   simp [Finsupp.prod_equivMapDomain]
 
+/-- Restricting to an embedded set of variables preserves the constant coefficient. -/
+@[simp]
+theorem constantCoeff_killCompl (e : σ ↪ τ) (p : MvPowerSeries τ R) :
+    constantCoeff (killCompl e p) = constantCoeff p := by
+  simp only [← coeff_zero_eq_constantCoeff_apply, coeff_killCompl, embDomain_zero]
+
 section Disjoint
 
 variable {σ₁ σ₂ : Type*} {e₁ : σ₁ ↪ τ} {e₂ : σ₂ ↪ τ} {a : MvPowerSeries σ₁ R}
   {b : MvPowerSeries σ₂ R}
+
+/-- Restricting a series renamed along `e₁` to a disjoint block `e₂` leaves only its constant
+coefficient. -/
+theorem killCompl_rename_of_disjoint (hdisj : ∀ i j, e₁ i ≠ e₂ j) :
+    killCompl e₂ (rename e₁ a) = C (constantCoeff a) := by
+  classical
+  ext d
+  rw [coeff_killCompl, coeff_C]
+  split_ifs with hd
+  · rw [hd, embDomain_zero, coeff_zero_eq_constantCoeff_apply, constantCoeff_rename]
+  · obtain ⟨j, hj⟩ := Finsupp.ne_iff.mp hd
+    apply coeff_rename_eq_zero_of_apply_ne_zero e₁ a (j := e₂ j)
+    · exact fun ⟨k, hk⟩ ↦ hdisj k j hk
+    · simpa only [embDomain_apply_self, Finsupp.zero_apply] using hj
 
 /-- **Renamings along embeddings with disjoint images agree only on constants**: if
 `rename e₁ a = rename e₂ b` and no `e₁ i` is an `e₂ j`, then `a` is the constant series at its own

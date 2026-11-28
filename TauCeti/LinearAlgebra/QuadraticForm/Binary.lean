@@ -98,6 +98,7 @@ isometric to the hyperbolic plane `[0, 0]`, in every characteristic.
   self-orthogonality of the first coordinate axis `R ∙ ![1, 0]` when `2 * a = 0`.
 * `TauCeti.isTotallyIsotropic_ker_proj_one_binaryQuadraticForm`,
   `TauCeti.not_anisotropic_binaryQuadraticForm_zero`,
+  `TauCeti.not_anisotropic_binaryQuadraticForm_zero_prod`,
   `TauCeti.anisotropic_binaryQuadraticForm_one_iff`: isotropy and Artin--Schreier anisotropy
   criteria for `[a, b]`.
 * `TauCeti.toMatrix₂'_polarBilin_binaryQuadraticForm`,
@@ -419,6 +420,13 @@ theorem not_anisotropic_binaryQuadraticForm_zero [Nontrivial R] :
   intro h
   have h10 := h ![1, 0] (by simp)
   exact one_ne_zero (α := R) (by simpa using congrFun h10 0)
+
+/-- Over a nontrivial commutative semiring, an orthogonal sum with the hyperbolic plane
+`binaryQuadraticForm R 0 0` is not anisotropic. -/
+theorem not_anisotropic_binaryQuadraticForm_zero_prod [Nontrivial R] {M : Type*}
+    [AddCommMonoid M] [Module R M] (A : QuadraticForm R M) :
+    ¬((binaryQuadraticForm R 0 0).prod A).Anisotropic :=
+  fun h ↦ not_anisotropic_binaryQuadraticForm_zero (anisotropic_of_prod h).1
 
 /-- Over every commutative semiring, the hyperbolic plane `binaryQuadraticForm R 0 0`, with value
 `x 0 * x 1`, is isometric to Mathlib's `QuadraticForm.dualProd R R`, with value `f z` at `(f, z)`:

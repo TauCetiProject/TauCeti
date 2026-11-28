@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Besov
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Elliptic.Interior
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.LocalizedChangeOfVariables
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 
 /-!
 # The elliptic estimate on a compact manifold
@@ -62,6 +63,10 @@ manifold. Finiteness of its smooth kernel is proved separately, from Rellich's t
 * `TauCeti.IsClassicalElliptic.exists_sum_norm_toBesovSpaceCLM_le_add`: the elliptic estimate
   `‖u‖_{B^{s + m}_{p,∞}} ≤ C (‖P u‖_{B^s_{p,∞}} + ‖u‖_{B^r_{p,∞}})`, `1 ≤ p ≤ ∞`, which at `p = ∞`
   is the Hölder–Zygmund estimate.
+* `TauCeti.IsClassicalElliptic.exists_norm_le_mul_norm_chartSobolevExtension_add`: the `L²`-based
+  estimate on all of the Sobolev space `H^{s + m}(M)` of a chart partition
+  (`TauCeti.chartSobolevSpace`), for the extension of `P` to `H^{s + m}(M) → H^s(M)`; both sides
+  are continuous, so it follows from the estimate on the dense smooth functions.
 
 ## References
 
@@ -231,16 +236,53 @@ theorem IsClassicalElliptic.exists_sum_norm_toBesovSpaceCLM_le_add
     (SchwartzMap.toBesovSpaceCLM_injective ℂ b r p ∞)
     (fun hκ hκ' _ hθ hθc hθs ↦
       BesovSpace.exists_norm_toBesovSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ hθc hθs b r p ∞)
-    _ (fun a ha ↦ ?_) ⌈s + m - r⌉₊ (fun a ha ↦ ?_) he φ he' ψ hψ
-  · obtain ⟨C, -, hC⟩ := ha.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le b s
-    refine ⟨C, fun w ↦ ?_⟩
-    have := hC (p := p) w
-    rwa [sub_neg_eq_add] at this
-  · -- `Op(a)` maps `B^r_{p,∞}` to `B^{r + N}_{p,∞}`, which embeds into `B^{s + m}_{p,∞}`.
-    obtain ⟨C, -, hC⟩ := ha.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le b r
-    refine ⟨‖BesovSpace.inclusion ℂ b p (q := ∞) (q' := ∞) hN le_rfl‖ * C, fun w ↦ ?_⟩
-    rw [← SchwartzMap.inclusion_toBesovSpaceCLM hN le_rfl, mul_assoc]
-    exact (ContinuousLinearMap.le_opNorm _ _).trans
-      (mul_le_mul_of_nonneg_left (hC w) (norm_nonneg _))
+    _ (fun a ha ↦ ha.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le_of_le b
+      (sub_neg_eq_add s m).ge p) ⌈s + m - r⌉₊
+    -- `Op(a)` maps `B^r_{p,∞}` to `B^{r + N}_{p,∞}`, which embeds into `B^{s + m}_{p,∞}`.
+    (fun a ha ↦ ha.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le_of_le b hN p) he φ he' ψ hψ
+
+/-! ### The elliptic estimate on the Sobolev spaces -/
+
+/-- **The elliptic estimate on `H^{s + m}(M)`.** If `P` is an elliptic classical
+pseudodifferential operator of order `m` and `r ≤ s + m`, there is a constant `C` such that every
+`x` in the Sobolev space `H^{s + m}(M)` of a chart partition satisfies
+
+`‖x‖_{H^{s + m}} ≤ C (‖P x‖_{H^s} + ‖x‖_{H^r})`,
+
+for the extension `P : H^{s + m}(M) → H^s(M)` and the inclusion `H^{s + m}(M) ⊆ H^r(M)`. The order
+`s + m` is given as `t`, with `s + m = t`. -/
+theorem IsClassicalElliptic.exists_norm_le_mul_norm_chartSobolevExtension_add
+    (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P)
+    {ι : Type*} [Fintype ι] {c : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
+    (hc : ∀ i, c i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (ψ : ∀ i, 𝓓(⟨(c i).target, (c i).open_target⟩, ℝ))
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
+    {s t r : ℝ} (hst : s + m = t) (hr : r ≤ t) :
+    ∃ C, ∀ x : chartSobolevSpace hc ψ t, ‖x‖ ≤
+      C * (‖chartSobolevExtension hc ψ hc ψ P t s x‖ + ‖chartSobolevInclusion hc ψ hr x‖) := by
+  subst hst
+  obtain ⟨C, hC⟩ := hPe.exists_sum_norm_toBesselPotentialSpaceCLM_le_add hc ψ hc ψ hψ
+    ENNReal.one_lt_two ENNReal.ofNat_ne_top s r
+  have hPx := chartSobolevExtension_toChartSobolevSpace_of_mem (hc' := hc) (φ := ψ) hP hψ
+    (s := s + m) (t := s) (by linarith)
+  refine ⟨|C| * Real.sqrt (Fintype.card ι), fun x ↦ ?_⟩
+  -- Both sides are continuous in `x`, so the estimate extends from smooth functions.
+  refine (chartReading hc ψ (s + m)).denseRange_toRangeClosure.induction_on x
+    (isClosed_le (by fun_prop) (by fun_prop)) fun u ↦ ?_
+  rw [hPx, LinearMap.rangeClosureMap_toRangeClosure]
+  simp only [LinearMap.norm_toRangeClosure]
+  -- On smooth functions this is the estimate in the sums of the norms of the chart readings.
+  calc ‖chartReading hc ψ (s + m) u‖
+      ≤ ∑ i, ‖chartReading hc ψ (s + m) u i‖ := PiLp.norm_le_sum_norm _
+    _ ≤ |C| * (∑ i, ‖chartReading hc ψ s (P u) i‖ + ∑ i, ‖chartReading hc ψ r u i‖) := by
+        simp only [chartReading_apply]
+        exact (hC u).trans (mul_le_mul_of_nonneg_right (le_abs_self C)
+          (add_nonneg (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)
+            (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)))
+    _ ≤ |C| * (Real.sqrt (Fintype.card ι) * ‖chartReading hc ψ s (P u)‖ +
+          Real.sqrt (Fintype.card ι) * ‖chartReading hc ψ r u‖) := by
+        gcongr <;> exact PiLp.sum_norm_le_sqrt_card_mul_norm _
+    _ = |C| * Real.sqrt (Fintype.card ι) *
+          (‖chartReading hc ψ s (P u)‖ + ‖chartReading hc ψ r u‖) := by ring
 
 end TauCeti

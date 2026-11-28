@@ -56,6 +56,9 @@ of `μ.comap (↑)`:
   subtype of `μ`-mass `1` yields a probability measure.
 * `MeasureTheory.Measure.isFiniteMeasure_comap_subtype_coe`: finiteness of `μ.comap ((↑) : s → α)`
   when `μ s < ∞`.
+* `MeasureTheory.Measure.map_comap_subtype_coe_eq_self` and
+  `MeasureTheory.Measure.map_subtype_coe_compl_eq_zero`: pushing and pulling measures
+  concentrated on a measurable subtype `s`.
 * `MeasureTheory.Measure.instIsLocallyFiniteMeasureComapSubtype`,
   `MeasureTheory.Measure.instIsFiniteMeasureOnCompactsComapSubtype`: local finiteness and finiteness
   on compact sets for `μ.comap (Subtype.val)`.
@@ -124,6 +127,20 @@ theorem isFiniteMeasure_comap_subtype_coe (μ : Measure α) {s : Set α} (hs : �
   ⟨by
     convert (comap_preimage_le measurable_subtypeVal μ s).trans_lt hs.lt_top
     exact (eq_univ_of_forall Subtype.prop).symm⟩
+
+/-- Pushing the pullback of a measure concentrated on a measurable set `s` back along subtype
+inclusion recovers the ambient measure. -/
+theorem map_comap_subtype_coe_eq_self (μ : Measure α) {s : Set α} (hs : MeasurableSet s)
+    (hμ : μ sᶜ = 0) :
+    (μ.comap ((↑) : s → α)).map (↑) = μ := by
+  rw [map_comap_subtypeVal hs, restrict_eq_self_of_ae_mem (ae_iff.mpr hμ)]
+
+/-- The pushforward of a measure on a measurable subtype assigns measure zero to the complement of
+the subtype. -/
+theorem map_subtype_coe_compl_eq_zero {s : Set α} (ν : Measure s) (hs : MeasurableSet s) :
+    (ν.map ((↑) : s → α)) sᶜ = 0 := by
+  rw [Measure.map_apply measurable_subtypeVal hs.compl]
+  simp
 
 end Measurable
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Weights.Killing
+import TauCeti.LinearAlgebra.Graded.Nilpotent
 
 /-!
 # Simultaneous eigenvectors of a subalgebra
@@ -29,6 +30,12 @@ Consequently, the sum of the simultaneous eigenspaces with eigenvalues in any ad
 subsemigroup, such as the set of all integral eigenvalues, is closed under the bracket. An
 automorphism whose inverse acts on the family by a coreflection `Hₖ ↦ Hₖ - CMₖᵢ • Hᵢ` carries each
 simultaneous eigenspace into the one of the correspondingly reflected integral eigenvalues.
+
+Over a field of characteristic zero, these shifts make every element of positive degree act
+nilpotently: if a single element `h` acts on a finite-dimensional module with integer eigenvalues,
+a sum of `ad h`-eigenvectors of positive integer eigenvalues raises the eigenvalue of `h` at every
+application, and only finitely many eigenvalues occur. This is how the elements of the positive
+nilradical of a Borel subalgebra are seen to act nilpotently, through the principal grading.
 
 Dually, a linear functional on which an element acts by a scalar detects weights: over an
 integral domain it can be nonzero on a generalized weight vector only if that scalar is the value
@@ -56,6 +63,9 @@ of the weight. This is how a weight is read off a coordinate of a vector in an e
 * `TauCeti.lie_pow_toEnd_eq_smul`: for a single `x : L`, applying an `x`-eigenvector `f` of
   eigenvalue `c` to an `x`-eigenvector of eigenvalue `a`, `k` times, gives an `x`-eigenvector of
   eigenvalue `a + k c`.
+* `TauCeti.isNilpotent_toEnd_of_mem_iSup_eigenspace_ad`: over a field of characteristic zero, a sum
+  of `ad h`-eigenvectors with positive integer eigenvalues acts nilpotently on a finite-dimensional
+  module spanned by the integer eigenspaces of `h`.
 * `TauCeti.apply_eq_of_mem_genWeightSpace`: dually, a linear functional on which `x` acts by the
   scalar `c` and which does not vanish on a generalized weight vector of weight `chi` forces
   `chi x = c`.
@@ -231,6 +241,35 @@ theorem apply_eq_of_mem_genWeightSpace {chi : L → R} {v : M} (hv : v ∈ genWe
   exact (sub_eq_zero.mp (pow_eq_zero_iff'.mp (h0.resolve_right hv0)).1).symm
 
 end Domain
+
+section PositiveDegree
+
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
+  [FiniteDimensional K M]
+
+/-- **Elements of positive degree act nilpotently.** Let `h : L` act on a finite-dimensional
+module `M` with `M` spanned by the eigenspaces of `h` at the integers. Then every sum `x` of
+eigenvectors of `ad h` with positive integer eigenvalues acts nilpotently on `M`. -/
+theorem isNilpotent_toEnd_of_mem_iSup_eigenspace_ad {h x : L}
+    (hM : ⨆ j : ℤ, (toEnd K L M h).eigenspace (j : K) = ⊤)
+    (hx : x ∈ ⨆ (j : ℤ) (_ : 0 < j), (ad K L h).eigenspace (j : K)) :
+    IsNilpotent (toEnd K L M x) := by
+  set E : ℤ → Submodule K M := fun j ↦ (toEnd K L M h).eigenspace (j : K)
+  -- only finitely many eigenspaces of `h` at the integers are nonzero
+  have hfin : {j : ℤ | E j ≠ ⊥}.Finite := WellFoundedGT.finite_ne_bot_of_iSupIndep
+    ((toEnd K L M h).eigenspaces_iSupIndep.comp Int.cast_injective)
+  -- `x` raises the degree: the bracket adds eigenvalues of `h`
+  refine LinearMap.isNilpotent_of_le_comap_iSup_lt hM hfin fun j v hv ↦ ?_
+  have hle : ⨆ (k : ℤ) (_ : 0 < k), (ad K L h).eigenspace (k : K) ≤
+      (⨆ (q : ℤ) (_ : j < q), E q).comap ((toEnd K L M : L →ₗ[K] Module.End K M).flip v) := by
+    refine iSup₂_le fun k hk y hy ↦ ?_
+    have hy' : ⁅y, v⁆ ∈ E (k + j) := by simpa [E] using lie_mem_eigenspace_toEnd_add hy hv
+    exact le_iSup₂_of_le (f := fun (q : ℤ) (_ : j < q) ↦ E q) (k + j) (by omega) le_rfl
+      (by simpa using hy')
+  simpa using hle hx
+
+end PositiveDegree
 
 section Killing
 
