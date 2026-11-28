@@ -997,10 +997,10 @@ theorem exists_lowerOrder_eq_restrictL_and_holderOnWith_iteratedGradient_of_inte
     rw [show ((Ω'' : Opens E) : Set E) = (Ω' : Set E) ∩ ball y₀ (r / 16) from Opens.coe_inf _ _,
       ← inter_eq_right.2 hball, ← inter_assoc, hΩ', inter_assoc, inter_eq_right.2 hball]
   set S₀ := closure ((H : Set E) ∩ ball y₀ (r / 16))
-  have hS₀ : S₀ ⊆ closedBall y₀ (r / 16) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ} :=
-    closure_minimal (fun y hy => ⟨ball_subset_closedBall hy.2, ((hH y).1 hy.1).le⟩)
-      (isClosed_closedBall.inter (isClosed_le continuous_const
-        (continuous_id.inner continuous_const)))
+  have hS₀ : S₀ ⊆ closedBall y₀ (r / 16) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ} := closure_minimal
+    (fun y hy => ⟨ball_subset_closedBall hy.2, ((hH y).1 hy.1).le⟩)
+    (isClosed_closedBall.inter (isClosed_le continuous_const (by fun_prop)))
+  have hbd : Bornology.IsBounded (Ω'' : Set E) := isBounded_ball.subset inter_subset_right
   have hΩ''conv : Convex ℝ ((Ω'' : Opens E) : Set E) := by
     rw [hΩ''H, show (H : Set E) = {x | c₀ < ⟪x, ν⟫_ℝ} from Set.ext hH]
     exact (convex_halfSpace_gt (IsLinearMap.mk (fun x y => inner_add_left x y ν)
@@ -1019,9 +1019,12 @@ theorem exists_lowerOrder_eq_restrictL_and_holderOnWith_iteratedGradient_of_inte
   have hP (j : Fin (n + 1)) : ∃ g : E → ℝ, (∃ C : ℝ≥0, HolderOnWith C α g S₀) ∧
       (fun x => ⟪W1p.gradient (W1p.restrictL (inf_le_left : Ω'' ≤ Ω') v) x, b j⟫_ℝ)
         =ᵐ[volume.restrict (Ω'' : Set E)] g := by
-    obtain ⟨g, hgH, hg⟩ := W1p.exists_holderOnWith_closure_ae_eq_of_gradient_ae_eq hα hα1.le
-      hΩ''conv (by rw [hΩ''H]; exact isBounded_ball.subset inter_subset_right) (d (b j))
-      (by rw [hΩ''H]; exact (hCG (b j)).mono hS₀) (hGd (b j))
+    obtain ⟨M, hM⟩ := (hΩ''H ▸ hbd).isCompact_closure.exists_bound_of_continuousOn
+      (((hCG (b j)).mono hS₀).continuousOn hα)
+    obtain ⟨g, hgH, hg⟩ := W1p.exists_holderOnWith_closure_ae_eq_of_ae_norm_gradient_le hα1.le
+      hΩ''conv hbd (d (b j)) (M := M.toNNReal) <| by
+        filter_upwards [hGd (b j), ae_restrict_mem Ω''.isOpen.measurableSet] with x h hx
+        exact h ▸ (hM x (subset_closure (hΩ''H ▸ hx))).trans (Real.le_coe_toNNReal M)
     exact ⟨g, by rwa [hΩ''H] at hgH, (((W1p.hasWeakLineDerivOn_inner_gradient _ (b j)).congr_ae
       hvv).ae_eq (hd (b j))).trans hg⟩
   choose g hgH hg using hP; choose Cg hCg using hgH

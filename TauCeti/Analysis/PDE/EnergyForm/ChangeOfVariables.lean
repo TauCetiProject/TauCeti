@@ -1136,7 +1136,7 @@ theorem exists_holderOnWith_fderiv_pullbackPrincipal (hα1 : α ≤ 1)
     rw [pullbackPrincipal_apply_apply_of_comp_eq_id a
       (hΦ.fderiv_comp_fderiv_eq_id hΨ hΨΦ hΦΨ (hρS hz).1) i j,
       hΦ.abs_det_fderiv_eq_one hΨ hΨΦ hΦΨ (hρS hz).1, one_mul, Fintype.sum_prod_type]
-    rfl
+    simp only [ContinuousLinearMap.id_apply]
   obtain ⟨C, hC⟩ := exists_forall_holderOnWith_of_finite
     (f := fun p : ι × ι => fderiv ℝ fun y => pullbackPrincipal Φ a y p.1 p.2)
     fun p => hent p.1 p.2
