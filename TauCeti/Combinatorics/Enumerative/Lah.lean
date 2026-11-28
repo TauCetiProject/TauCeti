@@ -55,8 +55,7 @@ def lah : ℕ → ℕ → ℕ
   | _ + 1, 0 => 0
   | n + 1, k + 1 => (n + k + 1) * lah n (k + 1) + lah n k
 
-/-- `L(0, 0) = 1`. -/
-@[simp]
+/-- `L(0, 0) = 1`. This is the case `n = 0` of `Nat.lah_self`, which is the `simp` lemma. -/
 theorem lah_zero : lah 0 0 = 1 :=
   (rfl)
 
