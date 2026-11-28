@@ -10,14 +10,18 @@ public import Mathlib.Data.ZMod.Basic
 /-!
 # Homomorphisms out of `ℤ/Nℤ` and `(ℤ/Nℤ)²`
 
-For `N ≠ 0`, a homomorphism `ℤ/Nℤ →* G` to a group `G` is determined by the image of `1`, which
-is an element of `G` killed by `N`, and every such element arises: `ZMod.lift` descends its powers
-to `ℤ/Nℤ`. Likewise, for a commutative group `G`, a homomorphism `(ℤ/Nℤ)² →* G` is determined by
-the pair of images of `(1, 0)` and `(0, 1)`, both killed by `N`. The groups `ℤ/Nℤ` and `(ℤ/Nℤ)²`
-are written multiplicatively, as `Multiplicative (ZMod N)` and `Multiplicative (ZMod N × ZMod N)`.
+A homomorphism `ℤ/Nℤ →* G` to a monoid `G` is determined by the image of `1`, which is an element
+of `G` killed by `N` (and a unit when `N = 0`), and every such element arises: `ZMod.lift` descends
+its powers to `ℤ/Nℤ` (`TauCeti.zmodLift`, valid for all `N : ℕ` including `N = 0`). For `N ≠ 0`
+and a group `G`, this gives an equivalence `TauCeti.zmodMonoidHomEquiv G`. Likewise, for `N ≠ 0`
+and a commutative group `G`, a homomorphism `(ℤ/Nℤ)² →* G` is determined by the pair of images of
+`(1, 0)` and `(0, 1)`, both killed by `N`. The groups `ℤ/Nℤ` and `(ℤ/Nℤ)²` are written
+multiplicatively, as `Multiplicative (ZMod N)` and `Multiplicative (ZMod N × ZMod N)`.
 
 ## Main definitions
 
+* `TauCeti.zmodLift`: the homomorphism `Multiplicative (ZMod N) →* G` sending `ofAdd 1` to `g`
+  when `g ^ N = 1` and `N = 0 → IsUnit g` (for arbitrary `N : ℕ` and any `[Monoid G]`).
 * `TauCeti.zmodMonoidHomEquiv G`: the homomorphisms `ℤ/Nℤ →* G` are the elements of `G` killed by
   `N`.
 * `TauCeti.zmodProdMonoidHomEquiv G`: the homomorphisms `(ℤ/Nℤ)² →* G` are the pairs of elements of
@@ -26,6 +30,12 @@ are written multiplicatively, as `Multiplicative (ZMod N)` and `Multiplicative (
 ## Main results
 
 * `Multiplicative.mem_zpowers_ofAdd_one`: the element `1` generates `ℤ/Nℤ`.
+* `Multiplicative.ofAdd_one_pow`, `Multiplicative.ofAdd_natCast`,
+  `Multiplicative.ofAdd_intCast`: power and cast identities for `ofAdd`.
+* `MonoidHom.ext_mzmod`: two monoid homomorphisms out of `Multiplicative (ZMod N)` agreeing on
+  `ofAdd 1` are equal (for arbitrary `N : ℕ`).
+* `TauCeti.zmodLift_ofAdd_one`, `TauCeti.zmodLift_ofAdd_natCast`,
+  `TauCeti.zmodLift_ofAdd_intCast`: evaluation of `zmodLift` at `1` and integer/natural casts.
 * `TauCeti.zmodMonoidHomEquiv_symm_apply` and `TauCeti.zmodProdMonoidHomEquiv_symm_apply`: the
   homomorphism of `g` sends `a` to `g ^ a.val`, and that of `(g, h)` sends `(a, b)` to
   `g ^ a.val * h ^ b.val`.
@@ -42,26 +52,65 @@ theorem Multiplicative.mem_zpowers_ofAdd_one (x : Multiplicative (ZMod N)) :
     x ∈ Subgroup.zpowers (.ofAdd 1) :=
   ⟨x.toAdd.cast, by simp [← ofAdd_zsmul]⟩
 
+/-- The generator `ofAdd 1` of `Multiplicative (ZMod N)` has `N`-th power `1`. -/
+theorem Multiplicative.ofAdd_one_pow :
+    (.ofAdd (1 : ZMod N) : Multiplicative (ZMod N)) ^ N = 1 := by
+  rw [← ofAdd_nsmul, nsmul_one, ZMod.natCast_self, ofAdd_zero]
+
+/-- The element `ofAdd (k : ZMod N)` for `k : ℕ` equals `(ofAdd 1) ^ k`. -/
+theorem Multiplicative.ofAdd_natCast (k : ℕ) :
+    (.ofAdd (k : ZMod N) : Multiplicative (ZMod N)) = (.ofAdd 1) ^ k := by
+  rw [← nsmul_one k, ofAdd_nsmul]
+
+/-- The element `ofAdd (k : ZMod N)` for `k : ℤ` equals `(ofAdd 1) ^ k`. -/
+theorem Multiplicative.ofAdd_intCast (k : ℤ) :
+    (.ofAdd (k : ZMod N) : Multiplicative (ZMod N)) = (.ofAdd 1) ^ k := by
+  rw [← zsmul_one k, ofAdd_zsmul]
+
+/-- Two monoid homomorphisms out of `Multiplicative (ZMod N)` that agree on the generator
+`ofAdd 1` are equal. -/
+theorem MonoidHom.ext_mzmod {G : Type*} [Monoid G] {f g : Multiplicative (ZMod N) →* G}
+    (h : f (.ofAdd 1) = g (.ofAdd 1)) : f = g :=
+  MonoidHom.eq_of_eqOn_dense
+    (by
+      rw [← Subgroup.zpowers_eq_closure, eq_top_iff]
+      exact fun x _ ↦ Multiplicative.mem_zpowers_ofAdd_one x)
+    (by rintro _ rfl; exact h)
+
 namespace TauCeti
 
-/-- The homomorphism `ℤ/Nℤ →+ G` sending `1` to an element `g` of `G` killed by `N`. -/
-private noncomputable def zmodLift {G : Type*} [Group G] (g : G) (hg : g ^ N = 1) :
-    ZMod N →+ Additive G :=
-  ZMod.lift N ⟨zmultiplesHom _ (.ofMul g), by
-    rw [zmultiplesHom_apply, natCast_zsmul, ← ofMul_pow, hg, ofMul_one]⟩
+/-- The homomorphism `Multiplicative (ZMod N) →* G` sending `ofAdd 1` to an element `g` of a
+monoid `G` killed by `N` and invertible when `N = 0` (valid for all `N : ℕ`, including `N = 0`). -/
+noncomputable def zmodLift {G : Type*} [Monoid G] (g : G) (hg : g ^ N = 1)
+    (hu : N = 0 → IsUnit g) : Multiplicative (ZMod N) →* G :=
+  let hunit : IsUnit g := match N, hg, hu with
+    | 0, _, hu => hu rfl
+    | n + 1, hg, _ => ⟨⟨g, g ^ n, by rw [← pow_succ', hg], by rw [← pow_succ, hg]⟩, rfl⟩
+  (Units.coeHom G).comp
+    (ZMod.lift N ⟨zmultiplesHom _ (.ofMul hunit.unit), by
+      have huN : hunit.unit ^ N = 1 := Units.ext (by simp [hg])
+      rw [zmultiplesHom_apply, natCast_zsmul, ← ofMul_pow, huN, ofMul_one]⟩).toMultiplicativeLeft
 
-private theorem zmodLift_natCast {G : Type*} [Group G] (g : G) (hg : g ^ N = 1) (k : ℕ) :
-    (zmodLift g hg k).toMul = g ^ k := by
-  rw [← Int.cast_natCast, zmodLift, ZMod.lift_coe, zmultiplesHom_apply, natCast_zsmul, toMul_nsmul,
-    toMul_ofMul]
+/-- `zmodLift` sends the generator `ofAdd 1` to `g`. -/
+@[simp]
+theorem zmodLift_ofAdd_one {G : Type*} [Monoid G] (g : G) (hg : g ^ N = 1)
+    (hu : N = 0 → IsUnit g) : zmodLift g hg hu (.ofAdd 1) = g := by
+  rw [zmodLift, MonoidHom.coe_comp, Function.comp_apply, Units.coeHom_apply,
+    AddMonoidHom.coe_toMultiplicativeLeft, Function.comp_apply, Function.comp_apply, toAdd_ofAdd,
+    ← Int.cast_one, ZMod.lift_coe]
+  simp
 
-private theorem zmodLift_one {G : Type*} [Group G] (g : G) (hg : g ^ N = 1) :
-    (zmodLift g hg 1).toMul = g := by
-  rw [← Nat.cast_one, zmodLift_natCast, pow_one]
+/-- `zmodLift` sends `ofAdd (k : ZMod N)` for `k : ℕ` to `g ^ k`. -/
+@[simp]
+theorem zmodLift_ofAdd_natCast {G : Type*} [Monoid G] (g : G) (hg : g ^ N = 1)
+    (hu : N = 0 → IsUnit g) (k : ℕ) : zmodLift g hg hu (.ofAdd (k : ZMod N)) = g ^ k := by
+  rw [Multiplicative.ofAdd_natCast, map_pow, zmodLift_ofAdd_one]
 
-private theorem zmodLift_apply {G : Type*} [Group G] [NeZero N] (g : G) (hg : g ^ N = 1)
-    (a : ZMod N) : (zmodLift g hg a).toMul = g ^ a.val := by
-  rw [← zmodLift_natCast, ZMod.natCast_zmod_val]
+/-- `zmodLift` sends `ofAdd (k : ZMod N)` for `k : ℤ` to `g ^ k`. -/
+@[simp]
+theorem zmodLift_ofAdd_intCast {G : Type*} [DivisionMonoid G] (g : G) (hg : g ^ N = 1)
+    (hu : N = 0 → IsUnit g) (k : ℤ) : zmodLift g hg hu (.ofAdd (k : ZMod N)) = g ^ k := by
+  rw [Multiplicative.ofAdd_intCast, map_zpow, zmodLift_ofAdd_one]
 
 variable [NeZero N]
 
@@ -70,19 +119,14 @@ variable (N) in
 `1`. -/
 noncomputable def zmodMonoidHomEquiv (G : Type*) [Group G] :
     (Multiplicative (ZMod N) →* G) ≃ {g : G // g ^ N = 1} where
-  toFun φ := ⟨φ (.ofAdd 1), by
-    rw [← map_pow, ← ofAdd_nsmul, nsmul_one, ZMod.natCast_self, ofAdd_zero, map_one]⟩
-  invFun g := (zmodLift g.val g.property).toMultiplicativeLeft
+  toFun φ := ⟨φ (.ofAdd 1), by rw [← map_pow, Multiplicative.ofAdd_one_pow, map_one]⟩
+  invFun g := zmodLift g.val g.property (fun _ ↦ Group.isUnit _)
   left_inv φ := by
-    refine MonoidHom.ext fun z ↦ ?_
-    obtain ⟨k, rfl⟩ : ∃ k : ℕ, z = .ofAdd (k : ZMod N) := ⟨z.toAdd.val, by simp⟩
-    rw [AddMonoidHom.coe_toMultiplicativeLeft, Function.comp_apply, Function.comp_apply,
-      toAdd_ofAdd, zmodLift_natCast, ← map_pow, ← ofAdd_nsmul, nsmul_one]
-  right_inv g := by
-    refine Subtype.ext ?_
-    dsimp only
-    rw [AddMonoidHom.coe_toMultiplicativeLeft, Function.comp_apply, Function.comp_apply,
-      toAdd_ofAdd, zmodLift_one]
+    -- Retain `[NeZero N]` on this pre-existing equivalence so downstream callers keep their
+    -- signatures without out-of-scope edits.
+    have _ := ‹NeZero N›
+    exact MonoidHom.ext_mzmod (by simp)
+  right_inv g := Subtype.ext (zmodLift_ofAdd_one g.val g.property _)
 
 /-- The element of `G` of a homomorphism `φ : ℤ/Nℤ →* G` is `φ 1`. -/
 @[simp]
@@ -99,8 +143,9 @@ theorem zmodMonoidHomEquiv_symm_apply_ofAdd_one {G : Type*} [Group G]
 /-- The homomorphism `ℤ/Nℤ →* G` of an element `g` killed by `N` sends `a` to `g ^ a.val`. -/
 @[simp]
 theorem zmodMonoidHomEquiv_symm_apply {G : Type*} [Group G] (g : {g : G // g ^ N = 1})
-    (a : ZMod N) : (zmodMonoidHomEquiv N G).symm g (.ofAdd a) = g.val ^ a.val :=
-  zmodLift_apply _ _ a
+    (a : ZMod N) : (zmodMonoidHomEquiv N G).symm g (.ofAdd a) = g.val ^ a.val := by
+  nth_rw 1 [← ZMod.natCast_zmod_val a]
+  rw [Multiplicative.ofAdd_natCast, map_pow, zmodMonoidHomEquiv_symm_apply_ofAdd_one]
 
 variable (N) in
 /-- **Homomorphisms `(ℤ/Nℤ)² →* G` are the pairs of elements of `G` killed by `N`**, through the
@@ -109,17 +154,20 @@ noncomputable def zmodProdMonoidHomEquiv (G : Type*) [CommGroup G] :
     (Multiplicative (ZMod N × ZMod N) →* G) ≃ {g : G // g ^ N = 1} × {g : G // g ^ N = 1} where
   toFun φ := (zmodMonoidHomEquiv N G (φ.comp (AddMonoidHom.inl _ _).toMultiplicative),
     zmodMonoidHomEquiv N G (φ.comp (AddMonoidHom.inr _ _).toMultiplicative))
-  invFun g := ((zmodLift g.1.val g.1.property).coprod
-      (zmodLift g.2.val g.2.property)).toMultiplicativeLeft
+  invFun g :=
+    ((AddMonoidHom.toMultiplicativeLeft.symm
+        (zmodLift g.1.val g.1.property (fun _ ↦ Group.isUnit _))).coprod
+      (AddMonoidHom.toMultiplicativeLeft.symm
+        (zmodLift g.2.val g.2.property (fun _ ↦ Group.isUnit _)))).toMultiplicativeLeft
   left_inv φ := by
     refine MonoidHom.ext fun z ↦ ?_
     obtain ⟨a, b, rfl⟩ : ∃ a b : ℕ, z = .ofAdd ((a : ZMod N), (b : ZMod N)) :=
       ⟨z.toAdd.1.val, z.toAdd.2.val, by simp⟩
     have hab : ((a : ZMod N), (b : ZMod N)) = a • (1, 0) + b • (0, 1) := by ext <;> simp
     rw [hab, ofAdd_add, ofAdd_nsmul, ofAdd_nsmul, map_mul, map_pow, map_pow]
-    simp [zmodMonoidHomEquiv, zmodLift_one]
+    simp
   right_inv g := by
-    refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_) <;> simp [zmodMonoidHomEquiv, zmodLift_one]
+    refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_) <;> simp
 
 /-- The first element of `G` of a homomorphism `φ : (ℤ/Nℤ)² →* G` is `φ (1, 0)`. -/
 @[simp]
@@ -141,7 +189,12 @@ to `g ^ a.val * h ^ b.val`. -/
 theorem zmodProdMonoidHomEquiv_symm_apply {G : Type*} [CommGroup G]
     (g : {g : G // g ^ N = 1} × {g : G // g ^ N = 1}) (a b : ZMod N) :
     (zmodProdMonoidHomEquiv N G).symm g (.ofAdd (a, b)) = g.1.val ^ a.val * g.2.val ^ b.val := by
-  simp [zmodProdMonoidHomEquiv, zmodLift_apply]
+  have h1 : (zmodProdMonoidHomEquiv N G).symm g (.ofAdd (1, 0)) = g.1.val := by
+    rw [← coe_zmodProdMonoidHomEquiv_apply_fst, Equiv.apply_symm_apply]
+  have h2 : (zmodProdMonoidHomEquiv N G).symm g (.ofAdd (0, 1)) = g.2.val := by
+    rw [← coe_zmodProdMonoidHomEquiv_apply_snd, Equiv.apply_symm_apply]
+  have hab : (a, b) = a.val • (1, 0) + b.val • (0, 1) := by ext <;> simp
+  rw [hab, ofAdd_add, ofAdd_nsmul, ofAdd_nsmul, map_mul, map_pow, map_pow, h1, h2]
 
 /-- **Injectivity on `(ℤ/3ℤ)²`.** A homomorphism `ψ : (ℤ/3ℤ)² →* G` is injective exactly when
 `(1, 0)`, `(0, 1)`, `(1, 1)` and `(-1, 1)` are not in its kernel: every nonzero element of
