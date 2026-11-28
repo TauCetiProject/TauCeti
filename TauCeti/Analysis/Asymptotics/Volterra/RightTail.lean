@@ -564,7 +564,9 @@ theorem norm_volterra_solution_le_exp_sub_one_on {P₀ : ℝ} (hI : I.OrdConnect
   set g : ℝ → ℝ := fun u ↦ P₀ * (Q u * ‖J u‖)
   set G : ℝ → ℝ := fun v ↦ ∫ u in I ∩ Ioi v, g u
   have hgint : ∀ v ∈ I, IntegrableOn g (I ∩ Ioi v) := fun v hv ↦ (hΦ v hv).const_mul P₀
-  rw [show P₀ * ∫ v in I ∩ Ioi x, Q v * ‖J v‖ = G x from (integral_const_mul P₀ _).symm]
+  have hGx : P₀ * ∫ v in I ∩ Ioi x, Q v * ‖J v‖ = G x := by
+    simp only [G, g, integral_const_mul]
+  rw [hGx]
   refine norm_le_of_tail_supersolution hI.measurableSet
     (B := fun v ↦ Real.exp (G v) - 1) (R := fun _ ↦ C * P₀) hx hgint
     (fun v hv hxv ↦ by
