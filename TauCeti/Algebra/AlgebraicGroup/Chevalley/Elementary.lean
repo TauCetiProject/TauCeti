@@ -236,11 +236,16 @@ theorem elementarySubgroup_le_extendedElementarySubgroup :
     D.elementarySubgroup A ≤ D.extendedElementarySubgroup A :=
   le_sup_left
 
+/-- The actual torus is contained in the extended elementary subgroup. -/
+theorem range_torusPoints_le_extendedElementarySubgroup :
+    (D.torusPoints A).range ≤ D.extendedElementarySubgroup A :=
+  le_sup_right
+
 /-- Every actual torus point belongs to the extended elementary subgroup. -/
 @[simp]
 theorem torusPoints_mem_extendedElementarySubgroup (s : Fin t.rank → Aˣ) :
     D.torusPoints A s ∈ D.extendedElementarySubgroup A :=
-  (le_sup_right : (D.torusPoints A).range ≤ D.extendedElementarySubgroup A) ⟨s, rfl⟩
+  D.range_torusPoints_le_extendedElementarySubgroup A ⟨s, rfl⟩
 
 /-- The actual torus normalizes the elementary subgroup, not just its full-weight
 parametrized image. -/

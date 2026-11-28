@@ -261,6 +261,15 @@ theorem weylProjection_list_prod_mul_torusPoints (l : List (Fin t.rank))
     D.list_prod_map_simpleWeylLift K l]
   rfl
 
+/-- On a product of simple Weyl elements `n_{αᵢ}(1)`, `D.weylProjection K` evaluates to the
+Weyl-group element spelled by the word. -/
+theorem weylProjection_list_prod (l : List (Fin t.rank)) :
+    D.weylProjection K
+      ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod,
+        D.list_prod_map_weylElement_mem_weylSubgroup K l⟩ =
+      t.simplyConnectedWeylWordProd ht l := by
+  simpa only [map_one, mul_one] using D.weylProjection_list_prod_mul_torusPoints K l 1
+
 end
 
 end TauCeti.DynkinType.ChevalleyDatum

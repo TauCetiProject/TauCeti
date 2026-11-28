@@ -54,9 +54,10 @@ unique factorization on every cell and across `D.extendedElementarySubgroup K`.
   projection inverts every positive root exchanges `U⁻(K)` and `U(K)` by conjugation.
 * `TauCeti.DynkinType.ChevalleyDatum.borelSubgroup_inf_map_borelSubgroup_conj_eq_range_torusPoints`:
   for a Weyl lift whose projection inverts every positive root, `B(K) ∩ n₀ B(K) n₀⁻¹ = T(K)`.
-* `TauCeti.DynkinType.ChevalleyDatum.existsUnique_mul_mul_eq_of_mem_bruhatCell` and
-  `TauCeti.DynkinType.ChevalleyDatum.existsUnique_bruhatNormalForm`: Steinberg's sharp Bruhat
-  normal form on each cell and on `D.extendedElementarySubgroup K`.
+* `TauCeti.DynkinType.ChevalleyDatum.existsUnique_mul_mul_eq_of_mem_bruhatCell`,
+  `TauCeti.DynkinType.ChevalleyDatum.existsUnique_bruhatNormalForm`, and
+  `TauCeti.DynkinType.ChevalleyDatum.exists_bruhatNormalForm`: Steinberg's sharp Bruhat normal form
+  on each cell and on `D.extendedElementarySubgroup K`.
 
 ## References
 
@@ -446,6 +447,23 @@ theorem existsUnique_bruhatNormalForm
   exact Prod.ext rfl (Prod.ext
     (congrArg (fun x => (x.1 : D.points K)) hp)
     (congrArg (fun x => (x.2 : D.points K)) hp))
+
+/-- **Existential sharp Bruhat normal form on `D.extendedElementarySubgroup K`:** every
+`g ∈ D.extendedElementarySubgroup K` factors as `u * (n : D.points K) * b` with
+`n ∈ D.weylSubgroup K`, `u ∈ D.inversionPoints K (D.weylProjection K n)`, and
+`b ∈ D.borelSubgroup K`. -/
+theorem exists_bruhatNormalForm {g : D.points K} (hg : g ∈ D.extendedElementarySubgroup K) :
+    ∃ (n : D.weylSubgroup K) (u b : D.points K),
+      u ∈ D.inversionPoints K (D.weylProjection K n) ∧
+      b ∈ D.borelSubgroup K ∧
+      u * (n : D.points K) * b = g := by
+  let rep : (t.simplyConnectedRootDatum ht).weylGroup → D.weylSubgroup K :=
+    fun w => (D.weylProjection_surjective K w).choose
+  have hrep : ∀ w, D.weylProjection K (rep w) = w :=
+    fun w => (D.weylProjection_surjective K w).choose_spec
+  obtain ⟨⟨w, u, b⟩, ⟨hu, hb, hprod⟩, -⟩ :=
+    D.existsUnique_bruhatNormalForm K rep hrep hg
+  exact ⟨rep w, u, b, (hrep w).symm ▸ hu, hb, hprod⟩
 
 end Field
 
