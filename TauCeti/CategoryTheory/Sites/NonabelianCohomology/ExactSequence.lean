@@ -14,7 +14,7 @@ Let `1 → A → B → Q → 1` be a short exact sequence of sheaves of groups o
 by `i : A ⟶ B` and `π : B ⟶ Q`. This file proves that the sequence of pointed sets
 `1 → A(C) → B(C) → Q(C) → H¹(A) → H¹(B) → H¹(Q)` is exact, where `Q(C) → H¹(A)` is the
 connecting map `NonabelianH1.connecting` sending a global section of `Q` to its torsor of lifts.
-Exactness at `A(C)` and `B(C)` is `IsGroupExtension.existsUnique_sections_iff` and exactness
+Exactness at `A(C)` and `B(C)` is `existsUnique_sections_iff` and exactness
 at `Q(C)` is `NonabelianH1.connecting_eq_one_iff`; this file adds the other positions.
 
 * At `H¹(A)`: an `A`-torsor `P` becomes trivial as a `B`-torsor if and only if it is a torsor of

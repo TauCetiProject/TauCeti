@@ -77,6 +77,14 @@ def trivial : LiftingFiber φ (Torsor.trivial D) :=
 @[simp]
 lemma trivial_left : (trivial φ).left = Torsor.trivial B := (rfl)
 
+/-- The chosen trivial lift extends the underlying coefficient homomorphism. -/
+@[simp]
+lemma toMap_trivial_hom :
+    (trivial φ).left.toMap φ ≫ (trivial φ).hom.hom =
+      eqToHom (congrArg Torsor.sheaf (trivial_left φ)) ≫
+        (sheafCompose J (forget GrpCat.{w})).map φ := by
+  exact (Torsor.trivial B).toMap_mapLift _ _
+
 /-- Every torsor lifts along a homomorphism with a specified right inverse. -/
 theorem nonempty_of_split (s : D ⟶ B) (hs : s ≫ φ = 𝟙 D) :
     Nonempty (LiftingFiber φ P) := by

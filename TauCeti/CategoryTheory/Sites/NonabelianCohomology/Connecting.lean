@@ -32,7 +32,7 @@ This file constructs the connecting map and proves the exactness statements whic
 
 * `CategoryTheory.Sheaf.IsGroupExtension i π`: the sequence `1 → A → B → Q → 1` given by
   `i : A ⟶ B` and `π : B ⟶ Q` is exact.
-* `CategoryTheory.Sheaf.IsGroupExtension.existsUnique_sections_iff`: exactness at `A(C)` and
+* `CategoryTheory.Sheaf.existsUnique_sections_iff`: exactness at `A(C)` and
   `B(C)`.
 * `CategoryTheory.Sheaf.IsGroupExtension.lifts`: the `A`-torsor of local lifts of a global
   section of `Q`.
@@ -93,19 +93,27 @@ lemma exists_app_eq {U : Cᵒᵖ} {b : B.obj.obj U} (hb : π.hom.app U b = 1) :
     ∃ a, i.hom.app U a = b :=
   (hE.range_eq_ker U).ge hb
 
-include hE in
+end IsGroupExtension
+
 /-- Exactness of `1 → A(C) → B(C) → Q(C)`: a global section of `B` maps to the unit section of
 `Q` if and only if it comes from a unique global section of `A`. -/
-theorem existsUnique_sections_iff (b : (B.obj ⋙ forget GrpCat).sections) :
+theorem existsUnique_sections_iff {i : A ⟶ B} {π : B ⟶ Q}
+    (hi : ∀ U, Function.Injective (i.hom.app U))
+    (hker : ∀ U, (i.hom.app U).hom.range = (π.hom.app U).hom.ker)
+    (b : (B.obj ⋙ forget GrpCat).sections) :
     (∃! a : (A.obj ⋙ forget GrpCat).sections, ∀ U, i.hom.app U (a.val U) = b.val U) ↔
       ∀ U, π.hom.app U (b.val U) = 1 := by
-  refine ⟨fun ⟨a, ha, _⟩ U ↦ ha U ▸ hE.app_app_eq_one (a.val U), fun hb ↦ ?_⟩
-  choose a ha using fun U ↦ hE.exists_app_eq (hb U)
-  refine ⟨⟨a, fun {U V} f ↦ hE.injective V ?_⟩, ha, fun a' ha' ↦ ?_⟩
+  refine ⟨fun ⟨a, ha, _⟩ U ↦ ha U ▸ (hker U).le ⟨a.val U, rfl⟩, fun hb ↦ ?_⟩
+  choose a ha using fun U ↦ (hker U).ge (hb U)
+  refine ⟨⟨a, fun {U V} f ↦ hi V ?_⟩, ha, fun a' ha' ↦ ?_⟩
   · -- `i` commutes with restriction, and `b` is compatible.
     exact (NatTrans.naturality_apply i.hom f (a U)).trans
       ((congrArg _ (ha U)).trans ((b.property f).trans (ha V).symm))
-  · exact Subtype.ext (funext fun U ↦ hE.injective U ((ha' U).trans (ha U).symm))
+  · exact Subtype.ext (funext fun U ↦ hi U ((ha' U).trans (ha U).symm))
+
+namespace IsGroupExtension
+
+variable {i : A ⟶ B} {π : B ⟶ Q} (hE : IsGroupExtension i π)
 
 variable (π) in
 /-- The subpresheaf of `B`, viewed as a presheaf of sets, of lifts of a global section `q` of `Q`:

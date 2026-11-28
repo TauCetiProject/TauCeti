@@ -5,22 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.Grp.Sections
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Abelian.Basic
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.LiftingGerbe.Fiber
 
 /-!
 # The positive band of the groupoid of lifts
 
-For an extension `1 → A → B → D → 1` with commutative `B`, the automorphism group of
+For a sequence `1 → A → B → D` exact at `A` and `B` with commutative `B`, the automorphism group of
 any lift of a `D`-torsor is the group of compatible global sections of `A`. The identification
 sends a section to positive translation through `A → B`. The statement applies to arbitrary
 sites, without a terminal object and without assuming that the lifted torsor has global sections.
 
 The displacement of an automorphism descends from the cover where its underlying torsor
 has sections. Compatibility with the structure isomorphism kills its image in `D`, and
-exactness then gives the unique section of `A`. For a short exact sequence of abelian sheaves,
-`ShortComplex.ShortExact.isGroupExtension` supplies precisely this kernel calculation.
+exactness then gives the unique section of `A`. For a monic exact sequence of abelian sheaves,
+`ShortComplex.Exact.range_eq_ker` supplies precisely this kernel calculation. No local
+surjectivity of `B → D` is needed.
 
 ## References
 
@@ -38,13 +38,15 @@ namespace CategoryTheory.Sheaf.Torsor.LiftingFiber
 variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
   [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)]
 
-section GroupExtension
+section Kernel
 
 variable {A B D : Sheaf J GrpCat.{w}} {i : A ⟶ B} {φ : B ⟶ D}
   [∀ U, IsMulCommutative (B.obj.obj U)]
-  (hE : IsGroupExtension i φ) {P : Torsor D} (L : LiftingFiber φ P)
+  (hi : ∀ U, Function.Injective (i.hom.app U))
+  (hker : ∀ U, (i.hom.app U).hom.range = (φ.hom.app U).hom.ker)
+  {P : Torsor D} (L : LiftingFiber φ P)
 
-include hE
+include hker
 
 /-- Positive translation by a section of the kernel is an endomorphism of a lift. -/
 def kernelTranslationHom (a : (A.obj ⋙ forget GrpCat).sections) : L ⟶ L :=
@@ -53,34 +55,36 @@ def kernelTranslationHom (a : (A.obj ⋙ forget GrpCat).sections) : L ⟶ L :=
     rw [mapHom_translationHom_eq_id]
     · exact Category.id_comp _
     · intro U
-      simpa [GrpCat.sectionsπMonoidHom] using hE.app_app_eq_one (a.val U))
+      simpa [GrpCat.sectionsπMonoidHom] using
+        ((hker U).le ⟨a.val U, rfl⟩ : φ.hom.app U (i.hom.app U (a.val U)) = 1))
 
 lemma kernelTranslationHom_left (a : (A.obj ⋙ forget GrpCat).sections) :
-    (kernelTranslationHom hE L a).left =
+    (kernelTranslationHom hker L a).left =
       L.left.translationHom (GrpCat.sectionsMap i.hom a) := (rfl)
 
 @[simp]
 lemma kernelTranslationHom_hom_app (a : (A.obj ⋙ forget GrpCat).sections) (U : Cᵒᵖ)
     (p : L.left.sheaf.obj.obj U) :
-    (kernelTranslationHom hE L a).left.hom.hom.app U p = i.hom.app U (a.val U) • p := by
+    (kernelTranslationHom hker L a).left.hom.hom.app U p = i.hom.app U (a.val U) • p := by
   rw [kernelTranslationHom_left]
   simp [GrpCat.sectionsπMonoidHom]
 
 /-- The homomorphism from kernel sections to automorphisms, with the positive sign convention. -/
 def kernelTranslation : (A.obj ⋙ forget GrpCat).sections →* Aut L where
-  toFun a := .of (asIso (kernelTranslationHom hE L a))
+  toFun a := .of (asIso (kernelTranslationHom hker L a))
   map_one' := by ext U p; simp [kernelTranslationHom]
   map_mul' a b := by ext U p; simp [kernelTranslationHom, mul_smul]
 
 @[simp]
 lemma kernelTranslation_hom_app (a : (A.obj ⋙ forget GrpCat).sections) (U : Cᵒᵖ)
     (p : L.left.sheaf.obj.obj U) :
-    (kernelTranslation hE L a).asIso.hom.left.hom.hom.app U p =
+    (kernelTranslation hker L a).asIso.hom.left.hom.hom.app U p =
       i.hom.app U (a.val U) • p :=
-  kernelTranslationHom_hom_app hE L a U p
+  kernelTranslationHom_hom_app hker L a U p
 
+include hi in
 /-- Sections of the kernel act faithfully on every lift, even a nontrivial torsor. -/
-theorem kernelTranslation_injective : Function.Injective (kernelTranslation hE L) := by
+theorem kernelTranslation_injective : Function.Injective (kernelTranslation hker L) := by
   intro a b hab
   have ht : L.left.translationHom (GrpCat.sectionsMap i.hom a) =
       L.left.translationHom (GrpCat.sectionsMap i.hom b) :=
@@ -92,18 +96,19 @@ theorem kernelTranslation_injective : Function.Injective (kernelTranslation hE L
         congrArg (fun k : L.left ⟶ L.left ↦ k.hom.hom.app U p) ht)
   apply Subtype.ext
   funext U
-  exact hE.injective U (by simpa using congrArg (fun s ↦ s.val U) hs)
+  exact hi U (by simpa using congrArg (fun s ↦ s.val U) hs)
 
-omit hE [∀ U, IsMulCommutative (B.obj.obj U)] in
+omit hi hker [∀ U, IsMulCommutative (B.obj.obj U)] in
 /-- An endomorphism of a lift induces the identity on its extended torsor. -/
 @[simp]
 lemma mapHom_left_eq_id (f : L ⟶ L) : mapHom φ f.left = 𝟙 (L.left.map φ) := by
   apply (cancel_mono L.hom).mp
   simpa only [mapFunctor, Category.id_comp] using CostructuredArrow.w f
 
+include hi in
 /-- Every endomorphism of a lift is a positive translation by a kernel section. -/
 theorem exists_kernelTranslationHom_eq (f : L ⟶ L) :
-    ∃ a : (A.obj ⋙ forget GrpCat).sections, kernelTranslationHom hE L a = f := by
+    ∃ a : (A.obj ⋙ forget GrpCat).sections, kernelTranslationHom hker L a = f := by
   obtain ⟨s, hs⟩ := L.left.exists_translationHom_eq f.left
   have hm : (L.left.translationHom s).hom ≫ L.left.toMap φ = L.left.toMap φ := by
     rw [← toMap_mapHom, hs, mapHom_left_eq_id]
@@ -121,40 +126,48 @@ theorem exists_kernelTranslationHom_eq (f : L ⟶ L) :
     apply L.left.coversTop.sections_ext ((sheafCompose J (forget GrpCat.{w})).obj D)
     rintro ⟨U, ⟨p⟩⟩
     simpa [GrpCat.sectionsπMonoidHom] using hk (op U) p
-  obtain ⟨a, ha, -⟩ := (hE.existsUnique_sections_iff s).mpr (fun U ↦ by
+  obtain ⟨a, ha, -⟩ := (existsUnique_sections_iff hi hker s).mpr (fun U ↦ by
     have h := congrArg (GrpCat.sectionsπMonoidHom D.obj U) hzero
     simpa [GrpCat.sectionsπMonoidHom] using h)
   refine ⟨a, CostructuredArrow.hom_ext _ _ ?_⟩
   have has : GrpCat.sectionsMap i.hom a = s := by ext U; simpa using ha U
   simpa only [kernelTranslationHom, CostructuredArrow.homMk_left, has] using hs
 
+include hi in
 /-- Kernel sections are exactly the automorphisms of each lift. -/
 def kernelTranslationEquiv : (A.obj ⋙ forget GrpCat).sections ≃* Aut L :=
-  MulEquiv.ofBijective (kernelTranslation hE L) ⟨kernelTranslation_injective hE L, fun f ↦ by
-    obtain ⟨a, ha⟩ := exists_kernelTranslationHom_eq hE L f.asIso.hom
+  MulEquiv.ofBijective (kernelTranslation hker L) ⟨kernelTranslation_injective hi hker L, fun f ↦ by
+    obtain ⟨a, ha⟩ := exists_kernelTranslationHom_eq hi hker L f.asIso.hom
     exact ⟨a, by apply Aut.ext; exact Iso.ext ha⟩⟩
 
 @[simp]
 lemma kernelTranslationEquiv_apply (a : (A.obj ⋙ forget GrpCat).sections) :
-    kernelTranslationEquiv hE L a = kernelTranslation hE L a := (rfl)
+    kernelTranslationEquiv hi hker L a = kernelTranslation hker L a := (rfl)
 
-end GroupExtension
+end Kernel
 
 section Abelian
 
-variable [HasSheafify J AddCommGrpCat.{w}] [J.WEqualsLocallyBijective AddCommGrpCat.{w}]
+variable [HasSheafify J AddCommGrpCat.{w}]
   {S : ShortComplex (Sheaf J AddCommGrpCat.{w})}
-  (hS : S.ShortExact)
+  [Mono S.f] (hS : S.Exact)
   {P : Torsor ((abelianSheafToGrpSheaf J).obj S.X₃)}
   (L : LiftingFiber ((abelianSheafToGrpSheaf J).map S.g) P)
 
-/-- The automorphisms of a lift through a short exact sequence of abelian sheaves are the
+/-- The automorphisms of a lift through a monic exact sequence of abelian sheaves are the
 compatible global sections of its kernel, written multiplicatively, acting positively. -/
 def abelianBandEquiv :
     (((abelianSheafToGrpSheaf J).obj S.X₁).obj ⋙ forget GrpCat).sections ≃* Aut L := by
   letI : ∀ U, IsMulCommutative (((abelianSheafToGrpSheaf J).obj S.X₂).obj.obj U) := fun U ↦
     (abelianSheafToGrpSheafObjEquiv S.X₂ U).isMulCommutative.mp ⟨⟨mul_comm⟩⟩
-  exact kernelTranslationEquiv hS.isGroupExtension L
+  refine kernelTranslationEquiv (fun U a b hab ↦ ?_) hS.range_eq_ker L
+  obtain ⟨a, rfl⟩ := (abelianSheafToGrpSheafObjEquiv S.X₁ U).surjective a
+  obtain ⟨b, rfl⟩ := (abelianSheafToGrpSheafObjEquiv S.X₁ U).surjective b
+  apply congrArg (abelianSheafToGrpSheafObjEquiv S.X₁ U)
+  apply Multiplicative.toAdd.injective
+  apply Sheaf.injective_app_of_mono S.f U
+  simpa only [abelianSheafToGrpSheaf_map_hom_app_abelianSheafToGrpSheafObjEquiv,
+    MulEquiv.apply_eq_iff_eq, Equiv.apply_eq_iff_eq] using hab
 
 /-- The abelian band sends `a` to translation by its positive image under the kernel inclusion. -/
 @[simp]
