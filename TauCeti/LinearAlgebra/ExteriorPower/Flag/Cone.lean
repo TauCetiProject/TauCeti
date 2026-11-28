@@ -337,8 +337,10 @@ theorem mem_exteriorFlagCone_iff {d : ℕ} (w : FlagSpace k M d) :
   refine ⟨fun hw s hs ↦ hs.2 w hw, fun hw ↦ ?_⟩
   induction d with
   | zero =>
-    refine ⟨_root_.exteriorPower.zeroEquiv k M (flagSpaceZeroEquiv k M w), Fin.elim0,
-      ((flagSpaceZeroEquiv k M).trans (_root_.exteriorPower.zeroEquiv k M)).injective (by simp)⟩
+    refine ⟨_root_.exteriorPower.zeroEquiv k M (PiTensorProduct.subsingletonEquiv (0 : Fin 1) w),
+      Fin.elim0,
+      ((PiTensorProduct.subsingletonEquiv (0 : Fin 1)).trans
+        (_root_.exteriorPower.zeroEquiv k M)).injective (by simp [exteriorFlagVector_zero])⟩
   | succ r ih =>
     by_cases hw0 : w = 0
     · exact hw0 ▸ zero_mem_exteriorFlagCone (r + 1)

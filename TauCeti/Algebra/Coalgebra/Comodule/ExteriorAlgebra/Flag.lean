@@ -15,8 +15,9 @@ public import TauCeti.LinearAlgebra.ExteriorPower.Flag.Basic
 
 For a right comodule `M` over a commutative bialgebra `H`, each exterior power `⋀[R]^i M` is a
 right `H`-comodule (`TauCeti.Comodule.exteriorPower`). Transporting tensor products recursively
-along `flagSpaceZeroEquiv` and `flagSpaceSuccEquiv` equips `exteriorPower.FlagSpace R M d` with
-the right `H`-comodule structure `TauCeti.Comodule.exteriorFlag`.
+along `PiTensorProduct.subsingletonEquiv` and `flagSpaceSuccEquiv` equips
+`exteriorPower.FlagSpace R M d` with the right `H`-comodule structure
+`TauCeti.Comodule.exteriorFlag`.
 
 ## Main definitions
 
@@ -44,7 +45,8 @@ local instance. -/
 noncomputable def exteriorFlag : (d : ℕ) → Comodule R H (exteriorPower.FlagSpace R M d)
   | 0 =>
       let _ : Comodule R H (⋀[R]^0 M) := exteriorPower R H M 0
-      Transport (exteriorPower.flagSpaceZeroEquiv R M).symm
+      Transport (M := ⋀[R]^0 M)
+        (PiTensorProduct.subsingletonEquiv (s := fun i : Fin 1 ↦ ⋀[R]^(i : ℕ) M) (0 : Fin 1)).symm
   | r + 1 =>
       let _ : Comodule R H (exteriorPower.FlagSpace R M r) := exteriorFlag r
       let _ : Comodule R H (⋀[R]^(r + 1) M) := exteriorPower R H M (r + 1)
@@ -56,7 +58,9 @@ noncomputable def exteriorFlag : (d : ℕ) → Comodule R H (exteriorPower.FlagS
 theorem exteriorFlag_zero :
     exteriorFlag R H M 0 =
       (letI : Comodule R H (⋀[R]^0 M) := exteriorPower R H M 0
-       Transport (exteriorPower.flagSpaceZeroEquiv R M).symm) :=
+       Transport (M := ⋀[R]^0 M)
+         (PiTensorProduct.subsingletonEquiv
+           (s := fun i : Fin 1 ↦ ⋀[R]^(i : ℕ) M) (0 : Fin 1)).symm) :=
   (rfl)
 
 /-- Recursive unfolding of `exteriorFlag` in degree `r + 1`. -/

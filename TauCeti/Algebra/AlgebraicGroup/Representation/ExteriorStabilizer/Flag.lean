@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.ExteriorAlgebra.Flag
 import TauCeti.Algebra.AlgebraicGroup.Representation.ExteriorStabilizer.Basic
 import TauCeti.Algebra.AlgebraicGroup.Representation.TensorProduct.Stabilizer
 import TauCeti.Algebra.Coalgebra.Comodule.Flag.Basic
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Solvable
+import TauCeti.RepresentationTheory.SolvableImage
 
 /-!
 # Scheme-theoretic stabilizers of exterior flag lines
@@ -85,14 +85,17 @@ theorem stabilizerHopfIdeal_span_exteriorFlagVector_of_linearIndependent [Module
           (Set.range (v ∘ Fin.castLE (Nat.le_of_lt_succ r.isLt)))).stabilizerHopfIdeal H := by
   induction d with
   | zero =>
+    let _ : AddCommGroup (exteriorPower.FlagSpace k M 0) := Module.addCommMonoidToAddCommGroup k
     let _ : Comodule k H (⋀[k]^0 M) := exteriorPower k H M 0
+    let e₀ : ⋀[k]^0 M ≃ₗ[k] exteriorPower.FlagSpace k M 0 :=
+      (PiTensorProduct.subsingletonEquiv
+        (s := fun i : Fin 1 ↦ ⋀[k]^(i : ℕ) M) (0 : Fin 1)).symm
     rw [exteriorFlag_zero]
-    have hmap : (k ∙ _root_.exteriorPower.ιMulti k 0 v).map
-        (exteriorPower.flagSpaceZeroEquiv k M).symm.toLinearMap =
+    have hmap : (k ∙ _root_.exteriorPower.ιMulti k 0 v).map e₀.toLinearMap =
         k ∙ exteriorPower.exteriorFlagVector k 0 v := by
       rw [Submodule.map_span, Set.image_singleton, LinearEquiv.coe_coe,
         ← exteriorPower.exteriorFlagVector_zero]
-    rw [← hmap, Submodule.stabilizerHopfIdeal_map_transport,
+    rw [← hmap, Submodule.stabilizerHopfIdeal_map_transport _ e₀,
       Submodule.stabilizerHopfIdeal_span_ιMulti hv]
     simp [Set.range_eq_empty]
   | succ r ih =>
@@ -217,39 +220,36 @@ theorem isSolvable_points_quotient_stabilizerHopfIdeal_exteriorFlagVector
   let Hcat := _root_.CommHopfAlgCat.of k H
   let ιD := (CommHopfAlgCat.quotientPointsHom Hcat D (CommAlgCat.of k k)).hom
   let ιJ := (CommHopfAlgCat.quotientPointsHom Hcat J (CommAlgCat.of k k)).hom
-  let eMat : (Module.End k M)ˣ ≃* Matrix.GeneralLinearGroup (Fin d) k :=
-    Units.mapEquiv (LinearMap.toMatrixAlgEquiv b).toMulEquiv
-  let ρ : WithConv (H →ₐ[k] k) →* Matrix.GeneralLinearGroup (Fin d) k :=
-    eMat.toMonoidHom.comp (Representation.asGroupHom (basePointsRepresentation (R := k) (H := H) M))
-  let f := ρ.comp ιD
   let _ : Comodule k (H ⧸ D.toIdeal) M :=
     Corestrict (CommHopfAlgCat.mkQuotient Hcat D).hom.toCoalgHom
+  let ρD : Representation k (WithConv ((H ⧸ D.toIdeal) →ₐ[k] k)) M :=
+    basePointsRepresentation (R := k) (H := H ⧸ D.toIdeal) M
   have htri : (coefficientMatrix (C := H ⧸ D.toIdeal) b).IsUpperTriangular :=
     (b.stabilizerHopfIdeal_span_exteriorFlagVector_le_iff D).mp le_rfl
-  have hf_mem (g : WithConv ((H ⧸ D.toIdeal) →ₐ[k] k)) :
-      f g ∈ upperTriangularGroup (Fin d) k := by
-    refine UpperTriangularGroup.mem_iff.mpr fun i j hij ↦ ?_
-    have hιD : ιD g = BialgHom.mapDomain (CommHopfAlgCat.mkQuotient Hcat D).hom g := by
-      rw [BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply]
-    have hmat : ((f g : Matrix (Fin d) (Fin d) k) i j) =
-        LinearMap.toMatrix b b (basePointsRepresentation (R := k) (H := H) M (ιD g)) i j := by
-      rw [LinearMap.toMatrix_apply]
-      exact LinearMap.toMatrixAlgEquiv_apply b _ i j
-    rw [hmat, hιD, ← basePointsRepresentation_corestrict, toMatrix_basePointsRepresentation,
-      Matrix.map_apply, htri hij, map_zero]
-  have hker_mem (g : f.ker) :
+  have hρD_tri (g : WithConv ((H ⧸ D.toIdeal) →ₐ[k] k)) :
+      (LinearMap.toMatrixAlgEquiv b (ρD g)).IsUpperTriangular := by
+    intro i j hij
+    rw [LinearMap.toMatrixAlgEquiv_apply, ← LinearMap.toMatrix_apply,
+      toMatrix_basePointsRepresentation, Matrix.map_apply, htri hij, map_zero]
+  have : Group.IsSolvable ρD.asGroupHom.range :=
+    ρD.isSolvable_range_asGroupHom_of_isUpperTriangular b hρD_tri
+  have hker_mem (g : ρD.asGroupHom.ker) :
       ιD g.val ∈ CommHopfAlgCat.quotientPointsSubgroup Hcat J (CommAlgCat.of k k) := by
-    have hid : basePointsRepresentation (R := k) (H := H) M (ιD g.val) = LinearMap.id :=
-      congrArg Units.val (eMat.injective (g.property.trans (map_one eMat).symm))
+    have hιD : ιD g.val = BialgHom.mapDomain (CommHopfAlgCat.mkQuotient Hcat D).hom g.val := by
+      rw [BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply]
+    have hid : basePointsRepresentation (R := k) (H := H) M (ιD g.val) = LinearMap.id := by
+      rw [hιD, ← basePointsRepresentation_corestrict]
+      exact congrArg Units.val g.property
     rw [← hW₀, Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff, hid, Submodule.map_id]
-  let k_to_J : f.ker →* ιJ.range := (ιD.comp f.ker.subtype).codRestrict ιJ.range hker_mem
+  let k_to_J : ρD.asGroupHom.ker →* ιJ.range :=
+    (ιD.comp ρD.asGroupHom.ker.subtype).codRestrict ιJ.range hker_mem
   have hk_inj : Function.Injective k_to_J := fun x y hxy ↦
     Subtype.ext ((CommHopfAlgCat.quotientPointsHom_injective Hcat D (CommAlgCat.of k k))
       (congrArg Subtype.val hxy))
   have : Group.IsSolvable ιJ.range := Group.isSolvable_of_surjective ιJ.rangeRestrict_surjective
-  have : Group.IsSolvable f.ker := Group.isSolvable_of_isSolvable_injective hk_inj
-  refine Group.isSolvable_of_ker_le_range f.ker.subtype
-    (f.codRestrict (upperTriangularGroup (Fin d) k) hf_mem) ?_
-  rw [Subgroup.subtype_range, MonoidHom.ker_codRestrict]
+  have : Group.IsSolvable ρD.asGroupHom.ker := Group.isSolvable_of_isSolvable_injective hk_inj
+  refine Group.isSolvable_of_ker_le_range ρD.asGroupHom.ker.subtype
+    ρD.asGroupHom.rangeRestrict ?_
+  rw [Subgroup.subtype_range, MonoidHom.ker_rangeRestrict]
 
 end Module.Basis

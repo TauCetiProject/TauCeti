@@ -442,14 +442,11 @@ theorem stabilizerHopfIdeal_map_transport
     (letI : Comodule k H N := Comodule.Transport (R := k) (C := H) e
      (W.map e.toLinearMap).stabilizerHopfIdeal H) = W.stabilizerHopfIdeal H := by
   let _ : Comodule k H N := Comodule.Transport (R := k) (C := H) e
-  refine stabilizerHopfIdeal_eq_of_forall_map_endOfPoint_eq_iff (W.map e.toLinearMap) W
-    fun A _ _ g ↦ ?_
   have hinj : Function.Injective (Comodule.transportToHom (R := k) (C := H) e) := by
     rw [← Comodule.Hom.coe_toLinearMap, Comodule.transportToHom_toLinearMap]
     exact e.injective
   simpa only [Comodule.transportToHom_toLinearMap] using
-    Comodule.Hom.map_endOfPoint_baseChange_eq_iff
-      (Comodule.transportToHom (R := k) (C := H) e) hinj W g.ofConv
+    stabilizerHopfIdeal_map_of_injective (Comodule.transportToHom (R := k) (C := H) e) hinj W
 
 end Comparison
 
