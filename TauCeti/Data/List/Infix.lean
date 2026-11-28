@@ -19,7 +19,9 @@ length `|l|` of `m` concatenated copies of `l` starting at position `d` is the r
 `d`. Hence a factor of a concatenation of copies of `l` that is at least as long as `l` begins with
 a rotation of `l`, and a factor of a concatenation of copies of a nonempty `l` also occurs in it at
 a position `o < |l|`. A list which, followed by an entry `y`, begins with `k` copies of an entry
-`x ≠ y` itself begins with these `k` copies. A list with no entry in `l₁` that is an infix of
+`x ≠ y` itself begins with these `k` copies. When neither `v₁` nor `v₂` starts with `x`, an equality
+`replicate m x ++ v₁ = replicate n x ++ v₂` forces `m = n` and `v₁ = v₂`
+(`List.replicate_append_eq_replicate_append_iff`). A list with no entry in `l₁` that is an infix of
 `l₁ ++ l₂` is an infix of `l₂`. An injective map preserves and reflects infixes. A bijection of
 lists preserving and reflecting prefixes preserves the parent `l ↦ l.dropLast`.
 -/
@@ -114,6 +116,30 @@ theorem replicate_prefix_of_append_cons_eq {x y : α} (hxy : x ≠ y) {l t r : L
       obtain rfl : y = z := by simpa using congrArg head? hc'
       exact absurd (eq_of_mem_replicate (hc ▸ by simp : y ∈ replicate k x)).symm hxy
   · exact ⟨c, hc.symm⟩
+
+/-- Uniqueness of a leading replicated block: if `v₁` and `v₂` do not start with `x`, then
+`replicate m x ++ v₁ = replicate n x ++ v₂` if and only if `m = n` and `v₁ = v₂`. -/
+theorem replicate_append_eq_replicate_append_iff {x : α} {m n : ℕ} {v₁ v₂ : List α}
+    (hv₁ : v₁.head? ≠ some x) (hv₂ : v₂.head? ≠ some x) :
+    replicate m x ++ v₁ = replicate n x ++ v₂ ↔ m = n ∧ v₁ = v₂ := by
+  refine ⟨fun h => ?_, ?_⟩
+  · induction m generalizing n with
+    | zero =>
+      cases n with
+      | zero => simpa using h
+      | succ n =>
+        simp only [replicate_zero, nil_append, replicate_succ, cons_append] at h
+        exact absurd (by simp [h]) hv₁
+    | succ m ih =>
+      cases n with
+      | zero =>
+        simp only [replicate_zero, nil_append, replicate_succ, cons_append] at h
+        exact absurd (by simp [← h]) hv₂
+      | succ n =>
+        simp only [replicate_succ, cons_append, cons.injEq, true_and] at h
+        exact (ih h).imp_left (congrArg Nat.succ)
+  · rintro ⟨rfl, rfl⟩
+    rfl
 
 /-- Along a prefix-monotone sequence of lists `σs`, any two terms defining index `x` assign the
 same entry there. -/

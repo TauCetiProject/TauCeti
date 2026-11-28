@@ -933,7 +933,7 @@ theorem isLocalDiffeomorph_representative (hp : ∀ i, ContMDiff IB 𝓘(ℝ) n 
   -- The diffeomorphisms have `(normalizationEquiv p).symm` and the division by the periods as their
   -- underlying functions by definition.
   have h := (Diffeomorph.refl IB B n).isLocalDiffeomorph.prodMap
-    (AddCircle.isLocalDiffeomorph_coe_pi (ι := ι) 1 n)
+    (AddCircle.isLocalDiffeomorph_coe_pi (fun _ : ι ↦ 1) n)
   exact ((realNormalization p IB hp).isLocalDiffeomorph z).comp _ _
     ((h _).comp _ _ ((normalization p IB n).symm.isLocalDiffeomorph _))
 
