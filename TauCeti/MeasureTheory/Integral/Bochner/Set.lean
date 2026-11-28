@@ -27,7 +27,8 @@ constant, the bound `∫_s ψ² ≤ K² |B|` for a function bounded by `K` and s
 ball `B`, the bound `∫ ‖f‖ ≤ K |s|` for a function bounded by `K` on a set `s` of finite measure
 and vanishing off it, the integral of `Φ x (f₀ x)` for an almost everywhere zero
 extension `f₀` of `f` from `s` and an integrand `Φ` vanishing at `0`, the pairing
-`∫ h φ = ∫_B (φ - c) h` of a function `h` of integral zero vanishing off `B`, and that a
+`∫ h φ = ∫_B (φ - c) h` of a function `h` of integral zero vanishing off `B`, the integral
+`∫ c 𝟙_A g = c ∫_A g` against an `Lᵖ` indicator, and that a
 continuous square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a
 measure positive on nonempty open sets.
 It also bounds the integral over a measurable set `S` by integrals over unions with disjoint sets,
@@ -61,6 +62,8 @@ their `L¹` distance.
   extension `1_s f` and `Φ x 0 = 0`, then `∫ Φ x (f₀ x) = ∫_s Φ x (f x)`.
 * `TauCeti.integral_mul_eq_setIntegral_sub_mul`: if `h` vanishes off `B` and has integral zero,
   then `∫ h φ = ∫_B (φ - c) h` for every constant `c`.
+* `TauCeti.integral_indicatorConstLp_mul`: integrating `g` against the `Lᵖ` indicator `c 𝟙_A` of
+  a set of finite measure gives `c ∫_A g`.
 * `TauCeti.setIntegral_le_setIntegral_add_setIntegral`: if nonnegative `f` and `g` agree off a
   measurable set `T`, then `∫_S f ≤ ∫_S g + ∫_T f` on any set `S`.
 * `TauCeti.integrableOn_sin_of_measure_ne_top`,
@@ -344,6 +347,18 @@ theorem setIntegral_le_setIntegral_add_setIntegral {X : Type*} [MeasurableSpace 
         gcongr
         rw [← integral_indicator hT]
         exact setIntegral_le_integral hind (ae_of_all _ (indicator_nonneg fun z _ ↦ hf0 z))
+
+/-- Integrating `g` against a constant multiple `c 𝟙_A` of the indicator of a set of finite
+measure, as an element of `Lᵖ`, is `c` times the integral of `g` over `A`. -/
+theorem integral_indicatorConstLp_mul {α 𝕜 : Type*} [MeasurableSpace α] [RCLike 𝕜]
+    {μ : Measure α} {p : ℝ≥0∞} {A : Set α} (hA : MeasurableSet A) (hμA : μ A ≠ ∞) (c : 𝕜)
+    (g : α → 𝕜) :
+    ∫ s, indicatorConstLp p hA hμA c s * g s ∂μ = c * ∫ s in A, g s ∂μ := by
+  rw [← integral_const_mul, ← integral_indicator hA]
+  refine integral_congr_ae ?_
+  filter_upwards [indicatorConstLp_coeFn (p := p) (hs := hA) (hμs := hμA) (c := c)] with s hs
+  rw [hs]
+  by_cases hsA : s ∈ A <;> simp [hsA]
 
 end TauCeti
 

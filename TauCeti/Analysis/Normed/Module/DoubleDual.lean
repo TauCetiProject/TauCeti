@@ -22,6 +22,10 @@ In particular, in a reflexive seminormed space over a proper field, where the ca
 surjective, every norm-bounded set has weakly compact closure
 (`TauCeti.isCompact_closure_toWeakSpace_of_isBounded`).
 
+Over `ℝ` or `ℂ`, the canonical map of a normed space into its bidual is injective
+(`NormedSpace.inclusionInDoubleDual_injective`), and its range is closed when the space is complete
+(`NormedSpace.isClosed_range_inclusionInDoubleDual`).
+
 Finally, every linear map from a vector space into the bidual of a normed space lifts into the
 space on the subspace of vectors sent into the canonical image (`LinearMap.exists_lift_doubleDual`).
 -/
@@ -98,6 +102,21 @@ theorem isCompact_closure_toWeakSpace_of_isBounded
 
 end TauCeti
 
+namespace NormedSpace
+
+variable (𝕜 E : Type*) [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- The canonical map of a normed space over `ℝ` or `ℂ` into its bidual is injective. -/
+theorem inclusionInDoubleDual_injective : Function.Injective (inclusionInDoubleDual 𝕜 E) :=
+  (inclusionInDoubleDualLi 𝕜 (E := E)).injective
+
+/-- The canonical image of a Banach space over `ℝ` or `ℂ` in its bidual is closed. -/
+theorem isClosed_range_inclusionInDoubleDual [CompleteSpace E] :
+    IsClosed (range (inclusionInDoubleDual 𝕜 E)) :=
+  (inclusionInDoubleDualLi 𝕜 (E := E)).isometry.isUniformInducing.isComplete_range.isClosed
+
+end NormedSpace
+
 namespace LinearMap
 
 open NormedSpace
@@ -113,7 +132,7 @@ theorem exists_lift_doubleDual (ι : V →ₗ[𝕜] StrongDual 𝕜 (StrongDual 
       (∀ φ : F₀, inclusionInDoubleDual 𝕜 E (A φ) = ι φ) ∧
         ∀ v x, ι v = inclusionInDoubleDual 𝕜 E x → v ∈ F₀ := by
   let J := inclusionInDoubleDual 𝕜 E
-  have hJ : Function.Injective J := (inclusionInDoubleDualLi 𝕜 (E := E)).injective
+  have hJ : Function.Injective J := inclusionInDoubleDual_injective 𝕜 E
   let F₀ : Submodule 𝕜 V := (LinearMap.range (J : E →ₗ[𝕜] _)).comap ι
   exact ⟨F₀, LinearMap.codRestrictOfInjective (ι ∘ₗ F₀.subtype) J hJ fun φ ↦ φ.property,
     fun φ ↦ LinearMap.codRestrictOfInjective_comp_apply (ι ∘ₗ F₀.subtype) (J : E →ₗ[𝕜] _)
