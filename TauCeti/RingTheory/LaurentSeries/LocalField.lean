@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LocalField.Basic
+public import TauCeti.NumberTheory.LocalField.Uniformizer
+public import TauCeti.RingTheory.LaurentSeries.Basic
 public import TauCeti.RingTheory.LaurentSeries.Valuation.Ring
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
@@ -17,7 +19,7 @@ For a field `K`, the formal Laurent series `K⸨X⸩` carry Mathlib's `X`-adic v
 induces, checks that the `X`-adic topology is the valuative topology and that the relation is
 nontrivial, and identifies the ring of integers of the relation with the power series and its
 residue field with `K`. When `K` is finite, `K⸨X⸩` is a nonarchimedean local field: it is the
-equal-characteristic local field `𝔽_q((X))`, with residue field `𝔽_q`.
+equal-characteristic local field `𝔽_q((X))`, with residue field `𝔽_q` and uniformizer `X`.
 
 ## Main results
 
@@ -29,6 +31,8 @@ equal-characteristic local field `𝔽_q((X))`, with residue field `𝔽_q`.
   `TauCeti.LaurentSeries.natCard_residueField` and `TauCeti.LaurentSeries.ringChar_residueField`.
 * `TauCeti.LaurentSeries.isNonarchimedeanLocalField`: for a finite field `K`, `K⸨X⸩` is a
   nonarchimedean local field.
+* `TauCeti.LaurentSeries.isUniformizer_unitX`: for a finite field `K`, `X` is a uniformizer of
+  `K⸨X⸩`.
 
 ## Implementation notes
 
@@ -124,5 +128,18 @@ instance isNonarchimedeanLocalField [Finite K] : IsNonarchimedeanLocalField K⸨
   have : LocallyCompactSpace K⸨X⸩ :=
     (_root_.LaurentSeries.comparePkg K).symm.toHomeomorph.isOpenEmbedding.locallyCompactSpace
   exact ⟨⟩
+
+/-- `X` is a uniformizer of `K⸨X⸩` when `K` is finite. -/
+theorem isUniformizer_unitX [Finite K] : IsUniformizer K⸨X⸩ (unitX : K⸨X⸩ˣ) := by
+  have hv : (Valued.v ((unitX : K⸨X⸩ˣ) : K⸨X⸩) : ℤᵐ⁰) = WithZero.exp (-1) := by
+    have h := _root_.LaurentSeries.valuation_X_pow K 1
+    simpa [val_unitX, PowerSeries.coe_X] using h
+  have hnorm : (normalizedValuation K⸨X⸩ (unitX : K⸨X⸩ˣ) : ℤᵐ⁰) = WithZero.exp 1 := by
+    have h0 := Valuation.normalizedValuationWithZero_eq_inv_of_surjective
+      (Valued.v : Valuation K⸨X⸩ ℤᵐ⁰) (_root_.LaurentSeries.valuation_surjective K)
+      (unitX : K⸨X⸩ˣ)
+    rw [normalizedValuationWithZero_coe, hv, ← WithZero.exp_neg, neg_neg] at h0
+    exact h0
+  rw [isUniformizer_def, ← WithZero.coe_inj, hnorm, WithZero.exp_eq_coe_ofAdd]
 
 end TauCeti.LaurentSeries

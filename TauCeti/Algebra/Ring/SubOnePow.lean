@@ -29,7 +29,9 @@ in a group algebra over the `p`-adic integers, topologically nilpotent.
 For a prime `p > 3` the binomial coefficients `C(p, 2)` and `C(p, 3)` are both divisible by `p`, so
 the third-order expansion of `(1 + x) ^ p` gives `(1 + x) ^ p ≡ 1 + p x` modulo `c p²` whenever
 `x ^ 2` is a multiple of `c p`. This is how `p`-th powers climb the congruence filtration of
-`SL₂(ℤ_p)` in Serre's lifting lemma.
+`SL₂(ℤ_p)` in Serre's lifting lemma. On the filtration itself, where `x = p ^ (k + 1) y`, the
+expansion `(1 + x) ^ p ≡ 1 + p x` modulo `p ^ (k + 3)` holds for `p = 3` as well, since the cubic
+term `x³` is divisible by `p ^ (3k + 3)`, and for `p = 2` once `k ≥ 1`.
 
 ## Main results
 
@@ -38,6 +40,8 @@ the third-order expansion of `(1 + x) ^ p` gives `(1 + x) ^ p ≡ 1 + p x` modul
 * `Nat.Prime.dvd_sub_one_pow_of_pow_eq_one`: `(p : A) ∣ (x - 1) ^ p ^ k` when `x ^ p ^ k = 1`.
 * `TauCeti.exists_one_add_pow_prime_eq_of_sq_eq_nsmul`: for a prime `p > 3`, if
   `x ^ 2 = (c p) • y` then `(1 + x) ^ p = 1 + p • x + (c p²) • w` for some `w`.
+* `TauCeti.exists_one_add_prime_pow_succ_nsmul_pow_eq`: for a prime `p`, unless `p = 2` and
+  `k = 0`, `(1 + p ^ (k + 1) x) ^ p = 1 + p ^ (k + 2) (x + p w)` for some `w`.
 * `TauCeti.exists_one_add_pow_pow_eq`: in a commutative ring with `(p : R) = 0`,
   `(1 + a) ^ p ^ j = 1 + a ^ 2 ^ j * y` for some `y`.
 * `TauCeti.exists_one_add_pow_eq_one_of_natCast_eq_zero`: conversely, if `(p : A) = 0` for some `p`,
@@ -81,6 +85,33 @@ theorem exists_one_add_pow_prime_eq_of_sq_eq_nsmul (hp : p.Prime) (hp3 : 3 < p) 
   rw [hv, hm₂, hm₃, h3, h4, hxy]
   simp only [← nsmul_eq_mul, smul_mul_assoc, smul_add, smul_smul]
   module
+
+/-- **The `p`-th power climbs the `p`-adic filtration.** For a prime `p`, the `p`-th power of
+`1 + p ^ (k + 1) x` is `1 + p ^ (k + 2) x` modulo `p ^ (k + 3)`, unless `p = 2` and `k = 0`.
+For `p = 3` the cubic term `p ^ (3k + 3) x³` is still divisible by `p ^ (k + 3)`. For `p = 2` and
+`k = 0` the statement fails, since `(1 + 2) ^ 2 = 9` is not of the form `1 + 4 (1 + 2 w)` in `ℤ`. -/
+theorem exists_one_add_prime_pow_succ_nsmul_pow_eq (hp : p.Prime) {k : ℕ} (hpk : p ≠ 2 ∨ k ≠ 0)
+    (x : A) : ∃ w, (1 + p ^ (k + 1) • x) ^ p = 1 + p ^ (k + 1 + 1) • (x + p • w) := by
+  obtain rfl | rfl | hp5 : p = 2 ∨ p = 3 ∨ 5 ≤ p := by
+    have := hp.two_le
+    have h4 : p ≠ 4 := by rintro rfl; exact absurd hp (by decide)
+    omega
+  · obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (hpk.resolve_left (absurd rfl))
+    refine ⟨2 ^ j • x ^ 2, ?_⟩
+    simp only [pow_succ, pow_zero, one_mul, add_mul, mul_add, mul_one, smul_mul_assoc,
+      mul_smul_comm, smul_smul, smul_add]
+    module
+  · refine ⟨3 ^ k • x ^ 2 + 3 ^ (2 * k) • x ^ 3, ?_⟩
+    simp only [pow_succ, pow_zero, one_mul, add_mul, mul_add, mul_one, smul_mul_assoc,
+      mul_smul_comm, smul_smul, smul_add]
+    module
+  · have hx : (p ^ (k + 1) • x) ^ 2 = (p ^ (k + 1) * p) • (p ^ k • x ^ 2) := by
+      rw [smul_pow, smul_smul]
+      ring_nf
+    obtain ⟨w, hw⟩ := exists_one_add_pow_prime_eq_of_sq_eq_nsmul hp (by omega) hx
+    refine ⟨w, ?_⟩
+    rw [hw]
+    module
 
 section Nilpotent
 

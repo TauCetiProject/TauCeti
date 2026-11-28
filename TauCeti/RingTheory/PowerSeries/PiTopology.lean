@@ -45,13 +45,20 @@ variable {R S : Type*} [TopologicalSpace R] [TopologicalSpace S]
 coefficientwise topology. -/
 theorem continuous_mk_comp_coeff [Semiring R] {f : R → S} (hf : Continuous f) :
     Continuous fun ψ : R⟦X⟧ ↦ mk fun n ↦ f (coeff n ψ) :=
+  -- `S` only carries `[TopologicalSpace S]` (no `Semiring S`), so `tendsto_iff_coeff_tendsto`
+  -- does not apply; `WithPiTopology` is `Pi.topologicalSpace` on `(Unit →₀ ℕ) → S` and `mk`
+  -- evaluates at `d ()`.
   continuous_pi fun d ↦ hf.comp (continuous_coeff R (d ()))
 
 /-- Mapping coefficients along a continuous ring homomorphism is continuous for the
 coefficientwise topology. -/
 theorem continuous_map [Semiring R] [Semiring S] {f : R →+* S} (hf : Continuous f) :
     Continuous (PowerSeries.map f) :=
-  continuous_pi fun d ↦ hf.comp (continuous_apply d)
+  continuous_iff_continuousAt.2 fun _ ↦ by
+    rw [ContinuousAt, tendsto_iff_coeff_tendsto]
+    exact fun n ↦ by
+      simp only [coeff_map]
+      exact (hf.comp (continuous_coeff R n)).continuousAt.tendsto
 
 end Semiring
 

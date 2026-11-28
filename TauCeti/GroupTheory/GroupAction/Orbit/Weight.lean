@@ -45,6 +45,9 @@ stabilizers are finite.
 * `Subgroup.orbitWeight_smul`: the orbit weight is constant on `G`-orbits.
 * `Subgroup.orbitWeight_eq_one_iff`, `Subgroup.orbitWeight_top`: the weight of a point of `Y` is
   one exactly when only elements of `Γ` keep it in `Y`, for instance when `Γ = G`.
+* `Subgroup.orbitWeight_eq_relIndex`: if `Y` meets the orbit of `v` and the points of `Y` in that
+  orbit lie in the `Γ`-orbit of `v`, the orbit weight is the relative index
+  `Γ.relIndex (stabilizer G v)`.
 * `Subgroup.orbitWeight_eq_finsum_relIndex`: when finitely many cosets are counted, the orbit
   weight is the sum over the counted orbits of the relative indices `Γ.relIndex (stabilizer G x)`.
 * `Subgroup.orbitCount_le_orbitWeight`,
@@ -258,6 +261,26 @@ theorem finite_orbitCountClasses (hW : (Γ.orbitWeightCosets Y v).Finite) :
   exact hW.image _
 
 /-! ### The stabilizer sum -/
+
+/-- **The orbit weight of one counted orbit.** If `Y` meets the `G`-orbit of `v`, and the points
+of `Y` in that orbit lie in the `Γ`-orbit of `v`, the cosets counted by the orbit weight are the
+fibre of `Subgroup.orbitOfRightCoset` over the orbit of `v`. The weight is therefore the relative
+index `Γ.relIndex (stabilizer G v)`. The fibre may be infinite: `Set.ncard` and `Nat.card` both
+send an infinite set to zero, so the equality needs no finiteness hypothesis. -/
+theorem orbitWeight_eq_relIndex (hY : (Y ∩ orbit G v).Nonempty)
+    (hYΓ : Y ∩ orbit G v ⊆ orbit Γ v) :
+    Γ.orbitWeight Y v = Γ.relIndex (stabilizer G v) := by
+  -- The only `Γ`-orbit of a point of `Y` in `G • v` is the orbit of `v`.
+  have hclasses : Γ.orbitCountClasses Y v = {Quotient.mk (orbitRel Γ α) v} := by
+    refine Set.eq_singleton_iff_unique_mem.mpr ⟨?_, ?_⟩
+    · obtain ⟨x, hxY, hxG⟩ := hY
+      exact mem_orbitCountClasses.mpr
+        ⟨x, hxG, hxY, Quotient.sound (orbitRel_apply.mpr (hYΓ ⟨hxY, hxG⟩))⟩
+    · intro o ho
+      obtain ⟨x, hxG, hxY, rfl⟩ := mem_orbitCountClasses.mp ho
+      exact Quotient.sound (orbitRel_apply.mpr (hYΓ ⟨hxY, hxG⟩))
+  rw [orbitWeight_def, orbitWeightCosets_eq_preimage, hclasses,
+    ncard_fiber_orbitOfRightCoset_eq_relIndex (mem_orbit_self v)]
 
 /-- **The orbit weight as a stabilizer sum.** If finitely many cosets are counted, the orbit
 weight is the sum, over the `Γ`-orbits of `G • v ∩ Y`, of the relative index of `Γ` in the

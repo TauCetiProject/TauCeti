@@ -51,6 +51,8 @@ of support finite and bounds sums over their subsets by the corresponding closed
 * `AnalyticOnNhd.one_le_divisor_of_eq_zero` and `AnalyticOnNhd.divisor_apply_eq_zero_iff` — on a
   preconnected set where `f` is analytic and somewhere nonzero, the divisor is at least `1` at
   every zero and vanishes exactly off the zeros.
+* `AnalyticOnNhd.single_restrict_le_divisor` — the divisor of an analytic function dominates the
+  restricted singleton at any zero of finite order.
 * `MeromorphicOn.divisor_finite_inter_support_of_isCompact` — finite divisor support on a
   subset of a compact set in the meromorphic domain.
 * `MeromorphicOn.divisor_finite_inter_support` — finite divisor support on a bounded region
@@ -281,6 +283,33 @@ theorem AnalyticOnNhd.one_le_divisor_of_eq_zero
     1 ≤ MeromorphicOn.divisor f U ρ :=
   Int.add_one_le_iff.2 <| (hf.meromorphicOn.zero_lt_divisor_iff_of_analyticAt (hf ρ hρ) hρ
     (hf.meromorphicOrderAt_ne_top_of_exists_ne_zero ⟨⟨ρ, hρ⟩, hU⟩ h0 hρ)).2 hfρ
+
+open Classical in
+/-- The divisor on `U` of a function analytic on `U` dominates one copy of any zero `β` of finite
+order. The restricted singleton vanishes if `β ∉ U`. -/
+theorem AnalyticOnNhd.single_restrict_le_divisor
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {U : Set 𝕜} {f : 𝕜 → E} (hf : AnalyticOnNhd 𝕜 f U) {β : 𝕜} (hβ : f β = 0)
+    (htop : analyticOrderAt f β ≠ ⊤) :
+    (Function.locallyFinsuppWithin.single β (1 : ℤ)).restrict (Set.subset_univ U) ≤
+      MeromorphicOn.divisor f U := by
+  have hnn := MeromorphicOn.AnalyticOnNhd.divisor_nonneg hf
+  intro w
+  by_cases hw : w ∈ U
+  · by_cases hwβ : w = β
+    · subst w
+      rw [Function.locallyFinsuppWithin.restrict_apply, ite_eq_left hw,
+        Function.locallyFinsuppWithin.single_apply, ite_eq_left rfl]
+      have hmero : meromorphicOrderAt f β ≠ ⊤ := by
+        rw [(hf β hw).meromorphicOrderAt_eq]
+        simp [htop]
+      exact Int.add_one_le_iff.mpr
+        ((hf.meromorphicOn.zero_lt_divisor_iff_of_analyticAt (hf β hw) hw hmero).mpr hβ)
+    · simpa only [Function.locallyFinsuppWithin.restrict_apply, ite_eq_left hw,
+        Function.locallyFinsuppWithin.single_apply, ite_eq_right hwβ,
+        Function.locallyFinsuppWithin.coe_zero, Pi.zero_apply] using hnn w
+  · simpa only [Function.locallyFinsuppWithin.restrict_apply, ite_eq_right hw,
+      Function.locallyFinsuppWithin.coe_zero, Pi.zero_apply] using hnn w
 
 /-- On a preconnected set where `f` is analytic and somewhere nonzero, the divisor of `f`
 vanishes exactly where `f` does not. The converse direction

@@ -11,6 +11,8 @@ public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Ring.Ultra
 public import TauCeti.Topology.MetricSpace.Ultra.Prod
 
+import TauCeti.Algebra.TrivSqZeroExt.Basic
+
 /-!
 # The dual numbers with the maximum norm
 
@@ -23,7 +25,8 @@ ring with `‖1‖ = 1` and `‖ε‖ = 1`, and its norm is not multiplicative s
 It is a basic example of a nonreduced ultrametric Banach ring (and Banach `𝕜`-algebra whenever `K`
 is a normed `𝕜`-algebra), built on Mathlib's `DualNumber K` (`TrivSqZeroExt K K`) through the ring
 and algebra identifications `TauCeti.MaxDualNumber.ofDualNumber` and
-`TauCeti.MaxDualNumber.ofDualNumberAlgEquiv`.
+`TauCeti.MaxDualNumber.ofDualNumberAlgEquiv`, with canonical bounded inclusion
+`TauCeti.MaxDualNumber.inlHom` and projection `TauCeti.MaxDualNumber.fstHom` modulo nilpotents.
 -/
 
 public section
@@ -103,6 +106,57 @@ def ofDualNumberAlgEquiv (R : Type*) [CommSemiring R] [Algebra R K] :
     (x : DualNumber K) : ofDualNumberAlgEquiv R x = ofDualNumber x := (rfl)
 @[simp] theorem norm_algebraMap (a : K) : ‖algebraMap K (MaxDualNumber K) a‖ = ‖a‖ := by
   simp [← (ofDualNumberAlgEquiv K).commutes, TrivSqZeroExt.algebraMap_eq_inl]
+
+/-- The canonical ring inclusion `K →+* MaxDualNumber K`. -/
+noncomputable def inlHom (K : Type*) [NormedCommRing K] [IsUltrametricDist K] :
+    K →+* MaxDualNumber K :=
+  ofDualNumber.toRingHom.comp (TrivSqZeroExt.inlHom K K)
+
+/-- The canonical ring projection `MaxDualNumber K →+* K`. -/
+noncomputable def fstHom (K : Type*) [NormedCommRing K] [IsUltrametricDist K] :
+    MaxDualNumber K →+* K :=
+  (TrivSqZeroExt.fstHom ℕ K K).toRingHom.comp ofDualNumber.symm.toRingHom
+
+/-- Applying `MaxDualNumber.inlHom` embeds an element as the constant part in `MaxDualNumber K`. -/
+@[simp]
+theorem inlHom_apply (x : K) : inlHom K x = ofDualNumber (TrivSqZeroExt.inl x) := by
+  simp only [inlHom, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+    TrivSqZeroExt.inlHom_apply]
+
+/-- Applying `MaxDualNumber.fstHom` extracts the constant coefficient of a dual number. -/
+@[simp]
+theorem fstHom_apply (y : MaxDualNumber K) : fstHom K y = (ofDualNumber.symm y).fst := by
+  simp only [fstHom, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, AlgHom.toRingHom_eq_coe,
+    RingHom.coe_coe, TrivSqZeroExt.fstHom_apply]
+
+/-- The canonical inclusion `MaxDualNumber.inlHom K` is bounded with constant `1` for the
+maximum norm. -/
+theorem isBounded_inlHom (K : Type*) [NormedCommRing K] [IsUltrametricDist K] :
+    (inlHom K).IsBounded :=
+  ⟨1, zero_lt_one, fun x ↦ by simp⟩
+
+/-- The canonical projection `MaxDualNumber.fstHom K` is bounded with constant `1` for the
+maximum norm. -/
+theorem isBounded_fstHom (K : Type*) [NormedCommRing K] [IsUltrametricDist K] :
+    (fstHom K).IsBounded :=
+  ⟨1, zero_lt_one, fun y ↦ by
+    obtain ⟨z, rfl⟩ := ofDualNumber.surjective y
+    rw [fstHom_apply, RingEquiv.symm_apply_apply, norm_ofDualNumber, one_mul]
+    exact le_max_left _ _⟩
+
+/-- Projecting after `MaxDualNumber.inlHom` recovers the original element. -/
+theorem fstHom_inlHom (x : K) : fstHom K (inlHom K x) = x := by
+  rw [fstHom_apply, inlHom_apply, RingEquiv.symm_apply_apply, TrivSqZeroExt.fst_inl]
+
+/-- Every element of `MaxDualNumber K` differs from `inlHom K (fstHom K y)` by a nilpotent
+element. -/
+theorem isNilpotent_sub_inlHom_fstHom (y : MaxDualNumber K) :
+    IsNilpotent (y - inlHom K (fstHom K y)) := by
+  rw [fstHom_apply, inlHom_apply]
+  obtain ⟨n, hn⟩ := TrivSqZeroExt.isNilpotent_sub_inl_fst (ofDualNumber.symm y)
+  refine ⟨n, ?_⟩
+  simpa only [map_sub, map_pow, RingEquiv.apply_symm_apply, map_zero] using
+    congrArg ofDualNumber hn
 
 section NormOneClass
 
