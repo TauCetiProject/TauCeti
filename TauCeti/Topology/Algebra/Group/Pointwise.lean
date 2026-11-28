@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Group.Unbundled.Basic
 public import Mathlib.Topology.Algebra.Group.Pointwise
 
 /-!
@@ -43,6 +44,12 @@ neighbourhood inside any given identity neighbourhood.
   contains `V * K` for an open superset `V` of `A`. Outer regularity arguments use it to thicken
   an arbitrary set to an open one.
 * `IsClosed.div_right_of_isCompact`, with its additive form `IsClosed.sub_right_of_isCompact`.
+* `ContinuousOn.comp_inv`, with its additive form `ContinuousOn.comp_neg`: precomposing a
+  map continuous on `s` with inversion (negation) gives a map continuous on `s⁻¹` (`-s`).
+* `ContinuousOn.uncurry_comp_inv`, with its additive form `ContinuousOn.uncurry_comp_neg`:
+  precomposing a two-variable map continuous on `{(x, v) ∈ I × I | v ≤ x}` with
+  `(x, v) ↦ (x⁻¹, v⁻¹)` (or `(-x, -v)`) gives continuity on `{(x, v) ∈ I⁻¹ × I⁻¹ | x ≤ v}`
+  (or `-I`).
 -/
 
 public section
@@ -142,5 +149,26 @@ theorem IsClosed.div_right_of_isCompact {G : Type*} [TopologicalSpace G] [Group 
     IsClosed (t / s) := by
   rw [div_eq_mul_inv]
   exact ht.mul_right_of_isCompact hs.inv
+
+/-- Precomposing a map continuous on `s` with inversion gives a map continuous on `s⁻¹`. -/
+@[to_additive
+  /-- Precomposing a map continuous on `s` with negation gives a map continuous on `-s`. -/]
+theorem ContinuousOn.comp_inv {G X : Type*} [TopologicalSpace G] [InvolutiveInv G] [ContinuousInv G]
+    [TopologicalSpace X] {f : G → X} {s : Set G} (hf : ContinuousOn f s) :
+    ContinuousOn (fun x ↦ f x⁻¹) s⁻¹ :=
+  hf.comp continuous_inv.continuousOn fun _ hx ↦ hx
+
+/-- Precomposing a two-variable map continuous on `{(x, v) ∈ I × I | v ≤ x}` with inversion on
+both coordinates gives a map continuous on `{(x, v) ∈ I⁻¹ × I⁻¹ | x ≤ v}`. -/
+@[to_additive
+  /-- Precomposing a two-variable map continuous on `{(x, v) ∈ I × I | v ≤ x}` with negation on
+  both coordinates gives a map continuous on `{(x, v) ∈ (-I) × (-I) | x ≤ v}`. -/]
+theorem ContinuousOn.uncurry_comp_inv {G X : Type*} [TopologicalSpace G] [Group G] [LE G]
+    [MulLeftMono G] [MulRightMono G] [ContinuousInv G] [TopologicalSpace X] {K : G → G → X}
+    {I : Set G} (hK : ContinuousOn (Function.uncurry K) {p | p.1 ∈ I ∧ p.2 ∈ I ∧ p.2 ≤ p.1}) :
+    ContinuousOn (Function.uncurry fun x v ↦ K x⁻¹ v⁻¹)
+      {p | p.1 ∈ I⁻¹ ∧ p.2 ∈ I⁻¹ ∧ p.1 ≤ p.2} :=
+  hK.comp (continuous_inv.prodMap continuous_inv).continuousOn
+    fun _ hp ↦ ⟨hp.1, hp.2.1, inv_le_inv_iff.2 hp.2.2⟩
 
 end

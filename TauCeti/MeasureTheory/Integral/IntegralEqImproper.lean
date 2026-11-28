@@ -33,12 +33,25 @@ integrability it suffices that `f` be continuous on `[-A, A]` for `A = ∫ u in 
 particular the integral of `g * Ψ ^ k` is `Ψ x ^ (k + 1) / (k + 1)`
 (`MeasureTheory.IntegrableOn.integral_Ioi_mul_pow_integral_Ioi`) and that of `g * exp Ψ` is
 `exp (Ψ x) - 1` (`MeasureTheory.IntegrableOn.integral_Ioi_mul_exp_integral_Ioi`).
+More generally, for `g` integrable on the right tail `I ∩ Ioi x` of a measurable set `I`
+(specializing to `(x, ∞)` via `inter_eq_right` and to `(x, b)` via `Iio_inter_Ioi`), with tail
+integral `Ψ v = ∫ u in I ∩ Ioi v, g u`, the product `g * Ψ ^ k` is integrable
+on `I ∩ Ioi x` with integral `Ψ x ^ (k + 1) / (k + 1)`
+(`MeasureTheory.IntegrableOn.mul_pow_integral_inter_Ioi`,
+`MeasureTheory.IntegrableOn.integral_inter_Ioi_mul_pow_integral_inter_Ioi`), and `g * exp ∘ Ψ` is
+integrable on `I ∩ Ioi x` with integral `exp (Ψ x) - 1`
+(`MeasureTheory.IntegrableOn.mul_exp_integral_inter_Ioi`,
+`MeasureTheory.IntegrableOn.integral_inter_Ioi_mul_exp_integral_inter_Ioi`).
 If `f` is only integrable on each `(y, ∞)` with `y > a` and continuous on `(a, ∞)`, the tail
 integral still has derivative `-f x` at every `x > a`
 (`MeasureTheory.hasDerivAt_integral_Ioi_of_continuousOn`).
-The tail integral of a function nonnegative on `(a, ∞)` is antitone there
-(`MeasureTheory.antitoneOn_integral_Ioi`). If `f` is continuous from the right at `a` and `f`
-and its derivative `f'` on `(a, ∞)` are both integrable on `(a, ∞)`, then
+The tail integral of a nonnegative function is antitone on `(a, ∞)`
+(`MeasureTheory.antitoneOn_integral_Ioi`) and on `I`
+(`MeasureTheory.antitoneOn_integral_inter_Ioi`), and a locally integrable function on an
+order-connected set `I` dominated towards the right endpoint
+by a tail-integrable function is integrable on every right tail
+(`MeasureTheory.LocallyIntegrableOn.integrableOn_inter_Ioi_of_isBigO`). If `f` is continuous from
+the right at `a` and `f` and its derivative `f'` on `(a, ∞)` are both integrable on `(a, ∞)`, then
 `∫ x in Ioi a, f' x = -f a`
 (`MeasureTheory.integral_Ioi_of_hasDerivAt_of_integrableOn`).
 
@@ -90,6 +103,8 @@ open scoped Topology
 
 namespace MeasureTheory.IntegrableOn
 
+section
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 variable {f : ℝ → E} {a t : ℝ}
 
@@ -131,7 +146,11 @@ theorem iteratedDeriv_integral_Ioi (hint : IntegrableOn f (Ioi a))
     exact hint.deriv_integral_Ioi (hcont.continuousAt (isOpen_Ioi.mem_nhds hu)) hu
   rw [iteratedDeriv_succ', heq.iteratedDeriv_eq n, iteratedDeriv_fun_neg]
 
+end
+
 section Real
+
+open scoped Nat
 
 variable {g : ℝ → ℝ} {x : ℝ}
 
@@ -229,6 +248,60 @@ theorem integral_Ioi_mul_exp_integral_Ioi (hint : IntegrableOn g (Ioi x)) :
   rw [hint.integral_Ioi_mul_comp_integral_Ioi Real.hasDerivAt_exp Real.continuous_exp,
     Real.exp_zero]
 
+private lemma indicator_mul_comp_integral_inter_Ioi {I : Set ℝ} (hI : MeasurableSet I)
+    (g f : ℝ → ℝ) :
+    (I.indicator fun v ↦ g v * f (∫ u in I ∩ Ioi v, g u)) =
+      fun v ↦ I.indicator g v * f (∫ u in Ioi v, I.indicator g u) := by
+  ext v
+  rw [Set.indicator_mul_left, setIntegral_indicator hI, inter_comm]
+
+/-- If `I` is measurable and `g` is integrable on `I ∩ Ioi x`, with tail integral
+`Ψ v = ∫ u in I ∩ Ioi v, g u`, then `v ↦ g v * Ψ v ^ k` is integrable on `I ∩ Ioi x`.
+Specializing `I = Iio b` via `Iio_inter_Ioi` yields the interval `(x, b)`, and `I = Ioi a` via
+`inter_eq_right` yields `(x, ∞)` for `a ≤ x`. -/
+theorem mul_pow_integral_inter_Ioi {I : Set ℝ} (hI : MeasurableSet I)
+    (hint : IntegrableOn g (I ∩ Ioi x)) (k : ℕ) :
+    IntegrableOn (fun v ↦ g v * (∫ u in I ∩ Ioi v, g u) ^ k) (I ∩ Ioi x) := by
+  rw [← integrableOn_indicator_iff hI.nullMeasurableSet,
+    indicator_mul_comp_integral_inter_Ioi hI g (· ^ k)]
+  exact ((integrableOn_indicator_iff hI.nullMeasurableSet).2 hint).mul_comp_integral_Ioi
+    (continuousOn_pow k)
+
+/-- For a measurable set `I` and `g` integrable on `I ∩ Ioi x`, with tail integral
+`Ψ v = ∫ u in I ∩ Ioi v, g u`, the integral of `g * Ψ ^ k` over `I ∩ Ioi x` is
+`Ψ x ^ (k + 1) / (k + 1)`. Specializing `I = Iio b` via `Iio_inter_Ioi` yields the interval
+`(x, b)`, and `I = Ioi a` via `inter_eq_right` yields `(x, ∞)` for `a ≤ x`. -/
+theorem integral_inter_Ioi_mul_pow_integral_inter_Ioi {I : Set ℝ} (hI : MeasurableSet I)
+    (hint : IntegrableOn g (I ∩ Ioi x)) (k : ℕ) :
+    ∫ v in I ∩ Ioi x, g v * (∫ u in I ∩ Ioi v, g u) ^ k =
+      (∫ u in I ∩ Ioi x, g u) ^ (k + 1) / (k + 1) := by
+  rw [inter_comm I (Ioi x), ← setIntegral_indicator hI,
+    indicator_mul_comp_integral_inter_Ioi hI g (· ^ k),
+    ((integrableOn_indicator_iff hI.nullMeasurableSet).2 hint).integral_Ioi_mul_pow_integral_Ioi k,
+    setIntegral_indicator hI, inter_comm]
+
+/-- If `I` is measurable and `g` is integrable on `I ∩ Ioi x`, with tail integral
+`Ψ v = ∫ u in I ∩ Ioi v, g u`, then `v ↦ g v * exp (Ψ v)` is integrable on `I ∩ Ioi x`. -/
+theorem mul_exp_integral_inter_Ioi {I : Set ℝ} (hI : MeasurableSet I)
+    (hint : IntegrableOn g (I ∩ Ioi x)) :
+    IntegrableOn (fun v ↦ g v * Real.exp (∫ u in I ∩ Ioi v, g u)) (I ∩ Ioi x) := by
+  rw [← integrableOn_indicator_iff hI.nullMeasurableSet,
+    indicator_mul_comp_integral_inter_Ioi hI g Real.exp]
+  exact ((integrableOn_indicator_iff hI.nullMeasurableSet).2 hint).mul_comp_integral_Ioi
+    Real.continuous_exp.continuousOn
+
+/-- For a measurable set `I` and `g` integrable on `I ∩ Ioi x`, with tail integral
+`Ψ v = ∫ u in I ∩ Ioi v, g u`, the integral of `g * exp ∘ Ψ` over `I ∩ Ioi x` is
+`exp (Ψ x) - 1`. -/
+theorem integral_inter_Ioi_mul_exp_integral_inter_Ioi {I : Set ℝ} (hI : MeasurableSet I)
+    (hint : IntegrableOn g (I ∩ Ioi x)) :
+    ∫ v in I ∩ Ioi x, g v * Real.exp (∫ u in I ∩ Ioi v, g u) =
+      Real.exp (∫ u in I ∩ Ioi x, g u) - 1 := by
+  rw [inter_comm I (Ioi x), ← setIntegral_indicator hI,
+    indicator_mul_comp_integral_inter_Ioi hI g Real.exp,
+    ((integrableOn_indicator_iff hI.nullMeasurableSet).2 hint).integral_Ioi_mul_exp_integral_Ioi,
+    setIntegral_indicator hI, inter_comm]
+
 end Real
 
 end MeasureTheory.IntegrableOn
@@ -252,6 +325,45 @@ theorem antitoneOn_integral_Ioi {f : ℝ → ℝ} {a : ℝ} (hf : ∀ v ∈ Ioi 
     AntitoneOn (fun x ↦ ∫ v in Ioi x, f v) (Ioi a) := fun x (hx : a < x) _ _ hxy ↦
   setIntegral_mono_set (hint x hx) ((ae_restrict_iff' measurableSet_Ioi).2
     (ae_of_all _ fun v hv ↦ hf v (hx.trans hv))) (Ioi_subset_Ioi hxy).eventuallySubset
+
+/-- If `I` is measurable and `f` is nonnegative on `I` and integrable on `I ∩ Ioi x` for every
+`x ∈ I`, then its tail integral `x ↦ ∫ v in I ∩ Ioi x, f v` is antitone on `I`. Specializing
+`I = Ioi a` via `inter_eq_right` yields `AntitoneOn (fun x ↦ ∫ v in Ioi x, f v) (Ioi a)`. -/
+theorem antitoneOn_integral_inter_Ioi {f : ℝ → ℝ} {I : Set ℝ} (hI : MeasurableSet I)
+    (hf : ∀ v ∈ I, 0 ≤ f v) (hint : ∀ x ∈ I, IntegrableOn f (I ∩ Ioi x)) :
+    AntitoneOn (fun x ↦ ∫ v in I ∩ Ioi x, f v) I := fun x hx _ _ hxy ↦
+  setIntegral_mono_set (hint x hx) ((ae_restrict_iff' (hI.inter measurableSet_Ioi)).2
+    (ae_of_all _ fun v hv ↦ hf v hv.1))
+    (inter_subset_inter_right I (Ioi_subset_Ioi hxy)).eventuallySubset
+
+/-- If `f` is locally integrable on an order-connected set `I`, `g` is integrable on every right
+tail `I ∩ Ioi x` (`x ∈ I`), and `f = O(g)` towards the right endpoint of `I`, then `f` is
+integrable on every right tail `I ∩ Ioi x` (`x ∈ I`). -/
+theorem LocallyIntegrableOn.integrableOn_inter_Ioi_of_isBigO
+    {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F] {I : Set ℝ}
+    (hI : I.OrdConnected) {μ : Measure ℝ} {f : ℝ → E} {g : ℝ → F}
+    (hf : LocallyIntegrableOn f I μ) (hO : f =O[map ((↑) : I → ℝ) atTop] g)
+    (hg : ∀ x ∈ I, IntegrableOn g (I ∩ Ioi x) μ) {x : ℝ} (hx : x ∈ I) :
+    IntegrableOn f (I ∩ Ioi x) μ := by
+  have : Nonempty I := ⟨⟨x, hx⟩⟩
+  rw [Asymptotics.isBigO_iff] at hO
+  obtain ⟨C, hC⟩ := hO
+  rw [eventually_map, eventually_atTop] at hC
+  obtain ⟨⟨x₀, hx₀⟩, hC⟩ := hC
+  have htail : IntegrableOn f (I ∩ Ioi x₀) μ := by
+    refine Integrable.mono' ((hg x₀ hx₀).norm.const_mul C)
+      (hf.aestronglyMeasurable.mono_set inter_subset_left) ?_
+    filter_upwards [ae_restrict_mem (hI.measurableSet.inter measurableSet_Ioi)] with v hv
+    exact hC ⟨v, hv.1⟩ hv.2.le
+  rcases le_or_gt x₀ x with hle | _
+  · exact htail.mono_set (inter_subset_inter_right I (Ioi_subset_Ioi hle))
+  · have hcomp : IntegrableOn f (Icc x x₀) μ :=
+      hf.integrableOn_compact_subset (hI.out hx hx₀) isCompact_Icc
+    have hsub : I ∩ Ioi x ⊆ Icc x x₀ ∪ (I ∩ Ioi x₀) := fun v hv ↦ by
+      rcases le_or_gt v x₀ with h | h
+      · exact Or.inl ⟨hv.2.le, h⟩
+      · exact Or.inr ⟨hv.1, h⟩
+    exact (hcomp.union htail).mono_set hsub
 
 /-- **Fundamental theorem of calculus on a half-line, with integrable primitive.** If `f` is
 continuous from the right at `a`, has derivative `f'` on `(a, ∞)`, and both `f` and `f'` are

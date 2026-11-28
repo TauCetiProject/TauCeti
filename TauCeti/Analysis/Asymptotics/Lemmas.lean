@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Pointwise.Set.Basic
 public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
 public import Mathlib.Analysis.Asymptotics.Lemmas
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import Mathlib.Topology.Bornology.BoundedOperation
+import TauCeti.Order.Filter.AtTopBot
 
 /-!
 # Elementary asymptotic criteria
@@ -125,6 +127,8 @@ resolvent-type functions, which are `O(1 / y)` there.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_continuousOn`: the same conclusion when closed
   intervals are compact, `f` and `g` take values in seminormed groups and are continuous on
   `[a, ∞)`, and `‖g‖` does not vanish there.
+* `Asymptotics.isBigO_comp_neg_map_atTop`: `f (-x) = O(g (-x))` towards the right endpoint of
+  `-I` if and only if `f = O(g)` towards the left endpoint of `I`.
 * `Asymptotics.IsBigO.isBigO_principal_Ioc_of_continuousOn`: the counterpart at a left endpoint:
   `f = O(g)` as `x → a⁺` gives `f = O(g)` on `(a, b]` under the same continuity and nonvanishing
   hypotheses on `(a, b]`.
@@ -158,6 +162,7 @@ bound `f(σ) = O((σ - 1)⁻¹)` for the Dirichlet `L`-function of the trivial c
 public section
 
 open Filter Topology
+open scoped Pointwise
 
 namespace Asymptotics
 
@@ -344,6 +349,15 @@ theorem IsBigO.isBigO_principal_Ici_of_continuousOn {ι E F : Type*} [LinearOrde
     (fun b ↦ isCompact_Icc.exists_forall_le' (hg.norm.mono Set.Icc_subset_Ici_self)
       fun x hx ↦ (norm_nonneg _).lt_of_ne' (hg0 x hx.1))
     fun b ↦ isCompact_Icc.exists_bound_of_continuousOn (hf.mono Set.Icc_subset_Ici_self)
+
+/-- For a subset `I` of an ordered additive group, `f (-x) = O(g (-x))` along the right-endpoint
+filter of `-I` if and only if `f x = O(g x)` along the left-endpoint filter of `I`. -/
+theorem isBigO_comp_neg_map_atTop {α E F : Type*} [AddCommGroup α] [PartialOrder α]
+    [IsOrderedAddMonoid α] [Norm E] [Norm F] {f : α → E} {g : α → F} (I : Set α) :
+    (fun x ↦ f (-x)) =O[map ((↑) : (-I : Set α) → α) atTop] (fun x ↦ g (-x)) ↔
+      f =O[map ((↑) : I → α) atBot] g := by
+  conv_rhs => rw [← TauCeti.map_neg_map_val_neg_atTop I, isBigO_map]
+  simp only [Function.comp_def]
 
 /-- **A big-O bound at `a⁺` holds on a whole interval `(a, b]`, continuous version.** In a
 linear order with the order topology whose closed intervals are compact, if `f = O(g)` as

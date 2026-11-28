@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Group.Pointwise.Interval
 public import Mathlib.MeasureTheory.Group.Action
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Average
@@ -75,6 +76,13 @@ need to be measurable.
   convolution kernel.
 * `TauCeti.setIntegral_smul_set`, `TauCeti.integrableOn_smul_set_iff`: integrals and
   integrability of an invariant integrand over a translated set.
+* `TauCeti.setIntegral_comp_inv`, `TauCeti.setIntegral_comp_neg`,
+  `TauCeti.setIntegral_comp_inv_inter_Ioi`, `TauCeti.setIntegral_comp_neg_inter_Ioi`,
+  `TauCeti.setIntegral_comp_inv_inter_Iio`, `TauCeti.setIntegral_comp_neg_inter_Iio`,
+  `MeasureTheory.IntegrableOn.comp_inv_inter_Ioi`, `MeasureTheory.IntegrableOn.comp_neg_inter_Ioi`,
+  `MeasureTheory.IntegrableOn.comp_inv_inter_Iio`, `MeasureTheory.IntegrableOn.comp_neg_inter_Iio`:
+  integrability and set-integral change of variables under `x ↦ x⁻¹` (or `x ↦ -x`) for an
+  inversion-invariant (or negation-invariant) measure.
 * `TauCeti.integral_eq_zero_of_mul_left_eq_smul`, `TauCeti.integral_eq_zero_of_add_left_eq_smul`:
   a function whose left translate by some `g` is `c • f` with `c ≠ 1` has integral `0` against a
   left-invariant measure.
@@ -324,6 +332,42 @@ theorem integral_comp_add_sub_mul_eq {w φ : G → 𝕜} (hw : Integrable w μ) 
 
 end Translation
 
+section InvInvariant
+
+/-- For an inversion-invariant measure, the integral of `x ↦ f x⁻¹` over `s` equals the integral
+of `f` over `s⁻¹`. -/
+@[to_additive (attr := simp) /-- For a negation-invariant measure, the integral of `x ↦ f (-x)`
+over `s` equals the integral of `f` over `-s`. -/]
+theorem setIntegral_comp_inv {G E : Type*} [MeasurableSpace G] [InvolutiveInv G] [MeasurableInv G]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure G} [μ.IsInvInvariant] (f : G → E)
+    (s : Set G) :
+    ∫ x in s, f x⁻¹ ∂μ = ∫ x in s⁻¹, f x ∂μ := by
+  simpa only [Set.inv_preimage, inv_inv] using
+    (Measure.measurePreserving_inv μ).setIntegral_preimage_emb
+      (MeasurableEquiv.inv G).measurableEmbedding f s⁻¹
+
+/-- For an inversion-invariant measure on an ordered commutative group, the integral of
+`v ↦ f v⁻¹` over `I⁻¹ ∩ Ioi x` equals the integral of `f` over `I ∩ Iio x⁻¹`. -/
+@[to_additive /-- For a negation-invariant measure on an ordered additive commutative group, the
+integral of `v ↦ f (-v)` over `-I ∩ Ioi x` equals the integral of `f` over `I ∩ Iio (-x)`. -/]
+theorem setIntegral_comp_inv_inter_Ioi {G E : Type*} [MeasurableSpace G] [CommGroup G]
+    [PartialOrder G] [IsOrderedMonoid G] [MeasurableInv G] [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure G} [μ.IsInvInvariant] (f : G → E) (I : Set G) (x : G) :
+    ∫ v in I⁻¹ ∩ Ioi x, f v⁻¹ ∂μ = ∫ v in I ∩ Iio x⁻¹, f v ∂μ := by
+  simp [Set.inter_inv]
+
+/-- For an inversion-invariant measure on an ordered commutative group, the integral of
+`v ↦ f v⁻¹` over `I⁻¹ ∩ Iio x` equals the integral of `f` over `I ∩ Ioi x⁻¹`. -/
+@[to_additive /-- For a negation-invariant measure on an ordered additive commutative group, the
+integral of `v ↦ f (-v)` over `-I ∩ Iio x` equals the integral of `f` over `I ∩ Ioi (-x)`. -/]
+theorem setIntegral_comp_inv_inter_Iio {G E : Type*} [MeasurableSpace G] [CommGroup G]
+    [PartialOrder G] [IsOrderedMonoid G] [MeasurableInv G] [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure G} [μ.IsInvInvariant] (f : G → E) (I : Set G) (x : G) :
+    ∫ v in I⁻¹ ∩ Iio x, f v⁻¹ ∂μ = ∫ v in I ∩ Ioi x⁻¹, f v ∂μ := by
+  simp [Set.inter_inv]
+
+end InvInvariant
+
 section TranslationScaling
 
 variable {G 𝕜 E : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] {μ : Measure G}
@@ -349,3 +393,29 @@ theorem integral_eq_zero_of_mul_left_eq_smul {f : G → E} {g : G} {c : 𝕜} (h
 end TranslationScaling
 
 end TauCeti
+
+namespace MeasureTheory.IntegrableOn
+
+/-- For an inversion-invariant measure on an ordered commutative group, integrability of `f` on
+`I ∩ Iio x⁻¹` yields integrability of `v ↦ f v⁻¹` on `I⁻¹ ∩ Ioi x`. -/
+@[to_additive /-- For a negation-invariant measure on an ordered additive commutative group,
+integrability of `f` on `I ∩ Iio (-x)` yields integrability of `v ↦ f (-v)` on `-I ∩ Ioi x`. -/]
+theorem comp_inv_inter_Ioi {G E : Type*} [MeasurableSpace G]
+    [CommGroup G] [PartialOrder G] [IsOrderedMonoid G] [MeasurableInv G]
+    [NormedAddCommGroup E] {μ : Measure G} [μ.IsInvInvariant] {f : G → E} {I : Set G} {x : G}
+    (hf : IntegrableOn f (I ∩ Iio x⁻¹) μ) :
+    IntegrableOn (fun v ↦ f v⁻¹) (I⁻¹ ∩ Ioi x) μ := by
+  simpa [Set.inter_inv] using hf.comp_inv
+
+/-- For an inversion-invariant measure on an ordered commutative group, integrability of `f` on
+`I ∩ Ioi x⁻¹` yields integrability of `v ↦ f v⁻¹` on `I⁻¹ ∩ Iio x`. -/
+@[to_additive /-- For a negation-invariant measure on an ordered additive commutative group,
+integrability of `f` on `I ∩ Ioi (-x)` yields integrability of `v ↦ f (-v)` on `-I ∩ Iio x`. -/]
+theorem comp_inv_inter_Iio {G E : Type*} [MeasurableSpace G]
+    [CommGroup G] [PartialOrder G] [IsOrderedMonoid G] [MeasurableInv G]
+    [NormedAddCommGroup E] {μ : Measure G} [μ.IsInvInvariant] {f : G → E} {I : Set G} {x : G}
+    (hf : IntegrableOn f (I ∩ Ioi x⁻¹) μ) :
+    IntegrableOn (fun v ↦ f v⁻¹) (I⁻¹ ∩ Iio x) μ := by
+  simpa [Set.inter_inv] using hf.comp_inv
+
+end MeasureTheory.IntegrableOn

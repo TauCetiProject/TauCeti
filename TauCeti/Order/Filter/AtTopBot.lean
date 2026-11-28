@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Pointwise.Set.Basic
 public import Mathlib.Algebra.Order.Archimedean.Defs
 public import Mathlib.Algebra.Order.Floor.Semiring
 public import Mathlib.Data.Nat.Find
@@ -12,6 +13,7 @@ public import Mathlib.Order.Filter.AtTopBot.Basic
 public import Mathlib.Order.Filter.Finite
 public import Mathlib.Order.WithBot
 
+import Mathlib.Order.Filter.AtTopBot.Map
 import Mathlib.Order.SuccPred.Nat
 import TauCeti.Order.SuccPred.IntermediateValue
 
@@ -54,11 +56,16 @@ numbers `k` exactly when `a = b = 0`, and otherwise it is nonzero for all large 
 (`TauCeti.eventually_add_mul_eq_zero_iff`): it vanishes for at most one `k` unless `b = 0`. In an
 Archimedean ordered semiring, truncating a finite `WithTop` element at natural casts eventually
 stabilizes (`WithTop.eventually_min_natCast_eq`).
+
+For a subset `I` of an ordered additive group, negation pushes the right-endpoint filter of `-I`
+forward to the left-endpoint filter of `I` (`TauCeti.map_neg_map_val_neg_atTop`), using
+`Filter.map_ofDual_atTop` (with dual `Filter.map_ofDual_atBot`).
 -/
 
 public section
 
 open Filter
+open scoped Pointwise
 
 namespace TauCeti
 
@@ -253,6 +260,37 @@ theorem eventually_add_mul_eq_zero_iff {R : Type*} [Ring R] [NoZeroDivisors R] [
     exact ⟨by simpa [hb] using hk', hb⟩
   · push Not at h
     exact .of_forall fun k ↦ iff_of_false (h k) fun ⟨ha, hb⟩ ↦ h 0 (by simp [ha, hb])
+
+/-- Mapping `atTop` on the order dual `βᵒᵈ` through `OrderDual.ofDual` gives `atBot` on `β`. -/
+@[simp]
+theorem _root_.Filter.map_ofDual_atTop {β : Type*} [Preorder β] :
+    map (OrderDual.ofDual : βᵒᵈ → β) atTop = atBot := by
+  -- `OrderDual.ofDual` is definitionally `id`, and `atBot` on `β` is defined as `atTop` on `βᵒᵈ`.
+  change map (id : β → β) (atBot : Filter β) = atBot
+  exact Filter.map_id
+
+/-- Mapping `atBot` on the order dual `βᵒᵈ` through `OrderDual.ofDual` gives `atTop` on `β`. -/
+@[simp]
+theorem _root_.Filter.map_ofDual_atBot {β : Type*} [Preorder β] :
+    map (OrderDual.ofDual : βᵒᵈ → β) atBot = atTop := by
+  -- `OrderDual.ofDual` is definitionally `id`, and `atTop` on `β` is defined as `atBot` on `βᵒᵈ`.
+  change map (id : β → β) (atTop : Filter β) = atTop
+  exact Filter.map_id
+
+/-- Negation pushes the right-endpoint filter of `-I` forward to the left-endpoint filter of
+`I`. -/
+theorem map_neg_map_val_neg_atTop {α : Type*} [AddCommGroup α] [PartialOrder α]
+    [IsOrderedAddMonoid α] (I : Set α) :
+    map Neg.neg (map ((↑) : (-I : Set α) → α) atTop) = map ((↑) : I → α) atBot := by
+  let e : (-I : Set α) ≃o (I : Set α)ᵒᵈ :=
+    { toEquiv := ((Equiv.neg α).subtypeEquiv fun _ ↦ Set.mem_neg).trans OrderDual.toDual
+      map_rel_iff' := @fun _ _ ↦ neg_le_neg_iff }
+  -- `e x` reduces definitionally through `OrderIso`/`Equiv` coercion to
+  -- `OrderDual.toDual ⟨-x.val, _⟩`, and `OrderDual.ofDual` cancels `OrderDual.toDual`.
+  have hcomp : Neg.neg ∘ ((↑) : (-I : Set α) → α) =
+      ((↑) : I → α) ∘ OrderDual.ofDual ∘ e := rfl
+  rw [Filter.map_map, hcomp, ← Filter.map_map, ← Filter.map_map, e.map_atTop,
+    Filter.map_ofDual_atTop]
 
 end TauCeti
 
