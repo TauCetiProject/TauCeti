@@ -21,6 +21,7 @@ realized as the rational circle `AddCircle (1 : ℚ)`, is a short exact sequence
 ## Main results
 
 * `ModuleCat.ratAddCircleShortComplex_shortExact`: `0 → ℤ → ℚ → ℚ/ℤ → 0` is short exact.
+* `ModuleCat.isIso_zsmul_id_rat`: multiplication by a nonzero integer is an automorphism of `ℚ`.
 -/
 
 public noncomputable section
@@ -45,5 +46,15 @@ theorem ratAddCircleShortComplex_shortExact : ratAddCircleShortComplex.ShortExac
   -- `Int.cast`
   shortComplex_shortExact _ (fun _ ↦ by simp [AddSubgroup.mem_zmultiples_iff])
     (by simpa using Int.cast_injective) (by simpa using QuotientAddGroup.mk_surjective)
+
+/-- Multiplication by a nonzero integer is an automorphism of the `ℤ`-module `ℚ`. -/
+theorem isIso_zsmul_id_rat {m : ℤ} (hm : m ≠ 0) : IsIso (m • 𝟙 (ModuleCat.of ℤ ℚ)) := by
+  have hm' : (m : ℚ) ≠ 0 := Int.cast_ne_zero.2 hm
+  rw [ConcreteCategory.isIso_iff_bijective]
+  refine ⟨fun x y hxy ↦ ?_, fun y ↦ ⟨(m : ℚ)⁻¹ * y, ?_⟩⟩
+  · simp only [hom_smul, hom_id, zsmul_eq_mul] at hxy
+    exact mul_left_cancel₀ hm' hxy
+  · simp only [hom_smul, hom_id, zsmul_eq_mul]
+    exact mul_inv_cancel_left₀ hm' y
 
 end ModuleCat

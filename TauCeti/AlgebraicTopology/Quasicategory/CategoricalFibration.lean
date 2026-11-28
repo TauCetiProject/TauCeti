@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.Quasicategory.StrictSegal
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 public import Mathlib.AlgebraicTopology.SimplicialSet.NerveCodiscrete
-public import TauCeti.AlgebraicTopology.Quasicategory.Core
+public import TauCeti.AlgebraicTopology.Quasicategory.HomotopyCategory
 public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
 
 /-!
@@ -26,7 +26,8 @@ suffice, since equivalences also have to lift.
 Isomorphisms are categorical fibrations, and categorical fibrations are closed under composition.
 A map to a terminal simplicial set is a categorical fibration exactly when its source is a
 quasicategory, and the projections from a product to a factor are categorical fibrations when the
-other factor is a quasicategory. For a functor `F` between ordinary categories, the nerve of `F` is
+other factor is a quasicategory. An essentially surjective categorical fibration to a quasicategory
+is surjective on vertices. For a functor `F` between ordinary categories, the nerve of `F` is
 always an inner fibration, and it is a categorical fibration exactly when every isomorphism
 `F a ≅ b` lifts to an isomorphism out of `a`. For instance, the inclusion of one object into the
 codiscrete groupoid on two objects is not a categorical fibration: the isomorphism to the missing
@@ -41,8 +42,11 @@ object has no lift.
 
 * `SSet.exists_isEquivalence_lift_of_section`: a section through a vertex lifts the equivalences
   out of its image.
+* `SSet.CategoricalFibration.of_rlp_monomorphisms`: a trivial fibration is a categorical fibration.
 * `SSet.CategoricalFibration.of_isIso`, `SSet.CategoricalFibration.comp`: isomorphisms are
   categorical fibrations, and categorical fibrations compose.
+* `SSet.CategoricalFibration.surjective_app_zero_of_essSurj`: an essentially surjective categorical
+  fibration to a quasicategory is surjective on vertices.
 * `SSet.categoricalFibration_iff_of_isTerminal`: a map to a terminal simplicial set is a
   categorical fibration exactly when its source is a quasicategory.
 * `SSet.categoricalFibration_fst`, `SSet.categoricalFibration_snd`: the projections from a
@@ -60,7 +64,7 @@ object has no lift.
 
 public section
 
-open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory Simplicial
+open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory MorphismProperty Simplicial
 
 universe u v
 
@@ -92,6 +96,23 @@ lemma exists_isEquivalence_lift_of_section {p : X ⟶ Y} (s : Y ⟶ X) (hs : s �
 
 namespace CategoricalFibration
 
+/-- **A trivial fibration is a categorical fibration.** -/
+theorem of_rlp_monomorphisms {p : X ⟶ Y} (hp : (monomorphisms SSet.{u}).rlp p) :
+    CategoricalFibration p := by
+  -- It is an inner fibration, and through each vertex `x₀` of its source it has a section, which
+  -- lifts the equivalences out of `p x₀`.
+  refine { mem := antitone_rlp innerHornInclusions_le_monomorphisms _ hp
+           exists_isEquivalence_lift := fun x₀ _ e he ↦ ?_ }
+  -- Lift the identity of `Y` against the inclusion of the vertex `p x₀`, sending it to `x₀`.
+  let y : Δ[0] ⟶ Y := yonedaEquiv.symm (p.app _ x₀)
+  have := stdSimplex.isTerminalObj₀.mono_from y
+  have := hp y (monomorphisms.infer_property y)
+  have sq : CommSq (yonedaEquiv.symm x₀) y p (𝟙 Y) :=
+    ⟨by rw [yonedaEquiv_symm_comp, Category.comp_id]⟩
+  refine exists_isEquivalence_lift_of_section sq.lift sq.fac_right ?_ e he
+  have h := congrArg yonedaEquiv sq.fac_left
+  rwa [yonedaEquiv_comp, Equiv.apply_symm_apply, Equiv.apply_symm_apply] at h
+
 /-- Isomorphisms of simplicial sets are categorical fibrations. -/
 instance of_isIso (p : X ⟶ Y) [IsIso p] : CategoricalFibration p where
   mem := innerFibrations.of_isIso p
@@ -106,6 +127,18 @@ instance comp (p : X ⟶ Y) (q : Y ⟶ Z) [CategoricalFibration p] [CategoricalF
     obtain ⟨_, e₁, he₁, hqe₁⟩ := exists_isEquivalence_lift (p := q) (p.app _ x₀) e he
     obtain ⟨x₁, e', he', hpe'⟩ := exists_isEquivalence_lift (p := p) x₀ e₁ he₁
     exact ⟨x₁, e', he', by rw [NatTrans.comp_app_apply, hpe', hqe₁]⟩
+
+/-- **An essentially surjective categorical fibration to a quasicategory is surjective on
+vertices.** -/
+theorem surjective_app_zero_of_essSurj [Quasicategory Y] (p : X ⟶ Y) [CategoricalFibration p]
+    [(mapHomotopyCategory p).EssSurj] : Function.Surjective (p.app (Opposite.op ⦋0⦌)) := by
+  -- The equivalence joining `y` to a vertex `p x` of the image lifts to an edge out of `x`,
+  -- whose target lies over `y`.
+  intro y
+  obtain ⟨x, e, he⟩ := (essSurj_mapHomotopyCategory_iff p).1 inferInstance y
+  obtain ⟨x₁, e', -, h⟩ := exists_isEquivalence_lift x e he
+  refine ⟨x₁, ?_⟩
+  rw [← e'.tgt_eq, ← e.tgt_eq, ← h, δ_naturality_apply]
 
 end CategoricalFibration
 

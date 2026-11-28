@@ -62,8 +62,10 @@ Compression is its inverse on this corner, and extension preserves composition a
 * `ContinuousLinearEquiv.adjointEquiv`: the adjoint as a continuous linear equivalence, with the
   same operator norm (`ContinuousLinearEquiv.norm_adjointEquiv`), bounded below by `‖A⁻¹‖⁻¹`
   (`ContinuousLinearEquiv.norm_le_norm_symm_mul_norm_adjointEquiv`).
-* `ContinuousLinearMap.adjointRealCLM`: the adjoint `T ↦ T†` of operators between real or complex
-  Hilbert spaces as a real-linear continuous map.
+* `ContinuousLinearMap.adjointRealLinearIsometryEquiv`: the adjoint `T ↦ T†` of operators between
+  real or complex Hilbert spaces as a real-linear isometric equivalence, inverse to the one in the
+  reverse direction (`ContinuousLinearMap.adjointRealLinearIsometryEquiv_symm`), and
+  `ContinuousLinearMap.adjointRealCLM`, its underlying real-linear continuous map.
 * `ContDiff.clm_adjoint`: the pointwise adjoint of a `C^n` family of operators is `C^n`; for a
   continuous family it is continuous (`Continuous.clm_adjoint`). Its derivative is the adjoint of
   the derivative (`HasFDerivAt.clm_adjoint`, `fderiv_clm_adjoint`).
@@ -102,10 +104,17 @@ of an invertible real operator and of the adjoint of its inverse multiply to `1`
 linear map, the orthogonal complement of its kernel has the dimension of the codomain
 (`LinearMap.finrank_orthogonal_ker_of_surjective`).
 
-Passing a finite-dimensional operator to continuous linear maps preserves its adjoint
-(`LinearMap.toContinuousLinearMap_star`) and its normality
+Passing a finite-dimensional operator to continuous linear maps and back preserves its adjoint
+(`LinearMap.toContinuousLinearMap_star`, `ContinuousLinearMap.toLinearMap_star`) and the first
+passage preserves its normality
 (the instance `LinearMap.isStarNormal_toContinuousLinearMap`).
-Unitary operators on a Hilbert space act by isometries (`Unitary.instIsIsometricSMul`).
+The symmetric part `(A + A†) / 2` of an operator `A` on a Hilbert space is symmetric
+(`ContinuousLinearMap.isSymmetric_two_inv_smul_add_adjoint`) and has the real quadratic form of
+`A` (`ContinuousLinearMap.re_inner_two_inv_smul_add_adjoint_apply`).
+Unitary operators on a Hilbert space act by isometries (`Unitary.instIsIsometricSMul`), and
+conjugation by an isometric isomorphism of Hilbert spaces commutes with adjoints
+(`LinearIsometryEquiv.adjoint_conjContinuousAlgEquiv`). The adjoint of the inverse of such an
+isomorphism is the isomorphism itself (`LinearIsometryEquiv.adjoint_toContinuousLinearEquiv_symm`).
 
 -/
 
@@ -243,17 +252,38 @@ variable {𝕜 V W : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSp
   [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V] [CompleteSpace V] [NormedAddCommGroup W]
   [InnerProductSpace 𝕜 W] [NormedSpace ℝ W] [IsScalarTower ℝ 𝕜 W] [CompleteSpace W]
 
-/-- The Hilbert space adjoint `T ↦ T†`, as a real-linear map: the conjugate-linear isometry
-`ContinuousLinearMap.adjoint` is real-linear by the Mazur-Ulam theorem. -/
+/-- The Hilbert space adjoint `T ↦ T†`, as a real-linear isometric equivalence: the
+conjugate-linear isometry `ContinuousLinearMap.adjoint` is real-linear by the Mazur-Ulam
+theorem. -/
+noncomputable def adjointRealLinearIsometryEquiv : (V →L[𝕜] W) ≃ₗᵢ[ℝ] (W →L[𝕜] V) :=
+  IsometryEquiv.toRealLinearIsometryEquivOfMapZero
+    (adjoint (𝕜 := 𝕜) (E := V) (F := W)).toIsometryEquiv (by simp)
+
+@[simp]
+theorem adjointRealLinearIsometryEquiv_apply (T : V →L[𝕜] W) :
+    adjointRealLinearIsometryEquiv T = adjoint T := by
+  rw [adjointRealLinearIsometryEquiv, IsometryEquiv.coe_toRealLinearIsometryEquivOfMapZero,
+    LinearIsometryEquiv.coe_toIsometryEquiv]
+
+/-- The adjoint is an involution, so its real-linear isometric equivalence is inverse to the one
+in the reverse direction. -/
+@[simp]
+theorem adjointRealLinearIsometryEquiv_symm :
+    (adjointRealLinearIsometryEquiv (𝕜 := 𝕜) (V := V) (W := W)).symm =
+      adjointRealLinearIsometryEquiv := by
+  ext T : 1
+  rw [LinearIsometryEquiv.symm_apply_eq, adjointRealLinearIsometryEquiv_apply,
+    adjointRealLinearIsometryEquiv_apply, adjoint_adjoint]
+
+/-- The Hilbert space adjoint `T ↦ T†`, as a real-linear continuous map: the underlying map of
+`ContinuousLinearMap.adjointRealLinearIsometryEquiv`. -/
 noncomputable def adjointRealCLM : (V →L[𝕜] W) →L[ℝ] (W →L[𝕜] V) :=
-  (IsometryEquiv.toRealLinearIsometryEquivOfMapZero
-    (adjoint (𝕜 := 𝕜) (E := V) (F := W)).toIsometryEquiv (by simp)).toContinuousLinearEquiv
+  (adjointRealLinearIsometryEquiv (𝕜 := 𝕜) (V := V) (W := W)).toContinuousLinearEquiv
 
 @[simp]
 theorem adjointRealCLM_apply (T : V →L[𝕜] W) : adjointRealCLM T = adjoint T := by
   rw [adjointRealCLM, ContinuousLinearEquiv.coe_coe,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    IsometryEquiv.coe_toRealLinearIsometryEquivOfMapZero, LinearIsometryEquiv.coe_toIsometryEquiv]
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, adjointRealLinearIsometryEquiv_apply]
 
 /-- The pointwise adjoint `x ↦ (f x)†` of a `C^n` family of operators between Hilbert spaces is
 `C^n`. -/
@@ -670,6 +700,33 @@ instance instIsIsometricSMul [CompleteSpace E] : IsIsometricSMul (unitary (E →
 
 end Unitary
 
+namespace LinearIsometryEquiv
+
+/-- Conjugation `T ↦ e ∘ T ∘ e⁻¹` by an isometric isomorphism of Hilbert spaces commutes with
+adjoints. -/
+@[simp]
+theorem adjoint_conjContinuousAlgEquiv [CompleteSpace E] [CompleteSpace F] (e : E ≃ₗᵢ[𝕜] F)
+    (T : E →L[𝕜] E) :
+    ContinuousLinearMap.adjoint (e.toContinuousLinearEquiv.conjContinuousAlgEquiv T) =
+      e.toContinuousLinearEquiv.conjContinuousAlgEquiv (ContinuousLinearMap.adjoint T) :=
+  -- Mathlib's star algebra equivalence `e.conjStarAlgEquiv` is defined as this conjugation
+  -- together with its compatibility with `star = adjoint`, so `map_star` is the statement.
+  (map_star e.conjStarAlgEquiv T).symm
+
+/-- The adjoint of the inverse of an isometric isomorphism of Hilbert spaces, viewed as a
+continuous linear equivalence, is the isomorphism itself: its transpose inverse `(e⁻¹)ᵀ` is `e`.
+
+Mathlib's `LinearIsometryEquiv.adjoint_eq_symm` states this for `e.symm`, whose coercion is
+rewritten by `simp` to that of `e.toContinuousLinearEquiv.symm`, so `simp` cannot apply it here. -/
+@[simp]
+theorem adjoint_toContinuousLinearEquiv_symm [CompleteSpace E] [CompleteSpace F]
+    (e : E ≃ₗᵢ[𝕜] F) :
+    ContinuousLinearMap.adjoint (e.toContinuousLinearEquiv.symm : F →L[𝕜] E) = e := by
+  rw [← toContinuousLinearEquiv_symm]
+  exact e.symm.adjoint_eq_symm
+
+end LinearIsometryEquiv
+
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
 
 namespace LinearIsometry
@@ -802,6 +859,36 @@ theorem toContinuousLinearMap_star {𝕜 E : Type*} [RCLike 𝕜]
     (star T).toContinuousLinearMap = star T.toContinuousLinearMap := by
   rw [LinearMap.star_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
     LinearMap.adjoint_toContinuousLinearMap]
+
+/-- Forgetting the continuity of an operator on a finite-dimensional space preserves its adjoint. -/
+@[simp, norm_cast]
+theorem _root_.ContinuousLinearMap.toLinearMap_star {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E]
+    (T : E →L[𝕜] E) : ((star T : E →L[𝕜] E) : E →ₗ[𝕜] E) = star (T : E →ₗ[𝕜] E) := by
+  rw [LinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_toLinearMap,
+    ContinuousLinearMap.star_eq_adjoint]
+
+/-- The symmetric part `(A + A†) / 2` of an operator `A` is symmetric. -/
+theorem _root_.ContinuousLinearMap.isSymmetric_two_inv_smul_add_adjoint {𝕜 V : Type*}
+    [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [CompleteSpace V]
+    (A : V →L[𝕜] V) : (((2⁻¹ : 𝕜) • (A + A.adjoint) : V →L[𝕜] V) : V →ₗ[𝕜] V).IsSymmetric :=
+  fun x y => by
+    simp only [ContinuousLinearMap.coe_coe, _root_.smul_apply, _root_.add_apply,
+      inner_smul_left, inner_smul_right, inner_add_left, inner_add_right,
+      ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.adjoint_inner_right, map_inv₀,
+      map_ofNat]
+    ring
+
+open scoped InnerProductSpace in
+/-- The symmetric part `(A + A†) / 2` of an operator `A` has the same real quadratic form
+`re ⟪A ξ, ξ⟫` as `A`. -/
+theorem _root_.ContinuousLinearMap.re_inner_two_inv_smul_add_adjoint_apply {𝕜 V : Type*}
+    [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [CompleteSpace V]
+    (A : V →L[𝕜] V) (ξ : V) :
+    RCLike.re ⟪((2⁻¹ : 𝕜) • (A + A.adjoint)) ξ, ξ⟫_𝕜 = RCLike.re ⟪A ξ, ξ⟫_𝕜 := by
+  simp [inner_add_left, inner_smul_left, ContinuousLinearMap.adjoint_inner_left,
+    inner_re_symm ξ (A ξ), RCLike.normSq_apply]
+  ring
 
 /-- A finite-dimensional linear operator remains normal when regarded as continuous. -/
 instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]

@@ -6,93 +6,77 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.ZeroFreeRegion
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.Entire.ChangeLevel
-import TauCeti.NumberTheory.DirichletCharacter.Quadratic.PowerLevel
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
+import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.FiniteFamily.Quadratic
 
 /-!
-# A uniform zero-free disc for powers of a fixed modulus
+# Uniform zero-free bounds for powers of a fixed modulus
 
-At levels `m ^ k`, the characters whose square is principal come from finitely many levels with
-unchanged regularized L-functions. Their lower bound near `1` is therefore uniform in `k`.
-This allows the zero-free region with the logarithmic derivative bound to be applied throughout
-the tower, in the discs used to detect primes in logarithmic windows.
+All powers of a fixed modulus have prime factors in one finite set. This makes the near-one
+lower bound for quadratic characters uniform across the tower. On a disk of radius `1 / X`
+the resulting logarithmic derivative bound is at most both `X` and `2 * ((A + 1) * log X) ^ 25`
+for moduli at most `X ^ A`. This is the local bound used when detecting primes in logarithmic
+windows in the class of `1`.
 
-The fixed-family argument and logarithmic choice of scale are from
-`New.eventually_norm_logDeriv_entireL_le_near_one` in [lsernau/grh-lean, `Primes.lean`]
-(https://github.com/lsernau/grh-lean/blob/72fead102f663d5c7a407964a13dc0cf9d977207/grh/src/Lib/Analytic/Primes.lean).
+The finite-family reduction and choice of logarithmic scale follow lsernau/grh-lean (commit
+`72fead1`), `Lib/Analytic/Primes.lean` (`New.eventually_norm_logDeriv_entireL_le_near_one`).
+Using the lower bound for fixed prime support avoids requiring the base modulus to be divisible
+by `4`.
 -/
 
 public section
 
-open Complex Filter Real Asymptotics
-open scoped Topology
+open Filter Real Topology TauCeti.DirichletCharacter
 
 namespace DirichletCharacter
 
-/-- On a tower of powers of a fixed nonzero modulus, regularized L-functions of characters
-whose square is principal satisfy a common lower bound on sufficiently small discs at `1`. -/
-theorem eventually_le_norm_regularizedLFunction_pow_level (m : ℕ) [NeZero m] :
-    ∀ᶠ r : ℝ in 𝓝 0, ∀ (k : ℕ) (χ : DirichletCharacter ℂ (m ^ k)), χ ^ 2 = 1 →
-      ∀ z : ℂ, ‖z - 1‖ ≤ r → r ≤ ‖χ.regularizedLFunction z‖ := by
-  have hb : ∀ᶠ r : ℝ in 𝓝 0, ∀ (j : Fin 4) (ψ : DirichletCharacter ℂ (m ^ (j : ℕ))),
-      ∀ z : ℂ, ‖z - 1‖ ≤ r → r ≤ ‖ψ.regularizedLFunction z‖ :=
-    eventually_all.mpr fun j ↦ eventually_all.mpr fun ψ ↦ ψ.eventually_le_norm_regularizedLFunction
-  filter_upwards [hb] with r hr k χ hχ z hz
-  obtain ⟨hd, ψ, rfl⟩ := χ.factorsThrough_pow_min_three_of_sq_eq_one hχ
-  have hpf : (m ^ k).primeFactors = (m ^ min k 3).primeFactors := by
-    rcases eq_or_ne k 0 with rfl | hk
-    · simp
-    · rw [Nat.primeFactors_pow m hk, Nat.primeFactors_pow m (by omega : min k 3 ≠ 0)]
-  rw [ψ.regularizedLFunction_changeLevel_eq_of_primeFactors_eq hd hpf]
-  exact hr ⟨min k 3, by omega⟩ ψ z hz
-
-/-- For sufficiently large `X` depending only on `m` and `A`, all Dirichlet characters of level
-`m ^ k ≤ X ^ A` have a zero-free pole-cleared L-function on `‖s - 1‖ ≤ 1 / X`, with logarithmic
-derivative of norm at most `X` there. -/
-theorem eventually_entireLFunction_ne_zero_and_norm_logDeriv_le_pow_level
-    (m : ℕ) [NeZero m] (A : ℕ) :
-    ∀ᶠ X : ℝ in atTop, ∀ k : ℕ, (↑(m ^ k) : ℝ) ≤ X ^ A →
-      ∀ (χ : DirichletCharacter ℂ (m ^ k)) (s : ℂ), ‖s - 1‖ ≤ X⁻¹ →
-        χ.entireLFunction s ≠ 0 ∧ ‖logDeriv χ.entireLFunction s‖ ≤ X := by
-  let l (X : ℝ) : ℝ := (↑(A + 1) : ℝ) * Real.log X
-  have hl : Tendsto l atTop atTop := Real.tendsto_log_atTop.const_mul_atTop (by positivity)
-  have hinv : Tendsto (fun X : ℝ ↦ (l X)⁻¹) atTop (𝓝 0) := tendsto_inv_atTop_zero.comp hl
-  have hsmall := (IsLittleO.const_mul_left
-    (isLittleO_log_rpow_rpow_atTop 25 (by norm_num : (0 : ℝ) < 1))
-    (2 * (↑(A + 1) : ℝ) ^ 25)).eventuallyLE
-  filter_upwards [hl.eventually (eventually_ge_atTop (10 ^ 10)),
-    hinv.eventually (eventually_le_norm_regularizedLFunction_pow_level m), hsmall,
-    eventually_ge_atTop (2 : ℝ)] with X hlarge hnear hsmall hX k hk χ s hs
-  have hX₀ : 0 < X := by linarith
-  have hl₀ : 0 < l X := by linarith
-  have hlog : 0 ≤ Real.log X := Real.log_nonneg (by linarith)
-  have hpow : Real.log X ^ (25 : ℝ) = Real.log X ^ (25 : ℕ) := by
-    simpa only [Nat.cast_ofNat] using Real.rpow_natCast (Real.log X) 25
-  rw [Real.rpow_one, hpow, Real.norm_of_nonneg (by positivity),
-    Real.norm_of_nonneg hX₀.le, mul_assoc, ← mul_pow] at hsmall
-  have hsmall' : 2 * l X ^ 25 ≤ X := hsmall
-  have hexp : Real.exp (l X) = X ^ (A + 1) := by
-    dsimp only [l]
-    rw [← Real.log_pow, Real.exp_log (by positivity)]
-  have hXinv : X⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by linarith)
-  have hre : 1 - 1 / l X ^ 25 ≤ s.re := by
-    have h := (abs_le.mp ((abs_re_le_norm (s - 1)).trans hs)).1
-    simp only [sub_re, one_re] at h
-    have hle : X⁻¹ ≤ 1 / l X ^ 25 := by
-      rw [one_div]
-      exact inv_anti₀ (by positivity) (by linarith : l X ^ 25 ≤ X)
-    linarith
-  have hnorm : ‖s‖ ≤ Real.exp (l X) := calc
-    ‖s‖ ≤ ‖s - 1‖ + ‖(1 : ℂ)‖ := norm_le_norm_sub_add s 1
-    _ ≤ 2 := by simp only [norm_one]; linarith
-    _ ≤ Real.exp (l X) := by linarith [Real.add_one_le_exp (l X)]
-  have hmod : (↑(m ^ k) : ℝ) ≤ Real.exp (l X) := by
-    rw [hexp, pow_succ]
-    exact hk.trans (le_mul_of_one_le_right (by positivity) (by linarith))
-  obtain ⟨hnz, hbound⟩ := χ.entireLFunction_ne_zero_and_norm_logDeriv_le hlarge hmod
-    (by simpa only [one_div] using hnear k χ) hre hnorm
-  exact ⟨hnz, hbound.trans hsmall'⟩
+/-- For sufficiently large `X`, uniformly over levels `m ^ k ≤ X ^ A` and all their characters,
+the pole-removed L-function is nonzero on the closed disk of radius `1 / X` about `1`.
+The logarithmic derivative there has norm at most both `X` and `2 * ((A + 1) * log X) ^ 25`. -/
+theorem eventually_norm_logDeriv_entireLFunction_le_near_one (m : ℕ) [NeZero m] (A : ℕ) :
+    ∀ᶠ X : ℝ in atTop, ∀ (k : ℕ), (m : ℝ) ^ k ≤ X ^ A →
+      ∀ (χ : DirichletCharacter ℂ (m ^ k)) (s : ℂ), ‖s - 1‖ ≤ 1 / X →
+        χ.entireLFunction s ≠ 0 ∧
+          ‖logDeriv χ.entireLFunction s‖ ≤ min X (2 * (((A + 1 : ℕ) : ℝ) * log X) ^ 25) := by
+  let l (X : ℝ) : ℝ := (A + 1 : ℕ) * log X
+  have htop : Tendsto l atTop atTop := tendsto_log_atTop.const_mul_atTop (by positivity)
+  have hsmall : Tendsto (fun X ↦ 1 / l X) atTop (𝓝 0) := tendsto_const_nhds.div_atTop htop
+  have hpow : ∀ᶠ X : ℝ in atTop, 2 * l X ^ 25 ≤ X :=
+    TauCeti.Real.eventually_const_mul_log_pow_le 2 _ 25
+  obtain ⟨c, hc, hnear⟩ :=
+    exists_pos_eventually_le_norm_regularizedLFunction_of_primeFactors_subset_of_sq_eq_one
+      m.primeFactors
+  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.mp hnear
+  -- Make the disk radius smaller than both the neighbourhood radius and the lower bound.
+  have hrad : ∀ᶠ X in atTop, 1 / l X < min r c := hsmall.eventually (gt_mem_nhds (lt_min hr hc))
+  filter_upwards [htop.eventually_ge_atTop (10 ^ 10), hpow, eventually_ge_atTop (1 : ℝ), hrad]
+    with X hl hp hX hrad k hk χ s hs
+  have hl₁ : 1 ≤ l X := by linarith
+  have hXL : (l X) ^ 25 ≤ X := by linarith [pow_nonneg (zero_le_one.trans hl₁) 25]
+  have he : exp (l X) = X ^ (A + 1) := by
+    dsimp [l]
+    rw [exp_natCast_mul, exp_log (by positivity)]
+  have hmod : (↑(m ^ k) : ℝ) ≤ exp (l X) := by
+    rw [Nat.cast_pow, he]
+    exact hk.trans (pow_le_pow_right₀ hX (Nat.le_succ _))
+  have hreal : 1 - 1 / l X ^ 25 ≤ s.re := by
+    have hdist : |s.re - 1| ≤ ‖s - 1‖ := by simpa using Complex.abs_re_le_norm (s - 1)
+    have := one_div_le_one_div_of_le (by positivity : 0 < l X ^ 25) hXL
+    linarith [(abs_le.mp hdist).1]
+  have hnorm : ‖s‖ ≤ exp (l X) := by
+    have h₁ := one_div_le_one_div_of_le zero_lt_one hX
+    have h₂ := norm_le_norm_sub_add s (1 : ℂ)
+    rw [norm_one] at h₂
+    linarith [add_one_le_exp (l X)]
+  have hprimes : (m ^ k).primeFactors ⊆ m.primeFactors := by
+    cases k <;> simp [Nat.primeFactors_pow_succ]
+  have hlower (hχ : χ ^ 2 = 1) (z : ℂ) (hz : ‖z - 1‖ ≤ 1 / l X) :
+      1 / l X ≤ ‖χ.regularizedLFunction z‖ := by
+    have hzball : z ∈ Metric.ball (1 : ℂ) r := by
+      rw [Metric.mem_ball, dist_eq_norm]
+      exact hz.trans_lt (hrad.trans_le (min_le_left _ _))
+    exact (hrad.le.trans (min_le_right _ _)).trans (hball hzball (m ^ k) hprimes χ hχ)
+  obtain ⟨hne, hb⟩ := χ.entireLFunction_ne_zero_and_norm_logDeriv_le hl hmod hlower hreal hnorm
+  exact ⟨hne, le_min (hb.trans hp) hb⟩
 
 end DirichletCharacter

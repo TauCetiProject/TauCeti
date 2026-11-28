@@ -38,8 +38,9 @@ minimum-modulus estimates for canonical products: on the whole plane, `log ‖1 
 size of the exponent, and on the closed half disk, `-2 * ‖z‖ ^ (p + 1)`.
 
 At genus one the factor is `(1 - z) * exp z`; its global logarithmic bounds supply the
-reciprocal Gamma estimates. The paired rational logarithmic derivative retains this genus-one
-specialization.
+reciprocal Gamma estimates. Pairing opposite arguments at genus one cancels the exponential
+factor, giving `weierstrassFactor 1 z * weierstrassFactor 1 (-z) = 1 - z ^ 2`. The paired
+rational logarithmic derivative retains this genus-one specialization.
 
 ## Provenance
 
@@ -138,6 +139,28 @@ theorem weierstrassFactor_eq_zero_iff (p : ℕ) {z : ℂ} :
     weierstrassFactor p z = 0 ↔ z = 1 := by
   rw [weierstrassFactor_def, mul_eq_zero, or_iff_left (exp_ne_zero _), sub_eq_zero]
   exact eq_comm
+
+/-- Pairing opposite arguments at genus one cancels the exponential factor:
+`E₁(z) E₁(-z) = 1 - z²`. -/
+@[simp]
+theorem weierstrassFactor_one_left_mul_neg (z : ℂ) :
+    weierstrassFactor 1 z * weierstrassFactor 1 (-z) = 1 - z ^ 2 := by
+  simpa using weierstrassFactor_mul_weierstrassFactor_neg 1 z
+
+/-- Pairing opposite purely imaginary roots `±ρ` in the genus-one Weierstrass product cancels the
+exponential factors and yields `(1 + z ^ 2 / (Im ρ) ^ 2) ^ d`. -/
+theorem weierstrassFactor_one_left_inv_mul_pow_mul_neg_inv_mul_pow {ρ : ℂ} (hre : ρ.re = 0)
+    (d : ℕ) (z : ℂ) :
+    weierstrassFactor 1 (ρ⁻¹ * z) ^ d * weierstrassFactor 1 ((-ρ)⁻¹ * z) ^ d =
+      (1 + z ^ 2 / (ρ.im : ℂ) ^ 2) ^ d := by
+  have hneg : (-ρ)⁻¹ * z = -(ρ⁻¹ * z) := by rw [inv_neg, neg_mul]
+  have hρ_sq : ρ ^ 2 = -(ρ.im : ℂ) ^ 2 := by
+    have hρ : ρ = (ρ.im : ℂ) * I := by simpa [hre] using (re_add_im ρ).symm
+    conv_lhs => rw [hρ]
+    rw [mul_pow, I_sq, mul_neg_one]
+  rw [hneg, ← mul_pow, weierstrassFactor_one_left_mul_neg]
+  congr 1
+  rw [mul_pow, inv_pow, ← div_eq_inv_mul, hρ_sq, div_neg, sub_neg_eq_add]
 
 /-- With total division `z / 0 = 0`, `weierstrassFactor p (z / a)` vanishes if and only if `a ≠ 0`
 and `a = z`. -/

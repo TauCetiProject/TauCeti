@@ -33,6 +33,9 @@ the plain form for a complete codomain, so that each side can be manipulated on 
 
 ## Main statements
 
+* `SchwartzMap.summable_norm_apply_sum_intCast_smul` gives absolute summability in
+  orthonormal coordinates using `ZLattice.summable_norm_poisson_left`.
+* `SchwartzMap.summable_norm_apply_intCast` specializes this to integer samples on `ℝ`.
 * `ZLattice.summable_norm_poisson_left`, `ZLattice.summable_poisson_left`: the translates of a
   Schwartz function are (absolutely) summable over a discrete subgroup `L`.
 * `ZLattice.summable_one_add_norm_pow_mul_norm`: on `L`, a Schwartz function stays summable after
@@ -176,3 +179,30 @@ theorem summable_poisson_right (f : 𝓢(E, ℂ)) (v : E) :
 end Right
 
 end ZLattice
+
+section
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {ι : Type*} [Fintype ι]
+
+/-- A Schwartz function is absolutely summable over the points `∑ i, n i • o i`, `n ∈ ℤ^ι`, of the
+lattice spanned by an orthonormal basis `o`. -/
+theorem SchwartzMap.summable_norm_apply_sum_intCast_smul {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (f : 𝓢(E, F)) (o : OrthonormalBasis ι ℝ E) :
+    Summable fun n : ι → ℤ ↦ ‖f (∑ i, (n i : ℝ) • o i)‖ := by
+  have : FiniteDimensional ℝ E := o.toBasis.finiteDimensional_of_finite
+  have h := ZLattice.summable_norm_poisson_left (Submodule.span ℤ (Set.range o.toBasis)) f 0
+  simp only [zero_add] at h
+  simpa only [Function.comp_def, LinearEquiv.coe_toEquiv, o.coe_latticeEquiv] using
+    o.latticeEquiv.toEquiv.summable_iff.2 h
+
+end
+
+/-- The integer samples of a Schwartz function on `ℝ` are absolutely summable. -/
+theorem SchwartzMap.summable_norm_apply_intCast {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (f : 𝓢(ℝ, F)) :
+    Summable fun n : ℤ ↦ ‖f (n : ℝ)‖ := by
+  have h := f.summable_norm_apply_sum_intCast_smul (OrthonormalBasis.singleton Unit ℝ)
+  have hinj : Function.Injective (fun (n : ℤ) (_ : Unit) ↦ n) := fun _ _ hn ↦ congrFun hn ()
+  simpa only [Function.comp_def, Finset.univ_unique, OrthonormalBasis.singleton_apply,
+    smul_eq_mul, mul_one, Finset.sum_singleton] using h.comp_injective hinj

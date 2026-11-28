@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.Probability.ConditionalProbability
 public import TauCeti.MeasureTheory.Integral.PiSystem
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Measure.Typeclasses.SFinite
 
 /-!
@@ -33,9 +34,9 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   conditional laws by any bound the integrand satisfies on the rectangle conditioned on. Use it to
   estimate an integral against two independently conditioned coordinates when the integrand is
   controlled only on the pair of sets being conditioned on.
-* `TauCeti.abs_integral_prod_sub_integral_prod_le_of_ae`: if the integrals over the second factor
-  differ by at most `C` for almost every point of a probability first factor, the integrals over
-  the product measures differ by at most `C`.
+* `TauCeti.norm_integral_prod_sub_integral_prod_le_of_ae`: if the integrals over the second factor
+  differ by at most `C` almost everywhere, the product integrals differ by at most `C` times the
+  mass of the common finite first factor.
 * `TauCeti.integrable_prod_restrict_of_continuous`: a continuous function on `α × β` vanishing on
   `(α \ K) × D` for compact `K` and `D` is integrable for `μ × ν|_D`, the integrability needed to
   apply Fubini's theorem to a compactly supported integrand over a compact parameter set.
@@ -65,6 +66,10 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   that divergent sections cannot be hidden by the default value of the Bochner integral.
 * `TauCeti.ae_eq_zero_prod_of_forall_integral_mul_eq_zero`: completeness passes from a countable
   complete system in the first variable of a product to the whole product, slice by slice.
+* `TauCeti.integral_Ioi_integral_Ioi_pow_smul`: Fubini on the region `t < s < τ` of a half-line,
+  `∫_t^∞ ∫_s^∞ (τ - s)^j g(τ) dτ ds = (j + 1)⁻¹ ∫_t^∞ (τ - t)^(j + 1) g(τ) dτ`, with the
+  integrability of the integrand on `(t, ∞)²` (`TauCeti.integrable_indicator_lt_pow_smul`). This
+  is Cauchy's formula for repeated integration from `+∞`.
 
 ## Fubini on sigma-finite supports
 
@@ -295,18 +300,16 @@ theorem setIntegral_eq_zero_of_forall_prod {ρ : Measure (α × β)} {f : α × 
   exact setIntegral_eq_zero_of_isPiSystem le_rfl generateFrom_prod.symm isPiSystem_prod hf huniv
     fun _ ⟨s, hs, t, ht, h⟩ => h ▸ hrect s hs t ht
 
-/-- If two integrals over the second factor of a product measure with a probability first factor
-differ by at most `C` for almost every point of the first factor, then the two integrals over the
-product measures differ by at most `C`. -/
-theorem abs_integral_prod_sub_integral_prod_le_of_ae {ρ : Measure α} [IsProbabilityMeasure ρ]
-    {κ₁ κ₂ : Measure β} [SFinite κ₁] [SFinite κ₂] {F : α × β → ℝ} {C : ℝ}
+/-- If two integrals over the second factor differ by at most `C` almost everywhere under the
+finite first-factor measure, then the product integrals differ by at most `C` times its mass. -/
+theorem norm_integral_prod_sub_integral_prod_le_of_ae {ρ : Measure α} [IsFiniteMeasure ρ]
+    {κ₁ κ₂ : Measure β} [SFinite κ₁] [SFinite κ₂] {F : α × β → E} {C : ℝ}
     (h₁ : Integrable F (ρ.prod κ₁)) (h₂ : Integrable F (ρ.prod κ₂))
-    (h : ∀ᵐ t ∂ρ, |∫ w, F (t, w) ∂κ₁ - ∫ w, F (t, w) ∂κ₂| ≤ C) :
-    |∫ p, F p ∂(ρ.prod κ₁) - ∫ p, F p ∂(ρ.prod κ₂)| ≤ C := by
+    (h : ∀ᵐ t ∂ρ, ‖(∫ w, F (t, w) ∂κ₁) - ∫ w, F (t, w) ∂κ₂‖ ≤ C) :
+    ‖(∫ p, F p ∂(ρ.prod κ₁)) - ∫ p, F p ∂(ρ.prod κ₂)‖ ≤ C * ρ.real Set.univ := by
   rw [integral_prod _ h₁, integral_prod _ h₂,
-    ← integral_sub h₁.integral_prod_left h₂.integral_prod_left, ← Real.norm_eq_abs]
-  exact le_trans (norm_integral_le_of_norm_le_const (C := C)
-    (by simpa only [Real.norm_eq_abs] using h)) (by simp)
+    ← integral_sub h₁.integral_prod_left h₂.integral_prod_left]
+  exact norm_integral_le_of_norm_le_const h
 
 omit [NormedSpace ℝ E] in
 /-- A continuous function on `α × β` that vanishes on `(α \ K) × D`, for compact sets `K` and
@@ -550,3 +553,101 @@ theorem _root_.MeasureTheory.StronglyMeasurable.fubini_of_countable_rectangles
 end TauCeti
 
 end LocalizedFubini
+
+section HalfLineFubini
+
+namespace TauCeti
+
+open MeasureTheory Set
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- `∫_t^τ (τ - s)^j ds = (τ - t)^(j + 1) / (j + 1)`, written over `(t, ∞)`. -/
+theorem integral_Ioi_indicator_Iio_pow {t τ : ℝ} (h : t < τ) (j : ℕ) :
+    ∫ s in Ioi t, (Iio τ).indicator (fun s ↦ (τ - s) ^ j) s = (τ - t) ^ (j + 1) / (j + 1) := by
+  rw [integral_indicator measurableSet_Iio, Measure.restrict_restrict measurableSet_Iio,
+    Iio_inter_Ioi, ← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le h.le,
+    intervalIntegral.integral_comp_sub_left (fun s ↦ s ^ j), sub_self, integral_pow]
+  simp
+
+/-- If `(τ - t)^j g(τ)` is integrable on `(t, ∞)`, then `g` is a.e. strongly measurable on
+`(t, ∞)`. -/
+theorem aestronglyMeasurable_of_integrableOn_pow_smul {g : ℝ → E} {t : ℝ} {j : ℕ}
+    (hg : IntegrableOn (fun τ ↦ (τ - t) ^ j • g τ) (Ioi t)) :
+    AEStronglyMeasurable g (volume.restrict (Ioi t)) := by
+  refine (aestronglyMeasurable_fun_smul_iff₀
+    ((measurable_id.sub_const t).pow_const j).aestronglyMeasurable ?_).1 hg.aestronglyMeasurable
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ (hτ : t < τ)
+  exact pow_ne_zero j (sub_pos.mpr hτ).ne'
+
+/-- The integrand `1_{s < τ} (τ - s)^j g(τ)` of `TauCeti.integral_Ioi_integral_Ioi_pow_smul` is
+integrable on `(t, ∞)²` when `(τ - t)^(j + 1) g(τ)` is integrable on `(t, ∞)`. -/
+theorem integrable_indicator_lt_pow_smul {g : ℝ → E} {t : ℝ} {j : ℕ}
+    (hg : IntegrableOn (fun τ ↦ (τ - t) ^ (j + 1) • g τ) (Ioi t)) :
+    Integrable ({q : ℝ × ℝ | q.1 < q.2}.indicator fun q ↦ (q.2 - q.1) ^ j • g q.2)
+      ((volume.restrict (Ioi t)).prod (volume.restrict (Ioi t))) := by
+  set F : ℝ × ℝ → E := {q : ℝ × ℝ | q.1 < q.2}.indicator fun q ↦ (q.2 - q.1) ^ j • g q.2 with hF
+  have hFm : AEStronglyMeasurable F ((volume.restrict (Ioi t)).prod (volume.restrict (Ioi t))) :=
+    (((continuous_snd.sub continuous_fst).pow j).aestronglyMeasurable.smul
+      (aestronglyMeasurable_of_integrableOn_pow_smul hg).comp_snd).indicator
+      (measurableSet_lt measurable_fst measurable_snd)
+  have hsec (τ : ℝ) : (fun s ↦ F (s, τ)) = (Iio τ).indicator fun s ↦ (τ - s) ^ j • g τ := by
+    ext s
+    simp only [hF, indicator, mem_Iio]
+    rfl
+  refine (integrable_prod_iff' hFm).2 ⟨?_, ?_⟩
+  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ _
+    rw [hsec]
+    refine (integrable_indicator_iff measurableSet_Iio).2 ?_
+    rw [IntegrableOn, Measure.restrict_restrict measurableSet_Iio, Iio_inter_Ioi]
+    exact (((continuous_const.sub continuous_id).pow j).smul
+      continuous_const).integrableOn_Icc.mono_set Ioo_subset_Icc_self
+  · -- the integral of the norm of a section is `(j + 1)⁻¹ ‖(τ - t)^(j + 1) g(τ)‖`
+    refine (hg.norm.const_mul ((j : ℝ) + 1)⁻¹).congr ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ (hτ : t < τ)
+    have h : (fun s ↦ ‖F (s, τ)‖) = fun s ↦ (Iio τ).indicator (fun s ↦ (τ - s) ^ j) s * ‖g τ‖ := by
+      ext s
+      rw [congrFun (hsec τ) s]
+      by_cases hs : s < τ
+      · simp [indicator, hs, norm_smul, abs_of_pos (sub_pos.mpr hs)]
+      · simp [indicator, hs]
+    rw [h, integral_mul_const, integral_Ioi_indicator_Iio_pow hτ j, norm_smul, norm_pow,
+      Real.norm_of_nonneg (sub_pos.mpr hτ).le]
+    ring
+
+/-- Fubini on the region `t < s < τ`: if `(τ - t)^(j + 1) g(τ)` is integrable on `(t, ∞)`, then
+`s ↦ ∫_s^∞ (τ - s)^j g(τ) dτ` is integrable on `(t, ∞)`, with integral
+`(j + 1)⁻¹ ∫_t^∞ (τ - t)^(j + 1) g(τ) dτ`. -/
+theorem integral_Ioi_integral_Ioi_pow_smul [CompleteSpace E] {g : ℝ → E} {t : ℝ} {j : ℕ}
+    (hg : IntegrableOn (fun τ ↦ (τ - t) ^ (j + 1) • g τ) (Ioi t)) :
+    IntegrableOn (fun s ↦ ∫ τ in Ioi s, (τ - s) ^ j • g τ) (Ioi t) ∧
+      ∫ s in Ioi t, ∫ τ in Ioi s, (τ - s) ^ j • g τ =
+        ((j : ℝ) + 1)⁻¹ • ∫ τ in Ioi t, (τ - t) ^ (j + 1) • g τ := by
+  set ν := volume.restrict (Ioi t)
+  set F : ℝ × ℝ → E := {q : ℝ × ℝ | q.1 < q.2}.indicator fun q ↦ (q.2 - q.1) ^ j • g q.2 with hF
+  have hFi : Integrable F (ν.prod ν) := integrable_indicator_lt_pow_smul hg
+  -- the inner integrals in `τ` and in `s`
+  have hleft : ∀ᵐ s ∂ν, ∫ τ, F (s, τ) ∂ν = ∫ τ in Ioi s, (τ - s) ^ j • g τ := by
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with s (hs : t < s)
+    have hsec : (fun τ ↦ F (s, τ)) = (Ioi s).indicator fun τ ↦ (τ - s) ^ j • g τ := by
+      ext τ
+      simp only [hF, indicator, mem_Ioi]
+      rfl
+    rw [hsec, integral_indicator measurableSet_Ioi, Measure.restrict_restrict measurableSet_Ioi,
+      inter_eq_left.mpr (Ioi_subset_Ioi hs.le)]
+  have hright (τ : ℝ) (hτ : t < τ) :
+      ∫ s, F (s, τ) ∂ν = ((τ - t) ^ (j + 1) / (j + 1)) • g τ := by
+    rw [← integral_Ioi_indicator_Iio_pow hτ j, ← integral_smul_const]
+    congr 1
+    ext s
+    by_cases hs : s < τ <;> simp [hF, indicator, hs]
+  refine ⟨hFi.integral_prod_left.congr hleft, ?_⟩
+  rw [← integral_congr_ae hleft, integral_integral_swap (f := fun s τ ↦ F (s, τ)) hFi,
+    ← integral_smul]
+  refine integral_congr_ae ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ (hτ : t < τ)
+  rw [hright τ hτ, smul_smul, div_eq_inv_mul]
+
+end TauCeti
+
+end HalfLineFubini

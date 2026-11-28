@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Analysis.Calculus.Deriv.Basic
@@ -13,6 +14,7 @@ public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Measure.Haar.Unique
@@ -66,8 +68,15 @@ gives a set of measure one.
   nontrivial space.
 * `MeasureTheory.Measure.addHaar_real_ball_div_addHaar_real_ball`: the ratio of the real measures
   of two balls is the ratio of their radii raised to the dimension.
+* `MeasureTheory.Measure.setAverage_ball_le_div_pow_mul_setAverage_ball`,
+  `MeasureTheory.Measure.rpow_setAverage_ball_le_div_pow_rpow_mul`: the average of a nonnegative
+  function over a ball `B(x, r) ⊆ B(y, s)` is at most `(s / r)ⁿ` times its average over `B(y, s)`,
+  and the same holds for nonnegative powers of both sides.
 * `MeasureTheory.Measure.addHaar_real_ball_rpow`: `μ (ball x r) ^ e = r ^ (n e) μ (ball 0 1) ^ e` in
   dimension `n`.
+* `MeasureTheory.Measure.addHaar_real_ball_div_rpow_le` and
+  `MeasureTheory.Measure.addHaar_ball_div_rpow_le`: `μ (ball y (R / κ)) ^ e ≤ κⁿ μ (ball x R) ^ e`
+  for `κ ≥ 1` and `e ≥ -1` in dimension `n`.
 * `MeasureTheory.Measure.addHaar_real_ball_half_rpow_le`:
   `μ (ball x (R / 2)) ^ e ≤ 2ⁿ μ (ball x R) ^ e` for `e ≥ -1` in dimension `n`.
 * `MeasureTheory.Measure.addHaar_ball_rpow_le_of_half_le`: its extended form
@@ -211,6 +220,43 @@ theorem addHaar_real_ball_div_addHaar_real_ball
   rw [mu.addHaar_real_ball_of_pos y hs, mu.addHaar_real_ball_of_pos x hr,
     mul_div_mul_right _ _ (Metric.measureReal_ball_pos mu 0 one_pos).ne', div_pow]
 
+/-- The average of a nonnegative function over a ball `B(x, r)` contained in a ball `B(y, s)` is at
+most `(s / r)ⁿ` times its average over `B(y, s)`, in dimension `n`. -/
+theorem setAverage_ball_le_div_pow_mul_setAverage_ball
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    {f : E → ℝ} (hf0 : ∀ z, 0 ≤ f z) {x y : E} {r s : ℝ} (hr : 0 < r)
+    (hsub : ball x r ⊆ ball y s) (hf : IntegrableOn f (ball y s) mu) :
+    ⨍ z in ball x r, f z ∂mu ≤ (s / r) ^ finrank ℝ E * ⨍ z in ball y s, f z ∂mu := by
+  have hs : 0 < s := dist_nonneg.trans_lt (mem_ball.1 (hsub (mem_ball_self hr)))
+  have hmr : 0 < mu.real (ball x r) := measureReal_ball_pos mu x hr
+  have hms : 0 < mu.real (ball y s) := measureReal_ball_pos mu y hs
+  have hint : ∫ z in ball x r, f z ∂mu ≤ ∫ z in ball y s, f z ∂mu :=
+    setIntegral_mono_set hf (Filter.Eventually.of_forall fun z => hf0 z)
+      (Filter.Eventually.of_forall hsub)
+  rw [setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul,
+    ← mu.addHaar_real_ball_div_addHaar_real_ball x y hr hs]
+  calc (mu.real (ball x r))⁻¹ * ∫ z in ball x r, f z ∂mu
+      ≤ (mu.real (ball x r))⁻¹ * ∫ z in ball y s, f z ∂mu := by gcongr
+    _ = mu.real (ball y s) / mu.real (ball x r) *
+          ((mu.real (ball y s))⁻¹ * ∫ z in ball y s, f z ∂mu) := by
+        field_simp
+
+/-- A nonnegative power of the average of a nonnegative function over a ball `B(x, r)` contained
+in a ball `B(y, s)` is at most the same power of `(s / r)ⁿ` times that of its average over
+`B(y, s)`, in dimension `n`. -/
+theorem rpow_setAverage_ball_le_div_pow_rpow_mul
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    {f : E → ℝ} (hf0 : ∀ z, 0 ≤ f z) {x y : E} {r s e : ℝ} (hr : 0 < r)
+    (hsub : ball x r ⊆ ball y s) (hf : IntegrableOn f (ball y s) mu) (he : 0 ≤ e) :
+    (⨍ z in ball x r, f z ∂mu) ^ e ≤
+      ((s / r) ^ finrank ℝ E) ^ e * (⨍ z in ball y s, f z ∂mu) ^ e := by
+  have hs : 0 < s := dist_nonneg.trans_lt (mem_ball.1 (hsub (mem_ball_self hr)))
+  rw [← Real.mul_rpow (by positivity) (average_nonneg hf0)]
+  exact Real.rpow_le_rpow (average_nonneg hf0)
+    (mu.setAverage_ball_le_div_pow_mul_setAverage_ball hf0 hr hsub hf) he
+
 /-- The square root of the real measure of a ball of radius `R` is `R ^ (n / 2)` times that of the
 unit ball, where `n` is the dimension. -/
 theorem _root_.MeasureTheory.Measure.sqrt_addHaar_real_ball
@@ -232,22 +278,51 @@ theorem addHaar_real_ball_rpow
   rw [addHaar_real_ball_of_pos _ _ hr, Real.mul_rpow (by positivity) measureReal_nonneg,
     ← Real.rpow_natCast, ← Real.rpow_mul hr.le]
 
+/-- Shrinking the radius of a ball by a factor `κ ≥ 1` divides its real measure by `κⁿ`, where `n`
+is the dimension, so `μ (ball y (R / κ)) ^ e ≤ κⁿ μ (ball x R) ^ e` for every exponent `e ≥ -1`,
+whatever the centres `x` and `y`. -/
+theorem addHaar_real_ball_div_rpow_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x y : E) {R κ : ℝ} (hR : 0 < R) (hκ : 1 ≤ κ) {e : ℝ} (he : -1 ≤ e) :
+    mu.real (ball y (R / κ)) ^ e ≤ κ ^ finrank ℝ E * mu.real (ball x R) ^ e := by
+  have hκ0 : 0 < κ := zero_lt_one.trans_le hκ
+  have hμR : 0 < mu.real (ball x R) := Metric.measureReal_ball_pos mu x hR
+  have h := mu.addHaar_real_ball_div_addHaar_real_ball x y hR (div_pos hR hκ0)
+  rw [div_div_cancel_left₀ hR.ne', inv_pow, div_eq_iff hμR.ne'] at h
+  rw [h, Real.mul_rpow (by positivity) hμR.le, Real.inv_rpow (by positivity),
+    ← Real.rpow_neg (by positivity)]
+  gcongr
+  calc (κ ^ finrank ℝ E) ^ (-e) ≤ (κ ^ finrank ℝ E) ^ (1 : ℝ) :=
+        Real.rpow_le_rpow_of_exponent_le (one_le_pow₀ hκ) (by linarith)
+    _ = κ ^ finrank ℝ E := Real.rpow_one _
+
 /-- Halving the radius of a ball divides its real measure by `2ⁿ`, where `n` is the dimension, so
 `μ (ball x (R / 2)) ^ e ≤ 2ⁿ μ (ball x R) ^ e` for every exponent `e ≥ -1`. -/
 theorem addHaar_real_ball_half_rpow_le
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
     (x : E) {R : ℝ} (hR : 0 < R) {e : ℝ} (he : -1 ≤ e) :
-    mu.real (ball x (R / 2)) ^ e ≤ 2 ^ finrank ℝ E * mu.real (ball x R) ^ e := by
-  have hμR : 0 < mu.real (ball x R) := Metric.measureReal_ball_pos mu x hR
-  have h := mu.addHaar_real_ball_div_addHaar_real_ball x x hR (half_pos hR)
-  rw [show R / 2 / R = 2⁻¹ by field_simp, inv_pow, div_eq_iff hμR.ne'] at h
-  rw [h, Real.mul_rpow (by positivity) hμR.le, Real.inv_rpow (by positivity),
-    ← Real.rpow_neg (by positivity)]
-  gcongr
-  calc ((2 : ℝ) ^ finrank ℝ E) ^ (-e) ≤ ((2 : ℝ) ^ finrank ℝ E) ^ (1 : ℝ) :=
-        Real.rpow_le_rpow_of_exponent_le (one_le_pow₀ one_le_two) (by linarith)
-    _ = 2 ^ finrank ℝ E := Real.rpow_one _
+    mu.real (ball x (R / 2)) ^ e ≤ 2 ^ finrank ℝ E * mu.real (ball x R) ^ e :=
+  mu.addHaar_real_ball_div_rpow_le x x hR one_le_two he
+
+/-- Shrinking the radius of a ball by a factor `κ ≥ 1` divides its measure by `κⁿ`, where `n` is
+the dimension, so `μ (ball y (R / κ)) ^ e ≤ κⁿ μ (ball x R) ^ e` for every exponent `e ≥ -1`,
+whatever the centres `x` and `y`. -/
+theorem addHaar_ball_div_rpow_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x y : E) {R κ : ℝ} (hR : 0 < R) (hκ : 1 ≤ κ) {e : ℝ} (he : -1 ≤ e) :
+    mu (ball y (R / κ)) ^ e ≤ ENNReal.ofReal κ ^ finrank ℝ E * mu (ball x R) ^ e := by
+  have hκ0 : 0 < κ := zero_lt_one.trans_le hκ
+  have hpos (z : E) (r : ℝ) (hr : 0 < r) : 0 < mu.real (ball z r) :=
+    Metric.measureReal_ball_pos mu z hr
+  have hofReal (z : E) (r : ℝ) : mu (ball z r) = ENNReal.ofReal (mu.real (ball z r)) := by
+    rw [measureReal_def, ENNReal.ofReal_toReal measure_ball_lt_top.ne]
+  rw [hofReal, hofReal, ENNReal.ofReal_rpow_of_pos (hpos y _ (div_pos hR hκ0)),
+    ENNReal.ofReal_rpow_of_pos (hpos x R hR), ← ENNReal.ofReal_pow hκ0.le,
+    ← ENNReal.ofReal_mul (by positivity)]
+  exact ENNReal.ofReal_le_ofReal (mu.addHaar_real_ball_div_rpow_le x y hR hκ he)
 
 /-- For `R / 2 ≤ ρ` and a nonpositive exponent `e ≥ -1`, `μ (ball x ρ) ^ e ≤ 2ⁿ μ (ball x R) ^ e`,
 where `n` is the dimension. -/
@@ -255,20 +330,9 @@ theorem addHaar_ball_rpow_le_of_half_le
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
     (x : E) {R ρ : ℝ} (hR : 0 < R) (hρ : R / 2 ≤ ρ) {e : ℝ} (he : -1 ≤ e) (he0 : e ≤ 0) :
-    mu (ball x ρ) ^ e ≤ 2 ^ finrank ℝ E * mu (ball x R) ^ e := by
-  have hpos (r : ℝ) (hr : 0 < r) : 0 < mu.real (ball x r) := Metric.measureReal_ball_pos mu x hr
-  have hofReal (r : ℝ) : mu (ball x r) = ENNReal.ofReal (mu.real (ball x r)) := by
-    rw [measureReal_def, ENNReal.ofReal_toReal measure_ball_lt_top.ne]
-  calc mu (ball x ρ) ^ e = ENNReal.ofReal (mu.real (ball x ρ) ^ e) := by
-        rw [hofReal, ENNReal.ofReal_rpow_of_pos (hpos _ (by linarith))]
-    _ ≤ ENNReal.ofReal (mu.real (ball x (R / 2)) ^ e) :=
-        ENNReal.ofReal_le_ofReal (Real.rpow_le_rpow_of_nonpos (hpos _ (half_pos hR))
-          (measureReal_mono (ball_subset_ball hρ) measure_ball_lt_top.ne) he0)
-    _ ≤ ENNReal.ofReal (2 ^ finrank ℝ E * mu.real (ball x R) ^ e) :=
-        ENNReal.ofReal_le_ofReal (mu.addHaar_real_ball_half_rpow_le x hR he)
-    _ = _ := by
-        rw [ENNReal.ofReal_mul (by positivity), hofReal R, ENNReal.ofReal_rpow_of_pos (hpos _ hR),
-          ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
+    mu (ball x ρ) ^ e ≤ 2 ^ finrank ℝ E * mu (ball x R) ^ e :=
+  (ENNReal.rpow_le_rpow_of_nonpos (measure_mono (ball_subset_ball hρ)) he0).trans
+    (by simpa only [ENNReal.ofReal_ofNat] using mu.addHaar_ball_div_rpow_le x x hR one_le_two he)
 
 /-- Hölder's inequality on a ball: for `p₀ ≤ p`, the `L^{p₀}` norm on `B(x₀, R)` is at most the
 `L^p` norm times `(Rⁿ |B(0, 1)|)^{1/p₀ - 1/p}`, where `n` is the dimension. For `R > 0` this

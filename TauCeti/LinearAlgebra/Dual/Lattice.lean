@@ -157,7 +157,7 @@ instance isFullLattice_dualLattice (N : Submodule R V) [N.IsFullLattice K] [Modu
   have := IsLattice.finite K N
   let b := Module.Free.chooseBasis R N
   rw [← b.span_range_extendOfIsFullLattice (K := K), (b.extendOfIsFullLattice K).dualLattice_span]
-  exact isFullLattice_span (Set.finite_range _) (b.extendOfIsFullLattice K).dualBasis.span_eq
+  exact (b.extendOfIsFullLattice K).dualBasis.isFullLattice_span_range
 
 omit [IsFractionRing R K] in
 /-- **Biduality for lattices.** Evaluation carries a free full lattice onto its double integral

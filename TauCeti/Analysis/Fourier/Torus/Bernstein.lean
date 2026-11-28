@@ -647,11 +647,11 @@ variable {d : Type*} [Fintype d]
 /-- The periodic kernel of a Schwartz symbol dilated by `R > 0`, `ξ ↦ σ (R⁻¹ • ξ)`. -/
 private noncomputable def dilatedKernel (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) {R : ℝ} (hR : 0 < R) :
     C(UnitAddTorus d, ℂ) :=
-  (SchwartzMap.compSMulCLM ℂ (Units.mk0 R⁻¹ (inv_ne_zero hR.ne')) σ).periodicKernel
+  (σ.dilate (inv_ne_zero hR.ne')).periodicKernel
 
 private theorem mFourierCoeff_dilatedKernel (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) {R : ℝ} (hR : 0 < R)
     (n : d → ℤ) : mFourierCoeff (dilatedKernel σ hR) n = σ (R⁻¹ • latticePoint n) := by
-  simp [dilatedKernel, Units.smul_def]
+  simp [dilatedKernel]
 
 /-- **Young's inequality for the dilated kernels**, uniformly in the scale: convolution with
 `dilatedKernel σ hR` is bounded on `Lᵖ(𝕋ᵈ; E)`, `1 ≤ p ≤ ∞`, by `∫ ‖𝓕⁻ σ‖`. -/
@@ -660,10 +660,8 @@ private theorem eLpNorm_dilatedKernel_convolution_le {E : Type*} [NormedAddCommG
     (hp : 1 ≤ p) {g : UnitAddTorus d → E} (hg : AEStronglyMeasurable g) :
     eLpNorm (⇑(dilatedKernel σ hR) ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] g) p volume ≤
       ENNReal.ofReal (∫ y, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) y‖) * eLpNorm g p volume := by
-  have h : ⇑(SchwartzMap.compSMulCLM ℂ (Units.mk0 R⁻¹ (inv_ne_zero hR.ne')) σ) =
-      fun ξ ↦ σ (R⁻¹ • ξ) := funext fun ξ ↦ by simp [Units.smul_def]
   rw [volume_eq_pi_haarAddCircle, ← integral_norm_fourierInv_comp_smul _ (inv_ne_zero hR.ne'),
-    ← h]
+    ← σ.coe_dilate (inv_ne_zero hR.ne')]
   exact SchwartzMap.eLpNorm_periodicKernel_convolution_le _ hp
     (by rwa [volume_eq_pi_haarAddCircle] at hg)
 

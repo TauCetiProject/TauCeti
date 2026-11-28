@@ -17,7 +17,7 @@ import TauCeti.LinearAlgebra.Complex.Determinant
 import TauCeti.LinearAlgebra.Matrix.Kronecker.MulLeftMulRight
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 import TauCeti.LinearAlgebra.Prod
-import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
+import TauCeti.Topology.Algebra.Matrix.UnitaryGroup.Basic
 import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!

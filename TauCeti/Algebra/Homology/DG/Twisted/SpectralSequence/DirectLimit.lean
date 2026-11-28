@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.DG.Twisted.DirectLimit
+public import TauCeti.Algebra.Homology.DG.Twisted.DirectLimit.Basic
 public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence.Continuation
 public import TauCeti.Algebra.Homology.SpectralSequence.Colimit
 public import TauCeti.Algebra.Homology.SpectralSequence.Reindex

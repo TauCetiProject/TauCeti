@@ -47,7 +47,7 @@ theorem upperRightHom_one_mem_level1 (N : Ideal R) :
 /-- For a proper nonzero ideal `N`, the unipotent matrix `[[1, 1], [0, 1]]` does not lie in
 `K(N)`: its entry `b = 1` is not in `NÔ`. -/
 theorem upperRightHom_one_notMem_principalLevel {N : Ideal R} (hN₀ : N ≠ ⊥) (hN : N ≠ ⊤) :
-    upperRightHom (1 : 𝔸ᶠ[R, K]) ∉ principalLevel K N := by
+    upperRightHom (1 : 𝔸ᶠ[R, K]) ∉ principalLevel K (Fin 2) N := by
   rw [← map_one (algebraMap R 𝔸ᶠ[R, K]), upperRightHom_algebraMap_mem_principalLevel_iff hN₀]
   exact (Ideal.ne_top_iff_one N).mp hN
 
@@ -55,19 +55,19 @@ theorem upperRightHom_one_notMem_principalLevel {N : Ideal R} (hN₀ : N ≠ ⊥
 open in `GL₂(𝔸_f)`. -/
 theorem not_isOpen_principalLevel_bot [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)]
     (hR : ¬ IsField R) :
-    ¬ IsOpen (principalLevel K (⊥ : Ideal R) : Set (GL (Fin 2) 𝔸ᶠ[R, K])) := by
+    ¬ IsOpen (principalLevel K (Fin 2) (⊥ : Ideal R) : Set (GL (Fin 2) 𝔸ᶠ[R, K])) := by
   intro h
   rw [principalLevel_bot, Subgroup.coe_bot] at h
   have := discreteTopology_of_isOpen_singleton_one h
   -- `GL₂(Ô)` is compact, hence finite, and contains `[[1, r], [0, 1]]` for every `r ∈ R`.
-  have hfin : ((integralGL K 2 (R := R)).range : Set (GL (Fin 2) 𝔸ᶠ[R, K])).Finite := by
+  have hfin : ((integralGL K (Fin 2) (R := R)).range : Set (GL (Fin 2) 𝔸ᶠ[R, K])).Finite := by
     rw [← level0_top]
-    exact (isCompact_level0 K top_ne_bot).finite_of_discrete
-  have hmem (r : R) : upperRightHom (algebraMap R 𝔸ᶠ[R, K] r) ∈ (integralGL K 2).range :=
+    exact (isCompact_level0 K ⊤).finite_of_discrete
+  have hmem (r : R) : upperRightHom (algebraMap R 𝔸ᶠ[R, K] r) ∈ (integralGL K (Fin 2)).range :=
     level1_top (R := R) K ▸ upperRightHom_mem_level1 ((integralAdeles R K).algebraMap_mem r) ⊤
   have := hfin.to_subtype
   have : Finite R := Finite.of_injective
-    (fun r ↦ (⟨_, hmem r⟩ : ((integralGL K 2 (R := R)).range : Set (GL (Fin 2) 𝔸ᶠ[R, K]))))
+    (fun r ↦ (⟨_, hmem r⟩ : ((integralGL K (Fin 2) (R := R)).range : Set (GL (Fin 2) 𝔸ᶠ[R, K]))))
     fun r s h ↦ IsFractionRing.injective R K <| algebraMap_injective K hR <| by
       simpa [← IsScalarTower.algebraMap_apply] using
         injective_upperRightHom (congrArg Subtype.val h)
@@ -88,7 +88,7 @@ private theorem span_ne_bot : Ideal.span {(n : ℤ)} ≠ ⊥ := by
 /-- **`K(n) ∩ SL₂(ℤ) = Γ(n)`**: an element of `SL₂(ℤ)` has its image in the principal level of
 `(n) ⊆ ℤ` exactly when it lies in the principal congruence subgroup `Γ(n)`. -/
 theorem mem_principalLevel_iff_mem_Gamma (γ : SL(2, ℤ)) :
-    map (algebraMap ℤ 𝔸ᶠ[ℤ, ℚ]) γ.toGL ∈ principalLevel ℚ (Ideal.span {(n : ℤ)}) ↔
+    map (algebraMap ℤ 𝔸ᶠ[ℤ, ℚ]) γ.toGL ∈ principalLevel ℚ (Fin 2) (Ideal.span {(n : ℤ)}) ↔
       γ ∈ Gamma n := by
   rw [map_algebraMap_mem_principalLevel_iff (K := ℚ) span_ne_bot, mem_Gamma_iff_dvd]
   simp [Fin.forall_fin_two, Ideal.mem_span_singleton, and_assoc]

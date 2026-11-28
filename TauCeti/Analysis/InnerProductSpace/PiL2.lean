@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
+public import TauCeti.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.Data.Fin.Tuple.Take
 public import Mathlib.Data.Fintype.Sort
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
@@ -48,6 +48,8 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.add_sub_smul_single_apply`: the point `x + (t - xᵢ) eᵢ` is `x` with its `i`-th
   coordinate replaced by `t`; the map `t ↦ x + (t - xᵢ) eᵢ` is `1`-Lipschitz
   (`EuclideanSpace.lipschitzWith_add_sub_smul_single`).
+* `EuclideanSpace.toLp_insertNth_eq_add_sub_smul_single`: inserting `t` as the `i`-th coordinate
+  is moving the point with `i`-th coordinate `s` along the `i`-th axis.
 * `EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq`: a quadratic form that is diagonal in the
   real Euclidean coordinates is positive definite exactly when all of its weights are positive.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
@@ -59,6 +61,7 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
   when its dot product with itself is `1`.
 * `EuclideanSpace.norm_fin_one`: the norm on `ℝ¹` is the absolute value of the coordinate.
+* `EuclideanSpace.norm_sq_fin_two`: the squared norm on `ℝ²` is `x₀² + x₁²`.
 * `EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere`: the coordinates of a point of the unit sphere
   of `ℝ³` satisfy `x₀² + x₁² + x₂² = 1`.
 * `EuclideanSpace.sum_mul_dist_basisFun_le_sqrt`: a point of the standard simplex is, on average
@@ -99,6 +102,10 @@ Borel measurable structure on the scalar field.
   norm, as a linear isometric automorphism of `EuclideanSpace 𝕜 ι`.
 * `PiLp.inner_single_left`, `PiLp.inner_single_right`: the inner product against `PiLp.single 2 i v`
   extracts the `i`-th coordinate inner product.
+* `EuclideanSpace.basisFun_toBasis_constrL_apply`:
+  `(EuclideanSpace.basisFun ι 𝕜).toBasis.constrL y g` expands as `∑ i, g i • y i`.
+* `EuclideanSpace.truncVec` and `EuclideanSpace.tailVec`: coordinatewise truncation to `[-t, t]`
+  and its complementary tail on `EuclideanSpace ℝ ι`.
 * `LinearIsometryEquiv.submodulePiLp_orthogonalProjectionOnto`,
   `LinearIsometryEquiv.map_starProjection_apply`, and
   `LinearIsometryEquiv.mem_orthogonal_iff_forall_mem_orthogonal`: coordinatewise orthogonal
@@ -177,6 +184,22 @@ theorem lipschitzWith_add_sub_smul_single {𝕜 ι : Type*} [RCLike 𝕜] [Finty
   LipschitzWith.of_dist_le_mul fun s t ↦ by
     simp [dist_eq_norm, ← sub_smul, norm_smul]
 
+/-- The point with `i`-th coordinate `t` and other coordinates `y` is obtained from the point with
+`i`-th coordinate `s` and the same other coordinates by moving along the `i`-th axis. -/
+theorem toLp_insertNth_eq_add_sub_smul_single {𝕜 : Type*} [RCLike 𝕜] {n : ℕ} (i : Fin (n + 1))
+    (s t : 𝕜) (y : Fin n → 𝕜) :
+    (WithLp.toLp 2 (i.insertNth t y) : EuclideanSpace 𝕜 (Fin (n + 1))) =
+      WithLp.toLp 2 (i.insertNth s y) +
+        (t - (WithLp.toLp 2 (i.insertNth s y) : EuclideanSpace 𝕜 (Fin (n + 1))) i) •
+          EuclideanSpace.single i 1 := by
+  ext j
+  rw [add_sub_smul_single_apply]
+  split_ifs with h
+  · subst h
+    simp
+  · obtain ⟨k, rfl⟩ := Fin.exists_succAbove_eq h
+    simp
+
 variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 
 /-- The square root of the dimension of a nonzero Euclidean space is positive. -/
@@ -201,6 +224,10 @@ theorem toLp_mem_sphere_zero_one_iff {v : ι → ℝ} :
 /-- The Euclidean norm on `ℝ¹` is the absolute value of the coordinate. -/
 theorem norm_fin_one (x : EuclideanSpace ℝ (Fin 1)) : ‖x‖ = |x 0| := by
   rw [EuclideanSpace.norm_eq, Fin.sum_univ_one, Real.norm_eq_abs, Real.sqrt_sq_eq_abs, abs_abs]
+
+/-- The squared Euclidean norm on `ℝ²` is the sum of the squared coordinates. -/
+theorem norm_sq_fin_two (x : EuclideanSpace ℝ (Fin 2)) : ‖x‖ ^ 2 = x 0 ^ 2 + x 1 ^ 2 := by
+  rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
 
 /-- The coordinates of a point of the unit sphere of `ℝ³` satisfy `x₀² + x₁² + x₂² = 1`. -/
 theorem sq_add_sq_add_sq_of_mem_sphere {x : EuclideanSpace ℝ (Fin 3)}
@@ -817,6 +844,13 @@ theorem forall_finsetComplEquivProd_symm_mk_zero_iff (P : 𝕜 → Prop)
 
 end finsetCompl
 
+/-- Expanding `(EuclideanSpace.basisFun ι 𝕜).toBasis.constrL y g` as a coordinate linear
+combination. -/
+theorem basisFun_toBasis_constrL_apply {Y : Type*} [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+    (y : ι → Y) (g : EuclideanSpace 𝕜 ι) :
+    (EuclideanSpace.basisFun ι 𝕜).toBasis.constrL y g = ∑ i, g i • y i := by
+  simp [Module.Basis.constrL_apply, EuclideanSpace.basisFun_toBasis]
+
 end EuclideanSpace
 
 namespace TauCeti
@@ -945,6 +979,61 @@ variable {ι 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [RCLike 𝕜] {F : ι �
   rw [← inner_conj_symm, inner_single_left, inner_conj_symm]
 
 end PiLp
+
+namespace EuclideanSpace
+
+section Truncation
+
+variable {ι : Type*}
+
+/-- Coordinatewise truncation of a real Euclidean vector to `[-t, t]`. -/
+def truncVec (t : ℝ) (g : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι :=
+  PiLp.coordIndicator {r : ℝ | |r| ≤ t} g
+
+/-- Defining formula for `EuclideanSpace.truncVec`. -/
+theorem truncVec_def (t : ℝ) (g : EuclideanSpace ℝ ι) :
+    truncVec t g = PiLp.coordIndicator {r : ℝ | |r| ≤ t} g :=
+  (rfl)
+
+/-- Coordinatewise tail of a real Euclidean vector outside `[-t, t]`. -/
+def tailVec (t : ℝ) (g : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι :=
+  PiLp.coordIndicator {r : ℝ | t < |r|} g
+
+/-- Defining formula for `EuclideanSpace.tailVec`. -/
+theorem tailVec_def (t : ℝ) (g : EuclideanSpace ℝ ι) :
+    tailVec t g = PiLp.coordIndicator {r : ℝ | t < |r|} g :=
+  (rfl)
+
+@[simp]
+theorem truncVec_apply (t : ℝ) (g : EuclideanSpace ℝ ι) (i : ι) :
+    truncVec t g i = if |g i| ≤ t then g i else 0 := by
+  simp [truncVec, Set.indicator_apply]
+
+@[simp]
+theorem tailVec_apply (t : ℝ) (g : EuclideanSpace ℝ ι) (i : ι) :
+    tailVec t g i = if t < |g i| then g i else 0 := by
+  simp [tailVec, Set.indicator_apply]
+
+/-- Splitting a real Euclidean vector into its coordinatewise truncation and tail. -/
+theorem truncVec_add_tailVec (t : ℝ) (g : EuclideanSpace ℝ ι) :
+    truncVec t g + tailVec t g = g := by
+  have hcompl : {r : ℝ | |r| ≤ t}ᶜ = {r : ℝ | t < |r|} := by
+    ext r
+    simp [not_le]
+  simpa only [truncVec, tailVec, hcompl] using
+    PiLp.coordIndicator_add_compl {r : ℝ | |r| ≤ t} g
+
+/-- Each coordinate of `EuclideanSpace.truncVec t g` has absolute value at most `t` when `0 ≤ t`. -/
+theorem abs_truncVec_apply_le {t : ℝ} (ht : 0 ≤ t) (g : EuclideanSpace ℝ ι) (i : ι) :
+    |truncVec t g i| ≤ t := by
+  simp only [truncVec_apply]
+  split_ifs with h
+  · exact h
+  · simpa using ht
+
+end Truncation
+
+end EuclideanSpace
 
 namespace LinearIsometryEquiv
 
