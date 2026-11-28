@@ -148,19 +148,22 @@ theorem rpow_add_one_le_rpow_mul {X x s : ℝ} (hX : 0 < X) (hXx : X ≤ x) (hs 
     _ ≤ X ^ s * x :=
       mul_le_mul_of_nonneg_right (rpow_le_rpow_of_nonpos hX hXx hs) (hX.le.trans hXx)
 
+private lemma rpow_neg_div_pow {b : ℝ} {p q : ℕ} (hb : 0 ≤ b) (hq : q ≠ 0) :
+    (b ^ (-(p : ℝ) / q)) ^ q = 1 / b ^ p := by
+  rw [← rpow_mul_natCast hb, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hq),
+    rpow_neg hb, rpow_natCast, one_div]
+
 /-- For `b > 0`, `u ≥ 0`, and `q ≠ 0`, `b ^ (-p / q) < u` if and only if `1 < u ^ q * b ^ p`. -/
 theorem rpow_neg_div_lt_iff {b u : ℝ} {p q : ℕ} (hb : 0 < b) (hu : 0 ≤ u) (hq : q ≠ 0) :
     b ^ (-(p : ℝ) / q) < u ↔ 1 < u ^ q * b ^ p := by
-  rw [← pow_lt_pow_iff_left₀ (by positivity) hu hq, ← rpow_natCast (b ^ (-(p : ℝ) / q)),
-    ← rpow_mul hb.le, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hq), rpow_neg hb.le,
-    rpow_natCast, ← one_div, div_lt_iff₀ (pow_pos hb p)]
+  rw [← pow_lt_pow_iff_left₀ (by positivity) hu hq, rpow_neg_div_pow hb.le hq,
+    div_lt_iff₀ (pow_pos hb p)]
 
 /-- For `b > 0`, `u ≥ 0`, and `q ≠ 0`, `u < b ^ (-p / q)` if and only if `u ^ q * b ^ p < 1`. -/
 theorem lt_rpow_neg_div_iff {b u : ℝ} {p q : ℕ} (hb : 0 < b) (hu : 0 ≤ u) (hq : q ≠ 0) :
     u < b ^ (-(p : ℝ) / q) ↔ u ^ q * b ^ p < 1 := by
-  rw [← pow_lt_pow_iff_left₀ hu (by positivity) hq, ← rpow_natCast (b ^ (-(p : ℝ) / q)),
-    ← rpow_mul hb.le, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hq), rpow_neg hb.le,
-    rpow_natCast, ← one_div, lt_div_iff₀ (pow_pos hb p)]
+  rw [← pow_lt_pow_iff_left₀ hu (by positivity) hq, rpow_neg_div_pow hb.le hq,
+    lt_div_iff₀ (pow_pos hb p)]
 
 /-- If `2 ≤ y` and `1 ≤ s`, then `y ^ (-s) ≤ 1 / 2`. -/
 theorem rpow_neg_le_half {y s : ℝ} (hy : 2 ≤ y) (hs : 1 ≤ s) : y ^ (-s) ≤ 1 / 2 :=

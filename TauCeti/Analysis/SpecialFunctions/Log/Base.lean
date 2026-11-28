@@ -29,8 +29,9 @@ convergence estimates.
 * `Real.lt_pow_natFloor_logb_add_one`: `x < b ^ (⌊logb b x⌋₊ + 1)` for `1 < b` and `0 < x`.
 * `Real.le_natFloor_logb_iff_pow_le`, `Real.natFloor_logb_lt_iff_lt_pow`: threshold comparisons
   between `⌊logb b x⌋₊` and `n ≠ 0` for `1 < b` and `0 ≤ x`.
-* `Real.natFloor_logb_eq_iff_mem_Ico`, `Real.natFloor_logb_eq_of_mem_Ico`: interval
-  `[b ^ n, b ^ (n + 1))` characterizations of `⌊logb b x⌋₊`.
+* `Real.natFloor_logb_eq_iff_mem_Ico`, `Real.natFloor_logb_eq_of_mem_Ico`,
+  `Real.mem_Ico_pow_natFloor_logb`: interval `[b ^ n, b ^ (n + 1))` characterizations of
+  `⌊logb b x⌋₊`.
 * `Real.natFloor_logb_pow_self`: `⌊logb b (b ^ n)⌋₊ = n` for `1 < b` and `n : ℕ`.
 * `Real.natFloor_logb_eq_natLog_natFloor`: `⌊logb b x⌋₊ = Nat.log b ⌊x⌋₊` for `b : ℕ` and
   `0 ≤ x`.
@@ -108,6 +109,11 @@ theorem natFloor_logb_eq_of_mem_Ico (hb : 1 < b)
     (hx : x ∈ Set.Ico (b ^ n) (b ^ (n + 1))) :
     ⌊logb b x⌋₊ = n :=
   (natFloor_logb_eq_iff_mem_Ico hb ((one_le_pow₀ hb.le).trans hx.1)).2 hx
+
+/-- For `b > 1` and `x ≥ 1`, `x` lies in `[b ^ ⌊logb b x⌋₊, b ^ (⌊logb b x⌋₊ + 1))`. -/
+theorem mem_Ico_pow_natFloor_logb (hb : 1 < b) (hx : 1 ≤ x) :
+    x ∈ Set.Ico (b ^ ⌊logb b x⌋₊) (b ^ (⌊logb b x⌋₊ + 1)) :=
+  (natFloor_logb_eq_iff_mem_Ico hb hx).mp rfl
 
 /-- For `b > 1` and `n : ℕ`, `⌊logb b (b ^ n)⌋₊ = n`. -/
 @[simp]
