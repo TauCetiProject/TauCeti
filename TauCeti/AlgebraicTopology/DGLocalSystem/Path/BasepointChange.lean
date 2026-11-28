@@ -71,6 +71,8 @@ computation over a zero-cell in Brown's model of the chains on the based path sp
 * `TauCeti.pathChainToLoopChain_smul`: `ρ` is a map of left modules over `C_*(Ω_a B)`.
 * `TauCeti.pathChainToLoopChain_smul_pathChainPoint`: `ρ(c) · [δ]` is the push-forward of
   appending `δ⁻¹` and then `δ`.
+* `TauCeti.pathChainToLoopChain_pathChainPoint`: `ρ` sends the `0`-chain of a path `γ` to the
+  `0`-chain of the loop `γ ⋆ δ⁻¹`.
 * `TauCeti.exists_cubicalChainDifferential_eq_and_smul_pathChainPoint_add_eq`: appending `δ` is a
   quasi-isomorphism `C_*(Ω_a B) → C_*(P_{a→b} B)`, in the form of relative cycles and boundaries.
 * `TauCeti.tensorPathChainPoint_tensorPathChainAct`: the composite of `m ⊗ c ↦ m · ρ(c)` and
@@ -183,6 +185,16 @@ theorem pathChainToLoopChain_smul_pathChainPoint (δ : MoorePathBetween B a b)
       NormalizedCubicalChain.leftAct_def, ← NormalizedCubicalChain.map_cast,
       NormalizedCubicalChain.crossProduct_point_right, ← h, NormalizedCubicalChain.map_comp,
       NormalizedCubicalChain.map_comp, LinearMap.comp_apply, LinearMap.comp_apply]
+
+/-- **Appending the reversal of `δ` to the `0`-chain of a path `γ` gives the `0`-chain of the loop
+`γ ⋆ δ⁻¹`.** -/
+theorem pathChainToLoopChain_pathChainPoint (δ γ : MoorePathBetween B a b) :
+    pathChainToLoopChain R δ (pathChainPoint R γ) =
+      cubicalChainPoint (MooreLoopSpace B a) R
+        ((MoorePathBetween.loopAppendHomotopyEquiv δ).symm γ) := by
+  rw [pathChainPoint_def, pathChainToLoopChain_lof, NormalizedCubicalChain.map_ofCube,
+    cubicalChainPoint_def]
+  exact congrArg _ (congrArg _ (ContinuousMap.ext fun _ ↦ by simp [SingularCube.point_apply]))
 
 /-- **The `0`-chain of `δ ⋆ δ⁻¹` is homologous to the unit**: `ρ([δ])` differs from the unit
 `[1]` of `C_*(Ω_a B)` by a boundary, the prism of the unit along a homotopy from appending `δ` and
@@ -305,6 +317,26 @@ local instance : SetLike.GradedSMul (cubicalChainGrading (MooreLoopSpace B a) R)
     (InternalGrading.ofDecomposition (pathChainBimodule B a b R).grading).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
+
+/-- The right action of the loop chains at `b` on `M ⊗ C_*(P_{a→b} B)`, which instance search
+does not see through the carrier of the tensor product. -/
+instance (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)) :
+    Module (loopChainAlgebra B b R)ᵐᵒᵖ (tensorBimoduleObj M (pathChainBimodule B a b R)) :=
+  (tensorBimoduleObj M (pathChainBimodule B a b R)).moduleOp
+
+/-- The ground ring acts compatibly with the right action of the loop chains at `b` on
+`M ⊗ C_*(P_{a→b} B)`. -/
+instance (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)) :
+    IsScalarTower R (loopChainAlgebra B b R)ᵐᵒᵖ
+      (tensorBimoduleObj M (pathChainBimodule B a b R)) :=
+  (tensorBimoduleObj M (pathChainBimodule B a b R)).scalarTower
+
+/-- The right action of the loop chains at `b` on `M ⊗ C_*(P_{a→b} B)` is graded. -/
+instance (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)) :
+    SetLike.GradedSMul
+      (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B b) R)).opposite.piece
+      (tensorBimoduleObj M (pathChainBimodule B a b R)).grading :=
+  (tensorBimoduleObj M (pathChainBimodule B a b R)).gradedSMul
 
 variable (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R))
   (δ : MoorePathBetween B a b)
@@ -468,13 +500,6 @@ derived one. -/
 theorem isQuasiIso_tensorBimoduleMap_pathChainBimodule
     {M N : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)} {f : M ⟶ N}
     (hf : IsQuasiIso f) : IsQuasiIso (tensorBimoduleMap f (𝟙 (pathChainBimodule B a b R))) := by
-  -- Instance search does not see the structures of a tensor product through its carrier.
-  let := (tensorBimoduleObj M (pathChainBimodule B a b R)).moduleOp
-  let := (tensorBimoduleObj M (pathChainBimodule B a b R)).scalarTower
-  let := (tensorBimoduleObj M (pathChainBimodule B a b R)).gradedSMul
-  let := (tensorBimoduleObj N (pathChainBimodule B a b R)).moduleOp
-  let := (tensorBimoduleObj N (pathChainBimodule B a b R)).scalarTower
-  let := (tensorBimoduleObj N (pathChainBimodule B a b R)).gradedSMul
   rcases isEmpty_or_nonempty (MoorePathBetween B a b) with hB | hB
   · -- Without Moore paths from `a` to `b`, both tensor products vanish.
     exact DGRightModuleHom.isQuasiIso_of_subsingleton _
@@ -510,13 +535,6 @@ theorem isQuasiIso_of_isQuasiIso_tensorBimoduleMap_pathChainBimodule
     (hab : Nonempty (MoorePathBetween B a b))
     {M N : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)} {f : M ⟶ N}
     (hf : IsQuasiIso (tensorBimoduleMap f (𝟙 (pathChainBimodule B a b R)))) : IsQuasiIso f := by
-  -- Instance search does not see the structures of a tensor product through its carrier.
-  let := (tensorBimoduleObj M (pathChainBimodule B a b R)).moduleOp
-  let := (tensorBimoduleObj M (pathChainBimodule B a b R)).scalarTower
-  let := (tensorBimoduleObj M (pathChainBimodule B a b R)).gradedSMul
-  let := (tensorBimoduleObj N (pathChainBimodule B a b R)).moduleOp
-  let := (tensorBimoduleObj N (pathChainBimodule B a b R)).scalarTower
-  let := (tensorBimoduleObj N (pathChainBimodule B a b R)).gradedSMul
   obtain ⟨δ⟩ := hab
   obtain ⟨KM, hKM⟩ := exists_tensorPathChainAct_tensorPathChainPoint M δ
   obtain ⟨KN, hKN⟩ := exists_tensorPathChainAct_tensorPathChainPoint N δ

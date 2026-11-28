@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import Mathlib.RingTheory.Kaehler.Polynomial
 public import Mathlib.RingTheory.PolynomialAlgebra
 public import TauCeti.RingTheory.Kaehler.BaseChange
-import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
+import TauCeti.FieldTheory.RatFunc.Kaehler
 import TauCeti.RingTheory.Kaehler.UnramifiedBase
 
 /-!

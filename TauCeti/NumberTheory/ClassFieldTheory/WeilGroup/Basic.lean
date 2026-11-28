@@ -58,6 +58,8 @@ as groups.
   `TauCeti.ClassFieldTheory.localWeilGroup_ne_top`: `W_K` is dense and proper in `G_K`.
 * `TauCeti.ClassFieldTheory.surjective_weilDegree`, `TauCeti.ClassFieldTheory.ker_weilDegree`:
   the exact sequence `1 → I_K → W_K → ℤ → 1`.
+* `TauCeti.ClassFieldTheory.exists_isArithFrobeniusLift_weilToAbsolute`: `W_K` contains an
+  arithmetic Frobenius lift.
 * `TauCeti.ClassFieldTheory.range_inertiaToWeil`: the image of inertia in `W_K` is the kernel of
   the degree.
 * `TauCeti.ClassFieldTheory.unramifiedCoordinate_weilDegree`,
@@ -284,6 +286,11 @@ theorem surjective_weilDegree : Function.Surjective (weilDegree K) := fun n ↦ 
     rw [range_weilToAbsolute]
     exact zpow_mem hσ.mem_localWeilGroup _
   exact ⟨w, weilDegree_eq_iff.2 (by rw [hw, map_zpow, isArithFrobeniusLift_def.1 hσ])⟩
+
+/-- The Weil group contains an arithmetic Frobenius lift: an element of degree `1`. -/
+theorem exists_isArithFrobeniusLift_weilToAbsolute :
+    ∃ w : WeilGroup K, IsArithFrobeniusLift K (weilToAbsolute K w) :=
+  (surjective_weilDegree K (Multiplicative.ofAdd 1)).imp fun _ ↦ weilDegree_eq_ofAdd_one_iff.1
 
 /-- **Exactness in the middle**: the kernel of the degree is inertia. With `surjective_weilDegree`
 and `injective_weilToAbsolute`, this is the exact sequence `1 → I_K → W_K → ℤ → 1`. -/

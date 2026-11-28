@@ -51,6 +51,24 @@ polynomial whose roots are the zeros of `P y`; they are smooth in the field coor
 the coefficients of the divisor of `y` when `y` is a vortex
 (`TauCeti.Vortex.SobolevFieldSpace.exists_isOpen_contDiffAt_coeffEquiv_sobolevVortexDivisor`).
 
+**The field projection over a window of divisors.** The neighbourhood above depends on the vortex
+`x₀`. Over a bounded set `S` of divisor coefficients, collisions of zeros included, one map serves
+all the vortex orbits at once. The smooth gauge-invariant divisor coordinates `Φ` of the window
+(`TauCeti.Vortex.SobolevFieldSpace.exists_contDiff_forall_coeffEquiv_sobolevVortexDivisor_eq`)
+followed by the smooth family `c ↦ y_c` of normalized vortices
+(`TauCeti.Vortex.SobolevFieldSpace.contDiff_realSubRef_normalizedVortex`) give a smooth,
+gauge-invariant map `P y = y_(Φ y)` into the vortices, fixing `y_c` for `c ∈ S`
+(`TauCeti.Vortex.SobolevFieldSpace.exists_contDiff_windowFieldProjection`). At every vortex `y`
+whose section is, in norm, within `1 / 4` of that of some `y_c`, `c ∈ S`, the coordinates `Φ y`
+are the divisor coefficients of `y`, so `P y` is the normalized vortex with the divisor of `y`, and
+Taubes's classification makes `y` gauge equivalent to `P y`. That condition holds at every field
+within a fixed distance of the gauge orbit of some `y_c`, `c ∈ S`, independent of `c` and of the
+gauge, both in the real coordinates and pointwise
+(`TauCeti.Vortex.SobolevFieldSpace.exists_pos_forall_abs_norm_sectionValue_sub_le`,
+`TauCeti.Vortex.SobolevFieldSpace.abs_norm_sectionValue_sub_le_of_forall_norm_sub_le`), which is
+how fields that are only `C⁰`-close to the vortices of the window are read through vortex
+coordinates.
+
 ## Main results
 
 * `TauCeti.Vortex.SobolevFieldSpace.exists_isOpen_sliceVortexRetraction`: a smooth
@@ -59,9 +77,13 @@ the coefficients of the divisor of `y` when `y` is a vortex
   vortex.
 * `TauCeti.Vortex.SobolevFieldSpace.exists_isOpen_contDiffAt_coeffEquiv_sobolevVortexDivisor`:
   gauge-invariant smooth divisor coordinates near a vortex.
+* `TauCeti.Vortex.SobolevFieldSpace.exists_contDiff_windowFieldProjection`: the field projection
+  on a neighbourhood of all the vortex orbits of a bounded window of divisors.
 
 ## References
 
+* C. H. Taubes, *Arbitrary N-vortex solutions to the first order Ginzburg–Landau equations*,
+  Comm. Math. Phys. 72 (1980), 277–292.
 * C. H. Taubes, *Gr ⇒ SW: from pseudo-holomorphic curves to Seiberg–Witten solutions*,
   J. Differential Geom. 51 (1999), 203–334.
 * S. K. Donaldson and P. B. Kronheimer, *The Geometry of Four-Manifolds*, Oxford University Press,
@@ -267,6 +289,65 @@ theorem exists_isOpen_contDiffAt_coeffEquiv_sobolevVortexDivisor (hk : 3 ≤ k)
     refine hF.congr_of_eventuallyEq ?_
     filter_upwards [hFev] with u hu
     exact hu (hP _).2
+
+/-! ### The field projection over a window of divisors -/
+
+/-- **The field projection over a window of divisors.** Let `k ≥ 3`, `m ≥ 1`, and let `S ⊆ ℂᵐ` be
+a bounded set of divisor coefficients, such as the coefficients of a compact window of divisors in
+`Sym ℂ m`, collisions of zeros included. There is one map `P` from the fields of `A_m^(k+1)` to the
+normalized vortices `y_c` (`TauCeti.Vortex.SobolevFieldSpace.normalizedVortex`) such that
+
+* `P` is smooth in the real coordinates of the fields;
+* `P` is invariant under `G_(k+2)`: `P (g · y) = P y` for every field `y`;
+* `P` fixes `y_c` for every `c ∈ S`;
+* at every vortex `y` whose section is, in norm, within `1 / 4` of the section of some `y_c`,
+  `c ∈ S`, at every point, `P y` is the normalized vortex whose divisor is that of `y`, and `y` is
+  gauge equivalent to `P y`.
+
+The condition on the norm of the section is invariant under `G_(k+2)`, and it holds at every
+field within a fixed distance of some `g · y_c`, `c ∈ S`, with the distance independent of `c` and
+of the gauge `g`: in the real coordinates
+(`TauCeti.Vortex.SobolevFieldSpace.exists_pos_forall_abs_norm_sectionValue_sub_le`), and at
+distance `1 / 8` pointwise
+(`TauCeti.Vortex.SobolevFieldSpace.abs_norm_sectionValue_sub_le_of_forall_norm_sub_le`). So,
+unlike the field projection near one vortex
+(`TauCeti.Vortex.SobolevFieldSpace.exists_isOpen_fieldProjection`), `P` serves a neighbourhood of
+all the vortex orbits of the window, of a size that depends only on the window. -/
+theorem exists_contDiff_windowFieldProjection (hm : 0 < m) (hk : 3 ≤ k)
+    {S : Set (Fin m → ℂ)} (hS : Bornology.IsBounded S) :
+    ∃ P : SobolevFieldSpace f m (k + 1 : ℕ) → SobolevFieldSpace f m (k + 1 : ℕ),
+      (∀ y, P y ∈ Set.range (normalizedVortex hm f (k + 1 : ℕ))) ∧
+      ContDiff ℝ ∞ (fun u : Fin 4 → realSubmodule ℂ (Nat.cast_nonneg (k + 1) :
+          (0 : ℝ) ≤ ((k + 1 : ℕ) : ℝ)) ↦
+        (P (ofRealSubRef (Nat.one_lt_cast.2 Fact.out) u)).realSubRef (Nat.cast_nonneg (k + 1))) ∧
+      (∀ (g : SobolevTopologicalGaugeGroup hs) y, P (g • y) = P y) ∧
+      (∀ c ∈ S, P (normalizedVortex hm f (k + 1 : ℕ) c) = normalizedVortex hm f (k + 1 : ℕ) c) ∧
+      ∀ y : SobolevFieldSpace f m (k + 1 : ℕ), (∃ c ∈ S, ∀ z, |‖sectionValue y z‖ -
+          ‖sectionValue (normalizedVortex hm f (k + 1 : ℕ) c) z‖| ≤ 1 / 4) →
+        ∀ hy : ∀ z, equation y z = 0,
+          P y = normalizedVortex hm f (k + 1 : ℕ) (Sym.coeffEquiv ℂ m
+            (sobolevVortexDivisor ⟨_, toFramedFieldSpace_mem_sobolevVortices (by omega) hy⟩)) ∧
+          ∃ g : SobolevTopologicalGaugeGroup hs, g • y = P y := by
+  set h0 : (0 : ℝ) ≤ ((k + 1 : ℕ) : ℝ) := Nat.cast_nonneg (k + 1)
+  -- `P` is the normalized vortex at the window divisor coordinates `Φ` of the field.
+  obtain ⟨Φ, hΦ, hΦg, hΦS, hΦD⟩ :=
+    exists_contDiff_forall_coeffEquiv_sobolevVortexDivisor_eq (f := f) (k := k + 1) (hs := hs) hm
+      (by omega) hS
+  refine ⟨fun y ↦ normalizedVortex hm f (k + 1 : ℕ) (Φ (y.realSubRef h0)), fun y ↦ ⟨_, rfl⟩,
+    ?_, fun g y ↦ by simp only [hΦg], fun c hc ↦ by simp only [hΦS c hc], fun y hyc hy ↦ ?_⟩
+  · simp only [realSubRef_ofRealSubRef]
+    exact (contDiff_realSubRef_normalizedVortex hm f h0).comp hΦ
+  -- On the window, `Φ` reads the divisor coefficients of a vortex.
+  have hP := hΦD y hyc hy
+  refine ⟨by rw [hP], ?_⟩
+  -- `y` and `P y` have the same divisor, so they lie in one gauge orbit.
+  have hdiv : sobolevVortexDivisor ⟨_, toFramedFieldSpace_mem_sobolevVortices (by omega) hy⟩ =
+      sobolevVortexDivisor ⟨_, toFramedFieldSpace_mem_sobolevVortices (by omega)
+        (equation_normalizedVortex hm f (k + 1 : ℕ) (Φ (y.realSubRef h0)))⟩ := by
+    rw [sobolevVortexDivisor_normalizedVortex hm (by omega), ← hP, Equiv.symm_apply_apply]
+  obtain ⟨u, hu⟩ := sobolevVortexDivisor_eq_sobolevVortexDivisor_iff (hs := hs).1 hdiv
+  exact MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1
+    (orbitRel_iff.2 ⟨u, u.property, congrArg Subtype.val hu⟩))
 
 end SobolevFieldSpace
 

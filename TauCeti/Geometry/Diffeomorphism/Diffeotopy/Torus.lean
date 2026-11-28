@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
 public import TauCeti.Geometry.Manifold.Instances.AddCircle.Torus
 public import TauCeti.Geometry.Manifold.MFDeriv.Pi
-import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Translation and shear diffeotopies of a torus
@@ -103,31 +102,22 @@ private theorem contMDiff_add_shift_prod :
   contMDiff_pi_iff.2 fun _ ↦ (contMDiff_apply.comp contMDiff_fst).add
     (contMDiff_apply.comp ((contMDiff_shift p v).comp contMDiff_snd))
 
-/-- Through a fixed point `x`, the curve `s ↦ x + [s v]` of the torus, for real `s`, has
-velocity `v`. -/
-private theorem hasMFDerivAt_add_shift_real (x : ∀ i, AddCircle (p i)) (s : ℝ) :
-    HasMFDerivAt 𝓘(ℝ) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-      (fun s : ℝ ↦ x + shift p v s) s (ContinuousLinearMap.toSpanSingleton ℝ v) := by
-  have h (i : ι) : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) (fun s : ℝ ↦ (x + shift p v s) i) s
-      ((1 : ℝ →L[ℝ] ℝ).smulRight (v i)) :=
-    AddCircle.hasMFDerivAt_add_coe_comp (hasDerivAt_mul_const (v i)) (x i)
-  refine (TauCeti.hasMFDerivAt_pi h).congr_mfderiv ?_
-  -- Both sides send `1` to `v`.
-  ext i
-  exact (one_smul ℝ (v i)).trans (one_smul ℝ (v i)).symm
-
 /-- The map `(x, s) ↦ x + [s v]` of `Tⁿ × ℝ` has derivative `(w, σ) ↦ w + σ • v`. -/
 private theorem hasMFDerivAt_add_shift_prod (y : (∀ i, AddCircle (p i)) × ℝ) :
     HasMFDerivAt ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ))
       (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (fun y ↦ y.1 + shift p v y.2) y
       (ContinuousLinearMap.fst ℝ (ι → ℝ) ℝ +
         (ContinuousLinearMap.toSpanSingleton ℝ v).comp (ContinuousLinearMap.snd ℝ (ι → ℝ) ℝ)) := by
+  -- Through `y.1`, the curve `s ↦ y.1 + [s v]` has velocity `v`.
+  have hv : HasMFDerivAt 𝓘(ℝ) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+      (fun s : ℝ ↦ y.1 + shift p v s) y.2 (ContinuousLinearMap.toSpanSingleton ℝ v) :=
+    AddCircle.hasMFDerivAt_pi_add_coe_mul v y.1 y.2
   have hd := (contMDiff_add_shift_prod (n := 1) p v).mdifferentiableAt one_ne_zero (x := y)
   refine hd.hasMFDerivAt.congr_mfderiv (ContinuousLinearMap.ext fun w ↦ ?_)
   rw [mfderiv_prod_eq_add_apply hd]
   -- In `x` the map is a translation, and in `s` the curve `s ↦ x + [s v]` of velocity `v`.
   dsimp only
-  rw [AddCircle.mfderiv_pi_add_right, (hasMFDerivAt_add_shift_real p v y.1 y.2).mfderiv]
+  rw [AddCircle.mfderiv_pi_add_right, hv.mfderiv]
   -- Both sides are `w.1 + w.2 • v`. The tangent spaces at `y.1` and `y.2` are type synonyms of
   -- `ι → ℝ` and `ℝ`, so the evaluation lemmas for `+`, `id` and `comp` of continuous linear maps
   -- match the two sides only up to unfolding them, which `rfl` does and `rw` and `simp` do not.
