@@ -1,13 +1,16 @@
 # CI runner routing
 
-PR builds prefer eligible Fleet PR runners (with a small bounded waiting queue),
-then Namespace (when enabled via `NAMESPACE_ENABLED` and `NAMESPACE_BUILD_CAP`),
-then GitHub-hosted runners. Maintenance builds (bot Mathlib bump and lint-repair PRs
-and their dispatched rebuilds) take a priority Namespace runner outside the capped
-scheduler groups when `NAMESPACE_ENABLED` is unset, empty or `true` and
-`NAMESPACE_BUILD_CAP` is not `0`; otherwise they use the GitHub-hosted bulk slots
-(see `scripts/namespace-controls.md`). The full clean nightly build uses the Fleet PR pool and retains its twelve-hour budget;
-staging-only and queue-control reservations cannot be taken by that class.
+PR builds run only on the Fleet PR pool: an idle Fleet PR runner first, then a small
+bounded waiting queue, then an unbounded Fleet overflow queue (`pr_order = ["fleet"]`,
+`pr_overflow_pool = "fleet"`). They wait for Fleet capacity rather than move to
+Namespace or GitHub-hosted runners. The picker still falls back to GitHub-hosted
+`ubuntu-24.04` when it cannot read the Fleet inventory or sees no online Fleet PR runner,
+and builds without an immutable PR head (manual dispatches without `label_head`, merge
+groups) stay on GitHub-hosted runners. Maintenance builds (bot Mathlib bump and lint-repair
+PRs and their dispatched rebuilds) target the Fleet PR pool directly. Namespace is
+disabled (see `scripts/namespace-controls.md`). The nightly clean build and its reference
+build run on Fleet's protected nightly slot (the `TauCetiNightly` runner group), not the
+Fleet PR pool.
 
 Staging runs only on tauchonki2. It prefers the exact available staging guest and
 otherwise waits for the next guest with tauchonki2's permanent machine and staging

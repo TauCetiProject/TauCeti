@@ -1,11 +1,22 @@
 # Namespace runner controls
 
-Namespace routing is controlled through the repository's
-[Actions variables](https://github.com/TauCetiProject/TauCeti/settings/variables/actions).
-Changing these settings requires no source PR or staging batch.
+Namespace is currently off. `NAMESPACE_ENABLED` is `false`, the `tauceti.toml`
+default is disabled, and `[services.fleet].pr_order` is `["fleet"]` with
+`pr_overflow_pool = "fleet"`, so the picker never considers Namespace for PR builds.
+Maintenance builds and the nightly builds do not use Namespace at all.
+
+The repository's
+[Actions variables](https://github.com/TauCetiProject/TauCeti/settings/variables/actions)
+only switch and size Namespace within the routing order. While `pr_order` omits
+`"namespace"`, setting them has no effect. Restoring Namespace routing takes a
+source PR to `tauceti.toml` that adds `"namespace"` to `pr_order` after `"fleet"`
+(for example `["fleet", "namespace", "github"]`) and, if PR builds that find every
+tier saturated should go to GitHub-hosted runners rather than wait for Fleet, sets
+`pr_overflow_pool = "github"`. Once that routing has landed, these variables control
+Namespace without a further source PR or staging batch:
 
 ```sh
-# Enable Namespace with an eight-build cap (the current operating setting).
+# Enable Namespace with an eight-build cap.
 gh variable set NAMESPACE_BUILD_CAP --repo TauCetiProject/TauCeti --body 8
 gh variable set NAMESPACE_ENABLED --repo TauCetiProject/TauCeti --body true
 
@@ -18,22 +29,15 @@ gh variable set NAMESPACE_BUILD_CAP --repo TauCetiProject/TauCeti --body 4
 
 `NAMESPACE_ENABLED` accepts `true` or `false`; `NAMESPACE_BUILD_CAP` accepts whole
 numbers from 0 through 64. An unset or empty variable uses the `tauceti.toml`
-default (enabled, cap eight). Invalid values disable Namespace while preserving
+default (disabled, cap eight). Invalid values disable Namespace while preserving
 GitHub and fleet routing. Keep `NAMESPACE_ENABLED=true` when using a positive cap
 to enable Namespace; a false switch always wins over a positive cap.
 
-PR builds and nightly reference builds share the same scheduler groups, named
+Picker-routed Namespace builds share scheduler groups, named
 `tauceti-namespace-build-0` through `tauceti-namespace-build-(cap-1)`. Waiting in
 these groups consumes no runner. Fixed slots can leave capacity unused when jobs
 collide. The cap covers this repository's picker-routed Namespace build jobs; staging retains
 its dedicated tauchonki2 runner.
-
-Maintenance builds (the review bot's Mathlib bump and lint-repair PRs, and the
-rebuilds dispatched for them) take a priority Namespace runner outside these
-scheduler groups, so the cap does not count them. They use Namespace only when
-`NAMESPACE_ENABLED` is unset, empty or `true` and `NAMESPACE_BUILD_CAP` is not
-`0`; otherwise they wait in the GitHub-hosted bulk slots. The `tauceti.toml`
-defaults do not apply to them.
 
 Settings govern new work, with graceful drain on a reduction: jobs already
 admitted under an earlier policy, including jobs waiting in scheduler groups,
