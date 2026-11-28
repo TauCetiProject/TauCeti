@@ -120,6 +120,7 @@ theorem exists_sq_mul_eq_fundamentalDiscriminant (d : ℤ) :
   · exact ⟨2, Or.inr rfl, by rw [h]; ring⟩
 
 /-- The fundamental discriminant has the same positivity as its radicand. -/
+@[simp]
 theorem fundamentalDiscriminant_pos_iff {d : ℤ} : 0 < fundamentalDiscriminant d ↔ 0 < d := by
   rw [fundamentalDiscriminant_def]
   split_ifs <;> omega
