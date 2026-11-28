@@ -63,12 +63,16 @@ noncomputable def nerveCommaIso (F : C ⥤ D) (b : D) :
   (F.isPullback_nerveMap_structuredArrow_coslice b).isoIsPullback _ _
     (SSet.comma.isPullback _ _)
 
+/-- The nerve comparison identifies the comma projection with the nerve of the
+projection to the source category. -/
 @[reassoc (attr := simp)]
 lemma nerveCommaIso_hom_π (F : C ⥤ D) (b : D) :
     (F.nerveCommaIso b).hom ≫ SSet.comma.π (nerveMap F) (nerveEquiv.symm b) =
       nerveMap (StructuredArrow.proj b F) :=
   (F.isPullback_nerveMap_structuredArrow_coslice b).isoIsPullback_hom_fst _ _ _
 
+/-- The nerve comparison identifies the underlying arrow through the isomorphism
+from the nerve of the undercategory to the simplicial coslice. -/
 @[reassoc (attr := simp)]
 lemma nerveCommaIso_hom_toCoslice (F : C ⥤ D) (b : D) :
     (F.nerveCommaIso b).hom ≫ SSet.comma.toCoslice (nerveMap F) (nerveEquiv.symm b) =

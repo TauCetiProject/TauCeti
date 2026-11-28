@@ -76,6 +76,19 @@ lemma inr_coneMap : join.inr _ _ ≫ coneMap i b = π i b ≫ i := by
   rw [coneMap, ← coslice.comp_π]
   exact (isPullback i b).w.symm
 
+/-- The tautological cone over the comma diagram in `B`, as a vertex of its slice. -/
+noncomputable def cone : (slice (π i b ≫ i)) _⦋0⦌ :=
+  slice.objEquiv.symm ⟨coneMap i b, inr_coneMap i b⟩
+
+@[simp]
+lemma objEquiv_cone_coe : (slice.objEquiv (cone i b)).val = coneMap i b := by
+  simp [cone]
+
+/-- The apex of the tautological comma cone is `b`. -/
+-- Not `@[simp]`: `SSet.slice.π_app` rewrites the left-hand side.
+lemma π_cone : (slice.π (π i b ≫ i)).app _ (cone i b) = b := by
+  rw [slice.π_app, objEquiv_cone_coe, inl_coneMap, yonedaEquiv_const]
+
 variable {i b} {X : SSet.{u}}
 
 /-- A map to `A` together with a cone from `b` to its image in `B` determines a
@@ -115,35 +128,36 @@ variable {A' A'' : SSet.{u}} {i' : A' ⟶ B} {i'' : A'' ⟶ B}
 
 /-- Reindexing a map to `B` induces a map of its comma simplicial sets under `b`. -/
 noncomputable def map (a : A' ⟶ A) (h : a ≫ i = i') : comma i' b ⟶ comma i b :=
-  lift (π i' b ≫ a) (coneMap i' b) (inl_coneMap i' b) (by simp [h])
+  pullback.map i' (coslice.π (const b)) i (coslice.π (const b))
+    a (𝟙 _) (𝟙 _) (by simp [h]) (by simp)
 
 @[reassoc (attr := simp)]
 lemma map_π (a : A' ⟶ A) (h : a ≫ i = i') : map a h ≫ π i b = π i' b ≫ a :=
-  lift_π _ _ _ _
-
-@[reassoc (attr := simp)]
-lemma map_coneMap (a : A' ⟶ A) (h : a ≫ i = i') :
-    join.map (𝟙 _) (map a h (b := b)) ≫ coneMap i b = coneMap i' b :=
-  map_lift_coneMap _ _ _ _
+  pullback.lift_fst _ _ _
 
 /-- Reindexing preserves the projection to the coslice. -/
 @[reassoc (attr := simp)]
 lemma map_toCoslice (a : A' ⟶ A) (h : a ≫ i = i') :
     map a h ≫ toCoslice i b = toCoslice i' b := by
-  apply coslice.hom_ext
-  simp
+  simp only [comma, map, pullback.map, toCoslice, pullback.lift_snd, Category.comp_id]
+
+@[reassoc (attr := simp)]
+lemma map_coneMap (a : A' ⟶ A) (h : a ≫ i = i') :
+    join.map (𝟙 _) (map a h (b := b)) ≫ coneMap i b = coneMap i' b := by
+  rw [coneMap, ← coslice.homEquiv_comp_coe, map_toCoslice, coneMap]
 
 @[simp]
 lemma map_id : map (𝟙 A) (Category.id_comp i) (b := b) = 𝟙 (comma i b) := by
-  apply hom_ext <;> simp
+  exact pullback.map_id
 
 @[reassoc (attr := simp)]
 lemma map_comp (a : A' ⟶ A) (h : a ≫ i = i') (a' : A'' ⟶ A') (h' : a' ≫ i' = i'') :
     map a' h' (b := b) ≫ map a h = map (a' ≫ a) (by simp [h, h']) := by
-  apply hom_ext
-  · simp
-  · rw [← Category.id_comp (𝟙 Δ[0]), join.map_comp_assoc]
-    simp
+  simpa only [comma, map, Category.id_comp] using
+    (pullback.map_comp (f := i'') (g := coslice.π (const b)) (f' := i')
+      (g' := coslice.π (const b)) (f'' := i) (g'' := coslice.π (const b))
+      a' a (𝟙 _) (𝟙 _) (𝟙 _) (𝟙 _)
+      (by simp [h']) (by simp) (by simp [h]) (by simp))
 
 end comma
 

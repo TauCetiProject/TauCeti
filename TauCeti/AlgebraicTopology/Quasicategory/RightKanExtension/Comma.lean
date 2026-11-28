@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.Limit
 public import TauCeti.AlgebraicTopology.Quasicategory.Slice
-public import TauCeti.AlgebraicTopology.SimplicialSet.Comma
 
 /-!
 # The pointwise cones for right Kan extensions
@@ -20,11 +19,12 @@ The tautological join cone is a vertex `SSet.comma.cone i b` of the slice over
 the comma diagram in `B`. A strict extension `G : B ⟶ C` of `F : A ⟶ C`
 transports it to `SSet.comma.pointwiseCone i b G h`, a cone in `C` on the
 comma diagram followed by `F`, with apex `G b`. Its being a limit cone is the
-pointwise condition for a right Kan extension. For empty `A`, this condition
-is exactly terminality of `G b`.
+pointwise condition for a right Kan extension. For an empty comma diagram, this
+condition is exactly terminality of `G b`.
 
-The cone constructions do not require quasicategory hypotheses; only the
-fibration and total-space instances do.
+The tautological cone lives in `SimplicialSet/Comma`, and the fibration and
+total-space instances live in `Quasicategory/Slice`. The cone constructions
+do not require quasicategory hypotheses.
 
 ## References
 
@@ -41,28 +41,6 @@ open CategoryTheory Limits Simplicial
 namespace SSet.comma
 
 variable {A B C D : SSet.{u}} (i : A ⟶ B) (b : B _⦋0⦌)
-
-/-- The comma projection is a left fibration when its codomain diagram lands in
-a quasicategory. -/
-instance leftFibration_π [Quasicategory B] : LeftFibration (π i b) :=
-  LeftFibration.of_isPullback (isPullback i b).flip
-
-/-- The comma simplicial set is a quasicategory when both `A` and `B` are. -/
-instance quasicategory [Quasicategory A] [Quasicategory B] : Quasicategory (comma i b) :=
-  quasicategory_of_innerFibration (π i b)
-
-/-- The tautological cone over the comma diagram in `B`, as a vertex of its slice. -/
-noncomputable def cone : (slice (π i b ≫ i)) _⦋0⦌ :=
-  slice.objEquiv.symm ⟨coneMap i b, inr_coneMap i b⟩
-
-@[simp]
-lemma objEquiv_cone_coe : (slice.objEquiv (cone i b)).val = coneMap i b := by
-  simp [cone]
-
-/-- The apex of the tautological comma cone is `b`. -/
--- Not `@[simp]`: `SSet.slice.π_app` rewrites the left-hand side.
-lemma π_cone : (slice.π (π i b ≫ i)).app _ (cone i b) = b := by
-  rw [slice.π_app, objEquiv_cone_coe, inl_coneMap, yonedaEquiv_const]
 
 variable {F : A ⟶ C}
 
@@ -84,8 +62,10 @@ lemma objEquiv_pointwiseCone_coe (G : B ⟶ C) (h : i ≫ G = F) :
 -- Not `@[simp]`: `SSet.slice.π_app` rewrites the left-hand side.
 lemma π_pointwiseCone (G : B ⟶ C) (h : i ≫ G = F) :
     (slice.π (π i b ≫ F)).app _ (pointwiseCone i b G h) = G.app _ b := by
-  rw [slice.π_app, objEquiv_pointwiseCone_coe, inl_coneMap_assoc,
-    yonedaEquiv_comp, yonedaEquiv_const]
+  have hπ := ConcreteCategory.congr_hom
+    (congr_app (slice.map_π (p := π i b ≫ i) (q := π i b ≫ F)
+      (𝟙 _) G (by simp [h])) _) (cone i b)
+  simpa only [pointwiseCone, comp_app, ConcreteCategory.comp_apply, π_cone] using hπ
 
 @[simp]
 lemma pointwiseCone_id : pointwiseCone i b (𝟙 B) (Category.comp_id i) = cone i b := by
@@ -98,12 +78,11 @@ lemma pointwiseCone_comp (G : B ⟶ C) (h : i ≫ G = F) (H : C ⟶ D) :
       (pointwiseCone i b G h) = pointwiseCone i b (G ≫ H) (by simp [← h]) := by
   simp only [pointwiseCone, ← NatTrans.comp_app_apply, slice.map_comp, Category.id_comp]
 
-/-- For an empty source, the pointwise limit condition is terminality of the value
-of the extension. -/
-theorem isLimit_pointwiseCone_iff_of_not_nonempty (hA : ¬ A.Nonempty)
+/-- For an empty comma diagram, the pointwise limit condition is terminality of the
+value of the extension. In particular, this applies to an empty source via `comma.π`. -/
+theorem isLimit_pointwiseCone_iff_of_not_nonempty (hK : ¬ (comma i b).Nonempty)
     (G : B ⟶ C) (h : i ≫ G = F) :
     slice.IsLimit (π i b ≫ F) (pointwiseCone i b G h) ↔ C.IsTerminalVertex (G.app _ b) := by
-  have hK : ¬ (comma i b).Nonempty := fun hK ↦ hA (nonempty_of_hom (π i b))
   rw [slice.isLimit_iff_isTerminalVertex_π _ hK, π_pointwiseCone]
 
 end SSet.comma

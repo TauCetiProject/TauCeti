@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.RightFibration.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.LeftRight.Slice
+public import TauCeti.AlgebraicTopology.SimplicialSet.Comma
 public import TauCeti.AlgebraicTopology.SimplicialSet.Horn
 
 /-!
@@ -217,5 +218,20 @@ instance quasicategory [Quasicategory C] (p : K ⟶ C) : Quasicategory (coslice 
   quasicategory_of_innerFibration (π p)
 
 end coslice
+
+namespace comma
+
+variable {A B : SSet.{u}} (i : A ⟶ B) (b : B _⦋0⦌)
+
+/-- The comma projection is a left fibration when its codomain diagram lands in
+a quasicategory. -/
+instance leftFibration_π [Quasicategory B] : LeftFibration (π i b) :=
+  LeftFibration.of_isPullback (isPullback i b).flip
+
+/-- The comma simplicial set is a quasicategory when both `A` and `B` are. -/
+instance quasicategory [Quasicategory A] [Quasicategory B] : Quasicategory (comma i b) :=
+  quasicategory_of_innerFibration (π i b)
+
+end comma
 
 end SSet
