@@ -36,6 +36,8 @@ Birch–Swinnerton-Dyer quotient.
 
 ## Main results
 
+* `TauCeti.Isogeny.mem_selmerGroup_relaxedAt_iff`: membership in the `S`-relaxed `φ`-Selmer group
+  via vanishing of `pointRes` at finite places outside `S` and at infinite places.
 * `TauCeti.Isogeny.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relaxedAt`,
   `TauCeti.Isogeny.sum_ringEquivCongr_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relaxedAt`,
   `TauCeti.Isogeny.localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relaxedAt_singleton`, and
@@ -63,6 +65,36 @@ open WeierstrassCurve TauCeti TauCeti.ContCohomology TauCeti.ClassFieldTheory
 open Hom (ofIsogeny)
 
 /-! ### Global orthogonality of relaxed `φ`- and `φ̂`-Selmer groups -/
+
+section NumberField
+
+variable {K : Type*} [Field K] [NumberField K]
+  {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
+  (φ : Isogeny W₁.toAffine W₂.toAffine)
+
+/-- An `S`-relaxed `φ`-Selmer class is precisely a class in `H¹(K, E₁[φ])` whose image under
+`pointRes` after pushing forward to `E₁` vanishes at every finite place outside `S` and at
+every infinite place. -/
+theorem mem_selmerGroup_relaxedAt_iff
+    (τ : ∀ p : GlobalNumberFields.Place K,
+      SeparableClosure K →ₐ[K] SeparableClosure p.Completion)
+    (S : Finset (HeightOneSpectrum (𝓞 K)))
+    {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff} :
+    a ∈ ((φ.selmerStructure τ).relaxedAt
+      (Sum.inl '' (S : Set (HeightOneSpectrum (𝓞 K))))).selmerGroup ↔
+      (∀ v ∉ S, W₁.pointRes (τ (.inl v))
+        (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology a) = 0) ∧
+      (∀ w : InfinitePlace K, W₁.pointRes (τ (.inr w))
+        (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology a) = 0) := by
+  rw [SelmerStructure.mem_selmerGroup_relaxedAt_iff]
+  simp only [selmerStructure_localization, selmerStructure_localCondition,
+    mem_localKummerCondition_iff, pointRes_kerCoeffIncl]
+  refine ⟨fun h ↦ ⟨fun v hv ↦ h (.inl v) (by simpa using hv), fun w ↦ h (.inr w) (by simp)⟩, ?_⟩
+  rintro ⟨hv, hw⟩ (v | w) hp
+  · exact hv v (by simpa using hp)
+  · exact hw w
+
+end NumberField
 
 section Global
 

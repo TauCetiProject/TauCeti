@@ -81,9 +81,8 @@ group.
 
 * `TauCeti.Isogeny.mem_selmerGroup_iff`: a class is `φ`-Selmer exactly when its image in
   `H¹(G_K, E₁)` lies in the Shafarevich–Tate group.
-* `TauCeti.Isogeny.selmerGroup_le_selmerGroup_relaxedAt` and
-  `TauCeti.Isogeny.mem_selmerGroup_relaxedAt_iff`: inclusion into and membership in the relaxed
-  `φ`-Selmer group.
+* `TauCeti.Isogeny.selmerGroup_le_selmerGroup_relaxedAt`: the `φ`-Selmer group lies in any
+  relaxed `φ`-Selmer group.
 * `TauCeti.Isogeny.mem_selmerGroup_iff_forall_kerRes_mem_range_kummerMap`: the `φ`-Selmer group
   is cut out by the images of the local Kummer maps.
 * `TauCeti.Isogeny.kummerSelmerMap_injective`,
@@ -199,34 +198,6 @@ indices. -/
 theorem selmerGroup_le_selmerGroup_relaxedAt (T : Set ι) :
     φ.selmerGroup τ ≤ ((φ.selmerStructure τ).relaxedAt T).selmerGroup :=
   (φ.selmerGroup_def τ).symm ▸ (φ.selmerStructure τ).selmerGroup_le_selmerGroup_relaxedAt T
-
-section NumberField
-
-open IsDedekindDomain NumberField
-
-/-- An `S`-relaxed `φ`-Selmer class is precisely a class in `H¹(K, E₁[φ])` whose image under
-`pointRes` after pushing forward to `E₁` vanishes at every finite place outside `S` and at
-every infinite place. -/
-theorem mem_selmerGroup_relaxedAt_iff [NumberField K]
-    (τ : ∀ p : GlobalNumberFields.Place K,
-      SeparableClosure K →ₐ[K] SeparableClosure p.Completion)
-    (S : Finset (HeightOneSpectrum (𝓞 K)))
-    {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff} :
-    a ∈ ((φ.selmerStructure τ).relaxedAt
-      (Sum.inl '' (S : Set (HeightOneSpectrum (𝓞 K))))).selmerGroup ↔
-      (∀ v ∉ S, W₁.pointRes (τ (.inl v))
-        (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology a) = 0) ∧
-      (∀ w : InfinitePlace K, W₁.pointRes (τ (.inr w))
-        (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology a) = 0) := by
-  rw [SelmerStructure.mem_selmerGroup_relaxedAt_iff]
-  simp only [selmerStructure_localization, selmerStructure_localCondition,
-    mem_localKummerCondition_iff, pointRes_kerCoeffIncl]
-  refine ⟨fun h ↦ ⟨fun v hv ↦ h (.inl v) (by simpa using hv), fun w ↦ h (.inr w) (by simp)⟩, ?_⟩
-  rintro ⟨hv, hw⟩ (v | w) hp
-  · exact hv v (by simpa using hp)
-  · exact hw w
-
-end NumberField
 
 /-- **The `φ`-Selmer group is cut out by the local Kummer images**: for a separable isogeny `φ`, a
 class in `H¹(G_K, E₁(Kˢ)[φ])` is `φ`-Selmer exactly when its restriction to every `L i` comes
