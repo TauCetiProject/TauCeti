@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.SplitPrimeSum
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Hadamard
-import TauCeti.NumberTheory.Chebyshev.Mertens
+import TauCeti.NumberTheory.Chebyshev.Mertens.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.DerivBound
 import TauCeti.NumberTheory.PrimeFactors.Bounds
 

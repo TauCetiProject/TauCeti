@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Chebyshev
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Riesz
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.SummatoryTail
+import TauCeti.NumberTheory.Chebyshev.Mertens.WeightedTail
 import TauCeti.NumberTheory.Chebyshev.WeightedError
 
 /-!
@@ -37,26 +37,20 @@ theorem rieszRemainder_one_eq_neg_mul_integral_psi_sub_div_sq {y : ℝ} (hy : 0 
   rw [rieszRemainder_one]
   rcases hy.eq_or_lt with rfl | hy
   · simp
-  rcases le_or_gt 1 y with hy₁ | hy₁
-  · have h := rieszSum_div_sub_log_eq_integral (fun n ↦ (Λ n : ℂ)) 1 hy₁
-    simp only [one_mul, Chebyshev.sum_vonMangoldt_sub_div_sq, integral_complex_ofReal] at h
-    rw [← intervalIntegral.integral_of_le hy₁,
-      ← intervalIntegral.integral_Ioi_sub_Ioi (Chebyshev.integrableOn_psi_sub_div_sq one_pos) hy₁,
-      Chebyshev.integral_psi_sub_div_sq] at h
-    push_cast at h ⊢
-    linear_combination (norm := (field_simp [hy.ne']; ring)) (y : ℂ) * h
-  · have hsmall : (∫ t in y..1, (ψ t - t) / t ^ 2) = Real.log y := by
-      rw [intervalIntegral.integral_congr (g := fun t : ℝ ↦ -(t⁻¹)) (fun t ht ↦ ?_),
-        intervalIntegral.integral_neg, integral_inv_of_pos hy zero_lt_one, one_div, Real.log_inv,
-        neg_neg]
-      rw [uIcc_of_le hy₁.le] at ht
-      exact Chebyshev.psi_sub_div_sq_eq_neg_inv_of_le_one ht.2
-    rw [← intervalIntegral.integral_Ioi_sub_Ioi (Chebyshev.integrableOn_psi_sub_div_sq hy) hy₁.le,
-      Chebyshev.integral_psi_sub_div_sq] at hsmall
-    rw [rieszSum_eq_zero_of_le_one _ hy₁.le]
-    have hsmall' := congrArg Complex.ofReal hsmall
-    push_cast at hsmall' ⊢
-    linear_combination (y : ℂ) * hsmall'
+  have hfloor : y ∈ Icc (⌊y⌋₊ : ℝ) (⌊y⌋₊ + 1) :=
+    ⟨Nat.floor_le hy.le, (Nat.lt_floor_add_one y).le⟩
+  have hIcc : Finset.Icc 1 ⌊y⌋₊ = Finset.Ioc 0 ⌊y⌋₊ := by
+    simpa only [zero_add] using Finset.Icc_add_one_left_eq_Ioc 0 ⌊y⌋₊
+  rw [rieszSum_eq_sum_mul_sub_sum_of_mem_Icc _ hfloor, hIcc]
+  have hpsi : ψ y = ∑ n ∈ Finset.Ioc 0 ⌊y⌋₊, Λ n := by
+    rw [Chebyshev.psi_eq_sum_Icc, ← Finset.add_sum_Ioc_eq_sum_Icc (Nat.zero_le _)]
+    simp
+  have hψ := congrArg Complex.ofReal hpsi
+  have h := congrArg Complex.ofReal
+    (Chebyshev.sum_vonMangoldt_div_eq_log_sub_eulerMascheroniConstant_add hy)
+  push_cast at h hψ ⊢
+  rw [← hψ]
+  linear_combination (norm := (field_simp [hy.ne']; ring)) (y : ℂ) * h
 
 /-- The principal Riesz remainder satisfies the de la Vallée Poussin type bound
 `C * y * exp (-c * √(log y))`, uniformly for `y ≥ 1`. -/

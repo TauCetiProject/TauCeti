@@ -26,7 +26,7 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Ded
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.IdealZetaSum
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.PrimeIdealTheorem
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Rat
-import TauCeti.NumberTheory.Chebyshev.Mertens
+import TauCeti.NumberTheory.Chebyshev.Mertens.Basic
 import TauCeti.NumberTheory.NumberField.DedekindZeta
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 

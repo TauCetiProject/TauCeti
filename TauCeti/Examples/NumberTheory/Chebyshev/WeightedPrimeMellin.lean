@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.NumberTheory.Chebyshev.Mertens
+import TauCeti.NumberTheory.Chebyshev.Mertens.Basic
 import TauCeti.NumberTheory.Chebyshev.PrimeTail
 import TauCeti.NumberTheory.Chebyshev.WeightedPrimeMellin
 

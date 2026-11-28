@@ -9,7 +9,7 @@ public import Mathlib.Data.Nat.Factorization.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 import Mathlib.Analysis.Complex.ExponentialBounds
-import TauCeti.NumberTheory.Chebyshev.Mertens
+import TauCeti.NumberTheory.Chebyshev.Mertens.Basic
 
 /-!
 # Bounds for products and logarithmic sums over prime divisors

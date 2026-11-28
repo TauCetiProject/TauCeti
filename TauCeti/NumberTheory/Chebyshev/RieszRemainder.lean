@@ -13,7 +13,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.FiniteDifference
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Lipschitz
-import TauCeti.NumberTheory.Chebyshev.Mertens
+import TauCeti.NumberTheory.Chebyshev.Mertens.Basic
 import TauCeti.NumberTheory.Chebyshev.WeightMethod
 
 /-!

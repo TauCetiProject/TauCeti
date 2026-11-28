@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.NumberTheory.Harmonic.Bounds
 public import Mathlib.NumberTheory.PrimeCounting
 public import TauCeti.Analysis.SpecialFunctions.Integrals.MellinWeight
-import TauCeti.NumberTheory.Chebyshev.Mertens
+import TauCeti.NumberTheory.Chebyshev.Mertens.Basic
 
 /-!
 # Weighted prime sums and their Mellin smoothing

@@ -11,7 +11,7 @@ public import Mathlib.NumberTheory.PrimeCounting
 import Mathlib.Analysis.PSeries
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.NumberTheory.ArithmeticFunction.Moebius
-import TauCeti.NumberTheory.Chebyshev.Mertens
+import TauCeti.NumberTheory.Chebyshev.Mertens.Basic
 import TauCeti.NumberTheory.Mertens.Basic
 
 /-!
