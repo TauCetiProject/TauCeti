@@ -153,9 +153,6 @@ def lift (f : ∀ {X : C}, (X ≅ X) → G)
 
 section Functor
 
--- Limit the shape-to-binary bridge's effect on instance search to importers of Bass K₁.
-attribute [instance 50] preservesBinaryBiproducts_of_preservesBiproducts
-
 variable {D : Type u'} [Category.{v'} D] [HasZeroMorphisms D] [HasBinaryBiproducts D]
   (F : C ⥤ D) [F.PreservesZeroMorphisms] [PreservesBinaryBiproducts F]
 
@@ -196,6 +193,25 @@ def mapEquiv (e : C ≌ D) : BassK1 C ≃+ BassK1 D :=
 
 @[simp] theorem mapEquiv_symm_toAddMonoidHom (e : C ≌ D) :
     ((mapEquiv e).symm : BassK1 D →+ BassK1 C) = map e.inverse := (rfl)
+
+@[simp] theorem mapEquiv_refl :
+    mapEquiv (CategoryTheory.Equivalence.refl : C ≌ C) = AddEquiv.refl (BassK1 C) := by
+  apply AddEquiv.toAddMonoidHom_injective
+  simp only [AddEquiv.toAddMonoidHom_eq_coe, mapEquiv_toAddMonoidHom,
+    AddEquiv.toAddMonoidHom_refl, CategoryTheory.Equivalence.refl_functor, map_id]
+
+@[simp] theorem mapEquiv_trans {E : Type u''} [Category.{v''} E] [HasZeroMorphisms E]
+    [HasBinaryBiproducts E] (e : C ≌ D) (f : D ≌ E) :
+    mapEquiv (e.trans f) = (mapEquiv e).trans (mapEquiv f) := by
+  apply AddEquiv.toAddMonoidHom_injective
+  simp only [AddEquiv.toAddMonoidHom_eq_coe, AddEquiv.toAddMonoidHom_trans, mapEquiv_toAddMonoidHom,
+    CategoryTheory.Equivalence.trans_functor, map_comp]
+
+@[simp] theorem mapEquiv_symm (e : C ≌ D) :
+    mapEquiv e.symm = (mapEquiv e).symm := by
+  apply AddEquiv.toAddMonoidHom_injective
+  simp only [AddEquiv.toAddMonoidHom_eq_coe, mapEquiv_toAddMonoidHom, mapEquiv_symm_toAddMonoidHom,
+    CategoryTheory.Equivalence.symm_functor]
 
 @[simp] theorem mapEquiv_of (e : C ≌ D) {X : C} (a : X ≅ X) :
     mapEquiv e (of a) = of (e.functor.mapIso a) := map_of _ _

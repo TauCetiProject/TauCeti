@@ -12,13 +12,16 @@ import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 /-!
 # Preservation of binary biproducts
 
-Composition and equivalences preserve binary biproducts. These instances supply the
-preservation hypotheses for the functoriality of the Bass group.
+This module provides binary biproduct preservation instances for composition, equivalences,
+and functors preserving biproducts of shape `WalkingPair`. These instances supply the preservation
+hypotheses for the functoriality of the Bass group.
 -/
 
 public section
 
 namespace CategoryTheory.Limits
+
+attribute [instance 50] preservesBinaryBiproducts_of_preservesBiproducts
 
 universe u₁ u₂ u₃ v₁ v₂ v₃
 
