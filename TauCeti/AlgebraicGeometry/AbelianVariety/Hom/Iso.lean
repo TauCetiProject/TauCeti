@@ -121,6 +121,21 @@ lemma dim_eq_of_iso {A B : AbelianVariety K} (e : A ≅ B) :
     A.dim = B.dim :=
   (isoToScheme e).hom.homeomorph.isHomeomorph.topologicalKrullDim_eq
 
+/-- A homomorphism of abelian varieties is an isomorphism if its underlying scheme map is one. -/
+lemma isIso_of_isIso_toSchemeHom {A B : AbelianVariety K} (f : A ⟶ B)
+    [IsIso (Hom.toSchemeHom f)] : IsIso f := by
+  have : IsIso ((Over.forget (Spec (.of K))).map (Hom.toOverHom f)) :=
+    ‹IsIso (Hom.toSchemeHom f)›
+  have : IsIso (Hom.toOverHom f) :=
+    isIso_of_reflects_iso (Hom.toOverHom f) (Over.forget (Spec (.of K)))
+  let G : AbelianVariety K → CommGrp (Over (Spec (.of K))) := fun A ↦ CommGrp.mk A.toOver
+  let e : A ≅ B :=
+    (fullyFaithfulInducedFunctor G).preimageIso (CommGrp.mkIso' (asIso (Hom.toOverHom f)))
+  -- The induced-category lift and the group isomorphism both keep the given forward map.
+  have he : e.hom = f := Hom.ext rfl
+  rw [← he]
+  infer_instance
+
 end
 
 end AbelianVariety
