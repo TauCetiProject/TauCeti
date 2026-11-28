@@ -176,9 +176,9 @@ theorem _root_.ValuationSubring.diagGL_mem_normalizer_map_iwahoriOne {t : m → 
   have hval (i j : m) :
       A.valuation (((diagGL t * g * (diagGL t)⁻¹ : GL m K) : Matrix m m K) i j) =
         A.valuation (g i j) := by
-    rw [diagGL_mul_mul_inv_apply, Units.val_inv_eq_inv_val, map_mul, map_mul, map_inv₀,
-      ht i j, mul_right_comm, mul_inv_cancel₀ (A.valuation.ne_zero_iff.mpr (t j).ne_zero),
-      one_mul]
+    rw [diagGL_mul_mul_inv_apply]
+    have hne : A.valuation (t j : K) ≠ 0 := A.valuation.ne_zero_iff.mpr (t j).ne_zero
+    simp [Units.val_inv_eq_inv_val, ht i j, mul_right_comm, hne]
   have hdiag (i : m) :
       ((diagGL t * g * (diagGL t)⁻¹ : GL m K) : Matrix m m K) i i = g i i := by
     rw [diagGL_mul_mul_inv_apply, mul_right_comm, Units.mul_inv, one_mul]
