@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Evaluation
-public import TauCeti.RingTheory.MvPowerSeries.Evaluation
+public import TauCeti.RingTheory.MvPowerSeries.Evaluation.Basic
 
 /-!
 # Evaluation of power series and division by `X - C c`

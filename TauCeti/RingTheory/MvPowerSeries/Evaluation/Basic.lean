@@ -68,6 +68,11 @@ Finiteness of `σ` makes the decay condition of `HasEval` vacuous in
 In `continuous_eval₂_of_continuous` it instead permits choosing a common neighbourhood for
 all arguments.
 
+The companion module `TauCeti.RingTheory.MvPowerSeries.Evaluation.IdealBounds` gives
+`MvPowerSeries.eval₂_sub_constantCoeff_mem_of_finite` and `MvPowerSeries.eval₂_mem_of_finite`.
+These finite-variable bounds apply to arbitrary ideals, including nonclosed ideals, without
+an adic topology hypothesis.
+
 ## Main results
 
 * `MvPowerSeries.eval₂_sub_eval₂_mem` : congruent evaluation points have congruent values modulo

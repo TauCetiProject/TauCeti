@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.PowerSeries.Evaluation
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Inverse
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.WExpansion
-public import TauCeti.RingTheory.MvPowerSeries.Evaluation
+public import TauCeti.RingTheory.MvPowerSeries.Evaluation.Basic
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.Topology.Algebra.Nonarchimedean.GeometricSeries
 
@@ -114,7 +114,7 @@ The evaluation differs from the source as follows.
 
 * The source evaluates through its own `ChabautyColeman.MvPSeries.eval`, which is by definition
   `MvPowerSeries.eval₂ (RingHom.id _)`. That wrapper is not ported; the definitions use Mathlib's
-  `PowerSeries.eval₂` directly, as `TauCeti/RingTheory/MvPowerSeries/Evaluation.lean` already does
+  `PowerSeries.eval₂` directly, as in `TauCeti/RingTheory/MvPowerSeries/Evaluation/Basic.lean`
   for the membership estimates this file calls.
 * The source's three `eval_mem_maximalIdeal_pow` lemmas are that same file's
   `MvPowerSeries.eval₂_mem_pow`, `_mul` and `_add_mul`, which are stated for an arbitrary adic
