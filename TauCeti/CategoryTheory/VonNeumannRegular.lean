@@ -42,7 +42,8 @@ instance op [IsVonNeumannRegularCategory C] : IsVonNeumannRegularCategory Cᵒ�
     exact ⟨g.op, by simpa [Category.assoc] using congrArg Quiver.Hom.op hg⟩
 
 /-- A fully faithful functor reflects von Neumann regularity. -/
-theorem of_fullyFaithful {D : Type u'} [Category.{v'} D] (F : C ⥤ D)
+theorem _root_.CategoryTheory.Functor.isVonNeumannRegularCategory_of_fullyFaithful
+    {D : Type u'} [Category.{v'} D] (F : C ⥤ D)
     [F.Full] [F.Faithful] [IsVonNeumannRegularCategory D] : IsVonNeumannRegularCategory C where
   exists_comp_comp_eq_self {_ _} f := by
     obtain ⟨g, hg⟩ := exists_comp_comp_eq_self (F.map f)
@@ -51,7 +52,8 @@ theorem of_fullyFaithful {D : Type u'} [Category.{v'} D] (F : C ⥤ D)
 
 /-- Von Neumann regularity is invariant under passage to the opposite category. -/
 @[simp] theorem op_iff : IsVonNeumannRegularCategory Cᵒᵖ ↔ IsVonNeumannRegularCategory C :=
-  ⟨fun _ ↦ of_fullyFaithful (opOpEquivalence C).inverse, fun _ ↦ inferInstance⟩
+  ⟨fun _ ↦ (opOpEquivalence C).inverse.isVonNeumannRegularCategory_of_fullyFaithful,
+    fun _ ↦ inferInstance⟩
 
 end IsVonNeumannRegularCategory
 

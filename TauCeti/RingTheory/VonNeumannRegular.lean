@@ -14,10 +14,10 @@ public import TauCeti.CategoryTheory.Preadditive.VonNeumannRegular
 
 import Mathlib.Algebra.Category.ModuleCat.Projective
 import Mathlib.RingTheory.Jacobson.Radical
-import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 import TauCeti.CategoryTheory.Preadditive.ModCat.SingleObj
 import TauCeti.CategoryTheory.Preadditive.ModCat.VonNeumannRegular
 import TauCeti.CategoryTheory.SingleObj
+import TauCeti.RingTheory.Semisimple.Regular
 
 /-!
 # Von Neumann regular rings and their one-object categories
@@ -29,6 +29,9 @@ for left modules. In particular, regularity is preserved by reversing
 multiplication, and regular rings have zero Jacobson radical.
 
 See T. Y. Lam, *A First Course in Noncommutative Rings*, §4, (4.23)–(4.24).
+
+The comparison between ring regularity and regularity of `SingleObj A` adapts the argument from
+[Tau Ceti PR #47044](https://github.com/TauCetiProject/TauCeti/pull/47044).
 -/
 
 public section
@@ -58,8 +61,8 @@ theorem isVonNeumannRegularCategory_singleObj_mulOpposite_iff (A : Type*) [Ring 
     IsVonNeumannRegularCategory (SingleObj Aᵐᵒᵖ) ↔ IsVonNeumannRegularRing A := by
   rw [← isVonNeumannRegularCategory_singleObj_iff]
   refine ⟨fun h ↦ IsVonNeumannRegularCategory.op_iff.mp ?_, fun h ↦ ?_⟩
-  · exact IsVonNeumannRegularCategory.of_fullyFaithful (SingleObj.mulOppositeEquiv A).inverse
-  · exact IsVonNeumannRegularCategory.of_fullyFaithful (SingleObj.mulOppositeEquiv A).functor
+  · exact (SingleObj.mulOppositeEquiv A).inverse.isVonNeumannRegularCategory_of_fullyFaithful
+  · exact (SingleObj.mulOppositeEquiv A).functor.isVonNeumannRegularCategory_of_fullyFaithful
 
 /-- A ring is von Neumann regular exactly when every finitely presented left module
 in the ring universe is projective. -/
@@ -155,7 +158,6 @@ instance {A : Type*} [BooleanRing A] : IsVonNeumannRegularRing A := by
 /-- Semisimple rings are von Neumann regular. -/
 instance (priority := 100) {A : Type*} [Ring A] [IsSemisimpleRing A] :
     IsVonNeumannRegularRing A :=
-  (isVonNeumannRegularRing_iff_finitelyPresented_projective A).mpr
-    fun M _ _ _ ↦ Module.projective_of_isSemisimpleRing A M
+  ⟨IsSemisimpleRing.exists_mul_mul_eq_self⟩
 
 end TauCeti

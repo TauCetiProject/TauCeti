@@ -13,6 +13,9 @@ public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 
 A map to a projective object with an epimorphic image factorization has a split
 image inclusion exactly when the map has an inner inverse.
+
+The image-splitting criterion adapts the projective lifting argument from
+[Tau Ceti PR #47044](https://github.com/TauCetiProject/TauCeti/pull/47044).
 -/
 
 public section
