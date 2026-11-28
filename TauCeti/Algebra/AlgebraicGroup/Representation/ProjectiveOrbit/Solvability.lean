@@ -41,8 +41,6 @@ conjugate of that proper subgroup.
   commutative algebra form a solvable group.
 * `TauCeti.Comodule.isSolvable_iff_forall_stabilizerHopfIdeal_eq_bot_of_isClosed`: **a reduced
   connected group is solvable exactly when all of its closed projective orbits are trivial.**
-* `TauCeti.Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_span_iff`: the rational points
-  of the stabilizer of `k ∙ m` are the rational points fixing the orbit base point `[m]`.
 * `TauCeti.HopfIdeal.exists_ne_bot_forall_exists_conjugate_le_of_not_isSolvable`: **an
   affine group that is not solvable has a proper closed subgroup containing a conjugate of
   every reduced connected solvable closed subgroup.**
@@ -62,18 +60,6 @@ namespace TauCeti.Comodule
 universe u w
 
 variable {k H : Type u} [Field k] [CommRing H] [HopfAlgebra k H]
-
-/-- The rational points of the stabilizer of the line `k ∙ m` are exactly the rational points
-fixing the base point `[m]` of its projective orbit. -/
-theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_span_iff
-    {M : Type u} [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
-    (m : M) (hm : Module.IsUnimodular k m) (g : WithConv (H →ₐ[k] k)) :
-    g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
-        ((k ∙ m).stabilizerHopfIdeal H) (CommAlgCat.of k k) ↔
-      projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint g.ofConv) =
-        projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) := by
-  rw [Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff,
-    projectiveOrbitMap_kernelPoint_eq_one_iff]
 
 variable [IsAlgClosed k] [Algebra.FiniteType k H]
 

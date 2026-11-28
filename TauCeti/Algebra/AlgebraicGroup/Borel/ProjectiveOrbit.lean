@@ -76,12 +76,9 @@ theorem IsBorelCandidate.exists_conjugate_le {D J : HopfIdeal k H}
   let _ : IsReduced Q := isReduced_of_smooth k Q
   let _ : ConnectedSpace (PrimeSpectrum Q) :=
     hJ.geometricallyConnected.connectedSpace
-  let _ : Group.IsSolvable (WithConv (Q →ₐ[k] AlgebraicClosure k)) :=
-    (geometricallySolvablePointsCommHopfAlgProperty_iff _ _).mp hJ.geometricallySolvable
   let _ : Group.IsSolvable (WithConv (Q →ₐ[k] k)) :=
-    Group.isSolvable_of_isSolvable_injective
-      (AlgHom.mapValue_injective (φ := Algebra.ofId k (AlgebraicClosure k))
-        (FaithfulSMul.algebraMap_injective k (AlgebraicClosure k)))
+    isSolvable_points_of_geometricallySolvablePointsCommHopfAlgProperty Q.obj
+      hJ.geometricallySolvable
   exact hD J
 
 /-- If a smooth connected solvable subgroup is the stabilizer of a rational point of a

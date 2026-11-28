@@ -41,6 +41,10 @@ power.
 * `Module.Basis.trace_map_exteriorPower_of_apply` sums those eigenvalues to compute the trace.
 * `Module.Basis.exteriorPower_ιMulti_eq_det_smul` expands a degree-`n` exterior product in terms
   of the wedge of a basis indexed by `Fin n`.
+* `exteriorPower.ιMulti_eq_det_span_smul` expands an exterior product of vectors in the span of a
+  linearly independent family as the determinant against that span basis times its wedge.
+* `exteriorPower.exists_units_smul_ιMulti_of_span_eq` shows that two linearly independent
+  `n`-tuples spanning the same submodule have exterior products differing by a unit scalar.
 * `Module.Basis.map_exteriorPower_top_eq_det_smul` gives the degree-`n` action as its determinant
   for a basis indexed by `Fin n`.
 * `Module.Basis.exteriorPowerTopEquiv_map` gives the scalar coordinate formula for every
@@ -135,6 +139,35 @@ theorem _root_.Module.Basis.exteriorPower_ιMulti_eq_det_smul (b : Module.Basis 
   refine (b.exteriorPower n).ext_elem fun s ↦ ?_
   have := congr($(((ιMultiDual R n b s).compAlternatingMap (ιMulti R n)).eq_smul_basis_det b) v)
   simpa [basis_repr_apply, mul_comm, -ιMultiDual_apply_ιMulti] using this
+
+/-- If `v : Fin n → M` is linearly independent and every `u i` lies in `span R (range v)`, then
+the exterior product of `u` is the determinant of `u` against `Module.Basis.span hv` times the
+exterior product of `v`. -/
+theorem ιMulti_eq_det_span_smul {v : Fin n → M} (hv : LinearIndependent R v) {u : Fin n → M}
+    (hu : ∀ i, u i ∈ Submodule.span R (Set.range v)) :
+    ιMulti R n u =
+      (Module.Basis.span hv).det (fun i ↦ ⟨u i, hu i⟩) • ιMulti R n v := by
+  have h := congrArg (map n (Submodule.span R (Set.range v)).subtype)
+    ((Module.Basis.span hv).exteriorPower_ιMulti_eq_det_smul fun i ↦ ⟨u i, hu i⟩)
+  simpa [map_apply_ιMulti, Module.Basis.coe_span_apply, Function.comp_def] using h
+
+/-- Two linearly independent `n`-tuples spanning the same submodule have exterior products
+differing by a unit scalar. -/
+theorem exists_units_smul_ιMulti_of_span_eq {u v : Fin n → M}
+    (hu : LinearIndependent R u) (hv : LinearIndependent R v)
+    (hspan : Submodule.span R (Set.range u) = Submodule.span R (Set.range v)) :
+    ∃ c : Rˣ, ιMulti R n u = c • ιMulti R n v := by
+  let W := Submodule.span R (Set.range v)
+  let e : Module.Basis (Fin n) R W := Module.Basis.span hv
+  have huW : ∀ i, u i ∈ W := fun i ↦ hspan.le (Submodule.subset_span ⟨i, rfl⟩)
+  let u' : Fin n → W := fun i ↦ ⟨u i, huW i⟩
+  have hu'_li : LinearIndependent R u' := LinearIndependent.of_comp W.subtype hu
+  have hu'_span : Submodule.span R (Set.range u') = ⊤ := by
+    apply Submodule.map_injective_of_injective W.injective_subtype
+    rw [Submodule.map_span, ← Set.range_comp, Submodule.map_top, Submodule.range_subtype]
+    exact hspan
+  have hunit : IsUnit (e.det u') := (e.is_basis_iff_det).mp ⟨hu'_li, hu'_span⟩
+  exact ⟨hunit.unit, by simpa [Units.smul_def] using ιMulti_eq_det_span_smul hv huW⟩
 
 /-- For a basis indexed by `Fin n`, an endomorphism acts on the degree-`n` exterior power as
 multiplication by its determinant. -/

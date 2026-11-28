@@ -104,14 +104,10 @@ theorem exists_finite_subcomodule_exteriorPower_line_stabilizer (I : HopfIdeal k
         ∀ (A : CommAlgCat.{w} k) (g : HopfAlgebra.points (R := k) (H := H) A),
           g ∈ CommHopfAlgCat.quotientPointsSubgroup H I A ↔
             (L.baseChange A).map (Comodule.endOfPoint (⋀[k]^n V) g.ofConv) = L.baseChange A := by
-  obtain ⟨V, hV, hgen⟩ := I.exists_finite_subcomodule_generating hI
-  let : Module.Finite k V := hV
+  obtain ⟨V, hV, hdim, hpts⟩ := I.exists_finite_subcomodule_topExteriorLine_stabilizer.{u, v, w} hI
   let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
   let W := I.definingSubspace V
-  refine ⟨V, Module.finrank k W, hV, LinearMap.range (_root_.exteriorPower.map _ W.subtype),
-    ?_, I.existsUnique_topExteriorLine_le_weightSpace V, ?_⟩
-  · rw [exteriorPower.finrank_range_map W.injective_subtype, Nat.choose_self]
-  · exact fun A g ↦
-      I.mem_quotientPointsSubgroup_iff_map_baseChange_range_exteriorPowerMap_eq V hgen A g
+  exact ⟨V, Module.finrank k W, hV, LinearMap.range (_root_.exteriorPower.map _ W.subtype),
+    hdim, I.existsUnique_topExteriorLine_le_weightSpace V, hpts⟩
 
 end TauCeti.HopfIdeal

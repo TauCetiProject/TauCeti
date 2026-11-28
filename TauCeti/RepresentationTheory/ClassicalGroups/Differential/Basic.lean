@@ -15,7 +15,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Fixed
 public import TauCeti.Algebra.AlgebraicGroup.Representation.LieStable
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Representation.TensorProduct
+public import TauCeti.Algebra.AlgebraicGroup.Representation.TensorProduct.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.FromMatrix
 public import TauCeti.Algebra.Lie.DirectSum
 import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation

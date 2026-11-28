@@ -83,6 +83,17 @@ theorem geometricallySolvablePointsCommHopfAlgProperty_of_isAlgClosed
     (f := AlgHom.mapValue (R := k) (H := H) φ)
     (AlgHom.mapValue_injective (R := k) (H := H) (φ := φ) φ.injective)
 
+/-- Geometric solvability implies solvability of rational points over any field. -/
+theorem isSolvable_points_of_geometricallySolvablePointsCommHopfAlgProperty
+    {k : Type u} [Field k] (H : CommHopfAlgCat.{v} k)
+    (hH : geometricallySolvablePointsCommHopfAlgProperty k H) :
+    Group.IsSolvable (WithConv (H →ₐ[k] k)) := by
+  let _ : Group.IsSolvable (WithConv (H →ₐ[k] AlgebraicClosure k)) :=
+    (geometricallySolvablePointsCommHopfAlgProperty_iff k H).mp hH
+  exact Group.isSolvable_of_isSolvable_injective
+    (AlgHom.mapValue_injective (φ := Algebra.ofId k (AlgebraicClosure k))
+      (FaithfulSMul.algebraMap_injective k (AlgebraicClosure k)))
+
 /-- A cocommutative coordinate Hopf algebra has solvable geometric points.
 
 Cocommutativity makes the convolution group of points commutative over every commutative value

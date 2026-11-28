@@ -53,15 +53,9 @@ theorem mapPointsFunctor_app_eq_one_iff (f : H ⟶ K) (A : CommAlgCat.{w} R)
     (g : HopfAlgebra.points (R := R) (H := K) A) :
     toConv (g.ofConv.comp (f.hom : ↥H →ₐ[R] ↥K)) = 1 ↔
       g ∈ quotientPointsSubgroup K (kernelHopfIdeal f) A := by
-  rw [← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, mem_quotientPointsSubgroup_iff]
-  have hbridge : (∀ h : ↥K, h ∈ kernelHopfIdeal f → g.ofConv h = 0) ↔
-      (kernelHopfIdeal f).toIdeal ≤ RingHom.ker g.ofConv.toRingHom := by
-    constructor
-    · intro hg x hx
-      exact RingHom.mem_ker.mpr (hg x (HopfIdeal.mem_toIdeal.mp hx))
-    · intro hle x hx
-      exact RingHom.mem_ker.mp (hle (HopfIdeal.mem_toIdeal.mpr hx))
-  rw [hbridge, kernelHopfIdeal_toIdeal_le_ker_iff]
+  rw [← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    mem_quotientPointsSubgroup_iff_toIdeal_le_ker, ← RingHom.ker_coe_toRingHom,
+    ← AlgHom.toRingHom_eq_coe, kernelHopfIdeal_toIdeal_le_ker_iff]
   constructor
   · intro h1
     ext a

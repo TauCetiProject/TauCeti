@@ -85,6 +85,8 @@ many.
   local Krull dimension of `Spec R` at `p` is at most the supremum of `dim (R ⧸ q)` over the
   minimal primes `q ≤ p`.
 * `Ideal.height_add_ringKrullDim_quotient_le`: `ht p + dim (R ⧸ p) ≤ dim R` for an ideal `p`.
+* `TauCeti.le_of_add_ringKrullDim_quotient_eq_of_le`: comparison of codimensions from
+  complementary quotient Krull dimensions when `R ⧸ I` has finite Krull dimension.
 * `Ideal.finite_setOf_le_and_mem`: in a noetherian ring, if `R ⧸ q` is a domain of
   dimension at most one, only finitely many primes contain `q` and a given `f ∉ q`.
 -/
@@ -188,6 +190,22 @@ theorem ringKrullDim_quotient_add_one_le_of_lt {p q : Ideal R} [p.IsPrime] (h : 
     (mem_nonZeroDivisors_of_ne_zero ?_) ?_
   · rwa [ne_eq, Ideal.Quotient.eq_zero_iff_mem]
   · rwa [Ideal.Quotient.factor_mk, Ideal.Quotient.eq_zero_iff_mem]
+
+/-- If `o₁ + dim (A ⧸ J) = dim A`, `o₂ + dim (A ⧸ I) = dim A`, and
+`dim (A ⧸ I) ≤ dim (A ⧸ J)`, with `A ⧸ I` of finite Krull dimension, then `o₁ ≤ o₂`. -/
+theorem le_of_add_ringKrullDim_quotient_eq_of_le
+    {A : Type*} [CommRing A] {o₁ o₂ : WithBot ℕ∞} {I J : Ideal A}
+    [FiniteRingKrullDim (A ⧸ I)]
+    (ho₁ : o₁ + ringKrullDim (A ⧸ J) = ringKrullDim A)
+    (ho₂ : o₂ + ringKrullDim (A ⧸ I) = ringKrullDim A)
+    (hIJ : ringKrullDim (A ⧸ I) ≤ ringKrullDim (A ⧸ J)) :
+    o₁ ≤ o₂ := by
+  have htop := ringKrullDim_ne_top (R := A ⧸ I)
+  lift ringKrullDim (A ⧸ I) to ℕ∞ using ringKrullDim_ne_bot with d
+  refine ((ENat.addLECancellable_of_ne_top (by simpa using htop)).withBot.add_le_add_iff_right).mp
+    ?_
+  rw [ho₂, ← ho₁]
+  exact add_le_add le_rfl hIJ
 
 end TauCeti
 

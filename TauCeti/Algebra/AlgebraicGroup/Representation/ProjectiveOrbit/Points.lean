@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.HomogeneousIdeal
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.AlgebraicGeometry.AugmentationPoint.Basic
 
@@ -133,6 +134,17 @@ theorem projectiveOrbitMap_kernelPoint_eq_one_iff (m : M) (hm : Module.IsUnimodu
   have haction : basePointsRepresentation M (1 : WithConv (H →ₐ[k] k)) m = m := by simp
   rw [haction] at h
   simpa [Submodule.map_span, AlgHom.convOne_def] using h
+
+/-- The rational points of the stabilizer of the line `k ∙ m` are exactly the rational points
+fixing the base point `[m]` of its projective orbit. -/
+theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_span_iff
+    (m : M) (hm : Module.IsUnimodular k m) (g : WithConv (H →ₐ[k] k)) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
+        ((k ∙ m).stabilizerHopfIdeal H) (CommAlgCat.of k k) ↔
+      projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint g.ofConv) =
+        projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) := by
+  rw [Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff,
+    projectiveOrbitMap_kernelPoint_eq_one_iff]
 
 /-- Two rational points have the same projective orbit image exactly when their matrix
 coefficients at `m` are proportional by one nonzero scalar. This is the rational-point form of

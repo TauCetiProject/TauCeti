@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # Decomposable exterior vectors
@@ -162,13 +163,7 @@ theorem contract_ιMulti_mem_span (η : ⋀[R]^n (Dual R M)) (v : Fin (n + 1) �
 theorem ι_contract_mul_ιMulti_eq_zero (η : ⋀[R]^n (Dual R M)) (v : Fin (n + 1) → M) :
     ExteriorAlgebra.ι R (contract R M n η (ιMulti R (n + 1) v)) *
       ExteriorAlgebra.ιMulti R (n + 1) v = 0 := by
-  rw [contract_ιMulti, map_sum, Finset.sum_mul]
-  refine Finset.sum_eq_zero fun j _ ↦ ?_
-  have h := (ExteriorAlgebra.ιMulti R (n + 2)).map_eq_zero_of_eq (Fin.cons (v j) v)
-    (i := 0) (j := j.succ) (by simp) (Fin.succ_ne_zero j).symm
-  rw [ExteriorAlgebra.ιMulti_succ_apply] at h
-  simp only [Matrix.vecTail, Fin.cons_zero, Fin.cons_comp_succ] at h
-  rw [map_smul, smul_mul_assoc, h, smul_zero]
+  simpa [ιMulti_apply_coe] using ι_mul_ιMulti_eq_zero_of_mem_span (contract_ιMulti_mem_span η v)
 
 end Contract
 
