@@ -66,6 +66,8 @@ space structure.
   and positive indices of inertia of `q`.
 * `LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi`: for nondegenerate `q`, the
   negative and positive spectral subspaces are complementary.
+* `LinearMap.BilinForm.exists_eigenbasis_of_isSelfAdjoint`: an operator self-adjoint for a
+  positive definite symmetric `g` admits an eigenbasis.
 * `LinearMap.BilinForm.exists_relativeSpectralSubspace_Iio_eq_iff`: the negative spectral
   subspaces of `q`, as `g` varies, are exactly the subspaces of dimension the negative index of
   inertia on which `q` is negative definite.
@@ -152,12 +154,8 @@ eigenspaces of an operator `T` representing `q`. -/
 theorem relativeEigenspace_innerₗ {E : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] {q : LinearMap.BilinForm ℝ E} {T : E →ₗ[ℝ] E}
     (hT : ∀ x y, q x y = ⟪T x, y⟫_ℝ)
-    (μ : ℝ) : relativeEigenspace (innerₗ E) q μ = Module.End.eigenspace T μ := by
-  ext x
-  rw [mem_relativeEigenspace_iff, Module.End.mem_eigenspace_iff]
-  simp only [hT, innerₗ_apply_apply]
-  exact ⟨fun h ↦ ext_inner_right ℝ fun y ↦ by rw [h, real_inner_smul_left],
-    fun h y ↦ by rw [h, real_inner_smul_left]⟩
+    (μ : ℝ) : relativeEigenspace (innerₗ E) q μ = Module.End.eigenspace T μ :=
+  relativeEigenspace_eq_eigenspace TauCeti.nondegenerate_inner.1 hT μ
 
 /-- **Euclidean model.** For positive definite symmetric `g` and symmetric `q`, a linear isometry
 from Euclidean space carries the point-spectral subspaces of a symmetric operator representing the
@@ -307,6 +305,36 @@ theorem isCompl_relativeSpectralSubspace_Iio_Ioi (hker : LinearMap.ker q = ⊥) 
       relativeEigenspace_zero, hker, sup_bot_eq, relativeSpectralSubspace_union] at h
 
 end Real
+
+section SelfAdjoint
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
+  {g : LinearMap.BilinForm ℝ V}
+
+/-- **Spectral theorem for a self-adjoint operator (eigenbasis).** An operator `T` self-adjoint
+for a symmetric positive definite bilinear form `g` on a finite-dimensional real space admits a
+basis of eigenvectors. -/
+theorem exists_eigenbasis_of_isSelfAdjoint (hg : g.IsSymm) (hpos : ∀ v, v ≠ 0 → 0 < g v v)
+    {T : V →ₗ[ℝ] V} (hT : g.IsSelfAdjoint T) :
+    ∃ (b : Module.Basis (Fin (finrank ℝ V)) ℝ V) (lam : Fin (finrank ℝ V) → ℝ),
+      ∀ i, T (b i) = lam i • b i := by
+  obtain ⟨e, he⟩ := exists_linearEquiv_euclideanSpace_apply_apply hg hpos
+  let S : Module.End ℝ (EuclideanSpace ℝ (Fin (finrank ℝ V))) :=
+    e.symm.toLinearMap.comp (T.comp e.toLinearMap)
+  have heS (x : EuclideanSpace ℝ (Fin (finrank ℝ V))) : e (S x) = T (e x) := by simp [S]
+  have hS : S.IsSymmetric := fun x y ↦ by
+    rw [← he (S x) y, ← he x (S y), heS x, heS y]
+    exact hT (e x) (e y)
+  let hn : finrank ℝ (EuclideanSpace ℝ (Fin (finrank ℝ V))) = finrank ℝ V :=
+    finrank_euclideanSpace_fin
+  let ob := hS.eigenvectorBasis hn
+  refine ⟨ob.toBasis.map e, hS.eigenvalues hn, fun i ↦ ?_⟩
+  calc
+    T ((ob.toBasis.map e) i) = e (S (ob i)) := (heS (ob i)).symm
+    _ = e (hS.eigenvalues hn i • ob i) := congrArg e (hS.apply_eigenvectorBasis hn i)
+    _ = hS.eigenvalues hn i • (ob.toBasis.map e) i := map_smul e _ _
+
+end SelfAdjoint
 
 /-! ### Which subspaces are negative spectral subspaces -/
 

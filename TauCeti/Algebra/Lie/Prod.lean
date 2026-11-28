@@ -39,6 +39,7 @@ product.
 * `LieSubmodule.prodFst` and `LieSubmodule.prodSnd`: the projections of a product Lie submodule.
   A nonzero coordinate guarantees surjectivity onto an irreducible factor.
 * `TauCeti.LieModuleEquiv.prodComm`: swapping the factors is an equivalence.
+* `LieEquiv.prodCongr`: product of two Lie algebra equivalences.
 * `TauCeti.lie_prod_apply`: the componentwise bracket on a product.
 * `LieHom.prodRepresentation`: the product of two explicit Lie representations.
 * `LieHom.piRepresentation`: the product of a family of explicit Lie representations.
@@ -399,6 +400,52 @@ theorem piRepresentation_injective_iff
 end Pi
 
 end LieHom
+
+namespace LieEquiv
+
+section
+
+variable {R L₁ L₂ M₁ M₂ N₁ N₂ : Type*} [CommRing R]
+  [LieRing L₁] [LieAlgebra R L₁] [LieRing L₂] [LieAlgebra R L₂]
+  [LieRing M₁] [LieAlgebra R M₁] [LieRing M₂] [LieAlgebra R M₂]
+  [LieRing N₁] [LieAlgebra R N₁] [LieRing N₂] [LieAlgebra R N₂]
+
+/-- Product of two Lie algebra equivalences. -/
+def prodCongr (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) : (L₁ × L₂) ≃ₗ⁅R⁆ (M₁ × M₂) where
+  __ := LinearEquiv.prodCongr e₁.toLinearEquiv e₂.toLinearEquiv
+  map_lie' {p q} := Prod.ext (e₁.map_lie p.1 q.1) (e₂.map_lie p.2 q.2)
+
+@[simp, grind =]
+theorem prodCongr_apply (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) (p : L₁ × L₂) :
+    prodCongr e₁ e₂ p = (e₁ p.1, e₂ p.2) := (rfl)
+
+@[simp]
+theorem prodCongr_symm (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) :
+    (prodCongr e₁ e₂).symm = prodCongr e₁.symm e₂.symm := (rfl)
+
+@[simp]
+theorem prodCongr_refl :
+    prodCongr (LieEquiv.refl : L₁ ≃ₗ⁅R⁆ L₁) (LieEquiv.refl : L₂ ≃ₗ⁅R⁆ L₂) = LieEquiv.refl :=
+  (rfl)
+
+@[simp]
+theorem prodCongr_trans_prodCongr (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) (f₁ : M₁ ≃ₗ⁅R⁆ N₁)
+    (f₂ : M₂ ≃ₗ⁅R⁆ N₂) :
+    (prodCongr e₁ e₂).trans (prodCongr f₁ f₂) = prodCongr (e₁.trans f₁) (e₂.trans f₂) := (rfl)
+
+@[simp]
+theorem toLinearEquiv_prodCongr (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) :
+    (prodCongr e₁ e₂).toLinearEquiv = LinearEquiv.prodCongr e₁.toLinearEquiv e₂.toLinearEquiv :=
+  (rfl)
+
+@[simp]
+theorem toLieHom_prodCongr (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) :
+    (prodCongr e₁ e₂ : (L₁ × L₂) →ₗ⁅R⁆ (M₁ × M₂)) = LieHom.prodMap e₁.toLieHom e₂.toLieHom :=
+  (rfl)
+
+end
+
+end LieEquiv
 
 namespace LieIdeal
 

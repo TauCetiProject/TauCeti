@@ -13,7 +13,7 @@ public import TauCeti.Algebra.Lie.Hom
 # Fixed Lie subalgebras
 
 The fixed submodule of a Lie endomorphism is closed under brackets. Its underlying
-submodule is the existing linear fixed submodule.
+submodule is the existing linear fixed submodule, equivalently the equalizer with the identity.
 
 Intertwining homomorphisms restrict to these subalgebras, and intertwining equivalences
 restrict with the expected inverse.

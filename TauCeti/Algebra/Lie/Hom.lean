@@ -10,13 +10,14 @@ public import Mathlib.Algebra.Lie.Ideal
 /-!
 # Intertwining Lie algebra homomorphisms
 
-Basic constructors, simp, and intertwining lemmas for `LieHom`, `LieEquiv`, and `LinearEquiv`:
-construction of `LieEquiv` from mutually inverse `LieHom`s (`LieEquiv.ofLieHoms`), composition of
-intertwining homomorphisms, and intertwining of inverse equivalences on Lie algebras and bracket
-actions (`LieEquiv.symm_intertwines`, `LinearEquiv.symm_lie_eq_of_lie_eq`), the transport
-`e ∘ θ ∘ e⁻¹` of an automorphism along an isomorphism (`LieEquiv.conj`), and the restriction of a
-Lie homomorphism to Lie subalgebras or Lie ideals it maps into each other (`LieHom.restrict`,
-`LieHom.restrictIdeal`).
+Basic constructors, simp, eigenvector, and intertwining lemmas for `LieHom`, `LieEquiv`, and
+`LinearEquiv`: construction of `LieEquiv` from mutually inverse `LieHom`s (`LieEquiv.ofLieHoms`),
+eigenvalue multiplication under brackets (`LieHom.map_lie_of_apply_eq_smul`), composition and
+cancellation of intertwining homomorphisms and equivalences (`LieHom.comp_intertwines`,
+`LieEquiv.symm_intertwines`, `LieEquiv.trans_intertwines`, `LinearEquiv.symm_lie_eq_of_lie_eq`),
+the transport `e ∘ θ ∘ e⁻¹` of an automorphism along an isomorphism (`LieEquiv.conj`), and the
+restriction of a Lie homomorphism to Lie subalgebras or Lie ideals it maps into each other
+(`LieHom.restrict`, `LieHom.restrictIdeal`).
 -/
 
 public section
@@ -35,6 +36,12 @@ theorem comp_intertwines (u : L →ₗ⁅R⁆ M) (v : M →ₗ⁅R⁆ N)
     k.comp (v.comp u) = (v.comp u).comp f := by
   ext x
   exact (congr_fun hv (u x)).trans (congrArg v (congr_fun hu x))
+
+/-- A Lie algebra endomorphism multiplies eigenvalues on Lie brackets of eigenvectors. -/
+theorem map_lie_of_apply_eq_smul (f : L →ₗ⁅R⁆ L) {u v : L} {μ ν : R}
+    (hu : f u = μ • u) (hv : f v = ν • v) :
+    f ⁅u, v⁆ = (μ * ν) • ⁅u, v⁆ := by
+  rw [map_lie, hu, hv, smul_lie, lie_smul, smul_smul]
 
 end LieHom
 

@@ -43,6 +43,9 @@ algebraic closedness, and the answer names the basis vectors involved.
 
 ## Main results
 
+* `Module.Basis.diagMap`, `Module.Basis.diagMap_apply_basis`, `Module.Basis.diagMap_comp`,
+  `Module.Basis.diagMap_one`, `Module.Basis.repr_diagMap`: diagonal endomorphisms scaling each
+  basis vector by prescribed coefficients, and their coordinate, composition, and identity laws.
 * `Module.Basis.repr_aeval_apply_of_apply_basis`: the coordinates of `q(f) w` are those of `w`
   scaled by the values of the polynomial `q` at the eigenvalues (the polynomial form of
   `Module.Basis.repr_apply_eq_mul_of_apply_eq_smul`).
@@ -59,9 +62,20 @@ algebraic closedness, and the answer names the basis vectors involved.
   by the basis vectors it contains.
 * `Module.Basis.exists_apply_eq_and_mem_span_singleton`: a nonzero eigenvector of `f` is a
   multiple of a single basis vector, whose eigenvalue is its eigenvalue.
+* `Module.Basis.eq_of_apply_eq_smul_of_repr_ne_zero`: every basis index appearing in an
+  eigenvector has the same eigenvalue.
 * `Module.Basis.eigenspace_eq_span_image` and `Module.Basis.finrank_eigenspace_eq_card`: with
   repeated eigenvalues allowed, the `μ`-eigenspace is spanned by the basis vectors of eigenvalue
   `μ`, and its dimension is their number.
+* `Module.Basis.apply_eq_smul_of_apply_eq_smul`: a linear map scaling every `μ`-eigenbasis vector
+  of `f` by `ν` acts on every `μ`-eigenvector of `f` as scalar multiplication by `ν`.
+* `LinearEquiv.apply_eq_inv_smul_of_conj`, `LinearEquiv.involutive_trans_symm`,
+  `LinearEquiv.involutive_trans_conj_left`, `LinearEquiv.involutive_trans_conj_right`,
+  `LinearEquiv.trans_self_conj_of_conj`, `LinearEquiv.involutive_sq_trans_conj_left`,
+  `LinearEquiv.involutive_sq_trans_conj_right`, and `LinearEquiv.sq_trans_apply_inv_of_eigenvector`:
+  conjugation to the inverse sends `μ`-eigenvectors to `μ⁻¹`-eigenvectors, and involutions `θ, θ'`
+  conjugate `θ' ∘ θ` and `(θ' ∘ θ)²` to their inverses and send `μ`-eigenvectors of `(θ' ∘ θ)²`
+  to `μ⁻¹`-eigenvectors.
 * `LinearMap.charpoly_eq_prod_of_apply_eq_smul`, `LinearMap.roots_charpoly_of_apply_eq_smul`: the
   characteristic polynomial of an endomorphism diagonal in a basis is `∏ i, (X - a i)`, with roots
   the eigenvalues `a i` counted with multiplicity.
@@ -79,6 +93,26 @@ section CommSemiring
 
 variable [CommSemiring K] [AddCommMonoid V] [Module K V] {f : V →ₗ[K] V} {a : ι → K}
 
+/-- The linear endomorphism scaling each basis vector `b i` by `c i`. -/
+noncomputable def _root_.Module.Basis.diagMap (b : Module.Basis ι K V) (c : ι → K) :
+    Module.End K V := b.constr K fun i ↦ c i • b i
+
+/-- A diagonal endomorphism scales each basis vector `b i` by `c i`. -/
+@[simp]
+theorem _root_.Module.Basis.diagMap_apply_basis (b : Module.Basis ι K V) (c : ι → K) (i : ι) :
+    b.diagMap c (b i) = c i • b i := b.constr_basis K _ i
+
+/-- Composing two diagonal endomorphisms multiplies their eigenvalues pointwise. -/
+@[simp]
+theorem _root_.Module.Basis.diagMap_comp (b : Module.Basis ι K V) (c d : ι → K) :
+    (b.diagMap d).comp (b.diagMap c) = b.diagMap fun i ↦ d i * c i :=
+  b.ext fun i ↦ by simp [smul_smul, mul_comm]
+
+/-- The diagonal endomorphism with eigenvalue `1` on every basis vector is the identity. -/
+@[simp]
+theorem _root_.Module.Basis.diagMap_one (b : Module.Basis ι K V) :
+    b.diagMap 1 = LinearMap.id := b.ext fun i ↦ by simp
+
 open Polynomial in
 /-- **A polynomial in an endomorphism diagonal in a basis scales the coordinates**: if
 `f (b i) = a i • b i` for every `i`, then `q(f)` multiplies the `i`-th coordinate of every vector
@@ -95,6 +129,12 @@ theorem _root_.Module.Basis.repr_aeval_apply_of_apply_basis (b : Module.Basis ι
   rw [aeval_algebraMap_apply_eq_algebraMap_eval, LinearMap.comp_apply,
     Module.algebraMap_end_apply] at hv
   simpa [F] using hv.symm
+
+/-- The `i`-th coordinate of `b.diagMap c v` in the basis `b` is `c i * b.repr v i`. -/
+@[simp]
+theorem _root_.Module.Basis.repr_diagMap (b : Module.Basis ι K V) (c : ι → K) (v : V) (i : ι) :
+    b.repr (b.diagMap c v) i = c i * b.repr v i :=
+  b.repr_apply_eq_mul_of_apply_eq_smul b (b.diagMap_apply_basis c) v i
 
 end CommSemiring
 
@@ -221,11 +261,9 @@ theorem _root_.Module.Basis.eq_span_self_mem_of_forall (b : Module.Basis ι K V)
     W = Submodule.span K {v | ∃ i : ι, b i = v ∧ v ∈ W} := by
   refine le_antisymm (fun w hw => ?_) (Submodule.span_le.2 ?_)
   · rw [← b.linearCombination_repr w, Finsupp.linearCombination_apply, Finsupp.sum]
-    refine Submodule.sum_mem _ fun k hk => ?_
-    exact Submodule.smul_mem _ _ (Submodule.subset_span
+    exact Submodule.sum_mem _ fun k hk => Submodule.smul_mem _ _ (Submodule.subset_span
       ⟨k, rfl, b.self_mem_of_repr_ne_zero_of_forall hf ha hW hw (Finsupp.mem_support_iff.1 hk)⟩)
-  · rintro v ⟨-, -, hv⟩
-    exact hv
+  · rintro v ⟨-, -, hv⟩; exact hv
 
 end Family
 
@@ -260,6 +298,15 @@ section CancelMulZero
 variable [CommSemiring K] [IsCancelMulZero K] [AddCommMonoid V] [Module K V] {f : V →ₗ[K] V}
   {a : ι → K}
 
+/-- If `f` is diagonal in `b` with eigenvalues `a` and `w` is a `μ`-eigenvector of `f`, then
+every basis index occurring in `w` has eigenvalue `μ`. -/
+theorem _root_.Module.Basis.eq_of_apply_eq_smul_of_repr_ne_zero (b : Module.Basis ι K V)
+    (hf : ∀ i, f (b i) = a i • b i) {w : V} {μ : K} (hw : f w = μ • w) {i : ι}
+    (hi : b.repr w i ≠ 0) : a i = μ := by
+  have h := b.repr_apply_eq_mul_of_apply_eq_smul b hf w i
+  rw [hw, map_smul, Finsupp.smul_apply, smul_eq_mul] at h
+  exact mul_right_cancel₀ hi h.symm
+
 /-- **A nonzero eigenvector is a multiple of a single basis vector**, when the endomorphism is
 diagonal in the basis with pairwise distinct eigenvalues, and its eigenvalue is the eigenvalue of
 that basis vector. -/
@@ -267,20 +314,31 @@ theorem _root_.Module.Basis.exists_apply_eq_and_mem_span_singleton (b : Module.B
     (hf : ∀ i, f (b i) = a i • b i) (ha : Function.Injective a) {w : V} (hw : w ≠ 0) {c : K}
     (hfw : f w = c • w) : ∃ i : ι, a i = c ∧ w ∈ Submodule.span K {b i} := by
   classical
-  have hcoord : ∀ k : ι, a k * b.repr w k = c * b.repr w k := by
-    intro k
-    rw [← b.repr_apply_eq_mul_of_apply_eq_smul b hf, hfw, map_smul, Finsupp.smul_apply,
-      smul_eq_mul]
-  have hrne : b.repr w ≠ 0 := fun h => hw (b.repr.map_eq_zero_iff.1 h)
-  obtain ⟨i, hi⟩ := Finsupp.ne_iff.1 hrne
+  obtain ⟨i, hi⟩ := Finsupp.ne_iff.1 (fun h => hw (b.repr.map_eq_zero_iff.1 h))
   rw [Finsupp.coe_zero, Pi.zero_apply] at hi
-  have hci : a i = c := mul_right_cancel₀ hi (hcoord i)
+  have hci : a i = c := b.eq_of_apply_eq_smul_of_repr_ne_zero hf hfw hi
   refine ⟨i, hci, ?_⟩
   have hsupp : (b.repr w).support ⊆ {i} := fun k hk =>
     Finset.mem_singleton.2
-      (ha ((mul_right_cancel₀ (Finsupp.mem_support_iff.1 hk) (hcoord k)).trans hci.symm))
+      (ha ((b.eq_of_apply_eq_smul_of_repr_ne_zero hf hfw (Finsupp.mem_support_iff.1 hk)).trans
+        hci.symm))
   rw [b.eq_smul_of_repr_support_subset_singleton hsupp]
   exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
+
+/-- If `f` is diagonal in a basis `b` with eigenvalues `a` and `g` scales every basis vector of
+eigenvalue `μ` by `ν`, then `g` acts on every `μ`-eigenvector of `f` as scalar multiplication by
+`ν`. -/
+theorem _root_.Module.Basis.apply_eq_smul_of_apply_eq_smul (b : Module.Basis ι K V)
+    {g : V →ₗ[K] V} {μ ν : K} (hf : ∀ i, f (b i) = a i • b i)
+    (hg : ∀ i, a i = μ → g (b i) = ν • b i) {v : V} (hv : f v = μ • v) : g v = ν • v := by
+  classical
+  have hrepr : v = ∑ i ∈ (b.repr v).support, b.repr v i • b i := by
+    conv_lhs => rw [← b.linearCombination_repr v, Finsupp.linearCombination_apply, Finsupp.sum]
+  conv_lhs => rw [hrepr]
+  simp only [map_sum, map_smul]
+  rw [Finset.sum_congr rfl fun i hi ↦ by
+    rw [hg i (b.eq_of_apply_eq_smul_of_repr_ne_zero hf hv (Finsupp.mem_support_iff.mp hi)),
+      smul_comm], ← Finset.smul_sum, ← hrepr]
 
 end CancelMulZero
 
@@ -298,9 +356,8 @@ theorem _root_.Module.Basis.eigenspace_eq_span_image (b : Module.Basis ι K V)
     (hf : ∀ i, f (b i) = a i • b i) (μ : K) :
     f.eigenspace μ = Submodule.span K (b '' {i | a i = μ}) := by
   refine le_antisymm (fun w hw => b.mem_span_image.mpr fun i hi => ?_) (Submodule.span_le.mpr ?_)
-  · have h := b.repr_apply_eq_mul_of_apply_eq_smul b hf w i
-    rw [Module.End.mem_eigenspace_iff.mp hw, map_smul, Finsupp.smul_apply, smul_eq_mul] at h
-    exact (mul_right_cancel₀ (Finsupp.mem_support_iff.mp hi) h).symm
+  · exact b.eq_of_apply_eq_smul_of_repr_ne_zero hf (Module.End.mem_eigenspace_iff.mp hw)
+      (Finsupp.mem_support_iff.mp hi)
   · rintro _ ⟨i, hi, rfl⟩
     rw [SetLike.mem_coe, Module.End.mem_eigenspace_iff, hf i, Set.mem_ofPred_eq.mp hi]
 
@@ -316,6 +373,91 @@ theorem _root_.Module.Basis.finrank_eigenspace_eq_card [Nontrivial K] (b : Modul
     Nat.card_eq_fintype_card]
 
 end Eigenspace
+
+/-! ### Eigenvectors inverted by conjugation -/
+
+section Semiring
+
+variable [Semiring K] [AddCommMonoid V] [Module K V]
+
+section Involutive
+
+variable (θ θ' : V ≃ₗ[K] V) (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ')
+include hθ hθ'
+
+/-- For two involutive linear equivalences `θ` and `θ'`, `(θ'.trans θ).symm x = θ' (θ x)`. -/
+theorem _root_.LinearEquiv.involutive_trans_symm (x : V) :
+    (θ'.trans θ).symm x = θ' (θ x) := by
+  rw [LinearEquiv.symm_apply_eq, LinearEquiv.trans_apply, hθ', hθ]
+
+/-- For two involutive linear equivalences `θ` and `θ'`, `θ` conjugates `θ'.trans θ` to its
+inverse. -/
+theorem _root_.LinearEquiv.involutive_trans_conj_left (x : V) :
+    θ ((θ'.trans θ) x) = (θ'.trans θ).symm (θ x) := by
+  rw [LinearEquiv.involutive_trans_symm θ θ' hθ hθ', LinearEquiv.trans_apply, hθ, hθ]
+
+/-- For two involutive linear equivalences `θ` and `θ'`, `θ'` conjugates `θ'.trans θ` to its
+inverse. -/
+theorem _root_.LinearEquiv.involutive_trans_conj_right (x : V) :
+    θ' ((θ'.trans θ) x) = (θ'.trans θ).symm (θ' x) := by
+  rw [LinearEquiv.involutive_trans_symm θ θ' hθ hθ', LinearEquiv.trans_apply]
+
+end Involutive
+
+/-- If a linear map `σ` conjugates `N` to `N.symm`, then `σ` conjugates `N.trans N` to
+`(N.trans N).symm`. -/
+theorem _root_.LinearEquiv.trans_self_conj_of_conj (N : V ≃ₗ[K] V) (σ : V →ₗ[K] V)
+    (hσ : ∀ x, σ (N x) = N.symm (σ x)) (x : V) :
+    σ ((N.trans N) x) = (N.trans N).symm (σ x) := by
+  simp only [LinearEquiv.trans_apply, LinearEquiv.trans_symm]
+  rw [hσ (N x), hσ x]
+
+/-- For two involutive linear equivalences `θ` and `θ'`, `θ` conjugates `(θ'.trans θ)²` to its
+inverse. -/
+theorem _root_.LinearEquiv.involutive_sq_trans_conj_left (θ θ' : V ≃ₗ[K] V)
+    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ') (x : V) :
+    θ (((θ'.trans θ).trans (θ'.trans θ)) x) =
+      ((θ'.trans θ).trans (θ'.trans θ)).symm (θ x) :=
+  (θ'.trans θ).trans_self_conj_of_conj θ.toLinearMap
+    (LinearEquiv.involutive_trans_conj_left θ θ' hθ hθ') x
+
+/-- For two involutive linear equivalences `θ` and `θ'`, `θ'` conjugates `(θ'.trans θ)²` to its
+inverse. -/
+theorem _root_.LinearEquiv.involutive_sq_trans_conj_right (θ θ' : V ≃ₗ[K] V)
+    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ') (x : V) :
+    θ' (((θ'.trans θ).trans (θ'.trans θ)) x) =
+      ((θ'.trans θ).trans (θ'.trans θ)).symm (θ' x) :=
+  (θ'.trans θ).trans_self_conj_of_conj θ'.toLinearMap
+    (LinearEquiv.involutive_trans_conj_right θ θ' hθ hθ') x
+
+end Semiring
+
+section DivisionRing
+
+variable [DivisionRing K] [AddCommGroup V] [Module K V]
+
+/-- If a linear map `σ` conjugates a linear equivalence `P` to its inverse
+(`σ (P x) = P.symm (σ x)`), then `σ` maps every `μ`-eigenvector of `P` (with `μ ≠ 0`) to a
+`μ⁻¹`-eigenvector of `P`. -/
+theorem _root_.LinearEquiv.apply_eq_inv_smul_of_conj (P : V ≃ₗ[K] V) (σ : V →ₗ[K] V)
+    (hσ : ∀ x, σ (P x) = P.symm (σ x)) {v : V} {μ : K} (hμ : μ ≠ 0) (hv : P v = μ • v) :
+    P (σ v) = μ⁻¹ • σ v := by
+  have h := congrArg (μ⁻¹ • ·) (congrArg P (hσ v))
+  rwa [P.apply_symm_apply, hv, map_smul, map_smul, smul_smul, inv_mul_cancel₀ hμ, one_smul] at h
+
+/-- For two involutive linear equivalences `θ` and `θ'`, both `θ` and `θ'` map every
+`μ`-eigenvector of `(θ' ∘ θ)²` (with `μ ≠ 0`) to a `μ⁻¹`-eigenvector. -/
+theorem _root_.LinearEquiv.sq_trans_apply_inv_of_eigenvector (θ θ' : V ≃ₗ[K] V)
+    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ') {v : V} {μ : K} (hμ : μ ≠ 0)
+    (hv : ((θ'.trans θ).trans (θ'.trans θ)) v = μ • v) :
+    ((θ'.trans θ).trans (θ'.trans θ)) (θ v) = μ⁻¹ • θ v ∧
+      ((θ'.trans θ).trans (θ'.trans θ)) (θ' v) = μ⁻¹ • θ' v :=
+  ⟨_root_.LinearEquiv.apply_eq_inv_smul_of_conj _ θ.toLinearMap
+      (LinearEquiv.involutive_sq_trans_conj_left θ θ' hθ hθ') hμ hv,
+    _root_.LinearEquiv.apply_eq_inv_smul_of_conj _ θ'.toLinearMap
+      (LinearEquiv.involutive_sq_trans_conj_right θ θ' hθ hθ') hμ hv⟩
+
+end DivisionRing
 
 end TauCeti
 
