@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.Valued.ValuationTopology
 -- `Matrix.GeneralLinearGroup` topology and `Continuous.generalLinearGroup_map`.
 public import Mathlib.Topology.Algebra.Group.Matrix
 -- `TauCeti.mem_map_iwahoriOne_iff` characterizes membership in `I₁` by entry valuations.
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.IwasawaBruhat
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Iwahori.Valuation
 
 import Mathlib.Topology.Algebra.Valued.ValuedField
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
