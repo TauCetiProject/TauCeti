@@ -128,7 +128,7 @@ theorem SpecMap_comp_ofOver_iff [Mono a] (g : Ω₂ →+* Ω₁) :
       g.comp (algebraMap R Ω₂) = algebraMap R Ω₁ := by
   dsimp only
   rw [← Category.assoc, cancel_mono a, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-  exact ⟨fun h ↦ TauCeti.AlgebraicGeometry.ringHom_eq_of_SpecMap_eq h,
+  exact ⟨fun h ↦ Spec.homEquivRingHom.symm.injective h,
     fun h ↦ congrArg (Spec.map ∘ CommRingCat.ofHom) h⟩
 
 /-- When `a` is a monomorphism, the ring homomorphism underlying a morphism
@@ -203,28 +203,20 @@ theorem ofOverGaloisStalkAction_mul_app_apply (σ τ : Ω ≃ₐ[R] Ω)
         ((ofOverGaloisStalkAction a Ω τ).asIso.hom.app F z) := by
   rw [map_mul, Aut.functor_mul_asIso_hom_app_apply]
 
-private theorem autToRingEquiv_toRingHom (φ : Aut (ofOver a Ω)) :
-    ((Scheme.Spec.preimageIso
-        ((forget S).mapIso φ.asIso)).unop.commRingCatIsoToRingEquiv : Ω →+* Ω) =
-      φ.asIso.hom.ringHom := by
-  apply TauCeti.AlgebraicGeometry.ringHom_eq_of_SpecMap_eq
-  rw [Hom.SpecMap_ringHom]
-  exact Scheme.Spec.map_preimage ((forget S).mapIso φ.asIso).hom
-
 /-- When `a : Spec (.of R) ⟶ S` is a monomorphism, an automorphism of `ofOver a Ω` in
 `GeometricPoint S` yields an `R`-algebra automorphism of `Ω`. -/
 noncomputable def autToAlgEquiv [Mono a] (φ : Aut (ofOver a Ω)) : Ω ≃ₐ[R] Ω :=
   AlgEquiv.ofRingEquiv
-    (f := (Scheme.Spec.preimageIso ((forget S).mapIso φ.asIso)).unop.commRingCatIsoToRingEquiv)
-    fun r ↦ by
-      rw [← RingEquiv.coe_toRingHom, autToRingEquiv_toRingHom]
-      exact DFunLike.congr_fun (φ.asIso.hom.ringHom_comp_algebraMap a) r
+    (f := RingEquiv.ofRingHom φ.asIso.hom.ringHom φ.asIso.inv.ringHom
+      (by rw [← Hom.ringHom_comp, φ.asIso.hom_inv_id, Hom.ringHom_id])
+      (by rw [← Hom.ringHom_comp, φ.asIso.inv_hom_id, Hom.ringHom_id]))
+    fun r ↦ DFunLike.congr_fun (φ.asIso.hom.ringHom_comp_algebraMap a) r
 
 /-- The ring homomorphism underlying `autToAlgEquiv a Ω φ` is `φ.asIso.hom.ringHom`. -/
 @[simp]
 theorem autToAlgEquiv_toRingHom [Mono a] (φ : Aut (ofOver a Ω)) :
     (autToAlgEquiv a Ω φ : Ω →+* Ω) = φ.asIso.hom.ringHom :=
-  autToRingEquiv_toRingHom a Ω φ
+  (rfl)
 
 /-- Evaluating `autToAlgEquiv a Ω φ` at `r` applies `φ.asIso.hom.ringHom`. -/
 @[simp]
@@ -272,12 +264,6 @@ theorem ofOverAutMulEquiv_apply [Mono a] (σ : Ω ≃ₐ[R] Ω) :
 theorem ofOverAutMulEquiv_symm_apply [Mono a] (e : (Aut (ofOver a Ω))ᵐᵒᵖ) :
     (ofOverAutMulEquiv a Ω).symm e = autToAlgEquiv a Ω e.unop :=
   (rfl)
-
-/-- The ring homomorphism underlying `(ofOverAutMulEquiv a Ω).symm e` is `e.unop.asIso.hom.ringHom`.
--/
-theorem ofOverAutMulEquiv_symm_toRingHom [Mono a] (e : (Aut (ofOver a Ω))ᵐᵒᵖ) :
-    ((ofOverAutMulEquiv a Ω).symm e : Ω →+* Ω) = e.unop.asIso.hom.ringHom :=
-  autToAlgEquiv_toRingHom a Ω e.unop
 
 /-- When `a : Spec (.of R) ⟶ S` is a monomorphism, every automorphism of `ofOver a Ω` in
 `GeometricPoint S` comes from an `R`-algebra automorphism of `Ω`. -/

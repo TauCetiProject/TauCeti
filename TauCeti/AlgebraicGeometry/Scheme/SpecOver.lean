@@ -57,8 +57,6 @@ The same correspondence is stated for Mathlib's bundled spectrum functor
 * `TauCeti.AlgebraicGeometry.exists_algHom_SpecMap_eq`: a morphism `Spec B ⟶ Spec A` over
   `Spec R` is `Spec.map` of an `R`-algebra homomorphism; `SpecMap_quotient_mk_comp_SpecMap_algHom`
   and `SpecMap_algHom_comp_quotient` compute its restriction to `Spec (B ⧸ I)`.
-* `TauCeti.AlgebraicGeometry.ringHom_eq_of_SpecMap_eq`: two ring homomorphisms with the same
-  induced morphism on spectra are equal.
 * `TauCeti.AlgebraicGeometry.algSpecHomEquivAlgHom`: morphisms `algSpec B ⟶ algSpec A` of schemes
   over `Spec R` are the `R`-algebra homomorphisms `A →ₐ[R] B`.
 * `TauCeti.AlgebraicGeometry.algSpec_map_ofHom_left`: underlying scheme morphism of
@@ -217,13 +215,6 @@ theorem SpecMap_algHom_comp_quotient (I : Ideal B) (f : A →ₐ[R] B ⧸ I) :
     Spec.map (CommRingCat.ofHom f.toRingHom) ≫ Spec.algebraMap R A =
       Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I)) ≫ Spec.algebraMap R B := by
   exact (Spec.homEquivAlgHom.symm f).property.trans (by rw [← Spec.map_comp]; rfl)
-
-/-- Two ring homomorphisms with the same induced morphism on spectra are equal. -/
-theorem ringHom_eq_of_SpecMap_eq {R₁ R₂ : Type u} [CommRing R₁] [CommRing R₂]
-    {φ ψ : R₁ →+* R₂}
-    (h : Spec.map (CommRingCat.ofHom φ) = Spec.map (CommRingCat.ofHom ψ)) :
-    φ = ψ :=
-  congrArg CommRingCat.Hom.hom (Spec.map_injective h)
 
 section algSpec
 

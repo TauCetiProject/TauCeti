@@ -235,8 +235,11 @@ theorem frobeniusAlgEquivOfFinite_pow_apply (K L : Type*) [Field K] [Finite K] [
 theorem frobeniusAlgEquivOfFinite_pow_toAlgHom (K L : Type*) [Field K] [Fintype K] [Field L]
     [Algebra K L] [PerfectField L] (m : ℕ) :
     (frobeniusAlgEquivOfFinite K L ^ m).toAlgHom = _root_.FiniteField.frobeniusAlgHom K L ^ m := by
-  ext x
-  rw [AlgEquiv.coe_toAlgHom, frobeniusAlgEquivOfFinite_pow_apply, frobeniusAlgHom_pow_apply]
+  have h : AlgEquiv.toAlgHomHom K L (frobeniusAlgEquivOfFinite K L) =
+      _root_.FiniteField.frobeniusAlgHom K L := by
+    ext x
+    simp [Nat.card_eq_fintype_card]
+  rw [← AlgEquiv.toAlgHomHom_apply, (AlgEquiv.toAlgHomHom K L).map_pow, h]
 
 end Perfect
 
@@ -255,29 +258,24 @@ theorem frobeniusAlgHom_pow_comp_eq_iff (K A : Type*) [Field K] [Fintype K] [Com
     (φ : E →ₐ[K] A) (m : ℕ) :
     ((_root_.FiniteField.frobeniusAlgHom K A ^ m).comp φ) = φ ↔
       Module.finrank K E ∣ m := by
-  have hpow (x : E) :
-      ((_root_.FiniteField.frobeniusAlgHom K A ^ m).comp φ) x =
-        φ (x ^ Nat.card K ^ m) := by
-    rw [AlgHom.comp_apply, frobeniusAlgHom_pow_apply, map_pow]
+  have hcomm : (_root_.FiniteField.frobeniusAlgHom K A ^ m).comp φ =
+      φ.comp (_root_.FiniteField.frobeniusAlgHom K E ^ m) := by
+    ext x
+    rw [AlgHom.comp_apply, AlgHom.comp_apply, frobeniusAlgHom_pow_apply,
+      frobeniusAlgHom_pow_apply, map_pow]
+  rw [hcomm]
+  nth_rw 2 [← AlgHom.comp_id φ]
+  rw [AlgHom.cancel_left φ.toRingHom.injective]
+  -- Unfold `AlgHom.id K E` to `1` (definitional).
+  change _root_.FiniteField.frobeniusAlgHom K E ^ m = 1 ↔ Module.finrank K E ∣ m
   by_cases hfin : Module.Finite K E
   · have : Finite E := Module.finite_of_finite K
-    rw [AlgHom.ext_iff]
-    have hcomp (x : E) :
-        ((_root_.FiniteField.frobeniusAlgHom K A ^ m).comp φ) x =
-          φ (((_root_.FiniteField.frobeniusAlgHom K E) ^ m) x) := by
-      rw [hpow, frobeniusAlgHom_pow_apply]
-    have hinj : Function.Injective φ := φ.toRingHom.injective
-    simp_rw [hcomp, hinj.eq_iff]
-    have heq : (∀ x : E, ((_root_.FiniteField.frobeniusAlgHom K E) ^ m) x = x) ↔
-        (_root_.FiniteField.frobeniusAlgHom K E) ^ m = 1 :=
-      ⟨fun h ↦ AlgHom.ext h, fun h x ↦ by rw [h, AlgHom.one_apply]⟩
-    rw [heq, ← orderOf_dvd_iff_pow_eq_one, _root_.FiniteField.orderOf_frobeniusAlgHom]
+    rw [← orderOf_dvd_iff_pow_eq_one, _root_.FiniteField.orderOf_frobeniusAlgHom]
   · rw [Module.finrank_of_infinite_dimensional hfin, zero_dvd_iff]
-    refine ⟨fun h ↦ ?_, fun hm ↦ by subst hm; exact AlgHom.ext fun x ↦ by simp⟩
+    refine ⟨fun h ↦ ?_, fun hm ↦ by subst hm; exact pow_zero _⟩
     by_contra hm
     have hmem (x : E) : x ∈ frobeniusFixedSubalgebra K E m := by
-      rw [mem_frobeniusFixedSubalgebra]
-      exact φ.toRingHom.injective ((hpow x).symm.trans (DFunLike.congr_fun h x))
+      rw [mem_frobeniusFixedSubalgebra, ← frobeniusAlgHom_pow_apply, h, AlgHom.one_apply]
     have hfinSub : Finite (frobeniusFixedSubalgebra K E m) := finite_frobeniusFixedSubalgebra hm
     have : Finite E :=
       Finite.of_injective (fun x : E ↦ (⟨x, hmem x⟩ : frobeniusFixedSubalgebra K E m))
