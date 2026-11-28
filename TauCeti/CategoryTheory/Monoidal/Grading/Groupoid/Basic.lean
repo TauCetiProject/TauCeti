@@ -360,7 +360,7 @@ private theorem functor_ext_of_groupoid {F₁ F₂ : universalGradingGroupoid C 
     have hφ : Quiver.FreeGroupoid.of (GeneratingQuiver C) ⋙q
         (CategoryTheory.Quotient.functor (Rel C) ⋙ fromQuotientFunctor ⋙ F₁).toPrefunctor = φ := by
       refine Prefunctor.ext (fun x ↦ hobj x.unit) ?_; rintro _ _ ⟨S⟩
-      exact heq_eqRecOn (hobj _) (hobj _)
+      exact eq_recOn_of_heq (hobj _) (hobj _)
         ((conj_eqToHom_iff_heq (F₁.map (degree S)) (F₂.map (degree S))
           (hobj _) (hobj _)).1 (hdeg S))
     rw [Quiver.FreeGroupoid.lift_unique φ _ hφ, Quiver.FreeGroupoid.lift_unique φ _ rfl]
@@ -418,11 +418,12 @@ def liftCoreEquiv {D : Type u₂} [Category.{v₂} D] :
   toFun γ := lift γ ⋙ Core.inclusion D
   invFun F := liftEquiv.symm (Core.functorToCore F)
   left_inv γ := by
-    have hF : Core.functorToCore (lift γ ⋙ Core.inclusion D) = lift γ :=
-      functor_ext (fun I ↦ by cases hy : γ.obj I; simp [Core.functorToCore, lift_mkObj, hy])
-        fun S ↦ Core.hom_ext <| by simp
-    simpa [hF] using liftEquiv.left_inv γ
-  right_inv F := functor_ext (fun _ ↦ by simp) fun S ↦ by simp
+    dsimp only
+    rw [Core.functorToCore_comp_left, Core.functorToCore_inclusion, Functor.comp_id]
+    exact liftEquiv.left_inv γ
+  right_inv F := by
+    dsimp only
+    rw [← liftEquiv_apply, liftEquiv.apply_symm_apply, Core.functorToCore_comp_inclusion]
 @[simp] theorem liftCoreEquiv_apply {D : Type u₂} [Category.{v₂} D]
     (γ : GroupoidGrading C (Core D)) : liftCoreEquiv γ = lift γ ⋙ Core.inclusion D := (rfl)
 @[simp] theorem liftCoreEquiv_symm_apply_obj {D : Type u₂} [Category.{v₂} D]
@@ -512,14 +513,16 @@ private theorem functor_ext_degree {C₁ : Type u₁} [Category.{v₁} C₁] [Ab
     mapEquivalence (e₁.trans e₂) = mapEquivalence e₁ ⋙ mapEquivalence e₂ :=
   functor_ext_degree (fun _ ↦ by simp) (SimpleClasses.equiv_trans e₁ e₂)
     (mapEquivalence_degree _) (mapEquivalence_comp_degree e₁ e₂)
-theorem mapEquivalence_comp_symm (e : C ≌ D) [e.functor.Monoidal] : letI := e.inverseMonoidal
+@[simp] theorem mapEquivalence_comp_symm (e : C ≌ D) [e.functor.Monoidal] :
+    letI := e.inverseMonoidal
     mapEquivalence e ⋙ mapEquivalence e.symm = 𝟭 (universalGradingGroupoid C) := by
   let _ := e.inverseMonoidal
   exact functor_ext_degree (fun I ↦ by
       simp [-UnitSimpleClasses.equiv_symm, ← UnitSimpleClasses.equiv_symm e])
     (SimpleClasses.equiv_symm_equiv e) (mapEquivalence_comp_degree e e.symm)
     (p₂ := fun _ ↦ rfl) (q₂ := fun _ ↦ rfl) fun _ ↦ by simp
-theorem symm_mapEquivalence_comp (e : C ≌ D) [e.functor.Monoidal] : letI := e.inverseMonoidal
+@[simp] theorem symm_mapEquivalence_comp (e : C ≌ D) [e.functor.Monoidal] :
+    letI := e.inverseMonoidal
     mapEquivalence e.symm ⋙ mapEquivalence e = 𝟭 (universalGradingGroupoid D) := by
   let _ := e.inverseMonoidal
   exact functor_ext_degree (fun J ↦ by

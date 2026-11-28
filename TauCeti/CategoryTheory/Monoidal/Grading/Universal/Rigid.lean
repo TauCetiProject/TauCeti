@@ -78,8 +78,7 @@ section ExactPairing
 `degree (classOf X)`. -/
 theorem degree_classOf_of_exactPairing {X Y : C} [ExactPairing X Y] [Simple X] [Simple Y] :
     degree (SimpleClasses.classOf Y) = (degree (SimpleClasses.classOf X))⁻¹ := by
-  obtain ⟨I, hf⟩ := (UnitSimpleClasses.ne_zero_iff_exists_ι_comp_ne_zero _).1
-    (coevaluation_ne_zero (Y := Y) (Simple.not_isZero X))
+  obtain ⟨I, hf⟩ := exists_unitSimpleClasses_ι_comp_coevaluation_ne_zero X Y (Simple.not_isZero X)
   exact degree_classOf_eq_inv_of_hom_ne_zero
     (degree_classOf_eq_one_of_hom_to_unit_ne_zero (UnitSimpleClasses.ι_ne_zero I)) hf
 

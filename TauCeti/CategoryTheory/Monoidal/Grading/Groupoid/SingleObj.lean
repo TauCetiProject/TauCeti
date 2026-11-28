@@ -56,10 +56,6 @@ variable {C : Type u₁} [Category.{v₁} C] [Abelian C] [MonoidalCategory C]
 
 section SingleObjComparison
 
-private theorem liftCoreEquiv_symm_deg_iso_hom {G : Type w} [Monoid G]
-    (F : universalGradingGroupoid C ⥤ SingleObj G) (S : SimpleClasses C) :
-    ((liftCoreEquiv.symm F).deg S).iso.hom = F.map (degree S) := by simp
-
 private theorem liftCoreEquiv_map_degree {G : Type w} [Monoid G]
     (γ : GroupoidGrading C (Core (SingleObj G))) (S : SimpleClasses C) :
     (liftCoreEquiv γ).map (degree S) = (γ.deg S).iso.hom := by
@@ -77,9 +73,10 @@ def singleObjFunctorEquiv (G : Type w) [Monoid G] :
   toFun F := universalGradingGroup.liftOfIsUnit (fun S ↦ MulOpposite.op (F.map (degree S)))
     (fun S ↦ ((SingleObj.isIso_iff_isUnit (F.map (degree S))).mp inferInstance).op)
     fun S T U f hf ↦ MulOpposite.unop_injective <| by
-      simpa [SingleObj.comp_as_mul, SingleObj.id_as_one, Core.eqToHom_iso_hom,
-        SingleObj.eqToHom_as_one, liftCoreEquiv_symm_deg_iso_hom] using
-        congrArg (fun m ↦ m.iso.hom) ((liftCoreEquiv.symm F).deg_comp f hf)
+      have h := congrArg F.map (degree_comp f hf)
+      simp only [Functor.map_comp, eqToHom_map, SingleObj.eqToHom_as_one, SingleObj.comp_as_mul,
+        one_mul, mul_one] at h
+      exact h
   invFun χ := liftCoreEquiv
     { obj := fun _ ↦ Core.mk (SingleObj.star G)
       deg := fun S ↦
@@ -198,21 +195,15 @@ private theorem toSingleObj_comp_fromSingleObj :
     simp [toSingleObjGradingGroup, fromSingleObjGradingGroup,
       fromSingleObjGradingGroupEndHom_apply, fromSingleObjGradingGroupHom]
 
-private def singleObjVertexGroupHom {G : Type w} [Group G] :
-    (SingleObj.star Gᵐᵒᵖ ⟶ SingleObj.star Gᵐᵒᵖ) →* G where
-  toFun m := MulOpposite.unop m
-  map_one' := MulOpposite.unop_one
-  map_mul' _ _ := by
-    rw [CategoryTheory.Groupoid.vertexGroup_mul, SingleObj.comp_as_mul, MulOpposite.unop_mul]
-
 private def toGradingGroupVertexHom :
     ((default : universalGradingGroupoid C) ⟶ default) →* universalGradingGroup C :=
-  singleObjVertexGroupHom.comp ((toSingleObjGradingGroup (C := C)).mapVertexGroup default)
+  (SingleObj.vertexGroupOpMulEquiv (universalGradingGroup C)).toMonoidHom.comp
+    ((toSingleObjGradingGroup (C := C)).mapVertexGroup default)
 
 private theorem toGradingGroupVertexHom_apply
     (g : (default : universalGradingGroupoid C) ⟶ default) :
-    toGradingGroupVertexHom g = MulOpposite.unop ((toSingleObjGradingGroup (C := C)).map g) :=
-  rfl
+    toGradingGroupVertexHom g = MulOpposite.unop ((toSingleObjGradingGroup (C := C)).map g) := by
+  simp [toGradingGroupVertexHom]; rfl
 
 private theorem fromSingleObj_comp_toSingleObj :
     fromSingleObjGradingGroup (C := C) ⋙ toSingleObjGradingGroup (C := C) =
@@ -223,7 +214,8 @@ private theorem fromSingleObj_comp_toSingleObj :
     ext S
     simp [toGradingGroupVertexHom_apply, fromSingleObjGradingGroupHom, toSingleObjGradingGroup,
       eqToHom_map, eqToHom_refl]
-  exact DFunLike.congr_fun hψ (MulOpposite.unop m)
+  simpa [toGradingGroupVertexHom_apply, fromSingleObjGradingGroup,
+    fromSingleObjGradingGroupEndHom_apply] using DFunLike.congr_fun hψ (MulOpposite.unop m)
 
 /-- When `𝟙_ C` is simple, `universalGradingGroupoid C` is equivalent (in fact, isomorphic) to
 `SingleObj (universalGradingGroup C)ᵐᵒᵖ`. -/
@@ -275,8 +267,11 @@ def vertexGroupMulEquiv :
     ((default : universalGradingGroupoid C) ⟶ default) ≃* universalGradingGroup C :=
   { toGradingGroupVertexHom (C := C) with
     invFun := fromSingleObjGradingGroupHom
-    left_inv := fun g ↦
-      eq_of_heq (CategoryTheory.Functor.hcongr_hom (toSingleObj_comp_fromSingleObj (C := C)) g)
+    left_inv := fun g ↦ by
+      have h := eq_of_heq
+        (CategoryTheory.Functor.hcongr_hom (toSingleObj_comp_fromSingleObj (C := C)) g)
+      simpa [toGradingGroupVertexHom_apply, toSingleObj_comp_fromSingleObj,
+        fromSingleObjGradingGroup, fromSingleObjGradingGroupEndHom_apply] using h
     right_inv := fun x ↦ by
       let m : SingleObj.star (universalGradingGroup C)ᵐᵒᵖ ⟶
           SingleObj.star (universalGradingGroup C)ᵐᵒᵖ := MulOpposite.op x

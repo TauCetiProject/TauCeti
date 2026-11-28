@@ -251,8 +251,7 @@ theorem simpleMultiplicities_le_one_of_comm (X : C)
   let _ := hι
   let _ := ha
   let _ := hba
-  rw [simpleMultiplicities_apply_eq_card a e S, Nat.card_eq_fintype_card,
-    Fintype.card_le_one_iff_subsingleton]
+  rw [simpleMultiplicities_apply_eq_card a e S, Finite.card_le_one_iff_subsingleton]
   refine ⟨fun ⟨i, hi⟩ ⟨j, hj⟩ ↦ ?_⟩
   apply Subtype.ext
   by_contra hne

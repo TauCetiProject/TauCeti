@@ -112,29 +112,22 @@ private def unitSummandClass {ι : Type} (a : ι → C) [∀ i, Simple (a i)]
 private theorem tensorUnit_summand_injective {ι : Type} [Finite ι] (a : ι → C)
     [∀ i, Simple (a i)] [HasBiproduct a] (e : 𝟙_ C ≅ ⨁ a) :
     Function.Injective (unitSummandClass a e) := by
-  classical
-  let _ := Fintype.ofFinite ι
   intro i j hij
-  let α := {k // SimpleClasses.classOf (a k) = SimpleClasses.classOf (a i)}
-  have hcard : Nat.card α ≤ 1 := by
-    rw [← simpleMultiplicities_apply_eq_card a e]; exact simpleMultiplicities_tensorUnit_le_one _
-  have hsub : Subsingleton α :=
-    Fintype.card_le_one_iff_subsingleton.1 (by rwa [← Nat.card_eq_fintype_card])
+  have hsub : Subsingleton {k // SimpleClasses.classOf (a k) = SimpleClasses.classOf (a i)} :=
+    Finite.card_le_one_iff_subsingleton.1 <| by
+      rw [← simpleMultiplicities_apply_eq_card a e]; exact simpleMultiplicities_tensorUnit_le_one _
   exact congrArg Subtype.val
-    (@Subsingleton.elim α hsub ⟨i, rfl⟩
+    (@Subsingleton.elim _ hsub ⟨i, rfl⟩
       ⟨j, by simpa [unitSummandClass] using (congrArg Subtype.val hij).symm⟩)
 
 private theorem tensorUnit_summand_surjective {ι : Type} [Finite ι] (a : ι → C)
     [∀ i, Simple (a i)] [HasBiproduct a] (e : 𝟙_ C ≅ ⨁ a) :
     Function.Surjective (unitSummandClass a e) := by
-  classical
-  let _ := Fintype.ofFinite ι
   intro I
-  have hcard : Nat.card {k // SimpleClasses.classOf (a k) = I.val} = 1 := by
+  have hne : Nonempty {k // SimpleClasses.classOf (a k) = I.val} := Finite.card_pos_iff.1 <| by
     rw [← simpleMultiplicities_apply_eq_card a e,
       UnitSimpleClasses.simpleMultiplicities_tensorUnit]
-  have hne : Nonempty {k // SimpleClasses.classOf (a k) = I.val} := by
-    rw [← Fintype.card_pos_iff, ← Nat.card_eq_fintype_card, hcard]; omega
+    exact zero_lt_one
   exact ⟨hne.some.val, Subtype.ext (by simpa [unitSummandClass] using hne.some.property)⟩
 
 private theorem nonempty_tensorUnitDecomp (C : Type u₁) [Category.{v₁} C] [Abelian C]
@@ -283,25 +276,32 @@ theorem UnitSimpleClasses.ne_zero_iff_exists_comp_π_ne_zero {Z : C} (h : Z ⟶ 
   refine ⟨fun hh ↦ ?_, fun ⟨I, hI⟩ hh ↦ hI (by rw [hh, zero_comp])⟩
   by_contra! h0; exact hh (UnitSimpleClasses.hom_ext fun I ↦ by simpa using h0 I)
 
+/-- An additive functor sends the selected unit-summand idempotent `π I ≫ ι I` to the identity
+on `F.obj (𝟙_ C)` whenever it kills all other simple unit summands `J ≠ I`. -/
+theorem UnitSimpleClasses.map_π_comp_ι_eq_id {D : Type u₂} [Category.{v₂} D] [Preadditive D]
+    (F : C ⥤ D) [F.Additive] {I : UnitSimpleClasses C} (h : ∀ J ≠ I, IsZero (F.obj J.repr)) :
+    F.map (UnitSimpleClasses.π I ≫ UnitSimpleClasses.ι I) = 𝟙 (F.obj (𝟙_ C)) := by
+  classical
+  let := Fintype.ofFinite (UnitSimpleClasses C)
+  rw [← F.map_id, ← UnitSimpleClasses.sum_π_comp_ι, F.map_sum]; symm
+  refine Finset.sum_eq_single I (fun J _ hne ↦ by
+    rw [F.map_comp, (h J hne).eq_of_tgt (F.map (UnitSimpleClasses.π J)) 0, zero_comp])
+    (fun hI ↦ absurd (Finset.mem_univ _) hI)
+
+omit [MonoidalCategory C] in
+/-- A functor preserves non-zeroness along any nonzero morphism out of a simple object. -/
+theorem not_isZero_obj_of_hom_ne_zero {D : Type u₂} [Category.{v₂} D] [HasZeroMorphisms D]
+    (F : C ⥤ D) {S Z : C} [Simple S] {f : S ⟶ Z} (hf : f ≠ 0) (hS : ¬ IsZero (F.obj S)) :
+    ¬ IsZero (F.obj Z) := fun hZ ↦ by
+  have := isSplitMono_of_nonzero_from_simple hf
+  exact hS (IsZero.of_mono_eq_zero (F.map f) (hZ.eq_of_tgt _ _))
+
 private theorem exists_unitSimpleClasses_iso_of_functor (F : C ⥤ C) [F.Additive]
     {X : C} [Simple X] (u : X ≅ F.obj (𝟙_ C)) :
-    ∃ I : UnitSimpleClasses C, Nonempty (F.obj I.repr ≅ X) := by
-  let a : UnitSimpleClasses C → C := fun I ↦ I.repr
-  have : Limits.PreservesBiproduct a F := by
-    obtain ⟨_, ⟨e⟩⟩ := Finite.exists_equiv_fin (UnitSimpleClasses C)
-    exact ⟨fun {b} hb ↦ ⟨((F.mapBicone b).whiskerIsBilimitIff e.symm).toFun
-      (Limits.isBilimitOfPreserves F ((b.whiskerIsBilimitIff e.symm).invFun hb))⟩⟩
-  let d : X ≅ ⨁ fun I : UnitSimpleClasses C ↦ F.obj I.repr :=
-    u ≪≫ F.mapIso UnitSimpleClasses.tensorUnitIsoBiproduct ≪≫ F.mapBiproduct a
-  obtain ⟨I, hI⟩ : ∃ I : UnitSimpleClasses C, ¬ IsZero (F.obj I.repr) := by
-    by_contra! h; exact Simple.not_isZero X <| IsZero.of_iso
-      ((IsZero.iff_id_eq_zero _).2 (biproduct.hom_ext _ _ fun I ↦ (h I).eq_of_tgt _ _)) d
-  let m : F.obj I.repr ⟶ X := biproduct.ι (fun I : UnitSimpleClasses C ↦ F.obj I.repr) I ≫ d.inv
-  have hm : m ≠ 0 := fun hm0 ↦ hI <| (IsZero.iff_id_eq_zero _).2 <| by
-    simpa [m, Category.assoc] using
-      hm0 =≫ (d.hom ≫ biproduct.π (fun I : UnitSimpleClasses C ↦ F.obj I.repr) I)
-  have : IsIso m := isIso_of_mono_of_ne_zero hm
-  exact ⟨I, ⟨asIso m⟩⟩
+    ∃ I : UnitSimpleClasses C, Nonempty (F.obj I.repr ≅ X) :=
+  letI := Limits.preservesBiproductsOfShape_of_finite (UnitSimpleClasses C) F
+  exists_iso_of_isBilimit_of_simple
+    (Limits.isBilimitOfPreserves F UnitSimpleClasses.tensorUnitBiconeIsBilimit) u
 
 variable [MonoidalPreadditive C]
 
@@ -341,13 +341,8 @@ theorem isZero_tensorObj_unitRepr_of_ne {X : C} [Simple X] {I : UnitSimpleClasse
 the identity on `𝟙_ C ⊗ X`. -/
 theorem π_comp_ι_whiskerRight_leftUnitClass (X : C) [Simple X] :
     (UnitSimpleClasses.π (leftUnitClass X) ≫ UnitSimpleClasses.ι (leftUnitClass X)) ▷ X =
-      𝟙 (𝟙_ C ⊗ X) := by
-  classical
-  let := Fintype.ofFinite (UnitSimpleClasses C)
-  rw [← id_whiskerRight, ← UnitSimpleClasses.sum_π_comp_ι, sum_whiskerRight]; symm
-  refine Finset.sum_eq_single (leftUnitClass X) (fun I _ hne ↦ by
-    rw [comp_whiskerRight, (isZero_unitRepr_tensorObj_of_ne hne).eq_of_tgt (_ ▷ X) 0,
-      zero_comp]) (fun h ↦ absurd (Finset.mem_univ _) h)
+      𝟙 (𝟙_ C ⊗ X) :=
+  UnitSimpleClasses.map_π_comp_ι_eq_id (tensorRight X) fun _ ↦ isZero_unitRepr_tensorObj_of_ne
 
 /-- For any simple object `X`, tensoring on the left with `(leftUnitClass X).repr` leaves `X`
 isomorphic to itself, via the summand inclusion and the left unitor. -/
@@ -369,13 +364,8 @@ def leftUnitClassReprIso (X : C) [Simple X] : (leftUnitClass X).repr ⊗ X ≅ X
 the identity on `X ⊗ 𝟙_ C`. -/
 theorem whiskerLeft_π_comp_ι_rightUnitClass (X : C) [Simple X] :
     X ◁ (UnitSimpleClasses.π (rightUnitClass X) ≫ UnitSimpleClasses.ι (rightUnitClass X)) =
-      𝟙 (X ⊗ 𝟙_ C) := by
-  classical
-  let := Fintype.ofFinite (UnitSimpleClasses C)
-  rw [← whiskerLeft_id, ← UnitSimpleClasses.sum_π_comp_ι, whiskerLeft_sum]; symm
-  refine Finset.sum_eq_single (rightUnitClass X) (fun I _ hne ↦ by
-    rw [whiskerLeft_comp, (isZero_tensorObj_unitRepr_of_ne hne).eq_of_tgt (X ◁ _) 0, zero_comp])
-    (fun h ↦ absurd (Finset.mem_univ _) h)
+      𝟙 (X ⊗ 𝟙_ C) :=
+  UnitSimpleClasses.map_π_comp_ι_eq_id (tensorLeft X) fun _ ↦ isZero_tensorObj_unitRepr_of_ne
 
 /-- For any simple object `X`, tensoring on the right with `(rightUnitClass X).repr` leaves `X`
 isomorphic to itself, via the summand inclusion and the right unitor. -/
@@ -465,23 +455,19 @@ theorem rightUnitClass_eq_leftUnitClass_of_hom_ne_zero {X Y U : C} [Simple X] [S
 unit class. -/
 theorem leftUnitClass_eq_of_hom_ne_zero {X Y U : C} [Simple X] [Simple U]
     {f : U ⟶ X ⊗ Y} (hf : f ≠ 0) : leftUnitClass U = leftUnitClass X := by
-  symm; rw [leftUnitClass_eq_iff]; intro hz; have := isSplitMono_of_nonzero_from_simple hf
-  have : Mono ((leftUnitClass U).repr ◁ f) :=
-    inferInstanceAs (Mono ((tensorLeft (leftUnitClass U).repr).map f))
-  exact not_isZero_leftUnitClass_tensorObj U <|
-    IsZero.of_mono_eq_zero ((leftUnitClass U).repr ◁ f) <|
-      (((tensorRight Y).map_isZero hz).of_iso (α_ _ X Y).symm).eq_of_tgt _ _
+  symm; rw [leftUnitClass_eq_iff]; intro hz
+  exact not_isZero_obj_of_hom_ne_zero (tensorLeft (leftUnitClass U).repr) hf
+    (not_isZero_leftUnitClass_tensorObj U)
+    (((tensorRight Y).map_isZero hz).of_iso (α_ _ X Y).symm)
 
 /-- Along a nonzero morphism `U ⟶ X ⊗ Y` with `U` and `Y` simple, `U` and `Y` have the same right
 unit class. -/
 theorem rightUnitClass_eq_of_hom_ne_zero {X Y U : C} [Simple Y] [Simple U]
     {f : U ⟶ X ⊗ Y} (hf : f ≠ 0) : rightUnitClass U = rightUnitClass Y := by
-  symm; rw [rightUnitClass_eq_iff]; intro hz; have := isSplitMono_of_nonzero_from_simple hf
-  have : Mono (f ▷ (rightUnitClass U).repr) :=
-    inferInstanceAs (Mono ((tensorRight (rightUnitClass U).repr).map f))
-  exact not_isZero_tensorObj_rightUnitClass U <|
-    IsZero.of_mono_eq_zero (f ▷ (rightUnitClass U).repr) <|
-      (((tensorLeft X).map_isZero hz).of_iso (α_ X Y _)).eq_of_tgt _ _
+  symm; rw [rightUnitClass_eq_iff]; intro hz
+  exact not_isZero_obj_of_hom_ne_zero (tensorRight (rightUnitClass U).repr) hf
+    (not_isZero_tensorObj_rightUnitClass U)
+    (((tensorLeft X).map_isZero hz).of_iso (α_ X Y _))
 
 section Equivalence
 

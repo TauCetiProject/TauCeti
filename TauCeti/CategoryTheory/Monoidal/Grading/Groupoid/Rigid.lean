@@ -43,15 +43,16 @@ section ExactPairing
 variable {C : Type u₁} [Category.{v₁} C] [Abelian C] [MonoidalCategory C]
   [MonoidalPreadditive C] [IsFiniteSemisimpleCategory C]
 
-/-- In an exact pairing of simple objects, `γ.degOf Y` is the inverse of `γ.degOf X` up to
+/-- In an exact pairing with a simple left member, `γ.degOf Y` is the inverse of `γ.degOf X` up to
 endpoint transports. -/
 theorem GroupoidGrading.degOf_of_exactPairing {G : Type u₂} [Groupoid.{v₂} G]
-    (γ : GroupoidGrading C G) {X Y : C} [ExactPairing X Y] [Simple X] [Simple Y] :
-    γ.degOf Y = eqToHom (congrArg γ.obj leftUnitClass_eq_rightUnitClass_of_exactPairing) ≫
-      inv (γ.degOf X) ≫
-      eqToHom (congrArg γ.obj rightUnitClass_eq_leftUnitClass_of_exactPairing).symm := by
-  obtain ⟨I, hf⟩ := (UnitSimpleClasses.ne_zero_iff_exists_ι_comp_ne_zero _).1
-    (coevaluation_ne_zero (Y := Y) (Simple.not_isZero X))
+    (γ : GroupoidGrading C G) {X Y : C} [ExactPairing X Y] [Simple X] :
+    @GroupoidGrading.degOf C _ _ _ _ _ _ _ γ Y (simple_right_of_exactPairing (X := X) ‹_›) =
+      eqToHom (congrArg γ.obj leftUnitClass_eq_rightUnitClass_of_exactPairing) ≫
+        inv (γ.degOf X) ≫
+        eqToHom (congrArg γ.obj rightUnitClass_eq_leftUnitClass_of_exactPairing).symm := by
+  let _ := simple_right_of_exactPairing (X := X) ‹ExactPairing X Y›
+  obtain ⟨I, hf⟩ := exists_unitSimpleClasses_ι_comp_coevaluation_ne_zero X Y (Simple.not_isZero X)
   have hcomp := γ.degOf_comp (UnitSimpleClasses.ι I ≫ η_ X Y) hf
   rw [γ.degOf_unitRepr] at hcomp
   have hinv : eqToHom (congrArg γ.obj (rightUnitClass_eq_leftUnitClass_of_hom_ne_zero hf)) ≫
@@ -66,8 +67,11 @@ theorem GroupoidGrading.degOf_of_exactPairing {G : Type u₂} [Groupoid.{v₂} G
 
 /-- Right duals have inverse grading degrees up to endpoint transports in any groupoid grading. -/
 @[simp] theorem GroupoidGrading.degOf_rightDual {G : Type u₂} [Groupoid.{v₂} G]
-    (γ : GroupoidGrading C G) (X : C) [HasRightDual X] [Simple X] [Simple Xᘁ] :
-    γ.degOf Xᘁ = eqToHom (by simp) ≫ inv (γ.degOf X) ≫ eqToHom (by simp) := by
+    (γ : GroupoidGrading C G) (X : C) [HasRightDual X] [Simple X] :
+    @GroupoidGrading.degOf C _ _ _ _ _ _ _ γ Xᘁ
+        (simple_right_of_exactPairing (X := X) HasRightDual.exact) =
+      eqToHom (by simp) ≫ inv (γ.degOf X) ≫ eqToHom (by simp) := by
+  let _ := simple_right_of_exactPairing (HasRightDual.exact (X := X))
   simpa using γ.degOf_of_exactPairing (X := X) (Y := Xᘁ)
 
 /-- Dual simple classes have inverse grading degrees up to endpoint transports in any groupoid
@@ -75,6 +79,7 @@ grading. -/
 @[simp] theorem GroupoidGrading.deg_dual [RigidCategory C] {G : Type u₂} [Groupoid.{v₂} G]
     (γ : GroupoidGrading C G) (S : SimpleClasses C) :
     γ.deg S.dual = eqToHom (by simp) ≫ inv (γ.deg S) ≫ eqToHom (by simp) := by
+  let _ := simple_right_of_exactPairing (HasRightDual.exact (X := S.repr))
   rw [← γ.degOf_repr S.dual, γ.degOf_congr (SimpleClasses.dualReprIso S),
     γ.degOf_rightDual S.repr, γ.degOf_repr S]; simp [Category.assoc]
 
@@ -85,19 +90,24 @@ namespace universalGradingGroupoid
 variable {C : Type u₁} [Category.{v₁} C] [Abelian C] [MonoidalCategory C]
   [MonoidalPreadditive C] [IsFiniteSemisimpleCategory C]
 
-/-- In an exact pairing of simple objects, `degreeOf Y` is the inverse of `degreeOf X` up to
+/-- In an exact pairing with a simple left member, `degreeOf Y` is the inverse of `degreeOf X` up to
 endpoint transports. -/
-theorem degreeOf_of_exactPairing {X Y : C} [ExactPairing X Y] [Simple X] [Simple Y] :
-    degreeOf Y = eqToHom (congrArg mkObj leftUnitClass_eq_rightUnitClass_of_exactPairing) ≫
-      inv (degreeOf X) ≫
-      eqToHom (congrArg mkObj rightUnitClass_eq_leftUnitClass_of_exactPairing).symm := by
+theorem degreeOf_of_exactPairing {X Y : C} [ExactPairing X Y] [Simple X] :
+    @degreeOf C _ _ _ _ _ Y (simple_right_of_exactPairing (X := X) ‹_›) =
+      eqToHom (congrArg mkObj leftUnitClass_eq_rightUnitClass_of_exactPairing) ≫
+        inv (degreeOf X) ≫
+        eqToHom (congrArg mkObj rightUnitClass_eq_leftUnitClass_of_exactPairing).symm := by
+  let _ := simple_right_of_exactPairing (X := X) ‹ExactPairing X Y›
   have h := (idGrading (C := C)).degOf_of_exactPairing (X := X) (Y := Y)
   simp only [idGrading_degOf] at h
   simpa [Category.assoc] using eqToHom (idGrading_obj (leftUnitClass Y)).symm ≫= h =≫
     eqToHom (idGrading_obj (rightUnitClass Y))
 
-@[simp] theorem degreeOf_rightDual (X : C) [HasRightDual X] [Simple X] [Simple Xᘁ] :
-    degreeOf Xᘁ = eqToHom (by simp) ≫ inv (degreeOf X) ≫ eqToHom (by simp) := by
+/-- Right duals have inverse universal degrees up to endpoint transports. -/
+@[simp] theorem degreeOf_rightDual (X : C) [HasRightDual X] [Simple X] :
+    @degreeOf C _ _ _ _ _ Xᘁ (simple_right_of_exactPairing (X := X) HasRightDual.exact) =
+      eqToHom (by simp) ≫ inv (degreeOf X) ≫ eqToHom (by simp) := by
+  let _ := simple_right_of_exactPairing (HasRightDual.exact (X := X))
   simpa using degreeOf_of_exactPairing (X := X) (Y := Xᘁ)
 
 section Rigid

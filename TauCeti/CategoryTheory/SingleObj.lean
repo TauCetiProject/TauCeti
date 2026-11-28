@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.EssentiallySmall
+public import Mathlib.CategoryTheory.Groupoid.VertexGroup
 public import Mathlib.CategoryTheory.SingleObj
 
 /-!
@@ -15,7 +16,8 @@ For a monoid `M`, the one-object category `SingleObj M` has the elements of `M` 
 of its object `∗`, composed by `f ≫ g = g * f`. Reversing the multiplication is the same as
 reversing the composition: `SingleObj Mᵐᵒᵖ` is isomorphic to the opposite category
 `(SingleObj M)ᵒᵖ`, a morphism `op a` going to `a.op`. The category `SingleObj M` is also
-essentially small as soon as `M` is small, since it has one object.
+essentially small as soon as `M` is small, since it has one object. For a group `G`, the vertex
+group of `SingleObj Gᵐᵒᵖ` is identified with `G` (`CategoryTheory.SingleObj.vertexGroupOpMulEquiv`).
 
 For a category `C` and a commutative monoid `M`, functors `C ⥤ SingleObj M` form a commutative
 monoid under pointwise multiplication (`(F * G).map f = F.map f * G.map f`, which respects
@@ -32,6 +34,8 @@ a groupoid).
 * `CategoryTheory.SingleObj.eqToHom_as_one`: every equality morphism in `SingleObj M` is `1`.
 * `CategoryTheory.SingleObj.isIso_iff_isUnit`: a morphism in `SingleObj M` is an isomorphism
   if and only if it is a unit in `M`.
+* `CategoryTheory.SingleObj.vertexGroupOpMulEquiv`: group isomorphism identifying the vertex
+  group of `SingleObj Gᵐᵒᵖ` with `G`.
 * `CategoryTheory.SingleObj.functor_ext`: extensionality on morphisms for `C ⥤ SingleObj M`.
 * `CategoryTheory.SingleObj.functorOne`, `functorCommMonoid`, `functorCommGroup`: pointwise
   `One`, `CommMonoid`, and `CommGroup` instances on `C ⥤ SingleObj M`.
@@ -115,6 +119,25 @@ theorem isIso_iff_isUnit {x y : SingleObj M} (f : x ⟶ y) :
     IsIso f ↔ IsUnit (f : M) :=
   (CategoryTheory.isUnit_iff_isIso (toEnd M (f : M))).symm.trans (MulEquiv.isUnit_map (toEnd M))
 
+/-- The vertex group of `SingleObj Gᵐᵒᵖ` at its unique object is canonically isomorphic to `G`. -/
+def vertexGroupOpMulEquiv (G : Type*) [Group G] :
+    (SingleObj.star Gᵐᵒᵖ ⟶ SingleObj.star Gᵐᵒᵖ) ≃* G where
+  toFun m := MulOpposite.unop m
+  invFun g := MulOpposite.op g
+  left_inv := MulOpposite.op_unop
+  right_inv := MulOpposite.unop_op
+  map_mul' _ _ := by
+    rw [Groupoid.vertexGroup_mul, SingleObj.comp_as_mul, MulOpposite.unop_mul]
+
+/-- `vertexGroupOpMulEquiv` acts by `MulOpposite.unop`. -/
+@[simp] theorem vertexGroupOpMulEquiv_apply {G : Type*} [Group G]
+    (m : SingleObj.star Gᵐᵒᵖ ⟶ SingleObj.star Gᵐᵒᵖ) :
+    vertexGroupOpMulEquiv G m = MulOpposite.unop m := (rfl)
+
+/-- The inverse of `vertexGroupOpMulEquiv` acts by `MulOpposite.op`. -/
+@[simp] theorem vertexGroupOpMulEquiv_symm_apply {G : Type*} [Group G] (g : G) :
+    (vertexGroupOpMulEquiv G).symm g = MulOpposite.op g := (rfl)
+
 /-- Two functors into `SingleObj M` are equal if they agree on every morphism. -/
 @[ext 1100] theorem functor_ext {F G : C ⥤ SingleObj M}
     (h : ∀ {X Y : C} (f : X ⟶ Y), F.map f = G.map f) : F = G :=
@@ -194,11 +217,14 @@ instance functorInv : Inv (C ⥤ SingleObj G) where
 /-- Pointwise division of functors into `SingleObj G` for a commutative group `G`. -/
 instance functorDiv : Div (C ⥤ SingleObj G) where
   div F H := F * H⁻¹
+/-- Pointwise division of functors into `SingleObj G` is multiplication by the pointwise
+inverse. -/
+theorem functor_div_eq_mul_inv (F H : C ⥤ SingleObj G) : F / H = F * H⁻¹ := (rfl)
 @[simp] theorem functor_div_obj (F H : C ⥤ SingleObj G) (X : C) :
     (F / H).obj X = SingleObj.star G := (rfl)
 @[simp] theorem functor_div_map (F H : C ⥤ SingleObj G) {X Y : C} (f : X ⟶ Y) :
     (F / H).map f = (F.map f : G) / (H.map f : G) := by
-  change (F * H⁻¹).map f = (F.map f : G) / (H.map f : G)
+  rw [functor_div_eq_mul_inv]
   simp only [functor_mul_map, functor_inv_map, div_eq_mul_inv]
 
 /-- Pointwise integer powers of functors into `SingleObj G` for a commutative group `G`. -/
