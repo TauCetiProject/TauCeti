@@ -30,6 +30,9 @@ Tag 03RW; no Noetherian hypothesis on `X` or `Λ` enters it.
   `CategoryTheory.Sheaf.IsConstructibleOn.of_iSup_eq` and
   `CategoryTheory.Sheaf.isConstructibleOn_of_isCompact`: the condition passes to smaller opens,
   and on a quasi-compact quasi-separated open it can be checked locally.
+* `CategoryTheory.Sheaf.IsConstructibleOn.of_isFiniteLisse_sdiffι`: **open–closed gluing.** A sheaf
+  constructible on a retrocompact open `W ≤ U` and finite lisse on the reduced closed complement
+  `U \ W` is constructible on `U`.
 * `CategoryTheory.Sheaf.IsConstructibleOn.smallEtalePullback` and
   `CategoryTheory.Sheaf.isConstructibleOn_image_iff`: the condition is stable under pullback along
   any morphism of schemes, and transported along open immersions.
@@ -145,6 +148,16 @@ lemma IsConstructibleOn.of_iSup_eq {κ : Type*} [Finite κ] {V : κ → X.Opens}
   refine ⟨T, fun j ↦ ?_⟩
   obtain ⟨k, hk⟩ := hT j
   exact hk.isFiniteLisse (hS k)
+
+/-- **Open–closed gluing of constructibility.** Let `W ≤ U` be opens of `X` with the trace of `W`
+on `U` retrocompact. A sheaf constructible on `W` whose pullback to the reduced closed subscheme
+on `U \ W` is finite lisse is constructible on `U`. -/
+lemma IsConstructibleOn.of_isFiniteLisse_sdiffι {W : X.Opens} (hWU : W ≤ U)
+    (hW : IsRetrocompact ((U : Set X) ↓∩ (W : Set X))) (hF : F.IsConstructibleOn W)
+    (hC : (((U.ι.sdiffι W).smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse) :
+    F.IsConstructibleOn U := by
+  obtain ⟨T, hT⟩ := hF
+  exact ⟨T.extend hWU hW, fun | none => hC | some i => hT i⟩
 
 /-- **Constructibility is local on a quasi-compact quasi-separated open.** If every point of the
 quasi-compact quasi-separated open `U` has an open neighbourhood inside `U` on which `F` is

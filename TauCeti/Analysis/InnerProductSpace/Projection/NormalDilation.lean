@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import Mathlib.LinearAlgebra.Determinant
+public import TauCeti.Analysis.InnerProductSpace.ProdL2
 
 /-!
 # The normal dilation along a subspace
@@ -27,6 +28,8 @@ normal coordinate rescaled by `t`.
 
 * `Submodule.normalDilation_mul`: normal dilations compose by multiplying their factors.
 * `Submodule.det_normalDilation`: `det (normalDilation V t) = t ^ dim V`.
+* `Submodule.normalDilation_comap_prod`: along a product subspace `p × q` of
+  `WithLp 2 (E₁ × E₂)`, the normal dilation dilates each component along its factor.
 -/
 
 public section
@@ -78,6 +81,12 @@ theorem normalDilation_mul (s t : ℝ) :
     normalDilation_starProjection_orthogonal, normalDilation_starProjection, smul_smul,
     normalDilation_apply, mul_comm]
 
+/-- The normal dilation by `t ≠ 0` undoes the normal dilation by `t⁻¹`. -/
+theorem normalDilation_normalDilation_inv {t : ℝ} (ht : t ≠ 0) (x : E) :
+    V.normalDilation t (V.normalDilation t⁻¹ x) = x := by
+  rw [← ContinuousLinearMap.comp_apply, ← normalDilation_mul, mul_inv_cancel₀ ht,
+    normalDilation_one, ContinuousLinearMap.id_apply]
+
 /-- For `t ≠ 0` the normal dilation by `t` is a linear automorphism, with inverse the normal
 dilation by `t⁻¹`. -/
 def normalDilationEquiv {t : ℝ} (ht : t ≠ 0) : E ≃L[ℝ] E :=
@@ -105,8 +114,7 @@ theorem normalDilationEquiv_symm {t : ℝ} (ht : t ≠ 0) :
     (V.normalDilationEquiv ht).symm = V.normalDilationEquiv (inv_ne_zero ht) := by
   ext x
   rw [ContinuousLinearEquiv.symm_apply_eq, normalDilationEquiv_apply, normalDilationEquiv_apply,
-    ← ContinuousLinearMap.comp_apply, ← normalDilation_mul, mul_inv_cancel₀ ht, normalDilation_one,
-    ContinuousLinearMap.id_apply]
+    normalDilation_normalDilation_inv V ht]
 
 /-- **The determinant of the normal dilation** by `t` is `t ^ dim V`. -/
 theorem det_normalDilation [FiniteDimensional ℝ E] (t : ℝ) :
@@ -123,5 +131,23 @@ theorem det_normalDilation [FiniteDimensional ℝ E] (t : ℝ) :
     simp [e, hw, starProjection_eq_self_iff.2 v.property, add_comm]
   rw [hconj, LinearMap.det_conj, LinearMap.det_prodMap, LinearMap.det_smul, LinearMap.det_id,
     LinearMap.det_id, mul_one, mul_one]
+
+section Prod
+
+variable {E₁ E₂ : Type*} [NormedAddCommGroup E₁] [InnerProductSpace ℝ E₁] [NormedAddCommGroup E₂]
+  [InnerProductSpace ℝ E₂] (p : Submodule ℝ E₁) (q : Submodule ℝ E₂) [p.HasOrthogonalProjection]
+  [q.HasOrthogonalProjection]
+
+/-- **The normal dilation along a product subspace** dilates each component along its factor:
+along `p × q ⊆ WithLp 2 (E₁ × E₂)`, the normal dilation by `t` is
+`(x, y) ↦ (normalDilation p t x, normalDilation q t y)`. -/
+theorem normalDilation_comap_prod (t : ℝ) (x : WithLp 2 (E₁ × E₂)) :
+    ((p.prod q).comap (WithLp.linearEquiv 2 ℝ (E₁ × E₂)).toLinearMap).normalDilation t x =
+      WithLp.toLp 2 (p.normalDilation t x.fst, q.normalDilation t x.snd) := by
+  simp only [normalDilation_apply, starProjection_orthogonal_val,
+    WithLp.starProjection_comap_prod]
+  exact WithLp.ofLp_injective 2 (Prod.ext (by simp) (by simp))
+
+end Prod
 
 end Submodule

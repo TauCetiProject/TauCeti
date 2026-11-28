@@ -388,9 +388,9 @@ theorem diracScatteringMatrix_congr_ae {q' : ℝ → ℂ} (h : ∀ᵐ u, u ∈ �
   filter_upwards [h] with u hu hmem
   simp [diracScatteringCoeff_def, hu hmem]
 
-/-- The scattering matrix of `q` up to time `t ≥ 0` is that of the truncation `1_{[0, t]} q`,
-which is locally integrable on `[0, ∞)` when `q` is integrable on `[0, t]`. -/
-private theorem diracScatteringMatrix_indicator (ht : 0 ≤ t) (z : ℂ) :
+/-- **Truncation.** The scattering matrix of `q` up to time `t ≥ 0` is that of the truncation
+`1_{[0, t]} q`, which is locally integrable on `[0, ∞)` when `q` is integrable on `[0, t]`. -/
+theorem diracScatteringMatrix_indicator (ht : 0 ≤ t) (z : ℂ) :
     diracScatteringMatrix ((Icc 0 t).indicator q) t z = diracScatteringMatrix q t z :=
   diracScatteringMatrix_congr_ae (ae_of_all _ fun _ hu ↦ indicator_of_mem
     (Ioc_subset_Icc_self (uIoc_of_le ht ▸ hu)) q) z

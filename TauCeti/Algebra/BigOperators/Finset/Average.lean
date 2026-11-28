@@ -27,6 +27,7 @@ This identity is useful for second-moment calculations without any independence 
 
 * `Finset.invOf_card_smul_sum_const`: `⅟#s • ∑ _i ∈ s, v = v`.
 * `Fintype.invOf_card_smul_sum_const`: the same over all of a finite type.
+* `Fintype.expect_prod_type`: the mean over `α × β` is the iterated mean.
 * `TauCeti.average_sub_sq_eq_sum_sum`: the squared deviation as a double sum.
 -/
 
@@ -45,6 +46,11 @@ theorem Finset.invOf_card_smul_sum_const (s : Finset ι) [Invertible (s.card : R
 theorem Fintype.invOf_card_smul_sum_const [Fintype ι] [Invertible (Fintype.card ι : R)] (v : M) :
     ⅟(Fintype.card ι : R) • ∑ _i : ι, v = v := by
   rw [Finset.sum_const, Finset.card_univ, ← Nat.cast_smul_eq_nsmul R, invOf_smul_smul]
+
+/-- The mean over a product of finite types is the iterated mean. -/
+theorem Fintype.expect_prod_type {α β N : Type*} [Fintype α] [Fintype β] [AddCommMonoid N]
+    [Module ℚ≥0 N] (f : α × β → N) : 𝔼 p, f p = 𝔼 a, 𝔼 b, f (a, b) := by
+  rw [← Finset.univ_product_univ, Finset.expect_product]
 
 namespace TauCeti
 

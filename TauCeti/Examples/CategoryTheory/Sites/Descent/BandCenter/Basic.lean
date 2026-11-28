@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Sites.Descent.BandFixtures.Component.Center
 public import TauCeti.Examples.CategoryTheory.Sites.Descent.BandFixtures.Constant
 
 /-!
@@ -20,7 +21,8 @@ the transposition `(0 1)` is not the evaluation of any central section: evaluati
 automorphisms fails without abelian inertia.
 
 For a commutative group `G` every element `g` gives a central section acting by `g`
-(`centralSection`, the constant section of a centre unit), and these are all the sections: for
+(`centralSection`, the constant section of the centre unit
+`BandFixtures.singleCenterUnit g`), and these are all the sections: for
 `G = C₃` there are exactly three, and the section of the generator evaluates to the nonidentity
 automorphism `Multiplicative.ofAdd 1`.
 -/
@@ -88,32 +90,24 @@ theorem evaluation_ne_swap {V : Discrete PUnit.{1}} (a : V ⟶ pt)
 
 /-! ### `B(G)` for a commutative group -/
 
-/-- For a commutative group `G`, the unit of the centre of the one-object groupoid of `G` acting
-by `g` on its object. -/
-def centerUnit {G : Type} [CommGroup G] (g : G) : (CatCenter (SingleObj G))ˣ :=
-  (Aut.unitsEndEquivAut (𝟭 (SingleObj G))).symm <| .of <|
-    NatIso.ofComponents (fun x ↦ asIso (g : x ⟶ x)) fun f ↦ by
-      simp only [Functor.id_map, asIso_hom, SingleObj.comp_as_mul]
-      exact mul_comm _ _
-
-/-- The component of `centerUnit g` at an object of `B(G)` is `g`. -/
+/-- The component of the central endomorphism `BandFixtures.singleCenter g` at an
+object of `B(G)` is `g`. -/
 @[simp]
-theorem toElem_centerUnit_app {G : Type} [CommGroup G] (g : G) {V : Discrete PUnit.{1}}
+theorem toElem_singleCenter_app {G : Type} [CommGroup G] (g : G) {V : Discrete PUnit.{1}}
     (x : (pointBG G).obj (.mk (op V))) :
-    toElem ((centerUnit g).val.app x) = g :=
-  -- `Aut.unitsEndEquivAut.symm` keeps the underlying natural transformation, whose component
-  -- built by `NatIso.ofComponents` is `g`.
-  rfl
+    toElem ((BandFixtures.singleCenter g).app x) = g :=
+  -- The fibre of `pointBG G` is `SingleObj G` by definition, so this is `singleCenter_app`.
+  BandFixtures.singleCenter_app g x
 
 /-- For a commutative group `G`, the central section of `B(G)` over the point acting by `g`
 on every fibre. -/
 def centralSection {G : Type} [CommGroup G] (g : G) : IntrinsicBandSections (pointBG G) pt :=
-  constantSection pt (centerUnit g)
+  constantSection pt (BandFixtures.singleCenterUnit g)
 
-/-- The components of `centralSection g` are `centerUnit g`. -/
+/-- The components of `centralSection g` are `BandFixtures.singleCenterUnit g`. -/
 @[simp]
 theorem val_centralSection {G : Type} [CommGroup G] (g : G) (V : Discrete PUnit.{1})
-    (a : V ⟶ pt) : (centralSection g).val V a = centerUnit g :=
+    (a : V ⟶ pt) : (centralSection g).val V a = BandFixtures.singleCenterUnit g :=
   val_constantSection pt _ V a
 
 /-- Evaluating `centralSection g` gives `g`. -/

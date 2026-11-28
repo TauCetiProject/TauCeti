@@ -49,7 +49,8 @@ parallel notion of Hölder continuity.
 * `TauCeti.HolderSpace.compLeftL`: postcomposition with a continuous linear map `g`, of operator
   norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry; an element of
   `HolderSpace α X (ι → Y)` is determined by its coordinates
-  (`TauCeti.HolderSpace.ext_compLeftL_proj`).
+  (`TauCeti.HolderSpace.ext_compLeftL_proj`), and `TauCeti.HolderSpace.piEquivL` identifies it
+  with the family of its coordinates.
 * `TauCeti.HolderSpace.norm_le_mul_norm_of_apply_eq`: an element whose values are those of `g`
   followed by a continuous linear map `L` has norm at most `‖L‖ * ‖g‖`.
 * `TauCeti.HolderSpace.norm_le_norm_of_apply_comp`: an element whose values are those of `F` along
@@ -749,6 +750,50 @@ theorem ext_compLeftL_proj {ι : Type*} [Fintype ι] {f f' : HolderSpace α X (�
       compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ Y) i) f') :
     f = f' :=
   ext fun x ↦ funext fun i ↦ by simpa using congrArg (· x) (h i)
+
+section Pi
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- The `i`-th coordinate of the element of `HolderSpace α X (ι → Y)` with coordinates `f j` is
+`f i`. -/
+theorem compLeftL_proj_sum_compLeftL_single (f : ι → HolderSpace α X Y) (i : ι) :
+    compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ Y) i)
+      (∑ j, compLeftL (.single ℝ (fun _ ↦ Y) j) (f j)) = f i :=
+  ext fun x ↦ by simp [sum_apply, Pi.single_apply]
+
+/-- An element of `HolderSpace α X (ι → Y)` is the sum of its coordinates, each put back in its
+place. -/
+theorem sum_compLeftL_single_compLeftL_proj (f : HolderSpace α X (ι → Y)) :
+    ∑ i, compLeftL (.single ℝ (fun _ ↦ Y) i)
+      (compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ Y) i) f) = f :=
+  ext_compLeftL_proj fun i ↦ compLeftL_proj_sum_compLeftL_single _ i
+
+variable (α X Y ι) in
+/-- A Hölder map into a finite product `ι → Y` is the family of its coordinates: postcomposition
+with the coordinate projections is a continuous linear equivalence from `HolderSpace α X (ι → Y)`
+onto `ι → HolderSpace α X Y`, whose inverse puts the coordinates back in their places. -/
+def piEquivL : HolderSpace α X (ι → Y) ≃L[ℝ] (ι → HolderSpace α X Y) :=
+  .ofContinuousLinearMap
+    (ContinuousLinearMap.pi fun i ↦ compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ Y) i))
+    (∑ i, compLeftL (.single ℝ (fun _ ↦ Y) i) ∘L ContinuousLinearMap.proj i)
+    (ContinuousLinearMap.ext fun f ↦ funext fun i ↦ by
+      simpa using compLeftL_proj_sum_compLeftL_single f i)
+    (ContinuousLinearMap.ext fun f ↦ by simpa using sum_compLeftL_single_compLeftL_proj f)
+
+/-- The `i`-th component of `TauCeti.HolderSpace.piEquivL` is the `i`-th coordinate. -/
+@[simp]
+theorem piEquivL_apply (f : HolderSpace α X (ι → Y)) (i : ι) :
+    piEquivL α X Y ι f i = compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ Y) i) f :=
+  (rfl)
+
+/-- The inverse of `TauCeti.HolderSpace.piEquivL` puts the coordinates back in their places. -/
+@[simp]
+theorem piEquivL_symm_apply (f : ι → HolderSpace α X Y) :
+    (piEquivL α X Y ι).symm f = ∑ i, compLeftL (.single ℝ (fun _ ↦ Y) i) (f i) := by
+  simp [piEquivL]
+
+end Pi
 
 end compLeft
 

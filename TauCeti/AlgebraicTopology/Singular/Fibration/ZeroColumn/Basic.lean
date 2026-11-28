@@ -37,7 +37,8 @@ page to the second being read as the quotient map
 quotient is the zeroth homology `H₀(C, D; Hq(F))` with coefficients in the fibre homology, which
 is identified in `TauCeti.AlgebraicTopology.Singular.Fibration.ZeroColumn.LocalCoefficients`.
 Classically, when `D = ∅` and `C` is connected, it is the module of coinvariants of the fibre
-homology under the fundamental group; that identification is not proved here.
+homology under the fundamental group, as shown in
+`TauCeti.AlgebraicTopology.Singular.Fibration.ZeroColumn.Coinvariants`.
 
 ## The argument
 

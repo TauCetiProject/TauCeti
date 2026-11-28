@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Riemannian.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.Riemannian.Distance
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Coordinate displacement is bounded by Riemannian path length
@@ -40,6 +41,10 @@ corresponding constructions in Mathlib's `Geometry/Manifold/Riemannian/Basic.lea
   estimate for continuous linear maps.
 * `TauCeti.Manifold.edist_le_mul_riemannianEDist`: a `C¹` map whose differential stretches tangent
   vectors by at most `C ≠ 0` is `C`-Lipschitz from the Riemannian distance.
+* `TauCeti.Manifold.exists_eventually_dist_extChartAt_le_mul_dist` and
+  `TauCeti.Manifold.exists_eventually_dist_le_mul_dist_extChartAt`: for the ambient distance of a
+  Riemannian manifold, the extended chart at `x` is bi-Lipschitz at its centre, comparing the
+  distance from `x` to nearby points with the distance of their images from the image of `x`.
 
 ## References
 
@@ -250,6 +255,40 @@ theorem eventually_enorm_apply_extChartAt_sub_le [IsRiemannianManifold I M]
   filter_upwards [Ioo_mem_nhdsGT hy] with δ hδmem using hδ δ hδmem.1 hδmem.2.le
 
 end LocalComparison
+
+section Centre
+
+variable {M : Type*} [PseudoMetricSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I 1 M]
+  [IsRiemannianManifold I M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+
+/-- **The extended chart is Lipschitz at its centre.** Near `x`, the extended chart at `x` moves
+each point `y` at most a constant times `dist x y` away from the image of `x`. -/
+theorem exists_eventually_dist_extChartAt_le_mul_dist (x : M) :
+    ∃ C : ℝ≥0, ∀ᶠ y in 𝓝 x, dist (extChartAt I x x) (extChartAt I x y) ≤ C * dist x y := by
+  -- The tangent chart at its own centre is the identity on coordinates, although its domain
+  -- carries the Riemannian norm and its codomain carries the model-space norm.
+  let ℓ : TangentSpace I x →L[ℝ] E :=
+    (trivializationAt E (fun x : M ↦ TangentSpace I x) x).continuousLinearMapAt ℝ x
+  have hℓ (v : E) : ℓ v = v := continuousLinearMapAt_trivializationAt_self (I := I) x v
+  refine ⟨2 * ‖ℓ‖₊, ?_⟩
+  filter_upwards [eventually_enorm_apply_extChartAt_sub_le (I := I) (F := E) x one_lt_two]
+    with y hy
+  have h := ENNReal.toReal_mono (by finiteness) (hy ℓ)
+  rw [hℓ] at h
+  simpa [← ofReal_norm, ENNReal.toReal_mul, edist_dist, dist_eq_norm, norm_sub_rev] using h
+
+/-- **The inverse extended chart is Lipschitz at the centre.** Near `x`, the distance from `x` to
+`y` is at most a constant times the distance between their images under the extended chart at
+`x`. -/
+theorem exists_eventually_dist_le_mul_dist_extChartAt (x : M) :
+    ∃ C : ℝ≥0, ∀ᶠ y in 𝓝 x, dist x y ≤ C * dist (extChartAt I x x) (extChartAt I x y) := by
+  obtain ⟨C, -, hC⟩ := eventually_riemannianEDist_le_edist_extChartAt I x
+  refine ⟨C, hC.mono fun y hy ↦ ?_⟩
+  rw [← IsRiemannianManifold.out (I := I)] at hy
+  simpa [edist_dist, ENNReal.toReal_mul] using ENNReal.toReal_mono (by finiteness) hy
+
+end Centre
 
 end Manifold
 end TauCeti

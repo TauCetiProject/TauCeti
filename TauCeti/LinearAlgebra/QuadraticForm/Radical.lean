@@ -39,6 +39,8 @@ regular case.
 * `QuadraticMap.nondegenerate_neg`: negating a quadratic map does not change its nondegeneracy.
 * `QuadraticMap.radical_smul`, `QuadraticMap.nondegenerate_smul_iff`: scaling a quadratic map by a
   unit does not change its radical or its nondegeneracy.
+* `QuadraticMap.radical_prod_radical_le_radical_prod`: the product of two radicals lies in the
+  radical of the orthogonal product, in every characteristic.
 * `QuadraticMap.radical_prod`: the radical of an orthogonal product is the product of the radicals.
 * `QuadraticMap.nondegenerate_prod_iff`: an orthogonal product is nondegenerate exactly when both
   factors are.
@@ -167,6 +169,16 @@ theorem nondegenerate_smul_iff {a : R} (ha : IsUnit a) (Q : QuadraticMap R M P) 
     exact ⟨(radical_smul ha Q).symm ▸ h, hker.symm ▸ hrank⟩
 
 variable {M' : Type*} [AddCommGroup M'] [Module R M']
+
+/-- The product of the radicals of two quadratic maps lies in the radical of their orthogonal
+product. The inclusion can be strict when two is not invertible: in characteristic two, `(1, 1)`
+lies in the radical of `x² + y²` although `1` does not lie in the radical of `x²`. -/
+theorem radical_prod_radical_le_radical_prod (Q : QuadraticMap R M P)
+    (Q' : QuadraticMap R M' P) : Q.radical.prod Q'.radical ≤ (Q.prod Q').radical := by
+  rintro ⟨x, y⟩ ⟨hx, hy⟩
+  rw [SetLike.mem_coe, mem_radical_iff'] at hx hy
+  rw [mem_radical_iff']
+  exact ⟨by simp [hx.1, hy.1], fun n ↦ by simp [hx.2, hy.2]⟩
 
 /-- The radical of an orthogonal product is the product of the two radicals when two is
 invertible. -/
