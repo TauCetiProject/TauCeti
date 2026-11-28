@@ -35,11 +35,9 @@ weak sheafification) inverse image `f.smallEtalePullback A`:
   left exactness from the conservative family of geometric points. For an étale monomorphism
   `j`, `smallEtaleMapCompFiberIso` identifies the fibre at `s ≫ j` of an étale `X`-scheme regarded
   over `Y` with its fibre at `s`.
-* **Local evaluation and étale covers**: `smallEtaleBaseChangeSelfDiag` is the diagonal section,
+* **Local evaluation**: `smallEtaleBaseChangeSelfDiag` is the diagonal section, and
   `evalUnitSelf` pulls a section of a sheaf over an étale `S`-scheme `u : U ⟶ S` back to the
-  terminal object of `U.Etale`, `exists_etaleCover_of_mem_smallEtaleTopology_terminal` extracts a
-  jointly surjective étale cover from a covering sieve of `Etale.mk (𝟙 S)`, and
-  `iUnion_range_comp_sigma` refines jointly surjective covers.
+  terminal object of `U.Etale`.
 
 ## References
 
@@ -584,40 +582,5 @@ instance preservesFiniteLimits_smallEtalePullback
 end StalksAndExactness
 
 end Hom
-
-/-- A covering sieve on the terminal étale `S`-scheme `Etale.mk (𝟙 S)` yields a `Type u`-indexed
-jointly surjective family of nonempty étale `S`-schemes whose morphisms to `Etale.mk (𝟙 S)` lie in
-the sieve. -/
-theorem exists_etaleCover_of_mem_smallEtaleTopology_terminal {S : Scheme.{u}}
-    {R : Sieve (Etale.mk (𝟙 S))} (hR : R ∈ smallEtaleTopology S (Etale.mk (𝟙 S))) :
-    ∃ (ι : Type u) (U : ι → Scheme.{u}) (u : ∀ i, U i ⟶ S) (hu : ∀ i, Etale (u i)),
-      (∀ i, Nonempty (U i)) ∧
-        (∀ i, ∃ g : @Etale.mk S (U i) (u i) (hu i) ⟶ Etale.mk (𝟙 S), R g) ∧
-        (⋃ i, Set.range (u i) = .univ) := by
-  obtain ⟨ι', V, g', heq⟩ := R.exists_eq_ofArrows
-  have hcov := (ofArrows_mem_smallEtaleTopology_iff g').mp (heq ▸ hR)
-  have hg' (j : ι') : ((g' j).left : (V j).left ⟶ S) = (V j).hom :=
-    (Category.comp_id _).symm.trans (CategoryTheory.Over.w ((Etale.forget S).map (g' j)))
-  choose idx hidx using fun s : S ↦ Set.mem_iUnion.mp (hcov ▸ Set.mem_univ s)
-  refine ⟨S, fun s ↦ (V (idx s)).left, fun s ↦ (V (idx s)).hom, fun s ↦ (V (idx s)).prop,
-    fun s ↦ ?_, fun s ↦ ?_, Set.eq_univ_of_forall fun s ↦ ?_⟩
-  · obtain ⟨z, -⟩ := hidx s
-    exact ⟨z⟩
-  · exact ⟨g' (idx s), heq.symm ▸ Sieve.ofArrows_mk V g' (idx s)⟩
-  · obtain ⟨z, hz⟩ := hidx s
-    exact Set.mem_iUnion.mpr ⟨s, z, (congrArg (fun f : (V (idx s)).left ⟶ S ↦ f z)
-      (hg' (idx s)).symm).trans hz⟩
-
-/-- Refining a jointly surjective family `u : ∀ i, U i ⟶ S` by jointly surjective families
-`v i : ∀ k, V i k ⟶ U i` yields a jointly surjective `Σ`-indexed family. -/
-lemma iUnion_range_comp_sigma {S : Scheme.{u}} {ι : Type*} {U : ι → Scheme.{u}}
-    {u : ∀ i, U i ⟶ S} (hu : ⋃ i, Set.range (u i) = .univ)
-    {κ : ι → Type*} {V : ∀ i, κ i → Scheme.{u}}
-    {v : ∀ i, ∀ k : κ i, V i k ⟶ U i} (hv : ∀ i, ⋃ k, Set.range (v i k) = .univ) :
-    (⋃ p : Σ i, κ i, Set.range (v p.1 p.2 ≫ u p.1)) = .univ := by
-  refine Set.eq_univ_of_forall fun s ↦ ?_
-  obtain ⟨i, x, rfl⟩ := Set.mem_iUnion.mp (hu ▸ Set.mem_univ s)
-  obtain ⟨k, z, rfl⟩ := Set.mem_iUnion.mp (hv i ▸ Set.mem_univ x)
-  exact Set.mem_iUnion.mpr ⟨⟨i, k⟩, z, Scheme.Hom.comp_apply (v i k) (u i) z⟩
 
 end AlgebraicGeometry.Scheme

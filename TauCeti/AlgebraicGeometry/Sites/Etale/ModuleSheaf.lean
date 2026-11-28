@@ -15,6 +15,7 @@ public import TauCeti.AlgebraicGeometry.Sites.Etale.LocallyConstant
 public import TauCeti.CategoryTheory.Sites.LocallyConstant.Module
 
 import Mathlib.Algebra.BigOperators.Pi
+import TauCeti.AlgebraicGeometry.Sites.Etale.Covering
 
 /-!
 # Étale sheaves of modules: geometric stalks and finite lisse sheaves

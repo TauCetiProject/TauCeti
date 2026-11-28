@@ -7,25 +7,25 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.ObjectProperty.Extensions
-public import Mathlib.CategoryTheory.ObjectProperty.Kernels
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.AlgebraicGeometry.Sites.Etale.FiniteLisse.Kernels
 public import TauCeti.CategoryTheory.Exact.Abelian
 public import TauCeti.CategoryTheory.Sites.Limits
 
+import TauCeti.CategoryTheory.Sites.JointlySurjective
+
 /-!
 # Finite lisse étale sheaves form a weak Serre class
 
 Let `S` be a scheme and `Λ` a ring. This file proves that finite lisse étale sheaves of
-`Λ`-modules on `S` (`CategoryTheory.Sheaf.IsFiniteLisse`) are closed under cokernels over any ring
-`Λ`, and closed under kernels and extensions when `Λ` is left Noetherian: together with
-`CategoryTheory.Sheaf.containsZero_isFiniteLisse` and closure under isomorphisms, they form a weak
-Serre class in `Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)`.
-
-Closure under cokernels and kernels comes from `CategoryTheory.Sheaf.IsFiniteLisse.cokernel` and
-`CategoryTheory.Sheaf.IsFiniteLisse.kernel` in
-`TauCeti.AlgebraicGeometry.Sites.Etale.FiniteLisse.Kernels`.
+`Λ`-modules on `S` (`CategoryTheory.Sheaf.IsFiniteLisse`) are closed under extensions when `Λ` is
+left Noetherian: together with `CategoryTheory.Sheaf.containsZero_isFiniteLisse`, closure under
+isomorphisms, and closure under cokernels and kernels
+(`CategoryTheory.Sheaf.isClosedUnderCokernels_isFiniteLisse`,
+`CategoryTheory.Sheaf.isClosedUnderKernels_isFiniteLisse` in
+`TauCeti.AlgebraicGeometry.Sites.Etale.FiniteLisse.Kernels`), they form a weak Serre class in
+`Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)`.
 
 For an extension `0 ⟶ F ⟶ E ⟶ G ⟶ 0` with `F` and `G` finite lisse over left Noetherian `Λ`,
 pass to a common trivializing étale cover so `F` and `G` are constant on finitely generated modules
@@ -38,10 +38,6 @@ short five lemma.
 
 ## Main results
 
-* `CategoryTheory.Sheaf.isClosedUnderCokernels_isFiniteLisse`: finite lisse sheaves are closed under
-  cokernels over any ring `Λ`.
-* `CategoryTheory.Sheaf.isClosedUnderKernels_isFiniteLisse`: finite lisse sheaves are closed under
-  kernels over any left Noetherian ring `Λ`.
 * `CategoryTheory.Sheaf.isClosedUnderExtensions_isFiniteLisse`: finite lisse sheaves are closed
   under extensions over any left Noetherian ring `Λ`.
 * `CategoryTheory.Sheaf.IsFiniteLisse.of_shortExact`: dot-notation form for extensions.
@@ -83,7 +79,10 @@ private theorem exists_etaleCover_pair_constantSheaf
       (hG.smallEtalePullback (u i))
   refine ⟨Σ i, κ i, fun p ↦ V p.1 p.2, fun p ↦ v p.1 p.2 ≫ u p.1,
     fun p ↦ have := hu_et p.1; have := hv_et p.1 p.2; inferInstance,
-    Scheme.iUnion_range_comp_sigma hu_cov hv_cov, fun p ↦ ?_⟩
+    by
+      simp_rw [Scheme.Hom.comp_base, TopCat.coe_comp]
+      exact (Set.iUnion_range_comp_sigma (fun i ↦ ⇑(u i)) hv_cov).trans hu_cov,
+    fun p ↦ ?_⟩
   obtain ⟨M, hM, ⟨eF⟩⟩ := htrivF p.1
   obtain ⟨N, hN, ⟨eG⟩⟩ := htrivG p.1 p.2
   have hcompF := (Hom.smallEtalePullbackComp (v p.1 p.2) (u p.1) (ModuleCat.{u} Λ)).app F
@@ -92,23 +91,6 @@ private theorem exists_etaleCover_pair_constantSheaf
     ⟨hcompF ≪≫ ((v p.1 p.2).smallEtalePullback (ModuleCat.{u} Λ)).mapIso eF ≪≫
       (v p.1 p.2).smallEtalePullbackConstantSheafIso (ModuleCat.{u} Λ) M⟩,
     ⟨hcompG ≪≫ eG⟩⟩
-
-/-- Over any ring `Λ`, finite lisse étale sheaves of `Λ`-modules are closed under cokernels. -/
-instance isClosedUnderCokernels_isFiniteLisse :
-    ObjectProperty.IsClosedUnderCokernels
-      (IsFiniteLisse : ObjectProperty (Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))) where
-  cokernels_le := by
-    rintro _ ⟨φ, k, hk, hF, hG⟩
-    exact (hF.cokernel hG φ).of_iso (hk.coconePointUniqueUpToIso (cokernelIsCokernel φ)).symm
-
-/-- Over a left Noetherian ring `Λ`, finite lisse étale sheaves of `Λ`-modules are closed under
-kernels. -/
-instance isClosedUnderKernels_isFiniteLisse [IsNoetherianRing Λ] :
-    ObjectProperty.IsClosedUnderKernels
-      (IsFiniteLisse : ObjectProperty (Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))) where
-  kernels_le := by
-    rintro _ ⟨φ, k, hk, hF, hG⟩
-    exact (hF.kernel hG φ).of_iso (hk.conePointUniqueUpToIso (kernelIsKernel φ)).symm
 
 /-- Pushout step in the extension lemma: if `πN : F₀ ⟶ N` lifts to `h : const F₀ ⟶ E` and
 `const (kernel.ι πN) ≫ h` factors through a linear map `gk : kernel πN ⟶ M` and `f : const M ⟶ E`,

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.CategoryTheory.ObjectProperty.Extensions
 public import Mathlib.CategoryTheory.ObjectProperty.Kernels
-public import TauCeti.Algebra.Homology.DerivedCategory.HomologyIn
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Constructible.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Etale.FiniteLisse.Serre
 
@@ -26,10 +25,6 @@ For two sheaves `F` and `G` constructible on an open `U`, passing to the common 
 cokernels, and extensions to the corresponding closure properties for finite lisse sheaves
 (`TauCeti.AlgebraicGeometry.Sites.Etale.FiniteLisse.Serre`), using the exactness of inverse image
 along each stratum immersion.
-
-In particular, over a left Noetherian ring `Λ`, complexes in `DerivedCategory` with constructible
-cohomology sheaves (`DerivedCategory.homologyIn (X.constructibleSheaf Λ)`) form a triangulated
-subcategory.
 
 ## Main results
 
@@ -56,7 +51,7 @@ subcategory.
 
 public section
 
-universe u w
+universe u
 
 open CategoryTheory Limits AlgebraicGeometry Scheme
 
@@ -157,10 +152,5 @@ instance isClosedUnderExtensions_constructibleSheaf [IsNoetherianRing Λ] :
   prop_X₂_of_shortExact hT h₁ h₃ :=
     constructibleSheaf_iff.mpr fun U hU ↦
       (constructibleSheaf_iff.mp h₁ U hU).of_shortExact hT (constructibleSheaf_iff.mp h₃ U hU)
-
-example (X : Scheme.{u}) (Λ : Type u) [Ring Λ] [IsNoetherianRing Λ]
-    [HasDerivedCategory.{w} (Sheaf (smallEtaleTopology X) (ModuleCat.{u} Λ))] :
-    (DerivedCategory.homologyIn (X.constructibleSheaf Λ)).IsTriangulated :=
-  inferInstance
 
 end AlgebraicGeometry.Scheme
