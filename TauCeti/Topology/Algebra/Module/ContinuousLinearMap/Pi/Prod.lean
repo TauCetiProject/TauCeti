@@ -11,13 +11,16 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalar
 /-!
 # Continuous linear maps on products and Pi types
 
-This file collects supplementary results about continuous linear maps on indexed products `ι → R`.
+This file collects supplementary results about continuous linear maps on indexed products `ι → R`
+and binary products `M₁ × M₂`.
 
 ## Main results
 
 * `ContinuousLinearMap.eq_smul_id_of_unique`: every continuous linear endomorphism of a
   one-coordinate space `ι → R` over a topological commutative semiring `R` with continuous scalar
   multiplication is a scalar multiple of the identity.
+* `ContinuousLinearMap.prodMap_id`: the `prodMap` of two continuous linear identities is the
+  identity.
 * `ContinuousLinearMap.update_proj_apply`: the family `Function.update (fun m ↦ proj m) i α`,
   which replaces the projection to the coordinate `i` by `α`, evaluates at `j` and `v` to the
   coordinate `j` of `Function.update v i (α v)`.
@@ -83,5 +86,14 @@ theorem restrictScalars_proj {A : Type*} [Semiring A] [∀ i, Module A (φ i)] (
   rfl
 
 end Pi
+
+/-- The product map of two continuous linear identities is the identity on the product. -/
+@[simp]
+theorem prodMap_id {R M₁ M₂ : Type*} [Semiring R]
+    [TopologicalSpace M₁] [AddCommMonoid M₁] [Module R M₁]
+    [TopologicalSpace M₂] [AddCommMonoid M₂] [Module R M₂] :
+    (ContinuousLinearMap.id R M₁).prodMap (ContinuousLinearMap.id R M₂) =
+      ContinuousLinearMap.id R (M₁ × M₂) :=
+  rfl
 
 end ContinuousLinearMap

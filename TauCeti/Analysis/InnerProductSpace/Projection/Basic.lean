@@ -173,7 +173,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `id = P_U + P_{Uᗮ}` as linear maps.
 * `Submodule.starProjection_comp_comp_starProjection_idem`: two-sided projection compression
   `Δ ↦ P_W Δ P_K` is idempotent.
-* `LinearMap.apply_sub_starProjection_ker`,
+* `LinearMap.apply_sub_starProjection_ker`, `LinearMap.ker_comp_subtype_orthogonal`,
+  `LinearMap.range_comp_subtype_orthogonal`,
   `LinearMap.comp_starProjection_ker_eq_zero`,
   `LinearMap.adjoint_comp_starProjection_orthogonal_range_eq_zero`,
   `LinearMap.sub_starProjection_comp_eq_add`,
@@ -182,8 +183,10 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `LinearMap.adjoint_comp_normalPart_eq_zero`, `LinearMap.comp_adjoint_normalPart_eq_zero`,
   `LinearMap.finrank_range_sub_starProjection_comp_le`,
   `LinearMap.finrank_range_sub_normalPart_le`,
-  `ContinuousLinearMap.comp_starProjection_orthogonal_ker`: kernel, range, and tangent–normal
-  projection identities and rank bounds.
+  `ContinuousLinearMap.comp_starProjection_orthogonal_ker`,
+  `ContinuousLinearMap.ker_comp_subtypeL_orthogonal`,
+  `ContinuousLinearMap.range_comp_subtypeL_orthogonal`: kernel, range, orthogonal-complement
+  restriction, and tangent–normal projection identities and rank bounds.
 * `LinearMap.exists_infDist_inf_ker_le`: distance to `P ⊓ ker D` is controlled by distance to `P`
   plus a multiple of `‖D (P.starProjection w)‖`.
 * `LinearIsometryEquiv.conjStarAlgEquiv_starProjection`: conjugating `P_V` by a linear isometry
@@ -975,6 +978,24 @@ theorem apply_sub_starProjection_ker (u : E →ₗ[𝕜] F) [u.ker.HasOrthogonal
   simpa only [map_add, hx, add_zero] using
     congrArg u (sub_add_cancel x (u.ker.starProjection x))
 
+/-- Restricting a linear map to the orthogonal complement of its kernel has trivial kernel. -/
+@[simp]
+theorem ker_comp_subtype_orthogonal (u : E →ₗ[𝕜] F) :
+    (u ∘ₗ u.kerᗮ.subtype).ker = ⊥ := by
+  rw [Submodule.eq_bot_iff]
+  intro x hx
+  exact Subtype.ext (Submodule.disjoint_def.mp u.ker.orthogonal_disjoint x hx x.property)
+
+/-- Restricting a linear map to the orthogonal complement of its kernel preserves its range. -/
+@[simp]
+theorem range_comp_subtype_orthogonal (u : E →ₗ[𝕜] F) [u.ker.HasOrthogonalProjection] :
+    (u ∘ₗ u.kerᗮ.subtype).range = u.range := by
+  refine le_antisymm (range_comp_le_range u.kerᗮ.subtype u) ?_
+  rintro _ ⟨x, rfl⟩
+  refine ⟨⟨u.kerᗮ.starProjection x, Submodule.starProjection_apply_mem u.kerᗮ x⟩, ?_⟩
+  simpa only [comp_apply, Submodule.coe_subtype, Submodule.starProjection_orthogonal_val] using
+    u.apply_sub_starProjection_ker x
+
 /-- Composing `Θ` on the right with the orthogonal projection onto `ker Θ` vanishes. -/
 @[simp]
 theorem comp_starProjection_ker_eq_zero (Θ : E →ₗ[𝕜] F) [Θ.ker.HasOrthogonalProjection] :
@@ -1135,6 +1156,18 @@ theorem comp_starProjection_orthogonal_ker (u : E →L[𝕜] F) [u.ker.HasOrthog
   ext x
   simpa only [comp_apply, Submodule.starProjection_orthogonal_val, coe_coe] using
     u.toLinearMap.apply_sub_starProjection_ker x
+
+/-- Restricting a continuous linear map to the orthogonal complement of its kernel has trivial
+kernel. -/
+theorem ker_comp_subtypeL_orthogonal (u : E →L[𝕜] F) :
+    (u ∘L u.kerᗮ.subtypeL).ker = ⊥ :=
+  u.toLinearMap.ker_comp_subtype_orthogonal
+
+/-- Restricting a continuous linear map to the orthogonal complement of its kernel preserves its
+range. -/
+theorem range_comp_subtypeL_orthogonal (u : E →L[𝕜] F) [u.ker.HasOrthogonalProjection] :
+    (u ∘L u.kerᗮ.subtypeL).range = u.range :=
+  u.toLinearMap.range_comp_subtype_orthogonal
 
 end ContinuousLinearMap
 

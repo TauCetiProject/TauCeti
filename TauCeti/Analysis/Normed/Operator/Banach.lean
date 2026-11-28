@@ -46,6 +46,11 @@ of more regular functions, then the solution is bounded in the smaller space by 
   the complement `G`, is `f.coprod G.subtypeL` as a continuous linear map.
 * `ContinuousLinearMap.isInvertible_iff_bijective`: by the open mapping theorem, a continuous
   linear map between Banach spaces is invertible exactly when it is bijective.
+* `ContinuousLinearMap.isOpenQuotientMap_iff_surjective`: a continuous semilinear map between
+  Banach spaces is an open quotient map exactly when it is surjective.
+* `ContinuousLinearMap.isClosedEmbedding_iff_injective_and_isClosed_range` and
+  `ContinuousLinearMap.isEmbedding_iff_injective_and_isClosed_range`: a continuous semilinear map
+  between Banach spaces is a (closed) embedding exactly when it is injective with closed range.
 * `ContinuousLinearMap.exists_comp_eq_of_range_le_range`: by the closed graph theorem, if the
   range of `f` lies in the range of an injective `g`, then `f` factors as `g ∘ h` with `h` a
   continuous linear map.
@@ -184,6 +189,43 @@ is, a continuous linear equivalence, exactly when it is bijective. -/
 theorem isInvertible_iff_bijective {f : E →L[𝕜] F} : f.IsInvertible ↔ Bijective f :=
   ⟨IsInvertible.bijective, fun h ↦ ⟨.ofBijective f (LinearMap.ker_eq_bot.2 h.1)
     (LinearMap.range_eq_top.2 h.2), ContinuousLinearEquiv.coe_ofBijective _ _ _⟩⟩
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
+  {σ : 𝕜 →+* 𝕜'} {σ' : 𝕜' →+* 𝕜} [RingHomInvPair σ σ'] [RingHomIsometric σ]
+  {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜' F] [CompleteSpace F]
+
+include σ'
+
+/-- By the Banach open mapping theorem, a continuous semilinear map between Banach spaces is an
+open quotient map exactly when it is surjective. -/
+theorem isOpenQuotientMap_iff_surjective {f : E →SL[σ] F} :
+    IsOpenQuotientMap f ↔ Surjective f :=
+  have := RingHomIsometric.inv σ
+  ⟨IsOpenQuotientMap.surjective, fun h ↦ ⟨h, f.continuous, f.isOpenMap h⟩⟩
+
+/-- By the Banach inverse mapping theorem, a continuous semilinear map between Banach spaces is a
+closed embedding exactly when it is injective with closed range. -/
+theorem isClosedEmbedding_iff_injective_and_isClosed_range {f : E →SL[σ] F} :
+    IsClosedEmbedding f ↔ Injective f ∧ IsClosed (range f) := by
+  have := RingHomInvPair.symm σ σ'
+  have := RingHomIsometric.inv σ
+  refine ⟨fun h ↦ ⟨h.injective, h.isClosed_range⟩, fun ⟨hinj, hclo⟩ ↦ ⟨?_, hclo⟩⟩
+  have hcomp : (Subtype.val : f.range → F) ∘ f.equivRange hinj hclo = f :=
+    funext fun x ↦ congrArg Subtype.val (congrFun (f.coe_equivRange hinj hclo) x)
+  exact hcomp ▸ IsEmbedding.subtypeVal.comp (f.equivRange hinj hclo).toHomeomorph.isEmbedding
+
+/-- By the Banach inverse mapping theorem, a continuous semilinear map between Banach spaces is a
+topological embedding exactly when it is injective with closed range. -/
+theorem isEmbedding_iff_injective_and_isClosed_range {f : E →SL[σ] F} :
+    IsEmbedding f ↔ Injective f ∧ IsClosed (range f) :=
+  ⟨fun h ↦ ⟨h.injective,
+      (AddMonoidHom.isUniformInducing_of_isInducing h.isInducing).isComplete_range.isClosed⟩,
+    fun h ↦ (isClosedEmbedding_iff_injective_and_isClosed_range.2 h).isEmbedding⟩
 
 end ContinuousLinearMap
 

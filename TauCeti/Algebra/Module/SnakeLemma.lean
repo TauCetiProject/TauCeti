@@ -48,8 +48,8 @@ different universes.
 * `Function.Exact.restrict_ker`: the kernel row `ker i₁ → ker i₂ → ker i₃` is exact.
 * `Function.Exact.mapQ_range`: the cokernel row `coker i₁ → coker i₂ → coker i₃` is exact.
 * `Function.Exact.snakeδ`: the connecting map `ker i₃ → coker i₁`, with exactness
-  `Function.Exact.restrict_ker_snakeδ` at `ker i₃` and `Function.Exact.snakeδ_mapQ_range` at
-  `coker i₁`.
+  `Function.Exact.restrict_ker_snakeδ` at `ker i₃`, `Function.Exact.snakeδ_mapQ_range` at
+  `coker i₁`, and split formula `Function.Exact.snakeδ_eq_of_rightInverse_of_leftInverse`.
 * `LinearMap.snakeδ_prodMap_eq_zero`: the connecting map of a direct sum, with split rows,
   vanishes.
 * `LinearMap.finiteDimensional_ker₂_of_finiteDimensional_ker₁₃` and
@@ -57,8 +57,9 @@ different universes.
 * `LinearMap.finiteDimensional_ker₃_of_finiteDimensional_ker₂_coker₁` and
   `LinearMap.finiteDimensional_coker₁_of_finiteDimensional_ker₃_coker₂`: finiteness across the
   connecting map.
-* `LinearMap.index_eq_add_of_exact`: the index of `i₂` is the sum of the indices of `i₁`
-  and `i₃`.
+* `LinearMap.index_eq_add_of_exact`, `LinearMap.index_eq_add_of_exact_of_left_middle`, and
+  `LinearMap.index_eq_add_of_exact_of_middle_right`: the index of `i₂` is the sum of the indices of
+  `i₁` and `i₃`.
 
 ## References
 
@@ -70,14 +71,12 @@ public section
 
 open Function Module Submodule LinearMap
 
-variable {R M₁ M₂ M₃ N₁ N₂ N₃ : Type*}
-  [AddCommGroup M₁] [AddCommGroup M₂] [AddCommGroup M₃]
-  [AddCommGroup N₁] [AddCommGroup N₂] [AddCommGroup N₃]
+section Semiring
 
-section Ring
-
-variable [Ring R] [Module R M₁] [Module R M₂] [Module R M₃] [Module R N₁] [Module R N₂]
-  [Module R N₃]
+variable {R M₁ M₂ M₃ N₁ N₂ N₃ : Type*} [Semiring R]
+  [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
+  [AddCommMonoid M₃] [Module R M₃] [AddCommMonoid N₁] [Module R N₁]
+  [AddCommMonoid N₂] [Module R N₂] [AddCommMonoid N₃] [Module R N₃]
   {f₁ : M₁ →ₗ[R] M₂} {f₂ : M₂ →ₗ[R] M₃} {g₁ : N₁ →ₗ[R] N₂} {g₂ : N₂ →ₗ[R] N₃}
   {i₁ : M₁ →ₗ[R] N₁} {i₂ : M₂ →ₗ[R] N₂} {i₃ : M₃ →ₗ[R] N₃}
 
@@ -100,6 +99,17 @@ theorem Function.Exact.restrict_ker (hf : Exact f₁ f₂) (hg₁ : Injective g�
     rw [← hxy, coe_restrict_apply, coe_restrict_apply, hf.apply_apply_eq_zero,
       ZeroMemClass.coe_zero]
 
+end Semiring
+
+section MapQRange
+
+variable {R M₁ M₂ M₃ N₁ N₂ N₃ : Type*} [Ring R]
+  [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
+  [AddCommMonoid M₃] [Module R M₃] [AddCommGroup N₁] [Module R N₁]
+  [AddCommGroup N₂] [Module R N₂] [AddCommGroup N₃] [Module R N₃]
+  {f₁ : M₁ →ₗ[R] M₂} {f₂ : M₂ →ₗ[R] M₃} {g₁ : N₁ →ₗ[R] N₂} {g₂ : N₂ →ₗ[R] N₃}
+  {i₁ : M₁ →ₗ[R] N₁} {i₂ : M₂ →ₗ[R] N₂} {i₃ : M₃ →ₗ[R] N₃}
+
 /-- **Exactness of the cokernel row.** For a commutative diagram with exact bottom row `g₁, g₂`
 and surjective `f₂`, the maps induced by `g₁` and `g₂` on the cokernels of the vertical maps form
 an exact sequence `coker i₁ → coker i₂ → coker i₃`. -/
@@ -112,7 +122,11 @@ theorem Function.Exact.mapQ_range (hg : Exact g₁ g₂) (hf₂ : Surjective f�
   obtain ⟨w, rfl⟩ := hf₂ z
   exact ⟨i₂ w, ⟨w, rfl⟩, LinearMap.congr_fun h₂ w⟩
 
-end Ring
+end MapQRange
+
+variable {R M₁ M₂ M₃ N₁ N₂ N₃ : Type*}
+  [AddCommGroup M₁] [AddCommGroup M₂] [AddCommGroup M₃]
+  [AddCommGroup N₁] [AddCommGroup N₂] [AddCommGroup N₃]
 
 section CommRing
 
@@ -165,6 +179,23 @@ theorem Function.Exact.snakeδ_mapQ_range (hf : Exact f₁ f₂) (hg : Exact g�
   SnakeLemma.exact_δ'_left i₁ i₂ i₃ f₁ f₂ hf g₁ g₂ hg h₁ h₂ (ker i₃).subtype
     (exact_subtype_ker_map i₃) (range i₁).mkQ (exact_map_mkQ_range i₁) (range i₂).mkQ
     (exact_map_mkQ_range i₂) hf₂ hg₁ _ (mapQ_mkQ ..) (range i₁).mkQ_surjective
+
+/-- **Split formula for the connecting map**: if `σ` is a linear right inverse of `f₂` and `ρ` is a
+linear left inverse of `g₁`, then `Function.Exact.snakeδ` equals
+`(range i₁).mkQ ∘ₗ ρ ∘ₗ i₂ ∘ₗ σ ∘ₗ (ker i₃).subtype`. In particular, that composite does not depend
+on the chosen splittings `σ` and `ρ`. -/
+theorem Function.Exact.snakeδ_eq_of_rightInverse_of_leftInverse (hf : Exact f₁ f₂)
+    (hg : Exact g₁ g₂) (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂)
+    {σ : M₃ →ₗ[R] M₂} (hσ : RightInverse σ f₂)
+    {ρ : N₂ →ₗ[R] N₁} (hρ : LeftInverse ρ g₁) :
+    hf.snakeδ hg hσ.surjective hρ.injective h₁ h₂ =
+      (range i₁).mkQ ∘ₗ ρ ∘ₗ i₂ ∘ₗ σ ∘ₗ (ker i₃).subtype := by
+  ext x₃
+  obtain ⟨y₁, hy₁⟩ := (hg (i₂ (σ x₃))).mp <| by
+    rw [← LinearMap.comp_apply, h₂, LinearMap.comp_apply, hσ x₃, mem_ker.mp x₃.property]
+  have hρy : ρ (i₂ (σ x₃)) = y₁ := by rw [← hy₁, hρ y₁]
+  simpa [hρy] using hf.snakeδ_apply hg hσ.surjective hρ.injective h₁ h₂ x₃ (σ x₃)
+    (hσ x₃) y₁ hy₁
 
 /-- **The connecting map of a direct sum vanishes.** For the split rows
 `0 → M₁ → M₁ × M₃ → M₃ → 0` and `0 → N₁ → N₁ × N₃ → N₃ → 0` and the vertical maps `j₁`,
@@ -271,6 +302,32 @@ theorem index_eq_add_of_exact [FiniteDimensional k (ker i₁)] [FiniteDimensiona
     (hg.mapQ_range hf₂ h₁ h₂) (mapQ_surjective _ _ g₂ (range_le_comap_range_of_comp_eq h₂) hg₂)
   simp only [index_eq_finrank_sub]
   linarith
+
+/-- Index additivity along short exact sequences when the left and middle vertical maps have
+finite-dimensional kernels and cokernels. -/
+theorem index_eq_add_of_exact_of_left_middle [FiniteDimensional k (ker i₁)]
+    [FiniteDimensional k (ker i₂)] [FiniteDimensional k (N₁ ⧸ range i₁)]
+    [FiniteDimensional k (N₂ ⧸ range i₂)]
+    (hf : Exact f₁ f₂) (hg : Exact g₁ g₂) (hf₁ : Injective f₁) (hf₂ : Surjective f₂)
+    (hg₁ : Injective g₁) (hg₂ : Surjective g₂)
+    (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) :
+    i₂.index = i₁.index + i₃.index := by
+  have := finiteDimensional_ker₃_of_finiteDimensional_ker₂_coker₁ hf hg hf₂ hg₁ h₁ h₂
+  have := finiteDimensional_coker₃_of_finiteDimensional_coker₂ hg₂ h₂
+  exact index_eq_add_of_exact hf hg hf₁ hf₂ hg₁ hg₂ h₁ h₂
+
+/-- Index additivity along short exact sequences when the middle and right vertical maps have
+finite-dimensional kernels and cokernels. -/
+theorem index_eq_add_of_exact_of_middle_right [FiniteDimensional k (ker i₂)]
+    [FiniteDimensional k (ker i₃)] [FiniteDimensional k (N₂ ⧸ range i₂)]
+    [FiniteDimensional k (N₃ ⧸ range i₃)]
+    (hf : Exact f₁ f₂) (hg : Exact g₁ g₂) (hf₁ : Injective f₁) (hf₂ : Surjective f₂)
+    (hg₁ : Injective g₁) (hg₂ : Surjective g₂)
+    (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) :
+    i₂.index = i₁.index + i₃.index := by
+  have := finiteDimensional_ker₁_of_finiteDimensional_ker₂ hf₁ h₁
+  have := finiteDimensional_coker₁_of_finiteDimensional_ker₃_coker₂ hf hg hf₂ hg₁ h₁ h₂
+  exact index_eq_add_of_exact hf hg hf₁ hf₂ hg₁ hg₂ h₁ h₂
 
 end Field
 

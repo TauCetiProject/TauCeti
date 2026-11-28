@@ -39,11 +39,69 @@ carrier for quotients such as complex tori, is second countable when `M` is
 topological additive group (`Submodule.orbitRelQuotientContinuousAddEquiv`). The map of orbit
 spaces induced by a continuous semilinear map is continuous
 (`Submodule.continuous_orbitRelQuotientMap`).
+The map of quotients `M ⧸ p →SL[σ] M₂ ⧸ q` induced by a continuous semilinear map carrying `p` into
+`q` is bundled as `Submodule.mapQL`, completing Mathlib's `Submodule.mkQL` and `Submodule.liftQL`.
 -/
 
 public section
 
 namespace Submodule
+
+section MapQL
+
+variable {R R₂ : Type*} [Ring R] [Ring R₂] {σ : R →+* R₂} {M M₂ : Type*}
+  [TopologicalSpace M] [AddCommGroup M] [Module R M]
+  [TopologicalSpace M₂] [AddCommGroup M₂] [Module R₂ M₂]
+  (p : Submodule R M)
+
+/-- Precomposition with `p.mkQL` is injective on continuous semilinear maps out of `M ⧸ p`. -/
+theorem comp_mkQL_injective :
+    Function.Injective fun (φ : M ⧸ p →SL[σ] M₂) ↦ φ.comp p.mkQL :=
+  fun _ _ h ↦ ContinuousLinearMap.coe_injective <|
+    Submodule.linearMap_qext p (congrArg ContinuousLinearMap.toLinearMap h)
+
+variable (q : Submodule R₂ M₂)
+
+section
+variable (f : M →SL[σ] M₂) (h : p ≤ q.comap f.toLinearMap)
+
+/-- `Submodule.mapQ` bundled as a `ContinuousLinearMap`: a continuous semilinear map `f` carrying
+`p` into `q` induces a continuous semilinear map `M ⧸ p →SL[σ] M₂ ⧸ q`. -/
+def mapQL : M ⧸ p →SL[σ] M₂ ⧸ q :=
+  p.liftQL (q.mkQL.comp f) (by simpa [LinearMap.ker_comp] using h)
+
+@[simp, norm_cast] theorem toLinearMap_mapQL :
+    (p.mapQL q f h).toLinearMap = p.mapQ q f.toLinearMap h := (rfl)
+
+@[simp] theorem coe_mapQL : ⇑(p.mapQL q f h) = p.mapQ q f.toLinearMap h := (rfl)
+
+theorem mapQL_apply (x : M ⧸ p) : p.mapQL q f h x = p.mapQ q f.toLinearMap h x := (rfl)
+
+theorem mapQL_mk (x : M) : p.mapQL q f h (Quotient.mk x) = Quotient.mk (f x) := (rfl)
+
+@[simp] theorem mapQL_comp_mkQL : (p.mapQL q f h).comp p.mkQL = q.mkQL.comp f := (rfl)
+
+end
+
+@[simp] theorem mapQL_zero (h : p ≤ q.comap (0 : M →SL[σ] M₂).toLinearMap := by simp) :
+    p.mapQL q (0 : M →SL[σ] M₂) h = 0 := by ext; simp
+
+@[simp] theorem mapQL_id (h : p ≤ p.comap (ContinuousLinearMap.id R M).toLinearMap := by simp) :
+    p.mapQL p (ContinuousLinearMap.id R M) h = ContinuousLinearMap.id R (M ⧸ p) := by ext; simp
+
+theorem mapQL_comp {R₃ M₃ : Type*} [Ring R₃] [TopologicalSpace M₃] [AddCommGroup M₃]
+    [Module R₃ M₃] (r : Submodule R₃ M₃) {τ : R₂ →+* R₃} {ρ : R →+* R₃} [RingHomCompTriple σ τ ρ]
+    (f : M →SL[σ] M₂) (g : M₂ →SL[τ] M₃)
+    (hf : p ≤ q.comap f.toLinearMap) (hg : q ≤ r.comap g.toLinearMap)
+    (h : p ≤ r.comap (g.comp f).toLinearMap := hf.trans (comap_mono hg)) :
+    p.mapQL r (g.comp f) h = (q.mapQL r g hg).comp (p.mapQL q f hf) := by
+  refine p.comp_mkQL_injective ?_
+  dsimp only
+  rw [mapQL_comp_mkQL, ContinuousLinearMap.comp_assoc, mapQL_comp_mkQL,
+    ← ContinuousLinearMap.comp_assoc (q.mapQL r g hg), mapQL_comp_mkQL,
+    ContinuousLinearMap.comp_assoc]
+
+end MapQL
 
 variable {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M] [TopologicalSpace M]
   [SeparatelyContinuousAdd M] [AddCommGroup N] [Module R N] [TopologicalSpace N]

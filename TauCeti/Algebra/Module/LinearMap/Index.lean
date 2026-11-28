@@ -20,7 +20,8 @@ import TauCeti.LinearAlgebra.Prod
 This file extends Mathlib's algebraic `LinearMap.index` API with its invariance under composing with
 a linear equivalence or transporting along linear equivalences (`LinearMap.index_arrowCongr`), its
 additivity under binary products and finite coordinatewise maps (`LinearMap.index_prodMap`,
-`LinearMap.index_piMap`) with finite free kernels and cokernels, and its behaviour under
+`LinearMap.index_piMap`) with finite free kernels and cokernels (as well as
+`LinearMap.index_id_prodMap`, which needs no finiteness hypotheses), and its behaviour under
 restriction of scalars along a tower of division rings `K → L`: the index gets multiplied by
 `finrank K L`. For instance, the realification of a complex-linear map has twice its complex index.
 
@@ -99,6 +100,22 @@ lemma index_prodMap {Q : Type*} [AddCommGroup Q] [Module R Q] [StrongRankConditi
     (f.prodMap g).index = f.index + g.index := by
   simp only [index_eq_finrank_sub, finrank_ker_prodMap, finrank_quotient_range_prodMap]
   omega
+
+/-- Adjoining an identity block on the left does not change the index, with no finiteness
+assumptions. -/
+@[simp]
+lemma index_id_prodMap (f : M →ₗ[R] N) :
+    ((LinearMap.id (R := R) (M := P)).prodMap f).index = f.index := by
+  rw [index_eq_finrank_sub, index_eq_finrank_sub, ker_prodMap, ker_id, range_prodMap, range_id]
+  have hker : Module.finrank R ((⊥ : Submodule R P).prod f.ker) = Module.finrank R f.ker := by
+    let : Unique (⊥ : Submodule R P) := uniqueOfSubsingleton 0
+    exact (Submodule.prodEquiv _ _ ≪≫ₗ LinearEquiv.uniqueProd).finrank_eq
+  have hcoker : Module.finrank R ((P × N) ⧸ (⊤ : Submodule R P).prod f.range) =
+      Module.finrank R (N ⧸ f.range) := by
+    have : Subsingleton (P ⧸ (⊤ : Submodule R P)) := Submodule.Quotient.subsingleton_iff.mpr rfl
+    let : Unique (P ⧸ (⊤ : Submodule R P)) := uniqueOfSubsingleton 0
+    exact (Submodule.quotientProdEquiv _ _ ≪≫ₗ LinearEquiv.uniqueProd).finrank_eq
+  rw [hker, hcoker]
 
 /-- The index is additive under finite coordinatewise maps when the kernels and cokernels are
 finite free modules. -/

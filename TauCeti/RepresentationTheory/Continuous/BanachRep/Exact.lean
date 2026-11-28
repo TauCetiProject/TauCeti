@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.ExactStructure
 public import TauCeti.RepresentationTheory.Continuous.BanachRep.Basic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Exact
 
 /-!
 # The strict exact structure on Banach representations
@@ -69,20 +70,12 @@ section KernelCokernel
 
 variable {f : X ⟶ Y} {g : Y ⟶ Z}
 
-/-- The range of the first map of an exact pair is closed, being the kernel of the second. -/
-theorem isClosed_range_of_exact (hfg : Function.Exact f.hom g.hom) :
-    IsClosed (Set.range f.hom) := by
-  have h : LinearMap.ker (g.hom : Y →ₗ[𝕜] Z) = LinearMap.range (f.hom : X →ₗ[𝕜] Y) :=
-    Function.Exact.linearMap_ker_eq hfg
-  rw [← ContinuousLinearMap.coe_coe f.hom, ← LinearMap.coe_range, ← h]
-  exact g.hom.isClosed_ker
-
 /-- **An injective morphism whose range is the kernel of `g` is a kernel of `g`.** The lift of a
 morphism killed by `g` is continuous by the open mapping theorem. -/
 noncomputable def isLimitKernelForkOfExact (w : f ≫ g = 0) (hf : Function.Injective f.hom)
     (hfg : Function.Exact f.hom g.hom) : IsLimit (KernelFork.ofι f w) :=
   haveI := mono_of_injective f hf
-  let e := f.hom.equivRange hf (isClosed_range_of_exact hfg)
+  let e := f.hom.equivRange hf hfg.isClosed_range
   KernelFork.IsLimit.ofι' f w fun {T} k hk =>
     have hmem : ∀ t, k.hom t ∈ LinearMap.range (f.hom : X →ₗ[𝕜] Y) := fun t =>
       (hfg (k.hom t)).mp congr(($hk).hom t)
@@ -158,7 +151,7 @@ private theorem conflationClass_isInflation_iff (i : X ⟶ Y) :
     conflationClass.IsInflation i ↔
       Function.Injective i.hom ∧ IsClosed (Set.range i.hom) := by
   rw [ConflationClass.isInflation_iff]
-  refine ⟨fun ⟨_, _, _, hS⟩ => ⟨hS.1, isClosed_range_of_exact hS.2.2⟩, fun ⟨hi, hc⟩ => ?_⟩
+  refine ⟨fun ⟨_, _, _, hS⟩ => ⟨hS.1, hS.2.2.isClosed_range⟩, fun ⟨hi, hc⟩ => ?_⟩
   let W := LinearMap.range (i.hom : X →ₗ[𝕜] Y)
   have hW : ∀ (g : G), ∀ y ∈ W, Y.ρ g y ∈ W := range_invariant i
   refine ⟨quotient Y W hW hc, quotientπ Y W hW hc, hom_ext (ContinuousLinearMap.ext fun x => ?_),
