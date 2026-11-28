@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Order.Filter.Extr
 public import TauCeti.Combinatorics.Network.Augmentation
 
 /-!
@@ -36,9 +35,6 @@ starts from it.
 
 ## Main definitions
 
-* `TauCeti.BoundedFlow.IsMaximum` and `TauCeti.BoundedFlow.IsMinimum`: bounded `s`–`t`
-  assignments of largest and smallest value, exchanged by terminal swap.
-* `TauCeti.Flow.IsMaximum`: an ordinary `s`–`t` flow of largest value.
 * `TauCeti.Flow.AugmentsTo`: one augmentation step, along an augmenting walk by its bottleneck.
 
 ## Main results
@@ -72,101 +68,6 @@ variable {V : Type u} {Q : V → V → Type v} {K : Type w}
 variable [Fintype V] [∀ v w, Fintype (Q v w)] [AddCommGroup K]
 
 namespace BoundedFlow
-
-section Preorder
-
-variable [Preorder K] {lo hi : Assignment Q K} {s t : V}
-
-/-- A bounded `s`–`t` assignment is *maximum* when it maximizes the value among all bounded
-`s`–`t` assignments for the same bounds. -/
-def IsMaximum (f : BoundedFlow lo hi s t) : Prop :=
-  IsMaxOn val Set.univ f
-
-/-- A bounded `s`–`t` assignment `f` is maximum exactly when every bounded `s`–`t` assignment for
-the same bounds has value at most `f.val`. -/
-theorem isMaximum_iff {f : BoundedFlow lo hi s t} :
-    f.IsMaximum ↔ ∀ g : BoundedFlow lo hi s t, g.val ≤ f.val :=
-  isMaxOn_univ_iff
-
-/-- When the terminals coincide, every bounded assignment is maximum. -/
-theorem isMaximum_of_eq (hst : s = t) (f : BoundedFlow lo hi s t) : f.IsMaximum :=
-  isMaximum_iff.2 fun g ↦ (val_eq_zero_of_eq hst g).trans_le (val_eq_zero_of_eq hst f).ge
-
-/-- A bounded terminal assignment is minimum when no other feasible assignment has smaller
-terminal value. No sign condition is imposed on that value. -/
-def IsMinimum (f : BoundedFlow lo hi s t) : Prop :=
-  IsMinOn val Set.univ f
-
-/-- A bounded `s`–`t` assignment `f` is minimum exactly when every bounded `s`–`t` assignment for
-the same bounds has value at least `f.val`. -/
-theorem isMinimum_iff {f : BoundedFlow lo hi s t} :
-    f.IsMinimum ↔ ∀ g : BoundedFlow lo hi s t, f.val ≤ g.val :=
-  isMinOn_univ_iff
-
-/-- When the terminals coincide, every bounded assignment is minimum. -/
-theorem isMinimum_of_eq (hst : s = t) (f : BoundedFlow lo hi s t) : f.IsMinimum :=
-  isMinimum_iff.2 fun g ↦ (val_eq_zero_of_eq hst f).trans_le (val_eq_zero_of_eq hst g).ge
-
-@[simp]
-theorem isMaximum_congr_iff {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo')
-    (hhi : hi = hi') (hs : s = s') (ht : t = t') (f : BoundedFlow lo hi s t) :
-    (BoundedFlow.congr hlo hhi hs ht f).IsMaximum ↔ f.IsMaximum := by
-  rw [isMaximum_iff, isMaximum_iff, ← (BoundedFlow.congr hlo hhi hs ht).forall_congr_right]
-  simp
-
-@[simp]
-theorem isMinimum_congr_iff {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo')
-    (hhi : hi = hi') (hs : s = s') (ht : t = t') (f : BoundedFlow lo hi s t) :
-    (BoundedFlow.congr hlo hhi hs ht f).IsMinimum ↔ f.IsMinimum := by
-  rw [isMinimum_iff, isMinimum_iff, ← (BoundedFlow.congr hlo hhi hs ht).forall_congr_right]
-  simp
-
-end Preorder
-
-/-- All minimum bounded terminal assignments have the same value. -/
-theorem IsMinimum.val_eq [PartialOrder K] {lo hi : Assignment Q K} {s t : V}
-    {f g : BoundedFlow lo hi s t} (hf : f.IsMinimum) (hg : g.IsMinimum) : f.val = g.val :=
-  le_antisymm (isMinimum_iff.1 hf g) (isMinimum_iff.1 hg f)
-
-/-- All maximum bounded `s`–`t` assignments have the same value. -/
-theorem IsMaximum.val_eq [PartialOrder K] {lo hi : Assignment Q K} {s t : V}
-    {f g : BoundedFlow lo hi s t} (hf : f.IsMaximum) (hg : g.IsMaximum) : f.val = g.val :=
-  le_antisymm (isMaximum_iff.1 hg f) (isMaximum_iff.1 hf g)
-
-section Ordered
-
-variable [Preorder K] [AddLeftMono K] {lo hi : Assignment Q K} {s t : V}
-
-/-- Exchanging the terminals exchanges minimum and maximum assignments. -/
-@[simp]
-theorem isMaximum_swap (f : BoundedFlow lo hi s t) : f.swap.IsMaximum ↔ f.IsMinimum := by
-  rw [isMaximum_iff, isMinimum_iff]
-  constructor
-  · intro h g
-    simpa using h g.swap
-  · intro h g
-    rw [val_swap]
-    exact le_neg.1 (by simpa using h g.swap)
-
-/-- Exchanging the terminals exchanges maximum and minimum assignments. -/
-@[simp]
-theorem isMinimum_swap (f : BoundedFlow lo hi s t) : f.swap.IsMinimum ↔ f.IsMaximum := by
-  rw [← isMaximum_swap, swap_swap]
-
-/-- A bounded `s`–`t` assignment whose value equals minus the cut bound of the complement of a
-vertex set containing `s` but not `t` is minimum. -/
-theorem isMinimum_of_val_eq_neg_cutBound_compl [DecidableEq V]
-    (f : BoundedFlow lo hi s t) {S : Finset V} (hs : s ∈ S) (ht : t ∉ S)
-    (h : f.val = -cutBound lo hi Sᶜ) : f.IsMinimum :=
-  isMinimum_iff.2 fun g ↦ h ▸ g.neg_cutBound_compl_le_val hs ht
-
-/-- A bounded `s`–`t` assignment whose value equals the cut bound of a vertex set containing `s`
-but not `t` is maximum. -/
-theorem isMaximum_of_val_eq_cutBound [DecidableEq V] (f : BoundedFlow lo hi s t) {S : Finset V}
-    (hs : s ∈ S) (ht : t ∉ S) (h : f.val = cutBound lo hi S) : f.IsMaximum :=
-  isMaximum_iff.2 fun g ↦ h ▸ g.val_le_cutBound hs ht
-
-end Ordered
 
 section PartialOrder
 
@@ -262,42 +163,6 @@ end BoundedFlow
 /-! ### Ordinary flows -/
 
 namespace Flow
-
-section Preorder
-
-variable [Preorder K] {cap : Assignment Q K} {s t : V}
-
-/-- An ordinary `s`–`t` flow is *maximum* when it maximizes the value among all ordinary `s`–`t`
-flows for the same capacities. -/
-def IsMaximum (f : Flow cap s t) : Prop :=
-  IsMaxOn (fun g : Flow cap s t ↦ g.val) Set.univ f
-
-/-- An ordinary `s`–`t` flow `f` is maximum exactly when every ordinary `s`–`t` flow for the same
-capacities has value at most `f.val`. -/
-theorem isMaximum_iff {f : Flow cap s t} : f.IsMaximum ↔ ∀ g : Flow cap s t, g.val ≤ f.val :=
-  isMaxOn_univ_iff
-
-@[simp]
-theorem isMaximum_congr_iff {cap' : Assignment Q K} {s' t' : V} (hcap : cap = cap') (hs : s = s')
-    (ht : t = t') (f : Flow cap s t) :
-    (Flow.congr hcap hs ht f).IsMaximum ↔ f.IsMaximum := by
-  rw [isMaximum_iff, isMaximum_iff, ← (Flow.congr hcap hs ht).forall_congr_right]
-  simp
-
-end Preorder
-
-/-- An ordinary flow is maximum among ordinary flows exactly when it is maximum among all bounded
-assignments with zero lower bounds: a bounded assignment of larger value has positive value, so it
-is itself an ordinary flow. -/
-@[simp]
-theorem isMaximum_toBoundedFlow [LinearOrder K] {cap : Assignment Q K} {s t : V}
-    (f : Flow cap s t) : f.toBoundedFlow.IsMaximum ↔ f.IsMaximum := by
-  rw [BoundedFlow.isMaximum_iff, isMaximum_iff]
-  refine ⟨fun hf g ↦ hf g.toBoundedFlow, fun hf g ↦ le_of_not_gt fun hg ↦ ?_⟩
-  have hg₀ : 0 ≤ excessAt g.toFun t := by
-    rw [← BoundedFlow.val_def]
-    exact f.val_nonneg.trans hg.le
-  exact (hf ⟨g, hg₀⟩).not_gt hg
 
 section LinearOrder
 
