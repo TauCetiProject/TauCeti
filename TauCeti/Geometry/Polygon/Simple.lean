@@ -303,6 +303,20 @@ private theorem eq_vertex_of_mem_affineSegment_right
       exact .inr ⟨(Fin.finRotate_succ_eq_succ_succAbove i).symm,
         (insertVertex_apply_succAbove _ _ _ _).symm⟩
 
+/-- Inserting a vertex into an edge `poly i → poly (i + 1)` keeps all edges nondegenerate, as long
+as the new vertex differs from both endpoints. -/
+private theorem hasNondegenerateEdges_insertVertex (hp : poly.HasNondegenerateEdges)
+    (hac : poly i ≠ c) (hcb : c ≠ poly (finRotate n i)) :
+    (poly.insertVertex i c).HasNondegenerateEdges := fun j ↦ by
+  rcases Fin.eq_succ_or_eq_castSucc_or_eq_succAbove i j with rfl | rfl | ⟨k, hk, rfl⟩
+  · rw [insertVertex_apply_succ_self, insertVertex_apply_finRotate_succ_self]
+    exact hcb
+  · rw [Fin.finRotate_castSucc, insertVertex_apply_castSucc_self, insertVertex_apply_succ_self]
+    exact hac
+  · rw [Fin.finRotate_succ_succAbove_of_ne hk, insertVertex_apply_succAbove,
+      insertVertex_apply_succAbove]
+    exact hp k
+
 /-- Inserting a vertex preserves simplicity if the two replacement segments meet only at the
 new vertex, avoid the opposite endpoints, and meet every other edge only at the old endpoints.
 This criterion includes both nondegenerate triangle moves and subdivisions of an edge. -/
@@ -318,14 +332,7 @@ theorem IsSimple.insertVertex (hp : poly.IsSimple R)
   have hright : poly i ∉ affineSegment R c (poly (finRotate n i)) := fun hx ↦
     hac (hinter.subset ⟨left_mem_affineSegment _ _ _, hx⟩)
   refine ⟨fun j => ?_, fun j₁ j₂ x hne hx₁ hx₂ => ?_⟩
-  · rcases Fin.eq_succ_or_eq_castSucc_or_eq_succAbove i j with rfl | rfl | ⟨k, hk, rfl⟩
-    · rw [insertVertex_apply_succ_self, insertVertex_apply_finRotate_succ_self]
-      exact hcb
-    · rw [Fin.finRotate_castSucc, insertVertex_apply_castSucc_self, insertVertex_apply_succ_self]
-      exact hac
-    · rw [Fin.finRotate_succ_succAbove_of_ne hk, insertVertex_apply_succAbove,
-        insertVertex_apply_succAbove]
-      exact hp.hasNondegenerateEdges k
+  · exact hasNondegenerateEdges_insertVertex hp.hasNondegenerateEdges hac hcb j
   -- The two new edges meet only at the new vertex.
   have new (hx₁ : x ∈ affineSegment R (poly i) c)
       (hx₂ : x ∈ affineSegment R c (poly (finRotate n i))) :
