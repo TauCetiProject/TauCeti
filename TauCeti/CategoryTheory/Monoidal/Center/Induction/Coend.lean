@@ -213,18 +213,6 @@ private theorem inductionCoendι_eq_coendιAux (X Y : C) :
         (IsFiniteSemisimpleCategory.chosenSimpleIso Y) X :=
   rfl
 
-omit [MonoidalPreadditive C] in
-private theorem inductionCoendι_def (X Y : C) :
-    inductionCoendι X Y = ∑ i : IsFiniteSemisimpleCategory.chosenSimpleIndex Y,
-      SimpleClasses.decompProj (IsFiniteSemisimpleCategory.chosenSimpleFamily Y)
-          (IsFiniteSemisimpleCategory.chosenSimpleIso Y) i ▷ (X ⊗ Yᘁ) ≫
-        (SimpleClasses.classOf (IsFiniteSemisimpleCategory.chosenSimpleFamily Y i)).repr ◁ X ◁
-          (SimpleClasses.decompIncl (IsFiniteSemisimpleCategory.chosenSimpleFamily Y)
-            (IsFiniteSemisimpleCategory.chosenSimpleIso Y) i)ᘁ ≫
-        biproduct.ι (inductionSummand X)
-          (SimpleClasses.classOf (IsFiniteSemisimpleCategory.chosenSimpleFamily Y i)) :=
-  rfl
-
 include k in
 /-- Dinaturality of `inductionCoendι`: precomposing with `g ▷ (X ⊗ Y'ᘁ)` on the first factor agrees
 with precomposing with `Y ◁ X ◁ gᘁ` on the third factor. -/
@@ -247,7 +235,7 @@ private theorem exists_inductionCoendι_repr_iso (X : C) (S : SimpleClasses C) :
       ⟨(SimpleClasses.classOfReprIso _).symm ≪≫ u.symm⟩).trans (SimpleClasses.classOf_repr S)
   refine ⟨SimpleClasses.classOf (IsFiniteSemisimpleCategory.chosenSimpleFamily S.repr default),
     u, hcls, ?_⟩
-  rw [inductionCoendι_def, Fintype.sum_unique,
+  rw [inductionCoendι_eq_coendιAux, coendιAux_def, Fintype.sum_unique,
     ← IsFiniteSemisimpleCategory.chosenSimpleDecompIso_hom,
     ← IsFiniteSemisimpleCategory.chosenSimpleDecompIso_inv,
     summandTransport_hom, Category.assoc]
@@ -269,7 +257,7 @@ omit [MonoidalPreadditive C] in
 @[reassoc]
 theorem inductionCoendι_comp_inductionMap {X X' : C} (f : X ⟶ X') (Y : C) :
     inductionCoendι X Y ≫ inductionMap f = Y ◁ f ▷ Yᘁ ≫ inductionCoendι X' Y := by
-  rw [inductionCoendι_def, inductionCoendι_def]
+  rw [inductionCoendι_eq_coendιAux, inductionCoendι_eq_coendιAux, coendιAux_def, coendιAux_def]
   simp only [Preadditive.sum_comp, Preadditive.comp_sum, Category.assoc, biproduct.ι_map]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [← whiskerLeft_comp_assoc, whisker_exchange, whiskerLeft_comp_assoc,
@@ -435,7 +423,7 @@ theorem map_coendι_comp_inductionMapDesc {D : Type*} [Category* D] [Preadditive
     F.map (inductionCoendι X Y) ≫ inductionMapDesc w = w Y := by
   let a := IsFiniteSemisimpleCategory.chosenSimpleFamily Y
   let e := IsFiniteSemisimpleCategory.chosenSimpleIso Y
-  rw [inductionCoendι_def, F.map_sum, Preadditive.sum_comp]
+  rw [inductionCoendι_eq_coendιAux, coendιAux_def, F.map_sum, Preadditive.sum_comp]
   calc ∑ i, F.map (SimpleClasses.decompProj a e i ▷ (X ⊗ Yᘁ) ≫
           _ ◁ X ◁ (SimpleClasses.decompIncl a e i)ᘁ ≫
           biproduct.ι (inductionSummand X) (SimpleClasses.classOf (a i))) ≫ inductionMapDesc w

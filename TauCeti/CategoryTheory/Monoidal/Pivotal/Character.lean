@@ -198,8 +198,11 @@ theorem endAlgEquivOfSimple_globalDim_eq_sum :
       ∑ S : SimpleClasses C,
         endAlgEquivOfSimple k (𝟙_ C) (End.of (leftDim S.repr)) *
           endAlgEquivOfSimple k (𝟙_ C) (End.of (rightDim S.repr)) := by
-  rw [globalDim_eq_sum_leftDim_comp_rightDim, endAlgEquivOfSimple_sum]
+  rw [globalDim_eq_sum_leftDim_comp_rightDim]
+  refine (map_sum (End.linearEquiv.symm.trans (endAlgEquivOfSimple k (𝟙_ C)).toLinearEquiv)
+    (fun S : SimpleClasses C ↦ leftDim S.repr ≫ rightDim S.repr) Finset.univ).trans ?_
   refine Finset.sum_congr rfl fun S _ ↦ ?_
+  change endAlgEquivOfSimple k (𝟙_ C) (End.of _) = _
   rw [End.of_comp, map_mul, mul_comm]
 
 end GlobalDimScalar

@@ -32,8 +32,6 @@ endomorphism algebra is `k(t)`.
   `TauCeti.algebraMap_endAlgEquivOfSimple`;
 * `TauCeti.endAlgEquivOfSimple_smul_id`: every endomorphism `f` is `endAlgEquivOfSimple k X f`
   times the identity, and `TauCeti.endAlgEquivOfSimple_apply_eq_iff` characterizes the scalar;
-* `TauCeti.endAlgEquivOfSimple_sum` and `TauCeti.endAlgEquivOfSimple_nsmul`: push
-  `endAlgEquivOfSimple k X (End.of ·)` through finite sums and natural-number multiples;
 * `CategoryTheory.End.of_id`, `CategoryTheory.End.of_comp`, … of
   `TauCeti.CategoryTheory.Linear.Endomorphism` are `simp` lemmas pushing `End.of` inside
   expressions built from morphisms `f : X ⟶ X`, after which `map_mul`, `map_add`, … let `simp`
@@ -100,19 +98,6 @@ theorem endAlgEquivOfSimple_smul_id (f : End X) : endAlgEquivOfSimple k X f • 
 theorem endAlgEquivOfSimple_apply_eq_iff (f : End X) (c : k) :
     endAlgEquivOfSimple k X f = c ↔ f.asHom = c • 𝟙 X := by
   rw [← AlgEquiv.eq_symm_apply, End.ext_iff, endAlgEquivOfSimple_symm_apply, End.algebraMap_asHom]
-
-/-- `endAlgEquivOfSimple` commutes with `Finset.sum` applied to `End.of`. -/
-theorem endAlgEquivOfSimple_sum {ι : Type*} (s : Finset ι) (f : ι → (X ⟶ X)) :
-    endAlgEquivOfSimple k X (End.of (∑ i ∈ s, f i)) =
-      ∑ i ∈ s, endAlgEquivOfSimple k X (End.of (f i)) := by
-  induction s using Finset.cons_induction with
-  | empty => simp
-  | cons a s ha ih => simp [ih]
-
-/-- `endAlgEquivOfSimple` pulls natural-number scalar multiplication out of `End.of`. -/
-theorem endAlgEquivOfSimple_nsmul (n : ℕ) (f : X ⟶ X) :
-    endAlgEquivOfSimple k X (End.of (n • f)) = n * endAlgEquivOfSimple k X (End.of f) := by
-  rw [← Nat.cast_smul_eq_nsmul k, End.of_smul, map_smul, smul_eq_mul]
 
 end Scalar
 
