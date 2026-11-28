@@ -27,6 +27,8 @@ counterpart of `NumberField.InfinitePlace.eq_equivOfRingEquiv_iff`.
   `w.valuation L (e x) = v.valuation K x`.
 * `RingEquiv.valuation_equivOfRingEquiv`: the same for the finite place of `L` corresponding to
   `v`.
+* `RingEquiv.valuation_eq_valuation_equivOfRingEquiv_symm`: the same, indexed by the finite place
+  `w` of `L`, for the corresponding place of `K`.
 * `RingEquiv.eq_equivOfRingEquiv_iff`: a finite place `w` of `L` is the place corresponding to `v`
   exactly when `w.valuation L (e x) = v.valuation K x` for every `x ∈ K`.
 -/
@@ -56,6 +58,17 @@ theorem valuation_equivOfRingEquiv (e : K ≃+* L) (v : HeightOneSpectrum (𝓞 
     (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) v).valuation L (e x) =
       v.valuation K x :=
   e.valuation_apply_of_asIdeal_eq (asIdeal_equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) v) x
+
+/-- A ring isomorphism `e : K ≃+* L` of number fields carries the valuation at the finite place of
+`K` corresponding to a finite place `w` of `L` to the valuation at `w`: this is the hypothesis of
+`adicCompletionCongr` for that pair of places. -/
+theorem valuation_eq_valuation_equivOfRingEquiv_symm (e : K ≃+* L) (w : HeightOneSpectrum (𝓞 L))
+    (x : K) :
+    w.valuation L (e x) =
+      ((HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e)).symm w).valuation K
+        x :=
+  e.valuation_apply_of_asIdeal_eq
+    (by rw [← asIdeal_equivOfRingEquiv, Equiv.apply_symm_apply]) x
 
 /-- **The image of a finite place is characterised by its valuation**: a finite place `w` of `L`
 satisfies `w.valuation L (e x) = v.valuation K x` for all `x ∈ K` exactly when it is the image of
