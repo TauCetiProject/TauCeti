@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import TauCeti.Algebra.Homology.Ext.DualNumbers
 import Mathlib.LinearAlgebra.Basis.Prod
+import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.CategoryTheory.Linear.Biproduct
 
 /-!
@@ -39,10 +40,6 @@ local notation "P" => dualNumberFree k
 local notation "S" => dualNumberResidue k
 local notation "s₁" => ModuleCat.Hom.hom (dualNumberProj k) (1 : DualNumber k)
 
-private noncomputable def dualNumberFreeEndEquiv : (P ⟶ P) ≃ₗ[k] B where
-  toAddEquiv := ModuleCat.homAddEquiv.trans (LinearMap.ringLmapEquivSelf B B B).toAddEquiv
-  map_smul' _ _ := rfl
-
 private theorem fst_homDualNumberResidue_eq_zero (f : S →ₗ[B] B) (x : S) :
     (f x).fst = 0 := by
   have h : DualNumber.eps * f x = 0 := by
@@ -59,7 +56,8 @@ private noncomputable def homDualNumberResidueToFreeEquiv : (S ⟶ P) ≃ₗ[k] 
     constructor
     · intro f g hfg
       apply (cancel_epi (dualNumberProj k)).1
-      apply (dualNumberFreeEndEquiv k).injective
+      apply (ModuleCat.homSelfLinearEquiv k P).injective
+      rw [ModuleCat.homSelfLinearEquiv_apply, ModuleCat.homSelfLinearEquiv_apply]
       exact TrivSqZeroExt.ext
         ((fst_homDualNumberResidue_eq_zero k f.hom s₁).trans
           (fst_homDualNumberResidue_eq_zero k g.hom s₁).symm) hfg
@@ -80,59 +78,31 @@ private noncomputable def homDualNumberResidueToFreeEquiv : (S ⟶ P) ≃ₗ[k] 
       change c * dualNumberResidueEquiv k s₁ = c
       rw [hone, mul_one]
 
-/-- The four constituent morphisms of an endomorphism of the regular and residue biproduct. -/
-private noncomputable def endDualNumberBiprodBlocks :
-    End (P ⊞ S) ≃+ ((P ⟶ P) × (S ⟶ P)) × ((P ⟶ S) × (S ⟶ S)) :=
-  -- The biproduct equivalences use the categorical module structure on morphisms.
-  letI (X Y : ModuleCat B) : Module k (X ⟶ Y) := Linear.homModule X Y
-  End.addEquiv.trans <| (homToBiprodLinearEquiv k (P ⊞ S) P S).toAddEquiv.trans <|
-    (homBiprodLinearEquiv k P P S).toAddEquiv.prodCongr (homBiprodLinearEquiv k S P S).toAddEquiv
-
-private theorem endDualNumberBiprodBlocks_apply (f : End (P ⊞ S)) :
-    endDualNumberBiprodBlocks k f =
-      ((biprod.inl ≫ f.asHom ≫ biprod.fst, biprod.inr ≫ f.asHom ≫ biprod.fst),
-        (biprod.inl ≫ f.asHom ≫ biprod.snd, biprod.inr ≫ f.asHom ≫ biprod.snd)) := by
-  simp [endDualNumberBiprodBlocks, AddEquiv.prodCongr, Equiv.prodCongr_apply,
-    homToBiprodLinearEquiv_apply, homBiprodLinearEquiv_apply]
-
 /-- The four blocks of an endomorphism of `B ⊕ S`, in row order. The diagonal blocks and the
 lower left block are evaluated at the corresponding cyclic generators. In the upper right block
 we take the coefficient of `ε`. -/
 noncomputable def endDualNumberBiprodResidueEquiv :
-    End (P ⊞ S) ≃ₗ[k] (B × k) × (k × k) :=
-  LinearEquiv.ofBijective
-    { toFun := fun f ↦
-        (((dualNumberFreeEndEquiv k) (biprod.inl ≫ f.asHom ≫ biprod.fst),
-          (homDualNumberResidueToFreeEquiv k) (biprod.inr ≫ f.asHom ≫ biprod.fst)),
-        ((homDualNumberFreeEquiv k) (biprod.inl ≫ f.asHom ≫ biprod.snd),
-          (homDualNumberResidueEquiv k) (biprod.inr ≫ f.asHom ≫ biprod.snd)))
-      map_add' := fun f g ↦ by
-        simp [Preadditive.add_comp, Preadditive.comp_add]
-        rfl
+    End (P ⊞ S) ≃ₗ[k] (B × k) × (k × k) := by
+  let regularEval := (ModuleCat.homSelfLinearEquiv k P).toAddEquiv
+  have regularEval_apply (g : P ⟶ P) : regularEval g = g.hom 1 :=
+    ModuleCat.homSelfLinearEquiv_apply g
+  let residueToFree := (homDualNumberResidueToFreeEquiv k).toAddEquiv
+  letI (X Y : ModuleCat B) : Module k (X ⟶ Y) := Linear.homModule X Y
+  -- The categorical action on maps into the regular module uses multiplication by the base
+  -- scalar, whereas the output coordinates use the componentwise action.
+  let topLinear : ((P ⟶ P) × (S ⟶ P)) ≃ₗ[k] (B × k) :=
+    { toAddEquiv := regularEval.prodCongr residueToFree
       map_smul' := fun c f ↦ by
-        simp only [End.smul_asHom, Linear.smul_comp, Linear.comp_smul, map_smul,
-          homDualNumberFreeEquiv_apply, ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply,
-          dualNumberResidueEquiv_apply, homDualNumberResidueEquiv_apply, RingHom.id_apply,
-          Prod.smul_mk, smul_eq_mul, Prod.mk.injEq]
-        refine ⟨⟨?_, ?_⟩, rfl⟩
-        · let z : B := (biprod.inl ≫ f.asHom ≫ biprod.fst : P ⟶ P).hom 1
-          -- The categorical scalar action on the regular module is multiplication by
-          -- the image of the base scalar.
-          change algebraMap k B c * z = c • z
-          exact (Algebra.smul_def c z).symm
-        · let z : B := (biprod.inr ≫ f.asHom ≫ biprod.fst : S ⟶ P).hom s₁
-          -- The same action on the upper right block is read in the `ε` coefficient.
-          change (algebraMap k B c * z).snd = c * z.snd
+        apply Prod.ext
+        · change regularEval _ = c • regularEval f.1
+          rw [regularEval_apply, regularEval_apply]
+          exact (Algebra.smul_def c (f.1.hom 1 : B)).symm
+        · change (algebraMap k B c * (f.2.hom s₁ : B)).snd = c * (f.2.hom s₁ : B).snd
           rw [← Algebra.smul_def]
-          rfl } <| by
-    let e := ((dualNumberFreeEndEquiv k).toAddEquiv.prodCongr
-      (homDualNumberResidueToFreeEquiv k).toAddEquiv).prodCongr
-      ((homDualNumberFreeEquiv k).toAddEquiv.prodCongr (homDualNumberResidueEquiv k).toAddEquiv)
-    convert e.bijective.comp (endDualNumberBiprodBlocks k).bijective using 1
-    funext f
-    simp only [LinearMap.coe_mk, AddHom.coe_mk, Function.comp_apply,
-      endDualNumberBiprodBlocks_apply]
-    rfl
+          rfl }
+  exact End.linearEquiv ≪≫ₗ homToBiprodLinearEquiv k (P ⊞ S) P S ≪≫ₗ
+    (homBiprodLinearEquiv k P P S).prodCongr (homBiprodLinearEquiv k S P S) ≪≫ₗ
+    topLinear.prodCongr ((homDualNumberFreeEquiv k).prodCongr (homDualNumberResidueEquiv k))
 
 /-- The entries are the values of the four block maps at their cyclic generators. -/
 @[simp]
@@ -142,9 +112,10 @@ theorem endDualNumberBiprodResidueEquiv_apply (f : End (P ⊞ S)) :
           ((biprod.inr ≫ f.asHom ≫ biprod.fst : S ⟶ P).hom s₁ : B).snd),
         (dualNumberResidueEquiv k ((biprod.inl ≫ f.asHom ≫ biprod.snd : P ⟶ S).hom 1),
           dualNumberResidueEquiv k ((biprod.inr ≫ f.asHom ≫ biprod.snd : S ⟶ S).hom s₁))) := by
-  simp only [endDualNumberBiprodResidueEquiv, LinearEquiv.ofBijective_apply,
-    LinearMap.coe_mk, AddHom.coe_mk, homDualNumberFreeEquiv_apply, homDualNumberResidueEquiv_apply]
-  rfl
+  simp only [endDualNumberBiprodResidueEquiv, LinearEquiv.trans_apply, End.linearEquiv_apply,
+    homToBiprodLinearEquiv_apply, homBiprodLinearEquiv_apply, LinearEquiv.prodCongr_apply,
+    homDualNumberFreeEquiv_apply, homDualNumberResidueEquiv_apply]
+  exact Prod.ext (Prod.ext (ModuleCat.homSelfLinearEquiv_apply _) rfl) rfl
 
 /-- The endomorphism algebra of the sum of the dual numbers and their residue module has
 rank five over any nontrivial commutative base ring. -/
