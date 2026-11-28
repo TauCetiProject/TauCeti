@@ -92,7 +92,8 @@ namespace TwoSidedIdeal
 
 section TopologicalClosure
 
-variable {A : Type*} [NonUnitalRing A] [TopologicalSpace A] [IsTopologicalRing A]
+variable {A : Type*} [NonUnitalNonAssocRing A] [TopologicalSpace A] [IsTopologicalAddGroup A]
+  [SeparatelyContinuousMul A]
 
 /-- The topological closure of a two-sided ideal in a possibly nonunital topological ring, as a
 native two-sided ideal. -/

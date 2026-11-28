@@ -132,17 +132,17 @@ theorem gc_annihilator_rightAnnihilator :
 
 /-- Taking annihilators reverses inclusion. -/
 theorem annihilator_antitone : Antitone (annihilator : TwoSidedIdeal R → TwoSidedIdeal R) :=
-  fun _ _ hIJ _ ha ↦ mem_annihilator.2 fun _ hx ↦ mul_eq_zero_of_mem_annihilator ha (hIJ hx)
+  gc_annihilator_rightAnnihilator.monotone_l
 
 theorem annihilator_le_annihilator (h : I ≤ J) : J.annihilator ≤ I.annihilator :=
   annihilator_antitone h
 
 theorem rightAnnihilator_anti : Antitone (rightAnnihilator (R := R)) :=
-  fun _ _ h => gc_annihilator_rightAnnihilator.monotone_u h
+  fun _ _ h => gc_annihilator_rightAnnihilator.monotone_u (OrderDual.toDual_le_toDual.mpr h)
 
 theorem le_rightAnnihilator_annihilator (I : TwoSidedIdeal R) :
     I ≤ I.annihilator.rightAnnihilator :=
-  le_annihilator_iff_le_rightAnnihilator.mp le_rfl
+  gc_annihilator_rightAnnihilator.le_u_l I
 
 theorem le_annihilator_rightAnnihilator (I : TwoSidedIdeal R) :
     I ≤ I.rightAnnihilator.annihilator :=
@@ -160,8 +160,7 @@ theorem rightAnnihilator_annihilator_rightAnnihilator (I : TwoSidedIdeal R) :
 
 @[simp]
 theorem annihilator_bot : (⊥ : TwoSidedIdeal R).annihilator = ⊤ :=
-  eq_top_iff.2 fun _ _ ↦ mem_annihilator.2 fun x hx ↦ by
-    rw [(mem_bot R).1 hx, mul_zero]
+  gc_annihilator_rightAnnihilator.l_bot
 
 @[simp]
 theorem rightAnnihilator_bot : (⊥ : TwoSidedIdeal R).rightAnnihilator = ⊤ :=
@@ -197,13 +196,7 @@ theorem rightAnnihilator_eq_top_iff [FaithfulSMul R R] {I : TwoSidedIdeal R} :
 
 @[simp]
 theorem annihilator_sup : (I ⊔ J).annihilator = I.annihilator ⊓ J.annihilator :=
-  le_antisymm (le_inf (annihilator_le_annihilator le_sup_left)
-      (annihilator_le_annihilator le_sup_right))
-    fun a ha ↦ by
-      rw [mem_inf R, mem_annihilator, mem_annihilator] at ha
-      refine mem_annihilator.2 fun x hx ↦ ?_
-      obtain ⟨y, hy, z, hz, rfl⟩ := mem_sup.1 hx
-      rw [mul_add, ha.left y hy, ha.right z hz, add_zero]
+  gc_annihilator_rightAnnihilator.l_sup
 
 theorem rightAnnihilator_sup (I J : TwoSidedIdeal R) :
     (I ⊔ J).rightAnnihilator = I.rightAnnihilator ⊓ J.rightAnnihilator :=

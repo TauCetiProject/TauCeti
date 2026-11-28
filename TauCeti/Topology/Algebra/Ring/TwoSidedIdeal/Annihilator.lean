@@ -43,8 +43,8 @@ instance isClosed_rightAnnihilator [SeparatelyContinuousMul A] [T1Space A] (I : 
 
 /-- Taking topological closure does not change the left annihilator of a two-sided ideal. -/
 @[simp]
-theorem annihilator_topologicalClosure [IsTopologicalRing A] [T1Space A]
-    (I : TwoSidedIdeal A) :
+theorem annihilator_topologicalClosure [IsTopologicalAddGroup A] [SeparatelyContinuousMul A]
+    [T1Space A] (I : TwoSidedIdeal A) :
     I.topologicalClosure.annihilator = I.annihilator :=
   le_antisymm (annihilator_le_annihilator I.le_topologicalClosure) fun a ha =>
     mem_annihilator.mpr fun _ hx =>
@@ -54,8 +54,8 @@ theorem annihilator_topologicalClosure [IsTopologicalRing A] [T1Space A]
 
 /-- Taking topological closure does not change the right annihilator of a two-sided ideal. -/
 @[simp]
-theorem rightAnnihilator_topologicalClosure [IsTopologicalRing A] [T1Space A]
-    (I : TwoSidedIdeal A) :
+theorem rightAnnihilator_topologicalClosure [IsTopologicalAddGroup A] [SeparatelyContinuousMul A]
+    [T1Space A] (I : TwoSidedIdeal A) :
     I.topologicalClosure.rightAnnihilator = I.rightAnnihilator :=
   le_antisymm (rightAnnihilator_anti I.le_topologicalClosure) fun a ha =>
     mem_rightAnnihilator.mpr fun _ hx =>
@@ -70,10 +70,11 @@ instance isClosed_moduleAnnihilator {R : Type*} [Ring R] [TopologicalSpace R]
     IsClosed (Module.annihilator R I : Set R) := by
   simpa only [← coe_asIdeal, asIdeal_annihilator] using I.isClosed_annihilator
 
-/-- In a `T₁` proper star topological ring, the topological closure of any two-sided ideal `I` is
-contained in its double annihilator. -/
-theorem topologicalClosure_le_annihilator_annihilator [IsTopologicalRing A] [T1Space A]
-    [StarRing A] [IsProperStar A] (I : TwoSidedIdeal A) :
+/-- In a `T₁` proper star ring with topological addition and separately continuous multiplication,
+the topological closure of any two-sided ideal `I` is contained in its double annihilator. -/
+theorem topologicalClosure_le_annihilator_annihilator [IsTopologicalAddGroup A]
+    [SeparatelyContinuousMul A] [T1Space A] [StarRing A] [IsProperStar A]
+    (I : TwoSidedIdeal A) :
     I.topologicalClosure ≤ I.annihilator.annihilator :=
   (I.topologicalClosure_le_iff _ I.annihilator.isClosed_annihilator).mpr
     I.le_annihilator_annihilator

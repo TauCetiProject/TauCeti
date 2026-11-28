@@ -87,14 +87,23 @@ theorem isClosedEssential_comap_iff_of_isHomeomorph {B E : Type*} [NonUnitalNonA
     (he : IsHomeomorph e) {I : TwoSidedIdeal B} :
     (I.comap e).IsClosedEssential ↔ I.IsClosedEssential := by
   rw [isClosedEssential_iff, isClosedEssential_iff]
-  refine forall_inf_eq_bot_comap_iff e (fun _ hJ => isClosed_comap he.continuous hJ)
-    fun K hK J hJK => ?_
-  have hset : (J : Set B) = e '' (K : Set A) := by
-    have hpre : e ⁻¹' (J : Set B) = (K : Set A) := by
-      rw [← hJK]
-      exact Set.ext fun _ => (mem_comap e).symm
-    rw [← hpre, Set.image_preimage_eq _ (EquivLike.surjective e)]
-  exact hset ▸ he.isClosedMap _ hK
+  let e' : A ≃+* B := { EquivLike.toEquiv e with map_mul' := map_mul e, map_add' := map_add e }
+  have hcomap (J : TwoSidedIdeal B) : e'.mapTwoSidedIdeal.symm J = J.comap e :=
+    ext fun _ => (mem_comap e').trans (mem_comap e).symm
+  simpa [hcomap] using e'.mapTwoSidedIdeal.symm.forall_inf_eq_bot_iff
+    (P := fun J : TwoSidedIdeal B => IsClosed (J : Set B))
+    (Q := fun K : TwoSidedIdeal A => IsClosed (K : Set A))
+    (fun J hJ => hcomap J ▸ isClosed_comap he.continuous hJ)
+    (fun K hK => by
+      have hset : (e'.mapTwoSidedIdeal K : Set B) = e '' (K : Set A) := by
+        ext b
+        refine ⟨fun hb => ⟨e'.symm b, ?_, e'.apply_symm_apply b⟩, ?_⟩
+        · simpa [RingEquiv.mapTwoSidedIdeal_apply, mem_comap] using hb
+        · rintro ⟨a, ha, rfl⟩
+          rw [SetLike.mem_coe, RingEquiv.mapTwoSidedIdeal_apply, mem_comap]
+          exact (e'.symm_apply_apply a).symm ▸ ha
+      exact hset ▸ he.isClosedMap _ hK)
+    (x := I)
 
 end ClosedEssential
 
@@ -159,14 +168,16 @@ theorem isClosedEssential_inf_iff
 
 @[simp]
 theorem isClosedEssential_topologicalClosure_iff
-    [IsTopologicalRing A] [T1Space A] [StarRing A] [IsProperStar A] {I : TwoSidedIdeal A} :
+    [IsTopologicalAddGroup A] [SeparatelyContinuousMul A] [T1Space A] [StarRing A]
+    [IsProperStar A] {I : TwoSidedIdeal A} :
     I.topologicalClosure.IsClosedEssential ↔ I.IsClosedEssential := by
   rw [isClosedEssential_iff_annihilator_eq_bot, isClosedEssential_iff_annihilator_eq_bot,
     I.annihilator_topologicalClosure]
 
 @[simp]
 theorem isEssential_topologicalClosure_iff
-    [IsTopologicalRing A] [T1Space A] [StarRing A] [IsProperStar A] {I : TwoSidedIdeal A} :
+    [IsTopologicalAddGroup A] [SeparatelyContinuousMul A] [T1Space A] [StarRing A]
+    [IsProperStar A] {I : TwoSidedIdeal A} :
     I.topologicalClosure.IsEssential ↔ I.IsEssential := by
   rw [← isClosedEssential_iff_isEssential, ← isClosedEssential_iff_isEssential,
     isClosedEssential_topologicalClosure_iff]

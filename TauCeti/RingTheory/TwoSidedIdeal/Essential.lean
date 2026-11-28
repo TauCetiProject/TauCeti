@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import TauCeti.Algebra.Module.Submodule.Essential
+public import TauCeti.Order.Hom.Basic
 public import TauCeti.RingTheory.TwoSidedIdeal.Basic
 
 /-!
@@ -21,6 +22,12 @@ Essential two-sided ideals (`TwoSidedIdeal.IsEssential`), lattice and `comap` AP
   `TwoSidedIdeal.isEssential_bot_iff`, `TwoSidedIdeal.isEssential_comap_iff`.
 * `TwoSidedIdeal.isEssential_of_isEssential_asIdeal`,
   `TwoSidedIdeal.isEssential_iff_isEssential_asIdeal`.
+
+## References
+
+* B. Blackadar, *Operator Algebras: Theory of C*-Algebras and von Neumann Algebras*, §II.5.4.7.
+* G. J. Murphy, *C*-Algebras and Operator Theory*, §3.1.
+* T. Y. Lam, *Lectures on Modules and Rings*, §3D.
 -/
 
 public section
@@ -75,38 +82,18 @@ theorem not_isEssential_bot [Nontrivial A] : ¬ (⊥ : TwoSidedIdeal A).IsEssent
 theorem IsEssential.ne_bot [Nontrivial A] (hI : I.IsEssential) : I ≠ ⊥ :=
   fun h => not_isEssential_bot (h ▸ hI)
 
-/-- Shared equivalence for essentiality-style conditions along a bijective nonunital ring
-homomorphism `e` when predicates `PA` and `PB` are preserved by `comap e` and inverse pullback. -/
-theorem forall_inf_eq_bot_comap_iff {B E : Type*} [NonUnitalNonAssocRing B]
-    [EquivLike E A B] [NonUnitalRingHomClass E A B] (e : E)
-    {PA : TwoSidedIdeal A → Prop} {PB : TwoSidedIdeal B → Prop}
-    (hAB : ∀ J : TwoSidedIdeal B, PB J → PA (J.comap e))
-    (hBA : ∀ K : TwoSidedIdeal A, PA K → ∀ J : TwoSidedIdeal B, J.comap e = K → PB J)
-    {I : TwoSidedIdeal B} :
-    (∀ K : TwoSidedIdeal A, PA K → I.comap e ⊓ K = ⊥ → K = ⊥) ↔
-      (∀ J : TwoSidedIdeal B, PB J → I ⊓ J = ⊥ → J = ⊥) := by
-  let e' : A ≃+* B := { EquivLike.toEquiv e with map_mul' := map_mul e, map_add' := map_add e }
-  let φ := e'.mapTwoSidedIdeal.symm
-  have hcomap (J : TwoSidedIdeal B) : J.comap e = φ J := by
-    ext a
-    exact (mem_comap e).trans (mem_comap e').symm
-  simp only [hcomap]
-  refine ⟨fun h J hJ hIJ => (map_eq_bot_iff φ).mp (h (φ J) (hcomap J ▸ hAB J hJ)
-      (by rw [← map_inf, hIJ, map_bot])),
-    fun h K hK hIK => ?_⟩
-  rw [← φ.apply_symm_apply K] at hIK ⊢
-  rw [← map_inf, map_eq_bot_iff] at hIK
-  rw [h (φ.symm K) (hBA K hK (φ.symm K) ((hcomap (φ.symm K)).trans (φ.apply_symm_apply K))) hIK,
-    map_bot]
-
 /-- Pulling back along a ring equivalence preserves and reflects essentiality. -/
 @[simp]
 theorem isEssential_comap_iff {B E : Type*} [NonUnitalNonAssocRing B]
     [EquivLike E A B] [NonUnitalRingHomClass E A B] (e : E) {I : TwoSidedIdeal B} :
     (I.comap e).IsEssential ↔ I.IsEssential := by
   rw [isEssential_iff_inf_eq_bot, isEssential_iff_inf_eq_bot]
-  simpa using forall_inf_eq_bot_comap_iff e (PA := fun _ => True) (PB := fun _ => True)
-    (fun _ _ => trivial) (fun _ _ _ _ => trivial)
+  let e' : A ≃+* B := { EquivLike.toEquiv e with map_mul' := map_mul e, map_add' := map_add e }
+  have hcomap : e'.mapTwoSidedIdeal.symm I = I.comap e :=
+    ext fun _ => (mem_comap e').trans (mem_comap e).symm
+  simpa [hcomap] using
+    e'.mapTwoSidedIdeal.symm.forall_inf_eq_bot_iff (P := fun _ => True) (Q := fun _ => True)
+      (fun _ _ => trivial) (fun _ _ => trivial) (x := I)
 
 section Ring
 

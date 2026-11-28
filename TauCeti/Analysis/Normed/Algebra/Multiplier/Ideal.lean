@@ -26,6 +26,12 @@ injective for proper star algebras iff `I` has zero left annihilator.
 * `NonUnitalStarSubalgebra.multiplierHom_eq_zero_iff`,
   `NonUnitalStarSubalgebra.multiplierHom_injective_iff`: kernel and injectivity characterizations
   for proper star algebras.
+
+## References
+
+* Iain Raeburn and Dana Williams, *Morita Equivalence and Continuous-Trace C*-Algebras*,
+  Section 2.3 and Proposition 2.54 (for C⋆-algebras).
+* Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2 (for C⋆-algebras).
 -/
 
 public section
