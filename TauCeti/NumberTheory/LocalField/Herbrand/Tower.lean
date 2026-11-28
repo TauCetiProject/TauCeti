@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Herbrand.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.Herbrand.IntegralClosure
+import TauCeti.RingTheory.IntegralClosure.Action.Basic
 
 /-!
 # Transitivity of the Herbrand functions

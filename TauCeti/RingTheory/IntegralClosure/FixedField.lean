@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.Basic
-public import TauCeti.RingTheory.DiscreteValuationRing.Invariant
+public import Mathlib.RingTheory.Invariant.Basic
+public import Mathlib.RingTheory.LocalRing.Defs
+import TauCeti.RingTheory.Invariant.Basic
 import TauCeti.RingTheory.LocalRing.FixedPoints
 
 /-!
@@ -17,8 +19,8 @@ For a Galois subgroup `H ≤ Gal(L/K)` and a subring or base ring `A` acting on 
 `integralClosure A (IntermediateField.fixedField H)`
 (`TauCeti.fixedPointsSubalgebraIntegralClosureEquiv`). When `H` is normal, this equivalence
 intertwines the quotient action of `Gal(L/K) ⧸ H` with `IsGalois.normalAutEquivQuotient H`
-(`TauCeti.fixedPointsSubalgebraIntegralClosureEquiv_smul`), and transfers `IsLocalRing` and
-`IsDiscreteValuationRing` from `integralClosure A L` to `integralClosure A (fixedField H)`.
+(`TauCeti.fixedPointsSubalgebraIntegralClosureEquiv_smul`), and transfers `IsLocalRing` from
+`integralClosure A L` to `integralClosure A (fixedField H)`.
 
 ## Main definitions and results
 
@@ -29,8 +31,6 @@ intertwines the quotient action of `Gal(L/K) ⧸ H` with `IsGalois.normalAutEqui
   action of `Gal(L/K) ⧸ H` and `IsGalois.normalAutEquivQuotient H`.
 * `TauCeti.instIsLocalRingIntegralClosureFixedField`: transfers `IsLocalRing` to
   `integralClosure A (fixedField H)`.
-* `TauCeti.instIsDiscreteValuationRingIntegralClosureFixedField`: transfers
-  `IsDiscreteValuationRing` to `integralClosure A (fixedField H)`.
 -/
 
 public section
@@ -106,19 +106,6 @@ variable {A H} in
 instance instIsLocalRingIntegralClosureFixedField [IsLocalRing (integralClosure A L)] :
     IsLocalRing (integralClosure A (fixedField H)) :=
   (fixedPointsSubalgebraIntegralClosureEquiv A H).toRingEquiv.isLocalRing
-
-/-- If `integralClosure A L` is a DVR and `H ≤ Gal(L/K)`, then
-`integralClosure A (fixedField H)` is a DVR. -/
-instance instIsDiscreteValuationRingIntegralClosureFixedField {A K L : Type*} [CommRing A]
-    [Field K] [Field L] [Algebra A K] [Algebra K L] [Algebra A L] [IsScalarTower A K L]
-    [_root_.IsDiscreteValuationRing (integralClosure A L)] {H : Subgroup (L ≃ₐ[K] L)} :
-    _root_.IsDiscreteValuationRing (integralClosure A (IntermediateField.fixedField H)) :=
-  have : Algebra.IsIntegral (FixedPoints.subalgebra A (integralClosure A L) H)
-      (integralClosure A L) := Algebra.IsIntegral.tower_top A
-  have := isDiscreteValuationRing_fixedPoints_subalgebra_of_isIntegral
-    (A := A) (B := integralClosure A L) (G := H)
-  _root_.IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing
-    (fixedPointsSubalgebraIntegralClosureEquiv A H)
 
 end FixedFieldEquiv
 

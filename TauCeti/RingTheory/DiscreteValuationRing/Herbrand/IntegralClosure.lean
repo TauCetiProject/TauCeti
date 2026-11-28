@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.Herbrand.Basic
-public import TauCeti.RingTheory.IntegralClosure.Action
 public import TauCeti.RingTheory.LocalRing.Herbrand.IntegralClosure
 import TauCeti.FieldTheory.Galois.Basic
+import TauCeti.RingTheory.IntegralClosure.Action.Basic
+import TauCeti.RingTheory.IntegralClosure.Action.EmbeddingSubgroup
 
 /-!
 # Herbrand functions and upper numbering in Galois field towers of DVRs

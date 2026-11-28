@@ -9,6 +9,7 @@ import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Tower
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 public import TauCeti.NumberTheory.LocalField.Herbrand.Jump
 import TauCeti.RingTheory.DiscreteValuationRing.Herbrand.IntegralClosure
+import TauCeti.RingTheory.IntegralClosure.Action.Basic
 
 /-!
 # The upper numbering in a Galois tower

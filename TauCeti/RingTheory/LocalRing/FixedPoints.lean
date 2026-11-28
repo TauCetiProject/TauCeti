@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.Algebra.Group.Action.MulDistribMulAction
 public import TauCeti.Algebra.Ring.Action.Invariant
-public import TauCeti.RingTheory.LocalRing.RingHom
+import TauCeti.RingTheory.LocalRing.RingHom.Subalgebra
 
 /-!
 # Fixed-point submonoids, subrings, and subalgebras of local rings
