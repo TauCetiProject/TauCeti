@@ -291,27 +291,35 @@ namespace TauCeti
 open NumberField
 open scoped NumberField Pointwise
 
-section PrimesOver
+section GalRestrict
 
-variable (K L : Type*) [Field K] [Field L] [NumberField K] [NumberField L]
-  [Algebra K L]
+variable (K L : Type*) [Field K] [Field L] [Algebra K L]
+  {A : Type*} [CommRing A] [Algebra A K] [IsFractionRing A K] [Algebra A (𝓞 L)]
+  [Algebra A L] [IsScalarTower A K L] [IsScalarTower A (𝓞 L) L] [IsIntegralClosure (𝓞 L) A L]
 
-/-- Restriction to rings of integers agrees with the canonical Galois action. -/
-theorem coe_galRestrict_eq_toRingHom (σ : L ≃ₐ[K] L) :
-    (galRestrict (𝓞 K) K L (𝓞 L) σ : 𝓞 L →+* 𝓞 L) =
+/-- Restriction to the ring of integers agrees with the canonical automorphism action. -/
+theorem coe_galRestrict_eq_toRingHom [Algebra.IsAlgebraic K L] (σ : L ≃ₐ[K] L) :
+    (galRestrict A K L (𝓞 L) σ : 𝓞 L →+* 𝓞 L) =
       MulSemiringAction.toRingHom (L ≃ₐ[K] L) (𝓞 L) σ := by
   ext1 z
   apply RingOfIntegers.ext
-  exact (algebraMap_galRestrict_apply (𝓞 K) σ z).trans
-    (algebraMap_smul_eq_apply σ z).symm
+  exact (algebraMap_galRestrict_apply A σ z).trans (algebraMap_smul_eq_apply σ z).symm
 
-/-- The action on primes above a base ideal agrees with the action on their underlying ideals. -/
+/-- The `galRestrict` action on primes above a base ideal agrees with the canonical action on
+their underlying ideals. -/
 @[simp]
-theorem coe_smul_primesOver_ringOfIntegers {p : Ideal (𝓞 K)}
+theorem coe_smul_primesOver_ringOfIntegers [FiniteDimensional K L] {p : Ideal A}
     (σ : L ≃ₐ[K] L) (P : p.primesOver (𝓞 L)) :
     (σ • P).val = σ • P.val := by
   rw [Ideal.coe_smul_primesOver_eq_map_galRestrict, Ideal.pointwise_smul_def,
     ← Ideal.map_coe, coe_galRestrict_eq_toRingHom]
+
+end GalRestrict
+
+section PrimesOver
+
+variable (K L : Type*) [Field K] [Field L] [NumberField K] [NumberField L]
+  [Algebra K L]
 
 /-- A prime above a base ideal has the same stabilizer as its underlying ideal. -/
 @[simp]

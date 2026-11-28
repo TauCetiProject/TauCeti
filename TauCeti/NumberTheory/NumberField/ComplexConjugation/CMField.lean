@@ -46,6 +46,8 @@ automorphism, not the identity, conjugating every complex embedding is CM.
   `NumberField.IsCMField.of_forall_isConj` assumes that the field is Galois over `ℚ` and totally
   complex; this criterion assumes only that the field is algebraic over `ℚ` and has one
   automorphism, not the identity, conjugating every complex embedding.
+* `AlgEquiv.commute_complexConj`: on an algebraic CM field, complex conjugation commutes
+  with every automorphism over `ℚ`, without a finiteness or Galois hypothesis.
 * `RingHom.star_comp`: on a CM field, every ring endomorphism of `ℂ` commutes with complex
   conjugation on embeddings.
 

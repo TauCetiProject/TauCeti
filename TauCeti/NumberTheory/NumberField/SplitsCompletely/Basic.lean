@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.RingTheory.Ideal.Int
 public import TauCeti.NumberTheory.RamificationInertia.Galois
 public import TauCeti.NumberTheory.RamificationInertia.Splitting
+import TauCeti.GroupTheory.GroupAction.Transitive
 
 /-!
 # Complete splitting in number fields
@@ -43,6 +44,8 @@ criteria connect complete splitting with the residue conditions used in prime-sp
   rational prime has that prime as its absolute norm.
 * `NumberField.ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot`: the relative
   orbit–stabilizer form of the splitting criterion.
+* `Ideal.galEquivPrimesOver`: evaluating at a prime above a completely split ideal identifies
+  the Galois group with the fiber of primes.
 * `NumberField.ncard_primesOver_ringOfIntegers_rat`: every rational prime splits completely in
   `ℚ`.
 
@@ -116,6 +119,46 @@ theorem ncard_primesOver_ringOfIntegers_rat (p : ℕ) [Fact p.Prime] :
 end NumberField
 
 namespace Ideal
+
+section Galois
+
+variable {K L A : Type*} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L]
+  [CommRing A] [Algebra A (𝓞 L)] [IsGaloisGroup Gal(L/K) A (𝓞 L)]
+
+/-- Under complete splitting, the orbit map at `Q` identifies the Galois group with the primes
+above `P`. It uses the action induced by the Galois group on the ring of integers. -/
+noncomputable def galEquivPrimesOver (P : Ideal A)
+    (Q : P.primesOver (𝓞 L)) (hP : (P.primesOver (𝓞 L)).ncard = finrank K L) :
+    Gal(L/K) ≃ P.primesOver (𝓞 L) := by
+  have : IsPretransitive Gal(L/K) (P.primesOver (𝓞 L)) := Ideal.isPretransitive_of_isGaloisGroup P _
+  have hsurj : Function.Surjective (fun g : Gal(L/K) ↦ g • Q) := exists_smul_eq Gal(L/K) Q
+  have : Finite (P.primesOver (𝓞 L)) := Finite.of_surjective _ hsurj
+  have hcard : Nat.card Gal(L/K) = Nat.card (P.primesOver (𝓞 L)) := by
+    refine le_antisymm ?_ (Nat.card_le_card_of_surjective _ hsurj)
+    rw [← Fintype.card_eq_nat_card, Nat.card_coe_set_eq, hP]
+    exact AlgEquiv.card_le
+  have h : stabilizer Gal(L/K) Q = ⊥ := TauCeti.stabilizer_eq_bot_of_natCard_eq hcard Q
+  exact ((QuotientGroup.quotientEquivSelf Gal(L/K)).symm.trans
+    (Subgroup.quotientEquivOfEq h.symm)).trans
+    (TauCeti.quotientStabilizerEquiv Gal(L/K) Q)
+
+/-- The Galois torsor bijection evaluates an automorphism at the chosen prime. -/
+@[simp]
+theorem galEquivPrimesOver_apply (P : Ideal A)
+    (Q : P.primesOver (𝓞 L)) (hP : (P.primesOver (𝓞 L)).ncard = finrank K L)
+    (g : Gal(L/K)) : P.galEquivPrimesOver Q hP g = g • Q := by
+  rw [galEquivPrimesOver, Equiv.trans_apply, Equiv.trans_apply,
+    show (QuotientGroup.quotientEquivSelf Gal(L/K)).symm g = QuotientGroup.mk g from rfl,
+    Subgroup.quotientEquivOfEq_mk, TauCeti.quotientStabilizerEquiv_mk]
+
+/-- The inverse Galois torsor bijection recovers the automorphism carrying `Q` to `g • Q`. -/
+@[simp]
+theorem galEquivPrimesOver_symm_apply_smul (P : Ideal A)
+    (Q : P.primesOver (𝓞 L)) (hP : (P.primesOver (𝓞 L)).ncard = finrank K L)
+    (g : Gal(L/K)) : (P.galEquivPrimesOver Q hP).symm (g • Q) = g := by
+  rw [← P.galEquivPrimesOver_apply Q hP, Equiv.symm_apply_apply]
+
+end Galois
 
 /-- **A full complement of primes forces unramifiedness.** If `𝓞 L` has `[L : K]` primes above a
 prime ideal `𝔭` of `𝓞 K`, then every prime `Q` of `𝓞 L` above `𝔭` is unramified over `𝓞 K`.

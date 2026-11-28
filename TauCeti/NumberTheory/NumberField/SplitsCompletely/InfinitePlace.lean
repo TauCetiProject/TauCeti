@@ -7,16 +7,16 @@ module
 
 public import Mathlib.NumberTheory.NumberField.CMField
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
-public import TauCeti.NumberTheory.NumberField.SplitsCompletely.Galois
+public import TauCeti.NumberTheory.NumberField.SplitsCompletely.Basic
 import TauCeti.NumberTheory.NumberField.ComplexConjugation.CMField
 
 /-!
 # Labelling split-prime conjugate pairs by infinite places
 
-In a Galois CM field, the primes above a completely split prime form a Galois torsor.
-After fixing a finite and an infinite base place, its quotient by complex conjugation
-is identified with the infinite places. In particular, a choice of one prime from each
-conjugate pair gives a finite-prime label at every infinite place.
+In a Galois CM field, fix an infinite place `w` and a prime `Q` over a completely split
+rational prime. A set `S` containing one prime of each conjugate pair above that rational
+prime is in bijection with the infinite places. The bijection sends `g • w` to `g • Q`
+whenever `g • Q` belongs to `S`.
 
 This is the pairing used in `New.Parameters.nonempty_infinitePlace_equiv_finPlace`
 in `New/Derivatives/Field/WeilData` of lsernau/grh-lean (`72fead1`); see Neukirch,
@@ -42,9 +42,10 @@ private theorem chosenPrimeOrbit_bijective (w : InfinitePlace E)
     IsCMField.isConj_complexConj E w.embedding
   have hstab : (stabilizer Gal(E/ℚ) w : Set Gal(E/ℚ)) = {1, c} := by
     rw [← mk_embedding w, hconj.coe_stabilizer_mk]
-  have hm (g : Gal(E/ℚ)) : e (c * g) = c • e g :=
-    (P.galEquivPrimesOver_apply Q hP (c * g)).trans
-      ((mul_smul c g Q).trans (congrArg (c • ·) (P.galEquivPrimesOver_apply Q hP g).symm))
+  have hm (g : Gal(E/ℚ)) : e (c * g) = c • e g := by
+    apply Subtype.ext
+    simp only [e, galEquivPrimesOver_apply, TauCeti.coe_smul_primesOver_ringOfIntegers,
+      coe_smul_primesOver, mul_smul]
   refine ⟨?_, ?_⟩
   · intro R R' h
     let g := e.symm R.val
@@ -69,8 +70,10 @@ private theorem chosenPrimeOrbit_bijective (w : InfinitePlace E)
     · refine ⟨⟨e (c * g), hm g ▸ (hS _).mpr h⟩,
         (congrArg (· • w) (e.symm_apply_apply (c * g))).trans ?_⟩
       -- The central conjugation fixes the infinite base place, so both choices label `v`.
-      have hc : c • w = w :=
-        mem_stabilizer_iff.mp (SetLike.mem_coe.mp (hstab ▸ Set.mem_insert_of_mem _ rfl))
+      have hc : c • w = w := by
+        apply mem_stabilizer_iff.mp
+        rw [← SetLike.mem_coe, hstab]
+        simp
       have hcomm : g * c = c * g := g.commute_complexConj.eq
       rw [← hcomm, mul_smul, hc, hg]
 
@@ -94,9 +97,9 @@ theorem equivPrimesOverTransversal_symm_apply (w : InfinitePlace E) (Q : P.prime
     (g : Gal(E/ℚ)) (hg : g • Q ∈ S) :
     (w.equivPrimesOverTransversal Q hP (S := S) hS).symm ⟨g • Q, hg⟩ = g • w := by
   have he : (P.galEquivPrimesOver Q hP).symm (g • Q) = g := by
-    rw [← P.galEquivPrimesOver_apply Q hP, Equiv.symm_apply_apply]
-  simpa only [equivPrimesOverTransversal, Equiv.symm_symm, Equiv.ofBijective_apply] using
-    congrArg (· • w) he
+    convert P.galEquivPrimesOver_symm_apply_smul Q hP g using 2
+    exact Subtype.ext (TauCeti.coe_smul_primesOver_ringOfIntegers ℚ E g Q)
+  simp only [equivPrimesOverTransversal, Equiv.symm_symm, Equiv.ofBijective_apply, he]
 
 /-- If the translate of `Q` belongs to the transversal, it labels the corresponding translate
 of the infinite base place. -/
