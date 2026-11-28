@@ -315,6 +315,13 @@ theorem strandIncl_T_castSucc (i : Fin n) :
   rw [strandIncl_T]
   exact congrArg (T q) (Fin.ext rfl)
 
+/-- Transporting a generator to an equal strand count casts its index. -/
+theorem cast_T {m : ℕ} (h : m = n) (i : Fin (m - 1)) :
+    (AlgEquiv.cast h : TypeAHeckeAlgebra R q m ≃ₐ[R] TypeAHeckeAlgebra R q n) (T q i) =
+      T q (Fin.cast (by rw [h]) i) := by
+  subst n
+  rfl
+
 /-- The last generator commutes with every element coming from two stages earlier in the
 finite Hecke tower. -/
 theorem commute_T_last_strandIncl_strandIncl (n : ℕ)

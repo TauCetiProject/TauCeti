@@ -77,6 +77,8 @@ Morse-theoretic definitions that use them.
   two fixed directions is continuous.
 * `TauCeti.fderiv_sum_comp_fderiv_apply`: the derivative of `y ↦ ∑ᵢ Lᵢ (Dω(y) bᵢ)` for fixed
   continuous linear maps `Lᵢ`, where the derivative of `ω` is differentiable.
+* `TauCeti.fderiv_sum_comp_smul_fderiv_add_mul_fderiv_smul_apply`: the product rule for frame
+  sums `y ↦ ∑ᵢ Lᵢ (c ∂ᵢφ(y) + t ∂ᵢf(y) φ(y))`, the shape of the summands of Witten's operators.
 * `ContDiffOn.hasFDerivWithinAt_fderiv_and_fderiv_fderiv`: the first and second derivatives of a
   map that is `C²` on an open set `U ⊇ s`, as derivatives within `s`.
 * `TauCeti.fderiv_fderiv_of_notMem_tsupport`: the second derivative vanishes off the support.
@@ -225,6 +227,30 @@ theorem fderiv_sum_comp_fderiv_apply {ι : Type*} [Fintype ι] (L : ι → F →
       ((ContinuousLinearMap.apply 𝕜 F (b i)).hasFDerivAt.comp x hω.hasFDerivAt)
   rw [(HasFDerivAt.fun_sum fun i _ ↦ h i).fderiv]
   simp
+
+/-- **The derivative of a frame sum of Witten summands**, by the product rule: for continuous
+linear maps `Lᵢ` and vectors `bᵢ`, with `∂ᵢ` the derivative in the direction `bᵢ`, the
+derivative of `y ↦ ∑ᵢ Lᵢ (c ∂ᵢφ + t ∂ᵢf φ)` at `x` in the direction `w` is
+`∑ᵢ Lᵢ (c ∂_w ∂ᵢφ + t ∂_w ∂ᵢf φ + t ∂ᵢf ∂_w φ)`, for `f` and `φ` that are `C²` at `x`. -/
+theorem fderiv_sum_comp_smul_fderiv_add_mul_fderiv_smul_apply {κ : Type*} [Fintype κ]
+    (L : κ → F →L[𝕜] G) (b : κ → E) {f : E → 𝕜} {φ : E → F} {x : E} (hf : ContDiffAt 𝕜 2 f x)
+    (hφ : ContDiffAt 𝕜 2 φ x) (t c : 𝕜) (w : E) :
+    fderiv 𝕜 (fun y ↦ ∑ i, L i (c • fderiv 𝕜 φ y (b i) + (t * fderiv 𝕜 f y (b i)) • φ y)) x w =
+      ∑ i, L i (c • fderiv 𝕜 (fderiv 𝕜 φ) x w (b i) + (t * fderiv 𝕜 (fderiv 𝕜 f) x w (b i)) • φ x +
+        (t * fderiv 𝕜 f x (b i)) • fderiv 𝕜 φ x w) := by
+  have h (i : κ) : HasFDerivAt
+      (fun y ↦ L i (c • fderiv 𝕜 φ y (b i) + (t * fderiv 𝕜 f y (b i)) • φ y))
+      ((L i).comp (c • (fderiv 𝕜 (fderiv 𝕜 φ) x).flip (b i) +
+        ((t * fderiv 𝕜 f x (b i)) • fderiv 𝕜 φ x +
+          (t • (fderiv 𝕜 (fderiv 𝕜 f) x).flip (b i)).smulRight (φ x)))) x :=
+    (L i).hasFDerivAt.comp x (((hφ.hasFDerivAt_fderiv_apply le_rfl (b i)).const_smul c).add
+      (((hf.hasFDerivAt_fderiv_apply le_rfl (b i)).const_mul t).smul
+        (hφ.differentiableAt (by norm_num)).hasFDerivAt))
+  rw [(HasFDerivAt.fun_sum fun i _ ↦ h i).fderiv]
+  simp only [sum_apply, ContinuousLinearMap.comp_apply, add_apply, smul_apply,
+    ContinuousLinearMap.flip_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul]
+  refine Finset.sum_congr rfl fun i _ ↦ congrArg _ ?_
+  abel
 
 /-- The first and second derivatives of a map that is `C²` on an open set `U ⊇ s`, as
 derivatives within `s`: `g` has derivative `fderiv 𝕜 g` and `fderiv 𝕜 g` has derivative
@@ -832,6 +858,31 @@ theorem fderiv_fderiv_apply_eq_smul_iteratedDeriv (φ : 𝕜 → F) (t a b : �
   have h := iteratedFDeriv_two_apply (𝕜 := 𝕜) φ t ![a, b]
   rw [iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod] at h
   simpa [Fin.prod_univ_two] using h.symm
+
+/-- **The second derivative of a function of separated variables.** For continuous linear maps
+`P : E → F` and `ℓ : E → 𝕜` and `C²` functions `φ` on `F` and `η` on `𝕜`, the second derivative
+of `y ↦ φ(P y) η(ℓ y)` is
+`D²φ(P v, P w) η + φ η'' ℓ v ℓ w + Dφ(P v) η' ℓ w + η' ℓ v Dφ(P w)`, all evaluated at `P y`
+and `ℓ y`. -/
+theorem fderiv_fderiv_mul_comp_apply {φ : F → 𝕜} {η : 𝕜 → 𝕜} (P : E →L[𝕜] F) (ℓ : E →L[𝕜] 𝕜)
+    {y : E} (hφ : ContDiffAt 𝕜 2 φ (P y)) (hη : ContDiffAt 𝕜 2 η (ℓ y)) (v w : E) :
+    fderiv 𝕜 (fderiv 𝕜 fun y => φ (P y) * η (ℓ y)) y v w =
+      φ (P y) * (ℓ v * ℓ w * iteratedDeriv 2 η (ℓ y)) +
+        η (ℓ y) * fderiv 𝕜 (fderiv 𝕜 φ) (P y) (P v) (P w) +
+        fderiv 𝕜 φ (P y) (P v) * (deriv η (ℓ y) * ℓ w) +
+        deriv η (ℓ y) * ℓ v * fderiv 𝕜 φ (P y) (P w) := by
+  have hφP : ContDiffAt 𝕜 2 (φ ∘ P) y := hφ.comp y P.contDiff.contDiffAt
+  have hηℓ : ContDiffAt 𝕜 2 (η ∘ ℓ) y := hη.comp y ℓ.contDiff.contDiffAt
+  have h := fderiv_fderiv_fun_mul_apply hφP hηℓ v w
+  simp only [Function.comp_apply] at h
+  rw [h, fderiv_fderiv_comp_apply hφ P.contDiff.contDiffAt,
+    fderiv_fderiv_comp_apply hη ℓ.contDiff.contDiffAt,
+    fderiv_comp y (hφ.differentiableAt two_ne_zero) P.differentiableAt,
+    fderiv_comp y (hη.differentiableAt two_ne_zero) ℓ.differentiableAt,
+    fderiv_fderiv_apply_eq_smul_iteratedDeriv]
+  simp only [ContinuousLinearMap.fderiv, ContinuousLinearMap.fderiv_fderiv, Pi.zero_apply,
+    zero_apply, map_zero, ContinuousLinearMap.comp_apply, fderiv_eq_smul_deriv, smul_eq_mul]
+  ring
 
 /-- The second derivative of a scalar function of one variable, a map from `𝕜` to the linear forms
 on `𝕜`, is invertible exactly when the second iterated derivative is nonzero. -/

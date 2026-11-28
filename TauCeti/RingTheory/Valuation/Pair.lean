@@ -31,6 +31,8 @@ valuation pair inside `F` (`ValuationSubring.isValuationPair_toSubring`).
 * `Subring.IsValuationPair.top_subring`: if `R ⊆ A` is a valuation pair, then `⊤ : Subring R` is a
   valuation pair.
 * `Subring.isValuationPair_top`: every `PreValuationRing A` is a valuation pair inside itself.
+* `Subring.IsValuationPair.pi`: the product `⨅ w, (R w).comap (Pi.evalRingHom B w)` of valuation
+  pairs `R w ⊆ B w` is a valuation pair in `∀ w, B w`.
 * `ValuationSubring.isValuationPair_toSubring`: every valuation subring of a field is a valuation
   pair inside that field.
 
@@ -94,6 +96,34 @@ theorem isValuationPair_top [PreValuationRing A] : (⊤ : Subring A).IsValuation
     obtain ⟨c, hc | hc⟩ := PreValuationRing.cond a b
     · exact Or.inr (mem_span_singleton.2 ⟨⟨c, trivial⟩, by simp [Subring.smul_def, mul_comm, hc]⟩)
     · exact Or.inl (mem_span_singleton.2 ⟨⟨c, trivial⟩, by simp [Subring.smul_def, mul_comm, hc]⟩)
+
+section Pi
+
+variable {σ : Type*} {B : σ → Type*} [∀ w, CommRing (B w)]
+
+/-- If every `R w ⊆ B w` is a valuation pair, then so is the product subring
+`⨅ w, (R w).comap (Pi.evalRingHom B w)` of `∀ w, B w`, the families `x` with `x w ∈ R w` for all
+`w`. For instance, the integers `∏ w, O w` of a product of fields `∏ w, F w` with valuation
+subrings `O w` form a valuation pair (with `ValuationSubring.isValuationPair_toSubring`). -/
+theorem IsValuationPair.pi {R : ∀ w, Subring (B w)} (hR : ∀ w, (R w).IsValuationPair) :
+    (⨅ w, (R w).comap (Pi.evalRingHom B w)).IsValuationPair := by
+  set S := ⨅ w, (R w).comap (Pi.evalRingHom B w)
+  have hS (x : ∀ w, B w) : x ∈ S ↔ ∀ w, x w ∈ R w := by simp [S, mem_iInf]
+  refine isValuationPair_iff.2 fun a b ↦ ?_
+  choose e he hle using fun w ↦ isValuationPair_iff.1 (hR w) (a w) (b w)
+  have mul_mem {x : ∀ w, B w} (hx : ∀ w, x w ∈ R w ∙ (a w - e w * (a w - b w))) :
+      x ∈ S ∙ (a - (fun w ↦ (e w : B w)) * (a - b)) := by
+    choose r hr using fun w ↦ mem_span_singleton.1 (hx w)
+    refine mem_span_singleton.2
+      ⟨⟨fun w ↦ r w, (hS _).2 fun w ↦ (r w).property⟩, funext fun w ↦ ?_⟩
+    simpa [Subring.smul_def] using hr w
+  refine ⟨⟨fun w ↦ e w, (hS _).2 fun w ↦ (e w).property⟩,
+    Subtype.ext (funext fun w ↦ congrArg Subtype.val (he w).eq), sup_le ?_ ?_⟩ <;>
+    refine (span_singleton_le_iff_mem _ _).2 (mul_mem fun w ↦ ?_)
+  · exact le_sup_left.trans (hle w) (mem_span_singleton_self _)
+  · exact le_sup_right.trans (hle w) (mem_span_singleton_self _)
+
+end Pi
 
 end Subring
 

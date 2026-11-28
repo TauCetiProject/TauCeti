@@ -369,6 +369,11 @@ needs no argument that the kernel of `O(GL_V) → ℝ ⊗[ℚ] O(GL_V) → O(S)`
 noncomputable def mumfordTateHopfIdeal : HopfIdeal ℚ (coordinateHopfAlgebra ℚ d) :=
   TauCeti.DeligneTorus.mumfordTateHopfIdeal (hs.deligneHom hℚ b)
 
+/-- `MT(V)` is the Mumford–Tate group of the homomorphism `h_V : S → GL_{V,ℝ}`. -/
+theorem mumfordTateHopfIdeal_eq_mumfordTateHopfIdeal_deligneHom :
+    hs.mumfordTateHopfIdeal hℚ b = TauCeti.DeligneTorus.mumfordTateHopfIdeal (hs.deligneHom hℚ b) :=
+  (rfl)
+
 /-- **Minimality of `MT(V)`**: a Hopf ideal `I` of `O(GL_V)` lies below the Mumford–Tate ideal
 exactly when `h_V` kills its real extension, that is, when `h_V` factors through the real
 extension of the closed `ℚ`-subgroup cut out by `I`. -/

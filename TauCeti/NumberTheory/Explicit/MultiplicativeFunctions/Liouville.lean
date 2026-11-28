@@ -112,23 +112,10 @@ theorem abs_liouvilleSum_le (hx : 0 ≤ x) : |liouvilleSum x| ≤ x := by
 
 /-! ### The summatory identities -/
 
-/-- Summing `f * g_□` over `n ≤ x` and grouping by the square divisor `w²`:
-`∑_{n ≤ x} (f * g_□)(n) = ∑_{w ≤ √x} g(w) ∑_{k ≤ x / w²} f(k)`. -/
-private theorem sum_Icc_natFloor_mul_dilateSq (f g : ArithmeticFunction ℤ) (x : ℝ) :
-    ∑ n ∈ Icc 1 ⌊x⌋₊, ((f * g.dilateSq) n : ℝ) =
-      ∑ w ∈ Icc 1 (Nat.sqrt ⌊x⌋₊), (g w : ℝ) * ∑ k ∈ Icc 1 ⌊x / w ^ 2⌋₊, (f k : ℝ) := by
-  have h := congrArg (Int.cast : ℤ → ℝ) (ArithmeticFunction.sum_Ioc_dilateSq_mul f g ⌊x⌋₊)
-  rw [mul_comm g.dilateSq f] at h
-  push_cast at h
-  simp only [← Icc_add_one_left_eq_Ioc, zero_add] at h
-  rw [h]
-  refine sum_congr rfl fun w _ ↦ ?_
-  rw [← Nat.cast_pow, Nat.floor_div_natCast]
-
 /-- `L_λ(x) = ∑_{w ≤ √x} M(x / w²)`, the sum running over the naturals `1 ≤ w ≤ √x`. -/
 theorem liouvilleSum_eq_sum_moebiusSum (x : ℝ) :
     liouvilleSum x = ∑ w ∈ Icc 1 (Nat.sqrt ⌊x⌋₊), moebiusSum (x / w ^ 2) := by
-  have h := sum_Icc_natFloor_mul_dilateSq μ (ζ : ArithmeticFunction ℤ) x
+  have h := ArithmeticFunction.sum_Icc_natFloor_mul_dilateSq μ (ζ : ArithmeticFunction ℤ) x
   rw [← ArithmeticFunction.liouville_eq_moebius_mul_dilateSq] at h
   rw [liouvilleSum_def, h]
   refine sum_congr rfl fun w hw ↦ ?_
@@ -139,7 +126,7 @@ theorem liouvilleSum_eq_sum_moebiusSum (x : ℝ) :
 /-- `M(x) = ∑_{w ≤ √x} μ(w) L_λ(x / w²)`, the sum running over the naturals `1 ≤ w ≤ √x`. -/
 theorem moebiusSum_eq_sum_liouvilleSum (x : ℝ) :
     moebiusSum x = ∑ w ∈ Icc 1 (Nat.sqrt ⌊x⌋₊), (μ w : ℝ) * liouvilleSum (x / w ^ 2) := by
-  have h := sum_Icc_natFloor_mul_dilateSq ArithmeticFunction.liouville μ x
+  have h := ArithmeticFunction.sum_Icc_natFloor_mul_dilateSq ArithmeticFunction.liouville μ x
   rw [ArithmeticFunction.liouville_mul_dilateSq_moebius] at h
   rw [moebiusSum_def, h]
   simp only [liouvilleSum_def]

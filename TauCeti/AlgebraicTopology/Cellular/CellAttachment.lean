@@ -85,28 +85,24 @@ private lemma skeletonLT_eq_univ :
   skeletonLT_eq_complex_of_isEmpty_cell _ (n + 2) fun _ hm ↦
     (cellAttachmentAttachCells φ).isEmpty_cell_toRelCWComplex (by omega)
 
-/-- The old space is homeomorphic to the `n`-skeleton of the cell attachment, through the
-inclusion. -/
-private def toSkeletonIso : X ≅ skeletonObj (univ : Set (cellAttachment φ)) (n + 1) :=
-  TopCat.isoOfHomeo ((isClosedEmbedding_cellAttachmentIncl φ).isEmbedding.toHomeomorph.trans
-    (Homeomorph.setCongr (skeletonLT_eq_range φ).symm))
+/-- The old space as the `n`-skeleton of the cell attachment, through the inclusion. -/
+private abbrev toSkeletonIso : X ≅ skeletonObj (univ : Set (cellAttachment φ)) (n + 1) :=
+  skeletonObjIsoOfRangeEq (f := (cellAttachmentIncl φ).hom)
+    (isClosedEmbedding_cellAttachmentIncl φ).isEmbedding (skeletonLT_eq_range φ).symm
 
-private lemma coe_toSkeletonIso_hom_apply (x : X) :
-    ((toSkeletonIso φ).hom x : cellAttachment φ) = cellAttachmentIncl φ x :=
-  (rfl)
+/-- The `(n + 1)`-skeleton of the cell attachment as the whole space. -/
+private abbrev skeletonIso :
+    skeletonObj (univ : Set (cellAttachment φ)) (n + 2) ≅ cellAttachment φ :=
+  skeletonObjIsoOfEqUniv (skeletonLT_eq_univ φ)
 
-/-- The `(n + 1)`-skeleton of the cell attachment is homeomorphic to the whole space, through the
-inclusion. -/
-private def skeletonIso : skeletonObj (univ : Set (cellAttachment φ)) (n + 2) ≅ cellAttachment φ :=
-  TopCat.isoOfHomeo ((Homeomorph.setCongr (skeletonLT_eq_univ φ)).trans (Homeomorph.Set.univ _))
-
-/-- Through the two identifications, the inclusion of the `n`-skeleton into the `(n + 1)`-skeleton
-is the inclusion of the old space. -/
-@[reassoc]
-private lemma toSkeletonIso_hom_comp_map_comp_skeletonIso_hom :
-    (toSkeletonIso φ).hom ≫ (skeletonPair (univ : Set (cellAttachment φ)) (n + 1)).map ≫
-      (skeletonIso φ).hom = cellAttachmentIncl φ :=
-  (rfl)
+/-- Through the two identifications, the inclusion of the old space is the inclusion of the
+`n`-skeleton into the `(n + 1)`-skeleton. -/
+private lemma cellAttachmentIncl_eq_comp :
+    cellAttachmentIncl φ = (toSkeletonIso φ).hom ≫
+      (skeletonPair (univ : Set (cellAttachment φ)) (n + 1)).map ≫ (skeletonIso φ).hom :=
+  -- `TopCat.ofHom (cellAttachmentIncl φ).hom` is `cellAttachmentIncl φ` (`TopCat.ofHom_hom`).
+  (skeletonObjIsoOfRangeEq_hom_comp_map_comp (isClosedEmbedding_cellAttachmentIncl φ).isEmbedding
+    (skeletonLT_eq_range φ).symm (skeletonLT_eq_univ φ)).symm
 
 /-- The `(n + 1)`-cells of the classical structure are the attached cells. -/
 private def cellEquiv : cell (univ : Set (cellAttachment φ)) (n + 1) ≃ ι :=
@@ -115,11 +111,12 @@ private def cellEquiv : cell (univ : Set (cellAttachment φ)) (n + 1) ≃ ι :=
 /-- The attaching map of an `(n + 1)`-cell of the classical structure is the prescribed attaching
 map, followed by the identification of the old space with the `n`-skeleton. -/
 private lemma cellAttachingMap_eq (j : cell (univ : Set (cellAttachment φ)) (n + 1)) :
-    cellAttachingMap j = φ (cellEquiv φ j) ≫ (toSkeletonIso φ).hom := by
+    cellAttachingMap j = φ (cellEquiv φ j) ≫
+      (toSkeletonIso φ).hom := by
   ext z
   obtain ⟨i, rfl⟩ := (cellEquiv φ).symm.surjective j
   rw [coe_cellAttachingMap_apply, Equiv.apply_symm_apply, ConcreteCategory.comp_apply,
-    coe_toSkeletonIso_hom_apply]
+    coe_skeletonObjIsoOfRangeEq_hom_apply]
   -- The cells of `cellAttachmentAttachCells φ` are indexed by `ι` by definition, which the
   -- characteristic-map formula states with the index type of the `AttachCells` structure.
   refine ((cellAttachmentAttachCells φ).map_cellToRelCWComplexEquiv_symm i _).trans ?_
@@ -145,7 +142,7 @@ theorem surjective_singularHomologyMap_cellAttachmentIncl :
   have : Epi (H.map (skeletonPair (univ : Set (cellAttachment φ)) (n + 1)).map) :=
     TopPair.epi_homologyMap_map_of_isZero _ _
       (isZero_singularHomology_skeletonPair_of_ne _ _ (by omega))
-  rw [← toSkeletonIso_hom_comp_map_comp_skeletonIso_hom]
+  rw [cellAttachmentIncl_eq_comp]
   -- The skeletal pair presents the `n`- and `(n + 1)`-skeleta as `TopPair.snd` and `TopPair.fst`,
   -- equal to `skeletonObj` only up to unfolding, so `erw` is needed to split the composite.
   erw [Functor.map_comp, Functor.map_comp]
@@ -183,16 +180,18 @@ theorem ker_singularHomologyMap_cellAttachmentIncl :
     funext j
     rw [Function.comp_apply, Function.comp_apply, cellAttachingMap_eq, Functor.map_comp,
       ModuleCat.hom_comp, LinearMap.comp_apply]
-  rw [← toSkeletonIso_hom_comp_map_comp_skeletonIso_hom]
+  rw [cellAttachmentIncl_eq_comp]
   -- As in `surjective_singularHomologyMap_cellAttachmentIncl`, the skeleta of the pair appear as
   -- `TopPair.snd` and `TopPair.fst`, so the composite is split and the exactness and span
   -- identities are applied with `erw`.
   erw [Functor.map_comp, Functor.map_comp]
   rw [ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.ker_comp]
   erw [LinearMap.ker_comp_of_ker_eq_bot _
-      (LinearMap.ker_eq_bot.2 (H.mapIso (skeletonIso φ)).toLinearEquiv.injective),
+      (LinearMap.ker_eq_bot.2
+        (H.mapIso (skeletonIso φ)).toLinearEquiv.injective),
     ← hexact, range_skeletonPairδ, hspan]
-  exact Submodule.comap_map_eq_of_injective (H.mapIso (toSkeletonIso φ)).toLinearEquiv.injective _
+  exact Submodule.comap_map_eq_of_injective
+    (H.mapIso (toSkeletonIso φ)).toLinearEquiv.injective _
 
 /-! ### Homology in the dimension of the cells -/
 

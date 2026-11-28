@@ -15,7 +15,7 @@ import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Tactic.Positivity
 
 /-!
-# Bounds on binomial and multichoose coefficients
+# Bounds on binomial coefficients, multichoose, and binomial-weighted power sums
 
 The sum `∑_{j = k}^{d} choose j k · A ^ (j - k)` is the value at `A` of the `k`-th Hasse
 derivative of `1 + X + ⋯ + X^d`, and so bounds evaluated Hasse derivatives of polynomials of degree
@@ -34,6 +34,8 @@ polynomial of degree `m` to its Hasse derivatives, by `(1 + m A) ^ m`.
 
 ## Main results
 
+* `Nat.add_two_le_add_choose`: `n + 2 ≤ C(n + d, d)` for `d ≥ 2` and `n ≥ 1`, so there are at
+  least `n + 2` monomials of degree `d` in `n + 1` variables.
 * `Nat.sum_Icc_choose_mul_pow_le`: `∑_{j = k}^{d} choose j k · A ^ (j - k) ≤
   (d + 1) 2 ^ d max(1, A) ^ d` for `0 ≤ A` in a linearly ordered semiring.
 * `Nat.multichoose_le_pow`: `n.multichoose k ≤ n ^ k`.
@@ -51,6 +53,18 @@ polynomial of degree `m` to its Hasse derivatives, by `(1 + m A) ^ m`.
 public section
 
 open Finset
+
+/-- For `d ≥ 2` and `n ≥ 1`, `n + 2 ≤ C(n + d, d)`: there are at least `n + 2` monomials of degree
+`d` in `n + 1` variables. -/
+theorem Nat.add_two_le_add_choose {n d : ℕ} (hd : 2 ≤ d) (hn : 1 ≤ n) :
+    n + 2 ≤ (n + d).choose d := by
+  have h2 : n + 2 ≤ (n + 2).choose 2 := by
+    rw [Nat.choose_two_right, Nat.le_div_iff_mul_le two_pos]
+    exact Nat.mul_le_mul_left _ (by omega)
+  calc n + 2 ≤ (n + 2).choose 2 := h2
+    _ = (n + 2).choose n := Nat.choose_symm_add.symm
+    _ ≤ (n + d).choose n := Nat.choose_le_choose n (by omega)
+    _ = (n + d).choose d := Nat.choose_symm_add
 
 /-- The binomial-weighted power sum `∑_{j = k}^{d} choose j k · A ^ (j - k)` is at most
 `(d + 1) 2 ^ d max(1, A) ^ d` when `0 ≤ A`. -/
