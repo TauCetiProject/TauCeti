@@ -76,9 +76,10 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   `θ_q(ω) ∏_{n ≥ 1} (1 - qⁿ) = (1 - ω) ∏_{n ≥ 1} (1 - q^{3n})` for a primitive cube root of
   unity `ω`.
 * `TauCeti.tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul`,
+  `TauCeti.tprod_one_add_pow_eq_tprod_one_add_pow_odd_mul`,
   `TauCeti.tprod_one_add_pow_mul_tprod_one_sub_pow`: the Euler function `∏_{n ≥ 1} (1 - qⁿ)` is
-  `∏_{n ≥ 0} (1 - q^{2n+1}) ∏_{n ≥ 1} (1 - q^{2n})`, and multiplying it by `∏_{n ≥ 1} (1 + qⁿ)`
-  gives `∏_{n ≥ 1} (1 - q^{2n})`.
+  `∏_{n ≥ 0} (1 - q^{2n+1}) ∏_{n ≥ 1} (1 - q^{2n})`, likewise for `∏_{n ≥ 1} (1 + qⁿ)`, and
+  multiplying `∏_{n ≥ 1} (1 + qⁿ)` by `∏_{n ≥ 1} (1 - qⁿ)` gives `∏_{n ≥ 1} (1 - q^{2n})`.
 * `TauCeti.tprod_one_add_pow_mul_tprod_one_sub_pow_odd`: **Euler's identity**
   `∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 0} (1 - q^{2n+1}) = 1` for `‖q‖ < 1`, the analytic form of the
   equinumerosity of partitions into distinct parts and into odd parts.
@@ -391,6 +392,16 @@ theorem tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul {q : 𝕜} (hq : ‖q‖ 
     simpa using multipliable_one_sub_pow_mul (norm_pow_lt_one hq two_ne_zero) 1
   rw [← tprod_even_mul_odd (f := fun n ↦ 1 - q ^ (n + 1))
     (multipliable_one_sub_pow_odd hq) (by simpa [← pow_mul, mul_add] using hP₂)]
+  simp [← pow_mul, mul_add]
+
+/-- The product `∏_{n ≥ 1} (1 + qⁿ)` split into its odd and even factors:
+`∏_{n ≥ 1} (1 + qⁿ) = ∏_{n ≥ 0} (1 + q^{2n+1}) ∏_{n ≥ 1} (1 + q^{2n})` for `‖q‖ < 1`. -/
+theorem tprod_one_add_pow_eq_tprod_one_add_pow_odd_mul {q : 𝕜} (hq : ‖q‖ < 1) :
+    ∏' n : ℕ, (1 + q ^ (n + 1)) =
+      (∏' n : ℕ, (1 + q ^ (2 * n + 1))) * ∏' n : ℕ, (1 + (q ^ 2) ^ (n + 1)) := by
+  have hE : Multipliable fun n : ℕ ↦ 1 + q ^ (2 * n + 1 + 1) := by
+    simpa [← pow_mul, mul_add] using multipliable_one_add_pow (norm_pow_lt_one hq two_ne_zero)
+  rw [← tprod_even_mul_odd (f := fun n ↦ 1 + q ^ (n + 1)) (multipliable_one_add_pow_odd hq) hE]
   simp [← pow_mul, mul_add]
 
 /-- `∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 1} (1 - qⁿ) = ∏_{n ≥ 1} (1 - q^{2n})` for `‖q‖ < 1`. -/

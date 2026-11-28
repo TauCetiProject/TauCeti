@@ -708,6 +708,80 @@ theorem etaQuotientMultiplier_T_zpow (N : ℕ) (r : ℕ → ℤ) (n : ℤ)
   rw [Subgroup.coe_mk, ModularGroup.coe_T_zpow_smul_eq, etaQuotient_add_intCast]
   simp [ModularGroup.coe_T_zpow]
 
+/-- The entries of `γ_δ = (a, δ b; (N / δ) t, d)` when `c = N t` and `δ ∣ N`. -/
+theorem conjScaleGamma0_apply_of_eq {N δ : ℕ} (hδ : δ ∣ N) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N)
+    {t : ℤ} (ht : γ 1 0 = N * t) :
+    conjScaleGamma0 hδ ⟨γ, hγ⟩ 0 0 = γ 0 0 ∧
+      conjScaleGamma0 hδ ⟨γ, hγ⟩ 0 1 = γ 0 1 * δ ∧
+      conjScaleGamma0 hδ ⟨γ, hγ⟩ 1 0 = (N / δ : ℕ) * t ∧
+      conjScaleGamma0 hδ ⟨γ, hγ⟩ 1 1 = γ 1 1 := by
+  have hmul : (δ : ℤ) * (N / δ : ℕ) = N := by exact_mod_cast Nat.mul_div_cancel' hδ
+  have hc : γ 1 0 = δ * ((N / δ : ℕ) * t) := by
+    rw [ht, ← mul_assoc, hmul]
+  rcases eq_or_ne δ 0 with rfl | hδ0
+  · refine ⟨by simp, by simp, by simp [hc], by simp⟩
+  · have hδ0' : (δ : ℤ) ≠ 0 := by exact_mod_cast hδ0
+    refine ⟨by simp, by simp [mul_comm], by simp [hc, Int.mul_ediv_cancel_left _ hδ0'], by simp⟩
+
+/-- Evaluating `etaQuotientMultiplier N r ⟨γ, hγ⟩` from a formula `F δ` for each conjugate eta
+multiplier `ε(γ_δ)`. -/
+theorem etaQuotientMultiplier_eq_prod {N : ℕ} (r : ℕ → ℤ) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N)
+    {F : ℕ → ℂ} (hF : ∀ δ (hδ : δ ∈ N.divisors),
+      etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) = F δ) :
+    etaQuotientMultiplier N r ⟨γ, hγ⟩ = ∏ δ ∈ N.divisors, F δ ^ r δ := by
+  rw [etaQuotientMultiplier_def, ← Finset.prod_attach N.divisors (fun δ ↦ F δ ^ r δ)]
+  exact Finset.prod_congr rfl fun δ _ ↦ by rw [hF δ δ.property]
+
+/-- Regrouping the even-`c` eta-multiplier exponent sum over `δ ∈ N.divisors` when `c = N * t`
+into multiples of `∑ δ ∈ N.divisors, (N / δ) * r δ`, `∑ δ ∈ N.divisors, δ * r δ`, and
+`∑ δ ∈ N.divisors, r δ`. -/
+theorem sum_mul_evenExp (N : ℕ) (r : ℕ → ℤ) (a b d t : ℤ) :
+    ∑ δ ∈ N.divisors, r δ * ((a + d) * ((N / δ : ℕ) * t) -
+      b * δ * d * (((N / δ : ℕ) * t) ^ 2 - 1) + 3 * d - 3 - 3 * ((N / δ : ℕ) * t) * d) =
+      (∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) *
+        ((a + d) * t - b * d * N * t ^ 2 - 3 * t * d) +
+        (∑ δ ∈ N.divisors, (δ : ℤ) * r δ) * (b * d) +
+        (∑ δ ∈ N.divisors, r δ) * (3 * d - 3) := by
+  rw [Finset.sum_mul, Finset.sum_mul, Finset.sum_mul, ← Finset.sum_add_distrib,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun δ hδ ↦ ?_
+  have hmul : (δ : ℤ) * (N / δ : ℕ) = N := by
+    exact_mod_cast Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors hδ)
+  linear_combination (-(r δ * b * d * (N / δ : ℕ) * t ^ 2)) * hmul
+
+/-- When `(γ : SL(2, ℤ)) 1 0 < 0`, negating `γ` negates the lower-left entry of every conjugate
+`γ_δ` (making it positive) and multiplies `etaQuotientMultiplier N r γ` by
+`I ^ (∑ δ ∈ N.divisors, r δ)`. -/
+theorem etaQuotientMultiplier_of_c_neg (N : ℕ) (r : ℕ → ℤ) (γ : Gamma0 N)
+    (hc : (γ : SL(2, ℤ)) 1 0 < 0) :
+    etaQuotientMultiplier N r γ =
+      I ^ (∑ δ ∈ N.divisors, r δ) * etaQuotientMultiplier N r (Gamma0.negOne N * γ) := by
+  have hNc : (N : ℤ) ∣ (γ : SL(2, ℤ)) 1 0 := mem_Gamma0_iff_dvd.mp γ.property
+  have hneg_mem : -(γ : SL(2, ℤ)) ∈ Gamma0 N := by
+    simpa using (Gamma0 N).mul_mem neg_one_mem_Gamma0 γ.property
+  have hneg_eq : Gamma0.negOne N * γ = ⟨-(γ : SL(2, ℤ)), hneg_mem⟩ :=
+    Subtype.ext (by simp [Gamma0.coe_negOne])
+  rw [hneg_eq, etaQuotientMultiplier_def, etaQuotientMultiplier_def]
+  have hfac (δ : N.divisors) :
+      etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors δ.property) γ) ^ r δ =
+        I ^ r δ * etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors δ.property)
+          ⟨-(γ : SL(2, ℤ)), hneg_mem⟩) ^ r δ := by
+    have hδ_pos : (0 : ℤ) < δ := Int.natCast_pos.mpr (Nat.pos_of_mem_divisors δ.property)
+    have hδ_dvd : (δ : ℤ) ∣ (γ : SL(2, ℤ)) 1 0 :=
+      dvd_trans (Int.natCast_dvd_natCast.mpr (Nat.dvd_of_mem_divisors δ.property)) hNc
+    have hneg_c_pos : 0 < (conjScaleGamma0 (Nat.dvd_of_mem_divisors δ.property)
+        ⟨-(γ : SL(2, ℤ)), hneg_mem⟩) 1 0 := by
+      rw [conjScaleGamma0_neg, Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply,
+        coe_conjScaleGamma0]
+      simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_one, Matrix.cons_val_zero,
+        Matrix.cons_val_fin_one, ← Int.neg_ediv_of_dvd hδ_dvd]
+      exact Int.ediv_pos_of_pos_of_dvd (by simpa using hc) hδ_pos.le (dvd_neg.mpr hδ_dvd)
+    rw [← neg_neg (conjScaleGamma0 (Nat.dvd_of_mem_divisors δ.property) γ),
+      ← conjScaleGamma0_neg _ γ hneg_mem,
+      etaMultiplier_neg_of_c_pos _ hneg_c_pos, mul_zpow]
+  rw [Finset.prod_congr rfl fun δ _ ↦ hfac δ, Finset.prod_mul_distrib,
+    Finset.prod_zpow_eq_zpow_sum_of_isUnit _ I_ne_zero.isUnit, Finset.sum_attach]
+
 /-- **The eta-quotient multiplier is a character of `Γ₀(N)`** when `∑_{δ ∣ N} r δ` is even: then
 the eta quotient has integral weight `k = ½ ∑_δ r δ`, and the slash relation `etaQuotient_slash`
 is compatible with the slash action. -/

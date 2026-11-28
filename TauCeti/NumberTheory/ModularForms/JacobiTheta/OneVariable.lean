@@ -29,6 +29,7 @@ Three identities, a positivity statement and two estimates for Mathlib's `jacobi
   its terms `(-1)^n e^{-π n² y}` alternate in sign.
 * `TauCeti.norm_jacobiTheta₂_sub_one_le`: for real `z`, `‖θ₂(z, τ) - 1‖ ≤ ‖θ(i im τ) - 1‖`.
 * `TauCeti.tendsto_jacobiTheta_comap_im_atTop`: `θ(τ) → 1` as `im τ → ∞`.
+* `TauCeti.periodic_jacobiTheta_two`: `jacobiTheta` is periodic with period `2`.
 -/
 
 public section
@@ -206,5 +207,9 @@ theorem tendsto_jacobiTheta_comap_im_atTop :
   have h : Tendsto (fun τ : ℂ ↦ rexp (-π * τ.im)) (comap im atTop) (𝓝 0) :=
     Real.tendsto_exp_atBot.comp (tendsto_comap.const_mul_atTop_of_neg (neg_neg_of_pos Real.pi_pos))
   simpa using (isBigO_at_im_infty_jacobiTheta_sub_one.trans_tendsto h).add_const 1
+
+/-- `jacobiTheta` is periodic with period `2`. -/
+theorem periodic_jacobiTheta_two : Function.Periodic jacobiTheta 2 := fun τ ↦ by
+  rw [add_comm, jacobiTheta_two_add]
 
 end TauCeti

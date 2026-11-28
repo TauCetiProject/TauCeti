@@ -621,17 +621,13 @@ def conjScaleGamma0 {N δ : ℕ} (hδ : δ ∣ N) : Gamma0 N →* SL(2, ℤ) whe
   toFun γ := conjScale δ γ ((γ : SL(2, ℤ)) 1 0 / δ)
     (Int.mul_ediv_cancel'
       ((Int.natCast_dvd_natCast.2 hδ).trans (mem_Gamma0_iff_dvd.1 γ.property))).symm
-  map_one' := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp
+  map_one' := by ext i j; fin_cases i <;> fin_cases j <;> simp
   map_mul' γ γ' := by
     rcases eq_or_ne δ 0 with rfl | hδ0
     · -- `Γ₀(0)` is upper triangular, and the diagonal parts multiply.
       obtain rfl := Nat.eq_zero_of_zero_dvd hδ
-      have hγ := mem_Gamma0_iff_dvd.1 γ.property
-      have hγ' := mem_Gamma0_iff_dvd.1 γ'.property
-      ext i j
-      fin_cases i <;> fin_cases j <;> simp_all [Matrix.mul_apply, Fin.sum_univ_two]
+      have hγ := mem_Gamma0_iff_dvd.1 γ.property; have hγ' := mem_Gamma0_iff_dvd.1 γ'.property
+      ext i j; fin_cases i <;> fin_cases j <;> simp_all [Matrix.mul_apply, Fin.sum_univ_two]
     · have : NeZero δ := ⟨hδ0⟩
       exact conjScale_mul _ _ _ _ _
 
@@ -646,23 +642,26 @@ lemma conjScaleGamma0_apply {N δ : ℕ} (hδ : δ ∣ N) (γ : Gamma0 N) :
 lemma coe_conjScaleGamma0 {N δ : ℕ} (hδ : δ ∣ N) (γ : Gamma0 N) :
     ((conjScaleGamma0 hδ γ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
       !![(γ : SL(2, ℤ)) 0 0, (δ : ℤ) * (γ : SL(2, ℤ)) 0 1; (γ : SL(2, ℤ)) 1 0 / δ,
-        (γ : SL(2, ℤ)) 1 1] := by
-  rw [conjScaleGamma0_apply, coe_conjScale]
+        (γ : SL(2, ℤ)) 1 1] := by rw [conjScaleGamma0_apply, coe_conjScale]
 
 /-- Every conjugate of `-1 ∈ Γ₀(N)` is `-1`. -/
-@[simp]
-lemma conjScaleGamma0_negOne {N δ : ℕ} (hδ : δ ∣ N) :
+@[simp] lemma conjScaleGamma0_negOne {N δ : ℕ} (hδ : δ ∣ N) :
     conjScaleGamma0 hδ (Gamma0.negOne N) = -1 := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [Gamma0.coe_negOne]
+  ext i j; fin_cases i <;> fin_cases j <;> simp [Gamma0.coe_negOne]
+
+/-- Conjugation by `diag(δ, 1)` commutes with negation on `Γ₀(N)`. -/
+@[simp] lemma conjScaleGamma0_neg {N δ : ℕ} (hδ : δ ∣ N) (γ : Gamma0 N)
+    (hneg : -(γ : SL(2, ℤ)) ∈ Gamma0 N) :
+    conjScaleGamma0 hδ ⟨-(γ : SL(2, ℤ)), hneg⟩ = -conjScaleGamma0 hδ γ :=
+  have h : (⟨-(γ : SL(2, ℤ)), hneg⟩ : Gamma0 N) = Gamma0.negOne N * γ :=
+    Subtype.ext (by simp [Gamma0.coe_negOne])
+  h ▸ by rw [map_mul, conjScaleGamma0_negOne, neg_one_mul]
 
 /-- The conjugate of a translation `Tⁿ ∈ Γ₀(N)` by `diag(δ, 1)` is the translation `T^{δ n}`. -/
-@[simp]
-lemma conjScaleGamma0_T_zpow {N δ : ℕ} (hδ : δ ∣ N) (n : ℤ)
+@[simp] lemma conjScaleGamma0_T_zpow {N δ : ℕ} (hδ : δ ∣ N) (n : ℤ)
     (h : ModularGroup.T ^ n ∈ Gamma0 N) :
     conjScaleGamma0 hδ ⟨ModularGroup.T ^ n, h⟩ = ModularGroup.T ^ ((δ : ℤ) * n) := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [ModularGroup.coe_T_zpow]
+  ext i j; fin_cases i <;> fin_cases j <;> simp [ModularGroup.coe_T_zpow]
 
 /-- Reading off the lower-left entry: if `diag(d, 1) X = Y diag(d, 1)`, then the lower-left entry
 of `X` is `d` times that of `Y`. -/

@@ -36,9 +36,9 @@ absolute convergence (`TauCeti.summable_norm_tateTheta`) and quasi-periodicity
 
 * `TauCeti.hasSum_qTheta_mul_tprod_one_sub_pow`: Jacobi's triple product identity,
   `θ_q(w) ∏_{n ≥ 1} (1 - qⁿ) = ∑_{k ∈ ℤ} (-1)ᵏ q^{k(k-1)/2} wᵏ` for `‖q‖ < 1` and `w ≠ 0`.
-* `TauCeti.hasSum_neg_one_pow_mul_pow_sq`, `TauCeti.hasSum_pow_sq`: the theta product
-  specializations `∑_{k ∈ ℤ} (-1)ᵏ q^{k²} = ∏_{n ≥ 1} (1 - qⁿ) / (1 + qⁿ)` and
-  `∑_{k ∈ ℤ} q^{k²} = (∏_{n ≥ 0} (1 + q^{2n+1}))² ∏_{n ≥ 1} (1 - q^{2n})` for `‖q‖ < 1`.
+* `TauCeti.hasSum_pow_sq`, `TauCeti.hasSum_neg_one_pow_mul_pow_sq`: the theta product
+  specializations `∑_{k ∈ ℤ} q^{k²} = (∏_{n ≥ 0} (1 + q^{2n+1}))² ∏_{n ≥ 1} (1 - q^{2n})` and
+  `∑_{k ∈ ℤ} (-1)ᵏ q^{k²} = ∏_{n ≥ 1} ((1 - qⁿ) / (1 + qⁿ))` for `‖q‖ < 1`.
 
 ## References
 
@@ -208,51 +208,9 @@ theorem hasSum_qTheta_mul_tprod_one_sub_pow {q w : 𝕜} (hq : ‖q‖ < 1) (hw 
   rw [← hw', hiter, hw'] at h
   simpa [Q] using h
 
-/-- **Jacobi's product specialization** for the alternating theta series: for `‖q‖ < 1`,
-`∑_{k ∈ ℤ} (-1)ᵏ q^{k²} = ∏_{n ≥ 1} (1 - qⁿ) / (1 + qⁿ)`. Obtained by specializing Jacobi's triple
-product identity (`hasSum_qTheta_mul_tprod_one_sub_pow`) to `(q², q)`. -/
-theorem hasSum_neg_one_pow_mul_pow_sq {q : 𝕜} (hq : ‖q‖ < 1) :
-    HasSum (fun k : ℤ ↦ (-1) ^ k * q ^ (k ^ 2))
-      (∏' n : ℕ, (1 - q ^ (n + 1)) / (1 + q ^ (n + 1))) := by
-  rcases eq_or_ne q 0 with rfl | hq₀
-  · have h : ∀ k ∉ ({0} : Finset ℤ), (-1) ^ k * (0 : 𝕜) ^ (k ^ 2) = 0 := by
-      intro k hk
-      simp only [Finset.mem_singleton] at hk
-      simp [zero_zpow _ (pow_ne_zero 2 hk)]
-    convert hasSum_sum_of_ne_finset_zero (L := .unconditional ℤ) h using 1
-    simp
-  have hJ := hasSum_qTheta_mul_tprod_one_sub_pow (norm_pow_lt_one hq two_ne_zero) hq₀
-  have hterm : (fun k : ℤ ↦ (-1) ^ k * (q ^ 2) ^ (k * (k - 1) / 2) * q ^ k) =
-      fun k : ℤ ↦ (-1) ^ k * q ^ (k ^ 2) := by
-    funext k
-    rw [← zpow_natCast, ← zpow_mul, mul_assoc, ← zpow_add₀ hq₀]
-    congr 2
-    simp only [Nat.cast_ofNat, Int.two_mul_mul_sub_one_ediv_two]
-    ring
-  rw [hterm] at hJ
-  have hP₁ : Multipliable fun n : ℕ ↦ 1 - q ^ (n + 1) := by
-    simpa using multipliable_one_sub_pow_mul hq 1
-  have hP₂ : Multipliable fun n : ℕ ↦ 1 + q ^ (n + 1) := multipliable_one_add_pow hq
-  have hP₂₀ : ∏' n : ℕ, (1 + q ^ (n + 1)) ≠ 0 :=
-    left_ne_zero_of_mul_eq_one (tprod_one_add_pow_mul_tprod_one_sub_pow_odd hq)
-  have hRHS : qTheta (q ^ 2) q * ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1)) =
-      ∏' n : ℕ, (1 - q ^ (n + 1)) / (1 + q ^ (n + 1)) := by
-    rw [qTheta_sq_self hq, sq, mul_assoc, ← tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul hq,
-      hP₁.tprod_div₀ hP₂ hP₂₀]
-    refine eq_div_of_mul_eq hP₂₀ ?_
-    rw [mul_right_comm, mul_comm (∏' n : ℕ, (1 - q ^ (2 * n + 1))),
-      tprod_one_add_pow_mul_tprod_one_sub_pow_odd hq, one_mul]
-  rwa [hRHS] at hJ
-
-/-- The `tsum` form of `hasSum_neg_one_pow_mul_pow_sq`: for `‖q‖ < 1`,
-`∑' k : ℤ, (-1)ᵏ q^{k²} = ∏' n : ℕ, (1 - q^{n+1}) / (1 + q^{n+1})`. -/
-theorem tsum_neg_one_pow_mul_pow_sq {q : 𝕜} (hq : ‖q‖ < 1) :
-    ∑' k : ℤ, (-1) ^ k * q ^ (k ^ 2) = ∏' n : ℕ, (1 - q ^ (n + 1)) / (1 + q ^ (n + 1)) :=
-  (hasSum_neg_one_pow_mul_pow_sq hq).tsum_eq
-
 /-- **Jacobi's product specialization** for the theta series `∑_{k ∈ ℤ} q^{k²}`: for `‖q‖ < 1`,
-`∑_{k ∈ ℤ} q^{k²} = (∏_{n ≥ 0} (1 + q^{2n+1}))² ∏_{n ≥ 1} (1 - q^{2n})`. Obtained by specializing
-Jacobi's triple product identity (`hasSum_qTheta_mul_tprod_one_sub_pow`) to `(q², -q)`. -/
+the series `∑_{k ∈ ℤ} q^{k²}` converges unconditionally to
+`(∏_{n ≥ 0} (1 + q^{2n+1}))² ∏_{n ≥ 1} (1 - q^{2n})`. -/
 theorem hasSum_pow_sq {q : 𝕜} (hq : ‖q‖ < 1) :
     HasSum (fun k : ℤ ↦ q ^ (k ^ 2))
       ((∏' n : ℕ, (1 + q ^ (2 * n + 1))) ^ 2 * ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1))) := by
@@ -269,7 +227,7 @@ theorem hasSum_pow_sq {q : 𝕜} (hq : ‖q‖ < 1) :
   have hterm : (fun k : ℤ ↦ (-1) ^ k * ((-q) ^ 2) ^ (k * (k - 1) / 2) * (-q) ^ k) =
       fun k : ℤ ↦ q ^ (k ^ 2) := by
     funext k
-    rw [neg_sq, show (-q : 𝕜) = (-1) * q by ring, mul_zpow, ← zpow_natCast, ← zpow_mul]
+    rw [neg_sq, neg_eq_neg_one_mul q, mul_zpow, ← zpow_natCast, ← zpow_mul]
     calc (-1) ^ k * q ^ ((2 : ℤ) * (k * (k - 1) / 2)) * ((-1) ^ k * q ^ k)
         = ((-1 : 𝕜) ^ k * (-1) ^ k) * (q ^ ((2 : ℤ) * (k * (k - 1) / 2)) * q ^ k) := by ring
       _ = q ^ (k ^ 2) := by
@@ -290,5 +248,40 @@ theorem tsum_pow_sq {q : 𝕜} (hq : ‖q‖ < 1) :
     ∑' k : ℤ, q ^ (k ^ 2) =
       (∏' n : ℕ, (1 + q ^ (2 * n + 1))) ^ 2 * ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1)) :=
   (hasSum_pow_sq hq).tsum_eq
+
+/-- **Jacobi's product specialization** for the alternating theta series: for `‖q‖ < 1`, the
+series `∑_{k ∈ ℤ} (-1)ᵏ q^{k²}` converges unconditionally to
+`∏_{n ≥ 1} ((1 - qⁿ) / (1 + qⁿ))`. -/
+theorem hasSum_neg_one_pow_mul_pow_sq {q : 𝕜} (hq : ‖q‖ < 1) :
+    HasSum (fun k : ℤ ↦ (-1) ^ k * q ^ (k ^ 2))
+      (∏' n : ℕ, (1 - q ^ (n + 1)) / (1 + q ^ (n + 1))) := by
+  have hJ := hasSum_pow_sq (q := -q) (by rwa [norm_neg])
+  have hterm : (fun k : ℤ ↦ (-q) ^ (k ^ 2)) = fun k : ℤ ↦ (-1) ^ k * q ^ (k ^ 2) := by
+    funext k
+    rw [neg_eq_neg_one_mul q, mul_zpow]
+    have hsq : k ^ 2 = k + k * (k - 1) := by ring
+    rw [hsq, zpow_add₀ (by norm_num : (-1 : 𝕜) ≠ 0), (Int.even_mul_pred_self k).neg_one_zpow,
+      mul_one, ← hsq]
+  have hRHS : (∏' n : ℕ, (1 + (-q) ^ (2 * n + 1))) ^ 2 * ∏' n : ℕ, (1 - ((-q) ^ 2) ^ (n + 1)) =
+      ∏' n : ℕ, (1 - q ^ (n + 1)) / (1 + q ^ (n + 1)) := by
+    have h1 : ∏' n : ℕ, (1 + (-q) ^ (2 * n + 1)) = ∏' n : ℕ, (1 - q ^ (2 * n + 1)) :=
+      tprod_congr fun n ↦ by simpa using (one_sub_neg_pow_odd (-q) n).symm
+    have hP₁ : Multipliable fun n : ℕ ↦ 1 - q ^ (n + 1) := by
+      simpa using multipliable_one_sub_pow_mul hq 1
+    have hP₂ : Multipliable fun n : ℕ ↦ 1 + q ^ (n + 1) := multipliable_one_add_pow hq
+    have hP₂₀ : ∏' n : ℕ, (1 + q ^ (n + 1)) ≠ 0 :=
+      left_ne_zero_of_mul_eq_one (tprod_one_add_pow_mul_tprod_one_sub_pow_odd hq)
+    rw [h1, neg_sq, sq, mul_assoc, ← tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul hq,
+      hP₁.tprod_div₀ hP₂ hP₂₀]
+    refine eq_div_of_mul_eq hP₂₀ ?_
+    rw [mul_right_comm, mul_comm (∏' n : ℕ, (1 - q ^ (2 * n + 1))),
+      tprod_one_add_pow_mul_tprod_one_sub_pow_odd hq, one_mul]
+  rwa [hterm, hRHS] at hJ
+
+/-- The `tsum` form of `hasSum_neg_one_pow_mul_pow_sq`: for `‖q‖ < 1`,
+`∑' k : ℤ, (-1)ᵏ q^{k²} = ∏' n : ℕ, ((1 - q^{n+1}) / (1 + q^{n+1}))`. -/
+theorem tsum_neg_one_pow_mul_pow_sq {q : 𝕜} (hq : ‖q‖ < 1) :
+    ∑' k : ℤ, (-1) ^ k * q ^ (k ^ 2) = ∏' n : ℕ, (1 - q ^ (n + 1)) / (1 + q ^ (n + 1)) :=
+  (hasSum_neg_one_pow_mul_pow_sq hq).tsum_eq
 
 end TauCeti

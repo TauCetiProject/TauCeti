@@ -89,44 +89,11 @@ private theorem natCast_mul_natCast_div {N δ : ℕ} (hδ : δ ∈ N.divisors) :
     (δ : ℤ) * (N / δ : ℕ) = N := by
   exact_mod_cast Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors hδ)
 
-/-- The entries of `γ_δ = (a, δ b; (N / δ) t, d)` when `c = N t` and `δ ∣ N`. -/
-private theorem conjScaleGamma0_apply_of_eq {N δ : ℕ} (hδ : δ ∈ N.divisors) {γ : SL(2, ℤ)}
-    (hγ : γ ∈ Gamma0 N) {t : ℤ} (ht : γ 1 0 = N * t) :
-    conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩ 0 0 = γ 0 0 ∧
-      conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩ 0 1 = γ 0 1 * δ ∧
-      conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩ 1 0 = (N / δ : ℕ) * t ∧
-      conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩ 1 1 = γ 1 1 := by
-  have hc : γ 1 0 = δ * ((N / δ : ℕ) * t) := by
-    rw [ht, ← mul_assoc, natCast_mul_natCast_div hδ]
-  have hδ0 : (δ : ℤ) ≠ 0 := by exact_mod_cast (Nat.pos_of_mem_divisors hδ).ne'
-  refine ⟨by simp, by simp [mul_comm], by simp [hc, Int.mul_ediv_cancel_left _ hδ0], by simp⟩
-
-/-- The multiplier `∏_δ ε(γ_δ) ^ r δ`, from the values `F δ` of the eta multipliers at the
-conjugates `γ_δ`. -/
-private theorem etaQuotientMultiplier_eq_prod {N : ℕ} (r : ℕ → ℤ) {γ : SL(2, ℤ)}
-    (hγ : γ ∈ Gamma0 N) {F : ℕ → ℂ} (hF : ∀ δ (hδ : δ ∈ N.divisors),
-      etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) = F δ) :
-    etaQuotientMultiplier N r ⟨γ, hγ⟩ = ∏ δ ∈ N.divisors, F δ ^ r δ := by
-  rw [etaQuotientMultiplier_def, ← Finset.prod_attach N.divisors (fun δ ↦ F δ ^ r δ)]
-  exact Finset.prod_congr rfl fun δ _ ↦ by rw [hF δ δ.property]
-
 /-! ### The Kronecker-symbol value of the multiplier -/
 
 /-- The value `((-1) ^ k ∏_δ δ ^ (r δ) / d) = (-1 / d) ^ k ∏_{δ ∣ N} (δ / d) ^ (r δ)`. -/
 private noncomputable def symb (N : ℕ) (r : ℕ → ℤ) (k d : ℤ) : ℂ :=
   (kroneckerSym (-1) d : ℂ) ^ k * ∏ δ ∈ N.divisors, (kroneckerSym δ d : ℂ) ^ r δ
-
-/-- The sum over `δ ∣ N` of `r δ` times the even-`c` exponent of `γ_δ = (a, b δ; (N / δ) t, d)`,
-regrouped along the three sums of the congruence conditions. -/
-private theorem sum_mul_evenExp (N : ℕ) (r : ℕ → ℤ) (a b d t : ℤ) :
-    ∑ δ ∈ N.divisors, r δ * ((a + d) * ((N / δ : ℕ) * t) -
-      b * δ * d * (((N / δ : ℕ) * t) ^ 2 - 1) + 3 * d - 3 - 3 * ((N / δ : ℕ) * t) * d) =
-      (∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) * ((a + d) * t - b * d * N * t ^ 2 - 3 * t * d) +
-        (∑ δ ∈ N.divisors, (δ : ℤ) * r δ) * (b * d) + (∑ δ ∈ N.divisors, r δ) * (3 * d - 3) := by
-  rw [Finset.sum_mul, Finset.sum_mul, Finset.sum_mul, ← Finset.sum_add_distrib,
-    ← Finset.sum_add_distrib]
-  exact Finset.sum_congr rfl fun δ hδ ↦ by
-    linear_combination (-(r δ * b * d * (N / δ : ℕ) * t ^ 2)) * natCast_mul_natCast_div hδ
 
 /-- The sum over `δ ∣ N` of `r δ` times the odd-`c` exponent of `γ_δ = (a, b δ; (N / δ) t, d)`,
 regrouped along the two sums of the congruence conditions. -/
@@ -229,7 +196,7 @@ private theorem etaQuotientMultiplier_eq_symb_of_odd {N : ℕ} {r : ℕ → ℤ}
   have hε (δ : ℕ) (hδ : δ ∈ N.divisors) : etaMultiplier
       (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) =
       (kroneckerSym ((N / δ : ℕ) * t) (γ 1 1) : ℂ) * e24 (E δ) := by
-    obtain ⟨h00, h01, h10, h11⟩ := conjScaleGamma0_apply_of_eq hδ hγ ht
+    obtain ⟨h00, h01, h10, h11⟩ := conjScaleGamma0_apply_of_eq (Nat.dvd_of_mem_divisors hδ) hγ ht
     rw [etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d _
       (by rw [h10]; exact mul_nonneg (Int.natCast_nonneg _) ht0) (by rw [h11]; exact ⟨v, hv⟩),
       h00, h01, h10, h11, e24_def]
@@ -265,7 +232,7 @@ private theorem etaQuotientMultiplier_eq_symb_of_even {N : ℕ} {r : ℕ → ℤ
   have hε (δ : ℕ) (hδ : δ ∈ N.divisors) : etaMultiplier
       (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) =
       (kroneckerSym (γ 1 1) ((N / δ : ℕ) * t) : ℂ) * e24 (O δ) := by
-    obtain ⟨h00, h01, h10, h11⟩ := conjScaleGamma0_apply_of_eq hδ hγ ht
+    obtain ⟨h00, h01, h10, h11⟩ := conjScaleGamma0_apply_of_eq (Nat.dvd_of_mem_divisors hδ) hγ ht
     have hm : Odd (N / δ) := hNo.of_dvd_nat (Nat.div_dvd_of_dvd (Nat.dvd_of_mem_divisors hδ))
     rw [etaMultiplier_eq_kroneckerSym_mul_of_c_pos_of_odd_c _
       (by rw [h10]; exact mul_pos (by exact_mod_cast hm.pos) ht_pos)
