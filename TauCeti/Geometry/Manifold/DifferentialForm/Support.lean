@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Boundary.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
 public import Mathlib.Topology.PartitionOfUnity
 import Mathlib.Topology.Compactness.LocallyFinite
+import TauCeti.Topology.PartitionOfUnity.Basic
 
 /-!
 # Topological support of rough differential forms
@@ -269,28 +270,10 @@ theorem exists_finset_partition_eq (φ : RoughForm I M F k) (hc : IsCompact
     ∃ s : Finset ι,
       φ = (fun x ↦ ∑ i ∈ s, ρ i x • φ x) ∧
         ∀ i ∉ s, (fun x ↦ ρ i x • φ x : RoughForm I M F k) = 0 := by
-  classical
-  have hfin := ρ.locallyFinite_tsupport.finite_nonempty_inter_compact hc
-  let s := hfin.toFinset
-  have hmem (i : ι) (x : M) (hρ : ρ i x ≠ 0) (hφ : φ x ≠ 0) : i ∈ s := by
-    exact hfin.mem_toFinset.mpr ⟨x, subset_tsupport (ρ i) hρ,
-    _root_.subset_tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ hφ⟩
-  refine ⟨s, ?_, ?_⟩
-  · funext x
-    by_cases hx : φ x = 0
-    · simp [hx]
-    · have hs : ρ.finsupport x ⊆ s := by
-        intro i hi
-        exact hmem i x (by simpa only [PartitionOfUnity.mem_finsupport, mem_support] using hi) hx
-      rw [← Finset.sum_smul, ρ.sum_finsupport' (mem_univ x) hs, one_smul]
-  · intro i hi
-    funext x
-    by_cases hφ : φ x = 0
-    · simp [hφ]
-    · have hρ : ρ i x = 0 := by
-        by_contra h
-        exact hi (hmem i x h hφ)
-      simp [hρ]
+  -- `TangentSpace I x` is definitionally `E`, so `φ` is viewed with fixed codomain.
+  obtain ⟨s, hsum, hzero⟩ :=
+    ρ.exists_finset_eq_sum_smul (show M → E [⋀^Fin k]→L[ℝ] F from φ) hc (subset_univ _)
+  exact ⟨s, funext fun x ↦ congrFun hsum x, fun i hi ↦ funext fun x ↦ congrFun (hzero i hi) x⟩
 
 /-- Weights summing to one on the support give an actual finite form decomposition. -/
 theorem eq_sum_fun_smul [Fintype ι] (φ : RoughForm I M F k) (ρ : ι → M → ℝ)

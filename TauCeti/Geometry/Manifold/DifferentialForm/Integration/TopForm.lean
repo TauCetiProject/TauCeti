@@ -16,6 +16,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Linear
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.OrientationLift
 import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.ExtChartAt.Integral
+import TauCeti.Topology.Algebra.Support
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Order.Disjointed
 
@@ -283,57 +284,19 @@ private theorem coverIntegral_eq_chartIntegral_of_ae_support
       y ∉ (extChartAt I β) '' ((extChartAt I β).source ∩ (extChartAt I α).source) →
         φ.signedInChartAt b β (fun _ ↦ 1) y = 0) :
     coverIntegral l b φ c = l.chartIntegral φ α := by
-  let e := extChartAt I α
-  let f := φ.signedInChartAt b α (fun x ↦ l.signAt α x)
-  let s : Fin c.n → Set M := fun i ↦ c.piece i ∩ e.source
-  have hs (i : Fin c.n) : IsChartMeasurable I (s i) :=
-    (c.isChartMeasurable_piece i).inter
-      (by dsimp only [e]; simpa only [extChartAt_source] using
-        (chartAt H α).open_source.isChartMeasurable (I := I))
   rw [l.chartIntegral_eq_integral φ b α, coverIntegral]
-  apply congrArg (fun r : ℝ ↦ (Orientation.signBasis l.modelOrientation b : ℝ) * r)
-  calc
-    (∑ i, ∫ y in (extChartAt I (c.center i)) '' c.piece i,
-      φ.signedInChartAt b (c.center i) (fun x ↦ l.signAt (c.center i) x) y ∂b.addHaar) =
-        ∑ i, ∫ y in e '' s i, f y ∂b.addHaar := by
-      apply Finset.sum_congr rfl
-      intro i _
-      have hzero : ∀ᵐ y ∂b.addHaar,
-          y ∈ (extChartAt I (c.center i)) '' c.piece i \
-            (extChartAt I (c.center i)) '' s i →
-            φ.signedInChartAt b (c.center i) (fun x ↦ l.signAt (c.center i) x) y = 0 := by
-        filter_upwards [hα (c.center i)] with y hy hys
-        obtain ⟨x, hx, rfl⟩ := hys.1
-        have hn : extChartAt I (c.center i) x ∉ (extChartAt I (c.center i)) ''
-            ((extChartAt I (c.center i)).source ∩ e.source) := by
-          rintro ⟨z, hz, he⟩
-          have hxz : x = z := (extChartAt I (c.center i)).injOn (c.piece_subset i hx) hz.1 he.symm
-          exact hys.2 (mem_image_of_mem _ ⟨hx, hxz ▸ hz.2⟩)
-        have hz := hy hn
-        rw [RoughForm.signedInChartAt_apply_of_mem_source _ _ _ _ (c.piece_subset i hx)] at hz ⊢
-        simp only [Units.val_one, Int.cast_one, one_mul] at hz
-        rw [hz, mul_zero]
-      have hspiece : s i ⊆ c.piece i := inter_subset_left
-      have heq := setIntegral_eq_of_subset_of_ae_sdiff_eq_zero (μ := b.addHaar)
-        (c.measurableSet_image_piece i).nullMeasurableSet
-        (image_mono hspiece) hzero
-      exact heq.trans (signed_changeChart l φ b (c.center i) α
-        (fun _ hx ↦ ⟨c.piece_subset i hx.1, hx.2⟩) (hs i))
-    _ = ∫ y, f y ∂b.addHaar := by
-      have he := integral_chart_piece_refine l φ hi b α c Subset.rfl
-        (by simpa only [extChartAt_source] using
-          (chartAt H α).open_source.isChartMeasurable (I := I)) Subset.rfl
-      -- Unfold the local chart e and coefficient f in the refinement identity; the
-      -- original statement names extChartAt and signedInChartAt explicitly.
-      change (∫ y in e '' e.source, f y ∂b.addHaar) =
-        ∑ i, ∫ y in e '' (e.source ∩ c.piece i), f y ∂b.addHaar at he
-      have he' : (∑ i, ∫ y in e '' s i, f y ∂b.addHaar) =
-          ∫ y in e '' e.source, f y ∂b.addHaar := by
-        simpa only [s, inter_comm] using he.symm
-      rw [he', e.image_source_eq_target]
-      exact setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦
-        Function.notMem_support.mp (fun hn ↦
-          hy (φ.support_signedInChartAt_subset_target b α (fun x ↦ l.signAt α x) hn))
+  refine congrArg (fun r : ℝ ↦ (Orientation.signBasis l.modelOrientation b : ℝ) * r) ?_
+  refine sum_setIntegral_image_extChartAt_piece_eq_integral
+    (f := fun γ ↦ φ.signedInChartAt b γ (fun x ↦ l.signAt γ x)) c α
+    (signed_coefficient_integrable l hi b α)
+    (φ.support_signedInChartAt_subset_target b α _)
+    (fun x hx hn ↦ φ.signedInChartAt_eq_zero_of_notMem_tsupport b α _ hx hn)
+    (fun i s hsub hs ↦ signed_changeChart l φ b (c.center i) α hsub hs) fun i ↦ ?_
+  filter_upwards [hα (c.center i)] with y hy hxo ⟨x, hx, hxy⟩
+  have hz := hy hxo
+  rw [← hxy, RoughForm.signedInChartAt_apply_of_mem_source _ _ _ _ (c.piece_subset i hx)] at hz ⊢
+  simp only [Units.val_one, Int.cast_one, one_mul] at hz
+  rw [hz, mul_zero]
 
 end WithMeasure
 
@@ -414,22 +377,12 @@ public theorem IntegrableTopForm.fun_smul {φ : RoughForm I M ℝ k} (hφ : Inte
     {g : M → ℝ} (hg : Continuous g) : IntegrableTopForm (fun x ↦ g x • φ x) := by
   let : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
-  -- Only the values of `g` on the compact support of `φ` matter, so `g` may be clamped to a bound
-  -- `C` of `|g|` there.
-  obtain ⟨C₀, hC₀⟩ := hφ.isCompact.exists_bound_of_continuousOn hg.continuousOn
-  set C := max C₀ 0
-  have hC : -C ≤ C := neg_le_self (le_max_right _ _)
-  set g' : M → ℝ := fun x ↦ projIcc (-C) C hC (g x)
-  have hg'C (x : M) : |g' x| ≤ C := abs_le.2 (projIcc (-C) C hC (g x)).property
-  have hgg' : (fun x ↦ g x • φ x) = fun x ↦ g' x • φ x := by
-    funext x
-    by_cases hx : x ∈ _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ
-    · have hg'x : g' x = g x := congrArg Subtype.val (projIcc_of_mem hC
-        (abs_le.1 ((Real.norm_eq_abs _ ▸ hC₀ x hx).trans (le_max_left C₀ 0))))
-      rw [hg'x]
-    · have h0 : φ x = 0 := image_eq_zero_of_notMem_tsupport hx
-      rw [h0, smul_zero, smul_zero]
-  rw [hgg']
+  -- `TangentSpace I x` is definitionally `E`, so clamp `g` on the compact support of `φ`.
+  obtain ⟨C, hC, g', hg'c, hg'b, hgg'⟩ :=
+    TauCeti.exists_continuous_abs_le_fun_smul_eq (f := (show M → E [⋀^Fin k]→L[ℝ] ℝ from φ))
+      hφ.isCompact hg
+  have hgg'φ : (fun x ↦ g x • φ x) = fun x ↦ g' x • φ x := funext fun x ↦ (congrFun hgg' x).symm
+  rw [hgg'φ]
   rw [integrableTopForm_iff] at hφ ⊢
   refine ⟨hφ.1.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_right _ _), hφ.2.1,
     fun b α ↦ ?_⟩
@@ -447,13 +400,12 @@ public theorem IntegrableTopForm.fun_smul {φ : RoughForm I M ℝ k} (hφ : Inte
         mul_zero]
   rw [heq]
   refine (hφ.2.2 b α).bdd_mul (c := C) ((aestronglyMeasurable_indicator_iff
-    (measurableSet_extChartAt_target α)).2 (((continuous_subtypeVal.comp
-      (continuous_projIcc.comp hg)).comp_continuousOn
-        (continuousOn_extChartAt_symm α)).aestronglyMeasurable (measurableSet_extChartAt_target α)))
+    (measurableSet_extChartAt_target α)).2 ((hg'c.comp_continuousOn
+      (continuousOn_extChartAt_symm α)).aestronglyMeasurable (measurableSet_extChartAt_target α)))
     (Filter.Eventually.of_forall fun y ↦ ?_)
   by_cases hy : y ∈ t
-  · simpa [indicator_of_mem hy] using hg'C _
-  · simpa [indicator_of_notMem hy] using (abs_nonneg _).trans (hg'C α)
+  · simpa [indicator_of_mem hy] using hg'b _
+  · simpa [indicator_of_notMem hy] using hC
 
 /-- **A partition of unity localizes an integrable top form.** If every point `x` of the support of
 an integrable top form `φ` has a neighbourhood `V x`, then `φ` is a finite sum of integrable top

@@ -44,6 +44,20 @@ abbrev RoughDensity (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace
     [ChartedSpace H M] (m : ℕ) : Type _ :=
   (x : M) → Density (TangentSpace I x) m
 
+namespace RoughDensity
+
+variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {m : ℕ}
+
+/-- Pointwise scalar multiplication does not enlarge the topological support of a rough density. -/
+theorem tsupport_fun_smul_subset (f : M → ℝ) (μ : RoughDensity I M m) :
+    _root_.tsupport (α := Density E m) (fun x ↦ f x • μ x) ⊆
+      _root_.tsupport (α := Density E m) μ :=
+  -- `TangentSpace I x` is definitionally `E`, so `μ` has fixed codomain `Density E m`.
+  _root_.tsupport_smul_subset_right f (show M → Density E m from μ)
+
+end RoughDensity
+
 variable [FiniteDimensional ℝ E] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I 1 M] {m : ℕ}
 

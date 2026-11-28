@@ -97,6 +97,42 @@ theorem inChartAt_of_notMem_target (μ : RoughDensity I M m) (b : Basis (Fin m) 
   unfold inChartAt
   exact ite_eq_right hy
 
+/-- If `μ ((extChartAt I α).symm y) = 0`, then `μ.inChartAt b α y = 0`. -/
+theorem inChartAt_eq_zero_of_apply_eq_zero {μ : RoughDensity I M m} (b : Basis (Fin m) ℝ E)
+    (α : M) {y : E} (h : μ ((extChartAt I α).symm y) = 0) : μ.inChartAt b α y = 0 := by
+  by_cases hy : y ∈ (extChartAt I α).target
+  · rw [μ.inChartAt_of_mem_target b α hy, h, Density.zero_apply]
+  · exact μ.inChartAt_of_notMem_target b α hy
+
+/-- If `x ∈ (extChartAt I α).source` lies outside `tsupport μ`, then
+`μ.inChartAt b α (extChartAt I α x) = 0`. -/
+theorem inChartAt_eq_zero_of_notMem_tsupport (μ : RoughDensity I M m)
+    (b : Basis (Fin m) ℝ E) (α : M) {x : M} (hx : x ∈ (extChartAt I α).source)
+    (hn : x ∉ _root_.tsupport (α := Density E m) μ) :
+    μ.inChartAt b α (extChartAt I α x) = 0 :=
+  inChartAt_eq_zero_of_apply_eq_zero b α <| by
+    rw [(extChartAt I α).left_inv hx]
+    exact _root_.image_eq_zero_of_notMem_tsupport (α := Density E m) hn
+
+/-- Chart coefficients vanish outside the coordinate target. -/
+theorem support_inChartAt_subset_target (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E)
+    (α : M) : Function.support (μ.inChartAt b α) ⊆ (extChartAt I α).target := by
+  intro y hy
+  by_contra hyt
+  exact hy (μ.inChartAt_of_notMem_target b α hyt)
+
+/-- `Function.support (μ.inChartAt b α)` lies in the coordinate image of
+`(extChartAt I α).source ∩ tsupport μ`. -/
+theorem support_inChartAt_subset (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E) (α : M) :
+    Function.support (μ.inChartAt b α) ⊆
+      (extChartAt I α) '' ((extChartAt I α).source ∩ _root_.tsupport (α := Density E m) μ) := by
+  intro y hy
+  have hyt := μ.support_inChartAt_subset_target b α hy
+  refine ⟨(extChartAt I α).symm y, ⟨(extChartAt I α).map_target hyt, ?_⟩,
+    (extChartAt I α).right_inv hyt⟩
+  exact _root_.subset_tsupport (α := Density E m) μ fun h0 ↦
+    Function.mem_support.mp hy (inChartAt_eq_zero_of_apply_eq_zero b α h0)
+
 @[simp]
 theorem inChartAt_zero (b : Basis (Fin m) ℝ E) (α : M) :
     (0 : RoughDensity I M m).inChartAt b α = 0 := by
@@ -218,6 +254,22 @@ theorem inChartAt_basis_change (μ : RoughDensity I M m) (b b' : Basis (Fin m) �
         exact congrArg _ (ν.apply_eq_abs_det_mul b b')
       _ = |b.det b'| * ν (fun i ↦ L (b i)) := by rw [hL b]
   · rw [inChartAt_of_notMem_target μ b' α hy, inChartAt_of_notMem_target μ b α hy, mul_zero]
+
+/-- If `μ` is nonnegative on every tangent basis, then its chart coefficient `μ.inChartAt b α`
+is nonnegative everywhere. -/
+theorem inChartAt_nonneg {μ : RoughDensity I M m}
+    (hμ : ∀ x (c : Basis (Fin m) ℝ (TangentSpace I x)), 0 ≤ μ x c)
+    (b : Basis (Fin m) ℝ E) (α : M) (y : E) : 0 ≤ μ.inChartAt b α y := by
+  by_cases hy : y ∈ (extChartAt I α).target
+  · rw [μ.inChartAt_of_mem_target b α hy]
+    -- `TangentSpace I ((extChartAt I α).symm y)` is definitionally `E`, so `b` gives a tangent
+    -- basis via `tangentSpaceCastModel` to evaluate `apply_eq_abs_det_mul`.
+    let c : Basis (Fin m) ℝ (TangentSpace I ((extChartAt I α).symm y)) :=
+      b.map (tangentSpaceCastModel I ((extChartAt I α).symm y)).symm.toLinearEquiv
+    rw [(μ ((extChartAt I α).symm y)).apply_eq_abs_det_mul c
+      (fun i ↦ mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) y (b i))]
+    exact mul_nonneg (abs_nonneg _) (hμ _ c)
+  · rw [μ.inChartAt_of_notMem_target b α hy]
 
 variable [MeasurableSpace E] [BorelSpace E]
 
@@ -522,6 +574,18 @@ theorem integralDensity_modelSpace [MeasurableSpace E] [BorelSpace E]
     integralDensity μ = ∫ y, μ y b ∂b.addHaar := by
   rw [integralDensity_eq_integral_inChartAt hi b 0 (by simp),
     RoughDensity.inChartAt_modelSpace]
+
+/-- On a model normed space `E`, `μ` is integrable iff `tsupport μ` is compact and `x ↦ μ x b` is
+Haar-integrable against `b.addHaar` in any model basis `b`. -/
+theorem integrableDensity_modelSpace_iff [MeasurableSpace E] [BorelSpace E]
+    {μ : RoughDensity 𝓘(ℝ, E) E m} (b : Basis (Fin m) ℝ E) :
+    IntegrableDensity μ ↔
+      IsCompact (_root_.tsupport (α := Density E m) μ) ∧ Integrable (fun x ↦ μ x b) b.addHaar := by
+  refine ⟨fun hi ↦ ⟨hi.isCompact, ?_⟩, fun ⟨hc, hint⟩ ↦ ?_⟩
+  · rw [← μ.inChartAt_modelSpace b 0]
+    exact hi.integrable_inChartAt b 0
+  · refine (μ.integrableDensity_iff_of_tsupport_subset_chart b 0 hc (by simp)).mpr ?_
+    rwa [μ.inChartAt_modelSpace b 0]
 
 /-- The zero density has zero integral. -/
 @[simp]

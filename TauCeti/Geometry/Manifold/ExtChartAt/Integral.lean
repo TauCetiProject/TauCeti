@@ -18,10 +18,12 @@ image of a chart-measurable subset of a chart source splits along these pieces
 (`TauCeti.setIntegral_image_extChartAt_eq_sum_disjointed`), and two finite chart-measurable covers
 of a set give the same sum of chart integrals for chart coefficients that agree on chart overlaps
 (`TauCeti.sum_setIntegral_image_extChartAt_disjointed_eq`). This is the cover-independence step
-in the integration of top forms and of densities. Chart coefficients related by the absolute
-Jacobian of the transition map have equal integrals over the two coordinate images of a subset
-of a chart overlap (`TauCeti.setIntegral_image_extChartAt_changeChart`). Only the model carries a
-measurable structure. The coefficients take values in any real normed space.
+in the integration of top forms and of densities; when the integrand vanishes almost everywhere
+outside one preferred chart, the cover sum reduces to that single chart's global integral
+(`TauCeti.sum_setIntegral_image_extChartAt_piece_eq_integral`). Chart coefficients related by the
+absolute Jacobian of the transition map have equal integrals over the two coordinate images of a
+subset of a chart overlap (`TauCeti.setIntegral_image_extChartAt_changeChart`). Only the model
+carries a measurable structure. The coefficients take values in any real normed space.
 
 A coefficient in a preferred chart is integrable when it vanishes off the chart target and at the
 coordinates of the points outside a compact set, and is integrable on the coordinate images of the
@@ -206,6 +208,57 @@ theorem sum_setIntegral_image_extChartAt_disjointed_eq [MeasurableSpace E]
     _ = ∑ j, ∫ y in (extChartAt I (β j)) '' disjointed v j, f (β j) y ∂ν :=
       (Finset.sum_congr rfl fun j _ ↦
         hsplit (β j) (IsChartMeasurable.disjointed hv j) (hpv j) (hfv j) hu hc).symm
+
+/-- If a `ChartCover` `c` covers `S`, and chart coefficients `f : M → E → F` vanish off the chart
+target, vanish at coordinates outside `S`, agree in integral on chart overlaps, and vanish almost
+everywhere outside `(extChartAt I α).source` on each piece of `c`, then the cover sum equals the
+global integral of `f α`. -/
+theorem sum_setIntegral_image_extChartAt_piece_eq_integral [MeasurableSpace E]
+    [OpensMeasurableSpace E] {ν : Measure E} {f : M → E → F} {S : Set M} (c : ChartCover I S)
+    (α : M) (hfα : Integrable (f α) ν)
+    (ht : Function.support (f α) ⊆ (extChartAt I α).target)
+    (hz : ∀ x ∈ (extChartAt I α).source, x ∉ S → f α (extChartAt I α x) = 0)
+    (hchange : ∀ (i : Fin c.n) (s : Set M),
+      s ⊆ (extChartAt I (c.center i)).source ∩ (extChartAt I α).source →
+        IsChartMeasurable I s →
+          (∫ y in (extChartAt I (c.center i)) '' s, f (c.center i) y ∂ν) =
+            ∫ y in (extChartAt I α) '' s, f α y ∂ν)
+    (hae : ∀ i : Fin c.n, ∀ᵐ y ∂ν,
+      y ∉ (extChartAt I (c.center i)) ''
+          ((extChartAt I (c.center i)).source ∩ (extChartAt I α).source) →
+        y ∈ (extChartAt I (c.center i)) '' c.piece i → f (c.center i) y = 0) :
+    ∑ i, (∫ y in (extChartAt I (c.center i)) '' c.piece i, f (c.center i) y ∂ν) =
+      ∫ y, f α y ∂ν := by
+  have hα_full : (∫ y, f α y ∂ν) =
+      ∫ y in (extChartAt I α) '' (extChartAt I α).source, f α y ∂ν := by
+    rw [(extChartAt I α).image_source_eq_target]
+    exact (setIntegral_eq_integral_of_forall_compl_eq_zero fun _ hy ↦
+      Function.notMem_support.mp fun hn ↦ hy (ht hn)).symm
+  have hα_split := setIntegral_image_extChartAt_eq_sum_disjointed α hfα.integrableOn
+    (isOpen_extChartAt_source (I := I) α).isChartMeasurable Subset.rfl
+    (fun i ↦ (c.isOpen_domain i).isChartMeasurable)
+    fun x hx hn ↦ hz x hx fun hS ↦ hn (c.covers hS)
+  rw [hα_full, hα_split]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hpiece_meas := c.isChartMeasurable_piece i
+  have hα_meas : IsChartMeasurable I (extChartAt I α).source :=
+    (isOpen_extChartAt_source α).isChartMeasurable
+  have hch := hchange i (c.piece i ∩ (extChartAt I α).source)
+    (fun _ hx ↦ ⟨c.piece_subset i hx.1, hx.2⟩) (hpiece_meas.inter hα_meas)
+  rw [inter_comm ((extChartAt I α).source) (disjointed c.domain i)]
+  simp_rw [← ChartCover.piece_def]
+  rw [← hch]
+  refine setIntegral_eq_of_subset_of_ae_sdiff_eq_zero
+    (c.measurableSet_image_piece i).nullMeasurableSet
+    (image_mono (inter_subset_left : c.piece i ∩ (extChartAt I α).source ⊆ c.piece i)) ?_
+  filter_upwards [hae i] with y hy
+  rintro ⟨⟨x, hx, rfl⟩, hnot⟩
+  have hxo : extChartAt I (c.center i) x ∉ (extChartAt I (c.center i)) ''
+      ((extChartAt I (c.center i)).source ∩ (extChartAt I α).source) := by
+    rintro ⟨x', hx', heq⟩
+    have hx_eq : x' = x := (extChartAt I (c.center i)).injOn hx'.1 (c.piece_subset i hx) heq
+    exact hnot ⟨x, ⟨hx, hx_eq ▸ hx'.2⟩, rfl⟩
+  exact hy hxo (mem_image_of_mem _ hx)
 
 /-- Chart coefficients that satisfy the absolute Jacobian law on a chart overlap have equal
 integrals over the coordinate images of a subset of the overlap, and are integrable there

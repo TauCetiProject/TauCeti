@@ -35,26 +35,6 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {m : ℕ}
 
-namespace RoughDensity
-
-/-- If `μ` is nonnegative on every tangent basis, then its chart coefficient `μ.inChartAt b α`
-is nonnegative everywhere. -/
-theorem inChartAt_nonneg {μ : RoughDensity I M m}
-    (hμ : ∀ x (c : Basis (Fin m) ℝ (TangentSpace I x)), 0 ≤ μ x c)
-    (b : Basis (Fin m) ℝ E) (α : M) (y : E) : 0 ≤ μ.inChartAt b α y := by
-  by_cases hy : y ∈ (extChartAt I α).target
-  · rw [μ.inChartAt_of_mem_target b α hy]
-    -- `TangentSpace I ((extChartAt I α).symm y)` is definitionally `E`, so `b` gives a tangent
-    -- basis via `tangentSpaceCastModel` to evaluate `apply_eq_abs_det_mul`.
-    let c : Basis (Fin m) ℝ (TangentSpace I ((extChartAt I α).symm y)) :=
-      b.map (tangentSpaceCastModel I ((extChartAt I α).symm y)).symm.toLinearEquiv
-    rw [(μ ((extChartAt I α).symm y)).apply_eq_abs_det_mul c
-      (fun i ↦ mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) y (b i))]
-    exact mul_nonneg (abs_nonneg _) (hμ _ c)
-  · rw [μ.inChartAt_of_notMem_target b α hy]
-
-end RoughDensity
-
 /-- Mapping a model basis along `(tangentSpaceCastModel I x).symm` preserves its underlying
 function into `TangentSpace I x`. -/
 private theorem coe_map_tangentSpaceCastModel_symm (x : M) (b : Basis (Fin m) ℝ E) :

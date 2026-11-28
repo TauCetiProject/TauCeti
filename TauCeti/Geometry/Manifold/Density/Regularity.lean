@@ -12,14 +12,15 @@ public import Mathlib.Topology.PartitionOfUnity
 import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.Measure
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
+import TauCeti.Topology.Algebra.Support
 import TauCeti.Topology.PartitionOfUnity.Basic
 
 /-!
 # Regularity, partitions of unity, and coordinate formulas for density integration
 
-Provides chart-support and bundle-continuity lemmas for `RoughDensity.inChartAt`, integrability
-under continuous scalar multiplication (`IntegrableDensity.fun_smul`) and for continuous or `C^n`
-sections of `TauCeti.DensityBundle` (`RoughDensity.integrableDensity_of_continuous_section`,
+Provides bundle-continuity lemmas for `RoughDensity.inChartAt`, integrability under continuous
+scalar multiplication (`IntegrableDensity.fun_smul`) and for continuous or `C^n` sections of
+`TauCeti.DensityBundle` (`RoughDensity.integrableDensity_of_continuous_section`,
 `RoughDensity.integrableDensity_of_contMDiff_section`), partition-of-unity decompositions
 (`integralDensity_eq_finsum_partitionOfUnity`), chosen-cover and almost-everywhere
 single-chart integration (`integralDensity_eq_sum_chooseChartCover`,
@@ -36,48 +37,12 @@ open scoped Manifold ContDiff Topology
 
 namespace TauCeti
 
-section ChartSupportAndContinuity
+section BundleContinuity
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {m : ℕ}
 
 namespace RoughDensity
-
-/-- If `μ ((extChartAt I α).symm y) = 0`, then `μ.inChartAt b α y = 0`. -/
-theorem inChartAt_eq_zero_of_apply_eq_zero {μ : RoughDensity I M m} (b : Basis (Fin m) ℝ E)
-    (α : M) {y : E} (h : μ ((extChartAt I α).symm y) = 0) : μ.inChartAt b α y = 0 := by
-  by_cases hy : y ∈ (extChartAt I α).target
-  · rw [μ.inChartAt_of_mem_target b α hy, h, Density.zero_apply]
-  · exact μ.inChartAt_of_notMem_target b α hy
-
-/-- If `x ∈ (extChartAt I α).source` lies outside `tsupport μ`, then
-`μ.inChartAt b α (extChartAt I α x) = 0`. -/
-theorem inChartAt_eq_zero_of_notMem_tsupport (μ : RoughDensity I M m)
-    (b : Basis (Fin m) ℝ E) (α : M) {x : M} (hx : x ∈ (extChartAt I α).source)
-    (hn : x ∉ _root_.tsupport (α := Density E m) μ) :
-    μ.inChartAt b α (extChartAt I α x) = 0 :=
-  inChartAt_eq_zero_of_apply_eq_zero b α <| by
-    rw [(extChartAt I α).left_inv hx]
-    exact _root_.image_eq_zero_of_notMem_tsupport (α := Density E m) hn
-
-/-- Chart coefficients vanish outside the coordinate target. -/
-theorem support_inChartAt_subset_target (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E)
-    (α : M) : Function.support (μ.inChartAt b α) ⊆ (extChartAt I α).target := by
-  intro y hy
-  by_contra hyt
-  exact hy (μ.inChartAt_of_notMem_target b α hyt)
-
-/-- `Function.support (μ.inChartAt b α)` lies in the coordinate image of
-`(extChartAt I α).source ∩ tsupport μ`. -/
-theorem support_inChartAt_subset (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E) (α : M) :
-    Function.support (μ.inChartAt b α) ⊆
-      (extChartAt I α) '' ((extChartAt I α).source ∩ _root_.tsupport (α := Density E m) μ) := by
-  intro y hy
-  have hyt := μ.support_inChartAt_subset_target b α hy
-  refine ⟨(extChartAt I α).symm y, ⟨(extChartAt I α).map_target hyt, ?_⟩,
-    (extChartAt I α).right_inv hyt⟩
-  exact _root_.subset_tsupport (α := Density E m) μ fun h0 ↦
-    Function.mem_support.mp hy (inChartAt_eq_zero_of_apply_eq_zero b α h0)
 
 /-- On a chart target, `μ.inChartAt (finBasis ℝ E) α z` is the fiber coordinate of `μ` in the
 preferred trivialization of `TauCeti.DensityBundle`. -/
@@ -131,7 +96,7 @@ theorem continuousOn_inChartAt_of_continuousOn_section [FiniteDimensional ℝ E]
 
 end RoughDensity
 
-end ChartSupportAndContinuity
+end BundleContinuity
 
 section RegularityAndFormulas
 
@@ -144,31 +109,24 @@ theorem IntegrableDensity.fun_smul {μ : RoughDensity I M m} (hμ : IntegrableDe
     {f : M → ℝ} (hf : Continuous f) : IntegrableDensity (fun x ↦ f x • μ x) := by
   let : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
-  -- Clamp `f` to its compact-support bound to obtain a globally bounded continuous multiplier.
-  obtain ⟨B, hB⟩ := hμ.isCompact.exists_bound_of_continuousOn hf.continuousOn
-  let C := max B 0
-  let g : M → ℝ := fun x ↦ max (-C) (min C (f x))
-  have hgf : (fun x ↦ g x • μ x : RoughDensity I M m) = fun x ↦ f x • μ x := by
-    funext x
-    by_cases hx : x ∈ _root_.tsupport (α := Density E m) μ
-    · obtain ⟨hl, hh⟩ := abs_le.mp
-        (by simpa only [Real.norm_eq_abs] using (hB x hx).trans (le_max_left B 0))
-      simp only [g, C, min_eq_right hh, max_eq_right hl]
-    · have hz : μ x = 0 := _root_.image_eq_zero_of_notMem_tsupport (α := Density E m) hx
-      simp [hz]
+  -- `TangentSpace I x` is definitionally `E`, so clamp `f` on the compact support of `μ`.
+  obtain ⟨C, _, g, hgc, hgb, hfg⟩ :=
+    TauCeti.exists_continuous_abs_le_fun_smul_eq (f := (show M → Density E m from μ))
+      hμ.isCompact hf
+  have hgf : (fun x ↦ g x • μ x : RoughDensity I M m) = fun x ↦ f x • μ x := funext fun x ↦
+    congrFun hfg x
   rw [← hgf, integrableDensity_iff]
   refine ⟨hμ.isCompact.of_isClosed_subset (_root_.isClosed_tsupport _)
-    (_root_.tsupport_smul_subset_right g (show M → Density E m from μ)),
-    hμ.nonempty_basis, fun b α ↦ ?_⟩
+    (RoughDensity.tsupport_fun_smul_subset g μ), hμ.nonempty_basis, fun b α ↦ ?_⟩
   have hm := measurableSet_extChartAt_target (I := I) α
   refine (integrableOn_iff_integrable_of_support_subset
     (RoughDensity.support_inChartAt_subset_target _ b α)).mp ?_
   refine IntegrableOn.congr_fun ?_ (fun y _ ↦ (RoughDensity.inChartAt_fun_smul g μ b α y).symm) hm
   exact (hμ.integrable_inChartAt b α).integrableOn.bdd_mul
-    (((continuous_const.max (continuous_const.min hf)).comp_continuousOn
-      (continuousOn_extChartAt_symm α)).aestronglyMeasurable hm (μ := b.addHaar))
-    (Filter.Eventually.of_forall fun _ ↦ (Real.norm_eq_abs _).trans_le <| abs_le.mpr
-      ⟨le_max_left _ _, max_le (neg_le_self (le_max_right B 0)) (min_le_left _ _)⟩)
+    ((hgc.comp_continuousOn (continuousOn_extChartAt_symm α)).aestronglyMeasurable hm
+      (μ := b.addHaar))
+    (Filter.Eventually.of_forall fun y ↦
+      (Real.norm_eq_abs _).trans_le (hgb ((extChartAt I α).symm y)))
 
 /-- A compactly supported rough density whose chart coefficient in one model basis is continuous on
 every preferred chart target is integrable. -/
@@ -265,55 +223,18 @@ theorem integralDensity_eq_integral_inChartAt_of_ae_support [IsManifold I 1 M]
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   let : LocallyCompactSpace H := I.locallyCompactSpace
   let c := chooseChartCover (I := I) (_root_.tsupport (α := Density E m) μ) hi.isCompact
-  have hsum := integralDensity_eq_sum_chooseChartCover hi b
-  have hα_full : (∫ y, μ.inChartAt b α y ∂b.addHaar) =
-      ∫ y in (extChartAt I α) '' (extChartAt I α).source, μ.inChartAt b α y ∂b.addHaar := by
-    rw [(extChartAt I α).image_source_eq_target]
-    exact (setIntegral_eq_integral_of_forall_compl_eq_zero fun _ hy ↦
-      μ.inChartAt_of_notMem_target b α hy).symm
-  have hα_split := setIntegral_image_extChartAt_eq_sum_disjointed α
-    (hi.integrable_inChartAt b α).integrableOn
-    (isOpen_extChartAt_source (I := I) α).isChartMeasurable
-    Subset.rfl (fun i ↦ (c.isOpen_domain i).isChartMeasurable)
-    fun x hx hn ↦ μ.inChartAt_eq_zero_of_notMem_tsupport b α hx fun hts ↦ hn (c.covers hts)
-  rw [hsum, hα_full, hα_split]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have hpiece_meas := c.isChartMeasurable_piece i
-  have hα_meas : IsChartMeasurable I (extChartAt I α).source :=
-    (isOpen_extChartAt_source α).isChartMeasurable
-  have hinter_sub : c.piece i ∩ (extChartAt I α).source ⊆
-      (extChartAt I (c.center i)).source ∩ (extChartAt I α).source :=
-    fun _ hx ↦ ⟨c.piece_subset i hx.1, hx.2⟩
-  have hch := (μ.setIntegral_inChartAt_changeChart b (c.center i) α hinter_sub
-    ((hpiece_meas.inter hα_meas).image_extChartAt (c.center i)
-      (inter_subset_left.trans (c.piece_subset i))) b.addHaar).1
-  rw [inter_comm ((extChartAt I α).source) (disjointed c.domain i)]
+  rw [integralDensity_eq_sum_chooseChartCover hi b]
   simp_rw [← ChartCover.piece_def]
-  rw [← hch]
-  refine setIntegral_eq_of_subset_of_ae_sdiff_eq_zero (μ := b.addHaar)
-    (f := μ.inChartAt b (c.center i)) (c.measurableSet_image_piece i).nullMeasurableSet
-    (image_mono (inter_subset_left : c.piece i ∩ (extChartAt I α).source ⊆ c.piece i)) ?_
+  refine sum_setIntegral_image_extChartAt_piece_eq_integral c α (hi.integrable_inChartAt b α)
+    (μ.support_inChartAt_subset_target b α)
+    (fun _ hx hn ↦ μ.inChartAt_eq_zero_of_notMem_tsupport b α hx hn)
+    (fun i s hsub hsm ↦ (μ.setIntegral_inChartAt_changeChart b (c.center i) α hsub
+      (hsm.image_extChartAt (c.center i) (hsub.trans inter_subset_left)) b.addHaar).1)
+    fun i ↦ ?_
   filter_upwards [hs.ae_extChartAt_symm_notMem_of_sdiff_source (c.center i) b.addHaar] with y hy
-  rintro ⟨⟨x, hx, rfl⟩, hnot⟩
-  have hxo : extChartAt I (c.center i) x ∉ (extChartAt I (c.center i)) ''
-      ((extChartAt I (c.center i)).source ∩ (extChartAt I α).source) := by
-    rintro ⟨x', hx', heq⟩
-    have hx_eq : x' = x := (extChartAt I (c.center i)).injOn hx'.1 (c.piece_subset i hx) heq
-    exact hnot ⟨x, ⟨hx, hx_eq ▸ hx'.2⟩, rfl⟩
+  intro hxo ⟨x, hx, hxy⟩
   exact μ.inChartAt_eq_zero_of_apply_eq_zero b (c.center i)
-    (not_not.mp (hy hxo ((extChartAt I (c.center i)).map_source (c.piece_subset i hx))))
-
-/-- On a model normed space `E`, `μ` is integrable iff `tsupport μ` is compact and `x ↦ μ x b` is
-Haar-integrable against `b.addHaar` in any model basis `b`. -/
-theorem integrableDensity_modelSpace_iff [MeasurableSpace E] [BorelSpace E]
-    {μ : RoughDensity 𝓘(ℝ, E) E m} (b : Basis (Fin m) ℝ E) :
-    IntegrableDensity μ ↔
-      IsCompact (_root_.tsupport (α := Density E m) μ) ∧ Integrable (fun x ↦ μ x b) b.addHaar := by
-  refine ⟨fun hi ↦ ⟨hi.isCompact, ?_⟩, fun ⟨hc, hint⟩ ↦ ?_⟩
-  · rw [← μ.inChartAt_modelSpace b 0]
-    exact hi.integrable_inChartAt b 0
-  · refine (μ.integrableDensity_iff_of_tsupport_subset_chart b 0 hc (by simp)).mpr ?_
-    rwa [μ.inChartAt_modelSpace b 0]
+    (not_not.mp (hy hxo (hxy ▸ (extChartAt I (c.center i)).map_source (c.piece_subset i hx))))
 
 /-- Evaluating a `1`-density on `ℝ` at `Basis.singleton (Fin 1) ℝ` agrees with evaluating it on the
 constant tuple `fun _ ↦ 1`. -/
