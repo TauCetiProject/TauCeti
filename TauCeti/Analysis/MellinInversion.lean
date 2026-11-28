@@ -450,12 +450,10 @@ theorem integrable_cpow_smul_of_norm_le_exp_neg_mul_abs {E : Type*} [NormedAddCo
   have hpow :
       ‖w ^ ((σ : ℂ) + y * I)‖ ≤ ‖w‖ ^ σ * (1 + |y|) ^ (0 : ℝ) * Real.exp (|w.arg| * |y|) := by
     simpa using Complex.norm_cpow_le_rpow_mul_exp_abs_arg_mul_abs_im w ((σ : ℂ) + y * I)
+  have hrate : (|w.arg| + -α) * |y| = -(δ * |y|) := by dsimp [δ]; ring
   rw [norm_smul]
   refine (mul_le_mul_one_add_abs_rpow_mul_exp (norm_nonneg _) (norm_nonneg _) hpow hgy).trans_eq ?_
-  rw [mul_assoc, zero_add]
-  congr 3
-  dsimp [δ]
-  ring
+  rw [zero_add, hrate, mul_assoc]
 
 /-- Negated-exponent companion to `TauCeti.integrable_cpow_smul_of_norm_le_exp_neg_mul_abs`:
 `y ↦ w ^ (-(σ + i y)) • g y` is integrable on `ℝ` whenever `|arg w| < α`. -/

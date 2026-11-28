@@ -982,13 +982,12 @@ theorem norm_cpow_deriv_smul_le {E : Type*} [NormedAddCommGroup E] [NormedSpace 
     simpa only [add_re, ofReal_re, mul_I_re, neg_zero, add_zero, add_im, ofReal_im, mul_I_im,
       zero_add, Real.rpow_one, mul_assoc] using
       norm_mul_cpow_sub_one_le_max_rpow_mul_exp hr₀ hw_lo hw_hi hw_arg ((σ : ℂ) + y * I)
+  have hdeg : (1 : ℝ) + R = R + 1 := add_comm 1 R
+  have hrate : (α' + -α) * |y| = -((α - α') * |y|) := by ring
   rw [norm_smul]
   refine (TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp (norm_nonneg _) (norm_nonneg _)
     hmul hv).trans_eq ?_
-  rw [mul_assoc]
-  congr 2
-  · congr 1; ring
-  · congr 1; ring
+  rw [hdeg, hrate, mul_assoc]
 
 /-- For a real base `b ≥ 1`, the principal power `b ^ z` is Lipschitz in the exponent on each
 half-plane `re z ≤ M`, with constant `log b · b ^ M`:

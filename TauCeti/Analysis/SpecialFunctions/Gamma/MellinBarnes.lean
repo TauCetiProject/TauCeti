@@ -245,12 +245,12 @@ private theorem continuous_and_norm_Gamma_mul_Gamma_sub_le {a : ℂ} {σ : ℝ}
   have h2y : ‖Gamma (a - σ - y * I)‖ ≤
       C₂ * (1 + |y|) ^ (a.re - σ - 1 / 2) * Real.exp (-(π / 2) * |y|) := by
     simpa [sub_re] using h₂ y
+  have hdeg : (σ - 1 / 2) + (a.re - σ - 1 / 2) = a.re - 1 := by ring
+  have hrate : (-(π / 2) + -(π / 2)) * |y| = -π * |y| := by ring
   rw [hsub, norm_mul]
   refine (TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp (norm_nonneg _) (norm_nonneg _) (h₁ y)
     h2y).trans_eq ?_
-  congr 1
-  · congr 2; ring
-  · congr 1; ring
+  rw [hdeg, hrate]
 
 /-- For `z ∈ Complex.slitPlane` and `σ : ℝ` avoiding the poles of `Γ(s)` and `Γ(a - s)`, the
 Mellin–Barnes integrand `y ↦ Γ(σ + i y) Γ(a - (σ + i y)) z^{-(σ + i y)}` is integrable on `ℝ`. -/

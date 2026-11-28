@@ -126,10 +126,10 @@ private theorem exists_norm_three_Gamma_le {a b : ℂ} {σ : ℝ}
   have h12 := TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp (norm_nonneg _) (norm_nonneg _) h1 h2
   have h123 := TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp
     (mul_nonneg (norm_nonneg _) (norm_nonneg _)) (norm_nonneg _) h12 h3
+  have hrate : (-(π / 2) + -(π / 2) + -(π / 2)) * |y| = -(3 * π / 2) * |y| := by ring
   rw [norm_mul, norm_mul]
   refine h123.trans_eq ?_
-  congr 2
-  ring
+  rw [hrate]
 
 /-- Continuity in `y` of `Γ(a + (σ + i y))` along a pole-free vertical line. -/
 private theorem continuous_Gamma_add_contour {a : ℂ} {σ : ℝ} (ha : ∀ n : ℕ, a.re + σ ≠ -n) :
@@ -188,10 +188,10 @@ theorem integrable_Gamma_mul_Gamma_mul_Gamma_mul_inv_Gamma_mul_neg_cpow {a b : �
       simpa only [← add_assoc] using (hbc (c + σ) (mem_ball_self zero_lt_one) y).1
     dsimp [g]
     rw [norm_mul]
+    have hrate : (-(3 * π / 2) + π / 2) * |y| = -π * |y| := by ring
     refine (TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp (norm_nonneg _) (norm_nonneg _)
       (hbg y) hinv).trans_eq ?_
-    congr 2
-    ring
+    rw [hrate]
   refine (TauCeti.integrable_cpow_smul_of_norm_le_exp_neg_mul_abs hg_meas hg_bound σ
     (abs_arg_lt_pi_of_mem_slitPlane hz)).congr (Eventually.of_forall fun y ↦ ?_)
   simp only [g, smul_eq_mul]; ring
@@ -247,10 +247,11 @@ private theorem norm_fderiv_mellinBarnesIntegrand_le {g : ℂ} {σ y Cg Kg Cc p_
     have hgvw := TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp
       (mul_nonneg (norm_nonneg _) (norm_nonneg _)) (norm_nonneg _) hgv hw
     rw [norm_mul, norm_mul]
+    have hdeg : Kg + q₁ + q₂ = Kg + p_exp + 1 := by linear_combination hq
+    have hrate : (-(3 * π / 2) + π / 2 + θ) * |y| = -((π - θ) * |y|) := by ring
     refine hgvw.trans_eq ?_
     dsimp [W]
-    rw [mul_assoc (Cg * Cc * M), add_assoc Kg q₁ q₂, hq]
-    congr 3 <;> ring
+    rw [hdeg, hrate, mul_assoc (Cg * Cc * M)]
   have hterm1 := hprod (add_zero (p_exp + 1)) hd (by simpa using hpow0)
   have hterm2 : ‖-(g * (Gamma (p.1 + (σ + y * I)))⁻¹ *
       (((σ : ℂ) + y * I) * (-p.2) ^ ((σ : ℂ) + y * I - 1)))‖ ≤ W := by
@@ -347,28 +348,15 @@ theorem analyticOnNhd_integral_Gamma_mul_Gamma_mul_Gamma_mul_inv_Gamma_mul_neg_c
     (integrable_Gamma_mul_Gamma_mul_Gamma_mul_inv_Gamma_mul_neg_cpow p₀.1 hp₀ ha hb hσ)
     hF'_meas h_bound h_dom_int h_diff).differentiableAt.differentiableWithinAt
 
-/-- Product integrability on `(0, 1) × ℝ` for Beta-times-Mellin–Barnes integrands whose
-exponents `u y` and `v y` have constant positive real parts `u₀` and `v₀`. -/
-private theorem integrable_beta_mul_mellinBarnes {a w : ℂ} {σ u₀ v₀ : ℝ}
-    {u v : ℝ → ℂ} (hu_cont : Continuous u) (hv_cont : Continuous v)
-    (hu_re : ∀ y, (u y).re = u₀) (hv_re : ∀ y, (v y).re = v₀)
-    (hu₀ : 0 < u₀) (hv₀ : 0 < v₀) (hσ_ne : ∀ n : ℕ, -σ ≠ -n)
-    (haσ_ne : ∀ n : ℕ, a.re + σ ≠ -n) (hw : w ∈ slitPlane) :
-    Integrable (fun p : ℝ × ℝ ↦ (p.1 : ℂ) ^ (u p.2 - 1) * (1 - (p.1 : ℂ)) ^ (v p.2 - 1) *
-        (Gamma (a + (σ + p.2 * I)) * Gamma (-(σ + p.2 * I)) * w ^ ((σ : ℂ) + p.2 * I)))
-      ((volume.restrict (Ioo (0 : ℝ) 1)).prod volume) := by
-  exact integrable_beta_mul_profile hu_cont hv_cont hu_re hv_re hu₀ hv₀
-    (integrable_Gamma_add_mul_Gamma_neg_mul_cpow hσ_ne haσ_ne hw)
-
 /-- Shared Fubini swap and inner Beta evaluation for Euler–Mellin–Barnes identities: if on `(0, 1)`
 the scaled Euler integrand expands pointwise as `(2π)⁻¹` times the vertical integral of a
-Beta-weighted Mellin–Barnes kernel with exponents `u y`, `v y` of constant positive real parts
-`u₀`, `v₀`, then `eulerIntegral a b c z` equals the normalized vertical integral with the Beta
+Beta-weighted Mellin–Barnes kernel with measurable exponents `u y`, `v y` of constant positive real
+parts `u₀`, `v₀`, then `eulerIntegral a b c z` equals the normalized vertical integral with the Beta
 factor `Γ(u y) Γ(v y) / Γ(u y + v y)`. -/
 private theorem eulerIntegral_eq_of_pointwise_mellinBarnes {a b c z w : ℂ} {σ u₀ v₀ : ℝ}
     {u v : ℝ → ℂ}
     (hσ : σ < 0) (haσ : -a.re < σ) (hw : w ∈ slitPlane)
-    (hu_cont : Continuous u) (hv_cont : Continuous v)
+    (hu_meas : Measurable u) (hv_meas : Measurable v)
     (hu_re : ∀ y, (u y).re = u₀) (hv_re : ∀ y, (v y).re = v₀)
     (hu₀ : 0 < u₀) (hv₀ : 0 < v₀)
     (hpoint : ∀ t ∈ Ioo (0 : ℝ) 1,
@@ -388,7 +376,8 @@ private theorem eulerIntegral_eq_of_pointwise_mellinBarnes {a b c z w : ℂ} {σ
       (Gamma (a + s y) * Gamma (-s y) * w ^ s y)
   have hF_int : Integrable (Function.uncurry F) ((volume.restrict (uIoc 0 1)).prod volume) := by
     rw [uIoc_of_le zero_le_one, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
-    exact integrable_beta_mul_mellinBarnes hu_cont hv_cont hu_re hv_re hu₀ hv₀ hσ_ne haσ_ne hw
+    exact integrable_beta_mul_profile hu_meas hv_meas hu_re hv_re hu₀ hv₀
+      (integrable_Gamma_add_mul_Gamma_neg_mul_cpow hσ_ne haσ_ne hw)
   have hinner (y : ℝ) : ∫ t : ℝ in 0..1, F t y =
       (Gamma (u y) * Gamma (v y) / Gamma (u y + v y)) *
         (Gamma (a + s y) * Gamma (-s y) * w ^ s y) := by
@@ -466,7 +455,7 @@ theorem eulerIntegral_eq_mellinBarnes (a : ℂ) {b c z : ℂ} (hbc : b.re < c.re
   have h := eulerIntegral_eq_of_pointwise_mellinBarnes (z := z) (w := -z)
     (u₀ := b.re + σ) (v₀ := (c - b).re)
     hσ haσ hz (u := fun y : ℝ ↦ b + ((σ : ℂ) + y * I)) (v := fun _ ↦ c - b)
-    (by fun_prop) continuous_const (fun _ ↦ by simp [add_re]) (fun _ ↦ rfl)
+    (by fun_prop) measurable_const (fun _ ↦ by simp [add_re]) (fun _ ↦ rfl)
     (by linarith) hcb (fun _ ht ↦ mul_eulerIntegrand_eq_integral_mellinBarnes hz hσ haσ ht.1)
   have hcongr (y : ℝ) :
       (Gamma (b + (σ + y * I)) * Gamma (c - b) / Gamma (b + (σ + y * I) + (c - b))) *
@@ -506,11 +495,11 @@ private theorem exists_norm_four_Gamma_le {a b c : ℂ} {σ : ℝ}
       ‖Gamma (a + (σ + y * I)) * Gamma (b + (σ + y * I)) * Gamma (-(σ + y * I))‖ *
         ‖Gamma (c - a - b - (σ + y * I))‖ := by
     simp only [norm_mul]; ring
+  have hrate : (-(3 * π / 2) + -(π / 2)) * |y| = -(2 * π) * |y| := by ring
   rw [hrew]
   refine (TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp (norm_nonneg _) (norm_nonneg _) (hb₃ y)
     h2).trans_eq ?_
-  congr 2
-  ring
+  rw [hrate]
 
 /-- Continuity in `y` of the four-Gamma factor in DLMF 15.6.7. -/
 private theorem continuous_four_Gamma {a b c : ℂ} {σ : ℝ}
