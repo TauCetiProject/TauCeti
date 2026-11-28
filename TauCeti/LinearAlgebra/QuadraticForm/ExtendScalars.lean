@@ -107,8 +107,8 @@ open QuadraticMap
 
 namespace QuadraticMap
 
-variable {K L N ι : Type*} [CommRing K] [CommRing L] [Algebra K L]
-variable [AddCommGroup N] [Module L N] [Finite ι]
+variable {K L N ι : Type*} [CommSemiring K] [CommSemiring L] [Algebra K L]
+variable [AddCancelCommMonoid N] [Module L N] [Finite ι]
 
 /-- A quadratic map on `ι → L` is determined by its values on vectors with coordinates in
 `K`. -/
