@@ -189,4 +189,43 @@ theorem range_comap_fiberRing (a : α) :
     PrimeSpectrum.coe_basicOpen_fiberIdempotent]
   rfl
 
+/-- The canonical coefficient maps to any injective family of fibre rings containing all labels
+give a bijection onto their product. Factors outside the finite range of `f` are zero rings. -/
+theorem bijective_pi_fiberRing {ι : Type*} (e : ι ↪ α)
+    (hs : Set.range f ⊆ Set.range e) :
+    Function.Bijective (RingHom.pi fun i : ι ↦ algebraMap R (f.fiberRing (e i))) := by
+  classical
+  let s := (f.range_finite.preimage e.injective.injOn).toFinset
+  let e' : s ↪ α := (Function.Embedding.subtype _).trans e
+  have hs' : Set.range f ⊆ Set.range e' := by
+    rintro _ ⟨p, rfl⟩
+    obtain ⟨i, hi⟩ := hs ⟨p, rfl⟩
+    exact ⟨⟨i, by simp [s, hi]⟩, hi⟩
+  have hc₀ := PrimeSpectrum.completeOrthogonalIdempotents_fiberIdempotent f.isLocallyConstant
+    (s := Finset.univ.map e') (by simpa using hs')
+  let j : s ≃ ↥(Finset.univ.map e') := Equiv.ofBijective
+    (fun i ↦ ⟨e' i, Finset.mem_map_of_mem _ (Finset.mem_univ i)⟩)
+    ⟨fun _ _ h ↦ e'.injective (congrArg Subtype.val h), by
+      rintro ⟨a, ha⟩
+      obtain ⟨i, _, rfl⟩ := Finset.mem_map.mp ha
+      exact ⟨i, rfl⟩⟩
+  have hj (i : s) : (j i).val = e' i := rfl
+  have hc : CompleteOrthogonalIdempotents fun i : s ↦
+      PrimeSpectrum.fiberIdempotent f.isLocallyConstant (e' i) := by
+    simpa only [Function.comp_def, hj] using
+      (CompleteOrthogonalIdempotents.equiv j).mpr hc₀
+  have hf : Function.Bijective (RingHom.pi fun i : s ↦ algebraMap R (f.fiberRing (e' i))) := by
+    simpa only [Ideal.Quotient.algebraMap_eq] using hc.bijective_pi
+  refine ⟨fun x y h ↦ hf.injective (funext fun i ↦ congrFun h i.val), ?_⟩
+  intro y
+  obtain ⟨x, hx⟩ := hf.surjective (fun i : s ↦ y i.val)
+  refine ⟨x, funext fun i ↦ ?_⟩
+  by_cases hi : i ∈ s
+  · exact congrFun hx ⟨i, hi⟩
+  · have he : PrimeSpectrum.fiberIdempotent f.isLocallyConstant (e i) = 0 :=
+      (PrimeSpectrum.fiberIdempotent_eq_zero_iff _).mpr (by simpa [s] using hi)
+    have : Subsingleton (f.fiberRing (e i)) := Ideal.Quotient.subsingleton_iff.mpr (by
+      rw [he, sub_zero, Ideal.span_singleton_one])
+    exact Subsingleton.elim _ _
+
 end LocallyConstant

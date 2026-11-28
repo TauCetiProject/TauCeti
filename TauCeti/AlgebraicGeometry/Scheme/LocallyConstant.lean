@@ -75,28 +75,11 @@ theorem isIso_specCover (hs : Set.range f ⊆ Set.range e) : IsIso (f.specCover 
   let k := (equivShrink.{u} ι).symm
   let := Fintype.ofEquiv ι k.symm
   let g := RingHom.pi fun i : Shrink.{u} ι ↦ algebraMap A (f.fiberRing (e (k i)))
-  have hc₀ := completeOrthogonalIdempotents_fiberIdempotent f.isLocallyConstant
-    (s := Finset.univ.map e) (by simpa using hs)
-  let j : ι ≃ ↥(Finset.univ.map e) := Equiv.ofBijective
-    (fun i ↦ ⟨e i, Finset.mem_map_of_mem _ (Finset.mem_univ i)⟩)
-    ⟨fun _ _ h ↦ e.injective (congrArg Subtype.val h), by
-      rintro ⟨a, ha⟩
-      obtain ⟨i, _, rfl⟩ := Finset.mem_map.mp ha
-      exact ⟨i, rfl⟩⟩
-  have hj (i : ι) : (j i).val = e i := rfl
-  have hc : CompleteOrthogonalIdempotents fun i : ι ↦
-      fiberIdempotent f.isLocallyConstant (e i) := by
-    simpa only [Function.comp_def, hj] using
-      (CompleteOrthogonalIdempotents.equiv j).mpr hc₀
-  have hf : Function.Bijective (RingHom.pi fun i : ι ↦ algebraMap A (f.fiberRing (e i))) := by
-    simpa only [Ideal.Quotient.algebraMap_eq] using hc.bijective_pi
   have hg : Function.Bijective g := by
-    have h := (Equiv.piCongrLeft (fun i : ι ↦ f.fiberRing (e i)) k).symm.bijective.comp hf
-    have heq : ⇑g = (Equiv.piCongrLeft (fun i : ι ↦ f.fiberRing (e i)) k).symm ∘
-        (RingHom.pi fun i : ι ↦ algebraMap A (f.fiberRing (e i))) := by
-      funext x i
-      simp only [g, Function.comp_apply, Equiv.piCongrLeft_symm_apply, RingHom.pi_apply]
-    rwa [heq]
+    apply f.bijective_pi_fiberRing (k.toEmbedding.trans e)
+    rintro _ ⟨p, rfl⟩
+    obtain ⟨i, hi⟩ := hs ⟨p, rfl⟩
+    exact ⟨k.symm i, by simpa using hi⟩
   have : IsIso (Spec.map (CommRingCat.ofHom g)) := isIso_SpecMap_iff.mpr hg
   have heq : (Sigma.reindex k F).hom ≫ f.specCover e =
       sigmaSpec.{u, u} (fun i : Shrink.{u} ι ↦ .of (f.fiberRing (e (k i)))) ≫

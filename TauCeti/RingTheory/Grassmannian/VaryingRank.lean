@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Grassmannian.StableLocus
-public import TauCeti.RingTheory.Spectrum.Prime.LocallyConstant
+public import TauCeti.RingTheory.Spectrum.Prime.Rank.Fiber
 public import TauCeti.RingTheory.Spectrum.Prime.Rank.Surjective
 
 /-!
@@ -39,27 +39,6 @@ namespace Submodule
 variable {R : Type u} {M : Type v} {A : Type w} [CommRing R] [AddCommGroup M] [Module R M]
   [CommRing A] [Algebra R A]
 
-section RankFactors
-
-variable {P : Type*} [AddCommGroup P] [Module A P]
-  (N : Submodule A P) [Module.Finite A (P ⧸ N)] [Module.Projective A (P ⧸ N)]
-
-/-- The coefficient ring of the clopen locus where the quotient by `N` has rank `r`. -/
-noncomputable abbrev quotientRankRing (r : ℕ) : Type w :=
-  LocallyConstant.fiberRing
-    ⟨_, Module.isLocallyConstant_rankAtStalk (R := A) (M := P ⧸ N)⟩ r
-
-/-- Scalar extension of the quotient to its rank-`r` factor has constant stalk rank `r`. -/
-@[simp]
-theorem rankAtStalk_quotientRankRing_tensor_quotient (r : ℕ)
-    (p : PrimeSpectrum (quotientRankRing N r)) :
-    Module.rankAtStalk (quotientRankRing N r ⊗[A] (P ⧸ N)) p = r := by
-  rw [Module.rankAtStalk_baseChange]
-  exact (Set.ext_iff.mp (LocallyConstant.range_comap_fiberRing
-    ⟨_, Module.isLocallyConstant_rankAtStalk (R := A) (M := P ⧸ N)⟩ r) _).mp ⟨p, rfl⟩
-
-end RankFactors
-
 section RankPoints
 
 variable (N : Submodule A (A ⊗[R] M)) [Module.Finite A ((A ⊗[R] M) ⧸ N)]
@@ -68,22 +47,22 @@ variable (N : Submodule A (A ⊗[R] M)) [Module.Finite A ((A ⊗[R] M) ⧸ N)]
 /-- The fixed-rank quotient on the canonical rank-`r` factor. Its kernel is the scalar
 extension of `N`, defined using the native quotient map `baseChangeMkQ`. -/
 noncomputable def quotientRankPoint (r : ℕ) :
-    G(r, quotientRankRing N r ⊗[R] M; quotientRankRing N r) :=
-  ofSurjective (baseChangeMkQ (quotientRankRing N r) N)
-    (baseChangeMkQ_surjective N) (rankAtStalk_quotientRankRing_tensor_quotient N r)
+    G(r, Module.rankRing A ((A ⊗[R] M) ⧸ N) r ⊗[R] M; Module.rankRing A ((A ⊗[R] M) ⧸ N) r) :=
+  ofSurjective (baseChangeMkQ (Module.rankRing A ((A ⊗[R] M) ⧸ N) r) N)
+    (baseChangeMkQ_surjective N) (Module.rankAtStalk_rankRing_tensor A ((A ⊗[R] M) ⧸ N) r)
 
 /-- The kernel on a rank factor is the kernel of the scalar-extended quotient map. -/
 @[simp]
 theorem quotientRankPoint_toSubmodule (r : ℕ) :
     (quotientRankPoint N r).toSubmodule =
-      (baseChangeMkQ (quotientRankRing N r) N).ker :=
+      (baseChangeMkQ (Module.rankRing A ((A ⊗[R] M) ⧸ N) r) N).ker :=
   toSubmodule_ofSurjective _ _ _
 
 /-- A stable kernel remains stable on each of its quotient-rank factors. -/
 theorem quotientRankPoint_mem_invtSubmodule {t : Module.End R M}
     (hN : N ∈ Module.End.invtSubmodule (t.baseChange A)) (r : ℕ) :
     (quotientRankPoint N r).toSubmodule ∈
-      Module.End.invtSubmodule (t.baseChange (quotientRankRing N r)) := by
+      Module.End.invtSubmodule (t.baseChange (Module.rankRing A ((A ⊗[R] M) ⧸ N) r)) := by
   rw [quotientRankPoint_toSubmodule]
   exact invtSubmodule_ker_baseChangeMkQ hN
 
