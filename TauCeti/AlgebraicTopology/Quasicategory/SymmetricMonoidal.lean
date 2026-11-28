@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.CategoricalEquivalence
 public import TauCeti.AlgebraicTopology.Quasicategory.CoCartesian.Uniqueness
-public import TauCeti.AlgebraicTopology.Quasicategory.InfinityOperad
+public import TauCeti.AlgebraicTopology.Quasicategory.InfinityOperad.Basic
 public import TauCeti.AlgebraicTopology.Quasicategory.Product
 
 /-!

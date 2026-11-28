@@ -45,6 +45,14 @@ namespace SSet
 
 variable {X : SSet.{u}}
 
+/-- Pulling back a totally degenerate simplex along a simplicial operator gives the totally
+degenerate simplex at the same vertex. -/
+@[simp]
+theorem map_map_const_zero (X : SSet.{u}) {m m' : SimplexCategory} (f : m' ⟶ m) (x : X _⦋0⦌) :
+    X.map f.op (X.map (SimplexCategory.const m ⦋0⦌ 0).op x) =
+      X.map (SimplexCategory.const m' ⦋0⦌ 0).op x := by
+  rw [← Functor.map_comp_apply, ← op_comp, Subsingleton.elim (f ≫ _)]
+
 /-- The face `0` of the degenerate `3`-simplex `s₁ s₁ e` on an edge `e` is the degenerate
 `2`-simplex on the target of `e`. -/
 lemma δ_zero_σ_one_σ_one (e : X _⦋1⦌) :

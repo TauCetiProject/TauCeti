@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Quasicategory.Cartesian
+public import TauCeti.AlgebraicTopology.Quasicategory.Cartesian.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Fiber
 public import TauCeti.AlgebraicTopology.SimplicialSet.Op
 public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
