@@ -150,8 +150,8 @@ lemma ofLE_π : ofLE P.B P.Z P.le ≫ P.π = 0 := by
 
 /-- The kernel of the projection is the smaller subobject, seen inside the larger one. -/
 lemma kernelSubobject_π : kernelSubobject P.π = (Subobject.pullback P.Z.arrow).obj P.B := by
-  rw [← cokernel_π_iso_hom, kernelSubobject_comp_mono, kernelSubobject_cokernel_π,
-    pullback_arrow_of_le]
+  rw [← cokernel_π_iso_hom, kernelSubobject_comp_mono,
+    kernelSubobject_cokernel_π_of_isNormalMonoCategory, pullback_arrow_of_le]
 
 /-- A morphism out of `P.Z` that vanishes on `P.B` descends uniquely to `X`. -/
 noncomputable def desc (f : (P.Z : C) ⟶ Y) (hf : ofLE P.B P.Z P.le ≫ f = 0) : X ⟶ Y :=
@@ -234,7 +234,7 @@ variable {B Z : Subobject A} (le : B ≤ Z) (g : (Z : C) ⟶ X)
   (w : ofLE B Z le ≫ g = 0) (hc : IsColimit (CokernelCofork.ofπ g w))
 
 /-- The subquotient presentation given by a cokernel colimit cocone `B ⟶ Z ⟶ X`. -/
-@[expose] noncomputable def ofIsColimit : SubquotientPresentation A X where
+noncomputable def ofIsColimit : SubquotientPresentation A X where
   B := B
   Z := Z
   le := le
@@ -246,9 +246,12 @@ lemma ofIsColimit_B : (ofIsColimit le g w hc).B = B := (rfl)
 @[simp]
 lemma ofIsColimit_Z : (ofIsColimit le g w hc).Z = Z := (rfl)
 
-@[simp]
-lemma π_ofIsColimit : (ofIsColimit le g w hc).π = g :=
-  (cokernelIsCokernel _).comp_coconePointUniqueUpToIso_hom hc WalkingParallelPair.one
+/-- The projection of the presentation given by a colimit cokernel cocone, as a morphism out of
+`Z`. -/
+lemma π_ofIsColimit :
+    (ofIsColimit le g w hc).π = ofLE _ Z (ofIsColimit_Z le g w hc).le ≫ g :=
+  ((cokernelIsCokernel _).comp_coconePointUniqueUpToIso_hom hc WalkingParallelPair.one).trans
+    (ofLE_self_comp _ _).symm
 
 end OfIsColimit
 

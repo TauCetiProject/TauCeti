@@ -45,17 +45,25 @@ theorem imageSubobject_eq_bot_iff [HasZeroMorphisms C] [HasZeroObject C] {X Y : 
     rw [← imageSubobject_arrow_comp f, harrow, comp_zero],
    fun h ↦ h ▸ imageSubobject_zero⟩
 
-/-- In a normal-mono category, the kernel subobject of `cokernel.π f` for a mono `f` is `mk f`. -/
+/-- For a normal monomorphism `f`, the kernel subobject of `cokernel.π f` is `mk f`. -/
 @[simp]
-theorem kernelSubobject_cokernel_π [HasZeroMorphisms C] [IsNormalMonoCategory C] {X Y : C}
-    (f : X ⟶ Y) [Mono f] [HasCokernel f] [HasKernel (cokernel.π f)] :
+theorem kernelSubobject_cokernel_π [HasZeroMorphisms C] {X Y : C}
+    (f : X ⟶ Y) [NormalMono f] [HasCokernel f] [HasKernel (cokernel.π f)] :
     kernelSubobject (cokernel.π f) = Subobject.mk f := by
   refine le_antisymm ?_ (le_kernelSubobject _ _ (by
     rw [← Subobject.underlyingIso_hom_comp_eq_mk f, Category.assoc, cokernel.condition, comp_zero]))
-  let := normalMonoOfMono f
   obtain ⟨l, hl⟩ := KernelFork.IsLimit.lift' (NormalMono.isLimitKernelForkCokernelπ f)
     (kernelSubobject (cokernel.π f)).arrow (kernelSubobject_arrow_comp _)
   exact Subobject.le_mk_of_comm l hl
+
+/-- In a normal-mono category, the kernel subobject of `cokernel.π f` for a mono `f` is `mk f`. -/
+@[simp]
+theorem kernelSubobject_cokernel_π_of_isNormalMonoCategory [HasZeroMorphisms C]
+    [IsNormalMonoCategory C] {X Y : C} (f : X ⟶ Y) [Mono f] [HasCokernel f]
+    [HasKernel (cokernel.π f)] :
+    kernelSubobject (cokernel.π f) = Subobject.mk f :=
+  let := normalMonoOfMono f
+  kernelSubobject_cokernel_π f
 
 /-- An image subobject `imageSubobject f` lies below `S` if and only if `f` factors through `S`. -/
 theorem imageSubobject_le_iff_factors {X Y : C} (f : X ⟶ Y) [HasImage f] (S : Subobject Y) :
@@ -76,10 +84,11 @@ theorem factors_of_exists_le [HasImages C] {X Y : C} {f : X ⟶ Y}
   factors_of_le _ h ((Subobject.imageFactorisation f S).F.fac ▸
     factors_comp_arrow (Subobject.imageFactorisation f S).F.e)
 
-/-- In a normal-mono category with cokernels, the kernel subobject of `A ⟶ ∏ᵢ cokernel (S i).arrow`
-is the greatest lower bound of `S : ι → Subobject A`. -/
-theorem isGLB_kernelSubobject_piLift [HasZeroMorphisms C] [HasCokernels C] [IsNormalMonoCategory C]
-    {A : C} {ι : Type*} (S : ι → Subobject A) [HasProduct fun i ↦ cokernel (S i).arrow]
+/-- When every `(S i).arrow` is a normal monomorphism having a cokernel, the kernel subobject of
+`A ⟶ ∏ᵢ cokernel (S i).arrow` is the greatest lower bound of `S : ι → Subobject A`. -/
+theorem isGLB_kernelSubobject_piLift [HasZeroMorphisms C] {A : C} {ι : Type*}
+    (S : ι → Subobject A) [∀ i, NormalMono (S i).arrow] [∀ i, HasCokernel (S i).arrow]
+    [HasProduct fun i ↦ cokernel (S i).arrow]
     [HasKernel (Pi.lift fun i ↦ cokernel.π (S i).arrow)] :
     IsGLB (Set.range S) (kernelSubobject (Pi.lift fun i ↦ cokernel.π (S i).arrow)) := by
   set φ : A ⟶ ∏ᶜ fun i ↦ cokernel (S i).arrow := Pi.lift fun i ↦ cokernel.π (S i).arrow
@@ -92,11 +101,20 @@ theorem isGLB_kernelSubobject_piLift [HasZeroMorphisms C] [HasCokernels C] [IsNo
       rw [kernelSubobject_arrow_comp_assoc, zero_comp]
     simpa [φ] using hpi
   have : HasKernel (cokernel.π (S i).arrow) :=
-    let := normalMonoOfMono (S i).arrow
     ⟨⟨⟨KernelFork.ofι (S i).arrow (cokernel.condition _),
       NormalMono.isLimitKernelForkCokernelπ (S i).arrow⟩⟩⟩
   rw [← Subobject.mk_arrow (S i), ← kernelSubobject_cokernel_π (S i).arrow]
   exact le_kernelSubobject _ _ hcomp
+
+/-- In a normal-mono category with cokernels, the kernel subobject of
+`A ⟶ ∏ᵢ cokernel (S i).arrow` is the greatest lower bound of `S : ι → Subobject A`. -/
+theorem isGLB_kernelSubobject_piLift_of_isNormalMonoCategory [HasZeroMorphisms C]
+    [IsNormalMonoCategory C] {A : C} {ι : Type*} (S : ι → Subobject A)
+    [∀ i, HasCokernel (S i).arrow] [HasProduct fun i ↦ cokernel (S i).arrow]
+    [HasKernel (Pi.lift fun i ↦ cokernel.π (S i).arrow)] :
+    IsGLB (Set.range S) (kernelSubobject (Pi.lift fun i ↦ cokernel.π (S i).arrow)) :=
+  let := fun i ↦ normalMonoOfMono (S i).arrow
+  isGLB_kernelSubobject_piLift S
 
 /-- The image subobject of `∐ᵢ (S i : C) ⟶ A` is the least upper bound of `S : ι → Subobject A`. -/
 theorem isLUB_imageSubobject_sigmaDesc {A : C} {ι : Type*} (S : ι → Subobject A)
