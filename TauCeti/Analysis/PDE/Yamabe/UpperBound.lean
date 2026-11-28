@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Yamabe.Quotient
-public import TauCeti.Analysis.PDE.Yamabe.SphereConstant
+public import TauCeti.Analysis.PDE.Yamabe.Sphere.Constant
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv

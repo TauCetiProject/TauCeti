@@ -132,7 +132,7 @@ theorem integral_mul_conformalLaplacian_rescale
       u x.ofWithMetric := by
     rw [← Real.rpow_add hux, show 4 / ((finrank ℝ E : ℝ) - 2) * ((finrank ℝ E : ℝ) / 2) +
       -((finrank ℝ E : ℝ) + 2) / ((finrank ℝ E : ℝ) - 2) = 1 by field_simp; ring, Real.rpow_one]
-  rw [conformalLaplacian_rescale g hn hu_pos hv, smul_eq_mul, ← Real.rpow_mul hux.le,
+  rw [conformalLaplacian_rescale g hn hu_pos hv.contMDiffAt, smul_eq_mul, ← Real.rpow_mul hux.le,
     mul_left_comm, ← mul_assoc (u x.ofWithMetric ^ _), hu, Pi.mul_apply]
   ring
 

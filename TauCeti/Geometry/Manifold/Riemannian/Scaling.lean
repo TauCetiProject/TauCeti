@@ -34,9 +34,9 @@ example the round sphere of radius `r` has sectional curvature `1 / r²`.
 
 The gradient of a function is the dual of its differential through the metric, so
 `grad_{c g} f = c⁻¹ grad_g f`, the constant case of
-`Bundle.ContMDiffRiemannianMetric.mgradient_rescale` in `Riemannian/Conformal.lean`; since the
-Levi-Civita connections agree, the Laplace–Beltrami operator `Δ = div ∘ grad` scales in the same
-way, `Δ_{c g} = c⁻¹ Δ_g`.
+`Bundle.ContMDiffRiemannianMetric.mgradient_rescale` in `Riemannian/Conformal.lean`, and
+`‖grad_{c g} f‖² = c⁻¹ ‖grad_g f‖²`; since the Levi-Civita connections agree, the Laplace–Beltrami
+operator `Δ = div ∘ grad` scales in the same way, `Δ_{c g} = c⁻¹ Δ_g`.
 
 Both metrics are installed in turn as the `RiemannianBundle` instance of the tangent bundle of
 `M`. Connections and curvature tensors do not depend on the metric, so they are compared directly
@@ -76,9 +76,10 @@ differentiable fields; this determines the curvature tensor.
   sectional-curvature form
   `hasConstantSectionalCurvature_leviCivitaConnection_rescale_const_iff`: `c g` has constant
   curvature `k` exactly when `g` has constant curvature `c k`.
-* `Bundle.ContMDiffRiemannianMetric.mgradient_rescale_const` and
-  `Bundle.ContMDiffRiemannianMetric.laplaceBeltrami_rescale_const`: `grad_{c g} = c⁻¹ grad_g`
-  and `Δ_{c g} = c⁻¹ Δ_g`.
+* `Bundle.ContMDiffRiemannianMetric.mgradient_rescale_const`,
+  `Bundle.ContMDiffRiemannianMetric.norm_sq_mgradient_rescale_const`, and
+  `Bundle.ContMDiffRiemannianMetric.laplaceBeltrami_rescale_const`: `grad_{c g} = c⁻¹ grad_g`,
+  `‖grad_{c g} f‖² = c⁻¹ ‖grad_g f‖²`, and `Δ_{c g} = c⁻¹ Δ_g`.
 
 ## References
 
@@ -253,6 +254,19 @@ theorem mgradient_rescale_const [IsManifold I 1 M]
     c⁻¹ • (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
       TauCeti.Manifold.mgradient I f x) :=
   g.mgradient_rescale contMDiff_const (fun _ ↦ hc) f x
+
+/-- Multiplying a metric by a positive constant `c` multiplies the squared gradient norm of every
+function by `c⁻¹`. -/
+theorem norm_sq_mgradient_rescale_const [IsManifold I 1 M]
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
+    {c : ℝ} (hc : 0 < c) (f : M → ℝ) (x : M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
+      ‖TauCeti.Manifold.mgradient I f x‖ ^ 2) =
+    c⁻¹ * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      ‖TauCeti.Manifold.mgradient I f x‖ ^ 2) := by
+  rw [g.norm_mgradient_rescale contMDiff_const (fun _ ↦ hc) f x, mul_pow, inv_pow,
+    Real.sq_sqrt hc.le]
 
 /-- **Scaling of the Laplacian.** Multiplying a `C¹` metric by a positive constant `c` multiplies
 the Laplace–Beltrami operator of every `C²` function by `c⁻¹`. -/
