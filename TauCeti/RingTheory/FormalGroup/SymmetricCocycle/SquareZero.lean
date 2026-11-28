@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.FormalGroup.Basic
+public import Mathlib.RingTheory.MvPowerSeries.Derivative
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Classification
 -- Proof-only: symmetry of the coefficients of commutative formal group laws and of symmetric
 -- polynomials, coefficients of substitutions into two-variable series, and substitution modulo
 -- an ideal annihilated by the coefficients.
 import TauCeti.RingTheory.FormalGroup.Basic
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Defs
+import TauCeti.RingTheory.MvPowerSeries.Derivative
+import TauCeti.RingTheory.MvPowerSeries.Ideal
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
@@ -42,6 +45,8 @@ applies to them.
 
 ## Main results
 
+* `FormalGroup.assocDefect_add_eq`: first-order expansion of the associativity defect of
+  `F + Δ` when `Δ` has coefficients in a square-zero ideal.
 * `FormalGroup.subst_add_subst_eq`: if the coefficients of `G = F - X - Y` pairwise multiply to
   zero, then `G` satisfies the additive 2-cocycle identity.
 * `FormalGroup.choose_mul_coeff_eq`: the cocycle identity at the coefficient of `XⁱYʲZᵏ` with
@@ -66,43 +71,84 @@ open MvPowerSeries Finsupp
 
 variable {A : Type*} [CommRing A]
 
-namespace TauCeti
-
-/-- For `F = X + Y + G` with the coefficients of `G` pairwise multiplying to zero,
-`F(F(X, Y), Z) = X + Y + Z + G(X, Y) + G(X + Y, Z)`. -/
-private theorem subst_subst_left {G : MvPowerSeries (Fin 2) A}
-    (hG : ∀ d e, coeff d G * coeff e G = 0) :
-    (X 0 + X 1 + G).subst ![(X 0 + X 1 + G).subst ![X 0, X 1], X 2] =
-      (X 0 + X 1 + X 2 + (G.subst ![X 0, X 1] + G.subst ![X 0 + X 1, X 2]) :
-        MvPowerSeries (Fin 3) A) := by
-  have h01 : HasSubst ![(X 0 : MvPowerSeries (Fin 3) A), X 1] :=
-    hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp
-  rw [subst_X_add_X_add_eq hG (u' := X 0) (v' := X 1) h01 (by simp) (by simp),
-    subst_X_add_X_add_eq hG (u := X 0 + X 1) (v := X 2)
-      (u' := X 0 + X 1 + G.subst ![X 0, X 1]) (v' := X 2)
-      (hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp)
-      (fun e ↦ by simpa using coeff_subst_mem_span h01 e) (by simp)]
-  ring
-
-/-- For `F = X + Y + G` with the coefficients of `G` pairwise multiplying to zero,
-`F(X, F(Y, Z)) = X + Y + Z + G(Y, Z) + G(X, Y + Z)`. -/
-private theorem subst_subst_right {G : MvPowerSeries (Fin 2) A}
-    (hG : ∀ d e, coeff d G * coeff e G = 0) :
-    (X 0 + X 1 + G).subst ![X 0, (X 0 + X 1 + G).subst ![X 1, X 2]] =
-      (X 0 + X 1 + X 2 + (G.subst ![X 1, X 2] + G.subst ![X 0, X 1 + X 2]) :
-        MvPowerSeries (Fin 3) A) := by
-  have h12 : HasSubst ![(X 1 : MvPowerSeries (Fin 3) A), X 2] :=
-    hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp
-  rw [subst_X_add_X_add_eq hG (u' := X 1) (v' := X 2) h12 (by simp) (by simp),
-    subst_X_add_X_add_eq hG (u := X 0) (v := X 1 + X 2)
-      (u' := X 0) (v' := X 1 + X 2 + G.subst ![X 1, X 2])
-      (hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp)
-      (by simp) (fun e ↦ by simpa using coeff_subst_mem_span h12 e)]
-  ring
-
-end TauCeti
-
 namespace FormalGroup
+
+/-- First-order expansion of `(F + Δ)((F + Δ)(X₀, X₁), X₂) - (F + Δ)(X₀, (F + Δ)(X₁, X₂))` when `Δ`
+has coefficients in a square-zero ideal `I`. -/
+theorem assocDefect_add_eq {I : Ideal A} (hI : I * I = ⊥) (F : FormalGroup A)
+    (Δ : MvPowerSeries (Fin 2) A) (hΔI : ∀ d, coeff d Δ ∈ I) :
+    let S := F.toPowerSeries + Δ
+    let F₀₁ := F.toPowerSeries.subst ![(X 0 : MvPowerSeries (Fin 3) A), X 1]
+    let F₁₂ := F.toPowerSeries.subst ![(X 1 : MvPowerSeries (Fin 3) A), X 2]
+    S.subst ![S.subst ![X 0, X 1], X 2] - S.subst ![X 0, S.subst ![X 1, X 2]] =
+      Δ.subst ![X 0, X 1] * (pderiv 0 F.toPowerSeries).subst ![F₀₁, X 2] + Δ.subst ![F₀₁, X 2] -
+        Δ.subst ![X 0, F₁₂] -
+        Δ.subst ![X 1, X 2] * (pderiv 1 F.toPowerSeries).subst ![X 0, F₁₂] := by
+  intro S F₀₁ F₁₂
+  have haL : HasSubst ![F₀₁, X 2] := .cons_subst_zero_left 0 1 2 F.zero_constantCoeff
+  have haR : HasSubst ![X 0, F₁₂] := .cons_subst_zero_right 0 1 2 F.zero_constantCoeff
+  set δL : Fin 2 → MvPowerSeries (Fin 3) A := ![Δ.subst ![X 0, X 1], 0]
+  set δR : Fin 2 → MvPowerSeries (Fin 3) A := ![0, Δ.subst ![X 1, X 2]]
+  have hδLI : ∀ s d, coeff d (δL s) ∈ I
+    | 0, d => coeff_subst_mem_of_coeff_mem .X_X hΔI d
+    | 1, _ => by simp [δL]
+  have hδRI : ∀ s d, coeff d (δR s) ∈ I
+    | 0, _ => by simp [δR]
+    | 1, d => coeff_subst_mem_of_coeff_mem .X_X hΔI d
+  have hhL i j := mul_eq_zero_of_coeff_mem hI (hδLI i) (hδLI j)
+  have hhR i j := mul_eq_zero_of_coeff_mem hI (hδRI i) (hδRI j)
+  have heqL : (![S.subst ![X 0, X 1], X 2] : Fin 2 → MvPowerSeries (Fin 3) A) =
+      ![F₀₁, X 2] + δL := by
+    dsimp only [S, F₀₁, δL]; rw [subst_add .X_X, Matrix.vec2_add, _root_.add_zero]
+  have heqR : (![X 0, S.subst ![X 1, X 2]] : Fin 2 → MvPowerSeries (Fin 3) A) =
+      ![X 0, F₁₂] + δR := by
+    dsimp only [S, F₁₂, δR]; rw [subst_add .X_X, Matrix.vec2_add, _root_.add_zero]
+  rw [heqL, heqR, subst_add (haL.add (.of_sq_eq_zero fun i ↦ by rw [sq, hhL])),
+    subst_add (haR.add (.of_sq_eq_zero fun i ↦ by rw [sq, hhR])),
+    subst_add_of_mul_eq_zero haL hhL F.toPowerSeries,
+    subst_add_eq_of_coeff_mem hI haL hδLI hΔI,
+    subst_add_of_mul_eq_zero haR hhR F.toPowerSeries,
+    subst_add_eq_of_coeff_mem hI haR hδRI hΔI, Fin.sum_univ_two, Fin.sum_univ_two, ← F.assoc]
+  simp only [δL, δR, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
+    zero_mul, _root_.add_zero]
+  ring
+
+/-- Specialization of `FormalGroup.assocDefect_add_eq` to `F := 𝔾ₐ` when the coefficients of `G`
+pairwise multiply to zero, taking the ideal spanned by the coefficients of `G`. -/
+private theorem assocDefect_add_𝔾ₐ_eq {G : MvPowerSeries (Fin 2) A}
+    (hG : ∀ d e, coeff d G * coeff e G = 0) :
+    (X 0 + X 1 + G).subst ![(X 0 + X 1 + G).subst ![X 0, X 1], X 2] -
+        (X 0 + X 1 + G).subst ![X 0, (X 0 + X 1 + G).subst ![X 1, X 2]] =
+      (G.subst ![X 0, X 1] + G.subst ![X 0 + X 1, X 2] - G.subst ![X 0, X 1 + X 2] -
+        G.subst ![X 1, X 2] : MvPowerSeries (Fin 3) A) := by
+  have hI : Ideal.span (Set.range fun d ↦ coeff d G) *
+      Ideal.span (Set.range fun d ↦ coeff d G) = ⊥ := by
+    rw [Ideal.span_mul_span, Ideal.span_eq_bot]
+    rintro _ ⟨_, ⟨d, rfl⟩, _, ⟨e, rfl⟩, rfl⟩
+    exact hG d e
+  have h := assocDefect_add_eq hI (𝔾ₐ : FormalGroup A) G fun d ↦ Ideal.subset_span ⟨d, rfl⟩
+  dsimp only at h
+  have h01 : (𝔾ₐ : FormalGroup A).toPowerSeries.subst ![(X 0 : MvPowerSeries (Fin 3) A), X 1] =
+      X 0 + X 1 := by
+    rw [𝔾ₐ_toPowerSeries, subst_add .X_X, subst_X .X_X, subst_X .X_X]; rfl
+  have h12 : (𝔾ₐ : FormalGroup A).toPowerSeries.subst ![(X 1 : MvPowerSeries (Fin 3) A), X 2] =
+      X 1 + X 2 := by
+    rw [𝔾ₐ_toPowerSeries, subst_add .X_X, subst_X .X_X, subst_X .X_X]; rfl
+  have hp0 : pderiv 0 (𝔾ₐ : FormalGroup A).toPowerSeries = 1 := by
+    rw [𝔾ₐ_toPowerSeries]; simp
+  have hp1 : pderiv 1 (𝔾ₐ : FormalGroup A).toPowerSeries = 1 := by
+    rw [𝔾ₐ_toPowerSeries]; simp
+  have hs0 : (1 : MvPowerSeries (Fin 2) A).subst ![(X 0 + X 1 : MvPowerSeries (Fin 3) A), X 2] =
+      1 := by
+    rw [← coe_substAlgHom (hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp),
+      map_one]
+  have hs1 : (1 : MvPowerSeries (Fin 2) A).subst ![(X 0 : MvPowerSeries (Fin 3) A), X 1 + X 2] =
+      1 := by
+    rw [← coe_substAlgHom (hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp),
+      map_one]
+  rw [h01, h12, hp0, hp1, 𝔾ₐ_toPowerSeries] at h
+  rw [hs0, hs1, mul_one, mul_one] at h
+  exact h
 
 /-- **The nonlinear part of a formal group law with square-zero coefficients is an additive
 2-cocycle.** If the coefficients of `G = F(X, Y) - X - Y` pairwise multiply to zero, then
@@ -114,11 +160,9 @@ theorem subst_add_subst_eq (F : FormalGroup A)
         (F.toPowerSeries - (X 0 + X 1)).subst ![X 0 + X 1, X 2] : MvPowerSeries (Fin 3) A) =
       (F.toPowerSeries - (X 0 + X 1)).subst ![X 0, X 1 + X 2] +
         (F.toPowerSeries - (X 0 + X 1)).subst ![X 1, X 2] := by
-  have h := F.assoc
-  rw [← add_sub_cancel (X 0 + X 1) F.toPowerSeries, TauCeti.subst_subst_left hF,
-    TauCeti.subst_subst_right hF] at h
-  rw [add_comm (subst ![X 0, X 1 + X 2] _)]
-  exact add_left_cancel h
+  have h := assocDefect_add_𝔾ₐ_eq hF
+  rw [add_sub_cancel, F.assoc, sub_self, sub_sub, eq_comm, sub_eq_zero] at h
+  exact h
 
 /-- The additive 2-cocycle identity for the nonlinear part of a formal group law with
 square-zero coefficients, at the coefficient of `XⁱYʲZᵏ` with `i, k ≥ 1`: writing `a_{i,j}` for
@@ -188,10 +232,18 @@ def formalGroup (hf : f.IsAddCocycle₂) (h0 : constantCoeff f = 0)
     have hG : ∀ d e, MvPowerSeries.coeff d (f : MvPowerSeries (Fin 2) A) *
         MvPowerSeries.coeff e (f : MvPowerSeries (Fin 2) A) = 0 := by
       simpa [MvPolynomial.coeff_coe] using hff
-    rw [TauCeti.subst_subst_left hG, TauCeti.subst_subst_right hG]
-    -- Both sides are polynomials, and the cocycle identity of `f` identifies them.
-    simp only [← coe_X, ← coe_add, subst_coe_pair_eq_coe_aeval]
-    rw [isAddCocycle₂_iff.1 hf, add_comm (aeval ![X 0, X 1 + X 2] f)]
+    have hcoc : ((f : MvPowerSeries (Fin 2) A).subst ![MvPowerSeries.X 0, MvPowerSeries.X 1] +
+        (f : MvPowerSeries (Fin 2) A).subst
+          ![MvPowerSeries.X 0 + MvPowerSeries.X 1, MvPowerSeries.X 2] :
+          MvPowerSeries (Fin 3) A) =
+        (f : MvPowerSeries (Fin 2) A).subst
+          ![MvPowerSeries.X 0, MvPowerSeries.X 1 + MvPowerSeries.X 2] +
+        (f : MvPowerSeries (Fin 2) A).subst ![MvPowerSeries.X 1, MvPowerSeries.X 2] := by
+      simp only [← coe_X, ← coe_add, subst_coe_pair_eq_coe_aeval]
+      rw [isAddCocycle₂_iff.1 hf, add_comm (aeval ![X 0, X 1 + X 2] f)]
+    have h := FormalGroup.assocDefect_add_𝔾ₐ_eq hG
+    rw [hcoc, add_sub_cancel_left, sub_self] at h
+    exact sub_eq_zero.mp h
 
 /-- The underlying power series of `hf.formalGroup h0 hff` is `X + Y + f(X, Y)`. -/
 @[simp]

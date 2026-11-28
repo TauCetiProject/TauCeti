@@ -18,6 +18,8 @@ import TauCeti.RingTheory.FormalGroup.Basic
 import TauCeti.RingTheory.FormalGroup.LazardRing.LeadingTerm
 import TauCeti.RingTheory.FormalGroup.LazardRing.Polynomial
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Height
+import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.SquareZero
+import TauCeti.RingTheory.MvPolynomial.FirstJet
 import TauCeti.RingTheory.MvPowerSeries.Derivative
 import TauCeti.RingTheory.MvPowerSeries.Ideal
 import TauCeti.RingTheory.MvPowerSeries.Order
@@ -183,57 +185,6 @@ theorem deformationCocycle_symm {F G : FormalGroup A} {I : Ideal A} (hI : I * I 
     rw [← neg_sub, map_neg]; exact I.neg_mem (hFG d)
   rw [deformationCocycle_self] at h
   exact eq_neg_of_add_eq_zero_right h.symm
-
-/-- Perturbing the inputs of an `I`-valued series by an `I`-valued family whose entries pairwise
-multiply to zero leaves the substitution unchanged when `I * I = ⊥`. -/
-private theorem subst_add_eq_of_coeff_mem {σ τ R : Type*} [CommRing R] [Finite σ]
-    {I : Ideal R} (hI : I * I = ⊥) {a δ : σ → MvPowerSeries τ R} (ha : HasSubst a)
-    (hh : ∀ i j, δ i * δ j = 0) (hδI : ∀ i d, coeff d (δ i) ∈ I)
-    {Δ : MvPowerSeries σ R} (hΔI : ∀ d, coeff d Δ ∈ I) :
-    Δ.subst (a + δ) = Δ.subst a :=
-  subst_eq_subst_of_coeff_mem (ha.add (.of_sq_eq_zero fun i ↦ by rw [sq, hh])) ha
-    (fun s e ↦ by simpa using hδI s e)
-    fun d x hx ↦ by rw [← Ideal.mem_bot, ← hI]; exact Ideal.mul_mem_mul (hΔI d) hx
-
-/-- First-order expansion of `(F + Δ)((F + Δ)(X₀, X₁), X₂) - (F + Δ)(X₀, (F + Δ)(X₁, X₂))` when `Δ`
-has coefficients in a square-zero ideal `I`. -/
-private theorem assocDefect_add_eq {I : Ideal A} (hI : I * I = ⊥) (F : FormalGroup A)
-    (Δ : MvPowerSeries (Fin 2) A) (hΔI : ∀ d, coeff d Δ ∈ I) :
-    let S := F.toPowerSeries + Δ
-    let F₀₁ := F.toPowerSeries.subst ![(X 0 : MvPowerSeries (Fin 3) A), X 1]
-    let F₁₂ := F.toPowerSeries.subst ![(X 1 : MvPowerSeries (Fin 3) A), X 2]
-    S.subst ![S.subst ![X 0, X 1], X 2] - S.subst ![X 0, S.subst ![X 1, X 2]] =
-      Δ.subst ![X 0, X 1] * (pderiv 0 F.toPowerSeries).subst ![F₀₁, X 2] + Δ.subst ![F₀₁, X 2] -
-        Δ.subst ![X 0, F₁₂] -
-        Δ.subst ![X 1, X 2] * (pderiv 1 F.toPowerSeries).subst ![X 0, F₁₂] := by
-  intro S F₀₁ F₁₂
-  have haL : HasSubst ![F₀₁, X 2] := .cons_subst_zero_left 0 1 2 F.zero_constantCoeff
-  have haR : HasSubst ![X 0, F₁₂] := .cons_subst_zero_right 0 1 2 F.zero_constantCoeff
-  set δL : Fin 2 → MvPowerSeries (Fin 3) A := ![Δ.subst ![X 0, X 1], 0]
-  set δR : Fin 2 → MvPowerSeries (Fin 3) A := ![0, Δ.subst ![X 1, X 2]]
-  have hδLI : ∀ s d, coeff d (δL s) ∈ I
-    | 0, d => coeff_subst_mem_of_coeff_mem .X_X hΔI d
-    | 1, _ => by simp [δL]
-  have hδRI : ∀ s d, coeff d (δR s) ∈ I
-    | 0, _ => by simp [δR]
-    | 1, d => coeff_subst_mem_of_coeff_mem .X_X hΔI d
-  have hhL i j := mul_eq_zero_of_coeff_mem hI (hδLI i) (hδLI j)
-  have hhR i j := mul_eq_zero_of_coeff_mem hI (hδRI i) (hδRI j)
-  have heqL : (![S.subst ![X 0, X 1], X 2] : Fin 2 → MvPowerSeries (Fin 3) A) =
-      ![F₀₁, X 2] + δL := by
-    dsimp only [S, F₀₁, δL]; rw [subst_add .X_X, Matrix.vec2_add, _root_.add_zero]
-  have heqR : (![X 0, S.subst ![X 1, X 2]] : Fin 2 → MvPowerSeries (Fin 3) A) =
-      ![X 0, F₁₂] + δR := by
-    dsimp only [S, F₁₂, δR]; rw [subst_add .X_X, Matrix.vec2_add, _root_.add_zero]
-  rw [heqL, heqR, subst_add (haL.add (.of_sq_eq_zero fun i ↦ by rw [sq, hhL])),
-    subst_add (haR.add (.of_sq_eq_zero fun i ↦ by rw [sq, hhR])),
-    subst_add_of_mul_eq_zero haL hhL F.toPowerSeries,
-    subst_add_eq_of_coeff_mem hI haL hhL hδLI hΔI,
-    subst_add_of_mul_eq_zero haR hhR F.toPowerSeries,
-    subst_add_eq_of_coeff_mem hI haR hhR hδRI hΔI, Fin.sum_univ_two, Fin.sum_univ_two, ← F.assoc]
-  simp only [δL, δR, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
-    zero_mul, _root_.add_zero]
-  ring
 
 /-- Multiplying the associativity defect of `S = F + F_X(0, F) · Φ` by `P(F(F(X₀, X₁), X₂))`
 recovers the 2-cocycle defect `Φ(X₀, X₁) + Φ(F(X₀, X₁), X₂) - Φ(X₀, F(X₁, X₂)) - Φ(X₁, X₂)`. -/
@@ -478,7 +429,7 @@ theorem deformationCocycle_smul_eq_homDefect_𝔾ₐ (F : FormalGroup A) [F.IsCo
     rw [hφeq, PowerSeries.subst_add (hX 0), PowerSeries.subst_add (hX 1),
       PowerSeries.subst_X (hX 0), PowerSeries.subst_X (hX 1), ← Matrix.vec2_add, finTwo_X_eq_X]
   have hΔsub : Δ.subst (X + δv) = Δ :=
-    (subst_add_eq_of_coeff_mem hI HasSubst.X hh hδvI (F.coeff_smul_sub_mem hφ)).trans
+    (subst_add_eq_of_coeff_mem hI HasSubst.X hδvI (F.coeff_smul_sub_mem hφ)).trans
       (congrFun subst_self Δ)
   rw [harg, hFsmul, hφeq, PowerSeries.subst_add hF, PowerSeries.subst_X hF,
     subst_add (HasSubst.X.add (.of_sq_eq_zero fun i ↦ by rw [sq, hh])),
@@ -541,23 +492,29 @@ section LubinTateCocycle
 open TauCeti.LazardRing
 
 private noncomputable def shiftGeneratorHom (n : ℕ+) : LazardRing →+* DualNumber LazardRing :=
-  homEquiv.symm fun m ↦
-    algebraMap LazardRing (DualNumber LazardRing) (generator m) +
-      if m = n then DualNumber.eps else 0
+  ((TrivSqZeroExt.map (LinearMap.proj n)).toRingHom.comp
+    (TauCeti.jetAlgebra generator).toRingHom).comp
+    ((MvPolynomial.map (Int.castRingHom LazardRing)).comp
+      (mvPolynomialEquiv.symm : LazardRing →+* MvPolynomial ℕ+ ℤ))
 
 private theorem shiftGeneratorHom_apply_generator (n m : ℕ+) :
     shiftGeneratorHom n (generator m) =
       algebraMap LazardRing (DualNumber LazardRing) (generator m) +
-        if m = n then DualNumber.eps else 0 :=
-  homEquiv_symm_apply_generator _ m
+        if m = n then DualNumber.eps else 0 := by
+  simp only [shiftGeneratorHom, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    mvPolynomialEquiv_symm_generator, MvPolynomial.map_X,
+    jetAlgebra_X, map_add, TrivSqZeroExt.map_inl, TrivSqZeroExt.map_inr, LinearMap.proj_apply,
+    TrivSqZeroExt.algebraMap_eq_inl]
+  congr 1
+  by_cases h : m = n
+  · subst h; simp only [Pi.single_eq_same, ite_true, DualNumber.eps]
+  · simp only [Pi.single_eq_of_ne (Ne.symm h), TrivSqZeroExt.inr_zero, h, ite_false]
 
 private theorem fst_shiftGeneratorHom (n : ℕ+) (x : LazardRing) :
-    (shiftGeneratorHom n x).fst = x :=
-  RingHom.congr_fun
-    (ringHom_ext (φ := (TrivSqZeroExt.fstHom LazardRing LazardRing LazardRing).toRingHom.comp
-        (shiftGeneratorHom n)) (ψ := RingHom.id LazardRing) fun m ↦ by
-      simp [shiftGeneratorHom_apply_generator, TrivSqZeroExt.algebraMap_eq_inl,
-        apply_ite TrivSqZeroExt.fst]) x
+    (shiftGeneratorHom n x).fst = x := by
+  simp only [shiftGeneratorHom, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    TrivSqZeroExt.fst_map, fst_jetAlgebra, MvPolynomial.eval_map]
+  exact (mvPolynomialEquiv_apply _).symm.trans (mvPolynomialEquiv.apply_symm_apply x)
 
 private noncomputable def universalShiftSeries (n : ℕ+) : MvPowerSeries (Fin 2) LazardRing :=
   fun d ↦ (shiftGeneratorHom n (coeff d formalGroup.toPowerSeries)).snd

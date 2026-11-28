@@ -100,6 +100,8 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   paired with the coefficients of the differences `aᵈ - bᵈ` of monomials.
 * `MvPowerSeries.subst_eq_subst_of_coeff_mem` : if the coefficients of `f` annihilate an ideal `J`,
   then `f(a) = f(b)` for families `a` and `b` that agree modulo `J`.
+* `MvPowerSeries.subst_add_eq_of_coeff_mem` : perturbing the inputs of an `I`-valued series by an
+  `I`-valued family leaves the substitution unchanged when `I * I = ⊥`.
 * `MvPowerSeries.subst_X_add_X_add_eq` : if the coefficients of `G` pairwise multiply to zero, then
   `(X + Y + G)(u', v') = u' + v' + G(u, v)` for pairs `(u', v')` and `(u, v)` that agree modulo
   them.
@@ -651,6 +653,20 @@ theorem subst_eq_subst_of_coeff_mem {a b : σ → MvPowerSeries τ O} (ha : HasS
     simp only [map_pow, hmap]
   rw [smul_eq_mul, smul_eq_mul, ← sub_eq_zero, ← mul_sub]
   exact hf d _ hd
+
+/-- Perturbing the inputs of an `I`-valued series by an `I`-valued family leaves the substitution
+unchanged when `I * I = ⊥`. -/
+theorem subst_add_eq_of_coeff_mem [Finite σ] {I : Ideal O} (hI : I * I = ⊥)
+    {a δ : σ → MvPowerSeries τ O} (ha : HasSubst a) (hδI : ∀ i d, coeff d (δ i) ∈ I)
+    {Δ : MvPowerSeries σ O} (hΔI : ∀ d, coeff d Δ ∈ I) :
+    Δ.subst (a + δ) = Δ.subst a :=
+  subst_eq_subst_of_coeff_mem
+    (ha.add (hasSubst_of_constantCoeff_nilpotent fun i ↦
+      ⟨2, by
+        rw [pow_two, ← Ideal.mem_bot, ← hI]
+        exact Ideal.mul_mem_mul (by simpa using hδI i 0) (by simpa using hδI i 0)⟩))
+    ha (fun s e ↦ by simpa using hδI s e)
+    fun d x hx ↦ by rw [← Ideal.mem_bot, ← hI]; exact Ideal.mul_mem_mul (hΔI d) hx
 
 /-- For `F = X + Y + G` with the coefficients of `G` pairwise multiplying to zero, substituting
 into `F` a pair `(u', v')` that agrees with `(u, v)` modulo the coefficients of `G` gives
