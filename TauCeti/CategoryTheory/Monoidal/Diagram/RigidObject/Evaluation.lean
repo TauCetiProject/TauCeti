@@ -253,6 +253,18 @@ def eval (f : α → C) : RigidObject α → C
   | rightDual X ih => rw [subst_rightDual, eval_rightDual, eval_rightDual, ih]
   | leftDual X ih => rw [subst_leftDual, eval_leftDual, eval_leftDual, ih]
 
+/-- Evaluating an included monoidal object expression agrees with Mathlib's
+`CategoryTheory.FreeMonoidalCategory.projectObj`. -/
+@[simp] theorem eval_toRigidObject (f : α → C) (X : FreeMonoidalCategory α) :
+    eval f X.toRigidObject = FreeMonoidalCategory.projectObj f X := by
+  induction X with
+  | of a => rw [FreeMonoidalCategory.toRigidObject_of]; rfl
+  | unit =>
+    rw [FreeMonoidalCategory.unit_eq_unit, FreeMonoidalCategory.toRigidObject_unit]; rfl
+  | tensor X Y ihX ihY =>
+    rw [FreeMonoidalCategory.tensor_eq_tensor, FreeMonoidalCategory.toRigidObject_tensor,
+      eval_tensor, ihX, ihY]; rfl
+
 section EvalIso
 
 variable {f g h : α → C}

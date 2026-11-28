@@ -158,6 +158,168 @@ theorem of_tensor {F G : C ⥤ D} [F.LaxMonoidal] [G.LaxMonoidal] (τ : F ⟶ G)
 
 end CategoryTheory.NatTrans.IsMonoidal
 
+namespace CategoryTheory.NatTrans.IsMonoidal
+
+open MonoidalCategory Functor.LaxMonoidal Functor.OplaxMonoidal
+
+variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
+variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
+
+/-- Two monoidal natural transformations from a strong monoidal functor to a lax monoidal functor
+agree at the tensor unit. -/
+theorem app_tensorUnit_eq {F G : C ⥤ D} [F.Monoidal] [G.LaxMonoidal] {α β : F ⟶ G}
+    [α.IsMonoidal] [β.IsMonoidal] : α.app (𝟙_ C) = β.app (𝟙_ C) := by
+  rw [← cancel_epi (ε F)]
+  exact (NatTrans.IsMonoidal.unit (τ := α)).trans (NatTrans.IsMonoidal.unit (τ := β)).symm
+
+/-- Two monoidal natural transformations from a strong monoidal functor to a lax monoidal functor
+that agree at `X` and `Y` also agree at `X ⊗ Y`. -/
+theorem app_tensor_eq {F G : C ⥤ D} [F.Monoidal] [G.LaxMonoidal] {α β : F ⟶ G}
+    [α.IsMonoidal] [β.IsMonoidal] {X Y : C} (hX : α.app X = β.app X) (hY : α.app Y = β.app Y) :
+    α.app (X ⊗ Y) = β.app (X ⊗ Y) := by
+  rw [← cancel_epi (μ F X Y)]
+  refine (NatTrans.IsMonoidal.tensor (τ := α) X Y).trans ?_
+  refine Eq.trans ?_ (NatTrans.IsMonoidal.tensor (τ := β) X Y).symm
+  rw [hX, hY]
+
+/-- The component at the tensor unit of a monoidal natural transformation between strong monoidal
+functors is `η F ≫ ε G`. -/
+theorem app_tensorUnit_eq_η_comp_ε {F G : C ⥤ D} [F.Monoidal] [G.Monoidal] (τ : F ⟶ G)
+    [τ.IsMonoidal] : τ.app (𝟙_ C) = η F ≫ ε G := by
+  rw [← cancel_epi (ε F), NatTrans.IsMonoidal.unit, Functor.Monoidal.ε_η_assoc]
+
+/-- The component at a tensor product of a monoidal natural transformation between strong monoidal
+functors conjugates the tensor product of components by `δ F` and `μ G`. -/
+theorem app_tensor_eq_δ_comp_tensor_comp_μ {F G : C ⥤ D} [F.Monoidal] [G.Monoidal] (τ : F ⟶ G)
+    [τ.IsMonoidal] (X Y : C) :
+    τ.app (X ⊗ Y) = δ F X Y ≫ (τ.app X ⊗ₘ τ.app Y) ≫ μ G X Y := by
+  rw [← cancel_epi (μ F X Y), NatTrans.IsMonoidal.tensor, Functor.Monoidal.μ_δ_assoc]
+
+/-- A monoidal natural transformation between strong monoidal functors intertwines the oplax unit
+comparisons: `τ.app (𝟙_ C) ≫ η G = η F`. -/
+@[reassoc]
+theorem app_unit_comp_η {F G : C ⥤ D} [F.Monoidal] [G.Monoidal] (τ : F ⟶ G) [τ.IsMonoidal] :
+    τ.app (𝟙_ C) ≫ η G = η F := by
+  rw [app_tensorUnit_eq_η_comp_ε, Category.assoc, Functor.Monoidal.ε_η, Category.comp_id]
+
+/-- A monoidal natural transformation between strong monoidal functors intertwines the oplax
+tensor comparisons. -/
+@[reassoc]
+theorem δ_comp_tensor {F G : C ⥤ D} [F.Monoidal] [G.Monoidal] (τ : F ⟶ G) [τ.IsMonoidal]
+    (X Y : C) :
+    δ F X Y ≫ (τ.app X ⊗ₘ τ.app Y) = τ.app (X ⊗ Y) ≫ δ G X Y := by
+  rw [app_tensor_eq_δ_comp_tensor_comp_μ, Category.assoc, Category.assoc, Functor.Monoidal.μ_δ,
+    Category.comp_id]
+
+end CategoryTheory.NatTrans.IsMonoidal
+
+namespace CategoryTheory.Functor.Monoidal
+
+open MonoidalCategory Functor.LaxMonoidal Functor.OplaxMonoidal
+
+variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
+variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
+
+/-- The canonical isomorphism `F.obj (𝟙_ C) ≅ G.obj (𝟙_ C)` between the images of the tensor unit
+under two strong monoidal functors. -/
+def isoAppUnit (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] : F.obj (𝟙_ C) ≅ G.obj (𝟙_ C) :=
+  (εIso F).symm ≪≫ εIso G
+
+@[simp]
+theorem isoAppUnit_hom (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] :
+    (isoAppUnit F G).hom = η F ≫ ε G := by
+  simp [isoAppUnit]
+
+@[simp]
+theorem isoAppUnit_inv (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] :
+    (isoAppUnit F G).inv = η G ≫ ε F := by
+  simp [isoAppUnit]
+
+/-- The canonical isomorphism `F.obj (X ⊗ Y) ≅ G.obj (X ⊗ Y)` induced by isomorphisms
+`F.obj X ≅ G.obj X` and `F.obj Y ≅ G.obj Y`. -/
+def isoAppTensor (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] {X Y : C}
+    (iX : F.obj X ≅ G.obj X) (iY : F.obj Y ≅ G.obj Y) :
+    F.obj (X ⊗ Y) ≅ G.obj (X ⊗ Y) :=
+  (μIso F X Y).symm ≪≫ (iX ⊗ᵢ iY) ≪≫ μIso G X Y
+
+@[simp]
+theorem isoAppTensor_hom (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] {X Y : C}
+    (iX : F.obj X ≅ G.obj X) (iY : F.obj Y ≅ G.obj Y) :
+    (isoAppTensor F G iX iY).hom = δ F X Y ≫ (iX.hom ⊗ₘ iY.hom) ≫ μ G X Y := by
+  simp [isoAppTensor]
+
+@[simp]
+theorem isoAppTensor_inv (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] {X Y : C}
+    (iX : F.obj X ≅ G.obj X) (iY : F.obj Y ≅ G.obj Y) :
+    (isoAppTensor F G iX iY).inv = δ G X Y ≫ (iX.inv ⊗ₘ iY.inv) ≫ μ F X Y := by
+  simp [isoAppTensor]
+
+section StructuralNaturality
+
+attribute [local simp] whiskerLeft_comp_tensorHom whiskerLeft_comp_tensorHom_assoc
+  whiskerRight_comp_tensorHom whiskerRight_comp_tensorHom_assoc tensorHom_comp_whiskerLeft
+  tensorHom_comp_whiskerLeft_assoc tensorHom_comp_whiskerRight tensorHom_comp_whiskerRight_assoc
+
+/-- Naturality of the forward associator with respect to a family of morphisms `e` satisfying the
+tensor comparison formula. -/
+theorem associator_hom_naturality_of_tensor {F G : C ⥤ D} [F.Monoidal] [G.Monoidal]
+    {e : ∀ Z : C, F.obj Z ⟶ G.obj Z}
+    (htensor : ∀ A B, e (A ⊗ B) = δ F A B ≫ (e A ⊗ₘ e B) ≫ μ G A B) (X Y Z : C) :
+    F.map (α_ X Y Z).hom ≫ e (X ⊗ (Y ⊗ Z)) = e ((X ⊗ Y) ⊗ Z) ≫ G.map (α_ X Y Z).hom := by
+  rw [← cancel_epi (μ F X Y ▷ F.obj Z ≫ μ F (X ⊗ Y) Z),
+    ← cancel_mono (δ G X (Y ⊗ Z) ≫ G.obj X ◁ δ G Y Z)]
+  simp [htensor, ← Functor.OplaxMonoidal.associativity]
+
+/-- Naturality of the forward left unitor with respect to a family of morphisms `e` satisfying the
+unit and tensor comparison formulas. -/
+theorem leftUnitor_hom_naturality_of_unit_tensor {F G : C ⥤ D} [F.Monoidal] [G.Monoidal]
+    {e : ∀ Z : C, F.obj Z ⟶ G.obj Z}
+    (hunit : e (𝟙_ C) = η F ≫ ε G)
+    (htensor : ∀ A B, e (A ⊗ B) = δ F A B ≫ (e A ⊗ₘ e B) ≫ μ G A B) (X : C) :
+    F.map (λ_ X).hom ≫ e X = e (𝟙_ C ⊗ X) ≫ G.map (λ_ X).hom := by
+  rw [← cancel_epi (ε F ▷ F.obj X ≫ μ F (𝟙_ _) X)]
+  simp [hunit, htensor]
+  -- After cancelling the unit and tensor comparisons, split the remaining `(η F ≫ ε G) ⊗ₘ e X`
+  -- so `ε_η` and `left_unitality` cancel on each side.
+  simp [tensorHom_def']
+
+/-- Naturality of the forward right unitor with respect to a family of morphisms `e` satisfying the
+unit and tensor comparison formulas. -/
+theorem rightUnitor_hom_naturality_of_unit_tensor {F G : C ⥤ D} [F.Monoidal] [G.Monoidal]
+    {e : ∀ Z : C, F.obj Z ⟶ G.obj Z}
+    (hunit : e (𝟙_ C) = η F ≫ ε G)
+    (htensor : ∀ A B, e (A ⊗ B) = δ F A B ≫ (e A ⊗ₘ e B) ≫ μ G A B) (X : C) :
+    F.map (ρ_ X).hom ≫ e X = e (X ⊗ 𝟙_ C) ≫ G.map (ρ_ X).hom := by
+  rw [← cancel_epi (F.obj X ◁ ε F ≫ μ F X (𝟙_ _))]
+  simp [hunit, htensor]
+  -- After cancelling the unit and tensor comparisons, split the remaining `e X ⊗ₘ (η F ≫ ε G)`
+  -- so `ε_η` and `right_unitality` cancel on each side.
+  simp [MonoidalCategory.tensorHom_def]
+
+/-- Naturality of left whiskering with respect to a family of morphisms `e` satisfying the tensor
+comparison formula. -/
+theorem whiskerLeft_naturality_of_tensor {F G : C ⥤ D} [F.Monoidal] [G.Monoidal]
+    {e : ∀ Z : C, F.obj Z ⟶ G.obj Z}
+    (htensor : ∀ A B, e (A ⊗ B) = δ F A B ≫ (e A ⊗ₘ e B) ≫ μ G A B)
+    (X : C) {Y₁ Y₂ : C} {f : Y₁ ⟶ Y₂} (hf : F.map f ≫ e Y₂ = e Y₁ ≫ G.map f) :
+    F.map (X ◁ f) ≫ e (X ⊗ Y₂) = e (X ⊗ Y₁) ≫ G.map (X ◁ f) := by
+  simp only [htensor, map_whiskerLeft, Category.assoc, μ_δ_assoc,
+    whiskerLeft_comp_tensorHom_assoc, tensorHom_comp_whiskerLeft_assoc, hf]
+
+/-- Naturality of right whiskering with respect to a family of morphisms `e` satisfying the tensor
+comparison formula. -/
+theorem whiskerRight_naturality_of_tensor {F G : C ⥤ D} [F.Monoidal] [G.Monoidal]
+    {e : ∀ Z : C, F.obj Z ⟶ G.obj Z}
+    (htensor : ∀ A B, e (A ⊗ B) = δ F A B ≫ (e A ⊗ₘ e B) ≫ μ G A B)
+    {X₁ X₂ : C} {f : X₁ ⟶ X₂} (Y : C) (hf : F.map f ≫ e X₂ = e X₁ ≫ G.map f) :
+    F.map (f ▷ Y) ≫ e (X₂ ⊗ Y) = e (X₁ ⊗ Y) ≫ G.map (f ▷ Y) := by
+  simp only [htensor, map_whiskerRight, Category.assoc, μ_δ_assoc,
+    whiskerRight_comp_tensorHom_assoc, tensorHom_comp_whiskerRight_assoc, hf]
+
+end StructuralNaturality
+
+end CategoryTheory.Functor.Monoidal
+
 namespace TauCeti
 
 open CategoryTheory
