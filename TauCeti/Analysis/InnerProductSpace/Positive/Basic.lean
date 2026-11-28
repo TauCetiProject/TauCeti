@@ -138,6 +138,37 @@ theorem smul_one_nonneg_iff [Nontrivial E] {c : 𝕜} :
   simpa only [nonneg_iff_isPositive] using
     isPositive_one.isPositive_smul_iff (E := E) (𝕜 := 𝕜) one_ne_zero (α := c)
 
+/-- An operator bounded below by a nonnegative real multiple of `1` is positive. -/
+theorem IsPositive.of_smul_one_le {c : ℝ} (hc : 0 ≤ c) {T : E →L[𝕜] E}
+    (hT : (c : 𝕜) • (1 : E →L[𝕜] E) ≤ T) : T.IsPositive :=
+  nonneg_iff_isPositive.mp <|
+    (smul_nonneg (RCLike.ofReal_nonneg.mpr hc) (nonneg_iff_isPositive.mpr isPositive_one)).trans hT
+
+/-- If `T ≤ b • 1` with `b ≤ 1`, then `1 - T` is positive. -/
+theorem IsPositive.one_sub_of_le_smul_one {b : ℝ} (hb : b ≤ 1) {T : E →L[𝕜] E}
+    (hT : T ≤ (b : 𝕜) • (1 : E →L[𝕜] E)) : (1 - T).IsPositive := by
+  have h1 : (0 : E →L[𝕜] E) ≤ 1 := nonneg_iff_isPositive.mpr isPositive_one
+  refine le_def.mp (hT.trans ?_)
+  have hb' : (b : 𝕜) ≤ 1 := by
+    simpa only [RCLike.ofReal_one] using (RCLike.ofReal_le_ofReal (K := 𝕜)).mpr hb
+  simpa only [one_smul] using smul_le_smul_of_nonneg_right hb' h1
+
+/-- A Loewner lower bound `c • 1 ≤ T` gives the quadratic-form lower bound
+`c ‖v‖² ≤ Re ⟪T v, v⟫`. -/
+theorem mul_norm_sq_le_re_inner_of_smul_one_le {c : ℝ} {T : E →L[𝕜] E}
+    (hT : (c : 𝕜) • (1 : E →L[𝕜] E) ≤ T) (v : E) :
+    c * ‖v‖ ^ 2 ≤ RCLike.re ⟪T v, v⟫_𝕜 := by
+  simpa [inner_sub_left, inner_smul_left, inner_self_eq_norm_sq_to_K] using
+    (le_def.mp hT).re_inner_nonneg_left v
+
+/-- A Loewner upper bound `T ≤ c • 1` gives the quadratic-form upper bound
+`Re ⟪T v, v⟫ ≤ c ‖v‖²`. -/
+theorem re_inner_le_mul_norm_sq_of_le_smul_one {c : ℝ} {T : E →L[𝕜] E}
+    (hT : T ≤ (c : 𝕜) • (1 : E →L[𝕜] E)) (v : E) :
+    RCLike.re ⟪T v, v⟫_𝕜 ≤ c * ‖v‖ ^ 2 := by
+  simpa [inner_sub_left, inner_smul_left, inner_self_eq_norm_sq_to_K] using
+    (le_def.mp hT).re_inner_nonneg_left v
+
 /-- Left multiplication `a ↦ T * a` on `E →L[𝕜] E` preserves the Loewner positive cone if and only
 if `T = c • 1` for some nonnegative scalar `c : 𝕜`. -/
 theorem forall_nonneg_mul_nonneg_iff {T : E →L[𝕜] E} :

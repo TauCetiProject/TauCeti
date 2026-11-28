@@ -223,6 +223,14 @@ theorem adjoint_eq_inv (hπ : IsUnitary π) (g : G) :
 theorem star_eq_inv (hπ : IsUnitary π) (g : G) : star (π g) = π g⁻¹ := by
   rw [ContinuousLinearMap.star_eq_adjoint, hπ.adjoint_eq_inv]
 
+omit [CompleteSpace V] in
+/-- Conjugating a bounded linear operator by a unitary group action preserves the operator-norm
+bound on vectors. -/
+theorem norm_conj_apply_le (hπ : IsUnitary π) (R : V →L[𝕜] V) (g : G) (v : V) :
+    ‖π g (R (π g⁻¹ v))‖ ≤ ‖R‖ * ‖v‖ := by
+  rw [hπ.norm_map]
+  simpa only [hπ.norm_map] using R.le_opNorm (π g⁻¹ v)
+
 end IsUnitary
 
 end Group

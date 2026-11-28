@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.Analytic
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Concentration
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
-import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 
 /-!
 # Gaussian smearing and density of entire analytic elements
@@ -62,7 +61,7 @@ public section
 noncomputable section
 
 open Complex MeasureTheory Filter Topology Real
-open scoped Convolution NNReal
+open scoped NNReal
 
 namespace TauCeti.CStarAction
 
@@ -119,69 +118,14 @@ theorem gaussianSmear_smul (c : ℝ) (r : ℂ) (a : A) :
 
 /-! ### The complex-time extension -/
 
-/-- The translated Gaussian integrand is continuous in the time variable. -/
-private theorem continuous_gaussianIntegrand (c : ℝ) (a : A) (z : ℂ) :
-    Continuous fun t : ℝ =>
-      ((c : ℂ) / √π * cexp (-(c * (t - z)) ^ 2)) • α (Multiplicative.ofAdd t) a := by
-  refine Continuous.smul ?_ (α.continuous_apply continuous_ofAdd continuous_const)
-  fun_prop
-
 /-- The function `z ↦ ∫ t, (c / √π) exp (-(c (t - z))²) • α_t a` is entire. -/
 private theorem differentiable_gaussianExtension (c : ℝ) (a : A) :
     Differentiable ℂ fun z : ℂ =>
       ∫ t : ℝ, ((c : ℂ) / √π * cexp (-(c * (t - z)) ^ 2)) • α (Multiplicative.ofAdd t) a := by
-  intro z₀
-  rcases eq_or_ne c 0 with rfl | hc
-  · simp
-  have hb : 0 < c ^ 2 / 2 := by positivity
-  set D := ‖z₀‖ + 1
-  have hD (z : ℂ) (hz : z ∈ Metric.ball z₀ 1) : ‖z‖ ≤ D := (norm_lt_of_mem_ball hz).le
-  -- dominate the kernel and its derivative on the unit ball about `z₀` by Gaussians in `t`
-  -- The kernel is the translated quadratic exponential with `a = -c²` and `b = t`.
-  have hderiv (t : ℝ) (z : ℂ) : HasDerivAt (fun z : ℂ => cexp (-(c * (t - z)) ^ 2))
-      (cexp (-(c * (t - z)) ^ 2) * (2 * c ^ 2 * (t - z))) z := by
-    convert Complex.hasDerivAt_cexp_mul_sub_sq (-(c : ℂ) ^ 2) t z using 1
-    · exact funext fun w => by ring_nf
-    · ring_nf
-  have hG := integrable_exp_neg_mul_sq hb
-  have hG' : Integrable fun t : ℝ => (|t| + D) * rexp (-(c ^ 2 / 2) * t ^ 2) := by
-    refine ((integrable_mul_exp_neg_mul_sq hb).norm.add (hG.const_mul D)).congr
-      (ae_of_all _ fun t => ?_)
-    simp only [Pi.add_apply, Real.norm_eq_abs, abs_mul, abs_of_pos (Real.exp_pos _)]
-    ring
-  refine (hasDerivAt_integral_of_dominated_loc_of_deriv_le (Metric.ball_mem_nhds z₀ one_pos)
-    (F' := fun z t => ((c : ℂ) / √π * cexp (-(c * (t - z)) ^ 2) * (2 * c ^ 2 * (t - z))) •
-      α (Multiplicative.ofAdd t) a)
-    (bound := fun t => ‖(c : ℂ) / √π‖ * rexp (c ^ 2 * D ^ 2) * (2 * c ^ 2) * ‖a‖ *
-      ((|t| + D) * rexp (-(c ^ 2 / 2) * t ^ 2)))
-    (.of_forall fun z => (α.continuous_gaussianIntegrand c a z).aestronglyMeasurable) ?_
-    ?_ (ae_of_all _ fun t z hz => ?_) (hG'.const_mul _)
-    (ae_of_all _ fun t z _ => by
-      simpa only [mul_assoc] using ((hderiv t z).const_mul
-        ((c : ℂ) / √π)).smul_const (α (Multiplicative.ofAdd t) a))).2.differentiableAt
-  · refine Integrable.mono' ((hG.const_mul (‖(c : ℂ) / √π‖ * rexp (c ^ 2 * D ^ 2) * ‖a‖)))
-      (α.continuous_gaussianIntegrand c a z₀).aestronglyMeasurable (ae_of_all _ fun t => ?_)
-    rw [norm_smul, norm_mul, StarAlgEquiv.norm_map]
-    calc _ ≤ ‖(c : ℂ) / √π‖ * (rexp (c ^ 2 * D ^ 2) * rexp (-(c ^ 2 / 2) * t ^ 2)) * ‖a‖ := by
-          gcongr
-          exact Complex.norm_cexp_neg_mul_sub_sq_le c t (hD z₀ (Metric.mem_ball_self one_pos))
-      _ = _ := by ring
-  · exact (Continuous.smul (by fun_prop)
-      (α.continuous_apply continuous_ofAdd continuous_const)).aestronglyMeasurable
-  · have h₁ : ‖2 * (c : ℂ) ^ 2 * (t - z)‖ ≤ 2 * c ^ 2 * (|t| + D) := by
-      rw [norm_mul, norm_mul, norm_pow, Complex.norm_real, Real.norm_eq_abs, sq_abs,
-        Complex.norm_two]
-      gcongr
-      refine (norm_sub_le _ _).trans ?_
-      rw [Complex.norm_real, Real.norm_eq_abs]
-      gcongr
-      exact hD z hz
-    rw [norm_smul, norm_mul, norm_mul, StarAlgEquiv.norm_map]
-    calc _ ≤ ‖(c : ℂ) / √π‖ * (rexp (c ^ 2 * D ^ 2) * rexp (-(c ^ 2 / 2) * t ^ 2)) *
-          (2 * c ^ 2 * (|t| + D)) * ‖a‖ := by
-          gcongr
-          exact Complex.norm_cexp_neg_mul_sub_sq_le c t (hD z hz)
-      _ = _ := by ring
+  simpa only [Complex.gaussianKernel_def] using
+    Complex.differentiable_integral_gaussianKernel_smul
+      (α.continuous_apply continuous_ofAdd continuous_const)
+      (fun t => (StarAlgEquiv.norm_map _ _).le) c
 
 /-- On the real line, the translated Gaussian integral is the orbit of the Gaussian smearing. -/
 private theorem gaussianExtension_ofReal (c : ℝ) (a : A) (s : ℝ) :
@@ -278,46 +222,14 @@ theorem toSemigroup_gaussianSmearCLM (c : ℝ) (t : ℝ≥0) (a : A) :
   simpa only [Semigroups.StronglyContinuousGroup.toSemigroup_apply,
     toStronglyContinuousGroup_apply, gaussianSmearCLM_apply] using α.apply_gaussianSmear c t a
 
-/-- At positive width, Gaussian smearing is heat-kernel convolution of the reversed orbit. -/
-private theorem gaussianSmear_eq_heatKernel_convolution {c : ℝ} (hc : 0 < c) (a : A) :
-    α.gaussianSmear c a =
-      (heatKernel (1 / (4 * c ^ 2)) ⋆ fun u : ℝ => α (Multiplicative.ofAdd (-u)) a) 0 := by
-  have hvariance : 4 * π * (1 / (4 * c ^ 2)) = π / c ^ 2 := by field_simp
-  have hexponent (t : ℝ) : -t ^ 2 / (4 * (1 / (4 * c ^ 2))) = -(c * t) ^ 2 := by
-    field_simp
-  have hkernel (t : ℝ) : heatKernel (1 / (4 * c ^ 2)) t = gaussianDensity c t := by
-    rw [heatKernel_apply]
-    simp only [Module.finrank_self, Nat.cast_one, Real.norm_eq_abs, sq_abs]
-    rw [neg_div, Real.rpow_neg (by positivity), ← Real.sqrt_eq_rpow, hvariance,
-      Real.sqrt_div' _ (sq_nonneg c), Real.sqrt_sq hc.le, hexponent, gaussianDensity_def]
-    simp only [inv_div]
-    ring
-  rw [gaussianSmear_eq_integral_gaussianDensity_smul, convolution_def]
-  simp only [ContinuousLinearMap.lsmul_apply, zero_sub, neg_neg, hkernel]
-
 /-- **Convergence of Gaussian smearings.** As the width `c⁻¹` of the Gaussian tends to zero, the
 Gaussian smearing of `a` tends to `a`. -/
 theorem tendsto_gaussianSmear (a : A) :
     Tendsto (fun c : ℝ => α.gaussianSmear c a) atTop (𝓝 a) := by
-  let g : ℝ → A := fun u => α (Multiplicative.ofAdd (-u)) a
-  have hg : Continuous g := α.continuous_apply (continuous_ofAdd.comp continuous_neg)
-    continuous_const
-  have hpow : Tendsto (fun c : ℝ => c ^ 2) atTop atTop :=
-    tendsto_pow_atTop (by decide : 2 ≠ 0)
-  have htime : Tendsto (fun c : ℝ => 4 * c ^ 2) atTop atTop :=
-    hpow.const_mul_atTop (by norm_num : 0 < (4 : ℝ))
-  have ht₀ : Tendsto (fun c : ℝ => 1 / (4 * c ^ 2)) atTop (𝓝 0) := by
-    simpa only [one_div] using! htime.inv_tendsto_atTop
-  have ht : Tendsto (fun c : ℝ => 1 / (4 * c ^ 2)) atTop (𝓝[>] 0) :=
-    tendsto_nhdsWithin_iff.mpr ⟨ht₀, (eventually_gt_atTop 0).mono fun c hc =>
-      Set.mem_Ioi.mpr (by positivity)⟩
-  have h := (tendsto_heatKernel_convolution hg.aestronglyMeasurable
-    (ae_of_all _ fun u => (StarAlgEquiv.norm_map _ a).le) (x₀ := 0) hg.continuousAt).comp
-      (ht.prodMk tendsto_const_nhds)
-  have hg₀ : g 0 = a := by simp [g]
-  rw [hg₀] at h
-  exact h.congr' ((eventually_gt_atTop 0).mono fun c hc =>
-    (α.gaussianSmear_eq_heatKernel_convolution hc a).symm)
+  have h := Complex.tendsto_integral_gaussianKernel_smul
+    (α.continuous_apply continuous_ofAdd continuous_const)
+    (fun t => (StarAlgEquiv.norm_map _ a).le)
+  simpa [gaussianSmear_def, Complex.gaussianKernel_def] using h
 
 /-! ### Density -/
 
