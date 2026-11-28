@@ -426,8 +426,8 @@ private theorem normalized_mul_eq_inv {B m n : Type*} [Fintype m] [Fintype n] [D
         = x.conjTranspose * (x * y) * y.conjTranspose := by
           simp only [CStarMatrix.mul_assoc_rectangular]
       _ = (y * x).conjTranspose := by
-          rw [hxy, hp.conjTranspose_mul_of_mul_eq hpx, ← conjTranspose_mul]
-      _ = q := by rw [hyx, hq.conjTranspose_eq]
+          rw [hxy, hp.isSelfAdjoint.conjTranspose_mul_of_mul_eq hpx, ← conjTranspose_mul]
+      _ = q := by rw [hyx, hq.isSelfAdjoint.conjTranspose_eq]
   have hcb : c * b = 1 := by
     have h1 : x.conjTranspose * x * (1 - q) = 0 := by
       rw [CStarMatrix.mul_assoc_rectangular, hx_1q, CStarMatrix.mul_zero]
@@ -469,7 +469,7 @@ private theorem normalized_mul_eq_witness {B m n : Type*} [Fintype m] [Fintype n
       CStarMatrix.mul_assoc_rectangular, hxq]
   have hcomm_cq : Commute c q := hcq.trans (by
     simp only [c, mul_add, mul_sub, mul_one, hq.isIdempotentElem.eq, sub_self, zero_add,
-      ← CStarMatrix.mul_assoc_rectangular, hq.mul_conjTranspose_of_mul_eq hxq])
+      ← CStarMatrix.mul_assoc_rectangular, hq.isSelfAdjoint.mul_conjTranspose_of_mul_eq hxq])
   have hsinv_sa : s⁻¹ʳ.conjTranspose = s⁻¹ʳ := by
     rw [← star_eq_conjTranspose, ← Ring.inverse_star, hs_pos.isSelfAdjoint.star_eq]
   let w : CStarMatrix n m B := s⁻¹ʳ * x.conjTranspose
@@ -486,8 +486,8 @@ private theorem normalized_mul_eq_witness {B m n : Type*} [Fintype m] [Fintype n
           rw [hsinv_sq, CStarMatrix.mul_add, CStarMatrix.add_mul]
           simp only [CStarMatrix.mul_assoc_rectangular]
       _ = p := by
-          rw [hx_1q, CStarMatrix.zero_mul, zero_add, ← conjTranspose_mul, hxy, hp.conjTranspose_eq,
-            hp.isIdempotentElem.eq]
+          rw [hx_1q, CStarMatrix.zero_mul, zero_add, ← conjTranspose_mul, hxy,
+            hp.isSelfAdjoint.conjTranspose_eq, hp.isIdempotentElem.eq]
   have hw₂ : w * w.conjTranspose = q := by
     have hcomm_sq : Commute s q := hcomm_cq.cfcₙ_nnreal NNReal.sqrt
     have hxx : x.conjTranspose * x = s * q * s := by
@@ -501,7 +501,8 @@ private theorem normalized_mul_eq_witness {B m n : Type*} [Fintype m] [Fintype n
       _ = q := by
           rw [Ring.inverse_mul_cancel _ hs_pos.isUnit, Ring.mul_inverse_cancel _ hs_pos.isUnit,
             one_mul, mul_one]
-  exact ⟨w, hw₁, hw₂, by rw [CStarMatrix.mul_assoc_rectangular, hp.conjTranspose_mul_of_mul_eq hpx]⟩
+  exact ⟨w, hw₁, hw₂,
+    by rw [CStarMatrix.mul_assoc_rectangular, hp.isSelfAdjoint.conjTranspose_mul_of_mul_eq hpx]⟩
 
 /-- **Rectangular algebraic equivalence of matrix projections implies Murray–von Neumann
 equivalence** (Blackadar, Proposition 4.6.4). If `p : CStarMatrix m m A` and
@@ -576,7 +577,7 @@ def stabilizedUnitary [DecidableEq m] [DecidableEq n] [Ring A] [StarRing A]
       simpa only [ofMatrix_symm_mul] using congrArg ofMatrix.symm hbe
     have heaM : ofMatrix.symm p * (ofMatrix.symm v)ᴴ = (ofMatrix.symm v)ᴴ := by
       simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] using
-        congrArg ofMatrix.symm (hp.mul_conjTranspose_of_mul_eq hbe)
+        congrArg ofMatrix.symm (hp.isSelfAdjoint.mul_conjTranspose_of_mul_eq hbe)
     have hsa : IsSelfAdjoint (fromBlocks (1 - p) v.conjTranspose v (1 - q)) := by
       simp only [isSelfAdjoint_iff, fromBlocks_star, star_sub, star_one,
         hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq, conjTranspose_conjTranspose]

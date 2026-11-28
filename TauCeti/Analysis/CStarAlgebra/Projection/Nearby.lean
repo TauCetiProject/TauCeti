@@ -94,9 +94,10 @@ private theorem nearbyUnitary_add_star {A : Type*} [CStarAlgebra A]
   have hsu : star (u : A) = s⁻¹ʳ * star z := by
     rw [hu_eq', star_mul, ← Ring.inverse_star, (CFC.sqrt_nonneg (1 - d)).isSelfAdjoint.star_eq,
       hcomm_s_sz.ringInverse_left.eq]
-  rw [show (CFC.sqrt (1 - (p - q) * (p - q))) = s by simp only [s, d, pow_two]]
-  rw [hsu, hu_eq', ← mul_add, hz_add_sz, mul_smul_comm, ← mul_assoc,
-    Ring.inverse_mul_cancel _ hs_unit, one_mul]
+  have hsum : (u : A) + star (u : A) = (2 : ℝ) • s := by
+    rw [hsu, hu_eq', ← mul_add, hz_add_sz, mul_smul_comm, ← mul_assoc,
+      Ring.inverse_mul_cancel _ hs_unit, one_mul]
+  simpa only [s, d, pow_two] using hsum
 
 private theorem norm_nearbyUnitary_sub_one_le_aux {A : Type*} [CStarAlgebra A]
     [PartialOrder A] [StarOrderedRing A] {p q : A}

@@ -461,7 +461,7 @@ theorem IsMurrayVonNeumannEquivalent.exists_isSelfAdjoint_mem_unitary_mul_fromBl
   have hp := h.isStarProjection_left
   have hq := h.isStarProjection_right
   obtain ⟨v, hvp, hvq, hbe, -⟩ := h.exists_mul_conjTranspose_mul_self_eq_support
-  have hea : p * vᴴ = vᴴ := mul_conjTranspose_eq_of_isStarProjection hp hbe
+  have hea : p * vᴴ = vᴴ := mul_conjTranspose_eq_of_isSelfAdjoint hp.isSelfAdjoint hbe
   have hw : IsSelfAdjoint (Matrix.fromBlocks (1 - p) vᴴ v (1 - q)) :=
     (IsHermitian.fromBlocks (isHermitian_one.sub hp.isSelfAdjoint.isHermitian)
       (conjTranspose_conjTranspose v)

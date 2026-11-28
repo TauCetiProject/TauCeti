@@ -66,8 +66,8 @@ embeddings into block-diagonal matrices.
   rectangular multiplication and conjugate transpose, and sends `star` to conjugate transpose; the
   companions `CStarMatrix.ofMatrix_symm_zero`, `ofMatrix_symm_one`, `ofMatrix_symm_add`,
   `ofMatrix_symm_neg`, `ofMatrix_symm_sub`, `ofMatrix_symm_smul`, `ofMatrix_symm_sum`,
-  `IsStarProjection.conjTranspose_eq`, `IsStarProjection.conjTranspose_mul_of_mul_eq`,
-  `IsStarProjection.mul_conjTranspose_of_mul_eq`, `continuous_map`,
+  `IsSelfAdjoint.conjTranspose_eq`, `IsSelfAdjoint.conjTranspose_mul_of_mul_eq`,
+  `IsSelfAdjoint.mul_conjTranspose_of_mul_eq`, `continuous_map`,
   `CStarMatrix.ofMatrixL_symm_apply`, `CStarMatrix.trace_ofMatrix_symm_unitary_conj`,
   `CStarMatrix.continuous_trace_ofMatrix_symm`, and
   `CStarMatrix.eq_zero_of_isIdempotentElem_of_trace_eq_zero` handle the remaining algebraic
@@ -419,25 +419,25 @@ lemma conjTranspose_conjTranspose {m : Type*} [InvolutiveStar A] (M : CStarMatri
   apply ofMatrix.symm.injective
   simp only [ofMatrix_symm_conjTranspose, Matrix.conjTranspose_conjTranspose]
 
-/-- A star projection C⋆-matrix equals its conjugate transpose. -/
-theorem _root_.IsStarProjection.conjTranspose_eq [Fintype n] [Mul A] [AddCommMonoid A] [Star A]
-    {p : CStarMatrix n n A} (hp : IsStarProjection p) :
-    p.conjTranspose = p := by
-  rw [← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq]
+/-- A self-adjoint C⋆-matrix equals its conjugate transpose. -/
+theorem _root_.IsSelfAdjoint.conjTranspose_eq [Star A]
+    {a : CStarMatrix n n A} (ha : IsSelfAdjoint a) :
+    a.conjTranspose = a := by
+  rw [← star_eq_conjTranspose, ha.star_eq]
 
-/-- If `p * x = x` for a star projection C⋆-matrix `p`, then `xᴴ * p = xᴴ`. -/
-theorem _root_.IsStarProjection.conjTranspose_mul_of_mul_eq {m : Type*} [Fintype m]
-    [NonUnitalNonAssocSemiring A] [StarRing A] {p : CStarMatrix m m A} (hp : IsStarProjection p)
-    {x : CStarMatrix m n A} (hpx : p * x = x) :
-    x.conjTranspose * p = x.conjTranspose := by
-  simpa only [conjTranspose_mul, hp.conjTranspose_eq] using congrArg conjTranspose hpx
+/-- If `a * x = x` for a self-adjoint C⋆-matrix `a`, then `xᴴ * a = xᴴ`. -/
+theorem _root_.IsSelfAdjoint.conjTranspose_mul_of_mul_eq {m : Type*} [Fintype m]
+    [NonUnitalNonAssocSemiring A] [StarRing A] {a : CStarMatrix m m A} (ha : IsSelfAdjoint a)
+    {x : CStarMatrix m n A} (hax : a * x = x) :
+    x.conjTranspose * a = x.conjTranspose := by
+  simpa only [conjTranspose_mul, ha.conjTranspose_eq] using congrArg conjTranspose hax
 
-/-- If `x * p = x` for a star projection C⋆-matrix `p`, then `p * xᴴ = xᴴ`. -/
-theorem _root_.IsStarProjection.mul_conjTranspose_of_mul_eq {m : Type*} [Fintype n]
-    [NonUnitalNonAssocSemiring A] [StarRing A] {p : CStarMatrix n n A} (hp : IsStarProjection p)
-    {x : CStarMatrix m n A} (hxp : x * p = x) :
-    p * x.conjTranspose = x.conjTranspose := by
-  simpa only [conjTranspose_mul, hp.conjTranspose_eq] using congrArg conjTranspose hxp
+/-- If `x * a = x` for a self-adjoint C⋆-matrix `a`, then `a * xᴴ = xᴴ`. -/
+theorem _root_.IsSelfAdjoint.mul_conjTranspose_of_mul_eq {m : Type*} [Fintype n]
+    [NonUnitalNonAssocSemiring A] [StarRing A] {a : CStarMatrix n n A} (ha : IsSelfAdjoint a)
+    {x : CStarMatrix m n A} (hxa : x * a = x) :
+    a * x.conjTranspose = x.conjTranspose := by
+  simpa only [conjTranspose_mul, ha.conjTranspose_eq] using congrArg conjTranspose hxa
 
 /-- A C⋆-matrix is a star projection exactly when the underlying matrix is. -/
 @[simp]
