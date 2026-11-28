@@ -18,7 +18,9 @@ Here its charts are pulled back to the original Clifford subtype along
 operations and lets constructions on native Spin quotients use the embedded smooth structure.
 
 The comparison is a diffeomorphism, not just an abstract group isomorphism; multiplication
-and inversion on the native carrier are smooth.
+and inversion on the native carrier are smooth, and `realSpinLieEquivUnitsRange` and
+`realSpinLieEquivQuadratic` identify its Lie algebra with that of the embedded units range and with
+`quadraticLieSubalgebra (realCliffordForm n 0)`.
 
 ## References
 
@@ -89,5 +91,62 @@ instance instLieGroupRealSpin (n : ℕ) :
       funext g
       exact (realSpinDiffeomorphUnitsRange_symm_apply n g).symm)
     (realCliffordSpinContinuousMulEquivUnitsRange n).symm.surjective
+
+/-- The Lie-algebra equivalence between native compact Spin and its embedded units range,
+induced by the topological group isomorphism `realCliffordSpinContinuousMulEquivUnitsRange`. -/
+def realSpinLieEquivUnitsRange (n : ℕ) :
+    LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0)) ≃ₗ⁅ℝ⁆
+      LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n)
+        (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) :=
+  (realCliffordSpinContinuousMulEquivUnitsRange n).lieEquiv
+
+/-- The forward Lie-algebra comparison is the Lie map of the units-range group isomorphism. -/
+@[simp]
+theorem realSpinLieEquivUnitsRange_apply (n : ℕ)
+    (X : LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0))) :
+    realSpinLieEquivUnitsRange n X =
+      ContinuousMonoidHom.lieMap
+        (I := 𝓘(ℝ, realSpinLieModel n)) (I' := 𝓘(ℝ, realSpinLieModel n))
+        (realCliffordSpinContinuousMulEquivUnitsRange n :
+          spinGroup (realCliffordForm n 0) →ₜ*
+            MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) X :=
+  ContinuousMulEquiv.lieEquiv_apply _ X
+
+/-- The inverse Lie-algebra comparison is the Lie map of the inverse units-range group
+isomorphism. -/
+@[simp]
+theorem realSpinLieEquivUnitsRange_symm_apply (n : ℕ)
+    (Y : LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n)
+      (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0)))) :
+    (realSpinLieEquivUnitsRange n).symm Y =
+      ContinuousMonoidHom.lieMap
+        (I := 𝓘(ℝ, realSpinLieModel n)) (I' := 𝓘(ℝ, realSpinLieModel n))
+        ((realCliffordSpinContinuousMulEquivUnitsRange n).symm :
+          MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0)) →ₜ*
+            spinGroup (realCliffordForm n 0)) Y :=
+  ContinuousMulEquiv.lieEquiv_symm_apply _ Y
+
+/-- The Lie algebra of native compact Spin identified directly with the quadratic Clifford Lie
+subalgebra. -/
+def realSpinLieEquivQuadratic (n : ℕ) :
+    LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0)) ≃ₗ⁅ℝ⁆
+      quadraticLieSubalgebra (realCliffordForm n 0) :=
+  (realSpinLieEquivUnitsRange n).trans (realCliffordSpinLieEquivQuadratic n)
+
+/-- Evaluation of the quadratic Clifford coordinate equivalence on native compact Spin. -/
+@[simp]
+theorem realSpinLieEquivQuadratic_apply (n : ℕ)
+    (X : LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0))) :
+    realSpinLieEquivQuadratic n X =
+      realCliffordSpinLieEquivQuadratic n (realSpinLieEquivUnitsRange n X) :=
+  (rfl)
+
+/-- Inverse evaluation of the quadratic Clifford coordinate equivalence on native compact Spin. -/
+@[simp]
+theorem realSpinLieEquivQuadratic_symm_apply (n : ℕ)
+    (x : quadraticLieSubalgebra (realCliffordForm n 0)) :
+    (realSpinLieEquivQuadratic n).symm x =
+      (realSpinLieEquivUnitsRange n).symm ((realCliffordSpinLieEquivQuadratic n).symm x) :=
+  (rfl)
 
 end TauCeti.CliffordAlgebra

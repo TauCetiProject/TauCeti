@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Lie.Subgroup.Differential
 public import TauCeti.Geometry.Lie.Subgroup.SpecialOrthogonal
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.LieAlgebra
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Projection
+import TauCeti.Geometry.Lie.Adjoint.Naturality
 
 /-!
 # The Lie map of the real Spin projection
@@ -50,7 +51,7 @@ Lie homomorphism from quadratic Clifford elements to skew-symmetric matrices.
 public section
 
 open Manifold
-open scoped ContDiff Manifold Matrix.Norms.Operator
+open scoped ContDiff Manifold Matrix Matrix.Norms.Operator
 
 noncomputable section
 
@@ -242,6 +243,36 @@ theorem
       ((realCliffordSpecialOrthogonalLieEquivSo n X :
           LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) :=
   (coe_realCliffordSpecialOrthogonalLieEquivSo_apply n X).symm
+
+/-- In skew-matrix coordinates, the group adjoint action of `u ∈ SpecialOrthogonalUnitsRange(n)`
+on `Lie(SO(n))` is conjugation by `u` (using transpose since `u` is orthogonal). -/
+theorem coe_realCliffordSpecialOrthogonalLieEquivSo_Ad (n : ℕ)
+    (u : SpecialOrthogonalUnitsRange(n))
+    (W : LeftInvariantDerivation 𝓘(ℝ, SpecialOrthogonalLieModel(n))
+      (SpecialOrthogonalUnitsRange(n))) :
+    ((realCliffordSpecialOrthogonalLieEquivSo n
+        (TauCeti.Lie.Ad (I := 𝓘(ℝ, SpecialOrthogonalLieModel(n))) u W) :
+        LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) =
+      ((u : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) *
+        ((realCliffordSpecialOrthogonalLieEquivSo n W :
+          LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) *
+        ((u : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)ᵀ := by
+  rw [coe_realCliffordSpecialOrthogonalLieEquivSo_apply,
+    TauCeti.Lie.EmbeddedLieSubgroupData.lieMapSubtypeVal_apply,
+    ContMDiffMonoidMorphism.lieMap_Ad,
+    TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply,
+    TauCeti.Lie.unitsLieAlgebraLieEquiv_apply, TauCeti.Lie.unitsLieAlgebraEquiv_Ad,
+    ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
+    ← TauCeti.Lie.EmbeddedLieSubgroupData.lieMapSubtypeVal_apply,
+    ← coe_realCliffordSpecialOrthogonalLieEquivSo_apply]
+  have hu : ((u : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) ∈
+      Matrix.specialOrthogonalGroup (Fin n) ℝ :=
+    (QuadraticMap.mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff n
+      (u : GL (Fin n) ℝ)).mp u.property
+  rw [Matrix.coe_units_inv, Matrix.inv_eq_right_inv hu.1.2]
+  -- `GL (Fin n) ℝ` is definitionally `(Matrix (Fin n) (Fin n) ℝ)ˣ` and `u.val` is
+  -- `(u : GL (Fin n) ℝ)`.
+  rfl
 
 /-- The continuous projection between the closed real Spin and special-orthogonal carriers,
 regarded as a smooth homomorphism by automatic smoothness. -/

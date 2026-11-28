@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.Exponential.Classification
 public import TauCeti.Geometry.Lie.Exponential.Smoothness
 public import TauCeti.Geometry.Lie.Exponential.Trotter
 public import TauCeti.Geometry.Lie.Tangent.Differential
+public import TauCeti.Geometry.Manifold.Algebra.Monoid
 import TauCeti.Geometry.Lie.Exponential.Homomorphism
 
 /-!
@@ -46,6 +47,13 @@ The linear map `L` is not exposed: once `f` is known to be smooth, it is the dif
   (`TauCeti.Lie.contMDiff_of_surjective_groupLieAlgebraMap`).
 * `ContinuousMonoidHom.toContMDiffMonoidMorphism`: a continuous homomorphism of such Lie groups,
   bundled as a smooth monoid morphism.
+* `ContinuousMonoidHom.toContMDiffMonoidMorphism_fst`,
+  `ContinuousMonoidHom.toContMDiffMonoidMorphism_snd`,
+  `ContinuousMonoidHom.toContMDiffMonoidMorphism_inl`, and
+  `ContinuousMonoidHom.toContMDiffMonoidMorphism_inr`: converting the continuous product
+  projections and factor inclusions recovers `ContMDiffMonoidMorphism.fst`,
+  `ContMDiffMonoidMorphism.snd`, `ContMDiffMonoidMorphism.inl`, and
+  `ContMDiffMonoidMorphism.inr`.
 * `ContinuousMulEquiv.toDiffeomorph`: an isomorphism of topological groups between such Lie groups,
   as a diffeomorphism.
 
@@ -195,6 +203,46 @@ def toContMDiffMonoidMorphism (f : G →ₜ* G') : ContMDiffMonoidMorphism I I' 
 theorem coe_toContMDiffMonoidMorphism (f : G →ₜ* G') :
     ⇑(f.toContMDiffMonoidMorphism I I') = f :=
   (rfl)
+
+/-- Converting the continuous first projection to a smooth morphism recovers
+`ContMDiffMonoidMorphism.fst`. -/
+@[simp]
+theorem toContMDiffMonoidMorphism_fst :
+    (ContinuousMonoidHom.fst G G').toContMDiffMonoidMorphism (I.prod I') I =
+      ContMDiffMonoidMorphism.fst := by
+  apply DFunLike.coe_injective
+  funext p
+  simp [coe_toContMDiffMonoidMorphism, ContMDiffMonoidMorphism.coe_fst]
+
+/-- Converting the continuous second projection to a smooth morphism recovers
+`ContMDiffMonoidMorphism.snd`. -/
+@[simp]
+theorem toContMDiffMonoidMorphism_snd :
+    (ContinuousMonoidHom.snd G G').toContMDiffMonoidMorphism (I.prod I') I' =
+      ContMDiffMonoidMorphism.snd := by
+  apply DFunLike.coe_injective
+  funext p
+  simp [coe_toContMDiffMonoidMorphism, ContMDiffMonoidMorphism.coe_snd]
+
+/-- Converting the continuous first factor inclusion to a smooth morphism recovers
+`ContMDiffMonoidMorphism.inl`. -/
+@[simp]
+theorem toContMDiffMonoidMorphism_inl :
+    (ContinuousMonoidHom.inl G G').toContMDiffMonoidMorphism I (I.prod I') =
+      ContMDiffMonoidMorphism.inl := by
+  apply DFunLike.coe_injective
+  funext g
+  simp [coe_toContMDiffMonoidMorphism, ContMDiffMonoidMorphism.coe_inl]
+
+/-- Converting the continuous second factor inclusion to a smooth morphism recovers
+`ContMDiffMonoidMorphism.inr`. -/
+@[simp]
+theorem toContMDiffMonoidMorphism_inr :
+    (ContinuousMonoidHom.inr G G').toContMDiffMonoidMorphism I' (I.prod I') =
+      ContMDiffMonoidMorphism.inr := by
+  apply DFunLike.coe_injective
+  funext g'
+  simp [coe_toContMDiffMonoidMorphism, ContMDiffMonoidMorphism.coe_inr]
 
 end ContinuousMonoidHom
 

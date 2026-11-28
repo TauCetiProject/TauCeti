@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Differential
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Standard
 
 /-!
 # The compact real Spin projection is a local diffeomorphism
@@ -56,21 +57,70 @@ local notation "SpecialOrthogonalLieModel(" n ")" =>
   LieSubalgebra.toSubmodule (TauCeti.Lie.lieSubalgebraOfSubgroup
     (I := 𝓘(ℝ, Matrix (Fin n) (Fin n) ℝ)) (SpecialOrthogonalUnitsRange(n)))
 
+/-- The coordinate differential of the real Spin projection undoes
+`CliffordAlgebra.matrixSoEquivQuadratic`. -/
+theorem realCliffordSpinToSpecialOrthogonalCoordinateLieHom_matrixSoEquivQuadratic (n : ℕ)
+    (A : LieAlgebra.Orthogonal.so (Fin n) ℝ) :
+    realCliffordSpinToSpecialOrthogonalCoordinateLieHom n
+        (matrixSoEquivQuadratic (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0)
+          (realCliffordFormZeroIsometryWeightedSumSquares n) A) = A := by
+  apply Subtype.ext
+  apply Matrix.mulVec_injective
+  funext v
+  apply ι_injective (realCliffordForm n 0)
+  rw [realCliffordSpinToSpecialOrthogonalCoordinateLieHom_lie_ι,
+    matrixSoEquivQuadratic_lie_ι,
+    realCliffordFormZeroIsometryWeightedSumSquares_apply,
+    realCliffordFormZeroIsometryWeightedSumSquares_symm_apply]
+
+/-- In quadratic Clifford and skew-matrix coordinates, the differential of the real Spin projection
+is the inverse of `CliffordAlgebra.matrixSoEquivQuadratic`. -/
+theorem realCliffordSpinToSpecialOrthogonalCoordinateLieHom_eq_symm_matrixSoEquivQuadratic
+    (n : ℕ) :
+    realCliffordSpinToSpecialOrthogonalCoordinateLieHom n =
+      (matrixSoEquivQuadratic (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0)
+        (realCliffordFormZeroIsometryWeightedSumSquares n)).symm.toLieHom := by
+  refine LieHom.ext fun x ↦ ?_
+  calc
+    realCliffordSpinToSpecialOrthogonalCoordinateLieHom n x
+      = realCliffordSpinToSpecialOrthogonalCoordinateLieHom n
+          (matrixSoEquivQuadratic (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0)
+            (realCliffordFormZeroIsometryWeightedSumSquares n)
+            ((matrixSoEquivQuadratic (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0)
+              (realCliffordFormZeroIsometryWeightedSumSquares n)).symm x)) := by
+        rw [LieEquiv.apply_symm_apply]
+    _ = _ := realCliffordSpinToSpecialOrthogonalCoordinateLieHom_matrixSoEquivQuadratic n _
+
+/-- In `so(n)` coordinates, the quadratic Clifford realization along
+`realCliffordFormZeroIsometryWeightedSumSquares` agrees with the normalized exterior-bivector
+embedding of `(bivectorEquivSo n ℝ).symm A`. -/
+theorem matrixSoEquivQuadratic_realCliffordFormZeroIsometryWeightedSumSquares_eq_bivector
+    (n : ℕ) (A : LieAlgebra.Orthogonal.so (Fin n) ℝ) :
+    let Q₀ := QuadraticMap.weightedSumSquares ℝ (1 : Fin n → ℝ)
+    letI := bivectorLieRing Q₀
+    letI := bivectorLieAlgebra Q₀
+    matrixSoEquivQuadratic (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0)
+        (realCliffordFormZeroIsometryWeightedSumSquares n) A =
+      bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0)
+        ((bivectorEquivSo n ℝ).symm A) := by
+  let Q₀ := QuadraticMap.weightedSumSquares ℝ (1 : Fin n → ℝ)
+  let _ := bivectorLieRing Q₀
+  let _ := bivectorLieAlgebra Q₀
+  apply (matrixSoEquivQuadratic (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0)
+    (realCliffordFormZeroIsometryWeightedSumSquares n)).symm.injective
+  simp only [LieEquiv.coe_toLieHom]
+  rw [LieEquiv.symm_apply_apply, ← LieEquiv.coe_toLieHom,
+    ← realCliffordSpinToSpecialOrthogonalCoordinateLieHom_eq_symm_matrixSoEquivQuadratic,
+    realCliffordSpinToSpecialOrthogonalCoordinateLieHom_eq_bivectorEquivSo,
+    LieEquiv.apply_symm_apply]
+
 /-- The differential of the Spin projection in quadratic and skew-matrix coordinates is
 bijective, in every dimension. -/
 theorem realCliffordSpinToSpecialOrthogonalCoordinateLieHom_bijective (n : ℕ) :
     Function.Bijective (realCliffordSpinToSpecialOrthogonalCoordinateLieHom n) := by
-  let e := bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0)
-  apply (Function.Bijective.of_comp_iff _ e.bijective).mp
-  have h : realCliffordSpinToSpecialOrthogonalCoordinateLieHom n ∘ e =
-      bivectorEquivSo n ℝ := by
-    funext z
-    exact realCliffordSpinToSpecialOrthogonalCoordinateLieHom_eq_bivectorEquivSo n z
-  rw [h]
-  let Q := QuadraticMap.weightedSumSquares ℝ (1 : Fin n → ℝ)
-  let _ := bivectorLieRing Q
-  let _ := bivectorLieAlgebra Q
-  exact (bivectorEquivSo n ℝ).bijective
+  rw [realCliffordSpinToSpecialOrthogonalCoordinateLieHom_eq_symm_matrixSoEquivQuadratic]
+  exact (matrixSoEquivQuadratic (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0)
+    (realCliffordFormZeroIsometryWeightedSumSquares n)).symm.bijective
 
 /-- The differential of the smooth Spin projection on the native units-range carriers is
 bijective. -/

@@ -157,6 +157,16 @@ def chargeConjContinuousMulEquiv : spinCGroup Q hQ ≃ₜ* spinCGroup Q hQ where
 theorem chargeConjContinuousMulEquiv_apply (x : spinCGroup Q hQ) :
     chargeConjContinuousMulEquiv Q hQ x = chargeConj Q hQ x := (rfl)
 
+/-- The defining quotient map as a continuous homomorphism into `Spinᶜ(Q)`. -/
+def mkContinuousMonoidHom : spinGroup Q × Circle →ₜ* spinCGroup Q hQ where
+  toMonoidHom := mk Q hQ
+  continuous_toFun := continuous_mk Q hQ
+
+/-- The Spin subgroup inclusion as a continuous homomorphism into `Spinᶜ(Q)`. -/
+def ofSpinContinuousMonoidHom : spinGroup Q →ₜ* spinCGroup Q hQ where
+  toMonoidHom := ofSpin Q hQ
+  continuous_toFun := continuous_ofSpin Q hQ
+
 /-- The determinant character as a continuous homomorphism on the Spinᶜ quotient. -/
 def detContinuousMonoidHom : spinCGroup Q hQ →ₜ* Circle where
   toMonoidHom := det Q hQ
@@ -167,6 +177,16 @@ def ofCircleContinuousMonoidHom : Circle →ₜ* spinCGroup Q hQ where
   toMonoidHom := ofCircle Q hQ
   continuous_toFun := continuous_ofCircle Q hQ
 
+/-- The bundled quotient homomorphism is the original quotient map. -/
+@[simp]
+theorem mkContinuousMonoidHom_apply (p : spinGroup Q × Circle) :
+    mkContinuousMonoidHom Q hQ p = mk Q hQ p := (rfl)
+
+/-- The bundled Spin inclusion is the original Spin subgroup inclusion. -/
+@[simp]
+theorem ofSpinContinuousMonoidHom_apply (s : spinGroup Q) :
+    ofSpinContinuousMonoidHom Q hQ s = ofSpin Q hQ s := (rfl)
+
 /-- The bundled determinant character is the original quotient determinant. -/
 @[simp]
 theorem detContinuousMonoidHom_apply (x : spinCGroup Q hQ) :
@@ -176,6 +196,30 @@ theorem detContinuousMonoidHom_apply (x : spinCGroup Q hQ) :
 @[simp]
 theorem ofCircleContinuousMonoidHom_apply (z : Circle) :
     ofCircleContinuousMonoidHom Q hQ z = ofCircle Q hQ z := (rfl)
+
+/-- Restricting the quotient homomorphism to the first factor gives the Spin inclusion. -/
+@[simp]
+theorem mkContinuousMonoidHom_comp_inl :
+    (mkContinuousMonoidHom Q hQ).comp (ContinuousMonoidHom.inl _ _) =
+      ofSpinContinuousMonoidHom Q hQ := by
+  ext s
+  simp [ofSpin_apply]
+
+/-- Restricting the quotient homomorphism to the second factor gives the central circle
+inclusion. -/
+@[simp]
+theorem mkContinuousMonoidHom_comp_inr :
+    (mkContinuousMonoidHom Q hQ).comp (ContinuousMonoidHom.inr _ _) =
+      ofCircleContinuousMonoidHom Q hQ := by
+  ext z
+  simp [ofCircle_apply]
+
+/-- The determinant character vanishes identically on the Spin subgroup. -/
+@[simp]
+theorem detContinuousMonoidHom_comp_ofSpinContinuousMonoidHom :
+    (detContinuousMonoidHom Q hQ).comp (ofSpinContinuousMonoidHom Q hQ) = 1 := by
+  ext s
+  simp [det_ofSpin]
 
 /-- The determinant restricted to the central circle is the square character. -/
 @[simp]
