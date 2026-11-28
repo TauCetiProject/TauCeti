@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.EdgeLabeling
+import Mathlib.Data.Set.Finite.Lattice
 
 /-!
 # Colour graphs of edge labellings
@@ -34,25 +35,26 @@ variable {V V' : Type*} {G : SimpleGraph V} {G' : SimpleGraph V'} {K K' : Type*}
 
 /-- The degrees at a vertex of all colour graphs of an edge labelling sum to its degree in the
 original graph. -/
-theorem EdgeLabeling.sum_degree_labelGraph [Fintype V] [Fintype K] [DecidableRel G.Adj]
-    [DecidableEq K] (C : EdgeLabeling G K) (v : V) :
+@[simp]
+theorem EdgeLabeling.sum_degree_labelGraph [Fintype K] (C : EdgeLabeling G K) (v : V)
+    [Fintype (G.neighborSet v)] [∀ k, Fintype ((C.labelGraph k).neighborSet v)] :
     ∑ k, (C.labelGraph k).degree v = G.degree v := by
   classical
-  simp only [← card_neighborFinset_eq_degree, neighborFinset_eq_filter]
-  rw [← card_biUnion (t := fun k ↦ {w | (C.labelGraph k).Adj v w})
-    fun k _ l _ hkl ↦ disjoint_filter.2 fun w _ hk hl ↦
-      SimpleGraph.disjoint_left.1 (EdgeLabeling.pairwise_disjoint_labelGraph hkl) _ _ hk hl]
+  simp only [← card_neighborFinset_eq_degree]
+  rw [← card_biUnion fun k _ l _ hkl ↦ Finset.disjoint_coe.1 <| by
+    rw [coe_neighborFinset, coe_neighborFinset]
+    exact SimpleGraph.disjoint_neighborSet.2 (EdgeLabeling.pairwise_disjoint_labelGraph hkl) v]
   congr 1
-  ext w
-  simp [EdgeLabeling.labelGraph_adj]
+  simp only [neighborFinset_def, ← Set.toFinset_iUnion, ← SimpleGraph.neighborSet_iSup,
+    C.iSup_labelGraph]
 
 /-- The degrees at a vertex of all colour graphs of a complete-graph edge labelling sum to one less
 than the number of vertices. -/
-theorem TopEdgeLabeling.sum_degree_labelGraph [Fintype V] [DecidableEq V] [Fintype K]
-    [DecidableEq K]
-    (C : TopEdgeLabeling V K) (v : V) :
+theorem TopEdgeLabeling.sum_degree_labelGraph [Fintype V] [Fintype K]
+    (C : TopEdgeLabeling V K) (v : V) [∀ k, Fintype ((C.labelGraph k).neighborSet v)] :
     ∑ k, (C.labelGraph k).degree v = Fintype.card V - 1 := by
-  rw [EdgeLabeling.sum_degree_labelGraph, complete_graph_degree]
+  classical
+  simp [complete_graph_degree]
 
 /-- Relabelling the edges along an injective map of labels does not change the graph of the edges
 of a given label. -/

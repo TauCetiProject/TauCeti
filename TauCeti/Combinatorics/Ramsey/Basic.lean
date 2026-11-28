@@ -114,11 +114,13 @@ theorem RamseyProp.exists_isNClique {V : Type*} [Fintype V] (h : RamseyProp f m)
 
 /-- If the lowered Ramsey property holds on `m` vertices and the `k`-coloured neighbourhood of `v`
 has at least `m` vertices, then the colouring contains a monochromatic clique meeting `f`. -/
-theorem RamseyProp.exists_isNClique_of_le_degree {V : Type*} [Fintype V] [DecidableEq V]
-    [DecidableEq K]
-    {v : V} {k : K} (h : RamseyProp (Function.update f k (f k - 1)) m)
-    (C : TopEdgeLabeling V K) (hv : m ≤ (C.labelGraph k).degree v) :
+theorem RamseyProp.exists_isNClique_of_le_degree {V : Type*} [DecidableEq K]
+    {k : K} (h : RamseyProp (Function.update f k (f k - 1)) m)
+    (C : TopEdgeLabeling V K) {v : V} [Fintype ((C.labelGraph k).neighborSet v)]
+    (hv : m ≤ (C.labelGraph k).degree v) :
     ∃ j s, (C.labelGraph j).IsNClique (f j) s := by
+  classical
+  rw [← card_neighborFinset_eq_degree] at hv
   obtain ⟨j, s, hsA, hs⟩ := h.exists_isNClique_subset C (A := (C.labelGraph k).neighborFinset v) hv
   obtain rfl | hjk := eq_or_ne j k
   · obtain hj | hj := eq_or_ne (f j) 0
