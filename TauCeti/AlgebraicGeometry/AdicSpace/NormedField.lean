@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Affinoid
+public import TauCeti.AlgebraicGeometry.AdicSpace.Affinoid.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StronglyNoetherian
 public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Huber.Restricted.Noetherian

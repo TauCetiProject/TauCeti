@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.CharacterTable.VirtualCharacter
 public import TauCeti.RepresentationTheory.Induction.Clifford.Multiplicity
 public import TauCeti.RepresentationTheory.Induction.Clifford.Orbit.Index
 import TauCeti.GroupTheory.Index.Basic
+import TauCeti.RepresentationTheory.CharacterTable.Automorphism
 import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Simple.Basic
 
@@ -33,11 +34,14 @@ using the irreducible-character basis: pairing either side with an irreducible c
 the same constituent, and a transversal contains exactly one representative when it occurs, so
 the two sides agree by `TauCeti.ClassFunction.eq_of_forall_characterPairing_ofCharacter_eq`.
 
-## Main result
+## Main results
 
 * `TauCeti.clifford_restrict_character`: **Clifford's theorem, character form**.  It supplies a
   simple constituent, its positive common multiplicity, a genuine inertia-group transversal, and
   the restriction-character formula indexed by that transversal.
+* `TauCeti.exists_restrict_eq_natCast_mul_of_mem_irreducibleCharactersOver`: **the invariant
+  case**.  An irreducible character of `G` lying over a `G`-invariant irreducible character `θ` of
+  `N` restricts to `N` as a positive multiple `e • θ`.
 
 ## References
 
@@ -325,5 +329,49 @@ theorem clifford_restrict_character [Finite G] [IsAlgClosed k]
     Submodule.coe_smul, Submodule.coe_sum, Pi.smul_apply, Finset.sum_apply, smul_eq_mul] using
     congrArg (fun f : ClassFunction k N ↦ f.val n)
       (ofFDRep_resFDRep_eq_smul_sum W sigma hsigma e hcommon)
+
+/-- **Clifford's theorem for an invariant character.** If an irreducible character `θ` of the
+normal subgroup `N` is invariant under conjugation by `G`, then every irreducible character `χ` of
+`G` lying over `θ` restricts to `N` as a positive multiple of `θ`: `χ n = e * θ n` for a natural
+number `e ≠ 0`, the multiplicity of `θ` in the restriction.
+
+In the decomposition of `TauCeti.clifford_restrict_character` the constituents are the conjugates
+of one irreducible constituent; since `χ` lies over `θ`, that constituent affords `θ`, and the
+invariance of `θ` makes all its conjugates afford `θ` as well. -/
+theorem exists_restrict_eq_natCast_mul_of_mem_irreducibleCharactersOver [Finite G]
+    [IsAlgClosed k] [NeZero (Nat.card G : k)] {θ : N → k} (hθ : θ ∈ irreducibleCharacters k N)
+    (hinv : ∀ g : G, θ ∘ MulAut.conjNormal g = θ) {χ : G → k}
+    (hχ : χ ∈ irreducibleCharactersOver k N θ) :
+    ∃ e : ℕ, e ≠ 0 ∧ ∀ n : N, χ n = e * θ n := by
+  classical
+  let _ : Fintype G := Fintype.ofFinite G
+  obtain ⟨hχirr, hsum⟩ := mem_irreducibleCharactersOver_iff_sum.mp hχ
+  obtain ⟨d, ρ, hρ, rfl⟩ := mem_irreducibleCharacters_iff.mp hχirr
+  have : Simple (FDRep.of ρ) := (FDRep.simple_iff_isIrreducible _).2 ((FDRep.of_ρ' ρ).symm ▸ hρ)
+  obtain ⟨V, _, e, reps, -, -, hW⟩ := clifford_restrict_character (N := N)
+    (NeZero.ne (Nat.card G : k)).isUnit (FDRep.of ρ)
+  simp only [FDRep.character_of, char_conjNormalFDRep] at hW
+  -- The constituent `V` affords `θ`: otherwise each of its conjugates is an irreducible character
+  -- of `N` other than `θ`, hence orthogonal to `θ`, and `χ` would not lie over `θ`.
+  have hVθ : V.character = θ := by
+    by_contra hne
+    refine hsum ?_
+    simp only [hW, Finset.mul_sum, Finset.sum_mul]
+    rw [Finset.sum_comm]
+    refine Finset.sum_eq_zero fun g _ => ?_
+    have h := sum_mul_inv_eq_zero_of_mem_irreducibleCharacters
+      ((MulAut.conjNormal g⁻¹).comp_mem_irreducibleCharacters_iff.2
+        V.character_mem_irreducibleCharacters) hθ fun h => hne ?_
+    · simpa [Finset.mul_sum, mul_assoc] using congrArg ((e : k) * ·) h
+    · funext n
+      simpa using congrFun (congrArg (· ∘ MulAut.conjNormal g) h) n |>.trans (congrFun (hinv g) n)
+  -- So every conjugate of `V` affords `θ` too, and `χ` is `e * |reps|` times `θ` on `N`.
+  have hinv' (g : G) (n : N) : θ (MulAut.conjNormal g n) = θ n := congrFun (hinv g) n
+  have hres (n : N) : ρ.character n = (e * reps.card : ℕ) * θ n := by
+    simp only [hW n, hVθ, hinv', Finset.sum_const, nsmul_eq_mul]
+    push_cast
+    ring
+  refine ⟨e * reps.card, fun he => hsum ?_, hres⟩
+  simp [hres, he]
 
 end TauCeti

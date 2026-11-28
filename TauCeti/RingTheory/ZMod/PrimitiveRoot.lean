@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Nat.ModEq
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+import Mathlib.RingTheory.ZMod.Torsion
 
 /-!
 # An executable search for a primitive root of unity modulo `p`
@@ -35,6 +37,8 @@ search always fails for `k = 0`, even though `0 : ZMod p` is a primitive `0`-th 
   primitive `k`-th root of unity, for `p` and `k` nonzero.
 * `TauCeti.ZMod.map_val_primitiveRoot?_eq_some_iff`: the search returns the least residue passing
   the criterion, a decidable description of its value.
+* `Nat.Coprime.exists_modEq_one_isPrimitiveRoot`: for a prime `p` coprime to `N`, there is
+  `a : ℕ` with `a ≡ 1 [MOD N]`, `p.Coprime a`, and `IsPrimitiveRoot (a : ZMod p) (p - 1)`.
 -/
 
 public section
@@ -96,3 +100,21 @@ theorem map_val_primitiveRoot?_eq_some_iff {p k : ℕ} {ζ : ZMod p} :
 end ZMod
 
 end TauCeti
+
+namespace Nat.Coprime
+
+/-- For a prime `p` and a natural number `N` coprime to `p`, there exists `a : ℕ` congruent to `1`
+modulo `N` and coprime to `p` whose reduction modulo `p` is a primitive `(p - 1)`-st root of unity
+in `ZMod p`. -/
+theorem exists_modEq_one_isPrimitiveRoot {p N : ℕ} [Fact p.Prime] (hN : p.Coprime N) :
+    ∃ a : ℕ, a ≡ 1 [MOD N] ∧ p.Coprime a ∧ IsPrimitiveRoot (a : ZMod p) (p - 1) := by
+  obtain ⟨ζ, hb⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (ZMod p) (p - 1)
+  obtain ⟨a, hab, ha⟩ := Nat.chineseRemainder hN ζ.val 1
+  have hab' : (a : ZMod p) = ζ := by
+    simpa [← ZMod.natCast_eq_natCast_iff] using hab
+  have hp_pos : p - 1 ≠ 0 := Nat.sub_ne_zero_of_lt (Fact.out : p.Prime).one_lt
+  have hpa : p.Coprime a :=
+    ((ZMod.isUnit_iff_coprime a p).1 (hab' ▸ hb.isUnit hp_pos)).symm
+  exact ⟨a, ha, hpa, hab' ▸ hb⟩
+
+end Nat.Coprime
