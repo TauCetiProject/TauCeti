@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Data.DedekindZeta
 public import TauCeti.NumberTheory.LFunctions.Data.Series
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
+import TauCeti.NumberTheory.LFunctions.DedekindZeta.TrivialZeros
 
 /-!
 # `ofSeries` recovery for the Dedekind zeta card
@@ -48,16 +48,7 @@ theorem ofSeries_dedekindZetaData :
     (dedekindZetaData_hasFunctionalEquation K)
     (by rw [dedekindZetaData_completed]; exact meromorphicNFOn_completedDedekindZeta K)
     (by simp) ?_
-  rw [(dedekindZetaData_hasDirichletAgreement K).completed_eq 2 (by norm_num)]
-  have hN : ((((dedekindZetaData K).conductor : ℕ) : ℂ) ^ ((2 : ℂ) / 2)) ≠ 0 :=
-    (dedekindZetaData K).conductor_cpow_ne_zero _
-  have hγ : (dedekindZetaData K).gammaFactor 2 ≠ 0 := by
-    rw [dedekindZetaData_gammaFactor]
-    exact mul_ne_zero (pow_ne_zero _ (Gammaℝ_ne_zero_of_re_pos (by norm_num)))
-      (pow_ne_zero _ (Gammaℂ_ne_zero_of_re_pos (by norm_num)))
-  have hL : LSeries (dedekindZetaData K).coeff 2 ≠ 0 := by
-    rw [funext (dedekindZetaData_coeff K), ← dedekindZeta_eq_LSeries_dedekindZetaCoeff K 2]
-    exact TauCeti.dedekindZeta_ne_zero_of_one_lt_re (by norm_num)
-  exact mul_ne_zero (mul_ne_zero hN hγ) hL
+  rw [dedekindZetaData_completed, ← completedDedekindZeta_one_sub K (2 : ℂ)]
+  exact completedDedekindZeta_ne_zero_of_re_neg K (by norm_num)
 
 end TauCeti.LFunctions

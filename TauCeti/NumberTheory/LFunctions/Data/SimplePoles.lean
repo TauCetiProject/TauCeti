@@ -36,20 +36,24 @@ conjugation. -/
 theorem single_zero_one_add_single_one_one_conj (s : ℂ) :
     (Finsupp.single (0 : ℂ) (1 : ℕ) + Finsupp.single 1 1 : ℂ →₀ ℕ) (conj s) =
       (Finsupp.single (0 : ℂ) (1 : ℕ) + Finsupp.single 1 1 : ℂ →₀ ℕ) s := by
-  simp [Finsupp.single_apply, eq_comm (a := (0 : ℂ)), eq_comm (a := (1 : ℂ)),
-    map_eq_one_iff _ (starRingEnd ℂ).injective]
+  simp only [Finsupp.add_apply]
+  have h0 := Finsupp.single_apply_left (starRingEnd ℂ).injective (0 : ℂ) s (1 : ℕ)
+  have h1 := Finsupp.single_apply_left (starRingEnd ℂ).injective (1 : ℂ) s (1 : ℕ)
+  simp only [map_zero, map_one] at h0 h1
+  rw [h0, h1]
 
 /-- The simple-pole divisor `Finsupp.single 0 1 + Finsupp.single 1 1` is invariant under
 `s ↦ 1 - conj s`. -/
 theorem single_zero_one_add_single_one_one_one_sub_conj (s : ℂ) :
     (Finsupp.single (0 : ℂ) (1 : ℕ) + Finsupp.single 1 1 : ℂ →₀ ℕ) (1 - conj s) =
       (Finsupp.single (0 : ℂ) (1 : ℕ) + Finsupp.single 1 1 : ℂ →₀ ℕ) s := by
-  have e0 : (0 : ℂ) = 1 - s ↔ 1 = s := by rw [eq_comm, sub_eq_zero]
-  have e1 : (1 : ℂ) = 1 - s ↔ 0 = s := by rw [eq_comm, sub_eq_self, eq_comm]
-  conv_lhs => arg 2; rw [← map_one (starRingEnd ℂ), ← map_sub]
-  rw [single_zero_one_add_single_one_one_conj]
-  simp only [Finsupp.add_apply, Finsupp.single_apply, e0, e1]
-  rw [add_comm]
+  simp only [Finsupp.add_apply]
+  have hinj : Function.Injective (fun z : ℂ ↦ 1 - conj z) :=
+    fun x y h ↦ (starRingEnd ℂ).injective (sub_right_injective h)
+  have h0 := Finsupp.single_apply_left hinj (1 : ℂ) s (1 : ℕ)
+  have h1 := Finsupp.single_apply_left hinj (0 : ℂ) s (1 : ℕ)
+  simp only [map_one, sub_self, map_zero, sub_zero] at h0 h1
+  rw [h0, h1, add_comm]
 
 namespace AnalyticLFunctionData
 

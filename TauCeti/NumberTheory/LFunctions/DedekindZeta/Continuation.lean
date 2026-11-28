@@ -97,23 +97,16 @@ private theorem inv_two_pow_mul_completedDedekindZeta_residue
     _ = -((classNumber K : ℂ) * (regulator K : ℂ) / (torsionOrder K : ℂ)) := by
       rw [h2, one_mul]
 
-private theorem uncompletedProduct_dedekindZetaData (s : ℂ) :
-    (dedekindZetaData K).uncompletedProduct s =
-      invDedekindZetaCompletionFactor K s * completedDedekindZeta K s := by
-  rw [AnalyticLFunctionData.uncompletedProduct_def, dedekindZetaData_conductor,
-    dedekindZetaData_completed, AnalyticLFunctionData.invGammaFactor_def,
-    dedekindZetaData_gammaFactor, invDedekindZetaCompletionFactor_def, Int.abs_eq_natAbs,
-    Int.cast_natCast, mul_inv, inv_pow, inv_pow]
-  ring
-
-private theorem uncompletedProduct_div_pow_rank_eq (K : Type*) [Field K] [NumberField K]
-    {s : ℂ} (hs : s ≠ 0) :
+private theorem mul_completedDedekindZeta_div_pow_rank_eq
+    (K : Type*) [Field K] [NumberField K] {s : ℂ} (hs : s ≠ 0) :
     ((|discr K| : ℤ) : ℂ) ^ (-s / 2) * (s * Gammaℝ s)⁻¹ ^ nrRealPlaces K *
         (s * Gammaℂ s)⁻¹ ^ nrComplexPlaces K * (s * completedDedekindZeta K s) =
-      (dedekindZetaData K).uncompletedProduct s / s ^ NumberField.Units.rank K := by
+      (((|discr K| : ℤ) : ℂ) ^ (-s / 2) * (Gammaℝ s)⁻¹ ^ nrRealPlaces K *
+        (Gammaℂ s)⁻¹ ^ nrComplexPlaces K * completedDedekindZeta K s) /
+        s ^ NumberField.Units.rank K := by
   have hspow : s ^ NumberField.Units.rank K * s = s ^ (nrRealPlaces K + nrComplexPlaces K) := by
     rw [← pow_succ, NumberField.Units.rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K]
-  rw [uncompletedProduct_dedekindZetaData, invDedekindZetaCompletionFactor_def, div_eq_mul_inv]
+  rw [div_eq_mul_inv]
   simp only [mul_inv, mul_pow]
   calc
     ((|discr K| : ℤ) : ℂ) ^ (-s / 2) * (s⁻¹ ^ nrRealPlaces K * (Gammaℝ s)⁻¹ ^ nrRealPlaces K) *
@@ -154,12 +147,10 @@ theorem tendsto_dedekindZetaC_div_pow_rank_zero :
   have hprod := ((hdiscr.mul hΓℝ).mul hΓℂ).mul (tendsto_mul_completedDedekindZeta_zero K)
   rw [inv_two_pow_mul_completedDedekindZeta_residue] at hprod
   refine hprod.congr' ?_
-  have hev : dedekindZetaC K =ᶠ[𝓝[≠] 0] (dedekindZetaData K).uncompletedProduct := by
-    rw [← dedekindZetaData_continuedL K]
-    exact AnalyticLFunctionData.continuedL_eventuallyEq
-      (dedekindZetaData_hasMeromorphicContinuation K).meromorphic 0
-  filter_upwards [hev, self_mem_nhdsWithin] with s hs hne
-  rw [hs, uncompletedProduct_div_pow_rank_eq K hne]
+  filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (isOpen_ne.mem_nhds zero_ne_one)]
+    with s hs0 hs1
+  rw [mul_completedDedekindZeta_div_pow_rank_eq K hs0,
+    ← dedekindZetaC_eq_mul_completedDedekindZeta K hs0 hs1]
 
 /-- When `K` has unit rank `0` (`ℚ` or an imaginary quadratic field),
 `dedekindZetaC K 0 = -h R / w`. -/
