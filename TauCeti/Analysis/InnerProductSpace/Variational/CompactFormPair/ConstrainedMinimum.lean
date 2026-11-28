@@ -12,6 +12,7 @@ import TauCeti.Analysis.Convex.Uniform.Basic
 import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
 import TauCeti.Analysis.Normed.Operator.DunfordPettis.Basic
 import TauCeti.Order.Filter.Extr
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
 # Constrained Rayleigh minima and compactness of minimizers
@@ -19,10 +20,8 @@ import TauCeti.Order.Filter.Extr
 This file complements `TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair` with
 additional theory for `P.energy` on the constrained unit sphere `P.unitConstraint W`:
 
-* Transport, shift, and scalar-restriction identities for `P.unitConstraint W`, phase invariance of
-  minimizers (`CompactFormPair.isMinOn_unitConstraint_smul_iff`), and the explicit `IsLeast`
-  Rayleigh-quotient equivalence
-  (`CompactFormPair.isMinOn_unitConstraint_iff_isLeast_rayleighQuotient`).
+* Transport, shift, and scalar-restriction identities for `P.unitConstraint W`, and phase
+  invariance of minimizers (`CompactFormPair.isMinOn_unitConstraint_smul_iff`).
 * Sequential weak-to-strong convergence
   (`CompactFormPair.tendsto_of_tendsto_toWeakSpace_of_tendsto_energy`) and norm compactness of
   the set of constrained minimizers (`CompactFormPair.isCompact_minimizers_unitConstraint`,
@@ -116,39 +115,6 @@ theorem unitConstraint_shift (P : CompactFormPair 𝕜 V H) (α : ℝ) (W : Subm
 
 end UnitConstraint
 
-section Normalization
-
-variable {𝕜 V H : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
-  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
-
-private theorem image_energy_unitConstraint (P : CompactFormPair 𝕜 V H) (W : Submodule 𝕜 H) :
-    P.energy '' P.unitConstraint W =
-      {r : ℝ | ∃ v : V, P.inclusion v ∈ W ∧ P.inclusion v ≠ 0 ∧
-        P.energy v / ‖P.inclusion v‖ ^ 2 = r} := by
-  ext r
-  constructor
-  · rintro ⟨v, hv, rfl⟩
-    exact ⟨v, (mem_unitConstraint.1 hv).1, P.inclusion_ne_zero_of_mem_unitConstraint hv,
-      by simp [(mem_unitConstraint.1 hv).2]⟩
-  · rintro ⟨v, hvW, hvne, rfl⟩
-    refine ⟨((‖P.inclusion v‖⁻¹ : ℝ) : 𝕜) • v, inv_norm_smul_mem_unitConstraint hvW hvne, ?_⟩
-    simp [div_eq_inv_mul]
-
-/-- Rayleigh-quotient characterization of constrained minimizers: `u ∈ P.unitConstraint W`
-minimizes `P.energy` on `P.unitConstraint W` if and only if `P.energy u` is the least value of
-`P.energy v / ‖P.inclusion v‖²` over `v : V` with `P.inclusion v ∈ W` and `P.inclusion v ≠ 0`. -/
-theorem isMinOn_unitConstraint_iff_isLeast_rayleighQuotient (P : CompactFormPair 𝕜 V H)
-    {W : Submodule 𝕜 H} {u : V} (hu : u ∈ P.unitConstraint W) :
-    IsMinOn P.energy (P.unitConstraint W) u ↔
-      IsLeast {r : ℝ | ∃ v : V, P.inclusion v ∈ W ∧ P.inclusion v ≠ 0 ∧
-        P.energy v / ‖P.inclusion v‖ ^ 2 = r} (P.energy u) := by
-  rw [← P.image_energy_unitConstraint W]
-  exact ⟨fun hmin => ⟨mem_image_of_mem P.energy hu, forall_mem_image.mpr hmin⟩,
-    fun hleast _ hv => hleast.2 (mem_image_of_mem P.energy hv)⟩
-
-end Normalization
-
 section WeakSequential
 
 variable {𝕜 V H : Type*} [RCLike 𝕜]
@@ -215,12 +181,8 @@ theorem tendsto_of_tendsto_toWeakSpace_of_tendsto_energy (P : CompactFormPair �
         atTop (𝓝 0) := by
     have hdiff := (henergy.sub_const (P.energy x)).sub (P.tendsto_energy_sub_lower ω hlim)
     simpa using hdiff.div_const c
-  have hnorm_sq : Tendsto (fun n => ‖u n - x‖ ^ 2) atTop (𝓝 0) :=
-    squeeze_zero (fun n => sq_nonneg _) hsq_le hrhs
-  have hnorm : Tendsto (fun n => ‖u n - x‖) atTop (𝓝 0) := by
-    have hsqrt := (Real.continuous_sqrt.tendsto 0).comp hnorm_sq
-    simpa only [Function.comp_def, Real.sqrt_sq (norm_nonneg _), Real.sqrt_zero] using hsqrt
-  exact tendsto_iff_norm_sub_tendsto_zero.mpr hnorm
+  exact TauCeti.tendsto_of_dist_pow_le_of_tendsto_zero (n := 2)
+    (Eventually.of_forall fun n => by rw [dist_eq_norm]; exact hsq_le n) hrhs
 
 end WeakSequential
 
@@ -296,8 +258,8 @@ theorem energy_eq_inv_norm_formSolutionOperator (P : CompactFormPair ℝ V H)
   have hleast₂ :
       IsLeast {r : ℝ | ∃ v : V, P.inclusion v ≠ 0 ∧ P.form v v / ‖P.inclusion v‖ ^ 2 = r}
         (P.energy u) := by
-    simpa only [Submodule.mem_top, true_and, energy_def, RCLike.re_to_real] using
-      (P.isMinOn_unitConstraint_iff_isLeast_rayleighQuotient hu).mp hmin
+    simpa only [Submodule.mem_top, true_and, energy_def, RCLike.re_to_real, eq_comm] using
+      isLeast_rayleigh_of_isMinOn hu hmin
   exact hleast₂.unique hleast₁
 
 /-- Over `ℝ`, after a shift `α` making `(P.shift α).form` coercive, the shifted minimum

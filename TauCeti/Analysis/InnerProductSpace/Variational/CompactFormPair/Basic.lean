@@ -9,10 +9,10 @@ public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm.Basic
 public import TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair
-import Mathlib.Analysis.Normed.Module.RCLike.Extend
 import Mathlib.Analysis.Normed.Operator.Bilinear
 import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.Normed.Operator.Compact.Pi
+import TauCeti.Analysis.Variational.QuadraticEnergy
 
 /-!
 # Functorial constructions and quadratic energy identities for compact form pairs
@@ -58,37 +58,44 @@ variable {𝕜 V H : Type*} [RCLike 𝕜]
 theorem form_self_eq_ofReal_energy (P : CompactFormPair 𝕜 V H) (u : V) :
     P.form u u = (P.energy u : 𝕜) := by
   rw [energy_def]
-  exact (RCLike.conj_eq_iff_re.mp (by rw [← RCLike.star_def, ← P.hermitian u u])).symm
+  exact (LinearMap.ofReal_re_apply_self_of_eq_star (a := P.form.toLinearMap₁₂) P.hermitian u).symm
 
 /-- The real part of the form is symmetric. -/
 theorem re_form_symm (P : CompactFormPair 𝕜 V H) (u v : V) :
-    RCLike.re (P.form u v) = RCLike.re (P.form v u) := by
-  rw [P.hermitian u v, RCLike.star_def, RCLike.conj_re]
+    RCLike.re (P.form u v) = RCLike.re (P.form v u) :=
+  LinearMap.re_apply_comm_of_eq_star (a := P.form.toLinearMap₁₂) P.hermitian u v
 
 /-- Expansion of the quadratic energy on a sum `u + v`. -/
 theorem energy_add (P : CompactFormPair 𝕜 V H) (u v : V) :
     P.energy (u + v) = P.energy u + 2 * RCLike.re (P.form u v) + P.energy v := by
-  simp only [energy_def, map_add, add_apply, P.re_form_symm v u]
-  ring
+  simp only [energy_def]
+  exact LinearMap.re_apply_add_self_of_eq_star (a := P.form.toLinearMap₁₂) P.hermitian u v
 
 /-- Expansion of the quadratic energy on a difference `u - v`. -/
 theorem energy_sub (P : CompactFormPair 𝕜 V H) (u v : V) :
     P.energy (u - v) = P.energy u - 2 * RCLike.re (P.form u v) + P.energy v := by
-  simpa [sub_eq_add_neg, map_neg, energy_neg] using P.energy_add u (-v)
+  simp only [energy_def]
+  exact LinearMap.re_apply_sub_self_of_eq_star (a := P.form.toLinearMap₁₂) P.hermitian u v
 
 /-- Increment formula `q(u) - q(v) = q(u - v) + 2 Re a(v, u - v)`. -/
 theorem energy_sub_energy (P : CompactFormPair 𝕜 V H) (u v : V) :
     P.energy u - P.energy v = P.energy (u - v) + 2 * RCLike.re (P.form v (u - v)) := by
-  have h := P.energy_add v (u - v)
-  rw [add_sub_cancel] at h
+  have h := P.form.quadraticEnergy_add 0 P.hermitian v (u - v)
+  simp only [add_sub_cancel, ContinuousLinearMap.quadraticEnergy_zero,
+    zero_apply, sub_zero, ← energy_def] at h
   linarith
 
 /-- Quadratic expansion along a real line `u + t • v`. -/
 theorem energy_add_real_smul (P : CompactFormPair 𝕜 V H) (u v : V) (t : ℝ) :
     P.energy (u + (t : 𝕜) • v) =
       P.energy u + 2 * t * RCLike.re (P.form u v) + t ^ 2 * P.energy v := by
-  simp [energy_add, energy_smul]
-  ring
+  simp only [energy_def]
+  have h : RCLike.re (P.form (u + (t : 𝕜) • v) (u + (t : 𝕜) • v)) =
+      RCLike.re (P.form u u) + 2 * RCLike.re ((t : 𝕜) * P.form u v) +
+        ‖(t : 𝕜)‖ ^ 2 * RCLike.re (P.form v v) :=
+    LinearMap.re_apply_add_smul_self_of_eq_star (a := P.form.toLinearMap₁₂) P.hermitian u v (t : 𝕜)
+  rw [RCLike.re_ofReal_mul, RCLike.norm_ofReal, sq_abs] at h
+  linarith
 
 /-- The quadratic energy is bounded by `‖P.form‖ ‖u‖²`. -/
 theorem abs_energy_le (P : CompactFormPair 𝕜 V H) (u : V) :
@@ -440,26 +447,6 @@ variable {𝕜 V H : Type*} [RCLike 𝕜]
   [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [InnerProductSpace ℝ V] [IsScalarTower ℝ 𝕜 V]
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [InnerProductSpace ℝ H] [IsScalarTower ℝ 𝕜 H]
 
-private def formAsRealLinear (P : CompactFormPair 𝕜 V H) : V →L[ℝ] StrongDual 𝕜 V where
-  toFun := P.form
-  map_add' := P.form.map_add'
-  map_smul' r u := by simp [RCLike.real_smul_eq_coe_smul (K := 𝕜), -algebraMap_smul]
-  cont := P.form.continuous
-
-omit [InnerProductSpace ℝ H] [IsScalarTower ℝ 𝕜 H] in
-private theorem formAsRealLinear_apply (P : CompactFormPair 𝕜 V H) (u : V) :
-    formAsRealLinear P u = P.form u :=
-  (rfl)
-
-private def restrictScalarsForm (P : CompactFormPair 𝕜 V H) : V →L⋆[ℝ] V →L[ℝ] ℝ :=
-  (StrongDual.extendRCLikeL (𝕜 := 𝕜) (F := V)).symm.toContinuousLinearMap.comp
-    (formAsRealLinear P)
-
-omit [InnerProductSpace ℝ H] [IsScalarTower ℝ 𝕜 H] in
-private theorem restrictScalarsForm_apply (P : CompactFormPair 𝕜 V H) (u v : V) :
-    restrictScalarsForm P u v = RCLike.re (P.form u v) := by
-  simp [restrictScalarsForm, formAsRealLinear, StrongDual.extendRCLikeL_symm_apply]
-
 /-- View a compact form pair over `𝕜` as a real compact form pair on the same underlying spaces
 with real symmetric bilinear form `(u, v) ↦ Re (P.form u v)`. -/
 def restrictScalars (P : CompactFormPair 𝕜 V H) : CompactFormPair ℝ V H where
@@ -467,14 +454,16 @@ def restrictScalars (P : CompactFormPair 𝕜 V H) : CompactFormPair ℝ V H whe
   injective := by rw [ContinuousLinearMap.coe_restrictScalars']; exact P.injective
   denseRange := by rw [ContinuousLinearMap.coe_restrictScalars']; exact P.denseRange
   isCompactOperator := by rw [ContinuousLinearMap.coe_restrictScalars']; exact P.isCompactOperator
-  form := restrictScalarsForm P
+  form := P.form.reBilin
   hermitian u v := by
-    rw [restrictScalarsForm_apply, restrictScalarsForm_apply, star_trivial, P.re_form_symm u v]
+    rw [ContinuousLinearMap.reBilin_apply_apply, ContinuousLinearMap.reBilin_apply_apply,
+      star_trivial, P.re_form_symm u v]
   exists_shifted_coercive := by
     obtain ⟨c, hc, ω, hbound⟩ := P.exists_shifted_coercive
-    exact ⟨c, hc, ω, fun u => by
-      simpa only [restrictScalarsForm_apply, RCLike.re_to_real,
-        ContinuousLinearMap.coe_restrictScalars'] using hbound u⟩
+    refine ⟨c, hc, ω, fun u => ?_⟩
+    rw [RCLike.re_to_real, ContinuousLinearMap.reBilin_apply_apply,
+      ContinuousLinearMap.coe_restrictScalars']
+    exact hbound u
 
 @[simp]
 theorem restrictScalars_inclusion (P : CompactFormPair 𝕜 V H) :
@@ -484,7 +473,7 @@ theorem restrictScalars_inclusion (P : CompactFormPair 𝕜 V H) :
 @[simp]
 theorem restrictScalars_form_apply (P : CompactFormPair 𝕜 V H) (u v : V) :
     P.restrictScalars.form u v = RCLike.re (P.form u v) :=
-  restrictScalarsForm_apply P u v
+  ContinuousLinearMap.reBilin_apply_apply P.form u v
 
 @[simp]
 theorem restrictScalars_energy (P : CompactFormPair 𝕜 V H) (u : V) :
