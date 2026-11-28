@@ -687,14 +687,14 @@ theorem isBigO_of_norm_le_volterra_bound (hP0 : ∀ x ∈ Ioi a, 0 ≤ P x)
   (isBigO_principal_Ici_of_norm_le_volterra_bound hP0 hQ0 hΦ hΨ hh (a + 1)
     (lt_add_one a)).mono (le_principal_iff.2 (Ici_mem_atTop _))
 
-/-- **Volterra integral equations, bound.** Let `J`, `ψ` and `Q` be continuous on `(a, ∞)`,
+/-- **Volterra integral equations, bound.** Let `ψ` and `Q` be continuous on `(a, ∞)`,
 with `P, Q ≥ 0` there, `‖K x v‖ ≤ P x * Q v` for `a < x ≤ v`, and let
 `Φ x = ∫ v in Ioi x, Q v * ‖J v‖` and `Ψ x = ∫ v in Ioi x, P v * Q v * ‖ψ v‖` converge for every
 `x > a`. Then every solution of `h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v)` that is
 continuous on `(a, ∞)` and `O(P)` at infinity satisfies `‖h x‖ ≤ P x * Φ x * exp (Ψ x)` for every
 `x > a`. -/
 theorem norm_volterra_solution_le
-    (hJ : ContinuousOn J (Ioi a)) (hψ : ContinuousOn ψ (Ioi a)) (hQ : ContinuousOn Q (Ioi a))
+    (hψ : ContinuousOn ψ (Ioi a)) (hQ : ContinuousOn Q (Ioi a))
     (hP0 : ∀ x ∈ Ioi a, 0 ≤ P x) (hQ0 : ∀ x ∈ Ioi a, 0 ≤ Q x)
     (hKle : ∀ x v, a < x → x ≤ v → ‖K x v‖ ≤ P x * Q v)
     (hΦ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ Q v * ‖J v‖) (Ioi x))
@@ -703,7 +703,6 @@ theorem norm_volterra_solution_le
     (h_eq : ∀ x ∈ Ioi a, h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v))
     (h_isBigO : h =O[atTop] P) {x : ℝ} (hx : x ∈ Ioi a) :
     ‖h x‖ ≤ P x * (∫ v in Ioi x, Q v * ‖J v‖) * Real.exp (∫ v in Ioi x, P v * Q v * ‖ψ v‖) := by
-  have _ := hJ
   have hIoi (y : ℝ) (hy : a < y) : Ioi a ∩ Ioi y = Ioi y :=
     inter_eq_right.2 (Ioi_subset_Ioi hy.le)
   simpa only [hIoi x hx] using norm_volterra_solution_le_on ordConnected_Ioi hψ hQ hP0 hQ0
@@ -985,7 +984,7 @@ theorem norm_deriv_volterra_solution_le
   have hIoi (y : ℝ) (hy : a < y) : Ioi a ∩ Ioi y = Ioi y :=
     inter_eq_right.2 (Ioi_subset_Ioi hy.le)
   have hle {v} (hv : v ∈ Ioi a) :=
-    norm_volterra_solution_le hJ hψ hQ hP0 hQ0 hKle hΦ hΨ h_cont h_eq h_isBigO hv
+    norm_volterra_solution_le hψ hQ hP0 hQ0 hKle hΦ hΨ h_cont h_eq h_isBigO hv
   have hd := hasDerivAt_volterra_solution hK hJ hψ hQ hP0 hQ0 hKle hΦ hΨ hKdiag hK₁ hKderiv
     hP₁ hK₁le h_cont h_eq h_isBigO hx
   simpa only [hIoi x hx] using norm_deriv_volterra_solution_le_on measurableSet_Ioi hP0 hQ0

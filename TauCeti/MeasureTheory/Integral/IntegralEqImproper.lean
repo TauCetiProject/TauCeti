@@ -34,8 +34,7 @@ particular the integral of `g * Ψ ^ k` is `Ψ x ^ (k + 1) / (k + 1)`
 `exp (Ψ x) - 1` (`MeasureTheory.IntegrableOn.integral_Ioi_mul_exp_integral_Ioi`).
 More generally, for `g` integrable on the right tail `I ∩ Ioi x` of a measurable set `I`
 (specializing to `(x, ∞)` via `inter_eq_right` and to `(x, b)` via `Iio_inter_Ioi`), with tail
-integral `Ψ v = ∫ u in I ∩ Ioi v, g u`, the tail norm is bounded by the larger tail norm integral
-(`MeasureTheory.IntegrableOn.norm_integral_inter_Ioi_le`), the product `g * Ψ ^ k` is integrable
+integral `Ψ v = ∫ u in I ∩ Ioi v, g u`, the product `g * Ψ ^ k` is integrable
 on `I ∩ Ioi x` with integral `Ψ x ^ (k + 1) / (k + 1)`
 (`MeasureTheory.IntegrableOn.mul_pow_integral_inter_Ioi`,
 `MeasureTheory.IntegrableOn.integral_inter_Ioi_mul_pow_integral_inter_Ioi`), and `g * exp ∘ Ψ` is
@@ -93,16 +92,6 @@ open Set Filter intervalIntegral
 open scoped Topology
 
 namespace MeasureTheory.IntegrableOn
-
-/-- The norm of a tail integral over `I ∩ Ioi v` is at most the integral of the norm over any
-larger tail `I ∩ Ioi x` (`x ≤ v`). -/
-theorem norm_integral_inter_Ioi_le {α E : Type*} [MeasurableSpace α] [Preorder α]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure α} {g : α → E} {I : Set α} {x v : α}
-    (hint : IntegrableOn g (I ∩ Ioi x) μ) (hxv : x ≤ v) :
-    ‖∫ u in I ∩ Ioi v, g u ∂μ‖ ≤ ∫ u in I ∩ Ioi x, ‖g u‖ ∂μ :=
-  (norm_integral_le_integral_norm _).trans
-    (setIntegral_mono_set hint.norm (ae_of_all _ fun _ ↦ norm_nonneg _)
-      (inter_subset_inter_right I (Ioi_subset_Ioi hxv)).eventuallySubset)
 
 section
 
