@@ -71,11 +71,11 @@ the only projective class pairing to zero with every finite graded module is zer
 theorem gradedProjectiveExtEuler_nondegenerate_of_isPrimitiveIdempotent :
     (gradedProjectiveExtEuler 𝒜).Nondegenerate := by
   have hI (i : I) := Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩
-  exact gradedProjectiveExtEuler_nondegenerate _ he.idem he₀ hI
+  exact gradedProjectiveExtEuler_nondegenerate _ he.idem he₀
     (pairwise_smulGradedDimension_gradedPositiveMulQuotient_eq_zero hneg he₀ hprim hnoniso) _
-    (gradedIdempotentProjectiveBasisOfPrimitive_apply he hI hprim hnoniso)
-    (fun i => smulGradedDimension_gradedPositiveMulQuotient_self_ne_zero hneg (he.idem i) (he₀ i)
-      (hprim i).ne_zero)
+    (fun i => by
+      rw [gradedIdempotentProjective_eq _ _ (hI i)]
+      exact gradedIdempotentProjectiveBasisOfPrimitive_apply he hI hprim hnoniso i)
     (isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent hneg he he₀
       hprim)
 
@@ -89,9 +89,11 @@ theorem gradedProjectiveExtEuler_bijective_iff_finrank_end_eq_one :
     Function.Bijective (gradedProjectiveExtEuler 𝒜) ↔
       ∀ i, Module.finrank k (Module.End A (gradedPositiveMulQuotient 𝒜 (he₀ i))) = 1 := by
   have hI (i : I) := Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩
-  rw [gradedProjectiveExtEuler_bijective_iff _ he.idem he₀ hI
+  rw [gradedProjectiveExtEuler_bijective_iff _ he.idem he₀
     (pairwise_smulGradedDimension_gradedPositiveMulQuotient_eq_zero hneg he₀ hprim hnoniso) _
-    (gradedIdempotentProjectiveBasisOfPrimitive_apply he hI hprim hnoniso)
+    (fun i => by
+      rw [gradedIdempotentProjective_eq _ _ (hI i)]
+      exact gradedIdempotentProjectiveBasisOfPrimitive_apply he hI hprim hnoniso i)
     (isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent hneg he he₀
       hprim)]
   exact forall_congr' fun i =>
@@ -107,9 +109,11 @@ theorem gradedProjectiveExtEuler_flip_bijective_iff_finrank_end_eq_one :
     Function.Bijective (gradedProjectiveExtEuler 𝒜).flip ↔
       ∀ i, Module.finrank k (Module.End A (gradedPositiveMulQuotient 𝒜 (he₀ i))) = 1 := by
   have hI (i : I) := Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩
-  rw [gradedProjectiveExtEuler_flip_bijective_iff _ he.idem he₀ hI
+  rw [gradedProjectiveExtEuler_flip_bijective_iff _ he.idem he₀
     (pairwise_smulGradedDimension_gradedPositiveMulQuotient_eq_zero hneg he₀ hprim hnoniso) _
-    (gradedIdempotentProjectiveBasisOfPrimitive_apply he hI hprim hnoniso)
+    (fun i => by
+      rw [gradedIdempotentProjective_eq _ _ (hI i)]
+      exact gradedIdempotentProjectiveBasisOfPrimitive_apply he hI hprim hnoniso i)
     (isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent hneg he he₀
       hprim)]
   exact forall_congr' fun i =>

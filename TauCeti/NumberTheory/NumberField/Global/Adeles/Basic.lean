@@ -16,12 +16,13 @@ infinite places, and `NumberField.AdeleRing R K` is the product of the infinite 
 finite adele ring of `R`.  Both are defined as type synonyms, so the Hausdorff property of the
 underlying products is not found by instance search.  This file records it, so that closedness of
 discrete subgroups and separation of quotients apply to the adele ring.  For the same reason
-`Prod.fst_mul` does not apply to adeles, so the file also records that the infinite component of a
-product of adeles is the product of the infinite components (`NumberField.AdeleRing.fst_mul`),
-that both components of a difference of adeles are the differences of the components
-(`NumberField.AdeleRing.fst_sub`, `NumberField.AdeleRing.snd_sub`), and that the embeddings of
-a completion at an infinite place into the infinite adele ring and into the adele ring are
-continuous (`NumberField.InfiniteAdeleRing.continuous_ofCompletion`,
+`Prod.fst_mul` does not apply to adeles, so the file also records that the components of sums,
+products, and differences of adeles are the corresponding sums, products, and differences of
+components (`NumberField.AdeleRing.fst_mul`, `NumberField.AdeleRing.snd_mul`,
+`NumberField.AdeleRing.fst_add`, `NumberField.AdeleRing.snd_add`, `NumberField.AdeleRing.fst_sub`,
+`NumberField.AdeleRing.snd_sub`), and that the embeddings of a completion at an infinite place into
+the infinite adele ring and into the adele ring are continuous
+(`NumberField.InfiniteAdeleRing.continuous_ofCompletion`,
 `NumberField.AdeleRing.continuous_ofCompletion`), as is the embedding of a completion at a finite
 place into the adele ring (`NumberField.AdeleRing.continuous_ofAdicCompletion`).
 
@@ -191,6 +192,24 @@ variable {R K} in
 components. -/
 @[simp]
 theorem AdeleRing.snd_sub (a b : AdeleRing R K) : (a - b).2 = a.2 - b.2 :=
+  rfl
+
+variable {R K} in
+/-- The finite component of a product of adeles is the product of their finite components. -/
+@[simp]
+theorem AdeleRing.snd_mul (a b : AdeleRing R K) : (a * b).2 = a.2 * b.2 :=
+  rfl
+
+variable {R K} in
+/-- The infinite component of a sum of adeles is the sum of their infinite components. -/
+@[simp]
+theorem AdeleRing.fst_add (a b : AdeleRing R K) : (a + b).1 = a.1 + b.1 :=
+  rfl
+
+variable {R K} in
+/-- The finite component of a sum of adeles is the sum of their finite components. -/
+@[simp]
+theorem AdeleRing.snd_add (a b : AdeleRing R K) : (a + b).2 = a.2 + b.2 :=
   rfl
 
 /-- The embedding of the completion at an infinite place into the infinite adele ring is

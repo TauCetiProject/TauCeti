@@ -52,7 +52,9 @@ which, for `w` with values in any real normed space, gives Hölder and sup bound
 `D²(w ∘ φ)` from those of `Dw`, `D²w`, `Dγ` and `D²γ`
 (`TauCeti.holderOnWith_fderiv_fderiv_comp_shearAlong`,
 `TauCeti.norm_fderiv_fderiv_comp_shearAlong_le`). A shear by a `G`-Lipschitz function is
-`(1 + G)`-Lipschitz (`TauCeti.lipschitzWith_shearAlong`), so composing with it preserves Hölder
+`(1 + G)`-Lipschitz (`TauCeti.lipschitzWith_shearAlong`), so it maps balls about `y₀` into balls
+about its image with radii scaled by `1 + G` (`TauCeti.dist_shearAlong_le`,
+`TauCeti.dist_shearAlong_lt`), and composing with it preserves Hölder
 continuity (`TauCeti.holderOnWith_comp_shearAlong`).
 -/
 
@@ -145,6 +147,12 @@ radius `r` about `y₀` into the closed ball of radius `(1 + G) r` about its ima
 theorem dist_shearAlong_le (hν : ‖ν‖ ≤ 1) {G : ℝ≥0} (hγ : LipschitzWith G γ) {y y₀ : E}
     {r : ℝ} (hy : dist y y₀ ≤ r) : dist (shearAlong γ ν y) (shearAlong γ ν y₀) ≤ (1 + G) * r :=
   ((lipschitzWith_shearAlong hν hγ).dist_le_mul y y₀).trans (by gcongr; push_cast; rfl)
+
+/-- The shear `shearAlong γ ν` by a `G`-Lipschitz function with `‖ν‖ ≤ 1` maps the open ball of
+radius `r` about `y₀` into the open ball of radius `(1 + G) r` about its image. -/
+theorem dist_shearAlong_lt (hν : ‖ν‖ ≤ 1) {G : ℝ≥0} (hγ : LipschitzWith G γ) {y y₀ : E}
+    {r : ℝ} (hy : dist y y₀ < r) : dist (shearAlong γ ν y) (shearAlong γ ν y₀) < (1 + G) * r :=
+  (dist_shearAlong_le hν hγ le_rfl).trans_lt (by gcongr)
 
 /-- A function Hölder on `t`, composed with a shear by a `G`-Lipschitz function that maps `s` into
 `t`, is Hölder on `s`, the constant multiplied by `(1 + G)^α`. -/
