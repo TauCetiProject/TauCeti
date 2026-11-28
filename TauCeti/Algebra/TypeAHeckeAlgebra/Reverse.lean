@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.MulOpposite
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Infinite
+public import TauCeti.Algebra.TypeAHeckeAlgebra.ReducedWord
+public import TauCeti.GroupTheory.Coxeter.Hecke.Reverse
 
 /-!
-# The reversal anti-automorphism of the infinite type-A Hecke algebra
+# The reversal anti-automorphisms of the type-A Hecke algebras
 
 The defining relations of the infinite type-A Hecke algebra are invariant under reading words
 backwards: the quadratic relation involves a single generator, and the braid and
@@ -25,6 +27,13 @@ left modules over the stages into statements about right modules. Unlike the rea
 involution of `TauCeti.Algebra.TypeAHeckeAlgebra.Star`, it is linear over the coefficients and
 needs no star structure or hypothesis on `q`.
 
+The finite type-A Hecke algebra on `n` strands carries the same anti-involution
+`TauCeti.TypeAHeckeAlgebra.reverse`, the reversal `CoxeterMatrix.HeckeAlgebra.reverse` of the
+Hecke algebra of the type-A Coxeter matrix transported along
+`TauCeti.TypeAHeckeAlgebra.algEquivHeckeAlgebra`. It sends `T_w` to `T_(w⁻¹)`
+(`TauCeti.TypeAHeckeAlgebra.reverse_Tw`), and it is the anti-involution `*` that transposes
+Murphy's elements `m_st` (`TauCeti.TypeAHeckeAlgebra.reverse_murphyElement`).
+
 ## Main definitions
 
 * `TauCeti.InfiniteTypeAHeckeAlgebra.reverseOp`: the reversal as an algebra homomorphism to the
@@ -34,6 +43,9 @@ needs no star structure or hypothesis on `q`.
   the opposite algebra.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.stageReverse`: its restriction to the stage of the first `n`
   strands, as a linear isomorphism.
+* `TauCeti.TypeAHeckeAlgebra.reverseOpEquiv` and `TauCeti.TypeAHeckeAlgebra.reverse`: the
+  reversal of the finite type-A Hecke algebra, as an algebra isomorphism with the opposite algebra
+  and as a linear map.
 
 ## Main results
 
@@ -41,6 +53,12 @@ needs no star structure or hypothesis on `q`.
   the reversal fixes the generators and reverses products.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.reverse_reverse`: the reversal is an involution.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.reverse_mem_stage_iff`: it preserves the finite stages.
+* `TauCeti.TypeAHeckeAlgebra.reverse_T`, `TauCeti.TypeAHeckeAlgebra.reverse_mul`,
+  `TauCeti.TypeAHeckeAlgebra.reverse_reverse` and `TauCeti.TypeAHeckeAlgebra.reverse_Tw`: the
+  finite reversal fixes the generators, reverses products, is an involution and sends `T_w` to
+  `T_(w⁻¹)`.
+* `TauCeti.TypeAHeckeAlgebra.toInfinite_reverse`: the embedding into the infinite algebra
+  intertwines the two reversals.
 
 ## References
 
@@ -180,3 +198,103 @@ theorem stageReverse_symm (n : ℕ) : (stageReverse q n).symm = stageReverse q n
   (rfl)
 
 end TauCeti.InfiniteTypeAHeckeAlgebra
+
+namespace TauCeti.TypeAHeckeAlgebra
+
+open MulOpposite
+
+variable {R : Type*} [CommRing R] (q : Rˣ) {n : ℕ}
+
+/-- The reversal of the type-A Hecke algebra on `n` strands, as an algebra isomorphism with its
+opposite algebra. It fixes every generator `T i` (`TauCeti.TypeAHeckeAlgebra.reverse_T`); it is the
+reversal of the Hecke algebra of the type-A Coxeter matrix, transported along
+`TauCeti.TypeAHeckeAlgebra.algEquivHeckeAlgebra`. -/
+noncomputable def reverseOpEquiv : TypeAHeckeAlgebra R q n ≃ₐ[R] (TypeAHeckeAlgebra R q n)ᵐᵒᵖ :=
+  ((algEquivHeckeAlgebra R q n).trans (CoxeterMatrix.HeckeAlgebra.reverseOpEquiv _ _)).trans
+    (AlgEquiv.op (algEquivHeckeAlgebra R q n)).symm
+
+/-- The reversal anti-automorphism of the type-A Hecke algebra on `n` strands: the `R`-linear map
+fixing every generator `T i` and reversing the order of products. It sends `T_w` to `T_(w⁻¹)`. -/
+noncomputable def reverse : TypeAHeckeAlgebra R q n →ₗ[R] TypeAHeckeAlgebra R q n :=
+  (opLinearEquiv R).symm.toLinearMap ∘ₗ (reverseOpEquiv q).toLinearMap
+
+variable {q}
+
+@[simp]
+theorem unop_reverseOpEquiv (x : TypeAHeckeAlgebra R q n) :
+    unop (reverseOpEquiv q x) = reverse q x :=
+  (rfl)
+
+@[simp]
+theorem op_reverse (x : TypeAHeckeAlgebra R q n) : op (reverse q x) = reverseOpEquiv q x :=
+  (rfl)
+
+/-- The reversal corresponds to the reversal of the Hecke algebra of the type-A Coxeter matrix
+under `TauCeti.TypeAHeckeAlgebra.algEquivHeckeAlgebra`. -/
+theorem algEquivHeckeAlgebra_reverse (x : TypeAHeckeAlgebra R q n) :
+    algEquivHeckeAlgebra R q n (reverse q x) =
+      CoxeterMatrix.HeckeAlgebra.reverse _ _ (algEquivHeckeAlgebra R q n x) := by
+  simp [reverse, reverseOpEquiv, ← CoxeterMatrix.HeckeAlgebra.op_reverse]
+
+/-- The reversal reverses the order of products. -/
+@[simp]
+theorem reverse_mul (x y : TypeAHeckeAlgebra R q n) :
+    reverse q (x * y) = reverse q y * reverse q x :=
+  op_injective (map_mul (reverseOpEquiv q) x y)
+
+@[simp]
+theorem reverse_one : reverse q (1 : TypeAHeckeAlgebra R q n) = 1 :=
+  op_injective (map_one (reverseOpEquiv q))
+
+/-- The reversal fixes the scalars. -/
+@[simp]
+theorem reverse_algebraMap (r : R) :
+    reverse q (algebraMap R (TypeAHeckeAlgebra R q n) r) = algebraMap R _ r :=
+  op_injective ((reverseOpEquiv q).commutes r)
+
+/-- The reversal fixes every generator. -/
+@[simp]
+theorem reverse_T (i : Fin (n - 1)) : reverse q (T q i) = T (R := R) q i :=
+  (algEquivHeckeAlgebra R q n).injective <| by
+    rw [algEquivHeckeAlgebra_reverse, algEquivHeckeAlgebra_T,
+      CoxeterMatrix.HeckeAlgebra.reverse_T]
+
+/-- The reversal sends `T_w` to `T_(w⁻¹)`. -/
+@[simp]
+theorem reverse_Tw {W : Type*} [Group W] (cs : CoxeterSystem (CoxeterMatrix.A (n - 1)) W)
+    (w : W) : reverse q (Tw (R := R) q cs w) = Tw q cs w⁻¹ :=
+  (algEquivHeckeAlgebra R q n).injective <| by
+    rw [algEquivHeckeAlgebra_reverse, algEquivHeckeAlgebra_Tw, algEquivHeckeAlgebra_Tw,
+      CoxeterMatrix.HeckeAlgebra.reverse_Tw]
+
+/-- The reversal is an involution. -/
+@[simp]
+theorem reverse_reverse (x : TypeAHeckeAlgebra R q n) : reverse q (reverse q x) = x :=
+  (algEquivHeckeAlgebra R q n).injective <| by
+    rw [algEquivHeckeAlgebra_reverse, algEquivHeckeAlgebra_reverse,
+      CoxeterMatrix.HeckeAlgebra.reverse_reverse]
+
+theorem reverse_involutive : Function.Involutive (reverse (R := R) q (n := n)) :=
+  reverse_reverse
+
+/-- The reversal is an involution, as a linear map. -/
+@[simp]
+theorem reverse_comp_reverse :
+    reverse q ∘ₗ reverse q = (LinearMap.id : TypeAHeckeAlgebra R q n →ₗ[R] _) :=
+  LinearMap.ext reverse_reverse
+
+/-- The map to the infinite type-A Hecke algebra intertwines the two reversals. -/
+theorem toInfinite_reverse (x : TypeAHeckeAlgebra R q n) :
+    toInfinite R q n (reverse q x) = InfiniteTypeAHeckeAlgebra.reverse q (toInfinite R q n x) := by
+  have h : (AlgHom.op (toInfinite R q n)).comp (reverseOpEquiv q).toAlgHom =
+      (InfiniteTypeAHeckeAlgebra.reverseOp q).comp (toInfinite R q n) :=
+    hom_ext fun i ↦ by simp [← op_reverse]
+  simpa [← op_reverse] using congrArg unop (AlgHom.congr_fun h x)
+
+/-- The inverse of `reverseOpEquiv` is the reversal read in the opposite algebra. -/
+@[simp]
+theorem reverseOpEquiv_symm_apply (x : (TypeAHeckeAlgebra R q n)ᵐᵒᵖ) :
+    (reverseOpEquiv q).symm x = reverse q (unop x) := by
+  rw [AlgEquiv.symm_apply_eq, ← op_reverse, reverse_reverse, op_unop]
+
+end TauCeti.TypeAHeckeAlgebra
