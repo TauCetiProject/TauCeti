@@ -1,0 +1,529 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
+public import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.VanishingIdeal
+public import TauCeti.LinearAlgebra.Alternating.RestrictScalars
+public import TauCeti.Topology.Algebra.Module.Alternating.Curry
+public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
+import Mathlib.Analysis.Normed.Module.Alternating.Curry
+import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
+import TauCeti.LinearAlgebra.Alternating.Curry
+import TauCeti.LinearAlgebra.Multilinear.Quotient
+import TauCeti.Topology.Algebra.Module.FiniteDimension
+
+/-!
+# Sections of fibrewise continuous alternating maps
+
+For a `C^n` vector bundle `V → M` with model fibre `F` and a normed space `G`, sections of
+`fun x ↦ V x [⋀^ι]→L[𝕜] G` are `C^n` families of fibrewise continuous alternating maps. This file
+develops:
+* Empty-index identification (`alternatingIsEmptyLinearEquiv`, `alternatingIsEmptyEquiv`).
+* Pointwise evaluation on `C^n` sections (`evalSection`, `ext_evalSection`, `evalAlternatingMap`,
+  `evalAlternatingLinearMap`).
+* Fibrewise interior product (`ContMDiffSection.curryLeft`) and its separation property
+  (`ext_curryLeft`).
+* Multilinear tensoriality (`ContMDiffSection.alternatingEquiv`): over a smooth finite-dimensional
+  Hausdorff real manifold and a smooth finite-rank bundle `V`, smooth sections of
+  `fun x ↦ V x [⋀^ι]→L[ℝ] ℝ` identify `C^∞(M)`-linearly with `C^∞(M)`-multilinear alternating maps
+  on `Cₛ^∞⟮I; F, V⟯`.
+
+## References
+
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
+  Springer (2013), Lemma 14.9.
+* K. C. H. Mackenzie, *General theory of Lie groupoids and Lie algebroids*, London Math. Soc.
+  Lecture Note Ser. 213, Cambridge University Press (2005), §2.1 and §7.1.
+-/
+
+public section
+
+noncomputable section
+
+open Bundle Filter Set
+open scoped ContDiff Manifold Topology
+
+namespace ContMDiffSection
+
+section General
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {n : ℕ∞ω} {V : M → Type*}
+  [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+
+/-! ### Degree transport -/
+
+/-- Transporting an alternating bundle section across an equality of degrees reindexes the input
+tuple by `Fin.cast`. -/
+theorem cast_alternating_apply {p q : ℕ} (h : p = q)
+    (φ : Cₛ^n⟮I; F [⋀^Fin p]→L[𝕜] G, fun x ↦ V x [⋀^Fin p]→L[𝕜] G⟯)
+    (x : M) (v : Fin q → V x) :
+    (LinearEquiv.cast (R := 𝕜)
+      (M := fun r : ℕ ↦ Cₛ^n⟮I; F [⋀^Fin r]→L[𝕜] G, fun x ↦ V x [⋀^Fin r]→L[𝕜] G⟯) h φ) x v =
+      φ x (v ∘ Fin.cast h) := by
+  cases h; rfl
+
+/-- Pointwise addition of alternating bundle sections evaluates at each point and tuple. -/
+theorem alternating_add_apply {ι : Type*} [Fintype ι]
+    (φ₁ φ₂ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯)
+    (x : M) (v : ι → V x) : (φ₁ + φ₂) x v = φ₁ x v + φ₂ x v := by
+  rw [ContMDiffSection.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply]
+
+/-- Pointwise subtraction of alternating bundle sections evaluates at each point and tuple. -/
+theorem alternating_sub_apply {ι : Type*} [Fintype ι]
+    (φ₁ φ₂ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯)
+    (x : M) (v : ι → V x) : (φ₁ - φ₂) x v = φ₁ x v - φ₂ x v := by
+  rw [ContMDiffSection.coe_sub, Pi.sub_apply, ContinuousAlternatingMap.sub_apply]
+
+/-- Pointwise scalar multiplication of an alternating bundle section evaluates at each point and
+tuple. -/
+theorem alternating_smul_apply {ι : Type*} [Fintype ι] (c : 𝕜)
+    (φ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯)
+    (x : M) (v : ι → V x) : (c • φ) x v = c • φ x v := by
+  rw [ContMDiffSection.coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply]
+
+/-! ### Empty-index / degree-zero sections -/
+
+section IsEmpty
+
+variable {ι : Type*} [Fintype ι] [IsEmpty ι]
+
+variable (I F G n V ι) in
+/-- When the index type `ι` is empty (for instance `ι = Fin 0`), sections of
+`fun x ↦ V x [⋀^ι]→L[𝕜] G` identify `𝕜`-linearly with `C^n` maps `M → G`. -/
+def alternatingIsEmptyLinearEquiv :
+    Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯ ≃ₗ[𝕜] C^n⟮I, M; 𝓘(𝕜, G), G⟯ where
+  toFun φ :=
+    ⟨fun x ↦ φ x 0, fun x₀ ↦ by
+      have hφ := (contMDiffAt_section_iff x₀).1 (φ.contMDiff x₀)
+      have hcomp := (contMDiffAt_const (c := (ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 F G
+        ι).symm.toLinearIsometry.toContinuousLinearMap)).clm_apply hφ
+      exact hcomp.congr_of_eventuallyEq (Eventually.of_forall fun x ↦
+        (FiberBundle.constOfIsEmptyLIE_symm_trivializationAt_snd x₀ x (φ x)).symm)⟩
+  invFun f :=
+    { toFun x := ContinuousAlternatingMap.constOfIsEmpty 𝕜 (V x) ι (f x)
+      contMDiff_toFun x₀ := by
+        rw [contMDiffAt_section_iff]
+        simp_rw [FiberBundle.trivializationAt_constOfIsEmpty_snd]
+        exact (contMDiffAt_const (c := (ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 F G
+          ι).toLinearIsometry.toContinuousLinearMap)).clm_apply (f.contMDiff x₀) }
+  left_inv φ := by ext x v; exact congrArg (φ x) (Subsingleton.elim (0 : ι → V x) v)
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp] theorem alternatingIsEmptyLinearEquiv_apply
+    (φ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯) (x : M) :
+    alternatingIsEmptyLinearEquiv I F G n V ι φ x = φ x 0 := (rfl)
+
+@[simp] theorem alternatingIsEmptyLinearEquiv_symm_apply
+    (f : C^n⟮I, M; 𝓘(𝕜, G), G⟯) (x : M) (v : ι → V x) :
+    (alternatingIsEmptyLinearEquiv I F G n V ι).symm f x v = f x := (rfl)
+
+variable (I F n V ι) in
+/-- Scalar-valued alternating bundle sections indexed by an empty type (such as `Fin 0`) identify
+`C^n⟮I, M; 𝕜⟯`-linearly with scalar `C^n` functions on `M`. -/
+def alternatingIsEmptyEquiv :
+    Cₛ^n⟮I; F [⋀^ι]→L[𝕜] 𝕜, fun x ↦ V x [⋀^ι]→L[𝕜] 𝕜⟯ ≃ₗ[C^n⟮I, M; 𝕜⟯] C^n⟮I, M; 𝕜⟯ where
+  toAddEquiv := (alternatingIsEmptyLinearEquiv I F 𝕜 n V ι).toAddEquiv
+  map_smul' _ _ := by ext x; simp
+
+@[simp] theorem alternatingIsEmptyEquiv_apply
+    (φ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] 𝕜, fun x ↦ V x [⋀^ι]→L[𝕜] 𝕜⟯) (x : M) :
+    alternatingIsEmptyEquiv I F n V ι φ x = φ x 0 := (rfl)
+
+@[simp] theorem alternatingIsEmptyEquiv_symm_apply
+    (f : C^n⟮I, M; 𝕜⟯) (x : M) (v : ι → V x) :
+    (alternatingIsEmptyEquiv I F n V ι).symm f x v = f x := (rfl)
+
+end IsEmpty
+
+/-! ### Pointwise evaluation on `C^n` sections -/
+
+section Eval
+
+variable {ι : Type*} [Fintype ι]
+
+/-- Pointwise evaluation of a `C^n` alternating bundle section on a tuple of `C^n` sections of `V`,
+as a `C^n` map `M → G`. -/
+def evalSection (φ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯)
+    (s : ι → Cₛ^n⟮I; F, V⟯) : C^n⟮I, M; 𝓘(𝕜, G), G⟯ :=
+  ⟨fun x ↦ φ x (s · x), fun x₀ ↦
+    (contMDiffAt_section_iff x₀).1 <|
+      (φ.contMDiff x₀).continuousAlternatingMap_bundle_apply (E₂ := Bundle.Trivial M G)
+        (fun i ↦ (s i).contMDiff x₀)⟩
+
+@[simp] theorem evalSection_apply (φ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯)
+    (s : ι → Cₛ^n⟮I; F, V⟯) (x : M) : φ.evalSection s x = φ x (s · x) := (rfl)
+
+@[simp] theorem evalSection_zero (s : ι → Cₛ^n⟮I; F, V⟯) :
+    (0 : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯).evalSection s = 0 := by
+  ext x; simp
+
+@[simp] theorem evalSection_add
+    (φ₁ φ₂ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯) (s : ι → Cₛ^n⟮I; F, V⟯) :
+    (φ₁ + φ₂).evalSection s = φ₁.evalSection s + φ₂.evalSection s := by
+  ext x; simp
+
+@[simp] theorem evalSection_sub
+    (φ₁ φ₂ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯) (s : ι → Cₛ^n⟮I; F, V⟯) :
+    (φ₁ - φ₂).evalSection s = φ₁.evalSection s - φ₂.evalSection s := by
+  ext x; simp
+
+@[simp] theorem evalSection_smul (c : 𝕜)
+    (φ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯) (s : ι → Cₛ^n⟮I; F, V⟯) :
+    (c • φ).evalSection s = c • φ.evalSection s := by
+  ext x; simp
+
+@[simp] theorem evalSection_fun_smul (f : C^n⟮I, M; 𝕜⟯)
+    (φ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯) (s : ι → Cₛ^n⟮I; F, V⟯) :
+    (f • φ).evalSection s = f • φ.evalSection s := by
+  ext x
+  exact congrArg (· (s · x)) (smul_apply f φ x)
+
+/-- A scalar-valued `C^n` alternating bundle section induces a `C^n⟮I, M; 𝕜⟯`-multilinear
+alternating map on `C^n` sections of `V`. -/
+def evalAlternatingMap (φ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] 𝕜, fun x ↦ V x [⋀^ι]→L[𝕜] 𝕜⟯) :
+    Cₛ^n⟮I; F, V⟯ [⋀^ι]→ₗ[C^n⟮I, M; 𝕜⟯] C^n⟮I, M; 𝕜⟯ where
+  toFun s := φ.evalSection s
+  map_update_add' s i a b := by
+    ext x; simp [Function.apply_update (fun _ (z : Cₛ^n⟮I; F, V⟯) ↦ z x)]
+  map_update_smul' s i f a := by
+    ext x; simp [Function.apply_update (fun _ (z : Cₛ^n⟮I; F, V⟯) ↦ z x)]
+  map_eq_zero_of_eq' s i j h hne := by
+    ext x; simp [evalSection_apply, (φ x).map_eq_zero_of_eq (s · x) (congrArg (· x) h) hne]
+
+@[simp] theorem evalAlternatingMap_apply (φ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] 𝕜, fun x ↦ V x [⋀^ι]→L[𝕜] 𝕜⟯)
+    (s : ι → Cₛ^n⟮I; F, V⟯) : φ.evalAlternatingMap s = φ.evalSection s := (rfl)
+
+theorem evalAlternatingMap_apply_apply (φ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] 𝕜, fun x ↦ V x [⋀^ι]→L[𝕜] 𝕜⟯)
+    (s : ι → Cₛ^n⟮I; F, V⟯) (x : M) : φ.evalAlternatingMap s x = φ x (s · x) := (rfl)
+
+variable (I F n V ι) in
+/-- `ContMDiffSection.evalAlternatingMap` bundled as a `C^n⟮I, M; 𝕜⟯`-linear map. -/
+def evalAlternatingLinearMap :
+    Cₛ^n⟮I; F [⋀^ι]→L[𝕜] 𝕜, fun x ↦ V x [⋀^ι]→L[𝕜] 𝕜⟯ →ₗ[C^n⟮I, M; 𝕜⟯]
+      (Cₛ^n⟮I; F, V⟯ [⋀^ι]→ₗ[C^n⟮I, M; 𝕜⟯] C^n⟮I, M; 𝕜⟯) where
+  toFun := evalAlternatingMap
+  map_add' _ _ := by ext s x; simp
+  map_smul' _ _ := by ext s x; simp
+
+@[simp] theorem evalAlternatingLinearMap_apply
+    (φ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] 𝕜, fun x ↦ V x [⋀^ι]→L[𝕜] 𝕜⟯) :
+    evalAlternatingLinearMap I F n V ι φ = φ.evalAlternatingMap := (rfl)
+
+end Eval
+
+/-! ### Smooth interior product -/
+
+section CurryLeft
+
+section BasicCurry
+
+variable {k : ℕ} (c : 𝕜) (f : C^n⟮I, M; 𝕜⟯)
+  (φ φ₁ φ₂ : Cₛ^n⟮I; F [⋀^Fin (k + 1)]→L[𝕜] G, fun x ↦ V x [⋀^Fin (k + 1)]→L[𝕜] G⟯)
+  (a b : Cₛ^n⟮I; F, V⟯)
+
+/-- The interior product `ι_a φ` of an alternating bundle section `φ` of degree `k + 1` with a
+section `a` of `V`, defined fibrewise via `ContinuousAlternatingMap.curryLeftTopological`. -/
+def curryLeft : Cₛ^n⟮I; F [⋀^Fin k]→L[𝕜] G, fun x ↦ V x [⋀^Fin k]→L[𝕜] G⟯ where
+  toFun x := (φ x).curryLeftTopological (a x)
+  contMDiff_toFun x₀ := (φ.contMDiff x₀).curryLeftTopological_bundle (a.contMDiff x₀)
+
+@[simp] theorem curryLeft_apply (x : M) :
+    φ.curryLeft a x = (φ x).curryLeftTopological (a x) := (rfl)
+
+theorem curryLeft_apply_apply (x : M) (v : Fin k → V x) :
+    φ.curryLeft a x v = φ x (Matrix.vecCons (a x) v) :=
+  ContinuousAlternatingMap.curryLeftTopological_apply_apply (φ x) (a x) v
+
+@[simp] theorem curryLeft_zero_left :
+    (0 : Cₛ^n⟮I; F [⋀^Fin (k + 1)]→L[𝕜] G,
+      fun x ↦ V x [⋀^Fin (k + 1)]→L[𝕜] G⟯).curryLeft a = 0 := by ext x v; simp
+
+@[simp] theorem curryLeft_zero_right : φ.curryLeft 0 = 0 := by ext x v; simp
+
+@[simp] theorem curryLeft_add_left :
+    (φ₁ + φ₂).curryLeft a = φ₁.curryLeft a + φ₂.curryLeft a := by ext x v; simp
+
+@[simp] theorem curryLeft_add_right :
+    φ.curryLeft (a + b) = φ.curryLeft a + φ.curryLeft b := by ext x v; simp [map_add]
+
+@[simp] theorem curryLeft_smul_left :
+    (c • φ).curryLeft a = c • φ.curryLeft a := by ext x v; simp
+
+@[simp] theorem curryLeft_fun_smul_left :
+    (f • φ).curryLeft a = f • φ.curryLeft a := by ext x v; simp
+
+@[simp] theorem curryLeft_smul_right :
+    φ.curryLeft (c • a) = c • φ.curryLeft a := by ext x v; simp [map_smul]
+
+@[simp] theorem curryLeft_fun_smul_right :
+    φ.curryLeft (f • a) = f • φ.curryLeft a := by ext x v; simp [map_smul]
+
+@[simp] theorem curryLeft_neg_left : (-φ).curryLeft a = -φ.curryLeft a := by ext x v; simp
+
+@[simp] theorem curryLeft_neg_right :
+    φ.curryLeft (-a) = -φ.curryLeft a := by ext x v; simp [map_neg]
+
+@[simp] theorem curryLeft_sub_left :
+    (φ₁ - φ₂).curryLeft a = φ₁.curryLeft a - φ₂.curryLeft a := by ext x v; simp
+
+@[simp] theorem curryLeft_sub_right :
+    φ.curryLeft (a - b) = φ.curryLeft a - φ.curryLeft b := by ext x v; simp [map_sub]
+
+end BasicCurry
+
+/-- Inserting the same section twice vanishes. -/
+@[simp] theorem curryLeft_same {k : ℕ}
+    (φ : Cₛ^n⟮I; F [⋀^Fin (k + 2)]→L[𝕜] G, fun x ↦ V x [⋀^Fin (k + 2)]→L[𝕜] G⟯)
+    (a : Cₛ^n⟮I; F, V⟯) : (φ.curryLeft a).curryLeft a = 0 := by ext x v; simp
+
+/-- Interior products with two sections anticommute. -/
+theorem curryLeft_curryLeft_eq_neg {k : ℕ}
+    (φ : Cₛ^n⟮I; F [⋀^Fin (k + 2)]→L[𝕜] G, fun x ↦ V x [⋀^Fin (k + 2)]→L[𝕜] G⟯)
+    (a b : Cₛ^n⟮I; F, V⟯) :
+    (φ.curryLeft a).curryLeft b = -(φ.curryLeft b).curryLeft a := by
+  ext x v
+  simpa only [curryLeft_apply, ContinuousAlternatingMap.coe_neg, ContMDiffSection.coe_neg,
+    Pi.neg_apply, ContinuousAlternatingMap.neg_apply, neg_apply,
+    ← ContinuousAlternatingMap.coe_toAlternatingMap,
+    ContinuousAlternatingMap.toAlternatingMap_curryLeftTopological] using
+    congrArg (· v) (AlternatingMap.curryLeft_curryLeft_eq_neg (φ x).toAlternatingMap (a x) (b x))
+
+/-- `ContMDiffSection.curryLeft` commutes with `LinearEquiv.cast` across successor degree
+equalities. -/
+theorem curryLeft_cast_alternating {p q : ℕ} (h : p + 1 = q + 1)
+    (φ : Cₛ^n⟮I; F [⋀^Fin (p + 1)]→L[𝕜] G, fun x ↦ V x [⋀^Fin (p + 1)]→L[𝕜] G⟯)
+    (a : Cₛ^n⟮I; F, V⟯) :
+    ContMDiffSection.curryLeft
+      (LinearEquiv.cast (R := 𝕜)
+        (M := fun r : ℕ ↦ Cₛ^n⟮I; F [⋀^Fin r]→L[𝕜] G, fun x ↦ V x [⋀^Fin r]→L[𝕜] G⟯) h φ) a =
+      LinearEquiv.cast (R := 𝕜)
+        (M := fun r : ℕ ↦ Cₛ^n⟮I; F [⋀^Fin r]→L[𝕜] G, fun x ↦ V x [⋀^Fin r]→L[𝕜] G⟯)
+        (Nat.succ.inj h) (φ.curryLeft a) := by
+  obtain rfl := Nat.succ.inj h; rfl
+
+/-- Evaluation on sections intertwines `ContMDiffSection.curryLeft` with
+`AlternatingMap.curryLeft`. -/
+@[simp] theorem evalAlternatingMap_curryLeft {k : ℕ}
+    (φ : Cₛ^n⟮I; F [⋀^Fin (k + 1)]→L[𝕜] 𝕜, fun x ↦ V x [⋀^Fin (k + 1)]→L[𝕜] 𝕜⟯)
+    (a : Cₛ^n⟮I; F, V⟯) :
+    (φ.curryLeft a).evalAlternatingMap = φ.evalAlternatingMap.curryLeft a := by
+  ext s x
+  simp only [evalAlternatingMap_apply_apply, curryLeft_apply_apply,
+    AlternatingMap.curryLeft_apply_apply, Matrix.vecCons]
+  exact congrArg (φ x) (Fin.comp_cons (fun z ↦ z x) a s).symm
+
+end CurryLeft
+
+end General
+
+/-! ### Separation by global sections and multilinear tensoriality -/
+
+section Real
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+
+/-- Two `C^n` alternating bundle sections are equal as soon as their evaluations on all tuples of
+global `C^n` sections agree. -/
+theorem ext_evalSection {n : ℕ∞ω} [ENat.LEInfty n] [ContMDiffVectorBundle n F V I]
+    {ι : Type*} [Fintype ι]
+    {φ₁ φ₂ : Cₛ^n⟮I; F [⋀^ι]→L[ℝ] G, fun x ↦ V x [⋀^ι]→L[ℝ] G⟯}
+    (h : ∀ s : ι → Cₛ^n⟮I; F, V⟯, φ₁.evalSection s = φ₂.evalSection s) : φ₁ = φ₂ := by
+  ext x v
+  obtain ⟨s, hs⟩ := exists_fun_apply_eq (I := I) (F := F) (V := V) n x v
+  simpa only [← hs, evalSection_apply] using congrArg (· x) (h s)
+
+/-- Two `C^n` alternating bundle sections of positive degree are equal as soon as all their
+interior products with global `C^n` sections agree. -/
+theorem ext_curryLeft {n : ℕ∞ω} [ENat.LEInfty n] [ContMDiffVectorBundle n F V I] {k : ℕ}
+    {φ₁ φ₂ : Cₛ^n⟮I; F [⋀^Fin (k + 1)]→L[ℝ] G, fun x ↦ V x [⋀^Fin (k + 1)]→L[ℝ] G⟯}
+    (h : ∀ a : Cₛ^n⟮I; F, V⟯, φ₁.curryLeft a = φ₂.curryLeft a) : φ₁ = φ₂ := by
+  ext x v
+  obtain ⟨a, ha⟩ := evalLinearMap_surjective (I := I) (F := F) (V := V) n x (v 0)
+  rw [evalLinearMap_apply] at ha
+  have hcons : Matrix.vecCons (a x) (Fin.tail v) = v := by
+    simpa only [ha, Matrix.vecCons] using Fin.cons_self_tail v
+  rw [← hcons, ← curryLeft_apply_apply, h a, curryLeft_apply_apply]
+
+section Tensoriality
+
+variable [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I]
+
+private theorem alternatingMap_update_apply_eq_zero_of_apply_eq_zero {ι : Type*} [DecidableEq ι]
+    (Φ : Cₛ^∞⟮I; F, V⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯)
+    (w : ι → Cₛ^∞⟮I; F, V⟯) (i : ι) {x : M} {u : Cₛ^∞⟮I; F, V⟯} (hu : u x = 0) :
+    Φ (Function.update w i u) x = 0 := by
+  refine Submodule.smul_induction_on
+    (p := fun z : Cₛ^∞⟮I; F, V⟯ ↦ Φ (Function.update w i z) x = 0)
+    (TauCeti.mem_smoothVanishingIdeal_smul_top_of_apply_eq_zero (I := I) hu) ?_ ?_
+  · intro f hf _ _; simp [Φ.map_update_smul, TauCeti.mem_smoothVanishingIdeal_iff.mp hf]
+  · intro _ _ hs ht; simp [Φ.map_update_add, hs, ht]
+
+/-- **Multilinear section tensoriality**: the value at `x` of a `C^∞(M)`-multilinear alternating
+map on smooth sections of a finite-rank bundle depends only on the values of its arguments at
+`x`. -/
+theorem alternatingMap_apply_eq_of_eval_eq {ι : Type*} [Finite ι]
+    (Φ : Cₛ^∞⟮I; F, V⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯)
+    {s t : ι → Cₛ^∞⟮I; F, V⟯} {x : M} (hst : ∀ i, s i x = t i x) : Φ s x = Φ t x := by
+  have h :=
+    ((ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ).toLinearMap.compMultilinearMap
+        (Φ.restrictScalars ℝ).toMultilinearMap).apply_eq_of_mkQ_eq
+      (fun _ ↦ LinearMap.ker (evalLinearMap I F ∞ V x))
+      (fun m i u hu ↦ by
+        simpa only [LinearMap.compMultilinearMap_apply, AlgHom.toLinearMap_apply,
+          ContMDiffMap.evalAlgHom_apply, MultilinearMap.toFun_eq_coe,
+          AlternatingMap.coe_multilinearMap, AlternatingMap.restrictScalars_apply] using
+          alternatingMap_update_apply_eq_zero_of_apply_eq_zero Φ m i
+            (by simpa only [LinearMap.mem_ker, evalLinearMap_apply] using hu))
+      (fun i ↦ (Submodule.Quotient.eq _).2 (by
+        simpa only [LinearMap.mem_ker, evalLinearMap_apply, coe_sub, Pi.sub_apply, sub_eq_zero]
+          using hst i))
+  simpa only [LinearMap.compMultilinearMap_apply, AlgHom.toLinearMap_apply,
+    ContMDiffMap.evalAlgHom_apply, MultilinearMap.toFun_eq_coe,
+    AlternatingMap.coe_multilinearMap, AlternatingMap.restrictScalars_apply] using h
+
+private def contMDiffExtendSection (x : M) : V x →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯ where
+  toFun v :=
+    ⟨FiberBundle.contMDiffExtendₗ I F V x v, by
+      simpa only [FiberBundle.contMDiffExtendₗ_apply] using
+        FiberBundle.contMDiff_contMDiffExtend (n := ∞) I F v⟩
+  map_add' v w := by
+    ext y
+    exact congrFun ((FiberBundle.contMDiffExtendₗ I F V x).map_add v w) y
+  map_smul' c v := by
+    ext y
+    exact congrFun ((FiberBundle.contMDiffExtendₗ I F V x).map_smul c v) y
+
+private def fiberAlternatingOfSections {ι' : Type*} [Finite ι']
+    (Φ : Cₛ^∞⟮I; F, V⟯ [⋀^ι']→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯) (x : M) :
+    V x [⋀^ι']→L[ℝ] ℝ :=
+  let ex := trivializationAt F V x
+  let βx : F [⋀^ι']→ₗ[ℝ] ℝ :=
+    ((ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ).toLinearMap.compAlternatingMap
+      (Φ.restrictScalars ℝ)).compLinearMap
+      ((contMDiffExtendSection (I := I) (F := F) x).comp (ex.symmL ℝ x).toLinearMap)
+  (AlternatingMap.toContinuousAlternatingMap βx).compContinuousLinearMap
+    (ex.continuousLinearMapAt ℝ x)
+
+private theorem fiberAlternatingOfSections_eval {ι' : Type*} [Finite ι']
+    (Φ : Cₛ^∞⟮I; F, V⟯ [⋀^ι']→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯)
+    (s : ι' → Cₛ^∞⟮I; F, V⟯) (x : M) :
+    fiberAlternatingOfSections Φ x (s · x) = Φ s x := by
+  have hx : x ∈ (trivializationAt F V x).baseSet := mem_baseSet_trivializationAt F V x
+  simp only [fiberAlternatingOfSections, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+    AlternatingMap.coe_toContinuousAlternatingMap, AlternatingMap.compLinearMap_apply,
+    LinearMap.compAlternatingMap_apply, AlgHom.toLinearMap_apply, ContMDiffMap.evalAlgHom_apply,
+    AlternatingMap.restrictScalars_apply]
+  refine alternatingMap_apply_eq_of_eval_eq Φ fun i ↦ ?_
+  simp only [Function.comp_apply, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+    contMDiffExtendSection, LinearMap.coe_mk, AddHom.coe_mk, ContMDiffSection.coeFn_mk,
+    FiberBundle.contMDiffExtendₗ_apply]
+  rw [FiberBundle.contMDiffExtend_apply_self,
+    (trivializationAt F V x).symmL_continuousLinearMapAt hx]
+
+section Fintype
+
+variable {ι : Type*} [Fintype ι]
+
+/-- Reconstruct a smooth section of `fun x ↦ V x [⋀^ι]→L[ℝ] ℝ` from a `C^∞(M)`-multilinear
+alternating map on global smooth sections of `V`. -/
+def ofSectionAlternatingMap
+    (Φ : Cₛ^∞⟮I; F, V⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯) :
+    Cₛ^∞⟮I; F [⋀^ι]→L[ℝ] ℝ, fun x ↦ V x [⋀^ι]→L[ℝ] ℝ⟯ where
+  toFun := fiberAlternatingOfSections Φ
+  contMDiff_toFun x₀ := by
+    rw [contMDiffAt_section_iff]
+    let e := trivializationAt F V x₀
+    have hx₀ : x₀ ∈ e.baseSet := mem_baseSet_trivializationAt F V x₀
+    have hmem : e.baseSet ∈ 𝓝 x₀ := e.open_baseSet.mem_nhds hx₀
+    refine (TauCeti.contMDiffAt_continuousAlternatingMap_apply (𝕜 := ℝ)).2 fun v ↦ ?_
+    let s (i : ι) : Cₛ^∞⟮I; F, V⟯ :=
+      contMDiffExtendSection (I := I) (F := F) x₀ (e.symmL ℝ x₀ (v i))
+    refine (Φ s).contMDiff.contMDiffAt.congr_of_eventuallyEq ?_
+    have hev : ∀ᶠ y in 𝓝 x₀, ∀ i : ι,
+        FiberBundle.contMDiffExtend I F (e.symmL ℝ x₀ (v i)) y =
+          FiberBundle.extend F (e.symmL ℝ x₀ (v i)) y :=
+      Filter.eventually_all.2 fun i ↦
+        FiberBundle.eventually_contMDiffExtend_eq_extend I F (e.symmL ℝ x₀ (v i))
+    filter_upwards [hev, hmem] with y hy_ext hy
+    have hs : e.symmL ℝ y ∘ v = (s · y) := funext fun i ↦ by
+      rw [Function.comp_apply, e.symmL_apply hy]
+      dsimp [s, contMDiffExtendSection]
+      rw [FiberBundle.contMDiffExtendₗ_apply, hy_ext i, FiberBundle.extend,
+        e.symmL_apply hx₀, e.apply_mk_symm hx₀]
+    rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
+      ContinuousAlternatingMap.compContinuousLinearMap_apply, hs, fiberAlternatingOfSections_eval]
+
+@[simp] theorem ofSectionAlternatingMap_eval
+    (Φ : Cₛ^∞⟮I; F, V⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯) (s : ι → Cₛ^∞⟮I; F, V⟯) (x : M) :
+    ofSectionAlternatingMap Φ x (s · x) = Φ s x :=
+  fiberAlternatingOfSections_eval Φ s x
+
+variable (I F V ι) in
+/-- **Tensoriality equivalence for alternating sections**: over a smooth finite-dimensional
+Hausdorff real manifold and a smooth finite-rank real vector bundle `V`, evaluation identifies
+smooth sections of `fun x ↦ V x [⋀^ι]→L[ℝ] ℝ` `C^∞(M)`-linearly with `C^∞(M)`-multilinear
+alternating maps on smooth sections of `V`. -/
+def alternatingEquiv :
+    Cₛ^∞⟮I; F [⋀^ι]→L[ℝ] ℝ, fun x ↦ V x [⋀^ι]→L[ℝ] ℝ⟯ ≃ₗ[C^∞⟮I, M; ℝ⟯]
+      (Cₛ^∞⟮I; F, V⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯) where
+  toFun := evalAlternatingLinearMap I F ∞ V ι
+  invFun := ofSectionAlternatingMap
+  left_inv φ := by
+    ext x v
+    obtain ⟨s, hs⟩ := exists_fun_apply_eq (I := I) (F := F) (V := V) ∞ x v
+    rw [← hs, ofSectionAlternatingMap_eval, evalAlternatingLinearMap_apply,
+      evalAlternatingMap_apply_apply]
+  right_inv Φ := by
+    ext s x
+    rw [evalAlternatingLinearMap_apply, evalAlternatingMap_apply_apply]
+    exact ofSectionAlternatingMap_eval Φ s x
+  map_add' := (evalAlternatingLinearMap I F ∞ V ι).map_add
+  map_smul' := (evalAlternatingLinearMap I F ∞ V ι).map_smul
+
+@[simp] theorem alternatingEquiv_apply
+    (φ : Cₛ^∞⟮I; F [⋀^ι]→L[ℝ] ℝ, fun x ↦ V x [⋀^ι]→L[ℝ] ℝ⟯) :
+    alternatingEquiv I F V ι φ = φ.evalAlternatingMap := (rfl)
+
+@[simp] theorem alternatingEquiv_symm_apply_eval
+    (Φ : Cₛ^∞⟮I; F, V⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯) (s : ι → Cₛ^∞⟮I; F, V⟯) (x : M) :
+    (alternatingEquiv I F V ι).symm Φ x (s · x) = Φ s x :=
+  ofSectionAlternatingMap_eval Φ s x
+
+end Fintype
+
+@[simp] theorem alternatingEquiv_symm_curryLeft {k : ℕ}
+    (Φ : Cₛ^∞⟮I; F, V⟯ [⋀^Fin (k + 1)]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯) (a : Cₛ^∞⟮I; F, V⟯) :
+    ((alternatingEquiv I F V (Fin (k + 1))).symm Φ).curryLeft a =
+      (alternatingEquiv I F V (Fin k)).symm (Φ.curryLeft a) :=
+  (alternatingEquiv I F V (Fin k)).injective <| by
+    rw [alternatingEquiv_apply, evalAlternatingMap_curryLeft, ← alternatingEquiv_apply,
+      LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+
+end Tensoriality
+
+end Real
+
+end ContMDiffSection
