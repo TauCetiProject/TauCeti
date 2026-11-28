@@ -38,9 +38,10 @@ quotient manifold is read off from a compact fundamental domain upstairs.
 * `TauCeti.continuous_section_orbitRelQuotientRec_iff`: the descent of a `G`-invariant section of
   the pullback of a family `V` over the orbit space is continuous, as a map into the total space,
   exactly when the section upstairs is.
-* `MulActionHom.isEmbedding_orbitRelQuotientMap`: an equivariant embedding descends to an
-  embedding of orbit spaces when the acting-group map is surjective and the target action is by
-  homeomorphisms.
+* `MulActionHom.continuous_orbitRelQuotientMap` and
+  `MulActionHom.isEmbedding_orbitRelQuotientMap`: a continuous equivariant map descends to a
+  continuous map of orbit spaces, and an equivariant embedding descends to an embedding of orbit
+  spaces when the acting-group map is surjective and the target action is by homeomorphisms.
 * `SubMulAction.isOpenEmbedding_orbitRelQuotientMap`: for an open slice `S` for a subgroup `H`, an
   `H`-invariant open set moved into itself only by elements of `H`, the map `S / H → X / G` of
   orbit spaces is an open embedding. For `H = ⊥` this recovers
@@ -123,6 +124,14 @@ theorem _root_.SubMulAction.isOpenEmbedding_orbitRelQuotientMap {H : Subgroup G}
     (hS_open.isOpenMap_subtypeVal _ (hU.preimage continuous_quot_mk))
 
 end Slice
+
+/-- A continuous equivariant map descends to a continuous map of orbit spaces. -/
+theorem _root_.MulActionHom.continuous_orbitRelQuotientMap
+    {G H X Y : Type*} [Group G] [Group H] [MulAction G X] [MulAction H Y]
+    [TopologicalSpace X] [TopologicalSpace Y] {σ : G → H} (φ : X →ₑ[σ] Y) (hφ : Continuous φ) :
+    Continuous φ.orbitRelQuotientMap :=
+  isQuotientMap_quotient_mk'.continuous_iff.2 (φ.orbitRelQuotientMap_comp_mk ▸
+    continuous_quot_mk.comp hφ)
 
 /-- An equivariant embedding descends to an embedding of orbit spaces when the map of acting
 groups is surjective and the target action is by homeomorphisms. -/

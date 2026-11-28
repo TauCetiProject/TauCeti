@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Covering.Equivariant
 public import TauCeti.Topology.FiberBundle.Trivialization
 public import TauCeti.Topology.Homotopy.HurewiczFibration.Numerable
 
@@ -46,6 +47,10 @@ assumption on them, and the fibre `F`, total space `E`, and base `B` may lie in 
   trivial map is a Hurewicz fibration.
 * `FiberBundle.hasHomotopyLiftingProperty_proj` and `FiberBundle.isHurewiczFibration_proj`: over a
   normal paracompact base, the projection of a fibre bundle is a Hurewicz fibration.
+* `MulActionHom.isHurewiczFibration_orbitRelQuotient_of_exists_trivialization` and
+  `MulActionHom.hasHomotopyLiftingProperty_orbitRelQuotient_of_exists_trivialization`: the descent
+  of a locally trivial equivariant map along a quotient covering over a normal paracompact base is a
+  Hurewicz fibration.
 
 ## References
 
@@ -174,3 +179,30 @@ theorem isHurewiczFibration_proj [NormalSpace B] [ParacompactSpace B] :
     (exists_trivialization_mem_baseSet F E)
 
 end FiberBundle
+
+namespace MulActionHom
+
+variable {G : Type*} {X : Type u} {Y : Type*} {Z : Type v} {F : Type uF} [Group G] [MulAction G X]
+  [MulAction G Y] [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+  [TopologicalSpace F] [ContinuousConstSMul G X] (p : X →[G] Y) (β : Y → Z)
+  (f : MulAction.orbitRel.Quotient G X → Z) (hf : ∀ x, f (Quotient.mk _ x) = β (p x))
+include hf
+
+/-- Descending a locally trivial `G`-equivariant map along a quotient covering over a normal
+paracompact base yields a Hurewicz fibration. -/
+theorem isHurewiczFibration_orbitRelQuotient_of_exists_trivialization [NormalSpace Z]
+    [ParacompactSpace Z] (hβ : IsQuotientCoveringMap β G)
+    (htriv : ∀ y, ∃ e : Trivialization F p, y ∈ e.baseSet) : TauCeti.IsHurewiczFibration.{w} f :=
+  TauCeti.isHurewiczFibration_of_exists_trivialization
+    (p.exists_orbitRelQuotientTrivialization β f hf hβ htriv)
+
+/-- Descending a locally trivial `G`-equivariant map along a quotient covering over a normal
+paracompact base satisfies the homotopy lifting property for every space `A`. -/
+theorem hasHomotopyLiftingProperty_orbitRelQuotient_of_exists_trivialization [NormalSpace Z]
+    [ParacompactSpace Z] (hβ : IsQuotientCoveringMap β G)
+    (htriv : ∀ y, ∃ e : Trivialization F p, y ∈ e.baseSet) (A : Type w) [TopologicalSpace A] :
+    TauCeti.HasHomotopyLiftingProperty f A :=
+  (p.isHurewiczFibration_orbitRelQuotient_of_exists_trivialization β f hf hβ htriv
+    |>.hasHomotopyLiftingProperty A)
+
+end MulActionHom

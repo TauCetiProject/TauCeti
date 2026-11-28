@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
+public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.HomotopyInvariance
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Basic
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
-public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
-public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.Topology.Category.TopPair
+public import TauCeti.Topology.Homotopy.Homotopic.Translation
 
 /-!
 # Homotopy invariance of relative singular homology
@@ -27,7 +28,9 @@ deformation retracts onto `s` the relative homology of `(t, s)` vanishes
 from the identity into `s` keeps `s` inside `s`
 (`TopPair.isZero_singularHomology_ofSubset_of_homotopy`).  In the absolute
 case, homotopic maps induce the same map on singular homology
-(`ContinuousMap.Homotopic.homologyMap_eq`) and a homotopy equivalence of spaces induces an
+(`ContinuousMap.Homotopic.homologyMap_eq`), right multiplication in a path-connected topological
+monoid acts trivially on it (`ContinuousMap.singularHomologyMap_mulRight`,
+`ContinuousMap.singularHomologyMap_addRight`), and a homotopy equivalence of spaces induces an
 isomorphism on it (`ContinuousMap.HomotopyEquiv.singularHomologyIso`), so by the five lemma a map
 of pairs which is a homotopy equivalence on both spaces induces isomorphisms on relative singular
 homology (`TopPair.isIso_singularHomologyMap_of_homotopyEquiv`). In particular, if `j : s → X` is
@@ -354,5 +357,27 @@ theorem HomotopyEquiv.bijective_singularHomologyMap {Y Z : Type w}
     [TopologicalSpace Y] [TopologicalSpace Z]
     (e : ContinuousMap.HomotopyEquiv Y Z) : Function.Bijective (singularHomologyMap k n e.toFun) :=
   ConcreteCategory.bijective_of_isIso (e.singularHomologyIso (ModuleCat.of k k) n).hom
+
+variable {k n} in
+/-- Right multiplication by an element joined to `1` acts trivially on singular homology. -/
+@[to_additive (dont_translate := k)
+  /-- Right addition by an element joined to `0` acts trivially on singular homology. -/]
+theorem singularHomologyMap_mulRight_of_joined {G : Type w} [TopologicalSpace G] [MulOneClass G]
+    [ContinuousMul G] {g : G} (h : Joined 1 g)
+    (x : ((singularChains k).obj (TopCat.of G)).homology n) :
+    singularHomologyMap k n (ContinuousMap.mulRight g) x = x := by
+  rw [singularHomologyMap_eq_of_homotopic k n h.homotopic_id_mulRight.symm, singularHomologyMap_id]
+
+variable {k n} in
+/-- In a path-connected topological monoid, right multiplication acts trivially on singular
+homology. -/
+@[to_additive (dont_translate := k) (attr := simp)
+  /-- In a path-connected additive topological monoid, right addition acts trivially on singular
+  homology. -/]
+theorem singularHomologyMap_mulRight {G : Type w} [TopologicalSpace G] [MulOneClass G]
+    [ContinuousMul G] [PathConnectedSpace G] (g : G)
+    (x : ((singularChains k).obj (TopCat.of G)).homology n) :
+    singularHomologyMap k n (ContinuousMap.mulRight g) x = x :=
+  singularHomologyMap_mulRight_of_joined (PathConnectedSpace.joined 1 g) x
 
 end ContinuousMap

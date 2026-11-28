@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.ULift
 public import Mathlib.Algebra.Ring.Int.Units
 public import Mathlib.SetTheory.Cardinal.Finite
+public import Mathlib.Topology.Category.TopCat.Basic
 public import Mathlib.Topology.Covering.Quotient
 import TauCeti.Topology.Covering.Proper
 
@@ -88,6 +89,8 @@ Neither normality nor a separation axiom is needed.
   preimage of a subset of the base is a quotient covering map onto that subset.
 * `AddSubgroup.isAddQuotientCoveringMap_quotientMk`: the orbit projection for translation by a
   discrete additive subgroup is a quotient covering map.
+* `IsQuotientCoveringMap.topCat_ofHom`: packaging a quotient covering map via `TopCat.ofHom`
+  preserves `IsQuotientCoveringMap`.
 
 ## Implementation notes
 
@@ -423,3 +426,17 @@ theorem AddSubgroup.isAddQuotientCoveringMap_quotientMk {E : Type*} [AddGroup E]
   isQuotientMap_quotient_mk'.isAddQuotientCoveringMap_of_addSubgroup L
     (isDiscrete_iff_discreteTopology.2 ‹_›) fun {_ _} ↦
       Quotient.eq.trans QuotientAddGroup.rightRel_apply
+
+section TopCat
+
+universe u
+
+/-- Packaging a quotient covering map `β : Y → Z` via `TopCat.ofHom` preserves
+`IsQuotientCoveringMap`, since `(TopCat.ofHom ⟨β, hβ.continuous⟩ : TopCat.of Y → TopCat.of Z)` is
+definitionally `β`. -/
+theorem IsQuotientCoveringMap.topCat_ofHom {Y Z : Type u} {G : Type*} [TopologicalSpace Y]
+    [TopologicalSpace Z] [Group G] [MulAction G Y] {β : Y → Z} (hβ : IsQuotientCoveringMap β G) :
+    IsQuotientCoveringMap (TopCat.ofHom ⟨β, hβ.continuous⟩) G :=
+  hβ
+
+end TopCat

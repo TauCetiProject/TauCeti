@@ -14,11 +14,15 @@ public import Mathlib.RepresentationTheory.Intertwining
 
 This file equips each exterior power of a representation with the induced diagonal action.
 Intertwining maps and equivalences pass functorially to exterior powers, and the zeroth and first
-exterior powers recover the trivial and original representations.
+exterior powers recover the trivial and original representations
+(`Representation.exteriorPowerZeroEquiv`, `Representation.exteriorPowerOneEquiv`, and the
+pointwise equivariance law `Representation.oneEquiv_exteriorPower_apply`).
 
 ## Main definitions
 
-* `Representation.exteriorPower` is the induced action on `⋀[R]^d M`.
+* `Representation.exteriorPower` is the induced action on `⋀[R]^d M`, commuting with restriction
+  along a monoid homomorphism (`Representation.exteriorPower_comp`,
+  `Representation.exteriorPowerCompEquiv`).
 * `IntertwiningMap.exteriorPower` is the induced map between exterior-power representations.
 * `Representation.Equiv.exteriorPower` is the induced equivalence.
 
@@ -91,6 +95,58 @@ with the module itself. -/
 theorem exteriorPowerOneEquiv_toLinearEquiv (ρ : Representation R G M) :
     ρ.exteriorPowerOneEquiv.toLinearEquiv = _root_.exteriorPower.oneEquiv R M :=
   (rfl)
+
+/-- Applying `Representation.exteriorPowerOneEquiv` evaluates `exteriorPower.oneEquiv`. -/
+@[simp] theorem exteriorPowerOneEquiv_apply (ρ : Representation R G M) (x : ⋀[R]^1 M) :
+    ρ.exteriorPowerOneEquiv x = _root_.exteriorPower.oneEquiv R M x := (rfl)
+
+/-- `Representation.exteriorPowerOneEquiv.symm` evaluates `(exteriorPower.oneEquiv R M).symm`. -/
+@[simp] theorem exteriorPowerOneEquiv_symm_apply (ρ : Representation R G M) (x : M) :
+    ρ.exteriorPowerOneEquiv.symm x = (_root_.exteriorPower.oneEquiv R M).symm x := (rfl)
+
+/-- `Representation.exteriorPowerOneEquiv.toLinearMap` is `(exteriorPower.oneEquiv).toLinearMap`. -/
+@[simp] theorem exteriorPowerOneEquiv_toLinearMap (ρ : Representation R G M) :
+    ρ.exteriorPowerOneEquiv.toLinearMap = (_root_.exteriorPower.oneEquiv R M).toLinearMap := (rfl)
+
+/-- `exteriorPower.oneEquiv` intertwines the first exterior-power action `ρ.exteriorPower 1` with
+`ρ` pointwise.
+
+This is intentionally not a simp lemma: `exteriorPower_apply` simplifies `ρ.exteriorPower 1 g` on
+the left-hand side. -/
+theorem oneEquiv_exteriorPower_apply (ρ : Representation R G M) (g : G) (x : ⋀[R]^1 M) :
+    _root_.exteriorPower.oneEquiv R M (ρ.exteriorPower 1 g x) =
+      ρ g (_root_.exteriorPower.oneEquiv R M x) :=
+  LinearMap.congr_fun (_root_.exteriorPower.oneEquiv_naturality (ρ g)) x
+
+/-- Restricting a representation along a monoid homomorphism commutes with exterior powers. -/
+@[simp] theorem exteriorPower_comp {H : Type*} [Monoid H] (ρ : Representation R G M) (f : H →* G)
+    (d : ℕ) : Representation.exteriorPower (ρ.comp f) d = (ρ.exteriorPower d).comp f := by
+  ext; simp
+
+/-- The `H`-equivariant identity equivalence between the `d`th exterior power of `ρ.comp f` and the
+restriction of `ρ.exteriorPower d` along `f : H →* G`. -/
+noncomputable def exteriorPowerCompEquiv {H : Type*} [Monoid H] (ρ : Representation R G M)
+    (f : H →* G) (d : ℕ) :
+    (Representation.exteriorPower (ρ.comp f) d).Equiv ((ρ.exteriorPower d).comp f) :=
+  .mk (.refl R (⋀[R]^d M)) fun _ ↦ by ext; simp
+
+/-- The underlying linear equivalence of `Representation.exteriorPowerCompEquiv` is the identity. -/
+@[simp] theorem exteriorPowerCompEquiv_toLinearEquiv {H : Type*} [Monoid H]
+    (ρ : Representation R G M) (f : H →* G) (d : ℕ) :
+    (ρ.exteriorPowerCompEquiv f d).toLinearEquiv = LinearEquiv.refl R (⋀[R]^d M) := (rfl)
+
+/-- `Representation.exteriorPowerCompEquiv` is pointwise the identity on `⋀[R]^d M`. -/
+@[simp] theorem exteriorPowerCompEquiv_apply {H : Type*} [Monoid H] (ρ : Representation R G M)
+    (f : H →* G) (d : ℕ) (x : ⋀[R]^d M) : ρ.exteriorPowerCompEquiv f d x = x := (rfl)
+
+/-- `Representation.exteriorPowerCompEquiv.symm` is pointwise the identity on `⋀[R]^d M`. -/
+@[simp] theorem exteriorPowerCompEquiv_symm_apply {H : Type*} [Monoid H] (ρ : Representation R G M)
+    (f : H →* G) (d : ℕ) (x : ⋀[R]^d M) : (ρ.exteriorPowerCompEquiv f d).symm x = x := (rfl)
+
+/-- The underlying linear map of `Representation.exteriorPowerCompEquiv` is `LinearMap.id`. -/
+@[simp] theorem exteriorPowerCompEquiv_toLinearMap {H : Type*} [Monoid H]
+    (ρ : Representation R G M) (f : H →* G) (d : ℕ) :
+    (ρ.exteriorPowerCompEquiv f d).toLinearMap = LinearMap.id := (rfl)
 
 end CommRing
 
