@@ -8,9 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Bott.MappingTorus.Basic
 public import TauCeti.Geometry.Manifold.Morse.Bott.NormalSubbundle
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
-import TauCeti.Geometry.Manifold.Instances.MappingTorus.Vertical
-import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Quotient
-import TauCeti.Topology.FiberBundle.Pullback
+import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit.NormalOrientation
 
 /-!
 # Monodromy of the negative normal bundle of a critical circle in a mapping torus
@@ -37,9 +35,11 @@ circle, depending continuously on `t`. The identification `[1, y] = [0, φ y]` c
 opposite. The continuous path of orientations then ends at the opposite of its start, which no
 orientation of `ν⁻` allows (`TauCeti.VectorBundleOrientation.isEmpty_of_continuous_basis`).
 
-Only the negative space at the single point `x` enters, not the whole normal bundle: in the
-mapping torus of `S² × S¹` by a pair of reflections, `dφₓ` reverses the negative plane of the
-circle `(N, π)` while preserving the orientation of its whole normal space
+Only the negative space at the single point `x` enters, not the whole normal bundle, which is
+orientable exactly when `det dφₓ > 0`
+(`TauCeti.SmoothMappingTorus.nonempty_vectorBundleOrientation_normalSpace_iff`): in the mapping
+torus of `S² × S¹` by a pair of reflections, `dφₓ` reverses the negative plane of the circle
+`(N, π)` while preserving the orientation of its whole normal space
 (`TauCeti.Geometry.Manifold.Morse.Bott.Examples.SphereCircle`).
 
 ## Main results
@@ -48,9 +48,6 @@ circle `(N, π)` while preserving the orientation of its whole normal space
   `dφₓ` acts with negative determinant on a space of directions of dimension the Morse index on
   which the Hessian of `h` is negative definite, the negative normal bundle of the critical circle
   through `x` is not orientable, for every `C^k` fibre metric.
-* `TauCeti.SmoothMappingTorus.continuous_normalClass_mfderiv_mk`: the normal classes of the
-  vertical vectors `d[t, ·]ₓ w` along a circle `t ↦ [t, x]` form a continuous path in its normal
-  bundle.
 
 ## References
 
@@ -75,26 +72,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 variable [FiniteDimensional ℝ E] (hn : (∞ : ℕ∞ω) ≠ 0)
   {c : SmoothEmbedding 𝓘(ℝ) (𝓘(ℝ).prod I) ∞ (AddCircle ((1 : ℕ) : ℝ)) (SmoothMappingTorus φ)}
-
-/-- The normal classes of the vertical vectors `d[t, ·]ₓ w` at the points `c t = [t, x]` of a
-circle `c` form a continuous path in the normal bundle of `c`. -/
-theorem continuous_normalClass_mfderiv_mk (hc : ∀ t : ℝ, c t = mk φ t x)
-    {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
-    (hdim : finrank ℝ P = finrank ℝ (ℝ × E) - finrank ℝ ℝ) (w : TangentSpace I x) :
-    letI := c.normalSpaceFiberBundle hn hdim
-    Continuous fun t : ℝ ↦ (⟨(t : AddCircle ((1 : ℕ) : ℝ)),
-      c.isImmersion.normalClass t hn (mfderiv I (𝓘(ℝ).prod I) (mk φ t) x w)⟩ :
-      TotalSpace P fun s ↦ c.isImmersion.NormalSpace s hn) := by
-  let := c.normalSpaceFiberBundle hn hdim
-  -- The vertical vectors form a continuous path in the pulled-back tangent bundle.
-  have hq : Continuous fun t : ℝ ↦ (⟨(t : AddCircle ((1 : ℕ) : ℝ)),
-      mfderiv I (𝓘(ℝ).prod I) (mk φ t) x w⟩ :
-        TotalSpace (ℝ × E) (⇑c *ᵖ (TangentSpace (𝓘(ℝ).prod I)))) :=
-    Pullback.continuous_iff.2 ⟨AddCircle.continuous_mk' (p := ((1 : ℕ) : ℝ)),
-      (continuous_mfderiv_mk φ x w).congr fun t ↦ TotalSpace.ext (hc t).symm HEq.rfl⟩
-  refine ((c.contMDiff_normalQuotientMap hn (m := 0) (by simp) hdim).continuous.comp hq).congr
-    fun t ↦ ?_
-  rw [Function.comp_apply, SmoothEmbedding.normalQuotientMap_apply]
 
 variable [I.Boundaryless]
 
@@ -128,19 +105,13 @@ private theorem totalSpaceMk_negativeNormalProjection_one {f : SmoothMappingToru
       ⟨((0 : ℝ) : AddCircle ((1 : ℕ) : ℝ)), ⟨hs.negativeNormalProjection hn g _
         (c.isImmersion.normalClass _ hn (mfderiv I (𝓘(ℝ).prod I) (mk φ 0) x w')), hu'⟩⟩ := by
   -- `x` is fixed by `φ`, since `[1, x] = c 1 = c 0 = [0, x]`, so `d[1, ·]ₓ w = d[0, ·]ₓ w'`.
-  have hx : φ x = x := (mk_add_one_eq_mk_iff φ 0 x).1 (by
-    rw [zero_add, ← hc, ← hc]
-    exact congrArg c (by simp))
+  have hx : φ x = x := apply_eq_of_forall_eq_mk hc
   have hvec : mfderiv I (𝓘(ℝ).prod I) (mk φ 1) x w = mfderiv I (𝓘(ℝ).prod I) (mk φ 0) x w' := by
     rw [← hw, ← mfderiv_mk_add_one_of_apply_eq φ (by simp) hx, zero_add]
   -- Projected normal classes over equal points of the circle with the same representative agree.
-  have hmk {s s' : AddCircle ((1 : ℕ) : ℝ)} (hss : s = s') (u : ℝ × E) (hu hu') :
-      (⟨s, ⟨hs.negativeNormalProjection hn g s (c.isImmersion.normalClass s hn u), hu⟩⟩ :
-        TotalSpace F' fun s ↦ hs.negativeNormalSpace hn g s) =
-        ⟨s', ⟨hs.negativeNormalProjection hn g s' (c.isImmersion.normalClass s' hn u), hu'⟩⟩ := by
-    subst hss
-    rfl
-  exact (hmk (by simp) _ hu (hs.negativeNormalProjection_apply_mem hn _ _)).trans
+  exact (congrArg (fun s ↦ (⟨s, ⟨hs.negativeNormalProjection hn g s (c.isImmersion.normalClass s hn
+    (mfderiv I (𝓘(ℝ).prod I) (mk φ 1) x w)), hs.negativeNormalProjection_apply_mem hn _ _⟩⟩ :
+      TotalSpace F' fun s ↦ hs.negativeNormalSpace hn g s)) (by simp)).trans
     (congrArg (TotalSpace.mk _) (Subtype.ext
       (congrArg (fun u ↦ hs.negativeNormalProjection hn g _ (c.isImmersion.normalClass _ hn u))
         hvec)))

@@ -13,6 +13,7 @@ import Mathlib.Tactic.Module
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Fredholm.Basic
 import TauCeti.Analysis.Fredholm.CompactPerturbation
+import TauCeti.Analysis.Normed.Operator.LinearPMap.CommonDomain.Spectrum
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -38,9 +39,10 @@ multiple of a compact perturbation of the identity when `ι` is compact, hence F
 (`ContinuousLinearMap.shiftedResolventTransform_apply_of_apply_eq_smul`). The full spectral
 correspondence is proved here only for the eigenvalue `0`: at a shift `c ≠ 0` with `c ι - A`
 invertible, the kernel of `τ_c A` is the image under `ι` of the kernel of `A`
-(`ContinuousLinearMap.ker_shiftedResolventTransform`). The function `λ ↦ c λ / (c - λ)` fixes `0`
-and has derivative `1` there. Along a real path `A` with derivative `A'` at `t₀`, the transforms
-have derivative `c² ι R A' R` at `t₀`, for `R = (c ι - A t₀)⁻¹`
+(`ContinuousLinearMap.ker_shiftedResolventTransform`), of the same dimension
+(`ContinuousLinearMap.finrank_ker_shiftedResolventTransform`). The function
+`λ ↦ c λ / (c - λ)` fixes `0` and has derivative `1` there. Along a real path `A` with derivative
+`A'` at `t₀`, the transforms have derivative `c² ι R A' R` at `t₀`, for `R = (c ι - A t₀)⁻¹`
 (`HasDerivAt.shiftedResolventTransform`).
 
 The shift is a choice, and a single shift need not be admissible along a whole path. The transforms
@@ -63,6 +65,10 @@ so `c` is admissible for `U A V⁻¹` exactly when it is for `A`
 (`ContinuousLinearMap.isInvertible_smul_sub_comp_comp_symm_iff`), and the transform of `U A V⁻¹`
 with respect to `ι'` is `U (τ_c A) U⁻¹`
 (`ContinuousLinearMap.shiftedResolventTransform_comp_comp_symm`).
+
+Negating the operator negates the shift: `c` is admissible for `-A` exactly when `-c` is admissible
+for `A` (`ContinuousLinearMap.isInvertible_smul_sub_neg_iff`), and `τ_c (-A) = -τ_{-c} A`
+(`ContinuousLinearMap.shiftedResolventTransform_neg`).
 
 ## References
 
@@ -126,6 +132,27 @@ theorem shiftedResolventTransform_eq_sub (h : ((c : 𝕜) • ι - A).IsInvertib
   simp only [sub_apply, smul_apply, comp_apply, inverse_smul_sub_apply h,
     shiftedResolventTransform_apply_sub h,
     one_apply_eq_self]
+  module
+
+/-- **The transform of the negated operator.** The shifted resolvent transform of `-A` at `c` is
+minus that of `A` at `-c`, since `c ι + A = -(-c ι - A)`. This holds for every shift: both sides
+are the junk value `0` when `c ι + A` is not invertible. -/
+@[simp]
+theorem shiftedResolventTransform_neg (ι A : D →L[𝕜] H) (c : ℝ) :
+    ι.shiftedResolventTransform (-A) c = -ι.shiftedResolventTransform A (-c) := by
+  have h : ((-c : ℝ) : 𝕜) • ι - A = (-1 : 𝕜) • ((c : 𝕜) • ι - -A) := by
+    push_cast
+    module
+  rw [shiftedResolventTransform_def, shiftedResolventTransform_def, h, inverse_smul]
+  simp only [inv_neg, inv_one, neg_smul, one_smul, comp_neg, neg_comp, smul_neg, neg_neg,
+    RCLike.ofReal_neg]
+
+/-- A shift `c` is admissible for `-A` exactly when `-c` is admissible for `A`: `c ι + A` is
+`-(-c ι - A)`. -/
+theorem isInvertible_smul_sub_neg_iff {c : 𝕜} :
+    (c • ι - -A).IsInvertible ↔ ((-c) • ι - A).IsInvertible := by
+  rw [← isInvertible_neg_iff (f := (-c) • ι - A)]
+  congr! 1
   module
 
 /-- An eigenvector `ι x` of the operator, with `A x = μ ι x`, is an eigenvector of the shifted
@@ -200,6 +227,15 @@ theorem ker_shiftedResolventTransform (h : ((c : 𝕜) • ι - A).IsInvertible)
         inv_mul_cancel₀ hc𝕜, one_smul] at hzx ⊢
       exact hzx.symm
     simp [hxz, hz]
+
+/-- At a shift `c ≠ 0` with `c ι - A` invertible, the kernel of the shifted resolvent transform has
+the dimension of the kernel of `A`: it is the image of that kernel under `ι`, and `ι` is injective
+on it, since `c ι x - A x = c ι x` there. -/
+theorem finrank_ker_shiftedResolventTransform (h : ((c : 𝕜) • ι - A).IsInvertible) (hc : c ≠ 0) :
+    Module.finrank 𝕜 (ι.shiftedResolventTransform A c).ker = Module.finrank 𝕜 A.ker := by
+  rw [ker_shiftedResolventTransform h hc, ← LinearMap.range_domRestrict]
+  exact LinearMap.finrank_range_of_inj
+    (injective_comp_subtype_ker_of_injective_smul_sub h.injective)
 
 /-- For shifts `c, c' ≠ 0` with `c ι - A` invertible, `1 + k τ_c A`, for `k = (c' - c) / (c c')`,
 is `(c / c') (c' ι - A) (c ι - A)⁻¹`. -/

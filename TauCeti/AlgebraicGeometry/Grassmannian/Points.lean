@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Cover.Open
 public import TauCeti.AlgebraicGeometry.Grassmannian.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.AffinePoints
+public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 public import TauCeti.RingTheory.Grassmannian.Chart.Locus
 public import TauCeti.RingTheory.Grassmannian.Localization
 import Mathlib.AlgebraicGeometry.ResidueField
@@ -42,6 +43,8 @@ Consequently, a map on points natural in the algebra is induced by a morphism of
   morphisms `Spec A ⟶ G(k, M)` over `Spec R`.
 * `Module.Grassmannian.homOfPoints F hF`: the morphism out of `G(k, M)` given on points by a
   family of maps `F` natural in the algebra.
+* `Module.Grassmannian.sectionsPoint f hf hU`: the point of `G(k, Γ(X, U) ⊗[R] M)` classified by
+  the restriction of a morphism `f : X ⟶ G(k, M)` to an affine open `U` of `X`.
 
 ## Main results
 
@@ -53,6 +56,8 @@ Consequently, a map on points natural in the algebra is induced by a morphism of
 * `Module.Grassmannian.toSchemeHom_chartHomEquiv_id`: `chartι R x` classifies the universal point
   of `ChartAlgebra R x`.
 * `Module.Grassmannian.toSchemeHom_map`: naturality of `toSchemeHom` in the algebra.
+* `Module.Grassmannian.map_sectionsPoint`: the points classified by the restrictions of a
+  morphism to nested affine opens are related by restriction of functions.
 * `Module.Grassmannian.toSchemeHom_injective` and `Module.Grassmannian.exists_toSchemeHom_eq`:
   every morphism over `Spec R` classifies a unique point.
 * `Module.Grassmannian.toSchemeHom_apply_mem_opensRange_chartι_iff`: a field-valued point lies in
@@ -486,6 +491,46 @@ theorem toSchemeHom_schemeHomEquiv_symm_apply
       h ≫ toSpec R M k = Spec.map (CommRingCat.ofHom (algebraMap R A))}) :
     toSchemeHom ((schemeHomEquiv R M k A).symm h) = h.val :=
   congrArg Subtype.val ((schemeHomEquiv R M k A).apply_symm_apply h)
+
+section SectionsPoint
+
+variable {X : Scheme.{u}} {π : X ⟶ Spec (.of R)} (f : X ⟶ scheme R M k)
+  (hf : f ≫ toSpec R M k = π)
+
+/-- The point of `G(k, Γ(X, U) ⊗[R] M)` classified by the restriction
+`Spec Γ(X, U) ⟶ X ⟶ G(k, M)` of a morphism `f` over `Spec R` to an affine open `U` of `X`, for the
+`R`-algebra structure on `Γ(X, U)` induced by the structure morphism `π = f ≫ toSpec R M k`. -/
+noncomputable def sectionsPoint {U : X.Opens} (hU : IsAffineOpen U) :
+    letI := π.sectionsAlgebra U
+    G(k, Γ(X, U) ⊗[R] M; Γ(X, U)) :=
+  letI := π.sectionsAlgebra U
+  (schemeHomEquiv R M k Γ(X, U)).symm
+    ⟨hU.fromSpec ≫ f, by rw [Category.assoc, hf, π.fromSpec_toSpec hU]⟩
+
+/-- **The point `sectionsPoint f hf hU` classifies the restriction of `f` to `U`.** -/
+@[simp]
+theorem toSchemeHom_sectionsPoint {U : X.Opens} (hU : IsAffineOpen U) :
+    letI := π.sectionsAlgebra U
+    toSchemeHom (sectionsPoint f hf hU) = hU.fromSpec ≫ f :=
+  letI := π.sectionsAlgebra U
+  toSchemeHom_schemeHomEquiv_symm_apply _
+
+/-- **The points classified by the restrictions of `f` are compatible with restriction.** For
+affine opens `V ≤ U` of `X`, the point classified by `V` is the base change of the point
+classified by `U` along restriction of functions. -/
+theorem map_sectionsPoint {U V : X.Opens} (hU : IsAffineOpen U) (hV : IsAffineOpen V)
+    (h : V ≤ U) :
+    letI := π.sectionsAlgebra U
+    letI := π.sectionsAlgebra V
+    map (π.resₐ h) (sectionsPoint f hf hU) = sectionsPoint f hf hV := by
+  let := π.sectionsAlgebra U
+  let := π.sectionsAlgebra V
+  refine toSchemeHom_injective ?_
+  rw [toSchemeHom_map, ← AlgHom.toRingHom_eq_coe, Scheme.Hom.resₐ_toRingHom,
+    CommRingCat.ofHom_hom, toSchemeHom_sectionsPoint, toSchemeHom_sectionsPoint]
+  exact hU.map_fromSpec_assoc hV (homOfLE h).op f
+
+end SectionsPoint
 
 section FieldPoints
 

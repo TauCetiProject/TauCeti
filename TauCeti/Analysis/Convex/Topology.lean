@@ -39,11 +39,16 @@ topological additive group, the convex join of any two compact sets is compact
 given point `y`, the union of the segments from `y` to `y` and to the points of `K`
 (`TopologicalSpace.Compacts.starHull`). For an inducing map `j : U → E` whose range is star-convex
 about `y ∈ range j`, the preimages of these star hulls are cofinal among the compact subsets of `U`
-(`Topology.IsInducing.exists_compacts_le_starConvex_image`). Over a linearly ordered field with
-compact closed intervals (`CompactIccSpace`), in a topological vector space, the convex hull of a
-finite union of sets with compact convex hulls is compact (`TauCeti.isCompact_convexHull_union`,
-`Finset.isCompact_convexHull_biUnion`), although the convex hull of a single compact set need not
-be in infinite dimension.
+(`Topology.IsInducing.exists_compacts_le_starConvex_image`). By
+`TauCeti.isCompact_convexHull_union`, over a linearly ordered field with compact closed intervals
+(`CompactIccSpace`), adjoining a point to a compact convex set keeps its convex hull compact
+without finite-dimensionality, so in a Hausdorff space the closed convex hull of `insert x s` lies
+in any set containing `x` and star-convex about every point of a compact convex superset of `s`
+(`IsCompact.closure_convexHull_insert_subset_of_forall_starConvex`). Over a linearly ordered field
+with compact closed intervals (`CompactIccSpace`), in a topological vector space, the
+convex hull of a finite union of sets with compact convex hulls is compact
+(`TauCeti.isCompact_convexHull_union`, `Finset.isCompact_convexHull_biUnion`), although the convex
+hull of a single compact set need not be in infinite dimension.
 -/
 
 public section
@@ -234,6 +239,24 @@ theorem Finset.isCompact_convexHull_biUnion {ι : Type*} (s : Finset ι) {t : ι
       (ih fun j hj ↦ ht j (Finset.mem_insert_of_mem hj))
 
 end ConvexHullUnion
+
+/-- In a Hausdorff topological vector space over a linearly ordered field with compact closed
+intervals (`CompactIccSpace`), if `s` is contained in a compact convex set `K`, `x ∈ t`, and `t` is
+star-convex about every point of `K`, then the closure of the convex hull of `insert x s` lies in
+`t`. -/
+theorem IsCompact.closure_convexHull_insert_subset_of_forall_starConvex {𝕜 E : Type*}
+    [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [TopologicalSpace 𝕜]
+    [CompactIccSpace 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [T2Space E]
+    [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] {s K t : Set E} {x : E}
+    (hK : IsCompact K) (hKc : Convex 𝕜 K) (hsK : s ⊆ K) (hx : x ∈ t)
+    (h : ∀ y ∈ K, StarConvex 𝕜 y t) :
+    closure (convexHull 𝕜 (insert x s)) ⊆ t :=
+  (closure_minimal (convexHull_mono (insert_subset_insert hsK))
+    (by
+      rw [Set.insert_eq]
+      exact (TauCeti.isCompact_convexHull_union (by simp)
+        (by rwa [hKc.convexHull_eq])).isClosed)).trans
+    (hKc.convexHull_insert_subset_of_forall_starConvex hx h)
 
 namespace TopologicalSpace.Compacts
 

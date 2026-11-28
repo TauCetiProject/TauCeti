@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.ConstantField
-public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 public import TauCeti.AlgebraicGeometry.SpecialFiber.Components
 public import TauCeti.AlgebraicGeometry.SpecialFiber.Subscheme
 
@@ -20,7 +19,7 @@ scheme proper over `k`, so its global functions form a field
 `κ_C = H⁰(C, 𝒪_C)`, the **constant field** of `C`
 (`AlgebraicGeometry.Scheme.isField_globalSections_of_isReduced_of_connectedSpace`). The numerical
 type of a regular model ([Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z) and
-[Section 55.9](https://stacks.math.columbia.edu/tag/0C9U)) attaches to the component `C` its
+[Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y)) attaches to the component `C` its
 **weight** and its **genus**,
 
 `w_C = [κ_C : k] = dim_k H⁰(C, 𝒪_C)` and `g_C = dim_{κ_C} H¹(C, 𝒪_C)`,
@@ -33,7 +32,7 @@ it is positive when `H⁰(C, 𝒪_C)` is finite-dimensional over `k`, and that t
 field, `AlgebraicGeometry.Scheme.Modules.finrank_cohomology_eq_finrank_cohomology_zero_trivial_mul`.
 That the weight `wᵢ` of the `i`-th component divides the `i`-th row of the intersection matrix is
 `AlgebraicGeometry.Scheme.Hom.specialFiberWeight_dvd_specialFiberIntersectionMatrix`, in
-`TauCeti.AlgebraicGeometry.IntersectionNumber.Weight`.
+`TauCeti.AlgebraicGeometry.IntersectionNumber.Weight.Matrix`.
 
 ## Main declarations
 
@@ -52,8 +51,8 @@ That the weight `wᵢ` of the `i`-th component divides the `i`-th row of the int
 
 ## References
 
-* [The Stacks Project, Section 55.8](https://stacks.math.columbia.edu/tag/0C6Y) and
-  [Section 55.9](https://stacks.math.columbia.edu/tag/0C9U), for the weights and genera of the
+* [The Stacks Project, Section 55.3](https://stacks.math.columbia.edu/tag/0C6Y) and
+  [Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y), for the weights and genera of the
   components of the numerical type of a regular model.
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 9.1.
 -/

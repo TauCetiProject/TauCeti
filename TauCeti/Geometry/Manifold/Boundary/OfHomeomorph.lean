@@ -25,7 +25,7 @@ The construction also takes a map `π : H → F` extending `φ`, so that the cha
 their domain through `π`, without a membership proof. The charts themselves are built with
 `OpenPartialHomeomorph.subtypeCoord`. The boundary charted spaces `TauCeti.boundaryChartedSpace`
 in `TauCeti/Geometry/Manifold/Boundary/Charts.lean`, `TauCeti.halfSpaceBoundaryChartedSpace` in
-`TauCeti/Geometry/Manifold/Boundary/ProductHalfSpace.lean` and
+`TauCeti/Geometry/Manifold/Boundary/ProductHalfSpace/Basic.lean` and
 `TauCeti.euclideanQuadrantBoundaryChartedSpace` in `TauCeti/Geometry/Manifold/Corners/Boundary.lean`
 are instances of this construction.
 

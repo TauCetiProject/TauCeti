@@ -11,6 +11,8 @@ public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Dynamics.Ergodic.Action.Basic
 public import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Dynamics.Ergodic.Action.Eigenfunction
+import TauCeti.Dynamics.Ergodic.Action.Factor
+import TauCeti.Dynamics.Ergodic.Action.WeakMixing.Product
 
 /-!
 # Checks: eigenfunctions of actions of `ℝ`
@@ -20,11 +22,11 @@ Checks for the eigenfunction criterion of weak mixing
 for `f : X → ℂ` and `a ∈ ℝ` reads `f(t +ᵥ x) = exp(2πiat) f(x)` for almost every `x`, for every
 `t`.
 
-It also gives counterexamples for the *multiplier property* of weak mixing: for
+It also gives counterexamples and instances of the *multiplier property* of weak mixing: for
 measure-preserving actions of `ℝ` on probability spaces `X` and `Y`, if the action on `X` is
 weakly mixing and the action on `Y` is ergodic, then the diagonal action
-`t +ᵥ (x, y) = (t +ᵥ x, t +ᵥ y)` on `X × Y` is ergodic. Each counterexample drops one of the two
-hypotheses and the conclusion fails.
+`t +ᵥ (x, y) = (t +ᵥ x, t +ᵥ y)` on `X × Y` is ergodic. Each of the two counterexamples drops
+one of the two hypotheses and the conclusion fails; the instance with `X` one point satisfies both.
 
 * **Constants and zero.** The zero function satisfies the equation for every `a`, and a constant
   function for `a = 0`; both are almost everywhere constant, so the criterion's quantification
@@ -42,6 +44,11 @@ hypotheses and the conclusion fails.
   action is weakly mixing, and `Y` the two-point space with the trivial action and the uniform
   measure, which is not ergodic. The diagonal action on `X × Y` is not ergodic:
   `univ ×ˢ {y}` is invariant of measure `1/2` for either point `y`.
+* **The multiplier property with `X` one point.** The one-point space is weakly mixing, the
+  correlation `∫ conj(f₁) (f₂ ∘ (t +ᵥ ·))` on it is the constant `(∫ f₂) conj(∫ f₁)` for every `t`,
+  and the diagonal action on `X × Y` is ergodic exactly when the action on `Y` is: the multiplier
+  property gives one direction, and the other holds because ergodicity passes to the factor
+  `Prod.snd`.
 -/
 
 public section
@@ -112,6 +119,18 @@ instance instAddActionSinglePoint : AddAction ℝ SinglePoint where
 
 /-- The action of `ℝ` on the one-point space is trivial. -/
 theorem SinglePoint.vadd_eq (t : ℝ) (x : SinglePoint) : t +ᵥ x = x := rfl
+
+instance instSubsingletonSinglePoint : Subsingleton SinglePoint :=
+  inferInstanceAs (Subsingleton Unit)
+
+/-- The trivial action of `ℝ` on the one-point space is jointly measurable. -/
+instance instMeasurableVAdd₂SinglePoint : MeasurableVAdd₂ ℝ SinglePoint where
+  measurable_vadd := measurable_snd
+
+/-- The Dirac measure at the point is invariant under the trivial action. -/
+instance instVAddInvariantMeasureSinglePoint :
+    VAddInvariantMeasure ℝ SinglePoint (dirac SinglePoint.pt) where
+  measure_preimage_vadd _ _ _ := rfl
 
 /-- On the one-point probability space, `f = 1` satisfies the eigenfunction equation exactly for
 `a = 0`. -/
@@ -192,5 +211,39 @@ theorem not_ergodicVAdd_singlePoint_prod_twoPoint :
   · have h₂ := measure_eq_zero_iff_ae_notMem.2 h₁
     rw [prod_pointSet] at h₂
     norm_num at h₂
+
+/-! ### The multiplier property with `X` one point -/
+
+/-- The one-point space is weakly mixing for its Dirac measure. -/
+theorem isWeaklyMixing_dirac_singlePoint : (dirac SinglePoint.pt).IsWeaklyMixing :=
+  isWeaklyMixing_of_subsingleton
+
+/-- On the one-point space, the correlation `∫ conj(f₁) (f₂ ∘ (t +ᵥ ·))` equals
+`(∫ f₂) conj(∫ f₁)` for every `t`. -/
+theorem integral_conj_mul_vadd_singlePoint (f₁ f₂ : SinglePoint → ℂ) (t : ℝ) :
+    ∫ x, conj (f₁ x) * f₂ (t +ᵥ x) ∂dirac SinglePoint.pt =
+      (∫ x, f₂ x ∂dirac SinglePoint.pt) * conj (∫ x, f₁ x ∂dirac SinglePoint.pt) := by
+  simp only [integral_dirac, SinglePoint.vadd_eq]
+  ring
+
+section Multiplier
+
+variable {Y : Type*} [MeasurableSpace Y] [AddAction ℝ Y] [MeasurableVAdd₂ ℝ Y] {ν : Measure Y}
+  [IsProbabilityMeasure ν]
+
+/-- **The multiplier property with `X` one point.** The diagonal action on `X × Y`, for `X` the
+one-point space, is ergodic exactly when the action on `Y` is. -/
+theorem ergodicVAdd_singlePoint_prod_iff :
+    ErgodicVAdd ℝ (SinglePoint × Y) ((dirac SinglePoint.pt).prod ν) ↔ ErgodicVAdd ℝ Y ν :=
+  ⟨fun _ => (IsFactorMapVAdd.snd (M := ℝ) (μ := dirac SinglePoint.pt) (μ' := ν)).ergodicVAdd,
+    fun _ => isWeaklyMixing_dirac_singlePoint.ergodicVAdd_prod⟩
+
+/-- The multiplier property applied with `X` the one-point space recovers ergodicity of the
+diagonal action from ergodicity of `Y`. -/
+example [ErgodicVAdd ℝ Y ν] :
+    ErgodicVAdd ℝ (SinglePoint × Y) ((dirac SinglePoint.pt).prod ν) :=
+  isWeaklyMixing_dirac_singlePoint.ergodicVAdd_prod
+
+end Multiplier
 
 end TauCeti.Examples.Eigenfunction
