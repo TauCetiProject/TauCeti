@@ -7,7 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.Grassmannian.StableLocus
 public import TauCeti.RingTheory.Grassmannian.VaryingRank
-import TauCeti.AlgebraicGeometry.Limits.Coproduct
+public import TauCeti.AlgebraicGeometry.Scheme.LocallyConstant
+import TauCeti.AlgebraicGeometry.Limits.Sigma
 
 /-!
 # Classifying stable quotients of varying rank
@@ -37,6 +38,8 @@ public section
 universe u
 
 open CategoryTheory CategoryTheory.Limits AlgebraicGeometry TensorProduct PrimeSpectrum Submodule
+
+attribute [local instance] Module.finitePresentation_of_projective
 
 namespace Module.Grassmannian
 
@@ -88,40 +91,26 @@ theorem ι_stableQuotientRankCover (r : Fin (d + 1)) :
 include hd in
 /-- The canonical rank-factor cover is an isomorphism onto `Spec A`. -/
 theorem isIso_stableQuotientRankCover : IsIso (stableQuotientRankCover d N) := by
-  let F := fun r : Fin (d + 1) ↦ Spec (.of (quotientRankRing N r))
-  let f := RingHom.pi fun r : ULift.{u} (Fin (d + 1)) ↦
-    algebraMap A (quotientRankRing N (Equiv.ulift.{u} r : Fin (d + 1)))
-  have hf : Function.Bijective f := by
-    have h := (Equiv.piCongrLeft (fun r : Fin (d + 1) ↦ quotientRankRing N r)
-      Equiv.ulift.{u}).symm.bijective.comp (bijective_pi_quotientRankRing N hd)
-    have heq : ⇑f =
-        (Equiv.piCongrLeft (fun r : Fin (d + 1) ↦ quotientRankRing N r)
-          Equiv.ulift.{u}).symm ∘
-            (RingHom.pi fun r : Fin (d + 1) ↦ algebraMap A (quotientRankRing N r)) := by
-      funext a r
-      dsimp only [f]
-      simp only [Function.comp_apply, Equiv.piCongrLeft_symm_apply,
-        RingHom.pi_apply]
-    rwa [heq]
-  have : IsIso (Spec.map (CommRingCat.ofHom f)) := isIso_SpecMap_iff.mpr hf
-  have heq : (Sigma.reindex Equiv.ulift.{u} F).hom ≫ stableQuotientRankCover d N =
-      sigmaSpec.{u, u} (fun r : ULift.{u} (Fin (d + 1)) ↦
-        .of (quotientRankRing N (Equiv.ulift.{u} r : Fin (d + 1)))) ≫
-        Spec.map (CommRingCat.ofHom f) := by
+  let f : LocallyConstant (PrimeSpectrum A) ℕ :=
+    ⟨_, Module.isLocallyConstant_rankAtStalk (R := A) (M := P ⧸ N)⟩
+  let e : Fin (d + 1) ≃ ↥(Finset.range (d + 1)) :=
+    { toFun := fun r ↦ ⟨r, Finset.mem_range.2 r.isLt⟩
+      invFun := fun r ↦ ⟨r, Finset.mem_range.1 r.property⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl }
+  have : IsIso (f.specCover (Finset.range (d + 1))) := f.isIso_specCover _ (by
+    rintro _ ⟨p, rfl⟩
+    exact Finset.mem_range.2 (Nat.lt_succ_of_le (hd p)))
+  have heq : stableQuotientRankCover d N =
+      (Sigma.reindex e (fun r ↦ Spec (.of (f.fiberRing r)))).hom ≫
+        f.specCover (Finset.range (d + 1)) := by
     apply Sigma.hom_ext
     intro r
-    dsimp only [F]
-    rw [Sigma.ι_reindex_hom_assoc, ι_stableQuotientRankCover]
-    dsimp only [Function.comp_def]
-    rw [ι_sigmaSpec_assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    apply congrArg (fun g ↦ Spec.map (CommRingCat.ofHom g))
-    apply RingHom.ext
-    intro a
-    simp only [f, RingHom.comp_apply, Pi.evalRingHom_apply, RingHom.pi_apply]
-  have : IsIso ((Sigma.reindex Equiv.ulift.{u} F).hom ≫ stableQuotientRankCover d N) := by
-    rw [heq]
-    infer_instance
-  exact IsIso.of_isIso_comp_left (Sigma.reindex Equiv.ulift.{u} F).hom _
+    rw [ι_stableQuotientRankCover]
+    exact ((Sigma.ι_reindex_hom_assoc e (fun r ↦ Spec (.of (f.fiberRing r))) r
+      (f.specCover (Finset.range (d + 1)))).trans (f.ι_specCover _ (e r))).symm
+  rw [heq]
+  infer_instance
 
 end RankCover
 
@@ -135,10 +124,9 @@ noncomputable def stableQuotientToScheme
     (hN : N ∈ Module.End.invtSubmodule (t.baseChange A)) :
     Spec (.of A) ⟶ schemeStableLocusCoproduct d t :=
   have := isIso_stableQuotientRankCover d N hd
-  inv (stableQuotientRankCover d N) ≫ Sigma.desc fun r : Fin (d + 1) ↦
+  inv (stableQuotientRankCover d N) ≫ Limits.Sigma.map fun r : Fin (d + 1) ↦
     (schemeStableLocusHomEquiv (r : ℕ) t (quotientRankRing N r)
-      ⟨quotientRankPoint N r, quotientRankPoint_mem_invtSubmodule N hN r⟩).val ≫
-        Sigma.ι (fun r : Fin (d + 1) ↦ (schemeStableLocus (r : ℕ) t).subscheme) r
+      ⟨quotientRankPoint N r, quotientRankPoint_mem_invtSubmodule N hN r⟩).val
 
 /-- On the rank-`r` factor the classifying morphism is the native fixed-rank classifying map
 followed by the inclusion of the rank-`r` summand. -/
@@ -153,7 +141,7 @@ theorem specMap_comp_stableQuotientToScheme
   have := isIso_stableQuotientRankCover d N hd
   rw [← ι_stableQuotientRankCover d N r]
   simp only [stableQuotientToScheme, Category.assoc, IsIso.hom_inv_id_assoc,
-    Sigma.ι_comp_desc]
+    Sigma.ι_map]
 
 /-- The inverse image of the rank-`r` summand is exactly the quotient-rank-`r` fibre. -/
 @[simp]
@@ -164,23 +152,55 @@ theorem stableQuotientToScheme_preimage_range_ι
           (schemeStableLocus (r : ℕ) t).subscheme) r) =
       {p | Module.rankAtStalk ((A ⊗[R] M) ⧸ N) p = r} := by
   have := isIso_stableQuotientRankCover d N hd
+  have hpre := sigmaMap_preimage_opensRange_sigmaι
+    (fun r : Fin (d + 1) ↦
+      (schemeStableLocusHomEquiv (r : ℕ) t (quotientRankRing N r)
+        ⟨quotientRankPoint N r, quotientRankPoint_mem_invtSubmodule N hN r⟩).val) r
+  have hrange : Set.range (Sigma.ι _ r ≫ stableQuotientRankCover d N) =
+      {p | Module.rankAtStalk ((A ⊗[R] M) ⧸ N) p = r} := by
+    rw [ι_stableQuotientRankCover]
+    ext p
+    simp only [Set.mem_range, Spec.map_apply, CommRingCat.hom_ofHom]
+    exact (Set.ext_iff.mp (LocallyConstant.range_comap_fiberRing
+      ⟨_, Module.isLocallyConstant_rankAtStalk (R := A) (M := (A ⊗[R] M) ⧸ N)⟩ (r : ℕ)) p)
+  rw [← hrange]
+  rw [← Scheme.Hom.coe_opensRange, ← Scheme.Hom.coe_preimage,
+    stableQuotientToScheme, Scheme.Hom.comp_preimage, hpre, Scheme.Hom.coe_preimage,
+    Scheme.Hom.coe_opensRange]
   ext p
-  obtain ⟨x, rfl⟩ := (stableQuotientRankCover d N).surjective p
-  obtain ⟨s, x, rfl⟩ : ∃ (s : Fin (d + 1))
-      (y : Spec (.of (quotientRankRing N s))),
-        Sigma.ι (fun s : Fin (d + 1) ↦ Spec (.of (quotientRankRing N s))) s y = x :=
-    (sigmaOpenCover fun s : Fin (d + 1) ↦ Spec (.of (quotientRankRing N s))).exists_eq x
-  rw [← Scheme.Hom.comp_apply, ι_stableQuotientRankCover]
-  have hmap := congrArg (fun f ↦ f x)
-    (specMap_comp_stableQuotientToScheme d t N hd hN s)
-  simp only [Scheme.Hom.comp_apply] at hmap
-  rw [Set.mem_preimage, hmap, TauCeti.AlgebraicGeometry.sigmaι_apply_mem_range_sigmaι_iff]
-  have hrank : Module.rankAtStalk ((A ⊗[R] M) ⧸ N)
-      (Spec.map (CommRingCat.ofHom (algebraMap A (quotientRankRing N s))) x) = s := by
-    rw [Spec.map_apply, CommRingCat.hom_ofHom]
-    exact (Module.rankAtStalk_baseChange (M := (A ⊗[R] M) ⧸ N) x).symm.trans
-      (rankAtStalk_quotientRankRing_tensor_quotient N s x)
-  exact Fin.ext_iff.trans (congrArg (· = (r : ℕ)) hrank).symm.to_iff
+  constructor
+  · rintro ⟨x, hx⟩
+    refine ⟨x, ?_⟩
+    rw [Scheme.Hom.comp_apply, hx, ← Scheme.Hom.comp_apply, IsIso.inv_hom_id]
+    rfl
+  · rintro ⟨x, rfl⟩
+    refine ⟨x, ?_⟩
+    rw [Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, IsIso.hom_inv_id]
+    rfl
+
+/-- The rank-`r` factor is the scheme-theoretic pullback of the rank-`r` summand along the
+varying-rank classifying morphism. -/
+theorem isPullback_specMap_stableQuotientToScheme
+    (hN : N ∈ Module.End.invtSubmodule (t.baseChange A)) (r : Fin (d + 1)) :
+    IsPullback
+      (schemeStableLocusHomEquiv (r : ℕ) t (quotientRankRing N r)
+        ⟨quotientRankPoint N r, quotientRankPoint_mem_invtSubmodule N hN r⟩).val
+      (Spec.map (CommRingCat.ofHom (algebraMap A (quotientRankRing N r))))
+      (Sigma.ι (fun r : Fin (d + 1) ↦ (schemeStableLocus (r : ℕ) t).subscheme) r)
+      (stableQuotientToScheme d t N hd hN) := by
+  have := isIso_stableQuotientRankCover d N hd
+  have : IsOpenImmersion
+      (Spec.map (CommRingCat.ofHom (algebraMap A (quotientRankRing N r)))) := by
+    rw [← ι_stableQuotientRankCover d N r]
+    infer_instance
+  apply IsOpenImmersion.isPullback _ _ _ _
+    (specMap_comp_stableQuotientToScheme d t N hd hN r)
+  apply SetLike.coe_injective
+  simp only [Scheme.Hom.coe_preimage, Scheme.Hom.coe_opensRange,
+    stableQuotientToScheme_preimage_range_ι]
+  ext p
+  exact (Set.ext_iff.mp (LocallyConstant.range_comap_fiberRing
+    ⟨_, Module.isLocallyConstant_rankAtStalk (R := A) (M := (A ⊗[R] M) ⧸ N)⟩ (r : ℕ)) p).symm
 
 /-- The varying-rank classifying morphism lies over the ground ring. -/
 @[reassoc (attr := simp)]

@@ -5,13 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Localization.Away.Lemmas
 public import TauCeti.RingTheory.Grassmannian.StableLocus
 public import TauCeti.RingTheory.Spectrum.Prime.LocallyConstant
 public import TauCeti.RingTheory.Spectrum.Prime.Rank.Surjective
-
-import TauCeti.RingTheory.Ideal.Quotient.Operations
-import TauCeti.RingTheory.Idempotents.Prime
 
 /-!
 # Quotient Grassmannian points on the clopen rank factors
@@ -48,67 +44,19 @@ section RankFactors
 variable {P : Type*} [AddCommGroup P] [Module A P]
   (N : Submodule A P) [Module.Finite A (P ⧸ N)] [Module.Projective A (P ⧸ N)]
 
-/-- The idempotent cutting out the locus where the quotient by `N` has rank `r`. -/
-noncomputable abbrev quotientRankIdempotent (r : ℕ) : A :=
-  fiberIdempotent (Module.isLocallyConstant_rankAtStalk (R := A) (M := P ⧸ N)) r
-
 /-- The coefficient ring of the clopen locus where the quotient by `N` has rank `r`. -/
 noncomputable abbrev quotientRankRing (r : ℕ) : Type w :=
-  A ⧸ Ideal.span {(1 - quotientRankIdempotent N r)}
-
-/-- The rank-factor ring is the localization at its fibre idempotent. -/
-noncomputable instance (r : ℕ) :
-    IsLocalization.Away (quotientRankIdempotent N r) (quotientRankRing N r) :=
-  IsLocalization.Away.quotient_of_isIdempotentElem
-    (isIdempotentElem_fiberIdempotent
-      (Module.isLocallyConstant_rankAtStalk (R := A) (M := P ⧸ N)) r)
+  LocallyConstant.fiberRing
+    ⟨_, Module.isLocallyConstant_rankAtStalk (R := A) (M := P ⧸ N)⟩ r
 
 /-- Scalar extension of the quotient to its rank-`r` factor has constant stalk rank `r`. -/
 @[simp]
 theorem rankAtStalk_quotientRankRing_tensor_quotient (r : ℕ)
     (p : PrimeSpectrum (quotientRankRing N r)) :
     Module.rankAtStalk (quotientRankRing N r ⊗[A] (P ⧸ N)) p = r := by
-  have hne : quotientRankIdempotent N r ∉
-      (p.comap (algebraMap A (quotientRankRing N r))).asIdeal := by
-    simpa only [comap_asIdeal, Ideal.mem_comap, Ideal.Quotient.algebraMap_eq,
-      TauCeti.Ideal.Quotient.mk_span_singleton_one_sub_self] using p.isPrime.one_notMem
   rw [Module.rankAtStalk_baseChange]
-  exact not_ne_iff.1 (mt (fiberIdempotent_mem_iff
-    (Module.isLocallyConstant_rankAtStalk (R := A) (M := P ⧸ N))).2 hne)
-
-/-- The image of the rank-factor spectrum is exactly the corresponding quotient-rank fibre. -/
-theorem range_comap_quotientRankRing (r : ℕ) :
-    Set.range (PrimeSpectrum.comap (algebraMap A (quotientRankRing N r))) =
-      {p | Module.rankAtStalk (P ⧸ N) p = r} := by
-  rw [Ideal.Quotient.algebraMap_eq,
-    range_comap_of_surjective _ _ Ideal.Quotient.mk_surjective, Ideal.mk_ker]
-  ext p
-  simp only [mem_zeroLocus, SetLike.coe_subset_coe, Ideal.span_singleton_le_iff_mem,
-    Set.mem_ofPred_eq]
-  rw [(isIdempotentElem_fiberIdempotent
-    (Module.isLocallyConstant_rankAtStalk (R := A) (M := P ⧸ N)) r).one_sub_mem_iff_notMem,
-    fiberIdempotent_mem_iff, not_not]
-
-/-- The finite family of quotient-rank factors reconstructs the coefficient ring. -/
-theorem bijective_pi_quotientRankRing {d : ℕ}
-    (hd : ∀ p : PrimeSpectrum A, Module.rankAtStalk (P ⧸ N) p ≤ d) :
-    Function.Bijective (RingHom.pi fun r : Fin (d + 1) ↦
-      algebraMap A (quotientRankRing N r)) := by
-  classical
-  have hc := completeOrthogonalIdempotents_fiberIdempotent
-    (Module.isLocallyConstant_rankAtStalk (R := A) (M := P ⧸ N))
-    (s := Finset.range (d + 1)) (by
-      rintro _ ⟨p, rfl⟩
-      exact Finset.mem_range.2 (Nat.lt_succ_of_le (hd p)))
-  let e : Fin (d + 1) ≃ ↥(Finset.range (d + 1)) :=
-    { toFun := fun r ↦ ⟨r, Finset.mem_range.2 r.isLt⟩
-      invFun := fun r ↦ ⟨r, Finset.mem_range.1 r.property⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl }
-  have hc' : CompleteOrthogonalIdempotents
-      (fun r : Fin (d + 1) ↦ quotientRankIdempotent N r) :=
-    (CompleteOrthogonalIdempotents.equiv e).2 hc
-  exact hc'.bijective_pi
+  exact (Set.ext_iff.mp (LocallyConstant.range_comap_fiberRing
+    ⟨_, Module.isLocallyConstant_rankAtStalk (R := A) (M := P ⧸ N)⟩ r) _).mp ⟨p, rfl⟩
 
 end RankFactors
 

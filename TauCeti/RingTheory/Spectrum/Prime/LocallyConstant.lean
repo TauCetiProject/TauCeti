@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Localization.Away.Lemmas
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.RingTheory.Idempotents.Module
+public import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Idempotents.Prime
 import TauCeti.RingTheory.Spectrum.Prime.Topology
 
@@ -27,6 +29,11 @@ The range of a locally constant function on the quasi-compact space `Spec R` is 
 example is the rank `Module.rankAtStalk M` of a finite projective module, whose fibre idempotents
 split `M` into pieces of constant rank; see
 `TauCeti.RingTheory.Spectrum.Prime.Rank.Decomposition`.
+
+The rings `LocallyConstant.fiberRing` are the corresponding clopen factors of the coefficient
+ring. They are away localizations at the fibre idempotents, and their spectra map precisely onto
+the labelled fibres. Complete orthogonal fibre idempotents reconstruct the coefficient ring
+using `CompleteOrthogonalIdempotents.bijective_pi`; no module or quotient is needed for this.
 
 ## Main declarations
 
@@ -159,3 +166,27 @@ instance projective_smul_top_fiberIdempotent {M : Type*} [AddCommMonoid M] [Modu
   (isIdempotentElem_fiberIdempotent hf a).projective_smul_top
 
 end PrimeSpectrum
+
+namespace LocallyConstant
+
+variable {R : Type*} [CommRing R] {α : Type*} (f : LocallyConstant (PrimeSpectrum R) α)
+
+/-- The coefficient ring of the clopen fibre of `f` over `a`. -/
+noncomputable abbrev fiberRing (a : α) :=
+  R ⧸ Ideal.span {1 - PrimeSpectrum.fiberIdempotent f.isLocallyConstant a}
+
+/-- A fibre ring is the localization at the corresponding fibre idempotent. -/
+noncomputable instance (a : α) :
+    IsLocalization.Away (PrimeSpectrum.fiberIdempotent f.isLocallyConstant a) (f.fiberRing a) :=
+  IsLocalization.Away.quotient_of_isIdempotentElem
+    (PrimeSpectrum.isIdempotentElem_fiberIdempotent f.isLocallyConstant a)
+
+/-- The spectrum of a fibre ring maps onto precisely the corresponding fibre. -/
+theorem range_comap_fiberRing (a : α) :
+    Set.range (PrimeSpectrum.comap (algebraMap R (f.fiberRing a))) = f ⁻¹' {a} := by
+  rw [PrimeSpectrum.localization_away_comap_range (f.fiberRing a)
+    (PrimeSpectrum.fiberIdempotent f.isLocallyConstant a),
+    PrimeSpectrum.coe_basicOpen_fiberIdempotent]
+  rfl
+
+end LocallyConstant
