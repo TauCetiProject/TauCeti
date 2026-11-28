@@ -21,9 +21,7 @@ import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 import TauCeti.AlgebraicGeometry.Normalization.Finite
 import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Normal
 import TauCeti.AlgebraicGeometry.Scheme.SpecOver
-import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
 import TauCeti.RingTheory.IntegralClosure.SeparatingCoordinate
-import TauCeti.RingTheory.Localization.Integral
 import TauCeti.RingTheory.Smooth.MinimalPrime
 
 /-!
@@ -324,8 +322,8 @@ theorem isIso_normalizationHom_iff : IsIso M.normalizationHom ↔
 normalization morphism of models is an isomorphism. -/
 instance isIso_normalizationHom [AlgebraicGeometry.IsNormalScheme M.total] :
     IsIso M.normalizationHom := by
-  rw [isIso_iff_isIso_hom, normalizationHom_hom, ← Scheme.Hom.isoLocus_eq_top_iff, eq_top_iff]
-  exact M.le_isoLocus_fromNormalization_genericι ⊤
+  rw [isIso_iff_isIso_hom, normalizationHom_hom]
+  infer_instance
 
 variable {M} {N : Model R K C toK}
 
@@ -370,20 +368,22 @@ def normalizationLift [AlgebraicGeometry.IsNormalScheme N.total] (f : N ⟶ M) :
     N ⟶ M.normalization where
   hom :=
     inv N.genericι.fromNormalization ≫
-      N.genericι.normalizationDesc (pullback.lift M.genericι.toNormalization N.genericι (by simp))
-        (pullback.snd M.genericι.fromNormalization f.hom) (pullback.lift_snd _ _ _).symm ≫
+      N.genericι.normalizationMap (pullback.snd M.genericι f.hom)
+        (pullback.lift (𝟙 C) N.genericι (by simp)) (pullback.lift_snd _ _ _) ≫
+      M.genericι.normalizationPullback f.hom ≫
       pullback.fst M.genericι.fromNormalization f.hom
   overBase := by
-    rw [normalization_toBase, Category.assoc, Category.assoc,
-      pullback.condition_assoc, Scheme.Hom.normalizationDesc_comp_assoc,
-      IsIso.inv_hom_id_assoc, f.overBase]
+    rw [normalization_toBase, Category.assoc, Category.assoc, Category.assoc,
+      pullback.condition_assoc, Scheme.Hom.normalizationPullback_snd_assoc,
+      Scheme.Hom.normalizationMap_fromNormalization_assoc, IsIso.inv_hom_id_assoc, f.overBase]
   genericFiber := by
     refine baseChangeHom_genericFiberIso_hom_left _ _ ?_
     have hgeneric : N.genericι ≫ inv N.genericι.fromNormalization = N.genericι.toNormalization := by
       rw [IsIso.comp_inv_eq, Scheme.Hom.toNormalization_fromNormalization]
-    rw [← Category.assoc, ← Category.assoc, hgeneric,
-      Scheme.Hom.toNormalization_normalizationDesc, pullback.lift_fst,
-      genericι_normalization]
+    rw [← Category.assoc, ← Category.assoc, ← Category.assoc, hgeneric,
+      Scheme.Hom.toNormalization_normalizationMap, Category.assoc, Category.assoc,
+      Scheme.Hom.toNormalization_normalizationPullback_fst, pullback.lift_fst_assoc,
+      Category.id_comp, genericι_normalization]
 
 /-- The lift of `f` to `M.normalization` has the canonical factorization through the pullback as
 underlying morphism. -/
@@ -391,9 +391,9 @@ underlying morphism. -/
 lemma normalizationLift_hom [AlgebraicGeometry.IsNormalScheme N.total] (f : N ⟶ M) :
     (normalizationLift f).hom =
       inv N.genericι.fromNormalization ≫
-        N.genericι.normalizationDesc
-          (pullback.lift M.genericι.toNormalization N.genericι (by simp))
-          (pullback.snd M.genericι.fromNormalization f.hom) (pullback.lift_snd _ _ _).symm ≫
+        N.genericι.normalizationMap (pullback.snd M.genericι f.hom)
+          (pullback.lift (𝟙 C) N.genericι (by simp)) (pullback.lift_snd _ _ _) ≫
+        M.genericι.normalizationPullback f.hom ≫
         pullback.fst M.genericι.fromNormalization f.hom :=
   (rfl)
 
@@ -404,7 +404,8 @@ lemma normalizationLift_normalizationHom [AlgebraicGeometry.IsNormalScheme N.tot
     normalizationLift f ≫ M.normalizationHom = f := by
   refine Hom.ext ?_
   simp only [comp_hom, normalizationLift_hom, normalizationHom_hom, Category.assoc,
-    pullback.condition, Scheme.Hom.normalizationDesc_comp_assoc, IsIso.inv_hom_id_assoc]
+    pullback.condition, Scheme.Hom.normalizationPullback_snd_assoc,
+    Scheme.Hom.normalizationMap_fromNormalization_assoc, IsIso.inv_hom_id_assoc]
 
 /-- **Uniqueness of factorization into the normalization model.** Every morphism of models
 `g : N ⟶ M.normalization` over `M` agrees with `normalizationLift f`. -/
