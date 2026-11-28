@@ -300,6 +300,12 @@ theorem ofLE_genericIso (M : Model Q j A) (hPQ : ∀ ⦃X Y : Scheme.{u}⦄ (f :
     (M.ofLE hPQ).genericIso = M.genericIso :=
   (rfl)
 
+/-- Weakening the test class preserves the map from the marked fibre to the total space. -/
+@[simp]
+theorem ofLE_genericι (M : Model Q j A) (hPQ : ∀ ⦃X Y : Scheme.{u}⦄ (f : X ⟶ Y), P f → Q f) :
+    (M.ofLE hPQ).genericι = M.genericι :=
+  (rfl)
+
 /-- Extension into a model, regarded as a model for a smaller class of test morphisms, is its
 original extension. -/
 @[simp]
@@ -346,6 +352,15 @@ def extendHom (N : NeronModel j B) (φ : A ⟶ B) : M.model ⟶ N.model :=
 theorem map_extendHom (N : NeronModel j B) (φ : A ⟶ B) :
     (Over.pullback j).map (M.extendHom N φ) ≫ N.genericIso.hom = M.genericIso.hom ≫ φ :=
   N.map_extend _ _
+
+/-- Extension of a morphism commutes with the maps from the marked fibres to the total spaces. -/
+@[reassoc (attr := simp)]
+theorem genericι_comp_extendHom_left (N : NeronModel j B) (φ : A ⟶ B) :
+    M.genericι ≫ (M.extendHom N φ).left = φ.left ≫ N.genericι := by
+  simpa only [Over.comp_left, Category.assoc, Model.genericIso_hom_left_genericι,
+    Over.pullback_map_left, pullback.lift_fst, Model.genericIso_inv_left_fst_assoc,
+    Over.inv_left_hom_left_assoc] using
+    congrArg (fun f ↦ M.genericIso.inv.left ≫ f.left ≫ N.genericι) (M.map_extendHom N φ)
 
 /-- A morphism of Néron models is the extension of `φ` if and only if it restricts to `φ` along
 the markings. -/

@@ -32,7 +32,7 @@ no finite-type Néron model, even for étale tests alone.
 
 public section
 
-open CategoryTheory Limits AlgebraicGeometry Opposite
+open CategoryTheory AlgebraicGeometry
 open scoped CategoryTheory.MonObj nonZeroDivisors
 
 namespace TauCeti.AlgebraicGeometry.Neron
@@ -44,43 +44,6 @@ open GroupScheme
 variable {R K : Type u} [CommRing R] [CommRing K] [Algebra R K]
   {P : ∀ ⦃X Y : Scheme.{u}⦄, (X ⟶ Y) → Prop} {A : Over (Spec (.of K))}
 
-/-- After multiplication by a denominator from the base, a regular function on the marked fibre
-is the restriction of a global regular function on the model. -/
-theorem Model.exists_appTop_genericι_eq_mul (M : Model P (Spec.algebraMap R K) A)
-    (D : Submonoid R) [IsLocalization D K] (b : Γ(A.left, ⊤)) :
-    ∃ (a : Γ(M.model.left, ⊤)) (d : D), M.genericι.appTop a =
-      A.hom.appTop ((Scheme.ΓSpecIso (.of K)).inv (algebraMap R K d)) * b := by
-  let _ : M.model.left.Over (Spec (.of R)) := ⟨M.model.hom⟩
-  let _ : A.left.Over (Spec (.of K)) := ⟨A.hom⟩
-  have := QuasiCompact.compactSpace_of_compactSpace M.model.hom
-  have := quasiSeparatedSpace_of_quasiSeparated M.model.hom
-  -- On the quasi-compact quasi-separated model, localizing the base localizes global sections.
-  let X := M.model.left
-  let Y := A.left
-  let : Algebra R Γ(X, ⊤) := ((X.baseRingToStructurePresheaf R).app (op ⊤)).hom.toAlgebra
-  let : Algebra K Γ(Y, ⊤) := ((Y.baseRingToStructurePresheaf K).app (op ⊤)).hom.toAlgebra
-  let : Module R Γ(Y, ⊤) := Module.compHom _ (algebraMap R K)
-  have : IsScalarTower R K Γ(Y, ⊤) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
-  have := IsLocalization.flat K D
-  have H : IsPullback M.genericι (Y ↘ Spec (.of K)) (X ↘ Spec (.of R))
-      (Spec.algebraMap R K) := M.isPullback_genericι
-  have htop : (⊤ : Y.Opens) = M.genericι ⁻¹ᵁ (⊤ : X.Opens) := by simp
-  have := (isLocalizedModule_iff_isBaseChange D K _).2
-    (isBaseChange_sectionsBaseChange H isCompact_univ isQuasiSeparated_univ htop)
-  obtain ⟨⟨a, d⟩, hd⟩ := IsLocalizedModule.surj D (sectionsBaseChange H htop.le) b
-  have happ : M.genericι.appLE ⊤ ⊤ htop.le = M.genericι.appTop := M.genericι.appLE_eq_app
-  refine ⟨a, d, ?_⟩
-  calc
-    _ = (Y.baseRingToStructurePresheaf K).app (op ⊤) (algebraMap R K d) * b := by
-      rw [← happ, ← sectionsBaseChange_apply H htop.le]
-      -- The restricted scalar action of `d` is multiplication by its image on `Y`.
-      exact hd.symm
-    _ = _ := by
-      -- The local `Over` instance uses `A.hom` as the structure morphism of `Y`.
-      have hbase : (Y ↘ Spec (.of K)).appLE ⊤ ⊤ le_top = A.hom.appTop :=
-        A.hom.appLE_eq_app
-      rw [Scheme.baseRingToStructurePresheaf_app_eq_appLE, CommRingCat.comp_apply, hbase]
-
 /-- For a regular function on the marked fibre, one denominator makes its value at every
 section over the localized base lie in the image of the base ring. -/
 theorem Model.exists_isInteger_mul_eval (M : Model P (Spec.algebraMap R K) A)
@@ -88,7 +51,9 @@ theorem Model.exists_isInteger_mul_eval (M : Model P (Spec.algebraMap R K) A)
     (b : Γ(A.left, ⊤)) : ∃ d : D, ∀ x : Over.mk (𝟙 (Spec (.of K))) ⟶ A,
       IsLocalization.IsInteger R
         (algebraMap R K d * (Scheme.ΓSpecIso (.of K)).hom (x.left.appTop b)) := by
-  obtain ⟨a, d, ha⟩ := M.exists_appTop_genericι_eq_mul D b
+  have := QuasiCompact.compactSpace_of_compactSpace M.model.hom
+  have := quasiSeparatedSpace_of_quasiSeparated M.model.hom
+  obtain ⟨a, d, ha⟩ := exists_appTop_eq_mul_of_isPullback M.isPullback_genericι D b
   refine ⟨d, fun x ↦ ?_⟩
   obtain ⟨s, hs⟩ := (M.existsUnique_section hP x).exists
   refine ⟨(Scheme.ΓSpecIso (.of R)).hom (s.left.appTop a), ?_⟩

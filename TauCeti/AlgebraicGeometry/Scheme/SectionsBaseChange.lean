@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.Algebra.Category.Ring.Constructions
+import Mathlib.RingTheory.Localization.BaseChange
 
 /-!
 # Flat base change for sections of the structure sheaf
@@ -36,6 +37,8 @@ square of commutative rings and as `IsBaseChange` for the linear map above.
   map.
 * `TauCeti.AlgebraicGeometry.isBaseChange_sectionsBaseChange`: flat base change for sections of
   the structure sheaf, as `IsBaseChange`.
+* `TauCeti.AlgebraicGeometry.exists_appTop_eq_mul_of_isPullback`: denominator clearing for global
+  sections after base change to a localization.
 
 ## References
 
@@ -51,6 +54,8 @@ open CategoryTheory Limits AlgebraicGeometry Opposite
 universe u
 
 namespace TauCeti.AlgebraicGeometry
+
+section
 
 variable {R : Type u} [CommRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))]
   {R' : Type u} [CommRing R'] [Algebra R R']
@@ -169,5 +174,41 @@ theorem isBaseChange_sectionsBaseChange [Module.Flat R R'] {W : X.Opens}
     (S' := Γ(Y, W'))).mp (isPushout_baseRingToStructurePresheaf_app_of_flat H hW hW' hW'eq)
   -- The `R`-module structure of the algebra `Γ(Y, W')` is the one restricted along `R → R'`.
   exact this.symm.out
+
+end
+
+/-- After base change from `R` to a localization `R'`, multiplying a global section by a
+denominator makes it the pullback of a global section of the original qcqs scheme. -/
+theorem exists_appTop_eq_mul_of_isPullback {R R' : Type u} [CommRing R] [CommRing R']
+    [Algebra R R'] {X Y : Scheme.{u}} [CompactSpace X] [QuasiSeparatedSpace X]
+    {g : Y ⟶ X} {p : Y ⟶ Spec (.of R')} {f : X ⟶ Spec (.of R)}
+    (H : IsPullback g p f (Spec.map (CommRingCat.ofHom (algebraMap R R'))))
+    (D : Submonoid R) [IsLocalization D R'] (b : Γ(Y, ⊤)) :
+    ∃ (a : Γ(X, ⊤)) (d : D), g.appTop a =
+      p.appTop ((Scheme.ΓSpecIso (.of R')).inv (algebraMap R R' d)) * b := by
+  let _ : X.Over (Spec (.of R)) := ⟨f⟩
+  let _ : Y.Over (Spec (.of R')) := ⟨p⟩
+  let : Algebra R Γ(X, ⊤) := ((X.baseRingToStructurePresheaf R).app (op ⊤)).hom.toAlgebra
+  let : Algebra R' Γ(Y, ⊤) := ((Y.baseRingToStructurePresheaf R').app (op ⊤)).hom.toAlgebra
+  let : Module R Γ(Y, ⊤) := Module.compHom _ (algebraMap R R')
+  have : IsScalarTower R R' Γ(Y, ⊤) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  have := IsLocalization.flat R' D
+  have H' : IsPullback g (Y ↘ Spec (.of R')) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R R'))) := H
+  have htop : (⊤ : Y.Opens) = g ⁻¹ᵁ (⊤ : X.Opens) := by simp
+  have := (isLocalizedModule_iff_isBaseChange D R' _).2
+    (isBaseChange_sectionsBaseChange H' isCompact_univ isQuasiSeparated_univ htop)
+  obtain ⟨⟨a, d⟩, hd⟩ := IsLocalizedModule.surj D (sectionsBaseChange H' htop.le) b
+  have happ : g.appLE ⊤ ⊤ htop.le = g.appTop := g.appLE_eq_app
+  refine ⟨a, d, ?_⟩
+  calc
+    _ = (Y.baseRingToStructurePresheaf R').app (op ⊤) (algebraMap R R' d) * b := by
+      rw [← happ, ← sectionsBaseChange_apply H' htop.le]
+      -- The restricted scalar action of `d` is multiplication by its image on `Y`.
+      exact hd.symm
+    _ = _ := by
+      -- The local `Over` instance takes `p` as the structure morphism of `Y`.
+      have hbase : (Y ↘ Spec (.of R')).appLE ⊤ ⊤ le_top = p.appTop := p.appLE_eq_app
+      rw [Scheme.baseRingToStructurePresheaf_app_eq_appLE, CommRingCat.comp_apply, hbase]
 
 end TauCeti.AlgebraicGeometry
