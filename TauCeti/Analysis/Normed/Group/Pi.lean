@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Constructions
+import Mathlib.Analysis.Normed.Group.Uniform
 
 /-!
 # Norms on products
@@ -17,7 +18,10 @@ exponent `n` its `n`-th power is at most the sum of the `n`-th powers of the coo
 about `0` by an element of norm at most `R` stays in that ball (`Pi.norm_update_le`).
 
 Over an arbitrary index type, every coordinate of `Pi.single i c` has norm at most `‖c‖`
-(`Pi.norm_single_apply_le`).
+(`Pi.norm_single_apply_le`). For signed weights, `TauCeti.exists_uniform_weighted_error_le` bounds
+the weighted errors uniformly from above. A uniform limit in nonnegative
+weighted coefficient norms preserves decay at infinity
+(`TauCeti.tendsto_zero_of_weighted_uniform_limit`).
 -/
 
 public section
@@ -58,3 +62,48 @@ theorem Pi.norm_update_le {ι : Type*} [Fintype ι] [DecidableEq ι] {E : ι →
     rcases eq_or_ne j i with rfl | hj
     · simpa using hy
     · simpa [Function.update_of_ne hj] using (norm_le_pi_norm x j).trans hx
+
+open Filter Topology in
+/-- Given uniform upper bounds on the pairwise weighted errors of a sequence of families, there
+is a family `a` such that `‖A k t - a t‖ * w t ≤ ε` eventually in `k`, uniformly in `t`, for
+every positive `ε`. At positive weights the coefficients converge to `a t`. Nonpositive weights
+impose no condition on the coefficients. -/
+theorem TauCeti.exists_uniform_weighted_error_le {ι E : Type*}
+    [SeminormedAddCommGroup E] [CompleteSpace E] (w : ι → ℝ) (A : ℕ → ι → E)
+    (hC : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ l ≥ N, ∀ t, ‖A k t - A l t‖ * w t < ε) :
+    ∃ a : ι → E, ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * w t ≤ ε := by
+  have hlim : ∀ t, ∃ a : E, 0 < w t → Tendsto (fun k ↦ A k t) atTop (𝓝 a) := fun t ↦ by
+    by_cases ht : 0 < w t
+    · refine (cauchySeq_tendsto_of_complete ?_).imp fun a ha _ ↦ ha
+      refine Metric.cauchySeq_iff.mpr fun ε hε ↦ ?_
+      obtain ⟨N, hN⟩ := hC (ε * w t) (mul_pos hε ht)
+      exact ⟨N, fun k hk l hl ↦ by
+        rw [dist_eq_norm]
+        exact lt_of_mul_lt_mul_right (hN k hk l hl t) ht.le⟩
+    · exact ⟨0, fun h ↦ absurd h ht⟩
+  choose a ha using hlim
+  refine ⟨a, fun ε hε ↦ ?_⟩
+  obtain ⟨N, hN⟩ := hC ε hε
+  refine ⟨N, fun k hk t ↦ ?_⟩
+  by_cases ht : 0 < w t
+  · exact le_of_tendsto (((tendsto_const_nhds.sub (ha t ht)).norm).mul_const (w t))
+      (eventually_atTop.mpr ⟨N, fun l hl ↦ (hN k hk l hl t).le⟩)
+  · exact (mul_nonpos_of_nonneg_of_nonpos (norm_nonneg _) (not_lt.mp ht)).trans hε.le
+
+open Filter Topology in
+/-- A uniform limit in nonnegative weighted coefficient norms preserves decay at infinity. -/
+theorem TauCeti.tendsto_zero_of_weighted_uniform_limit {ι E : Type*} [SeminormedAddGroup E]
+    (w : ι → ℝ) (hw : ∀ t, 0 ≤ w t) (A : ℕ → ι → E) (a : ι → E)
+    (hres : ∀ k, Tendsto (fun t ↦ ‖A k t‖ * w t) cofinite (𝓝 0))
+    (hunif : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * w t ≤ ε) :
+    Tendsto (fun t ↦ ‖a t‖ * w t) cofinite (𝓝 0) := by
+  refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun t ↦
+    hb.trans_le (mul_nonneg (norm_nonneg _) (hw t)), fun ε hε ↦ ?_⟩
+  obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
+  filter_upwards [(hres N).eventually (gt_mem_nhds (half_pos hε))] with t ht
+  calc
+    ‖a t‖ * w t ≤ ‖A N t‖ * w t + ‖A N t - a t‖ * w t := by
+      rw [← add_mul]
+      exact mul_le_mul_of_nonneg_right (norm_le_norm_add_norm_sub _ _) (hw t)
+    _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le ht (hN N le_rfl t)
+    _ = ε := add_halves ε
