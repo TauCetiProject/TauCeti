@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Spectrum.Prime.Noetherian
 public import Mathlib.Topology.Sheaves.Flasque
 public import TauCeti.Algebra.Module.Injective.Noetherian
 public import TauCeti.Algebra.Module.LocalizedModule.Away.Basic
+import TauCeti.Topology.Sheaves.Flasque.Basic
 
 /-!
 # The sheaf of an injective module over a Noetherian ring is flasque
@@ -40,7 +41,11 @@ Hartshorne's proof.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.isFlasque_tilde_of_injective`: `I^~` is flasque.
+* `TauCeti.AlgebraicGeometry.isFlasque_tilde_of_injective`: `I^~` is flasque as an abelian
+  presheaf.
+* `TauCeti.AlgebraicGeometry.isFlasque_modulesSpecToSheaf_tilde_of_injective`: the associated sheaf
+  of `R`-modules `(modulesSpecToSheaf.obj (tilde M)).obj` is flasque for injective
+  `M : ModuleCat R`.
 
 ## References
 
@@ -189,6 +194,17 @@ instance isFlasque_tilde_of_injective : (tilde M).presheaf.IsFlasque where
     obtain ⟨t, rfl⟩ := exists_restrict_eq_of_eq_iSup M G hG s
     exact ⟨res[le_top] t,
       TopCat.Presheaf.restrict_restrict (F := 𝓕) (leOfHom i.unop) le_top t⟩
+
+omit [Module.Injective R M] in
+/-- Over a Noetherian ring `R`, the sheaf of `R`-modules associated with an injective object of
+`ModuleCat.{u} R` is flasque. -/
+instance isFlasque_modulesSpecToSheaf_tilde_of_injective [Injective M] :
+    TopCat.Presheaf.IsFlasque (modulesSpecToSheaf.obj (tilde M)).obj := by
+  have : Module.Injective R M := Module.injective_module_of_injective_object R M
+  have hfl : TopCat.Presheaf.IsFlasque
+      ((modulesSpecToSheaf.obj (tilde M)).obj ⋙ forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}) :=
+    isFlasque_tilde_of_injective M
+  exact (TopCat.Presheaf.isFlasque_comp_iff _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).1 hfl
 
 end AlgebraicGeometry
 

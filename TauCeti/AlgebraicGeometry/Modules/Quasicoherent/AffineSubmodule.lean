@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Submodule
 public import Mathlib.Algebra.Module.LocalizedModule.Submodule
-public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+public import TauCeti.AlgebraicGeometry.Modules.Affine.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 

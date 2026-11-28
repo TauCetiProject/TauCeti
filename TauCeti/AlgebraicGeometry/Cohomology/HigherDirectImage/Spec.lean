@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.FinitePresentation
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Quasicoherent
-public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+public import TauCeti.AlgebraicGeometry.Modules.Affine.GlobalSections
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 

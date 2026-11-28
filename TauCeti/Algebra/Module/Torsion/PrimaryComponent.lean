@@ -68,6 +68,8 @@ For finitely generated `𝔞`, the quotient `N ⧸ Γ_𝔞(N)` has no `𝔞`-pow
   `N`-regular element.
 * `Ideal.primaryComponent_quotient_primaryComponent`: for finitely generated `𝔞`,
   `Γ_𝔞(N ⧸ Γ_𝔞(N)) = 0`.
+* `Ideal.primaryComponent_eq_bot_of_ne_bot`: over a domain, a torsion-free module has no nonzero
+  `I`-power torsion for any nonzero ideal `I`.
 
 ## References
 

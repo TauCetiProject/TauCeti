@@ -17,59 +17,30 @@ public import TauCeti.CategoryTheory.Abelian.Injective.Resolution
 /-!
 # Right derived functors from acyclic resolutions
 
-Let `F : C ⥤ D` be an additive functor between abelian categories, where `C` has enough
-injectives. Mathlib defines the right derived functors `RⁿF` through injective resolutions. This
-file shows that they may be computed from resolutions by objects of a class `P` adapted to `F`, in
-the following sense:
-
-* every injective object lies in `P`, and `P` is closed under isomorphisms;
-* in a short exact sequence `0 ⟶ A ⟶ B ⟶ C ⟶ 0` with `A` and `B` in `P`, also `C` lies in `P`;
-* `F` sends such a short exact sequence to a short exact sequence.
-
-For instance, flasque sheaves form such a class for the global sections functor. If
-`0 ⟶ X ⟶ K⁰ ⟶ K¹ ⟶ ⋯` is a resolution of `X` by objects of `P`, given as a quasi-isomorphism
-`ι : X[0] ⟶ K`, then `F` applied to a comparison map `K ⟶ I` to an injective resolution of `X` is
-a quasi-isomorphism (`CategoryTheory.InjectiveResolution.quasiIso_map_of_comp_eq`), so
-`RⁿF(X) ≅ Hⁿ(F(K))` (`CategoryTheory.Functor.rightDerivedObjIsoOfResolution`).
-
-The proof has three steps.
-
-* `F` sends acyclic complexes `0 ⟶ Q⁰ ⟶ Q¹ ⟶ ⋯` with terms in `P` to acyclic complexes
-  (`HomologicalComplex.Acyclic.map_of_shortExact`, in
-  `TauCeti/Algebra/Homology/HomologicalComplex/Acyclic.lean`).
-* A comparison map `φ : K ⟶ I` exists (`CategoryTheory.InjectiveResolution.descOfQuasiIso`, which
-  only uses the exactness of `K` and the injectivity of the terms of `I`) and is unique up to
-  homotopy (`CategoryTheory.InjectiveResolution.homotopyOfQuasiIso`); both are in
-  `TauCeti/CategoryTheory/Abelian/Injective/Resolution.lean`.
-* Adding to `I` a contractible complex `T` of injective objects with a morphism `χ : K ⟶ T` which
-  is a monomorphism in positive degrees, the map `(χ, φ) : K ⟶ T ⊞ I` becomes a degreewise
-  monomorphism and stays a quasi-isomorphism. Its cokernel `Q` is acyclic with terms in `P`, so
-  `F` keeps the short exact sequence of complexes `0 ⟶ K ⟶ T ⊞ I ⟶ Q ⟶ 0` exact and sends `Q`
-  to an acyclic complex. Hence `F(χ, φ)` is a quasi-isomorphism, and so is `F(φ)`, since `F(T)`
-  is contractible.
+Let `F : C ⥤ D` be an additive functor between abelian categories (`C` with enough injectives).
+This file computes `RⁿF` from resolutions by objects of an `F`-adapted class `P` (closed under
+isomorphisms, containing injectives, closed under cokernels of monomorphisms in `P`, and on which
+`F` preserves short exact sequences): for a `P`-resolution `ι : X[0] ⟶ K`, any comparison map
+`K ⟶ I` to an injective resolution maps under `F` to a quasi-isomorphism
+(`CategoryTheory.InjectiveResolution.quasiIso_map_of_comp_eq`), giving `RⁿF(X) ≅ Hⁿ(F(K))`
+(`CategoryTheory.Functor.rightDerivedObjIsoOfResolution`).
 
 ## Main definitions and results
 
-* `CategoryTheory.InjectiveResolution.quasiIso_map_of_comp_eq`: `F` applied to a comparison map
-  from a `P`-resolution to an injective resolution is a quasi-isomorphism.
-* `CategoryTheory.Functor.rightDerivedObjIsoOfResolution`: the isomorphism `RⁿF(X) ≅ Hⁿ(F(K))`
-  for a `P`-resolution `K` of `X`, and
-  `CategoryTheory.Functor.rightDerivedObjIsoOfResolution_hom_comp_homologyMap`, its
-  characterization through any injective resolution.
-* `CategoryTheory.Functor.rightDerivedObjIsoOfResolution_hom_naturality`: compatibility with
-  morphisms of augmented resolutions.
-* `CategoryTheory.Functor.toRightDerivedZero_app_comp_rightDerivedObjIsoOfResolution_hom`: in
-  degree `0`, the comparison is compatible with the canonical maps `F(X) ⟶ R⁰F(X)` and
-  `F(X) ⟶ H⁰(F(K))`.
-* `CategoryTheory.Functor.rightDerivedIsoOfResolution`: the natural isomorphism for a
-  functorial adapted resolution.
+* `CategoryTheory.InjectiveResolution.quasiIso_map_of_comp_eq`: `F` sends any comparison map from
+  a `P`-resolution to an injective resolution to a quasi-isomorphism.
+* `CategoryTheory.Functor.rightDerivedObjIsoOfResolution`: `RⁿF(X) ≅ Hⁿ(F(K))`, with
+  characterization `rightDerivedObjIsoOfResolution_hom_comp_homologyMap`, naturality
+  `rightDerivedObjIsoOfResolution_hom_naturality`, and degree-`0` compatibility
+  `toRightDerivedZero_app_comp_rightDerivedObjIsoOfResolution_hom`.
+* `CategoryTheory.Functor.rightDerivedIsoOfResolution` and
+  `CategoryTheory.Functor.compRightDerivedIsoOfResolution`: functorial and composite versions.
 
 ## References
 
-* The Stacks Project, Derived Categories, Lemma 13.15.6 (tag 05T8) and Lemma 13.16.7
-  (tag 015E).
+* The Stacks Project, Tags 05T8 and 015E.
 * M. Kashiwara, P. Schapira, *Categories and Sheaves*, Grundlehren 332, Springer, 2006,
-  Definition 13.3.4 and Corollary 13.3.8, where such classes are called `F`-injective.
+  Definition 13.3.4 and Corollary 13.3.8.
 -/
 
 public section
@@ -408,5 +379,133 @@ lemma rightDerivedIsoOfResolution_app (K : C ⥤ CochainComplex C ℕ)
     (F.rightDerivedIsoOfResolution P hinj hP hF K ι hK n).app X =
       F.rightDerivedObjIsoOfResolution P hinj hP hF (ι.app X) (hK X) n :=
   (rfl)
+
+end CategoryTheory.Functor
+
+namespace CategoryTheory.Functor
+
+open CochainComplex
+
+universe v₀ u₀
+
+variable {C₀ : Type u₀} [Category.{v₀} C₀] [Abelian C₀] [HasInjectiveResolutions C₀]
+  {C : Type u₁} [Category.{v₁} C] [Abelian C] [EnoughInjectives C]
+  {D : Type u₂} [Category.{v₂} D] [Abelian D]
+  (F : C ⥤ D) [F.Additive] (P : ObjectProperty C)
+  [P.IsClosedUnderIsomorphisms] (hinj : ∀ (Y : C), Injective Y → P Y)
+  (hP : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → P S.X₃)
+  (hF : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → (S.map F).ShortExact)
+  (H : C₀ ⥤ C) [H.Additive] [H.PreservesHomology]
+  (G : C₀ ⥤ D) [G.Additive] (e : H ⋙ F ≅ G)
+  (hHP : ∀ (E : C₀), Injective E → P (H.obj E))
+
+private lemma compRightDerivedObj_comm {W W' : C₀} (f : W ⟶ W') (I : InjectiveResolution W)
+    (J : InjectiveResolution W') (φ : I.cocomplex ⟶ J.cocomplex)
+    (hφ : I.ι ≫ φ = (single₀ C₀).map f ≫ J.ι) (n : ℕ) :
+    (F.rightDerived n).map (H.map f) ≫
+        (F.rightDerivedObjIsoOfResolution P hinj hP hF (J.mapι H)
+          (fun m ↦ hHP _ (J.injective m)) n).hom ≫
+        (HomologicalComplex.homologyFunctor D _ n).map
+          ((Functor.mapHomologicalComplexCompIso e (ComplexShape.up ℕ)).app J.cocomplex).hom =
+      (F.rightDerivedObjIsoOfResolution P hinj hP hF (I.mapι H)
+          (fun m ↦ hHP _ (I.injective m)) n).hom ≫
+        (HomologicalComplex.homologyFunctor D _ n).map
+          ((Functor.mapHomologicalComplexCompIso e (ComplexShape.up ℕ)).app I.cocomplex).hom ≫
+        (I.isoRightDerivedObj G n).inv ≫ (G.rightDerived n).map f ≫
+          (J.isoRightDerivedObj G n).hom := by
+  rw [F.rightDerivedObjIsoOfResolution_hom_naturality_assoc P hinj hP hF
+    (I.mapι H) (fun m ↦ hHP _ (I.injective m))
+    (J.mapι H) (fun m ↦ hHP _ (J.injective m))
+    (H.map f) ((H.mapHomologicalComplex _).map φ) (I.mapι_naturality f J φ hφ H) n]
+  have hcomp :
+      (HomologicalComplex.homologyFunctor D _ n).map
+          ((F.mapHomologicalComplex _).map ((H.mapHomologicalComplex _).map φ)) ≫
+        (HomologicalComplex.homologyFunctor D _ n).map
+          ((Functor.mapHomologicalComplexCompIso e (ComplexShape.up ℕ)).app J.cocomplex).hom =
+      (HomologicalComplex.homologyFunctor D _ n).map
+          ((Functor.mapHomologicalComplexCompIso e (ComplexShape.up ℕ)).app I.cocomplex).hom ≫
+        (HomologicalComplex.homologyFunctor D _ n).map ((G.mapHomologicalComplex _).map φ) := by
+    rw [← Functor.map_comp, ← Functor.map_comp]
+    exact congrArg (HomologicalComplex.homologyFunctor D _ n).map
+      ((Functor.mapHomologicalComplexCompIso e (ComplexShape.up ℕ)).hom.naturality φ)
+  have hnat := InjectiveResolution.isoRightDerivedObj_hom_naturality f I J φ
+    (by simpa using congr(($hφ).f 0)) G n
+  dsimp only [Functor.comp_map] at hnat; rw [hcomp, hnat, Iso.inv_hom_id_assoc]
+
+/-- **Composing an exact functor with a right derived functor via adapted resolutions.**
+Let `H : C₀ ⥤ C` be an exact additive functor sending injective objects of `C₀` into a class `P`
+adapted to `F : C ⥤ D`, and let `e : H ⋙ F ≅ G` for an additive functor `G : C₀ ⥤ D`. Then
+`H ⋙ F.rightDerived n ≅ G.rightDerived n` for every `n : ℕ`: `H` turns an injective resolution of
+`W` into a `P`-resolution of `H(W)`, which computes `(F.rightDerived n).obj (H.obj W)` and agrees
+under `e` with `G` applied to the injective resolution of `W`. -/
+noncomputable def compRightDerivedIsoOfResolution (n : ℕ) :
+    H ⋙ F.rightDerived n ≅ G.rightDerived n :=
+  NatIso.ofComponents
+    (fun W ↦
+      F.rightDerivedObjIsoOfResolution P hinj hP hF ((injectiveResolution W).mapι H)
+          (fun m ↦ hHP _ ((injectiveResolution W).injective m)) n ≪≫
+        (HomologicalComplex.homologyFunctor D _ n).mapIso
+          ((Functor.mapHomologicalComplexCompIso e (ComplexShape.up ℕ)).app
+            (injectiveResolution W).cocomplex) ≪≫
+        ((injectiveResolution W).isoRightDerivedObj G n).symm)
+    fun {W W'} f ↦ by
+      rw [← cancel_mono ((injectiveResolution W').isoRightDerivedObj G n).hom]
+      simp only [Functor.comp_obj, Functor.comp_map, Iso.trans_hom, Iso.symm_hom,
+        Functor.mapIso_hom, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+      exact F.compRightDerivedObj_comm P hinj hP hF H G e hHP f
+        (injectiveResolution W) (injectiveResolution W')
+        (InjectiveResolution.desc f _ _) (InjectiveResolution.desc_commutes f _ _) n
+
+@[simp]
+lemma compRightDerivedIsoOfResolution_hom_app (n : ℕ) (W : C₀) :
+    (F.compRightDerivedIsoOfResolution P hinj hP hF H G e hHP n).hom.app W =
+      (F.rightDerivedObjIsoOfResolution P hinj hP hF ((injectiveResolution W).mapι H)
+          (fun m ↦ hHP _ ((injectiveResolution W).injective m)) n).hom ≫
+        (HomologicalComplex.homologyFunctor D _ n).map
+          ((Functor.mapHomologicalComplexCompIso e (ComplexShape.up ℕ)).app
+            (injectiveResolution W).cocomplex).hom ≫
+        ((injectiveResolution W).isoRightDerivedObj G n).inv :=
+  (rfl)
+
+/-- For any injective resolution `I` of `W`, `compRightDerivedIsoOfResolution` agrees with the
+adapted-resolution isomorphism on `I.mapι H` followed by `e` on `I.cocomplex`. -/
+@[reassoc]
+lemma compRightDerivedIsoOfResolution_hom_app_comp_isoRightDerivedObj
+    (n : ℕ) {W : C₀} (I : InjectiveResolution W) :
+    (F.compRightDerivedIsoOfResolution P hinj hP hF H G e hHP n).hom.app W ≫
+        (I.isoRightDerivedObj G n).hom =
+      (F.rightDerivedObjIsoOfResolution P hinj hP hF (I.mapι H)
+          (fun m ↦ hHP _ (I.injective m)) n).hom ≫
+        (HomologicalComplex.homologyFunctor D _ n).map
+          ((Functor.mapHomologicalComplexCompIso e (ComplexShape.up ℕ)).app I.cocomplex).hom := by
+  have h := F.compRightDerivedObj_comm P hinj hP hF H G e hHP (𝟙 W) (injectiveResolution W) I
+    (InjectiveResolution.desc (𝟙 W) I _) (InjectiveResolution.desc_commutes (𝟙 W) I _) n
+  rw [Functor.map_id, Functor.map_id, Functor.map_id, Category.id_comp, Category.id_comp] at h
+  rw [compRightDerivedIsoOfResolution_hom_app, Category.assoc, Category.assoc, ← h]
+
+/-- In degree zero, `compRightDerivedIsoOfResolution` is compatible with the canonical morphisms
+`F.toRightDerivedZero` and `G.toRightDerivedZero` along `e : H ⋙ F ≅ G`. -/
+@[reassoc]
+lemma toRightDerivedZero_app_comp_compRightDerivedIsoOfResolution_hom (W : C₀) :
+    F.toRightDerivedZero.app (H.obj W) ≫
+        (F.compRightDerivedIsoOfResolution P hinj hP hF H G e hHP 0).hom.app W =
+      e.hom.app W ≫ G.toRightDerivedZero.app W := by
+  let I := injectiveResolution W
+  rw [← cancel_mono (I.isoRightDerivedObj G 0).hom, Category.assoc,
+    F.compRightDerivedIsoOfResolution_hom_app_comp_isoRightDerivedObj P hinj hP hF H G e hHP 0 I,
+    ← Category.assoc, F.toRightDerivedZero_app_comp_rightDerivedObjIsoOfResolution_hom P hinj hP hF
+      (I.mapι H) (fun m ↦ hHP _ (I.injective m)), Category.assoc, Category.assoc,
+    I.toRightDerivedZero_eq G]
+  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  -- `erw` identifies `(CochainComplex.isoHomologyπ₀ _).hom` with `homologyπ 0`.
+  erw [HomologicalComplex.homologyπ_naturality]
+  rw [← Category.assoc, ← Category.assoc]
+  refine congrArg (· ≫ ((G.mapHomologicalComplex _).obj I.cocomplex).homologyπ 0) ?_
+  rw [← cancel_mono (HomologicalComplex.iCycles _ 0)]
+  simp only [liftCycles_comp_cyclesMap, liftCycles_i, Category.assoc,
+    InjectiveResolution.toRightDerivedZero'_comp_iCycles]
+  rw [show (fromSingle₀Equiv ((H.mapHomologicalComplex _).obj I.cocomplex) (H.obj W)
+    (I.mapι H)).val = H.map (I.ι.f 0) by simp [fromSingle₀Equiv]]
+  exact e.hom.naturality (I.ι.f 0)
 
 end CategoryTheory.Functor

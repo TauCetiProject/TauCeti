@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.RelativeGluing
 public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 public import TauCeti.AlgebraicGeometry.Grassmannian.BaseChange
-public import TauCeti.AlgebraicGeometry.Modules.AffineRestriction
+public import TauCeti.AlgebraicGeometry.Modules.Affine.Restriction
 public import TauCeti.AlgebraicGeometry.Modules.Sections
 
 /-!

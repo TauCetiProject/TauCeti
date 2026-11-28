@@ -49,6 +49,10 @@ right derived functors by one degree:
 These are the dimension-shifting steps of inductive arguments on vanishing derived functors,
 such as Leray's acyclicity theorem.
 
+A diagram `G : T ⥤ C ⥤ D` of additive functors induces a diagram
+`CategoryTheory.Limits.rightDerivedDiagram G q : T ⥤ C ⥤ D` of their degree-`q` right derived
+functors.
+
 The composition comparison is computed on arbitrary chosen resolutions by
 `Functor.rightDerivedCompIso_app_injectiveResolution`. Its special case with the identity as the
 outer functor, `RⁿF ≅ H' ⋙ RⁿF''` for `F ≅ H' ⋙ F''`, is `Functor.rightDerivedPrecompIso`.
@@ -130,6 +134,27 @@ lemma NatIso.rightDerived_inv {F G : C ⥤ D} [F.Additive] [G.Additive]
     (e : F ≅ G) (n : ℕ) : (NatIso.rightDerived e n).inv = e.inv.rightDerived n :=
   (rfl)
 
+/-- The comparison `F ⟶ R⁰F` is natural in the additive functor `F`: it intertwines `α : F ⟶ G`
+with the natural transformation `R⁰F ⟶ R⁰G` induced by `α`. -/
+@[reassoc]
+theorem NatTrans.toRightDerivedZero_comp_rightDerived_zero {F G : C ⥤ D} [F.Additive]
+    [G.Additive] (α : F ⟶ G) :
+    F.toRightDerivedZero ≫ NatTrans.rightDerived α 0 = α ≫ G.toRightDerivedZero := by
+  ext X
+  let I := injectiveResolution X
+  -- On cycles in degree zero, both sides are induced by `α` on `F(X) ⟶ F(I⁰) ⟶ G(I⁰)`.
+  have h : I.toRightDerivedZero' F ≫
+      HomologicalComplex.cyclesMap ((NatTrans.mapHomologicalComplex α _).app I.cocomplex) 0 =
+      α.app X ≫ I.toRightDerivedZero' G := by
+    rw [← cancel_mono (HomologicalComplex.iCycles _ 0), Category.assoc, Category.assoc,
+      HomologicalComplex.cyclesMap_i, I.toRightDerivedZero'_comp_iCycles]
+    simp [I.toRightDerivedZero'_comp_iCycles_assoc]
+  simp only [NatTrans.comp_app, I.toRightDerivedZero_eq, I.rightDerived_app_eq, Category.assoc,
+    Iso.inv_hom_id_assoc]
+  -- `erw`: the homology of `G(I)` appears both as `homologyFunctor.obj` and as `homology 0`.
+  erw [HomologicalComplex.homologyπ_naturality_assoc, reassoc_of% h]
+  rfl
+
 /-- An exact additive functor has no positive right derived functors. -/
 theorem Functor.isZero_rightDerived_succ (F : C ⥤ D) [F.Additive] [F.PreservesHomology]
     (X : C) (q : ℕ) : Limits.IsZero ((F.rightDerived (q + 1)).obj X) := by
@@ -167,6 +192,22 @@ noncomputable def Functor.rightDerivedCompIso {C' : Type*} [Category* C'] [Abeli
     isoWhiskerRight H.injectiveResolutionsCompIso _ ≪≫
     Functor.associator _ _ _ ≪≫
     isoWhiskerLeft H (Functor.associator _ _ _).symm
+
+namespace Limits
+
+/-- Applying `Functor.rightDerived q` objectwise and morphismwise to a diagram `G : T ⥤ C ⥤ D` of
+additive functors produces the diagram `t ↦ (G.obj t).rightDerived q`. -/
+@[simps]
+noncomputable abbrev rightDerivedDiagram {T : Type*} [Category* T]
+    {C : Type u} [Category.{v} C] [Abelian C] [HasInjectiveResolutions C]
+    {D : Type*} [Category* D] [Abelian D]
+    (G : T ⥤ C ⥤ D) [∀ t, (G.obj t).Additive] (q : ℕ) : T ⥤ C ⥤ D where
+  obj t := (G.obj t).rightDerived q
+  map w := (G.map w).rightDerived q
+  map_id t := by simp
+  map_comp f g := by simp
+
+end Limits
 
 /-! ### Dimension shifting
 

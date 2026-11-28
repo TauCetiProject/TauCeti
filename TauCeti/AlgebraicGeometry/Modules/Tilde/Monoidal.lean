@@ -10,7 +10,7 @@ public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import TauCeti.Algebra.Category.ModuleCat.Colimits
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Evaluation
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
-import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+import TauCeti.AlgebraicGeometry.Modules.Affine.GlobalSections
 
 /-!
 # The sheaf associated with a tensor product of modules

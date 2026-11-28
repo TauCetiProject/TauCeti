@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Functor
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.LocalTriviality
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
-public import TauCeti.AlgebraicGeometry.Modules.AffineRestriction
+public import TauCeti.AlgebraicGeometry.Modules.Affine.Restriction
 
 /-!
 # Pullback of the twisting sheaves along `Proj.map`

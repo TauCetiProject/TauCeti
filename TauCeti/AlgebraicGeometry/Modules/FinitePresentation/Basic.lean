@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Instances
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import Mathlib.RingTheory.LocalProperties.FinitePresentation
 public import Mathlib.RingTheory.Finiteness.Finsupp
-public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+public import TauCeti.AlgebraicGeometry.Modules.Affine.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.FiniteType
 
 /-!

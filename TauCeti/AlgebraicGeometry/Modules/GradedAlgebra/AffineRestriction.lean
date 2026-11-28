@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.AffineRestriction
+public import TauCeti.AlgebraicGeometry.Modules.Affine.Restriction
 public import TauCeti.AlgebraicGeometry.Modules.GradedAlgebra.Sections
 public import Mathlib.Algebra.Category.Ring.Constructions
 public import Mathlib.RingTheory.RingHom.FiniteType

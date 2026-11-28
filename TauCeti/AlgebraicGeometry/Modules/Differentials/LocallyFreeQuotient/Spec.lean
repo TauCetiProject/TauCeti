@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.LocallyFreeQuotient.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Spec
 public import TauCeti.AlgebraicGeometry.VectorBundle.Affine.Basic
-import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+import TauCeti.AlgebraicGeometry.Modules.Affine.GlobalSections
 
 /-!
 # Locally free quotients of the differentials of an affine scheme

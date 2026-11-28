@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.FinitePresentationDescent
+public import TauCeti.AlgebraicGeometry.Modules.Affine.Sheaf
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 import Mathlib.Algebra.Category.ModuleCat.Presheaf.EpiMono
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
@@ -18,9 +19,12 @@ import TauCeti.RingTheory.TensorProduct.IsBaseChange
 /-!
 # Exactness and base change of the sheaf associated with a module
 
-The functor `M ↦ M~` from `R`-modules to `𝒪_{Spec R}`-modules is exact. It preserves finite
-colimits as a left adjoint of the global-section functor, and it preserves monomorphisms because
-a section of `M~` over an open subset `U` is a family of elements of the localizations `M_p`,
+The functor `M ↦ M~` from `R`-modules to `𝒪_{Spec R}`-modules is additive and exact, and
+composing with `modulesSpecToSheaf`
+(`TauCeti.AlgebraicGeometry.Modules.Affine.Sheaf`) gives the exact functor
+`tildeSheafFunctor R` into sheaves of `R`-modules on `Spec R`. `tilde.functor R` preserves finite
+colimits as a left adjoint of the global-section functor, and it preserves monomorphisms because a
+section of `M~` over an open subset `U` is a family of elements of the localizations `M_p`,
 `p ∈ U`, that is locally a fraction, and localization preserves injectivity.
 
 For a ring map `φ : R ⟶ S` and an `R`-module `M`, the pullback of the quasi-coherent sheaf `M~`
@@ -56,6 +60,8 @@ base change of `M` along `R → Γ(Spec R, ⊤)`.
   restriction of `M~` to such an open is zero;
 * `TauCeti.AlgebraicGeometry.subsingleton_tilde_of_forall_notMem_support`: the sections of
   `M~` over `U` vanish when `U` misses the support of `M`;
+* `TauCeti.AlgebraicGeometry.tildeSheafFunctor`: the exact composite functor `M ↦ M~` from
+  `ModuleCat R` to sheaves of `R`-modules on `Spec R`;
 * `Scheme.Modules.tildeKernelIso`: the affine computation of ambient kernels of morphisms
   between quasicoherent sheaves, with `tildeKernelIso_hom_comp_ι` identifying the kernel inclusion;
 * `TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso`: the isomorphism
@@ -216,6 +222,21 @@ theorem subsingleton_tilde_of_forall_notMem_support {M : ModuleCat.{u} R} {U : (
     Subsingleton Γ(tilde M, U) :=
   ⟨fun _ _ ↦ Subtype.ext (funext fun p ↦
     (Module.notMem_support_iff.mp (h p.val p.property)).elim _ _)⟩
+
+/-- The functor `M ↦ M~` from `R`-modules to sheaves of `R`-modules on `Spec R`. -/
+abbrev tildeSheafFunctor (R : CommRingCat.{u}) :
+    ModuleCat.{u} R ⥤ Sheaf (Opens.grothendieckTopology (Spec R)) (ModuleCat.{u} R) :=
+  tilde.functor R ⋙ modulesSpecToSheaf
+
+/-- `tildeSheafFunctor R` sends an `R`-module `M` to `modulesSpecToSheaf.obj (tilde M)`. -/
+lemma tildeSheafFunctor_obj (R : CommRingCat.{u}) (M : ModuleCat.{u} R) :
+    (tildeSheafFunctor R).obj M = modulesSpecToSheaf.obj (tilde M) :=
+  rfl
+
+/-- `tildeSheafFunctor R` sends a morphism `f` to `modulesSpecToSheaf.map (tilde.map f)`. -/
+lemma tildeSheafFunctor_map (R : CommRingCat.{u}) {M N : ModuleCat.{u} R} (f : M ⟶ N) :
+    (tildeSheafFunctor R).map f = modulesSpecToSheaf.map (tilde.map f) :=
+  rfl
 
 end Exactness
 

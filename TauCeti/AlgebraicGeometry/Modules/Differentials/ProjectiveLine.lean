@@ -6,7 +6,7 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Quasicoherent
-public import TauCeti.AlgebraicGeometry.Modules.AffineRestriction
+public import TauCeti.AlgebraicGeometry.Modules.Affine.Restriction
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveLine
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.LocalTriviality
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent

@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.AffineChart
 public import TauCeti.AlgebraicGeometry.NormalCone.NormalBundle
 public import TauCeti.AlgebraicGeometry.NormalCone.Regular.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
-import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+import TauCeti.AlgebraicGeometry.Modules.Affine.GlobalSections
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 import TauCeti.AlgebraicGeometry.Modules.SymmetricPower.Affine
 import TauCeti.AlgebraicGeometry.Modules.SymmetricPower.Pullback.Quasicoherent

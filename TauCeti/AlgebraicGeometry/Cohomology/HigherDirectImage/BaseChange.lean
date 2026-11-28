@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Quasicohere
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 public import TauCeti.AlgebraicGeometry.Cohomology.Pullback
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
-import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+import TauCeti.AlgebraicGeometry.Modules.Affine.GlobalSections
 
 /-!
 # The base change map for higher direct images

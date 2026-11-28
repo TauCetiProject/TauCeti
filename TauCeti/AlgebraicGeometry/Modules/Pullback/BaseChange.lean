@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Sections
 public import Mathlib.Topology.QuasiSeparated
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
-import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+import TauCeti.AlgebraicGeometry.Modules.Affine.GlobalSections
 import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.RingTheory.Flat.IsBaseChange
 import TauCeti.RingTheory.TensorProduct.IsBaseChange

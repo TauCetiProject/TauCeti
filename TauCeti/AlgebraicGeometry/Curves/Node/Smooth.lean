@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.Node.CoordinateOpen
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
-import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+import TauCeti.AlgebraicGeometry.Modules.Affine.GlobalSections
 
 /-!
 # Node charts at smooth points of relative curves

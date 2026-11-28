@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.BaseChange
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
-import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+import TauCeti.AlgebraicGeometry.Modules.Affine.GlobalSections
 import TauCeti.AlgebraicGeometry.Cohomology.FlatBaseChange
 import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.LocalScalars
 import TauCeti.AlgebraicGeometry.Cohomology.Pullback.Comp

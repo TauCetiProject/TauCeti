@@ -9,7 +9,7 @@ public import TauCeti.CategoryTheory.GradedObject.MonObj
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.GradedRing
 public import TauCeti.RingTheory.GradedAlgebra.DirectSum
-public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+public import TauCeti.AlgebraicGeometry.Modules.Affine.GlobalSections
 public import Mathlib.RingTheory.GradedAlgebra.RingHom
 
 /-!
