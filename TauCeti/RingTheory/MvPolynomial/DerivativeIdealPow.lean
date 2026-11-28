@@ -22,6 +22,9 @@ the univariate forms are in `TauCeti.RingTheory.Polynomial.DerivativeIdealPow`.
 
 * `MvPolynomial.pderiv_prod_mem_ideal_pow`: iterated partial derivatives of multivariate
   polynomials, in an arbitrary variable.
+* `MvPolynomial.pow_dvd_aeval_iterate_pderiv_mul_X_pow_sub_X_pow`: divisibility of ordinary
+  jets at points satisfying a Frobenius congruence, using
+  `Derivation.iterate_mul_prod_mem_ideal_pow`.
 
 ## References
 
@@ -32,7 +35,37 @@ the univariate forms are in `TauCeti.RingTheory.Polynomial.DerivativeIdealPow`.
 
 public section
 
+open Finset
+
 namespace MvPolynomial
+
+variable {R : Type*} [CommRing R] {S : Type*} [CommRing S] [Algebra R S] in
+/-- All ordinary jets in `X i` of `g * (X i ^ p - X j)^e` are divisible by `p ^ e` at
+a point satisfying `a i ^ p ≡ a j (mod p)`, when `i ≠ j`. See Green, *On Landau–Siegel zeros*. -/
+theorem pow_dvd_aeval_iterate_pderiv_mul_X_pow_sub_X_pow {σ : Type*} {i j : σ}
+    (g : MvPolynomial σ R) (hij : j ≠ i) {p : ℕ} {a : σ → S}
+    (ha : (p : S) ∣ a i ^ p - a j) (e k : ℕ) :
+    (p : S) ^ e ∣ aeval a ((pderiv i)^[k] (g * (X i ^ p - X j) ^ e)) := by
+  let d : Derivation R (MvPolynomial σ R) (MvPolynomial σ R) := pderiv i
+  have hfactor (t : ℕ) : aeval a (d^[t] (X i ^ p - X j)) ∈ Ideal.span {(p : S)} := by
+    rw [Ideal.mem_span_singleton]
+    cases t with
+    | zero =>
+      simpa only [Function.iterate_zero_apply, map_sub, map_pow, aeval_X] using ha
+    | succ t =>
+      have hd : d (X i ^ p - X j) = p • X i ^ (p - 1) := by
+        simp only [d, map_sub, pderiv_pow, pderiv_X_self, pderiv_X_of_ne hij, mul_one,
+          sub_zero, nsmul_eq_mul]
+      rw [Function.iterate_succ_apply, hd]
+      have hmap (f : MvPolynomial σ R) : d^[t] (p • f) = p • d^[t] f := by
+        simpa only [pow_apply_eq_iterate, Derivation.coeFn_coe] using
+          map_nsmul (d.toLinearMap ^ t) p f
+      rw [hmap, map_nsmul, nsmul_eq_mul]
+      exact dvd_mul_right _ _
+  have hprod := d.iterate_mul_prod_mem_ideal_pow (RingHomClass.toRingHom (aeval a))
+    (fun _ : Fin e ↦ X i ^ p - X j) g (Ideal.span {(p : S)}) k (fun _ t _ ↦ hfactor t) k le_rfl
+  simpa only [prod_const, card_univ, Fintype.card_fin, Ideal.span_singleton_pow,
+    Ideal.mem_span_singleton, RingHom.coe_coe, d] using hprod
 
 variable {R σ ι : Type*} [CommSemiring R]
 
