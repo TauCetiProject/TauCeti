@@ -70,9 +70,7 @@ theorem exists_mod_four_eq_one_four_mul_eq {a E : ℤ} {u : Finset ℤ}
   have hsplit : E * ∏ P ∈ u.erase E, P = fundamentalDiscriminant a := by
     rw [Finset.mul_prod_erase u (fun P => P) hE]; exact huprod
   refine ⟨∏ P ∈ u.erase E, P, ?_, ?_⟩
-  · refine prod_primeDiscriminant_mod_four_eq_one
-      (fun P hP => hu P (Finset.mem_of_mem_erase hP)) fun P hP hPev => ?_
-    exact Finset.ne_of_mem_erase hP (hue P (Finset.mem_of_mem_erase hP) E hE hPev hEeven)
+  · exact prod_erase_primeDiscriminant_mod_four_eq_one hu hue hE hEeven
   · have h2 : (2 : ℤ) ∣ fundamentalDiscriminant a :=
       hsplit ▸ (two_dvd_evenPrimeDiscriminant hEeven).mul_right _
     have hmod : a % 4 ≠ 1 := fun h =>

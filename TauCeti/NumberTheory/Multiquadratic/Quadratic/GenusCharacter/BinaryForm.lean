@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.BinaryQuadraticForm.GenusCharacter
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Reflection
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.Dirichlet
-import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Basic
 import TauCeti.Data.Int.DivMod
 import TauCeti.Data.ZMod.Units
 
@@ -35,7 +34,9 @@ that domain. Its definition gives precedence to a represented value with charact
 * `binaryFormGenusChar_eq_binaryQuadraticFormGenusChar`: comparison of the total character
   with the bundled form character.
 * `binaryFormGenusChar_eq_of_represents`: evaluation at any coprime represented integer.
-* `binaryFormGenusChar_eq_zero_iff`: the content criterion for vanishing at nonzero products.
+* `binaryFormGenusChar_eq_zero_iff`: the content criterion for prime-discriminant indices.
+* `binaryFormGenusChar_eq_zero_iff_of_prod_ne_zero`: the criterion for any nonzero product.
+* `binaryFormGenusChar_principalForm`: the character is `1` on every principal form.
 * `binaryFormGenusChar_congr_of_exists_eval_iff`: forms representing the same integers have
   the same total character, without restrictions on the indices.
 * `binaryFormGenusChar_smul`, `binaryFormGenusChar_reflected`, and `binaryFormGenusChar_smul'`:
@@ -131,9 +132,7 @@ theorem isGenusChar_genusChar {t : Finset ℤ}
   refine primeDiscriminantCharFun_principalForm_eq_one (ht P hP) ?_ hmod x y ?_
   · intro hPe
     have hrest : (∏ P' ∈ t.erase P, P') % 4 = 1 :=
-      prod_primeDiscriminant_mod_four_eq_one (fun P' hP' => ht P' (Finset.mem_of_mem_erase hP'))
-        (fun P' hP' hP'e => Finset.ne_of_mem_erase hP'
-          (heven P hP P' (Finset.mem_of_mem_erase hP') hPe hP'e).symm)
+      prod_erase_primeDiscriminant_mod_four_eq_one ht heven hP hPe
     rwa [Int.mul_emod, hrest, one_mul, Int.emod_emod]
   · rw [← hfactor]
     exact hcop.of_prod_right _ hP
@@ -199,10 +198,25 @@ theorem binaryFormGenusChar_eq_zero_iff_not_exists (t : Finset ℤ) (Q : BinaryQ
 
 /-- For a nonzero product of indices the total form character vanishes exactly when the
 content and that product have a common nonunit factor. -/
-@[simp] theorem binaryFormGenusChar_eq_zero_iff {t : Finset ℤ}
+theorem binaryFormGenusChar_eq_zero_iff_of_prod_ne_zero {t : Finset ℤ}
     (hprod : (∏ P ∈ t, P) ≠ 0) (Q : BinaryQuadraticForm ℤ) :
     binaryFormGenusChar t Q = 0 ↔ ¬ IsCoprime (Q.content : ℤ) (∏ P ∈ t, P) := by
   rw [binaryFormGenusChar_eq_zero_iff_not_exists, Q.exists_isCoprime_eval_iff hprod]
+
+/-- For a finite set of prime discriminants, the total form character vanishes exactly when
+the content and the product have a common nonunit factor. -/
+@[simp] theorem binaryFormGenusChar_eq_zero_iff {t : Finset ℤ}
+    (ht : ∀ P ∈ t, IsPrimeDiscriminant P) (Q : BinaryQuadraticForm ℤ) :
+    binaryFormGenusChar t Q = 0 ↔ ¬ IsCoprime (Q.content : ℤ) (∏ P ∈ t, P) :=
+  binaryFormGenusChar_eq_zero_iff_of_prod_ne_zero
+    (prod_ne_zero_of_forall_isPrimeDiscriminant ht) Q
+
+/-- The total form character is `1` on every principal form, since it represents `1` at
+`(1, 0)`. -/
+@[simp] theorem binaryFormGenusChar_principalForm (t : Finset ℤ) (D : ℤ) :
+    binaryFormGenusChar t (principalForm D) = 1 := by
+  rw [binaryFormGenusChar_eq_one_iff]
+  exact ⟨1, 0, by simp [isCoprime_one_left]⟩
 
 /-- The empty product gives the trivial character on all forms. -/
 @[simp] theorem binaryFormGenusChar_empty (Q : BinaryQuadraticForm ℤ) :

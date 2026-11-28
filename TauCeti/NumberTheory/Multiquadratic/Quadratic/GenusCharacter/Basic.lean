@@ -169,10 +169,7 @@ theorem primeDiscriminantCharFun_eq_one_of_mem_of_four_mul_eq_sq_sub_mul_sq {s :
   refine primeDiscriminantCharFun_eq_one_of_four_mul_eq_sq_sub_mul_sq (hs P hP) ?_
     hcop h
   intro hPeven
-  exact prod_primeDiscriminant_mod_four_eq_one
-    (fun P' hP' => hs P' (Finset.mem_of_mem_erase hP'))
-    (fun P' hP' hev => Finset.ne_of_mem_erase hP'
-      (heven P hP P' (Finset.mem_of_mem_erase hP') hPeven hev).symm)
+  exact prod_erase_primeDiscriminant_mod_four_eq_one hs heven hP hPeven
 
 /-- The genus character indexed by a finite set `s` of prime discriminants: the product of the
 characters they carry. The genus characters of a fundamental discriminant `D` are those indexed by

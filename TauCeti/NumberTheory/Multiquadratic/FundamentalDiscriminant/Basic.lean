@@ -44,10 +44,6 @@ shown to be fundamental in `FundamentalDiscriminant/Examples.lean`.
 
 ## Main results
 
-* `TauCeti.Multiquadratic.IsPrimeDiscriminant.mod_four_eq_one` and
-  `TauCeti.Multiquadratic.prod_primeDiscriminant_mod_four_eq_one`: odd prime discriminants
-  and their products are `1` modulo `4`.
-
 * `TauCeti.Multiquadratic.IsPrimeDiscriminant.isFundamentalDiscr`: every prime
   discriminant is a fundamental discriminant.
 * `TauCeti.Multiquadratic.isFundamentalDiscr_prod`: a product of distinct prime
@@ -67,25 +63,6 @@ The generic `Int.IsFundamentalDiscr` fact `Int.IsFundamentalDiscr.not_isSquare_r
 public section
 
 namespace TauCeti.Multiquadratic
-
-/-- A prime discriminant other than `-4`, `8`, `-8` is congruent to `1` modulo `4`: it is the
-odd prime discriminant `p*`. -/
-theorem IsPrimeDiscriminant.mod_four_eq_one {P : ℤ} (hP : IsPrimeDiscriminant P)
-    (hne : ¬ IsEvenPrimeDiscriminant P) : P % 4 = 1 := by
-  rcases isPrimeDiscriminant_iff.mp hP with hev | ⟨_p, _hp, hodd, rfl⟩
-  · exact absurd hev hne
-  · exact oddPrimeDiscriminant_mod_four_eq_one_iff.mpr hodd
-
-/-- A product of odd prime discriminants is congruent to `1` modulo `4`. -/
-theorem prod_primeDiscriminant_mod_four_eq_one {s : Finset ℤ}
-    (hs : ∀ P ∈ s, IsPrimeDiscriminant P) (hne : ∀ P ∈ s, ¬ IsEvenPrimeDiscriminant P) :
-    (∏ P ∈ s, P) % 4 = 1 :=
-  Finset.prod_induction _ (fun x => x % 4 = 1)
-    (fun x y hx hy => by
-      have h := Int.mul_emod x y 4
-      rw [hx, hy] at h
-      simpa using h)
-    (by norm_num) fun P hP => (hs P hP).mod_four_eq_one (hne P hP)
 
 /-- Every prime discriminant is a fundamental discriminant: the odd ones are `1` modulo `4` and
 squarefree, the even ones `-4, 8, -8` are `4` times the radicands `-1, 2, -2`. -/
