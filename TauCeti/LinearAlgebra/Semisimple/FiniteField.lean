@@ -14,18 +14,22 @@ import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
-# Conjugacy of semisimple primary endomorphisms over finite fields
+# Conjugacy of endomorphisms annihilated by an irreducible polynomial over finite fields
 
-Let `L / k` be an extension of finite fields, and let `g : Module.End k W` be a semisimple
-`k`-linear endomorphism of a finite-dimensional `k`-vector space `W` with
-`Module.finrank k W = Module.finrank k L` whose characteristic polynomial is a power `P ^ j` of an
-irreducible polynomial `P : k[X]`. Then `P` annihilates `g`, giving `W` the structure of a vector
-space over `k[X]/(P)`. Comparing dimensions shows `[k[X]/(P) : k] ∣ [L : k]`, so `k[X]/(P)` embeds
-into `L` and `g` is conjugate via a `k`-linear equivalence `L ≃ₗ[k] W` to left multiplication
-`Algebra.lmul k L y` by some `y ∈ L`.
+Let `L / k` be an extension of finite fields, and let `g : Module.End k W` be a `k`-linear
+endomorphism of a finite-dimensional `k`-vector space `W` with
+`Module.finrank k W = Module.finrank k L`. If `g` is annihilated by an irreducible polynomial
+`P : k[X]` (`Polynomial.aeval g P = 0`), then `W` becomes a vector space over `k[X]/(P)`.
+Comparing dimensions shows `[k[X]/(P) : k] ∣ [L : k]`, so `k[X]/(P)` embeds into `L` and `g` is
+conjugate via a `k`-linear equivalence `L ≃ₗ[k] W` to left multiplication `Algebra.lmul k L y` by
+some `y ∈ L`.
 
-* `Module.End.IsSemisimple.exists_conj_lmul_eq`: `g` is conjugate to `Algebra.lmul k L y` for some
-  `e : L ≃ₗ[k] W` and `y : L`.
+In particular, this applies when `g` is semisimple with primary characteristic polynomial `P ^ j`.
+
+* `Module.End.exists_conj_lmul_eq_of_aeval_eq_zero`: any endomorphism `g` annihilated by an
+  irreducible `P : k[X]` is conjugate to `Algebra.lmul k L y` for some `e : L ≃ₗ[k] W` and `y : L`.
+* `Module.End.IsSemisimple.exists_conj_lmul_eq`: specialization to semisimple `g` with
+  `g.charpoly = P ^ j`.
 
 ## References
 
@@ -40,22 +44,19 @@ into `L` and `g` is conjugate via a `k`-linear equivalence `L ≃ₗ[k] W` to le
 
 public section
 
-namespace Module.End.IsSemisimple
+namespace Module.End
 
 open Polynomial Module
 
-/-- Let `L / k` be an extension of finite fields. Any semisimple `k`-linear endomorphism `g` of a
-finite-dimensional `k`-vector space `W` with `Module.finrank k W = Module.finrank k L` whose
-characteristic polynomial is a power `P ^ j` of an irreducible polynomial `P : k[X]` is conjugate
-to left multiplication `Algebra.lmul k L y` for some `e : L ≃ₗ[k] W` and `y ∈ L`. -/
-theorem exists_conj_lmul_eq {k L W : Type*} [Field k] [Field L] [Finite L] [Algebra k L]
-    [AddCommGroup W] [Module k W] [Module.Finite k W] (hdim : finrank k W = finrank k L)
-    {g : End k W} {P : k[X]} {j : ℕ} (hg : g.IsSemisimple) (hP : Irreducible P)
-    (h_charpoly : g.charpoly = P ^ j) :
+/-- Let `L / k` be an extension of finite fields. Any `k`-linear endomorphism `g` of a
+finite-dimensional `k`-vector space `W` with `Module.finrank k W = Module.finrank k L` that is
+annihilated by an irreducible polynomial `P : k[X]` is conjugate to left multiplication
+`Algebra.lmul k L y` for some `e : L ≃ₗ[k] W` and `y ∈ L`. -/
+theorem exists_conj_lmul_eq_of_aeval_eq_zero {k L W : Type*} [Field k] [Field L] [Finite L]
+    [Algebra k L] [AddCommGroup W] [Module k W] [Module.Finite k W]
+    (hdim : finrank k W = finrank k L) {g : End k W} {P : k[X]} (hP : Irreducible P)
+    (h_aeval : Polynomial.aeval g P = 0) :
     ∃ (e : L ≃ₗ[k] W) (y : L), e.conjAlgEquiv k (Algebra.lmul k L y) = g := by
-  have h_aeval : Polynomial.aeval g P = 0 :=
-    minpoly.dvd_iff.mp <|
-      hg.minpoly_squarefree.isRadical j P ((LinearMap.minpoly_dvd_charpoly g).trans h_charpoly.dvd)
   let V : Type _ := AEval' g
   let e₀ : W ≃ₗ[k] V := AEval'.of g
   have : Fact (Irreducible P) := ⟨hP⟩
@@ -75,13 +76,26 @@ theorem exists_conj_lmul_eq {k L W : Type*} [Field k] [Field L] [Finite L] [Alge
   have : Module.Finite (AdjoinRoot P) V := Module.Finite.of_restrictScalars_finite k _ _
   have : Module.Finite (AdjoinRoot P) L := Module.Finite.of_restrictScalars_finite k _ _
   let t : V ≃ₗ[AdjoinRoot P] L := LinearEquiv.ofFinrankEq _ _ hdim_eq
-  have h_root_V (w : W) : AdjoinRoot.root P • e₀ w = e₀ (g w) := AEval'.X_smul_of g w
-  have h_root_L (x : L) : AdjoinRoot.root P • x = φ (AdjoinRoot.root P) * x := rfl
+  have h_root_V (w : W) : AdjoinRoot.root P • e₀ w = e₀ (g w) := by
+    -- `AdjoinRoot.root P` is `Ideal.Quotient.mk (span {P}) X`, whose `IsTorsionBy.module`
+    -- action on `AEval' g` agrees with `X • e₀ w = e₀ (g w)`.
+    exact AEval'.X_smul_of g w
+  have h_root_L (x : L) : AdjoinRoot.root P • x = φ (AdjoinRoot.root P) * x := by
+    rw [Algebra.smul_def, RingHom.algebraMap_toAlgebra]
+    rfl
   refine ⟨(t.symm.restrictScalars k).trans e₀.symm, φ (AdjoinRoot.root P), LinearMap.ext fun w ↦ ?_⟩
-  simp only [LinearEquiv.conjAlgEquiv_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.trans_apply, LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm,
-    LinearEquiv.restrictScalars_apply, LinearEquiv.restrictScalars_symm_apply,
-    Algebra.coe_lmul_eq_mul, LinearMap.mul_apply']
-  rw [← h_root_L, ← t.map_smul, h_root_V, t.symm_apply_apply, e₀.symm_apply_apply]
+  simp [← h_root_L, ← t.map_smul, h_root_V]
 
-end Module.End.IsSemisimple
+/-- Let `L / k` be an extension of finite fields. Any semisimple `k`-linear endomorphism `g` of a
+finite-dimensional `k`-vector space `W` with `Module.finrank k W = Module.finrank k L` whose
+characteristic polynomial is a power `P ^ j` of an irreducible polynomial `P : k[X]` is conjugate
+to left multiplication `Algebra.lmul k L y` for some `e : L ≃ₗ[k] W` and `y ∈ L`. -/
+theorem IsSemisimple.exists_conj_lmul_eq {k L W : Type*} [Field k] [Field L] [Finite L]
+    [Algebra k L] [AddCommGroup W] [Module k W] [Module.Finite k W]
+    (hdim : finrank k W = finrank k L) {g : End k W} {P : k[X]} {j : ℕ} (hg : g.IsSemisimple)
+    (hP : Irreducible P) (h_charpoly : g.charpoly = P ^ j) :
+    ∃ (e : L ≃ₗ[k] W) (y : L), e.conjAlgEquiv k (Algebra.lmul k L y) = g :=
+  exists_conj_lmul_eq_of_aeval_eq_zero hdim hP <| minpoly.dvd_iff.mp <|
+    hg.minpoly_squarefree.isRadical j P ((LinearMap.minpoly_dvd_charpoly g).trans h_charpoly.dvd)
+
+end Module.End
