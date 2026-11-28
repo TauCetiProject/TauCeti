@@ -152,6 +152,12 @@ def constOne : HallAlgebra k :=
 theorem constOne_apply (c : SimilarityClass k) : (constOne : HallAlgebra k) c = 1 :=
   (rfl)
 
+/-- The constant function `𝟙` is nonzero. -/
+@[simp]
+theorem constOne_ne_zero : (constOne : HallAlgebra k) ≠ 0 := fun h ↦ by
+  have h0 := congrArg (fun F : HallAlgebra k ↦ F (ofEnd (0 : Module.End k (Fin 0 → k)))) h
+  simp [constOne_apply, zero_apply] at h0
+
 /-- The rank-`n` part `A|_n` of `A`: equal to `A` on the classes of size `n` and to `0` on the
 others. -/
 def rankPart (n : ℕ) (F : HallAlgebra k) : HallAlgebra k :=

@@ -15,7 +15,6 @@ import Mathlib.LinearAlgebra.Projection
 import TauCeti.LinearAlgebra.GeneralLinearGroup.Basic
 import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.LinearAlgebra.GeneralLinearGroup.SubmoduleOrbit
-import TauCeti.RingTheory.Derivation.Basic
 
 /-!
 # The adjoint of the induction product, and cuspidal elements
@@ -30,6 +29,8 @@ adjoint of multiplication by `f` when `f` lives in size `d`, and for cuspidal `f
 
 * `TauCeti.HallAlgebra.rankInner n A A′`: the inner product `⟨A, A′⟩_n` over `GL_n(k)`.
 * `TauCeti.HallAlgebra.mulAdjoint d f A`: the function `∂_{d,f} A`.
+* `TauCeti.HallAlgebra.mulAdjointDerivation hc hd`: `∂_{d,c}` bundled as a
+  `Derivation ℂ (HallAlgebra k) (HallAlgebra k)` for cuspidal `c` and `d ≠ 0`.
 
 ## Main results
 
@@ -44,6 +45,8 @@ adjoint of multiplication by `f` when `f` lives in size `d`, and for cuspidal `f
   `∂_{d,f} c = ⟨f, c⟩_d · 1`.
 * `TauCeti.HallAlgebra.mulAdjoint_mul`: for cuspidal `c` and `d ≠ 0`, `∂_{d,c}` is a derivation,
   by Mackey's formula `TauCeti.HallAlgebra.blockAverage_mul`.
+* `TauCeti.HallAlgebra.mulAdjoint_one`, `TauCeti.HallAlgebra.mulAdjoint_constOne`, and
+  `TauCeti.HallAlgebra.mulAdjoint_constOne_eq_zero_iff`: action of `∂_{d,f}` on `1` and `𝟙`.
 
 ## References
 
@@ -443,10 +446,7 @@ Anthropic PBC). -/
 @[simp]
 theorem mulAdjoint_constOne_eq_zero_iff (d : ℕ) (f : HallAlgebra k) :
     mulAdjoint d f constOne = 0 ↔ rankInner d f constOne = 0 := by
-  have hne : (constOne : HallAlgebra k) ≠ 0 := fun h ↦ by
-    have h0 := congrArg (fun F : HallAlgebra k ↦ F (ofEnd (0 : Module.End k (Fin 0 → k)))) h
-    simp [constOne_apply, zero_apply] at h0
-  rw [mulAdjoint_constOne, smul_eq_zero_iff_left hne]
+  rw [mulAdjoint_constOne, smul_eq_zero_iff_left constOne_ne_zero]
 
 /-- For cuspidal `c` and `d ≠ 0`, `mulAdjoint d c` bundled as a `ℂ`-derivation of `HallAlgebra k`.
 Adapted from grh-lean (`src/Lib/LocalGL/Green/TauFunctions.lean`, Apache 2.0, Copyright 2026
@@ -466,22 +466,6 @@ theorem mulAdjointDerivation_apply {c : HallAlgebra k} (hc : c.IsCuspidal)
     {d : ℕ} (hd : d ≠ 0) (F : HallAlgebra k) :
     mulAdjointDerivation hc hd F = mulAdjoint d c F := by
   rfl
-
-/-- For cuspidal `c` and `d ≠ 0`, the derivation `∂_{d, c}` satisfies the power rule
-`∂_{d, c} (F ^ (n + 1)) = (n + 1) • (F ^ n * ∂_{d, c} F)`. -/
-theorem mulAdjoint_pow_succ {c : HallAlgebra k} (hc : c.IsCuspidal) {d : ℕ} (hd : d ≠ 0)
-    (F : HallAlgebra k) (n : ℕ) :
-    mulAdjoint d c (F ^ (n + 1)) = (n + 1) • (F ^ n * mulAdjoint d c F) := by
-  simpa only [mulAdjointDerivation_apply, smul_eq_mul, Nat.add_sub_cancel] using
-    (mulAdjointDerivation hc hd).leibniz_pow F (n + 1)
-
-/-- **Finite-product Leibniz rule.** For cuspidal `c` and `d ≠ 0`,
-`∂_{d, c} (∏ i ∈ s, F i) = ∑ i ∈ s, ∂_{d, c} (F i) * ∏ j ∈ s.erase i, F j`. -/
-theorem mulAdjoint_prod {ι : Type*} [DecidableEq ι] {c : HallAlgebra k} (hc : c.IsCuspidal)
-    {d : ℕ} (hd : d ≠ 0) (s : Finset ι) (F : ι → HallAlgebra k) :
-    mulAdjoint d c (∏ i ∈ s, F i) =
-      ∑ i ∈ s, mulAdjoint d c (F i) * ∏ j ∈ s.erase i, F j := by
-  simpa [smul_eq_mul, mul_comm] using (mulAdjointDerivation hc hd).leibniz_prod s F
 
 end Adjunction
 
