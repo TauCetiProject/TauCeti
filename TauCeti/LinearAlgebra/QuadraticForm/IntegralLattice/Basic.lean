@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.Module.Lattice.Full
 public import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Basic
-import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
+import TauCeti.LinearAlgebra.QuadraticForm.TensorProduct
 
 /-!
 # Integral lattices in a quadratic space
@@ -108,11 +108,8 @@ of the integral form on pure tensors with first factor one. -/
 theorem eq_comp_isBaseChange_subtype_iff (q' : QuadraticForm F (F ⊗[R] N.carrier)) :
     q' = q.comp N.isBaseChange_subtype.equiv.toLinearMap ↔
       ∀ x : N.carrier, q' (1 ⊗ₜ[R] x) = algebraMap R F (N.integralForm x) := by
-  have h (x : N.carrier) :
-      (q.comp N.isBaseChange_subtype.equiv.toLinearMap) (1 ⊗ₜ[R] x) =
-        algebraMap R F (N.integralForm x) := by
-    simp [IsBaseChange.equiv_tmul]
-  exact ⟨fun heq x ↦ heq ▸ h x, fun heq ↦ baseChange_ext fun x ↦ (heq x).trans (h x).symm⟩
+  simpa only [Submodule.subtype_apply, algebraMap_integralForm] using
+    N.isBaseChange_subtype.eq_comp_quadraticMap_iff q q'
 
 end FractionField
 

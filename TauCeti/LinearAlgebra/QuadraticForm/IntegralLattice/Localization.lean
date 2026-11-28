@@ -8,25 +8,34 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import Mathlib.RingTheory.Localization.AsSubring
 public import TauCeti.LinearAlgebra.QuadraticForm.IntegralLattice.Basic
-import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
 import Mathlib.RingTheory.LocalProperties.Submodule
 import TauCeti.Algebra.Module.Lattice.BaseChange
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
+import TauCeti.LinearAlgebra.QuadraticForm.Isometry
+import TauCeti.LinearAlgebra.QuadraticForm.TensorProduct
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
 # Localization of integral quadratic lattices
 
 Localization is the span of the lattice over the localized ring inside the original quadratic
-space. Clearing a denominator in a vector clears its square in the quadratic value. Mathlib's
-`Submodule.localized'` supplies the carrier and `Submodule.toLocalized'` its canonical inclusion.
-Integral isometric equivalences extend using `IsLocalizedModule.mapEquiv` for the underlying
-linear equivalence. Membership, containment, and equality of embedded lattices can be tested at
-all maximal ideals.
+space, with the integral quadratic form extended to the localized ring.
+
+## Main definitions and results
+
+* `IntegralQuadraticLattice.localize` and `IntegralQuadraticLattice.toLocalize`: the localized
+  lattice and its canonical inclusion from the original carrier.
+* `IntegralQuadraticLattice.localizeIsometryEquiv`: extension of integral isometric equivalences,
+  compatible with identity, composition, and inversion.
+* `IntegralQuadraticLattice.mem_iff_local`, `IntegralQuadraticLattice.le_iff_local`, and
+  `IntegralQuadraticLattice.eq_iff_local`: membership, containment, and equality of embedded
+  lattices can be tested at all maximal ideals.
 
 ## References
 
 * John Voight, *Quaternion algebras*, §9.4, especially Lemma 9.4.6 and Corollary 9.4.7.
+* Mathlib's `Submodule.localized'` and `Submodule.toLocalized'` for the carrier and inclusion,
+  and `IsLocalizedModule.mapEquiv` for the underlying linear equivalence.
 -/
 
 public section
@@ -46,34 +55,37 @@ variable (S : Submonoid R) (hS : S ≤ R⁰)
 local notation "Rₛ" => Localization.subalgebra K S hS
 
 /-- The lattice over the localization at `S`, embedded in the same generic quadratic space. -/
-noncomputable def localize : IntegralQuadraticLattice Rₛ Q := by
-  have := isLocalizedModule_id S V Rₛ
-  refine
-    { carrier := L.carrier.localized' Rₛ S LinearMap.id
-      isFullLattice := ?_
-      integral := ?_ }
-  · simpa [Submodule.localized'_eq_span] using
-      (IsBaseChange.ofEquiv (LinearEquiv.refl K V)).isFullLattice_span_image (S := Rₛ) L.carrier
-  · intro x hx
-    obtain ⟨s, hs⟩ := (L.carrier.map_mem_localized'_iff Rₛ S LinearMap.id x).mp hx
-    obtain ⟨r, hr⟩ := L.integral _ hs
-    apply Submodule.mem_one.mp
-    apply (IsLocalization.smul_mem_iff (s := s * s)).mp
-    rw [Submonoid.smul_def, Submonoid.coe_mul, ← Q.map_smul_of_tower]
-    exact Submodule.mem_one.mpr ⟨algebraMap R Rₛ r,
-      (IsScalarTower.algebraMap_apply R Rₛ K r).symm.trans hr⟩
+noncomputable def localize : IntegralQuadraticLattice Rₛ Q :=
+  letI := isLocalizedModule_id S V Rₛ
+  { carrier := L.carrier.localized' Rₛ S LinearMap.id
+    isFullLattice := by
+      simpa [Submodule.localized'_eq_span] using
+        (IsBaseChange.ofEquiv (LinearEquiv.refl K V)).isFullLattice_span_image (S := Rₛ) L.carrier
+    integral := by
+      intro x hx
+      obtain ⟨s, hs⟩ := (L.carrier.map_mem_localized'_iff Rₛ S LinearMap.id x).mp hx
+      obtain ⟨r, hr⟩ := L.integral _ hs
+      apply Submodule.mem_one.mp
+      apply (IsLocalization.smul_mem_iff (s := s * s)).mp
+      rw [Submonoid.smul_def, Submonoid.coe_mul, ← Q.map_smul_of_tower]
+      exact Submodule.mem_one.mpr ⟨algebraMap R Rₛ r,
+        (IsScalarTower.algebraMap_apply R Rₛ K r).symm.trans hr⟩ }
+
+private theorem carrier_localize_eq_localized' :
+    letI := isLocalizedModule_id S V Rₛ
+    (L.localize S hS).carrier = L.carrier.localized' Rₛ S LinearMap.id := (rfl)
 
 /-- The underlying submodule of a localized lattice is the span over the localized ring. -/
 theorem carrier_localize :
     (L.localize S hS).carrier = Submodule.span Rₛ (L.carrier : Set V) := by
-  simp [localize, Submodule.localized'_eq_span]
+  simp [carrier_localize_eq_localized', Submodule.localized'_eq_span]
 
 /-- A vector belongs to the localization exactly when some scalar in `S` carries it into the
 original lattice. -/
 theorem mem_localize_iff {x : V} :
     x ∈ (L.localize S hS).carrier ↔ ∃ s ∈ S, s • x ∈ L.carrier := by
   have := isLocalizedModule_id S V Rₛ
-  simpa [localize, Subtype.exists] using
+  simpa [carrier_localize_eq_localized', Subtype.exists] using
     L.carrier.map_mem_localized'_iff Rₛ S LinearMap.id x
 
 /-- The canonical linear inclusion into the localized carrier. -/
@@ -107,49 +119,60 @@ theorem eq_comp_localized_integralForm_iff (q : QuadraticForm Rₛ (Rₛ ⊗[R] 
     q = (L.localize S hS).integralForm.comp
         (IsLocalizedModule.isBaseChange S Rₛ (L.toLocalize S hS)).equiv.toLinearMap ↔
       ∀ x : L.carrier, q (1 ⊗ₜ[R] x) = algebraMap R Rₛ (L.integralForm x) := by
-  have h (x : L.carrier) :
-      ((L.localize S hS).integralForm.comp
-        (IsLocalizedModule.isBaseChange S Rₛ (L.toLocalize S hS)).equiv.toLinearMap)
-          (1 ⊗ₜ[R] x) = algebraMap R Rₛ (L.integralForm x) := by
-    simp [IsBaseChange.equiv_tmul]
-  exact ⟨fun heq x ↦ heq ▸ h x, fun heq ↦ baseChange_ext fun x ↦ (heq x).trans (h x).symm⟩
+  simpa only [integralForm_toLocalize] using
+    (IsLocalizedModule.isBaseChange S Rₛ (L.toLocalize S hS)).eq_comp_quadraticMap_iff
+      (L.localize S hS).integralForm q
 
 variable {W : Type*} [AddCommGroup W] [Module R W] [Module K W] [IsScalarTower R K W]
   {Q' : QuadraticForm K W} (M : IntegralQuadraticLattice R Q')
 
 /-- An isometric equivalence of the integral forms extends over the localized ring. -/
 noncomputable def localizeIsometryEquiv (e : L.integralForm.IsometryEquiv M.integralForm) :
-    (L.localize S hS).integralForm.IsometryEquiv (M.localize S hS).integralForm := by
+    (L.localize S hS).integralForm.IsometryEquiv (M.localize S hS).integralForm :=
   let f := IsLocalizedModule.mapEquiv S (L.toLocalize S hS) (M.toLocalize S hS) Rₛ
     e.toLinearEquiv
-  refine { toLinearEquiv := f, map_app' := fun x ↦ ?_ }
-  have h : (M.localize S hS).integralForm.comp f.toLinearMap = (L.localize S hS).integralForm := by
-    apply QuadraticMap.ext_of_span_range_eq_top (L.toLocalize S hS)
-      (IsLocalizedModule.isBaseChange S Rₛ (L.toLocalize S hS)).span_range_eq_top
-    intro y
-    simp [f]
-  exact DFunLike.congr_fun h x
+  { toLinearEquiv := f
+    map_app' := fun x ↦ by
+      have h : (M.localize S hS).integralForm.comp f.toLinearMap =
+          (L.localize S hS).integralForm := by
+        apply QuadraticMap.ext_of_span_range_eq_top (L.toLocalize S hS)
+          (IsLocalizedModule.isBaseChange S Rₛ (L.toLocalize S hS)).span_range_eq_top
+        intro y
+        simp [f]
+      exact DFunLike.congr_fun h x }
+
+/-- The underlying linear equivalence of a localized isometric equivalence is the localization
+of the original linear equivalence. -/
+theorem toLinearEquiv_localizeIsometryEquiv (e : L.integralForm.IsometryEquiv M.integralForm) :
+    (L.localizeIsometryEquiv S hS M e).toLinearEquiv =
+      IsLocalizedModule.mapEquiv S (L.toLocalize S hS) (M.toLocalize S hS) Rₛ e.toLinearEquiv :=
+  (rfl)
 
 /-- On integral vectors the localized isometric equivalence agrees with the original one. -/
 @[simp]
 theorem localizeIsometryEquiv_toLocalize (e : L.integralForm.IsometryEquiv M.integralForm)
     (x : L.carrier) :
     L.localizeIsometryEquiv S hS M e (L.toLocalize S hS x) = M.toLocalize S hS (e x) := by
-  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv, localizeIsometryEquiv]
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv, toLinearEquiv_localizeIsometryEquiv]
   simp only [IsLocalizedModule.mapEquiv_apply, IsLocalizedModule.map_apply,
     LinearEquiv.coe_coe, QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+
+private theorem localizeIsometryEquiv_ext
+    {e f : (L.localize S hS).integralForm.IsometryEquiv (M.localize S hS).integralForm}
+    (h : ∀ x : L.carrier, e (L.toLocalize S hS x) = f (L.toLocalize S hS x)) : e = f := by
+  have hlin : e.toLinearEquiv.toLinearMap = f.toLinearEquiv.toLinearMap :=
+    LinearMap.ext_on_range
+      (IsLocalizedModule.isBaseChange S Rₛ (L.toLocalize S hS)).span_range_eq_top h
+  exact DFunLike.ext _ _ fun x ↦ DFunLike.congr_fun hlin x
 
 /-- Localization preserves the identity isometric equivalence. -/
 @[simp]
 theorem localizeIsometryEquiv_refl :
     L.localizeIsometryEquiv S hS L (.refl L.integralForm) =
       .refl (L.localize S hS).integralForm := by
-  apply DFunLike.ext
+  apply L.localizeIsometryEquiv_ext S hS L
   intro x
-  refine DFunLike.congr_fun (LinearMap.ext_on_range
-    (IsLocalizedModule.isBaseChange S Rₛ (L.toLocalize S hS)).span_range_eq_top ?_) x
-  intro y
-  exact L.localizeIsometryEquiv_toLocalize S hS L (.refl L.integralForm) y
+  simp only [localizeIsometryEquiv_toLocalize, QuadraticMap.IsometryEquiv.refl_apply]
 
 /-- Localization commutes with composition of integral isometric equivalences. -/
 @[simp]
@@ -159,32 +182,17 @@ theorem localizeIsometryEquiv_trans {U : Type*} [AddCommGroup U] [Module R U] [M
     (f : M.integralForm.IsometryEquiv N.integralForm) :
     L.localizeIsometryEquiv S hS N (e.trans f) =
       (L.localizeIsometryEquiv S hS M e).trans (M.localizeIsometryEquiv S hS N f) := by
-  apply DFunLike.ext
+  apply L.localizeIsometryEquiv_ext S hS N
   intro x
-  refine DFunLike.congr_fun (LinearMap.ext_on_range
-    (IsLocalizedModule.isBaseChange S Rₛ (L.toLocalize S hS)).span_range_eq_top ?_) x
-  intro y
-  -- The composite is defined on the underlying linear equivalences, where `trans_apply` applies.
-  change (L.localizeIsometryEquiv S hS N (e.trans f)).toLinearEquiv (L.toLocalize S hS y) =
-    ((L.localizeIsometryEquiv S hS M e).toLinearEquiv.trans
-      (M.localizeIsometryEquiv S hS N f).toLinearEquiv) (L.toLocalize S hS y)
-  simp only [LinearEquiv.trans_apply, QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
-    localizeIsometryEquiv_toLocalize]
-  exact congrArg (N.toLocalize S hS)
-    (LinearEquiv.trans_apply (e₁₂ := e.toLinearEquiv) (e₂₃ := f.toLinearEquiv) y)
+  simp only [QuadraticMap.IsometryEquiv.trans_apply, localizeIsometryEquiv_toLocalize]
 
 /-- Localization commutes with inversion of integral isometric equivalences. -/
 @[simp]
 theorem localizeIsometryEquiv_symm (e : L.integralForm.IsometryEquiv M.integralForm) :
     M.localizeIsometryEquiv S hS L e.symm = (L.localizeIsometryEquiv S hS M e).symm := by
-  apply DFunLike.ext
+  apply M.localizeIsometryEquiv_ext S hS L
   intro x
-  refine DFunLike.congr_fun (LinearMap.ext_on_range
-    (IsLocalizedModule.isBaseChange S Rₛ (M.toLocalize S hS)).span_range_eq_top ?_) x
-  intro y
-  simp only [LinearEquiv.coe_coe, QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
-    localizeIsometryEquiv_toLocalize]
-  apply (L.localizeIsometryEquiv S hS M e).eq_symm_apply.mpr
+  rw [localizeIsometryEquiv_toLocalize, QuadraticMap.IsometryEquiv.eq_symm_apply]
   simp only [localizeIsometryEquiv_toLocalize, QuadraticMap.IsometryEquiv.apply_symm_apply]
 
 end Localization
@@ -193,48 +201,55 @@ local notation "Sₚ" p => (@Ideal.primeCompl_le_nonZeroDivisors R _
   (Function.Injective.noZeroDivisors (algebraMap R K) (IsFractionRing.injective R K)
     (map_zero _) (map_mul _)) p _)
 
-local notation "Rₚ" p => (Localization.subalgebra K (Ideal.primeCompl p) (Sₚ p))
+local notation "Rₚ'" p => (Localization.subalgebra K (Ideal.primeCompl p) (Sₚ p))
+
+include K in
+private theorem isLocalizedModule_id_primeCompl :
+    ∀ (p : Ideal R) [p.IsMaximal],
+      IsLocalizedModule p.primeCompl (LinearMap.id (R := R) (M := V)) :=
+  fun p _ ↦ isLocalizedModule_id p.primeCompl V (Rₚ' p)
 
 /-- An embedded lattice is the intersection of its localizations at the maximal ideals. -/
 theorem mem_iff_local {x : V} :
     x ∈ L.carrier ↔
       ∀ (p : Ideal R) [p.IsMaximal], x ∈ (L.localize p.primeCompl (Sₚ p)).carrier := by
-  have localized (p : Ideal R) [p.IsMaximal] : IsLocalizedModule p.primeCompl
-      (LinearMap.id (R := R) (M := V)) := isLocalizedModule_id p.primeCompl V (Rₚ p)
-  refine ⟨fun hx p _ ↦ (L.mem_localize_iff p.primeCompl (Sₚ p)).mpr ⟨1, one_mem _, by simpa⟩,
-    fun h ↦ @Submodule.mem_of_localization_maximal R V _ _ _ (fun _ _ ↦ V) _ _
-      (fun _ _ ↦ LinearMap.id) localized
-      x L.carrier fun p _ ↦ ?_⟩
-  rw [← Submodule.restrictScalars_localized' (Rₚ p)]
-  exact h p
+  refine ⟨fun hx p _ ↦ (L.mem_localize_iff p.primeCompl (Sₚ p)).mpr ⟨1, one_mem _, by simpa⟩, ?_⟩
+  intro h
+  apply +allowSynthFailures @Submodule.mem_of_localization_maximal (Mₚ := fun _ _ ↦ V)
+    (f := fun _ _ ↦ LinearMap.id)
+  case inst => exact isLocalizedModule_id_primeCompl (K := K)
+  intro p _
+  simpa only [← Submodule.restrictScalars_localized' (Rₚ' p), Submodule.restrictScalars_mem,
+    LinearMap.id_apply, carrier_localize_eq_localized'] using h p
 
 /-- Containment of embedded lattices can be tested at all maximal ideals. -/
 theorem le_iff_local {Q' : QuadraticForm K V} (M : IntegralQuadraticLattice R Q') :
     L.carrier ≤ M.carrier ↔
       ∀ (p : Ideal R) [p.IsMaximal],
         (L.localize p.primeCompl (Sₚ p)).carrier ≤ (M.localize p.primeCompl (Sₚ p)).carrier := by
-  have localized (p : Ideal R) [p.IsMaximal] : IsLocalizedModule p.primeCompl
-      (LinearMap.id (R := R) (M := V)) := isLocalizedModule_id p.primeCompl V (Rₚ p)
-  refine ⟨fun h p _ ↦ ?_,
-    fun h ↦ @Submodule.le_of_localization_maximal R V _ _ _ (fun _ _ ↦ V) _ _
-      (fun _ _ ↦ LinearMap.id) localized _ _
-      fun p _ ↦ ?_⟩
+  refine ⟨fun h p _ ↦ ?_, ?_⟩
   · rw [L.carrier_localize, M.carrier_localize]
     exact Submodule.span_mono h
-  · rw [← Submodule.restrictScalars_localized' (Rₚ p),
-      ← Submodule.restrictScalars_localized' (Rₚ p)]
-    exact fun _ hx ↦ h p hx
+  · intro h
+    apply +allowSynthFailures @Submodule.le_of_localization_maximal (Mₚ := fun _ _ ↦ V)
+      (f := fun _ _ ↦ LinearMap.id)
+    case inst => exact isLocalizedModule_id_primeCompl (K := K)
+    intro p _
+    simpa only [← Submodule.restrictScalars_localized' (Rₚ' p), carrier_localize_eq_localized']
+      using Submodule.restrictScalars_mono R (h p)
 
 /-- In a fixed quadratic space two embedded lattices are equal exactly when their
 localizations at every maximal ideal are equal. -/
 theorem eq_iff_local (M : IntegralQuadraticLattice R Q) :
     L = M ↔ ∀ (p : Ideal R) [p.IsMaximal],
       L.localize p.primeCompl (Sₚ p) = M.localize p.primeCompl (Sₚ p) := by
-  have localized (p : Ideal R) [p.IsMaximal] : IsLocalizedModule p.primeCompl
-      (LinearMap.id (R := R) (M := V)) := isLocalizedModule_id p.primeCompl V (Rₚ p)
   refine ⟨fun h p _ ↦ congrArg (fun N ↦ N.localize p.primeCompl (Sₚ p)) h, fun h ↦ ?_⟩
   apply IntegralQuadraticLattice.ext
-  exact @Submodule.eq_of_localization_maximal R V _ _ _ (fun p _ ↦ Rₚ p) _ _ _
-    (fun _ _ ↦ V) _ _ _ _ (fun _ _ ↦ LinearMap.id) localized _ _ fun p _ ↦ congrArg carrier (h p)
+  apply +allowSynthFailures @Submodule.eq_of_localization_maximal (R := R) (M := V)
+    (Rₚ := fun p _ ↦ Rₚ' p) (Mₚ := fun _ _ ↦ V) (f := fun _ _ ↦ LinearMap.id)
+  all_goals try (intro p _; infer_instance)
+  case inst => exact isLocalizedModule_id_primeCompl (K := K)
+  intro p _
+  simpa only [carrier_localize_eq_localized'] using congrArg carrier (h p)
 
 end TauCeti.IntegralQuadraticLattice

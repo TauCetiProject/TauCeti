@@ -12,7 +12,11 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 # Basic properties of quadratic maps
 
 This file records elementary consequences of the quadratic-map axioms.
-The codomain restriction uses Mathlib's `QuadraticMap.ofPolar` constructor.
+
+## Main definitions
+
+* `QuadraticMap.codRestrict`: a quadratic map whose values lie in a submodule, regarded as
+  taking values in that submodule.
 
 ## Main results
 
@@ -33,6 +37,10 @@ The codomain restriction uses Mathlib's `QuadraticMap.ofPolar` constructor.
   equivalence identifies them.
 * `RingEquiv.congrPiQuadraticForm`: additive equivalence of coordinate quadratic forms induced by
   a ring isomorphism of scalars, preserving scalar multiplication and anisotropy.
+
+## References
+
+* Mathlib's `QuadraticMap.ofPolar` for codomain restriction.
 -/
 
 public section
