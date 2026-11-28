@@ -183,7 +183,7 @@ input polynomial. -/
     inputPolynomial (fun k => rename (Sum.map f id) (P k)) j =
       map (rename f : MvPolynomial W K →ₐ[K] MvPolynomial W' K) (inputPolynomial P j) := by
   rw [← polynomialReparametrize_X, inputPolynomial_polynomialReparametrize, rename_eq_aeval]
-  rfl
+  simp only [Function.comp_def]
 
 /-- Renaming the parameter variables precomposes the realization map with that renaming. -/
 @[simp] theorem polynomialRealization_rename_sumMap (f : W → W')
@@ -278,11 +278,11 @@ theorem polynomialInputDegree_polynomialCompose_le [Fintype J] [Fintype L]
     polynomialInputDegree (polynomialCompose P Q) ≤
       polynomialInputDegree P * polynomialInputDegree Q := by
   refine (polynomialInputDegree_le_iff _).2 fun l => ?_
-  rw [inputPolynomial_polynomialCompose, ← eval₂_map, ← coe_eval₂Hom,
-    ← algebraMap_eq (R := MvPolynomial (W ⊕ V) K) (σ := I), ← coe_aeval_eq_eval₂Hom]
-  refine (totalDegree_aeval_le _ fun j _ => totalDegree_map_inputPolynomial_le P _ j).trans ?_
+  rw [inputPolynomial_polynomialCompose]
+  refine (totalDegree_eval₂_C_comp_le _ _ fun j _ =>
+    totalDegree_map_inputPolynomial_le P _ j).trans ?_
   rw [mul_comm]
-  exact Nat.mul_le_mul_left _ (totalDegree_map_inputPolynomial_le Q _ l)
+  exact Nat.mul_le_mul_left _ (totalDegree_inputPolynomial_le Q l)
 
 /-- Composition by polynomial substitution realizes the composite of the two realization
 maps, after splitting the parameters into those of `P` and those of `Q`. -/

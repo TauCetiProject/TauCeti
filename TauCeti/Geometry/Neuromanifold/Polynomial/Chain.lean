@@ -191,8 +191,12 @@ theorem polynomialChainPrefix_castSucc {I : Fin (n + 2) → Type*} {W : Fin (n +
     rw [polynomialChainPrefix_succ, polynomialChainPrefix_succ, rename_aeval]
     refine congrArg (fun F => aeval F (P i.castSucc o)) (funext fun x => ?_)
     rcases x with w | a
-    · simp only [Sum.elim_inl, rename_X, Sum.map_inl]; rfl
-    · simp only [Sum.elim_inr, ih a]; rfl
+    · simp only [Sum.elim_inl, rename_X, Sum.map_inl]
+      -- `⟨i, w⟩` projections reduce and `I (Fin.castSucc 0)` is defeq to `I 0` in the codomain.
+      rfl
+    · simp only [Sum.elim_inr, ih a]
+      -- `I (Fin.castSucc 0)` is definitionally `I 0` in the codomain of `rename`.
+      rfl
 
 /-- Every positive prefix of a nonempty chain is the binary composition `polynomialCompose` of the
 first layer `P 0` with the corresponding prefix of the tail chain, after folding the first-layer
@@ -212,13 +216,17 @@ theorem polynomialChainPrefix_succ_eq_rename_polynomialCompose
     refine congrArg (fun F => aeval F (P 0 o)) (funext fun x => ?_)
     rcases x with w | a
     · simp
-    · simp [Fin.castSucc_zero]; rfl
+    · simp only [Fin.castSucc_zero, polynomialChainPrefix_zero, Function.comp_apply]
+      -- `Sum.elim`/`Sum.map` reduce on `Sum.inr a` with `a : I (Fin.castSucc 0)` defeq to `I 0`.
+      rfl
   | succ i ih =>
     rw [polynomialChainPrefix_succ, polynomialCompose_apply, polynomialChainPrefix_succ,
       comp_aeval_apply (φ := aeval _), rename_aeval]
     refine congrArg (fun F => aeval F (P i.succ o)) (funext fun x => ?_)
     rcases x with w | a
-    · simp only [Sum.elim_inl, aeval_X, rename_X, Sum.map_inl, Sum.elim_inr]; rfl
+    · simp only [Sum.elim_inl, aeval_X, rename_X, Sum.map_inl, Sum.elim_inr]
+      -- `⟨i, w⟩` projections reduce and `I (Fin.castSucc 0)` is defeq to `I 0` in the codomain.
+      rfl
     · simp only [Sum.elim_inr, ← polynomialCompose_apply]
       exact ih a
 
@@ -258,7 +266,10 @@ theorem polynomialChain_succ_last {I : Fin (n + 2) → Type*} {W : Fin (n + 1) �
   rw [polynomialCompose_apply, polynomialCompose_apply, rename_aeval, rename_aeval]
   refine congrArg (fun F => aeval F (P (Fin.last n) o)) (funext fun x => ?_)
   rcases x with w | a
-  · simp only [Sum.elim_inl, rename_X, Sum.map_inl, Sum.elim_inr]; rfl
+  · simp only [Sum.elim_inl, rename_X, Sum.map_inl, Sum.elim_inr]
+    -- `I (Fin.castSucc 0)` (the input index of `polynomialChain ... P.castSucc`) is defeq to
+    -- `I 0`.
+    rfl
   · simp only [Sum.elim_inr, polynomialChain_def]
     rw [rename_rename, rename_rename]
     refine (congrArg _ (polynomialChainPrefix_castSucc P (Fin.last n) a)).trans ?_
@@ -352,7 +363,7 @@ theorem inputPolynomial_polynomialChainPrefix_succ
     funext k
     simp [polynomialChainPrefix_succ]
   rw [hstep, inputPolynomial_aeval_sumElim, rename_eq_aeval (Sigma.mk i)]
-  rfl
+  simp only [Function.comp_def]
 
 /-- Reparametrizing each layer `i` by `R i` reparametrizes every prefix of `polynomialChainPrefix`
 by the induced substitution on `Σ i, W i`. -/
@@ -374,7 +385,7 @@ by the induced substitution on `Σ i, W i`. -/
     rcases x with w | a
     · simp only [Sum.elim_inl, aeval_X, rename_rename, aeval_rename, Function.comp_def]
       rw [rename_eq_aeval]
-      rfl
+      simp only [Function.comp_def]
     · simp only [Sum.elim_inr, aeval_X, ← polynomialReparametrize_apply]
       exact congrFun ih a
 
