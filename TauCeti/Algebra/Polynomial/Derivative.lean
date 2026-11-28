@@ -70,7 +70,7 @@ has no antiderivative.
 As linear endomorphisms of `R[X]`, the derivative and multiplication by `X` satisfy the Weyl
 relation `d x = x d + 1` (`Polynomial.derivative_mul_mulLeft_X`).
 
-Over a commutative semiring, the derivative of a combination of the products
+Over any semiring, commutative or not, the derivative of a combination of the products
 `(X + a) ^ (n + 1 - k) (X + b) ^ k` is a combination of the products `(X + a) ^ (n - k) (X + b) ^ k`
 with explicit coefficients (`Polynomial.derivative_sum_smul_X_add_C_pow_mul_X_add_C_pow`).
 
@@ -409,30 +409,38 @@ theorem derivative_mul_mulLeft_X {R : Type*} [CommSemiring R] :
 /-- **Differentiating a shifted-power expansion.** The derivative of a combination of the products
 `(X + a) ^ (n + 1 - k) (X + b) ^ k`, `k ≤ n + 1`, is the combination of the products
 `(X + a) ^ (n - k) (X + b) ^ k`, `k ≤ n`, in which the coefficient of the `k`-th product is
-`(n - k + 1) f k + (k + 1) f (k + 1)`. -/
-theorem derivative_sum_smul_X_add_C_pow_mul_X_add_C_pow {R : Type*} [CommSemiring R] (a b : R)
+`(n - k + 1) f k + (k + 1) f (k + 1)`. The coefficients need not commute: each coefficient stays to
+the left of its product, and the factor `X + a` to the left of `X + b`. -/
+theorem derivative_sum_smul_X_add_C_pow_mul_X_add_C_pow {R : Type*} [Semiring R] (a b : R)
     (f : ℕ → R) (n : ℕ) :
     derivative (∑ k ∈ Finset.range (n + 2), f k • ((X + C a) ^ (n + 1 - k) * (X + C b) ^ k)) =
       ∑ k ∈ Finset.range (n + 1), ((((n - k : ℕ) : R) + 1) * f k + ((k : R) + 1) * f (k + 1)) •
         ((X + C a) ^ (n - k) * (X + C b) ^ k) := by
+  -- The power rule for a shifted variable: all `m` summands of `derivative_pow_eq_sum` agree.
+  have hp (c : R) (m : ℕ) : derivative ((X + C c) ^ m) = m • (X + C c) ^ (m - 1) := by
+    have hs : ∀ k ∈ Finset.range m,
+        (X + C c) ^ k * derivative (X + C c) * (X + C c) ^ (m - 1 - k) = (X + C c) ^ (m - 1) := by
+      intro k hk
+      have hk' : k + (m - 1 - k) = m - 1 := by have := Finset.mem_range.1 hk; omega
+      rw [derivative_X_add_C, mul_one, ← pow_add, hk']
+    rw [derivative_pow_eq_sum, Finset.sum_congr rfl hs, Finset.sum_const, Finset.card_range]
   have h (m k : ℕ) : derivative ((X + C a) ^ m * (X + C b) ^ k) =
-      C (m : R) * ((X + C a) ^ (m - 1) * (X + C b) ^ k) +
-        C (k : R) * ((X + C a) ^ m * (X + C b) ^ (k - 1)) := by
-    simp only [derivative_mul, derivative_X_add_C_pow]
-    ring
+      m • ((X + C a) ^ (m - 1) * (X + C b) ^ k) + k • ((X + C a) ^ m * (X + C b) ^ (k - 1)) := by
+    rw [derivative_mul, hp, hp, smul_mul_assoc, mul_smul_comm]
   simp only [derivative_sum, derivative_smul, h, smul_add, Finset.sum_add_distrib]
   -- The first sum loses its top term and the second its bottom term, both with coefficient `0`.
   rw [Finset.sum_range_succ, Finset.sum_range_succ' (fun k =>
-    f k • (C (k : R) * ((X + C a) ^ (n + 1 - k) * (X + C b) ^ (k - 1))))]
-  simp only [Nat.sub_self, Nat.cast_zero, C_0, zero_mul, smul_zero, add_zero]
+    f k • k • ((X + C a) ^ (n + 1 - k) * (X + C b) ^ (k - 1)))]
+  simp only [Nat.sub_self, zero_smul, smul_zero, add_zero]
   rw [← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun k hk => ?_
   have hk' : k ≤ n := Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)
   -- The exponent of `X + C a` in the `k`-th term of the first sum, as a successor.
   have hexp : n + 1 - k = n - k + 1 := by omega
-  simp only [hexp, Nat.add_sub_add_right, Nat.add_sub_cancel, smul_eq_C_mul, C_add, C_mul,
-    Nat.cast_add, Nat.cast_one, C_1]
-  ring
+  -- Natural numbers commute with the coefficients, so they can be moved in front of `f`.
+  simp only [hexp, Nat.add_sub_add_right, Nat.add_sub_cancel]
+  rw [add_smul (_ * f k), mul_smul, mul_smul, ← Nat.cast_add_one, ← Nat.cast_add_one,
+    Nat.cast_smul_eq_nsmul, Nat.cast_smul_eq_nsmul, smul_comm (f k), smul_comm (f (k + 1))]
 
 /-- Over an additively cancellative semiring in which multiplication by each nonzero natural number
 is injective, such as `ℕ` or a `ℚ`-algebra, two polynomials with equal derivatives and equal

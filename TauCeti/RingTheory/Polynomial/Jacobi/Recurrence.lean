@@ -13,7 +13,6 @@ import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.Algebra.Polynomial.Derivative
 import TauCeti.Data.Nat.Factorial.Field
-import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
 # Derivative and recurrences of the Jacobi polynomials
@@ -77,38 +76,13 @@ variable {R : Type*} [CommRing R] [Algebra ℚ R]
 
 /-! ### The derivative -/
 
-/-- The coefficient identity behind `Polynomial.derivative_jacobi`. -/
+/-- The coefficient identity behind `Polynomial.derivative_jacobi`: the sum of
+`Polynomial.jacobiCoeff_mul_right` and `Polynomial.jacobiCoeff_mul_left` at the indices `(m, k)`. -/
 private lemma derivative_jacobi_coeff (α β : R) (m k : ℕ) :
-    ((m : R) + 1) * (((1 : ℚ) / ((m + 1).factorial * k.factorial)) •
-        ((ascPochhammer R (m + 1)).smeval (β + k + 1) *
-          (ascPochhammer R k).smeval (α + (m + 1 : ℕ) + 1))) +
-      ((k : R) + 1) * (((1 : ℚ) / (m.factorial * (k + 1).factorial)) •
-        ((ascPochhammer R m).smeval (β + (k + 1 : ℕ) + 1) *
-          (ascPochhammer R (k + 1)).smeval (α + m + 1))) =
-      ((m + k : ℕ) + α + β + 2) * (((1 : ℚ) / (m.factorial * k.factorial)) •
-        ((ascPochhammer R m).smeval (β + 1 + k + 1) *
-          (ascPochhammer R k).smeval (α + 1 + m + 1))) := by
-  have h₁ := congrArg (algebraMap ℚ R) (Nat.one_div_factorial_mul_factorial_succ_left (K := ℚ) m k)
-  have h₂ := congrArg (algebraMap ℚ R) (Nat.one_div_factorial_mul_factorial_succ_right (K := ℚ) m k)
-  simp only [map_mul, map_add, map_natCast, map_one] at h₁ h₂
-  -- Peeling the first factor off a rising factorial: `(x)ₙ₊₁ = x (x + 1)ₙ`.
-  have hp (n : ℕ) (x : R) :
-      (ascPochhammer R (n + 1)).eval x = x * (ascPochhammer R n).eval (x + 1) := by
-    rw [add_comm n 1, TauCeti.ascPochhammer_add_eval, ascPochhammer_one, eval_X, Nat.cast_one]
-  -- After the first factor is peeled off the two rising factorials of length `m + 1` and `k + 1`,
-  -- every rising factorial is evaluated at `β + k + 2` or at `α + m + 2`. These four equalities
-  -- bring the arguments, which the two sides write differently, to one common form.
-  have hα : α + ((m + 1 : ℕ) : R) + 1 = α + m + 1 + 1 := by push_cast; ring
-  have hβ : β + ((k + 1 : ℕ) : R) + 1 = β + k + 1 + 1 := by push_cast; ring
-  have hβ' : β + 1 + (k : R) + 1 = β + k + 1 + 1 := by ring
-  have hα' : α + 1 + (m : R) + 1 = α + m + 1 + 1 := by ring
-  simp only [← eval_eq_smeval, hp, hα, hβ, hβ', hα']
-  simp only [Algebra.smul_def, Nat.cast_add]
-  linear_combination
-    -((β + k + 1) * (ascPochhammer R m).eval (β + k + 1 + 1) *
-        (ascPochhammer R k).eval (α + m + 1 + 1)) * h₁ -
-      (α + m + 1) * (ascPochhammer R m).eval (β + k + 1 + 1) *
-        (ascPochhammer R k).eval (α + m + 1 + 1) * h₂
+    ((m : R) + 1) * jacobiCoeff α β (m + 1) k + ((k : R) + 1) * jacobiCoeff α β m (k + 1) =
+      ((m + k : ℕ) + α + β + 2) * jacobiCoeff (α + 1) (β + 1) m k := by
+  push_cast
+  linear_combination -jacobiCoeff_mul_right α β m k - jacobiCoeff_mul_left α β m k
 
 /-- The derivative of the Jacobi polynomial of index `n + 1` is a scalar multiple of the Jacobi
 polynomial of index `n` with both parameters raised by one:
@@ -124,7 +98,7 @@ theorem derivative_jacobi (α β : R) (n : ℕ) :
   -- One factor `1 / 2` of the normalization `1 / 2 ^ (n + 1)` stays in front.
   have h2 : (1 : ℚ) / 2 ^ (n + 1) = 1 / 2 * (1 / 2 ^ n) := by ring
   -- Expand the derivative in the shifted powers of index `n`.
-  rw [jacobi_def, jacobi_def, derivative_smul, hd]
+  rw [jacobi_eq_smul_sum_jacobiCoeff, jacobi_eq_smul_sum_jacobiCoeff, derivative_smul, hd]
   -- Collect the scalars; what remains is a termwise comparison of coefficients.
   rw [mul_smul_comm, smul_smul, ← smul_eq_C_mul, h2]
   congr 1

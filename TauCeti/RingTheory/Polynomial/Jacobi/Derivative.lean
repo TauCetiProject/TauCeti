@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Polynomial.Derivative
 import Mathlib.Algebra.BigOperators.NatAntidiagonal
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
-import TauCeti.Data.Nat.Factorial.Field
 
 /-!
 # The raising relation of the Jacobi polynomials
@@ -33,7 +32,8 @@ The proof expands both sides in the products `(X - 1)^i (X + 1)^k` of the defini
 the antidiagonal `i + k = n`. Multiplying by `(X - 1) (X + 1)` turns the derivative of
 `(X - 1)^i (X + 1)^k` into `i (X - 1)^i (X + 1)^(k+1) + k (X - 1)^(i+1) (X + 1)^k`, and the two
 resulting families match the two halves of `(n + 1) = i + k` on the antidiagonal of `n + 1`, by
-the rising factorial identity `(x)ₖ₊₁ = x (x + 1)ₖ`.
+the coefficient identities `Polynomial.jacobiCoeff_mul_left` and
+`Polynomial.jacobiCoeff_mul_right`.
 
 ## Main statements
 
@@ -54,23 +54,15 @@ namespace Polynomial
 
 variable {R : Type*} [CommRing R] [Algebra ℚ R]
 
-/-- The coefficient of `(X - 1)^i (X + 1)^k` in `2ⁿ Pₙ^{(α,β)}`, for `i + k = n`. -/
-private noncomputable def jacobiCoeff (α β : R) (i k : ℕ) : R :=
-  algebraMap ℚ R (1 / (i.factorial * k.factorial)) *
-    ((ascPochhammer R i).eval (β + k + 1) * (ascPochhammer R k).eval (α + i + 1))
-
 /-- `2ⁿ Pₙ^{(α,β)}` as a sum over the antidiagonal `i + k = n`. -/
 private noncomputable def jacobiSum (α β : R) (n : ℕ) : R[X] :=
   ∑ p ∈ antidiagonal n, C (jacobiCoeff α β p.1 p.2) * ((X - 1) ^ p.1 * (X + 1) ^ p.2)
 
 private theorem jacobi_eq_smul_jacobiSum (α β : R) (n : ℕ) :
     jacobi α β n = ((1 : ℚ) / 2 ^ n) • jacobiSum α β n := by
-  rw [jacobi_def, jacobiSum, ← Nat.sum_antidiagonal_swap,
+  rw [jacobi_eq_smul_sum_jacobiCoeff, jacobiSum, ← Nat.sum_antidiagonal_swap,
     Nat.sum_antidiagonal_eq_sum_range_succ_mk]
-  congr 1
-  refine sum_congr rfl fun k _ => ?_
-  simp only [jacobiCoeff, Prod.swap_prod_mk, ← eval_eq_smeval, Algebra.smul_def,
-    algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply]
+  simp only [Prod.swap_prod_mk, smul_eq_C_mul]
 
 omit [Algebra ℚ R] in
 /-- Multiplying by `(X - 1) (X + 1)` turns the derivative of `(X - 1)^i (X + 1)^k` into a
@@ -83,32 +75,6 @@ private theorem X_sub_one_mul_X_add_one_mul_derivative_pow_mul_pow (i k : ℕ) :
     simp only [derivative_mul, derivative_pow, derivative_sub, derivative_add, derivative_X,
       derivative_one, C_eq_natCast] <;>
     push_cast <;> ring
-
-/-- The rising factorial identity behind the raising relation, in the variable `k`. -/
-private theorem jacobiCoeff_mul_left (α β : R) (i k : ℕ) :
-    jacobiCoeff (α + 1) (β + 1) i k * (α + 1 + i) = (k + 1) * jacobiCoeff α β i (k + 1) := by
-  have hq : algebraMap ℚ R (1 / (i.factorial * k.factorial)) =
-      algebraMap ℚ R (1 / (i.factorial * (k + 1).factorial)) * (k + 1) := by
-    rw [Nat.one_div_factorial_mul_factorial_succ_right, map_mul, map_add, map_natCast, map_one]
-  have hp : (ascPochhammer R (k + 1)).eval (α + i + 1) =
-      (α + i + 1) * (ascPochhammer R k).eval (α + 1 + i + 1) := by
-    rw [ascPochhammer_succ_eval, ← ascPochhammer_eval_succ]
-    ring_nf
-  simp only [jacobiCoeff, hq, hp, Nat.cast_add, Nat.cast_one]
-  ring_nf
-
-/-- The rising factorial identity behind the raising relation, in the variable `i`. -/
-private theorem jacobiCoeff_mul_right (α β : R) (i k : ℕ) :
-    jacobiCoeff (α + 1) (β + 1) i k * (β + 1 + k) = (i + 1) * jacobiCoeff α β (i + 1) k := by
-  have hq : algebraMap ℚ R (1 / (i.factorial * k.factorial)) =
-      algebraMap ℚ R (1 / ((i + 1).factorial * k.factorial)) * (i + 1) := by
-    rw [Nat.one_div_factorial_mul_factorial_succ_left, map_mul, map_add, map_natCast, map_one]
-  have hp : (ascPochhammer R (i + 1)).eval (β + k + 1) =
-      (β + k + 1) * (ascPochhammer R i).eval (β + 1 + k + 1) := by
-    rw [ascPochhammer_succ_eval, ← ascPochhammer_eval_succ]
-    ring_nf
-  simp only [jacobiCoeff, hq, hp, Nat.cast_add, Nat.cast_one]
-  ring_nf
 
 /-- The raising relation for the sums `jacobiSum`, without the powers of `2`. -/
 private theorem raising_jacobiSum (α β : R) (n : ℕ) :
