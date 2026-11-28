@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Current.Mass
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
-import TauCeti.Topology.Algebra.Module.Spaces.CompactConvergenceCLM
 
 /-!
 # Mass of the point current
@@ -36,14 +35,33 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 
 /-- The unit point current at `x`, acting on the scalar coefficient of a test zero-form. -/
 def dirac (x : M) : Current I M 0 :=
-  TestForm.formEquiv.toContinuousLinearMap.precompCompactConvergenceCLM ℝ
-    (BundleTest.delta x (ContinuousAlternatingMap.apply ℝ (TangentSpace I x) ℝ ![]))
+  letI := ContinuousLinearMap.topologicalSpace (σ := RingHom.id ℝ)
+    (E := (TangentSpace I x [⋀^Fin 0]→L[ℝ] ℝ) →L[ℝ] DensityBundle I M x)
+    (F := DensityBundle I M x)
+  BundleTest.delta x
+    ((ContinuousAlternatingMap.apply ℝ (TangentSpace I x) ℝ ![]).comp
+      (I.formDensityDoubleDualEquiv 0 x).symm.toContinuousLinearMap)
 
 /-- The point current reads the scalar value of the test at its point. -/
 @[simp]
 theorem dirac_apply (x : M) (s : TestForm I M 0) : dirac x s = TestForm.formEquiv s x ![] := by
-  rw [dirac, ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply, BundleTest.delta_apply,
-    ContinuousAlternatingMap.apply_apply, ContinuousLinearEquiv.coe_coe]
+  let := ContinuousLinearMap.topologicalSpace (σ := RingHom.id ℝ)
+    (E := (TangentSpace I x [⋀^Fin 0]→L[ℝ] ℝ) →L[ℝ] DensityBundle I M x)
+    (F := DensityBundle I M x)
+  rw [dirac, BundleTest.delta_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, ContinuousAlternatingMap.apply_apply,
+    ← TestForm.formDensityDoubleDualEquiv_formEquiv_apply s x,
+    ContinuousLinearEquiv.symm_apply_apply]
+
+/-- On a Hausdorff manifold, the distributional support of the unit point current is its point. -/
+@[simp]
+theorem dsupport_dirac [T2Space M] (x : M) : BundleTest.dsupport (dirac (I := I) x) = {x} := by
+  rw [dirac]
+  apply BundleTest.dsupport_delta
+  intro h
+  let α := ContinuousAlternatingMap.constOfIsEmpty ℝ (TangentSpace I x) (Fin 0) (1 : ℝ)
+  have hval := DFunLike.congr_fun h (I.formDensityDoubleDualEquiv 0 x α)
+  simp [α] at hval
 
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)] {U : Set M} {x : M}
 

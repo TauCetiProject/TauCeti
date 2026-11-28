@@ -77,12 +77,23 @@ def localMass (T : Current I M k) (U : Set M) : ℝ≥0∞ :=
 /-- The extended mass of a current, with tests allowed throughout the manifold. -/
 def mass (T : Current I M k) : ℝ≥0∞ := localMass T univ
 
+/-- Local mass is the supremum of evaluations in absolute value over unit-comass tests
+whose closed support lies in the given set. -/
+theorem localMass_def (T : Current I M k) (U : Set M) :
+    localMass T U = ⨆ (s : TestForm I M k) (_ : closure {x | s x ≠ 0} ⊆ U)
+      (_ : ∀ x, ‖TestForm.formEquiv s x‖ ≤ 1), ‖T s‖ₑ := (rfl)
+
+/-- Total mass is the supremum of evaluations in absolute value over all unit-comass tests. -/
+theorem mass_def (T : Current I M k) :
+    mass T = ⨆ (s : TestForm I M k) (_ : ∀ x, ‖TestForm.formEquiv s x‖ ≤ 1), ‖T s‖ₑ := by
+  simp only [mass, localMass_def, subset_univ, iSup_true]
+
 variable {T S : Current I M k} {U V : Set M} {b : ℝ≥0∞}
 
 /-- A local mass bound is exactly a bound on evaluations of the unit-comass tests in the set. -/
 theorem localMass_le_iff : localMass T U ≤ b ↔ ∀ s : TestForm I M k,
     closure {x | s x ≠ 0} ⊆ U → (∀ x, ‖TestForm.formEquiv s x‖ ≤ 1) → ‖T s‖ₑ ≤ b := by
-  simp only [localMass, iSup_le_iff]
+  simp only [localMass_def, iSup_le_iff]
 
 /-- A unit-comass test supported in the set gives a lower bound for local mass. -/
 theorem eNorm_apply_le_localMass {s : TestForm I M k} (hs : closure {x | s x ≠ 0} ⊆ U)
@@ -96,8 +107,7 @@ theorem localMass_univ (T : Current I M k) : localMass T univ = mass T := (rfl)
 /-- A mass bound is exactly a bound on evaluations of all unit-comass tests. -/
 theorem mass_le_iff : mass T ≤ b ↔ ∀ s : TestForm I M k,
     (∀ x, ‖TestForm.formEquiv s x‖ ≤ 1) → ‖T s‖ₑ ≤ b := by
-  rw [mass, localMass_le_iff]
-  simp only [subset_univ, forall_const]
+  simp only [mass_def, iSup_le_iff]
 
 /-- Evaluating a unit-comass test bounds the total mass from below. -/
 theorem eNorm_apply_le_mass {s : TestForm I M k}
