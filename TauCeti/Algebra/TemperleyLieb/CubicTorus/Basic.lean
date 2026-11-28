@@ -40,7 +40,8 @@ in `TauCeti.Algebra.TemperleyLieb.CubicTorus.Trace`.
 
 ## Main definitions
 
-* `TauCeti.TemperleyLieb.chainForm`: the alternating chain form on `Fin N → R`.
+* `TauCeti.TemperleyLieb.halfChainForm` and `TauCeti.TemperleyLieb.chainForm`: the forward-step
+  bilinear pairing and the alternating chain form on `Fin N → R`.
 * `TauCeti.TemperleyLieb.cubeRootPow`: the character `x ↦ ω ^ x` of `ZMod 3` in `ℂˣ`.
 * `TauCeti.TemperleyLieb.cubicFactor`, `TauCeti.TemperleyLieb.CubicTorus` and
   `TauCeti.TemperleyLieb.weyl`: the factor set `ω ^ (2 B)`, the cubic quantum torus `G_N` and its
@@ -97,13 +98,15 @@ open TwistedMonoidAlgebra
 
 section ChainForm
 
-variable (R : Type*) [CommRing R] (N : ℕ)
+section HalfChainForm
 
-/-- The **chain form** `B(a, b) = Σ_(j + 1 < N) (a_j b_(j+1) - a_(j+1) b_j)` on `Fin N → R`, the
-alternating bilinear form pairing each coordinate with its successor. -/
-noncomputable def chainForm : LinearMap.BilinForm R (Fin N → R) :=
+variable (R : Type*) [CommSemiring R] (N : ℕ)
+
+/-- The **forward-step pairing** `H(a, b) = Σ_(j + 1 < N) a_j b_(j+1)` on `Fin N → R`, whose
+antisymmetrization is `chainForm`. -/
+noncomputable def halfChainForm : LinearMap.BilinForm R (Fin N → R) :=
   LinearMap.mk₂ R
-    (fun a b ↦ ∑ i : Fin N, ∑ j : Fin N, if (i : ℕ) + 1 = j then a i * b j - a j * b i else 0)
+    (fun a b ↦ ∑ i : Fin N, ∑ j : Fin N, if (i : ℕ) + 1 = j then a i * b j else 0)
     (fun a a' b ↦ by
       simp only [Pi.add_apply, ← Finset.sum_add_distrib]
       refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
@@ -123,37 +126,61 @@ noncomputable def chainForm : LinearMap.BilinForm R (Fin N → R) :=
 
 variable {R N}
 
+/-- Unfolding `halfChainForm` as a double sum over adjacent pairs of coordinates. -/
+theorem halfChainForm_apply (a b : Fin N → R) :
+    halfChainForm R N a b =
+      ∑ i : Fin N, ∑ j : Fin N, if (i : ℕ) + 1 = j then a i * b j else 0 :=
+  (rfl)
+
+/-- The forward-step pairing on coordinate vectors: `H(r e_i, s e_j)` is `r s` when
+`j = i + 1` and `0` otherwise. -/
+theorem halfChainForm_single_single (i j : Fin N) (r s : R) :
+    halfChainForm R N (Pi.single i r) (Pi.single j s) =
+      if (i : ℕ) + 1 = j then r * s else 0 := by
+  rw [halfChainForm_apply,
+    Finset.sum_eq_single i (fun i' _ hi' ↦ by simp [hi']) (by simp),
+    Finset.sum_eq_single j (fun j' _ hj' ↦ by simp [hj']) (by simp)]
+  simp
+
+end HalfChainForm
+
+variable (R : Type*) [CommRing R] (N : ℕ)
+
+/-- The **chain form** `B(a, b) = Σ_(j + 1 < N) (a_j b_(j+1) - a_(j+1) b_j)` on `Fin N → R`, the
+alternating bilinear form pairing each coordinate with its successor. -/
+noncomputable def chainForm : LinearMap.BilinForm R (Fin N → R) :=
+  halfChainForm R N - (halfChainForm R N).flip
+
+variable {R N}
+
+/-- Expressing `chainForm` as the difference of `halfChainForm` and its flip. -/
+theorem chainForm_eq_sub (a b : Fin N → R) :
+    chainForm R N a b = halfChainForm R N a b - halfChainForm R N b a :=
+  (rfl)
+
 /-- Unfolding `chainForm` as a double sum over adjacent pairs of coordinates. -/
 theorem chainForm_apply (a b : Fin N → R) :
     chainForm R N a b =
-      ∑ i : Fin N, ∑ j : Fin N, if (i : ℕ) + 1 = j then a i * b j - a j * b i else 0 :=
-  (rfl)
+      ∑ i : Fin N, ∑ j : Fin N, if (i : ℕ) + 1 = j then a i * b j - a j * b i else 0 := by
+  simp only [chainForm_eq_sub, halfChainForm_apply, ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+  split_ifs <;> ring
 
 /-- The chain form is alternating. -/
 @[simp]
 theorem chainForm_self (a : Fin N → R) : chainForm R N a a = 0 := by
-  simp [chainForm_apply, mul_comm]
+  rw [chainForm_eq_sub, sub_self]
 
 /-- The chain form is antisymmetric. -/
 theorem chainForm_swap (a b : Fin N → R) : chainForm R N b a = -chainForm R N a b := by
-  simp only [chainForm_apply, ← Finset.sum_neg_distrib]
-  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-  split_ifs <;> ring
+  rw [chainForm_eq_sub, chainForm_eq_sub, neg_sub]
 
 /-- The chain form on coordinate vectors: `B(r e_i, s e_j)` is `r s` when `j = i + 1`, `-(r s)`
 when `i = j + 1`, and `0` otherwise. -/
 theorem chainForm_single_single (i j : Fin N) (r s : R) :
     chainForm R N (Pi.single i r) (Pi.single j s) =
       if (i : ℕ) + 1 = j then r * s else if (j : ℕ) + 1 = i then -(r * s) else 0 := by
-  have hsplit (p : Prop) [Decidable p] (x y : R) :
-      (if p then x - y else 0) = (if p then x else 0) - (if p then y else 0) := by
-    split_ifs <;> simp
-  simp only [chainForm_apply, hsplit, Finset.sum_sub_distrib]
-  rw [Finset.sum_eq_single i (fun i' _ hi' ↦ by simp [hi']) (by simp),
-    Finset.sum_eq_single j (fun j' _ hj' ↦ by simp [hj']) (by simp),
-    Finset.sum_eq_single j (fun i' _ hi' ↦ by simp [hi']) (by simp),
-    Finset.sum_eq_single i (fun j' _ hj' ↦ by simp [hj']) (by simp)]
-  simp only [Pi.single_eq_same]
+  rw [chainForm_eq_sub, halfChainForm_single_single, halfChainForm_single_single]
   split_ifs <;> first | (exfalso; omega) | ring
 
 /-- Extending both vectors by a zero last coordinate does not change the chain form. -/

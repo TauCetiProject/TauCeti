@@ -75,9 +75,10 @@ range, so the value is a `dite` rather than a plain application.
   the first `m` indices is injective.
 * `Fin.map_partialProd`, `Fin.comp_partialProd`: applying a monoid homomorphism entrywise commutes
   with `Fin.partialProd` (`Fin.map_partialSum` and `Fin.comp_partialSum` for `Fin.partialSum`).
-* `Fin.partialProd_last_eq_mul_tail`, `Fin.partialProd_last_eq_init_mul`, `Fin.partialProd_one`,
-  `Fin.partialProd_last_eq_of_eq_one`, `Fin.partialProd_mulSingle`: the final partial product
-  of a tuple in a monoid, split at its first or its last entry or supported at a single entry.
+* `Fin.partialProd_last_eq_mul_tail`, `Fin.partialProd_last_eq_init_mul`,
+  `Fin.partialProd_pow_last`, `Fin.partialProd_one`, `Fin.partialProd_last_eq_of_eq_one`,
+  `Fin.partialProd_mulSingle`: the final partial product of a tuple in a monoid, split at its
+  first or its last entry, entrywise powers, or supported at a single entry.
 * `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
   interacts with the cyclic successor and predecessor.
 * `Fin.castSucc_last_add_one`: adding one to the penultimate index gives the last index.
@@ -355,6 +356,15 @@ times its last entry. -/
 theorem partialProd_last_eq_init_mul {M : Type*} [Monoid M] {n : ℕ} (y : Fin (n + 1) → M) :
     partialProd y (last (n + 1)) = partialProd (init y) (last n) * y (last n) := by
   rw [← succ_last, partialProd_succ, partialProd_init]
+
+/-- The final partial product of entrywise powers `u i ^ e i` in a monoid splits off the last
+factor. -/
+theorem partialProd_pow_last {M : Type*} [Monoid M] {n : ℕ} (u : Fin (n + 1) → M)
+    (e : Fin (n + 1) → ℕ) :
+    partialProd (fun i ↦ u i ^ e i) (last (n + 1)) =
+      partialProd (fun i ↦ init u i ^ init e i) (last n) * u (last n) ^ e (last n) := by
+  have hinit : init (fun i ↦ u i ^ e i) = fun i ↦ init u i ^ init e i := rfl
+  rw [partialProd_last_eq_init_mul, hinit]
 
 /-- Every partial product of the constant `1` tuple is `1`. -/
 @[simp]
