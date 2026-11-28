@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Residue.Basic
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.MellinBarnes
 import Mathlib.Analysis.Meromorphic.Complex
 import TauCeti.Analysis.Contour.ConnectorLimit
 import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
 import TauCeti.Analysis.Contour.Residue.VerticalLineShift
-import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Gamma.Residue
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -38,7 +38,6 @@ poles. This file defines that value and proves that it does not depend on the li
 
 * `Complex.hypergeometricMellinBarnesIntegrand a b c z t`: the integrand
   `Γ(a + t) Γ(b + t) Γ(-t) Γ(c + t)⁻¹ (-z)^t` of DLMF 15.6.6.
-* `Complex.gammaPolesRightOf a σ`: the poles `-a - k` of `t ↦ Γ(a + t)` with real part `> σ`.
 * `Complex.hypergeometricMellinBarnes a b c z σ`: the integral `(2πi)⁻¹ ∫_C` over the separating
   contour `C`, written as `(2π)⁻¹ ∫ F(σ + i y) dy` plus the residues of `F` at the poles of
   `Γ(a + t) Γ(b + t)` to the right of `Re t = σ`.
@@ -115,33 +114,6 @@ theorem meromorphicAt_hypergeometricMellinBarnesIntegrand (a b c z t : ℂ) :
     · exact ((differentiable_id.const_cpow (.inl (neg_ne_zero.mpr hz))).analyticAt t).meromorphicAt
   exact ((((hG _ (by fun_prop)).mul (hG _ (by fun_prop))).mul (hG _ (by fun_prop))).mul
     hinv).mul hpow
-
-/-- The poles `t = -a - k` (`k : ℕ`) of `t ↦ Γ(a + t)` that lie to the right of the vertical line
-`Re t = σ`. There are finitely many, since `Re (-a - k) = -Re a - k`. -/
-def gammaPolesRightOf (a : ℂ) (σ : ℝ) : Finset ℂ :=
-  (Finset.range ⌈-a.re - σ⌉₊).image fun k : ℕ ↦ -a - k
-
-@[simp]
-theorem mem_gammaPolesRightOf {a t : ℂ} {σ : ℝ} :
-    t ∈ gammaPolesRightOf a σ ↔ σ < t.re ∧ ∃ k : ℕ, t = -a - k := by
-  simp only [gammaPolesRightOf, Finset.mem_image, Finset.mem_range, Nat.lt_ceil]
-  constructor
-  · rintro ⟨k, hk, rfl⟩
-    exact ⟨by simp; linarith, k, rfl⟩
-  · rintro ⟨hσ, k, rfl⟩
-    exact ⟨k, by simp at hσ; linarith, rfl⟩
-
-@[simp]
-theorem gammaPolesRightOf_eq_empty_iff {a : ℂ} {σ : ℝ} :
-    gammaPolesRightOf a σ = ∅ ↔ -a.re ≤ σ := by
-  simp [gammaPolesRightOf, Nat.ceil_eq_zero]
-
-/-- The poles of `t ↦ Γ(a + t) Γ(b + t)` to the right of the line `Re t = σ`. -/
-theorem mem_gammaPolesRightOf_union {a b t : ℂ} {σ : ℝ} :
-    t ∈ gammaPolesRightOf a σ ∪ gammaPolesRightOf b σ ↔
-      σ < t.re ∧ ∃ k : ℕ, t = -a - k ∨ t = -b - k := by
-  simp only [Finset.mem_union, mem_gammaPolesRightOf]
-  grind
 
 /-! ### The integral over the separating contour -/
 

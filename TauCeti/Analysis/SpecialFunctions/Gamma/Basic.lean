@@ -418,7 +418,7 @@ theorem neg_one_pow_div_factorial_mul_Gamma_sub_natCast {c : ℂ}
   have hsin : sin (π * (c - k)) = (-1 : ℂ) ^ k * sin (π * c) := by
     rw [mul_sub, mul_comm (π : ℂ) (k : ℂ)]
     exact sin_antiperiodic.sub_nat_mul_eq k
-  rw [hsin, show 1 - (c - (k : ℂ)) = 1 - c + k by ring] at hrefl
+  rw [hsin, ← sub_add] at hrefl
   have hsgn : ((-1 : ℂ) ^ k) ≠ 0 := pow_ne_zero _ (by norm_num)
   have hfac : (k ! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero k)
   have hG : Gamma (1 - c + k) ≠ 0 := fun h ↦ by
@@ -472,9 +472,9 @@ theorem neg_one_pow_div_factorial_mul_Gamma_sub_natCast {c : ℝ}
       π / sin (π * c) / (k ! * Gamma (1 - c + k)) := by
   have h := Complex.neg_one_pow_div_factorial_mul_Gamma_sub_natCast (c := (c : ℂ))
     (by rw [← Complex.ofReal_mul, ← Complex.ofReal_sin]; exact Complex.ofReal_ne_zero.mpr hc) k
-  rw [show (c : ℂ) - k = ((c - k : ℝ) : ℂ) by push_cast; ring,
-    show 1 - (c : ℂ) + k = ((1 - c + k : ℝ) : ℂ) by push_cast; ring,
-    Complex.Gamma_ofReal, Complex.Gamma_ofReal, ← Complex.ofReal_mul, ← Complex.ofReal_sin] at h
+  rw [← Complex.ofReal_natCast k, ← Complex.ofReal_sub, ← Complex.ofReal_one, ← Complex.ofReal_sub,
+    ← Complex.ofReal_add, Complex.Gamma_ofReal, Complex.Gamma_ofReal, ← Complex.ofReal_mul,
+    ← Complex.ofReal_sin] at h
   exact_mod_cast h
 
 /-- The reflection formula between consecutive poles:

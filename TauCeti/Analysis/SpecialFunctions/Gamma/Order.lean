@@ -31,8 +31,11 @@ and has a simple pole for odd `n` (`Complex.meromorphicOrderAt_Gammaℝ_one_sub_
 
 The total values at poles are zero by Mathlib's convention. The zero-order characterizations
 therefore use nonzero total values, while the negative-order characterizations identify the
-pole lattices. These formulas supply the local orders from which shifted products and
-archimedean divisors of L-function records are assembled.
+pole lattices. `Complex.gammaPolesRightOf` packages the finite set of poles of `t ↦ Γ(a + t)`
+strictly to the right of a vertical line `Re t = σ` (together with `mem_gammaPolesRightOf`,
+`gammaPolesRightOf_eq_empty_iff`, and `mem_gammaPolesRightOf_union`). These formulas supply the
+local orders and pole sets from which shifted products and archimedean divisors of L-function
+records are assembled.
 
 ## References
 
@@ -290,5 +293,35 @@ theorem meromorphicOrderAt_Gammaℝ_one_sub_nat (n : ℕ) :
     omega
   · obtain ⟨k, rfl⟩ := Nat.not_even_iff_odd.mp he
     exact (meromorphicOrderAt_Gammaℝ_eq_neg_one_iff _).mpr ⟨k, by push_cast; ring⟩
+
+/-- The poles `t = -a - k` (`k : ℕ`) of `t ↦ Γ(a + t)` that lie to the right of the vertical line
+`Re t = σ`. There are finitely many, since `Re (-a - k) = -Re a - k`. -/
+noncomputable def gammaPolesRightOf (a : ℂ) (σ : ℝ) : Finset ℂ :=
+  (Finset.range ⌈-a.re - σ⌉₊).image fun k : ℕ ↦ -a - k
+
+/-- Membership in `gammaPolesRightOf a σ` characterizes the poles `-a - k` strictly to the right
+of `Re t = σ`. -/
+@[simp]
+theorem mem_gammaPolesRightOf {a t : ℂ} {σ : ℝ} :
+    t ∈ gammaPolesRightOf a σ ↔ σ < t.re ∧ ∃ k : ℕ, t = -a - k := by
+  simp only [gammaPolesRightOf, Finset.mem_image, Finset.mem_range, Nat.lt_ceil]
+  constructor
+  · rintro ⟨k, hk, rfl⟩
+    exact ⟨by simp; linarith, k, rfl⟩
+  · rintro ⟨hσ, k, rfl⟩
+    exact ⟨k, by simp at hσ; linarith, rfl⟩
+
+/-- `gammaPolesRightOf a σ` is empty if and only if `-Re a ≤ σ`. -/
+@[simp]
+theorem gammaPolesRightOf_eq_empty_iff {a : ℂ} {σ : ℝ} :
+    gammaPolesRightOf a σ = ∅ ↔ -a.re ≤ σ := by
+  simp [gammaPolesRightOf, Nat.ceil_eq_zero]
+
+/-- The poles of `t ↦ Γ(a + t) Γ(b + t)` to the right of the line `Re t = σ`. -/
+theorem mem_gammaPolesRightOf_union {a b t : ℂ} {σ : ℝ} :
+    t ∈ gammaPolesRightOf a σ ∪ gammaPolesRightOf b σ ↔
+      σ < t.re ∧ ∃ k : ℕ, t = -a - k ∨ t = -b - k := by
+  simp only [Finset.mem_union, mem_gammaPolesRightOf]
+  grind
 
 end Complex

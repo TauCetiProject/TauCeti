@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Analysis.SpecialFunctions.Arcosh
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 
 /-!
 # Trigonometric bounds and nonvanishing criteria
@@ -288,8 +289,8 @@ theorem norm_inv_sin_le {z : ℂ} (hz : Real.sin z.re ≠ 0) :
     ‖(sin z)⁻¹‖ ≤ 2 / |Real.sin z.re| * Real.exp (-|z.im|) := by
   have hsin_pos : 0 < |Real.sin z.re| := abs_pos.mpr hz
   have hcosh : Real.exp |z.im| / 2 ≤ Real.cosh z.im := by
-    rw [Real.cosh_eq]
-    linarith [Real.exp_abs_le z.im]
+    rw [← Real.cosh_abs, div_le_iff₀ two_pos, mul_comm]
+    exact Real.exp_le_two_mul_cosh |z.im|
   have hge : |Real.sin z.re| * Real.exp |z.im| / 2 ≤ ‖sin z‖ :=
     calc |Real.sin z.re| * Real.exp |z.im| / 2
         = |Real.sin z.re| * (Real.exp |z.im| / 2) := by ring

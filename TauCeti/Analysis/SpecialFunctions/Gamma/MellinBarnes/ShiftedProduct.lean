@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.MellinInversion
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import TauCeti.Analysis.Contour.Residue.Basic
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Cotangent
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Algebra.Order.Floor.Ring
@@ -16,7 +17,6 @@ import TauCeti.Analysis.Contour.Residue.SimplePole
 import TauCeti.Analysis.Contour.Residue.VerticalLineShift
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
-import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Gamma.Residue
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -164,8 +164,9 @@ theorem exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_le {c p : ℂ} (hc : c ≠ 
   have hcpow := hzb (-x) ⟨neg_le_neg hx.2, neg_le_neg hx.1⟩ (-T)
   rw [zero_add] at hG₁
   rw [add_comm p] at hG₂
-  rw [show ((-x : ℝ) : ℂ) + ((-T : ℝ) : ℂ) * I = -((x : ℂ) + T * I) by push_cast; ring,
-    abs_neg] at hcpow
+  -- Rewrite `(-x : ℂ) + (-T : ℂ) * I` as `-(x + T * I)` to match the target norm bound.
+  have hneg : ((-x : ℝ) : ℂ) + ((-T : ℝ) : ℂ) * I = -((x : ℂ) + T * I) := by push_cast; ring
+  rw [hneg, abs_neg] at hcpow
   have hcpow' : ‖c ^ (-((x : ℂ) + T * I))‖ ≤ max Cz 0 * Real.exp (|c.arg| * |T|) :=
     hcpow.trans (mul_le_mul_of_nonneg_right (le_max_left Cz 0) (Real.exp_pos _).le)
   exact norm_cpow_neg_mul_Gamma_mul_Gamma_add_le hcpow' hG₁ hG₂
@@ -195,7 +196,7 @@ theorem integrable_cpow_neg_mul_Gamma_mul_Gamma_add {c p : ℂ} (hc : c ∈ slit
     simpa using norm_cpow_le_mul_exp_arg c (-((σ : ℂ) + y * I))
   have hb₁ := hG₁ y
   have hb₂ := hG₂ y
-  rw [show ((σ : ℂ) + p) + y * I = (σ : ℂ) + y * I + p by ring, add_re, ofReal_re] at hb₂
+  rw [add_right_comm, add_re, ofReal_re] at hb₂
   exact norm_cpow_neg_mul_Gamma_mul_Gamma_add_le hcpow hb₁ hb₂
 
 /-! ### Residues at the two simple-pole lattices -/
@@ -212,8 +213,7 @@ theorem residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_nat {c p : ℂ} (hc : c ≠
         (f := fun s : ℂ ↦ s + p) (by fun_prop))
   have hfun : (fun s ↦ c ^ (-s) * (Gamma s * Gamma (s + p))) =
       fun s ↦ Gamma s * (c ^ (-s) * Gamma (s + p)) := funext fun s ↦ by ring
-  rw [hfun, residue_Gamma_mul_neg_nat k hw, neg_neg, cpow_natCast,
-    show -(k : ℂ) + p = p - k by ring]
+  rw [hfun, residue_Gamma_mul_neg_nat k hw, neg_neg, cpow_natCast, neg_add_eq_sub]
   ring
 
 /-- The residue of `s ↦ c ^ (-s) * (Γ(s) * Γ(s + p))` at the pole `s = -p - k` (`k : ℕ`) is
@@ -239,10 +239,13 @@ theorem residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_sub_nat {c p : ℂ} (k : �
   have hfun : (fun s ↦ c ^ (-s) * (Gamma s * Gamma (s + p))) =
       fun s ↦ Gamma (s + p) * (c ^ (-(s + p - p)) * Gamma (s + p - p)) :=
     funext fun s ↦ by rw [add_sub_cancel_right]; ring
+  -- Align the shifted argument `-p - k + p` and exponent `-(-(k : ℂ) - p)`.
+  have harg : -p - k + p = -(k : ℂ) := by ring
+  have hpow : -(-(k : ℂ) - p) = p + k := by ring
+  have hsub : -(k : ℂ) - p = -p - k := by ring
   rw [hfun, TauCeti.Contour.residue_comp_add_const
       (fun w : ℂ ↦ Gamma w * (c ^ (-(w - p)) * Gamma (w - p))) p,
-    show -p - k + p = -(k : ℂ) by ring, residue_Gamma_mul_neg_nat k hw,
-    show -(-(k : ℂ) - p) = p + k by ring, show -(k : ℂ) - p = -p - k by ring]
+    harg, residue_Gamma_mul_neg_nat k hw, hpow, hsub]
   ring
 
 /-- For `p ∉ ℤ` and `c ≠ 0`, the residue of `s ↦ c ^ (-s) * (Γ(s) * Γ(s + p))` at `s = -k` is
@@ -278,45 +281,76 @@ theorem residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_sub_nat_eq_regularizedHGFun
     exact sin_pi_mul_ne_zero (x := p) (not_exists.mpr fun m hm ↦ hp m hm.symm)
   have hrefl := neg_one_pow_div_factorial_mul_Gamma_sub_natCast hsin_ne k
   rw [mul_neg, sin_neg, sub_neg_eq_add] at hrefl
+  -- Group `(-1) ^ k / k! * Γ(-p - k)` so `hrefl` rewrites it directly.
+  have hrearr : (-1 : ℂ) ^ k / (k ! : ℂ) * (c ^ p * c ^ k) * Gamma (-p - k) =
+      c ^ p * c ^ k * ((-1 : ℂ) ^ k / (k ! : ℂ) * Gamma (-p - k)) := by ring
   rw [residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_sub_nat k hp_neg,
-    cpow_add _ _ hc, cpow_natCast, regularizedHGFunCoeff_zero_singleton,
-    show (-1 : ℂ) ^ k / (k ! : ℂ) * (c ^ p * c ^ k) * Gamma (-p - k) =
-      c ^ p * c ^ k * ((-1 : ℂ) ^ k / (k ! : ℂ) * Gamma (-p - k)) by ring, hrefl]
+    cpow_add _ _ hc, cpow_natCast, regularizedHGFunCoeff_zero_singleton, hrearr, hrefl]
   ring
 
 /-! ### Finite contour shift between two vertical lines -/
 
-/-- Exact pole characterization inside an open vertical strip `(σ₁, σ₂)` when both boundary
-abscissas avoid `-ℕ` and `-p.re - ℕ`. -/
-private lemma exists_open_strip_avoiding_poles {p : ℂ} {σ₁ σ₂ : ℝ}
-    (hσ₁ : ∀ n : ℕ, σ₁ ≠ -n) (hσ₁p : ∀ n : ℕ, σ₁ + p.re ≠ -n)
-    (hσ₂ : ∀ n : ℕ, σ₂ ≠ -n) (hσ₂p : ∀ n : ℕ, σ₂ + p.re ≠ -n) :
-    ∃ ε : ℝ, 0 < ε ∧ ∀ s : ℂ, σ₁ - ε < s.re → s.re < σ₂ + ε →
-      ((∃ k : ℕ, s = -(k : ℂ)) ∨ (∃ k : ℕ, s = -p - k)) →
-      s ∈ (Finset.Ico ⌈-σ₂⌉₊ ⌈-σ₁⌉₊).image (fun k : ℕ ↦ -(k : ℂ)) ∪
-          (Finset.Ico ⌈-(σ₂ + p.re)⌉₊ ⌈-(σ₁ + p.re)⌉₊).image (fun k : ℕ ↦ -p - k) := by
-  obtain ⟨ε₁, hε₁, h1⟩ := TauCeti.exists_pos_forall_mem_Ico_ceil_neg_iff_mem_Ioo hσ₁ hσ₂
-  obtain ⟨ε₂, hε₂, h2⟩ := TauCeti.exists_pos_forall_mem_Ico_ceil_neg_iff_mem_Ioo hσ₁p hσ₂p
-  refine ⟨min ε₁ ε₂, lt_min hε₁ hε₂, fun s hs1 hs2 hpole ↦ ?_⟩
-  rcases hpole with ⟨k, rfl⟩ | ⟨k, rfl⟩
-  · exact Finset.mem_union_left _ (Finset.mem_image.mpr ⟨k,
-      (h1 (lt_min hε₁ hε₂) (min_le_left _ _) k).mpr ⟨by simpa using hs1, by simpa using hs2⟩, rfl⟩)
-  · exact Finset.mem_union_right _ (Finset.mem_image.mpr ⟨k,
-      (h2 (lt_min hε₁ hε₂) (min_le_right _ _) k).mpr
-        ⟨by simp only [sub_re, neg_re, natCast_re] at hs1; linarith,
-         by simp only [sub_re, neg_re, natCast_re] at hs2; linarith⟩, rfl⟩)
+/-- Unfold `gammaPolesRightOf a σ₁ \ gammaPolesRightOf a σ₂` to a ceiling-interval image. -/
+private lemma gammaPolesRightOf_sdiff (a : ℂ) (σ₁ σ₂ : ℝ) :
+    gammaPolesRightOf a σ₁ \ gammaPolesRightOf a σ₂ =
+      (Finset.Ico ⌈-(σ₂ + a.re)⌉₊ ⌈-(σ₁ + a.re)⌉₊).image fun k : ℕ ↦ -a - k := by
+  ext t
+  simp only [Finset.mem_sdiff, mem_gammaPolesRightOf, Finset.mem_image,
+    TauCeti.mem_Ico_ceil_neg_iff, Set.mem_Ioc]
+  constructor
+  · rintro ⟨⟨h₁, k, rfl⟩, h₂⟩
+    refine ⟨k, ⟨?_, ?_⟩, rfl⟩
+    · simp only [sub_re, neg_re, natCast_re] at h₁
+      linarith
+    · have hle : (-a - k).re ≤ σ₂ := not_lt.mp fun h ↦ h₂ ⟨h, k, rfl⟩
+      simp only [sub_re, neg_re, natCast_re] at hle
+      linarith
+  · rintro ⟨k, ⟨h₁, h₂⟩, rfl⟩
+    refine ⟨⟨by simp; linarith, k, rfl⟩, fun ⟨hlt, k', hk'⟩ ↦ ?_⟩
+    have hre : (-a - k').re = (-a - k).re := congrArg re hk'.symm
+    simp only [sub_re, neg_re, natCast_re] at hlt hre
+    linarith
 
-/-- Evaluation of the finite residue sum over the two disjoint pole families in `(σ₁, σ₂)`. -/
+/-- Evaluation of the finite residue sum over the two disjoint pole families in `(σ₁, σ₂]`. -/
 private lemma sum_residue_strip_cpow_neg_mul_Gamma_mul_Gamma_add
     {c p : ℂ} (hc : c ≠ 0) (hp : ∀ m : ℤ, p ≠ m) (σ₁ σ₂ : ℝ) :
-    ∑ s ∈ (Finset.Ico ⌈-σ₂⌉₊ ⌈-σ₁⌉₊).image (fun k : ℕ ↦ -(k : ℂ)) ∪
-        (Finset.Ico ⌈-(σ₂ + p.re)⌉₊ ⌈-(σ₁ + p.re)⌉₊).image (fun k : ℕ ↦ -p - k),
+    ∑ s ∈ (gammaPolesRightOf 0 σ₁ ∪ gammaPolesRightOf p σ₁) \
+        (gammaPolesRightOf 0 σ₂ ∪ gammaPolesRightOf p σ₂),
         TauCeti.Contour.residue (fun z ↦ c ^ (-z) * (Gamma z * Gamma (z + p))) s =
       π / sin (π * p) *
         ((∑ k ∈ Finset.Ico ⌈-σ₂⌉₊ ⌈-σ₁⌉₊, regularizedHGFunCoeff 0 {1 - p} k * c ^ k) -
           c ^ p * ∑ k ∈ Finset.Ico ⌈-(σ₂ + p.re)⌉₊ ⌈-(σ₁ + p.re)⌉₊,
             regularizedHGFunCoeff 0 {1 + p} k * c ^ k) := by
-  -- Split the union over the two disjoint injective families `-k` and `-p - k`.
+  -- For `p ∉ ℤ`, the two pole lattices `-k` and `-p - k` never collide, so the sdiff splits.
+  have hdisj_all : ∀ k₁ k₂ : ℕ, (-(k₁ : ℂ)) ≠ -p - k₂ := fun k₁ k₂ hk ↦
+    hp ((k₁ : ℤ) - k₂) (by push_cast; linear_combination hk)
+  have hsdiff_eq : (gammaPolesRightOf 0 σ₁ ∪ gammaPolesRightOf p σ₁) \
+      (gammaPolesRightOf 0 σ₂ ∪ gammaPolesRightOf p σ₂) =
+      (Finset.Ico ⌈-σ₂⌉₊ ⌈-σ₁⌉₊).image (fun k : ℕ ↦ -(k : ℂ)) ∪
+        (Finset.Ico ⌈-(σ₂ + p.re)⌉₊ ⌈-(σ₁ + p.re)⌉₊).image (fun k : ℕ ↦ -p - k) := by
+    have hsplit : (gammaPolesRightOf 0 σ₁ ∪ gammaPolesRightOf p σ₁) \
+        (gammaPolesRightOf 0 σ₂ ∪ gammaPolesRightOf p σ₂) =
+        (gammaPolesRightOf 0 σ₁ \ gammaPolesRightOf 0 σ₂) ∪
+          (gammaPolesRightOf p σ₁ \ gammaPolesRightOf p σ₂) := by
+      ext s
+      simp only [Finset.mem_sdiff, Finset.mem_union, mem_gammaPolesRightOf]
+      constructor
+      · rintro ⟨⟨h₁, k, rfl⟩ | ⟨h₁, k, rfl⟩, h₂⟩
+        · exact Or.inl ⟨⟨h₁, k, rfl⟩, fun h ↦ h₂ (Or.inl h)⟩
+        · exact Or.inr ⟨⟨h₁, k, rfl⟩, fun h ↦ h₂ (Or.inr h)⟩
+      · rintro (⟨⟨h₁, k, rfl⟩, h₂⟩ | ⟨⟨h₁, k, rfl⟩, h₂⟩)
+        · refine ⟨Or.inl ⟨h₁, k, rfl⟩, ?_⟩
+          rintro (h | ⟨_, k', hk'⟩)
+          · exact h₂ h
+          · exact hdisj_all k k' (by simpa using hk')
+        · refine ⟨Or.inr ⟨h₁, k, rfl⟩, ?_⟩
+          rintro (⟨_, k', hk'⟩ | h)
+          · exact hdisj_all k' k (by simpa using hk'.symm)
+          · exact h₂ h
+    have hzero : (fun k : ℕ ↦ -(0 : ℂ) - k) = fun k : ℕ ↦ -(k : ℂ) :=
+      funext fun k ↦ by simp
+    rw [hsplit, gammaPolesRightOf_sdiff 0 σ₁ σ₂, gammaPolesRightOf_sdiff p σ₁ σ₂,
+      zero_re, add_zero, add_zero, hzero]
   have hdisj : Disjoint
       ((Finset.Ico ⌈-σ₂⌉₊ ⌈-σ₁⌉₊).image (fun k : ℕ ↦ -(k : ℂ)))
       ((Finset.Ico ⌈-(σ₂ + p.re)⌉₊ ⌈-(σ₁ + p.re)⌉₊).image (fun k : ℕ ↦ -p - k)) := by
@@ -324,12 +358,12 @@ private lemma sum_residue_strip_cpow_neg_mul_Gamma_mul_Gamma_add
     intro s hs1 hs2
     rcases Finset.mem_image.mp hs1 with ⟨k₁, _, rfl⟩
     rcases Finset.mem_image.mp hs2 with ⟨k₂, _, hk⟩
-    exact hp ((k₁ : ℤ) - k₂) (by push_cast; linear_combination -hk)
+    exact hdisj_all k₁ k₂ hk.symm
   have hinj1 : Function.Injective (fun k : ℕ ↦ -(k : ℂ)) := fun _ _ h ↦
     Nat.cast_injective (neg_inj.mp h)
   have hinj2 : Function.Injective (fun k : ℕ ↦ -p - (k : ℂ)) := fun _ _ h ↦
     Nat.cast_injective (by linear_combination -h)
-  rw [Finset.sum_union hdisj, Finset.sum_image (fun _ _ _ _ h ↦ hinj1 h),
+  rw [hsdiff_eq, Finset.sum_union hdisj, Finset.sum_image (fun _ _ _ _ h ↦ hinj1 h),
     Finset.sum_image (fun _ _ _ _ h ↦ hinj2 h)]
   -- Evaluate each family's sum using the Euler-reflection residue formulas.
   have hsum1 : ∑ k ∈ Finset.Ico ⌈-σ₂⌉₊ ⌈-σ₁⌉₊,
@@ -362,31 +396,35 @@ theorem integral_cpow_neg_mul_Gamma_mul_Gamma_add_sub_integral_eq_sum_residue
     (∫ y : ℝ, c ^ (-(σ₂ + y * I)) * (Gamma (σ₂ + y * I) * Gamma (σ₂ + y * I + p))) -
       (∫ y : ℝ, c ^ (-(σ₁ + y * I)) * (Gamma (σ₁ + y * I) * Gamma (σ₁ + y * I + p))) =
         2 * π * ∑ s ∈
-          (Finset.Ico ⌈-σ₂⌉₊ ⌈-σ₁⌉₊).image (fun k : ℕ ↦ -(k : ℂ)) ∪
-          (Finset.Ico ⌈-(σ₂ + p.re)⌉₊ ⌈-(σ₁ + p.re)⌉₊).image (fun k : ℕ ↦ -p - k),
+          (gammaPolesRightOf 0 σ₁ ∪ gammaPolesRightOf p σ₁) \
+            (gammaPolesRightOf 0 σ₂ ∪ gammaPolesRightOf p σ₂),
             TauCeti.Contour.residue (fun z ↦ c ^ (-z) * (Gamma z * Gamma (z + p))) s := by
   have hc0 : c ≠ 0 := slitPlane_ne_zero hc
   set f : ℂ → ℂ := fun s ↦ c ^ (-s) * (Gamma s * Gamma (s + p))
   set P : Finset ℂ :=
-    (Finset.Ico ⌈-σ₂⌉₊ ⌈-σ₁⌉₊).image (fun k : ℕ ↦ -(k : ℂ)) ∪
-    (Finset.Ico ⌈-(σ₂ + p.re)⌉₊ ⌈-(σ₁ + p.re)⌉₊).image (fun k : ℕ ↦ -p - k)
-  -- Characterize poles in `(σ₁, σ₂)` and show differentiability off `P`.
-  obtain ⟨ε, hε, hstrip_poles⟩ := exists_open_strip_avoiding_poles hσ₁ hσ₁p hσ₂ hσ₂p
+    (gammaPolesRightOf 0 σ₁ ∪ gammaPolesRightOf p σ₁) \
+      (gammaPolesRightOf 0 σ₂ ∪ gammaPolesRightOf p σ₂)
+  -- Check that `P` lies in the open strip `(σ₁, σ₂)` and `f` is differentiable off `P`.
+  have hre_ne {σ : ℝ} (hσ0 : ∀ n : ℕ, σ ≠ -n) (hσp : ∀ n : ℕ, σ + p.re ≠ -n) {s : ℂ}
+      (hs : ∃ k : ℕ, s = -0 - k ∨ s = -p - k) : s.re ≠ σ := by
+    obtain ⟨k, rfl | rfl⟩ := hs
+    · exact fun h ↦ hσ0 k (by simpa using h.symm)
+    · exact fun h ↦ hσp k (by simp only [sub_re, neg_re, natCast_re] at h; linarith)
   have hP : ∀ s ∈ P, σ₁ < s.re ∧ s.re < σ₂ := fun s hs ↦ by
-    simp only [P, Finset.mem_union, Finset.mem_image] at hs
-    rcases hs with ⟨k, hk, rfl⟩ | ⟨k, hk, rfl⟩
-    · obtain ⟨h1, h2⟩ := TauCeti.mem_Ico_ceil_neg_iff.mp hk
-      exact ⟨by simpa using h1, by simpa using lt_of_le_of_ne h2 (hσ₂ k).symm⟩
-    · obtain ⟨h1, h2⟩ := TauCeti.mem_Ico_ceil_neg_iff.mp hk
-      simp only [sub_re, neg_re, natCast_re]
-      exact ⟨by linarith, lt_of_le_of_ne (by linarith) (fun h ↦ hσ₂p k (by linarith))⟩
-  have hdiff_closed : DifferentiableOn ℂ f ({t : ℂ | σ₁ ≤ t.re ∧ t.re ≤ σ₂} \ (↑P : Set ℂ)) :=
-    fun s ⟨hs, hsP⟩ ↦
-      (differentiableAt_cpow_neg_mul_Gamma_mul_Gamma_add hc0
-        (fun k hk ↦ hsP (Finset.mem_coe.mpr
-          (hstrip_poles s (by linarith [hs.1]) (by linarith [hs.2]) (Or.inl ⟨k, hk⟩))))
-        (fun k hk ↦ hsP (Finset.mem_coe.mpr (hstrip_poles s (by linarith [hs.1])
-          (by linarith [hs.2]) (Or.inr ⟨k, by linear_combination hk⟩))))).differentiableWithinAt
+    rw [Finset.mem_sdiff, mem_gammaPolesRightOf_union, mem_gammaPolesRightOf_union] at hs
+    obtain ⟨⟨h₁, hk⟩, h₂⟩ := hs
+    exact ⟨h₁, lt_of_le_of_ne (not_lt.mp fun h ↦ h₂ ⟨h, hk⟩) (hre_ne hσ₂ hσ₂p hk)⟩
+  have hdiff_closed : DifferentiableOn ℂ f ({t : ℂ | σ₁ ≤ t.re ∧ t.re ≤ σ₂} \ (↑P : Set ℂ)) := by
+    intro s ⟨hs, hsP⟩
+    have hpole {w : ℂ} (hw : ∀ k : ℕ, s + w = -k → ∃ m : ℕ, s = -0 - m ∨ s = -p - m) :
+        ∀ k : ℕ, s + w ≠ -k := fun k hk ↦ by
+      have hm := hw k hk
+      refine hsP (Finset.mem_coe.mpr (Finset.mem_sdiff.mpr ⟨mem_gammaPolesRightOf_union.mpr
+        ⟨lt_of_le_of_ne hs.1 (hre_ne hσ₁ hσ₁p hm).symm, hm⟩, fun h ↦ ?_⟩))
+      exact (mem_gammaPolesRightOf_union.mp h).1.not_ge hs.2
+    exact (differentiableAt_cpow_neg_mul_Gamma_mul_Gamma_add hc0
+      (by simpa only [add_zero] using hpole (w := 0) fun k hk ↦ ⟨k, Or.inl (by simpa using hk)⟩)
+      (hpole (w := p) fun k hk ↦ ⟨k, Or.inr (by linear_combination hk)⟩)).differentiableWithinAt
   obtain ⟨C, K, T₀, _, hstrip⟩ := exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_le hc0 σ₁ σ₂
   have hα : 0 < π - |c.arg| := sub_pos.mpr (abs_arg_lt_pi_of_mem_slitPlane hc)
   have hB : Tendsto (fun T : ℝ ↦ C * ((1 + |T|) ^ K * Real.exp (-((π - |c.arg|) * |T|))))
@@ -472,9 +510,13 @@ private lemma exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_sub_natCast_le
       (C₂ * Real.exp (π * |p.im| / 2)) * (1 + |y|) ^ (0 : ℝ) * Real.exp (-(π * |y| / 2)) := by
     rw [Real.rpow_zero, mul_one]
     have h := hG₂ hMN (y + p.im)
-    rw [show ((p.re - δ : ℝ) : ℂ) - N + (y + p.im : ℝ) * I = s + p by
-      dsimp [s]; conv_rhs => rw [← re_add_im p]
-      push_cast; ring] at h
+    -- Align `(p.re - δ : ℂ) - N + (y + p.im) * I` with `s + p` so `hG₂` applies.
+    have harg : ((p.re - δ : ℝ) : ℂ) - N + (y + p.im : ℝ) * I = s + p := by
+      dsimp [s]
+      conv_rhs => rw [← re_add_im p]
+      push_cast
+      ring
+    rw [harg] at h
     have hfac1 : (1 : ℝ) ≤ (Nat.factorial (N - M) : ℝ) :=
       by exact_mod_cast Nat.factorial_pos (N - M)
     have htri : |y| - |p.im| ≤ |y + p.im| := by
@@ -492,6 +534,14 @@ private lemma exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_sub_natCast_le
   rw [add_zero, Real.rpow_zero, one_mul] at hcomb
   exact hcomb.trans_eq (by ring)
 
+/-- For `δ ∈ (0, 1)` with `p.re - δ ∉ ℤ`, the shifted abscissa `-N - δ` avoids both `-ℕ` and
+`-p.re - ℕ`. -/
+private lemma left_shift_avoids_poles {p : ℂ} {δ : ℝ} (hδ : δ ∈ Ioo (0 : ℝ) 1)
+    (hpδ : ∀ m : ℤ, p.re - δ ≠ m) (N : ℕ) :
+    (∀ n : ℕ, -(N : ℝ) - δ ≠ -n) ∧ (∀ n : ℕ, -(N : ℝ) - δ + p.re ≠ -n) :=
+  ⟨fun n h ↦ neg_ne_intCast_of_mem_Ioo_zero_one hδ ((N : ℤ) - n) (by push_cast; linarith),
+   fun n h ↦ hpδ ((N : ℤ) - n) (by push_cast; linarith)⟩
+
 /-- For a fixed offset `δ ∈ (0, 1)` with `p.re - δ ∉ ℤ`, the vertical integral along
 `Re s = -N - δ` tends to `0` as `N → ∞`, with bound `O(‖c‖ ^ N / N!)`. -/
 private lemma tendsto_integral_cpow_neg_mul_Gamma_mul_Gamma_add_left
@@ -507,10 +557,9 @@ private lemma tendsto_integral_cpow_neg_mul_Gamma_mul_Gamma_add_left
   refine squeeze_zero_norm' ?_ (by simpa using
     ((Real.summable_pow_div_factorial ‖c‖).tendsto_atTop_zero.const_mul C₀).mul_const (2 / α))
   filter_upwards [eventually_ge_atTop ⌈p.re - δ⌉₊] with N hMN
+  have ⟨hσ₁, hσ₁p⟩ := left_shift_avoids_poles hδ hpδ N
   refine (norm_integral_le_integral_norm _).trans ((integral_mono
-    ((integrable_cpow_neg_mul_Gamma_mul_Gamma_add hc
-      (fun n h ↦ neg_ne_intCast_of_mem_Ioo_zero_one hδ ((N : ℤ) - n) (by push_cast; linarith))
-      (fun n h ↦ hpδ ((N : ℤ) - n) (by push_cast; linarith))).norm)
+    ((integrable_cpow_neg_mul_Gamma_mul_Gamma_add hc hσ₁ hσ₁p).norm)
     ((TauCeti.integrable_exp_neg_mul_abs hα).const_mul _) (hpt hMN)).trans_eq ?_)
   rw [integral_const_mul, TauCeti.integral_exp_neg_mul_abs hα]
 
@@ -548,17 +597,19 @@ theorem integral_cpow_neg_mul_Gamma_mul_Gamma_add
           c ^ p * ∑ k ∈ Finset.range ⌈(N : ℝ) + (δ - p.re)⌉₊,
             regularizedHGFunCoeff 0 {1 + p} k * c ^ k)) := by
     intro N
+    have ⟨hσ₁, hσ₁p⟩ := left_shift_avoids_poles hδ hpδ N
     have h := integral_cpow_neg_mul_Gamma_mul_Gamma_add_sub_integral hc hp
       (by linarith [N.cast_nonneg (α := ℝ), hδ.1] : -(N : ℝ) - δ ≤ σ)
-      (fun n h ↦ neg_ne_intCast_of_mem_Ioo_zero_one hδ ((N : ℤ) - n) (by push_cast; linarith))
-      (fun n h ↦ hpδ ((N : ℤ) - n) (by push_cast; linarith))
+      hσ₁ hσ₁p
       (fun n h ↦ by linarith [n.cast_nonneg (α := ℝ)])
       (fun n h ↦ by linarith [n.cast_nonneg (α := ℝ)])
     have hc1 : ⌈-σ⌉₊ = 0 := Nat.ceil_eq_zero.mpr (by linarith)
     have hc2 : ⌈-(σ + p.re)⌉₊ = 0 := Nat.ceil_eq_zero.mpr (by linarith)
-    rw [show -(-(N : ℝ) - δ) = (N : ℝ) + δ by ring,
-      show -((-(N : ℝ) - δ) + p.re) = (N : ℝ) + (δ - p.re) by ring,
-      hc1, hc2, Nat.Ico_zero_eq_range, Nat.Ico_zero_eq_range] at h
+    -- Rewrite the ceiling cutoffs into `(N : ℝ) + a` for
+    -- `tendsto_sum_range_ceil_regularizedHGFunCoeff`.
+    have ha1 : -(-(N : ℝ) - δ) = (N : ℝ) + δ := by ring
+    have ha2 : -((-(N : ℝ) - δ) + p.re) = (N : ℝ) + (δ - p.re) := by ring
+    rw [ha1, ha2, hc1, hc2, Nat.Ico_zero_eq_range, Nat.Ico_zero_eq_range] at h
     exact h
   -- 3. Pass to the limit `N → ∞`: `IN N → 0` on the LHS, while the partial sums give `₀F₁`.
   have hlim_lhs : Tendsto (fun N : ℕ ↦ Iσ - IN N) atTop (𝓝 Iσ) := by

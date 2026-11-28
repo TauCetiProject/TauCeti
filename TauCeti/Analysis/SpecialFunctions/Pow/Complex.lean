@@ -1037,21 +1037,18 @@ theorem inv_cpow_half_cpow (z w : ℂ) : (z ^ (1 / 2 : ℂ))⁻¹ ^ w = z ^ (-w 
 theorem norm_cpow_le_mul_exp_arg (w d : ℂ) :
     ‖w ^ d‖ ≤ ‖w‖ ^ d.re * Real.exp (|w.arg| * |d.im|) := by
   calc ‖w ^ d‖ ≤ ‖w‖ ^ d.re / Real.exp (w.arg * d.im) := norm_cpow_le w d
-    _ = ‖w‖ ^ d.re * Real.exp (-(w.arg * d.im)) := by rw [div_eq_mul_inv, Real.exp_neg]
-    _ ≤ ‖w‖ ^ d.re * Real.exp (|w.arg| * |d.im|) := by
-        refine mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_)
+    _ = ‖w‖ ^ d.re * (Real.exp (w.arg * d.im))⁻¹ := div_eq_mul_inv _ _
+    _ ≤ ‖w‖ ^ d.re * Real.exp (|w.arg| * |d.im|) :=
+        mul_le_mul_of_nonneg_left (inv_exp_arg_mul_le_exp_abs_arg_mul_abs w d.im)
           (Real.rpow_nonneg (norm_nonneg w) _)
-        rw [← abs_mul]
-        exact neg_le_abs _
 
 /-- For any complex base `w` and exponent `d`, `‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (π * |d.im|)`. -/
 theorem norm_cpow_le_mul_exp (w d : ℂ) :
-    ‖w ^ d‖ ≤ ‖w‖ ^ d.re * Real.exp (Real.pi * |d.im|) := by
-  calc ‖w ^ d‖ ≤ ‖w‖ ^ d.re / Real.exp (w.arg * d.im) := norm_cpow_le w d
-    _ = ‖w‖ ^ d.re * (Real.exp (w.arg * d.im))⁻¹ := div_eq_mul_inv _ _
-    _ ≤ ‖w‖ ^ d.re * Real.exp (Real.pi * |d.im|) :=
-        mul_le_mul_of_nonneg_left (inv_exp_arg_mul_le_exp_pi_mul_abs w d.im)
-          (Real.rpow_nonneg (norm_nonneg w) _)
+    ‖w ^ d‖ ≤ ‖w‖ ^ d.re * Real.exp (Real.pi * |d.im|) :=
+  (norm_cpow_le_mul_exp_arg w d).trans <|
+    mul_le_mul_of_nonneg_left
+      (Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_right (abs_arg_le_pi _) (abs_nonneg _)))
+      (Real.rpow_nonneg (norm_nonneg w) _)
 
 /-- Uniform norm bound for `(-log w) ^ k * exp (-s * log w)` on an annulus `δ ≤ ‖w‖ ≤ B`
 (`0 < δ`) with `‖s‖ ≤ S`. -/
