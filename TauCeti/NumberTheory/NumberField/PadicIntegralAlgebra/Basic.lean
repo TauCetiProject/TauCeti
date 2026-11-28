@@ -327,7 +327,8 @@ theorem topologicalClosure_map_principalUnitGroup_le_ker_normUnitsHom {N : ℕ} 
       (globalUnitInclusion K p)).topologicalClosure ≤ (normUnitsHom K p).toMonoidHom.ker := by
   refine Subgroup.topologicalClosure_minimal _ ?_ (normUnitsHom K p).isClosed_ker
   rintro _ ⟨η, hη, rfl⟩
-  exact normUnitsHom_globalUnitInclusion_eq_one_of_mem_principalUnitGroup K p hN hη
+  exact MonoidHom.mem_ker.mpr
+    (normUnitsHom_globalUnitInclusion_eq_one_of_mem_principalUnitGroup K p hN hη)
 
 /-- **The norm as a product over embeddings.** Let `E` be a field of characteristic zero
 over `ℤ_p` in which `K` splits, that is, with `[K : ℚ]` embeddings `σ : K → E`. Then the image in

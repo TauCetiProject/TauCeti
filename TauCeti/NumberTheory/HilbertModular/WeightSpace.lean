@@ -148,7 +148,8 @@ theorem inverseNormPullback_apply {R : Type*} [Monoid R] [TopologicalSpace R]
 theorem unitsMap_comp_inverseNormPullback {R S : Type*} [Monoid R] [Monoid S]
     [TopologicalSpace R] [TopologicalSpace S] (f : R →ₜ* S) (κ : ArithmeticWeight K p R) :
     f.unitsMap.comp (inverseNormPullback K p κ) = inverseNormPullback K p (f.unitsMap.comp κ) :=
-  (rfl)
+  ContinuousMonoidHom.ext fun x ↦ by
+    simp only [inverseNormPullback, ContinuousMonoidHom.coe_comp, Function.comp_apply]
 
 section CommMonoid
 
@@ -302,6 +303,30 @@ theorem algebraicGeometricWeight_neg (k : (K →+* E) → ℤ) :
   ext x
   simp [zpow_neg, Finset.prod_inv_distrib]
 
+/-- Over a splitting field `E` of characteristic zero, the image in `Eˣ` of `N_p(x)` equals
+the product of the embedding characters `embeddingChar σ x`. -/
+theorem unitsMap_algebraMap_normUnits_eq_prod_embeddingChar
+    (hE : Module.finrank ℚ K ≤ Fintype.card (K →+* E))
+    (x : (PadicIntegralAlgebra K p)ˣ) :
+    Units.map (algebraMap ℤ_[p] E : ℤ_[p] →* E) (TauCeti.Algebra.normUnits ℤ_[p] x) =
+      ∏ σ : K →+* E, embeddingChar K p E σ x := by
+  refine Units.ext ?_
+  push_cast
+  simpa [TauCeti.Algebra.coe_normUnits] using
+    PadicIntegralAlgebra.algebraMap_norm_eq_prod_embeddings K p hE
+      (x : PadicIntegralAlgebra K p)
+
+/-- Over a splitting field `E` of characteristic zero, pulling back the algebraic central
+character `y ↦ y ^ v` along `N_p` gives the algebraic geometric weight with constant exponent
+`v`. -/
+theorem algebraic_comp_normUnitsHom
+    (hE : Module.finrank ℚ K ≤ Fintype.card (K →+* E)) (v : ℤ) :
+    (WeightSpace.algebraic E v).comp (PadicIntegralAlgebra.normUnitsHom K p) =
+      algebraicGeometricWeight K p E (fun _ ↦ v) := by
+  ext x
+  simp [WeightSpace.algebraic_apply,
+    unitsMap_algebraMap_normUnits_eq_prod_embeddingChar K p E hE, Finset.prod_zpow]
+
 /-- **Algebraic exponent law for the inverse norm convention.** Over a splitting field `E` of
 characteristic zero, the arithmetic pair with algebraic exponents `(a_σ, v)` pulls back under
 `inverseNormHom` to the algebraic geometric weight with exponents `2 * a_σ - v`. -/
@@ -310,25 +335,12 @@ theorem inverseNormPullback_coprod_algebraic
     inverseNormPullback K p
         ((algebraicGeometricWeight K p E a).coprod (WeightSpace.algebraic E v)) =
       algebraicGeometricWeight K p E (fun σ ↦ 2 * a σ - v) := by
-  refine ContinuousMonoidHom.ext fun x ↦ ?_
-  have hnorm :
-      Units.map (algebraMap ℤ_[p] E : ℤ_[p] →* E) (TauCeti.Algebra.normUnits ℤ_[p] x) =
-        ∏ σ : K →+* E, embeddingChar K p E σ x := by
-    refine Units.ext ?_
-    push_cast
-    simpa [TauCeti.Algebra.coe_normUnits] using
-      PadicIntegralAlgebra.algebraMap_norm_eq_prod_embeddings K p hE
-        (x : PadicIntegralAlgebra K p)
-  rw [inverseNormPullback_coprod_apply, algebraicGeometricWeight_apply,
-    algebraicGeometricWeight_apply]
-  -- Rewrite `t(N_p(x))⁻¹` as `∏_σ embeddingChar σ x ^ (-v)` using `hnorm`.
-  have hcentral : (WeightSpace.algebraic E v (TauCeti.Algebra.normUnits ℤ_[p] x))⁻¹ =
-      ∏ σ : K →+* E, embeddingChar K p E σ x ^ (-v) := by
-    rw [WeightSpace.algebraic_apply, hnorm, ← zpow_neg, Finset.prod_zpow]
-  rw [hcentral, ← Finset.prod_pow Finset.univ 2, ← Finset.prod_mul_distrib]
-  refine Finset.prod_congr rfl fun σ _ ↦ ?_
-  rw [← zpow_natCast, ← zpow_mul, ← zpow_add]
+  rw [inverseNormPullback_coprod, algebraic_comp_normUnitsHom K p E hE v, sq,
+    ← algebraicGeometricWeight_add, ← algebraicGeometricWeight_neg,
+    ← algebraicGeometricWeight_add]
   congr 1
+  ext σ
+  simp only [Pi.add_apply, Pi.neg_apply]
   omega
 
 end Splitting
@@ -349,8 +361,10 @@ theorem inverseNormPullback_coprod_eq_sq_of_mem_topologicalClosure {R : Type*} [
       (PadicIntegralAlgebra.globalUnitInclusion K p)).topologicalClosure) :
     inverseNormPullback K p (w.coprod t) z = w z ^ 2 := by
   have hnorm : TauCeti.Algebra.normUnits ℤ_[p] z = 1 := by
-    simpa [PadicIntegralAlgebra.normUnitsHom_apply] using
-      PadicIntegralAlgebra.topologicalClosure_map_principalUnitGroup_le_ker_normUnitsHom K p hN hz
+    simpa only [ContinuousMonoidHom.coe_toMonoidHom, PadicIntegralAlgebra.coe_normUnitsHom] using
+      MonoidHom.mem_ker.mp
+        (PadicIntegralAlgebra.topologicalClosure_map_principalUnitGroup_le_ker_normUnitsHom
+          K p hN hz)
   simp [hnorm]
 
 end CongruenceUnits

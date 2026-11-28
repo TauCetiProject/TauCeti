@@ -84,8 +84,8 @@ theorem coprod_unique (h : (A × B) →ₜ* E) : (h.comp (inl A B)).coprod (h.co
 `A × B`. -/]
 theorem coprod_inl_inr {C D : Type*} [CommMonoid C] [CommMonoid D] [TopologicalSpace C]
     [TopologicalSpace D] [ContinuousMul C] [ContinuousMul D] :
-    (inl C D).coprod (inr C D) = id (C × D) :=
-  coprod_unique (id (C × D))
+    (inl C D).coprod (inr C D) = id (C × D) := by
+  ext x <;> simp
 
 /-- Postcomposing a coproduct with a continuous homomorphism distributes over the factors. -/
 @[to_additive /-- Postcomposing an additive coproduct with a continuous additive homomorphism

@@ -451,8 +451,7 @@ theorem algebraic_eq_inclusion_zpow (K : Type*) [SeminormedCommRing K] [NormedAl
   have h : Units.map (algebraMap ℤ_[p] K : ℤ_[p] →* K) x = inclusion (p := p) K x := by
     ext
     rw [Units.coe_map, MonoidHom.coe_ofClass, coe_inclusion_apply, padicIntAlgebraMap_apply,
-      IsScalarTower.algebraMap_apply ℤ_[p] ℚ_[p] K]
-    rfl
+      IsScalarTower.algebraMap_apply ℤ_[p] ℚ_[p] K, PadicInt.algebraMap_apply]
   rw [algebraic_apply, ContinuousMonoidHom.zpow_apply, h]
 
 section Construction
