@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Integral.Layercake
 public import Mathlib.Data.Set.SymmDiff
 -- Proof-only: integrability of a real power on a bounded interval.
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+-- Proof-only: Riemann sum comparisons for antitone functions.
+import Mathlib.Analysis.SumIntegralComparisons
 -- Proof-only: the layer-cake formula for a power and the power integral on `(0, a)`.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 -- Proof-only: the integrability of indicators of bounded intervals.
@@ -110,7 +112,10 @@ therefore makes every shifted tail integrable.
   its integrand;
 * `TauCeti.integrable_rpow_iff_integrableOn_weighted_tail` and
   `TauCeti.integrable_rpow_iff_integrableAtFilter_weighted_tail` — the weighted-tail
-  integrability criteria for positive real-power moments.
+  integrability criteria for positive real-power moments;
+* `MeasureTheory.integral_le_mul_sum_measureReal_gt` and
+  `MeasureTheory.mul_sum_measureReal_gt_le_integral_add` — upper and lower Riemann-sum bounds for
+  the integral of a nonnegative integrable function in terms of superlevel-set measures.
 -/
 
 public section
@@ -893,3 +898,76 @@ theorem integrableOn_Ioi_measureReal_tail_add (F : Measure ℝ≥0) (x : ℝ≥0
     (lintegral_mono fun u => ENNReal.coe_le_coe.mpr (tsub_le_self : u - x ≤ u))
 
 end MeasureTheory.Measure
+
+namespace MeasureTheory
+
+/-- Upper Riemann-sum bound for the integral of a nonnegative almost-everywhere bounded integrable
+function on a finite measure space in terms of strict superlevel-set measures. -/
+theorem integral_le_mul_sum_measureReal_gt
+    {X : Type*} [MeasurableSpace X] (ν : Measure X) [IsFiniteMeasure ν] {f : X → ℝ}
+    (hf_int : Integrable f ν) (hf : 0 ≤ᵐ[ν] f) {k : ℕ} {a : ℝ} (ha : 0 < a)
+    (hka : ∀ᵐ x ∂ν, f x ≤ k * a) :
+    ∫ x, f x ∂ν ≤ a * ∑ j ∈ Finset.range k, ν.real {x | (j : ℝ) * a < f x} := by
+  let g : ℝ → ℝ := fun t ↦ ν.real {x | t < f x / a}
+  have hg_anti : AntitoneOn g (Set.Icc 0 (0 + k)) :=
+    fun _ _ _ _ hst ↦ measureReal_mono fun _ hx ↦ hst.trans_lt hx
+  have hint : (∫ x, f x ∂ν) / a = ∫ t in (0 : ℝ)..0 + k, g t := by
+    rw [← integral_div, (hf_int.div_const a).integral_eq_integral_Ioc_meas_le
+      (hf.mono fun x hx ↦ div_nonneg hx ha.le) (hka.mono fun x hx ↦ (div_le_iff₀ ha).2 hx)]
+    rw [zero_add, intervalIntegral.integral_of_le (Nat.cast_nonneg k)]
+    refine integral_congr_ae ?_
+    filter_upwards [meas_le_ae_eq_meas_lt ν (volume.restrict (Set.Ioc (0 : ℝ) k))
+      (fun x ↦ f x / a)] with t ht
+    simpa only [measureReal_def, g] using congrArg ENNReal.toReal ht
+  have hle_sum :
+      (∫ x, f x ∂ν) / a ≤ ∑ j ∈ Finset.range k, ν.real {x | (j : ℝ) * a < f x} := by
+    simpa only [zero_add, g, lt_div_iff₀ ha] using hint.trans_le hg_anti.integral_le_sum
+  exact (div_le_iff₀' ha).1 hle_sum
+
+/-- Lower Riemann-sum bound (upper bound on the Riemann sum) for the integral of a nonnegative
+integrable function on a finite measure space in terms of strict superlevel-set measures. -/
+theorem mul_sum_measureReal_gt_le_integral_add
+    {X : Type*} [MeasurableSpace X] (ν : Measure X) [IsFiniteMeasure ν] {f : X → ℝ}
+    (hf_int : Integrable f ν) (hf : 0 ≤ᵐ[ν] f) (k : ℕ) {a : ℝ} (ha : 0 < a) :
+    a * ∑ j ∈ Finset.range k, ν.real {x | (j : ℝ) * a < f x} ≤
+      (∫ x, f x ∂ν) + a * ν.real Set.univ := by
+  cases k with
+  | zero =>
+    simp only [Finset.range_zero, Finset.sum_empty, mul_zero]
+    exact add_nonneg (integral_nonneg_of_ae hf) (mul_nonneg ha.le measureReal_nonneg)
+  | succ m =>
+    let g : ℝ → ℝ := fun t ↦ ν.real {x | t < f x / a}
+    have hg_anti : Antitone g := fun _ _ hst ↦ measureReal_mono fun _ hx ↦ hst.trans_lt hx
+    have hsum_int :
+        ∑ j ∈ Finset.range m, g (j + 1 : ℕ) ≤ ∫ t in (0 : ℝ)..0 + m, g t := by
+      simpa only [zero_add] using (hg_anti.antitoneOn (Set.Icc (0 : ℝ) (0 + m))).sum_le_integral
+    have hf_div : Integrable (fun x ↦ f x / a) ν := hf_int.div_const a
+    have hf_div_nn : 0 ≤ᵐ[ν] fun x ↦ f x / a := hf.mono fun x hx ↦ div_nonneg hx ha.le
+    have hlin : (∫⁻ t in Set.Ioi (0 : ℝ), ν {x | t < f x / a}) ≠ ∞ := by
+      rw [← lintegral_eq_lintegral_meas_lt ν hf_div_nn hf_div.aemeasurable]
+      exact hf_div.lintegral_lt_top.ne
+    have hm : Measurable fun t : ℝ ↦ ν {x | t < f x / a} :=
+      Antitone.measurable fun _ _ hst ↦ measure_mono fun _ hx ↦ hst.trans_lt hx
+    have hg_int : IntegrableOn g (Set.Ioi 0) :=
+      integrable_toReal_of_lintegral_ne_top hm.aemeasurable hlin
+    have hint_le : ∫ t in (0 : ℝ)..0 + m, g t ≤ (∫ x, f x ∂ν) / a := by
+      rw [zero_add, intervalIntegral.integral_of_le (Nat.cast_nonneg m)]
+      calc
+        ∫ t in Set.Ioc (0 : ℝ) m, g t ≤ ∫ t in Set.Ioi (0 : ℝ), g t :=
+          setIntegral_mono_set hg_int (ae_of_all _ fun _ ↦ measureReal_nonneg)
+            (ae_of_all _ fun _ hx ↦ Set.Ioc_subset_Ioi_self hx)
+        _ = ∫ x, f x / a ∂ν := (hf_div.integral_eq_integral_meas_lt hf_div_nn).symm
+        _ = (∫ x, f x ∂ν) / a := integral_div a f
+    have hg0 : g 0 ≤ ν.real Set.univ := measureReal_mono (Set.subset_univ _)
+    have hsum : ∑ j ∈ Finset.range (m + 1), ν.real {x | (j : ℝ) * a < f x} ≤
+        ν.real Set.univ + (∫ x, f x ∂ν) / a := by
+      have hrewrite : ∑ j ∈ Finset.range (m + 1), ν.real {x | (j : ℝ) * a < f x} =
+          (∑ j ∈ Finset.range m, g (j + 1 : ℕ)) + g 0 := by
+        simpa only [g, lt_div_iff₀ ha, Nat.cast_add, Nat.cast_one, Nat.cast_zero] using
+          Finset.sum_range_succ' (fun j : ℕ ↦ g j) m
+      linarith
+    refine (le_div_iff₀' ha).1 ?_
+    rw [add_div, mul_div_cancel_left₀ _ ha.ne']
+    linarith [hsum]
+
+end MeasureTheory

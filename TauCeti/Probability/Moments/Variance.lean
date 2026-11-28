@@ -20,7 +20,7 @@ import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.MinkowskiIntegral
-import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
+import TauCeti.Probability.Moments.Chebyshev
 import TauCeti.Probability.Moments.Covariance
 
 /-!
@@ -426,10 +426,12 @@ theorem ae_tendsto_sub_integral_of_summable_variance {Ω : Type*} [MeasurableSpa
     {P : Measure Ω} [IsFiniteMeasure P] {X : ℕ → Ω → ℝ}
     (hX : ∀ n, MemLp (X n) 2 P) (hvar : Summable fun n ↦ Var[X n; P]) :
     ∀ᵐ ω ∂P, Tendsto (fun n ↦ X n ω - ∫ ω', X n ω' ∂P) atTop (𝓝 0) := by
-  refine TauCeti.MeasureTheory.ae_tendsto_of_tsum_dist_ge_ne_top (g := 0) fun ε hε ↦ ?_
-  refine ne_top_of_le_ne_top (hvar.div_const (ε ^ 2)).tsum_ofReal_ne_top
-    (tsum_le_tsum fun n ↦ ?_)
-  simpa only [Pi.zero_apply, Real.dist_eq, sub_zero] using meas_ge_le_variance_div_sq (hX n) hε
+  have hint : ∀ᶠ n in atTop, Integrable (fun ω ↦ (X n ω - ∫ ω', X n ω' ∂P) ^ 2) P :=
+    Eventually.of_forall fun n ↦ ((hX n).sub (memLp_const _)).integrable_sq
+  have hsum : Summable fun n ↦ (∫ ω, (X n ω - ∫ ω', X n ω' ∂P) ^ 2 ∂P) / (1 : ℝ) ^ 2 := by
+    simpa only [one_pow, div_one, ← variance_eq_integral (hX _).aemeasurable] using hvar
+  simpa only [div_one] using
+    TauCeti.ae_tendsto_div_zero_of_summable_integral_sq (b := fun _ ↦ 1) hint hsum
 
 section ProdSections
 
