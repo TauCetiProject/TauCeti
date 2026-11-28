@@ -6,7 +6,6 @@ Authors: Jon Crall, Claude Fable 5, Claude Opus 4.8
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import TauCeti.Analysis.InnerProductSpace.BasisSpan

@@ -608,20 +608,18 @@ theorem singularValues_le_mul_of_norm_apply_le {A : E →ₗ[𝕜] F} {B : E →
   swap
   · simp [B.singularValues_of_finrank_le hi, A.singularValues_of_finrank_le hi]
   -- Courant–Fischer: on an `(i + 1)`-dimensional subspace where the Rayleigh quotient of `B† B` is
-  -- at least `σᵢ(B)²`, find a unit vector where that of `A† A` is at most `σᵢ(A)²`.
+  -- at least `σᵢ(B)²`, find a unit vector `x` with `‖A x‖ ≤ σᵢ(A)`.
   obtain ⟨V, hV, hBV⟩ :=
     B.isSymmetric_adjoint_comp_self.exists_submodule_forall_unit_eigenvalue_le_re_inner rfl ⟨i, hi⟩
-  obtain ⟨x, hxV, hx, hAx⟩ :=
-    A.isSymmetric_adjoint_comp_self.exists_unit_vector_re_inner_le_eigenvalue rfl ⟨i, hi⟩ V hV
+  obtain ⟨x, hxV, hx, hAx⟩ := A.exists_unit_vector_norm_apply_le_singularValues V hV.ge
   have hBx := hBV x hxV hx
-  simp only [comp_apply, adjoint_inner_left, inner_self_eq_norm_sq] at hAx hBx
-  have hsq : B.singularValues i ^ 2 ≤ (c * A.singularValues i) ^ 2 := by
-    rw [mul_pow, B.sq_singularValues_of_lt rfl hi, A.sq_singularValues_of_lt rfl hi]
-    calc _ ≤ ‖B x‖ ^ 2 := hBx
-      _ ≤ (c * ‖A x‖) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (h x) 2
-      _ ≤ _ := by rw [mul_pow]; exact mul_le_mul_of_nonneg_left hAx (sq_nonneg c)
-  exact (pow_le_pow_iff_left₀ (B.singularValues_nonneg i)
-    (mul_nonneg hc (A.singularValues_nonneg i)) two_ne_zero).mp hsq
+  rw [← B.sq_singularValues_of_lt rfl hi, comp_apply, adjoint_inner_left,
+    inner_self_eq_norm_sq] at hBx
+  calc B.singularValues i
+      ≤ ‖B x‖ := (pow_le_pow_iff_left₀ (B.singularValues_nonneg i) (norm_nonneg _)
+        two_ne_zero).mp hBx
+    _ ≤ c * ‖A x‖ := h x
+    _ ≤ c * A.singularValues i := mul_le_mul_of_nonneg_left hAx hc
 
 /-- **Bounded-factor domination.** If `‖C y‖ ≤ c * ‖y‖` for every `y` (for `c ≥ 0`: if `C` has
 operator norm at most `c`), then `σᵢ(C A) ≤ c σᵢ(A)` for every `i`. -/

@@ -108,9 +108,9 @@ Passing a finite-dimensional operator to continuous linear maps and back preserv
 (`LinearMap.toContinuousLinearMap_star`, `ContinuousLinearMap.toLinearMap_star`) and the first
 passage preserves its normality
 (the instance `LinearMap.isStarNormal_toContinuousLinearMap`).
-The Hermitian part `H` of a finite-dimensional operator `T`, given by `2 • H = T + T†`, has the
-real quadratic form of `T` (`LinearMap.re_inner_apply_self_eq_of_two_smul_eq`) and is symmetric
-(`LinearMap.isSymmetric_of_two_smul_eq`).
+The symmetric part `(A + A†) / 2` of an operator `A` on a Hilbert space is symmetric
+(`ContinuousLinearMap.isSymmetric_two_inv_smul_add_adjoint`) and has the real quadratic form of
+`A` (`ContinuousLinearMap.re_inner_two_inv_smul_add_adjoint_apply`).
 Unitary operators on a Hilbert space act by isometries (`Unitary.instIsIsometricSMul`), and
 conjugation by an isometric isomorphism of Hilbert spaces commutes with adjoints
 (`LinearIsometryEquiv.adjoint_conjContinuousAlgEquiv`). The adjoint of the inverse of such an
@@ -868,30 +868,27 @@ theorem _root_.ContinuousLinearMap.toLinearMap_star {𝕜 E : Type*} [RCLike �
   rw [LinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_toLinearMap,
     ContinuousLinearMap.star_eq_adjoint]
 
-open scoped InnerProductSpace in
-/-- An endomorphism `T` and its Hermitian part `H`, given by `2 • H = T + T†`, have the same real
-quadratic form: `re ⟪H x, x⟫ = re ⟪T x, x⟫`. -/
-theorem re_inner_apply_self_eq_of_two_smul_eq {T H : E →ₗ[𝕜] E}
-    (hHT : (2 : 𝕜) • H = T + adjoint T) (x : E) :
-    RCLike.re ⟪H x, x⟫_𝕜 = RCLike.re ⟪T x, x⟫_𝕜 := by
-  have := FiniteDimensional.completeSpace 𝕜 E
-  -- `T` and `T†` have the same real quadratic form, as continuous operators.
-  have hstar := ContinuousLinearMap.re_inner_star_apply_self T.toContinuousLinearMap x
-  rw [← toContinuousLinearMap_star, star_eq_adjoint, coe_toContinuousLinearMap',
-    coe_toContinuousLinearMap'] at hstar
-  have h := congrArg (fun y ↦ RCLike.re ⟪y, x⟫_𝕜) (LinearMap.congr_fun hHT x)
-  simp only [LinearMap.smul_apply, LinearMap.add_apply, inner_add_left, inner_smul_left,
-    map_add, map_ofNat, RCLike.ofNat_mul_re, hstar] at h
-  linarith
+/-- The symmetric part `(A + A†) / 2` of an operator `A` is symmetric. -/
+theorem _root_.ContinuousLinearMap.isSymmetric_two_inv_smul_add_adjoint {𝕜 V : Type*}
+    [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [CompleteSpace V]
+    (A : V →L[𝕜] V) : (((2⁻¹ : 𝕜) • (A + A.adjoint) : V →L[𝕜] V) : V →ₗ[𝕜] V).IsSymmetric :=
+  fun x y => by
+    simp only [ContinuousLinearMap.coe_coe, _root_.smul_apply, _root_.add_apply,
+      inner_smul_left, inner_smul_right, inner_add_left, inner_add_right,
+      ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.adjoint_inner_right, map_inv₀,
+      map_ofNat]
+    ring
 
-/-- A solution `H` of `2 • H = T + T†`, the Hermitian part of `T`, is symmetric. -/
-theorem isSymmetric_of_two_smul_eq {T H : E →ₗ[𝕜] E} (hHT : (2 : 𝕜) • H = T + adjoint T) :
-    H.IsSymmetric := by
-  -- `H = 2⁻¹ • (T + star T)`, a real multiple of a self-adjoint element.
-  have hH : H = (2⁻¹ : 𝕜) • (T + star T) := by
-    rw [star_eq_adjoint, ← hHT, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
-  rw [isSymmetric_iff_isSelfAdjoint, hH]
-  exact .smul (isSelfAdjoint_iff.2 (by simp)) (.add_star_self T)
+open scoped InnerProductSpace in
+/-- The symmetric part `(A + A†) / 2` of an operator `A` has the same real quadratic form
+`re ⟪A ξ, ξ⟫` as `A`. -/
+theorem _root_.ContinuousLinearMap.re_inner_two_inv_smul_add_adjoint_apply {𝕜 V : Type*}
+    [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [CompleteSpace V]
+    (A : V →L[𝕜] V) (ξ : V) :
+    RCLike.re ⟪((2⁻¹ : 𝕜) • (A + A.adjoint)) ξ, ξ⟫_𝕜 = RCLike.re ⟪A ξ, ξ⟫_𝕜 := by
+  simp [inner_add_left, inner_smul_left, ContinuousLinearMap.adjoint_inner_left,
+    inner_re_symm ξ (A ξ), RCLike.normSq_apply]
+  ring
 
 /-- A finite-dimensional linear operator remains normal when regarded as continuous. -/
 instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]
