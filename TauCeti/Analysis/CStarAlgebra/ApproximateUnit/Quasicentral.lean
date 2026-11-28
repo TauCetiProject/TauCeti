@@ -65,8 +65,13 @@ the off-diagonal products `d_i^* d_j` (`i ≠ j`) are uniformly small, whereas t
   `Filter.IsIncreasingApproximateUnit.isQuasicentralApproximateUnit_map_subtypeVal`: the
   specialized pullback and pushforward characterizations with
   `Filter.IsIncreasingApproximateUnit` on `I` when `I` is a closed ideal of a C⋆-algebra.
-* `TwoSidedIdeal.IsQuasicentralApproximateUnit.map`: a surjective `⋆`-algebra homomorphism carries
-  a quasicentral approximate unit of `I` to one of `I.map f` (and hence of its closure).
+* `TwoSidedIdeal.IsQuasicentralApproximateUnit.map_of_continuous`: a continuous,
+  nonnegativity-preserving, unit-ball-contractive surjective nonunital ring homomorphism between
+  partially ordered seminormed rings carries a quasicentral approximate unit of `I` to one of
+  `I.map f`.
+* `TwoSidedIdeal.IsQuasicentralApproximateUnit.map`: specialization to a surjective `⋆`-algebra
+  homomorphism between star-ordered C⋆-algebras, carrying a quasicentral approximate unit of `I`
+  to one of `I.map f` (and hence of its closure).
 * `TwoSidedIdeal.quasicentralSet`, `TwoSidedIdeal.mem_quasicentralSet_iff`,
   `TwoSidedIdeal.quasicentralSet_subset_quasicentralSet`,
   `TwoSidedIdeal.quasicentralApproximateUnit`, and
@@ -79,10 +84,11 @@ the off-diagonal products `d_i^* d_j` (`i ≠ j`) are uniformly small, whereas t
   `TwoSidedIdeal.quasicentralApproximateUnit_neBot`,
   `TwoSidedIdeal.isQuasicentralApproximateUnit_quasicentralApproximateUnit`, and
   `TwoSidedIdeal.exists_isQuasicentralApproximateUnit`: Arveson's existence theorem for closed
-  two-sided ideals of a C⋆-algebra.
-* `TwoSidedIdeal.exists_isQuasicentralApproximateUnit_iff_exists_seq` and
-  `TwoSidedIdeal.exists_seq_isQuasicentralApproximateUnit`: sequential quasicentral approximate
-  units when `A` is separable.
+  two-sided ideals of a star-ordered C⋆-algebra.
+* `TwoSidedIdeal.exists_isQuasicentralApproximateUnit_iff_exists_seq`: equivalence with sequential
+  quasicentral approximate units on a separable partially ordered seminormed ring.
+* `TwoSidedIdeal.exists_seq_isQuasicentralApproximateUnit`: sequential quasicentral approximate
+  units for closed two-sided ideals of a separable star-ordered C⋆-algebra.
 
 ## References
 
@@ -379,6 +385,31 @@ theorem _root_.Filter.IsApproximateUnit.isQuasicentralApproximateUnit_map_subtyp
     simp only [mul_comm _ a, sub_self]
     exact tendsto_const_nhds⟩
 
+/-- The image of a quasicentral approximate unit of `I` under a continuous,
+nonnegativity-preserving, unit-ball-contractive surjective nonunital ring homomorphism `f` between
+partially ordered seminormed rings is a quasicentral approximate unit of `I.map f`. -/
+theorem IsQuasicentralApproximateUnit.map_of_continuous {B F : Type*} [NonUnitalSeminormedRing B]
+    [PartialOrder B] [FunLike F A B] [NonUnitalRingHomClass F A B] {I : TwoSidedIdeal A}
+    {l : Filter A} (hl : I.IsQuasicentralApproximateUnit l) (f : F) (hfc : Continuous f)
+    (hfn : ∀ a, 0 ≤ a → 0 ≤ f a) (hf1 : ∀ a, ‖a‖ ≤ 1 → ‖f a‖ ≤ 1)
+    (hf : Function.Surjective f) : (I.map f).IsQuasicentralApproximateUnit (l.map f) := by
+  have := hl.neBot
+  refine .of_tendsto_mul_right
+    (eventually_map.mpr <| hl.eventually_mem.mono fun e he =>
+      (TwoSidedIdeal.mem_map_iff_of_surjective hf).mpr ⟨e, he, rfl⟩)
+    (eventually_map.mpr <| hl.eventually_nonneg.mono fun _ hx => hfn _ hx)
+    (eventually_map.mpr <| hl.eventually_norm.mono fun _ he => hf1 _ he)
+    (fun y hy => ?_)
+    (fun b => ?_)
+  · obtain ⟨x, hx, rfl⟩ := (TwoSidedIdeal.mem_map_iff_of_surjective hf).mp hy
+    rw [tendsto_map'_iff]
+    simpa only [Function.comp_def, map_mul] using
+      (hfc.tendsto x).comp (hl.tendsto_mul_right hx)
+  · obtain ⟨a, rfl⟩ := hf b
+    rw [tendsto_map'_iff]
+    simpa only [Function.comp_def, map_sub, map_mul, map_zero] using
+      (hfc.tendsto 0).comp (hl.tendsto_commutator a)
+
 end Basic
 
 section CStarAlgebra
@@ -425,7 +456,7 @@ theorem isQuasicentralApproximateUnit_map_subtypeVal_iff_isIncreasingApproximate
   exact ⟨fun ⟨hl, hn, hno, hc⟩ => ⟨⟨hl, hn, hno⟩, hc⟩,
     fun ⟨hl, hc⟩ => ⟨hl.toIsApproximateUnit, hl.eventually_nonneg, hl.eventually_norm, hc⟩⟩
 
-/-- In a unital C⋆-algebra, `pure 1` is a quasicentral approximate unit for `⊤`. -/
+/-- In a star-ordered unital C⋆-algebra, `pure 1` is a quasicentral approximate unit for `⊤`. -/
 theorem IsQuasicentralApproximateUnit.top_pure_one {A : Type*} [CStarAlgebra A] [PartialOrder A]
     [StarOrderedRing A] : (⊤ : TwoSidedIdeal A).IsQuasicentralApproximateUnit (pure 1) :=
   isQuasicentralApproximateUnit_top_iff.mpr (.pure_one A)
@@ -448,27 +479,12 @@ variable {A B F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrdered
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
 
 /-- The image of a quasicentral approximate unit of `I` under a surjective `⋆`-algebra homomorphism
-`f` is a quasicentral approximate unit of `I.map f`. -/
+`f` between star-ordered C⋆-algebras is a quasicentral approximate unit of `I.map f`. -/
 theorem IsQuasicentralApproximateUnit.map {I : TwoSidedIdeal A} {l : Filter A}
     (hl : I.IsQuasicentralApproximateUnit l) (f : F) (hf : Function.Surjective f) :
-    (I.map f).IsQuasicentralApproximateUnit (l.map f) := by
-  have := hl.neBot
-  refine .of_tendsto_mul_right
-    (eventually_map.mpr <| hl.eventually_mem.mono fun e he =>
-      (TwoSidedIdeal.mem_map_iff_of_surjective hf).mpr ⟨e, he, rfl⟩)
-    (eventually_map.mpr <| hl.eventually_nonneg.mono fun _ hx => map_nonneg f hx)
-    (eventually_map.mpr <| hl.eventually_norm.mono fun e he =>
-      (NonUnitalStarAlgHom.norm_apply_le f e).trans he)
-    (fun y hy => ?_)
-    (fun b => ?_)
-  · obtain ⟨x, hx, rfl⟩ := (TwoSidedIdeal.mem_map_iff_of_surjective hf).mp hy
-    rw [tendsto_map'_iff]
-    simpa only [Function.comp_def, map_mul] using
-      ((map_continuous f).tendsto x).comp (hl.tendsto_mul_right hx)
-  · obtain ⟨a, rfl⟩ := hf b
-    rw [tendsto_map'_iff]
-    simpa only [Function.comp_def, map_sub, map_mul, map_zero] using
-      ((map_continuous f).tendsto 0).comp (hl.tendsto_commutator a)
+    (I.map f).IsQuasicentralApproximateUnit (l.map f) :=
+  hl.map_of_continuous f (map_continuous f) (fun _ => map_nonneg f)
+    (fun e he => (NonUnitalStarAlgHom.norm_apply_le f e).trans he) hf
 
 end Map
 
@@ -826,8 +842,8 @@ private theorem norm_commutator_average_sq_le {n : ℕ} {u : ℕ → A} {a : A}
     _ = 4 * ‖a‖ ^ 2 / n + η := by ring
 
 /-- **Finite-set Arveson–Akemann–Pedersen theorem.** Every finite-set quasicentral approximation
-neighborhood `I.quasicentralSet G F ε` (`ε > 0`) of a closed two-sided ideal `I` is nonempty; see
-`TwoSidedIdeal.mem_quasicentralSet_iff` for the expanded clauses. -/
+neighborhood `I.quasicentralSet G F ε` (`ε > 0`) of a closed two-sided ideal `I` in a star-ordered
+C⋆-algebra is nonempty; see `TwoSidedIdeal.mem_quasicentralSet_iff` for the expanded clauses. -/
 theorem quasicentralSet_nonempty (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     (G : Finset I) (F : Finset A) {ε : ℝ} (hε : 0 < ε) :
     (I.quasicentralSet G F ε).Nonempty := by
@@ -865,22 +881,22 @@ theorem quasicentralSet_nonempty (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
       _ = ε ^ 2 := add_halves _
   exact lt_of_pow_lt_pow_left₀ 2 hε.le hlt
 
-/-- For every closed two-sided ideal `I` of a C⋆-algebra `A`, the canonical filter
+/-- For every closed two-sided ideal `I` of a star-ordered C⋆-algebra `A`, the canonical filter
 `I.quasicentralApproximateUnit` is proper (`NeBot`). -/
 instance quasicentralApproximateUnit_neBot (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
     I.quasicentralApproximateUnit.NeBot :=
   (hasBasis_quasicentralApproximateUnit I).neBot_iff.mpr fun {p} hε =>
     I.quasicentralSet_nonempty p.1 p.2.1 hε
 
-/-- **Arveson's theorem.** For every closed two-sided ideal `I` of a C⋆-algebra `A`,
+/-- **Arveson's theorem.** For every closed two-sided ideal `I` of a star-ordered C⋆-algebra `A`,
 `I.quasicentralApproximateUnit` is a quasicentral approximate unit of `I` in `A`. -/
 theorem isQuasicentralApproximateUnit_quasicentralApproximateUnit (I : TwoSidedIdeal A)
     [IsClosed (I : Set A)] :
     I.IsQuasicentralApproximateUnit I.quasicentralApproximateUnit :=
   isQuasicentralApproximateUnit_iff_neBot_and_le.mpr ⟨inferInstance, le_rfl⟩
 
-/-- **Arveson's theorem** (existential form): every closed two-sided ideal `I` of a C⋆-algebra `A`
-admits a positive contractive approximate unit that is quasicentral in `A`. -/
+/-- **Arveson's theorem** (existential form): every closed two-sided ideal `I` of a star-ordered
+C⋆-algebra `A` admits a positive contractive approximate unit that is quasicentral in `A`. -/
 theorem exists_isQuasicentralApproximateUnit (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
     ∃ l : Filter A, I.IsQuasicentralApproximateUnit l :=
   ⟨I.quasicentralApproximateUnit, I.isQuasicentralApproximateUnit_quasicentralApproximateUnit⟩
@@ -936,8 +952,8 @@ theorem exists_isQuasicentralApproximateUnit_iff_exists_seq {A : Type*} [NonUnit
       simpa only [Function.comp_def, sub_zero] using
         huF n (dA k) (Finset.mem_image.mpr ⟨k, Finset.mem_range.mpr hkn, rfl⟩)
 
-/-- Every closed two-sided ideal `I` of a separable C⋆-algebra `A` admits a sequential
-quasicentral approximate unit `u : ℕ → A` in the nonnegative closed unit ball of `I`. -/
+/-- Every closed two-sided ideal `I` of a separable star-ordered C⋆-algebra `A` admits a
+sequential quasicentral approximate unit `u : ℕ → A` in the nonnegative closed unit ball of `I`. -/
 theorem exists_seq_isQuasicentralApproximateUnit {A : Type*} [NonUnitalCStarAlgebra A]
     [PartialOrder A] [StarOrderedRing A] [TopologicalSpace.SeparableSpace A] (I : TwoSidedIdeal A)
     [IsClosed (I : Set A)] :
