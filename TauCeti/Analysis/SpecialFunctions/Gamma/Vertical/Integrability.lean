@@ -54,7 +54,7 @@ theorem verticalIntegrable_Gamma_mul_exp_mul_abs_im {x θ : ℝ} (hx : ∀ n : �
   rw [him]
   simp only [norm_mul, norm_real, Real.norm_eq_abs, Real.abs_exp]
   calc ‖Gamma (x + y * I)‖ * Real.exp (θ * |y|)
-      ≤ C * (1 + |y|) ^ (x - 1 / 2) * Real.exp (-(π * |y| / 2)) * Real.exp (θ * |y|) := by
+      ≤ C * (1 + |y|) ^ (x - 1 / 2) * Real.exp (-(π / 2) * |y|) * Real.exp (θ * |y|) := by
         gcongr
         exact h y
     _ = C * ((1 + |y|) ^ (x - 1 / 2) * Real.exp (-((π / 2 - θ) * |y|))) := by

@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Algebra.Lie.Orthogonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
-public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Form
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.UnitaryTransvection
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
 import Mathlib.Tactic.LinearCombination
@@ -54,15 +54,19 @@ The basic structure of these groups is recorded here.
 * Over a field of characteristic zero, the centre of `U(p, q)` is the group of unit scalars
   `λ • 1` with `star λ * λ = 1`. The proof uses the reflections
   `1 - (2 / ⟨v, v⟩) • vecMulVec v (star v ᵥ* A)` in the non-isotropic vectors `v`, which lie in
-  `unitaryGroupOf A` for every Hermitian invertible `A` (`Matrix.unitaryGroupOf.reflection`): a
+  `unitaryGroupOf A` for every Hermitian `A` (`Matrix.unitaryGroupOf.reflection`, defined in
+  `TauCeti.LinearAlgebra.Matrix.UnitaryGroup.UnitaryTransvection` for every vector, as the
+  identity at isotropic vectors): a
   central element commutes with the rank-one matrices `vecMulVec v (star v ᵥ* A)`, and for `A = J`
   testing this on the vectors `eₖ` and `eᵢ + 2 eₖ` forces it to be scalar.
 
 ## Main definitions
 
 * `Matrix.unitaryGroupOf.scalarHom`: the embedding `λ ↦ λ • 1` of the unitary scalars.
-* `Matrix.unitaryGroupOf.reflection`: the reflection in a non-isotropic vector, for a Hermitian
-  invertible Gram matrix `A`.
+* `Matrix.unitaryGroupOf.conjEquiv`: for `bᴴ (t A) b = A'` with `t ≠ 0`, the isomorphism
+  `g ↦ b⁻¹ g b` from `unitaryGroupOf A` onto `unitaryGroupOf A'`.
+* `Matrix.unitaryGroupOf.transport`: for such `b` and `a b ∈ unitaryGroupOf A'`, the bijection
+  `g ↦ a g b` from `unitaryGroupOf A` onto `unitaryGroupOf A'`.
 * `TauCeti.Matrix.indefiniteUnitaryGroup p q R`: the group `U(p, q)` of invertible matrices
   preserving the Hermitian form of Gram matrix `diag(1, …, 1, -1, …, -1)`.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.fromBlocksHom`: the block-diagonal embedding of
@@ -136,10 +140,8 @@ theorem specialIsometryGroup_starRingEnd_eq_comap_unitaryGroupOf :
     A.specialIsometryGroup (starRingEnd R) =
       (unitaryGroupOf A).comap SpecialLinearGroup.toGL :=
   Subgroup.ext fun g => by
-    have h : ((g : Matrix n n R).map (starRingEnd R))ᵀ = star (g : Matrix n n R) := by
-      ext; simp [starRingEnd_apply]
     rw [mem_specialIsometryGroup_iff, Subgroup.mem_comap, mem_unitaryGroupOf_iff,
-      SpecialLinearGroup.coe_GL_coe_matrix, h]
+      SpecialLinearGroup.coe_GL_coe_matrix, transpose_map_starRingEnd, ← star_eq_conjTranspose]
 
 /-- For invertible `A`, membership in `unitaryGroupOf A` is equivalent to the equation
 `g * A⁻¹ * star g = A⁻¹`. -/
@@ -179,6 +181,29 @@ theorem det_mem_unitary_of_mem_unitaryGroupOf (hA : IsUnit A) {g : GL n R}
   rw [Unitary.mem_iff_star_mul_self]
   exact ((isUnit_iff_isUnit_det A).mp hA).mul_eq_right.mp h
 
+section Congruence
+
+variable {A' : Matrix n n R} {b : GL n R} {K : Type*} [Semifield K] [Algebra K R] {t : K}
+
+/-- If `bᴴ (t A) b = A'` with `A` invertible and `t ≠ 0`, then `A'` is invertible. -/
+theorem isUnit_of_star_mul_smul_mul_eq (hA : IsUnit A) (ht : t ≠ 0)
+    (hb : star (b : Matrix n n R) * (t • A) * b = A') : IsUnit A' := by
+  rw [← hb]
+  have htA : IsUnit (t • A) := by simpa [Units.smul_def] using hA.smul (Units.mk0 t ht)
+  exact ((b.isUnit.star).mul htA).mul b.isUnit
+
+/-- The congruence `bᴴ (t A) b = A'` inverted: `(b⁻¹)ᴴ (t⁻¹ A') b⁻¹ = A`. -/
+theorem star_inv_mul_smul_mul_inv (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A') :
+    star ((b⁻¹ : GL n R) : Matrix n n R) * (t⁻¹ • A') * (b⁻¹ : GL n R) = A := by
+  have h1 : star ((b⁻¹ : GL n R) : Matrix n n R) * star (b : Matrix n n R) = 1 := by
+    rw [← star_mul, Units.mul_inv, star_one]
+  have h2 : (b : Matrix n n R) * ((b⁻¹ : GL n R) : Matrix n n R) = 1 := Units.mul_inv b
+  rw [← hb]
+  simp only [Matrix.mul_smul, Matrix.smul_mul, ← Matrix.mul_assoc, h1, Matrix.one_mul]
+  rw [Matrix.mul_assoc, h2, Matrix.mul_one, smul_smul, inv_mul_cancel₀ ht, one_smul]
+
+end Congruence
+
 namespace unitaryGroupOf
 
 variable (A) in
@@ -202,6 +227,100 @@ theorem scalarHom_injective [Nonempty n] : Function.Injective (scalarHom A) := f
   rw [unitaryGroupOf.ext_iff, val_scalarHom, val_scalarHom] at h
   exact Subtype.ext (scalar_inj.mp h)
 
+section Congruence
+
+variable {A' : Matrix n n R} {b : GL n R}
+
+section CommSemiring
+
+variable {K : Type*} [CommSemiring K] [Algebra K R] {t : K}
+
+/-- If `bᴴ (t A) b = A'`, conjugation `g ↦ b⁻¹ g b` maps the unitary group of `A` into that of
+`A'`. -/
+theorem inv_mul_mul_mem (hb : star (b : Matrix n n R) * (t • A) * b = A') {g : GL n R}
+    (hg : g ∈ unitaryGroupOf A) : b⁻¹ * g * b ∈ unitaryGroupOf A' := by
+  rw [mem_unitaryGroupOf_iff] at hg ⊢
+  rw [← hb]
+  have h1 : star ((b⁻¹ : GL n R) : Matrix n n R) * star (b : Matrix n n R) = 1 := by
+    rw [← star_mul, Units.mul_inv, star_one]
+  have h2 : (b : Matrix n n R) * ((b⁻¹ : GL n R) : Matrix n n R) = 1 := Units.mul_inv b
+  calc star (((b⁻¹ * g * b : GL n R)) : Matrix n n R) * (star (b : Matrix n n R) * (t • A) * b) *
+        ((b⁻¹ * g * b : GL n R) : Matrix n n R)
+      = star (b : Matrix n n R) * star (g : Matrix n n R) *
+          (star ((b⁻¹ : GL n R) : Matrix n n R) * star (b : Matrix n n R)) * (t • A) *
+          ((b : Matrix n n R) * ((b⁻¹ : GL n R) : Matrix n n R)) * g * b := by
+        simp only [Units.val_mul, star_mul, Matrix.mul_assoc]
+    _ = star (b : Matrix n n R) * (t • (star (g : Matrix n n R) * A * g)) * b := by
+        rw [h1, h2, Matrix.mul_one, Matrix.mul_one]
+        simp only [Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_assoc]
+    _ = star (b : Matrix n n R) * (t • A) * b := by rw [hg]
+
+end CommSemiring
+
+variable {K : Type*} [Semifield K] [Algebra K R] {t : K}
+
+/-- The **conjugation isomorphism** `g ↦ b⁻¹ g b` from the unitary group of `A` to that of
+`A' = bᴴ (t A) b`, for a nonzero scalar `t`. Its inverse is `g ↦ b g b⁻¹`. -/
+noncomputable def conjEquiv (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A') :
+    unitaryGroupOf A ≃* unitaryGroupOf A' where
+  toFun g := ⟨b⁻¹ * g * b, inv_mul_mul_mem hb g.property⟩
+  invFun g := ⟨b * g * b⁻¹, by
+    simpa using inv_mul_mul_mem (star_inv_mul_smul_mul_inv ht hb) g.property⟩
+  left_inv g := Subtype.ext (by simp [mul_assoc])
+  right_inv g := Subtype.ext (by simp [mul_assoc])
+  map_mul' g h := Subtype.ext (by simp [mul_assoc])
+
+theorem conjEquiv_apply (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A')
+    (g : unitaryGroupOf A) :
+    conjEquiv ht hb g = ⟨b⁻¹ * g * b, inv_mul_mul_mem hb g.property⟩ :=
+  (rfl)
+
+@[simp]
+theorem coe_conjEquiv_apply (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A')
+    (g : unitaryGroupOf A) :
+    (((conjEquiv ht hb g : unitaryGroupOf A') : GL n R) : Matrix n n R) =
+      (b : Matrix n n R)⁻¹ * ((g : GL n R) : Matrix n n R) * b := by
+  simp [conjEquiv, coe_units_inv]
+
+@[simp]
+theorem coe_conjEquiv_symm_apply (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A')
+    (g : unitaryGroupOf A') :
+    ((((conjEquiv ht hb).symm g : unitaryGroupOf A) : GL n R) : Matrix n n R) =
+      (b : Matrix n n R) * ((g : GL n R) : Matrix n n R) * (b : Matrix n n R)⁻¹ := by
+  simp [conjEquiv, coe_units_inv]
+
+/-- For `a b ∈ U(A')`, the bijection `g ↦ a g b` from the unitary group of `A` to that of
+`A' = bᴴ (t A) b`: the conjugation isomorphism `g ↦ b⁻¹ g b` followed by the left translation by
+`a b`. -/
+noncomputable def transport (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A')
+    {a : GL n R} (hab : a * b ∈ unitaryGroupOf A') : unitaryGroupOf A ≃ unitaryGroupOf A' :=
+  (conjEquiv ht hb).toEquiv.trans (Equiv.mulLeft ⟨a * b, hab⟩)
+
+theorem transport_apply (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A')
+    {a : GL n R} (hab : a * b ∈ unitaryGroupOf A') (g : unitaryGroupOf A) :
+    transport ht hb hab g = ⟨a * b, hab⟩ * conjEquiv ht hb g :=
+  (rfl)
+
+/-- `Matrix.unitaryGroupOf.transport` is `g ↦ a g b`. -/
+@[simp]
+theorem coe_transport_apply (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A')
+    {a : GL n R} (hab : a * b ∈ unitaryGroupOf A') (g : unitaryGroupOf A) :
+    (((transport ht hb hab g : unitaryGroupOf A') : GL n R) : Matrix n n R) =
+      (a : Matrix n n R) * ((g : GL n R) : Matrix n n R) * b := by
+  simp [transport_apply, Matrix.mul_assoc]
+
+/-- The inverse of `Matrix.unitaryGroupOf.transport` is `g ↦ a⁻¹ g b⁻¹`. -/
+@[simp]
+theorem coe_transport_symm_apply (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A')
+    {a : GL n R} (hab : a * b ∈ unitaryGroupOf A') (g : unitaryGroupOf A') :
+    ((((transport ht hb hab).symm g : unitaryGroupOf A) : GL n R) : Matrix n n R) =
+      (a : Matrix n n R)⁻¹ * ((g : GL n R) : Matrix n n R) * (b : Matrix n n R)⁻¹ := by
+  obtain ⟨h, rfl⟩ := (transport ht hb hab).surjective g
+  rw [Equiv.symm_apply_apply, coe_transport_apply]
+  simp [Matrix.mul_assoc]
+
+end Congruence
+
 end unitaryGroupOf
 
 end CommRing
@@ -210,92 +329,30 @@ section Field
 
 variable {K : Type*} [Field K] [StarRing K] {A : Matrix n n K}
 
-/-- For Hermitian `A`, the reflection matrix `1 - (2 / ⟨v, v⟩) • v (star v ᵥ* A)` preserves the
-form. -/
-private theorem star_reflectionMatrix_mul_mul (hA : A.IsHermitian) {v : n → K}
-    (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) :
-    star (1 - (2 / (star v ⬝ᵥ A *ᵥ v)) • vecMulVec v (star v ᵥ* A)) * A *
-      (1 - (2 / (star v ⬝ᵥ A *ᵥ v)) • vecMulVec v (star v ᵥ* A)) = A := by
-  set c := star v ⬝ᵥ A *ᵥ v
-  set S := vecMulVec (A *ᵥ v) (star v ᵥ* A)
-  have hstar : star (vecMulVec v (star v ᵥ* A)) = vecMulVec (A *ᵥ v) (star v) := by
-    rw [star_eq_conjTranspose, conjTranspose_vecMulVec, star_vecMul, star_star, hA.eq]
-  have ha : star (2 / c) = 2 / c := by
-    rw [star_div₀, star_ofNat, hA.star_dotProduct_mulVec_comm]
-  have hNS : star (vecMulVec v (star v ᵥ* A)) * A = S := by
-    rw [hstar, vecMulVec_mul]
-  have hSN : A * vecMulVec v (star v ᵥ* A) = S := by
-    rw [mul_vecMulVec]
-  have hSNN : S * vecMulVec v (star v ᵥ* A) = c • S := by
-    rw [vecMulVec_mul_vecMulVec, ← dotProduct_mulVec, vecMulVec_smul]
-  rw [star_sub, star_one, star_smul, ha]
-  simp only [sub_mul, mul_sub, Matrix.one_mul, Matrix.mul_one, Matrix.smul_mul, Matrix.mul_smul,
-    hNS, hSN, hSNN, smul_smul]
-  have h2 : 2 / c * (2 / c * c) = 2 / c + 2 / c := by
-    field_simp
-    ring
-  rw [h2, add_smul]
-  abel
-
 namespace unitaryGroupOf
 
-/-- **The reflection in a non-isotropic vector**, for a Hermitian invertible Gram matrix `A`. For
-`v` with `⟨v, v⟩ ≠ 0`, the element `1 - (2 / ⟨v, v⟩) • v (star v ᵥ* A)` of `unitaryGroupOf A`,
-which sends `v` to `-v` (`reflection_mulVec_self`) and fixes the vectors orthogonal to `v` for the
-form (`reflection_mulVec_of_dotProduct_eq_zero`). -/
-noncomputable def reflection (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
-    (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) : unitaryGroupOf A :=
-  ofMatrix hA' _ (star_reflectionMatrix_mul_mul hA hv)
-
-@[simp]
-theorem val_reflection (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
-    (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) :
-    ((reflection hA hA' v hv : GL n K) : Matrix n n K) =
-      1 - (2 / (star v ⬝ᵥ A *ᵥ v)) • vecMulVec v (star v ᵥ* A) :=
-  val_ofMatrix _ _ _
-
-/-- The reflection in `v` sends `x` to `x - (2 ⟨v, x⟩ / ⟨v, v⟩) v`. -/
-theorem reflection_mulVec (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
-    (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) (x : n → K) :
-    ((reflection hA hA' v hv : GL n K) : Matrix n n K) *ᵥ x =
-      x - (2 / (star v ⬝ᵥ A *ᵥ v) * (star v ⬝ᵥ A *ᵥ x)) • v := by
-  simp [sub_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec, smul_smul]
-
-/-- The reflection in `v` sends `v` to `-v`. -/
-theorem reflection_mulVec_self (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
-    (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) :
-    ((reflection hA hA' v hv : GL n K) : Matrix n n K) *ᵥ v = -v := by
-  simp [sub_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec, smul_smul,
-    div_mul_cancel₀ _ hv, two_smul]
-
-/-- The reflection in `v` fixes every vector `w` orthogonal to `v` for the form. -/
-theorem reflection_mulVec_of_dotProduct_eq_zero (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
-    (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) {w : n → K} (hw : star v ⬝ᵥ A *ᵥ w = 0) :
-    ((reflection hA hA' v hv : GL n K) : Matrix n n K) *ᵥ w = w := by
-  simp [sub_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec, hw]
-
-/-- For a Hermitian invertible Gram matrix `A`, an element of the centre of `unitaryGroupOf A`
+/-- For a Hermitian Gram matrix `A`, an element of the centre of `unitaryGroupOf A`
 commutes with the rank-one matrix `v (star v ᵥ* A)` of every non-isotropic vector `v`, since it
 commutes with the reflection in `v`. -/
 private theorem mul_vecMulVec_eq_of_mem_center [NeZero (2 : K)] (hA : A.IsHermitian)
-    (hA' : IsUnit A) {g : unitaryGroupOf A} (hg : g ∈ Subgroup.center (unitaryGroupOf A))
+    {g : unitaryGroupOf A} (hg : g ∈ Subgroup.center (unitaryGroupOf A))
     {v : n → K} (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) :
     ((g : GL n K) : Matrix n n K) * vecMulVec v (star v ᵥ* A) =
       vecMulVec v (star v ᵥ* A) * (g : GL n K) := by
   have h := congrArg (fun x : unitaryGroupOf A => ((x : GL n K) : Matrix n n K))
-    (Subgroup.mem_center_iff.mp hg (reflection hA hA' v hv))
+    (Subgroup.mem_center_iff.mp hg (reflection hA v))
   simp only [Subgroup.coe_mul, Units.val_mul, val_reflection, sub_mul, mul_sub, Matrix.one_mul,
     Matrix.mul_one, Matrix.smul_mul, Matrix.mul_smul, sub_right_inj] at h
   exact (smul_right_injective _ (div_ne_zero two_ne_zero hv) h).symm
 
 /-- The entry `(i, k)` of `g * v (star v ᵥ* A) = v (star v ᵥ* A) * g`. -/
 private theorem mulVec_apply_mul_eq_of_mem_center [NeZero (2 : K)] (hA : A.IsHermitian)
-    (hA' : IsUnit A) {g : unitaryGroupOf A} (hg : g ∈ Subgroup.center (unitaryGroupOf A))
+    {g : unitaryGroupOf A} (hg : g ∈ Subgroup.center (unitaryGroupOf A))
     {v : n → K} (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) (i k : n) :
     (((g : GL n K) : Matrix n n K) *ᵥ v) i * (star v ᵥ* A) k =
       v i * (star v ᵥ* A ᵥ* ((g : GL n K) : Matrix n n K)) k := by
   simpa [mul_vecMulVec, vecMulVec_mul, vecMulVec_apply] using
-    congrFun (congrFun (mul_vecMulVec_eq_of_mem_center hA hA' hg hv) i) k
+    congrFun (congrFun (mul_vecMulVec_eq_of_mem_center hA hg hv) i) k
 
 end unitaryGroupOf
 
@@ -465,7 +522,7 @@ private theorem apply_eq_zero_of_mem_center {g : indefiniteUnitaryGroup p q K}
     simpa [Pi.single_star, mulVec_single_one, single_one_dotProduct] using
       indefiniteDiagonal_apply_self_ne_zero k
   have h := unitaryGroupOf.mulVec_apply_mul_eq_of_mem_center isHermitian_indefiniteDiagonal
-    isUnit_indefiniteDiagonal hg hv i k
+    hg hv i k
   simp only [mulVec_single, MulOpposite.op_one, Pi.smul_apply, col_apply, one_smul,
     Pi.star_single, star_one, single_vecMul, row_apply, smul_eq_mul, one_mul, ne_eq, hik,
     not_false_eq_true, Pi.single_eq_of_ne, zero_mul, mul_eq_zero] at h
@@ -507,7 +564,7 @@ private theorem apply_self_eq_of_mem_center {g : indefiniteUnitaryGroup p q K}
     rcases indefiniteDiagonal_apply_self_eq_one_or_eq_neg_one (p := p) (q := q) (R := K) k
       with h2 | h2 <;> rw [h1, h2] <;> norm_num
   have h := unitaryGroupOf.mulVec_apply_mul_eq_of_mem_center isHermitian_indefiniteDiagonal
-    isUnit_indefiniteDiagonal hg hv i k
+    hg hv i k
   rw [eq_diagonal_of_mem_center hg, mulVec_diagonal, vecMul_diagonal, hsv,
     vecMul_indefiniteDiagonal_apply, hvi, hvk] at h
   apply mul_right_cancel₀ (mul_ne_zero two_ne_zero (indefiniteDiagonal_apply_self_ne_zero k))

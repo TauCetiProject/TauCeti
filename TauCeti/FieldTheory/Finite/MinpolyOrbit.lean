@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.Finite.Extension
 public import Mathlib.FieldTheory.Minpoly.Field
 public import TauCeti.FieldTheory.Finite.FrobeniusFixed
+import Mathlib.Data.Nat.ModEq
 
 /-!
 # The Frobenius orbit of an element algebraic over a finite field
@@ -47,10 +48,21 @@ polynomial be irreducible.
   `d` the degree of its minimal polynomial; stated for `E` merely a domain.
 * `TauCeti.FiniteField.splits_minpoly`: the minimal polynomial splits in any field containing the
   element.
+* `TauCeti.FiniteField.pow_card_pow_eq_self_iff`: for a root `x` of an irreducible `P`,
+  `x ^ q ^ n = x` if and only if `deg P ∣ n`.
+* `TauCeti.FiniteField.aroots_eq_map_pow_card_pow`: the roots of an irreducible `P` with
+  multiplicity are `x ^ q ^ i`, `i < deg P`.
+* `TauCeti.FiniteField.aroots_pow_eq_map_pow_card_pow`: the roots of `P ^ j` with multiplicity are
+  `x ^ q ^ i`, `i < deg (P ^ j)`.
 
 ## References
 
 * [S. Lang, *Algebra*][serge_lang_algebra], Chapter V, §5.
+* The roots of an irreducible polynomial with multiplicity are adapted from
+  `src/Lib/General/NumberTheory/FrobeniusOrbits.lean` in grh-lean
+  (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC):
+  `New.root_pow_card_pow_eq_self_iff`, `New.root_pow_card_pow_eq_iff_modEq`,
+  `New.aroots_eq_frobenius_orbit` and `New.aroots_pow_eq_frobenius_orbit`.
 -/
 
 public section
@@ -82,6 +94,93 @@ theorem pow_card_pow_natDegree_minpoly {x : E} (hx : IsIntegral F x) :
   simpa [Nat.card_eq_fintype_card, sub_eq_zero] using h0
 
 end NoZeroDivisors
+
+/-! ### The roots of an irreducible polynomial, with multiplicity
+
+Let `P` be irreducible of degree `d` over `k` with `q` elements, and let `x` be a root of `P` in a
+`k`-algebra `K` that is a domain. The roots of `P` in `K`, counted with multiplicity, are the
+Frobenius conjugates `x, x ^ q, …, x ^ q ^ (d - 1)`, and those of `P ^ j` are `x ^ q ^ i` for
+`i < j d`. `pow_card_pow_eq_self_iff` sharpens `pow_card_pow_natDegree_minpoly` to an iff; it and
+`pow_card_pow_eq_pow_card_pow_iff`, which says when two Frobenius conjugates of `x` coincide, need
+only a nontrivial, possibly noncommutative, `K`. -/
+
+section IrreducibleRoots
+
+variable {k K : Type*} [Field k] [Fintype k] {P : k[X]}
+
+section Ring
+
+variable [Ring K] [Nontrivial K] [Algebra k K] (hP : Irreducible P) {x : K} (hx : aeval x P = 0)
+
+include hP hx
+
+/-- `x ^ q ^ n = x` if and only if the degree of `P` divides `n`. -/
+theorem pow_card_pow_eq_self_iff {n : ℕ} : x ^ Fintype.card k ^ n = x ↔ P.natDegree ∣ n := by
+  rw [hP.natDegree_dvd_iff_dvd_X_pow_card_pow_sub_X, ← hP.dvd_iff_aeval_eq_zero hx]
+  simp [sub_eq_zero, Nat.card_eq_fintype_card]
+
+/-- `x ^ q ^ a = x ^ q ^ b` if and only if `a ≡ b` modulo the degree of `P`. -/
+theorem pow_card_pow_eq_pow_card_pow_iff {a b : ℕ} :
+    x ^ Fintype.card k ^ a = x ^ Fintype.card k ^ b ↔ a ≡ b [MOD P.natDegree] := by
+  set q := Fintype.card k
+  set d := P.natDegree
+  have h_shift (m c : ℕ) : (x ^ q ^ m) ^ q ^ c = x ^ q ^ (m + c) := by rw [← pow_mul, ← pow_add]
+  -- `x ^ q ^ d = x`, so `x ^ q ^ m` only depends on `m` modulo `d`.
+  have h_mod (m : ℕ) : x ^ q ^ m = x ^ q ^ (m % d) := by
+    conv_lhs => rw [← Nat.div_add_mod m d, ← h_shift,
+      (pow_card_pow_eq_self_iff hP hx).2 (dvd_mul_right d _)]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h_mod a, h_mod b, h]⟩
+  -- Only the orbit of `x` needs cancelling: raising to the `q ^ c`-th power with `d ∣ a + c`
+  -- sends `x ^ q ^ a` back to `x`, so `d ∣ b + c` as well.
+  have hd : 1 ≤ d := Irreducible.natDegree_pos hP
+  have hc : d ∣ a + a * (d - 1) := ⟨a, by rw [← mul_one_add, Nat.add_sub_cancel' hd, mul_comm]⟩
+  have hb : d ∣ b + a * (d - 1) := by
+    rw [← pow_card_pow_eq_self_iff hP hx, ← h_shift, ← h, h_shift,
+      (pow_card_pow_eq_self_iff hP hx).2 hc]
+  exact Nat.ModEq.add_right_cancel' (a * (d - 1))
+    ((Nat.modEq_zero_iff_dvd.2 hc).trans (Nat.modEq_zero_iff_dvd.2 hb).symm)
+
+end Ring
+
+variable [CommRing K] [IsDomain K] [Algebra k K] (hP : Irreducible P) {x : K}
+  (hx : aeval x P = 0)
+
+include hP hx
+
+/-- The roots of `P` in `K`, with multiplicity, are `x ^ q ^ i` for `i < deg P`. -/
+theorem aroots_eq_map_pow_card_pow :
+    P.aroots K = (Multiset.range P.natDegree).map fun i ↦ x ^ Fintype.card k ^ i := by
+  -- The `x ^ q ^ i` are roots, images of `x` under powers of the Frobenius, and distinct for
+  -- `i < deg P`; there are `deg P` of them.
+  have h_root (i : ℕ) : aeval (x ^ Fintype.card k ^ i) P = 0 := by
+    simpa [_root_.FiniteField.coe_frobeniusAlgHom, hx] using
+      aeval_algHom_apply (_root_.FiniteField.frobeniusAlgHom k K ^ i) x P
+  have h_nodup : ((Multiset.range P.natDegree).map fun i ↦ x ^ Fintype.card k ^ i).Nodup :=
+    (Multiset.nodup_range P.natDegree).map_on fun a ha b hb h_eq ↦
+      ((pow_card_pow_eq_pow_card_pow_iff hP hx).1 h_eq).eq_of_lt_of_lt
+        (Multiset.mem_range.1 ha) (Multiset.mem_range.1 hb)
+  have h_le : ((Multiset.range P.natDegree).map fun i ↦ x ^ Fintype.card k ^ i) ≤ P.aroots K :=
+    (Multiset.le_iff_subset h_nodup).2
+      (by simpa [Multiset.subset_iff, hP.ne_zero] using fun i _ ↦ h_root i)
+  exact (Multiset.eq_of_le_of_card_le h_le
+    (by simpa using card_roots' (P.map (algebraMap k K)))).symm
+
+/-- The roots of `P ^ j` in `K`, with multiplicity, are `x ^ q ^ i` for `i < deg (P ^ j)`. -/
+theorem aroots_pow_eq_map_pow_card_pow (j : ℕ) :
+    (P ^ j).aroots K =
+      (Multiset.range (P ^ j).natDegree).map (fun i ↦ x ^ Fintype.card k ^ i) := by
+  -- The roots of `P` form one Frobenius orbit, which each further factor `P` repeats.
+  have h_fixed (j : ℕ) : x ^ Fintype.card k ^ (j * P.natDegree) = x :=
+    (pow_card_pow_eq_self_iff hP hx).2 (dvd_mul_left P.natDegree j)
+  rw [natDegree_pow]
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    rw [pow_succ, aroots_mul (by simp [hP.ne_zero]), ih, aroots_eq_map_pow_card_pow hP hx]
+    simp only [add_one_mul, Multiset.range_add, Multiset.map_add, Multiset.map_map,
+      Function.comp_def, pow_add, pow_mul x, h_fixed]
+
+end IrreducibleRoots
 
 section Algebraic
 

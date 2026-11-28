@@ -68,6 +68,7 @@ is of `∂`-type.
 * `TauCeti.IsRealCauchyRiemannOperator.inner_formalAdjoint`: `⟪D* η, e⟫ = ⟪∇* η, e⟫ + ⟪η, a e⟫_HS`.
 * `TauCeti.IsRealCauchyRiemannOperator.formalAdjoint_add`, `formalAdjoint_const_smul` and
   their variants: linearity of `D*`.
+* `TauCeti.IsRealCauchyRiemannOperator.formalAdjoint_congr_of_eventuallyEq`: `D*` is local.
 * `TauCeti.IsRealCauchyRiemannOperator.contMDiff_formalAdjoint`: for compatible metrics, `D*`
   sends smooth `(0,1)`-forms to smooth sections.
 * `TauCeti.IsRealCauchyRiemannOperator.integral_inner_formalAdjoint`: Green's formula
@@ -291,6 +292,48 @@ theorem mem_kerFormalAdjoint :
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun y ↦ TangentSpace I y →L[ℝ] V y) x (η x)) ∧
         (∀ x, j.IsZeroOneForm (η x)) ∧ ∀ x, hD.formalAdjoint cov η x = 0 :=
   Iff.rfl
+
+omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ F V] in
+/-- **Locality of the formal adjoint.** The formal adjoint at `x` of a one-form only depends on
+the germ of the one-form at `x`. -/
+theorem formalAdjoint_congr_of_eventuallyEq {η η' : Π x : M, TangentSpace I x →L[ℝ] V x} {x : M}
+    (h : ∀ᶠ y in 𝓝 x, η y = η' y) :
+    hD.formalAdjoint cov η x = hD.formalAdjoint cov η' x := by
+  rw [formalAdjoint, formalAdjoint, h.self_of_nhds]
+  congr 1
+  have hT : (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y
+      (η' y)) =ᶠ[𝓝 x] fun y ↦ TotalSpace.mk' (E →L[ℝ] F)
+        (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η y) :=
+    h.mono fun y hy ↦ by simp only [hy]
+  by_cases hη : MDiffAt
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η y)) x
+  · rw [CovariantDerivative.formalAdjoint_def, CovariantDerivative.formalAdjoint_def,
+      ((leviCivitaConnection I M).hom cov).isCovariantDerivativeOnUniv.congr_of_eventuallyEq hη
+        (hη.congr_of_eventuallyEq hT) Filter.univ_mem h]
+  · -- Neither one-form is differentiable at `x`, so both connection terms vanish.
+    rw [CovariantDerivative.formalAdjoint_eq_zero_of_not_mdifferentiableAt _ _ hη,
+      CovariantDerivative.formalAdjoint_eq_zero_of_not_mdifferentiableAt _ _
+        fun hη' ↦ hη (hη'.congr_of_eventuallyEq (hT.mono fun y hy ↦ hy.symm))]
+
+omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ F V] in
+/-- The formal adjoint is additive on finite sums of one-forms differentiable at the point. -/
+theorem formalAdjoint_sum {ι : Type*} (s : Finset ι) {η : ι → Π x : M, TangentSpace I x →L[ℝ] V x}
+    {x : M}
+    (hη : ∀ k ∈ s, MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] F)
+      (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η k y)) x) :
+    hD.formalAdjoint cov (∑ k ∈ s, η k) x = ∑ k ∈ s, hD.formalAdjoint cov (η k) x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert k s hk ih =>
+    have hs : MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] F)
+        (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y ((∑ l ∈ s, η l) y)) x := by
+      have := MDifferentiableAt.sum_section (s := s) (t := η) fun l hl ↦
+        hη l (Finset.mem_insert_of_mem hl)
+      simpa using this
+    rw [Finset.sum_insert hk, Finset.sum_insert hk,
+      hD.formalAdjoint_add cov (hη k (Finset.mem_insert_self k s)) hs,
+      ih fun l hl ↦ hη l (Finset.mem_insert_of_mem hl)]
 
 include hD in
 omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]

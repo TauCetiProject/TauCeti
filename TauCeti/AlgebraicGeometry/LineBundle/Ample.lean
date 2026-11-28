@@ -76,6 +76,9 @@ These closure properties are ported from `roed-math/TauCeti-w2-fresh`, branch
   scheme, the defining affine nonvanishing neighbourhoods need only cover the closed points.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple.exists_finset_isAffineOpen_nonvanishingLocus`:
   finitely many such nonvanishing loci cover a scheme carrying an ample class.
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf.exists_common_power_nonvanishing_cover`:
+  some positive tensor power `L^{⊗D}` admits global sections with affine nonvanishing loci
+  covering `X`.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.isAmple_of_isAffine`: on an affine scheme every
   line-bundle class is ample.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple.quasiSeparatedSpace`: a scheme with an ample
@@ -331,3 +334,40 @@ theorem IsAmple.quasiSeparatedSpace {a : LineBundleClass X} (h : a.IsAmple) :
     exact (i.2.property.nonvanishingLocus _).isCompact
 
 end TauCeti.AlgebraicGeometry.LineBundleClass
+
+namespace TauCeti.AlgebraicGeometry.InvertibleSheaf
+
+universe u
+
+variable {X : Scheme.{u}}
+
+/-- For an ample line bundle `L`, some positive power `L^{⊗D}` admits global sections whose
+affine nonvanishing loci cover `X`. -/
+theorem exists_common_power_nonvanishing_cover (L : InvertibleSheaf X)
+    (hL : (LineBundleClass.mk L).IsAmple) :
+    ∃ (D : ℕ) (_ : 0 < D), ∀ x : X, ∃ t : Γ(TauCeti.tensorPow L.obj D, ⊤),
+      x ∈ (TauCeti.tensorPow L.obj D).nonvanishingLocus t ∧
+        IsAffineOpen ((TauCeti.tensorPow L.obj D).nonvanishingLocus t) := by
+  classical
+  obtain ⟨S, hS, hmem⟩ := hL.exists_finset_isAffineOpen_nonvanishingLocus
+  choose haff n hn L₀ hL₀ s hs using fun U : S ↦ hmem U.val U.property
+  let D : ℕ := ∏ U : S, n U
+  have hDpos : 0 < D := Finset.prod_pos fun U _ ↦ hn U
+  have hlift (U : S) : ∃ t : Γ(TauCeti.tensorPow L.obj D, ⊤),
+      (TauCeti.tensorPow L.obj D).nonvanishingLocus t = U.val := by
+    obtain ⟨q, hqeq⟩ := Finset.dvd_prod_of_mem n (Finset.mem_univ U)
+    have hqpos : 0 < q := Nat.pos_of_ne_zero fun hq0 ↦ by
+      rw [hq0, mul_zero] at hqeq
+      exact hDpos.ne' hqeq
+    have hmk : LineBundleClass.mk (TauCeti.tensorPow L D) = LineBundleClass.mk (L₀ U) ^ q := by
+      rw [LineBundleClass.mk_tensorPow, hL₀ U, ← pow_mul]
+      exact congrArg (LineBundleClass.mk L ^ ·) hqeq
+    obtain ⟨t, ht⟩ := exists_nonvanishingLocus_eq_of_mk_eq_pow hqpos hmk (s U)
+    refine ⟨(eqToIso (tensorPow_obj L D)).hom.app ⊤ t, ?_⟩
+    rw [Scheme.Modules.nonvanishingLocus_hom_app, ht, hs U]
+  choose t ht using hlift
+  refine ⟨D, hDpos, fun x ↦ ?_⟩
+  obtain ⟨U, hUS, hxU⟩ := Opens.mem_sSup.mp (hS.symm ▸ Opens.mem_top x)
+  exact ⟨t ⟨U, hUS⟩, (ht ⟨U, hUS⟩).symm ▸ hxU, (ht ⟨U, hUS⟩).symm ▸ haff ⟨U, hUS⟩⟩
+
+end TauCeti.AlgebraicGeometry.InvertibleSheaf

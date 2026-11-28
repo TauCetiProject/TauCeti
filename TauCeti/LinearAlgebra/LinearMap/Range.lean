@@ -11,27 +11,25 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 /-!
 # Ranges in commuting squares of linear maps
 
-In a commuting square `g ∘ e₁ = e₂ ∘ f` of linear maps whose left side `e₁` is surjective, the
-right side `e₂` carries the range of `f` onto the range of `g`. Transporting cokernels along a
-commuting square of linear isomorphisms uses this. When `e₂` is an isomorphism, the two ranges
-have the same dimension (`LinearMap.finrank_range_eq_of_comp_eq`). In any commuting square
-`g ∘ i = i' ∘ f`, the map `g` sends the range of `i` into the range of `i'`, so it induces a map of
-cokernels. A linear map whose range contains a spanning family of the target is surjective
-(`LinearMap.surjective_of_span_range_eq_top`).
+In a commuting square `g ∘ e₁ = e₂ ∘ f` with semilinear horizontal sides and linear vertical
+sides, `e₂` sends the range of `f` into the range of `g`, and onto it if `e₁` is surjective.
+When `e₂` is a linear isomorphism, the two ranges have the same dimension
+(`LinearMap.finrank_range_eq_of_comp_eq`). A semilinear map whose range contains a spanning
+family of the target is surjective (`LinearMap.surjective_of_span_range_eq_top`).
 -/
 
 public section
 
 namespace LinearMap
 
-/-- In a commuting square `g ∘ e₁ = e₂ ∘ f` of linear maps with `e₁` surjective, `e₂` carries the
-range of `f` onto that of `g`. -/
+/-- In a commuting square `g ∘ e₁ = e₂ ∘ f` with semilinear horizontal sides and linear vertical
+sides, if `e₁` is surjective then `e₂` carries the range of `f` onto that of `g`. -/
 theorem map_range_eq_range_of_comp_eq
-    {R M N M' N' : Type*} [Semiring R]
+    {R S M N M' N' : Type*} [Semiring R] [Semiring S] {σ : R →+* S} [RingHomSurjective σ]
     [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-    [AddCommMonoid M'] [Module R M'] [AddCommMonoid N'] [Module R N']
-    (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} {e₁ : M →ₗ[R] M'} {e₂ : N →ₗ[R] N'}
-    (he₁ : Function.Surjective e₁) (h : g ∘ₗ e₁ = e₂ ∘ₗ f) :
+    [AddCommMonoid M'] [Module S M'] [AddCommMonoid N'] [Module S N']
+    (f : M →ₗ[R] N) {g : M' →ₗ[S] N'} {e₁ : M →ₛₗ[σ] M'} {e₂ : N →ₛₗ[σ] N'}
+    (he₁ : Function.Surjective e₁) (h : g ∘ₛₗ e₁ = e₂ ∘ₛₗ f) :
     (range f).map e₂ = range g := by
   rw [← range_comp, ← h, range_comp_of_range_eq_top _ (range_eq_top.2 he₁)]
 
@@ -55,14 +53,14 @@ theorem subtype_comp_rangeRestrict_comp
     (range f).subtype ∘ (f.rangeRestrict ∘ v) = f ∘ v := by
   rw [← Function.comp_assoc, ← coe_comp, subtype_comp_rangeRestrict]
 
-/-- In a commuting square `g ∘ i = i' ∘ f` of linear maps, `g` sends the range of `i` into the
-range of `i'`. -/
+/-- In a commuting square `g ∘ i = i' ∘ f` with semilinear horizontal sides and linear vertical
+sides, `g` sends the range of `i` into the range of `i'`. -/
 theorem range_le_comap_range_of_comp_eq
-    {R M N M' N' : Type*} [Semiring R]
+    {R S M N M' N' : Type*} [Semiring R] [Semiring S] {σ : R →+* S}
     [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-    [AddCommMonoid M'] [Module R M'] [AddCommMonoid N'] [Module R N']
-    {f : M →ₗ[R] M'} {g : N →ₗ[R] N'} {i : M →ₗ[R] N} {i' : M' →ₗ[R] N'}
-    (h : g ∘ₗ i = i' ∘ₗ f) :
+    [AddCommMonoid M'] [Module S M'] [AddCommMonoid N'] [Module S N']
+    {f : M →ₛₗ[σ] M'} {g : N →ₛₗ[σ] N'} {i : M →ₗ[R] N} {i' : M' →ₗ[S] N'}
+    (h : g ∘ₛₗ i = i' ∘ₛₗ f) :
     range i ≤ (range i').comap g := by
   rintro _ ⟨x, rfl⟩
   exact ⟨f x, (LinearMap.congr_fun h x).symm⟩

@@ -89,9 +89,8 @@ theorem norm_gaussianMollifier_le_moebius_theta_tail {N : ℕ} (χ : DirichletCh
   refine (norm_mellin_indicator_Ioi_le_integral_rpow_mul_norm _ hr s).trans_eq
     (setIntegral_congr_fun measurableSet_Ioi fun u hu ↦ ?_)
   have hu₀ : 0 < u := hr.trans_lt hu
-  rw [hs, gaussianThetaSeries_def, norm_mul, Complex.norm_real,
-    Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _)]
-  rw [Real.rpow_sub_one hu₀.ne', ← Real.sqrt_eq_rpow, div_mul_eq_mul_div]
+  rw [hs, norm_gaussianThetaSeries, Real.rpow_sub_one hu₀.ne', ← Real.sqrt_eq_rpow,
+    div_mul_eq_mul_div]
 
 /-- Above a positive cutoff, the Gaussian mollifier of degree zero or one satisfies the
 regularity and boundedness hypotheses of three-lines interpolation on any vertical strip. -/

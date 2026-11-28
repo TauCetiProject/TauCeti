@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Basic
 public import TauCeti.NumberTheory.LSeries.RiemannZeta.RiemannSiegelTheta.Basic
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Sector
 
 /-!
 # The Stirling asymptotic of the Riemann–Siegel theta function
@@ -19,7 +20,8 @@ Writing `log Γ` at `z = 1/4 + iT/2` as Stirling's main term plus the remainder 
 against `(T/2) log (T/(2πe)) - π/8` are at most `1/(16T)` (the modulus, from
 `Complex.abs_log_norm_sub_log_abs_im_le`), and `1/(8T)` (the argument, from
 `Complex.pi_div_two_sub_arg_le_div`)
-and `1/(2T)` (the remainder, from Nemes's bound `TauCeti.norm_stirlingRemainder_le_of_re_nonneg`).
+and `1/(2T)` (the remainder, from Stieltjes' bound
+`TauCeti.norm_stirlingRemainder_lt_of_re_nonneg`).
 
 ## Main results
 
@@ -32,9 +34,9 @@ and `1/(2T)` (the remainder, from Nemes's bound `TauCeti.norm_stirlingRemainder_
 
 * E. C. Titchmarsh, *The Theory of the Riemann Zeta-Function*, 2nd ed. (revised by
   D. R. Heath-Brown), §9.3.
-* G. Nemes, *Error bounds and exponential improvements for the asymptotic expansions of the gamma
-  function and its reciprocal*, Proc. Roy. Soc. Edinburgh Sect. A 145 (2015), 571–596, for the
-  bound on the Stirling remainder used in the asymptotic.
+* F. W. J. Olver, *Asymptotics and Special Functions*, Chapter 8, §4, eq. (8.4.06).
+* T. J. Stieltjes, *Sur le développement de `log Γ(a)`*, J. Math. Pures Appl. (4) 5 (1889),
+  425–444, for the `1 / (6 * ‖z‖)` right half-plane bound on the Stirling remainder.
 -/
 
 public section
@@ -96,8 +98,8 @@ private theorem arg_quarter_add_bounds {T : ℝ} (hT : 0 < T) :
     ring
   constructor <;> linarith
 
-/-- The remainder term: `|Im R(1/4 + iT/2)| ≤ 1/(2T)` for `T > 0`, from Nemes's bound
-`|R(z)| ≤ 1/(4|z|)` on the nonzero points of the closed right half-plane and `|z| ≥ T/2`. -/
+/-- The remainder term: `|Im R(1/4 + iT/2)| ≤ 1/(2T)` for `T > 0`, from Stieltjes' bound
+`|R(z)| < 1/(6|z|)` on the nonzero points of the closed right half-plane and `|z| ≥ T/2`. -/
 private theorem abs_im_stirlingRemainder_quarter_add_le {T : ℝ} (hT : 0 < T) :
     |(stirlingRemainder (1 / 4 + (T : ℂ) / 2 * I)).im| ≤ 1 / (2 * T) := by
   set z : ℂ := 1 / 4 + (T : ℂ) / 2 * I
@@ -106,7 +108,8 @@ private theorem abs_im_stirlingRemainder_quarter_add_le {T : ℝ} (hT : 0 < T) :
   have hnorm : T / 2 ≤ ‖z‖ := him ▸ im_le_norm z
   have hz0 : z ≠ 0 := Complex.ne_zero_of_re_pos hre
   calc |(stirlingRemainder z).im| ≤ ‖stirlingRemainder z‖ := abs_im_le_norm _
-    _ ≤ 1 / (4 * ‖z‖) := norm_stirlingRemainder_le_of_re_nonneg hre.le hz0
+    _ ≤ 1 / (6 * ‖z‖) := (norm_stirlingRemainder_lt_of_re_nonneg hre.le hz0).le
+    _ ≤ 1 / (4 * ‖z‖) := by gcongr; norm_num
     _ ≤ 1 / (4 * (T / 2)) := by gcongr
     _ = 1 / (2 * T) := by ring
 

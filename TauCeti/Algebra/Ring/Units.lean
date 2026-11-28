@@ -33,6 +33,8 @@ product into its two factors.
 * `TauCeti.isUnit_one_add_mul_comm`: `IsUnit (1 + a * b) ↔ IsUnit (1 + b * a)`.
 * `Units.val_sub_val_inv_ne_zero`: in a ring without zero divisors, a unit `u ≠ ±1` satisfies
   `u - u⁻¹ ≠ 0`.
+* `Units.val_mul_val_add_val_inv`: for any unit `q` in a ring, `q * (q + q⁻¹) = 1 + q ^ 2`.
+* `Units.val_inv_mul_eq_val_add_val_inv`: if `u = 1 + q ^ 2`, then `q⁻¹ * u = q + q⁻¹`.
 * `Units.val_inv_add_val_neg_mul_inv_eq_one`: if `r + s = 1` for units, then
   `r⁻¹ + (-(s r⁻¹)) = 1`.
 * `Units.mul_inv_eq_inv_mul_sub_inv`: if `[p, u] = u` for a unit `u`, then `[p, u⁻¹] = -u⁻¹`.
@@ -70,6 +72,16 @@ end TauCeti
 namespace Units
 
 variable {R : Type*} [Ring R]
+
+/-- For any unit `q` in a ring, `q * (q + q⁻¹) = 1 + q ^ 2`. -/
+theorem val_mul_val_add_val_inv (q : Rˣ) :
+    (q : R) * ((q : R) + ↑q⁻¹) = 1 + (q : R) ^ 2 := by
+  rw [mul_add, q.mul_inv, sq, add_comm]
+
+/-- If `u = 1 + q ^ 2` for units `q` and `u`, then `q⁻¹ * u = q + q⁻¹`. -/
+theorem val_inv_mul_eq_val_add_val_inv {q u : Rˣ} (hu : (u : R) = 1 + (q : R) ^ 2) :
+    ((q⁻¹ * u : Rˣ) : R) = (q : R) + ↑q⁻¹ := by
+  rw [Units.val_mul, hu, ← q.val_mul_val_add_val_inv, ← mul_assoc, q.inv_mul, one_mul]
 
 /-- If `r + s = 1` for units `r` and `s`, then `r⁻¹ + (-(s r⁻¹)) = 1`. This trades a pair adding
 up to one for another such pair whose first entry is `r⁻¹`, as in the Steinberg relation. -/

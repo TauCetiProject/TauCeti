@@ -61,7 +61,8 @@ Consequences:
   By the above, this identification respects the complex structures.
 * **The Sobolev realization is complex linear.** On `H¹(ℂ)⁴`, `J` acts by the same signed
   permutation of coordinates, an almost complex structure
-  (`TauCeti.Vortex.sobolevVariationAlmostComplexStructure`), and the
+  (`TauCeti.Vortex.sobolevVariationAlmostComplexStructure`) whose `L²` values are `J` applied
+  pointwise (`TauCeti.Vortex.sobolevFieldValues_sobolevVariationAlmostComplexStructure`), and the
   realization `TauCeti.Vortex.sobolevGaugeFixedOperator a : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` intertwines it with
   `J'` (`TauCeti.Vortex.sobolevGaugeFixedOperator_sobolevVariationAlmostComplexStructure`), which
   acts pointwise on `L²(ℂ; ℝ⁴)` as an almost complex structure
@@ -448,6 +449,21 @@ theorem values_sobolevVariationAlmostComplexStructure_ae
   filter_upwards [W1p.value_neg_ae (y 1), W1p.value_neg_ae (y 3)] with z h₁ h₃
   ext j
   fin_cases j <;> simp [h₁, h₃]
+
+/-- The `L²` values of `J y`, for `y ∈ H¹(ℂ)⁴`, are `J` applied pointwise to the values of `y`. -/
+theorem sobolevFieldValues_sobolevVariationAlmostComplexStructure
+    (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevFieldValues (sobolevVariationAlmostComplexStructure y) =
+      variationComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap.compLp
+        (sobolevFieldValues y) := by
+  refine Lp.ext ?_
+  filter_upwards [sobolevFieldValues_ae_eq (sobolevVariationAlmostComplexStructure y),
+    sobolevFieldValues_ae_eq y, ContinuousLinearMap.coeFn_compLp
+      variationComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap
+      (sobolevFieldValues y), values_sobolevVariationAlmostComplexStructure_ae y]
+    with z h₁ h₂ h₃ h₄
+  rw [h₁, h₃, h₂, h₄]
+  simp
 
 /-- The almost complex structure `J` on `H¹(ℂ)⁴` is continuous. -/
 theorem continuous_sobolevVariationAlmostComplexStructure :

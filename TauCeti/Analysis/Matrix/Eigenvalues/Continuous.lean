@@ -172,3 +172,14 @@ theorem measurable_eigenvalues :
   continuous_eigenvalues.measurable
 
 end Matrix
+
+namespace selfAdjoint
+
+/-- The decreasing eigenvalues depend continuously on a self-adjoint matrix. -/
+theorem continuous_orderedEigenvalues {n : ℕ} {𝕜 : Type*} [RCLike 𝕜] :
+    Continuous (orderedEigenvalues (n := n) (𝕜 := 𝕜)) :=
+  continuous_pi fun i ↦
+    (continuous_apply (Fin.cast (Fintype.card_fin n).symm i)).comp
+      (Matrix.continuous_eigenvalues₀.comp (Continuous.subtype_mk continuous_subtypeVal _))
+
+end selfAdjoint

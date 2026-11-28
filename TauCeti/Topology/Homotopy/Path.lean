@@ -62,7 +62,10 @@ detour `(α · ρ⁻¹) · (ρ · β⁻¹)` to `α · β⁻¹` uniformly in a pa
 space of paths; it compares families of loops on spheres with products of loops in
 `AlgebraicTopology/Sphere/Stiefel/MeridianProduct.lean`. The lemma
 `Path.Homotopic.refl_of_forall_mem_of_nullhomotopic` is not from #38292; it was factored out of
-`AlgebraicTopology/SemilocallySimplyConnected/Basic.lean`.
+`AlgebraicTopology/SemilocallySimplyConnected/Basic.lean`,
+`Path.Homotopic.refl_of_compact_nullhomotopic` specializes it to spaces in which every map from a
+compact space is null-homotopic, and `TauCeti.simplyConnectedSpace_of_compact_nullhomotopic`
+upgrades compact-source null-homotopy on a path-connected space to `SimplyConnectedSpace`.
 
 `Path.exists_monotone_range_subpath_subset` subdivides a path, by the Lebesgue number lemma on the
 unit interval, so that each consecutive subpath lies in a member of a given family of sets. It is
@@ -1206,3 +1209,30 @@ theorem Path.Homotopic.trans_of_subpath_trans {x y x' y' : X}
   exact h_last.symm.trans ((h_chain (Fin.last n)).trans h_zero)
 
 end Pasting
+
+namespace Path.Homotopic
+
+/-- In a space in which every continuous map from a compact space is null-homotopic, every loop is
+null-homotopic. -/
+theorem refl_of_compact_nullhomotopic.{u} {X : Type u} [TopologicalSpace X]
+    (hnull : ∀ {K : Type u} [TopologicalSpace K] [CompactSpace K] (f : C(K, X)), f.Nullhomotopic)
+    {x : X} (γ : Path x x) : γ.Homotopic (Path.refl x) := by
+  have : CompactSpace (Set.range γ) :=
+    isCompact_iff_compactSpace.mp (isCompact_range γ.continuous)
+  exact refl_of_forall_mem_of_nullhomotopic
+    (hnull (ContinuousMap.subtypeVal (Set.range γ))) γ Set.mem_range_self
+
+end Path.Homotopic
+
+namespace TauCeti
+
+/-- A path-connected space in which every continuous map from a compact space is null-homotopic is
+simply connected. -/
+theorem simplyConnectedSpace_of_compact_nullhomotopic.{u} {X : Type u} [TopologicalSpace X]
+    [PathConnectedSpace X]
+    (hnull : ∀ {K : Type u} [TopologicalSpace K] [CompactSpace K] (f : C(K, X)), f.Nullhomotopic) :
+    SimplyConnectedSpace X :=
+  simply_connected_iff_loops_nullhomotopic.mpr
+    ⟨‹_›, fun _ γ ↦ Path.Homotopic.refl_of_compact_nullhomotopic hnull γ⟩
+
+end TauCeti
