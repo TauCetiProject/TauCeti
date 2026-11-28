@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NewtonPolygon.Radius
 public import TauCeti.RingTheory.PowerSeries.Convergence
+import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
 # Pointwise convergence radius from the Newton polygon
@@ -146,8 +147,10 @@ theorem convergenceRadius_eq_ofReal_zpow_floor (A : Type*) [SeminormedRing A] [S
     (ht : (linearGrowthInf fun n ↦ (v (coeff n f)).toEReal) = t) (hfloor : (⌊t⌋ : ℝ) < t)
     (hatt : ∃ x : A, ‖x‖ = b ^ ⌊t⌋) :
     f.convergenceRadius A = ENNReal.ofReal (b ^ ⌊t⌋) :=
-  convergenceRadius_eq_ofReal_zpow_of_lt_radius hb hdisc hatt
-    (ofReal_zpow_lt_radius_of_linearGrowthInf f v hb hv ht hfloor)
+  convergenceRadius_eq_ofReal_of_norm_le_or_le_of_lt_radius
+    (zpow_pos (zero_lt_one.trans hb) _).le
+    (ofReal_zpow_lt_radius_of_linearGrowthInf f v hb hv ht hfloor) hatt
+    (TauCeti.norm_le_zpow_or_zpow_succ_le_of_disc hb hdisc ⌊t⌋)
     (not_isRestricted_zpow_floor_add_one f v hb hv ht)
 
 /-- If every nonzero norm in `A` is an integer power of `b` and the lower linear growth of `v (aₙ)`
@@ -157,7 +160,9 @@ theorem convergenceRadius_lt_radius_of_linearGrowthInf (A : Type*) [SeminormedRi
     [NormSMulClass K A] [NormMulClass A] (hdisc : ∀ y : A, ‖y‖ ≠ 0 → ∃ m : ℤ, ‖y‖ = b ^ m) {t : ℝ}
     (ht : (linearGrowthInf fun n ↦ (v (coeff n f)).toEReal) = t) (hfloor : (⌊t⌋ : ℝ) < t) :
     f.convergenceRadius A < f.radius :=
-  convergenceRadius_lt_radius_of_zpow hb hdisc
+  convergenceRadius_lt_radius_of_norm_le_or_le
+    (zpow_pos (zero_lt_one.trans hb) _).le
+    (TauCeti.norm_le_zpow_or_zpow_succ_le_of_disc hb hdisc ⌊t⌋)
     (ofReal_zpow_lt_radius_of_linearGrowthInf f v hb hv ht hfloor)
     (not_isRestricted_zpow_floor_add_one f v hb hv ht)
 
