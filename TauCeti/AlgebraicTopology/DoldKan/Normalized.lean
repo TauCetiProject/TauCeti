@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.DoldKan.Normalized
-public import Mathlib.AlgebraicTopology.DoldKan.Degeneracies
+public import Mathlib.AlgebraicTopology.DoldKan.Equivalence
+public import TauCeti.AlgebraicTopology.DoldKan.Retract
 
 /-!
 # Chain maps out of the normalized Moore complex
@@ -20,10 +20,14 @@ projection `PInftyToNormalizedMooreComplex X`, and restrict along the inclusion
 practice, for instance through the free simplicial objects on standard simplices, whose
 alternating face map complexes have the simplices as a basis.
 
-## Main definitions
+## Main definitions and results
 
 * `AlgebraicTopology.DoldKan.normalizedMooreComplexHomEquiv`: chain maps `N[X] ⟶ L` are the chain
   maps `K[X] ⟶ L` vanishing on degeneracies.
+* `CategoryTheory.SimplicialObject.quasiIso_normalizedMooreComplex_map_iff_N`,
+  `CategoryTheory.SimplicialObject.quasiIso_normalizedMooreComplex_map_iff`: quasi-isomorphism
+  comparisons between `normalizedMooreComplex`, `Idempotents.DoldKan.N`, and
+  `alternatingFaceMapComplex`.
 -/
 
 public section
@@ -87,3 +91,32 @@ lemma normalizedMooreComplexHomEquiv_naturality {X Y : SimplicialObject A} (g : 
     (Category.assoc _ _ _)
 
 end AlgebraicTopology.DoldKan
+
+namespace CategoryTheory.SimplicialObject
+
+open AlgebraicTopology
+
+variable {A : Type*} [Category* A] [Abelian A]
+
+/-- In an abelian category, a morphism `f : X ⟶ Y` of simplicial objects induces a quasi-isomorphism
+on normalized Moore complexes if and only if it induces a quasi-isomorphism on pseudoabelian
+normalized chains `Idempotents.DoldKan.N`. -/
+theorem quasiIso_normalizedMooreComplex_map_iff_N {X Y : SimplicialObject A} (f : X ⟶ Y) :
+    QuasiIso ((normalizedMooreComplex A).map f) ↔ QuasiIso (Idempotents.DoldKan.N.map f) := by
+  -- `Abelian.DoldKan.N` is defined as `AlgebraicTopology.normalizedMooreComplex A`
+  -- (`Equivalence.lean`), so `comparisonN` applies after exposing `Abelian.DoldKan.N.map f`.
+  change QuasiIso (Abelian.DoldKan.N.map f) ↔ _
+  rw [← NatIso.naturality_2 Abelian.DoldKan.comparisonN f,
+    quasiIso_iff_comp_left (Abelian.DoldKan.comparisonN.hom.app X) _,
+    quasiIso_iff_comp_right (Idempotents.DoldKan.N.map f)
+      (Abelian.DoldKan.comparisonN.inv.app Y)]
+
+/-- In an abelian category, a morphism `f : X ⟶ Y` of simplicial objects induces a quasi-isomorphism
+on normalized Moore complexes if and only if it induces a quasi-isomorphism on alternating face map
+complexes. -/
+theorem quasiIso_normalizedMooreComplex_map_iff {X Y : SimplicialObject A} (f : X ⟶ Y) :
+    QuasiIso ((normalizedMooreComplex A).map f) ↔
+      QuasiIso ((alternatingFaceMapComplex A).map f) :=
+  (quasiIso_normalizedMooreComplex_map_iff_N f).trans (quasiIso_N_map_iff f)
+
+end CategoryTheory.SimplicialObject

@@ -21,6 +21,9 @@ transport and iteration of homotopies, and assembly of null-homotopies from comp
 `Homotopy.compSquare` composes specified square homotopies by postcomposing the first
 and precomposing the second, retaining their sum rather than choosing a new outer homotopy.
 
+`Homotopy.compLeftRightOfEq` transports a chain homotopy by precomposition and postcomposition
+along given factorizations of the endpoints.
+
 `HomotopyEquiv.invNaturality` turns a strictly commutative square whose horizontal sides are the
 forward maps of chain homotopy equivalences, `e₁.hom ≫ b = a ≫ e₂.hom`, into a square of homotopy
 inverses commuting up to chain homotopy: `e₁.inv ≫ a` is homotopic to `b ≫ e₂.inv`. This is how a
@@ -148,6 +151,29 @@ def _root_.HomotopyEquiv.invNaturality (e₁ : HomotopyEquiv K₁ L₁) (e₂ : 
           Homotopy.ofEq (Category.id_comp (b ≫ e₂.inv))
 
 end Squares
+
+/-- Transport a chain homotopy `H : Homotopy f' g'` by precomposition with `u : K ⟶ K'` and
+postcomposition with `v : L' ⟶ L`, rewriting the endpoints along `hf : f = u ≫ f' ≫ v` and
+`hg : g = u ≫ g' ≫ v`. -/
+@[no_expose]
+def compLeftRightOfEq {C : Type u} [Category.{v} C] [Preadditive C]
+    {ι : Type*} {c : ComplexShape ι}
+    {K L K' L' : HomologicalComplex C c} {f g : K ⟶ L} {f' g' : K' ⟶ L'}
+    (H : Homotopy f' g') (u : K ⟶ K') (v : L' ⟶ L)
+    (hf : f = u ≫ f' ≫ v) (hg : g = u ≫ g' ≫ v) :
+    Homotopy f g :=
+  (Homotopy.ofEq hf).trans (((H.compRight v).compLeft u).trans (Homotopy.ofEq hg.symm))
+
+/-- The components of `Homotopy.compLeftRightOfEq` are obtained by precomposing with `u` and
+postcomposing with `v`. -/
+@[simp]
+lemma compLeftRightOfEq_hom {C : Type u} [Category.{v} C] [Preadditive C]
+    {ι : Type*} {c : ComplexShape ι}
+    {K L K' L' : HomologicalComplex C c} {f g : K ⟶ L} {f' g' : K' ⟶ L'}
+    (H : Homotopy f' g') (u : K ⟶ K') (v : L' ⟶ L)
+    (hf : f = u ≫ f' ≫ v) (hg : g = u ≫ g' ≫ v) (p q : ι) :
+    (H.compLeftRightOfEq u v hf hg).hom p q = u.f p ≫ H.hom p q ≫ v.f q := by
+  simp [compLeftRightOfEq]
 
 section HomologyMap
 
