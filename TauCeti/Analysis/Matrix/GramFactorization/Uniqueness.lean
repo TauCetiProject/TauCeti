@@ -20,8 +20,20 @@ zero-padded factorizations. The proof uses `TauCeti.gram_eq_iff_exists_linearIso
 and Mathlib's `LinearIsometryEquiv.toMatrix_mem_unitaryGroup` to pass from Gram rigidity
 of column families to the matrix statement.
 
+The case of a single column is `TauCeti.exists_mem_unitaryGroup_mulVec_eq`: two vectors of the
+same length differ by a unitary matrix. Its real counterpart, proved with Householder reflections,
+is `TauCeti.exists_mem_orthogonalGroup_mulVec_eq_smul_single`.
+
 For the matrix Gram-factorization interpretation, see Horn and Johnson, *Matrix Analysis*,
 2nd ed., §7.2.
+
+## Provenance
+
+`TauCeti.exists_mem_unitaryGroup_mulVec_eq` is adapted from `New.exists_unitary_mulVec_eq` in
+`src/Lib/DiscreteSeries/Haar/TotalMass.lean` of grh-lean (https://github.com/lsernau/grh-lean,
+Apache 2.0, Copyright 2026 Anthropic, PBC), stated there for complex vectors and proved with a
+Witt-type extension theorem; here it is the one-column case of
+`TauCeti.conjTranspose_mul_self_eq_iff_exists_unitary_mul`.
 -/
 
 public section
@@ -59,5 +71,18 @@ theorem conjTranspose_mul_self_eq_iff_exists_unitary_mul {A B : Matrix m n 𝕜}
     have hU : (U : Matrix m m 𝕜)ᴴ * (U : Matrix m m 𝕜) = 1 :=
       Matrix.mem_unitaryGroup_iff'.mp U.property
     simp [Matrix.conjTranspose_mul, Matrix.mul_assoc, ← Matrix.mul_assoc _ (U : Matrix m m 𝕜), hU]
+
+/-- Two vectors of the same length differ by a unitary matrix. -/
+theorem exists_mem_unitaryGroup_mulVec_eq {x y : m → 𝕜}
+    (h : ∑ i, ‖x i‖ ^ 2 = ∑ i, ‖y i‖ ^ 2) : ∃ u ∈ unitaryGroup m 𝕜, u *ᵥ x = y := by
+  have h_gram : (replicateCol Unit x)ᴴ * replicateCol Unit x =
+      (replicateCol Unit y)ᴴ * replicateCol Unit y := by
+    ext
+    simp only [conjTranspose_replicateCol, replicateRow_mul_replicateCol_apply, dotProduct,
+      Pi.star_apply, RCLike.star_def, RCLike.conj_mul]
+    exact_mod_cast congrArg (fun t : ℝ ↦ (t : 𝕜)) h
+  obtain ⟨U, hU⟩ := conjTranspose_mul_self_eq_iff_exists_unitary_mul.1 h_gram
+  refine ⟨U, U.property, funext fun i ↦ ?_⟩
+  simpa [Matrix.mul_apply, mulVec, dotProduct] using (congrFun₂ hU i ()).symm
 
 end TauCeti

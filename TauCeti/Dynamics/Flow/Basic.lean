@@ -8,6 +8,7 @@ module
 public import Mathlib.Dynamics.Flow
 public import Mathlib.Topology.Homotopy.Basic
 import Mathlib.Topology.Compactness.Compact
+import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
 # Invariant sets and basic flow lemmas
@@ -31,12 +32,15 @@ This file supplements Mathlib's `IsInvariant` predicate and `Flow` API from
 * `Flow.orbit_reverse`: reversing time does not change the orbits.
 * `Flow.prod`: the product of two flows with the same time.
 * `Flow.continuous_eval_const`: the flow line `t ↦ ϕ t x` through a point is continuous.
+* `Flow.continuousVAdd`: the action `ϕ.toAddAction` of a flow is jointly continuous.
 * `Flow.map_nsmul`: the time-`(k • t)` map is the `k`-th iterate of the time-`t` map.
 * `Flow.coe_toHomeomorph`, `Flow.coe_toHomeomorph_symm`: the homeomorphism `ϕ.toHomeomorph t` is
   the time-`t` map, with inverse the time-`(-t)` map.
 * `Flow.timeChange`: the time change `t ↦ ϕ (c * t)` of a flow by a factor `c`.
 * `Flow.exists_forall_exists_mem_Ioo_apply_mem`: if the forward orbits of the points of a compact
   set all meet an open set, they all meet it before a common time.
+* `Flow.tendsto_abs_atTop_of_forall_apply_ne`: times between points converging to two points that
+  no time joins tend to infinity in absolute value.
 * `Flow.homotopic_of_eq_apply`: maps sending each point to two times of its flow line are homotopic.
 * `Flow.homotopic_id_restrict`: on a forward invariant set, each forward time map is homotopic to
   the identity.
@@ -133,6 +137,13 @@ theorem prod_apply {β : Type*} [TopologicalSpace β] [AddZero τ] (ϕ : Flow τ
 theorem continuous_eval_const [AddZero τ] (ϕ : Flow τ α) (x : α) : Continuous fun t ↦ ϕ t x :=
   ϕ.continuous continuous_id continuous_const
 
+/-- The action `ϕ.toAddAction` of a flow is jointly continuous, since `t +ᵥ x` is `ϕ t x` by
+definition of `Flow.toAddAction`. -/
+theorem continuousVAdd [AddMonoid τ] (ϕ : Flow τ α) :
+    @ContinuousVAdd τ α ϕ.toAddAction.toVAdd _ _ :=
+  letI := ϕ.toAddAction
+  ⟨ϕ.cont'⟩
+
 /-- The time-`(k • t)` map of a flow is the `k`-th iterate of its time-`t` map. -/
 theorem map_nsmul [AddMonoid τ] (ϕ : Flow τ α) (k : ℕ) (t : τ) : ϕ (k • t) = (ϕ t)^[k] := by
   induction k with
@@ -183,6 +194,31 @@ theorem exists_forall_exists_mem_Ioo_apply_mem [AddZero τ] [Preorder τ] [IsDir
   obtain ⟨σ, hσ, hσW⟩ := h x hx
   obtain ⟨T, hT⟩ := exists_gt σ
   exact Set.mem_iUnion.2 ⟨T, σ, ⟨hσ, hT⟩, hσW⟩
+
+/-- **Times between converging points diverge when no time joins the limits.** Let `y n → y₀` and
+`ϕ (t n) (y n) → z₀` along a filter. If no time carries `y₀` to `z₀`, then `|t n| → ∞`. Indeed, the
+pairs of points joined by a time of a compact interval `[-K, K]` form a closed set, which would
+contain `(y₀, z₀)` if the times `t n` were frequently in `[-K, K]`. -/
+theorem tendsto_abs_atTop_of_forall_apply_ne [T2Space α] (ϕ : Flow ℝ α) {y₀ z₀ : α}
+    (h : ∀ t, ϕ t y₀ ≠ z₀) {ι : Type*} {l : Filter ι} {y : ι → α} {t : ι → ℝ}
+    (hy : Filter.Tendsto y l (nhds y₀))
+    (hz : Filter.Tendsto (fun n ↦ ϕ (t n) (y n)) l (nhds z₀)) :
+    Filter.Tendsto (fun n ↦ |t n|) l Filter.atTop := by
+  refine Filter.tendsto_atTop.2 fun K ↦ ?_
+  by_contra hK
+  -- The pairs joined by a time in `[-K, K]` are the projection of a closed subset of the product
+  -- with the compact interval.
+  have hS : IsClosed {w : α × α | ∃ s ∈ Set.Icc (-K) K, ϕ s w.1 = w.2} := by
+    have hC : IsClosed {sw : Set.Icc (-K) K × (α × α) | ϕ sw.1 sw.2.1 = sw.2.2} :=
+      isClosed_eq (ϕ.continuous (continuous_subtypeVal.comp continuous_fst)
+        (continuous_fst.comp continuous_snd)) (continuous_snd.comp continuous_snd)
+    convert isClosedMap_snd_of_compactSpace _ hC using 1
+    ext w
+    simp
+  obtain ⟨s, -, hs⟩ := hS.mem_of_frequently_of_tendsto
+    ((Filter.not_eventually.1 hK).mono fun n hn ↦ ⟨t n, abs_le.1 (not_le.1 hn).le, rfl⟩)
+    (hy.prodMk_nhds hz)
+  exact h s hs
 
 /-- **Homotopy along flow lines.** Two maps into a space `Z` embedded in `α` which send each `y` to
 the flow line of `p y` at the times `τ₀ y` and `τ₁ y` are homotopic, provided the flow line stays

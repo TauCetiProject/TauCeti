@@ -33,10 +33,12 @@ without any measurability hypotheses (for subgroups as typeclass instances), tha
 `volume` of left- or right-invariant measure spaces (such as Lebesgue measure on `ℝ × ℝ`) is
 left- or right-invariant, and that restricting
 an inversion-invariant measure to a symmetric set, or weighting it by an even density, keeps it
-inversion-invariant. A left-invariant probability measure gives mass `n⁻¹` to a measurable
-subgroup of finite index `n`, since its `n` cosets have equal mass and partition the group, and a
-surjective homomorphism onto a finite group with measurable kernel splits a left-invariant measure
-evenly among its fibres, the translates of the kernel. Finally, for an
+inversion-invariant. Likewise, restricting a left-invariant measure to a set that is invariant
+up to null sets under every left translation keeps it left-invariant. A left-invariant
+probability measure gives mass `n⁻¹` to a measurable subgroup of finite index `n`, since its
+`n` cosets have equal mass and partition the group, and a surjective homomorphism onto a finite
+group with measurable kernel splits a left-invariant measure evenly among its fibres, the
+translates of the kernel. Finally, for an
 inner regular measure whose right translations are quasi-measure-preserving—in particular any
 inner regular Haar measure on a locally compact group—if an open set `U` lies up to a null set
 inside a null-measurable set `V` satisfying `V * s ⊆ V`, then `U * s` (such as the subgroup
@@ -44,7 +46,9 @@ saturation `(QuotientGroup.mk : G → G ⧸ N) ⁻¹' (QuotientGroup.mk '' U) = 
 up to a null set. In a first-countable topological group with measurable open sets and measurable
 multiplication, a compact set of positive measure for a left-invariant measure finite on compact
 sets forces the group to be locally compact
-(`IsCompact.locallyCompactSpace_of_measure_ne_zero_of_group`).
+(`IsCompact.locallyCompactSpace_of_measure_ne_zero_of_group`), and in a weakly locally compact group
+a left-invariant measure of finite mass that is positive on open sets forces the group to be
+compact.
 
 ## Main results
 
@@ -62,6 +66,8 @@ sets forces the group to be locally compact
 * `Measure.isInvInvariant_restrict`, `Measure.isNegInvariant_restrict`,
   `Measure.isInvInvariant_withDensity`, `Measure.isNegInvariant_withDensity`: restriction to a
   symmetric set and an even density preserve inversion or negation invariance.
+* `Measure.isMulLeftInvariant_restrict`, `Measure.isAddLeftInvariant_restrict`: restriction to a
+  set invariant up to null sets under left translations preserves left invariance.
 * `Measure.isMulLeftInvariant_comap`, `Measure.isAddLeftInvariant_comap`,
   `Measure.isMulRightInvariant_comap`, `Measure.isAddRightInvariant_comap`: the pullback of a
   left- or right-invariant measure along a group homomorphism is left- or right-invariant, without
@@ -95,6 +101,9 @@ sets forces the group to be locally compact
   topological group with measurable open sets and measurable multiplication (or addition), a
   compact set of positive measure for a left-invariant measure finite on compact sets forces the
   group to be locally compact.
+* `Measure.compactSpace_of_isMulLeftInvariant_of_isFiniteMeasure`,
+  `Measure.compactSpace_of_isAddLeftInvariant_of_isFiniteMeasure`: a weakly locally compact
+  group with a left-invariant measure of finite mass, positive on open sets, is compact.
 -/
 
 public section
@@ -355,6 +364,26 @@ theorem quasiMeasurePreserving_inv_mul_of_inv_absolutelyContinuous [μ.IsMulLeft
 
 end Measurable
 
+section LeftInvariant
+
+variable {G : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G]
+
+/-- Restricting a left-invariant measure to a set that is invariant up to null sets under every
+left translation gives a left-invariant measure. -/
+@[to_additive /-- Restricting an additive left-invariant measure to a set that is invariant up to
+null sets under every left translation gives an additive left-invariant measure. -/]
+theorem isMulLeftInvariant_restrict (μ : Measure G) [μ.IsMulLeftInvariant] {s : Set G}
+    (h : ∀ g : G, g • s =ᵐ[μ] s) : (μ.restrict s).IsMulLeftInvariant := by
+  refine ⟨fun g ↦ ext fun t ht ↦ ?_⟩
+  have hpre : (g * ·) ⁻¹' s =ᵐ[μ] s := by
+    simpa only [← smul_eq_mul, preimage_smul] using h g⁻¹
+  have hinter : (g * ·) ⁻¹' t ∩ s =ᵐ[μ] (g * ·) ⁻¹' t ∩ (g * ·) ⁻¹' s :=
+    ae_eq_set_inter (.refl _ _ : (g * ·) ⁻¹' t =ᵐ[μ] (g * ·) ⁻¹' t) hpre.symm
+  rw [map_apply (measurable_const_mul g) ht, restrict_apply (measurable_const_mul g ht),
+    restrict_apply ht, measure_congr hinter, ← preimage_inter, measure_preimage_mul]
+
+end LeftInvariant
+
 end MeasureTheory.Measure
 
 /-- A left-invariant probability measure on a group gives mass `n⁻¹` to a measurable subgroup of
@@ -579,3 +608,20 @@ theorem IsCompact.locallyCompactSpace_of_measure_ne_zero_of_group
   exact hcompact.measure_lt_top.not_ge hle
 
 end LocallyCompact
+
+section CompactSpace
+
+/-- A weakly locally compact group carrying a left-invariant measure of finite total mass that is
+positive on open sets, such as a Haar probability measure, is compact. -/
+@[to_additive /-- A weakly locally compact additive group carrying a left-invariant measure of
+finite total mass that is positive on open sets, such as an additive Haar probability measure, is
+compact. -/]
+theorem MeasureTheory.Measure.compactSpace_of_isMulLeftInvariant_of_isFiniteMeasure {G : Type*}
+    [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [WeaklyLocallyCompactSpace G]
+    [MeasurableSpace G] [BorelSpace G] (μ : Measure G) [μ.IsOpenPosMeasure] [μ.IsMulLeftInvariant]
+    [IsFiniteMeasure μ] : CompactSpace G := by
+  by_contra h
+  have : NoncompactSpace G := not_compactSpace_iff.mp h
+  exact measure_ne_top μ univ (measure_univ_of_isMulLeftInvariant μ)
+
+end CompactSpace

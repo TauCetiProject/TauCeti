@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Topology.Algebra.Module.BilinearForm
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
@@ -19,9 +21,9 @@ On a finite-dimensional real normed space, contraction with a symplectic form is
 invertible continuous linear map to the continuous dual. This identifies covectors with
 vectors and allows the contraction equation in Moser's deformation argument to be solved
 using the continuous-linear-map inverse. The symplectic pairing of two continuous maps is
-continuous, and that of two differentiable curves satisfies the product rule. The pairing is
-bounded by the operator norm of the form, and the continuous bilinear map minus its transpose is
-twice the form.
+continuous, that of two maps of class `C^n` is of class `C^n`, and that of two differentiable
+curves satisfies the product rule. The pairing is bounded by the operator norm of the form, and
+the continuous bilinear map minus its transpose is twice the form.
 
 ## Main declarations
 
@@ -91,6 +93,13 @@ theorem hasDerivAt_apply_comp (ω : SymplecticForm V) {p q : ℝ → V} {p' q' :
     HasDerivAt (fun t ↦ ω (p t) (q t)) (ω p' (q t) + ω (p t) q') t := by
   simpa only [LinearMap.toContinuousBilinearMap_apply, add_comm] using
     ω.toBilinForm.toContinuousBilinearMap.hasDerivAt_of_bilinear (fun _ ↦ hp) (fun _ ↦ hq)
+
+/-- The symplectic pairing of two maps of class `C^n` at a point is of class `C^n` there. -/
+theorem contDiffAt_apply_comp (ω : SymplecticForm V) {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {p q : E → V} {x : E} {n : WithTop ℕ∞} (hp : ContDiffAt ℝ n p x)
+    (hq : ContDiffAt ℝ n q x) : ContDiffAt ℝ n (fun z ↦ ω (p z) (q z)) x := by
+  simpa only [Function.comp_apply, LinearMap.toContinuousBilinearMap_apply] using
+    (ω.toBilinForm.toContinuousBilinearMap.contDiff.contDiffAt.comp x hp).clm_apply hq
 
 /-! ### Covectors as vectors through `ω` -/
 

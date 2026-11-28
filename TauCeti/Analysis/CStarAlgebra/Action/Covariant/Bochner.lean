@@ -36,7 +36,7 @@ to the unconditional series `∑' s, π(f s)(U_s v)` without any countability as
   `TauCeti.CStarAction.CovariantRepresentation.summable_integrand_of_summable_norm`: norm and
   vector summability of `s ↦ π(f s)(U_s v)` for any norm-summable `f : G → A`.
 * `TauCeti.CStarAction.CovariantRepresentation.integratedOperatorBochnerL1_count_toL1_apply` and
-  `TauCeti.CStarAction.CovariantRepresentation.norm_integratedOperatorBochnerL1_count_toL1_le`:
+  `TauCeti.CStarAction.CovariantRepresentation.norm_integratedOperatorBochnerL1_count_le`:
   counting-measure specialization `(π ⋊ U)(f) v = ∑' s, π(f s)(U_s v)` for norm-summable `f` on
   an `R1Space` topological group with measurable singletons.
 
@@ -138,7 +138,7 @@ theorem integratedOperatorBochnerL1_count_toL1_apply {f : G → A}
 /-- With respect to counting measure on an `R1Space` topological group with measurable singletons,
 the operator norm of the integrated form of a norm-summable `f : G → A` is bounded by
 `∑' s, ‖f s‖`. -/
-theorem norm_integratedOperatorBochnerL1_count_toL1_le {f : G → A}
+theorem norm_integratedOperatorBochnerL1_count_le {f : G → A}
     (hf : Summable fun s => ‖f s‖) :
     ‖P.integratedOperatorBochnerL1 Measure.count ((integrable_count_iff.mpr hf).toL1 f)‖ ≤
       ∑' s, ‖f s‖ :=

@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.LeftCapping.Sobolev
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.SemiFredholm
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.RealChart
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart.Output
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Patching
 import TauCeti.Topology.Instances.Real.TSupport
 

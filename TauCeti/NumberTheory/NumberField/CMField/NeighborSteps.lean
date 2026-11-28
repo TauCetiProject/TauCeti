@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.LinearAlgebra.Projectivization.Basic
 public import Mathlib.SetTheory.Cardinal.Order
 public import TauCeti.NumberTheory.NumberField.CMField.AdelicLattice
+public import TauCeti.NumberTheory.NumberField.CMField.ConjCompletion
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 import Mathlib.LinearAlgebra.Projectivization.Cardinality
 import TauCeti.Algebra.Order.GroupWithZero.WithZeroInt
@@ -71,9 +72,7 @@ A fixed well-ordering of the finite places (`WellOrderingRel`) defines the *plac
 `(1 − ε_w q_w^{−s})(1 − ε_{conj w} q_{conj w}^{−s}) = 1 − q_w^{−2s}` at a split place.
 
 The conjugate place `conj w` is the image of `w` under the isomorphism of rings of integers
-induced by complex conjugation,
-`HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv (complexConj E).toRingEquiv) w`;
-declaration names refer to it as `conjPlace`.
+induced by complex conjugation, `IsDedekindDomain.HeightOneSpectrum.conjPlace`.
 
 ## Main definitions
 
@@ -137,71 +136,24 @@ namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {E : Type*} [Field E] [NumberField E] [IsCMField E]
 
-/-- The conjugate `conj w` of a finite place `w` of a CM field: its image under the isomorphism of
-rings of integers induced by complex conjugation. -/
-local notation "conjPlace" =>
-  HeightOneSpectrum.equivOfRingEquiv
-    (RingOfIntegers.mapRingEquiv (AlgEquiv.toRingEquiv (complexConj E)))
-
 /-! ### Complex conjugation on the places and on the finite adeles -/
 
 section Conjugation
 
-/-- `|conj x|_{conj w} = |x|_w`. -/
-private theorem valuation_conjPlace (w : HeightOneSpectrum (𝓞 E)) (x : E) :
-    (conjPlace w).valuation E (complexConj E x) = w.valuation E x := by
-  have := valuation_ringEquivOfRingEquiv (K := E) (K' := E)
-    (RingOfIntegers.mapRingEquiv (complexConj E).toRingEquiv)
-    (asIdeal_equivOfRingEquiv _ w) x
-  rwa [RingOfIntegers.ringEquivOfRingEquiv_mapRingEquiv, AlgEquiv.coe_toRingEquiv] at this
-
-/-- `|conj x|_w = |x|_{conj w}`. -/
-private theorem valuation_complexConj (w : HeightOneSpectrum (𝓞 E)) (x : E) :
-    w.valuation E ((complexConj E).toRingEquiv x) = (conjPlace w).valuation E x := by
-  rw [AlgEquiv.coe_toRingEquiv, ← valuation_conjPlace w (complexConj E x),
-    complexConj_apply_apply]
-
-/-- Conjugation of finite places is an involution. -/
-private theorem conjPlace_conjPlace (w : HeightOneSpectrum (𝓞 E)) :
-    conjPlace (conjPlace w) = w := by
-  ext x
-  rw [asIdeal_equivOfRingEquiv, asIdeal_equivOfRingEquiv, ← Ideal.symm_apply_mem_of_equiv_iff,
-    ← Ideal.symm_apply_mem_of_equiv_iff]
-  convert Iff.rfl using 2
-  ext
-  simp [AlgEquiv.eq_symm_apply]
-
-/-- The component of `conj a` at a place `w'` with `|conj x|_{w'} = |x|_w` is the image of `a_w`
-under the isomorphism `E_w ≃ E_{w'}` extending complex conjugation. -/
-private theorem finiteAdeleConj_apply {w w' : HeightOneSpectrum (𝓞 E)}
-    (hw : ∀ x, w'.valuation E ((complexConj E).toRingEquiv x) = w.valuation E x) (a : 𝔸ᶠ[E]) :
-    finiteAdeleConj E a w' = adicCompletionCongr w w' (complexConj E).toRingEquiv hw (a w) := by
-  -- Both sides are continuous in `a` and agree on the dense image of `E`.
-  have hconj : Continuous (finiteAdeleConj E) := by
-    rw [finiteAdeleConj_def]
-    exact TauCeti.GlobalNumberFields.continuous_finiteAdeleEquiv E E _
-  have hl : Continuous fun a ↦ proj E w' (finiteAdeleConj E a) :=
-    (proj E w').continuous.comp hconj
-  have hr : Continuous fun a ↦ adicCompletionCongr w w' _ hw (proj E w a) :=
-    (continuous_adicCompletionCongr hw).comp (proj E w).continuous
-  have h := congr_fun ((FiniteAdeleRing.denseRange_algebraMap (𝓞 E) E).equalizer hl hr
-    (funext fun x ↦ ?_)) a
-  · simpa only [proj_apply] using h
-  simp only [Function.comp_apply, finiteAdeleConj_algebraMap, AlgHomClass.commutes,
-    adicCompletionCongr_algebraMap, AlgEquiv.coe_toRingEquiv]
+/-- The ideal of `conj w` is the image of that of `w` under conjugation of the integers. -/
+private theorem asIdeal_conjPlace (w : HeightOneSpectrum (𝓞 E)) :
+    (conjPlace w).asIdeal =
+      w.asIdeal.map (RingOfIntegers.mapRingEquiv (complexConj E).toRingEquiv) := by
+  rw [← eq_conjPlace_iff.2 <| RingEquiv.valuation_equivOfRingEquiv (complexConj E).toRingEquiv w,
+    asIdeal_equivOfRingEquiv]
 
 /-- The conjugate of a finite adele supported at `w` vanishes at every place `u` with
 `conj u ≠ w`. -/
 private theorem finiteAdeleConj_single_apply_of_ne {u w : HeightOneSpectrum (𝓞 E)}
     (hu : conjPlace u ≠ w) (t : w.adicCompletion E) :
     finiteAdeleConj E (single E w t) u = 0 := by
-  rw [finiteAdeleConj_apply (valuation_complexConj u), single_apply_of_ne hu, map_zero]
-
-/-- At a place with `conj w = w`, complex conjugation preserves the `w`-adic valuation. -/
-private theorem valuation_complexConj_of_conjPlace_eq {w : HeightOneSpectrum (𝓞 E)}
-    (h : conjPlace w = w) (x : E) :
-    w.valuation E ((complexConj E).toRingEquiv x) = w.valuation E x := by
-  rw [valuation_complexConj, h]
+  rw [finiteAdeleConj_apply, star_apply_eq_adicCompletionCongr (valuation_complexConj u),
+    single_apply_of_ne hu, map_zero]
 
 /-- At a place with `conj w = w`, the conjugate of a finite adele supported at `w` has component
 `conj t` at `w`, for the continuous extension `t ↦ conj t` of complex conjugation to `E_w`. -/
@@ -209,7 +161,8 @@ private theorem finiteAdeleConj_single_apply_self_of_conjPlace_eq {w : HeightOne
     (h : conjPlace w = w) (t : w.adicCompletion E) :
     finiteAdeleConj E (single E w t) w =
       adicCompletionCongr w w _ (valuation_complexConj_of_conjPlace_eq h) t := by
-  rw [finiteAdeleConj_apply (valuation_complexConj_of_conjPlace_eq h), single_apply_self]
+  rw [finiteAdeleConj_apply,
+    star_apply_eq_adicCompletionCongr (valuation_complexConj_of_conjPlace_eq h), single_apply_self]
 
 /-- At a split place, a finite adele `s` supported at `w` with `s + conj s ∈ Ô` is integral. -/
 private theorem mem_adicCompletionIntegers_of_conjPlace_ne {w : HeightOneSpectrum (𝓞 E)}
@@ -386,23 +339,6 @@ theorem neighborResidues_eq_singleton_zero (h : conjPlace w ≠ w) {ϖ : w.adicC
     mul_lt_one_of_lt_of_le hϖ <|
       (mem_adicCompletionIntegers _ _ _).1 (mem_adicCompletionIntegers_of_conjPlace_ne h hs)
 
-/-- At a place with `conj w = w`, `y − conj y` has valuation `1` in `E_w` when it lies outside
-`w`. -/
-private theorem valued_sub_adicCompletionCongr_eq_one (h : conjPlace w = w) {y : 𝓞 E}
-    (hy : y - ringOfIntegersComplexConj E y ∉ w.asIdeal) :
-    Valued.v (algebraMap (𝓞 E) (w.adicCompletion E) y -
-      adicCompletionCongr w w _ (valuation_complexConj_of_conjPlace_eq h)
-        (algebraMap (𝓞 E) (w.adicCompletion E) y)) = 1 := by
-  have hτ : adicCompletionCongr w w _ (valuation_complexConj_of_conjPlace_eq h)
-      (algebraMap (𝓞 E) (w.adicCompletion E) y) =
-        algebraMap (𝓞 E) (w.adicCompletion E) (ringOfIntegersComplexConj E y) := by
-    rw [IsScalarTower.algebraMap_apply (𝓞 E) E (w.adicCompletion E),
-      IsScalarTower.algebraMap_apply (𝓞 E) E (w.adicCompletion E) (ringOfIntegersComplexConj E y),
-      adicCompletionCongr_algebraMap]
-    simp [← RingOfIntegers.coe_eq_algebraMap]
-  rw [hτ, ← map_sub]
-  exact (notMem_asIdeal_iff_valued_algebraMap_eq_one (K := E) w).1 hy
-
 /-- At a place with `conj w = w`, an integer `y` with `y − conj y ∉ w` makes `(r, r′) ↦ r + y r′`
 injective on `R_w × R_w`, for a uniformiser `ϖ`. -/
 private theorem injOn_neighborResidues_prod (h : conjPlace w = w) {ϖ : w.adicCompletion E}
@@ -443,7 +379,7 @@ private theorem injOn_neighborResidues_prod (h : conjPlace w = w) {ϖ : w.adicCo
     ring
   have hYτ : Valued.v ((Y : w.adicCompletion E) - τ Y) = 1 := by
     rw [hY]
-    exact valued_sub_adicCompletionCongr_eq_one h hy
+    exact valued_algebraMap_sub_adicCompletionCongr_eq_one h hy
   have ha' : t₁' - t₂' ∈ w.adicCompletionIntegers E :=
     Valuation.mem_valuationSubring_of_add_mul_mem (τ := (τ : _ →+* _)) hτ Y.property hYτ
       (hconj hs₁ hs₂) (hconj hs₁' hs₂') hsum
@@ -485,7 +421,7 @@ private theorem mem_higherDegreePrimes_of_conjPlace_eq (h : conjPlace w = w) {y 
     have e : RingOfIntegers.mapRingEquiv (complexConj E).toRingEquiv x =
         ringOfIntegersComplexConj E x := RingOfIntegers.ext (by simp)
     have := Ideal.mem_map_of_mem (RingOfIntegers.mapRingEquiv (complexConj E).toRingEquiv) hx
-    rwa [← asIdeal_equivOfRingEquiv, h, e] at this
+    rwa [← asIdeal_conjPlace, h, e] at this
   let := Fintype.ofFinite (𝓞 E ⧸ w.asIdeal)
   have hcard : Fintype.card (𝓞 E ⧸ w.asIdeal) = Ideal.absNorm w.asIdeal := by
     rw [Ideal.absNorm_apply, Submodule.cardQuot_apply, Nat.card_eq_fintype_card]
@@ -741,7 +677,7 @@ theorem prod_one_sub_placeSign_mul_rpow [DecidableEq (HeightOneSpectrum (𝓞 E)
     ∏ u ∈ {w, conjPlace w}, (1 - u.placeSign * (Ideal.absNorm u.asIdeal : ℝ) ^ (-s)) =
       1 - (Ideal.absNorm w.asIdeal : ℝ) ^ (-(2 * s)) := by
   have e : -(2 * s) = -s * 2 := by ring
-  rw [Finset.prod_pair (Ne.symm h), placeSign_conjPlace_of_ne h, asIdeal_equivOfRingEquiv,
+  rw [Finset.prod_pair (Ne.symm h), placeSign_conjPlace_of_ne h, asIdeal_conjPlace,
     Ideal.absNorm_map_of_ringEquiv, e,
     Real.rpow_mul (Nat.cast_nonneg _), Real.rpow_two]
   have := congrArg (Int.cast : ℤ → ℝ) (placeSign_mul_self (w := w))

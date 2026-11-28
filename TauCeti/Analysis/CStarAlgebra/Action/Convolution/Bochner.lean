@@ -42,10 +42,10 @@ second-countability hypotheses are required on non-σ-compact groups.
 * `TauCeti.CStarAction.ae_integrable_bochnerConvolution_integrand`,
   `TauCeti.CStarAction.integrable_bochnerConvolution`,
   `TauCeti.CStarAction.convolutionL1_toL1_eq_bochnerConvolution`, and
-  `TauCeti.CStarAction.coeFn_convolutionL1`: for any left-invariant measure finite on compact sets,
-  inner regular on finite-measure sets, and satisfying `μ.inv ≪ μ` (with no second-countability
-  assumption on `G`), the twisted convolution integrand is a.e. integrable, `bochnerConvolution` is
-  integrable, and it represents `convolutionL1` almost everywhere.
+  `TauCeti.CStarAction.coeFn_convolutionL1_eq_bochnerConvolution`: for any left-invariant measure
+  finite on compact sets, inner regular on finite-measure sets, and satisfying `μ.inv ≪ μ` (with no
+  second-countability assumption on `G`), the twisted convolution integrand is a.e. integrable,
+  `bochnerConvolution` is integrable, and it represents `convolutionL1` almost everywhere.
 * `TauCeti.CStarAction.lintegral_eNorm_twistedInvolution`,
   `TauCeti.CStarAction.integrable_bochnerInvolution`,
   `TauCeti.CStarAction.twistedInvolutionL1_toL1_eq_bochnerInvolution`,
@@ -441,7 +441,7 @@ theorem integral_norm_bochnerConvolution_le
 /-- For arbitrary `u, v : Lp A 1 μ`, `α.convolutionL1 μ u v` is represented `μ`-almost everywhere
 by `α.bochnerConvolution μ u v` whenever `μ.inv ≪ μ`, with no second-countability assumption on
 `G`. -/
-theorem coeFn_convolutionL1 (hinv : μ.inv ≪ μ) (u v : Lp A 1 μ) :
+theorem coeFn_convolutionL1_eq_bochnerConvolution (hinv : μ.inv ≪ μ) (u v : Lp A 1 μ) :
     α.convolutionL1 μ u v =ᵐ[μ] α.bochnerConvolution μ u v := by
   have hu : (L1.integrable_coeFn u).toL1 u = u := Integrable.toL1_coeFn u (L1.integrable_coeFn u)
   have hv : (L1.integrable_coeFn v).toL1 v = v := Integrable.toL1_coeFn v (L1.integrable_coeFn v)

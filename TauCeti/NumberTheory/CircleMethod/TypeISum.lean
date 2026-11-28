@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Harmonic.Bounds
 public import TauCeti.NumberTheory.CircleMethod.AdditiveCharacter
 public import TauCeti.NumberTheory.Harmonic.Basic
+import TauCeti.Analysis.Normed.Group.AddCircle.Basic
 
 /-!
 # Type I sums for additive twists
@@ -69,44 +70,6 @@ private theorem ite_min_inv_distInt_le_ite_floor (x : ℝ) {δ : ℝ} (hδ : 0 <
       mul_pos (by exact_mod_cast Nat.pos_of_ne_zero hn) hδ
     exact (min_le_right _ _).trans (inv_anti₀ hpos hle)
 
-/-- If the pairwise differences of the points `x i` are at distance at least `δ` from the
-integers, each window `‖x i‖ ∈ [kδ, (k + 1)δ)` holds at most two of them, one on each side of the
-nearest integer. -/
-private theorem card_filter_floor_distInt_div_eq_le_two {ι : Type*} (s : Finset ι) (x : ι → ℝ)
-    {δ : ℝ} (hδ : 0 < δ) (hsep : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → δ ≤ distInt (x i - x j)) (k : ℕ) :
-    (s.filter fun i ↦ ⌊distInt (x i) / δ⌋₊ = k).card ≤ 2 := by
-  refine (Finset.card_le_card_of_injOn (fun i ↦ decide (0 ≤ x i - round (x i)))
-    (fun _ _ ↦ Finset.mem_coe.2 (Finset.mem_univ _)) ?_).trans_eq
-    (Finset.card_univ.trans Fintype.card_bool)
-  intro i hi j hj hij
-  by_contra hne
-  rw [Finset.mem_coe, Finset.mem_filter] at hi hj
-  -- With `r = x - round x`, so `|r| = ‖x‖`: both `|r i|` and `|r j|` lie in `[kδ, (k + 1)δ)`.
-  have key : ∀ t, ⌊distInt (x t) / δ⌋₊ = k →
-      (k : ℝ) * δ ≤ |x t - round (x t)| ∧ |x t - round (x t)| < k * δ + δ := fun t ht ↦ by
-    have h1 := Nat.floor_le (div_nonneg (distInt_nonneg (x t)) hδ.le)
-    have h2 := Nat.lt_floor_add_one (distInt (x t) / δ)
-    rw [ht, le_div_iff₀ hδ] at h1
-    rw [ht, div_lt_iff₀ hδ, add_mul, one_mul] at h2
-    rw [distInt_def] at h1 h2
-    exact ⟨h1, h2⟩
-  obtain ⟨h1, h2⟩ := key i hi.2
-  obtain ⟨h3, h4⟩ := key j hj.2
-  have hs : 0 ≤ x i - round (x i) ↔ 0 ≤ x j - round (x j) := by simpa using hij
-  -- On the same side of the nearest integer, they differ by less than `δ`.
-  have hlt : |(x i - round (x i)) - (x j - round (x j))| < δ := by
-    rw [abs_sub_lt_iff]
-    rcases le_or_gt 0 (x i - round (x i)) with hr | hr
-    · rw [abs_of_nonneg hr] at h1 h2
-      rw [abs_of_nonneg (hs.1 hr)] at h3 h4
-      constructor <;> linarith
-    · rw [abs_of_neg hr] at h1 h2
-      rw [abs_of_neg (lt_of_not_ge (mt hs.2 hr.not_ge))] at h3 h4
-      constructor <;> linarith
-  have hle := distInt_le_abs_sub_intCast (x i - x j) (round (x i) - round (x j))
-  push_cast at hle
-  exact (hsep i hi.1 j hj.1 hne).not_gt (hle.trans_lt (by convert hlt using 2; ring))
-
 /-- **Separated points.** If the pairwise differences of the points `x i`, `i ∈ s`, are at
 distance at least `δ > 0` from the integers, then
 `∑_{i ∈ s} min(Y, 1 / ‖x i‖) ≤ 2Y + (2 / δ) H_K` with `K = ⌊1 / (2δ)⌋` and `H_K` the harmonic
@@ -128,6 +91,10 @@ theorem sum_min_inv_distInt_le_of_separated {ι : Type*} (s : Finset ι) (x : ι
     refine Nat.floor_le_floor ?_
     rw [div_le_iff₀ hδ, mul_inv, mul_assoc, inv_mul_cancel₀ hδ.ne', mul_one]
     exact (distInt_le_half _).trans_eq (one_div 2)
+  have hcard : ∀ k, (s.filter fun i ↦ n i = k).card ≤ 2 := fun k ↦ by
+    simpa only [n, zero_sub, AddCircle.coe_neg, norm_neg, ← distInt_eq_norm] using
+      card_filter_floor_norm_unitAddCircle_div_le_two hδ
+        (by simpa only [distInt_eq_norm] using hsep) 0 k
   calc ∑ i ∈ s, (if distInt (x i) = 0 then Y else min Y (distInt (x i))⁻¹)
       = ∑ k ∈ Finset.range (K + 1), ∑ i ∈ s with n i = k,
           (if distInt (x i) = 0 then Y else min Y (distInt (x i))⁻¹) :=
@@ -137,8 +104,7 @@ theorem sum_min_inv_distInt_le_of_separated {ι : Type*} (s : Finset ι) (x : ι
         calc _ ≤ ∑ i ∈ s with n i = k, b k := Finset.sum_le_sum fun i hi ↦
               (Finset.mem_filter.1 hi).2 ▸ ite_min_inv_distInt_le_ite_floor (x i) hδ Y
           _ = (s.filter fun i ↦ n i = k).card * b k := by rw [Finset.sum_const, nsmul_eq_mul]
-          _ ≤ 2 * b k := mul_le_mul_of_nonneg_right
-              (by exact_mod_cast card_filter_floor_distInt_div_eq_le_two s x hδ hsep k) (hb0 k)
+          _ ≤ 2 * b k := mul_le_mul_of_nonneg_right (by exact_mod_cast hcard k) (hb0 k)
     _ = 2 * Y + 2 / δ * harmonic K := by
         rw [Finset.sum_range_succ', add_comm]
         simp only [hb, cast_harmonic_eq_sum_range, Finset.mul_sum, Nat.succ_ne_zero, ↓reduceIte]
