@@ -5,20 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.Normed.Group.Pi
 
 /-!
 # Lipschitz-margin certificates of robustness
 
 A classifier with class index type `ι` on a set `X` is a map `f : X → ι → ℝ` of logits. It
 predicts the class `i` at `x` when `f x j < f x i` for every `j ≠ i`. A certificate on a set `S`
-says that `f` predicts `i` at every point of `S`. When `S` is a ball about `x`, no perturbation
-of `x` of norm less than the radius changes the prediction.
+says that `f` predicts `i` at every point of `S`. When `S` is a ball about `x`, `f` predicts `i`
+at each point at distance less than the radius from `x`.
 
 A Lipschitz bound on the logits gives such a certificate. The gap `f y i - f y j` moves by at
-most `√2 L ‖y - x‖` when `f` is `L`-Lipschitz into `EuclideanSpace ℝ ι`, so a margin `m` at `x`
+most `√2 L dist x y` when `f` is `L`-Lipschitz into `EuclideanSpace ℝ ι`, so a margin `m` at `x`
 certifies every ball of radius `ε` with `√2 L ε ≤ m`. With one Lipschitz constant for each gap,
 the margin of each gap is compared with its own constant.
+
+The coordinate bounds behind the constants `√2` and `2` are
+`EuclideanSpace.abs_sub_le_sqrt_two_mul_norm` and `Pi.abs_sub_le_two_mul_norm`.
 
 ## Main declarations
 
@@ -29,10 +33,6 @@ the margin of each gap is compared with its own constant.
   prediction at the centre.
 * `TauCeti.CertifiedOn.comp_ofLp`: a certificate on a sup-norm ball gives one on the `ℓᵖ` ball of
   the same radius.
-* `EuclideanSpace.abs_sub_le_sqrt_two_mul_norm`: `|v i - v j| ≤ √2 ‖v‖` for `i ≠ j`, with
-  equality at `v = e_i - e_j` (`EuclideanSpace.abs_sub_eq_sqrt_two_mul_norm_single_sub_single`).
-* `TauCeti.abs_sub_le_two_mul_norm`: the sup-norm form `|v i - v j| ≤ 2 ‖v‖`, with equality at
-  `v = e_i - e_j` (`TauCeti.abs_sub_eq_two_mul_norm_single_sub_single`).
 * `TauCeti.certifiedOn_ball_of_lipschitzWith_gap`: the certificate from one Lipschitz constant
   for each gap.
 * `TauCeti.certifiedOn_ball_of_lipschitzWith`: the certificate from one Lipschitz constant of
@@ -50,49 +50,6 @@ public section
 
 open Metric Set WithLp
 open scoped NNReal ENNReal
-
-namespace EuclideanSpace
-
-variable {ι : Type*} [Fintype ι]
-
-/-- A difference of two coordinates of a Euclidean vector is at most `√2` times its norm. -/
-theorem abs_sub_le_sqrt_two_mul_norm (v : EuclideanSpace ℝ ι) (i j : ι) :
-    |v i - v j| ≤ √2 * ‖v‖ := by
-  classical
-  rcases eq_or_ne i j with rfl | hij
-  · simp
-  have hpair : v i ^ 2 + v j ^ 2 ≤ ‖v‖ ^ 2 := by
-    have := Finset.sum_le_univ_sum_of_nonneg (s := {i, j}) fun p => sq_nonneg (v p)
-    rwa [Finset.sum_pair hij, ← EuclideanSpace.real_norm_sq_eq] at this
-  have hsq : (v i - v j) ^ 2 ≤ 2 * ‖v‖ ^ 2 := by nlinarith [sq_nonneg (v i + v j)]
-  calc |v i - v j| ≤ √(2 * ‖v‖ ^ 2) := Real.abs_le_sqrt hsq
-    _ = √2 * ‖v‖ := by rw [Real.sqrt_mul zero_le_two, Real.sqrt_sq (norm_nonneg v)]
-
-/-- The vector `e_i - e_j` attains the bound `abs_sub_le_sqrt_two_mul_norm`. -/
-theorem abs_sub_eq_sqrt_two_mul_norm_single_sub_single [DecidableEq ι] (i j : ι) :
-    |(single i 1 - single j 1 : EuclideanSpace ℝ ι) i -
-        (single i 1 - single j 1 : EuclideanSpace ℝ ι) j| =
-      √2 * ‖(single i 1 - single j 1 : EuclideanSpace ℝ ι)‖ := by
-  rcases eq_or_ne i j with rfl | hij
-  · simp
-  have hnorm : ‖(single i 1 - single j 1 : EuclideanSpace ℝ ι)‖ = √2 := by
-    rw [← Real.sqrt_sq (norm_nonneg _), norm_sub_sq_real]
-    simp [EuclideanSpace.inner_single_left, hij.symm]
-    norm_num
-  rw [hnorm, Real.mul_self_sqrt zero_le_two]
-  simp [hij, hij.symm]
-  norm_num
-
-/-- The map `v ↦ v i - v j` on `EuclideanSpace ℝ ι` is `√2`-Lipschitz. -/
-theorem lipschitzWith_apply_sub_apply (i j : ι) :
-    LipschitzWith (NNReal.sqrt 2) fun v : EuclideanSpace ℝ ι => v i - v j := by
-  refine LipschitzWith.of_dist_le_mul fun v w => ?_
-  rw [Real.dist_eq, dist_eq_norm, Real.coe_sqrt, NNReal.coe_ofNat]
-  calc |v i - v j - (w i - w j)| = |(v - w) i - (v - w) j| := by
-        simp only [PiLp.sub_apply]; ring_nf
-    _ ≤ √2 * ‖v - w‖ := abs_sub_le_sqrt_two_mul_norm (v - w) i j
-
-end EuclideanSpace
 
 namespace TauCeti
 
@@ -173,32 +130,7 @@ end CertifiedOn
 
 section Margin
 
-variable {ι : Type*}
-
-/-- In the sup norm, a difference of two coordinates is at most twice the norm. -/
-theorem abs_sub_le_two_mul_norm [Fintype ι] (v : ι → ℝ) (i j : ι) :
-    |v i - v j| ≤ 2 * ‖v‖ := by
-  have hi : |v i| ≤ ‖v‖ := by simpa using norm_le_pi_norm v i
-  have hj : |v j| ≤ ‖v‖ := by simpa using norm_le_pi_norm v j
-  linarith [abs_sub (v i) (v j)]
-
-/-- The vector `e_i - e_j` attains the bound `abs_sub_le_two_mul_norm`. -/
-theorem abs_sub_eq_two_mul_norm_single_sub_single [Fintype ι] [DecidableEq ι] (i j : ι) :
-    |(Pi.single i 1 - Pi.single j 1 : ι → ℝ) i - (Pi.single i 1 - Pi.single j 1 : ι → ℝ) j| =
-      2 * ‖(Pi.single i 1 - Pi.single j 1 : ι → ℝ)‖ := by
-  rcases eq_or_ne i j with rfl | hij
-  · simp
-  have hnorm : ‖(Pi.single i 1 - Pi.single j 1 : ι → ℝ)‖ = 1 := by
-    refine le_antisymm ((pi_norm_le_iff_of_nonneg zero_le_one).2 fun p => ?_) ?_
-    · by_cases hpi : p = i <;> by_cases hpj : p = j <;> subst_vars <;>
-        simp [hij.symm, *]
-    · have := norm_le_pi_norm (Pi.single i 1 - Pi.single j 1 : ι → ℝ) i
-      rwa [Pi.sub_apply, Pi.single_eq_same, Pi.single_eq_of_ne hij, sub_zero, norm_one] at this
-  rw [hnorm]
-  simp [hij, hij.symm]
-  norm_num
-
-variable {X : Type*} [PseudoMetricSpace X]
+variable {ι X : Type*} [PseudoMetricSpace X]
 
 /-- **Per-pair Lipschitz-margin certificate.** If each gap `y ↦ f y i - f y j` with `j ≠ i` is
 `L j`-Lipschitz, positive at `x`, and at least `L j * ε` at `x`, then `f` is certified on the
