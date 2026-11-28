@@ -42,6 +42,10 @@ representations with open kernel (`Representation.isOpen_ker_coind`): the kernel
 coinduced action contains the open set of `x` with `t x t⁻¹ ∈ φ(ker ρ)` for `t` in a finite set of
 coset representatives.
 
+`Representation.coindSupport` gives the support modulo a subgroup in the ordinary coset space.
+The action on this support is described by `Representation.coindSupport_coind_apply` using
+Mathlib's left action on cosets.
+
 ## References
 
 * K. S. Brown, *Cohomology of Groups*, Chapter III, §6 and §9.
@@ -105,6 +109,55 @@ theorem coind_apply_coe_apply (φ : G →* H) (ρ : Representation k G V) (f : c
   rfl
 
 end Apply
+
+section Support
+
+open Function
+
+variable {A G V : Type*} [Semiring A] [Group G] [AddCommMonoid V] [Module A V]
+  {H : Subgroup G} {σ : Representation A H V}
+
+/-- Support modulo `H` of a left-covariant function. Inversion identifies its left `H`-orbits
+with the ordinary cosets in `G ⧸ H`. -/
+def coindSupport (f : σ.coindV H.subtype) : Set (G ⧸ H) :=
+  (fun g : G ↦ (↑g⁻¹ : G ⧸ H)) '' support f.val
+
+/-- The coset of `g⁻¹` lies in the support iff the function is nonzero at `g`. -/
+@[simp]
+theorem coindSupport_mk_inv_mem_iff {f : σ.coindV H.subtype} {g : G} :
+    (↑g⁻¹ : G ⧸ H) ∈ coindSupport f ↔ f.val g ≠ 0 := by
+  refine ⟨?_, fun hg ↦ ⟨g, hg, rfl⟩⟩
+  rintro ⟨x, hx, heq⟩
+  have h : x * g⁻¹ ∈ H := by
+    simpa only [inv_inv] using QuotientGroup.eq.mp heq
+  have hcov := f.property ⟨x * g⁻¹, h⟩ g
+  simp only [Subgroup.subtype_apply, inv_mul_cancel_right] at hcov
+  intro hg
+  exact hx (hcov.trans (by rw [hg, map_zero]))
+
+/-- Quotient support is the image of ordinary function support under the inverse coset map. -/
+theorem coindSupport_def (f : σ.coindV H.subtype) :
+    coindSupport f = (fun g : G ↦ (↑g⁻¹ : G ⧸ H)) '' support f.val := (rfl)
+
+/-- The zero function has empty support modulo the subgroup. -/
+@[simp] theorem coindSupport_zero : coindSupport (0 : σ.coindV H.subtype) = ∅ := by
+  simp only [coindSupport_def, Submodule.coe_zero, support_zero, Set.image_empty]
+
+/-- Right translation on coinduction translates support by the left action on `G ⧸ H`. -/
+theorem coindSupport_coind_apply (f : σ.coindV H.subtype) (g : G) :
+    coindSupport (σ.coind H.subtype g f) = (g • ·) '' coindSupport f := by
+  ext q
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    refine ⟨(↑(x * g)⁻¹ : G ⧸ H), coindSupport_mk_inv_mem_iff.2 ?_, ?_⟩
+    · simpa only [mem_support, coind_apply_coe_apply] using hx
+    · simp only [MulAction.Quotient.smul_coe, smul_eq_mul, mul_inv_rev, mul_inv_cancel_left]
+  · rintro ⟨q, ⟨x, hx, rfl⟩, rfl⟩
+    refine ⟨x * g⁻¹, ?_, ?_⟩
+    · simpa only [mem_support, coind_apply_coe_apply, inv_mul_cancel_right] using hx
+    · simp only [MulAction.Quotient.smul_coe, smul_eq_mul, mul_inv_rev, inv_inv]
+
+end Support
 
 section OpenKernel
 

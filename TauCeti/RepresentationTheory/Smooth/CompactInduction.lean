@@ -35,46 +35,6 @@ variable {A G V W : Type*} [Semiring A] [Group G]
   [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
   {H : Subgroup G} {σ : Representation A H V} {τ : Representation A H W}
 
-/-- Support modulo `H` of a left-covariant function. Inversion identifies its left `H`-orbits
-with the ordinary cosets in `G ⧸ H`. -/
-def coindSupport (f : σ.coindV H.subtype) : Set (G ⧸ H) :=
-  (fun g : G ↦ (↑g⁻¹ : G ⧸ H)) '' support f.val
-
-/-- The coset of `g⁻¹` lies in the support iff the function is nonzero at `g`. -/
-@[simp]
-theorem coindSupport_mk_inv_mem_iff {f : σ.coindV H.subtype} {g : G} :
-    (↑g⁻¹ : G ⧸ H) ∈ coindSupport f ↔ f.val g ≠ 0 := by
-  refine ⟨?_, fun hg ↦ ⟨g, hg, rfl⟩⟩
-  rintro ⟨x, hx, heq⟩
-  have h : x * g⁻¹ ∈ H := by
-    simpa only [inv_inv] using QuotientGroup.eq.mp heq
-  have hcov := f.property ⟨x * g⁻¹, h⟩ g
-  simp only [Subgroup.subtype_apply, inv_mul_cancel_right] at hcov
-  intro hg
-  exact hx (hcov.trans (by rw [hg, map_zero]))
-
-/-- Quotient support is the image of ordinary function support under the inverse coset map. -/
-theorem coindSupport_def (f : σ.coindV H.subtype) :
-    coindSupport f = (fun g : G ↦ (↑g⁻¹ : G ⧸ H)) '' support f.val := (rfl)
-
-/-- The zero function has empty support modulo the subgroup. -/
-@[simp] theorem coindSupport_zero : coindSupport (0 : σ.coindV H.subtype) = ∅ := by
-  simp only [coindSupport_def, Submodule.coe_zero, support_zero, Set.image_empty]
-
-/-- Right translation on coinduction translates support by the left action on `G ⧸ H`. -/
-theorem coindSupport_coind_apply (f : σ.coindV H.subtype) (g : G) :
-    coindSupport (σ.coind H.subtype g f) = (g • ·) '' coindSupport f := by
-  ext q
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    refine ⟨(↑(x * g)⁻¹ : G ⧸ H), coindSupport_mk_inv_mem_iff.2 ?_, ?_⟩
-    · simpa only [mem_support, coind_apply_coe_apply] using hx
-    · simp only [MulAction.Quotient.smul_coe, smul_eq_mul, mul_inv_rev, mul_inv_cancel_left]
-  · rintro ⟨q, ⟨x, hx, rfl⟩, rfl⟩
-    refine ⟨x * g⁻¹, ?_, ?_⟩
-    · simpa only [mem_support, coind_apply_coe_apply, inv_mul_cancel_right] using hx
-    · simp only [MulAction.Quotient.smul_coe, smul_eq_mul, mul_inv_rev, inv_inv]
-
 variable [TopologicalSpace G] [SeparatelyContinuousMul G]
 
 /-- Inverting the argument of a smooth coinduced function gives a locally constant function.
@@ -197,4 +157,13 @@ def cIndFunctor (H : Subgroup G) (A : Type u) [Ring A] :
     (X : SmoothRep.{max v w} A H) :
     (H.cIndFunctor A).obj X = SmoothRep.of (V := X.obj.ρ.compactInduction.toSubmodule)
       X.obj.ρ.compactInduction.toRepresentation := (rfl)
+
+/-- Compact induction maps a morphism by postcomposition, via the object identifications
+`cIndFunctor_obj`. -/
+@[simp] theorem cIndFunctor_map (H : Subgroup G) (A : Type u) [Ring A]
+    {X Y : SmoothRep.{max v w} A H} (f : X ⟶ Y) :
+    (H.cIndFunctor A).map f =
+      eqToHom (H.cIndFunctor_obj A X) ≫
+        ObjectProperty.homMk (Rep.ofHom (Representation.compactInductionMap f.hom.hom)) ≫
+        eqToHom (H.cIndFunctor_obj A Y).symm := (rfl)
 end Subgroup
