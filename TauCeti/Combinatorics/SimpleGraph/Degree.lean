@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import Mathlib.GroupTheory.GroupAction.Basic
+import Mathlib.Combinatorics.SimpleGraph.DegreeSum
 import Mathlib.Data.Fin.VecNotation
 
 /-!
@@ -33,6 +34,9 @@ A vertex outside a finite set `s` has, among the vertices of `s`, as many neighb
   `Fin 2`-indexed family.
 * `SimpleGraph.card_filter_adj_add_card_filter_compl_adj`: the neighbours in `s` of a vertex
   outside `s`, in `G` and in `Gᶜ`, number `#s` together.
+* `SimpleGraph.IsRegularOfDegree.two_mul_card_edgeFinset`: a `d`-regular graph on `n` vertices has
+  `2 e = n d` edges, so for `d ≥ 2` it has at least as many edges as vertices
+  (`SimpleGraph.IsRegularOfDegree.card_le_card_edgeFinset`).
 -/
 
 public section
@@ -92,5 +96,23 @@ theorem card_filter_adj_add_card_filter_compl_adj {V : Type*} {G : SimpleGraph V
   congr 2
   refine filter_congr fun w hw ↦ ?_
   simp [compl_adj, show v ≠ w from fun hvw ↦ hv (hvw ▸ hw)]
+
+open Finset in
+/-- **The handshake lemma for a regular graph**: a `d`-regular graph on `n` vertices has `e` edges
+with `2 e = n d`. -/
+theorem IsRegularOfDegree.two_mul_card_edgeFinset {V : Type*} {G : SimpleGraph V} [Fintype V]
+    [DecidableRel G.Adj] {d : ℕ} (h : G.IsRegularOfDegree d) :
+    2 * #G.edgeFinset = Fintype.card V * d := by
+  rw [← sum_degrees_eq_twice_card_edges]
+  simp [h.degree_eq]
+
+open Finset in
+/-- A `d`-regular graph with `d ≥ 2` has at least as many edges as vertices. -/
+theorem IsRegularOfDegree.card_le_card_edgeFinset {V : Type*} {G : SimpleGraph V} [Fintype V]
+    [DecidableRel G.Adj] {d : ℕ} (h : G.IsRegularOfDegree d) (hd : 2 ≤ d) :
+    Fintype.card V ≤ #G.edgeFinset := by
+  have h₁ := h.two_mul_card_edgeFinset
+  have h₂ : Fintype.card V * 2 ≤ Fintype.card V * d := Nat.mul_le_mul_left _ hd
+  omega
 
 end SimpleGraph

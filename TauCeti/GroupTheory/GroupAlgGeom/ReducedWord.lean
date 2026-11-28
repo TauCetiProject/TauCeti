@@ -6,10 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Automorphism
+public import Mathlib.Data.Finset.Dedup
+public import Mathlib.Algebra.Group.Commutator
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import Mathlib.Algebra.Group.End
 import Mathlib.Algebra.Group.Submonoid.BigOperators
+import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Tactic.Group
+import TauCeti.Data.List.Count
+import TauCeti.Data.List.Flatten
 import TauCeti.GroupTheory.FreeGroup.Basic
 
 /-!
@@ -37,8 +42,9 @@ a variable letter at the start cancels against its inverse at the end, as do coe
 the start and `h` at the end with `h * g = 1`; if `h * g ≠ 1`, then `g m' h` is the conjugate of
 `m' (h * g)` by `g`, so `g` merges into the coefficient at the end.
 
-Counting the letters `x^{±1}` of the reduced word gives the number of occurrences of a variable in
-an element of `G[X]`; a word without letters `x^{±1}` spells an element of the subgroup
+Counting the letters `x^{±1}` of the reduced word gives the number of occurrences
+`GX.occurrences x w` of a variable `x` in an element `w ∈ G[X]`, and its finite set of occurring
+variables `GX.occVars w`; a word without letters `x^{±1}` spells an element of the subgroup
 `GX.avoiding x` of the words in which `x` does not occur. Cyclic reduction replaces an equation
 `w = 1` over `G` by an equation with the same solutions whose left side is cyclically reduced; in a
 quadratic equation, the variables of the conjugator disappear from it. This is a step towards the
@@ -58,6 +64,8 @@ directly for words in letters.
   cyclically reduced words.
 * `TauCeti.GroupAlgGeom.GX.invRev`: the formal inverse of a word.
 * `TauCeti.GroupAlgGeom.GX.reducedWord w`: the reduced word of `w ∈ G[X]`.
+* `TauCeti.GroupAlgGeom.GX.occurrences x w`, `TauCeti.GroupAlgGeom.GX.occVars w`: the number of
+  occurrences of `x` in `w`, and the finite set of variables occurring in `w`.
 
 ## Main results
 
@@ -73,10 +81,19 @@ directly for words in letters.
   `TauCeti.GroupAlgGeom.GX.countVar_reducedWord_le`: reduction removes letters `x^{±1}` in pairs,
   so it does not increase their number.
 * `TauCeti.GroupAlgGeom.GX.isCyclicallyReduced_append_comm`,
+  `TauCeti.GroupAlgGeom.GX.isCyclicallyReduced_flatten_iff`,
   `TauCeti.GroupAlgGeom.GX.isCyclicallyReduced_invRev`: cyclically reduced words are closed under
-  cyclic permutation and formal inversion.
+  cyclic permutation and formal inversion, and a block-level characterization of cyclic
+  reducedness.
 * `TauCeti.GroupAlgGeom.GX.IsReduced.exists_isCyclicallyReduced`: cyclic reduction relative to
   `G` of reduced words.
+* `TauCeti.GroupAlgGeom.GX.le_occurrences`,
+  `TauCeti.GroupAlgGeom.GX.exists_occurrences_add_occurrences_eq_add_two_mul`,
+  `TauCeti.GroupAlgGeom.GX.occurrences_map_le`,
+  `TauCeti.GroupAlgGeom.GX.occurrences_map_eq_zero`,
+  `TauCeti.GroupAlgGeom.GX.mem_avoiding_iff_occurrences_eq_zero`: the extremal characterization,
+  pair cancellation, homomorphism bounds, and `GX.avoiding` characterization for variable
+  occurrences.
 
 ## References
 
@@ -116,6 +133,12 @@ theorem letter_inr_true (y : X) : letter (.inr (y, true) : G ⊕ X × Bool) = in
 @[simp]
 theorem letter_inr_false (y : X) :
     letter (.inr (y, false) : G ⊕ X × Bool) = (inr (FreeGroup.of y))⁻¹ := (rfl)
+
+/-- Flipping the sign of a variable letter inverts the element of `G[X]` it spells. -/
+@[simp]
+theorem letter_inr_not (x : X) (b : Bool) :
+    (letter (.inr (x, !b)) : GX G X) = (letter (.inr (x, b)))⁻¹ := by
+  cases b <;> simp
 
 /-- The product of a word in variable letters is the image in `G[X]` of the element of the free
 group `F(X)` that the word spells. -/
@@ -204,6 +227,40 @@ theorem countVar_map_inr [DecidableEq X] (x : X) (L : List (X × Bool)) :
     countVar x (L.map Sum.inr : List (G ⊕ X × Bool)) = L.countP fun p => p.1 = x := by
   simp [countVar_eq_countP, Function.comp_def]
 
+@[simp]
+theorem countVar_flatten (x : X) (L : List (List (G ⊕ X × Bool))) :
+    countVar x L.flatten = (L.map (countVar x)).sum := by
+  classical
+  rw [countVar_eq_countP, List.countP_flatten]
+  exact congrArg List.sum (List.map_congr_left fun l _ => (countVar_eq_countP x l).symm)
+
+/-- A word in which `x` occurs splits at its first letter `x^{±1}`. -/
+theorem exists_split_of_countVar_pos {x : X} {l : List (G ⊕ X × Bool)} (h : 0 < countVar x l) :
+    ∃ l₁ b l₂, l = l₁ ++ .inr (x, b) :: l₂ ∧ countVar x l₁ = 0 := by
+  classical
+  rw [countVar_eq_countP] at h
+  obtain ⟨l₁, a, l₂, rfl, ha, h₁⟩ := List.exists_split_of_countP_pos h
+  rcases a with g | ⟨y, b⟩
+  · simp at ha
+  · obtain rfl : y = x := by simpa using ha
+    exact ⟨l₁, b, l₂, rfl, by simpa [countVar_eq_countP] using h₁⟩
+
+/-- A word in which `x` occurs at least twice splits at its first two letters `x^{±1}`. -/
+theorem exists_two_split_of_two_le_countVar {x : X} {l : List (G ⊕ X × Bool)}
+    (h : 2 ≤ countVar x l) :
+    ∃ l₁ b₁ l₂ b₂ l₃, l = l₁ ++ .inr (x, b₁) :: (l₂ ++ .inr (x, b₂) :: l₃) ∧
+      countVar x l₁ = 0 ∧ countVar x l₂ = 0 := by
+  classical
+  rw [countVar_eq_countP] at h
+  obtain ⟨l₁, a₁, l₂, a₂, l₃, rfl, ha₁, ha₂, h₁, h₂⟩ := List.exists_two_split_of_two_le_countP h
+  rcases a₁ with g | ⟨y₁, b₁⟩; · simp at ha₁
+  rcases a₂ with g | ⟨y₂, b₂⟩; · simp at ha₂
+  have hy₁ : y₁ = x := by simpa using ha₁
+  have hy₂ : y₂ = x := by simpa using ha₂
+  subst y₁ y₂
+  exact ⟨l₁, b₁, l₂, b₂, l₃, rfl,
+    by simpa [countVar_eq_countP] using h₁, by simpa [countVar_eq_countP] using h₂⟩
+
 /-- A word without variable letters is a word in coefficients. -/
 theorem exists_eq_map_inl {l : List (G ⊕ X × Bool)} (h : ∀ x, countVar x l = 0) :
     ∃ L : List G, l = L.map Sum.inl := by
@@ -215,14 +272,19 @@ theorem exists_eq_map_inl {l : List (G ⊕ X × Bool)} (h : ∀ x, countVar x l 
       exact ⟨g :: L, rfl⟩
     · simpa using h x
 
+/-- A signed variable letter `y^{±1}` does not involve `x` if and only if `y ≠ x`. -/
+@[simp]
+theorem letter_inr_mem_avoiding_iff [Group G] [DecidableEq X] {x y : X} {b : Bool} :
+    letter (G := G) (.inr (y, b)) ∈ avoiding x ↔ y ≠ x := by
+  cases b <;> simp
+
 /-- A variable that is not spelled in a word does not occur in its product. -/
 theorem prod_map_letter_mem_avoiding [Group G] [DecidableEq X] {x : X} {l : List (G ⊕ X × Bool)}
     (h : countVar x l = 0) : (l.map letter).prod ∈ avoiding x :=
   list_prod_mem <| List.forall_mem_map.2 fun
     | .inl g, _ => by simp
-    | .inr (y, b), hm => by
-      have hy : y ≠ x := by rintro rfl; exact countVar_eq_zero.1 h b hm
-      cases b <;> simp [hy]
+    | .inr (y, b), hm =>
+      letter_inr_mem_avoiding_iff.2 (by rintro rfl; exact countVar_eq_zero.1 h b hm)
 
 end CountVar
 
@@ -310,12 +372,31 @@ theorem IsReduced.infix {l₁ l₂ : List (G ⊕ X × Bool)} (h : IsReduced l₂
     IsReduced l₁ :=
   ⟨fun g hg => h.1 g (h'.subset hg), h.2.infix h'⟩
 
+/-- A reduced word consisting of a sequence of coefficients between two mutually inverse variable
+letters contains a single coefficient. -/
+theorem IsReduced.exists_eq_singleton_of_inr_map_inl {z : X} {b : Bool} {L : List G}
+    (h : IsReduced (.inr (z, b) :: (L.map Sum.inl ++ [.inr (z, !b)]))) : ∃ c : G, L = [c] := by
+  rcases L with _ | ⟨c, _ | ⟨c', L'⟩⟩
+  · simp at h
+  · exact ⟨c, rfl⟩
+  · simp at h
+
 /-- A word in variable letters is reduced exactly when it is a reduced word of the free group
 `F(X)`. -/
 @[simp]
 theorem isReduced_map_inr {L : List (X × Bool)} :
     IsReduced (L.map Sum.inr : List (G ⊕ X × Bool)) ↔ FreeGroup.IsReduced L := by
   simp [IsReduced, FreeGroup.IsReduced, List.isChain_map]
+
+/-- A flatten of nonempty words is reduced if and only if each word is reduced and consecutive
+words do not combine across boundaries. -/
+theorem isReduced_flatten_iff {L : List (List (G ⊕ X × Bool))} (hne : ∀ l ∈ L, l ≠ []) :
+    IsReduced L.flatten ↔ (∀ l ∈ L, IsReduced l) ∧
+      L.IsChain fun l₁ l₂ => ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬Combines a b := by
+  simp only [isReduced_iff, List.mem_flatten, List.isChain_flatten fun h => hne [] h rfl,
+    forall_exists_index, and_imp]
+  exact ⟨fun ⟨h1, h2, h3⟩ => ⟨fun l hl => ⟨fun g hg => h1 g l hl hg, h2 l hl⟩, h3⟩,
+    fun ⟨h, h3⟩ => ⟨fun g l hl hg => (h l hl).1 g hg, fun l hl => (h l hl).2, h3⟩⟩
 
 end Reduced
 
@@ -379,6 +460,11 @@ theorem invRev_inj [InvolutiveInv G] {l₁ l₂ : List (G ⊕ X × Bool)} :
 theorem invRev_map_inr [Inv G] (L : List (X × Bool)) :
     invRev (L.map Sum.inr : List (G ⊕ X × Bool)) = (FreeGroup.invRev L).map Sum.inr := by
   simp [invRev, FreeGroup.invRev, Function.comp_def]
+
+@[simp]
+theorem getLast?_invRev [Inv G] (l : List (G ⊕ X × Bool)) :
+    (invRev l).getLast? = l.head?.map (Sum.map (·⁻¹) fun p => (p.1, !p.2)) := by
+  simp [invRev, List.getLast?_reverse]
 
 @[simp]
 theorem countVar_invRev [Inv G] (x : X) (l : List (G ⊕ X × Bool)) :
@@ -775,6 +861,73 @@ theorem isCyclicallyReduced_append_comm {l₁ l₂ : List (G ⊕ X × Bool)} :
     intro l₂ h
     simpa using ih (l₂ ++ [a]) (by simpa using h.append_singleton)
 
+/-- A word is cyclically reduced if and only if it is reduced and, whenever it has at least two
+letters, its last and first letters do not combine. -/
+theorem isCyclicallyReduced_iff_head?_getLast? {l : List (G ⊕ X × Bool)} :
+    IsCyclicallyReduced l ↔
+      IsReduced l ∧ (2 ≤ l.length → ∀ a ∈ l.getLast?, ∀ b ∈ l.head?, ¬Combines a b) := by
+  induction l using List.bidirectionalRec with
+  | nil => simp
+  | singleton a => simp
+  | cons_append b m a =>
+    rw [isCyclicallyReduced_cons_append, List.getLast?_cons, List.getLast?_concat, List.head?_cons]
+    simp
+
+/-- A flatten of nonempty words is cyclically reduced if and only if each word is reduced,
+consecutive words do not combine across boundaries, and when the flattened word has at least two
+letters, the last letter of the last word and the first letter of the first word do not combine. -/
+theorem isCyclicallyReduced_flatten_iff {blocks : List (List (G ⊕ X × Bool))}
+    (hne : ∀ l ∈ blocks, l ≠ []) :
+    IsCyclicallyReduced blocks.flatten ↔
+      (∀ l ∈ blocks, IsReduced l) ∧
+      (blocks.IsChain fun l₁ l₂ => ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬Combines a b) ∧
+      (2 ≤ blocks.flatten.length →
+        ∀ l₁ ∈ blocks.getLast?, ∀ l₂ ∈ blocks.head?,
+          ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬Combines a b) := by
+  rw [isCyclicallyReduced_iff_head?_getLast?, isReduced_flatten_iff hne,
+    List.head?_flatten_of_ne_nil hne, List.getLast?_flatten_of_ne_nil hne, and_assoc]
+  refine and_congr_right fun _ => and_congr_right fun _ => ?_
+  simp only [Option.mem_bind_iff]
+  exact ⟨fun h hlen l₁ hl₁ l₂ hl₂ a ha b hb => h hlen a ⟨l₁, hl₁, ha⟩ b ⟨l₂, hl₂, hb⟩,
+    fun h hlen a ⟨l₁, hl₁, ha⟩ b ⟨l₂, hl₂, hb⟩ => h hlen l₁ hl₁ l₂ hl₂ a ha b hb⟩
+
+/-- Appending a reduced letter `a` to a flatten of nonempty reduced words whose boundaries do not
+combine, and such that `a` combines with neither the last letter of the last block nor the first
+letter of the first block, yields a cyclically reduced word. -/
+theorem isCyclicallyReduced_flatten_append_singleton {blocks : List (List (G ⊕ X × Bool))}
+    {a : G ⊕ X × Bool} (hne : ∀ l ∈ blocks, l ≠ []) (hred : ∀ l ∈ blocks, IsReduced l)
+    (hchain : blocks.IsChain fun l₁ l₂ => ∀ x ∈ l₁.getLast?, ∀ y ∈ l₂.head?, ¬Combines x y)
+    (hhead : ∀ l ∈ blocks.head?, ∀ b ∈ l.head?, ¬Combines a b)
+    (hlast : ∀ l ∈ blocks.getLast?, ∀ c ∈ l.getLast?, ¬Combines c a) (ha : IsReduced [a]) :
+    IsCyclicallyReduced (blocks.flatten ++ [a]) := by
+  have hfl : blocks.flatten ++ [a] = (blocks ++ [[a]]).flatten := by simp
+  rw [hfl]
+  refine (isCyclicallyReduced_flatten_iff ?_).2 ⟨?_, ?_, ?_⟩
+  · intro l hl
+    rcases List.mem_append.1 hl with hl | hl
+    · exact hne l hl
+    · obtain rfl : l = [a] := by simpa using hl
+      simp
+  · intro l hl
+    rcases List.mem_append.1 hl with hl | hl
+    · exact hred l hl
+    · obtain rfl : l = [a] := by simpa using hl
+      exact ha
+  · rw [List.isChain_append]
+    refine ⟨hchain, List.isChain_singleton _, fun l₁ hl₁ l₂ hl₂ c hc b hb => ?_⟩
+    obtain rfl : [a] = l₂ := by simpa using hl₂
+    obtain rfl : a = b := by simpa using hb
+    exact hlast l₁ hl₁ c hc
+  · intro hlen l₁ hl₁ l₂ hl₂ c hc b hb
+    rcases blocks with _ | ⟨l₀, rest⟩
+    · simp at hlen
+    obtain rfl : [a] = l₁ := by
+      rw [List.getLast?_append_of_ne_nil _ (by simp)] at hl₁
+      simpa using hl₁
+    obtain rfl : l₀ = l₂ := by simpa using hl₂
+    obtain rfl : a = c := by simpa using hc
+    exact hhead l₀ rfl b hb
+
 end Cyclic
 
 @[simp]
@@ -865,7 +1018,303 @@ theorem IsReduced.exists_isCyclicallyReduced {l : List (G ⊕ X × Bool)} (hl : 
       · subst hx; simp
       · simp [hx]
 
+/-- A cyclically reduced word whose product in `G[X]` is conjugate to a coefficient has no
+variable letters. -/
+theorem IsCyclicallyReduced.countVar_eq_zero_of_eq_conj_inl {l : List (G ⊕ X × Bool)}
+    (hl : IsCyclicallyReduced l) {v : GX G X} {c : G}
+    (hv : (l.map letter).prod = v * inl c * v⁻¹) (x : X) : countVar x l = 0 := by
+  suffices ∀ (p : List (G ⊕ X × Bool)) (c : G), IsReduced p →
+      (l.map letter).prod = (p.map letter).prod * inl c * ((p.map letter).prod)⁻¹ →
+      countVar x l = 0 from
+    this (reducedWord v) c (isReduced_reducedWord v) (by simpa using hv)
+  intro p
+  induction p using List.reverseRecOn with
+  | nil =>
+    intro c _ hprod
+    have hl' : l = reducedWord (inl c) :=
+      ((reducedWord_eq_iff hl.isReduced).2 (by simpa using hprod)).symm
+    by_cases hc : c = 1 <;> simp [hl', hc]
+  | append_singleton q d ih =>
+    intro c hp hprod
+    by_cases hc : c = 1
+    · have hl' : l = reducedWord 1 :=
+        ((reducedWord_eq_iff hl.isReduced).2 (by simpa [hc] using hprod)).symm
+      simp [hl']
+    rcases d with g | ⟨y, b⟩
+    · exact ih (g * c * g⁻¹) (isReduced_append.1 hp).1 (by simpa [mul_assoc] using hprod)
+    · -- A nonempty reduced word `p'` ending in a variable letter yields a reduced word
+      -- `p' ++ [.inl c] ++ invRev p'`, which must equal `l` by normal form, contradicting
+      -- cyclic reducedness of `l` since its first and last letters are formal inverses.
+      exfalso
+      have hm_red :
+          IsReduced ((q ++ [.inr (y, b)]) ++ [.inl c] ++ invRev (q ++ [.inr (y, b)])) := by
+        rw [isReduced_append, isReduced_append]
+        refine ⟨⟨hp, isReduced_singleton_inl.2 hc, by simp⟩, isReduced_invRev.2 hp, ?_⟩
+        simp [invRev_append]
+      have hm_eq : l = (q ++ [.inr (y, b)]) ++ [.inl c] ++ invRev (q ++ [.inr (y, b)]) := by
+        rw [← hl.isReduced.reducedWord_prod, ← hm_red.reducedWord_prod]
+        congr 1
+        simpa only [List.map_append, List.prod_append, List.map_singleton, List.prod_singleton,
+          letter_inl, prod_map_letter_invRev] using hprod
+      set p' := q ++ [.inr (y, b)]
+      have hp'_ne : p' ≠ [] := by simp [p']
+      let a := p'.head hp'_ne
+      have ha_head : l.head? = some a := by
+        rw [hm_eq, List.append_assoc, List.head?_append_of_ne_nil _ hp'_ne,
+          List.head?_eq_some_head hp'_ne]
+      have ha_last : l.getLast? = some (Sum.map (·⁻¹) (fun s => (s.1, !s.2)) a) := by
+        rw [hm_eq, List.getLast?_append_of_ne_nil _ (by simp [p']), getLast?_invRev,
+          List.head?_eq_some_head hp'_ne, Option.map_some]
+      have hnc := (isCyclicallyReduced_iff_head?_getLast?.1 hl).2
+        (by rw [hm_eq]; simp [p']; omega) _ (Option.mem_def.2 ha_last) _
+        (Option.mem_def.2 ha_head)
+      rcases a with _ | ⟨_, _⟩ <;> simp at hnc
+
 end CyclicReduction
+
+/-! ### Occurrences of a variable -/
+
+section Occurrences
+
+open scoped commutatorElement
+
+variable [Group G]
+
+/-- The number of occurrences of the variable `x` in `w ∈ G[X]`: the number of letters `x^{±1}` in
+the reduced word of `w`. By `GX.countVar_reducedWord_le` it is the least number of letters `x^{±1}`
+in an expression of `w` as a product of coefficients and letters `y^{±1}`. -/
+noncomputable def occurrences (x : X) (w : GX G X) : ℕ :=
+  countVar x (reducedWord w)
+
+theorem occurrences_eq_countVar_reducedWord (x : X) (w : GX G X) :
+    occurrences x w = countVar x (reducedWord w) :=
+  (rfl)
+
+/-- The number of occurrences of `x` in the product of a reduced word is its number of letters
+`x^{±1}`. -/
+theorem IsReduced.occurrences_prod {l : List (G ⊕ X × Bool)} (hl : IsReduced l) (x : X) :
+    occurrences x (l.map letter).prod = countVar x l := by
+  rw [occurrences_eq_countVar_reducedWord, hl.reducedWord_prod]
+
+/-- `occurrences x` is the largest subadditive function on `G[X]` vanishing on coefficients and
+on the letters `y^{±1}` with `y ≠ x`, and bounded by `1` on the letters `x^{±1}`. -/
+theorem le_occurrences (x : X) (f : GX G X → ℕ) (hmul : ∀ u v, f (u * v) ≤ f u + f v)
+    (hcoeff : ∀ g, f (inl g) = 0) (hx : f (inr (FreeGroup.of x)) ≤ 1)
+    (hx' : f (inr (FreeGroup.of x))⁻¹ ≤ 1)
+    (hy : ∀ y, y ≠ x → f (inr (FreeGroup.of y)) = 0 ∧ f (inr (FreeGroup.of y))⁻¹ = 0)
+    (w : GX G X) :
+    f w ≤ occurrences x w := by
+  rw [occurrences_eq_countVar_reducedWord]
+  nth_rw 1 [← prod_reducedWord w]
+  generalize reducedWord w = l
+  induction l with
+  | nil => simpa using (hcoeff 1).le
+  | cons a l ih =>
+    rw [List.map_cons, List.prod_cons]
+    refine (hmul _ _).trans ?_
+    rcases a with g | ⟨y, b⟩
+    · simpa [hcoeff] using ih
+    · by_cases h : y = x
+      · subst h
+        rw [countVar_cons_inr_self, add_comm (countVar y l)]
+        refine add_le_add ?_ ih
+        cases b <;> simpa
+      · rw [countVar_cons_inr_of_ne h]
+        cases b <;> simpa [hy y h] using ih
+
+/-- Variables cancel in pairs: `x` occurs in `u` and `v` together as often as in `u * v` plus an
+even number. -/
+theorem exists_occurrences_add_occurrences_eq_add_two_mul (x : X) (u v : GX G X) :
+    ∃ k, occurrences x u + occurrences x v = occurrences x (u * v) + 2 * k := by
+  simpa [occurrences_eq_countVar_reducedWord] using
+    exists_countVar_eq_add_two_mul x (reducedWord u ++ reducedWord v)
+
+theorem occurrences_mul_le (x : X) (u v : GX G X) :
+    occurrences x (u * v) ≤ occurrences x u + occurrences x v := by
+  obtain ⟨k, hk⟩ := exists_occurrences_add_occurrences_eq_add_two_mul x u v
+  omega
+
+@[simp]
+theorem occurrences_inl (x : X) (g : G) : occurrences x (inl g : GX G X) = 0 := by
+  by_cases hg : g = 1 <;> simp [occurrences_eq_countVar_reducedWord, hg]
+
+@[simp]
+theorem occurrences_one (x : X) : occurrences x (1 : GX G X) = 0 := by
+  simpa using occurrences_inl (G := G) x 1
+
+@[simp]
+theorem occurrences_inv (x : X) (w : GX G X) : occurrences x w⁻¹ = occurrences x w := by
+  simp [occurrences_eq_countVar_reducedWord]
+
+theorem occurrences_pow_le (x : X) (w : GX G X) (n : ℕ) :
+    occurrences x (w ^ n) ≤ n * occurrences x w := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, add_one_mul]
+    exact (occurrences_mul_le x _ _).trans (by omega)
+
+theorem occurrences_list_prod_le (x : X) (l : List (GX G X)) :
+    occurrences x l.prod ≤ (l.map (occurrences x)).sum := by
+  induction l with
+  | nil => simp
+  | cons w l ih =>
+    rw [List.prod_cons, List.map_cons, List.sum_cons]
+    exact (occurrences_mul_le x _ _).trans (by omega)
+
+theorem occurrences_commutatorElement_le (x : X) (u v : GX G X) :
+    occurrences x ⁅u, v⁆ ≤ 2 * (occurrences x u + occurrences x v) := by
+  rw [commutatorElement_def]
+  have h₁ := occurrences_mul_le x (u * v * u⁻¹) v⁻¹
+  have h₂ := occurrences_mul_le x (u * v) u⁻¹
+  have h₃ := occurrences_mul_le x u v
+  simp only [occurrences_inv] at h₁ h₂
+  omega
+
+theorem occurrences_conj_le (x : X) (u w : GX G X) :
+    occurrences x (u⁻¹ * w * u) ≤ 2 * occurrences x u + occurrences x w := by
+  have h₁ := occurrences_mul_le x (u⁻¹ * w) u
+  have h₂ := occurrences_mul_le x u⁻¹ w
+  simp only [occurrences_inv] at h₂
+  omega
+
+/-- The number of letters `x^{±1}` in the reduced word of the image of `w` in `F(X)`, where the
+coefficients are deleted, is a lower bound for the number of occurrences of `x` in `w`. -/
+theorem countP_toWord_snd_le_occurrences [DecidableEq X] (x : X) (w : GX G X) :
+    ((snd w).toWord.countP fun p => p.1 = x) ≤ occurrences x w := by
+  refine le_occurrences x (fun u => (snd u).toWord.countP fun p => p.1 = x) (fun u v => ?_)
+    (fun _ => by simp) (by simp [FreeGroup.toWord_of]) ?_ (fun y hy => ⟨?_, ?_⟩) w
+  · rw [map_mul, ← List.countP_append]
+    exact (FreeGroup.toWord_mul_sublist _ _).countP_le
+  · simp [FreeGroup.toWord_inv, FreeGroup.toWord_of, FreeGroup.invRev]
+  · simp [FreeGroup.toWord_of, hy]
+  · simp [FreeGroup.toWord_inv, FreeGroup.toWord_of, FreeGroup.invRev, hy]
+
+@[simp]
+theorem occurrences_inr_of_self (x : X) : occurrences x (inr (FreeGroup.of x) : GX G X) = 1 := by
+  simp [occurrences_eq_countVar_reducedWord]
+
+@[simp]
+theorem occurrences_inr_of_of_ne {x y : X} (h : y ≠ x) :
+    occurrences x (inr (FreeGroup.of y) : GX G X) = 0 := by
+  simp [occurrences_eq_countVar_reducedWord, h]
+
+theorem occurrences_inr_of [DecidableEq X] (x y : X) :
+    occurrences x (inr (FreeGroup.of y) : GX G X) = if y = x then 1 else 0 := by
+  split_ifs with h
+  · subst h; exact occurrences_inr_of_self y
+  · exact occurrences_inr_of_of_ne h
+
+/-- The number of occurrences of `x` in an element `f` of `F(X)` is the number of letters `x^{±1}`
+in the reduced word of `f`. -/
+theorem occurrences_inr [DecidableEq X] (x : X) (f : FreeGroup X) :
+    occurrences x (inr f : GX G X) = f.toWord.countP fun p => p.1 = x := by
+  rw [occurrences_eq_countVar_reducedWord, reducedWord_inr, countVar_map_inr]
+
+/-- A homomorphism `φ : G[X] → H[Y]` does not increase occurrence counts from `x` to `y` when
+`y` does not occur in the images of the coefficients and of the variables other than `x`, and
+occurs at most once in the image of `x`. -/
+theorem occurrences_map_le {H Y F : Type*} [Group H] [FunLike F (GX G X) (GX H Y)]
+    [MonoidHomClass F (GX G X) (GX H Y)] (φ : F) (x : X) (y : Y)
+    (hcoeff : ∀ g, occurrences y (φ (inl g)) = 0)
+    (hx : occurrences y (φ (inr (FreeGroup.of x))) ≤ 1)
+    (hne : ∀ z, z ≠ x → occurrences y (φ (inr (FreeGroup.of z))) = 0) (w : GX G X) :
+    occurrences y (φ w) ≤ occurrences x w :=
+  le_occurrences x (fun u => occurrences y (φ u))
+    (fun u v => by simpa using occurrences_mul_le y (φ u) (φ v)) hcoeff hx (by simpa using hx)
+    (fun z hz => ⟨hne z hz, by simpa using hne z hz⟩) w
+
+/-- A variable `y` occurs in no image under a homomorphism `φ : G[X] → H[Y]` when it occurs
+neither in the images of the coefficients nor in the images of the variables. -/
+theorem occurrences_map_eq_zero {H Y F : Type*} [Group H] [FunLike F (GX G X) (GX H Y)]
+    [MonoidHomClass F (GX G X) (GX H Y)] (φ : F) (y : Y)
+    (hcoeff : ∀ g, occurrences y (φ (inl g)) = 0)
+    (hvar : ∀ x, occurrences y (φ (inr (FreeGroup.of x))) = 0) (w : GX G X) :
+    occurrences y (φ w) = 0 := by
+  have hmul : ∀ u v, occurrences y (φ u) = 0 → occurrences y (φ v) = 0 →
+      occurrences y (φ (u * v)) = 0 := fun u v hu hv =>
+    Nat.eq_zero_of_le_zero <| by simpa [hu, hv] using occurrences_mul_le y (φ u) (φ v)
+  induction w using Monoid.Coprod.induction_on with
+  | inl g => exact hcoeff g
+  | inr f =>
+    induction f using FreeGroup.induction_on with
+    | one => simp
+    | of x => exact hvar x
+    | inv_of x ih => simpa using ih
+    | mul f₁ f₂ h₁ h₂ => simpa using hmul _ _ h₁ h₂
+  | mul u v hu hv => exact hmul u v hu hv
+
+open Classical in
+/-- The finite set of variables occurring in `w ∈ G[X]`. -/
+noncomputable def occVars (w : GX G X) : Finset X :=
+  ((reducedWord w).filterMap fun | .inl _ => none | .inr p => some p.1).toFinset
+
+@[simp] theorem mem_occVars_iff {x : X} {w : GX G X} :
+    x ∈ occVars w ↔ occurrences x w ≠ 0 := by
+  classical
+  rw [occVars, List.mem_toFinset, List.mem_filterMap, occurrences_eq_countVar_reducedWord,
+    ne_eq, countVar_eq_zero, not_forall]
+  refine ⟨?_, fun ⟨b, hb⟩ => ⟨.inr (x, b), not_not.1 hb, rfl⟩⟩
+  rintro ⟨_ | ⟨y, b⟩, hm, hy⟩
+  · simp at hy
+  · exact ⟨b, not_not.2 ((Option.some.inj hy) ▸ hm)⟩
+
+@[simp] theorem coe_occVars (w : GX G X) : (occVars w : Set X) = {x | occurrences x w ≠ 0} :=
+  Set.ext fun _ => mem_occVars_iff
+
+@[simp] theorem occVars_inl (g : G) : occVars (inl g : GX G X) = ∅ := by ext; simp
+@[simp] theorem occVars_one : occVars (1 : GX G X) = ∅ := by ext; simp
+@[simp] theorem occVars_inv (w : GX G X) : occVars w⁻¹ = occVars w := by ext; simp
+
+@[simp] theorem occVars_inr_of (x : X) : occVars (inr (FreeGroup.of x) : GX G X) = {x} := by
+  ext y; rcases eq_or_ne x y with rfl | h <;> [simp; simp [h, h.symm]]
+
+/-- Every variable occurring in a product `u * v` occurs in `u` or in `v`. -/
+theorem occVars_mul_subset (u v : GX G X) :
+    (occVars (u * v) : Set X) ⊆ (occVars u : Set X) ∪ (occVars v : Set X) := fun x hx => by
+  have hle := occurrences_mul_le x u v
+  simp only [Set.mem_union, Finset.mem_coe, mem_occVars_iff] at hx ⊢
+  omega
+
+/-- No variable occurs in `w` if and only if `w` is a coefficient. -/
+theorem occVars_eq_empty_iff {w : GX G X} :
+    occVars w = ∅ ↔ w ∈ Set.range (inl : G →* GX G X) := by
+  rw [mem_range_inl_iff]
+  simp [Finset.eq_empty_iff_forall_notMem, occurrences_eq_countVar_reducedWord]
+
+/-- Only finitely many variables occur in any word of `G[X]`. -/
+theorem finite_setOf_occurrences_ne_zero (w : GX G X) : {x | occurrences x w ≠ 0}.Finite :=
+  coe_occVars w ▸ (occVars w).finite_toSet
+
+/-- The variable `x` does not occur in a word after the substitution `x ↦ 1`. -/
+@[simp]
+theorem occurrences_eval_update_one [DecidableEq X] (x : X) (w : GX G X) :
+    occurrences x (eval inl (Function.update (fun y => inr (FreeGroup.of y)) x 1) w) = 0 := by
+  refine occurrences_map_eq_zero _ x (by simp) (fun y => ?_) w
+  by_cases h : y = x
+  · subst h; simp
+  · simp [h]
+
+/-- The words of `GX.avoiding x` are the words in which `x` does not occur. -/
+theorem mem_avoiding_iff_occurrences_eq_zero [DecidableEq X] {x : X} {a : GX G X} :
+    a ∈ avoiding x ↔ occurrences x a = 0 := by
+  classical
+  refine ⟨fun ha => ?_, fun ha => ?_⟩
+  · rw [← mem_avoiding.1 ha, occurrences_eval_update_one]
+  · have h := le_occurrences x
+      (fun u => if u ∈ avoiding x then 0 else 1)
+      (fun u v => by
+        by_cases hu : u ∈ avoiding x
+        · by_cases hv : v ∈ avoiding x
+          · simp [hu, hv, mul_mem hu hv]
+          · simp only [hv, ite_false]; split_ifs <;> omega
+        · simp only [hu, ite_false]; split_ifs <;> omega)
+      (by simp) (by split_ifs <;> simp) (by split_ifs <;> simp)
+      (fun y hy => by simp [hy]) a
+    by_contra ha'
+    simp [ha, ha'] at h
+
+end Occurrences
 
 /-! ### Examples -/
 

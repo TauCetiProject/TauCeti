@@ -1,0 +1,181 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Dynamics.Ergodic.MeasureEntropy.FinitePartition
+public import TauCeti.Dynamics.Ergodic.MeasureEntropy.Iterate
+public import TauCeti.InformationTheory.PartitionEntropy.Mismatch
+import Mathlib.MeasureTheory.Function.FactorsThrough
+import Mathlib.MeasureTheory.Measure.Real
+import TauCeti.MeasureTheory.Measure.MonotoneApproximation
+
+/-!
+# The Kolmogorov–Sinai theorem for one-sided generators
+
+A measurable countable label `ξ` of finite entropy is a one-sided generator of a measure-preserving
+map `T` when the σ-algebras of the labels `ξ ∘ T^[k]`, `k : ℕ`, generate the σ-algebra of `X`
+modulo `μ`-null sets. The Kolmogorov–Sinai theorem says that the entropy rate of such a generator
+is the Kolmogorov–Sinai entropy: `h_μ(T) = h_μ(T, ξ)`.
+
+The proof approximates every finite label `η` by labels `b` that factor through a finite
+itinerary of `ξ` (`TauCeti.exists_measure_ne_le_of_monotone`, applied to the increasing
+σ-algebras of the itineraries): the probability that `η` and `b` disagree can be made arbitrarily
+small, and then so can the conditional entropy `H(η | b)`
+(`TauCeti.tendsto_countablePartitionEntropy_mismatchLabel`). The bound
+`h(T, η) ≤ h(T, b) + H(η | b)` of `TauCeti.partitionEntropyRate_le_add_conditionalPartitionEntropy`,
+the bound `h(T, join_N ξ) ≤ h(T, ξ)` of `TauCeti.partitionEntropyRate_iteratedPartitionLabel_le`,
+and the finite-partition formula `TauCeti.measureEntropy_eq_iSup_fin` then give the theorem.
+
+The approximation and the rate bound hold for any increasing sequence of labels whose σ-algebras
+generate (`TauCeti.exists_measure_ne_comp_le_of_monotone`,
+`TauCeti.partitionEntropyRate_le_of_monotone_comap`); the two-sided theorem in
+`TauCeti/Dynamics/Ergodic/MeasureEntropy/TwoSidedGenerator.lean` applies them to windows.
+
+## Main results
+
+* `TauCeti.exists_measure_ne_comp_le_of_monotone`,
+  `TauCeti.partitionEntropyRate_le_of_monotone_comap`: approximation and the rate bound
+  `h(T, η) ≤ c` for increasing generating labels of rate at most `c`.
+* `TauCeti.exists_measure_ne_comp_iteratedPartitionLabel_le`: for a one-sided generator `ξ`, every
+  measurable finite label agrees, outside a set of small measure, with a label factoring through an
+  itinerary of `ξ`.
+* `TauCeti.partitionEntropyRate_le_of_generator`: `h(T, η) ≤ h(T, ξ)` for every measurable finite
+  label `η` and one-sided generator `ξ`.
+* `TauCeti.measureEntropy_eq_partitionEntropyRate_of_generator`: the Kolmogorov–Sinai theorem
+  for one-sided generators.
+
+## References
+
+* O. Sarig, *Lecture Notes on Ergodic Theory*, 2023, Definition 4.4 and Theorem 4.4, p. 111
+  (a one-sided generator there is a strong generator). Entropies there are in base 2; here they
+  use natural logarithms.
+-/
+
+public section
+
+open MeasureTheory Filter Topology
+open scoped ENNReal
+
+namespace TauCeti
+
+variable {X ι κ : Type*} {mX : MeasurableSpace X} {μ : Measure X} {T : X → X}
+
+/-- **Approximation through an increasing sequence of labels.** Let `ζ N` be measurable labels
+whose σ-algebras increase and generate the σ-algebra of `X` modulo `μ`-null sets. Every measurable
+label `η` into a finite type is approximated by labels factoring through some `ζ N`: for `ε > 0`
+there are `N` and `g` with `μ {η ≠ g ∘ ζ N} ≤ card κ * ε`. -/
+theorem exists_measure_ne_comp_le_of_monotone [IsFiniteMeasure μ] {α : ℕ → Type*}
+    [∀ N, MeasurableSpace (α N)] {ζ : ∀ N, X → α N} (hζ : ∀ N, Measurable (ζ N))
+    (hmono : Monotone fun N ↦ MeasurableSpace.comap (ζ N) inferInstance)
+    (hgen : ∀ s : Set X, MeasurableSet s → ∃ t : Set X,
+      MeasurableSet[⨆ N, MeasurableSpace.comap (ζ N) inferInstance] t ∧ s =ᵐ[μ] t)
+    [Fintype κ] [Nonempty κ] [MeasurableSpace κ] [MeasurableSingletonClass κ] {η : X → κ}
+    (hη : Measurable η) {ε : ℝ≥0∞} (hε : 0 < ε) :
+    ∃ (N : ℕ) (g : α N → κ), μ {x | η x ≠ g (ζ N x)} ≤ Fintype.card κ * ε := by
+  obtain ⟨N, b, hb, hlt⟩ :=
+    exists_measure_ne_le_of_monotone hmono (fun N ↦ (hζ N).comap_le) hgen hη hε
+  -- Each fiber of `b` is measurable for the σ-algebra of `ζ N`, so `b` factors through `ζ N`.
+  have hbm : Measurable[MeasurableSpace.comap (ζ N) inferInstance] b := by
+    let := MeasurableSpace.comap (ζ N) inferInstance
+    exact measurable_to_countable' hb
+  refine ⟨N, Function.extend (ζ N) b fun _ ↦ Classical.arbitrary κ, ?_⟩
+  simpa only [hbm.factorsThrough.extend_apply] using hlt
+
+/-- **Approximation through itineraries.** Let `ξ` be a measurable label whose shifted
+labels `ξ ∘ T^[k]` generate the σ-algebra of `X` modulo `μ`-null sets. Every measurable label `η`
+into a finite type is approximated by labels factoring through an itinerary of `ξ`: for `ε > 0`
+there are `N` and `g` with `μ {η ≠ g ∘ join_N ξ} ≤ card κ * ε`. -/
+theorem exists_measure_ne_comp_iteratedPartitionLabel_le [IsFiniteMeasure μ] (hT : Measurable T)
+    [MeasurableSpace ι] {ξ : X → ι} (hξ : Measurable ξ)
+    (hgen : ∀ s : Set X, MeasurableSet s → ∃ t : Set X,
+      MeasurableSet[⨆ k : ℕ, MeasurableSpace.comap (fun x ↦ ξ (T^[k] x)) ‹_›] t ∧ s =ᵐ[μ] t)
+    [Fintype κ] [Nonempty κ] [MeasurableSpace κ] [MeasurableSingletonClass κ] {η : X → κ}
+    (hη : Measurable η) {ε : ℝ≥0∞} (hε : 0 < ε) :
+    ∃ (N : ℕ) (g : (Fin N → ι) → κ),
+      μ {x | η x ≠ g (iteratedPartitionLabel T ξ N x)} ≤ Fintype.card κ * ε :=
+  exists_measure_ne_comp_le_of_monotone (measurable_iteratedPartitionLabel hT hξ)
+    (monotone_comap_iteratedPartitionLabel T ξ)
+    (fun s hs ↦ (hgen s hs).imp fun _ ht ↦
+      ⟨iSup_comap_iterate_le_iSup_comap_iteratedPartitionLabel T ξ _ ht.1, ht.2⟩) hη hε
+
+/-- **Entropy rates under generating labels.** Let `ζ N` be measurable countable labels whose
+σ-algebras increase and generate the σ-algebra of `X` modulo `μ`-null sets, with entropy rates
+`h(T, ζ N) ≤ c`. Then every measurable finite label `η` has `h(T, η) ≤ c`. -/
+theorem partitionEntropyRate_le_of_monotone_comap [IsProbabilityMeasure μ]
+    (hT : MeasurePreserving T μ μ) {α : ℕ → Type*} [∀ N, MeasurableSpace (α N)]
+    [∀ N, Countable (α N)] [∀ N, MeasurableSingletonClass (α N)] {ζ : ∀ N, X → α N}
+    (hζ : ∀ N, Measurable (ζ N))
+    (hmono : Monotone fun N ↦ MeasurableSpace.comap (ζ N) inferInstance)
+    (hgen : ∀ s : Set X, MeasurableSet s → ∃ t : Set X,
+      MeasurableSet[⨆ N, MeasurableSpace.comap (ζ N) inferInstance] t ∧ s =ᵐ[μ] t)
+    {c : ℝ≥0∞} (hc : ∀ N, partitionEntropyRate μ T (ζ N) ≤ c)
+    [Finite κ] [MeasurableSpace κ] [MeasurableSingletonClass κ] {η : X → κ}
+    (hη : Measurable η) :
+    partitionEntropyRate μ T η ≤ c := by
+  classical
+  have := Fintype.ofFinite κ
+  obtain ⟨x₀⟩ := nonempty_of_isProbabilityMeasure μ
+  have : Nonempty κ := ⟨η x₀⟩
+  have hε (k : ℕ) : (0 : ℝ≥0∞) < ((k + 1 : ℕ) : ℝ≥0∞)⁻¹ :=
+    ENNReal.inv_pos.2 (ENNReal.natCast_ne_top _)
+  choose N g hg using fun k : ℕ ↦ exists_measure_ne_comp_le_of_monotone hζ hmono hgen hη (hε k)
+  set b : ℕ → X → κ := fun k ↦ g k ∘ ζ (N k)
+  have hb (k : ℕ) : Measurable (b k) := (measurable_of_countable _).comp (hζ (N k))
+  -- The mismatch measures tend to zero in `ℝ≥0∞`; transfer this to `μ.real` once.
+  have hsmall : Tendsto (fun k ↦ μ.real {x | η x ≠ b k x}) atTop (𝓝 0) := by
+    have hbound : Tendsto (fun k : ℕ ↦ (Fintype.card κ : ℝ≥0∞) * ((k + 1 : ℕ) : ℝ≥0∞)⁻¹)
+        atTop (𝓝 0) := by
+      simpa only [mul_zero, Function.comp_def] using ENNReal.Tendsto.const_mul
+        (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1))
+        (Or.inr (ENNReal.natCast_ne_top _))
+    have h : Tendsto (fun k ↦ μ {x | η x ≠ b k x}) atTop (𝓝 0) :=
+      tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hbound (fun _ ↦ zero_le) hg
+    simpa only [measureReal_def, ENNReal.toReal_zero, Function.comp_def] using
+      (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp h
+  have hkey (k : ℕ) : partitionEntropyRate μ T η ≤
+      c + countablePartitionEntropy μ (mismatchLabel η (b k)) :=
+    calc partitionEntropyRate μ T η
+        ≤ partitionEntropyRate μ T (ζ (N k)) + conditionalPartitionEntropy μ η (ζ (N k)) :=
+          partitionEntropyRate_le_add_conditionalPartitionEntropy hT hη (hζ _)
+      _ ≤ c + conditionalPartitionEntropy μ η (b k) :=
+          add_le_add (hc _) (conditionalPartitionEntropy_le_comp _ (hζ _) _)
+      _ ≤ _ := add_le_add le_rfl
+          (conditionalPartitionEntropy_le_countablePartitionEntropy_mismatchLabel hη (hb k))
+  have hlim := (tendsto_const_nhds (x := c)).add
+    (tendsto_countablePartitionEntropy_mismatchLabel hη hb hsmall)
+  rw [add_zero] at hlim
+  exact ge_of_tendsto' hlim hkey
+
+/-- The entropy rate of a measurable finite label is at most that of a one-sided generator. -/
+theorem partitionEntropyRate_le_of_generator [IsProbabilityMeasure μ]
+    (hT : MeasurePreserving T μ μ) [Countable ι] [MeasurableSpace ι] [MeasurableSingletonClass ι]
+    {ξ : X → ι} (hξ : Measurable ξ)
+    (hgen : ∀ s : Set X, MeasurableSet s → ∃ t : Set X,
+      MeasurableSet[⨆ k : ℕ, MeasurableSpace.comap (fun x ↦ ξ (T^[k] x)) ‹_›] t ∧ s =ᵐ[μ] t)
+    [Finite κ] [MeasurableSpace κ] [MeasurableSingletonClass κ] {η : X → κ}
+    (hη : Measurable η) :
+    partitionEntropyRate μ T η ≤ partitionEntropyRate μ T ξ :=
+  partitionEntropyRate_le_of_monotone_comap hT (measurable_iteratedPartitionLabel hT.measurable hξ)
+    (monotone_comap_iteratedPartitionLabel T ξ)
+    (fun s hs ↦ (hgen s hs).imp fun _ ht ↦
+      ⟨iSup_comap_iterate_le_iSup_comap_iteratedPartitionLabel T ξ _ ht.1, ht.2⟩)
+    (partitionEntropyRate_iteratedPartitionLabel_le hT hξ) hη
+
+/-- **The Kolmogorov–Sinai theorem.** Let `T` preserve a probability measure `μ`, and let `ξ` be a
+measurable countable label of finite entropy that is a one-sided generator: the σ-algebras of the
+labels `ξ ∘ T^[k]`, `k : ℕ`, generate the σ-algebra of `X` modulo `μ`-null sets. Then the
+Kolmogorov–Sinai entropy is the entropy rate of `ξ` (Sarig 2023, Theorem 4.4). -/
+theorem measureEntropy_eq_partitionEntropyRate_of_generator [IsProbabilityMeasure μ]
+    (hT : MeasurePreserving T μ μ) [Countable ι] [MeasurableSpace ι] [MeasurableSingletonClass ι]
+    {ξ : X → ι} (hξ : Measurable ξ) (hH : countablePartitionEntropy μ ξ ≠ ∞)
+    (hgen : ∀ s : Set X, MeasurableSet s → ∃ t : Set X,
+      MeasurableSet[⨆ k : ℕ, MeasurableSpace.comap (fun x ↦ ξ (T^[k] x)) ‹_›] t ∧ s =ᵐ[μ] t) :
+    measureEntropy μ T = partitionEntropyRate μ T ξ := by
+  refine le_antisymm ?_ (partitionEntropyRate_le_measureEntropy_of_countable T hξ hH)
+  rw [measureEntropy_eq_iSup_fin hT]
+  exact iSup₂_le fun n η ↦ iSup_le fun hη ↦ partitionEntropyRate_le_of_generator hT hξ hgen hη
+
+end TauCeti

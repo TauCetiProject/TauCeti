@@ -12,19 +12,36 @@ import Mathlib.Analysis.SpecialFunctions.Log.Basic
 /-!
 # Archimedean different bounds in the quadratic cyclotomic tower
 
-At the scale `2^s ≍ x^11`, the factor `3 l₀(s)` in the tower degree costs only `O(log x)`.
-The cyclotomic derivative and the quadratic different factor therefore have product of
-size between `x^10` and `x^12` at every complex embedding, uniformly in the tower level.
+After dividing the size of the cyclotomic different generator by `towerDeg s * √d`,
+the remaining logarithmic error depends only on derivatives at level `q₀`, independently of
+`s` and the infinite place. This is the factorization used in
+`New.Parameters.exists_abs_log_le_and_apply_deltaE_eq` of lsernau/grh-lean (`72fead1`).
 
-The interval is the one in `New.Data.hasLogBound_deltaE` in
-`grh/src/New/Derivatives/Field/ChosenPlaces.lean` of lsernau/grh-lean (`72fead1`).
+At the scale `2^s ≍ x^11`, the factor `3 l₀(s)` in the tower degree costs only `O(log x)`,
+so the different expression has size between `x^10` and `x^12` at every complex embedding,
+uniformly in the tower level. This is the interval in `New.Data.hasLogBound_deltaE` in
+`grh/src/New/Derivatives/Field/ChosenPlaces.lean` of the same formalization.
 -/
 
 public section
 
-open Filter Polynomial Real Set
+open Filter NumberField NumberField.IsCMField Polynomial Real Set
 
 namespace TauCeti.OneSidedBound.Parameters
+
+/-- For a generator in cyclotomic-derivative form, the placewise logarithmic error after
+removing the scale `towerDeg s * √d` is bounded by the cyclotomic contribution at `q₀`. -/
+theorem exists_pos_apply_different_generator (P : Parameters) (s : ℕ) {E : Type*}
+    [Field E] [CharZero E] [IsCMField E] [Algebra.IsIntegral ℚ E]
+    (v : InfinitePlace E) {ζ u b δ : E}
+    (hζ : IsPrimitiveRoot ζ (P.q₁ s)) (hu : u * complexConj E u = 1) (hb : b ^ 2 = -(P.d : E))
+    (hδ : δ = u * (cyclotomic (P.q₁ s) E).derivative.eval ζ * b) :
+    ∃ A : ℝ, 0 < A ∧ v δ = A * towerDeg s * √(P.d : ℝ) ∧
+      |Real.log A| ≤ ∑ w ∈ primitiveRoots P.q₀ ℂ,
+        |Real.log ‖(cyclotomic P.q₀ ℂ).derivative.eval w‖| := by
+  rw [hδ, P.q₁_def s]
+  exact v.exists_pos_apply_cyclotomic_different_generator P.q₀_ne_zero
+    (P.primeFactors_towerDeg_subset s) (by simpa only [P.q₁_def s] using hζ) hu hb
 
 -- Compare the ternary factor with a logarithm; the dyadic factor fixes the polynomial scale.
 private theorem towerDeg_bounds {x : ℝ} (hx : 2 ≤ x) {s : ℕ}
@@ -40,15 +57,12 @@ private theorem towerDeg_bounds {x : ℝ} (hx : 2 ≤ x) {s : ℕ}
     norm_num at hlo h
     linarith
   have hslog : (s : ℝ) ≤ (33 / log 2) * log x := by
-    have h := log_le_log (pow_pos (by norm_num) s) hhi
-    rw [log_pow, log_mul (by norm_num) (pow_ne_zero _ hx₀.ne'), log_pow, log_pow] at h
-    have h4 : log (4 : ℝ) = 2 * log 2 := by
-      have hpow : (4 : ℝ) = 2 ^ (2 : ℕ) := by norm_num
-      rw [hpow, log_pow, Nat.cast_ofNat]
-    rw [h4] at h
-    have h' : (s : ℝ) ≤ (33 * log x) / log 2 :=
-      (le_div_iff₀ (log_pos (by norm_num : (1 : ℝ) < 2))).mpr (by push_cast at h; linarith)
-    rwa [mul_div_right_comm] at h'
+    have hpow : (4 : ℝ) ^ 11 = 2 ^ 22 := by norm_num
+    have h := le_log_of_pow_le (by norm_num : 0 < (2 : ℝ)) hhi
+    simp only [hpow, log_mul (pow_ne_zero _ two_ne_zero) (pow_ne_zero _ hx₀.ne'),
+      log_pow, Nat.cast_ofNat] at h
+    rw [div_mul_eq_mul_div, le_div_iff₀ (log_pos (by norm_num))]
+    linarith
   have hl₀ : (l₀ s : ℝ) ≤ 81 * (s : ℝ) := by exact_mod_cast l₀_le hs
   have hl₁ : 1 ≤ l₀ s := by rw [l₀_def]; exact Nat.one_le_pow _ _ (by decide)
   have hl₁' : (1 : ℝ) ≤ l₀ s := by exact_mod_cast hl₁
@@ -79,15 +93,10 @@ theorem eventually_norm_cyclotomic_different_factor_mem_Icc (P : Parameters) :
   have hsmall := (isLittleO_log_id_atTop.const_mul_left B).bound one_pos
   filter_upwards [eventually_ge_atTop (2 : ℝ), eventually_ge_atTop A₀⁻¹, hsmall]
     with x hx hlarge hlog s hlo hhi E _ σ u ζ η hu hζ hη
-  have hsupp : (towerDeg s).primeFactors ⊆ P.q₀.primeFactors := by
-    intro p hp
-    obtain ⟨hp', hpd, _⟩ := Nat.mem_primeFactors.mp hp
-    have hdiv : p ∣ P.q₁ s := by rw [q₁_def]; exact hpd.trans (dvd_mul_left _ _)
-    exact hp'.mem_primeFactors (P.dvd_q₀_of_dvd_q₁ hp' hdiv) P.q₀_ne_zero
   have hη' : η ^ 2 = ((-(P.d : ℤ) : ℤ) : E) := by simpa using hη
   have hζ' : IsPrimitiveRoot (σ ζ) (P.q₀ * towerDeg s) := by rwa [q₁_def] at hζ
   obtain ⟨A, hA, heq, hAlog⟩ := σ.exists_pos_norm_apply_cyclotomic_different_eq
-    P.q₀_ne_zero hsupp hu hζ' hη'
+    P.q₀_ne_zero (P.primeFactors_towerDeg_subset s) hu hζ' hη'
   have hAlog' : |log A| ≤ C := hAlog
   obtain ⟨hAlow, hAhigh⟩ := abs_le.mp hAlog'
   obtain ⟨hTlow, hThigh⟩ := towerDeg_bounds hx hlo hhi

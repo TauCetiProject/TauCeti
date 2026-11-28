@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.SmulLeft
 public import TauCeti.Topology.VectorBundle.ZeroSection
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 
 /-!
@@ -71,6 +72,9 @@ covectors read in two charts.
   depend on the frame.
 * `TauCeti.BundleTest.IsMicrolocallyAt`: the functional `T` satisfies `P` at a covector of `M`, and
   `TauCeti.BundleTest.isMicrolocallyAt_iff`, its characterization in every chart and frame.
+* `TauCeti.BundleTest.forall_chartComponent_iff_forall_isMicrolocallyAt`: in a chart and frame,
+  `T` satisfies `P` at every nonzero covector at `x` exactly when all its components satisfy `P` at
+  `c x` in every nonzero direction.
 * `TauCeti.BundleTest.isMicrolocallyAt_smul_iff`, `TauCeti.BundleTest.IsMicrolocallyAt.add`,
   `TauCeti.BundleTest.IsMicrolocallyAt.smul`: it depends only on the ray through the covector and
   is preserved by sums and real multiples.
@@ -93,7 +97,9 @@ covectors read in two charts.
   and that of a smooth multiple `f T` lies in that of `T` over the support of `f`
   (`TauCeti.BundleTest.microlocalSingularSet_smulLeftDualCLM_subset`) and agrees with it where
   `f` does not vanish (`TauCeti.BundleTest.mem_microlocalSingularSet_smulLeftDualCLM_iff`,
-  `TauCeti.BundleTest.microlocalSingularSet_smulLeftDualCLM_of_forall_mem_ne_zero`).
+  `TauCeti.BundleTest.microlocalSingularSet_smulLeftDualCLM_of_forall_mem_ne_zero`). A set of
+  points of `M` at which `T` fails `P` at some nonzero covector is its projection
+  (`TauCeti.BundleTest.proj_image_microlocalSingularSet`).
 
 ## References
 
@@ -286,6 +292,30 @@ theorem isMicrolocallyAt_iff (hP : IsInvariantMicrolocalRegularity P)
   rw [hD, hwx, OpenPartialHomeomorph.coe_trans]
   exact ContinuousLinearMap.comp_apply _ _ _
 
+/-- **Nonzero covectors read in a chart.** Let `P` be an invariant notion of microlocal regularity.
+For a smooth chart `c` at `x` with smooth inverse and a frame `t` over its source, every component
+of the local representative of `T` in `(t, c)` satisfies `P` at `c x` in every nonzero direction of
+`E` exactly when `T` satisfies `P` at every nonzero covector at `x`. Reading covectors at `x` in the
+chart is a bijection onto the covectors of `E`
+(`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective`) that sends only the zero
+covector to zero. -/
+theorem forall_chartComponent_iff_forall_isMicrolocallyAt (hP : IsInvariantMicrolocalRegularity P)
+    (T : BundleTest I F V →L_c[ℝ] ℝ) {t : Trivialization F (π F V)} [MemTrivializationAtlas t]
+    {c : OpenPartialHomeomorph M E} (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source)
+    (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target) (hct : c.source ⊆ t.baseSet)
+    (hx : x ∈ c.source) :
+    (∀ v, ∀ η : E, η ≠ 0 → P _ (t.chartComponent c hc hct T v) (c x) η) ↔
+      ∀ ξ : TangentSpace I x →L[ℝ] ℝ, ξ ≠ 0 → IsMicrolocallyAt P T x ξ := by
+  have hb := OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective
+    ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hx
+  refine ⟨fun h ξ hξ ↦ (isMicrolocallyAt_iff hP T hc hcs hct hx ξ).2 fun v ↦
+    h v _ (mt (c.toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hx).1 hξ), fun h v η hη ↦ ?_⟩
+  -- The vector `η` is the reading in the chart of a nonzero covector `ξ` at `x`.
+  obtain ⟨ξ, hξη⟩ := hb.2 (toDual ℝ E η)
+  rw [← (toDual ℝ E).symm_apply_apply η, ← hξη] at hη ⊢
+  have hξ : ξ ≠ 0 := mt (c.toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hx).2 hη
+  exact (isMicrolocallyAt_iff hP T hc hcs hct hx ξ).1 (h ξ hξ) v
+
 /-- **Monotonicity in the notion.** If `P` implies `Q`, then satisfying `P` at a covector implies
 satisfying `Q` there. -/
 theorem IsMicrolocallyAt.mono (h : IsMicrolocallyAt P T x ξ)
@@ -470,6 +500,21 @@ def microlocalSingularSet (T : BundleTest I F V →L_c[ℝ] ℝ) : Set (Cotangen
 theorem mem_microlocalSingularSet_iff {p : CotangentBundle I M} :
     p ∈ microlocalSingularSet I P T ↔ p.snd ≠ 0 ∧ ¬ IsMicrolocallyAt P T p.proj p.snd :=
   Iff.rfl
+
+/-- **The projection of the singular set.** If a set `S` of points of `M` is the set of points at
+which `T` fails `P` at some nonzero covector, then `S` is the projection of the singular set of `T`
+for `P` to `M`. This is how the singular support and the `H^s` singular support are the
+projections of the wave front set and of the `H^s` wave front set. -/
+theorem proj_image_microlocalSingularSet {S : Set M}
+    (h : ∀ x, x ∉ S ↔ ∀ ξ : TangentSpace I x →L[ℝ] ℝ, ξ ≠ 0 → IsMicrolocallyAt P T x ξ) :
+    TotalSpace.proj '' microlocalSingularSet I P T = S := by
+  ext x
+  rw [← not_iff_not, h]
+  refine ⟨fun h ξ hξ ↦ by_contra fun hT ↦
+    h ⟨⟨x, ξ⟩, mem_microlocalSingularSet_iff.2 ⟨hξ, hT⟩, rfl⟩, ?_⟩
+  rintro h ⟨p, hpT, rfl⟩
+  obtain ⟨hp, hT⟩ := mem_microlocalSingularSet_iff.1 hpT
+  exact hT (h p.snd hp)
 
 /-- For an invariant notion of microlocal regularity, the singular set is conic: it is invariant
 under positive scaling of the covectors. -/

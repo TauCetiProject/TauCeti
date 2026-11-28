@@ -25,6 +25,10 @@ Nondegeneracy is proved by pairing against the indicator function of a conjugacy
 class function off its pairings against the class indicators is what turns the expansion of a class
 function in the basis of irreducible characters into the second orthogonality relation.
 
+Splitting the defining sum over a subgroup `N` and its complement,
+`TauCeti.ClassFunction.characterPairing_eq_add_inv_index_mul` computes the pairing with a class
+function glued from a class function of `N` on `N` and a class function of `G` off `N`.
+
 ## References
 
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 2.
@@ -280,6 +284,32 @@ theorem characterPairing_ofFDRep_eq_zero
   rw [characterPairing_ofFDRep_eq_finrank V W,
     CategoryTheory.finrank_hom_simple_simple_eq_zero_of_not_iso k fun i => h.elim i.symm,
     Nat.cast_zero]
+
+/-- **The pairing with a class function glued from a class function of a subgroup and one of `G`.**
+If `F` agrees with the class function `Y` of the subgroup `N` on `N`, and with `Θ` off `N`, then
+splitting the sum over `G` into `N` and its complement gives
+`⟨c, F⟩_G = ⟨c, Θ⟩_G + n⁻¹ (⟨c|_N, Y⟩_N - ⟨c|_N, Θ|_N⟩_N)` for the index `n` of `N`. This holds
+over any field and for any subgroup. -/
+theorem characterPairing_eq_add_inv_index_mul {N : Subgroup G} [Fintype N]
+    {Y : ClassFunction k N} {Θ F : ClassFunction k G} (hres : ∀ n : N, F.val n = Y.val n)
+    (hoff : Set.EqOn F.val Θ.val (N : Set G)ᶜ) (c : ClassFunction k G) :
+    characterPairing c F = characterPairing c Θ + (N.index : k)⁻¹ *
+      (characterPairing (comap N.subtype c) Y -
+        characterPairing (comap N.subtype c) (comap N.subtype Θ)) := by
+  classical
+  -- split a sum over `G` into the sum over `N` and the sum over the complement of `N`
+  have hsplit (u : G → k) : ∑ g, u g = ∑ n : N, u n + ∑ g with g ∉ N, u g := by
+    rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (· ∈ N) u,
+      Finset.sum_subtype (p := (· ∈ N)) _ (by simp) u]
+  have hon : ∑ n : N, c.val n * F.val (n : G)⁻¹ = ∑ n : N, c.val n * Y.val n⁻¹ :=
+    Finset.sum_congr rfl fun n _ => by rw [← hres n⁻¹, Subgroup.coe_inv]
+  have hoff' : ∑ g with g ∉ N, c.val g * F.val g⁻¹ = ∑ g with g ∉ N, c.val g * Θ.val g⁻¹ :=
+    Finset.sum_congr rfl fun g hg => by
+      rw [hoff (x := g⁻¹) (by simpa using (Finset.mem_filter.mp hg).2)]
+  simp only [characterPairing_apply, comap_apply, Subgroup.subtype_apply, Subgroup.coe_inv]
+  rw [hsplit fun g => c.val g * F.val g⁻¹, hsplit fun g => c.val g * Θ.val g⁻¹, hon, hoff',
+    ← N.index_mul_card, Nat.cast_mul, mul_inv]
+  ring
 
 end ClassFunction
 

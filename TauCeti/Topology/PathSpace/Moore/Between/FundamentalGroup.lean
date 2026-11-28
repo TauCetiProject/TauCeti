@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Topology.PathSpace.Moore.Between.Append
 public import TauCeti.Topology.PathSpace.Moore.Comparison.FundamentalGroup
+public import TauCeti.Topology.PathSpace.Moore.Comparison.Homotopic
+import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 
 /-!
 # Conjugating Moore loops by a Moore path
@@ -15,7 +17,12 @@ For a Moore path `δ` from `a` to `b` and a Moore loop `λ` at `b`, the loop `δ
 is obtained by letting `λ` act on `δ` from the right and then appending the reversal of `δ`:
 it is `(MoorePathBetween.loopAppendHomotopyEquiv δ).symm (op λ • δ)`. This is the conjugation
 by `δ` that carries loops at `b` to loops at `a`, the change of basepoint of the fundamental
-group along `δ`.
+group along `δ`. On classes it is the inverse of Mathlib's change of basepoint
+`FundamentalGroup.fundamentalGroupMulEquivOfPath` along the reparametrization `δ.toPath` of `δ`
+to the unit interval: changing the basepoint of the class of `δ ⋆ λ ⋆ δ⁻¹` along `δ.toPath` gives
+the class of `λ`
+(`fundamentalGroupMulEquivOfPath_fundamentalGroupHom_loopAppendHomotopyEquiv_symm_op_smul` in the
+namespace `TauCeti.MoorePathBetween`).
 
 When `δ` is itself a loop at `a`, read as a Moore path from `a` to itself, its class in the
 fundamental group is that of `(MoorePathBetween.loopHomeomorph a).symm δ`, and the class of
@@ -27,6 +34,9 @@ change the class of a loop.
 
 ## Main results
 
+* `fundamentalGroupMulEquivOfPath_fundamentalGroupHom_loopAppendHomotopyEquiv_symm_op_smul`: for a
+  Moore path `δ` from `a` to `b`, changing the basepoint of the class of `δ ⋆ λ ⋆ δ⁻¹` along
+  `δ.toPath` gives the class of `λ`.
 * `TauCeti.MoorePathBetween.fundamentalGroupHom_loopAppendHomotopyEquiv_symm_op_smul`: the class
   of `δ ⋆ λ ⋆ δ⁻¹` is the conjugate of the class of `λ` by the class of `δ`.
 
@@ -42,7 +52,28 @@ open MulOpposite
 
 namespace TauCeti.MoorePathBetween
 
-variable {X : Type*} [TopologicalSpace X] {a : X}
+variable {X : Type*} [TopologicalSpace X] {a b : X}
+
+/-- **Conjugating by a Moore path is Mathlib's change of basepoint.** For a Moore path `δ` from
+`a` to `b` and a Moore loop `λ` at `b`, changing the basepoint of the class of the loop
+`δ ⋆ λ ⋆ δ⁻¹` at `a` along the reparametrization `δ.toPath` of `δ`, by
+`FundamentalGroup.fundamentalGroupMulEquivOfPath`, gives the class of `λ`. -/
+theorem fundamentalGroupMulEquivOfPath_fundamentalGroupHom_loopAppendHomotopyEquiv_symm_op_smul
+    (δ : MoorePathBetween X a b) (l : MooreLoopSpace X b) :
+    FundamentalGroup.fundamentalGroupMulEquivOfPath δ.toPath
+        (MooreLoopSpace.fundamentalGroupHom a ((loopAppendHomotopyEquiv δ).symm (op l • δ))) =
+      MooreLoopSpace.fundamentalGroupHom b l := by
+  set L := (loopAppendHomotopyEquiv δ).symm (op l • δ)
+  have hL : loopHomeomorph a L = (rightAct δ l).trans δ.symm := ext (by simp [L])
+  -- Reparametrization commutes with concatenation and reversal up to homotopy.
+  have h : L.toPath.Homotopic ((δ.toPath.trans l.toPath).trans δ.toPath.symm) := by
+    rw [← toPath_loopHomeomorph, hL, ← toPath_symm]
+    exact (homotopic_toPath_trans _ _).trans
+      ((homotopic_toPath_rightAct δ l).hcomp (Path.Homotopic.refl _))
+  rw [← MulEquiv.eq_symm_apply, MooreLoopSpace.fundamentalGroupHom_apply,
+    MooreLoopSpace.fundamentalGroupHom_apply, map_inv, inv_inj,
+    FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, Path.Homotopic.Quotient.eq.2 h]
+  simp [Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_symm]
 
 /-- **The class of `δ ⋆ λ ⋆ δ⁻¹` is the conjugate of the class of `λ`** by the class of `δ`, for
 Moore loops `δ` and `λ` at `a`, with `δ` read as a Moore path from `a` to itself. -/

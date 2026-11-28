@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
-public import TauCeti.LinearAlgebra.RootSystem.Isomorphism
+public import TauCeti.LinearAlgebra.RootSystem.Isomorphism.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
 
 /-!
