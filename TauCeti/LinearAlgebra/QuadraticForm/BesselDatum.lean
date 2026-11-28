@@ -557,7 +557,7 @@ theorem formClass_eq_nsmul_hyperbolicClass_add_formClass_restrict_middleSpace :
     ⟨{ toLinearEquiv := LinearEquiv.ofEq _ _ D.middleSpace_eq_orthogonal_polarBilin
        map_app' := fun _ ↦ rfl }⟩
   rw [(formClass_eq_iff _ _ _ (hQ.nondegenerate_restrict_orthogonal hS)).mpr hmid, ← hSclass,
-    formClass_restrict_add_formClass_restrict_orthogonal]
+    QuadraticForm.formClass_restrict_add_formClass_restrict_orthogonal]
 
 /-- The anisotropic vector `w` splits its line off the middle space: `V_ℓ ≅ ⟨Q w⟩ ⊥ (V_ℓ ∩ w^⊥)`,
 where `V_ℓ ∩ w^⊥` is the Bessel space. -/
@@ -566,8 +566,8 @@ theorem formClass_restrict_middleSpace :
       Quotient.mk (regularFormSetoid K) ⟨1, fun _ => Units.mk0 (Q D.w) D.apply_w_ne_zero⟩ +
         formClass (Q.restrict D.besselSpace) (D.nondegenerate_restrict_besselSpace hQ) := by
   let w' : D.middleSpace := ⟨D.w, D.w_mem_middleSpace⟩
-  rw [formClass_eq_mk_rankOne_add _ (D.nondegenerate_restrict_middleSpace hQ) (v := w')
-    D.apply_w_ne_zero]
+  rw [QuadraticForm.formClass_eq_mk_rankOne_add _ (D.nondegenerate_restrict_middleSpace hQ)
+    (v := w') D.apply_w_ne_zero]
   congr 1
   rw [formClass_eq_iff]
   -- The orthogonal complement of `w` inside `V_ℓ`, viewed in `V`, is the Bessel space.
