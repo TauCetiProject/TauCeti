@@ -36,9 +36,6 @@ atom while vanishing on every singleton.
 * `MeasureTheory.Measure.exists_eq_smul_dirac_of_forall_restrict_eq_smul` — a finite measure on a
   standard Borel space that is proportional to each of its restrictions is a multiple of a point
   mass;
-* `MeasureTheory.Measure.nullSingletonClass_map_of_injective` — an injective measurable map
-  into a space whose singletons are measurable preserves the property that singletons have
-  measure zero;
 * `MeasureTheory.Measure.IsAtom.measure_ne_top` — an atom on which the measure is σ-finite has
   finite mass;
 * `MeasureTheory.Measure.IsAtom.exists_measure_sdiff_singleton_eq_zero_of_measure_ne_top`,
@@ -135,28 +132,6 @@ theorem _root_.MeasureTheory.Measure.exists_eq_smul_dirac_of_forall_restrict_eq_
   obtain ⟨z, hz⟩ := aemeasurable_id.exists_map_restrict_eq_smul_dirac_of_atom
     (measure_ne_top ν Set.univ) hatom
   exact ⟨z, by simpa using hz⟩
-
-/-- An injective measurable map into a space whose singletons are measurable sends a measure
-with null singletons to a measure with null singletons: each singleton has an at-most-singleton
-preimage, which is null.
-
-Adapted from Cameron Freer's private `noAtoms_map_of_injective` in `Graphon/MeasureIso.lean` at
-commit `9f7be59fa754d260a544b4cfd83d6a5b94f7552e`:
-<https://github.com/cameronfreer/graphon/commit/9f7be59fa754d260a544b4cfd83d6a5b94f7552e>; the
-original work is copyright Cameron Freer and licensed under Apache 2.0, and it assumes `f` to be
-a measurable embedding, where the measurability and injectivity of `f` are separated here. -/
-theorem _root_.MeasureTheory.Measure.nullSingletonClass_map_of_injective
-    {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-    {μ : Measure α} [NullSingletonClass μ] {f : α → β}
-    [MeasurableSingletonClass β] (hf : Measurable f) (hInj : Function.Injective f) :
-    NullSingletonClass (Measure.map f μ) := by
-  refine ⟨fun y => ?_⟩
-  rw [Measure.map_apply hf (measurableSet_singleton y)]
-  have hsub : (f ⁻¹' {y}).Subsingleton := by
-    intro a ha b hb
-    simp only [mem_preimage, mem_singleton_iff] at ha hb
-    exact hInj (ha.trans hb.symm)
-  exact hsub.measure_zero μ
 
 end MeasureTheory
 

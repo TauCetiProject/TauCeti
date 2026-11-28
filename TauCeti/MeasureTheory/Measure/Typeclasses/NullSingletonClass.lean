@@ -12,9 +12,11 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
 This file records closure of `MeasureTheory.NullSingletonClass` under the zero measure, finite
 addition, and scalar multiplication, characterizes when sums and scaled measures have null
-singletons, shows that Dirac measures never have null singletons, and proves that removing
-countably many inputs changes the image of an arbitrary map only on a null set. Dually, a map
-injective on a set meets a countable set at a null set of points of that set.
+singletons, shows that Dirac measures never have null singletons and that an almost everywhere
+measurable map with countable fibres, in particular an injective measurable map, preserves null
+singletons, and proves that removing countably many inputs changes the image of an arbitrary map
+only on a null set. Dually, a map injective on a set meets a countable set at a null set of points
+of that set.
 
 On a metric space any bounded set of diameter zero is a subsingleton and therefore has zero
 restricted measure (`MeasureTheory.Measure.restrict_eq_zero_of_diam_eq_zero`).
@@ -76,6 +78,33 @@ theorem not_nullSingletonClass_dirac (a : α) :
 theorem nullSingletonClass_smul_dirac_iff {c : ℝ≥0∞} {a : α} :
     NullSingletonClass (c • Measure.dirac a) ↔ c = 0 := by
   simp [nullSingletonClass_smul_iff]
+
+/-- An almost everywhere measurable map with countable fibres into a space whose singletons are
+measurable sends a measure with null singletons to a measure with null singletons: each singleton
+has a countable preimage, which is null. -/
+theorem Measure.nullSingletonClass_map_of_countable_preimage {β : Type*} [MeasurableSpace β]
+    {μ : Measure α} [NullSingletonClass μ] {f : α → β}
+    [MeasurableSingletonClass β] (hf : AEMeasurable f μ) (hfib : ∀ y, (f ⁻¹' {y}).Countable) :
+    NullSingletonClass (Measure.map f μ) :=
+  ⟨fun y ↦ by
+    rw [Measure.map_apply_of_aemeasurable hf (measurableSet_singleton y)]
+    exact (hfib y).measure_zero μ⟩
+
+/-- An injective measurable map into a space whose singletons are measurable sends a measure
+with null singletons to a measure with null singletons: each singleton has an at-most-singleton
+preimage, which is null.
+
+Adapted from Cameron Freer's private `noAtoms_map_of_injective` in `Graphon/MeasureIso.lean` at
+commit `9f7be59fa754d260a544b4cfd83d6a5b94f7552e`:
+<https://github.com/cameronfreer/graphon/commit/9f7be59fa754d260a544b4cfd83d6a5b94f7552e>; the
+original work is copyright Cameron Freer and licensed under Apache 2.0, and it assumes `f` to be
+a measurable embedding, where the measurability and injectivity of `f` are separated here. -/
+theorem Measure.nullSingletonClass_map_of_injective {β : Type*} [MeasurableSpace β]
+    {μ : Measure α} [NullSingletonClass μ] {f : α → β}
+    [MeasurableSingletonClass β] (hf : Measurable f) (hInj : Function.Injective f) :
+    NullSingletonClass (Measure.map f μ) :=
+  nullSingletonClass_map_of_countable_preimage hf.aemeasurable fun _ ↦
+    (Set.Subsingleton.countable fun _ ha _ hb ↦ hInj (ha.trans hb.symm))
 
 end MeasureTheory
 

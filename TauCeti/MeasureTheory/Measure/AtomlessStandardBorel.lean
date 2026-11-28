@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Constructions.Polish.EmbeddingReal
 public import TauCeti.MeasureTheory.Measure.Atom
 public import TauCeti.Probability.Quantile
 
+import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
+
 /-!
 # Atomless standard-Borel transport to the unit interval
 

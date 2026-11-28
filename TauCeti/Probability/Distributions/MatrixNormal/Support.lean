@@ -9,7 +9,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Density
 public import TauCeti.Probability.Distributions.MatrixNormal.Basic
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Matrix
 
-import TauCeti.MeasureTheory.Measure.Atom
+import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!

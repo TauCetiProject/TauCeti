@@ -6,11 +6,13 @@ Authors: Codex
 module
 
 public import TauCeti.Data.Fin.Tuple.OrderStatistic
+public import TauCeti.Data.Fin.Tuple.Rank
 public import Mathlib.Probability.Independence.Basic
 public import Mathlib.Probability.UniformOn
 import TauCeti.Data.Fin.Tuple.Sort
 import TauCeti.MeasureTheory.MeasurableSpace.Sort
 import TauCeti.MeasureTheory.Measure.Prod
+import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 import TauCeti.Probability.Independence.InfinitePi
 import TauCeti.Probability.Distributions.OrderStatistic.Joint
 
@@ -22,9 +24,28 @@ labels a chamber that contributes the same measure to the sorted tuple. The resu
 permutation lists the original indices in increasing order of their observations. Its inverse
 assigns the rank to each original index.
 
+For the rank vector `TauCeti.rank` this is the law of the ranks: the ranks are uniform on the
+permutations and independent of the sorted sample. For a symmetric atomless law on `ℝ`, the signs
+of the observations are moreover independent fair coin flips, independent of the absolute ranks
+`TauCeti.absRank`, because flipping the signs of some coordinates preserves the law of the
+sample and its absolute ranks.
+
+## Main results
+
+* `TauCeti.map_prod_sort_orderStatistics_pi` — the sorting permutation and the sorted sample are
+  independent, with the uniform law on the permutations;
+* `TauCeti.measure_rank_eq_perm` — the law of the ranks: the ranks are `σ + 1` and the sorted
+  sample lies in `A` with probability `(n!)⁻¹` times the probability of the latter;
+* `TauCeti.measure_absRank_eq_perm` — the absolute ranks of an atomless sample on `ℝ` are
+  uniform on the permutations;
+* `TauCeti.measure_signs_absRank_eq` — for a symmetric atomless law on `ℝ`, every sign vector
+  and every absolute-rank permutation together have probability `(2ⁿ n!)⁻¹`.
+
 ## References
 
 * D. R. Cox and D. V. Hinkley, *Theoretical Statistics*, Chapman and Hall, 1974, Example 2.11.
+* A. W. van der Vaart, *Asymptotic Statistics*, Cambridge University Press, 1998, Lemmas 13.1
+  and 13.17.
 -/
 
 public section
@@ -68,6 +89,135 @@ theorem measureReal_sort_eq_inter_preimage_orderStatistics (σ : Equiv.Perm (Fin
   have h := congrArg (fun μ : Measure (Fin n → α) ↦ μ.real B)
     (map_orderStatistics_pi_restrict_sort_eq (P := P) σ)
   simpa [map_measureReal_apply hS hB, measureReal_restrict_apply (hS hB), inter_comm] using h
+
+variable (P) in
+/-- **The law of the ranks.** Under an atomless law the rank vector of an i.i.d. sample is
+uniform on the permutations and independent of the sorted sample `x ∘ Tuple.sort x`: for every
+permutation `σ` and every measurable set `A` of sorted tuples, the event that the ranks are
+`σ + 1` and the sorted sample lies in `A` has probability `(n!)⁻¹` times the probability that the
+sorted sample lies in `A`. With `A = univ` the rank vector takes each permutation with
+probability `(n!)⁻¹`. -/
+theorem measure_rank_eq_perm (σ : Equiv.Perm (Fin n)) {A : Set (Fin n → α)}
+    (hA : MeasurableSet A) :
+    (Measure.pi fun _ : Fin n ↦ P)
+        {x | (∀ i, rank x i = (σ i : ℕ) + 1) ∧ (fun i ↦ x (Tuple.sort x i)) ∈ A} =
+      ((n.factorial : ℝ≥0∞))⁻¹ *
+        (Measure.pi fun _ : Fin n ↦ P) {x | (fun i ↦ x (Tuple.sort x i)) ∈ A} := by
+  have hS := Measurable.of_eval (fun i : Fin n ↦ measurable_orderStatistic (α := α) i)
+  have hinj : ∀ᵐ x ∂(Measure.pi fun _ : Fin n ↦ P), Injective x := by
+    simpa only [Measure.infinitePi_eq_pi] using
+      (Probability.ae_injective_infinitePi (fun _ : Fin n ↦ P))
+  have hsets : {x : Fin n → α | (∀ i, rank x i = (σ i : ℕ) + 1) ∧
+        (fun i ↦ x (Tuple.sort x i)) ∈ A} =ᵐ[Measure.pi fun _ : Fin n ↦ P]
+      (fun x i ↦ orderStatistic i x) ⁻¹' A ∩ {x | Tuple.sort x = σ.symm} := by
+    filter_upwards [hinj] with x hx
+    simp only [mem_ofPred_eq, mem_inter_iff, mem_preimage, orderStatistic_def,
+      forall_rank_eq_iff_sort_eq_symm hx, and_comm]
+  have h := congrArg (fun μ : Measure (Fin n → α) ↦ μ A)
+    (map_orderStatistics_pi_restrict_sort_eq (P := P) σ.symm)
+  simp only [Measure.map_apply hS hA, Measure.restrict_apply (hS hA), smul_apply,
+    smul_eq_mul] at h
+  rw [measure_congr hsets, h]
+  simp only [preimage, orderStatistic_def]
+
+/-- Under an atomless law on `ℝ` the vector of absolute ranks of an i.i.d. sample takes each
+permutation, shifted by one, with probability `(n!)⁻¹`. -/
+theorem measure_absRank_eq_perm (P : Measure ℝ) [IsProbabilityMeasure P] [NullSingletonClass P]
+    (σ : Equiv.Perm (Fin n)) :
+    (Measure.pi fun _ : Fin n ↦ P) {x | ∀ i, absRank x i = (σ i : ℕ) + 1} =
+      ((n.factorial : ℝ≥0∞))⁻¹ := by
+  have habs : Measurable fun t : ℝ ↦ |t| := continuous_abs.measurable
+  -- The law of `|X|` is atomless: the fibre of `t` under `|·|` is contained in `{t, -t}`.
+  have : NullSingletonClass (P.map fun t ↦ |t|) :=
+    Measure.nullSingletonClass_map_of_countable_preimage habs.aemeasurable fun t ↦
+      ((toFinite {t, -t}).subset fun s hs ↦ by
+        rw [mem_preimage, mem_singleton_iff] at hs
+        rw [mem_insert_iff, mem_singleton_iff, ← hs]
+        rcases abs_choice s with h | h <;> simp [h]).countable
+  have : IsProbabilityMeasure (P.map fun t ↦ |t|) :=
+    (Measure.isProbabilityMeasure_map_iff habs.aemeasurable).2 inferInstance
+  have hmp := measurePreserving_pi (fun _ : Fin n ↦ P) (fun _ ↦ P.map fun t ↦ |t|)
+    fun _ ↦ habs.measurePreserving P
+  have h := measure_rank_eq_perm (P.map fun t ↦ |t|) σ MeasurableSet.univ
+  simp only [mem_univ, and_true, ofPred_true, measure_univ, mul_one] at h
+  have hmeas : MeasurableSet {y : Fin n → ℝ | ∀ i, rank y i = (σ i : ℕ) + 1} :=
+    measurableSet_setOfPred.2 (Measurable.forall fun i ↦ (measurable_rank i).eq measurable_const)
+  rw [← h, ← hmp.measure_preimage hmeas.nullMeasurableSet]
+  simp only [preimage, absRank_eq_rank, mem_ofPred_eq]
+
+/-- The event that an i.i.d. sample on `ℝ` has signs `b` and absolute ranks `σ + 1` is
+measurable. -/
+private theorem measurableSet_signs_absRank (b : Fin n → Bool) (σ : Equiv.Perm (Fin n)) :
+    MeasurableSet
+      {x : Fin n → ℝ | (∀ i, decide (0 < x i) = b i) ∧ ∀ i, absRank x i = (σ i : ℕ) + 1} := by
+  refine measurableSet_setOfPred.2 (Measurable.and (Measurable.forall fun i ↦ ?_)
+    (Measurable.forall fun i ↦ ?_))
+  · have hlt : MeasurableSet {x : Fin n → ℝ | 0 < x i} :=
+      measurableSet_lt measurable_const (measurable_pi_apply i)
+    exact (measurable_to_bool (by simpa only [preimage, mem_singleton_iff, decide_eq_true_eq] using
+      hlt)).eq measurable_const
+  · exact (measurable_absRank i).eq measurable_const
+
+/-- The event that the signs of an i.i.d. sample from a symmetric atomless law on `ℝ` are `b`
+and its absolute ranks are `σ + 1` has a probability that does not depend on `b`. -/
+private theorem measure_signs_absRank_eq_measure_signs_absRank (P : Measure ℝ)
+    [IsProbabilityMeasure P] [NullSingletonClass P] (hsymm : P.map Neg.neg = P)
+    (σ : Equiv.Perm (Fin n)) (b b' : Fin n → Bool) :
+    (Measure.pi fun _ : Fin n ↦ P)
+        {x | (∀ i, decide (0 < x i) = b' i) ∧ ∀ i, absRank x i = (σ i : ℕ) + 1} =
+      (Measure.pi fun _ : Fin n ↦ P)
+        {x | (∀ i, decide (0 < x i) = b i) ∧ ∀ i, absRank x i = (σ i : ℕ) + 1} := by
+  -- Flipping the sign of the coordinates where `b` and `b'` differ preserves the law of the
+  -- sample and the absolute ranks, and off the null set where a coordinate vanishes it turns
+  -- the signs `b` into the signs `b'`.
+  let g : Fin n → ℝ → ℝ := fun i ↦ if b i = b' i then id else Neg.neg
+  have hf : MeasurePreserving (fun x i ↦ g i (x i)) (Measure.pi fun _ ↦ P)
+      (Measure.pi fun _ ↦ P) :=
+    measurePreserving_pi _ _ fun i ↦ by
+      simp only [g]
+      split_ifs
+      exacts [MeasurePreserving.id P, ⟨measurable_neg, hsymm⟩]
+  rw [← hf.measure_preimage (measurableSet_signs_absRank b σ).nullMeasurableSet]
+  refine measure_congr ?_
+  filter_upwards [ae_all_iff.2 fun i ↦ Measure.ae_eval_ne (fun _ ↦ P) i 0] with x hx
+  have habs : absRank (fun i ↦ g i (x i)) = absRank x := absRank_congr fun j ↦ by
+    simp only [g]
+    split_ifs <;> simp
+  simp only [mem_preimage, mem_ofPred_eq, habs]
+  refine and_congr_left' (forall_congr' fun i ↦ ?_)
+  simp only [g]
+  rcases (hx i).lt_or_gt with h | h <;> by_cases hb : b i = b' i <;>
+    simp [hb, h, h.not_gt, Bool.eq_not_iff, ne_comm]
+
+/-- **Signed ranks.** Under a symmetric atomless law on `ℝ` the signs `1_{0 < x i}` of an
+i.i.d. sample are independent fair Bernoulli variables, independent of the vector of absolute
+ranks, which takes each permutation, shifted by one, with probability `(n!)⁻¹`: every sign
+vector `b` and permutation `σ` together have probability `(2ⁿ n!)⁻¹`. -/
+theorem measure_signs_absRank_eq (P : Measure ℝ) [IsProbabilityMeasure P]
+    [NullSingletonClass P] (hsymm : P.map Neg.neg = P) (b : Fin n → Bool)
+    (σ : Equiv.Perm (Fin n)) :
+    (Measure.pi fun _ : Fin n ↦ P)
+        {x | (∀ i, decide (0 < x i) = b i) ∧ ∀ i, absRank x i = (σ i : ℕ) + 1} =
+      ((2 ^ n * n.factorial : ℕ) : ℝ≥0∞)⁻¹ := by
+  let E : (Fin n → Bool) → Set (Fin n → ℝ) := fun b ↦
+    {x | (∀ i, decide (0 < x i) = b i) ∧ ∀ i, absRank x i = (σ i : ℕ) + 1}
+  -- The absolute-rank event is the disjoint union of the events `E b` over the sign vectors.
+  have hunion : {x : Fin n → ℝ | ∀ i, absRank x i = (σ i : ℕ) + 1} = ⋃ b, E b := by
+    ext x
+    simp only [E, mem_iUnion, mem_ofPred_eq]
+    exact ⟨fun h ↦ ⟨fun i ↦ decide (0 < x i), fun _ ↦ rfl, h⟩, fun ⟨_, _, h⟩ ↦ h⟩
+  have hdisj : Pairwise (Disjoint on E) := fun b b' hbb' ↦ disjoint_left.2 fun x hb hb' ↦
+    hbb' (funext fun i ↦ (hb.1 i).symm.trans (hb'.1 i))
+  have h := measure_iUnion hdisj (fun b ↦ measurableSet_signs_absRank b σ)
+    (μ := Measure.pi fun _ : Fin n ↦ P)
+  -- Each of the `2 ^ n` sign events has the same probability, and they add up to `(n!)⁻¹`.
+  rw [← hunion, measure_absRank_eq_perm, tsum_fintype,
+    Finset.sum_congr rfl fun b' _ ↦ measure_signs_absRank_eq_measure_signs_absRank P hsymm σ b b'
+    ] at h
+  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fun, Fintype.card_bool,
+    Fintype.card_fin, nsmul_eq_mul, Nat.cast_pow, Nat.cast_ofNat] at h
+  rw [Nat.cast_mul, ENNReal.mul_inv (by simp) (by simp), h, Nat.cast_pow, Nat.cast_ofNat,
+    ENNReal.inv_mul_cancel_left (by simp) (by simp)]
 
 variable [MeasurableSpace (Equiv.Perm (Fin n))] [MeasurableSingletonClass (Equiv.Perm (Fin n))]
 
