@@ -58,6 +58,9 @@ integer indexing that Herbrand theory uses.
   `TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertiaSubgroup` reads that off as Mathlib's
   `ValuationSubring.inertiaSubgroup` for a valuation subring of a field.
 * `TauCeti.IsLocalRing.instNormalRamificationGroup`: each `G_i` is normal in `G`.
+* `TauCeti.IsLocalRing.smul_sub_mem_maximalIdeal_pow_of_mem_ramificationGroup` and
+  `TauCeti.IsLocalRing.commutator_ramificationGroup_le`: `G_n` raises the `𝔪`-adic order of
+  `𝔪 ^ (k + 1)` by `n`, and `[G_i, G_j] ≤ G_{i + j}` for all integers `i` and `j`.
 * `TauCeti.IsLocalRing.ramificationGroupGradedSubgroupHom`: subgroup inclusion induces an
   injective homomorphism `H_i / H_{i+1} → G_i / G_{i+1}` on successive quotients.
 * `TauCeti.IsLocalRing.ramificationGroupGradedConj`: conjugation by an element of the ambient
@@ -228,6 +231,78 @@ instance instNormalRamificationGroup (G : Type*) [Group G] (S : Type*) [CommRing
   exact fun σ ↦ congrArg (Ideal.inertia G) (smul_maximalIdeal_pow σ _)
 
 end Normal
+
+section Commutator
+
+open scoped commutatorElement
+
+variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
+
+/-- An element of `G_n` moves every element of `𝔪 ^ (k + 1)` by an element of
+`𝔪 ^ (n + k + 1)`: the operator `σ - 1` raises the `𝔪`-adic order by `n`, and by `n + 1` on `S`
+itself. -/
+theorem smul_sub_mem_maximalIdeal_pow_of_mem_ramificationGroup {n k : ℕ} {σ : G}
+    (hσ : σ ∈ ramificationGroup G S n) {y : S} (hy : y ∈ maximalIdeal S ^ (k + 1)) :
+    σ • y - y ∈ maximalIdeal S ^ (n + k + 1) := by
+  rw [mem_ramificationGroup_natCast_iff] at hσ
+  induction k generalizing y with
+  | zero => simpa using hσ y
+  | succ k ih =>
+    rw [pow_succ] at hy
+    refine Submodule.mul_induction_on hy (fun a ha b hb ↦ ?_) (fun a b ha hb ↦ ?_)
+    · -- `σ (a b) - a b = (σ a - a) σ b + a (σ b - b)`, with each term of order `n + k + 2`.
+      have hb' : σ • b ∈ maximalIdeal S ^ 1 := by
+        rw [smul_mem_maximalIdeal_pow_iff, pow_one]; exact hb
+      rw [smul_mul',
+        (by ring : σ • a * σ • b - a * b = (σ • a - a) * σ • b + a * (σ • b - b))]
+      refine add_mem ?_ ?_
+      · rw [(by omega : n + (k + 1) + 1 = (n + k + 1) + 1), pow_add]
+        exact Ideal.mul_mem_mul (ih ha) hb'
+      · rw [(by omega : n + (k + 1) + 1 = (k + 1) + (n + 1)), pow_add]
+        exact Ideal.mul_mem_mul ha (hσ b)
+    · rw [smul_add, (by ring : σ • a + σ • b - (a + b) = (σ • a - a) + (σ • b - b))]
+      exact add_mem ha hb
+
+/-- For `σ ∈ G_a` and `τ ∈ G_b`, the displacement of `σ * τ` is the sum of the displacements of
+`σ` and `τ` modulo `𝔪 ^ (a + b + 1)`. -/
+private theorem mul_smul_sub_sub_add_mem_maximalIdeal_pow_add {a b : ℕ} {σ τ : G}
+    (hσ : σ ∈ ramificationGroup G S a) (hτ : τ ∈ ramificationGroup G S b) (x : S) :
+    (σ * τ) • x - x - ((σ • x - x) + (τ • x - x)) ∈ maximalIdeal S ^ (a + b + 1) := by
+  have hid : (σ * τ) • x - x - ((σ • x - x) + (τ • x - x)) = σ • (τ • x - x) - (τ • x - x) := by
+    rw [mul_smul, smul_sub]
+    ring
+  rw [hid]
+  exact smul_sub_mem_maximalIdeal_pow_of_mem_ramificationGroup hσ
+    (mem_ramificationGroup_natCast_iff.mp hτ x)
+
+variable (G S) in
+/-- **Commutators in the ramification filtration.** For all integers `i` and `j`, the commutator
+subgroup `[G_i, G_j]` lies in `G_{i + j}`. -/
+theorem commutator_ramificationGroup_le (i j : ℤ) :
+    ⁅ramificationGroup G S i, ramificationGroup G S j⁆ ≤ ramificationGroup G S (i + j) := by
+  rcases lt_or_ge i 0 with hi | hi
+  · exact (Subgroup.commutator_le_right _ _).trans (ramificationGroup_antitone G S (by omega))
+  rcases lt_or_ge j 0 with hj | hj
+  · exact (Subgroup.commutator_le_left _ _).trans (ramificationGroup_antitone G S (by omega))
+  rw [Subgroup.commutator_le]
+  intro σ hσ τ hτ
+  obtain ⟨a, rfl⟩ := Int.eq_ofNat_of_zero_le hi
+  obtain ⟨b, rfl⟩ := Int.eq_ofNat_of_zero_le hj
+  have hcast : (a : ℤ) + (b : ℤ) = ((a + b : ℕ) : ℤ) := by push_cast; ring
+  rw [hcast, mem_ramificationGroup_natCast_iff]
+  intro z
+  let x : S := (σ⁻¹ * τ⁻¹) • z
+  have hcomm : ⁅σ, τ⁆ • z - z =
+      ((σ * τ) • x - x - ((σ • x - x) + (τ • x - x))) -
+        ((τ * σ) • x - x - ((τ • x - x) + (σ • x - x))) := by
+    simp only [x, commutatorElement_def, mul_smul, smul_inv_smul]
+    ring
+  rw [hcomm]
+  refine sub_mem (mul_smul_sub_sub_add_mem_maximalIdeal_pow_add hσ hτ x) ?_
+  rw [add_comm a b]
+  exact mul_smul_sub_sub_add_mem_maximalIdeal_pow_add hτ hσ x
+
+end Commutator
 
 section ResidueField
 

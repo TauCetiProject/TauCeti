@@ -18,6 +18,7 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.Algebra.TensorProduct.BaseChange
 public import Mathlib.RingTheory.TensorProduct.Pi
 import TauCeti.Algebra.Group.Action.MulDistribMulAction
+import TauCeti.GroupTheory.GroupAction.Norm
 import TauCeti.RingTheory.Invariant.Basic
 import TauCeti.RingTheory.FiniteType.PointSeparation
 

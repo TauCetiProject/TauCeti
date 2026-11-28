@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 public import TauCeti.RingTheory.LocalRing.RamificationGroup.Graded
-import TauCeti.RingTheory.DiscreteValuationRing.RamificationGroup
 
 /-!
 # Absolute inertia and Frobenius lifts at finite level
@@ -121,7 +120,7 @@ theorem IsArithFrobeniusLift.tameCharacter_conj_restrictNormal {σ : Gal(Algebra
     (hσ : IsArithFrobeniusLift K σ) (τ : IsLocalRing.ramificationGroup Gal(L/K) 𝒪[L] 0) :
     IsLocalRing.tameCharacter Gal(L/K) 𝒪[L] (MulAut.conjNormal (AlgEquiv.restrictNormal σ L) τ) =
       IsLocalRing.tameCharacter Gal(L/K) 𝒪[L] τ ^ Nat.card 𝓀[K] :=
-  IsDiscreteValuationRing.tameCharacter_conj_of_smul_eq_pow Gal(L/K) 𝒪[L]
+  IsLocalRing.tameCharacter_conj_of_smul_eq_pow Gal(L/K) 𝒪[L]
     (hσ.restrictNormal_smul_residueField_eq_pow L) τ
 
 end TauCeti

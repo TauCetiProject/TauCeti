@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.FiniteType
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
+import TauCeti.GroupTheory.GroupAction.Norm
 import TauCeti.LinearAlgebra.SymmetricAlgebra.FiniteType
 import TauCeti.RingTheory.Invariant.FiniteType
 

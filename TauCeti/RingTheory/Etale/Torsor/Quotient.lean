@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Etale.Torsor.Basic
+import TauCeti.GroupTheory.GroupAction.Norm
 
 /-!
 # Fixed subalgebras of finite étale torsors

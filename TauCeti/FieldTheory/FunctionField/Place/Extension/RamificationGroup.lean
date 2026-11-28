@@ -69,9 +69,9 @@ the characteristic needs the residue extension to be separable, and is proved in
 * `TauCeti.Place.ker_ramificationResidueHom`: **the kernel of the ramification residue is the next
   ramification group**, so `G_{i+1}(P) / G_{i+2}(P)` embeds in an additive group of functions to
   the residue field.
-* `TauCeti.Place.commutator_ramificationGroup_le` and
-  `TauCeti.Place.pow_mem_ramificationGroup_of_charP`: the quotient `G_{i+1}(P) / G_{i+2}(P)` is
-  abelian, and elementary abelian of exponent `p` in characteristic `p`.
+* `TauCeti.Place.pow_mem_ramificationGroup_of_charP`: in characteristic `p`, the `p`-th power
+  of an element of `G_{i+1}(P)` lies in `G_{i+2}(P)`, so `G_{i+1}(P) / G_{i+2}(P)` has
+  exponent `p`.
 * `TauCeti.Place.ramificationGroup_one_eq_bot`: **in characteristic zero the first ramification
   group of a place is trivial when it is finite**.
 
@@ -330,15 +330,6 @@ end Residue
 section Structure
 
 variable (F) (P : Place k F')
-
-/-- **The successive quotients of the ramification filtration are abelian**
-(Stichtenoth, Proposition 3.8.5): a commutator of `G_{i+1}(P)` lies in `G_{i+2}(P)`. -/
-theorem commutator_ramificationGroup_le (i : ℕ) :
-    ⁅ramificationGroup F P (i + 1), ramificationGroup F P (i + 1)⁆ ≤
-      ramificationGroup F P (i + 2) := by
-  rw [ramificationGroup_def, ramificationGroup_def]
-  exact (IsLocalRing.commutator_ramificationGroup_le _ P.integers (i + 1 : ℕ) (i + 1 : ℕ)).trans
-    (IsLocalRing.ramificationGroup_antitone _ _ (by push_cast; omega))
 
 /-- **In characteristic `p` the successive quotients of the ramification filtration are killed by
 `p`** (Stichtenoth, Proposition 3.8.5): the `p`-th power of an element of `G_{i+1}(P)` lies in

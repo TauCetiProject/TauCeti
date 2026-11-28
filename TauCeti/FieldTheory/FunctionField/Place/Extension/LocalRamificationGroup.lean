@@ -20,17 +20,21 @@ Hilbert counting identity
 (`IsLocalRing.sum_addVal_smul_sub_eq_finsum_card_ramificationGroup_sub_one`) apply directly to
 the function-field groups.
 
-Over the inertia field `T` of `P`, the inertia group acts on `𝒪_P` by `𝒪_{P ∩ T}`-algebra
-automorphisms, and when the residue extension is separable `P` is totally ramified over `T`, so a
-uniformizer generates `𝒪_P` over `𝒪_{P ∩ T}`. The generic monogenic criterion then reads the
-ramification groups off a single uniformizer.
+For a finite Galois extension with separable residue extension, `P` is totally ramified over its
+inertia field `T`, so a uniformizer generates `𝒪_P` over `𝒪_{P ∩ T}`, where the inertia group
+acts by `𝒪_{P ∩ T}`-algebra automorphisms. Independently of finite dimensionality, the separable
+residue extension over `𝒪_{P ∩ F}` lets the generic separable-residue uniformizer criterion
+(`TauCeti.IsLocalRing.mem_ramificationGroup_natCast_iff_smul_sub_mem`) test membership in the
+ramification groups at a single uniformizer.
 
 ## Main results
 
-* `TauCeti.Place.algebra_adjoin_restrict_inertiaField_eq_top_of_ord_eq_one`: a uniformizer at `P`
-  generates `𝒪_P` over the valuation ring below it in the inertia field.
-* `TauCeti.Place.mem_ramificationGroup_iff_sub_mem_filtration`: an element of the inertia group
-  lies in `G_i` exactly when it moves a uniformizer by something of order at least `i + 1`.
+* `TauCeti.Place.algebra_adjoin_restrict_inertiaField_eq_top_of_ord_eq_one`: in a finite Galois
+  extension with separable residue extension, a uniformizer at `P` generates `𝒪_P` over the
+  valuation ring below it in the inertia field.
+* `TauCeti.Place.mem_ramificationGroup_iff_sub_mem_filtration`: for a separable residue extension
+  (with no finite-dimensionality assumption), an element of the inertia group lies in `G_i`
+  exactly when it moves a uniformizer by something of order at least `i + 1`.
 
 ## References
 
