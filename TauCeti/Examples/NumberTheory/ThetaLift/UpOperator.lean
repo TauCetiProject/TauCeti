@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Field.ZMod
-public import TauCeti.NumberTheory.ThetaLift.UpOperator
+public import TauCeti.NumberTheory.ThetaLift.UpOperator.Basic
 
 /-!
 # A sanity check of the lift law modulo `N` and the operator `Up`
