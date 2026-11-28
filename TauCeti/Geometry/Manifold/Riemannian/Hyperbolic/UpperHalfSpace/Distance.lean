@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Riemannian.HalfSpace
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.Completeness
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Minimizing
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 import TauCeti.Analysis.InnerProductSpace.UnitVector
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.SpecialFunctions.Arcosh
@@ -34,6 +36,7 @@ hyperbolic distance, for instance for Dirichlet domains.
 ## Main results
 
 * `TauCeti.UpperHalfSpace.instCompleteSpace`: in finite dimension the distance is complete.
+* `TauCeti.UpperHalfSpace.instProperSpace`: in finite dimension closed balls are compact.
 * `TauCeti.UpperHalfSpace.lipschitzWith_one_of_coe_comp_eq`: a map between upper half-spaces
   that is the restriction of a `C¹`, `1`-Lipschitz map of the ambient Euclidean spaces and does
   not decrease height is `1`-Lipschitz for the hyperbolic distances.
@@ -79,6 +82,16 @@ instance instMetricSpace : MetricSpace (UpperHalfSpace E) :=
 /-- In finite dimension the hyperbolic distance on the upper half-space model is complete. -/
 instance instCompleteSpace [FiniteDimensional ℝ E] : CompleteSpace (UpperHalfSpace E) :=
   completeSpace_of_riemannianMetric
+
+/-- In finite dimension the closed hyperbolic balls in upper half-space are compact. -/
+instance instProperSpace [FiniteDimensional ℝ E] : ProperSpace (UpperHalfSpace E) :=
+  TauCeti.Manifold.properSpace_of_completeSpace 𝓘(ℝ, WithLp 2 (E × ℝ))
+
+instance instMeasurableSpace : MeasurableSpace (UpperHalfSpace E) :=
+  borel _
+
+instance instBorelSpace : BorelSpace (UpperHalfSpace E) :=
+  ⟨rfl⟩
 
 /-- A map between upper half-spaces that is the restriction of a `C¹` map `A` of the ambient
 Euclidean spaces is `1`-Lipschitz for the hyperbolic distances when `A` is `1`-Lipschitz for the

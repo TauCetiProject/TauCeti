@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Connection
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Ricci
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import all TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Basic
@@ -140,6 +141,16 @@ theorem hasConstantSectionalCurvature :
     ∇.HasConstantSectionalCurvature (isMetricCompatible_leviCivitaConnection J) (-1) :=
   ∇.hasConstantSectionalCurvature_of_curvatureTensor_eq_smul_inner_sub
     (isMetricCompatible_leviCivitaConnection J) (-1) curvatureTensor_eq
+
+/-- The scalar curvature of hyperbolic space is minus its dimension times its horizontal
+dimension. For the hyperbolic plane (`E = ℝ`) this is `-2`. -/
+theorem scalarCurvature_eq (x : UpperHalfSpace E) :
+    ∇.scalarCurvature x = -((Module.finrank ℝ E + 1 : ℝ) * Module.finrank ℝ E) := by
+  rw [∇.scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub x (-1)
+    (curvatureTensor_eq x), TauCeti.finrank_tangentSpace,
+    (WithLp.linearEquiv 2 ℝ (E × ℝ)).finrank_eq, Module.finrank_prod, Module.finrank_self]
+  push_cast
+  ring
 
 /-- The Ricci tensor of hyperbolic space is minus the horizontal dimension times
 the hyperbolic metric. In dimension one it vanishes. -/

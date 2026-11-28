@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
@@ -52,6 +53,9 @@ this with completeness to construct a `TauCeti.HyperbolicMetric`.
   norm forms.
 * `TauCeti.UpperHalfSpace.contMDiff_coe_comp_iff`: a map into the upper half-space is `C^n` iff
   its composite with the inclusion into `E × ℝ` is.
+* `TauCeti.UpperHalfSpace.tangentSpaceCastModel_mfderiv` and
+  `TauCeti.UpperHalfSpace.tangentSpaceCastModel_curveVelocity`: differentials and curve velocities
+  can be computed in the ambient coordinates.
 * `TauCeti.UpperHalfSpace.isPretransitive_isom`: the isometry group of the upper half-space model
   acts transitively on it.
 
@@ -259,6 +263,32 @@ theorem contMDiff_coe_comp_iff
       ContMDiff I 𝓘(ℝ, WithLp 2 (E × ℝ)) n f :=
   TauCeti.ContMDiff.subtypeVal_comp_iff (upperHalfSpaceOpens E)
     (f : M → upperHalfSpaceOpens E)
+
+/-- The differential of a map from a normed space into upper half-space is the derivative of
+its ambient coordinate map. -/
+theorem tangentSpaceCastModel_mfderiv {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f : F → UpperHalfSpace E} {x : F} {L : F →L[ℝ] WithLp 2 (E × ℝ)}
+    (h : HasFDerivAt (fun y ↦ (f y : WithLp 2 (E × ℝ))) L x) (v : F) :
+    tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (f x)
+      (mfderiv 𝓘(ℝ, F) 𝓘(ℝ, WithLp 2 (E × ℝ)) f x v) = L v := by
+  have h1 : mfderiv 𝓘(ℝ, F) 𝓘(ℝ, WithLp 2 (E × ℝ))
+      ((Subtype.val : upperHalfSpaceOpens E → WithLp 2 (E × ℝ)) ∘ f) x v =
+      mfderiv 𝓘(ℝ, F) 𝓘(ℝ, WithLp 2 (E × ℝ)) f x v :=
+    TauCeti.Manifold.mfderiv_subtype_val_comp_apply _
+  change (mfderiv 𝓘(ℝ, F) 𝓘(ℝ, WithLp 2 (E × ℝ))
+    (fun y ↦ (f y : WithLp 2 (E × ℝ))) x v) = _ at h1
+  rw [mfderiv_eq_fderiv, h.fderiv] at h1
+  exact h1.symm
+
+/-- The velocity of a curve in upper half-space is the derivative of its ambient coordinate
+curve. -/
+theorem tangentSpaceCastModel_curveVelocity {γ : ℝ → UpperHalfSpace E} {t : ℝ}
+    {v : WithLp 2 (E × ℝ)} (h : HasDerivAt (fun s ↦ (γ s : WithLp 2 (E × ℝ))) v t) :
+    tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (γ t)
+      (TauCeti.Manifold.curveVelocity 𝓘(ℝ, WithLp 2 (E × ℝ)) γ t) = v := by
+  rw [TauCeti.Manifold.curveVelocity_apply]
+  refine (tangentSpaceCastModel_mfderiv h.hasFDerivAt 1).trans ?_
+  simp
 
 /-- The tangent trivializations of the upper half-space do not depend on the base point. -/
 theorem trivializationAt_eq (α x : UpperHalfSpace E) :
