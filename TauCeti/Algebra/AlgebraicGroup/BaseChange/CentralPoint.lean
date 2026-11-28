@@ -42,11 +42,12 @@ open TensorProduct WithConv
 
 namespace TauCeti
 
-universe u v
+universe u v w x
 
 namespace HopfAlgebra
 
-variable {k : Type u} {K H A : Type v} [CommRing k] [CommRing K] [Ring H] [CommRing A]
+variable {k : Type u} {K : Type w} {H : Type v} {A : Type x}
+variable [CommRing k] [CommRing K] [Ring H] [CommRing A]
 variable [Algebra k K] [_root_.Bialgebra k H]
 variable [Algebra K A] [Algebra k A] [IsScalarTower k K A]
 
@@ -62,7 +63,7 @@ theorem isCentralPoint_baseChangePointsMulEquiv_symm_iff
       IsCentralPoint g := by
   constructor
   · intro hg
-    rw [isCentralPoint_def] at hg ⊢
+    rw [isCentralPoint_def]
     intro B _ _ φ h
     let _ : Algebra k B := Algebra.compHom B (algebraMap k K)
     let _ : IsScalarTower k K B := IsScalarTower.of_algebraMap_eq' rfl
@@ -71,11 +72,11 @@ theorem isCentralPoint_baseChangePointsMulEquiv_symm_iff
       (k := k) (K := K) (A := H) (R := B)).symm.injective
     simp only [map_mul]
     rw [AlgHom.baseChangePointsMulEquiv_symm_mapValue]
-    exact (hg (φ.restrictScalars k)
+    exact (hg.commute_mapValue (φ.restrictScalars k)
       ((AlgHom.baseChangePointsMulEquiv
         (k := k) (K := K) (A := H) (R := B)).symm h)).eq
   · intro hg
-    rw [isCentralPoint_def] at hg ⊢
+    rw [isCentralPoint_def]
     intro B _ _ φ h
     let _ : Algebra K B :=
       (φ.toRingHom.comp (algebraMap K A)).toAlgebra
@@ -94,7 +95,7 @@ theorem isCentralPoint_baseChangePointsMulEquiv_symm_iff
     simp only [map_mul]
     have hφ : φK.restrictScalars k = φ := AlgHom.ext fun _ ↦ rfl
     rw [← hφ, ← AlgHom.mapValue_baseChangePointsMulEquiv φK]
-    simpa only [MulEquiv.apply_symm_apply] using (hg φK
+    simpa only [MulEquiv.apply_symm_apply] using (hg.commute_mapValue φK
       (AlgHom.baseChangePointsMulEquiv
         (k := k) (K := K) (A := H) (R := B) h)).eq
 
@@ -102,12 +103,12 @@ end HopfAlgebra
 
 namespace CommHopfAlgCat
 
-variable {k : Type u} {K : Type v} [CommRing k] [CommRing K] [Algebra k K]
+variable {k : Type u} {K : Type w} [CommRing k] [CommRing K] [Algebra k K]
 
 /-- The bundled base-change equivalence on points preserves and reflects universal centrality. -/
 @[simp]
 theorem isCentralPoint_baseChangePointsMulEquiv_iff
-    (H : _root_.CommHopfAlgCat.{v} k) (A : CommAlgCat.{v} K)
+    (H : _root_.CommHopfAlgCat.{v} k) (A : CommAlgCat.{x} K)
     (g : HopfAlgebra.points (R := K) (H := baseChange (K := K) H) A) :
     HopfAlgebra.IsCentralPoint (baseChangePointsMulEquiv (K := K) A H g) ↔
       HopfAlgebra.IsCentralPoint g := by

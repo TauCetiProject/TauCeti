@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Prod
 public import TauCeti.Topology.Algebra.Group.Units
 import Mathlib.Topology.Algebra.Group.Matrix
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
@@ -17,7 +18,8 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 For the units topology on `GL n A = Matrix.GeneralLinearGroup n A`, a homomorphism from a group
 with continuous inversion into `GL n A` is continuous exactly when its matrix entries are
 continuous: by `MonoidHom.continuous_iff_continuous_val` the inverse matrices `ρ(g)⁻¹ = ρ(g⁻¹)`
-come for free, and a matrix-valued map is continuous exactly when its entries are.
+come for free, and a matrix-valued map is continuous exactly when its entries are. Assembling an
+invertible matrix over a product `A × B` from its two components is continuous as well.
 
 Entrywise application of a ring homomorphism `f : R →+* S` that is an open embedding, such as the
 inclusion of an open subring, is an open embedding `GL n R → GL n S`: its range consists of the
@@ -29,6 +31,8 @@ invertible matrices whose entries and inverse entries lie in the open range of `
   through its matrix entries.
 * `Topology.IsOpenEmbedding.generalLinearGroup_map`: `GL n R → GL n S` is an open embedding when
   `f` is.
+* `TauCeti.continuous_prodEquivGL_symm`: the inverse of `GL n (A × B) ≃* GL n A × GL n B` is
+  continuous.
 -/
 
 public section
@@ -63,3 +67,17 @@ theorem Topology.IsOpenEmbedding.generalLinearGroup_map {n R S : Type*} [Fintype
   rw [h]
   exact (hf.isOpen_range.matrix.preimage Units.continuous_val).inter
     (hf.isOpen_range.matrix.preimage Units.continuous_coe_inv)
+
+/-- Assembling an invertible matrix over `A × B` from its components, the inverse of
+`TauCeti.prodEquivGL`, is continuous for the units topologies. -/
+theorem TauCeti.continuous_prodEquivGL_symm {n A B : Type*} [Fintype n] [DecidableEq n]
+    [Semiring A] [TopologicalSpace A] [Semiring B] [TopologicalSpace B] :
+    Continuous (prodEquivGL n A B).symm := by
+  refine Units.continuous_iff.2 ⟨continuous_matrix fun i j ↦ ?_, continuous_matrix fun i j ↦ ?_⟩
+  · simp only [Function.comp_apply, coe_prodEquivGL_symm_apply, Matrix.of_apply]
+    exact ((Units.continuous_val.comp continuous_fst).matrix_elem i j).prodMk
+      ((Units.continuous_val.comp continuous_snd).matrix_elem i j)
+  · simp only [← map_inv, coe_prodEquivGL_symm_apply, Matrix.of_apply, Prod.fst_inv,
+      Prod.snd_inv]
+    exact ((Units.continuous_coe_inv.comp continuous_fst).matrix_elem i j).prodMk
+      ((Units.continuous_coe_inv.comp continuous_snd).matrix_elem i j)

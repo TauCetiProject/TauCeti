@@ -23,7 +23,7 @@ This file proves the weight-level statement underlying that isomorphism: shiftin
 
 `χ_{k + 2·A l}(x) = χ_k(x + l) - χ_k(l)`.
 
-The proof combines the covector-shift formula `characteristicWeight_add_two_mul` (`Weight/Basic`)
+The proof combines the covector-shift formula `characteristicWeight_addTwoMul` (`Weight/Basic`)
 with the polarization identity `characteristicWeight_add` (`Weight/Polarization`): both sides
 reduce to `χ_k(x) - A(x, l)`. Reading the identity through the weight grading, the sublevel sets of
 the two representatives correspond under the `l`-translation with a constant grading shift, which is
@@ -62,10 +62,7 @@ the covector-shift half of the translation equivariance. -/
 theorem characteristicWeight_addTwoMulVec (k : P.characteristicVectors) (m x : V → ℤ) :
     P.characteristicWeight (P.addTwoMulVec k m) x =
       P.characteristicWeight k x - P.intersectionForm x m := by
-  have h : P.addTwoMulVec k m =
-      ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec m) v, k.property.add_two_mul⟩ :=
-    Subtype.ext (P.addTwoMulVec_val k m)
-  rw [h, characteristicWeight_add_two_mul, sum_intersectionMatrix_mulVec_mul]
+  rw [← addTwoMul_mulVec, characteristicWeight_addTwoMul, sum_intersectionMatrix_mulVec_mul]
 
 /-- Spin^c translation equivariance of Némethi's weight function: shifting the characteristic
 covector by `2 · A l` translates the weight by `l`, up to the additive constant `χ_k(l)`,

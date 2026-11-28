@@ -203,11 +203,8 @@ theorem IsMorseSmale.signedMorseBoundaryCoeff_dual (hMS : hX.IsMorseSmale)
       ((𝔬.dual hX hf oM).orientation q)
       (reindex_unstableFrameOrientation_complementaryOrientation _ hf hp oM _)
       (reindex_unstableFrameOrientation_complementaryOrientation _ hf hq oM _) hMS hpq
-  · have hq' : manifoldMorseIndex 𝓘(ℝ, E) (-f) q ≠ manifoldMorseIndex 𝓘(ℝ, E) (-f) p + 1 := by
-      have := hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-      have := hq.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-      omega
-    rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hq',
+  · rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one
+      (hp.manifoldMorseIndex_neg_ne_add_one_of_ne_add_one hq hpq),
       signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hpq, mul_zero]
 
 section Ring

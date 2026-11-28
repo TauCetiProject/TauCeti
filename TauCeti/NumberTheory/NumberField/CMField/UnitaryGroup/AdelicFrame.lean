@@ -58,7 +58,9 @@ from `x_w`, the equation at `conj w` being equivalent to that at `w`.
 
 * `TauCeti.FramedHermitianSpace E s`: the hermitian spaces with an adelic frame of signs `s`.
 * `TauCeti.FramedHermitianSpace.rationalEmbedding`, `rationalPoints`, `finiteRationalPoints`:
-  the embedding `γ ↦ x⁻¹ γ x` and the groups `Γ_V` and `Γ_{V,f}`.
+  the embedding `γ ↦ x⁻¹ γ x` and the groups `Γ_V` and `Γ_{V,f}`, and
+  `TauCeti.FramedHermitianSpace.infiniteRationalEmbedding`, `finiteRationalEmbedding`: the
+  components `γ ↦ x_∞⁻¹ γ x_∞` and `γ ↦ x_f⁻¹ γ x_f` of the embedding.
 * `TauCeti.FramedHermitianSpace.lattice`: the lattice `Λ_V`.
 * The right action `V · g` of `G(s)`, as a `MulAction` of `G(s)ᵐᵒᵖ`.
 * `TauCeti.FramedHermitianSpace.standard E ι`: the standard space `I_n`.
@@ -199,6 +201,43 @@ theorem rationalEmbedding_injective : Function.Injective V.rationalEmbedding := 
   exact Subtype.ext (GeneralLinearGroup.map_injective
     (FiniteAdeleRing.algebraMap_injective E (RingOfIntegers.not_isField E)) h₂)
 
+/-- The **archimedean rational embedding** `γ ↦ x_∞⁻¹ γ x_∞` of `U(J)(E⁺)` in `G_∞(s)`: the
+archimedean component of the rational embedding. -/
+def infiniteRationalEmbedding : unitaryGroupOf V.gram →* infiniteAdelicUnitaryGroup E s :=
+  (adelicUnitaryGroup.infinitePart E s).comp V.rationalEmbedding
+
+/-- The archimedean component of the rational embedding is the archimedean rational embedding. -/
+@[simp]
+theorem infinitePart_rationalEmbedding (γ : unitaryGroupOf V.gram) :
+    adelicUnitaryGroup.infinitePart E s (V.rationalEmbedding γ) = V.infiniteRationalEmbedding γ :=
+  (rfl)
+
+/-- The archimedean rational embedding is `γ ↦ x_∞⁻¹ γ x_∞`. -/
+@[simp]
+theorem coe_infiniteRationalEmbedding (γ : unitaryGroupOf V.gram) :
+    (V.infiniteRationalEmbedding γ : GL ι (InfiniteAdeleRing E)) =
+      V.frame.1⁻¹ * GeneralLinearGroup.map (algebraMap E (InfiniteAdeleRing E)) γ * V.frame.1 := by
+  rw [← infinitePart_rationalEmbedding, adelicUnitaryGroup.coe_infinitePart,
+    coe_rationalEmbedding]
+
+/-- The **finite rational embedding** `γ ↦ x_f⁻¹ γ x_f` of `U(J)(E⁺)` in `G_f`: the finite
+component of the rational embedding. Its image is `Γ_{V,f}` (`finiteRationalPoints_def`). -/
+def finiteRationalEmbedding : unitaryGroupOf V.gram →* finiteAdelicUnitaryGroup E ι :=
+  (adelicUnitaryGroup.finitePart E s).comp V.rationalEmbedding
+
+/-- The finite component of the rational embedding is the finite rational embedding. -/
+@[simp]
+theorem finitePart_rationalEmbedding (γ : unitaryGroupOf V.gram) :
+    adelicUnitaryGroup.finitePart E s (V.rationalEmbedding γ) = V.finiteRationalEmbedding γ :=
+  (rfl)
+
+/-- The finite rational embedding is `γ ↦ x_f⁻¹ γ x_f`. -/
+@[simp]
+theorem coe_finiteRationalEmbedding (γ : unitaryGroupOf V.gram) :
+    (V.finiteRationalEmbedding γ : GL ι 𝔸ᶠ[E]) =
+      V.frame.2⁻¹ * GeneralLinearGroup.map (algebraMap E 𝔸ᶠ[E]) γ * V.frame.2 := by
+  rw [← finitePart_rationalEmbedding, adelicUnitaryGroup.coe_finitePart, coe_rationalEmbedding]
+
 /-- The **rational points** `Γ_V` of a space with an adelic frame: the image of `U(J)(E⁺)` in the
 adelic unitary group `G(s)` under the rational embedding `γ ↦ x⁻¹ γ x`. -/
 def rationalPoints : Subgroup (adelicUnitaryGroup E s) :=
@@ -210,22 +249,21 @@ theorem rationalPoints_def : V.rationalPoints = V.rationalEmbedding.range :=
   (rfl)
 
 /-- The **finite rational points** `Γ_{V,f}` of a space with an adelic frame: the image in the
-finite adelic unitary group `G_f` of `U(J)(E⁺)` under the rational embedding followed by the
-finite component, that is the image of the rational points `Γ_V` in `G_f`
+finite adelic unitary group `G_f` of `U(J)(E⁺)` under the finite rational embedding
+`γ ↦ x_f⁻¹ γ x_f`, that is the image of the rational points `Γ_V` in `G_f`
 (`finiteRationalPoints_eq_map`). -/
 def finiteRationalPoints : Subgroup (finiteAdelicUnitaryGroup E ι) :=
-  ((adelicUnitaryGroup.finitePart E s).comp V.rationalEmbedding).range
+  V.finiteRationalEmbedding.range
 
-/-- The finite rational points `Γ_{V,f}` are the range of the rational embedding followed by the
-finite component. -/
-theorem finiteRationalPoints_def :
-    V.finiteRationalPoints = ((adelicUnitaryGroup.finitePart E s).comp V.rationalEmbedding).range :=
+/-- The finite rational points `Γ_{V,f}` are the range of the finite rational embedding. -/
+theorem finiteRationalPoints_def : V.finiteRationalPoints = V.finiteRationalEmbedding.range :=
   (rfl)
 
 /-- `Γ_{V,f}` is the image of the rational points `Γ_V` in `G_f`. -/
 theorem finiteRationalPoints_eq_map :
     V.finiteRationalPoints = V.rationalPoints.map (adelicUnitaryGroup.finitePart E s) := by
-  rw [finiteRationalPoints_def, rationalPoints_def, MonoidHom.range_comp]
+  rw [finiteRationalPoints_def, rationalPoints_def, ← MonoidHom.range_comp]
+  exact congrArg MonoidHom.range (MonoidHom.ext fun γ ↦ (V.finitePart_rationalEmbedding γ).symm)
 
 /-- `Γ_{V,f}` consists of the conjugates `x_f⁻¹ γ x_f` of the elements `γ ∈ U(J)(E⁺)` by the
 finite component `x_f` of the frame. -/
@@ -233,8 +271,8 @@ theorem mem_finiteRationalPoints_iff {g : finiteAdelicUnitaryGroup E ι} :
     g ∈ V.finiteRationalPoints ↔ ∃ γ : unitaryGroupOf V.gram,
       V.frame.2⁻¹ * GeneralLinearGroup.map (algebraMap E 𝔸ᶠ[E]) γ * V.frame.2 =
         (g : GL ι 𝔸ᶠ[E]) := by
-  simp only [finiteRationalPoints_def, MonoidHom.mem_range, MonoidHom.comp_apply, Subtype.ext_iff,
-    adelicUnitaryGroup.coe_finitePart, coe_rationalEmbedding]
+  simp only [finiteRationalPoints_def, MonoidHom.mem_range, Subtype.ext_iff,
+    coe_finiteRationalEmbedding]
 
 /-! ### The lattice -/
 

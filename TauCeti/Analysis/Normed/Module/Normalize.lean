@@ -24,6 +24,8 @@ sphere, which moves nets built from arbitrary approximants onto the sphere.
   over a closed set `S` of directions is closed.
 * `NormedSpace.normalize_apply_normalize`: a map commuting with nonnegative dilations commutes
   with normalization up to normalization.
+* `NormedSpace.eq_normalize_iff_of_apply_pos`: a positive functional selects the unique unit
+  vector in an oriented line.
 * `NormedSpace.normalize_eq_div_norm`: in a normed field over `ℝ`, such as `ℂ`, normalization is
   division by the norm.
 * `NormedSpace.dist_normalize_le_two_mul_dist`: `dist x (normalize y) ≤ 2 * dist x y` for a unit
@@ -204,6 +206,24 @@ theorem _root_.NormedSpace.tendsto_normalize_sub_normalize_sub_cobounded (c : E)
   exact hd
 
 end Direction
+
+/-- A functional positive on `u` characterizes its normalization by unit length, membership
+in the line spanned by `u`, and positive functional value. -/
+theorem _root_.NormedSpace.eq_normalize_iff_of_apply_pos {u v : E} {ℓ : E →ₗ[ℝ] ℝ} (hℓ : 0 < ℓ u) :
+    v = normalize u ↔ ‖v‖ = 1 ∧ v ∈ ℝ ∙ u ∧ 0 < ℓ v := by
+  have hu : u ≠ 0 := by
+    rintro rfl
+    simp at hℓ
+  constructor
+  · rintro rfl
+    refine ⟨norm_normalize hu, ?_, ?_⟩
+    · exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self u)
+    · simpa only [normalize, map_smul, smul_eq_mul] using
+        mul_pos (inv_pos.mpr (norm_pos_iff.mpr hu)) hℓ
+  · rintro ⟨hnorm, hmem, hpos⟩
+    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hmem
+    have hc : 0 < c := (mul_pos_iff_of_pos_right hℓ).mp (by simpa using hpos)
+    rw [← normalize_eq_self_of_norm_eq_one hnorm, normalize_smul_of_pos hc]
 
 end TauCeti
 

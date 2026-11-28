@@ -13,6 +13,9 @@ public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
 
 A finite-type scheme over a base is a scheme with a quasi-compact morphism to the base that is
 locally of finite type. The category inherits all morphisms over the base.
+
+A morphism over the base between schemes over it is locally of finite type when its source is
+(`AlgebraicGeometry.Scheme.Hom.locallyOfFiniteType_of_isOver`).
 -/
 
 public section
@@ -55,5 +58,15 @@ over its target. -/
 abbrev FiniteType.mk {S X : Scheme.{u}} (f : X ⟶ S) [LocallyOfFiniteType f]
     [QuasiCompact f] : S.FiniteType :=
   MorphismProperty.Over.mk ⊤ f ⟨inferInstance, inferInstance⟩
+
+/-- A morphism `f : X ⟶ Y` over `S` is locally of finite type when `X` is locally of finite type
+over `S`. -/
+lemma Hom.locallyOfFiniteType_of_isOver {X Y : Scheme.{u}} (S : Scheme.{u}) [X.Over S]
+    [Y.Over S] (f : X ⟶ Y) [f.IsOver S] [LocallyOfFiniteType (X ↘ S)] :
+    LocallyOfFiniteType f := by
+  have : LocallyOfFiniteType (f ≫ Y ↘ S) := by
+    rw [comp_over]
+    infer_instance
+  exact locallyOfFiniteType_of_comp f (Y ↘ S)
 
 end AlgebraicGeometry.Scheme
