@@ -13,9 +13,9 @@ public import Mathlib.RingTheory.RootsOfUnity.Complex
 
 Given a multiplicative character `T : MulChar K ℂ` and an integer `Q ≥ 2`, every `(Q - 1)`-th root
 of unity `x ∈ K` maps under `T` to a `(Q - 1)`-th root of unity in `ℂ`, hence to a power
-`exp (2πi / (Q - 1)) ^ e`. Defining `T.thetaChar Q x := T ^ e` produces a pairing on `(Q - 1)`-th
-roots of unity used to parameterize Green's cuspidal functions `τ_P` on `GL_n(k)` by irreducible
-polynomials `P`.
+`exp (2πi / (Q - 1)) ^ e`. Defining `T.thetaChar Q x := T ^ e` produces a symmetric pairing on
+`(Q - 1)`-th roots of unity used to parameterize Green's cuspidal functions `τ_P` on `GL_n(k)` by
+irreducible polynomials `P`.
 
 * `MulChar.thetaExponent`: chosen natural number `j` with `T x = exp (2πi / (Q - 1)) ^ j`.
 * `MulChar.apply_eq_exp_pow_thetaExponent`: `T x = exp (2πi / (Q - 1)) ^ T.thetaExponent Q x`
@@ -23,6 +23,7 @@ polynomials `P`.
 * `MulChar.thetaChar`: the multiplicative character `T ^ T.thetaExponent Q x`.
 * `MulChar.thetaChar_def`: defining equation `T.thetaChar Q x = T ^ T.thetaExponent Q x`.
 * `MulChar.thetaChar_apply_pow`: symmetry `T.thetaChar Q x (z ^ m) = (T ^ a) x`.
+* `MulChar.thetaChar_comm`: root-pairing symmetry `T.thetaChar Q x z = T.thetaChar Q z x`.
 * `MulChar.thetaChar_mul`: multiplicativity in the indexing root `x`.
 * `MulChar.thetaChar_eq_apply_norm_pow`: base-change formula relating `Q` and `Q ^ r`
   via the norm exponent `∑ i ∈ Finset.range r, Q ^ i`.
@@ -90,17 +91,23 @@ theorem thetaChar_apply_pow (hx : x ^ (Q - 1) = 1) {a N : ℕ} (hN : N ≠ 0)
     field_simp
   simp only [← exp_nsmul, nsmul_eq_mul, Nat.cast_mul, h_exp]
 
+/-- Symmetry of the root pairing `MulChar.thetaChar`: for `2 ≤ Q` and `(Q - 1)`-th roots of unity
+`x, z ∈ K`, `T.thetaChar Q x z = T.thetaChar Q z x`. -/
+theorem thetaChar_comm (hQ : 2 ≤ Q) (hx : x ^ (Q - 1) = 1) (hz : z ^ (Q - 1) = 1) :
+    T.thetaChar Q x z = T.thetaChar Q z x := by
+  have hTz := T.apply_eq_exp_pow_thetaExponent hQ hz
+  simpa [thetaChar_def] using
+    T.thetaChar_apply_pow hx (Nat.sub_ne_zero_of_lt hQ) (mul_one _).symm hTz
+
 /-- Multiplicativity of `MulChar.thetaChar` in the indexing root: for `2 ≤ Q` and `(Q - 1)`-th
 roots of unity `x, y, z ∈ K`,
 `T.thetaChar Q (x * y) z = T.thetaChar Q x z * T.thetaChar Q y z`. -/
+@[simp]
 theorem thetaChar_mul (hQ : 2 ≤ Q) (hx : x ^ (Q - 1) = 1) (hy : y ^ (Q - 1) = 1)
     (hz : z ^ (Q - 1) = 1) :
     T.thetaChar Q (x * y) z = T.thetaChar Q x z * T.thetaChar Q y z := by
-  have hTz := T.apply_eq_exp_pow_thetaExponent hQ hz
-  have h_symm {w : K} (hw : w ^ (Q - 1) = 1) : T.thetaChar Q w z = T.thetaChar Q z w := by
-    simpa [thetaChar_def] using
-      T.thetaChar_apply_pow hw (Nat.sub_ne_zero_of_lt hQ) (mul_one _).symm hTz
-  rw [h_symm hx, h_symm hy, h_symm (by rw [mul_pow, hx, hy, one_mul]), map_mul]
+  rw [T.thetaChar_comm hQ hx hz, T.thetaChar_comm hQ hy hz,
+    T.thetaChar_comm hQ (by rw [mul_pow, hx, hy, one_mul]) hz, map_mul]
 
 /-- Base-change formula for `MulChar.thetaChar`: if `2 ≤ Q`, `r ≠ 0`, `x ^ (Q - 1) = 1`, and
 `z ^ (Q ^ r - 1) = 1`, then
@@ -118,8 +125,7 @@ theorem thetaChar_eq_apply_norm_pow (hQ : 2 ≤ Q) {r : ℕ} (hr : r ≠ 0) (a :
     rw [mul_comm, geom_sum_mul_of_one_le (by omega)]
   have hxa : (x ^ a) ^ (Q ^ r - 1) = 1 := by
     simp [pow_right_comm x a, h_geom, pow_mul, hx]
-  have h_left : T.thetaChar (Q ^ r) (x ^ a) z = (T ^ T.thetaExponent (Q ^ r) z) (x ^ a) := by
-    simpa using T.thetaChar_apply_pow hxa hQr_sub (mul_one _).symm hTz
-  rw [h_left, T.thetaChar_apply_pow hx hQr_sub h_geom hTz, map_pow]
+  rw [T.thetaChar_comm hQr hxa hz, thetaChar_def,
+    T.thetaChar_apply_pow hx hQr_sub h_geom hTz, map_pow]
 
 end MulChar
