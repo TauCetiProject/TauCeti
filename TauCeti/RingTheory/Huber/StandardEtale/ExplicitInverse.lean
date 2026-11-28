@@ -383,21 +383,25 @@ private noncomputable def withInversePairHom
   tateSeriesPair.evalHom P.toBasePairHom
     (fun j ↦ ⟨P.withInverseTuple j, P.withInverseTuple_mem_plus j⟩)
 
+private theorem withInversePairHom_toRingHom_apply
+    (P : StandardEtalePresentation Aplus ϖ Cplus) (f : tateSeries (P.N + 1) A) :
+    P.withInversePairHom.toRingHom f =
+      weightedEval (algebraMap A C) P.withInverseTuple
+        (f : MvPowerSeries (Fin (P.N + 1)) A) := by
+  let _ : UniformSpace C := IsTopologicalAddGroup.rightUniformSpace C
+  have : IsUniformAddGroup C := isUniformAddGroup_of_addCommGroup
+  have : T2Space C := P.t2Space
+  have : CompleteSpace C := P.completeSpace
+  rw [withInversePairHom, tateSeriesPair.toRingHom_evalHom, toBasePairHom_toRingHom]
+
 /-- **Extended `A`-algebra quotient homomorphism `tateSeries (P.N + 1) A →ₐ[A] C`** extending `P.π`
 along `tateSeries.castSuccAlgHom` and sending `T_{P.N}` to `ϖ ^ P.k · P.π(P.jacobian)⁻¹ ∈ C⁺`. -/
 noncomputable def withInverseHom (P : StandardEtalePresentation Aplus ϖ Cplus) :
     tateSeries (P.N + 1) A →ₐ[A] C :=
-  { toRingHom := P.withInversePairHom.toRingHom
+  { P.withInversePairHom.toRingHom with
+    toFun := P.withInversePairHom.toRingHom
     commutes' a := by
-      let _ : UniformSpace C := IsTopologicalAddGroup.rightUniformSpace C
-      have : IsUniformAddGroup C := isUniformAddGroup_of_addCommGroup
-      have : T2Space C := P.t2Space
-      have : CompleteSpace C := P.completeSpace
-      change P.withInversePairHom.toRingHom (algebraMap A (tateSeries (P.N + 1) A) a) =
-        algebraMap A C a
-      dsimp only [withInversePairHom]
-      rw [tateSeriesPair.toRingHom_evalHom, tateSeries.coe_algebraMap,
-        weightedEval_C, toBasePairHom_toRingHom] }
+      rw [P.withInversePairHom_toRingHom_apply, tateSeries.coe_algebraMap, weightedEval_C] }
 
 /-- `P.withInverseHom` is continuous. -/
 theorem continuous_withInverseHom (P : StandardEtalePresentation Aplus ϖ Cplus) :
@@ -409,13 +413,8 @@ private theorem withInverseHom_apply
     P.withInverseHom f =
       weightedEval (algebraMap A C) P.withInverseTuple
         (f : MvPowerSeries (Fin (P.N + 1)) A) := by
-  let _ : UniformSpace C := IsTopologicalAddGroup.rightUniformSpace C
-  have : IsUniformAddGroup C := isUniformAddGroup_of_addCommGroup
-  have : T2Space C := P.t2Space
-  have : CompleteSpace C := P.completeSpace
-  change P.withInversePairHom.toRingHom f = _
-  dsimp only [withInversePairHom]
-  rw [tateSeriesPair.toRingHom_evalHom, toBasePairHom_toRingHom]
+  rw [← AlgHom.coe_toRingHom]
+  exact P.withInversePairHom_toRingHom_apply f
 
 private theorem withInverseHom_X_apply
     (P : StandardEtalePresentation Aplus ϖ Cplus) (j : Fin (P.N + 1)) :

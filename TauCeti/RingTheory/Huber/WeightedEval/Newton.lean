@@ -246,14 +246,13 @@ private theorem mul_jacobianOD_eq
       weightedEval (RingHom.id C) (fun l ↦ (t l : C)) (MvPowerSeries.pderiv j (F i))) =
         (ϖ : C) ^ k • (1 : Matrix (Fin N) (Fin N) C)) :
     M * jacobianOD P hF₀ t = ϖ ^ k • (1 : Matrix (Fin N) (Fin N) P.ringOfDefinition) := by
-  apply Matrix.map_injective Subtype.coe_injective
-  have h : P.ringOfDefinition.subtype.mapMatrix (M * jacobianOD P hF₀ t) =
-      P.ringOfDefinition.subtype.mapMatrix (ϖ ^ k • 1) := by
-    rw [map_mul, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply,
-      Matrix.map_smul' _ _ _ (map_mul _), Matrix.map_one _ (map_zero _) (map_one _), map_pow,
-      Subring.coe_subtype]
-    exact hM
-  simpa only [RingHom.mapMatrix_apply, Subring.coe_subtype] using h
+  have hjac : (jacobianOD P hF₀ t).map Subtype.val = Matrix.of (fun i j ↦
+      weightedEval (RingHom.id C) (fun l ↦ (t l : C)) (MvPowerSeries.pderiv j (F i))) := by
+    ext i j
+    simp [jacobianOD]
+  exact (Matrix.map_mul_eq_smul_one_iff (f := P.ringOfDefinition.subtype) Subtype.coe_injective
+    M (jacobianOD P hF₀ t) (ϖ ^ k)).mp
+      (by simpa only [Subring.coe_subtype, map_pow, hjac] using hM)
 
 /-- **Error bound in Newton's method for restricted series.** Let `ϖ ∈ A₀` be a unit of `C`, and
 let `M` be an integral matrix with `M J(t) = ϖᵏ`, where `J(t) = (∂ⱼFᵢ(t))` is the Jacobian matrix
@@ -344,11 +343,8 @@ private theorem exists_mul_eq_pow_smul_one_of_matrix_dvd [T0Space C]
     rw [Matrix.mul_assoc, hMJ₂, Matrix.mul_smul, Matrix.nonsing_inv_mul _ hUdet]
   have hleft : M'.map ((↑) : P.ringOfDefinition → C) * J₂.map ((↑) : P.ringOfDefinition → C) =
       (ϖ : C) ^ k • (1 : Matrix (Fin N) (Fin N) C) := by
-    have h := congrArg P.ringOfDefinition.subtype.mapMatrix hM'J₂
-    rw [map_mul, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply,
-      Matrix.map_smul' _ _ _ (map_mul _), Matrix.map_one _ (map_zero _) (map_one _), map_pow,
-      Subring.coe_subtype] at h
-    exact h
+    simpa only [Subring.coe_subtype, map_pow] using
+      Matrix.map_mul_eq_smul_one P.ringOfDefinition.subtype hM'J₂
   -- Stage 4: Two-sidedness of the `ϖ ^ k`-scaled inverse.
   exact ⟨M', hM'mod, hleft,
     (Matrix.mul_eq_smul_one_comm

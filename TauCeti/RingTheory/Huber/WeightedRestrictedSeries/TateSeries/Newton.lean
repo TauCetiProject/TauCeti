@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.TateSeries.Eval
 public import TauCeti.RingTheory.Huber.WeightedEval.Newton
+import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
 # Multivariable Newton–Hensel lifting for `tateSeries`
@@ -95,18 +96,20 @@ theorem tateSeries.adjugateJacobianMatrixInv_mul
           (MvPowerSeries.pderiv j (F i : MvPowerSeries (Fin N) A))) =
       (s * weightedEval φ x (tateSeries.jacobian F : MvPowerSeries (Fin N) A)) •
         (1 : Matrix (Fin N) (Fin N) C) := by
-  let JR : Matrix (Fin N) (Fin N) R :=
-    Matrix.of fun i j ↦ ⟨weightedEval φ x
-      (MvPowerSeries.pderiv j (F i : MvPowerSeries (Fin N) A)), hJ i j⟩
   let J : Matrix (Fin N) (Fin N) C :=
     Matrix.of fun i j ↦ weightedEval φ x
       (MvPowerSeries.pderiv j (F i : MvPowerSeries (Fin N) A))
-  have hJR_map : JR.map R.subtype = J := rfl
+  have hJR_map : (Matrix.of fun i j ↦ (⟨weightedEval φ x
+      (MvPowerSeries.pderiv j (F i : MvPowerSeries (Fin N) A)), hJ i j⟩ : R)).map R.subtype =
+      J := by
+    ext i j
+    simp [J]
   have hadj : (tateSeries.adjugateJacobianMatrixInv R φ x F hJ hs).map Subtype.val =
       s • J.adjugate := by
-    change ((⟨s, hs⟩ : R) • JR.adjugate).map R.subtype = s • J.adjugate
-    rw [Matrix.map_smul' _ _ _ (map_mul R.subtype), ← RingHom.mapMatrix_apply,
-      RingHom.map_adjugate, RingHom.mapMatrix_apply, hJR_map]; rfl
+    rw [tateSeries.adjugateJacobianMatrixInv, ← Subring.coe_subtype (s := R),
+      Matrix.map_smul' _ _ _ (map_mul R.subtype), ← RingHom.mapMatrix_apply,
+      RingHom.map_adjugate, RingHom.mapMatrix_apply, hJR_map]
+    simp
   rw [hadj, Matrix.smul_mul, Matrix.adjugate_mul, smul_smul, weightedEval_tateSeries_jacobian hφ hx]
 
 end Adjugate
@@ -211,11 +214,10 @@ theorem existsUnique_weightedEval_tateSeries_eq_zero_of_coeff_sub
       (ϖ : C) ^ (k + 1) • (P.ringOfDefinition : Set C) := by
     intro i ν
     obtain ⟨r, hr⟩ := hFG i ν
-    refine ⟨(ϖ ^ (e - (k + 1)) * r : P.ringOfDefinition), SetLike.coe_mem _, ?_⟩
-    change (ϖ : C) ^ (k + 1) • ((ϖ ^ (e - (k + 1)) * r : P.ringOfDefinition) : C) = _
-    push_cast
-    rw [← AddSubgroupClass.coe_sub (G i) (F i), hr, smul_eq_mul, ← mul_assoc, ← pow_add,
-      Nat.add_sub_of_le hke]
+    rw [Set.mem_smul_set]
+    refine ⟨((ϖ ^ (e - (k + 1)) * r : P.ringOfDefinition) : C), SetLike.coe_mem _, ?_⟩
+    rw [smul_eq_mul, Subring.coe_mul, Subring.coe_pow, ← mul_assoc, ← pow_add,
+      Nat.add_sub_of_le hke, ← hr, AddSubgroupClass.coe_sub, map_sub]
   obtain ⟨M', -, hJM', -⟩ := exists_mul_jacobianMatrix_eq_pow_smul_one_of_coeff_mem P hϖ
     (fun i ↦ mem_weightedRestrictedSubring.mp (F i).property)
     (fun i ↦ mem_tateSeriesPlus_iff.mp (hF i))
@@ -317,12 +319,8 @@ theorem map_weightedEval_tateSeries_eq_zero
         (fun m ↦ P.isBounded_ringOfDefinition.isPowerBounded_of_mem (t m).property)
         (tateSeries.pderiv j (F i))).symm
     have hM' : M'.map Subtype.val = (M.map Subtype.val).map φ := rfl
-    have h := congrArg φ.mapMatrix hJ
-    rw [map_mul, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply,
-      Matrix.map_smul' _ _ _ (map_mul _), Matrix.map_one _ (map_zero _) (map_one _),
-      map_pow] at h
     rw [hM', hJφ]
-    exact h
+    simpa only [map_pow] using Matrix.map_mul_eq_smul_one φ hJ
   exact eq_of_weightedEval_eq_zero P' (hϖ.map hφ)
     (fun i ↦ mem_weightedRestrictedSubring.mp (tateSeries.mapRingHom hφ (F i)).property)
     (fun i ↦ mem_tateSeriesPlus_iff.mp (hF' i))
