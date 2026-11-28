@@ -263,6 +263,7 @@ theorem _root_.Finset.norm_mul_prod_pow_le {ι R : Type*} [SeminormedCommRing R]
 
 /-- Without the normalisation `‖1‖ = 1`, a multiplicative norm still satisfies `‖(1 : M)‖ ≤ 1`
 (since `‖1‖ * ‖1‖ = ‖1‖` forces `‖1‖ = 0` or `‖1‖ = 1`). -/
+@[simp]
 theorem norm_one_le_one {M : Type*} [Norm M] [MulOneClass M] [NormMulClass M] :
     ‖(1 : M)‖ ≤ 1 := by
   have hmul : ‖(1 : M)‖ * ‖(1 : M)‖ = ‖(1 : M)‖ := by simpa using (norm_mul (1 : M) 1).symm

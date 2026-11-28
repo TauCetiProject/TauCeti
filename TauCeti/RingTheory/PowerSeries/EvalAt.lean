@@ -14,6 +14,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.Analysis.Normed.Algebra.Basic
 import TauCeti.RingTheory.PowerSeries.GaussNorm
 import TauCeti.RingTheory.PowerSeries.Restricted
 
@@ -438,7 +439,7 @@ theorem norm_evalAt_le_gaussNorm [IsUltrametricDist A] [NormOneClass A] {r : ℝ
     (hf : f.HasGaussNorm norm r) {b : A} (hb : ‖b‖ ≤ r) :
     ‖f.evalAt b‖ ≤ gaussNorm norm r f :=
   norm_evalAt_le_gaussNorm_of_norm_algebraMap_le hf
-    (fun a ↦ by simpa [Algebra.algebraMap_eq_smul_one] using norm_smul_le a (1 : A)) hb
+    (TauCeti.norm_algebraMap_le_of_norm_one_le_one norm_one.le) hb
 
 /-- In any normed algebra, the value of a series at a point `b` with `‖b‖ ≤ q * r`, where
 `0 ≤ q < 1`, is bounded by `(‖1‖ + 1) * (1 - q)⁻¹` times the Gauss norm of the series at the radius

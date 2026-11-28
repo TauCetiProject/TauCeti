@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.RingTheory.PowerSeries.EvalAt
 public import TauCeti.RingTheory.PowerSeries.Radius
+import TauCeti.Analysis.Normed.Algebra.Basic
 import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.RingTheory.PowerSeries.Entire.Eval
@@ -221,12 +222,10 @@ end UltrametricEval
 theorem norm_evalAt_le_gaussNorm_of_summable_smul_pow {R A : Type*} [NormedCommRing R]
     [SeminormedRing A] [Algebra R A] [NormSMulClass R A] [NormMulClass A] [IsUltrametricDist A]
     {f : R⟦X⟧} {x y : A} (hy : ‖y‖ ≤ ‖x‖) (h : Summable fun n ↦ coeff n f • x ^ n) :
-    ‖f.evalAt y‖ ≤ gaussNorm norm ‖x‖ f := by
-  refine norm_evalAt_le_gaussNorm_of_norm_algebraMap_le
+    ‖f.evalAt y‖ ≤ gaussNorm norm ‖x‖ f :=
+  norm_evalAt_le_gaussNorm_of_norm_algebraMap_le
     (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (isRestricted_norm_of_summable h))
-    (fun a ↦ ?_) hy
-  rw [Algebra.algebraMap_eq_smul_one, norm_smul]
-  exact mul_le_of_le_one_right (norm_nonneg a) TauCeti.norm_one_le_one
+    (TauCeti.norm_algebraMap_le_of_norm_one_le_one TauCeti.norm_one_le_one) hy
 
 section ConvergenceRadiusDef
 
