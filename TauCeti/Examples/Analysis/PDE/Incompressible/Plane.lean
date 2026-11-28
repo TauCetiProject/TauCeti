@@ -28,9 +28,10 @@ on `ℝ² = EuclideanSpace ℝ (Fin 2)`, with coordinates `x = (x 0, x 1)`.
   `TauCeti.hasWeakDivergenceOn_id`.
 * **Shears.** The shear `(g(x₂), 0)` is solenoidal for every locally integrable `g`
   (`isSolenoidalOn_shear`). For the Heaviside function `g = 1_{(0, ∞)}` the shear has no weak
-  derivative at all (`not_hasWeakFDerivOn_heavisideShear`): its first component jumps across the
-  line `x₂ = 0`. So solenoidality, a condition on the single scalar `div u`, is strictly weaker
-  than weak differentiability of `u`.
+  Fréchet derivative, i.e. no weak derivative in the direction `x₂`
+  (`not_hasWeakFDerivOn_heavisideShear`): its first component jumps across the line `x₂ = 0`.
+  So solenoidality, a condition on the single scalar `div u`, is strictly weaker than weak
+  differentiability of `u`.
 
 ## References
 
@@ -109,7 +110,7 @@ theorem isSolenoidalOn_shear {g : ℝ → ℝ} (hg : LocallyIntegrable g) :
   exact isSolenoidalOn_smul_const_of_forall_add_smul_eq hgA fun x t ↦ by simp
 
 /-- The Heaviside shear `(1_{(0, ∞)}(x₂), 0)`, solenoidal by `isSolenoidalOn_shear`, has no weak
-derivative: its first component jumps across the line `x₂ = 0`. -/
+Fréchet derivative on the plane: its first component jumps across the line `x₂ = 0`. -/
 theorem not_hasWeakFDerivOn_heavisideShear
     (U : EuclideanSpace ℝ (Fin 2) → EuclideanSpace ℝ (Fin 2) →L[ℝ] EuclideanSpace ℝ (Fin 2)) :
     ¬ HasWeakFDerivOn volume ⊤
