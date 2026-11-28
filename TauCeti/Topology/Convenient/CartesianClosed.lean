@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
 public import Mathlib.CategoryTheory.Monoidal.Closed.Basic
+public import TauCeti.Topology.Category.TopCat.MappingSpace
 public import TauCeti.Topology.Category.TopCat.Monoidal
 public import TauCeti.Topology.Convenient.Category
 public import TauCeti.Topology.Convenient.HomSpace
@@ -556,6 +557,30 @@ theorem equiv_compactOpenToIhom_apply (Y Z : GeneratedByTopCat.{v} G)
       (TopCat.ofHom ⟨ContinuousMap.toContinuousMapGeneratedBy G,
         ContinuousMap.continuous_toContinuousMapGeneratedBy⟩) f
   simp [h]
+
+/-- `compactOpenToIhom Y` is natural in the target `Z`. -/
+@[reassoc]
+theorem compactOpenToIhom_naturality (Y : GeneratedByTopCat.{v} G)
+    {Z T : GeneratedByTopCat.{v} G} (f : Z ⟶ T) :
+    (toTopCat ⋙ TopCat.mappingSpace Y.obj ⋙ TopCat.toGeneratedByTopCat (X := G)).map f ≫
+        compactOpenToIhom Y T =
+      compactOpenToIhom Y Z ≫ (ihom Y).map f :=
+  ConcreteCategory.hom_ext _ _ fun _ ↦
+    (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y T)).injective <|
+      DFunLike.ext _ _ fun _ ↦ rfl
+
+/-- When every compact subset of `Y` is the continuous image of a compact subset of some generator
+`G i`, `compactOpenToIhom Y Z` is an isomorphism in `GeneratedByTopCat G`. -/
+theorem isIso_compactOpenToIhom (Y Z : GeneratedByTopCat.{v} G)
+    (hG : ∀ ⦃K : Set Y⦄, IsCompact K →
+      ∃ (i : ι) (L : Set (G i)) (p : C(G i, Y)), IsCompact L ∧ p '' L = K) :
+    IsIso (compactOpenToIhom Y Z) := by
+  have h : TopCat.ofHom ⟨ContinuousMap.toContinuousMapGeneratedBy G,
+      ContinuousMap.continuous_toContinuousMapGeneratedBy⟩ =
+      (TopCat.isoOfHomeo
+        (ContinuousMapGeneratedBy.homeomorphContinuousMap (Z := Z) hG)).inv := rfl
+  rw [compactOpenToIhom, h]
+  exact Functor.map_isIso _ _
 
 end Closed
 

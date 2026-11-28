@@ -287,14 +287,34 @@ theorem toCompactlyGeneratedProdLeftIso_inv_apply (L : Type w) (X : TopCat.{w})
     (p : ↑((of L : CompactlyGenerated.{u, w}) ⊗ TopCat.toCompactlyGenerated.{u, w}.obj X)) :
     (toCompactlyGeneratedProdLeftIso L X).inv p = p := (rfl)
 
+/-- The convenient product `X ⊗ Y` carries the `u`-compactly generated refinement of the
+ordinary product topology on `X × Y`. -/
+theorem topologicalSpace_tensor_eq (X Y : CompactlyGenerated.{u, w}) :
+    (X ⊗ Y).toTop.str = TopologicalSpace.compactlyGenerated.{u} (X × Y) :=
+  rfl
+
 /-- Any map into `↑(X ⊗ Y)` from a `u`-compactly generated space that is continuous into the
 ordinary product `X × Y` is continuous into the convenient product `X ⊗ Y`. -/
 theorem continuous_toCompactlyGeneratedProd {A : Type*} [TopologicalSpace A]
     [UCompactlyGeneratedSpace.{u} A] {X Y : CompactlyGenerated.{u, w}}
     {g : A → ↑(X ⊗ Y)} (hg : Continuous fun a ↦ ((g a).1, (g a).2)) :
     Continuous g := by
-  change Continuous[_, TopologicalSpace.compactlyGenerated.{u} (X × Y)] g
-  exact TopologicalSpace.continuous_to_compactlyGenerated_of_uCompactlyGeneratedSpace.{u} hg
+  rw [topologicalSpace_tensor_eq]
+  exact TopologicalSpace.continuous_to_compactlyGenerated_of_uCompactlyGeneratedSpace.{u}
+    (Y := X × Y) (hg.congr fun a ↦ Prod.eta (g a))
+
+/-- A map from a `u`-compactly generated space into the convenient product `X ⊗ Y` is continuous
+if and only if both coordinate maps are continuous. -/
+theorem continuous_toCompactlyGeneratedProd_iff {A : Type*} [TopologicalSpace A]
+    [UCompactlyGeneratedSpace.{u} A] {X Y : CompactlyGenerated.{u, w}}
+    {g : A → ↑(X ⊗ Y)} :
+    Continuous g ↔ (Continuous fun a ↦ (g a).1) ∧ (Continuous fun a ↦ (g a).2) :=
+  ⟨fun hg ↦
+    ⟨((CartesianMonoidalCategory.fst X Y).hom.hom.continuous.comp hg).congr
+      (fun a ↦ fst_apply X Y (g a)),
+     ((CartesianMonoidalCategory.snd X Y).hom.hom.continuous.comp hg).congr
+      (fun a ↦ snd_apply X Y (g a))⟩,
+   fun ⟨h1, h2⟩ ↦ continuous_toCompactlyGeneratedProd (h1.prodMk h2)⟩
 
 /-! ### Cartesian closed structure -/
 
@@ -471,6 +491,15 @@ theorem compactOpenToIhom_apply (Y Z : CompactlyGenerated.{u, w})
     (f : TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, Z))) (y : Y) :
     (compactOpenToIhom Y Z f) y = f y := (rfl)
 
+/-- `compactOpenToIhom Y` is natural in the target `Z`. -/
+@[reassoc]
+theorem compactOpenToIhom_naturality (Y : CompactlyGenerated.{u, w})
+    {Z T : CompactlyGenerated.{u, w}} (f : Z ⟶ T) :
+    (compactlyGeneratedToTop.{u, w} ⋙ TopCat.mappingSpace Y.toTop ⋙
+        TopCat.toCompactlyGenerated.{u, w}).map f ≫ compactOpenToIhom Y T =
+      compactOpenToIhom Y Z ≫ (ihom Y).map f :=
+  ConcreteCategory.hom_ext _ _ fun _ ↦ DFunLike.ext _ _ fun _ ↦ rfl
+
 instance (Y Z : CompactlyGenerated.{u, w}) :
     FunLike ↑((compactlyGeneratedToTop.{u, w} ⋙ TopCat.mappingSpace Y.toTop ⋙
       TopCat.toCompactlyGenerated.{u, w}).obj Z) Y Z :=
@@ -535,6 +564,13 @@ theorem ihomIsoToCompactlyGeneratedMappingSpace_inv_app
   ConcreteCategory.hom_ext _ _ fun f ↦ DFunLike.ext _ _ fun y ↦
     (ihomIsoToCompactlyGeneratedMappingSpace_inv_app_apply Y Z f y).trans
       (compactOpenToIhom_apply Y Z f y).symm
+
+/-- When `Y` is `u`-small and Hausdorff, `compactOpenToIhom Y Z` is an isomorphism in
+`CompactlyGenerated.{u, w}`. -/
+instance instIsIsoCompactOpenToIhom (Y Z : CompactlyGenerated.{u, w})
+    [T2Space Y] [Small.{u} Y] : IsIso (compactOpenToIhom Y Z) := by
+  rw [← ihomIsoToCompactlyGeneratedMappingSpace_inv_app Y Z]
+  exact inferInstanceAs (IsIso ((ihomIsoToCompactlyGeneratedMappingSpace Y).app Z).inv)
 
 /-- When `Y` is locally compact, `u`-small, and Hausdorff, currying `Y ⊗ X ⟶ Z` into `k(C(Y, Z))`
 agrees with currying on the ordinary product `Y × X` in `TopCat` (`TopCat.curryEquiv`) followed by

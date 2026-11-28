@@ -107,9 +107,11 @@ theorem toGeneratedByTopCat_map_adjCounit_hom (X : TopCat.{v}) :
 theorem isIso_adjCounit_app_iff (X : TopCat.{v}) :
     CategoryTheory.IsIso ((adjCounit (X := G)).app X) ↔ Topology.IsGeneratedBy G X := by
   rw [TopCat.isIso_iff_isHomeomorph]
-  change IsHomeomorph ((adjCounit (X := G)).app X).hom ↔ _
-  rw [adjCounit_app_hom]
-  exact Topology.WithGeneratedByTopology.isHomeomorph_counit_iff G X
+  -- `TopCat.isIso_iff_isHomeomorph` states `IsHomeomorph ⇑(ConcreteCategory.hom _)`, whereas
+  -- `adjCounit_app_hom` rewrites `TopCat.Hom.hom`.
+  exact (iff_of_eq (congrArg (fun f : C(_, _) ↦ IsHomeomorph (f : _ → _))
+    (adjCounit_app_hom G X))).trans
+    (Topology.WithGeneratedByTopology.isHomeomorph_counit_iff G X)
 
 theorem adjCounit_app_apply (X : TopCat.{v})
     (x : ↑((TopCat.toGeneratedByTopCat (X := G)).obj X)) :
