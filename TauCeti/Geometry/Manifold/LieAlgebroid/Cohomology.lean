@@ -58,7 +58,7 @@ def cochainZeroEquiv (A : LieAlgebroid I F V) : A.Cochain 0 ≃ₗ[C^∞⟮I, M;
 
 /-- Express the scalar-section evaluation of a degree-`0` cochain in terms of
 `A.cochainZeroEquiv`. -/
-@[simp] theorem trivialEquiv_alternatingIsEmptyEquiv (A : LieAlgebroid I F V) (η : A.Cochain 0) :
+theorem trivialEquiv_alternatingIsEmptyEquiv (A : LieAlgebroid I F V) (η : A.Cochain 0) :
     ContMDiffSection.trivialEquiv (ContMDiffSection.alternatingIsEmptyEquiv η) =
       A.cochainZeroEquiv η :=
   by rw [cochainZeroEquiv, LinearEquiv.trans_apply]
@@ -238,7 +238,7 @@ abbrev cohomology (k : ℕ) : ModuleCat ℝ := A.cochainComplex.homology k
   (A.cochainAlternatingEquiv 0).injective (by simp)
 
 /-- **Cartan's magic formula** for Lie algebroid cochains: `ι_a (d_A η) = L_a η - d_A (ι_a η)`. -/
-theorem interior_extDeriv_succ {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (η : A.Cochain (k + 1)) :
+@[simp] theorem interior_extDeriv_succ {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (η : A.Cochain (k + 1)) :
     interior a (A.extDeriv (k + 1) η) = A.lieDeriv a η - A.extDeriv k (interior a η) :=
   (A.cochainAlternatingEquiv (k + 1)).injective (by simp [map_sub])
 

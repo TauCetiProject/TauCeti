@@ -73,7 +73,7 @@ theorem extDeriv_smul {k : ℕ} (f : C^∞⟮I, M; ℝ⟯) (η : A.Cochain k) :
     have hη : f • η = A.cochainZeroEquiv.symm (f * A.cochainZeroEquiv η) :=
       A.cochainZeroEquiv.injective (by simp [smul_eq_mul])
     rw [hη, A.extDeriv_zero_mul, wedge_zero_right]
-    simp
+    simp [A.trivialEquiv_alternatingIsEmptyEquiv]
   | succ k ih =>
     refine ext_of_interior fun a ↦ ?_
     simp only [A.interior_extDeriv_succ, A.lieDeriv_smul, map_add, interior_cast,
@@ -127,14 +127,17 @@ theorem extDeriv_wedge {k l : ℕ} (φ : A.Cochain k) (ψ : A.Cochain l) :
       interior_wedge a (A.extDeriv (k + 1) φ) ψ, interior_wedge a φ (A.extDeriv (l + 1) ψ),
       A.interior_extDeriv_succ, A.extDeriv_cast, map_add, map_sub, map_smul, LinearMap.sub_apply,
       ih₁, ih₂, LinearMapClass.map_smul_of_tower (S := C^∞⟮I, M; ℝ⟯)]
+    have hcast {m p q : ℕ} (h₁ : m = p) (h₂ : p = q) :
+        Fin.cast h₂ ∘ Fin.cast h₁ = Fin.cast (h₁.trans h₂) :=
+      funext fun _ ↦ Fin.cast_cast h₁ h₂
     ext x v
     simp only [ContMDiffSection.coe_add, ContMDiffSection.coe_sub, ContMDiffSection.coe_smul,
       Pi.add_apply, Pi.sub_apply, Pi.smul_apply, ContinuousAlternatingMap.add_apply,
       ContinuousAlternatingMap.sub_apply, ContinuousAlternatingMap.smul_apply,
-      alternating_cast_apply, smul_eq_mul, Function.comp_def, Fin.cast_cast, Fin.cast_refl,
-      id_eq, pow_succ, mul_neg, mul_one, neg_mul, mul_add, neg_neg, ← mul_assoc, ← pow_add,
-      Even.neg_one_pow ⟨k, rfl⟩, one_mul]
-    ring_nf; rfl
+      alternating_cast_apply, smul_eq_mul, Function.comp_assoc, hcast, Fin.cast_refl,
+      Function.comp_id, pow_succ, mul_neg, mul_one, neg_mul, mul_add, neg_neg, ← mul_assoc,
+      ← pow_add, Even.neg_one_pow ⟨k, rfl⟩, one_mul]
+    ring
 /-- Pointwise **graded Leibniz rule** for `A.extDeriv` with respect to `ContMDiffSection.wedge`. -/
 theorem extDeriv_wedge_apply {k l : ℕ} (φ : A.Cochain k) (ψ : A.Cochain l) (x : M)
     (v : Fin (k + l + 1) → V x) : (A.extDeriv (k + l) (wedge φ ψ)) x v =

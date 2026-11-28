@@ -17,7 +17,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 Smooth differential `k`-forms on a finite-dimensional real manifold `M` identify `ℝ`-linearly with
 degree-`k` Chevalley–Eilenberg cochains of the tangent Lie algebroid `LieAlgebroid.tangent I M` via
 `TauCeti.LieAlgebroid.tangentCochainEquiv`, intertwining `TauCeti.mextDerivₗ` with `extDeriv`
-(`TauCeti.LieAlgebroid.extDeriv_tangentCochainEquiv`).
+(`TauCeti.LieAlgebroid.tangent_extDeriv_toContMDiffSection`).
 -/
 
 public section
@@ -61,7 +61,9 @@ private theorem coe_scalarAlternatingEquiv_removeNth [T2Space M] {k : ℕ}
     (V : Fin (k + 2) → ContMDiffSection I E ∞ (TangentSpace I)) (i : Fin (k + 2)) :
     ⇑(ContMDiffSection.scalarAlternatingEquiv φ.toContMDiffSection (i.removeNth V)) =
       fun y ↦ φ.val y (i.removeNth (V · y)) := by
-  ext y; simp; rfl
+  ext y
+  simp only [ContMDiffSection.scalarAlternatingEquiv_apply, SmoothForm.toContMDiffSection_apply]
+  exact congrArg _ (funext fun j ↦ by simp [Fin.removeNth])
 
 omit [FiniteDimensional ℝ E] in
 private theorem tangent_bracket_summand {k : ℕ} (φ : SmoothForm I M ℝ (k + 1))
@@ -91,11 +93,5 @@ theorem tangent_extDeriv_toContMDiffSection [T2Space M] {k : ℕ} (φ : SmoothFo
         (fun i ↦ (V i).contMDiff.mdifferentiableAt (by simp))]
     simp [coe_scalarAlternatingEquiv_removeNth, tangent_bracket_summand, sub_eq_add_neg,
       Finset.sum_neg_distrib]
-
-/-- `tangentCochainEquiv` intertwines the de Rham exterior derivative `TauCeti.mextDerivₗ` with
-`extDeriv` on `LieAlgebroid.tangent I M`. -/
-theorem extDeriv_tangentCochainEquiv [T2Space M] {k : ℕ} (φ : SmoothForm I M ℝ k) :
-    (tangent I M).extDeriv k (tangentCochainEquiv k φ) =
-      tangentCochainEquiv (k + 1) (mextDerivₗ I k φ) := tangent_extDeriv_toContMDiffSection φ
 
 end TauCeti.LieAlgebroid
