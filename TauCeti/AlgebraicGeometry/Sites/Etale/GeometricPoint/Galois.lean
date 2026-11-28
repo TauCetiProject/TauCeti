@@ -93,10 +93,10 @@ theorem homOfAlgHom_id (Ω : Type u) [Field Ω] [IsSepClosed Ω] [Algebra R Ω] 
 @[simp]
 theorem homOfAlgHom_comp (σ : Ω₂ →ₐ[R] Ω₁) (τ : Ω₃ →ₐ[R] Ω₂) :
     homOfAlgHom a (σ.comp τ) = homOfAlgHom a σ ≫ homOfAlgHom a τ := by
-  ext : 1
-  rw [comp_hom, homOfAlgHom_hom, homOfAlgHom_hom, homOfAlgHom_hom, ← Spec.map_comp,
-    ← CommRingCat.ofHom_comp]
-  simp only [AlgHom.toRingHom_eq_coe, AlgHom.comp_toRingHom]
+  apply Hom.ringHom_injective
+  rw [Hom.ringHom_comp, Hom.ringHom_homOfAlgHom, Hom.ringHom_homOfAlgHom,
+    Hom.ringHom_homOfAlgHom]
+  rfl
 
 /-- An `R`-algebra isomorphism `σ : Ω₂ ≃ₐ[R] Ω₁` induces an isomorphism `Spec σ` from
 `ofOver a Ω₁` to `ofOver a Ω₂` in `GeometricPoint S`. -/
@@ -110,16 +110,15 @@ noncomputable def isoOfAlgEquiv (σ : Ω₂ ≃ₐ[R] Ω₁) : ofOver a Ω₁ �
 theorem isoOfAlgEquiv_hom (σ : Ω₂ ≃ₐ[R] Ω₁) :
     (isoOfAlgEquiv a σ).hom = homOfAlgHom a σ.toAlgHom := by
   ext : 1
-  rw [isoOfAlgEquiv, isoOfRingEquiv_hom_hom, homOfAlgHom_hom, AlgEquiv.toRingEquiv_toRingHom,
-    ← AlgEquiv.toAlgHom_toRingHom, ← AlgHom.toRingHom_eq_coe]
+  simp [isoOfAlgEquiv]
 
 /-- The inverse morphism of `isoOfAlgEquiv a σ` is `homOfAlgHom a σ.symm`. -/
 @[simp]
 theorem isoOfAlgEquiv_inv (σ : Ω₂ ≃ₐ[R] Ω₁) :
     (isoOfAlgEquiv a σ).inv = homOfAlgHom a σ.symm.toAlgHom := by
-  ext : 1
-  rw [isoOfAlgEquiv, isoOfRingEquiv_inv_hom, homOfAlgHom_hom, ← AlgEquiv.symm_toRingEquiv,
-    AlgEquiv.toRingEquiv_toRingHom, ← AlgEquiv.toAlgHom_toRingHom, ← AlgHom.toRingHom_eq_coe]
+  rw [← cancel_epi (isoOfAlgEquiv a σ).hom, Iso.hom_inv_id, isoOfAlgEquiv_hom,
+    ← homOfAlgHom_comp, show σ.toAlgHom.comp σ.symm.toAlgHom = AlgHom.id R Ω₁ by ext; simp,
+    homOfAlgHom_id]
 
 /-- When `a : Spec (.of R) ⟶ S` is a monomorphism, `Spec g : Spec Ω₁ ⟶ Spec Ω₂` is a morphism
 `ofOver a Ω₁ ⟶ ofOver a Ω₂` in `GeometricPoint S` if and only if `g` is `R`-linear. -/
@@ -128,7 +127,7 @@ theorem SpecMap_comp_ofOver_iff [Mono a] (g : Ω₂ →+* Ω₁) :
       g.comp (algebraMap R Ω₂) = algebraMap R Ω₁ := by
   dsimp only
   rw [← Category.assoc, cancel_mono a, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-  exact ⟨fun h ↦ Spec.homEquivRingHom.symm.injective h,
+  exact ⟨fun h ↦ congrArg CommRingCat.Hom.hom (Spec.map_injective h),
     fun h ↦ congrArg (Spec.map ∘ CommRingCat.ofHom) h⟩
 
 /-- When `a` is a monomorphism, the ring homomorphism underlying a morphism
@@ -290,6 +289,8 @@ noncomputable def ofPointAutMulEquiv (x : S) :
   let a : Spec (.of (S.residueField x)) ⟶ S := S.fromSpecResidueField x
   ofOverAutMulEquiv a (SeparableClosure (S.residueField x))
 
+/-- The forward equivalence `ofPointAutMulEquiv x` sends `σ ∈ Gal(κ(x)ˢᵉᵖ/κ(x))` to `Spec σ`
+(`isoOfAlgEquiv` over `S.fromSpecResidueField x`). -/
 @[simp]
 lemma ofPointAutMulEquiv_apply (x : S)
     (σ : SeparableClosure (S.residueField x) ≃ₐ[S.residueField x]
@@ -303,6 +304,8 @@ lemma ofPointAutMulEquiv_apply (x : S)
   let _ : CommRing (S.residueField x) := Field.toCommRing
   rw [ofPointAutMulEquiv, ofOverAutMulEquiv_apply, unop_autOfAlgEquiv]
 
+/-- The inverse equivalence `(ofPointAutMulEquiv x).symm` recovers the underlying residue-field
+algebra automorphism from an automorphism of `ofPoint x` via `autToAlgEquiv`. -/
 @[simp]
 lemma ofPointAutMulEquiv_symm_apply (x : S) (φ : (Aut (ofPoint x))ᵐᵒᵖ) :
     (ofPointAutMulEquiv x).symm φ =
@@ -326,6 +329,8 @@ noncomputable def galoisStalkAction (A : Type u') [Category.{w} A] [HasColimitsO
   let a : Spec (.of (S.residueField x)) ⟶ S := S.fromSpecResidueField x
   ofOverGaloisStalkAction a (SeparableClosure (S.residueField x))
 
+/-- Under `galoisStalkAction A x`, `σ ∈ Gal(κ(x)ˢᵉᵖ/κ(x))` acts on stalks by the stalk map
+induced by `Spec σ`. -/
 @[simp]
 lemma galoisStalkAction_apply (A : Type u') [Category.{w} A] [HasColimitsOfSize.{u, u} A] (x : S)
     (σ : SeparableClosure (S.residueField x) ≃ₐ[S.residueField x]

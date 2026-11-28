@@ -27,18 +27,22 @@ stalks:
 
 * A morphism `φ : s₁ ⟶ s₂` of geometric points acts on the stalk of `FiniteEtaleScheme.toSheaf`
   by precomposing lifts with `φ`
-  (`toPointFunctor_map_sheafFiber_app_toSheafCompSheafFiberIso_inv_app_apply`).
+  (`fiberCompInclIso_hom_app_toSheafCompSheafFiberIso_hom_app_toPointFunctor_map`).
 * Over an affine base `Spec (.of R)`, the stalk at `ofOver (𝟙 (Spec (.of R))) Ω` of the sheaf of
   sections of `Spec B` (for a finite étale `R`-algebra `B`) is identified with `B →ₐ[R] Ω`
-  (`toSheafSpecStalkEquiv`), and `σ : Ω ≃ₐ[R] Ω` acts via `ofOverGaloisStalkAction` by
-  postcomposition `v ↦ σ ∘ v` (`toSheafSpecStalkEquiv_ofOverGaloisStalkAction`).
-* For any finite étale `Spec R`-scheme `X`, the same identification and Galois-action formula hold
-  via its coordinate algebra (`toSheafStalkEquiv`, `toSheafStalkEquiv_ofOverGaloisStalkAction`).
+  (`toSheafSpecStalkEquiv`), naturally in `B` (`toSheafSpecStalkEquiv_map`), and `σ : Ω ≃ₐ[R] Ω`
+  acts via `ofOverGaloisStalkAction` by postcomposition `v ↦ σ ∘ v`
+  (`toSheafSpecStalkEquiv_ofOverGaloisStalkAction`).
+* For any finite étale `Spec R`-scheme `X`, the same identification, cover-naturality, and
+  Galois-action formula hold via its coordinate algebra (`toSheafStalkEquiv`,
+  `toSheafStalkEquiv_map`, `toSheafStalkEquiv_ofOverGaloisStalkAction`).
 * Over a field `K`, the stalk of `Spec B` has cardinality `Module.finrank K B.obj`
   (`natCard_toSheafSpecStalk_eq_finrank`).
 * For a Kummer cover `FiniteEtaleScheme.kummerCover t n hn`, the stalk is the set of `n`-th roots
   of `t` in `Ω` (`kummerCoverStalkEquiv`), or `rootsOfUnity n Ω` when `t` maps to `1`
-  (`kummerCoverStalkEquivRootsOfUnity`), and `σ : Ω ≃ₐ[R] Ω` acts directly on roots by `ω ↦ σ ω`.
+  (`kummerCoverStalkEquivRootsOfUnity`), compatibly with transition maps (`kummerCoverMap`) and
+  deck transformations (`kummerCoverDeck`), and `σ : Ω ≃ₐ[R] Ω` acts directly on roots by
+  `ω ↦ σ ω`.
 
 ## Main definitions
 
@@ -56,13 +60,19 @@ stalks:
 
 ## Main results
 
-* `toPointFunctor_map_sheafFiber_app_toSheafCompSheafFiberIso_inv_app_apply`: a morphism of
+* `fiberCompInclIso_hom_app_toSheafCompSheafFiberIso_hom_app_toPointFunctor_map`: a morphism of
   geometric points acts on stalks of finite étale sheaves by precomposition of lifts.
+* `toSheafOfOverIdStalkEquivFiber_map`, `toSheafSpecStalkEquiv_map`, `toSheafStalkEquiv_map`:
+  naturality of the stalk identifications with respect to morphisms of finite étale covers.
 * `toSheafSpecStalkEquiv_ofOverGaloisStalkAction`,
   `toSheafStalkEquiv_ofOverGaloisStalkAction`: on the stalk of a finite étale cover, `σ` sends the
   point with coordinate map `v` to `σ ∘ v`.
 * `natCard_toSheafSpecStalk_eq_finrank`: over a field `K`, the stalk of `Spec B` has cardinality
   `Module.finrank K B.obj`.
+* `kummerCoverStalkEquiv_map_kummerCoverMap`, `kummerCoverStalkEquiv_map_kummerCoverDeck`,
+  `kummerCoverStalkEquivRootsOfUnity_map_kummerCoverMap`,
+  `kummerCoverStalkEquivRootsOfUnity_map_kummerCoverDeck`: transition and deck-transformation
+  formulae on the stalk of a Kummer cover.
 * `coe_kummerCoverStalkEquiv_ofOverGaloisStalkAction`,
   `coe_kummerCoverStalkEquivRootsOfUnity_ofOverGaloisStalkAction`: on the stalk of a Kummer cover,
   `σ` acts on roots by `ω ↦ σ ω`.
@@ -84,25 +94,6 @@ namespace TauCeti.AlgebraicGeometry.Scheme.GeometricPoint
 
 variable {S : Scheme.{u}}
 
-/-- On the étale sheaf of sections of a finite étale `S`-scheme `X`, the stalk map of a morphism
-`φ : s₁ ⟶ s₂` of geometric points corresponds, under `FiniteEtaleScheme.toSheafCompSheafFiberIso`,
-to precomposition of lifts with `φ`. -/
-theorem toPointFunctor_map_sheafFiber_app_toSheafCompSheafFiberIso_inv_app_apply
-    {s₁ s₂ : GeometricPoint S} (φ : s₁ ⟶ s₂) (X : FiniteEtaleScheme S)
-    (y : (FiniteEtaleScheme.fiber s₂.hom).obj X) :
-    ((toPointFunctor S).map φ).sheafFiber.app ((FiniteEtaleScheme.toSheaf S).obj X)
-        ((FiniteEtaleScheme.toSheafCompSheafFiberIso s₂.hom).inv.app X y) =
-      (FiniteEtaleScheme.toSheafCompSheafFiberIso s₁.hom).inv.app X
-        ((FiniteEtaleScheme.fiberCompInclIso s₁.hom).inv.app X
-          ((Over.homMk φ.hom φ.w : Over.mk s₁.hom ⟶ Over.mk s₂.hom) ≫
-            (FiniteEtaleScheme.fiberCompInclIso s₂.hom).hom.app X y)) := by
-  rw [FiniteEtaleScheme.toSheafCompSheafFiberIso_inv_app_apply,
-    FiniteEtaleScheme.toSheafCompSheafFiberIso_inv_app_apply, Iso.inv_hom_id_app_apply]
-  exact congrArg (fun g ↦ g (𝟙 _))
-    (toPresheafFiber_toPointFunctor_map_sheafFiber_app (A := Type u) φ
-      ((FiniteEtaleScheme.toSheaf S).obj X) ((FiniteEtaleScheme.toEtale S).obj X)
-      ((FiniteEtaleScheme.fiberCompInclIso s₂.hom).hom.app X y))
-
 /-- On the étale sheaf of sections of a finite étale `S`-scheme `X`, a morphism `φ : s₁ ⟶ s₂`
 of geometric points acts on geometric fibres (via `FiniteEtaleScheme.toSheafCompSheafFiberIso`
 and `FiniteEtaleScheme.fiberCompInclIso`) by precomposing lifts with `φ`. -/
@@ -118,19 +109,19 @@ theorem fiberCompInclIso_hom_app_toSheafCompSheafFiberIso_hom_app_toPointFunctor
   let y := (FiniteEtaleScheme.toSheafCompSheafFiberIso s₂.hom).hom.app X z
   have hy : z = (FiniteEtaleScheme.toSheafCompSheafFiberIso s₂.hom).inv.app X y :=
     (Iso.hom_inv_id_app_apply (FiniteEtaleScheme.toSheafCompSheafFiberIso s₂.hom) X z).symm
-  calc
-    (FiniteEtaleScheme.fiberCompInclIso s₁.hom).hom.app X
-        ((FiniteEtaleScheme.toSheafCompSheafFiberIso s₁.hom).hom.app X
-          (((toPointFunctor S).map φ).sheafFiber.app ((FiniteEtaleScheme.toSheaf S).obj X) z))
-      = (FiniteEtaleScheme.fiberCompInclIso s₁.hom).hom.app X
-          ((FiniteEtaleScheme.toSheafCompSheafFiberIso s₁.hom).hom.app X
-            (((toPointFunctor S).map φ).sheafFiber.app ((FiniteEtaleScheme.toSheaf S).obj X)
-              ((FiniteEtaleScheme.toSheafCompSheafFiberIso s₂.hom).inv.app X y))) := by
-        rw [← hy]
-    _ = (Over.homMk φ.hom φ.w : Over.mk s₁.hom ⟶ Over.mk s₂.hom) ≫
-          (FiniteEtaleScheme.fiberCompInclIso s₂.hom).hom.app X y := by
-        rw [toPointFunctor_map_sheafFiber_app_toSheafCompSheafFiberIso_inv_app_apply,
-          Iso.inv_hom_id_app_apply, Iso.inv_hom_id_app_apply]
+  have hstep :
+      ((toPointFunctor S).map φ).sheafFiber.app ((FiniteEtaleScheme.toSheaf S).obj X) z =
+        (FiniteEtaleScheme.toSheafCompSheafFiberIso s₁.hom).inv.app X
+          ((FiniteEtaleScheme.fiberCompInclIso s₁.hom).inv.app X
+            ((Over.homMk φ.hom φ.w : Over.mk s₁.hom ⟶ Over.mk s₂.hom) ≫
+              (FiniteEtaleScheme.fiberCompInclIso s₂.hom).hom.app X y)) := by
+    rw [hy, FiniteEtaleScheme.toSheafCompSheafFiberIso_inv_app_apply,
+      FiniteEtaleScheme.toSheafCompSheafFiberIso_inv_app_apply, Iso.inv_hom_id_app_apply]
+    exact congrArg (fun g ↦ g (𝟙 _))
+      (toPresheafFiber_toPointFunctor_map_sheafFiber_app (A := Type u) φ
+        ((FiniteEtaleScheme.toSheaf S).obj X) ((FiniteEtaleScheme.toEtale S).obj X)
+        ((FiniteEtaleScheme.fiberCompInclIso s₂.hom).hom.app X y))
+  rw [hstep, Iso.inv_hom_id_app_apply, Iso.inv_hom_id_app_apply]
 
 private lemma fiberCompInclIso_hom_app_cast_left {Ω : Type u} [Field Ω] [IsSepClosed Ω]
     (X : FiniteEtaleScheme S) {x₁ x₂ : Spec (.of Ω) ⟶ S} (h : x₁ = x₂)
@@ -153,6 +144,35 @@ noncomputable def toSheafOfOverIdStalkEquivFiber (R : Type u) [CommRing R] (Ω :
     (ofOver (𝟙 (Spec (.of R))) Ω).hom).app X).toEquiv.trans
     (Equiv.cast (congrArg (fun x ↦ ((FiniteEtaleScheme.fiber x).obj X : Type u))
       (Category.comp_id _)))
+
+private lemma fiber_map_cast {Ω : Type u} [Field Ω] [IsSepClosed Ω]
+    {X Y : FiniteEtaleScheme S} (f : X ⟶ Y) {x₁ x₂ : Spec (.of Ω) ⟶ S} (h : x₁ = x₂)
+    (y : (FiniteEtaleScheme.fiber x₁).obj X) :
+    cast (congrArg (fun x ↦ ((FiniteEtaleScheme.fiber x).obj Y : Type u)) h)
+        ((FiniteEtaleScheme.fiber x₁).map f y) =
+      (FiniteEtaleScheme.fiber x₂).map f
+        (cast (congrArg (fun x ↦ ((FiniteEtaleScheme.fiber x).obj X : Type u)) h) y) := by
+  subst h
+  rfl
+
+/-- Naturality of `toSheafOfOverIdStalkEquivFiber` with respect to morphisms of finite étale
+`Spec R`-schemes. -/
+@[simp]
+theorem toSheafOfOverIdStalkEquivFiber_map (R : Type u) [CommRing R] (Ω : Type u) [Field Ω]
+    [IsSepClosed Ω] [Algebra R Ω] {X Y : FiniteEtaleScheme (Spec (.of R))} (f : X ⟶ Y)
+    (z : (Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.obj
+      ((FiniteEtaleScheme.toSheaf (Spec (.of R))).obj X)) :
+    toSheafOfOverIdStalkEquivFiber R Ω Y
+        ((Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.map
+          ((FiniteEtaleScheme.toSheaf (Spec (.of R))).map f) z) =
+      (FiniteEtaleScheme.fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).map f
+        (toSheafOfOverIdStalkEquivFiber R Ω X z) := by
+  dsimp only [toSheafOfOverIdStalkEquivFiber, Equiv.trans_apply, Iso.toEquiv_fun, Iso.app_hom,
+    Equiv.cast_apply]
+  have hnat := congrArg (fun g ↦ g z)
+    ((FiniteEtaleScheme.toSheafCompSheafFiberIso
+      (ofOver (𝟙 (Spec (.of R))) Ω).hom).hom.naturality f)
+  exact (congrArg (cast _) hnat).trans (fiber_map_cast f (Category.comp_id _) _)
 
 /-- Under `toSheafOfOverIdStalkEquivFiber`, `ofOverGaloisStalkAction (𝟙 (Spec (.of R))) Ω σ`
 acts on the geometric fibre of `X` by precomposing lifts with `Spec σ`. -/
@@ -254,6 +274,22 @@ theorem toSheafSpecStalkEquiv_apply (R : Type u) [CommRing R] (Ω : Type u) [Fie
         (toSheafOfOverIdStalkEquivFiber R Ω ((FiniteEtaleScheme.spec (.of R)).obj (op B)) z) :=
   FiniteEtaleScheme.specFiberEquiv_apply (.of R) Ω B _
 
+/-- **Naturality of `toSheafSpecStalkEquiv`.** A morphism `f : B₁ ⟶ B₂` of finite étale
+`R`-algebras acts on `Ω`-valued stalk points by precomposition with `f`. -/
+@[simp]
+theorem toSheafSpecStalkEquiv_map (R : Type u) [CommRing R] (Ω : Type u) [Field Ω]
+    [IsSepClosed Ω] [Algebra R Ω] {B₁ B₂ : CommAlgCat.FiniteEtale.{u} R} (f : B₁ ⟶ B₂)
+    (z : (Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.obj
+      ((FiniteEtaleScheme.toSheaf (Spec (.of R))).obj
+        ((FiniteEtaleScheme.spec (.of R)).obj (op B₂)))) :
+    toSheafSpecStalkEquiv R Ω B₁
+        ((Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.map
+          ((FiniteEtaleScheme.toSheaf (Spec (.of R))).map
+            ((FiniteEtaleScheme.spec (.of R)).map f.op)) z) =
+      (toSheafSpecStalkEquiv R Ω B₂ z).comp f.hom.hom := by
+  dsimp only [toSheafSpecStalkEquiv, Equiv.trans_apply]
+  rw [toSheafOfOverIdStalkEquivFiber_map, FiniteEtaleScheme.specFiberEquiv_map]
+
 /-- **The Galois action on the stalk of an affine finite étale cover.** Under
 `toSheafSpecStalkEquiv`, `σ : Ω ≃ₐ[R] Ω` sends the point with coordinate map `v : B →ₐ[R] Ω` to
 `σ ∘ v`. -/
@@ -318,6 +354,51 @@ theorem toSheafStalkEquiv_apply (R Ω : Type u) [CommRing R] [Field Ω] [IsSepCl
                   (.of R)))).hom.app X)) z) :=
   (rfl)
 
+/-- **Naturality of `toSheafStalkEquiv`.** A morphism `f : X ⟶ Y` of finite étale
+`Spec R`-schemes acts on `Ω`-valued stalk points by precomposition with the induced map on
+coordinate algebras. -/
+@[simp]
+theorem toSheafStalkEquiv_map (R Ω : Type u) [CommRing R] [Field Ω] [IsSepClosed Ω]
+    [Algebra R Ω] {X Y : FiniteEtaleScheme (Spec (.of R))} (f : X ⟶ Y)
+    (z : (Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.obj
+      ((FiniteEtaleScheme.toSheaf (Spec (.of R))).obj X)) :
+    toSheafStalkEquiv R Ω Y
+        ((Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.map
+          ((FiniteEtaleScheme.toSheaf (Spec (.of R))).map f) z) =
+      (toSheafStalkEquiv R Ω X z).comp
+        ((FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme
+          (.of R)).inverse.map f).unop.hom.hom := by
+  have hnat :
+      f ≫
+        (FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme
+          (.of R)).counitIso.inv.app Y ≫
+        (Functor.isoWhiskerLeft _
+          (eqToIso (FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor
+            (.of R)))).hom.app Y =
+      ((FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme
+          (.of R)).counitIso.inv.app X ≫
+        (Functor.isoWhiskerLeft _
+          (eqToIso (FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor
+            (.of R)))).hom.app X) ≫
+        (FiniteEtaleScheme.spec (.of R)).map
+          ((FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme
+            (.of R)).inverse.map f).unop.op := by
+    let E := FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of R)
+    rw [← Category.assoc]
+    trans (E.counitIso.inv.app X ≫ (E.inverse ⋙ E.functor).map f) ≫
+      (Functor.isoWhiskerLeft E.inverse
+        (eqToIso (FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor
+          (.of R)))).hom.app Y
+    · exact congrArg (· ≫ _) (E.counitIso.inv.naturality f)
+    · rw [Category.assoc]
+      exact congrArg (E.counitIso.inv.app X ≫ ·)
+        ((Functor.isoWhiskerLeft E.inverse
+          (eqToIso (FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor
+            (.of R)))).hom.naturality f)
+  rw [toSheafStalkEquiv_apply, toSheafStalkEquiv_apply, ← ConcreteCategory.comp_apply,
+    ← Functor.map_comp, ← Functor.map_comp, hnat, Functor.map_comp, Functor.map_comp,
+    ConcreteCategory.comp_apply, toSheafSpecStalkEquiv_map]
+
 /-- **The Galois action on the stalk of any finite étale cover over an affine base.** Under
 `toSheafStalkEquiv`, `σ : Ω ≃ₐ[R] Ω` sends the point with coordinate map `v` to `σ ∘ v`. -/
 @[simp]
@@ -329,24 +410,9 @@ theorem toSheafStalkEquiv_ofOverGaloisStalkAction (R Ω : Type u) [CommRing R] [
         ((ofOverGaloisStalkAction (𝟙 (Spec (.of R))) Ω σ).asIso.hom.app
           ((FiniteEtaleScheme.toSheaf (Spec (.of R))).obj X) z) =
       σ.toAlgHom.comp (toSheafStalkEquiv R Ω X z) := by
-  rw [toSheafStalkEquiv_apply, toSheafStalkEquiv_apply]
-  let f := (FiniteEtaleScheme.toSheaf (Spec (.of R))).map
-    ((FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme
-      (.of R)).counitIso.inv.app X ≫
-      (Functor.isoWhiskerLeft _
-        (eqToIso (FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor
-          (.of R)))).hom.app X)
-  have hnat := ((ofOverGaloisStalkAction (𝟙 (Spec (.of R))) Ω
-    (A := Type u) σ).asIso.hom.naturality f).symm
-  have hnat_z :
-      (Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.map f
-          ((ofOverGaloisStalkAction (𝟙 (Spec (.of R))) Ω σ).asIso.hom.app
-            ((FiniteEtaleScheme.toSheaf (Spec (.of R))).obj X) z) =
-        (ofOverGaloisStalkAction (𝟙 (Spec (.of R))) Ω σ).asIso.hom.app
-          ((FiniteEtaleScheme.toSheaf (Spec (.of R))).obj _)
-          ((Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.map f z) :=
-    congrArg (fun g ↦ g z) hnat
-  rw [hnat_z]
+  rw [toSheafStalkEquiv_apply, toSheafStalkEquiv_apply, ← ConcreteCategory.comp_apply,
+    ← (ofOverGaloisStalkAction (𝟙 (Spec (.of R))) Ω σ).asIso.hom.naturality,
+    ConcreteCategory.comp_apply]
   exact toSheafSpecStalkEquiv_ofOverGaloisStalkAction R Ω _ σ _
 
 /-- Over a field `K`, the stalk at `ofOver (𝟙 (Spec (.of K))) Ω` of the étale sheaf of sections
@@ -397,6 +463,39 @@ theorem coe_kummerCoverStalkEquiv_apply
       toSheafSpecStalkEquiv R Ω (FiniteEtaleScheme.kummerAlgebra t n hn) z (AdjoinRoot.root _) :=
   FiniteEtaleScheme.coe_kummerCoverFiberEquiv_apply t Ω n hn _
 
+/-- On the stalk of a Kummer cover, the transition map from degree `m` to degree `n ∣ m` raises
+an `m`-th root of `t` to the power `m / n`. -/
+@[simp]
+theorem kummerCoverStalkEquiv_map_kummerCoverMap {m : ℕ} (hm : IsUnit (m : CommRingCat.of R))
+    (hd : n ∣ m)
+    (z : (Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.obj
+      ((FiniteEtaleScheme.toSheaf (Spec (.of R))).obj
+        (FiniteEtaleScheme.kummerCover t m hm))) :
+    (kummerCoverStalkEquiv R Ω t n hn
+        ((Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.map
+          ((FiniteEtaleScheme.toSheaf (Spec (.of R))).map
+            (FiniteEtaleScheme.kummerCoverMap t hn hm hd)) z) : Ω) =
+      (kummerCoverStalkEquiv R Ω t m hm z : Ω) ^ (m / n) := by
+  dsimp only [kummerCoverStalkEquiv, Equiv.trans_apply]
+  rw [toSheafOfOverIdStalkEquivFiber_map,
+    FiniteEtaleScheme.kummerCoverFiberEquiv_map_kummerCoverMap]
+
+/-- On the stalk of a Kummer cover, the deck transformation of an `n`-th root of unity `ζ` of `R`
+multiplies an `n`-th root of `t` by the image of `ζ`. -/
+@[simp]
+theorem kummerCoverStalkEquiv_map_kummerCoverDeck (ζ : rootsOfUnity n R)
+    (z : (Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.obj
+      ((FiniteEtaleScheme.toSheaf (Spec (.of R))).obj
+        (FiniteEtaleScheme.kummerCover t n hn))) :
+    (kummerCoverStalkEquiv R Ω t n hn
+        ((Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.map
+          ((FiniteEtaleScheme.toSheaf (Spec (.of R))).map
+            (FiniteEtaleScheme.kummerCoverDeck t hn ζ).hom) z) : Ω) =
+      algebraMap R Ω (ζ : Rˣ) * kummerCoverStalkEquiv R Ω t n hn z := by
+  dsimp only [kummerCoverStalkEquiv, Equiv.trans_apply]
+  rw [toSheafOfOverIdStalkEquivFiber_map,
+    FiniteEtaleScheme.kummerCoverFiberEquiv_map_kummerCoverDeck]
+
 /-- On the stalk of a Kummer cover, `σ : Ω ≃ₐ[R] Ω` acts on the `n`-th roots of `t` by
 `ω ↦ σ ω`. -/
 @[simp]
@@ -436,6 +535,43 @@ theorem coe_kummerCoverStalkEquivRootsOfUnity_apply (h : algebraMap R Ω t = 1)
       kummerCoverStalkEquiv R Ω t n hn z :=
   FiniteEtaleScheme.coe_kummerCoverFiberEquivRootsOfUnity_apply t Ω n hn h _
 
+/-- On the stalks `rootsOfUnity n Ω` of a Kummer cover over `1`, the transition map from degree
+`m` to degree `n ∣ m` is the power map `ζ ↦ ζ ^ (m / n)`. -/
+@[simp]
+theorem kummerCoverStalkEquivRootsOfUnity_map_kummerCoverMap {m : ℕ}
+    (hm : IsUnit (m : CommRingCat.of R)) (h : algebraMap R Ω t = 1) (hd : n ∣ m)
+    (z : (Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.obj
+      ((FiniteEtaleScheme.toSheaf (Spec (.of R))).obj
+        (FiniteEtaleScheme.kummerCover t m hm))) :
+    (kummerCoverStalkEquivRootsOfUnity R Ω t n hn h
+        ((Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.map
+          ((FiniteEtaleScheme.toSheaf (Spec (.of R))).map
+            (FiniteEtaleScheme.kummerCoverMap t hn hm hd)) z) : Ωˣ) =
+      (kummerCoverStalkEquivRootsOfUnity R Ω t m hm h z : Ωˣ) ^ (m / n) := by
+  apply Units.ext
+  rw [coe_kummerCoverStalkEquivRootsOfUnity_apply, kummerCoverStalkEquiv_map_kummerCoverMap,
+    Units.val_pow_eq_pow_val, coe_kummerCoverStalkEquivRootsOfUnity_apply]
+
+/-- On the stalk `rootsOfUnity n Ω` of a Kummer cover over `1`, the deck transformation of an
+`n`-th root of unity `ζ` of `R` is multiplication by the image of `ζ` in `rootsOfUnity n Ω`. -/
+@[simp]
+theorem kummerCoverStalkEquivRootsOfUnity_map_kummerCoverDeck (h : algebraMap R Ω t = 1)
+    (ζ : rootsOfUnity n R)
+    (z : (Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.obj
+      ((FiniteEtaleScheme.toSheaf (Spec (.of R))).obj
+        (FiniteEtaleScheme.kummerCover t n hn))) :
+    kummerCoverStalkEquivRootsOfUnity R Ω t n hn h
+        ((Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.map
+          ((FiniteEtaleScheme.toSheaf (Spec (.of R))).map
+            (FiniteEtaleScheme.kummerCoverDeck t hn ζ).hom) z) =
+      restrictRootsOfUnity (algebraMap R Ω) n ζ *
+        kummerCoverStalkEquivRootsOfUnity R Ω t n hn h z := by
+  apply Subtype.ext
+  apply Units.ext
+  rw [coe_kummerCoverStalkEquivRootsOfUnity_apply, kummerCoverStalkEquiv_map_kummerCoverDeck,
+    Subgroup.coe_mul, Units.val_mul, restrictRootsOfUnity_coe_apply,
+    coe_kummerCoverStalkEquivRootsOfUnity_apply]
+
 /-- On the stalk `rootsOfUnity n Ω` of a Kummer cover over `1`, `σ : Ω ≃ₐ[R] Ω` acts on roots of
 unity by `ζ ↦ σ ζ`. -/
 @[simp]
@@ -461,23 +597,25 @@ theorem natCard_kummerCoverStalk (R Ω : Type u) [CommRing R] [Field Ω] [IsSepC
     Nat.card ((Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.obj
         ((FiniteEtaleScheme.toSheaf (Spec (.of R))).obj
           (FiniteEtaleScheme.kummerCover t n hn))) = n := by
-  let t' : (CommRingCat.of Ω)ˣ := Units.map (algebraMap R Ω).toMonoidHom t
-  have hn' : IsUnit (n : CommRingCat.of Ω) := by simpa using hn.map (algebraMap R Ω)
-  have hn0 : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr fun h ↦ by
-    rw [h, Nat.cast_zero] at hn'
-    exact not_isUnit_zero hn'
-  have heq : {ω : Ω // ω ^ n = algebraMap R Ω t} ≃ {ω : Ω // ω ^ n = algebraMap Ω Ω t'} :=
-    Equiv.subtypeEquivRight fun ω ↦ by simp [t']
-  calc Nat.card _
+  let t' : Ωˣ := Units.map (algebraMap R Ω).toMonoidHom t
+  have hn' : IsUnit (n : Ω) := by simpa using hn.map (algebraMap R Ω)
+  let P : Polynomial Ω := Polynomial.X ^ n - Polynomial.C (algebraMap R Ω t)
+  have hsep : P.Separable := by
+    simpa [P, t'] using Polynomial.separable_X_pow_sub_C_unit t' hn'
+  have hsplit : (P.map (algebraMap Ω Ω)).Splits := by
+    simpa using IsSepClosed.splits_of_separable P hsep
+  have heq : {ω : Ω // ω ^ n = algebraMap R Ω t} ≃ P.rootSet Ω :=
+    Equiv.subtypeEquivRight fun ω ↦ by
+      rw [Polynomial.mem_rootSet_of_ne hsep.ne_zero]
+      simp [P, sub_eq_zero]
+  calc Nat.card ((Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.obj
+          ((FiniteEtaleScheme.toSheaf (Spec (.of R))).obj
+            (FiniteEtaleScheme.kummerCover t n hn)))
       = Nat.card {ω : Ω // ω ^ n = algebraMap R Ω t} :=
         Nat.card_congr (kummerCoverStalkEquiv R Ω t n hn)
-    _ = Nat.card {ω : Ω // ω ^ n = algebraMap Ω Ω t'} := Nat.card_congr heq
-    _ = Nat.card ((Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of Ω))) Ω).hom).sheafFiber.obj
-          ((FiniteEtaleScheme.toSheaf (Spec (.of Ω))).obj
-            (FiniteEtaleScheme.kummerCover t' n hn'))) :=
-        Nat.card_congr (kummerCoverStalkEquiv Ω Ω t' n hn').symm
-    _ = Module.finrank Ω (FiniteEtaleScheme.kummerAlgebra t' n hn').obj :=
-        natCard_toSheafSpecStalk_eq_finrank Ω Ω (FiniteEtaleScheme.kummerAlgebra t' n hn')
-    _ = n := (TauCeti.standardTameCover_free Ω (t' : Ω) n hn0).2
+    _ = Nat.card (P.rootSet Ω) := Nat.card_congr heq
+    _ = Fintype.card (P.rootSet Ω) := Nat.card_eq_fintype_card
+    _ = P.natDegree := Polynomial.card_rootSet_eq_natDegree hsep hsplit
+    _ = n := by simp [P]
 
 end TauCeti.AlgebraicGeometry.Scheme.GeometricPoint

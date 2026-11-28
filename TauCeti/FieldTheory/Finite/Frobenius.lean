@@ -216,6 +216,7 @@ theorem frobeniusAlgEquivOfFinite_apply (K L : Type*) [Field K] [Finite K] [Fiel
 
 /-- Raising the inverse image under `TauCeti.FiniteField.frobeniusAlgEquivOfFinite K L` to the
 `Nat.card K`-th power recovers the input. -/
+@[simp]
 theorem frobeniusAlgEquivOfFinite_symm_apply_pow (K L : Type*) [Field K] [Finite K] [Field L]
     [Algebra K L] [PerfectField L] (x : L) :
     ((frobeniusAlgEquivOfFinite K L).symm x) ^ Nat.card K = x := by
@@ -227,8 +228,19 @@ the `(Nat.card K) ^ m`-th power. -/
 theorem frobeniusAlgEquivOfFinite_pow_apply (K L : Type*) [Field K] [Finite K] [Field L]
     [Algebra K L] [PerfectField L] (m : ℕ) (x : L) :
     (frobeniusAlgEquivOfFinite K L ^ m) x = x ^ Nat.card K ^ m := by
-  rw [AlgEquiv.coe_pow, show ⇑(frobeniusAlgEquivOfFinite K L) = (· ^ Nat.card K) from
-    funext (frobeniusAlgEquivOfFinite_apply K L), pow_iterate]
+  have hcoe : ⇑(frobeniusAlgEquivOfFinite K L) = (· ^ Nat.card K) :=
+    funext (frobeniusAlgEquivOfFinite_apply K L)
+  rw [AlgEquiv.coe_pow, hcoe, pow_iterate]
+
+/-- Under `[Fintype K]` and `[Algebra.IsAlgebraic K L]`,
+`TauCeti.FiniteField.frobeniusAlgEquivOfFinite K L` equals Mathlib's
+`FiniteField.frobeniusAlgEquivOfAlgebraic K L`. -/
+theorem frobeniusAlgEquivOfFinite_eq_frobeniusAlgEquivOfAlgebraic (K L : Type*) [Field K]
+    [Fintype K] [Field L] [Algebra K L] [Algebra.IsAlgebraic K L] [PerfectField L] :
+    frobeniusAlgEquivOfFinite K L = _root_.FiniteField.frobeniusAlgEquivOfAlgebraic K L := by
+  ext x
+  rw [frobeniusAlgEquivOfFinite_apply, _root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic,
+    Nat.card_eq_fintype_card]
 
 /-- When `K` carries a `Fintype` instance, `(frobeniusAlgEquivOfFinite K L ^ m).toAlgHom` equals
 `FiniteField.frobeniusAlgHom K L ^ m`. -/
@@ -263,9 +275,10 @@ theorem frobeniusAlgHom_pow_comp_eq_iff (K A : Type*) [Field K] [Fintype K] [Com
     ext x
     rw [AlgHom.comp_apply, AlgHom.comp_apply, frobeniusAlgHom_pow_apply,
       frobeniusAlgHom_pow_apply, map_pow]
-  rw [hcomm]
-  nth_rw 2 [← AlgHom.comp_id φ]
-  rw [AlgHom.cancel_left φ.toRingHom.injective]
+  have hiff : φ.comp (_root_.FiniteField.frobeniusAlgHom K E ^ m) = φ ↔
+      φ.comp (_root_.FiniteField.frobeniusAlgHom K E ^ m) = φ.comp (AlgHom.id K E) := by
+    rw [AlgHom.comp_id]
+  rw [hcomm, hiff, AlgHom.cancel_left φ.toRingHom.injective]
   -- Unfold `AlgHom.id K E` to `1` (definitional).
   change _root_.FiniteField.frobeniusAlgHom K E ^ m = 1 ↔ Module.finrank K E ∣ m
   by_cases hfin : Module.Finite K E

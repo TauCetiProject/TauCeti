@@ -15,9 +15,9 @@ public import TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint.Galois
 # The Galois action on stalks of étale sheaves on a field
 
 Let `K` be a field and `Ω` a separably closed field with an algebra map `K → Ω`, giving the
-geometric point `GeometricPoint.ofOver (𝟙 (Spec (.of K))) Ω : Spec Ω ⟶ Spec K`. Every
-`σ ∈ Gal(Ω/K)` gives an automorphism `Spec σ` of `Spec Ω` over `Spec K`, that is an automorphism of
-this geometric point, and automorphisms of a geometric point act on its stalks
+geometric point `x := GeometricPoint.ofOver (𝟙 (Spec (.of K))) Ω` with underlying morphism
+`x.hom : Spec Ω ⟶ Spec K`. Every `σ ∈ Gal(Ω/K)` gives an automorphism `Spec σ` of `Spec Ω` over
+`Spec K`, that is an automorphism of `x`, and automorphisms of a geometric point act on its stalks
 (`TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.ofOverGaloisStalkAction`). Since `Spec` reverses
 composition, this is a left action of `Gal(Ω/K)` on the stalk at `x` of every étale sheaf on
 `Spec K`, natural in the sheaf, so the stalk at `x` is a functor
