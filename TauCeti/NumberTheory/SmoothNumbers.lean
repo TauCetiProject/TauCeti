@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.NumberTheory.EulerProduct.Basic
 public import Mathlib.NumberTheory.SmoothNumbers
 public import TauCeti.NumberTheory.Padics.PadicValRat
@@ -20,12 +21,16 @@ in the finite set `S`. This file describes these numbers through `p`-adic valuat
   and its denominator are `S`-factored;
 * `TauCeti.prod_pow_padicValNat_eq_self_of_mem_factoredNumbers`: if `S` consists of primes, an
   `S`-factored number is the product of the powers `p ^ v_p(n)` over `p ∈ S`;
-* `TauCeti.hasSum_inv_factoredNumbers`: the reciprocals of the `S`-factored numbers sum to the
-  finite Euler product `∏_{p ∈ S prime} (1 - 1/p)⁻¹`.
+* `TauCeti.hasSum_rpow_neg_factoredNumbers`: for every real `σ > 0`, the powers `n ^ (-σ)` of the
+  `S`-factored numbers sum to the finite Euler product `∏_{p ∈ S prime} (1 - p ^ (-σ))⁻¹`, with
+  the reciprocal case `TauCeti.hasSum_inv_factoredNumbers` and the version
+  `TauCeti.hasSum_rpow_neg_smoothNumbers` for the `N`-smooth numbers.
 
 The valuation results are the arithmetic inputs for describing the rational `S`-units. The
 reciprocal sum bounds harmonic sums over integers whose prime factors are restricted, as in the
-denominators of Selberg's sieve.
+denominators of Selberg's sieve. The sum of `n ^ (-σ)` over the smooth numbers needs only
+`σ > 0`, not `σ > 1`, because only finitely many primes occur; it is the series behind Rankin's
+upper bound for the number of smooth integers.
 -/
 
 public section
@@ -63,13 +68,37 @@ theorem prod_pow_padicValNat_eq_self_of_mem_factoredNumbers {S : Finset ℕ}
   exact Finset.prod_congr rfl fun p hp ↦ by
     rw [Nat.padicValNat_def, Nat.factorization_def n (hS p hp)]
 
+/-- For every real `σ > 0`, the powers `n ^ (-σ)` of the `S`-factored numbers sum to the finite
+Euler product `∏_{p ∈ S prime} (1 - p ^ (-σ))⁻¹`. No condition `σ > 1` is needed, since only the
+finitely many primes of `S` occur. -/
+theorem hasSum_rpow_neg_factoredNumbers {σ : ℝ} (hσ : 0 < σ) (S : Finset ℕ) :
+    HasSum (fun n : Nat.factoredNumbers S ↦ ((n : ℕ) : ℝ) ^ (-σ))
+      (∏ p ∈ S with p.Prime, (1 - (p : ℝ) ^ (-σ))⁻¹) := by
+  let f : ℕ →* ℝ :=
+    { toFun := fun n ↦ (n : ℝ) ^ (-σ)
+      map_one' := by simp
+      map_mul' := fun m n ↦ by rw [Nat.cast_mul, Real.mul_rpow m.cast_nonneg n.cast_nonneg] }
+  have hf : ∀ {p : ℕ}, p.Prime → ‖f p‖ < 1 := fun {p} hp ↦ by
+    simp only [f, MonoidHom.coe_mk, OneHom.coe_mk]
+    rw [Real.norm_of_nonneg (Real.rpow_nonneg p.cast_nonneg _)]
+    exact Real.rpow_lt_one_of_one_lt_of_neg (by exact_mod_cast hp.one_lt) (neg_neg_of_pos hσ)
+  have h := (EulerProduct.summable_and_hasSum_factoredNumbers_prod_filter_prime_geometric hf S).2
+  simpa only [f, MonoidHom.coe_mk, OneHom.coe_mk] using h
+
 /-- The reciprocals of the `S`-factored numbers sum to the finite Euler product
 `∏_{p ∈ S prime} (1 - 1/p)⁻¹`. -/
 theorem hasSum_inv_factoredNumbers (S : Finset ℕ) :
     HasSum (fun n : Nat.factoredNumbers S ↦ ((n : ℕ) : ℝ)⁻¹)
-      (∏ p ∈ S with p.Prime, (1 - (p : ℝ)⁻¹)⁻¹) :=
-  (EulerProduct.summable_and_hasSum_factoredNumbers_prod_filter_prime_geometric
-    (f := invMonoidHom.comp (Nat.castRingHom ℝ : ℕ →* ℝ))
-    (fun hp ↦ by simpa using inv_lt_one_of_one_lt₀ (by exact_mod_cast hp.one_lt)) S).2
+      (∏ p ∈ S with p.Prime, (1 - (p : ℝ)⁻¹)⁻¹) := by
+  simpa only [Real.rpow_neg_one] using hasSum_rpow_neg_factoredNumbers one_pos S
+
+/-- For every real `σ > 0`, the powers `n ^ (-σ)` of the `N`-smooth numbers (the positive integers
+all of whose prime factors are less than `N`) sum to the finite Euler product
+`∏_{p < N prime} (1 - p ^ (-σ))⁻¹`. -/
+theorem hasSum_rpow_neg_smoothNumbers {σ : ℝ} (hσ : 0 < σ) (N : ℕ) :
+    HasSum (fun n : N.smoothNumbers ↦ ((n : ℕ) : ℝ) ^ (-σ))
+      (∏ p ∈ N.primesBelow, (1 - (p : ℝ) ^ (-σ))⁻¹) := by
+  rw [Nat.smoothNumbers_eq_factoredNumbers, Nat.primesBelow]
+  exact hasSum_rpow_neg_factoredNumbers hσ _
 
 end TauCeti

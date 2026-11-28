@@ -14,6 +14,8 @@ public import Mathlib.CategoryTheory.Subobject.Limits
 In a balanced category with images, precomposing with an epimorphism does not change an image
 subobject (`imageSubobject_comp_eq_of_epi`). Hence the direct image of the image subobject of `f`
 along `g` is the image subobject of `f ≫ g` (`Subobject.exists_obj_imageSubobject`).
+The image subobject is the top subobject exactly for epimorphisms
+(`imageSubobject_eq_top_iff_epi`).
 -/
 
 public section
@@ -26,6 +28,16 @@ namespace CategoryTheory
 
 variable {C : Type u} [Category.{v} C] {X Y : C}
   [Balanced C] [HasImages C] [HasEqualizers C]
+
+/-- A morphism has full image exactly when it is an epimorphism. -/
+@[simp]
+lemma imageSubobject_eq_top_iff_epi (f : X ⟶ Y) : imageSubobject f = ⊤ ↔ Epi f := by
+  calc
+    imageSubobject f = ⊤ ↔ Epi (imageSubobject f).arrow := by
+      rw [Subobject.epi_iff_mk_eq_top, Subobject.mk_arrow]
+    _ ↔ Epi f := by
+      rw [← epi_comp_iff_of_epi (factorThruImageSubobject f) (imageSubobject f).arrow,
+        imageSubobject_arrow_comp]
 
 /-- Precomposing with an epimorphism does not change the image subobject. -/
 lemma imageSubobject_comp_eq_of_epi {X' : C} (h : X' ⟶ X) [Epi h] (f : X ⟶ Y) :

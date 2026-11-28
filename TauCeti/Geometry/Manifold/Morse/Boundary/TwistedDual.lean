@@ -40,8 +40,11 @@ to sign. This is the local-coefficient form, on an oriented manifold, of the com
 Morse complex of `-f` with the dual complex that underlies Poincaré duality, of which the integral
 coefficient identity `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedMorseBoundaryCoeff_dual`
 is the constant-coefficient counterpart. On a nonorientable
-manifold the dual system has to be twisted further by the orientation local system of `M`, which
-is not treated here.
+manifold the dual system has to be twisted further by the orientation local system `o(TM)` of `M`:
+the boundary of `-f` with coefficients in `L^∨ ⊗ o(TM)` is the signed transpose of the boundary of
+`f` with coefficients in `L` with no orientation of `M`
+(`IsMorseSmale.tensorSignLocalSystemFiberEquiv_twistedMorseBoundaryMap_neg_dual`, in
+`TauCeti.Geometry.Manifold.Morse.Boundary.OrientationSystem`).
 
 ## Main results
 
@@ -107,23 +110,15 @@ theorem IsMorseSmale.twistedMorseBoundaryMap_dual (hMS : hX.IsMorseSmale)
     have := (hMS.finite_morseTrajectorySlice hf hpq').to_subtype
     have := Fintype.ofFinite (hX.morseTrajectorySlice (Set.equivOfEq criticalPoints_neg p)
       (Set.equivOfEq criticalPoints_neg q))
-    rw [twistedMorseBoundaryMap_of_morseIndex_eq_add_one hqp,
-      twistedMorseBoundaryMap_of_morseIndex_eq_add_one hpq']
-    -- Read the trajectories of `-X` from `q` to `p` as those of `X` from `p` to `q`.
-    have hslice : ∀ y, y ∈ hX.morseTrajectorySlice (Set.equivOfEq criticalPoints_neg p : M)
-        (Set.equivOfEq criticalPoints_neg q) ↔ y ∈ (hX.neg hf).morseTrajectorySlice q p :=
-      fun y ↦ (Set.ext_iff.1 (hX.neg_morseTrajectorySlice hf p q) y).symm
-    rw [← finsum_comp_equiv (Equiv.subtypeEquivRight hslice), LinearMap.dualMap_def,
-      map_finsum _ (Set.toFinite _), finsum_eq_sum_of_fintype, finsum_eq_sum_of_fintype,
-      Finset.smul_sum]
+    rw [twistedMorseBoundaryMap_neg_eq_sum hf _ hqp,
+      twistedMorseBoundaryMap_of_morseIndex_eq_add_one hpq', LinearMap.dualMap_def,
+      map_finsum _ (Set.toFinite _), finsum_eq_sum_of_fintype, Finset.smul_sum]
     refine Finset.sum_congr rfl fun y _ ↦ ?_
     -- Along each trajectory, transport in `L^∨` along the reversed path is the dual map of
     -- transport in `L`, and the sign for `-f` is `(-1) ^ ind_f p` times the sign for `f`.
     have hy := hX.mem_morseTrajectorySlice.1 y.property
-    rw [hX.neg_trajectoryPathClass hf (p := (p : M)) (q := q) y
-        ((Equiv.subtypeEquivRight hslice) y) (Equiv.subtypeEquivRight_apply_coe _ _),
-      LocalCoefficientSystem.transport_dual_symm, Equiv.subtypeEquivRight_apply_coe, map_zsmul,
-      smul_smul]
+    rw [hX.neg_trajectoryPathClass hf (p := (p : M)) (q := q) y _ rfl,
+      LocalCoefficientSystem.transport_dual_symm, map_zsmul, smul_smul]
     -- The sign for `-f` with the dual orientation data is `(-1) ^ ind_f p` times the sign for `f`.
     exact congrArg (· • _) (neg_trajectorySign_of_unstableFrameOrientation
       (𝔬.coord_mfderiv_chart (Set.equivOfEq criticalPoints_neg p))
@@ -133,11 +128,8 @@ theorem IsMorseSmale.twistedMorseBoundaryMap_dual (hMS : hX.IsMorseSmale)
       (reindex_unstableFrameOrientation_complementaryOrientation _ hf hp oM _)
       (reindex_unstableFrameOrientation_complementaryOrientation _ hf hq oM _) hMS hpq'
       ⟨hy.1, hy.2.1⟩)
-  · have hq' : manifoldMorseIndex 𝓘(ℝ, E) (-f) q ≠ manifoldMorseIndex 𝓘(ℝ, E) (-f) p + 1 := by
-      have := hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-      have := hq.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-      omega
-    rw [twistedMorseBoundaryMap_of_not_morseIndex_eq_add_one hq',
+  · rw [twistedMorseBoundaryMap_of_not_morseIndex_eq_add_one
+        (hp.manifoldMorseIndex_neg_ne_add_one_of_ne_add_one hq hpq),
       twistedMorseBoundaryMap_of_not_morseIndex_eq_add_one (p := Set.equivOfEq criticalPoints_neg p)
         (q := Set.equivOfEq criticalPoints_neg q) hpq, LinearMap.dualMap_def, map_zero,
       smul_zero]

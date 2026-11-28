@@ -25,7 +25,8 @@ points in the right half-plane lies in the slit plane as well, and positive real
 it.
 
 For a point `z ≠ 1` of the unit circle, `-z` lies in the slit plane, and for a point `z ≠ 1` of
-the closed unit disc, `1 - z` has positive real part.
+the closed unit disc, `1 - z` has positive real part. When `‖x‖ + ‖y‖ < 1`, the point
+`x / (1 - y)` lies in the open unit disc, hence `1 - x / (1 - y)` lies in the slit plane.
 
 Translating a point of the slit plane by a nonnegative real number keeps it in the slit plane,
 and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane.
@@ -69,6 +70,7 @@ half-plane.
   `Complex.one_sub_sub_neg_mul_ofReal_mem_slitPlane`,
   `IsCompact.exists_le_norm_one_sub_ofReal_mul`
 * `Complex.one_sub_mem_slitPlane_of_norm_lt_one`
+* `Complex.norm_div_one_sub_lt_one`
 * `Complex.isOpen_setOf_one_sub_mem_slitPlane`,
   `Complex.starConvex_setOf_one_sub_mem_slitPlane`,
   `Complex.starConvex_ofReal_setOf_one_sub_mem_slitPlane`,
@@ -582,6 +584,13 @@ theorem _root_.IsCompact.exists_le_norm_one_sub_ofReal_mul {K : Set ℂ} (hK : I
 /-- The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` contains the open unit disc. -/
 theorem one_sub_mem_slitPlane_of_norm_lt_one {z : ℂ} (hz : ‖z‖ < 1) : 1 - z ∈ slitPlane := by
   simpa [sub_eq_add_neg] using mem_slitPlane_of_norm_lt_one (z := -z) (by simpa using hz)
+
+/-- If `‖x‖ + ‖y‖ < 1`, then `x / (1 - y)` lies in the open unit disc. -/
+theorem norm_div_one_sub_lt_one {x y : ℂ} (hxy : ‖x‖ + ‖y‖ < 1) :
+    ‖x / (1 - y)‖ < 1 := by
+  have hy : 1 - ‖y‖ ≤ ‖1 - y‖ := by simpa using norm_sub_norm_le (1 : ℂ) y
+  rw [norm_div, div_lt_one (by linarith [norm_nonneg x])]
+  linarith
 
 /-- The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is open. -/
 theorem isOpen_setOf_one_sub_mem_slitPlane : IsOpen {z : ℂ | 1 - z ∈ slitPlane} :=

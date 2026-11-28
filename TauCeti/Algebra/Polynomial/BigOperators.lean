@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.BigOperators
 public import Mathlib.Algebra.Polynomial.Monic
+import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Tactic.Abel
 
 /-!
@@ -37,7 +38,9 @@ It also records that the image of a finite product of polynomials under a ring h
 ring without zero divisors has degree the sum of the factors' degrees when each factor's image is
 nonzero.
 
-Finally, `TauCeti.sum_range_monomial_add_monomial_eq_of_eq_add` turns coefficient relations
+Finally, `Polynomial.exists_eval_div_eq_sum_mul_div` clears common denominators in finite linear
+combinations of rational functions `p i / q i`, and
+`TauCeti.sum_range_monomial_add_monomial_eq_of_eq_add` turns coefficient relations
 `cᵢ = bᵢ + qᵢ + qᵢ₋₁` into the polynomial identity
 `∑ᵢ₌₀ⁿ cᵢ Xⁱ + qₙ Xⁿ⁺¹ = ∑ᵢ₌₀ⁿ bᵢ Xⁱ + (1 + X) ∑ᵢ₌₀ⁿ qᵢ Xⁱ`, the shape of the Morse polynomial
 identity.
@@ -182,6 +185,28 @@ theorem natDegree_geom_sum₂ {S : Type*} [Semiring S] [CharZero S]
       · simp
     rw [hc]
     exact_mod_cast hn.ne'
+
+/-- **Common denominator for a finite linear combination of polynomial fractions.** Given finite
+families `a : ι → K` and `p q : ι → K[X]` over a semifield `K` with `q i ≠ 0` on `s : Finset ι`,
+there exist `P Q : K[X]` with `Q ≠ 0`, every root of `Q` a root of some `q i` (`i ∈ s`), and
+`P.eval z / Q.eval z = ∑ i ∈ s, a i * ((p i).eval z / (q i).eval z)` at every `z` where no
+`q i` (`i ∈ s`) vanishes. -/
+theorem exists_eval_div_eq_sum_mul_div {ι K : Type*} [Semifield K] (s : Finset ι)
+    (a : ι → K) (p q : ι → K[X]) (hq : ∀ i ∈ s, q i ≠ 0) :
+    ∃ P Q : K[X], Q ≠ 0 ∧ (∀ z, Q.eval z = 0 → ∃ i ∈ s, (q i).eval z = 0) ∧
+      ∀ z, (∀ i ∈ s, (q i).eval z ≠ 0) →
+        P.eval z / Q.eval z = ∑ i ∈ s, a i * ((p i).eval z / (q i).eval z) := by
+  classical
+  refine ⟨∑ i ∈ s, C (a i) * p i * ∏ j ∈ s.erase i, q j, ∏ j ∈ s, q j,
+    Finset.prod_ne_zero_iff.mpr hq, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
+  · simpa only [eval_prod, Finset.prod_eq_zero_iff] using hz
+  · rw [eval_finsetSum, Finset.sum_div]
+    refine Finset.sum_congr rfl fun i hi ↦ ?_
+    have herase : ∏ j ∈ s.erase i, (q j).eval z ≠ 0 :=
+      Finset.prod_ne_zero_iff.mpr fun j hj ↦ hz j (Finset.mem_of_mem_erase hj)
+    rw [← Finset.mul_prod_erase s q hi]
+    simp only [eval_mul, eval_C, eval_prod]
+    rw [mul_div_mul_right _ _ herase, mul_div_assoc]
 
 end Polynomial
 

@@ -69,6 +69,10 @@ makes it bijective, so `A` is reduced with surjective Frobenius.
   `TauCeti.Perfectoid.isIntegralPerfectoid_iff_perfectRing`: conversely, a ring of characteristic
   `p` is integral perfectoid only if it is perfect (Bhatt–Morrow–Scholze, Example 3.15).
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.of_subsingleton`: so is the zero ring.
+* `TauCeti.Perfectoid.isIntegralPerfectoid_iff_perfectRing_of_natCast_eq_zero`: more generally, a
+  ring in which `p` vanishes, such as the zero ring, is integral perfectoid exactly when its
+  `p`-th power map is bijective; such a ring is reduced
+  (`TauCeti.Perfectoid.IsIntegralPerfectoid.isReduced_of_natCast_eq_zero`).
 
 ## References
 
@@ -218,6 +222,29 @@ theorem of_subsingleton [Subsingleton A] : IsIntegralPerfectoid p A where
     dsimp only
     rw [← map_pow, Subsingleton.elim (x ^ p) x]
   theta_kernel_principal hp := (hp (isUnit_of_subsingleton _)).elim
+
+variable {p A} in
+/-- **The characteristic `p` dictionary, including the zero ring.** A ring in which `p` vanishes
+is integral perfectoid exactly when its `p`-th power map is bijective. Unlike
+`isIntegralPerfectoid_iff_perfectRing`, this applies to the zero ring, which does not have
+characteristic `p`, and so to every quotient of a ring of characteristic `p`. -/
+theorem _root_.TauCeti.Perfectoid.isIntegralPerfectoid_iff_perfectRing_of_natCast_eq_zero
+    (h : (p : A) = 0) : IsIntegralPerfectoid p A ↔ PerfectRing A p := by
+  rcases subsingleton_or_nontrivial A with hA | hA
+  · exact ⟨fun _ ↦ ⟨⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun x ↦ ⟨x, Subsingleton.elim _ _⟩⟩⟩,
+      fun _ ↦ of_subsingleton p A⟩
+  · have := (CharP.charP_iff_prime_eq_zero (Fact.out : p.Prime)).mpr h
+    exact isIntegralPerfectoid_iff_perfectRing
+
+variable {p A} in
+/-- An integral perfectoid ring in which `p` vanishes is reduced. -/
+theorem isReduced_of_natCast_eq_zero [IsIntegralPerfectoid p A] (h : (p : A) = 0) :
+    IsReduced A := by
+  rcases subsingleton_or_nontrivial A with hA | hA
+  · infer_instance
+  · have := (CharP.charP_iff_prime_eq_zero (Fact.out : p.Prime)).mpr h
+    have := perfectRing (p := p) (A := A)
+    exact isReduced_of_perfectRing A p
 
 variable {p A} in
 /-- **Relative Frobenius criterion for integral perfectoid rings** (Bhatt–Morrow–Scholze,

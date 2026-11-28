@@ -35,6 +35,9 @@ These are the two kinds of edges carrying the merge and split maps of the Khovan
   edge the number of circles changes by exactly one.
 * `TauCeti.OrientedPDCode.negativeCrossingCount_mod_two_congr_toPDCode`: two oriented PD-codes
   sharing the same underlying planar PD-code have the same number of negative crossings modulo `2`.
+* `TauCeti.OrientedPDCode.card_false_add_negativeCrossingCount_add_stateLoopCount_mod_two` and
+  `TauCeti.OrientedPDCode.neg_one_pow_card_false_add_negativeCrossingCount`: parity of
+  `|S(s)| + n₋ + k(s)` and the resulting normalization-sign identity on a planar oriented PD-code.
 
 ## Implementation notes
 
@@ -428,24 +431,41 @@ end PDCode
 
 namespace OrientedPDCode
 
+/-- For a planar oriented PD-code `D`, the parity of `#{i | s i = false} + D.negativeCrossingCount +
+D.stateLoopCount s` equals that of `n + D.componentCount`, independently of the state `s`. -/
+theorem card_false_add_negativeCrossingCount_add_stateLoopCount_mod_two {n : ℕ}
+    (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar) (s : Fin n → Bool) :
+    (#{i | s i = false} + D.negativeCrossingCount + D.toPDCode.stateLoopCount s) % 2 =
+      (n + D.componentCount) % 2 := by
+  have hseif := Int.even_iff.mp D.even_seifertCircleCount_sub_crossingCount_add_componentCount
+  have hcube := hD.card_false_add_stateLoopCount_mod_two_eq s D.seifertState
+  have hneg : #{i | D.seifertState i = false} = D.negativeCrossingCount := by
+    simp [negativeCrossingCount_def]
+  rw [hneg] at hcube
+  omega
+
 /-- Two oriented PD-codes sharing the same underlying planar PD-code have the same number of
 negative crossings modulo `2`. -/
 theorem negativeCrossingCount_mod_two_congr_toPDCode {n : ℕ} {D₁ D₂ : OrientedPDCode n}
     (hD₁ : D₁.toPDCode.IsPlanar) (h : D₁.toPDCode = D₂.toPDCode) :
     D₁.negativeCrossingCount % 2 = D₂.negativeCrossingCount % 2 := by
-  have hD₂ : D₂.toPDCode.IsPlanar := h ▸ hD₁
-  have hcube₁ := hD₁.card_false_add_stateLoopCount_mod_two_eq D₁.seifertState (fun _ ↦ true)
-  have hcube₂ := hD₂.card_false_add_stateLoopCount_mod_two_eq D₂.seifertState (fun _ ↦ true)
-  have hseif₁ := Int.even_iff.mp D₁.even_seifertCircleCount_sub_crossingCount_add_componentCount
-  have hseif₂ := Int.even_iff.mp D₂.even_seifertCircleCount_sub_crossingCount_add_componentCount
-  have hneg (D : OrientedPDCode n) : #{i | D.seifertState i = false} = D.negativeCrossingCount := by
-    simp [negativeCrossingCount_def]
+  have h₁ := D₁.card_false_add_negativeCrossingCount_add_stateLoopCount_mod_two hD₁ (fun _ ↦ true)
+  have h₂ := D₂.card_false_add_negativeCrossingCount_add_stateLoopCount_mod_two (h ▸ hD₁)
+    (fun _ ↦ true)
   have hloop : D₁.toPDCode.stateLoopCount (fun _ ↦ true) =
       D₂.toPDCode.stateLoopCount (fun _ ↦ true) := by rw [h]
-  have hcomp : D₁.toPDCode.componentCount = D₂.toPDCode.componentCount := by rw [h]
-  rw [hneg] at hcube₁ hcube₂
-  simp only [Bool.true_eq_false, filter_false, card_empty, zero_add] at hcube₁ hcube₂
+  have hcomp : D₁.componentCount = D₂.componentCount := congrArg PDCode.componentCount h
+  simp only [Bool.true_eq_false, filter_false, card_empty, zero_add] at h₁ h₂
   omega
+
+/-- For a planar oriented PD-code `D`, the normalization sign `(-1) ^ (|S(s)| + n₋)` equals
+`(-1) ^ (n + D.componentCount + k(s))` over any monoid `R` with distributive negation. -/
+theorem neg_one_pow_card_false_add_negativeCrossingCount {n : ℕ} {R : Type*} [Monoid R]
+    [HasDistribNeg R] (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar) (s : Fin n → Bool) :
+    (-1 : R) ^ (#{i | s i = false} + D.negativeCrossingCount) =
+      (-1 : R) ^ (n + D.componentCount + D.toPDCode.stateLoopCount s) := by
+  have hmod := D.card_false_add_negativeCrossingCount_add_stateLoopCount_mod_two hD s
+  exact neg_one_pow_congr (by simp only [Nat.even_iff]; omega)
 
 end OrientedPDCode
 
