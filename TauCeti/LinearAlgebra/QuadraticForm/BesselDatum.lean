@@ -59,8 +59,8 @@ the Gram matrix of Jiang–Zhang.
   `V ≅ ℓ ℍ ⊥ V_ℓ` and `V_ℓ ≅ ⟨Q w⟩ ⊥ (V_ℓ ∩ w^⊥)`.
 * `TauCeti.OrthogonalBesselDatum.add_wittIndex_formClass_restrict_besselSpace_eq_iff`,
   `TauCeti.OrthogonalBesselDatum.add_wittIndex_formClass_restrict_besselSpace_add_one_eq_iff`:
-  in a regular space of Witt index `r`, the Bessel space has Witt index `r - ℓ` when the
-  anisotropic part of `V` represents `Q w`, and `r - ℓ - 1` otherwise.
+  in a regular space of Witt index `r`, the Witt index `b` of the Bessel space satisfies
+  `ℓ + b = r` when the anisotropic part of `V` represents `Q w`, and `ℓ + b + 1 = r` otherwise.
 
 ## References
 
@@ -249,8 +249,8 @@ theorem middleSpace_eq_orthogonal_polarBilin :
     (isUnit_of_invertible (2 : R)).mul_right_eq_zero]
 
 /-- The *Bessel space* `V_ℓ ∩ w^⊥` of a Bessel datum: the orthogonal complement of the vectors
-`e₋ℓ, …, e₋₁, e₁, …, e_ℓ` and `w`. Its special orthogonal group is the Bessel subgroup of the
-datum. -/
+`e₋ℓ, …, e₋₁, e₁, …, e_ℓ` and `w`. When `Q` is a regular form on a finite-dimensional space
+over a field, the special orthogonal group of this space is the Bessel subgroup of the datum. -/
 def besselSpace : Submodule R M :=
   LinearMap.BilinForm.orthogonal (associated Q)
     (Submodule.span R (Set.range D.e ∪ Set.range D.f ∪ {D.w}))
@@ -621,8 +621,8 @@ theorem add_wittIndex_formClass_restrict_besselSpace_eq_iff :
     Nat.add_left_cancel_iff, eq_comm, wittIndex_mk_rankOne_add_eq_wittIndex_iff]
 
 /-- **Witt index of the Bessel space**, second case. For a Bessel datum of index `ℓ` in a regular
-space of Witt index `r` and anisotropic part `V_an`, the Bessel space `V_ℓ ∩ w^⊥` has Witt index
-`r - ℓ - 1` exactly when `V_an` does not represent `Q w`. -/
+space of Witt index `r` and anisotropic part `V_an`, the Witt index `b` of the Bessel space
+`V_ℓ ∩ w^⊥` satisfies `ℓ + b + 1 = r` exactly when `V_an` does not represent `Q w`. -/
 theorem add_wittIndex_formClass_restrict_besselSpace_add_one_eq_iff :
     ℓ + wittIndex
         (formClass (Q.restrict D.besselSpace) (D.nondegenerate_restrict_besselSpace hQ)) + 1 =

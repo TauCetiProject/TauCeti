@@ -838,13 +838,19 @@ theorem _root_.QuadraticMap.nondegenerate_smul_sq {a : R} (ha : a ≠ 0) :
   have h := hx.1
   simpa [ha] using h
 
+omit [Invertible (2 : R)] in
 /-- A quadratic form restricts nondegenerately to the line spanned by a vector of nonzero value:
 on that line it is the form `t ↦ Q v * t²`. -/
-theorem nondegenerate_restrict_span_singleton {K W : Type*} [Field K] [AddCommGroup W]
-    [Module K W] {Q : QuadraticForm K W} {v : W} (hv : Q v ≠ 0) :
-    (Q.restrict (K ∙ v)).Nondegenerate :=
-  (QuadraticMap.IsometryEquiv.nondegenerate_iff
-    { toLinearEquiv := LinearEquiv.toSpanNonzeroSingleton K W v fun h ↦ hv (by rw [h, map_zero])
+theorem nondegenerate_restrict_span_singleton {Q : QuadraticForm R V} {v : V} (hv : Q v ≠ 0) :
+    (Q.restrict (R ∙ v)).Nondegenerate := by
+  have hinj : Function.Injective (LinearMap.toSpanSingleton R V v) := by
+    refine (injective_iff_map_eq_zero _).mpr fun c hc ↦ ?_
+    have h := congrArg Q hc
+    simp only [LinearMap.toSpanSingleton_apply, QuadraticMap.map_smul, map_zero] at h
+    simpa [hv] using h
+  exact (QuadraticMap.IsometryEquiv.nondegenerate_iff
+    { toLinearEquiv := (LinearEquiv.ofInjective _ hinj).trans
+        (LinearEquiv.ofEq _ _ (LinearMap.span_singleton_eq_range R V v).symm)
       map_app' := fun t ↦ by simp [QuadraticMap.map_smul, mul_comm] }).mp
     (QuadraticMap.nondegenerate_smul_sq hv)
 
