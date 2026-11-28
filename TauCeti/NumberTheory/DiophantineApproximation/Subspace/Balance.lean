@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Rank
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SmallInteger
 
-import TauCeti.NumberTheory.DiophantineApproximation.Subspace.SuccessiveMinima
 
 /-!
 # Successive minima concentrated at one infinite place

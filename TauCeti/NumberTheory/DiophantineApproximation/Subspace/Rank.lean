@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.ExteriorPower.LinearForms
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Span
-public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SuccessiveMinima
+public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.SuccessiveMinima.Basic
 
 import TauCeti.Algebra.Order.BigOperators.Min
-import TauCeti.LinearAlgebra.Dimension.Submodule
-import TauCeti.NumberTheory.DiophantineApproximation.Subspace.SuccessiveMinima
 
 /-!
 # The rank of an approximation domain
@@ -38,8 +35,9 @@ minima have junk value zero. The rank and spanning statements allow rank zero an
 When the domain spans a nonzero proper subspace, of rank `R`, the minima beyond the rank contain
 a large jump: some `k` with `R ≤ k < #ι` has `(μ (k - 1) / μ k) ^ (#ι - R) ≤ (μ (#ι - 1))⁻¹`
 (`TauCeti.NumberField.exists_div_pow_le_inv`). This chooses the splitting index `k` at which the
-Plücker vectors of the first `k` minimal vectors are moved into an exterior power, where the jump
-`μ k / μ (k - 1)` makes the last minimum of the new domain large.
+Plücker vectors of the `p`-subfamilies of the corrected family that meet the first `k` indices lie
+in an exterior-power approximation domain, where the jump `μ k / μ (k - 1)` makes the last
+minimum large.
 
 ## References
 
@@ -49,7 +47,7 @@ Plücker vectors of the first `k` minimal vectors are moved into an exterior pow
 
 public section
 
-open Module NumberField NumberField.mixedEmbedding Set Set.powersetCard
+open Module NumberField NumberField.mixedEmbedding Set
 open scoped Pointwise
 
 namespace TauCeti.NumberField
@@ -72,11 +70,10 @@ theorem successiveMinimum_le_one_of_lt_finrank_approxSpan {S₀ : Finset (Finite
     {l : ℕ} (hl : l < finrank K (approxSpan S₀ L c Q)) :
     (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ≤ 1 := by
   rw [approxSpan_eq_span] at hl
-  obtain ⟨x, hx, hxD⟩ := Submodule.le_finrank_span_iff_exists_linearIndependent.1 hl
-  refine Submodule.successiveMinimum_le one_pos hx (fun i ↦ approxDomain_subset_approxModule
-    (hxD i)) fun i ↦ ?_
+  refine Submodule.successiveMinimum_le_of_lt_finrank_span one_pos
+    approxDomain_subset_approxModule (fun x hx ↦ ?_) hl
   rw [one_smul, mixedEmbedding_mem_approxBody_iff]
-  exact (mem_approxDomain.1 (hxD i)).1
+  exact (mem_approxDomain.1 hx).1
 
 open scoped Classical in
 /-- The rank of an approximation domain of positive level is the number of its successive
@@ -96,6 +93,20 @@ theorem finrank_approxSpan {S₀ : Finset (FinitePlace K)}
   rw [approxSpan_eq_span_mixedEmbedding c hQ.le, ← hcoe]
   exact Submodule.finrank_span_setOf_mem (Λ := approxModule S₀ L c Q) hB
     (t := (1 : ℝ)) zero_lt_one
+
+/-- Below `#ι`, the successive minima over `K` of an approximation domain of positive level are
+nondecreasing. -/
+theorem monotoneOn_successiveMinimum_approx {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
+    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) :
+    MonotoneOn ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q))
+      (Iio (Fintype.card ι)) := by
+  let _ := discreteTopology_mixedImage_approxModule hLfin c Q
+  let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
+  obtain ⟨B, hcoe, hB⟩ := exists_convexBody_eq_approxBody hLinf c hQ
+  simpa only [hcoe] using (approxModule S₀ L c Q).monotoneOn_successiveMinimum hB
 
 /-- Below `#ι`, a successive minimum over `K` of an approximation domain of positive level is at
 most one exactly when its index is below the rank of the domain. -/
@@ -171,61 +182,5 @@ theorem exists_div_pow_le_inv {S₀ : Finset (FinitePlace K)}
   refine ⟨j + 1, Finset.mem_Ico.2 ⟨by omega, by omega⟩, ?_⟩
   rw [Nat.add_sub_cancel, ← hexp, ← one_div]
   exact hjle.trans (div_le_div_of_nonneg_right hle (hpos _ (by omega)).le)
-
-section Plucker
-
-variable [LinearOrder ι]
-
-/-- If the Plücker vectors indexed by the subsets meeting the first `k` indices of `y` lie in an
-approximation domain, their span `wedgeSpan k p y` lies in the span of the domain. -/
-theorem wedgeSpan_le_approxSpan_of_forall_plucker_mem {p k : ℕ}
-    {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → Set.powersetCard ι p → Dual K (Set.powersetCard ι p → K)}
-    {c : AbsoluteValue K ℝ → Set.powersetCard ι p → ℝ} {Q : ℝ}
-    {y : Fin (Fintype.card ι) → ι → K}
-    (hyD : ∀ J : Set.powersetCard (Fin (Fintype.card ι)) p, (∃ j ∈ J, (j : ℕ) < k) →
-      plucker (y ∘ ofFinEmbEquiv.symm J) ∈ approxDomain S₀ L c Q) :
-    wedgeSpan k p y ≤ approxSpan S₀ L c Q :=
-  wedgeSpan_le_iff.2 fun J hJ ↦ mem_approxSpan_of_mem (hyD J hJ)
-
-/-- **The rank of a domain of `⋀^p` containing the wedges of a basis** (toward Bombieri–Gubler,
-Lemma 7.5.31). Let `y` be a basis of `ι → K` and `k + p = card ι`. If an approximation domain of
-`Set.powersetCard ι p → K` contains the Plücker vectors of the `p`-subfamilies of `y` meeting the
-first `k` indices, then its span has dimension at least `(card ι).choose p - 1`: those Plücker
-vectors span the hyperplane `wedgeSpan k p y`. -/
-theorem choose_sub_one_le_finrank_approxSpan_of_forall_plucker_mem {p k : ℕ}
-    {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → Set.powersetCard ι p → Dual K (Set.powersetCard ι p → K)}
-    {c : AbsoluteValue K ℝ → Set.powersetCard ι p → ℝ} {Q : ℝ}
-    (hkp : k + p = Fintype.card ι) {y : Fin (Fintype.card ι) → ι → K}
-    (hy : LinearIndependent K y)
-    (hyD : ∀ J : Set.powersetCard (Fin (Fintype.card ι)) p, (∃ j ∈ J, (j : ℕ) < k) →
-      plucker (y ∘ ofFinEmbEquiv.symm J) ∈ approxDomain S₀ L c Q) :
-    (Fintype.card ι).choose p - 1 ≤ finrank K (approxSpan S₀ L c Q) := by
-  have hW := wedgeSpan_le_approxSpan_of_forall_plucker_mem hyD
-  have hrank := finrank_wedgeSpan_add_one hy hkp
-  rw [Set.powersetCard.fintypeCard] at hrank
-  have hle : (Fintype.card ι).choose p - 1 ≤ finrank K (wedgeSpan k p y) := by omega
-  exact hle.trans (Submodule.finrank_mono hW)
-
-/-- **The first `M - 1` minima of a domain of `⋀^p` containing the wedges of a basis** (toward
-Bombieri–Gubler, Lemma 7.5.31). Let `y` be a basis of `ι → K` and `k + p = card ι`. If an
-approximation domain of `Set.powersetCard ι p → K` contains the Plücker vectors of the
-`p`-subfamilies of `y` meeting the first `k` indices, then its `l`-th successive minimum over `K` is
-at most `1` for every `l + 1 < (card ι).choose p`: its rank is at least `(card ι).choose p - 1`
-(`TauCeti.NumberField.choose_sub_one_le_finrank_approxSpan_of_forall_plucker_mem`). -/
-theorem successiveMinimum_le_one_of_forall_plucker_mem {p k : ℕ} {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → Set.powersetCard ι p → Dual K (Set.powersetCard ι p → K)}
-    {c : AbsoluteValue K ℝ → Set.powersetCard ι p → ℝ} {Q : ℝ}
-    (hkp : k + p = Fintype.card ι) {y : Fin (Fintype.card ι) → ι → K}
-    (hy : LinearIndependent K y)
-    (hyD : ∀ J : Set.powersetCard (Fin (Fintype.card ι)) p, (∃ j ∈ J, (j : ℕ) < k) →
-      plucker (y ∘ ofFinEmbEquiv.symm J) ∈ approxDomain S₀ L c Q)
-    {l : ℕ} (hl : l + 1 < (Fintype.card ι).choose p) :
-    (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ≤ 1 := by
-  have := choose_sub_one_le_finrank_approxSpan_of_forall_plucker_mem hkp hy hyD
-  exact successiveMinimum_le_one_of_lt_finrank_approxSpan (by omega)
-
-end Plucker
 
 end TauCeti.NumberField

@@ -362,18 +362,30 @@ theorem plucker_topBlock_notMem_wedgeSpan (hx : LinearIndependent K x) {k : ℕ}
   rw [wedgeSpan_eq_ker hf h, LinearMap.mem_ker, wedgeForms_plucker_comp_eq_ite hf]
   simp
 
-/-- **The span of the wedges meeting the first `k` indices has codimension one.** -/
-theorem finrank_wedgeSpan_add_one (hx : LinearIndependent K x) {k : ℕ}
-    (h : k + p = Fintype.card ι) :
-    finrank K (wedgeSpan k p x) + 1 = Fintype.card (powersetCard ι p) := by
-  obtain ⟨f, hf⟩ := hx.exists_dual_forall_apply_eq_ite
-  rw [wedgeSpan_eq_ker hf h, Dual.finrank_ker_add_one_of_ne_zero, finrank_fintype_fun_eq_card]
-  -- the kernel form takes the value `1` on the wedge of the top block
-  intro h₀
-  simpa [wedgeForms_plucker_comp_eq_ite hf] using
-    congr($h₀ (plucker (x ∘ ofFinEmbEquiv.symm (topBlock h))))
-
 end WedgeSpan
+
+/-- For `k + p = N`, the wedges of an independent family of length `N` that meet the first `k`
+indices span a space of dimension `N.choose p - 1`. Only the top block is omitted. -/
+theorem finrank_wedgeSpan_add_one [Finite ι] {K : Type*} [Field K] {N k : ℕ}
+    {x : Fin N → ι → K} (hx : LinearIndependent K x) (h : k + p = N) :
+    finrank K (wedgeSpan k p x) + 1 = N.choose p := by
+  classical
+  have hsets : {J : powersetCard (Fin N) p | ∃ j ∈ J, (j : ℕ) < k} =
+      {J | J ≠ topBlock h} := by
+    ext J
+    exact ⟨fun ⟨j, hj, hjk⟩ heq ↦ hjk.not_ge ((mem_topBlock h).1 (heq ▸ hj)),
+      exists_lt_of_ne_topBlock h⟩
+  have hli : LinearIndependent K (fun J : ({J : powersetCard (Fin N) p | J ≠ topBlock h} : Set _) ↦
+      plucker (x ∘ ofFinEmbEquiv.symm J.val)) :=
+    (linearIndependent_plucker_comp hx p).comp _ Subtype.val_injective
+  rw [wedgeSpan, hsets, Set.image_eq_range]
+  have hcard : Fintype.card {J : powersetCard (Fin N) p // J ≠ topBlock h} = N.choose p - 1 := by
+    rw [Fintype.card_subtype_compl (· = topBlock h), Fintype.card_subtype_eq,
+      Set.powersetCard.fintypeCard, Fintype.card_fin]
+  rw [finrank_span_eq_card hli]
+  calc
+    _ = (N.choose p - 1) + 1 := congrArg (· + 1) hcard
+    _ = N.choose p := Nat.sub_add_cancel (Nat.choose_pos (by omega))
 
 /-! ### Examples -/
 

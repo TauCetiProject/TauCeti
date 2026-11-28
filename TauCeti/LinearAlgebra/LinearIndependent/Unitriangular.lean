@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.LinearIndependent.Basic
+import Mathlib.Data.Finsupp.NeLocus
 import Mathlib.Order.Preorder.Finite
 
 /-!
@@ -63,12 +64,9 @@ theorem LinearIndependent.of_eq_add_mem_span_image_Iio {x z : ι → M}
   rw [hz] at hfg
   have hfg' : f + Finsupp.linearCombination R d f = g + Finsupp.linearCombination R d g := hx hfg
   by_contra hne
-  obtain ⟨i, hi⟩ := DFunLike.ne_iff.1 hne
   set s := f.support ∪ g.support
   -- A maximal index `j` where `f` and `g` differ.
-  obtain ⟨j, hjmax⟩ := (s.filter fun l ↦ f l ≠ g l).exists_maximal
-    ⟨i, Finset.mem_filter.2 ⟨by by_contra hs; simp_all [s], hi⟩⟩
-  obtain ⟨-, hj⟩ := Finset.mem_filter.1 hjmax.prop
+  obtain ⟨j, hjmax⟩ := (f.neLocus g).exists_maximal (Finsupp.nonempty_neLocus_iff.2 hne)
   have hsum (h : ι →₀ R) (hs : h.support ⊆ s) :
       Finsupp.linearCombination R d h j = ∑ l ∈ s, h l * d l j := by
     rw [Finsupp.linearCombination_apply_of_mem_supported R (Finset.coe_subset.2 hs),
@@ -78,11 +76,11 @@ theorem LinearIndependent.of_eq_add_mem_span_image_Iio {x z : ι → M}
   -- at `j` unless `j < l`.
   have hd_eq : Finsupp.linearCombination R d f j = Finsupp.linearCombination R d g j := by
     rw [hsum f Finset.subset_union_left, hsum g Finset.subset_union_right]
-    refine Finset.sum_congr rfl fun l hl ↦ ?_
+    refine Finset.sum_congr rfl fun l _ ↦ ?_
     by_cases hjl : j < l
-    · by_contra hfl
-      exact hjmax.not_gt (Finset.mem_filter.2 ⟨hl, fun h ↦ hfl (by rw [h])⟩) hjl
+    · have hfl : f l = g l := Finsupp.notMem_neLocus.1 fun hl ↦ hjmax.not_gt hl hjl
+      rw [hfl]
     · rw [(Finsupp.mem_supported' _ _).1 (hd l) j hjl, mul_zero, mul_zero]
   have hj' := DFunLike.congr_fun hfg' j
   rw [Finsupp.add_apply, Finsupp.add_apply, hd_eq] at hj'
-  exact hj (add_right_cancel hj')
+  exact Finsupp.mem_neLocus.1 hjmax.prop (add_right_cancel hj')
