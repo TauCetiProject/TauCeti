@@ -12,7 +12,7 @@ public import TauCeti.Topology.Algebra.PointTopology.Basic
 public import TauCeti.Topology.Algebra.PointTopology.Localization
 public import TauCeti.Topology.Algebra.PointTopology.Presentation
 import TauCeti.Analysis.MvPolynomial.Implicit
-import TauCeti.Topology.OpenPartialHomeomorph.Constructions
+import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # Local charts on the points of smooth algebras
@@ -27,7 +27,7 @@ coordinates on the space of points with its evaluation topology: the map
 `Algebra.SubmersivePresentation.basisKaehler`, the differentials of the same generators form a
 basis of the Kähler differentials of `S` over `K`.
 
-The polynomial zero-set chart `MvPolynomial.exists_openPartialHomeomorph_zeroSet` applies
+The polynomial zero-set chart `TauCeti.exists_openPartialHomeomorph_zeroSet` applies
 because the Jacobian minor is invertible at every point of a submersive presentation
 (`Algebra.SubmersivePresentation.isUnit_det_jacobiMatrix_solution`). No hypothesis on the
 characteristic of `K` is needed, and the theorem applies over `ℝ`, `ℂ` and every nonarchimedean
@@ -95,7 +95,7 @@ private theorem exists_openPartialHomeomorph_pointCoords (x : S →ₐ[K] K) :
   classical
   let := Fintype.ofFinite σ
   let h := P.toPresentation.pointsHomeomorphZeroSet (K := K)
-  obtain ⟨e, hx, he⟩ := MvPolynomial.exists_openPartialHomeomorph_zeroSet P.relation P.map_inj
+  obtain ⟨e, hx, he⟩ := TauCeti.exists_openPartialHomeomorph_zeroSet P.relation
     (h x) (by simpa only [h, Presentation.coe_pointsHomeomorphZeroSet_apply] using
       P.isUnit_det_jacobiMatrixAt_submatrix x)
   refine ⟨h.toOpenPartialHomeomorph.trans e, ?_, fun y ↦ ?_⟩

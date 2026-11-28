@@ -34,6 +34,7 @@ theorem eval₂_sumAlgEquiv (f : R →+* S) (x : σ → S) (y : τ → S)
 
 /-- Evaluating a polynomial after substituting an algebra map into its coefficient variables
 agrees with evaluating all variables at once. -/
+@[simp]
 theorem aevalTower_map_sumAlgEquiv {A : Type*} [CommSemiring A] [Algebra R A] [Algebra R S]
     (p : MvPolynomial (σ ⊕ τ) R) (q : MvPolynomial τ R →ₐ[R] A)
     (y : A →ₐ[R] S) (x : σ → S) :

@@ -5,32 +5,40 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.IsLocalHomeomorph
+public import Mathlib.Topology.OpenPartialHomeomorph.Basic
 public import TauCeti.Analysis.MvPolynomial.Jacobian
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import TauCeti.Analysis.Calculus.ImplicitFunction.Data
 import TauCeti.LinearAlgebra.Matrix.MaximalMinor
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.FunLeft
 
 /-!
 # Implicit function charts for polynomial equations
 
-At a zero of a polynomial family with an invertible Jacobian minor, the coordinates outside the
-minor are local coordinates on the zero set. This is the implicit function theorem with the
-coordinate projection as the complementary map.
+At a zero of a polynomial family, an invertible square Jacobian minor using every equation
+row gives a chart on the common zero set. The chart projects onto the coordinates outside the
+selected columns.
+
+This construction is extracted from
+`TauCeti.Topology.Algebra.PointTopology.Smooth.Chart`, using
+`ImplicitFunctionData.levelSetChart` as its formal basis.
+
+## References
+
+* B. Conrad, *Weil and Grothendieck approaches to adelic points*, Enseign. Math. (2) 58 (2012),
+  §4, p. 11.
+* V. Platonov, A. Rapinchuk and I. Rapinchuk, *Algebraic Groups and Number Theory*, vol. 1,
+  second edition, §3.1.
 -/
 
 public section
 
-open TauCeti
+namespace TauCeti
 
-namespace MvPolynomial
+open MvPolynomial
 
 variable {K ι σ : Type*} [NontriviallyNormedField K] [CompleteSpace K]
   (p : σ → MvPolynomial ι K) {m : σ → ι}
-
-/-- The projection onto the coordinates outside the Jacobian minor. -/
-private def freeCoords : (ι → K) →L[K] ↥(Set.range m)ᶜ → K :=
-  ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.proj i.val
 
 section Fintype
 
@@ -41,10 +49,7 @@ private noncomputable abbrev implicitData [DecidableEq σ] (hm : Function.Inject
     (hJ : IsUnit (((jacobiMatrixAt p x).submatrix id m).det)) :
     ImplicitFunctionData K (ι → K) (σ → K) (↥(Set.range m)ᶜ → K) := by
   classical
-  let π : (ι → K) →L[K] ↥(Set.range m)ᶜ → K := freeCoords
-  have hπ : π.toLinearMap = LinearMap.funLeft K K Subtype.val := by
-    ext y i
-    simp [π, freeCoords]
+  let π : (ι → K) →L[K] ↥(Set.range m)ᶜ → K := ContinuousLinearMap.funLeft K K Subtype.val
   have hD := fderiv_eval_family p x
   exact
     { leftFun := fun y j ↦ eval y (p j)
@@ -58,18 +63,17 @@ private noncomputable abbrev implicitData [DecidableEq σ] (hm : Function.Inject
         rw [hD, LinearMap.range_eq_top, Matrix.coe_mulVecLin]
         exact Matrix.mulVec_surjective_of_isUnit_det_submatrix _ hm hJ
       range_rightDeriv := by
-        rw [hπ, LinearMap.range_eq_top]
+        rw [ContinuousLinearMap.toLinearMap_funLeft, LinearMap.range_eq_top]
         exact LinearMap.funLeft_surjective_of_injective K K _ Subtype.val_injective
       isCompl_ker := by
-        rw [hD, hπ]
+        rw [hD, ContinuousLinearMap.toLinearMap_funLeft]
         exact Matrix.isCompl_ker_mulVecLin_ker_funLeft _ hm hJ }
 
 end Fintype
 
-/-- At a common zero of polynomial equations with an invertible Jacobian minor, evaluating
-the coordinates outside the minor gives a chart on the zero set. -/
+/-- At a common zero of polynomial equations, an invertible square Jacobian minor using every
+equation row gives a chart on the zero set, projecting onto the coordinates outside its columns. -/
 theorem exists_openPartialHomeomorph_zeroSet [Finite ι] [Fintype σ] [DecidableEq σ]
-    (hm : Function.Injective m)
     (x : {y : ι → K | (fun j ↦ eval y (p j)) = 0})
     (hJ : IsUnit (((jacobiMatrixAt p x.val).submatrix id m).det)) :
     ∃ e : OpenPartialHomeomorph {y : ι → K | (fun j ↦ eval y (p j)) = 0}
@@ -78,8 +82,13 @@ theorem exists_openPartialHomeomorph_zeroSet [Finite ι] [Fintype σ] [Decidable
   classical
   let := Fintype.ofFinite ι
   let := Fintype.ofFinite ↥(Set.range m)ᶜ
+  have hm : Function.Injective m := by
+    intro i j hij
+    by_contra hne
+    exact hJ.ne_zero (Matrix.det_zero_of_column_eq hne (fun a ↦ by
+      simp only [Matrix.submatrix_apply, hij]))
   let d := implicitData p hm x.val hJ
   refine ⟨d.levelSetChart x.property, d.mem_levelSetChart_source x.property, fun y i ↦ ?_⟩
-  simp [d, implicitData, freeCoords]
+  simp [d, implicitData]
 
-end MvPolynomial
+end TauCeti
