@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.EulerCharacteristic
 public import TauCeti.Algebra.Category.ModuleCat.Finrank
 public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
+import TauCeti.Algebra.Homology.EulerCharacteristic.Finite
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
 
 /-!
@@ -158,17 +159,7 @@ theorem eulerChar_eq_homologyEulerChar [∀ n, Module.Finite k (K.X n)]
     (hK : ∀ᶠ n in Filter.atTop, IsZero (K.X n)) :
     K.eulerChar = K.homologyEulerChar := by
   obtain ⟨n, hn⟩ := Filter.eventually_atTop.1 hK
-  have hX : ∀ i ∉ Finset.range (n + 1), IsZero (K.X i) := fun i hi ↦
-    hn i (by simp at hi; omega)
-  rw [HomologicalComplex.eulerChar_eq_sum_finSet_of_finrankSupport_subset K (Finset.range (n + 1))
-      ((GradedObject.finrankSupport_subset_iff _ _).2 fun i hi ↦
-        ModuleCat.finrank_eq_zero_of_isZero (hX i hi)),
-    HomologicalComplex.homologyEulerChar_eq_sum_finSet_of_finrankSupport_subset K
-      (Finset.range (n + 1))
-      ((GradedObject.finrankSupport_subset_iff _ _).2 fun i hi ↦
-        ModuleCat.finrank_eq_zero_of_isZero
-          (((K.exactAt_iff i).2 (ShortComplex.exact_of_isZero_X₂ _ (hX i hi))).isZero_homology))]
-  simpa using K.sum_range_finrank_X_eq_sum_range_finrank_homology
-    (fun _ _ ↦ inferInstance) ((hX (n + 1) (by simp)).eq_of_src _ 0)
+  exact K.eulerChar_eq_homologyEulerChar_of_finset (Finset.range (n + 1))
+    (fun i hi ↦ hn i (by simp at hi; omega)) (fun _ _ ↦ inferInstance)
 
 end ChainComplex

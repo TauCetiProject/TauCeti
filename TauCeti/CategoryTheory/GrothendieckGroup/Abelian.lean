@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Exact.Abelian
 public import TauCeti.CategoryTheory.Exact.Functor
 public import TauCeti.CategoryTheory.GrothendieckGroup.Exact
+public import TauCeti.CategoryTheory.ObjectProperty.AdditiveFunction
 
 /-!
 # Abelian `K₀` of an essentially small abelian category
@@ -236,6 +237,13 @@ omit [EssentiallySmall.{w} C] in
 theorem AdditiveInvariant.map_iso (a : AdditiveInvariant C G) ⦃X Y : C⦄ (e : X ≅ Y) :
     a.obj X = a.obj Y :=
   a.toExact.map_iso e
+
+omit [EssentiallySmall.{w} C] in
+/-- An additive invariant for abelian `K₀` is additive on every object property `P` (in particular
+on `⊤`). -/
+lemma AdditiveInvariant.isAdditiveOn (a : AdditiveInvariant C G) (P : ObjectProperty C) :
+    P.IsAdditiveOn a.obj :=
+  (ObjectProperty.isAdditiveOn_iff P a.obj).2 fun _ hS _ _ _ ↦ a.map_shortExact hS
 
 /-- The homomorphism out of abelian `K₀` induced by an invariant additive on short exact
 sequences. -/
