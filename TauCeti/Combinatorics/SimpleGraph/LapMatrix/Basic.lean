@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.LapMatrix
-import TauCeti.Combinatorics.SimpleGraph.AdjMatrix
+import TauCeti.Combinatorics.SimpleGraph.AdjMatrix.Basic
 
 /-!
 # Laplacian of a graph complement
