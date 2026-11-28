@@ -10,17 +10,18 @@ import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import TauCeti.Analysis.Normed.Module.Dual.Separable
 import TauCeti.MeasureTheory.Function.AEAdditiveFamily
-import TauCeti.MeasureTheory.Function.StronglyMeasurable.ScalarTests
+import TauCeti.MeasureTheory.MeasurableSpace.DualTests
 
 /-!
 # Separable dual spaces have the Radon–Nikodým property
 
 Let `X` be a real normed space whose dual `X⋆` is separable. This file proves that `X⋆` has the
 Radon–Nikodým property with respect to every σ-finite measure, and in particular has the intrinsic
-Radon–Nikodým property. Thus separable duals such as `ℓ¹ = c₀⋆` admit Bochner densities for all
-their vector measures of finite variation. In the duality theory of Bochner spaces this is the
-hypothesis on `X⋆` under which, for `1 ≤ p < ∞` and a σ-finite measure `μ`, functionals on
-`Lᵖ(μ; X)` are represented by `L^q(μ; X⋆)` densities, where `1/p + 1/q = 1`.
+Radon–Nikodým property. Thus, for a separable dual such as `ℓ¹ = c₀⋆` and a σ-finite measure
+`μ`, every vector measure of finite variation whose variation is absolutely continuous with
+respect to `μ` has a Bochner density with respect to `μ`. In the duality theory of Bochner
+spaces this is the hypothesis on `X⋆` under which, for `1 ≤ p < ∞` and a σ-finite measure `μ`,
+functionals on `Lᵖ(μ; X)` are represented by `L^q(μ; X⋆)` densities, where `1/p + 1/q = 1`.
 
 The main step is a bounded version on a finite measure space: a vector measure `m` with
 `‖m A‖ ≤ C ν(A)` has a strongly measurable density `φ` with `‖φ s‖ ≤ C` everywhere
@@ -122,15 +123,12 @@ theorem exists_density_strongDual_of_norm_le [SeparableSpace (StrongDual ℝ X)]
   obtain ⟨g, hgm, hint, hadd, hbound⟩ := exists_scalar_densities hm
   obtain ⟨φ, hφm, hφC, hφg⟩ := exists_strongDual_ae_eq_apply hgm hadd hbound
   -- Pettis: the evaluations at the predual separate the points of the separable dual.
-  have hφ : StronglyMeasurable φ := by
-    borelize (StrongDual ℝ X)
-    have hT := evalMeasurableSpace_eq_borel_of_separating (𝕜 := ℝ)
+  have hφ : StronglyMeasurable φ :=
+    (stronglyMeasurable_iff_separating_dual_tests (𝕜 := ℝ)
       (T := range (inclusionInDoubleDual ℝ X)) fun y hy ↦ by
         ext x
-        simpa using hy _ ⟨x, rfl⟩
-    have h : Measurable[_, evalMeasurableSpace (range (inclusionInDoubleDual ℝ X))] φ :=
-      measurable_evalMeasurableSpace_iff.2 fun _ ⟨x, hx⟩ ↦ by simpa [← hx] using hφm x
-    exact (hT ▸ h).stronglyMeasurable
+        simpa using hy _ ⟨x, rfl⟩).2
+      fun _ ⟨x, hx⟩ ↦ by simpa [← hx] using hφm x
   have hφi : Integrable φ ν := .of_bound hφ.aestronglyMeasurable C (ae_of_all _ hφC)
   refine ⟨φ, hφi, hφC, ?_⟩
   ext A hA : 1
