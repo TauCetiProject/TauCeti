@@ -211,46 +211,34 @@ private lemma eulerianNumber_ge_66_of_three_le {n r : ℕ} (hr : 3 ≤ r) (hrn :
       _ ≤ eulerianNumber n (r - 1) :=
         eulerianNumber_antitoneOn n (Set.mem_Ici.mpr hle') (Set.mem_Ici.mpr (by omega)) (by omega)
 
-private lemma pow_three_mul_27_64_lt {n : ℕ} (hn : 15 ≤ n) :
-    27 * 64 * 3 ^ n < 25 * 4 ^ n := by
-  induction n, hn using Nat.le_induction with
-  | base => decide
-  | succ m _hm ih =>
-    calc
-      27 * 64 * 3 ^ (m + 1) = 3 * (27 * 64 * 3 ^ m) := by rw [pow_succ']; ring
-      _ < 3 * (25 * 4 ^ m) := Nat.mul_lt_mul_of_pos_left ih (by omega)
-      _ ≤ 4 * (25 * 4 ^ m) := Nat.mul_le_mul_right _ (by omega)
-      _ = 25 * 4 ^ (m + 1) := by rw [pow_succ']; ring
-
 /-- For `11 ≤ n`, `27 * eulerianNumber n 2 < eulerianNumber n 1 ^ 2`
 (Lawrence–Sawin, Lemma C.5). -/
 theorem mul_eulerianNumber_two_lt_sq {n : ℕ} (hn : 11 ≤ n) :
     27 * eulerianNumber n 2 < eulerianNumber n 1 ^ 2 := by
-  rcases lt_or_ge n 15 with hlt | h15
-  · have hcheck : ∀ m ∈ Finset.Icc 11 14,
-        27 * (eulerianRow m).getD 2 0 < ((eulerianRow m).getD 1 0) ^ 2 := by
+  have h : 27 * n ≤ eulerianNumber n 1 ∧ 27 * eulerianNumber n 2 < eulerianNumber n 1 ^ 2 := by
+    induction n, hn using Nat.le_induction with
+    | base =>
+      rw [← eulerianRow_getD, ← eulerianRow_getD]
       decide
-    have := hcheck n (Finset.mem_Icc.mpr ⟨hn, by omega⟩)
-    simpa only [eulerianRow_getD] using this
-  · have h2lt : ((1 : ℕ) : ℝ) + 1 < (n : ℝ) / (Real.log ((n : ℝ) + 1) + 1) := by
-      norm_num
-      exact two_lt_div_log_of_six_le (by exact_mod_cast (by omega : 6 ≤ n))
-    have hlow := one_sub_exp_neg_one_mul_pow_le_eulerianNumber h2lt
-    norm_num at hlow
-    have hpow2 : (5 : ℝ) / 8 * 2 ^ n < (eulerianNumber n 1 : ℝ) :=
-      (mul_lt_mul_of_pos_right five_eighths_lt_one_sub_exp_neg_one (by positivity)).trans_le hlow
-    have h4 : (4 : ℝ) = 2 ^ 2 := by norm_num
-    have hsq : (25 : ℝ) / 64 * 4 ^ n < (eulerianNumber n 1 : ℝ) ^ 2 := by
-      calc
-        (25 : ℝ) / 64 * 4 ^ n = ((5 : ℝ) / 8 * 2 ^ n) ^ 2 := by
-          rw [mul_pow, h4, ← pow_mul, mul_comm 2 n, pow_mul]
-          norm_num
-        _ < (eulerianNumber n 1 : ℝ) ^ 2 := pow_lt_pow_left₀ hpow2 (by positivity) (by norm_num)
-    have hup : (eulerianNumber n 2 : ℝ) ≤ 3 ^ n := by exact_mod_cast eulerianNumber_le_pow n 2
-    have hnat_real : (27 : ℝ) * 64 * 3 ^ n < 25 * 4 ^ n := by
-      exact_mod_cast pow_three_mul_27_64_lt h15
-    exact_mod_cast
-      (by linarith : (27 : ℝ) * (eulerianNumber n 2 : ℝ) < (eulerianNumber n 1 : ℝ) ^ 2)
+    | succ m _hm ih =>
+      rcases ih with ⟨ha, hb⟩
+      have ha_succ : eulerianNumber (m + 1) 1 = 2 * eulerianNumber m 1 + m := by
+        rw [eulerianNumber_succ_succ, eulerianNumber_zero_right, mul_one, Nat.sub_zero]
+      have hb_succ : eulerianNumber (m + 1) 2 =
+          3 * eulerianNumber m 2 + (m - 1) * eulerianNumber m 1 := by
+        rw [eulerianNumber_succ_succ]
+      refine ⟨?_, ?_⟩
+      · rw [ha_succ]
+        omega
+      · rw [ha_succ, hb_succ]
+        have h1 : 27 * (m - 1) * eulerianNumber m 1 ≤ eulerianNumber m 1 ^ 2 := by
+          calc
+            27 * (m - 1) * eulerianNumber m 1 ≤ 27 * m * eulerianNumber m 1 := by
+              gcongr; omega
+            _ ≤ eulerianNumber m 1 * eulerianNumber m 1 := Nat.mul_le_mul_right _ ha
+            _ = eulerianNumber m 1 ^ 2 := (sq _).symm
+        nlinarith
+  exact h.2
 
 private lemma two_mul_66_64_mul_pow_eight_lt {n : ℕ} (hn : 21 ≤ n) :
     2 * 66 * 64 * 8 ^ n < 65 * 25 * 9 ^ n := by

@@ -72,7 +72,6 @@ In the other direction, a small logarithm bounds a power from above: if `log z �
 * `Real.log_sub_one_div_le_log`: `log a - 1 / m ≤ log m` for `0 ≤ m` and `0 ≤ a ≤ m + 1`.
 * `TauCeti.natSqrt_pred_add_one_lt_div_log`: `Nat.sqrt (n - 1) + 1 < n / (log (n + 1) + 1)` for
   `21 ≤ n`.
-* `TauCeti.two_lt_div_log_of_six_le`: `2 < x / (log (x + 1) + 1)` for `6 ≤ x`.
 -/
 
 public section
@@ -367,37 +366,5 @@ theorem natSqrt_pred_add_one_lt_div_log {n : ℕ} (hn : 21 ≤ n) :
   have hmul : (r₀ : ℝ) * (log ((n : ℝ) + 1) + 1) < (r₀ : ℝ) * ((n : ℝ) / (r₀ : ℝ)) :=
     mul_lt_mul_of_pos_left (by linarith) hr₀_pos
   rwa [mul_div_cancel₀ _ hr₀_pos.ne'] at hmul
-
-/-- For `6 ≤ x`, `2 < x / (log (x + 1) + 1)`. -/
-theorem two_lt_div_log_of_six_le {x : ℝ} (hx : 6 ≤ x) :
-    2 < x / (log (x + 1) + 1) := by
-  set y : ℝ := x / 2 - 1
-  have hy2 : 2 ≤ y := by dsimp [y]; linarith
-  have htay := sum_le_exp_of_nonneg (by linarith : (0 : ℝ) ≤ y) 6
-  set t : ℝ := y - 2
-  have ht0 : 0 ≤ t := by dsimp [t]; linarith
-  have hy_eq : y = t + 2 := by dsimp [t]; ring
-  have hpoly : x + 1 < ∑ k ∈ Finset.range 6, y ^ k / (k.factorial : ℝ) := by
-    simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial]
-    have hx_eq : x + 1 = 2 * y + 3 := by dsimp [y]; ring
-    rw [hx_eq, hy_eq]
-    have hdiff :
-        (∑ k ∈ Finset.range 6, (t + 2) ^ k / (k.factorial : ℝ)) - (2 * (t + 2) + 3) =
-          4 / 15 + 5 * t + 19 / 6 * t ^ 2 + 5 / 6 * t ^ 3 + 1 / 8 * t ^ 4 +
-            1 / 120 * t ^ 5 := by
-      simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial]
-      norm_num; ring
-    have ht2 : 0 ≤ t ^ 2 := sq_nonneg t
-    have ht3 : 0 ≤ t ^ 3 := pow_nonneg ht0 3
-    have ht4 : 0 ≤ t ^ 4 := pow_nonneg ht0 4
-    have ht5 : 0 ≤ t ^ 5 := pow_nonneg ht0 5
-    simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hdiff
-    linarith
-  have hlt : log (x + 1) < y := (log_lt_iff_lt_exp (by linarith)).mpr (hpoly.trans_le htay)
-  have hlogpos : 0 < log (x + 1) + 1 := by
-    linarith [log_pos (by linarith : (1 : ℝ) < x + 1)]
-  rw [lt_div_iff₀ hlogpos]
-  dsimp [y] at hlt
-  linarith
 
 end TauCeti
