@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Algebraic
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.FiniteComponent
 
+import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.PrincipalFinite
+
 /-!
 # Unit compatibility for algebraic Hecke characters
 
@@ -202,20 +204,11 @@ theorem exists_modulus_embeddingCharacter_eq_one (χ : HeckeCharacter K)
   have hpos : IsTotallyPositive (x : K) :=
     isTotallyPositive_iff.mpr fun w hw ↦
       (mem_unitsCongruenceSubgroup.mp hu).pos (mem_narrowModulus_infinitePart ⟨w, hw⟩)
-  have hprincipal :
-      (QuotientGroup.mk (IdeleGroup.unitEmbedding (𝓞 K) K x) : IdeleClassGroup (𝓞 K) K) = 1 :=
-    (QuotientGroup.eq_one_iff _).mpr ⟨x, rfl⟩
-  have hsplit := congrArg (fun z : IdeleGroup (𝓞 K) K ↦ χ (QuotientGroup.mk z))
-    (IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele (IdeleGroup.unitEmbedding (𝓞 K) K x))
-  rw [QuotientGroup.mk_mul, map_mul, hfinite, mul_one, hprincipal, map_one,
-    QuotientGroup.mk_prod, map_prod] at hsplit
-  have hinf : (∏ w : InfinitePlace K,
-      χ.infiniteComponent w (Units.map (algebraMap K w.Completion).toMonoidHom x)) = 1 := by
-    simpa only [infiniteComponent_apply, IdeleClassGroup.ofCompletion_apply,
-      InfinitePlace.ideleInfiniteCoord_unitEmbedding] using hsplit
+  rw [IdeleGroup.toFiniteIdele_unitEmbedding, χ.apply_ofFiniteIdele_unitEmbedding,
+    inv_eq_one] at hfinite
   apply Units.ext
   refine (χ.coe_prod_infiniteComponent_eq_embeddingCharacter n hn x hpos).symm.trans ?_
-  simpa only [Units.coe_prod] using congrArg Units.val hinf
+  simpa only [Units.coe_prod] using congrArg Units.val hfinite
 
 /-- The exact kernel of the embedding monomial on integer units has finite index. No sign
 condition is imposed on these units. -/
