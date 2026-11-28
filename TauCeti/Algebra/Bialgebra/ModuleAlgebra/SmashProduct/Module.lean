@@ -385,22 +385,11 @@ variable {μ : LeftModuleAlgebra R H A} {M : Type x} {N : Type y}
   [AddCommMonoid M] [Module A M] [Module H M] [Module (SmashProduct μ) M] [μ.IsSmashModule M]
   [AddCommMonoid N] [Module A N] [Module H N] [Module (SmashProduct μ) N] [μ.IsSmashModule N]
 
-/-- Every `A # H`-linear map is `A`-linear. -/
-def restrictScalarsLinearMapA (f : M →ₗ[SmashProduct μ] N) : M →ₗ[A] N where
-  toFun := f
-  map_add' := f.map_add
-  map_smul' a m := by
-    simp only [RingHom.id_apply, ← IsSmashModule.includeA_smul (μ := μ), f.map_smul]
+local instance : LinearMap.CompatibleSMul M N A (SmashProduct μ) :=
+  ⟨fun f a m => by simp only [← IsSmashModule.includeA_smul (μ := μ), f.map_smul]⟩
 
-@[simp]
-theorem restrictScalarsLinearMapA_apply (f : M →ₗ[SmashProduct μ] N) (m : M) :
-    restrictScalarsLinearMapA f m = f m :=
-  (rfl)
-
-/-- Every `A # H`-linear map commutes with the `H`-action. -/
-theorem map_smulH_of_smashLinear (f : M →ₗ[SmashProduct μ] N) (h : H) (m : M) :
-    f (h • m) = h • f m := by
-  rw [← IsSmashModule.includeH_smul (μ := μ), f.map_smul, IsSmashModule.includeH_smul]
+local instance : LinearMap.CompatibleSMul M N H (SmashProduct μ) :=
+  ⟨fun f h m => by simp only [← IsSmashModule.includeH_smul (μ := μ), f.map_smul]⟩
 
 /-- An `H`-equivariant `A`-linear map upgrades to an `A # H`-linear map. -/
 def mkLinearMap (f : M →ₗ[A] N) (hf : ∀ (h : H) (m : M), f (h • m) = h • f m) :
@@ -424,11 +413,10 @@ theorem mkLinearMap_apply (f : M →ₗ[A] N)
 variable (R μ M N) in
 /-- `R`-linear equivalence between `A # H`-linear maps `M →ₗ[SmashProduct μ] N` and
 `H`-equivariant `A`-linear maps `M →ₗ[A] N`. -/
-def linearMapEquiv [Module R N] [IsScalarTower R A N] [SMulCommClass R H N]
+noncomputable def linearMapEquiv [Module R N] [IsScalarTower R A N] [SMulCommClass R H N]
     [IsScalarTower R (SmashProduct μ) N] :
     (M →ₗ[SmashProduct μ] N) ≃ₗ[R] equivariantLinearMaps R H A M N where
-  toFun f := ⟨restrictScalarsLinearMapA f,
-    (mem_equivariantLinearMaps _).2 (map_smulH_of_smashLinear f)⟩
+  toFun f := ⟨f.restrictScalars A, (mem_equivariantLinearMaps _).2 f.map_smul_of_tower⟩
   invFun f := mkLinearMap f.val ((mem_equivariantLinearMaps _).1 f.property)
   left_inv _ := LinearMap.ext fun _ => rfl
   right_inv _ := Subtype.ext <| LinearMap.ext fun _ => rfl

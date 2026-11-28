@@ -20,8 +20,6 @@ bialgebra homomorphism `g : K →ₐc[R] H` and an equivariant algebra homomorph
 
 * `TauCeti.LeftModuleAlgebra.SmashProduct.mapBialg`: joint functoriality `A # K →ₐ[R] B # H`
   sending `a # k` to `f a # g k`.
-* `TauCeti.LeftModuleAlgebra.SmashProduct.mapRestrict`: functoriality
-  `(μ.restrict g) # K →ₐ[R] A # H` along a bialgebra homomorphism `g : K →ₐc[R] H`.
 * `TauCeti.LeftModuleAlgebra.SmashProduct.congr`: algebra equivalence `A # K ≃ₐ[R] B # H` induced
   by a bialgebra equivalence `K ≃ₐc[R] H` and an equivariant algebra equivalence `A ≃ₐ[R] B`.
 
@@ -107,27 +105,6 @@ theorem toLinearMap_mapBialg {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlge
         TensorProduct.map f.toAlgHom.toLinearMap g.toAlgHom.toLinearMap ∘ₗ
         (linearEquivTensor μ).toLinearMap :=
   lhom_ext fun a k => by simp [AlgHom.toLinearMap_apply]
-
-/-- Functoriality of `A # H` along a bialgebra homomorphism `g : K →ₐc[R] H`. -/
-noncomputable def mapRestrict (μ : LeftModuleAlgebra R H A) (g : K →ₐc[R] H) :
-    SmashProduct (μ.restrict g) →ₐ[R] SmashProduct μ :=
-  mapBialg g (Hom.id (μ.restrict g))
-
-@[simp]
-theorem mapRestrict_pure (μ : LeftModuleAlgebra R H A) (g : K →ₐc[R] H) (a : A) (k : K) :
-    mapRestrict μ g (pure a k) = pure a (g k) := by
-  simp [mapRestrict]
-
-@[simp]
-theorem mapRestrict_comp_includeA (μ : LeftModuleAlgebra R H A) (g : K →ₐc[R] H) :
-    (mapRestrict μ g).comp includeA = includeA := by
-  ext a
-  simp [mapRestrict]
-
-@[simp]
-theorem mapRestrict_comp_includeH (μ : LeftModuleAlgebra R H A) (g : K →ₐc[R] H) :
-    (mapRestrict μ g).comp includeH = includeH.comp g.toAlgHom :=
-  mapBialg_comp_includeH ..
 
 @[simp]
 theorem mapBialg_comp {μ : LeftModuleAlgebra R L A} {ν : LeftModuleAlgebra R K B}
