@@ -9,6 +9,7 @@ public import Mathlib.Probability.Moments.CovarianceBilin
 import Mathlib.Analysis.Matrix.Hermitian
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
@@ -26,6 +27,9 @@ The `MemLp id 2 μ` hypothesis in the comparison theorem is essential. Mathlib d
 totalized coordinate by coordinate.
 
 ## Main results
+
+* `TauCeti.covariance_sq_le_variance_mul_variance` bounds the squared covariance
+  by the product of the variances for square-integrable functions under a finite measure.
 
 * `TauCeti.covMatrix` is the matrix of coordinate covariances of a measure.
 * `TauCeti.covarianceBilin_eq_covMatrix` identifies the matrix and bilinear-form views of
@@ -59,6 +63,21 @@ open MeasureTheory ProbabilityTheory
 open scoped RealInnerProductSpace
 
 namespace TauCeti
+
+section CovarianceBound
+
+variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {f g : α → ℝ}
+
+/-- The covariance Cauchy–Schwarz inequality for square-integrable real functions
+on a finite measure space. -/
+theorem covariance_sq_le_variance_mul_variance [IsFiniteMeasure μ]
+    (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    covariance f g μ ^ 2 ≤ variance f μ * variance g μ := by
+  rw [covariance, variance_eq_integral hf.aemeasurable, variance_eq_integral hg.aemeasurable]
+  exact sq_integral_mul_le_integral_sq_mul_integral_sq
+    (hf.sub (memLp_const _)) (hg.sub (memLp_const _))
+
+end CovarianceBound
 
 /-- Covariance is unchanged by almost-everywhere changes to either observable. -/
 theorem covariance_congr_ae {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
