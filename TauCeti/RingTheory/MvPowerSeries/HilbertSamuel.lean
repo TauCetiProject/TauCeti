@@ -37,8 +37,7 @@ univariate monomial powers `Ideal.span {X i ^ k}`.
 Applying Dickson-lemma stabilization of degree-bounded complement counts for sequences of upper
 sets in `σ →₀ ℕ` (`TauCeti.exists_forall_ge_ncard_sdiff_eq_of_antitone`) to graded
 lexicographic initial diagrams yields lexicographic stabilization
-(`TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_toLex_le`, `TauCeti.hsLexStabilization`,
-`MvPowerSeries.exists_forall_ge_localQuotientHilbertSamuel_eq_of_antitone`)
+(`TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_toLex_le`, `TauCeti.hsLexStabilization`)
 and hence pointwise stabilization (`TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_le`)
 for Hilbert–Samuel functions of ideals in `MvPowerSeries σ (K j)` across possibly varying
 coefficient fields `K j` (Bierstone–Milman 1989, Theorem 5.2.1; Bierstone–Milman–Temkin 2011,
@@ -71,7 +70,6 @@ invariant that decreases under blowing up.
   realized Hilbert–Samuel functions form a well-founded subset of the lexicographic order.
 * `TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_toLex_le`,
   `TauCeti.hsLexStabilization`,
-  `MvPowerSeries.exists_forall_ge_localQuotientHilbertSamuel_eq_of_antitone`,
   `TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_le`: lexicographic and pointwise
   stabilization of realized Hilbert–Samuel functions in `MvPowerSeries σ (K j)` and
   `MvPowerSeries (Fin n) K`.
@@ -310,17 +308,3 @@ theorem exists_forall_ge_localQuotientHilbertSamuel_eq_of_le
 end Stabilization
 
 end TauCeti
-
-namespace MvPowerSeries
-
-/-- **Lexicographic stabilization of Hilbert–Samuel functions.** In finitely many variables over a
-field, a sequence of ideals `I j` of `K[[X]]` whose Hilbert–Samuel functions are lexicographically
-nonincreasing has eventually constant Hilbert–Samuel function. -/
-theorem exists_forall_ge_localQuotientHilbertSamuel_eq_of_antitone {σ K : Type*} [Finite σ]
-    [Field K] {I : ℕ → Ideal (MvPowerSeries σ K)}
-    (h : Antitone fun j ↦ toLex (I j).localQuotientHilbertSamuel) :
-    ∃ j₀, ∀ j, j₀ ≤ j →
-      (I j).localQuotientHilbertSamuel = (I j₀).localQuotientHilbertSamuel :=
-  TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_toLex_le I fun j ↦ h (Nat.le_succ j)
-
-end MvPowerSeries
