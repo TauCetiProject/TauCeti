@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Linear.Adjunction
 public import TauCeti.CategoryTheory.Monoidal.Center.Induction.LeftAdjunction
 public import TauCeti.CategoryTheory.Monoidal.Center.Ribbon
+public import TauCeti.CategoryTheory.Monoidal.Center.Semisimple
 public import TauCeti.CategoryTheory.Monoidal.Center.Simple
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Biproduct
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Character
@@ -18,23 +19,25 @@ public import TauCeti.CategoryTheory.Semisimple.Split
 /-!
 # The Drinfeld centre of a pivotal fusion category is a fusion category
 
-This file establishes the fusion structure, ribbon structure, and global dimension of the Drinfeld
-centre `Center C` of a pivotal fusion category `C` over an algebraically closed field `k`
-(Müger; Etingof–Nikshych–Ostrik), along with the pivot-free `normGlobalDim` criterion:
+This file builds on `TauCeti.CategoryTheory.Monoidal.Center.Semisimple` to establish the scalar
+averaging identity, pivotal and spherical corollaries, Frobenius reciprocity, and the global
+dimension formula `globalDim (Center C) = (globalDim C)²` for the Drinfeld centre `Center C` of a
+pivotal fusion category `C` over an algebraically closed field `k` (Müger;
+Etingof–Nikshych–Ostrik):
 
 * **Averaging identity**: from
   `Center.forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app_f`,
   the composite
   `(forgetInductionAdjunction k C).unit.app Z ≫ (inductionForgetAdjunction k C).counit.app Z`
   acts on every `Z : Center C` as scalar multiplication by `normGlobalDim C a` (which equals
-  `globalDim C` when `C` is pivotal, by `TauCeti.normGlobalDim_eq_globalDim`), making each
-  component of the unit of `forgetInductionAdjunction` a split monomorphism whenever
-  `normGlobalDim C a ≠ 0` (in particular whenever `globalDim C ≠ 0` for pivotal `C`).
-* **Fusion and ribbon structure on `Center C`**: when `normGlobalDim C a ≠ 0` (and, for pivotal
-  `C`, when `globalDim C ≠ 0`, hence unconditionally when `CharZero k`), `Center C` is finite
-  semisimple with finitely many simple isomorphism classes (supplementing the existing
-  `Abelian (Center C)`, `instFiniteDimensionalHom`, and `instSimpleUnit` instances). If `C` is
-  moreover spherical, `Center C` is a ribbon category for its canonical twist.
+  `globalDim C` when `C` is pivotal, by `TauCeti.normGlobalDim_eq_globalDim`), complementing the
+  pivot-free splitting, semisimplicity, and finiteness results in
+  `TauCeti.CategoryTheory.Monoidal.Center.Semisimple`.
+* **Pivotal fusion and ribbon structure on `Center C`**: for pivotal `C`, `Center C` is finite
+  semisimple with finitely many simple isomorphism classes whenever `globalDim C ≠ 0` (and
+  unconditionally when `CharZero k`, by `Center.isFiniteSemisimpleCategory_of_charZero` and
+  `Center.finite_simpleClasses_of_charZero`). If `C` is moreover spherical, `Center C` is a ribbon
+  category for its canonical twist.
 * **Multiplicities and dimensions**: when `C` has finitely many simple classes and `Center C` is
   finite semisimple, `Center C` also has finitely many simple classes and Frobenius reciprocity
   identifies the multiplicity of a simple class `Z` of `Center C` in `(induction k C).obj S.repr`
@@ -55,16 +58,10 @@ centre `Center C` of a pivotal fusion category `C` over an algebraically closed 
 * `Center.forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_eq_smul` and
   `Center.forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit`:
   the pivot-free and pivotal forms of the averaging identity `η_Z ≫ ε'_Z = dim(C) • 𝟙 Z`;
-* `CategoryTheory.Center.isSplitMono_forgetInductionAdjunction_unit_of_normGlobalDim_ne_zero`,
-  `CategoryTheory.Center.isFiniteSemisimpleCategory_of_normGlobalDim_ne_zero`, and
-  `CategoryTheory.Center.finite_simpleClasses_of_normGlobalDim_ne_zero`: pivot-free splitting,
-  semisimplicity, and finiteness of `Center C` whenever `normGlobalDim C a ≠ 0`;
-* `CategoryTheory.Center.isFiniteSemisimpleCategory_of_globalDim_ne_zero` and
+* `CategoryTheory.Center.isSplitMono_forgetInductionAdjunction_unit_of_globalDim_ne_zero`,
+  `CategoryTheory.Center.isFiniteSemisimpleCategory_of_globalDim_ne_zero`, and
   `CategoryTheory.Center.finite_simpleClasses_of_globalDim_ne_zero`: for pivotal `C`, `Center C`
   is a fusion category whenever `globalDim C ≠ 0`;
-* `CategoryTheory.Center.isFiniteSemisimpleCategory` and
-  `CategoryTheory.Center.finite_simpleClasses`: for pivotal `C`, `Center C` is a fusion category in
-  characteristic zero;
 * `CategoryTheory.Center.ribbonCategory_of_sphericalCategory_of_globalDim_ne_zero` and
   `CategoryTheory.Center.ribbonCategory_of_sphericalCategory_of_charZero`: Müger's ribbon theorem
   on `Center C` under `globalDim C ≠ 0` and unconditionally in characteristic zero;
@@ -179,45 +176,6 @@ theorem forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_eq_
   conv_lhs => rw [hsmul]
   simp [-endAlgEquivOfSimple_smul_id]
 
-/-- When `normGlobalDim C a ≠ 0`, each component of the unit of `forgetInductionAdjunction` is
-a split monomorphism in `Center C`, retracted by
-`(endAlgEquivOfSimple k (𝟙_ C) (End.of (normGlobalDim C a)))⁻¹ •
-(inductionForgetAdjunction k C).counit`. -/
-theorem isSplitMono_forgetInductionAdjunction_unit_of_normGlobalDim_ne_zero
-    (a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ)
-    (h : normGlobalDim C a ≠ 0) (Z : Center C) :
-    IsSplitMono ((forgetInductionAdjunction k C).unit.app Z) := by
-  have hc : endAlgEquivOfSimple k (𝟙_ C) (End.of (normGlobalDim C a)) ≠ 0 := fun h0 ↦
-    h (by simpa using (endAlgEquivOfSimple_apply_eq_iff (End.of (normGlobalDim C a)) 0).mp h0)
-  refine IsSplitMono.mk'
-    ⟨(endAlgEquivOfSimple k (𝟙_ C) (End.of (normGlobalDim C a)))⁻¹ •
-      (inductionForgetAdjunction k C).counit.app Z, ?_⟩
-  rw [Linear.comp_smul,
-    forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_eq_smul k C Z a,
-    smul_smul, inv_mul_cancel₀ hc, one_smul]
-  simp only [Functor.id_obj]
-
-include k in
-/-- **Semisimplicity of the Drinfeld centre (pivot-free criterion)**: if `normGlobalDim C a ≠ 0`,
-then `Center C` is a split finite semisimple category. -/
-theorem isFiniteSemisimpleCategory_of_normGlobalDim_ne_zero
-    (a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ)
-    (h : normGlobalDim C a ≠ 0) :
-    IsFiniteSemisimpleCategory (Center C) := by
-  have := isSplitMono_forgetInductionAdjunction_unit_of_normGlobalDim_ne_zero k C a h
-  exact IsFiniteSemisimpleCategory.of_natTrans (forget C) (induction k C)
-    (forgetInductionAdjunction k C).unit
-
-include k in
-/-- **Finiteness of simple classes in the Drinfeld centre (pivot-free criterion)**: if
-`normGlobalDim C a ≠ 0`, then `Center C` has finitely many simple isomorphism classes. -/
-theorem finite_simpleClasses_of_normGlobalDim_ne_zero
-    (a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ)
-    (h : normGlobalDim C a ≠ 0) :
-    Finite (SimpleClasses (Center C)) := by
-  have := isFiniteSemisimpleCategory_of_normGlobalDim_ne_zero k C a h
-  exact finite_simpleClasses_of_isFiniteSemisimpleCategory k C
-
 end Averaging
 
 section Pivotal
@@ -261,7 +219,7 @@ monomorphism in `Center C`, retracted by `(dim C)⁻¹ • (inductionForgetAdjun
 theorem isSplitMono_forgetInductionAdjunction_unit_of_globalDim_ne_zero
     (hdim : globalDim C ≠ 0) (Z : Center C) :
     IsSplitMono ((forgetInductionAdjunction k C).unit.app Z) :=
-  isSplitMono_forgetInductionAdjunction_unit_of_normGlobalDim_ne_zero k C
+  isSplitMono_forgetInductionAdjunction_unit_app k
     (fun S ↦ pivotalIsoApp S.repr) (by rwa [normGlobalDim_eq_globalDim C k]) Z
 
 include k in
@@ -269,7 +227,7 @@ include k in
 `globalDim C ≠ 0`, then `Center C` is a split finite semisimple category. -/
 theorem isFiniteSemisimpleCategory_of_globalDim_ne_zero (hdim : globalDim C ≠ 0) :
     IsFiniteSemisimpleCategory (Center C) :=
-  isFiniteSemisimpleCategory_of_normGlobalDim_ne_zero k C
+  isFiniteSemisimpleCategory_of_normGlobalDim_ne_zero k
     (fun S ↦ pivotalIsoApp S.repr) (by rwa [normGlobalDim_eq_globalDim C k])
 
 include k in
@@ -277,7 +235,7 @@ include k in
 `globalDim C ≠ 0`, then `Center C` has finitely many simple isomorphism classes. -/
 theorem finite_simpleClasses_of_globalDim_ne_zero (hdim : globalDim C ≠ 0) :
     Finite (SimpleClasses (Center C)) :=
-  finite_simpleClasses_of_normGlobalDim_ne_zero k C
+  finite_simpleClasses_of_normGlobalDim_ne_zero k
     (fun S ↦ pivotalIsoApp S.repr) (by rwa [normGlobalDim_eq_globalDim C k])
 
 include k in
@@ -297,29 +255,14 @@ section CharZero
 variable [CharZero k] [Finite (SimpleClasses C)]
 
 include k in
-/-- **The Drinfeld centre of a pivotal fusion category in characteristic zero is finite
-semisimple** (Etingof–Nikshych–Ostrik, Müger). -/
-theorem isFiniteSemisimpleCategory : IsFiniteSemisimpleCategory (Center C) := by
-  let := Fintype.ofFinite (SimpleClasses C)
-  exact isFiniteSemisimpleCategory_of_globalDim_ne_zero k C (globalDim_ne_zero k C)
-
-include k in
-/-- **The Drinfeld centre of a pivotal fusion category in characteristic zero has finitely many
-simple isomorphism classes**, completing the fusion category properties of `Center C` alongside
-`Abelian (Center C)`, `instFiniteDimensionalHom`, and `instSimpleUnit`. -/
-theorem finite_simpleClasses : Finite (SimpleClasses (Center C)) := by
-  let := Fintype.ofFinite (SimpleClasses C)
-  exact finite_simpleClasses_of_globalDim_ne_zero k C (globalDim_ne_zero k C)
-
-include k in
 /-- **Müger's ribbon theorem in characteristic zero**: the Drinfeld centre of a spherical fusion
 category over an algebraically closed field of characteristic zero is a ribbon category for its
 canonical twist. -/
 theorem ribbonCategory_of_sphericalCategory_of_charZero [SphericalCategory C] :
     letI := balancedOfBraidedPivotal (Center C)
     RibbonCategory (Center C) := by
-  let := Fintype.ofFinite (SimpleClasses C)
-  exact ribbonCategory_of_sphericalCategory_of_globalDim_ne_zero k C (globalDim_ne_zero k C)
+  have := isFiniteSemisimpleCategory_of_charZero k (C := C)
+  exact ribbonCategory_of_sphericalCategory k
 
 end CharZero
 
@@ -432,26 +375,31 @@ theorem globalDim_f_of_isFiniteSemisimpleCategory
 
 /-- **Global dimension of the Drinfeld centre in characteristic zero (scalar form)**:
 `dim(Center C) = dim(C)²`. -/
-theorem endAlgEquivOfSimple_globalDim [CharZero k] [Fintype (SimpleClasses (Center C))] :
+theorem endAlgEquivOfSimple_globalDim [CharZero k] :
+    letI := @Fintype.ofFinite _ (finite_simpleClasses_of_charZero k (C := C))
     endAlgEquivOfSimple k (𝟙_ (Center C)) (End.of (globalDim (Center C))) =
       endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) ^ 2 := by
-  have := isFiniteSemisimpleCategory k C
+  have := isFiniteSemisimpleCategory_of_charZero k (C := C)
+  let := @Fintype.ofFinite _ (finite_simpleClasses_of_charZero k (C := C))
   exact endAlgEquivOfSimple_globalDim_of_isFiniteSemisimpleCategory k C
 
 /-- **Global dimension of the Drinfeld centre in characteristic zero (scalar multiplication
 form)**: `globalDim (Center C) = (dim C)² • 𝟙 (𝟙_ (Center C))`. -/
-theorem globalDim_eq_smul_id [CharZero k] [Fintype (SimpleClasses (Center C))] :
+theorem globalDim_eq_smul_id [CharZero k] :
+    letI := @Fintype.ofFinite _ (finite_simpleClasses_of_charZero k (C := C))
     globalDim (Center C) =
       endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) ^ 2 • 𝟙 (𝟙_ (Center C)) := by
-  have := isFiniteSemisimpleCategory k C
+  have := isFiniteSemisimpleCategory_of_charZero k (C := C)
+  let := @Fintype.ofFinite _ (finite_simpleClasses_of_charZero k (C := C))
   exact globalDim_eq_smul_id_of_isFiniteSemisimpleCategory k C
 
-include k in
 /-- **Global dimension of the Drinfeld centre in characteristic zero (morphism form)**:
 `(globalDim (Center C)).f = globalDim C ≫ globalDim C`. -/
-theorem globalDim_f [CharZero k] [Fintype (SimpleClasses (Center C))] :
+theorem globalDim_f [CharZero k] :
+    letI := @Fintype.ofFinite _ (finite_simpleClasses_of_charZero k (C := C))
     (globalDim (Center C)).f = globalDim C ≫ globalDim C := by
-  have := isFiniteSemisimpleCategory k C
+  have := isFiniteSemisimpleCategory_of_charZero k (C := C)
+  let := @Fintype.ofFinite _ (finite_simpleClasses_of_charZero k (C := C))
   exact globalDim_f_of_isFiniteSemisimpleCategory k C
 
 end GlobalDim
