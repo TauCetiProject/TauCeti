@@ -47,7 +47,9 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.toZMod_eq_zero_iff_dvd`, `PadicInt.toZModPow_eq_zero_iff_dvd`: the kernels of
   reduction and truncation, as divisibility statements; `PadicInt.toZModPow_eq_iff_dvd_sub`:
   two `p`-adic integers truncate to the same residue exactly when `p ^ n` divides their
-  difference; `PadicInt.eight_dvd_sub_iff_toZModPow_three_eq` is its case `p ^ n = 8`.
+  difference; `PadicInt.eight_dvd_sub_iff_toZModPow_three_eq` is its case `p ^ n = 8`, and
+  `PadicInt.four_dvd_iff_two_mul_toZModPow_three_eq_zero` reads divisibility by `4` in `ℤ_[2]`
+  off the residue modulo `8`.
 * `PadicInt.residueClopen`: the clopen fibre of a residue modulo `p ^ n`;
   `PadicInt.mem_residueClopen_iff_dvd`: its description as a coset of `p ^ n ℤ_p`.
 * `PadicInt.isUnit_iff_toZModPow_three_mul_self`: the units of `ℤ_[2]` are exactly the elements
@@ -221,6 +223,22 @@ theorem eight_dvd_sub_iff_toZModPow_three_eq {a c : ℤ_[2]} :
     (8 : ℤ_[2]) ∣ c - a ↔ toZModPow 3 a = toZModPow 3 c := by
   rw [toZModPow_eq_iff_dvd_sub]
   norm_num
+
+/-- Divisibility by `4` in `ℤ_[2]` is read off the residue modulo `8`. -/
+theorem four_dvd_iff_two_mul_toZModPow_three_eq_zero {z : ℤ_[2]} :
+    (4 : ℤ_[2]) ∣ z ↔ 2 * toZModPow 3 z = 0 := by
+  constructor
+  · rintro ⟨w, rfl⟩
+    rw [map_mul, map_ofNat, ← mul_assoc, show (2 * 4 : ZMod (2 ^ 3)) = 0 by decide, zero_mul]
+  · intro hz
+    have key : ∀ x : ZMod (2 ^ 3), 2 * x = 0 → x = 0 ∨ x = 4 := by decide
+    have h48 : (4 : ℤ_[2]) ∣ 8 := ⟨2, by norm_num⟩
+    rcases key _ hz with h0 | h4
+    · rw [← map_zero (toZModPow 3), eq_comm, ← eight_dvd_sub_iff_toZModPow_three_eq,
+        sub_zero] at h0
+      exact h48.trans h0
+    · rw [← map_ofNat (toZModPow 3) 4, eq_comm, ← eight_dvd_sub_iff_toZModPow_three_eq] at h4
+      simpa using dvd_add (h48.trans h4) (dvd_refl (4 : ℤ_[2]))
 
 /-- An element of `ℤ_[2]` is a unit exactly when its residue modulo `8` squares to `1`. -/
 theorem isUnit_iff_toZModPow_three_mul_self {z : ℤ_[2]} :
