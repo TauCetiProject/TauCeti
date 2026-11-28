@@ -221,10 +221,9 @@ theorem tendsto_sub_one_mul_partialZeta_of_modulus_one (c : RayClassGroup (Modul
       (oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹)).congr' ?_
     filter_upwards [self_mem_nhdsWithin] with s hs
     rw [partialZeta_eq_LSeries_of_modulus_one _ (by simpa using hs)]
-  have hofReal : Tendsto (fun s : ℝ ↦ (s : ℂ)) (𝓝[>] 1) (𝓝[≠] 1) :=
-    tendsto_nhdsWithin_iff.mpr ⟨(continuous_ofReal.tendsto' 1 1 ofReal_one).mono_left
-      nhdsWithin_le_nhds, eventually_nhdsWithin_of_forall fun s (hs : (1 : ℝ) < s) ↦
-        by simpa using hs.ne'⟩
+  have hofReal : Tendsto (fun s : ℝ ↦ (s : ℂ)) (𝓝[>] 1) (𝓝[≠] 1) := by
+    simpa using (continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin
+      fun _ hx ↦ ofReal_injective.ne hx).mono_left (nhdsGT_le_nhdsNE (1 : ℝ))
   rwa [tendsto_nhds_unique (hlim.comp hofReal) hreal] at hlim
 
 /-- **The partial zeta functions of the ideal classes have a simple pole at `s = 1`.** -/

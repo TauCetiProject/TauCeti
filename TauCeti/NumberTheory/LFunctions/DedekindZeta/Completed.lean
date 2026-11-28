@@ -527,12 +527,9 @@ theorem analyticAt_toMeromorphicNFOn_invDedekindZetaCompletionFactor_mul {Z : �
       ((hA.meromorphicAt.meromorphicAt_mul_iff_of_meromorphicOrderAt_ne_top (hfin 0)).mp (hm 0))]
     obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp (hfin 0)
     rw [← hn] at hpos ⊢
-    generalize meromorphicOrderAt Z 0 = m at hZ0 ⊢
-    induction m using WithTop.recTopCoe with
-    | top => simp
-    | coe m =>
-      norm_cast at hpos hZ0 ⊢
-      omega
+    have h1 : ((1 : ℤ) : WithTop ℤ) ≤ n := by
+      exact_mod_cast (show (0 : ℤ) < n by exact_mod_cast hpos)
+    simpa using add_le_add h1 hZ0
   · exact ((analyticAt_invDedekindZetaCompletionFactor K s).mul
       (hZan h0 hs)).meromorphicOrderAt_nonneg
 
