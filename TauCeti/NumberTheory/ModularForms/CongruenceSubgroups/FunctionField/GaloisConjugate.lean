@@ -9,8 +9,6 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Laurent
 public import TauCeti.NumberTheory.ModularForms.WeakForm
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
-import TauCeti.LinearAlgebra.Matrix.Diagonal
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Holomorphic
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Invariant
 import TauCeti.NumberTheory.ModularForms.DedekindEta.Basic
