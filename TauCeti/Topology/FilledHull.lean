@@ -9,7 +9,9 @@ public import Mathlib.Topology.Bornology.Basic
 public import Mathlib.Topology.Connected.Basic
 public import Mathlib.Topology.Connected.LocallyConnected
 public import Mathlib.Topology.Compactness.LocallyCompact
+public import Mathlib.Topology.Homeomorph.Defs
 public import Mathlib.Topology.Separation.Hausdorff
+import Mathlib.Topology.Homeomorph.Lemmas
 import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Frontier
@@ -89,6 +91,9 @@ Carathéodory boundary correspondence in `TauCeti/Analysis/Complex/Conformal/Car
 * `TauCeti.exists_isCompact_finite_connectedComponents_compl` — in a preconnected, locally
   connected, locally compact Hausdorff space, every compact set has a compact neighbourhood whose
   complement has finitely many components, none of them with compact closure.
+* `Homeomorph.image_filledHull`, `Homeomorph.image_filledHull_sdiff`, and
+  `Homeomorph.image_subset_filledHull_sdiff_iff`: a boundedness-preserving homeomorphism commutes
+  with `TauCeti.filledHull` and preserves nesting inside `filledHull K \ K`.
 -/
 
 public section
@@ -224,6 +229,34 @@ theorem subset_filledHull_of_frontier_subset (hSb : IsBounded S) (hfr : frontier
       ⟨x, mem_connectedComponentIn hxKc, hxi⟩ ⟨y, hy, hyi⟩
     exact connectedComponentIn_subset _ _ hz (hfr (frontier_interior_subset hzf))
   exact mem_filledHull_iff.mpr (hSb.subset (hcomp.trans interior_subset))
+
+/-- A homeomorphism preserving boundedness commutes with taking filled hulls. -/
+theorem _root_.Homeomorph.image_filledHull {F : Type*} [TopologicalSpace F] [Bornology F]
+    (e : E ≃ₜ F) (he : ∀ s : Set E, IsBounded (e '' s) ↔ IsBounded s) (K : Set E) :
+    e '' filledHull K = filledHull (e '' K) := by
+  ext y
+  obtain ⟨x, rfl⟩ := e.surjective y
+  rw [e.injective.mem_set_image, mem_filledHull_iff, mem_filledHull_iff]
+  by_cases hx : x ∈ K
+  · have h1 : e x ∉ (e '' K)ᶜ := fun h => h (mem_image_of_mem e hx)
+    have h2 : x ∉ Kᶜ := fun h => h hx
+    simp [connectedComponentIn_eq_empty h1, connectedComponentIn_eq_empty h2]
+  · have hxc : x ∈ Kᶜ := hx
+    rw [← e.image_compl, ← e.image_connectedComponentIn hxc, he]
+
+/-- A homeomorphism preserving boundedness commutes with taking the bounded complementary
+components `filledHull K \ K`. -/
+theorem _root_.Homeomorph.image_filledHull_sdiff {F : Type*} [TopologicalSpace F] [Bornology F]
+    (e : E ≃ₜ F) (he : ∀ s : Set E, IsBounded (e '' s) ↔ IsBounded s) (K : Set E) :
+    e '' (filledHull K \ K) = filledHull (e '' K) \ e '' K := by
+  rw [Set.image_sdiff e.injective, e.image_filledHull he]
+
+/-- Nesting inside `filledHull K \ K` is invariant under a boundedness-preserving homeomorphism. -/
+theorem _root_.Homeomorph.image_subset_filledHull_sdiff_iff {F : Type*} [TopologicalSpace F]
+    [Bornology F] (e : E ≃ₜ F) (he : ∀ s : Set E, IsBounded (e '' s) ↔ IsBounded s)
+    (S K : Set E) :
+    e '' S ⊆ filledHull (e '' K) \ e '' K ↔ S ⊆ filledHull K \ K := by
+  rw [← e.image_filledHull_sdiff he, Set.image_subset_image_iff e.injective]
 
 end TauCeti
 

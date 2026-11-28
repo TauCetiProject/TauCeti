@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Filter.AtTopBot.Archimedean
+public import Mathlib.Topology.Homeomorph.Defs
 public import Mathlib.Topology.MetricSpace.Bounded
 
 /-!
@@ -35,6 +36,10 @@ theorem.  It holds in every pseudometric space; the Riemannian structure plays n
 * `CompactExhaustion.closedBall`: the closed balls of natural radius about a point, as a
   `CompactExhaustion` of a proper space; a point `x` first enters it at the index `⌈dist x p⌉₊`
   (`CompactExhaustion.find_closedBall`).
+* `TauCeti.isBounded_iff_isCompact_closure`: in a proper pseudometric space, a set is bounded
+  exactly when its closure is compact.
+* `Homeomorph.isBounded_image_iff`: a homeomorphism between proper pseudometric spaces preserves
+  and reflects boundedness of subsets.
 * `ContinuousOn.exists_closedBall_subset_and_le_dist`: inside a neighbourhood of an isolated point
   of a fibre in a proper pseudometric space on which `f` is continuous, a closed ball isolating the
   point with a positive lower bound on `dist (f z) (f x)` on its boundary sphere.
@@ -100,6 +105,19 @@ theorem properSpace_iff_exists_isCompact_monotone_iUnion_eq_univ_tendsto_dist (p
       ∀ q : ℕ → α, (∀ n, q n ∉ K n) → Tendsto (fun n ↦ dist p (q n)) atTop atTop :=
   ⟨fun _ ↦ exists_isCompact_monotone_iUnion_eq_univ_tendsto_dist p,
     fun ⟨_, hKc, _, _, hK⟩ ↦ properSpace_of_isCompact_of_tendsto_dist hKc hK⟩
+
+/-- In a proper pseudometric space, a set is bounded if and only if its closure is compact. -/
+theorem isBounded_iff_isCompact_closure [ProperSpace α] {s : Set α} :
+    Bornology.IsBounded s ↔ IsCompact (closure s) :=
+  ⟨Bornology.IsBounded.isCompact_closure, fun h => h.isBounded.subset subset_closure⟩
+
+/-- A homeomorphism between proper pseudometric spaces preserves boundedness of sets. -/
+@[simp]
+theorem _root_.Homeomorph.isBounded_image_iff {β : Type*} [PseudoMetricSpace β]
+    [ProperSpace α] [ProperSpace β] (e : α ≃ₜ β) {s : Set α} :
+    Bornology.IsBounded (e '' s) ↔ Bornology.IsBounded s := by
+  rw [isBounded_iff_isCompact_closure, isBounded_iff_isCompact_closure,
+    ← e.image_closure, e.isCompact_image]
 
 /-- Inside any neighbourhood `U` of an isolated point `x` of `f⁻¹(f x)` on which `f` is
 continuous, there is a closed ball about `x` contained in `U` whose only solution of `f z = f x`
