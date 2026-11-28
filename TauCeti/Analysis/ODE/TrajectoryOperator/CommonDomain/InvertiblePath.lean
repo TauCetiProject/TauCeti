@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Fredholm.Spectral.CommonDomain
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Fredholm
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
-import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Bounds
+import TauCeti.Analysis.Normed.Operator.LinearPMap.CommonDomain.Bounds
 import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.IndexLocalization
 import TauCeti.MeasureTheory.Function.Lp.SmoothSegmentPath
 
@@ -105,9 +105,9 @@ theorem index_familyDomainTrajectoryOperator_eq_zero_of_path [CompleteSpace D] [
   have hF (t : unitInterval) :
       (familyDomainTrajectoryOperator (p := 2) ι (smoothSegmentPathL B₀ (γ t))).IsFredholm :=
     isFredholm_familyDomainTrajectoryOperator hι hSymm₀ hB₀ (hSymm t) (hγ t)
-      (smoothSegmentPathL_ae _ _) (eventuallyEq_smoothSegmentPath_atBot _ _).tendsto
+      (coeFn_smoothSegmentPathL _ _) (eventuallyEq_smoothSegmentPath_atBot _ _).tendsto
       (eventuallyEq_smoothSegmentPath_atTop _ _).tendsto
-      (exists_ae_norm_smoothSegmentPath_sub_apply_le (hbdd t))
+      (ContinuousLinearMap.exists_ae_norm_smoothSegmentPath_sub_apply_le (hbdd t))
   -- Along the path, the index of the smooth segment family is constant.
   have hpath := Continuous.index_eq_of_preconnectedSpace
     ((continuous_familyDomainTrajectoryOperator ι).comp
@@ -115,13 +115,11 @@ theorem index_familyDomainTrajectoryOperator_eq_zero_of_path [CompleteSpace D] [
   simp only [Path.source, Path.target] at hpath
   -- At `t = 0` the smooth segment family is constant, at `t = 1` it has the limits of `A`.
   rw [index_familyDomainTrajectoryOperator_eq hι hSymm₀ hB₀ hSymm₁ hB₁ hAL hbot htop hc
-    (smoothSegmentPathL_ae B₀ B₁) (eventuallyEq_smoothSegmentPath_atBot _ _).tendsto
+    (coeFn_smoothSegmentPathL B₀ B₁) (eventuallyEq_smoothSegmentPath_atBot _ _).tendsto
     (eventuallyEq_smoothSegmentPath_atTop _ _).tendsto
-    (exists_ae_norm_smoothSegmentPath_sub_apply_le (by simpa using hbdd 1)), ← hpath]
-  exact index_familyDomainTrajectoryOperator_eq_zero hι hSymm₀ hB₀
-    (smoothSegmentPathL_ae B₀ B₀) (eventuallyEq_smoothSegmentPath_atBot _ _).tendsto
-    (eventuallyEq_smoothSegmentPath_atTop _ _).tendsto
-    (exists_ae_norm_smoothSegmentPath_sub_apply_le (by simpa using hbdd 0))
+    (ContinuousLinearMap.exists_ae_norm_smoothSegmentPath_sub_apply_le (by simpa using hbdd 1)),
+    ← hpath, smoothSegmentPathL_self, familyDomainTrajectoryOperator_toLp_const]
+  exact index_domainTrajectoryOperator hSymm₀ hB₀
 
 /-- **The index vanishes between shifts across no eigenvalue.** Let `ι` be compact and `B` an
 `ι`-symmetric operator such that `B - c ι` is invertible for every `c` between `a` and `b`. Let

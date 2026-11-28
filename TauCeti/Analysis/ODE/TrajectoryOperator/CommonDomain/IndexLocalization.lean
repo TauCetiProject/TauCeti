@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Fredholm
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
 import TauCeti.Analysis.Normed.Group.Basic
-import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Bounds
+import TauCeti.Analysis.Normed.Operator.LinearPMap.CommonDomain.Bounds
 import TauCeti.MeasureTheory.Function.Lp.StoppedPath
 import TauCeti.Topology.Order.ProjIcc
 
@@ -92,7 +92,7 @@ theorem index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible
     (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
     (familyDomainTrajectoryOperator (p := 2) ι AL).index = 0 := by
   obtain ⟨C, hC⟩ := exists_forall_norm_le_of_tendsto hA hbot htop
-  have hb := exists_forall_mem_Icc_norm_sub_apply_le_of_ae hA hc
+  have hb := ContinuousLinearMap.exists_forall_mem_Icc_norm_sub_apply_le_of_ae hA hc
   have hSymmbot (x y : D) : ⟪Bbot x, ι y⟫_ℝ = ⟪ι x, Bbot y⟫_ℝ :=
     ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot (.of_forall fun s ↦ hSymm s x y)
   -- The class in `L∞` of the path stopped at `t`.
@@ -102,7 +102,8 @@ theorem index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible
   have hFred (t : ℝ) : (familyDomainTrajectoryOperator (p := 2) ι ((hm t).toLp _)).IsFredholm :=
     isFredholm_familyDomainTrajectoryOperator hι hSymmbot hBbot (hSymm t) (hInv t)
       (hm t).coeFn_toLp (hbot.comp_min_atBot t) (tendsto_comp_min_atTop t)
-      (exists_ae_norm_comp_sub_apply_le hb (exists_norm_sub_apply_le hb t) (by fun_prop))
+      (ContinuousLinearMap.exists_ae_norm_comp_sub_apply_le hb
+        (ContinuousLinearMap.exists_norm_sub_apply_le hb t) (by fun_prop))
   have hD := continuous_familyDomainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι
   have hFredbot : (familyDomainTrajectoryOperator (p := 2) ι
       ((memLp_top_const (μ := μ₀) Bbot).toLp _)).IsFredholm := by
@@ -139,8 +140,8 @@ theorem index_familyDomainTrajectoryOperator_eq_of_ae_eq_IccExtend (hι : IsComp
     (familyDomainTrajectoryOperator (p := 2) ι AL).index =
       (familyDomainTrajectoryOperator (p := 2) ι AL').index := by
   obtain ⟨C, hC⟩ := exists_forall_norm_le_of_tendsto hA hbot htop
-  have hb := exists_forall_mem_Icc_norm_sub_apply_le_of_ae hA hc
-  have hpt := exists_norm_sub_apply_le hb
+  have hb := ContinuousLinearMap.exists_forall_mem_Icc_norm_sub_apply_le_of_ae hA hc
+  have hpt := ContinuousLinearMap.exists_norm_sub_apply_le hb
   have hb₀ : ∃ c, ∀ x, ‖(Btop - Btop) x‖ ≤ c * ‖ι x‖ := ⟨0, fun x ↦ by simp⟩
   have hSymmbot (x y : D) : ⟪Bbot x, ι y⟫_ℝ = ⟪ι x, Bbot y⟫_ℝ :=
     ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot (.of_forall fun s ↦ hSymm s x y)
@@ -157,27 +158,29 @@ theorem index_familyDomainTrajectoryOperator_eq_of_ae_eq_IccExtend (hι : IsComp
     index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible hι (by fun_prop)
       (fun s ↦ hSymm _) (fun s ↦ hInv _ fun h ↦ (min_le_right s a).not_gt h.1) hBbot
       (hInv a left_notMem_Ioo) hL.coeFn_toLp (hbot.comp_min_atBot a) (tendsto_comp_min_atTop a)
-      (exists_ae_norm_comp_sub_apply_le hb (hpt a) (by fun_prop))
+      (ContinuousLinearMap.exists_ae_norm_comp_sub_apply_le hb (hpt a) (by fun_prop))
   have hR₀ : (familyDomainTrajectoryOperator (p := 2) ι (hR.toLp _)).index = 0 :=
     index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible hι (by fun_prop)
       (fun s ↦ hSymm _) (fun s ↦ hInv _ fun h ↦ (le_max_right s b).not_gt h.2)
       (hInv b right_notMem_Ioo) hBtop hR.coeFn_toLp (tendsto_comp_max_atBot b)
-      (htop.comp_max_atTop b) (exists_ae_norm_comp_sub_apply_le hb hb₀ (by fun_prop))
+      (htop.comp_max_atTop b)
+      (ContinuousLinearMap.exists_ae_norm_comp_sub_apply_le hb hb₀ (by fun_prop))
   -- Cut at `a`, then at `b`.
   rw [index_familyDomainTrajectoryOperator_eq_add hι hSymmbot hBbot (hSymm a)
       (hInv a left_notMem_Ioo) hSymmtop hBtop (hpt a) hL.coeFn_toLp (hbot.comp_min_atBot a)
-      (tendsto_comp_min_atTop a) (exists_ae_norm_comp_sub_apply_le hb (hpt a) (by fun_prop))
+      (tendsto_comp_min_atTop a)
+      (ContinuousLinearMap.exists_ae_norm_comp_sub_apply_le hb (hpt a) (by fun_prop))
       hM.coeFn_toLp (tendsto_comp_max_atBot a) (htop.comp_max_atTop a)
-      (exists_ae_norm_comp_sub_apply_le hb hb₀ (by fun_prop)) hAL hbot htop hc,
+      (ContinuousLinearMap.exists_ae_norm_comp_sub_apply_le hb hb₀ (by fun_prop)) hAL hbot htop hc,
     hL₀, zero_add,
     index_familyDomainTrajectoryOperator_eq_add hι (hSymm a) (hInv a left_notMem_Ioo) (hSymm b)
       (hInv b right_notMem_Ioo) hSymmtop hBtop (hpt b) hAL'
       (TauCeti.tendsto_IccExtend_atBot hab _) (TauCeti.tendsto_IccExtend_atTop hab _)
-      (exists_ae_norm_IccExtend_sub_apply_le hb (hpt b) hab) hR.coeFn_toLp
+      (ContinuousLinearMap.exists_ae_norm_IccExtend_sub_apply_le hb (hpt b) hab) hR.coeFn_toLp
       (tendsto_comp_max_atBot b) (htop.comp_max_atTop b)
-      (exists_ae_norm_comp_sub_apply_le hb hb₀ (by fun_prop)) hM.coeFn_toLp
+      (ContinuousLinearMap.exists_ae_norm_comp_sub_apply_le hb hb₀ (by fun_prop)) hM.coeFn_toLp
       (tendsto_comp_max_atBot a) (htop.comp_max_atTop a)
-      (exists_ae_norm_comp_sub_apply_le hb hb₀ (by fun_prop)),
+      (ContinuousLinearMap.exists_ae_norm_comp_sub_apply_le hb hb₀ (by fun_prop)),
     hR₀, add_zero]
 
 end TauCeti.WeakDerivStep

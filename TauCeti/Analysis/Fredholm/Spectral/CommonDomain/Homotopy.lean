@@ -243,19 +243,27 @@ theorem domainSpectralFlow_eq_of_homotopy_of_isInvertible (hab : a ≤ b) (huv :
 
 section ShiftSegments
 
+omit [CompleteSpace D] [CompleteSpace H] [NormedAlgebra ℝ (H →L[𝕜] H)]
+  [IsometricContinuousFunctionalCalculus ℝ (H →L[𝕜] H) IsSelfAdjoint]
+  [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)] hι in
+/-- Transporting an invertible shift of `B` to one of `B - lam • ι`. -/
+private theorem isInvertible_sub_smul_sub_smul {B : D →L[𝕜] H} {c : 𝕜}
+    (hc : (B - c • ι).IsInvertible) (lam : 𝕜) :
+    ((c - lam) • ι - (B - lam • ι)).IsInvertible :=
+  ContinuousLinearMap.isInvertible_sub_comm.2 <| by
+    simpa only [sub_smul, sub_sub_sub_cancel_right] using hc
+
 /-- **Reparametrizing a smooth shift segment.** Along the smooth segment `s ↦ B - ψ(s) ι`
-(`TauCeti.smoothSegmentPath c₁ c₂`), where `B - c₁ ι` and `B - c₂ ι` are invertible and `a ≤ 0`,
-`1 ≤ b`, the spectral flow over `[a, b]` equals the spectral flow of the affine shift segment
+(`TauCeti.smoothSegmentPath c₁ c₂`), where `B - c₁ ι` is invertible and `a ≤ 0`, `1 ≤ b`, the
+spectral flow over `[a, b]` equals the spectral flow of the affine shift segment
 `σ ↦ B - ((1 - σ) c₁ + σ c₂) ι` over `[0, 1]`. -/
 theorem domainSpectralFlow_sub_smul_smoothSegmentPath {B : D →L[𝕜] H}
     (hSymm : ∀ x y, ⟪B x, ι y⟫ = ⟪ι x, B y⟫) {c₁ c₂ : ℝ}
-    (hc₁ : (B - (c₁ : 𝕜) • ι).IsInvertible) (hc₂ : (B - (c₂ : 𝕜) • ι).IsInvertible)
-    (ha : a ≤ 0) (hb : 1 ≤ b) :
+    (hc₁ : (B - (c₁ : 𝕜) • ι).IsInvertible) (ha : a ≤ 0) (hb : 1 ≤ b) :
     domainSpectralFlow ι (fun s ↦ B - ((smoothSegmentPath c₁ c₂ s : ℝ) : 𝕜) • ι) a b =
       domainSpectralFlow ι (fun σ ↦ B - (((1 - σ) * c₁ + σ * c₂ : ℝ) : 𝕜) • ι) 0 1 := by
   have h0 {lam : ℝ} : ∃ c₀ : 𝕜, (c₀ • ι - (B - (lam : 𝕜) • ι)).IsInvertible :=
-    ⟨(c₁ - lam : ℝ), ContinuousLinearMap.isInvertible_sub_comm.2 <| by
-      simpa only [push_cast, sub_smul, sub_sub_sub_cancel_right] using hc₁⟩
+    ⟨_, isInvertible_sub_smul_sub_smul hc₁ _⟩
   have hcs : Continuous (smoothSegmentPath c₁ c₂) :=
     (contDiff_smoothSegmentPath (x := c₁) (y := c₂) (n := 0)).continuous
   have hcont : Continuous fun s ↦ B - ((smoothSegmentPath c₁ c₂ s : ℝ) : 𝕜) • ι := by fun_prop
@@ -271,9 +279,9 @@ theorem domainSpectralFlow_sub_smul_smoothSegmentPath {B : D →L[𝕜] H}
       domainSpectralFlow_eq_zero_of_forall_isInvertible hι ha hcont.continuousOn
         (fun s _ ↦ hsymm s) fun s hs ↦ by
           simpa only [smoothSegmentPath_of_nonpos c₁ c₂ hs.2] using hc₁,
-      domainSpectralFlow_eq_zero_of_forall_isInvertible hι hb hcont.continuousOn
-        (fun s _ ↦ hsymm s) fun s hs ↦ by
-          simpa only [smoothSegmentPath_of_one_le c₁ c₂ hs.1] using hc₂,
+      domainSpectralFlow_eq_zero_of_forall_eq hι hb (hsymm 1) h0 fun s hs ↦ by
+        simp only [smoothSegmentPath_of_one_le c₁ c₂ hs.1,
+          smoothSegmentPath_of_one_le c₁ c₂ le_rfl],
       zero_add, add_zero]
   have heq : (fun s ↦ B - ((smoothSegmentPath c₁ c₂ s : ℝ) : 𝕜) • ι) =
       (fun σ ↦ B - (((1 - σ) * c₁ + σ * c₂ : ℝ) : 𝕜) • ι) ∘ Real.smoothTransition := by
@@ -307,8 +315,7 @@ theorem domainSpectralFlow_sub_smul_add_domainSpectralFlow_sub_smul_eq {B : D �
       domainSpectralFlow ι (fun σ ↦ B - ((σ * c₂ : ℝ) : 𝕜) • ι) 0 1 := by
   let K : ℝ → ℝ → D →L[𝕜] H := fun τ σ ↦ B - (((1 - σ) * (τ * c₁) + σ * c₂ : ℝ) : 𝕜) • ι
   have hK₀ (τ σ : ℝ) : ∃ c₀ : 𝕜, (c₀ • ι - K τ σ).IsInvertible :=
-    ⟨(c₁ - ((1 - σ) * (τ * c₁) + σ * c₂) : ℝ), ContinuousLinearMap.isInvertible_sub_comm.2 <| by
-      simpa only [K, push_cast, sub_smul, sub_sub_sub_cancel_right] using hc₁⟩
+    ⟨_, isInvertible_sub_smul_sub_smul hc₁ _⟩
   have hrect := domainSpectralFlow_add_domainSpectralFlow_eq_add (G := K) hι zero_le_one zero_le_one
     (by fun_prop)
     (fun τ _ σ _ _ _ ↦
@@ -340,19 +347,11 @@ theorem domainSpectralFlow_add_domainSpectralFlow_sub_smul_eq {A : ℝ → D →
     hA.comp continuousOn_snd fun _ hp ↦ hp.2
   have hGc : ContinuousOn (Function.uncurry G) (Icc 0 1 ×ˢ Icc u v) :=
     hA₂.sub (Continuous.continuousOn (by fun_prop))
-  have hG₀ : ∀ σ ∈ Icc (0 : ℝ) 1, ∀ t ∈ Icc u v, ∃ c₀ : 𝕜, (c₀ • ι - G σ t).IsInvertible := by
-    intro σ _ t ht
-    refine ⟨((1 - σ) * c : ℝ), ContinuousLinearMap.isInvertible_sub_comm.2 ?_⟩
-    have heq : G σ t - (((1 - σ) * c : ℝ) : 𝕜) • ι = A t - (c : 𝕜) • ι := by
-      simp only [G, push_cast]
-      module
-    rw [heq]
-    exact hinv t ht
   have hrect := domainSpectralFlow_add_domainSpectralFlow_eq_add (G := G) hι huv zero_le_one hGc
     (fun σ _ t ht _ _ ↦
       ContinuousLinearMap.inner_sub_ofReal_smul_apply_eq_inner_sub_ofReal_smul_apply
         (hSymm t ht _ _) _)
-    hG₀
+    fun σ _ t ht ↦ ⟨_, isInvertible_sub_smul_sub_smul (hinv t ht) _⟩
   have hG1 : G 1 = fun t ↦ A t - (c : 𝕜) • ι := funext fun t ↦ by simp [G]
   have htop : domainSpectralFlow ι (G 1) u v = 0 := by
     rw [hG1]

@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 public import Mathlib.Topology.Order.ProjIcc
 public import TauCeti.Analysis.SpecialFunctions.SmoothSegmentPath
 public import TauCeti.MeasureTheory.Measure.OpenPos
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
 # Bounds through a compact domain embedding
@@ -21,25 +20,25 @@ kind for shifted differences, compact-interval extensions of continuous paths, r
 
 ## Main declarations
 
-* `TauCeti.WeakDerivStep.norm_sub_smul_sub_apply_le` and
-  `TauCeti.WeakDerivStep.exists_norm_sub_smul_sub_apply_le`: shifted differences
+* `ContinuousLinearMap.norm_sub_smul_sub_apply_le` and
+  `ContinuousLinearMap.exists_norm_sub_smul_sub_apply_le`: shifted differences
   `(A₁ - c₁ • ι) - (A₂ - c₂ • ι)` are bounded through `ι`.
-* `TauCeti.WeakDerivStep.exists_forall_mem_Icc_norm_sub_apply_le_of_ae`: almost everywhere bounds on
+* `ContinuousLinearMap.exists_forall_mem_Icc_norm_sub_apply_le_of_ae`: almost everywhere bounds on
   bounded windows pass to every time of every compact interval for a continuous path.
-* `TauCeti.WeakDerivStep.exists_ae_norm_comp_sub_apply_le`,
-  `TauCeti.WeakDerivStep.exists_ae_norm_IccExtend_sub_apply_le`, and
-  `TauCeti.WeakDerivStep.exists_norm_sub_apply_le`: bounds for continuous reparametrizations,
+* `ContinuousLinearMap.exists_ae_norm_comp_sub_apply_le`,
+  `ContinuousLinearMap.exists_ae_norm_IccExtend_sub_apply_le`, and
+  `ContinuousLinearMap.exists_norm_sub_apply_le`: bounds for continuous reparametrizations,
   `Set.IccExtend`, and single times.
-* `TauCeti.WeakDerivStep.norm_smoothSegmentPath_sub_apply_le` and
-  `TauCeti.WeakDerivStep.exists_ae_norm_smoothSegmentPath_sub_apply_le`: bounds for the smooth
+* `ContinuousLinearMap.norm_smoothSegmentPath_sub_apply_le` and
+  `ContinuousLinearMap.exists_ae_norm_smoothSegmentPath_sub_apply_le`: bounds for the smooth
   segment path `TauCeti.smoothSegmentPath`.
 -/
 
 public section
 
-namespace TauCeti.WeakDerivStep
+namespace ContinuousLinearMap
 
-open Filter MeasureTheory Set
+open Filter MeasureTheory Set TauCeti
 open scoped Topology
 
 section ShiftedDifference
@@ -61,7 +60,7 @@ theorem norm_sub_smul_sub_apply_le {ι A₁ A₂ B : D →L[𝕜] H} {C₁ C₂ 
   exact (norm_add_le _ _).trans (add_le_add ((norm_sub_le _ _).trans (add_le_add (h₁ x) (h₂ x)))
     le_rfl)
 
-/-- Existential form of `TauCeti.WeakDerivStep.norm_sub_smul_sub_apply_le`. -/
+/-- Existential form of `ContinuousLinearMap.norm_sub_smul_sub_apply_le`. -/
 theorem exists_norm_sub_smul_sub_apply_le {ι A₁ A₂ B : D →L[𝕜] H}
     (h₁ : ∃ C₁, ∀ x, ‖(A₁ - B) x‖ ≤ C₁ * ‖ι x‖)
     (h₂ : ∃ C₂, ∀ x, ‖(A₂ - B) x‖ ≤ C₂ * ‖ι x‖) (c₁ c₂ : 𝕜) :
@@ -106,8 +105,10 @@ theorem exists_ae_norm_comp_sub_apply_le {μ : Measure ℝ} {B B' : D →L[𝕜]
   refine ⟨c + c', Eventually.of_forall fun s hs x ↦ ?_⟩
   have hφs : φ s ∈ Icc (-R) R := by
     simpa [Real.norm_eq_abs, abs_le] using hR _ (mem_image_of_mem φ (Ioo_subset_Icc_self hs))
-  rw [show (A (φ s) - B') x = (A (φ s) - B) x - (B' - B) x by simp, add_mul]
-  exact (norm_sub_le _ _).trans (add_le_add (hc _ hφs x) (hc' x))
+  simpa only [sub_apply, add_mul] using
+    (norm_sub_le_norm_sub_add_norm_sub (A (φ s) x) (B x) (B' x)).trans
+      (add_le_add (by simpa only [sub_apply] using hc _ hφs x)
+        (by simpa only [sub_apply, norm_sub_rev] using hc' x))
 
 /-- If `A r - B` is bounded through `ι` for `r` in compact intervals, then `Set.IccExtend` of `A`
 on `[a, b]` satisfies the bounded-window bound through `ι` against any `B'` with `B' - B`
@@ -117,7 +118,7 @@ theorem exists_ae_norm_IccExtend_sub_apply_le {μ : Measure ℝ} {B B' : D →L[
     (hB' : ∃ c, ∀ x, ‖(B' - B) x‖ ≤ c * ‖ι x‖) {a b : ℝ} (hab : a ≤ b) (T : ℝ) :
     ∃ c, ∀ᵐ s ∂μ, s ∈ Ioo (-T) T →
       ∀ x, ‖(IccExtend hab ((Icc a b).domRestrict A) s - B') x‖ ≤ c * ‖ι x‖ := by
-  simpa only [IccExtend_apply, domRestrict_apply] using
+  simpa only [IccExtend_apply, Set.domRestrict_apply, coe_projIcc] using
     exists_ae_norm_comp_sub_apply_le hb hB' (by fun_prop : Continuous fun s : ℝ ↦ max a (min b s)) T
 
 /-- A bound through `ι` of `A r - B` on compact intervals gives one at each single time. -/
@@ -156,4 +157,4 @@ theorem exists_ae_norm_smoothSegmentPath_sub_apply_le {μ : Measure ℝ} {ι B�
 
 end SmoothSegment
 
-end TauCeti.WeakDerivStep
+end ContinuousLinearMap

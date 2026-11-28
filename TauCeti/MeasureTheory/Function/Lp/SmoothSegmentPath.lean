@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.Analysis.SpecialFunctions.SmoothSegmentPath
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Tactic.Abel
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -25,7 +24,7 @@ element `TauCeti.smoothSegmentPathL x y` of `L∞(μ)`. It depends `1`-Lipschitz
 * `TauCeti.memLp_smoothSegmentPath`: `TauCeti.smoothSegmentPath x y` belongs to `L∞(μ)`.
 * `TauCeti.smoothSegmentPathL`: the `L∞(μ)` class of `TauCeti.smoothSegmentPath x y`.
 * `TauCeti.smoothSegmentPathL_def`: definitional equation for `TauCeti.smoothSegmentPathL`.
-* `TauCeti.smoothSegmentPathL_ae`: almost everywhere agreement with `TauCeti.smoothSegmentPath`.
+* `TauCeti.coeFn_smoothSegmentPathL`: almost everywhere agreement with `TauCeti.smoothSegmentPath`.
 * `TauCeti.smoothSegmentPathL_self`: normal form for equal endpoints.
 * `TauCeti.lipschitzWith_smoothSegmentPathL`: `1`-Lipschitz dependence on the endpoint.
 -/
@@ -61,7 +60,7 @@ theorem smoothSegmentPathL_def (x y : E) :
 
 /-- `TauCeti.smoothSegmentPathL x y` agrees almost everywhere with
 `TauCeti.smoothSegmentPath x y`. -/
-theorem smoothSegmentPathL_ae (x y : E) :
+theorem coeFn_smoothSegmentPathL (x y : E) :
     (smoothSegmentPathL x y : Lp E ∞ μ) =ᵐ[μ] smoothSegmentPath x y :=
   (memLp_smoothSegmentPath x y).coeFn_toLp
 
@@ -69,8 +68,8 @@ theorem smoothSegmentPathL_ae (x y : E) :
 @[simp]
 theorem smoothSegmentPathL_self (x : E) :
     (smoothSegmentPathL x x : Lp E ∞ μ) = (memLp_top_const x).toLp (fun _ ↦ x) :=
-  Lp.ext ((smoothSegmentPathL_ae x x).trans <|
-    (Filter.EventuallyEq.of_eq (funext fun s ↦ by simp [smoothSegmentPath_def])).trans
+  Lp.ext ((coeFn_smoothSegmentPathL x x).trans <|
+    (Filter.EventuallyEq.of_eq (funext fun s ↦ smoothSegmentPath_self x s)).trans
       (memLp_top_const x).coeFn_toLp.symm)
 
 /-- The `L∞` class `TauCeti.smoothSegmentPathL x` depends `1`-Lipschitz on the endpoint `y`. -/
@@ -80,7 +79,7 @@ theorem lipschitzWith_smoothSegmentPathL (x : E) :
     rw [NNReal.coe_one, one_mul, dist_eq_norm, dist_eq_norm]
     refine Lp.norm_le_of_ae_bound_top (norm_nonneg _) ?_
     filter_upwards [Lp.coeFn_sub (smoothSegmentPathL x y) (smoothSegmentPathL x y'),
-      smoothSegmentPathL_ae x y, smoothSegmentPathL_ae x y'] with s hs h h'
+      coeFn_smoothSegmentPathL x y, coeFn_smoothSegmentPathL x y'] with s hs h h'
     rw [hs, Pi.sub_apply, h, h']
     have heq : smoothSegmentPath x y s - smoothSegmentPath x y' s =
         Real.smoothTransition s • (y - y') := by

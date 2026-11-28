@@ -13,7 +13,7 @@ import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.Normed.Operator.LinearPMap.CommonDomain.Perturbation
 import TauCeti.Analysis.Normed.Operator.LinearPMap.CommonDomain.Spectrum
-import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Bounds
+import TauCeti.Analysis.Normed.Operator.LinearPMap.CommonDomain.Bounds
 import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.InvertiblePath
 import TauCeti.MeasureTheory.Function.Lp.SmoothSegmentPath
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
@@ -38,8 +38,8 @@ This file proves the general **Robbin–Salamon spectral flow index theorem**:
   for all `a` far enough to the left and all `b` far enough to the right
   (`TauCeti.WeakDerivStep.eventually_index_familyDomainTrajectoryOperator_eq_domainSpectralFlow`).
 * In the convention `∂ₛ - A` with coefficient `-A`, `ind(∂ₛ - A) = -SF(A; a, b)`
-  (`index_familyDomainTrajectoryOperator_of_ae_eq_neg_eq_neg_domainSpectralFlow` and
-  `eventually_index_familyDomainTrajectoryOperator_of_ae_eq_neg_eq_neg_domainSpectralFlow` in
+  (`index_familyDomainTrajectoryOperator_eq_neg_domainSpectralFlow_of_ae_eq_neg` and
+  `eventually_index_familyDomainTrajectoryOperator_eq_neg_domainSpectralFlow_of_ae_eq_neg` in
   `TauCeti.WeakDerivStep`).
 * When every crossing `t` (where `ker A t ≠ ⊥`) is regular, the index equals the sum of the
   crossing-form signatures
@@ -97,6 +97,17 @@ variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
 
 variable [CompleteSpace D] [CompleteSpace H]
 
+/-- A path symmetric through `ι` and bounded through `ι` relative to an invertible `Btop` on
+compact intervals admits an invertible real shift at every time. -/
+private theorem exists_isInvertible_smul_sub_of_forall_mem_Icc (hι : IsCompactOperator ι)
+    {A : ℝ → D →L[ℝ] H} {Btop : D →L[ℝ] H}
+    (hSymm : ∀ s x y, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ) (hBtop : Btop.IsInvertible)
+    (hb : ∀ R, ∃ c, ∀ r ∈ Icc (-R) R, ∀ x, ‖(A r - Btop) x‖ ≤ c * ‖ι x‖) (t : ℝ) :
+    ∃ c₀ : ℝ, (c₀ • ι - A t).IsInvertible := by
+  obtain ⟨C, hC⟩ := ContinuousLinearMap.exists_norm_sub_apply_le hb t
+  simpa using ι.exists_isInvertible_ofReal_smul_sub_of_norm_sub_apply_le (c₀ := 0) hι
+    (by simpa [ContinuousLinearMap.isInvertible_neg_iff] using hBtop) (hSymm t) hC
+
 /-- The index of the trajectory operator along `TauCeti.smoothSegmentPath B₀ B`. -/
 private def modelIndex (ι B₀ B : D →L[ℝ] H) : ℤ :=
   (familyDomainTrajectoryOperator (p := 2) ι (smoothSegmentPathL (μ := μ₀) B₀ B)).index
@@ -111,21 +122,21 @@ private theorem modelIndex_eq_add (hι : IsCompactOperator ι) {B₁ B₂ B₃ :
   obtain ⟨c₁₂, hc₁₂⟩ := h₁₂
   obtain ⟨c₂₃, hc₂₃⟩ := h₂₃
   have h₁₃ : ∃ c, ∀ x, ‖(B₃ - B₁) x‖ ≤ c * ‖ι x‖ := ⟨c₁₂ + c₂₃, fun x ↦ by
-    have hsplit : (B₃ - B₁) x = (B₃ - B₂) x + (B₂ - B₁) x := by simp
-    rw [hsplit, add_comm c₁₂ c₂₃, add_mul]
-    exact (norm_add_le _ _).trans (add_le_add (hc₂₃ x) (hc₁₂ x))⟩
+    rw [add_comm c₁₂ c₂₃, add_mul]
+    exact (norm_sub_le_norm_sub_add_norm_sub (B₃ x) (B₂ x) (B₁ x)).trans
+      (add_le_add (hc₂₃ x) (hc₁₂ x))⟩
   have h₂₃' : ∃ c, ∀ x, ‖(B₂ - B₃) x‖ ≤ c * ‖ι x‖ :=
     ⟨c₂₃, fun x ↦ by simpa only [sub_apply, norm_sub_rev] using hc₂₃ x⟩
   exact index_familyDomainTrajectoryOperator_eq_add hι hSymm₁ hB₁ hSymm₂ hB₂ hSymm₃ hB₃ h₂₃'
-    (smoothSegmentPathL_ae B₁ B₂) (eventuallyEq_smoothSegmentPath_atBot B₁ B₂).tendsto
+    (coeFn_smoothSegmentPathL B₁ B₂) (eventuallyEq_smoothSegmentPath_atBot B₁ B₂).tendsto
     (eventuallyEq_smoothSegmentPath_atTop B₁ B₂).tendsto
-    (exists_ae_norm_smoothSegmentPath_sub_apply_le ⟨c₁₂, hc₁₂⟩)
-    (smoothSegmentPathL_ae B₂ B₃) (eventuallyEq_smoothSegmentPath_atBot B₂ B₃).tendsto
+    (ContinuousLinearMap.exists_ae_norm_smoothSegmentPath_sub_apply_le ⟨c₁₂, hc₁₂⟩)
+    (coeFn_smoothSegmentPathL B₂ B₃) (eventuallyEq_smoothSegmentPath_atBot B₂ B₃).tendsto
     (eventuallyEq_smoothSegmentPath_atTop B₂ B₃).tendsto
-    (exists_ae_norm_smoothSegmentPath_sub_apply_le ⟨c₂₃, hc₂₃⟩)
-    (smoothSegmentPathL_ae B₁ B₃) (eventuallyEq_smoothSegmentPath_atBot B₁ B₃).tendsto
+    (ContinuousLinearMap.exists_ae_norm_smoothSegmentPath_sub_apply_le ⟨c₂₃, hc₂₃⟩)
+    (coeFn_smoothSegmentPathL B₁ B₃) (eventuallyEq_smoothSegmentPath_atBot B₁ B₃).tendsto
     (eventuallyEq_smoothSegmentPath_atTop B₁ B₃).tendsto
-    (exists_ae_norm_smoothSegmentPath_sub_apply_le h₁₃)
+    (ContinuousLinearMap.exists_ae_norm_smoothSegmentPath_sub_apply_le h₁₃)
 
 private theorem modelIndex_sub_smul_eq_zero (hι : IsCompactOperator ι) {A : ℝ → D →L[ℝ] H}
     (hA : Continuous A) (hSymm : ∀ s x y, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ) {u v c : ℝ}
@@ -147,32 +158,32 @@ private theorem modelIndex_sub_smul_eq_zero (hι : IsCompactOperator ι) {A : �
       ContinuousLinearMap.inner_sub_ofReal_smul_apply_eq_inner_sub_ofReal_smul_apply
         (hSymm (Path.segment u v t) x y) c)
     (fun t ↦ hinv (Path.segment u v t) (hmem t)) hγbdd
-    (smoothSegmentPathL_ae _ _) (eventuallyEq_smoothSegmentPath_atBot _ _).tendsto
+    (coeFn_smoothSegmentPathL _ _) (eventuallyEq_smoothSegmentPath_atBot _ _).tendsto
     (eventuallyEq_smoothSegmentPath_atTop _ _).tendsto
-    (exists_ae_norm_smoothSegmentPath_sub_apply_le hvu)
+    (ContinuousLinearMap.exists_ae_norm_smoothSegmentPath_sub_apply_le hvu)
 
 private theorem modelIndex_sub_smul (hι : IsCompactOperator ι) {B : D →L[ℝ] H}
     (hSymm : ∀ x y, ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ) {c₁ c₂ : ℝ}
     (hc₁ : (B - c₁ • ι).IsInvertible) (hc₂ : (B - c₂ • ι).IsInvertible) :
     modelIndex ι (B - c₁ • ι) (B - c₂ • ι) =
       domainSpectralFlow ι (fun σ ↦ B - ((1 - σ) * c₁ + σ * c₂) • ι) 0 1 := by
+  let f : ℝ →ᵃ[ℝ] D →L[ℝ] H :=
+    AffineMap.const ℝ ℝ B - ((LinearMap.lsmul ℝ (D →L[ℝ] H)).flip ι).toAffineMap
   have hseg : smoothSegmentPath (B - c₁ • ι) (B - c₂ • ι) =
-      fun s ↦ B - smoothSegmentPath c₁ c₂ s • ι := by
-    ext s x
-    simp only [smoothSegmentPath_def, add_apply, smul_apply, sub_apply, smul_eq_mul]
-    module
+      fun s ↦ B - smoothSegmentPath c₁ c₂ s • ι :=
+    funext fun s ↦ (f.map_smoothSegmentPath c₁ c₂ s).symm
   have hall : ∀ᶠ ab in atBot ×ˢ atTop, modelIndex ι (B - c₁ • ι) (B - c₂ • ι) =
       domainSpectralFlow ι (fun s ↦ B - smoothSegmentPath c₁ c₂ s • ι) ab.1 ab.2 := by
     refine eventually_index_familyDomainTrajectoryOperator_sub_smul_eq_domainSpectralFlow hι hSymm
       (contDiff_smoothSegmentPath (x := c₁) (y := c₂) (n := 0)).continuous
       (eventuallyEq_smoothSegmentPath_atBot c₁ c₂).tendsto
       (eventuallyEq_smoothSegmentPath_atTop c₁ c₂).tendsto hc₁ hc₂ _ ?_
-    simpa only [← hseg] using smoothSegmentPathL_ae (B - c₁ • ι) (B - c₂ • ι)
+    simpa only [← hseg] using coeFn_smoothSegmentPathL (B - c₁ • ι) (B - c₂ • ι)
   obtain ⟨⟨a, b⟩, hab, ha, hb⟩ :=
     (hall.and ((eventually_le_atBot 0).prod_mk (eventually_ge_atTop 1))).exists
   rw [hab]
   simpa only [RCLike.ofReal_real_eq_id, id_eq] using
-    domainSpectralFlow_sub_smul_smoothSegmentPath hι hSymm hc₁ hc₂ ha hb
+    domainSpectralFlow_sub_smul_smoothSegmentPath hι hSymm hc₁ ha hb
 
 /-! ### Staircase homotopy -/
 
@@ -196,7 +207,7 @@ private theorem staircaseDefect_eq_of_isInvertible (hι : IsCompactOperator ι)
     (ha : (A a).IsInvertible) (hc₁ : (A t - c₁ • ι).IsInvertible)
     (hc₂ : (A t - c₂ • ι).IsInvertible) :
     staircaseDefect ι A a t c₁ = staircaseDefect ι A a t c₂ := by
-  have hpt := exists_norm_sub_apply_le hb
+  have hpt := ContinuousLinearMap.exists_norm_sub_apply_le hb
   have hm := modelIndex_eq_add hι (B₁ := A a) (B₂ := A t - c₁ • ι) (B₃ := A t - c₂ • ι)
     (hSymm a) ha
     (fun x y ↦
@@ -207,8 +218,8 @@ private theorem staircaseDefect_eq_of_isInvertible (hι : IsCompactOperator ι)
       ContinuousLinearMap.inner_sub_ofReal_smul_apply_eq_inner_sub_ofReal_smul_apply
         (hSymm t x y) c₂)
     hc₂
-    (by simpa using exists_norm_sub_smul_sub_apply_le (hpt t) (hpt a) c₁ 0)
-    (exists_norm_sub_smul_sub_apply_le (hpt t) (hpt t) c₂ c₁)
+    (by simpa using ContinuousLinearMap.exists_norm_sub_smul_sub_apply_le (hpt t) (hpt a) c₁ 0)
+    (ContinuousLinearMap.exists_norm_sub_smul_sub_apply_le (hpt t) (hpt t) c₂ c₁)
   have hseg := modelIndex_sub_smul hι (hSymm t) hc₁ hc₂
   have htri := domainSpectralFlow_sub_smul_add_domainSpectralFlow_sub_smul_eq hι (hSymm t)
     (c₂ := c₂) hc₁
@@ -223,7 +234,7 @@ private theorem staircaseDefect_eq_of_forall_isInvertible (hι : IsCompactOperat
     (h₀ : ∀ t, ∃ c₀ : ℝ, (c₀ • ι - A t).IsInvertible) {a u v c : ℝ} (hau : a ≤ u) (huv : u ≤ v)
     (ha : (A a).IsInvertible) (hinv : ∀ t ∈ Icc u v, (A t - c • ι).IsInvertible) :
     staircaseDefect ι A a u c = staircaseDefect ι A a v c := by
-  have hpt := exists_norm_sub_apply_le hb
+  have hpt := ContinuousLinearMap.exists_norm_sub_apply_le hb
   have hu : u ∈ Icc u v := left_mem_Icc.2 huv
   have hv : v ∈ Icc u v := right_mem_Icc.2 huv
   have hm := modelIndex_eq_add hι (B₁ := A a) (B₂ := A u - c • ι) (B₃ := A v - c • ι)
@@ -236,10 +247,10 @@ private theorem staircaseDefect_eq_of_forall_isInvertible (hι : IsCompactOperat
       ContinuousLinearMap.inner_sub_ofReal_smul_apply_eq_inner_sub_ofReal_smul_apply
         (hSymm v x y) c)
     (hinv v hv)
-    (by simpa using exists_norm_sub_smul_sub_apply_le (hpt u) (hpt a) c 0)
-    (exists_norm_sub_smul_sub_apply_le (hpt v) (hpt u) c c)
+    (by simpa using ContinuousLinearMap.exists_norm_sub_smul_sub_apply_le (hpt u) (hpt a) c 0)
+    (ContinuousLinearMap.exists_norm_sub_smul_sub_apply_le (hpt v) (hpt u) c c)
   have hm0 := modelIndex_sub_smul_eq_zero hι hA hSymm huv hinv fun t _ ↦ by
-    simpa using exists_norm_sub_smul_sub_apply_le (hpt t) (hpt u) 0 0
+    simpa using ContinuousLinearMap.exists_norm_sub_smul_sub_apply_le (hpt t) (hpt u) 0 0
   have hadd := domainSpectralFlow_add_adjacent_intervals hι hau huv hA.continuousOn
     (fun t _ ↦ hSymm t) fun t _ ↦ h₀ t
   have hsq := domainSpectralFlow_add_domainSpectralFlow_sub_smul_eq hι huv hA.continuousOn
@@ -255,10 +266,7 @@ private theorem modelIndex_eq_domainSpectralFlow (hι : IsCompactOperator ι) {A
     {a b : ℝ} (hab : a ≤ b) (ha : (A a).IsInvertible) (hbInv : (A b).IsInvertible) :
     modelIndex ι (A a) (A b) = domainSpectralFlow ι A a b := by
   classical
-  have h₀ (t : ℝ) : ∃ c₀ : ℝ, (c₀ • ι - A t).IsInvertible := by
-    obtain ⟨C, hC⟩ := exists_norm_sub_apply_le hb t
-    simpa using ι.exists_isInvertible_ofReal_smul_sub_of_isInvertible_of_norm_sub_apply_le hι
-      hBtop (hSymm t) hC
+  have h₀ := exists_isInvertible_smul_sub_of_forall_mem_Icc hι hSymm hBtop hb
   obtain ⟨δ, hδ, hloc⟩ := ι.exists_pos_forall_exists_mem_Ioo_isInvertible_ofReal_smul_sub hι
     isCompact_Icc hA.continuousOn (fun t _ ↦ h₀ t) zero_lt_one
   let ψ (t : ℝ) : ℤ :=
@@ -285,11 +293,8 @@ private theorem modelIndex_eq_domainSpectralFlow (hι : IsCompactOperator ι) {A
         (by simpa using ha),
       staircaseDefect_zero hι hSymm h₀ a a]
     have hm0 : modelIndex ι (A a) (A a) = 0 := by
-      rw [modelIndex]
-      exact index_familyDomainTrajectoryOperator_eq_zero hι (hSymm a) ha (smoothSegmentPathL_ae _ _)
-        (eventuallyEq_smoothSegmentPath_atBot _ _).tendsto
-        (eventuallyEq_smoothSegmentPath_atTop _ _).tendsto
-        (exists_ae_norm_smoothSegmentPath_sub_apply_le ⟨0, fun _ ↦ by simp⟩)
+      rw [modelIndex, smoothSegmentPathL_self, familyDomainTrajectoryOperator_toLp_const]
+      exact index_domainTrajectoryOperator (hSymm a) ha
     rw [hm0, domainSpectralFlow_self, sub_zero]
   have hψb : ψ b = modelIndex ι (A a) (A b) - domainSpectralFlow ι A a b := by
     simp only [ψ, hb0, ↓reduceDIte]
@@ -317,23 +322,25 @@ private theorem index_familyDomainTrajectoryOperator_eq_modelIndex (hι : IsComp
     (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
     (familyDomainTrajectoryOperator (p := 2) ι AL).index = modelIndex ι (A a) (A b) := by
   obtain ⟨C, hC⟩ := exists_forall_norm_le_of_tendsto hA hbot htop
-  have hb := exists_forall_mem_Icc_norm_sub_apply_le_of_ae hA hc
+  have hb := ContinuousLinearMap.exists_forall_mem_Icc_norm_sub_apply_le_of_ae hA hc
   have hm : MemLp (IccExtend hab ((Icc a b).domRestrict A)) ∞ μ₀ :=
     memLp_top_of_bound hA.continuousOn.domRestrict.Icc_extend'.aestronglyMeasurable C
       (.of_forall fun s ↦ hC _)
   have hloc := index_familyDomainTrajectoryOperator_eq_of_ae_eq_IccExtend hι hA hSymm hab hInv
     hBbot hBtop hAL hbot htop hc hm.coeFn_toLp
   have hba : ∃ c, ∀ x, ‖(A b - A a) x‖ ≤ c * ‖ι x‖ := by
-    simpa using exists_norm_sub_smul_sub_apply_le (exists_norm_sub_apply_le hb b)
-      (exists_norm_sub_apply_le hb a) 0 0
+    simpa using ContinuousLinearMap.exists_norm_sub_smul_sub_apply_le
+      (ContinuousLinearMap.exists_norm_sub_apply_le hb b)
+      (ContinuousLinearMap.exists_norm_sub_apply_le hb a) 0 0
   rw [hloc]
   exact index_familyDomainTrajectoryOperator_eq hι (hSymm a) (hInv a left_notMem_Ioo)
     (hSymm b) (hInv b right_notMem_Ioo) hm.coeFn_toLp
     (TauCeti.tendsto_IccExtend_atBot hab _) (TauCeti.tendsto_IccExtend_atTop hab _)
-    (exists_ae_norm_IccExtend_sub_apply_le hb (exists_norm_sub_apply_le hb b) hab)
-    (smoothSegmentPathL_ae (A a) (A b)) (eventuallyEq_smoothSegmentPath_atBot _ _).tendsto
+    (ContinuousLinearMap.exists_ae_norm_IccExtend_sub_apply_le hb
+      (ContinuousLinearMap.exists_norm_sub_apply_le hb b) hab)
+    (coeFn_smoothSegmentPathL (A a) (A b)) (eventuallyEq_smoothSegmentPath_atBot _ _).tendsto
     (eventuallyEq_smoothSegmentPath_atTop _ _).tendsto
-    (exists_ae_norm_smoothSegmentPath_sub_apply_le hba)
+    (ContinuousLinearMap.exists_ae_norm_smoothSegmentPath_sub_apply_le hba)
 
 /-- **The Robbin–Salamon index formula over a compactly embedded domain.** Let `ι : D →L[ℝ] H` be a
 compact operator from a Banach space into a real Hilbert space, and let `A : ℝ → D →L[ℝ] H` be a
@@ -352,7 +359,7 @@ theorem index_familyDomainTrajectoryOperator_eq_domainSpectralFlow (hι : IsComp
   rw [index_familyDomainTrajectoryOperator_eq_modelIndex hι hA hSymm hab hInv hBbot hBtop hAL hbot
       htop hc,
     modelIndex_eq_domainSpectralFlow hι hA hSymm hBtop
-      (exists_forall_mem_Icc_norm_sub_apply_le_of_ae hA hc) hab
+      (ContinuousLinearMap.exists_forall_mem_Icc_norm_sub_apply_le_of_ae hA hc) hab
       (hInv a left_notMem_Ioo) (hInv b right_notMem_Ioo)]
 
 /-- **The Robbin–Salamon index formula for large intervals.** Under the hypotheses of
@@ -379,7 +386,7 @@ at `±∞`, differing from `Btop` on bounded windows by operators bounded throug
 outside `(a, b)` for `a ≤ b`. Then the index of `u ↦ (ι ∘ u)' - A u` from
 `L²(ℝ, D) ∩ W^{1,2}(ℝ, H)` to `L²(ℝ, H)`, whose coefficient is `-A`, is
 `-TauCeti.domainSpectralFlow ι A a b`. -/
-theorem index_familyDomainTrajectoryOperator_of_ae_eq_neg_eq_neg_domainSpectralFlow
+theorem index_familyDomainTrajectoryOperator_eq_neg_domainSpectralFlow_of_ae_eq_neg
     (hι : IsCompactOperator ι) (hA : Continuous A)
     (hSymm : ∀ s x y, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ) {a b : ℝ} (hab : a ≤ b)
     (hInv : ∀ s ∉ Ioo a b, (A s).IsInvertible) (hBbot : Bbot.IsInvertible)
@@ -387,11 +394,7 @@ theorem index_familyDomainTrajectoryOperator_of_ae_eq_neg_eq_neg_domainSpectralF
     (hbot : Tendsto A atBot (𝓝 Bbot)) (htop : Tendsto A atTop (𝓝 Btop))
     (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
     (familyDomainTrajectoryOperator (p := 2) ι AL).index = -domainSpectralFlow ι A a b := by
-  have hb := exists_forall_mem_Icc_norm_sub_apply_le_of_ae hA hc
-  have h₀ (t : ℝ) (_ : t ∈ Icc a b) : ∃ c₀ : ℝ, (c₀ • ι - A t).IsInvertible := by
-    obtain ⟨C, hC⟩ := exists_norm_sub_apply_le hb t
-    simpa using ι.exists_isInvertible_ofReal_smul_sub_of_isInvertible_of_norm_sub_apply_le hι
-      hBtop (hSymm t) hC
+  have hb := ContinuousLinearMap.exists_forall_mem_Icc_norm_sub_apply_le_of_ae hA hc
   have hind := index_familyDomainTrajectoryOperator_eq_domainSpectralFlow (A := fun s ↦ -A s)
     hι hA.neg (fun s x y ↦ by simp [hSymm s x y]) hab
     (fun s hs ↦ ContinuousLinearMap.isInvertible_neg_iff.2 (hInv s hs))
@@ -400,17 +403,18 @@ theorem index_familyDomainTrajectoryOperator_of_ae_eq_neg_eq_neg_domainSpectralF
       obtain ⟨c, hcT⟩ := hc T
       exact ⟨c, hcT.mono fun s hs hsT x ↦ by
         simpa only [sub_apply, neg_apply, neg_sub_neg, norm_sub_rev] using hs hsT x⟩
-  rw [hind, domainSpectralFlow_neg_of_ker_eq_bot hι hab hA.continuousOn (fun t _ ↦ hSymm t) h₀
+  rw [hind, domainSpectralFlow_neg_of_ker_eq_bot hι hab hA.continuousOn (fun t _ ↦ hSymm t)
+    (fun t _ ↦ exists_isInvertible_smul_sub_of_forall_mem_Icc hι hSymm hBtop hb t)
     (LinearMap.ker_eq_bot.2 (hInv a left_notMem_Ioo).injective)
     (LinearMap.ker_eq_bot.2 (hInv b right_notMem_Ioo).injective)]
 
 /-- **The index of `∂ₛ - A` is minus the spectral flow of `A`, for large intervals.** Under the
 hypotheses of
-`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_of_ae_eq_neg_eq_neg_domainSpectralFlow`,
+`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq_neg_domainSpectralFlow_of_ae_eq_neg`,
 without pre-specifying an interval containing the crossings, the index of `u ↦ (ι ∘ u)' - A u`
 equals `-TauCeti.domainSpectralFlow ι A a b` for every `a` far enough to the left and every `b` far
 enough to the right. -/
-theorem eventually_index_familyDomainTrajectoryOperator_of_ae_eq_neg_eq_neg_domainSpectralFlow
+theorem eventually_index_familyDomainTrajectoryOperator_eq_neg_domainSpectralFlow_of_ae_eq_neg
     (hι : IsCompactOperator ι) (hA : Continuous A)
     (hSymm : ∀ s x y, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ) (hBbot : Bbot.IsInvertible)
     (hBtop : Btop.IsInvertible) (hAL : AL =ᵐ[μ₀] fun s ↦ -A s)
@@ -421,7 +425,7 @@ theorem eventually_index_familyDomainTrajectoryOperator_of_ae_eq_neg_eq_neg_doma
         -domainSpectralFlow ι A ab.1 ab.2 := by
   filter_upwards [ContinuousLinearMap.eventually_le_and_forall_notMem_Ioo_isInvertible
       hBbot hBtop hbot htop] with ⟨a, b⟩ ⟨hab, hinv⟩
-  exact index_familyDomainTrajectoryOperator_of_ae_eq_neg_eq_neg_domainSpectralFlow hι hA hSymm hab
+  exact index_familyDomainTrajectoryOperator_eq_neg_domainSpectralFlow_of_ae_eq_neg hι hA hSymm hab
     hinv hBbot hBtop hAL hbot htop hc
 
 /-- **The regular-crossing index formula over a compactly embedded domain.** Under the hypotheses
@@ -443,17 +447,15 @@ theorem index_familyDomainTrajectoryOperator_eq_finsum_sigPos_sub_sigNeg_domainC
   obtain ⟨⟨a, b⟩, hab, hinv⟩ :=
     (ContinuousLinearMap.eventually_le_and_forall_notMem_Ioo_isInvertible
       hBbot hBtop hbot htop).exists
-  have hb := exists_forall_mem_Icc_norm_sub_apply_le_of_ae hA hc
-  have h₀ (t : ℝ) (_ : t ∈ Icc a b) : ∃ c₀ : ℝ, (c₀ • ι - A t).IsInvertible := by
-    obtain ⟨C, hC⟩ := exists_norm_sub_apply_le hb t
-    simpa using ι.exists_isInvertible_ofReal_smul_sub_of_isInvertible_of_norm_sub_apply_le hι
-      hBtop (hSymm t) hC
+  have hb := ContinuousLinearMap.exists_forall_mem_Icc_norm_sub_apply_le_of_ae hA hc
   have hker {s : ℝ} (hs : s ∉ Ioo a b) : (A s).ker = ⊥ :=
     LinearMap.ker_eq_bot.2 (hinv s hs).injective
   rw [index_familyDomainTrajectoryOperator_eq_domainSpectralFlow hι hA hSymm hab hinv hBbot hBtop
       hAL hbot htop hc,
     domainSpectralFlow_eq_finsum_sigPos_sub_sigNeg_domainCrossingForm hι hab hA.continuousOn
-      (fun t _ ↦ hSymm t) h₀ (hker left_notMem_Ioo) (hker right_notMem_Ioo)
+      (fun t _ ↦ hSymm t)
+      (fun t _ ↦ exists_isInvertible_smul_sub_of_forall_mem_Icc hι hSymm hBtop hb t)
+      (hker left_notMem_Ioo) (hker right_notMem_Ioo)
       (fun t _ hne ↦ hderiv t hne) (fun t _ hne ↦ hreg t hne)]
   refine (finsum_mem_inter_support_eq' _ (Ioo a b) univ fun t ht ↦
     iff_of_true ?_ (mem_univ t)).trans (finsum_mem_univ _)
