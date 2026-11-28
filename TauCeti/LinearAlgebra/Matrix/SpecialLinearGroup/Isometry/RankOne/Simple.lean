@@ -282,6 +282,26 @@ theorem normalClosure_unipotent_eq_top (hσ : Function.Involutive σ)
 
 /-! ### The normal core of the Borel subgroup -/
 
+private theorem coe_apply_zero_mul_eq_zero_of_mul_upperRootHom_comm
+    (hσ : Function.Involutive σ) {g : UnitaryRankOne.Group K σ} {d : K} (hd : d + σ d = 0)
+    (hcomm : g * upperRootHom K σ (HeisenbergGroup.unitaryMk σ hσ 0 d (by simpa using hd)) =
+      upperRootHom K σ (HeisenbergGroup.unitaryMk σ hσ 0 d (by simpa using hd)) * g)
+    {i : Fin 3} (hi : i ≠ 0) :
+    ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) i 0 * d = 0 := by
+  have hi2 := congrArg (fun m : UnitaryRankOne.Group K σ ↦
+    ((m : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) i 2) hcomm
+  have hu : ((upperRootHom K σ (HeisenbergGroup.unitaryMk σ hσ 0 d (by simpa using hd)) :
+      Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) =
+      !![1, 0, d; 0, 1, 0; 0, 0, 1] := by
+    ext r s
+    fin_cases r <;> fin_cases s <;>
+      simp [coe_upperRootHom, HeisenbergGroup.coe_toSpecialLinear, HeisenbergGroup.toMatrix_apply]
+  simp only [Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, hu, Matrix.mul_apply,
+    Fin.sum_univ_three] at hi2
+  fin_cases i
+  · exact (hi rfl).elim
+  all_goals simpa [Fin.sum_univ_three] using hi2
+
 /-- **The normal core of the Borel subgroup is the centre** of the rank-one special isometry group
 whenever `σ` is involutive and `∃ d ≠ 0, d + σ d = 0`. -/
 theorem normalCore_borel_eq_center (hσ : Function.Involutive σ)
@@ -294,27 +314,14 @@ theorem normalCore_borel_eq_center (hσ : Function.Involutive σ)
     rwa [normalClosure_unipotent_eq_top hσ hadm, Subgroup.coe_top,
       Subgroup.centralizer_univ] at hcenter
   · obtain ⟨d, hd0, hd⟩ := hadm
-    let u := upperRootHom K σ (HeisenbergGroup.unitaryMk σ hσ 0 d (by simpa using hd))
-    have hcomm : g * u = u * g := (Subgroup.mem_center_iff.mp hg u).symm
-    have h10 : ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 1 0 = 0 := by
-      have h12 := congrArg (fun m : UnitaryRankOne.Group K σ ↦
-        ((m : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 1 2) hcomm
-      have hmul :
-          ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 1 0 * d = 0 := by
-        simpa [u, Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, coe_upperRootHom,
-          HeisenbergGroup.coe_toSpecialLinear, HeisenbergGroup.toMatrix_apply,
-          Matrix.mul_apply, Fin.sum_univ_three] using h12
-      exact (mul_eq_zero.mp hmul).resolve_right hd0
-    have h20 : ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 0 = 0 := by
-      have h22 := congrArg (fun m : UnitaryRankOne.Group K σ ↦
-        ((m : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 2) hcomm
-      have hmul :
-          ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 0 * d = 0 := by
-        simpa [u, Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, coe_upperRootHom,
-          HeisenbergGroup.coe_toSpecialLinear, HeisenbergGroup.toMatrix_apply,
-          Matrix.mul_apply, Fin.sum_univ_three] using h22
-      exact (mul_eq_zero.mp hmul).resolve_right hd0
-    exact (mem_borel_iff g).mpr ⟨h10, h20⟩
+    have hcomm : g * upperRootHom K σ (HeisenbergGroup.unitaryMk σ hσ 0 d (by simpa using hd)) =
+        upperRootHom K σ (HeisenbergGroup.unitaryMk σ hσ 0 d (by simpa using hd)) * g :=
+      (Subgroup.mem_center_iff.mp hg _).symm
+    exact (mem_borel_iff g).mpr
+      ⟨(mul_eq_zero.mp (coe_apply_zero_mul_eq_zero_of_mul_upperRootHom_comm hσ hd hcomm
+          (by decide))).resolve_right hd0,
+        (mul_eq_zero.mp (coe_apply_zero_mul_eq_zero_of_mul_upperRootHom_comm hσ hd hcomm
+          (by decide))).resolve_right hd0⟩
 
 /-! ### Commutator generation, perfectness, and simplicity -/
 

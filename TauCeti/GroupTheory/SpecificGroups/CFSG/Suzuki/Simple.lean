@@ -142,7 +142,7 @@ theorem isIrreducible_titsSystem (hm : m ≠ 0) : (titsSystem m hm).IsIrreducibl
 theorem normalCore_borelSubgroupOf : (borelSubgroupOf m).normalCore = ⊥ := by
   -- The Weyl element conjugates an element of `Z ∩ U` into `B`, so that element is trivial.
   have hZU : (borelSubgroupOf m).normalCore ⊓ unipotentSubgroupOf m = ⊥ :=
-    Subgroup.normalCore_inf_eq_bot_of_conj_mem (weylOf m) <|
+    Subgroup.normalCore_inf_eq_bot_of_disjoint_map_conj (weylOf m) <|
       Subgroup.disjoint_def.mpr fun {y} hyU h ↦ by
         obtain ⟨a, b, hy⟩ := mem_unipotentSubgroup.mp (Subgroup.mem_subgroupOf.mp hyU)
         rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply, Subgroup.mem_subgroupOf] at h
