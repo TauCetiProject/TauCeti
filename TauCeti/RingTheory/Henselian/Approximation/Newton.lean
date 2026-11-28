@@ -13,7 +13,7 @@ import Mathlib.LinearAlgebra.Matrix.Adjugate
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.MvPolynomial.Eval
 import TauCeti.Algebra.MvPolynomial.PDeriv
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Newton approximation for Elkik's Jacobian ideal

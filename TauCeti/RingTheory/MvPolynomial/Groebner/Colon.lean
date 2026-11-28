@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Ideal.Colon
-public import TauCeti.RingTheory.MvPolynomial.Ideal
+public import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 public import TauCeti.RingTheory.MvPolynomial.Groebner.Elimination
 
 /-!

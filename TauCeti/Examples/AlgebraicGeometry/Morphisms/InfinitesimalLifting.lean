@@ -9,7 +9,7 @@ public import Mathlib.Algebra.TrivSqZeroExt.Ideal
 public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
 public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import TauCeti.AlgebraicGeometry.Morphisms.FormallySmooth.AffineSpace
-public import TauCeti.RingTheory.MvPolynomial.Ideal
+public import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Examples for thickenings and the infinitesimal lifting properties

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.ParameterFamily
-public import TauCeti.RingTheory.MvPolynomial.JetInterpolation
+public import TauCeti.RingTheory.MvPolynomial.FirstJet.Evaluation
 import TauCeti.LinearAlgebra.Basis.Submodule
 
 /-!

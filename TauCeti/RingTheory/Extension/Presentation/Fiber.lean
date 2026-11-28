@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Extension.Presentation.Basic
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
-public import TauCeti.RingTheory.MvPolynomial.Ideal
+public import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 import Mathlib.RingTheory.Smooth.Quotient
 import Mathlib.RingTheory.Support
 import Mathlib.RingTheory.TensorProduct.MvPolynomial

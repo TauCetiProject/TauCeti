@@ -12,11 +12,14 @@ public import Mathlib.Algebra.Order.Interval.Set.SuccPred
 public import Mathlib.Algebra.Polynomial.Sequence
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.RingTheory.MvPolynomial.Basic
+public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.Algebra.MvPolynomial.Variables
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 public import TauCeti.LinearAlgebra.Basis.Pi
 import TauCeti.Algebra.MvPolynomial.Degrees
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.Algebra.MvPolynomial.PDeriv
+import TauCeti.Algebra.MvPolynomial.Rename
 import TauCeti.RingTheory.MvPolynomial.LinearSubst
 
 /-!
@@ -61,6 +64,14 @@ the monomials may be replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members 
   one, such as affine linear forms, for the variables occurring in a polynomial of total degree at
   most `m` gives a polynomial of total degree at most `m`, also when the substituted polynomials
   have coefficients in an `R`-algebra.
+* `MvPolynomial.killCompl_mem_restrictTotalDegree`: discarding variables outside an injective
+  renaming does not raise the total degree.
+* `MvPolynomial.hyperplaneSliceMap`, `MvPolynomial.hyperplaneSliceMap_surjective`: the bounded
+  hyperplane slice map `(f₀, ∂f/∂X_{j₀}|_{X_{j₀}=0})` from `restrictTotalDegree σ R (d + 1)` to
+  `restrictTotalDegree {j // j ≠ j₀} R (d + 1) × restrictTotalDegree {j // j ≠ j₀} R d` is
+  surjective.
+* `MvPolynomial.restrictTotalDegreeEquivDegreeLT`: in one variable, `restrictTotalDegree σ R d`
+  is linearly equivalent to `Polynomial.degreeLT R (d + 1)`.
 * `Submodule.exists_surjective_linearMap_restrictTotalDegree`: over an infinite field,
   restricting the polynomials of total degree at most `m` to a subspace `W`, in coordinates on
   `W`, is onto the polynomials of total degree at most `m` in `dim W` variables, with kernel the
@@ -127,6 +138,16 @@ noncomputable def basisRestrictTotalDegree (m : ℕ) :
   (basisRestrictSupport R {s : σ →₀ ℕ | s.degree ≤ m}).map
     (LinearEquiv.ofEq _ _ (restrictTotalDegree_eq_restrictSupport σ R m).symm)
 
+theorem basisRestrictTotalDegree_def (m : ℕ) :
+    basisRestrictTotalDegree σ R m =
+      (basisRestrictSupport R {s : σ →₀ ℕ | s.degree ≤ m}).map
+        (LinearEquiv.ofEq _ _ (restrictTotalDegree_eq_restrictSupport σ R m).symm) :=
+  (rfl)
+
+/-- The submodule of polynomials of total degree at most `m` is a free `R`-module. -/
+noncomputable instance (m : ℕ) : Module.Free R (restrictTotalDegree σ R m) :=
+  Module.Free.of_basis (basisRestrictTotalDegree σ R m)
+
 /-- The coordinate of a bounded-degree polynomial in the monomial basis is its coefficient. -/
 @[simp]
 theorem basisRestrictTotalDegree_repr_apply (m : ℕ) (p : restrictTotalDegree σ R m)
@@ -137,7 +158,7 @@ theorem basisRestrictTotalDegree_repr_apply (m : ℕ) (p : restrictTotalDegree �
 @[simp]
 theorem coe_basisRestrictTotalDegree (m : ℕ) (s : {s : σ →₀ ℕ // s.degree ≤ m}) :
     (basisRestrictTotalDegree σ R m s : MvPolynomial σ R) = monomial s.val 1 := by
-  rw [basisRestrictTotalDegree, Module.Basis.map_apply, LinearEquiv.coe_ofEq_apply]
+  rw [basisRestrictTotalDegree_def, Module.Basis.map_apply, LinearEquiv.coe_ofEq_apply]
   -- As in `basisRestrictTotalDegree`, the index `s` is read as an element of the set
   -- `{t | t.degree ≤ m}` that indexes `basisRestrictSupport`; the two subtypes agree by definition.
   exact basisRestrictSupport_apply_coe (s := {t : σ →₀ ℕ | t.degree ≤ m}) s
@@ -294,6 +315,151 @@ theorem aeval_mem_restrictTotalDegree {τ S : Type*} [CommSemiring S] [Algebra R
     aeval f p ∈ restrictTotalDegree τ S m := by
   rw [mem_restrictTotalDegree] at hp ⊢
   exact (totalDegree_aeval_le p hf).trans ((mul_one _).trans_le hp)
+
+/-- Discarding variables outside the range of an injective renaming does not raise the total
+degree. -/
+theorem killCompl_mem_restrictTotalDegree {τ : Type*} {g : τ → σ} (hg : Function.Injective g)
+    {m : ℕ} {f : MvPolynomial σ R} (hf : f ∈ restrictTotalDegree σ R m) :
+    killCompl hg f ∈ restrictTotalDegree τ R m := by
+  classical
+  rw [killCompl_eq_aeval]
+  refine aeval_mem_restrictTotalDegree f (fun j _ ↦ ?_) hf
+  by_cases hj : j ∈ Set.range g
+  · obtain ⟨i, rfl⟩ := hj
+    rw [hg.extend_apply]
+    exact TauCeti.totalDegree_X_le i
+  · rw [Function.extend_apply' _ _ _ hj, Pi.zero_apply, totalDegree_zero]
+    exact Nat.zero_le _
+
+/-- The bounded hyperplane slice map: restricts a polynomial of total degree at most `d + 1` and
+its `j₀`-th partial derivative to the coordinate hyperplane `X j₀ = 0`, producing polynomials of
+total degree at most `d + 1` and `d`, respectively, in the remaining variables. -/
+noncomputable def hyperplaneSliceMap (j₀ : σ) (d : ℕ) :
+    restrictTotalDegree σ R (d + 1) →ₗ[R]
+      restrictTotalDegree {j : σ // j ≠ j₀} R (d + 1) ×
+        restrictTotalDegree {j : σ // j ≠ j₀} R d where
+  toFun f :=
+    (⟨killCompl Subtype.val_injective f.val,
+      killCompl_mem_restrictTotalDegree Subtype.val_injective f.property⟩,
+     ⟨killCompl Subtype.val_injective (pderiv j₀ f.val),
+      killCompl_mem_restrictTotalDegree Subtype.val_injective <|
+        (mem_restrictTotalDegree σ d _).2 <|
+          (totalDegree_pderiv_le j₀ f.val).trans <|
+            Nat.sub_le_of_le_add ((mem_restrictTotalDegree σ (d + 1) _).1 f.property)⟩)
+  map_add' _ _ := by ext <;> simp
+  map_smul' _ _ := by ext <;> simp
+
+/-- The first component of `hyperplaneSliceMap j₀ d f` is the restriction of `f` to `X j₀ = 0`. -/
+@[simp]
+theorem hyperplaneSliceMap_fst_coe (j₀ : σ) (d : ℕ) (f : restrictTotalDegree σ R (d + 1)) :
+    ((hyperplaneSliceMap (R := R) j₀ d f).1 : MvPolynomial {j : σ // j ≠ j₀} R) =
+      killCompl Subtype.val_injective f.val := by
+  simp [hyperplaneSliceMap]
+
+/-- The second component of `hyperplaneSliceMap j₀ d f` is the restriction of `pderiv j₀ f` to
+`X j₀ = 0`. -/
+@[simp]
+theorem hyperplaneSliceMap_snd_coe (j₀ : σ) (d : ℕ) (f : restrictTotalDegree σ R (d + 1)) :
+    ((hyperplaneSliceMap (R := R) j₀ d f).2 : MvPolynomial {j : σ // j ≠ j₀} R) =
+      killCompl Subtype.val_injective (pderiv j₀ f.val) := by
+  simp [hyperplaneSliceMap]
+
+/-- The bounded hyperplane slice map `hyperplaneSliceMap j₀ d` is surjective. -/
+theorem hyperplaneSliceMap_surjective (j₀ : σ) (d : ℕ) :
+    Function.Surjective (hyperplaneSliceMap (R := R) j₀ d) := by
+  classical
+  rintro ⟨g₀, g₁⟩
+  let p : MvPolynomial σ R := rename Subtype.val g₀.val + X j₀ * rename Subtype.val g₁.val
+  have hp : p ∈ restrictTotalDegree σ R (d + 1) := by
+    rw [mem_restrictTotalDegree]
+    refine (totalDegree_add _ _).trans (max_le ?_ ?_)
+    · exact (totalDegree_rename_le Subtype.val g₀.val).trans
+        ((mem_restrictTotalDegree {j : σ // j ≠ j₀} (d + 1) _).1 g₀.property)
+    · refine (totalDegree_mul _ _).trans ?_
+      have hX : (X j₀ : MvPolynomial σ R).totalDegree ≤ 1 :=
+        (totalDegree_monomial_le _ _).trans_eq (by simp)
+      have hg1 : (rename Subtype.val g₁.val).totalDegree ≤ d :=
+        (totalDegree_rename_le Subtype.val g₁.val).trans
+          ((mem_restrictTotalDegree {j : σ // j ≠ j₀} d _).1 g₁.property)
+      omega
+  refine ⟨⟨p, hp⟩, Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)⟩
+  · simp [p, killCompl_X_of_notMem_range]
+  · simp [p, pderiv_rename_of_notMem_range]
+
+/-- Changing coefficients along a ring map preserves the total degree bound. -/
+theorem map_mem_restrictTotalDegree {S : Type*} [CommSemiring S] (φ : R →+* S)
+    {m : ℕ} {p : MvPolynomial σ R} (hp : p ∈ restrictTotalDegree σ R m) :
+    map φ p ∈ restrictTotalDegree σ S m := by
+  rw [restrictTotalDegree_eq_restrictSupport] at hp ⊢
+  exact map_mem_restrictSupport φ hp
+
+variable (σ) in
+/-- Changing the coefficients of polynomials of total degree at most `m` along a ring map
+`φ : R →+* S`, as a `φ`-semilinear map. -/
+noncomputable def mapRestrictTotalDegree {S : Type*} [CommSemiring S] (φ : R →+* S) (m : ℕ) :
+    restrictTotalDegree σ R m →ₛₗ[φ] restrictTotalDegree σ S m :=
+  (LinearEquiv.ofEq _ _ (restrictTotalDegree_eq_restrictSupport σ S m).symm).toLinearMap.comp
+    ((mapRestrictSupport {s : σ →₀ ℕ | s.degree ≤ m} φ).comp
+      (LinearEquiv.ofEq _ _ (restrictTotalDegree_eq_restrictSupport σ R m)).toLinearMap)
+
+/-- The underlying polynomial of `mapRestrictTotalDegree σ φ m p` is `map φ p`. -/
+@[simp]
+theorem coe_mapRestrictTotalDegree_apply {S : Type*} [CommSemiring S] (φ : R →+* S) (m : ℕ)
+    (p : restrictTotalDegree σ R m) :
+    (mapRestrictTotalDegree σ φ m p : MvPolynomial σ S) = map φ p := by
+  simp [mapRestrictTotalDegree, coe_mapRestrictSupport_apply]
+
+/-- An element of `restrictTotalDegree σ R (d + 1)` lies in the kernel of `hyperplaneSliceMap j₀ d`
+if and only if `X j₀ ^ 2` divides it. -/
+theorem mem_ker_hyperplaneSliceMap {j₀ : σ} {d : ℕ} {f : restrictTotalDegree σ R (d + 1)} :
+    f ∈ LinearMap.ker (hyperplaneSliceMap (R := R) j₀ d) ↔
+      X j₀ ^ 2 ∣ (f : MvPolynomial σ R) := by
+  classical
+  have hrange : Set.range (Subtype.val : {j : σ // j ≠ j₀} → σ) = {j₀}ᶜ := by
+    ext j
+    simp
+  have hX : killCompl (R := R) (Subtype.val_injective (p := (· ≠ j₀))) (X j₀) = 0 :=
+    killCompl_X_of_notMem_range Subtype.val_injective (by simp)
+  simp only [LinearMap.mem_ker, Prod.ext_iff, Prod.fst_zero, Prod.snd_zero, Subtype.ext_iff,
+    hyperplaneSliceMap_fst_coe, hyperplaneSliceMap_snd_coe, Submodule.coe_zero]
+  constructor
+  · rintro ⟨h0, h1⟩
+    -- Vanishing on `X j₀ = 0` yields `f = X j₀ * q`; then vanishing of `∂_{j₀} f` on `X j₀ = 0`
+    -- reduces to `killCompl q = 0`, giving `X j₀ ∣ q`.
+    obtain ⟨q, hq⟩ := (killCompl_eq_zero_iff_X_dvd Subtype.val_injective hrange f.val).1 h0
+    have hpderiv : pderiv j₀ (f : MvPolynomial σ R) = X j₀ * pderiv j₀ q + q := by
+      rw [hq, Derivation.leibniz, pderiv_X_self, smul_eq_mul, smul_eq_mul, mul_one, add_comm]
+    rw [hpderiv, map_add, map_mul, hX, zero_mul, zero_add] at h1
+    obtain ⟨r, hr⟩ := (killCompl_eq_zero_iff_X_dvd Subtype.val_injective hrange q).1 h1
+    exact ⟨r, by rw [hq, hr, sq, mul_assoc]⟩
+  · rintro ⟨r, hr⟩
+    -- Both `f` and `∂_{j₀} f` are multiples of `X j₀`, so both vanish on `X j₀ = 0`.
+    refine ⟨?_, ?_⟩
+    · rw [hr, map_mul, map_pow, hX, zero_pow two_ne_zero, zero_mul]
+    · have hpderiv : pderiv j₀ (f : MvPolynomial σ R) =
+          X j₀ * (pderiv j₀ (X j₀ * r) + r) := by
+        rw [hr, sq, mul_assoc, Derivation.leibniz, pderiv_X_self]
+        simp [mul_add]
+      rw [hpderiv, map_mul, hX, zero_mul]
+
+/-- In one variable, `MvPolynomial.uniqueAlgEquiv` identifies the polynomials of total degree at
+most `d` with `Polynomial.degreeLT R (d + 1)`. -/
+noncomputable def restrictTotalDegreeEquivDegreeLT (σ R : Type*) [CommSemiring R] [Unique σ]
+    (d : ℕ) :
+    restrictTotalDegree σ R d ≃ₗ[R] Polynomial.degreeLT R (d + 1) :=
+  (LinearEquiv.ofEq _ _ (by
+    rw [restrictTotalDegree_eq_restrictSupport]
+    congr 1
+    ext μ
+    simp [Finsupp.degree_eq_sum])).trans <|
+    ((uniqueAlgEquiv R σ).toLinearEquiv.submoduleMap _).trans
+      (LinearEquiv.ofEq _ _ (map_restrictSupport_uniqueAlgEquiv (d + 1)))
+
+@[simp]
+theorem coe_restrictTotalDegreeEquivDegreeLT_apply [Unique σ] (d : ℕ)
+    (f : restrictTotalDegree σ R d) :
+    (restrictTotalDegreeEquivDegreeLT σ R d f : Polynomial R) = uniqueAlgEquiv R σ f.val := by
+  simp [restrictTotalDegreeEquivDegreeLT]
 
 /-- Setting the variable `none` to `1` and keeping the variables `some j` does not raise the total
 degree. -/

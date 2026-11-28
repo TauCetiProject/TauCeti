@@ -11,7 +11,7 @@ import TauCeti.Algebra.Module.FinitePresentation
 import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.RingTheory.Coherent.MvPolynomial
 import TauCeti.RingTheory.MvPolynomial.Evaluation.Single
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Checks and counterexamples for coherent modules and coherent rings

@@ -15,7 +15,7 @@ public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
 import Mathlib.Algebra.DualNumber
 import TauCeti.Algebra.GCDMonoid.Finset
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.SquareZero
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # The indecomposables of the Lazard ring

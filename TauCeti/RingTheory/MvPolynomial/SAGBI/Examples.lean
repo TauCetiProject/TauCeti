@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Criterion
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Monic
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!

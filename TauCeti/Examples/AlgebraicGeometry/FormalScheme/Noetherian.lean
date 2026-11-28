@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.FormalScheme.Noetherian
 public import TauCeti.RingTheory.Huber.Padic.Basic
-public import TauCeti.RingTheory.MvPolynomial.Ideal
+public import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Checks for locally noetherian formal schemes

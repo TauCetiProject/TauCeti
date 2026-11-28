@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.MvPowerSeries.Equiv
 
 import TauCeti.RingTheory.AdicCompletion.Filtered
 import TauCeti.RingTheory.FilteredAlgebra.Map
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Polynomial completion as multivariate power series

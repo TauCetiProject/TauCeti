@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.Blowup.Modification
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Stalk
 import Mathlib.RingTheory.MvPolynomial.Ideal
 import TauCeti.RingTheory.KrullDimension.FiniteType
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Examples: the blowup of the affine plane at the origin is a modification

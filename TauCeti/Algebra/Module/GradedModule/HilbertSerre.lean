@@ -23,7 +23,7 @@ import TauCeti.Algebra.Module.MvPolynomial
 import TauCeti.RingTheory.Artinian.FiniteLength
 import TauCeti.RingTheory.MvPolynomial.Finrank
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 import TauCeti.RingTheory.Polynomial.HilbertPoly
 import TauCeti.RingTheory.PowerSeries.Basic
 import TauCeti.RingTheory.PowerSeries.Trunc

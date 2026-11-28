@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Adjoin.FG
-public import TauCeti.RingTheory.MvPolynomial.Ideal
+public import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Criterion
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Finite
 import Mathlib.Basic.Finite.Sum

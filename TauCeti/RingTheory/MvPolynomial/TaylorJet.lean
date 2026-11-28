@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.LocalOrder
-import TauCeti.RingTheory.MvPolynomial.FirstJet
+import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 import TauCeti.RingTheory.MvPolynomial.Ideal.Point
 
 /-!
@@ -46,7 +47,7 @@ theorem exists_forall_coeff_taylor_eq {K ι S : Type*} [Field K] [Finite S] {z :
   have h_coprime : Pairwise (Function.onFun IsCoprime fun t : S ↦ vanishingIdeal K {z t} ^ d) :=
     fun t t' h_ne ↦ .pow (by
       simpa only [vanishingIdeal_singleton_eq_ker_eval] using
-        TauCeti.isCoprime_ker_eval (hz_inj.ne h_ne))
+        isCoprime_ker_eval (hz_inj.ne h_ne))
   let q (t : S) : MvPolynomial ι K := taylor (-z t) (∑ γ : Γ, monomial γ (y (t, γ)))
   obtain ⟨p, hp⟩ := exists_forall_sub_mem_ideal h_coprime q
   refine ⟨p, fun t γ ↦ ?_⟩

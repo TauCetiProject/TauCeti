@@ -83,6 +83,8 @@ its iterated partial derivatives in `Xᵢ` vanishing there too.
   monomial `a X^m` is `a mᵢ (mᵢ - 1) ⋯ (mᵢ - k + 1) X^(m - k eᵢ)`.
 * `MvPolynomial.iterate_pderiv_prod_aeval_X`: on a separated product `∏ⱼ Qⱼ(Xⱼ)` of one-variable
   polynomials, the `k`-th iterated partial derivative along `Xᵢ` is `Qᵢ⁽ᵏ⁾(Xᵢ) ∏_{j ≠ i} Qⱼ(Xⱼ)`.
+* `MvPolynomial.pderiv_killCompl`, `MvPolynomial.pderiv_rename_of_notMem_range`: compatibility of
+  `pderiv` with `killCompl` and renaming away from a variable.
 * `MvPolynomial.pderiv_surjective`: over a `ℚ≥0`-algebra every polynomial has an antiderivative
   in each variable.
 * `MvPolynomial.eval_sub_eval_sub_sum_pderiv_mem_mul`,
@@ -319,6 +321,23 @@ theorem iterate_pderiv_prod_aeval_X [DecidableEq σ] {s : Finset σ} {i : σ} (h
   | zero => rfl
   | succ k ih =>
     simp [Function.iterate_succ_apply', ih, Derivation.leibniz, Derivation.map_aeval, hg, mul_comm]
+
+/-- Partial differentiation along a variable `l : τ` commutes with `killCompl hg` along an
+injective renaming `g : τ → σ`. -/
+theorem pderiv_killCompl {g : τ → σ} (hg : Function.Injective g) (l : τ) (f : MvPolynomial σ R) :
+    pderiv l (killCompl (R := R) hg f) = killCompl hg (pderiv (g l) f) := by
+  ext m
+  rw [coeff_pderiv, coeff_killCompl, coeff_killCompl, coeff_pderiv, Finsupp.mapDomain_add,
+    Finsupp.mapDomain_single, Finsupp.mapDomain_apply_of_injective hg m l]
+
+/-- Partial differentiation along a variable outside the range of a renaming vanishes on renamed
+polynomials. -/
+theorem pderiv_rename_of_notMem_range {g : τ → σ} {j₀ : σ} (hj₀ : j₀ ∉ Set.range g)
+    (f : MvPolynomial τ R) :
+    pderiv j₀ (rename (R := R) g f) = 0 :=
+  pderiv_eq_zero_of_notMem_vars fun h ↦ by
+    obtain ⟨i, -, hi⟩ := mem_vars_rename g f h
+    exact hj₀ ⟨i, hi⟩
 
 /-- Over a `ℚ≥0`-algebra every partial derivative `∂/∂Xᵢ` is surjective: the monomial `a X^s` is
 the partial derivative of `(s i + 1)⁻¹ a X^(s + eᵢ)`. -/

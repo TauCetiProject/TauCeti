@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.CohenMacaulay
 public import TauCeti.RingTheory.CohenMacaulay.Catenary
 public import TauCeti.RingTheory.CohenMacaulay.Localization
 public import TauCeti.RingTheory.KrullDimension.Module
-public import TauCeti.RingTheory.MvPolynomial.Ideal
+public import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Tests for Cohen–Macaulay schemes

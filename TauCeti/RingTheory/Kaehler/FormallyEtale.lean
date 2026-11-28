@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.Kaehler.JacobiZariski
 public import Mathlib.RingTheory.Kaehler.Polynomial
 public import Mathlib.RingTheory.RingHom.Etale
 import Mathlib.RingTheory.TensorProduct.Quotient
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Kähler differentials along a formally étale extension

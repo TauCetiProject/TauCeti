@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.AffineSpace.NoetherNormalization
 import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 import TauCeti.Examples.RingTheory.NoetherNormalization
 import TauCeti.RingTheory.MvPolynomial.Basic
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Examples of geometric linear Noether normalization on affine spaces

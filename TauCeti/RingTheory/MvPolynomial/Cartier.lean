@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import TauCeti.Algebra.MvPolynomial.Monomial
 public import TauCeti.RingTheory.MvPolynomial.Expand
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Cartier operators and the Frobenius trace of a polynomial ring
