@@ -115,11 +115,13 @@ theorem isSpanningPath_singleton [Subsingleton W] (D : Digraph W) (v : W) :
   mem w := List.mem_singleton.2 (Subsingleton.elim w v)
   isChain := List.isChain_singleton v
 
-/-- A spanning path of a digraph on a finite vertex type has one entry for each vertex. -/
-theorem IsSpanningPath.length_eq [Fintype W] {D : Digraph W} {l : List W}
-    (hl : D.IsSpanningPath l) : l.length = Fintype.card W := by
+/-- A spanning path of a digraph has one entry for each vertex. -/
+theorem IsSpanningPath.length_eq {D : Digraph W} {l : List W}
+    (hl : D.IsSpanningPath l) : l.length = Nat.card W := by
+  have : Finite W := Set.finite_univ_iff.1 (l.finite_toSet.subset fun v _ => hl.mem v)
+  have := Fintype.ofFinite W
   classical
-  rw [← List.toFinset_card_of_nodup hl.nodup,
+  rw [Nat.card_eq_fintype_card, ← List.toFinset_card_of_nodup hl.nodup,
     Finset.eq_univ_of_forall fun v => List.mem_toFinset.2 (hl.mem v), Finset.card_univ]
 
 /-- A digraph with a spanning cycle has at least two vertices. -/
