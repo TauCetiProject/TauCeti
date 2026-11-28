@@ -37,16 +37,19 @@ of its numbers of roots modulo the prime powers exactly dividing `n`, by `ZMod.e
 
 For `n > 0`, sums over the residues modulo `n` of a function of the least nonnegative
 representative are sums over `range n` (`ZMod.sum_val_eq_sum_range`, in
-`TauCeti.Data.ZMod.FinEquiv`). For `n, m > 0` with `m ∣ n`, a function evaluated at the
-representative divided by `n / m`, summed over the representatives that are multiples of `n / m`,
-is the sum of that function over the representatives modulo `m` (`ZMod.sum_ite_dvd_val`). As a
-special case of the first identity, the reciprocals of the representatives sum to the harmonic
-number `H_{n-1}`; the residue `0` contributes `0⁻¹ = 0`.
+`TauCeti.Data.ZMod.FinEquiv`), and sums over `ZMod n` coincide with sums over the positive
+representatives `Icc 1 n` (`ZMod.sum_eq_sum_Icc`). For `n, m > 0` with `m ∣ n`, a function
+evaluated at the representative divided by `n / m`, summed over the representatives that are
+multiples of `n / m`, is the sum of that function over the representatives modulo `m`
+(`ZMod.sum_ite_dvd_val`). As a special case of the first identity, the reciprocals of the
+representatives sum to the harmonic number `H_{n-1}`; the residue `0` contributes `0⁻¹ = 0`.
 
 ## Main results
 
 * `ZMod.mul_card_filter_natCast_val`: counting a condition on the reduction modulo `m ∣ n`.
 * `ZMod.sum_comp_natCast_val`: summing a function of the reduction modulo `m ∣ n`.
+* `ZMod.sum_eq_sum_Icc`: summing a function on `ZMod n` over the positive representatives
+  `Icc 1 n`.
 * `ZMod.sum_val_filter_castHom_eq_sum_range`: summing a function of the representatives over a
   fibre of the reduction `ZMod (k * m) → ZMod m`.
 * `ZMod.sum_inv_val_eq_harmonic`: the reciprocals of the representatives sum to `H_{n-1}`, the
@@ -97,6 +100,17 @@ theorem mul_card_filter_natCast_val [NeZero m] [NeZero n] (hmn : m ∣ n)
     m * #{x : ZMod n | Q (x.val : ZMod m)} = n * #{y : ZMod m | Q y} := by
   rw [card_filter, card_filter, sum_comp_natCast_val hmn fun y ↦ if Q y then 1 else 0,
     smul_eq_mul, ← mul_assoc, Nat.mul_div_cancel' hmn]
+
+/-- **Summing over positive residue representatives.** For `n ≠ 0`, a sum over `ZMod n` equals
+the sum over `Finset.Icc 1 n` obtained by replacing `0` with `n`. -/
+theorem sum_eq_sum_Icc {A : Type*} [AddCommMonoid A] [NeZero n] (f : ZMod n → A) :
+    ∑ x : ZMod n, f x = ∑ a ∈ Icc 1 n, f a := by
+  have hval : ∑ x : ZMod n, f x = ∑ x : ZMod n, f (x.val : ZMod n) :=
+    Finset.sum_congr rfl fun x _ => by rw [ZMod.natCast_zmod_val]
+  have h0n : f (0 : ℕ) = f (n : ℕ) := by simp
+  rw [hval, sum_val_eq_sum_range (fun a => f a), Finset.range_eq_Ico,
+    Finset.sum_eq_sum_Ico_succ_bot (NeZero.pos n), h0n,
+    add_comm, ← Finset.sum_Ico_succ_top (NeZero.pos n), Finset.Ico_add_one_right_eq_Icc]
 
 /-- **Summing over a fibre of the reduction.** The residues modulo `k * m` that reduce to
 `x : ZMod m` have the representatives `x.val + m * j` for `j < k`, so a function of the

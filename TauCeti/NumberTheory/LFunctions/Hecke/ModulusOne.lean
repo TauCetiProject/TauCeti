@@ -101,6 +101,7 @@ theorem heckeLFunctionC_eq_continuedLFunctionOfWeight_of_modulus_one
     (analyticAt_heckeLFunctionC_of_modulus_one hχ z).differentiableAt
   refine hF.differentiableOn.eqOn_of_eqOn_re_gt (differentiableOn_continuedLFunctionOfWeight hc)
     (b := 1) (fun z hz ↦ ?_) hs
-  rw [heckeLFunctionC_eq_LSeries_of_modulus_one χ hz, continuedLFunctionOfWeight_eq_LSeries _ hz]
+  rw [heckeLFunctionC_eq_LSeries_of_modulus_one χ hz.2,
+    continuedLFunctionOfWeight_eq_LSeries _ hz.2]
 
 end TauCeti.LFunctions

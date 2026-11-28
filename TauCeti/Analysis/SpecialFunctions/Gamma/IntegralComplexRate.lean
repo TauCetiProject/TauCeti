@@ -40,6 +40,7 @@ is the Fourier integral of `t^{s-1}`, regularised at `∞`.
 
 ## Main results
 
+* `Complex.norm_cpow_mul_exp_neg_mul`: norm identity for `t^{s-1} e^{-wt}` on `t > 0`.
 * `Real.integrableOn_abs_log_pow_mul_rpow_mul_exp_neg_mul_Ioi`,
   `Complex.norm_cpow_mul_log_pow_mul_exp_neg_mul`,
   `Complex.integrableOn_cpow_mul_log_pow_mul_exp_neg_mul_Ioi`,
@@ -63,7 +64,7 @@ is the Fourier integral of `t^{s-1}`, regularised at `∞`.
 * `Complex.integral_cpow_mul_exp_mul_I_add_sum_eq`: the Fourier integral of `t^{s-1}`,
   regularised by integration by parts, is `e^{iπs/2} Γ(s) x^{-s}`.
 * `TauCeti.integral_norm_cpow_mul_exp_neg_mul_Ioi`: the integral of the norm of the integrand is
-  `(Re w)^{−Re s} Γ(Re s)`.
+  `(1 / Re w)^{Re s} Γ(Re s)`.
 
 ## References
 
@@ -134,6 +135,11 @@ theorem norm_cpow_mul_log_pow_mul_exp_neg_mul (s w : ℂ) (k : ℕ) {t : ℝ} (h
   rw [norm_mul, norm_mul, norm_pow, norm_cpow_eq_rpow_re_of_pos ht, ← ofReal_log ht.le,
     norm_real, Real.norm_eq_abs, norm_exp_neg_mul_ofReal, neg_mul]
   ring
+
+/-- The norm of the integrand `t^{s-1} e^{-wt}` for `t > 0`. -/
+theorem norm_cpow_mul_exp_neg_mul (s w : ℂ) {t : ℝ} (ht : 0 < t) :
+    ‖(t : ℂ) ^ (s - 1) * exp (-(w * t))‖ = t ^ (s.re - 1) * Real.exp (-w.re * t) := by
+  simpa using norm_cpow_mul_log_pow_mul_exp_neg_mul (s - 1) w 0 ht
 
 /-- For `Re s > -1`, `Re w > 0`, and `k : ℕ`, `t ↦ t^s (log t)^k e^{-wt}` is integrable on
 `(0, ∞)`. -/

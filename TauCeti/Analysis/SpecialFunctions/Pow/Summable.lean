@@ -5,14 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
 import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Topology.Algebra.InfiniteSum.Group
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
-# Summable real powers
+# Summable real and complex powers
 
 A nonnegative family `f` with a summable positive power `f ^ p` tends to `0` along the cofinite
 filter, since its terms are the `p`-th roots of a summable family.
@@ -20,6 +22,11 @@ filter, since its terms are the `p`-th roots of a summable family.
 Dually, a family `a` with a summable negative power `a ^ r` tends to infinity along the cofinite
 filter once it is positive outside a finite set. So `c + a i ~ a i` for every constant `c`, and
 `(c + a i) ^ r` is summable as well (`Summable.const_add_rpow`).
+
+For `1 < s.re` and any complex shift `c : ℂ`, the shifted principal-power series
+`∑' n : ℕ, ((n : ℂ) + c) ^ (-s)` converges absolutely. At a nonpositive integer shift `c = -n`
+(`n : ℕ`), the base `(n : ℂ) + c` vanishes and the principal-power summand `0 ^ (-s)` is `0` for
+`1 < s.re` by Lean's totalized `Complex.cpow`; genuine non-totalized shifts require `c ∉ -ℕ`.
 
 For `e < -1`, every constant multiple of the shifted `p`-series `(n + 1) ^ e` over `ℕ` has a
 finite sum of nonnegative parts in `ℝ≥0∞`. This is the form of a summable majorant for tail
@@ -33,6 +40,10 @@ of `q` events, each with the Markov tail `C / (N ^ a) ^ m`, takes this form thro
   power tends to `0`.
 * `Summable.const_add_rpow` — if `∑ a i ^ r` converges for `r ≤ 0` and `a` is positive
   outside a finite set, so does `∑ (c + a i) ^ r` for every real `c`.
+* `Complex.eventually_re_natCast_add_pos` — `(n : ℂ) + c` has positive real part for all
+  sufficiently large `n`.
+* `TauCeti.summable_norm_natCast_add_cpow_neg` and `TauCeti.summable_natCast_add_cpow_neg` —
+  absolute convergence of `∑' n : ℕ, ((n : ℂ) + c) ^ (-s)` for `1 < s.re` and any `c : ℂ`.
 * `TauCeti.tsum_ofReal_mul_natCast_add_one_rpow_lt_top` —
   `∑' n : ℕ, ENNReal.ofReal (C * (n + 1) ^ e) < ∞` for `e < -1`.
 * `TauCeti.pow_add_one_mul_div_rpow_pow_pow` —
@@ -40,6 +51,8 @@ of `q` events, each with the Markov tail `C / (N ^ a) ^ m`, takes this form thro
 -/
 
 public section
+
+open Complex
 
 namespace TauCeti
 
@@ -79,6 +92,37 @@ theorem _root_.Summable.const_add_rpow {ι : Type*} {a : ι → ℝ} {r : ℝ}
   refine summable_of_isBigO h (hequiv.isTheta.rpow ?_ (ha.mono fun i hi ↦ hi.le)).1
   filter_upwards [htop.eventually_ge_atTop (-c)] with i hi
   exact neg_le_iff_add_nonneg'.1 hi
+
+/-- For any `c : ℂ`, `(n : ℂ) + c` has positive real part for all sufficiently large `n : ℕ`. -/
+theorem _root_.Complex.eventually_re_natCast_add_pos (c : ℂ) :
+    ∀ᶠ n : ℕ in Filter.atTop, 0 < ((n : ℂ) + c).re := by
+  filter_upwards [(Filter.eventually_gt_atTop (-c.re)).natCast_atTop] with n hn
+  simp only [add_re, natCast_re]
+  linarith
+
+/-- For `1 < s.re` and any `c : ℂ`, the principal-power series `∑' n : ℕ, ‖(n + c) ^ (-s)‖` is
+summable (for `c = -n` with `n : ℕ`, the `n`-th summand uses the totalized principal power
+`0 ^ (-s) = 0`). -/
+theorem summable_norm_natCast_add_cpow_neg {s : ℂ} (hs : 1 < s.re) (c : ℂ) :
+    Summable (fun n : ℕ => ‖((n : ℂ) + c) ^ (-s)‖) := by
+  obtain ⟨N, hN_pos⟩ := Filter.eventually_atTop.mp c.eventually_re_natCast_add_pos
+  have hN : (N : ℂ) + c ∈ slitPlane := mem_slitPlane_iff.mpr (Or.inl (hN_pos N le_rfl))
+  obtain ⟨U, hU, -, C, -, hbound⟩ :=
+    exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow hN (-s)
+  have hp : Summable (fun n : ℕ => (1 + (n : ℝ)) ^ (-s.re)) :=
+    ((summable_nat_add_iff 1).mpr
+      ((Real.summable_nat_rpow (p := -s.re)).mpr (by linarith))).congr
+      fun n => by push_cast; rw [add_comm]
+  refine (summable_nat_add_iff N).mp ?_
+  refine Summable.of_nonneg_of_le (fun _ => norm_nonneg _) (fun n => ?_) (hp.mul_left C)
+  have h := hbound ((N : ℂ) + c) (mem_of_mem_nhds hU) (n : ℝ) (Nat.cast_nonneg n)
+  simpa only [ofReal_natCast, neg_re, Nat.cast_add, add_assoc] using h
+
+/-- For `1 < s.re` and any `c : ℂ`, `n ↦ (n + c) ^ (-s)` is summable (with totalized `0 ^ (-s) = 0`
+at index `n` when `c = -n`). -/
+theorem summable_natCast_add_cpow_neg {s : ℂ} (hs : 1 < s.re) (c : ℂ) :
+    Summable (fun n : ℕ => ((n : ℂ) + c) ^ (-s)) :=
+  (summable_norm_natCast_add_cpow_neg hs c).of_norm
 
 open scoped ENNReal in
 /-- For `e < -1`, a constant multiple of the shifted real `p`-series `(n + 1) ^ e` has a finite

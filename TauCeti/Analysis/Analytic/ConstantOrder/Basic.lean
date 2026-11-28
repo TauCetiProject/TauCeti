@@ -8,10 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import TauCeti.Analysis.Analytic.Constructions
-public import TauCeti.Analysis.Analytic.IntervalIntegral
-import TauCeti.Analysis.Normed.Operator.Prod
-import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+public import TauCeti.Analysis.Analytic.Hadamard
 
 /-!
 # Constant order of vanishing in a distinguished variable
@@ -74,59 +71,6 @@ end NontriviallyNormedField
 
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
-
-/-- **Hadamard's lemma** in a distinguished variable: a function `G` analytic at `(x₀, y₀)` that
-vanishes on the hyperplane `y = y₀` near `x₀` is `(y - y₀) • H (x, y)` near `(x₀, y₀)`, with `H`
-analytic at `(x₀, y₀)`. -/
-theorem AnalyticAt.exists_eventuallyEq_sub_smul {G : E × 𝕜 → F} {x₀ : E} {y₀ : 𝕜}
-    (hG : AnalyticAt 𝕜 G (x₀, y₀)) (h0 : ∀ᶠ x in 𝓝 x₀, G (x, y₀) = 0) :
-    ∃ H : E × 𝕜 → F, AnalyticAt 𝕜 H (x₀, y₀) ∧
-      ∀ᶠ p in 𝓝 (x₀, y₀), G p = (p.2 - y₀) • H p := by
-  let : NormedSpace ℝ F := .restrictScalars ℝ 𝕜 F
-  have : IsScalarTower ℝ 𝕜 F := .restrictScalars ℝ 𝕜 F
-  -- `K` is the partial derivative of `G` in the distinguished variable
-  set K : E × 𝕜 → F := fun p ↦ fderiv 𝕜 G p (0, 1) with hK
-  have hKa {z : E × 𝕜} (hz : AnalyticAt 𝕜 G z) : AnalyticAt 𝕜 K z :=
-    ((ContinuousLinearMap.apply 𝕜 F ((0 : E), (1 : 𝕜))).analyticAt _).comp hz.fderiv
-  -- `L t` scales the distinguished variable by `t`
-  set L : ℝ → (E × 𝕜) →L[𝕜] (E × 𝕜) := fun t ↦
-    (ContinuousLinearMap.inl 𝕜 E 𝕜).comp (ContinuousLinearMap.fst 𝕜 E 𝕜) +
-      (t : 𝕜) • (ContinuousLinearMap.inr 𝕜 E 𝕜).comp (ContinuousLinearMap.snd 𝕜 E 𝕜) with hL
-  have hLapply (t : ℝ) (w : E × 𝕜) : L t w = (w.1, t * w.2) := by
-    ext <;> simp [hL]
-  have hLc : Continuous L := by
-    rw [hL]
-    fun_prop
-  have hL1 : ∀ t ∈ Icc (0 : ℝ) 1, ‖L t‖ ≤ 1 := fun t ht ↦
-    ContinuousLinearMap.norm_inl_comp_fst_add_smul_inr_comp_snd_le
-      (by rw [RCLike.norm_ofReal, abs_of_nonneg ht.1]; exact ht.2)
-  refine ⟨fun z ↦ ∫ t in (0 : ℝ)..1, K ((x₀, y₀) + L t (z - (x₀, y₀))),
-    (hKa hG).intervalIntegral_comp hLc.aestronglyMeasurable (.of_forall fun t ht ↦
-      hL1 t <| Ioc_subset_Icc_self <| by rwa [uIoc_of_le zero_le_one] at ht), ?_⟩
-  -- on a ball about `(x₀, y₀)`, `G` is analytic and vanishes on the hyperplane
-  have hev : ∀ᶠ z in 𝓝 (x₀, y₀), AnalyticAt 𝕜 G z ∧ G (z.1, y₀) = 0 :=
-    hG.eventually_analyticAt.and ((continuous_fst.tendsto (x₀, y₀)).eventually h0)
-  obtain ⟨ρ, hρ, hball⟩ := Metric.eventually_nhds_iff_ball.1 hev
-  filter_upwards [Metric.ball_mem_nhds (x₀, y₀) hρ] with ⟨x, y⟩ hz
-  -- the segment from `(x, y₀)` to `(x, y)` stays in the ball
-  have hmem (t : ℝ) (ht : t ∈ Icc 0 1) :
-      ((x, y₀ + t • (y - y₀)) : E × 𝕜) ∈ Metric.ball (x₀, y₀) ρ := by
-    rw [← ball_prod_same] at hz ⊢
-    exact ⟨hz.1, (convex_ball y₀ ρ).add_smul_sub_mem (Metric.mem_ball_self hρ) hz.2 ht⟩
-  -- the fundamental theorem of calculus along the segment
-  have hFTC := intervalIntegral.integral_unitInterval_deriv_eq_sub (f := fun s ↦ G (x, s))
-    (f' := fun s ↦ K (x, s)) (z₀ := y₀) (z₁ := y - y₀)
-    (fun t ht ↦ (ContinuousAt.comp (f := fun t : ℝ ↦ ((x, y₀ + t • (y - y₀)) : E × 𝕜))
-      (hKa (hball _ (hmem t ht)).1).continuousAt (by fun_prop)).continuousWithinAt)
-    (fun t ht ↦ by
-      simpa [hK, Function.comp_def] using
-        (hball _ (hmem t ht)).1.differentiableAt.hasFDerivAt.comp_hasDerivAt
-          (y₀ + t • (y - y₀)) ((hasDerivAt_const _ x).prodMk (hasDerivAt_id _)))
-  rw [add_sub_cancel, (hball _ hz).2, sub_zero] at hFTC
-  rw [← hFTC]
-  congr 1
-  refine intervalIntegral.integral_congr fun t _ ↦ ?_
-  simp [hLapply, RCLike.real_smul_eq_coe_mul]
 
 /-- **Hadamard's lemma along a graph**: a function `G` analytic at `(x₀, g x₀)` that vanishes on
 the graph `y = g x` of a function `g` analytic at `x₀` is `(y - g x) • H (x, y)` near

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import TauCeti.Analysis.Analytic.Order
+public import TauCeti.Analysis.Calculus.DSlope.Iterate
 
 /-!
 # Dividing an analytic function by prescribed zeros
@@ -24,8 +25,6 @@ order hypotheses may be given as vanishing of derivatives through Mathlib's
 
 ## Main results
 
-* `HasFPowerSeriesAt.iterate_dslope_apply_eq_coeff`: the iterated divided differences of `f` at
-  `a` take the Taylor coefficients of `f` at `a` as their values at `a`.
 * `TauCeti.iterate_dslope_apply_eq_zero_of_lt`: if `f` vanishes to order at least `n` at `a`,
   then the first `n` iterated divided differences of `f` at `a` vanish at `a`.
 * `AnalyticOnNhd.exists_eq_prod_pow_smul`: an analytic function with zeros of orders at least
@@ -45,21 +44,6 @@ open Function Topology
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {f : 𝕜 → E} {a : 𝕜}
-
-/-- Iterated divided differences at `a` preserve analyticity at every point where `f` is
-analytic. -/
-theorem AnalyticAt.iterate_dslope {z : 𝕜} (hf : AnalyticAt 𝕜 f z) (n : ℕ) :
-    AnalyticAt 𝕜 ((swap dslope a)^[n] f) z := by
-  induction n with
-  | zero => exact hf
-  | succ n ih => rw [iterate_succ_apply']; exact ih.dslope a
-
-/-- The `n`-th iterated divided difference at `z₀` of a function with power series `p` at `z₀`
-takes the value `p.coeff n` at `z₀`: these values are the Taylor coefficients. -/
-theorem HasFPowerSeriesAt.iterate_dslope_apply_eq_coeff {p : FormalMultilinearSeries 𝕜 𝕜 E}
-    {z₀ : 𝕜} (hp : HasFPowerSeriesAt f p z₀) (n : ℕ) : (swap dslope z₀)^[n] f z₀ = p.coeff n := by
-  rw [← (hp.has_fpower_series_iterate_dslope_fslope n).coeff_zero 1,
-    ← FormalMultilinearSeries.coeff, FormalMultilinearSeries.coeff_iterate_fslope, zero_add]
 
 namespace TauCeti
 

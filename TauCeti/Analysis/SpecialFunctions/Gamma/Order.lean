@@ -5,6 +5,7 @@ Authors: OpenAI Codex
 -/
 module
 
+public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
@@ -17,9 +18,11 @@ import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 # Exact orders of Gamma and the archimedean factors
 
 The entire reciprocal of `Complex.Gamma` has a simple zero at each nonpositive integer,
-with derivative `(-1)^n n!` at `-n`. Hence Gamma has a simple pole at each such point, with
-leading Laurent coefficient `(-1)^n / n!` (`Complex.tendsto_add_natCast_mul_Gamma`,
-`Complex.meromorphicTrailingCoeffAt_Gamma_neg_nat`,
+with derivative `(-1)^n n!` at `-n`; accordingly, its divided difference
+`dslope (fun s ↦ (Gamma s)⁻¹) (-m)` clears `(s + m)⁻¹` and evaluates to `(-1)^n n!`
+at `-n` when `m = n` and `0` at all other nonpositive integers. Hence Gamma has a simple pole at
+each such point, with leading Laurent coefficient `(-1)^n / n!`
+(`Complex.tendsto_add_natCast_mul_Gamma`, `Complex.meromorphicTrailingCoeffAt_Gamma_neg_nat`,
 `Complex.meromorphicTrailingCoeffAt_Gamma_zero`), and has order zero everywhere else. In particular,
 `Complex.Gamma` and the shifted Gamma–power kernel `s ↦ Γ(s - β) * x ^ (β - s)`
 are analytic wherever the Gamma argument avoids the nonpositive integers. Analyticity of Gamma is
@@ -72,6 +75,18 @@ theorem hasDerivAt_inv_Gamma_neg_nat (n : ℕ) :
     convert hd using 1
     simp only [Nat.factorial_succ, pow_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one]
     ring
+
+/-- At nonpositive integers, `dslope (fun w ↦ (Gamma w)⁻¹) (-k) (-n)` equals `(-1)^n n!` when
+`k = n` and `0` otherwise. -/
+theorem dslope_inv_Gamma_neg_nat (k n : ℕ) :
+    dslope (fun w : ℂ ↦ (Gamma w)⁻¹) (-(k : ℂ)) (-(n : ℂ)) =
+      if k = n then (-1 : ℂ) ^ n * n.factorial else 0 := by
+  by_cases hkn : k = n
+  · subst hkn
+    simp [dslope_same, (hasDerivAt_inv_Gamma_neg_nat k).deriv]
+  · have hne : (-(n : ℂ)) ≠ -(k : ℂ) := by
+      simpa [neg_inj] using fun h : n = k => hkn h.symm
+    simp [dslope_of_ne _ hne, slope_def_field, Gamma_neg_nat_eq_zero, hkn]
 
 /-- **The residue of `Γ` at `−n`**: `(a + n) Γ(a) → (−1)ⁿ/n!` as `a → −n`. -/
 theorem tendsto_add_natCast_mul_Gamma (n : ℕ) :

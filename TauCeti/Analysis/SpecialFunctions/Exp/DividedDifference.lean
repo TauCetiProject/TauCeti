@@ -7,17 +7,28 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.DSlope
+public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Basic
 
 /-!
-# Positive divided differences of the real exponential
+# Divided differences of the real and complex exponential
 
-The divided difference of the exponential is the integral of the exponential along the segment
+The divided difference of the real exponential is the integral of the exponential along the segment
 between its arguments. In particular it is strictly positive, including when the arguments
-coincide. It is jointly real analytic, including on the diagonal. These divided differences
-are the scalar coefficients in the derivative of the matrix exponential at a Hermitian matrix.
+coincide, and jointly real analytic, including on the diagonal. These divided differences are the
+scalar coefficients in the derivative of the matrix exponential at a Hermitian matrix.
+
+For any `[NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜] [CompleteSpace 𝕜]`,
+`dslope NormedSpace.exp a b = NormedSpace.exp a * dslope NormedSpace.exp 0 (b - a)`
+(`NormedSpace.dslope_exp_eq_exp_mul_dslope_zero`), specializing to both
+`Real.dslope_exp_eq_exp_mul_dslope_zero` and `Complex.dslope_exp_eq_exp_mul_dslope_zero`.
+Over `ℂ`, `dslope Complex.exp a b` vanishes if and only if `b - a` is a nonzero integer multiple of
+`2 * π * I`. In particular, it does not vanish on the horizontal strip `|(b - a).im| < 2 * π`
+(`Complex.dslope_exp_ne_zero_of_abs_im_sub_lt`,
+`Complex.abs_im_snd_lt_subset_dslope_exp_neg_ne_zero`) or on `Metric.ball a (2 * π)`.
 
 At base point `0`, `TauCeti.dslope_exp_zero_of_ne` identifies `dslope exp 0 u` with
 `(exp u - 1) / u` away from `0`, so `(exp u - 1) / u` agrees almost everywhere with a continuous
@@ -32,6 +43,26 @@ public section
 
 open Filter MeasureTheory
 open scoped ContDiff Nat
+
+namespace NormedSpace
+
+/-- Translating the divided difference of `NormedSpace.exp` to zero extracts the factor
+`NormedSpace.exp a`. -/
+theorem dslope_exp_eq_exp_mul_dslope_zero {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
+    [ContinuousSMul ℚ 𝕜] [CompleteSpace 𝕜] (a b : 𝕜) :
+    dslope (exp : 𝕜 → 𝕜) a b = exp a * dslope (exp : 𝕜 → 𝕜) 0 (b - a) := by
+  by_cases hab : b = a
+  · subst hab
+    have hderiv (x : 𝕜) : HasDerivAt (exp : 𝕜 → 𝕜) (exp x) x := by
+      simpa using (hasFDerivAt_exp_of_continuousSMul 𝕜 x).hasDerivAt
+    simp [dslope_same, (hderiv b).deriv, (hderiv 0).deriv]
+  · have hsub : b - a ≠ 0 := sub_ne_zero.mpr hab
+    rw [dslope_of_ne _ hab, dslope_of_ne _ hsub, slope_def_field, slope_def_field]
+    simp only [sub_zero, exp_zero]
+    rw [← mul_div_assoc, mul_sub, mul_one, ← exp_add_of_continuousSMul 𝕜 (Commute.all _ _),
+      add_sub_cancel]
+
+end NormedSpace
 
 namespace Real
 
@@ -58,14 +89,7 @@ theorem dslope_exp_pos (a b : ℝ) : 0 < dslope exp a b := by
 /-- Translating the real exponential divided difference to zero extracts the factor `exp a`. -/
 theorem dslope_exp_eq_exp_mul_dslope_zero (a b : ℝ) :
     dslope exp a b = exp a * dslope exp 0 (b - a) := by
-  rw [dslope_exp_eq_integral a b, dslope_exp_eq_integral 0 (b - a),
-    ← intervalIntegral.integral_const_mul]
-  apply intervalIntegral.integral_congr
-  intro t _
-  dsimp only
-  rw [← exp_add]
-  congr 1
-  ring
+  simpa only [Real.exp_eq_exp_ℝ] using NormedSpace.dslope_exp_eq_exp_mul_dslope_zero a b
 
 /-- The real exponential divided difference is jointly smooth, including its removable
 value at equal arguments. The regularity parameter also permits real analyticity. -/
@@ -80,6 +104,59 @@ theorem contDiff_dslope_exp (m : ℕ∞ω) :
   exact dslope_exp_eq_exp_mul_dslope_zero p.1 p.2
 
 end Real
+
+namespace Complex
+
+/-- Translating the complex exponential divided difference to zero extracts the factor `exp a`. -/
+theorem dslope_exp_eq_exp_mul_dslope_zero (a b : ℂ) :
+    dslope exp a b = exp a * dslope exp 0 (b - a) := by
+  simpa only [Complex.exp_eq_exp_ℂ] using NormedSpace.dslope_exp_eq_exp_mul_dslope_zero a b
+
+/-- The divided difference `dslope Complex.exp a b` vanishes if and only if `b - a` is a nonzero
+integer multiple of `2 * π * I`. -/
+theorem dslope_exp_eq_zero_iff {a b : ℂ} :
+    dslope exp a b = 0 ↔ ∃ k : ℤ, k ≠ 0 ∧ b - a = k * (2 * Real.pi * I) := by
+  by_cases hab : b = a
+  · subst hab
+    simp [dslope_same, deriv_exp, exp_ne_zero]
+  · rw [dslope_of_ne _ hab, slope_eq_zero_iff, eq_comm, Complex.exp_eq_exp_iff_exists_int]
+    constructor
+    · rintro ⟨k, hk⟩
+      refine ⟨k, fun hk0 => hab ?_, by linear_combination hk⟩
+      simpa [hk0] using hk
+    · rintro ⟨k, _, hk⟩
+      exact ⟨k, by linear_combination hk⟩
+
+/-- On the horizontal strip `|(b - a).im| < 2 * π`, `dslope Complex.exp a b` does not vanish. -/
+theorem dslope_exp_ne_zero_of_abs_im_sub_lt {a b : ℂ} (h : |(b - a).im| < 2 * Real.pi) :
+    dslope exp a b ≠ 0 := by
+  intro h0
+  obtain ⟨k, hkne, hk⟩ := dslope_exp_eq_zero_iff.mp h0
+  have him : (b - a).im = k * (2 * Real.pi) := by
+    simpa [mul_assoc] using congrArg Complex.im hk
+  have hk1 : (1 : ℝ) ≤ |(k : ℝ)| := by exact_mod_cast Int.one_le_abs hkne
+  have habs : |(b - a).im| = |(k : ℝ)| * (2 * Real.pi) := by
+    rw [him, abs_mul, abs_of_pos Real.two_pi_pos]
+  nlinarith [Real.pi_pos]
+
+/-- Every point `(c, z)` with `|z.im| < 2 * π` lies in the nonvanishing locus
+`{p : E × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}`. -/
+theorem abs_im_snd_lt_subset_dslope_exp_neg_ne_zero {E : Type*} :
+    {p : E × ℂ | |p.2.im| < 2 * Real.pi} ⊆ {p : E × ℂ | dslope exp 0 (-p.2) ≠ 0} :=
+  fun _ hp => dslope_exp_ne_zero_of_abs_im_sub_lt (by simpa using hp)
+
+/-- On the real axis, `dslope Complex.exp (x : ℂ) (y : ℂ)` does not vanish. -/
+@[simp]
+theorem dslope_exp_ofReal_ne_zero (x y : ℝ) : dslope exp (x : ℂ) (y : ℂ) ≠ 0 :=
+  dslope_exp_ne_zero_of_abs_im_sub_lt (by simp [Real.pi_pos])
+
+/-- On `Metric.ball a (2 * π)`, the divided difference `dslope Complex.exp a b` does not vanish. -/
+theorem dslope_exp_ne_zero_of_mem_ball {a b : ℂ} (h : b ∈ Metric.ball a (2 * Real.pi)) :
+    dslope exp a b ≠ 0 :=
+  dslope_exp_ne_zero_of_abs_im_sub_lt <|
+    (abs_im_le_norm (b - a)).trans_lt (by simpa [dist_eq_norm] using h)
+
+end Complex
 
 namespace TauCeti
 

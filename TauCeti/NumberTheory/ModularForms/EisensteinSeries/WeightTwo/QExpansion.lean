@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.QExpansion
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Character
-import TauCeti.NumberTheory.LSeries.ZMod
+import TauCeti.NumberTheory.LSeries.ZMod.Basic
 import TauCeti.Analysis.Fourier.ZMod
 
 /-!

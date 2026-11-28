@@ -39,6 +39,8 @@ is bounded on `x ≥ 0`.
   eventually bounded by `C exp (-μ t)`, so an exponential rate `k` cannot be improved.
 * `TauCeti.exp_neg_le_div_exp_sub_one`: `exp (-x) ≤ x / (exp x - 1)` for `0 < x`.
 * `TauCeti.div_exp_sub_one_le_one`: `x / (exp x - 1) ≤ 1` for `0 ≤ x`.
+* `TauCeti.inv_one_sub_exp_neg_eq_one_add_inv_exp_sub_one`, `TauCeti.inv_one_sub_exp_neg_le`:
+  `(1 - exp (-t))⁻¹ = 1 + (exp t - 1)⁻¹ ≤ 1 + t⁻¹` for `0 < t`.
 * `TauCeti.min_one_div_two_le_one_sub_exp_neg`: `min 1 t / 2 ≤ 1 - exp (-t)` for `0 ≤ t`.
 * `TauCeti.exp_neg_le_rpow_iff`: `exp (-t) ≤ y ^ ε ↔ exp (-(t / ε)) ≤ y` for `0 ≤ y`, `0 < ε`.
 * `TauCeti.abs_log_sub_le_iff`: `|log x - y| ≤ C ↔ exp (-C) * exp y ≤ x ∧ x ≤ exp C * exp y` for
@@ -66,6 +68,12 @@ is bounded on `x ≥ 0`.
   `((y ^ m)⁻¹ + y ^ m) exp (-a ((y - 1)² / y)) ≤ 2 max (m! / (a / 4) ^ m) (2 ^ m)` for `0 < a`,
   `0 < y`.
 * `TauCeti.exp_neg_mul_mul_le`: `x exp (-r x) ≤ (2 / δ) exp (-(δ / 2) x)` for `0 < δ ≤ r`.
+* `TauCeti.norm_exp_neg_mul_div_one_sub_exp_neg`: exact norm
+  `‖exp (-c * t) / (1 - exp (-t))‖ = exp (-c.re * t) / (1 - exp (-t))` for `0 < t`.
+* `TauCeti.norm_exp_neg_mul_div_one_sub_exp_neg_le`: uniform bound for
+  `exp (-c * t) / (1 - exp (-t))` on `0 < T ≤ t`.
+* `TauCeti.rpow_mul_norm_exp_neg_mul_div_one_sub_exp_neg_le`: uniform bound for
+  `t ^ a * ‖exp (-c * t) / (1 - exp (-t))‖` for `0 < T ≤ t`, `1 ≤ t`, `a ≤ A`, and `η ≤ c.re`.
 * `TauCeti.exp_neg_sub_mul_le_of_le`: `exp (-(x - σ) t) ≤ exp (-(x - σ) δ)` for `σ ≤ x` and
   `δ ≤ t`.
 * `Real.pow_le_exp_mul`: `x ^ k ≤ exp (k x)` for `0 ≤ x` and every natural `k`.
@@ -190,6 +198,22 @@ theorem div_exp_sub_one_le_one {x : ℝ} (hx : 0 ≤ x) : x / (exp x - 1) ≤ 1 
   · simp
   rw [div_le_one (sub_pos.2 (one_lt_exp_iff.2 hx))]
   linarith [add_one_le_exp x]
+
+/-- For `t ≠ 0`, `(1 - exp (-t))⁻¹ = 1 + (exp t - 1)⁻¹`. -/
+theorem inv_one_sub_exp_neg_eq_one_add_inv_exp_sub_one {t : ℝ} (ht : t ≠ 0) :
+    (1 - exp (-t))⁻¹ = 1 + (exp t - 1)⁻¹ := by
+  have h1 : exp t - 1 ≠ 0 := sub_ne_zero.2 ((exp_eq_one_iff t).not.2 ht)
+  have h2 : exp t ≠ 0 := (exp_pos t).ne'
+  rw [exp_neg]
+  field_simp
+  ring
+
+/-- For `0 < t`, `(1 - exp (-t))⁻¹ ≤ 1 + t⁻¹`. -/
+theorem inv_one_sub_exp_neg_le {t : ℝ} (ht : 0 < t) : (1 - exp (-t))⁻¹ ≤ 1 + t⁻¹ := by
+  rw [inv_one_sub_exp_neg_eq_one_add_inv_exp_sub_one ht.ne']
+  have hdiv := div_exp_sub_one_le_one ht.le
+  rw [div_le_one (sub_pos.2 (one_lt_exp_iff.2 ht))] at hdiv
+  linarith [inv_anti₀ ht hdiv]
 
 /-- For nonnegative `t`, the gap `1 - exp (-t)` is at least half of `min 1 t`: it is linear in
 `t` up to `t = 1` and bounded below by a constant thereafter. -/
@@ -441,6 +465,52 @@ theorem exp_neg_mul_mul_le {r δ : ℝ} (hδ : 0 < δ) (hr : δ ≤ r) (x : ℝ)
     nlinarith
   calc _ ≤ exp (-(δ / 2 * x)) * exp (-(δ / 2 * x)) * x := by gcongr
     _ ≤ _ := by rw [mul_assoc, mul_comm]; gcongr
+
+/-- For `0 < t` and any `c : ℂ`,
+`‖Complex.exp (-c * t) / (1 - Complex.exp (-t))‖ = Real.exp (-c.re * t) / (1 - Real.exp (-t))`. -/
+theorem norm_exp_neg_mul_div_one_sub_exp_neg {t : ℝ} (ht : 0 < t) (c : ℂ) :
+    ‖Complex.exp (-c * t) / (1 - Complex.exp (-t))‖ =
+      Real.exp (-c.re * t) / (1 - Real.exp (-t)) := by
+  have h1e : 0 ≤ 1 - Real.exp (-t) := by
+    linarith [Real.exp_lt_one_iff.mpr (neg_lt_zero.mpr ht)]
+  have hden : ‖1 - Complex.exp (-(t : ℂ))‖ = 1 - Real.exp (-t) := by
+    rw [← Complex.ofReal_neg, ← Complex.ofReal_exp, ← Complex.ofReal_one, ← Complex.ofReal_sub,
+      Complex.norm_real, Real.norm_of_nonneg h1e]
+  have hre : (-c * (t : ℂ)).re = -c.re * t := by simp
+  rw [norm_div, Complex.norm_exp, hre, hden]
+
+/-- For `0 < T ≤ t` and any `c : ℂ`, `‖Complex.exp (-c * t) / (1 - Complex.exp (-t))‖` is
+bounded by `(1 - Real.exp (-T))⁻¹ * Real.exp (-c.re * t)`. -/
+theorem norm_exp_neg_mul_div_one_sub_exp_neg_le {T t : ℝ} (hT : 0 < T) (ht : T ≤ t) (c : ℂ) :
+    ‖Complex.exp (-c * t) / (1 - Complex.exp (-t))‖ ≤
+      (1 - Real.exp (-T))⁻¹ * Real.exp (-c.re * t) := by
+  have ht0 : 0 < t := hT.trans_le ht
+  have hpos : 0 < 1 - Real.exp (-T) := by linarith [Real.exp_lt_one_iff.mpr (neg_lt_zero.mpr hT)]
+  have hlow : 1 - Real.exp (-T) ≤ 1 - Real.exp (-t) := by
+    linarith [Real.exp_le_exp.mpr (neg_le_neg ht)]
+  rw [norm_exp_neg_mul_div_one_sub_exp_neg ht0 c, div_eq_mul_inv, mul_comm]
+  exact mul_le_mul_of_nonneg_right (inv_anti₀ hpos hlow) (Real.exp_pos _).le
+
+/-- For `0 < T ≤ t` with `1 ≤ t`, `a ≤ A`, and `η ≤ c.re`,
+`t ^ a * ‖Complex.exp (-c * t) / (1 - Complex.exp (-t))‖` is bounded by
+`(1 - Real.exp (-T))⁻¹ * (t ^ A * Real.exp (-η * t))`. -/
+theorem rpow_mul_norm_exp_neg_mul_div_one_sub_exp_neg_le {T t a A η : ℝ} {c : ℂ}
+    (hT : 0 < T) (htT : T ≤ t) (ht1 : 1 ≤ t) (ha : a ≤ A) (hc : η ≤ c.re) :
+    t ^ a * ‖Complex.exp (-c * t) / (1 - Complex.exp (-t))‖ ≤
+      (1 - Real.exp (-T))⁻¹ * (t ^ A * Real.exp (-η * t)) := by
+  have ht0 : 0 < t := hT.trans_le htT
+  have hpos : 0 < 1 - Real.exp (-T) := by linarith [Real.exp_lt_one_iff.mpr (neg_lt_zero.mpr hT)]
+  calc t ^ a * ‖Complex.exp (-c * t) / (1 - Complex.exp (-t))‖
+      ≤ t ^ A * ((1 - Real.exp (-T))⁻¹ * Real.exp (-c.re * t)) :=
+        mul_le_mul (Real.rpow_le_rpow_of_exponent_le ht1 ha)
+          (norm_exp_neg_mul_div_one_sub_exp_neg_le hT htT c) (norm_nonneg _)
+          (Real.rpow_nonneg ht0.le _)
+    _ ≤ t ^ A * ((1 - Real.exp (-T))⁻¹ * Real.exp (-η * t)) :=
+        mul_le_mul_of_nonneg_left
+          (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr (by nlinarith))
+            (inv_pos.mpr hpos).le)
+          (Real.rpow_nonneg ht0.le _)
+    _ = (1 - Real.exp (-T))⁻¹ * (t ^ A * Real.exp (-η * t)) := by ring
 
 /-- Raising the damping rate from `σ` to `x ≥ σ` multiplies by `e^{-(x-σ)t}`, which is at most
 `e^{-(x-σ)δ}` for `t ≥ δ`. -/
