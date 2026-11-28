@@ -30,8 +30,8 @@ complementary slackness controls the terms with `l i ≠ 0`.
 
 ## Main statements
 
-* `TauCeti.isMinOn_of_kkt` — **sufficiency of the Karush–Kuhn–Tucker conditions**: `f xs ≤ f x`
-  for every feasible `x`.
+* `ContinuousLinearMap.isMinOn_of_kkt` — **sufficiency of the Karush–Kuhn–Tucker conditions**:
+  `f xs ≤ f x` for every feasible `x`.
 
 ## References
 
@@ -48,7 +48,9 @@ public section
 
 open scoped InnerProductSpace RealInnerProductSpace
 
-namespace TauCeti
+namespace ContinuousLinearMap
+
+open TauCeti
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
@@ -85,4 +87,4 @@ theorem isMinOn_of_kkt {ι : Type*} [Fintype ι] {f : E → ℝ} {g : ι → E �
   have := Finset.sum_nonpos fun i (_ : i ∈ Finset.univ) => hterm i
   linarith
 
-end TauCeti
+end ContinuousLinearMap
