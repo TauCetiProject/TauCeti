@@ -60,6 +60,8 @@ infinite adeles only needs `E` to be an algebraic CM field.
   involutions.
 * `IsDedekindDomain.FiniteAdeleRing.star_apply_conjPlace`: the components of the conjugate of a
   finite adele.
+* `IsDedekindDomain.FiniteAdeleRing.star_unit_eq_map`: conjugation on finite ideles is
+  `Units.map` of the finite adele equivalence induced by `complexConj`.
 * `IsDedekindDomain.FiniteAdeleRing.unitsProj_star_eq_one_iff`: the corresponding criterion
   for a conjugate finite idele to have component `1` at a place, via `coe_unitsProj_apply`.
 * `RingEquiv.finiteAdeleEquiv_star`: transport of finite adeles along an
@@ -208,6 +210,17 @@ theorem finiteAdeleEquiv_star (e : E ≃+* E') (a : 𝔸ᶠ[E]) :
 end RingEquiv
 
 namespace IsDedekindDomain.FiniteAdeleRing
+
+/-- On finite ideles of a CM field, `star` is the map on units induced by complex conjugation
+on finite adeles. -/
+theorem star_unit_eq_map {E : Type*} [Field E] [NumberField E] [IsCMField E] (a : 𝔸ᶠ[E]ˣ) :
+    star a = Units.map (finiteAdeleEquiv E E (complexConj E).toRingEquiv).toMonoidHom a := by
+  apply Units.ext
+  rw [Units.coe_star, ← finiteAdeleConj_apply, finiteAdeleConj_def]
+  let e := finiteAdeleEquiv E E (complexConj E).toRingEquiv
+  have hmap : e.toMonoidHom = (e : 𝔸ᶠ[E] ≃* 𝔸ᶠ[E]).toMonoidHom := by
+    simpa only [← RingEquiv.toRingHom_eq_coe] using e.toMonoidHom_commutes
+  rw [Units.coe_map, hmap, MulEquiv.coe_toMonoidHom, RingEquiv.coe_toMulEquiv]
 
 variable {E : Type*} [Field E] [NumberField E] [IsCMField E]
 
