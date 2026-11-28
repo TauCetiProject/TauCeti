@@ -58,6 +58,9 @@ subextension, which may be unramified while the extension itself is not.
   conductor exponent `0` exactly when it is unramified.
 * `TauCeti.ClassFieldTheory.characterConductorExp_le_iff`: the character conductor exponent of
   `χ` is at most `n` exactly when `χ` is trivial on `U(K,n)`.
+* `TauCeti.ClassFieldTheory.isOpen_ker_character`,
+  `TauCeti.ClassFieldTheory.isLocallyConstant_character`: a continuous character `Kˣ → ℂˣ` has
+  open kernel, so it is locally constant.
 * `TauCeti.ClassFieldTheory.characterConductorExp_mul_of_unitFiltration_zero_le_ker`: twisting by
   an unramified character does not change the character conductor exponent.
 
@@ -179,6 +182,16 @@ theorem exists_unitFiltration_le_ker (χ : Kˣ →ₜ* ℂˣ) : ∃ n, unitFiltr
   obtain ⟨N, hN, hNker⟩ := χ.exists_mem_nhds_one_forall_le_ker
   obtain ⟨n, -, hn⟩ := hasBasis_nhds_one_unitFiltration.mem_iff.mp hN
   exact ⟨n, hNker _ hn⟩
+
+/-- A continuous character `Kˣ → ℂˣ` has open kernel: the kernel contains a step of the unit
+filtration. -/
+theorem isOpen_ker_character (χ : Kˣ →ₜ* ℂˣ) : IsOpen (χ.ker : Set Kˣ) :=
+  have ⟨n, hn⟩ := exists_unitFiltration_le_ker K χ
+  Subgroup.isOpen_mono hn (isOpen_unitFiltration n)
+
+/-- A continuous character `Kˣ → ℂˣ` is locally constant. -/
+theorem isLocallyConstant_character (χ : Kˣ →ₜ* ℂˣ) : IsLocallyConstant χ :=
+  χ.toMonoidHom.isLocallyConstant_of_isOpen_ker (isOpen_ker_character K χ)
 
 /-- The **conductor exponent of a continuous character** `χ : Kˣ → ℂˣ`: the least `n` such that
 `χ` is trivial on the step `U(K,n)` of the unit filtration. The minimum is attained
