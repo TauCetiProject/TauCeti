@@ -167,7 +167,8 @@ theorem map_gaussSumOfPrimitiveRoot (χ : DirichletCharacter ℤ N) {ζ : L}
   have h := TauCeti.map_gaussSum_eq_inv_apply_mul hχ hψ (IsPrimitiveRoot.neg_one 0 (by norm_num))
     hζ (σ := (σ : L →+* L)) (by simp) (hζ.autToPow_spec ℚ σ).symm
     (by rw [ZMod.natCast_zmod_val]; exact Units.isUnit _)
-  rwa [ZMod.natCast_zmod_val] at h
+  rw [gaussSumOfPrimitiveRoot_def]
+  simpa [ZMod.natCast_zmod_val] using h
 
 /-- The Gauss sum attached to a primitive integer-valued Dirichlet character does not vanish in a
 characteristic-zero field. -/
