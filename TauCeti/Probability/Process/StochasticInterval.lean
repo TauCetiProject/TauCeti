@@ -8,7 +8,6 @@ module
 public import Mathlib.Probability.Process.Predictable
 public import Mathlib.Probability.Process.Stopping
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
-public import TauCeti.Order.Interval.Set.Piecewise
 
 /-!
 # Predictable stochastic intervals

@@ -13,7 +13,7 @@ public import TauCeti.Probability.Process.TimeMeasure
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.Probability.Process.Stopping
 import Mathlib.MeasureTheory.Function.L2Space
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Function.LpSeminorm.SquaredNorm
 import TauCeti.MeasureTheory.Integral.Bochner.UniformInMeasure
 import TauCeti.Probability.Process.StochasticInterval

@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Process.Stopping
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.Order.Interval.Set.Piecewise
 import TauCeti.Probability.BrownianMotion.Integral.Stopping
 import TauCeti.Probability.Finance.SimpleStrategy.Stopping
 import TauCeti.Probability.Process.StoppedValue
@@ -23,7 +24,9 @@ filtration, stopping `I` at a stopping time `σ` gives a continuous Itô integra
 `W` or moment bounds. As a consequence, `stoppedProcess I σ` is indistinguishable from any Itô
 integral of `H · 1_{[0, σ]}` (`TauCeti.Probability.IsItoIntegral.stoppedProcess_indist`), and for
 stopping times `σ ≤ τ`, `stoppedProcess I τ - stoppedProcess I σ` is an Itô integral of
-`H · 1_{(σ, τ]}` (`TauCeti.Probability.IsItoIntegral.ite_Ioc`).
+`H · 1_{(σ, τ]}` (`TauCeti.Probability.IsItoIntegral.ite_Ioc`). Adjacent stochastic intervals
+`(σ, τ]` and `(τ, ρ]` concatenate to `(σ, ρ]` (`TauCeti.Probability.IsItoIntegral.ite_Ioc_add`,
+`TauCeti.Probability.IsFilteredPreBrownianReal.indist_ite_Ioc_add_stoppedProcess_sub`).
 
 ## Main results
 
@@ -32,6 +35,9 @@ stopping times `σ ≤ τ`, `stoppedProcess I τ - stoppedProcess I σ` is an It
   stopping time `σ` integrates `H · 1_{[0, σ]}`.
 * `TauCeti.Probability.IsItoIntegral.ite_Ioc`: restricting an integrand to `(σ, τ]` for stopping
   times `σ ≤ τ` integrates to `stoppedProcess I τ - stoppedProcess I σ`.
+* `TauCeti.Probability.IsItoIntegral.ite_Ioc_add` and
+  `TauCeti.Probability.IsFilteredPreBrownianReal.indist_ite_Ioc_add_stoppedProcess_sub`:
+  adjacent stochastic-interval concatenation for Itô integrals and stopped integrals.
 
 ## References
 
@@ -47,10 +53,16 @@ open Filter MeasureTheory ProbabilityTheory Set
 open Finset hiding Iic mem_Iic
 open scoped ENNReal NNReal Topology
 
-namespace TauCeti.Probability.IsItoIntegral
+namespace TauCeti.Probability
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
-  {P : Measure Ω} {W H I J : ℝ≥0 → Ω → ℝ} {σ : Ω → WithTop ℝ≥0}
+  {P : Measure Ω} {W H I J : ℝ≥0 → Ω → ℝ}
+
+namespace IsItoIntegral
+
+section
+
+variable {σ : Ω → WithTop ℝ≥0}
 
 private theorem tendstoInMeasure_stoppedProcess_simpleGains_dyadicCeilTime
     (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -200,6 +212,8 @@ theorem stoppedProcess_indist (hW : IsFilteredPreBrownianReal ℱ W P)
     MeasureTheory.stoppedProcess I σ ≡ᵐ[P] J :=
   isItoIntegral_unique hW (hI.stoppedProcess hW hσ) hJ
 
+end
+
 /-- **Stochastic-interval restriction for the continuous Brownian Itô integral**: for stopping
 times `σ ≤ τ`, restricting `H` to `(σ, τ]` yields an Itô integral equal to
 `stoppedProcess I τ - stoppedProcess I σ`, without path continuity of `W` or moment bounds. -/
@@ -217,4 +231,39 @@ theorem ite_Ioc (hW : IsFilteredPreBrownianReal ℱ W P)
   rw [heq]
   exact (hI.stoppedProcess hW hτ).sub (hI.stoppedProcess hW hσ)
 
-end TauCeti.Probability.IsItoIntegral
+/-- **Adjacent stochastic-interval concatenation for Itô integrals.** For ordered random times
+`σ ≤ τ ≤ ρ`, summing Itô integrals of the restrictions `1_{(σ, τ]} H` and `1_{(τ, ρ]} H` yields
+an Itô integral of `1_{(σ, ρ]} H`. Neither stopping-time properties nor path continuity of `W` is
+needed. -/
+theorem ite_Ioc_add {σ τ ρ : Ω → WithTop ℝ≥0} (hστ : σ ≤ τ) (hτρ : τ ≤ ρ)
+    {J₁ J₂ : ℝ≥0 → Ω → ℝ}
+    (hJ₁ : IsItoIntegral ℱ P W
+      (fun t ω ↦ if σ ω < (t : WithTop ℝ≥0) ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) J₁)
+    (hJ₂ : IsItoIntegral ℱ P W
+      (fun t ω ↦ if τ ω < (t : WithTop ℝ≥0) ∧ (t : WithTop ℝ≥0) ≤ ρ ω then H t ω else 0) J₂) :
+    IsItoIntegral ℱ P W
+      (fun t ω ↦ if σ ω < (t : WithTop ℝ≥0) ∧ (t : WithTop ℝ≥0) ≤ ρ ω then H t ω else 0)
+      (fun t ω ↦ J₁ t ω + J₂ t ω) := by
+  rw [TauCeti.ite_Ioc_fun_eq_add_ite_Ioc hστ hτρ]
+  exact hJ₁.add hJ₂
+
+end IsItoIntegral
+
+/-- **Adjacent stochastic-interval concatenation for stopped Itô integrals.** For ordered random
+times `σ ≤ τ ≤ ρ` where `σ` and `ρ` are stopping times, summing Itô integrals of `1_{(σ, τ]} H` and
+`1_{(τ, ρ]} H` is indistinguishable from `stoppedProcess I ρ - stoppedProcess I σ`. -/
+theorem IsFilteredPreBrownianReal.indist_ite_Ioc_add_stoppedProcess_sub
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) {σ τ ρ : Ω → WithTop ℝ≥0}
+    (hσ : IsStoppingTime ℱ σ) (hρ : IsStoppingTime ℱ ρ)
+    (hστ : σ ≤ τ) (hτρ : τ ≤ ρ) {J₁ J₂ : ℝ≥0 → Ω → ℝ}
+    (hJ₁ : IsItoIntegral ℱ P W
+      (fun t ω ↦ if σ ω < (t : WithTop ℝ≥0) ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) J₁)
+    (hJ₂ : IsItoIntegral ℱ P W
+      (fun t ω ↦ if τ ω < (t : WithTop ℝ≥0) ∧ (t : WithTop ℝ≥0) ≤ ρ ω then H t ω else 0) J₂) :
+    (fun t ω ↦ J₁ t ω + J₂ t ω) ≡ᵐ[P]
+      fun t ω ↦ MeasureTheory.stoppedProcess I ρ t ω - MeasureTheory.stoppedProcess I σ t ω :=
+  isItoIntegral_unique hW (hJ₁.ite_Ioc_add hστ hτρ hJ₂)
+    (hI.ite_Ioc hW hσ hρ (hστ.trans hτρ))
+
+end TauCeti.Probability

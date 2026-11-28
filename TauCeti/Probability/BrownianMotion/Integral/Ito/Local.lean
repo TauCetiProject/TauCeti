@@ -34,9 +34,6 @@ and the `L²` theory (`TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry`
 
 * `TauCeti.Probability.IsItoIntegral.of_stoppedProcess`: stability of `IsItoIntegral` under
   localization by measurable random times tending almost surely to `⊤`;
-* `TauCeti.Probability.IsItoIntegral.ite_Ioc_add` and
-  `TauCeti.Probability.IsFilteredPreBrownianReal.indist_ite_Ioc_add_stoppedProcess_sub`:
-  adjacent stochastic-interval concatenation for Itô integrals and stopped integrals;
 * `TauCeti.Probability.IsItoIntegral.locally_martingale` and
   `TauCeti.Probability.IsItoIntegral.locally_martingale_sq_sub`: strongly progressive continuous Itô
   integrals `I` and their square-compensated brackets `I t ^ 2 - ∫ s, H s ^ 2 ∂timeMeasure t` are
@@ -72,7 +69,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
 
 namespace Probability
 
-/-! ### Localization stability and stochastic-interval concatenation -/
+/-! ### Localization stability -/
 
 private theorem tendsto_measure_compl_goodEvent [IsFiniteMeasure P]
     {τ : ℕ → Ω → WithTop ℝ≥0} {Hseq : ℕ → ℝ≥0 → Ω → ℝ} {H : ℝ≥0 → Ω → ℝ}
@@ -89,18 +86,14 @@ private theorem tendsto_measure_compl_goodEvent [IsFiniteMeasure P]
     ((hHseq_meas m).eNorm.pow_const 2).lintegral_prod_left'
   have hG_meas (m : ℕ) : MeasurableSet (G m) :=
     (measurableSet_lt measurable_const (hτ_meas m)).inter (hE_meas m (measurableSet_singleton 0))
-  refine ⟨hG_meas, ?_⟩
-  simpa using tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure atTop
-    MeasurableSet.empty (fun m ↦ (hG_meas m).compl) <| by
-      filter_upwards [hτ, hHeq] with ω hτω hHω
-      obtain ⟨m, hm⟩ := eventually_atTop.mp
-        ((hτω.eventually (eventually_gt_nhds (WithTop.coe_lt_top t))).and (hHω t))
-      refine eventually_atTop.mpr ⟨m, fun j hj ↦ ?_⟩
-      simp only [mem_compl_iff, mem_empty_iff_false, iff_false, not_not, G, mem_inter_iff,
-        Set.mem_ofPred_eq]
-      exact ⟨(hm j hj).1, (TauCeti.ae_eq_iff_lintegral_enorm_sub_sq_eq_zero
-        (((hHseq_meas j).comp measurable_prodMk_right).eNorm.pow_const 2).aemeasurable).mp
-        ((ae_mem_Ioc_timeMeasure t).mono fun s hs ↦ (hm j hj).2 hs.2)⟩
+  refine ⟨hG_meas, MeasureTheory.tendsto_measure_compl_of_ae_eventually_mem hG_meas ?_⟩
+  filter_upwards [hτ, hHeq] with ω hτω hHω
+  obtain ⟨m, hm⟩ := eventually_atTop.mp
+    ((hτω.eventually (eventually_gt_nhds (WithTop.coe_lt_top t))).and (hHω t))
+  exact eventually_atTop.mpr ⟨m, fun j hj ↦ ⟨(hm j hj).1,
+    (TauCeti.ae_eq_iff_lintegral_enorm_sub_sq_eq_zero
+      (((hHseq_meas j).comp measurable_prodMk_right).eNorm.pow_const 2).aemeasurable).mp
+      ((ae_mem_Ioc_timeMeasure t).mono fun s hs ↦ (hm j hj).2 hs.2)⟩⟩
 
 private theorem exists_simpleHolding_stage_approx
     {Hseq U : ℕ → ℝ≥0 → Ω → ℝ}
@@ -177,39 +170,6 @@ theorem IsItoIntegral.of_stoppedProcess [IsFiniteMeasure P]
         dsimp only [Set.mem_ofPred_eq] at hω ⊢
         exact hk.le.trans (hIU ▸ hω)
       · exact Or.inr (Or.inl hGω)
-
-/-- **Adjacent stochastic-interval concatenation for Itô integrals.** For ordered random times
-`σ ≤ τ ≤ ρ`, summing Itô integrals of the restrictions `1_{(σ, τ]} H` and `1_{(τ, ρ]} H` yields
-an Itô integral of `1_{(σ, ρ]} H`. Neither stopping-time properties nor path continuity of `W` is
-needed. -/
-theorem IsItoIntegral.ite_Ioc_add {σ τ ρ : Ω → WithTop ℝ≥0} (hστ : σ ≤ τ) (hτρ : τ ≤ ρ)
-    {J₁ J₂ : ℝ≥0 → Ω → ℝ}
-    (hJ₁ : IsItoIntegral ℱ P W
-      (fun t ω ↦ if σ ω < (t : WithTop ℝ≥0) ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) J₁)
-    (hJ₂ : IsItoIntegral ℱ P W
-      (fun t ω ↦ if τ ω < (t : WithTop ℝ≥0) ∧ (t : WithTop ℝ≥0) ≤ ρ ω then H t ω else 0) J₂) :
-    IsItoIntegral ℱ P W
-      (fun t ω ↦ if σ ω < (t : WithTop ℝ≥0) ∧ (t : WithTop ℝ≥0) ≤ ρ ω then H t ω else 0)
-      (fun t ω ↦ J₁ t ω + J₂ t ω) := by
-  rw [TauCeti.ite_Ioc_fun_eq_add_ite_Ioc hστ hτρ]
-  exact hJ₁.add hJ₂
-
-/-- **Adjacent stochastic-interval concatenation for stopped Itô integrals.** For ordered random
-times `σ ≤ τ ≤ ρ` where `σ` and `ρ` are stopping times, summing Itô integrals of `1_{(σ, τ]} H` and
-`1_{(τ, ρ]} H` is indistinguishable from `stoppedProcess I ρ - stoppedProcess I σ`. -/
-theorem IsFilteredPreBrownianReal.indist_ite_Ioc_add_stoppedProcess_sub
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hI : IsItoIntegral ℱ P W H I) {σ τ ρ : Ω → WithTop ℝ≥0}
-    (hσ : IsStoppingTime ℱ σ) (hρ : IsStoppingTime ℱ ρ)
-    (hστ : σ ≤ τ) (hτρ : τ ≤ ρ) {J₁ J₂ : ℝ≥0 → Ω → ℝ}
-    (hJ₁ : IsItoIntegral ℱ P W
-      (fun t ω ↦ if σ ω < (t : WithTop ℝ≥0) ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) J₁)
-    (hJ₂ : IsItoIntegral ℱ P W
-      (fun t ω ↦ if τ ω < (t : WithTop ℝ≥0) ∧ (t : WithTop ℝ≥0) ≤ ρ ω then H t ω else 0) J₂) :
-    (fun t ω ↦ J₁ t ω + J₂ t ω) ≡ᵐ[P]
-      fun t ω ↦ MeasureTheory.stoppedProcess I ρ t ω - MeasureTheory.stoppedProcess I σ t ω :=
-  isItoIntegral_unique hW (hJ₁.ite_Ioc_add hστ hτρ hJ₂)
-    (hI.ite_Ioc hW hσ hρ (hστ.trans hτρ))
 
 /-! ### Local-martingale property and square compensation -/
 

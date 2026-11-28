@@ -31,8 +31,8 @@ horizon `T` with the terminal `L²` integral `hW.l2Integral T`. Extending
   `TauCeti.Probability.IsItoIntegral.tendsto_eLpNorm_sub`: `L²(P)` time continuity of the integral
   process.
 * `TauCeti.Probability.IsItoIntegral.integral_eq_zero`: zero expectation at every horizon.
-* `TauCeti.Probability.IsFilteredPreBrownianReal.ae_eq_mul_sub_of_isItoIntegral_indicator_Ioc` and
-  `indist_mul_sub_of_isItoIntegral_indicator_Ioc`: the `ℱ s`-measurable multiplier rule on `(s, u]`.
+* `TauCeti.Probability.IsFilteredPreBrownianReal.ae_eq_mul_sub_of_isItoIntegral_indicator_Ioc`:
+  the fixed-time `L²` `ℱ s`-measurable multiplier rule on `(s, u]`.
 * `TauCeti.Probability.IsFilteredPreBrownianReal.ae_eq_wienerIntegral_of_isItoIntegral` and
   `isItoIntegral_iff_ae_eq_wienerIntegral`: identification with the deterministic Wiener integral.
 * `TauCeti.Probability.IsFilteredPreBrownianReal.tendsto_measure_exists_le_simpleGains_sub_lt`:
@@ -45,9 +45,8 @@ horizon `T` with the terminal `L²` integral `hW.l2Integral T`. Extending
   increments on predictable rectangles, and identification of the integral's finite-horizon
   predictable measure with `(ℱ.predictableMeasure P T).withDensity (fun p ↦ ‖H p.1 p.2‖ₑ ^ 2)`.
 
-Except where path continuity of `W` is required for Doob uniform approximation or unbounded
-indistinguishability on `(s, u]`, none of these results assume path continuity of `W` or usual
-conditions on `ℱ`.
+Except where path continuity of `W` is required for Doob uniform approximation, none of these
+results assume path continuity of `W` or usual conditions on `ℱ`.
 
 ## References
 
@@ -81,10 +80,8 @@ theorem continuous_toLp (hW : IsFilteredPreBrownianReal ℱ W P)
     Continuous fun t : ℝ≥0 ↦ (hI.memLp hW hH t).toLp (I t) := by
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
   refine continuous_iff_continuousAt.2 fun t₀ ↦ tendsto_iff_edist_tendsto_0.2 ?_
-  have hne_fst : ∀ᵐ t ∂timeMeasure (t₀ + 1), t ≠ t₀ := by
-    simp only [ae_iff, ne_eq, not_not, ofPred_eq_eq_singleton,
-      timeMeasure_apply _ (measurableSet_singleton t₀)]
-    by_cases h0 : t₀ ∈ Ioc 0 (t₀ + 1) <;> simp [h0]
+  have hne_fst : ∀ᵐ t ∂timeMeasure (t₀ + 1), t ≠ t₀ :=
+    Measure.ae_ne (timeMeasure (t₀ + 1)) t₀
   have hne : ∀ᵐ p ∂(timeMeasure (t₀ + 1)).prod P, p.1 ≠ t₀ :=
     (Measure.quasiMeasurePreserving_fst (μ := timeMeasure (t₀ + 1)) (ν := P)).ae hne_fst
   have hlim : Tendsto (fun t ↦ eLpNorm
@@ -155,18 +152,6 @@ theorem IsFilteredPreBrownianReal.ae_eq_mul_sub_of_isItoIntegral_indicator_Ioc
   · simp [min_eq_left hst, max_eq_right (le_min hsu hst)]
   · have hts : t ≤ s := (not_le.mp hst).le
     simp [min_eq_right hts, min_eq_right (hts.trans hsu), max_eq_left hts]
-
-/-- **Multiplier rule on `(s, u]` (indistinguishable process form).** When `W` has almost surely
-continuous paths, any Itô integral of an `ℱ s`-measurable random variable `ξ` held on `(s, u]` is
-indistinguishable from `t ↦ ξ * (W (min u t) - W (min s t))`. No moment condition on `ξ` is
-needed. -/
-theorem IsFilteredPreBrownianReal.indist_mul_sub_of_isItoIntegral_indicator_Ioc
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω) {s u : ℝ≥0} (hsu : s ≤ u) {ξ : Ω → ℝ}
-    (hξ : StronglyMeasurable[ℱ s] ξ)
-    (hI : IsItoIntegral ℱ P W (fun t ω ↦ (Ioc s u).indicator (fun _ ↦ ξ ω) t) I) :
-    I ≡ᵐ[P] fun t ω ↦ ξ ω * (W (min u t) ω - W (min s t) ω) :=
-  isItoIntegral_unique hW hI (IsItoIntegral.indicator_Ioc hsu hWc hξ)
 
 /-! ### Deterministic bridge and Doob uniform approximation -/
 

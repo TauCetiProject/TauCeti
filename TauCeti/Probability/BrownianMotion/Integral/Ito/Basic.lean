@@ -55,8 +55,10 @@ time (`TauCeti.Probability.IsItoIntegral.aestronglyMeasurable`).
 The elementary integral of a simple holding on a nondecreasing grid with left-measurable heights
 is its Itô integral against every process with almost surely continuous paths
 (`TauCeti.Probability.isItoIntegral_simpleGains`). This file also establishes linearity,
-bounded initial and post-`u` multipliers, `(dt × P)`-a.e. integrand congruence for an `SFinite`
-measure `P` (`TauCeti.Probability.IsItoIntegral.congr_integrand`), and gains convergence in measure
+bounded initial and post-`u` multipliers, the `ℱ s`-measurable multiplier rule on `(s, u]`
+(`TauCeti.Probability.IsFilteredPreBrownianReal.indist_mul_sub_of_isItoIntegral_indicator_Ioc`),
+`(dt × P)`-a.e. integrand congruence for an `SFinite` measure `P`
+(`TauCeti.Probability.IsItoIntegral.congr_integrand`), and gains convergence in measure
 for arbitrary approximating sequences against a filtered pre-Brownian motion. Against a filtered
 pre-Brownian integrator with almost surely continuous paths, existence of the integral is proved in
 `TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry` for square-integrable integrands and in
@@ -357,6 +359,22 @@ theorem indicator_Ioc {u v : ℝ≥0} {ξ : Ω → ℝ} (huv : u ≤ v)
   convert isItoIntegral_simpleGains (ℱ := ℱ) (P := P) (n := 1) (τ := τ) (a := fun _ ↦ ξ)
     hcont hτ (fun i hi ↦ by obtain rfl : i = 0 := (by omega); exact hξ) using 1 <;>
     (ext t ω; simp [Finance.simpleHolding_def, Finance.simpleGains_def, τ])
+
+end IsItoIntegral
+
+/-- **Multiplier rule on `(s, u]` (indistinguishable process form).** When `W` has almost surely
+continuous paths, any Itô integral of an `ℱ s`-measurable random variable `ξ` held on `(s, u]` is
+indistinguishable from `t ↦ ξ * (W (min u t) - W (min s t))`. No moment condition on `ξ` is
+needed. -/
+theorem IsFilteredPreBrownianReal.indist_mul_sub_of_isItoIntegral_indicator_Ioc
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω) {s u : ℝ≥0} (hsu : s ≤ u) {ξ : Ω → ℝ}
+    (hξ : StronglyMeasurable[ℱ s] ξ)
+    (hI : IsItoIntegral ℱ P W (fun t ω ↦ (Ioc s u).indicator (fun _ ↦ ξ ω) t) I) :
+    I ≡ᵐ[P] fun t ω ↦ ξ ω * (W (min u t) ω - W (min s t) ω) :=
+  isItoIntegral_unique hW hI (IsItoIntegral.indicator_Ioc hsu hWc hξ)
+
+namespace IsItoIntegral
 
 /-- A time-constant `ℱ 0`-measurable `ξ` has `t ↦ ξ * (W t - W 0)` as an Itô integral when `W`
 is `P`-a.s. continuous, with no finiteness assumption on `P`, moment assumption on `ξ`, or

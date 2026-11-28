@@ -23,6 +23,7 @@ namespace Set
 
 /-- Subtracting an initial half-open interval `Ioc c a` from `Ioc c b` shifts the left endpoint
 to `max c a`. -/
+@[simp]
 theorem Ioc_sdiff_Ioc_left {α : Type*} [LinearOrder α] (c a b : α) :
     Ioc c b \ Ioc c a = Ioc (max c a) b := by
   ext x

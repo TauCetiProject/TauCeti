@@ -226,17 +226,18 @@ theorem dyadic_div_lt_of_lt_ceil {m k : ℕ} {T : ℝ≥0} (hk : k < ⌈T * 2 ^ 
   (div_lt_iff₀ (by positivity)).mpr (Nat.lt_ceil.mp hk)
 
 /-- A clipped dyadic grid point strictly below `⌈T * 2 ^ m⌉₊` equals the unclipped grid point. -/
+@[simp]
 theorem dyadicGridClip_of_lt_ceil {m k : ℕ} {T : ℝ≥0} (hk : k < ⌈T * 2 ^ m⌉₊) :
     dyadicGridClip m T k = (k : ℝ≥0) / 2 ^ m :=
   min_eq_left (dyadic_div_lt_of_lt_ceil hk).le
 
 /-- Any clipped dyadic grid point at or beyond `⌈T * 2 ^ m⌉₊` equals the horizon `T`. -/
+@[simp]
 theorem dyadicGridClip_of_ceil_le {m k : ℕ} {T : ℝ≥0} (hk : ⌈T * 2 ^ m⌉₊ ≤ k) :
     dyadicGridClip m T k = T :=
   min_eq_right ((le_div_iff₀ (by positivity)).mpr (Nat.ceil_le.mp hk))
 
 /-- The terminal clipped dyadic grid point at `⌈T * 2 ^ m⌉₊` equals the horizon `T`. -/
-@[simp]
 theorem dyadicGridClip_ceil (m : ℕ) (T : ℝ≥0) : dyadicGridClip m T ⌈T * 2 ^ m⌉₊ = T :=
   dyadicGridClip_of_ceil_le le_rfl
 

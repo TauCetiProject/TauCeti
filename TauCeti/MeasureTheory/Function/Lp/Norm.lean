@@ -523,31 +523,16 @@ theorem MemLp.norm_toLp_sq {alpha F : Type*} [MeasurableSpace alpha] {m : Measur
   rw [hx]
 
 /-- The integral of the squared pointwise norm of an a.e. strongly measurable function is the
-real part of the lower integral of its squared extended norm. -/
-theorem integral_norm_sq_eq_toReal_lintegral_enorm {alpha F : Type*} [MeasurableSpace alpha]
-    {m : Measure alpha} [SeminormedAddGroup F] {f : alpha → F} (hf : AEStronglyMeasurable f m) :
-    ∫ x, ‖f x‖ ^ 2 ∂m = (∫⁻ x, ‖f x‖ₑ ^ 2 ∂m).toReal := by
-  rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ sq_nonneg _)
-    ((continuous_norm.comp_aestronglyMeasurable hf).pow 2)]
-  congr 1
-  refine lintegral_congr fun x ↦ ?_
-  rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
-
-/-- The integral of the squared pointwise norm of an a.e. strongly measurable function is the
 square of the real part of its `L²` seminorm. Both sides vanish when the function is not square
 integrable. -/
 theorem integral_norm_sq_eq_toReal_eLpNorm_sq {alpha F : Type*} [MeasurableSpace alpha]
     {m : Measure alpha} [SeminormedAddGroup F] {f : alpha → F} (hf : AEStronglyMeasurable f m) :
     ∫ x, ‖f x‖ ^ 2 ∂m = (eLpNorm f 2 m).toReal ^ 2 := by
-  rw [integral_norm_sq_eq_toReal_lintegral_enorm hf, ← ENNReal.toReal_pow,
-    TauCeti.eLpNorm_two_sq_eq_lintegral hf]
-
-/-- The integral of the square of an a.e. strongly measurable real-valued function is the real
-part of the lower integral of its squared extended norm. -/
-theorem integral_sq_eq_toReal_lintegral_enorm {alpha : Type*} [MeasurableSpace alpha]
-    {m : Measure alpha} {f : alpha → ℝ} (hf : AEStronglyMeasurable f m) :
-    ∫ x, f x ^ 2 ∂m = (∫⁻ x, ‖f x‖ₑ ^ 2 ∂m).toReal := by
-  simpa only [Real.norm_eq_abs, sq_abs] using integral_norm_sq_eq_toReal_lintegral_enorm hf
+  rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ sq_nonneg _)
+    ((continuous_norm.comp_aestronglyMeasurable hf).pow 2)]
+  have h : (∫⁻ x, ENNReal.ofReal (‖f x‖ ^ 2) ∂m) = ∫⁻ x, ‖f x‖ₑ ^ 2 ∂m :=
+    lintegral_congr fun x ↦ by rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+  rw [h, ← ENNReal.toReal_pow, TauCeti.eLpNorm_two_sq_eq_lintegral hf]
 
 /-- L² convergence implies convergence of the integral of the squared norm, for any measure
 and any normed additive group of values. -/

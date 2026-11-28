@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Probability.Process.Predictable.Measure
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Square energy of elementary holdings

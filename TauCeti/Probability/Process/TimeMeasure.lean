@@ -147,11 +147,11 @@ theorem timeMeasure_zero : timeMeasure 0 = 0 := by
   simp [timeMeasure_def]
 
 /-- Every singleton time carries no mass, independently of the horizon. -/
-@[simp]
-theorem timeMeasure_singleton (T t : ℝ≥0) : timeMeasure T {t} = 0 := by
-  rw [timeMeasure_apply T (measurableSet_singleton t)]
-  exact (Set.subsingleton_singleton.image _ |>.anti
-    (Set.image_mono inter_subset_left)).measure_zero _
+instance (T : ℝ≥0) : NullSingletonClass (timeMeasure T) where
+  measure_singleton t := by
+    rw [timeMeasure_apply T (measurableSet_singleton t)]
+    exact (Set.subsingleton_singleton.image _ |>.anti
+      (Set.image_mono inter_subset_left)).measure_zero _
 
 /-- For any `s`-finite measure `P`, moving the right endpoint of an interval rectangle
 `Ioc a s ×ˢ A` converges pointwise almost everywhere under `(timeMeasure T).prod P` as
@@ -163,7 +163,7 @@ theorem tendsto_indicator_Ioc_prod_ae {Ω E : Type*} {mΩ : MeasurableSpace Ω}
       Tendsto (fun s ↦ (Ioc a s ×ˢ A).indicator f p)
         (𝓝 t) (𝓝 ((Ioc a t ×ˢ A).indicator f p)) := by
   have hnull : ((timeMeasure T).prod P) ({t} ×ˢ (univ : Set Ω)) = 0 := by
-    rw [Measure.prod_prod, timeMeasure_singleton, zero_mul]
+    rw [Measure.prod_prod, measure_singleton, zero_mul]
   filter_upwards [compl_mem_ae_iff.mpr hnull] with p hp
   by_cases hbase : a < p.fst ∧ p.snd ∈ A
   · have hne : p.fst ≠ t := fun h ↦ hp ⟨h, mem_univ _⟩
