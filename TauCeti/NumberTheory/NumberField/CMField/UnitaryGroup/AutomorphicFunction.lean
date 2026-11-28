@@ -148,9 +148,8 @@ theorem norm_boundedAutomorphicRepresentation (k : finiteAdelicUnitaryGroup E ι
 
 /-- Finite right translation is a smooth representation. -/
 instance : Representation.IsSmooth V.boundedAutomorphicRepresentation := by
-  refine ⟨fun f ↦ ?_⟩
-  rw [boundedAutomorphicRepresentation, Subrepresentation.stabilizer_toRepresentation]
-  exact (Representation.mem_smoothVectors_iff).1 f.property.2
+  unfold boundedAutomorphicRepresentation
+  exact Representation.le_smoothVectors_iff.mp inf_le_right
 
 variable (V)
 
@@ -202,14 +201,6 @@ theorem mem_boundedAutomorphicFunctionsOfLevel_iff
   simp only [boundedAutomorphicFunctionsOfLevel, Representation.mem_invariants,
     MonoidHom.comp_apply, BoundedAutomorphicFunction.ext_iff,
     boundedAutomorphicRepresentation_apply, Subgroup.coe_subtype, Subtype.forall]
-
-/-- Shrinking the level enlarges the space of functions. -/
-theorem boundedAutomorphicFunctionsOfLevel_anti
-    {K L : Subgroup (finiteAdelicUnitaryGroup E ι)} (hKL : K ≤ L) :
-    V.boundedAutomorphicFunctionsOfLevel L ≤ V.boundedAutomorphicFunctionsOfLevel K := by
-  intro f hf
-  rw [mem_boundedAutomorphicFunctionsOfLevel_iff] at hf ⊢
-  exact fun k hk ↦ hf k (hKL hk)
 
 /-- Every bounded automorphic function has a compact open level inside the standard
 integral subgroup. -/

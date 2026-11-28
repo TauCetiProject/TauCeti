@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.FixedSubmodule
 public import Mathlib.RepresentationTheory.Subrepresentation
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 
@@ -26,7 +27,7 @@ variable (𝕜 V G : Type*) [NormedField 𝕜] [SeminormedAddCommGroup V] [Norme
 
 /-- Right translation on bounded continuous functions. -/
 noncomputable def rightRegular : Representation 𝕜 G (G →ᵇ V) where
-  toFun g := (compContinuousCLM V 𝕜 ⟨fun x ↦ x * g, continuous_mul_const g⟩).toLinearMap
+  toFun g := (compContinuousCLM V 𝕜 (ContinuousMap.mulRight g)).toLinearMap
   map_one' := by ext f x; simp
   map_mul' g h := by ext f x; simp [mul_assoc]
 
@@ -55,20 +56,24 @@ variable (𝕜 V) {H : Type*} [Monoid H] (Γ : Subgroup G) (i : H →* G)
 
 /-- Bounded continuous functions invariant under left translation by `Γ`, with right
 translation restricted along `i`. -/
-def leftInvariantSubrepresentation :
+noncomputable def leftInvariantSubrepresentation :
     Subrepresentation ((rightRegular 𝕜 V G).comp i) where
-  toSubmodule :=
-    { carrier := {f | ∀ γ ∈ Γ, ∀ x, f (γ * x) = f x}
-      zero_mem' := by simp
-      add_mem' := by intro f g hf hg γ hγ x; simp [hf γ hγ x, hg γ hγ x]
-      smul_mem' := by intro c f hf γ hγ x; simp [hf γ hγ x] }
-  apply_mem_toSubmodule h f hf γ hγ x := by
-    simpa only [MonoidHom.comp_apply, rightRegular_apply, mul_assoc] using hf γ hγ (x * i h)
+  toSubmodule := ⨅ γ : Γ,
+    (compContinuousCLM V 𝕜 (ContinuousMap.mulLeft (γ : G))).toLinearMap.fixedSubmodule
+  apply_mem_toSubmodule h f hf := by
+    simp only [Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff,
+      BoundedContinuousFunction.ext_iff] at hf ⊢
+    change ∀ γ : Γ, ∀ x, f ((γ : G) * x * i h) = f (x * i h)
+    change ∀ γ : Γ, ∀ x, f ((γ : G) * x) = f x at hf
+    exact fun γ x ↦ by simpa only [mul_assoc] using hf γ (x * i h)
 
 /-- Membership is left invariance, independently of the translating homomorphism. -/
 @[simp]
 theorem mem_leftInvariantSubrepresentation_iff (f : G →ᵇ V) :
-    f ∈ leftInvariantSubrepresentation 𝕜 V Γ i ↔ ∀ γ ∈ Γ, ∀ x, f (γ * x) = f x :=
-  Iff.rfl
+    f ∈ leftInvariantSubrepresentation 𝕜 V Γ i ↔ ∀ γ ∈ Γ, ∀ x, f (γ * x) = f x := by
+  change f ∈ (leftInvariantSubrepresentation 𝕜 V Γ i).toSubmodule ↔ _
+  simp only [leftInvariantSubrepresentation, Submodule.mem_iInf, LinearMap.mem_fixedSubmodule_iff,
+    BoundedContinuousFunction.ext_iff, Subtype.forall]
+  rfl
 
 end BoundedContinuousFunction
