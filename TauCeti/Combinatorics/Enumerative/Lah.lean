@@ -80,7 +80,7 @@ theorem lah_succ_succ (n k : ℕ) :
 theorem lah_succ_left (n k : ℕ) (hk : k ≠ 0) :
     lah (n + 1) k = (n + k) * lah n k + lah n (k - 1) := by
   obtain ⟨l, rfl⟩ := Nat.exists_eq_add_of_le' (Nat.pos_of_ne_zero hk)
-  rfl
+  rw [lah_succ_succ, Nat.add_sub_cancel, add_assoc]
 
 /-- `L(n, k) = 0` for `n < k`. -/
 theorem lah_eq_zero_of_lt : ∀ {n k : ℕ}, n < k → lah n k = 0
@@ -195,19 +195,14 @@ theorem descPochhammer_eval_eq_sum_lah (x : R) (n : ℕ) :
   -- `[y]ₖ = (-1)ᵏ (-y)ₖ`, from `(-y)ₖ = (-1)ᵏ [y]ₖ`.
   have hdesc (k : ℕ) (y : R) :
       (descPochhammer R k).eval y = (-1) ^ k * (ascPochhammer R k).eval (-y) := by
-    rw [ascPochhammer_eval_neg_eq_descPochhammer, ← mul_assoc, ← pow_add, ← two_mul, pow_mul,
-      neg_one_sq, one_pow, one_mul]
+    rw [ascPochhammer_eval_neg_eq_descPochhammer, ← mul_assoc, ← pow_add,
+      Even.neg_one_pow ⟨k, rfl⟩, one_mul]
   rw [hdesc, ascPochhammer_eval_eq_sum_lah, mul_sum]
   refine sum_congr rfl fun k hk => ?_
   have hkn : k ≤ n := Nat.lt_succ_iff.mp (mem_range.mp hk)
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hkn
-  have hsq : (-1 : R) ^ k * (-1) ^ k = 1 := by
-    rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]
-  rw [hdesc, neg_neg, Nat.add_sub_cancel]
-  simp only [mul_assoc]
-  rw [← mul_assoc ((m + k).lah k : R) ((-1 : R) ^ k),
-    Nat.cast_comm ((m + k).lah k) ((-1 : R) ^ k), pow_add]
-  simp only [mul_assoc]
-  rw [← mul_assoc ((-1 : R) ^ k) ((-1 : R) ^ k), hsq, one_mul]
+  rw [hdesc, neg_neg, Nat.add_sub_cancel, ← (Nat.cast_commute _ _).left_comm, pow_add,
+    mul_assoc, ← mul_assoc ((-1 : R) ^ k), ← pow_add, Even.neg_one_pow ⟨k, rfl⟩, one_mul,
+    mul_assoc, (Nat.cast_commute _ _).left_comm]
 
 end TauCeti
