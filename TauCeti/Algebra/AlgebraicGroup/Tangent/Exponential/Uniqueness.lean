@@ -46,8 +46,7 @@ theorem eq_expPointPolynomial_of_aeval_one_comp_eq
     (hd : ∀ x, ∃ n, (leftInvariantDerivation d)^[n] x = 0)
     (h : (aeval (1 : R)).comp γ = expPoint d hd) :
     γ = expPointPolynomial d hd := by
-  let : Algebra ℚ R :=
-    ((_root_.Bialgebra.counitAlgHom R H).toRingHom.comp (algebraMap ℚ H)).toAlgebra
+  let : Algebra ℚ R := counitRatAlgebra R H
   have := HasUniqueDiv.of_module_rat R
   apply γ.eq_of_aeval_one_comp_eq _ hγ
     (aeval_comp_expPointPolynomial_add d hd)

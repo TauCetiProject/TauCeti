@@ -60,6 +60,8 @@ across `M ⊗[R] N` can also be moved across `M ⊗[R] (N ⊗[K] P)`.
   `TensorProduct.map` negates the tensor-product map.
 * `TensorProduct.exists_eq_sum_tmul_of_span_eq_top`: over a finite spanning family of the right
   factor, every tensor is a sum of pure tensors with those right factors.
+* `TensorProduct.exists_forall_ge_of_tmul`: a property holding eventually on every pure tensor
+  and closed under addition holds eventually on every tensor.
 * `TensorProduct.nontrivial_right`: the right factor is nontrivial when the tensor product is.
 * `TensorProduct.mk_one_eq_rTensor_comp_lid_symm`: the map `M → A ⊗[R] M`, `m ↦ 1 ⊗ m`, is the
   structure map `R → A` tensored with `M`.
@@ -434,6 +436,20 @@ theorem exists_eq_sum_tmul_of_span_eq_top {κ : Type*} [Fintype κ] {n : κ → 
     obtain ⟨m, rfl⟩ := hx
     obtain ⟨m', rfl⟩ := hy
     exact ⟨m + m', by simp [add_tmul, Finset.sum_add_distrib]⟩
+
+/-- If a property holds on every pure tensor `m ⊗ₜ n` for all sufficiently large `k` and is closed
+under addition, then it holds on every tensor `z : M ⊗[R] N` for all sufficiently large `k`. -/
+theorem exists_forall_ge_of_tmul {P : ℕ → M ⊗[R] N → Prop}
+    (ht : ∀ m n, ∃ n₀, ∀ k, n₀ ≤ k → P k (m ⊗ₜ[R] n))
+    (hadd : ∀ k x y, P k x → P k y → P k (x + y)) (z : M ⊗[R] N) :
+    ∃ n₀, ∀ k, n₀ ≤ k → P k z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul m n => exact ht m n
+  | add x y hx hy =>
+    obtain ⟨nx, hnx⟩ := hx
+    obtain ⟨ny, hny⟩ := hy
+    exact ⟨max nx ny, fun k hk ↦
+      hadd k x y (hnx k (le_of_max_le_left hk)) (hny k (le_of_max_le_right hk))⟩
 
 /-- Splitting `F ⊗ F - id - (D ⊗ id + id ⊗ D)` into the terms in which one factor is the defect
 `F - id - D` and the term `(F - id) ⊗ (F - id)` in which both factors move. -/

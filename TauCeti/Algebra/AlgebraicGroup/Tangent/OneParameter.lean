@@ -59,6 +59,15 @@ theorem coeff_expPointPolynomial (h : H) (n : ℕ) :
         ((n.factorial : ℚ)⁻¹ • (leftInvariantDerivation d)^[n] h) := by
   simp [expPointPolynomial, Polynomial.coeff_map]
 
+/-- The support of `expPointPolynomial d hd h` is contained in `Finset.range n` whenever the
+`n`-th iterate of `leftInvariantDerivation d` vanishes on `h`. -/
+theorem support_expPointPolynomial_subset_range {h : H} {n : ℕ}
+    (hn : (leftInvariantDerivation d)^[n] h = 0) :
+    (expPointPolynomial d hd h).support ⊆ Finset.range n := by
+  simpa [expPointPolynomial, Polynomial.coe_mapAlgHom] using
+    (Polynomial.support_map_subset _ _).trans
+      ((leftInvariantDerivation d).support_taylorExpPolynomial_subset_range hd hn)
+
 /-- The velocity of the exponential curve at zero is its specified tangent vector. -/
 theorem coeff_one_expPointPolynomial (h : H) :
     (expPointPolynomial d hd h).coeff 1 = CounitAlgebra.algEquivSelf R H R (d h) := by
@@ -227,8 +236,7 @@ private theorem coeff_expPointAddPolynomial (h : H) (i j : ℕ) :
 private theorem expPointAddPolynomial_eq_expPointMulPolynomial (h : H) :
     expPointAddPolynomial d hd h = expPointMulPolynomial d hd h := by
   -- The counit supplies the rational scalars needed to compare divided coefficients.
-  let : Algebra ℚ R :=
-    ((_root_.Bialgebra.counitAlgHom R H).toRingHom.comp (algebraMap ℚ H)).toAlgebra
+  let : Algebra ℚ R := counitRatAlgebra R H
   classical
   let 𝓡 := Coalgebra.Repr.arbitrary R h
   ext j i

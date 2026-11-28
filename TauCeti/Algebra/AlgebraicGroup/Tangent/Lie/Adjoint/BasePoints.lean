@@ -107,6 +107,18 @@ theorem basePointsAdjointLieEquiv_toLinearMap (g : WithConv (H →ₐ[R] R)) :
   let := adjointComodule (R := R) (H := H)
   exact LinearMap.ext fun x ↦ basePointsAdjointLieEquiv_apply g x
 
+/-- As a unit in the general linear group, the base-point action of the adjoint comodule agrees
+with `Derivation.basePointsAdjointLieEquiv`. -/
+theorem toHomUnits_basePointsRepresentation_eq_ofLinearEquiv (g : WithConv (H →ₐ[R] R)) :
+    letI := adjointComodule (R := R) (H := H)
+    (Comodule.basePointsRepresentation
+        (Module.Dual R (Bialgebra.CotangentSpace R H))).toHomUnits g =
+      LinearMap.GeneralLinearGroup.ofLinearEquiv
+        (basePointsAdjointLieEquiv (R := R) (H := H) g).toLinearEquiv := by
+  let := adjointComodule (R := R) (H := H)
+  exact Units.ext <| LinearMap.ext fun y ↦ by
+    simp [basePointsAdjointLieEquiv_apply]
+
 /-- The identity point acts as the identity Lie automorphism. -/
 @[simp]
 theorem basePointsAdjointLieEquiv_one :

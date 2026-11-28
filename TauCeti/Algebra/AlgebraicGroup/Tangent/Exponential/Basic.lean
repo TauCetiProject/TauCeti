@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.InvariantDerivation
+public import TauCeti.Algebra.Bialgebra.Counit
 public import TauCeti.RingTheory.Derivation.TaylorExp
 import Mathlib.Algebra.Module.Rat
 
@@ -84,8 +85,7 @@ theorem taylorExp_leftInvariantDerivation_apply
   classical
   -- The counit makes `R` a `ℚ`-algebra, which lets the rational Taylor coefficients pass through
   -- the counit.
-  let : Algebra ℚ R :=
-    ((_root_.Bialgebra.counitAlgHom R H).toRingHom.comp (algebraMap ℚ H)).toAlgebra
+  let : Algebra ℚ R := counitRatAlgebra R H
   set D := leftInvariantDerivation d
   let 𝓡 := Coalgebra.Repr.arbitrary R h
   -- A single truncation `N` computes the Taylor exponential of `h` and of every right
