@@ -1,0 +1,159 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.LinearAlgebra.PerfectPairing.Basic
+public import TauCeti.Algebra.Module.Torsion.Localization
+public import TauCeti.LinearAlgebra.BilinearForm.BaseChange
+public import TauCeti.LinearAlgebra.BilinearForm.Dual.Lattice
+import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
+import Mathlib.LinearAlgebra.FreeModule.PID
+import TauCeti.LinearAlgebra.PerfectPairing.Basis
+import TauCeti.LinearAlgebra.SesquilinearForm.TorsionFree
+
+/-!
+# Integral pairings and their dual lattices
+
+An integral pairing gives an inclusion of the original lattice into its dual after scalar
+extension. The pairing map into the linear dual represents this inclusion. In the nondegenerate
+case this gives the perfect-pairing criterion for self-duality and the Gram determinant formula
+for the relative index.
+
+## References
+
+* The Gram determinant proof adapts Andrew Yang's dual-basis computation in Mathlib's
+  `NumberField.absNorm_differentIdeal`.
+-/
+
+public section
+
+open scoped TensorProduct
+open Module
+
+namespace LinearMap.BilinForm
+
+/-- The unit-tensor image of an integral bilinear form is contained in its dual lattice. -/
+theorem range_mk_one_le_dualSubmodule {R K M : Type*}
+    [CommRing R] [Field K] [Algebra R K] [AddCommGroup M] [Module R M]
+    (B : LinearMap.BilinForm R M) :
+    let N := LinearMap.range (TensorProduct.mk R K M 1)
+    N ≤ (B.baseChange K).dualSubmodule N := by
+  dsimp only
+  rintro _ ⟨x, rfl⟩
+  refine (mem_dualSubmodule (B.baseChange K)
+    (N := LinearMap.range (TensorProduct.mk R K M 1))).2 ?_
+  rintro _ ⟨y, rfl⟩
+  exact Submodule.mem_one.2 ⟨B x y, by simp [Algebra.algebraMap_eq_smul_one]⟩
+
+section FractionField
+
+variable {R K M : Type*} [CommRing R] [IsDomain R] [Field K] [Algebra R K] [IsFractionRing R K]
+  [AddCommGroup M] [Module R M] [Module.Finite R M]
+
+/-- For a form with nondegenerate fraction-field extension, the dual lattice of the unit-tensor
+image of a finite torsion-free module is equivalent to the linear dual of the original module. -/
+noncomputable def dualSubmoduleRangeMkOneEquivDual [IsTorsionFree R M]
+    (B : LinearMap.BilinForm R M) (hB : (B.baseChange K).Nondegenerate) :
+    (B.baseChange K).dualSubmodule (LinearMap.range (TensorProduct.mk R K M 1)) ≃ₗ[R]
+      Module.Dual R M :=
+  ((B.baseChange K).dualSubmoduleEquivDual hB (LinearMap.range (TensorProduct.mk R K M 1))).trans
+    (IsTorsionFree.rangeMkOneEquiv K).dualMap
+
+/-- Under `dualSubmoduleRangeMkOneEquivDual`, the inclusion of the unit-tensor image into
+its dual lattice represents the integral pairing map. -/
+theorem dualSubmoduleEquivDual_comp_inclusion_range_mk_one [IsTorsionFree R M]
+    (B : LinearMap.BilinForm R M) (hB : (B.baseChange K).Nondegenerate) :
+    (B.dualSubmoduleRangeMkOneEquivDual hB).toLinearMap.comp
+      ((Submodule.inclusion (B.range_mk_one_le_dualSubmodule (K := K))).comp
+        (IsTorsionFree.rangeMkOneEquiv K).toLinearMap) = B := by
+  ext x y
+  apply FaithfulSMul.algebraMap_injective R K
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, dualSubmoduleRangeMkOneEquivDual,
+    LinearEquiv.trans_apply, LinearEquiv.dualMap_apply, dualSubmoduleEquivDual_apply,
+    dualSubmoduleToDual_apply_apply, dualSubmodulePairing_spec, Submodule.coe_inclusion,
+    IsTorsionFree.coe_rangeMkOneEquiv_apply]
+  simp [Algebra.algebraMap_eq_smul_one]
+
+/-- An integral form on a finite reflexive module with nondegenerate scalar extension is
+perfect exactly when the integral lattice in the fraction-field extension is self-dual. -/
+theorem dualSubmodule_range_mk_eq_self_iff_isPerfPair [Module.IsReflexive R M]
+    (B : LinearMap.BilinForm R M) (hB : (B.baseChange K).Nondegenerate) :
+    let N := LinearMap.range (TensorProduct.mk R K M 1)
+    (B.baseChange K).dualSubmodule N = N ↔ B.IsPerfPair := by
+  let i := Submodule.inclusion (B.range_mk_one_le_dualSubmodule (K := K))
+  let u := IsTorsionFree.rangeMkOneEquiv (R := R) K (N := M)
+  let e := B.dualSubmoduleRangeMkOneEquivDual hB
+  constructor
+  · intro h
+    have hs : Function.Bijective i :=
+      ⟨Submodule.inclusion_injective _, fun x ↦
+        ⟨⟨x, h.le x.property⟩, Subtype.ext rfl⟩⟩
+    apply IsPerfPair.of_bijective B
+    rw [← B.dualSubmoduleEquivDual_comp_inclusion_range_mk_one hB]
+    exact e.bijective.comp (hs.comp u.bijective)
+  · intro h
+    apply le_antisymm (fun x hx ↦ ?_) B.range_mk_one_le_dualSubmodule
+    obtain ⟨y, hy⟩ := h.bijective_left.surjective (e ⟨x, hx⟩)
+    have hxy : i (u y) = ⟨x, hx⟩ := e.injective (by
+      simpa only [← B.dualSubmoduleEquivDual_comp_inclusion_range_mk_one hB,
+        LinearMap.comp_apply, LinearEquiv.coe_toLinearMap] using hy)
+    have heq : (u y : K ⊗[R] M) = x := congrArg Subtype.val hxy
+    exact heq ▸ (u y).property
+
+end FractionField
+
+section Int
+
+variable {M : Type*} [AddCommGroup M] [Module ℤ M]
+
+/-- For an integral pairing with nondegenerate rational extension, the relative index of the
+unit-tensor lattice in its rational dual is the absolute Gram determinant. -/
+theorem relIndex_dualSubmodule_range_mk_one_eq_natAbs_det (B : LinearMap.BilinForm ℤ M)
+    (hB : (B.baseChange ℚ).Nondegenerate) {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Basis ι ℤ M) :
+    let N := LinearMap.range (TensorProduct.mk ℤ ℚ M 1)
+    N.toAddSubgroup.relIndex ((B.baseChange ℚ).dualSubmodule N).toAddSubgroup =
+      (B.toMatrix b).det.natAbs := by
+  have := Module.Free.of_basis b
+  have := Module.Finite.of_basis b
+  let u := IsTorsionFree.rangeMkOneEquiv (R := ℤ) ℚ (N := M)
+  let e := B.dualSubmoduleRangeMkOneEquivDual hB
+  let i := Submodule.inclusion (B.range_mk_one_le_dualSubmodule (K := ℚ))
+  let N := LinearMap.range (TensorProduct.mk ℤ ℚ M 1)
+  have hindex : N.toAddSubgroup.relIndex ((B.baseChange ℚ).dualSubmodule N).toAddSubgroup =
+      ((b.dualBasis.map e.symm).det fun j ↦ i (b.map u j)).natAbs :=
+    AddSubgroup.relIndex_eq_natAbs_det N.toAddSubgroup
+      ((B.baseChange ℚ).dualSubmodule N).toAddSubgroup
+      (B.range_mk_one_le_dualSubmodule (K := ℚ)) (b.map u) (b.dualBasis.map e.symm)
+  have hm : e.symm.symm ∘ (fun j ↦ i (b.map u j)) = B ∘ b := by
+    funext i
+    simpa only [Function.comp_apply, LinearEquiv.symm_symm, Basis.map_apply, LinearMap.comp_apply,
+      LinearEquiv.coe_toLinearMap] using
+        congr($(B.dualSubmoduleEquivDual_comp_inclusion_range_mk_one hB) (b i))
+  have hmatrix : (b.dualBasis.map e.symm).toMatrix
+      (fun j ↦ i (b.map u j)) = (B.toMatrix b).transpose := by
+    rw [Basis.toMatrix_map, hm, ← LinearMap.toMatrix_eq_basisToMatrix,
+      Basis.toMatrix_dualBasis_eq_transpose_toMatrix₂]
+    ext i j
+    simp only [Matrix.transpose_apply, LinearMap.toMatrix₂_apply, toMatrix_apply]
+  simpa only [Basis.det_apply, hmatrix, Matrix.det_transpose] using hindex
+
+/-- A nondegenerate integral form on a finite module has positive dual-lattice index. -/
+theorem relIndex_dualSubmodule_range_mk_one_pos [Module.Finite ℤ M]
+    (B : LinearMap.BilinForm ℤ M) (hB : B.Nondegenerate) :
+    let N := LinearMap.range (TensorProduct.mk ℤ ℚ M 1)
+    0 < N.toAddSubgroup.relIndex ((B.baseChange ℚ).dualSubmodule N).toAddSubgroup := by
+  classical
+  have := hB.1.isTorsionFree
+  let b := Module.Free.chooseBasis ℤ M
+  dsimp only
+  rw [B.relIndex_dualSubmodule_range_mk_one_eq_natAbs_det
+    (hB.baseChange_of_isLocalization ℚ (nonZeroDivisors ℤ)) b]
+  exact Int.natAbs_pos.mpr ((nondegenerate_iff_det_ne_zero b).mp hB)
+
+end Int
+
+end LinearMap.BilinForm

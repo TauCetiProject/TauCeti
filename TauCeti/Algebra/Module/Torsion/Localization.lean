@@ -275,6 +275,16 @@ theorem mk_one_injective_of_isFractionRing : Function.Injective (TensorProduct.m
   (IsLocalizedModule.injective_iff_isRegular (nonZeroDivisors R) _).mpr fun c ↦
     isSMulRegular (isRegular_iff_mem_nonZeroDivisors.mpr c.property)
 
+/-- The unit-tensor map identifies a torsion-free module with its image in the base change
+to the total ring of fractions. -/
+noncomputable def rangeMkOneEquiv : N ≃ₗ[R] LinearMap.range (TensorProduct.mk R K N 1) :=
+  LinearEquiv.ofInjective (TensorProduct.mk R K N 1) (mk_one_injective_of_isFractionRing K)
+
+/-- The equivalence onto the unit-tensor image sends each vector to its unit tensor. -/
+@[simp]
+theorem coe_rangeMkOneEquiv_apply (n : N) :
+    (rangeMkOneEquiv (R := R) K n : K ⊗[R] N) = (1 : K) ⊗ₜ[R] n := (rfl)
+
 variable {K} in
 /-- In a torsion-free module, an element `n` with `1 ⊗ n = 0` in the base change to the total
 ring of fractions is zero. -/
