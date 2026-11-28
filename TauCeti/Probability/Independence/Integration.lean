@@ -266,7 +266,8 @@ theorem measureReal_preimage_le_add {Ω α β : Type*}
     have hle := (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) hb).2 (h ω hgood)
     have hmap : f (X ω) = P (Y ⁻¹' (Prod.mk (X ω) ⁻¹' s)) :=
       Measure.map_apply_of_aemeasurable hY (hs.preimage measurable_prodMk_left)
-    exact (show ENNReal.ofReal b < f (X ω) from hω).not_ge (hmap.trans_le hle)
+    have hgt : ENNReal.ofReal b < f (X ω) := Set.mem_ofPred.mp (Set.mem_preimage.mp hω)
+    exact hgt.not_ge (hmap.trans_le hle)
   have hmajor (x : α) : f x ≤ ENNReal.ofReal b + t.indicator (fun _ ↦ 1) x := by
     by_cases hx : x ∈ t
     · rw [Set.indicator_of_mem hx]

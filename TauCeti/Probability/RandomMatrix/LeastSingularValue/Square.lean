@@ -107,8 +107,8 @@ theorem exists_measureReal_infDist_col_span_lt_le (K : ℝ≥0) :
   have := hind.isProbabilityMeasure
   by_cases hdim : 2 ≤ Fintype.card n
   swap
-  · have hd : (Fintype.card n : ℝ) ≤ 1 := by
-      exact_mod_cast (show Fintype.card n ≤ 1 by omega)
+  · have hdNat : Fintype.card n ≤ 1 := by omega
+    have hd : (Fintype.card n : ℝ) ≤ 1 := by exact_mod_cast hdNat
     refine measureReal_le_one.trans ((one_le_exp (x := a + -a * Fintype.card n)
       (by nlinarith)).trans ?_)
     rw [exp_add]
@@ -154,10 +154,14 @@ theorem exists_measureReal_infDist_col_span_lt_le (K : ℝ≥0) :
     simpa only [M, div_mul_eq_mul_div] using
       measureReal_infDist_lt_le_of_largeLCD hcol (fun r ↦ hlaw r i) hbball
         x.property hx1 hc hL hLCD ht
-  · have hs : 1 ≤ √(d : ℝ) := by
-      rw [← sqrt_one]; exact sqrt_le_sqrt (by exact_mod_cast (show 1 ≤ d by omega))
+  · have hd : 1 ≤ d := by omega
+    have hs : 1 ≤ √(d : ℝ) := by
+      rw [← sqrt_one]
+      exact sqrt_le_sqrt (by exact_mod_cast hd)
+    have hL_inv : L⁻¹ = (c * √d)⁻¹ * exp (-(c * d)) := by
+      simp [L, exp_neg, mul_comm]
     have hinv : L⁻¹ ≤ c⁻¹ * exp (-a * d) := by
-      rw [show L⁻¹ = (c * √d)⁻¹ * exp (-(c * d)) by simp [L, exp_neg, mul_comm]]
+      rw [hL_inv]
       gcongr
       · exact le_mul_of_one_le_right hc.le hs
       · rw [← neg_mul]; gcongr; exact min_le_left _ _
@@ -205,7 +209,9 @@ private theorem exists_measureReal_singularValues_card_sub_one_lt_le_mul_exp (K 
   intro Ω n _ _ _ P A ν hind hA hvar hlaw hn t ht
   have := hind.isProbabilityMeasure
   have hρ' : (0 : ℝ) < ρ := NNReal.coe_pos.2 hρ
-  have hdim : (0 : ℝ) < Fintype.card n := by exact_mod_cast (show 0 < Fintype.card n by omega)
+  have hdimNat : 1 ≤ Fintype.card n := by omega
+  have hdim' : (1 : ℝ) ≤ Fintype.card n := by exact_mod_cast hdimNat
+  have hdim : (0 : ℝ) < Fintype.card n := zero_lt_one.trans_le hdim'
   have hs := sqrt_pos.2 hdim
   by_cases hcut : t / √(Fintype.card n) ≤ √(Fintype.card n) / 4
   · have hscale : (ρ : ℝ) / √(Fintype.card n) * (t / ρ) = t / √(Fintype.card n) := by
@@ -230,8 +236,6 @@ private theorem exists_measureReal_singularValues_card_sub_one_lt_le_mul_exp (K 
       _ ≤ _ := add_le_add_left (mul_le_mul_of_nonneg_right (le_max_right _ _) ht) _
   · have hlarge := (lt_div_iff₀ hs).1 (lt_of_not_ge hcut)
     have hsq := sq_sqrt hdim.le
-    have hdim' : (1 : ℝ) ≤ Fintype.card n :=
-      by exact_mod_cast (show 1 ≤ Fintype.card n by omega)
     have ht' : 1 ≤ 4 * t := by nlinarith
     exact measureReal_le_one.trans (ht'.trans ((mul_le_mul_of_nonneg_right
       (le_max_left _ _) ht).trans (le_add_of_nonneg_right (by positivity))))
@@ -260,6 +264,38 @@ private theorem measureReal_singularValues_card_sub_one_le_le_of_measureReal_ge
   refine (measureReal_mono (s₂ := {ω | u ≤ s ω}ᶜ) fun ω hω ↦ ?_).trans hrest
   exact not_le.mpr ((mem_ofPred.mp hω).trans_lt ((div_le_self ht hone).trans_lt htu))
 
+/-- Above the dimension cutoff, half the exponential decay absorbs the prefactor. -/
+private theorem mul_exp_neg_mul_le_max_pow_of_ceil_le {D a c : ℝ} {d : ℕ}
+    (ha : 0 < a) (hd : ⌈2 * log D / a⌉₊ ≤ d) :
+    D * exp (-a * d) ≤ max (exp (-(a / 2))) c ^ d := by
+  have hlog : 2 * log D / a ≤ (d : ℝ) :=
+    (Nat.le_ceil _).trans (by exact_mod_cast hd)
+  have hD : D ≤ exp (a * d / 2) := le_exp_of_log_le (by
+    have := (div_le_iff₀ ha).mp hlog
+    nlinarith)
+  calc
+    D * exp (-a * d) ≤ exp (a * d / 2) * exp (-a * d) :=
+      mul_le_mul_of_nonneg_right hD (exp_pos _).le
+    _ = exp (d * (-(a / 2))) := by rw [← exp_add]; congr 1; ring
+    _ = exp (-(a / 2)) ^ d := exp_natCast_mul _ _
+    _ ≤ _ := pow_le_pow_left₀ (exp_pos _).le (le_max_left _ _) _
+
+/-- Up to the dimension cutoff, Bernoulli's inequality bounds the power of the selected
+exponential base below by the probability bound `1 - p`. -/
+private theorem one_sub_le_max_pow_of_le {p a : ℝ} {d N : ℕ}
+    (hp : 0 ≤ p) (hdN : d ≤ N + 1) :
+    1 - p ≤ max (exp (-(a / 2))) (1 - p / (N + 1)) ^ d := by
+  let c := max (exp (-(a / 2))) (1 - p / (N + 1))
+  have hc : 0 < c := (exp_pos _).trans_le (le_max_left _ _)
+  have hdiv : (d : ℝ) * (p / (N + 1)) ≤ p := by
+    rw [← mul_div_assoc, div_le_iff₀ (by positivity), mul_comm p]
+    have : (d : ℝ) ≤ (N : ℝ) + 1 := by exact_mod_cast hdN
+    exact mul_le_mul_of_nonneg_right this hp
+  have hbase : 1 - p / ((N : ℝ) + 1) ≤ c := le_max_right _ _
+  have hmul := mul_le_mul_of_nonneg_left (sub_le_sub_right hbase 1) (Nat.cast_nonneg d)
+  exact (by linarith : 1 - p ≤ 1 + d * (c - 1)).trans
+    (one_add_mul_sub_le_pow (by linarith : -1 ≤ c) d)
+
 /-- **Rudelson–Vershynin least-singular-value bound.** For independent real sub-Gaussian
 entries with common upper variance proxy and second moments at least one, assume the entries
 within each column have a common law. The probability that the least singular value of the
@@ -276,11 +312,11 @@ theorem exists_measureReal_singularValues_card_sub_one_le_le (K : ℝ≥0) :
         ∀ {t : ℝ}, 0 ≤ t →
         P.real {ω | (toEuclideanLin (A ω)).singularValues (Fintype.card n - 1) ≤
           t / √(Fintype.card n)} ≤ C * t + c ^ Fintype.card n := by
-  obtain ⟨B, D, a, hB, hD, ha, hlarge⟩ :=
+  obtain ⟨B, D, a, hB, _, ha, hlarge⟩ :=
     exists_measureReal_singularValues_card_sub_one_lt_le_mul_exp K
   let N := ⌈2 * log D / a⌉₊ + 2
   have hN : 2 ≤ N := by dsimp [N]; omega
-  obtain ⟨u, p, hu, hp, hp₁, hsmall⟩ :=
+  obtain ⟨u, p, hu, hp, _, hsmall⟩ :=
     exists_le_measureReal_singularValues_card_sub_one_ge_of_card_le K N
   let C := max B u⁻¹
   let c := max (exp (-(a / 2))) (1 - p / (N + 1))
@@ -291,23 +327,15 @@ theorem exists_measureReal_singularValues_card_sub_one_le_le (K : ℝ≥0) :
   intro Ω n _ _ _ P A ν hind hA hvar hlaw t ht
   have := hind.isProbabilityMeasure
   let d := Fintype.card n
-  by_cases hd : d = 0
+  by_cases hd : Fintype.card n = 0
   · exact measureReal_le_one.trans (by
-      rw [show Fintype.card n = 0 from hd, pow_zero]
+      rw [hd, pow_zero]
       exact le_add_of_nonneg_left (mul_nonneg hC.le ht))
   have hd' : 0 < d := Nat.pos_of_ne_zero hd
   have hs : 0 < √(d : ℝ) := sqrt_pos.2 (by positivity)
   by_cases hcut : N ≤ d
-  · have hlog : 2 * log D / a ≤ (d : ℝ) :=
-      (Nat.le_ceil _).trans (by exact_mod_cast (show ⌈2 * log D / a⌉₊ ≤ d by omega))
-    have hdecay : D * exp (-a * d) ≤ c ^ d := by
-      calc
-        _ = exp (log D + -a * d) := by rw [exp_add, exp_log hD]
-        _ ≤ exp (d * (-(a / 2))) := exp_le_exp.mpr (by
-          have hlog' := (div_le_iff₀ ha).1 hlog
-          nlinarith)
-        _ = exp (-(a / 2)) ^ d := exp_natCast_mul _ _
-        _ ≤ c ^ d := pow_le_pow_left₀ (exp_pos _).le (le_max_left _ _) _
+  · have hceil : ⌈2 * log D / a⌉₊ ≤ d := by omega
+    have hdecay : D * exp (-a * d) ≤ c ^ d := mul_exp_neg_mul_le_max_pow_of_ceil_le ha hceil
     refine le_of_forall_pos_le_add fun ε hε ↦ ?_
     have hshift : t < t + ε / C := lt_add_of_pos_right _ (div_pos hε hC)
     refine (measureReal_mono (fun ω hω ↦ (mem_ofPred.mp hω).trans_lt
@@ -327,16 +355,7 @@ theorem exists_measureReal_singularValues_card_sub_one_le_le (K : ℝ≥0) :
     have hmeas : AEMeasurable A P := .of_eval fun i ↦ .of_eval fun j ↦ (hA i j).aemeasurable
     have hrest := measureReal_singularValues_card_sub_one_le_le_of_measureReal_ge hmeas hd' ht
       (lt_of_not_ge htu) (hsmall hind hA hvar hd' hdN)
-    have hpower : 1 - p ≤ c ^ d := by
-      have hbase : 0 ≤ 1 - p / ((N : ℝ) + 1) :=
-        sub_nonneg.mpr ((div_le_iff₀ (by positivity)).2 (by linarith))
-      have hdiv : (d : ℝ) * (p / (N + 1)) ≤ p := by
-        rw [← mul_div_assoc, div_le_iff₀ (by positivity)]
-        have : (d : ℝ) ≤ N := by exact_mod_cast hdN
-        nlinarith
-      exact (by linarith : 1 - p ≤ 1 + d * ((1 - p / (N + 1)) - 1)).trans
-        ((one_add_mul_sub_le_pow (by linarith : -1 ≤ 1 - p / ((N : ℝ) + 1)) d).trans
-          (pow_le_pow_left₀ hbase (le_max_right _ _) _))
+    have hpower : 1 - p ≤ c ^ d := one_sub_le_max_pow_of_le hp.le (hdN.trans (Nat.le_succ N))
     exact hrest.trans (hpower.trans (le_add_of_nonneg_left (mul_nonneg hC.le ht)))
 
 end ProbabilityTheory.iIndepFun

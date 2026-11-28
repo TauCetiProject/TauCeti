@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Basi
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 import Mathlib.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.InnerProductSpace.SingularValues.Least
 
 /-!
 # Singular values and two-sided unitary matrix orbits
@@ -276,6 +277,20 @@ end Matrix
 namespace Matrix
 
 open scoped Matrix.Norms.L2Operator
+
+/-- For a square matrix of positive size `n`, the norm of its determinant is at most the
+product of its least singular value and the `(n - 1)`-st power of its Euclidean operator norm.
+This is the matrix form of `LinearMap.normDet_le_norm_pow_mul_minimalStretch`. -/
+theorem norm_det_le_l2_opNorm_pow_mul_singularValues
+    {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
+    (A : Matrix ι ι 𝕜) (hι : 0 < Fintype.card ι) :
+    ‖A.det‖ ≤ ‖A‖ ^ (Fintype.card ι - 1) *
+      (A.toEuclideanLin).singularValues (Fintype.card ι - 1) := by
+  have h := A.toEuclideanLin.normDet_le_norm_pow_mul_minimalStretch
+    (by simpa only [finrank_euclideanSpace] using hι)
+  rw [← LinearMap.det_toLpLin 2 A, ← LinearMap.normDet_eq_norm_det]
+  simpa only [LinearMap.minimalStretch_def, finrank_euclideanSpace,
+    Matrix.l2_opNorm_def, LinearEquiv.trans_apply] using h
 
 /-- The squared singular values stay within the operator-norm distance of the source Gram
 matrix from a scalar matrix. Only source indices are included, so this applies to rectangular

@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors, Codex
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.SingularValues.Least
+public import TauCeti.Analysis.InnerProductSpace.SingularValues
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.Probability.Moments.SubGaussian
 import Mathlib.Probability.Independence.Process.Basic
 import TauCeti.MeasureTheory.MeasurableSpace.Pi.SplitAt
 import TauCeti.Probability.Independence.Integration
 import TauCeti.Analysis.Matrix.MeasurableSpace
+import TauCeti.Analysis.Matrix.SingularValues
 import TauCeti.Probability.Moments.SubGaussian.AntiConcentration
 import TauCeti.Probability.Moments.SubGaussian.Basic
 import TauCeti.Probability.Moments.SubGaussian.Matrix
@@ -99,8 +100,8 @@ private theorem mul_measureReal_abs_det_submatrix_le
     ext i j
     let e := MeasurableEquiv.piSplitAt k (fun _ ↦ ℝ)
     have h : (Y ω, X ω) = e (fun ij ↦ A ω ij.1 ij.2) := by
-      rw [show e = MeasurableEquiv.piSplitAt k (fun _ ↦ ℝ) from rfl,
-        MeasurableEquiv.piSplitAt_apply]
+      dsimp only [e]
+      rw [MeasurableEquiv.piSplitAt_apply]
     exact congrFun (e.symm_apply_eq.mpr h) (i, j)
   let a (x : S → ℝ) := ((fillTopLeft (x, 0)).submatrix Fin.succ Fin.succ).det
   let F : Set ((S → ℝ) × ℝ) := {p | r * u ≤ |(fillTopLeft p).det|}
@@ -200,20 +201,6 @@ private theorem le_measureReal_abs_det_ge_of_subgaussian
   have ht : ¬ |Z ω - v| ≤ 1 / 2 := hω
   exact (not_le.mp ht).le
 
-private theorem abs_det_le_l2_opNorm_pow_mul_singularValues
-    {n : Type*} [Fintype n] [DecidableEq n] (A : Matrix n n ℝ) (hn : 0 < Fintype.card n) :
-    |A.det| ≤ ‖A‖ ^ (Fintype.card n - 1) *
-      (toEuclideanLin A).singularValues (Fintype.card n - 1) := by
-  have h := (toEuclideanLin A).normDet_le_norm_pow_mul_minimalStretch
-    (by simpa only [finrank_euclideanSpace] using hn)
-  rw [LinearMap.minimalStretch_def, finrank_euclideanSpace] at h
-  have heq : (toEuclideanLin A).normDet = |A.det| := by
-    rw [(toEuclideanLin A).normDet_eq_norm_det_toMatrix
-      (EuclideanSpace.basisFun n ℝ) (EuclideanSpace.basisFun n ℝ),
-      Matrix.toEuclideanLin_eq_toLin_orthonormal, LinearMap.toMatrix_toLin, Real.norm_eq_abs]
-  rw [heq] at h
-  simpa only [Matrix.l2_opNorm_def, LinearEquiv.trans_apply] using h
-
 /-- For independent real sub-Gaussian entries of second moments at least one, square matrices
 of positive size at most `N` have a uniformly positive probability of a least singular value
 bounded below by a positive constant. No equality of entry laws is required. -/
@@ -248,8 +235,9 @@ theorem exists_le_measureReal_singularValues_card_sub_one_ge_of_card_le (K : ℝ
   intro Ω n _ _ _ P A hind hA hvar hn hN
   have := hind.isProbabilityMeasure
   let d := Fintype.card n
+  have hKReal : (K : ℝ) ≤ ((K : ℝ) + 1) ^ 2 := by nlinarith [K.coe_nonneg]
   have hK : K ≤ (K + 1) ^ 2 := by
-    exact_mod_cast (show (K : ℝ) ≤ ((K : ℝ) + 1) ^ 2 by nlinarith [K.coe_nonneg])
+    exact_mod_cast hKReal
   let G : Set Ω := {ω | (1 / 2 : ℝ) ^ d ≤ |(A ω).det|}
   let E : Set Ω := {ω | R < ‖A ω‖}
   have hG : b ^ d ≤ P.real G := le_measureReal_abs_det_ge_of_subgaussian hind hA hvar
@@ -267,7 +255,8 @@ theorem exists_le_measureReal_singularValues_card_sub_one_ge_of_card_le (K : ℝ
   have hsmall : G \ E ⊆ {ω | u ≤ (toEuclideanLin (A ω)).singularValues (d - 1)} := by
     rintro ω ⟨hω, hωE⟩
     have hnorm : ‖A ω‖ ≤ R := le_of_not_gt hωE
-    have hdet := abs_det_le_l2_opNorm_pow_mul_singularValues (A ω) hn
+    have hdet := (A ω).norm_det_le_l2_opNorm_pow_mul_singularValues hn
+    rw [Real.norm_eq_abs] at hdet
     have hpow : ‖A ω‖ ^ (d - 1) ≤ R ^ (N - 1) :=
       (pow_le_pow_left₀ (norm_nonneg _) hnorm _).trans
         (pow_le_pow_right₀ hR (Nat.sub_le_sub_right hN _))
