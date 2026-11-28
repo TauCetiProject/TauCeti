@@ -45,6 +45,8 @@ matrices commute. For a field, Matsumoto's theorem presents `K₂` by these symb
   subgroup exactly when it contains every Steinberg symbol.
 * `TauCeti.AlgebraicK2.mem_diagonalSubgroup_of_mem_symbolSubgroup`: products of Steinberg
   symbols lie in the diagonal subgroup of `St(R)`.
+* `TauCeti.AlgebraicK2.map_symbolSubgroup_le`: ring homomorphisms map symbol subgroups into
+  symbol subgroups.
 
 ## References
 
@@ -183,7 +185,7 @@ theorem AlgebraicK2.map_steinbergSymbol {S : Type*} [Ring S] (f : R →+* S) {u 
 /-- **The Steinberg relation** `{u, v} = 1`: over any ring, the Steinberg symbol of units `u` and
 `v` with `u + v = 1` is trivial. Such units commute, since `v = 1 - u`. -/
 theorem steinbergSymbol_of_add_eq_one {u v : Rˣ} (huv : (u : R) + v = 1) :
-    steinbergSymbol u v (Units.commute_of_add_eq_one huv) = 1 :=
+    steinbergSymbol u v (Commute.units_of_val (commute_of_add_eq_one huv)) = 1 :=
   Subtype.ext <| by
     rw [coe_steinbergSymbol_eq_commutatorElement_h, Subgroup.coe_one]
     exact SteinbergGroup.commutatorElement_h_h_of_add_eq_one (by decide) (by decide) (by decide)
@@ -230,11 +232,19 @@ theorem mem_diagonalSubgroup_of_mem_symbolSubgroup {x : AlgebraicK2 R}
     (hx : x ∈ symbolSubgroup R) : (x : SteinbergGroup R) ∈ SteinbergGroup.diagonalSubgroup R := by
   refine (symbolSubgroup_le_iff (H := (SteinbergGroup.diagonalSubgroup R).comap
     (SteinbergGroup.toStableGL R).ker.subtype)).2 (fun u v h ↦ ?_) hx
-  rw [Subgroup.mem_comap, Subgroup.coe_subtype, coe_steinbergSymbol_eq_commutatorElement_h,
-    commutatorElement_def]
-  have hu := SteinbergGroup.h_mem_diagonalSubgroup (by decide : (0 : ℕ) ≠ 1) u
-  have hv := SteinbergGroup.h_mem_diagonalSubgroup (by decide : (0 : ℕ) ≠ 2) v
-  exact mul_mem (mul_mem (mul_mem hu hv) (inv_mem hu)) (inv_mem hv)
+  rw [Subgroup.mem_comap, Subgroup.coe_subtype, coe_steinbergSymbol_eq_commutatorElement_h]
+  exact Subgroup.commutator_le_self _ (Subgroup.commutator_mem_commutator
+    (SteinbergGroup.h_mem_diagonalSubgroup (by decide : (0 : ℕ) ≠ 1) u)
+    (SteinbergGroup.h_mem_diagonalSubgroup (by decide : (0 : ℕ) ≠ 2) v))
+
+/-- The homomorphism `K₂(R) →* K₂(S)` induced by a ring homomorphism `f` maps the symbol subgroup
+of `K₂(R)` into that of `K₂(S)`, since it sends `{u, v}` to `{f u, f v}`. -/
+theorem map_symbolSubgroup_le {S : Type*} [Ring S] (f : R →+* S) :
+    (symbolSubgroup R).map (AlgebraicK2.map f) ≤ symbolSubgroup S := by
+  rw [Subgroup.map_le_iff_le_comap, symbolSubgroup_le_iff]
+  intro u v h
+  rw [Subgroup.mem_comap, map_steinbergSymbol]
+  exact steinbergSymbol_mem_symbolSubgroup _
 
 end AlgebraicK2
 

@@ -163,11 +163,12 @@ private def diagProd (n : ℕ) : (Fin n → Rˣ) →* SteinbergGroup R ⧸ symbo
   MonoidHom.noncommPiCoprod (fun k : Fin n ↦ diagHom k) fun _ _ hkl ↦
     commute_diagHom (Fin.val_ne_of_ne hkl)
 
-/-- `diagProd` sends `Pi.mulSingle k u` to `h_{k0}(u)`. Unfolding `diagProd` and rewriting with
-`MonoidHom.noncommPiCoprod_mulSingle` directly fails, since the unfolded commutation proof no longer
-has the `Pairwise` type that the rewrite expects. -/
+/-- `diagProd` sends `Pi.mulSingle k u` to `diagHom k u`: the class of `h_{k0}(u)` for `k ≠ 0`,
+and the identity for `k = 0`. -/
 private theorem diagProd_mulSingle {n : ℕ} (k : Fin n) (u : Rˣ) :
     diagProd n (Pi.mulSingle k u) = diagHom k u :=
+  -- Unfolding `diagProd` and rewriting with `MonoidHom.noncommPiCoprod_mulSingle` fails, since the
+  -- unfolded commutation proof no longer has the `Pairwise` type that the rewrite expects.
   MonoidHom.noncommPiCoprod_mulSingle (fun k : Fin n ↦ diagHom (R := R) k) k u
 
 /-- Modulo the symbols, every element of the diagonal subgroup is a product `∏_{k < n} h_{k0}(d_k)`
@@ -200,17 +201,23 @@ private abbrev toStableGLSymbol :
     SteinbergGroup R ⧸ symbolNormal R →* StableGeneralLinearGroup R :=
   QuotientGroup.lift _ (toStableGL R) symbolNormal_le_ker
 
-/-- The image of a single factor `h_{k0}(u)` in `GL_∞(R)`, reading `h_{00}` as trivial, is the
-diagonal matrix with `u` at `k` and `u⁻¹` at `0`. -/
+omit [IsMulCommutative Rˣ] in
+/-- The projection `St(R) / S →* GL_∞(R)` sends the class of `x` to the image of `x`. -/
+private theorem toStableGLSymbol_mkSymbol (x : SteinbergGroup R) :
+    toStableGLSymbol (mkSymbol x) = toStableGL R x := by
+  rw [QuotientGroup.mk'_apply, QuotientGroup.lift_mk]
+
+/-- The image in `GL_∞(R)` of the single factor `diagHom k u` is the identity for `k = 0`. For
+`k ≠ 0` it is the class of the diagonal matrix with `u` at `k`, `u⁻¹` at `0` and `1` elsewhere. -/
 private theorem toStableGLSymbol_diagProd_mulSingle {n : ℕ} (k : Fin (n + 1)) (u : Rˣ) :
     toStableGLSymbol (diagProd (n + 1) (Pi.mulSingle k u)) =
       StableGeneralLinearGroup.of R (n + 1) (diagGL (Pi.mulSingle k u * Pi.mulSingle 0 u⁻¹)) := by
   rw [diagProd_mulSingle]
   rcases eq_or_ne (k : ℕ) 0 with hk | hk
   · obtain rfl : k = 0 := Fin.ext hk
-    rw [Fin.val_zero, diagHom_zero, MonoidHom.one_apply, map_one, ← Pi.mulSingle_mul,
-      mul_inv_cancel, Pi.mulSingle_one, map_one, map_one]
-  · rw [diagHom_apply_of_ne hk, QuotientGroup.mk'_apply, QuotientGroup.lift_mk,
+    rw [Fin.val_zero, diagHom_zero, ← Pi.mulSingle_mul, mul_inv_cancel, Pi.mulSingle_one]
+    simp only [MonoidHom.one_apply, map_one]
+  · rw [diagHom_apply_of_ne hk, toStableGLSymbol_mkSymbol,
       toStableGL_h hk u k.isLt (Nat.zero_lt_succ n), Fin.eta, Fin.mk_zero]
 
 /-- The image of `∏_{k ≤ n} h_{k0}(d_k)` in `GL_∞(R)` is the diagonal matrix with entries `d_k`
@@ -229,9 +236,9 @@ private theorem toStableGLSymbol_diagProd {n : ℕ} (d : Fin (n + 1) → Rˣ) :
   have key : toStableGLSymbol.comp (diagProd (n + 1)) =
       (StableGeneralLinearGroup.of R (n + 1)).comp (diagGL.comp φ) := by
     refine MonoidHom.pi_ext fun k u ↦ ?_
-    rw [MonoidHom.comp_apply, toStableGLSymbol_diagProd_mulSingle, MonoidHom.comp_apply,
-      MonoidHom.comp_apply, hφ, Fintype.prod_pi_mulSingle']
-  rw [← MonoidHom.comp_apply, key, MonoidHom.comp_apply, MonoidHom.comp_apply, hφ]
+    simp only [MonoidHom.comp_apply, toStableGLSymbol_diagProd_mulSingle, hφ,
+      Fintype.prod_pi_mulSingle']
+  simpa only [MonoidHom.comp_apply, hφ] using DFunLike.congr_fun key d
 
 end SteinbergGroup
 
@@ -252,8 +259,8 @@ theorem mem_symbolSubgroup_of_mem_diagonalSubgroup {x : AlgebraicK2 R}
   obtain ⟨d, hd⟩ := hn (n₀ + 1) (Nat.le_succ n₀)
   -- The image of `∏ h_{k0}(d_k)` in `GL_∞(R)` is trivial, so every `d_k` with `k ≠ 0` is `1`.
   have himg : toStableGLSymbol (diagProd (n₀ + 1) d) = 1 := by
-    rw [← hd, QuotientGroup.mk'_apply, QuotientGroup.lift_mk]
-    exact x.property
+    rw [← hd, toStableGLSymbol_mkSymbol]
+    exact (MonoidHom.mem_ker).1 x.property
   rw [toStableGLSymbol_diagProd, ← map_one (StableGeneralLinearGroup.of R (n₀ + 1)),
     ← map_one diagGL] at himg
   have hE := diagGL_injective (StableGeneralLinearGroup.of_injective _ himg)
@@ -268,7 +275,9 @@ theorem mem_symbolSubgroup_of_mem_diagonalSubgroup {x : AlgebraicK2 R}
     rw [hd, hd₀, diagProd_mulSingle, Fin.val_zero, diagHom_zero, MonoidHom.one_apply]
   rw [QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff] at h₁
   -- `h₁` says that `x` lies in the preimage of `S` under the inclusion of `K₂(R)`.
-  have h₂ : x ∈ (symbolNormal R).comap (toStableGL R).ker.subtype := h₁
+  have h₂ : x ∈ (symbolNormal R).comap (toStableGL R).ker.subtype := by
+    rw [Subgroup.mem_comap, Subgroup.coe_subtype]
+    exact h₁
   rwa [symbolNormal, Subgroup.comap_map_eq_self_of_injective (Subgroup.subtype_injective _)] at h₂
 
 /-- **Diagonal elements of `K₂` are exactly the products of symbols.** Over a ring `R` whose units
