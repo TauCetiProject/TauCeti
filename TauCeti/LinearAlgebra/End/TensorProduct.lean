@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Semisimple
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 import Mathlib.RingTheory.TensorProduct.Finite
-import TauCeti.LinearAlgebra.Semisimple
+import TauCeti.LinearAlgebra.Semisimple.Basic
 import Mathlib.Tactic.NoncommRing
 
 /-!
