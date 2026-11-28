@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.LinearMap.Polynomial
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
 public import Mathlib.RingTheory.PowerSeries.Substitution
+public import TauCeti.RingTheory.MvPowerSeries.Basic
 -- Proof-only: coefficients of three-variable polynomials, and quotients by an ideal.
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import TauCeti.Algebra.MvPolynomial.Fin.Three
@@ -62,6 +64,11 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   equals substitution after mapping the coefficients.
 * `MvPowerSeries.subst_powerSeriesSubst` : substituting into the composite of a one-variable
   series with a multivariate one is substituting into the inner series.
+* `MvPowerSeries.hasSubst_coe`: a finite family of polynomials without constant term can
+  be substituted as power series, by `MvPolynomial.constantCoeff_coe` and
+  `MvPowerSeries.hasSubst_of_constantCoeff_zero`.
+* `Matrix.hasSubst_toMvPolynomial`: matrix rows give a valid linear substitution when there
+  are finitely many rows and columns, by `Matrix.toMvPolynomial_constantCoeff`.
 * `MvPowerSeries.constantCoeff_subst_of_constantCoeff_zero` : substituting a family of series
   without constant term preserves the constant coefficient.
 * `MvPowerSeries.hasSubst_finTwo` : two substitutable series form a substitution family `![x, y]`
@@ -139,6 +146,26 @@ the work, so no new continuity lemma is needed.
 -/
 
 public section
+
+namespace MvPowerSeries
+
+/-- A finite family of polynomials without constant term can be substituted as power series. -/
+theorem hasSubst_coe {σ τ R : Type*} [CommRing R] [Finite σ] {a : σ → MvPolynomial τ R}
+    (ha : ∀ s, (a s).constantCoeff = 0) : HasSubst fun s ↦ (a s : MvPowerSeries τ R) :=
+  hasSubst_of_constantCoeff_zero fun i ↦ (MvPolynomial.constantCoeff_coe (a i)).trans (ha i)
+
+end MvPowerSeries
+
+namespace Matrix
+
+/-- The linear forms of a matrix with finitely many rows and columns form a valid power-series
+substitution. -/
+theorem hasSubst_toMvPolynomial {σ τ R : Type*} [CommRing R] [Finite σ] [Fintype τ]
+    (A : Matrix σ τ R) :
+    MvPowerSeries.HasSubst fun i ↦ (A.toMvPolynomial i : MvPowerSeries τ R) :=
+  MvPowerSeries.hasSubst_coe A.toMvPolynomial_constantCoeff
+
+end Matrix
 
 namespace MvPowerSeries
 
