@@ -274,9 +274,9 @@ theorem segmentCrossingWord_reverse (ν : C.walls → V →ₗ[ℝ] ℝ)
     C.segmentCrossingWord ν (Quiver.reverse e) = (C.segmentCrossingWord ν e)⁻¹ := by
   have hl : (C.orderedCrossings e).map (fun a => C.crossingLetter ν y x a.1) =
       (C.orderedCrossings e).map (fun a => (C.crossingLetter ν x y a.1)⁻¹) := by
-    refine List.map_congr_left fun a ha => C.crossingLetter_swap ν a.1 fun hz => ?_
-    have ha := (mem_crossings x y a.1 a.2).mp ((C.mem_orderedCrossings e a).mp ha)
-    exact e.down.transverse a.1 ⟨a.2, ha.1, ha.2⟩ (hν a.1 ▸ hz)
+    refine List.map_congr_left fun a ha => C.crossingLetter_swap ν a.1 ?_
+    exact e.down.apply_sub_ne_zero_of_mem_crossings
+      ((C.mem_orderedCrossings e a).mp ha) (hν a.1).le
   simp only [segmentCrossingWord_def, orderedCrossings_reverse, List.map_reverse,
     List.reverse_reverse, List.map_map, Function.comp_def]
   rw [hl, List.prod_inv_reverse]
