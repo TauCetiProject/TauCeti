@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Moments.CovarianceBilin
-import Mathlib.Algebra.QuadraticDiscriminant
 import Mathlib.Analysis.Matrix.Hermitian
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
@@ -73,15 +73,9 @@ on a finite measure space. -/
 theorem covariance_sq_le_variance_mul_variance [IsFiniteMeasure μ]
     (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
     covariance f g μ ^ 2 ≤ variance f μ * variance g μ := by
-  have hquad : ∀ t : ℝ,
-      0 ≤ variance g μ * (t * t) + (2 * covariance f g μ) * t + variance f μ := by
-    intro t
-    have h := variance_nonneg (fun a ↦ f a + t * g a) μ
-    rw [variance_fun_add hf (hg.const_mul t), variance_const_mul, covariance_const_mul_right] at h
-    nlinarith only [h]
-  have hdisc := discrim_le_zero hquad
-  unfold discrim at hdisc
-  nlinarith only [hdisc]
+  rw [covariance, variance_eq_integral hf.aemeasurable, variance_eq_integral hg.aemeasurable]
+  exact sq_integral_mul_le_integral_sq_mul_integral_sq
+    (hf.sub (memLp_const _)) (hg.sub (memLp_const _))
 
 end CovarianceBound
 

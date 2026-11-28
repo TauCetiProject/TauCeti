@@ -12,7 +12,8 @@ public import TauCeti.Probability.Moments.Covariance
 
 For two real random variables bounded almost everywhere in intervals `[m, M]` and `[r, R]`,
 Grüss's inequality bounds the absolute covariance by `(M - m) * (R - r) / 4`.
-We combine the covariance Cauchy–Schwarz inequality with Popoviciu's variance bound.
+We combine the covariance Cauchy–Schwarz inequality with Mathlib's formalization of
+Popoviciu's variance bound, `ProbabilityTheory.variance_le_sq_of_bounded`.
 
 ## Main results
 
@@ -52,8 +53,7 @@ theorem abs_integral_mul_sub_le [IsProbabilityMeasure μ]
   have hcov_eq := covariance_eq_sub hf2 hg2
   simp only [Pi.mul_apply] at hcov_eq
   rw [← hcov_eq]
-  apply (sq_le_sq₀ (abs_nonneg _) (by positivity)).mp
-  rw [sq_abs]
+  refine abs_le_of_sq_le_sq ?_ (by positivity)
   nlinarith only [hcov, hprod]
 
 end TauCeti
