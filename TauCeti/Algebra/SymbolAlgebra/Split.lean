@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Algebra.Hom
 public import TauCeti.Algebra.SymbolAlgebra.CentralSimple
+import TauCeti.LinearAlgebra.Matrix.WeightedShift
 import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
@@ -214,20 +215,11 @@ theorem algEquivMatrixOfPowEq_y (hζ : IsPrimitiveRoot ζ n) (hα : α ^ n = a) 
     algEquivMatrixOfPowEq hζ hα ha hb y = Matrix.of fun i j : Fin n =>
       if (i : ℕ) = j + 1 then 1 else if (i : ℕ) = 0 ∧ (j : ℕ) + 1 = n then b else 0 := by
   ext i j
-  rw [algEquivMatrixOfPowEq_apply, toEndAdjoinRootOfPowEq_y, LinearMap.mulLeft_apply,
-    ← pow_succ', Matrix.of_apply]
-  rcases (show (j : ℕ) + 1 ≤ n from j.isLt).lt_or_eq with h | h
-  · -- the image `X ^ (j + 1)` of `X ^ j` is the next basis vector
-    rw [AdjoinRoot.basisXPowSubC_repr_root_pow _ _ ⟨j + 1, h⟩, Finsupp.single_apply]
-    by_cases hi : (i : ℕ) = j + 1
-    · simp [Fin.ext_iff, hi]
-    · have h1 : (⟨j + 1, h⟩ : Fin n) ≠ i := fun h' => hi (congrArg Fin.val h').symm
-      simp [h1, hi, h.ne]
-  · -- the image `X ^ n = b` of `X ^ (n - 1)` is `b` times the first basis vector
-    rw [h, AdjoinRoot.basisXPowSubC_repr_root_pow_self, Finsupp.single_apply]
-    rcases eq_or_ne i 0 with rfl | hi
-    · simp [(NeZero.ne n).symm]
-    · simp [hi, hi.symm, i.isLt.ne]
+  calc
+    _ = Matrix.weightedShift n b i j := by
+      rw [algEquivMatrixOfPowEq_apply, toEndAdjoinRootOfPowEq_y, Matrix.weightedShift_eq_toMatrix,
+        LinearMap.toMatrixAlgEquiv_apply, AdjoinRoot.basisXPowSubC_apply]
+    _ = _ := Matrix.weightedShift_apply n b i j
 
 /-- Under `algEquivMatrixOfPowEq`, the monomial basis vector `x ^ i * y ^ j` is the product of the
 `i`-th power of the diagonal matrix of `x` and the `j`-th power of the shift matrix of `y`. -/
