@@ -7,20 +7,19 @@ module
 
 public import Mathlib.RingTheory.Bialgebra.TensorProduct
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Symmetric
-public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.TensorProduct
-public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Finite
-public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Regular
+public import TauCeti.Algebra.Coalgebra.Comodule.Finite.MatrixCoefficient
 
 /-!
 # Bialgebra laws detected by finite comodules
 
 A coalgebra's multiplication and unit can be supplied as coalgebra maps before their algebra
-laws are known. If finite comodules have tensor objects with the usual underlying vector
-spaces, the product formula for matrix coefficients transfers the ordinary associator,
+laws are known. If finite comodules have tensor objects with the usual underlying
+modules, the product formula for matrix coefficients transfers the ordinary associator,
 left unitor and flip to associativity, a left unit and commutativity on the coalgebra.
-Every coalgebra element is tested using a finite regular subcoalgebra and its counit.
+For a coalgebra that is free over a principal ideal domain, every element is tested using a
+finite regular subcoalgebra and its counit; over a field, freeness is automatic.
 
-`FGComoduleCat.TensorPresentation` records the tensor objects and their vector-space
+`FGComoduleCat.TensorPresentation` records the tensor objects and their module
 identifications. `TensorPresentation.CoefficientCompatibility` asks that the three ordinary
 linear equivalences lift to comodule isomorphisms and that coefficients obey the supplied
 multiplication and unit formulas. No rigidity or antipode is needed.
@@ -189,21 +188,10 @@ end TensorPresentation
 
 end Semiring
 
-section Field
+section PID
 
-variable {K : Type u} [Field K] {B : Type v}
-variable [AddCommGroup B] [Module K B] [cB : Coalgebra K B]
-
-/-- Every coalgebra element is a coefficient of a finite comodule: take a finite regular
-subcoalgebra containing it and pair with the restricted counit. -/
-theorem exists_matrixCoefficient_eq (b : B) :
-    ∃ (M : FGComoduleCat.{u, v, v} K B) (φ : Module.Dual K M) (m : M),
-      Comodule.matrixCoefficient (C := B) φ m = b := by
-  obtain ⟨D, hD, hb⟩ := Subcoalgebra.exists_finiteDimensional_subcoalgebra_mem (k := K) b
-  let : Module.Finite K D.toRegularSubcomodule := hD
-  refine ⟨of (R := K) (C := B) D.toRegularSubcomodule,
-    Coalgebra.counit ∘ₗ SMulMemClass.subtype D.toRegularSubcomodule, ⟨b, hb⟩, ?_⟩
-  exact Comodule.matrixCoefficient_counit_comp_subtype D.toRegularSubcomodule ⟨b, hb⟩
+variable {K : Type u} [CommRing K] [IsDomain K] [IsPrincipalIdealRing K] {B : Type v}
+variable [AddCommGroup B] [Module K B] [cB : Coalgebra K B] [Module.Free K B]
 
 namespace TensorPresentation.CoefficientCompatibility
 
@@ -348,7 +336,11 @@ theorem bialgebra_algebraMap (r : K) :
 
 end TensorPresentation.CoefficientCompatibility
 
+end PID
+
 section Scalar
+
+variable {K : Type u} [Field K]
 
 attribute [local instance] Comodule.tensor
 
@@ -397,14 +389,14 @@ example (a b : K) :
   constructor <;> rfl
 
 -- The full bialgebra constructor applies and retains the usual coalgebra on the field.
+-- Bind it before installing the new ring, so the base ring remains the original field.
 example :
     let h := scalarTensorPresentation_compatible (K := K)
+    let b := h.bialgebra
     letI := h.commRing
-    (h.bialgebra).toCoalgebra = CommSemiring.toCoalgebra K := by
+    b.toCoalgebra = CommSemiring.toCoalgebra K := by
   exact TensorPresentation.CoefficientCompatibility.bialgebra_toCoalgebra _
 
 end Scalar
-
-end Field
 
 end TauCeti.FGComoduleCat
