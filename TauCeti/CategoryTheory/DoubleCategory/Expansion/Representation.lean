@@ -34,11 +34,6 @@ open CategoryTheory DoubleCategoryStruct
 variable {O : Type u} {H : Category.{h} O} {V : Category.{v} O}
   (D : StrictDoubleCategory.{s} O H V)
 
-/-- Expansion commutes with exchanging the horizontal and vertical directions. -/
-@[simp]
-theorem expand_transpose : D.transpose.expand = D.expand.transpose := by
-  rfl
-
 /-- Evaluate horizontal paths and their globular cells in the original double category.
 The cell itself is unchanged. Its body is exposed so that evaluated boundary objects compute
 in the types of cell formulas. -/
