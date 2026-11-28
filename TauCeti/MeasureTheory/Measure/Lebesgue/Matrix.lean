@@ -20,8 +20,8 @@ of that set raised to the number of entries.
 
 Column-stacking vectorization preserves product Lebesgue measure, also when either index type
 is empty. Thus a density on Euclidean vector coordinates transfers to a matrix density without
-a Jacobian factor. The proof regroups product coordinates with `TauCeti.measurePreserving_piCurry`
-and uses Mathlib's `PiLp.volume_preserving_toLp` for the Euclidean volume normalization.
+a Jacobian factor. The row-indexed presentation has the same property. The proofs regroup product
+coordinates and use Mathlib's Euclidean volume normalization.
 -/
 
 public section
@@ -101,6 +101,19 @@ theorem volume_preserving_matrixVecMeasurableEquiv {m n : Type*} [Fintype m] [Fi
     Matrix.ofMeasurableEquiv_symm_apply, Equiv.piCongrLeft_symm_apply, Prod.swap_prod_mk,
     Equiv.sigmaEquivProd_symm_apply, MeasurableEquiv.piCurry_symm_apply, Sigma.uncurry,
     Matrix.of_symm_apply, Matrix.vec, e]
+
+/-- Reading row-indexed Euclidean coordinates as a real matrix preserves volume. -/
+theorem volume_preserving_matrixRowMeasurableEquiv {m n : Type*} [Fintype m] [Fintype n] :
+    MeasurePreserving (matrixRowMeasurableEquiv (m := m) (n := n) (p := 2) (α := ℝ))
+      volume volume := by
+  have hrow := measurePreserving_curry (fun _ : m => fun _ : n => (volume : Measure ℝ))
+  have hmatrix := Matrix.volume_preserving_ofMeasurableEquiv m n ℝ
+  have h := hmatrix.comp (hrow.comp (PiLp.volume_preserving_ofLp (m × n)))
+  refine h.congr (MeasurableEquiv.measurable _) (ae_of_all _ fun X => ?_)
+  ext i j
+  simp only [Function.comp_apply, matrixRowMeasurableEquiv_apply,
+    Matrix.ofMeasurableEquiv_apply, MeasurableEquiv.coe_curry, Function.curry_apply,
+    Matrix.of_apply]
 
 end TauCeti
 
