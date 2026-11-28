@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+import TauCeti.LinearAlgebra.Projection
 
 /-!
 # Products and norms of orthogonal projections
@@ -84,7 +85,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.starProjection_eq_iff_mem_orthogonal_inf`: nested projections of a vector agree
   exactly when the vector is orthogonal to the complement of the smaller subspace in the larger.
 * `LinearMap.map_starProjection_eq_of_le_comap`: a semilinear map preserving the subspace and
-  its orthogonal complement commutes with the projections by Mathlib's projection uniqueness.
+  its orthogonal complement commutes with the projections, by
+  `Submodule.projection_map_apply_of_mem`.
 * `Submodule.starProjection_starProjection_apply`: `P_U (P_U x) = P_U x`.
 * `Submodule.orthogonalProjectionOnto_comp_subtypeL`: restricting the orthogonal projection
   onto `U` to `U` itself gives the identity map.
@@ -963,10 +965,9 @@ theorem map_starProjection_eq_of_le_comap {𝕜 𝕝 E F : Type*} [RCLike 𝕜] 
     [V.HasOrthogonalProjection] [W.HasOrthogonalProjection]
     (hV : V ≤ W.comap f) (hV' : Vᗮ ≤ Wᗮ.comap f) (x : E) :
     f (V.starProjection x) = W.starProjection (f x) := by
-  symm
-  refine W.eq_starProjection_of_mem_orthogonal (hV (V.starProjection_apply_mem x)) ?_
-  rw [← map_sub]
-  exact hV' (V.sub_starProjection_mem_orthogonal x)
+  rw [V.starProjection_apply_eq_isComplProjection, W.starProjection_apply_eq_isComplProjection]
+  exact (Submodule.projection_map_apply_of_mem V.isCompl_orthogonal W.isCompl_orthogonal
+    f.toAddMonoidHom (fun _ hx ↦ hV hx) (fun _ hx ↦ hV' hx) x).symm
 
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [AddCommMonoid F] [Module 𝕜 F]
