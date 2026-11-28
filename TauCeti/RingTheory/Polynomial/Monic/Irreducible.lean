@@ -37,6 +37,7 @@ monic quadratic factors, in the domain itself.
 * `TauCeti.Polynomial.exists_finset_monic_irreducible_mem_of_natDegree_le`: over a finite
   coefficient ring, a finite set of monic irreducibles contains every monic irreducible of degree
   at most `n`.
+* `Polynomial.monicIrreduciblesOfDegree_zero`: there are no monic irreducibles of degree zero.
 * `Polynomial.ncard_monicIrreduciblesOfDegree_one`: over a domain the monic irreducibles of degree
   one are the `X - C a`, as many as the elements of the coefficient ring.
 * `Polynomial.monicIrreduciblesOfDegree_sdiff_singleton_X`: the monic irreducibles other than `X`
@@ -113,6 +114,17 @@ theorem monicIrreduciblesOfDegree_sdiff_singleton_X_of_ne_one {d : ℕ} (hd : d 
 end Semiring
 
 section Domain
+
+/-- There are no monic irreducible polynomials of degree zero: a monic polynomial of degree zero
+is `1`, a unit. -/
+@[simp]
+theorem monicIrreduciblesOfDegree_zero (R : Type*) [Semiring R] :
+    monicIrreduciblesOfDegree R 0 = ∅ := by
+  ext g
+  simp only [mem_monicIrreduciblesOfDegree_iff, Set.mem_empty_iff_false, iff_false]
+  rintro ⟨hmon, hirr, hdeg⟩
+  rw [eq_one_of_monic_natDegree_zero hmon hdeg] at hirr
+  exact not_irreducible_one hirr
 
 variable {R : Type*} [CommRing R] [IsDomain R]
 
