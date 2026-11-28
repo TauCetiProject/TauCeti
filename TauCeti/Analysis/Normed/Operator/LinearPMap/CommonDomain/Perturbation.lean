@@ -13,6 +13,7 @@ import TauCeti.Analysis.Fredholm.CompactPerturbation
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Relatively compact symmetric perturbations over a compactly embedded domain
@@ -24,7 +25,9 @@ the asymptotic operator `J₀ ∂ₜ + S` of the Floer equation with `D = H¹` a
 shows that this property survives perturbations which are *bounded through `ι`* and keep the
 operator symmetric: if `B : D →L H` is symmetric through `ι`, `⟪B x, ι y⟫ = ⟪ι x, B y⟫`, and
 `‖(B - A) x‖ ≤ C ‖ι x‖` for all `x`, then some real shift `c • ι - B` is invertible
-(`ContinuousLinearMap.exists_isInvertible_ofReal_smul_sub_of_norm_sub_apply_le`). In the Floer
+(`ContinuousLinearMap.exists_isInvertible_ofReal_smul_sub_of_norm_sub_apply_le`, and
+`ContinuousLinearMap.exists_isInvertible_ofReal_smul_sub_of_isInvertible_of_norm_sub_apply_le` when
+`A` itself is invertible). In the Floer
 setting, changing the zeroth-order term `S` is such a perturbation. By
 `ContinuousLinearMap.eventually_isInvertible_ofReal_smul_sub` the admissible real shifts of `B`
 are then dense.
@@ -55,6 +58,8 @@ killed by `c₀ • ι - A`, so `A x ≠ 0`, and `(B - A) x = 0`, so `B x ≠ 0`
 * `ContinuousLinearMap.exists_isInvertible_ofReal_smul_sub_of_norm_sub_apply_le`: a symmetric
   perturbation bounded through `ι` of an operator with an invertible shift has an invertible real
   shift.
+* `ContinuousLinearMap.exists_isInvertible_ofReal_smul_sub_of_isInvertible_of_norm_sub_apply_le`:
+  specialization when the reference operator `A` itself is invertible.
 
 ## References
 
@@ -162,5 +167,14 @@ theorem exists_isInvertible_ofReal_smul_sub_of_norm_sub_apply_le (hι : IsCompac
   refine hc ⟨x, hx0, ?_⟩
   rw [sub_apply, sub_eq_zero, smul_apply] at hx
   exact hx.symm
+
+/-- **Relatively compact symmetric perturbations of an invertible operator.** A symmetric
+perturbation bounded through `ι` of an invertible operator `A` has an invertible real shift. -/
+theorem exists_isInvertible_ofReal_smul_sub_of_isInvertible_of_norm_sub_apply_le
+    (hι : IsCompactOperator ι) (hA : A.IsInvertible) (hsymm : ∀ x y, ⟪B x, ι y⟫ = ⟪ι x, B y⟫)
+    {C : ℝ} (hBA : ∀ x, ‖(B - A) x‖ ≤ C * ‖ι x‖) :
+    ∃ c : ℝ, ((c : 𝕜) • ι - B).IsInvertible :=
+  exists_isInvertible_ofReal_smul_sub_of_norm_sub_apply_le (c₀ := 0) hι
+    (by simpa [isInvertible_neg_iff] using hA) hsymm hBA
 
 end ContinuousLinearMap

@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Restrict
 public import TauCeti.Topology.Algebra.Module.Equiv.SMul
+import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Tactic.Abel
 
 /-!
@@ -75,6 +76,10 @@ to `q` (`ContinuousLinearMap.IsInvertible.codRestrictOfTower_comp`,
 The rectangular Jacobson identity says that `1 - u ∘ v` and `1 - v ∘ u` are invertible together,
 even for maps between different modules. It transports invertibility from an operator to its
 extension through a continuous linear retract, without any choice of complementary submodule.
+
+A family `A : α → E →L[𝕜] F` on a linear order converging to invertible operators at `-∞` and `+∞`
+is eventually invertible outside `[a, b]` with `a ≤ b`
+(`ContinuousLinearMap.eventually_le_and_forall_notMem_Ioo_isInvertible`).
 -/
 
 public section
@@ -561,5 +566,31 @@ theorem isUnit_one_sub_comp_comm (u : N →L[R] M) (v : M →L[R] N) :
   ⟨isUnit_one_sub_comp_of v u, isUnit_one_sub_comp_of u v⟩
 
 end OneSubComp
+
+section Order
+
+variable {𝕜 α E F : Type*} [NontriviallyNormedField 𝕜] [LinearOrder α]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- If a family `A : α → E →L[𝕜] F` on a linear order converges to invertible operators at `-∞`
+and `+∞`, then eventually in `atBot ×ˢ atTop` we have `a ≤ b` and `A s` is invertible for every
+`s ∉ Set.Ioo a b`. -/
+theorem eventually_le_and_forall_notMem_Ioo_isInvertible {A : α → E →L[𝕜] F}
+    {Bbot Btop : E →L[𝕜] F} (hBbot : Bbot.IsInvertible) (hBtop : Btop.IsInvertible)
+    (hbot : Tendsto A atBot (𝓝 Bbot)) (htop : Tendsto A atTop (𝓝 Btop)) :
+    ∀ᶠ ab in atBot ×ˢ atTop, ab.1 ≤ ab.2 ∧ ∀ s ∉ Set.Ioo ab.1 ab.2, (A s).IsInvertible := by
+  by_cases hα : Nonempty α
+  · obtain ⟨a₀, ha₀⟩ := eventually_atBot.1 (hbot.eventually hBbot.eventually_nhds)
+    obtain ⟨b₀, hb₀⟩ := eventually_atTop.1 (htop.eventually hBtop.eventually_nhds)
+    filter_upwards [(eventually_le_atBot (min a₀ b₀)).prod_mk (eventually_ge_atTop (max a₀ b₀))]
+      with ⟨a, b⟩ ⟨ha, hb⟩
+    refine ⟨ha.trans (min_le_max.trans hb), fun s hs ↦ ?_⟩
+    rcases not_and_or.1 hs with h | h
+    · exact ha₀ s ((not_lt.1 h).trans (ha.trans (min_le_left _ _)))
+    · exact hb₀ s (((le_max_right _ _).trans hb).trans (not_lt.1 h))
+  · exact Eventually.of_forall fun ab ↦ (hα ⟨ab.1⟩).elim
+
+end Order
 
 end ContinuousLinearMap

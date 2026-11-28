@@ -26,9 +26,11 @@ coordinate to `[a, b]` with `Set.projIcc`.
 * `ContinuousOn.comp_projIcc`: that extension, written as `f ∘ projIcc a b`, is continuous.
 * `TauCeti.continuousWithinAt_IccExtend_Ici`: constant extension preserves right continuity
   within the interval and is right-continuous outside `[a, b)` without further assumptions.
-* `Filter.Tendsto.comp_min_atBot`, `TauCeti.tendsto_comp_min_atTop`,
-  `TauCeti.tendsto_comp_max_atBot` and `Filter.Tendsto.comp_max_atTop`: the limits at `±∞` of
-  the clamped functions `s ↦ f (min s t)` and `s ↦ f (max s t)`.
+* `TauCeti.tendsto_comp_min_atTop`, `TauCeti.tendsto_comp_max_atBot` and
+  `Filter.Tendsto.comp_max_atTop`: the limits at `±∞` of the clamped functions
+  `s ↦ f (min s t)` and `s ↦ f (max s t)`.
+* `TauCeti.tendsto_IccExtend_atBot` and `TauCeti.tendsto_IccExtend_atTop`: the limits at `±∞` of
+  `Set.IccExtend`.
 -/
 
 public section
@@ -110,3 +112,17 @@ theorem TauCeti.tendsto_comp_min_atTop {ι X : Type*} [LinearOrder ι] [Topologi
 theorem TauCeti.tendsto_comp_max_atBot {ι X : Type*} [LinearOrder ι] [TopologicalSpace X]
     {g : ι → X} (t : ι) : Tendsto (fun s ↦ g (max s t)) atBot (𝓝 (g t)) :=
   tendsto_const_nhds.congr' ((eventually_le_atBot t).mono fun s hs ↦ by simp only [max_eq_right hs])
+
+/-- `Set.IccExtend` is eventually constant at `-∞`, equal to its value at the left endpoint. -/
+theorem TauCeti.tendsto_IccExtend_atBot {ι X : Type*} [LinearOrder ι] [TopologicalSpace X]
+    {a b : ι} (hab : a ≤ b) (g : Icc a b → X) :
+    Tendsto (IccExtend hab g) atBot (𝓝 (g ⟨a, left_mem_Icc.2 hab⟩)) :=
+  tendsto_const_nhds.congr' ((eventually_le_atBot a).mono fun _ hs ↦
+    (IccExtend_of_le_left hab g hs).symm)
+
+/-- `Set.IccExtend` is eventually constant at `+∞`, equal to its value at the right endpoint. -/
+theorem TauCeti.tendsto_IccExtend_atTop {ι X : Type*} [LinearOrder ι] [TopologicalSpace X]
+    {a b : ι} (hab : a ≤ b) (g : Icc a b → X) :
+    Tendsto (IccExtend hab g) atTop (𝓝 (g ⟨b, right_mem_Icc.2 hab⟩)) :=
+  tendsto_const_nhds.congr' ((eventually_ge_atTop b).mono fun _ hs ↦
+    (IccExtend_of_right_le hab g hs).symm)

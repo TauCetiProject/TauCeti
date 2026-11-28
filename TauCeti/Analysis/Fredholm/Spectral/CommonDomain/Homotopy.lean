@@ -58,9 +58,9 @@ formula to a single path for each pair of endpoints.
 * `TauCeti.domainSpectralFlow_eq_of_homotopy_of_isInvertible`: homotopy invariance with
   invertible endpoints.
 * `TauCeti.domainSpectralFlow_sub_smul_smoothSegmentPath`,
-  `TauCeti.domainSpectralFlow_shift_segment_add`,
-  `TauCeti.domainSpectralFlow_add_shift_segment`: shift-segment identities from homotopy
-  invariance.
+  `TauCeti.domainSpectralFlow_sub_smul_add_domainSpectralFlow_sub_smul_eq`,
+  `TauCeti.domainSpectralFlow_add_domainSpectralFlow_sub_smul_eq`: shift-segment identities from
+  homotopy invariance.
 * `TauCeti.domainSpectralFlow_eq_of_homotopy_of_norm_sub_apply_le`,
   `TauCeti.domainSpectralFlow_eq_of_homotopy_of_isInvertible_of_norm_sub_apply_le`: the same for
   deformations bounded through `ι`, with invertible shifts given along one path only.
@@ -300,7 +300,7 @@ theorem domainSpectralFlow_sub_smul_smoothSegmentPath {B : D →L[𝕜] H}
 `B - c₁ ι` invertible, the spectral flow along the affine segment from `B` to `B - c₁ ι` plus
 that from `B - c₁ ι` to `B - c₂ ι` equals the spectral flow along the affine segment from `B` to
 `B - c₂ ι`. -/
-theorem domainSpectralFlow_shift_segment_add {B : D →L[𝕜] H}
+theorem domainSpectralFlow_sub_smul_add_domainSpectralFlow_sub_smul_eq {B : D →L[𝕜] H}
     (hSymm : ∀ x y, ⟪B x, ι y⟫ = ⟪ι x, B y⟫) {c₁ c₂ : ℝ} (hc₁ : (B - (c₁ : 𝕜) • ι).IsInvertible) :
     domainSpectralFlow ι (fun σ ↦ B - ((σ * c₁ : ℝ) : 𝕜) • ι) 0 1 +
         domainSpectralFlow ι (fun σ ↦ B - (((1 - σ) * c₁ + σ * c₂ : ℝ) : 𝕜) • ι) 0 1 =
@@ -327,13 +327,11 @@ theorem domainSpectralFlow_shift_segment_add {B : D →L[𝕜] H}
   linarith
 
 /-- **Staircase identity for horizontal and vertical shift segments.** If a continuous path `A` on
-`[u, v]`, symmetric through `ι` with invertible shifts, has `A t - c ι` invertible on `[u, v]`,
-then the spectral flow of `A` over `[u, v]` plus the affine shift segment at `v` equals the affine
-shift segment at `u`. -/
-theorem domainSpectralFlow_add_shift_segment {A : ℝ → D →L[𝕜] H} (huv : u ≤ v)
+`[u, v]`, symmetric through `ι`, has `A t - c ι` invertible on `[u, v]`, then the spectral flow of
+`A` over `[u, v]` plus the affine shift segment at `v` equals the affine shift segment at `u`. -/
+theorem domainSpectralFlow_add_domainSpectralFlow_sub_smul_eq {A : ℝ → D →L[𝕜] H} (huv : u ≤ v)
     (hA : ContinuousOn A (Icc u v))
     (hSymm : ∀ t ∈ Icc u v, ∀ x y, ⟪A t x, ι y⟫ = ⟪ι x, A t y⟫)
-    (h₀ : ∀ t ∈ Icc u v, ∃ c₀ : 𝕜, (c₀ • ι - A t).IsInvertible)
     {c : ℝ} (hinv : ∀ t ∈ Icc u v, (A t - (c : 𝕜) • ι).IsInvertible) :
     domainSpectralFlow ι A u v + domainSpectralFlow ι (fun σ ↦ A v - ((σ * c : ℝ) : 𝕜) • ι) 0 1 =
       domainSpectralFlow ι (fun σ ↦ A u - ((σ * c : ℝ) : 𝕜) • ι) 0 1 := by
@@ -344,9 +342,12 @@ theorem domainSpectralFlow_add_shift_segment {A : ℝ → D →L[𝕜] H} (huv :
     hA₂.sub (Continuous.continuousOn (by fun_prop))
   have hG₀ : ∀ σ ∈ Icc (0 : ℝ) 1, ∀ t ∈ Icc u v, ∃ c₀ : 𝕜, (c₀ • ι - G σ t).IsInvertible := by
     intro σ _ t ht
-    obtain ⟨c₀, hc₀⟩ := h₀ t ht
-    exact ⟨c₀ - ((σ * c : ℝ) : 𝕜), by
-      simpa only [G, sub_smul, sub_sub_sub_cancel_right] using hc₀⟩
+    refine ⟨((1 - σ) * c : ℝ), ContinuousLinearMap.isInvertible_sub_comm.2 ?_⟩
+    have heq : G σ t - (((1 - σ) * c : ℝ) : 𝕜) • ι = A t - (c : 𝕜) • ι := by
+      simp only [G, push_cast]
+      module
+    rw [heq]
+    exact hinv t ht
   have hrect := domainSpectralFlow_add_domainSpectralFlow_eq_add (G := G) hι huv zero_le_one hGc
     (fun σ _ t ht _ _ ↦
       ContinuousLinearMap.inner_sub_ofReal_smul_apply_eq_inner_sub_ofReal_smul_apply
