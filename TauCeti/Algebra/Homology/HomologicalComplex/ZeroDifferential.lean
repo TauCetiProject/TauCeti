@@ -102,6 +102,11 @@ lemma XIsoHomologyOfDEqZero_inv (K : HomologicalComplex C c) (i : ι) [K.HasHomo
       K.iCycles i := by
   simp [XIsoHomologyOfDEqZero]
 
+/-- `𝟙 (K.X i)` is definitionally `𝟙 (K.sc i).X₂` since `K.X i` is definitionally `(K.sc i).X₂`.
+-/
+private lemma id_X_eq_id_sc_X₂ (K : HomologicalComplex C c) (i : ι) :
+    𝟙 (K.X i) = 𝟙 (K.sc i).X₂ := rfl
+
 /-- `K.iCycles i` is definitionally `(K.sc i).iCycles`. -/
 private lemma iCycles_eq_sc (K : HomologicalComplex C c) (i : ι) [K.HasHomology i] :
     K.iCycles i = (K.sc i).iCycles := rfl
@@ -119,7 +124,7 @@ lemma XIsoHomologyOfDEqZero_eq_shortComplex (K : HomologicalComplex C c) (i : ι
   ext
   have hinj : (K.iCyclesIso i (c.next i) rfl h₂).inv = ((K.sc i).cyclesIsoX₂ h₂).inv := by
     rw [← cancel_mono (K.sc i).iCycles, ShortComplex.cyclesIsoX₂_inv_hom_id,
-      ← iCycles_eq_sc, K.iCyclesIso_inv_hom_id]; rfl
+      ← iCycles_eq_sc, K.iCyclesIso_inv_hom_id, id_X_eq_id_sc_X₂]
   rw [XIsoHomologyOfDEqZero_hom, Iso.trans_hom, Iso.symm_hom, ShortComplex.asIsoHomologyπ_hom,
     hinj, homologyπ_eq_sc]
 

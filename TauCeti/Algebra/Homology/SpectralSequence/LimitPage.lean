@@ -499,45 +499,46 @@ section
 
 variable (E : SpectralSequence C c r₀) (pq : κ)
 
+private theorem isGLB_antitone_tail_iff {α : Type*} [Preorder α] {r₀ s : ℤ} (hs : r₀ ≤ s)
+    (f : ∀ r : ℤ, r₀ ≤ r → α)
+    (hf : ∀ {r r'} (hr : r₀ ≤ r) (hrr' : r ≤ r'), f r' (hr.trans hrr') ≤ f r hr) (a : α) :
+    IsGLB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ f r.val r.property) a ↔
+      IsGLB (Set.range fun r : {r : ℤ // s ≤ r} ↦ f r.val (hs.trans r.property)) a := by
+  have hsub : (Set.range fun r : {r : ℤ // s ≤ r} ↦ f r.val (hs.trans r.property)) ⊆
+      Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ f r.val r.property :=
+    fun _ ⟨⟨r, hr⟩, hEq⟩ ↦ ⟨⟨r, hs.trans hr⟩, hEq⟩
+  have hco : IsCoinitialFor
+      (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ f r.val r.property)
+      (Set.range fun r : {r : ℤ // s ≤ r} ↦ f r.val (hs.trans r.property)) :=
+    fun _ ⟨⟨r, hr⟩, hEq⟩ ↦
+      ⟨f (max r s) (hr.trans (le_max_left r s)), ⟨⟨max r s, le_max_right r s⟩, rfl⟩,
+        hEq ▸ hf hr (le_max_left r s)⟩
+  exact isGLB_congr (le_antisymm (lowerBounds_mono_set hsub)
+    (lowerBounds_mono_of_isCoinitialFor hco))
+
+private theorem isLUB_monotone_tail_iff {α : Type*} [Preorder α] {r₀ s : ℤ} (hs : r₀ ≤ s)
+    (f : ∀ r : ℤ, r₀ ≤ r → α)
+    (hf : ∀ {r r'} (hr : r₀ ≤ r) (hrr' : r ≤ r'), f r hr ≤ f r' (hr.trans hrr')) (a : α) :
+    IsLUB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ f r.val r.property) a ↔
+      IsLUB (Set.range fun r : {r : ℤ // s ≤ r} ↦ f r.val (hs.trans r.property)) a :=
+  isGLB_antitone_tail_iff (α := αᵒᵈ) hs (fun r hr ↦ OrderDual.toDual (f r hr))
+    (fun hr hrr' ↦ (hf hr hrr').dual) (OrderDual.toDual a)
+
 private theorem isGLB_cyclesSubobject_iff_fromPage (s : ℤ) (hs : r₀ ≤ s)
     (Z : Subobject ((E.page r₀).X pq)) :
     IsGLB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.val r.property) Z ↔
       IsGLB (Set.range fun r : {r : ℤ // s ≤ r} ↦
-        E.cyclesSubobject pq r.val (hs.trans r.property)) Z := by
-  have hsub : (Set.range fun r : {r : ℤ // s ≤ r} ↦
-        E.cyclesSubobject pq r.val (hs.trans r.property)) ⊆
-      Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.val r.property :=
-    fun _ ⟨⟨r, hr⟩, hEq⟩ ↦ ⟨⟨r, hs.trans hr⟩, hEq⟩
-  have hco : IsCoinitialFor
-      (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.val r.property)
-      (Set.range fun r : {r : ℤ // s ≤ r} ↦
-        E.cyclesSubobject pq r.val (hs.trans r.property)) :=
-    fun _ ⟨⟨r, hr⟩, hEq⟩ ↦
-      ⟨E.cyclesSubobject pq (max r s) (hr.trans (le_max_left r s)),
-        ⟨⟨max r s, le_max_right r s⟩, rfl⟩,
-        hEq ▸ E.cyclesSubobject_anti pq hr (le_max_left r s)⟩
-  exact isGLB_congr (le_antisymm (lowerBounds_mono_set hsub)
-    (lowerBounds_mono_of_isCoinitialFor hco))
+        E.cyclesSubobject pq r.val (hs.trans r.property)) Z :=
+  isGLB_antitone_tail_iff hs (fun r hr ↦ E.cyclesSubobject pq r hr)
+    (fun hr hrr' ↦ E.cyclesSubobject_anti pq hr hrr') Z
 
 private theorem isLUB_boundariesSubobject_iff_fromPage (s : ℤ) (hs : r₀ ≤ s)
     (B : Subobject ((E.page r₀).X pq)) :
     IsLUB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.val r.property) B ↔
       IsLUB (Set.range fun r : {r : ℤ // s ≤ r} ↦
-        E.boundariesSubobject pq r.val (hs.trans r.property)) B := by
-  have hsub : (Set.range fun r : {r : ℤ // s ≤ r} ↦
-        E.boundariesSubobject pq r.val (hs.trans r.property)) ⊆
-      Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.val r.property :=
-    fun _ ⟨⟨r, hr⟩, hEq⟩ ↦ ⟨⟨r, hs.trans hr⟩, hEq⟩
-  have hcof : IsCofinalFor
-      (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.val r.property)
-      (Set.range fun r : {r : ℤ // s ≤ r} ↦
-        E.boundariesSubobject pq r.val (hs.trans r.property)) :=
-    fun _ ⟨⟨r, hr⟩, hEq⟩ ↦
-      ⟨E.boundariesSubobject pq (max r s) (hr.trans (le_max_left r s)),
-        ⟨⟨max r s, le_max_right r s⟩, rfl⟩,
-        hEq ▸ E.boundariesSubobject_mono pq hr (le_max_left r s)⟩
-  exact isLUB_congr (le_antisymm (upperBounds_mono_set hsub)
-    (upperBounds_mono_of_isCofinalFor hcof))
+        E.boundariesSubobject pq r.val (hs.trans r.property)) B :=
+  isLUB_monotone_tail_iff hs (fun r hr ↦ E.boundariesSubobject pq r hr)
+    (fun hr hrr' ↦ E.boundariesSubobject_mono pq hr hrr') B
 
 private theorem range_cyclesSubobject_fromPage_eq (s : ℤ) (hs : r₀ ≤ s) :
     (Set.range fun r : {r : ℤ // s ≤ r} ↦ E.cyclesSubobject pq r.val (hs.trans r.property)) =

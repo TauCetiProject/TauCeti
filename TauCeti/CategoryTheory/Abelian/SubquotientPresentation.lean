@@ -699,14 +699,18 @@ lemma mapIso_isoOfEq (P' : SubquotientPresentation A Y) (hB : P.B = P'.B) (hZ : 
     P.mapIso (P.isoOfEq P' hB hZ) = P' :=
   ext hB hZ (by rw [π_mapIso', π_isoOfEq_hom, ofLE_comp_ofLE_assoc])
 
+/-- Equal subquotient presentations of `Y` inside `A` have equal projections out of any common
+subobject `S ≤ Q₁.Z, Q₂.Z`. -/
+lemma π_congr {Q₁ Q₂ : SubquotientPresentation A Y} (h : Q₁ = Q₂)
+    {S : Subobject A} (h₁ : S ≤ Q₁.Z) (h₂ : S ≤ Q₂.Z) :
+    ofLE S Q₁.Z h₁ ≫ Q₁.π = ofLE S Q₂.Z h₂ ≫ Q₂.π := by
+  subst h; rfl
+
 lemma mapIso_injective : Function.Injective (P.mapIso (Y := Y)) := fun e₁ e₂ h ↦ by
+  -- Plain `congrArg π` fails because the domain `(Q.Z : C)` of `Q.π` depends on `Q.Z`.
   have hπ : P.π ≫ e₁.hom = P.π ≫ e₂.hom := by
-    have : ∀ {Q₁ Q₂ : SubquotientPresentation A Y} (_ : Q₁ = Q₂)
-        (h₁ : P.Z ≤ Q₁.Z) (h₂ : P.Z ≤ Q₂.Z),
-        ofLE P.Z Q₁.Z h₁ ≫ Q₁.π = ofLE P.Z Q₂.Z h₂ ≫ Q₂.π := by
-      rintro Q _ rfl _ _; rfl
     simpa only [π_mapIso', ofLE_comp_ofLE_assoc, ofLE_refl, Category.id_comp] using
-      this h (P.mapIso_Z e₁).ge (P.mapIso_Z e₂).ge
+      π_congr h (P.mapIso_Z e₁).ge (P.mapIso_Z e₂).ge
   exact Iso.ext ((cancel_epi P.π).mp hπ)
 
 lemma isoOfEq_congr {P₁ P₂ : SubquotientPresentation A X}

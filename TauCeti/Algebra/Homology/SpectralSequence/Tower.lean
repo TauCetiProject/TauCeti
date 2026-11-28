@@ -654,13 +654,29 @@ lemma StabilisesAt.boundariesSubobject_eq {pq : κ} {s : ℤ} {hs : r₀ ≤ s}
     E.boundariesSubobject pq r (hs.trans hsr) = E.boundariesSubobject pq s hs :=
   ((E.stabilisesAt_iff_const_cyclesSubobject_and_boundariesSubobject pq s hs).mp h r hsr).2
 
+/-- If differentials leaving `pq` vanish on all pages `r ≥ r₀`, then `Z_r(pq) = ⊤` for all
+`r ≥ r₀`. -/
+lemma cyclesSubobject_eq_top_of_forall_dFrom_eq_zero (pq : κ)
+    (h : ∀ (r : ℤ) (hr : r₀ ≤ r), (E.page r hr).dFrom pq = 0) (r : ℤ) (hr : r₀ ≤ r := by lia) :
+    E.cyclesSubobject pq r hr = ⊤ := by
+  rw [E.cyclesSubobject_eq_of_forall_dFrom_eq_zero pq le_rfl h r hr, cyclesSubobject_self]
+
+/-- If differentials entering `pq` vanish on all pages `r ≥ r₀`, then `B_r(pq) = ⊥` for all
+`r ≥ r₀`. -/
+lemma boundariesSubobject_eq_bot_of_forall_dTo_eq_zero (pq : κ)
+    (h : ∀ (r : ℤ) (hr : r₀ ≤ r), (E.page r hr).dTo pq = 0) (r : ℤ) (hr : r₀ ≤ r := by lia) :
+    E.boundariesSubobject pq r hr = ⊥ := by
+  rw [E.boundariesSubobject_eq_of_forall_dTo_eq_zero pq le_rfl h r hr, boundariesSubobject_self]
+
 lemma DegeneratesAt.cyclesSubobject_eq_top (h : E.DegeneratesAt r₀ le_rfl) (pq : κ) (r : ℤ)
-    (hr : r₀ ≤ r := by lia) : E.cyclesSubobject pq r hr = ⊤ := by
-  rw [(h.stabilisesAt pq).cyclesSubobject_eq r hr, cyclesSubobject_self]
+    (hr : r₀ ≤ r := by lia) : E.cyclesSubobject pq r hr = ⊤ :=
+  E.cyclesSubobject_eq_top_of_forall_dFrom_eq_zero pq
+    (fun _ hs ↦ (h.stabilisesAt pq).dFrom_eq_zero hs) r hr
 
 lemma DegeneratesAt.boundariesSubobject_eq_bot (h : E.DegeneratesAt r₀ le_rfl) (pq : κ) (r : ℤ)
-    (hr : r₀ ≤ r := by lia) : E.boundariesSubobject pq r hr = ⊥ := by
-  rw [(h.stabilisesAt pq).boundariesSubobject_eq r hr, boundariesSubobject_self]
+    (hr : r₀ ≤ r := by lia) : E.boundariesSubobject pq r hr = ⊥ :=
+  E.boundariesSubobject_eq_bot_of_forall_dTo_eq_zero pq
+    (fun _ hs ↦ (h.stabilisesAt pq).dTo_eq_zero hs) r hr
 
 /-- Naturality of `pageXIsoOfStabilises` with respect to morphisms of spectral sequences. -/
 @[reassoc]
