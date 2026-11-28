@@ -53,6 +53,11 @@ particular, norms `∏ i ∈ range p, τ^[i] x` of periodic points and ring-endo
   `Finset.isFixedPt_sum_range_iterate_of_isPeriodicPt`, and
   `Finset.isFixedPt_prod_range_pow_apply`: an endomorphism fixes the product or sum over `range p`
   of any `p`-periodic orbit.
+* `Finset.isPeriodicPt_of_isFixedPt_prod_range_iterate`,
+  `Finset.isPeriodicPt_of_isFixedPt_sum_range_iterate`: conversely, over a left-cancellative
+  monoid, an endomorphism fixing the orbit product or sum over `range p` of `x` has `x` as a
+  `p`-periodic point; in particular `RingHom.pow_apply_eq_self_of_sum_range_pow_apply_eq_one`:
+  `∑ i ∈ range p, (σ ^ i) c = 1` implies `(σ ^ p) c = c`.
 -/
 
 public section
@@ -188,6 +193,40 @@ theorem isFixedPt_prod_range_iterate_of_isPeriodicPt {p : ℕ} {τ : M →* M} {
     Function.iterate_succ_apply' τ i x
 
 end CommMonoid
+
+section LeftCancel
+
+variable {M : Type*} [CommMonoid M] [IsLeftCancelMul M]
+
+/-- Conversely, in a left-cancellative commutative monoid, if a monoid endomorphism `τ` fixes the
+orbit product `∏ i ∈ range p, τ^[i] x`, then `x` is `p`-periodic under `τ`. -/
+@[to_additive
+  /-- Conversely, in a left-cancellative commutative additive monoid, if an additive monoid
+  endomorphism `τ` fixes the orbit sum `∑ i ∈ range p, τ^[i] x`, then `x` is `p`-periodic
+  under `τ`. -/]
+theorem isPeriodicPt_of_isFixedPt_prod_range_iterate {p : ℕ} {τ : M →* M} {x : M}
+    (hx : Function.IsFixedPt τ (∏ i ∈ range p, τ^[i] x)) : Function.IsPeriodicPt τ p x := by
+  have hτ : ∏ i ∈ range p, τ^[i + 1] x = ∏ i ∈ range p, τ^[i] x := by
+    simpa only [Function.IsFixedPt, map_prod, Function.iterate_succ_apply'] using hx
+  have h := (prod_range_succ (fun i ↦ τ^[i] x) p).symm.trans
+    (prod_range_succ' (fun i ↦ τ^[i] x) p)
+  rw [hτ] at h
+  exact mul_left_cancel h
+
+end LeftCancel
+
+/-- If the orbit sum `∑ i ∈ range p, (σ ^ i) c` of `c` under a ring endomorphism `σ` is `1`, then
+`σ ^ p` fixes `c`: `σ` fixes the orbit sum, since `σ 1 = 1`. -/
+theorem _root_.RingHom.pow_apply_eq_self_of_sum_range_pow_apply_eq_one {R : Type*}
+    [NonAssocSemiring R] [IsLeftCancelAdd R] (σ : R →+* R) {p : ℕ} {c : R}
+    (hc : ∑ i ∈ range p, (σ ^ i) c = 1) : (σ ^ p) c = c := by
+  have hfix : Function.IsFixedPt (σ : R →+ R) (∑ i ∈ range p, (σ : R →+ R)^[i] c) := by
+    simp only [AddMonoidHom.coe_ofClass, ← RingHom.coe_pow, hc, Function.IsFixedPt, map_one]
+  have hper := isPeriodicPt_of_isFixedPt_sum_range_iterate hfix
+  rw [AddMonoidHom.coe_ofClass] at hper
+  -- `Function.IsPeriodicPt σ p c` unfolds to `σ^[p] c = c`.
+  rw [RingHom.coe_pow]
+  exact hper
 
 /-- If a ring endomorphism `σ` satisfies `σ ^ p = 1`, then `σ` fixes the norm product
 `∏ i ∈ range p, (σ ^ i) x` for every `x`. -/

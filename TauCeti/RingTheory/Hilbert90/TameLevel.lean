@@ -20,6 +20,8 @@ import Mathlib.LinearAlgebra.Matrix.Unique
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.Spectrum.Prime.Topology
 import TauCeti.Algebra.BigOperators.Finset.Periodic
+-- `Matrix.GeneralLinearGroup.iterate_mul_map_eq_twistedNorm_mul_map`: iterates of `v ↦ c * σ(v)`.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.TwistedNorm
 import TauCeti.LinearAlgebra.Matrix.Determinant.IdealDivisibility
 
 /-!
@@ -308,11 +310,8 @@ theorem IsTameAtLevel.exists_mul_map_eq_of_twistedNorm_eq_one {n : Type*} [Finty
   have hτ_apply (v : Matrix n n R) : τ v = c.val * v.map σ := by simp [τ]
   have hτ (i : ℕ) (v : Matrix n n R) :
       τ^[i] v = (MonoidHom.twistedNorm (GeneralLinearGroup.map σ) i c).val * v.map (σ ^ i) := by
-    induction i with
-    | zero => simp
-    | succ i ih =>
-      rw [MonoidHom.twistedNorm_succ]
-      simp [iterate_succ_apply', ih, hτ_apply, Matrix.map_mul, Matrix.map_map, mul_assoc, pow_succ']
+    rw [show ⇑τ = fun w ↦ c.val * w.map σ from funext hτ_apply]
+    exact Matrix.GeneralLinearGroup.iterate_mul_map_eq_twistedNorm_mul_map σ c i v
   have hτ_period (v : Matrix n n R) : τ^[p] v = v := by simp [hτ, hc, h_tame.pow_eq_one]
   -- Pick a `τ`-fixed matrix `g ≡ 1 [mod m]` maximizing the basic open set `D(det g)`.
   obtain ⟨g, ⟨hg, W, hW⟩, hmax⟩ := exists_maximalFor_of_wellFoundedGT

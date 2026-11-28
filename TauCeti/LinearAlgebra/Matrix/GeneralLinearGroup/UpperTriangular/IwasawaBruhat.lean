@@ -107,18 +107,13 @@ theorem mem_map_iwahoriOne_iff {g : GL m K} :
       (A.valuation_lt_one_iff _).mpr (hlow hji)
     have hdiagM : ∀ i, M i i - 1 ∈ IsLocalRing.maximalIdeal A := fun i ↦
       (A.valuation_lt_one_iff _).mpr (hdiag i)
-    -- Modulo the maximal ideal, `M` is upper unitriangular, so its determinant is a unit.
-    have hdet : IsUnit M.det := by
-      refine isUnit_det_of_isUpperTriangular_map (f := IsLocalRing.residue A)
-        (fun _ _ hji ↦ (IsLocalRing.residue_eq_zero_iff _).mpr (hlowM hji)) fun i ↦ ?_
-      have hdiag_res : IsLocalRing.residue A (M i i) = 1 := by
-        simpa [sub_eq_zero] using (IsLocalRing.residue_eq_zero_iff _).mpr (hdiagM i)
-      simp [hdiag_res]
-    refine ⟨GeneralLinearGroup.mk'' M hdet, ?_, ?_⟩
-    · exact mem_upperUnitriangularCongruenceSubgroup_iff.mpr ⟨hlowM, hdiagM⟩
-    · ext i j
-      rw [GeneralLinearGroup.map_apply, GeneralLinearGroup.val_mk'']
-      simp [M, ValuationSubring.algebraMap_apply]
+    -- Modulo the maximal ideal, `M` is upper unitriangular, so it is invertible and lies in `I₁`.
+    obtain ⟨k, hk, hkM⟩ := exists_mem_upperUnitriangularCongruenceSubgroup_coe_eq
+      (IsLocalRing.ringJacobson_eq_maximalIdeal A).ge hlowM hdiagM
+    refine ⟨k, hk, ?_⟩
+    ext i j
+    rw [GeneralLinearGroup.map_apply, hkM]
+    simp [M, ValuationSubring.algebraMap_apply]
 
 /-- A diagonal matrix lies in the pro-`p` Iwahori subgroup of `GL m K` exactly when every diagonal
 entry satisfies `v (t i - 1) < 1`. -/
