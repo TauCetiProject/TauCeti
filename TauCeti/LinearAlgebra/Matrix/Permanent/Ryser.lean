@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Permanent
-import Mathlib.Data.Nat.Choose.Sum
+import TauCeti.Data.Finset.Basic
 
 /-!
 # Ryser's formula for the permanent
@@ -71,10 +71,7 @@ theorem permanent_eq_sum_powerset_compl [CommRing R] (A : Matrix n n R) :
       simp only [mem_filter, mem_univ, true_and, mem_powerset, subset_iff, mem_compl, mem_image,
         not_exists]
       exact ⟨fun h a ha x hx ↦ h x (hx ▸ ha), fun h i hi ↦ h hi i rfl⟩
-    have hsum := congrArg (Int.cast : ℤ → R)
-      (sum_powerset_neg_one_pow_card (x := (univ.image φ)ᶜ))
-    push_cast at hsum
-    rw [← sum_filter, hT, hsum]
+    rw [← sum_filter, hT, sum_powerset_neg_one_pow_card_of_ring]
     exact if_congr (by simp [compl_eq_empty_iff, eq_univ_iff_forall, Function.Surjective]) rfl rfl
   simp_rw [hrow, Fintype.prod_sum, Fintype.prod_ite_zero, mul_sum]
   rw [sum_comm, permanent_eq_sum_surjective, sum_filter]
