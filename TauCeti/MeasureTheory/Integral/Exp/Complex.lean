@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
@@ -21,6 +22,12 @@ the complex exponential kernel `t ↦ Complex.exp (-s * t)`.
 * `TauCeti.integrable_cexp_neg_mul_smul_of_re_le`: for a measure supported on `[0, ∞)`,
   integrability of `t ↦ exp (-s₀ * t) • f t` implies integrability of `t ↦ exp (-s * t) • f t`
   whenever `s₀.re ≤ s.re`.
+* `TauCeti.norm_cexp_neg_mul_smul_le_mul_exp`: a pointwise exponential bound on the integrand.
+* `TauCeti.integrable_cexp_neg_mul_smul_of_norm_le_mul_exp`: the integrand is integrable on
+  `(c, ∞)` when `f` is a.e. strongly measurable there, `‖f(t)‖ ≤ M e^{σt}` a.e. there, and
+  `σ < Re s`.
+* `TauCeti.norm_integral_cexp_neg_mul_smul_le_of_norm_le_mul_exp`: the exponential bound and
+  `σ < Re s` give the bound `M e^{-(Re s - σ)c} / (Re s - σ)` on the integral over `(c, ∞)`.
 * `TauCeti.intervalIntegrable_cexp_neg_mul_smul_iff`: multiplying by `t ↦ exp (-s * t)` preserves
   `IntervalIntegrable` for vector-valued functions and arbitrary measures.
 * `TauCeti.intervalIntegrable_of_integrableOn_cexp_neg_mul_smul_Ioi`: integrability of
@@ -29,6 +36,10 @@ the complex exponential kernel `t ↦ Complex.exp (-s * t)`.
   `∫ r in a..b, s * exp (-s * r) = exp (-s * a) - exp (-s * b)` for all `s : ℂ`, including `s = 0`.
 * `TauCeti.intervalIntegral_ofReal_cpow_neg_sub_one`: substitution `x = exp t` identifying
   `∫ x in u..v, x ^ (-z - 1)` with `∫ t in log u..log v, exp (-z * t)` for `0 < u, v`.
+
+The exponential-growth bounds are adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file `DLMF/AlgebraicAnalytic/Transforms/Laplace.lean`
+(`norm_laplaceTransform_le`).
 -/
 
 public section
@@ -57,6 +68,48 @@ theorem integrable_cexp_neg_mul_smul_of_re_le {E : Type*} [NormedAddCommGroup E]
   filter_upwards [hμ] with t ht
   rw [Complex.norm_exp, Complex.re_mul_ofReal, Complex.neg_re, Complex.sub_re]
   simpa using exp_neg_sub_mul_le_of_le hs ht
+
+section ExponentialGrowth
+
+open Complex
+
+/-- At a point `t` with `‖f(t)‖ ≤ M e^{σt}`, the Laplace integrand has
+`‖e^{-st} f(t)‖ ≤ M e^{-(Re s - σ)t}`. -/
+theorem norm_cexp_neg_mul_smul_le_mul_exp {E : Type*} [Norm E] [SMul ℂ E]
+    [NormSMulClass ℂ E] {f : ℝ → E} {s : ℂ} {σ M t : ℝ}
+    (h : ‖f t‖ ≤ M * Real.exp (σ * t)) :
+    ‖cexp (-s * t) • f t‖ ≤ M * Real.exp (-(s.re - σ) * t) := by
+  rw [norm_smul, Complex.norm_exp, re_mul_ofReal, neg_re]
+  calc Real.exp (-s.re * t) * ‖f t‖ ≤ Real.exp (-s.re * t) * (M * Real.exp (σ * t)) := by
+        gcongr
+    _ = M * Real.exp (-(s.re - σ) * t) := by
+        rw [mul_left_comm, ← Real.exp_add]
+        congr 2
+        ring
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- If `f` is a.e. strongly measurable on `(c, ∞)` with `‖f(t)‖ ≤ M e^{σt}` for almost every
+`t > c` and `σ < Re s`, then the Laplace integrand `t ↦ e^{-st} f(t)` is integrable on `(c, ∞)`. -/
+theorem integrable_cexp_neg_mul_smul_of_norm_le_mul_exp {f : ℝ → E} {s : ℂ} {σ M c : ℝ}
+    (hf : AEStronglyMeasurable f (volume.restrict (Ioi c)))
+    (hb : ∀ᵐ t ∂volume.restrict (Ioi c), ‖f t‖ ≤ M * Real.exp (σ * t)) (hs : σ < s.re) :
+    Integrable (fun t : ℝ => cexp (-s * t) • f t) (volume.restrict (Ioi c)) :=
+  Integrable.mono' ((integrableOn_exp_mul_Ioi (by linarith) c).const_mul M)
+    ((by fun_prop : Continuous fun t : ℝ => cexp (-s * t)).aestronglyMeasurable.smul hf)
+    (hb.mono fun _ ht => norm_cexp_neg_mul_smul_le_mul_exp ht)
+
+/-- If `‖f(t)‖ ≤ M e^{σt}` for almost every `t > c` and `σ < Re s`, then the Laplace integral of
+`f` over `(c, ∞)` at `s` has norm at most `M e^{-(Re s - σ)c} / (Re s - σ)`. -/
+theorem norm_integral_cexp_neg_mul_smul_le_of_norm_le_mul_exp {f : ℝ → E} {s : ℂ} {σ M c : ℝ}
+    (hb : ∀ᵐ t ∂volume.restrict (Ioi c), ‖f t‖ ≤ M * Real.exp (σ * t)) (hs : σ < s.re) :
+    ‖∫ t in Ioi c, cexp (-s * t) • f t‖ ≤ M * Real.exp (-(s.re - σ) * c) / (s.re - σ) := by
+  have hσs : -(s.re - σ) < 0 := by linarith
+  refine (norm_integral_le_of_norm_le ((integrableOn_exp_mul_Ioi hσs c).const_mul M)
+    (hb.mono fun _ ht => norm_cexp_neg_mul_smul_le_mul_exp ht)).trans_eq ?_
+  rw [integral_const_mul, integral_exp_mul_Ioi hσs, neg_div_neg_eq, mul_div_assoc]
+
+end ExponentialGrowth
 
 /-- Multiplying by the scalar exponential `t ↦ exp (-s * t)` preserves `IntervalIntegrable` for
 vector-valued functions with respect to any measure `μ`. -/
