@@ -36,6 +36,8 @@ and scalar extension.
   roots `α`.
 * `Polynomial.Splits.eq_prod_roots_of_coeff_zero_eq_one`: the case of constant coefficient `1`,
   where the polynomial is the product of the factors `1 - α⁻¹ X` alone.
+* `Polynomial.Splits.eq_zero_of_degree_lt_of_rootMultiplicity_le`: a lower-degree polynomial whose
+  root multiplicities at every root of a split polynomial `P` are at least those of `P` vanishes.
 * `Polynomial.Splits.eval_nonpos_of_forall_mem_erase_le`: over an ordered domain, a split
   polynomial with nonnegative leading coefficient is nonpositive between its largest root and the
   remaining ones.
@@ -103,6 +105,22 @@ theorem Splits.eq_C_mul_prod_roots_of_coeff_zero_ne_zero {f : K[X]} (hf : f.Spli
 theorem Splits.eq_prod_roots_of_coeff_zero_eq_one {f : K[X]} (hf : f.Splits)
     (h0 : f.coeff 0 = 1) : f = (f.roots.map fun α ↦ 1 - C α⁻¹ * X).prod := by
   simpa [h0] using hf.eq_C_mul_prod_roots_of_coeff_zero_ne_zero (by simp [h0])
+
+/-- If `P` splits over a field `K`, `Q.degree < P.degree`, and whenever `Q ≠ 0` the root
+multiplicity of `P` at every root `ζ` of `P` is at most that of `Q`, then `Q = 0`. -/
+theorem Splits.eq_zero_of_degree_lt_of_rootMultiplicity_le {P Q : K[X]} (hP : P.Splits)
+    (hdeg : Q.degree < P.degree)
+    (hm : Q ≠ 0 → ∀ ζ, P.IsRoot ζ → P.rootMultiplicity ζ ≤ Q.rootMultiplicity ζ) :
+    Q = 0 := by
+  classical
+  have hP0 : P ≠ 0 := ne_zero_of_degree_gt hdeg
+  by_contra hQ0
+  have hdvd : P ∣ Q := hP.dvd_of_roots_le_roots hP0 <| Multiset.le_iff_count.mpr fun ζ ↦ by
+    rw [count_roots, count_roots]
+    rcases Nat.eq_zero_or_pos (P.rootMultiplicity ζ) with h0 | hpos
+    · simp [h0]
+    · exact hm hQ0 ζ ((rootMultiplicity_pos hP0).mp hpos)
+  exact hQ0 (eq_zero_of_dvd_of_degree_lt hdvd hdeg)
 
 section Order
 

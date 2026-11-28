@@ -26,14 +26,19 @@ calculus on entire functions.
 
 * `TauCeti.partialDeriv_eq_deriv_update`, `TauCeti.hasDerivAt_comp_update`: `∂ᵢ f (z)` is the
   derivative of `f` along the line through `z` parallel to the `i`-th coordinate axis, and
-  `TauCeti.iteratedDeriv_comp_update` gives the same for `∂ᵢ^m` and entire `f`, whose restrictions
-  to such lines are entire (`TauCeti.differentiable_comp_update`). Freezing a variable of an
-  entire function gives an entire function (`TauCeti.differentiable_comp_update_const`).
+  `TauCeti.iteratedDeriv_comp_update`, `TauCeti.iterate_partialDeriv_eq_iteratedDeriv_update` give
+  the same for `∂ᵢ^m` and entire `f`, whose restrictions to such lines are entire
+  (`TauCeti.differentiable_comp_update`). Freezing a variable of an entire function gives an entire
+  function (`TauCeti.differentiable_comp_update_const`).
 * `TauCeti.partialDeriv_comp_update_self`, `TauCeti.partialDeriv_comp_update_of_ne`: freezing the
   `i`-th variable kills `∂ᵢ` and commutes with `∂ⱼ` for `j ≠ i`.
 * `TauCeti.differentiable_partialDeriv`: a partial derivative of an entire function is entire.
 * `TauCeti.partialDeriv_comm`: partial derivatives of an entire function commute.
-* `TauCeti.partialDeriv_add`, `TauCeti.partialDeriv_const_smul`: `∂ᵢ` is linear.
+* `TauCeti.partialDeriv_add`, `TauCeti.partialDeriv_sub`, `TauCeti.partialDeriv_const_smul`: `∂ᵢ`
+  is linear on entire functions (and commutes with constant scalar multiplication unconditionally).
+* `TauCeti.partialDeriv_smul_of_update_eq`, `TauCeti.iterate_partialDeriv_smul_of_update_eq`:
+  for entire functions `φ` and `f`, if `φ` is independent of the `i`-th coordinate, then `φ`
+  pulls out of `∂ᵢ` and `∂ᵢ^k`.
 * `TauCeti.partialDeriv_prod`, `TauCeti.iterate_partialDeriv_prod`: for a separated product
   `z ↦ ∏ⱼ gⱼ(zⱼ)` of entire functions of one variable, `∂ᵢ^k` differentiates the `i`-th factor
   `k` times.
@@ -103,6 +108,13 @@ theorem partialDeriv_add [Finite ι] (hf : Differentiable ℂ f) (hg : Different
   ext z
   simp [partialDeriv_apply, fderiv_add (hf z) (hg z)]
 
+/-- `∂ᵢ` commutes with subtraction on entire functions. -/
+theorem partialDeriv_sub [Finite ι] (hf : Differentiable ℂ f) (hg : Differentiable ℂ g) (i : ι) :
+    partialDeriv i (f - g) = partialDeriv i f - partialDeriv i g := by
+  have := Fintype.ofFinite ι
+  ext z
+  simp [partialDeriv_apply, fderiv_sub (hf z) (hg z)]
+
 /-- `∂ᵢ` commutes with scalar multiplication by a constant. -/
 @[simp]
 theorem partialDeriv_const_smul [Finite ι] (c : ℂ) (i : ι) :
@@ -167,17 +179,27 @@ theorem partialDeriv_fun_smul_self [Finite ι] {c : ℂ → ℂ} (hc : Different
   simp only [update_eq_self] at h
   simpa only [update_self] using h.deriv
 
+/-- An entire scalar factor `φ` independent of the `i`-th coordinate pulls out of `∂ᵢ` when
+multiplying an entire function `f`. -/
+theorem partialDeriv_smul_of_update_eq [Finite ι] {φ : (ι → ℂ) → ℂ} (hφ : Differentiable ℂ φ)
+    (hf : Differentiable ℂ f) {i : ι} (hφi : ∀ z s, φ (update z i s) = φ z) :
+    partialDeriv i (fun z ↦ φ z • f z) = fun z ↦ φ z • partialDeriv i f z := by
+  have := Fintype.ofFinite ι
+  ext z
+  rw [partialDeriv_eq_deriv_update ((hφ z).fun_smul (hf z)) i,
+    partialDeriv_eq_deriv_update (hf z) i]
+  have hconst : (fun s ↦ φ (update z i s) • f (update z i s)) =
+      fun s ↦ φ z • f (update z i s) := funext fun s ↦ by rw [hφi]
+  rw [hconst, deriv_fun_const_smul_field]
+
 /-- A factor depending only on the `i`-th variable is a constant for `∂ⱼ` with `j ≠ i`:
 `∂ⱼ (c(zᵢ) f) = c(zᵢ) ∂ⱼ f`. -/
 theorem partialDeriv_fun_smul_of_ne [Finite ι] {c : ℂ → ℂ} (hc : Differentiable ℂ c)
     (hf : Differentiable ℂ f) {i j : ι} (hji : j ≠ i) :
     partialDeriv j (fun z ↦ c (z i) • f z) = fun z ↦ c (z i) • partialDeriv j f z := by
   have := Fintype.ofFinite ι
-  ext z
-  rw [partialDeriv_eq_deriv_update (by fun_prop)]
-  have h := (hasDerivAt_comp_update (s := z j) (hf (update z j (z j)))).fun_const_smul (c (z i))
-  simp only [update_eq_self] at h
-  simpa only [update_of_ne hji.symm] using h.deriv
+  exact partialDeriv_smul_of_update_eq (hc.comp (differentiable_apply i)) hf fun z s ↦ by
+    rw [update_of_ne hji.symm]
 
 /-! ### Entire functions -/
 
@@ -232,6 +254,13 @@ theorem iterate_partialDeriv_add (hf : Differentiable ℂ f) (hg : Differentiabl
       partialDeriv_add (differentiable_iterate_partialDeriv hf i k)
         (differentiable_iterate_partialDeriv hg i k)]
 
+/-- `∂ᵢ^k` commutes with subtraction on entire functions. -/
+theorem iterate_partialDeriv_sub (hf : Differentiable ℂ f) (hg : Differentiable ℂ g) (i : ι)
+    (k : ℕ) : (partialDeriv i)^[k] (f - g) = (partialDeriv i)^[k] f - (partialDeriv i)^[k] g := by
+  have := Fintype.ofFinite ι
+  rw [sub_eq_add_neg, ← neg_one_smul ℂ g, iterate_partialDeriv_add hf (hg.const_smul (-1 : ℂ)),
+    iterate_partialDeriv_const_smul, neg_one_smul, sub_eq_add_neg]
+
 /-- Replacing the `i`-th variable by a constant commutes with the iterated partial derivatives
 `∂ⱼ^m` in another variable `j ≠ i` of an entire function. -/
 theorem iterate_partialDeriv_comp_update_of_ne (hf : Differentiable ℂ f) {i j : ι} (hji : j ≠ i)
@@ -243,17 +272,26 @@ theorem iterate_partialDeriv_comp_update_of_ne (hf : Differentiable ℂ f) {i j 
     rw [iterate_succ_apply', iterate_succ_apply', ih,
       partialDeriv_comp_update_of_ne (differentiable_iterate_partialDeriv hf j m) hji]
 
+/-- An entire scalar factor `φ` independent of the `i`-th coordinate pulls out of `∂ᵢ^k` when
+multiplying an entire function `f`. -/
+theorem iterate_partialDeriv_smul_of_update_eq {φ : (ι → ℂ) → ℂ} (hφ : Differentiable ℂ φ)
+    (hf : Differentiable ℂ f) {i : ι} (hφi : ∀ z s, φ (update z i s) = φ z) (k : ℕ) :
+    (partialDeriv i)^[k] (fun z ↦ φ z • f z) = fun z ↦ φ z • (partialDeriv i)^[k] f z := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [iterate_succ_apply', iterate_succ_apply', ih,
+      partialDeriv_smul_of_update_eq hφ (differentiable_iterate_partialDeriv hf i k) hφi]
+
 /-- A factor depending only on the `i`-th variable commutes with the iterated partial derivatives
 `∂ⱼ^m` in another variable `j ≠ i`. -/
 theorem iterate_partialDeriv_fun_smul_of_ne {c : ℂ → ℂ} (hc : Differentiable ℂ c)
     (hf : Differentiable ℂ f) {i j : ι} (hji : j ≠ i) (m : ℕ) :
     (partialDeriv j)^[m] (fun z ↦ c (z i) • f z) =
       fun z ↦ c (z i) • (partialDeriv j)^[m] f z := by
-  induction m with
-  | zero => rfl
-  | succ m ih =>
-    rw [iterate_succ_apply', iterate_succ_apply', ih,
-      partialDeriv_fun_smul_of_ne hc (differentiable_iterate_partialDeriv hf j m) hji]
+  have := Fintype.ofFinite ι
+  exact iterate_partialDeriv_smul_of_update_eq (hc.comp (differentiable_apply i)) hf
+    (fun z s ↦ by rw [update_of_ne hji.symm]) m
 
 /-- **Leibniz's rule** for `∂ᵢ^(n+1)` and the factor `zᵢ - a`:
 `∂ᵢ^(n+1) ((zᵢ - a) f) = (zᵢ - a) ∂ᵢ^(n+1) f + (n + 1) ∂ᵢ^n f`. -/
@@ -291,6 +329,21 @@ theorem iteratedDeriv_comp_update (hf : Differentiable ℂ f) (i : ι) (z : ι �
     ext s
     rw [iteratedDeriv_succ, ih, iterate_succ_apply']
     exact (hasDerivAt_comp_update (differentiable_iterate_partialDeriv hf i m _)).deriv
+
+/-- For an entire function `f`, the iterated partial derivative `∂ᵢ^k f (z)` is the `k`-th
+derivative of `f` restricted to the line through `z` parallel to the `i`-th coordinate axis. -/
+theorem iterate_partialDeriv_eq_iteratedDeriv_update (hf : Differentiable ℂ f) (i : ι) (k : ℕ)
+    (z : ι → ℂ) :
+    (partialDeriv i)^[k] f z = iteratedDeriv k (fun s ↦ f (update z i s)) (z i) := by
+  have h := congrFun (iteratedDeriv_comp_update hf i z k).symm (z i)
+  rwa [update_eq_self] at h
+
+/-- An entire factor `φ` independent of the `i`-th coordinate pulls out of `∂ᵢ^k` when
+multiplying an entire function `h`. -/
+theorem iterate_partialDeriv_mul_of_update_eq {φ h : (ι → ℂ) → ℂ} (hφ : Differentiable ℂ φ)
+    (hh : Differentiable ℂ h) {i : ι} (hφi : ∀ z s, φ (update z i s) = φ z) (k : ℕ) :
+    (partialDeriv i)^[k] (fun z ↦ φ z * h z) = fun z ↦ φ z * (partialDeriv i)^[k] h z := by
+  simpa only [smul_eq_mul] using iterate_partialDeriv_smul_of_update_eq hφ hh hφi k
 
 end Entire
 

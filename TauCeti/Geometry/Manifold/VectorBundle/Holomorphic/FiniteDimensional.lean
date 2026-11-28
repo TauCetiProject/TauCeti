@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 import Mathlib.Topology.VectorBundle.FiniteDimensional
-import TauCeti.Analysis.Complex.Schwarz
+import TauCeti.Analysis.Complex.Schwarz.Basic
 import Mathlib.Topology.ContinuousMap.Compact
 import TauCeti.Geometry.Manifold.CoordinateBall
 

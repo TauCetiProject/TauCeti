@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-public import TauCeti.Analysis.Complex.Schwarz
+public import TauCeti.Analysis.Complex.Schwarz.Basic
 
 import Mathlib.Analysis.Complex.ExponentialBounds
 import TauCeti.Algebra.CharZero.RatCast
