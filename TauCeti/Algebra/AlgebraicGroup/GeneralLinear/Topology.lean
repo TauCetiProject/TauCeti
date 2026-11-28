@@ -12,6 +12,7 @@ public import TauCeti.Topology.Algebra.PointTopology.Group
 public import TauCeti.Topology.Instances.Matrix
 
 import TauCeti.Algebra.AlgebraicGroup.CongruenceSubgroup.Topology
+import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Basic
 
 /-!
 # The point topology on `GL_n` is the topology of the unit group
@@ -172,27 +173,20 @@ theorem hasBasis_nhds_one_ker_map_quotientMk (m : Type*) [Fintype m] [DecidableE
     convert h using 2 with i
     rw [← map_congruenceSubgroup (R := ℤ), Subgroup.coe_map, MulEquiv.coe_toMonoidHom]
     simp only [pointsContinuousMulEquiv_apply]
-  -- Reindexing along `m ≃ Fin n` is a homeomorphism of the unit groups commuting with reduction:
-  -- `reindex R e` is `Units.map` of the reindexing of matrices, which is continuous.
-  let e := Fintype.equivFin m
-  let Φ : Matrix.GeneralLinearGroup m R ≃ₜ* Matrix.GeneralLinearGroup (Fin (Fintype.card m)) R :=
-    { toMulEquiv := Matrix.GeneralLinearGroup.reindex R e
-      continuous_toFun := Continuous.units_map (Matrix.reindexRingEquiv R e).toMonoidHom
-        (continuous_id.matrix_reindex e e)
-      continuous_invFun := Continuous.units_map (Matrix.reindexRingEquiv R e.symm).toMonoidHom
-        (continuous_id.matrix_reindex e.symm e.symm) }
+  -- Reindexing along `m ≃ Fin n` is a homeomorphism of the unit groups commuting with reduction.
+  let Φ := Matrix.GeneralLinearGroup.reindexContinuousMulEquiv R (Fintype.equivFin m)
   have hΦ : Filter.comap Φ (𝓝 1) = 𝓝 (1 : Matrix.GeneralLinearGroup m R) := by
-    rw [← Homeomorph.coe_ofClass Φ, Homeomorph.comap_nhds_eq]
-    exact congrArg 𝓝 (map_one Φ.symm)
+    rw [← map_one Φ, ← Homeomorph.coe_ofClass Φ,
+      ← (Homeomorph.ofClass Φ).isInducing.nhds_eq_comap]
   have h := hFin.comap Φ
   rw [hΦ] at h
   convert h using 2 with i
   ext g
-  simp only [SetLike.mem_coe, MonoidHom.mem_ker, Set.mem_preimage]
-  -- As a map, `Φ` is `reindex R e` by construction; reindexing commutes with reduction.
-  rw [show Φ g = Matrix.GeneralLinearGroup.reindex R e g from rfl,
-    ← Matrix.GeneralLinearGroup.reindex_map, ← map_one (Matrix.GeneralLinearGroup.reindex _ e),
-    (Matrix.GeneralLinearGroup.reindex _ e).injective.eq_iff]
+  simp only [SetLike.mem_coe, MonoidHom.mem_ker, Set.mem_preimage, Φ,
+    Matrix.GeneralLinearGroup.reindexContinuousMulEquiv_apply]
+  rw [← Matrix.GeneralLinearGroup.reindex_map,
+    ← map_one (Matrix.GeneralLinearGroup.reindex _ (Fintype.equivFin m)),
+    (Matrix.GeneralLinearGroup.reindex _ (Fintype.equivFin m)).injective.eq_iff]
 
 end PointTopology
 
