@@ -393,17 +393,6 @@ theorem isTheta_cpow_div_ascPochhammer (j : ℕ) {x : ℝ} (hx : 0 < x)
   exact (hn.div (hp.trans (hs.pow (j + 1)))).mono
     (Filter.prod_mono (Filter.principal_mono.mpr subset_closure) le_rfl)
 
-private lemma aestronglyMeasurable_and_norm_neg_le_exp_neg_mul_abs {E : Type*}
-    [NormedAddCommGroup E] {g : ℝ → E} {α : ℝ} (hg_meas : AEStronglyMeasurable g)
-    (hg_bound : ∃ C R : ℝ, ∀ᵐ y : ℝ, ‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|)) :
-    AEStronglyMeasurable (fun y : ℝ ↦ g (-y)) ∧
-      ∃ C R : ℝ, ∀ᵐ y : ℝ, ‖g (-y)‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|) := by
-  obtain ⟨C, R, hg⟩ := hg_bound
-  have hqmp := (Measure.measurePreserving_neg (volume : Measure ℝ)).quasiMeasurePreserving
-  refine ⟨hg_meas.comp_quasiMeasurePreserving hqmp, C, R, ?_⟩
-  filter_upwards [hqmp.tendsto_ae.eventually hg] with y hy
-  simpa [abs_neg] using hy
-
 private lemma neg_contour_eq (σ y : ℝ) :
     ((-σ : ℝ) : ℂ) + (-y : ℝ) * I = -((σ : ℂ) + y * I) := by
   push_cast; ring
@@ -462,10 +451,12 @@ theorem integrable_cpow_neg_smul_of_norm_le_exp_neg_mul_abs {E : Type*} [NormedA
     (hg_bound : ∃ C R : ℝ, ∀ᵐ y : ℝ, ‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|))
     (σ : ℝ) {w : ℂ} (harg : |w.arg| < α) :
     Integrable fun y : ℝ ↦ w ^ (-((σ : ℂ) + y * I)) • g y := by
-  obtain ⟨hg_neg_meas, hg_neg_bound⟩ :=
-    aestronglyMeasurable_and_norm_neg_le_exp_neg_mul_abs hg_meas hg_bound
+  obtain ⟨C, R, hg⟩ := hg_bound
   exact (integrable_neg_add_mul_I_iff (fun s y ↦ w ^ s • g y) σ).mpr
-    (integrable_cpow_smul_of_norm_le_exp_neg_mul_abs hg_neg_meas hg_neg_bound (-σ) harg)
+    (integrable_cpow_smul_of_norm_le_exp_neg_mul_abs
+      (hg_meas.comp_quasiMeasurePreserving
+        (Measure.measurePreserving_neg (volume : Measure ℝ)).quasiMeasurePreserving)
+      ⟨C, R, ae_norm_neg_le_one_add_abs_rpow_mul_exp_neg_mul_abs hg⟩ (-σ) harg)
 
 /-- **Differentiation under a Mellin–Barnes integral.** If `g : ℝ → E` is strongly measurable and
 satisfies `‖g y‖ ≤ C (1 + |y|) ^ R e^{-α |y|}` almost everywhere, then
@@ -515,9 +506,11 @@ theorem hasDerivAt_integral_cpow_neg_smul {E : Type*} [NormedAddCommGroup E]
     (σ : ℝ) {w₀ : ℂ} (hw₀ : w₀ ∈ slitPlane) (harg : |w₀.arg| < α) :
     HasDerivAt (fun w : ℂ ↦ ∫ y : ℝ, w ^ (-((σ : ℂ) + y * I)) • g y)
       (∫ y : ℝ, (-((σ : ℂ) + y * I) * w₀ ^ (-((σ : ℂ) + y * I) - 1)) • g y) w₀ := by
-  obtain ⟨hg_neg_meas, hg_neg_bound⟩ :=
-    aestronglyMeasurable_and_norm_neg_le_exp_neg_mul_abs hg_meas hg_bound
-  have h := hasDerivAt_integral_cpow_smul hg_neg_meas hg_neg_bound (-σ) hw₀ harg
+  obtain ⟨C, R, hg⟩ := hg_bound
+  have h := hasDerivAt_integral_cpow_smul
+    (hg_meas.comp_quasiMeasurePreserving
+      (Measure.measurePreserving_neg (volume : Measure ℝ)).quasiMeasurePreserving)
+    ⟨C, R, ae_norm_neg_le_one_add_abs_rpow_mul_exp_neg_mul_abs hg⟩ (-σ) hw₀ harg
   refine (h.congr_of_eventuallyEq (Eventually.of_forall fun w ↦ ?_)).congr_deriv ?_
   · exact integral_neg_add_mul_I (fun s y ↦ w ^ s • g y) σ
   · exact (integral_neg_add_mul_I (fun s y ↦ (s * w₀ ^ (s - 1)) • g y) σ).symm
