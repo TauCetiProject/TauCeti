@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.CharacteristicSet
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Composition
-public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Elliptic
+public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Elliptic.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 import TauCeti.Algebra.Module.LinearMap.UnitSMul
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart

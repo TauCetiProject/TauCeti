@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Determinant
+import TauCeti.Algebra.Module.LinearMap.End
 
 /-!
 # The determinant of a commuting scalar action
@@ -23,6 +24,8 @@ Let `V` be a module over a commutative ring `E` with a commuting action of a sem
 * `TauCeti.smulDet_congr`: it depends only on the isomorphism class of `V`.
 * `TauCeti.smulDet_eq_pow_of_smul_eq`: if `a` acts on a free module as `c ∈ E`, then
   `det_E(a | V) = c ^ dim_E V`.
+* `TauCeti.smulDet_prod`: the determinant on `V × W` is the product of the determinants, since
+  `a` acts on `V × W` componentwise (`DistribSMul.toLinearMap_prod`).
 -/
 
 public section
@@ -68,5 +71,14 @@ theorem smulDet_congr {W : Type*} [AddCommGroup W] [Module E W] [Module k W]
   congr 1
   ext w
   simp [eE, e.map_smul]
+
+/-- The determinant of the scalar action on a product is the product of the determinants. -/
+theorem smulDet_prod {W : Type*} [AddCommGroup W] [Module E W] [Module k W] [SMulCommClass E k W]
+    [Module.Free E V] [Module.Finite E V] [Module.Free E W] [Module.Finite E W] (a : k) :
+    smulDet E k (V × W) a = smulDet E k V a * smulDet E k W a := by
+  have : SMulCommClass k E V := .symm E k V
+  have : SMulCommClass k E W := .symm E k W
+  rw [smulDet_apply, smulDet_apply, smulDet_apply, DistribSMul.toLinearMap_prod,
+    LinearMap.det_prodMap]
 
 end TauCeti
