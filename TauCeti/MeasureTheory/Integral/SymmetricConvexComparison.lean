@@ -146,6 +146,43 @@ theorem prod_apply_le_prod_apply_of_forall_convex [MeasurableNeg E] [MeasurableN
         (hswap.logConcave_measure_preimage_prodMk hν₁ (hs.preimage measurable_swap)) hevenE
     _ = ν₁.prod ν₂ s := (Measure.prod_apply_symm hs).symm
 
+/-- The `Fin n`-indexed case of `pi_apply_le_pi_apply_of_forall_convex`, by induction on `n`,
+splitting off the zeroth coordinate. -/
+private theorem pi_fin_apply_le_pi_fin_apply_of_forall_convex :
+    ∀ (n : ℕ) (α : Fin n → Type _) [∀ i, MeasurableSpace (α i)]
+    [∀ i, AddCommGroup (α i)] [∀ i, Module ℝ (α i)] [∀ i, MeasurableNeg (α i)]
+    (μ ν : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] [∀ i, SigmaFinite (ν i)]
+    [∀ i, (μ i).IsNegInvariant] [∀ i, (ν i).IsNegInvariant],
+    (∀ i ⦃θ : ℝ⦄, 0 ≤ θ → θ ≤ 1 → (μ i).HasPrekopaLeindler θ) →
+    (∀ i ⦃θ : ℝ⦄, 0 ≤ θ → θ ≤ 1 → (ν i).HasPrekopaLeindler θ) →
+    (∀ i (s : Set (α i)), MeasurableSet s → Convex ℝ s → (∀ x ∈ s, -x ∈ s) →
+      μ i s ≤ ν i s) →
+    ∀ s : Set (∀ i, α i), MeasurableSet s → Convex ℝ s → (∀ x ∈ s, -x ∈ s) →
+      Measure.pi μ s ≤ Measure.pi ν s := by
+  intro n
+  induction n with
+  | zero =>
+    intro α _ _ _ _ μ ν _ _ _ _ _ _ _ s _ _ _
+    rw [Measure.pi_of_empty μ isEmptyElim, Measure.pi_of_empty ν isEmptyElim]
+  | succ n ih =>
+    intro α _ _ _ _ μ ν _ _ _ _ hμ hν h s hs hsc hneg
+    -- `Fin.cons` is linear and identifies the product measures.
+    have hcons (ρ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (ρ i)] :
+        MeasurePreserving (Fin.consLinearEquiv ℝ α).toLinearMap
+          ((ρ 0).prod (Measure.pi fun j ↦ ρ j.succ)) (Measure.pi ρ) := by
+      have hL : ⇑(Fin.consLinearEquiv ℝ α).toLinearMap =
+          ⇑(MeasurableEquiv.piFinSuccAbove α 0).symm := by
+        -- At the index `0`, `Fin.insertNth` is `Fin.cons` by definition.
+        ext p i
+        cases i using Fin.cases <;> rfl
+      rw [hL]
+      exact (measurePreserving_piFinSuccAbove ρ 0).symm
+    refine (hcons μ).measure_le_of_forall_convex (hcons ν) ?_ hs hsc hneg
+    intro t ht htc htneg
+    exact prod_apply_le_prod_apply_of_forall_convex (hν 0)
+      (fun _ hθ₀ hθ₁ ↦ Measure.HasPrekopaLeindler.pi fun j ↦ hμ j.succ hθ₀ hθ₁) (h 0)
+      (ih _ _ _ (fun j ↦ hμ j.succ) (fun j ↦ hν j.succ) fun j ↦ h j.succ) ht htc htneg
+
 /-- **Domination on symmetric convex sets passes to finite products** (Bombieri–Gubler, the
 induction in the proof of Lemma C.3.7). Let `μ i` be dominated by `ν i` on symmetric convex
 subsets of `α i` for each `i`, where all these measures are σ-finite, negation-invariant and have
@@ -160,47 +197,14 @@ theorem pi_apply_le_pi_apply_of_forall_convex {ι : Type*} [Fintype ι] {α : ι
     (h : ∀ i (s : Set (α i)), MeasurableSet s → Convex ℝ s → (∀ x ∈ s, -x ∈ s) → μ i s ≤ ν i s)
     {s : Set (∀ i, α i)} (hs : MeasurableSet s) (hsc : Convex ℝ s) (hneg : ∀ x ∈ s, -x ∈ s) :
     Measure.pi μ s ≤ Measure.pi ν s := by
-  -- First treat the index types `Fin n`, splitting off the zeroth coordinate inductively.
-  have hfin : ∀ (n : ℕ) (α : Fin n → Type _) [∀ i, MeasurableSpace (α i)]
-      [∀ i, AddCommGroup (α i)] [∀ i, Module ℝ (α i)] [∀ i, MeasurableNeg (α i)]
-      (μ ν : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] [∀ i, SigmaFinite (ν i)]
-      [∀ i, (μ i).IsNegInvariant] [∀ i, (ν i).IsNegInvariant],
-      (∀ i ⦃θ : ℝ⦄, 0 ≤ θ → θ ≤ 1 → (μ i).HasPrekopaLeindler θ) →
-      (∀ i ⦃θ : ℝ⦄, 0 ≤ θ → θ ≤ 1 → (ν i).HasPrekopaLeindler θ) →
-      (∀ i (s : Set (α i)), MeasurableSet s → Convex ℝ s → (∀ x ∈ s, -x ∈ s) →
-        μ i s ≤ ν i s) →
-      ∀ s : Set (∀ i, α i), MeasurableSet s → Convex ℝ s → (∀ x ∈ s, -x ∈ s) →
-        Measure.pi μ s ≤ Measure.pi ν s := by
-    intro n
-    induction n with
-    | zero =>
-      intro α _ _ _ _ μ ν _ _ _ _ _ _ _ s _ _ _
-      rw [Measure.pi_of_empty μ isEmptyElim, Measure.pi_of_empty ν isEmptyElim]
-    | succ n ih =>
-      intro α _ _ _ _ μ ν _ _ _ _ hμ hν h s hs hsc hneg
-      -- `Fin.cons` is linear and identifies the product measures.
-      have hcons (ρ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (ρ i)] :
-          MeasurePreserving (Fin.consLinearEquiv ℝ α).toLinearMap
-            ((ρ 0).prod (Measure.pi fun j ↦ ρ j.succ)) (Measure.pi ρ) := by
-        have hL : ⇑(Fin.consLinearEquiv ℝ α).toLinearMap =
-            ⇑(MeasurableEquiv.piFinSuccAbove α 0).symm := by
-          -- At the index `0`, `Fin.insertNth` is `Fin.cons` by definition.
-          ext p i
-          cases i using Fin.cases <;> rfl
-        rw [hL]
-        exact (measurePreserving_piFinSuccAbove ρ 0).symm
-      refine (hcons μ).measure_le_of_forall_convex (hcons ν) ?_ hs hsc hneg
-      intro t ht htc htneg
-      exact prod_apply_le_prod_apply_of_forall_convex (hν 0)
-        (fun _ hθ₀ hθ₁ ↦ Measure.HasPrekopaLeindler.pi fun j ↦ hμ j.succ hθ₀ hθ₁) (h 0)
-        (ih _ _ _ (fun j ↦ hμ j.succ) (fun j ↦ hν j.succ) fun j ↦ h j.succ) ht htc htneg
-  -- Then reindex along `Fintype.equivFin ι`.
+  -- Reindex along `Fintype.equivFin ι`, using the `Fin n` case.
   let e := Fintype.equivFin ι
   have hcongr (ρ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (ρ i)] :
       MeasurePreserving (LinearEquiv.piCongrLeft ℝ α e.symm).toLinearMap
         (Measure.pi fun j ↦ ρ (e.symm j)) (Measure.pi ρ) :=
     measurePreserving_piCongrLeft ρ e.symm
   exact (hcongr μ).measure_le_of_forall_convex (hcongr ν)
-    (hfin _ _ _ _ (fun j ↦ hμ _) (fun j ↦ hν _) fun j ↦ h _) hs hsc hneg
+    (pi_fin_apply_le_pi_fin_apply_of_forall_convex _ _ _ _ (fun j ↦ hμ _) (fun j ↦ hν _)
+      fun j ↦ h _) hs hsc hneg
 
 end TauCeti
