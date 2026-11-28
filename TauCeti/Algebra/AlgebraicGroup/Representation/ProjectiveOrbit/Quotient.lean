@@ -202,7 +202,7 @@ private theorem toProjectiveOrbit_mul_invariant :
   simp
 
 include hcoset in
-private theorem toProjectiveOrbit_coset_iff
+private theorem inv_mul_mem_quotientPointsSubgroup_of_comp_toProjectiveOrbit_eq
     (A : CommAlgCat.{u} k) (g g' : HopfAlgebra.points (R := k) (H := H) A)
     (h : Spec.mapMulEquiv g ≫ toProjectiveOrbitOver (H := H) m hm =
       Spec.mapMulEquiv g' ≫ toProjectiveOrbitOver (H := H) m hm) :
@@ -234,7 +234,7 @@ instance isIso_fppfHomogeneousQuotientToProjectiveOrbitPoints [_root_.IsReduced 
     IsIso (fppfHomogeneousQuotientToProjectiveOrbitPoints I m hm hcoset) :=
   CommHopfAlgCat.isIso_fppfHomogeneousQuotientDesc H I _
     (toProjectiveOrbit_mul_invariant I m hm hcoset)
-    (toProjectiveOrbit_coset_iff I m hm hcoset)
+    (inv_mul_mem_quotientPointsSubgroup_of_comp_toProjectiveOrbit_eq I m hm hcoset)
 
 /-- **The homogeneous quotient `G/N` is represented by a projective orbit.** For a reduced
 finite-type group over an algebraically closed field and a vector whose matrix coefficients
@@ -244,7 +244,7 @@ noncomputable def fppfHomogeneousQuotientIsoProjectiveOrbitPoints [_root_.IsRedu
     CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m hm :=
   CommHopfAlgCat.fppfHomogeneousQuotientIsoPointsSheaf H I _
     (toProjectiveOrbit_mul_invariant I m hm hcoset)
-    (toProjectiveOrbit_coset_iff I m hm hcoset)
+    (inv_mul_mem_quotientPointsSubgroup_of_comp_toProjectiveOrbit_eq I m hm hcoset)
 
 /-- The forward map of the representing isomorphism is the descended orbit map. -/
 @[simp]
@@ -271,7 +271,7 @@ end Descent
       Over.homMk (toProjectiveOrbit (H := H) m hm) (toProjectiveOrbit_projectiveOrbitToSpec m hm) :=
   CommHopfAlgCat.representedQuotientProjection_fppfHomogeneousQuotientIsoPointsSheaf H I _
     (toProjectiveOrbit_mul_invariant I m hm hcoset)
-    (toProjectiveOrbit_coset_iff I m hm hcoset)
+    (inv_mul_mem_quotientPointsSubgroup_of_comp_toProjectiveOrbit_eq I m hm hcoset)
 
 /-- For a reduced group `G` and Chevalley's representing isomorphism, the underlying scheme morphism
 of `representedQuotientProjection` is `toProjectiveOrbit`. -/

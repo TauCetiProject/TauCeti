@@ -394,9 +394,8 @@ instance isLocallySurjective_pointsSheafFunctor_map
     Presheaf.IsLocallySurjective (fppfTopology R) ((pointsSheafFunctor R).map f).hom := by
   have hcov : Sieve.generate (Presieve.singleton f) ∈
       Scheme.fppfTopology.over (Spec (CommRingCat.of R)) Y := by
-    rw [← Presieve.ofArrows_pUnit.{0}]
-    change Sieve.ofArrows (fun _ : PUnit.{1} ↦ X) (fun _ : PUnit.{1} ↦ f) ∈ _
-    rw [GrothendieckTopology.mem_over_iff, Sieve.overEquiv_ofArrows]
+    rw [← Presieve.ofArrows_pUnit.{0}, ← Sieve.ofArrows, GrothendieckTopology.mem_over_iff,
+      Sieve.overEquiv_ofArrows]
     refine Precoverage.generate_mem_toGrothendieck ?_
     rw [Presieve.ofArrows_pUnit]
     exact f.left.singleton_mem_fppfPrecoverage
@@ -414,15 +413,6 @@ instance isLocallySurjective_pointsSheafFunctor_map
     rw [pointsSheafFunctor_map]
     infer_instance
   exact (Sheaf.isLocallySurjective_iff_epi ((pointsSheafFunctor R).map f)).mpr hepi'
-
-variable {R} in
-/-- **Fppf morphisms induce locally surjective maps on affine points sheaves (sheaf form).** -/
-instance isLocallySurjective_sheaf_pointsSheafFunctor_map
-    {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y)
-    [Flat f.left] [Surjective f.left] [LocallyOfFinitePresentation f.left] :
-    Sheaf.IsLocallySurjective ((pointsSheafFunctor R).map f) :=
-  (Sheaf.isLocallySurjective_sheafToPresheaf_map_iff _).1
-    (isLocallySurjective_pointsSheafFunctor_map f)
 
 variable {R} in
 /-- **Locally surjective maps of points come from surjective morphisms.** If a morphism of

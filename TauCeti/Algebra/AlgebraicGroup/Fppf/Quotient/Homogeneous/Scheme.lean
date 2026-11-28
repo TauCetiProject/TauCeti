@@ -532,10 +532,6 @@ theorem isModHom_representedQuotientIso_hom
       (representedQuotientIso H I e₁ e₂).hom := by
   let G := (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))
   let _ : ModObj G G := ModObj.regular G
-  have : Presheaf.IsLocallySurjective (CommAlgCat.fppfTopology R)
-      ((CommAlgCat.pointsSheafFunctor R).map (representedQuotientProjection H I e₁)).hom :=
-    (Sheaf.isLocallySurjective_sheafToPresheaf_map_iff _).2
-      (isLocallySurjective_pointsSheafFunctor_map_representedQuotientProjection H I e₁)
   have : IsModHom G (representedQuotientProjection H I e₁) := ⟨hX⟩
   have : IsModHom G
       (representedQuotientProjection H I e₁ ≫ (representedQuotientIso H I e₁ e₂).hom) :=
