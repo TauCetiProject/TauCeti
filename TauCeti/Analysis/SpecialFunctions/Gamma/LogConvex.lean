@@ -27,6 +27,7 @@ Log-convexity also bounds and orders the ratios of Gamma values at shifted point
 
 * `Real.Gamma_add_le_rpow_mul_Gamma`: `Γ(y + a) ≤ y^a Γ(y)` for `0 < y` and `0 ≤ a ≤ 1`, the
   interpolation step of Wendel's inequalities.
+* `Real.Gamma_add_half_div_Gamma_lt_sqrt`: `Γ(x + 1/2) / Γ(x) < √x` for `x > 0`.
 * `Real.rpow_one_sub_le_Gamma_add_one_div_Gamma_add`,
   `Real.Gamma_add_one_div_Gamma_add_le_rpow`: Wendel's inequalities for `0 ≤ s ≤ 1`, the lower
   bound `x^{1-s} ≤ Γ(x + 1)/Γ(x + s)` for `x ≥ 0` and the upper bound
@@ -92,6 +93,30 @@ theorem Gamma_add_le_rpow_mul_Gamma {y a : ℝ} (hy : 0 < y) (ha0 : 0 ≤ a) (ha
       rw [Gamma_add_one hy.ne', mul_rpow hy.le hΓ.le]
       ring
     _ = y ^ a * Gamma y := by rw [← rpow_add' hΓ.le (by simp), add_sub_cancel, rpow_one]
+
+/-- The half-step Gamma quotient at a positive argument is strictly below its square root
+(Brent, *On asymptotic approximations to the log-Gamma and Riemann-Siegel theta functions*,
+Corollary 1). -/
+theorem Gamma_add_half_div_Gamma_lt_sqrt {x : ℝ} (hx : 0 < x) :
+    Gamma (x + 1 / 2) / Gamma x < sqrt x := by
+  have hstep : (x + 1 / 2) * Gamma (x + 1 / 2) ≤ sqrt (x + 1) * (x * Gamma x) := by
+    have h := Gamma_add_le_rpow_mul_Gamma (y := x + 1) (a := 1 / 2)
+      (by positivity) (by norm_num) (by norm_num)
+    have hadd : x + 1 + 1 / 2 = x + 1 / 2 + 1 := by ring
+    rwa [hadd, Gamma_add_one (by positivity : x + 1 / 2 ≠ 0), Gamma_add_one hx.ne',
+      ← sqrt_eq_rpow] at h
+  have hsqrt : sqrt (x + 1) * x < sqrt x * (x + 1 / 2) := by
+    apply (pow_lt_pow_iff_left₀ (by positivity) (by positivity) two_ne_zero).mp
+    rw [mul_pow, mul_pow, sq_sqrt (by positivity), sq_sqrt hx.le]
+    nlinarith only [hx]
+  have hΓ := Gamma_pos_of_pos hx
+  apply (div_lt_iff₀ hΓ).mpr
+  apply lt_of_mul_lt_mul_left _ (by positivity : 0 ≤ x + 1 / 2)
+  calc
+    (x + 1 / 2) * Gamma (x + 1 / 2) ≤ sqrt (x + 1) * (x * Gamma x) := hstep
+    _ = (sqrt (x + 1) * x) * Gamma x := (mul_assoc _ _ _).symm
+    _ < (sqrt x * (x + 1 / 2)) * Gamma x := mul_lt_mul_of_pos_right hsqrt hΓ
+    _ = (x + 1 / 2) * (sqrt x * Gamma x) := by ring
 
 /-- Wendel's lower bound: for `x ≥ 0` and `0 ≤ s ≤ 1`, `x^{1-s} ≤ Γ(x + 1)/Γ(x + s)`. The case
 `(x, s) = (0, 0)`, a pole of `Γ(x + s)`, extends the classical inequality under Mathlib's
