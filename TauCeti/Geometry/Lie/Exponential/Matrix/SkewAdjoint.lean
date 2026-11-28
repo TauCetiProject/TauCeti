@@ -12,7 +12,6 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.Geometry.Lie.Exponential.OneParameter
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
-import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Lie.SkewAdjoint
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
