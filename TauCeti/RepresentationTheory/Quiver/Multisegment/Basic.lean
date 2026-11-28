@@ -196,18 +196,6 @@ theorem shift_injective (c : ℤ) : Function.Injective (fun s : IntInterval => s
   intro s t h
   simpa using congrArg (·.shift (-c)) h
 
--- Not `@[simp]`: firing inside `standardPair_operator_standardVector` breaks `simpNF` on
--- `standardPair_up_operator_standardVector_snd` and
--- `standardPair_down_operator_standardVector_fst`.
-/-- An integral interval contains its left endpoint. -/
-theorem fst_mem (s : IntInterval) : s.fst ∈ s :=
-  NonemptyInterval.mem_def.2 ⟨le_rfl, s.fst_le_snd⟩
-
--- Not `@[simp]`: same `simpNF` conflict as `fst_mem`.
-/-- An integral interval contains its right endpoint. -/
-theorem snd_mem (s : IntInterval) : s.snd ∈ s :=
-  NonemptyInterval.mem_def.2 ⟨s.fst_le_snd, le_rfl⟩
-
 /-! ### Precedence -/
 
 /-- An integral interval `s = [b, e]` precedes `t = [b', e']` when `b < b' ≤ e + 1 ≤ e'`. -/

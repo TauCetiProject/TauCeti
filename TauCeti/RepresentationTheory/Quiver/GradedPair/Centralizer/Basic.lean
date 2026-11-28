@@ -169,42 +169,29 @@ namespace GradedPairEquiv
 variable {S T U : GradedCoordSpace} {d : StepDirection}
   {P : GradedPair S d} {Q : GradedPair T d} {R : GradedPair U d}
 
+private theorem conj_operator (e : GradedPairEquiv P Q) :
+    e.toLinearEquiv.conj P.operator = Q.operator :=
+  LinearMap.ext fun v ↦ by
+    rw [LinearEquiv.conj_apply_apply, coe_toLinearEquiv, ← toLinearEquiv_symm,
+      coe_toLinearEquiv, e.map_operator, e.apply_symm_apply]
+
+private theorem conj_mem_centralizer (e : GradedPairEquiv P Q) {K : Module.End ℂ S.Carrier}
+    (hK : K ∈ P.centralizer) :
+    e.toLinearEquiv.conj K ∈ Q.centralizer := by
+  obtain ⟨hKhom, hKcomm⟩ := GradedPair.mem_centralizer_iff.1 hK
+  refine GradedPair.mem_centralizer_iff.2 ⟨LinearMap.isHomogeneous_def.2 fun a v hv ↦ ?_, ?_⟩
+  · rw [LinearEquiv.conj_apply_apply, coe_toLinearEquiv, ← toLinearEquiv_symm, coe_toLinearEquiv,
+      e.mem_grade_iff]
+    exact hKhom.map_mem (e.symm.mem_grade_iff.2 hv)
+  · rw [← e.conj_operator, ← LinearEquiv.conj_comp, ← LinearEquiv.conj_comp, hKcomm]
+
 /-- Conjugation by a graded equivalence maps `P.centralizer` onto `Q.centralizer`. -/
 theorem map_centralizer (e : GradedPairEquiv P Q) :
     P.centralizer.map (e.toLinearEquiv.conj : Module.End ℂ S.Carrier →ₗ[ℂ] Module.End ℂ T.Carrier) =
       Q.centralizer := by
-  ext L
-  rw [Submodule.mem_map]
-  constructor
-  · rintro ⟨K, hK, rfl⟩
-    obtain ⟨hKhom, hKcomm⟩ := GradedPair.mem_centralizer_iff.1 hK
-    have hconj (x : T.Carrier) :
-        ((e.toLinearEquiv.conj : Module.End ℂ S.Carrier →ₗ[ℂ] Module.End ℂ T.Carrier) K) x =
-          e (K (e.symm x)) := by
-      rw [LinearEquiv.coe_coe, LinearEquiv.conj_apply_apply, coe_toLinearEquiv,
-        ← toLinearEquiv_symm, coe_toLinearEquiv]
-    have hcomm' (y : S.Carrier) : K (P.operator y) = P.operator (K y) :=
-      congrFun (congrArg DFunLike.coe hKcomm) y
-    refine GradedPair.mem_centralizer_iff.2 ⟨LinearMap.isHomogeneous_def.2 fun a v hv ↦ ?_,
-      LinearMap.ext fun v ↦ ?_⟩
-    · rw [hconj, e.mem_grade_iff]
-      exact hKhom.map_mem (e.symm.mem_grade_iff.2 hv)
-    · simp only [LinearMap.comp_apply, hconj]
-      rw [e.symm.map_operator, hcomm', e.map_operator]
-  · intro hL
-    obtain ⟨hLhom, hLcomm⟩ := GradedPair.mem_centralizer_iff.1 hL
-    have hconj (x : S.Carrier) : (e.toLinearEquiv.symm.conj L) x = e.symm (L (e x)) := by
-      rw [LinearEquiv.conj_apply_apply, LinearEquiv.symm_symm, coe_toLinearEquiv,
-        ← toLinearEquiv_symm, coe_toLinearEquiv]
-    have hcomm' (y : T.Carrier) : L (Q.operator y) = Q.operator (L y) :=
-      congrFun (congrArg DFunLike.coe hLcomm) y
-    refine ⟨e.toLinearEquiv.symm.conj L, GradedPair.mem_centralizer_iff.2
-      ⟨LinearMap.isHomogeneous_def.2 fun a v hv ↦ ?_, LinearMap.ext fun v ↦ ?_⟩, ?_⟩
-    · rw [hconj, e.symm.mem_grade_iff]
-      exact hLhom.map_mem (e.mem_grade_iff.2 hv)
-    · simp only [LinearMap.comp_apply, hconj]
-      rw [e.map_operator, hcomm', ← e.symm.map_operator]
-    · simp
+  refine le_antisymm (Submodule.map_le_iff_le_comap.2 fun _ hK ↦ e.conj_mem_centralizer hK)
+    fun L hL ↦ ⟨e.symm.toLinearEquiv.conj L, e.symm.conj_mem_centralizer hL, ?_⟩
+  simp [toLinearEquiv_symm]
 
 /-- Conjugation by a graded equivalence gives a complex linear equivalence between opposite-degree
 centralizers. -/
@@ -229,31 +216,23 @@ theorem centralizerEquiv_apply_apply (e : GradedPairEquiv P Q) (L : P.centralize
 @[simp]
 theorem centralizerEquiv_symm (e : GradedPairEquiv P Q) :
     e.centralizerEquiv.symm = e.symm.centralizerEquiv := by
-  refine LinearEquiv.ext fun L ↦ Subtype.ext (LinearMap.ext fun w ↦ e.toLinearEquiv.injective ?_)
-  calc
-    e ((e.centralizerEquiv.symm L : Module.End ℂ S.Carrier) w)
-      = (e.centralizerEquiv (e.centralizerEquiv.symm L) : Module.End ℂ T.Carrier) (e w) :=
-        (e.centralizerEquiv_apply_apply _ w).symm
-    _ = (L : Module.End ℂ T.Carrier) (e w) := by simp
-    _ = e (e.symm ((L : Module.End ℂ T.Carrier) (e w))) := (e.apply_symm_apply _).symm
-    _ = e ((e.symm.centralizerEquiv L : Module.End ℂ S.Carrier) (e.symm (e w))) := by
-        rw [e.symm.centralizerEquiv_apply_apply]
-    _ = e ((e.symm.centralizerEquiv L : Module.End ℂ S.Carrier) w) := by rw [e.symm_apply_apply]
+  refine LinearEquiv.ext fun L ↦ e.centralizerEquiv.injective (Subtype.ext ?_)
+  simp [coe_centralizerEquiv_apply, toLinearEquiv_symm]
 
 @[simp]
 theorem centralizerEquiv_refl (P : GradedPair S d) :
     (refl P).centralizerEquiv = LinearEquiv.refl ℂ P.centralizer := by
-  refine LinearEquiv.ext fun L ↦ Subtype.ext (LinearMap.ext fun v ↦ ?_)
-  rw [coe_centralizerEquiv_apply, LinearEquiv.conj_apply_apply, coe_toLinearEquiv,
-    ← toLinearEquiv_symm, coe_toLinearEquiv, ← refl_apply ((refl P).symm v),
-    apply_symm_apply, refl_apply, LinearEquiv.refl_apply]
+  refine LinearEquiv.ext fun L ↦ Subtype.ext ?_
+  have hrefl : (refl P).toLinearEquiv = LinearEquiv.refl ℂ S.Carrier :=
+    LinearEquiv.ext refl_apply
+  rw [coe_centralizerEquiv_apply, LinearEquiv.refl_apply, hrefl, LinearEquiv.conj_refl]
 
 theorem centralizerEquiv_trans (e : GradedPairEquiv P Q) (f : GradedPairEquiv Q R) :
     (e.trans f).centralizerEquiv = e.centralizerEquiv.trans f.centralizerEquiv := by
-  refine LinearEquiv.ext fun L ↦ Subtype.ext (LinearMap.ext fun v ↦ ?_)
-  obtain ⟨u, rfl⟩ := (e.trans f).toLinearEquiv.surjective v
-  rw [coe_toLinearEquiv, centralizerEquiv_apply_apply, trans_apply, trans_apply,
-    LinearEquiv.trans_apply, centralizerEquiv_apply_apply, centralizerEquiv_apply_apply]
+  refine LinearEquiv.ext fun L ↦ Subtype.ext ?_
+  have htrans : (e.trans f).toLinearEquiv = e.toLinearEquiv.trans f.toLinearEquiv :=
+    LinearEquiv.ext (trans_apply e f)
+  simp only [LinearEquiv.trans_apply, coe_centralizerEquiv_apply, htrans, ← LinearEquiv.conj_trans]
 
 /-- A graded equivalence between `P` and `Q` also intertwines `P.oppositePair L` and
 `Q.oppositePair (e.centralizerEquiv L)`. -/
@@ -305,20 +284,24 @@ noncomputable def restrictCentralizer (M : P.SubmoduleModel W)
     (hW : ∀ L ∈ P.centralizer, ∀ v ∈ W, L v ∈ W) :
     P.centralizer →ₗ[ℂ] M.pair.centralizer where
   toFun L :=
-    ⟨M.equiv.symm.toLinearMap ∘ₗ
-        ((L : Module.End ℂ S.Carrier).restrict (hW L L.property)) ∘ₗ
-        M.equiv.toLinearMap, by
-      refine mem_centralizer_iff.2 ⟨LinearMap.isHomogeneous_def.2 fun a v hv ↦ ?_,
-        LinearMap.ext fun v ↦ M.embed_injective ?_⟩
+    ⟨M.equiv.symm.conj ((L : Module.End ℂ S.Carrier).restrict (hW L L.property)), by
+      have hPW : ∀ v ∈ W, P.operator v ∈ W := fun w hw ↦ by
+        obtain ⟨u, rfl⟩ := M.mem_iff_exists_embed_eq.1 hw
+        simpa only [← M.embed_operator] using M.embed_mem _
+      have hPconj : M.equiv.symm.conj (P.operator.restrict hPW) = M.pair.operator :=
+        LinearMap.ext fun v ↦ M.embed_injective (by simp)
+      have hcomm : Commute ((L : Module.End ℂ S.Carrier).restrict (hW L L.property))
+          (P.operator.restrict hPW) :=
+        LinearMap.restrict_commute (centralizer_comp_operator L) (hW L L.property) hPW
+      refine mem_centralizer_iff.2 ⟨LinearMap.isHomogeneous_def.2 fun a v hv ↦ ?_, ?_⟩
       · rw [← M.embed_mem_grade_iff]
         have hv' : M.embed v ∈ S.grade a := M.embed_mem_grade_iff.2 hv
         have himg : (L : Module.End ℂ S.Carrier) (M.embed v) ∈ S.grade (a + -d.step) :=
           (isHomogeneous_coe_centralizer L).map_mem hv'
-        simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, M.embed_equiv_symm_apply,
-          LinearMap.restrict_apply, M.coe_equiv_apply] using himg
-      · simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, M.embed_operator,
-          M.embed_equiv_symm_apply, LinearMap.restrict_apply, M.coe_equiv_apply,
-          centralizer_operator_apply]⟩
+        simpa only [LinearEquiv.conj_apply_apply, LinearEquiv.symm_symm,
+          M.embed_equiv_symm_apply, LinearMap.restrict_apply, M.coe_equiv_apply] using himg
+      · rw [← hPconj, ← LinearEquiv.conj_comp, ← LinearEquiv.conj_comp]
+        exact congrArg M.equiv.symm.conj hcomm.eq⟩
   map_add' L₁ L₂ := Subtype.ext (LinearMap.ext fun v ↦ M.embed_injective (by simp))
   map_smul' c L := Subtype.ext (LinearMap.ext fun v ↦ M.embed_injective (by simp))
 
@@ -594,27 +577,22 @@ theorem centralizer_image_extension (P : GradedPair S d)
     LinearMap.isHomogeneous_def.2 fun a x hx ↦ by
       rw [hL_grade a ⟨x, hx⟩, ← sub_eq_add_neg]
       exact (g a ⟨x, hx⟩).property
-  have hL_range (x : S.Carrier) :
-      L (P.operator x) = (L' (P.operator.rangeRestrict x) : S.Carrier) := by
-    induction x using DirectSum.Decomposition.inductionOn S.grade with
-    | zero => simp
-    | @homogeneous a x =>
-      have hmem : P.operator (x : S.Carrier) ∈ S.grade (a + d.step) :=
-        P.isHomogeneous.map_mem x.property
-      rw [hL_grade (a + d.step) ⟨P.operator x, hmem⟩]
-      exact hg_ext (a + d.step) (P.operator.rangeRestrict (x : S.Carrier)) hmem
-    | add x y hx hy => simp only [map_add, Submodule.coe_add, hx, hy]
-  have hPL_range (x : S.Carrier) :
-      P.operator (L x) = (L' (P.operator.rangeRestrict x) : S.Carrier) := by
-    induction x using DirectSum.Decomposition.inductionOn S.grade with
-    | zero => simp
-    | @homogeneous a x =>
-      rw [hL_grade a x]
-      exact hg_comm a x
-    | add x y hx hy => simp only [map_add, Submodule.coe_add, hx, hy]
-  refine ⟨L, mem_centralizer_iff.2 ⟨hL_hom, LinearMap.ext fun x ↦ ?_⟩, fun ⟨_, x, rfl⟩ ↦ ?_⟩
-  · exact (hL_range x).trans (hPL_range x).symm
-  · exact hL_range x
+  have hL_range : L ∘ₗ P.operator =
+      (LinearMap.range P.operator).subtype ∘ₗ L' ∘ₗ P.operator.rangeRestrict := by
+    refine DirectSum.decompose_lhom_ext S.grade fun a ↦ LinearMap.ext fun x ↦ ?_
+    have hmem : P.operator (x : S.Carrier) ∈ S.grade (a + d.step) :=
+      P.isHomogeneous.map_mem x.property
+    simp only [LinearMap.comp_apply, Submodule.coe_subtype]
+    rw [hL_grade (a + d.step) ⟨P.operator x, hmem⟩]
+    exact hg_ext (a + d.step) (P.operator.rangeRestrict (x : S.Carrier)) hmem
+  have hPL_range : P.operator ∘ₗ L =
+      (LinearMap.range P.operator).subtype ∘ₗ L' ∘ₗ P.operator.rangeRestrict := by
+    refine DirectSum.decompose_lhom_ext S.grade fun a ↦ LinearMap.ext fun x ↦ ?_
+    simp only [LinearMap.comp_apply, Submodule.coe_subtype]
+    rw [hL_grade a x]
+    exact hg_comm a x
+  refine ⟨L, mem_centralizer_iff.2 ⟨hL_hom, hL_range.trans hPL_range.symm⟩, fun ⟨_, x, rfl⟩ ↦ ?_⟩
+  exact congrFun (congrArg DFunLike.coe hL_range) x
 
 namespace SubmoduleModel
 
