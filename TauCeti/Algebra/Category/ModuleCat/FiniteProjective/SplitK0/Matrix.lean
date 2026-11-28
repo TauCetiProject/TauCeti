@@ -52,6 +52,19 @@ theorem finiteProjectiveModulesMatrixSplitK0Equiv_apply (x) :
       SplitK0.of.{max u v} ((finiteProjectiveModulesToMatrixFunctor R ι).obj P) :=
   SplitK0.mapEquiv_of.{u, max u v} _ P
 
+open scoped Matrix.Module in
+/-- The matrix Morita isomorphism sends the class of `M` to the class of any finitely generated
+projective `Matrix ι ι R`-module linearly isomorphic to the column module `M^ι`. -/
+theorem finiteProjectiveModulesMatrixSplitK0Equiv_of_linearEquiv
+    (M : (finiteProjectiveModules R).FullSubcategory)
+    (N : (finiteProjectiveModules (Matrix ι ι R)).FullSubcategory)
+    (e : (ι → M.obj) ≃ₗ[Matrix ι ι R] N.obj) :
+    finiteProjectiveModulesMatrixSplitK0Equiv R ι (SplitK0.of.{u} M) =
+      SplitK0.of.{max u v} N := by
+  rw [finiteProjectiveModulesMatrixSplitK0Equiv_of]
+  exact SplitK0.of_congr <| ObjectProperty.isoMk _ <|
+    eqToIso (finiteProjectiveModulesToMatrixFunctor_obj_obj R ι M) ≪≫ e.toModuleIso
+
 /-- Under `finiteProjectiveModulesMatrixSplitK0Equiv`, `|ι| • [R]` maps to `[Matrix ι ι R]`. -/
 @[simp] theorem
     finiteProjectiveModulesMatrixSplitK0Equiv_card_nsmul_finiteProjectiveModulesRegular :
@@ -71,6 +84,16 @@ theorem finiteProjectiveModulesMatrixSplitK0Equiv_apply (x) :
           (LinearEquiv.funCongrLeft R R (Fintype.equivFin ι))).toModuleIso ≪≫
       (toMatrixModCatPiLinearEquiv R ι).toModuleIso ≪≫
       eqToIso (finiteProjectiveModulesRegular_obj (Matrix ι ι R)).symm
+
+/-- Under the inverse of `finiteProjectiveModulesMatrixSplitK0Equiv`, `[Matrix ι ι R]` maps to
+`|ι| • [R]`. -/
+@[simp] theorem
+    finiteProjectiveModulesMatrixSplitK0Equiv_symm_of_finiteProjectiveModulesRegular :
+    (finiteProjectiveModulesMatrixSplitK0Equiv R ι).symm
+        (SplitK0.of.{max u v} (finiteProjectiveModulesRegular (Matrix ι ι R))) =
+      Fintype.card ι • SplitK0.of.{u} (finiteProjectiveModulesRegular R) :=
+  (AddEquiv.symm_apply_eq _).mpr
+    (finiteProjectiveModulesMatrixSplitK0Equiv_card_nsmul_finiteProjectiveModulesRegular R ι).symm
 end Index
 
 namespace SplitK0

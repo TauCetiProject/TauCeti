@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
+public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 
 import TauCeti.Algebra.Module.Projective.FreeComplement
 
@@ -99,9 +100,6 @@ instance : (finiteProjectiveModules R).IsClosedUnderBinaryProducts :=
 
 instance : (finiteProjectiveModules R).IsClosedUnderFiniteProducts :=
   ObjectProperty.IsClosedUnderFiniteProducts.mk'
-
-instance : HasFiniteBiproducts (finiteProjectiveModules R).FullSubcategory :=
-  .of_hasFiniteProducts
 
 instance : HasBinaryBiproducts (finiteProjectiveModules R).FullSubcategory :=
   hasBinaryBiproducts_of_finite_biproducts _
