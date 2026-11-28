@@ -89,6 +89,37 @@ theorem apply_eq_of_apply_eq_of_mem_complexConjugations {c : Gal(Ω/ℚ)}
     (hc : c ∈ complexConjugations Ω) {x y : Ω} (h : c x = y) : c y = x := by
   rw [← h, apply_apply_of_mem_complexConjugations hc]
 
+/-- The identity is a complex conjugation exactly when `Ω` has a real embedding. -/
+theorem one_mem_complexConjugations_iff :
+    1 ∈ complexConjugations Ω ↔ ∃ ι : Ω →+* ℂ, IsReal ι := by
+  simp only [mem_complexConjugations_iff, isConj_one_iff]
+
+/-- A complex conjugation of a totally complex field is not the identity. -/
+theorem ne_one_of_mem_complexConjugations [IsTotallyComplex Ω] {c : Gal(Ω/ℚ)}
+    (hc : c ∈ complexConjugations Ω) : c ≠ 1 := by
+  rintro rfl
+  obtain ⟨ι, hι⟩ := one_mem_complexConjugations_iff.mp hc
+  exact IsTotallyComplex.complexEmbedding_not_isReal ι hι
+
+/-- If `Gal(Ω/ℚ)` has order `2` and `Ω` is totally complex, its automorphisms are `1` and any
+complex conjugation. -/
+theorem eq_one_or_eq_of_mem_complexConjugations [IsTotallyComplex Ω]
+    (hΩ : Nat.card Gal(Ω/ℚ) = 2) {c : Gal(Ω/ℚ)} (hc : c ∈ complexConjugations Ω)
+    (σ : Gal(Ω/ℚ)) : σ = 1 ∨ σ = c := by
+  obtain ⟨y, -, hy⟩ := (Nat.card_eq_two_iff' (1 : Gal(Ω/ℚ))).mp hΩ
+  refine or_iff_not_imp_left.mpr fun hσ ↦ ?_
+  exact (hy σ hσ).trans (hy c (ne_one_of_mem_complexConjugations hc)).symm
+
+/-- If `Gal(Ω/ℚ)` has order `2` and `Ω` is totally complex and algebraic over `ℚ`, its ring
+endomorphisms are the identity and any complex conjugation. -/
+theorem ringHom_eq_id_or_eq_of_mem_complexConjugations [IsTotallyComplex Ω]
+    [Algebra.IsAlgebraic ℚ Ω] (hΩ : Nat.card Gal(Ω/ℚ) = 2) {c : Gal(Ω/ℚ)}
+    (hc : c ∈ complexConjugations Ω) (τ : Ω →+* Ω) : τ = RingHom.id Ω ∨ τ = c := by
+  let σ : Gal(Ω/ℚ) := AlgEquiv.ofBijective τ.toRatAlgHom (Algebra.IsAlgebraic.algHom_bijective _)
+  have hσ (x : Ω) : σ x = τ x := by simp [σ]
+  refine (eq_one_or_eq_of_mem_complexConjugations hΩ hc σ).imp (fun h ↦ ?_) fun h ↦ ?_ <;>
+    ext x <;> simp [← hσ, h]
+
 /-- The set of complex conjugations is stable under conjugation by `Gal(Ω/ℚ)`: if `c` is the
 conjugation of `ι`, then `g⁻¹ c g` is the conjugation of `ι ∘ g`. -/
 theorem inv_mul_mul_mem_complexConjugations {c : Gal(Ω/ℚ)} (hc : c ∈ complexConjugations Ω)

@@ -316,8 +316,8 @@ theorem hasDerivAt_mpullback_flowOf_zero (y : M)
   refine hasDerivAt_mpullback_of_eq_id_of_eventually_nhds_prod (ψ := flowOf Z) (V := fun _ ↦ Z) y
     (Eventually.of_forall (flowOf_zero Z))
     ((contMDiffOn_flowOf (n := 1) le_rfl hZ).contMDiffAt
-      (hD.mem_nhds (mem_flowDomain_zero hZ y))) (hZ.comp contMDiff_snd).contMDiffAt ?_ hα
-  filter_upwards [hD.mem_nhds (mem_flowDomain_zero hZ y)] with p hp
+      (hD.mem_nhds (mem_flowDomain_zero (hZ y)))) (hZ.comp contMDiff_snd).contMDiffAt ?_ hα
+  filter_upwards [hD.mem_nhds (mem_flowDomain_zero (hZ y))] with p hp
   exact (isMIntegralCurveAt_flowOf hZ hp).hasMFDerivAt
 
 /-- **Lie derivatives along maximal flows.** For a `C¹` vector field `Z` with maximal flow `φ`, a
@@ -337,7 +337,7 @@ theorem hasDerivAt_mpullback_flowOf {t : ℝ} {x : M} (hx : (t, x) ∈ flowDomai
       (t, p.2) ∈ flowDomain Z ∧ (p.1, flowOf Z t p.2) ∈ flowDomain Z :=
     ((continuous_const.prodMk continuous_snd).continuousAt.eventually_mem (hD.mem_nhds hx)).and
       ((continuousAt_fst.prodMk (hφ.continuousAt.comp continuousAt_snd)).eventually_mem
-        (hD.mem_nhds (mem_flowDomain_zero hZ _)))
+        (hD.mem_nhds (mem_flowDomain_zero (hZ _))))
   rw [nhds_prod_eq] at hev
   have hsub : Tendsto (fun s ↦ s - t) (𝓝 t) (𝓝 0) := by
     simpa using (continuous_sub_right t).tendsto t
@@ -371,7 +371,7 @@ theorem mpullback_flowOf_apply_eq_exp_integral_smul {g : M → ℝ} (hg : Contin
     ext s
     exact mem_flowDomain
   have hJc : J.OrdConnected := hJ ▸ ordConnected_maximalIntegralCurveInterval
-  have hJ0 : (0 : ℝ) ∈ J := mem_flowDomain_zero hZ x
+  have hJ0 : (0 : ℝ) ∈ J := mem_flowDomain_zero (hZ x)
   -- The pullbacks at `x`, as alternating maps on the model space.
   set P : ℝ → E [⋀^Fin k]→L[ℝ] F := fun s ↦ mpullback I I (flowOf Z s) α x
   have hcont : ContinuousOn (fun s ↦ g (flowOf Z s x)) J :=

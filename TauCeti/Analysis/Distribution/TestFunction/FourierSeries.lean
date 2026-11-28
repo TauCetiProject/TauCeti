@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
+public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Analysis.Fourier.PoissonSummation
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.SmoothSeries
@@ -53,11 +54,15 @@ the resulting double series converge.
   `χ` supported in `K` by the character of frequency `w`.
 * `ContDiffMapSupportedIn.modulateCLM`: modulation by a fixed frequency, as a continuous linear
   map.
+* `TestFunction.toSupportedInTSupport`: a test function `χ` on an open set, as a function
+  supported in the compact set `tsupport χ`, whose modulations are the modulated cutoffs of
+  Fourier series with cutoff `χ`.
 
 ## Main results
 
 * `ContDiffMapSupportedIn.seminorm_modulate_le`: the polynomial bound on the derivatives of a
-  modulated cutoff.
+  modulated cutoff; `ContDiffMapSupportedIn.seminorm_modulate_le_of_norm_le` bounds them by
+  `C (1 + t) ^ k` when the frequency has norm at most `t`.
 * `ContDiffMapSupportedIn.exists_seminorm_modulate_le`: a continuous seminorm grows at most
   polynomially along modulated cutoffs, with a degree independent of the cutoff and a constant
   proportional to a sup norm of finitely many of its derivatives.
@@ -207,6 +212,20 @@ theorem seminorm_modulate_le (χ : 𝓓_{K}(E, F)) (w : E) (k : ℕ) :
         rw [add_comm 1, add_pow, Finset.mul_sum]
         refine Finset.sum_congr rfl fun i _ ↦ ?_
         ring
+
+/-- The `k`-th derivatives of a modulated cutoff with frequency of norm at most `t` are bounded
+by `(sup_{i ≤ k} N_i χ) (1 + 2π) ^ k (1 + t) ^ k`, a form of `seminorm_modulate_le` that
+separates the constant from the power of `1 + t`. -/
+theorem seminorm_modulate_le_of_norm_le (χ : 𝓓_{K}(E, F)) {w : E} {t : ℝ} (hw : ‖w‖ ≤ t)
+    (k : ℕ) :
+    N[ℂ]_{K, k} (χ.modulate w) ≤
+      ContDiffMapSupportedIn.supSeminorm ℂ E F ⊤ K k χ * (1 + 2 * π) ^ k * (1 + t) ^ k := by
+  calc _ ≤ ContDiffMapSupportedIn.supSeminorm ℂ E F ⊤ K k χ * (1 + 2 * π * ‖w‖) ^ k :=
+        seminorm_modulate_le χ w k
+    _ ≤ ContDiffMapSupportedIn.supSeminorm ℂ E F ⊤ K k χ * ((1 + 2 * π) * (1 + t)) ^ k := by
+        gcongr
+        nlinarith [Real.pi_pos, norm_nonneg w]
+    _ = _ := by rw [mul_pow, mul_assoc]
 
 /-- Every continuous seminorm `q` on `𝓓_{K}(E, F)` grows at most polynomially along the
 modulated cutoffs `χ.modulate w`, with a degree and a constant independent of the cutoff: there are
@@ -439,3 +458,21 @@ theorem hasSum_fourier_smul_modulate (φ χ : 𝓓_{K}(E, ℂ))
     (mod_cast le_top), hφ]
 
 end ContDiffMapSupportedIn
+
+namespace TestFunction
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] {Ω : Opens E} {n : ℕ∞}
+
+/-- A test function `χ` on `Ω`, as a `C^n` function supported in the compact set `tsupport χ`.
+Its modulations `χ.toSupportedInTSupport.modulate w` are the modulated cutoffs of the Fourier
+series with cutoff `χ`. -/
+def toSupportedInTSupport (χ : 𝓓^{n}(Ω, F)) :
+    𝓓^{n}_{⟨tsupport χ, χ.hasCompactSupport.isCompact⟩}(E, F) :=
+  .of_support_subset χ.contDiff (subset_tsupport _)
+
+@[simp]
+theorem coe_toSupportedInTSupport (χ : 𝓓^{n}(Ω, F)) : ⇑χ.toSupportedInTSupport = χ :=
+  funext <| ContDiffMapSupportedIn.coe_of_support_subset _ _
+
+end TestFunction

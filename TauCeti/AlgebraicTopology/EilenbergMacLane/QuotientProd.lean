@@ -71,11 +71,8 @@ theorem bijective_homotopyGroupMap_quotientMk_inr [ContractibleSpace A]
     refine e.isWeakHomotopyEquivalence.of_postcomp ?_
     rw [he]
     exact ContinuousMap.IsWeakHomotopyEquivalence.id
-  let q : C(A × K, (A × K) ⧸ Γ) := ⟨QuotientGroup.mk, continuous_quot_mk⟩
-  have hq : Function.Bijective (HomotopyGroup.map (N := Fin (n + 2)) q (rfl : q (inr k) = _)) :=
-    HomotopyGroup.map_bijective
-      (Γ.isQuotientCoveringMap (isDiscrete_iff_discreteTopology.2 ‹_›)).isCoveringMap rfl
-  exact HomotopyGroup.map_comp_map q rfl inr rfl ▸ hq.comp (hinr.bijective (n + 2) k)
+  exact (Γ.isQuotientCoveringMap (isDiscrete_iff_discreteTopology.2 ‹_›)).isCoveringMap
+    |>.bijective_homotopyGroupMap_comp hinr (fun _ ↦ rfl) k
 
 /-- **Asphericity of `(A × K) ⧸ Γ` for contractible `A`.** For a discrete subgroup `Γ` of `A × K`,
 the quotient is aspherical exactly when it is path connected and every homotopy group of `K` of
@@ -83,13 +80,7 @@ dimension at least two is trivial. -/
 theorem isAspherical_quotient_iff [ContractibleSpace A] [DiscreteTopology Γ]
     (x : (A × K) ⧸ Γ) :
     IsAspherical ((A × K) ⧸ Γ) x ↔
-      PathConnectedSpace ((A × K) ⧸ Γ) ∧ ∀ n : ℕ, Subsingleton (π_ (n + 2) K 1) := by
-  refine ⟨fun h ↦ ⟨h.pathConnectedSpace, fun n ↦ ?_⟩, fun ⟨hX, h⟩ ↦ ?_⟩
-  · have := (h.of_basepoint (((1 : A), (1 : K)) : (A × K) ⧸ Γ)).subsingleton_homotopyGroup n
-    exact (Equiv.ofBijective _ (Γ.bijective_homotopyGroupMap_quotientMk_inr 1 n)).subsingleton
-  · refine IsAspherical.of_basepoint
-      (IsAspherical.mk (x := (((1 : A), (1 : K)) : (A × K) ⧸ Γ)) hX fun n ↦ ?_) x
-    have := h n
-    exact (Equiv.ofBijective _ (Γ.bijective_homotopyGroupMap_quotientMk_inr 1 n)).symm.subsingleton
+      PathConnectedSpace ((A × K) ⧸ Γ) ∧ ∀ n : ℕ, Subsingleton (π_ (n + 2) K 1) :=
+  isAspherical_iff_of_bijective_homotopyGroupMap (Γ.bijective_homotopyGroupMap_quotientMk_inr 1) x
 
 end Subgroup

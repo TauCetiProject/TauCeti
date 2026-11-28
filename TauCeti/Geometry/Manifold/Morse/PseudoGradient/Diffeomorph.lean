@@ -49,6 +49,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {X' : (x : M') → TangentSpace 𝓘(ℝ, E) x} {σ : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M'}
   [IsManifold 𝓘(ℝ, E) ∞ M] [IsManifold 𝓘(ℝ, E) ∞ M']
 
+omit [IsManifold 𝓘(ℝ, E) ∞ M'] in
 /-- The linear flow of the pullback is the linear flow of `φ`. -/
 @[simp]
 theorem MorseChart.pullback_linearFlow (hf : f' ∘ σ = f) {x : M} (φ : MorseChart E f' (σ x)) :
