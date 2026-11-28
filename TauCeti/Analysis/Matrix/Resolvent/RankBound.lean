@@ -22,7 +22,7 @@ in the resolvent method for global spectral laws.
 
 The norm estimate uses the unit-disc bound for the Cayley expression
 `1 + (z - conj z) • R_A(z)`, rather than the less precise triangle bound on the two resolvents.
-All unnormalized estimates allow empty index types; spectral probability measures require
+The trace estimates allow empty index types, while spectral probability measures require
 positive dimension. The resolvent convention is `R_A(z) = (A - z • 1)⁻¹`.
 
 ## References
@@ -60,6 +60,19 @@ theorem norm_trace_inv_sub_smul_one_sub_le_rank (hA : A.IsHermitian) (hB : B.IsH
   exact h.trans (mul_le_mul_of_nonneg_left
     (hA.l2_opNorm_inv_sub_smul_one_sub_le hB hz) (Nat.cast_nonneg _))
 
+/-- Low-rank perturbations change the normalized resolvent trace by at most
+`rank (A - B) / (n |Im z|)`. This also holds in dimension zero. -/
+theorem norm_normalizedResolventTrace_sub_le_rank
+    (hA : A.IsHermitian) (hB : B.IsHermitian) {z : ℂ} (hz : z.im ≠ 0) :
+    ‖A.normalizedResolventTrace z - B.normalizedResolventTrace z‖ ≤
+      (A - B).rank / ((Fintype.card n : ℝ) * |z.im|) := by
+  simp only [normalizedResolventTrace_def, ← mul_sub, norm_mul, norm_inv, Complex.norm_natCast]
+  calc
+    _ ≤ (Fintype.card n : ℝ)⁻¹ * ((A - B).rank / |z.im|) :=
+      mul_le_mul_of_nonneg_left (hA.norm_trace_inv_sub_smul_one_sub_le_rank hB hz)
+        (by positivity)
+    _ = _ := by ring
+
 /-- Low-rank perturbations change the empirical spectral transform by at most
 `rank (A - B) / (n |Im z|)`. -/
 theorem norm_resolventTransform_spectralMeasure_sub_le_rank [Nonempty n]
@@ -68,12 +81,7 @@ theorem norm_resolventTransform_spectralMeasure_sub_le_rank [Nonempty n]
         resolventTransform (B.spectralMeasure hB : Measure ℝ) z‖ ≤
       (A - B).rank / ((Fintype.card n : ℝ) * |z.im|) := by
   rw [resolventTransform_spectralMeasure A hA (hA.notMem_spectrum_of_im_ne_zero hz),
-    resolventTransform_spectralMeasure B hB (hB.notMem_spectrum_of_im_ne_zero hz),
-    ← mul_sub, norm_mul, norm_inv, Complex.norm_natCast]
-  calc
-    _ ≤ (Fintype.card n : ℝ)⁻¹ * ((A - B).rank / |z.im|) :=
-      mul_le_mul_of_nonneg_left (hA.norm_trace_inv_sub_smul_one_sub_le_rank hB hz)
-        (by positivity)
-    _ = _ := by ring
+    resolventTransform_spectralMeasure B hB (hB.notMem_spectrum_of_im_ne_zero hz)]
+  exact hA.norm_normalizedResolventTrace_sub_le_rank hB hz
 
 end Matrix.IsHermitian

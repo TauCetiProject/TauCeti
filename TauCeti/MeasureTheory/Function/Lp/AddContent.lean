@@ -74,6 +74,8 @@ simple functions in `L∞` come from `TauCeti/MeasureTheory/Function/Lp/Indicato
   functional.
 * `PositiveLinearMap.le_iff_addContentLpTopEquiv_le`: `addContentLpTopEquiv` matches the order of
   functionals on the nonnegative cone with the pointwise order of contents.
+* `PositiveLinearMap.addContentLpTopCompletionEquiv_apply`: the completed content of a
+  null-measurable set is the value of the functional on its indicator class.
 * `PositiveLinearMap.forall_apply_leftTranslation_eq_iff`: invariance of a functional under left
   translation is invariance of its content.
 * `MeasureTheory.exists_invariant_positiveLinearMap_lpTop_iff_exists_invariantContent`: `L∞` of
@@ -372,6 +374,33 @@ theorem coe_addContentLpTopCompletionEquiv_apply (M : Lp ℝ ∞ μ →ₚ[ℝ] 
       M.toLinearMap.toAddContentLpTop.completion μ
         (fun _ hs h => M.toLinearMap.toAddContentLpTop_of_measure_eq_zero hs h) :=
   (rfl)
+
+/-- If `φ` represents the indicator of `s` in `L∞(μ)`, the completed content of `s` is `M φ`.
+The existence of this class implies that `s` is null-measurable. -/
+theorem addContentLpTopCompletionEquiv_apply_of_ae_eq_indicator (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ)
+    {s : Set α} {φ : Lp ℝ ∞ μ} (hφ : φ =ᵐ[μ] s.indicator (1 : α → ℝ)) :
+    (addContentLpTopCompletionEquiv μ M).val s = M φ := by
+  have hs : NullMeasurableSet s μ :=
+    (aemeasurable_indicator_const_iff (1 : ℝ)).1 ((Lp.memLp φ).aemeasurable.congr hφ)
+  have ht : MeasurableSet (toMeasurable μ s) := measurableSet_toMeasurable μ s
+  have hind : (toMeasurable μ s).indicator (1 : α → ℝ) =ᵐ[μ] s.indicator (1 : α → ℝ) :=
+    (Filter.indicator_const_eventuallyEq one_ne_zero).2 hs.toMeasurable_ae_eq
+  have hclass : linftyIndicator μ (toMeasurable μ s) ht = φ :=
+    Lp.ext ((coeFn_linftyIndicator ht).trans (hind.trans hφ.symm))
+  rw [coe_addContentLpTopCompletionEquiv_apply,
+    AddContent.completion_apply_of_nullMeasurableSet _ hs, LinearMap.toAddContentLpTop_apply _ ht,
+    coe_toLinearMap, hclass]
+
+/-- On a null-measurable set, the completed content of `M` is its value on the class of the
+set's indicator function. -/
+-- Not a simp lemma: expanding to `MemLp.toLp` would obscure the simpler evaluation rules on
+-- measurable sets and on null sets.
+theorem addContentLpTopCompletionEquiv_apply (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ)
+    {s : Set α} (hs : NullMeasurableSet s μ) :
+    (addContentLpTopCompletionEquiv μ M).val s =
+      M (((memLp_top_const (1 : ℝ)).indicator hs).toLp (s.indicator (1 : α → ℝ))) := by
+  exact M.addContentLpTopCompletionEquiv_apply_of_ae_eq_indicator
+    ((memLp_top_const (1 : ℝ)).indicator hs).coeFn_toLp
 
 /-- The functional of a content under `addContentLpTopCompletionEquiv` integrates against its
 restriction to the measurable sets. -/
