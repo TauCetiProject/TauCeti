@@ -8,24 +8,25 @@ module
 public import Mathlib.Analysis.Meromorphic.NormalForm
 public import TauCeti.Analysis.Contour.Residue.Basic
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Entire
-public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Remainder
+public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Laplace
 import Mathlib.Analysis.Calculus.DSlope
 import TauCeti.Analysis.Contour.Residue.Germ
+import TauCeti.Analysis.LaplaceTransform.Meromorphic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.FiniteSum
-import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Laplace
 
 /-!
 # Poles of the one-sided prime remainder transform
 
 This file studies the meromorphic normal form of `(G_q(z) / z - G_q(1)) / (z - 1)`, where
 `G_q` is the signed mean of logarithmic derivatives. For an odd prime `d` coprime to `q`,
-`TauCeti.OneSidedBound.hasLaplace_primeRemainder` identifies the quotient on `Re z > 1`
-with the Laplace transform of the normalized first Riesz remainder at `z - 1`. The point `1`
-is removable. Away from `0` and `1`, the only possible poles are simple, and the residue
-is the difference of the total untwisted and twisted zero multiplicities divided by
+`TauCeti.OneSidedBound.hasLaplace_primeRemainderTransform` identifies the normal form on
+`Re z > 1` with the Laplace transform of the normalized first Riesz remainder at `z - 1`.
+The point `1` is removable. Away from `0` and `1`, the only possible poles are simple.
+The residue is the difference of the total untwisted and twisted zero multiplicities divided by
 `φ(q) z (1 - z)`. Where the twists do not vanish, the untwisted zeros cannot cancel, and
 the residue at a positive real pole is strictly positive. These are the pole and sign
-conditions used in one-sided Landau arguments for the remainder.
+conditions used in the one-sided Landau argument below: a one-sided bound and nonvanishing
+of the twists on the relevant real interval give absolute convergence past `Re s = 1`.
 
 The normalization and signed multiplicities follow `New.isPolar_primeRemainder` in
 `New/Reduction/Zeros/PrimeError` of lsernau/grh-lean at commit
@@ -34,7 +35,7 @@ The normalization and signed multiplicities follow `New.isPolar_primeRemainder` 
 
 public section
 
-open Complex Filter Set
+open Complex DirichletCharacter Filter Set
 open scoped Topology
 
 namespace TauCeti.OneSidedBound
@@ -90,6 +91,16 @@ At `s = 1` this gives the derivative, not the junk value of the defining quotien
 theorem primeRemainderTransform_eq_dslope {s : ℂ} (hs : 1 ≤ s.re) :
     primeRemainderTransform d q s = dslope (fun z ↦ logDerivMean d q z / z) 1 s :=
   (primeRemainderTransform_analyticGerm d q hs).2.eq_of_nhds
+
+/-- On `Re s > 1`, the Laplace transform of `v ↦ R_q(exp v)` at `s - 1` agrees with
+its meromorphic normal form. -/
+theorem hasLaplace_primeRemainderTransform (hd : d ≠ 2) (hc : q.Coprime d) {s : ℂ}
+    (hs : 1 < s.re) :
+    HasLaplace (fun v : ℝ ↦ (primeRemainder d q (Real.exp v) : ℂ)) (s - 1)
+      (primeRemainderTransform d q s) := by
+  rw [primeRemainderTransform_eq_dslope d q hs.le, dslope_of_ne _ (ne_of_apply_ne re hs.ne'),
+    slope_def_field, div_one]
+  exact hasLaplace_primeRemainder hd hc hs
 
 /-- The constant `-1` in the numerator of `G_q` contributes the reciprocal term. -/
 private theorem primeRemainderTransform_eventuallyEq_rieszRemainderMellin (s : ℂ) :
@@ -238,5 +249,60 @@ theorem re_residue_primeRemainderTransform_pos {σ : ℝ} (hσ : 0 < σ)
       refine (Complex.ofReal_re _).symm.trans ?_
       push_cast
       rfl
+
+/-- An eventual bound `R_q(x) ≤ C * x ^ (β - 1)` and nonvanishing of the twisted
+L-functions on the real interval `(β, 1)` ensure that the continued transform is analytic
+on `Re s > β` and represented there by the absolutely convergent Laplace integral. -/
+theorem analyticAt_and_hasLaplace_primeRemainderTransform_of_eventually_le
+    (hd : d ≠ 2) (hc : q.Coprime d) {β C : ℝ} (hβ : 0 ≤ β)
+    (hR : ∀ᶠ x : ℝ in atTop, primeRemainder d q x ≤ C * x ^ (β - 1))
+    (htwist : ∀ b ∈ Ioo β 1, ∀ ψ : DirichletCharacter ℂ q,
+      (ψ.legendreTwist d).LFunction (b : ℂ) ≠ 0) {s : ℂ} (hs : β < s.re) :
+    AnalyticAt ℂ (primeRemainderTransform d q) s ∧
+      HasLaplace (fun u : ℝ ↦ (primeRemainder d q (Real.exp u) : ℂ)) (s - 1)
+        (primeRemainderTransform d q s) := by
+  let F := primeRemainderTransform d q
+  let g := fun u : ℝ ↦ Real.exp u * primeRemainder d q (Real.exp u)
+  obtain ⟨u₀, hbound⟩ := exists_ae_le_exp_of_eventually_le_rpow hR
+  have hg : ∀ᵐ u ∂MeasureTheory.volume.restrict (Ioi u₀), g u ≤ C * Real.exp (β * u) := by
+    filter_upwards [hbound] with u hu
+    calc
+      g u ≤ Real.exp u * (C * Real.exp ((β - 1) * u)) :=
+        mul_le_mul_of_nonneg_left hu (Real.exp_nonneg u)
+      _ = C * Real.exp (β * u) := by
+        rw [mul_left_comm, ← Real.exp_add]
+        congr 2
+        ring
+  have hF : MeromorphicNFOn F {z | β < z.re} :=
+    fun z _ ↦ meromorphicNFOn_primeRemainderTransform d q (mem_univ z)
+  have hshift (z : ℂ) : HasLaplace (fun u ↦ (g u : ℂ)) z (F z) ↔
+      HasLaplace (fun u ↦ (primeRemainder d q (Real.exp u) : ℂ)) (z - 1) (F z) := by
+    simpa only [g, one_mul, ofReal_mul, ofReal_exp, smul_eq_mul] using
+      (hasLaplace_cexp_mul_smul_iff (s := z) (w := 1) (z := F z)
+        (f := fun u ↦ (primeRemainder d q (Real.exp u) : ℂ)))
+  have hL (z : ℂ) (hz : 1 < z.re) :=
+    (hshift z).mpr (hasLaplace_primeRemainderTransform d q hd hc hz)
+  have hsign (b : ℝ) (hb : b ∈ Ioc β 1) (hp : meromorphicOrderAt F (b : ℂ) < 0) :
+      0 ≤ (meromorphicTrailingCoeffAt F (b : ℂ)).re := by
+    have hb₁ : b < 1 := by
+      by_contra! hb'
+      exact hp.not_ge (analyticAt_primeRemainderTransform_of_one_le_re d q
+        (by simpa using hb')).meromorphicOrderAt_nonneg
+    have hb₀ := hβ.trans_lt hb.1
+    have hlo := neg_one_le_meromorphicOrderAt_primeRemainderTransform d q
+      (ofReal_ne_zero.mpr hb₀.ne')
+    have hord : meromorphicOrderAt F (b : ℂ) = -1 := by
+      obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp hp.ne_top
+      have hneg : n < 0 := WithTop.coe_lt_coe.mp (hn ▸ hp)
+      have hle : -1 ≤ n := WithTop.coe_le_coe.mp (hn ▸ hlo)
+      have he : n = -1 := by omega
+      simpa [he] using hn.symm
+    rw [← Contour.residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one hord]
+    exact (re_residue_primeRemainderTransform_pos d q hb₀ (fun ψ ↦ by
+      simpa only [quadraticTwist_eq_legendreTwist, entireLFunction_legendreTwist _ d hd hc]
+        using htwist b ⟨hb.1, hb₁⟩ ψ) hp).le
+  obtain ⟨hord, hLap⟩ := hasLaplace_toMeromorphicNFOn_of_ae_le_exp hg hF.meromorphicOn hL hsign
+  rw [toMeromorphicNFOn_eq_self.mpr hF] at hLap
+  exact ⟨(hF hs).meromorphicOrderAt_nonneg_iff_analyticAt.mp (hord s hs), (hshift s).mp (hLap s hs)⟩
 
 end TauCeti.OneSidedBound
