@@ -125,24 +125,26 @@ section Quotient
 variable [CommRing R] [CommRing A] [Algebra R A]
 
 /-- **Reduction of a basis modulo an extended ideal.** For an arbitrary ideal `J` of `R`, the
-classes of a basis of `A` over `R` form a basis of `A ⧸ J A` over `R ⧸ J`: the base change of `b`
-to `R ⧸ J`, transported along `Algebra.TensorProduct.quotIdealMapEquivQuotTensor`. -/
+classes of a basis of `A` over `R` form a basis of `A ⧸ J A` over `R ⧸ J`, using the quotient
+coordinates `Basis.quotientEquiv`. -/
 noncomputable def quotient (b : Basis ι R A) (J : Ideal R) :
     Basis ι (R ⧸ J) (A ⧸ J.map (algebraMap R A)) :=
-  (b.baseChange (R ⧸ J)).map
-    (Algebra.TensorProduct.quotIdealMapEquivQuotTensor A J).symm.toLinearEquiv
-
-@[simp]
-theorem quotient_apply (b : Basis ι R A) (J : Ideal R) (i : ι) :
-    b.quotient J i = Ideal.Quotient.mk _ (b i) := by
-  simp [quotient, AlgEquiv.symm_apply_eq]
+  .ofRepr ((b.quotientEquiv J).extendScalarsOfSurjective Ideal.Quotient.mk_surjective)
 
 /-- The coordinates of the class of `x` in `b.quotient J` are the classes of the coordinates of
 `x` in `b`. -/
 @[simp]
 theorem quotient_repr_mk (b : Basis ι R A) (J : Ideal R) (x : A) (i : ι) :
     (b.quotient J).repr (Ideal.Quotient.mk _ x) i = Ideal.Quotient.mk J (b.repr x i) := by
-  simp [quotient, Algebra.smul_def]
+  exact b.quotientEquiv_mk J x i
+
+@[simp]
+theorem quotient_apply (b : Basis ι R A) (J : Ideal R) (i : ι) :
+    b.quotient J i = Ideal.Quotient.mk _ (b i) := by
+  classical
+  apply (b.quotient J).repr.injective
+  ext j
+  simp [Finsupp.single_apply]
 
 end Quotient
 

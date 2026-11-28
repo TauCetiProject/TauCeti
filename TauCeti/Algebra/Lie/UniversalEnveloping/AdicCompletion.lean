@@ -54,26 +54,18 @@ abbrev scalarAdicFiltration : TauCeti.AlgFiltration U :=
 families in the finite-order quotient rings. -/
 abbrev adicCompletion := (scalarAdicFiltration I L).completion
 
-/-- The canonical map from the ordinary enveloping algebra to its integral completion. -/
-def toAdicCompletion : U →ₐ[R] adicCompletion I L :=
-  (scalarAdicFiltration I L).toCompletionₐ
-
-/-- The canonical algebra map has the same values as the generic ring completion map. -/
-theorem toAdicCompletion_apply (x : U) :
-    toAdicCompletion I L x = (scalarAdicFiltration I L).toCompletion x :=
-  (scalarAdicFiltration I L).toCompletionₐ_apply x
-
 /-- Projection to the actual finite-order quotient by `I^(k+1) U(L)`. -/
 abbrev adicProjection (k : ℕ) :
     adicCompletion I L →ₐ[R] U ⧸ (I.map (algebraMap R U)) ^ (k + 1) :=
   AdicCompletion.extendedIdealCompletionProjection I k
 
 /-- The canonical map computes to the ordinary quotient map at each finite order. -/
-@[simp]
+@[simp↓]
 theorem adicProjection_toAdicCompletion (k : ℕ) (x : U) :
-    adicProjection I L k (toAdicCompletion I L x) =
+    adicProjection I L k ((scalarAdicFiltration I L).toCompletionₐ (R := R) x) =
       Ideal.Quotient.mk ((I.map (algebraMap R U)) ^ (k + 1)) x := by
-  rw [AdicCompletion.extendedIdealCompletionProjection_apply, toAdicCompletion_apply,
+  rw [AdicCompletion.extendedIdealCompletionProjection_apply,
+    TauCeti.AlgFiltration.toCompletionₐ_apply,
     TauCeti.AlgFiltration.projection_toCompletion, Ideal.quotientEquivAlgOfEq_mk]
 
 /-- Finite-order projections are compatible with the concrete quotient transition maps. -/
@@ -88,9 +80,10 @@ theorem adicProjection_factor {k l : ℕ} (h : k ≤ l) (x : adicCompletion I L)
           (Ideal.algFiltration_ideal (I.map (algebraMap R U)) (l + 1)) z) =
       Ideal.quotientEquivAlgOfEq R (Ideal.algFiltration_ideal (I.map (algebraMap R U)) (k + 1))
         (Ideal.Quotient.factor (F.antitone (Nat.add_le_add_right h 1)) z) := by
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective z
-    dsimp only [F]
-    simp only [Ideal.quotientEquivAlgOfEq_mk, Ideal.Quotient.factor_mk]
+    dsimp only [F] at z ⊢
+    simp only [← AlgEquiv.toAlgHom_apply, ← AlgHom.coe_toRingHom,
+      AlgEquiv.toAlgHom_toRingHom, Ideal.quotientEquivAlgOfEq_coe_eq_factor,
+      Ideal.Quotient.factor_comp_apply]
   simp only [AdicCompletion.extendedIdealCompletionProjection_apply]
   rw [he, F.factor_projection h]
 
@@ -137,13 +130,15 @@ theorem adicPBWEquiv_factor {m n : ℕ} (h : m ≤ n)
       Ideal.Quotient.factor (Ideal.pow_le_pow_right h) (adicPBWEquiv I b n x α) := by
   simp only [adicPBWEquiv, LinearEquiv.trans_apply, AlgEquiv.toLinearEquiv_apply]
   rw [← b.pbwBasis.quotientEquiv_factor (Ideal.pow_le_pow_right h)]
-  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
-  simp only [Ideal.Quotient.factor_mk, Ideal.quotientEquivAlgOfEq_mk]
+  congr 2
+  simp only [← AlgEquiv.toAlgHom_apply, ← AlgHom.coe_toRingHom,
+    AlgEquiv.toAlgHom_toRingHom, Ideal.quotientEquivAlgOfEq_coe_eq_factor,
+    Ideal.Quotient.factor_comp_apply]
 
 /-- Freeness of the Lie algebra and separatedness of the base suffice for the ordinary
 inclusion into the integral completion; finite rank and completeness are not needed. -/
 theorem toAdicCompletion_injective [Module.Free R L] [IsHausdorff I R] :
-    Function.Injective (toAdicCompletion I L) := by
+    Function.Injective ((scalarAdicFiltration I L).toCompletionₐ (R := R)) := by
   classical
   let b := Module.Free.chooseBasis R L
   let : LinearOrder (Module.Free.ChooseBasisIndex R L) :=
@@ -153,7 +148,7 @@ theorem toAdicCompletion_injective [Module.Free R L] [IsHausdorff I R] :
   intro x y h
   apply AdicCompletion.of_injective I U
   apply (AdicCompletion.extendedIdealCompletionEquiv (A := U) I).injective
-  simpa only [AdicCompletion.extendedIdealCompletionEquiv_of, toAdicCompletion,
+  simpa only [AdicCompletion.extendedIdealCompletionEquiv_of,
     TauCeti.AlgFiltration.toCompletionₐ_apply] using h
 
 end TauCeti.UniversalEnvelopingAlgebra

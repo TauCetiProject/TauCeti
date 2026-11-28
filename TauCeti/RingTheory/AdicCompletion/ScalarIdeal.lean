@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.AdicCompletion.Basic
 
 import Mathlib.RingTheory.AdicCompletion.Completeness
 
+import TauCeti.Algebra.Category.ModuleCat.Tower.Reduction
 import TauCeti.LinearAlgebra.Submodule.Quotient
 
 /-!
@@ -29,6 +30,8 @@ public section
 
 namespace AdicCompletion
 
+open TauCeti.ModuleTower
+
 variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] (I : Ideal R)
 
 /-- The module quotient by `I ^ n • A` is the quotient by the `n`-th extended ideal power. -/
@@ -38,49 +41,43 @@ def extendedIdealQuotientEquiv (n : ℕ) :
   Submodule.quotEquivOfEqRestrictScalars _ _
     (I.pow_smul_top_eq_restrictScalars_map_pow n)
 
+/-- The quotient comparison sends each representative to its class in the ideal quotient. -/
 @[simp]
 theorem extendedIdealQuotientEquiv_mk (n : ℕ) (a : A) :
     extendedIdealQuotientEquiv (A := A) I n (Submodule.Quotient.mk a) =
       Ideal.Quotient.mk _ a := by
-  simp [extendedIdealQuotientEquiv]
+  rw [extendedIdealQuotientEquiv, Submodule.quotEquivOfEqRestrictScalars_mk,
+    Ideal.Quotient.mk_eq_mk]
 
+/-- The inverse quotient comparison sends a representative class to the module quotient. -/
 @[simp]
 theorem extendedIdealQuotientEquiv_symm_mk (n : ℕ) (a : A) :
     (extendedIdealQuotientEquiv (A := A) I n).symm (Ideal.Quotient.mk _ a) =
       Submodule.Quotient.mk a := by
-  rw [LinearEquiv.symm_apply_eq, extendedIdealQuotientEquiv_mk]
+  rw [extendedIdealQuotientEquiv, ← Ideal.Quotient.mk_eq_mk,
+    Submodule.quotEquivOfEqRestrictScalars_symm_mk]
 
-private def filtrationQuotientEquiv (n : ℕ) :
-    (A ⧸ (I ^ n • (⊤ : Submodule R A))) ≃ₗ[R]
-      A ⧸ (I.map (algebraMap R A)).algFiltration.ideal n :=
-  (extendedIdealQuotientEquiv I n).trans
-    (Ideal.quotientEquivAlgOfEq R (Ideal.algFiltration_ideal _ n)).symm.toLinearEquiv
+private def reductionQuotientEquiv (n : ℕ) :
+    (reduction I A).obj (Opposite.op n) ≃ₗ[R]
+      A ⧸ (I.map (algebraMap R A)).algFiltration.ideal (n + 1) :=
+  (quotientsObjEquiv _ (I.pow_succ_smul_top_antitone A) n).trans
+    ((extendedIdealQuotientEquiv I (n + 1)).trans
+      (Ideal.quotientEquivAlgOfEq R (Ideal.algFiltration_ideal _ (n + 1))).symm.toLinearEquiv)
 
-private theorem filtrationQuotientEquiv_mk (n : ℕ) (a : A) :
-    filtrationQuotientEquiv I n (Submodule.Quotient.mk a) =
-      Ideal.Quotient.mk _ a := by
-  simp [filtrationQuotientEquiv, Ideal.quotientEquivAlgOfEq_symm]
+private theorem reductionQuotientEquiv_π (n : ℕ) (a : A) :
+    reductionQuotientEquiv I n (reductionπ I A n a) = Ideal.Quotient.mk _ a := by
+  simp only [reductionQuotientEquiv, LinearEquiv.trans_apply, quotientsObjEquiv_quotientsπ,
+    extendedIdealQuotientEquiv_mk, AlgEquiv.toLinearEquiv_apply,
+    Ideal.quotientEquivAlgOfEq_symm, Ideal.quotientEquivAlgOfEq_mk]
 
-private theorem filtrationQuotientEquiv_symm_mk (n : ℕ) (a : A) :
-    (filtrationQuotientEquiv I n).symm (Ideal.Quotient.mk _ a) =
-      Submodule.Quotient.mk a := by
-  rw [LinearEquiv.symm_apply_eq, filtrationQuotientEquiv_mk]
-
-private theorem factor_filtrationQuotientEquiv {m n : ℕ} (h : m ≤ n)
-    (x : A ⧸ (I ^ n • (⊤ : Submodule R A))) :
-    Ideal.Quotient.factor ((I.map (algebraMap R A)).algFiltration.antitone h)
-        (filtrationQuotientEquiv I n x) =
-      filtrationQuotientEquiv I m (transitionMap I A h x) := by
-  induction x using Submodule.Quotient.induction_on with
-  | _ a => simp [filtrationQuotientEquiv_mk]
-
-private theorem transitionMap_filtrationQuotientEquiv_symm {m n : ℕ} (h : m ≤ n)
-    (x : A ⧸ (I.map (algebraMap R A)).algFiltration.ideal n) :
-    transitionMap I A h ((filtrationQuotientEquiv I n).symm x) =
-      (filtrationQuotientEquiv I m).symm
-        (Ideal.Quotient.factor ((I.map (algebraMap R A)).algFiltration.antitone h) x) := by
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-  simp [filtrationQuotientEquiv_symm_mk]
+private theorem factor_reductionQuotientEquiv {m n : ℕ} (h : m ≤ n)
+    (x : (reduction I A).obj (Opposite.op n)) :
+    Ideal.Quotient.factor ((I.map (algebraMap R A)).algFiltration.antitone
+        (Nat.add_le_add_right h 1)) (reductionQuotientEquiv I n x) =
+      reductionQuotientEquiv I m ((reduction I A).transitionOfLE h x) := by
+  obtain ⟨a, rfl⟩ := quotientsπ_surjective _ _ n x
+  rw [transitionOfLE_quotientsπ, reductionQuotientEquiv_π, reductionQuotientEquiv_π,
+    Ideal.Quotient.factor_mk]
 
 private theorem projection_smul (n : ℕ) (r : R)
     (x : (I.map (algebraMap R A)).algFiltration.completion) :
@@ -90,13 +87,12 @@ private theorem projection_smul (n : ℕ) (r : R)
     map_smul ((I.map (algebraMap R A)).algFiltration.projectionₐ (R := R) n) r x
 
 private def toExtendedIdealCompletion :
-    AdicCompletion I A →ₗ[R] (I.map (algebraMap R A)).algFiltration.completion where
-  toFun x := ⟨fun k => filtrationQuotientEquiv I (k.unop + 1) (eval I A _ x), by
+    (reduction I A).lim →ₗ[R] (I.map (algebraMap R A)).algFiltration.completion where
+  toFun x := ⟨fun k => reductionQuotientEquiv I k.unop ((reduction I A).limπ k.unop x), by
     apply (I.map (algebraMap R A)).algFiltration.mem_completion_iff _ |>.mpr
     intro k l h
-    rw [factor_filtrationQuotientEquiv I (Nat.add_le_add_right h 1)]
-    exact congrArg (filtrationQuotientEquiv I (k + 1))
-      (transitionMap_comp_eval_apply I A (Nat.add_le_add_right h 1) x)⟩
+    rw [factor_reductionQuotientEquiv I h, ← LinearMap.comp_apply,
+      transitionOfLE_comp_limπ]⟩
   map_add' x y := by
     apply (I.map (algebraMap R A)).algFiltration.completion_ext
     intro k
@@ -107,59 +103,58 @@ private def toExtendedIdealCompletion :
     rw [projection_smul]
     simp only [TauCeti.AlgFiltration.projection_apply, map_smul, RingHom.id_apply]
 
-private def ofExtendedIdealCompletion :
-    (I.map (algebraMap R A)).algFiltration.completion →ₗ[R] AdicCompletion I A :=
-  lift I (fun n => (transitionMap I A (Nat.le_succ n)).comp
-    ((filtrationQuotientEquiv I (n + 1)).symm.toLinearMap.comp
-      ((I.map (algebraMap R A)).algFiltration.projectionₐ (R := R) n).toLinearMap)) (by
-    intro m n h
-    ext x
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toLinearMap_apply,
-      TauCeti.AlgFiltration.projectionₐ_apply]
-    rw [← (I.map (algebraMap R A)).algFiltration.factor_projection h x]
-    rw [← transitionMap_filtrationQuotientEquiv_symm I (Nat.add_le_add_right h 1)]
-    simp only [transitionMap, Submodule.factor_comp_apply])
-
-private theorem projection_toExtendedIdealCompletion (k : ℕ) (x : AdicCompletion I A) :
+private theorem projection_toExtendedIdealCompletion (k : ℕ) (x : (reduction I A).lim) :
     (I.map (algebraMap R A)).algFiltration.projection k (toExtendedIdealCompletion I x) =
-      filtrationQuotientEquiv I (k + 1) (eval I A (k + 1) x) := by
+      reductionQuotientEquiv I k ((reduction I A).limπ k x) := by
   rw [TauCeti.AlgFiltration.projection_apply]
   rfl
 
-private theorem eval_ofExtendedIdealCompletion (n : ℕ)
+private def ofExtendedIdealCompletion :
+    (I.map (algebraMap R A)).algFiltration.completion →ₗ[R] (reduction I A).lim :=
+  (reduction I A).limLift (fun n => (reductionQuotientEquiv I n).symm.toLinearMap.comp
+    ((I.map (algebraMap R A)).algFiltration.projectionₐ (R := R) n).toLinearMap) (by
+      intro n
+      ext x
+      apply (reductionQuotientEquiv I n).injective
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toLinearMap_apply,
+        TauCeti.AlgFiltration.projectionₐ_apply, LinearEquiv.apply_symm_apply]
+      rw [← transitionOfLE_succ, ← factor_reductionQuotientEquiv I n.le_succ,
+        LinearEquiv.apply_symm_apply,
+        TauCeti.AlgFiltration.factor_projection _ n.le_succ x])
+
+private theorem limπ_ofExtendedIdealCompletion (k : ℕ)
     (x : (I.map (algebraMap R A)).algFiltration.completion) :
-    eval I A n (ofExtendedIdealCompletion I x) =
-      transitionMap I A (Nat.le_succ n) ((filtrationQuotientEquiv I (n + 1)).symm
-        ((I.map (algebraMap R A)).algFiltration.projection n x)) := by
-  unfold ofExtendedIdealCompletion
-  generalize_proofs
-  have h := eval_lift_apply I _ (by assumption) n x
-  simpa only [eval_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    AlgHom.toLinearMap_apply, TauCeti.AlgFiltration.projectionₐ_apply] using h
+    (reduction I A).limπ k (ofExtendedIdealCompletion I x) =
+      (reductionQuotientEquiv I k).symm
+        ((I.map (algebraMap R A)).algFiltration.projection k x) := by
+  rw [ofExtendedIdealCompletion, ← LinearMap.comp_apply, limπ_comp_limLift]
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toLinearMap_apply,
+    TauCeti.AlgFiltration.projectionₐ_apply]
+
+private def reductionCompletionEquiv :
+    (reduction I A).lim ≃ₗ[R] (I.map (algebraMap R A)).algFiltration.completion where
+  __ := toExtendedIdealCompletion I
+  invFun := ofExtendedIdealCompletion I
+  left_inv x := by
+    apply (reduction I A).lim_ext
+    intro k
+    change (reduction I A).limπ k
+      (ofExtendedIdealCompletion I (toExtendedIdealCompletion I x)) = _
+    rw [limπ_ofExtendedIdealCompletion, projection_toExtendedIdealCompletion,
+      (reductionQuotientEquiv I k).symm_apply_apply]
+  right_inv x := by
+    apply (I.map (algebraMap R A)).algFiltration.completion_ext
+    intro k
+    change (I.map (algebraMap R A)).algFiltration.projection k
+      (toExtendedIdealCompletion I (ofExtendedIdealCompletion I x)) = _
+    rw [projection_toExtendedIdealCompletion, limπ_ofExtendedIdealCompletion,
+      (reductionQuotientEquiv I k).apply_symm_apply]
 
 /-- The completion of the extended ideal filtration agrees, as an `R`-module, with the
 module-adic completion. No commutativity of `A` is needed. -/
 def extendedIdealCompletionEquiv :
-    AdicCompletion I A ≃ₗ[R] (I.map (algebraMap R A)).algFiltration.completion where
-  __ := toExtendedIdealCompletion I
-  invFun := ofExtendedIdealCompletion I
-  left_inv x := by
-    apply AdicCompletion.ext
-    intro n
-    -- Extract the coordinate on the module-adic side of the two compatible families.
-    change eval I A n (ofExtendedIdealCompletion I (toExtendedIdealCompletion I x)) = _
-    rw [eval_ofExtendedIdealCompletion, projection_toExtendedIdealCompletion,
-      LinearEquiv.symm_apply_apply]
-    exact transitionMap_comp_eval_apply I A (Nat.le_succ n) x
-  right_inv x := by
-    apply (I.map (algebraMap R A)).algFiltration.completion_ext
-    intro k
-    -- The underlying linear map of the equivalence is the constructed family map.
-    change (I.map (algebraMap R A)).algFiltration.projection k
-      (toExtendedIdealCompletion I (ofExtendedIdealCompletion I x)) = _
-    rw [projection_toExtendedIdealCompletion, eval_ofExtendedIdealCompletion,
-      transitionMap_filtrationQuotientEquiv_symm, LinearEquiv.apply_symm_apply]
-    exact (I.map (algebraMap R A)).algFiltration.factor_projection (Nat.le_succ k) x
+    AdicCompletion I A ≃ₗ[R] (I.map (algebraMap R A)).algFiltration.completion :=
+  (limReductionEquiv I A).symm.trans (reductionCompletionEquiv I)
 
 /-- After the canonical identification of quotient ideals, the completion comparison preserves
 all positive-order projections. -/
@@ -169,13 +164,16 @@ theorem extendedIdealCompletionEquiv_projection (k : ℕ) (x : AdicCompletion I 
       ((I.map (algebraMap R A)).algFiltration.projection k
         (extendedIdealCompletionEquiv I x)) =
       extendedIdealQuotientEquiv I (k + 1) (eval I A (k + 1) x) := by
-  -- Read the comparison through its underlying linear map.
+  obtain ⟨a, ha⟩ := Submodule.Quotient.mk_surjective _ (eval I A (k + 1) x)
+  have hval : x.val (k + 1) = Submodule.Quotient.mk a := by
+    simpa only [eval_apply] using ha.symm
+  rw [extendedIdealCompletionEquiv, LinearEquiv.trans_apply]
   change Ideal.quotientEquivAlgOfEq R (Ideal.algFiltration_ideal _ (k + 1))
     ((I.map (algebraMap R A)).algFiltration.projection k
-      (toExtendedIdealCompletion I x)) = _
-  rw [projection_toExtendedIdealCompletion]
-  simp only [filtrationQuotientEquiv, LinearEquiv.trans_apply,
-    AlgEquiv.toLinearEquiv_apply, AlgEquiv.apply_symm_apply]
+      (toExtendedIdealCompletion I ((limReductionEquiv I A).symm x))) = _
+  rw [projection_toExtendedIdealCompletion, limπ_limReductionEquiv_symm_apply I A hval,
+    reductionQuotientEquiv_π, Ideal.quotientEquivAlgOfEq_mk, ← ha,
+    extendedIdealQuotientEquiv_mk]
 
 /-- The comparison preserves the canonical image of the uncompleted algebra. -/
 @[simp]
@@ -186,8 +184,8 @@ theorem extendedIdealCompletionEquiv_of (a : A) :
   intro k
   apply (Ideal.quotientEquivAlgOfEq R (Ideal.algFiltration_ideal _ (k + 1))).injective
   rw [extendedIdealCompletionEquiv_projection, eval_of, Submodule.mkQ_apply,
-    extendedIdealQuotientEquiv_mk,
-    TauCeti.AlgFiltration.projection_toCompletion, Ideal.quotientEquivAlgOfEq_mk]
+    extendedIdealQuotientEquiv_mk, TauCeti.AlgFiltration.projection_toCompletion,
+    Ideal.quotientEquivAlgOfEq_mk]
 
 /-- The inverse comparison has the prescribed positive-order module projections. -/
 @[simp]
@@ -244,18 +242,23 @@ private theorem reduction_ker (hI : I.FG) (k : ℕ) :
     RingHom.ker (extendedIdealCompletionProjection (A := A) I k) =
       (I.map (algebraMap R (I.map (algebraMap R A)).algFiltration.completion)) ^ (k + 1) := by
   rw [← extendedIdealCompletion_ker_projection I hI k]
-  ext x
-  simp only [RingHom.mem_ker, extendedIdealCompletionProjection_apply,
-    map_eq_zero_iff _
-      (Ideal.quotientEquivAlgOfEq R (Ideal.algFiltration_ideal _ (k + 1))).injective]
+  let e := Ideal.quotientEquivAlgOfEq R
+    (Ideal.algFiltration_ideal (I.map (algebraMap R A)) (k + 1))
+  change RingHom.ker (e.toRingEquiv.toRingHom.comp
+    (((I.map (algebraMap R A)).algFiltration.projectionₐ (R := R) k).toRingHom)) = _
+  have he : Function.Injective e.toRingEquiv.toRingHom := e.injective
+  rw [RingHom.ker_comp_of_injective _ he]
+  exact congrArg RingHom.ker (TauCeti.AlgFiltration.coe_projectionₐ
+    (R := R) (I.map (algebraMap R A)).algFiltration k)
 
 private theorem reduction_surjective (k : ℕ) :
     Function.Surjective (extendedIdealCompletionProjection (A := A) I k) := by
-  intro x
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-  refine ⟨(I.map (algebraMap R A)).algFiltration.toCompletion a, ?_⟩
-  rw [extendedIdealCompletionProjection_apply, TauCeti.AlgFiltration.projection_toCompletion,
-    Ideal.quotientEquivAlgOfEq_mk]
+  intro y
+  obtain ⟨x, hx⟩ := eval_surjective I A (k + 1)
+    ((extendedIdealQuotientEquiv I (k + 1)).symm y)
+  refine ⟨extendedIdealCompletionEquiv I x, ?_⟩
+  rw [extendedIdealCompletionProjection_apply, extendedIdealCompletionEquiv_projection,
+    hx, LinearEquiv.apply_symm_apply]
 
 /-- Reduction of the completed algebra by an extended ideal power is the same as reduction of
 the original algebra by that power. -/
