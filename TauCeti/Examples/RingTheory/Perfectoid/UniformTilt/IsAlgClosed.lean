@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.Perfectoid.Padic
 public import TauCeti.RingTheory.Perfectoid.Untilt
 public import TauCeti.RingTheory.Perfectoid.UniformTilt.IsAlgClosed
+public import TauCeti.RingTheory.Perfectoid.Cyclotomic.Period
+public import TauCeti.RingTheory.WittVector.ArtinSchreier.Basic
 
 /-!
 # Checks for algebraically closed tilts
@@ -16,7 +18,8 @@ The tilt of `ℂ_p` is algebraically closed; this is found by instance search fr
 structure of `ℂ_p`. In particular the Artin–Schreier equations `x ^ p - x = t` are solvable in it.
 For a complete algebraically closed nonarchimedean field `C` in which `p` is topologically
 nilpotent, the tilt `O_C♭ = PreTilt O_C p` of its valuation ring is absolutely integrally closed,
-so the fraction field `C♭` of `O_C♭` is algebraically closed.
+so the fraction field `C♭` of `O_C♭` is algebraically closed, and the Artin–Schreier–Witt
+equations `φ(c) - ξ ^ n * c = x` are solvable in `A_inf = W(O_C♭)`.
 -/
 
 public section
@@ -51,5 +54,10 @@ example : IsAbsolutelyIntegrallyClosed (PreTilt 𝒪[C] p) := inferInstance
 -- The fraction field `C♭` of the tilt `O_C♭` is algebraically closed.
 example : IsAlgClosed (FractionRing (PreTilt 𝒪[C] p)) :=
   IsAbsolutelyIntegrallyClosed.isAlgClosed (A := PreTilt 𝒪[C] p) _
+
+-- The Artin–Schreier–Witt equations `φ(c) - ξ ^ n * c = x` are solvable in `A_inf = W(O_C♭)`.
+example (ε : PreTilt 𝒪[C] p) (n : ℕ) (x : WittVector p (PreTilt 𝒪[C] p)) :
+    ∃ c, WittVector.frobenius c - xi p ε ^ n * c = x :=
+  WittVector.surjective_frobenius_sub_mul _ x
 
 end TauCeti.Examples.TiltIsAlgClosed

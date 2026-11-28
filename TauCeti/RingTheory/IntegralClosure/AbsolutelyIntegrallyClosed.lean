@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
+public import TauCeti.Algebra.CharP.Frobenius.Fixed
 
 import Mathlib.Algebra.Polynomial.Lifts
 import Mathlib.NumberTheory.Real.Irrational
@@ -39,6 +40,9 @@ be stable under the quotients and localizations used to cut a valuation ring int
   and only if every monic polynomial over `A` is a product of monic linear factors.
 * `TauCeti.IsAbsolutelyIntegrallyClosed.exists_pow_nat_eq`: every element has `n`-th roots for
   all `n > 0`.
+* `TauCeti.IsAbsolutelyIntegrallyClosed.natCard_frobeniusFixedSubring`: in an absolutely
+  integrally closed domain of characteristic `p`, the subring fixed by the `p ^ n`-power
+  Frobenius, `n ≠ 0`, has exactly `p ^ n` elements.
 * `TauCeti.isAbsolutelyIntegrallyClosed_iff_isAlgClosed`: for a field, the notion is
   `IsAlgClosed`.
 * `TauCeti.IsAbsolutelyIntegrallyClosed.of_surjective` and
@@ -105,6 +109,16 @@ theorem exists_pow_nat_eq [IsAbsolutelyIntegrallyClosed A] (x : A) {n : ℕ} (hn
   obtain ⟨z, hz⟩ := exists_root (X ^ n - C x) (monic_X_pow_sub_C x hn.ne')
     (by rwa [natDegree_X_pow_sub_C])
   exact ⟨z, by simpa [sub_eq_zero] using hz⟩
+
+/-- **The field of `q` elements inside an absolutely integrally closed domain.** In an absolutely
+integrally closed domain of characteristic `p` and for `n ≠ 0`, the subring of elements fixed by the
+`p ^ n`-power Frobenius has exactly `p ^ n` elements, since `X ^ p ^ n - X` splits. -/
+theorem natCard_frobeniusFixedSubring [IsAbsolutelyIntegrallyClosed A] [IsDomain A] (p : ℕ)
+    [Fact p.Prime] [CharP A p] {n : ℕ} (hn : n ≠ 0) :
+    Nat.card ↥(frobeniusFixedSubring A p n) = p ^ n :=
+  natCard_frobeniusFixedSubring_of_splits A p hn <| splits <| monic_X_pow_sub <| by
+    rw [degree_X]
+    exact_mod_cast Nat.one_lt_pow hn (Fact.out : p.Prime).one_lt
 
 /-- The zero ring is absolutely integrally closed: no polynomial over it has positive degree. -/
 theorem of_subsingleton [Subsingleton A] : IsAbsolutelyIntegrallyClosed A where

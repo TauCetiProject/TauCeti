@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.RingTheory.PolynomialLaw.Kernel
+import TauCeti.RingTheory.PolynomialLaw.Determinant.Triangular
 import Mathlib.Algebra.Field.Rat
 
 /-!
@@ -15,6 +16,8 @@ import Mathlib.Algebra.Field.Rat
 * The zero law has kernel everything, so it is not faithful on a nonzero module.
 * The law of the first projection `ℚ × ℚ → ℚ` has kernel the second factor, and the law it
   induces on the quotient is faithful.
+* On upper-triangular `2 × 2` matrices the determinant is not faithful: the strictly
+  upper-triangular matrix `!![0, 1; 0, 0]` lies in its kernel.
 -/
 
 open PolynomialLaw
@@ -47,3 +50,19 @@ example : (LinearMap.fst ℚ ℚ ℚ).toPolynomialLaw =
 
 example : ((LinearMap.fst ℚ ℚ ℚ).toPolynomialLaw.liftQ _ le_rfl).IsFaithful :=
   isFaithful_liftQ_ker
+
+-- On upper-triangular `2 × 2` matrices over `ℚ` the determinant is not faithful: the strictly
+-- upper-triangular matrices lie in its kernel.
+example : ¬ (TauCeti.Determinant.algHomDet
+    (Matrix.blockTriangularSubalgebra ℚ ℚ (id : Fin 2 → Fin 2)).val).toLaw.IsFaithful := by
+  have hN : (!![0, 1; 0, 0] : Matrix (Fin 2) (Fin 2) ℚ) ∈
+      Matrix.blockTriangularSubalgebra ℚ ℚ (id : Fin 2 → Fin 2) := by
+    rw [Matrix.mem_blockTriangularSubalgebra]
+    intro i j hij
+    fin_cases i <;> fin_cases j <;> simp_all
+  rw [isFaithful_iff, ← ne_eq, Submodule.ne_bot_iff]
+  refine ⟨⟨_, hN⟩, TauCeti.Determinant.mem_ker_algHomDet_of_isUpperTriangular _
+    (fun x ↦ (Matrix.mem_blockTriangularSubalgebra ..).1 x.property) fun i ↦ ?_, fun h ↦ ?_⟩
+  · fin_cases i <;> simp
+  · simpa using congrArg (fun M : Matrix.blockTriangularSubalgebra ℚ ℚ (id : Fin 2 → Fin 2) ↦
+      (M : Matrix (Fin 2) (Fin 2) ℚ) 0 1) h
