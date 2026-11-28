@@ -15,7 +15,8 @@ import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 # Skew-Hermitian quaternionic matrices
 
 Establishes vanishing of the real part of the quadratic form `star v ⬝ᵥ (M *ᵥ v)` for
-skew-Hermitian quaternionic matrices (`Matrix.re_dotProduct_mulVec_eq_zero_of_skewHermitian`).
+skew-Hermitian quaternionic matrices
+(`Matrix.re_star_dotProduct_mulVec_self_eq_zero_of_skewHermitian`).
 -/
 
 public section
@@ -25,7 +26,7 @@ open scoped Matrix Quaternion
 namespace Matrix
 
 /-- The real part of the quadratic form of a skew-Hermitian quaternionic matrix vanishes. -/
-theorem re_dotProduct_mulVec_eq_zero_of_skewHermitian {n : Type*} [Fintype n]
+theorem re_star_dotProduct_mulVec_self_eq_zero_of_skewHermitian {n : Type*} [Fintype n]
     {M : Matrix n n ℍ[ℝ]} (hM : Mᴴ = -M) (v : n → ℍ[ℝ]) :
     (star v ⬝ᵥ (M *ᵥ v)).re = 0 := by
   have hre := congrArg QuaternionAlgebra.re (star_dotProduct_mulVec_self_of_skewHermitian hM v)

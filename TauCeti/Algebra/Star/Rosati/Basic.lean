@@ -322,8 +322,9 @@ theorem inner_lmul_left (t : E →ₗ[ℝ] ℝ) (hcyc : ∀ x y : E, t (x * y) =
     (RosatiSpace.lmul t hstar hpos s)).mpr
       fun x y ↦ by simpa only [star_star] using inner_lmul_left t hcyc hstar hpos (star s) x y).symm
 
-/-- When `t` is cyclic, the left-regular representation as a faithful star algebra homomorphism
-from `E` into the endomorphisms of `TauCeti.RosatiSpace t hstar hpos`. -/
+/-- When `E` is a finite-dimensional real star algebra and `t` is cyclic, the left-regular
+representation as a faithful star algebra homomorphism from `E` into the endomorphisms of
+`TauCeti.RosatiSpace t hstar hpos` (carrying the Hilbert-space adjoint as `star`). -/
 noncomputable def rosatiRegularRepresentation [FiniteDimensional ℝ E]
     (t : E →ₗ[ℝ] ℝ) (hcyc : ∀ x y : E, t (x * y) = t (y * x))
     (hstar : ∀ x : E, t (star x) = t x) (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) :

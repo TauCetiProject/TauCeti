@@ -98,9 +98,9 @@ theorem exists_eq_comp_traceLinearMap_of_cyclic {R D M : Type*} [CommSemiring R]
 
 /-- Recovering the factor `τ` from `t = τ.comp (Matrix.traceLinearMap n R D)` on any diagonal
 matrix entry `Matrix.single i i a`. -/
-theorem apply_eq_single_of_eq_comp_traceLinearMap {R D M : Type*} [CommSemiring R] [Semiring D]
-    [Module R D] [AddCommMonoid M] [Module R M] {n : Type*} [Fintype n] [DecidableEq n]
-    {t : Matrix n n D →ₗ[R] M} {τ : D →ₗ[R] M}
+theorem apply_eq_apply_single_of_eq_comp_traceLinearMap {R D M : Type*} [CommSemiring R]
+    [Semiring D] [Module R D] [AddCommMonoid M] [Module R M] {n : Type*} [Fintype n]
+    [DecidableEq n] {t : Matrix n n D →ₗ[R] M} {τ : D →ₗ[R] M}
     (ht : t = τ.comp (Matrix.traceLinearMap n R D)) (i : n) (a : D) :
     τ a = t (Matrix.single i i a) := by
   rw [ht, comp_apply, Matrix.traceLinearMap_apply, Matrix.trace_single_eq_same]
@@ -113,10 +113,10 @@ theorem comp_traceLinearMap_injective {R D M : Type*} [CommSemiring R] [Semiring
   intro τ₁ τ₂ h
   ext a
   obtain ⟨i⟩ := ‹Nonempty n›
-  rw [apply_eq_single_of_eq_comp_traceLinearMap
+  rw [apply_eq_apply_single_of_eq_comp_traceLinearMap
       (t := τ₁.comp (Matrix.traceLinearMap n R D)) rfl i a,
     LinearMap.congr_fun h (Matrix.single i i a),
-    ← apply_eq_single_of_eq_comp_traceLinearMap
+    ← apply_eq_apply_single_of_eq_comp_traceLinearMap
       (t := τ₂.comp (Matrix.traceLinearMap n R D)) rfl i a]
 
 /-- For nonempty `n`, every cyclic `R`-linear map on `Matrix n n D` factors uniquely through

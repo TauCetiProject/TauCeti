@@ -30,8 +30,8 @@ Mathlib's `Mathlib.Algebra.Quaternion`.
   `(a² + b² + c² + d²) / e²`.
 * `Quaternion.normSq_mk_div_two`: the norm of `(a + b i + c j + d k) / 2` is
   `(a² + b² + c² + d²) / 4`, as used for quaternions with half-integer coordinates.
-* `Quaternion.exists_pure_neg_conj`: pure imaginary `r` admits nonzero pure `q` with
-  `star q * r * q = -(normSq q • r)`.
+* `Quaternion.exists_pure_star_mul_mul_eq_neg_normSq_smul`: pure imaginary `r` admits nonzero pure
+  `q` with `star q * r * q = -(normSq q • r)`.
 * `Quaternion.re_mul_comm`, `Quaternion.re_mul_star_pos`: real-part commutativity and positivity
   of `(a * star a).re`.
 * `LinearMap.apply_eq_map_one_mul_re_of_cyclic_quaternion`: every cyclic real linear functional
@@ -80,7 +80,7 @@ theorem normSq_mk_div_two {K : Type*} [Field K] (a b c d : K) :
 
 /-- Every pure imaginary quaternion `r` admits a nonzero pure imaginary quaternion `q` satisfying
 `star q * r * q = -(q.normSq • r)`. -/
-theorem exists_pure_neg_conj (r : ℍ[ℝ]) (hr : r.re = 0) :
+theorem exists_pure_star_mul_mul_eq_neg_normSq_smul (r : ℍ[ℝ]) (hr : r.re = 0) :
     ∃ q : ℍ[ℝ], q ≠ 0 ∧ q.re = 0 ∧ star q * r * q = -(normSq q • r) := by
   by_cases h : r.imI = 0 ∧ r.imJ = 0
   · refine ⟨⟨0, 1, 0, 0⟩, fun h0 ↦ by simpa using congrArg QuaternionAlgebra.imI h0, rfl, ?_⟩

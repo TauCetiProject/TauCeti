@@ -19,7 +19,9 @@ import TauCeti.Algebra.Quaternion.Basic
 Compares `TauCeti.IsRosatiPositive` for `rePart.comp (Matrix.traceLinearMap n ℝ D)` against
 `Matrix.PosDef` over `ℝ` and `ℂ`, and against `Matrix.QuatPosDef` over `ℍ[ℝ]` (where
 `QuaternionAlgebra.reₗ (-1) 0 (-1)` gives the real part, half the quaternionic reduced trace),
-and classifies cyclic star-invariant real linear functionals on `Matrix n n ℂ`.
+and for nonempty matrix index `n`, classifies cyclic, star-invariant real linear functionals `t` on
+`Matrix n n ℂ` satisfying `0 < t 1` (as well as cyclic functionals with `0 < t 1` and
+`t (Complex.I • 1) = 0`).
 -/
 
 public section

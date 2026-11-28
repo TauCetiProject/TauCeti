@@ -28,11 +28,11 @@ import TauCeti.LinearAlgebra.Matrix.Hermitian.Quaternion
 /-!
 # Positive involutions on simple real matrix algebras
 
-For `D ∈ {ℝ, ℂ, ℍ[ℝ]}` and an `ℝ`-star algebra `A` with `φ : A ≃ₐ[ℝ] Matrix n n D` and cyclic
-`t : A →ₗ[ℝ] ℝ` strictly positive on `x * star x`, constructs `e : A ≃⋆ₐ[ℝ] Matrix n n D`
-matching `TauCeti.IsRosatiPositive t` with `Matrix.PosDef` or `Matrix.QuatPosDef`
-(`AlgEquiv.exists_starAlgEquiv_matrix_real`, `AlgEquiv.exists_starAlgEquiv_matrix_complex`,
-`AlgEquiv.exists_starAlgEquiv_matrix_quaternion`).
+For `D ∈ {ℝ, ℂ, ℍ[ℝ]}` and an `ℝ`-star algebra `A` with `φ : A ≃ₐ[ℝ] Matrix n n D` (not assumed to
+preserve `star`) and cyclic `t : A →ₗ[ℝ] ℝ` strictly positive on nonzero `x * star x`, constructs
+`e : A ≃⋆ₐ[ℝ] Matrix n n D` matching `TauCeti.IsRosatiPositive t` with `Matrix.PosDef` or
+`Matrix.QuatPosDef` (`AlgEquiv.exists_starAlgEquiv_matrix_real`,
+`AlgEquiv.exists_starAlgEquiv_matrix_complex`, `AlgEquiv.exists_starAlgEquiv_matrix_quaternion`).
 
 ## References
 
@@ -211,8 +211,8 @@ private theorem not_pos_of_skewHermitian_quaternion {n : Type*} [Fintype n] [Dec
     rwa [LinearMap.comp_traceLinearMap_vecMulVec_mul_mul_conjTranspose_mul
       (rePart := QuaternionAlgebra.reₗ (-1) 0 (-1)) Quaternion.re_mul_comm
       (u : Matrix n n ℍ[ℝ]) Uinv v₀ v₀] at h
-  obtain ⟨q, hq0, _, hqconj⟩ := Quaternion.exists_pure_neg_conj r
-    (Matrix.re_dotProduct_mulVec_eq_zero_of_skewHermitian huinv_skew v₀)
+  obtain ⟨q, hq0, _, hqconj⟩ := Quaternion.exists_pure_star_mul_mul_eq_neg_normSq_smul r
+    (Matrix.re_star_dotProduct_mulVec_self_eq_zero_of_skewHermitian huinv_skew v₀)
   let v₁ : n → ℍ[ℝ] := fun i ↦ v₀ i * q
   have hv₁ : v₁ ≠ 0 := fun h ↦ by have := congrFun h i₀; simp [v₁, v₀, hq0] at this
   have hpos1 : 0 < (-(Quaternion.normSq q • r) * s).re := by
@@ -236,7 +236,9 @@ namespace AlgEquiv
 
 open TauCeti
 
-/-- Existence of a star-preserving `ℝ`-algebra isomorphism `e : A ≃⋆ₐ[ℝ] Matrix n n ℝ`
+/-- Given an `ℝ`-algebra isomorphism `φ : A ≃ₐ[ℝ] Matrix n n ℝ` (not assumed to preserve `star`)
+and a cyclic `ℝ`-linear functional `t : A →ₗ[ℝ] ℝ` strictly positive on `x * star x` for all
+`x ≠ 0`, produces a star-preserving `ℝ`-algebra isomorphism `e : A ≃⋆ₐ[ℝ] Matrix n n ℝ`
 identifying `TauCeti.IsRosatiPositive t` with `Matrix.PosDef`. -/
 theorem exists_starAlgEquiv_matrix_real {A : Type*} [Ring A] [Algebra ℝ A] [StarRing A]
     {n : Type*} [Fintype n] [DecidableEq n] (φ : A ≃ₐ[ℝ] Matrix n n ℝ)
@@ -249,7 +251,9 @@ theorem exists_starAlgEquiv_matrix_real {A : Type*} [Ring A] [Algebra ℝ A] [St
     not_pos_of_skewSymmetric_real φ t hcyclic hpos
   exact ⟨e, fun s ↦ by simpa using he s⟩
 
-/-- Existence of a star-preserving `ℝ`-algebra isomorphism `e : A ≃⋆ₐ[ℝ] Matrix n n ℂ`
+/-- Given an `ℝ`-algebra isomorphism `φ : A ≃ₐ[ℝ] Matrix n n ℂ` (not assumed to preserve `star`)
+and a cyclic `ℝ`-linear functional `t : A →ₗ[ℝ] ℝ` strictly positive on `x * star x` for all
+`x ≠ 0`, produces a star-preserving `ℝ`-algebra isomorphism `e : A ≃⋆ₐ[ℝ] Matrix n n ℂ`
 identifying `TauCeti.IsRosatiPositive t` with `Matrix.PosDef`. -/
 theorem exists_starAlgEquiv_matrix_complex {A : Type*} [Ring A] [Algebra ℝ A] [StarRing A]
     {n : Type*} [Fintype n] [DecidableEq n] (φ : A ≃ₐ[ℝ] Matrix n n ℂ)
@@ -300,7 +304,9 @@ theorem exists_starAlgEquiv_matrix_complex {A : Type*} [Ring A] [Algebra ℝ A] 
       φ t' c hc ht hpos' u' (Matrix.isHermitian_iff_isSelfAdjoint.mpr hu'sa) hσ
     exact ⟨e, fun s ↦ by rw [← isRosatiPositive_comp_selfAdjointPart_iff hcyclic, hePos]; simp⟩
 
-/-- Existence of a star-preserving `ℝ`-algebra isomorphism `e : A ≃⋆ₐ[ℝ] Matrix n n ℍ[ℝ]`
+/-- Given an `ℝ`-algebra isomorphism `φ : A ≃ₐ[ℝ] Matrix n n ℍ[ℝ]` (not assumed to preserve
+`star`) and a cyclic `ℝ`-linear functional `t : A →ₗ[ℝ] ℝ` strictly positive on `x * star x` for
+all `x ≠ 0`, produces a star-preserving `ℝ`-algebra isomorphism `e : A ≃⋆ₐ[ℝ] Matrix n n ℍ[ℝ]`
 identifying `TauCeti.IsRosatiPositive t` with `Matrix.QuatPosDef`. -/
 theorem exists_starAlgEquiv_matrix_quaternion {A : Type*} [Ring A] [Algebra ℝ A] [StarRing A]
     {n : Type*} [Fintype n] [DecidableEq n] (φ : A ≃ₐ[ℝ] Matrix n n ℍ[ℝ])
