@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Core
-public import TauCeti.CategoryTheory.Sites.Descent.BandedMorphism.FiberHomSheaf
+public import TauCeti.CategoryTheory.Sites.Descent.BandedMorphism.Fiber.HomSheaf
 public import TauCeti.CategoryTheory.Sites.Descent.IsomTorsor.Basic
 public import TauCeti.CategoryTheory.Sites.Descent.PresheafHomMap
 

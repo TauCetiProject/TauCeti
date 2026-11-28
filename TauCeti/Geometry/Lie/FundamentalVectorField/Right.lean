@@ -58,6 +58,8 @@ vector field `-mulRightInvariantVectorField ξ`, which preserves the Lie bracket
   right multiplication, `ξ♯` is the left-invariant vector field `mulInvariantVectorField ξ`.
 * `TauCeti.mfderiv_op_smul_mulInvariantVectorField`: each orbit map `g ↦ x · g` relates
   `mulInvariantVectorField ξ` on `G` to `ξ♯` on `M`.
+* `TauCeti.mfderiv_op_smul_apply`: the Leibniz rule
+  `d(s · g) v = d(R_g) (ds v) + (d(L_{g⁻¹}) (dg v))♯` for the derivative of `y ↦ s y · g y`.
 * `TauCeti.mfderiv_op_smul_rightFundamentalVectorField`: right-translation equivariance
   `d(R_g)_x (ξ♯ x) = (Ad(g⁻¹) ξ)♯ (x · g)`.
 * `TauCeti.mlieBracket_rightFundamentalVectorField`: Lie bracket homomorphism
@@ -237,6 +239,40 @@ theorem mfderiv_op_smul_mulInvariantVectorField [ContMDiffMul I 1 G] {x : M} {g 
   congr 2
   funext h
   simp [op_mul, mul_smul]
+
+/-- **The Leibniz rule for a right action.** For maps `s` into `M` and `g` into `G`, differentiable
+at `x`, where the action map is differentiable at `(s x, g x)`, the derivative of `y ↦ s y · g y`
+at `x` is the right translate of the derivative of `s`, plus the fundamental vector field generated
+by the left translate `d(L_{(g x)⁻¹}) (dg v)` of the derivative of `g` back to the identity, which
+is the value of the left Maurer–Cartan form `θ (dg v) = g⁻¹ dg (v)`:
+
+`d(s · g) v = d(R_{g x}) (ds v) + (d(L_{(g x)⁻¹}) (dg v))♯ (s x · g x)`. -/
+theorem mfderiv_op_smul_apply [ContMDiffMul I 1 G]
+    {EN : Type*} [NormedAddCommGroup EN] [NormedSpace 𝕜 EN]
+    {HN : Type*} [TopologicalSpace HN] {IN : ModelWithCorners 𝕜 EN HN}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace HN N] {s : N → M} {g : N → G} {x : N}
+    (hact : MDifferentiableAt (I'.prod I) I' (fun p : M × G => op p.2 • p.1) (s x, g x))
+    (hs : MDifferentiableAt IN I' s x) (hg : MDifferentiableAt IN I g x)
+    (v : TangentSpace IN x) :
+    mfderiv IN I' (fun y => op (g y) • s y) x v =
+      mfderiv I' I' (fun p : M => op (g x) • p) (s x) (mfderiv IN I' s x v) +
+        rightFundamentalVectorField (I := I) (G := G) I'
+          (mfderiv I I ((g x)⁻¹ * ·) (g x) (mfderiv IN I g x v)) (op (g x) • s x) := by
+  -- The map is the action composed with `y ↦ (s y, g y)`, and the derivative of the action is the
+  -- sum of its partial derivatives.
+  have hcomp := mfderiv_comp_apply_of_eq (f := fun y => (s y, g y))
+    (g := fun p : M × G => op p.2 • p.1) x hact (hs.prodMk hg) rfl v
+  rw [mfderiv_prodMk hs hg, mfderiv_prod_eq_add_apply hact] at hcomp
+  dsimp only [ContinuousLinearMap.prod_apply] at hcomp
+  refine hcomp.trans (congrArg _ ?_)
+  -- The partial derivative in the group variable sends the left-invariant vector field of `ξ` to
+  -- the fundamental vector field of `ξ`, and `dg v` is the left-invariant field of its translate
+  -- `ξ` back to the identity.
+  have horbit : MDifferentiableAt I I' (fun h : G => op h • s x) (g x) :=
+    hact.comp (g x) (mdifferentiableAt_const.prodMk mdifferentiableAt_id)
+  have h := mfderiv_op_smul_mulInvariantVectorField horbit
+    (mfderiv I I ((g x)⁻¹ * ·) (g x) (mfderiv IN I g x v))
+  rwa [mulInvariantVectorField_mfderiv_inv_mul] at h
 
 /-- **Equivariance under right translation.** For a `C¹` Lie group `G`, the derivative of right
 translation `y ↦ op g • y` at `x` carries the right fundamental vector field of `ξ` at `x` to that

@@ -9,6 +9,7 @@ public import TauCeti.KnotTheory.Khovanov.Resolution.Cube
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Data.Int.Interval
+import TauCeti.KnotTheory.Khovanov.EnhancedState.Parity
 
 /-!
 # Quantum support of the Khovanov bracket
@@ -23,6 +24,12 @@ The same bound holds for its homology.
 Over a nontrivial coefficient ring, a term is nonzero exactly when there is an enhanced state
 of its bidegree. This describes chain groups, rather than asserting that every such state
 survives in homology.
+
+For an oriented planar diagram with `c` link components, every enhanced state has quantum degree
+congruent to `c` modulo two (`TauCeti.OrientedPDCode.enhancedQuantumDegree_mod_two` in
+`TauCeti.KnotTheory.Khovanov.EnhancedState.Parity`). Consequently the shifted resolution modules
+vanish in quantum degrees of the opposite parity, over every commutative coefficient ring
+(`TauCeti.OrientedPDCode.circleQuantumGrading_piece_eq_bot_of_mod_two_ne`).
 
 ## References
 
@@ -155,3 +162,23 @@ theorem finite_bigradedSupport_khovanovBracket :
     exact h (D.isZero_khovanovBracket_X_of_quantum_notMem_Icc hD R hj r)
 
 end TauCeti.PDCode
+
+namespace TauCeti.OrientedPDCode
+
+variable {n : ℕ} (D : OrientedPDCode n)
+
+/-- A normalized resolution module is zero in every quantum degree of the wrong component
+parity. No nontriviality or characteristic assumption on the coefficient ring is needed. -/
+theorem circleQuantumGrading_piece_eq_bot_of_mod_two_ne (hD : D.toPDCode.IsPlanar)
+    (R : Type*) [CommRing R] (s : Fin n → Bool) {j : ℤ}
+    (hj : j % 2 ≠ (D.componentCount : ℤ) % 2) :
+    (Khovanov.circleQuantumGrading R (D.ResolvedCircle s)).piece
+      (j - D.stateQuantumShift s) = ⊥ := by
+  apply Khovanov.circleQuantumGrading_piece_eq_bot
+  intro l hl
+  have h := D.enhancedQuantumDegree_mod_two hD ⟨s, l⟩
+  rw [enhancedQuantumDegree_def] at h
+  dsimp only at h
+  omega
+
+end TauCeti.OrientedPDCode
