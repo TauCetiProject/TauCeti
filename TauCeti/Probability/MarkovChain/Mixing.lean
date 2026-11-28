@@ -9,6 +9,7 @@ public import TauCeti.Probability.Kernel.Composition.TotalVariation
 public import Mathlib.Probability.Kernel.Invariance
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
+import Mathlib.Analysis.Subadditive
 import TauCeti.Probability.Kernel.Composition.Power
 import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
@@ -33,18 +34,18 @@ of `ℕ∞`, with value `⊤` if there is no such time.
 ## Main declarations
 
 * `Kernel.tvToStationary` and `Kernel.tvBetweenStarts`: the worst-case distances `d(t)` to a
-  reference measure and `d̄(t)` between two starts.
+  reference measure and `D(t)` between two starts.
 * `Kernel.isGreatest_tvToStationary` and `Kernel.isGreatest_tvBetweenStarts`: on a nonempty
   finite space with measurable singletons, point starts attain the worst-case distances over
   all initial probability laws.
 * `Kernel.tvToStationary_antitone` and `Kernel.tvBetweenStarts_antitone`: for a Markov kernel
   on a finite space with measurable singletons, both distances are nonincreasing.
-* `Kernel.tvBetweenStarts_add_le`: the bound `d̄(s + t) ≤ d̄(s) d̄(t)`.
+* `Kernel.tvBetweenStarts_add_le`: the bound `D(s + t) ≤ D(s) D(t)`.
 * `Kernel.mixingTime`: the mixing time `t_mix(ε)`.
 * `Kernel.mixingTime_le_iff`: for a Markov kernel on a finite space with measurable
   singletons, `t_mix(ε) ≤ t` exactly when `κ.tvToStationary π t ≤ ε`.
 * `Kernel.tvBetweenStarts_mul_le` and `Kernel.tvToStationary_mul_le`: the bounds
-  `d̄(k t) ≤ d̄(t) ^ k` and, for an invariant probability measure, `d(k t) ≤ (2 d(t)) ^ k`.
+  `D(k t) ≤ D(t) ^ k` and, for an invariant probability measure, `d(k t) ≤ (2 d(t)) ^ k`.
 * `Kernel.mixingTime_le_ceil_logb_mul`: for an invariant probability measure and `0 < ε`,
   `t_mix(ε) ≤ ⌈log₂ ε⁻¹⌉ t_mix(1/4)`.
 
@@ -387,12 +388,9 @@ theorem mixingTime_le_iff {ε : ℝ} : κ.mixingTime π ε ≤ t ↔ κ.tvToStat
 time `t`. -/
 theorem tvBetweenStarts_mul_le (k : ℕ) :
     κ.tvBetweenStarts (k * t) ≤ κ.tvBetweenStarts t ^ k := by
-  induction k with
-  | zero => simpa using tvBetweenStarts_le_one
-  | succ k ih =>
-    rw [Nat.succ_mul, pow_succ]
-    exact tvBetweenStarts_add_le.trans
-      (mul_le_mul_of_nonneg_right ih tvBetweenStarts_nonneg)
+  have h : Submultiplicative κ.tvBetweenStarts := fun _ _ ↦ tvBetweenStarts_add_le
+  simpa only [add_zero] using (h.apply_mul_add_le k t 0 tvBetweenStarts_nonneg).trans
+    (mul_le_of_le_one_right (pow_nonneg tvBetweenStarts_nonneg k) tvBetweenStarts_le_one)
 
 /-- For an invariant probability measure, the distance to stationarity after `k * t` steps is at
 most `(2 d(t)) ^ k`, where `d(t)` is the distance to stationarity at time `t`. -/
