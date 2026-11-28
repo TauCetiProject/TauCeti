@@ -100,7 +100,7 @@ theorem isometry_toPath : Isometry (toPath (A := A)) :=
 at `0`. -/
 noncomputable def equivKerEvalZero :
     CStarCone A ≃⋆ₐ[ℂ] TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A (0 : I)) :=
-  ZeroAtInftyContinuousMap.equivKerContinuousMapEvalOfNotMemRangeIff A
+  ZeroAtInftyContinuousMap.equivKerContinuousMapEvalOfNotMemRange A
     isOpenEmbedding_inclusion_Ioc_Icc notMem_range_inclusion_Ioc_Icc_iff
 
 @[simp] theorem coe_equivKerEvalZero_apply (f : CStarCone A) :
@@ -108,7 +108,7 @@ noncomputable def equivKerEvalZero :
       TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A (0 : I))) : C(I, A)) =
       toPath f := by
   rw [coe_toPath_apply, equivKerEvalZero,
-    ZeroAtInftyContinuousMap.coe_equivKerContinuousMapEvalOfNotMemRangeIff_apply]
+    ZeroAtInftyContinuousMap.coe_equivKerContinuousMapEvalOfNotMemRange_apply]
 
 @[simp] theorem equivKerEvalZero_symm_apply
     (g : TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A (0 : I)))
@@ -317,9 +317,9 @@ theorem evalOne_toCone (f : CStarSuspension A) : CStarCone.evalOne (toCone f) = 
 @[simp] theorem evalOne_comp_toCone : (CStarCone.evalOne (A := A)).comp toCone = 0 :=
   NonUnitalStarAlgHom.ext evalOne_toCone
 
-theorem toCone_injective : Function.Injective (toCone (A := A)) :=
-  ZeroAtInftyContinuousMap.extendByZeroNonUnitalStarAlgHom_injective ℂ A
-    isOpenEmbedding_inclusion_Ioo_Ioc
+theorem toCone_injective : Function.Injective (toCone (A := A)) := by
+  rw [toCone, ZeroAtInftyContinuousMap.coe_extendByZeroNonUnitalStarAlgHom]
+  exact ZeroAtInftyContinuousMap.extendByZero_injective isOpenEmbedding_inclusion_Ioo_Ioc
 
 theorem isometry_toCone : Isometry (toCone (A := A)) :=
   NonUnitalStarAlgHom.isometry toCone toCone_injective
@@ -327,13 +327,13 @@ theorem isometry_toCone : Isometry (toCone (A := A)) :=
 /-- `CStarSuspension A` is `⋆`-isomorphic to the kernel of `CStarCone.evalOne`. -/
 noncomputable def equivKerEvalOne :
     CStarSuspension A ≃⋆ₐ[ℂ] TwoSidedIdeal.ker (CStarCone.evalOne (A := A)) :=
-  ZeroAtInftyContinuousMap.equivKerEvalOfNotMemRangeIff A
+  ZeroAtInftyContinuousMap.equivKerEvalOfNotMemRange A
     isOpenEmbedding_inclusion_Ioo_Ioc notMem_range_inclusion_Ioo_Ioc_iff
 
 @[simp] theorem coe_equivKerEvalOne_apply (f : CStarSuspension A) :
     ((equivKerEvalOne f : TwoSidedIdeal.ker (CStarCone.evalOne (A := A))) : CStarCone A) =
       toCone f := by
-  rw [equivKerEvalOne, ZeroAtInftyContinuousMap.coe_equivKerEvalOfNotMemRangeIff_apply, toCone,
+  rw [equivKerEvalOne, ZeroAtInftyContinuousMap.coe_equivKerEvalOfNotMemRange_apply, toCone,
     ZeroAtInftyContinuousMap.coe_extendByZeroNonUnitalStarAlgHom]
 
 @[simp] theorem equivKerEvalOne_symm_apply

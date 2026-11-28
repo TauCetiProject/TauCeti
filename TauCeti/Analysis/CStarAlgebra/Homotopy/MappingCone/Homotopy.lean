@@ -123,49 +123,100 @@ private theorem warpHomotopy_apply (q : (I × I) × I) :
 variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
   {φ₀ φ₁ : A →⋆ₙₐ[ℂ] B}
 
+/-- Evaluation `MappingCone Φ.toHom →⋆ₙₐ[ℂ] MappingCone (Φ.eval t)` at `t : unitInterval`. -/
+def evalMap (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (t : I) :
+    MappingCone Φ.toHom →⋆ₙₐ[ℂ] MappingCone (Φ.eval t) :=
+  map Φ.toHom (Φ.eval t) (.id ℂ A) (ContinuousMap.evalNonUnitalStarAlgHom ℂ B t) <| by
+    ext a; simp
+
+@[simp]
+theorem fst_evalMap_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (t : I)
+    (x : MappingCone Φ.toHom) : (evalMap Φ t x).fst = x.fst := by simp [evalMap]
+
+@[simp]
+theorem snd_evalMap_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (t : I)
+    (x : MappingCone Φ.toHom) (s : Ioc (0 : ℝ) 1) : (evalMap Φ t x).snd s = x.snd s t := by
+  simp [evalMap]
+
+@[simp] theorem fstHom_comp_evalMap (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (t : I) :
+    (fstHom (Φ.eval t)).comp (evalMap Φ t) = fstHom Φ.toHom :=
+  (fstHom_comp_map _ _ _ _ _).trans (NonUnitalStarAlgHom.id_comp _)
+
+theorem evalMap_comp_inr (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (t : I) :
+    (evalMap Φ t).comp (inr Φ.toHom) =
+      (inr (Φ.eval t)).comp (CStarSuspension.map (ContinuousMap.evalNonUnitalStarAlgHom ℂ B t)) :=
+  map_comp_inr _
+
+private def castCodomain {φ : A →⋆ₙₐ[ℂ] C(I, B)} {ψ₁ ψ₂ : A →⋆ₙₐ[ℂ] B} (h : ψ₁ = ψ₂)
+    (f : MappingCone φ →⋆ₙₐ[ℂ] MappingCone ψ₁) :
+    MappingCone φ →⋆ₙₐ[ℂ] MappingCone ψ₂ :=
+  h ▸ f
+
+private theorem fst_castCodomain_apply {φ : A →⋆ₙₐ[ℂ] C(I, B)} {ψ₁ ψ₂ : A →⋆ₙₐ[ℂ] B}
+    (h : ψ₁ = ψ₂) (f : MappingCone φ →⋆ₙₐ[ℂ] MappingCone ψ₁) (x : MappingCone φ) :
+    (castCodomain h f x).fst = (f x).fst := by cases h; rfl
+
+private theorem snd_castCodomain_apply {φ : A →⋆ₙₐ[ℂ] C(I, B)} {ψ₁ ψ₂ : A →⋆ₙₐ[ℂ] B}
+    (h : ψ₁ = ψ₂) (f : MappingCone φ →⋆ₙₐ[ℂ] MappingCone ψ₁) (x : MappingCone φ) :
+    (castCodomain h f x).snd = (f x).snd := by cases h; rfl
+
+private theorem fstHom_comp_castCodomain {φ : A →⋆ₙₐ[ℂ] C(I, B)} {ψ₁ ψ₂ : A →⋆ₙₐ[ℂ] B}
+    (h : ψ₁ = ψ₂) (f : MappingCone φ →⋆ₙₐ[ℂ] MappingCone ψ₁) :
+    (fstHom ψ₂).comp (castCodomain h f) = (fstHom ψ₁).comp f := by cases h; rfl
+
+private theorem castCodomain_comp_inr {φ : A →⋆ₙₐ[ℂ] C(I, B)} {ψ₁ ψ₂ : A →⋆ₙₐ[ℂ] B}
+    (h : ψ₁ = ψ₂) (f : MappingCone φ →⋆ₙₐ[ℂ] MappingCone ψ₁)
+    {g : CStarSuspension C(I, B) →⋆ₙₐ[ℂ] CStarSuspension B}
+    (hf : f.comp (inr φ) = (inr ψ₁).comp g) :
+    (castCodomain h f).comp (inr φ) = (inr ψ₂).comp g := by cases h; exact hf
+
 /-- Endpoint evaluation `MappingCone Φ.toHom →⋆ₙₐ[ℂ] MappingCone φ₀` at `t = 0`. -/
 def evalZeroMap (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
     MappingCone Φ.toHom →⋆ₙₐ[ℂ] MappingCone φ₀ :=
-  map Φ.toHom φ₀ (.id ℂ A) (ContinuousMap.evalNonUnitalStarAlgHom ℂ B 0) <| by ext a; simp
+  castCodomain Φ.eval_zero (evalMap Φ 0)
 
 @[simp]
 theorem fst_evalZeroMap_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x : MappingCone Φ.toHom) :
-    (evalZeroMap Φ x).fst = x.fst := by simp [evalZeroMap]
+    (evalZeroMap Φ x).fst = x.fst := by
+  rw [evalZeroMap, fst_castCodomain_apply, fst_evalMap_apply]
 
 @[simp]
 theorem snd_evalZeroMap_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x : MappingCone Φ.toHom)
-    (s : Ioc (0 : ℝ) 1) : (evalZeroMap Φ x).snd s = x.snd s 0 := by simp [evalZeroMap]
+    (s : Ioc (0 : ℝ) 1) : (evalZeroMap Φ x).snd s = x.snd s 0 := by
+  rw [evalZeroMap, snd_castCodomain_apply, snd_evalMap_apply]
 
 @[simp] theorem fstHom_comp_evalZeroMap (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
-    (fstHom φ₀).comp (evalZeroMap Φ) = fstHom Φ.toHom :=
-  (fstHom_comp_map _ _ _ _ _).trans (NonUnitalStarAlgHom.id_comp _)
+    (fstHom φ₀).comp (evalZeroMap Φ) = fstHom Φ.toHom := by
+  rw [evalZeroMap, fstHom_comp_castCodomain, fstHom_comp_evalMap]
 
 theorem evalZeroMap_comp_inr (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
     (evalZeroMap Φ).comp (inr Φ.toHom) =
       (inr φ₀).comp (CStarSuspension.map (ContinuousMap.evalNonUnitalStarAlgHom ℂ B 0)) :=
-  map_comp_inr _
+  castCodomain_comp_inr Φ.eval_zero (evalMap Φ 0) (evalMap_comp_inr Φ 0)
 
 /-- Endpoint evaluation `MappingCone Φ.toHom →⋆ₙₐ[ℂ] MappingCone φ₁` at `t = 1`. -/
 def evalOneMap (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
     MappingCone Φ.toHom →⋆ₙₐ[ℂ] MappingCone φ₁ :=
-  map Φ.toHom φ₁ (.id ℂ A) (ContinuousMap.evalNonUnitalStarAlgHom ℂ B 1) <| by ext a; simp
+  castCodomain Φ.eval_one (evalMap Φ 1)
 
 @[simp]
 theorem fst_evalOneMap_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x : MappingCone Φ.toHom) :
-    (evalOneMap Φ x).fst = x.fst := by simp [evalOneMap]
+    (evalOneMap Φ x).fst = x.fst := by
+  rw [evalOneMap, fst_castCodomain_apply, fst_evalMap_apply]
 
 @[simp]
 theorem snd_evalOneMap_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x : MappingCone Φ.toHom)
-    (s : Ioc (0 : ℝ) 1) : (evalOneMap Φ x).snd s = x.snd s 1 := by simp [evalOneMap]
+    (s : Ioc (0 : ℝ) 1) : (evalOneMap Φ x).snd s = x.snd s 1 := by
+  rw [evalOneMap, snd_castCodomain_apply, snd_evalMap_apply]
 
 @[simp] theorem fstHom_comp_evalOneMap (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
-    (fstHom φ₁).comp (evalOneMap Φ) = fstHom Φ.toHom :=
-  (fstHom_comp_map _ _ _ _ _).trans (NonUnitalStarAlgHom.id_comp _)
+    (fstHom φ₁).comp (evalOneMap Φ) = fstHom Φ.toHom := by
+  rw [evalOneMap, fstHom_comp_castCodomain, fstHom_comp_evalMap]
 
 theorem evalOneMap_comp_inr (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
     (evalOneMap Φ).comp (inr Φ.toHom) =
       (inr φ₁).comp (CStarSuspension.map (ContinuousMap.evalNonUnitalStarAlgHom ℂ B 1)) :=
-  map_comp_inr _
+  castCodomain_comp_inr Φ.eval_one (evalMap Φ 1) (evalMap_comp_inr Φ 1)
 
 /-- Underlying continuous square `(s, t) ↦ f(s(1 + t))` for `s(1 + t) ≤ 1` and
 `Φ_a(s(1 + t) - 1)` for `s(1 + t) ≥ 1`, defining `inclZeroSquare`. -/

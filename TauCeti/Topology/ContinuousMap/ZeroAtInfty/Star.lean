@@ -149,17 +149,6 @@ noncomputable def extendByZeroNonUnitalStarAlgHom (he : IsOpenEmbedding e) :
 @[simp] theorem coe_extendByZeroNonUnitalStarAlgHom (he : IsOpenEmbedding e) :
     ⇑(extendByZeroNonUnitalStarAlgHom 𝕜 A he) = extendByZero he := (rfl)
 
-theorem extendByZeroNonUnitalStarAlgHom_apply_mem (he : IsOpenEmbedding e) (f : C₀(X, A))
-    (x : X) : extendByZeroNonUnitalStarAlgHom 𝕜 A he f (e x) = f x :=
-  extendByZero_apply_mem he f x
-
-theorem extendByZeroNonUnitalStarAlgHom_apply_of_notMem (he : IsOpenEmbedding e) (f : C₀(X, A))
-    {y : Y} (hy : y ∉ range e) : extendByZeroNonUnitalStarAlgHom 𝕜 A he f y = 0 :=
-  extendByZero_apply_of_notMem he f hy
-
-theorem extendByZeroNonUnitalStarAlgHom_injective (he : IsOpenEmbedding e) :
-    Function.Injective (extendByZeroNonUnitalStarAlgHom 𝕜 A he) := extendByZero_injective he
-
 end ExtendByZero
 
 end ZeroAtInftyContinuousMap
