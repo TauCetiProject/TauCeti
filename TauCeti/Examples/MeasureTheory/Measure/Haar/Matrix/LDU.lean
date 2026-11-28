@@ -48,8 +48,9 @@ example {f : Matrix (Fin 1) (Fin 1) ℂ → ℝ≥0∞} (hf : Measurable f) :
   -- Match the theorem's local coordinate type and constructor to `I` and `U` for rewriting.
   change (∫⁻ c : Fin 1 → ℂ, (∏ i : Fin 1, ‖c i‖ₑ ^ (4 * i.rev.val)) *
     ∫⁻ q : (I → ℂ) × (I → ℂ), f ((U q.1)ᴴ * diagonal c * U q.2)) = _ at h
-  simp only [Fin.prod_univ_one, show (0 : Fin 1).rev.val = 0 from rfl, mul_zero, pow_zero, hU,
-    Matrix.conjTranspose_one, one_mul, mul_one, lintegral_const, hu] at h
+  simp only [Fin.isValue, Fin.val_rev, Nat.reduceSubDiff, Fin.prod_univ_one,
+    Fin.coe_ofNat_eq_mod, Nat.mod_succ, tsub_self, mul_zero, pow_zero,
+    hU, Matrix.conjTranspose_one, one_mul, mul_one, lintegral_const, hu] at h
   rw [← h]
   let e := MeasurableEquiv.funUnique (Fin 1) ℂ
   exact ((volume_preserving_funUnique (Fin 1) ℂ).symm e).lintegral_comp_emb
@@ -81,8 +82,9 @@ example {f : Matrix (Fin 2) (Fin 2) ℂ → ℝ≥0∞} (hf : Measurable f) :
     ∫⁻ q : (I → ℂ) × (I → ℂ), f ((U q.1)ᴴ * diagonal c * U q.2)) = _ at h
   rw [← h]
   refine lintegral_congr fun c ↦ ?_
-  simp only [Fin.prod_univ_two, show (0 : Fin 2).rev.val = 1 from rfl,
-    show (1 : Fin 2).rev.val = 0 from rfl, mul_one, mul_zero, pow_zero]
+  simp only [Fin.isValue, Fin.val_rev, Nat.reduceSubDiff, Fin.prod_univ_two,
+    Fin.coe_ofNat_eq_mod, Nat.zero_mod, tsub_zero, mul_one, Nat.mod_succ, tsub_self, mul_zero,
+    pow_zero]
   congr 1
   simp only [volume_eq_prod]
   exact (hpres.prod hpres).lintegral_comp_emb (e.symm.prodCongr e.symm).measurableEmbedding

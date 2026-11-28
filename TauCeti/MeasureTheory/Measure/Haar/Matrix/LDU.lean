@@ -6,10 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.Haar.Matrix.Complex
+public import TauCeti.MeasureTheory.Integral.Prod
 public import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
 # Lebesgue integration in complex LDU coordinates
+
+For measurable functions on complex `n × n` matrices, this formula converts the Lebesgue integral
+into a weighted integral over the diagonal vector `c`, with weight
+`∏ i, ‖c i‖ₑ ^ (4 * i.rev.val)`, of integrals over independent strict-upper-triangular coordinates
+of the two unitriangular factors. Indicator functions can use it to compute or bound volumes of
+matrix sets.
 
 Splitting off the first row and column reduces the formula to two vector scalings and
 translation of the trailing block. The diagonal ranges over the whole space; at each step
@@ -123,20 +130,6 @@ private theorem lintegral_pivotMatrix {n : ℕ} {f : CMat (n + 1) → ℝ≥0∞
     ha.comp (measurable_const.prodMk measurable_id)
   rw [volume_eq_prod, lintegral_prod _ hv.aemeasurable]
 
-private theorem lintegral_scaleVec {n : ℕ} {a : ℂ} (ha : a ≠ 0) (g : CVec n → ℝ≥0∞) :
-    ∫⁻ u, g u = ‖a‖ₑ ^ (2 * n) * ∫⁻ u : CVec n, g (a • u) := by
-  let D : CMat n := diagonal fun _ ↦ a
-  have hD : D.det ≠ 0 := by simp [D, ha]
-  have h := lintegral_comp_mulVec hD g
-  have hdet : D.det = a ^ n := by simp [D]
-  have ha' : 0 < ‖a‖ := norm_pos_iff.mpr ha
-  have hvec (u : CVec n) : D *ᵥ u = a • u := by
-    funext i
-    exact Matrix.mulVec_diagonal _ _ _
-  simp only [hvec, hdet, norm_pow, ← inv_pow, ← pow_mul, Nat.mul_comm n 2,
-    ENNReal.ofReal_pow (inv_nonneg.mpr ha'.le), ENNReal.ofReal_inv_of_pos ha', ofReal_norm] at h
-  rw [h, ← mul_assoc, ← ENNReal.inv_pow, ENNReal.mul_inv_cancel (by simp [ha]) (by simp), one_mul]
-
 -- The pivot contributes a scaling on each off-diagonal block and a rank-one translation.
 private def pivotLDU {n : ℕ} (a : ℂ) (v u : CVec n) (A : CMat n) : CMat (n + 1) :=
   pivotMatrix n (a, a • v, a • (fun i ↦ star (u i)),
@@ -178,15 +171,19 @@ private theorem lintegral_pivotLDU {n : ℕ} {a : ℂ} (ha : a ≠ 0)
       ((measurable_pi_iff.mpr fun i ↦ by
         change Measurable fun p : CVec n × CMat n ↦ a * p.1 i
         fun_prop).prodMk measurable_snd))
+  have hscale (g : CVec n → ℝ≥0∞) :
+      ∫⁻ u, g u = ‖a‖ₑ ^ (2 * n) * ∫⁻ u : CVec n, g (a • u) := by
+    simpa only [Fintype.card_fin] using
+      (lintegral_eq_enorm_pow_mul_lintegral_comp_smul (κ := Fin n) ha g)
   have hcol (v : CVec n) :
       (∫⁻ u : CVec n, ∫⁻ A : CMat n, f (pivotMatrix n (a, a • v, u, A))) =
         ‖a‖ₑ ^ (2 * n) * ∫⁻ u : CVec n, ∫⁻ A : CMat n, f (pivotLDU a v u A) := by
-    rw [lintegral_scaleVec ha (fun u ↦ ∫⁻ A : CMat n, f (pivotMatrix n (a, a • v, u, A))),
+    rw [hscale (fun u ↦ ∫⁻ A : CMat n, f (pivotMatrix n (a, a • v, u, A))),
       ← hc.lintegral_comp (hcomp v).lintegral_prod_right']
     congr 1
     exact lintegral_congr fun u ↦ (lintegral_add_right_eq_self
       (fun A : CMat n ↦ f (pivotMatrix n (a, a • v, a • (fun i ↦ star (u i)), A))) _).symm
-  rw [lintegral_scaleVec ha (fun v ↦ ∫⁻ u : CVec n, ∫⁻ A : CMat n,
+  rw [hscale (fun v ↦ ∫⁻ u : CVec n, ∫⁻ A : CMat n,
     f (pivotMatrix n (a, v, u, A))), lintegral_congr hcol, lintegral_const_mul' _ _ (by simp),
     ← mul_assoc, ← pow_add, ← add_mul]
 
@@ -309,23 +306,6 @@ private theorem density_cons {n : ℕ} (a : ℂ) (c : CVec n) :
     density (Fin.cons a c) = ‖a‖ₑ ^ (4 * n) * density c := by
   simp [density, Fin.prod_univ_succ, Fin.rev]
 
--- Keep the Fubini step separate so elaboration does not unfold the weighted pivot integrand.
-private theorem lintegral_swap_pivot {n : ℕ} {k : CVec n → CVec n × CVec n → ℝ≥0∞}
-    (hk : Measurable fun p : CVec n × (CVec n × CVec n) ↦ k p.1 p.2) :
-    (∫⁻ v : CVec n, ∫⁻ u : CVec n, ∫⁻ c : CVec n, k c (v, u)) =
-      ∫⁻ c : CVec n, ∫⁻ v : CVec n, ∫⁻ u : CVec n, k c (v, u) := by
-  have hswap : Measurable fun p : (CVec n × CVec n) × CVec n ↦ k p.2 p.1 :=
-    hk.comp measurable_swap
-  calc
-    _ = ∫⁻ p : CVec n × CVec n, ∫⁻ c : CVec n, k c p := by
-      rw [volume_eq_prod, lintegral_prod _ hswap.lintegral_prod_right'.aemeasurable]
-    _ = ∫⁻ c : CVec n, ∫⁻ p : CVec n × CVec n, k c p :=
-      lintegral_lintegral_swap hswap.aemeasurable
-    _ = _ := by
-      refine lintegral_congr fun c ↦ ?_
-      have hc : Measurable (k c) := hk.comp (measurable_const.prodMk measurable_id)
-      rw [volume_eq_prod, lintegral_prod _ hc.aemeasurable]
-
 private theorem lintegral_pivot_induction {n : ℕ} (a : ℂ) {f : CMat (n + 1) → ℝ≥0∞}
     (hf : Measurable f) (ih : ∀ {g : CMat n → ℝ≥0∞}, Measurable g →
       (∫⁻ c : CVec n, density c * ∫⁻ q : UpperEntries n × UpperEntries n, g (ldu c q)) =
@@ -342,12 +322,14 @@ private theorem lintegral_pivot_induction {n : ℕ} (a : ℂ) {f : CMat (n + 1) 
     exact h.lintegral_prod_right'
   have hweight : Measurable fun p : CVec n × (CVec n × CVec n) ↦ density p.1 * k p.1 p.2 :=
     (measurable_density.comp measurable_fst).mul hk
+  -- Keep the Fubini step separate so elaboration does not unfold the weighted pivot integrand.
   calc
     _ = ∫⁻ v : CVec n, ∫⁻ u : CVec n, ∫⁻ c : CVec n, density c * k c (v, u) := by
       refine lintegral_congr fun v ↦ lintegral_congr fun u ↦ ?_
       exact (ih (g := fun A ↦ f (pivotLDU a v u A)) (by fun_prop)).symm
     _ = ∫⁻ c : CVec n, ∫⁻ v : CVec n, ∫⁻ u : CVec n, density c * k c (v, u) :=
-      lintegral_swap_pivot (k := fun c p ↦ density c * k c p) hweight
+      TauCeti.lintegral_lintegral_lintegral_rotate
+        (k := fun c p ↦ density c * k c p) hweight
     _ = _ := by
       refine lintegral_congr fun c ↦ ?_
       have ht : density c ≠ ∞ := ENNReal.prod_ne_top fun i _ ↦ by simp
