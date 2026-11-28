@@ -17,8 +17,8 @@ import TauCeti.NumberTheory.NumberField.CMField.Basic
 Let `E` be a CM field with complex conjugation `x ↦ star x`. For a square matrix `β` over `E` and
 `ν ∈ ℚ`, a matrix `y` over `E` is an **elliptic similitude of `β` with multiplier `ν`**
 (`Matrix.IsEllipticSimilitude`) if its characteristic polynomial is irreducible over `E`,
-`yᴴ * β * y = ν • β`, and every complex root `r` of the characteristic polynomial under every
-complex embedding of `E` satisfies `star r * r = ν`, that is `|r| ^ 2 = ν`. These are the
+`ν ≠ 0`, `yᴴ * β * y = ν • β`, and every complex root `r` of the characteristic polynomial under
+every complex embedding of `E` satisfies `star r * r = ν`, that is `|r| ^ 2 = ν`. These are the
 elements whose orbital integrals the comparison of traces between unitary groups with different
 signs at the infinite places relates.
 
@@ -36,7 +36,9 @@ signs of the real numbers `b i * p (d i)` (`Matrix.posDef_mul_aeval_iff`). Repla
 (`Matrix.posDef_mul_aeval_mul_aeval_iff`). This is how the signs of a form at the infinite places
 are changed while the elliptic similitude `y` is kept.
 
-The multiplier is not required to be nonzero: none of the results here needs it.
+The nonzero multiplier forces `y` to be invertible (`Matrix.IsEllipticSimilitude.isUnit`),
+as required in §7.9 of the roadmap. The general matrix identities used here also apply to zero
+multipliers.
 
 ## Main definitions
 
@@ -45,6 +47,7 @@ The multiplier is not required to be nonzero: none of the results here needs it.
 ## Main results
 
 * `Matrix.IsEllipticSimilitude.separable_charpoly`: the characteristic polynomial is separable.
+* `Matrix.IsEllipticSimilitude.isUnit`: the matrix is invertible.
 * `Matrix.IsEllipticSimilitude.conjTranspose_map_mul_mul_map`: at every complex embedding `y` is a
   similitude of `β` with multiplier `ν`.
 * `Matrix.IsEllipticSimilitude.exists_mul_eq_mul_diagonal`: at every complex embedding `β` is
@@ -71,9 +74,12 @@ variable {E : Type*} [Field E] [CharZero E] [Algebra.IsIntegral ℚ E] [IsCMFiel
   {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- A matrix `y` over a CM field `E` is an **elliptic similitude of `β` with multiplier `ν`** if
-its characteristic polynomial is irreducible, `yᴴ * β * y = ν • β`, and every complex root `r` of
-the characteristic polynomial under every complex embedding of `E` satisfies `star r * r = ν`. -/
+its characteristic polynomial is irreducible, `ν ≠ 0`, `yᴴ * β * y = ν • β`, and every complex
+root `r` of the characteristic polynomial under every complex embedding of `E` satisfies
+`star r * r = ν`. Invertibility of `y` follows from these conditions. -/
 structure IsEllipticSimilitude (y β : Matrix n n E) (ν : ℚ) : Prop where
+  /-- The multiplier is nonzero. -/
+  multiplier_ne_zero : ν ≠ 0
   /-- The characteristic polynomial is irreducible. -/
   irreducible_charpoly : Irreducible y.charpoly
   /-- The similitude identity `yᴴ * β * y = ν • β`. -/
@@ -89,6 +95,22 @@ variable {y β : Matrix n n E} {ν : ℚ}
 /-- The characteristic polynomial of an elliptic similitude is separable. -/
 theorem separable_charpoly (h : y.IsEllipticSimilitude β ν) : y.charpoly.Separable :=
   h.irreducible_charpoly.separable
+
+/-- An elliptic similitude is invertible, since zero cannot be a complex eigenvalue when the
+multiplier is nonzero. -/
+theorem isUnit (h : y.IsEllipticSimilitude β ν) : IsUnit y := by
+  classical
+  let φ : E →+* ℂ := Classical.choice inferInstance
+  apply (isUnit_iff_isUnit_det y).2
+  apply isUnit_iff_ne_zero.2
+  intro hy
+  have hzero : 0 ∈ (y.charpoly.map φ).roots := by
+    rw [← charpoly_map]
+    apply (mem_roots (charpoly_monic _).ne_zero).2
+    simp only [IsRoot, eval_charpoly, map_zero, zero_sub, det_neg]
+    rw [← RingHom.mapMatrix_apply, ← φ.map_det, hy, map_zero, mul_zero]
+  have hν := h.star_mul_self_of_mem_roots φ 0 hzero
+  exact h.multiplier_ne_zero (by simpa using hν.symm)
 
 /-- At every complex embedding `φ`, an elliptic similitude of `β` with multiplier `ν` is a
 similitude of the complex form `β.map φ` with multiplier `ν`. -/
@@ -119,6 +141,7 @@ theorem exists_mul_eq_mul_diagonal (h : y.IsEllipticSimilitude β ν) (φ : E �
 of `β * δ(y)` with multiplier `ν`, for every polynomial `δ` over `E`. -/
 theorem mul_aeval (h : y.IsEllipticSimilitude β ν) (δ : E[X]) :
     y.IsEllipticSimilitude (β * aeval y δ) ν where
+  multiplier_ne_zero := h.multiplier_ne_zero
   irreducible_charpoly := h.irreducible_charpoly
   conjTranspose_mul_mul := conjTranspose_mul_mul_aeval_mul_eq_smul h.conjTranspose_mul_mul δ
   star_mul_self_of_mem_roots := h.star_mul_self_of_mem_roots
