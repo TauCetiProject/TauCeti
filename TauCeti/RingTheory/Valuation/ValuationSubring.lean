@@ -37,6 +37,9 @@ Membership in the subring of an additive valuation is equivalent to nonnegativit
 * `AddValuation.mem_toValuation_valuationSubring_iff`: additive valuation subring membership.
 
 * `ValuationSubring.mem_nonunits_comap`: nonunits of a pulled-back valuation subring.
+* `ValuationSubring.instAlgebraComap`: a valuation subring is an algebra over its pullback along
+  a field algebra map, obtained by restricting that map. The map is local by
+  `ValuationSubring.isLocalHom_restrict`.
 * `ValuationSubring.valuation_map_eq_one`: units of `O` map to units of every valuation subring
   whose pullback contains `O`.
 * `ValuationSubring.exists_ne_zero_and_div_mem`: among finitely many elements, not all zero, one
@@ -145,6 +148,35 @@ theorem isLocalHom_restrict (A : ValuationSubring L) (f : K →+* L) {B : Valuat
   subst hB
   rw [← notMem_maximalIdeal, ← coe_mem_nonunits_iff] at ha ⊢
   exact mem_nonunits_comap.not.mpr ha
+
+section Algebra
+
+variable [Algebra K L]
+
+/-- A valuation subring is an algebra over its pullback along a field algebra map. -/
+instance instAlgebraComap (B : ValuationSubring L) : Algebra (B.comap (algebraMap K L)) B :=
+  ((algebraMap K L).restrict (B.comap (algebraMap K L)) B
+    fun _ hx ↦ mem_comap.mp hx).toAlgebra
+
+/-- The algebra map from the pullback agrees with the field algebra map on underlying
+elements. -/
+@[simp]
+theorem coe_algebraMap_comap (B : ValuationSubring L) (x : B.comap (algebraMap K L)) :
+    (algebraMap (B.comap (algebraMap K L)) B x : L) = algebraMap K L (x : K) :=
+  (rfl)
+
+/-- Including a pulled-back valuation subring into the larger field factors through the
+valuation subring of that field. -/
+instance isScalarTower_comap (B : ValuationSubring L) :
+    IsScalarTower (B.comap (algebraMap K L)) B L :=
+  .of_algebraMap_eq fun x ↦ (coe_algebraMap_comap B x).symm
+
+/-- A valuation subring dominates its pullback along a field algebra map. -/
+instance isLocalHom_algebraMap_comap (B : ValuationSubring L) :
+    IsLocalHom (algebraMap (B.comap (algebraMap K L)) B) :=
+  B.isLocalHom_restrict (algebraMap K L) rfl
+
+end Algebra
 
 /-- Let `ψ : S →+* L` map into a valuation subring `W` of the field `L`, sending an ideal `Q` into
 the nonunits of `W`. If a valuation subring `V` of `K` maps to `S` with its maximal ideal in `Q`,

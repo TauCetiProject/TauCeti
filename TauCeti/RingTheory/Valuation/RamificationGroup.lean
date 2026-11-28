@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.Basic
+public import Mathlib.RingTheory.IsGaloisGroup.Defs
 public import Mathlib.RingTheory.Valuation.RamificationGroup
+public import TauCeti.RingTheory.Valuation.ValuationSubring
+import Mathlib.FieldTheory.Galois.Infinite
 
 /-!
 # The action of a decomposition group on its valuation subring
@@ -34,6 +37,11 @@ maximal ideal.
   on `A` are equal.
 * `ValuationSubring.instFaithfulSMulDecompositionSubgroup`: the decomposition group acts
   faithfully on `A`.
+* `ValuationSubring.smulCommClass_decompositionSubgroup_comap`: the action commutes with
+  scalars from the pullback of `A`.
+* `ValuationSubring.isGaloisGroup_decompositionSubgroup_of_eq_top`: when the decomposition group
+  of a Galois extension is full, its fixed ring is the pullback of `A` to the base field.
+  This uses the fixed-point criterion `InfiniteGalois.mem_range_algebraMap_iff_fixed`.
 * `ValuationSubring.mem_inertiaSubgroup_iff`: an element of the decomposition group lies in the
   inertia group exactly when it fixes the residue of every element of `A`.
 * `ValuationSubring.mem_inertiaSubgroup_iff_sub_mem_maximalIdeal`: equivalently, when it moves
@@ -107,6 +115,27 @@ instance instFaithfulSMulDecompositionSubgroup (A : ValuationSubring L) :
     FaithfulSMul (A.decompositionSubgroup K) A where
   eq_of_smul_eq_smul {g h} heq := decompositionSubgroup.ext A fun x ↦ by
     simpa only [coe_decompositionSubgroup_smul] using congrArg Subtype.val (heq x)
+
+/-- The decomposition group acts by algebra automorphisms over the pulled-back valuation
+subring. -/
+instance smulCommClass_decompositionSubgroup_comap (B : ValuationSubring L) :
+    SMulCommClass (B.decompositionSubgroup K) (B.comap (algebraMap K L)) B where
+  smul_comm g a b := Subtype.ext <| by
+    simp only [Algebra.smul_def, coe_decompositionSubgroup_smul, MulMemClass.coe_mul,
+      coe_algebraMap_comap, map_mul, AlgEquiv.commutes]
+
+/-- In a Galois field extension, if the decomposition group of a valuation subring is full,
+it acts on the valuation subring with fixed ring its pullback. -/
+theorem isGaloisGroup_decompositionSubgroup_of_eq_top (B : ValuationSubring L) [IsGalois K L]
+    (hB : B.decompositionSubgroup K = ⊤) :
+    IsGaloisGroup (B.decompositionSubgroup K) (B.comap (algebraMap K L)) B := by
+  refine ⟨inferInstance, inferInstance, ⟨fun b hb ↦ ?_⟩⟩
+  have hfix (g : L ≃ₐ[K] L) : g (b : L) = b := by
+    have hg : g ∈ B.decompositionSubgroup K := hB ▸ Subgroup.mem_top g
+    simpa only [coe_decompositionSubgroup_smul] using congrArg Subtype.val (hb ⟨g, hg⟩)
+  obtain ⟨a, ha⟩ := (InfiniteGalois.mem_range_algebraMap_iff_fixed (b : L)).mpr hfix
+  have haB : a ∈ B.comap (algebraMap K L) := mem_comap.mpr (ha ▸ b.property)
+  exact ⟨⟨a, haB⟩, Subtype.ext <| (coe_algebraMap_comap B ⟨a, haB⟩).trans ha⟩
 
 /-- **The inertia group, elementwise**: an element of the decomposition group of `A` lies in the
 inertia group exactly when it acts trivially on the residue field of `A`, that is, when it fixes

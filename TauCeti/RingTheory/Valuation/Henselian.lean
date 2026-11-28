@@ -25,6 +25,9 @@ of value groups or normalizations. This applies in particular to complete discre
 rings. Every `K`-automorphism of `L` preserves the prolongation, so the decomposition group
 for its ramification action is the full group.
 
+`ValuationSubring.isIntegralClosure_comap` provides the `IsIntegralClosure` instance on
+the prolongation, using `ValuationSubring.mem_iff_isIntegral_of_comap_eq`.
+
 ## References
 
 * J.-P. Serre, *Local Fields*, Chapter II, §2, Proposition 3 (the discrete case).
@@ -111,6 +114,16 @@ theorem toSubring_eq_integralClosure_of_comap_eq {B : ValuationSubring L} {A : V
   ext x
   simpa only [mem_toSubring, Subalgebra.mem_toSubring, mem_integralClosure_iff] using
     mem_iff_isIntegral_of_comap_eq hB (Algebra.IsAlgebraic.isAlgebraic x)
+
+/-- Over a henselian pullback, a prolongation to an algebraic extension is a model of the
+integral closure. -/
+instance isIntegralClosure_comap (B : ValuationSubring L) [Algebra.IsAlgebraic K L]
+    [HenselianRing (B.comap (algebraMap K L)) (maximalIdeal (B.comap (algebraMap K L)))] :
+    IsIntegralClosure B (B.comap (algebraMap K L)) L where
+  algebraMap_injective := IsFractionRing.injective B L
+  isIntegral_iff {x} := by
+    rw [← mem_iff_isIntegral_of_comap_eq (B := B) rfl (Algebra.IsAlgebraic.isAlgebraic x)]
+    exact ⟨fun hx ↦ ⟨⟨x, hx⟩, rfl⟩, fun ⟨y, hy⟩ ↦ hy ▸ y.property⟩
 
 /-- A henselian valuation subring has a unique prolongation to every algebraic field extension.
 Uniqueness is equality of valuation subrings, hence is independent of normalization. -/
