@@ -39,8 +39,10 @@ divisors). Functoriality `RootPairing.Equiv.piCongr` preserves identity and comp
 
 ## Main results
 
-* `RootPairing.range_pi_root`: the roots of `RootPairing.pi P` are the union of the coordinate
-  images of the summands' roots.
+* `RootPairing.range_pi_root`, `RootPairing.single_mem_range_pi_root_iff`,
+  `RootPairing.single_mem_range_pi_coroot_iff`: the roots and coroots of `RootPairing.pi P` are
+  the union of the coordinate images of the summands' roots and coroots, and membership of a
+  one-point family reduces to that summand.
 * `RootPairing.pi_flip`: flipping a finite direct sum gives the direct sum of the flipped pairings.
 * `RootPairing.isRootSystem_pi_iff`, `RootPairing.isValuedIn_pi_iff`,
   `RootPairing.isReduced_of_pi`, `RootPairing.isReduced_pi_iff_of_isRegular`,
@@ -175,11 +177,6 @@ theorem pi_pairing_ne {c d : κ} (hcd : c ≠ d) (i : ι c) (j : ι d) :
   rw [← root_coroot_eq_pairing, pi_toLinearMap, pi_root, pi_coroot,
     LinearMap.piPairing_single_left, Pi.single_eq_of_ne hcd, map_zero]
 
-/-- Roots in distinct summands of a finite direct sum are orthogonal. -/
-theorem isOrthogonal_pi_of_ne {c d : κ} (hcd : c ≠ d) (i : ι c) (j : ι d) :
-    (pi P).IsOrthogonal ⟨c, i⟩ ⟨d, j⟩ :=
-  ⟨pi_pairing_ne P hcd i j, pi_pairing_ne P hcd.symm j i⟩
-
 @[simp]
 theorem pi_reflectionPerm_same (c : κ) (i j : ι c) :
     (pi P).reflectionPerm ⟨c, i⟩ ⟨c, j⟩ = ⟨c, (P c).reflectionPerm i j⟩ :=
@@ -218,11 +215,29 @@ theorem range_pi_root :
   rw [h, Set.range_sigma_eq_iUnion_range]
   exact iUnion_congr fun c ↦ Set.range_comp' (Pi.single c) (P c).root
 
+/-- A one-point vector `Pi.single c x` is a root of `RootPairing.pi P` iff `x` is a root of
+`P c`. -/
+theorem single_mem_range_pi_root_iff (c : κ) (x : M c) :
+    Pi.single c x ∈ range (pi P).root ↔ x ∈ range (P c).root := by
+  refine ⟨?_, fun ⟨i, hi⟩ ↦ ⟨⟨c, i⟩, hi ▸ pi_root P c i⟩⟩
+  rintro ⟨⟨d, i⟩, h⟩
+  rcases eq_or_ne d c with rfl | hdc
+  · exact ⟨i, by simpa [pi_root] using congrFun h d⟩
+  · have h0 : (P d).root i = 0 := by
+      simpa [pi_root, Pi.single_eq_of_ne hdc] using congrFun h d
+    exact ((P d).ne_zero i h0).elim
+
 /-- The coroots of a finite direct sum are the union of the coordinate images of the summands'
 coroots. -/
 theorem range_pi_coroot :
     range (pi P).coroot = ⋃ c, Pi.single c '' range (P c).coroot :=
   range_pi_root fun c ↦ (P c).flip
+
+/-- A one-point coweight `Pi.single c y` is a coroot of `RootPairing.pi P` iff `y` is a coroot of
+`P c`. -/
+theorem single_mem_range_pi_coroot_iff (c : κ) (y : N c) :
+    Pi.single c y ∈ range (pi P).coroot ↔ y ∈ range (P c).coroot :=
+  single_mem_range_pi_root_iff (fun c ↦ (P c).flip) c y
 
 /-- Flipping a finite direct sum of root pairings gives the finite direct sum of the flipped
 pairings. -/
@@ -307,6 +322,16 @@ theorem pi_pairingIn_ne (S : Type*) [CommRing S] [Algebra S R] [FaithfulSMul S R
     (pi P).pairingIn S ⟨c, i⟩ ⟨d, j⟩ = 0 :=
   FaithfulSMul.algebraMap_injective S R <| by simp [pi_pairing_ne P hcd]
 
+private theorem linearIndependent_pi_root_pair_iff (c : κ) (i j : ι c) :
+    LinearIndependent R ![(pi P).root ⟨c, i⟩, (pi P).root ⟨c, j⟩] ↔
+      LinearIndependent R ![(P c).root i, (P c).root j] := by
+  have h : ![(pi P).root ⟨c, i⟩, (pi P).root ⟨c, j⟩] =
+      LinearMap.single R M c ∘ ![(P c).root i, (P c).root j] := by
+    ext k
+    fin_cases k <;> simp
+  rw [h]
+  exact LinearMap.linearIndependent_iff (LinearMap.single R M c) (LinearMap.ker_single R M c)
+
 /-- **A finite direct sum of reduced root pairings is reduced**, provided `2` is regular in `R`. -/
 theorem isReduced_pi_of_isRegular (h2 : IsRegular (2 : R)) [∀ c, (P c).IsReduced] :
     (pi P).IsReduced where
@@ -314,10 +339,8 @@ theorem isReduced_pi_of_isRegular (h2 : IsRegular (2 : R)) [∀ c, (P c).IsReduc
     rintro ⟨c, i⟩ ⟨d, j⟩ hdep
     by_cases hcd : c = d
     · subst hcd
-      have hdep' : ¬ LinearIndependent R ![(P c).root i, (P c).root j] := fun hli ↦ hdep <| by
-        convert hli.map' (LinearMap.single R M c) (LinearMap.ker_single R M c) using 1
-        ext k
-        fin_cases k <;> rfl
+      have hdep' : ¬ LinearIndependent R ![(P c).root i, (P c).root j] :=
+        mt (linearIndependent_pi_root_pair_iff P c i j).mpr hdep
       rcases IsReduced.eq_or_eq_neg (P := P c) i j hdep' with h | h
       · exact Or.inl (by simp [h])
       · exact Or.inr (by simp [h, Pi.single_neg])
@@ -335,12 +358,8 @@ theorem isReduced_pi_of_isRegular (h2 : IsRegular (2 : R)) [∀ c, (P c).IsReduc
 /-- Every summand of a reduced finite direct sum is reduced. -/
 theorem isReduced_of_pi [(pi P).IsReduced] (c : κ) : (P c).IsReduced where
   eq_or_eq_neg i j hdep := by
-    have hdep' : ¬ LinearIndependent R ![(pi P).root ⟨c, i⟩, (pi P).root ⟨c, j⟩] := fun hli ↦
-      hdep <| by
-        refine LinearIndependent.of_comp (LinearMap.single R M c) ?_
-        convert hli
-        ext k
-        fin_cases k <;> rfl
+    have hdep' : ¬ LinearIndependent R ![(pi P).root ⟨c, i⟩, (pi P).root ⟨c, j⟩] :=
+      mt (linearIndependent_pi_root_pair_iff P c i j).mp hdep
     rcases IsReduced.eq_or_eq_neg (P := pi P) ⟨c, i⟩ ⟨c, j⟩ hdep' with h | h
     · exact Or.inl <| by simpa using congrFun h c
     · exact Or.inr <| by simpa using congrFun h c
@@ -398,27 +417,25 @@ noncomputable def Equiv.piCongr (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv (Q (e
       LinearEquiv.piCongrLeft_symm_apply]
     exact (e c).toLinearMap_weightEquiv (x c) (y (eκ c))
   root_weightMap := by
-    ext ⟨c, i⟩ d
-    obtain ⟨c', rfl⟩ := eκ.surjective d
-    simp only [comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
-      _root_.Equiv.sigmaCongr, _root_.Equiv.trans_apply, _root_.Equiv.sigmaCongrRight_apply,
-      _root_.Equiv.sigmaCongrLeft_apply, pi_root, LinearEquiv.piCongrLeft_apply_apply,
-      LinearEquiv.piCongrRight_apply]
-    rcases eq_or_ne c' c with rfl | h
-    · simp [Hom.root_weightMap_apply]
-    · simp [Pi.single_eq_of_ne h, Pi.single_eq_of_ne (eκ.injective.ne h)]
+    funext ⟨c, i⟩
+    simp only [comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply, pi_root,
+      LinearEquiv.piCongrRight_single, LinearEquiv.piCongrLeft_single, weightEquiv_apply,
+      Hom.root_weightMap_apply, _root_.Equiv.sigmaCongr, _root_.Equiv.trans_apply,
+      _root_.Equiv.sigmaCongrRight_apply, _root_.Equiv.sigmaCongrLeft_apply]
   coroot_coweightMap := by
-    ext ⟨d, j⟩ c
-    obtain ⟨c', rfl⟩ := eκ.surjective d
-    have hidx : (_root_.Equiv.sigmaCongr eκ fun c ↦ (e c).indexEquiv).symm ⟨eκ c', j⟩ =
-        ⟨c', (e c').indexEquiv.symm j⟩ := by
-      rw [_root_.Equiv.symm_apply_eq]
-      simp [_root_.Equiv.sigmaCongr]
-    simp only [comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
-      LinearEquiv.piCongrRight_apply, LinearEquiv.piCongrLeft_symm_apply, hidx, pi_coroot]
-    rcases eq_or_ne c c' with rfl | h
-    · simp [Hom.coroot_coweightMap_apply]
-    · simp [Pi.single_eq_of_ne h, Pi.single_eq_of_ne (eκ.injective.ne h)]
+    funext ⟨d, j⟩
+    obtain ⟨c, rfl⟩ := eκ.surjective d
+    have hidx : (_root_.Equiv.sigmaCongr eκ fun c ↦ (e c).indexEquiv).symm ⟨eκ c, j⟩ =
+        ⟨c, (e c).indexEquiv.symm j⟩ :=
+      (_root_.Equiv.symm_apply_eq _).mpr (by simp [_root_.Equiv.sigmaCongr])
+    have hleft : (LinearEquiv.piCongrLeft R N' eκ).symm
+        (Pi.single (eκ c) ((Q (eκ c)).coroot j)) = Pi.single c ((Q (eκ c)).coroot j) :=
+      (LinearEquiv.piCongrLeft R N' eκ).symm_apply_eq.mpr
+        (LinearEquiv.piCongrLeft_single _ _ _ _).symm
+    dsimp only [Function.comp_apply]
+    rw [LinearEquiv.coe_coe, LinearEquiv.trans_apply, pi_coroot, hleft,
+      LinearEquiv.piCongrRight_single, coweightEquiv_apply, Hom.coroot_coweightMap_apply, hidx,
+      pi_coroot]
   bijective_weightMap := LinearEquiv.bijective _
   bijective_coweightMap := LinearEquiv.bijective _
 
@@ -435,6 +452,12 @@ theorem Equiv.piCongr_weightMap_apply (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv
   simp [Equiv.piCongr]
 
 @[simp]
+theorem Equiv.piCongr_weightMap_single (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv (Q (eκ c)))
+    (c : κ) (x : M c) :
+    (Equiv.piCongr eκ e).weightMap (Pi.single c x) = Pi.single (eκ c) ((e c).weightMap x) := by
+  simp [Equiv.piCongr]
+
+@[simp]
 theorem Equiv.piCongr_coweightMap_apply (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv (Q (eκ c)))
     (y : ∀ c, N' c) (c : κ) :
     (Equiv.piCongr eκ e).coweightMap y c = (e c).coweightMap (y (eκ c)) := by
@@ -447,9 +470,12 @@ theorem Equiv.piCongr_id :
     Equiv.piCongr (_root_.Equiv.refl κ) (fun c ↦ Equiv.id (P c)) = Equiv.id (pi P) := by
   refine Equiv.ext (LinearMap.ext fun x ↦ funext fun c ↦ ?_)
     (LinearMap.ext fun y ↦ funext fun c ↦ ?_) (_root_.Equiv.ext fun ⟨c, i⟩ ↦ ?_)
-  · exact Equiv.piCongr_weightMap_apply (_root_.Equiv.refl κ) (fun c ↦ Equiv.id (P c)) x c
-  · rfl
-  · rfl
+  · exact (Equiv.piCongr_weightMap_apply (_root_.Equiv.refl κ) (fun c ↦ Equiv.id (P c)) x c).trans
+      (LinearMap.id_apply (R := R) (x c))
+  · exact (Equiv.piCongr_coweightMap_apply (_root_.Equiv.refl κ) (fun c ↦ Equiv.id (P c)) y c).trans
+      (LinearMap.id_apply (R := R) (y c))
+  · exact (Equiv.piCongr_indexEquiv (_root_.Equiv.refl κ) (fun c ↦ Equiv.id (P c)) c i).trans
+      (congrArg (Sigma.mk c) (_root_.Equiv.refl_apply i))
 
 /-- Composing two `Equiv.piCongr` equivalences gives `Equiv.piCongr` on the composite reindexing
 and reindexed composite summand equivalences. -/
@@ -472,8 +498,14 @@ theorem Equiv.piCongr_comp
     rw [Equiv.piCongr_weightMap_apply, Equiv.piCongr_weightMap_apply]
     exact (Equiv.piCongr_weightMap_apply (eκ.trans eκ')
       (fun c ↦ Equiv.comp (e' (eκ c)) (e c)) x c).symm
-  · rfl
-  · rfl
+  · simp only [Equiv.toHom_comp, Hom.comp, LinearMap.comp_apply, _root_.Equiv.trans_apply]
+    rw [Equiv.piCongr_coweightMap_apply, Equiv.piCongr_coweightMap_apply]
+    exact (Equiv.piCongr_coweightMap_apply (eκ.trans eκ')
+      (fun c ↦ Equiv.comp (e' (eκ c)) (e c)) y c).symm
+  · simp only [Equiv.toHom_comp, Hom.comp, _root_.Equiv.trans_apply]
+    rw [Equiv.piCongr_indexEquiv, Equiv.piCongr_indexEquiv]
+    exact (Equiv.piCongr_indexEquiv (eκ.trans eκ')
+      (fun c ↦ Equiv.comp (e' (eκ c)) (e c)) c i).symm
 
 end Functoriality
 

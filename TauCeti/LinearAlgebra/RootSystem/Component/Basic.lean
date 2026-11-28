@@ -9,6 +9,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.LinearAlgebra.RootSystem.Hom
 public import Mathlib.LinearAlgebra.RootSystem.Irreducible
 public import Mathlib.LinearAlgebra.RootSystem.RootPositive
+public import TauCeti.LinearAlgebra.Projection
 
 /-!
 # Irreducible components of a root pairing
@@ -39,6 +40,8 @@ root system is irreducible exactly when its graph is connected.
 
 * `RootPairing.isInternal_componentSpace`: a root system is the internal direct sum of its component
   spaces.
+* `RootPairing.internalProjection_componentSpace_eq_componentProj`: `TauCeti.internalProjection`
+  onto a component space agrees with `RootPairing.componentProj`.
 * `RootPairing.sum_componentProj`: every vector is the sum of its component projections, and
   `RootPairing.coe_componentProj_reflection`: the projections commute with the reflections.
 * `RootPairing.root_mem_componentSpace_iff`: when `2 ≠ 0`, a root lies in exactly the component
@@ -310,6 +313,17 @@ theorem componentProj_apply_of_ne {C D : P.Component} (hCD : D ≠ C) {x : M}
     (hx : x ∈ P.componentSpace D) : P.componentProj C x = 0 := by
   classical
   exact DirectSum.IsInternal.ofBijective_coeLinearMap_of_mem_ne P.isInternal_componentSpace hCD hx
+
+/-- `TauCeti.internalProjection` onto a component space agrees with `RootPairing.componentProj`. -/
+@[simp]
+theorem internalProjection_componentSpace_eq_componentProj (C : P.Component) (x : M) :
+    TauCeti.internalProjection P.iSupIndep_componentSpace
+        (P.iSup_componentSpace.trans IsRootSystem.span_root_eq_top) C x =
+      P.componentProj C x := by
+  classical
+  exact Subtype.ext
+    (DirectSum.IsInternal.coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection
+      P.isInternal_componentSpace C x).symm
 
 /-- The projection of a root onto its own component space. -/
 @[simp]

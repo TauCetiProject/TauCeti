@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.DirectSum.Internal
 public import TauCeti.LinearAlgebra.RootSystem.Height
+import TauCeti.Algebra.Group.Pi.Lemmas
 import TauCeti.LinearAlgebra.LinearIndependent.Pi
 
 /-!
@@ -89,6 +90,15 @@ private theorem linearIndepOn_restrictPi_of_eq {κ R : Type*} [DecidableEq κ] [
     simp only [Finset.coe_preimage, Set.univ_sigma_preimage_mk]
   exact (Pi.linearIndepOn_single_iff v).mp (by rw [hfn, ← hsupp]; exact ht) c (Set.mem_univ c)
 
+private theorem image_sigma_pi_single_eq_iUnion {κ : Type*} [DecidableEq κ]
+    {ι M : κ → Type*} [∀ c, Zero (M c)]
+    {w : (Σ c, ι c) → ∀ c, M c} {v : ∀ c, ι c → M c}
+    (hw : ∀ c i, w ⟨c, i⟩ = Pi.single c (v c i)) (s : ∀ c, Set (ι c)) :
+    w '' (Set.univ.sigma s) = ⋃ c, Pi.single c '' (v c '' s c) := by
+  have hfn : w = fun p : Σ d, ι d ↦ Pi.single p.1 (v p.1 p.2) := funext fun ⟨d, i⟩ ↦ hw d i
+  simp only [hfn, Set.image_sigma_eq_iUnion, Set.mem_univ, iUnion_true, Function.comp_def,
+    Set.image_image]
+
 private theorem mem_closure_pi_single_or_neg_mem {κ : Type*} [Fintype κ] [DecidableEq κ]
     {ι M : κ → Type*} [∀ c, AddCommGroup (M c)]
     {w : (Σ c, ι c) → ∀ c, M c} {v : ∀ c, ι c → M c}
@@ -100,18 +110,8 @@ private theorem mem_closure_pi_single_or_neg_mem {κ : Type*} [Fintype κ] [Deci
       -w p ∈ AddSubmonoid.closure
         (w '' ((Finset.univ.sigma s : Finset (Σ d, ι d)) : Set (Σ d, ι d))) := by
   rcases p with ⟨c, i⟩
-  have hmono : (AddSubmonoid.closure (v c '' (s c : Set (ι c)))).map (AddMonoidHom.single M c) ≤
-      AddSubmonoid.closure
-        (w '' ((Finset.univ.sigma s : Finset (Σ d, ι d)) : Set (Σ d, ι d))) := by
-    rw [AddMonoidHom.map_mclosure]
-    refine AddSubmonoid.closure_mono ?_
-    rintro _ ⟨_, ⟨j, hj, rfl⟩, rfl⟩
-    exact ⟨⟨c, j⟩, by simpa using hj, hw c j⟩
-  rw [hw]
-  rcases hv c i with h | h
-  · exact Or.inl (hmono (AddSubmonoid.mem_map_of_mem (AddMonoidHom.single M c) h))
-  · exact Or.inr <| by
-      simpa [Pi.single_neg] using hmono (AddSubmonoid.mem_map_of_mem (AddMonoidHom.single M c) h)
+  rw [Finset.coe_sigma, Finset.coe_univ, image_sigma_pi_single_eq_iUnion hw, hw, ← Pi.single_neg]
+  simpa only [AddSubmonoid.single_mem_closure_iUnion_single] using hv c i
 
 private theorem mem_closure_restrictPi_or_neg_mem {κ : Type*} [DecidableEq κ]
     {ι M : κ → Type*} [∀ c, AddCommGroup (M c)]
@@ -123,20 +123,12 @@ private theorem mem_closure_restrictPi_or_neg_mem {κ : Type*} [DecidableEq κ]
         sigma_mk_injective.injOn : Finset (ι c)) : Set (ι c))) ∨
       -v c i ∈ AddSubmonoid.closure (v c '' ((t.preimage (Sigma.mk c)
         sigma_mk_injective.injOn : Finset (ι c)) : Set (ι c))) := by
-  have hle : (AddSubmonoid.closure (w '' (t : Set (Σ d, ι d)))).map
-        (Pi.evalAddMonoidHom M c) ≤
-      AddSubmonoid.closure (v c '' ((t.preimage (Sigma.mk c)
-        sigma_mk_injective.injOn : Finset (ι c)) : Set (ι c))) := by
-    rw [AddMonoidHom.map_mclosure, AddSubmonoid.closure_le]
-    rintro _ ⟨_, ⟨⟨d, j⟩, hj, rfl⟩, rfl⟩
-    rcases eq_or_ne d c with rfl | hdc
-    · exact AddSubmonoid.subset_closure ⟨j, by simpa using hj, by simp [hw]⟩
-    · simp [hw, Pi.single_eq_of_ne hdc.symm, zero_mem]
-  rcases ht ⟨c, i⟩ with h | h
-  · exact Or.inl <| by
-      simpa [hw] using hle (AddSubmonoid.mem_map_of_mem (Pi.evalAddMonoidHom M c) h)
-  · exact Or.inr <| by
-      simpa [hw] using hle (AddSubmonoid.mem_map_of_mem (Pi.evalAddMonoidHom M c) h)
+  have hsupp : (t : Set (Σ d, ι d)) = Set.univ.sigma fun d ↦
+      ((t.preimage (Sigma.mk d) sigma_mk_injective.injOn : Finset (ι d)) : Set (ι d)) := by
+    simp only [Finset.coe_preimage, Set.univ_sigma_preimage_mk]
+  have h := ht ⟨c, i⟩
+  rw [hsupp, image_sigma_pi_single_eq_iUnion hw, hw, ← Pi.single_neg] at h
+  simpa only [AddSubmonoid.single_mem_closure_iUnion_single] using h
 
 /-- **The base of a finite direct sum of root pairings** assembled from bases of its summands.
 Its simple-root support is the disjoint union `Finset.univ.sigma fun c ↦ (b c).support`. -/
@@ -350,24 +342,17 @@ theorem Base.map_piCongr_pi (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv (Q (eκ c
     (hb : ∀ c, (b c).map (e c) = b' (eκ c)) :
     (Base.pi b).map (Equiv.piCongr eκ e) = Base.pi b' := by
   classical
-  ext ⟨c', j⟩
-  obtain ⟨c, rfl⟩ := eκ.surjective c'
-  simp only [Base.support_map_eq, Base.support_pi, Finset.mem_image, Finset.mem_sigma,
-    Finset.mem_univ, true_and, Sigma.exists]
-  constructor
-  · rintro ⟨d, i, hi, heq⟩
-    rw [Equiv.piCongr_indexEquiv] at heq
-    rcases Sigma.ext_iff.mp heq with ⟨hdc, hij⟩
-    obtain rfl := eκ.injective hdc
-    rw [heq_eq_eq] at hij
-    rw [← hb d]
-    simp only [Base.support_map_eq, Finset.mem_image]
-    exact ⟨i, hi, hij⟩
-  · intro hj
-    rw [← hb c] at hj
-    simp only [Base.support_map_eq, Finset.mem_image] at hj
-    obtain ⟨i, hi, hij⟩ := hj
-    exact ⟨c, i, hi, by rw [Equiv.piCongr_indexEquiv, hij]⟩
+  ext p
+  obtain ⟨⟨c, i⟩, rfl⟩ := (Equiv.piCongr eκ e).indexEquiv.surjective p
+  rw [Base.support_map_eq]
+  conv_lhs => lhs; rw [← _root_.Equiv.coe_toEmbedding, ← Finset.map_eq_image]
+  rw [Finset.mem_map_equiv, _root_.Equiv.symm_apply_apply]
+  simp only [Base.support_pi, Finset.mem_sigma, Finset.mem_univ, true_and,
+    Equiv.piCongr_indexEquiv]
+  have hcoe : (⇑(e c).indexEquiv : ι c → ι' (eκ c)) = (e c).indexEquiv.toEmbedding := rfl
+  rw [← hb c, Base.support_map_eq]
+  conv_rhs => lhs; rw [hcoe, ← Finset.map_eq_image]
+  rw [Finset.mem_map_equiv, _root_.Equiv.symm_apply_apply]
 
 /-- Mapping an assembled base `Base.pi b` along `Equiv.piCongr (.refl κ) e` assembles the
 transported summand bases. -/

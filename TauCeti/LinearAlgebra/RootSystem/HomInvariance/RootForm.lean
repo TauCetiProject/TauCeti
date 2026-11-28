@@ -14,17 +14,18 @@ import TauCeti.LinearAlgebra.RootSystem.HomInvariance.Basic
 /-!
 # Canonical bilinear forms under morphisms of root pairings
 
-A morphism `f : P.Hom Q` of finite root pairings preserves the canonical root form `RootForm`:
-its index bijection reindexes the sum of products of coroot values. Consequently, an equivalence
-`e : P.Equiv Q` preserves and reflects anisotropy (`IsAnisotropic`). This file lives downstream of
-`TauCeti.LinearAlgebra.RootSystem.HomInvariance.Basic` and
-`Mathlib.LinearAlgebra.RootSystem.Finite.CanonicalBilinear` without pulling in nondegeneracy,
-invariant-form, or positive-definiteness theory.
+A morphism `f : P.Hom Q` of finite root pairings preserves the canonical root form `RootForm` on
+weights and contravariantly preserves the canonical coroot form `CorootForm` on coweights: its
+index bijection reindexes the sum of products of coroot and root values. Neither an injective
+weight map nor a root-spanning hypothesis is required. Consequently, an equivalence `e : P.Equiv Q`
+preserves and reflects anisotropy (`IsAnisotropic`).
 
 ## Main results
 
 * `RootPairing.Hom.rootForm_weightMap`: a morphism of finite root pairings preserves the canonical
   root form.
+* `RootPairing.Hom.corootForm_coweightMap`: a morphism of finite root pairings preserves the
+  canonical coroot form along its coweight map.
 * `RootPairing.Equiv.isAnisotropic` and `RootPairing.Equiv.isAnisotropic_iff`: an equivalence of
   finite root pairings preserves and reflects anisotropy.
 
@@ -51,6 +52,12 @@ theorem Hom.rootForm_weightMap (f : P.Hom Q) (x y : M) :
   rw [← f.indexEquiv.sum_comp]
   simp only [Hom.coroot'_weightMap]
 
+/-- A morphism of finite root pairings preserves the canonical coroot form on coweights. -/
+@[simp]
+theorem Hom.corootForm_coweightMap (f : P.Hom Q) (x y : N₂) :
+    P.CorootForm (f.coweightMap x) (f.coweightMap y) = Q.CorootForm x y := by
+  simpa [CorootForm, Hom.flip_weightMap] using f.flip.rootForm_weightMap x y
+
 /-- An equivalence of finite root pairings transports anisotropy from the source to the target. -/
 theorem Equiv.isAnisotropic (e : P.Equiv Q) [P.IsAnisotropic] : Q.IsAnisotropic where
   rootForm_root_ne_zero j := by
@@ -58,8 +65,7 @@ theorem Equiv.isAnisotropic (e : P.Equiv Q) [P.IsAnisotropic] : Q.IsAnisotropic 
     rw [← Hom.root_weightMap_apply, e.toHom.rootForm_weightMap]
     exact IsAnisotropic.rootForm_root_ne_zero i
   corootForm_coroot_ne_zero j := by
-    rw [CorootForm, ← e.toHom.flip.rootForm_weightMap, Hom.flip_weightMap,
-      Hom.coroot_coweightMap_apply]
+    rw [← e.toHom.corootForm_coweightMap, Hom.coroot_coweightMap_apply]
     exact IsAnisotropic.corootForm_coroot_ne_zero (e.indexEquiv.symm j)
 
 /-- An equivalence of finite root pairings preserves and reflects anisotropy. -/

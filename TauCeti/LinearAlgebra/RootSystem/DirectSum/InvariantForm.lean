@@ -141,11 +141,9 @@ theorem internalDirectSum_corootForm_apply_apply (f g : Module.Dual R M) :
         ((P c).flip.toPerfPair.symm (f.comp (E c).subtype))
         ((P c).flip.toPerfPair.symm (g.comp (E c).subtype)) := by
   let _ : DecidableEq κ := Classical.decEq κ
-  let e := piEquivInternalDirectSum hEi hEt P
-  have h : (internalDirectSum hEi hEt P).CorootForm f g =
-      (pi P).CorootForm (e.coweightMap f) (e.coweightMap g) := by
-    simpa [CorootForm, Hom.flip_weightMap] using (e.toHom.flip.rootForm_weightMap f g).symm
-  simp [h, e]
+  rw [← (piEquivInternalDirectSum hEi hEt P).toHom.corootForm_coweightMap,
+    pi_corootForm_apply_apply]
+  simp
 
 end Internal
 

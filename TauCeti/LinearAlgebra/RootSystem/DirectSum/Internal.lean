@@ -45,8 +45,11 @@ wherever no `Finset.univ` appears in the statement.
 
 * `RootPairing.toPerfPair_symm_internalDirectSum_coroot_comp_same`,
   `RootPairing.internalDirectSum_coroot_comp_ne`, `RootPairing.range_internalDirectSum_root`,
-  `RootPairing.range_internalDirectSum_coroot`: coroot restriction formulas and characterization of
-  roots and coroots of an internal direct sum inside `M` and `Module.Dual R M`.
+  `RootPairing.coe_mem_range_internalDirectSum_root_iff`,
+  `RootPairing.range_internalDirectSum_coroot`,
+  `RootPairing.comp_internalProjection_mem_range_internalDirectSum_coroot_iff`: coroot restriction
+  formulas and characterization of roots and coroots of an internal direct sum inside `M` and
+  `Module.Dual R M`.
 * `RootPairing.piEquivInternalDirectSum_coweightEquiv_symm_apply`: formula assembling a tuple of
   summand coweights into an ambient functional.
 * `RootPairing.isRootSystem_internalDirectSum_iff`,
@@ -207,12 +210,6 @@ theorem internalDirectSum_pairing_ne {c d : κ} (hcd : c ≠ d) (i : ι c) (j : 
   rw [← root_coroot'_eq_pairing, internalDirectSum_coroot'_apply, internalDirectSum_root,
     internalProjection_apply_of_ne hEi hEt hcd, map_zero]
 
-/-- Roots in distinct summands of an internal direct sum are orthogonal. -/
-theorem isOrthogonal_internalDirectSum_of_ne {c d : κ} (hcd : c ≠ d) (i : ι c) (j : ι d) :
-    (internalDirectSum hEi hEt P).IsOrthogonal ⟨c, i⟩ ⟨d, j⟩ :=
-  ⟨internalDirectSum_pairing_ne hEi hEt P hcd i j,
-    internalDirectSum_pairing_ne hEi hEt P hcd.symm j i⟩
-
 @[simp]
 theorem internalDirectSum_reflectionPerm_same (c : κ) (i j : ι c) :
     (internalDirectSum hEi hEt P).reflectionPerm ⟨c, i⟩ ⟨c, j⟩ = ⟨c, (P c).reflectionPerm i j⟩ := by
@@ -287,6 +284,19 @@ theorem range_internalDirectSum_root :
   rw [h, Set.range_sigma_eq_iUnion_range]
   exact iUnion_congr fun c ↦ Set.range_comp' Subtype.val (P c).root
 
+/-- An element `(x : M)` from summand `E c` is a root of `internalDirectSum` iff `x` is a root
+of `P c`. -/
+theorem coe_mem_range_internalDirectSum_root_iff (c : κ) (x : E c) :
+    (x : M) ∈ range (internalDirectSum hEi hEt P).root ↔ x ∈ range (P c).root := by
+  refine ⟨?_, fun ⟨i, hi⟩ ↦ ⟨⟨c, i⟩, congrArg Subtype.val hi⟩⟩
+  rintro ⟨⟨d, i⟩, h⟩
+  rcases eq_or_ne d c with rfl | hdc
+  · exact ⟨i, Subtype.ext (by simpa [internalDirectSum_root] using h)⟩
+  · have h0 : (P d).root i = 0 := by
+      have := congrArg (internalProjection hEi hEt d) h
+      simpa [internalDirectSum_root, internalProjection_apply_of_ne hEi hEt hdc.symm] using this
+    exact ((P d).ne_zero i h0).elim
+
 /-- **The coroots of a finite internal direct sum are the union of the summands' coroot
 functionals extended by `TauCeti.internalProjection`.** -/
 theorem range_internalDirectSum_coroot :
@@ -299,6 +309,23 @@ theorem range_internalDirectSum_coroot :
   exact iUnion_congr fun c ↦
     Set.range_comp' (fun g : Module.Dual R (E c) ↦ g.comp (internalProjection hEi hEt c))
       (P c).coroot'
+
+/-- A functional `g` on `E c` extended by `TauCeti.internalProjection` is a coroot of
+`internalDirectSum` iff `g` is a coroot functional of `P c`. -/
+theorem comp_internalProjection_mem_range_internalDirectSum_coroot_iff
+    (c : κ) (g : Module.Dual R (E c)) :
+    g.comp (internalProjection hEi hEt c) ∈ range (internalDirectSum hEi hEt P).coroot ↔
+      g ∈ range (P c).coroot' := by
+  refine ⟨?_, fun ⟨i, hi⟩ ↦ ⟨⟨c, i⟩, hi ▸ internalDirectSum_coroot hEi hEt P c i⟩⟩
+  rintro ⟨⟨d, i⟩, h⟩
+  rcases eq_or_ne d c with rfl | hdc
+  · refine ⟨i, LinearMap.ext fun y ↦ ?_⟩
+    simpa [internalDirectSum_coroot] using LinearMap.congr_fun h (y : M)
+  · have h0 : (2 : R) = 0 := by
+      have hx := LinearMap.congr_fun h ((P d).root i : M)
+      simpa [internalDirectSum_coroot, internalProjection_apply_of_ne hEi hEt hdc,
+        root_coroot'_eq_pairing] using hx
+    exact (two_ne_zero h0).elim
 
 end Evaluation
 
@@ -550,15 +577,7 @@ theorem Equiv.internalDirectSumCongr_weightMap_coe
       Pi.single c x := by
     rw [LinearEquiv.symm_apply_eq]
     exact (internalDirectSumEquiv_single hEi hEt c x).symm
-  have hpi : (Equiv.piCongr eκ e).weightMap (Pi.single c x) =
-      Pi.single (eκ c) ((e c).weightMap x) := by
-    ext c'
-    obtain ⟨d, rfl⟩ := eκ.surjective c'
-    rw [Equiv.piCongr_weightMap_apply]
-    rcases eq_or_ne d c with rfl | h
-    · simp
-    · simp [Pi.single_eq_of_ne h, Pi.single_eq_of_ne (eκ.injective.ne h)]
-  simp [Equiv.internalDirectSumCongr, Equiv.toHom_comp, hsingle, hpi,
+  simp [Equiv.internalDirectSumCongr, Equiv.toHom_comp, hsingle,
     Pi.apply_single (fun c' (y : E' c') ↦ (y : M')) (fun _ ↦ rfl)]
 
 @[simp]

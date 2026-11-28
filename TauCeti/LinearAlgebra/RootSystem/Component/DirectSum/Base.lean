@@ -43,17 +43,11 @@ theorem Base.internalDirectSum_componentBase [NeZero (2 : K)] [Finite ι] [P.IsR
         (fun C ↦ b.componentBase C) =
       b.map P.equivInternalDirectSumComponentPairing := by
   classical
-  ext ⟨C, ⟨i, hi⟩⟩
-  simp only [Base.mem_support_internalDirectSum, Base.mem_support_componentBase,
-    Base.support_map_eq, Finset.mem_image, equivInternalDirectSumComponentPairing_indexEquiv]
-  constructor
-  · intro h
-    exact ⟨i, h, by subst hi; rfl⟩
-  · rintro ⟨j, hj, heq⟩
-    rcases Sigma.ext_iff.mp heq with ⟨hC, hij⟩
-    subst hC
-    rw [heq_eq_eq] at hij
-    cases hij
-    exact hj
+  ext p
+  obtain ⟨i, rfl⟩ := P.equivInternalDirectSumComponentPairing.indexEquiv.surjective p
+  rw [Base.support_map_eq]
+  conv_rhs => lhs; rw [← _root_.Equiv.coe_toEmbedding, ← Finset.map_eq_image]
+  rw [Finset.mem_map_equiv, _root_.Equiv.symm_apply_apply]
+  simp
 
 end RootPairing
