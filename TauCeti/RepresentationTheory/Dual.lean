@@ -53,6 +53,8 @@ are the intertwiners into `ρ.dual`, so counting them is counting invariants of 
   dimensions as the dual has invariants**, for any group.
 * `TauCeti.Representation.finrank_invariants_dual`: **the dual of a representation has as many
   invariants as the representation** whenever `|G|` is invertible in `k`.
+* `Representation.dualInvariantsEquivOfProjection`: an averaging projection identifies
+  invariant functionals with the dual of the fixed space.
 * `Representation.sub_dual_apply_mem_span_singleton`: if `g` fixes the hyperplane `ker ℓ`
   pointwise, then `ρ.dual g` moves every linear form by a multiple of `ℓ`; by
   `Representation.forall_sub_dual_apply_mem_span_singleton_iff`, this characterizes the elements
@@ -221,6 +223,38 @@ theorem apply_averageMap_of_mem_invariants_dual [Fintype G] [Invertible (Fintype
 
 end Averaging
 
+section Projection
+
+variable {k G V : Type*} [CommRing k] [Group G] [AddCommGroup V] [Module k V]
+  (ρ : Representation k G V) {p : V →ₗ[k] V} (hp : LinearMap.IsProj ρ.invariants p)
+  (hact : ∀ g v, p (ρ g v) = p v) (hdual : ∀ ψ ∈ ρ.dual.invariants, ∀ v, ψ (p v) = ψ v)
+
+/-- An averaging projection identifies invariant functionals with the dual of the fixed space.
+Restriction is inverse to precomposition with the projection onto the fixed space. -/
+noncomputable def _root_.Representation.dualInvariantsEquivOfProjection :
+    ρ.dual.invariants ≃ₗ[k] Module.Dual k ρ.invariants where
+  toFun ψ := ρ.invariants.dualRestrict ψ.val
+  invFun χ := ⟨χ.comp hp.codRestrict, mem_invariants_dual_iff.2 fun g v ↦
+    congrArg χ (Subtype.ext (hact g v))⟩
+  left_inv ψ := Subtype.ext <| LinearMap.ext fun v ↦ hdual ψ.val ψ.property v
+  right_inv χ := LinearMap.ext fun v ↦ congrArg χ (hp.codRestrict_apply_cod v)
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+theorem _root_.Representation.dualInvariantsEquivOfProjection_apply (ψ : ρ.dual.invariants)
+    (v : ρ.invariants) :
+    ρ.dualInvariantsEquivOfProjection hp hact hdual ψ v = ψ.val v :=
+  (rfl)
+
+@[simp]
+theorem _root_.Representation.dualInvariantsEquivOfProjection_symm_apply
+    (χ : Module.Dual k ρ.invariants) (v : V) :
+    ((ρ.dualInvariantsEquivOfProjection hp hact hdual).symm χ).val v = χ (hp.codRestrict v) :=
+  (rfl)
+
+end Projection
+
 section Finite
 
 variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
@@ -238,22 +272,10 @@ theorem finrank_invariants_dual (ρ : Representation k G V) :
   have : Fintype G := Fintype.ofFinite G
   let _ : Invertible (Fintype.card G : k) :=
     invertibleOfNonzero (by rw [← Nat.card_eq_fintype_card]; exact hne)
-  -- Restriction of an invariant functional to the invariants.
-  let r : ρ.dual.invariants →ₗ[k] Module.Dual k ρ.invariants :=
-    { toFun := fun ψ => (ψ : Module.Dual k V).comp ρ.invariants.subtype
-      map_add' := fun _ _ => rfl
-      map_smul' := fun _ _ => rfl }
-  let avg : V →ₗ[k] ρ.invariants :=
-    ρ.averageMap.codRestrict ρ.invariants ρ.averageMap_invariant
-  have hr : Function.Bijective r := by
-    refine ⟨fun ψ φ h => Subtype.ext (LinearMap.ext fun u => ?_), fun χ => ?_⟩
-    · rw [← apply_averageMap_of_mem_invariants_dual ψ.property,
-        ← apply_averageMap_of_mem_invariants_dual φ.property]
-      exact DFunLike.congr_fun h (avg u)
-    · refine ⟨⟨χ.comp avg, mem_invariants_dual_iff.2 fun g u => ?_⟩, ?_⟩
-      · exact congrArg χ (Subtype.ext (LinearMap.congr_fun (ρ.averageMap_comp_ρ g) u))
-      · exact LinearMap.ext fun v => congrArg χ (Subtype.ext (ρ.averageMap_id v v.property))
-  rw [(LinearEquiv.ofBijective r hr).finrank_eq, Subspace.dual_finrank_eq]
+  let e := ρ.dualInvariantsEquivOfProjection (Representation.isProj_averageMap ρ)
+    (fun g v ↦ LinearMap.congr_fun (ρ.averageMap_comp_ρ g) v)
+    (fun _ hψ ↦ apply_averageMap_of_mem_invariants_dual hψ)
+  rw [e.finrank_eq, Subspace.dual_finrank_eq]
 
 end Finite
 

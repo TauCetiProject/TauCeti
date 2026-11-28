@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.LinearAlgebra.Dual.Defs
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.Finiteness.Defs
 
 import Mathlib.Algebra.Module.LocalizedModule.Basic
@@ -35,6 +36,8 @@ this holds for every finitely generated torsion-free `R`-module
   nonzero element of `M` is not killed by some `R`-linear functional.
 * `TauCeti.Module.Dual.injective_eval_of_finite`: over any integral domain `R`, a finitely
   generated torsion-free `R`-module has injective double-dual evaluation.
+* `TauCeti.Module.Dual.surjective_eval_iff_finiteDimensional`: over a field, double-dual evaluation
+  is surjective exactly in finite dimension.
 * `TauCeti.Module.Dual.evalHomEquiv`: precomposition with evaluation is a linear equivalence on maps
   to a reflexive target, provided the dual of the source is reflexive.
 -/
@@ -44,6 +47,14 @@ public section
 open Module Module.Dual
 
 namespace TauCeti.Module.Dual
+
+/-- Over a field, evaluation into the algebraic bidual is surjective exactly in finite dimension.
+The converse to finite-dimensional reflexivity is `Module.instFiniteDimensionalOfIsReflexive`. -/
+theorem surjective_eval_iff_finiteDimensional (k V : Type*) [Field k] [AddCommGroup V]
+    [Module k V] : Function.Surjective (eval k V) ↔ FiniteDimensional k V := by
+  refine ⟨fun hs ↦ ?_, fun _ ↦ (bijective_dual_eval k V).2⟩
+  let _ : IsReflexive k V := ⟨eval_apply_injective k, hs⟩
+  exact instFiniteDimensionalOfIsReflexive k V
 
 /-- The canonical evaluation map `Module.Dual.eval R M` into the double dual is injective if and
 only if `Module.Dual R M` separates nonzero points of `M`. -/

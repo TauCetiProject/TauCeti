@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Smooth.Basic
 public import TauCeti.RepresentationTheory.Intertwining
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.Dual.DoubleDual
 
 /-!
 # The smooth dual of a representation
@@ -250,13 +251,8 @@ theorem smoothDualEval_surjective_iff [IsSmooth ρ] {U : Subgroup G} (hU : IsOpe
   have hΦ : ⇑Φ ∘ ⇑ρ.smoothDualEval = Dual.eval k V := by
     ext v f
     simp [Φ, e₁, LinearEquiv.ofTop_apply]
-  have key : Function.Surjective ρ.smoothDualEval ↔ Function.Surjective (Dual.eval k V) := by
-    rw [← hΦ]
-    exact (Φ.toEquiv.comp_surjective _).symm
-  rw [key]
-  refine ⟨fun hs ↦ ?_, fun _ ↦ (bijective_dual_eval k V).2⟩
-  have : IsReflexive k V := ⟨⟨eval_apply_injective k, hs⟩⟩
-  exact instFiniteDimensionalOfIsReflexive k V
+  rw [← EquivLike.comp_surjective _ Φ, hΦ,
+    TauCeti.Module.Dual.surjective_eval_iff_finiteDimensional]
 
 end Field
 
