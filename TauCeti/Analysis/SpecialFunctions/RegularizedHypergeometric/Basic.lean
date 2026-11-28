@@ -71,8 +71,11 @@ with no condition on the lower parameters.
 * `Complex.hasSum_regularizedGaussHGFun`, `Complex.summable_norm_regularizedGaussHGFun` —
   the power series of `regularizedGaussHGFun a b c` converges to it (and absolutely) on the open
   unit disk `‖z‖ < 1`.
-* `Complex.regularizedHGFunCoeff_one_singleton` — the coefficients `1 / Γ(b + n)` of the Kummer
-  function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`.
+* `Complex.regularizedHGFunCoeff_one` — with the upper parameter `1`, the coefficients are
+  `1 / ∏ⱼ Γ(bⱼ + n)`, as for the Kummer function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)` and the series
+  `𝐅₁₂(b₁, b₂; z)` of the Struve functions.
+* `Complex.regularizedHGFunCoeff_map_ofReal`, `Complex.regularizedHGFun_ofReal_im` — at real
+  parameters the coefficients are real, and so is the function at real arguments.
 * `Complex.sum_regularizedHGFunCoeff_zero_singleton_mul` and
   `Complex.hasSum_regularizedHGFun_zero_singleton_mul` — the Cauchy product series of
   `₀F₁(; a; z) ₀F₁(; b; z)`, absolutely convergent by
@@ -267,13 +270,48 @@ theorem hasDerivAt_regularizedHGFun_zero_singleton (b z : ℂ) :
     HasDerivAt (regularizedHGFun 0 {b}) (regularizedHGFun 0 {b + 1} z) z := by
   simpa using hasDerivAt_regularizedHGFun (a := 0) (b := {b}) (z := z) (by simp)
 
-/-- The coefficients of the Kummer function `𝐌(1, b, z) = ₁F₁(1; b; z) / Γ(b)` are
-`1 / Γ(b + n)`. -/
+/-- With the single upper parameter `1`, the coefficients of the regularized hypergeometric series
+are `1 / ∏ⱼ Γ(bⱼ + n)`: the Pochhammer symbol `(1)ₙ = n!` cancels the factorial. Examples are the
+Kummer function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)` and the series
+`𝐅₁₂(b₁, b₂; z) = ∑ zⁿ / (Γ(b₁ + n) Γ(b₂ + n))` of the Struve functions. -/
 @[simp]
-theorem regularizedHGFunCoeff_one_singleton (b : ℂ) (n : ℕ) :
-    regularizedHGFunCoeff {1} {b} n = (Gamma (b + n))⁻¹ := by
+theorem regularizedHGFunCoeff_one (b : Multiset ℂ) (n : ℕ) :
+    regularizedHGFunCoeff {1} b n = (b.map fun x => Gamma (x + n)).prod⁻¹ := by
   simpa [regularizedHGFunCoeff] using div_mul_cancel_left₀ (Nat.cast_ne_zero.2 n.factorial_ne_zero)
-    (Gamma (b + n))
+    (b.map fun x => Gamma (x + n)).prod
+
+/-- At real parameters, the coefficients of the regularized hypergeometric series are real. -/
+theorem regularizedHGFunCoeff_map_ofReal (a b : Multiset ℝ) (n : ℕ) :
+    regularizedHGFunCoeff (a.map ofReal) (b.map ofReal) n =
+      (((a.map (ascPochhammer ℝ n).eval).prod /
+        (n ! * (b.map (Real.Gamma <| · + n)).prod) : ℝ) : ℂ) := by
+  simp only [regularizedHGFunCoeff, Multiset.map_map, Function.comp_def, ofReal_div, ofReal_mul,
+    ofReal_natCast]
+  congr 2
+  · rw [← ofRealHom_eq_coe, map_multiset_prod, Multiset.map_map]
+    refine congrArg _ (Multiset.map_congr rfl fun x _ => ?_)
+    rw [← ascPochhammer_map ofRealHom n]
+    exact Polynomial.eval_map_apply (p := ascPochhammer ℝ n) ofRealHom x
+  · rw [← ofRealHom_eq_coe, map_multiset_prod, Multiset.map_map]
+    refine congrArg _ (Multiset.map_congr rfl fun x _ => ?_)
+    simp [← Gamma_ofReal]
+
+/-- At real parameters and a real argument the regularized hypergeometric function is real. The
+parameters are complex numbers with vanishing imaginary parts, so that `simp` can discharge the
+hypotheses for literal parameter lists. Where the series does not converge, `regularizedHGFun`
+takes the junk value `0`. -/
+@[simp]
+theorem regularizedHGFun_ofReal_im {a b : Multiset ℂ} (ha : ∀ x ∈ a, x.im = 0)
+    (hb : ∀ x ∈ b, x.im = 0) (y : ℝ) : (regularizedHGFun a b y).im = 0 := by
+  -- Write each parameter list as the image of its real parts, so that the coefficients are real.
+  have hmap (s : Multiset ℂ) (hs : ∀ x ∈ s, x.im = 0) : (s.map re).map ofReal = s := by
+    rw [Multiset.map_map]
+    exact (Multiset.map_congr rfl fun x hx => ext (by simp) (by simp [hs x hx])).trans
+      (Multiset.map_id s)
+  rw [← hmap a ha, ← hmap b hb, regularizedHGFun, regularizedHGFunSeries,
+    ← FormalMultilinearSeries.ofScalarsSum, FormalMultilinearSeries.ofScalars_sum_eq]
+  simp only [regularizedHGFunCoeff_map_ofReal, smul_eq_mul, ← ofReal_pow, ← ofReal_mul,
+    ← ofReal_tsum, ofReal_im]
 
 /-- The complex-valued `₀F₁` series at real parameters and arguments sums to its regularized
 hypergeometric value. -/
@@ -283,13 +321,6 @@ theorem hasSum_ofReal_regularizedHGFun_zero_singleton (b y : ℝ) :
   convert hasSum_regularizedHGFun (a := 0) (b := {(b : ℂ)}) (by simp) (y : ℂ) with n
   push_cast [← Gamma_ofReal, regularizedHGFunCoeff_zero_singleton]
   ring
-
-/-- At real arguments, `₀F₁(; b; y)` is real. -/
-@[simp]
-theorem regularizedHGFun_zero_singleton_ofReal_im (b y : ℝ) :
-    (regularizedHGFun 0 {(b : ℂ)} y).im = 0 := by
-  refine (hasSum_im (hasSum_ofReal_regularizedHGFun_zero_singleton b y)).unique ?_
-  simpa only [ofReal_im] using hasSum_zero
 
 /-- At real arguments, `₀F₁(; b; y)` is the sum of the real series `∑ yⁿ / (n! Γ(b + n))`. -/
 theorem hasSum_regularizedHGFun_zero_singleton_ofReal_re (b y : ℝ) :
