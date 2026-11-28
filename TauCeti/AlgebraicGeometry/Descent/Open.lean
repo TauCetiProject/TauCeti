@@ -53,6 +53,9 @@ quasi-projective scheme embedded as an open of the projective spectrum of its se
 * `TauCeti.DescentDatum.Hom.exists_baseChange_hom_isIso_of_isOpenImmersion`: for such `p`, a
   descent datum which is open in the canonical descent datum on a base change `X₀ ×_S S'` is the
   base change of an open of `X₀`.
+* `TauCeti.DescentDatum.exists_baseChange_hom_isIso_restrict_of_le`: for such `p`, if the
+  restriction of a descent datum to a stable open is effective, so is its restriction to every
+  smaller stable open.
 * `TauCeti.DescentDatum.Hom.exists_baseChange_hom_isIso_restrict_of_pullbackAlong`: effectivity
   of the base change of a descent datum to an open of the base gives effectivity of its restriction
   to the preimage of that open.
@@ -376,6 +379,27 @@ theorem Hom.exists_baseChange_hom_isIso_of_isOpenImmersion {X₀ : Over S}
   calc f.comp (e.inv.comp g)
       = (((baseChange p X₀).restrictHom _ hV).comp e).comp (e.inv.comp g) := by rw [he]
     _ = _ := by simp [hgf]
+
+/-- **Effectivity passes to smaller stable opens.** Let `p` be surjective, flat and
+quasi-compact, and let `V ≤ U` be stable opens of `X`. If the restriction of `D` to `U` is
+effective, so is its restriction to `V`. -/
+theorem exists_baseChange_hom_isIso_restrict_of_le {U V : X.left.Opens} (hU : D.IsStable U)
+    (hV : D.IsStable V) (hVU : V ≤ U) {X₀ : Over S} (f : Hom (baseChange p X₀) (D.restrict U hU))
+    [IsIso f.hom] :
+    ∃ (V₀ : X₀.left.Opens) (g : Hom (baseChange p (Over.mk (V₀.ι ≫ X₀.hom))) (D.restrict V hV)),
+      IsIso g.hom := by
+  -- The inclusion of `V` factors through `U`, and so is an open immersion into `X₀ ×_S S'`.
+  let i := (D.restrictHom V hV).codRestrict hU (by simpa using hVU)
+  have : IsOpenImmersion i.hom.left := by
+    have : IsOpenImmersion (i.hom.left ≫ U.ι) := by
+      rw [Hom.codRestrict_hom_left_ι, restrictHom_hom_left]
+      infer_instance
+    exact IsOpenImmersion.of_comp _ U.ι
+  have : IsOpenImmersion (f.inv.comp i).hom.left := by
+    rw [Hom.comp_hom, Over.comp_left, Hom.inv_hom]
+    infer_instance
+  obtain ⟨V₀, g, hg, -⟩ := (f.inv.comp i).exists_baseChange_hom_isIso_of_isOpenImmersion
+  exact ⟨V₀, g, hg⟩
 
 end Effective
 
