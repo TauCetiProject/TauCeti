@@ -23,6 +23,7 @@ vanish in `R`.
 
 ## Main results
 
+* `TauCeti.iterate_powRingHom`: its `n`-th iterate is `x ↦ x ^ p ^ n`.
 * `TauCeti.powRingHom_eq_frobenius`: when `R` has exponential characteristic `p`, it is
   `frobenius R p`.
 -/
@@ -44,6 +45,11 @@ variable {R p}
 
 @[simp]
 theorem powRingHom_apply (h : (p : R) = 0) (x : R) : powRingHom R p h x = x ^ p := (rfl)
+
+/-- The `n`-th iterate of the `p`-th power map is the `p ^ n`-th power map. -/
+theorem iterate_powRingHom (h : (p : R) = 0) (n : ℕ) (x : R) :
+    (powRingHom R p h)^[n] x = x ^ p ^ n :=
+  congrFun (pow_iterate p n) x
 
 /-- When `R` has exponential characteristic `p`, the `p`-th power map is the Frobenius. -/
 theorem powRingHom_eq_frobenius [ExpChar R p] (h : (p : R) = 0) :

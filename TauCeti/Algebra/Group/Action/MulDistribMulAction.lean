@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Action.Defs
+public import Mathlib.Algebra.Group.Irreducible.Defs
+import Mathlib.Algebra.Group.Action.End
+import Mathlib.Algebra.Group.Irreducible.Lemmas
 
 /-!
 # A multiplicative action on a monoid is distributive over its self-action
@@ -13,11 +16,13 @@ public import Mathlib.Algebra.Group.Action.Defs
 A multiplicative distributive action of `G` on a monoid `A`, such as a `MulSemiringAction`, has
 `g • (a * b) = g • a * g • b`. Read with `A` acting on itself by left multiplication, this is
 `SMulDistribClass G A A`, the form taken by statements about semilinear actions on `A`-modules
-when the module is `A` itself.
+when the module is `A` itself. When `G` is a group, each `g • ·` is a multiplicative
+automorphism of `A`, so it preserves irreducibility.
 
 ## Main results
 
 * `TauCeti.smulDistribClass_self`: `SMulDistribClass G A A` for a `MulDistribMulAction G A`.
+* `Irreducible.smul`: irreducibility is preserved by a multiplicative distributive group action.
 -/
 
 public section
@@ -31,3 +36,8 @@ instance smulDistribClass_self (G A : Type*) [Monoid G] [Monoid A] [MulDistribMu
   ⟨smul_mul'⟩
 
 end TauCeti
+
+/-- Irreducibility is preserved by a multiplicative distributive group action. -/
+theorem Irreducible.smul {G A : Type*} [Group G] [Monoid A] [MulDistribMulAction G A]
+    {a : A} (ha : Irreducible a) (g : G) : Irreducible (g • a) :=
+  ha.map (MulDistribMulAction.toMulEquiv A g)

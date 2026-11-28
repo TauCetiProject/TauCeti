@@ -71,6 +71,16 @@ theorem linearHomotopy_add_const (β : ℝ → ℝ) (H₀ H₁ : ℝ → V → �
   simp only [linearHomotopy_def]
   ring
 
+/-- **The continuation homotopy to a normalization.** The continuation homotopy from `H` to
+`H + c(t)` is `H` plus the target-independent function `(s, t) ↦ β(s) c(t)`, with
+`β = Real.smoothTransition`. -/
+theorem continuationHomotopy_add_const (H : ℝ → V → ℝ) (c : ℝ → ℝ) (z : ℝ × ℝ) :
+    continuationHomotopy H (fun t x ↦ H t x + c t) z =
+      fun x ↦ H z.2 x + Real.smoothTransition z.1 * c z.2 := by
+  funext x
+  rw [continuationHomotopy_def]
+  ring
+
 /-- **The curvature of a normalized linear homotopy.** The `s`-derivative of the linear homotopy
 with normalized end Hamiltonians `H₀ + c₀` and `H₁ + c₁` is the `s`-derivative for `H₀` and `H₁`
 plus `β'(s) (c₁ - c₀)(t)`. -/

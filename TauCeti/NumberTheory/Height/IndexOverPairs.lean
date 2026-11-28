@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-public import TauCeti.NumberTheory.Height.FamilyOverPairs
+public import TauCeti.NumberTheory.Height.FamilyOverPairs.Basic
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import TauCeti.LinearAlgebra.Matrix.Module
 

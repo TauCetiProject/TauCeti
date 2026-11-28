@@ -126,6 +126,18 @@ theorem IsMatlisGenerator.units_smul (hχ : χ.IsMatlisGenerator) (u : Rˣ) :
   refine fun r s hrs ↦ (Units.mul_left_inj u).mp (hχ ?_)
   simpa [mul_smul] using hrs
 
+/-- A linear form vanishes on a submodule if and only if its trace character does. Multiplying
+elements of the submodule by all scalars is essential: the trace can have an additive kernel. -/
+theorem IsMatlisGenerator.forall_apply_eq_zero_iff (hχ : χ.IsMatlisGenerator)
+    {M : Type*} [AddCommGroup M] [Module R M] (S : Submodule R M) (f : Module.Dual R M) :
+    (∀ m ∈ S, χ (f m) = 0) ↔ ∀ m ∈ S, f m = 0 := by
+  refine ⟨fun h m hm ↦ ?_, fun h m hm ↦ by rw [h m hm, map_zero]⟩
+  apply (isMatlisGenerator_iff_injective.mp hχ)
+  rw [map_zero]
+  ext r
+  simpa only [LinearMap.toSpanSingleton_apply, smul_apply, smul_eq_mul, zero_mul, map_zero,
+    map_smul, mul_comm, TauCeti.CharacterModule.zero_apply] using h (r • m) (S.smul_mem r hm)
+
 section Finite
 
 variable [Finite R]

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Analysis.InnerProductSpace.Gram.ChangeOfFamily
 public import TauCeti.Analysis.InnerProductSpace.Gram.Fischer
+import TauCeti.Analysis.InnerProductSpace.Gram.Basic
 
 /-!
 # Gram determinants of a family completed by a second family
@@ -27,6 +28,10 @@ finite-dimensionality hypothesis is needed, and either family may be empty.
 
 ## Main results
 
+* `Matrix.gram_starProjection_orthogonal_sub_of_le`: for nested subspaces `K ≤ K'` admitting
+  orthogonal projections,
+  `gram 𝕜 (fun i ↦ Kᗮ.starProjection (v i)) - gram 𝕜 (fun i ↦ K'ᗮ.starProjection (v i))` equals
+  `gram 𝕜 (fun i ↦ K'.starProjection (v i) - K.starProjection (v i))`.
 * `Matrix.det_gram_sumElim_eq_mul_det_gram_starProjection`: if `span (range u) = W`, then
   `det (gram (Sum.elim u v)) = det (gram u) * det (gram (fun j ↦ Wᗮ.starProjection (v j)))`.
 
@@ -42,6 +47,26 @@ open Submodule
 open scoped InnerProductSpace
 
 namespace Matrix
+
+/-- For nested subspaces `K ≤ K'` admitting orthogonal projections, projecting onto `Kᗮ` rather
+than `K'ᗮ` increases the Gram matrix by the Gram matrix of the projection difference
+`K'.starProjection - K.starProjection`. -/
+theorem gram_starProjection_orthogonal_sub_of_le {𝕜 E ι : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {K K' : Submodule 𝕜 E}
+    [K.HasOrthogonalProjection] [K'.HasOrthogonalProjection] (h : K ≤ K') (v : ι → E) :
+    gram 𝕜 (fun i ↦ Kᗮ.starProjection (v i)) -
+        gram 𝕜 (fun i ↦ K'ᗮ.starProjection (v i)) =
+      gram 𝕜 (fun i ↦ K'.starProjection (v i) - K.starProjection (v i)) := by
+  have hsplit : (fun i ↦ Kᗮ.starProjection (v i)) =
+      (fun i ↦ K'ᗮ.starProjection (v i)) +
+        (fun i ↦ K'.starProjection (v i) - K.starProjection (v i)) := by
+    ext i
+    simp [Submodule.starProjection_orthogonal_val]
+  rw [hsplit, gram_add_of_inner_eq_zero, add_sub_cancel_left]
+  intro i j
+  exact Submodule.inner_left_of_mem_orthogonal
+    (K'.sub_mem (K'.starProjection_apply_mem _) (h (K.starProjection_apply_mem _)))
+    (K'ᗮ.starProjection_apply_mem _)
 
 variable {𝕜 E ι κ : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]

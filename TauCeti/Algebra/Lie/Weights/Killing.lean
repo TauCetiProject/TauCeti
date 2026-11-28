@@ -29,6 +29,7 @@ splitting Cartan subalgebra.
   `TauCeti.eq_zero_of_forall_root_apply_eq_zero`: the roots separate its points.
 * `TauCeti.rootSpace_neg_eq_bot_iff`: the roots are closed under negation, so a functional on the
   Cartan subalgebra is a root exactly when its negative is.
+* `TauCeti.subsingleton_of_isEmpty_root`: without roots, `L` is trivial.
 -/
 
 public section
@@ -119,6 +120,21 @@ theorem rootSpace_neg_eq_bot_iff (χ : H → K) :
   have key (ψ : H → K) (hψ : rootSpace H ψ ≠ ⊥) : rootSpace H (-ψ) ≠ ⊥ :=
     (-(⟨ψ, hψ⟩ : Weight K H L)).genWeightSpace_ne_bot
   exact not_iff_not.mp ⟨fun h ↦ neg_neg χ ▸ key (-χ) h, key χ⟩
+
+omit [CharZero K] in
+/-- **Without roots a Lie algebra with non-degenerate Killing form is trivial.** If there are no
+roots, `L` is its Cartan subalgebra, which is abelian, and an abelian Killing Lie algebra is
+zero. -/
+theorem subsingleton_of_isEmpty_root [IsEmpty H.root] : Subsingleton L := by
+  have hnz (α : Weight K H L) : ¬α.IsNonZero := fun hα ↦
+    IsEmpty.false (⟨α, by simpa [LieSubalgebra.root] using hα⟩ : H.root)
+  have htop : H.toLieSubmodule = ⊤ := by
+    simpa [hnz] using cartan_sup_iSup_rootSpace_eq_top (H := H)
+  have hH : H = ⊤ := H.toSubmodule_eq_top.mp <| by
+    rw [← LieSubalgebra.coe_toLieSubmodule, htop, LieSubmodule.top_toSubmodule]
+  have : IsLieAbelian L :=
+    (H.incl.range_eq_top.mp (H.incl_range.trans hH)).isLieAbelian inferInstance
+  exact subsingleton_of_isKilling_of_isLieAbelian K L
 
 end TauCeti
 
