@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.Pullback
+public import TauCeti.AlgebraicGeometry.Cohomology.Pullback.Opens
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Pullback.Comp
 
@@ -32,7 +33,11 @@ and the functoriality of pullback of cohomology over objects of a site
   along `TauCeti.AlgebraicGeometry.preimage_preimage_eq_of_comp_eq`;
 * `AlgebraicGeometry.Scheme.Hom.cohomologyOnPullback_cohomologyOnRes_cohomologyOnPullback_ι`:
   the case of the square `g.resLE U U' hle ≫ U.ι = U'.ι ≫ g` of open subschemes, comparing
-  pullback along `g` with pullback along its restriction `U' ⟶ U`.
+  pullback along `g` with pullback along its restriction `U' ⟶ U`;
+* `AlgebraicGeometry.Scheme.Hom.cohomologyOnPullbackι_cohomologyOnPullback_smul`: consequently,
+  pullback along `g` respects the action of functions on `U`, which act on `Hⁿ(U, M)` through the
+  open subscheme `U` (`AlgebraicGeometry.Scheme.Opens.cohomologyOnPullbackι`) and on
+  `Hⁿ(U', g^* M)` through `g.resLE U U' hle`.
 -/
 
 public section
@@ -171,5 +176,26 @@ theorem cohomologyOnPullback_cohomologyOnRes_cohomologyOnPullback_ι {X' : Schem
     ← cohomologyOnPullback_comp_cohomologyOnPullback_of_comp_eq_assoc (g.resLE_comp_ι hle)]
   rw [cohomologyOnRes_comp_cohomologyOnMap_assoc]
   simp only [cohomologyOnRes_comp, Functor.comp_obj]
+
+/-- **Pullback on cohomology respects functions on opens.** Functions on an open `U` of `X` act on
+`Hⁿ(U, M)` through the cohomology of the open subscheme `U`
+(`AlgebraicGeometry.Scheme.Opens.cohomologyOnPullbackι`). If `x` is `r` times `y` in this sense,
+then the pullbacks of `x` and `y` along `g`, restricted to an open `U' ≤ g⁻¹ U`, differ by the
+function `(g.resLE U U' hle)^* r` on `U'` in the same sense. -/
+theorem cohomologyOnPullbackι_cohomologyOnPullback_smul {X' : Scheme.{u}} (g : X' ⟶ X)
+    (M : X.Modules) (n : ℕ) (U : X.Opens) (U' : X'.Opens) (hle : U' ≤ g ⁻¹ᵁ U)
+    (r : Γ(U.toScheme, ⊤)) (x y : cohomologyOn M n U)
+    (hxy : U.cohomologyOnPullbackι M n x = r • U.cohomologyOnPullbackι M n y) :
+    U'.cohomologyOnPullbackι ((Scheme.Modules.pullback g).obj M) n
+        (cohomologyOnRes _ n hle (g.cohomologyOnPullback M n U x)) =
+      (g.resLE U U' hle).appTop r •
+        U'.cohomologyOnPullbackι ((Scheme.Modules.pullback g).obj M) n
+          (cohomologyOnRes _ n hle (g.cohomologyOnPullback M n U y)) := by
+  have hsq (z : cohomologyOn M n U) := ConcreteCategory.congr_hom
+    (g.cohomologyOnPullback_cohomologyOnRes_cohomologyOnPullback_ι M n U U' hle) z
+  simp only [ConcreteCategory.comp_apply, ← Scheme.Opens.cohomologyOnPullbackι_apply] at hsq
+  rw [hsq, hsq, hxy, cohomologyOnPullback_smul, ← cohomologyOnMapLinear_apply, LinearMap.map_smul,
+    cohomologyOnMapLinear_apply, ← cohomologyOnResLinear_apply, LinearMap.map_smul,
+    cohomologyOnResLinear_apply]
 
 end AlgebraicGeometry.Scheme.Hom
