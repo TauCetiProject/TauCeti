@@ -510,8 +510,9 @@ end Bundle.Trivialization
 namespace TauCeti.BundleTest
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  [BoundarylessManifold I M]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
