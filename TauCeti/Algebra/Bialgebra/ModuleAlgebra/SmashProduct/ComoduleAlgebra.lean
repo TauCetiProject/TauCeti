@@ -204,7 +204,7 @@ theorem includeA_retractA_of_mem_coinvariants {x : SmashProduct μ}
       (linearEquivTensor μ).symm).mem_fixedSubcomodule
         (Comodule.mem_fixedSubcomodule.2 (ComoduleAlgebra.mem_coinvariants.1 hx))
   refine (linearEquivTensor μ).injective ?_
-  rw [linearEquivTensor_includeA]
+  rw [linearEquivTensor_includeA, retractA_apply]
   exact (Comodule.mem_fixedSubcomodule_cofree_iff (linearEquivTensor μ x)).1 hmem
 
 /-- The coinvariant subalgebra `(A # H)^{co H}` equals the image `(includeA (μ := μ)).range` of
