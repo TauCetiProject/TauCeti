@@ -37,6 +37,7 @@ continuous when `G` is first countable.
   `c g 1 = 1` for all `g`, then `ω(g) ω(h) = c g h • ω(gh)` and `ω(g)` preserves `⟨·, ·⟩`.
 * `TauCeti.ReproducingModel.innerSL_heisenbergRep_weilOp`: the Heisenberg coefficients of a Weil
   operator, `⟨u, ϱ(x) ω(g) w⟩ = Δ g * ∫ w (g⁻¹ • z) * β x z * conj (u (x + z)) dμ(z)`.
+* `TauCeti.ReproducingModel.innerSL_weilRep_inv`: `ω(g⁻¹)` is the adjoint of `ω(g)`.
 * `TauCeti.ReproducingModel.weilRep_heisenbergRep`, `TauCeti.ReproducingModel.weilRep_apply`,
   `TauCeti.ReproducingModel.weilRep_apply_of_vacuum`,
   `TauCeti.ReproducingModel.conj_mul_weilRep_vacuum_apply_zero`,
@@ -272,6 +273,12 @@ theorem weilRep_heisenbergRep :
 @[simp]
 theorem innerSL_weilRep : innerSL (weilRep e Δ hc g v) (weilRep e Δ hc g w) = innerSL v w :=
   innerSL_weilOp Δ g v w (hc g 1)
+
+/-- `ω(g⁻¹)` is the adjoint of `ω(g)`: `⟨ω(g⁻¹) v, w⟩ = ⟨v, ω(g) w⟩`. -/
+theorem innerSL_weilRep_inv :
+    innerSL (weilRep e Δ hc g⁻¹ v) w = innerSL v (weilRep e Δ hc g w) := by
+  rw [← innerSL_weilRep Δ g _ _ hc, ← mul_apply_eq_comp, ← map_mul, mul_inv_cancel,
+    map_one, one_apply_eq_self]
 
 /-- `(ω(g) v) x = Δ g * ∫ v y * (β (g • y) x * e (x - g • y)) dμ(y)`. -/
 theorem weilRep_apply :

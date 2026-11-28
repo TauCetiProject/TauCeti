@@ -29,6 +29,8 @@ of its blocks on both sides by the corresponding diagonal blocks.
 On a single diagonal block `{i | b i = a}` of a ranking `b`, the square block of a product of two
 block triangular matrices is the product of their square blocks, and the block diagonal matrix
 with prescribed diagonal blocks on the fibres of `b` is block triangular with those blocks.
+The inverse of a matrix whose entries vanish between indices of distinct labels has the same
+property, for labels in any type.
 
 On a set of indices that is down-closed for a ranking `b`, the square block of a product with a
 block lower triangular left factor, or a block upper triangular right factor, is the product of
@@ -64,6 +66,7 @@ a chain of nonzero entries of one gives a chain of nonzero entries of the other.
 * `Matrix.blockTriangular_reindex_blockDiagonal'` and `Matrix.toSquareBlock_reindex_blockDiagonal'`:
   the block diagonal matrix with the blocks `M a` on the fibres of `b` is block triangular with
   diagonal blocks `M a`.
+* `Matrix.inv_apply_eq_zero_of_ne`: the inverse of a block diagonal matrix is block diagonal.
 * `Matrix.BlockTriangular.toSquareBlockProp_mul_of_toDual` and
   `Matrix.BlockTriangular.toSquareBlockProp_mul`: square blocks of products on down-closed sets.
 * `Matrix.submatrix_mul_mul_of_isLowerTriangular_of_isUpperTriangular`: rectangular leading
@@ -251,6 +254,24 @@ public theorem toSquareBlock_reindex_blockDiagonal' [DecidableEq α] [Zero R] {b
     Sigma.subtype_ext ((Equiv.sigmaFiberEquiv_symm_apply_fst b j).trans hj)
       (Equiv.sigmaFiberEquiv_symm_apply_snd_coe b j)
   simp [toSquareBlock_def, h_i, h_j]
+
+/-- The inverse of a block diagonal matrix is block diagonal: if the entries of `M` vanish between
+indices with distinct labels `f i ≠ f j`, so do those of `M⁻¹`. The labels need not be ordered,
+and `M` need not be invertible. -/
+public theorem inv_apply_eq_zero_of_ne [Fintype m] [DecidableEq m] [CommRing R] {f : m → α}
+    {M : Matrix m m R} (hM : ∀ i j, f i ≠ f j → M i j = 0) {i j : m} (hij : f i ≠ f j) :
+    M⁻¹ i j = 0 := by
+  classical
+  by_cases h : IsUnit M.det
+  · -- Rank the indices by whether they carry the label of `i`: then `M` and `M⁻¹` are block
+    -- triangular, and `(i, j)` lies strictly below the diagonal blocks.
+    have := M.invertibleOfIsUnitDet h
+    let b (k : m) : Bool := decide (f k = f i)
+    have hb : M.BlockTriangular b := fun k l hlk ↦ by
+      simp only [b, Bool.lt_iff, decide_eq_false_iff_not, decide_eq_true_eq] at hlk
+      exact hM k l (hlk.2 ▸ Ne.symm hlk.1)
+    exact blockTriangular_inv_of_blockTriangular hb (by simpa [b, Bool.lt_iff] using hij.symm)
+  · rw [nonsing_inv_apply_not_isUnit M h, Matrix.zero_apply]
 
 end DiagonalBlocks
 

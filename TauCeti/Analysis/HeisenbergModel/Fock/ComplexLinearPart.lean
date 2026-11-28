@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.HeisenbergModel.Fock.Basic
 import TauCeti.Data.Int.Sign
+import TauCeti.LinearAlgebra.Matrix.Block
 import TauCeti.LinearAlgebra.Matrix.Determinant.ComplementaryMinor
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
@@ -209,27 +210,8 @@ theorem inv_complexLinearPart_submatrix (u : Matrix ι ι ℂ)
 complex-linear part is singular (when its nonsingular inverse is zero). -/
 @[simp]
 theorem inv_complexLinearPart_apply_of_ne (u : Matrix ι ι ℂ) {i j : ι} (h : ε i ≠ ε j) :
-    (complexLinearPart ε u)⁻¹ i j = 0 := by
-  by_cases hu : IsUnit (complexLinearPart ε u)
-  · let e := Equiv.sumCompl fun i ↦ ε i = -1
-    obtain ⟨i, rfl⟩ := e.surjective i
-    obtain ⟨j, rfl⟩ := e.surjective j
-    have hblocks := inv_complexLinearPart_submatrix ε u hu
-    cases i with
-    | inl i =>
-      cases j with
-      | inl j => exact (h (i.property.trans j.property.symm)).elim
-      | inr j =>
-        simpa [e, submatrix_apply] using congrFun (congrFun hblocks (Sum.inl i)) (Sum.inr j)
-    | inr i =>
-      cases j with
-      | inl j =>
-        simpa [e, submatrix_apply] using congrFun (congrFun hblocks (Sum.inr i)) (Sum.inl j)
-      | inr j =>
-        exact (h ((Int.units_eq_one_of_ne_neg_one i.property).trans
-          (Int.units_eq_one_of_ne_neg_one j.property).symm)).elim
-  · rw [nonsing_inv_apply_not_isUnit _ ((isUnit_iff_isUnit_det _).not.mp hu),
-      Matrix.zero_apply]
+    (complexLinearPart ε u)⁻¹ i j = 0 :=
+  inv_apply_eq_zero_of_ne (fun _ _ ↦ complexLinearPart_apply_of_ne ε u) h
 
 /-- Between coordinates of sign `-1`, the inverse of an invertible complex-linear part is the
 inverse of the conjugate negative block. -/
