@@ -103,19 +103,16 @@ theorem sqrt_neg (z : ℂ) :
 (`z.arg = π`) and `1` elsewhere. -/
 theorem sqrt_inv_mul_sqrt {z : ℂ} (hz : z ≠ 0) :
     sqrt z⁻¹ * sqrt z = if z.arg = π then -1 else 1 := by
-  by_cases h : z.arg = π
-  · have harg : π < z⁻¹.arg + z.arg := by
-      rw [arg_inv, ite_eq_left h, h]
-      linarith [Real.pi_pos]
-    have hmul : (1 : ℂ) = sqrt z⁻¹ * sqrt z * -1 := by
-      calc (1 : ℂ) = (z⁻¹ * z) ^ (2⁻¹ : ℂ) := by rw [inv_mul_cancel₀ hz, one_cpow]
-        _ = sqrt z⁻¹ * sqrt z * -1 := by
-          rw [mul_cpow_of_pi_lt harg, show (-2 * π * I * (2⁻¹ : ℂ)) = -(π * I) by ring,
-            exp_neg_pi_mul_I, ← sqrt, ← sqrt]
-    rw [ite_eq_left h]
-    linear_combination hmul
-  · rw [ite_eq_right h, sqrt, inv_cpow z (2⁻¹ : ℂ) h, ← sqrt,
-      inv_mul_cancel₀ (sqrt_eq_zero_iff.not.2 hz)]
+  have hne : sqrt z ≠ 0 := sqrt_eq_zero_iff.not.2 hz
+  rw [sqrt, inv_cpow_eq_ite, show (starRingEnd ℂ) (2⁻¹ : ℂ) = 2⁻¹ by simp [map_ofNat], ← sqrt]
+  split_ifs with h
+  · have hre : (sqrt z).re = 0 := by
+      have ⟨hzre, hzim⟩ := arg_eq_pi_iff.mp h
+      rw [sqrt, cpow_inv_two_re, ← neg_re_eq_norm.mpr ⟨hzre.le, hzim⟩,
+        neg_add_cancel, zero_div, Real.sqrt_zero]
+    have hconj : starRingEnd ℂ (sqrt z) = -sqrt z := Complex.ext (by simp [hre]) (by simp)
+    rw [map_inv₀, hconj, inv_neg, neg_mul, inv_mul_cancel₀ hne]
+  · exact inv_mul_cancel₀ hne
 
 /-- The principal square root has nonnegative real part. -/
 @[simp]
