@@ -58,6 +58,11 @@ No inner product instance on the algebraic dual is installed.
   invertible.
 * `InnerProductSpace.isSymmetric_continuousLinearMapOfBilin`: over `ℝ`, the Riesz operator of a
   symmetric form is symmetric.
+* `InnerProductSpace.norm_continuousLinearMapOfBilin_apply`: the Riesz representative of a
+  partially evaluated form has the same norm as the resulting covector.
+* `InnerProductSpace.contDiffOn_ringInverse_continuousLinearMapOfBilin` and
+  `InnerProductSpace.ringInverse_continuousLinearMapOfBilin_apply_self`: positive forms
+  have smoothly varying inverse Riesz operators, which left-invert their Riesz operators.
 * `ContinuousLinearMap.continuousLinearMapOfBilin_bilinearComp`: pulling a real bilinear form back
   along a linear isometry equivalence conjugates its Riesz operator.
 * `ContinuousLinearMap.reGradient P`, `ContinuousLinearMap.imGradient P`: the vectors
@@ -74,6 +79,8 @@ No inner product instance on the algebraic dual is installed.
 -/
 
 public section
+
+open scoped ContDiff
 
 namespace InnerProductSpace
 
@@ -216,6 +223,47 @@ theorem isSymmetric_continuousLinearMapOfBilin {B : F →L[ℝ] F →L[ℝ] ℝ}
   fun u v ↦ by
     rw [ContinuousLinearMap.coe_coe, continuousLinearMapOfBilin_apply, real_inner_comm,
       continuousLinearMapOfBilin_apply, hB]
+
+/-- The Riesz operator preserves the norm of the covector obtained by fixing the first argument. -/
+theorem norm_continuousLinearMapOfBilin_apply (B : F →L[ℝ] F →L[ℝ] ℝ) (v : F) :
+    ‖continuousLinearMapOfBilin B v‖ = ‖B v‖ := by
+  rw [continuousLinearMapOfBilin, ContinuousLinearMap.comp_apply]
+  exact (toDual ℝ F).symm.norm_map _
+
+private theorem isUnit_continuousLinearMapOfBilin_of_pos
+    [FiniteDimensional ℝ F] {B : F →L[ℝ] F →L[ℝ] ℝ}
+    (hpos : ∀ v : F, v ≠ 0 → 0 < B v v) : IsUnit (continuousLinearMapOfBilin B) := by
+  apply isUnit_continuousLinearMapOfBilin
+  apply (LinearMap.ker_eq_bot).mp
+  apply LinearMap.ker_eq_bot'.mpr
+  intro v hv
+  by_contra hne
+  have hvv : B v v = 0 := congrArg (fun l : F →L[ℝ] ℝ ↦ l v) hv
+  exact (hpos v hne).ne' hvv
+
+/-- Positive forms have a smoothly varying inverse Riesz operator. -/
+theorem contDiffOn_ringInverse_continuousLinearMapOfBilin
+    {P E : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    {n : WithTop ℕ∞} {G : P → E →L[ℝ] E →L[ℝ] ℝ} {S : Set P}
+    (hG : ContDiffOn ℝ n G S)
+    (hpos : ∀ z ∈ S, ∀ v : E, v ≠ 0 → 0 < G z v v) :
+    ContDiffOn ℝ n (fun z ↦ Ring.inverse (continuousLinearMapOfBilin (G z))) S := by
+  have hA : ContDiffOn ℝ n (fun z ↦ continuousLinearMapOfBilin (G z)) S :=
+    contDiff_continuousLinearMapOfBilin.comp_contDiffOn hG
+  intro z hz
+  obtain ⟨v, hv⟩ := isUnit_continuousLinearMapOfBilin_of_pos (hpos z hz)
+  have hB : ContDiffAt ℝ n Ring.inverse (continuousLinearMapOfBilin (G z)) :=
+    hv ▸ contDiffAt_ringInverse ℝ v
+  exact hB.comp_contDiffWithinAt z (hA z hz)
+
+/-- The inverse Riesz operator of a positive form left-inverts its Riesz operator. -/
+theorem ringInverse_continuousLinearMapOfBilin_apply_self
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    {B : E →L[ℝ] E →L[ℝ] ℝ} (hpos : ∀ v : E, v ≠ 0 → 0 < B v v) (v : E) :
+    Ring.inverse (continuousLinearMapOfBilin B) (continuousLinearMapOfBilin B v) = v :=
+  congrArg (fun L : E →L[ℝ] E ↦ L v)
+    (Ring.inverse_mul_cancel _ (isUnit_continuousLinearMapOfBilin_of_pos hpos))
 
 end Real
 

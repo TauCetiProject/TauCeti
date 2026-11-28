@@ -86,6 +86,15 @@ variable (I g) in
         (curveVelocity I α s) / 2 + 2 * s ^ 2 * (g (T - s ^ 2)).scalarCurvature (α s) := by
   rfl
 
+/-- The regularized reduced action is the moving-metric action at backward square time,
+with scalar potential weighted by twice square time. -/
+theorem regularizedReducedAction_eq_movingMetricAction (T : ℝ) (α : ℝ → M) (a b : ℝ) :
+    regularizedReducedAction I g T α a b =
+      movingMetricAction I (fun s ↦ (g (T - s ^ 2)).ofLE (by norm_num))
+        (fun s x ↦ 2 * s ^ 2 * (g (T - s ^ 2)).scalarCurvature x) α a b := by
+  simp only [regularizedReducedAction_def, movingMetricAction_def,
+    ContMDiffRiemannianMetric.ofLE_inner]
+
 /-- Square-time pullback preserves the metric and scalar-potential regularity along the path. -/
 private theorem regularized_family_regularity {s T : ℝ}
     (hg : ContMDiffAt (𝓘(ℝ, ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) 1
@@ -157,7 +166,11 @@ theorem hasDerivAt_regularizedReducedAction {a b T : ℝ}
     (U := U) hF (by simpa only [ContMDiffRiemannianMetric.ofLE_inner] using hG) hU
     (by simpa only [ContMDiffRiemannianMetric.ofLE_inner,
       ContMDiffRiemannianMetric.toRiemannianMetric_ofLE] using hpair)
-  simp only [movingMetricAction_def, ContMDiffRiemannianMetric.ofLE_inner] at h
+  have haction (α : ℝ → M) :
+      movingMetricAction I (fun s ↦ (G s).ofLE (by norm_num)) U α a b =
+        regularizedReducedAction I g T α a b :=
+    (regularizedReducedAction_eq_movingMetricAction T α a b).symm
+  simp only [haction, ContMDiffRiemannianMetric.ofLE_inner] at h
   refine h.congr_deriv ?_
   congr 1
   apply intervalIntegral.integral_congr

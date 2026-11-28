@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Topology.ContinuousMap.Ascoli
@@ -71,6 +72,14 @@ used to identify weak derivatives on an interval with ordinary primitives.
   `v` in `L¹(a, b)`, is bounded by `‖c‖ + ∫ B` when `‖d v‖ ≤ B`, and then has relatively compact
   range (Arzelà–Ascoli).
 * `ContDiff.contDiff_add_one_integral`: the primitive of a `C^k` function on `ℝ` is `C^(k+1)`.
+* `TauCeti.intervalIntegral.integral_eq_of_ae_eq_Icc`: a.e. equal velocities on a closed interval
+  give equal integrals from its left endpoint.
+* `TauCeti.intervalIntegral.continuousOn_of_forall_eq_add_integral`: a path given by a constant
+  plus the integral primitive of an interval-integrable velocity is continuous on the interval.
+* `TauCeti.intervalIntegral.ae_hasDerivAt_of_forall_eq_add_integral`: an integral path has its
+  specified velocity as its derivative almost everywhere on the closed interval.
+* `TauCeti.intervalIntegral.hasDerivWithinAt_and_contDiffOn_of_forall_eq_add_integral`: a
+  continuous velocity gives an everywhere within derivative and C¹ regularity of the integral path.
 * `TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le`: integration by parts
   between a `C¹` scalar function `φ : ℝ → 𝕜` (`[RCLike 𝕜]`) and the primitive of an integrable `f`,
   which need not be differentiable anywhere:
@@ -466,6 +475,71 @@ theorem integral_deriv_smul_primitive_eq_sub_of_le {𝕜 : Type*} [RCLike 𝕜] 
     _root_.intervalIntegral.integral_sub ?_ ?_, _root_.intervalIntegral.integral_smul]
   · exact hf.smul (φ b)
   · exact hf.continuousOn_smul hφ.continuous.continuousOn
+
+omit [CompleteSpace E] in
+/-- Almost everywhere equal functions on a closed interval have equal integrals from its
+left endpoint to any point of the interval. -/
+theorem integral_eq_of_ae_eq_Icc {a b s : ℝ} {f g : ℝ → E}
+    (hfg : f =ᵐ[volume.restrict (Icc a b)] g) (hs : s ∈ Icc a b) :
+    (∫ r in a..s, f r) = ∫ r in a..s, g r := by
+  apply _root_.intervalIntegral.integral_congr_ae_restrict
+  rw [uIoc_of_le hs.1]
+  exact ae_mono (Measure.restrict_mono
+    (Ioc_subset_Icc_self.trans (Icc_subset_Icc_right hs.2)) le_rfl) hfg
+
+omit [CompleteSpace E] in
+/-- A function equal on an interval to a constant plus the primitive of an integrable
+function is continuous there. -/
+theorem continuousOn_of_forall_eq_add_integral (hab : a ≤ b) (u : ℝ → E)
+    (hw : IntervalIntegrable f volume a b)
+    (hprimitive : ∀ t ∈ Icc a b, u t = u a + ∫ s in a..t, f s) :
+    ContinuousOn u (Icc a b) := by
+  have hc := (continuousOn_const (c := u a)).add
+    (_root_.intervalIntegral.continuousOn_primitive_interval' hw left_mem_uIcc)
+  rw [uIcc_of_le hab] at hc
+  exact hc.congr hprimitive
+
+/-- An integrable velocity is the classical derivative almost everywhere of any function
+agreeing with its integral primitive on a closed interval. -/
+theorem ae_hasDerivAt_of_forall_eq_add_integral (hab : a ≤ b) (u : ℝ → E)
+    (hf : IntervalIntegrable f volume a b)
+    (hprimitive : ∀ t ∈ Icc a b, u t = u a + ∫ s in a..t, f s) :
+    ∀ᵐ t ∂volume.restrict (Icc a b), HasDerivAt u (f t) t := by
+  have hFTC := hf.ae_hasDerivAt_integral
+  rw [uIcc_of_le hab] at hFTC
+  have hmem : ∀ᵐ t ∂volume.restrict (Icc a b), t ∈ Ioo a b := by
+    rw [← restrict_Ioo_eq_restrict_Icc]
+    exact ae_restrict_mem measurableSet_Ioo
+  filter_upwards [ae_restrict_of_ae hFTC, hmem] with t ht htI
+  have hd := (ht (Ioo_subset_Icc_self htI) a ⟨le_rfl, hab⟩).const_add (u a)
+  apply hd.congr_of_eventuallyEq
+  filter_upwards [Ioo_mem_nhds htI.1 htI.2] with r hr
+  exact hprimitive r (Ioo_subset_Icc_self hr)
+
+/-- A continuous interval velocity gives an everywhere within derivative and C¹ regularity of
+its integral primitive, including the endpoints. -/
+theorem hasDerivWithinAt_and_contDiffOn_of_forall_eq_add_integral {a b : ℝ} (hab : a < b)
+    (u q : ℝ → E) (hq : ContinuousOn q (Icc a b))
+    (hprimitive : ∀ s ∈ Icc a b, u s = u a + ∫ r in a..s, q r) :
+    (∀ s ∈ Icc a b, HasDerivWithinAt u (q s) (Icc a b) s) ∧
+      ContDiffOn ℝ 1 u (Icc a b) := by
+  have hqint : IntervalIntegrable q volume a b := hq.intervalIntegrable_of_Icc hab.le
+  have hderiv (s : ℝ) (hs : s ∈ Icc a b) :
+      HasDerivWithinAt u (q s) (Icc a b) s := by
+    have : Fact (s ∈ Icc a b) := ⟨hs⟩
+    have hint : IntervalIntegrable q volume a s := hqint.mono_set (by
+      rw [uIcc_of_le hs.1, uIcc_of_le hab.le]
+      exact Icc_subset_Icc_right hs.2)
+    have hd := (_root_.intervalIntegral.integral_hasDerivWithinAt_right
+      (s := Icc a b) (t := Icc a b) hint
+      (hq.stronglyMeasurableAtFilter_nhdsWithin measurableSet_Icc s) (hq s hs)).const_add
+        (u a)
+    exact hd.congr_of_mem hprimitive hs
+  refine ⟨hderiv, ?_⟩
+  rw [contDiffOn_one_iff_derivWithin (uniqueDiffOn_Icc hab)]
+  refine ⟨fun s hs ↦ (hderiv s hs).differentiableWithinAt, hq.congr ?_⟩
+  intro s hs
+  exact (hderiv s hs).derivWithin (uniqueDiffOn_Icc hab s hs)
 
 end intervalIntegral
 
