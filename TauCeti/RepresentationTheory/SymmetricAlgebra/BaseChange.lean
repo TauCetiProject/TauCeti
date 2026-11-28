@@ -20,17 +20,16 @@ Let `ρ` be a representation of a monoid `G` on an `R`-module `M`, and let `S` b
 extension of the induced action of `G` on `Sym M` with the action induced by the scalar-extended
 representation `ρ.baseChange S`. This file draws the consequences for invariants.
 
-* For a finite acting monoid and a flat `R`-algebra `S`, the invariant subalgebra
-  commutes with scalar extension: `S ⊗[R] Sym(M)^G ≃ Sym(S ⊗[R] M)^G` as `S`-algebras.
+* For a finite acting monoid and a flat extension of commutative rings `R → S`, the invariant
+  subalgebra commutes with scalar extension: `S ⊗[R] Sym(M)^G ≃ Sym(S ⊗[R] M)^G` as `S`-algebras.
   The proof transports
   `Representation.mem_range_lTensor_subtype_iff_fixed_baseChange_of_finite` along the equivariant
   equivalence. The comparison extends the inclusion of invariants and is an algebra map.
 * For a finite group with invertible `#G`, the Reynolds operator commutes with scalar extension
   without flatness: averaging over `G` is a finite sum, so it commutes with `S ⊗[R] -`
   (`Representation.averageMap_baseChange`).
-* Over a field `K`, the dimension of each homogeneous component of the invariant subalgebra does
-  not change under extension to any nontrivial commutative `K`-algebra. Thus the Hilbert series of
-  `Sym(M)^G` is unchanged by extending scalars, for instance from `ℚ` to `ℝ` or from `ℝ` to `ℂ`.
+* For a finite group, the finrank of each homogeneous component of the invariant subalgebra over
+  a field `K` is unchanged under extension to a nontrivial commutative `K`-algebra.
 
 ## Main declarations
 
@@ -39,15 +38,16 @@ representation `ρ.baseChange S`. This file draws the consequences for invariant
 * `Representation.symmetricAlgebraInvariantsBaseChangeMap`: the canonical algebra comparison
   for any monoid action.
 * `Representation.symmetricAlgebraInvariantsBaseChangeMap_bijective_of_free`: the comparison is
-  bijective for any monoid action when the coefficient algebra is free as an `R`-module.
-* `Representation.symmetricAlgebraInvariantsBaseChangeEquiv`: flat scalar extension for a finite
-  acting monoid, as an algebra equivalence.
+  bijective for any monoid action over commutative semirings when `S` is free as an `R`-module.
+* `Representation.symmetricAlgebraInvariantsBaseChangeEquiv`: the comparison as an algebra
+  equivalence for a finite acting monoid and flat scalar extension of commutative rings.
 * `Representation.coe_symmetricAlgebraReynolds_scalarTensorBialgEquiv_tmul`: the Reynolds operator
   commutes with scalar extension.
 * `Representation.symmetricAlgebraReynolds_scalarTensorBialgEquiv`: for flat `S`, the same
   compatibility stated through the invariant-subalgebra equivalence.
 * `Representation.finrank_symmetricAlgebraInvariants_baseChange_inf_homogeneousSubmodule`: the
-  graded dimensions of the invariant subalgebra are invariant under scalar extension of fields.
+  graded finranks for a finite group are preserved by scalar extension from a field to a
+  nontrivial commutative algebra.
 
 ## References
 
@@ -184,9 +184,9 @@ variable [CommRing R] [CommRing S] [Algebra R S] [AddCommMonoid M] [Module R M]
   [Module.Flat R S] [Monoid G] [Finite G]
 variable (ρ : Representation R G M)
 
-/-- **Polynomial invariants commute with flat scalar extension.** For a finite monoid `G` and
-an `R`-algebra `S` flat as an `R`-module, the canonical comparison identifies
-`S ⊗[R] Sym(M)^G` with the invariant algebra of the scalar-extended representation. -/
+/-- For a finite monoid `G` and a flat extension of commutative rings `R → S`, the canonical
+comparison identifies `S ⊗[R] Sym(M)^G` with the invariant algebra of the scalar-extended
+representation. -/
 noncomputable def symmetricAlgebraInvariantsBaseChangeEquiv :
     S ⊗[R] ρ.symmetricAlgebraInvariants ≃ₐ[S] (ρ.baseChange S).symmetricAlgebraInvariants :=
   AlgEquiv.ofBijective _ ⟨ρ.symmetricAlgebraInvariantsBaseChangeMap_injective,
@@ -218,6 +218,15 @@ theorem symmetricAlgebraInvariantsBaseChangeEquiv_symm_apply_baseChangeMap
       (ρ.symmetricAlgebraInvariantsBaseChangeMap (S := S) x) = x := by
   rw [← symmetricAlgebraInvariantsBaseChangeEquiv_apply, AlgEquiv.symm_apply_apply]
 
+/-- The canonical comparison sends the inverse image under the flat equivalence back to the
+original invariant. -/
+@[simp]
+theorem symmetricAlgebraInvariantsBaseChangeMap_apply_equiv_symm
+    (y : (ρ.baseChange S).symmetricAlgebraInvariants) :
+    ρ.symmetricAlgebraInvariantsBaseChangeMap
+      (ρ.symmetricAlgebraInvariantsBaseChangeEquiv.symm y) = y := by
+  rw [← symmetricAlgebraInvariantsBaseChangeEquiv_apply, AlgEquiv.apply_symm_apply]
+
 /-- The inverse of the flat base change of the invariant subalgebra agrees, after inclusion, with
 the inverse of the canonical equivalence `S ⊗[R] Sym M ≃ Sym (S ⊗[R] M)`. -/
 @[simp]
@@ -231,28 +240,20 @@ theorem lTensor_val_symmetricAlgebraInvariantsBaseChangeEquiv_symm
   rw [← coe_symmetricAlgebraInvariantsBaseChangeMap,
     ← symmetricAlgebraInvariantsBaseChangeEquiv_apply, AlgEquiv.apply_symm_apply]
 
-end Invariants
-
-section GroupInvariants
-
-variable [CommRing R] [CommRing S] [Algebra R S] [Group G] [AddCommMonoid M] [Module R M]
-  [Module.Flat R S] [Finite G] (ρ : Representation R G M)
-
-/-- For a finite group and flat scalar extension, every invariant of the scalar extension of
-the induced representation on `Sym M` comes from `S ⊗[R] Sym(M)^G`. -/
+/-- For a finite monoid and a flat extension of commutative rings, every fixed vector of the
+scalar-extended action on `Sym M` comes from the scalar extension of the invariant subalgebra. -/
 theorem exists_lTensor_val_eq_of_mem_invariants_baseChange {y : S ⊗[R] SymmetricAlgebra R M}
-    (hy : y ∈ (ρ.symmetricAlgebra.baseChange S).invariants) :
+    (hy : ∀ g, (ρ.symmetricAlgebra.baseChange S) g y = y) :
     ∃ x : S ⊗[R] ρ.symmetricAlgebraInvariants,
       Algebra.TensorProduct.lTensor (S := S) S ρ.symmetricAlgebraInvariants.val x = y := by
   obtain ⟨x, hx⟩ := (ρ.symmetricAlgebra.mem_range_lTensor_subtype_iff_fixed_baseChange_of_finite
-    ρ.symmetricAlgebraInvariants.toSubmodule ρ.mem_symmetricAlgebraInvariants).2
-    ((mem_invariants _ y).1 hy)
+    ρ.symmetricAlgebraInvariants.toSubmodule ρ.mem_symmetricAlgebraInvariants).2 hy
   refine ⟨x, ?_⟩
   rw [AlgHom.coe_tensorProduct_map_id, LinearMap.baseChange_eq_lTensor]
   rw [Subalgebra.toSubmodule_subtype] at hx
   exact hx
 
-end GroupInvariants
+end Invariants
 
 section Reynolds
 
@@ -313,10 +314,9 @@ private noncomputable def symmetricAlgebraHomogeneousBaseChangeEquiv (n : ℕ) :
       baseChange_apply, LinearMap.baseChange_tmul] at h
     simpa using h
 
-/-- **The Hilbert series of polynomial invariants is unchanged by scalar extension.** For a finite
-group acting on a vector space `M` over a field `K` and a nontrivial commutative `K`-algebra `L`,
-the degree-`n` part of the invariant subalgebra of `Sym (L ⊗[K] M)` has the same dimension over
-`L` as the degree-`n` part of `Sym(M)^G` has over `K`. -/
+/-- For a finite group acting on a vector space `M` over a field `K` and a nontrivial commutative
+`K`-algebra `L`, the degree-`n` invariants of `Sym (L ⊗[K] M)` have the same finrank over `L`
+as the degree-`n` invariants of `Sym M` have over `K`. -/
 theorem finrank_symmetricAlgebraInvariants_baseChange_inf_homogeneousSubmodule (n : ℕ) :
     Module.finrank L ↥(Subalgebra.toSubmodule (ρ.baseChange L).symmetricAlgebraInvariants ⊓
         homogeneousSubmodule L (L ⊗[K] M) n) =

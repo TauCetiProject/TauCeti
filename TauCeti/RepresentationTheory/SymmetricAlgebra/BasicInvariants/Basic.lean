@@ -71,6 +71,12 @@ theorem IsBasicInvariants.aevalEquiv_symm_aeval (h : ρ.IsBasicInvariants f d)
     (p : MvPolynomial ι R) : h.aevalEquiv.symm (aeval f p) = p := by
   rw [← h.aevalEquiv_apply, AlgEquiv.symm_apply_apply]
 
+/-- Evaluating the inverse polynomial presentation recovers the invariant. -/
+@[simp]
+theorem IsBasicInvariants.aeval_aevalEquiv_symm (h : ρ.IsBasicInvariants f d)
+    (y : ρ.symmetricAlgebraInvariants) : aeval f (h.aevalEquiv.symm y) = y := by
+  rw [← h.aevalEquiv_apply, AlgEquiv.apply_symm_apply]
+
 /-- The inverse presentation sends a basic invariant to its corresponding variable. -/
 @[simp]
 theorem IsBasicInvariants.aevalEquiv_symm_apply_generator (h : ρ.IsBasicInvariants f d) (i : ι) :

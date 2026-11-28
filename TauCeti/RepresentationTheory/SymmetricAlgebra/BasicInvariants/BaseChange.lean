@@ -16,9 +16,9 @@ import TauCeti.RingTheory.TensorProduct.MvPolynomial
 `Representation.IsBasicInvariants.baseChange_of_bijective` transports a system of basic
 invariants and its degrees along a bijective invariant-algebra comparison.
 `Representation.IsBasicInvariants.baseChange_of_free` applies when the coefficient algebra
-is free as a module, and `Representation.IsBasicInvariants.baseChange` applies to flat scalar
-extension for a finite acting monoid. The polynomial presentation is transported using
-`MvPolynomial.algebraTensorAlgEquiv`.
+is free over the base commutative semiring, and `Representation.IsBasicInvariants.baseChange`
+applies to flat extensions of commutative rings for a finite acting monoid. The polynomial
+presentation is transported using `MvPolynomial.algebraTensorAlgEquiv`.
 -/
 
 public section
@@ -72,8 +72,8 @@ end CommSemiring
 variable [CommRing R] [CommRing S] [Algebra R S] [Monoid G] [Finite G] [AddCommMonoid M]
   [Module R M] [Module.Flat R S] {ρ : Representation R G M}
 
-/-- Under flat scalar extension for a finite acting monoid, basic invariants remain basic
-invariants of the same degrees. -/
+/-- Under a flat extension of commutative rings for a finite acting monoid, basic invariants
+remain basic invariants of the same degrees. -/
 theorem IsBasicInvariants.baseChange {f : ι → ρ.symmetricAlgebraInvariants} {d : ι → ℕ}
     (h : ρ.IsBasicInvariants f d) :
     (ρ.baseChange S).IsBasicInvariants
