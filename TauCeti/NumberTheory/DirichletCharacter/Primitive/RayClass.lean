@@ -111,7 +111,8 @@ theorem finitePart_conductor_toPrimitiveRayClassCharacter (ψ : PrimitiveDirichl
     RayClassCharacter.conductor_finitePart_eq_span, MulEquiv.apply_symm_apply, conductor_character]
 
 /-- The absolute norm of the finite conductor of `toPrimitiveRayClassCharacter ψ` is `ψ.level`. -/
-theorem absNorm_conductor_toPrimitiveRayClassCharacter (ψ : PrimitiveDirichletCharacter) :
+theorem absNorm_conductor_finitePart_toPrimitiveRayClassCharacter
+    (ψ : PrimitiveDirichletCharacter) :
     Ideal.absNorm (toPrimitiveRayClassCharacter ψ).conductor.finitePart = ψ.level := by
   rw [finitePart_conductor_toPrimitiveRayClassCharacter,
     RingOfIntegers.absNorm_span_natCast_of_finrank_eq_one (Module.finrank_self ℚ)]
@@ -120,9 +121,10 @@ theorem absNorm_conductor_toPrimitiveRayClassCharacter (ψ : PrimitiveDirichletC
 @[simp]
 theorem level_toPrimitiveRayClassCharacter_symm (η : PrimitiveRayClassCharacter ℚ) :
     ((toPrimitiveRayClassCharacter.symm η).level : ℕ) = Ideal.absNorm η.conductor.finitePart := by
-  have h := finitePart_conductor_toPrimitiveRayClassCharacter (toPrimitiveRayClassCharacter.symm η)
+  have h := absNorm_conductor_finitePart_toPrimitiveRayClassCharacter
+    (toPrimitiveRayClassCharacter.symm η)
   rw [Equiv.apply_symm_apply] at h
-  rw [h, RingOfIntegers.absNorm_span_natCast_of_finrank_eq_one (Module.finrank_self ℚ)]
+  exact h.symm
 
 /-- The real place is omitted from the conductor exactly when the Dirichlet character is even. -/
 @[simp]
@@ -138,7 +140,7 @@ theorem conductor_toPrimitiveRayClassCharacter_of_even (ψ : PrimitiveDirichletC
     (hψ : ψ.character.Even) :
     (toPrimitiveRayClassCharacter ψ).conductor =
       Modulus.spanNat ℚ ψ.level := by
-  simpa only [absNorm_conductor_toPrimitiveRayClassCharacter] using
+  simpa only [absNorm_conductor_finitePart_toPrimitiveRayClassCharacter] using
     eq_spanNat_of_infinitePart_eq_empty
       ((infinitePart_conductor_toPrimitiveRayClassCharacter_eq_empty_iff ψ).mpr hψ)
 
@@ -148,7 +150,7 @@ theorem conductor_toPrimitiveRayClassCharacter_of_not_even (ψ : PrimitiveDirich
     (hψ : ¬ ψ.character.Even) :
     (toPrimitiveRayClassCharacter ψ).conductor =
       ratModulus ψ.level (NeZero.ne (ψ.level : ℕ)) := by
-  simpa only [absNorm_conductor_toPrimitiveRayClassCharacter] using
+  simpa only [absNorm_conductor_finitePart_toPrimitiveRayClassCharacter] using
     eq_ratModulus_of_infinitePart_ne_empty
       ((infinitePart_conductor_toPrimitiveRayClassCharacter_eq_empty_iff ψ).not.mpr hψ)
 
@@ -177,7 +179,8 @@ theorem toPrimitiveRayClassCharacter_inv (ψ : PrimitiveDirichletCharacter) :
 recovers `ψ.character`. -/
 theorem changeLevel_toDirichletCharacter_toPrimitiveRayClassCharacter
     (ψ : PrimitiveDirichletCharacter) :
-    DirichletCharacter.changeLevel (dvd_of_eq (absNorm_conductor_toPrimitiveRayClassCharacter ψ))
+    DirichletCharacter.changeLevel
+      (dvd_of_eq (absNorm_conductor_finitePart_toPrimitiveRayClassCharacter ψ))
       (toPrimitiveRayClassCharacter ψ).character.toDirichletCharacter = ψ.character := by
   let η := (ratDirichletEquiv ψ.level (NeZero.ne (ψ.level : ℕ))).symm ψ.character
   -- Generalize `toPrimitiveRayClassCharacter ψ` to `ξ` with `ξ = of η` because `ξ` appears in the
@@ -205,7 +208,7 @@ theorem toDirichletCharacter_toPrimitiveRayClassCharacter_intCast
     (toPrimitiveRayClassCharacter ψ).character.toDirichletCharacter m = ψ.character m := by
   have hm := (toPrimitiveRayClassCharacter ψ).isPrimitive_toDirichletCharacter
     |>.apply_intCast_eq_primitiveCharacter_of_changeLevel_eq
-      (dvd_of_eq (absNorm_conductor_toPrimitiveRayClassCharacter ψ))
+      (dvd_of_eq (absNorm_conductor_finitePart_toPrimitiveRayClassCharacter ψ))
       (changeLevel_toDirichletCharacter_toPrimitiveRayClassCharacter ψ) m
   exact hm.trans (ψ.isPrimitive.apply_intCast_eq_primitiveCharacter_of_changeLevel_eq
     dvd_rfl (DirichletCharacter.changeLevel_self ψ.character) m).symm
@@ -227,7 +230,7 @@ theorem LFunction_toDirichletCharacter_toPrimitiveRayClassCharacter
     (toPrimitiveRayClassCharacter ψ).character.toDirichletCharacter.LFunction =
       ψ.character.LFunction :=
   DirichletCharacter.LFunction_eq_of_changeLevel_eq
-    (absNorm_conductor_toPrimitiveRayClassCharacter ψ)
+    (absNorm_conductor_finitePart_toPrimitiveRayClassCharacter ψ)
     (changeLevel_toDirichletCharacter_toPrimitiveRayClassCharacter ψ)
 
 /-- The inverse dictionary maps `PrimitiveRayClassCharacter.of η` to the primitive Dirichlet

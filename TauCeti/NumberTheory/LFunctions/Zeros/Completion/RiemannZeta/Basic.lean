@@ -210,17 +210,24 @@ theorem divisor_zetaEntireCompletion_eq_riemannZeta {s : ℂ} (hs : 0 < s.re) (h
       (analyticOn_riemannZeta s hs1) (Set.mem_univ s)]
   simp only [analyticOrderNatAt, analyticOrderAt_zetaEntireCompletion_eq_riemannZeta hs]
 
+/-- On the positive half-plane, `zetaEntireCompletion` and `riemannZeta` have the same positive
+divisor multiplicity (at the pole `1`, both vanish). -/
+theorem toNat_divisor_zetaEntireCompletion_eq_riemannZeta {s : ℂ} (hs : 0 < s.re) :
+    (MeromorphicOn.divisor zetaEntireCompletion Set.univ s).toNat =
+      (MeromorphicOn.divisor riemannZeta Set.univ s).toNat := by
+  rcases eq_or_ne s 1 with rfl | hs1
+  · rw [(differentiable_zetaEntireCompletion.analyticAt 1).divisor_apply_eq_zero (by simp),
+      (meromorphicOn_univ.2 meromorphic_riemannZeta).divisor_apply (Set.mem_univ 1),
+      meromorphicOrderAt_riemannZeta_one]
+    simp
+  · rw [divisor_zetaEntireCompletion_eq_riemannZeta hs hs1]
+
 /-- On any region in the positive half-plane, `zetaEntireCompletion` and `riemannZeta` have the
 same zero count (at the pole `1`, both positive divisor multiplicities vanish). -/
 theorem zeroCount_zetaEntireCompletion_eq_riemannZeta {R : Set ℂ}
     (hR : ∀ s ∈ R, 0 < s.re) :
     zeroCount zetaEntireCompletion Set.univ R = zeroCount riemannZeta Set.univ R :=
-  zeroCount_congr_divisor fun s hs ↦ by
-    rcases eq_or_ne s 1 with rfl | hs1
-    · rw [(differentiable_zetaEntireCompletion.analyticAt 1).divisor_apply_eq_zero (by simp),
-        (meromorphicOn_univ.2 meromorphic_riemannZeta).divisor_apply (Set.mem_univ 1),
-        meromorphicOrderAt_riemannZeta_one]
-      simp
-    · rw [divisor_zetaEntireCompletion_eq_riemannZeta (hR s hs) hs1]
+  zeroCount_congr_divisor_toNat fun s hs ↦
+    toNat_divisor_zetaEntireCompletion_eq_riemannZeta (hR s hs)
 
 end TauCeti.LFunctions

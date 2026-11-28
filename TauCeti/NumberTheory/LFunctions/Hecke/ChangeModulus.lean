@@ -17,9 +17,12 @@ public import TauCeti.NumberTheory.LFunctions.Hecke.Basic
 Inducing a ray class character deletes finitely many Euler factors. Their correction is entire
 and nonvanishing off `Re s = 0`. Thus wherever the correction is nonzero (in particular at every
 point off the imaginary axis), changing the presentation preserves the meromorphic order, divisor,
-and zero count, including at a pole. In particular, a zero-free right half-plane can be checked at
-the primitive conductor. For a trivial character this reduces to Dedekind zeta, both as punctured
-germs everywhere (`heckeLFunctionC_one_eventuallyEq`) and for zero-free right half-planes.
+signed divisor count, and zero count, including at a pole. In particular, a zero-free right
+half-plane with nonnegative threshold can be checked at the primitive conductor. For a trivial
+character at an arbitrary modulus, the punctured germs everywhere agree with Dedekind zeta times
+the finite Euler correction (`heckeLFunctionC_one_eventuallyEq`, reducing to `dedekindZetaC K` at
+`Modulus.one K`), and zero-freeness on right half-planes with nonnegative threshold reduces to
+`dedekindZetaC K`.
 -/
 
 public section
@@ -87,12 +90,32 @@ theorem divisor_heckeLFunctionC_induced_of_re_ne_zero (h : 𝔪 ∣ 𝔫) (χ : 
     (χ.eulerCorrection_ne_zero 𝔫 hs)
 
 /-- On any region `R` and divisor domain `U` such that the deleted Euler correction is nonzero on
+`R ∩ U`, inducing does not change the signed divisor count of `heckeLFunctionC`. -/
+theorem divisorCount_heckeLFunctionC_induced_of_eulerCorrection_ne_zero (h : 𝔪 ∣ 𝔫)
+    (χ : RayClassCharacter 𝔪) {U R : Set ℂ} (hR : ∀ s ∈ R ∩ U, χ.eulerCorrection 𝔫 s ≠ 0) :
+    divisorCount (heckeLFunctionC (χ.induced h)) U R =
+      divisorCount (heckeLFunctionC χ) U R :=
+  divisorCount_congr_divisor fun s hsR ↦ by
+    by_cases hsU : s ∈ U
+    · rw [divisor_heckeLFunctionC_induced_of_eulerCorrection_ne_zero h χ U (hR s ⟨hsR, hsU⟩)]
+    · simp only [Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hsU]
+
+/-- On any region `R` and divisor domain `U` whose intersection avoids the imaginary axis, inducing
+does not change the signed divisor count of `heckeLFunctionC`. -/
+theorem divisorCount_heckeLFunctionC_induced_of_re_ne_zero (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪)
+    {U R : Set ℂ} (hR : ∀ s ∈ R ∩ U, s.re ≠ 0) :
+    divisorCount (heckeLFunctionC (χ.induced h)) U R =
+      divisorCount (heckeLFunctionC χ) U R :=
+  divisorCount_heckeLFunctionC_induced_of_eulerCorrection_ne_zero h χ fun s hs ↦
+    χ.eulerCorrection_ne_zero 𝔫 (hR s hs)
+
+/-- On any region `R` and divisor domain `U` such that the deleted Euler correction is nonzero on
 `R ∩ U`, inducing does not change the zero count of `heckeLFunctionC`. -/
 theorem zeroCount_heckeLFunctionC_induced_of_eulerCorrection_ne_zero (h : 𝔪 ∣ 𝔫)
     (χ : RayClassCharacter 𝔪) {U R : Set ℂ} (hR : ∀ s ∈ R ∩ U, χ.eulerCorrection 𝔫 s ≠ 0) :
     zeroCount (heckeLFunctionC (χ.induced h)) U R =
       zeroCount (heckeLFunctionC χ) U R :=
-  zeroCount_congr_divisor fun s hsR ↦ by
+  zeroCount_congr_divisor_toNat fun s hsR ↦ by
     by_cases hsU : s ∈ U
     · rw [divisor_heckeLFunctionC_induced_of_eulerCorrection_ne_zero h χ U (hR s ⟨hsR, hsU⟩)]
     · simp only [Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hsU]

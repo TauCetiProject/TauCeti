@@ -101,10 +101,12 @@ theorem eulerCorrection_character_of {𝔪 : Modulus ℚ} (η : RayClassCharacte
   refine Finset.prod_congr ?_ fun p _ ↦ by simp only [toDirichletCharacter_of_natCast]
   rw [conductor_of, ← RayClassCharacter.conductor_toDirichletCharacter]
 
-/-- For a primitive Dirichlet bundle `ψ`, the deleted Euler correction from
-`toPrimitiveRayClassCharacter ψ` to any modulus `𝔫` of `ℚ` is the product of
+/-- For a primitive Dirichlet bundle `ψ`, `eulerCorrection` of
+`(toPrimitiveRayClassCharacter ψ).character` evaluated at any modulus `𝔫` of `ℚ` is the product of
 `1 - ψ.character p * p ^ (-s)` over
-`p ∈ (Ideal.absNorm 𝔫.finitePart).primeFactors \ ψ.level.primeFactors`. -/
+`p ∈ (Ideal.absNorm 𝔫.finitePart).primeFactors \ ψ.level.primeFactors`. When the conductor of
+`toPrimitiveRayClassCharacter ψ` divides `𝔫`, this represents the deleted Euler factors under
+induction. -/
 theorem eulerCorrection_toPrimitiveRayClassCharacter (ψ : PrimitiveDirichletCharacter)
     (𝔫 : Modulus ℚ) (s : ℂ) :
     (PrimitiveDirichletCharacter.toPrimitiveRayClassCharacter ψ).character.eulerCorrection 𝔫 s =
@@ -114,7 +116,7 @@ theorem eulerCorrection_toPrimitiveRayClassCharacter (ψ : PrimitiveDirichletCha
   refine Finset.prod_congr ?_ fun p _ ↦ by
     simp only [
       PrimitiveDirichletCharacter.toDirichletCharacter_toPrimitiveRayClassCharacter_natCast]
-  rw [PrimitiveDirichletCharacter.absNorm_conductor_toPrimitiveRayClassCharacter]
+  rw [PrimitiveDirichletCharacter.absNorm_conductor_finitePart_toPrimitiveRayClassCharacter]
 
 end LFunctions.PrimitiveRayClassCharacter
 

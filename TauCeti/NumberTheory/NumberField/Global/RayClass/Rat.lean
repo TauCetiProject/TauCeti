@@ -14,6 +14,7 @@ import Mathlib.NumberTheory.NumberField.Units.Basic
 import TauCeti.Algebra.Group.Subgroup.ZPowers
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Integral
+import TauCeti.NumberTheory.NumberField.Ideal.DegreeOne
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.IntCast
 
@@ -422,8 +423,8 @@ theorem two_mul_card_rayClassGroup_spanNat_rat [NeZero n] (h2 : 2 < n) :
 -- Not a `simp` lemma: `ratModulus_finitePart` and `Ideal.absNorm_span_singleton` rewrite the LHS.
 theorem absNorm_ratModulus_finitePart (n : ℕ) (hn : n ≠ 0) :
     Ideal.absNorm (ratModulus n hn).finitePart = n := by
-  rw [ratModulus_finitePart, Ideal.absNorm_span_natCast, NumberField.RingOfIntegers.rank,
-    Module.finrank_self, pow_one]
+  rw [ratModulus_finitePart,
+    RingOfIntegers.absNorm_span_natCast_of_finrank_eq_one (Module.finrank_self ℚ)]
 
 /-- The finite part of `Modulus.spanNat ℚ n` has absolute norm `n`. -/
 -- Not a `simp` lemma: `Modulus.spanNat_finitePart` and `Ideal.absNorm_span_singleton` rewrite
@@ -482,23 +483,28 @@ theorem isPrimeTo_span_natCast_support_iff {𝔪 : Modulus ℚ} {m : ℕ} (hm : 
   rw [← ratModulus_absNorm_support 𝔪]
   refine (Ideal.isPrimeTo_iff.trans <| Modulus.isCoprimeTo_iff.symm.trans <|
     isCoprimeTo_ratModulus_iff hbot).trans ?_
-  rw [Ideal.absNorm_span_natCast, NumberField.RingOfIntegers.rank, Module.finrank_self, pow_one]
+  rw [RingOfIntegers.absNorm_span_natCast_of_finrank_eq_one (Module.finrank_self ℚ)]
 
 /-- A modulus of `ℚ` with empty infinite part is `Modulus.spanNat ℚ N` for the absolute norm `N`
 of its finite part. -/
 theorem eq_spanNat_of_infinitePart_eq_empty {𝔪 : Modulus ℚ}
     (h : 𝔪.infinitePart = ∅) :
-    𝔪 = Modulus.spanNat ℚ (Ideal.absNorm 𝔪.finitePart) :=
-  Modulus.ext (Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart).symm h
+    𝔪 = Modulus.spanNat ℚ (Ideal.absNorm 𝔪.finitePart) := by
+  refine Modulus.ext ?_ ?_
+  · simpa only [Modulus.spanNat_finitePart] using
+      (Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart).symm
+  · simpa only [Modulus.spanNat_infinitePart] using h
 
 /-- A modulus of `ℚ` with nonempty infinite part is `ratModulus N` for the absolute norm `N` of
 its finite part, since `ℚ` has a unique infinite place. -/
 theorem eq_ratModulus_of_infinitePart_ne_empty {𝔪 : Modulus ℚ}
     (h : 𝔪.infinitePart ≠ ∅) :
     𝔪 = ratModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _) := by
-  refine Modulus.ext (Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart).symm ?_
-  obtain ⟨w, hw⟩ := Finset.ne_empty_iff_nonempty.mp h
-  rw [ratModulus_infinitePart, Subsingleton.elim ⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩ w]
-  exact Finset.coe_eq_singleton.mp (Set.subsingleton_of_subsingleton.eq_singleton_of_mem hw)
+  refine Modulus.ext ?_ ?_
+  · simpa only [ratModulus_finitePart] using
+      (Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart).symm
+  · obtain ⟨w, hw⟩ := Finset.ne_empty_iff_nonempty.mp h
+    rw [ratModulus_infinitePart, Subsingleton.elim ⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩ w]
+    exact Finset.coe_eq_singleton.mp (Set.subsingleton_of_subsingleton.eq_singleton_of_mem hw)
 
 end TauCeti.GlobalNumberFields

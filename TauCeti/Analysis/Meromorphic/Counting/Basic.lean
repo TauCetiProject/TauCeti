@@ -244,7 +244,7 @@ theorem divisorCount_congr_divisor {F : Type*} [NormedAddCommGroup F] [NormedSpa
   exact finsum_mem_congr rfl h
 
 /-- Equal positive divisor multiplicities on `R` give equal zero counts on `R`. -/
-theorem zeroCount_congr_divisor {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+theorem zeroCount_congr_divisor_toNat {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
     {g : 𝕜 → F} {V : Set 𝕜}
     (h : ∀ z ∈ R, (MeromorphicOn.divisor f U z).toNat = (MeromorphicOn.divisor g V z).toNat) :
     zeroCount f U R = zeroCount g V R := by

@@ -200,22 +200,30 @@ theorem toNat_divisor_dirichletData_entireCompletion_eq_analyticOrderNatAt
     (hm.analyticAt_entireCompletion s) (Set.mem_univ s), Int.toNat_natCast,
     analyticOrderNatAt_dirichletData_entireCompletion_eq_LFunction χ hχ hs]
 
+/-- On the positive half-plane, a primitive Dirichlet entire completion and its ordinary L-function
+have the same positive divisor multiplicity (including for the principal character at `s = 1`, where
+both vanish). -/
+theorem toNat_divisor_dirichletData_entireCompletion_eq_LFunction {s : ℂ} (hs : 0 < s.re) :
+    (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ s).toNat =
+      (MeromorphicOn.divisor χ.LFunction Set.univ s).toNat := by
+  rcases eq_or_ne χ 1 with rfl | hne
+  · have hN : N = 1 := hχ.eq_one_iff.mp rfl
+    subst hN
+    rw [dirichletData_entireCompletion_eq_zetaEntireCompletion_of_eq_one _ hχ rfl,
+      DirichletCharacter.LFunction_modOne_eq]
+    exact toNat_divisor_zetaEntireCompletion_eq_riemannZeta hs
+  · exact congrArg Int.toNat
+      (divisor_dirichletData_entireCompletion_eq_LFunction χ hχ hs (.inr hne))
+
 /-- On any region in the positive half-plane, a primitive Dirichlet entire completion and its
 ordinary L-function have the same zero count (including for the principal character at `N = 1`,
 where both positive divisor multiplicities vanish at `s = 1`). -/
 theorem zeroCount_dirichletData_entireCompletion_eq_LFunction {R : Set ℂ}
     (hR : ∀ s ∈ R, 0 < s.re) :
     zeroCount (dirichletData χ hχ).entireCompletion Set.univ R =
-      zeroCount χ.LFunction Set.univ R := by
-  rcases eq_or_ne χ 1 with rfl | hne
-  · have hN : N = 1 := hχ.eq_one_iff.mp rfl
-    subst hN
-    rw [dirichletData_entireCompletion_eq_zetaEntireCompletion_of_eq_one _ hχ rfl,
-      DirichletCharacter.LFunction_modOne_eq]
-    exact zeroCount_zetaEntireCompletion_eq_riemannZeta hR
-  · exact zeroCount_congr_divisor fun s hs ↦
-      congrArg Int.toNat
-        (divisor_dirichletData_entireCompletion_eq_LFunction χ hχ (hR s hs) (.inr hne))
+      zeroCount χ.LFunction Set.univ R :=
+  zeroCount_congr_divisor_toNat fun s hs ↦
+    toNat_divisor_dirichletData_entireCompletion_eq_LFunction χ hχ (hR s hs)
 
 /-- On any region `R`, the zero count of a primitive Dirichlet entire completion is the zero count
 of its ordinary L-function on the intersection of `R` with the open critical strip: every zero of
