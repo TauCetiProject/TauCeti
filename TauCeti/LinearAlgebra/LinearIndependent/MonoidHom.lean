@@ -17,7 +17,7 @@ import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 
 Distinct monoid homomorphisms from a monoid `G` into a domain `M` are linearly independent over
 `M`; that is Dedekind's theorem, Mathlib's `linearIndependent_monoidHom`. This file records
-three consequences of it.
+four consequences of it.
 
 The first is a count. When `G` is finite, the homomorphisms are linearly independent vectors of
 the `M`-module `G → M` of rank `#G`, so there are only finitely many of them, and at most `#G`.
@@ -39,6 +39,11 @@ degenerate case is exactly the third disjunct of Mathlib's
 The third is the version for sets: a finite set of homomorphisms is determined by its pointwise
 sum. This is what makes the trace of a character over its Galois orbit determine the orbit.
 
+The fourth is the independence of the sequences of powers `n ↦ μ ^ n` of distinct scalars: the
+weighted power sums `∑ μ ∈ s, μ ^ k * f μ` in all positive degrees `k` determine the weights
+`f μ` of the nonzero `μ`. This is how traces of powers of an operator determine the dimensions of
+its generalized eigenspaces of nonzero eigenvalue.
+
 ## Main results
 
 * `TauCeti.finite_monoidHom`, `TauCeti.natCard_monoidHom_le`, and
@@ -49,6 +54,8 @@ sum. This is what makes the trace of a character over its Galois orbit determine
   `a = c` and `b = d`, or `a = d` and `b = c`.
 * `MonoidHom.finset_eq_of_forall_sum_apply_eq`: two finite sets of homomorphisms with the same
   pointwise sum are equal.
+* `Finset.apply_eq_of_forall_sum_pow_succ_mul_eq`: weightings of a finite set of scalars with the
+  same power sums in all positive degrees agree at the nonzero scalars.
 -/
 
 public section
@@ -124,3 +131,30 @@ theorem finset_eq_of_forall_sum_apply_eq {s t : Finset (G →* M)}
   split_ifs at ha with hs ht ht <;> simp_all
 
 end MonoidHom
+
+namespace Finset
+
+/-- **Power sums over a finite set of scalars determine the weights of the nonzero scalars.** If
+two weightings `f` and `g` of a finite set `s` of elements of a domain `M` have the same weighted
+power sums `∑ μ ∈ s, μ ^ k * f μ` in every positive degree `k`, then they agree at every nonzero
+`μ ∈ s`. This is Dedekind's theorem for the homomorphisms `n ↦ μ ^ n` from `ℕ`: distinct scalars
+have linearly independent sequences of powers. The weight of `0` is invisible in positive
+degrees. -/
+theorem apply_eq_of_forall_sum_pow_succ_mul_eq {M : Type*} [CommRing M] [IsDomain M]
+    (s : Finset M) {f g : M → M}
+    (h : ∀ l : ℕ, ∑ μ ∈ s, μ ^ (l + 1) * f μ = ∑ μ ∈ s, μ ^ (l + 1) * g μ) {μ : M}
+    (hμ : μ ∈ s) (hμ₀ : μ ≠ 0) : f μ = g μ := by
+  have hli := (linearIndependent_monoidHom (Multiplicative ℕ) M).comp (powersHom M)
+    (powersHom M).injective
+  have key := linearIndependent_iff'.mp hli s (fun μ ↦ μ * (f μ - g μ)) ?_ μ hμ
+  · exact sub_eq_zero.mp ((mul_eq_zero.mp key).resolve_left hμ₀)
+  · funext n
+    have hn := sub_eq_zero.mpr (h n.toAdd)
+    rw [← Finset.sum_sub_distrib] at hn
+    simp only [Finset.sum_apply, Pi.smul_apply, Function.comp_apply, powersHom_apply,
+      smul_eq_mul, Pi.zero_apply]
+    rw [← hn]
+    refine Finset.sum_congr rfl fun ν _ ↦ ?_
+    ring
+
+end Finset
