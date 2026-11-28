@@ -405,14 +405,92 @@ theorem spatialDerivFst_zero (j : Fin n) :
   ext p; simp
 
 @[simp]
+theorem spatialDerivFst_add (j : Fin n) (a b : Amplitude n V W m) :
+    spatialDerivFst j (a + b) = spatialDerivFst j a + spatialDerivFst j b := by
+  ext p
+  simp [fderiv_add (a.contDiff_coefficient.differentiable (by simp) p)
+    (b.contDiff_coefficient.differentiable (by simp) p)]
+
+@[simp]
+theorem spatialDerivFst_neg (j : Fin n) (a : Amplitude n V W m) :
+    spatialDerivFst j (-a) = -spatialDerivFst j a := by
+  ext p
+  simp [fderiv_neg]
+
+@[simp]
+theorem spatialDerivFst_sub (j : Fin n) (a b : Amplitude n V W m) :
+    spatialDerivFst j (a - b) = spatialDerivFst j a - spatialDerivFst j b := by
+  ext p
+  simp [fderiv_sub (a.contDiff_coefficient.differentiable (by simp) p)
+    (b.contDiff_coefficient.differentiable (by simp) p)]
+
+@[simp]
+theorem spatialDerivFst_smul (j : Fin n) (c : ℂ) (a : Amplitude n V W m) :
+    spatialDerivFst j (c • a) = c • spatialDerivFst j a := by
+  ext p
+  simp [fderiv_const_smul (a.contDiff_coefficient.differentiable (by simp) p)]
+
+@[simp]
 theorem spatialDerivSnd_zero (j : Fin n) :
     spatialDerivSnd j (0 : Amplitude n V W m) = 0 := by
   ext p; simp
 
 @[simp]
+theorem spatialDerivSnd_add (j : Fin n) (a b : Amplitude n V W m) :
+    spatialDerivSnd j (a + b) = spatialDerivSnd j a + spatialDerivSnd j b := by
+  ext p
+  simp [fderiv_add (a.contDiff_coefficient.differentiable (by simp) p)
+    (b.contDiff_coefficient.differentiable (by simp) p)]
+
+@[simp]
+theorem spatialDerivSnd_neg (j : Fin n) (a : Amplitude n V W m) :
+    spatialDerivSnd j (-a) = -spatialDerivSnd j a := by
+  ext p
+  simp [fderiv_neg]
+
+@[simp]
+theorem spatialDerivSnd_sub (j : Fin n) (a b : Amplitude n V W m) :
+    spatialDerivSnd j (a - b) = spatialDerivSnd j a - spatialDerivSnd j b := by
+  ext p
+  simp [fderiv_sub (a.contDiff_coefficient.differentiable (by simp) p)
+    (b.contDiff_coefficient.differentiable (by simp) p)]
+
+@[simp]
+theorem spatialDerivSnd_smul (j : Fin n) (c : ℂ) (a : Amplitude n V W m) :
+    spatialDerivSnd j (c • a) = c • spatialDerivSnd j a := by
+  ext p
+  simp [fderiv_const_smul (a.contDiff_coefficient.differentiable (by simp) p)]
+
+@[simp]
 theorem frequencyDeriv_zero (j : Fin n) :
     frequencyDeriv j (0 : Amplitude n V W m) = 0 := by
   ext p; simp
+
+@[simp]
+theorem frequencyDeriv_add (j : Fin n) (a b : Amplitude n V W m) :
+    frequencyDeriv j (a + b) = frequencyDeriv j a + frequencyDeriv j b := by
+  ext p
+  simp [fderiv_add (a.contDiff_coefficient.differentiable (by simp) p)
+    (b.contDiff_coefficient.differentiable (by simp) p)]
+
+@[simp]
+theorem frequencyDeriv_neg (j : Fin n) (a : Amplitude n V W m) :
+    frequencyDeriv j (-a) = -frequencyDeriv j a := by
+  ext p
+  simp [fderiv_neg]
+
+@[simp]
+theorem frequencyDeriv_sub (j : Fin n) (a b : Amplitude n V W m) :
+    frequencyDeriv j (a - b) = frequencyDeriv j a - frequencyDeriv j b := by
+  ext p
+  simp [fderiv_sub (a.contDiff_coefficient.differentiable (by simp) p)
+    (b.contDiff_coefficient.differentiable (by simp) p)]
+
+@[simp]
+theorem frequencyDeriv_smul (j : Fin n) (c : ℂ) (a : Amplitude n V W m) :
+    frequencyDeriv j (c • a) = c • frequencyDeriv j a := by
+  ext p
+  simp [fderiv_const_smul (a.contDiff_coefficient.differentiable (by simp) p)]
 
 
 /-! ### Commuting derivatives -/
@@ -1246,6 +1324,29 @@ def diagonal (a : Amplitude n V W m) : Symbol n V W m where
 theorem coefficient_diagonal (a : Amplitude n V W m) (x ξ : CoordinateSpace n) :
     a.diagonal.coefficient (x, ξ) = a.coefficient (x, x, ξ) :=
   (rfl)
+
+@[simp]
+theorem diagonal_zero : (0 : Amplitude n V W m).diagonal = 0 := by
+  ext1; funext ⟨x, ξ⟩; simp
+
+@[simp]
+theorem diagonal_add (a b : Amplitude n V W m) :
+    (a + b).diagonal = a.diagonal + b.diagonal := by
+  ext1; funext ⟨x, ξ⟩; simp
+
+@[simp]
+theorem diagonal_neg (a : Amplitude n V W m) : (-a).diagonal = -a.diagonal := by
+  ext1; funext ⟨x, ξ⟩; simp
+
+@[simp]
+theorem diagonal_sub (a b : Amplitude n V W m) :
+    (a - b).diagonal = a.diagonal - b.diagonal := by
+  ext1; funext ⟨x, ξ⟩; simp
+
+@[simp]
+theorem diagonal_smul (c : ℂ) (a : Amplitude n V W m) :
+    (c • a).diagonal = c • a.diagonal := by
+  ext1; funext ⟨x, ξ⟩; simp
 
 /-- **Leibniz rule in the position** for the restriction to the diagonal. -/
 theorem spatialDeriv_diagonal (j : Fin n) (a : Amplitude n V W m) :

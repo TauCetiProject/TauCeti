@@ -192,6 +192,36 @@ theorem HasProperOutputSupport.exists_isCompact_isClosed_forall_eq_zero {K : X �
   obtain ⟨C, hC, hCc, hCK⟩ := hK.flip.exists_isCompact_isClosed_forall_eq_zero hL
   exact ⟨C, hC, hCc, fun x hx y hy ↦ hCK y hy x hx⟩
 
+/-- If `K` has proper input support and `Y` is weakly locally compact, then every point `x₀ : X`
+has an open neighborhood `U` and a compact set `L ⊆ Y` outside which `K x y = 0` for all
+`x ∈ U`. -/
+theorem HasProperInputSupport.exists_isOpen_isCompact_forall_eq_zero
+    [WeaklyLocallyCompactSpace Y] {K : X → Y → M} (hK : HasProperInputSupport K) (x₀ : X) :
+    ∃ (U : Set X) (L : Set Y), IsOpen U ∧ x₀ ∈ U ∧ IsCompact L ∧
+      ∀ x ∈ U, ∀ y ∉ L, K x y = 0 := by
+  let S := tsupport (uncurry K)
+  have hKp := hasProperInputSupport_iff_isProperMap.mp hK
+  obtain ⟨L, hL, hFL⟩ := exists_compact_superset
+    ((hKp.isCompact_preimage (isCompact_singleton (x := x₀))).image
+      (continuous_snd.comp continuous_subtypeVal))
+  let Z : Set S := (fun p : S ↦ p.val.2) ⁻¹' (interior L)ᶜ
+  have hZc : IsClosed Z :=
+    isOpen_interior.isClosed_compl.preimage (continuous_snd.comp continuous_subtypeVal)
+  refine ⟨((fun p : S ↦ p.val.1) '' Z)ᶜ, L, (hKp.isClosedMap Z hZc).isOpen_compl,
+    fun ⟨p, hpZ, hp1⟩ ↦ hpZ (hFL ⟨p, hp1, rfl⟩), hL, fun x hxU y hyL ↦ ?_⟩
+  exact image_eq_zero_of_notMem_tsupport (f := uncurry K) fun hmem ↦
+    hxU ⟨⟨(x, y), hmem⟩, fun hy_int ↦ hyL (interior_subset hy_int), rfl⟩
+
+/-- If `K` has proper output support and `X` is weakly locally compact, then every point `y₀ : Y`
+has an open neighborhood `V` and a compact set `C ⊆ X` outside which `K x y = 0` for all
+`y ∈ V`. -/
+theorem HasProperOutputSupport.exists_isOpen_isCompact_forall_eq_zero
+    [WeaklyLocallyCompactSpace X] {K : X → Y → M} (hK : HasProperOutputSupport K) (y₀ : Y) :
+    ∃ (V : Set Y) (C : Set X), IsOpen V ∧ y₀ ∈ V ∧ IsCompact C ∧
+      ∀ x ∉ C, ∀ y ∈ V, K x y = 0 := by
+  obtain ⟨V, C, hV, hy₀V, hC, hCK⟩ := hK.flip.exists_isOpen_isCompact_forall_eq_zero y₀
+  exact ⟨V, C, hV, hy₀V, hC, fun x hx y hy ↦ hCK y hy x hx⟩
+
 namespace HasProperOutputSupport
 
 /-- If `K` has proper output support and `u : Y → N` has compact support, there is a compact closed

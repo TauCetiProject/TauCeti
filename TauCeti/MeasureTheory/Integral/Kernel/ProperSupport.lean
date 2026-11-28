@@ -62,33 +62,6 @@ theorem HasProperOutputSupport.hasCompactSupport_integral {X Y 𝕜 V W : Type*}
     · simp [image_eq_zero_of_notMem_tsupport hy]
   simp [hzero]
 
-private theorem exists_open_isCompact_forall_eq_zero {X Y M : Type*} [TopologicalSpace X]
-    [NormedAddCommGroup Y] [TopologicalSpace M] [Zero M] [T1Space M]
-    {K : X → Y → M} (hK : HasProperInputSupport K) (hKc : Continuous (uncurry K))
-    {x₁ : X} {y₁ : Y} (hne : K x₁ y₁ ≠ 0) (x₀ : X) :
-    ∃ (U : Set X) (L : Set Y), IsOpen U ∧ x₀ ∈ U ∧ IsCompact L ∧
-      ∀ x ∈ U, ∀ y ∉ L, K x y = 0 := by
-  obtain ⟨L₁, hL₁, hL₁c, hKL₁⟩ :=
-    hK.exists_isCompact_isClosed_forall_eq_zero (isCompact_singleton (x := x₁))
-  have hc₁ : HasCompactSupport fun y ↦ K x₁ y :=
-    HasCompactSupport.intro' hL₁ hL₁c fun y hy ↦ hKL₁ x₁ rfl y hy
-  have hcont₁ : Continuous fun y ↦ K x₁ y := hKc.comp (continuous_const.prodMk continuous_id)
-  have : LocallyCompactSpace Y :=
-    (hc₁.eq_zero_or_locallyCompactSpace_of_addGroup hcont₁).resolve_left
-      fun h0 ↦ hne (congrFun h0 y₁)
-  let S := tsupport (uncurry K)
-  have hKp := hasProperInputSupport_iff_isProperMap.mp hK
-  obtain ⟨L, hL, hFL⟩ := exists_compact_superset
-    ((hKp.isCompact_preimage (isCompact_singleton (x := x₀))).image
-      (continuous_snd.comp continuous_subtypeVal))
-  let Z : Set S := (fun p : S ↦ p.val.2) ⁻¹' (interior L)ᶜ
-  have hZc : IsClosed Z :=
-    isOpen_interior.isClosed_compl.preimage (continuous_snd.comp continuous_subtypeVal)
-  refine ⟨((fun p : S ↦ p.val.1) '' Z)ᶜ, L, (hKp.isClosedMap Z hZc).isOpen_compl,
-    fun ⟨p, hpZ, hp1⟩ ↦ hpZ (hFL ⟨p, hp1, rfl⟩), hL, fun x hxU y hyL ↦ ?_⟩
-  exact image_eq_zero_of_notMem_tsupport (f := uncurry K) fun hmem ↦
-    hxU ⟨⟨(x, y), hmem⟩, fun hy_int ↦ hyL (interior_subset hy_int), rfl⟩
-
 /-- **Proper input support gives smoothness on arbitrary continuous inputs.** If `K` is `C^n` on
 `X × Y` and has proper input support, where `μ` is finite on compact subsets of `Y`, then
 `x ↦ ∫ y, K x y (u y) ∂μ` is `C^n` for every continuous `u : Y → V` (with no support assumption on
@@ -104,9 +77,17 @@ theorem HasProperInputSupport.contDiff_integral {X Y 𝕜 V W : Type*}
     ContDiff ℝ n fun x ↦ ∫ y, K x y (u y) ∂μ := by
   by_cases hne : ∃ x₁ y₁, K x₁ y₁ ≠ 0
   · obtain ⟨x₁, y₁, hne⟩ := hne
+    obtain ⟨L₁, hL₁, hL₁c, hKL₁⟩ :=
+      hK.exists_isCompact_isClosed_forall_eq_zero (isCompact_singleton (x := x₁))
+    have hc₁ : HasCompactSupport fun y ↦ K x₁ y :=
+      HasCompactSupport.intro' hL₁ hL₁c fun y hy ↦ hKL₁ x₁ rfl y hy
+    have hcont₁ : Continuous fun y ↦ K x₁ y :=
+      hK_diff.continuous.comp (continuous_const.prodMk continuous_id)
+    have : LocallyCompactSpace Y :=
+      (hc₁.eq_zero_or_locallyCompactSpace_of_addGroup hcont₁).resolve_left
+        fun h0 ↦ hne (congrFun h0 y₁)
     refine contDiff_iff_contDiffAt.2 fun x₀ ↦ ?_
-    obtain ⟨U, L, hUo, hx₀U, hL, hKL⟩ :=
-      exists_open_isCompact_forall_eq_zero hK hK_diff.continuous hne x₀
+    obtain ⟨U, L, hUo, hx₀U, hL, hKL⟩ := hK.exists_isOpen_isCompact_forall_eq_zero x₀
     have : CompactSpace L := isCompact_iff_compactSpace.mp hL
     have hmeasL : MeasurableSet L := hL.isClosed.measurableSet
     let μL : Measure L := μ.comap Subtype.val

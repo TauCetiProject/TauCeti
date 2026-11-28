@@ -18,15 +18,7 @@ input support, proper output support, or proper support, despite its rapid off-d
 
 public section
 
-open Function Set
-
 namespace TauCeti
-
-private theorem tsupport_exp_neg_norm_sub_sq {E : Type*} [SeminormedAddCommGroup E] :
-    tsupport (uncurry fun x y : E ↦ Real.exp (-‖x - y‖ ^ 2)) = univ := by
-  have hsup : Function.support (uncurry fun x y : E ↦ Real.exp (-‖x - y‖ ^ 2)) = univ :=
-    eq_univ_iff_forall.2 fun ⟨x, y⟩ ↦ mem_support.2 (by simp [Real.exp_ne_zero])
-  rw [tsupport, hsup, closure_univ]
 
 /-- On any noncompact seminormed additive group (for instance any nontrivial real normed space),
 the Gaussian kernel `(x, y) ↦ exp (-‖x - y‖²)` does not have proper input support. -/
@@ -34,7 +26,8 @@ theorem not_hasProperInputSupport_exp_neg_norm_sub_sq {E : Type*} [SeminormedAdd
     [NoncompactSpace E] :
     ¬HasProperInputSupport fun x y : E ↦ Real.exp (-‖x - y‖ ^ 2) := by
   have : Nonempty E := ⟨0⟩
-  exact not_hasProperInputSupport_of_tsupport_eq_univ tsupport_exp_neg_norm_sub_sq
+  exact not_hasProperInputSupport_of_tsupport_eq_univ
+    (tsupport_eq_univ_of_forall_ne_zero fun _ ↦ Real.exp_ne_zero _)
 
 /-- On any noncompact seminormed additive group (for instance any nontrivial real normed space),
 the Gaussian kernel `(x, y) ↦ exp (-‖x - y‖²)` does not have proper output support. -/
@@ -42,7 +35,8 @@ theorem not_hasProperOutputSupport_exp_neg_norm_sub_sq {E : Type*} [SeminormedAd
     [NoncompactSpace E] :
     ¬HasProperOutputSupport fun x y : E ↦ Real.exp (-‖x - y‖ ^ 2) := by
   have : Nonempty E := ⟨0⟩
-  exact not_hasProperOutputSupport_of_tsupport_eq_univ tsupport_exp_neg_norm_sub_sq
+  exact not_hasProperOutputSupport_of_tsupport_eq_univ
+    (tsupport_eq_univ_of_forall_ne_zero fun _ ↦ Real.exp_ne_zero _)
 
 /-- On any noncompact seminormed additive group (for instance any nontrivial real normed space),
 the Gaussian kernel `(x, y) ↦ exp (-‖x - y‖²)` is not properly supported, despite its rapid
@@ -51,6 +45,7 @@ theorem not_hasProperSupport_exp_neg_norm_sub_sq {E : Type*} [SeminormedAddCommG
     [NoncompactSpace E] :
     ¬HasProperSupport fun x y : E ↦ Real.exp (-‖x - y‖ ^ 2) := by
   have : Nonempty E := ⟨0⟩
-  exact not_hasProperSupport_of_tsupport_eq_univ tsupport_exp_neg_norm_sub_sq
+  exact not_hasProperSupport_of_tsupport_eq_univ
+    (tsupport_eq_univ_of_forall_ne_zero fun _ ↦ Real.exp_ne_zero _)
 
 end TauCeti

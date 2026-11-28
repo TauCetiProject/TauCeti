@@ -41,6 +41,8 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
   `TauCeti.mulTSupport_subset_of_forall_notMem_eq_one`.
 * `TauCeti.mulTSupport_const` and `TauCeti.tsupport_const`: the topological support of a
   non-unit / nonzero constant function is `Set.univ`.
+* `TauCeti.mulTSupport_eq_univ_of_forall_ne_one` and `TauCeti.tsupport_eq_univ_of_forall_ne_zero`:
+  the topological support of a function never equal to `1` / `0` is `Set.univ`.
 * `TauCeti.mulTSupport_uncurry_flip` and `TauCeti.tsupport_uncurry_flip`: flipping the arguments
   of a binary function pulls back its topological support along `Prod.swap`.
 * `TauCeti.disjoint_tsupport_iff_eventuallyEq`: a set is disjoint from the topological support of
@@ -127,6 +129,13 @@ theorem mulTSupport_subset_of_forall_notMem_eq_one {Y M : Type*} [TopologicalSpa
 theorem mulTSupport_const {Y M : Type*} [TopologicalSpace Y] [One M] {c : M} (hc : c ≠ 1) :
     mulTSupport (fun _ : Y ↦ c) = Set.univ := by
   rw [mulTSupport, Function.mulSupport_const hc, closure_univ]
+
+/-- The topological multiplicative support of a function never taking the value `1` is the whole
+space. -/
+@[to_additive /-- The topological support of a nowhere-vanishing function is the whole space. -/]
+theorem mulTSupport_eq_univ_of_forall_ne_one {Y M : Type*} [TopologicalSpace Y] [One M]
+    {f : Y → M} (hf : ∀ y, f y ≠ 1) : mulTSupport f = Set.univ := by
+  rw [mulTSupport, Function.mulSupport_eq_univ hf, closure_univ]
 
 /-- The topological multiplicative support of `Function.uncurry (_root_.flip K)` is the preimage
 under `Prod.swap` of the topological multiplicative support of `Function.uncurry K`. -/
