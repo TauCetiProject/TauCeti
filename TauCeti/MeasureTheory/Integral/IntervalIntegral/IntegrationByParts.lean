@@ -53,17 +53,6 @@ theorem integral_comp_sq_mul {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (g : ℝ 
     (by fun_prop) (fun x _ => by simpa using hasDerivAt_pow 2 x) fun x hx => by
       linarith [(le_min ha hb).trans_lt hx.1]
 
-private theorem continuousOn_const_div_of_notMem {a b c : ℝ} (h0 : (0 : ℝ) ∉ uIcc a b) :
-    ContinuousOn (fun t : ℝ ↦ c / t) (uIcc a b) :=
-  continuousOn_const.div continuousOn_id fun _ ht h ↦ h0 (h ▸ ht)
-
-private theorem hasDerivAt_const_div_of_mem_Ioo {a b c : ℝ} (h0 : (0 : ℝ) ∉ uIcc a b) :
-    ∀ t ∈ Ioo (min a b) (max a b), HasDerivAt (fun t : ℝ ↦ c / t) (-c / t ^ 2) t := by
-  intro t ht
-  have ht0 : t ≠ 0 := fun h ↦ h0 (h ▸ Ioo_subset_Icc_self ht)
-  refine ((hasDerivAt_const t c).div (hasDerivAt_id' t) ht0).congr_deriv ?_
-  ring
-
 private theorem neg_div_sq_smul_comp_div_eq {E : Type*} [AddCommGroup E] [Module ℝ E]
     (c : ℝ) (f : ℝ → E) :
     (fun t : ℝ ↦ (-c / t ^ 2) • (f ∘ fun t ↦ c / t) t) =
@@ -77,8 +66,11 @@ theorem intervalIntegrable_div_sq_smul_comp_div_iff {E : Type*} [NormedAddCommGr
     [NormedSpace ℝ E] {a b c : ℝ} (h0 : (0 : ℝ) ∉ uIcc a b) (f : ℝ → E) :
     IntervalIntegrable (fun t ↦ (c / t ^ 2) • f (c / t)) volume a b ↔
       IntervalIntegrable f volume (c / b) (c / a) := by
-  have hcont := continuousOn_const_div_of_notMem (c := c) h0
-  have hderiv := hasDerivAt_const_div_of_mem_Ioo (c := c) h0
+  have hcont : ContinuousOn (fun t : ℝ ↦ c / t) (uIcc a b) :=
+    continuousOn_const.div continuousOn_id fun _ ht h ↦ h0 (h ▸ ht)
+  have hderiv : ∀ t ∈ Ioo (min a b) (max a b), HasDerivAt (fun t : ℝ ↦ c / t) (-c / t ^ 2) t :=
+    fun t ht ↦ ((hasDerivAt_const t c).div (hasDerivAt_id' t)
+      fun h ↦ h0 (h ▸ Ioo_subset_Icc_self ht)).congr_deriv (by ring)
   have hneg :
       (IntervalIntegrable (fun t ↦ (-c / t ^ 2) • (f ∘ fun t ↦ c / t) t) volume a b ↔
           IntervalIntegrable (fun t ↦ (c / t ^ 2) • f (c / t)) volume a b) := by
@@ -99,8 +91,11 @@ theorem intervalIntegrable_div_sq_smul_comp_div_iff {E : Type*} [NormedAddCommGr
 theorem integral_div_sq_smul_comp_div {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {a b c : ℝ} (h0 : (0 : ℝ) ∉ uIcc a b) (f : ℝ → E) :
     ∫ t in a..b, (c / t ^ 2) • f (c / t) = ∫ u in c / b..c / a, f u := by
-  have hcont := continuousOn_const_div_of_notMem (c := c) h0
-  have hderiv := hasDerivAt_const_div_of_mem_Ioo (c := c) h0
+  have hcont : ContinuousOn (fun t : ℝ ↦ c / t) (uIcc a b) :=
+    continuousOn_const.div continuousOn_id fun _ ht h ↦ h0 (h ▸ ht)
+  have hderiv : ∀ t ∈ Ioo (min a b) (max a b), HasDerivAt (fun t : ℝ ↦ c / t) (-c / t ^ 2) t :=
+    fun t ht ↦ ((hasDerivAt_const t c).div (hasDerivAt_id' t)
+      fun h ↦ h0 (h ▸ Ioo_subset_Icc_self ht)).congr_deriv (by ring)
   have hneg :
       ∫ t in a..b, (-c / t ^ 2) • (f ∘ fun t ↦ c / t) t =
         -∫ t in a..b, (c / t ^ 2) • f (c / t) := by

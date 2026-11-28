@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.NumberTheory.Explicit.MultiplicativeFunctions.Moebius.Basic
 import Mathlib.Algebra.Order.Floor.Semifield
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts

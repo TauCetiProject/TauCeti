@@ -27,8 +27,6 @@ in Euler–Maclaurin type estimates.
 * `Int.hasDerivAt_fract`: at every non-integer real `t`, `fract` has derivative `1`.
 * `Int.abs_fract_sq_sub_fract_le`: `|fract t ^ 2 - fract t| ≤ 1 / 4`.
 * `Int.fract_sub_fract_sq_nonneg`, `Int.fract_sub_fract_sq_le`: `0 ≤ fract t - fract t ^ 2 ≤ 1 / 4`.
-* `Int.abs_two_fract_sub_one_mul_add_fract_sub_fract_sq_le`:
-  `|(2 fract t - 1) t + fract t - fract t ^ 2| ≤ t` for `t ≥ 0`.
 -/
 
 public section
@@ -86,18 +84,5 @@ theorem fract_sub_fract_sq_nonneg (t : ℝ) : 0 ≤ fract t - fract t ^ 2 := by
 /-- `fract t - fract t ^ 2 ≤ 1 / 4`, with equality at half-integers. -/
 theorem fract_sub_fract_sq_le (t : ℝ) : fract t - fract t ^ 2 ≤ 1 / 4 := by
   nlinarith [sq_nonneg (fract t - 1 / 2)]
-
-/-- For `t ≥ 0`, `|(2 {t} - 1) t + {t} - {t}²| ≤ t`. -/
-theorem abs_two_fract_sub_one_mul_add_fract_sub_fract_sq_le {t : ℝ} (ht : 0 ≤ t) :
-    |(2 * fract t - 1) * t + fract t - fract t ^ 2| ≤ t := by
-  have h0 := fract_nonneg t
-  have h1 := fract_lt_one t
-  rw [abs_le]
-  constructor
-  · nlinarith
-  · rcases lt_or_ge t 1 with ht1 | ht1
-    · rw [fract_eq_self.mpr ⟨ht, ht1⟩]
-      nlinarith
-    · nlinarith
 
 end Int

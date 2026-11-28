@@ -27,6 +27,7 @@ series (`hasSum_one_div_nat_pow_mul_cos`, `hasSum_one_div_nat_pow_mul_fourier`, 
 * `TauCeti.bernoulliFun_eval_add_one`: the difference equation
   `B_k(x + 1) = B_k(x) + k x^(k-1)`.
 * `TauCeti.bernoulliFun_three`, `TauCeti.bernoulliFun_four`: explicit formulas for `B₃` and `B₄`.
+* `TauCeti.periodic_bernoulliFun_fract`: for every `k : ℕ`, `x ↦ B_k({x})` is `1`-periodic.
 * `TauCeti.continuous_bernoulliFun_fract`: for `k ≠ 1`, the periodized Bernoulli function
   `x ↦ B_k({x})` is continuous on `ℝ`.
 * `TauCeti.hasDerivAt_bernoulliFun_fract`: at every non-integer `t : ℝ`, `u ↦ B_k({u})` has
@@ -107,6 +108,11 @@ theorem bernoulliFun_four (x : ℝ) :
     Finset.sum_empty, zero_add]
   norm_num [Nat.choose]
   ring
+
+/-- For every `k : ℕ`, the periodized Bernoulli function `x ↦ B_k({x})` is `1`-periodic. -/
+theorem periodic_bernoulliFun_fract (k : ℕ) :
+    Function.Periodic (fun x : ℝ ↦ bernoulliFun k (Int.fract x)) 1 :=
+  fun x ↦ by simp [Int.fract_add_one]
 
 /-- For `k ≠ 1`, the periodized Bernoulli function `x ↦ B_k({x})` is continuous on `ℝ`. -/
 theorem continuous_bernoulliFun_fract {k : ℕ} (hk : k ≠ 1) :
