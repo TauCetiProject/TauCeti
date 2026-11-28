@@ -9,9 +9,9 @@ public import Mathlib.GroupTheory.Torsion
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RingTheory.AdicCompletion.Basic
-import Mathlib.Data.Nat.Factors
 import Mathlib.RingTheory.AdicCompletion.Noetherian
 import Mathlib.RingTheory.ZMod
+import TauCeti.Data.Nat.Pow
 import TauCeti.GroupTheory.Torsion
 import TauCeti.LinearAlgebra.Matrix.IdealEntries
 import TauCeti.NumberTheory.Padics.PadicIntegers
@@ -36,26 +36,30 @@ The bound on the modulus is sharp: `-1 ∈ GL 1 ℤ` has order `2` and reduces t
   the regularity and separatedness hypotheses above.
 * `Matrix.GeneralLinearGroup.domRestrict_map_injective`,
   `Matrix.GeneralLinearGroup.natCard_le_natCard_map`: under the same hypotheses,
-  `GL n R → GL n S` is injective on every torsion subgroup. In particular, if `GL n S` is finite,
-  a finite subgroup of `GL n R` has at most `|GL n S|` elements.
+  `GL n R → GL n S` is injective on every torsion subgroup. If `GL n S` is finite, its cardinality
+  bounds `Nat.card G` for every subgroup `G` of `GL n R`. For finite `G`, this bounds its size.
+* `Matrix.GeneralLinearGroup.isMulTorsionFree_ker_map_toZModPow`,
+  `Matrix.GeneralLinearGroup.domRestrict_map_toZModPow_injective`: reduction of `GL n ℤ_[p]`
+  modulo `p ^ k ≥ 3` has torsion-free kernel and is injective on torsion subgroups.
 * `Matrix.GeneralLinearGroup.isMulTorsionFree_ker_map_toZMod`,
-  `Matrix.GeneralLinearGroup.injective_domRestrict_map_toZMod`: the first congruence subgroup of
-  `GL n ℤ_[ℓ]` is torsion-free, and reduction `GL n ℤ_[ℓ] → GL n (ZMod ℓ)` is injective on every
-  finite subgroup.
+  `Matrix.GeneralLinearGroup.domRestrict_map_toZMod_injective`: for an odd prime `p`, reduction
+  `GL n ℤ_[p] → GL n (ZMod p)` has torsion-free kernel and is injective on torsion subgroups.
 * `Matrix.GeneralLinearGroup.eq_one_of_isOfFinOrder_of_map_intCast_eq_one`:
   Minkowski's lemma for every modulus `m ≥ 3`.
 * `Matrix.GeneralLinearGroup.isMulTorsionFree_ker_map_intCast` and
   `Matrix.GeneralLinearGroup.domRestrict_map_intCast_injective`: the corresponding
   torsion-free kernel and injectivity on torsion subgroups.
-* `Matrix.GeneralLinearGroup.natCard_le_natCard_zmod_three`: a finite subgroup of `GL n ℤ` has at
-  most `|GL n (ZMod 3)|` elements.
+* `Matrix.GeneralLinearGroup.natCard_le_natCard_zmod`: for `m ≥ 3`, the cardinality of
+  `GL n (ZMod m)` bounds `Nat.card G` for every subgroup `G` of `GL n ℤ`, and hence the size of
+  each finite subgroup.
 
 ## Implementation notes
 
 Torsion-freeness of the congruence kernel is Serre's lemma
 `TauCeti.eq_one_of_isOfFinOrder_of_pow_dvd_sub_one`, applied in the matrix ring `Matrix n n R`
-with `ℓ ^ k ≥ 3`. The integer case uses `ZMod.ker_intCastRingHom`: every `m ≥ 3` is
-divisible by an odd prime or is a power of `2` greater than or equal to `4`.
+with `ℓ ^ k ≥ 3`. The integer case uses `ZMod.ker_intCastRingHom` and
+`Nat.exists_prime_pow_dvd_of_three_le`. The p-adic case uses `PadicInt.ker_toZModPow` and
+`PadicInt.ker_toZMod`.
 
 ## References
 
@@ -104,22 +108,15 @@ theorem isMulTorsionFree_ker_map {ℓ k : ℕ} (hℓ : ℓ.Prime) (hk : 3 ≤ �
   refine IsMulTorsionFree.of_not_isOfFinOrder ?_
   rintro ⟨g, hg⟩ hne hfin
   refine hne ?_
-  have hgφ : (g : Matrix n n R).map φ = 1 := Matrix.ext fun i j ↦ by
-    simpa only [Matrix.map_apply, Matrix.GeneralLinearGroup.map_apply, Units.val_one]
-      using congrArg (fun u : GL n S ↦ (u : Matrix n n S) i j) (MonoidHom.mem_ker.mp hg)
+  have hgφ : (g : Matrix n n R).map φ = 1 := by
+    simpa only [Units.ext_iff, ← Matrix.ext_iff, Matrix.map_apply,
+      Matrix.GeneralLinearGroup.map_apply, Units.val_one]
+      using MonoidHom.mem_ker.mp hg
   have hgφ' : ((g : Matrix n n R) - 1).map φ = 0 := by
     rw [← RingHom.mapMatrix_apply, map_sub, map_one]
     exact sub_eq_zero.mpr ((RingHom.mapMatrix_apply _ _).trans hgφ)
   have hg1 : (ℓ : Matrix n n R) ^ k ∣ (g : Matrix n n R) - 1 := by
-    let I : Ideal R := Ideal.span {((ℓ : R) ^ k)}
-    have hzero : ((g : Matrix n n R) - 1).map (Ideal.Quotient.mk I) = 0 :=
-      Matrix.forall_mem_ker_iff_map_eq_zero.mp fun i j ↦ by
-        rw [Ideal.mk_ker]
-        exact hφ (Matrix.forall_mem_ker_iff_map_eq_zero.mpr hgφ' i j)
-    obtain ⟨Y, hY⟩ := (Matrix.map_eq_zero_iff_exists_eq_smul (Ideal.mk_ker (I := I))).mp hzero
-    have hscalar : Matrix.scalar n ((ℓ : R) ^ k) = (ℓ : Matrix n n R) ^ k := by
-      rw [map_pow, map_natCast]
-    exact ⟨Y, by rw [hY, ← hscalar, Matrix.scalar_apply, ← Matrix.smul_eq_diagonal_mul]⟩
+    simpa only [map_pow, map_natCast] using Matrix.scalar_dvd_of_map_eq_zero hφ hgφ'
   refine Subtype.ext (Units.ext (TauCeti.eq_one_of_isOfFinOrder_of_pow_dvd_sub_one hℓ ?_ ?_ hk
     (Units.isOfFinOrder_val.mpr ((Subgroup.subtype _).isOfFinOrder hfin)) hg1))
   · simpa using Matrix.isLeftRegular_scalar (n := n) hreg
@@ -136,41 +133,52 @@ theorem domRestrict_map_injective {ℓ k : ℕ} (hℓ : ℓ.Prime) (hk : 3 ≤ �
   (map φ).injective_domRestrict_of_isMulTorsion hG
 
 /-- Under the hypotheses of `Matrix.GeneralLinearGroup.isMulTorsionFree_ker_map`, if `GL n S`
-is finite then a finite subgroup of `GL n R` has at most `|GL n S|` elements. -/
+is finite, its cardinality bounds `Nat.card G` for every subgroup `G` of `GL n R`, and hence
+the size of each finite subgroup. -/
 theorem natCard_le_natCard_map {ℓ k : ℕ} (hℓ : ℓ.Prime) (hk : 3 ≤ ℓ ^ k)
     (hreg : IsSMulRegular R (ℓ : R)) (hsep : IsHausdorff (Ideal.span {(ℓ : R)}) R) (φ : R →+* S)
     (hφ : RingHom.ker φ ≤ Ideal.span {((ℓ : R) ^ k)}) [Finite (GL n S)] (G : Subgroup (GL n R)) :
-    Nat.card G ≤ Nat.card (GL n S) := by
-  cases finite_or_infinite G with
-  | inl _ =>
-    exact Nat.card_le_card_of_injective _
-      (domRestrict_map_injective hℓ hk hreg hsep φ hφ G isMulTorsion_of_finite)
-  | inr _ => simp
+    Nat.card G ≤ Nat.card (GL n S) :=
+  have := isMulTorsionFree_ker_map (n := n) hℓ hk hreg hsep φ hφ
+  (map φ).natCard_le_of_isMulTorsionFree_ker G
 
 section Padic
 
 variable {p : ℕ} [Fact p.Prime]
+
+/-- For a prime `p` and `p ^ k ≥ 3`, the kernel of reduction
+`GL n ℤ_[p] → GL n (ZMod (p ^ k))` is torsion-free. -/
+theorem isMulTorsionFree_ker_map_toZModPow {k : ℕ} (hk : 3 ≤ p ^ k) :
+    IsMulTorsionFree (map (n := n) (PadicInt.toZModPow (p := p) k)).ker :=
+  have hp : p.Prime := Fact.out
+  isMulTorsionFree_ker_map hp hk (.of_ne_zero (by exact_mod_cast hp.ne_zero))
+    inferInstance _ (PadicInt.ker_toZModPow k).le
+
+/-- For a prime `p` and `p ^ k ≥ 3`, reduction `GL n ℤ_[p] → GL n (ZMod (p ^ k))`
+is injective on every torsion subgroup. -/
+theorem domRestrict_map_toZModPow_injective {k : ℕ} (hk : 3 ≤ p ^ k)
+    (G : Subgroup (GL n ℤ_[p])) (hG : IsMulTorsion G) :
+    Function.Injective ((map (PadicInt.toZModPow k)).domRestrict G) :=
+  have := isMulTorsionFree_ker_map_toZModPow (n := n) hk
+  (map _).injective_domRestrict_of_isMulTorsion hG
 
 /-- **The first congruence subgroup of `GL n ℤ_[p]` is torsion-free** for an odd prime `p`: the
 kernel of reduction `GL n ℤ_[p] → GL n (ZMod p)` has no nontrivial element of finite order. -/
 theorem isMulTorsionFree_ker_map_toZMod (hp : Odd p) :
     IsMulTorsionFree (map (n := n) (PadicInt.toZMod : ℤ_[p] →+* ZMod p)).ker := by
   have hprime : p.Prime := Fact.out
-  have hlevel : 3 ≤ p ^ 1 := by
-    have := hprime.two_le
-    obtain ⟨a, ha⟩ := hp
-    simp only [pow_one]
-    omega
+  have hlevel : 3 ≤ p ^ 1 := by simpa only [pow_one] using hprime.odd_iff.mp hp
   refine isMulTorsionFree_ker_map hprime hlevel
     (.of_ne_zero (by exact_mod_cast hprime.ne_zero)) inferInstance _ ?_
   rw [pow_one, PadicInt.ker_toZMod, PadicInt.maximalIdeal_eq_span_p]
 
-/-- **Finite subgroups of `GL n ℤ_[p]` inject modulo `p`** for an odd prime `p`: reduction
-`GL n ℤ_[p] → GL n (ZMod p)` is injective on every finite subgroup. -/
-theorem injective_domRestrict_map_toZMod (hp : Odd p) (G : Subgroup (GL n ℤ_[p])) [Finite G] :
+/-- For an odd prime `p`, reduction `GL n ℤ_[p] → GL n (ZMod p)` is injective on every
+torsion subgroup. -/
+theorem domRestrict_map_toZMod_injective (hp : Odd p) (G : Subgroup (GL n ℤ_[p]))
+    (hG : IsMulTorsion G) :
     Function.Injective ((map (PadicInt.toZMod : ℤ_[p] →+* ZMod p)).domRestrict G) :=
   have := isMulTorsionFree_ker_map_toZMod (n := n) hp
-  (map _).injective_domRestrict_of_isMulTorsion isMulTorsion_of_finite
+  (map _).injective_domRestrict_of_isMulTorsion hG
 
 end Padic
 
@@ -179,16 +187,7 @@ section Int
 /-- The kernel of reduction `GL n ℤ → GL n (ZMod m)` is torsion-free for every `m ≥ 3`. -/
 theorem isMulTorsionFree_ker_map_intCast {m : ℕ} (hm : 3 ≤ m) :
     IsMulTorsionFree (map (n := n) (Int.castRingHom (ZMod m))).ker := by
-  obtain ⟨p, k, hp, hpk, hdvd⟩ : ∃ p k : ℕ, p.Prime ∧ 3 ≤ p ^ k ∧ p ^ k ∣ m := by
-    by_cases h : ∃ p : ℕ, p.Prime ∧ p ∣ m ∧ 3 ≤ p
-    · obtain ⟨p, hp, hpm, hp3⟩ := h
-      exact ⟨p, 1, hp, by simpa only [pow_one] using hp3, by simpa only [pow_one] using hpm⟩
-    · have hm₂ : m = 2 ^ m.primeFactorsList.length :=
-        Nat.eq_prime_pow_of_unique_prime_dvd (by omega) fun {p} hp hpm ↦ by
-          have := hp.two_le
-          have : ¬3 ≤ p := fun hp3 ↦ h ⟨p, hp, hpm, hp3⟩
-          omega
-      exact ⟨2, m.primeFactorsList.length, Nat.prime_two, hm₂ ▸ hm, hm₂ ▸ dvd_rfl⟩
+  obtain ⟨p, k, hp, hpk, hdvd⟩ := Nat.exists_prime_pow_dvd_of_three_le hm
   refine isMulTorsionFree_ker_map hp hpk (.of_ne_zero (by exact_mod_cast hp.ne_zero))
     (.of_isDomain _ (by
       rw [Ne, Ideal.span_singleton_eq_top, Int.isUnit_iff]
@@ -203,9 +202,11 @@ theorem eq_one_of_isOfFinOrder_of_map_intCast_eq_one {m : ℕ} (hm : 3 ≤ m)
     {g : GL n ℤ} (hg : IsOfFinOrder g) (h : map (Int.castRingHom (ZMod m)) g = 1) :
     g = 1 := by
   have := isMulTorsionFree_ker_map_intCast (n := n) hm
-  have hfin : IsOfFinOrder (⟨g, MonoidHom.mem_ker.mpr h⟩ :
-      (map (Int.castRingHom (ZMod m))).ker) := Submonoid.isOfFinOrder_coe.mp hg
-  exact congrArg Subtype.val hfin.eq_one'
+  let K := (map (n := n) (Int.castRingHom (ZMod m))).ker
+  let x : K := ⟨g, MonoidHom.mem_ker.mpr h⟩
+  have hxg : K.subtype x = g := by simp only [Subgroup.coe_subtype, x]
+  have hx : IsOfFinOrder x := K.subtype_injective.isOfFinOrder_iff.mp (hxg.symm ▸ hg)
+  exact hxg.symm.trans ((congrArg K.subtype hx.eq_one').trans (map_one K.subtype))
 
 /-- Reduction modulo `m ≥ 3` is injective on every torsion subgroup of `GL n ℤ`. -/
 theorem domRestrict_map_intCast_injective {m : ℕ} (hm : 3 ≤ m)
@@ -214,18 +215,17 @@ theorem domRestrict_map_intCast_injective {m : ℕ} (hm : 3 ≤ m)
   have := isMulTorsionFree_ker_map_intCast (n := n) hm
   (map _).injective_domRestrict_of_isMulTorsion hG
 
-/-- A finite subgroup of `GL n ℤ` has at most `|GL n (ZMod 3)|` elements, since it embeds into
-`GL n (ZMod 3)` by reduction. -/
-theorem natCard_le_natCard_zmod_three {G : Subgroup (GL n ℤ)} :
-    Nat.card G ≤ Nat.card (GL n (ZMod 3)) := by
-  cases finite_or_infinite G with
-  | inl _ =>
-    exact Nat.card_le_card_of_injective _
-      (domRestrict_map_intCast_injective (m := 3) le_rfl G isMulTorsion_of_finite)
-  | inr _ => simp
+/-- For `m ≥ 3`, the cardinality of `GL n (ZMod m)` bounds `Nat.card G` for every subgroup
+`G` of `GL n ℤ`. For finite `G` this bounds its size, since reduction embeds it into
+`GL n (ZMod m)`. -/
+theorem natCard_le_natCard_zmod {m : ℕ} (hm : 3 ≤ m) {G : Subgroup (GL n ℤ)} :
+    Nat.card G ≤ Nat.card (GL n (ZMod m)) :=
+  have : NeZero m := NeZero.of_pos (by lia)
+  have := isMulTorsionFree_ker_map_intCast (n := n) hm
+  (map (Int.castRingHom (ZMod m))).natCard_le_of_isMulTorsionFree_ker G
 
-/-- Oddness is needed: the kernel of `GL n ℤ → GL n (ZMod 2)` contains `-1`, of order `2`, as soon
-as `n` is nonempty. -/
+/-- The threshold `m ≥ 3` is sharp. At level two the kernel contains `-1`, of order `2`, as
+soon as `n` is nonempty. -/
 theorem not_isMulTorsionFree_ker_map_intCast_two [Nonempty n] :
     ¬IsMulTorsionFree (map (n := n) (Int.castRingHom (ZMod 2))).ker := by
   rw [not_isMulTorsionFree_iff_isOfFinOrder]

@@ -316,6 +316,8 @@ end TauCeti
   element of prime order.
 * `MonoidHom.injective_domRestrict_of_isMulTorsion`: a homomorphism with torsion-free kernel is
   injective on every torsion subgroup, in particular on every finite subgroup.
+* `MonoidHom.natCard_le_of_isMulTorsionFree_ker`: for such a homomorphism into a finite group,
+  `Nat.card_le_card_of_injective` bounds the `Nat.card` of any source subgroup.
 -/
 
 section PrimeOrder
@@ -346,5 +348,15 @@ theorem MonoidHom.injective_domRestrict_of_isMulTorsion {H : Type*} [Group H] (f
     Submonoid.isOfFinOrder_coe.1 (Submonoid.isOfFinOrder_coe.2 (hK x) : IsOfFinOrder (x : G))
   have h1 : (x : G) = 1 := congrArg Subtype.val hfin.eq_one'
   exact Subtype.ext h1
+
+/-- For a group homomorphism into a finite group with torsion-free kernel, the `Nat.card` of
+every source subgroup is at most the cardinality of the target. -/
+theorem MonoidHom.natCard_le_of_isMulTorsionFree_ker {H : Type*} [Group H] (f : G →* H)
+    [IsMulTorsionFree f.ker] [Finite H] (K : Subgroup G) : Nat.card K ≤ Nat.card H := by
+  cases finite_or_infinite K with
+  | inl _ =>
+    exact Nat.card_le_card_of_injective _ (f.injective_domRestrict_of_isMulTorsion
+      (K := K) isMulTorsion_of_finite)
+  | inr _ => simp
 
 end PrimeOrder

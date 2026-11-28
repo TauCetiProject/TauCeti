@@ -32,6 +32,8 @@ A difference `q ^ n - q ^ i` of two powers of one base `q` with `i ≤ n` factor
   `q ≠ b`.
 * `Nat.Prime.forall_prime_ne_not_dvd_iff_exists_pow_eq`: for a prime `p`, a natural number has no
   prime divisor distinct from `p` if and only if it is a power of `p`.
+* `Nat.exists_prime_pow_dvd_of_three_le`: every `m ≥ 3` has a prime-power divisor at least three,
+  by Mathlib's split into a multiple of four or a multiple of an odd prime.
 * `Nat.pow_sub_pow_eq_pow_mul_pow_sub_one`: `q ^ n - q ^ i = q ^ i * (q ^ (n - i) - 1)` for
   `i ≤ n`.
 * `Nat.add_mul_pow_sub_two_lt_pow_sub_pow`: the strict lower bound above.
@@ -42,6 +44,14 @@ A difference `q ^ n - q ^ i` of two powers of one base `q` with `i ≤ n` factor
 public section
 
 namespace Nat
+
+/-- Every natural number `m ≥ 3` has a prime-power divisor `p ^ k ≥ 3`. -/
+theorem exists_prime_pow_dvd_of_three_le {m : ℕ} (hm : 3 ≤ m) :
+    ∃ p k : ℕ, p.Prime ∧ 3 ≤ p ^ k ∧ p ^ k ∣ m := by
+  rcases four_dvd_or_exists_odd_prime_and_dvd_of_two_lt hm with h4 | ⟨p, hp, hpm, hodd⟩
+  · exact ⟨2, 2, prime_two, by decide, h4⟩
+  · exact ⟨p, 1, hp, by simpa only [pow_one] using hp.odd_iff.mp hodd,
+      by simpa only [pow_one] using hpm⟩
 
 /-- A natural number `n ≠ 1` either is not a power of `b`, or is `b ^ k` for some `k > 0`. -/
 theorem forall_ne_pow_or_exists_pos_eq_pow {b n : ℕ} (hn : n ≠ 1) :
