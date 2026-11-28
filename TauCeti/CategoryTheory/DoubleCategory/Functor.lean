@@ -344,6 +344,12 @@ theorem transpose_comp (F : StrictDoubleFunctor D₁ D₂) (G : StrictDoubleFunc
     (F.comp G).transpose = F.transpose.comp G.transpose := by
   apply hext <;> intros <;> rfl
 
+/-- Transposing a strict double functor twice recovers the original functor. -/
+@[simp]
+theorem transpose_transpose (F : StrictDoubleFunctor D₁ D₂) :
+    F.transpose.transpose = F := by
+  apply hext <;> intros <;> rfl
+
 end StrictDoubleFunctor
 
 /-- A double isomorphism between strict double categories: strict double functors in both
