@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
-import Mathlib.RingTheory.TensorProduct.IncludeLeftSubRight
+public import Mathlib.RingTheory.TensorProduct.IncludeLeftSubRight
 
 /-!
 # Degree-one exactness of the Amitsur complex
@@ -24,6 +24,8 @@ For a faithfully flat algebra, `TauCeti.Amitsur.exact_d₀_d₁` says that every
 descent cocycle is a coboundary. This is the module-theoretic input for trivializing
 vector-group torsors over affine schemes. The ambiguity of a primitive is exactly an
 element `1 ⊗ m`, by `TauCeti.Amitsur.d₀_eq_d₀_iff` and degree-zero exactness.
+The scalar version `TauCeti.Amitsur.exists_includeLeftSubRight_eq` removes the trailing
+tensor unit and writes the cocycle equation directly in the tensor cube.
 
 The contracting homotopy after tensoring with `S` multiplies the first two factors,
 as in the degree-zero proof originally in `TauCeti.RingTheory.Flat.EffectiveDescent`.
@@ -157,3 +159,40 @@ theorem d₀_eq_d₀_iff [Module.FaithfullyFlat R S] (x y : S ⊗[R] M) :
 end TauCeti.Amitsur
 
 end
+
+namespace TauCeti.Amitsur
+
+open scoped TensorProduct
+
+variable {R S : Type*} [CommRing R] [Ring S] [Algebra R S]
+
+/-- A scalar additive descent cocycle over a faithfully flat cover is the difference
+of the two pullbacks of an element of the covering algebra. -/
+theorem exists_includeLeftSubRight_eq [Module.FaithfullyFlat R S] (c : S ⊗[R] S)
+    (hc : (Algebra.TensorProduct.includeLeft : S →ₐ[R] S ⊗[R] S).toLinearMap.lTensor S c -
+      (Algebra.TensorProduct.includeRight : S →ₐ[R] S ⊗[R] S).toLinearMap.lTensor S c +
+        1 ⊗ₜ[R] c = 0) :
+    ∃ b : S, Algebra.TensorProduct.includeLeftSubRight R S b = c := by
+  let e := (TensorProduct.rid R S).symm.lTensor S
+  let j := e.lTensor S
+  have key : d₁ S R ∘ₗ e.toLinearMap = j.toLinearMap ∘ₗ
+      ((Algebra.TensorProduct.includeLeft : S →ₐ[R] S ⊗[R] S).toLinearMap.lTensor S -
+        (Algebra.TensorProduct.includeRight : S →ₐ[R] S ⊗[R] S).toLinearMap.lTensor S +
+          TensorProduct.mk R S (S ⊗[R] S) 1) := by
+    ext s t
+    simp [e, j, d₁_tmul]
+    abel
+  have hcycle : d₁ S R (e c) = 0 := by
+    have hk := DFunLike.congr_fun key c
+    simpa only [LinearMap.comp_apply, LinearMap.add_apply, LinearMap.sub_apply,
+      TensorProduct.mk_apply, hc, map_zero, LinearEquiv.coe_coe] using hk
+  have key₀ (x : S ⊗[R] R) :
+      e (Algebra.TensorProduct.includeLeftSubRight R S (TensorProduct.rid R S x)) =
+        d₀ S R x := by
+    induction x using TensorProduct.inductionOn with
+    | tmul s r => simp [e, d₀_tmul, smul_sub, ← TensorProduct.tmul_smul]
+    | add x y hx hy => simp only [map_add, hx, hy]
+  obtain ⟨x, hx⟩ := (exact_d₀_d₁ S R (e c)).mp hcycle
+  exact ⟨TensorProduct.rid R S x, e.injective ((key₀ x).trans hx)⟩
+
+end TauCeti.Amitsur
