@@ -18,9 +18,13 @@ Crossing-free components remain an explicit field of `PDCode`.
 
 The orbits of `componentPermOutgoing` correspond to the crossing-bearing components; the
 unrestricted `componentPerm` preserves orientation and therefore has separate incoming and
-outgoing orbits for each such component. Conversely, every unoriented `PDCode` admits a consistent
-orientation on its crossing-bearing components together with any prescribed crossing-free circle
-orientations (`TauCeti.PDCode.orient`).
+outgoing orbits for each such component. Conjugating `componentPerm` by `crossingTurn` inverts it
+(`TauCeti.PDCode.crossingTurn_permCongr_componentPerm`), carrying each directed orbit to the
+reversed orbit (`TauCeti.PDCode.sameCycle_componentPerm_crossingTurn_iff`) with no half-edge in
+the same directed orbit as its opposite-slot partner
+(`TauCeti.PDCode.not_sameCycle_componentPerm_crossingTurn`). Conversely,
+every unoriented `PDCode` admits a consistent orientation on its crossing-bearing components
+together with any prescribed crossing-free circle orientations (`TauCeti.PDCode.orient`).
 
 The traversal follows M. Mastin, *Links and Planar Diagram Codes*, Definitions 2–3.
 -/
@@ -61,6 +65,34 @@ theorem componentPerm_def (D : PDCode n) : D.componentPerm = D.crossingTurn * D.
     D.crossingTurn (D.halfEdge (PDCode.crossingSlotEquiv n (i, slot))) =
       D.crossing i (oppositeCrossingSlot slot) := by
   simp [crossingTurn]
+
+-- Not `@[simp]`: `crossing_apply` and `crossingTurn_crossing` already rewrite the left-hand side.
+/-- Passing through crossing `i` from slot `0` leads to slot `2`. -/
+theorem crossingTurn_crossing_zero (D : PDCode n) (i : Fin n) :
+    D.crossingTurn (D.crossing i 0) = D.crossing i 2 := by
+  have h : oppositeCrossingSlot 0 = 2 := by rw [oppositeCrossingSlot_apply]; decide
+  rw [crossing_apply, crossingTurn_crossing, h]
+
+-- Not `@[simp]`: `crossing_apply` and `crossingTurn_crossing` already rewrite the left-hand side.
+/-- Passing through crossing `i` from slot `1` leads to slot `3`. -/
+theorem crossingTurn_crossing_one (D : PDCode n) (i : Fin n) :
+    D.crossingTurn (D.crossing i 1) = D.crossing i 3 := by
+  have h : oppositeCrossingSlot 1 = 3 := by rw [oppositeCrossingSlot_apply]; decide
+  rw [crossing_apply, crossingTurn_crossing, h]
+
+-- Not `@[simp]`: `crossing_apply` and `crossingTurn_crossing` already rewrite the left-hand side.
+/-- Passing through crossing `i` from slot `2` leads to slot `0`. -/
+theorem crossingTurn_crossing_two (D : PDCode n) (i : Fin n) :
+    D.crossingTurn (D.crossing i 2) = D.crossing i 0 := by
+  have h : oppositeCrossingSlot 2 = 0 := by rw [oppositeCrossingSlot_apply]; decide
+  rw [crossing_apply, crossingTurn_crossing, h]
+
+-- Not `@[simp]`: `crossing_apply` and `crossingTurn_crossing` already rewrite the left-hand side.
+/-- Passing through crossing `i` from slot `3` leads to slot `1`. -/
+theorem crossingTurn_crossing_three (D : PDCode n) (i : Fin n) :
+    D.crossingTurn (D.crossing i 3) = D.crossing i 1 := by
+  have h : oppositeCrossingSlot 3 = 1 := by rw [oppositeCrossingSlot_apply]; decide
+  rw [crossing_apply, crossingTurn_crossing, h]
 
 /-- The crossing turn is an involution. -/
 @[simp] theorem crossingTurn_apply_apply (D : PDCode n) (h : Fin (4 * n)) :
@@ -130,6 +162,37 @@ theorem isPerfectMatching_crossingTurn (D : PDCode n) :
 theorem even_orbitCount_componentPerm (D : PDCode n) :
     Even (orbitCount D.componentPerm) :=
   (D.isPerfectMatching_crossingTurn).even_orbitCount_mul D.edgePair.prop
+
+/-- Conjugating `componentPerm` by `crossingTurn` inverts it. -/
+theorem crossingTurn_permCongr_componentPerm (D : PDCode n) :
+    D.crossingTurn.permCongr D.componentPerm = D.componentPerm⁻¹ := by
+  have hsymm : D.crossingTurn.symm = D.crossingTurn :=
+    Function.Involutive.symm_eq_self_of_involutive _ D.isPerfectMatching_crossingTurn.involutive
+  refine mul_eq_one_iff_eq_inv.mp (Equiv.ext fun x ↦ ?_)
+  rw [Perm.mul_apply, permCongr_apply, hsymm, componentPerm_apply, componentPerm_apply,
+    crossingTurn_apply_apply, Perm.one_apply]
+  exact (congrArg D.edgePair.val (D.crossingTurn_apply_apply (D.edgePair.val x))).trans
+    (D.edgePair.apply_apply x)
+
+/-- `crossingTurn` carries each directed component orbit to the reversed orbit, so it preserves
+`SameCycle` for `componentPerm`. -/
+@[simp] theorem sameCycle_componentPerm_crossingTurn_iff (D : PDCode n) {x y : Fin (4 * n)} :
+    D.componentPerm.SameCycle (D.crossingTurn x) (D.crossingTurn y) ↔
+      D.componentPerm.SameCycle x y := by
+  have h := (sameCycle_permCongr D.componentPerm D.crossingTurn
+    (x := D.crossingTurn x) (y := D.crossingTurn y)).symm
+  rwa [D.crossingTurn_apply_apply, D.crossingTurn_apply_apply,
+    D.crossingTurn_permCongr_componentPerm, sameCycle_inv] at h
+
+/-- No half-edge lies in the same directed `componentPerm` orbit as its opposite-slot partner. -/
+theorem not_sameCycle_componentPerm_crossingTurn (D : PDCode n) (x : Fin (4 * n)) :
+    ¬ D.componentPerm.SameCycle x (D.crossingTurn x) := by
+  intro h
+  have hedge : D.componentPerm.SameCycle (D.edgePair.val x) (D.crossingTurn x) := ⟨1, by simp⟩
+  have hself : (D.crossingTurn * D.edgePair.val).SameCycle x (D.edgePair.val x) := by
+    rw [← D.componentPerm_def]
+    exact h.trans hedge.symm
+  exact D.isPerfectMatching_crossingTurn.not_sameCycle_self_apply D.edgePair.prop x hself
 
 /-- The number of crossing-bearing components is half the number of directed traversal orbits. -/
 theorem crossingComponentCount_def (D : PDCode n) :

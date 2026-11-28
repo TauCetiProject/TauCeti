@@ -16,7 +16,8 @@ records how such an agreement condition changes when a point is added to `S`, an
 functions is updated at a point inside or outside `S`. These are the steps that move an updated
 coordinate in and out of a comparison of tuples, as in the matrix entries of operators acting on
 finitely many coordinates of a tuple. It also describes the fibres of `Function.update id b a`,
-the map that sends `b` to `a` and fixes every other point.
+the map that sends `b` to `a` and fixes every other point, and shows that updating a dependent
+function at a single coordinate by an involutive map on that fibre gives an involutive permutation.
 
 ## Main results
 
@@ -38,6 +39,9 @@ the map that sends `b` to `a` and fixes every other point.
   only if it assigns the same value to `a` and `b`.
 * `Function.Embedding.update_id_comp_eq_update_id_comp_iff`: two embeddings have the same
   composite with `Function.update id b a` exactly when they agree up to `Equiv.swap a b`.
+* `Function.Involutive.update`, `Function.Involutive.updatePerm`: updating a dependent function at
+  a single coordinate by an involutive map on that fibre is an involution and induces an involutive
+  permutation.
 -/
 
 public section
@@ -160,3 +164,35 @@ theorem update_id_comp_eq_update_id_comp_iff {ι : Type*} (f g : ι ↪ α) :
       exact update_id_swap_apply (f i)
 
 end Function.Embedding
+
+namespace Function.Involutive
+
+variable {ι : Sort*} [DecidableEq ι] {β : ι → Sort*}
+
+/-- Updating a dependent function at coordinate `i` by an involutive map on that fibre is an
+involution. -/
+protected theorem update (i : ι) {f : β i → β i} (hf : Involutive f) :
+    Involutive (fun s : ∀ j, β j ↦ Function.update s i (f (s i))) := fun s ↦ by
+  funext j
+  obtain rfl | hj := eq_or_ne j i
+  · simp [hf (s j)]
+  · simp [hj]
+
+/-- The permutation of `∀ j, β j` that applies an involutive map `f` to coordinate `i` and leaves
+all other coordinates unchanged. -/
+def updatePerm (i : ι) {f : β i → β i} (hf : Involutive f) : Equiv.Perm (∀ j, β j) :=
+  (Function.Involutive.update i hf).toPerm
+
+/-- `Function.Involutive.updatePerm i hf` updates a function at `i` by `f`. -/
+@[simp]
+theorem updatePerm_apply (i : ι) {f : β i → β i} (hf : Involutive f) (s : ∀ j, β j) :
+    updatePerm i hf s = Function.update s i (f (s i)) :=
+  (rfl)
+
+/-- `Function.Involutive.updatePerm i hf` is its own inverse. -/
+@[simp]
+theorem updatePerm_symm (i : ι) {f : β i → β i} (hf : Involutive f) :
+    (updatePerm i hf).symm = updatePerm i hf :=
+  (Function.Involutive.update i hf).toPerm_symm
+
+end Function.Involutive

@@ -80,6 +80,8 @@ the smoothing arcs suppresses them; neither step raises the genus.
 * `TauCeti.PDCode.detachedCircleCount D c t`: the circles of the smoothing of `c` that meet no
   other crossing.
 * `TauCeti.PDCode.resolveCrossing D c t`: the code with the crossing `c` smoothed.
+* `TauCeti.PDCode.resolveCrossingHalfEdge D c`: the half-edge of `D` corresponding to a half-edge
+  of `D.resolveCrossing c t`.
 * `TauCeti.PDCode.resolvedTurn D c t`: the half-edge matching smoothing `c` and following
   `crossingTurn` at every other crossing.
 * `TauCeti.PDCode.resolveCrossingResolvedCircleEquiv D c t s`: the resolved circles of a state of
@@ -110,6 +112,9 @@ the smoothing arcs suppresses them; neither step raises the genus.
 * `TauCeti.PDCode.resolveCrossingResolvedCircleEquiv_saddleResolvedCircleMap`: the circle
   correspondence commutes with the saddles at the other crossings.
 * `TauCeti.PDCode.IsPlanar.resolveCrossing`: the resolutions of a planar code are planar.
+* `TauCeti.PDCode.apply_resolveCrossingHalfEdge_edgePair_val`: a half-edge colouring transforming
+  along the arcs of `D` and along the local smoothing at `c` transforms in the same way along every
+  arc of `D.resolveCrossing c t`.
 
 ## References
 
@@ -1385,6 +1390,49 @@ theorem resolveCrossingResolvedCircleEquiv_saddleResolvedCircleMap {s s' : Fin n
         saddleResolvedCircleMap_inl, saddleCircleMap_mk]
 
 end ResolvedCircle
+
+/-! ### Half-edge embedding of a resolution -/
+
+section HalfEdgeEmbedding
+
+/-- The half-edge of `D` corresponding to a half-edge position of `D.resolveCrossing c t`: slot `k`
+of crossing `i` of the resolution comes from slot `k` of crossing `c.succAbove i` of `D`. -/
+def resolveCrossingHalfEdge (y : Fin (4 * n)) : Fin (4 * (n + 1)) :=
+  D.slotEquiv c (.inl y)
+
+/-- Slot `k` of crossing `i` of a resolution embeds as slot `k` of crossing `c.succAbove i` of
+`D`. -/
+@[simp] theorem resolveCrossingHalfEdge_crossingSlotEquiv (i : Fin n) (k : Fin 4) :
+    D.resolveCrossingHalfEdge c (crossingSlotEquiv n (i, k)) = D.crossing (c.succAbove i) k :=
+  D.slotEquiv_inl c i k
+
+/-- Distinct half-edges of a resolution come from distinct half-edges of `D`. -/
+theorem resolveCrossingHalfEdge_injective : Function.Injective (D.resolveCrossingHalfEdge c) :=
+  (D.slotEquiv c).injective.comp Sum.inl_injective
+
+/-- If a colouring of the half-edges of `D` transforms by `g` along every arc of `D` and along the
+two arcs of the local smoothing of `c`, then the restricted colouring on `D.resolveCrossing c t`
+transforms by `g` along every arc of that resolution. -/
+theorem apply_resolveCrossingHalfEdge_edgePair_val (t : Bool) {β : Type*} {g : β → β}
+    {o : Fin (4 * (n + 1)) → β} (hedge : ∀ x, o (D.edgePair.val x) = g (o x))
+    (hsmooth : ∀ k : Fin 4,
+      o (D.crossing c (slotSmoothing (bif t then D.overPair c else !D.overPair c) k)) =
+        g (o (D.crossing c k)))
+    (y : Fin (4 * n)) :
+    o (D.resolveCrossingHalfEdge c ((D.resolveCrossing c t).edgePair.val y)) =
+      g (o (D.resolveCrossingHalfEdge c y)) := by
+  have hM₀ (x) : (o ∘ D.slotEquiv c) ((D.slotMatching c).val x) = g ((o ∘ D.slotEquiv c) x) := by
+    simp only [Function.comp_apply, slotMatching_val, permCongr_apply, symm_symm,
+      apply_symm_apply, hedge]
+  have hs (k : Fin 4) :
+      (o ∘ D.slotEquiv c) (.inr (D.localSmoothing c t k)) = g ((o ∘ D.slotEquiv c) (.inr k)) := by
+    simpa only [Function.comp_apply, slotEquiv_inr, localSmoothing] using hsmooth k
+  have hM₂ := PerfectMatching.apply_reconnect_val_eq
+    (PerfectMatching.apply_reconnect_val_eq hM₀ (hs 0)) (hs 2) (.inl y)
+  rwa [Function.comp_apply, Function.comp_apply, ← pinchedOnce, ← pinchedTwice,
+    pinchedTwice_val, Perm.sumCongr_apply, Sum.map_inl] at hM₂
+
+end HalfEdgeEmbedding
 
 /-- The `A`-resolution of the kink consists of two crossing-free circles. -/
 theorem crossinglessComponentCount_resolveCrossing_kink_true :

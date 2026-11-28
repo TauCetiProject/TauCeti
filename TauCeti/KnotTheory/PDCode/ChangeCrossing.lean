@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.PDCode.RotateCrossing
+public import TauCeti.Logic.Function.Update
 
 /-!
 # Switching a crossing of a PD-code
@@ -18,7 +19,8 @@ keeps the slot numbering and flips `overPair i` alone, performing an actual cros
 
 Changing a crossing preserves the underlying `4`-valent graph, its faces, planarity, and the
 component traversal. At the switched crossing the `A`- and `B`-smoothings exchange roles, so
-flipping the state bit at `i` (`TauCeti.PDCode.flipStateEquiv i`) matches the smoothed diagrams and
+flipping the state bit at `i` (`TauCeti.PDCode.flipStateEquiv i`, an instance of
+`Function.Involutive.updatePerm`) matches the smoothed diagrams and
 their circle counts bijectively. On an oriented code (`TauCeti.OrientedPDCode.changeCrossing`),
 switching crossing `i` negates `crossingSign i`, leaves all other crossing signs unchanged, shifts
 `negativeCrossingCount` by `±1`, and therefore preserves the parity of
@@ -75,17 +77,12 @@ def changeCrossing (D : PDCode n) (i : Fin n) : PDCode n where
 crossings unchanged. Across `TauCeti.PDCode.changeCrossing D i` it matches each state with the
 state producing the same smoothed diagram. -/
 def flipStateEquiv (i : Fin n) : Perm (Fin n → Bool) :=
-  Function.Involutive.toPerm (fun s ↦ Function.update s i (!s i)) fun s ↦ by
-    funext j
-    by_cases hj : j = i
-    · subst hj
-      simp
-    · simp [hj]
+  Bool.involutive_not.updatePerm i
 
 /-- Applying `flipStateEquiv i` updates the state at `i` by negation. -/
 theorem flipStateEquiv_apply (i : Fin n) (s : Fin n → Bool) :
     flipStateEquiv i s = Function.update s i (!s i) :=
-  congrFun (Function.Involutive.coe_toPerm _) s
+  Bool.involutive_not.updatePerm_apply i s
 
 /-- At crossing `i`, `flipStateEquiv i` negates the state bit. -/
 @[simp] theorem flipStateEquiv_apply_self (i : Fin n) (s : Fin n → Bool) :
@@ -100,7 +97,7 @@ theorem flipStateEquiv_apply (i : Fin n) (s : Fin n → Bool) :
 /-- `flipStateEquiv i` is its own inverse. -/
 @[simp] theorem flipStateEquiv_symm (i : Fin n) :
     (flipStateEquiv i).symm = flipStateEquiv i :=
-  Function.Involutive.toPerm_symm _
+  Bool.involutive_not.updatePerm_symm i
 
 /-- Flipping the state at `i` twice returns the original state. -/
 @[simp] theorem flipStateEquiv_flipStateEquiv (i : Fin n) (s : Fin n → Bool) :

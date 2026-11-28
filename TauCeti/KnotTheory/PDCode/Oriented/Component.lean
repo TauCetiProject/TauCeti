@@ -15,11 +15,12 @@ public import TauCeti.GroupTheory.Perm.Basic
 set of crossing-free circle labels. Its cardinality is the native component count. The
 constructor `componentOfOutgoing` assigns an outgoing half-edge to its component, independently
 of the point chosen along that traversal.
-`crossingComponentOfHalfEdge` also accepts incoming half-edges, and is invariant
-under arc pairing and passing straight through a crossing. `apply_crossingComponentOfHalfEdge`
-evaluates maps on crossing-bearing components at arbitrary half-edges from their action on
-outgoing half-edges, and `liftCrossingComponent` descends crossing-turn- and arc-invariant
-half-edge functions to `CrossingComponent`.
+`crossingComponentOfHalfEdge` also accepts incoming half-edges, is invariant under arc pairing and
+passing straight through a crossing, and identifies two half-edges exactly when `componentPerm`
+connects one to the other or to its opposite crossing slot (`crossingComponentOfHalfEdge_eq_iff`).
+`apply_crossingComponentOfHalfEdge` evaluates maps on crossing-bearing components at arbitrary
+half-edges from their action on outgoing half-edges, and `liftCrossingComponent` descends
+crossing-turn- and arc-invariant half-edge functions to `CrossingComponent`.
 
 `componentEquiv` transports these components along an equivalence of outgoing traversals and
 an explicit bijection of crossing-free labels. It preserves identities and composition;
@@ -139,6 +140,54 @@ def crossingComponentOfHalfEdge (h : Fin (4 * n)) : D.CrossingComponent :=
     exact (by simp [crossingComponentOfHalfEdge, hh] :
       D.crossingComponentOfHalfEdge (D.crossingTurn h) =
         ⟦⟨D.edgePair.val (D.crossingTurn h), he⟩⟧).trans (Quotient.sound ht.symm)
+
+/-- Two half-edges in the same directed `componentPerm` orbit have the same orientation. -/
+theorem orientation_eq_of_sameCycle_componentPerm {x y : Fin (4 * n)}
+    (h : D.toPDCode.componentPerm.SameCycle x y) :
+    D.orientation x = D.orientation y :=
+  h.apply_eq_of_apply_eq D.orientation_componentPerm
+
+private theorem crossingComponentOfHalfEdge_eq_iff_of_outgoing {x y : Fin (4 * n)}
+    (hx : D.orientation x = true) (hy : D.orientation y = true) :
+    D.crossingComponentOfHalfEdge x = D.crossingComponentOfHalfEdge y ↔
+      D.toPDCode.componentPerm.SameCycle x y ∨
+        D.toPDCode.componentPerm.SameCycle x (D.crossingTurn y) := by
+  have hnot : ¬ D.toPDCode.componentPerm.SameCycle x (D.crossingTurn y) := fun h ↦ by
+    have ho := D.orientation_eq_of_sameCycle_componentPerm h
+    simp [hx, hy] at ho
+  have hsub : D.componentPermOutgoing =
+      D.toPDCode.componentPerm.subtypePerm (fun h ↦ by simp only [orientation_componentPerm]) := by
+    ext h
+    simp
+  rw [← Sum.inl_injective.eq_iff, D.inl_crossingComponentOfHalfEdge ⟨x, hx⟩,
+    D.inl_crossingComponentOfHalfEdge ⟨y, hy⟩, D.componentOfOutgoing_eq_iff, hsub,
+    or_iff_left hnot]
+  exact sameCycle_subtypePerm
+
+private theorem crossingComponentOfHalfEdge_eq_iff_of_left_outgoing {x : Fin (4 * n)}
+    (hx : D.orientation x = true) (y : Fin (4 * n)) :
+    D.crossingComponentOfHalfEdge x = D.crossingComponentOfHalfEdge y ↔
+      D.toPDCode.componentPerm.SameCycle x y ∨
+        D.toPDCode.componentPerm.SameCycle x (D.crossingTurn y) := by
+  cases hy : D.orientation y
+  · have hy' : D.orientation (D.crossingTurn y) = true := by simp [hy]
+    rw [← D.crossingComponentOfHalfEdge_crossingTurn y,
+      D.crossingComponentOfHalfEdge_eq_iff_of_outgoing hx hy', D.crossingTurn_apply_apply, or_comm]
+  · exact D.crossingComponentOfHalfEdge_eq_iff_of_outgoing hx hy
+
+/-- Two half-edges belong to the same crossing-bearing component iff `componentPerm` connects `x`
+either to `y` (same direction) or to `D.crossingTurn y` (opposite direction). -/
+theorem crossingComponentOfHalfEdge_eq_iff (x y : Fin (4 * n)) :
+    D.crossingComponentOfHalfEdge x = D.crossingComponentOfHalfEdge y ↔
+      D.toPDCode.componentPerm.SameCycle x y ∨
+        D.toPDCode.componentPerm.SameCycle x (D.crossingTurn y) := by
+  cases hx : D.orientation x
+  · have hx' : D.orientation (D.crossingTurn x) = true := by simp [hx]
+    rw [← D.crossingComponentOfHalfEdge_crossingTurn x,
+      D.crossingComponentOfHalfEdge_eq_iff_of_left_outgoing hx' y,
+      ← D.toPDCode.sameCycle_componentPerm_crossingTurn_iff (x := D.crossingTurn x) (y := y),
+      D.crossingTurn_apply_apply, D.toPDCode.sameCycle_componentPerm_crossingTurn_iff, or_comm]
+  · exact D.crossingComponentOfHalfEdge_eq_iff_of_left_outgoing hx y
 
 /-- A function on crossing-bearing components agrees with an arc-invariant half-edge function on
 every half-edge once it agrees on outgoing half-edges. -/
@@ -381,3 +430,5 @@ theorem exists_reindex_eq {D : OrientedPDCode n} (o p : D.CrossinglessLabeling) 
 end CrossinglessLabeling
 
 end TauCeti.OrientedPDCode
+
+end
