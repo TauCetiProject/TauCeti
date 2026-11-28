@@ -45,8 +45,7 @@ A gauge carries `x` to `y` exactly when its logarithmic derivative is the differ
 connection forms and it carries the section of `x` to that of `y`
 (`TauCeti.Vortex.gaugeTransform_eq_iff`). Since `du = i u Im (u⁻¹ du)`, a differentiable gauge is
 one order smoother than its logarithmic derivative
-(`TauCeti.Vortex.contDiff_coe_of_contDiff_gaugeForm`), so a differentiable gauge carrying one `C^n`
-field to another is `C^(n+1)` (`TauCeti.Vortex.contDiff_coe_of_contDiff_gaugeTransform`).
+(`TauCeti.Vortex.contDiff_coe_of_contDiff_gaugeForm`).
 
 ## References
 
@@ -824,20 +823,6 @@ theorem gaugeForm_eq_connectionDifferenceCLM {u : ℂ → Circle}
     gaugeForm u z = connectionDifferenceCLM (x z, y z) := by
   rw [connectionDifferenceCLM_apply]
   exact (gaugeTransform_eq_iff.1 h z).1
-
-/-- **A differentiable gauge between `C^n` fields is `C^(n+1)`.** Converse to
-`contDiff_gaugeTransform`: if `u` is differentiable and both `x` and `gaugeTransform u x` are
-`C^n` (`n ≤ ∞`), then `u` is `C^(n+1)`. -/
-theorem contDiff_coe_of_contDiff_gaugeTransform {n : ℕ∞} {u : ℂ → Circle}
-    (hu : Differentiable ℝ (fun z ↦ (u z : ℂ)))
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n x)
-    (hux : ContDiff ℝ n (gaugeTransform u x)) :
-    ContDiff ℝ (n + 1) (fun z ↦ (u z : ℂ)) := by
-  refine contDiff_coe_of_contDiff_gaugeForm hu ?_
-  have hform : gaugeForm u = fun z ↦ connectionDifferenceCLM (x z, gaugeTransform u x z) :=
-    funext (gaugeForm_eq_connectionDifferenceCLM rfl)
-  rw [hform]
-  exact connectionDifferenceCLM.contDiff.comp (hx.prodMk hux)
 
 /-- Covariant derivatives transform by multiplication by the circle-valued gauge. -/
 theorem covariantDerivative_gaugeTransform {u : ℂ → Circle} {z : ℂ}

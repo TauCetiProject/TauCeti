@@ -33,9 +33,7 @@ element of `G_(k+1)` is unique, since the action is free. In the bundled action 
 `TauCeti.Vortex.sobolevVortexDivisor_eq_sobolevVortexDivisor_iff`: the divisor is a complete
 invariant of the `G_(k+1)`-orbit. A smooth vortex of `A_m^k` has the divisor of the smooth framed
 moduli `TauCeti.Vortex.framedVortexModuliEquiv`
-(`TauCeti.Vortex.sobolevVortexDivisor_eq_framedVortexDivisor`), while off-shell smooth fields of
-`A_m^k` are related by a smooth framed gauge if and only if they are related by an element of
-`G_(k+1)` (`TauCeti.Vortex.exists_framedGaugeGroup_smul_eq_iff_exists_sobolevGaugeGroup_smul_eq`).
+(`TauCeti.Vortex.sobolevVortexDivisor_eq_framedVortexDivisor`).
 
 For `k ≥ 4` the elements of `G_(k+1)` are `C³`, so they preserve the `C²` vortices of `A_m^k`
 (`TauCeti.Vortex.smul_mem_sobolevVortices`), which form a sub-action
@@ -49,9 +47,8 @@ existence theorem for smooth framed vortices (`TauCeti.Vortex.framedVortexDiviso
 a smooth framed gauge moving each smooth framed vortex into `A_m^k`. This is
 `TauCeti.Vortex.exists_framedGaugeGroup_smul_mem_framedFieldSpace` in
 `TauCeti/Analysis/PDE/Vortex/FramedGauge/Moduli.lean`, which gives
-`TauCeti.Vortex.sobolevVortexDivisor_surjective`, the identification
-`TauCeti.Vortex.sobolevVortexModuliEquiv` of the Sobolev moduli with `Sym ℂ m`, and the comparison
-`TauCeti.Vortex.sobolevVortexModuliEquivFramedVortexModuli` with the smooth framed moduli.
+`TauCeti.Vortex.sobolevVortexDivisor_surjective` and the identification
+`TauCeti.Vortex.sobolevVortexModuliEquiv` of the Sobolev moduli with `Sym ℂ m`.
 
 ## Main definitions
 
@@ -235,18 +232,6 @@ theorem mem_sobolevVortexSubMulAction {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
     {x : framedFieldSpace f m k} :
     x ∈ sobolevVortexSubMulAction (hs := hs) hk ↔ x ∈ sobolevVortices f m k :=
   Iff.rfl
-
-/-- A vortex of `sobolevVortexSubMulAction` is continuous. -/
-theorem continuous_sobolevVortexSubMulAction {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
-    (y : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) :
-    Continuous (y : ℂ → EuclideanSpace ℝ (Fin 4)) :=
-  (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 y.property)).1.continuous
-
-/-- A vortex of `sobolevVortexSubMulAction` solves the vortex equation everywhere. -/
-theorem equation_sobolevVortexSubMulAction_eq_zero {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
-    (y : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) (z : ℂ) :
-    equation (y : ℂ → EuclideanSpace ℝ (Fin 4)) z = 0 :=
-  (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 y.property)).2 z
 
 /-- **The divisor on the Sobolev moduli of framed vortices.** For `k ≥ 4` the zero divisor descends
 to the `G_(k+1)`-orbits of `C²` vortices of `A_m^k`. -/

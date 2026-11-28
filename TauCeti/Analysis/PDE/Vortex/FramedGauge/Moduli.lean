@@ -47,10 +47,9 @@ every effective divisor of degree `m` is the zero divisor of a smooth vortex `x`
 exponentially (`exists_contDiff_mem_framedFieldSpace_equation_eq_zero_isZeroMultiplicity`), so
 `sobolevVortexDivisor` is surjective (`sobolevVortexDivisor_surjective`). For `k ≥ 4`,
 where `G_(k+1)` preserves the `C²` vortices of `A_m^k`, the divisor therefore identifies the
-Sobolev moduli of framed vortices with `Sym ℂ m` (`sobolevVortexModuliEquiv`), and canonically
-identifies the Sobolev moduli with the smooth framed moduli
-(`sobolevVortexModuliEquivFramedVortexModuli`). Conversely, a smooth framed gauge relating two
-fields of `A_m^k` lies in `G_(k+1)`
+Sobolev moduli of framed vortices with `Sym ℂ m` (`sobolevVortexModuliEquiv`), the Sobolev
+counterpart of `TauCeti.Vortex.framedVortexModuliEquiv`. Conversely, a smooth framed gauge relating
+two fields of `A_m^k` lies in `G_(k+1)`
 (`TauCeti.Vortex.mem_sobolevGaugeGroup_of_mem_framedFieldSpace`).
 
 ## Main results
@@ -75,8 +74,6 @@ All in the namespace `TauCeti.Vortex`:
 * `sobolevVortexDivisor_surjective`: every point of `Sym ℂ m` is the divisor of a `C²` vortex of
   `A_m^k`.
 * `sobolevVortexModuliEquiv`: for `k ≥ 4`, the Sobolev moduli of framed vortices are `Sym ℂ m`.
-* `sobolevVortexModuliEquivFramedVortexModuli`: for `k ≥ 4`, the canonical equivalence between the
-  Sobolev and smooth framed vortex moduli spaces.
 
 ## References
 
@@ -319,50 +316,5 @@ theorem sobolevVortexModuliEquiv_apply {hs : 1 < (k : ℝ) + 1} (hk : 3 < k)
       (sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk)) :
     sobolevVortexModuliEquiv hk q = sobolevVortexModuliDivisor hk q :=
   (rfl)
-
-/-- **Equivalence between the Sobolev and smooth framed vortex moduli spaces.** For `k ≥ 4`, the
-orbit space of `G_(k+1)` on the `C²` vortices of `A_m^k` is canonically equivalent to the orbit
-space of `framedGaugeGroup` on the smooth framed degree-`m` vortices, identifying orbits with the
-same zero divisor. -/
-def sobolevVortexModuliEquivFramedVortexModuli {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) :
-    MulAction.orbitRel.Quotient (sobolevGaugeGroup hs)
-      (sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) ≃
-      MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction 1 m) :=
-  (sobolevVortexModuliEquiv hk).trans (framedVortexModuliEquiv one_pos m).symm
-
-/-- Passing from Sobolev to smooth framed vortex moduli and taking the divisor recovers
-`sobolevVortexModuliEquiv`. -/
-@[simp]
-theorem framedVortexModuliEquiv_sobolevVortexModuliEquivFramedVortexModuli
-    {hs : 1 < (k : ℝ) + 1} (hk : 3 < k)
-    (q : MulAction.orbitRel.Quotient (sobolevGaugeGroup hs)
-      (sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk)) :
-    framedVortexModuliEquiv one_pos m (sobolevVortexModuliEquivFramedVortexModuli hk q) =
-      sobolevVortexModuliEquiv hk q :=
-  Equiv.apply_symm_apply _ _
-
-/-- The equivalence between Sobolev and smooth framed vortex moduli sends the orbit of any `C²`
-Sobolev vortex `x` to the orbit of a smooth framed vortex `x'` if and only if their zero divisors
-agree. -/
-@[simp]
-theorem sobolevVortexModuliEquivFramedVortexModuli_mk_eq_mk_iff {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
-    (x : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk)
-    (x' : framedVortexSubMulAction 1 m) :
-    sobolevVortexModuliEquivFramedVortexModuli hk (Quotient.mk'' x) = Quotient.mk'' x' ↔
-      sobolevVortexDivisor ⟨x.val, mem_sobolevVortexSubMulAction.1 x.property⟩ =
-        framedVortexDivisor x' := by
-  rw [← (framedVortexModuliEquiv one_pos m).apply_eq_iff_eq,
-    framedVortexModuliEquiv_sobolevVortexModuliEquivFramedVortexModuli]
-  simp
-
-/-- On the `G_(k+1)`-orbit of any smooth vortex in `A_m^k`,
-`sobolevVortexModuliEquivFramedVortexModuli` agrees with taking its `framedGaugeGroup`-orbit. -/
-theorem sobolevVortexModuliEquivFramedVortexModuli_mk_of_eq {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
-    (x : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk)
-    (x' : framedVortexSubMulAction 1 m) (hx : (x : ℂ → EuclideanSpace ℝ (Fin 4)) = x') :
-    sobolevVortexModuliEquivFramedVortexModuli hk (Quotient.mk'' x) = Quotient.mk'' x' :=
-  (sobolevVortexModuliEquivFramedVortexModuli_mk_eq_mk_iff x x').2
-    (sobolevVortexDivisor_eq_framedVortexDivisor
-      ⟨x.val, mem_sobolevVortexSubMulAction.1 x.property⟩ x' hx)
 
 end TauCeti.Vortex
