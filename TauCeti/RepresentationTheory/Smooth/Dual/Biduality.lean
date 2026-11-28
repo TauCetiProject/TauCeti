@@ -8,15 +8,17 @@ module
 public import TauCeti.RepresentationTheory.Smooth.Admissible
 public import TauCeti.RepresentationTheory.Smooth.Averaging
 public import TauCeti.RepresentationTheory.Smooth.Dual.Basic
+import TauCeti.LinearAlgebra.Dual.DoubleDual
 import TauCeti.RepresentationTheory.Dual
 
 /-!
 # Fixed vectors of the smooth dual and smooth biduality
 
-For a compact open subgroup `U` of invertible pro-order, restriction identifies the
-`U`-fixed smooth functionals with the algebraic dual of `Vᵁ`. The inverse extends a
-functional by precomposing with the averaging projector. Applying this identification twice
-turns smooth bidual evaluation on `U`-fixed vectors into ordinary bidual evaluation on `Vᵁ`.
+For a smooth representation and a compact open subgroup `U` of invertible pro-order,
+restriction identifies the `U`-fixed smooth functionals with the algebraic dual of `Vᵁ`.
+The inverse extends a functional by precomposing with the averaging projector. Applying this
+identification twice turns smooth bidual evaluation on `U`-fixed vectors into ordinary bidual
+evaluation on `Vᵁ`.
 
 Over a field, when such subgroups form a neighbourhood basis, the smooth dual separates
 points and evaluation into the smooth bidual is bijective exactly for admissible representations.
@@ -40,53 +42,61 @@ section Invariants
 
 variable (U : OpenSubgroup G) [CompactSpace U] (hU : TauCeti.HasUnitProOrder A U)
 
-/-- Restriction identifies the `U`-fixed vectors of the smooth dual with the dual of the
-`U`-fixed vectors. Its inverse extends a functional by averaging its argument over `U`. -/
+omit [IsSmooth ρ] [CompactSpace U] in
+private theorem mem_smoothDual_comp_invariants_iff (f : ρ.dual.smoothVectors.toSubmodule) :
+    f ∈ invariants (ρ.smoothDual.comp U.toSubgroup.subtype) ↔
+      f.val ∈ (dual (ρ.comp U.toSubgroup.subtype)).invariants := by
+  rw [dual_comp]
+  constructor
+  · intro hf u
+    simpa only [MonoidHom.comp_apply, smoothDual, Subrepresentation.coe_toRepresentation_apply]
+      using congrArg Subtype.val (hf u)
+  · intro hf u
+    apply Subtype.ext
+    simpa only [MonoidHom.comp_apply, smoothDual, Subrepresentation.coe_toRepresentation_apply]
+      using hf u
+
+/-- For a smooth representation, restriction identifies the `U`-fixed vectors of the smooth dual
+with the dual of the `U`-fixed vectors. Its inverse extends a functional by averaging its argument
+over `U`. -/
 noncomputable def smoothDualInvariantsEquiv :
     invariants (V := ρ.dual.smoothVectors.toSubmodule)
         (ρ.smoothDual.comp U.toSubgroup.subtype) ≃ₗ[A]
       Dual A (invariants (ρ.comp U.toSubgroup.subtype)) := by
   let σ : Representation A U V := ρ.comp U.toSubgroup.subtype
   letI : IsSmooth σ := IsSmooth.comp (ρ := ρ) continuous_subtypeVal
-  let p := (σ.isProj_smoothAverage hU).codRestrict
-  refine
-    { toFun := fun f ↦ σ.invariants.dualRestrict f.val
-      invFun := fun l ↦ ?_
-      left_inv := ?_
-      right_inv := ?_
+  let e : invariants (ρ.smoothDual.comp U.toSubgroup.subtype) ≃ₗ[A] σ.dual.invariants :=
+    { toFun := fun f ↦ ⟨f.val.val, (ρ.mem_smoothDual_comp_invariants_iff U f.val).mp f.property⟩
+      invFun := fun f ↦
+        let hs := (mem_smoothVectors_iff_exists_openSubgroup_mem_invariants (ρ := ρ.dual)).mpr
+          ⟨U, dual_comp ρ U.toSubgroup.subtype ▸ f.property⟩
+        ⟨⟨f.val, hs⟩, (ρ.mem_smoothDual_comp_invariants_iff U _).mpr f.property⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl
       map_add' := fun _ _ ↦ rfl
       map_smul' := fun _ _ ↦ rfl }
-  · have hfix : l.comp p ∈ σ.dual.invariants :=
-      TauCeti.Representation.mem_invariants_dual_iff.mpr fun u v ↦
-        congrArg l (Subtype.ext (σ.smoothAverage_apply_apply hU u v))
-    have hs := (mem_smoothVectors_iff_exists_openSubgroup_mem_invariants (ρ := ρ.dual)).mpr
-      ⟨U, dual_comp ρ U.toSubgroup.subtype ▸ hfix⟩
-    exact ⟨⟨l.comp p, hs⟩, fun u ↦ Subtype.ext (hfix u)⟩
-  · intro f
-    refine Subtype.ext <| Subtype.ext <| LinearMap.ext fun v ↦ ?_
-    have hfix : f.val.val ∈ σ.dual.invariants := fun u ↦ congrArg Subtype.val (f.property u)
-    exact σ.map_smoothAverage_of_forall_apply_eq hU f.val.val
-      (fun u ↦ TauCeti.Representation.apply_of_mem_invariants_dual hfix u v)
-  · intro l
-    exact LinearMap.ext fun v ↦ congrArg l ((σ.isProj_smoothAverage hU).codRestrict_apply_cod v)
+  exact e ≪≫ₗ σ.dualInvariantsEquivOfProjection (σ.isProj_smoothAverage hU)
+    (σ.smoothAverage_apply_apply hU) fun f hf v ↦
+      σ.map_smoothAverage_of_forall_apply_eq hU f
+        (fun u ↦ TauCeti.Representation.apply_of_mem_invariants_dual hf u v)
 
 @[simp]
 theorem smoothDualInvariantsEquiv_apply
     (f : invariants (V := ρ.dual.smoothVectors.toSubmodule)
       (ρ.smoothDual.comp U.toSubgroup.subtype))
     (v : invariants (ρ.comp U.toSubgroup.subtype)) :
-    ρ.smoothDualInvariantsEquiv U hU f v = f.val.val v :=
-  (rfl)
+    ρ.smoothDualInvariantsEquiv U hU f v = f.val.val v := by
+  simp [smoothDualInvariantsEquiv]
 
 @[simp]
 theorem smoothDualInvariantsEquiv_symm_apply (l : Dual A (invariants (ρ.comp U.toSubgroup.subtype)))
     (v : V) :
     ((ρ.smoothDualInvariantsEquiv U hU).symm l).val.val v =
-      l ((isProj_smoothAverage (ρ.comp U.toSubgroup.subtype) hU).codRestrict v) :=
-  (rfl)
+      l ((isProj_smoothAverage (ρ.comp U.toSubgroup.subtype) hU).codRestrict v) := by
+  simp [smoothDualInvariantsEquiv]
 
-/-- The fixed vectors in the smooth bidual identify with the algebraic bidual of the fixed
-vectors. Under this equivalence the two evaluation maps agree. -/
+/-- For a smooth representation, the fixed vectors in the smooth bidual identify with the
+algebraic bidual of the fixed vectors. Under this equivalence the two evaluation maps agree. -/
 noncomputable def smoothBidualInvariantsEquiv :
     invariants (V := ρ.smoothDual.dual.smoothVectors.toSubmodule)
         (ρ.smoothDual.smoothDual.comp U.toSubgroup.subtype) ≃ₗ[A]
@@ -100,10 +110,25 @@ theorem smoothBidualInvariantsEquiv_apply
       (ρ.smoothDual.smoothDual.comp U.toSubgroup.subtype))
     (l : Dual A (invariants (ρ.comp U.toSubgroup.subtype))) :
     ρ.smoothBidualInvariantsEquiv U hU b l =
-      b.val.val ((ρ.smoothDualInvariantsEquiv U hU).symm l) :=
-  (rfl)
+      b.val.val ((ρ.smoothDualInvariantsEquiv U hU).symm l) := by
+  simp only [smoothBidualInvariantsEquiv, LinearEquiv.trans_apply, LinearEquiv.dualMap_apply,
+    smoothDualInvariantsEquiv_apply]
 
-/-- On fixed vectors, smooth bidual evaluation agrees with algebraic bidual evaluation. -/
+/-- The inverse bidual comparison evaluates a smooth functional after averaging it over `U`
+and restricting it to the fixed vectors. -/
+@[simp]
+theorem smoothBidualInvariantsEquiv_symm_apply
+    (b : Dual A (Dual A (invariants (ρ.comp U.toSubgroup.subtype))))
+    (f : ρ.dual.smoothVectors.toSubmodule) :
+    letI := IsSmooth.comp (ρ := ρ.smoothDual) (φ := U.toSubgroup.subtype) continuous_subtypeVal
+    ((ρ.smoothBidualInvariantsEquiv U hU).symm b).val.val f =
+      b (ρ.smoothDualInvariantsEquiv U hU
+        ((isProj_smoothAverage (ρ.smoothDual.comp U.toSubgroup.subtype) hU).codRestrict f)) := by
+  simp only [smoothBidualInvariantsEquiv, LinearEquiv.symm_trans_apply, LinearEquiv.dualMap_symm,
+    LinearEquiv.symm_symm, smoothDualInvariantsEquiv_symm_apply, LinearEquiv.dualMap_apply]
+
+/-- For a smooth representation, smooth bidual evaluation agrees with algebraic bidual evaluation
+on the fixed vectors. -/
 @[simp]
 theorem smoothBidualInvariantsEquiv_eval (v : invariants (ρ.comp U.toSubgroup.subtype)) :
     ρ.smoothBidualInvariantsEquiv U hU
@@ -118,24 +143,25 @@ section Field
 variable {k V : Type*} [Field k] [AddCommGroup V] [Module k V] (ρ : Representation k G V)
   [IsSmooth ρ]
 
-/-- At a compact open subgroup of invertible pro-order, smooth bidual evaluation is surjective
-on fixed vectors exactly when the fixed space is finite-dimensional. -/
+/-- For a smooth representation over a field, smooth bidual evaluation is surjective on the fixed
+vectors of a compact open subgroup of invertible pro-order exactly when that fixed space is
+finite-dimensional. As in `Representation.smoothDualEval_surjective_iff`, this uses
+`Module.instFiniteDimensionalOfIsReflexive` for the converse after comparison with algebraic
+bidual evaluation. -/
 theorem smoothDualEval_invariantsMap_surjective_iff (U : OpenSubgroup G) [CompactSpace U]
     (hU : TauCeti.HasUnitProOrder k U) :
     Function.Surjective ((ρ.smoothDualEval.res U.toSubgroup.subtype).invariantsMap
       (W := ρ.smoothDual.dual.smoothVectors.toSubmodule)) ↔
       FiniteDimensional k (invariants (ρ.comp U.toSubgroup.subtype)) := by
   let W := invariants (ρ.comp U.toSubgroup.subtype)
-  have he : ⇑(ρ.smoothBidualInvariantsEquiv U hU).toEquiv ∘
+  have he : ⇑(ρ.smoothBidualInvariantsEquiv U hU) ∘
       ⇑(ρ.smoothDualEval.res U.toSubgroup.subtype).invariantsMap = Dual.eval k W :=
     funext (ρ.smoothBidualInvariantsEquiv_eval U hU)
-  rw [← (ρ.smoothBidualInvariantsEquiv U hU).toEquiv.comp_surjective, he]
-  refine ⟨fun hs ↦ ?_, fun _ ↦ (bijective_dual_eval k W).2⟩
-  let _ : IsReflexive k W := ⟨eval_apply_injective k, hs⟩
-  exact instFiniteDimensionalOfIsReflexive k W
+  rw [← EquivLike.comp_surjective _ (ρ.smoothBidualInvariantsEquiv U hU), he,
+    TauCeti.Module.Dual.surjective_eval_iff_finiteDimensional]
 
-/-- The smooth dual separates points if compact open subgroups of invertible pro-order
-form a neighbourhood basis of the identity. -/
+/-- For a smooth representation over a field, the smooth dual separates points if compact open
+subgroups of invertible pro-order form a neighbourhood basis of the identity. -/
 theorem smoothDualEval_injective (hG : TauCeti.HasCofinalUnitProOrder k G) :
     Function.Injective ρ.smoothDualEval := by
   apply (injective_iff_map_eq_zero ρ.smoothDualEval.toLinearMap).2
