@@ -104,7 +104,7 @@ when every endomorphism `ψ` of `P` with `(-, ψ) ≫ p = 0` lies in the radical
 theorem isRepresentableProjectiveCover_iff {P : C} (p : preadditiveYoneda.obj P ⟶ F) :
     IsRepresentableProjectiveCover p ↔
       Epi p ∧ ∀ ψ : P ⟶ P, preadditiveYoneda.map ψ ≫ p = 0 → ψ ∈ jacobsonRadical P P := by
-  have h := preadditiveYoneda.right_minimal_iff_map_comp_eq_zero p
+  have h := preadditiveYoneda.isIso_of_map_comp_eq_self_iff_forall_mem_jacobsonRadical p
   exact ⟨fun ⟨hp, hmin⟩ ↦ ⟨hp, h.mp hmin⟩, fun ⟨hp, hrad⟩ ↦ ⟨hp, h.mpr hrad⟩⟩
 
 namespace IsRepresentableProjectiveCover

@@ -40,7 +40,7 @@ variable {C : Type*} [Category* C] [Preadditive C] {X Y Z : C}
 
 /-- All endomorphisms of `Y` fixing `p` under `F.map (-) ≫ p` are invertible exactly when
 all endomorphisms killed by this operation lie in the radical. -/
-theorem _root_.CategoryTheory.Functor.right_minimal_iff_map_comp_eq_zero
+theorem _root_.CategoryTheory.Functor.isIso_of_map_comp_eq_self_iff_forall_mem_jacobsonRadical
     {D : Type*} [Category* D] [Preadditive D] (F : C ⥤ D) [F.Additive]
     {T : D} (p : F.obj Y ⟶ T) :
     (∀ b : Y ⟶ Y, F.map b ≫ p = p → IsIso b) ↔
@@ -60,7 +60,8 @@ theorem _root_.Function.Exact.right_minimal_iff_mem_jacobsonRadical
     (∀ b : Y ⟶ Y, b ≫ g = g → IsIso b) ↔ f ∈ jacobsonRadical X Y := by
   have hmin : (∀ b : Y ⟶ Y, b ≫ g = g → IsIso b) ↔
       ∀ a : Y ⟶ Y, a ≫ g = 0 → a ∈ jacobsonRadical Y Y := by
-    simpa only [Functor.id_map] using (𝟭 C).right_minimal_iff_map_comp_eq_zero g
+    simpa only [Functor.id_map] using
+      (𝟭 C).isIso_of_map_comp_eq_self_iff_forall_mem_jacobsonRadical g
   rw [hmin]
   constructor
   · intro hrad
@@ -76,17 +77,12 @@ lie in the radical. -/
 theorem _root_.Quiver.Hom.left_minimal_iff_forall_mem_jacobsonRadical (f : X ⟶ Y) :
     (∀ b : Y ⟶ Y, f ≫ b = f → IsIso b) ↔
       ∀ a : Y ⟶ Y, f ≫ a = 0 → a ∈ jacobsonRadical Y Y := by
-  let e := opEquiv (op Y) (op Y)
-  have hrad (a : op Y ⟶ op Y) :
-      a ∈ jacobsonRadical (op Y) (op Y) ↔ a.unop ∈ jacobsonRadical Y Y := by
-    rw [mem_jacobsonRadical_iff_isIso_id_sub_comp_left,
-      mem_jacobsonRadical_iff_isIso_id_sub_comp_right]
-    exact e.forall_congr fun b ↦ by
-      simp only [e, opEquiv, Equiv.coe_fn_mk, ← isIso_unop_iff, unop_sub, unop_id, unop_comp]
-  rw [← e.forall_congr_right, ← e.forall_congr_right]
-  simpa only [e, opEquiv, Equiv.coe_fn_mk, Functor.id_map, ← Quiver.Hom.unop_inj.eq_iff,
-    unop_comp, Quiver.Hom.unop_op, unop_zero, isIso_unop_iff, hrad] using
-    (𝟭 Cᵒᵖ).right_minimal_iff_map_comp_eq_zero f.op
+  rw [← (opEquiv (op Y) (op Y)).forall_congr_right,
+    ← (opEquiv (op Y) (op Y)).forall_congr_right]
+  simp only [opEquiv_apply (op Y) (op Y), isIso_unop_iff]
+  simpa only [Functor.id_map, ← Quiver.Hom.unop_inj.eq_iff, unop_comp,
+    Quiver.Hom.unop_op, unop_zero, mem_jacobsonRadical_iff_unop] using
+    (𝟭 Cᵒᵖ).isIso_of_map_comp_eq_self_iff_forall_mem_jacobsonRadical f.op
 
 /-- If `Hom(Z, Y) ⟶ Hom(Y, Y) ⟶ Hom(X, Y)` is exact, then `f` is left minimal
 exactly when `g` lies in the radical. -/
@@ -104,15 +100,15 @@ theorem _root_.Function.Exact.left_minimal_iff_mem_jacobsonRadical
     exact comp_mem_jacobsonRadical_right hg a
 
 /-- A map with a kernel is right minimal exactly when its kernel map lies in the radical. -/
-theorem _root_.CategoryTheory.Limits.IsLimit.right_minimal_iff_mem_jacobsonRadical {w : f ≫ g = 0}
-    (h : IsLimit (KernelFork.ofι f w)) :
-    (∀ b : Y ⟶ Y, b ≫ g = g → IsIso b) ↔ f ∈ jacobsonRadical X Y :=
+theorem _root_.CategoryTheory.Limits.IsLimit.right_minimal_iff_mem_jacobsonRadical
+    {s : KernelFork g} (h : IsLimit s) :
+    (∀ b : Y ⟶ Y, b ≫ g = g → IsIso b) ↔ s.ι ∈ jacobsonRadical s.pt Y :=
   (h.exact_postcomp Y).right_minimal_iff_mem_jacobsonRadical
 
 /-- A map with a cokernel is left minimal exactly when its cokernel map lies in the radical. -/
-theorem _root_.CategoryTheory.Limits.IsColimit.left_minimal_iff_mem_jacobsonRadical {w : f ≫ g = 0}
-    (h : IsColimit (CokernelCofork.ofπ g w)) :
-    (∀ b : Y ⟶ Y, f ≫ b = f → IsIso b) ↔ g ∈ jacobsonRadical Y Z :=
+theorem _root_.CategoryTheory.Limits.IsColimit.left_minimal_iff_mem_jacobsonRadical
+    {s : CokernelCofork f} (h : IsColimit s) :
+    (∀ b : Y ⟶ Y, f ≫ b = f → IsIso b) ↔ s.π ∈ jacobsonRadical Y s.pt :=
   (h.exact_precomp Y).left_minimal_iff_mem_jacobsonRadical
 
 end TauCeti

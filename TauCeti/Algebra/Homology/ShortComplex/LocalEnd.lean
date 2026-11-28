@@ -112,15 +112,17 @@ theorem ShortExact.isIso_of_τ₁_eq_id (hS : S.ShortExact) [IsLocalRing (End S.
 /-- The final map of a non-split short exact sequence is right minimal if the left-hand end
 has a local endomorphism ring. -/
 theorem ShortExact.isIso_of_comp_g_eq (hS : S.ShortExact) [IsLocalRing (End S.X₁)]
-    (hf : ¬ IsSplitMono S.f) (b : S.X₂ ⟶ S.X₂) (hb : b ≫ S.g = S.g) : IsIso b :=
-  hS.fIsKernel.right_minimal_iff_mem_jacobsonRadical.mpr
-    (TauCeti.mem_jacobsonRadical_iff_not_isSplitMono.mpr hf) b hb
+    (hf : ¬ IsSplitMono S.f) (b : S.X₂ ⟶ S.X₂) (hb : b ≫ S.g = S.g) : IsIso b := by
+  refine hS.fIsKernel.right_minimal_iff_mem_jacobsonRadical.mpr ?_ b hb
+  rw [KernelFork.ι_ofι]
+  exact (TauCeti.mem_jacobsonRadical_iff_not_isSplitMono (f := S.f)).mpr hf
 
 /-- The initial map of a non-split short exact sequence is left minimal if the right-hand end
 has a local endomorphism ring. -/
 theorem ShortExact.isIso_of_f_comp_eq (hS : S.ShortExact) [IsLocalRing (End S.X₃)]
-    (hg : ¬ IsSplitEpi S.g) (b : S.X₂ ⟶ S.X₂) (hb : S.f ≫ b = S.f) : IsIso b :=
-  hS.gIsCokernel.left_minimal_iff_mem_jacobsonRadical.mpr
-    (TauCeti.mem_jacobsonRadical_iff_not_isSplitEpi.mpr hg) b hb
+    (hg : ¬ IsSplitEpi S.g) (b : S.X₂ ⟶ S.X₂) (hb : S.f ≫ b = S.f) : IsIso b := by
+  refine hS.gIsCokernel.left_minimal_iff_mem_jacobsonRadical.mpr ?_ b hb
+  rw [CokernelCofork.π_ofπ]
+  exact (TauCeti.mem_jacobsonRadical_iff_not_isSplitEpi (f := S.g)).mpr hg
 
 end CategoryTheory.ShortComplex

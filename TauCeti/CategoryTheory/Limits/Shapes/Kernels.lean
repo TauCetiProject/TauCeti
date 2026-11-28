@@ -59,29 +59,25 @@ end TauCeti
 namespace CategoryTheory.Limits
 
 variable {C : Type*} [Category* C] [HasZeroMorphisms C]
-  {X Y Z : C} {f : X ⟶ Y} {g : Y ⟶ Z} {w : f ≫ g = 0}
 
-/-- Applying `Hom(W, -)` to `X ⟶ Y ⟶ Z` gives an exact pair if `f` is a kernel of `g`. -/
-theorem IsLimit.exact_postcomp (h : IsLimit (KernelFork.ofι f w)) (W : C) :
-    Function.Exact (fun a : W ⟶ X ↦ a ≫ f) (fun b : W ⟶ Y ↦ b ≫ g) := by
-  intro b
-  constructor
-  · intro hb
-    obtain ⟨a, ha⟩ := KernelFork.IsLimit.lift' h b hb
-    exact ⟨a, by simpa only [KernelFork.ι_ofι] using ha⟩
-  · rintro ⟨a, rfl⟩
-    simp [Category.assoc, w]
+/-- Applying `Hom(W, -)` to a limiting kernel fork and its defining map gives an exact pair. -/
+theorem IsLimit.exact_postcomp {Y Z : C} {g : Y ⟶ Z} {s : KernelFork g}
+    (h : IsLimit s) (W : C) :
+    Function.Exact (fun a : W ⟶ s.pt ↦ a ≫ s.ι) (fun b : W ⟶ Y ↦ b ≫ g) := by
+  refine Function.Exact.of_comp_of_mem_range (funext fun a ↦ ?_) fun b hb ↦ ?_
+  · simp [Category.assoc, s.condition]
+  · obtain ⟨a, ha⟩ := KernelFork.IsLimit.lift' h b hb
+    exact ⟨a, ha⟩
 
-/-- Applying `Hom(-, W)` to `X ⟶ Y ⟶ Z` gives an exact pair if `g` is a cokernel of `f`. -/
-theorem IsColimit.exact_precomp (h : IsColimit (CokernelCofork.ofπ g w)) (W : C) :
-    Function.Exact (fun a : Z ⟶ W ↦ g ≫ a) (fun b : Y ⟶ W ↦ f ≫ b) := by
-  intro b
-  constructor
-  · intro hb
-    obtain ⟨a, ha⟩ := CokernelCofork.IsColimit.desc' h b hb
-    exact ⟨a, by simpa only [CokernelCofork.π_ofπ] using ha⟩
-  · rintro ⟨a, rfl⟩
-    simp [← Category.assoc, w]
+/-- Applying `Hom(-, W)` to a colimiting cokernel cofork and its defining map gives
+an exact pair. -/
+theorem IsColimit.exact_precomp {X Y : C} {f : X ⟶ Y} {s : CokernelCofork f}
+    (h : IsColimit s) (W : C) :
+    Function.Exact (fun a : s.pt ⟶ W ↦ s.π ≫ a) (fun b : Y ⟶ W ↦ f ≫ b) := by
+  refine Function.Exact.of_comp_of_mem_range (funext fun a ↦ ?_) fun b hb ↦ ?_
+  · simp [← Category.assoc, s.condition]
+  · obtain ⟨a, ha⟩ := CokernelCofork.IsColimit.desc' h b hb
+    exact ⟨a, ha⟩
 
 end CategoryTheory.Limits
 

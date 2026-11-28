@@ -208,6 +208,14 @@ theorem mem_jacobsonRadical_iff_isIso_id_sub_comp_left {X Y : C} {f : X ⟶ Y} :
   ⟨fun hf g => (isIso_id_sub_comp_comm f g).1 (hf g),
     fun hf g => (isIso_id_sub_comp_comm f g).2 (hf g)⟩
 
+/-- A morphism in the opposite category lies in the radical exactly when its unop does. -/
+theorem mem_jacobsonRadical_iff_unop {X Y : Cᵒᵖ} {f : X ⟶ Y} :
+    f ∈ jacobsonRadical X Y ↔ f.unop ∈ jacobsonRadical Y.unop X.unop := by
+  rw [mem_jacobsonRadical_iff_isIso_id_sub_comp_left,
+    mem_jacobsonRadical_iff_isIso_id_sub_comp_right]
+  exact (opEquiv Y X).forall_congr fun g ↦ by
+    simp only [opEquiv_apply, ← isIso_unop_iff, unop_sub, unop_id, unop_comp]
+
 /-! ### The radical is a two-sided ideal -/
 
 /-- **Precomposing a radical morphism keeps it radical.** -/
