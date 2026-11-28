@@ -288,14 +288,14 @@ theorem forall_prop_and_isRepresentationFinite_of_length_le (hA : centralIdempot
     (∀ X : FGModuleCat.{w} A, Indecomposable X.obj → S X) ∧ IsRepresentationFinite.{w} A := by
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
   -- The source and sink maps at non-injective and non-projective modules are the end maps of the
-  -- almost-split sequences of `FGModuleCat A`, moved to the given module along the end isomorphism.
+  -- almost-split sequences of `FGModuleCat A`.
   refine forall_prop_and_isRepresentationFinite_of_isLeftAlmostSplit_of_isRightAlmostSplit hA S hS
     (fun N hN hinj ↦ ?_) (fun M hM hproj ↦ ?_) hirr hne b hb
-  · obtain ⟨T, hT, ⟨e⟩⟩ := FGModuleCat.exists_isAlmostSplit_of_not_injective R N
+  · obtain ⟨Y, _, i, _, _, hT⟩ := FGModuleCat.exists_isAlmostSplit_of_not_injective R N
       ((FGModuleCat.indecomposable_obj_iff N).mp (hS N hN)) hinj
-    exact ⟨T.X₂, e.inv ≫ T.f, hT.isLeftAlmostSplit_f.iso_comp e.inv⟩
-  · obtain ⟨T, hT, ⟨e⟩⟩ := FGModuleCat.exists_isAlmostSplit R M
+    exact ⟨Y, i, hT.isLeftAlmostSplit_f⟩
+  · obtain ⟨_, Y, _, p, _, hT⟩ := FGModuleCat.exists_isAlmostSplit R M
       ((FGModuleCat.indecomposable_obj_iff M).mp (hS M hM)) hproj
-    exact ⟨T.X₂, T.g ≫ e.hom, hT.isRightAlmostSplit_g.comp_iso e.hom⟩
+    exact ⟨Y, p, hT.isRightAlmostSplit_g⟩
 
 end TauCeti

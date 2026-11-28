@@ -39,8 +39,8 @@ These are the categorical sides of the covariant and contravariant defects of `e
 
 * `TauCeti.ExactStructure.Extension.exists_mk_pushout_eq_of_isProjective`: every class in
   `Ext¹_E(Z, W)` is a cobase change of `[e]`.
-* `TauCeti.ExactStructure.ProjectivePresentation.isFiniteLength_ext1`: it suffices to bound
-  the length of `Hom(K, W)` for the kernel `K` of a projective presentation of `Z`.
+* `TauCeti.ExactStructure.Extension.isFiniteLength_ext1_of_isProjective`: it suffices to bound
+  the length of `Hom(X, W)` for a conflation `X ⟶ P ⟶ Z` with projective middle term.
 * `TauCeti.ExactStructure.EnoughProjectives.isFiniteLength_ext1`: if `Hom(-, W)` takes values of
   finite length, then so does `Ext¹_E(-, W)`.
 
@@ -160,20 +160,13 @@ end Linear
 
 end Extension
 
-/-- Given a projective presentation of `Z` with kernel `K`, `Ext¹_E(Z, W)` has finite length if
-`Hom(K, W)` does. -/
-theorem ProjectivePresentation.isFiniteLength_ext1 (P : E.ProjectivePresentation Z)
-    (R : Type*) [Ring R] [Linear R C] (W : C)
-    (hK : IsFiniteLength R (P.K ⟶ W)) : IsFiniteLength R (E.Ext1 Z W) :=
-  P.extension.isFiniteLength_ext1_of_isProjective P.isProjective_extension_obj R W hK
-
 /-- In an exact category with enough projectives, `Ext¹_E(Z, W)` has finite length if every
 `Hom(K, W)` has finite length. -/
 theorem EnoughProjectives.isFiniteLength_ext1 (h : E.EnoughProjectives)
     (R : Type*) [Ring R] [Linear R C] (Z W : C)
     (hW : ∀ K : C, IsFiniteLength R (K ⟶ W)) : IsFiniteLength R (E.Ext1 Z W) := by
   let P := h.projectivePresentation Z
-  exact P.isFiniteLength_ext1 R W (hW P.K)
+  exact P.extension.isFiniteLength_ext1_of_isProjective P.isProjective_extension_obj R W (hW P.K)
 
 end ExactStructure
 

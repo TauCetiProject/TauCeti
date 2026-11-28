@@ -203,27 +203,29 @@ generated indecomposable module that is not projective in `FGModuleCat A` ends a
 sequence of `FGModuleCat A`. The modules live in any universe in which `A` is small. -/
 theorem exists_isAlmostSplit [Small.{w} A] (M : FGModuleCat.{w} A) (hM : Indecomposable M)
     (hP : ¬ Projective M) :
-    ∃ S : ShortComplex (FGModuleCat.{w} A), S.IsAlmostSplit ∧ Nonempty (S.X₃ ≅ M) := by
+    ∃ (X Y : FGModuleCat.{w} A) (i : X ⟶ Y) (p : Y ⟶ M) (h : i ≫ p = 0),
+      (ShortComplex.mk i p h).IsAlmostSplit := by
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
   obtain ⟨X, Y, i, p, h, hX, hY, hS⟩ := ModuleCat.exists_isAlmostSplit_of_not_projective R M.obj
     ((indecomposable_obj_iff M).mpr hM) ((projective_obj_iff M).not.mpr hP)
   obtain ⟨i', p', h', hS', -⟩ := (ObjectProperty.ι _).exists_isAlmostSplit_of_obj_iso hS
     (X₁ := ⟨X, (ModuleCat.isFG_iff _).mpr hX⟩) (X₂ := ⟨Y, (ModuleCat.isFG_iff _).mpr hY⟩)
     (X₃ := M) (Iso.refl _) (Iso.refl _) (Iso.refl _)
-  exact ⟨ShortComplex.mk i' p' h', hS', ⟨Iso.refl _⟩⟩
+  exact ⟨_, _, i', p', h', hS'⟩
 
 /-- **Almost-split sequences starting at a module.** Over an Artin algebra, every finitely
 generated indecomposable module that is not injective in `FGModuleCat A` starts an almost-split
 sequence of `FGModuleCat A`. The modules live in any universe in which `A` is small. -/
 theorem exists_isAlmostSplit_of_not_injective [Small.{w} A] (M : FGModuleCat.{w} A)
     (hM : Indecomposable M) (hI : ¬ Injective M) :
-    ∃ S : ShortComplex (FGModuleCat.{w} A), S.IsAlmostSplit ∧ Nonempty (S.X₁ ≅ M) := by
+    ∃ (Y Z : FGModuleCat.{w} A) (i : M ⟶ Y) (p : Y ⟶ Z) (h : i ≫ p = 0),
+      (ShortComplex.mk i p h).IsAlmostSplit := by
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
   obtain ⟨Y, Z, i, p, h, hY, hZ, hS⟩ := ModuleCat.exists_isAlmostSplit_of_not_injective R M.obj
     ((indecomposable_obj_iff M).mpr hM) ((injective_obj_iff M).not.mpr hI)
   obtain ⟨i', p', h', hS', -⟩ := (ObjectProperty.ι _).exists_isAlmostSplit_of_obj_iso hS
     (X₁ := M) (X₂ := ⟨Y, (ModuleCat.isFG_iff _).mpr hY⟩)
     (X₃ := ⟨Z, (ModuleCat.isFG_iff _).mpr hZ⟩) (Iso.refl _) (Iso.refl _) (Iso.refl _)
-  exact ⟨ShortComplex.mk i' p' h', hS', ⟨Iso.refl _⟩⟩
+  exact ⟨_, _, i', p', h', hS'⟩
 
 end FGModuleCat
