@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.Grp.Abelian
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Map
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
+public import TauCeti.Algebra.Homology.DerivedCategory.Ext.WithAction
 
 /-!
 # Comparisons between cohomology theories of functors
@@ -29,13 +30,21 @@ bijective in every degree. Isomorphisms give bijective comparisons for the ident
 
 Comparison maps are natural in the source and in the coefficients
 (`CategoryTheory.Functor.mk₀_comp_extComparison` and
-`CategoryTheory.Functor.extComparison_comp_mk₀`), compose
+`CategoryTheory.Functor.extComparison_comp_mk₀`), commute with the connecting maps of short exact
+sequences of coefficients (`CategoryTheory.Functor.extComparison_comp_extClass`), compose
 (`CategoryTheory.Functor.extComparison_extComparison`), reduce to pull-back and push-forward for
 the identity functor (`CategoryTheory.Functor.extComparison_id_apply`), and a natural
 transformation `η : φ ⟶ ψ` can be moved from the coefficients to the source
 (`CategoryTheory.Functor.extComparison_whiskerRight_comp`). The proofs rest on Mathlib's
 compatibility of `CategoryTheory.Abelian.Ext.mapExactFunctor` with composition of classes, of
-functors, and with natural transformations.
+functors, with natural transformations and with extension classes.
+
+When the coefficients carry actions `ρ : R →+* End F` and `ρ' : R →+* End F'` of a semiring `R`,
+the comparison map is also a map between the cohomology groups with these actions
+(`TauCeti.Abelian.ExtWithAction`), `CategoryTheory.Functor.extComparisonWithAction`. By
+naturality in the coefficients it commutes with the action of every `r ∈ R` with which `β`
+commutes (`CategoryTheory.Functor.extComparisonWithAction_smul`), so it is `R`-linear when `β` is
+`R`-equivariant.
 
 ## References
 
@@ -84,6 +93,13 @@ degree. -/
 def IsExtComparisonBijective (φ : C' ⥤ C) (β : φ ⋙ F ⟶ F') (α : N' ⟶ φ ⋙ N) : Prop :=
   ∀ n : ℕ, Function.Bijective (extComparison.{t, t'} φ β α n)
 
+/-- A comparison is bijective along `α` exactly when its comparison maps are bijective in every
+degree. -/
+lemma isExtComparisonBijective_iff (φ : C' ⥤ C) (β : φ ⋙ F ⟶ F') (α : N' ⟶ φ ⋙ N) :
+    IsExtComparisonBijective.{t, t'} φ β α ↔
+      ∀ n : ℕ, Function.Bijective (extComparison.{t, t'} φ β α n) :=
+  Iff.rfl
+
 /-- For the identity functor the comparison map is push-forward along `β` followed by pull-back
 along `α`. -/
 lemma extComparison_id_apply (β : F ⟶ G) (α : M ⟶ N) (x : Ext.{t} N F n) :
@@ -129,6 +145,61 @@ lemma extComparison_comp_mk₀ (φ : C' ⥤ C) {β : φ ⋙ F ⟶ F'} {β' : φ 
   simp only [extComparison_apply, Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀,
     Ext.comp_assoc_of_third_deg_zero, Ext.mk₀_comp_mk₀]
   rw [whiskeringLeft_obj_map, h]
+
+/-! ### Comparison maps between cohomology groups with actions -/
+
+section WithAction
+
+open TauCeti.Abelian
+
+variable {R : Type*} [Semiring R] (ρ : R →+* End F) (ρ' : R →+* End F') (φ : C' ⥤ C)
+  (β : φ ⋙ F ⟶ F') (α : N' ⟶ φ ⋙ N)
+
+/-- The comparison map `Extⁿ(N, F) ⟶ Extⁿ(N', F')` for `β` along `α`, between the cohomology
+groups with the actions `ρ` and `ρ'` of `R`. It commutes with the action of every `r ∈ R` with
+which `β` commutes (`CategoryTheory.Functor.extComparisonWithAction_smul`), so it is `R`-linear
+when `β` is `R`-equivariant. -/
+noncomputable def extComparisonWithAction (n : ℕ) :
+    ExtWithAction ρ N n →+ ExtWithAction ρ' N' n :=
+  (ExtWithAction.toExt ρ').symm.toAddMonoidHom.comp
+    ((extComparison φ β α n).comp (ExtWithAction.toExt ρ).toAddMonoidHom)
+
+/-- The comparison map between the cohomology groups with actions is the comparison map. -/
+@[simp]
+lemma toExt_extComparisonWithAction {n : ℕ} (x : ExtWithAction ρ N n) :
+    ExtWithAction.toExt ρ' (extComparisonWithAction ρ ρ' φ β α n x) =
+      extComparison φ β α n (ExtWithAction.toExt ρ x) :=
+  AddEquiv.apply_symm_apply _ _
+
+variable {ρ ρ' φ β} in
+/-- The comparison map commutes with the action of every `r` with which `β` commutes. -/
+lemma extComparisonWithAction_smul {r : R}
+    (hβ : φ.whiskerLeft (ρ r).asHom ≫ β = β ≫ (ρ' r).asHom) {n : ℕ} (x : ExtWithAction ρ N n) :
+    extComparisonWithAction ρ ρ' φ β α n (r • x) = r • extComparisonWithAction ρ ρ' φ β α n x :=
+  (ExtWithAction.toExt ρ').injective <| by simp [extComparison_comp_mk₀ φ hβ]
+
+end WithAction
+
+/-- Comparison maps commute with connecting maps. Let `S` and `S'` be short exact sequences of
+coefficients on `C` and `C'`, and let `u` be a map from the restriction of `S` along `φ` to `S'`,
+with components `u.τᵢ : φ ⋙ S.Xᵢ ⟶ S'.Xᵢ`. Then the comparison map for `u.τ₁` after the connecting
+map `Extⁿ(N, S.X₃) ⟶ Extⁿ⁺¹(N, S.X₁)` of `S` is the connecting map of `S'` after the comparison
+map for `u.τ₃`. -/
+lemma extComparison_comp_extClass (φ : C' ⥤ C) {S : ShortComplex (C ⥤ AddCommGrpCat.{w})}
+    {S' : ShortComplex (C' ⥤ AddCommGrpCat.{w})} (hS : S.ShortExact) (hS' : S'.ShortExact)
+    (u : S.map ((whiskeringLeft C' C AddCommGrpCat.{w}).obj φ) ⟶ S') (α : N' ⟶ φ ⋙ N)
+    (x : Ext.{t} N S.X₃ n) {m : ℕ} (h : n + 1 = m) :
+    extComparison φ u.τ₁ α m (x.comp hS.extClass h) =
+      (extComparison φ u.τ₃ α n x).comp hS'.extClass h := by
+  -- Restricting `x.comp hS.extClass h` along `φ` gives the restriction of `x` followed by the
+  -- connecting map of the restriction of `S`.
+  rw [extComparison_apply, extComparison_apply, Ext.mapExactFunctor_comp,
+    Ext.mapExactFunctor_extClass]
+  -- Naturality of connecting maps moves `u.τ₁` across the connecting map, as `u.τ₃`.
+  rw [Ext.comp_assoc_of_third_deg_zero, (hS.map_of_exact _).extClass_naturality hS' u,
+    ← Ext.comp_assoc_of_second_deg_zero]
+  -- Both sides are now `α`, then `x`, then `u.τ₃`, then `hS'.extClass`, bracketed differently.
+  exact (Ext.comp_assoc _ _ _ (zero_add n) h (by lia)).symm
 
 /-- Comparison maps compose: the comparison map of `(ψ, β')` along `α'` after that of `(φ, β)`
 along `α` is the comparison map of the composite `(ψ ⋙ φ, ψ.whiskerLeft β ≫ β')` along

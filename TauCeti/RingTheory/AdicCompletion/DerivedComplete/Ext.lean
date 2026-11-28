@@ -1,0 +1,88 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.Homology.DerivedCategory.Ext.WithAction
+public import TauCeti.Algebra.Homology.Ext.Product
+public import TauCeti.RingTheory.AdicCompletion.DerivedComplete.Module
+
+/-!
+# Derived completeness of `Ext` groups
+
+Let `F` be an object of an abelian category `C` with an action `ρ : R →+* End F` of a commutative
+ring `R`, so that every `Extⁿ(P, F)` is an `R`-module (`TauCeti.Abelian.ExtWithAction`).
+
+The telescope map `(xⱼ) ↦ (xⱼ - f • xⱼ₊₁)` defining derived completeness
+(`TauCeti.IsDerivedComplete`) has a counterpart on a product `∏_ℕ F` of copies of `F`: the
+endomorphism with components `πⱼ - πⱼ₊₁ ≫ ρ(f)`. When `C` has enough injectives and countable
+products in `C` are exact, `Extⁿ(P, -)` turns the product into the product of copies of
+`Extⁿ(P, F)` (`CategoryTheory.Abelian.Ext.addEquivProduct`), and this endomorphism into the
+telescope map of `Extⁿ(P, F)`. So if it is an isomorphism for every `f ∈ I`, every `Extⁿ(P, F)`
+is derived `I`-complete (`TauCeti.Abelian.ExtWithAction.isDerivedComplete_of_isIso`). For a functor
+to modules, as coefficients in a category of functors, the endomorphism is an isomorphism as soon
+as the values of the functor are derived complete, so derived completeness passes from the
+coefficients to their cohomology.
+
+## Main results
+
+* `TauCeti.Abelian.ExtWithAction.isDerivedComplete_of_isIso`: if the telescope endomorphisms of
+  `∏_ℕ F` are isomorphisms for all `f ∈ I`, every `Extⁿ(P, F)` is derived `I`-complete.
+
+## References
+
+* [ShortProof]: `grh-lean`, https://github.com/lsernau/grh-lean, file
+  `src/Lib/PadicComparison/Completion.lean` (declaration
+  `New.Variety.IsDerivedComplete.cohomology`); Apache 2.0, Copyright 2026 Anthropic, PBC. The
+  statement is adapted from this declaration and stated for an object with an action in an abelian
+  category with exact countable products; the proof follows its plan, through the commutation of
+  `Ext` with the product of countably many copies of `F`.
+* [Stacks Project, Tag 091N](https://stacks.math.columbia.edu/tag/091N), for derived
+  completeness.
+-/
+
+public section
+
+open CategoryTheory CategoryTheory.Abelian CategoryTheory.Abelian.Ext CategoryTheory.Limits
+
+universe w v u
+
+namespace TauCeti.Abelian.ExtWithAction
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C] {R : Type*} [CommRing R] {F : C}
+  (ρ : R →+* End F)
+
+/-- **Derived completeness of `Ext`.** Let `c` exhibit `c.pt` as the product `∏_ℕ F` of countably
+many copies of an object `F` with an action `ρ` of `R`, in an abelian category with enough
+injectives and exact countable products. If for every `f ∈ I` the endomorphism of `c.pt` with
+components `πⱼ - πⱼ₊₁ ≫ ρ(f)` is an isomorphism, then every `Extⁿ(P, F)` is derived
+`I`-complete. -/
+theorem isDerivedComplete_of_isIso [HasLimitsOfShape (Discrete ℕ) C]
+    [HasExactLimitsOfShape (Discrete ℕ) C] [EnoughInjectives C] {I : Ideal R}
+    {c : Fan fun _ : ℕ ↦ F} (hc : IsLimit c)
+    (h : ∀ f ∈ I, IsIso (Fan.IsLimit.lift hc fun j ↦ c.proj j - c.proj (j + 1) ≫ (ρ f).asHom))
+    (P : C) (n : ℕ) : IsDerivedComplete I (ExtWithAction ρ P n) := by
+  refine isDerivedComplete_iff.2 fun f hf ↦ ?_
+  set T := Fan.IsLimit.lift hc fun j ↦ c.proj j - c.proj (j + 1) ≫ (ρ f).asHom
+  have := h f hf
+  -- `Extⁿ(P, ∏_ℕ F)` is the product of copies of `Extⁿ(P, F)`.
+  let e : Ext.{w} P c.pt n ≃+ (ℕ → ExtWithAction ρ P n) :=
+    (addEquivProduct P hc n).trans (AddEquiv.piCongrRight fun _ ↦ (toExt ρ).symm)
+  have he (x : Ext.{w} P c.pt n) (j : ℕ) :
+      toExt ρ (e x j) = x.comp (mk₀ (c.proj j)) (add_zero n) := by
+    simp [e]
+  -- Under `e`, composition with the isomorphism `T` is the telescope map of `Extⁿ(P, F)`.
+  have hsq : ⇑(telescope (ExtWithAction ρ P n) f) ∘ e =
+      e ∘ TauCeti.extAddEquivOfIso (Iso.refl P) (asIso T) n := by
+    ext x j
+    apply (toExt ρ).injective
+    simp only [Function.comp_apply, telescope_apply, sub_eq_add_neg, map_add, map_neg, toExt_smul,
+      he, TauCeti.extAddEquivOfIso_apply, Iso.refl_inv, mk₀_id_comp, asIso_hom,
+      comp_assoc_of_second_deg_zero, mk₀_comp_mk₀, T, Fan.IsLimit.fac, mk₀_add, mk₀_neg, comp_add,
+      comp_neg]
+  exact (Function.Bijective.of_comp_iff _ e.bijective).1
+    (hsq ▸ e.bijective.comp (AddEquiv.bijective _))
+
+end TauCeti.Abelian.ExtWithAction

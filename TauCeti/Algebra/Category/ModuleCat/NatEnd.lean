@@ -21,6 +21,11 @@ When `F` is a fibre functor restricted to a finite piece of a category, `End F` 
 algebra out of which the category is reconstructed, and `F.toNatEndModule` is the comparison
 functor to its modules.
 
+In the other direction, the scalars act by natural endomorphisms of the functor
+`F ⋙ forget₂ (ModuleCat R) AddCommGrpCat` to abelian groups underlying `F`
+(`CategoryTheory.Functor.smulEnd`). This is the action through which the `Ext` groups of functors
+to abelian groups with coefficients in `F` become `R`-modules.
+
 ## Main definitions
 
 * `CategoryTheory.Functor.natEndModule`: the action of `End F` on `F.obj Y`, as a `Module`
@@ -28,6 +33,8 @@ functor to its modules.
 * `CategoryTheory.Functor.toNatEndModule`: the lift of `F` to modules over `End F`.
 * `CategoryTheory.Functor.toNatEndModuleCompRestrictScalarsIso`: restricting scalars back to `R`
   recovers `F`.
+* `CategoryTheory.Functor.smulEnd`: the action of `R` on the functor to abelian groups underlying
+  `F`.
 
 ## References
 
@@ -94,6 +101,22 @@ instance [F.Faithful] : F.toNatEndModule.Faithful where
     have hy := congrArg (fun φ ↦ φ.hom y) h
     simp only [toNatEndModule_map_hom_apply] at hy
     exact hy))
+
+/-- The action of `R` on the functor to abelian groups underlying `F`: `r` acts at every object by
+multiplication by `r`. It is `ModuleCat.smulNatTrans` whiskered by `F`. -/
+noncomputable def smulEnd : R →+* End (F ⋙ forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w}) where
+  toFun r := .of (F.whiskerLeft (ModuleCat.smulNatTrans R r).asHom)
+  map_one' := by ext; simp
+  map_mul' _ _ := by ext; simp
+  map_zero' := by ext; simp
+  map_add' _ _ := by ext; simp
+
+/-- The action of `r` on the functor underlying `F` is multiplication by `r` at every object. Not
+a `simp` lemma: its left-hand side is not in simp normal form, since `simp` rewrites the type of
+`y` through `Functor.comp_obj`. -/
+theorem smulEnd_asHom_app_apply (r : R) (Y : D) (y : F.obj Y) :
+    (F.smulEnd r).asHom.app Y y = r • y :=
+  (rfl)
 
 end Ring
 
