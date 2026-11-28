@@ -26,7 +26,9 @@ additive fact underlying the compactness of the norm-one idele class group.
 * `TauCeti.GlobalNumberFields.eq_zero_of_forall_norm_lt_one_of_mem_integralAdeles`:
   the only element of `K` whose adele has norm less than `1` at every infinite place and is
   integral at every finite place is `0`.
-* `TauCeti.GlobalNumberFields.discreteTopology_principalSubgroup`: `K` is discrete in `𝔸[K]`.
+* `TauCeti.GlobalNumberFields.discreteTopology_principalSubgroup`: `K` is discrete in `𝔸[K]`;
+  `TauCeti.GlobalNumberFields.exists_mem_nhds_zero_eq_zero_of_algebraMap_mem`: so some
+  neighbourhood of `0` in `𝔸[K]` meets `K` only in `0`.
 * `TauCeti.GlobalNumberFields.isClosed_principalSubgroup`: `K` is closed in `𝔸[K]`.
 * `TauCeti.GlobalNumberFields.t3Space_quotient_principalSubgroup`: `𝔸[K] / K` is Hausdorff.
 
@@ -39,7 +41,7 @@ additive fact underlying the compactness of the norm-one idele class group.
 public section
 
 open IsDedekindDomain HeightOneSpectrum NumberField
-open scoped NumberField.AdeleRing
+open scoped NumberField.AdeleRing Topology
 
 namespace TauCeti.GlobalNumberFields
 
@@ -91,6 +93,18 @@ instance discreteTopology_principalSubgroup :
       (FiniteAdeleRing.algebraMap_mem_integralAdeles_iff (R := 𝓞 K) 0).mpr ⟨0, map_zero _⟩⟩
   · obtain rfl := eq_zero_of_forall_norm_lt_one_of_mem_integralAdeles h.1 h.2
     simp
+
+/-- **A neighbourhood of `0` in the adeles meeting `K` only in `0`**: the diagonal copy of a
+number field is discrete in `𝔸[K]`, so some neighbourhood of `0` in `𝔸[K]` contains the image of
+no nonzero element of `K`. -/
+theorem exists_mem_nhds_zero_eq_zero_of_algebraMap_mem :
+    ∃ N ∈ 𝓝 (0 : 𝔸[K]), ∀ x : K, algebraMap K 𝔸[K] x ∈ N → x = 0 := by
+  have h0 : ({0} : Set (AdeleRing.principalSubgroup (𝓞 K) K)) ∈ 𝓝 0 := mem_nhds_discrete.2 rfl
+  rw [Topology.IsInducing.subtypeVal.nhds_eq_comap, Filter.mem_comap] at h0
+  obtain ⟨N, hN, hN0⟩ := h0
+  refine ⟨N, hN, fun x hx ↦ AdeleRing.algebraMap_injective (𝓞 K) K ?_⟩
+  have : (⟨algebraMap K 𝔸[K] x, x, rfl⟩ : AdeleRing.principalSubgroup (𝓞 K) K) = 0 := hN0 hx
+  simpa using congrArg Subtype.val this
 
 /-- **`K` is closed in its adele ring**: the diagonal copy of a number field is a closed additive
 subgroup of `𝔸[K]`. -/
