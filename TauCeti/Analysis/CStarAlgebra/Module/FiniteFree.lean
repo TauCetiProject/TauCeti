@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.Module.Constructions
 public import TauCeti.Analysis.CStarAlgebra.Module.Action
-public import TauCeti.Analysis.CStarAlgebra.Module.Self
+public import TauCeti.Analysis.CStarAlgebra.Module.Synonym
 
-import Mathlib.Analysis.Normed.Operator.Banach
+import TauCeti.Analysis.CStarAlgebra.Module.Self
 import TauCeti.LinearAlgebra.Prod
 
 /-!
@@ -17,10 +18,10 @@ import TauCeti.LinearAlgebra.Prod
 Over a unital C⋆-algebra `A`, `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` is a finitely generated free right Hilbert
 `A`-module when `ι` is finite, identified with `ι → Aᵐᵒᵖ` via
 `TauCeti.WithCStarModule.piOpLinearEquiv`. Every right `A`-linear map out of `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)`
-into a right Hilbert `A`-module is continuous (`LinearMap.continuous_of_finite_pi_cstarModule`), and
-by the closed graph theorem any right `A`-linear right inverse into `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` from a
-complete right Hilbert `A`-module is also continuous
-(`LinearMap.continuous_rightInverse_of_comp_eq_id_of_finite_pi_cstarModule`).
+into any topological right `A`-module (`[ContinuousAdd E] [ContinuousSMul Aᵐᵒᵖ E]`) is continuous
+(`LinearMap.continuous_of_finite_pi_cstarModule`), and by the closed graph theorem any right
+`A`-linear right inverse into `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` from a complete right Hilbert `A`-module is
+also continuous (`LinearMap.continuous_rightInverse_of_comp_eq_id_of_finite_pi_cstarModule`).
 
 ## Main declarations
 
@@ -37,14 +38,11 @@ open scoped WithCStarModule
 
 namespace LinearMap
 
-variable {A E : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [SeminormedAddCommGroup E] [NormedSpace ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
-
 /-- Every right `A`-linear map out of a finitely generated free right Hilbert `A`-module
-`C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` into a right Hilbert `A`-module is continuous. -/
-theorem continuous_of_finite_pi_cstarModule {ι : Type*} [Finite ι]
-    (f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E) : Continuous f := by
-  let : IsBoundedSMul Aᵐᵒᵖ E := IsBoundedSMul.of_norm_smul_le CStarModule.norm_smul_le
+`C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` into a topological right `A`-module is continuous. -/
+theorem continuous_of_finite_pi_cstarModule {A E ι : Type*} [CStarAlgebra A]
+    [AddCommMonoid E] [Module Aᵐᵒᵖ E] [TopologicalSpace E] [ContinuousAdd E]
+    [ContinuousSMul Aᵐᵒᵖ E] [Finite ι] (f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E) : Continuous f := by
   let e := TauCeti.WithCStarModule.piOpLinearEquiv A ι
   have he : Continuous e := continuous_pi fun i ↦
     (MulOpposite.continuous_op.comp ((continuous_apply i).comp
@@ -54,13 +52,18 @@ theorem continuous_of_finite_pi_cstarModule {ι : Type*} [Finite ι]
 
 /-- If `f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E` and `g : E →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` satisfy
 `f ∘ₗ g = .id` on a complete right Hilbert `A`-module `E`, then `g` is continuous. -/
-theorem continuous_rightInverse_of_comp_eq_id_of_finite_pi_cstarModule {ι : Type*} [Finite ι]
-    [CompleteSpace E] (f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E)
+theorem continuous_rightInverse_of_comp_eq_id_of_finite_pi_cstarModule {A E ι : Type*}
+    [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+    [SeminormedAddCommGroup E] [NormedSpace ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
+    [CompleteSpace E] [Finite ι] (f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E)
     (g : E →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) (hfg : f ∘ₗ g = LinearMap.id) : Continuous g := by
   let : Fintype ι := Fintype.ofFinite ι
   have : IsScalarTower ℂ Aᵐᵒᵖ E := CStarModule.isScalarTower Aᵐᵒᵖ E
   have : IsScalarTower ℂ Aᵐᵒᵖ C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) := CStarModule.isScalarTower _ _
   let : NormedAddCommGroup E := TauCeti.CStarModule.normedAddCommGroupOfCStarModule Aᵐᵒᵖ E
+  let : IsBoundedSMul Aᵐᵒᵖ E := IsBoundedSMul.of_norm_smul_le CStarModule.norm_smul_le
+  let : IsBoundedSMul Aᵐᵒᵖ C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) :=
+    IsBoundedSMul.of_norm_smul_le CStarModule.norm_smul_le
   refine (g.restrictScalars ℂ).continuous_of_isClosed_graph ?_
   rw [coe_graph_eq_of_comp_eq_id (f.restrictScalars ℂ) (g.restrictScalars ℂ)
     (LinearMap.ext fun z ↦ LinearMap.congr_fun hfg z)]

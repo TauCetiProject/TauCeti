@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.ToLin
-public import TauCeti.Analysis.CStarAlgebra.Module.AdjointPair
 public import TauCeti.Analysis.CStarAlgebra.Module.Gram
 public import TauCeti.Analysis.CStarAlgebra.Module.Self
 
@@ -35,11 +34,14 @@ ring `A` and for finite `n`, `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)` is a finite fr
   `CStarMatrix.isAdjointPair_mulVecCLM_star`:
   over a (possibly non-unital) C⋆-algebra `A` for finite `m` and `n` (resp. finite `n`),
   `mulVecCLM M` and `mulVecCLM M.conjTranspose` form a C⋆-module adjoint pair.
+* `CStarMatrix.gram_cols`: over a (possibly non-unital) C⋆-algebra `A` and for finite `m`,
+  the Gram matrix of the columns of `M : CStarMatrix m n A` is `M.conjTranspose * M`.
 * `CStarMatrix.mulVecLinearMap`: over a unital ring `A` and finite `n`, left matrix-vector
   multiplication bundled additively in the matrix as
   `CStarMatrix m n A →ₗ[ℤ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A) →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, m → A)`.
-* `CStarMatrix.gram_mulVecCLM_single_one`: over a unital C⋆-algebra `A` and for finite `m`
-  and `n`, the Gram matrix of the columns `j ↦ mulVecCLM M (e j)` of `M` is `M.conjTranspose * M`.
+* `CStarMatrix.gram_mulVecCLM_single_one`, `IsStarProjection.gram_mulVecCLM_single_one`:
+  over a unital C⋆-algebra `A` and for finite `m` and `n`, the Gram matrix of the columns
+  `j ↦ mulVecCLM M (e j)` of `M` is `M.conjTranspose * M`, and for a star projection `p` it is `p`.
 
 ## References
 
@@ -138,6 +140,15 @@ theorem isAdjointPair_mulVecCLM_star (M : CStarMatrix n n A) : LinearMap.IsAdjoi
       (innerₛₗ (A := Aᵐᵒᵖ) (E := C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A))).flip (mulVecCLM M) (mulVecCLM (star M)) :=
   isAdjointPair_mulVecCLM_conjTranspose M
 
+omit [Fintype n] in
+/-- Over a (possibly non-unital) C⋆-algebra, the Gram matrix of the columns of
+`M : CStarMatrix m n A` is `M.conjTranspose * M`. -/
+theorem gram_cols [Fintype m] (M : CStarMatrix m n A) :
+    gram A (fun j ↦ (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm (fun i ↦ M i j)) =
+      M.conjTranspose * M := by
+  ext i j
+  simp [gram_apply, WithCStarModule.pi_inner, Finset.unop_sum, mul_apply, conjTranspose_apply]
+
 end CStar
 
 end NonUnital
@@ -200,9 +211,21 @@ theorem gram_mulVecCLM_single_one [Fintype m] [DecidableEq n] [CStarAlgebra A] [
     [StarOrderedRing A] (M : CStarMatrix m n A) :
     gram A (fun j ↦ mulVecCLM M ((WithCStarModule.equiv Aᵐᵒᵖ (n → A)).symm (Pi.single j (1 : A)))) =
       M.conjTranspose * M := by
-  ext i j
-  simp [gram_apply, WithCStarModule.pi_inner, Finset.unop_sum, mulVecCLM_apply_apply, mul_apply,
-    conjTranspose_apply, Pi.single_apply]
+  have hcol (j : n) :
+      mulVecCLM M ((WithCStarModule.equiv Aᵐᵒᵖ (n → A)).symm (Pi.single j (1 : A))) =
+        (WithCStarModule.equiv Aᵐᵒᵖ (m → A)).symm (fun i ↦ M i j) := by
+    ext i
+    simp [mulVecCLM_apply_apply, Pi.single_apply]
+  simpa only [hcol] using gram_cols M
+
+/-- Over a unital C⋆-algebra, the Gram matrix of the columns `j ↦ mulVecCLM p (e j)` of a star
+projection `p : CStarMatrix n n A` is `p` itself. -/
+theorem _root_.IsStarProjection.gram_mulVecCLM_single_one [DecidableEq n] [CStarAlgebra A]
+    [PartialOrder A] [StarOrderedRing A] {p : CStarMatrix n n A} (hp : IsStarProjection p) :
+    gram A (fun j ↦ mulVecCLM p ((WithCStarModule.equiv Aᵐᵒᵖ (n → A)).symm (Pi.single j (1 : A)))) =
+      p := by
+  rw [CStarMatrix.gram_mulVecCLM_single_one, ← CStarMatrix.star_eq_conjTranspose,
+    hp.isSelfAdjoint.star_eq, hp.isIdempotentElem.eq]
 
 end Unital
 

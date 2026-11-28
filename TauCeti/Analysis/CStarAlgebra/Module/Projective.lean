@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Finiteness.Projective
-public import TauCeti.Analysis.CStarAlgebra.Module.Frame
+public import TauCeti.Analysis.CStarAlgebra.Module.Frame.Polar
 
 /-!
 # Finitely generated projective Hilbert C⋆-modules
@@ -96,6 +96,7 @@ theorem exists_completeSpace_cstarModule_of_finite_projective (A M : Type*)
     (e_pi.symm.injective.comp hg₀_inj) g.map_smul fun _ ↦ rfl
   let : NormedAddCommGroup M := CStarModule.normedAddCommGroup Aᵐᵒᵖ
   let : NormedSpace ℂ M := .ofCore (CStarModule.normedSpaceCore Aᵐᵒᵖ)
+  let : IsBoundedSMul Aᵐᵒᵖ M := IsBoundedSMul.of_norm_smul_le CStarModule.norm_smul_le
   have hisom : Isometry g := AddMonoidHomClass.isometry_of_norm (g.restrictScalars ℂ) fun _ ↦ rfl
   exact ⟨‹_›, ‹_›, hisom.isUniformInducing.completeSpace
     (hfg_apply.isClosed_range f.continuous_of_finite_pi_cstarModule hisom.continuous).isComplete⟩

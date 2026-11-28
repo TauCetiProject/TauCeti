@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.CStarAlgebra.Module.Defs
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.Analysis.CStarAlgebra.Module.Self
 
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.ConjSqrt
 import TauCeti.Analysis.CStarAlgebra.Module.Basic
@@ -35,6 +36,8 @@ for the comparison between finite frames and projections.
 * `TauCeti.CStarMatrix.sum_inner_smul_of_gram_eq_one`: a family with identity Gram matrix
   reconstructs every vector in its right `A`-linear span.
 * `CStarMatrix.gram_nonneg`: Gram matrices are positive.
+* `CStarMatrix.algebraMap_le_gram_iff`: scalar lower bounds `r • 1 ≤ gram A y` in terms of
+  right linear combinations.
 * `TauCeti.CStarMatrix.exists_gram_eq_one_of_isStrictlyPositive`: a finite family with strictly
   positive Gram matrix can be renormalized to one with Gram matrix `1` spanning the same vectors.
 
@@ -48,6 +51,7 @@ for the comparison between finite frames and projections.
 public section
 
 open MulOpposite
+open scoped WithCStarModule
 
 namespace CStarMatrix
 
@@ -88,6 +92,25 @@ theorem gram_nonneg [Fintype n] (x : n → E) : 0 ≤ gram A x :=
   nonneg_iff_forall_sum_nonneg.mpr fun a => by
     rw [sum_star_mul_gram_mul, unop_nonneg]
     exact CStarModule.inner_self_nonneg
+
+/-- Over a unital C⋆-algebra `A`, a real scalar matrix `algebraMap ℝ (CStarMatrix n n A) r` is
+dominated by `gram A y` if and only if every right `A`-linear combination `∑ i, op (w i) • y i`
+satisfies `r • ⟨w, w⟩_A ≤ ⟨∑ i, op (w i) • y i, ∑ i, op (w i) • y i⟩_A`. -/
+theorem algebraMap_le_gram_iff [Fintype n] [DecidableEq n] {A E : Type*}
+    [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+    [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
+    (y : n → E) {r : ℝ} :
+    algebraMap ℝ (CStarMatrix n n A) r ≤ gram A y ↔
+      ∀ w : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A), r • unop (inner Aᵐᵒᵖ w w) ≤
+        unop (inner Aᵐᵒᵖ (∑ i, op (w i) • y i) (∑ i, op (w i) • y i)) := by
+  rw [(gram A y).algebraMap_le_iff_forall_sum_le]
+  refine (WithCStarModule.equiv Aᵐᵒᵖ (n → A)).symm.forall_congr fun w ↦ ?_
+  have hw : ∑ i, star (w i) * w i =
+      unop (inner Aᵐᵒᵖ ((WithCStarModule.equiv Aᵐᵒᵖ (n → A)).symm w)
+        ((WithCStarModule.equiv Aᵐᵒᵖ (n → A)).symm w)) := by
+    simp [WithCStarModule.pi_inner, Finset.unop_sum]
+  rw [hw, sum_star_mul_gram_mul]
+  rfl
 
 end CStarMatrix
 

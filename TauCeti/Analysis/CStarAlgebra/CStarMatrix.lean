@@ -125,10 +125,9 @@ embeddings into block-diagonal matrices.
   star-algebra whose star is proper.
 * `CStarMatrix.sum_star_mul_mul_eq_dotProduct_mulVec`: rewriting a quadratic form as a
   dot product with `mulVec`.
-* `CStarMatrix.nonneg_iff_forall_sum_nonneg`: the quadratic-form criterion for positivity, with
-  `CStarMatrix.ofMatrix_smul_nonneg` (`[pᵢⱼ b]` is positive for positive `[pᵢⱼ]` and `b`) and
-  `CStarMatrix.star_left_conjugate_unitization_nonneg` (compressing a positive matrix over `A⁺¹`
-  by `e ∈ A` gives a positive matrix over `A`).
+* `CStarMatrix.nonneg_iff_forall_sum_nonneg`, `CStarMatrix.le_iff_forall_sum_le`,
+  `CStarMatrix.algebraMap_le_iff_forall_sum_le`: order by quadratic forms, with
+  `ofMatrix_smul_nonneg` and `star_left_conjugate_unitization_nonneg`.
 * `CStarMatrix.diag_nonneg_of_nonneg`: the diagonal entries of a positive matrix are positive.
 * `CStarMatrix.submatrix_nonneg` and `CStarMatrix.extend_nonneg`: reindexing a positive matrix
   along any map of indices, or extending it by zero along an injective one, gives a positive
@@ -984,6 +983,19 @@ theorem nonneg_iff_forall_sum_nonneg {M : CStarMatrix n n A} :
   simp only [mulVec_single, Pi.smul_apply, col_apply, MulOpposite.smul_eq_mul_unop,
     MulOpposite.unop_op, ofMatrix_symm_apply, Pi.zero_apply, mul_star_self_eq_zero] at h
   rw [h, zero_apply]
+
+/-- Matrix order via finite quadratic forms: `N ≤ M` iff `M` dominates `N` on all forms. -/
+theorem le_iff_forall_sum_le (N M : CStarMatrix n n A) : N ≤ M ↔ ∀ a : n → A,
+    ∑ i, ∑ j, star (a i) * N i j * a j ≤ ∑ i, ∑ j, star (a i) * M i j * a j := by
+  rw [← sub_nonneg, nonneg_iff_forall_sum_nonneg]; simp [mul_sub, sub_mul, Finset.sum_sub_distrib]
+
+/-- Scalar lower bounds `algebraMap ℝ (CStarMatrix n n B) r ≤ M` via finite quadratic forms. -/
+theorem algebraMap_le_iff_forall_sum_le {B : Type*} [DecidableEq n] [CStarAlgebra B]
+    [PartialOrder B] [StarOrderedRing B] (M : CStarMatrix n n B) {r : ℝ} :
+    algebraMap ℝ (CStarMatrix n n B) r ≤ M ↔ ∀ a : n → B,
+      r • ∑ i, star (a i) * a i ≤ ∑ i, ∑ j, star (a i) * M i j * a j := by
+  simp [le_iff_forall_sum_le, Algebra.algebraMap_eq_smul_one, one_apply, ite_mul, mul_ite,
+    ← Finset.smul_sum]
 
 /-- The diagonal entries of a positive matrix over a C⋆-algebra are positive. -/
 theorem diag_nonneg_of_nonneg {M : CStarMatrix n n A} (hM : 0 ≤ M) (i : n) : 0 ≤ M i i := by

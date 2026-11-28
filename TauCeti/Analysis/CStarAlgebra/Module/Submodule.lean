@@ -750,7 +750,7 @@ namespace Submodule
 
 /-- View an `A`-submodule of a complex vector space with a compatible unital `A`-module structure
 (in particular, any `Submodule ℂ E`) as a `TauCeti.CStarSubmodule A E`. -/
-@[expose] def toCStarSubmodule {A E : Type*} [Semiring A] [AddCommGroup E] [Module ℂ E] [Module A E]
+def toCStarSubmodule {A E : Type*} [Semiring A] [AddCommGroup E] [Module ℂ E] [Module A E]
     [SMul ℂ A] [IsScalarTower ℂ A E] (K : Submodule A E) : TauCeti.CStarSubmodule A E where
   toSubmodule := K.restrictScalars ℂ
   smul_mem_coeff' a _ hx := K.smul_mem a hx
@@ -774,19 +774,19 @@ theorem coe_toCStarSubmodule {A E : Type*} [Semiring A] [AddCommGroup E] [Module
   (rfl)
 
 /-- Any `A`-submodule of a `CStarModule` over a unital coefficient ring inherits a `CStarModule`
-structure from `K.toCStarSubmodule`. -/
+structure from the ambient `CStarModule`. -/
 instance instCStarModule {A E : Type*} [Ring A] [StarRing A] [Module ℂ A] [PartialOrder A]
     [Norm A] [SeminormedAddCommGroup E] [Module ℂ E] [Module A E] [IsScalarTower ℂ A E]
-    [CStarModule A E] (K : Submodule A E) : CStarModule A K :=
-  let inst := TauCeti.CStarSubmodule.instCStarModule K.toCStarSubmodule
-  { inner x y := inner A (x : E) (y : E)
-    inner_add_right := inst.inner_add_right
-    inner_self_nonneg := inst.inner_self_nonneg
-    inner_self := inst.inner_self
-    inner_op_smul_right := inst.inner_op_smul_right
-    inner_smul_right_complex := inst.inner_smul_right_complex
-    star_inner := inst.star_inner
-    norm_eq_sqrt_norm_inner_self := inst.norm_eq_sqrt_norm_inner_self }
+    [CStarModule A E] (K : Submodule A E) : CStarModule A K where
+  inner x y := inner A (x : E) (y : E)
+  inner_add_right := CStarModule.inner_add_right
+  inner_self_nonneg := CStarModule.inner_self_nonneg
+  inner_self {x} := (CStarModule.inner_self (A := A) (x := (x : E))).trans
+    (Subtype.ext_iff (a1 := x) (a2 := 0)).symm
+  inner_op_smul_right := CStarModule.inner_op_smul_right
+  inner_smul_right_complex := CStarModule.inner_smul_right_complex
+  star_inner _ _ := CStarModule.star_inner _ _
+  norm_eq_sqrt_norm_inner_self x := CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (x : E)
 
 /-- The `A`-valued inner product on an `A`-submodule agrees with that of the ambient
 `CStarModule`. -/
