@@ -88,8 +88,7 @@ theorem tgt_ι :
 /-- The target projection acts on underlying simplices by the vertex-slice projection. -/
 @[simp]
 theorem tgt_app_coe {n : SimplexCategoryᵒᵖ} (s : (postcompSpace q y c : SSet.{u}).obj n) :
-    ((tgt q y c).app n s).val = (π (yonedaEquiv.symm c)).app n s.val :=
-by
+    dsimp% ((tgt q y c).app n s).val = (π (yonedaEquiv.symm c)).app n s.val := by
   exact congrArg (fun k ↦ k.app n s) (tgt_ι q y c)
 
 /-- The target projection is the pullback of the vertex-slice projection along the fibre
@@ -305,8 +304,7 @@ theorem tgt_ι :
 /-- The target projection acts on underlying simplices by the vertex-coslice projection. -/
 @[simp]
 theorem tgt_app_coe {n : SimplexCategoryᵒᵖ} (s : (precompSpace q c y : SSet.{u}).obj n) :
-    ((tgt q c y).app n s).val = (π (yonedaEquiv.symm c)).app n s.val :=
-by
+    dsimp% ((tgt q c y).app n s).val = (π (yonedaEquiv.symm c)).app n s.val := by
   exact congrArg (fun k ↦ k.app n s) (tgt_ι q c y)
 
 /-- The target projection is the pullback of the vertex-coslice projection along the fibre

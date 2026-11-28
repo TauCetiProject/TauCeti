@@ -76,7 +76,7 @@ lemma isPullback_fromPreimage (q : X ⟶ Y) (A : Y.Subcomplex) :
 
 /-- A constant map to a subcomplex, followed by its inclusion, is constant at the underlying
 vertex. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 lemma const_comp_ι {Z : SSet.{u}} (A : Y.Subcomplex) (y : (A : SSet.{u}) _⦋0⦌) :
     (const y : Z ⟶ A) ≫ A.ι = const y.val := by
   rw [const_comp]
