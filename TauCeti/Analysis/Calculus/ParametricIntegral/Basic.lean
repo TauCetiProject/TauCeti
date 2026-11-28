@@ -11,6 +11,7 @@ public import TauCeti.Topology.Compactness.Compact
 public import TauCeti.Topology.Compactness.Normed
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
+import TauCeti.Analysis.Calculus.ParametricIntegral.Dominated
 
 /-!
 # Compact-parameter integration
@@ -419,22 +420,27 @@ theorem contDiffOn_integral_smul_of_continuousOn_iteratedFDeriv {G : Type*}
   refine ⟨V, hVo, hx₀V, ?_⟩
   have hs : IsOpen (U ∩ V) := hU.inter hVo
   have hUV : ∀ x ∈ U ∩ V, ∀ y, (x, id y) ∈ U ×ˢ (univ : Set α) := fun x hx y ↦ ⟨hx.1, mem_univ y⟩
-  -- The weighted Taylor series of the integrand, in the form required by Mathlib.
-  have hT (y : α) : HasFTaylorSeriesUpToOn m (fun x ↦ g y • F (x, y))
-      (fun x k ↦ g y • iteratedFDeriv ℝ k (fun x ↦ F (x, y)) x) (U ∩ V) :=
-    ((((hF y).of_le (by exact_mod_cast hm)).mono inter_subset_left).ftaylorSeriesWithin
-      hs.uniqueDiffOn |>.continuousLinearMap_comp (g y • ContinuousLinearMap.id ℝ G)).congr_series
-      fun k _ x hx ↦ by
-        ext v
-        simp [ftaylorSeriesWithin, iteratedFDerivWithin_of_isOpen k hs hx]
-  have hInt := hasFTaylorSeriesUpToOn_integral_of_le_bound (μ := μ) (n := (m : ℕ∞))
-    (bound := fun k y ↦ ‖g y‖ * if hk : k ≤ m then C ⟨k, hk⟩ else 0) hs
-    (fun x hx k hk ↦ (integrable_smul_of_continuousOn (F := fun p : E × α ↦
-      iteratedFDeriv ℝ k (fun x ↦ F (x, p.2)) p.1) hg continuous_id
-      (hcont k (hkn k (by exact_mod_cast hk))) (hUV x hx)).aestronglyMeasurable)
-    (ae_of_all _ fun y x hx k hk ↦ ?_) (fun k _ ↦ hg.norm.mul_const _) (ae_of_all _ hT)
+  -- The weighted Taylor series of the integrand, using the dominated open-set theorem.
+  have hFcd (y : α) : ContDiffOn ℝ m (fun x ↦ g y • F (x, y)) (U ∩ V) :=
+    (((hF y).of_le (by exact_mod_cast hm)).mono inter_subset_left).const_smul (g y)
+  have hF_iter (y : α) {x : E} (hx : x ∈ U ∩ V) (k : ℕ) (hk : k ≤ m) :
+      iteratedFDeriv ℝ k (fun x ↦ g y • F (x, y)) x =
+        g y • iteratedFDeriv ℝ k (fun x ↦ F (x, y)) x :=
+    iteratedFDeriv_const_smul_apply'
+      (((hF y).contDiffAt (hU.mem_nhds hx.1)).of_le (WithTop.coe_le_coe.2 (hkn k hk)))
+  have hInt := hs.hasFTaylorSeriesUpToOn_integral_of_dominated (μ := μ) (n := (m : ℕ∞))
+    (bound := fun k y ↦ ‖g y‖ * if hk : k ≤ m then C ⟨k, hk⟩ else 0)
+    (ae_of_all _ hFcd)
+    (fun x hx k hk ↦ by
+      have hk' : k ≤ m := by exact_mod_cast hk
+      have hae := (integrable_smul_of_continuousOn (F := fun p : E × α ↦
+        iteratedFDeriv ℝ k (fun x ↦ F (x, p.2)) p.1) hg continuous_id
+        (hcont k (hkn k hk')) (hUV x hx)).aestronglyMeasurable
+      exact hae.congr (ae_of_all _ fun y ↦ (hF_iter y hx k hk').symm))
+    (ae_of_all _ fun y x hx k hk ↦ ?_) (fun k _ ↦ hg.norm.mul_const _)
   · exact hInt.contDiffOn
   · have hk' : k ≤ m := by exact_mod_cast hk
+    rw [hF_iter y hx k hk']
     simp only [norm_smul, hk', ↓reduceDIte]
     exact mul_le_mul_of_nonneg_left ((hV hx.2 ⟨k, hk'⟩ y (mem_univ y)).2) (norm_nonneg _)
 

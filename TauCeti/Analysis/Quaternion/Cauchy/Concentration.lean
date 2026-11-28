@@ -50,12 +50,10 @@ theorem tendsto_support_cauchyFueterCutoffDensity (x₀ : Fin 4 → ℝ) :
       (𝓝[>] 0) (𝓝 x₀).smallSets := by
   rw [tendsto_smallSets_iff]
   intro u hu
-  let e := (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm.toContinuousLinearEquiv
-  have hdq (x : Fin 4 → ℝ) : dq x = e x := congrFun coe_dq x
-  have he : e.symm ⁻¹' u ∈ 𝓝 (dq x₀) := by
-    rw [hdq]
-    exact e.symm.continuous.continuousAt.preimage_mem_nhds
-      (by simpa only [e.symm_apply_apply] using hu)
+  have he : dqEquiv.symm ⁻¹' u ∈ 𝓝 (dq x₀) := by
+    rw [← dqEquiv_apply]
+    exact dqEquiv.symm.continuous.continuousAt.preimage_mem_nhds
+      (by simpa only [dqEquiv.symm_apply_apply] using hu)
   obtain ⟨δ, hδ, hδu⟩ := Metric.mem_nhds_iff.1 he
   filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (Iio_mem_nhds hδ)] with ε hε hεδ
   intro x hx
@@ -63,7 +61,7 @@ theorem tendsto_support_cauchyFueterCutoffDensity (x₀ : Fin 4 → ℝ) :
     by_contra h
     exact hx (cauchyFueterCutoffDensity_eq_zero hε (Or.inr (hεδ.trans_le (le_of_not_gt h))))
   have := hδu (by simpa [Metric.mem_ball, dist_eq_norm] using hxδ)
-  simpa only [mem_preimage, hdq, e.symm_apply_apply] using this
+  simpa only [mem_preimage, ← dqEquiv_apply, dqEquiv.symm_apply_apply] using this
 
 /-- Removing the cutoff recovers `2π²` times the coefficient at the pole. Only
 integrability on a measurable neighbourhood and continuity within it at the pole are

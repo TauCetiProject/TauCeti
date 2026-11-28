@@ -43,7 +43,9 @@ tangent vectors (`tupleConj` in real coordinates) pulls `Dq` back to `-star Dq`.
 
 ## Main declarations
 
-* `TauCeti.Quaternion.dq`: the `1`-form `dq`, the inverse of the coordinate map `ℍ → (Fin 4 → ℝ)`.
+* `TauCeti.Quaternion.dqEquiv` and `TauCeti.Quaternion.dq`: the coordinate equivalence
+  `(Fin 4 → ℝ) ≃L[ℝ] ℍ` and its underlying `1`-form `dq`, the inverse of the coordinate map
+  `ℍ → (Fin 4 → ℝ)`.
 * `TauCeti.Quaternion.abs_apply_le_norm_dq`, `TauCeti.Quaternion.abs_sub_apply_le_norm_dq_sub`,
   `TauCeti.Quaternion.norm_dq_le_two_mul_of_abs_le`,
   `TauCeti.Quaternion.norm_dq_sub_le_two_mul_of_abs_sub_le`: comparisons between coordinates on
@@ -51,6 +53,9 @@ tangent vectors (`tupleConj` in real coordinates) pulls `Dq` back to `-star Dq`.
 * `TauCeti.Quaternion.star_dq`, `TauCeti.Quaternion.image_star_image_dq_Icc`,
   `TauCeti.Quaternion.image_star_image_dq_pi_Ioo`: action of quaternionic conjugation on `dq` and
   on closed and open coordinate boxes.
+* `TauCeti.Quaternion.exists_ball_subset_and_le_norm_affine_face` and
+  `TauCeti.Quaternion.exists_ball_subset_and_le_norm_box_face`: positive face separation for
+  interior points of affine parallelepipeds and coordinate boxes.
 * `TauCeti.Quaternion.Dq`: the `3`-form `Dq`, as a continuous alternating map.
 * `TauCeti.Quaternion.Dq_apply`: `Dq v` is the sum over the four coordinates `i` of
   `(-1) ^ i` times the `3 × 3` minor of `v` omitting coordinate `i`, times the `i`-th unit.
@@ -81,11 +86,30 @@ namespace TauCeti.Quaternion
 
 /-! ### The `1`-form `dq` -/
 
+/-- The coordinate continuous linear equivalence `(Fin 4 → ℝ) ≃L[ℝ] ℍ` sending `h` to
+`h 0 + i * h 1 + j * h 2 + k * h 3`. Its underlying continuous linear map is `dq`. -/
+noncomputable def dqEquiv : (Fin 4 → ℝ) ≃L[ℝ] ℍ :=
+  (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm.toContinuousLinearEquiv
+
 /-- The constant quaternion-valued `1`-form `dq = dt + i dx + j dy + k dz` on the coordinate space
 `Fin 4 → ℝ`: it sends `h` to `h 0 + i * h 1 + j * h 2 + k * h 3`, the quaternion with coordinates
 `h`. -/
 noncomputable def dq : (Fin 4 → ℝ) →L[ℝ] ℍ :=
-  (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm.toContinuousLinearEquiv
+  dqEquiv.toContinuousLinearMap
+
+@[simp]
+theorem toContinuousLinearMap_dqEquiv : dqEquiv.toContinuousLinearMap = dq :=
+  (rfl)
+
+@[simp]
+theorem dqEquiv_apply (h : Fin 4 → ℝ) : dqEquiv h = dq h :=
+  (rfl)
+
+/-- Evaluating `dqEquiv.symm` on `q` gives its coordinate tuple. -/
+@[simp]
+theorem dqEquiv_symm_apply (q : ℍ) :
+    dqEquiv.symm q = QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1) q :=
+  (rfl)
 
 theorem dq_apply (h : Fin 4 → ℝ) : dq h = ⟨h 0, h 1, h 2, h 3⟩ :=
   (rfl)
@@ -283,6 +307,51 @@ with them. -/
 theorem _root_.Quaternion.sum_inner_dq_single_smul (q : ℍ) :
     ∑ i : Fin 4, ⟪q, dq (Pi.single i 1)⟫ • dq (Pi.single i 1) = q := by
   ext <;> simp [Fin.sum_univ_four, _root_.Quaternion.inner_def, dq_apply, Pi.single_apply]
+
+/-- For an invertible affine map `u ↦ p + L u` on `Fin 4 → ℝ` and an interior point `x₀` whose
+preimage `L.symm (x₀ - p)` lies in the open coordinate box `∏ i, Ioo (a i) (b i)`, there is an
+open ball around `dq x₀` contained in the open parallelepiped image whose radius bounds the
+distance from `dq x₀` to all eight extended face hyperplanes. -/
+theorem exists_ball_subset_and_le_norm_affine_face
+    {L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)} {p a b x₀ : Fin 4 → ℝ}
+    (hx₀ : L.symm (x₀ - p) ∈ Set.pi Set.univ fun i ↦ Set.Ioo (a i) (b i)) :
+    ∃ δ > 0,
+      Metric.ball (dq x₀) δ ⊆
+        dq '' ((fun u ↦ p + L u) '' Set.pi Set.univ fun i ↦ Set.Ioo (a i) (b i)) ∧
+      ∀ (j : Fin 4) (c : ℝ), (c = a j ∨ c = b j) → ∀ u : Fin 3 → ℝ,
+        δ ≤ ‖dq (p + L (j.insertNth c u)) - dq x₀‖ := by
+  let e : (Fin 4 → ℝ) ≃ₜ ℍ :=
+    (L.toHomeomorph.trans (Homeomorph.addLeft p)).trans dqEquiv.toHomeomorph
+  have he (u : Fin 4 → ℝ) : e u = dq (p + L u) := by
+    simp [e]
+  let U := Set.pi Set.univ fun i ↦ Set.Ioo (a i) (b i)
+  have hU : IsOpen U := isOpen_set_pi Set.finite_univ fun _ _ ↦ isOpen_Ioo
+  have hx₀' : dq x₀ ∈ e '' U := ⟨L.symm (x₀ - p), hx₀, by simp [he]⟩
+  obtain ⟨δ, hδ, hball⟩ := Metric.isOpen_iff.mp (e.isOpenMap U hU) (dq x₀) hx₀'
+  refine ⟨δ, hδ, ?_, fun j c hc u ↦ ?_⟩
+  · intro q hq
+    obtain ⟨v, hv, rfl⟩ := hball hq
+    exact ⟨p + L v, ⟨v, hv, rfl⟩, (he v).symm⟩
+  · by_contra hn
+    have hmem : e (j.insertNth c u) ∈ Metric.ball (dq x₀) δ := by
+      simpa only [Metric.mem_ball, dist_eq_norm, he] using lt_of_not_ge hn
+    obtain ⟨v, hv, hvq⟩ := hball hmem
+    have hj := Set.mem_pi.mp hv j (Set.mem_univ j)
+    rw [e.injective hvq, Fin.insertNth_apply_same] at hj
+    rcases hc with rfl | rfl
+    · exact lt_irrefl _ hj.1
+    · exact lt_irrefl _ hj.2
+
+/-- Positive separation of the eight extended face hyperplanes of a coordinate box from an interior
+point `x₀`, together with an open ball around `dq x₀` inside the open box image. -/
+theorem exists_ball_subset_and_le_norm_box_face {a b x₀ : Fin 4 → ℝ}
+    (ha : ∀ i, a i < x₀ i) (hb : ∀ i, x₀ i < b i) :
+    ∃ δ > 0, Metric.ball (dq x₀) δ ⊆ dq '' Set.pi Set.univ (fun i ↦ Set.Ioo (a i) (b i)) ∧
+      ∀ (i : Fin 4) (c : ℝ), (c = a i ∨ c = b i) → ∀ u : Fin 3 → ℝ,
+        δ ≤ ‖dq (i.insertNth c u) - dq x₀‖ := by
+  simpa using exists_ball_subset_and_le_norm_affine_face
+    (L := ContinuousLinearEquiv.refl ℝ (Fin 4 → ℝ)) (p := 0) (a := a) (b := b) (x₀ := x₀)
+    (Set.mem_pi.mpr fun i _ ↦ by simpa using ⟨ha i, hb i⟩)
 
 /-! ### The `3`-form `Dq` -/
 

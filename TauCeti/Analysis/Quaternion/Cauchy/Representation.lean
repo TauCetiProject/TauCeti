@@ -189,29 +189,7 @@ theorem eventually_affineFluxBoundary_cauchyFueterCutoffField (F : Fin 4 → ℍ
       L.affineFluxBoundary p
         (fun i x ↦ cauchyFueterCutoffField ε (dq x₀) (F i) (dq x)) =
       L.affineFluxBoundary p (fun i x ↦ F i (dq x)) := by
-  let e := (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm.toContinuousLinearEquiv
-  let A := L.toHomeomorph.trans (Homeomorph.addLeft p)
-  let U := pi univ (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)
-  have he (x : Fin 4 → ℝ) : dq x = e x := congrFun coe_dq x
-  have hU : IsOpen U := isOpen_set_pi finite_univ fun _ _ ↦ isOpen_Ioo
-  have hpole : x₀ ∈ A '' U :=
-    ⟨L.symm (x₀ - p), hx₀, by simp [A]⟩
-  obtain ⟨δ, hδ, hball⟩ := Metric.isOpen_iff.mp (e.isOpenMap _ (A.isOpenMap _ hU))
-    (e x₀) (mem_image_of_mem e hpole)
-  -- Every affine face lies outside an open ball about the pole, even on its extended plane.
-  have hdist (j : Fin 4) (c : ℝ) (hc : c = 0 ∨ c = 1) (x : Fin 3 → ℝ) :
-      δ ≤ ‖dq (p + L (j.insertNth c x)) - dq x₀‖ := by
-    by_contra hn
-    obtain ⟨y, hy, hyq⟩ := hball
-      (by simpa only [Metric.mem_ball, dist_eq_norm, he] using lt_of_not_ge hn)
-    have hy' : y = p + L (j.insertNth c x) := e.injective hyq
-    obtain ⟨v, hv, hvq⟩ := hy
-    have hv' : v = j.insertNth c x := A.injective (by simpa [A, hy'] using hvq)
-    have hj := mem_pi.mp hv j (mem_univ j)
-    rw [hv', Fin.insertNth_apply_same] at hj
-    rcases hc with rfl | rfl
-    · exact lt_irrefl _ hj.1
-    · exact lt_irrefl _ hj.2
+  obtain ⟨δ, hδ, _, hdist⟩ := exists_ball_subset_and_le_norm_affine_face hx₀
   filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (Iio_mem_nhds hδ)] with ε hε hεδ
   have heq (j : Fin 4) (c : ℝ) (hc : c = 0 ∨ c = 1) (x : Fin 3 → ℝ) :
       L.affineFluxPullback p

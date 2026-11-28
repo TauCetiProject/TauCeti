@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Evaluation
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
+import TauCeti.Analysis.Calculus.ParametricIntegral.Dominated
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
@@ -54,7 +55,7 @@ The estimates come from the symbol estimates of `a` uniformly in the spectral pa
 for `-1 < σ`, `μ ≤ 0` and `μ + 2 σ + 2 < 0`, by the substitution `t = ⟨ξ⟩² v`. The derivatives of
 the integral are the integrals of the derivatives
 (`TauCeti.ParameterSymbol.mixedDeriv_contourIntegral`), by differentiation under the integral sign
-at every order (`hasFTaylorSeriesUpToOn_integral_of_le_bound`).
+at every order (`IsOpen.hasFTaylorSeriesUpToOn_integral_of_dominated`).
 
 ## Main declarations
 
@@ -430,10 +431,10 @@ private theorem hasFTaylorSeriesUpToOn_integral_smul_coefficient
       (fun p k ↦ ∫ t, iteratedFDeriv ℝ k (fun q ↦ g t • a.coefficient (q, γ t)) p)
       (Metric.ball p₀ 1) := by
   choose G hG hGb using a.exists_bound_iteratedFDeriv_smul_coefficient hγΛ hγc hgσ hσ hm p₀
-  exact hasFTaylorSeriesUpToOn_integral_of_le_bound Metric.isOpen_ball
+  exact Metric.isOpen_ball.hasFTaylorSeriesUpToOn_integral_of_dominated
+    (.of_forall fun t ↦ (a.contDiff_smul_coefficient t).contDiffOn)
     (fun p _ k _ ↦ a.aestronglyMeasurable_iteratedFDeriv_smul_coefficient hγ hγΛ hg k p)
     (.of_forall fun t p hp k _ ↦ hGb k t p hp) (fun k _ ↦ hG k)
-    (.of_forall fun t ↦ (a.contDiff_smul_coefficient t).ftaylorSeries.hasFTaylorSeriesUpToOn _)
 
 /-- The coefficient `(x, ξ) ↦ ∫ g(t) a(x, ξ, γ(t)) dt` is smooth. -/
 private theorem contDiff_integral_smul_coefficient :

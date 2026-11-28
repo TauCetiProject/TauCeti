@@ -15,6 +15,7 @@ import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
+import TauCeti.Analysis.Calculus.ParametricIntegral.Dominated
 import TauCeti.Analysis.Fourier.FourierCharDeriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
@@ -379,7 +380,7 @@ theorem contDiff_quantizationKernel_of_bound {a : E × E → V →L[ℂ] W} {k :
     (hC : ∀ K : Set E, IsCompact K → ∃ C, ∀ i ≤ k, ∀ x ∈ K, ∀ ξ,
       ‖iteratedFDeriv ℝ i (fun y ↦ a (y, ξ)) x‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :
     ContDiff ℝ k (Function.uncurry (quantizationKernel a)) := by
-  -- Near each point `p₀`, Mathlib's `hasFTaylorSeriesUpToOn_integral_of_le_bound` differentiates
+  -- Near each point `p₀`, `IsOpen.hasFTaylorSeriesUpToOn_integral_of_dominated` differentiates
   -- under the integral sign `k` times. Its hypotheses are measurability of the derivatives of the
   -- integrand in the frequency, the Leibniz bound `C (1 + 2 ‖2πζ‖) ^ i ⟨2πζ⟩ ^ m` on the `i`-th
   -- derivative for positions near `p₀`, and integrability of these bounds since `m + k < -n`.
@@ -404,12 +405,11 @@ theorem contDiff_quantizationKernel_of_bound {a : E × E → V →L[ℂ] W} {k :
   obtain ⟨C, hC⟩ := hC _ (isCompact_closedBall p₀.1 1)
   have hs : IsOpen (Prod.fst ⁻¹' Metric.ball p₀.1 1 : Set (E × E)) :=
     Metric.isOpen_ball.preimage continuous_fst
-  have hT := hasFTaylorSeriesUpToOn_integral_of_le_bound (μ := volume) (F := F)
-    (s := Prod.fst ⁻¹' Metric.ball p₀.1 1) (n := (k : ℕ∞))
-    (p := fun p ζ ↦ ftaylorSeries ℝ (F · ζ) p)
+  have hT := hs.hasFTaylorSeriesUpToOn_integral_of_dominated (μ := volume)
+    (f := fun ζ p ↦ F p ζ) (n := (k : ℕ∞))
     (bound := fun i ζ ↦ C * (1 + 2 * ‖(2 * π) • ζ‖) ^ i * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2))
-    hs (fun p _ i hi ↦ ?_) (ae_of_all _ fun ζ p hp i hi ↦ ?_) (fun i hi ↦ ?_)
-    (ae_of_all _ fun ζ ↦ (contDiff_iff_ftaylorSeries.1 (hslice ζ)).hasFTaylorSeriesUpToOn _)
+    (ae_of_all _ fun ζ ↦ (hslice ζ).contDiffOn)
+    (fun p _ i hi ↦ ?_) (ae_of_all _ fun ζ p hp i hi ↦ ?_) (fun i hi ↦ ?_)
   · exact hT.contDiffOn.contDiffAt (hs.mem_nhds (Metric.mem_ball_self one_pos))
   · -- measurability: the derivatives of the slices are continuous in the frequency
     have hi' : i ≤ k := by exact_mod_cast hi
@@ -419,7 +419,7 @@ theorem contDiff_quantizationKernel_of_bound {a : E × E → V →L[ℂ] W} {k :
         (ContinuousMultilinearMap ℝ (fun _ : Fin i ↦ E × E) (V →L[ℂ] W)) :=
       @PseudoEMetricSpace.pseudoMetrizableSpace
         (ContinuousMultilinearMap ℝ (fun _ : Fin i ↦ E × E) (V →L[ℂ] W)) _
-    simp only [ftaylorSeries, hΦ.contDiffAt.iteratedFDeriv_prod_left i (mod_cast hi')]
+    simp only [hΦ.contDiffAt.iteratedFDeriv_prod_left i (mod_cast hi')]
     exact ((ContinuousMultilinearMap.compContinuousLinearMapL _).continuous.comp
       ((hΦ.continuous_iteratedFDeriv (mod_cast hi')).comp
         (continuous_const.prodMk continuous_id))).aestronglyMeasurable
