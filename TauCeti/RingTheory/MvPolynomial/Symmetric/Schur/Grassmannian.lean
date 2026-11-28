@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basis
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.JacobiTrudi
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Pieri
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Elementary
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.LinearIndependent
 
 /-!
 # The rectangular Schur basis of the symmetric polynomials modulo `h_{m+1}, …, h_{m+n}`

@@ -27,7 +27,7 @@ distinct from `|λ| + |μ|` have zero hive count, while Young diagrams of more t
 `N ≤ n` variables (`TauCeti.diagramSchurPoly_eq_zero_of_lt_colLen`) without requiring rational Weyl
 modules or `FDRep`; sharpness of the `N ≤ n` bound is recorded here as
 `TauCeti.Hive.schur_mul_two_vars_ne_finsum_hiveCount_one`, and input-swap symmetry of `hiveCount`
-is `TauCeti.Hive.hiveCount_comm` (via `YoungDiagram.natCard_lrTableau_comm`).
+is `TauCeti.Hive.hiveCount_comm` (via `TauCeti.natCard_lrTableau_comm`).
 
 ## Main results
 
@@ -294,7 +294,7 @@ theorem hiveCount_comm {n : ℕ} (l m p : DominantWeight n) :
     hiveCount (productBoundary l m p) = hiveCount (productBoundary m l p) := by
   rw [hiveCount_productBoundary, hiveCount_productBoundary, add_comm l.detShift m.detShift]
   split_ifs
-  · exact YoungDiagram.natCard_lrTableau_comm _ _ _
+  · exact natCard_lrTableau_comm _ _ _
   · rfl
 
 end TauCeti.Hive

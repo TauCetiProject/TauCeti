@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.Block
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.LinearIndependent
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Monomial
 import Mathlib.LinearAlgebra.Matrix.Nonsingular
 

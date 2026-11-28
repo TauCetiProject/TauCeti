@@ -29,7 +29,7 @@ bijection `TauCeti.lrTableauEquivYamanouchi`; for taller `ν` the Schur polynomi
 So the coefficients may equally be taken to be the Littlewood–Richardson coefficients
 (`TauCeti.diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau`). Comparing coefficients
 in the `ℤ`-linearly independent Schur basis in `|λ| + |μ|` variables immediately gives the symmetry
-`c^ν_{λ μ} = c^ν_{μ λ}` (`YoungDiagram.natCard_lrTableau_comm`).
+`c^ν_{λ μ} = c^ν_{μ λ}` (`TauCeti.natCard_lrTableau_comm`).
 
 ## Stembridge's proof
 
@@ -58,7 +58,7 @@ commutative semiring.
 * `TauCeti.diagramSchurPoly_mul_diagramSchurPoly`: **the Littlewood–Richardson rule**.
 * `TauCeti.diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau`: the
   Littlewood–Richardson rule with the Littlewood–Richardson coefficients `c^ν_{λ μ}`.
-* `YoungDiagram.natCard_lrTableau_comm`: **symmetry of the Littlewood–Richardson coefficients**,
+* `TauCeti.natCard_lrTableau_comm`: **symmetry of the Littlewood–Richardson coefficients**,
   `c^ν_{λ μ} = c^ν_{μ λ}`.
 
 ## References
@@ -324,12 +324,6 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau {R : Type
     exact card_boundedYamanouchi_eq_natCard_lrTableau hν
   · rw [diagramSchurPoly_eq_zero_of_lt_colLen (Nat.lt_of_not_le hν), smul_zero, smul_zero]
 
-end TauCeti
-
-namespace YoungDiagram
-
-open TauCeti
-
 /-- **Symmetry of the Littlewood–Richardson coefficients**: `c^ν_{λ μ} = c^ν_{μ λ}` for all Young
 diagrams `λ`, `ν`, and `μ`. -/
 theorem natCard_lrTableau_comm (lam outer μ : YoungDiagram) :
@@ -346,10 +340,11 @@ theorem natCard_lrTableau_comm (lam outer μ : YoungDiagram) :
       exact congrArg (fun m => ∑ ν : m.Partition,
         Nat.card (LRTableau μ (ofPartition ν) lam) • diagramSchurPoly d ℤ (ofPartition ν))
         (add_comm μ.card lam.card)
-    simpa only [ofPartition_toPartition] using
-      congrFun (eq_of_sum_nsmul_diagramSchurPoly_eq le_rfl heq_diag) (toPartition outer hcard)
+    simpa only [YoungDiagram.ofPartition_toPartition] using
+      congrFun (eq_of_sum_nsmul_diagramSchurPoly_eq le_rfl heq_diag)
+        (YoungDiagram.toPartition outer hcard)
   · have hcard' : outer.card ≠ μ.card + lam.card := by omega
     rw [@Nat.card_of_isEmpty _ (isEmpty_lrTableau_of_card_ne hcard),
       @Nat.card_of_isEmpty _ (isEmpty_lrTableau_of_card_ne hcard')]
 
-end YoungDiagram
+end TauCeti

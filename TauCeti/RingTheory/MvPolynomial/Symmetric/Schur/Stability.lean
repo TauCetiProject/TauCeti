@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basis
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Branching
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.LinearIndependent
 
 /-!
 # Stability of the symmetric polynomials of a fixed degree
