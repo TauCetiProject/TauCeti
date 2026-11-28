@@ -22,6 +22,11 @@ continuous cohomology class. Restriction of a class computed in the ambient tens
 computed in the orbitwise complex via the Mackey comparison. This is
 the additive comparison needed before identifying the orbitwise class with a cup product.
 
+`Subgroup.res_smoothTensorInducedDiagonalClass` specializes the class comparison to a
+diagonal cocycle and identifies the representative explicitly as the tensor of its orbitwise
+diagonals, using `Subgroup.smoothTensorInducedMackeyIso_inv_tprod_const` and
+`Subgroup.mackey_tprod_diagonal_isCocycle`.
+
 ## References
 
 * L. Evens, *A generalization of the transfer map in the cohomology of groups*, Trans. Amer.
@@ -249,5 +254,31 @@ theorem res_gradedCohomologyClass_smoothTensorInducedGradedResolutionContraction
     smoothTensorInducedMackeyResolutionResIso_inv_f_apply,
     Submodule.coe_inclusion, TopRep.gradedCochainComplexInvariant_val,
     TopRep.gradedCochainComplexInvariant_val]
+
+/-- For smooth discrete coefficients killed by `2`, restricting the class of the diagonal tensor
+of a `U`-invariant cocycle gives the class of the tensor of its orbitwise diagonals in the
+Mackey-decomposed resolution of the locally compact subgroup `V`. -/
+theorem _root_.Subgroup.res_smoothTensorInducedDiagonalClass [LocallyCompactSpace V] {n : ℕ}
+    {z : A.obj.gradedResolutionModule} (hdz : A.obj.gradedResolutionDifferential z = 0)
+    (hinv : ∀ u, A.obj.gradedResolutionTopRep.ρ u z = z)
+    (hz : z ∈ A.obj.gradedResolutionPiece n) :
+    ContinuousCohomology.res V _ (Fintype.card (G ⧸ U) * n)
+        (smoothTensorInducedDiagonalClass U hU s A hA z hz hinv hdz) =
+      (smoothTensorInducedMackeyResolutionContraction U V hU r hr t s A hA).gradedCohomologyClass
+        (PiTensorProduct.tprod R (fun D ↦ PiTensorProduct.tprod R
+          (fun _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V ↦ z)))
+        (U.mackey_tprod_diagonal_isCocycle V hU r hr t s A hdz hinv hz).1
+        (U.mackey_tprod_diagonal_isCocycle V hU r hr t s A hdz hinv hz).2.1
+        (U.mackey_tprod_diagonal_isCocycle V hU r hr t s A hdz hinv hz).2.2 := by
+  rw [smoothTensorInducedDiagonalClass_eq]
+  refine (res_gradedCohomologyClass_smoothTensorInducedGradedResolutionContraction_mackey
+    U V hU r hr t s A hA _
+    (tprod_const_mem_smoothTensorInducedGradedResolutionPiece U hU s A hz)
+    (smoothTensorInducedGradedResolutionFunctor_obj_ρ_tprod_const U hU s A hinv)
+    (smoothTensorInducedGradedResolutionDifferential_tprod_const_eq_zero U hU s A hdz)).trans ?_
+  congr 1
+  exact U.smoothTensorInducedMackeyIso_inv_tprod_const V hU r hr t s
+    (smoothGradedResolutionFunctor.obj A)
+    (fun u ↦ (smoothGradedResolutionFunctor_obj_obj_ρ_apply A u z).trans (hinv u))
 
 end TauCeti

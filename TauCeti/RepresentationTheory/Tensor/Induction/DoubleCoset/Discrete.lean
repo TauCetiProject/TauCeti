@@ -38,6 +38,8 @@ data of the comparison, as in the algebraic statement; the transversal `s` of `U
 
 * `TauCeti.DiscreteRep.tensorInducedMackeyIso`: the Mackey comparison for discrete continuous
   representations.
+* `Subgroup.smoothTensorInducedMackeyIso_inv_tprod_const`: inverse Mackey regrouping of invariant
+  diagonal tensors, using `Subgroup.tensorInducedMackey_tensorInducedDiagonal`.
 * `TauCeti.smoothTensorInducedMackeyIso`: the Mackey comparison for smooth discrete
   representations.
 
@@ -193,6 +195,25 @@ theorem smoothTensorInducedMackeyIso_inv_apply
     (DiscreteRep.tensorInducedMackeyIso U V hU r hr t s ((ofSmoothDiscrete R U).obj A)).inv z).trans
     (LinearMap.congr_fun (DiscreteRep.tensorInducedMackeyIso_inv_toLinearMap
       U V hU r hr t s ((ofSmoothDiscrete R U).obj A)) z)
+
+/-- Inverse Mackey regrouping sends a diagonal tensor of a `U`-invariant vector to the tensor
+of its diagonal tensors over the individual double cosets. -/
+@[simp]
+theorem _root_.Subgroup.smoothTensorInducedMackeyIso_inv_tprod_const
+    (A : SmoothDiscreteTopRep.{u, v, w} R U) {z : A.obj.V}
+    (hz : ∀ g, A.obj.ρ g z = z) :
+    (smoothTensorInducedMackeyIso U V hU r hr t s A).inv.hom.hom
+        (PiTensorProduct.tprod R (fun _ : G ⧸ U ↦ z)) =
+      PiTensorProduct.tprod R (fun D ↦
+        PiTensorProduct.tprod R (fun _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V ↦ z)) := by
+  refine (smoothTensorInducedMackeyIso_inv_apply U V hU r hr t s A _).trans
+    ((LinearEquiv.symm_apply_eq _).2 ?_)
+  have h := Subgroup.tensorInducedMackey_tensorInducedDiagonal U V r hr t
+    ((ofSmoothDiscrete R U).obj A).ρ s
+    ⟨z, fun g ↦ (ofSmoothDiscrete_obj_ρ_apply R U A g z).trans (hz g)⟩
+  simp only [Representation.coe_tensorInducedDiagonal] at h
+  exact h.symm.trans ((Representation.Equiv.toLinearEquiv_apply _ _).trans
+    (congrFun (Representation.Equiv.coe_toIntertwiningMap _) _)).symm
 
 /-- On arbitrary tensors, applying a coefficient map in every factor commutes with the smooth
 Mackey comparison. -/
