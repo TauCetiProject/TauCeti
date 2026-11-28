@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Integral.Prod
-import Mathlib.MeasureTheory.Measure.Prod
 
 /-!
 # Measure-preserving subgroup shear and product integrability
@@ -19,14 +18,15 @@ an s-finite left-invariant measure `μ` on `G`. For any `g : G`, the subgroup sh
 (`TauCeti.measurePreserving_subgroup_shear`). Consequently, for any `ν`-integrable scalar function
 `a : R → 𝕜` and `μ`-integrable function `e : G → E`, the sheared product
 `(s, x) ↦ a s • e (g * (s : G)⁻¹ * x)` is `ν.prod μ`-integrable
-(`TauCeti.integrable_smul_comp_inv_mul`) and its product integral factors as
+(`MeasureTheory.Integrable.smul_comp_inv_mul`) and its product integral factors as
 `(∫ s, a s ∂ν) • (∫ x, e x ∂μ)` (`TauCeti.integral_prod_smul_comp_inv_mul`).
 
 ## Main results
 
 * `TauCeti.measurePreserving_subgroup_shear`: the shear `(s, x) ↦ (s, g * s⁻¹ * x)` preserves
   `ν.prod μ`.
-* `TauCeti.integrable_smul_comp_inv_mul`: integrability of `(s, x) ↦ a s • e (g * s⁻¹ * x)`.
+* `MeasureTheory.Integrable.smul_comp_inv_mul`: integrability of
+  `(s, x) ↦ a s • e (g * s⁻¹ * x)`.
 * `TauCeti.integral_prod_smul_comp_inv_mul`: product integral evaluation via the shear.
 
 ## Provenance
@@ -38,9 +38,9 @@ file `src/Lib/Adelic/QuotientMeasure/MovingTheQuotient.lean`).
 
 public section
 
-namespace TauCeti
-
 open MeasureTheory Measure
+
+section
 
 variable {G : Type*} [Group G] [MeasurableSpace G] [MeasurableMul₂ G] [MeasurableInv G]
   {R : Subgroup G} {μ : Measure G} [SFinite μ] [μ.IsMulLeftInvariant]
@@ -48,7 +48,7 @@ variable {G : Type*} [Group G] [MeasurableSpace G] [MeasurableMul₂ G] [Measura
 
 /-- The subgroup shear `(s, x) ↦ (s, g * (s : G)⁻¹ * x)` preserves the product measure `ν.prod μ`
 whenever `μ` is left-invariant on `G`. -/
-theorem measurePreserving_subgroup_shear (g : G) :
+theorem TauCeti.measurePreserving_subgroup_shear (g : G) :
     MeasurePreserving (fun p : R × G ↦ (p.fst, g * (p.fst : G)⁻¹ * p.snd))
       (ν.prod μ) (ν.prod μ) :=
   (MeasurePreserving.id ν).skew_product
@@ -58,17 +58,17 @@ theorem measurePreserving_subgroup_shear (g : G) :
 
 /-- If `a : R → 𝕜` is `ν`-integrable and `e : G → E` is `μ`-integrable for a left-invariant
 measure `μ`, then `(s, x) ↦ a s • e (g * (s : G)⁻¹ * x)` is integrable on `R × G`. -/
-theorem integrable_smul_comp_inv_mul {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+theorem MeasureTheory.Integrable.smul_comp_inv_mul {𝕜 E : Type*} [NormedRing 𝕜]
+    [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
     {a : R → 𝕜} (ha : Integrable a ν) {e : G → E} (he : Integrable e μ) (g : G) :
     Integrable (fun p : R × G ↦ a p.fst • e (g * (p.fst : G)⁻¹ * p.snd)) (ν.prod μ) :=
-  (measurePreserving_subgroup_shear (R := R) (μ := μ) (ν := ν) g).integrable_comp_of_integrable
-    (ha.smul_prod he)
+  (TauCeti.measurePreserving_subgroup_shear (R := R) (μ := μ) (ν := ν) g)
+    |>.integrable_comp_of_integrable (ha.smul_prod he)
 
 /-- The product integral of `(s, x) ↦ a s • e (g * (s : G)⁻¹ * x)` over `ν.prod μ` factors as
 `(∫ s, a s ∂ν) • (∫ x, e x ∂μ)`. -/
-theorem integral_prod_smul_comp_inv_mul {𝕜 E : Type*} [RCLike 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
+theorem TauCeti.integral_prod_smul_comp_inv_mul {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E]
     (a : R → 𝕜) (e : G → E) (g : G) :
     ∫ p : R × G, a p.fst • e (g * (p.fst : G)⁻¹ * p.snd) ∂(ν.prod μ) =
       (∫ s : R, a s ∂ν) • ∫ x : G, e x ∂μ := by
@@ -84,7 +84,7 @@ theorem integral_prod_smul_comp_inv_mul {𝕜 E : Type*} [RCLike 𝕜]
         measurable_fst.prodMk
           ((measurable_fst.subtypeVal.mul measurable_const).mul measurable_snd) }
   have hmp : MeasurePreserving φ (ν.prod μ) (ν.prod μ) :=
-    measurePreserving_subgroup_shear (R := R) (μ := μ) (ν := ν) g
+    TauCeti.measurePreserving_subgroup_shear (R := R) (μ := μ) (ν := ν) g
   exact (hmp.integral_comp' (g := fun p : R × G ↦ a p.fst • e p.snd)).trans (integral_prod_smul a e)
 
-end TauCeti
+end
