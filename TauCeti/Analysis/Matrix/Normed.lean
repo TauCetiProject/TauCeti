@@ -45,6 +45,7 @@ bounded entries, and if `g - 1 = O(a)` entrywise, then so is `g⁻¹ - 1 = -g⁻
 * `Matrix.ofContinuousLinearEquiv`: `Matrix.of` as a continuous linear equivalence from entry
   functions to matrices with the topology of the `L∞` operator norm.
 * `Matrix.properSpace`: properness for the entrywise sup norm, scoped with the norm.
+* `Matrix.norm_mul_apply_le_of_le`: entrywise bounds on a matrix product.
 * `Matrix.isBoundedUnder_le_mul_tendsto_zero`, `Matrix.tendsto_zero_mul_isBoundedUnder_le`: an
   entrywise bounded family times a family tending to `0`, in either order, tends to `0`.
 * `Matrix.isBigO_inv_apply_of_tendsto_one`, `Matrix.isBigO_inv_sub_one_apply_of_tendsto_one`:
@@ -54,6 +55,20 @@ bounded entries, and if `g - 1 = O(a)` entrywise, then so is `g⁻¹ - 1 = -g⁻
 public section
 
 namespace Matrix
+
+/-- Bounds on the entries of row `i` of `A` and column `j` of `B` bound entry
+`(i, j)` of their product. -/
+theorem norm_mul_apply_le_of_le {R m n p : Type*} [NonUnitalSeminormedRing R] [Fintype n]
+    (A : Matrix m n R) (B : Matrix n p R) (i : m) (j : p) {a b : ℝ}
+    (hA : ∀ k, ‖A i k‖ ≤ a) (hB : ∀ k, ‖B k j‖ ≤ b) :
+    ‖(A * B) i j‖ ≤ Fintype.card n * (a * b) := by
+  rw [Matrix.mul_apply]
+  calc
+    _ ≤ ∑ k, ‖A i k * B k j‖ := norm_sum_le _ _
+    _ ≤ ∑ _k : n, a * b := Finset.sum_le_sum fun k _ ↦
+      (norm_mul_le _ _).trans (mul_le_mul (hA k) (hB k) (norm_nonneg _)
+        ((norm_nonneg _).trans (hA k)))
+    _ = _ := by simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
 
 /-- The topology underlying the `L∞` operator norm on finite matrices. -/
 protected noncomputable abbrev linftyOpTopologicalSpace

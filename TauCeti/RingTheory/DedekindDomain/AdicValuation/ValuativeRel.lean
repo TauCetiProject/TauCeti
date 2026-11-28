@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ResidueField
 import TauCeti.Topology.Algebra.Valued.DiscreteValuationRing
 
 /-!
@@ -61,6 +62,8 @@ nonarchimedean local field, the steps of its unit filtration are read off from `
   `unitsMap_algebraMap_mem_unitFiltration_zero_iff` reads on the units of `K`.
 * `IsDedekindDomain.HeightOneSpectrum.coe_normalizedValuation_unitsMap_algebraMap`: on the units
   of `K`, the normalized valuation of `K_v` is the inverse of the `v`-adic valuation.
+* `IsDedekindDomain.HeightOneSpectrum.normalizedAbsoluteValue_adicCompletion_eq_nnnorm`: when `R`
+  has finite quotients, the normalized absolute value of `K_v` coincides with its pinned `nnnorm`.
 
 ## Implementation notes
 
@@ -362,6 +365,26 @@ theorem coe_normalizedValuation_unitsMap_algebraMap [Finite (R ⧸ v.asIdeal)] (
   rw [← TauCeti.normalizedValuationWithZero_coe, normalizedValuationWithZero_adicCompletion,
     Units.coe_map, MonoidHom.coe_ofClass, algebraMap_adicCompletion, Function.comp_apply,
     valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply]
+
+/-- When `R` has finite quotients, the normalized absolute value of `v.adicCompletion K` coincides
+with its pinned `nnnorm` `‖·‖₊`. -/
+@[simp, grind =]
+theorem normalizedAbsoluteValue_adicCompletion_eq_nnnorm [Ring.HasFiniteQuotients R]
+    (x : v.adicCompletion K) :
+    (TauCeti.normalizedAbsoluteValue (v.adicCompletion K) x : NNReal) = ‖x‖₊ := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  have hv : Valued.v x = WithZero.exp
+      (-(TauCeti.normalizedValuation (v.adicCompletion K) (Units.mk0 x hx)).toAdd) := by
+    have h := v.normalizedValuationWithZero_adicCompletion (K := K) (Units.mk0 x hx)
+    rw [TauCeti.normalizedValuationWithZero_coe, Units.val_mk0] at h
+    rw [← inv_inv (Valued.v x), ← h, WithZero.exp_neg, WithZero.exp_eq_coe_ofAdd, ofAdd_toAdd]
+  apply NNReal.coe_injective
+  rw [coe_nnNorm, TauCeti.normalizedAbsoluteValue_apply_ne_zero x hx,
+    NumberField.FinitePlace.norm_def, hv,
+    WithZeroMulInt.toNNReal_neg_apply _ WithZero.exp_ne_zero, WithZero.log_exp,
+    v.natCard_residueField_adicCompletion_eq_absNorm]
+  simp
 
 /-- **An element of odd order of vanishing at `v` is a nonsquare in the completion `K_v`.**
 

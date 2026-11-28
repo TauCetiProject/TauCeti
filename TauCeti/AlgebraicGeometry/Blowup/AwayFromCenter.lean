@@ -85,19 +85,16 @@ private theorem preimage_basicOpen_le_basicOpen_monomialDegreeOne (ha : a ∈ I)
       Proj.basicOpen (grade I) (monomialDegreeOne ha) := by
   intro x hx
   -- A point over `D(a)` is a homogeneous prime not containing `a`.
-  rw [toSpecZero_reesAlgebra_preimage_basicOpen] at hx
+  rw [toSpecZero_reesAlgebra_preimage_basicOpen, gradeZeroEquiv_apply,
+    SetLike.GradeZero.coe_algebraMap] at hx
   -- It also avoids some `b t` with `b ∈ I`, since these generate the irrelevant ideal.
-  have hcover := Proj.iSup_basicOpen_eq_top (grade I) (fun b : I ↦ monomialDegreeOne b.property)
-    (irrelevant_eq_span_monomialDegreeOne (s := fun b : I ↦ (b : R)) (by simp)).le
+  have hcover := iSup_basicOpen_monomialDegreeOne_coe I
   obtain ⟨b, hxb⟩ := TopologicalSpace.Opens.mem_iSup.mp (hcover.ge (by trivial : x ∈ ⊤))
   -- Then `x` avoids `a · (b t) = b · (a t)`, hence `a t`.
-  have hab : ((gradeZeroEquiv I a : grade I 0) : reesAlgebra I) * monomialDegreeOne b.property =
-      ((gradeZeroEquiv I b : grade I 0) : reesAlgebra I) * monomialDegreeOne ha := by
-    ext1
-    simp [Polynomial.C_mul_monomial, mul_comm]
   have hmem : x ∈ Proj.basicOpen (grade I)
-      (((gradeZeroEquiv I b : grade I 0) : reesAlgebra I) * monomialDegreeOne ha) :=
-    hab ▸ (Proj.basicOpen_mul _ _ _).ge ⟨hx, hxb⟩
+      (algebraMap R (reesAlgebra I) b * monomialDegreeOne ha) :=
+    (reesAlgebra.algebraMap_mul_monomialDegreeOne_eq b.property ha) ▸
+      (Proj.basicOpen_mul _ _ _).ge ⟨hx, hxb⟩
   exact ((Proj.basicOpen_mul _ _ _).le hmem).2
 
 variable (S : Type u) [CommRing S] [Algebra R S] [IsLocalization.Away a S]

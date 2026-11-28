@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
-import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 import Mathlib.Analysis.Normed.Operator.Mul
+import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
 
 /-!
 # The GNS class map and cyclic vector
@@ -188,3 +188,21 @@ theorem norm_toSpanSingleton_gnsVector_sq (f : B →ₚ[ℂ] ℂ) :
 end Unital
 
 end PositiveLinearMap
+
+namespace PositiveContinuousLinearMap
+
+/-- For a positive contraction `e`, the squared distance from its GNS class to the class of
+the unit is at most the norm of the functional minus the real part of its value at `e`. -/
+theorem norm_gnsVector_sub_toGNS_sq_le {A : Type*}
+    [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+    (f : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he₁ : ‖e‖ ≤ 1) :
+    ‖f.gnsVector - f.toGNS e‖ ^ 2 ≤ ‖(f : A →L[ℂ] ℂ)‖ - (f e).re := by
+  rw [PositiveLinearMap.gnsVector_eq_toGNS_one, ← map_sub]
+  have hnorm : ‖f.toGNS (1 - e)‖ ^ 2 = ‖f (star (1 - e) * (1 - e))‖ := by
+    simpa only [← Complex.ofReal_pow, Complex.norm_real, Real.norm_eq_abs, abs_sq,
+      coe_toPositiveLinearMap] using
+      congrArg norm (f.norm_toGNS_sq (1 - e))
+  rw [hnorm]
+  exact f.norm_map_star_one_sub_mul_one_sub_le he he₁
+
+end PositiveContinuousLinearMap

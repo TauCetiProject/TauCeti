@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.MeasureTheory.Function.Jacobian
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.Analysis.Matrix.SkewAdjoint
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Haar measures on skew-Hermitian matrices
@@ -64,6 +65,18 @@ instance isNegInvariant_skewAdjoint [Finite n] : μ.IsNegInvariant := by
 
 omit [Fintype n] in
 open scoped Matrix.Norms.Frobenius in
+/-- An additive Haar measure on the skew-Hermitian matrices is sigma-finite. -/
+instance sigmaFinite_skewAdjoint [Finite n] : SigmaFinite μ := by
+  have := Fintype.ofFinite n
+  have := Matrix.borelSpace_skewAdjoint_frobenius (n := n)
+  have := μ.isAddHaarMeasure_skewAdjoint_frobenius
+  have := FiniteDimensional.proper_real (skewAdjoint.submodule ℝ (Matrix n n ℂ))
+  exact @SigmaFinite.of_isFiniteMeasureOnCompacts _ _
+    NormedAddCommGroup.toMetricSpace.toUniformSpace.toTopologicalSpace inferInstance μ
+    inferInstance
+
+omit [Fintype n] in
+open scoped Matrix.Norms.Frobenius in
 /-- The change of variables formula on the skew-Hermitian matrices, for a Haar measure of the
 topology of entries and derivatives for the Frobenius norm. -/
 theorem lintegral_image_eq_lintegral_abs_det_fderiv_mul_skewAdjoint [Finite n]
@@ -78,5 +91,18 @@ theorem lintegral_image_eq_lintegral_abs_det_fderiv_mul_skewAdjoint [Finite n]
   have := Matrix.borelSpace_skewAdjoint_frobenius (n := n)
   have := μ.isAddHaarMeasure_skewAdjoint_frobenius
   exact lintegral_image_eq_lintegral_abs_det_fderiv_mul μ hs hf' hf g
+
+omit [Fintype n] in
+open scoped Matrix.Norms.Frobenius in
+/-- Change of variables along a linear automorphism of the skew-Hermitian matrices, for an
+additive Haar measure of the topology of entries. -/
+theorem lintegral_comp_linearMap_skewAdjoint [Finite n]
+    {f : skewAdjoint.submodule ℝ (Matrix n n ℂ) →ₗ[ℝ] skewAdjoint.submodule ℝ (Matrix n n ℂ)}
+    (hf : LinearMap.det f ≠ 0) (g : skewAdjoint.submodule ℝ (Matrix n n ℂ) → ℝ≥0∞) :
+    ∫⁻ S, g (f S) ∂μ = ENNReal.ofReal |(LinearMap.det f)⁻¹| * ∫⁻ S, g S ∂μ := by
+  have := Fintype.ofFinite n
+  have := Matrix.borelSpace_skewAdjoint_frobenius (n := n)
+  have := μ.isAddHaarMeasure_skewAdjoint_frobenius
+  exact lintegral_comp_linearMap μ hf g
 
 end MeasureTheory.Measure
