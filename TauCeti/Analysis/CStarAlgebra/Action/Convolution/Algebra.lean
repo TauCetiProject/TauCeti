@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Basic
 public import TauCeti.Analysis.CStarAlgebra.Action.Involution
+public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported.L1
 
 /-!
 # The convolution ⋆-algebra of a C⋆-dynamical system
@@ -26,10 +27,11 @@ The essential identity is that the twisted involution reverses twisted convoluti
 and multiplicativity of `c`, so no relation between `μ` and `c` is needed here. The modular
 character is matched with `μ` only when the involution is compared with the `L¹` norm.
 
-The ⋆-algebra is the type `ConvolutionAlgebra α μ`, a one-field structure wrapping `C_c(G, A)`.
+The ⋆-algebra is the type `ConvolutionAlgebra α μ`, an abbreviation for
+`TauCeti.CompactlySupportedL1 α A μ` wrapping `C_c(G, A)`.
 A separate type is needed because `C_c(G, A)` already carries the pointwise product and star,
-and because the product and star depend on `α` and `μ`. The maps `ConvolutionAlgebra.toConv` and
-`ConvolutionAlgebra.ofConv` pass between the two types, following Mathlib's `WithConv`.
+and because the product and star depend on `α` and `μ`. The maps `CompactlySupportedL1.ofFun` and
+`CompactlySupportedL1.toFun` pass between the two types, following Mathlib's `WithConv`.
 Distributivity and the scalar compatibilities hold for any measure finite on compacts.
 Associativity, and hence the `NonUnitalRing` and `StarRing` structures, uses left invariance.
 No unit, separability, or σ-finiteness is assumed.
@@ -48,7 +50,7 @@ The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter
   `IsScalarTower` and `SMulCommClass`.
 * `TauCeti.CStarAction.ConvolutionAlgebra.instStarRing`: the twisted involution makes it a ⋆-ring,
   and it is a ⋆-module over `ℂ`.
-* `TauCeti.CStarAction.ConvolutionAlgebra.ofConv_mul_smulRight_apply`: the formula for the right
+* `TauCeti.CStarAction.ConvolutionAlgebra.toFun_mul_smulRight_apply`: the formula for the right
   product `f ⋆ (φ ⊗ e)` with an elementary function, after the substitution `r = s * t⁻¹`.
 -/
 
@@ -106,138 +108,23 @@ variable [MeasurableSpace G]
 
 /-- The convolution ⋆-algebra of the C⋆-dynamical system `(A, G, α)` with respect to `μ`: the
 compactly supported continuous functions `G → A`, with twisted convolution as product and the
-twisted involution as star. Use `ConvolutionAlgebra.toConv` and `ConvolutionAlgebra.ofConv` to
+twisted involution as star. Use `CompactlySupportedL1.ofFun` and `CompactlySupportedL1.toFun` to
 pass to and from `C_c(G, A)`, whose own product and star are pointwise. -/
-structure ConvolutionAlgebra (α : CStarAction G A) (μ : Measure G) where
-  /-- Regard a compactly supported function as an element of the convolution algebra. -/
-  toConv ::
-  /-- The compactly supported function underlying an element of the convolution algebra. -/
-  ofConv : C_c(G, A)
+abbrev ConvolutionAlgebra (α : CStarAction G A) (μ : Measure G) : Type _ :=
+  CompactlySupportedL1 α A μ
 
 namespace ConvolutionAlgebra
 
 variable {α : CStarAction G A} {μ : Measure G}
 
-@[simp]
-theorem ofConv_toConv (f : C_c(G, A)) : (toConv f : ConvolutionAlgebra α μ).ofConv = f :=
-  (rfl)
-
-@[simp]
-theorem toConv_ofConv (f : ConvolutionAlgebra α μ) : toConv f.ofConv = f :=
-  (rfl)
-
-theorem ofConv_injective : Function.Injective (ofConv : ConvolutionAlgebra α μ → C_c(G, A)) :=
-  fun f g h => by rw [← toConv_ofConv f, h, toConv_ofConv]
-
-theorem toConv_injective : Function.Injective (toConv : C_c(G, A) → ConvolutionAlgebra α μ) :=
-  fun f g h => by rw [← ofConv_toConv (α := α) (μ := μ) f, h, ofConv_toConv]
-
-@[ext]
-theorem ext {f g : ConvolutionAlgebra α μ} (h : f.ofConv = g.ofConv) : f = g :=
-  ofConv_injective h
-
-variable (α μ) in
-/-- `ConvolutionAlgebra.ofConv` and `ConvolutionAlgebra.toConv` as an equivalence. -/
-def equiv : ConvolutionAlgebra α μ ≃ C_c(G, A) where
-  toFun := ofConv
-  invFun := toConv
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-@[simp]
-theorem equiv_apply (f : ConvolutionAlgebra α μ) : equiv α μ f = f.ofConv :=
-  (rfl)
-
-@[simp]
-theorem equiv_symm_apply (f : C_c(G, A)) : (equiv α μ).symm f = toConv f :=
-  (rfl)
-
-instance : AddCommGroup (ConvolutionAlgebra α μ) :=
-  (equiv α μ).addCommGroup
-
-variable (α μ) in
-/-- `ConvolutionAlgebra.ofConv` as an additive equivalence with `C_c(G, A)`. -/
-def addEquiv : ConvolutionAlgebra α μ ≃+ C_c(G, A) where
-  __ := equiv α μ
-  map_add' _ _ := (rfl)
-
-@[simp]
-theorem addEquiv_apply (f : ConvolutionAlgebra α μ) : addEquiv α μ f = f.ofConv :=
-  (rfl)
-
-@[simp]
-theorem addEquiv_symm_apply (f : C_c(G, A)) : (addEquiv α μ).symm f = toConv f :=
-  (rfl)
-
-instance : Module ℂ (ConvolutionAlgebra α μ) :=
-  (addEquiv α μ).module ℂ
-
-@[simp]
-theorem ofConv_zero : (0 : ConvolutionAlgebra α μ).ofConv = 0 :=
-  (rfl)
-
-@[simp]
-theorem ofConv_add (f g : ConvolutionAlgebra α μ) : (f + g).ofConv = f.ofConv + g.ofConv :=
-  (rfl)
-
-@[simp]
-theorem ofConv_neg (f : ConvolutionAlgebra α μ) : (-f).ofConv = -f.ofConv :=
-  (rfl)
-
-@[simp]
-theorem ofConv_sub (f g : ConvolutionAlgebra α μ) : (f - g).ofConv = f.ofConv - g.ofConv :=
-  (rfl)
-
-@[simp]
-theorem ofConv_smul (c : ℂ) (f : ConvolutionAlgebra α μ) : (c • f).ofConv = c • f.ofConv :=
-  (rfl)
-
-@[simp]
-theorem toConv_zero : (toConv 0 : ConvolutionAlgebra α μ) = 0 :=
-  (rfl)
-
-@[simp]
-theorem toConv_add (f g : C_c(G, A)) :
-    (toConv (f + g) : ConvolutionAlgebra α μ) = toConv f + toConv g :=
-  (rfl)
-
-@[simp]
-theorem toConv_neg (f : C_c(G, A)) : (toConv (-f) : ConvolutionAlgebra α μ) = -toConv f :=
-  (rfl)
-
-@[simp]
-theorem toConv_sub (f g : C_c(G, A)) :
-    (toConv (f - g) : ConvolutionAlgebra α μ) = toConv f - toConv g :=
-  (rfl)
-
-@[simp]
-theorem toConv_smul (c : ℂ) (f : C_c(G, A)) :
-    (toConv (c • f) : ConvolutionAlgebra α μ) = c • toConv f :=
-  (rfl)
-
-variable (α μ) in
-/-- `ConvolutionAlgebra.ofConv` as a complex linear equivalence with `C_c(G, A)`. -/
-def linearEquiv : ConvolutionAlgebra α μ ≃ₗ[ℂ] C_c(G, A) where
-  __ := equiv α μ
-  map_add' _ _ := (rfl)
-  map_smul' _ _ := (rfl)
-
-@[simp]
-theorem linearEquiv_apply (f : ConvolutionAlgebra α μ) : linearEquiv α μ f = f.ofConv :=
-  (rfl)
-
-@[simp]
-theorem linearEquiv_symm_apply (f : C_c(G, A)) : (linearEquiv α μ).symm f = toConv f :=
-  (rfl)
-
 /-- The elementary function `s ↦ φ s • e` of a real compactly supported function `φ` and a
 coefficient `e`, as an element of the convolution algebra. -/
 def smulRight (φ : C_c(G, ℝ)) (e : A) : ConvolutionAlgebra α μ :=
-  toConv (φ.compLeft (ContinuousLinearMap.toSpanSingleton ℝ e))
+  CompactlySupportedL1.ofFun (φ.compLeft (ContinuousLinearMap.toSpanSingleton ℝ e))
 
 @[simp]
-theorem ofConv_smulRight_apply (φ : C_c(G, ℝ)) (e : A) (s : G) :
-    (smulRight φ e : ConvolutionAlgebra α μ).ofConv s = φ s • e := by
+theorem toFun_smulRight_apply (φ : C_c(G, ℝ)) (e : A) (s : G) :
+    (smulRight φ e : ConvolutionAlgebra α μ).toFun s = φ s • e := by
   simp [smulRight, CompactlySupportedContinuousMap.compLeft_apply]
 
 /-! ### Convolution product -/
@@ -247,34 +134,36 @@ section Mul
 variable [IsTopologicalGroup G] [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ]
 
 instance : Mul (ConvolutionAlgebra α μ) where
-  mul f g := toConv (α.convolution μ f.ofConv g.ofConv)
+  mul f g := CompactlySupportedL1.ofFun (α.convolution μ f.toFun g.toFun)
 
 @[simp]
-theorem ofConv_mul (f g : ConvolutionAlgebra α μ) :
-    (f * g).ofConv = α.convolution μ f.ofConv g.ofConv :=
+theorem toFun_mul (f g : ConvolutionAlgebra α μ) :
+    (f * g).toFun = α.convolution μ f.toFun g.toFun :=
   (rfl)
 
 @[simp]
-theorem toConv_convolution (f g : C_c(G, A)) :
-    (toConv (α.convolution μ f g) : ConvolutionAlgebra α μ) = toConv f * toConv g :=
+theorem ofFun_convolution (f g : C_c(G, A)) :
+    (CompactlySupportedL1.ofFun (α.convolution μ f g) : ConvolutionAlgebra α μ) =
+      CompactlySupportedL1.ofFun f * CompactlySupportedL1.ofFun g :=
   (rfl)
 
-instance : NonUnitalNonAssocRing (ConvolutionAlgebra α μ) where
-  left_distrib f g h := by ext1; simp
-  right_distrib f g h := by ext1; simp
-  zero_mul f := by ext1; simp
-  mul_zero f := by ext1; simp
+instance : NonUnitalNonAssocRing (ConvolutionAlgebra α μ) :=
+  CompactlySupportedL1.nonUnitalNonAssocRingOf (fun f g => α.convolution μ f g) toFun_mul
+    (fun _ _ _ => by simp) (fun _ _ _ => by simp) (fun _ => by simp) (fun _ => by simp)
 
-instance : IsScalarTower ℂ (ConvolutionAlgebra α μ) (ConvolutionAlgebra α μ) where
-  smul_assoc c f g := by ext1; simp
+instance : IsScalarTower ℂ (ConvolutionAlgebra α μ) (ConvolutionAlgebra α μ) :=
+  CompactlySupportedL1.isScalarTowerOf (fun f g => α.convolution μ f g) toFun_mul
+    fun _ _ _ => by simp
 
-instance : SMulCommClass ℂ (ConvolutionAlgebra α μ) (ConvolutionAlgebra α μ) where
-  smul_comm c f g := by ext1; simp
+instance : SMulCommClass ℂ (ConvolutionAlgebra α μ) (ConvolutionAlgebra α μ) :=
+  CompactlySupportedL1.smulCommClassOf (fun f g => α.convolution μ f g) toFun_mul
+    fun _ _ _ => by simp
 
 variable [MeasurableMul G] [μ.IsMulLeftInvariant]
 
-instance instNonUnitalRing : NonUnitalRing (ConvolutionAlgebra α μ) where
-  mul_assoc f g h := by ext1; simp [convolution_assoc]
+instance instNonUnitalRing : NonUnitalRing (ConvolutionAlgebra α μ) :=
+  CompactlySupportedL1.nonUnitalRingOf (fun f g => α.convolution μ f g) toFun_mul
+    fun _ _ _ => by simp [convolution_assoc]
 
 end Mul
 
@@ -284,18 +173,18 @@ section SMulRight
 
 /-- The right product with an elementary function, after substituting `r = s * t⁻¹`:
 `(f ⋆ (φ ⊗ e)) s = ∫ t, φ t • c(t) • (f (s * t⁻¹) * α (s * t⁻¹) e) ∂μ`. -/
-theorem ofConv_mul_smulRight_apply [IsTopologicalGroup G] [LocallyCompactSpace G]
-    [BorelSpace G] [μ.IsHaarMeasure] (f : ConvolutionAlgebra α μ)
-    (φ : C_c(G, ℝ)) (e : A) (s : G) :
-    (f * smulRight φ e).ofConv s = ∫ t, φ t • (Measure.modularCharacter t : ℝ) •
-      (f.ofConv (s * t⁻¹) * α (s * t⁻¹) e) ∂μ := by
-  set g := f.ofConv
+theorem toFun_mul_smulRight_apply [IsTopologicalGroup G] [LocallyCompactSpace G]
+    [BorelSpace G] [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant]
+    (f : ConvolutionAlgebra α μ) (φ : C_c(G, ℝ)) (e : A) (s : G) :
+    (f * smulRight φ e).toFun s = ∫ t, φ t • (Measure.modularCharacter t : ℝ) •
+      (f.toFun (s * t⁻¹) * α (s * t⁻¹) e) ∂μ := by
+  set g := f.toFun
   have hinv := integral_inv_eq_integral_modularCharacter_smul (μ := μ)
     (f := fun t => φ t • (g (s * t⁻¹) * α (s * t⁻¹) e)) (by fun_prop)
     φ.hasCompactSupport.smul_right
   simp only [inv_inv] at hinv
-  calc (f * smulRight φ e).ofConv s = ∫ r, φ (r⁻¹ * s) • (g r * α r e) ∂μ := by
-        simp only [ofConv_mul, convolution_apply, ofConv_smulRight_apply, g]
+  calc (f * smulRight φ e).toFun s = ∫ r, φ (r⁻¹ * s) • (g r * α r e) ∂μ := by
+        simp only [toFun_mul, convolution_apply, toFun_smulRight_apply, g]
         congr 1 with r
         rw [← Complex.coe_smul, map_smul, Complex.coe_smul, mul_smul_comm]
     _ = ∫ t, φ t⁻¹ • (g (s * t) * α (s * t) e) ∂μ := by
@@ -312,30 +201,32 @@ section Star
 variable [IsTopologicalGroup G] [LocallyCompactSpace G]
 
 instance : Star (ConvolutionAlgebra α μ) where
-  star f := toConv (α.twistedInvolution f.ofConv)
+  star f := CompactlySupportedL1.ofFun (α.twistedInvolution f.toFun)
 
 @[simp]
-theorem ofConv_star (f : ConvolutionAlgebra α μ) :
-    (star f).ofConv = α.twistedInvolution f.ofConv :=
+theorem toFun_star (f : ConvolutionAlgebra α μ) :
+    (star f).toFun = α.twistedInvolution f.toFun :=
   (rfl)
 
 @[simp]
-theorem toConv_twistedInvolution (f : C_c(G, A)) :
-    (toConv (α.twistedInvolution f) : ConvolutionAlgebra α μ) = star (toConv f) :=
+theorem ofFun_twistedInvolution (f : C_c(G, A)) :
+    (CompactlySupportedL1.ofFun (α.twistedInvolution f) : ConvolutionAlgebra α μ) =
+      star (CompactlySupportedL1.ofFun f) :=
   (rfl)
 
-instance : InvolutiveStar (ConvolutionAlgebra α μ) where
-  star_involutive f := by ext1; simp
+instance : InvolutiveStar (ConvolutionAlgebra α μ) :=
+  CompactlySupportedL1.involutiveStarOf α.twistedInvolution toFun_star fun _ => by simp
 
-instance : StarModule ℂ (ConvolutionAlgebra α μ) where
-  star_smul c f := by ext1; simp
+instance : StarModule ℂ (ConvolutionAlgebra α μ) :=
+  CompactlySupportedL1.starModuleOf α.twistedInvolution toFun_star fun _ _ => by simp
 
 variable [OpensMeasurableSpace G] [MeasurableMul G] [IsFiniteMeasureOnCompacts μ]
   [μ.IsMulLeftInvariant]
 
-instance instStarRing : StarRing (ConvolutionAlgebra α μ) where
-  star_mul f g := by ext1; simp [twistedInvolution_convolution]
-  star_add f g := by ext1; simp
+instance instStarRing : StarRing (ConvolutionAlgebra α μ) :=
+  CompactlySupportedL1.starRingOf (fun f g => α.convolution μ f g) α.twistedInvolution toFun_mul
+    toFun_star CompactlySupportedL1.toFun_add (fun _ _ => by simp) fun _ _ => by
+      simp [twistedInvolution_convolution]
 
 end Star
 

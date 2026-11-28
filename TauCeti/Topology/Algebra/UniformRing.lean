@@ -5,6 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.Algebra.Star.StarAlgHom
 public import Mathlib.RingTheory.RingHom.Flat
 public import Mathlib.Topology.Algebra.UniformRing
 public import TauCeti.Topology.Algebra.Star.Completion
@@ -14,8 +15,9 @@ public import TauCeti.Topology.Algebra.Star.Completion
 
 Results about `UniformSpace.Completion` as a ring: extensionality for continuous ring
 homomorphisms, comparison across equal uniformities, the identification of a complete
-Hausdorff ring with its completion, and the ring and star structures on completions of nonunital
-rings.
+Hausdorff ring with its completion, the ring and star structures on completions of nonunital
+rings, and extensions of continuous nonunital algebra and `⋆`-algebra homomorphisms from
+completions.
 
 `UniformSpace.Completion.ringHom_ext_of_continuous` is `UniformSpace.Completion.ext` for ring
 homomorphisms: two continuous ring homomorphisms out of `Completion R` that agree after composing
@@ -53,7 +55,9 @@ the multiplication is Mathlib's.
 
 The star operation on the completion of a uniform additive group, and its star monoid and star
 module laws, are in `TauCeti.Topology.Algebra.Star.Completion`. For a nonunital topological ring
-with continuous star, the star ring law passes to the completion as well.
+with continuous star, the star ring law passes to the completion as well. Bundling continuous
+nonunital algebra and `⋆`-algebra homomorphisms into complete separated targets yields
+`NonUnitalAlgHom.fromCompletion` and `NonUnitalStarAlgHom.fromCompletion`.
 
 ## Comparison across equal uniformities
 
@@ -79,6 +83,10 @@ maps from a fixed commutative ring into completions.
   continuous `R`-algebra map.
 * `UniformSpace.Completion.mapAlgEquiv`: the `R`-algebra isomorphism of completions induced by
   an `R`-algebra isomorphism that is continuous in both directions.
+* `NonUnitalAlgHom.fromCompletion`: extension of a continuous semilinear nonunital algebra
+  homomorphism into a complete separated target from `UniformSpace.Completion`.
+* `NonUnitalStarAlgHom.fromCompletion`: extension of a continuous nonunital `⋆`-algebra
+  homomorphism into a complete separated target from `UniformSpace.Completion`.
 
 ## Main results
 
@@ -114,6 +122,8 @@ maps from a fixed commutative ring into completions.
 * `UniformSpace.Completion.instNonUnitalRing` and `UniformSpace.Completion.instStarRing`: the
   completion of a nonunital topological ring is a nonunital ring, and a star ring when the star
   operation is continuous.
+* `UniformSpace.Completion.extension_mul`: extending a uniformly continuous multiplicative map into
+  a complete separated space preserves multiplication.
 * `UniformSpace.Completion.uniformContinuous_completeRingEquivSelf` and
   `UniformSpace.Completion.uniformContinuous_completeRingEquivSelf_symm`: both directions are
   uniformly continuous, hence continuous by `UniformContinuous.continuous`.
@@ -357,6 +367,26 @@ theorem coe_mul' [Mul α] [ContinuousMul α] (a b : α) :
   ((isDenseInducing_coe.prodMap isDenseInducing_coe).extend_eq
       ((continuous_coe α).comp continuous_mul) (a, b)).symm
 
+/-- Extending a uniformly continuous multiplicative map into a complete separated uniform space
+preserves multiplication. -/
+theorem extension_mul {E F : Type*} [UniformSpace E] [Mul E] [ContinuousMul E]
+    [ContinuousMul (Completion E)] [UniformSpace F] [T0Space F] [CompleteSpace F] [Mul F]
+    [ContinuousMul F] {f : E → F} (hf : UniformContinuous f)
+    (hmul : ∀ a b : E, f (a * b) = f a * f b) (x y : Completion E) :
+    Completion.extension f (x * y) = Completion.extension f x * Completion.extension f y := by
+  induction x, y using Completion.induction_on₂ with
+  | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
+  | ih a b => simp only [← coe_mul', extension_coe hf, hmul]
+
+/-- Mapping a uniformly continuous multiplicative map to completions preserves multiplication. -/
+protected theorem map_mul {E F : Type*} [UniformSpace E] [Mul E] [ContinuousMul E]
+    [ContinuousMul (Completion E)] [UniformSpace F] [Mul F] [ContinuousMul F]
+    [ContinuousMul (Completion F)] {f : E → F} (hf : UniformContinuous f)
+    (hmul : ∀ a b : E, f (a * b) = f a * f b) (x y : Completion E) :
+    Completion.map f (x * y) = Completion.map f x * Completion.map f y :=
+  extension_mul (uniformContinuous_coe F |>.comp hf)
+    (fun a b => by simp only [Function.comp_apply, hmul, coe_mul']) x y
+
 variable [NonUnitalNonAssocRing α] [IsTopologicalRing α] [IsUniformAddGroup α]
 
 /-- Multiplication on the completion of a nonunital topological ring is continuous. -/
@@ -516,6 +546,129 @@ theorem coe_completeAlgEquivSelf_symm :
 end Algebra
 
 end UniformSpace.Completion
+
+section HomFromCompletion
+
+open UniformSpace
+
+namespace NonUnitalAlgHom
+
+section FromCompletion
+
+variable {R S E F : Type*} [Monoid R] [Monoid S] {φ : R →* S}
+  [NonUnitalNonAssocRing E] [UniformSpace E] [IsUniformAddGroup E] [IsTopologicalRing E]
+  [DistribMulAction R E] [UniformContinuousConstSMul R E]
+  [NonUnitalNonAssocRing F] [UniformSpace F] [IsUniformAddGroup F] [ContinuousMul F]
+  [DistribMulAction S F] [ContinuousConstSMul S F] [T0Space F] [CompleteSpace F]
+
+/-- Extend a continuous semilinear nonunital algebra homomorphism `f : E →ₛₙₐ[φ] F` into a
+complete separated target to the completion `UniformSpace.Completion E →ₛₙₐ[φ] F`. -/
+noncomputable def fromCompletion (f : E →ₛₙₐ[φ] F) (hf : Continuous f) :
+    Completion E →ₛₙₐ[φ] F where
+  __ := f.toAddMonoidHom.extension hf
+  map_smul' c x := Completion.induction_on x
+    (isClosed_eq ((AddMonoidHom.continuous_extension f.toAddMonoidHom hf).comp
+        (continuous_const_smul c))
+      ((continuous_const_smul (φ c)).comp
+        (AddMonoidHom.continuous_extension f.toAddMonoidHom hf)))
+    fun a ↦ by
+      simp only [AddMonoidHom.toFun_eq_coe, ← Completion.coe_smul,
+        AddMonoidHom.extension_coe f.toAddMonoidHom hf]
+      exact map_smulₛₗ f c a
+  map_mul' x y := Completion.extension_mul
+    (uniformContinuous_addMonoidHom_of_continuous (f := f.toAddMonoidHom) hf) (map_mul f) x y
+
+/-- As a function, `f.fromCompletion hf` is `UniformSpace.Completion.extension f`. -/
+theorem coe_fromCompletion (f : E →ₛₙₐ[φ] F) (hf : Continuous f) :
+    ⇑(f.fromCompletion hf) = Completion.extension f :=
+  (rfl)
+
+/-- On `E`, the extension of `f` to the completion agrees with `f`. -/
+@[simp]
+theorem fromCompletion_apply_coe (f : E →ₛₙₐ[φ] F) (hf : Continuous f) (x : E) :
+    f.fromCompletion hf x = f x :=
+  f.toAddMonoidHom.extension_coe hf x
+
+/-- Extending a continuous semilinear nonunital algebra homomorphism to the completion yields a
+continuous homomorphism. -/
+@[fun_prop, continuity]
+theorem continuous_fromCompletion (f : E →ₛₙₐ[φ] F) (hf : Continuous f) :
+    Continuous (f.fromCompletion hf) :=
+  AddMonoidHom.continuous_extension (f := f.toAddMonoidHom) hf
+
+/-- Any continuous semilinear nonunital algebra homomorphism out of `Completion E` agreeing with `f`
+on `E` equals `f.fromCompletion hf`. -/
+theorem fromCompletion_unique (f : E →ₛₙₐ[φ] F) (hf : Continuous f)
+    (g : Completion E →ₛₙₐ[φ] F) (hg : Continuous g) (h : ∀ x : E, f x = g x) :
+    f.fromCompletion hf = g :=
+  DFunLike.coe_injective <| (coe_fromCompletion f hf).trans <|
+    Completion.extension_unique
+      (uniformContinuous_addMonoidHom_of_continuous (f := f.toAddMonoidHom) hf)
+      (uniformContinuous_addMonoidHom_of_continuous (f := g.toAddMonoidHom) hg) h
+
+end FromCompletion
+
+end NonUnitalAlgHom
+
+namespace NonUnitalStarAlgHom
+
+section FromCompletion
+
+variable {R E F : Type*} [Monoid R]
+  [NonUnitalNonAssocRing E] [UniformSpace E] [IsUniformAddGroup E] [IsTopologicalRing E]
+  [StarAddMonoid E] [ContinuousStar E] [DistribMulAction R E] [UniformContinuousConstSMul R E]
+  [NonUnitalNonAssocRing F] [UniformSpace F] [IsUniformAddGroup F] [ContinuousMul F]
+  [Star F] [ContinuousStar F] [DistribMulAction R F] [ContinuousConstSMul R F]
+  [T0Space F] [CompleteSpace F]
+
+/-- Extend a continuous nonunital `⋆`-algebra homomorphism `f : E →⋆ₙₐ[R] F` into a complete
+separated target to the completion `UniformSpace.Completion E →⋆ₙₐ[R] F`. -/
+noncomputable def fromCompletion (f : E →⋆ₙₐ[R] F) (hf : Continuous f) :
+    Completion E →⋆ₙₐ[R] F where
+  __ := f.toNonUnitalAlgHom.fromCompletion hf
+  map_star' x :=
+    Completion.extension_star TauCeti.uniformContinuous_star
+      (uniformContinuous_addMonoidHom_of_continuous (f := f.toAddMonoidHom) hf) (map_star f) x
+
+/-- The underlying nonunital algebra homomorphism of `f.fromCompletion hf` is the completion
+extension of `f.toNonUnitalAlgHom`. -/
+@[simp]
+theorem toNonUnitalAlgHom_fromCompletion (f : E →⋆ₙₐ[R] F) (hf : Continuous f) :
+    (f.fromCompletion hf).toNonUnitalAlgHom = f.toNonUnitalAlgHom.fromCompletion hf :=
+  (rfl)
+
+/-- As a function, `f.fromCompletion hf` is `UniformSpace.Completion.extension f`. -/
+theorem coe_fromCompletion (f : E →⋆ₙₐ[R] F) (hf : Continuous f) :
+    ⇑(f.fromCompletion hf) = Completion.extension f :=
+  f.toNonUnitalAlgHom.coe_fromCompletion hf
+
+/-- On `E`, the extension of `f` to the completion agrees with `f`. -/
+@[simp]
+theorem fromCompletion_apply_coe (f : E →⋆ₙₐ[R] F) (hf : Continuous f) (x : E) :
+    f.fromCompletion hf x = f x :=
+  f.toNonUnitalAlgHom.fromCompletion_apply_coe hf x
+
+/-- Extending a continuous nonunital `⋆`-algebra homomorphism to the completion yields a continuous
+homomorphism. -/
+@[fun_prop, continuity]
+theorem continuous_fromCompletion (f : E →⋆ₙₐ[R] F) (hf : Continuous f) :
+    Continuous (f.fromCompletion hf) :=
+  f.toNonUnitalAlgHom.continuous_fromCompletion hf
+
+/-- Any continuous nonunital `⋆`-algebra homomorphism out of `Completion E` agreeing with `f` on
+`E` equals `f.fromCompletion hf`. -/
+theorem fromCompletion_unique (f : E →⋆ₙₐ[R] F) (hf : Continuous f)
+    (g : Completion E →⋆ₙₐ[R] F) (hg : Continuous g) (h : ∀ x : E, f x = g x) :
+    f.fromCompletion hf = g :=
+  DFunLike.coe_injective <| congr_arg (DFunLike.coe : (Completion E →ₙₐ[R] F) → _) <|
+    (f.toNonUnitalAlgHom_fromCompletion hf).trans <|
+      f.toNonUnitalAlgHom.fromCompletion_unique hf g.toNonUnitalAlgHom hg h
+
+end FromCompletion
+
+end NonUnitalStarAlgHom
+
+end HomFromCompletion
 
 namespace TauCeti
 

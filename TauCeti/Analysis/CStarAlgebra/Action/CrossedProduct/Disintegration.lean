@@ -137,11 +137,11 @@ representation `L` of the full crossed product is `L`. -/
 @[simp]
 theorem integratedOperator_toCovariantRepresentation (f : C_c(G, A)) :
     (L.toCovariantRepresentation hL).integratedOperator μ f =
-      L (of α μ (ConvolutionAlgebra.toConv f)) := by
+      L (of α μ (CompactlySupportedL1.ofFun f)) := by
   simpa only [CovariantRepresentation.integratedFull_of,
-    CovariantRepresentation.integratedStarAlgHom_apply, ConvolutionAlgebra.ofConv_toConv] using
+    CovariantRepresentation.integratedStarAlgHom_apply, CompactlySupportedL1.toFun_ofFun] using
     congr($(integratedFull_toCovariantRepresentation L hL)
-      (of α μ (ConvolutionAlgebra.toConv f)))
+      (of α μ (CompactlySupportedL1.ofFun f)))
 
 /-- The covariant pair of a nondegenerate representation `L` of the full crossed product is the
 unique covariant pair with nondegenerate coefficient representation whose integrated form is

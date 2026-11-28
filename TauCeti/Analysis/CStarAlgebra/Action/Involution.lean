@@ -21,8 +21,10 @@ The operation is named rather than installed as a `Star` instance: compactly sup
 continuous maps already carry a different, pointwise star operation. These functions and
 this involution are the dense coefficient space for crossed-product convolution algebras.
 Compatibility with twisted convolution is proved in
-`TauCeti.Analysis.CStarAlgebra.Action.Convolution.Algebra`; this file says nothing about the
-`L¹` norm.
+`TauCeti.Analysis.CStarAlgebra.Action.Convolution.Algebra`. Against any left-invariant Borel
+measure finite on compact sets on a locally compact topological group,
+`CStarAction.twistedInvolution` preserves the `L¹` integral norm (`integral_norm_twistedInvolution`)
+without requiring Haar full support.
 
 The convention follows Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2:
 Mathlib's `c(s)` is Williams's `Δ(s)⁻¹`.
@@ -113,5 +115,14 @@ theorem support_twistedInvolution (α : CStarAction G A) (f : C_c(G, A)) :
 theorem tsupport_twistedInvolution (α : CStarAction G A) (f : C_c(G, A)) :
     tsupport (α.twistedInvolution f) = (tsupport f)⁻¹ := by
   simp only [tsupport, support_twistedInvolution, ← inv_closure]
+
+/-- Against any left-invariant Borel measure finite on compact sets on a locally compact
+topological group, `α.twistedInvolution` preserves the `L¹` integral norm (without requiring Haar
+full support). -/
+theorem integral_norm_twistedInvolution (α : CStarAction G A) [MeasurableSpace G] [BorelSpace G]
+    (μ : Measure G) [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant] (f : C_c(G, A)) :
+    ∫ s, ‖α.twistedInvolution f s‖ ∂μ = ∫ s, ‖f s‖ ∂μ := by
+  simp_rw [norm_twistedInvolution_apply, ← smul_eq_mul]
+  exact integral_modularCharacter_smul_inv_eq_self f.continuous.norm f.hasCompactSupport.norm
 
 end TauCeti.CStarAction

@@ -82,6 +82,14 @@ theorem integratedOperator_apply (f : C_c(G, A)) (v : H) :
     P.integratedOperator μ f v = ∫ g, P.coefficient (f g) (P.group g v) ∂μ :=
   P.coefficient.integratedOperator_apply P.continuous_orbit P.isUnitary.exists_norm_le μ f v
 
+/-- The integrated form of a covariant pair equals `P.coefficient.integratedOperator` applied to
+`P.group`. -/
+theorem integratedOperator_eq_coefficient :
+    P.integratedOperator μ =
+      P.coefficient.integratedOperator (fun g => P.group g) P.continuous_orbit
+        P.isUnitary.exists_norm_le μ :=
+  (rfl)
+
 /-- The integrated form is bounded by the coefficient function's L¹ norm. -/
 theorem norm_integratedOperator_le (f : C_c(G, A)) :
     ‖P.integratedOperator μ f‖ ≤ ∫ g, ‖f g‖ ∂μ := by

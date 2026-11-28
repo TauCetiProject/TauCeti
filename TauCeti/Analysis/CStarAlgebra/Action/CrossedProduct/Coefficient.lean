@@ -45,12 +45,12 @@ variable {G A H : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
 
 private theorem integratedOperator_single_one (a : A) :
     (CovariantRepresentation.regular α ρ Measure.count).integratedOperator Measure.count
-      (ConvolutionAlgebra.single 1 a : ConvolutionAlgebra α Measure.count).ofConv =
+      (ConvolutionAlgebra.single 1 a : ConvolutionAlgebra α Measure.count).toFun =
       (CovariantRepresentation.regular α ρ Measure.count).coefficient a := by
   refine ContinuousLinearMap.ext fun v => ?_
   rw [CovariantRepresentation.integratedOperator_apply, integral_count_eq_single 1 fun g hg => by
-    rw [ConvolutionAlgebra.ofConv_single_of_ne hg, map_zero, zero_apply],
-    ConvolutionAlgebra.ofConv_single_same, map_one, one_apply_eq_self]
+    rw [ConvolutionAlgebra.toFun_single_of_ne hg, map_zero, zero_apply],
+    ConvolutionAlgebra.toFun_single_same, map_one, one_apply_eq_self]
 
 /-- The coefficient inclusion into the discrete concrete regular crossed product. -/
 def coefficient : A →⋆ₙₐ[ℂ] regularAlgebra α ρ Measure.count :=
@@ -76,7 +76,7 @@ open scoped Classical in
 @[simp]
 theorem fourierCoeff_coefficient (hρ : Function.Injective ρ) (g : G) (a : A) :
     fourierCoeff α ρ hρ g (coefficient α ρ a) = if g = 1 then a else 0 := by
-  rw [coefficient_eq_of, fourierCoeff_of, ConvolutionAlgebra.ofConv_single_apply]
+  rw [coefficient_eq_of, fourierCoeff_of, ConvolutionAlgebra.toFun_single_apply]
 
 /-- Faithfulness of the inducing representation makes the coefficient inclusion isometric. -/
 theorem isometry_coefficient (hρ : Function.Injective ρ) : Isometry (coefficient α ρ) := by
@@ -84,15 +84,15 @@ theorem isometry_coefficient (hρ : Function.Injective ρ) : Isometry (coefficie
   exact NonUnitalStarAlgHom.isometry (coefficient α ρ) h.injective
 
 /-- Left multiplication by an included coefficient `a` on the image of a compactly supported
-function `f` is the image of the pointwise product `a • f.ofConv`. -/
+function `f` is the image of the pointwise product `a • f.toFun`. -/
 theorem coefficient_mul_of (a : A) (f : ConvolutionAlgebra α Measure.count) :
     coefficient α ρ a * of α ρ Measure.count f =
-      of α ρ Measure.count (ConvolutionAlgebra.toConv (a • f.ofConv)) := by
+      of α ρ Measure.count (CompactlySupportedL1.ofFun (a • f.toFun)) := by
   apply Subtype.ext
   simpa only [MulMemClass.coe_mul, coe_coefficient, coe_of,
-    CovariantRepresentation.integratedStarAlgHom_apply, ConvolutionAlgebra.ofConv_toConv] using
+    CovariantRepresentation.integratedStarAlgHom_apply, CompactlySupportedL1.toFun_ofFun] using
     ((CovariantRepresentation.regular α ρ Measure.count).integratedOperator_smul
-      Measure.count a f.ofConv).symm
+      Measure.count a f.toFun).symm
 
 /-- Fourier coefficients are left linear over the included coefficient algebra. -/
 @[simp]

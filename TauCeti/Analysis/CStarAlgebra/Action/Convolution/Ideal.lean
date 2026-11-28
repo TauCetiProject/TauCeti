@@ -62,20 +62,21 @@ theorem convolutionMap_subtypeHom_injective :
 /-- An element of `ConvolutionAlgebra α μ` lies in the range of `hI.subtypeHom.convolutionMap μ`
 precisely when its underlying function takes every value in `I`. -/
 theorem mem_range_convolutionMap_subtypeHom_iff {f : CStarAction.ConvolutionAlgebra α μ} :
-    f ∈ (hI.subtypeHom.convolutionMap μ).range ↔ ∀ s : G, f.ofConv s ∈ I := by
+    f ∈ (hI.subtypeHom.convolutionMap μ).range ↔ ∀ s : G, f.toFun s ∈ I := by
   rw [(hI.subtypeHom.convolutionMap μ).mem_range]
   refine ⟨?_, fun hf => ?_⟩
   · rintro ⟨g, rfl⟩ s
-    simpa only [CStarAction.Hom.convolutionMap_apply, subtypeHom_apply] using (g.ofConv s).property
-  · have hsupp : HasCompactSupport (fun s : G => (⟨f.ofConv s, hf s⟩ : I)) := by
-      have hEq : Function.support (fun s : G => (⟨f.ofConv s, hf s⟩ : I)) =
-          Function.support f.ofConv := by
+    simpa only [CStarAction.Hom.convolutionMap_apply, subtypeHom_apply] using (g.toFun s).property
+  · have hsupp : HasCompactSupport (fun s : G => (⟨f.toFun s, hf s⟩ : I)) := by
+      have hEq : Function.support (fun s : G => (⟨f.toFun s, hf s⟩ : I)) =
+          Function.support f.toFun := by
         ext s
         simp [Subtype.ext_iff]
-      simpa only [HasCompactSupport, tsupport, hEq] using f.ofConv.hasCompactSupport
+      simpa only [HasCompactSupport, tsupport, hEq] using f.toFun.hasCompactSupport
     let g : CStarAction.ConvolutionAlgebra hI.restrict μ :=
-      .toConv ⟨⟨fun s => ⟨f.ofConv s, hf s⟩, (map_continuous f.ofConv).subtype_mk hf⟩, hsupp⟩
-    refine ⟨g, CStarAction.ConvolutionAlgebra.ext ?_⟩
+      CompactlySupportedL1.ofFun
+        ⟨⟨fun s => ⟨f.toFun s, hf s⟩, (map_continuous f.toFun).subtype_mk hf⟩, hsupp⟩
+    refine ⟨g, CompactlySupportedL1.ext ?_⟩
     ext s
     simp [g]
 
@@ -83,13 +84,13 @@ theorem mem_range_convolutionMap_subtypeHom_iff {f : CStarAction.ConvolutionAlge
 of `hI.subtypeHom.convolutionMap μ`. -/
 private theorem mul_mem_range_convolutionMap_subtypeHom_of_forall_mem
     {f g : CStarAction.ConvolutionAlgebra α μ}
-    (hfg : ∀ r s : G, f.ofConv r * α r (g.ofConv (r⁻¹ * s)) ∈ I) :
+    (hfg : ∀ r s : G, f.toFun r * α r (g.toFun (r⁻¹ * s)) ∈ I) :
     f * g ∈ (hI.subtypeHom.convolutionMap μ).range := by
   refine (hI.mem_range_convolutionMap_subtypeHom_iff μ).2 fun s => ?_
-  let φ : G → I := fun r => ⟨f.ofConv r * α r (g.ofConv (r⁻¹ * s)), hfg r s⟩
-  have hint : (∫ r, f.ofConv r * α r (g.ofConv (r⁻¹ * s)) ∂μ) = ((∫ r, φ r ∂μ : I) : A) :=
+  let φ : G → I := fun r => ⟨f.toFun r * α r (g.toFun (r⁻¹ * s)), hfg r s⟩
+  have hint : (∫ r, f.toFun r * α r (g.toFun (r⁻¹ * s)) ∂μ) = ((∫ r, φ r ∂μ : I) : A) :=
     I.toSubmodule.subtypeₗᵢ.integral_comp_comm φ
-  rw [CStarAction.ConvolutionAlgebra.ofConv_mul, CStarAction.convolution_apply, hint]
+  rw [CStarAction.ConvolutionAlgebra.toFun_mul, CStarAction.convolution_apply, hint]
   exact (∫ r, φ r ∂μ).property
 
 /-- When `I` is a closed invariant two-sided star ideal of `A`, the range of
@@ -101,7 +102,7 @@ theorem mul_mem_range_convolutionMap_subtypeHom_left (hmul : ∀ a : A, ∀ x �
     f * g ∈ (hI.subtypeHom.convolutionMap μ).range := by
   have hg' := (hI.mem_range_convolutionMap_subtypeHom_iff μ).1 hg
   exact hI.mul_mem_range_convolutionMap_subtypeHom_of_forall_mem μ fun r s =>
-    hmul (f.ofConv r) _ (hI.apply_mem r (hg' (r⁻¹ * s)))
+    hmul (f.toFun r) _ (hI.apply_mem r (hg' (r⁻¹ * s)))
 
 /-- When `I` is a closed invariant two-sided star ideal of `A`, the range of
 `hI.subtypeHom.convolutionMap μ` absorbs right twisted convolution by arbitrary elements of
@@ -113,6 +114,6 @@ theorem mul_mem_range_convolutionMap_subtypeHom_right (hmul : ∀ a : A, ∀ x �
     f * g ∈ (hI.subtypeHom.convolutionMap μ).range := by
   have hf' := (hI.mem_range_convolutionMap_subtypeHom_iff μ).1 hf
   exact hI.mul_mem_range_convolutionMap_subtypeHom_of_forall_mem μ fun r _ =>
-    StarMemClass.mul_mem_right_of_mul_mem_left hmul (α r (g.ofConv _)) (hf' r)
+    StarMemClass.mul_mem_right_of_mul_mem_left hmul (α r (g.toFun _)) (hf' r)
 
 end IsInvariant

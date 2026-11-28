@@ -81,10 +81,10 @@ theorem toCovariantRepresentation_covariantMultiplierHom {H : Type*} [NormedAddC
 @[simp]
 theorem integratedMultiplier_covariantMultiplierHom (f : C_c(G, A)) :
     (covariantMultiplierHom α μ).integratedMultiplier μ f =
-      (of α μ (ConvolutionAlgebra.toConv f) : 𝓜(ℂ, FullCrossedProduct α μ)) :=
+      (of α μ (CompactlySupportedL1.ofFun f) : 𝓜(ℂ, FullCrossedProduct α μ)) :=
   DoubleCentralizer.ext_fst fun x => by
     simpa using integral_coefficientMultiplier_mul_groupMultiplier_fst
-      (ConvolutionAlgebra.toConv f) x
+      (CompactlySupportedL1.ofFun f) x
 
 /-- The integrated ⋆-homomorphism of `(i_A, i_G)` is `of α μ` into `𝓜(ℂ, A ⋊_α G)`. -/
 theorem integratedStarAlgHom_covariantMultiplierHom (f : ConvolutionAlgebra α μ) :
@@ -94,7 +94,7 @@ theorem integratedStarAlgHom_covariantMultiplierHom (f : ConvolutionAlgebra α �
 /-- Right multiplication by `of α μ f` equals `∫ s, (i_A(f s) i_G(s)).snd y ∂μ`. -/
 theorem integral_coefficientMultiplier_mul_groupMultiplier_snd (f : ConvolutionAlgebra α μ)
     (y : FullCrossedProduct α μ) :
-    ∫ s, (coefficientMultiplier α μ (f.ofConv s) *
+    ∫ s, (coefficientMultiplier α μ (f.toFun s) *
       (groupMultiplier α μ s : 𝓜(ℂ, FullCrossedProduct α μ))).snd y ∂μ = y * of α μ f := by
   have hsnd : y * of α μ f = (of α μ f : 𝓜(ℂ, FullCrossedProduct α μ)).snd y := by simp
   rw [hsnd, ← integratedStarAlgHom_covariantMultiplierHom]
@@ -256,10 +256,10 @@ variable (μ) in
 theorem topologicalClosure_span_integratedFull :
     (Submodule.span ℂ (⋃ x, Set.range (M.integratedFull μ x).fst)).topologicalClosure =
       (Submodule.span ℂ (⋃ a, Set.range (M.coefficient a).fst)).topologicalClosure := by
-  rw [← NonUnitalStarAlgHom.topologicalClosure_span_fst_comp_eq denseRange_of_comp_toConv
+  rw [← NonUnitalStarAlgHom.topologicalClosure_span_fst_comp_eq denseRange_of_comp_ofFun
     (M.integratedFull μ)]
   simpa only [Function.comp_apply, M.integratedFull_of, integratedStarAlgHom_apply,
-    ConvolutionAlgebra.ofConv_toConv] using M.topologicalClosure_span_integratedMultiplier μ
+    CompactlySupportedL1.toFun_ofFun] using M.topologicalClosure_span_integratedMultiplier μ
 
 variable (μ) in
 /-- `M.integratedFull μ` is multiplier-nondegenerate if and only if `M.coefficient` is. -/
@@ -388,7 +388,7 @@ theorem toCovariantRepresentation_toCovariantMultiplierHom {H : Type*} [NormedAd
 @[simp]
 theorem integratedMultiplier_toCovariantMultiplierHom (f : C_c(G, A)) :
     (Φ.toCovariantMultiplierHom hΦ).integratedMultiplier μ f =
-      Φ (of α μ (ConvolutionAlgebra.toConv f)) := by
+      Φ (of α μ (CompactlySupportedL1.ofFun f)) := by
   rw [toCovariantMultiplierHom,
     ← (covariantMultiplierHom α μ).extendToMultiplier_integratedMultiplier μ hΦ,
     integratedMultiplier_covariantMultiplierHom, Φ.extendToMultiplier_coe hΦ]
@@ -403,13 +403,13 @@ has nondegenerate `M.coefficient` and equals `Φ.toCovariantMultiplierHom hΦ`. 
 theorem eq_toCovariantMultiplierHom_of_integratedStarAlgHom_eq {M : CovariantMultiplierHom α B}
     (hM : M.integratedStarAlgHom μ = Φ.comp (of α μ)) : M = Φ.toCovariantMultiplierHom hΦ := by
   have hint (f : C_c(G, A)) :
-      M.integratedMultiplier μ f = Φ (of α μ (ConvolutionAlgebra.toConv f)) := by
+      M.integratedMultiplier μ f = Φ (of α μ (CompactlySupportedL1.ofFun f)) := by
     simpa [CovariantMultiplierHom.integratedStarAlgHom_apply] using
-      congr($hM (ConvolutionAlgebra.toConv f))
+      congr($hM (CompactlySupportedL1.ofFun f))
   have hMnd : M.coefficient.IsMultiplierNondegenerate :=
     (M.dense_span_integratedMultiplier_iff μ).1 <| by
       simpa only [Function.comp_apply, hint] using
-        (isMultiplierNondegenerate_iff_dense_span_comp denseRange_of_comp_toConv).1 hΦ
+        (isMultiplierNondegenerate_iff_dense_span_comp denseRange_of_comp_ofFun).1 hΦ
   exact M.eq_of_integratedStarAlgHom_eq μ hMnd
     (hM.trans (integratedStarAlgHom_toCovariantMultiplierHom hΦ).symm)
 

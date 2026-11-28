@@ -316,9 +316,10 @@ theorem denseRange_of : DenseRange (of α μ) := by
 
 /-- Compactly supported continuous functions `C_c(G, A)` map densely into
 `FullCrossedProduct α μ`. -/
-theorem denseRange_of_comp_toConv :
-    DenseRange ((of α μ) ∘ ConvolutionAlgebra.toConv) := by
-  rw [DenseRange, (Function.RightInverse.surjective ConvolutionAlgebra.toConv_ofConv).range_comp]
+theorem denseRange_of_comp_ofFun :
+    DenseRange ((of α μ) ∘ CompactlySupportedL1.ofFun) := by
+  rw [DenseRange,
+    (Function.RightInverse.surjective (CompactlySupportedL1.ofFun_toFun (tag := α))).range_comp]
   exact denseRange_of
 
 /-- To prove a closed property of every element of the full crossed product, it suffices to
@@ -403,7 +404,7 @@ theorem integratedFull_of (f : ConvolutionAlgebra α μ) :
 /-- The vector formula for the extended integrated form on the twisted convolution algebra:
 `(π ⋊ U)(f) ξ = ∫ π(f(s)) U_s ξ dμ(s)`. -/
 theorem integratedFull_of_apply (f : ConvolutionAlgebra α μ) (ξ : H) :
-    P.integratedFull μ (of α μ f) ξ = ∫ s, P.coefficient (f.ofConv s) (P.group s ξ) ∂μ := by
+    P.integratedFull μ (of α μ f) ξ = ∫ s, P.coefficient (f.toFun s) (P.group s ξ) ∂μ := by
   rw [integratedFull_of, integratedStarAlgHom_apply, integratedOperator_apply]
 
 @[simp]
@@ -417,11 +418,11 @@ precisely when the coefficient representation is zero. -/
 theorem integratedFull_eq_zero_iff :
     P.integratedFull μ = 0 ↔ P.coefficient = 0 := by
   refine ⟨fun h => (P.forall_integratedOperator_eq_zero_iff μ).1 fun f => ?_, fun h => ?_⟩
-  · simpa only [integratedFull_of, integratedStarAlgHom_apply, ConvolutionAlgebra.ofConv_toConv,
-      NonUnitalStarAlgHom.zero_apply] using DFunLike.congr_fun h (of α μ (.toConv f))
+  · simpa only [integratedFull_of, integratedStarAlgHom_apply, CompactlySupportedL1.toFun_ofFun,
+      NonUnitalStarAlgHom.zero_apply] using DFunLike.congr_fun h (of α μ (.ofFun f))
   · refine starAlgHom_ext (NonUnitalStarAlgHom.ext fun f => ?_)
     simpa only [NonUnitalStarAlgHom.comp_apply, integratedFull_of, integratedStarAlgHom_apply,
-      NonUnitalStarAlgHom.zero_apply] using (P.forall_integratedOperator_eq_zero_iff μ).2 h f.ofConv
+      NonUnitalStarAlgHom.zero_apply] using (P.forall_integratedOperator_eq_zero_iff μ).2 h f.toFun
 
 end CovariantRepresentation
 

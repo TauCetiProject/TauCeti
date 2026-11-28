@@ -105,7 +105,7 @@ theorem fullCrossedProductMap_eq_zero_of_forall_eq_zero (hφ : ∀ a, φ a = 0) 
   refine FullCrossedProduct.starAlgHom_ext <| NonUnitalStarAlgHom.ext fun f => ?_
   have hconv : φ.convolutionMap μ f = 0 := by
     ext s
-    simpa using hφ (f.ofConv s)
+    simpa using hφ (f.toFun s)
   simp [hconv]
 
 /-- If the composite of two equivariant homomorphisms vanishes on coefficients, then the composite

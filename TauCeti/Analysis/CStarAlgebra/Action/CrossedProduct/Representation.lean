@@ -71,16 +71,16 @@ theorem topologicalClosure_span_integratedFull :
     | ih f =>
       rw [integratedFull_of, integratedStarAlgHom_apply]
       exact Submodule.le_topologicalClosure _
-        (Submodule.subset_span (Set.mem_iUnion.2 ⟨f.ofConv, v, rfl⟩))
+        (Submodule.subset_span (Set.mem_iUnion.2 ⟨f.toFun, v, rfl⟩))
   · apply Submodule.topologicalClosure_mono
     refine Submodule.span_le.2 ?_
     intro y hy
     obtain ⟨f, v, rfl⟩ := Set.mem_iUnion.1 hy
     have h := Submodule.subset_span (R := ℂ)
       (s := ⋃ x : FullCrossedProduct α μ, Set.range (P.integratedFull μ x))
-      (Set.mem_iUnion.2 ⟨FullCrossedProduct.of α μ (ConvolutionAlgebra.toConv f), v, rfl⟩)
+      (Set.mem_iUnion.2 ⟨FullCrossedProduct.of α μ (CompactlySupportedL1.ofFun f), v, rfl⟩)
     simpa only [integratedFull_of, integratedStarAlgHom_apply,
-      ConvolutionAlgebra.ofConv_toConv] using h
+      CompactlySupportedL1.toFun_ofFun] using h
 
 /-- The integrated representation of the full crossed product is nondegenerate exactly when
 the coefficient representation is nondegenerate. -/
@@ -104,7 +104,7 @@ theorem comp_integratedFull {T : H →L[ℂ] K}
   | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
   | ih f =>
     simpa only [integratedFull_of, integratedStarAlgHom_apply] using
-      comp_integratedOperator μ hπ hU f.ofConv
+      comp_integratedOperator μ hπ hU f.toFun
 
 /-- For a nondegenerate source pair, bounded intertwiners of the full crossed-product
 representations are precisely the simultaneous coefficient and group intertwiners. In
@@ -116,8 +116,8 @@ theorem comp_integratedFull_iff (hP : P.coefficient.IsNondegenerate) {T : H →L
   refine ⟨fun h => (comp_integratedOperator_iff μ hP).1 fun f => ?_,
     fun h => comp_integratedFull μ h.1 h.2⟩
   simpa only [integratedFull_of, integratedStarAlgHom_apply,
-    ConvolutionAlgebra.ofConv_toConv] using
-    h (FullCrossedProduct.of α μ (ConvolutionAlgebra.toConv f))
+    CompactlySupportedL1.toFun_ofFun] using
+    h (FullCrossedProduct.of α μ (CompactlySupportedL1.ofFun f))
 
 /-- A covariant pair with nondegenerate coefficient representation is determined by its
 representation of the full crossed product. -/
@@ -127,9 +127,9 @@ theorem ext_integratedFull {P Q : CovariantRepresentation α H}
   apply ext_integratedOperator μ hP
   intro f
   have hf := DFunLike.congr_fun h
-    (FullCrossedProduct.of α μ (ConvolutionAlgebra.toConv f))
+    (FullCrossedProduct.of α μ (CompactlySupportedL1.ofFun f))
   simpa only [integratedFull_of, integratedStarAlgHom_apply,
-    ConvolutionAlgebra.ofConv_toConv] using hf
+    CompactlySupportedL1.toFun_ofFun] using hf
 
 /-- For a nondegenerate coefficient representation, the commutant of the integrated full
 crossed-product representation equals the simultaneous coefficient and group commutant.

@@ -205,7 +205,7 @@ private theorem star_translateCLM_mul (r : G) (x y : FullCrossedProduct α μ) :
     star (translateCLM r⁻¹ x) * y = star x * translateCLM r y :=
   star_extendCLM_mul (fun f g H _ _ _ P => by
     simp only [map_mul, map_star, CovariantRepresentation.integratedStarAlgHom_apply,
-      LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv, ofConv_translateLIE,
+      LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv, toFun_translateLIE,
       CovariantRepresentation.integratedOperator_translate, star_mul, mul_assoc]
     rw [ContinuousLinearMap.star_eq_adjoint (P.group r⁻¹), P.isUnitary.adjoint_eq_inv, inv_inv])
     x y
@@ -361,34 +361,34 @@ namespace FullCrossedProduct
 `integral_coefficientMultiplier_mul_groupMultiplier_fst` is continuous. -/
 theorem continuous_coefficientMultiplier_mul_groupMultiplier_fst
     (f : ConvolutionAlgebra α μ) (y : FullCrossedProduct α μ) :
-    Continuous fun s => (coefficientMultiplier α μ (f.ofConv s) *
+    Continuous fun s => (coefficientMultiplier α μ (f.toFun s) *
       (groupMultiplier α μ s : 𝓜(ℂ, FullCrossedProduct α μ))).fst y := by
   simp only [DoubleCentralizer.mul_fst, mul_apply_eq_comp]
   have hfst : Continuous fun m : 𝓜(ℂ, FullCrossedProduct α μ) => m.fst :=
     DoubleCentralizer.isUniformEmbedding_toProdMulOpposite.uniformContinuous.continuous.fst
   exact (hfst.comp ((map_continuous (coefficientMultiplier α μ)).comp
-    f.ofConv.continuous)).clm_apply (continuous_groupMultiplier_fst_apply y)
+    f.toFun.continuous)).clm_apply (continuous_groupMultiplier_fst_apply y)
 
 /-- The integrand `s ↦ i_A(f(s)) i_G(s) y` of the integral formula
 `integral_coefficientMultiplier_mul_groupMultiplier_fst` is integrable. -/
 theorem integrable_coefficientMultiplier_mul_groupMultiplier_fst
     (f : ConvolutionAlgebra α μ) (y : FullCrossedProduct α μ) :
-    Integrable (fun s => (coefficientMultiplier α μ (f.ofConv s) *
+    Integrable (fun s => (coefficientMultiplier α μ (f.toFun s) *
       (groupMultiplier α μ s : 𝓜(ℂ, FullCrossedProduct α μ))).fst y) μ := by
   refine (continuous_coefficientMultiplier_mul_groupMultiplier_fst f y
-    ).integrable_of_hasCompactSupport (f.ofConv.hasCompactSupport.mono fun s hs hzero => hs ?_)
+    ).integrable_of_hasCompactSupport (f.toFun.hasCompactSupport.mono fun s hs hzero => hs ?_)
   simp [hzero]
 
 /-- An element of the twisted convolution algebra acts on the full crossed product as the
 integral of its canonical multipliers: `∫ i_A(f(s)) i_G(s) y dμ(s) = f * y`. -/
 theorem integral_coefficientMultiplier_mul_groupMultiplier_fst (f : ConvolutionAlgebra α μ)
     (y : FullCrossedProduct α μ) :
-    ∫ s, (coefficientMultiplier α μ (f.ofConv s) *
+    ∫ s, (coefficientMultiplier α μ (f.toFun s) *
       (groupMultiplier α μ s : 𝓜(ℂ, FullCrossedProduct α μ))).fst y ∂μ = of α μ f * y := by
   rw [← sub_eq_zero, ← norm_le_zero_iff, norm_le_iff]
   intro H _ _ _ P
   -- Every integrated form takes the same value at both sides.
-  suffices h : P.integratedFull μ (∫ s, (coefficientMultiplier α μ (f.ofConv s) *
+  suffices h : P.integratedFull μ (∫ s, (coefficientMultiplier α μ (f.toFun s) *
       (groupMultiplier α μ s : 𝓜(ℂ, FullCrossedProduct α μ))).fst y ∂μ) =
       P.integratedFull μ (of α μ f * y) by
     rw [map_sub, h, sub_self, norm_zero]

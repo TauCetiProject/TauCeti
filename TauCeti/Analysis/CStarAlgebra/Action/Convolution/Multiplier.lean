@@ -42,23 +42,39 @@ section FiniteMeasure
 variable [IsFiniteMeasureOnCompacts μ]
 
 /-- Left multiplication by a coefficient `a` multiplies the L¹ norm by at most `‖a‖`. -/
-private theorem norm_toConv_smul_le (a : A) (f : ConvolutionAlgebra α μ) :
-    ‖(toConv (a • f.ofConv) : ConvolutionAlgebra α μ)‖ ≤ ‖a‖ * ‖f‖ := by
-  simp only [norm_eq_integral_norm, ← integral_const_mul]
-  exact integral_mono (a • f.ofConv).integrable.norm (f.ofConv.integrable.norm.const_mul _)
-    fun s => norm_mul_le a (f.ofConv s)
+private theorem norm_ofFun_smul_le (a : A) (f : ConvolutionAlgebra α μ) :
+    ‖(CompactlySupportedL1.ofFun (a • f.toFun) : ConvolutionAlgebra α μ)‖ ≤ ‖a‖ * ‖f‖ := by
+  have hcomp :
+      f.toFun.compLeft
+          ⟨ContinuousLinearMap.mul ℂ A a, (ContinuousLinearMap.mul ℂ A a).continuous⟩ =
+        a • f.toFun := by
+    ext s
+    rw [CompactlySupportedContinuousMap.compLeft_apply (map_zero (ContinuousLinearMap.mul ℂ A a))]
+    rfl
+  calc
+    ‖(CompactlySupportedL1.ofFun (a • f.toFun) : ConvolutionAlgebra α μ)‖
+        = ‖(CompactlySupportedL1.ofFun
+            (f.toFun.compLeft
+              ⟨ContinuousLinearMap.mul ℂ A a, (ContinuousLinearMap.mul ℂ A a).continuous⟩) :
+              ConvolutionAlgebra α μ)‖ := by rw [hcomp]
+    _ ≤ ‖ContinuousLinearMap.mul ℂ A a‖ * ‖f‖ := by
+        simpa only [CompactlySupportedL1.ofFun_toFun] using
+          CompactlySupportedL1.norm_ofFun_compLeft_le
+            (tag := α) (tag' := α) (μ := μ) (ContinuousLinearMap.mul ℂ A a) f.toFun
+    _ ≤ ‖a‖ * ‖f‖ :=
+        mul_le_mul_of_nonneg_right (ContinuousLinearMap.opNorm_mul_apply_le ℂ A a) (norm_nonneg f)
 
 /-- The canonical left coefficient multiplier, as a bounded operator for the L¹ norm. -/
 def coefficientMul (a : A) : ConvolutionAlgebra α μ →L[ℂ] ConvolutionAlgebra α μ :=
   LinearMap.mkContinuous
-    { toFun := fun f => toConv (a • f.ofConv)
+    { toFun := fun f => CompactlySupportedL1.ofFun (a • f.toFun)
       map_add' := fun f g => by ext s; simp [mul_add]
       map_smul' := fun c f => by ext s; simp [mul_smul_comm] }
-    ‖a‖ (norm_toConv_smul_le a)
+    ‖a‖ (norm_ofFun_smul_le a)
 
 @[simp]
-theorem ofConv_coefficientMul (a : A) (f : ConvolutionAlgebra α μ) :
-    (coefficientMul a f).ofConv = a • f.ofConv :=
+theorem toFun_coefficientMul (a : A) (f : ConvolutionAlgebra α μ) :
+    (coefficientMul a f).toFun = a • f.toFun :=
   (rfl)
 
 /-- The L¹ operator norm of a coefficient multiplier is at most the coefficient norm. -/
@@ -94,31 +110,31 @@ variable [IsTopologicalGroup G]
 /-- A coefficient multiplier is a left multiplier of the convolution algebra. -/
 theorem coefficientMul_apply_mul (a : A) (f g : ConvolutionAlgebra α μ) :
     coefficientMul a (f * g) = coefficientMul a f * g := by
-  apply ext
+  apply CompactlySupportedL1.ext
   simp [α.smul_convolution]
 
 variable [MeasurableMul G] [μ.IsMulLeftInvariant]
 
 /-- The twisted left translation, as a linear isometric equivalence for the L¹ norm. -/
 def translateLIE (r : G) : ConvolutionAlgebra α μ ≃ₗᵢ[ℂ] ConvolutionAlgebra α μ where
-  toFun f := toConv (α.translate r f.ofConv)
-  invFun f := toConv (α.translate r⁻¹ f.ofConv)
+  toFun f := CompactlySupportedL1.ofFun (α.translate r f.toFun)
+  invFun f := CompactlySupportedL1.ofFun (α.translate r⁻¹ f.toFun)
   left_inv f := by simp [← α.translate_mul]
   right_inv f := by simp [← α.translate_mul]
   map_add' f g := by simp
   map_smul' c f := by simp
-  norm_map' f := (norm_toConv (α.translate r f.ofConv)).trans <| by
-    simp only [translate_apply, StarAlgEquiv.norm_map, norm_eq_integral_norm]
-    exact integral_mul_left_eq_self (μ := μ) (fun s => ‖f.ofConv s‖) r⁻¹
+  norm_map' f := (CompactlySupportedL1.norm_ofFun (α.translate r f.toFun)).trans <| by
+    simp only [translate_apply, StarAlgEquiv.norm_map, CompactlySupportedL1.norm_eq_integral_norm]
+    exact integral_mul_left_eq_self (μ := μ) (fun s => ‖f.toFun s‖) r⁻¹
 
 @[simp]
-theorem ofConv_translateLIE (r : G) (f : ConvolutionAlgebra α μ) :
-    (translateLIE r f).ofConv = α.translate r f.ofConv :=
+theorem toFun_translateLIE (r : G) (f : ConvolutionAlgebra α μ) :
+    (translateLIE r f).toFun = α.translate r f.toFun :=
   (rfl)
 
 @[simp]
-theorem ofConv_translateLIE_symm (r : G) (f : ConvolutionAlgebra α μ) :
-    ((translateLIE r).symm f).ofConv = α.translate r⁻¹ f.ofConv :=
+theorem toFun_translateLIE_symm (r : G) (f : ConvolutionAlgebra α μ) :
+    ((translateLIE r).symm f).toFun = α.translate r⁻¹ f.toFun :=
   (rfl)
 
 @[simp]
@@ -153,7 +169,7 @@ theorem translateLIE_mul (r t : G) : translateLIE (α := α) (μ := μ) (r * t) 
 /-- A group multiplier is a left multiplier of the convolution algebra. -/
 theorem translateLIE_apply_mul (r : G) (f g : ConvolutionAlgebra α μ) :
     translateLIE r (f * g) = translateLIE r f * g := by
-  apply ext
+  apply CompactlySupportedL1.ext
   simp [α.translate_convolution]
 
 /-- The coefficient and group multipliers satisfy covariance. -/
@@ -172,16 +188,16 @@ theorem continuous_translateLIE (f : ConvolutionAlgebra α μ) :
   intro r
   obtain ⟨K, hK, hrK⟩ := exists_compact_mem_nhds r
   have hcont : ContinuousOn (fun t : G => ‖translateLIE t f - translateLIE r f‖) K := by
-    simp only [norm_eq_integral_norm, ofConv_sub, ofConv_translateLIE,
-      CompactlySupportedContinuousMap.sub_apply, translate_apply]
-    refine continuousOn_integral_of_compact_support (hK.mul f.ofConv.hasCompactSupport)
+    simp only [CompactlySupportedL1.norm_eq_integral_norm, CompactlySupportedL1.toFun_sub,
+      toFun_translateLIE, CompactlySupportedContinuousMap.sub_apply, translate_apply]
+    refine continuousOn_integral_of_compact_support (hK.mul f.toFun.hasCompactSupport)
       ?_ ?_
     · exact ((α.continuous_apply continuous_fst
-        (f.ofConv.continuous.comp (continuous_fst.inv.mul continuous_snd))).sub
-          (α.continuous_apply (continuous_const (y := r)) (f.ofConv.continuous.comp
+        (f.toFun.continuous.comp (continuous_fst.inv.mul continuous_snd))).sub
+          (α.continuous_apply (continuous_const (y := r)) (f.toFun.continuous.comp
             ((continuous_const (y := r⁻¹)).mul continuous_snd)))).norm.continuousOn
     · intro t s ht hs
-      have hzero (u : G) (hu : u ∈ K) : f.ofConv (u⁻¹ * s) = 0 := by
+      have hzero (u : G) (hu : u ∈ K) : f.toFun (u⁻¹ * s) = 0 := by
         apply image_eq_zero_of_notMem_tsupport
         intro hmem
         exact hs ⟨u, hu, u⁻¹ * s, hmem, by simp⟩

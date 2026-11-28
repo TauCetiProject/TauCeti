@@ -50,24 +50,24 @@ theorem denseRange_convolutionMap (hφ : DenseRange φ) :
   classical
   rw [Metric.denseRange_iff]
   intro f ε hε
-  obtain ⟨s, χ, hχ⟩ := f.ofConv.exists_integral_norm_sub_sum_smul_lt μ hφ hε
+  obtain ⟨s, χ, hχ⟩ := f.toFun.exists_integral_norm_sub_sum_smul_lt μ hφ hε
   choose a ha using fun i : s => i.val.property
   let g : ConvolutionAlgebra α μ := ∑ i : s, ConvolutionAlgebra.smulRight (χ i) (a i)
   refine ⟨g, ?_⟩
-  rw [dist_eq_norm, ConvolutionAlgebra.norm_eq_integral_norm]
+  rw [dist_eq_norm, CompactlySupportedL1.norm_eq_integral_norm]
   convert hχ using 1
   apply integral_congr_ae
   filter_upwards [] with x
   congr 1
-  simp only [ConvolutionAlgebra.ofConv_sub, CompactlySupportedContinuousMap.sub_apply,
+  simp only [CompactlySupportedL1.toFun_sub, CompactlySupportedContinuousMap.sub_apply,
     convolutionMap_apply]
-  have hg : g.ofConv = ∑ i : s, (ConvolutionAlgebra.smulRight (χ i) (a i) :
-      ConvolutionAlgebra α μ).ofConv := by
-    simpa only [ConvolutionAlgebra.linearEquiv_apply] using
-      map_sum (ConvolutionAlgebra.linearEquiv α μ)
+  have hg : g.toFun = ∑ i : s, (ConvolutionAlgebra.smulRight (χ i) (a i) :
+      ConvolutionAlgebra α μ).toFun := by
+    simpa only [CompactlySupportedL1.linearEquiv_apply] using
+      map_sum (CompactlySupportedL1.linearEquiv α A μ ℂ)
         (fun i : s => ConvolutionAlgebra.smulRight (χ i) (a i)) Finset.univ
   simp only [hg, CompactlySupportedContinuousMap.sum_apply,
-    ConvolutionAlgebra.ofConv_smulRight_apply, map_sum]
+    ConvolutionAlgebra.toFun_smulRight_apply, map_sum]
   simp only [← Complex.coe_smul, map_smul, ha]
 
 variable [BorelSpace G] [MeasurableMul G] [μ.IsMulLeftInvariant]
