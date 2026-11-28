@@ -118,15 +118,6 @@ theorem filtCov_def (k : ℕ) : M.filtCov k = measurementUpdate (M.C k) (M.R k) 
 
 theorem gain_def (k : ℕ) : M.gain k = kalmanGain (M.C k) (M.R k) (M.predCov k) := (rfl)
 
-/-- The predicted covariance is the time update of the filtered covariance. -/
-theorem predCov_succ_eq_timeUpdate (k : ℕ) :
-    M.predCov (k + 1) = timeUpdate (M.A k) (M.Q k) (M.filtCov k) := by
-  rw [predCov_succ, riccatiMap_def, filtCov_def]
-
-/-- The filtered covariance is `P - K C P` with `P` the predicted covariance and `K` the gain. -/
-theorem filtCov_eq_sub (k : ℕ) : M.filtCov k = M.predCov k - M.gain k * M.C k * M.predCov k := by
-  rw [filtCov_def, measurementUpdate_def, gain_def]
-
 /-! ### Positivity of the covariances -/
 
 variable {M}
@@ -163,19 +154,24 @@ variable (M)
 
 variable [DecidableEq ι]
 
+/-- The correction `x + K(k) (y - C(k) x)` of a predicted state `x` at time `k` by the
+observation `y`, where `K(k)` is the Kalman gain. -/
+private def correct (k : ℕ) (y : EuclideanSpace ℝ κ) (x : EuclideanSpace ℝ ι) :
+    EuclideanSpace ℝ ι :=
+  x + (M.gain k).toEuclideanLin (y - (M.C k).toEuclideanLin x)
+
 /-- The predicted mean `x̂(k|k-1)` along the observation sequence `ys`: `m₀` at time `0`, and
 `A(k) (x̂ + K(k) (ys k - C(k) x̂))` at time `k + 1`, where `x̂ = x̂(k|k-1)` and `K(k)` is the Kalman
 gain. It reads `ys j` for `j < k` only. -/
 def predMean (ys : ℕ → EuclideanSpace ℝ κ) : ℕ → EuclideanSpace ℝ ι
   | 0 => M.m₀
-  | k + 1 => (M.A k).toEuclideanLin (predMean ys k +
-      (M.gain k).toEuclideanLin (ys k - (M.C k).toEuclideanLin (predMean ys k)))
+  | k + 1 => (M.A k).toEuclideanLin (M.correct k (ys k) (predMean ys k))
 
 /-- The filtered mean `x̂(k|k) = x̂ + K(k) (ys k - C(k) x̂)` along the observation sequence `ys`,
 where `x̂ = x̂(k|k-1)` is the predicted mean and `K(k)` the Kalman gain. It reads `ys j` for
 `j ≤ k` only. -/
 def filtMean (ys : ℕ → EuclideanSpace ℝ κ) (k : ℕ) : EuclideanSpace ℝ ι :=
-  M.predMean ys k + (M.gain k).toEuclideanLin (ys k - (M.C k).toEuclideanLin (M.predMean ys k))
+  M.correct k (ys k) (M.predMean ys k)
 
 variable (ys : ℕ → EuclideanSpace ℝ κ)
 
@@ -281,7 +277,8 @@ example : scalarModel.filtCov 1 = diagonal fun _ ↦ 3 / 5 := by
   fin_cases i; fin_cases j
   norm_num [scalarModel, measurementUpdate_def, kalmanGain_def, innovationCov_def]
 
-example (ys : ℕ → EuclideanSpace ℝ (Fin 1)) :
+/-- The first filtered mean of the scalar model is `ys 0 / 2`. -/
+private theorem scalarModel_filtMean_zero (ys : ℕ → EuclideanSpace ℝ (Fin 1)) :
     scalarModel.filtMean ys 0 = (2 : ℝ)⁻¹ • ys 0 := by
   ext i
   fin_cases i
@@ -290,10 +287,8 @@ example (ys : ℕ → EuclideanSpace ℝ (Fin 1)) :
 
 example (ys : ℕ → EuclideanSpace ℝ (Fin 1)) :
     scalarModel.predMean ys 1 = (2 : ℝ)⁻¹ • ys 0 := by
-  ext i
-  fin_cases i
-  norm_num [filtMean_def, gain_def, scalarModel, kalmanGain_def,
-    innovationCov_def, one_add_one_eq_two, ofNat_apply, mulVec_diagonal]
+  rw [predMean_succ, scalarModel_filtMean_zero, show scalarModel.A 0 = 1 from rfl,
+    toLpLin_one, LinearMap.id_apply]
 
 example (ys : ℕ → EuclideanSpace ℝ (Fin 1)) :
     scalarModel.filtMean ys 1 = (5 : ℝ)⁻¹ • (ys 0 + (3 : ℝ) • ys 1) := by
