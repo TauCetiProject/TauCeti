@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.Derivation.Coordinates
 import Mathlib.RingTheory.Derivation.Lie
 import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.Data.Finsupp.Multiset
+import TauCeti.Geometry.Variational.PolynomialJet.Relative.Comparison
 
 /-!
 # The Euler operator on polynomial jets and the first variation formula
@@ -98,6 +99,17 @@ theorem totalDeriv_mem_range_totalDivergence (i : ι) (p : PolynomialJet R ι α
     totalDeriv i p ∈ LinearMap.range (totalDivergence R ι α) :=
   ⟨Finsupp.single i p, totalDivergence_single i p⟩
 
+/-- Differentiating a total derivative in a field coordinate: the partial derivative in `uᵃ_I`
+of `Dᵢ f` is `Dᵢ (∂f/∂uᵃ_I)`, plus `∂f/∂uᵃ_(I-eᵢ)` when `I` involves the direction `i`. -/
+theorem pderiv_totalDeriv (i : ι) (a : α) (I : ι →₀ ℕ) (f : PolynomialJet R ι α) :
+    pderiv (Sum.inr (a, I)) (totalDeriv i f) =
+      totalDeriv i (pderiv (Sum.inr (a, I)) f) +
+        if I i = 0 then 0 else pderiv (Sum.inr (a, I - Finsupp.single i 1)) f := by
+  apply (RelJetAlgebra.polyJetEquivRel R ι α).injective
+  simpa [apply_ite] using RelJetAlgebra.pderiv_totalDeriv
+    (fun k ↦ MvPolynomial.pderiv (R := R) k) i a I
+    (RelJetAlgebra.polyJetEquivRel R ι α f)
+
 end CommSemiring
 
 section CommRing
@@ -109,33 +121,6 @@ theorem commute_totalDeriv (i j : ι) :
     Commute (totalDeriv (R := R) (α := α) i : Module.End R (PolynomialJet R ι α))
       (totalDeriv (R := R) (α := α) j : Module.End R (PolynomialJet R ι α)) :=
   LinearMap.ext fun p ↦ totalDeriv_comm i j p
-
-/-- Differentiating a total derivative in a field coordinate: the partial derivative in `uᵃ_I`
-of `Dᵢ f` is `Dᵢ (∂f/∂uᵃ_I)`, plus `∂f/∂uᵃ_(I-eᵢ)` when `I` involves the direction `i`. -/
-theorem pderiv_totalDeriv (i : ι) (a : α) (I : ι →₀ ℕ) (f : PolynomialJet R ι α) :
-    pderiv (Sum.inr (a, I)) (totalDeriv i f) =
-      totalDeriv i (pderiv (Sum.inr (a, I)) f) +
-        if I i = 0 then 0 else pderiv (Sum.inr (a, I - Finsupp.single i 1)) f := by
-  classical
-  -- the commutator of the two derivations is a derivation, determined on the generators
-  have h : ⁅(pderiv (Sum.inr (a, I)) : Derivation R (PolynomialJet R ι α) _), totalDeriv i⁆ =
-      if I i = 0 then (0 : Derivation R (PolynomialJet R ι α) (PolynomialJet R ι α))
-        else pderiv (Sum.inr (a, I - Finsupp.single i 1)) := by
-    apply MvPolynomial.derivation_ext
-    rintro (j | ⟨b, J⟩)
-    · split <;> simp [Derivation.commutator_apply, pderiv_X, apply_ite]
-    · rcases eq_or_ne (I i) 0 with hI | hI
-      · -- `uᵇ_(J+eᵢ)` is never `uᵃ_I`, since `I` does not involve `i`
-        have hJ : J + Finsupp.single i 1 ≠ I := fun h ↦ by simp [← h] at hI
-        simp [Derivation.commutator_apply, pderiv_X, Pi.single_apply, apply_ite, hI, hJ]
-      · obtain ⟨I, rfl⟩ : ∃ I', I = I' + Finsupp.single i 1 :=
-          ⟨_, (Finsupp.sub_add_single_one_cancel hI).symm⟩
-        by_cases hb : b = a <;> by_cases hJ : J = I <;>
-          simp [Derivation.commutator_apply, pderiv_X, Pi.single_apply, apply_ite, hb, hJ]
-  have := congr($h f)
-  rw [Derivation.commutator_apply] at this
-  rw [← sub_eq_iff_eq_add', this]
-  split <;> simp
 
 private theorem injective_field (a : α) :
     Function.Injective fun I : ι →₀ ℕ ↦ (Sum.inr (a, I) : ι ⊕ (α × (ι →₀ ℕ))) :=
