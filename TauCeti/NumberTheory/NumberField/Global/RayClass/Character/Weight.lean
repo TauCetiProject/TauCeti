@@ -86,6 +86,7 @@ theorem toMultiplicativeIdealWeight_mul (χ ψ : RayClassCharacter 𝔪) :
 
 /-- Pointwise powers of ray class characters (for `n ≠ 0`) agree with powers of ideal weights,
 including at ideals meeting the modulus. -/
+@[simp]
 theorem toMultiplicativeIdealWeight_pow (χ : RayClassCharacter 𝔪) {n : ℕ} (hn : n ≠ 0) :
     toMultiplicativeIdealWeight (χ ^ n) = χ.toMultiplicativeIdealWeight ^ n := by
   induction n with
@@ -152,6 +153,7 @@ theorem toUnitaryIdealWeight_mul (χ ψ : RayClassCharacter 𝔪) :
   simp
 
 /-- The unitary extension respects positive powers of characters. -/
+@[simp]
 theorem toUnitaryIdealWeight_pow (χ : RayClassCharacter 𝔪) {n : ℕ} (hn : n ≠ 0) :
     (χ ^ n).toUnitaryIdealWeight = χ.toUnitaryIdealWeight ^ n := by
   apply Subtype.ext

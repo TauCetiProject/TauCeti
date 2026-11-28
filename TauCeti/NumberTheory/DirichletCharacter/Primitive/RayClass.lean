@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Bundle
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 public import TauCeti.NumberTheory.LFunctions.Hecke.Basic
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Dirichlet
+import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.LFunctions.Hecke.Rat
 import TauCeti.NumberTheory.NumberField.Ideal.DegreeOne
 
@@ -111,7 +113,8 @@ theorem finitePart_conductor_toPrimitiveRayClassCharacter (ψ : PrimitiveDirichl
   rw [toPrimitiveRayClassCharacter_apply, PrimitiveRayClassCharacter.conductor_of,
     RayClassCharacter.conductor_finitePart_eq_span, MulEquiv.apply_symm_apply, conductor_character]
 
-private theorem finitePart_absNorm_toPrimitiveRayClassCharacter (ψ : PrimitiveDirichletCharacter) :
+private theorem absNorm_finitePart_conductor_toPrimitiveRayClassCharacter
+    (ψ : PrimitiveDirichletCharacter) :
     Ideal.absNorm (toPrimitiveRayClassCharacter ψ).conductor.finitePart = ψ.level := by
   rw [finitePart_conductor_toPrimitiveRayClassCharacter,
     RingOfIntegers.absNorm_span_natCast_of_finrank_eq_one (Module.finrank_self ℚ)]
@@ -120,7 +123,8 @@ private theorem finitePart_absNorm_toPrimitiveRayClassCharacter (ψ : PrimitiveD
 @[simp]
 theorem level_toPrimitiveRayClassCharacter_symm (η : PrimitiveRayClassCharacter ℚ) :
     ((toPrimitiveRayClassCharacter.symm η).level : ℕ) = Ideal.absNorm η.conductor.finitePart := by
-  have h := finitePart_absNorm_toPrimitiveRayClassCharacter (toPrimitiveRayClassCharacter.symm η)
+  have h := absNorm_finitePart_conductor_toPrimitiveRayClassCharacter
+    (toPrimitiveRayClassCharacter.symm η)
   rw [Equiv.apply_symm_apply] at h
   exact h.symm
 
@@ -146,27 +150,6 @@ theorem toPrimitiveRayClassCharacter_inv (ψ : PrimitiveDirichletCharacter) :
   rw [of_inv, of_character, map_inv, PrimitiveRayClassCharacter.of_inv] at h
   rw [h, toPrimitiveRayClassCharacter_apply]
 
-private theorem changeLevel_eq_of_eq {M N : ℕ} [NeZero M] [NeZero N] (hMN : M ∣ N)
-    (hNM : N = M) (ψ : DirichletCharacter ℂ M) {χ : DirichletCharacter ℂ N}
-    (h : DirichletCharacter.changeLevel hMN ψ = χ) :
-    (∀ k : ℕ, χ k = ψ k) ∧ χ.LFunction = ψ.LFunction := by
-  subst hNM
-  rw [DirichletCharacter.changeLevel_self] at h
-  subst h
-  exact ⟨fun _ ↦ rfl, rfl⟩
-
-private theorem toDirichletCharacter_character_toPrimitiveRayClassCharacter
-    (ψ : PrimitiveDirichletCharacter) :
-    (∀ k : ℕ, (toPrimitiveRayClassCharacter ψ).character.toDirichletCharacter k = ψ.character k) ∧
-      (toPrimitiveRayClassCharacter ψ).character.toDirichletCharacter.LFunction =
-        ψ.character.LFunction := by
-  have : NeZero (Ideal.absNorm (toPrimitiveRayClassCharacter ψ).conductor.finitePart) :=
-    ⟨Ideal.absNorm_eq_zero_iff.not.mpr
-      (toPrimitiveRayClassCharacter ψ).conductor.finitePart_ne_bot⟩
-  obtain ⟨hdiv, hchg⟩ := of_eq_iff.mp (toPrimitiveRayClassCharacter.symm_apply_apply ψ)
-  exact changeLevel_eq_of_eq hdiv (finitePart_absNorm_toPrimitiveRayClassCharacter ψ) ψ.character
-    hchg
-
 /-- At a nonzero ideal, the primitive ray class character associated to `ψ` has weight given by
 `ψ` at the ideal norm, with both sides zero at ideals meeting the conductor. -/
 @[simp]
@@ -175,7 +158,9 @@ theorem toMultiplicativeIdealWeight_toPrimitiveRayClassCharacter_apply
     (toPrimitiveRayClassCharacter ψ).character.toMultiplicativeIdealWeight J =
       ψ.character (Ideal.absNorm J) := by
   rw [← (toPrimitiveRayClassCharacter ψ).character.toDirichletCharacter_apply_absNorm hJ]
-  exact (toDirichletCharacter_character_toPrimitiveRayClassCharacter ψ).1 (Ideal.absNorm J)
+  obtain ⟨hdiv, hchg⟩ := of_eq_iff.mp (toPrimitiveRayClassCharacter.symm_apply_apply ψ)
+  exact DirichletCharacter.apply_natCast_eq_of_level_eq_of_changeLevel_eq hdiv
+    (absNorm_finitePart_conductor_toPrimitiveRayClassCharacter ψ) ψ.character hchg (Ideal.absNorm J)
 
 /-- The coefficients of the corresponding ray class and Dirichlet series agree at every
 positive index. -/
@@ -186,15 +171,19 @@ theorem normCoeff_toPrimitiveRayClassCharacter (ψ : PrimitiveDirichletCharacter
       (toPrimitiveRayClassCharacter ψ).character.toUnitaryIdealWeight.toIdealArithmeticFunction n =
         ψ.character n := by
   rw [normCoeff_rayClassCharacter_rat_eq _ hn]
-  exact (toDirichletCharacter_character_toPrimitiveRayClassCharacter ψ).1 n
+  obtain ⟨hdiv, hchg⟩ := of_eq_iff.mp (toPrimitiveRayClassCharacter.symm_apply_apply ψ)
+  exact DirichletCharacter.apply_natCast_eq_of_level_eq_of_changeLevel_eq hdiv
+    (absNorm_finitePart_conductor_toPrimitiveRayClassCharacter ψ) ψ.character hchg n
 
 /-- The continued ray class L-function is the meromorphic normal form of the corresponding
 Dirichlet L-function. In particular the comparison does not identify their values at a pole. -/
 theorem heckeLFunctionC_toPrimitiveRayClassCharacter (ψ : PrimitiveDirichletCharacter) :
     heckeLFunctionC (toPrimitiveRayClassCharacter ψ).character =
       toMeromorphicNFOn ψ.character.LFunction Set.univ := by
+  obtain ⟨hdiv, hchg⟩ := of_eq_iff.mp (toPrimitiveRayClassCharacter.symm_apply_apply ψ)
   rw [heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat,
-    (toDirichletCharacter_character_toPrimitiveRayClassCharacter ψ).2]
+    DirichletCharacter.LFunction_eq_of_level_eq_of_changeLevel_eq hdiv
+      (absNorm_finitePart_conductor_toPrimitiveRayClassCharacter ψ) ψ.character hchg]
 
 /-- The corresponding continued L-functions have the same punctured germ at every point. -/
 theorem heckeLFunctionC_toPrimitiveRayClassCharacter_eventuallyEq (ψ : PrimitiveDirichletCharacter)

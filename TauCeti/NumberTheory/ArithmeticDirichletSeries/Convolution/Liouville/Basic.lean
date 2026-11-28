@@ -10,20 +10,17 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Liouville
 public import TauCeti.NumberTheory.ArithmeticFunction.DilateSq
 import Mathlib.Algebra.GroupWithZero.Torsion
 import TauCeti.Algebra.Group.Submonoid.Operations
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Analytic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Multiplicative
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
-import TauCeti.NumberTheory.LSeries.Term
-import TauCeti.NumberTheory.NumberField.DedekindZeta
+import TauCeti.NumberTheory.LSeries.DilateSq
 
 /-!
-# Ideal convolution and continuation of the ideal Liouville weight
+# Ideal convolution of the ideal Liouville weight
 
 Let `K` be a number field and `λ_K = TauCeti.MultiplicativeIdealWeight.liouville K` the ideal
 Liouville weight taking value `-1` at every height-one prime. Since `λ_K ^ 2 = 1`, `λ_K` satisfies
 `(λ_K ^ 2).IsTrivialOnGood`, so the convolution theory of
 `TauCeti/NumberTheory/ArithmeticDirichletSeries/Convolution/Quadratic.lean` applies. This file
-collects the exact identities and sharpness counterexamples for `1 * λ_K` and `L(λ_K, ·)`:
+collects the exact convolution and series identities for `1 * λ_K`:
 
 * at every nonzero integral ideal `A`, `(1 * λ_K)(A) = 1` if `A` is a square ideal `B ^ 2` and `0`
   otherwise (`TauCeti.convolution_one_liouville_apply`);
@@ -35,11 +32,10 @@ collects the exact identities and sharpness counterexamples for `1 * λ_K` and `
   specifically on `Re s > 1 / 2`
   (`TauCeti.LSeriesSummable_normCoeff_convolution_one_liouville_iff`), showing that the abscissa
   lower bound `1 / 2` in `TauCeti.half_le_abscissaOfAbsConv_normCoeff_convolution_one` is sharp
-  (`TauCeti.abscissaOfAbsConv_normCoeff_convolution_one_liouville`);
-* on `Re s > 1`, `L(λ_K, s) = ζ_K(2s) / ζ_K(s)` extends holomorphically across `s = 1` to a
-  function vanishing at `s = 1` (`TauCeti.MultiplicativeIdealWeight.`
-  `exists_differentiableOn_eqOn_LSeries_liouville_and_apply_one_eq_zero`),
-  demonstrating that local analytic continuation across `s = 1` alone does not prevent `L 1 = 0`.
+  (`TauCeti.abscissaOfAbsConv_normCoeff_convolution_one_liouville`).
+
+For the local continuation counterexample across `s = 1`, see
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/Convolution/Liouville/Continuation.lean`.
 
 ## Main results
 
@@ -50,9 +46,6 @@ collects the exact identities and sharpness counterexamples for `1 * λ_K` and `
   `TauCeti.LSeriesSummable_normCoeff_convolution_one_liouville_iff`,
   `TauCeti.abscissaOfAbsConv_normCoeff_convolution_one_liouville`: totalized `L`-series identity
   and exact abscissa of absolute convergence `1 / 2`.
-* `TauCeti.MultiplicativeIdealWeight.`
-  `exists_differentiableOn_eqOn_LSeries_liouville_and_apply_one_eq_zero`:
-  local continuation counterexample with `L 1 = 0`.
 
 ## References
 
@@ -155,37 +148,15 @@ theorem LSeries_normCoeff_convolution_one_liouville (s : ℂ) :
     LSeries (normCoeff K (IdealArithmeticFunction.convolution 1
       (MultiplicativeIdealWeight.liouville K).toIdealArithmeticFunction)) s =
       dedekindZeta K (2 * s) := by
-  rw [dedekindZeta_eq_LSeries_normCoeff_one, LSeries, LSeries,
-    normCoeff_convolution_one_liouville_eq_dilateSq]
-  refine (Function.Injective.tsum_eq (Nat.pow_left_injective two_ne_zero) ?_).symm.trans
-    (tsum_congr fun m ↦ ?_)
-  · intro n hn
-    by_contra hnot
-    have hnsq : ¬ IsSquare n := by
-      rintro ⟨m, rfl⟩
-      exact hnot ⟨m, sq m⟩
-    simp [LSeries.term, ArithmeticFunction.dilateSq_apply_of_not_isSquare _ hnsq] at hn
-  · rw [TauCeti.LSeries.term_sq]
-    simp [LSeries.term]
+  rw [dedekindZeta_eq_LSeries_normCoeff_one, normCoeff_convolution_one_liouville_eq_dilateSq,
+    ArithmeticFunction.LSeries_dilateSq]
 
 /-- The Dirichlet series of `1 * λ_K` converges absolutely exactly on `Re s > 1 / 2`. -/
 theorem LSeriesSummable_normCoeff_convolution_one_liouville_iff {s : ℂ} :
     LSeriesSummable (normCoeff K (IdealArithmeticFunction.convolution 1
       (MultiplicativeIdealWeight.liouville K).toIdealArithmeticFunction)) s ↔ 1 / 2 < s.re := by
-  rw [LSeriesSummable, normCoeff_convolution_one_liouville_eq_dilateSq,
-    ← (Nat.pow_left_injective two_ne_zero).summable_iff fun n hn ↦ by
-      have hnsq : ¬ IsSquare n := by
-        rintro ⟨m, rfl⟩
-        exact hn ⟨m, sq m⟩
-      simp [LSeries.term, ArithmeticFunction.dilateSq_apply_of_not_isSquare _ hnsq]]
-  have hfun :
-      (LSeries.term ⇑(ArithmeticFunction.dilateSq
-        (normCoeff K (1 : IdealArithmeticFunction K))) s) ∘ (· ^ 2) =
-        LSeries.term (normCoeff K (1 : IdealArithmeticFunction K)) (2 * s) := by
-    ext m
-    rw [Function.comp_apply, TauCeti.LSeries.term_sq]
-    simp [LSeries.term]
-  rw [hfun, ← LSeriesSummable, LSeriesSummable_normCoeff_one_iff]
+  rw [normCoeff_convolution_one_liouville_eq_dilateSq,
+    ArithmeticFunction.LSeriesSummable_dilateSq_iff, LSeriesSummable_normCoeff_one_iff]
   simp only [Complex.mul_re, Complex.re_ofNat, Complex.im_ofNat, zero_mul, sub_zero]
   constructor <;> intro h <;> linarith
 
@@ -201,60 +172,5 @@ theorem abscissaOfAbsConv_normCoeff_convolution_one_liouville :
       (MultiplicativeIdealWeight.isTrivialOnGood_liouville_sq K))
   exact LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun _ hy ↦
     (LSeriesSummable_normCoeff_convolution_one_liouville_iff (K := K)).mpr (by simpa using hy)
-
-namespace MultiplicativeIdealWeight
-
-/-- **Counterexample to local continuation across `s = 1` alone.** For the ideal Liouville weight
-`λ_K = MultiplicativeIdealWeight.liouville K`, which satisfies `(λ_K ^ 2).IsTrivialOnGood`, the
-Dirichlet series `L(λ_K, s) = ζ_K(2s) / ζ_K(s)` continues holomorphically across `s = 1` to
-`Metric.ball 1 r ∪ {s | 1 < s.re}` and vanishes at `s = 1`. Thus local analytic continuation across
-`s = 1` alone cannot rule out `L 1 = 0`. -/
-theorem exists_differentiableOn_eqOn_LSeries_liouville_and_apply_one_eq_zero :
-    ∃ r > 0, ∃ L : ℂ → ℂ,
-      DifferentiableOn ℂ L (Metric.ball (1 : ℂ) r ∪ {s | 1 < s.re}) ∧
-      Set.EqOn L (LSeries (normCoeff K (liouville K).toIdealArithmeticFunction)) {s | 1 < s.re} ∧
-      L 1 = 0 := by
-  obtain ⟨H, hHdiff, hHeq, _, hHne⟩ := exists_differentiableOn_eq_sub_one_mul_dedekindZeta K
-  set U : Set ℂ := {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re}
-  have hUopen : IsOpen U := isOpen_lt continuous_const Complex.continuous_re
-  have h1U : (1 : ℂ) ∈ U :=
-    setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K (by simp)
-  have hH1 : H 1 ≠ 0 := hHne 1 (by simp)
-  have hmem : U ∩ {s : ℂ | (1 / 2 : ℝ) < s.re} ∩ {s : ℂ | H s ≠ 0} ∈ nhds (1 : ℂ) :=
-    Filter.inter_mem (Filter.inter_mem (hUopen.mem_nhds h1U)
-      ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds (by norm_num)))
-      ((hHdiff.differentiableAt (hUopen.mem_nhds h1U)).continuousAt.eventually_ne hH1)
-  obtain ⟨r, hr, hball⟩ := Metric.nhds_basis_ball.mem_iff.mp hmem
-  set L : ℂ → ℂ := fun s ↦ (s - 1) * dedekindZeta K (2 * s) / H s
-  refine ⟨r, hr, L, ?_, ?_, by simp [L]⟩
-  · intro s hs
-    have hsU : s ∈ U := hs.elim (fun h ↦ (hball h).1.1) fun h ↦
-      setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K
-        (le_of_lt (by simpa only [Set.mem_ofPred_eq] using h))
-    have hs2 : 1 < (2 * s).re := by
-      have hhalf : (1 / 2 : ℝ) < s.re :=
-        hs.elim (fun h ↦ (hball h).1.2) fun h ↦ by
-          simpa only [Set.mem_ofPred_eq] using lt_trans (by norm_num : (1 / 2 : ℝ) < 1) h
-      simp only [Complex.mul_re, Complex.re_ofNat, Complex.im_ofNat, zero_mul, sub_zero]
-      linarith
-    have hHs : H s ≠ 0 := hs.elim (fun h ↦ (hball h).2) fun h ↦
-      hHne s (le_of_lt (by simpa only [Set.mem_ofPred_eq] using h))
-    have hζ2 : DifferentiableAt ℂ (fun z : ℂ ↦ dedekindZeta K (2 * z)) s :=
-      (analyticOnNhd_dedekindZeta K (2 * s) hs2).differentiableAt.comp s
-        (differentiableAt_id.const_mul 2)
-    exact (((differentiableAt_id.sub_const 1).mul hζ2).div
-      (hHdiff.differentiableAt (hUopen.mem_nhds hsU)) hHs).differentiableWithinAt
-  · intro s hs
-    have hne : s - 1 ≠ 0 := sub_ne_zero.mpr fun h ↦ by simp [h] at hs
-    have hζne : dedekindZeta K s ≠ 0 := dedekindZeta_ne_zero_of_one_lt_re hs
-    have hconv : dedekindZeta K (2 * s) = dedekindZeta K s *
-        LSeries (normCoeff K (liouville K).toIdealArithmeticFunction) s := by
-      rw [← LSeries_normCoeff_convolution_one_liouville,
-        LSeries_normCoeff_convolution_one_eq_dedekindZeta_mul hs
-          (LSeriesSummable_normCoeff_of_isTrivialOnGood_sq (isTrivialOnGood_liouville_sq K) hs)]
-    simp only [L, hHeq s hs, hconv]
-    field_simp [hne, hζne]
-
-end MultiplicativeIdealWeight
 
 end TauCeti

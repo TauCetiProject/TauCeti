@@ -11,8 +11,8 @@ public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Conduct
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Rat
 
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.NumberField.Ideal.DegreeOne
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.IntCast
 
@@ -320,9 +320,7 @@ theorem mem_range_toDirichletCharacter_iff {𝔪 : Modulus ℚ}
     ψ ∈ Set.range (toDirichletCharacter (𝔪 := 𝔪)) ↔ 𝔪.infinitePart.Nonempty ∨ ψ.Even := by
   let n := Ideal.absNorm 𝔪.finitePart
   have hn : n ≠ 0 := Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot
-  have hfin : 𝔪.finitePart = (ratModulus n hn).finitePart :=
-    (Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart).symm.trans
-      (ratModulus_finitePart n hn).symm
+  have hfin : 𝔪.finitePart = (ratModulus n hn).finitePart := (ratModulus_absNorm_finitePart 𝔪).symm
   have hiff : ψ ∈ Set.range (toDirichletCharacter (𝔪 := 𝔪)) ↔
       ∃ χ : RayClassCharacter 𝔪,
         χ.induced (dvd_ratModulus_absNorm 𝔪) = (ratDirichletEquiv n hn).symm ψ := by
@@ -330,27 +328,31 @@ theorem mem_range_toDirichletCharacter_iff {𝔪 : Modulus ℚ}
     rw [toDirichletCharacter_apply]
     exact ⟨fun h ↦ by rw [← h]; exact (MulEquiv.symm_apply_apply _ _).symm,
       fun h ↦ by rw [h]; exact MulEquiv.apply_symm_apply _ _⟩
-  rw [hiff, exists_induced_eq_iff_of_finitePart_eq (dvd_ratModulus_absNorm 𝔪) hfin]
+  rw [hiff]
   by_cases hinf : 𝔪.infinitePart.Nonempty
-  · rw [iff_true_intro (Or.inl hinf), iff_true]
+  · rw [exists_induced_eq_iff_of_finitePart_eq (dvd_ratModulus_absNorm 𝔪) hfin,
+      iff_true_intro (Or.inl hinf), iff_true]
     obtain ⟨w₀, hw₀⟩ := hinf
     intro s hs
     have hs1 : s = 1 := funext fun w ↦
       hs w (by convert hw₀ using 1; exact Subtype.ext (Subsingleton.elim _ _))
     rw [hs1, Prod.mk_one_one, map_one, map_one]
   · rw [or_iff_right hinf]
-    have hη := even_ratDirichletEquiv_iff ((ratDirichletEquiv n hn).symm ψ)
+    have hinf_empty : 𝔪.infinitePart = ∅ := Finset.not_nonempty_iff_eq_empty.mp hinf
+    have : NeZero n := ⟨hn⟩
+    have hspan : 𝔪 = Modulus.spanNat ℚ n := Modulus.ext
+      (hfin.trans (ratModulus_finitePart n hn) |>.trans
+        (Modulus.spanNat_finitePart (K := ℚ) n).symm)
+      (hinf_empty.trans (Modulus.spanNat_infinitePart (K := ℚ) n).symm)
+    have h₁ : Modulus.spanNat ℚ n ∣ 𝔪 := hspan ▸ Modulus.dvd_refl _
+    have h₂ : 𝔪 ∣ Modulus.spanNat ℚ n := hspan.symm ▸ Modulus.dvd_refl _
+    have hη := even_ratDirichletEquiv_iff_exists_induced
+      (spanNat_dvd_ratModulus (n := n) (hn := hn)) ((ratDirichletEquiv n hn).symm ψ)
     rw [MulEquiv.apply_symm_apply] at hη
     rw [hη]
-    refine ⟨fun h ↦ h (fun _ ↦ -1) fun w hw ↦ absurd ⟨w.val, hw⟩ hinf, fun h s _ ↦ ?_⟩
-    let w₀ : (ratModulus n hn).infinitePart :=
-      ⟨⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩, by simp⟩
-    rcases Int.units_eq_one_or (s w₀) with hs | hs
-    · have hs' : s = 1 := funext fun w ↦ by rw [Subsingleton.elim w w₀, hs, Pi.one_apply]
-      rw [hs', Prod.mk_one_one, map_one, map_one]
-    · have hs' : s = fun _ ↦ -1 := funext fun w ↦ by rw [Subsingleton.elim w w₀, hs]
-      rw [hs']
-      exact h
+    refine ⟨fun ⟨χ, hχ⟩ ↦ ⟨χ.induced h₂, ?_⟩, fun ⟨χ, hχ⟩ ↦ ⟨χ.induced h₁, ?_⟩⟩
+    · rwa [RayClassCharacter.induced_trans]
+    · rwa [RayClassCharacter.induced_trans]
 
 /-- When `𝔪` includes the real place of `ℚ`, `toDirichletCharacter` is surjective. -/
 theorem surjective_toDirichletCharacter_of_infinitePart_nonempty {𝔪 : Modulus ℚ}
@@ -379,9 +381,7 @@ theorem toDirichletCharacter_apply_absNorm {𝔪 : Modulus ℚ} (χ : RayClassCh
   by_cases hI : J.IsPrimeTo 𝔪.support
   · have hI' : J ∈ integralIdealsPrimeTo (ratModulus n hn) :=
       Modulus.mem_integralIdealsPrimeTo.mpr
-        ((Modulus.isCoprimeTo_iff_of_finitePart_eq
-          ((Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart).symm.trans
-            (ratModulus_finitePart n hn).symm)).mp
+        ((Modulus.isCoprimeTo_iff_of_finitePart_eq (ratModulus_absNorm_finitePart 𝔪).symm).mp
           (Modulus.isCoprimeTo_iff.mpr (Ideal.isPrimeTo_iff.mp hI)))
     have hval := ratDirichletEquiv_absNorm (χ.induced h𝔪) ⟨J, hI'⟩
     have hincl : (⟨J, NumberFieldArithmetic.mem_integralIdealsAway_iff.mpr
@@ -402,7 +402,7 @@ theorem toDirichletCharacter_apply_natCast {𝔪 : Modulus ℚ} (χ : RayClassCh
   have hJ : Ideal.span {(k : 𝓞 ℚ)} ≠ ⊥ := by
     simpa only [ne_eq, Ideal.span_singleton_eq_bot, Nat.cast_eq_zero] using hk
   rw [← χ.toDirichletCharacter_apply_absNorm hJ,
-    Ideal.absNorm_span_natCast, NumberField.RingOfIntegers.rank, Module.finrank_self, pow_one]
+    RingOfIntegers.absNorm_span_natCast_of_finrank_eq_one (Module.finrank_self ℚ)]
 
 end RayClassCharacter
 

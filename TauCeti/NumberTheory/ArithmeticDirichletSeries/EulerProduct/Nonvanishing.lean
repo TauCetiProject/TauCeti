@@ -21,7 +21,7 @@ ideal weight whose pointwise square `χ ^ 2` is a purely imaginary norm twist
 automatically unitary (`TauCeti.MultiplicativeIdealWeight.unitaryOfIsNormTwistOnGoodSq`), and
 `L(χ ^ 2, ·)` agrees on `Re s > 1` with the `u * I`-translate of a Dedekind zeta function with
 finitely many Euler factors removed. By
-`TauCeti.exists_differentiableOn_eq_LSeries_ofBadPrimes_sub`, that translate continues
+`TauCeti.exists_differentiableOn_eq_LSeries_ofBadPrimes`, that translate continues
 continuously to every point of `Re s = 1` except `1 + u * I`, so the `3-4-1` inequality rules out
 zeros of any continuation `L` of `L(χ, ·)` everywhere on the line `Re s = 1` except possibly at
 `s = 1 + (u / 2) * I`.
@@ -59,21 +59,17 @@ theorem ne_zero_of_eqOn_LSeries_of_isNormTwistOnGood_sq
   obtain ⟨S, hS⟩ : ∃ S : Finset (HeightOneSpectrum (𝓞 K)),
       (χ ^ 2).badPrimes = (S : Set (HeightOneSpectrum (𝓞 K))) :=
     ⟨(χ ^ 2).finite_badPrimes.toFinset, (χ ^ 2).finite_badPrimes.coe_toFinset.symm⟩
-  obtain ⟨G, hG, hGL⟩ := exists_differentiableOn_eq_LSeries_ofBadPrimes_sub K S
-  set ρ : ℂ := dedekindZeta_residue K * ∏ P ∈ S, (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-1 : ℂ))
+  obtain ⟨T, hT, hTL⟩ := exists_differentiableOn_eq_LSeries_ofBadPrimes K S
   set w₀ : ℂ := 2 * s - 1 - (u : ℂ) * Complex.I
   have hw₀re : w₀.re = 1 := by norm_num [w₀, hs]
-  have hw₀ : w₀ - 1 ≠ 0 := fun h ↦ hsu (by linear_combination h / 2)
-  have hcont : ContinuousAt
-      (fun z : ℂ ↦ G (z - (u : ℂ) * Complex.I) + ρ / (z - (u : ℂ) * Complex.I - 1))
-      (2 * s - 1) := by
-    have hG₀ : ContinuousAt G w₀ :=
-      (hG.differentiableAt ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds
-        (setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K hw₀re.ge))).continuousAt
-    have hsub : ContinuousAt (fun z : ℂ ↦ z - (u : ℂ) * Complex.I) (2 * s - 1) :=
-      continuousAt_id.sub continuousAt_const
-    exact (hG₀.comp_of_eq hsub rfl).add
-      (continuousAt_const.div (hsub.sub continuousAt_const) hw₀)
+  have hw₀ : w₀ ≠ 1 := fun h ↦ hsu (by linear_combination h / 2)
+  have hcont : ContinuousAt (fun z : ℂ ↦ T (z - (u : ℂ) * Complex.I)) (2 * s - 1) := by
+    have hopen : IsOpen ({z : ℂ | 1 - 1 / (Module.finrank ℚ K : ℝ) < z.re} \ {1}) :=
+      (isOpen_lt continuous_const Complex.continuous_re).sdiff isClosed_singleton
+    have hT₀ : ContinuousAt T w₀ :=
+      (hT.differentiableAt (hopen.mem_nhds
+        ⟨setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K hw₀re.ge, hw₀⟩)).continuousAt
+    exact hT₀.comp_of_eq (continuousAt_id.sub continuousAt_const) rfl
   have hLL' : Set.EqOn L
       (LSeries (normCoeff K (unitaryOfIsNormTwistOnGoodSq hχ₂).toIdealArithmeticFunction))
       {z | 1 < z.re} := by
@@ -82,6 +78,6 @@ theorem ne_zero_of_eqOn_LSeries_of_isNormTwistOnGood_sq
   refine (unitaryOfIsNormTwistOnGoodSq hχ₂).ne_zero_of_eqOn_LSeries hs hLs hLL' hcont fun z hz ↦ ?_
   have hz' : 1 < (z - (u : ℂ) * Complex.I).re := by simpa using hz
   rw [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val, UnitaryIdealWeight.val_pow,
-    val_unitaryOfIsNormTwistOnGoodSq, hχ₂.LSeries_normCoeff hS, hGL _ hz', sub_add_cancel]
+    val_unitaryOfIsNormTwistOnGoodSq, hχ₂.LSeries_normCoeff hS, hTL hz']
 
 end TauCeti.MultiplicativeIdealWeight

@@ -40,7 +40,7 @@ Both endpoints of the abscissa interval `[1 / 2, 1]` are sharp: the trivial weig
 (`TauCeti.abscissaOfAbsConv_normCoeff_convolution_one_one` in
 `TauCeti/NumberTheory/ArithmeticDirichletSeries/Convolution/Analytic.lean`), and the ideal Liouville
 weight `TauCeti.MultiplicativeIdealWeight.liouville K` attains `1 / 2` (see
-`TauCeti/NumberTheory/ArithmeticDirichletSeries/Convolution/Liouville.lean`).
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/Convolution/Liouville/Basic.lean`).
 
 ## Main results
 

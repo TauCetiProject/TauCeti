@@ -104,23 +104,37 @@ theorem idealAbscissaOfAbsConv_convolution_le (f g : IdealArithmeticFunction K) 
 
 /-! ### Norm-regrouped convolution series -/
 
+/-- **Product identity for norm-regrouped convolution.** Whenever the norm-regrouped `L`-series of
+`f` and `g` converge absolutely at `s`, the regrouped `L`-series of `f * g` is
+`L(f, s) * L(g, s)`. -/
+theorem LSeries_normCoeff_convolution {f g : IdealArithmeticFunction K} {s : ℂ}
+    (hf : LSeriesSummable (normCoeff K f) s) (hg : LSeriesSummable (normCoeff K g) s) :
+    LSeries (normCoeff K (f.convolution g)) s =
+      LSeries (normCoeff K f) s * LSeries (normCoeff K g) s := by
+  rw [normCoeff_convolution, ArithmeticFunction.LSeries_mul' hf hg]
+
+/-- Ideal convolution preserves absolute convergence of the norm-regrouped `L`-series. -/
+theorem LSeriesSummable_normCoeff_convolution {f g : IdealArithmeticFunction K} {s : ℂ}
+    (hf : LSeriesSummable (normCoeff K f) s) (hg : LSeriesSummable (normCoeff K g) s) :
+    LSeriesSummable (normCoeff K (f.convolution g)) s := by
+  rw [normCoeff_convolution]
+  exact ArithmeticFunction.LSeriesSummable_mul hf hg
+
 /-- **Product identity on `Re s > 1`.** Whenever the regrouped `L`-series of `f` converges
 absolutely at `s` with `1 < Re s`, the regrouped `L`-series of `1 * f` is `ζ_K(s) L(f, s)`. -/
 theorem LSeries_normCoeff_convolution_one_eq_dedekindZeta_mul {f : IdealArithmeticFunction K}
     {s : ℂ} (hs : 1 < s.re) (hf : LSeriesSummable (normCoeff K f) s) :
     LSeries (normCoeff K (IdealArithmeticFunction.convolution 1 f)) s =
       NumberField.dedekindZeta K s * LSeries (normCoeff K f) s := by
-  rw [normCoeff_convolution,
-    ArithmeticFunction.LSeries_mul' ((LSeriesSummable_normCoeff_one_iff K).mpr hs) hf,
+  rw [LSeries_normCoeff_convolution ((LSeriesSummable_normCoeff_one_iff K).mpr hs) hf,
     dedekindZeta_eq_LSeries_normCoeff_one]
 
 /-- The Dirichlet series of `1 * f` converges absolutely on `Re s > 1` whenever `f` is uniformly
 bounded on nonzero ideals. -/
 theorem LSeriesSummable_normCoeff_convolution_one_of_bounded {f : IdealArithmeticFunction K} {C : ℝ}
     (hf : ∀ I : (Ideal (𝓞 K))⁰, ‖f I‖ ≤ C) {s : ℂ} (hs : 1 < s.re) :
-    LSeriesSummable (normCoeff K (IdealArithmeticFunction.convolution 1 f)) s := by
-  rw [normCoeff_convolution]
-  exact ArithmeticFunction.LSeriesSummable_mul ((LSeriesSummable_normCoeff_one_iff K).mpr hs)
+    LSeriesSummable (normCoeff K (IdealArithmeticFunction.convolution 1 f)) s :=
+  LSeriesSummable_normCoeff_convolution ((LSeriesSummable_normCoeff_one_iff K).mpr hs)
     (LSeriesSummable_normCoeff K (summable_idealTerm_of_bounded_of_one_lt_re hf hs))
 
 /-- The abscissa of absolute convergence of `1 * f` is at most `1` whenever `f` is uniformly

@@ -196,6 +196,21 @@ theorem exists_differentiableOn_eq_LSeries_ofBadPrimes_sub (S : Finset (HeightOn
   simp only [E]
   ring
 
+/-- **Meromorphic continuation across `Re s = 1` of the Dedekind zeta function with finitely many
+Euler factors deleted.** There is a function holomorphic on `{s | 1 - 1 / [K : ℚ] < s.re} \ {1}`
+agreeing with the `L`-series of the indicator of ideals prime to `S` on `Re s > 1`. -/
+theorem exists_differentiableOn_eq_LSeries_ofBadPrimes (S : Finset (HeightOneSpectrum (𝓞 K))) :
+    ∃ T : ℂ → ℂ, DifferentiableOn ℂ T ({s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} \ {1}) ∧
+      Set.EqOn T (LSeries (normCoeff K
+        (MultiplicativeIdealWeight.ofBadPrimes (S : Set (HeightOneSpectrum (𝓞 K)))
+          S.finite_toSet).toIdealArithmeticFunction)) {s | 1 < s.re} := by
+  obtain ⟨G, hG, hGL⟩ := exists_differentiableOn_eq_LSeries_ofBadPrimes_sub K S
+  set ρ : ℂ := dedekindZeta_residue K * ∏ P ∈ S, (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-1 : ℂ))
+  refine ⟨fun s ↦ G s + ρ / (s - 1), (hG.mono Set.sdiff_subset).add
+    ((differentiableOn_const ρ).div (differentiableOn_id.sub_const 1) fun _ hs ↦
+      sub_ne_zero.mpr hs.2), fun s hs ↦ ?_⟩
+  simp only [hGL s hs, ρ, sub_add_cancel]
+
 variable {K} in
 /-- **The Dedekind zeta function has no zeros on the line `Re s = 1` away from its pole.** If `f`
 agrees with `ζ_K` on `Re s > 1` and is complex differentiable at a point `s ≠ 1` with `Re s = 1`,
