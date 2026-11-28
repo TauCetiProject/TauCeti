@@ -25,7 +25,8 @@ elements (`Polynomial.separable_X_pow_card_pow_sub_X`).
 
 Over a finite field with `q` elements, `(X - a) ^ q = X ^ q - a` (`Polynomial.X_sub_C_pow_natCard`),
 so `(X - a) ^ q` divides `A(X, X ^ q) - A(X, a)` for `A ∈ K[X][Y]`
-(`Polynomial.X_sub_C_pow_natCard_dvd_eval_sub_eval`).
+(`Polynomial.X_sub_C_pow_natCard_dvd_eval_sub_eval`). In particular `f ^ q ≡ f(a)` modulo
+`(X - a) ^ q` for `f ∈ K[X]` (`Polynomial.X_sub_C_pow_natCard_dvd_pow_natCard_sub_C_eval`).
 -/
 
 public section
@@ -68,16 +69,12 @@ theorem hasseDeriv_pow_card_eq_zero [Fintype K] {k : ℕ} (hk : ¬Fintype.card K
   rw [← Nat.card_eq_fintype_card] at hk ⊢
   exact hasseDeriv_pow_natCard_eq_zero hk f
 
-section Finite
-
-variable [Finite K]
-
 /-- Over a finite field with `q` elements, `(X - a) ^ q = X ^ q - a`. -/
-theorem X_sub_C_pow_natCard (a : K) : (X - C a) ^ Nat.card K = X ^ Nat.card K - C a := by
+theorem X_sub_C_pow_natCard [Finite K] (a : K) :
+    (X - C a) ^ Nat.card K = X ^ Nat.card K - C a := by
   have := Fintype.ofFinite K
   rw [Nat.card_eq_fintype_card, ← FiniteField.Polynomial.expand_card, map_sub, expand_X, expand_C]
 
-omit [Finite K] in
 /-- Over a finite field with `q` elements, `(X - a) ^ q` divides `A(X, X ^ q) - A(X, a)` for every
 `A ∈ K[X][Y]`. Over an infinite field `Nat.card K = 0`, and the statement is `1 ∣ _`. -/
 theorem X_sub_C_pow_natCard_dvd_eval_sub_eval (a : K) (A : K[X][X]) :
@@ -90,7 +87,6 @@ theorem X_sub_C_pow_natCard_dvd_eval_sub_eval (a : K) (A : K[X][X]) :
     rw [Nat.card_eq_zero_of_infinite, pow_zero]
     exact one_dvd _
 
-omit [Finite K] in
 /-- Over a finite field with `q` elements, `f ^ q ≡ f(a)` modulo `(X - a) ^ q` for every
 `f ∈ K[X]`: `f ^ q = f(X ^ q)` with the coefficients of `f` fixed, so this is
 `X_sub_C_pow_natCard_dvd_eval_sub_eval` for `f` read in `K[X][Y]`. Over an infinite field
@@ -107,7 +103,5 @@ theorem X_sub_C_pow_natCard_dvd_pow_natCard_sub_C_eval (a : K) (f : K[X]) :
   | inr _ =>
     rw [Nat.card_eq_zero_of_infinite, pow_zero]
     exact one_dvd _
-
-end Finite
 
 end Polynomial

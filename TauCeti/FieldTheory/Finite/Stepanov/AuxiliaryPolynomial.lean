@@ -69,9 +69,8 @@ open Polynomial
 
 namespace Polynomial
 
-variable {F : Type*} [Field F] [Finite F]
+variable {F : Type*} [Field F]
 
-omit [Finite F] in
 /-- Modulo `(X - a) ^ q`, the sum `∑ᵢ f ^ (i c) · Aᵢ(X, X ^ q)` is `P(f ^ c)` for
 `P = ∑ᵢ Aᵢ(X, a) Tⁱ`. -/
 private theorem dvd_eval_sub_sum {e : ℕ} (a : F) (f : F[X]) (c : ℕ) (A : Fin e → F[X][X]) :
@@ -92,13 +91,14 @@ private theorem aeval_div_eq_zero_of_dvd {e E : ℕ} {f : F[X]} (hf₀ : f ≠ 0
     aeval (algebraMap F[X] (FractionRing F[X]) (C (f.eval a)) /
       algebraMap F[X] (FractionRing F[X]) f) Q = 0 := by
   set q := Nat.card F
+  have hq : q ≠ 0 := (Nat.zero_lt_of_lt hE).ne'
   -- `f ^ q ≡ f(a)` modulo `(X - a) ^ q`, so `G = (scaleRoots Q f)(f(a))` is congruent to
   -- `(scaleRoots Q f)(f ^ q) = f ^ deg Q · Q(f ^ (q - 1))` (`Polynomial.scaleRoots_eval_mul`).
   have hfq : (X - C a) ^ q ∣ f ^ q - C (f.eval a) :=
     X_sub_C_pow_natCard_dvd_pow_natCard_sub_C_eval a f
   have hG : (X - C a) ^ q ∣ (Q.scaleRoots f).eval (C (f.eval a)) := by
     have h1 : (X - C a) ^ q ∣ (Q.scaleRoots f).eval (f ^ q) := by
-      rw [← mul_pow_sub_one Nat.card_pos.ne' f, scaleRoots_eval_mul]
+      rw [← mul_pow_sub_one hq f, scaleRoots_eval_mul]
       exact dvd_mul_of_dvd_right hdvd _
     exact (dvd_sub_right h1).1 (hfq.trans (sub_dvd_eval_sub _ _ _))
   have hG0 : (Q.scaleRoots f).eval (C (f.eval a)) = 0 := by
@@ -116,7 +116,6 @@ private theorem aeval_div_eq_zero_of_dvd {e E : ℕ} {f : F[X]} (hf₀ : f ≠ 0
   rw [mul_div_cancel₀ _ hfK, eval₂_at_apply, hG0, map_zero, eq_comm, ← aeval_def] at h
   exact (mul_eq_zero.1 h).resolve_left (pow_ne_zero _ hfK)
 
-omit [Finite F] in
 /-- For `P` of degree `< e` whose coefficients have degree at most `D`, the norm
 `∏_{k < e} P(ζᵏ T)` is `Q(Tᵉ)` with `deg Q < e` and coefficients of degree at most `e D`. -/
 private theorem exists_prod_comp_eq_expand {e D : ℕ} (he : e ≠ 0) {ζ : F}
@@ -151,7 +150,7 @@ private theorem eval_C_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero {e D : ℕ}
     (hR : ∑ i : Fin e, f ^ ((i : ℕ) * ((Nat.card F - 1) / e)) * (A i).eval (X ^ Nat.card F) = 0)
     (i₀ : Fin e) : (A i₀).eval (C a) = 0 := by
   classical
-  by_contra hAa
+  have : Finite F := Nat.finite_of_card_ne_zero (Nat.zero_lt_of_lt hD).ne'
   have he0 : e ≠ 0 := by rintro rfl; exact i₀.elim0
   set q := Nat.card F
   set c := (q - 1) / e
@@ -192,7 +191,7 @@ private theorem eval_C_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero {e D : ℕ}
   rw [Polynomial.map_eq_zero_iff hinj] at hP0
   have h₀ : P.coeff i₀ = B i₀ := ofFn_coeff_eq_val_of_lt _ i₀.isLt
   rw [hP0, coeff_zero] at h₀
-  exact hAa h₀.symm
+  exact h₀.symm
 
 /-- The case `f ≠ 0` of `Polynomial.sum_pow_mul_eval_X_pow_eq_zero_iff`, for `a` with `f(a) ≠ 0`.
 Every `Aᵢ` vanishes at `Y = a`, so `Aᵢ = (Y - a) A'ᵢ`, and the `A'ᵢ` satisfy the same hypotheses
@@ -220,7 +219,7 @@ private theorem forall_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero {e D : ℕ}
       exact (natDegree_C_mul_le _ _).trans (hA _ _)
   have hR' : ∑ i : Fin e, f ^ ((i : ℕ) * ((Nat.card F - 1) / e)) *
       (A' i).eval (X ^ Nat.card F) = 0 := by
-    have hXq : (X ^ Nat.card F - C a : F[X]) ≠ 0 := X_pow_sub_C_ne_zero Nat.card_pos a
+    have hXq : (X ^ Nat.card F - C a : F[X]) ≠ 0 := X_pow_sub_C_ne_zero (Nat.zero_lt_of_lt hD) a
     refine (mul_eq_zero.1 (Eq.trans ?_ hR)).resolve_left hXq
     rw [Finset.mul_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
@@ -245,7 +244,8 @@ private theorem forall_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero {e D : ℕ}
 `e ∣ q - 1` and `c = (q - 1) / e`, and let `f` not be of the form `C b * hˡ` for any `ℓ > 1`
 dividing `e`. If the coefficients of `A₀, …, A_{e-1} ∈ F[X][Y]` have degree at most `D` in `X`, with
 `e D + (e - 1) deg f < q`, then `∑ᵢ f ^ (i c) · Aᵢ(X, X ^ q) = 0` if and only if every `Aᵢ` is
-zero. -/
+zero. The statement does not assume that `F` is finite: over an infinite field `Nat.card F = 0`,
+and the degree bound does not hold. -/
 theorem sum_pow_mul_eval_X_pow_eq_zero_iff {e D : ℕ} (he : e ∣ Nat.card F - 1) {f : F[X]}
     (hf : ∀ (b : F) (h : F[X]) (ℓ : ℕ), 1 < ℓ → ℓ ∣ e → f ≠ C b * h ^ ℓ)
     {A : Fin e → F[X][X]} (hA : ∀ i j, ((A i).coeff j).natDegree ≤ D)
@@ -262,6 +262,7 @@ theorem sum_pow_mul_eval_X_pow_eq_zero_iff {e D : ℕ} (he : e ∣ Nat.card F - 
       (fun b h ℓ hℓ hℓ1 ↦ absurd (Nat.le_of_dvd one_pos hℓ1) (by lia)) (by simpa using hD) hA
       (by simpa using hR)
   · -- For `e > 1` the hypothesis on `f` gives `f ≠ 0`, and `deg f < q`, so `f(a) ≠ 0` for some `a`.
+    have : Finite F := Nat.finite_of_card_ne_zero (Nat.zero_lt_of_lt hD).ne'
     have he0 : e ≠ 0 := by lia
     have hf₀ : f ≠ 0 := by
       rintro rfl
