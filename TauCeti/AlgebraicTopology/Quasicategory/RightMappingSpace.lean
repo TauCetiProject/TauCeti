@@ -19,7 +19,6 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Slice
 public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
 public import TauCeti.AlgebraicTopology.SimplicialSet.ULift
 import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
-import TauCeti.AlgebraicTopology.SimplicialSet.Vertex
 
 /-!
 # Right mapping spaces of simplicial sets
@@ -129,14 +128,6 @@ namespace SSet
 open SimplexCategory
 
 variable (X : SSet.{u})
-
-/-- Pulling back a totally degenerate simplex along a simplicial operator gives the totally
-degenerate simplex at the same vertex. -/
-@[simp]
-theorem map_map_const_zero {m m' : SimplexCategory} (f : m' ⟶ m) (x : X _⦋0⦌) :
-    X.map f.op (X.map (SimplexCategory.const m ⦋0⦌ 0).op x) =
-      X.map (SimplexCategory.const m' ⦋0⦌ 0).op x := by
-  rw [← Functor.map_comp_apply, ← op_comp, Subsingleton.elim (f ≫ _)]
 
 /-- The right mapping space `Hom^R_X(x, y)` between vertices `x` and `y` of a simplicial set `X`.
 It is the subcomplex of `joinVertex.op ⋙ X` whose `n`-simplices are the `(n + 1)`-simplices of

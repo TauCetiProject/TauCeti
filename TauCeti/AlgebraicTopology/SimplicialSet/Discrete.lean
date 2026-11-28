@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.KanComplex
 public import Mathlib.AlgebraicTopology.SimplicialSet.NonDegenerateSimplices
 public import Mathlib.CategoryTheory.Sites.ConstantSheaf
 public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
+public import TauCeti.AlgebraicTopology.SimplicialSet.Vertex
 
 /-!
 # Discrete simplicial sets
@@ -96,14 +97,6 @@ lemma isIso_constHomEquiv_symm {v : ι → X _⦋0⦌} (hv : Function.Bijective 
     obtain ⟨i, rfl⟩ := hv.2 y
     exact ⟨i, happ i⟩
 
-/-- The vertex of the totally degenerate simplex at a vertex `w` is `w`. -/
-private lemma map_const_map_const_zero (Z : SSet.{u}) (n : ℕ) (w : Z _⦋0⦌) :
-    Z.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ 0).op (Z.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op w) =
-      w := by
-  rw [← Functor.map_comp_apply, ← op_comp, Subsingleton.elim
-    (SimplexCategory.const ⦋0⦌ ⦋n⦌ 0 ≫ SimplexCategory.const ⦋n⦌ ⦋0⦌ 0) (𝟙 _), op_id]
-  simp
-
 /-- A map between simplicial sets all of whose simplices are totally degenerate is an
 isomorphism as soon as it is bijective on vertices: both are the discrete simplicial sets on their
 vertices (`SSet.isIso_constHomEquiv_symm`). -/
@@ -129,7 +122,7 @@ lemma Subcomplex.surjective_map_const {A : X.Subcomplex}
   obtain ⟨v, hv⟩ := hX n s.val
   -- The vertex `v` is a vertex of the simplex `s`, hence a vertex of `A`.
   have hv' : v = X.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ 0).op s.val := by
-    rw [← hv, map_const_map_const_zero]
+    rw [← hv, map_map_const_zero, SimplexCategory.const_eq_id, op_id, Functor.map_id_apply]
   exact ⟨⟨v, hv' ▸ A.map _ s.property⟩, Subtype.ext hv⟩
 
 /-- The simplices of a product of simplicial sets whose simplices are all totally degenerate are
@@ -145,7 +138,8 @@ lemma surjective_piObj_map_const {J : Type*} (Y : J → SSet.{u}) [Limits.HasPro
     NatTrans.naturality_apply, NatTrans.naturality_apply]
   -- The projection of `s` is the totally degenerate simplex at its vertex.
   obtain ⟨w, hw⟩ := hY j n ((Limits.Pi.π Y j).app _ s)
-  rw [← hw, map_const_map_const_zero]
+  simp only [← hw, map_map_const_zero, SimplexCategory.const_eq_id, op_id,
+    Functor.map_id_apply]
 
 /-- Every simplex of positive dimension of a discrete simplicial set is degenerate. -/
 @[simp]
