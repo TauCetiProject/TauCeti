@@ -68,7 +68,8 @@ theorem isAdicComplete_quotient_range_of_isSMulRegular
     ⟨hQ, hQ.isHausdorff_span_singleton_of_isSMulRegular hf⟩
 
 /-- If `N` is derived `I`-complete, so is the scalar quotient `N / gN`.
-See the Stacks Project, Tag 091P. -/
+See [Stacks Project, Lemma 15.93.6 (Tag 091U)](https://stacks.math.columbia.edu/tag/091U)
+for closure under cokernels. -/
 theorem quotSMulTop {I : Ideal R} (hN : IsDerivedComplete I N) (g : R) :
     IsDerivedComplete I (QuotSMulTop g N) := by
   suffices h : IsDerivedComplete I (N ⧸ g • (⊤ : Submodule R N)) from h
