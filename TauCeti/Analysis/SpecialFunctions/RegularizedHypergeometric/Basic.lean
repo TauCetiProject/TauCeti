@@ -14,6 +14,7 @@ import Mathlib.RingTheory.Binomial
 import Mathlib.Algebra.Polynomial.OfFn
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
+import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.UniformLimit
@@ -56,8 +57,9 @@ with no condition on the lower parameters.
 * `Complex.hasSum_regularizedHGFun_of_mem_eball`,
   `Complex.summable_norm_regularizedHGFun_of_mem_eball` — `HasSum` and absolute convergence on the
   formal convergence ball of `regularizedHGFunSeries`.
-* `Complex.hasSum_regularizedHGFun` — the power series of `regularizedHGFun a b` converges to it
-  everywhere when `a.card ≤ b.card`, absolutely by `Complex.summable_norm_regularizedHGFun`.
+* `Complex.hasSum_regularizedHGFun`, `Complex.tendsto_sum_range_ceil_regularizedHGFunCoeff` — the
+  power series of `regularizedHGFun a b` converges to it everywhere when `a.card ≤ b.card` (and
+  along ceiling-truncated partial sums), absolutely by `Complex.summable_norm_regularizedHGFun`.
 * `Complex.differentiable_regularizedHGFun_of_card_le` — `regularizedHGFun a b` is entire when
   `a.card ≤ b.card`, and `Complex.hasSum_deriv_regularizedHGFun` expresses its derivative as the
   termwise differentiated series.
@@ -188,6 +190,16 @@ series converges to `regularizedHGFun a b z` at every `z`. -/
 theorem hasSum_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card) (z : ℂ) :
     HasSum (fun n => regularizedHGFunCoeff a b n * z ^ n) (regularizedHGFun a b z) :=
   hasSum_regularizedHGFun_of_mem_eball (by simp [radius_regularizedHGFunSeries_eq_top h])
+
+/-- Partial sums of `regularizedHGFunCoeff a b k * z ^ k` up to `⌈N + x⌉₊` converge to
+`regularizedHGFun a b z` as `N → ∞` when `a.card ≤ b.card`. -/
+theorem tendsto_sum_range_ceil_regularizedHGFunCoeff {a b : Multiset ℂ} (h : a.card ≤ b.card)
+    (z : ℂ) (x : ℝ) :
+    Tendsto (fun N : ℕ => ∑ k ∈ Finset.range ⌈(N : ℝ) + x⌉₊,
+        regularizedHGFunCoeff a b k * z ^ k)
+      atTop (𝓝 (regularizedHGFun a b z)) :=
+  (hasSum_regularizedHGFun h z).tendsto_sum_nat.comp
+    (tendsto_nat_ceil_atTop.comp (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds))
 
 /-- When there is one more upper than lower parameter, the regularized hypergeometric series
 converges to `regularizedHGFun a b z` on the open unit disk `‖z‖ < 1`. -/

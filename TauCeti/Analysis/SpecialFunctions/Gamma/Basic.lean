@@ -82,7 +82,8 @@ valid for every `s`, is the form from which the growth of hypergeometric coeffic
   `-1` avoids `−ℕ`.
 * `Real.sub_natCast_ne_neg_natCast` — a real number strictly between `0` and `1`, shifted left by
   a natural number, avoids `−ℕ`.
-* `Real.neg_one_pow_div_factorial_mul_Gamma_sub_natCast` — the reflection formula at `c - k`:
+* `Complex.neg_one_pow_div_factorial_mul_Gamma_sub_natCast` and
+  `Real.neg_one_pow_div_factorial_mul_Gamma_sub_natCast` — the reflection formula at `c - k`:
   `(-1)^k / k! · Γ(c - k) = (π / sin πc) / (k! Γ(1 - c + k))` when `sin πc ≠ 0`.
 * `Real.neg_one_pow_mul_Gamma_pos_of_mem_Ioo` — the sign of `Γ` between consecutive poles:
   `(-1)ᵏ Γ s > 0` on `(-k, -k + 1)`, with the even and odd cases `Real.Gamma_pos_of_mem_Ioo` and
@@ -408,6 +409,28 @@ theorem inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast (s : ℂ) (n :
     rw [ih, one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (s + n), ascPochhammer_succ_eval,
       Nat.cast_succ, ← add_assoc, mul_assoc]
 
+open scoped Real in
+/-- The reflection formula at `c - k`: when `sin (π * c) ≠ 0`,
+`(-1)^k / k! · Γ(c - k) = (π / sin (π * c)) / (k! * Γ(1 - c + k))`. -/
+theorem neg_one_pow_div_factorial_mul_Gamma_sub_natCast {c : ℂ}
+    (hc : sin (π * c) ≠ 0) (k : ℕ) :
+    (-1 : ℂ) ^ k / (k ! : ℂ) * Gamma (c - k) =
+      π / sin (π * c) / (k ! * Gamma (1 - c + k)) := by
+  have hrefl := Gamma_mul_Gamma_one_sub (c - k)
+  have hsin : sin (π * (c - k)) = (-1 : ℂ) ^ k * sin (π * c) := by
+    rw [mul_sub, mul_comm (π : ℂ) (k : ℂ)]
+    exact sin_antiperiodic.sub_nat_mul_eq k
+  rw [hsin, ← sub_add] at hrefl
+  have hsgn : ((-1 : ℂ) ^ k) ≠ 0 := pow_ne_zero _ (by norm_num)
+  have hfac : (k ! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero k)
+  have hG : Gamma (1 - c + k) ≠ 0 := fun h ↦ by
+    rw [h, mul_zero] at hrefl
+    exact div_ne_zero (ofReal_ne_zero.mpr Real.pi_ne_zero) (mul_ne_zero hsgn hc) hrefl.symm
+  rw [eq_div_iff (mul_ne_zero hsgn hc)] at hrefl
+  rw [div_div, eq_div_iff (mul_ne_zero hc (mul_ne_zero hfac hG)),
+    div_mul_eq_mul_div, div_mul_eq_mul_div, div_eq_iff hfac]
+  linear_combination (k ! : ℂ) * hrefl
+
 end Complex
 
 namespace Real
@@ -458,17 +481,12 @@ theorem neg_one_pow_div_factorial_mul_Gamma_sub_natCast {c : ℝ}
     (hc : sin (π * c) ≠ 0) (k : ℕ) :
     (-1) ^ k / (k ! : ℝ) * Gamma (c - k) =
       π / sin (π * c) / (k ! * Gamma (1 - c + k)) := by
-  have hrefl := Gamma_mul_Gamma_one_sub (c - k)
-  rw [show π * (c - k) = π * c - k * π by ring, sin_sub_nat_mul_pi,
-    show 1 - (c - k) = 1 - c + k by ring] at hrefl
-  have hsgn : ((-1 : ℝ) ^ k) ≠ 0 := pow_ne_zero _ (by norm_num)
-  have hG : Gamma (1 - c + k) ≠ 0 := fun h ↦ by
-    rw [h, mul_zero] at hrefl
-    exact div_ne_zero pi_ne_zero (mul_ne_zero hsgn hc) hrefl.symm
-  rw [eq_div_iff (mul_ne_zero hsgn hc)] at hrefl
-  rw [div_div, eq_div_iff (mul_ne_zero hc (mul_ne_zero (by positivity) hG)),
-    div_mul_eq_mul_div, div_mul_eq_mul_div, div_eq_iff (by positivity)]
-  linear_combination (k ! : ℝ) * hrefl
+  apply Complex.ofReal_injective
+  push_cast
+  rw [← Complex.Gamma_ofReal, ← Complex.Gamma_ofReal]
+  push_cast
+  exact Complex.neg_one_pow_div_factorial_mul_Gamma_sub_natCast (c := (c : ℂ))
+    (by exact_mod_cast hc) k
 
 /-- The reflection formula between consecutive poles:
 `(-1)ᵏ Γ s = π / sin(π(s + k)) / Γ(1 - s)` for `s ∈ (-k, -k + 1)`, where `0 < π(s + k) < π`. -/

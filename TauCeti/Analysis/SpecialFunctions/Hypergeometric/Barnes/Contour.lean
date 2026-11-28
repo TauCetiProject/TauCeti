@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Residue.Basic
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.MellinBarnes
 import Mathlib.Analysis.Meromorphic.Complex
 import TauCeti.Analysis.Contour.ConnectorLimit
 import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
 import TauCeti.Analysis.Contour.Residue.VerticalLineShift
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
-import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Gamma.Residue
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -41,7 +41,6 @@ poles. This file defines that value and proves that it does not depend on the li
 
 * `Complex.hypergeometricMellinBarnesIntegrand a b c z t`: the integrand
   `Γ(a + t) Γ(b + t) Γ(-t) Γ(c + t)⁻¹ (-z)^t` of DLMF 15.6.6.
-* `Complex.gammaPolesRightOf a σ`: the poles `-a - k` of `t ↦ Γ(a + t)` with real part `> σ`.
 * `Complex.hypergeometricMellinBarnes a b c z σ`: the integral `(2πi)⁻¹ ∫_C` over the separating
   contour `C`, written as `(2π)⁻¹ ∫ F(σ + i y) dy` plus the residues of `F` at the poles of
   `Γ(a + t) Γ(b + t)` to the right of `Re t = σ`.
@@ -51,7 +50,6 @@ poles. This file defines that value and proves that it does not depend on the li
 * `Complex.hypergeometricMellinBarnes_eq`: for `-z ∈ slitPlane`, the value does not depend on
   the line `Re t = σ`, among lines with `σ < 0` that avoid the poles of `Γ(a + t) Γ(b + t)`.
   This holds for all complex `a`, `b`, `c`.
-* `Complex.gammaPolesRightOf_antitone`: `gammaPolesRightOf a` is antitone in `σ`.
 * `Complex.residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast`: the residue at a simple
   pole `t = -a - k` that is not a pole of `Γ(b + t)` or of `Γ(-t)`, which is
   `(-1)^k / k! · Γ(b - a - k) Γ(a + k) Γ(c - a - k)⁻¹ (-z)^(-a - k)`.
@@ -118,40 +116,6 @@ theorem meromorphicAt_hypergeometricMellinBarnesIntegrand (a b c z t : ℂ) :
     · exact ((differentiable_id.const_cpow (.inl (neg_ne_zero.mpr hz))).analyticAt t).meromorphicAt
   exact ((((hG _ (by fun_prop)).mul (hG _ (by fun_prop))).mul (hG _ (by fun_prop))).mul
     hinv).mul hpow
-
-/-- The poles `t = -a - k` (`k : ℕ`) of `t ↦ Γ(a + t)` that lie to the right of the vertical line
-`Re t = σ`. There are finitely many, since `Re (-a - k) = -Re a - k`. -/
-def gammaPolesRightOf (a : ℂ) (σ : ℝ) : Finset ℂ :=
-  (Finset.range ⌈-a.re - σ⌉₊).image fun k : ℕ ↦ -a - k
-
-@[simp]
-theorem mem_gammaPolesRightOf {a t : ℂ} {σ : ℝ} :
-    t ∈ gammaPolesRightOf a σ ↔ σ < t.re ∧ ∃ k : ℕ, t = -a - k := by
-  simp only [gammaPolesRightOf, Finset.mem_image, Finset.mem_range, Nat.lt_ceil]
-  constructor
-  · rintro ⟨k, hk, rfl⟩
-    exact ⟨by simp; linarith, k, rfl⟩
-  · rintro ⟨hσ, k, rfl⟩
-    exact ⟨k, by simp at hσ; linarith, rfl⟩
-
-@[simp]
-theorem gammaPolesRightOf_eq_empty_iff {a : ℂ} {σ : ℝ} :
-    gammaPolesRightOf a σ = ∅ ↔ -a.re ≤ σ := by
-  simp [gammaPolesRightOf, Nat.ceil_eq_zero]
-
-/-- `gammaPolesRightOf a` is antitone in the abscissa `σ`: shifting `σ` to the left only adds
-poles of `t ↦ Γ(a + t)` to the right of `Re t = σ`. -/
-theorem gammaPolesRightOf_antitone (a : ℂ) : Antitone (gammaPolesRightOf a) :=
-  fun _ _ h s hs ↦ by
-    rw [mem_gammaPolesRightOf] at hs ⊢
-    exact ⟨h.trans_lt hs.1, hs.2⟩
-
-/-- The poles of `t ↦ Γ(a + t) Γ(b + t)` to the right of the line `Re t = σ`. -/
-theorem mem_gammaPolesRightOf_union {a b t : ℂ} {σ : ℝ} :
-    t ∈ gammaPolesRightOf a σ ∪ gammaPolesRightOf b σ ↔
-      σ < t.re ∧ ∃ k : ℕ, t = -a - k ∨ t = -b - k := by
-  simp only [Finset.mem_union, mem_gammaPolesRightOf]
-  grind
 
 /-! ### The integral over the separating contour -/
 
@@ -278,13 +242,6 @@ theorem integrable_hypergeometricMellinBarnesIntegrand (a b c : ℂ) {z : ℂ}
   simp only [hypergeometricMellinBarnesIntegrand_def]
   exact integrable_Gamma_mul_Gamma_mul_Gamma_mul_inv_Gamma_mul_neg_cpow c hz ha hb hσ
 
-/-- A pole of `Γ(a + t) Γ(b + t)` does not lie on a line `Re t = σ` that avoids the poles. -/
-private theorem re_ne_of_pole {a b t : ℂ} {σ : ℝ} (ha : ∀ n : ℕ, a.re + σ ≠ -n)
-    (hb : ∀ n : ℕ, b.re + σ ≠ -n) (ht : ∃ k : ℕ, t = -a - k ∨ t = -b - k) : t.re ≠ σ := by
-  obtain ⟨k, rfl | rfl⟩ := ht
-  · exact fun h ↦ ha k (by simp at h; linarith)
-  · exact fun h ↦ hb k (by simp at h; linarith)
-
 /-- For `σ₂ < 0`, with the line `Re t = σ₁` avoiding the poles of `Γ(a + t) Γ(b + t)`, the
 integrand of Barnes's integral is holomorphic at every point of the strip `σ₁ ≤ Re t ≤ σ₂` other
 than the poles of `Γ(a + t) Γ(b + t)` with `σ₁ < Re t`, `Re t ≤ σ₂`. -/
@@ -294,15 +251,9 @@ private theorem differentiableAt_hypergeometricMellinBarnesIntegrand_of_mem_stri
     (hP : t ∉ (gammaPolesRightOf a σ₁ ∪ gammaPolesRightOf b σ₁) \
       (gammaPolesRightOf a σ₂ ∪ gammaPolesRightOf b σ₂)) :
     DifferentiableAt ℂ (hypergeometricMellinBarnesIntegrand a b c z) t := by
-  have hpole {w : ℂ} (hw : ∀ m : ℕ, w + t = -m → ∃ k : ℕ, t = -a - k ∨ t = -b - k) :
-      ∀ m : ℕ, w + t ≠ -m := fun m hm ↦ by
-    have hk := hw m hm
-    refine hP (Finset.mem_sdiff.mpr ⟨mem_gammaPolesRightOf_union.mpr
-      ⟨lt_of_le_of_ne h₁ (re_ne_of_pole ha₁ hb₁ hk).symm, hk⟩, fun h ↦ ?_⟩)
-    exact absurd (mem_gammaPolesRightOf_union.mp h).1 (not_lt.mpr h₂)
-  refine differentiableAt_hypergeometricMellinBarnesIntegrand hz
-    (hpole fun m hm ↦ ⟨m, .inl (by linear_combination hm)⟩)
-    (hpole fun m hm ↦ ⟨m, .inr (by linear_combination hm)⟩) fun m hm ↦ ?_
+  obtain ⟨ha, hb⟩ :=
+    add_ne_neg_natCast_of_notMem_gammaPolesRightOf_union_sdiff ha₁ hb₁ h₁ h₂ hP
+  refine differentiableAt_hypergeometricMellinBarnesIntegrand hz ha hb fun m hm ↦ ?_
   have : t.re = m := by simpa using congrArg re (neg_injective hm)
   linarith [m.cast_nonneg' (α := ℝ)]
 
@@ -319,10 +270,8 @@ private theorem hypergeometricMellinBarnes_eq_of_le (a b c : ℂ) {z : ℂ} (hz 
   -- The poles strictly between the two lines.
   set P := (gammaPolesRightOf a σ₁ ∪ gammaPolesRightOf b σ₁) \
     (gammaPolesRightOf a σ₂ ∪ gammaPolesRightOf b σ₂)
-  have hP : ∀ p ∈ P, σ₁ < p.re ∧ p.re < σ₂ := fun p hp ↦ by
-    rw [Finset.mem_sdiff, mem_gammaPolesRightOf_union, mem_gammaPolesRightOf_union] at hp
-    obtain ⟨⟨h₁, hk⟩, h₂⟩ := hp
-    exact ⟨h₁, lt_of_le_of_ne (not_lt.mp fun h ↦ h₂ ⟨h, hk⟩) (re_ne_of_pole ha₂ hb₂ hk)⟩
+  have hP : ∀ p ∈ P, σ₁ < p.re ∧ p.re < σ₂ := fun p hp ↦
+    re_mem_Ioo_of_mem_gammaPolesRightOf_union_sdiff ha₂ hb₂ hp
   have hF {t : ℂ} (h₁ : σ₁ ≤ t.re) (h₂ : t.re ≤ σ₂) (ht : t ∉ P) :=
     differentiableAt_hypergeometricMellinBarnesIntegrand_of_mem_strip a b c
       (by simpa using slitPlane_ne_zero hz) hσ₂ ha₁ hb₁ h₁ h₂ ht

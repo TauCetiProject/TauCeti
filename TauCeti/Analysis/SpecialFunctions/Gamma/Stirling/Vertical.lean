@@ -10,12 +10,14 @@ import Mathlib.Analysis.Asymptotics.Prod
 import Mathlib.Analysis.Complex.Liouville
 import TauCeti.Analysis.Asymptotics.VerticalStrip
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # Stirling's formula on vertical strips
@@ -79,6 +81,8 @@ Negative `t` reduces to positive `t` by `Γ(conj s) = conj (Γ s)`.
   `TauCeti.exists_norm_inv_Gamma_and_deriv_ball_add_I_le`: uniform upper bounds for `‖(Γ s)⁻¹‖`
   and `‖deriv (Γ ·)⁻¹ s‖` across the strip `Re s ∈ [a, b]` and on shifted vertical lines over unit
   balls.
+* `TauCeti.exists_norm_Gamma_sub_natCast_le`: left-shift factorial decay
+  `‖Γ(σ - N + i t)‖ ≤ C / (N - ⌈σ⌉₊)! * exp (-π |t| / 2)` for a noninteger real offset `σ`.
 * `TauCeti.exists_norm_Gamma_add_mul_I_le`: uniform exponential bounds for `‖Γ(w + i y)‖` and
   `‖(Γ(w + i y))⁻¹‖` on bounded boxes `|Re w|, |Im w| ≤ R` for large `|y|`.
 
@@ -800,6 +804,79 @@ theorem exists_norm_inv_Gamma_and_deriv_ball_add_I_le (w₀ : ℂ) :
             mul_le_mul_of_nonneg_left (hshift _ him_le y) hCd.le
       _ ≤ C * (1 + |y|) ^ (5 / 2 - w₀.re) * Real.exp ((π / 2) * |y|) := by
             rw [← mul_assoc, ← mul_assoc]; gcongr; exact le_max_right _ _
+
+/-- Reciprocal Gamma bound on the reflected left-shifted line `1 - (σ - N + i t)`, reducing
+`N - M` steps back to the vertical line `Re s = 1 + M - σ ≥ 1`. -/
+private lemma norm_inv_Gamma_one_sub_sub_natCast_le {σ K : ℝ} (hK : 0 ≤ K) {M N : ℕ}
+    (hM : σ ≤ M) (hMN : M ≤ N)
+    (hinv : ∀ s : ℂ, s.re ∈ Icc (1 + (M : ℝ) - σ) (1 + (M : ℝ) - σ) →
+      ‖(Complex.Gamma s)⁻¹‖ ≤ K * (1 + |s.im|) ^ (1 / 2 - s.re) * Real.exp ((π / 2) * |s.im|))
+    (t : ℝ) :
+    ‖(Complex.Gamma (1 - ((σ : ℂ) - N + t * I)))⁻¹‖ ≤
+      K * Real.exp (π * |t| / 2) / (Nat.factorial (N - M) : ℝ) := by
+  set a : ℝ := 1 + M - σ
+  have hsplit : 1 - ((σ : ℂ) - N + t * I) = ((a : ℂ) + (-t : ℝ) * I) + ((N - M : ℕ) : ℂ) := by
+    simp only [a, Nat.cast_sub hMN]; push_cast; ring
+  rw [hsplit]
+  have hre : ((a : ℂ) + (-t : ℝ) * I).re = a := by simp
+  have him : ((a : ℂ) + (-t : ℝ) * I).im = -t := by simp
+  have hinv_t : ‖(Complex.Gamma ((a : ℂ) + (-t : ℝ) * I))⁻¹‖ ≤ K * Real.exp (π * |t| / 2) := by
+    have hb := hinv ((a : ℂ) + (-t : ℝ) * I) (by simp only [mem_Icc, hre, le_refl, and_self])
+    rw [hre, him, abs_neg, div_mul_eq_mul_div] at hb
+    have hrpow : (1 + |t|) ^ (1 / 2 - a) ≤ 1 :=
+      Real.rpow_le_one_of_one_le_of_nonpos (by linarith [abs_nonneg t]) (by linarith)
+    calc ‖(Complex.Gamma ((a : ℂ) + (-t : ℝ) * I))⁻¹‖
+        ≤ K * (1 + |t|) ^ (1 / 2 - a) * Real.exp (π * |t| / 2) := hb
+      _ ≤ K * 1 * Real.exp (π * |t| / 2) := by gcongr
+      _ = K * Real.exp (π * |t| / 2) := by ring
+  exact (Complex.norm_inv_Gamma_add_natCast_le (by rw [hre]; linarith) (N - M)).trans
+    (div_le_div_of_nonneg_right hinv_t (by positivity))
+
+/-- Left-shift vertical-line bound for a single Gamma factor: for any noninteger real offset `σ`,
+there is `C > 0` such that for all `N ≥ ⌈σ⌉₊` and `t : ℝ`,
+`‖Γ(σ - N + i t)‖ ≤ C / (N - ⌈σ⌉₊)! * exp (-π |t| / 2)`. -/
+theorem exists_norm_Gamma_sub_natCast_le {σ : ℝ} (hσ : ∀ m : ℤ, σ ≠ m) :
+    ∃ C > 0, ∀ ⦃N : ℕ⦄, ⌈σ⌉₊ ≤ N → ∀ t : ℝ,
+      ‖Complex.Gamma ((σ : ℂ) - N + t * I)‖ ≤
+        C / (Nat.factorial (N - ⌈σ⌉₊) : ℝ) * Real.exp (-(π * |t| / 2)) := by
+  set M : ℕ := ⌈σ⌉₊
+  obtain ⟨K, hK, hinv⟩ := exists_norm_inv_Gamma_vertical_strip_le (1 + M - σ) (1 + M - σ)
+  have hsin : Real.sin (π * σ) ≠ 0 := fun h ↦ by
+    obtain ⟨m, hm⟩ := Real.sin_eq_zero_iff.mp h
+    exact hσ m (mul_left_cancel₀ pi_ne_zero (by linarith))
+  refine ⟨π * (2 / |Real.sin (π * σ)|) * K, by positivity, fun N hMN t ↦ ?_⟩
+  set z : ℂ := (σ : ℂ) - N + t * I
+  have hz_re : z.re = σ - N := by simp [z]
+  have hz_im : z.im = t := by simp [z]
+  -- Bound `(sin (π z))⁻¹` via periodicity of `Real.sin (π * ·)` and `Complex.norm_inv_sin_le`.
+  have hinv_sin : ‖(sin (π * z))⁻¹‖ ≤ 2 / |Real.sin (π * σ)| * Real.exp (-(π * |t|)) := by
+    have hre : (π * z).re = π * σ - (N : ℕ) * π := by
+      rw [re_ofReal_mul, hz_re]; ring
+    have hsin_eq : |Real.sin (π * z).re| = |Real.sin (π * σ)| := by
+      rw [hre, Real.sin_sub_nat_mul_pi, abs_mul, abs_pow, abs_neg, abs_one, one_pow, one_mul]
+    have him : |(π * z).im| = π * |t| := by
+      rw [im_ofReal_mul, hz_im, abs_mul, abs_of_pos pi_pos]
+    refine (norm_inv_sin_le (abs_pos.mp (by rw [hsin_eq]; exact abs_pos.mpr hsin))).trans_eq ?_
+    rw [hsin_eq, him]
+  -- Reflect `Γ(z) = π (sin (π z))⁻¹ (Γ(1 - z))⁻¹` and apply the reflected reciprocal bound.
+  have href : Complex.Gamma z = π * (sin (π * z))⁻¹ * (Complex.Gamma (1 - z))⁻¹ :=
+    (eq_mul_inv_iff_mul_eq₀ (Gamma_ne_zero_of_re_pos (by
+      have hMN' : (M : ℝ) ≤ N := Nat.cast_le.mpr hMN
+      rw [sub_re, one_re, hz_re]
+      linarith [Nat.le_ceil σ]))).mpr
+      (by rw [← div_eq_mul_inv]; exact Gamma_mul_Gamma_one_sub z)
+  have hinvG := norm_inv_Gamma_one_sub_sub_natCast_le hK.le (Nat.le_ceil σ) hMN hinv t
+  have hexp : Real.exp (-(π * |t|)) * Real.exp (π * |t| / 2) = Real.exp (-(π * |t| / 2)) := by
+    rw [← Real.exp_add]; congr 1; ring
+  have hpi : ‖(π : ℂ)‖ = π := by simp [abs_of_pos pi_pos]
+  rw [href, norm_mul, norm_mul, hpi]
+  calc π * ‖(sin (π * z))⁻¹‖ * ‖(Complex.Gamma (1 - z))⁻¹‖
+      ≤ π * (2 / |Real.sin (π * σ)| * Real.exp (-(π * |t|))) *
+          (K * Real.exp (π * |t| / 2) / (Nat.factorial (N - M) : ℝ)) := by gcongr
+    _ = π * (2 / |Real.sin (π * σ)|) * K / (Nat.factorial (N - M) : ℝ) *
+          (Real.exp (-(π * |t|)) * Real.exp (π * |t| / 2)) := by ring
+    _ = π * (2 / |Real.sin (π * σ)|) * K / (Nat.factorial (N - M) : ℝ) *
+          Real.exp (-(π * |t| / 2)) := by rw [hexp]
 
 /-- Uniform vertical-strip exponential bounds for `‖Γ(w + i y)‖` and `‖(Γ(w + i y))⁻¹‖`: for any
 `R : ℝ` and `ε > 0`, there exist `A` and `Y₀ ≥ 1` such that whenever `|w.re| ≤ R`, `|w.im| ≤ R`,
