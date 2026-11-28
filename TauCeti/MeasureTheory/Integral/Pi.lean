@@ -149,8 +149,10 @@ theorem integral_integral_update_pi {E : Type*} [NormedAddCommGroup E] [NormedSp
 /-- **Fubini against a function of one coordinate.** If `x ↦ T x * h (xᵢ)` is integrable under a
 product of σ-finite measures whose `i`-th factor is a probability measure, its integral is the
 integral under `P i` of `a ↦ (∫ y, T (update y i a) ∂(Measure.pi P)) * h a`. This partial
-integral integrates `T` over the other coordinates with the `i`-th held at `a`; only when every
-factor is a probability measure is it a version of the conditional expectation `E(T | Xᵢ = a)`. -/
+integral integrates `T` over the other coordinates with the `i`-th held at `a`. The theorem asks
+only for integrability of `x ↦ T x * h (xᵢ)`; when moreover `T` itself is integrable and every
+factor is a probability measure, the partial integral is, for `P i`-almost every `a`, a version of
+the conditional expectation `E(T | Xᵢ = a)`. -/
 theorem integral_mul_comp_eval_eq (P : ∀ i, Measure (α i)) [∀ i, SigmaFinite (P i)]
     {T : (∀ i, α i) → ℝ} (i : ι) [IsProbabilityMeasure (P i)] {h : α i → ℝ}
     (hTh : Integrable (fun x ↦ T x * h (x i)) (Measure.pi P)) :
@@ -200,8 +202,11 @@ theorem integral_integral_update_pi_swap (P : ∀ i, Measure (α i)) [∀ i, Sig
   rfl
 
 omit [DecidableEq ι] in
-/-- Two functions of distinct coordinates `j ≠ i` of a product of probability measures are
-uncorrelated: `E(u(Xⱼ) v(Xᵢ)) = E u(Xⱼ) · E v(Xᵢ)`. -/
+/-- **Factorization over two distinct coordinates.** For `j ≠ i` and a product of probability
+measures, the Bochner integral of `x ↦ u (xⱼ) * v (xᵢ)` is the product of the Bochner integrals of
+`u` under `P j` and of `v` under `P i`. Only a.e. strong measurability is assumed: when `u` or
+`v` is not integrable, both sides are `0`. For square-integrable `u` and `v`, for which the
+covariance is defined, it says that `u (Xⱼ)` and `v (Xᵢ)` are uncorrelated. -/
 theorem integral_comp_eval_mul_comp_eval (P : ∀ i, Measure (α i))
     [∀ i, IsProbabilityMeasure (P i)] {i j : ι} (hji : j ≠ i) {u : α j → ℝ} {v : α i → ℝ}
     (hu : AEStronglyMeasurable u (P j)) (hv : AEStronglyMeasurable v (P i)) :

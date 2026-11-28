@@ -15,10 +15,12 @@ import TauCeti.MeasureTheory.Integral.Pi
 
 Let `T` be a real statistic of independent coordinates `Xᵢ` with laws `P i`, indexed by a finite
 type `ι`. Its Hájek projection is
-`T̂ = ∑ᵢ E(T | Xᵢ) - (|ι| - 1) E T`,
-where the conditional expectation `E(T | Xᵢ = a)` is written as the integral of
-`y ↦ T (Function.update y i a)` under the product law, that is with the coordinates other than
-`i` integrated out.
+`T̂ x = ∑ᵢ Tᵢ (xᵢ) - (|ι| - 1) ∫ T`,
+where the partial integral `Tᵢ a` is the Bochner integral of `y ↦ T (Function.update y i a)`
+under the product law, that is with the coordinates other than `i` integrated out. The definition
+takes any `T` and any measures. When `T` is integrable and every `P i` is a probability measure,
+`Tᵢ (Xᵢ)` is almost everywhere a version of the conditional expectation `E(T | Xᵢ)`, so
+`T̂ = ∑ᵢ E(T | Xᵢ) - (|ι| - 1) E T` almost everywhere.
 
 For square-integrable `T`, the residual `T - T̂` is orthogonal in `L²` to every sum `∑ᵢ gᵢ(Xᵢ)`
 of square-integrable functions of one coordinate each. For nonempty `ι` these sums contain the
@@ -29,7 +31,7 @@ projection statement needs a nonempty index type; the orthogonality holds in all
 ## Main results
 
 * `TauCeti.hajekProjection`: the Hájek projection.
-* `TauCeti.hajekProjection_eq_integral_add_sum`: `T̂ = E T + ∑ᵢ (E(T | Xᵢ) - E T)`.
+* `TauCeti.hajekProjection_eq_integral_add_sum`: `T̂ x = ∫ T + ∑ᵢ (Tᵢ (xᵢ) - ∫ T)`.
 * `TauCeti.hajekProjection_const`, `TauCeti.hajekProjection_const_mul`: the projection of a
   constant, and homogeneity in the statistic.
 * `TauCeti.hajekProjection_add`, `TauCeti.hajekProjection_sub`, `TauCeti.hajekProjection_sub_const`:
@@ -57,8 +59,10 @@ namespace TauCeti
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
 
 /-- The **Hájek projection** of a statistic `T` of independent coordinates with laws `P i`:
-`T̂ x = ∑ᵢ E(T | Xᵢ = xᵢ) - (|ι| - 1) E T`, where `E(T | Xᵢ = a)` is the integral of
-`y ↦ T (Function.update y i a)` under `Measure.pi P`. -/
+`T̂ x = ∑ᵢ Tᵢ (xᵢ) - (|ι| - 1) ∫ T`, where the partial integral `Tᵢ a` is the Bochner integral of
+`y ↦ T (Function.update y i a)` under `Measure.pi P`. For integrable `T` under probability laws
+`P i`, `Tᵢ (Xᵢ)` is almost everywhere a version of `E(T | Xᵢ)`, and then
+`T̂ = ∑ᵢ E(T | Xᵢ) - (|ι| - 1) E T` almost everywhere. -/
 noncomputable def hajekProjection (P : ∀ i, Measure (α i)) (T : (∀ i, α i) → ℝ)
     (x : ∀ i, α i) : ℝ :=
   ∑ i, ∫ y, T (update y i (x i)) ∂(Measure.pi P) -
@@ -70,7 +74,9 @@ theorem hajekProjection_def (P : ∀ i, Measure (α i)) (T : (∀ i, α i) → �
       (Fintype.card ι - 1 : ℝ) * ∫ y, T y ∂(Measure.pi P) :=
   (rfl)
 
-/-- The centred form of the Hájek projection: `T̂ = E T + ∑ᵢ (E(T | Xᵢ) - E T)`. -/
+/-- The centred form of the Hájek projection: `T̂ x = ∫ T + ∑ᵢ (Tᵢ (xᵢ) - ∫ T)`, with the
+partial integrals `Tᵢ a = ∫ y, T (update y i a) ∂(Measure.pi P)`. For integrable `T` under
+probability laws this is `T̂ = E T + ∑ᵢ (E(T | Xᵢ) - E T)` almost everywhere. -/
 theorem hajekProjection_eq_integral_add_sum (P : ∀ i, Measure (α i)) (T : (∀ i, α i) → ℝ)
     (x : ∀ i, α i) :
     hajekProjection P T x = ∫ y, T y ∂(Measure.pi P) +

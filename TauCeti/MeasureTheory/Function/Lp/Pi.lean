@@ -15,8 +15,9 @@ import TauCeti.Probability.Moments.Variance
 # Partial integrals over finite product measures in `L²`
 
 For a function `T` on a finite product of probability spaces, integrating out every coordinate but
-the `i`-th gives the function `a ↦ ∫ y, T (Function.update y i a)`, the conditional expectation of
-`T` given the `i`-th coordinate. This file shows that it is square-integrable when `T` is.
+the `i`-th gives the function `a ↦ ∫ y, T (Function.update y i a)`. For integrable `T` it is,
+almost everywhere, a version of the conditional expectation of `T` given the `i`-th coordinate.
+This file shows that it is square-integrable when `T` is.
 
 ## Main results
 
@@ -32,8 +33,9 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
 
-/-- The conditional expectation `a ↦ E(T | Xᵢ = a)` of a square-integrable function of
-independent coordinates is square-integrable. -/
+/-- The partial integral `a ↦ ∫ y, T (update y i a)` of a square-integrable function `T` of
+independent coordinates, almost everywhere a version of `a ↦ E(T | Xᵢ = a)`, is
+square-integrable. -/
 theorem memLp_integral_update (P : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (P i)]
     {T : (∀ i, α i) → ℝ} (hT : MemLp T 2 (Measure.pi P)) (i : ι) :
     MemLp (fun a ↦ ∫ y, T (update y i a) ∂(Measure.pi P)) 2 (P i) := by
