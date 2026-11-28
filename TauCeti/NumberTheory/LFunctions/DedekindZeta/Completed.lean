@@ -660,11 +660,8 @@ and `1`), `dedekindZetaC K` has the punctured germ of
 theorem dedekindZetaC_eventuallyEq_invDedekindZetaCompletionFactor_mul (s : ℂ) :
     dedekindZetaC K =ᶠ[𝓝[≠] s]
       fun z ↦ invDedekindZetaCompletionFactor K z * completedDedekindZeta K z := by
-  have ev_ne (c : ℂ) : ∀ᶠ z in 𝓝[≠] s, z ≠ c := by
-    rcases eq_or_ne s c with rfl | hsc
-    · exact self_mem_nhdsWithin
-    · exact nhdsWithin_le_nhds (isOpen_ne.mem_nhds hsc)
-  filter_upwards [ev_ne 0, ev_ne 1] with z hz0 hz1
+  filter_upwards [(eventually_cofinite_ne 0).filter_mono (nhdsNE_le_cofinite s),
+    (eventually_cofinite_ne 1).filter_mono (nhdsNE_le_cofinite s)] with z hz0 hz1
   rw [dedekindZetaC_eq_mul_completedDedekindZeta K hz0 hz1, invDedekindZetaCompletionFactor_def]
 
 private theorem dedekindZetaC_zero_limit_coeff :
