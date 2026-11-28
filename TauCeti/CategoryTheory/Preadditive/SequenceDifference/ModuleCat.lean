@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Shift.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Products
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Basic
 public import TauCeti.CategoryTheory.Preadditive.SequenceDifference.Basic
+public import TauCeti.CategoryTheory.Shift.Limits
 
 import TauCeti.CategoryTheory.ConcreteCategory.Basic
 
@@ -20,10 +20,6 @@ Given a sequence `X : ℕ ⥤ T` in a preadditive category and an additive contr
 coordinate linear equivalence `IsColimit.cofanOpToPiLinearEquiv` identifies the action of
 `X.sequenceDifference` (and its shift `(X.sequenceDifference)⟦(1 : ℤ)⟧'`) on `F.obj (op (∐ X.obj))`
 with `ModuleTower.shift` on `X.op ⋙ F` (respectively `(X ⋙ shiftFunctor T (1 : ℤ)).op ⋙ F`).
-
-## Main definitions
-
-* `CategoryTheory.Functor.isColimitShiftedCoproductCofan`
 
 ## Main results
 
@@ -79,28 +75,21 @@ section Shift
 
 variable [HasShift T ℤ]
 
-/-- The shifted coproduct cofan for `X ⋙ shiftFunctor T (1 : ℤ)` with vertex `(∐ X.obj)⟦1⟧` and
-inclusions `(Sigma.ι X.obj n)⟦1⟧'` is a colimit cofan, since `shiftFunctor T (1 : ℤ)` is an
-equivalence and hence preserves coproducts. -/
-def isColimitShiftedCoproductCofan (X : ℕ ⥤ T) [HasCoproduct X.obj] :
-    IsColimit (Cofan.mk (f := (X ⋙ shiftFunctor T (1 : ℤ)).obj) ((∐ X.obj)⟦(1 : ℤ)⟧)
-      fun n ↦ (Sigma.ι X.obj n)⟦(1 : ℤ)⟧') :=
-  (isColimitMapCoconeCofanMkEquiv (shiftFunctor T (1 : ℤ)) X.obj (Sigma.ι X.obj)).toFun
-    (isColimitOfPreserves (shiftFunctor T (1 : ℤ)) (coproductIsCoproduct X.obj))
-
 /-- Coordinatewise, `F.map ((X.sequenceDifference)⟦(1 : ℤ)⟧').op` corresponds under
 `cofanOpToPiLinearEquiv` to `ModuleTower.shift ((X ⋙ shiftFunctor T (1 : ℤ)).op ⋙ F)`. -/
 theorem cofanOpToPiLinearEquiv_map_shift_sequenceDifference {R : Type uR} [Ring R]
     (F : Tᵒᵖ ⥤ ModuleCat.{s} R) [F.Additive] [(shiftFunctor T (1 : ℤ)).Additive]
     (X : ℕ ⥤ T) [HasCoproduct X.obj]
-    [PreservesLimit (Discrete.functor fun n ↦ op ((X ⋙ shiftFunctor T (1 : ℤ)).obj n)) F]
+    [PreservesLimit (Discrete.functor fun n ↦ op ((X.obj n)⟦(1 : ℤ)⟧)) F]
     (y : F.obj (op ((∐ X.obj)⟦(1 : ℤ)⟧))) :
-    (isColimitShiftedCoproductCofan X).cofanOpToPiLinearEquiv F
+    (isColimitShiftedCoproductCofan X.obj (1 : ℤ)).cofanOpToPiLinearEquiv F
         (F.map ((X.sequenceDifference)⟦(1 : ℤ)⟧').op y) =
       ModuleTower.shift ((X ⋙ shiftFunctor T (1 : ℤ)).op ⋙ F)
-        ((isColimitShiftedCoproductCofan X).cofanOpToPiLinearEquiv F y) :=
-  cofanOpToPiLinearEquiv_map_eq_shift F (X ⋙ shiftFunctor T (1 : ℤ))
-    (isColimitShiftedCoproductCofan X) ((X.sequenceDifference)⟦(1 : ℤ)⟧')
+        ((isColimitShiftedCoproductCofan X.obj (1 : ℤ)).cofanOpToPiLinearEquiv F y) := by
+  let : PreservesLimit (Discrete.functor fun n ↦ op ((X ⋙ shiftFunctor T (1 : ℤ)).obj n)) F :=
+    ‹_›
+  exact cofanOpToPiLinearEquiv_map_eq_shift F (X ⋙ shiftFunctor T (1 : ℤ))
+    (isColimitShiftedCoproductCofan X.obj (1 : ℤ)) ((X.sequenceDifference)⟦(1 : ℤ)⟧')
     (X.map_ι_comp_map_sequenceDifference (shiftFunctor T (1 : ℤ))) y
 
 end Shift

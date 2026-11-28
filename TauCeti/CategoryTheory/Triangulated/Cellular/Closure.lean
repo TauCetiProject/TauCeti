@@ -96,6 +96,9 @@ theorem InCellClosure.of_iso {A B : T} (e : A ≅ B) (hA : InCellClosure G A) :
 theorem inCellClosure_iff_of_iso {A B : T} (e : A ≅ B) :
     InCellClosure G A ↔ InCellClosure G B := ⟨fun h ↦ h.of_iso e, fun h ↦ h.of_iso e.symm⟩
 
+instance (G : I → T) : ObjectProperty.IsClosedUnderIsomorphisms (InCellClosure G) where
+  of_iso e hA := hA.of_iso e
+
 /-- `InCellClosure G` is closed under `Type v`-indexed coproducts. -/
 theorem InCellClosure.coproduct {J : Type v} (f : J → T) (hf : ∀ j, InCellClosure G (f j)) :
     InCellClosure G (∐ f) := fun P hgen hiso hcop htri ↦ hcop J f fun j ↦ hf j P hgen hiso hcop htri
@@ -107,6 +110,21 @@ theorem InCellClosure.coproduct_of_small {J : Type w} [Small.{v} J] (f : J → T
   let e : J ≃ Shrink.{v} J := equivShrink.{v} J
   (InCellClosure.coproduct (G := G) (f ∘ e.symm) fun k ↦ hf (e.symm k)).of_iso
     (Limits.Sigma.reindex e.symm f)
+
+instance (G : I → T) (J : Type w) [Small.{v} J] :
+    ObjectProperty.IsClosedUnderColimitsOfShape (InCellClosure G) (Discrete J) where
+  colimitsOfShape_le := by
+    rintro _ ⟨h⟩
+    let e : J ≃ Shrink.{v} J := equivShrink.{v} J
+    let f : Shrink.{v} J → T := fun k ↦ h.diag.obj ⟨e.symm k⟩
+    let α : Discrete.functor f ≅ (Discrete.equivalence e.symm).functor ⋙ h.diag :=
+      Discrete.natIso fun ⟨k⟩ ↦ Iso.refl (f k)
+    let hc : IsColimit ((Cocone.precompose α.hom).obj
+        (h.cocone.whisker (Discrete.equivalence e.symm).functor)) :=
+      (IsColimit.precomposeHomEquiv α _).symm
+        (h.isColimit.whiskerEquivalence (Discrete.equivalence e.symm))
+    exact (InCellClosure.coproduct f fun k ↦ h.prop_diag_obj ⟨e.symm k⟩).of_iso
+      ((coproductIsCoproduct f).coconePointUniqueUpToIso hc)
 
 /-- Every zero object lies in `InCellClosure G` (as the empty coproduct). -/
 theorem InCellClosure.of_isZero (G : I → T) {Z : T} (hZ : IsZero Z) : InCellClosure G Z := by
@@ -124,6 +142,10 @@ whose first two objects lie in `InCellClosure G`. -/
 theorem InCellClosure.of_distTriang₃ {t : Triangle T} (ht : t ∈ distTriang T)
     (h₁ : InCellClosure G t.obj₁) (h₂ : InCellClosure G t.obj₂) : InCellClosure G t.obj₃ :=
   fun P hgen hiso hcop htri ↦ htri t ht (h₁ P hgen hiso hcop htri) (h₂ P hgen hiso hcop htri)
+
+instance (G : I → T) : ObjectProperty.IsTriangulatedClosed₃ (InCellClosure G) :=
+  ObjectProperty.IsTriangulatedClosed₃.mk' fun _ ht h₁ h₂ ↦
+    InCellClosure.of_distTriang₃ ht h₁ h₂
 
 /-- `InCellClosure G` is closed under unit positive suspension `⟦1⟧` (as the cone of
 `R ⟶ 0`). -/
