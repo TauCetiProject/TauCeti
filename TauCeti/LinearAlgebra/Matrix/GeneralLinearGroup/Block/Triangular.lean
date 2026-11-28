@@ -39,6 +39,8 @@ standard subgroups of `GL n R` cut out by entry conditions.
   upper unitriangular subgroup.
 * `TauCeti.leviSubgroup_le_parahoricSubgroup`: the Levi subgroup is contained in the parahoric
   subgroup for any ideal `I`.
+* `TauCeti.leviSubgroup_const`, `TauCeti.parahoricSubgroup_const`: for a constant labelling the
+  Levi and parahoric subgroups are all of `GL n R`.
 
 ## References
 
@@ -169,6 +171,18 @@ def parahoricSubgroup [LinearOrder α] (I : Ideal R) : Subgroup (GL n R) :=
 theorem leviSubgroup_le_parahoricSubgroup [LinearOrder α] (I : Ideal R) :
     leviSubgroup τ R ≤ parahoricSubgroup τ I := fun _ hg ↦
   (mem_parahoricSubgroup τ I).2 fun i j hij ↦ hg i j hij.ne ▸ I.zero_mem
+
+/-- For a constant labelling, the Levi subgroup is all of `GL n R`. -/
+@[simp]
+theorem leviSubgroup_const (c : α) (R : Type*) [CommRing R] :
+    leviSubgroup (fun _ : n ↦ c) R = ⊤ :=
+  eq_top_iff.mpr fun _ _ ↦ (mem_leviSubgroup _).2 fun _ _ h ↦ (h rfl).elim
+
+/-- For a constant labelling, the parahoric subgroup is all of `GL n R`. -/
+@[simp]
+theorem parahoricSubgroup_const [LinearOrder α] (c : α) (I : Ideal R) :
+    parahoricSubgroup (fun _ : n ↦ c) I = ⊤ :=
+  eq_top_iff.mpr fun _ _ ↦ (mem_parahoricSubgroup _ I).2 fun _ _ h ↦ (lt_irrefl c h).elim
 
 end Parahoric
 

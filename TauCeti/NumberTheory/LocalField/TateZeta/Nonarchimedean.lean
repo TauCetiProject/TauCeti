@@ -13,7 +13,7 @@ import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Analysis.SpecificLimits.Basic
-import TauCeti.NumberTheory.LocalField.HaarCharacter
+import TauCeti.NumberTheory.LocalField.Haar.Character
 import TauCeti.NumberTheory.LocalField.Unramified.Character
 import TauCeti.NumberTheory.LocalField.Units.Shell
 
