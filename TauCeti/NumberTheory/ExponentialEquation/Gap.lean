@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.SmoothNumbers
 import Mathlib.Data.Int.Lemmas
 import TauCeti.Analysis.SpecialFunctions.Log.AddMulLog
 import TauCeti.NumberTheory.Padics.PadicValNat
-import TauCeti.NumberTheory.SmoothNumbers
+import TauCeti.NumberTheory.SmoothNumbers.Basic
 
 /-!
 # Gaps between powers and between `S`-integers

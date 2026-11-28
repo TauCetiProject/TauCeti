@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.NumberTheory.SmoothNumbers
+import Mathlib.Algebra.Order.Floor.Semifield
+import TauCeti.NumberTheory.SmoothNumbers.MaxPrimeFac
 
 /-!
 # The smooth-number counting function
@@ -33,6 +35,8 @@ prime factors are *strictly* less than `k`. The inclusive condition `p ≤ y` on
 * `TauCeti.smoothCount_le_natFloor`: `Ψ(x, y) ≤ ⌊x⌋₊`.
 * `TauCeti.smoothCount_eq_natFloor`: `Ψ(x, y) = ⌊x⌋₊` when `x ≤ y`.
 * `TauCeti.smoothCount_pos`: `0 < Ψ(x, y)` exactly when `1 ≤ x`, since `1` is always counted.
+* `TauCeti.smoothCount_add_sum_smoothCount_div`: sorting the integers up to `x` by their largest
+  prime factor gives `Ψ(x, y) + ∑_{y < p ≤ x} Ψ(x / p, p) = ⌊x⌋₊`, the sum being over primes.
 
 ## References
 
@@ -140,6 +144,17 @@ theorem smoothCount_eq_zero_iff {x y : ℝ} : smoothCount x y = 0 ↔ x < 1 := b
 
 /-! ### Examples -/
 
+/-- **Decomposition by the largest prime factor.** For all real `x` and `y`,
+`Ψ(x, y) + ∑_{y < p ≤ x} Ψ(x / p, p) = ⌊x⌋₊`, the sum being over the primes `p` with
+`⌊y⌋₊ < p ≤ ⌊x⌋₊`: every positive integer up to `x` is either `y`-smooth or is `p * m` for its
+largest prime factor `p > y` and a `p`-smooth integer `m ≤ x / p`. -/
+theorem smoothCount_add_sum_smoothCount_div (x y : ℝ) :
+    smoothCount x y + ∑ p ∈ Ioc ⌊y⌋₊ ⌊x⌋₊ with p.Prime, smoothCount (x / p) p = ⌊x⌋₊ := by
+  have h := Nat.smoothNumbersUpTo_card_add_sum ⌊x⌋₊ ⌊y⌋₊
+  rw [smoothCount_def]
+  refine (congrArg _ (sum_congr rfl fun p _ ↦ ?_)).trans h
+  rw [smoothCount_def, Nat.floor_div_natCast, Nat.floor_natCast]
+
 example : smoothCount 0 2 = 0 := smoothCount_eq_zero_iff.2 one_pos
 
 example : smoothCount 10 2 = 4 := by
@@ -153,5 +168,11 @@ example : smoothCount 10 3 = 7 := by
 example : smoothCount 5 5 = 5 := by simpa using smoothCount_eq_natFloor (le_refl (5 : ℝ))
 
 example : #(Nat.smoothNumbersUpTo 5 5) = 4 := by decide +kernel
+
+/-- Of the ten integers up to `10`, four are powers of `2`; the others have largest prime factor
+`3` (namely `3, 6, 9`), `5` (namely `5, 10`) or `7`. -/
+example :
+    smoothCount 10 2 + ∑ p ∈ (Ioc 2 10 : Finset ℕ) with p.Prime, smoothCount (10 / p) p = 10 := by
+  simpa using smoothCount_add_sum_smoothCount_div 10 2
 
 end TauCeti
