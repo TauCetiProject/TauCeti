@@ -7,6 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.Blowup.EffectiveCartier
 public import TauCeti.AlgebraicGeometry.Blowup.UniversalProperty
+public import TauCeti.AlgebraicGeometry.Pullback.Over
+import TauCeti.CategoryTheory.EpiMono
+import TauCeti.CategoryTheory.IrreducibleMorphism
 
 /-!
 # The exceptional divisor of a blowup and its universal consequences
@@ -40,6 +43,9 @@ The results on the blowup along an ideal sheaf are in the namespace
   Cartier divisor on `X`.
 * `isIso_blowupToBase_of_isSplitEpi`: a section of the blowup morphism is its inverse.
 * `isSplitEpi_blowupToBase_iff`: the Cartier criterion for the blowup to admit a section.
+* `section_pullback_map_not_mem_range_of_not_isEffectiveCartier`: a section of a morphism
+  factoring through a nontrivial blowup cannot extend from a schematically dense base change,
+  by `Over.pullback_map_injective_of_isSchemeTheoreticallyDominant`.
 
 ## References
 
@@ -119,7 +125,7 @@ end TauCeti.AlgebraicGeometry
 
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 
-open TauCeti.AlgebraicGeometry
+open Limits TauCeti.AlgebraicGeometry
 
 variable {X : Scheme.{u}} (I : X.IdealSheafData)
 
@@ -159,5 +165,33 @@ for the universal property of the blowup. -/
 theorem isSplitEpi_blowupToBase_iff : IsSplitEpi I.blowupToBase ↔ I.IsEffectiveCartier := by
   rw [← I.isIso_blowupToBase_iff]
   exact ⟨fun _ ↦ I.isIso_blowupToBase_of_isSplitEpi, fun _ ↦ inferInstance⟩
+
+/-- For a separated scheme `X` over `S`, consider the composite of `p` with the blowup
+morphism. A section after schematically dense base change cannot extend over `S` if the
+blowup centre is not effective Cartier. -/
+theorem section_pullback_map_not_mem_range_of_not_isEffectiveCartier
+    {η Y S : Scheme.{u}} {f : X ⟶ S} (j : η ⟶ S) [IsSeparated f]
+    [IsSchemeTheoreticallyDominant (pullback.fst f j)] {p : Y ⟶ I.blowup}
+    {s : (Over.pullback j).obj (Over.mk f) ⟶
+      (Over.pullback j).obj (Over.mk (p ≫ I.blowupToBase ≫ f))}
+    (hs : s ≫ (Over.pullback j).map
+      (Over.homMk (p ≫ I.blowupToBase) (Category.assoc _ _ _) :
+        Over.mk (p ≫ I.blowupToBase ≫ f) ⟶ Over.mk f) = 𝟙 _) (hI : ¬ I.IsEffectiveCartier) :
+    s ∉ Set.range ((Over.pullback j).map : (Over.mk f ⟶ Over.mk (p ≫ I.blowupToBase ≫ f)) → _) := by
+  rintro ⟨g, rfl⟩
+  have hd : IsSchemeTheoreticallyDominant (pullback.fst (Over.mk f).hom j) := by
+    simpa only [Over.mk_hom] using
+      (inferInstance : IsSchemeTheoreticallyDominant (pullback.fst f j))
+  have hf : IsSeparated (Over.mk f).hom := by
+    simpa only [Over.mk_hom] using (inferInstance : IsSeparated f)
+  have hm := (Over.pullback j).isSplitEpi_of_map_comp_eq_id
+    (Over.pullback_map_injective_of_isSchemeTheoreticallyDominant j) hs
+  have hc : IsSplitEpi (p ≫ I.blowupToBase) := by
+    simpa only [Over.forget_map, Over.homMk_left] using
+      (inferInstance : IsSplitEpi ((Over.forget S).map
+        (Over.homMk (p ≫ I.blowupToBase) (Category.assoc _ _ _) :
+          Over.mk (p ≫ I.blowupToBase ≫ f) ⟶ Over.mk f)))
+  exact hI (I.isSplitEpi_blowupToBase_iff.mp
+    (TauCeti.isSplitEpi_of_isSplitEpi_comp p I.blowupToBase))
 
 end AlgebraicGeometry.Scheme.IdealSheafData
