@@ -23,10 +23,15 @@ closed ball of radius `h` about the origin, then
 |∑ ℓ ∈ L, f (t + ℓ) - ∫ f ∂μ / covolume L μ| ≤ c * h * #{ℓ ∈ L | t + ℓ ∈ cthickening h (support f)},
 ```
 
-where `c` is the Lipschitz constant of `f`. The point `t + ℓ` stands for the cell `t + ℓ + F`, on
-which `f` varies by at most `c * h`, and only the cells meeting the support of `f` contribute, so
-the error is counted by the points of `t + L` near the support of `f`. The bound is uniform in the
-lattice: it sees `L` only through the radius `h`.
+where `c` is a Lipschitz constant of `f`. The integral splits over the cells `t + ℓ + F`, and
+the point `t + ℓ` is the sample of the cell `t + ℓ + F`. The cell lies in the closed ball of
+radius `h` about its sample, but the sample need not lie in the cell, since `F` need not contain
+`0`. So each value of `f` on the cell differs from the sample value `f (t + ℓ)` by at most
+`c * h`, and the error of the cell, `f (t + ℓ)` minus the average of `f` over the cell, is at most
+`c * h` in absolute value. That error vanishes if both the cell and its sample avoid the support
+of `f`; if either of them meets the support, the sample lies in the closed `h`-thickening of the
+support. So the error is counted by the points of `t + L` in that thickening. Apart from this
+count, the bound sees `L` only through the radius `h`.
 
 A fundamental domain of small radius exists as soon as `L` contains `n = dim E` linearly
 independent vectors of norm at most `s`: by Cassels' lemma `ZLattice.exists_basis_gauge_le`,
@@ -105,8 +110,8 @@ variable [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
 omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
 /-- Comparing a value of `f` with its average over a translated fundamental domain: if `F` lies in
-the closed ball of radius `h` and has measure `V`, then `f y` and `∫ x in F, f (y + x) ∂μ / V`
-differ by at most `c * h`. -/
+the closed ball of radius `h` and has finite positive measure `V = μ.real F`, then `f y` and
+`∫ x in F, f (y + x) ∂μ / V` differ by at most `c * h`. The point `y` need not lie in `y + F`. -/
 private theorem abs_sub_setIntegral_div_le {F : Set E} (hF : μ F < ⊤) (hF0 : 0 < μ.real F)
     {h : ℝ} (hFh : F ⊆ closedBall 0 h) {c : ℝ≥0} {f : E → ℝ} (hf : LipschitzWith c f)
     (hfs : HasCompactSupport f) (y : E) :
@@ -148,7 +153,7 @@ theorem abs_tsum_sub_integral_div_covolume_le (L : Submodule ℤ E) [DiscreteTop
   have hFV : covolume L μ = μ.real F := covolume_eq_measure_fundamentalDomain L μ hF
   have hFfin : μ F < ⊤ := (isBounded_closedBall.subset hFh).measure_lt_top
   have hF0 : 0 < μ.real F := hFV ▸ covolume_pos L μ
-  -- A cell `t + ℓ + F` that meets the support of `f` has `t + ℓ` in the thickening.
+  -- A cell `t + ℓ + F` that meets the support of `f` has its sample `t + ℓ` in the thickening.
   have hcell (ℓ : L) (hℓ : ℓ ∉ hS.toFinset) (x : E) (hx : x ∈ F) : f (t + (ℓ + x)) = 0 := by
     by_contra hne
     refine hℓ (hS.mem_toFinset.2 (mem_cthickening_of_dist_le _ _ _ _ hne ?_))
