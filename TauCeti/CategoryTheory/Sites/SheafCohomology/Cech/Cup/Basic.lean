@@ -684,17 +684,6 @@ theorem cechComplexCompIso_hom_cechCup
           b) := by
   refine cechComplex_ext (U := U)
     (P := (G.op ⋙ Q) ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) fun k ↦ ?_
-  have hcomp {m : ℕ} (c : Fin (m + 1) → ι)
-      (x : (cechAlgebraComplex (fun i ↦ G.obj (U i)) Q).X m) :
-      cechComplexπ U ((G.op ⋙ Q) ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) m c
-          (((cechComplexCompIso G U (Q ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) hG).hom.f m).hom
-            x) =
-        (Q.map (piComparison G fun j ↦ U (c j)).op).hom
-          (cechComplexπ (fun i ↦ G.obj (U i)) (Q ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) m c
-            x) := by
-    simp only [cechComplexπ_eq]
-    exact congrArg (fun f ↦ f.hom x)
-      (cechComplexCompIso_hom_f_π G U (Q ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) hG m c)
   have hface {m : ℕ} (σ : Fin (m + 1) → Fin (n + 1))
       (x : (cechAlgebraComplex (fun i ↦ G.obj (U i)) Q).X m) :
       ((G.op ⋙ Q).map (Pi.map' σ (fun _ ↦ 𝟙 _) :
@@ -714,11 +703,18 @@ theorem cechComplexCompIso_hom_cechCup
           (∏ᶜ fun j ↦ U (k j)) ⟶ ∏ᶜ fun j ↦ U ((k ∘ σ) j)) ≫
           piComparison G fun j ↦ U ((k ∘ σ) j) :=
       Pi.hom_ext _ _ fun _ ↦ by simp [Pi.map']
-    rw [hcomp (k ∘ σ) x, Functor.comp_map, Functor.op_map, Quiver.Hom.unop_op,
-      ← AlgCat.comp_apply, ← AlgCat.comp_apply, ← Q.map_comp, ← Q.map_comp, ← op_comp,
+    erw [cechComplexπ_cechComplexCompIso_hom (Q := Q ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))]
+    simp only [Functor.comp_map, AlgCat.forget₂_module_map, ModuleCat.hom_ofHom,
+      AlgHom.toLinearMap_apply, Functor.op_map, Quiver.Hom.unop_op]
+    rw [← AlgCat.comp_apply, ← AlgCat.comp_apply, ← Q.map_comp, ← Q.map_comp, ← op_comp,
       ← op_comp, hpi]
-  rw [hcomp k (cechCup p q n h a b), cechComplexπ_cechCup, cechComplexπ_cechCup, map_mul,
-    hface _ a, hface _ b]
+  erw [cechComplexπ_cechComplexCompIso_hom (Q := Q ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))]
+  rw [cechComplexπ_cechCup, cechComplexπ_cechCup]
+  conv_lhs =>
+    simp only [Functor.comp_obj, Functor.comp_map, AlgCat.forget₂_module_obj,
+      AlgCat.forget₂_module_map, ModuleCat.coe_of, ModuleCat.hom_ofHom, AlgHom.toLinearMap_apply,
+      map_mul]
+  rw [hface _ a, hface _ b]
 
 /-- The inverse comparison `Č(U, G.op ⋙ Q) ≅ Č(G ∘ U, Q)` preserves cup products. -/
 theorem cechComplexCompIso_inv_cechCup (a : (cechAlgebraComplex U (G.op ⋙ Q)).X p)
@@ -746,16 +742,11 @@ theorem cechComplexCompIso_hom_cechOne :
       cechOne U (G.op ⋙ Q) := by
   refine cechComplex_ext (U := U)
     (P := (G.op ⋙ Q) ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) fun k ↦ ?_
-  have hk : cechComplexπ U ((G.op ⋙ Q) ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) 0 k
-        (((cechComplexCompIso G U (Q ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) hG).hom.f 0).hom
-          (cechOne (fun i ↦ G.obj (U i)) Q)) =
-      (Q.map (piComparison G fun j ↦ U (k j)).op).hom
-        (cechComplexπ (fun i ↦ G.obj (U i)) (Q ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) 0 k
-          (cechOne (fun i ↦ G.obj (U i)) Q)) := by
-    simp only [cechComplexπ_eq]
-    exact congrArg (fun f ↦ f.hom (cechOne (fun i ↦ G.obj (U i)) Q))
-      (cechComplexCompIso_hom_f_π G U (Q ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) hG 0 k)
-  rw [hk, cechComplexπ_cechOne, cechComplexπ_cechOne, map_one]
+  erw [cechComplexπ_cechComplexCompIso_hom (Q := Q ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))]
+  rw [cechComplexπ_cechOne, cechComplexπ_cechOne]
+  simp only [Functor.comp_obj, Functor.comp_map, AlgCat.forget₂_module_obj,
+    AlgCat.forget₂_module_map, ModuleCat.coe_of, ModuleCat.hom_ofHom, AlgHom.toLinearMap_apply,
+    map_one]
 
 /-- The inverse comparison `Č(U, G.op ⋙ Q) ≅ Č(G ∘ U, Q)` preserves the unit cochain. -/
 @[simp]

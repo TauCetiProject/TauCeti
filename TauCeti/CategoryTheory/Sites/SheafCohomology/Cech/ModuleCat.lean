@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Limits
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Functor
 import TauCeti.CategoryTheory.Limits.Shapes.Products
 
 /-!
@@ -33,6 +34,8 @@ over `c : Fin (n + 1) → ι`. This file provides the elementwise tuple-projecti
   morphisms of families.
 * `TauCeti.CategoryTheory.cechComplexπ_cechComplexFunctor_map`: tuple projections of maps induced
   by morphisms of presheaves.
+* `TauCeti.CategoryTheory.cechComplexπ_cechComplexCompIso_hom`: tuple projections of the functor
+  comparison isomorphism `cechComplexCompIso`.
 * `TauCeti.CategoryTheory.cechComplexπ_cechAugmentation`: tuple projections of the degree-`0`
   augmentation.
 * `TauCeti.CategoryTheory.cechComplexπ_map_piMap'_eq_of_val` and
@@ -46,7 +49,7 @@ noncomputable section
 
 open CategoryTheory Limits Opposite
 
-universe uR w v u
+universe uR w v v' u u'
 
 namespace TauCeti.CategoryTheory
 
@@ -114,6 +117,22 @@ theorem cechComplexπ_cechComplexFunctor_map (U : ι → C) {P Q : Cᵒᵖ ⥤ M
       α.app (op (∏ᶜ fun j ↦ U (c j))) (cechComplexπ U P n c a) :=
   (ModuleCat.comp_apply _ _ a).symm.trans <|
     (ConcreteCategory.congr_hom (cechComplexFunctor_map_f_comp_cechComplexπ U P α n c) a).trans
+      (ModuleCat.comp_apply _ _ a)
+
+/-- The factor of `(cechComplexCompIso G U Q hG).hom.f n a` indexed by `c` is `Q` applied to the
+canonical comparison map `piComparison G fun j ↦ U (c j)` evaluated on the factor of `a` indexed
+by `c`. -/
+theorem cechComplexπ_cechComplexCompIso_hom {D : Type u'} [Category.{v'} D] [HasFiniteProducts D]
+    (G : C ⥤ D) (U : ι → C) (Q : Dᵒᵖ ⥤ ModuleCat.{w} R)
+    (hG : ∀ (n : ℕ) (a : Fin (n + 1) → ι), IsIso (piComparison G fun j ↦ U (a j)))
+    (n : ℕ) (a : ((cechComplexFunctor (fun i ↦ G.obj (U i))).obj Q).X n)
+    (c : Fin (n + 1) → ι) :
+    cechComplexπ U (G.op ⋙ Q) n c ((cechComplexCompIso G U Q hG).hom.f n a) =
+      Q.map (piComparison G fun j ↦ U (c j)).op
+        (cechComplexπ (fun i ↦ G.obj (U i)) Q n c a) := by
+  simp only [cechComplexπ_eq]
+  exact (ModuleCat.comp_apply _ _ a).symm.trans <|
+    (ConcreteCategory.congr_hom (cechComplexCompIso_hom_f_π G U Q hG n c) a).trans
       (ModuleCat.comp_apply _ _ a)
 
 /-- The factor of the degree-`0` augmentation of a global section `e₀ ∈ P(T)` indexed by `a` is

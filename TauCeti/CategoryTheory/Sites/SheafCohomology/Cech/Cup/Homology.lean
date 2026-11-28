@@ -312,13 +312,10 @@ theorem cechUnitClass_eq_homologyMap_cechAugmentation {T : C} (hT : IsTerminal T
   rw [← singleObjCyclesSelfIso_inv_homologyπ, ModuleCat.comp_apply,
     moduleCat_homologyMap_homologyπ, cechUnitClass]
   congr 1; apply moduleCat_iCycles_injective
-  have hsc : ((CochainComplex.single₀ (ModuleCat.{w} R)).obj (P.obj (op T))).iCycles 0
-        ((singleObjCyclesSelfIso (ComplexShape.up ℕ) 0 (P.obj (op T))).inv e₀) =
-      (singleObjXSelf (ComplexShape.up ℕ) 0 (P.obj (op T))).inv e₀ :=
-    (ModuleCat.comp_apply _ (((single (ModuleCat.{w} R) _ 0).obj _).iCycles 0) e₀).symm.trans
-      (ConcreteCategory.congr_hom (singleObjCyclesSelfIso_inv_iCycles (ComplexShape.up ℕ) 0 _) e₀)
-  rw [moduleCat_iCycles_cyclesMap_apply, hsc, iCycles_moduleCatCyclesMk]
-  exact cechAugmentation_f_zero_eq_cechUnitCochain U hT P e₀
+  rw [moduleCat_iCycles_cyclesMap_apply, CochainComplex.iCycles_singleObjCyclesSelfIso_inv,
+    iCycles_moduleCatCyclesMk]
+  simpa [singleObjXSelf, singleObjXIsoOfEq] using
+    cechAugmentation_f_zero_eq_cechUnitCochain U hT P e₀
 
 /-- The degree-`0` augmentation intertwines `μ (op T)` with `cechComplexCup` in degree `0`. -/
 theorem cechComplexCup_homologyMap_cechAugmentation {T : C} (hT : IsTerminal T)
