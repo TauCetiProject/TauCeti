@@ -240,29 +240,6 @@ its right unit support. -/
 def degree (S : SimpleClasses C) : mkObj (leftUnitClass S.repr) ⟶ mkObj (rightUnitClass S.repr) :=
   quotFunctor.map (freeGeneratingDeg C S)
 
-/-- Equal simple classes have equal universal degrees up to endpoint transports. -/
-theorem degree_congr {S T : SimpleClasses C} (h : S = T) :
-    degree S = eqToHom (by rw [h]) ≫ degree T ≫ eqToHom (by rw [h]) := by subst h; simp
-
-/-- The universal grading morphism of a simple object `X`. -/
-def degreeOf (X : C) [Simple X] : mkObj (leftUnitClass X) ⟶ mkObj (rightUnitClass X) :=
-  eqToHom (by simp) ≫ degree (SimpleClasses.classOf X) ≫ eqToHom (by simp)
-
-/-- `degreeOf X` is `degree (SimpleClasses.classOf X)` conjugated by the unit-class equalities
-along `SimpleClasses.classOfReprIso X`. -/
-theorem degreeOf_def (X : C) [Simple X] :
-    degreeOf X = eqToHom (by simp) ≫ degree (SimpleClasses.classOf X) ≫ eqToHom (by simp) := (rfl)
-@[simp] theorem degreeOf_repr (S : SimpleClasses C) : degreeOf S.repr = degree S := by
-  rw [degreeOf_def, degree_congr (SimpleClasses.classOf_repr S)]; simp
-
-/-- Isomorphic simple objects have equal universal grading degrees up to endpoint transports. -/
-theorem degreeOf_congr {X Y : C} [Simple X] [Simple Y] (e : X ≅ Y) :
-    degreeOf X = eqToHom (congrArg mkObj (leftUnitClass_congr e)) ≫ degreeOf Y ≫
-      eqToHom (congrArg mkObj (rightUnitClass_congr e)).symm := by
-  rw [degreeOf_def, degreeOf_def,
-    degree_congr ((SimpleClasses.classOf_eq_iff_nonempty_iso X Y).2 ⟨e⟩)]
-  simp [Category.assoc]
-
 /-- Every nonzero morphism `U.repr ⟶ S.repr ⊗ T.repr` identifies `degree U` with the composite of
 `degree S` and `degree T` in `universalGradingGroupoid C`. -/
 theorem degree_comp {S T U : SimpleClasses C} (f : U.repr ⟶ S.repr ⊗ T.repr) (hf : f ≠ 0) :
@@ -282,9 +259,36 @@ def idGrading : GroupoidGrading C (universalGradingGroupoid C) := ⟨mkObj, degr
 @[simp] theorem idGrading_deg (S : SimpleClasses C) : (idGrading (C := C)).deg S =
     eqToHom (idGrading_obj _) ≫ degree S ≫ eqToHom (idGrading_obj _).symm :=
   (conj_eqToHom_iff_heq _ _ (idGrading_obj _) (idGrading_obj _)).2 HEq.rfl
+
+/-- Equal simple classes have equal universal degrees up to endpoint transports. -/
+theorem degree_congr {S T : SimpleClasses C} (h : S = T) :
+    degree S = eqToHom (by rw [h]) ≫ degree T ≫ eqToHom (by rw [h]) := by
+  have h' := (idGrading (C := C)).deg_congr h
+  dsimp only [idGrading] at h'; exact h'
+
+/-- The universal grading morphism of a simple object `X`. -/
+def degreeOf (X : C) [Simple X] : mkObj (leftUnitClass X) ⟶ mkObj (rightUnitClass X) :=
+  (idGrading (C := C)).degOf X
+
 @[simp] theorem idGrading_degOf (X : C) [Simple X] : (idGrading (C := C)).degOf X =
-    eqToHom (idGrading_obj _) ≫ degreeOf X ≫ eqToHom (idGrading_obj _).symm := by
-  simp [GroupoidGrading.degOf_def, degreeOf_def, Category.assoc]
+    eqToHom (idGrading_obj _) ≫ degreeOf X ≫ eqToHom (idGrading_obj _).symm :=
+  (conj_eqToHom_iff_heq _ _ (idGrading_obj _) (idGrading_obj _)).2 HEq.rfl
+
+/-- `degreeOf X` is `degree (SimpleClasses.classOf X)` conjugated by the unit-class equalities
+along `SimpleClasses.classOfReprIso X`. -/
+theorem degreeOf_def (X : C) [Simple X] :
+    degreeOf X = eqToHom (by simp) ≫ degree (SimpleClasses.classOf X) ≫ eqToHom (by simp) := by
+  have h' := (idGrading (C := C)).degOf_def X
+  dsimp only [idGrading] at h'; exact h'
+@[simp] theorem degreeOf_repr (S : SimpleClasses C) : degreeOf S.repr = degree S := by
+  have h' := (idGrading (C := C)).degOf_repr S
+  dsimp only [idGrading] at h'; exact h'
+
+/-- Isomorphic simple objects have equal universal grading degrees up to endpoint transports. -/
+theorem degreeOf_congr {X Y : C} [Simple X] [Simple Y] (e : X ≅ Y) :
+    degreeOf X = eqToHom (congrArg mkObj (leftUnitClass_congr e)) ≫ degreeOf Y ≫
+      eqToHom (congrArg mkObj (rightUnitClass_congr e)).symm :=
+  (idGrading (C := C)).degOf_congr e
 
 /-- Every nonzero morphism `U ⟶ X ⊗ Y` between simple objects identifies `degreeOf U` with the
 composite of `degreeOf X` and `degreeOf Y`. -/

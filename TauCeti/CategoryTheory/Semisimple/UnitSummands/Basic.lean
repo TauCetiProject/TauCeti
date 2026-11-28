@@ -156,29 +156,28 @@ namespace UnitSimpleClasses
 attribute [local instance] TensorUnitDecomp.fintype TensorUnitDecomp.simple
   TensorUnitDecomp.hasBiproduct
 
+private def chosenUnitIsoBiproduct (C : Type u₁) [Category.{v₁} C] [Abelian C] [MonoidalCategory C]
+    [IsFiniteSemisimpleCategory C] :
+    𝟙_ C ≅ ⨁ fun I : UnitSimpleClasses C ↦ I.repr :=
+  let d := chosenTensorUnitDecomp C
+  d.iso ≪≫ biproduct.whiskerEquiv d.equiv (fun i ↦ (d.summandIso i).symm)
+
 /-- Canonical inclusion of a simple summand `I.repr` into the tensor unit `𝟙_ C`. -/
 def ι (I : UnitSimpleClasses C) : I.repr ⟶ 𝟙_ C :=
-  let d := chosenTensorUnitDecomp C; let i := d.equiv.symm I
-  eqToHom (congrArg (fun J : UnitSimpleClasses C ↦ J.repr) (d.equiv.apply_symm_apply I).symm) ≫
-    (d.summandIso i).inv ≫ biproduct.ι d.summands i ≫ d.iso.inv
+  biproduct.ι (fun I : UnitSimpleClasses C ↦ I.repr) I ≫ (chosenUnitIsoBiproduct C).inv
 
 /-- Canonical projection from the tensor unit `𝟙_ C` onto a simple summand `I.repr`. -/
 def π (I : UnitSimpleClasses C) : 𝟙_ C ⟶ I.repr :=
-  let d := chosenTensorUnitDecomp C; let i := d.equiv.symm I
-  d.iso.hom ≫ biproduct.π d.summands i ≫ (d.summandIso i).hom ≫
-    eqToHom (congrArg (fun J : UnitSimpleClasses C ↦ J.repr) (d.equiv.apply_symm_apply I))
+  (chosenUnitIsoBiproduct C).hom ≫ biproduct.π (fun I : UnitSimpleClasses C ↦ I.repr) I
 
 @[reassoc (attr := simp)]
 theorem ι_comp_π_self (I : UnitSimpleClasses C) : ι I ≫ π I = 𝟙 I.repr := by
-  classical
   dsimp only [ι, π]
-  simp only [Category.assoc, Iso.inv_hom_id_assoc, biproduct.ι_π_assoc, ↓reduceDIte,
-    eqToHom_refl, Category.id_comp, eqToHom_trans]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc, biproduct.ι_π_self]
 @[reassoc (attr := simp)]
 theorem ι_comp_π_ne {I J : UnitSimpleClasses C} (h : I ≠ J) : ι I ≫ π J = 0 := by
-  dsimp only [ι, π]; have hne := (chosenTensorUnitDecomp C).equiv.symm.injective.ne h
-  simp only [Category.assoc, Iso.inv_hom_id_assoc, biproduct.ι_π_ne_assoc _ hne, zero_comp,
-    comp_zero]
+  dsimp only [ι, π]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc, biproduct.ι_π_ne _ h]
 instance (I : UnitSimpleClasses C) : IsSplitMono (ι I) := .mk' ⟨π I, ι_comp_π_self I⟩
 instance (I : UnitSimpleClasses C) : IsSplitEpi (π I) := .mk' ⟨ι I, ι_comp_π_self I⟩
 
@@ -200,44 +199,14 @@ theorem π_ne_zero (I : UnitSimpleClasses C) : π I ≠ 0 :=
 @[simp] theorem tensorUnitBicone_ι (I : UnitSimpleClasses C) :
     (tensorUnitBicone (C := C)).ι I = ι I := (rfl)
 
-private theorem π_equiv (i : (chosenTensorUnitDecomp C).ι) :
-    π ((chosenTensorUnitDecomp C).equiv i) = (chosenTensorUnitDecomp C).iso.hom ≫
-      biproduct.π _ i ≫ ((chosenTensorUnitDecomp C).summandIso i).hom := by
-  dsimp only [π]
-  suffices ∀ {j}, j = i → ∀ (hk : (chosenTensorUnitDecomp C).equiv j =
-      (chosenTensorUnitDecomp C).equiv i), (chosenTensorUnitDecomp C).iso.hom ≫
-      biproduct.π _ j ≫ ((chosenTensorUnitDecomp C).summandIso j).hom ≫
-      eqToHom (congrArg (·.repr) hk) = (chosenTensorUnitDecomp C).iso.hom ≫
-      biproduct.π _ i ≫ ((chosenTensorUnitDecomp C).summandIso i).hom from
-    this ((chosenTensorUnitDecomp C).equiv.symm_apply_apply i)
-      ((chosenTensorUnitDecomp C).equiv.apply_symm_apply _)
-  rintro j rfl hk; simp
-
-private theorem ι_equiv (i : (chosenTensorUnitDecomp C).ι) :
-    ι ((chosenTensorUnitDecomp C).equiv i) = ((chosenTensorUnitDecomp C).summandIso i).inv ≫
-      biproduct.ι _ i ≫ (chosenTensorUnitDecomp C).iso.inv := by
-  dsimp only [ι]
-  suffices ∀ {j}, j = i → ∀ (hk : (chosenTensorUnitDecomp C).equiv i =
-      (chosenTensorUnitDecomp C).equiv j), eqToHom (congrArg (·.repr) hk) ≫
-      ((chosenTensorUnitDecomp C).summandIso j).inv ≫ biproduct.ι _ j ≫
-      (chosenTensorUnitDecomp C).iso.inv = ((chosenTensorUnitDecomp C).summandIso i).inv ≫
-      biproduct.ι _ i ≫ (chosenTensorUnitDecomp C).iso.inv from
-    this ((chosenTensorUnitDecomp C).equiv.symm_apply_apply i)
-      ((chosenTensorUnitDecomp C).equiv.apply_symm_apply _).symm
-  rintro j rfl hk; simp
-
 /-- Resolution of the identity of `𝟙_ C` as the sum of the unit-summand projections followed by
 the inclusions. -/
 theorem sum_π_comp_ι [Fintype (UnitSimpleClasses C)] :
     ∑ I : UnitSimpleClasses C, π I ≫ ι I = 𝟙 (𝟙_ C) := by
-  let d := chosenTensorUnitDecomp C
-  rw [← Fintype.sum_equiv d.equiv (fun i ↦ π (d.equiv i) ≫ ι (d.equiv i))
-    (fun I ↦ π I ≫ ι I) (fun _ ↦ rfl)]
-  have hterm : ∀ i : d.ι, π (d.equiv i) ≫ ι (d.equiv i) =
-      d.iso.hom ≫ biproduct.π d.summands i ≫ biproduct.ι d.summands i ≫ d.iso.inv := fun i ↦ by
-    dsimp only [d]; rw [π_equiv, ι_equiv]; simp only [Category.assoc, Iso.hom_inv_id_assoc]
-  simp_rw [hterm, ← Category.assoc, ← Preadditive.sum_comp, Category.assoc, ← Preadditive.comp_sum,
-    biproduct.total]; simp
+  dsimp only [π, ι]
+  simp_rw [Category.assoc, ← Preadditive.comp_sum, ← Category.assoc (biproduct.π _ _),
+    ← Preadditive.sum_comp, biproduct.total]
+  simp
 
 /-- `tensorUnitBicone` is a bilimit, realizing `𝟙_ C` as the biproduct of its simple summand
 classes `UnitSimpleClasses C`. -/
@@ -314,33 +283,35 @@ theorem UnitSimpleClasses.ne_zero_iff_exists_comp_π_ne_zero {Z : C} (h : Z ⟶ 
   refine ⟨fun hh ↦ ?_, fun ⟨I, hI⟩ hh ↦ hI (by rw [hh, zero_comp])⟩
   by_contra! h0; exact hh (UnitSimpleClasses.hom_ext fun I ↦ by simpa using h0 I)
 
-private theorem exists_unitSimpleClasses_iso_of_functor (F : C ⥤ C)
-    (dist : ∀ {ι : Type} [Fintype ι] (a : ι → C), F.obj (⨁ a) ≅ ⨁ fun i ↦ F.obj (a i))
+private theorem exists_unitSimpleClasses_iso_of_functor (F : C ⥤ C) [F.Additive]
     {X : C} [Simple X] (u : X ≅ F.obj (𝟙_ C)) :
     ∃ I : UnitSimpleClasses C, Nonempty (F.obj I.repr ≅ X) := by
-  obtain ⟨ι, hι, a, ha, hba, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples (𝟙_ C)
-  let _ := hι; let _ := ha; let _ := hba
-  let B : ι → C := fun i ↦ F.obj (a i); let d : X ≅ ⨁ B := u ≪≫ F.mapIso e ≪≫ dist a
-  obtain ⟨i, hi⟩ : ∃ i, ¬ IsZero (B i) := by
+  let a : UnitSimpleClasses C → C := fun I ↦ I.repr
+  have : Limits.PreservesBiproduct a F := by
+    obtain ⟨_, ⟨e⟩⟩ := Finite.exists_equiv_fin (UnitSimpleClasses C)
+    exact ⟨fun {b} hb ↦ ⟨((F.mapBicone b).whiskerIsBilimitIff e.symm).toFun
+      (Limits.isBilimitOfPreserves F ((b.whiskerIsBilimitIff e.symm).invFun hb))⟩⟩
+  let d : X ≅ ⨁ fun I : UnitSimpleClasses C ↦ F.obj I.repr :=
+    u ≪≫ F.mapIso UnitSimpleClasses.tensorUnitIsoBiproduct ≪≫ F.mapBiproduct a
+  obtain ⟨I, hI⟩ : ∃ I : UnitSimpleClasses C, ¬ IsZero (F.obj I.repr) := by
     by_contra! h; exact Simple.not_isZero X <| IsZero.of_iso
-      ((IsZero.iff_id_eq_zero _).2 (biproduct.hom_ext _ _ fun i ↦ (h i).eq_of_tgt _ _)) d
-  let m : B i ⟶ X := biproduct.ι B i ≫ d.inv
-  have hm : m ≠ 0 := fun hm0 ↦ hi <| (IsZero.iff_id_eq_zero _).2 <| by
-    simpa [m, Category.assoc] using hm0 =≫ (d.hom ≫ biproduct.π B i)
+      ((IsZero.iff_id_eq_zero _).2 (biproduct.hom_ext _ _ fun I ↦ (h I).eq_of_tgt _ _)) d
+  let m : F.obj I.repr ⟶ X := biproduct.ι (fun I : UnitSimpleClasses C ↦ F.obj I.repr) I ≫ d.inv
+  have hm : m ≠ 0 := fun hm0 ↦ hI <| (IsZero.iff_id_eq_zero _).2 <| by
+    simpa [m, Category.assoc] using
+      hm0 =≫ (d.hom ≫ biproduct.π (fun I : UnitSimpleClasses C ↦ F.obj I.repr) I)
   have : IsIso m := isIso_of_mono_of_ne_zero hm
-  exact ⟨unitSummandClass a e i,
-    ⟨F.mapIso (eqToIso (congrArg SimpleClasses.repr (UnitSimpleClasses.val_mkOfHomNeZero _)) ≪≫
-      SimpleClasses.classOfReprIso (a i)) ≪≫ asIso m⟩⟩
+  exact ⟨I, ⟨asIso m⟩⟩
 
 variable [MonoidalPreadditive C]
 
 private theorem exists_unitSimpleClasses_iso_left (X : C) [Simple X] :
     ∃ I : UnitSimpleClasses C, Nonempty (I.repr ⊗ X ≅ X) :=
-  exists_unitSimpleClasses_iso_of_functor (tensorRight X) (fun a ↦ rightDistributor a X) (λ_ X).symm
+  exists_unitSimpleClasses_iso_of_functor (tensorRight X) (λ_ X).symm
 
 private theorem exists_unitSimpleClasses_iso_right (X : C) [Simple X] :
     ∃ I : UnitSimpleClasses C, Nonempty (X ⊗ I.repr ≅ X) :=
-  exists_unitSimpleClasses_iso_of_functor (tensorLeft X) (fun a ↦ leftDistributor X a) (ρ_ X).symm
+  exists_unitSimpleClasses_iso_of_functor (tensorLeft X) (ρ_ X).symm
 
 /-- The unique simple summand class `I` of `𝟙_ C` such that `I.repr ⊗ X ≅ X`. -/
 def leftUnitClass (X : C) [Simple X] : UnitSimpleClasses C :=
@@ -495,16 +466,22 @@ unit class. -/
 theorem leftUnitClass_eq_of_hom_ne_zero {X Y U : C} [Simple X] [Simple U]
     {f : U ⟶ X ⊗ Y} (hf : f ≠ 0) : leftUnitClass U = leftUnitClass X := by
   symm; rw [leftUnitClass_eq_iff]; intro hz; have := isSplitMono_of_nonzero_from_simple hf
-  exact not_isZero_leftUnitClass_tensorObj U <| isZero_tensorObj_of_whiskerLeft_eq_zero f <|
-    (((tensorRight Y).map_isZero hz).of_iso (α_ _ X Y).symm).eq_of_tgt _ _
+  have : Mono ((leftUnitClass U).repr ◁ f) :=
+    inferInstanceAs (Mono ((tensorLeft (leftUnitClass U).repr).map f))
+  exact not_isZero_leftUnitClass_tensorObj U <|
+    IsZero.of_mono_eq_zero ((leftUnitClass U).repr ◁ f) <|
+      (((tensorRight Y).map_isZero hz).of_iso (α_ _ X Y).symm).eq_of_tgt _ _
 
 /-- Along a nonzero morphism `U ⟶ X ⊗ Y` with `U` and `Y` simple, `U` and `Y` have the same right
 unit class. -/
 theorem rightUnitClass_eq_of_hom_ne_zero {X Y U : C} [Simple Y] [Simple U]
     {f : U ⟶ X ⊗ Y} (hf : f ≠ 0) : rightUnitClass U = rightUnitClass Y := by
   symm; rw [rightUnitClass_eq_iff]; intro hz; have := isSplitMono_of_nonzero_from_simple hf
-  exact not_isZero_tensorObj_rightUnitClass U <| isZero_tensorObj_of_whiskerRight_eq_zero f <|
-    (((tensorLeft X).map_isZero hz).of_iso (α_ X Y _)).eq_of_tgt _ _
+  have : Mono (f ▷ (rightUnitClass U).repr) :=
+    inferInstanceAs (Mono ((tensorRight (rightUnitClass U).repr).map f))
+  exact not_isZero_tensorObj_rightUnitClass U <|
+    IsZero.of_mono_eq_zero (f ▷ (rightUnitClass U).repr) <|
+      (((tensorLeft X).map_isZero hz).of_iso (α_ X Y _)).eq_of_tgt _ _
 
 section Equivalence
 

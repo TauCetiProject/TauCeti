@@ -11,18 +11,13 @@ public import Mathlib.CategoryTheory.Monoidal.Category
 public import Mathlib.CategoryTheory.Retract
 
 /-!
-# Retracts of the tensor unit and zero whiskered split monomorphisms
+# Retracts of the tensor unit
 
 Any retract `h : Retract U (𝟙_ C)` of the tensor unit `𝟙_ C` in a monoidal category `C` is
 canonically tensor-idempotent (`CategoryTheory.Retract.tensorSelfIso : U ⊗ U ≅ U`). When `C`
 has zero morphisms, two retracts `h₁ : Retract U (𝟙_ C)` and `h₂ : Retract V (𝟙_ C)` with zero
 cross-composite `h₁.i ≫ h₂.r = 0` have zero tensor product
 (`CategoryTheory.Retract.isZero_tensorObj`).
-
-This file also records the split-monomorphism vanishing criteria
-`CategoryTheory.isZero_tensorObj_of_whiskerLeft_eq_zero` and
-`CategoryTheory.isZero_tensorObj_of_whiskerRight_eq_zero`: if whiskering a split monomorphism
-`f : U ⟶ V` by `Z` yields zero, then the corresponding tensor product with `U` is zero.
 -/
 
 public section
@@ -73,24 +68,3 @@ theorem isZero_tensorObj [HasZeroMorphisms C] {U V : C}
 
 end CategoryTheory.Retract
 
-namespace CategoryTheory
-
-section SplitMono
-
-variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C] [HasZeroMorphisms C]
-
-/-- If `Z ◁ f = 0` for a split monomorphism `f : U ⟶ V`, then `Z ⊗ U` is zero. -/
-theorem isZero_tensorObj_of_whiskerLeft_eq_zero {Z U V : C} (f : U ⟶ V) [IsSplitMono f]
-    (h : Z ◁ f = 0) : IsZero (Z ⊗ U) :=
-  (IsZero.iff_id_eq_zero _).2 <| by
-    rw [← whiskerLeft_id, ← IsSplitMono.id f, whiskerLeft_comp, h, zero_comp]
-
-/-- If `f ▷ Z = 0` for a split monomorphism `f : U ⟶ V`, then `U ⊗ Z` is zero. -/
-theorem isZero_tensorObj_of_whiskerRight_eq_zero {U V Z : C} (f : U ⟶ V) [IsSplitMono f]
-    (h : f ▷ Z = 0) : IsZero (U ⊗ Z) :=
-  (IsZero.iff_id_eq_zero _).2 <| by
-    rw [← id_whiskerRight, ← IsSplitMono.id f, comp_whiskerRight, h, zero_comp]
-
-end SplitMono
-
-end CategoryTheory
