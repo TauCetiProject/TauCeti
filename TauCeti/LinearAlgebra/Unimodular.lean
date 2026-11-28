@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Unimodular
 public import Mathlib.RingTheory.LocalRing.Basic
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 
+import Mathlib.Algebra.Ring.Fin
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!
@@ -260,25 +261,85 @@ theorem Module.IsUnimodular.ringHom_comp {R S ι : Type*} [Semiring R] [Semiring
 
 /-- Applying a ring isomorphism to the coordinates leaves unimodularity unchanged. -/
 @[simp]
-theorem RingEquiv.isUnimodular_comp_iff {R S ι : Type*} [Semiring R] [Semiring S] [Finite ι]
+theorem RingEquiv.isUnimodular_comp_iff {R S ι : Type*} [Semiring R] [Semiring S]
     (e : R ≃+* S) {v : ι → R} :
-    Module.IsUnimodular S (e ∘ v) ↔ Module.IsUnimodular R v :=
-  ⟨fun h ↦ by simpa [Function.comp_def] using h.ringHom_comp (e.symm : S →+* R),
-    fun h ↦ by simpa using h.ringHom_comp (e : R →+* S)⟩
+    Module.IsUnimodular S (e ∘ v) ↔ Module.IsUnimodular R v := by
+  have := RingHomInvPair.of_ringEquiv e
+  have := RingHomInvPair.of_ringEquiv e.symm
+  let rows : (ι → R) ≃ₛₗ[(e : R →+* S)] (ι → S) :=
+    { AddEquiv.piCongrRight (fun _ ↦ e.toAddEquiv) with
+      map_smul' := fun a w ↦ funext fun i ↦ e.map_mul a (w i) }
+  let transport : ((ι → R) →ₗ[R] R) ≃+ ((ι → S) →ₗ[S] S) :=
+    rows.arrowCongrAddEquiv e.toSemilinearEquiv
+  have hrows : rows v = e ∘ v :=
+    funext fun i ↦ AddEquiv.piCongrRight_apply (fun _ ↦ e.toAddEquiv) v i
+  rw [Module.isUnimodular_iff, Module.isUnimodular_iff]
+  refine (transport.toEquiv.symm.exists_congr_left (p := fun f ↦ f (e ∘ v) = 1)).trans ?_
+  refine exists_congr fun f ↦ ?_
+  rw [Equiv.symm_symm, ← hrows]
+  -- The existential rewrite uses the underlying `Equiv`. The application lemma for
+  -- transporting functionals is stated for the `AddEquiv` itself.
+  change transport f (rows v) = 1 ↔ f v = 1
+  rw [LinearEquiv.arrowCongrAddEquiv_apply rows e.toSemilinearEquiv f]
+  have hinverse : rows.symm.toLinearMap (rows v) = v := rows.symm_apply_apply v
+  simp only [LinearMap.comp_apply, hinverse, LinearEquiv.coe_coe,
+    RingEquiv.toSemilinearEquiv_apply, e.map_eq_one_iff]
+
+/-- A row over a family of semirings is unimodular exactly when its projection to every
+factor is unimodular. -/
+@[simp]
+theorem TauCeti.Module.isUnimodular_pi_pi_iff {ι κ : Type*} {B : κ → Type*}
+    [∀ k, Semiring (B k)]
+    {v : ι → ∀ k, B k} :
+    Module.IsUnimodular (∀ k, B k) v ↔ ∀ k, Module.IsUnimodular (B k) (fun i ↦ v i k) := by
+  classical
+  rw [Module.isUnimodular_iff]
+  constructor
+  · rintro ⟨f, hf⟩ k
+    -- Restrict the functional to vectors supported in the `k`th ring factor.
+    let insert := (AddMonoidHom.single B k).compLeft ι
+    have hinsert (w : ι → B k) (i : ι) : insert w i k = w i := by
+      simp [insert, AddMonoidHom.compLeft_apply]
+    have hsingle (a : B k) (w : ι → ∀ j, B j) :
+        insert (a • fun i ↦ w i k) = (Pi.single k a : ∀ j, B j) • w :=
+      funext fun i ↦ Pi.single_mul_left (f := w i) a
+    let restrict := (Pi.evalAddMonoidHom B k).comp (f.toAddMonoidHom.comp insert)
+    have hsmul (a : B k) (w : ι → B k) : restrict (a • w) = a • restrict w := by
+      simp only [restrict, AddMonoidHom.comp_apply, Pi.evalAddMonoidHom_apply,
+        LinearMap.toAddMonoidHom_coe, smul_eq_mul]
+      have hw : insert (a • w) = (Pi.single k a : ∀ j, B j) • insert w := by
+        simpa only [hinsert] using hsingle a (insert w)
+      rw [hw, map_smul]
+      simp [smul_eq_mul]
+    refine Module.isUnimodular_iff.mpr ⟨{ toAddHom := restrict, map_smul' := hsmul }, ?_⟩
+    simpa [LinearMap.coe_mk, restrict, hf, smul_eq_mul] using
+      congrArg (fun w ↦ f w k) (hsingle 1 v)
+  · intro h
+    choose f hf using fun k ↦ Module.isUnimodular_iff.mp (h k)
+    exact ⟨{
+      toAddHom := AddMonoidHom.pi fun k ↦
+        (f k).toAddMonoidHom.comp ((Pi.evalAddMonoidHom B k).compLeft ι)
+      map_smul' := fun a w ↦ funext fun k ↦ (f k).map_smul (a k) (fun i ↦ w i k) },
+      funext hf⟩
 
 /-- A coordinate vector over a product of semirings is unimodular exactly when both of its
 components are. -/
-theorem TauCeti.Module.isUnimodular_pi_prod_iff {R S ι : Type*} [Semiring R] [Semiring S]
-    [Finite ι] {v : ι → R × S} :
-    Module.IsUnimodular (R × S) v ↔
-      Module.IsUnimodular R (Prod.fst ∘ v) ∧ Module.IsUnimodular S (Prod.snd ∘ v) := by
-  refine ⟨fun h ↦ ⟨h.ringHom_comp (RingHom.fst R S), h.ringHom_comp (RingHom.snd R S)⟩,
-    fun ⟨h₁, h₂⟩ ↦ ?_⟩
-  have := Fintype.ofFinite ι
-  obtain ⟨b₁, hb₁⟩ := isUnimodular_pi_iff.mp h₁
-  obtain ⟨b₂, hb₂⟩ := isUnimodular_pi_iff.mp h₂
-  exact isUnimodular_pi_iff.mpr ⟨fun i ↦ (b₁ i, b₂ i), Prod.ext (by simpa [Prod.fst_sum] using hb₁)
-    (by simpa [Prod.snd_sum] using hb₂)⟩
+theorem TauCeti.Module.isUnimodular_pi_prod_iff {R : Type u} {S : Type v} {ι : Type*}
+    [Semiring R] [Semiring S] {w : ι → R × S} :
+    Module.IsUnimodular (R × S) w ↔
+      Module.IsUnimodular R (Prod.fst ∘ w) ∧ Module.IsUnimodular S (Prod.snd ∘ w) := by
+  let B : Fin 2 → Type (max u v) := Fin.cons (ULift.{v} R) (fun _ ↦ ULift.{u} S)
+  let (k : Fin 2) : Semiring (B k) := Fin.cases (inferInstance : Semiring (ULift.{v} R))
+    (fun _ ↦ (inferInstance : Semiring (ULift.{u} S))) k
+  let e := (RingEquiv.piFinTwo B).trans (RingEquiv.prodCongr ULift.ringEquiv ULift.ringEquiv)
+  rw [← e.symm.isUnimodular_comp_iff, isUnimodular_pi_pi_iff, Fin.forall_fin_two]
+  -- The two coordinate types reduce from the local family `B`. Reducing its `Fin.cases`
+  -- instances with them lets both goals use the standard `ULift` semiring instances.
+  change (Module.IsUnimodular (ULift.{v} R) (fun i ↦ ULift.up (w i).1) ∧
+    Module.IsUnimodular (ULift.{u} S) (fun i ↦ ULift.up (w i).2)) ↔ _
+  rw [← (ULift.ringEquiv : ULift.{v} R ≃+* R).isUnimodular_comp_iff,
+    ← (ULift.ringEquiv : ULift.{u} S ≃+* S).isUnimodular_comp_iff]
+  rfl
 
 namespace TauCeti
 

@@ -1043,13 +1043,13 @@ theorem reindexGL_sumCongr_fromBlocksGL {m₁ m₂ k₁ k₂ : Type*} [Decidable
 
 end Equiv
 
+/-! ## Scalar change and lifting -/
+
 namespace RingHom
 
 open TauCeti
 
 variable {A B C n : Type*} [Ring A] [Ring B] [Ring C] [Fintype n] [DecidableEq n]
-
-/-! ## Scalar change and lifting -/
 
 /-- Scalar change carries elementary matrices into elementary matrices, in the same size. -/
 theorem map_elementarySubgroup_le (f : A →+* B) :

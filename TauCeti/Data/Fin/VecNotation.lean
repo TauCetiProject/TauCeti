@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.Pi
 public import Mathlib.Data.Fin.VecNotation
 import Mathlib.Data.Fin.Tuple.Reflection
 import Mathlib.Tactic.FinCases
 
 /-!
-# Postcomposing a pair with a function, and updating a four-tuple
+# Operations on vector pairs and four-tuples
 
 Postcomposing the pair `![a₀, a₁]` with a function `f` applies `f` to both entries
 (`Matrix.comp_vec2`), in the style of `Matrix.smul_vec2` and `Matrix.vec2_add`. This is the form in
@@ -24,6 +25,8 @@ in which a multilinear map in four arguments is used as a linear map in a single
 ## Main results
 
 * `Matrix.comp_vec2`: `f ∘ ![a₀, a₁] = ![f a₀, f a₁]`.
+* `TauCeti.eq_of_smul_vecCons_one_eq`: rows of the form `![x, 1]` have unique first coordinates
+  up to scalar rescaling.
 * `Matrix.update_vec4_zero`, `Matrix.update_vec4_one`, `Matrix.update_vec4_two`,
   `Matrix.update_vec4_three`: `Function.update ![a₀, a₁, a₂, a₃] i p` for each slot `i`.
 -/
@@ -63,3 +66,11 @@ theorem update_vec4_three : Function.update ![a₀, a₁, a₂, a₃] 3 p = ![a�
 end Update
 
 end Matrix
+
+/-- Two rows of the form `![x, 1]` have the same first coordinate if one is a scalar multiple
+of the other. -/
+theorem TauCeti.eq_of_smul_vecCons_one_eq {R : Type*} [Monoid R] {x y : R} {a : R}
+    (h : a • (![x, 1] : Fin 2 → R) = ![y, 1]) : x = y := by
+  have ha : a = 1 := by
+    simpa [Pi.smul_apply, smul_eq_mul] using congrFun h 1
+  simpa [ha] using congrFun h 0
