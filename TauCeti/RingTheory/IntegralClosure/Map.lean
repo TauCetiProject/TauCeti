@@ -134,14 +134,6 @@ theorem isLocalRing_integralClosure_of_injective [IsLocalRing (integralClosure R
       (AlgHom.mapIntegralClosure_injective hf)
   f.mapIntegralClosure.toRingHom.domain_isLocalRing
 
-/-- In a tower `R → A → B` with `A → B` faithful, if `integralClosure R B` is local, so is
-`integralClosure R A`. -/
-theorem isLocalRing_integralClosure_of_tower (R A B : Type*) [CommRing R] [CommRing A] [CommRing B]
-    [Algebra R A] [Algebra A B] [Algebra R B] [IsScalarTower R A B] [FaithfulSMul A B]
-    [IsLocalRing (integralClosure R B)] : IsLocalRing (integralClosure R A) :=
-  isLocalRing_integralClosure_of_injective (f := IsScalarTower.toAlgHom R A B)
-    (FaithfulSMul.algebraMap_injective A B)
-
 end TauCeti
 
 /-- Lying over between abstract integral closures: along an injective `R`-algebra map `f : A → B`,

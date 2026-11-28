@@ -88,6 +88,9 @@ quotients, needs a discrete valuation ring and a separable residue extension; it
 * J.-P. Serre, *Sur les corps locaux à corps résiduel algébriquement clos*, Bull. Soc. Math.
   France 89 (1961), n° 3.1, formula (5) and the properties of `φ` and `ψ`, for totally ramified
   extensions with algebraically closed residue field.
+
+The integral inverse `psiNat` API and Herbrand transport results are generalized from
+`TauCeti.NumberTheory.LocalField.Herbrand.Basic`.
 -/
 
 public section

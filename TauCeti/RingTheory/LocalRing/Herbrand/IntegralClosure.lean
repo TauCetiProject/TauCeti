@@ -33,14 +33,14 @@ variable {A K E E' : Type*} [CommRing A] [CommRing K] [CommRing E] [CommRing E']
 include e
 
 /-- `e : E ≃ₐ[K] E'` over `A` preserves `herbrandFun` on `integralClosure`. -/
-theorem _root_.AlgEquiv.herbrandFun_integralClosure_eq_of_algEquiv (u : ℝ) :
+theorem _root_.AlgEquiv.herbrandFun_integralClosure_eq (u : ℝ) :
     herbrandFun (E ≃ₐ[K] E) (integralClosure A E) u =
       herbrandFun (E' ≃ₐ[K] E') (integralClosure A E') u :=
   herbrandFun_eq_of_ramificationGroup_eq_comap e.autCongr.bijective
     e.ramificationGroup_integralClosure_eq_comap_autCongr u
 
 /-- `e : E ≃ₐ[K] E'` over `A` preserves `inverseHerbrandFun` on `integralClosure`. -/
-theorem _root_.AlgEquiv.inverseHerbrandFun_integralClosure_eq_of_algEquiv (v : ℝ) :
+theorem _root_.AlgEquiv.inverseHerbrandFun_integralClosure_eq (v : ℝ) :
     inverseHerbrandFun (E ≃ₐ[K] E) (integralClosure A E) v =
       inverseHerbrandFun (E' ≃ₐ[K] E') (integralClosure A E') v :=
   inverseHerbrandFun_eq_of_ramificationGroup_eq_comap e.autCongr.bijective
@@ -55,7 +55,7 @@ theorem _root_.AlgEquiv.upperRamificationGroup_integralClosure_eq_comap_autCongr
     e.ramificationGroup_integralClosure_eq_comap_autCongr v
 
 /-- `e : E ≃ₐ[K] E'` over `A` preserves `UpperJump` on `integralClosure`. -/
-theorem _root_.AlgEquiv.upperJump_integralClosure_iff_of_algEquiv (u : ℝ) :
+theorem _root_.AlgEquiv.upperJump_integralClosure_iff (u : ℝ) :
     UpperJump (E ≃ₐ[K] E) (integralClosure A E) u ↔
       UpperJump (E' ≃ₐ[K] E') (integralClosure A E') u :=
   upperJump_iff_of_ramificationGroup_eq_comap e.autCongr.bijective

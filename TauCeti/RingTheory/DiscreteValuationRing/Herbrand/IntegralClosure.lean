@@ -92,7 +92,7 @@ private theorem herbrandFun_quotient_embeddingSubgroup_integralClosure (u : ℝ)
       herbrandFun (E ≃ₐ[K] E) (integralClosure A E) u := by
   have := IsGalois.tower_bot_of_normal K E L
   rw [herbrandFun_fixedPoints_integralClosure A (TauCeti.embeddingSubgroup K E L),
-    (TauCeti.equivFixedFieldEmbeddingSubgroup K E L).herbrandFun_integralClosure_eq_of_algEquiv]
+    (TauCeti.equivFixedFieldEmbeddingSubgroup K E L).herbrandFun_integralClosure_eq]
 
 private theorem inverseHerbrandFun_quotient_embeddingSubgroup_integralClosure (v : ℝ) :
     inverseHerbrandFun ((L ≃ₐ[K] L) ⧸ TauCeti.embeddingSubgroup K E L)
@@ -100,8 +100,7 @@ private theorem inverseHerbrandFun_quotient_embeddingSubgroup_integralClosure (v
       inverseHerbrandFun (E ≃ₐ[K] E) (integralClosure A E) v := by
   have := IsGalois.tower_bot_of_normal K E L
   rw [inverseHerbrandFun_fixedPoints_integralClosure A (TauCeti.embeddingSubgroup K E L),
-    (TauCeti.equivFixedFieldEmbeddingSubgroup K E
-      L).inverseHerbrandFun_integralClosure_eq_of_algEquiv]
+    (TauCeti.equivFixedFieldEmbeddingSubgroup K E L).inverseHerbrandFun_integralClosure_eq]
 
 private theorem upperJump_quotient_embeddingSubgroup_integralClosure_iff (v : ℝ) :
     UpperJump ((L ≃ₐ[K] L) ⧸ TauCeti.embeddingSubgroup K E L)
@@ -109,7 +108,7 @@ private theorem upperJump_quotient_embeddingSubgroup_integralClosure_iff (v : �
       UpperJump (E ≃ₐ[K] E) (integralClosure A E) v := by
   have := IsGalois.tower_bot_of_normal K E L
   rw [upperJump_fixedPoints_integralClosure_iff A (TauCeti.embeddingSubgroup K E L),
-    ← (TauCeti.equivFixedFieldEmbeddingSubgroup K E L).upperJump_integralClosure_iff_of_algEquiv]
+    ← (TauCeti.equivFixedFieldEmbeddingSubgroup K E L).upperJump_integralClosure_iff]
 
 end QuotientHelpers
 
@@ -155,16 +154,14 @@ theorem herbrandFun_integralClosure_tower (u : ℝ) :
     herbrandFun_embeddingSubgroup_integralClosure,
     herbrandFun_quotient_embeddingSubgroup_integralClosure]
 
-section FiniteIntermediate
-
-variable [FiniteDimensional K E] [FiniteDimensional E L]
-
 /-- **Transitivity of `inverseHerbrandFun` in a field tower `L / E / K`** (`L / K` finite Galois,
 `E / K` normal): `ψ_{L/K}(v) = ψ_{L/E}(ψ_{E/K}(v))`. -/
 theorem inverseHerbrandFun_integralClosure_tower (v : ℝ) :
     inverseHerbrandFun (L ≃ₐ[K] L) (integralClosure A L) v =
       inverseHerbrandFun (L ≃ₐ[E] L) (integralClosure A L)
         (inverseHerbrandFun (E ≃ₐ[K] E) (integralClosure A E) v) := by
+  have := FiniteDimensional.left K E L
+  have := Module.Finite.of_restrictScalars_finite K E L
   rw [← herbrandFun_inj (L ≃ₐ[K] L) (integralClosure A L), herbrandFun_inverseHerbrandFun,
     herbrandFun_integralClosure_tower A E, herbrandFun_inverseHerbrandFun,
     herbrandFun_inverseHerbrandFun]
@@ -191,8 +188,6 @@ theorem map_restrictScalarsHom_upperRamificationGroup_integralClosure (v : ℝ) 
         upperRamificationGroup (L ≃ₐ[K] L) (integralClosure A L) v := by
   rw [← comap_restrictScalarsHom_upperRamificationGroup_integralClosure A E v,
     Subgroup.map_comap_eq]
-
-end FiniteIntermediate
 
 /-- **Upper breaks in a field tower `L / E / K`** (`L / K` finite Galois, `E / K` normal):
 `v` is an upper break of `Gal(L/K)` iff it is one of `Gal(E/K)` or `ψ_{E/K}(v)` is one of

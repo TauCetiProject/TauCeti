@@ -48,8 +48,10 @@ finiteness of its residue field is assumed.
 
 On nonarchimedean local fields these are
 `TauCeti.LocalFieldsRamification.map_restrictNormalHom_lowerRamificationGroupReal`,
-`TauCeti.LocalFieldsRamification.herbrand_tower` and
-`TauCeti.LocalFieldsRamification.map_restrictNormalHom_upperRamificationGroup`.
+`TauCeti.LocalFieldsRamification.herbrand_tower`,
+`TauCeti.LocalFieldsRamification.map_restrictNormalHom_upperRamificationGroup`, and
+`TauCeti.LocalFieldsRamification.upperJump_iff_upperJump_or_upperJump_inverseHerbrand` (adapting
+`TauCeti.NumberTheory.LocalField.Herbrand.UpperQuotient` for the upper-break decomposition).
 
 ## Main results
 
@@ -81,11 +83,11 @@ open IsLocalRing
 
 namespace TauCeti.IsLocalRing
 
-attribute [local instance] fixedPointsSubalgebraAlgebra isScalarTower_fixedPointsSubalgebra
-  faithfulSMul_fixedPointsSubalgebra isLocalHom_algebraMap_fixedPointsSubalgebra
+attribute [local instance] fixedPointsSubalgebraAlgebra isScalarTower_fixedPoints_subalgebra
+  faithfulSMul_fixedPoints_subalgebra isLocalHom_algebraMap_fixedPoints_subalgebra
   FixedPoints.moduleFinite_subalgebra FixedPoints.moduleFinite_subalgebra_of_le
-  isSeparable_residueField_fixedPointsSubalgebra
-  isSeparable_residueField_fixedPointsSubalgebra_of_le
+  isSeparable_residueField_fixedPoints_subalgebra
+  isSeparable_residueField_fixedPoints_subalgebra_of_le
 
 variable {A B : Type*} [CommRing A] [IsLocalRing A]
   [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [Algebra A B]
@@ -95,6 +97,18 @@ variable {A B : Type*} [CommRing A] [IsLocalRing A]
   (H : Subgroup G) [H.Normal]
 
 /-! ### Herbrand's theorem in the lower numbering -/
+
+private theorem herbrandFun_lowerIndex_sub_one_mk' {σ : G} {j : ℕ}
+    (hj : lowerIndex B σ = j)
+    (hσ : ∀ τ ∈ (QuotientGroup.mk' H).ker, lowerIndex B (σ * τ) ≤ lowerIndex B σ) :
+    herbrandFun H B ((j : ℝ) - 1) =
+      ((lowerIndex (FixedPoints.subalgebra A B H) ((QuotientGroup.mk' H) σ)).toNat : ℝ) - 1 := by
+  have hsum := ramificationIdx_mul_lowerIndex_mk_eq_sum_card A B G H hj
+    (by simpa only [QuotientGroup.ker_mk'] using hσ)
+  rw [← natCard_ramificationGroup_zero_fixedPoints A B H] at hsum
+  exact herbrandFun_sub_one_of_card_mul_eq_sum H B
+    (lowerIndex_ne_top_of_forall_mem_ker_le (π := QuotientGroup.mk' H)
+      (hj ▸ ENat.natCast_ne_top j) hσ) hsum
 
 variable (A) in
 /-- If `σ` has the largest lower index in its coset `σ H`, then its class lies in the lower
@@ -106,26 +120,11 @@ theorem mk_mem_ramificationGroupReal_herbrandFun_iff {σ : G}
     (σ : G ⧸ H) ∈
         ramificationGroupReal (G ⧸ H) (FixedPoints.subalgebra A B H) (herbrandFun H B u) ↔
       σ ∈ ramificationGroupReal G B u := by
-  rcases eq_or_ne (lowerIndex B σ) ⊤ with htop | htop
-  · -- `i_G(σ) = ⊤` means `σ = 1`, and both sides hold.
-    rw [lowerIndex_eq_top_iff] at htop
-    subst htop
-    exact iff_of_true (one_mem _) (one_mem _)
-  obtain ⟨j, hj⟩ := ENat.ne_top_iff_exists.1 htop
-  have hsum := ramificationIdx_mul_lowerIndex_mk_eq_sum_card A B G H hj.symm hσ
-  -- The ramification index of `B` over `B^H` is `#H_0`.
-  rw [← natCard_ramificationGroup_zero_fixedPoints A B H] at hsum
-  -- Hence `i_{G/H}(σ H)` is a natural number `n` with `#H_0 · n = ∑_{k < j} #H_k`.
-  have h0 : Nat.card (ramificationGroup H B 0) ≠ 0 := Nat.card_pos.ne'
-  have hne : lowerIndex (FixedPoints.subalgebra A B H) (σ : G ⧸ H) ≠ ⊤ := fun h ↦ by
-    rw [h, ENat.mul_top (by exact_mod_cast h0), ← Nat.cast_sum] at hsum
-    exact ENat.natCast_ne_top _ hsum.symm
-  obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.1 hne
-  have hφ : herbrandFun H B ((j : ℝ) - 1) = (n : ℝ) - 1 := by
-    simpa [← hn] using herbrandFun_sub_one_of_card_mul_eq_sum H B hne hsum
-  rw [mem_ramificationGroupReal_iff_of_lowerIndex_eq hn.symm,
-    mem_ramificationGroupReal_iff_of_lowerIndex_eq hj.symm, ← hφ]
-  exact (herbrandFun_strictMono H B).le_iff_le
+  have hσ' : ∀ τ ∈ (QuotientGroup.mk' H).ker, lowerIndex B (σ * τ) ≤ lowerIndex B σ := by
+    simpa only [QuotientGroup.ker_mk'] using hσ
+  exact apply_mem_ramificationGroupReal_iff (π := QuotientGroup.mk' H)
+    (herbrandFun_strictMono H B) (fun hj ↦ lowerIndex_ne_top_of_forall_mem_ker_le hj hσ')
+    (fun hj ↦ herbrandFun_lowerIndex_sub_one_mk' (A := A) H hj hσ') u
 
 variable (A) in
 /-- **Herbrand's theorem.** The image of the lower ramification group `G_u` in `G ⧸ H` is the
@@ -133,21 +132,11 @@ lower ramification group of `G ⧸ H` acting on `B^H` at `φ_H(u)`:
 `(G/H)_{φ_H(u)} = G_u H / H`. -/
 theorem map_mk'_ramificationGroupReal (u : ℝ) :
     (ramificationGroupReal G B u).map (QuotientGroup.mk' H) =
-      ramificationGroupReal (G ⧸ H) (FixedPoints.subalgebra A B H) (herbrandFun H B u) := by
-  ext q
-  induction q using QuotientGroup.induction_on with | H σ =>
-  -- Replace `σ` by an element `σ τ₀` of largest lower index in its coset.
-  obtain ⟨τ₀, hτ₀H, hτ₀⟩ := H.exists_mem_forall_lowerIndex_mul_le (S := B) σ
-  have hmk : ((σ * τ₀ : G) : G ⧸ H) = σ := QuotientGroup.mk_mul_of_mem σ hτ₀H
-  rw [← hmk, mk_mem_ramificationGroupReal_herbrandFun_iff A H hτ₀, Subgroup.mem_map]
-  constructor
-  · rintro ⟨σ', hσ', hσ'σ⟩
-    -- `σ' = σ τ₀ τ` with `τ ∈ H`, and `i(σ') ≤ i(σ τ₀)`.
-    obtain ⟨τ, hτ, rfl⟩ : ∃ τ ∈ H, σ * τ₀ * τ = σ' :=
-      ⟨(σ * τ₀)⁻¹ * σ', QuotientGroup.eq.1 hσ'σ.symm, mul_inv_cancel_left _ _⟩
-    rw [ramificationGroupReal_def, mem_ramificationGroup_iff_le_lowerIndex] at hσ' ⊢
-    exact hσ'.trans (hτ₀ τ hτ)
-  · exact fun h ↦ ⟨σ * τ₀, h, rfl⟩
+      ramificationGroupReal (G ⧸ H) (FixedPoints.subalgebra A B H) (herbrandFun H B u) :=
+  map_ramificationGroupReal_eq_of_surjective (QuotientGroup.mk'_surjective H)
+    (herbrandFun_strictMono H B)
+    (fun _ hσ hj ↦ lowerIndex_ne_top_of_forall_mem_ker_le hj hσ)
+    (fun _ hσ _ hj ↦ herbrandFun_lowerIndex_sub_one_mk' (A := A) H hj hσ) u
 
 variable (A) in
 /-- **Herbrand's theorem in counting form**: `#(G/H)_{φ_H(u)} · #H_u = #G_u`. The kernel of

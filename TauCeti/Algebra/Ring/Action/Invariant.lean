@@ -25,9 +25,9 @@ and preserve units (`TauCeti.isUnit_coe_fixedPoints_subring_iff`,
 `TauCeti.isUnit_coe_fixedPoints_subalgebra_iff`) and divisibility under left-cancellative
 multiplication (`TauCeti.coe_dvd_coe_fixedPoints_subsemiring_iff`,
 `TauCeti.coe_dvd_coe_fixedPoints_subring_iff`, `TauCeti.coe_dvd_coe_fixedPoints_subalgebra_iff`),
-and the tower infrastructure `B^G ≤ B^H` (`TauCeti.fixedPointsSubalgebra_le`,
-`TauCeti.fixedPointsSubalgebraAlgebra`, `TauCeti.coe_algebraMap_fixedPointsSubalgebra`,
-`TauCeti.isScalarTower_fixedPointsSubalgebra`, `TauCeti.faithfulSMul_fixedPointsSubalgebra`).
+and the tower infrastructure `B^G ≤ B^H` (`TauCeti.fixedPoints_subalgebra_le`,
+`TauCeti.fixedPointsSubalgebraAlgebra`, `TauCeti.coe_algebraMap_fixedPoints_subalgebra`,
+`TauCeti.isScalarTower_fixedPoints_subalgebra`, `TauCeti.faithfulSMul_fixedPoints_subalgebra`).
 -/
 
 public section
@@ -197,7 +197,7 @@ end FixedPointsDvd
 section FixedPointsTower
 
 /-- Elements fixed by `G` are fixed by any submonoid-like subobject `H` of `G`. -/
-theorem fixedPointsSubalgebra_le {A B G S : Type*} [CommSemiring A] [Semiring B] [Algebra A B]
+theorem fixedPoints_subalgebra_le {A B G S : Type*} [CommSemiring A] [Semiring B] [Algebra A B]
     [Monoid G] [MulSemiringAction G B] [SMulCommClass G A B] [SetLike S G] [SubmonoidClass S G]
     (H : S) : FixedPoints.subalgebra A B G ≤ FixedPoints.subalgebra A B H :=
   fun _ hx h ↦ hx (h : G)
@@ -209,12 +209,12 @@ def fixedPointsSubalgebraAlgebra (A B : Type*) {G S : Type*} [CommSemiring A] [C
     [Algebra A B] [Monoid G] [MulSemiringAction G B] [SMulCommClass G A B]
     [SetLike S G] [SubmonoidClass S G] (H : S) :
     Algebra (FixedPoints.subalgebra A B G) (FixedPoints.subalgebra A B H) :=
-  (Subalgebra.inclusion (fixedPointsSubalgebra_le H)).toAlgebra
+  (Subalgebra.inclusion (fixedPoints_subalgebra_le H)).toAlgebra
 
 /-- The algebra map `FixedPoints.subalgebra A B G →ₐ[A] FixedPoints.subalgebra A B H` acts as the
 identity on underlying elements of `B`. -/
 @[simp]
-theorem coe_algebraMap_fixedPointsSubalgebra {A B G S : Type*} [CommSemiring A] [CommSemiring B]
+theorem coe_algebraMap_fixedPoints_subalgebra {A B G S : Type*} [CommSemiring A] [CommSemiring B]
     [Algebra A B] [Monoid G] [MulSemiringAction G B] [SMulCommClass G A B]
     [SetLike S G] [SubmonoidClass S G] (H : S) (x : FixedPoints.subalgebra A B G) :
     letI := fixedPointsSubalgebraAlgebra A B H
@@ -223,22 +223,22 @@ theorem coe_algebraMap_fixedPointsSubalgebra {A B G S : Type*} [CommSemiring A] 
   (rfl)
 
 /-- Scalar tower `B^G → B^H → B` for `H ≤ G`. -/
-theorem isScalarTower_fixedPointsSubalgebra (A B : Type*) {G S : Type*} [CommSemiring A]
+theorem isScalarTower_fixedPoints_subalgebra (A B : Type*) {G S : Type*} [CommSemiring A]
     [CommSemiring B] [Algebra A B] [Monoid G] [MulSemiringAction G B] [SMulCommClass G A B]
     [SetLike S G] [SubmonoidClass S G] (H : S) :
     letI := fixedPointsSubalgebraAlgebra A B H
     IsScalarTower (FixedPoints.subalgebra A B G) (FixedPoints.subalgebra A B H) B :=
   let _ := fixedPointsSubalgebraAlgebra A B H
-  Subalgebra.inclusion.isScalarTower_right (fixedPointsSubalgebra_le H) B
+  Subalgebra.inclusion.isScalarTower_right (fixedPoints_subalgebra_le H) B
 
 /-- Inclusion `B^G → B^H` is faithful. -/
-theorem faithfulSMul_fixedPointsSubalgebra (A B : Type*) {G S : Type*} [CommSemiring A]
+theorem faithfulSMul_fixedPoints_subalgebra (A B : Type*) {G S : Type*} [CommSemiring A]
     [CommSemiring B] [Algebra A B] [Monoid G] [MulSemiringAction G B] [SMulCommClass G A B]
     [SetLike S G] [SubmonoidClass S G] (H : S) :
     letI := fixedPointsSubalgebraAlgebra A B H
     FaithfulSMul (FixedPoints.subalgebra A B G) (FixedPoints.subalgebra A B H) :=
   let _ := fixedPointsSubalgebraAlgebra A B H
-  Subalgebra.inclusion.faithfulSMul (fixedPointsSubalgebra_le H)
+  Subalgebra.inclusion.faithfulSMul (fixedPoints_subalgebra_le H)
 
 end FixedPointsTower
 

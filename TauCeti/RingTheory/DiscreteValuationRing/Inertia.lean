@@ -11,7 +11,6 @@ public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 import TauCeti.RingTheory.LocalRing.FixedPoints
-import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
 # Inertia group cardinality on discrete valuation rings
@@ -46,7 +45,7 @@ theorem natCard_ramificationGroup_zero {A B G : Type*} [CommRing A] [IsDomain A]
     [_root_.IsDiscreteValuationRing A] [CommRing B] [IsDomain B] [_root_.IsDiscreteValuationRing B]
     [Algebra A B] [IsLocalHom (algebraMap A B)] [Group G] [Finite G] [MulSemiringAction G B]
     [SMulCommClass G A B] [Algebra.IsInvariant A B G] [FaithfulSMul G B]
-    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] :
+    [hsep : Algebra.IsSeparable (ResidueField A) (ResidueField B)] :
     Nat.card (ramificationGroup G B 0) = (maximalIdeal B).ramificationIdx A := by
   have _ : Algebra.IsIntegral A B := Algebra.IsInvariant.isIntegral A B G
   have _ : FaithfulSMul A B := IsDiscreteValuationRing.faithfulSMul_of_isIntegral (R := A) (S := B)
@@ -54,8 +53,9 @@ theorem natCard_ramificationGroup_zero {A B G : Type*} [CommRing A] [IsDomain A]
   have _ : Module.Finite A B := IsGaloisGroup.moduleFinite_of_isIntegrallyClosed G A B
   let := Ideal.Quotient.field (maximalIdeal A)
   let := Ideal.Quotient.field (maximalIdeal B)
-  have _ : Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ maximalIdeal B) :=
-    TauCeti.isSeparable_quotient_of_residueField A B
+  have _ : Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ maximalIdeal B) := by
+    unfold IsLocalRing.ResidueField at hsep
+    exact hsep
   rw [ramificationGroup_zero_eq_inertia,
     ← Ideal.ramificationIdxIn_eq_ramificationIdx (maximalIdeal A) (maximalIdeal B) G]
   exact Ideal.card_inertia_eq_ramificationIdxIn_of_isSeparable (G := G)
@@ -71,7 +71,7 @@ theorem natCard_ramificationGroup_zero_fixedPoints
     Nat.card (ramificationGroup G B 0) =
       (maximalIdeal B).ramificationIdx (FixedPoints.subalgebra A B G) :=
   have _ := FixedPoints.isGaloisGroup_subalgebra A B G
-  have _ := isSeparable_residueField_fixedPointsSubalgebra A B G
+  have _ := isSeparable_residueField_fixedPoints_subalgebra A B G
   natCard_ramificationGroup_zero
 
 end IsLocalRing

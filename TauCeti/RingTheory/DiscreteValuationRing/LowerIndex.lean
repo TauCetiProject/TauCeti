@@ -98,11 +98,11 @@ end Monogenic
 
 section
 
-attribute [local instance] fixedPointsSubalgebraAlgebra isScalarTower_fixedPointsSubalgebra
-  faithfulSMul_fixedPointsSubalgebra isLocalHom_algebraMap_fixedPointsSubalgebra
+attribute [local instance] fixedPointsSubalgebraAlgebra isScalarTower_fixedPoints_subalgebra
+  faithfulSMul_fixedPoints_subalgebra isLocalHom_algebraMap_fixedPoints_subalgebra
   FixedPoints.moduleFinite_subalgebra FixedPoints.moduleFinite_subalgebra_of_le
-  isSeparable_residueField_fixedPointsSubalgebra
-  isSeparable_residueField_fixedPointsSubalgebra_of_le
+  isSeparable_residueField_fixedPoints_subalgebra
+  isSeparable_residueField_fixedPoints_subalgebra_of_le
 
 variable (A B G : Type*) [CommRing A] [IsLocalRing A] [CommRing B] [IsDomain B]
   [_root_.IsDiscreteValuationRing B] [Algebra A B] [IsLocalHom (algebraMap A B)] [Group G]

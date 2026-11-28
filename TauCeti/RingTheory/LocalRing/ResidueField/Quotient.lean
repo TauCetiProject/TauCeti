@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 -- `Nat.card` occurs in the statement of `TauCeti.card_residueField_of_surjective`.
 public import Mathlib.SetTheory.Cardinal.Finite
@@ -28,8 +27,6 @@ is the residue field `κ`. Likewise, any surjective `R₀`-algebra map `ψ : R �
   sending the class of `r` to `residue R r`.
 * `TauCeti.residueFieldAlgEquivOfSurjective`: `ResidueField R ≃ₐ[R₀] L` induced by a surjective
   `R₀`-algebra map `ψ : R →ₐ[R₀] L` onto a field `L`.
-* `TauCeti.isSeparable_quotient_of_residueField`: transports `Algebra.IsSeparable` from
-  `ResidueField A → ResidueField B` to `(A ⧸ maximalIdeal A) → (B ⧸ maximalIdeal B)`.
 * `TauCeti.card_residueField_of_surjective`: along a surjective ring homomorphism of
   local rings, the residue fields have the same number of elements.
 * `TauCeti.natCard_residueField_mem_maximalIdeal`: the cast cardinality of the residue field
@@ -115,27 +112,6 @@ theorem residueFieldAlgEquivOfSurjective_symm_apply {R₀ L : Type*} [CommRing R
     (residueFieldAlgEquivOfSurjective hψ).symm (ψ r) = residue R r :=
   (residueFieldAlgEquivOfSurjective hψ).symm_apply_eq.mpr
     (residueFieldAlgEquivOfSurjective_residue hψ r).symm
-
-/-- If a local homomorphism `A → B` of local rings induces a separable residue field extension
-`ResidueField B / ResidueField A`, then `(B ⧸ maximalIdeal B) / (A ⧸ maximalIdeal A)` is also
-separable. -/
-theorem isSeparable_quotient_of_residueField
-    (A B : Type*) [CommRing A] [IsLocalRing A]
-    [CommRing B] [IsLocalRing B] [Algebra A B] [IsLocalHom (algebraMap A B)]
-    [hsep : Algebra.IsSeparable (ResidueField A) (ResidueField B)] :
-    let := Ideal.Quotient.field (maximalIdeal A)
-    let := Ideal.Quotient.field (maximalIdeal B)
-    Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ maximalIdeal B) := by
-  let := Ideal.Quotient.field (maximalIdeal A)
-  let := Ideal.Quotient.field (maximalIdeal B)
-  have hA : Function.Surjective (Ideal.Quotient.mkₐ A (maximalIdeal A)) :=
-    Ideal.Quotient.mk_surjective
-  have hB : Function.Surjective (Ideal.Quotient.mkₐ A (maximalIdeal B)) :=
-    Ideal.Quotient.mk_surjective
-  refine Algebra.IsSeparable.of_equiv_equiv (residueFieldAlgEquivOfSurjective hA).toRingEquiv
-    (residueFieldAlgEquivOfSurjective hB).toRingEquiv (RingHom.ext fun x ↦ ?_)
-  obtain ⟨a, rfl⟩ := residue_surjective x
-  simp [ResidueField.algebraMap_residue, Ideal.Quotient.algebraMap_mk_of_liesOver]
 
 /-- Along a surjective ring homomorphism of local rings, the residue fields have the same number
 of elements, so the residue field of a quotient `A ⧸ I` by a proper ideal has as many elements as

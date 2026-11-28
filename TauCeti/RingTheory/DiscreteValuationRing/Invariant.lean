@@ -142,7 +142,7 @@ theorem moduleFinite_subalgebra_of_le (A B : Type*) {G S : Type*} [CommRing A] [
     letI := fixedPointsSubalgebraAlgebra A B H
     Module.Finite (FixedPoints.subalgebra A B G) (FixedPoints.subalgebra A B H) :=
   let _ := fixedPointsSubalgebraAlgebra A B H
-  let _ := isScalarTower_fixedPointsSubalgebra A B H
+  let _ := isScalarTower_fixedPoints_subalgebra A B H
   let _ := moduleFinite_subalgebra A B G
   Module.Finite.of_injective (IsScalarTower.toAlgHom (FixedPoints.subalgebra A B G)
     (FixedPoints.subalgebra A B H) B).toLinearMap Subtype.val_injective
