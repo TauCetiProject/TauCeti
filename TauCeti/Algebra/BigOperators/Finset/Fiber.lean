@@ -48,6 +48,9 @@ for the fibre sums over the range holds for the fibre sum over every value of th
   the fibre sums over the range bounds every fibre sum.
 * `Finset.card_filter_apply_eq_sum_card_filter`: counting elements `e ∈ s` satisfying `P (f e) e`
   splits fiberwise along `f` over any `t` containing the relevant image values.
+* `Finset.sum_sum_ite_eq_sum_card_filter_sq`: the ordered pairs of elements of `s` with the same
+  image under `f` number `∑_a m_a²`, where `m_a` is the number of elements of `s` that `f` sends
+  to `a` and `a` ranges over any finite set that contains the image of `s`.
 -/
 
 public section
@@ -157,5 +160,19 @@ theorem _root_.Finset.card_filter_apply_eq_sum_card_filter {ι κ : Type*} [Deci
   refine sum_congr rfl fun c _ ↦ congrArg card (ext fun e ↦ ?_)
   simp only [mem_filter]
   exact ⟨fun ⟨⟨he, hP⟩, hf⟩ ↦ ⟨he, hf, hf ▸ hP⟩, fun ⟨he, hf, hP⟩ ↦ ⟨⟨he, hf.symm ▸ hP⟩, hf⟩⟩
+
+/-- The ordered pairs of elements of `s` with the same image under `f` number `∑_{a ∈ t} m_a²`,
+where `m_a` is the number of elements of `s` that `f` sends to `a`, for any `t : Finset κ` that
+contains the image of `s`. -/
+theorem _root_.Finset.sum_sum_ite_eq_sum_card_filter_sq {ι κ : Type*} [DecidableEq κ]
+    (s : Finset ι) (f : ι → κ) {t : Finset κ} (h : ∀ x ∈ s, f x ∈ t) :
+    ∑ x ∈ s, ∑ y ∈ s, (if f x = f y then 1 else 0) = ∑ a ∈ t, #{x ∈ s | f x = a} ^ 2 := by
+  have hrow (x) (_ : x ∈ s) :
+      ∑ y ∈ s, (if f x = f y then 1 else 0) = #{y ∈ s | f y = f x} := by
+    rw [sum_boole, Nat.cast_id]
+    exact congr_arg card (filter_congr fun _ _ ↦ eq_comm)
+  rw [sum_congr rfl hrow, ← sum_fiberwise_of_maps_to' h fun a ↦ #{y ∈ s | f y = a}]
+  refine sum_congr rfl fun a _ ↦ ?_
+  rw [sum_const_nat fun _ _ ↦ rfl, sq]
 
 end TauCeti

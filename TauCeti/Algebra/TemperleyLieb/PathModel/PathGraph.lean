@@ -11,10 +11,10 @@ public import Mathlib.Analysis.Complex.Order
 public import Mathlib.Combinatorics.SimpleGraph.Hasse
 import Mathlib.Data.Matrix.Basis
 import Mathlib.LinearAlgebra.Matrix.StdBasis
+import TauCeti.Algebra.BigOperators.Finset.Fiber
 import TauCeti.Algebra.TemperleyLieb.Dimension
 import TauCeti.Algebra.TemperleyLieb.TypeA
 import TauCeti.Combinatorics.SimpleGraph.PathGraph.Counting
-import TauCeti.Data.Fintype.BigOperators
 
 /-!
 # The image of the path model on a path graph
@@ -382,9 +382,15 @@ theorem walkRep_pathGraph_injective {K : Type*} [Field K] {δ : K} {n N : ℕ} (
     simp [b, Matrix.stdBasis_eq_single]
   -- and there are `catalan n` of them
   have hcard : Fintype.card ι = catalan n := by
-    rw [show Fintype.card ι = _ from Fintype.card_subtype_apply_fst_eq_apply_snd
-      fun s : {s : Fin (n + 1) → Fin (N + 1) // (pathGraph (N + 1)).IsWalkFrom 0 s} ↦
-        s.val (Fin.last n), ← sum_sq_card_walk_length_pathGraph hn]
+    -- the pairs of walks with a common endpoint, counted by the endpoint
+    have hfib : Fintype.card ι = ∑ v, Fintype.card
+        {s : {s : Fin (n + 1) → Fin (N + 1) // (pathGraph (N + 1)).IsWalkFrom 0 s} //
+          s.val (Fin.last n) = v} ^ 2 := by
+      simpa only [ι, Fintype.card_subtype, Finset.card_filter, Fintype.sum_prod_type] using
+        Finset.sum_sum_ite_eq_sum_card_filter_sq Finset.univ
+          (fun s : {s : Fin (n + 1) → Fin (N + 1) // (pathGraph (N + 1)).IsWalkFrom 0 s} ↦
+            s.val (Fin.last n)) fun _ _ ↦ Finset.mem_univ _
+    rw [hfib, ← sum_sq_card_walk_length_pathGraph hn]
     refine Finset.sum_congr rfl fun v _ ↦ ?_
     rw [Fintype.card_congr (Equiv.subtypeSubtypeEquivSubtypeInter _
       (fun s : Fin (n + 1) → Fin (N + 1) ↦ s (Fin.last n) = v)),
