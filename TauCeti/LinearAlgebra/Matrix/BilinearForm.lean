@@ -69,6 +69,8 @@ alternating form is `Z - Zᵀ`, with `Z` its strictly upper triangular part.
 * `Matrix.toBilin_apply_basis`, `Matrix.toBilin_one_apply`, `Matrix.nondegenerate_toBilin_one`,
   `Matrix.toBilin_one_apply_self_nonneg`: evaluation on basis vectors, coordinate dot-product
   formula, nondegeneracy, and diagonal nonnegativity for the identity-matrix form in a finite basis.
+* `Matrix.detRowAlternating_fin_two_eq_toBilin'`: the two-by-two row determinant alternating map
+  agrees with `Matrix.toBilin' !![0, 1; -1, 0]` over any commutative ring.
 * `TauCeti.isUnit_det_hyperbolic`: the hyperbolic plane `!![0, 1; 1, 0]` is unimodular over every
   commutative ring.
 * `LinearMap.BilinForm.toMatrix_dualBasis`: the Gram matrix of a nondegenerate form in a `B`-dual
@@ -251,6 +253,15 @@ theorem isAlt_toBilin'_iff (Λ : Matrix I I R) :
   simpa only [Matrix.toBilin'_apply, Fintype.sum_prod_type] using hsum
 
 end BilinearAlternationRing
+
+/-- The two-by-two row determinant alternating map `Matrix.detRowAlternating ![u, v]` agrees with
+the alternating bilinear form `Matrix.toBilin' !![0, 1; -1, 0]` over any commutative ring. -/
+theorem detRowAlternating_fin_two_eq_toBilin' {R : Type*} [CommRing R] (u v : Fin 2 → R) :
+    detRowAlternating ![u, v] = toBilin' !![0, (1 : R); -1, 0] u v := by
+  rw [← Pi.basisFun_det, Pi.basisFun_det_apply, det_fin_two]
+  simp only [toBilin'_apply', mulVec, dotProduct, Fin.sum_univ_two, of_apply,
+    cons_val_zero, cons_val_one, cons_val_fin_one]
+  ring
 
 end Matrix
 

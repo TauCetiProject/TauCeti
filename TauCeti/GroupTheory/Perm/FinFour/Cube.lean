@@ -16,6 +16,7 @@ import Mathlib.GroupTheory.Perm.Closure
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import TauCeti.InformationTheory.Coding.Equivalence
+import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 
 /-!
 # The symmetric group on four letters as the rotation group of the cube
@@ -60,8 +61,9 @@ axis through two opposite face centres a double transposition, a third-turn abou
 
 * `TauCeti.cubeBodyDiagonalHom_injective`, `TauCeti.cubeBodyDiagonalHom_surjective`: the induced
   permutation of the diagonals is an isomorphism.
-* `TauCeti.cubeRotationToSpecialOrthogonalGroup_injective`: the homomorphism into `SO(3, R)` is
-  injective whenever `2 ≠ 0` in `R`.
+* `TauCeti.cubeRotationToSpecialOrthogonalGroup_injective` and
+  `TauCeti.natCard_range_cubeRotationToSpecialOrthogonalGroup`: the homomorphism into `SO(3, R)`
+  is injective and its image has `24` elements whenever `2 ≠ 0` in `R`.
 * `TauCeti.mem_range_cubeRotationToSpecialOrthogonalGroup_iff`: characterization of the image in
   `SO(3, R)` as the signed permutation matrices, whenever `2 ≠ 0` in `R`.
 * `TauCeti.cubeEdgeOrientation_smul`, `TauCeti.cubeEdgeOrientation_neg`: the orientation is
@@ -655,6 +657,15 @@ theorem cubeRotationToSpecialOrthogonalGroup_injective (R : Type*) [CommRing R] 
     simpa [Matrix.map_apply] using congrFun (congrFun (congrArg Subtype.val hAB) i) j
   exact Int.cast_injOn_of_ringChar_ne_two hchar (hmem A i j) (hmem B i j) hij
 
+/-- **The image of `TauCeti.cubeRotationToSpecialOrthogonalGroup` in `SO(3, R)` has `24`
+elements** whenever `2 ≠ 0` in `R`. -/
+theorem natCard_range_cubeRotationToSpecialOrthogonalGroup (R : Type*) [CommRing R]
+    [NeZero (2 : R)] :
+    Nat.card (cubeRotationToSpecialOrthogonalGroup R).range = 24 := by
+  rw [← SetLike.coe_sort_coe, MonoidHom.coe_range,
+    Nat.card_range_of_injective (cubeRotationToSpecialOrthogonalGroup_injective R),
+    natCard_cubeRotationGroup]
+
 /-- **Range characterization of `TauCeti.cubeRotationToSpecialOrthogonalGroup`**: an element of
 `SO(3, R)` comes from a cube rotation exactly when it is a signed permutation matrix with entries
 in `{-1, 0, 1}` (whenever `2 ≠ 0` in `R`, so `1 ≠ -1` and the lift to `ℤ` has determinant `1`). -/
@@ -686,17 +697,14 @@ theorem mem_range_cubeRotationToSpecialOrthogonalGroup_iff {R : Type*} [CommRing
     let M : Matrix (Fin 3) (Fin 3) ℤ := Matrix.of fun i j => if σ j = i then (u j : ℤ) else 0
     have hMM : Mᵀ * M = 1 := transpose_mul_self_of_eq_ite σ.injective
       (fun j => by simp [sq, ← Units.val_mul, Int.units_mul_self]) fun _ _ => rfl
-    have hdet_sq : M.det ^ 2 = 1 := by
-      calc M.det ^ 2 = Mᵀ.det * M.det := by rw [sq, Matrix.det_transpose]
-        _ = (Mᵀ * M).det := (Matrix.det_mul Mᵀ M).symm
-        _ = 1 := by rw [hMM, Matrix.det_one]
     have hmap : M.map (Int.castRingHom R) = (A : Matrix (Fin 3) (Fin 3) R) := by
       ext i j
       rw [Matrix.map_apply, hA]
       simp only [M, Matrix.of_apply, eq_intCast]
       split_ifs <;> simp [hu]
     have hdet : M.det = 1 := by
-      rcases sq_eq_one_iff.mp hdet_sq with h | h
+      rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup
+          ((Matrix.mem_orthogonalGroup_iff' _ _).mpr hMM) with h | h
       · exact h
       · exfalso
         have h1 : (Int.castRingHom R) M.det = 1 := by

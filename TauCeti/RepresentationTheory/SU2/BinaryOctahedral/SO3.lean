@@ -123,11 +123,9 @@ theorem map_toSO3_binaryOctahedralSubgroup :
     rcases hg with rfl | rfl
     · exact ⟨_, toSO3_binaryDihedralRotation_four.symm⟩
     · exact ⟨_, toSO3_binaryTetrahedralOmega.symm⟩
-  have hcard : Nat.card (cubeRotationToSpecialOrthogonalGroup ℝ).range = 24 := by
-    rw [← SetLike.coe_sort_coe, MonoidHom.coe_range,
-      Nat.card_range_of_injective (cubeRotationToSpecialOrthogonalGroup_injective ℝ),
-      natCard_cubeRotationGroup]
-  exact Subgroup.eq_of_le_of_card_ge hle (by rw [hcard, natCard_map_toSO3_binaryOctahedralSubgroup])
+  exact Subgroup.eq_of_le_of_card_ge hle
+    (by rw [natCard_range_cubeRotationToSpecialOrthogonalGroup,
+      natCard_map_toSO3_binaryOctahedralSubgroup])
 
 /-- **The binary octahedral subgroup is the full preimage of the real cube rotation group under
 `toSO3`.** -/
