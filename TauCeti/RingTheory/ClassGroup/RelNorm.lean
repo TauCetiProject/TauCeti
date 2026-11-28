@@ -7,9 +7,11 @@ module
 
 public import Mathlib.RingTheory.ClassGroup.Basic
 public import Mathlib.RingTheory.ClassGroup.ExtendedHom
+public import Mathlib.RingTheory.DedekindDomain.Dvr
 public import Mathlib.RingTheory.Ideal.Norm.RelNorm
+public import Mathlib.RingTheory.Localization.Finiteness
+public import TauCeti.RingTheory.Localization.Defs
 import Mathlib.GroupTheory.Congruence.Basic
-import TauCeti.RingTheory.Localization.Defs
 
 /-!
 # The relative norm on ideal class groups
@@ -38,7 +40,7 @@ descent instead goes through the monoid congruence `Con.ker` and
   `ClassGroup.relNorm_comp_extendedHom` the same statement as an identity of monoid homomorphisms.
   The extension direction is Mathlib's `ClassGroup.extendedHom`; the composite itself is the
   source's `ClassGroup.relNorm_comp_map`, respelt against it.
-* `ClassGroup.relNorm_extendedHom_eq_extendedHom_relNorm`: the relative norm commutes with
+* `ClassGroup.relNorm_map_eq_map_relNorm`: the relative norm commutes with
   extension to localizations when the upper ring is localized at the images of the base
   denominators.
 
@@ -169,21 +171,42 @@ theorem relNorm_comp_extendedHom :
 
 section Localization
 
-variable {Rₘ Sₘ : Type*} [CommRing Rₘ] [CommRing Sₘ]
-  [IsDedekindDomain Rₘ] [IsDedekindDomain Sₘ]
+variable {Rₘ Sₘ : Type*} [CommRing Rₘ] [CommRing Sₘ] [Nontrivial Rₘ]
   [Algebra R Rₘ] [Algebra S Sₘ] [Algebra Rₘ Sₘ] [Algebra R Sₘ]
   [IsScalarTower R Rₘ Sₘ] [IsScalarTower R S Sₘ]
-  [Module.IsTorsionFree R Rₘ] [Module.IsTorsionFree S Sₘ] [Module.IsTorsionFree Rₘ Sₘ]
-  [Module.Finite Rₘ Sₘ]
 
-/-- The class-group norm commutes with extension of ideals to a localization when the upper
-ring is localized at the image of the same denominators as the base ring. -/
-theorem relNorm_extendedHom_eq_extendedHom_relNorm (M : Submonoid R) [IsLocalization M Rₘ]
-    [IsLocalization (Algebra.algebraMapSubmonoid S M) Sₘ] (c : ClassGroup S) :
-    relNorm Rₘ (extendedHom S Sₘ c) = extendedHom R Rₘ (relNorm R c) := by
+/-- For a module-finite extension of Dedekind domains, the class-group norm commutes with
+extension of ideals to localizations at matching denominators. The localized domain,
+Dedekind, torsion-free and finiteness instances are derived from the localization data. -/
+theorem relNorm_map_eq_map_relNorm (c : ClassGroup S) (M : Submonoid R)
+    [IsLocalization M Rₘ] [IsLocalization (Algebra.algebraMapSubmonoid S M) Sₘ] :
+    let hM := TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial M Rₘ
+    let hSM : Algebra.algebraMapSubmonoid S M ≤ S⁰ :=
+      Submonoid.map_le_of_le_comap _ (hM.trans
+        (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
+          (FaithfulSMul.algebraMap_injective R S)))
+    letI := IsLocalization.isDomain_of_le_nonZeroDivisors Rₘ hM
+    letI := IsLocalization.isDomain_of_le_nonZeroDivisors Sₘ hSM
+    letI := IsLocalization.isDedekindDomain R hM Rₘ
+    letI := IsLocalization.isDedekindDomain S hSM Sₘ
+    letI := Module.IsTorsionFree.of_isLocalization R S hM (Rₚ := Rₘ) (Sₚ := Sₘ)
+    letI := Module.Finite.of_isLocalization R S M (Rₚ := Rₘ) (Sₚ := Sₘ)
+    relNorm Rₘ (map (algebraMap S Sₘ) (IsLocalization.injective Sₘ hSM) c) =
+      map (algebraMap R Rₘ) (IsLocalization.injective Rₘ hM) (relNorm R c) := by
   have hM := TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial M Rₘ
+  have hSM : Algebra.algebraMapSubmonoid S M ≤ S⁰ :=
+    Submonoid.map_le_of_le_comap _ (hM.trans
+      (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
+        (FaithfulSMul.algebraMap_injective R S)))
+  have := IsLocalization.isDomain_of_le_nonZeroDivisors Rₘ hM
+  have := IsLocalization.isDomain_of_le_nonZeroDivisors Sₘ hSM
+  have := IsLocalization.isDedekindDomain R hM Rₘ
+  have := IsLocalization.isDedekindDomain S hSM Sₘ
+  have := Module.IsTorsionFree.of_isLocalization R S hM (Rₚ := Rₘ) (Sₚ := Sₘ)
+  have := Module.Finite.of_isLocalization R S M (Rₚ := Rₘ) (Sₚ := Sₘ)
+  dsimp only
   obtain ⟨I, rfl⟩ := mk0_surjective c
-  rw [extendedHom_mk0, relNorm_mk0, relNorm_mk0, extendedHom_mk0]
+  rw [map_mk0, relNorm_mk0, relNorm_mk0, map_mk0]
   apply congrArg mk0
   apply Subtype.ext
   simpa only [Ideal.coe_relNorm0, ← Ideal.spanNorm_eq] using
