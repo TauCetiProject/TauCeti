@@ -71,14 +71,21 @@ A smooth cylinder from the loop `γ` to the loop `γ₀` (`TauCeti.IsSmoothCylin
 `u (s, 1) = f (u (s, 0))` instead, so that it joins two `f`-seamed paths, the paths `γ` with
 `γ 1 = f (γ 0)` on which the Floer theory of a symplectomorphism `f` is built; the cylinders are
 defined as the case `f = id`. Seamed cylinders concatenate and reverse, and a smooth family of
-seamed paths gives seamed cylinders between any two of its members.
+seamed paths gives seamed cylinders between any two of its members. Reversing time, that is the
+second coordinate, turns an `f`-seamed cylinder into a `g`-seamed cylinder between the reversed
+paths `t ↦ γ (1 - t)`, for every left inverse `g` of `f`
+(`TauCeti.IsSmoothSeamedCylinder.comp_prodMap_id_one_sub`): this is how the Floer theory of `f`
+is compared with that of `f⁻¹`.
 
 Finally, a two-form vanishes on spheres (`TauCeti.VanishesOnSpheres`) or on tori
 (`TauCeti.VanishesOnTori`) when its integral over every map of the square factoring through a
 sphere, respectively a torus, vanishes. It vanishes on `f`-seamed tori
 (`TauCeti.VanishesOnSeamedTori`) when its integral vanishes over every map of the square that
 agrees on the two vertical edges and is `f`-seamed along the horizontal ones, so that it sweeps out
-a loop of `f`-seamed paths; for `f = id` these are the tori. Such a form has the same integral over
+a loop of `f`-seamed paths; for `f = id` these are the tori. Reversing time changes the sign of
+the integral and turns `g`-seamed tori into `f`-seamed tori when `f ∘ g = id`, so a form vanishing
+on `f`-seamed tori vanishes on `g`-seamed tori (`TauCeti.VanishesOnSeamedTori.of_rightInverse`).
+Such a form has the same integral over
 any two caps of a loop (`TauCeti.VanishesOnSpheres.rectangleIntegral_eq`), respectively over any
 two seamed cylinders between the same seamed paths
 (`TauCeti.VanishesOnSeamedTori.rectangleIntegral_eq`, and
@@ -127,6 +134,16 @@ even when it vanishes on spheres: for `f = id` on a torus, the loop of seamed pa
 * `TauCeti.IsSmoothSeamedCylinder.comp_prodMap_one_sub`,
   `TauCeti.IsSmoothCylinder.comp_prodMap_one_sub`: a smooth (seamed) cylinder run backwards is a
   smooth (seamed) cylinder.
+* `TauCeti.IsSmoothSeamedCylinder.comp_prodMap_id_one_sub`,
+  `TauCeti.IsSmoothCylinder.comp_prodMap_id_one_sub`: reversing time in a smooth `f`-seamed
+  cylinder gives a smooth `g`-seamed cylinder for a left inverse `g` of `f`, and reversing time in a
+  smooth cylinder gives a smooth cylinder.
+* `TauCeti.VanishesOnSeamedTori.of_rightInverse`,
+  `TauCeti.vanishesOnSeamedTori_iff_of_leftInverse_of_rightInverse`: vanishing on `f`-seamed tori
+  passes to `g`-seamed tori for a right inverse `g` of `f`.
+* `TauCeti.IsSmoothSeamedCylinder.comp_prodMap_one_sub_trans`,
+  `TauCeti.IsSmoothCylinder.comp_prodMap_one_sub_trans`: two smooth (seamed) cylinders from the
+  same path, the first run backwards, glue to a smooth (seamed) cylinder.
 * `TauCeti.isSmoothSeamedCylinder_comp_prodMap_affine`,
   `TauCeti.isSmoothCylinder_comp_prodMap_affine`: rescaling a smooth family of seamed paths, or a
   smooth map `1`-periodic in `t`, from `[a, b]` to `[0, 1]` in the first coordinate gives a smooth
@@ -780,6 +797,29 @@ theorem IsSmoothSeamedCylinder.comp_prodMap_one_sub (hu : IsSmoothSeamedCylinder
   apply_one t _ := by simp [hu.apply_zero]
   seam s hs := by simpa using hu.seam (1 - s) ⟨by linarith [hs.2], by linarith [hs.1]⟩
 
+/-- **Reversing time in a seamed cylinder.** Reversing the second coordinate of a smooth
+`f`-seamed cylinder from `γ` to `γ₀` gives a smooth `g`-seamed cylinder from `t ↦ γ (1 - t)` to
+`t ↦ γ₀ (1 - t)`, for every left inverse `g` of `f`: each reversed path `t ↦ u (s, 1 - t)` runs
+from `f (u (s, 0))` to `u (s, 0) = g (f (u (s, 0)))`. -/
+theorem IsSmoothSeamedCylinder.comp_prodMap_id_one_sub {g : M → M}
+    (hu : IsSmoothSeamedCylinder I f γ γ₀ u) (hgf : Function.LeftInverse g f) :
+    IsSmoothSeamedCylinder I g (fun t ↦ γ (1 - t)) (fun t ↦ γ₀ (1 - t))
+      (u ∘ Prod.map id fun t ↦ 1 - t) where
+  contMDiff := hu.contMDiff.comp (contDiff_id.prodMap (contDiff_const.sub contDiff_id)).contMDiff
+  apply_zero t := by simp [hu.apply_zero]
+  apply_one t ht := by
+    simpa using hu.apply_one (1 - t) ⟨by linarith [ht.2], by linarith [ht.1]⟩
+  seam s hs := by simp [hu.seam s hs, hgf (u (s, 0))]
+
+/-- Two smooth `f`-seamed cylinders from the same path `γ`, the first run backwards followed by the
+second, glue to a smooth `f`-seamed cylinder from the final edge `u₁ (1, ·)` of the first to the
+final path of the second. -/
+theorem IsSmoothSeamedCylinder.comp_prodMap_one_sub_trans
+    (h₁ : IsSmoothSeamedCylinder I f γ γ' u₁) (h₂ : IsSmoothSeamedCylinder I f γ γ₀ u₂) :
+    IsSmoothSeamedCylinder I f (fun t ↦ u₁ (1, t)) γ₀
+      (rectangleTrans (u₁ ∘ Prod.map (fun s ↦ 1 - s) id) u₂) :=
+  h₁.comp_prodMap_one_sub.trans h₂ fun t ↦ by simp [h₁.apply_zero, h₂.apply_zero]
+
 /-- Rescaling the first coordinate from `[0, 1]` to `[a, b]` turns a smooth family `u` of
 `f`-seamed paths `u (s, ·)` into a smooth `f`-seamed cylinder from `u (a, ·)` to `u (b, ·)`. -/
 theorem isSmoothSeamedCylinder_comp_prodMap_affine (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u)
@@ -807,6 +847,26 @@ theorem IsSmoothCylinder.comp_prodMap_one_sub {γ γ₀ : ℝ → M} {u : ℝ ×
     (hu : IsSmoothCylinder I γ γ₀ u) :
     IsSmoothCylinder I (fun t ↦ u (1, t)) γ (u ∘ Prod.map (fun s ↦ 1 - s) id) :=
   isSmoothSeamedCylinder_id_iff.mp (isSmoothSeamedCylinder_id_iff.mpr hu).comp_prodMap_one_sub
+
+/-- Reversing the second coordinate of a smooth cylinder from `γ` to `γ₀` gives a smooth cylinder
+from `t ↦ γ (1 - t)` to `t ↦ γ₀ (1 - t)`. -/
+theorem IsSmoothCylinder.comp_prodMap_id_one_sub {γ γ₀ : ℝ → M} {u : ℝ × ℝ → M}
+    (hu : IsSmoothCylinder I γ γ₀ u) :
+    IsSmoothCylinder I (fun t ↦ γ (1 - t)) (fun t ↦ γ₀ (1 - t))
+      (u ∘ Prod.map id fun t ↦ 1 - t) :=
+  isSmoothSeamedCylinder_id_iff.mp
+    ((isSmoothSeamedCylinder_id_iff.mpr hu).comp_prodMap_id_one_sub fun _ ↦ rfl)
+
+/-- Two smooth cylinders from the same loop `γ`, the first run backwards followed by the second,
+glue to a smooth cylinder from the final edge `u₁ (1, ·)` of the first to the final loop of the
+second. -/
+theorem IsSmoothCylinder.comp_prodMap_one_sub_trans {γ γ' γ₀ : ℝ → M} {u₁ u₂ : ℝ × ℝ → M}
+    (h₁ : IsSmoothCylinder I γ γ' u₁) (h₂ : IsSmoothCylinder I γ γ₀ u₂) :
+    IsSmoothCylinder I (fun t ↦ u₁ (1, t)) γ₀
+      (rectangleTrans (u₁ ∘ Prod.map (fun s ↦ 1 - s) id) u₂) :=
+  isSmoothSeamedCylinder_id_iff.mp
+    ((isSmoothSeamedCylinder_id_iff.mpr h₁).comp_prodMap_one_sub_trans
+      (isSmoothSeamedCylinder_id_iff.mpr h₂))
 
 /-- Rescaling the first coordinate from `[0, 1]` to `[a, b]` turns a smooth map `u : ℝ × ℝ → M`,
 `1`-periodic in `t`, into a smooth cylinder from the loop `u(a, ·)` to the loop `u(b, ·)`. -/
@@ -873,6 +933,27 @@ theorem vanishesOnSeamedTori_id_iff (φ : RoughForm I M F 2) :
     VanishesOnSeamedTori id φ ↔ VanishesOnTori φ :=
   Iff.rfl
 
+/-- **Reversing time in seamed tori.** A two-form that vanishes on `f`-seamed tori vanishes on
+`g`-seamed tori for every right inverse `g` of `f`: reversing the second coordinate of a
+`g`-seamed torus gives an `f`-seamed torus, and changes the sign of the integral. -/
+theorem VanishesOnSeamedTori.of_rightInverse {φ : RoughForm I M F 2} {f g : M → M}
+    (hT : VanishesOnSeamedTori f φ) (hfg : Function.RightInverse g f) :
+    VanishesOnSeamedTori g φ := by
+  intro u hu h₁ hseam
+  have hv := hT (u ∘ Prod.map id fun t ↦ 1 - t)
+    (hu.comp (contDiff_id.prodMap (contDiff_const.sub contDiff_id)).contMDiff)
+    (fun t ht ↦ by simpa using h₁ (1 - t) ⟨by linarith [ht.2], by linarith [ht.1]⟩)
+    (fun s hs ↦ by simp [hseam s hs, hfg (u (s, 0))])
+  rwa [rectangleIntegral_comp_prodMap_id_one_sub φ (hu.mdifferentiable (by simp)),
+    neg_eq_zero] at hv
+
+/-- For mutually inverse maps `f` and `g`, a two-form vanishes on `g`-seamed tori exactly when it
+vanishes on `f`-seamed tori. -/
+theorem vanishesOnSeamedTori_iff_of_leftInverse_of_rightInverse {φ : RoughForm I M F 2}
+    {f g : M → M} (hgf : Function.LeftInverse g f) (hfg : Function.RightInverse g f) :
+    VanishesOnSeamedTori g φ ↔ VanishesOnSeamedTori f φ :=
+  ⟨fun h ↦ h.of_rightInverse hgf, fun h ↦ h.of_rightInverse hfg⟩
+
 /-! ### Independence of the cylinder -/
 
 section Independence
@@ -888,7 +969,7 @@ theorem VanishesOnSpheres.rectangleIntegral_eq (hS : VanishesOnSpheres φ)
     rectangleIntegral φ u (0, 0) (1, 1) = rectangleIntegral φ v (0, 0) (1, 1) := by
   -- Glue `u`, run backwards, to `v` along `γ`: this is a sphere, with integral `∫ v - ∫ u`.
   have h t : u (0, t) = v (0, t) := (hu.apply_zero t).trans (hv.apply_zero t).symm
-  have hw := hu.comp_prodMap_one_sub.trans hv fun t ↦ by simpa using h t
+  have hw := hu.comp_prodMap_one_sub_trans hv
   have h₀ : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := left_mem_Icc.mpr zero_le_one
   have hglue := hS _ hw.contMDiff
     (fun t ht ↦ by rw [hw.apply_zero, hw.apply_zero, hu.apply_one t ht, hu.apply_one 0 h₀])
@@ -905,7 +986,7 @@ theorem VanishesOnSeamedTori.rectangleIntegral_eq {f : M → M} (hT : VanishesOn
     rectangleIntegral φ u (0, 0) (1, 1) = rectangleIntegral φ v (0, 0) (1, 1) := by
   -- Glue `u`, run backwards, to `v` along `γ`: this is a seamed torus, with integral `∫ v - ∫ u`.
   have h t : u (0, t) = v (0, t) := (hu.apply_zero t).trans (hv.apply_zero t).symm
-  have hw := hu.comp_prodMap_one_sub.trans hv fun t ↦ by simpa using h t
+  have hw := hu.comp_prodMap_one_sub_trans hv
   have hglue := hT _ hw.contMDiff
     (fun t ht ↦ by rw [hw.apply_one t ht, hw.apply_zero, hu.apply_one t ht]) hw.seam
   rw [rectangleIntegral_rectangleTrans_comp_prodMap_one_sub hφ (hu.contMDiff.of_le (by simp))

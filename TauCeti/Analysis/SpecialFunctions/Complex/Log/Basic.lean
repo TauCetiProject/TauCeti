@@ -6,9 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
-# Local branch identities for the complex principal logarithm
+# Basic identities for the complex principal logarithm
+
+The real part of `log (x / y)` is always `log ‖x‖ - log ‖y‖`, so the quotient rule
+`log (x / y) = log x - log y` for the principal logarithm holds exactly when the corresponding
+rule `arg (x / y) = arg x - arg y` holds for the principal argument, that is, when
+`arg x - arg y ∈ (-π, π]`.
 
 When `p₀` lies in `Complex.slitPlane`, its argument lies strictly in `(-π, π)`. Multiplying `p₀`
 by a perturbation `1 + u x` with `u → 0` shifts the argument by an amount tending to `0`, so the
@@ -17,6 +23,9 @@ sum of arguments eventually stays in `(-π, π]` and the principal logarithm spl
 
 ## Main results
 
+* `Complex.log_div_eq_sub_log_iff`: `log (x / y) = log x - log y` exactly when
+  `arg x - arg y ∈ (-π, π]`.
+* `Complex.log_div_of_re_pos`: if `0 < x.re` and `0 < y.re`, then `log (x / y) = log x - log y`.
 * `Complex.eventually_log_mul_one_add`: for `p₀ ∈ Complex.slitPlane` and `u → 0` along a filter,
   eventually `Complex.log (p₀ * (1 + u x)) = Complex.log p₀ + Complex.log (1 + u x)`.
 -/
@@ -27,6 +36,23 @@ open Filter Topology
 open scoped Real
 
 namespace Complex
+
+/-- The principal logarithm of a quotient is the difference of the principal logarithms exactly
+when the difference of the arguments lies in `(-π, π]`. -/
+theorem log_div_eq_sub_log_iff {x y : ℂ} (hx₀ : x ≠ 0) (hy₀ : y ≠ 0) :
+    log (x / y) = log x - log y ↔ arg x - arg y ∈ Set.Ioc (-Real.pi) Real.pi := by
+  rw [← arg_div_eq_sub_arg_iff hx₀ hy₀, Complex.ext_iff]
+  simp only [log_re, log_im, norm_div, sub_re, sub_im,
+    Real.log_div (norm_ne_zero_iff.mpr hx₀) (norm_ne_zero_iff.mpr hy₀), true_and]
+
+/-- The principal logarithm of the quotient of two points of the open right half-plane is the
+difference of their principal logarithms. -/
+theorem log_div_of_re_pos {x y : ℂ} (hx : 0 < x.re) (hy : 0 < y.re) :
+    log (x / y) = log x - log y := by
+  have hx₀ : x ≠ 0 := fun h ↦ hx.ne' (by rw [h, zero_re])
+  have hy₀ : y ≠ 0 := fun h ↦ hy.ne' (by rw [h, zero_re])
+  exact (log_div_eq_sub_log_iff hx₀ hy₀).2 <|
+    (arg_div_eq_sub_arg_iff hx₀ hy₀).1 (arg_div_of_re_pos hx hy)
 
 /-- Local branch law for the principal complex logarithm: when `p₀ ∈ Complex.slitPlane` and
 `u → 0` along `l`, eventually

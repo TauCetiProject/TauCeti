@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.DiscreteValuationRing.MatlisDual
 public import TauCeti.RingTheory.MatlisDuality.Basic
+public import TauCeti.RingTheory.MatlisDuality.PrincipalIdealRing
 
 /-!
 # The coefficient rings `O ⧸ (a)` are Matlis self-dual
 
 Let `O` be a domain with fraction field `K`, let `a ≠ 0` and `A = O ⧸ (a)`. Division by `a`
-(`IsDiscreteValuationRing.divQuotient`) identifies `A` with the elements of `K/O` killed by `a`.
+(`TauCeti.divQuotient`) identifies `A` with the elements of `K/O` killed by `a`.
 This file upgrades that identification to an isomorphism of `A`-modules between `A` and its Matlis
 dual `Hom_O(A, K/O)`, sending `x` to `y ↦ yx/a mod O`. Consequently, for every `A`-module `N`, the
 `A`-linear dual `Hom_A(N, A)` is the Matlis dual `Hom_O(N, K/O)`, through `f ↦ (x ↦ f(x)/a mod O)`,
@@ -50,7 +50,7 @@ and the inverse different.
 
 public section
 
-open LinearMap MulOpposite TauCeti IsDiscreteValuationRing
+open LinearMap MulOpposite TauCeti
 
 namespace TauCeti.IsDiscreteValuationRing
 

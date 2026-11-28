@@ -47,8 +47,9 @@ set of `x` is the inverse different.
   is determined by its values on `K`.
 * `IsDedekindDomain.FiniteAdeleRing.eq_extendAddChar_iff`: the extension is the unique character
   trivial on `Ô` that restricts to `χ` on `K`.
-* `IsDedekindDomain.FiniteAdeleRing.isLocallyConstant_extendAddChar`: the extension is locally
-  constant, hence continuous for every topology on the values.
+* `IsDedekindDomain.FiniteAdeleRing.isLocallyConstant_extendAddChar`,
+  `IsDedekindDomain.FiniteAdeleRing.continuous_extendAddChar`: the extension is locally constant,
+  hence continuous for every topology on the values.
 * `IsDedekindDomain.FiniteAdeleRing.forall_extendAddChar_mul_eq_one_iff`: the annihilator of `Ô`
   under `(z, u) ↦ ψ (z u)`.
 
@@ -162,6 +163,10 @@ theorem isLocallyConstant_extendAddChar : IsLocallyConstant (extendAddChar χ h�
   AddChar.isLocallyConstant_of_setOf_eq_one_mem_nhds_zero <|
     Filter.mem_of_superset ((isOpen_integralAdeles R K).mem_nhds (zero_mem _))
       fun _ ha ↦ extendAddChar_apply_of_mem_integralAdeles χ hχ ha
+
+/-- The extended character is continuous, for every topology on its values. -/
+theorem continuous_extendAddChar [TopologicalSpace M] : Continuous (extendAddChar χ hχ) :=
+  (isLocallyConstant_extendAddChar χ hχ).continuous
 
 /-- **The annihilator of the integral finite adeles.** A finite adele `z` satisfies
 `ψ (z u) = 1` for every integral finite adele `u`, where `ψ` extends `χ`, exactly when
