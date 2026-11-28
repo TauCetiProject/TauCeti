@@ -34,11 +34,8 @@ theorem exists_pos_apply_different_generator (P : Parameters) (s : ℕ) {E : Typ
       |Real.log A| ≤ ∑ w ∈ primitiveRoots P.q₀ ℂ,
         |Real.log ‖(cyclotomic P.q₀ ℂ).derivative.eval w‖| := by
   have hprimes : (towerDeg s).primeFactors ⊆ P.q₀.primeFactors := by
-    intro p hp
-    obtain ⟨hpp, hpd, _⟩ := Nat.mem_primeFactors.mp hp
-    refine Nat.mem_primeFactors.mpr ⟨hpp, P.dvd_q₀_of_dvd_q₁ (s := s) hpp ?_, P.q₀_pos.ne'⟩
-    rw [P.q₁_def s]
-    exact hpd.trans (dvd_mul_left _ _)
+    rw [← P.primeFactors_q₁ s]
+    exact Nat.primeFactors_mono (by rw [P.q₁_def]; exact dvd_mul_left _ _) (P.q₁_pos s).ne'
   rw [hδ, P.q₁_def s]
   exact v.exists_pos_apply_cyclotomic_different_generator P.q₀_pos.ne' hprimes
     (by simpa only [P.q₁_def s] using hζ) hu hb
