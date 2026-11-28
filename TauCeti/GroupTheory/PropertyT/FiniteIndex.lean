@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.PropertyT.KazhdanPair
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Induced
-import TauCeti.Analysis.PositiveDefinite.Kernel.Bounds
+import TauCeti.GroupTheory.PositiveDefinite.Bounds
 import TauCeti.Analysis.RCLike.Basic
 import TauCeti.GroupTheory.PositiveDefinite.Basic
 import TauCeti.GroupTheory.PropertyT.PositiveDefinite
@@ -163,8 +163,9 @@ theorem relativePropertyT_subgroupOf_iff_of_normal (Λ H : Subgroup Γ) [Λ.Norm
   have hΛNH : ((Λ.subgroupOf H).subgroupOf N_H).RelativePropertyT.{v} :=
     hΛH.subgroupOf.{v, v} N_H
   have hmap : ((Λ.subgroupOf H).subgroupOf N_H).map (H.subtype.comp N_H.subtype) = Λ ⊓ N := by
-    ext x
-    simpa [N_H, mem_subgroupOf] using fun _ hxN ↦ H.normalCore_le hxN
+    rw [← Subgroup.map_map, Subgroup.subgroupOf_map_subtype,
+      Subgroup.map_inf _ _ H.subtype H.subtype_injective, Subgroup.subgroupOf_map_subtype,
+      Subgroup.map_subgroupOf_eq_of_le H.normalCore_le, inf_assoc, inf_of_le_right H.normalCore_le]
   have hinfT : (Λ ⊓ N).RelativePropertyT.{v} := by
     rw [← hmap]
     exact hΛNH.map (H.subtype.comp N_H.subtype)

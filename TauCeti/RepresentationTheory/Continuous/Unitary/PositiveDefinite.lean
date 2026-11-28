@@ -44,7 +44,7 @@ representations on Hilbert spaces.
 * `Matrix.PosSemidef.gnsRepresentation`: the GNS unitary representation of a positive-definite
   function, with `Matrix.PosSemidef.isUnitary_gnsRepresentation`,
   `Matrix.PosSemidef.inner_gnsVector_one_gnsRepresentation`,
-  `Matrix.PosSemidef.norm_gnsVector_eq_one`, `Matrix.PosSemidef.norm_gnsVector_one`,
+  `Matrix.PosSemidef.norm_gnsVector_eq_one`, `Matrix.PosSemidef.norm_gnsVector_sub_sq_le`,
   `Matrix.PosSemidef.norm_gnsVector_sub_lt`,
   `Matrix.PosSemidef.norm_gnsRepresentation_gnsVector_one_sub_sq_le`, and
   `Matrix.PosSemidef.norm_gnsRepresentation_gnsVector_one_sub_lt`.
@@ -190,40 +190,39 @@ theorem gnsRepresentation_gnsVector_one_dense :
 /-- Every GNS vector of a normalized (`φ 1 = 1`) positive-definite function has unit norm. -/
 theorem norm_gnsVector_eq_one (h1 : φ 1 = 1) (g : G) : ‖hφ.gnsVector g‖ = 1 := by
   have hsq : ‖hφ.gnsVector g‖ ^ 2 = 1 := by
-    rw [@norm_sq_eq_re_inner 𝕜, hφ.inner_gnsVector, inv_mul_cancel, h1, RCLike.one_re]
+    rw [gnsVector, hφ.norm_kolmogorovFeature_sq g, Matrix.of_apply, inv_mul_cancel, h1,
+      RCLike.one_re]
   exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).mp hsq
 
 /-- The squared distance between two GNS vectors in terms of the positive-definite function. -/
 theorem norm_gnsVector_sub_sq (g h : G) :
     ‖hφ.gnsVector g - hφ.gnsVector h‖ ^ 2 =
       2 * (RCLike.re (φ 1) - RCLike.re (φ (g⁻¹ * h))) := by
-  rw [@norm_sub_sq 𝕜, ← inner_self_eq_norm_sq (𝕜 := 𝕜), ← inner_self_eq_norm_sq (𝕜 := 𝕜)]
-  simp only [inner_gnsVector, inv_mul_cancel]
+  rw [gnsVector, gnsVector, hφ.norm_kolmogorovFeature_sub_sq g h]
+  simp only [Matrix.of_apply, inv_mul_cancel]
   ring
 
-/-- For a positive-definite function normalized by `φ 1 = 1`, the GNS vector at the identity is a
-unit vector. -/
-theorem norm_gnsVector_one (hφ1 : φ 1 = 1) : ‖hφ.gnsVector 1‖ = 1 :=
-  hφ.norm_gnsVector_eq_one hφ1 1
+/-- For a normalized (`φ 1 = 1`) positive-definite function, the squared distance between two GNS
+vectors is at most `2 * ‖φ (g⁻¹ * h) - 1‖`. -/
+theorem norm_gnsVector_sub_sq_le (h1 : φ 1 = 1) (g h : G) :
+    ‖hφ.gnsVector g - hφ.gnsVector h‖ ^ 2 ≤ 2 * ‖φ (g⁻¹ * h) - 1‖ := by
+  rw [hφ.norm_gnsVector_sub_sq g h, h1, RCLike.one_re]
+  linarith [RCLike.one_sub_re_le_norm_sub_one (φ (g⁻¹ * h))]
 
 /-- For a positive-definite function normalized by `φ 1 = 1`, the GNS representation moves the GNS
 vector at the identity by `g` a distance whose square is at most `2 * ‖φ g - 1‖`. -/
 theorem norm_gnsRepresentation_gnsVector_one_sub_sq_le (hφ1 : φ 1 = 1) (g : G) :
     ‖hφ.gnsRepresentation g (hφ.gnsVector 1) - hφ.gnsVector 1‖ ^ 2 ≤ 2 * ‖φ g - 1‖ := by
-  rw [hφ.gnsRepresentation_gnsVector_one, norm_sub_rev, hφ.norm_gnsVector_sub_sq, inv_one,
-    one_mul, hφ1, RCLike.one_re]
-  linarith [RCLike.one_sub_re_le_norm_sub_one (φ g)]
+  rw [hφ.gnsRepresentation_gnsVector_one, norm_sub_rev]
+  simpa using hφ.norm_gnsVector_sub_sq_le hφ1 1 g
 
 /-- If a normalized positive-definite function `φ` satisfies `‖φ (g⁻¹ * h) - 1‖ < δ ^ 2 / 2` with
 `δ > 0`, then the GNS vectors at `g` and `h` lie within distance `δ`. -/
 theorem norm_gnsVector_sub_lt (h1 : φ 1 = 1) {g h : G} {δ : ℝ} (hδ : 0 < δ)
     (hgh : ‖φ (g⁻¹ * h) - 1‖ < δ ^ 2 / 2) :
-    ‖hφ.gnsVector g - hφ.gnsVector h‖ < δ := by
-  have hsq := hφ.norm_gnsVector_sub_sq g h
-  rw [h1, RCLike.one_re] at hsq
-  have hre : 1 - RCLike.re (φ (g⁻¹ * h)) < δ ^ 2 / 2 :=
-    (RCLike.one_sub_re_le_norm_sub_one (φ (g⁻¹ * h))).trans_lt hgh
-  exact (sq_lt_sq₀ (norm_nonneg _) hδ.le).mp (by linarith)
+    ‖hφ.gnsVector g - hφ.gnsVector h‖ < δ :=
+  (sq_lt_sq₀ (norm_nonneg _) hδ.le).mp <|
+    (hφ.norm_gnsVector_sub_sq_le h1 g h).trans_lt (by linarith)
 
 /-- If a normalized positive-definite function `φ` satisfies `‖φ g - 1‖ < δ ^ 2 / 2` with `δ > 0`,
 then `g` moves the GNS vector at the identity by less than `δ`. -/

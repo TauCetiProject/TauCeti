@@ -36,6 +36,8 @@ zero the quadratic form of `(exp (-t ψ) - 1) / t` is nonnegative and tends to t
 ## Main declarations
 
 * `Matrix.CondNegSemidef.posSemidef_cexp_neg_mul`: the forward direction of Schoenberg's theorem.
+* `Matrix.posSemidef_cexp_neg_tsum_mul`: weighted Schoenberg series for positive-semidefinite
+  kernels.
 * `Matrix.condNegSemidef_iff_forall_posSemidef_cexp_neg_mul`: **Schoenberg's theorem**.
 * `Matrix.condNegSemidef_sq_norm_sub`: the squared distance `‖f a - f b‖²` along a map into a
   real inner product space is conditionally negative semidefinite.
@@ -81,6 +83,26 @@ theorem CondNegSemidef.posSemidef_cexp_neg_mul {ψ : Matrix n n ℂ} (hψ : ψ.C
     Complex.conj_ofReal, ← Complex.star_def, hsymm, ← Complex.exp_add]
   congr 1
   ring
+
+/-- **Weighted Schoenberg series.** For nonnegative weights `w`, positive-semidefinite kernels
+`K k : n → n → ℂ`, and `t ≥ 0`, the kernel `(a, b) ↦ exp (-t * ∑' k, w k * (1 - K k a b))` is
+positive semidefinite whenever the series converges pointwise. -/
+theorem posSemidef_cexp_neg_tsum_mul {ι : Type*} {K : ι → n → n → ℂ}
+    (hK : ∀ k, (of (K k)).PosSemidef) {w : ι → ℝ} (hw : ∀ k, 0 ≤ w k)
+    {L : SummationFilter ι} [L.NeBot]
+    (hsumm : ∀ a b, Summable (fun k ↦ (w k : ℂ) * (1 - K k a b)) L)
+    {t : ℝ} (ht : 0 ≤ t) :
+    PosSemidef (of fun a b ↦
+      Complex.exp (-(t : ℂ) * ∑'[L] k, (w k : ℂ) * (1 - K k a b))) := by
+  let Ψ : Matrix n n ℂ := of fun a b ↦ ∑'[L] k, (w k : ℂ) * (1 - K k a b)
+  have hΨ : Ψ.CondNegSemidef := by
+    refine CondNegSemidef.tsum_of_summable
+      (f := fun (k : ι) (a b : n) ↦ (w k : ℂ) * (1 - K k a b)) hsumm fun k ↦ ?_
+    convert ((hK k).const_sub_condNegSemidef (star_one ℂ)).smul
+      (a := (w k : ℂ)) (by exact_mod_cast hw k) using 1
+    ext a b
+    simp
+  simpa [Ψ] using hΨ.posSemidef_cexp_neg_mul ht
 
 /-- **Schoenberg's theorem.** A complex kernel `ψ` is conditionally negative semidefinite if and
 only if `(a, b) ↦ exp (-t ψ(a, b))` is positive semidefinite for every `t > 0`. -/

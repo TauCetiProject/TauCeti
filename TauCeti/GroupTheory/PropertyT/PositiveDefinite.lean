@@ -11,10 +11,10 @@ public import TauCeti.GroupTheory.PropertyT.KazhdanPair
 public import TauCeti.RepresentationTheory.Continuous.Unitary.PositiveDefinite
 import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
 import TauCeti.Analysis.InnerProductSpace.UnitVector
-import TauCeti.Analysis.PositiveDefinite.Kernel.Bounds
+import TauCeti.Analysis.PositiveDefinite.Kernel.Schoenberg
 import TauCeti.Analysis.RCLike.Basic
+import TauCeti.GroupTheory.PositiveDefinite.Bounds
 import TauCeti.GroupTheory.PositiveDefinite.Metric
-import TauCeti.GroupTheory.PositiveDefinite.Schoenberg
 import TauCeti.RepresentationTheory.Continuous.Unitary.OrbitConvexHull
 
 /-!
@@ -326,7 +326,8 @@ private theorem posSemidef_approx_of_relativePropertyT [Countable Γ] {Λ : Subg
     0 < δ₀ ^ 2 / 2)
   let Φ (g : Γ) : ℂ := Complex.exp (-(t : ℂ) * ψ g)
   have hΦ : (Matrix.of fun a b : Γ ↦ Φ (a⁻¹ * b)).PosSemidef :=
-    TauCeti.posSemidef_cexp_neg_tsum_mul hpd (fun k ↦ by positivity) hsumm ht.le
+    Matrix.posSemidef_cexp_neg_tsum_mul (K := fun k a b ↦ φ k (a⁻¹ * b))
+      hpd (fun _ ↦ by positivity) (fun a b ↦ hsumm (a⁻¹ * b)) ht.le
   have hΦ1 : Φ 1 = 1 := by simp [Φ, ψ, h1]
   -- Its GNS vector `gnsVector 1` is `(F₀, δ₀)`-invariant, giving a nonzero `Λ`-invariant `v`.
   obtain ⟨v, hv0, hvΛ⟩ := (isKazhdanPair_def Λ F₀ δ₀).mp hK
@@ -364,8 +365,8 @@ theorem RelativePropertyT.exists_forall_norm_sub_one_lt [Λ.Normal]
   have hπ : π.IsUnitary := hφ.isUnitary_gnsRepresentation
   -- The GNS vector at the identity is moved by less than `δ` by each element of `F`, so it lies
   -- within `ε / 2` of a `Λ`-invariant vector `η`.
-  obtain ⟨η, hη, hξη⟩ := hK hφ.gnsSpace π hπ ξ fun g hg ↦ (sq_lt_sq₀ (norm_nonneg _) hδ.le).mp <|
-    (hφ.norm_gnsRepresentation_gnsVector_one_sub_sq_le hφ1 g).trans_lt (by linarith [hφF g hg])
+  obtain ⟨η, hη, hξη⟩ := hK hφ.gnsSpace π hπ ξ fun g hg ↦
+    hφ.norm_gnsRepresentation_gnsVector_one_sub_lt hφ1 hδ (hφF g hg)
   -- Hence `h ∈ Λ` moves `ξ` by at most `2 * ‖ξ - η‖ < ε`.
   have hπη : π h η = η := (mem_invariants_restrict.mp hη) h hh
   have hmove : ‖π h ξ - ξ‖ ≤ 2 * ‖ξ - η‖ := by
@@ -373,7 +374,7 @@ theorem RelativePropertyT.exists_forall_norm_sub_one_lt [Λ.Normal]
       _ ≤ ‖π h (ξ - η)‖ + ‖ξ - η‖ := norm_sub_le _ _
       _ = 2 * ‖ξ - η‖ := by rw [hπ.norm_map]; ring
   calc ‖φ h - 1‖ = ‖⟪ξ, π h ξ⟫_ℂ - 1‖ := by rw [hφ.inner_gnsVector_one_gnsRepresentation]
-    _ ≤ ‖π h ξ - ξ‖ := TauCeti.norm_inner_sub_one_le (hφ.norm_gnsVector_one hφ1) _
+    _ ≤ ‖π h ξ - ξ‖ := TauCeti.norm_inner_sub_one_le (hφ.norm_gnsVector_eq_one hφ1 1) _
     _ < ε := by linarith
 
 /-- **Relative property (T) by positive-definite functions.** If a normal subgroup `Λ` has relative
@@ -419,14 +420,16 @@ theorem relativePropertyT_of_forall_tendstoUniformlyOn
         (∀ g, Tendsto (fun i ↦ φ i g) l (𝓝 1)) → TendstoUniformlyOn φ (fun _ ↦ 1) l Λ) :
     Λ.RelativePropertyT.{u} := by
   classical
+  have hA (g : Γ) : ∀ᶠ i : Finset Γ × ℕ in atTop, g ∈ i.1 := by
+    rw [← Filter.prod_atTop_atTop_eq]
+    exact Filter.tendsto_fst.eventually (eventually_finset_mem_atTop g)
+  have hδ0 : Tendsto (fun i : Finset Γ × ℕ ↦ 1 / (i.2 + 1 : ℝ)) atTop (𝓝 0) := by
+    rw [← Filter.prod_atTop_atTop_eq]
+    exact tendsto_one_div_add_atTop_nhds_zero_nat.comp Filter.tendsto_snd
   exact relativePropertyT_of_exists_forall_norm_sub_one_lt (ε := 1 / 2) (by norm_num) <|
     posSemidef_approx_of_tendstoUniformlyOn_of_exhaustion (l := (atTop : Filter (Finset Γ × ℕ)))
       Prod.fst (fun i ↦ 1 / (i.2 + 1 : ℝ)) (fun _ ↦ Nat.one_div_pos_of_nat)
-      (fun g ↦ (eventually_ge_atTop (({g}, 0) : Finset Γ × ℕ)).mono
-        fun _ hi ↦ hi.1 (Finset.mem_singleton_self g))
-      (tendsto_one_div_add_atTop_nhds_zero_nat.comp
-        (tendsto_atTop.mpr fun n ↦ eventually_atTop.mpr ⟨(∅, n), fun _ h ↦ h.2⟩))
-      (hΛ _ atTop) (1 / 2) (by norm_num)
+      hA hδ0 (hΛ _ atTop) (1 / 2) (by norm_num)
 
 /-- **Relative property (T) by positive-definite functions, uniform form.** A normal subgroup `Λ`
 has relative property (T) exactly when for every `ε > 0` there are a finite set `F` and a `δ > 0`
@@ -524,11 +527,10 @@ theorem relativePropertyT_iff_tendstoUniformlyOn (Λ : Subgroup Γ) :
   have hu := hunif (ULift.{w} ℕ) (Filter.comap ULift.down atTop) (fun i ↦ φ i.down)
     (fun i ↦ hpd i.down) (fun i ↦ h1 i.down)
     (fun g ↦ (hpt g).comp Filter.tendsto_comap)
-  rw [Metric.tendstoUniformlyOn_iff] at hu ⊢
-  intro ε hε
-  obtain ⟨S, hS, hS_sub⟩ := Filter.mem_comap.mp (hu ε hε)
-  filter_upwards [hS] with n hn x hx
-  exact hS_sub (a := ULift.up n) hn x hx
+  have hup : Tendsto (ULift.up.{w} : ℕ → ULift.{w} ℕ) atTop (Filter.comap ULift.down atTop) :=
+    Filter.tendsto_comap_iff.mpr tendsto_id
+  rw [tendstoUniformlyOn_iff_tendsto] at hu ⊢
+  exact hu.comp (hup.prodMap tendsto_id)
 
 end Countable
 

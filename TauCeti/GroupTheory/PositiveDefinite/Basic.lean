@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Order.Filter.Cofinite.Basic
-import TauCeti.Analysis.PositiveDefinite.Kernel.Bounds
+import TauCeti.GroupTheory.PositiveDefinite.Bounds
 
 /-!
 # Restriction, limits, zero extension and induction of positive-definite functions
@@ -187,22 +187,26 @@ theorem tendsto_inducedFun_cofinite (s : G ⧸ H → G) {φ : H → 𝕜}
   rw [Finset.sum_const_zero, mul_zero] at h
   exact h.congr fun g ↦ (inducedFun_apply s φ g).symm
 
+/-- Centered coset-average formula: `inducedFun s φ g - 1` is the average of `φ (…) - 1` over
+the cosets `x : G ⧸ H`. -/
+private theorem inducedFun_sub_one {s : G ⧸ H → G} (hs : ∀ x, (s x : G ⧸ H) = x) (φ : H → 𝕜)
+    (g : G) :
+    inducedFun s φ g - 1 = (Fintype.card (G ⧸ H) : 𝕜)⁻¹ *
+      ∑ x, (φ ⟨(s (g • x))⁻¹ * g * s x, inv_mul_mul_mem_of_section hs g x⟩ - 1) := by
+  have hcard : (Fintype.card (G ⧸ H) : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  have hext (x : G ⧸ H) : Function.extend Subtype.val φ 0 ((s (g • x))⁻¹ * g * s x) =
+      φ ⟨_, inv_mul_mul_mem_of_section hs g x⟩ :=
+    Subtype.val_injective.extend_apply φ 0 ⟨_, inv_mul_mul_mem_of_section hs g x⟩
+  simp only [inducedFun_apply, hext, Finset.sum_sub_distrib, Finset.sum_const,
+    Finset.card_univ, nsmul_eq_mul, mul_one, mul_sub, inv_mul_cancel₀ hcard]
+
 /-- If `φ` is within `ε` of `1` at the finitely many elements `(s (g • x))⁻¹ * g * s x` of `H`, then
 the induced function is within `ε` of `1` at `g`. -/
 theorem norm_inducedFun_sub_one_lt {s : G ⧸ H → G} (hs : ∀ x, (s x : G ⧸ H) = x) {φ : H → 𝕜}
     {g : G} {ε : ℝ}
     (hφ : ∀ x, ‖φ ⟨(s (g • x))⁻¹ * g * s x, inv_mul_mul_mem_of_section hs g x⟩ - 1‖ < ε) :
     ‖inducedFun s φ g - 1‖ < ε := by
-  have hcard : (Fintype.card (G ⧸ H) : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
-  have hext (x : G ⧸ H) : Function.extend Subtype.val φ 0 ((s (g • x))⁻¹ * g * s x) =
-      φ ⟨_, inv_mul_mul_mem_of_section hs g x⟩ :=
-    Subtype.val_injective.extend_apply φ 0 ⟨_, inv_mul_mul_mem_of_section hs g x⟩
-  -- `inducedFun s φ g - 1` is the average of the differences `φ (…) - 1`.
-  have heq : inducedFun s φ g - 1 = (Fintype.card (G ⧸ H) : 𝕜)⁻¹ *
-      ∑ x, (φ ⟨_, inv_mul_mul_mem_of_section hs g x⟩ - 1) := by
-    simp only [inducedFun_apply, hext, Finset.sum_sub_distrib, Finset.sum_const,
-      Finset.card_univ, nsmul_eq_mul, mul_one, mul_sub, inv_mul_cancel₀ hcard]
-  rw [heq, norm_mul, norm_inv, RCLike.norm_natCast]
+  rw [inducedFun_sub_one hs φ g, norm_mul, norm_inv, RCLike.norm_natCast]
   have hpos : (0 : ℝ) < Fintype.card (G ⧸ H) := Nat.cast_pos.mpr Fintype.card_pos
   rw [inv_mul_lt_iff₀ hpos]
   calc ‖∑ x, (φ ⟨_, inv_mul_mul_mem_of_section hs g x⟩ - 1)‖
@@ -218,16 +222,12 @@ theorem card_mul_one_sub_re_inducedFun {s : G ⧸ H → G} (hs : ∀ x, (s x : G
       ∑ x : G ⧸ H, (1 - RCLike.re (φ ⟨(s (g • x))⁻¹ * g * s x,
         inv_mul_mul_mem_of_section hs g x⟩)) := by
   have hpos : (0 : ℝ) < Fintype.card (G ⧸ H) := Nat.cast_pos.mpr Fintype.card_pos
-  have hext (x : G ⧸ H) :
-      Function.extend Subtype.val φ 0 ((s (g • x))⁻¹ * g * s x) =
-        φ ⟨_, inv_mul_mul_mem_of_section hs g x⟩ :=
-    Subtype.val_injective.extend_apply φ 0 ⟨_, inv_mul_mul_mem_of_section hs g x⟩
-  have hre : RCLike.re (inducedFun s φ g) = (Fintype.card (G ⧸ H) : ℝ)⁻¹ *
-      ∑ x : G ⧸ H, RCLike.re (φ ⟨_, inv_mul_mul_mem_of_section hs g x⟩) := by
-    simp [inducedFun_apply, hext, map_sum, RCLike.normSq_apply, div_eq_mul_inv, hpos.ne']
-  rw [hre, Finset.sum_sub_distrib]
-  field_simp [hpos.ne']
-  simp
+  have hsub : 1 - RCLike.re (inducedFun s φ g) = -RCLike.re (inducedFun s φ g - 1) := by simp
+  have hcoe : (Fintype.card (G ⧸ H) : 𝕜)⁻¹ = (((Fintype.card (G ⧸ H) : ℝ)⁻¹ : ℝ) : 𝕜) := by
+    simp
+  rw [hsub, inducedFun_sub_one hs φ g, hcoe, RCLike.re_ofReal_mul, map_sum, mul_neg,
+    ← mul_assoc, mul_inv_cancel₀ hpos.ne', one_mul, ← Finset.sum_neg_distrib]
+  simp [map_sub, RCLike.one_re]
 
 /-- For a normalized positive-definite function `φ` on a finite-index subgroup `H` and a section
 `s` fixing the identity coset, `1 - re (φ h)` is bounded above by
