@@ -81,6 +81,9 @@ rank of its underlying graph plus the sum of the ranks of its vertex groups.
   Internat. J. Algebra Comput. 15 (2005), §3, Definition 3.1, Convention 3.2, Definition 3.3,
   Example 3.4, Convention 3.5, Definition 3.6, Proposition 3.7, Remark 3.8 and Lemma 3.9; §4,
   Definition 4.1 and Example 4.4; §6, Definition 6.1.
+* The helpers `cast_vertexHom_nil_mem_subgroup`, `cast_mem_grp` and `rankGrp_congr` come from
+  [Tau Ceti PR #39438](https://github.com/TauCetiProject/TauCeti/pull/39438), accepted at head
+  `69d53542b6`.
 -/
 
 public section
@@ -257,6 +260,15 @@ theorem toHom_mapLetter_dart_eq (f : B.graph.E)
   -- The labels on the two sides are transported along proofs of the same equalities.
   rfl
 
+/-- The letters read along a dart `f`: its start label `f_α`, its type `[f]` and its end label
+`f_ω`, read in the vertex groups at the endpoints of `[f]`. -/
+theorem toHom_mapLetter_dart (f : B.graph.E) :
+    B.toHom.mapLetter (Letter.dart (𝔸 := B.toGraphOfGroups) (B.graph.dart f)) =
+      ((Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src f) (B.labelα f))).comp
+        (Path.ofDart ⟨B.typ.mapE f, B.typ.map_src f, B.typ.map_tgt _ f⟩)).comp
+          (Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ f) (B.labelω f))) :=
+  B.toHom_mapLetter_dart_eq f rfl rfl rfl
+
 /-- The path read along a dart `f`, from equalities for its start label, its type and its end
 label. -/
 theorem toHom_mapPath_ofDart_eq (f : B.graph.E)
@@ -337,6 +349,13 @@ theorem mem_subgroup_iff {g : π₁ 𝔸 v₀} : g ∈ B.subgroup ↔
   · rintro ⟨p, rfl⟩
     exact ⟨π₁.mk p, B.π₁Hom_mk p⟩
 
+/-- The vertex group `B_{u₀}` at the base vertex, read in `π₁(𝔸, v₀)` through `[u₀] = v₀`, lies in
+`L(B, u₀)`. -/
+theorem cast_vertexHom_nil_mem_subgroup {b : 𝔸.vertexGroup (B.typ.mapV B.base)}
+    (hb : b ∈ B.grp B.base) :
+    MulEquiv.cast (M := π₁ 𝔸) B.typ_base (π₁.vertexHom Quiver.Path.nil b) ∈ B.subgroup :=
+  B.mem_subgroup_iff.2 ⟨Path.ofVertex ⟨b, hb⟩, by simp⟩
+
 /-- The induction behind `subgroup_eq_sup`: for a `𝔹`-path `p` from `u₀` to `x`, the element
 `γ_{u₀} p γ_x⁻¹` of `π₁(𝔹, u₀)` lies in every subgroup containing the generators. -/
 private theorem mk_conj_mem (γ : ∀ u : B.graph.V, B.toGraphOfGroups.Path ⟨B.base⟩ ⟨u⟩)
@@ -402,6 +421,11 @@ theorem subgroup_eq_sup (γ : ∀ u : B.graph.V, B.toGraphOfGroups.Path ⟨B.bas
 def grpSrc (f : B.graph.E) : Subgroup (𝔸.vertexGroup (Γ.src (B.typ.mapE f))) :=
   (B.grp (B.graph.src f)).comap (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src f)).toMonoidHom
 
+theorem grpSrc_def (f : B.graph.E) : B.grpSrc f =
+    (B.grp (B.graph.src f)).comap
+      (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src f)).toMonoidHom :=
+  (rfl)
+
 theorem mem_grpSrc {f : B.graph.E} {c : 𝔸.vertexGroup (Γ.src (B.typ.mapE f))} :
     c ∈ B.grpSrc f ↔
       MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src f) c ∈ B.grp (B.graph.src f) :=
@@ -411,10 +435,22 @@ theorem mem_grpSrc {f : B.graph.E} {c : 𝔸.vertexGroup (Γ.src (B.typ.mapE f))
 def grpTgt (f : B.graph.E) : Subgroup (𝔸.vertexGroup (Γ.tgt (B.typ.mapE f))) :=
   (B.grp (B.graph.tgt f)).comap (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ f)).toMonoidHom
 
+theorem grpTgt_def (f : B.graph.E) : B.grpTgt f =
+    (B.grp (B.graph.tgt f)).comap
+      (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ f)).toMonoidHom :=
+  (rfl)
+
 theorem mem_grpTgt {f : B.graph.E} {c : 𝔸.vertexGroup (Γ.tgt (B.typ.mapE f))} :
     c ∈ B.grpTgt f ↔
       MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ f) c ∈ B.grp (B.graph.tgt f) :=
   Iff.rfl
+
+/-- Membership in a vertex group, read through equal vertices. -/
+theorem cast_mem_grp {z z' : B.graph.V} (h : z = z') {T : Type w} {c : T}
+    {h₁ : T = 𝔸.vertexGroup (B.typ.mapV z)} {h₂ : T = 𝔸.vertexGroup (B.typ.mapV z')}
+    (hc : cast h₁ c ∈ B.grp z) : cast h₂ c ∈ B.grp z' := by
+  subst h
+  exact hc
 
 /-- A folded `𝔸`-graph. Two darts `f₁`, `f₂` issuing from the same vertex `z`, with the same type
 `e` and with `(f₂)_α = a' (f₁)_α α_e(c)` for some `a' ∈ B_z` and `c ∈ A_e`, are equal; and for
@@ -468,6 +504,19 @@ theorem rankGrp_eq (z : B.graph.V) [Group.FG (B.grp z)] : B.rankGrp z = Group.ra
 theorem rankGrp_of_not_fg {z : B.graph.V} (h : ¬ (B.grp z).FG) : B.rankGrp z = 0 := by
   simp [rankGrp, h]
 
+variable {B} in
+/-- The rank of a vertex group depends only on its isomorphism type. -/
+theorem rankGrp_congr {Γ' : SerreGraph} {𝔸' : GraphOfGroups Γ'} {v₀' : Γ'.V} {B' : AGraph 𝔸' v₀'}
+    {z : B.graph.V} {z' : B'.graph.V} (e : B.grp z ≃* B'.grp z') :
+    B.rankGrp z = B'.rankGrp z' := by
+  by_cases h : (B.grp z).FG
+  · have : Group.FG (B.grp z) := (Group.fg_iff_subgroup_fg _).2 h
+    have : Group.FG (B'.grp z') := (isMulFG_congr e).1 this
+    rw [rankGrp_eq, rankGrp_eq, Group.rank_congr e]
+  · have h' : ¬ (B'.grp z').FG := fun h' => h ((Group.fg_iff_subgroup_fg _).1
+      ((isMulFG_congr e).2 ((Group.fg_iff_subgroup_fg _).2 h')))
+    rw [rankGrp_of_not_fg _ h, rankGrp_of_not_fg _ h']
+
 /-- The complexity of an `𝔸`-graph: the rank `#E - #V + 1` of its underlying graph, for a finite
 connected graph with `#E` geometric edges and `#V` vertices, plus the sum of the ranks of its vertex
 groups. -/
@@ -477,6 +526,29 @@ noncomputable def complexity : ℕ :=
 theorem complexity_def :
     B.complexity = (Nat.card B.graph.GeomEdge + 1 - Nat.card B.graph.V) + ∑ᶠ z, B.rankGrp z :=
   (rfl)
+
+section mk
+
+variable (grp : ∀ z : B.graph.V, Subgroup (𝔸.vertexGroup (B.typ.mapV z)))
+  (lab : ∀ f : B.graph.E, 𝔸.vertexGroup (Γ.src (B.typ.mapE f)))
+
+/-- Replacing the vertex groups of an `𝔸`-graph by isomorphic ones, and its labels by any others,
+preserves finiteness; this covers the auxiliary moves A0–A2. -/
+theorem isFinite_mk_iff (e : ∀ z, B.grp z ≃* grp z) :
+    (⟨B.graph, B.typ, B.base, B.typ_base, grp, lab⟩ :
+      AGraph.{u, v, w, x, u', v'} 𝔸 v₀).IsFinite ↔ B.IsFinite :=
+  ⟨fun h => ⟨h.finite_E, h.connected, fun z => (isMulFG_congr (e z)).2 (h.fg z)⟩,
+    fun h => ⟨h.finite_E, h.connected, fun z => (isMulFG_congr (e z)).1 (h.fg z)⟩⟩
+
+/-- Replacing the vertex groups of an `𝔸`-graph by isomorphic ones, and its labels by any others,
+preserves the complexity; this covers the auxiliary moves A0–A2. -/
+theorem complexity_mk (e : ∀ z, B.grp z ≃* grp z) :
+    (⟨B.graph, B.typ, B.base, B.typ_base, grp, lab⟩ :
+      AGraph.{u, v, w, x, u', v'} 𝔸 v₀).complexity = B.complexity := by
+  rw [complexity_def, complexity_def]
+  exact congrArg _ (finsum_congr fun z => (rankGrp_congr (e z)).symm)
+
+end mk
 
 /-! ### A single edge over an amalgamated product -/
 
