@@ -51,6 +51,8 @@ This file develops `Γ` for an arbitrary additive group `S` with two such homomo
 * `PeriodGroup.chern_injective_iff`, `PeriodGroup.area_injective_iff`: the Chern number (resp.
   the area) embeds `Γ` into `ℤ` (resp. `ℝ`) exactly when its kernel on `S` lies in the kernel of
   the area (resp. the Chern number).
+* `PeriodGroup.exists_degree_quotient_ker_area_iff`: the degree descends to the quotient by the
+  kernel of the area alone exactly when that kernel lies in the kernel of the Chern number.
 * `PeriodGroup.chern_injective_of_area_eq_mul_chern`,
   `PeriodGroup.isAddCyclic_of_area_eq_mul_chern`: if the area is a fixed multiple of the Chern
   number (spherical monotonicity), then the Chern number embeds `Γ` into `ℤ`, so `Γ` is cyclic.
@@ -110,6 +112,10 @@ def degree : PeriodGroup ω c →+ ℤ :=
 /-- The degree of a class is twice its first Chern number. -/
 @[simp]
 theorem degree_apply (γ : PeriodGroup ω c) : degree ω c γ = 2 * chern ω c γ := by
+  simp [degree]
+
+/-- The degree is twice the first Chern number, as homomorphisms. -/
+theorem degree_eq_two_smul_chern : degree ω c = 2 • chern ω c := by
   simp [degree]
 
 /-- Degrees in the period group are even. -/
@@ -231,6 +237,22 @@ theorem area_injective_iff : Function.Injective (area ω c) ↔ ω.ker ≤ c.ker
     ext s
     simp
   rw [h, QuotientAddGroup.injective_lift_iff, AddMonoidHom.ker_prod, inf_eq_left]
+
+/-- The degree `2 c` is a function on the quotient of the spherical classes by the kernel of the
+area alone exactly when every spherical class with vanishing area has vanishing first Chern
+number, which is also when that quotient is the period group (`PeriodGroup.area_injective_iff`).
+Otherwise a class `B` of zero area and nonzero first Chern number becomes `0` in that quotient,
+while its degree `2 c B` is not the degree `0` of `0`, so the monomial `e^B` would carry two
+degrees. -/
+theorem exists_degree_quotient_ker_area_iff :
+    (∃ d : S ⧸ ω.ker → ℤ, ∀ s : S, d s = 2 * c s) ↔ ω.ker ≤ c.ker := by
+  refine ⟨fun ⟨d, hd⟩ s hs => ?_, fun h => ⟨QuotientAddGroup.lift _ (2 • c) fun s hs => ?_,
+    fun s => by simp⟩⟩
+  · have hs' : (s : S ⧸ ω.ker) = (0 : S) := (QuotientAddGroup.eq_zero_iff s).2 hs
+    have h0 := hd s
+    rw [hs', hd, map_zero] at h0
+    exact AddMonoidHom.mem_ker.2 (by omega)
+  · simp [AddMonoidHom.mem_ker.1 (h hs)]
 
 /-- The degree is injective exactly when the first Chern number is. -/
 theorem degree_injective_iff :

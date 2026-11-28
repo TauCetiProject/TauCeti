@@ -30,6 +30,8 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
 
 * `FundamentalGroup.map_id`: the identity induces the identity homomorphism.
 * `FundamentalGroup.map_comp`: induced maps preserve composition.
+* `FundamentalGroup.toPath_fromPath`: converting a loop homotopy class to `FundamentalGroup` and
+  back is the identity.
 * `FundamentalGroup.fromPath_mk_out`: every element of the fundamental group is the class of a
   chosen representative loop.
 * `FundamentalGroup.mapOfEq_comp`: the induced map of a composite is the composite of the
@@ -92,6 +94,13 @@ theorem map_comp {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [Topo
     (g : C(Y, Z)) (f : C(X, Y)) (x : X) :
     map (g.comp f) x = (map g (f x)).comp (map f x) :=
   MonoidHom.ext fun p ↦ End.ext (FundamentalGroupoid.map_comp_map g f p.asHom)
+
+/-- Converting a path-homotopy class of loops to the fundamental group and back is the identity. -/
+@[simp]
+theorem toPath_fromPath {X : Type*} [TopologicalSpace X] {x : X}
+    (q : Path.Homotopic.Quotient x x) :
+    toPath (fromPath q) = q :=
+  rfl
 
 /-- Every element of the fundamental group is the class of a chosen representative loop. -/
 @[simp]
@@ -156,6 +165,15 @@ theorem mapOfEq_mapOfEq_eq_mapOfEq {A B D : Type*} [TopologicalSpace A]
       FundamentalGroup.mapOfEq k hk p := by
   rw [FundamentalGroup.mapOfEq_comp]
   exact FundamentalGroup.mapOfEq_congr h _ _ p
+
+/-- **Functoriality of the image**: if `k` factors as `g ∘ f`, the image of `π₁` under `k` lies in
+the image under `g`. No hypothesis beyond continuity is needed. -/
+theorem range_mapOfEq_le_of_comp_eq {A B D : Type*} [TopologicalSpace A] [TopologicalSpace B]
+    [TopologicalSpace D] {a : A} {b : B} {d : D} {f : C(A, B)} {g : C(B, D)} {k : C(A, D)}
+    (h : g.comp f = k) (hf : f a = b) (hg : g b = d) (hk : k a = d) :
+    (FundamentalGroup.mapOfEq k hk).range ≤ (FundamentalGroup.mapOfEq g hg).range := by
+  rintro _ ⟨γ, rfl⟩
+  exact ⟨FundamentalGroup.mapOfEq f hf γ, mapOfEq_mapOfEq_eq_mapOfEq h hf hg hk γ⟩
 
 /-- Two factorizations of the same map through different spaces induce the same map on
 fundamental groups. -/

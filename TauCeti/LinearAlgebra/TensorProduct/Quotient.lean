@@ -18,6 +18,7 @@ public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 import TauCeti.LinearAlgebra.Dual.Divisibility
+import TauCeti.LinearAlgebra.Isomorphisms
 
 /-!
 # Cokernels commute with tensor products, heterobasically
@@ -54,6 +55,8 @@ relations, for instance the rationalisation of a module over an integral group r
   `N ⊗[R] (R ⧸ I) ≃ N ⧸ I S • N` for an `S`-module `N`.
 * `LinearMap.cokernelBaseChangeEquiv`: the `S`-linear isomorphism
   `S ⊗[R] cokernel f ≃ₗ[S] cokernel (S ⊗[R] f)`.
+* `TensorProduct.quotTensorQuotEquivQuotSup`: the `R`-linear isomorphism
+  `(R ⧸ I) ⊗[R] (R ⧸ J) ≃ₗ[R] R ⧸ (I ⊔ J)`, with its values on representatives.
 
 ## Main results
 
@@ -120,6 +123,33 @@ theorem one_tmul_eq_zero_iff_exists_smul_eq (r : R) (x : M) :
     Submodule.Quotient.mk_eq_zero, Submodule.ideal_span_singleton_smul,
     Submodule.mem_smul_pointwise_iff_exists]
   exact ⟨fun ⟨y, _, hy⟩ ↦ ⟨y, hy⟩, fun ⟨y, hy⟩ ↦ ⟨y, Submodule.mem_top, hy⟩⟩
+
+/-- The tensor product of two quotients of a commutative ring is the quotient by the sum of the
+two ideals: `(R ⧸ I) ⊗[R] (R ⧸ J) ≃ₗ[R] R ⧸ (I ⊔ J)`, sending `[a] ⊗ [b]` to `[a * b]`. -/
+noncomputable def quotTensorQuotEquivQuotSup (I J : Ideal R) :
+    ((R ⧸ I) ⊗[R] (R ⧸ J)) ≃ₗ[R] R ⧸ (I ⊔ J) :=
+  quotTensorEquivQuotSMul (R ⧸ J) I ≪≫ₗ
+    Submodule.quotEquivOfEq _ _ (by
+      ext x
+      obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+      simp [Ideal.smul_top_eq_map, Ideal.mem_map_iff_of_surjective _ Ideal.Quotient.mk_surjective])
+    ≪≫ₗ Submodule.quotientQuotientEquivQuotientSup J I ≪≫ₗ
+    Submodule.quotEquivOfEq _ _ (sup_comm J I)
+
+/-- `TensorProduct.quotTensorQuotEquivQuotSup` sends `[a] ⊗ [b]` to `[a * b]`. -/
+@[simp]
+theorem quotTensorQuotEquivQuotSup_mk_tmul_mk (I J : Ideal R) (a b : R) :
+    quotTensorQuotEquivQuotSup I J (Ideal.Quotient.mk I a ⊗ₜ Ideal.Quotient.mk J b) =
+      Ideal.Quotient.mk (I ⊔ J) (a * b) := by
+  simp only [quotTensorQuotEquivQuotSup, LinearEquiv.trans_apply, quotTensorEquivQuotSMul_mk_tmul]
+  simp [← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul]
+
+/-- The inverse of `TensorProduct.quotTensorQuotEquivQuotSup` sends `[a]` to `[a] ⊗ [1]`. -/
+@[simp]
+theorem quotTensorQuotEquivQuotSup_symm_mk (I J : Ideal R) (a : R) :
+    (quotTensorQuotEquivQuotSup I J).symm (Ideal.Quotient.mk (I ⊔ J) a) =
+      Ideal.Quotient.mk I a ⊗ₜ Ideal.Quotient.mk J 1 := by
+  rw [LinearEquiv.symm_apply_eq, quotTensorQuotEquivQuotSup_mk_tmul_mk, mul_one]
 
 /-- **Base change along a surjective ring map.** If `R → S` is surjective with kernel `I`, then
 `x ↦ 1 ⊗ x` from `M` to `S ⊗[R] M` has kernel `I M`: writing `S = R ⧸ I`, the tensor product is

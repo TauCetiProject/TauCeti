@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.SpecificGroups.Dihedral
 public import Mathlib.Topology.Instances.ZMod
-public import TauCeti.Topology.Algebra.Group.Heisenberg
+public import TauCeti.Topology.Algebra.Group.Heisenberg.Basic
 public import TauCeti.Topology.Algebra.Group.Powerful
 import Mathlib.Data.Nat.Choose.Dvd
 import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic

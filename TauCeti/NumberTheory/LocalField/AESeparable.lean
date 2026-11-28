@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Group.Defs
 public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.Analysis.Polynomial.GCD
 import TauCeti.MeasureTheory.Group.BoundedLineSections
@@ -129,14 +129,7 @@ theorem ae_separable_monicOfCoeff (μ : Measure (Fin n → K)) [μ.IsAddLeftInva
   have hr0 (a : Fin (m + 2) → K) : r a = 0 ↔ ¬ (monicOfCoeff a).Separable := by
     have h := (monic_monicOfCoeff a).resultant_deriv_eq_zero_iff
     rwa [natDegree_monicOfCoeff] at h
-  have h₁ : μ {a | a 1 = 0} = 0 := by
-    refine μ.measure_eq_zero_of_encard_setOf_add_smul_mem_le
-      (isClosed_eq (continuous_apply 1) continuous_const).measurableSet (Pi.single 1 1) (D := 1)
-      fun x ↦ ?_
-    have : {t : K | x 1 + t = 0} = {-x 1} := by
-      ext t
-      simp [eq_neg_iff_add_eq_zero, add_comm]
-    simp [this]
+  have h₁ : μ {a | a 1 = 0} = 0 := μ.measure_setOf_apply_eq_zero 1
   have h₂ : μ ({a | r a = 0} ∩ {a | a 1 ≠ 0}) = 0 := by
     refine μ.measure_eq_zero_of_encard_setOf_add_smul_mem_le
       ((isClosed_eq hr continuous_const).measurableSet.inter

@@ -159,8 +159,8 @@ and letting the truncations increase to `F` gives the bound for `∫⁻ F ^ q`.
   `TauCeti.maximalFunctionConst`.
 * `TauCeti.eLpNorm_maximalFunction_rpow_rpow_inv_le`: the maximal function
   `M_q f = (M (‖f‖ₑ ^ q)) ^ (1 / q)` is bounded on `Lᵖ` for `0 < q < p < ∞`.
-* `TauCeti.lintegral_rpow_le_of_sq_le_maximalFunction`: integrating a pointwise bound of `g²` by
-  three maximal functions, as in the sharp function method.
+* `TauCeti.lintegral_rpow_le_of_rpow_le_maximalFunction`: integrating a pointwise bound of `g^γ`
+  by three maximal functions, as in the sharp function method.
 * `TauCeti.mul_setLIntegral_lt_maximalFunction_le`,
   `TauCeti.lintegral_rpow_maximalFunction_mul_le`: the **weighted maximal inequality** of
   Fefferman and Stein, of weak type `(1, 1)` and of strong type `(p, p)` for `1 < p < ∞`.
@@ -736,24 +736,26 @@ theorem eLpNorm_maximalFunction_le [TopologicalSpace F] (μ : Measure E) [μ.IsA
 
 /- The integration step below follows the corresponding helper of
 https://github.com/TauCetiProject/TauCeti/pull/33788. -/
-/-- Integrating a pointwise bound of `g²` by three maximal functions, the integration step of
-Krylov's sharp function method. If `1 < q`, `2q < s` and
-`g² ≤ α₁ M h₁ + α₂ M h₂ + α₃ (M h₃)^(1/q)` everywhere, then `∫ g^s` is at most a combination of
-`∫ h₁^(s/2)` and `∫ h₂^(s/2)`, with the constant `maximalFunctionConst n (s / 2)`, and of
-`∫ h₃^(s/(2q))`, with the constant `maximalFunctionConst n (s / (2q))`. -/
-theorem lintegral_rpow_le_of_sq_le_maximalFunction (μ : Measure E) [μ.IsAddHaarMeasure]
+/-- Integrating a pointwise bound of `g^γ` by three maximal functions, the integration step of
+Krylov's sharp function method. If `0 < γ`, `1 < q`, `γ q < s` and
+`g^γ ≤ α₁ M h₁ + α₂ M h₂ + α₃ (M h₃)^(1/q)` everywhere, then `∫ g^s` is at most a combination of
+`∫ h₁^(s/γ)` and `∫ h₂^(s/γ)`, with the constant `maximalFunctionConst n (s / γ)`, and of
+`∫ h₃^(s/(γq))`, with the constant `maximalFunctionConst n (s / (γq))`. -/
+theorem lintegral_rpow_le_of_rpow_le_maximalFunction (μ : Measure E) [μ.IsAddHaarMeasure]
     {g h₁ h₂ h₃ : E → ℝ≥0∞} (h₁m : AEMeasurable h₁ μ) (h₂m : AEMeasurable h₂ μ)
-    (h₃m : AEMeasurable h₃ μ) {α₁ α₂ α₃ : ℝ≥0∞} {q s : ℝ} (hq : 1 < q) (hqs : 2 * q < s)
-    (hg : ∀ x, g x ^ 2 ≤ α₁ * maximalFunction μ h₁ x + α₂ * maximalFunction μ h₂ x +
+    (h₃m : AEMeasurable h₃ μ) {α₁ α₂ α₃ : ℝ≥0∞} {γ q s : ℝ} (hγ : 0 < γ) (hq : 1 < q)
+    (hqs : γ * q < s)
+    (hg : ∀ x, g x ^ γ ≤ α₁ * maximalFunction μ h₁ x + α₂ * maximalFunction μ h₂ x +
       α₃ * maximalFunction μ h₃ x ^ q⁻¹) :
-    ∫⁻ x, g x ^ s ∂μ ≤ 2 ^ (s / 2 - 1) * (2 ^ (s / 2 - 1) *
-        (α₁ ^ (s / 2) * (maximalFunctionConst (finrank ℝ E) (s / 2) * ∫⁻ x, h₁ x ^ (s / 2) ∂μ) +
-          α₂ ^ (s / 2) * (maximalFunctionConst (finrank ℝ E) (s / 2) * ∫⁻ x, h₂ x ^ (s / 2) ∂μ)) +
-        α₃ ^ (s / 2) *
-          (maximalFunctionConst (finrank ℝ E) (s / 2 / q) * ∫⁻ x, h₃ x ^ (s / 2 / q) ∂μ)) := by
-  set r := s / 2
-  have hr : 1 < r := by simp only [r]; linarith
-  have hrq : 1 < r / q := by rw [one_lt_div (by linarith)]; simp only [r]; linarith
+    ∫⁻ x, g x ^ s ∂μ ≤ 2 ^ (s / γ - 1) * (2 ^ (s / γ - 1) *
+        (α₁ ^ (s / γ) * (maximalFunctionConst (finrank ℝ E) (s / γ) * ∫⁻ x, h₁ x ^ (s / γ) ∂μ) +
+          α₂ ^ (s / γ) * (maximalFunctionConst (finrank ℝ E) (s / γ) * ∫⁻ x, h₂ x ^ (s / γ) ∂μ)) +
+        α₃ ^ (s / γ) *
+          (maximalFunctionConst (finrank ℝ E) (s / γ / q) * ∫⁻ x, h₃ x ^ (s / γ / q) ∂μ)) := by
+  set r := s / γ
+  have hrq : 1 < r / q := by
+    rw [one_lt_div (by linarith), show r = s / γ from rfl, lt_div_iff₀ hγ]; linarith
+  have hr : 1 < r := hq.trans ((one_lt_div (by linarith)).1 hrq)
   have hr0 : 0 ≤ r := by linarith
   set M₁ := maximalFunction μ h₁
   set M₂ := maximalFunction μ h₂
@@ -766,11 +768,11 @@ theorem lintegral_rpow_le_of_sq_le_maximalFunction (μ : Measure E) [μ.IsAddHaa
       ∫⁻ x, maximalFunction μ h x ^ e ∂μ ≤
         maximalFunctionConst (finrank ℝ E) e * ∫⁻ x, h x ^ e ∂μ := fun {h} hh {e} he => by
     simpa only [eNorm_eq_self] using lintegral_rpow_maximalFunction_le μ (f := h) hh he
-  -- Pointwise: `g^s = (g²)^r ≤ 2^(r-1) (2^(r-1) ((α₁ M₁)^r + (α₂ M₂)^r) + (α₃ M₃^(1/q))^r)`.
+  -- Pointwise: `g^s = (g^γ)^r ≤ 2^(r-1) (2^(r-1) ((α₁ M₁)^r + (α₂ M₂)^r) + (α₃ M₃^(1/q))^r)`.
   have hpt : ∀ x, g x ^ s ≤ 2 ^ (r - 1) * (2 ^ (r - 1) *
       (α₁ ^ r * M₁ x ^ r + α₂ ^ r * M₂ x ^ r) + α₃ ^ r * M₃ x ^ (r / q)) := fun x => by
-    have hgs : g x ^ s = (g x ^ 2) ^ r := by
-      rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]; congr 1; simp only [r]; push_cast; ring
+    have hgs : g x ^ s = (g x ^ γ) ^ r := by
+      rw [← ENNReal.rpow_mul]; congr 1; simp only [r]; field_simp
     rw [hgs]
     refine (ENNReal.rpow_le_rpow (hg x) hr0).trans ?_
     refine (ENNReal.rpow_add_le_mul_rpow_add_rpow _ _ hr.le).trans ?_
@@ -1140,5 +1142,31 @@ theorem lintegral_rpow_tsum_maximalFunction_rpow_le_of_exponent_lt (μ : Measure
 end VectorValued
 
 end Haar
+
+section Real
+
+variable {E : Type*} [NormedAddCommGroup E]
+
+/-- **The maximal function of a truncation.** If the averages of `‖g‖` over the closed balls
+`B(x, r)`, `0 < r ≤ δ`, are at most `c`, then the maximal function at `x` of `g` truncated to
+`B(x, δ)` is at most `c`. -/
+theorem maximalFunction_indicator_closedBall_le {g : ℝ → E} {x δ : ℝ} {c : ℝ≥0∞} (hδ : 0 < δ)
+    (hc : ∀ r ∈ Ioc 0 δ, (∫⁻ y in closedBall x r, ‖g y‖ₑ) / volume (closedBall x r) ≤ c) :
+    maximalFunction volume ((closedBall x δ).indicator g) x ≤ c := by
+  refine maximalFunction_le fun r hr => ?_
+  rw [setLAverage_eq]
+  simp_rw [eNorm_indicator_eq_indicator_eNorm]
+  rw [lintegral_indicator measurableSet_closedBall,
+    Measure.restrict_restrict measurableSet_closedBall]
+  rcases le_or_gt r δ with hrδ | hδr
+  · refine le_trans (ENNReal.div_le_div (lintegral_mono_set
+      (inter_subset_right.trans ball_subset_closedBall)) ?_) (hc r ⟨hr, hrδ⟩)
+    rw [Real.volume_ball, Real.volume_closedBall]
+  · refine le_trans (ENNReal.div_le_div (lintegral_mono_set inter_subset_left) ?_)
+      (hc δ ⟨hδ, le_rfl⟩)
+    rw [Real.volume_ball, Real.volume_closedBall]
+    exact ENNReal.ofReal_le_ofReal (by linarith)
+
+end Real
 
 end TauCeti

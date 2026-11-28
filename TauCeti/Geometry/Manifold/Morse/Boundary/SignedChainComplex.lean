@@ -30,7 +30,11 @@ function on the torus. This file proves it under the Morse–Smale condition on 
 dimension at most two with a unique minimum
 (`IsMorseSmale.signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_finrank_le_two`): there the
 differential into degree `0` vanishes, and no critical point has index `3` or more. This covers the
-moment function on `ℝℙ²` and the sphere `S²` with two maxima.
+moment function on `ℝℙ²` and the sphere `S²` with two maxima. In dimension at most one it holds
+for every pseudo-gradient and every choice of orientations, since there are no critical points of
+index `2` (`signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_finrank_le_one`). Once it holds
+over `ℤ`, it holds with coefficients in every ring
+(`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_int`).
 
 With coefficients in `ZMod 2` and under the Morse–Smale condition, the integral boundary squares to
 zero and the complex is the mod-two Morse complex
@@ -50,10 +54,15 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 * `signedMorseComplex`: the integral Morse chain complex, with coefficients in a ring `R`.
 * `signedMorseComplex_X`, `signedMorseComplex_d_apply`: its terms and differentials.
+* `signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_int`: `∂² = 0` over `ℤ` gives `∂² = 0`
+  with coefficients in every ring.
 * `IsMorseSmale.signedMorseBoundary_comp_signedMorseBoundary_zmod_two`,
   `IsMorseSmale.signedMorseComplex_zmod_two`: modulo two it is the mod-two Morse complex.
 * `IsMorseSmale.signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_finrank_le_two`: `∂² = 0`
   in dimension at most two when the minimum is unique.
+* `signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_finrank_le_one`: `∂² = 0` in dimension
+  at most one.
+* `free_signedMorseComplex_X`: its terms are free modules.
 * `isZero_homology_signedMorseComplex_of_finrank_lt`: the homology vanishes above the dimension.
 * `free_homology_signedMorseComplex_of_signedMorseBoundary_eq_zero`,
   `finrank_homology_signedMorseComplex_of_signedMorseBoundary_eq_zero`: with zero boundary, the
@@ -178,14 +187,32 @@ theorem signedMorseComplex_d_eq_zero_of_signedMorseBoundary_eq_zero
       (signedMorseBoundaryAt_eq_zero_of_signedMorseBoundary_eq_zero h0 j)
   · exact (hX.signedMorseComplex 𝔬 hf R hsq).shape i j hij
 
+/-- **`∂² = 0` in dimension at most one.** On a manifold of dimension at most one the integral
+Morse boundary squares to zero, with coefficients in any ring and whatever the orientations and the
+pseudo-gradient: a composite of two graded boundaries starts at critical points of index at least
+`2`, and there are none. -/
+theorem signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_finrank_le_one
+    (hdim : finrank ℝ E ≤ 1) :
+    hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0 := by
+  refine (signedMorseBoundaryAt_comp_signedMorseBoundaryAt_eq_zero_iff hf).1 fun n ↦ ?_
+  have : IsEmpty {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n + 1 + 1} :=
+    ⟨fun p ↦ by
+      have := manifoldMorseIndex_le_finrank (I := 𝓘(ℝ, E)) (f := f) (x := p.val)
+      omega⟩
+  exact LinearMap.ext fun c ↦ by simp [Subsingleton.elim c 0]
+
+/-- The terms of the integral Morse chain complex are free `R`-modules, on the critical points of
+each index. -/
+instance free_signedMorseComplex_X (n : ℕ) :
+    Module.Free R ((hX.signedMorseComplex 𝔬 hf R hsq).X n) := by
+  rw [signedMorseComplex_X]
+  exact Module.Free.finsupp R R _
+
 /-- **Integral Morse homology with zero boundary is free.** If the integral Morse boundary
 vanishes, the Morse homology in each degree is a free `R`-module. -/
 theorem free_homology_signedMorseComplex_of_signedMorseBoundary_eq_zero
     (h0 : hX.signedMorseBoundary 𝔬 hf R = 0) (n : ℕ) :
     Module.Free R ((hX.signedMorseComplex 𝔬 hf R hsq).homology n) :=
-  have : Module.Free R ((hX.signedMorseComplex 𝔬 hf R hsq).X n) := by
-    rw [signedMorseComplex_X]
-    exact Module.Free.finsupp R R _
   Module.Free.of_equiv ((hX.signedMorseComplex 𝔬 hf R hsq).XIsoHomologyOfDEqZero n
     (signedMorseComplex_d_eq_zero_of_signedMorseBoundary_eq_zero hsq h0 _ _)
     (signedMorseComplex_d_eq_zero_of_signedMorseBoundary_eq_zero hsq h0 _ _)).toLinearEquiv
@@ -226,6 +253,22 @@ theorem nonempty_linearEquiv_homology_zero_signedMorseComplex
       exact signedMorseComplex_d_eq_zero_of_signedMorseBoundaryAt_eq_zero hsq 0 h0)
     ((hX.signedMorseComplex 𝔬 hf R hsq).shape _ _ (by simp))).toLinearEquiv.symm.trans
     (Finsupp.uniqueLinearEquiv R R p)⟩
+
+/-- **`∂² = 0` over `ℤ` gives `∂² = 0` with any coefficients.** If the integral Morse boundary
+squares to zero, so does the Morse boundary with coefficients in any ring `R'`: the boundary with
+coefficients in `R'` is the integral boundary with its coefficients cast into `R'`
+(`TauCeti.IsAdaptedPseudoGradient.mapRange_signedMorseBoundary`). -/
+theorem signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_int
+    (hsq : hX.signedMorseBoundary 𝔬 hf ℤ ∘ₗ hX.signedMorseBoundary 𝔬 hf ℤ = 0)
+    (R' : Type*) [Ring R'] :
+    hX.signedMorseBoundary 𝔬 hf R' ∘ₗ hX.signedMorseBoundary 𝔬 hf R' = 0 := by
+  refine Finsupp.lhom_ext fun p a ↦ ?_
+  have hc : Finsupp.single p a =
+      a • Finsupp.mapRange (Int.castAddHom R') (map_zero _) (Finsupp.single p 1) := by
+    simp
+  rw [hc, map_smul, LinearMap.comp_apply, ← mapRange_signedMorseBoundary,
+    ← mapRange_signedMorseBoundary, ← LinearMap.comp_apply, hsq]
+  simp
 
 namespace IsMorseSmale
 
