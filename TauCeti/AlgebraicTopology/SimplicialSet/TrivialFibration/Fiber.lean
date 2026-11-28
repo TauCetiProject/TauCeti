@@ -90,16 +90,17 @@ theorem rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal
              homotopy := .mk' H.h (by rw [H.h₀, comp_const]) H.h₁
              homotopy_h_comp := hT.hom_ext _ _ }⟩
 
-/-- If the maps induced by `f` on fibres over a further base `S` are trivial fibrations,
-then each fibre of `f` is weakly contractible. No fibration hypothesis on `f` is needed. -/
-theorem fiber.isWeaklyContractible_of_forall_rlp_map {S : SSet.{u}} (f : X ⟶ Y) (p : Y ⟶ S)
-    (h : ∀ s : S _⦋0⦌, (monomorphisms SSet.{u}).rlp (fiber.map f (q := f ≫ p) rfl s))
-    (y : Y _⦋0⦌) : IsWeaklyContractible (fiber f y : SSet.{u}) := by
+/-- If the map induced by `f` on the fibre over `p y` is a trivial fibration,
+then the fibre of `f` over `y` is weakly contractible. No fibration hypothesis on `f` is needed. -/
+theorem fiber.isWeaklyContractible_of_rlp_map {S : SSet.{u}} (f : X ⟶ Y) (p : Y ⟶ S)
+    (y : Y _⦋0⦌)
+    (h : (monomorphisms SSet.{u}).rlp (fiber.map f (q := f ≫ p) rfl (p.app _ y))) :
+    IsWeaklyContractible (fiber f y : SSet.{u}) := by
   apply ((rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal
     stdSimplex.isTerminalObj₀
       (stdSimplex.isTerminalObj₀.from (fiber f y : SSet.{u}))).1 ?_).2
   intro A B i hi
-  have := h (p.app _ y) i hi
+  have := h i hi
   exact fiber.hasLiftingProperty_of_map f p y i
 
 /-- A Kan fibration whose fibres over all vertices of the base are weakly contractible has the

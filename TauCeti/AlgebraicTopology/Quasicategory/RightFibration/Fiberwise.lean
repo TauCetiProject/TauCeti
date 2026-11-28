@@ -61,7 +61,7 @@ theorem rlp_monomorphisms_iff_forall_fiber_map (f : X ⟶ Y) [RightFibration f]
   refine ⟨fun hf s ↦ (monomorphisms SSet.{u}).rlp.of_isPullback
     (fiber.isPullback_map f rfl s) hf, fun h ↦ ?_⟩
   rw [rlp_monomorphisms_iff_isWeaklyContractible_fiber]
-  exact fiber.isWeaklyContractible_of_forall_rlp_map f p h
+  exact fun y ↦ fiber.isWeaklyContractible_of_rlp_map f p y (h (p.app _ y))
 
 /-- For a right fibration over `S`, if the fibres of `Y ⟶ S` are Kan complexes,
 triviality is detected by intrinsic weak homotopy equivalences on these fibres. -/
@@ -91,7 +91,7 @@ theorem rlp_monomorphisms_iff_forall_fiber_map (f : X ⟶ Y) [LeftFibration f]
   refine ⟨fun hf s ↦ (monomorphisms SSet.{u}).rlp.of_isPullback
     (fiber.isPullback_map f rfl s) hf, fun h ↦ ?_⟩
   rw [rlp_monomorphisms_iff_isWeaklyContractible_fiber]
-  exact fiber.isWeaklyContractible_of_forall_rlp_map f p h
+  exact fun y ↦ fiber.isWeaklyContractible_of_rlp_map f p y (h (p.app _ y))
 
 /-- For a left fibration over `S`, if the fibres of `Y ⟶ S` are Kan complexes,
 triviality is detected by intrinsic weak homotopy equivalences on these fibres. -/
