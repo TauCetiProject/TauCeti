@@ -100,7 +100,7 @@ private theorem hasWeakFDerivOn_comp_of_isCompact_closure
   set S := closure (V : Set E)
   have hVS : (V : Set E) ⊆ S := subset_closure
   obtain ⟨un, hcd, huu, -, -, hDD_Lp⟩ := hu.exists_contDiff_tendstoUniformlyOn huc hVc hVΩ
-    le_rfl le_rfl ENNReal.one_ne_top le_rfl ENNReal.one_ne_top
+    le_rfl ENNReal.one_ne_top le_rfl ENNReal.one_ne_top
     ((memLpLoc_one_iff_locallyIntegrableOn Ω.isOpen.isLocallyClosed).2 hu.locallyIntegrableOn_deriv)
   let Dn : ℕ → E → E →L[ℝ] F := fun n => fderiv ℝ (un n)
   have hun : ∀ n, Continuous (un n) := fun n => (hcd n).continuous

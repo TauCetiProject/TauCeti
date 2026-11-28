@@ -39,7 +39,9 @@ every `u ∈ W^{1,n}(Ω)`: there are constants `A > 0` and `C`, depending only o
 
 The mean oscillation bound is the Poincaré–Wirtinger inequality in `L¹` on the ball
 (`TauCeti.W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset`), followed by Hölder's
-inequality on the ball to pass from `‖∇u‖_{L¹(B)}` to `‖∇u‖_{Lᵖ(B)}`.
+inequality on the ball to pass from `‖∇u‖_{L¹(B)}` to `‖∇u‖_{Lᵖ(B)}`. For the Banach-valued
+weakly differentiable version on the whole space (`W^{1,n} ⊆ VMO ⊆ BMO`), see
+`TauCeti.Analysis.Sobolev.WeakDeriv.BoundedMeanOscillation`.
 
 ## Main declarations
 

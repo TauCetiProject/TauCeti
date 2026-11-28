@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.MeasureTheory.Integral.Average
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 
 import TauCeti.Analysis.Convex.Exhaustion
 import TauCeti.Analysis.Normed.Module.Basic
@@ -18,7 +17,6 @@ import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.LocallyAEConst
 import TauCeti.MeasureTheory.Function.Lp.Const
 import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
-import TauCeti.MeasureTheory.Function.LpSeminorm.Ball
 import TauCeti.MeasureTheory.Function.MemLpLoc
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -48,13 +46,11 @@ estimate with Hölder's inequality bounds the mean oscillation on `B(x, r)` for 
 `  ≤ 2 ^ (n + 1) ω ^ (-1 / p) r ^ (1 - n / p) ‖Du‖_{Lᵖ(B(x, r))}`.
 
 At the borderline exponent `p = n` (in positive dimension `n ≥ 1`), the radius cancels completely,
-yielding a scale-invariant mean-oscillation bound. Two classical consequences follow immediately:
-
-* A weakly differentiable function with vanishing weak derivative on a preconnected open set is
-  almost everywhere constant (`TauCeti.HasWeakFDerivOn.exists_ae_eq_const_of_deriv_ae_eq_zero`).
-* Globally defined weakly differentiable functions with `Du ∈ Lⁿ` have bounded and vanishing mean
-  oscillation: `W^{1,n} ⊆ VMO ⊆ BMO` (`TauCeti.HasWeakFDerivOn.memBMO`,
-  `TauCeti.HasWeakFDerivOn.memVMO`).
+yielding a scale-invariant mean-oscillation bound. In particular, a weakly differentiable function
+with vanishing weak derivative on a preconnected open set is almost everywhere constant
+(`TauCeti.HasWeakFDerivOn.exists_ae_eq_const_of_deriv_ae_eq_zero`); for the borderline
+embeddings `W^{1,n} ⊆ VMO ⊆ BMO`, see
+`TauCeti.Analysis.Sobolev.WeakDeriv.BoundedMeanOscillation`.
 
 ## Main declarations
 
@@ -72,17 +68,12 @@ yielding a scale-invariant mean-oscillation bound. Two classical consequences fo
   balls for all `1 ≤ p ≤ ∞` and at the scale-invariant exponent `p = n`.
 * `TauCeti.HasWeakFDerivOn.exists_ae_eq_const_of_deriv_ae_eq_zero`: constancy on preconnected open
   sets when `Du = 0` a.e.
-* `TauCeti.HasWeakFDerivOn.bmoSeminorm_le`, `TauCeti.HasWeakFDerivOn.memBMO`,
-  `TauCeti.HasWeakFDerivOn.vmoModulus_le`, and `TauCeti.HasWeakFDerivOn.memVMO`: `W^{1,n}` embeds
-  into `VMO` and `BMO`.
 
 ## References
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
   Lemma 7.16.
 * L. C. Evans, *Partial Differential Equations*, 2nd ed., Section 5.8.1.
-* H. Brezis, L. Nirenberg, *Degree theory and BMO; Part I: Compact manifolds without boundaries*,
-  Selecta Math. (N.S.) **1** (1995), 197–263.
 -/
 
 public section
@@ -113,7 +104,7 @@ private theorem eLpNorm_sub_setAverage_le_of_isCompact_closure (hu : HasWeakFDer
   have : CompleteSpace F := hu.completeSpace
   have hUb : Bornology.IsBounded (U : Set E) := hUcomp.isBounded.subset subset_closure
   obtain ⟨v, hv_cd, hv_deriv, hv_L1, -⟩ :=
-    hu.exists_contDiff_tendsto_eLpNorm hUcomp hUΩ le_rfl le_rfl ENNReal.one_ne_top
+    hu.exists_contDiff_tendsto_eLpNorm hUcomp hUΩ le_rfl ENNReal.one_ne_top
       ((memLpLoc_one_iff_locallyIntegrableOn Ω.isOpen.isLocallyClosed).2 hu.locallyIntegrableOn)
       hp1 hp hDu.memLpLoc
   have hv_S : Tendsto (fun n => eLpNorm (v n - u) 1 (μ.restrict S)) atTop (𝓝 0) :=
@@ -469,49 +460,5 @@ theorem HasWeakFDerivOn.exists_ae_eq_const_of_deriv_ae_eq_zero (hu : HasWeakFDer
   have hle := hu.setLIntegral_enorm_sub_setAverage_ball_le hball
   rw [hint0, mul_zero] at hle
   rw [setLAverage_eq, le_antisymm hle bot_le, ENNReal.zero_div]
-
-/-! ### Borderline embedding `W^{1,n} ⊆ VMO ⊆ BMO` -/
-
-/-- **BMO bound for globally weakly differentiable functions at the borderline exponent `p = n`.**
--/
-theorem HasWeakFDerivOn.bmoSeminorm_le [Nontrivial E] (hu : HasWeakFDerivOn μ ⊤ u Du) :
-    bmoSeminorm u μ ≤
-      ENNReal.ofReal (2 ^ (finrank ℝ E + 1) * μ.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹)) *
-        eLpNorm Du (finrank ℝ E) μ :=
-  TauCeti.bmoSeminorm_le fun c r =>
-    (hu.setLAverage_enorm_sub_setAverage_ball_le (x := c) (r := r) (subset_univ _)).trans
-      (mul_le_mul_right (eLpNorm_mono_measure _ Measure.restrict_le_self) _)
-
-/-- **Borderline embedding `W^{1,n} ⊆ BMO`.** A globally weakly differentiable function whose weak
-derivative has finite `Lⁿ` seminorm has bounded mean oscillation. -/
-theorem HasWeakFDerivOn.memBMO [Nontrivial E] (hu : HasWeakFDerivOn μ ⊤ u Du)
-    (hDu : eLpNorm Du (finrank ℝ E) μ ≠ ∞) :
-    MemBMO u μ :=
-  memBMO_iff.2 ⟨locallyIntegrableOn_univ.1 hu.locallyIntegrableOn,
-    hu.bmoSeminorm_le.trans_lt
-      (ENNReal.mul_lt_top ENNReal.ofReal_lt_top (lt_top_iff_ne_top.2 hDu))⟩
-
-/-- **VMO modulus bound at the borderline exponent `p = n`.** For every radius `r`, the VMO modulus
-of `u` at scale `r` is controlled by the supremum over all centres `c` of `‖Du‖_{Lⁿ(B(c, r))}`. -/
-theorem HasWeakFDerivOn.vmoModulus_le [Nontrivial E] (hu : HasWeakFDerivOn μ ⊤ u Du) (r : ℝ) :
-    vmoModulus u μ r ≤
-      ENNReal.ofReal (2 ^ (finrank ℝ E + 1) * μ.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹)) *
-        ⨆ c : E, eLpNorm Du (finrank ℝ E) (μ.restrict (ball c r)) :=
-  TauCeti.vmoModulus_le fun c s hs =>
-    (hu.setLAverage_enorm_sub_setAverage_ball_le (x := c) (r := s) (subset_univ _)).trans <|
-      mul_le_mul_right
-        ((eLpNorm_mono_measure _ (Measure.restrict_mono (ball_subset_ball hs) le_rfl)).trans
-          (le_iSup (fun c' => eLpNorm Du (finrank ℝ E) (μ.restrict (ball c' r))) c)) _
-
-/-- **Borderline embedding `W^{1,n} ⊆ VMO`.** A globally weakly differentiable function whose weak
-derivative has finite `Lⁿ` seminorm has vanishing mean oscillation. -/
-theorem HasWeakFDerivOn.memVMO [Nontrivial E] (hu : HasWeakFDerivOn μ ⊤ u Du)
-    (hDu : eLpNorm Du (finrank ℝ E) μ ≠ ∞) :
-    MemVMO u μ :=
-  memVMO_iff_tendsto.2 ⟨hu.memBMO hDu,
-    tendsto_zero_of_eventually_le_mul_iSup_eLpNorm_restrict_ball
-      (Nat.cast_ne_zero.2 finrank_pos.ne') (ENNReal.natCast_ne_top _) hDu
-      (tendsto_id.mono_left nhdsWithin_le_nhds) (.of_forall hu.vmoModulus_le)
-      ENNReal.ofReal_ne_top⟩
 
 end TauCeti
