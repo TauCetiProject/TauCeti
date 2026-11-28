@@ -241,6 +241,14 @@ theorem eq_inverse (hE : IsSpectralProjection u C h E) {w : M →L[R] M}
     _ = hE.inverse := by
         rw [hw, mul_sub (α := M →L[R] M), mul_one, hE.inverse_mul_eq_zero, sub_zero hE.inverse]
 
+/-- Two spectral projections with the same projector `E` and equal spectral operators `C = C'`
+have the same complementary inverse, even across different operators `u`, `u'` or nilpotence
+bounds `h`, `k`. -/
+theorem inverse_congr {u' C' : M →L[R] M} {k : ℕ}
+    (hE : IsSpectralProjection u C h E) (hE' : IsSpectralProjection u' C' k E)
+    (hC : C = C') : hE.inverse = hE'.inverse :=
+  hE'.eq_inverse (hC ▸ hE.spectral_mul_inverse) hE.mul_inverse_eq_zero
+
 /-- Scaling the spectral operator `C` by a unit `c : Rˣ` scales the complementary inverse by
 `c⁻¹`. -/
 theorem inverse_units_smul_spectral (hE : IsSpectralProjection u C h E) (c : Rˣ) :
@@ -253,7 +261,7 @@ theorem inverse_units_smul_spectral (hE : IsSpectralProjection u C h E) (c : Rˣ
 /-- Increasing the nilpotence bound does not change the complementary inverse. -/
 theorem inverse_of_le (hE : IsSpectralProjection u C h E) (hn : h ≤ n) :
     (hE.of_le hn).inverse = hE.inverse :=
-  ((hE.of_le hn).eq_inverse hE.spectral_mul_inverse hE.mul_inverse_eq_zero).symm
+  (hE.of_le hn).inverse_congr hE rfl
 
 /-- The complementary inverse preserves the kernel of the spectral projection. -/
 theorem mapsTo_ker_inverse (hE : IsSpectralProjection u C h E) :
@@ -569,15 +577,10 @@ theorem IsSpectralProjection.map {u C E : M →L[R] M} {h : ℕ}
     (hE : IsSpectralProjection u C h E) (φ : (M →L[R] M) →+* (N →L[S] N))
     (hφ : ∀ {v}, v ∈ closure (Algebra.adjoin R {u} : Set (M →L[R] M)) →
       φ v ∈ closure (Algebra.adjoin S {φ u} : Set (N →L[S] N))) :
-    IsSpectralProjection (φ u) (φ C) h (φ E) := by
-  obtain ⟨w, hw₁, hw₂, hw₃, hw₄, hw⟩ := hE.exists_inverse
-  refine ⟨hE.isIdempotentElem.map φ, hE.commute.map φ, hφ hE.mem_closure_adjoin, ?_,
-    ⟨φ w, ?_, ?_, ?_, ?_, hφ hw⟩⟩
-  · simpa only [map_mul, map_pow, map_zero] using congrArg φ hE.pow_mul_eq_zero
-  · simpa only [map_mul, map_sub, map_one] using congrArg φ hw₁
-  · simpa only [map_mul, map_sub, map_one] using congrArg φ hw₂
-  · simpa only [map_mul, map_zero] using congrArg φ hw₃
-  · simpa only [map_mul, map_zero] using congrArg φ hw₄
+    IsSpectralProjection (φ u) (φ C) h (φ E) :=
+  ⟨hE.isIdempotentElem.map φ, hE.commute.map φ, hφ hE.mem_closure_adjoin,
+    by simpa only [map_mul, map_pow, map_zero] using congrArg φ hE.pow_mul_eq_zero,
+    φ.exists_mul_eq_one_sub_map rfl hE.exists_inverse hφ⟩
 
 /-- The complementary inverse of any spectral projection `hF` whose spectral operator and
 projector match `φ C` and `φ E` under a ring homomorphism `φ` is the image `φ hE.inverse` of the
@@ -587,9 +590,9 @@ theorem IsSpectralProjection.inverse_map {u C E : M →L[R] M} {h : ℕ}
     {u' C' E' : N →L[S] N} {k : ℕ} (hF : IsSpectralProjection u' C' k E')
     (hC : C' = φ C) (hE' : E' = φ E) :
     hF.inverse = φ hE.inverse := by
-  refine (hF.eq_inverse ?_ ?_).symm
-  · simpa only [hC, hE', map_mul, map_sub, map_one] using congrArg φ hE.spectral_mul_inverse
-  · simpa only [hE', map_mul, map_zero] using congrArg φ hE.mul_inverse_eq_zero
+  obtain ⟨hw₁, -, hw₃, -⟩ := φ.map_mul_eq_one_sub_and_mul_eq_zero hC.symm
+    hE.spectral_mul_inverse hE.inverse_mul_spectral hE.mul_inverse_eq_zero hE.inverse_mul_eq_zero
+  exact (hF.eq_inverse (hE' ▸ hw₁) (hE' ▸ hw₃)).symm
 
 end Map
 

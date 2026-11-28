@@ -540,9 +540,9 @@ theorem IsRieszProjection.completedBaseChange [TauCeti.NormedRing.IsTate S]
       (E.completedBaseChange α α) := by
   let Φ := completedBaseChangeRingHom α
   have h1sub : Φ (1 - a • u) = 1 - algebraMap R S a • u.completedBaseChange α α := by
-    simp [Φ, completedBaseChangeRingHom]
-  have hu' : Φ u = u.completedBaseChange α α := rfl
-  have hE' : Φ E = E.completedBaseChange α α := rfl
+    simp only [Φ, map_sub, map_one, completedBaseChangeRingHom_apply, completedBaseChange_smul]
+  have hu' : Φ u = u.completedBaseChange α α := completedBaseChangeRingHom_apply α u
+  have hE' : Φ E = E.completedBaseChange α α := completedBaseChangeRingHom_apply α E
   exact isRieszProjection_def.mpr <| by
     simpa only [hu', h1sub, hE'] using
       (isRieszProjection_def.mp hE).map Φ fun {v} hv ↦

@@ -55,9 +55,7 @@ also after a coefficient map, and its coefficient at the bound is the constant c
 coefficient map preserves the degree of `p` (in particular, when it does not kill the leading
 coefficient or when the leading coefficient is a unit), it commutes with reversal
 (`Polynomial.reverse_map_of_natDegree_eq`, `Polynomial.reverse_map_of_leadingCoeff_ne_zero`,
-`Polynomial.reverse_map_of_isUnit_leadingCoeff`), and scaling by a unit also commutes with
-reversal (`Polynomial.reverse_units_smul`).
-The reverse of
+`Polynomial.reverse_map_of_isUnit_leadingCoeff`). The reverse of
 `(X - C a) ^ n` is `(1 - C a * X) ^ n`, and over a nontrivial ring its factor `1 - X` (for `a = 1`)
 is nonzero.
 
@@ -232,27 +230,6 @@ theorem reverse_map_of_isUnit_leadingCoeff [Semiring R] [Semiring S] {p : R[X]}
     (p.map f).reverse = p.reverse.map f := by
   nontriviality S
   exact reverse_map_of_leadingCoeff_ne_zero f (hp.map f).ne_zero
-
-/-- Scaling a polynomial by a unit commutes with reversal. -/
-@[simp]
-theorem reverse_units_smul [Semiring R] (c : Rˣ) (p : R[X]) :
-    (c • p).reverse = c • p.reverse := by
-  rw [reverse, reverse, natDegree_smul_of_smul_regular p (IsSMulRegular.all c),
-    Units.smul_def, Units.smul_def, smul_eq_C_mul, smul_eq_C_mul, reflect_C_mul]
-
-/-- Normalizing a polynomial by a unit of the coefficient ring leaves
-`C (Ring.inverse p.leadingCoeff) * p.reverse` unchanged. -/
-theorem C_ringInverse_leadingCoeff_mul_reverse_units_smul [CommSemiring R] (c : Rˣ) (p : R[X]) :
-    C (Ring.inverse (c • p).leadingCoeff) * (c • p).reverse =
-      C (Ring.inverse p.leadingCoeff) * p.reverse := by
-  have hlc : (c • p).leadingCoeff = (c : R) * p.leadingCoeff := by
-    rw [leadingCoeff_smul_of_smul_regular p (IsSMulRegular.all _), Units.smul_def, smul_eq_mul]
-  have hinv : Ring.inverse (c • p).leadingCoeff = (↑c⁻¹ : R) * Ring.inverse p.leadingCoeff := by
-    rw [hlc, Ring.inverse_mul (Or.inl c.isUnit), Ring.inverse_unit, mul_comm]
-  have hrev : (c • p).reverse = C (c : R) * p.reverse := by
-    rw [reverse_units_smul, Units.smul_def, smul_eq_C_mul]
-  rw [hinv, hrev, map_mul, mul_assoc, mul_left_comm (C (Ring.inverse p.leadingCoeff)), ← mul_assoc,
-    ← map_mul, Units.inv_mul, map_one, one_mul]
 
 /-- Reversing a polynomial scaled on the left by a unit pulls the unit scalar out. -/
 @[simp]

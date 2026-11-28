@@ -11,12 +11,12 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Restrict
 # Restrictions of continuous semilinear maps
 
 This file supplements `Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Restrict` with density
-properties of codomain restrictions of continuous semilinear maps, retract-compression identities
-for invariant submodules, and the restriction and corestriction of an `R`-linear map to submodules
-over a larger ring `S` of scalars. The latter are Mathlib's `ContinuousLinearMap.restrict` and
-`ContinuousLinearMap.codRestrict` for the `R`-submodules `Submodule.restrictScalars R`, stated
-with the `S`-submodules themselves as domain and codomain, so that their `S`-module structure, for
-example the complex structure of complex subspaces for a real-linear map, is directly available.
+properties of codomain restrictions of continuous semilinear maps, and with the restriction and
+corestriction of an `R`-linear map to submodules over a larger ring `S` of scalars. They are
+Mathlib's `ContinuousLinearMap.restrict` and `ContinuousLinearMap.codRestrict` for the
+`R`-submodules `Submodule.restrictScalars R`, stated with the `S`-submodules themselves as domain
+and codomain, so that their `S`-module structure, for example the complex structure of complex
+subspaces for a real-linear map, is directly available.
 
 ## Main definitions
 
@@ -31,8 +31,6 @@ example the complex structure of complex subspaces for a real-linear map, is dir
   when the original semilinear map does.
 * `ContinuousLinearMap.denseRange_codRestrict_topologicalClosure`: corestricting a continuous
   semilinear map to the topological closure of its range yields a map with dense range.
-* `ContinuousLinearMap.comp_comp_subtypeL_eq_restrict`: compressing a continuous semilinear map
-  along a continuous linear retraction onto a target submodule equals its restriction.
 -/
 
 public section
@@ -62,18 +60,6 @@ theorem denseRange_codRestrict_topologicalClosure {R₁ R₂ M₁ M₂ : Type*} 
       fun x ↦ Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ x)) := by
   rw [DenseRange, Subtype.dense_iff, ← Set.range_comp]
   exact (Submodule.topologicalClosure_coe _).subset
-
-/-- Compressing a continuous semilinear map `u` sending `S₁` into `S₂` along a continuous linear
-retraction `r ∘ S₂.subtypeL = id` yields the restriction `u.restrict hs`. -/
-theorem comp_comp_subtypeL_eq_restrict {R₁ R₂ M₁ M₂ : Type*} [Semiring R₁] [Semiring R₂]
-    {σ : R₁ →+* R₂} [TopologicalSpace M₁] [AddCommMonoid M₁] [Module R₁ M₁]
-    [TopologicalSpace M₂] [AddCommMonoid M₂] [Module R₂ M₂]
-    {u : M₁ →SL[σ] M₂} {S₁ : Submodule R₁ M₁} {S₂ : Submodule R₂ M₂}
-    (hs : ∀ x ∈ S₁, u x ∈ S₂) {r : M₂ →L[R₂] S₂}
-    (hri : r.comp S₂.subtypeL = .id R₂ S₂) :
-    r.comp (u.comp S₁.subtypeL) = u.restrict hs := by
-  change r.comp (u.domRestrict S₁) = u.restrict hs
-  rw [← subtypeL_comp_restrict hs, ← comp_assoc, hri, id_comp]
 
 section Tower
 

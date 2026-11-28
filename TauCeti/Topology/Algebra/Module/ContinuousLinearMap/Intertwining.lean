@@ -182,54 +182,58 @@ variable {R M N : Type*} [CommSemiring R]
   [TopologicalSpace N] [AddCommGroup N] [Module R N] [IsTopologicalAddGroup N]
   [ContinuousConstSMul R N]
 
-/-- Along a continuous linear retract `r ∘ i = id`, if a polynomial `P` has invertible constant
-coefficient, then `r` and `i` identify `ker P(i ∘ u ∘ r)` with `ker P(u)` as topological
-modules. -/
-noncomputable def kerAevalEquivOfRetract {i : M →L[R] N} {r : N →L[R] M}
-    (hri : r.comp i = .id R M) (u : M →L[R] M) {P : Polynomial R} (hP : IsUnit (P.coeff 0)) :
-    LinearMap.ker ((Polynomial.aeval (i.comp (u.comp r)) P : N →L[R] N) : N →ₗ[R] N) ≃L[R]
+private theorem ker_aeval_units_smul {R M : Type*} [CommSemiring R]
+    [TopologicalSpace M] [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M]
+    [ContinuousConstSMul R M] (u : M →L[R] M) (c : Rˣ) (P : Polynomial R) :
+    LinearMap.ker ((Polynomial.aeval u (c • P) : M →L[R] M) : M →ₗ[R] M) =
       LinearMap.ker ((Polynomial.aeval u P : M →L[R] M) : M →ₗ[R] M) := by
-  have hri' := toLinearMap_comp_eq_id hri
+  ext x
+  simp only [Units.smul_def, map_smul, LinearMap.mem_ker, coe_coe, smul_apply,
+    c.isUnit.smul_eq_zero]
+
+private theorem aeval_eq_splitEnd {R M N : Type*} [CommSemiring R]
+    [TopologicalSpace M] [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M]
+    [ContinuousConstSMul R M]
+    [TopologicalSpace N] [AddCommGroup N] [Module R N] [IsTopologicalAddGroup N]
+    [ContinuousConstSMul R N] {i : M →L[R] N} {r : N →L[R] M}
+    (hri : r.comp i = .id R M) (u : M →L[R] M) {P : Polynomial R} (hP : IsUnit (P.coeff 0)) :
+    ((Polynomial.aeval (i.comp (u.comp r)) (hP.unit⁻¹ • P) : N →L[R] N) : N →ₗ[R] N) =
+      LinearMap.splitEnd r.toLinearMap i.toLinearMap (toLinearMap_comp_eq_id hri)
+        ((Polynomial.aeval u (hP.unit⁻¹ • P) : M →L[R] M) : M →ₗ[R] M) := by
   set Q : Polynomial R := hP.unit⁻¹ • P
-  have hQ0 : Q.coeff 0 = 1 := by
-    simp [Q, Units.smul_def, smul_eq_mul]
+  have hQ0 : Q.coeff 0 = 1 := by simp [Q, Units.smul_def, smul_eq_mul]
   have hQ : Q = Polynomial.X * Q.divX + 1 := by
     simpa [hQ0] using (Polynomial.X_mul_divX_add Q).symm
   have hB := aeval_comp_comp_of_retract hri u (B := Polynomial.X * Q.divX) (by simp)
   have hQu : ((Polynomial.aeval u Q : M →L[R] M) : M →ₗ[R] M) - 1 =
       ((Polynomial.aeval u (Polynomial.X * Q.divX) : M →L[R] M) : M →ₗ[R] M) := by
     apply sub_eq_iff_eq_add.mpr
-    conv_lhs => rw [hQ, map_add, map_one, toLinearMap_add, toLinearMap_one]
-  have hsplit : ((Polynomial.aeval (i.comp (u.comp r)) Q : N →L[R] N) : N →ₗ[R] N) =
-      LinearMap.splitEnd r.toLinearMap i.toLinearMap hri'
-        ((Polynomial.aeval u Q : M →L[R] M) : M →ₗ[R] M) := by
-    rw [LinearMap.splitEnd_eq_one_add, hQu, ← toLinearMap_comp, ← toLinearMap_comp, ← hB]
-    conv_lhs => rw [hQ, map_add, map_one, toLinearMap_add, toLinearMap_one, add_comm]
-  have hQ_ker_u :
-      LinearMap.ker ((Polynomial.aeval u P : M →L[R] M) : M →ₗ[R] M) =
-        LinearMap.ker ((Polynomial.aeval u Q : M →L[R] M) : M →ₗ[R] M) := by
-    ext x
-    simp only [Q, Units.smul_def, map_smul, LinearMap.mem_ker, coe_coe, smul_apply,
-      (hP.unit⁻¹).isUnit.smul_eq_zero]
-  have hQ_ker_v :
-      LinearMap.ker ((Polynomial.aeval (i.comp (u.comp r)) P : N →L[R] N) : N →ₗ[R] N) =
-        LinearMap.ker ((Polynomial.aeval (i.comp (u.comp r)) Q : N →L[R] N) : N →ₗ[R] N) := by
-    ext x
-    simp only [Q, Units.smul_def, map_smul, LinearMap.mem_ker, coe_coe, smul_apply,
-      (hP.unit⁻¹).isUnit.smul_eq_zero]
-  let e₀ :=
-    ((LinearEquiv.ofEq _ _ (hQ_ker_v.trans (congrArg LinearMap.ker hsplit))).trans
-      (LinearMap.kerSplitEndEquiv r.toLinearMap i.toLinearMap hri'
-        ((Polynomial.aeval u Q : M →L[R] M) : M →ₗ[R] M))).trans
-      (LinearEquiv.ofEq _ _ hQ_ker_u.symm)
-  exact
-    { toLinearEquiv := e₀
-      continuous_toFun := continuous_induced_rng.2 <|
-        (r.continuous.comp continuous_subtypeVal).congr fun x ↦ by
-          simp [e₀, LinearMap.coe_kerSplitEndEquiv_apply]
-      continuous_invFun := continuous_induced_rng.2 <|
-        (i.continuous.comp continuous_subtypeVal).congr fun x ↦ by
-          simp [e₀, LinearMap.coe_kerSplitEndEquiv_symm_apply] }
+    nth_rw 1 [hQ]
+    simp only [map_add, map_one, toLinearMap_add, toLinearMap_one]
+  rw [LinearMap.splitEnd_eq_one_add, hQu, ← toLinearMap_comp, ← toLinearMap_comp, ← hB]
+  nth_rw 1 [hQ]
+  simp only [map_add, map_one, toLinearMap_add, toLinearMap_one, add_comm]
+
+/-- Along a continuous linear retract `r ∘ i = id`, if a polynomial `P` has invertible constant
+coefficient, then `r` and `i` identify `ker P(i ∘ u ∘ r)` with `ker P(u)` as topological
+modules. -/
+noncomputable def kerAevalEquivOfRetract {i : M →L[R] N} {r : N →L[R] M}
+    (hri : r.comp i = .id R M) (u : M →L[R] M) {P : Polynomial R} (hP : IsUnit (P.coeff 0)) :
+    LinearMap.ker ((Polynomial.aeval (i.comp (u.comp r)) P : N →L[R] N) : N →ₗ[R] N) ≃L[R]
+      LinearMap.ker ((Polynomial.aeval u P : M →L[R] M) : M →ₗ[R] M) :=
+  { toLinearEquiv :=
+      ((LinearEquiv.ofEq _ _
+          ((ker_aeval_units_smul (i.comp (u.comp r)) hP.unit⁻¹ P).symm.trans
+            (congrArg LinearMap.ker (aeval_eq_splitEnd hri u hP)))).trans
+        (LinearMap.kerSplitEndEquiv r.toLinearMap i.toLinearMap (toLinearMap_comp_eq_id hri)
+          ((Polynomial.aeval u (hP.unit⁻¹ • P) : M →L[R] M) : M →ₗ[R] M))).trans
+        (LinearEquiv.ofEq _ _ (ker_aeval_units_smul u hP.unit⁻¹ P))
+    continuous_toFun := continuous_induced_rng.2 <|
+      (r.continuous.comp continuous_subtypeVal).congr fun x ↦ by
+        simp [LinearMap.coe_kerSplitEndEquiv_apply]
+    continuous_invFun := continuous_induced_rng.2 <|
+      (i.continuous.comp continuous_subtypeVal).congr fun x ↦ by
+        simp [LinearMap.coe_kerSplitEndEquiv_symm_apply] }
 
 /-- The forward map of `kerAevalEquivOfRetract` applies the retraction `r`. -/
 @[simp]
@@ -237,10 +241,7 @@ theorem coe_kerAevalEquivOfRetract_apply {i : M →L[R] N} {r : N →L[R] M}
     (hri : r.comp i = .id R M) (u : M →L[R] M) {P : Polynomial R} (hP : IsUnit (P.coeff 0))
     (x : LinearMap.ker ((Polynomial.aeval (i.comp (u.comp r)) P : N →L[R] N) : N →ₗ[R] N)) :
     (kerAevalEquivOfRetract hri u hP x : M) = r x := by
-  dsimp only [kerAevalEquivOfRetract]
-  rw [ContinuousLinearEquiv.coe_mk, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply,
-    LinearEquiv.trans_apply, LinearMap.coe_kerSplitEndEquiv_apply, LinearEquiv.coe_ofEq_apply,
-    coe_coe]
+  simp [kerAevalEquivOfRetract]
 
 /-- The inverse map of `kerAevalEquivOfRetract` applies the inclusion `i`. -/
 @[simp]
@@ -248,10 +249,7 @@ theorem coe_kerAevalEquivOfRetract_symm_apply {i : M →L[R] N} {r : N →L[R] M
     (hri : r.comp i = .id R M) (u : M →L[R] M) {P : Polynomial R} (hP : IsUnit (P.coeff 0))
     (x : LinearMap.ker ((Polynomial.aeval u P : M →L[R] M) : M →ₗ[R] M)) :
     ((kerAevalEquivOfRetract hri u hP).symm x : N) = i x := by
-  change (((kerAevalEquivOfRetract hri u hP).toLinearEquiv).symm x : N) = i x
-  dsimp only [kerAevalEquivOfRetract]
-  rw [LinearEquiv.symm_trans_apply, LinearEquiv.symm_trans_apply, LinearEquiv.ofEq_symm,
-    LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply, LinearMap.coe_kerSplitEndEquiv_symm_apply,
-    LinearEquiv.coe_ofEq_apply, coe_coe]
+  rw [← ContinuousLinearEquiv.coe_symm_toLinearEquiv]
+  simp [kerAevalEquivOfRetract]
 
 end ContinuousLinearMap

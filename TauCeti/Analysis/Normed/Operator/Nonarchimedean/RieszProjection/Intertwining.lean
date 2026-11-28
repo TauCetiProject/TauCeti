@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszProjection.Splitting
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
+import TauCeti.Algebra.Ring.Commute
 
 /-!
 # Functoriality of Riesz splittings
@@ -41,19 +42,15 @@ variable {I R : Type*} [TopologicalSpace I]
 /-- A bounded operator commuting with `u` commutes with every Riesz projector of `u`. -/
 theorem commute_of_commute (hE : IsRieszProjection u a h E)
     {w : C₀(I, R) →L[R] C₀(I, R)} (hw : Commute w u) : Commute w E :=
-  (isRieszProjection_def.mp hE).commute_of_commute <| by
-    rw [Commute, SemiconjBy]; ext x : 1
-    have hwu : w (u x) = u (w x) := congr($(hw.eq) x)
-    simp [mul_apply_eq_comp, hwu]
+  (isRieszProjection_def.mp hE).commute_of_commute
+    (Commute.one_sub_smul_right (A := C₀(I, R) →L[R] C₀(I, R)) hw a)
 
 /-- A bounded operator commuting with `u` commutes with the complementary inverse of any
 Riesz projector of `u`. -/
 theorem commute_inverse_of_commute (hE : IsRieszProjection u a h E)
     {w : C₀(I, R) →L[R] C₀(I, R)} (hw : Commute w u) :
     Commute w (isRieszProjection_def.mp hE).inverse :=
-  (isRieszProjection_def.mp hE).commute_inverse_of_commute <| by
-    rw [Commute, SemiconjBy]; ext x : 1
-    have hwu : w (u x) = u (w x) := congr($(hw.eq) x)
-    simp [mul_apply_eq_comp, hwu]
+  (isRieszProjection_def.mp hE).commute_inverse_of_commute
+    (Commute.one_sub_smul_right (A := C₀(I, R) →L[R] C₀(I, R)) hw a)
 
 end ContinuousLinearMap.IsRieszProjection

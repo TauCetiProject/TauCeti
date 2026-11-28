@@ -130,14 +130,6 @@ theorem rieszColemanProjection_one (u : C₀(I, R) →L[R] C₀(I, R)) :
     u.rieszColemanProjection 1 = 0 := by
   simp [rieszColemanProjection_def]
 
-/-- Scaling a polynomial by a unit of `R` leaves `u.rieszColemanProjection` unchanged. -/
-@[simp]
-theorem rieszColemanProjection_units_smul (u : C₀(I, R) →L[R] C₀(I, R)) {Q : R[X]} (c : Rˣ) :
-    u.rieszColemanProjection (c • Q) = u.rieszColemanProjection Q := by
-  rw [rieszColemanProjection_def, rieszColemanProjection_def,
-    Polynomial.natDegree_smul_of_smul_regular Q (IsSMulRegular.all _),
-    Polynomial.C_ringInverse_leadingCoeff_mul_reverse_units_smul c Q]
-
 /-- Scaling `Q` by a unit scalar does not change `u.rieszColemanProjection Q`. -/
 @[simp]
 theorem rieszColemanProjection_C_mul (u : C₀(I, R) →L[R] C₀(I, R)) {Q : R[X]}
