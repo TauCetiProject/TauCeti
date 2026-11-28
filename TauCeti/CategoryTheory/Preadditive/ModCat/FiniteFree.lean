@@ -93,6 +93,13 @@ theorem isFiniteFree_biproduct_yoneda {n : ℕ} (Y : Fin n → C) :
 theorem isFiniteFree_yoneda_obj (X : C) : isFiniteFree C ((yoneda C).obj X) :=
   isFiniteSumOfRepresentables_preadditiveYoneda_obj X
 
+/-- The binary biproduct of two finite free modules is finite free. -/
+theorem isFiniteFree_biprod {U V : ModCat.{v} C}
+    (hU : isFiniteFree C U) (hV : isFiniteFree C V) : isFiniteFree C (U ⊞ V) := by
+  simp only [isFiniteFree] at hU hV ⊢
+  have := preservesBinaryBiproducts_of_preservesBinaryProducts (ι C)
+  simpa only [ObjectProperty.ι_obj] using (hU.biprod hV).of_iso ((ι C).mapBiprod U V).symm
+
 /-- A choice of an element at each representing object defines a map from the sum of the
 representables, taking each identity generator to the chosen element. -/
 theorem exists_biproduct_desc_app_id {F : ModCat.{v} C} {m : ℕ} {Y : Fin m → C}

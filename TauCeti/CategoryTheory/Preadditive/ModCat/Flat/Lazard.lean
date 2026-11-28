@@ -74,22 +74,14 @@ end FiniteFreeOver
 instance (F : ModCat.{v} C) : Nonempty (FiniteFreeOver F) :=
   ⟨FiniteFreeOver.mk _ (isFiniteFree_biproduct_yoneda (Fin.elim0 : Fin 0 → C)) 0⟩
 
-/-- Flatness allows pairs of objects to be joined and parallel arrows to be coequalized. -/
+/-- Biproducts provide common targets, and flatness coequalizes parallel arrows. -/
 instance (F : ModCat.{v} C) [F.Flat] : IsFiltered (FiniteFreeOver F) where
   cocone_objs i j := by
-    let ι := (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι
-    let p : i.left.obj ⊞ j.left.obj ⟶ F := biprod.desc i.hom j.hom
-    have hp : IsFinitelyPresentedFunctor (i.left.obj ⊞ j.left.obj).obj := by
-      refine (isFinitelyPresentedFunctor_of_isFiniteFree i.left.property).biprod
-        (isFinitelyPresentedFunctor_of_isFiniteFree j.left.property) |>.of_iso ?_
-      have := preservesBinaryBiproducts_of_preservesBinaryProducts ι
-      exact (ι.mapBiprod i.left.obj j.left.obj).symm
-    obtain ⟨W, hW, a, b, hab⟩ := Flat.exists_factorization_of_isFinitelyPresentedFunctor hp p
-    let k : FiniteFreeOver F := FiniteFreeOver.mk W hW b
-    refine ⟨k, FiniteFreeOver.homMk (biprod.inl ≫ a) ?_,
-      FiniteFreeOver.homMk (biprod.inr ≫ a) ?_, trivial⟩
-    · simp [k, hab, p]
-    · simp [k, hab, p]
+    let k := FiniteFreeOver.mk _ (isFiniteFree_biprod i.left.property j.left.property)
+      (biprod.desc i.hom j.hom)
+    refine ⟨k, FiniteFreeOver.homMk biprod.inl ?_, FiniteFreeOver.homMk biprod.inr ?_, trivial⟩
+    · simp only [k, CostructuredArrow.mk_hom_eq_self, biprod.inl_desc]
+    · simp only [k, CostructuredArrow.mk_hom_eq_self, biprod.inr_desc]
   cocone_maps {i j} f g := by
     have h : (f.left.hom - g.left.hom) ≫ j.hom = 0 := by
       rw [Preadditive.sub_comp, sub_eq_zero]
