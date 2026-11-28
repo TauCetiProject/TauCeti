@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.GLn.HallAlgebra.Mackey
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.RingTheory.Derivation.Basic
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.GroupTheory.GroupAction.Quotient
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
@@ -28,6 +29,8 @@ adjoint of multiplication by `f` when `f` lives in size `d`, and for cuspidal `f
 
 * `TauCeti.HallAlgebra.rankInner n A A′`: the inner product `⟨A, A′⟩_n` over `GL_n(k)`.
 * `TauCeti.HallAlgebra.mulAdjoint d f A`: the function `∂_{d,f} A`.
+* `TauCeti.HallAlgebra.mulAdjointDerivation hc hd`: `∂_{d,c}` bundled as a
+  `Derivation ℂ (HallAlgebra k) (HallAlgebra k)` for cuspidal `c` and `d ≠ 0`.
 
 ## Main results
 
@@ -42,6 +45,8 @@ adjoint of multiplication by `f` when `f` lives in size `d`, and for cuspidal `f
   `∂_{d,f} c = ⟨f, c⟩_d · 1`.
 * `TauCeti.HallAlgebra.mulAdjoint_mul`: for cuspidal `c` and `d ≠ 0`, `∂_{d,c}` is a derivation,
   by Mackey's formula `TauCeti.HallAlgebra.blockAverage_mul`.
+* `TauCeti.HallAlgebra.mulAdjoint_one`, `TauCeti.HallAlgebra.mulAdjoint_constOne`, and
+  `TauCeti.HallAlgebra.mulAdjoint_constOne_eq_zero_iff`: action of `∂_{d,f}` on `1` and `𝟙`.
 
 ## References
 
@@ -414,6 +419,53 @@ theorem mulAdjoint_mul (hc : c.IsCuspidal) {d : ℕ} (hd : d ≠ 0) (F H : HallA
   -- The term of `W` is the Leibniz rule for the block averages at `g|_W` and `g|_{V/W}`.
   rw [rankInner_mul_of_isCuspidal hc hd _ _ ho, mulAdjoint_apply, mulAdjoint_apply,
     blockAverage_of_dim_eq_zero_right _ ho, blockAverage_of_dim_eq_zero_right _ ho]
+
+/-- For `d ≠ 0` and any `f`, the multiplication adjoint `∂_{d, f}` annihilates the unit `1`.
+Adapted from grh-lean (`src/Lib/LocalGL/Green/TauFunctions.lean`, Apache 2.0, Copyright 2026
+Anthropic PBC). -/
+@[simp]
+theorem mulAdjoint_one {d : ℕ} (hd : d ≠ 0) (f : HallAlgebra k) :
+    mulAdjoint d f 1 = 0 := by
+  ext a
+  rw [mulAdjoint_apply, zero_apply]
+  refine rankInner_eq_zero_of_right f fun b hb ↦ ?_
+  rw [← SimilarityClass.ofEnd_rep a, ← SimilarityClass.ofEnd_rep b, blockAverage_one_ofEnd]
+  simp [one_apply, hb, hd]
+
+/-- The multiplication adjoint `∂_{d, f}` scales the constant function `𝟙` by `⟨f, 𝟙⟩_d`.
+Adapted from grh-lean (`src/Lib/LocalGL/Green/LabelCharacters.lean`, Apache 2.0, Copyright 2026
+Anthropic PBC). -/
+theorem mulAdjoint_constOne (d : ℕ) (f : HallAlgebra k) :
+    mulAdjoint d f constOne = rankInner d f constOne • constOne := by
+  ext a
+  rw [mulAdjoint_apply, blockAverage_constOne, smul_apply, constOne_apply, mul_one]
+
+/-- `∂_{d, f} 𝟙 = 0` iff `⟨f, 𝟙⟩_d = 0`.
+Adapted from grh-lean (`src/Lib/LocalGL/Green/LabelCharacters.lean`, Apache 2.0, Copyright 2026
+Anthropic PBC). -/
+@[simp]
+theorem mulAdjoint_constOne_eq_zero_iff (d : ℕ) (f : HallAlgebra k) :
+    mulAdjoint d f constOne = 0 ↔ rankInner d f constOne = 0 := by
+  rw [mulAdjoint_constOne, smul_eq_zero_iff_left constOne_ne_zero]
+
+/-- For cuspidal `c` and `d ≠ 0`, `mulAdjoint d c` bundled as a `ℂ`-derivation of `HallAlgebra k`.
+Adapted from grh-lean (`src/Lib/LocalGL/Green/TauFunctions.lean`, Apache 2.0, Copyright 2026
+Anthropic PBC). -/
+noncomputable def mulAdjointDerivation {c : HallAlgebra k} (hc : c.IsCuspidal)
+    {d : ℕ} (hd : d ≠ 0) : Derivation ℂ (HallAlgebra k) (HallAlgebra k) :=
+  Derivation.mk'
+    { toFun := mulAdjoint d c
+      map_add' := mulAdjoint_add d c
+      map_smul' := fun r F ↦ by simp [mulAdjoint_smul] }
+    fun F H ↦ by
+      simp only [LinearMap.coe_mk, AddHom.coe_mk, smul_eq_mul]
+      rw [mulAdjoint_mul hc hd, add_comm, mul_comm (mulAdjoint d c F)]
+
+@[simp]
+theorem mulAdjointDerivation_apply {c : HallAlgebra k} (hc : c.IsCuspidal)
+    {d : ℕ} (hd : d ≠ 0) (F : HallAlgebra k) :
+    mulAdjointDerivation hc hd F = mulAdjoint d c F := by
+  rfl
 
 end Adjunction
 
