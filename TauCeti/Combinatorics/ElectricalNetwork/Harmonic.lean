@@ -66,6 +66,24 @@ theorem harmonicAt_iff : N.HarmonicAt f x ↔ ∑ y, N.cond x y * f y = N.weight
 @[simp] theorem harmonicAt_of_weight_eq_zero (hx : N.weight x = 0) : N.HarmonicAt f x := by
   simp [harmonicAt_def, N.weight_eq_zero_iff.mp hx]
 
+/-- A potential is harmonic at a vertex if and only if its negative is harmonic there. -/
+@[simp] theorem harmonicAt_neg_iff : N.HarmonicAt (-f) x ↔ N.HarmonicAt f x := by
+  unfold HarmonicAt
+  exact (N.netInwardCurrent x).ker.neg_mem_iff
+
+/-- Adding a constant to a potential does not change its harmonicity at a vertex. -/
+@[simp] theorem harmonicAt_add_const_iff (c : ℝ) :
+    N.HarmonicAt (fun v => f v + c) x ↔ N.HarmonicAt f x := by
+  have hc := N.harmonicAt_const c x
+  unfold HarmonicAt at hc ⊢
+  exact (N.netInwardCurrent x).ker.add_mem_iff_left hc
+
+/-- Multiplication by a nonzero scalar does not change harmonicity at a vertex. -/
+@[simp] theorem harmonicAt_const_smul_iff {c : ℝ} (hc : c ≠ 0) :
+    N.HarmonicAt (c • f) x ↔ N.HarmonicAt f x := by
+  unfold HarmonicAt
+  exact (N.netInwardCurrent x).ker.smul_mem_iff hc
+
 variable {N}
 
 /-- Negating a potential preserves harmonicity. -/
@@ -108,7 +126,7 @@ theorem HarmonicAt.eq_of_forall_le_of_adj (hf : N.HarmonicAt f x)
       (sub_nonpos.mpr (hmax z (N.graph_adj.mpr ⟨hxz, hz⟩)))
   have hzero := (Finset.sum_eq_zero_iff_of_nonpos (fun z _ => hterm z)).mp
     (N.harmonicAt_def.mp hf) y (Finset.mem_univ y)
-  exact sub_eq_zero.mp ((mul_eq_zero.mp hzero).resolve_left (N.cond_pos_of_adj hxy).ne')
+  simpa only [mul_eq_zero, (N.cond_pos_of_adj hxy).ne', false_or, sub_eq_zero] using hzero
 
 variable (N)
 
@@ -133,18 +151,26 @@ theorem exists_mem_le_of_harmonicAt {B : Set V} (x : V) (hB : ∃ b ∈ B, N.gra
     (fun z hz => hd.2 ▸ hle (hd.1.trans hz.reachable)) d.adj
   exact hd' ⟨hd.1.trans d.adj.reachable, heq.trans hd.2⟩
 
+/-- If the component of a vertex meets the boundary, two potentials harmonic at its interior
+vertices have the same value at the vertex when they agree on its boundary vertices. -/
+theorem apply_eq_of_eqOn_of_harmonicAt {B : Set V} {g : V → ℝ} (x : V)
+    (hB : ∃ b ∈ B, N.graph.Reachable x b)
+    (hfg : Set.EqOn f g (B ∩ {v | N.graph.Reachable x v}))
+    (hf : ∀ v, N.graph.Reachable x v → v ∉ B → N.HarmonicAt f v)
+    (hg : ∀ v, N.graph.Reachable x v → v ∉ B → N.HarmonicAt g v) : f x = g x := by
+  have hdiff v hxv hv := (hf v hxv hv).sub (hg v hxv hv)
+  obtain ⟨b, hb, hxb, hupper⟩ := N.exists_mem_le_of_harmonicAt x hB hdiff
+  obtain ⟨c, hc, hxc, hlower⟩ :=
+    N.exists_mem_le_of_harmonicAt x hB (fun v hxv hv => (hdiff v hxv hv).neg)
+  exact le_antisymm (by simpa [Pi.sub_apply, hfg ⟨hb, hxb⟩] using hupper)
+    (by simpa [Pi.sub_apply, hfg ⟨hc, hxc⟩] using hlower)
+
 /-- Two potentials harmonic off a boundary that meets every component coincide if they agree
 on the boundary. -/
 theorem eq_of_eqOn_of_harmonicAt {B : Set V} {g : V → ℝ} (hfg : Set.EqOn f g B)
     (hf : ∀ v ∉ B, N.HarmonicAt f v) (hg : ∀ v ∉ B, N.HarmonicAt g v)
     (hB : ∀ v, ∃ b ∈ B, N.graph.Reachable v b) : f = g := by
-  have hdiff v hv := (hf v hv).sub (hg v hv)
-  funext x
-  obtain ⟨b, hb, -, hupper⟩ :=
-    N.exists_mem_le_of_harmonicAt x (hB x) (fun v _ hv => hdiff v hv)
-  obtain ⟨c, hc, -, hlower⟩ :=
-    N.exists_mem_le_of_harmonicAt x (hB x) (fun v _ hv => (hdiff v hv).neg)
-  exact le_antisymm (by simpa [Pi.sub_apply, hfg hb] using hupper)
-    (by simpa [Pi.sub_apply, hfg hc] using hlower)
+  exact funext fun x => N.apply_eq_of_eqOn_of_harmonicAt x (hB x) (hfg.mono Set.inter_subset_left)
+    (fun v _ hv => hf v hv) (fun v _ hv => hg v hv)
 
 end TauCeti.ElectricalNetwork
