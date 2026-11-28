@@ -68,6 +68,9 @@ itself (Mathlib's `MulAction.IsInvariantBlock` for the logic action), or it equa
   that preserves and reflects isomorphism carries invariant sets to invariant sets;
 * `TauCeti.RelationalConfiguration.analyticSet_iUnion_smul` — on a countable carrier the
   saturation of an analytic set under the logic action is analytic, for every language;
+* `TauCeti.RelationalConfiguration.realize_perm_smul` and
+  `TauCeti.RelationalConfiguration.realize_sentenceInf_perm_smul`: the logic action transports
+  satisfaction of infinitary formulas and sentences.
 * `TauCeti.RelationalConfiguration.mem_stabilizer_iff` — the stabilizer of a configuration is the
   automorphism group of its decoded structure.
 
@@ -80,7 +83,7 @@ itself (Mathlib's `MulAction.IsInvariantBlock` for the logic action), or it equa
 
 public section
 
-universe u v u' v' w w' w''
+universe u v u' v' w w' w'' uι uγ
 
 open FirstOrder FirstOrder.Language MeasureTheory Set
 
@@ -115,8 +118,25 @@ theorem perm_smul_eq_encodeVia (σ : Equiv.Perm V) (c : RelationalConfiguration 
 @[simp]
 theorem toStructure_perm_smul (σ : Equiv.Perm V) (c : RelationalConfiguration L V) :
     (σ • c).toStructure = @Equiv.inducedStructure L V V c.toStructure σ := by
-  rw [perm_smul_eq_encodeVia]
-  exact @Equiv.toStructure_encodeVia L V V c.toStructure _ σ
+  rw [← relabel_perm, toStructure_relabel]
+
+/-- The logic action of a permutation `σ` transports realization of every infinitary formula
+along `σ`. -/
+theorem realize_perm_smul {ι : Type uι} {γ : Type uγ} {n : ℕ} (σ : Equiv.Perm V)
+    (c : RelationalConfiguration L V) (φ : L.BoundedFormulaInf ι γ n) (v : γ → V)
+    (xs : Fin n → V) :
+    @BoundedFormulaInf.Realize L ι γ V (σ • c).toStructure n φ (σ ∘ v) (σ ∘ xs) ↔
+      @BoundedFormulaInf.Realize L ι γ V c.toStructure n φ v xs := by
+  rw [← relabel_perm]
+  exact realize_relabel σ c φ v xs
+
+/-- Configurations related by the logic action satisfy the same infinitary sentences. -/
+theorem realize_sentenceInf_perm_smul {ι : Type uι} (σ : Equiv.Perm V)
+    (c : RelationalConfiguration L V) (φ : L.SentenceInf ι) :
+    @SentenceInf.Realize L ι φ V (σ • c).toStructure ↔
+      @SentenceInf.Realize L ι φ V c.toStructure := by
+  rw [← relabel_perm]
+  exact realize_sentenceInf_relabel σ c φ
 
 /-- A relabelled configuration is isomorphic to the original one. -/
 theorem isoSetoid_perm_smul (σ : Equiv.Perm V) (c : RelationalConfiguration L V) :

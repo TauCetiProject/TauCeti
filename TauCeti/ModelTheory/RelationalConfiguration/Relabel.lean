@@ -36,10 +36,14 @@ isomorphism relations up to Borel bireducibility.
   `TauCeti.RelationalConfiguration.relabel_relabel` and
   `TauCeti.RelationalConfiguration.relabel_refl`: relabelling is functorial.
 * `TauCeti.RelationalConfiguration.relabel_perm`: along a permutation it is the logic action.
-* `TauCeti.RelationalConfiguration.relabel_eq_encodeVia`: it encodes the transported decoded
-  structure.
+* `TauCeti.RelationalConfiguration.relabel_eq_encodeVia` and
+  `TauCeti.RelationalConfiguration.toStructure_relabel`: it encodes and decodes to the
+  transported decoded structure.
 * `TauCeti.RelationalConfiguration.nonempty_equiv_relabel`: a configuration and its relabelling
   decode to isomorphic structures.
+* `TauCeti.RelationalConfiguration.realize_relabel` and
+  `TauCeti.RelationalConfiguration.realize_sentenceInf_relabel`: relabelling transports
+  satisfaction of infinitary formulas and sentences.
 
 ## References
 
@@ -50,7 +54,7 @@ isomorphism relations up to Borel bireducibility.
 
 public section
 
-universe u v w w' w''
+universe u v w w' w'' uι uγ
 
 open FirstOrder FirstOrder.Language
 
@@ -162,10 +166,39 @@ theorem relabel_eq_encodeVia (e : α ≃ β) (c : RelationalConfiguration L α) 
   induction a using Atom.induction_atom with
   | h R x => simp
 
+/-- Decoding a relabelled configuration gives the decoded structure transported along `e`. -/
+@[simp]
+theorem toStructure_relabel (e : α ≃ β) (c : RelationalConfiguration L α) :
+    (relabel e c).toStructure = @Equiv.inducedStructure L α β c.toStructure e := by
+  rw [relabel_eq_encodeVia]
+  exact @Equiv.toStructure_encodeVia L α β c.toStructure _ e
+
 /-- A configuration on `α` and its relabelling on `β` decode to isomorphic structures. -/
 theorem nonempty_equiv_relabel (e : α ≃ β) (c : RelationalConfiguration L α) :
     Nonempty (@Language.Equiv L α β c.toStructure (relabel e c).toStructure) := by
   rw [relabel_eq_encodeVia]
   exact @Equiv.nonempty_equiv_encodeVia L α β c.toStructure _ e
+
+/-- Relabelling a configuration along `e` transports realization of every infinitary formula
+along `e`. -/
+theorem realize_relabel {ι : Type uι} {γ : Type uγ} {n : ℕ} (e : α ≃ β)
+    (c : RelationalConfiguration L α) (φ : L.BoundedFormulaInf ι γ n) (v : γ → α)
+    (xs : Fin n → α) :
+    @BoundedFormulaInf.Realize L ι γ β (relabel e c).toStructure n φ (e ∘ v) (e ∘ xs) ↔
+      @BoundedFormulaInf.Realize L ι γ α c.toStructure n φ v xs := by
+  rw [toStructure_relabel]
+  let := c.toStructure
+  let := e.inducedStructure (L := L)
+  exact StrongHomClass.realize_boundedFormulaInf e.inducedStructureEquiv φ
+
+/-- Relabelling a configuration preserves satisfaction of every infinitary sentence. -/
+theorem realize_sentenceInf_relabel {ι : Type uι} (e : α ≃ β) (c : RelationalConfiguration L α)
+    (φ : L.SentenceInf ι) :
+    @SentenceInf.Realize L ι φ β (relabel e c).toStructure ↔
+      @SentenceInf.Realize L ι φ α c.toStructure := by
+  rw [toStructure_relabel]
+  let := c.toStructure
+  let := e.inducedStructure (L := L)
+  exact (StrongHomClass.realize_sentenceInf e.inducedStructureEquiv φ).symm
 
 end TauCeti.RelationalConfiguration
