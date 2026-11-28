@@ -580,11 +580,8 @@ noncomputable def liftNoncomm (g : R →+* K) (hg : IsUnit (g x)) : S →+* K :=
 @[simp]
 theorem liftNoncomm_eq (g : R →+* K) (hg : IsUnit (g x)) (a : R) :
     liftNoncomm x g hg (algebraMap R S a) = g a := by
-  rw [liftNoncomm, RingHom.comp_apply]
-  change OreLocalization.universalHom g _ _
-    (IsLocalization.algEquiv (Submonoid.powers x) S (Localization (Submonoid.powers x))
-      (algebraMap R S a)) = g a
-  rw [AlgEquiv.commutes]
+  rw [liftNoncomm, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+    AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes]
   exact OreLocalization.universalHom_commutes g _ _
 
 /-- Bundled form of `liftNoncomm_eq`: `(liftNoncomm x g hg).comp (algebraMap R S) = g`. -/
