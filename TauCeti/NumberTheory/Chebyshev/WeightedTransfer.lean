@@ -6,18 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Chebyshev
+import TauCeti.NumberTheory.AbelSummation
 
 /-!
 # Weighted prime sums and the Chebyshev remainder
 
-Partial summation expresses a weighted prime sum as its integral main term, a boundary
-term involving `θ(x) - x`, and an integral of the same Chebyshev remainder. For a weight
-`f`, the function differentiated in this formula is `g(t) = f(t) / log t`.
-The base point is `2`, and primes at the upper endpoint are included.
+Partial summation expresses a weighted prime sum as its integral main term, the lower
+boundary contribution `2 * g 2 = 2 * f 2 / log 2`, a boundary term involving `θ(x) - x`,
+and an integral of the same Chebyshev remainder. For a weight `f`, the function
+differentiated in this formula is `g(t) = f(t) / log t`. The base point is `2`, and
+primes at the upper endpoint are included.
 
 The uncentered identity is the prime-weighted form of Mathlib's
-`sum_mul_eq_sub_integral_mul₁`. The proof integrates the contribution of each prime
-separately, so continuity at the endpoints and an integrable interior derivative suffice.
+`sum_mul_eq_sub_integral_mul₁`. Continuity at the endpoints and an integrable interior
+derivative suffice by `TauCeti.sum_mul_eq_sub_sub_integral_mul_of_hasDerivAt`.
 
 If `(θ(t) - t) g'(t)` is absolutely integrable on `(2, ∞)`, its full integral enters the
 constant term and its tail enters the remaining error. This identity underlies the
@@ -53,43 +55,22 @@ theorem sum_primesLE_mul_log_eq_sub_integral {g g' : ℝ → ℝ} {x : ℝ} (hx 
     (hg' : IntervalIntegrable g' volume 2 x) :
     ∑ p ∈ Nat.primesLE ⌊x⌋₊, g p * Real.log p =
       g x * Chebyshev.theta x - ∫ t in (2 : ℝ)..x, g' t * Chebyshev.theta t := by
-  let S := Nat.primesLE ⌊x⌋₊
-  let F (p : ℕ) := (Ici (p : ℝ)).indicator (fun t ↦ g' t * Real.log p)
-  have hθ (t : ℝ) (ht : t ∈ uIcc 2 x) : g' t * Chebyshev.theta t = ∑ p ∈ S, F p t := by
-    have ht' : t ∈ Icc 2 x := uIcc_of_le hx ▸ ht
-    have hfilter : S.filter (fun p : ℕ ↦ (p : ℝ) ≤ t) = Nat.primesLE ⌊t⌋₊ := by
-      ext p
-      have ht₀ : 0 ≤ t := zero_le_two.trans ht'.1
-      simp only [mem_filter]
-      exact ⟨fun hp ↦ Nat.mem_primesLE.mpr
-        ⟨(Nat.le_floor_iff ht₀).mpr hp.2, (Nat.mem_primesLE.mp hp.1).2⟩, fun hp ↦
-        ⟨Nat.primesLE_mono (Nat.floor_le_floor ht'.2) hp,
-          (Nat.le_floor_iff ht₀).mp (Nat.mem_primesLE.mp hp).1⟩⟩
-    rw [Chebyshev.theta_eq_sum_primesLE, ← hfilter, mul_sum, sum_filter]
-    simp only [F, indicator_apply, Set.mem_Ici]
-  have hF (p : ℕ) (_ : p ∈ S) : IntervalIntegrable (F p) volume 2 x :=
-    (intervalIntegrable_iff_integrableOn_Icc_of_le hx).mpr
-      (((intervalIntegrable_iff_integrableOn_Icc_of_le hx).mp hg').mul_const
-        (Real.log p) |>.indicator measurableSet_Ici)
-  rw [intervalIntegral.integral_congr hθ, intervalIntegral.integral_finsetSum hF,
-    Chebyshev.theta_eq_sum_primesLE, mul_sum, ← sum_sub_distrib]
-  refine sum_congr rfl fun p hp ↦ ?_
-  obtain ⟨hpx, hprime⟩ := Nat.mem_primesLE.mp hp
-  have hp₂ : (2 : ℝ) ≤ p := by exact_mod_cast hprime.two_le
-  have hpₓ : (p : ℝ) ≤ x := (Nat.le_floor_iff (zero_le_two.trans hx)).mp hpx
-  have hset : Ici (p : ℝ) ∩ Icc 2 x = Icc (p : ℝ) x := by
-    ext t
-    exact ⟨fun ht ↦ ⟨ht.1, ht.2.2⟩, fun ht ↦ ⟨ht.1, hp₂.trans ht.1, ht.2⟩⟩
-  have hsub : Icc (p : ℝ) x ⊆ Icc 2 x := Icc_subset_Icc_left hp₂
-  have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le hpₓ (hc.mono hsub)
-    (fun t ht ↦ hg t ⟨hp₂.trans_lt ht.1, ht.2⟩)
-    (hg'.mono_set (by simpa only [uIcc_of_le hx, uIcc_of_le hpₓ] using hsub))
-  simp only [F]
-  rw [intervalIntegral.integral_of_le hx, ← integral_Icc_eq_integral_Ioc,
-    MeasureTheory.integral_indicator measurableSet_Ici, Measure.restrict_restrict measurableSet_Ici,
-    hset, integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hpₓ,
-    intervalIntegral.integral_mul_const, hFTC]
-  ring
+  have h := sum_mul_eq_sub_sub_integral_mul_of_hasDerivAt
+    (fun p : ℕ ↦ if p.Prime then Real.log p else 0) (by norm_num : (0 : ℝ) ≤ 2) hx hc hg hg'
+  simp only [mul_ite, mul_zero, ← sum_filter] at h
+  simp_rw [← Chebyshev.theta_eq_sum_Icc] at h
+  have hfloor : ⌊(2 : ℝ)⌋₊ = 2 := by norm_num
+  rw [hfloor] at h
+  have htwo : Nat.primesLE 2 = {2} := by decide
+  have hθ₂ : Chebyshev.theta 2 = Real.log 2 := by
+    rw [Chebyshev.theta_eq_sum_primesLE, hfloor, htwo, sum_singleton]
+    rfl
+  rw [Nat.primesLE_eq_filter_Icc_two, Icc_eq_cons_Ioc (hfloor ▸ Nat.floor_le_floor hx),
+    cons_eq_insert, filter_insert, ite_eq_left Nat.prime_two, sum_insert]
+  · rw [h, hθ₂]
+    simp only [Nat.cast_ofNat]
+    ring
+  · exact fun hp ↦ left_notMem_Ioc (mem_filter.mp hp).1
 
 /-- Partial summation with the Chebyshev main term removed. The sum includes the prime `2`
 and any prime at `x`. The term `2 * g 2` is the lower boundary contribution from
@@ -108,11 +89,11 @@ theorem sum_primesLE_mul_log_eq_integral_add {g g' : ℝ → ℝ} {x : ℝ} (hx 
       integrableOn_mul_sum_Icc (m := 0)
         (fun n : ℕ ↦ if n.Prime then Real.log n else 0) (by norm_num : (0 : ℝ) ≤ 2)
         ((intervalIntegrable_iff_integrableOn_Icc_of_le hx).mp hg')
-  have hparts : (∫ t in (2 : ℝ)..x, g t + t * g' t) = x * g x - 2 * g 2 :=
-    intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le hx (continuousOn_id.mul hc)
-      (fun t ht ↦ by simpa only [id, one_mul] using (hasDerivAt_id t).mul (hg t ht))
-      ((hc.intervalIntegrable_of_Icc hx).add ht)
-  rw [intervalIntegral.integral_add (hc.intervalIntegrable_of_Icc hx) ht] at hparts
+  have hparts := intervalIntegral.integral_mul_deriv_eq_deriv_mul_of_hasDerivAt
+    (u := fun t : ℝ ↦ t) (u' := fun _ ↦ (1 : ℝ)) continuousOn_id (uIcc_of_le hx ▸ hc)
+    (fun t _ ↦ hasDerivAt_id t) (by simpa only [min_eq_left hx, max_eq_right hx] using hg)
+    intervalIntegrable_const hg'
+  simp only [one_mul] at hparts
   have hsplit : (∫ t in (2 : ℝ)..x, (Chebyshev.theta t - t) * g' t) =
       (∫ t in (2 : ℝ)..x, g' t * Chebyshev.theta t) - ∫ t in (2 : ℝ)..x, t * g' t := by
     rw [← intervalIntegral.integral_sub hθ ht]
