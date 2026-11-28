@@ -38,7 +38,7 @@ with exponent `1 - 1 / r > 0`. Their values are also uniformly close to a compac
 subinterval of length `h` containing `t`, the first moment method gives a time `s` with
 `vₙ s = j (i (uₙ s))` and `‖uₙ s‖ ≤ h⁻¹ ‖uₙ‖_{L¹(a, b)}`, so `vₙ t` lies within `O(h ^ (1 - 1 / r))`
 of the image under `j ∘ i` of a ball of `X₀`, which is relatively compact. By the Arzelà–Ascoli
-theorem (`TauCeti.exists_subseq_uniformCauchySeqOn_of_continuity_modulus`) a subsequence of `vₙ`
+theorem (`IsCompact.exists_subseq_uniformCauchySeqOn_of_continuity_modulus`) a subsequence of `vₙ`
 converges uniformly on `[a, b]`. Ehrling's inequality
 `‖i x‖ ≤ ε ‖x‖ + C_ε ‖j (i x)‖`, integrated in time
 (`IsCompactOperator.exists_eLpNorm_le_mul_eLpNorm_add_mul_eLpNorm`), then shows that this
@@ -110,7 +110,7 @@ namespace IsCompactOperator
 
 /-- The uniform part of the Aubin–Lions theorem: under its hypotheses, the continuous
 representatives `v n` of `j ∘ i ∘ u n` have a subsequence converging uniformly on `Icc a b`. -/
-private theorem exists_subseq_uniformCauchySeqOn_of_hasWeakLineDerivOn [CompleteSpace X₁]
+private theorem exists_subseq_uniformCauchySeqOn_of_hasWeakLineDerivOn
     {i : X₀ →L[ℝ] X} (hi : IsCompactOperator i) {j : X →L[ℝ] X₁} {r : ℝ≥0∞} (hr : 1 < r)
     {a b : ℝ} (hab : a < b) {C₁ : ℝ} {M' : ℝ≥0} {u : ℕ → ℝ → X₀} {u' v : ℕ → ℝ → X₁}
     (hu : ∀ n, IntegrableOn (fun t ↦ ‖u n t‖) (Ioo a b))
@@ -138,7 +138,7 @@ private theorem exists_subseq_uniformCauchySeqOn_of_hasWeakLineDerivOn [Complete
   have hlim : Tendsto (fun h : ℝ ↦ h ^ α * M') (𝓝 0) (𝓝 0) := by
     simpa [Real.zero_rpow hα.ne'] using
       (Real.continuousAt_rpow_const 0 α (Or.inr hα.le)).tendsto.mul_const (M' : ℝ)
-  refine TauCeti.exists_subseq_uniformCauchySeqOn_of_continuity_modulus isCompact_Icc hlim
+  refine isCompact_Icc.exists_subseq_uniformCauchySeqOn_of_continuity_modulus hlim
     (fun n s hs t ht ↦ by rw [dist_eq_norm, Real.dist_eq]; exact hmod n t ht s hs)
     fun δ hδ ↦ ?_
   -- A subinterval length `h` with `h ^ α * M' ≤ δ`.
@@ -210,12 +210,13 @@ private theorem cauchySeq_toLp_of_uniformCauchySeqOn {i : X₀ →L[ℝ] X} (hi 
       simpa using hreal
 
 /-- **The Aubin–Lions theorem.** Let `i : X₀ → X` be a compact operator and `j : X → X₁` an
-injective continuous linear map, where `X₀` is a normed space and `X`, `X₁` are Banach spaces,
-and let `1 ≤ p ≤ ∞` and `1 < r ≤ ∞`. Let `u n` be bounded in `Lᵖ(a, b; X₀)`, and let
+injective continuous linear map, where `X₀` is a normed space and `X`, `X₁` are Banach spaces
+(completeness of `X₁` follows from the weak derivative hypothesis), and let `1 ≤ p ≤ ∞` and
+`1 < r ≤ ∞`. Let `u n` be bounded in `Lᵖ(a, b; X₀)`, and let
 `j ∘ i ∘ u n` have weak derivatives `u' n` on `(a, b)` bounded in `Lʳ(a, b; X₁)`. Then a
 subsequence of `i ∘ u n` converges in `Lᵖ(a, b; X)`.
 No reflexivity is assumed, as in Simon's version of the theorem. -/
-theorem exists_subseq_tendsto_eLpNorm_of_hasWeakLineDerivOn [CompleteSpace X] [CompleteSpace X₁]
+theorem exists_subseq_tendsto_eLpNorm_of_hasWeakLineDerivOn [CompleteSpace X]
     {i : X₀ →L[ℝ] X} (hi : IsCompactOperator i) {j : X →L[ℝ] X₁} (hj : Function.Injective j)
     {p r : ℝ≥0∞} (hp : 1 ≤ p) (hr : 1 < r) {a b : ℝ} {M M' : ℝ≥0} {u : ℕ → ℝ → X₀}
     {u' : ℕ → ℝ → X₁} (huM : ∀ n, eLpNorm (u n) p (volume.restrict (Ioo a b)) ≤ M)
