@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.MapDerivedTensorPointwise
-public import TauCeti.Algebra.Homology.Monoidal.KFlat.DerivabilityStructure
 
 /-!
 # Identity check for the canonical derived tensor comparison
