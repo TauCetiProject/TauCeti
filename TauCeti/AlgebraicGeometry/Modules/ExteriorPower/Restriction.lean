@@ -26,9 +26,7 @@ the pushforward comparison (`TauCeti.AlgebraicGeometry.restrictAdjunction_unit_a
 Consequently, along an open immersion `j` the canonical pullback comparison
 `j^* (⋀ⁿ M) ⟶ ⋀ⁿ (j^* M)` is the inverse of the restriction isomorphism, read through the
 identification of restriction with pullback
-(`TauCeti.AlgebraicGeometry.pullbackExteriorPowerComparison_app_of_isOpenImmersion`), and so it
-is invertible for every sheaf of modules
-(`TauCeti.AlgebraicGeometry.isIso_pullbackExteriorPowerComparison_app_of_isOpenImmersion`).
+(`TauCeti.AlgebraicGeometry.pullbackExteriorPowerComparison_app_of_isOpenImmersion`).
 
 ## References
 
@@ -108,14 +106,6 @@ theorem pullbackExteriorPowerComparison_app_of_isOpenImmersion (n : ℕ) (M : Y.
         (_root_.SheafOfModules.exteriorPower U.sheaf n).map
           ((restrictFunctorIsoPullback j).hom.app M) :=
   pullbackComparison_app_of_isOpenImmersion j _ _ _ _ _ M
-    (Scheme.Modules.unit_comp_pushforward_map_pullbackExteriorPowerComparison_app j n M)
-    (restrictAdjunction_unit_app_exteriorPower j n M)
-
-/-- Along an open immersion the canonical exterior-power comparison is invertible for every
-sheaf of modules. -/
-instance isIso_pullbackExteriorPowerComparison_app_of_isOpenImmersion (n : ℕ) (M : Y.Modules) :
-    IsIso ((Scheme.Modules.pullbackExteriorPowerComparison j n).app M) :=
-  isIso_pullbackComparison_app_of_isOpenImmersion j _ _ _ _ _ M
     (Scheme.Modules.unit_comp_pushforward_map_pullbackExteriorPowerComparison_app j n M)
     (restrictAdjunction_unit_app_exteriorPower j n M)
 

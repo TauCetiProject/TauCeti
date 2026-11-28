@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Pullback
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Rank
-public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Quasicoherent
+public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.Determinant.LocallyConstantRank
 public import TauCeti.AlgebraicGeometry.VectorBundle.ExteriorPower.Basic
 

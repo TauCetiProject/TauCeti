@@ -87,23 +87,51 @@ theorem exteriorPower_map (n : ℕ) {M N : SheafOfModules.{u} (ringCatSheaf R)} 
         ((PresheafOfModulesOfCommRing.exteriorPower n).map φ.val) ≫ (exteriorPowerIso n N).inv :=
   (rfl)
 
+/-- The local wedge of a family of sections, mapped from the sectionwise exterior power
+into its sheafification. -/
+def exteriorPowerMk (M : SheafOfModules.{u} (ringCatSheaf R)) {n : ℕ} (U : Cᵒᵖ)
+    (m : Fin n → M.val.obj U) : ((exteriorPower R n).obj M).val.obj U :=
+  (exteriorPowerIso n M).inv.val.app U
+    (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+      ((PresheafOfModulesOfCommRing.exteriorPower n).obj M.val)).app U
+        (ModuleCat.exteriorPower.mk
+          (M := PresheafOfModulesOfCommRing.obj (R := R.obj) M.val U) m))
+
+/-- A local wedge is the image of the sectionwise wedge under sheafification. -/
+theorem exteriorPowerMk_def (M : SheafOfModules.{u} (ringCatSheaf R)) {n : ℕ} (U : Cᵒᵖ)
+    (m : Fin n → M.val.obj U) :
+    M.exteriorPowerMk (R := R) U m =
+      (exteriorPowerIso n M).inv.val.app U
+        (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+          ((PresheafOfModulesOfCommRing.exteriorPower n).obj M.val)).app U
+            (ModuleCat.exteriorPower.mk
+              (M := PresheafOfModulesOfCommRing.obj (R := R.obj) M.val U) m)) :=
+  (rfl)
+
+/-- Restriction of a local wedge restricts each of its factors. -/
+@[simp]
+theorem exteriorPower_obj_map_mk (M : SheafOfModules.{u} (ringCatSheaf R)) {n : ℕ}
+    {U V : Cᵒᵖ} (f : U ⟶ V) (m : Fin n → M.val.obj U) :
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
+      Functor.comp_map, CommRingCat.forgetToRingCat_map_hom]
+    (((exteriorPower R n).obj M).val.map f (M.exteriorPowerMk (R := R) U m) =
+      M.exteriorPowerMk (R := R) V (fun i ↦ M.val.map f (m i))) := by
+  let ε := (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+      ((PresheafOfModulesOfCommRing.exteriorPower n).obj M.val) ≫
+    (forget _).map (exteriorPowerIso n M).inv
+  simp only [exteriorPowerMk_def]
+  exact (PresheafOfModules.naturality_apply ε f _).symm.trans
+    (congrArg (ε.app V) (PresheafOfModulesOfCommRing.exteriorPower_obj_map_mk n M.val f m))
+
 /-- On sections over `X`, the exterior power of a morphism `φ` sends the sheafified wedge
 `m₁ ∧ ⋯ ∧ mₙ` to the sheafified wedge `φ m₁ ∧ ⋯ ∧ φ mₙ`. -/
+@[simp]
 theorem exteriorPower_map_val_app_mk (n : ℕ) {M N : SheafOfModules.{u} (ringCatSheaf R)}
     (φ : M ⟶ N) (X : Cᵒᵖ) (m : Fin n → PresheafOfModulesOfCommRing.obj (R := R.obj) M.val X) :
     dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
       ObjectProperty.ι_obj, Functor.id_obj]
-    (((exteriorPower R n).map φ).val.app X ((exteriorPowerIso n M).inv.val.app X
-      (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
-        ((PresheafOfModulesOfCommRing.exteriorPower n).obj M.val)).app X
-          (ModuleCat.exteriorPower.mk
-            (M := PresheafOfModulesOfCommRing.obj (R := R.obj) M.val X) m))) =
-    (exteriorPowerIso n N).inv.val.app X
-      (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
-        ((PresheafOfModulesOfCommRing.exteriorPower n).obj N.val)).app X
-          (ModuleCat.exteriorPower.mk
-            (M := PresheafOfModulesOfCommRing.obj (R := R.obj) N.val X)
-            (fun i ↦ φ.val.app X (m i))))) := by
+    (((exteriorPower R n).map φ).val.app X (M.exteriorPowerMk (R := R) X m) =
+      N.exteriorPowerMk (R := R) X (fun i ↦ φ.val.app X (m i))) := by
   have hu := ConcreteCategory.congr_hom (congrArg (fun α ↦ α.app X)
     ((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.naturality
       ((PresheafOfModulesOfCommRing.exteriorPower n).map φ.val)))
@@ -390,16 +418,8 @@ theorem exteriorPower_hom_ext (n : ℕ) (M : _root_.SheafOfModules.{u} (ringCatS
     {N : _root_.SheafOfModules.{u} (ringCatSheaf R)}
     {f g : (exteriorPower R n).obj M ⟶ N}
     (h : ∀ (U : Cᵒᵖ) (m : Fin n → PresheafOfModulesOfCommRing.obj (R := R.obj) M.val U),
-      f.val.app U ((exteriorPowerIso n M).inv.val.app U
-        (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
-          ((PresheafOfModulesOfCommRing.exteriorPower n).obj M.val)).app U
-            (ModuleCat.exteriorPower.mk
-              (M := PresheafOfModulesOfCommRing.obj (R := R.obj) M.val U) m))) =
-      g.val.app U ((exteriorPowerIso n M).inv.val.app U
-        (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
-          ((PresheafOfModulesOfCommRing.exteriorPower n).obj M.val)).app U
-            (ModuleCat.exteriorPower.mk
-              (M := PresheafOfModulesOfCommRing.obj (R := R.obj) M.val U) m)))) : f = g := by
+      f.val.app U (M.exteriorPowerMk (R := R) U m) =
+        g.val.app U (M.exteriorPowerMk (R := R) U m)) : f = g := by
   rw [← cancel_epi (exteriorPowerIso n M).inv]
   apply ((PresheafOfModules.sheafificationAdjunction
     (𝟙 (ringCatSheaf R).obj)).homEquiv _ _).injective

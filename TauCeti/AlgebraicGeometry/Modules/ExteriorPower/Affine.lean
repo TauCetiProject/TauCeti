@@ -386,14 +386,11 @@ rather than exterior powers of sections on arbitrary opens. -/
 theorem tildeExteriorPowerIso_inv_toOpen_mk (n : ℕ) (M : ModuleCat.{u} R)
     (U : (Spec R).Opens) (m : Fin n → M) :
     (tildeExteriorPowerIso n M).inv.val.app (.op U)
-      ((SheafOfModules.exteriorPowerIso n (tilde M)).inv.val.app (.op U)
-        (((PresheafOfModules.sheafificationAdjunction (𝟙 (Spec R).ringCatSheaf.obj)).unit.app
-          ((PresheafOfModulesOfCommRing.exteriorPower (R := (Spec R).presheaf) n).obj
-            (tilde M).val)).app (.op U)
-          (ModuleCat.exteriorPower.mk
-            (M := PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde M).val (.op U))
-            (fun i ↦ tilde.toOpen M U (m i))))) =
+      ((tilde M).exteriorPowerMk (R := (Spec R).sheaf) (.op U)
+        (fun i ↦ tilde.toOpen M U (m i))) =
       tilde.toOpen (M.exteriorPower n) U (ModuleCat.exteriorPower.mk m) := by
+  refine (congrArg ((tildeExteriorPowerIso n M).inv.val.app (.op U))
+    (SheafOfModules.exteriorPowerMk_def (R := (Spec R).sheaf) (tilde M) _ _)).trans ?_
   let F := PresheafOfModules.sheafification (𝟙 (Spec R).ringCatSheaf.obj)
   let adj := PresheafOfModules.sheafificationAdjunction (𝟙 (Spec R).ringCatSheaf.obj)
   have h₁ : adj.unit.app (exteriorPresheaf M n) ≫
@@ -435,13 +432,8 @@ theorem tildeExteriorPowerIso_hom_toOpen_mk (n : ℕ) (M : ModuleCat.{u} R)
     dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
     ((tildeExteriorPowerIso n M).hom.val.app (.op U)
         (tilde.toOpen (M.exteriorPower n) U (ModuleCat.exteriorPower.mk m)) =
-      (SheafOfModules.exteriorPowerIso n (tilde M)).inv.val.app (.op U)
-        (((PresheafOfModules.sheafificationAdjunction (𝟙 (Spec R).ringCatSheaf.obj)).unit.app
-          ((PresheafOfModulesOfCommRing.exteriorPower (R := (Spec R).presheaf) n).obj
-            (tilde M).val)).app (.op U)
-          (ModuleCat.exteriorPower.mk
-            (M := PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde M).val (.op U))
-            (fun i ↦ tilde.toOpen M U (m i))))) := by
+      (tilde M).exteriorPowerMk (R := (Spec R).sheaf) (.op U)
+        (fun i ↦ tilde.toOpen M U (m i))) := by
   have h := congrArg ((tildeExteriorPowerIso n M).hom.val.app (.op U))
     (tildeExteriorPowerIso_inv_toOpen_mk n M U m)
   exact h.symm.trans (ModuleCat.hom_inv_apply

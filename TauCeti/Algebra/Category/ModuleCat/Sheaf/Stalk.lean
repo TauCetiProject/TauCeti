@@ -110,6 +110,30 @@ def sheafificationStalkEquiv :
   LinearEquiv.ofBijective (sheafificationStalkMap S P x)
     (sheafificationStalkMap_bijective S P x)
 
+/-- The forward map of the sheafification stalk equivalence is the stalk map of the unit. -/
+theorem sheafificationStalkEquiv_toLinearMap :
+    (P.sheafificationStalkEquiv S x).toLinearMap =
+      stalkMapCommRing (S := S.obj) x
+        ((sheafificationAdjunction
+          (𝟙 (TauCeti.SheafOfModules.ringCatSheaf S).obj)).unit.app P) :=
+  (rfl)
+
+/-- The equivalence between the stalks before and after sheafification is natural in the
+module presheaf. -/
+theorem sheafificationStalkEquiv_naturality
+    {Q : PresheafOfModules.{u} (S.obj ⋙ forget₂ CommRingCat RingCat.{u})} (g : P ⟶ Q) :
+    (Q.sheafificationStalkEquiv S x).toLinearMap ∘ₗ stalkMapCommRing (S := S.obj) x g =
+      stalkMapCommRing (S := S.obj) x
+          ((sheafification (R := TauCeti.SheafOfModules.ringCatSheaf S)
+            (𝟙 (TauCeti.SheafOfModules.ringCatSheaf S).obj)).map g).val ∘ₗ
+        (P.sheafificationStalkEquiv S x).toLinearMap := by
+  rw [sheafificationStalkEquiv_toLinearMap, sheafificationStalkEquiv_toLinearMap]
+  -- The unit target includes restriction along the identity ring map.
+  erw [← stalkMapCommRing_comp, ← stalkMapCommRing_comp]
+  exact congrArg (stalkMapCommRing (S := S.obj) x)
+    ((sheafificationAdjunction (R := TauCeti.SheafOfModules.ringCatSheaf S)
+      (𝟙 (TauCeti.SheafOfModules.ringCatSheaf S).obj)).unit.naturality g)
+
 /-- The sheafification stalk equivalence sends a germ to the germ of its unit image. -/
 theorem sheafificationStalkEquiv_germ (U : Opens X) (hx : x ∈ U) (m : P.obj (op U)) :
     dsimp% only [presheaf_obj_coe, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
@@ -175,6 +199,17 @@ theorem GeneratingSections.span_germ_eq_top {U : Opens X} (G : (M.over U).Genera
   erw [M.val.germ_smul (R := R.obj) x V hxV (a k), he,
     germ_res_apply M.val.presheaf (f ≫ homOfLE hWU) x hxV]
   exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨k, rfl⟩)
+
+/-- A morphism of module sheaves over a sheaf of rings is an isomorphism exactly when
+all its underlying additive stalk maps are bijective. -/
+theorem isIso_iff_forall_bijective_stalkMap
+    {R : Sheaf (Opens.grothendieckTopology X) RingCat.{u}}
+    {M N : SheafOfModules.{u} R} (g : M ⟶ N) :
+    IsIso g ↔ ∀ x : X, Function.Bijective
+      ((stalkFunctor AddCommGrpCat x).map ((PresheafOfModules.toPresheaf R.obj).map g.val)) := by
+  rw [← isIso_iff_of_reflects_iso g (toSheaf R),
+    TopCat.Presheaf.isIso_iff_stalkFunctor_map_iso]
+  exact forall_congr' fun x ↦ ConcreteCategory.isIso_iff_bijective _
 
 /-- A morphism of sheaves of modules over a sheaf of commutative rings on a topological space is
 a monomorphism exactly when all its stalk maps are injective. -/
