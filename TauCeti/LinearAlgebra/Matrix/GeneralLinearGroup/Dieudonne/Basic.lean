@@ -26,7 +26,7 @@ quotient isomorphism `GL n D ⧸ TauCeti.elementarySubgroup n D ≃* Group.Abeli
 
 * `TauCeti.elementarySubgroup_normal`: `TauCeti.elementarySubgroup n D` is normal in `GL n D`.
 * `TauCeti.dieudonneDet_eq_one_iff`: membership in `elementarySubgroup n D` vs. `dieudonneDet = 1`.
-* `TauCeti.dieudonneDet_scalar`, `TauCeti.dieudonneDet_stabilizeGL`,
+* `Units.dieudonneDet_scalar`, `TauCeti.dieudonneDet_stabilizeGL`,
   `Matrix.dieudonneDet_upperBlockGL`, `Matrix.dieudonneDet_lowerBlockGL`: values on scalar,
   stabilized, and block-unipotent matrices.
 
@@ -61,7 +61,7 @@ theorem dieudonneDet_eq_one_iff (hn : 2 ≤ Fintype.card n) {g : GL n D} :
 /-- A scalar matrix `scalar n u` has Dieudonné determinant
 `Group.Abelianization.of u ^ Fintype.card n`. -/
 @[simp]
-theorem dieudonneDet_scalar (u : Dˣ) :
+theorem _root_.Units.dieudonneDet_scalar (u : Dˣ) :
     dieudonneDet n D (Matrix.GeneralLinearGroup.scalar n u) =
       Group.Abelianization.of u ^ Fintype.card n := by
   rw [← AlgebraicK1.divisionRingEquiv_mkOfFintype, AlgebraicK1.mkOfFintype_scalar, map_pow,
