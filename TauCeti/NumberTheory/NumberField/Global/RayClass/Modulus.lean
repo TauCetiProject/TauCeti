@@ -344,6 +344,14 @@ def one (K : Type*) [Field K] [NumberField K] : Modulus K where
   rw [mem_support_iff, one_finitePart]
   simpa only [Finset.notMem_empty, iff_false, ← Ideal.one_eq_top] using v.prime.not_dvd_one
 
+/-- A modulus with trivial finite part has the same support as `Modulus.one`, hence empty
+support. -/
+theorem support_eq_empty_of_finitePart_eq_top {𝔪 : Modulus K} (h : 𝔪.finitePart = ⊤) :
+    𝔪.support = ∅ := by
+  refine Eq.trans ?_ (support_one (K := K))
+  ext v
+  rw [mem_support_iff, mem_support_iff, h, one_finitePart]
+
 theorem one_dvd (𝔪 : Modulus K) : one K ∣ 𝔪 :=
   dvd_iff.mpr ⟨by rw [one_finitePart, ← Ideal.one_eq_top]; exact _root_.one_dvd _, by simp⟩
 
@@ -366,11 +374,8 @@ noncomputable def narrowModulus (K : Type*) [Field K] [NumberField K] : Modulus 
   (Set.Finite.mem_toFinset _).mpr (Set.mem_univ w)
 
 /-- The narrow modulus has the same finite part as the trivial one, hence the same support. -/
-@[simp] theorem narrowModulus_support : (narrowModulus K).support = ∅ := by
-  refine Eq.trans ?_ Modulus.support_one
-  ext v
-  rw [Modulus.mem_support_iff, Modulus.mem_support_iff, narrowModulus_finitePart,
-    Modulus.one_finitePart]
+@[simp] theorem narrowModulus_support : (narrowModulus K).support = ∅ :=
+  Modulus.support_eq_empty_of_finitePart_eq_top narrowModulus_finitePart
 
 /-! ### Multiplicative congruence -/
 

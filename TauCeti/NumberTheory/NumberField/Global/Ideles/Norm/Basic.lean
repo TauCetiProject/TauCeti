@@ -152,40 +152,6 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_prod_ofAdicCompletio
   · exact Finset.prod_eq_one fun v hv ↦
       v'.ideleFiniteCoord_ofAdicCompletion_of_ne (ne_of_mem_of_not_mem hv hv').symm (u v)
 
-/-- The infinite coordinates of an idele concentrated at a finite place are trivial. -/
-@[simp]
-theorem NumberField.InfinitePlace.ideleInfiniteCoord_ofAdicCompletion
-    (w : InfinitePlace K) (v : HeightOneSpectrum R)
-    (u : (v.adicCompletion K)ˣ) :
-    w.ideleInfiniteCoord (IdeleGroup.ofAdicCompletion R K v u) = 1 :=
-  Units.ext <| by
-    rw [InfinitePlace.coe_ideleInfiniteCoord]
-    rfl
-
-/-- At its own place, the infinite coordinate of an idele concentrated at an infinite place `w`
-is the given unit of `K_w`. -/
-@[simp]
-theorem NumberField.InfinitePlace.ideleInfiniteCoord_ofCompletion_self
-    (w : InfinitePlace K) (u : w.Completionˣ) :
-    w.ideleInfiniteCoord (IdeleGroup.ofCompletion R K w u) = u :=
-  Units.ext <| by
-    classical
-    rw [InfinitePlace.coe_ideleInfiniteCoord]
-    exact (InfiniteAdeleRing.ofCompletion_apply w u w).trans (Pi.mulSingle_eq_same _ _)
-
-/-- Away from its own place, the infinite coordinates of an idele concentrated at an infinite
-place are trivial. -/
-@[simp]
-theorem NumberField.InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne
-    (w' : InfinitePlace K) {w : InfinitePlace K} (h : w' ≠ w)
-    (u : w.Completionˣ) :
-    w'.ideleInfiniteCoord (IdeleGroup.ofCompletion R K w u) = 1 :=
-  Units.ext <| by
-    classical
-    rw [InfinitePlace.coe_ideleInfiniteCoord]
-    exact (InfiniteAdeleRing.ofCompletion_apply w u w').trans
-      (Pi.mulSingle_eq_of_ne h _)
-
 /-- The infinite coordinates of an idele with trivial infinite components are trivial. -/
 @[simp]
 theorem NumberField.InfinitePlace.ideleInfiniteCoord_ofFiniteIdele

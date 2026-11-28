@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Algebraic
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.FiniteComponent
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Shift
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
-import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
@@ -60,9 +59,28 @@ L-function `Grossencharacter.lFunctionC` is the canonical meromorphic continuati
 ## Main results
 
 * `TauCeti.LFunctions.Grossencharacter.ext`: a presentation is determined by its Hecke character.
+* `TauCeti.LFunctions.Grossencharacter.infiniteComponent_eq_of_infinityType_eq_of_isComplex`:
+  presentations with equal algebraic infinity types agree at every complex place.
+* `TauCeti.LFunctions.Grossencharacter.infiniteComponent_apply_eq_of_infinityType_eq_of_isReal`:
+  presentations with equal algebraic infinity types agree at a real place on positive or
+  parity-compatible inputs.
+* `TauCeti.LFunctions.Grossencharacter.eqOn_raySubgroup_of_infinityType_eq`,
+  `TauCeti.LFunctions.Grossencharacter.ext_of_infinityType_eq`: presentations with the same
+  algebraic infinity type agree on `raySubgroup 𝔪`, and hence everywhere when
+  `raySubgroup 𝔪 = ⊤`.
+* `TauCeti.LFunctions.Grossencharacter.badPrimes_unitaryWeight`: the bad primes of the unitary
+  weight of a presentation are the primes in the support of `𝔪`.
+* `TauCeti.LFunctions.Grossencharacter.isGood_unitaryWeight_iff`,
+  `TauCeti.LFunctions.Grossencharacter.isGood_unitaryWeight_iff_of_finitePart_eq_top`,
+  `TauCeti.LFunctions.Grossencharacter.isGood_unitaryWeight_modulus_one_iff`: an ideal is good for
+  the unitary weight of a presentation iff it is coprime to the modulus (and iff nonzero when the
+  finite part is trivial).
+* `TauCeti.LFunctions.Grossencharacter.unitaryWeight_eq_mul`: multiplying underlying Hecke
+  characters at the same modulus multiplies their unitary ideal weights.
 * `TauCeti.LFunctions.Grossencharacter.isAlgebraic`: the presented Hecke character is algebraic.
 * `TauCeti.LFunctions.Grossencharacter.conductorExponent_le_exponent`,
   `TauCeti.LFunctions.Grossencharacter.finiteConductor_dvd_finitePart`,
+  `TauCeti.LFunctions.Grossencharacter.finiteConductor_eq_top_of_finitePart_eq_top`,
   `TauCeti.LFunctions.Grossencharacter.mk_finiteConductor_dvd_mk_finitePart` and
   `TauCeti.LFunctions.Grossencharacter.mk_finiteConductor_dvd`: the finite conductor of the
   presented character divides the finite part of the modulus.
@@ -165,6 +183,42 @@ theorem unitaryWeight_apply_of_dvd (χ : Grossencharacter K 𝔪) {v : HeightOne
   χ.unitaryWeight_eq_zero _ fun h ↦
     (Modulus.isCoprimeTo_iff.mp h).2 v ((𝔪.mem_support_iff v).mpr hv) dvd_rfl
 
+/-- **The bad primes of the unitary weight of a presentation are the primes dividing the
+modulus**: at a prime `v ∣ 𝔪` the weight vanishes, and at every prime `v ∤ 𝔪` it is a local
+component of the unitary part at a uniformizer and hence nonzero. -/
+theorem badPrimes_unitaryWeight (χ : Grossencharacter K 𝔪) :
+    χ.unitaryWeight.val.badPrimes = (𝔪.support : Set (HeightOneSpectrum (𝓞 K))) := by
+  ext v
+  rw [MultiplicativeIdealWeight.mem_badPrimes, SetLike.mem_coe, 𝔪.mem_support_iff v]
+  refine ⟨fun h0 ↦ ?_, fun hv ↦ χ.unitaryWeight_apply_of_dvd hv⟩
+  by_contra hv
+  obtain ⟨u, hu⟩ := v.exists_unit_valued_eq_exp K (-1)
+  rw [χ.unitaryWeight_apply v hv u hu] at h0
+  exact Units.ne_zero _ h0
+
+/-- An ideal is good for the unitary weight of a presentation at `𝔪` if and only if it is coprime
+to `𝔪`. -/
+theorem isGood_unitaryWeight_iff (χ : Grossencharacter K 𝔪) (I : Ideal (𝓞 K)) :
+    χ.unitaryWeight.val.IsGood I ↔ 𝔪.IsCoprimeTo I := by
+  simp only [MultiplicativeIdealWeight.IsGood, χ.badPrimes_unitaryWeight, Ideal.isPrimeTo_iff,
+    Modulus.isCoprimeTo_iff, Finset.mem_coe]
+
+/-- An ideal is good for the unitary weight of a presentation at a modulus with trivial finite part
+if and only if the ideal is nonzero. -/
+theorem isGood_unitaryWeight_iff_of_finitePart_eq_top (χ : Grossencharacter K 𝔪)
+    (h : 𝔪.finitePart = ⊤) (I : Ideal (𝓞 K)) :
+    χ.unitaryWeight.val.IsGood I ↔ I ≠ ⊥ := by
+  simp [χ.isGood_unitaryWeight_iff, Modulus.isCoprimeTo_iff,
+    Modulus.support_eq_empty_of_finitePart_eq_top h]
+
+/-- For a presentation at `Modulus.one K`, an ideal is good for the unitary weight if and only if
+it is nonzero. -/
+@[simp]
+theorem isGood_unitaryWeight_modulus_one_iff (χ : Grossencharacter K (Modulus.one K))
+    (I : Ideal (𝓞 K)) :
+    χ.unitaryWeight.val.IsGood I ↔ I ≠ ⊥ :=
+  χ.isGood_unitaryWeight_iff_of_finitePart_eq_top Modulus.one_finitePart I
+
 /-- Two presentations of the same Hecke character, even at different moduli, have the same
 algebraic infinity type. -/
 theorem infinityType_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter K 𝔫}
@@ -184,6 +238,20 @@ theorem infinityType_eq_zero_of_isFiniteOrder (χ : Grossencharacter K 𝔪)
   exact AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff.mp
     (χ.agreesOnIdentityComponent.symm.trans hagrees)
 
+/-- If the underlying Hecke character of a presentation `ξ` at `𝔪` is the product of those of
+presentations `χ` and `ψ` at the same modulus `𝔪`, then `ξ.unitaryWeight = χ.unitaryWeight *
+ψ.unitaryWeight`. -/
+theorem unitaryWeight_eq_mul {ξ χ ψ : Grossencharacter K 𝔪}
+    (h : ξ.toHeckeCharacter = χ.toHeckeCharacter * ψ.toHeckeCharacter) :
+    ξ.unitaryWeight = χ.unitaryWeight * ψ.unitaryWeight := by
+  refine Subtype.ext (MultiplicativeIdealWeight.ext_heightOneSpectrum fun v ↦ ?_)
+  by_cases hv : v.asIdeal ∣ 𝔪.finitePart
+  · simp [ξ.unitaryWeight_apply_of_dvd hv, χ.unitaryWeight_apply_of_dvd hv,
+      ψ.unitaryWeight_apply_of_dvd hv]
+  · obtain ⟨u, hu⟩ := v.exists_unit_valued_eq_exp K (-1)
+    simp [ξ.unitaryWeight_apply v hv u hu, χ.unitaryWeight_apply v hv u hu,
+      ψ.unitaryWeight_apply v hv u hu, h]
+
 /-- **A presentation is determined by its Hecke character.** The infinity type is determined on
 the identity component (`AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff`), and
 the weight is determined at every prime: at the primes of `𝔪` it vanishes, and at the others it is
@@ -196,10 +264,7 @@ theorem ext {χ ψ : Grossencharacter K 𝔪} (h : χ.toHeckeCharacter = ψ.toHe
     refine Subtype.ext (MultiplicativeIdealWeight.ext_heightOneSpectrum fun v ↦ ?_)
     by_cases hv : v.asIdeal ∣ 𝔪.finitePart
     · rw [χ.unitaryWeight_apply_of_dvd hv, ψ.unitaryWeight_apply_of_dvd hv]
-    · -- Compare the two weights at a uniformizer of `K_v`.
-      have : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
-      obtain ⟨u, hu⟩ := TauCeti.exists_isUniformizer (v.adicCompletion K)
-      have hu := v.isUniformizer_iff_valued_eq_exp_neg_one.mp hu
+    · obtain ⟨u, hu⟩ := v.exists_unit_valued_eq_exp K (-1)
       rw [χ.unitaryWeight_apply v hv u hu, ψ.unitaryWeight_apply v hv u hu, h]
   cases χ
   cases ψ
@@ -209,6 +274,106 @@ theorem ext {χ ψ : Grossencharacter K 𝔪} (h : χ.toHeckeCharacter = ψ.toHe
 theorem toHeckeCharacter_injective :
     Function.Injective (toHeckeCharacter : Grossencharacter K 𝔪 → HeckeCharacter K) :=
   fun _ _ ↦ ext
+
+private theorem agreesOnIdentityComponent_of_infinityType_eq {𝔪 𝔫 : Modulus K}
+    {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter K 𝔫}
+    (h : χ.infinityType = ψ.infinityType) :
+    χ.toHeckeCharacter.infinityType.AgreesOnIdentityComponent ψ.toHeckeCharacter.infinityType :=
+  χ.agreesOnIdentityComponent.trans (h ▸ ψ.agreesOnIdentityComponent.symm)
+
+/-- Two presentations with the same algebraic infinity type have the same archimedean component at
+every complex place: their continuous infinity types agree on the identity component, which
+determines the complex components completely. -/
+theorem infiniteComponent_eq_of_infinityType_eq_of_isComplex {𝔪 𝔫 : Modulus K}
+    {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter K 𝔫}
+    (h : χ.infinityType = ψ.infinityType) {w : InfinitePlace K} (hw : w.IsComplex) :
+    χ.toHeckeCharacter.infiniteComponent w = ψ.toHeckeCharacter.infiniteComponent w := by
+  obtain ⟨_, hce, hkf⟩ :=
+    (ContinuousInfinityType.agreesOnIdentityComponent_iff _ _).mp
+      (agreesOnIdentityComponent_of_infinityType_eq h)
+  have hc : χ.toHeckeCharacter.complexComponent ⟨w, hw⟩ =
+      ψ.toHeckeCharacter.complexComponent ⟨w, hw⟩ := by
+    rw [HeckeCharacter.complexComponent_eq, HeckeCharacter.complexComponent_eq,
+      congrFun hce ⟨w, hw⟩, congrFun hkf ⟨w, hw⟩]
+  let e := Units.mapContinuousMulEquiv
+    (NumberField.InfinitePlace.Completion.continuousMulEquivComplexOfIsComplex hw)
+  refine ContinuousMonoidHom.ext fun u ↦ ?_
+  have hu := DFunLike.congr_fun hc (e u)
+  rwa [HeckeCharacter.complexComponent_apply, HeckeCharacter.complexComponent_apply,
+    e.symm_apply_apply] at hu
+
+/-- Two presentations with the same algebraic infinity type have equal archimedean components at a
+real place `w` on any unit `u` whose real coordinate is positive or at a place where both
+presentations have the same real parity. -/
+theorem infiniteComponent_apply_eq_of_infinityType_eq_of_isReal {𝔪 𝔫 : Modulus K}
+    {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter K 𝔫}
+    (h : χ.infinityType = ψ.infinityType) {w : InfinitePlace K} (hw : w.IsReal)
+    (u : w.Completionˣ)
+    (hu : 0 < NumberField.InfinitePlace.Completion.continuousMulEquivRealOfIsReal hw
+          (u : w.Completion) ∨
+      χ.toHeckeCharacter.infinityType.realParity ⟨w, hw⟩ =
+        ψ.toHeckeCharacter.infinityType.realParity ⟨w, hw⟩) :
+    χ.toHeckeCharacter.infiniteComponent w u = ψ.toHeckeCharacter.infiniteComponent w u := by
+  obtain ⟨hre, -, -⟩ :=
+    (ContinuousInfinityType.agreesOnIdentityComponent_iff _ _).mp
+      (agreesOnIdentityComponent_of_infinityType_eq h)
+  set w' : {w : InfinitePlace K // w.IsReal} := ⟨w, hw⟩
+  let r : ℝˣ := Units.mapContinuousMulEquiv
+    (NumberField.InfinitePlace.Completion.continuousMulEquivRealOfIsReal hw) u
+  have hcomp (ξ : HeckeCharacter K) :
+      ((ξ.infiniteComponent w u : ℂˣ) : ℂ) = (ξ.realComponent w' r : ℂ) := by
+    rw [HeckeCharacter.realComponent_apply, ContinuousMulEquiv.symm_apply_apply]
+  apply Units.ext
+  rw [hcomp χ.toHeckeCharacter, hcomp ψ.toHeckeCharacter,
+    HeckeCharacter.realComponent_eq, HeckeCharacter.realComponent_eq, congrFun hre w']
+  rcases hu with hpos | hpar
+  · have hrpos : 0 < (r : ℝ) := by
+      simpa only [r, Units.mapContinuousMulEquiv_apply, Units.coe_map, MonoidHom.coe_ofClass,
+        ContinuousMulEquiv.coe_toMulEquiv,
+        InfinitePlace.Completion.continuousMulEquivRealOfIsReal_apply] using hpos
+    rw [coe_realUnitsCharacter_apply, coe_realUnitsCharacter_apply, sign_pos hrpos]
+    simp
+  · rw [hpar]
+
+/-- **Agreement on the ray subgroup from equality of infinity types**: two presentations at the
+same modulus `𝔪` with the same algebraic infinity type have underlying Hecke characters that agree
+on `raySubgroup 𝔪`. -/
+theorem eqOn_raySubgroup_of_infinityType_eq {𝔪 : Modulus K} {χ ψ : Grossencharacter K 𝔪}
+    (h : χ.infinityType = ψ.infinityType) :
+    Set.EqOn χ.toHeckeCharacter ψ.toHeckeCharacter
+      (raySubgroup 𝔪 : Set (IdeleClassGroup (𝓞 K) K)) := by
+  intro c hc
+  obtain ⟨y, hy, rfl⟩ := mem_raySubgroup_iff.mp hc
+  have hfin_mem := ideleCongruenceSubgroup.ofFiniteIdele_toFiniteIdele_mem hy
+  have hfin_inf (w : InfinitePlace K) :
+      w.ideleInfiniteCoord
+        (IdeleGroup.ofFiniteIdele (𝓞 K) K (IdeleGroup.toFiniteIdele (𝓞 K) K y)) = 1 :=
+    InfinitePlace.ideleInfiniteCoord_ofFiniteIdele w _
+  apply Units.ext
+  rw [QuotientGroup.mk'_apply, ← IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele y]
+  simp only [QuotientGroup.mk_mul, map_mul, χ.eq_one_of_mem _ hfin_mem hfin_inf,
+    ψ.eq_one_of_mem _ hfin_mem hfin_inf, mul_one, QuotientGroup.mk_prod, map_prod, Units.coe_prod]
+  -- Compare the archimedean coordinates place by place via the real and complex companions.
+  refine Finset.prod_congr rfl fun w _ ↦ congrArg Units.val ?_
+  rw [← IdeleClassGroup.ofCompletion_apply, ← HeckeCharacter.infiniteComponent_apply,
+    ← HeckeCharacter.infiniteComponent_apply]
+  rcases w.isReal_or_isComplex with hw | hw
+  · refine infiniteComponent_apply_eq_of_infinityType_eq_of_isReal h hw (w.ideleInfiniteCoord y) ?_
+    by_cases hw_mem : ⟨w, hw⟩ ∈ 𝔪.infinitePart
+    · exact .inl (by
+        simpa [InfinitePlace.Completion.continuousMulEquivRealOfIsReal_apply] using
+          ideleCongruenceSubgroup.extensionEmbeddingOfIsReal_pos hy hw_mem)
+    · exact .inr (by rw [χ.realParity_eq ⟨w, hw⟩ hw_mem, ψ.realParity_eq ⟨w, hw⟩ hw_mem, h])
+  · exact DFunLike.congr_fun
+      (infiniteComponent_eq_of_infinityType_eq_of_isComplex h hw) (w.ideleInfiniteCoord y)
+
+/-- **Uniqueness by infinity type when `raySubgroup 𝔪 = ⊤`**: if every idele class lies in
+`raySubgroup 𝔪` (in particular, at `Modulus.one K` when `K` has class number `1`), then two
+presentations at `𝔪` with the same algebraic infinity type are equal. -/
+theorem ext_of_infinityType_eq {𝔪 : Modulus K} (hray : raySubgroup 𝔪 = ⊤)
+    {χ ψ : Grossencharacter K 𝔪} (h : χ.infinityType = ψ.infinityType) : χ = ψ :=
+  ext (ContinuousMonoidHom.ext fun c ↦
+    eqOn_raySubgroup_of_infinityType_eq h (hray ▸ Subgroup.mem_top c))
 
 /-! ### The finite conductor of a presentation -/
 
@@ -233,6 +398,13 @@ theorem finiteConductor_dvd_finitePart (χ : Grossencharacter K 𝔪) :
   rw [HeightOneSpectrum.maxPowDividing, χ.toHeckeCharacter.count_finiteConductor]
   exact (Ideal.dvd_iff_le.mp (𝔪.pow_exponent_dvd_finitePart v)).trans
     (Ideal.pow_le_pow_right (χ.conductorExponent_le_exponent v))
+
+/-- If the finite part of the modulus of a presentation is `⊤`, then its presented Hecke
+character has finite conductor `⊤` (it is everywhere unramified at finite places). -/
+theorem finiteConductor_eq_top_of_finitePart_eq_top (χ : Grossencharacter K 𝔪)
+    (h : 𝔪.finitePart = ⊤) : χ.toHeckeCharacter.finiteConductor = ⊤ := by
+  have hdvd := χ.finiteConductor_dvd_finitePart
+  rwa [h, Ideal.dvd_iff_le, top_le_iff] at hdvd
 
 /-- **The finite conductor of a presentation, as a modulus without real places, divides the
 finite part of its modulus**, also taken without real places. -/

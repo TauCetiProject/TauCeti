@@ -68,6 +68,8 @@ subgroups, since an idele can be split placewise into two factors.
 * `TauCeti.GlobalNumberFields.ideleCongruenceSubgroup.inv_ofAdicCompletion_mul_mem`: removing its
   component at one place from a congruence idele leaves a congruence idele for any modulus that
   imposes no further conditions away from that place.
+* `TauCeti.GlobalNumberFields.ideleCongruenceSubgroup.ofFiniteIdele_toFiniteIdele_mem`: replacing
+  the infinite coordinates of a congruence idele by `1` preserves membership.
 * `TauCeti.GlobalNumberFields.isOpen_ideleCongruenceSubgroup`: the congruence subgroup is open.
 * `TauCeti.GlobalNumberFields.unitEmbedding_mem_ideleCongruenceSubgroup_iff`: the principal
   ideles lying in the congruence subgroup are the images of the units of `𝓞 K` congruent to one
@@ -248,6 +250,20 @@ theorem extensionEmbeddingOfIsReal_pos (hx : x ∈ ideleCongruenceSubgroup 𝔪)
     0 < InfinitePlace.Completion.extensionEmbeddingOfIsReal w.property
       (w.val.ideleInfiniteCoord x : w.val.Completion) :=
   (mem_ideleCongruenceSubgroup_iff.mp hx).2.2 w hw
+
+/-- **Replacing the infinite coordinates of a congruence idele by `1` preserves membership.** Its
+finite coordinates are unchanged, and every infinite coordinate becomes `1`, which is positive at
+every real place. -/
+theorem ofFiniteIdele_toFiniteIdele_mem (hx : x ∈ ideleCongruenceSubgroup 𝔪) :
+    IdeleGroup.ofFiniteIdele (𝓞 K) K (IdeleGroup.toFiniteIdele (𝓞 K) K x) ∈
+      ideleCongruenceSubgroup 𝔪 := by
+  have hmem := mem_ideleCongruenceSubgroup_iff.mp hx
+  refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v hv ↦ ?_, fun v hv ↦ ?_, fun w _ ↦ ?_⟩
+  · rw [HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele_toFiniteIdele]
+    exact hmem.1 v hv
+  · rw [HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele_toFiniteIdele]
+    exact hmem.2.1 v hv
+  · simp [InfinitePlace.ideleInfiniteCoord_ofFiniteIdele]
 
 /-- **An idele of the congruence subgroup is a unit at every finite place.**  Away from the finite
 part this is the defining condition, and at a divisor of the finite part it follows from the

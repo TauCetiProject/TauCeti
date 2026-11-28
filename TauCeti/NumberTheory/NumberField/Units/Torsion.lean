@@ -32,6 +32,8 @@ degree, to every field with a real place, in particular to the real quadratic fi
 * `TauCeti.NumberField.Units.totient_torsionOrder_le_finrank`: `φ(torsionOrder K) ≤ [K : ℚ]`.
 * `TauCeti.NumberField.Units.torsion_eq_top_of_rank_eq_zero`: with unit rank zero, every unit
   is torsion.
+* `TauCeti.NumberField.Units.pow_torsionOrder_eq_one_of_rank_eq_zero`: with unit rank zero,
+  every unit has power equal to `1` at exponent `torsionOrder K`.
 * `TauCeti.NumberField.Units.torsion_eq_one_or_neg_one_of_isReal`: with a real place, every
   torsion unit is `1` or `-1`.
 * `TauCeti.NumberField.Units.torsionOrder_eq_two_of_isReal`: with a real place, the torsion
@@ -73,6 +75,12 @@ theorem torsion_eq_top_of_rank_eq_zero (h : rank K = 0) : torsion K = ⊤ := by
     rw [h]
     infer_instance
   simpa [Set.range_eq_empty] using closure_fundSystem_sup_torsion_eq_top K
+
+/-- In a number field of unit rank zero, every unit has power equal to `1` at exponent
+`torsionOrder K`. -/
+theorem pow_torsionOrder_eq_one_of_rank_eq_zero (h : rank K = 0) (u : (𝓞 K)ˣ) :
+    u ^ torsionOrder K = 1 :=
+  pow_torsionOrder_eq_one K (torsion_eq_top_of_rank_eq_zero h ▸ Subgroup.mem_top u)
 
 /-- In a number field with a real infinite place, every torsion unit is `1` or `-1`. -/
 theorem torsion_eq_one_or_neg_one_of_isReal {w : InfinitePlace K} (hw : w.IsReal)

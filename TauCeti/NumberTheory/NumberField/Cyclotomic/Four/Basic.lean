@@ -6,15 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
+public import Mathlib.NumberTheory.NumberField.Cyclotomic.Embeddings
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Quadratic
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.RootsOfUnity
 public import TauCeti.NumberTheory.NumberField.Ideal.RootsOfUnity
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 public import TauCeti.NumberTheory.NumberField.Quadratic.Norm
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Invariants
 public import TauCeti.RingTheory.RootsOfUnity.Basic
 import Mathlib.NumberTheory.SumTwoSquares
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
+import TauCeti.NumberTheory.NumberField.Units.Dirichlet
+import TauCeti.NumberTheory.NumberField.Units.Torsion
 
 /-!
 # Basic facts about the Gaussian integers as a ring of integers
@@ -44,7 +48,13 @@ coordinates of `ℤ[i]` in the basis `1, i` are described for every quadratic cy
 * `IsPrimitiveRoot.isUnit_intCast_add_intCast_mul_toInteger_iff_of_four`: `a + b i` is a unit
   exactly when `a² + b² = 1`;
 * `TauCeti.finrank_eq_two_of_isCyclotomicExtension_four`: `[K : ℚ] = 2`;
-* `TauCeti.isPrincipalIdealRing_ringOfIntegers_four`: `ℤ[i]` is a principal ideal domain;
+* `TauCeti.isTotallyComplex_four`, `TauCeti.subsingleton_infinitePlace_four`,
+  `TauCeti.complexPlaceFour`: `K` is totally complex with a unique (complex) infinite place;
+* `TauCeti.isPrincipalIdealRing_ringOfIntegers_four`, `TauCeti.classNumber_eq_one_four`: `ℤ[i]` is
+  a principal ideal domain, so `ℚ(i)` has class number `1`;
+* `TauCeti.units_pow_four_eq_one_four`, `TauCeti.map_coe_unit_pow_four_eq_one_four`: every unit of
+  `ℤ[i]` (and its image under any multiplicative homomorphism out of `ℚ(i)`) is a fourth root of
+  unity;
 * `TauCeti.exists_gal_apply_eq_pow_three_of_four`: complex conjugation of `ℤ[i]` cubes every
   fourth root of unity;
 * `TauCeti.intCast_norm_eq_mul_of_four`: the norm of `x` is `x σ(x)` for such a conjugation `σ`,
@@ -177,6 +187,43 @@ theorem finrank_eq_two_of_isCyclotomicExtension_four
   rw [IsCyclotomicExtension.Rat.finrank 4 K]
   decide
 
+/-- A fourth cyclotomic extension of `ℚ` is totally complex. -/
+instance isTotallyComplex_four {K : Type*} [Field K] [CharZero K]
+    [IsCyclotomicExtension {4} ℚ K] : IsTotallyComplex K :=
+  IsCyclotomicExtension.Rat.isTotallyComplex K (n := 4) (by decide)
+
+/-- A fourth cyclotomic extension of `ℚ` has a unique infinite place. -/
+instance subsingleton_infinitePlace_four {K : Type*} [Field K] [NumberField K]
+    [IsCyclotomicExtension {4} ℚ K] : Subsingleton (InfinitePlace K) :=
+  InfinitePlace.subsingleton_of_finrank_eq_two
+    (finrank_eq_two_of_isCyclotomicExtension_four (K := K))
+
+/-- The unique complex infinite place of a fourth cyclotomic extension of `ℚ`. -/
+noncomputable def complexPlaceFour (K : Type*) [Field K] [NumberField K]
+    [IsCyclotomicExtension {4} ℚ K] : {w : InfinitePlace K // w.IsComplex} :=
+  ⟨Classical.arbitrary (InfinitePlace K), IsTotallyComplex.isComplex _⟩
+
+/-- Every unit of `𝓞 K = ℤ[i]` is a fourth root of unity (`±1` or `±i`). -/
+theorem units_pow_four_eq_one_four {K : Type*} [Field K] [CharZero K]
+    [IsCyclotomicExtension {4} ℚ K] (u : (𝓞 K)ˣ) : u ^ 4 = 1 := by
+  have := IsCyclotomicExtension.numberField {4} ℚ K
+  have hrank : Units.rank K = 0 :=
+    Units.rank_eq_zero_of_isTotallyComplex_of_finrank_eq_two K
+      (finrank_eq_two_of_isCyclotomicExtension_four (K := K))
+  have htor : Units.torsionOrder K = 4 := by
+    rw [IsCyclotomicExtension.Rat.torsionOrder_eq (n := 4)]
+    decide
+  simpa [htor] using NumberField.Units.pow_torsionOrder_eq_one_of_rank_eq_zero hrank u
+
+/-- Any multiplicative homomorphism out of `ℚ(i)` maps every unit of `ℤ[i]` to a fourth root of
+unity. -/
+theorem map_coe_unit_pow_four_eq_one_four {K L : Type*} [Field K] [CharZero K]
+    [IsCyclotomicExtension {4} ℚ K] [Monoid L] {M : Type*} [FunLike M K L]
+    [MonoidHomClass M K L] (φ : M) (u : (𝓞 K)ˣ) :
+    φ ((u : 𝓞 K) : K) ^ 4 = 1 := by
+  rw [← map_pow, RingOfIntegers.coe_eq_algebraMap, ← map_pow, ← Units.val_pow_eq_pow_val,
+    units_pow_four_eq_one_four u, Units.val_one, map_one, map_one]
+
 variable (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
 
 /-- **`ℤ[i]` is a principal ideal domain.** This is
@@ -186,6 +233,10 @@ theorem isPrincipalIdealRing_ringOfIntegers_four : IsPrincipalIdealRing (𝓞 K)
   have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
   NumberField.GaussianRationals.isPrincipalIdealRing hζ.minpoly_toInteger_eq_X_sq_add_one
     hζ.adjoin_toInteger_four
+
+/-- The fourth cyclotomic field `ℚ(i)` has class number `1`. -/
+theorem classNumber_eq_one_four : classNumber K = 1 :=
+  classNumber_eq_one_iff.mpr (isPrincipalIdealRing_ringOfIntegers_four K)
 
 end TauCeti
 

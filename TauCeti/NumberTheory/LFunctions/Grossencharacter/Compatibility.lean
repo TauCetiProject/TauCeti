@@ -29,8 +29,10 @@ Over `ℚ(i)` the angular character `(α) ↦ (α / conj α) ^ (2k)` has finite 
 
 ## Main results
 
-* `TauCeti.LFunctions.Grossencharacter.compatibility`: Hecke's unit relation, and
-  `TauCeti.LFunctions.Grossencharacter.compatibility_inv` its form solved for the finite value.
+* `TauCeti.LFunctions.Grossencharacter.compatibility`: Hecke's unit relation,
+  `TauCeti.LFunctions.Grossencharacter.compatibility_inv` its form solved for the finite value,
+  and `TauCeti.LFunctions.Grossencharacter.compatibility_inv_of_idealShift_eq_zero` its
+  specialization when `χ.idealShift = 0`.
 
 ## Implementation notes
 
@@ -145,6 +147,15 @@ theorem compatibility_inv (χ : Grossencharacter K 𝔪) (x : Kˣ) (hx : IsCongr
         ((Ideal.absNorm (Ideal.span {a}) : ℕ) : ℂ) ^ (χ.idealShift : ℂ) =
       (∏ τ : K →+* ℂ, τ (x : K) ^ χ.infinityType τ)⁻¹ :=
   eq_inv_of_mul_eq_one_left (χ.compatibility x hx a ha)
+
+/-- **Hecke's unit relation for shift-zero presentations**: when `χ.idealShift = 0` and
+`a ≡ 1 mod* 𝔪`, the unitary weight at `(a)` equals `(∏_τ τ(a) ^ (n τ))⁻¹`. -/
+theorem compatibility_inv_of_idealShift_eq_zero (χ : Grossencharacter K 𝔪)
+    (hshift : χ.idealShift = 0) (x : Kˣ) (hx : IsCongrOne 𝔪 x) (a : 𝓞 K)
+    (ha : algebraMap (𝓞 K) K a = x) :
+    χ.unitaryWeight.val (Ideal.span {a}) =
+      (∏ τ : K →+* ℂ, τ (x : K) ^ χ.infinityType τ)⁻¹ := by
+  simpa [hshift] using χ.compatibility_inv x hx a ha
 
 end Grossencharacter
 

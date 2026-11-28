@@ -25,6 +25,7 @@ given by explicit generators.
 
 ## Main results
 
+* `TauCeti.NumberField.GaussianRationals.two_add_ne_zero`: `2 + θ ≠ 0` in `𝓞 K`.
 * `TauCeti.NumberField.GaussianRationals.absNorm_span_two_add`,
   `absNorm_span_two_sub`: `N(2 + θ) = N(2 − θ) = 5`.
 * `TauCeti.NumberField.GaussianRationals.span_two_add_ne_span_two_sub`: `(2 + θ) ≠ (2 − θ)`.
@@ -51,6 +52,15 @@ omit [NumberField K] in
 theorem two_add_mul_two_sub_eq_five (hmin : minpoly ℤ θ = X ^ 2 + 1) :
     (2 + θ) * (2 - θ) = 5 := by
   linear_combination -(sq_eq_neg_one hmin)
+
+omit [NumberField K] in
+/-- `2 + θ ≠ 0` in `𝓞 K`, since `(2 + θ)(2 − θ) = 5` and `K` has characteristic zero. -/
+theorem two_add_ne_zero [CharZero K] (hmin : minpoly ℤ θ = X ^ 2 + 1) :
+    (2 : 𝓞 K) + θ ≠ 0 := by
+  intro h0
+  have h5 := two_add_mul_two_sub_eq_five hmin
+  rw [h0, zero_mul] at h5
+  exact absurd h5.symm (by norm_num)
 
 /-- The ideal `(2 + θ)` has absolute norm `5`: `N(2 + θ) = 2² − (−1) · 1²`. -/
 theorem absNorm_span_two_add (hmin : minpoly ℤ θ = X ^ 2 + 1)

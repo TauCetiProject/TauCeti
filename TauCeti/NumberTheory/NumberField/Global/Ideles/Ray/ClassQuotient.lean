@@ -45,6 +45,9 @@ description determines a well-defined homomorphism on idele classes.
   congruent to one is the ray class of the fractional ideal of its finite component.
 * `TauCeti.GlobalNumberFields.rayClassQuotient_surjective`: the map is surjective.
 * `TauCeti.GlobalNumberFields.ker_rayClassQuotient`: its kernel is `raySubgroup 𝔪`.
+* `TauCeti.GlobalNumberFields.raySubgroup_eq_top_iff`,
+  `TauCeti.GlobalNumberFields.raySubgroup_one_eq_top_iff`: `raySubgroup 𝔪 = ⊤` iff `RayClassGroup 𝔪`
+  is trivial, and at the trivial modulus iff `classNumber K = 1`.
 * `TauCeti.GlobalNumberFields.finiteIndex_raySubgroup`: hence the ray subgroup has finite index.
 * `TauCeti.GlobalNumberFields.classMap_comp_rayClassQuotient`: the maps are compatible with the
   transition maps between ray class groups.
@@ -333,6 +336,24 @@ theorem ker_rayClassQuotient (𝔪 : Modulus K) : (rayClassQuotient 𝔪).ker = 
   obtain ⟨α, hα⟩ := exists_unitEmbedding_mul_mem_ideleCongrOneSubgroup 𝔪 x
   rw [mk_eq_mk_unitEmbedding_mul x α, MonoidHom.mem_ker]
   exact rayClassQuotient_mk_eq_one_iff_of_mem hα
+
+/-- **Triviality of the ray subgroup**: `raySubgroup 𝔪 = ⊤` if and only if the ray class group
+`RayClassGroup 𝔪` is trivial. -/
+theorem raySubgroup_eq_top_iff (𝔪 : Modulus K) :
+    raySubgroup 𝔪 = ⊤ ↔ Subsingleton (RayClassGroup 𝔪) := by
+  rw [← ker_rayClassQuotient, MonoidHom.ker_eq_top_iff]
+  refine ⟨fun h ↦ ⟨fun a b ↦ ?_⟩, fun _ ↦ MonoidHom.ext fun _ ↦ Subsingleton.elim _ _⟩
+  obtain ⟨x, rfl⟩ := rayClassQuotient_surjective 𝔪 a
+  obtain ⟨y, rfl⟩ := rayClassQuotient_surjective 𝔪 b
+  simp [h]
+
+/-- **Triviality of the ray subgroup at the trivial modulus**: `raySubgroup (Modulus.one K) = ⊤`
+if and only if `K` has class number `1`. -/
+theorem raySubgroup_one_eq_top_iff (K : Type*) [Field K] [NumberField K] :
+    raySubgroup (Modulus.one K) = ⊤ ↔ NumberField.classNumber K = 1 := by
+  rw [raySubgroup_eq_top_iff, (oneEquivClassGroup (K := K)).toEquiv.subsingleton_congr,
+    ← Fintype.card_le_one_iff_subsingleton]
+  exact ⟨fun h ↦ le_antisymm h (NumberField.classNumber_pos K), fun h ↦ h.le⟩
 
 /-- **The ray subgroup has finite index**: it is the kernel of the surjection `rayClassQuotient 𝔪`
 onto the finite ray class group. -/

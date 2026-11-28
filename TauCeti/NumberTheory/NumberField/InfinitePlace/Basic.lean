@@ -91,6 +91,18 @@ absolute value on `ℚ`.
   equivalent to a nonarchimedean absolute value.
 * `NumberField.IsTotallyReal.instIsEmptyIsComplex`: a totally real field has no complex infinite
   places.
+* `NumberField.IsTotallyComplex.instIsEmptyIsReal`: a totally complex field has no real infinite
+  places.
+* `NumberField.InfinitePlace.subsingleton_of_finrank_eq_two`: a totally complex field of degree
+  `2` has a unique infinite place.
+* `NumberField.InfinitePlace.univ_embedding_eq_pair`: when `K` has a unique infinite place `w`,
+  the complex embeddings of `K` are `w.embedding` and its conjugate.
+* `NumberField.InfinitePlace.embedding_fun_ext`: when `K` has a unique infinite place `w`, two
+  functions on `K →+* ℂ` agree once they agree at `w.embedding` and its conjugate.
+* `NumberField.InfinitePlace.embedding_eq_or_eq_conjugate`: an embedding inducing `w` equals
+  `w.embedding` or its conjugate.
+* `NumberField.InfinitePlace.IsComplex.embedding_ne_conjugate`: at a complex place, `w.embedding`
+  is distinct from its conjugate.
 -/
 
 public section
@@ -106,6 +118,11 @@ variable {K : Type*} [Field K]
 instance IsTotallyReal.instIsEmptyIsComplex [IsTotallyReal K] :
     IsEmpty {w : InfinitePlace K // w.IsComplex} :=
   ⟨fun w ↦ not_isReal_iff_isComplex.mpr w.property (IsTotallyReal.isReal w.val)⟩
+
+/-- A totally complex field has no real infinite places. -/
+instance IsTotallyComplex.instIsEmptyIsReal [IsTotallyComplex K] :
+    IsEmpty {w : InfinitePlace K // w.IsReal} :=
+  ⟨fun w ↦ not_isReal_iff_isComplex.mpr (IsTotallyComplex.isComplex w.val) w.property⟩
 
 /-- **An extension of a totally real field unramified at infinity is totally real.** If every
 infinite place of `K` is unramified over a totally real field `k`, then every infinite place of
@@ -217,6 +234,13 @@ theorem InfinitePlace.nrComplexPlaces_eq_one_of_finrank_eq_two [IsTotallyComplex
   have := NumberField.IsTotallyComplex.finrank (K := K)
   omega
 
+/-- **A totally complex field of degree `2` has a unique infinite place.** -/
+theorem InfinitePlace.subsingleton_of_finrank_eq_two [IsTotallyComplex K]
+    (hK : Module.finrank ℚ K = 2) : Subsingleton (InfinitePlace K) := by
+  apply Fintype.card_le_one_iff_subsingleton.mp
+  rw [card_eq_nrRealPlaces_add_nrComplexPlaces, NumberField.IsTotallyComplex.nrRealPlaces_eq_zero,
+    nrComplexPlaces_eq_one_of_finrank_eq_two hK, zero_add]
+
 variable (K) in
 /-- **Halving the degree less the real places counts the complex places.** The degree is
 `r₁ + 2 r₂`, so subtracting the real places and halving leaves the complex ones. -/
@@ -297,6 +321,39 @@ theorem IsTotallyReal.nontrivial_ringHom_real [IsTotallyReal K]
   rw [← hφ.coe_embedding_apply, ← hψ.coe_embedding_apply, h]
 
 end NumberField
+
+/-- If a complex embedding `σ` induces the infinite place `w`, then `σ` equals `w.embedding` or
+its complex conjugate. -/
+theorem InfinitePlace.embedding_eq_or_eq_conjugate {w : InfinitePlace K} {σ : K →+* ℂ}
+    (h : mk σ = w) :
+    σ = w.embedding ∨ σ = ComplexEmbedding.conjugate w.embedding :=
+  (mk_eq_iff.mp ((mk_embedding w).trans h.symm)).imp Eq.symm Eq.symm
+
+/-- When `K` has a unique infinite place `w`, the complex embeddings of `K` are `w.embedding`
+and its complex conjugate. -/
+theorem InfinitePlace.univ_embedding_eq_pair [NumberField K] [Subsingleton (InfinitePlace K)]
+    [DecidableEq (K →+* ℂ)] (w : InfinitePlace K) :
+    (Finset.univ : Finset (K →+* ℂ)) = {w.embedding, ComplexEmbedding.conjugate w.embedding} := by
+  ext τ
+  simpa using w.embedding_eq_or_eq_conjugate (Subsingleton.elim (mk τ) w)
+
+/-- When `K` has a unique infinite place `w`, two functions on complex embeddings `K →+* ℂ` are
+equal once they agree at `w.embedding` and its complex conjugate. -/
+theorem InfinitePlace.embedding_fun_ext {α : Sort*} [Subsingleton (InfinitePlace K)]
+    {f g : (K →+* ℂ) → α} (w : InfinitePlace K)
+    (h1 : f w.embedding = g w.embedding)
+    (h2 : f (ComplexEmbedding.conjugate w.embedding) =
+      g (ComplexEmbedding.conjugate w.embedding)) :
+    f = g := by
+  funext σ
+  rcases w.embedding_eq_or_eq_conjugate (Subsingleton.elim (mk σ) w) with rfl | rfl
+  · exact h1
+  · exact h2
+
+/-- At a complex infinite place `w`, `w.embedding` is distinct from its complex conjugate. -/
+theorem InfinitePlace.IsComplex.embedding_ne_conjugate {w : InfinitePlace K} (hw : w.IsComplex) :
+    w.embedding ≠ ComplexEmbedding.conjugate w.embedding := fun h ↦
+  not_isReal_iff_isComplex.mpr hw (isReal_iff.mpr (ComplexEmbedding.isReal_iff.mpr h.symm))
 
 /-- The real embedding of the restriction of a real place `w` along `f` is the real embedding of
 `w` composed with `f`. -/
