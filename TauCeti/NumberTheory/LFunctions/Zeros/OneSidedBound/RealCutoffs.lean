@@ -12,9 +12,10 @@ import TauCeti.Analysis.Asymptotics.NatFloor
 # Real cutoffs for the signed prime remainder
 
 The theorem `eventually_primeRemainder_le_rpow_iff_natCast` gives the real-cutoff estimate
-from integer estimates with arbitrarily small exponent losses. It combines
-`abs_primeRemainder_sub_le` with the floor interpolation theorems
-`eventually_sub_nat_floor_le_div` and `eventually_le_rpow_add_iff_natCast`.
+from integer estimates with arbitrarily small exponent losses, using the local variation bound
+`abs_primeRemainder_sub_le` and floor interpolation. Taking `ε = β - 1/2` for `β > 1/2`
+supplies the eventual upper bound `y ^ (β - 1)` required by the Dirichlet L-function
+zero-exclusion criterion `LFunction_ne_zero_of_primeRemainder_le`.
 
 The transfer is the step in `New.eventually_primeRemainder_le_rpow` in
 `grh/src/New/Reduction/OneSidedBound.lean` of lsernau/grh-lean, revision `72fead1`
