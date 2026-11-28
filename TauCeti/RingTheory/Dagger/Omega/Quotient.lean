@@ -219,4 +219,9 @@ instance (priority := low) finite_omega : Module.Finite A (Omega K A) := by
     IsScalarTower.of_algebraMap_eq fun r ↦ ((presentation K A).commutes r).symm
   exact Omega.finite_of_surjective (R := K) (presentation_surjective K A)
 
+/-- For every `K`-dagger algebra `A` over a complete ultrametric normed field `K`, `Omega K A` is
+a Noetherian `A`-module. -/
+instance (priority := low) isNoetherian_omega : IsNoetherian A (Omega K A) :=
+  have := isNoetherianRing (K := K) (A := A); inferInstance
+
 end TauCeti.Dagger.IsDaggerAlgebra

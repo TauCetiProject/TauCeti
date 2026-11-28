@@ -6,14 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
-public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
-import Mathlib.GroupTheory.Perm.Fin
-import Mathlib.Order.Fin.Tuple
+public import TauCeti.LinearAlgebra.ExteriorAlgebra.Basis
 import TauCeti.Data.Finset.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Reverse
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
-import TauCeti.Order.Hom.PowersetCard
 
 /-!
 # Coordinate projections on an exterior algebra
@@ -33,28 +30,26 @@ exterior basis vectors containing both coordinates.
 Removing two distinct coordinates from an index set in the two possible orders gives opposite
 products of shuffle signs (`TauCeti.ExteriorAlgebra.basisEraseSign_mul_basisEraseSign_erase`).
 
-The grade involution is diagonal for the exterior basis as well: it multiplies an exterior
-monomial, and so the basis vector indexed by `s`, by the parity of its degree.
-Reversal is diagonal too, with the sign `(-1) ^ (s.card.choose 2)`
-(`ExteriorAlgebra.reverse_basis`). For a finite index set, the top-degree coefficient
-`b.ExteriorAlgebra.coord Finset.univ` therefore kills every contraction, and the grade involution
-and reversal multiply it by `(-1) ^ n` and `(-1) ^ (n.choose 2)` in rank `n`
-(`Module.Basis.exteriorAlgebra_coord_univ_contractLeft`,
+Reversal is diagonal for the exterior basis, with the sign `(-1) ^ (s.card.choose 2)`
+(`ExteriorAlgebra.reverse_basis`), matching the diagonal grade involution from
+`TauCeti.LinearAlgebra.ExteriorAlgebra.Basis` (`TauCeti.ExteriorAlgebra.involute_basis`). For a
+finite index set, the top-degree coefficient `b.ExteriorAlgebra.coord Finset.univ` therefore kills
+every contraction, and the grade involution and reversal multiply it by `(-1) ^ n` and
+`(-1) ^ (n.choose 2)` in rank `n` (`Module.Basis.exteriorAlgebra_coord_univ_contractLeft`,
 `Module.Basis.exteriorAlgebra_coord_univ_involute`,
 `Module.Basis.exteriorAlgebra_coord_univ_reverse`).
-
-Every basis vector is the product of the exterior-algebra generators of its index set, in
-increasing order; for index sets with one or two elements this is also recorded in the explicit
-forms `TauCeti.ExteriorAlgebra.basis_singleton` and `TauCeti.ExteriorAlgebra.basis_pair`.
 
 Independently of a basis, `ExteriorAlgebra.contractLeft_map` states naturality under a linear
 map: pull back the contracting functional and then map the contracted element. This follows
 from the general quadratic-isometry statement `CliffordAlgebra.contractLeft_map`.
 
-Independently of a basis, the grade involution is the sign `(-1) ^ n` on the `n`-th exterior power,
-a contraction carries the `(n + 1)`-th exterior power into the `n`-th, and a vector graded-commutes
-with every multivector: `ι m * x = involute x * ι m`.  Together with the graded Leibniz rule
-`CliffordAlgebra.contractLeft_mul`, these say that a contraction is an odd derivation of degree
+Independently of a basis, a contraction carries the `(n + 1)`-th exterior power into the `n`-th
+(`TauCeti.ExteriorAlgebra.contractLeft_mem_exteriorPower`). Together with the `(-1) ^ n` sign of
+the grade involution on `⋀ⁿ M` (`TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower`) and
+graded commutativity `ι m * x = involute x * ι m` (`ExteriorAlgebra.ι_mul_eq_involute_mul`,
+`ExteriorAlgebra.ι_mul_eq_neg_one_pow_smul_mul`) in
+`TauCeti.LinearAlgebra.ExteriorAlgebra.GradeInvolution`, as well as the graded Leibniz rule
+`CliffordAlgebra.contractLeft_mul`, this says that a contraction is an odd derivation of degree
 `-1` of the graded-commutative exterior algebra. On a wedge product of vectors it is the alternating
 sum of deletions (`TauCeti.ExteriorAlgebra.contractLeft_ιMulti`); this is the differential of the
 Koszul complex.
@@ -88,19 +83,6 @@ universe u v w
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 
-/-- **An exterior-basis vector is the product of its generators in increasing order**: the basis
-vector indexed by `s` is `ι (b i₁) * ⋯ * ι (b iₖ)` for `s.sort = [i₁, …, iₖ]`. -/
-theorem _root_.Module.Basis.exteriorAlgebra_eq_prod_map_sort {I : Type w} [LinearOrder I]
-    (b : Module.Basis I R M) (s : Finset I) :
-    b.ExteriorAlgebra s = ((s.sort.map b).map (ExteriorAlgebra.ι R)).prod := by
-  rw [ExteriorAlgebra.basis_apply_ofCard b rfl, ExteriorAlgebra.ιMulti_family,
-    ExteriorAlgebra.ιMulti_apply]
-  congr 1
-  refine List.ext_getElem (by simp) fun n _ _ ↦ ?_
-  simp only [List.getElem_ofFn, Function.comp_apply, List.getElem_map,
-    Set.powersetCard.ofFinEmbEquiv_symm_apply, Set.powersetCard.ofCard]
-  exact congrArg (fun i ↦ ExteriorAlgebra.ι R (b i)) (Finset.orderEmbOfFin_apply _ _ _)
-
 /-- Contracting an exterior-basis vector by a coordinate not in its index set gives zero. -/
 @[simp]
 private theorem contractLeft_coord_basis_eq_zero_of_not_mem {I : Type w} [LinearOrder I]
@@ -114,108 +96,6 @@ private theorem contractLeft_coord_basis_eq_zero_of_not_mem {I : Type w} [Linear
   rintro rfl
   exact absurd ((Finset.mem_sort _).mp hj) hi
 
-/-- **The grade involution acts on an exterior monomial by the parity of its degree.** The
-monomial is the product of its `n` generators, each of which the involution negates. -/
-@[simp]
-theorem involute_ιMulti {n : ℕ} (v : Fin n → M) :
-    CliffordAlgebra.involute (Q := (0 : QuadraticForm R M)) (ExteriorAlgebra.ιMulti R n v) =
-      (-1 : R) ^ n • ExteriorAlgebra.ιMulti R n v := by
-  -- Every exterior monomial is the product of the list of its generators.
-  have h : ExteriorAlgebra.ιMulti R n v =
-      ((List.ofFn v).map (CliffordAlgebra.ι (0 : QuadraticForm R M))).prod := by
-    rw [ExteriorAlgebra.ιMulti_apply, List.map_ofFn]
-    rfl
-  rw [h, CliffordAlgebra.involute_prod_map_ι, List.length_ofFn]
-
-/-- **The grade involution acts on an exterior-basis vector by the parity of its index set.** The
-basis vector indexed by `s` is the monomial on `s.card` generators. -/
-@[simp]
-theorem involute_basis {I : Type w} [LinearOrder I]
-    (b : Module.Basis I R M) (s : Finset I) :
-    CliffordAlgebra.involute (Q := (0 : QuadraticForm R M)) (b.ExteriorAlgebra s) =
-      (-1 : R) ^ s.card • b.ExteriorAlgebra s := by
-  rw [ExteriorAlgebra.basis_apply]
-  exact involute_ιMulti _
-
-private def basisEraseSignOfErase {I : Type w} [LinearOrder I]
-    (i : I) (t : Finset I) (hi : i ∉ t) : ℤˣ :=
-  let u : Set.powersetCard I 1 := ⟨{i}, Finset.card_singleton i⟩
-  let t' : Set.powersetCard I t.card := ⟨t, rfl⟩
-  (Set.powersetCard.permOfDisjoint (s := u) (t := t') (by simp [u, t', hi])).sign
-
-/-- The shuffle sign for the singleton basis vector indexed by `i` followed by the basis vector
-indexed by `s.erase i`. When `i ∈ s`, this is the sign of moving `i` to the front of `s`. -/
-def basisEraseSign {I : Type w} [LinearOrder I] (i : I) (s : Finset I) : ℤˣ :=
-  basisEraseSignOfErase i (s.erase i) (by simp)
-
-private theorem basisEraseSign_eq_neg_one_pow_card_filter_lt_of_mem
-    {I : Type w} [LinearOrder I]
-    (i : I) (s : Finset I) (hi : i ∈ s) :
-    basisEraseSign i s = (-1 : ℤˣ) ^ (s.filter (fun j ↦ j < i)).card := by
-  classical
-  let n := (s.erase i).card
-  have hsCard : s.card = n + 1 := by
-    simpa [n] using (Finset.card_erase_add_one hi).symm
-  -- Enumerate `s` in increasing order. The position `k` of `i` counts precisely the entries
-  -- which the shuffle crosses when it moves the singleton `{i}` to the front.
-  let e : Fin (n + 1) ↪o I := s.orderEmbOfFin hsCard
-  let k : Fin (n + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
-  have hek : e k = i :=
-    congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
-  let u : Set.powersetCard I 1 := ⟨{i}, Finset.card_singleton i⟩
-  let t : Set.powersetCard I n := ⟨s.erase i, rfl⟩
-  have hdisj : Disjoint u.val t.val := by simp [u, t]
-  let p : Equiv.Perm (Fin (1 + n)) := Set.powersetCard.permOfDisjoint hdisj
-  -- After reconciling the two cardinality presentations, this shuffle is the inverse cycle
-  -- which moves position `k` to the front and shifts the preceding positions one step right.
-  have hp := Set.powersetCard.conj_permOfDisjoint_singleton_erase i s hi rfl hsCard hdisj
-  have hsign : Equiv.Perm.sign ((finCongr (Nat.add_comm 1 n)).symm.trans
-      (p.trans (finCongr (Nat.add_comm 1 n)))) = Equiv.Perm.sign p :=
-    Equiv.Perm.sign_symm_trans_trans p (finCongr (Nat.add_comm 1 n))
-  rw [basisEraseSign]
-  -- Unfolding the local permutation exposes the sign computed above.
-  change Equiv.Perm.sign p = _
-  rw [← hsign, hp, Equiv.Perm.sign_symm, Fin.sign_cycleRange]
-  congr 1
-  -- The initial segment below `k` is order-isomorphic to the elements of `s` strictly below `i`,
-  -- so its cardinality is the exponent in the claimed sign.
-  have himage : Finset.image e (Finset.Iio k) = s.filter (fun j ↦ j < i) := by
-    ext x
-    simp only [Finset.mem_image, Finset.mem_Iio, Finset.mem_filter]
-    constructor
-    · rintro ⟨j, hj, rfl⟩
-      exact ⟨Finset.orderEmbOfFin_mem s hsCard j, hek ▸ e.strictMono hj⟩
-    · rintro ⟨hxs, hxi⟩
-      let j : Fin (n + 1) := (s.orderIsoOfFin hsCard).symm ⟨x, hxs⟩
-      refine ⟨j, ?_, ?_⟩
-      · exact e.lt_iff_lt.mp (by simpa [e, j, k] using hxi)
-      · exact congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨x, hxs⟩)
-  rw [← Fin.card_Iio k, ← himage, Finset.card_image_of_injective _ e.injective]
-
-/-- The shuffle sign which moves `i` to the front of an ordered exterior monomial is `-1`
-raised to the number of indices before `i`. This formula also applies when `i ∉ s`: inserting
-`i` changes neither the erased set defining the shuffle nor the indices strictly below `i`. -/
-@[simp]
-theorem basisEraseSign_eq_neg_one_pow_card_filter_lt {I : Type w} [LinearOrder I]
-    (i : I) (s : Finset I) :
-    basisEraseSign i s = (-1 : ℤˣ) ^ (s.filter (fun j ↦ j < i)).card := by
-  classical
-  by_cases hi : i ∈ s
-  · exact basisEraseSign_eq_neg_one_pow_card_filter_lt_of_mem i s hi
-  · have hsign : basisEraseSign i (insert i s) = basisEraseSign i s := by
-      simp [basisEraseSign, hi]
-    have hfilter : (insert i s).filter (fun j ↦ j < i) = s.filter (fun j ↦ j < i) := by
-      ext j
-      simp only [Finset.mem_filter, Finset.mem_insert]
-      constructor
-      · rintro ⟨hji' | hjs, hji⟩
-        · exact ((ne_of_lt hji) hji').elim
-        · exact ⟨hjs, hji⟩
-      · exact fun h ↦ ⟨Or.inr h.1, h.2⟩
-    rw [← hsign, ← hfilter]
-    exact basisEraseSign_eq_neg_one_pow_card_filter_lt_of_mem i (insert i s)
-      (Finset.mem_insert_self i s)
-
 /-- The two orders of removing distinct indices `j` and `k` from `J` carry opposite products of
 shuffle signs. -/
 theorem basisEraseSign_mul_basisEraseSign_erase {I : Type w} [LinearOrder I] {J : Finset I}
@@ -224,60 +104,6 @@ theorem basisEraseSign_mul_basisEraseSign_erase {I : Type w} [LinearOrder I] {J 
       -(basisEraseSign k J * basisEraseSign j (J.erase k)) := by
   simp only [basisEraseSign_eq_neg_one_pow_card_filter_lt]
   exact Finset.neg_one_pow_card_filter_lt_mul_erase hj hk hjk
-
-/-- The exterior-basis vector indexed by a singleton is the image of the corresponding basis
-vector under the exterior-algebra generator. -/
-@[simp]
-theorem basis_singleton {I : Type w} [LinearOrder I]
-    (b : Module.Basis I R M) (i : I) :
-    b.ExteriorAlgebra {i} = ExteriorAlgebra.ι R (b i) := by
-  simp [b.exteriorAlgebra_eq_prod_map_sort]
-
-/-- The exterior-basis vector indexed by a pair `{i, j}` with `i < j` is the product of the two
-basis vectors in increasing order. -/
-theorem basis_pair {I : Type w} [LinearOrder I] (b : Module.Basis I R M) {i j : I} (hij : i < j) :
-    b.ExteriorAlgebra {i, j} = ExteriorAlgebra.ι R (b i) * ExteriorAlgebra.ι R (b j) := by
-  rw [b.exteriorAlgebra_eq_prod_map_sort,
-    Finset.sort_insert _ (by simpa using hij.le) (by simpa using hij.ne)]
-  simp
-
-/-- Multiplying the basis vector for `i` by the basis vector for `s.erase i` reconstructs the
-basis vector for `s`, with the shuffle sign that moves `i` to the front. -/
-theorem basis_singleton_mul_basis_erase {I : Type w} [LinearOrder I]
-    (b : Module.Basis I R M) (i : I) (s : Finset I) (hi : i ∈ s) :
-    b.ExteriorAlgebra {i} * b.ExteriorAlgebra (s.erase i) =
-      basisEraseSign i s • b.ExteriorAlgebra s := by
-  let u : Set.powersetCard I 1 := ⟨{i}, Finset.card_singleton i⟩
-  let t : Set.powersetCard I (s.erase i).card := ⟨s.erase i, rfl⟩
-  have hdisj : Disjoint u.val t.val := by simp [u, t]
-  have hunion : Set.powersetCard.disjUnion hdisj =
-      (Set.powersetCard.ofCard (s := s) (by
-        rw [Finset.card_erase_of_mem hi]
-        have : 0 < s.card := Finset.card_pos.mpr ⟨i, hi⟩
-        omega) : Set.powersetCard I (1 + (s.erase i).card)) := by
-    apply Subtype.ext
-    simp [Set.powersetCard.disjUnion, u, t, hi]
-  have hprod := ExteriorAlgebra.basis_mul_of_disjoint b u t hdisj
-  rw [hunion] at hprod
-  simpa [basisEraseSign, basisEraseSignOfErase, u, t] using hprod
-
-/-- **Creating a basis coordinate inserts it into the index set**, with the shuffle sign that
-moves it to the front; it is zero when the coordinate is already present, since a repeated
-generator squares to zero. -/
-@[simp]
-theorem ι_mul_basis {I : Type w} [LinearOrder I]
-    (b : Module.Basis I R M) (i : I) (s : Finset I) :
-    ExteriorAlgebra.ι R (b i) * b.ExteriorAlgebra s =
-      if i ∈ s then 0
-        else basisEraseSign i (insert i s) • b.ExteriorAlgebra (insert i s) := by
-  classical
-  rw [← basis_singleton]
-  split_ifs with hi
-  · exact ExteriorAlgebra.basis_mul_of_not_disjoint b
-      (⟨{i}, Finset.card_singleton i⟩ : Set.powersetCard I 1) (⟨s, rfl⟩ : Set.powersetCard I s.card)
-      (by simp [hi])
-  · have h := basis_singleton_mul_basis_erase b i (insert i s) (Finset.mem_insert_self i s)
-    rwa [Finset.erase_insert hi] at h
 
 /-- Contracting an exterior-basis vector erases the contracted coordinate, with the shuffle sign
 that moves that coordinate to the front; it is zero when the coordinate is absent. -/
@@ -364,18 +190,7 @@ theorem ι_mul_ι_mul_contractLeft_contractLeft_coord_basis {I : Type w} [Linear
     · simp [hi]
   · simp [hj]
 
-/-! ### Exterior powers under the grade involution and contraction -/
-
-/-- **The grade involution acts on the `n`-th exterior power by `(-1) ^ n`.** -/
-theorem involute_of_mem_exteriorPower {n : ℕ} {x : ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^n M) :
-    involute (Q := (0 : QuadraticForm R M)) x = (-1 : R) ^ n • x := by
-  induction hx using Submodule.pow_induction_on_left' with
-  | algebraMap r => simp
-  | add x y i hx hy ihx ihy => rw [map_add, ihx, ihy, smul_add]
-  | mem_mul m hm i x _ ih =>
-    obtain ⟨v, rfl⟩ := hm
-    rw [map_mul, ih, involute_ι, mul_smul_comm, neg_mul, smul_neg, pow_succ', mul_smul,
-      neg_one_smul]
+/-! ### Exterior powers under contraction -/
 
 /-- Contraction annihilates the zeroth exterior power, the scalars. -/
 theorem contractLeft_eq_zero_of_mem_exteriorPower_zero (d : Module.Dual R M)
@@ -442,36 +257,6 @@ theorem contractLeft_map {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ
         (contractLeft (Q := (0 : QuadraticForm R M)) (d ∘ₗ f) x) := by
   -- The exterior-algebra map is the zero-quadratic-form case of the Clifford-algebra map.
   exact CliffordAlgebra.contractLeft_map { f with map_app' := fun _ => rfl } d x
-
-/-- **A vector graded-commutes with every multivector**: moving `ι R m` past `x` applies the grade
-involution to `x`. -/
-theorem ι_mul_eq_involute_mul (m : M) (x : ExteriorAlgebra R M) :
-    ExteriorAlgebra.ι R m * x =
-      involute (Q := (0 : QuadraticForm R M)) x * ExteriorAlgebra.ι R m := by
-  induction x using CliffordAlgebra.induction with
-  | algebraMap r => rw [AlgHom.commutes, Algebra.commutes]
-  | ι v =>
-    rw [involute_ι, neg_mul, eq_neg_iff_add_eq_zero]
-    exact ExteriorAlgebra.ι_add_mul_swap m v
-  | mul x y hx hy => rw [← mul_assoc, hx, mul_assoc, hy, map_mul, mul_assoc]
-  | add x y hx hy => rw [mul_add, hx, hy, map_add, add_mul]
-
-/-- A vector graded-commutes with an element of the `n`-th exterior power with the sign
-`(-1) ^ n`. -/
-theorem ι_mul_eq_neg_one_pow_smul_mul {n : ℕ} {x : ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^n M)
-    (m : M) : ExteriorAlgebra.ι R m * x = (-1 : R) ^ n • (x * ExteriorAlgebra.ι R m) := by
-  rw [ι_mul_eq_involute_mul, TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower hx,
-    smul_mul_assoc]
-
-/-- An element of an even exterior power commutes with every vector, in the form
-`x * ι m + involute (ι m) * x = 0` required of the degree-one part of a twisted derivation by
-`ExteriorAlgebra.liftTwistedDerivation`. -/
-theorem mul_ι_add_involute_ι_mul_of_mem_exteriorPower {n : ℕ} (hn : Even n)
-    {x : ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^n M) (m : M) :
-    x * ExteriorAlgebra.ι R m +
-      involute (Q := (0 : QuadraticForm R M)) (ExteriorAlgebra.ι R m) * x = 0 := by
-  rw [involute_ι, neg_mul, ι_mul_eq_neg_one_pow_smul_mul hx, hn.neg_one_pow, one_smul,
-    add_neg_cancel]
 
 /-! ### Reversal and the top-degree coefficient of a basis -/
 
@@ -544,7 +329,6 @@ theorem _root_.Module.Basis.exteriorAlgebra_coord_univ_reverse (x : ExteriorAlge
   simpa using LinearMap.congr_fun h x
 
 end Basis
-
 end ExteriorAlgebra
 
 namespace TauCeti.ExteriorAlgebra

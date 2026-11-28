@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Dagger.Omega.Quotient
+public import TauCeti.RingTheory.Dagger.Omega.DeRham.Coordinates
 public import TauCeti.RingTheory.Dagger.Omega.Kaehler
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.RingTheory.Unramified.Field
 
 /-!
-# Differentials of a doubled dagger origin
+# Differentials of a doubled dagger origin and two-variable de Rham examples
 
 The quotient presentation retains the relation `d(X²) = 2X dX`, not `dX = 0`.
 In characteristic two the relation vanishes entirely: the differentials of the doubled origin
@@ -20,7 +20,8 @@ also applies to the zero algebra.
 
 For finite algebras the comparison with algebraic Kähler differentials is an isomorphism.
 The tests below include scalar compatibility, finite separable extensions, the zero algebra,
-and dual numbers with a nonzero differential of their nilpotent coordinate.
+dual numbers with a nonzero differential of their nilpotent coordinate, and explicit two-variable
+exterior-derivative calculations on `K⟨X₀, X₁⟩†`.
 -/
 
 public section
@@ -73,11 +74,8 @@ theorem injective_quotientMap_doubledOrigin_of_charTwo [CharP K 2] :
     simp [Derivation.leibniz_pow, ← Nat.cast_smul_eq_nsmul W, htwo]
   simp [hd]
 
-end TauCeti.Examples
-
 section KaehlerComparison
 
-open TauCeti.Dagger
 open scoped DualNumber
 
 -- No norm, completeness, separability or reducedness is required for the comparison.
@@ -128,3 +126,37 @@ example (R : Type*) [CommRing R] [Nontrivial R] :
   simpa only [hD_eps, map_zero] using hD
 
 end KaehlerComparison
+
+section TwoVariableDeRham
+
+open TauCeti.Dagger.washnitzerAlgebra
+
+-- Explicit two-variable calculation: on `K⟨X₀, X₁⟩†`, `d(X₀ • dX₁) = dX₀ ∧ dX₁`.
+example :
+    let W₂ := washnitzerAlgebra (Fin 2) K
+    Omega.extDerivPow K W₂ 1 (X (Fin 2) K 0 •
+        (exteriorPower.oneEquiv W₂ (Omega K W₂)).symm (Omega.d K W₂ (X (Fin 2) K 1))) =
+      exteriorPower.ιMulti W₂ 2 ![Omega.d K W₂ (X (Fin 2) K 0), Omega.d K W₂ (X (Fin 2) K 1)] := by
+  intro W₂
+  rw [show (exteriorPower.oneEquiv W₂ (Omega K W₂)).symm (Omega.d K W₂ (X (Fin 2) K 1)) =
+      exteriorPower.ιMulti W₂ 1 (fun i ↦ Omega.d K W₂ (![X (Fin 2) K 1] i)) from
+      Subtype.ext <| by simp [exteriorPower.oneEquiv_symm_apply, ExteriorAlgebra.ιMulti_succ_apply],
+    Omega.extDerivPow_smul_ιMulti]
+  congr 1; funext i; fin_cases i <;> rfl
+
+-- On `K⟨X₀, X₁⟩†`, the `2`-form `dX₀ ∧ dX₁` is nonzero.
+example :
+    let W₂ := washnitzerAlgebra (Fin 2) K
+    exteriorPower.ιMulti W₂ 2
+        ![Omega.d K W₂ (X (Fin 2) K 0), Omega.d K W₂ (X (Fin 2) K 1)] ≠ 0 := by
+  intro W₂
+  let u := Set.powersetCard.ofCard (Finset.card_pair (by decide : (0 : Fin 2) < 1).ne)
+  have heq : (Omega.washnitzerBasis (Fin 2) K).exteriorPower 2 u =
+      exteriorPower.ιMulti W₂ 2 ![Omega.d K W₂ (X (Fin 2) K 0), Omega.d K W₂ (X (Fin 2) K 1)] := by
+    rw [Module.Basis.exteriorPower_pair _ (by decide : (0 : Fin 2) < 1),
+      Omega.washnitzerBasis_apply, Omega.washnitzerBasis_apply]
+  exact heq ▸ Omega.washnitzerBasis_exteriorPower_ne_zero 2 u
+
+end TwoVariableDeRham
+
+end TauCeti.Examples

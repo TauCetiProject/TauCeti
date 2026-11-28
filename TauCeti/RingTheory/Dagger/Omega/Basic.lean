@@ -104,6 +104,16 @@ instance [Subsingleton Ω[A⁄K]] : Subsingleton (Omega K A) :=
   (ofKaehler_surjective K A).subsingleton
 
 variable {K A} in
+/-- Universally finite differentials vanish when the structure map is surjective. -/
+theorem subsingleton_of_surjective (h : Function.Surjective (algebraMap K A)) :
+    Subsingleton (Omega K A) :=
+  have := KaehlerDifferential.subsingleton_of_surjective K A h; inferInstance
+
+/-- Universally finite differentials of a ring over itself vanish. -/
+instance instSubsingletonSelf : Subsingleton (Omega K K) :=
+  subsingleton_of_surjective Function.surjective_id
+
+variable {K A} in
 /-- A Kähler differential vanishes in `Omega K A` iff it lies in every submodule of `Ω[A⁄K]` with
 finite quotient. -/
 theorem ofKaehler_eq_zero_iff {x : Ω[A⁄K]} :
@@ -236,9 +246,28 @@ theorem washnitzerBasis_repr_d (g : W) (i : σ) :
     (washnitzerBasis σ K).repr (d K W g) i = pderiv σ K i g := by
   simp [washnitzerBasis, pderivPi_apply]
 
+/-- On `W = K⟨X_σ⟩†`, `d g = ω` iff all partial derivatives of `g` equal the coordinates of `ω`. -/
+theorem d_eq_iff_forall_pderiv_eq (g : W) (ω : Omega K W) :
+    d K W g = ω ↔ ∀ i, pderiv σ K i g = (washnitzerBasis σ K).repr ω i := by
+  rw [← (washnitzerBasis σ K).repr.injective.eq_iff, Finsupp.ext_iff]; simp [washnitzerBasis_repr_d]
+
+/-- On `W = K⟨X_σ⟩†` in any characteristic, `d g = 0` iff all partial derivatives vanish. -/
+theorem d_eq_zero_iff_forall_pderiv_eq_zero (g : W) :
+    d K W g = 0 ↔ ∀ i, pderiv σ K i g = 0 := by simpa using d_eq_iff_forall_pderiv_eq g 0
+
+/-- In characteristic zero, `d f = 0` in `Ω¹_{W/K}` iff `f ∈ range (algebraMap K W)`. -/
+theorem d_eq_zero_iff_mem_range_algebraMap [CharZero K] (f : W) :
+    d K W f = 0 ↔ f ∈ Set.range (algebraMap K W) := by
+  rw [d_eq_zero_iff_forall_pderiv_eq_zero, forall_pderiv_eq_zero_iff, Set.mem_range]
+
+/-- In characteristic zero, `d f = 0` iff `f` equals its constant coefficient viewed in `W`. -/
+theorem d_eq_zero_iff_eq_algebraMap_constantCoeff [CharZero K] (f : W) :
+    d K W f = 0 ↔ f = algebraMap K W (MvPowerSeries.constantCoeff f.val) := by
+  rw [d_eq_zero_iff_mem_range_algebraMap]
+  exact ⟨by rintro ⟨c, rfl⟩; simp [MvPowerSeries.algebraMap_apply], fun h ↦ ⟨_, h.symm⟩⟩
+
 /-- The basis vectors are the differentials of the variables. -/
-@[simp]
-theorem washnitzerBasis_apply (i : σ) : washnitzerBasis σ K i = d K W (X σ K i) := by
+@[simp] theorem washnitzerBasis_apply (i : σ) : washnitzerBasis σ K i = d K W (X σ K i) := by
   classical
   refine (washnitzerBasis σ K).repr.injective (Finsupp.ext fun j ↦ ?_)
   rw [Module.Basis.repr_self, washnitzerBasis_repr_d]
@@ -254,5 +283,4 @@ theorem d_eq_sum [Fintype σ] (g : W) :
   simp
 
 end Omega
-
 end TauCeti.Dagger

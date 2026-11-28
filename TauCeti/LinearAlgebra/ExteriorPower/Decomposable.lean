@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
-import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import TauCeti.LinearAlgebra.ExteriorAlgebra.GradeInvolution
 
 /-!
 # Decomposable exterior vectors

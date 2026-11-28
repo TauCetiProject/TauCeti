@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Determinant
-public import Mathlib.LinearAlgebra.ExteriorPower.Basis
+public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Order.Hom.PowersetCard
 
@@ -306,6 +306,65 @@ theorem map_sum_smul (f : M [⋀^Fin n]→ₗ[R] N) (A : Matrix (Fin n) (Fin n) 
 end AlternatingMap
 
 namespace Module.Basis
+
+section Repr
+
+variable {R M I : Type*} [CommRing R] [AddCommGroup M] [Module R M] [LinearOrder I]
+
+/-- The exterior-algebra coordinate of `ω : ⋀[R]^r M` at `u.1` equals its `exteriorPower r`
+coordinate at `u`. -/
+theorem exteriorAlgebra_repr_coe_eq (b : Basis I R M) {r : ℕ} (ω : ⋀[R]^r M)
+    (u : Set.powersetCard I r) :
+    b.ExteriorAlgebra.repr ω.val u.val = (b.exteriorPower r).repr ω u := by
+  classical
+  exact LinearMap.congr_fun
+    ((b.exteriorPower r).ext
+      (f₁ := (b.ExteriorAlgebra.coord u.val).comp (Submodule.subtype _))
+      (f₂ := (b.exteriorPower r).coord u)
+      fun t ↦ by
+        simp only [LinearMap.comp_apply, Submodule.coe_subtype,
+          ← ExteriorAlgebra.basis_eq_coe_basis, Module.Basis.coord_apply, Module.Basis.repr_self,
+          Finsupp.single_apply, Subtype.ext_iff]) ω
+
+/-- For `i : I`, `(exteriorPower.oneEquiv R M).symm (b i)` is the exterior-power basis vector
+indexed by `{i}`. -/
+theorem exteriorPower_one_apply (b : Basis I R M) (i : I) :
+    (exteriorPower.oneEquiv R M).symm (b i) =
+      b.exteriorPower 1 (Set.powersetCard.ofCard (Finset.card_singleton i)) := by
+  rw [exteriorPower.basis_apply, exteriorPower.ιMulti_family, exteriorPower.oneEquiv_symm_apply]
+  congr 1; funext j
+  have hmem : (Set.powersetCard.ofFinEmbEquiv.symm
+      (Set.powersetCard.ofCard (Finset.card_singleton i))) j ∈ ({i} : Finset I) := by
+    rw [Set.powersetCard.ofFinEmbEquiv_symm_apply]; exact Finset.orderEmbOfFin_mem _ _ j
+  exact congrArg b (Finset.mem_singleton.mp hmem).symm
+
+/-- For `i < j`, the exterior-power basis vector indexed by `{i, j}` is `b i ∧ b j`. -/
+theorem exteriorPower_pair (b : Basis I R M) {i j : I} (hij : i < j) :
+    b.exteriorPower 2 (Set.powersetCard.ofCard (Finset.card_pair hij.ne)) =
+      exteriorPower.ιMulti R 2 ![b i, b j] := by
+  rw [exteriorPower.basis_apply, exteriorPower.ιMulti_family,
+    Set.powersetCard.coe_ofFinEmbEquiv_symm_pair hij rfl]
+  congr 1
+  funext k
+  fin_cases k <;> simp
+
+/-- The `{k}`-coordinate of `(exteriorPower.oneEquiv R M).symm m` in `b.exteriorPower 1` equals
+the `k`-th coordinate of `m` in `b`. -/
+theorem exteriorPower_one_repr_oneEquiv_symm (b : Basis I R M) (m : M) (k : I) :
+    (b.exteriorPower 1).repr ((exteriorPower.oneEquiv R M).symm m)
+        (Set.powersetCard.ofCard (Finset.card_singleton k)) = b.repr m k := by
+  classical
+  exact LinearMap.congr_fun
+    (b.ext
+      (f₁ := ((b.exteriorPower 1).coord (Set.powersetCard.ofCard (Finset.card_singleton k))).comp
+        (exteriorPower.oneEquiv R M).symm.toLinearMap)
+      (f₂ := b.coord k)
+      fun i ↦ by
+        simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, exteriorPower_one_apply,
+          Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply, Subtype.ext_iff,
+          Set.powersetCard.val_ofCard, Finset.singleton_inj]) m
+
+end Repr
 
 variable {R M N I J : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] [LinearOrder I] [Fintype I] [LinearOrder J] [Finite J]
