@@ -26,7 +26,7 @@ public section
 
 namespace TauCeti.OneSidedBound
 
-open Filter
+open Filter TauCeti.ComplexMultiplication
 
 /-- Subtracting a local sum of positive parts from the uncut reciprocal contribution
 leaves the local sum of the minima. All three terms use the same exponent set and
@@ -36,12 +36,14 @@ theorem mul_localPrimeSum_inv_sub_eq_localPrimeSum_min {d p : ℕ} [Fact d.Prime
     y * localPrimeSum d p (fun n ↦ (n : ℝ)⁻¹) -
         localPrimeSum d p (fun n ↦ max (y / n - w n) 0) =
       localPrimeSum d p (fun n ↦ min (y / n) (w n)) := by
+  classical
   rcases le_or_gt p 1 with hp | hp
   · obtain rfl | rfl : p = 0 ∨ p = 1 := by omega
-    · simp [localPrimeSum_def, (Fact.out : d.Prime).ne_zero.symm]
+    · simp [localPrimeSum_def, positivePartnerExponents_of_ne_of_legendreSym_ne_neg_one
+        (Fact.out : d.Prime).ne_zero.symm (by simp)]
     · simp
-  simp only [localPrimeSum_def]
-  let A (e : ℕ) : Prop := 0 < e ∧ (p = d ∨ legendreSym d p = -1 ∧ Odd e)
+  simp only [localPrimeSum_eq_mul_tsum_indicator, Set.indicator_apply]
+  let A (e : ℕ) : Prop := e ∈ positivePartnerExponents d p
   let u (e : ℕ) : ℝ := if A e then y / (↑(p ^ e) : ℝ) else 0
   let v (e : ℕ) : ℝ := if A e then min (y / (↑(p ^ e) : ℝ)) (w (p ^ e)) else 0
   have hg : Summable (fun e : ℕ ↦ |y| * ((p : ℝ)⁻¹) ^ e) :=

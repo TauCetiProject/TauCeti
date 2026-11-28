@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Ramification
 import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Values
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.SplitPrime
 import TauCeti.NumberTheory.NumberField.Discriminant.Basic
-import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import TauCeti.NumberTheory.NumberField.Quadratic.Splitting
 import TauCeti.NumberTheory.RamificationInertia.Inert
 
@@ -58,8 +57,9 @@ Dedekind zeta function of `K`.
   `p` is inert.
 * `TauCeti.Multiquadratic.exists_span_natCast_eq_mul_of_fundamentalDiscriminantChar_discr_eq_one`:
   if `χ_D(p) = 1`, then `p 𝓞 K = 𝔭 𝔮` for distinct primes `𝔭 ≠ 𝔮`.
-* `TauCeti.Multiquadratic.isPrime_span_natCast_of_fundamentalDiscriminantChar_discr_eq_neg_one`:
-  if `χ_D(p) = -1`, then `p 𝓞 K` is prime.
+* `TauCeti.Multiquadratic.span_natCast_eq_of_fundamentalDiscriminantChar_discr_eq_neg_one`,
+  `TauCeti.Multiquadratic.isPrime_span_natCast_of_fundamentalDiscriminantChar_discr_eq_neg_one`:
+  if `χ_D(p) = -1`, then `p 𝓞 K` is the prime above `p`.
 * `TauCeti.Multiquadratic.absNorm_eq_sq_of_fundamentalDiscriminantChar_discr_eq_neg_one`,
   `TauCeti.Multiquadratic.absNorm_eq_of_fundamentalDiscriminantChar_discr_ne_neg_one`: a prime of
   `𝓞 K` above `p` has norm `p²` if `χ_D(p) = -1` and `p` otherwise.
@@ -217,22 +217,28 @@ theorem exists_span_natCast_eq_mul_of_fundamentalDiscriminantChar_discr_eq_one
     Set.toFinset_congr hT]
   simp [Finset.prod_pair hne, he𝔭, he𝔮]
 
+/-- **An inert prime generates the prime above it.** For a quadratic field `K` with discriminant
+`D`, if `χ_D(p) = -1`, then `p 𝓞 K` is the prime `𝔭` of `𝓞 K` above `p`. -/
+theorem span_natCast_eq_of_fundamentalDiscriminantChar_discr_eq_neg_one (hK : finrank ℚ K = 2)
+    (p : ℕ) [Fact p.Prime] (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime] [𝔭.LiesOver (span {(p : ℤ)})]
+    (h : fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p = -1) :
+    span {(p : 𝓞 K)} = 𝔭 := by
+  have hun := (isUnramifiedIn_iff_fundamentalDiscriminantChar_discr_ne_zero hK p).mpr
+    (by rw [h]; exact neg_ne_zero.mpr one_ne_zero)
+  have hmap := TauCeti.RamificationInertia.map_eq_of_ncard_primesOver_eq_one (span {(p : ℤ)}) 𝔭
+    ((fundamentalDiscriminantChar_discr_eq_neg_one_iff hK p).mp h).2
+    (Algebra.IsUnramifiedIn.ramificationIdx_eq_one (R := ℤ) hun ‹_›)
+  simpa only [Ideal.map_span, Set.image_singleton, map_natCast] using hmap
+
 /-- **An inert prime stays prime.** For a quadratic field `K` with discriminant `D`, if
 `χ_D(p) = -1`, then `p 𝓞 K` is a prime ideal of `𝓞 K`. -/
 theorem isPrime_span_natCast_of_fundamentalDiscriminantChar_discr_eq_neg_one
     (hK : finrank ℚ K = 2) (p : ℕ) [Fact p.Prime]
     (h : fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p = -1) :
     (span {(p : 𝓞 K)}).IsPrime := by
-  have hun := (isUnramifiedIn_iff_fundamentalDiscriminantChar_discr_ne_zero hK p).mpr
-    (by rw [h]; exact neg_ne_zero.mpr one_ne_zero)
-  have hone := ((fundamentalDiscriminantChar_discr_eq_neg_one_iff hK p).mp h).2
-  obtain ⟨𝔭, h𝔭⟩ := Set.ncard_eq_one.mp hone
-  have hmem : 𝔭 ∈ (span {(p : ℤ)}).primesOver (𝓞 K) := h𝔭 ▸ Set.mem_singleton 𝔭
-  have := hmem.1; have := hmem.2
-  have hmap := TauCeti.RamificationInertia.map_eq_of_ncard_primesOver_eq_one (span {(p : ℤ)}) 𝔭
-    hone (Algebra.IsUnramifiedIn.ramificationIdx_eq_one (R := ℤ) hun hmem.2)
-  simp only [Ideal.map_span, Set.image_singleton, map_natCast] at hmap
-  exact hmap ▸ hmem.1
+  obtain ⟨𝔭, _, _⟩ := (inferInstance : Nonempty ((span {(p : ℤ)}).primesOver (𝓞 K)))
+  rw [span_natCast_eq_of_fundamentalDiscriminantChar_discr_eq_neg_one hK p 𝔭 h]
+  infer_instance
 
 /-- **The norm of an inert prime.** For a quadratic field `K` with discriminant `D`, if
 `χ_D(p) = -1`, then the prime of `𝓞 K` above `p` has absolute norm `p²`. -/
@@ -240,15 +246,8 @@ theorem absNorm_eq_sq_of_fundamentalDiscriminantChar_discr_eq_neg_one (hK : finr
     (p : ℕ) [Fact p.Prime] (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime] [𝔭.LiesOver (span {(p : ℤ)})]
     (h : fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p = -1) :
     absNorm 𝔭 = p ^ 2 := by
-  have hun := (isUnramifiedIn_iff_fundamentalDiscriminantChar_discr_ne_zero hK p).mpr
-    (by rw [h]; exact neg_ne_zero.mpr one_ne_zero)
-  have hone := ((fundamentalDiscriminantChar_discr_eq_neg_one_iff hK p).mp h).2
-  obtain ⟨𝔮, h𝔮⟩ := Set.ncard_eq_one.mp hone
-  have h𝔭 : 𝔭 ∈ (span {(p : ℤ)}).primesOver (𝓞 K) := ⟨‹_›, ‹_›⟩
-  rw [h𝔮, Set.mem_singleton_iff] at h𝔭
-  have hT : (span {(p : ℤ)}).primesOver (𝓞 K) = {𝔭} := h𝔭 ▸ h𝔮
-  rw [TauCeti.NumberField.absNorm_eq_pow_finrank_of_primesOver_eq_singleton 𝔭 hT
-    (Algebra.IsUnramifiedIn.ramificationIdx_eq_one (R := ℤ) hun ‹_›), hK]
+  rw [← span_natCast_eq_of_fundamentalDiscriminantChar_discr_eq_neg_one hK p 𝔭 h,
+    absNorm_span_natCast, NumberField.RingOfIntegers.rank, hK]
 
 /-- **The norm of a split or ramified prime.** For a quadratic field `K` with discriminant `D`,
 if `χ_D(p) ≠ -1`, then every prime of `𝓞 K` above `p` has absolute norm `p`. -/
