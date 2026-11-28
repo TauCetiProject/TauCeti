@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 public import TauCeti.Topology.Algebra.UnitaryGroup
 public import TauCeti.Topology.Grassmannian.Orthonormal
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Extension
 import TauCeti.Topology.Algebra.GroupAction.Transitive
 
 /-!
@@ -111,24 +112,12 @@ theorem unitaryMap_standard_surjective (h : r ≤ N) :
   intro f
   -- Extend the frame to an orthonormal basis `b` indexed by `Fin N`; its vectors are the columns
   -- of a unitary matrix.
-  let v : Fin N → EuclideanSpace 𝕜 (Fin N) := fun k ↦
-    if hk : (k : ℕ) < r then WithLp.toLp 2 (f.val ⟨k, hk⟩) else 0
-  have hv_castLE : ∀ i, v (Fin.castLE h i) = WithLp.toLp 2 (f.val i) := fun i ↦ by
-    simp [v, i.isLt]
-  have hv : Orthonormal 𝕜 ((Set.range (Fin.castLE h)).domRestrict v) := by
-    rw [orthonormal_iff_ite]
-    rintro ⟨_, i, rfl⟩ ⟨_, j, rfl⟩
-    by_cases hij : i = j
-    · subst hij
-      simp [Set.domRestrict, hv_castLE, f.property.1 i]
-    · have hne : (⟨Fin.castLE h i, i, rfl⟩ : Set.range (Fin.castLE h)) ≠ ⟨Fin.castLE h j, j, rfl⟩ :=
-        fun e ↦ hij (Fin.castLE_injective h (congrArg Subtype.val e))
-      simp [Set.domRestrict, hv_castLE, orthonormal_iff_ite.1 f.property i j, hij, hne]
-  obtain ⟨b, hb⟩ := hv.exists_orthonormalBasis_extension_of_card_eq (by simp)
+  obtain ⟨b, hb⟩ := exists_orthonormalBasis_fin_apply_castLE_eq finrank_euclideanSpace_fin h
+    (e := fun i ↦ WithLp.toLp 2 (f.val i)) f.property
   refine ⟨⟨(EuclideanSpace.basisFun (Fin N) 𝕜).toBasis.toMatrix b,
     (EuclideanSpace.basisFun (Fin N) 𝕜).toMatrix_orthonormalBasis_mem_unitary b⟩, ?_⟩
   refine Subtype.ext <| funext fun i ↦ funext fun k ↦ ?_
-  simp [Module.Basis.toMatrix_apply, hb _ ⟨i, rfl⟩, hv_castLE]
+  simp [Module.Basis.toMatrix_apply, hb]
 
 variable (𝕜) in
 /-- The **stabilizer of the standard frame** in the unitary group: the unitary matrices whose
@@ -279,6 +268,21 @@ theorem fromBlocksOne_specialUnitaryStabilizerHomeomorph_symm_apply (m : ℕ)
     specialUnitaryGroup.fromBlocksOne 𝕜 r m ((specialUnitaryStabilizerHomeomorph 𝕜 r m).symm A) =
       A := by
   rw [← coe_specialUnitaryStabilizerHomeomorph_apply, Homeomorph.apply_symm_apply]
+
+/-- The element of `SU(m)` corresponding to an element `A` of the stabilizer is the lower right
+`m × m` block of `A`. -/
+@[simp]
+theorem coe_specialUnitaryStabilizerHomeomorph_symm_apply (m : ℕ)
+    (A : specialUnitaryStabilizer 𝕜 (Nat.le_add_right r m)) :
+    (((specialUnitaryStabilizerHomeomorph 𝕜 r m).symm A : specialUnitaryGroup (Fin m) 𝕜) :
+      Matrix (Fin m) (Fin m) 𝕜) =
+      ((A : specialUnitaryGroup (Fin (r + m)) 𝕜) : Matrix (Fin (r + m)) (Fin (r + m)) 𝕜).submatrix
+        (Fin.natAdd r) (Fin.natAdd r) := by
+  ext k l
+  have h := congrArg (fun B : specialUnitaryGroup (Fin (r + m)) 𝕜 ↦
+    (B : Matrix (Fin (r + m)) (Fin (r + m)) 𝕜) (Fin.natAdd r k) (Fin.natAdd r l))
+    (fromBlocksOne_specialUnitaryStabilizerHomeomorph_symm_apply m A)
+  simpa only [specialUnitaryGroup.fromBlocksOne_apply_natAdd_natAdd, submatrix_apply] using h
 
 /-- The identity of `SU(m)` corresponds to the identity of the stabilizer. -/
 @[simp]

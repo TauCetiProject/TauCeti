@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Semigroups.Group.Unitary
 import Mathlib.LinearAlgebra.Complex.Module
-import Mathlib.Analysis.Normed.Algebra.Exponential
+import TauCeti.Analysis.Normed.Operator.Exponential
 
 /-!
 # The bounded part of Stone's theorem
@@ -35,36 +35,13 @@ self-adjoint. -/
 def ofBoundedExp (A : H →L[ℂ] H) : StronglyContinuousGroup H :=
   ofBounded ((Complex.I • A).restrictScalars ℝ)
 
-private theorem restrictScalars_exp (A : H →L[ℂ] H) (t : ℝ) :
-    NormedSpace.exp (t • A.restrictScalars ℝ) =
-      (NormedSpace.exp ((t : ℂ) • A)).restrictScalars ℝ := by
-  let _i : Module ℚ H := Module.compHom H (algebraMap ℚ ℂ)
-  let +nondep : NormedAlgebra ℚ (H →L[ℂ] H) := .restrictScalars ℚ ℂ _
-  let +nondep : NormedAlgebra ℚ (H →L[ℝ] H) := .restrictScalars ℚ ℝ _
-  let φ : (H →L[ℂ] H) →+* (H →L[ℝ] H) :=
-    { toFun := fun B => B.restrictScalars ℝ
-      map_one' := by ext x; rfl
-      map_mul' := by intro B C; ext x; rfl
-      map_zero' := by ext x; rfl
-      map_add' := by intro B C; ext x; rfl }
-  have hφ : Continuous φ := by
-    -- The local normed-algebra instances give `φ` a bundled topology; expose its underlying
-    -- function so that the restriction isometry supplies continuity for the normed topologies.
-    change Continuous (fun B : H →L[ℂ] H => B.restrictScalars ℝ)
-    exact (ContinuousLinearMap.restrictScalarsIsometry ℂ H H ℝ ℝ).continuous
-  have h := NormedSpace.map_exp φ hφ ((t : ℂ) • A)
-  have hsmul : φ ((t : ℂ) • A) = t • φ A := by
-    ext x
-    rfl
-  rw [hsmul] at h
-  exact h.symm
-
 /-- At time `t`, the bounded Stone group is the complex exponential regarded as real-linear. -/
 @[simp]
 theorem ofBoundedExp_apply (A : H →L[ℂ] H) (t : ℝ) :
     ofBoundedExp A t =
       (NormedSpace.exp ((t : ℂ) • (Complex.I • A))).restrictScalars ℝ := by
-  rw [ofBoundedExp, ofBounded_apply, restrictScalars_exp]
+  rw [ofBoundedExp, ofBounded_apply, ← ContinuousLinearMap.restrictScalars_smul,
+    ← ContinuousLinearMap.restrictScalars_exp, Complex.coe_smul]
 
 /-- The generator of the bounded exponential group is `i A`, regarded as a real partial linear
 map. -/

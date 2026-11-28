@@ -183,8 +183,9 @@ noncomputable abbrev OrthonormalFrameLift.extendSpinC : SpinCStructure F V n :=
   s.extend σ hσ hσρ
     spinCGroup.norm_toLp_toSpecialOrthogonal_apply spinCGroup.continuous_toSpecialOrthogonal_apply
 
-/-- **The frame of `[p, 1]`** in the `Spinᶜ` structure induced by a lift is the frame of `p`. -/
-@[simp]
+/-- **The frame of `[p, 1]`** in the `Spinᶜ` structure induced by a lift is the frame of `p`. Not a
+simp lemma: `simp` proves it by `TauCeti.OrthonormalFrameLift.toFrame_extend_inl`, since
+`extendSpinC` is reducible. -/
 theorem OrthonormalFrameLift.toFrame_extendSpinC_inl (x : X) (p : s.P x) :
     (s.extendSpinC σ hσ hσρ).toFrame ⟨x, PrincipalBundle.Extend.inl σ hσ p⟩ =
       s.toFrame ⟨x, p⟩ :=

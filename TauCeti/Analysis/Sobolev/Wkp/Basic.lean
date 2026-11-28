@@ -334,6 +334,16 @@ theorem value_neg_ae (k : ℕ) (u : Wkp mu Omega p k) :
     ⇑(value k (-u)) =ᵐ[mu.restrict Omega] -⇑(value k u) := by
   simpa only [value_neg] using Lp.coeFn_neg (value k u)
 
+/-- Negating a doubly indexed family of Sobolev functions with given values negates their values
+almost everywhere, simultaneously over finitely many indices. -/
+theorem ae_forall_value_neg_eq {ι κ : Type*} {k : ℕ} {Y : ι → κ → Wkp mu Omega p k}
+    {c : ι → κ → E → ℝ} (hY : ∀ i j, ⇑(value k (Y i j)) =ᵐ[mu.restrict Omega] c i j)
+    (s : Finset ι) (t : Finset κ) :
+    ∀ᵐ x ∂mu.restrict Omega, ∀ i ∈ s, ∀ j ∈ t, value k (-Y i j) x = -c i j x :=
+  s.eventually_all.2 fun i _ => t.eventually_all.2 fun j _ => by
+    filter_upwards [value_neg_ae k (Y i j), hY i j] with x h₁ h₂
+    rw [h₁, Pi.neg_apply, h₂]
+
 /-- The highest weak derivative preserves negation. (Not `@[simp]`: the `simpNF` linter reports
 that `simp` cannot use it to rewrite its own left-hand side.) -/
 theorem iteratedGradient_neg (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
@@ -351,6 +361,12 @@ theorem iteratedGradient_neg_ae (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
 theorem value_add_ae (k : ℕ) (u v : Wkp mu Omega p k) :
     ⇑(value k (u + v)) =ᵐ[mu.restrict Omega] ⇑(value k u) + ⇑(value k v) := by
   simpa only [value_add] using Lp.coeFn_add (value k u) (value k v)
+
+/-- The value of a difference of two Sobolev functions is almost everywhere the difference of their
+values. -/
+theorem value_sub_ae (k : ℕ) (u v : Wkp mu Omega p k) :
+    ⇑(value k (u - v)) =ᵐ[mu.restrict Omega] ⇑(value k u) - ⇑(value k v) := by
+  simpa only [value_sub] using Lp.coeFn_sub (value k u) (value k v)
 
 /-- The value of a scalar multiple of a Sobolev function is almost everywhere the scalar multiple
 of its value. -/

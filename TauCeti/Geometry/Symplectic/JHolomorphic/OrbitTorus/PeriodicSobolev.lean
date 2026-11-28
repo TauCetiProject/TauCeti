@@ -265,6 +265,14 @@ theorem isFredholm_prodMap_loopOperator (hB : B.IsInvertible) :
     ((I • loopOperator T S).prodMap B).IsFredholm :=
   (isFredholm_I_smul_loopOperator T S).prodMap hB.isFredholm
 
+/-- **Continuous dependence on the loop and the operator.** The operators `(J₀ L_{M x}) ⊕ B x`
+depend continuously, in operator norm, on `x` where the loops `M x` and the operators `B x` do. -/
+theorem continuousOn_prodMap_loopOperator {X : Type*} [TopologicalSpace X]
+    {M : X → C(AddCircle T, F →L[ℝ] F)} {B : X → E →L[ℝ] E'} {s : Set X}
+    (hM : ContinuousOn M s) (hB : ContinuousOn B s) :
+    ContinuousOn (fun x ↦ (I • loopOperator T (M x)).prodMap (B x)) s :=
+  ContinuousOn.prod_mapL ℝ (((continuous_loopOperator T).const_smul I).comp_continuousOn hM) hB
+
 /-- **The asymptotic operator beside an invertible operator has index zero**: the index is additive
 under `prodMap`, `J₀ L_S` has the index zero of `L_S`, and the invertible `B` has index zero. -/
 @[simp]
@@ -350,14 +358,21 @@ operator `A ζ = J₀ (ζ' - S ζ)` of a loop `S`. A map periodic in `s` is a pa
 (`TauCeti.torusModeSobolev`); the operator is `A` on the first and `TauCeti.torusModeOperator` on
 the second. -/
 def periodicTorusOperator (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] F)) :
-    CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →L[ℝ]
+    CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →L[ℝ]
       CircleSobolev 0 F × 𝕐[F] :=
   (I • loopOperator T S).prodMap (torusModeOperator T _ S)
 
 @[simp]
 theorem periodicTorusOperator_apply (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] F))
-    (x : CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ)) :
+    (x : CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ)) :
     periodicTorusOperator T ℓ S x = (I • loopOperator T S x.1, torusModeOperator T _ S x.2) :=
+  (rfl)
+
+/-- `TauCeti.periodicTorusOperator` is `(J₀ L_S) ⊕ B` for the operator `B` on the modes of nonzero
+frequency. -/
+theorem periodicTorusOperator_eq_prodMap (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] F)) :
+    periodicTorusOperator T ℓ S =
+      (I • loopOperator T S).prodMap (torusModeOperator T (periodicModeFrequency ℓ) S) :=
   (rfl)
 
 /-- **Complex linearity.** If the loop operator `L_S` commutes with multiplication by complex
@@ -365,7 +380,7 @@ scalars, as for a constant complex scalar loop, so does the operator `∂s + A` 
 `s`, the complex structure of the Sobolev spaces acting by `J₀`. -/
 theorem periodicTorusOperator_apply_smul (ℓ : ℝ) {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ (c : ℂ) (a : CircleSobolev 1 F), loopOperator T S (c • a) = c • loopOperator T S a)
-    (c : ℂ) (x : CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ)) :
+    (c : ℂ) (x : CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ)) :
     periodicTorusOperator T ℓ S (c • x) = c • periodicTorusOperator T ℓ S x := by
   refine Prod.ext ?_ (torusModeOperator_apply_smul T _ hS c x.2)
   simp [hS, smul_comm c I]
@@ -374,7 +389,7 @@ theorem periodicTorusOperator_apply_smul (ℓ : ℝ) {S : C(AddCircle T, F →L[
 periodic in `s` commutes with multiplication by complex scalars, the complex structure of the
 Sobolev spaces acting by `J₀`. -/
 theorem periodicTorusOperator_zero_apply_smul (ℓ : ℝ) (c : ℂ)
-    (x : CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ)) :
+    (x : CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ)) :
     periodicTorusOperator T ℓ 0 (c • x) = c • periodicTorusOperator T ℓ 0 x :=
   periodicTorusOperator_apply_smul T ℓ (fun c a ↦ by simp) c x
 
@@ -414,7 +429,7 @@ theorem kerPeriodicTorusOperatorEquiv_symm_apply (hℓ : ℓ ≠ 0) (S : C(AddCi
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
     (a : ker (loopOperator T S : CircleSobolev 1 F →ₗ[ℝ] CircleSobolev 0 F)) :
     ((kerPeriodicTorusOperatorEquiv T hℓ S hS).symm a :
-      CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ)) =
+      CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ)) =
         ((a : CircleSobolev 1 F), 0) :=
   kerProdMapLoopOperatorEquiv_symm_apply T S _ a
 

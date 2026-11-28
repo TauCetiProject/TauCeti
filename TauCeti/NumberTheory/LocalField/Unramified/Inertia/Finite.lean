@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
-public import TauCeti.NumberTheory.LocalField.UnitFiltration.Conjugation
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.Graded
+import TauCeti.RingTheory.DiscreteValuationRing.RamificationGroup
 
 /-!
 # Absolute inertia and Frobenius lifts at finite level

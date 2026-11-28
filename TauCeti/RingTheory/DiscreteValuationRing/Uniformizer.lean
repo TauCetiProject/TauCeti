@@ -14,13 +14,13 @@ public import TauCeti.RingTheory.Ideal.Operations
 /-!
 # Uniformizer coordinates on maximal-ideal graded pieces
 
-Let `R` be a discrete valuation ring with maximal ideal `𝔪` and residue field `k`.  Fixing a
+Let `R` be a discrete valuation ring with maximal ideal `𝔪` and residue field `k`. Fixing a
 uniformizer `π` identifies `k` with the graded piece `𝔪^m / 𝔪^(m+1)` by sending the residue
-of `x` to the class of `x * π ^ m`.  This file constructs that identification explicitly and
+of `x` to the class of `x * π ^ m`. This file constructs that identification explicitly and
 computes how it changes when the uniformizer is replaced.
 
 If `π' = π * a` for a unit `a` of `R`, then the identification for `π'` is the identification
-for `π` precomposed with multiplication by the residue of `a ^ m`.  Thus it is independent of
+for `π` precomposed with multiplication by the residue of `a ^ m`. Thus it is independent of
 the uniformizer up to multiplication by a unit of the residue field.
 
 The explicit principal-power equivalence below follows the construction of Mathlib's
@@ -62,12 +62,6 @@ theorem mul_uniformizerChangeUnit (π π' : R) (hπ : Irreducible π)
     π * (uniformizerChangeUnit π π' hπ hπ' : R) = π' :=
   (IsDiscreteValuationRing.associated_of_irreducible R hπ hπ').choose_spec
 
-/-- The difference identity `π * (uniformizerChangeUnit π π' - 1) = π' - π` in `R`. -/
-theorem mul_uniformizerChangeUnit_sub_one (π π' : R) (hπ : Irreducible π)
-    (hπ' : Irreducible π') :
-    π * ((uniformizerChangeUnit π π' hπ hπ' : R) - 1) = π' - π := by
-  rw [mul_sub, mul_uniformizerChangeUnit, mul_one]
-
 /-- The change unit from a uniformizer to itself is one. -/
 @[simp]
 theorem uniformizerChangeUnit_self (π : R) (hπ : Irreducible π) :
@@ -84,6 +78,33 @@ theorem uniformizerChangeUnit_mul (π₁ π₂ π₃ : R) (h₁ : Irreducible π
   apply mul_left_cancel₀ h₁.ne_zero
   rw [Units.val_mul, ← mul_assoc, mul_uniformizerChangeUnit, mul_uniformizerChangeUnit,
     mul_uniformizerChangeUnit]
+
+end TauCeti
+
+namespace RingHom
+
+open TauCeti
+
+variable {R S : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
+  [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
+
+/-- A ring homomorphism preserving irreducibility of `π` and `π'` carries
+`uniformizerChangeUnit π π'` to the change unit between their images. -/
+theorem unitsMap_uniformizerChangeUnit (f : R →+* S) (π π' : R)
+    (hπ : Irreducible π) (hπ' : Irreducible π')
+    (hfπ : Irreducible (f π)) (hfπ' : Irreducible (f π')) :
+    Units.map f.toMonoidHom (uniformizerChangeUnit π π' hπ hπ') =
+      uniformizerChangeUnit (f π) (f π') hfπ hfπ' := by
+  apply Units.ext
+  apply mul_left_cancel₀ hfπ.ne_zero
+  simp only [mul_uniformizerChangeUnit, Units.coe_map, toMonoidHom_eq_coe,
+    MonoidHom.coe_ofClass, ← map_mul]
+
+end RingHom
+
+namespace TauCeti
+
+variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 
 private noncomputable def uniformizerPowToMaximalIdealGraded (π : R)
     (hπ : Irreducible π) (m : ℕ) :

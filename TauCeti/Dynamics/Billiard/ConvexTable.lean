@@ -33,6 +33,7 @@ in this sense are the tables on which the billiard ball map of a convex billiard
 ## Main definitions
 
 * `TauCeti.ConvexTable k ℓ`: convex billiard tables of class `C^k` and perimeter `ℓ`.
+* `TauCeti.ConvexTable.tangent`: the unit tangent `τ` of a table, as a point of `Circle`.
 * `TauCeti.ConvexTable.curvature`: the signed curvature `τ × τ'` of a table.
 * `TauCeti.ConvexTable.circleParam`: the parametrisation of the boundary by `AddCircle ℓ`.
 * `TauCeti.ConvexTable.shift`, `TauCeti.ConvexTable.rigidMotion`, `TauCeti.ConvexTable.ofLE`:
@@ -158,6 +159,20 @@ theorem continuous_deriv : Continuous (deriv T) :=
 
 /-- The unit tangent of a table is `ℓ`-periodic. -/
 theorem periodic_deriv : Periodic (deriv T) ℓ := T.periodic.deriv
+
+/-- The unit tangent `τ(s)` of a table, as a point of the unit circle. -/
+def tangent (s : ℝ) : Circle :=
+  ⟨deriv T s, mem_sphere_zero_iff_norm.2 (T.norm_deriv s)⟩
+
+@[simp]
+theorem coe_tangent (s : ℝ) : (T.tangent s : ℂ) = deriv T s :=
+  (rfl)
+
+theorem continuous_tangent : Continuous T.tangent :=
+  T.continuous_deriv.subtype_mk _
+
+theorem periodic_tangent : Periodic T.tangent ℓ := fun s =>
+  Circle.ext (by simp [T.periodic_deriv s])
 
 /-- Every point `γ t` with `t ≢ s` modulo `ℓ` lies strictly to the left of the tangent line at
 `γ s`. -/

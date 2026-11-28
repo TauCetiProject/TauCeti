@@ -9,6 +9,7 @@ public import TauCeti.Examples.Probability.Gibbs.Specification
 public import TauCeti.Probability.Gibbs.Extreme
 public import TauCeti.MeasureTheory.Group.ErgodicExtreme
 public import TauCeti.Algebra.Group.TypeTags.Countable
+import TauCeti.Dynamics.Ergodic.Action.TimeMap
 import TauCeti.Probability.Process.Tail.ProperAction
 
 /-!
@@ -63,13 +64,6 @@ def oneBar : X₀ := ⟨fun _ => true, (mem_X₀_iff _).2 fun _ _ => rfl⟩
 theorem zeroBar_ne_oneBar : zeroBar ≠ oneBar := fun h => by
   simpa [zeroBar, oneBar] using congrFun (congrArg Subtype.val h) 1
 
-/-- The Dirac masses on `X₀` are ergodic. -/
-theorem ergodicSMul_dirac (ω : X₀) : ErgodicSMul (Multiplicative ℤ) X₀ (Measure.dirac ω) where
-  aeconst_of_forall_preimage_smul_ae_eq _ _ := by
-    rw [ae_dirac_eq, Filter.eventuallyEmptyOrUniv_iff]
-    simp only [Filter.eventually_pure]
-    exact em _
-
 /-- The Dirac masses at `zeroBar` and `oneBar` are extreme invariant Gibbs measures for the
 identity specification. -/
 theorem dirac_mem_extremePoints_gibbsInvariant (ω : X₀) :
@@ -98,17 +92,11 @@ theorem diracMidpoint_mem_gibbsInvariant : diracMidpoint ∈ idSpec.gibbsInvaria
   exact mem_invariantMeasuresOfMeasureUnivEq_iff.2 ⟨inferInstance, diracMidpoint_univ⟩
 
 /-- **The midpoint is not ergodic**: the invariant event `{oneBar}` has measure `1/2`. -/
-theorem not_ergodicSMul_diracMidpoint : ¬ ErgodicSMul (Multiplicative ℤ) X₀ diracMidpoint := by
-  intro h
-  have := h.aeconst_of_forall_preimage_smul_ae_eq (measurableSet_singleton oneBar)
-    fun g => by simp only [smul_X₀, preimage_id']; rfl
-  rcases Filter.eventuallyEmptyOrUniv_iff'.1 this with h0 | h1
-  · have := measure_congr h0
-    rw [diracMidpoint_singleton_oneBar, measure_empty] at this
-    exact absurd this (by simp)
-  · have := measure_congr h1
-    rw [diracMidpoint_singleton_oneBar, diracMidpoint_univ] at this
-    exact absurd this (by norm_num)
+theorem not_ergodicSMul_diracMidpoint : ¬ ErgodicSMul (Multiplicative ℤ) X₀ diracMidpoint :=
+  not_ergodicSMul_of_forall_smul_eq smul_X₀ (measurableSet_singleton oneBar).nullMeasurableSet
+    (by simp [diracMidpoint_singleton_oneBar])
+    (by rw [measure_compl (measurableSet_singleton _) (by simp [diracMidpoint_singleton_oneBar]),
+      diracMidpoint_univ, diracMidpoint_singleton_oneBar]; norm_num)
 
 /-- The midpoint is not extreme among the invariant Gibbs measures. -/
 theorem diracMidpoint_notMem_extremePoints_gibbsInvariant :

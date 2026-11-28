@@ -92,6 +92,11 @@ theorem mem_ofFn {a : α} {f : Fin n → α} : a ∈ ofFn f ↔ ∃ i, f i = a :
   rw [← Sym.mem_coe, coe_ofFn]
   simp
 
+/-- An ordered tuple has no repeated entries exactly when it is injective. -/
+theorem nodup_coe_ofFn_iff {f : Fin n → α} :
+    (ofFn f : Multiset α).Nodup ↔ Function.Injective f := by
+  rw [coe_ofFn, Multiset.coe_nodup, List.nodup_ofFn]
+
 /-- Every unordered `n`-tuple is the image of an ordered one: `ofFn` is the quotient map
 presenting `Sym α n` as a quotient of `Fin n → α`. -/
 theorem ofFn_surjective : Function.Surjective (ofFn : (Fin n → α) → Sym α n) := by
@@ -121,6 +126,10 @@ theorem fin_two_three_cases (s : Sym (Fin 2) 3) :
 @[simp]
 theorem ofFn_cons (a : α) (f : Fin n → α) : ofFn (Fin.cons a f) = a ::ₛ ofFn f :=
   Subtype.ext <| by simp [Sym.coe_cons, List.ofFn_succ]
+
+/-- An ordered one-point tuple is the singleton `Sym.oneEquiv` of its entry. -/
+theorem ofFn_eq_oneEquiv (f : Fin 1 → α) : ofFn f = Sym.oneEquiv (f 0) :=
+  Sym.coe_injective <| by simp [List.ofFn_succ]
 
 /-- Applying a function to every entry of an ordered tuple applies it to every point of the
 unordered one. -/
