@@ -76,9 +76,7 @@ theorem rank_hadamard_le (A B : Matrix m n K) : (A ⊙ B).rank ≤ A.rank * B.ra
   simp
 
 /-- **The rank of an entrywise square.** Over a field, for a matrix with finitely many columns,
-`2 rk (A ⊙ A) ≤ rk A (rk A + 1)`: the rows of `A ⊙ A` are combinations of the
-`rk A (rk A + 1) / 2` entrywise products `u_a ⊙ u_b` with `a ≤ b` of `rk A` rows `u_a` that
-span the rows of `A`. -/
+`2 rk (A ⊙ A) ≤ rk A (rk A + 1)`. -/
 theorem two_mul_rank_hadamard_self_le (A : Matrix m n K) :
     2 * (A ⊙ A).rank ≤ A.rank * (A.rank + 1) := by
   obtain ⟨L, R, hA⟩ := A.exists_eq_mul_fin_rank
