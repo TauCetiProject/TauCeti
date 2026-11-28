@@ -69,8 +69,8 @@ private lemma exists_lift_of_etale_puncturedSpectrum [Module.Finite A B] [Module
         (hreg.pow_cons n.succ_ne_zero)).2
       have hK : Ideal.span {f ^ (n + 1)} = K := (Ideal.span_singleton_pow _ _).symm
       have e : QuotSMulTop (f ^ (n + 1)) A ≃ₗ[A] A ⧸ K :=
-        (Submodule.quotEquivOfEq _ _ (by rw [← hK, Submodule.ideal_span_singleton_smul])).trans
-          ((Ideal.quotSMulTopSelfEquiv K).restrictScalars A)
+        (QuotSMulTop.equivQuotSpanSingleton (f ^ (n + 1))).trans
+          (Ideal.quotientEquivAlgOfEq A hK).toLinearEquiv
       exact (e.isWeaklyRegular_congr _).mp h
     have hB : IsWeaklyRegular (B ⧸ K.map (algebraMap A B)) [a, b] := by
       let e := Algebra.TensorProduct.quotIdealMapEquivQuotTensor B K
@@ -96,8 +96,7 @@ private lemma exists_overHom_lift_hypersurface [Module.Finite A B] [Module.Flat 
   let A₀ := A ⧸ I
   -- A regular pair on the hypersurface both recovers sections and lifts the ring map.
   let eQuot : QuotSMulTop f A ≃ₗ[A] A₀ :=
-    (Submodule.quotEquivOfEq _ _ (Submodule.ideal_span_singleton_smul f ⊤).symm).trans
-      ((Ideal.quotSMulTopSelfEquiv I).restrictScalars A)
+    QuotSMulTop.equivQuotSpanSingleton f
   obtain ⟨rs, hlen, hmem, hab⟩ := _root_.IsLocalRing.exists_isWeaklyRegular_of_le_depth
     (ModuleCat.of A₀ A₀) (n := 2) hdepth₀
   obtain ⟨a₀, b₀, rfl⟩ := List.length_eq_two.mp hlen
@@ -206,8 +205,7 @@ theorem extends_of_extends_quotient_of_isAdicComplete {f : A} (hreg : IsSMulRegu
     radical_map_maximalIdeal_of_surjective (Ideal.Quotient.algebraMap_eq I ▸
       Ideal.Quotient.mk_surjective)
   let eQuot : QuotSMulTop f A ≃ₗ[A] A₀ :=
-    (Submodule.quotEquivOfEq _ _ (Submodule.ideal_span_singleton_smul f ⊤).symm).trans
-      ((Ideal.quotSMulTopSelfEquiv I).restrictScalars A)
+    QuotSMulTop.equivQuotSpanSingleton f
   have hdepth : 2 ≤ depth (ModuleCat.of A A) := by
     have k := depth_quotSMulTop_succ_eq_depth hreg hf
     rw [depth_eq_of_linearEquiv eQuot,
