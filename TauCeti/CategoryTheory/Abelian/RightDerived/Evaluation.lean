@@ -89,6 +89,14 @@ lemma Functor.rightDerivedEvaluationIso_hom_app_injectiveResolution (n : ℕ) (j
     _ = _ := Category.id_comp _
     _ = _ := hres
 
+private lemma homologyFunctor_map_evaluation (K : HomologicalComplex (J ⥤ D) (.up ℕ))
+    (n : ℕ) {i j : J} (f : i ⟶ j) :
+    (HomologicalComplex.homologyFunctor D (.up ℕ) n).map
+        ((((ev).map f).mapHomologicalComplex (.up ℕ)).app K) =
+      ShortComplex.homologyMap ((K.sc n).mapNatTrans ((ev).map f)) := by
+  rw [HomologicalComplex.homologyFunctor_map, HomologicalComplex.homologyMap]
+  congr 1
+
 /-- The evaluation comparison is natural in the indexing category of the diagrams. -/
 @[reassoc]
 lemma Functor.rightDerivedEvaluationIso_hom_naturality (n : ℕ) {i j : J} (f : i ⟶ j) :
@@ -110,13 +118,16 @@ lemma Functor.rightDerivedEvaluationIso_hom_naturality (n : ℕ) {i j : J} (f : 
   refine congrArg (fun g ↦ (I.isoRightDerivedObj F n).hom.app i ≫ g) ?_
   rw [Functor.mapHomologicalComplexCompHomologyFunctorIso_inv_app,
     Functor.mapHomologicalComplexCompHomologyFunctorIso_inv_app]
+  have hmap :
+      (HomologicalComplex.homologyFunctor D (.up ℕ) n).map
+          (((Functor.whiskerLeft F ((ev).map f)).mapHomologicalComplex (.up ℕ)).app
+            I.cocomplex) =
+        ShortComplex.homologyMap ((K.sc n).mapNatTrans ((ev).map f)) :=
+    homologyFunctor_map_evaluation K n f
   have h := NatTrans.app_homology ((ev).map f) (K.sc n)
   simp only [evaluation_map_app] at h
-  -- The degree-`n` homology is that of `K.sc n`. The chain map of the derived
-  -- evaluation transformation restricts to `mapNatTrans` on this short complex.
-  change (K.sc n).homology.map f ≫ ((K.sc n).mapHomologyIso ((ev).obj j)).inv ≫ _ =
-    ((K.sc n).mapHomologyIso ((ev).obj i)).inv ≫
-      ShortComplex.homologyMap ((K.sc n).mapNatTrans ((ev).map f)) ≫ _
-  rw [reassoc_of% h, Iso.hom_inv_id_assoc]
+  simp only [HomologicalComplex.homologyFunctor_obj, HomologicalComplex.homology]
+  dsimp only [K] at h hmap
+  rw [hmap, reassoc_of% h, Iso.hom_inv_id_assoc]
 
 end CategoryTheory

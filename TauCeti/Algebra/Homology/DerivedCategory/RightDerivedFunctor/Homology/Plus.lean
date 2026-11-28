@@ -33,11 +33,24 @@ namespace TauCeti
 
 variable (C : Type*) [Category* C] [Abelian C] [EnoughInjectives C]
 
+private def injectiveResolutionPlus (X : C) : CochainComplex.Plus (InjectiveObject C) :=
+  let I := (injectiveResolution X).cochainComplex
+  ⟨HomologicalComplex.liftObjectProperty _ I (fun _ ↦ inferInstanceAs (Injective (I.X _))),
+    0, (CochainComplex.isStrictlyGE_mapHomologicalComplex_obj_iff
+      _ (InjectiveObject.ι C) _).1 (inferInstanceAs (I.IsStrictlyGE 0))⟩
+
 /-- The chosen injective resolutions, viewed in the bounded below homotopy category. -/
 def injectiveResolutionsPlus : C ⥤ HomotopyCategory.Plus C :=
   (HomotopyCategory.plus C).lift (injectiveResolutions C ⋙ (upNat).extendHomotopyFunctor C) fun X ↦
     (HomotopyCategory.plus_quotient_obj_iff _).2 ⟨0,
       inferInstanceAs ((injectiveResolution X).cochainComplex.IsStrictlyGE 0)⟩
+
+/-- Forgetting termwise injectivity and taking the homotopy class gives the chosen resolution. -/
+private lemma injectiveResolutionsPlus_obj (X : C) :
+    (HomotopyCategory.Plus.quotient C).obj
+      ((InjectiveObject.ι C).mapCochainComplexPlus.obj (injectiveResolutionPlus C X)) =
+    (injectiveResolutionsPlus C).obj X :=
+  (rfl)
 
 /-- Forgetting the bound on the chosen injective resolutions gives extension by zero. -/
 def injectiveResolutionsPlusCompιIso :
@@ -71,16 +84,7 @@ variable {C : Type*} [Category* C] [Abelian C] [EnoughInjectives C] [HasDerivedC
 /-- The bounded below derived unit is invertible on each chosen injective resolution. -/
 instance isIso_rightDerivedFunctorPlusUnith_app_injectiveResolutionsPlus (X : C) :
     IsIso (F.rightDerivedFunctorPlusUnith.app ((injectiveResolutionsPlus C).obj X)) := by
-  let I := (injectiveResolution X).cochainComplex
-  let K : CochainComplex.Plus (InjectiveObject C) :=
-    ⟨HomologicalComplex.liftObjectProperty _ I (fun _ ↦ inferInstanceAs (Injective (I.X _))),
-      0, (CochainComplex.isStrictlyGE_mapHomologicalComplex_obj_iff
-        _ (InjectiveObject.ι C) _).1 (inferInstanceAs (I.IsStrictlyGE 0))⟩
-  -- Forgetting the termwise injectivity of K recovers the extended resolution I.
-  have hK : (HomotopyCategory.Plus.quotient C).obj
-      ((InjectiveObject.ι C).mapCochainComplexPlus.obj K) =
-      (injectiveResolutionsPlus C).obj X := rfl
-  rw [← hK]
+  rw [← injectiveResolutionsPlus_obj]
   infer_instance
 
 private instance : IsIso (whiskerLeft (injectiveResolutionsPlus C)
@@ -151,6 +155,25 @@ lemma Functor.rightDerivedFunctorPlusHomologyIso_hom_app (n : ℕ) (X : C) :
 
 variable {F} {G : C ⥤ D} [G.Additive]
 
+private lemma inv_unith_app_naturality (τ : F ⟶ G) (X : C) :
+    let K := (injectiveResolutionsPlus C).obj X
+    τ.rightDerivedFunctorPlus.app (Plus.Qh.obj K) ≫
+        CategoryTheory.inv (G.rightDerivedFunctorPlusUnith.app K) =
+      CategoryTheory.inv (F.rightDerivedFunctorPlusUnith.app K) ≫
+        Plus.Qh.map (τ.mapHomotopyCategoryPlus.app K) := by
+  dsimp only
+  apply (cancel_epi (F.rightDerivedFunctorPlusUnith.app ((injectiveResolutionsPlus C).obj X))).1
+  simp only [NatTrans.rightDerivedFunctorPlus_fach_app_assoc, IsIso.hom_inv_id_assoc,
+    IsIso.hom_inv_id, Category.comp_id]
+
+omit [HasDerivedCategory C] [HasDerivedCategory D] in
+/-- The classical derived transformation applies homology to its component on the chosen
+injective resolution. -/
+private lemma rightDerived_app_eq_homotopy (τ : F ⟶ G) (n : ℕ) (X : C) :
+    (τ.rightDerived n).app X = (HomotopyCategory.homologyFunctor D (.up ℕ) n).map
+      ((τ.mapHomotopyCategory (.up ℕ)).app ((injectiveResolutions C).obj X)) :=
+  (rfl)
+
 variable (F) in
 /-- The comparison with the classical right derived functors is natural in the additive functor. -/
 @[reassoc]
@@ -163,47 +186,37 @@ lemma Functor.rightDerivedFunctorPlusHomologyIso_hom_naturality (τ : F ⟶ G) (
   funext X
   let K := (injectiveResolutionsPlus C).obj X
   let I := (injectiveResolutions C).obj X
-  have : IsIso (F.rightDerivedFunctorPlusUnith.app K) :=
-    isIso_rightDerivedFunctorPlusUnith_app_injectiveResolutionsPlus F X
-  have : IsIso (G.rightDerivedFunctorPlusUnith.app K) :=
-    isIso_rightDerivedFunctorPlusUnith_app_injectiveResolutionsPlus G X
   let A := (singleFunctorIsoInjectiveResolutionsPlus C).hom.app X
   let H := Plus.homologyFunctor D n
   let Hℤ := HomotopyCategory.homologyFunctor D (.up ℤ) (n : ℤ)
-  let Hℕ := HomotopyCategory.homologyFunctor D (.up ℕ) n
-  have hA := congrArg H.map (τ.rightDerivedFunctorPlus.naturality A).symm
-  have hU :
-      τ.rightDerivedFunctorPlus.app (Plus.Qh.obj K) ≫
-        CategoryTheory.inv (G.rightDerivedFunctorPlusUnith.app K) =
-        CategoryTheory.inv (F.rightDerivedFunctorPlusUnith.app K) ≫
-          Plus.Qh.map (τ.mapHomotopyCategoryPlus.app K) := by
-    apply (cancel_epi (F.rightDerivedFunctorPlusUnith.app K)).1
-    simp only [NatTrans.rightDerivedFunctorPlus_fach_app_assoc, IsIso.hom_inv_id_assoc,
-      IsIso.hom_inv_id, Category.comp_id]
-  have hH := (Plus.homologyFunctorFactorsh D n).hom.naturality
+  have hAugmentation := congrArg H.map (τ.rightDerivedFunctorPlus.naturality A).symm
+  have hUnit := congrArg H.map (inv_unith_app_naturality τ X)
+  have hLocalization := (Plus.homologyFunctorFactorsh D n).hom.naturality
     (τ.mapHomotopyCategoryPlus.app K)
-  have hK := (τ.mapHomotopyCategory (.up ℤ)).naturality
+  have hInclusion := congrArg Hℤ.map (τ.mapHomotopyCategoryPlusCompι_hom_app_naturality K)
+  have hResolution := (τ.mapHomotopyCategory (.up ℤ)).naturality
     ((injectiveResolutionsPlusCompιIso C).hom.app X)
-  have hE := congrArg Hℤ.map (F.mapHomotopyCategoryExtendIso_hom_app_naturality (e := upNat) τ I)
-  have hN := ((upNat).extendHomotopyFunctorCompHomologyFunctorIso D (j := n) rfl).hom.naturality
-    ((τ.mapHomotopyCategory (.up ℕ)).app I)
-  have hU' := congrArg H.map hU
-  have hι := congrArg Hℤ.map (τ.mapHomotopyCategoryPlusCompι_hom_app_naturality K)
-  have hK' := congrArg Hℤ.map hK.symm
-  simp only [Functor.map_comp] at hA hU' hι hK' hE
-  have hR : (τ.rightDerived n).app X = Hℕ.map ((τ.mapHomotopyCategory (.up ℕ)).app I) := by
-    -- Mathlib defines both derived transformations using `injectiveResolutions C`,
-    -- so the component is computed on the same chosen resolution I on both sides.
-    dsimp only [NatTrans.rightDerived, NatTrans.rightDerivedToHomotopyCategory,
-      whiskerRight, whiskerLeft, Hℕ, I]
-    rfl
+  have hResolutionMap := congrArg Hℤ.map hResolution.symm
+  have hExtension :=
+    congrArg Hℤ.map (F.mapHomotopyCategoryExtendIso_hom_app_naturality (e := upNat) τ I)
+  have hHomology :=
+    ((upNat).extendHomotopyFunctorCompHomologyFunctorIso D (j := n) rfl).hom.naturality
+      ((τ.mapHomotopyCategory (.up ℕ)).app I)
+  simp only [Functor.map_comp] at hAugmentation hUnit hInclusion hResolutionMap hExtension
   simp only [NatTrans.comp_app, whiskerLeft_app, whiskerRight_app,
-    rightDerivedFunctorPlusHomologyIso_hom_app, hR]
-  dsimp only [H, Hℤ, Hℕ, K, I, A, Functor.rightDerived, Functor.rightDerivedToHomotopyCategory,
-    Functor.comp_obj, Functor.comp_map] at hA hU' hH hι hK' hE hN ⊢
-  simp only [ComplexShape.embeddingUpNat_f] at hN
+    rightDerivedFunctorPlusHomologyIso_hom_app, rightDerived_app_eq_homotopy]
+  dsimp only [H, Hℤ, K, I, A, Functor.comp_obj, Functor.comp_map]
+    at hAugmentation hUnit hLocalization hInclusion hResolutionMap hExtension hHomology
+  dsimp only [Functor.rightDerived, Functor.rightDerivedToHomotopyCategory, Functor.comp_obj]
+  simp only [ComplexShape.embeddingUpNat_f] at hHomology
   simp only [Category.assoc]
-  rw [reassoc_of% hA, reassoc_of% hU', reassoc_of% hH, reassoc_of% hι,
-    reassoc_of% hK', reassoc_of% hE, hN]
+  calc
+    _ = _ := (reassoc_of% hAugmentation) _
+    _ = _ := by rw [reassoc_of% hUnit]
+    _ = _ := by rw [reassoc_of% hLocalization]
+    _ = _ := by rw [reassoc_of% hInclusion]
+    _ = _ := by rw [reassoc_of% hResolutionMap]
+    _ = _ := by rw [reassoc_of% hExtension]
+    _ = _ := by rw [hHomology]
 
 end CategoryTheory

@@ -279,6 +279,14 @@ def supportedSubmoduleSectionsRestrict {W' W : Opens X} (i : W' ⟶ W) :
   Functor.whiskerLeft (supportedSubmoduleFunctor S)
     ((sheafSections (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map i.op)
 
+/-- Evaluating the supported-submodule presheaf at an open gives supported sections on it. -/
+lemma supportedSubmoduleSectionsFunctor_eq_evaluation (W : (Opens X)ᵒᵖ) :
+    supportedSubmoduleSectionsFunctor (R := R) S W.unop =
+      (supportedSubmoduleFunctor S ⋙
+        sheafToPresheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) ⋙
+        (evaluation (Opens X)ᵒᵖ (ModuleCat.{u} R)).obj W :=
+  (rfl)
+
 /-- Restriction of supported sections is induced by presheaf evaluation. -/
 lemma supportedSubmoduleSectionsRestrict_eq_whiskerLeft_evaluation {W' W : Opens X}
     (i : W' ⟶ W) :

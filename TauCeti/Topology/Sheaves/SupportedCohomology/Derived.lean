@@ -188,11 +188,15 @@ def rightDerivedSupportedSubmodulePresheafIso (n : ℕ) :
         Category.assoc]
       have he := ((P).rightDerivedEvaluationIso n W).hom.naturality f
       have hr := (rightDerivedSupportedSubmoduleSectionsIso (R := R) S W.unop n).hom.naturality f
+      have rightDerived_congr {E E' : Sheaf J A ⥤ A} [E.Additive] [E'.Additive] (h : E = E') :
+          E.rightDerived n = E'.rightDerived n := by
+        subst E'
+        rfl
+      have hEval := rightDerived_congr
+        (supportedSubmoduleSectionsFunctor_eq_evaluation (R := R) S W).symm
+      have hMap := eq_of_heq (Functor.hcongr_hom hEval f)
       simp only [Functor.comp_map, evaluation_obj_map] at he hr
-      -- Evaluating the supported-submodule presheaf at `W` is the functor of
-      -- supported sections on `W.unop`.
-      change _ = _ ≫ ((supportedSubmoduleSectionsFunctor (R := R) S W.unop).rightDerived n).map f
-        at he
+      rw [hMap] at he
       rw [reassoc_of% he, hr])
 
 /-- The presheaf comparison on an open is evaluation followed by the Ext comparison
