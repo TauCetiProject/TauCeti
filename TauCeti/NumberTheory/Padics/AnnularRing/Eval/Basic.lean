@@ -13,6 +13,7 @@ import Mathlib.RingTheory.PowerSeries.Trunc
 import TauCeti.Analysis.Normed.Operator.BoundedLinearMaps
 import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.Localization.Away.Basic
+import TauCeti.Topology.Algebra.InfiniteSum.DiscreteConvolution
 import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
@@ -196,17 +197,7 @@ private theorem eval₂_mul (f : ℤ_[p] →+* K) (hf : ∃ C : ℝ, ∀ a : ℤ
   obtain ⟨C, hC⟩ := hf
   have hfx := summable_norm_eval₂ f ⟨C, hC⟩ t ht htinv x
   have hfy := summable_norm_eval₂ f ⟨C, hC⟩ t ht htinv y
-  rw [tsum_mul_tsum_of_summable_norm hfx hfy]
-  let e : ℤ × ℤ ≃ ℤ × ℤ :=
-    (Equiv.prodComm ℤ ℤ).trans (Equiv.prodShear (Equiv.refl ℤ) fun i ↦ (Equiv.addRight i).symm)
-  have hprod : Summable fun mi : ℤ × ℤ ↦
-      (f (x.coeff mi.2) * ((t ^ mi.2 : Kˣ) : K)) *
-        (f (y.coeff (mi.1 - mi.2)) * ((t ^ (mi.1 - mi.2) : Kˣ) : K)) :=
-    e.summable_iff.mpr (summable_mul_of_summable_norm hfx hfy)
-  rw [← e.tsum_eq]
-  simp only [e, Equiv.trans_apply, Equiv.prodComm_apply, Equiv.prodShear_apply, Equiv.refl_apply,
-    Equiv.addRight_symm_apply, Prod.fst_swap, Prod.snd_swap, ← sub_eq_add_neg]
-  rw [hprod.tsum_prod' (fun m ↦ hprod.comp_injective fun _ _ h ↦ (Prod.mk.inj h).2)]
+  rw [← (DiscreteConvolution.hasSum_tsum_mul_sub hfx hfy).tsum_eq]
   refine tsum_congr fun m ↦ ?_
   let g : ℤ_[p] →+ K := (AddMonoidHom.mulRight ((t ^ m : Kˣ) : K)).comp f.toAddMonoidHom
   have hf_cont : Continuous f := AddMonoidHomClass.continuous_of_bound f C hC
@@ -223,8 +214,7 @@ private theorem eval₂_mul (f : ℤ_[p] →+* K) (hf : ∃ C : ℝ, ∀ a : ℤ
   have hcomm : ((t ^ i : Kˣ) : K) * f (y.coeff (m - i)) =
       f (y.coeff (m - i)) * ((t ^ i : Kˣ) : K) :=
     (PadicInt.commute_ringHom_of_continuous hf_cont (y.coeff (m - i)) ((t ^ i : Kˣ) : K)).symm
-  rw [map_mul, ← ht_add, mul_assoc, ← mul_assoc ((t ^ i : Kˣ) : K), hcomm, mul_assoc, mul_assoc,
-    sub_eq_add_neg]
+  rw [map_mul, ← ht_add, mul_assoc, ← mul_assoc ((t ^ i : Kˣ) : K), hcomm, mul_assoc, mul_assoc]
 
 /-- The evaluation ring homomorphism `H = ℤ_p⟦T, p/T⟧ →+* K` sending `∑ d_m T ^ m` to
 `∑ f(d_m) t ^ m`, for any bounded `f : ℤ_[p] →+* K` and any unit `t : Kˣ` with `‖t‖ < 1` and
