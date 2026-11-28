@@ -26,19 +26,23 @@ invariant, so lie in the image of `R⁺`.
 
 For a morphism of Huber pairs `(R, R⁺) → (A, A⁺)` with underlying map `algebraMap R A`, the map
 `Spa(A, A⁺) → Spa(R, R⁺)` is therefore surjective when `R → A` is injective. When moreover `G`
-acts by `R`-algebra automorphisms (`SMulCommClass G R A`), its fibres are the `G`-orbits for
-`(g • y)(a) = y(g⁻¹ • a)`. When `R` is a Tate ring, a morphism of Huber pairs out of `(R, R⁺)`
-that is surjective on adic spectra induces a quotient map
+acts by `R`-algebra automorphisms (`SMulCommClass G R A`), its fibres are the intersections
+of `Spa(A, A⁺)` with the `G`-orbits of `Spv A` for `(g • y)(a) = y(g⁻¹ • a)`. When `R` is a
+Tate ring, a morphism of Huber pairs out of `(R, R⁺)` that is surjective on adic spectra induces a
+quotient map
 (`TauCeti.Huber.Pair.Hom.isQuotientMap_spaComap_of_isTateRing`), so if `G` acts by `R`-algebra
 automorphisms, `Spa(R, R⁺)` is the quotient of `Spa(A, A⁺)` by `G` as a topological space.
 Nothing is assumed about the order of `G`, which may be divisible by the residue characteristic.
+The identification with the orbit space for the action of `G` on `Spa(A, A⁺)` is in
+`TauCeti/AlgebraicGeometry/AdicSpace/Spa/Invariant/Quotient.lean`.
 
 ## Main results
 
 * `TauCeti.ValuationSpectrum.mem_spa_iff_comap_mem_spa_comap_of_isInvariant`: `Spa(A, A⁺)` is the
   preimage of `Spa(R, R⁺)` in `Spv A`.
 * `TauCeti.Huber.Pair.Hom.spaComap_eq_spaComap_iff_of_isInvariant`: the fibres of
-  `Spa(A, A⁺) → Spa(R, R⁺)` are the `G`-orbits when `G` acts by `R`-algebra automorphisms.
+  `Spa(A, A⁺) → Spa(R, R⁺)` are the intersections of `Spa(A, A⁺)` with the `G`-orbits of `Spv A`
+  when `G` acts by `R`-algebra automorphisms.
 * `TauCeti.Huber.Pair.Hom.surjective_spaComap_of_isInvariant`: the map is surjective.
 * `TauCeti.Huber.Pair.Hom.isQuotientMap_spaComap_of_isInvariant`: over a Tate ring `R`, it is a
   quotient map.
@@ -104,15 +108,18 @@ section Huber
 
 variable [IsHuberRing R] {S : Pair R} {T : Pair A}
 
-/-- **The fibres of `Spa(A, A⁺) → Spa(R, R⁺)` are the `G`-orbits.** For a finite group `G` acting
-on `A` by `R`-algebra automorphisms with every invariant coming from `R`, and a morphism of Huber
-pairs `φ : (R, R⁺) → (A, A⁺)` with underlying map `algebraMap R A`, two points `x` and `y` of
-`Spa(A, A⁺)` have the same image in `Spa(R, R⁺)` exactly when `y = g • x` for some `g ∈ G`,
-where `(g • x)(a) = x(g⁻¹ • a)`. -/
+/-- **The fibres of `Spa(A, A⁺) → Spa(R, R⁺)` are the traces of `G`-orbits of `Spv A`.** For a
+finite group `G` acting on `A` by `R`-algebra automorphisms with every invariant coming from `R`,
+and a morphism of Huber pairs `φ : (R, R⁺) → (A, A⁺)` with underlying map `algebraMap R A`, two
+points `x` and `y` of `Spa(A, A⁺)` have the same image in `Spa(R, R⁺)` exactly when
+`y = g • x` in `Spv A` for some `g ∈ G`, where `(g • x)(a) = x(g⁻¹ • a)`. The action is not
+assumed to preserve `Spa(A, A⁺)`; when it does, the fibres are the orbits of the action on
+`Spa(A, A⁺)` itself
+(`TauCeti.Huber.Pair.Hom.spaComap_eq_spaComap_iff_mem_orbit_of_isInvariant`). -/
 theorem spaComap_eq_spaComap_iff_of_isInvariant [SMulCommClass G R A] {φ : Hom S T}
     (hφ : φ.toRingHom = algebraMap R A) {x y : spa T.plus} :
     φ.spaComap x = φ.spaComap y ↔
-      ∃ g : G, (y : Spv A) = comap (MulSemiringAction.toRingHom G A g⁻¹) x := by
+      ∃ g : G, (y : Spv A) = g • (x : Spv A) := by
   rw [← comap_algebraMap_eq_comap_algebraMap_iff_of_isInvariant (R := R), Subtype.ext_iff,
     spaComap_val, spaComap_val, hφ]
 

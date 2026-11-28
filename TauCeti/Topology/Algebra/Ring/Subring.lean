@@ -47,6 +47,7 @@ locally constant, being constant on the open cosets of its kernel.
 ## Main results
 
 * `Subring.topologicalClosure_coe`: `↑S.topologicalClosure = closure ↑S`.
+* `Subring.isInducing_algebraMap`: the algebra map of a subring is inducing.
 * `isOpen_integralClosure_toSubring`: the integral closure of an open subring is open.
 * `Ideal.isOpen_comap_subtype_iff`: an ideal is open exactly when its trace on an open subring is.
 * `Subring.isLocalizationAway_of_isOpen`: an open subring containing a topologically nilpotent
@@ -85,6 +86,18 @@ variable {R : Type*} [Ring R] [TopologicalSpace R] [IsSemitopologicalRing R]
 @[simp]
 theorem topologicalClosure_coe (S : Subring R) :
     (S.topologicalClosure : Set R) = _root_.closure (S : Set R) := (rfl)
+
+end Subring
+
+namespace Subring
+
+variable {R : Type*} [CommRing R] [TopologicalSpace R]
+
+/-- The algebra map `S → R` of a subring `S` with the subspace topology is inducing: it is the
+inclusion `Subring.subtype`. -/
+theorem isInducing_algebraMap (S : Subring R) : Topology.IsInducing (algebraMap S R) := by
+  rw [Algebra.algebraMap_ofSubring, Subring.coe_subtype]
+  exact Topology.IsInducing.subtypeVal
 
 end Subring
 

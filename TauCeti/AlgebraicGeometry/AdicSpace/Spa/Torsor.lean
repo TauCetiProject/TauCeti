@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.FiniteAlgebra
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Generalizing
+public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Action
 public import TauCeti.RingTheory.Etale.Torsor.Basic
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Invariant
 
@@ -89,37 +90,30 @@ theorem isOpenMap_spaComap_of_isFiniteEtaleTorsor {φ : Hom S T}
   have := Algebra.IsFiniteEtaleTorsor.finite (G := G) (A := A) (B := B)
   have hquot := φ.isQuotientMap_spaComap_of_isTateRing
     (surjective_spaComap_of_isFiniteEtaleTorsor (G := G) hφ hT)
-  -- `G` acts on `Spa(B, B⁺)` by `σ g : y ↦ comap g y`
-  have hmem (g : G) {y : Spv B} (hy : y ∈ spa T.plus) :
-      comap (MulSemiringAction.toRingHom G B g) y ∈ spa T.plus := by
+  -- `G` acts on `Spa(B, B⁺)` by `σ g : y ↦ g • y`
+  have hmem (g : G) {y : Spv B} (hy : y ∈ spa T.plus) : g • y ∈ spa T.plus := by
     rw [hT] at hy ⊢
-    exact (MulSemiringAction.toAlgHom A B g).comap_mem_spa_integralClosure hy
-  let σ (g : G) : spa T.plus → spa T.plus := fun y ↦ ⟨_, hmem g y.property⟩
-  have hσ (g : G) : Continuous (σ g) :=
-    ((continuous_comap _).comp continuous_subtypeVal).subtype_mk _
-  have hinv (g : G) (y : Spv B) :
-      comap (MulSemiringAction.toRingHom G B g⁻¹) (comap (MulSemiringAction.toRingHom G B g) y) =
-        y := by
-    -- acting by `g⁻¹` and then by `g` is the identity of `B`
-    have hcomp : (MulSemiringAction.toRingHom G B g).comp (MulSemiringAction.toRingHom G B g⁻¹) =
-        RingHom.id B :=
-      RingHom.ext fun b ↦ smul_inv_smul g b
-    rw [comap_comap, hcomp, comap_id, _root_.id]
+    rw [smul_def]
+    exact (MulSemiringAction.toAlgHom A B g⁻¹).comap_mem_spa_integralClosure hy
+  let σ (g : G) : spa T.plus → spa T.plus := fun y ↦ ⟨g • y.val, hmem g y.property⟩
+  have hσ (g : G) (y : spa T.plus) : (σ g y).val = g • y.val := rfl
+  have hσc (g : G) : Continuous (σ g) :=
+    ((continuous_const_smul g).comp continuous_subtypeVal).subtype_mk _
   intro U hU
   rw [← hquot.isOpen_preimage]
   -- the saturation of `U` is the union of its translates
-  convert isOpen_iUnion fun g ↦ hU.preimage (hσ g) using 1
+  convert isOpen_iUnion fun g ↦ hU.preimage (hσc g) using 1
   ext y
   simp only [Set.mem_preimage, Set.mem_image, Set.mem_iUnion]
   constructor
   · rintro ⟨u, hu, huy⟩
     obtain ⟨g, hg⟩ := (spaComap_eq_spaComap_iff_of_isInvariant (G := G) hφ).mp huy
-    refine ⟨g, ?_⟩
+    refine ⟨g⁻¹, ?_⟩
     convert hu using 1
-    exact Subtype.ext <| by simpa [σ, hg] using hinv g⁻¹ u.val
+    exact Subtype.ext <| by rw [hσ, hg, inv_smul_smul]
   · rintro ⟨g, hg⟩
     refine ⟨σ g y, hg, (spaComap_eq_spaComap_iff_of_isInvariant (G := G) hφ).mpr
-      ⟨g, (hinv g y.val).symm⟩⟩
+      ⟨g⁻¹, by rw [hσ, inv_smul_smul]⟩⟩
 
 /-- **The base is the `G`-quotient of the adic spectrum of a finite étale torsor.** If `B` is a
 finite étale `G`-torsor over a Tate ring `A`, carries its natural topology and has plus ring the
@@ -131,7 +125,7 @@ theorem spaComap_orbits_of_isFiniteEtaleTorsor {φ : Hom S T}
     (hT : T.plus = (integralClosure (S.plus.map (algebraMap A B)) B).toSubring) :
     Function.Surjective φ.spaComap ∧ IsOpenMap φ.spaComap ∧
       ∀ x y : spa T.plus, φ.spaComap x = φ.spaComap y ↔
-        ∃ g : G, (y : Spv B) = comap (MulSemiringAction.toRingHom G B g⁻¹) x :=
+        ∃ g : G, (y : Spv B) = g • (x : Spv B) :=
   ⟨surjective_spaComap_of_isFiniteEtaleTorsor (G := G) hφ hT,
     isOpenMap_spaComap_of_isFiniteEtaleTorsor (G := G) hφ hT,
     fun _ _ ↦ spaComap_eq_spaComap_iff_of_isInvariant hφ⟩
