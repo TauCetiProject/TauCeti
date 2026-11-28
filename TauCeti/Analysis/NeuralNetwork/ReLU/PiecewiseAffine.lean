@@ -38,7 +38,7 @@ open Neuromanifold
 functions. -/
 theorem not_reluNetComputes_depth_one_abs :
     ¬∃ d : Fin 2 → ℕ, ReLUNetComputes d (fun x : Fin 1 → ℝ => |x 0|) := by
-  rw [reluNetComputes_depth_one_iff]
+  rw [exists_reluNetComputes_depth_one_iff]
   rintro ⟨A, hA⟩
   let e : ℝ →ᴬ[ℝ] (Fin 1 → ℝ) :=
     (ContinuousLinearEquiv.funUnique (Fin 1) ℝ ℝ).symm.toContinuousLinearMap.toContinuousAffineMap

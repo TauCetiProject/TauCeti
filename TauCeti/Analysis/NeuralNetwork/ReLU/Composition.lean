@@ -48,6 +48,11 @@ def compWidths {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ) (d₂ : Fin (L�
     Fin (L₁ + L₂ + 2) → ℕ :=
   Fin.append (Fin.init d₁) (Fin.tail d₂) ∘ Fin.cast (by omega)
 
+/-- `compWidths d₁ d₂` is the concatenation of `Fin.init d₁` and `Fin.tail d₂`, reindexed to
+`Fin (L₁ + L₂ + 2)`. -/
+theorem compWidths_def {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ) (d₂ : Fin (L₂ + 2) → ℕ) :
+    compWidths d₁ d₂ = Fin.append (Fin.init d₁) (Fin.tail d₂) ∘ Fin.cast (by omega) := (rfl)
+
 /-- On indices `i : Fin (L₁ + 1)` below the merge layer, `compWidths` agrees with `d₁`. -/
 @[simp]
 theorem compWidths_left {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ)

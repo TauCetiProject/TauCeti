@@ -9,9 +9,9 @@ public import TauCeti.Geometry.Neuromanifold.MLP.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
 public import Mathlib.Topology.Algebra.Ring.Real
+public import Mathlib.Order.Interval.Finset.Fin
 import Mathlib.Data.Matrix.ColumnRowPartitioned
 import Mathlib.LinearAlgebra.Matrix.ToLin
-import Mathlib.Order.Interval.Finset.Fin
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Geometry.Neuromanifold.MLP.Composition
 
@@ -133,24 +133,46 @@ theorem reluNetComputes_iff {n L : ℕ} {d : Fin (L + 1) → ℕ} {f : (Fin n �
   simp only [reluNetComputes_iff_reluNetRealizes, reluNetRealizes_iff, Fin.forall_fin_one]
 
 /-- A network realizing a map into `Fin m → ℝ` has input width `n`. -/
+@[grind →]
 theorem ReLUNetRealizes.width_zero {n m L : ℕ} {d : Fin (L + 1) → ℕ}
     {f : (Fin n → ℝ) → (Fin m → ℝ)} (hf : ReLUNetRealizes d f) : d 0 = n :=
   hf.choose
 
 /-- A network realizing a map into `Fin m → ℝ` has output width `m`. -/
+@[grind →]
 theorem ReLUNetRealizes.width_last {n m L : ℕ} {d : Fin (L + 1) → ℕ}
     {f : (Fin n → ℝ) → (Fin m → ℝ)} (hf : ReLUNetRealizes d f) : d (Fin.last L) = m :=
   hf.choose_spec.choose
 
 /-- A network computing a scalar function on `Fin n → ℝ` has input width `n`. -/
+@[grind →]
 theorem ReLUNetComputes.width_zero {n L : ℕ} {d : Fin (L + 1) → ℕ}
     {f : (Fin n → ℝ) → ℝ} (hf : ReLUNetComputes d f) : d 0 = n :=
   (reluNetComputes_iff_reluNetRealizes.mp hf).width_zero
 
 /-- A network computing a scalar function has output width `1`. -/
+@[grind →]
 theorem ReLUNetComputes.width_last {n L : ℕ} {d : Fin (L + 1) → ℕ}
     {f : (Fin n → ℝ) → ℝ} (hf : ReLUNetComputes d f) : d (Fin.last L) = 1 :=
   (reluNetComputes_iff_reluNetRealizes.mp hf).width_last
+
+/-- If any layer of a ReLU network realizing `f` has width zero, then `f` is constant. -/
+theorem ReLUNetRealizes.eq_of_width_eq_zero {n m L : ℕ} {d : Fin (L + 1) → ℕ}
+    {f : (Fin n → ℝ) → (Fin m → ℝ)} (hf : ReLUNetRealizes d f)
+    {k : Fin (L + 1)} (hk : d k = 0) (x x' : Fin n → ℝ) :
+    f x = f x' := by
+  obtain ⟨h0, hL, θ, hθ⟩ := reluNetRealizes_iff.mp hf
+  have hconst := (reluSpec d).realize_eq_of_width_eq_zero θ hk
+    (fun i => x (Fin.cast h0 i)) (fun i => x' (Fin.cast h0 i))
+  ext j
+  rw [← hθ x j, ← hθ x' j, hconst]
+
+/-- If any layer of a ReLU network computing `f` has width zero, then `f` is constant. -/
+theorem ReLUNetComputes.eq_of_width_eq_zero {n L : ℕ} {d : Fin (L + 1) → ℕ}
+    {f : (Fin n → ℝ) → ℝ} (hf : ReLUNetComputes d f)
+    {k : Fin (L + 1)} (hk : d k = 0) (x x' : Fin n → ℝ) :
+    f x = f x' :=
+  congrFun ((reluNetComputes_iff_reluNetRealizes.mp hf).eq_of_width_eq_zero hk x x') 0
 
 /-- Transporting `ReLUNetRealizes` along equal width functions. -/
 theorem ReLUNetRealizes.of_width_eq {n m L : ℕ} {d d' : Fin (L + 1) → ℕ}
@@ -187,6 +209,9 @@ theorem ReLUNetComputes.congr_depth {n L L' : ℕ} {d : Fin (L + 1) → ℕ}
 the output `Fin.last L`. -/
 def hiddenLayers (L : ℕ) : Finset (Fin (L + 1)) :=
   Finset.Ioo 0 (Fin.last L)
+
+/-- `hiddenLayers L` is the finite interval `Finset.Ioo 0 (Fin.last L)`. -/
+theorem hiddenLayers_def (L : ℕ) : hiddenLayers L = Finset.Ioo 0 (Fin.last L) := (rfl)
 
 /-- Membership in `hiddenLayers L` means being neither the input layer nor the output layer. -/
 @[simp]
@@ -332,57 +357,85 @@ theorem ReLUNetRealizes.id_depth_two (m : ℕ) :
     Matrix.one_mulVec, Matrix.neg_mulVec, id_eq]
   simpa [max_comm, sub_eq_add_neg] using (max_zero_sub_max_neg_zero_eq_self (x j)).symm
 
+/-- A depth-zero ReLU network with widths `![n]` realizes only the identity on `Fin n → ℝ`. -/
+theorem reluNetRealizes_depth_zero_iff {n : ℕ} {f : (Fin n → ℝ) → (Fin n → ℝ)} :
+    ReLUNetRealizes ![n] f ↔ f = id := by
+  rw [reluNetRealizes_iff]
+  constructor
+  · rintro ⟨h0, hL, θ, hθ⟩
+    ext x j
+    have hx := (hθ x j).symm
+    rw [MLPSpec.realize_depth_zero] at hx
+    exact hx.trans (congrArg x (Fin.ext rfl))
+  · rintro rfl
+    refine ⟨rfl, rfl, fun i => i.elim0, fun x j => ?_⟩
+    rw [MLPSpec.realize_depth_zero]
+    exact congrArg x (Fin.ext rfl)
+
 /-- A depth-zero ReLU network on `ℝ` computes only the identity `x ↦ x 0`. -/
 theorem reluNetComputes_depth_zero_iff {f : (Fin 1 → ℝ) → ℝ} :
     ReLUNetComputes ![1] f ↔ f = fun x => x 0 := by
-  rw [reluNetComputes_iff]
+  rw [reluNetComputes_iff_reluNetRealizes, reluNetRealizes_depth_zero_iff]
   constructor
-  · rintro ⟨h0, hL, θ, hθ⟩
+  · intro h
     ext x
-    have hx := (hθ x).symm
-    rw [MLPSpec.realize_depth_zero] at hx
-    simpa [Fin.eq_zero] using hx
+    exact congrFun (congrFun h x) 0
   · rintro rfl
-    refine ⟨rfl, rfl, fun i => i.elim0, fun x => ?_⟩
-    rw [MLPSpec.realize_depth_zero]
-    exact congrArg x (Fin.eq_zero _)
+    ext x j
+    rw [Fin.eq_zero j]
+    rfl
+
+/-- A depth-one ReLU network with widths `![n, m]` realizes `f` if and only if `f` is a
+continuous affine map. -/
+theorem reluNetRealizes_depth_one_iff {n m : ℕ} {f : (Fin n → ℝ) → (Fin m → ℝ)} :
+    ReLUNetRealizes ![n, m] f ↔ ∃ A : (Fin n → ℝ) →ᴬ[ℝ] (Fin m → ℝ), f = ⇑A := by
+  constructor
+  · intro hf
+    obtain ⟨h0, hL, θ, hθ⟩ := reluNetRealizes_iff.mp hf
+    let W : Matrix (Fin m) (Fin n) ℝ := fun i j => (θ 0).1 i j
+    let b : Fin m → ℝ := fun i => (θ 0).2 i
+    let Lmap : (Fin n → ℝ) →L[ℝ] (Fin m → ℝ) :=
+      LinearMap.toContinuousLinearMap (Matrix.toLin' W)
+    refine ⟨Lmap.toContinuousAffineMap + ContinuousAffineMap.const ℝ (Fin n → ℝ) b, ?_⟩
+    ext x j
+    have hx := (hθ x j).symm
+    rw [MLPSpec.realize_depth_one] at hx
+    change f x j = (W *ᵥ (fun i : Fin n => x (Fin.cast h0 i)) + b) (Fin.cast hL.symm j) at hx
+    have hx' : (fun i : Fin n => x (Fin.cast h0 i)) = x := funext fun i => congrArg x (Fin.ext rfl)
+    rw [hx'] at hx
+    refine hx.trans ((congrArg (W *ᵥ x + b) (Fin.ext rfl)).trans ?_)
+    simp [Lmap]
+  · rintro ⟨A, rfl⟩
+    exact ReLUNetRealizes.of_continuousAffineMap A
+
+/-- A depth-one ReLU network with widths `![n, 1]` computes `f` if and only if `f` is a
+continuous affine functional. -/
+theorem reluNetComputes_depth_one_iff {n : ℕ} {f : (Fin n → ℝ) → ℝ} :
+    ReLUNetComputes ![n, 1] f ↔ ∃ A : (Fin n → ℝ) →ᴬ[ℝ] ℝ, f = ⇑A := by
+  constructor
+  · intro hf
+    rw [reluNetComputes_iff_reluNetRealizes, reluNetRealizes_depth_one_iff] at hf
+    obtain ⟨B, hB⟩ := hf
+    let eval0 : (Fin 1 → ℝ) →ᴬ[ℝ] ℝ :=
+      (ContinuousLinearEquiv.funUnique (Fin 1) ℝ ℝ).toContinuousLinearMap.toContinuousAffineMap
+    exact ⟨eval0.comp B, funext fun x => congrFun (congrFun hB x) 0⟩
+  · rintro ⟨A, rfl⟩
+    exact ReLUNetComputes.of_continuousAffineMap A
 
 /-- A depth-one ReLU network computes a function if and only if that function is continuous
 affine. -/
-theorem reluNetComputes_depth_one_iff {n : ℕ} {f : (Fin n → ℝ) → ℝ} :
+theorem exists_reluNetComputes_depth_one_iff {n : ℕ} {f : (Fin n → ℝ) → ℝ} :
     (∃ d : Fin 2 → ℕ, ReLUNetComputes d f) ↔
       ∃ A : (Fin n → ℝ) →ᴬ[ℝ] ℝ, f = ⇑A := by
   constructor
   · rintro ⟨d, hd⟩
-    obtain ⟨h0, hL, θ, hθ⟩ := reluNetComputes_iff.mp hd
-    have h0' : (reluSpec d).width 0 = n := (congrFun (reluSpec_width d) 0).trans h0
-    have hL' : (reluSpec d).width (Fin.last 1) = 1 :=
-      (congrFun (reluSpec_width d) (Fin.last 1)).trans hL
-    let M : Matrix (Fin 1) (Fin n) ℝ := (θ 0).1.reindex (finCongr hL') (finCongr h0')
-    let Lmap : (Fin n → ℝ) →L[ℝ] ℝ :=
-      (ContinuousLinearEquiv.funUnique (Fin 1) ℝ ℝ).toContinuousLinearMap.comp
-        (LinearMap.toContinuousLinearMap (Matrix.toLin' M))
-    refine ⟨Lmap.toContinuousAffineMap +
-      ContinuousAffineMap.const ℝ (Fin n → ℝ) ((θ 0).2 (Fin.cast hL'.symm 0)), ?_⟩
-    ext x
-    have hx := (hθ x).symm
-    rw [MLPSpec.realize_depth_one] at hx
-    refine hx.trans ?_
-    have hM : M *ᵥ x = ((θ 0).1 *ᵥ (fun i => x (Fin.cast h0' i))) ∘ (finCongr hL').symm := by
-      dsimp only [M]
-      rw [Matrix.reindex_apply,
-        Matrix.submatrix_mulVec_equiv _ _ (finCongr hL').symm (finCongr h0').symm]
-      rfl
-    have hM0 := congrFun hM 0
-    simp only [Lmap, ContinuousAffineMap.add_apply,
-      ContinuousLinearMap.coe_toContinuousAffineMap, ContinuousAffineMap.coe_const,
-      Function.const_apply, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.coe_funUnique, Function.eval, Fin.default_eq_zero,
-      LinearMap.coe_toContinuousLinearMap', Matrix.toLin'_apply, hM0, Function.comp_apply,
-      finCongr_symm, finCongr_apply, Pi.add_apply]
-    rfl
-  · rintro ⟨A, rfl⟩
-    exact ⟨![n, 1], ReLUNetComputes.of_continuousAffineMap A⟩
+    have hd_eq : d = ![n, 1] := funext fun i => by
+      fin_cases i
+      · exact hd.width_zero
+      · exact hd.width_last
+    exact reluNetComputes_depth_one_iff.mp (hd.of_width_eq hd_eq)
+  · rintro h
+    exact ⟨![n, 1], reluNetComputes_depth_one_iff.mpr h⟩
 
 /-- The absolute value `x ↦ |x 0|` on `ℝ` is computed by a depth-2 ReLU network with two hidden
 units (`![1, 2, 1]`). -/

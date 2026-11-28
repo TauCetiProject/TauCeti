@@ -80,19 +80,12 @@ theorem IsPiecewiseAffineOn.sum [ContinuousAdd F] {ι : Type*} (s : Finset ι)
 /-- Pointwise maximum of two coordinates on `ℝ × ℝ` is piecewise affine on the whole plane. -/
 theorem isPiecewiseAffineOn_max_prod :
     IsPiecewiseAffineOn (fun p : ℝ × ℝ => max p.1 p.2) (Set.univ : Set (ℝ × ℝ)) := by
-  let f : Bool → (ℝ × ℝ) →ᴬ[ℝ] ℝ := fun b =>
-    cond b (ContinuousLinearMap.fst ℝ ℝ ℝ).toContinuousAffineMap
-      (ContinuousLinearMap.snd ℝ ℝ ℝ).toContinuousAffineMap
-  refine isPiecewiseAffineOn_of_finite (ι := Bool)
-    (C := fun b => {p : ℝ × ℝ | (f (!b) - f b) p ≤ 0}) (A := f)
-    (fun b => isConvexPolyhedron_setOf_le _) ?_ ?_
-  · intro p _
-    rcases le_total p.1 p.2 with h | h
-    · exact mem_iUnion.mpr ⟨false, by simpa [f] using h⟩
-    · exact mem_iUnion.mpr ⟨true, by simpa [f] using h⟩
-  · rintro (_ | _) p ⟨-, hp⟩
-    · simpa [f, max_eq_right] using hp
-    · simpa [f, max_eq_left] using hp
+  let A : Bool → (ℝ × ℝ) →ᴬ[ℝ] ℝ := fun b =>
+    cond b (-(ContinuousLinearMap.fst ℝ ℝ ℝ)).toContinuousAffineMap
+      (-(ContinuousLinearMap.snd ℝ ℝ ℝ)).toContinuousAffineMap
+  refine ((Finset.univ : Finset Bool).isPiecewiseAffineOn_infAffine
+    Finset.univ_nonempty A).neg.congr fun p _ => ?_
+  simp [A, min_neg_neg]
 
 /-- Pointwise maximum of two real-valued piecewise-affine maps is piecewise affine. -/
 theorem IsPiecewiseAffineOn.sup {f g : E → ℝ} (hf : IsPiecewiseAffineOn f V)
