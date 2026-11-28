@@ -52,6 +52,8 @@ secant equations, and the symmetry of the direct updates into that of the invers
   `Matrix.IsSymm.dfpInvUpdate`: the updates of a symmetric matrix are symmetric.
 * `Matrix.bfgsUpdate_zero`, `Matrix.dfpUpdate_zero`: with the step `s = 0` both direct updates
   return `B`.
+* `Matrix.bfgsInvUpdate_zero`, `Matrix.dfpInvUpdate_zero`: with the gradient change `y = 0` both
+  inverse updates return `H`.
 
 ## References
 
@@ -136,20 +138,18 @@ theorem dfpInvUpdate_eq_bfgsUpdate (H : Matrix ι ι 𝕜) (s y : ι → 𝕜) :
 `bfgsUpdate B s y` sends `s` to `y`. -/
 theorem bfgsUpdate_mulVec (B : Matrix ι ι 𝕜) {s y : ι → 𝕜} (hsy : s ⬝ᵥ y ≠ 0)
     (hsBs : s ⬝ᵥ (B *ᵥ s) ≠ 0) : bfgsUpdate B s y *ᵥ s = y := by
-  rw [bfgsUpdate_def, add_mulVec, sub_mulVec, smul_mulVec, smul_mulVec, vecMulVec_mulVec,
-    vecMulVec_mulVec, op_smul_eq_smul, op_smul_eq_smul, ← dotProduct_mulVec, smul_smul,
-    smul_smul, inv_mul_cancel₀ hsBs, inv_mul_cancel₀ (dotProduct_comm s y ▸ hsy), one_smul,
-    one_smul, sub_self, zero_add]
+  have := dotProduct_comm s y ▸ hsy
+  simp [bfgsUpdate_def, add_mulVec, sub_mulVec, smul_mulVec, vecMulVec_mulVec,
+    ← dotProduct_mulVec, smul_smul, hsBs, this]
 
 variable [DecidableEq ι] in
 /-- The secant equation for the DFP update: if `sᵀ y ≠ 0`, then `dfpUpdate B s y` sends `s`
 to `y`, for every square matrix `B`. -/
 theorem dfpUpdate_mulVec (B : Matrix ι ι 𝕜) {s y : ι → 𝕜} (hsy : s ⬝ᵥ y ≠ 0) :
     dfpUpdate B s y *ᵥ s = y := by
-  have hys : (y ⬝ᵥ s)⁻¹ * (y ⬝ᵥ s) = 1 := inv_mul_cancel₀ (dotProduct_comm s y ▸ hsy)
-  rw [dfpUpdate_def, add_mulVec, ← mulVec_mulVec, one_sub_smul_vecMulVec_mulVec,
-    op_smul_eq_smul, smul_smul, hys, one_smul, sub_self, mulVec_zero, zero_add,
-    smul_mulVec, vecMulVec_mulVec, op_smul_eq_smul, smul_smul, hys, one_smul]
+  have := dotProduct_comm s y ▸ hsy
+  simp [dfpUpdate_def, add_mulVec, ← mulVec_mulVec, one_sub_smul_vecMulVec_mulVec, smul_mulVec,
+    vecMulVec_mulVec, smul_smul, this]
 
 variable [DecidableEq ι] in
 /-- The inverse secant equation for the inverse BFGS update: if `sᵀ y ≠ 0`, then
@@ -164,7 +164,7 @@ theorem dfpInvUpdate_mulVec (H : Matrix ι ι 𝕜) {s y : ι → 𝕜} (hsy : s
     (hyHy : y ⬝ᵥ (H *ᵥ y) ≠ 0) : dfpInvUpdate H s y *ᵥ y = s := by
   rw [dfpInvUpdate_eq_bfgsUpdate, bfgsUpdate_mulVec H (dotProduct_comm s y ▸ hsy) hyHy]
 
-/-! ### The step zero -/
+/-! ### The step zero and the gradient change zero -/
 
 /-- With the step `s = 0` the BFGS update returns `B`, since both reciprocals vanish. -/
 @[simp]
@@ -176,6 +176,17 @@ variable [DecidableEq ι] in
 @[simp]
 theorem dfpUpdate_zero (B : Matrix ι ι 𝕜) (y : ι → 𝕜) : dfpUpdate B 0 y = B := by
   simp [dfpUpdate_def]
+
+variable [DecidableEq ι] in
+/-- With the gradient change `y = 0` the inverse BFGS update returns `H`. -/
+@[simp]
+theorem bfgsInvUpdate_zero (H : Matrix ι ι 𝕜) (s : ι → 𝕜) : bfgsInvUpdate H s 0 = H := by
+  rw [bfgsInvUpdate_eq_dfpUpdate, dfpUpdate_zero]
+
+/-- With the gradient change `y = 0` the inverse DFP update returns `H`. -/
+@[simp]
+theorem dfpInvUpdate_zero (H : Matrix ι ι 𝕜) (s : ι → 𝕜) : dfpInvUpdate H s 0 = H := by
+  rw [dfpInvUpdate_eq_bfgsUpdate, bfgsUpdate_zero]
 
 /-! ### Symmetry -/
 
