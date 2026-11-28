@@ -73,6 +73,11 @@ theorem latticePoint_sub {ι : Type*} (j j' : ι → ℤ) :
   ext i
   simp
 
+/-- The lattice point of `-j` is the negative of the lattice point of `j`. -/
+theorem latticePoint_neg {ι : Type*} (j : ι → ℤ) : latticePoint (-j) = -latticePoint j := by
+  ext i
+  simp
+
 /-- The lattice point with coordinates `j` is the integer combination `∑ i, j i • eᵢ` of the
 standard basis vectors. -/
 theorem latticePoint_eq_sum {ι : Type*} [Fintype ι] (j : ι → ℤ) :

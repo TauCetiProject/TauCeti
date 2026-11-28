@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Operator.Basic
 import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
+import TauCeti.Topology.UniformSpace.Pi
 
 /-!
 # Comparisons of finite product norms and distances
@@ -28,7 +29,8 @@ distance is at most the square root of the number of coordinates times the sup d
 These estimates give inclusions between balls in the two metrics. The corresponding
 Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` times the `L²` norm;
 conversely, for `p ≥ 1` the `Lᵖ` norm is at most the sum of coordinate norms
-(`PiLp.norm_le_sum_norm`).
+(`PiLp.norm_le_sum_norm`). Together, a bound between sums of coordinate norms gives a bound between
+an `Lᵖ` norm and an `L²` norm (`PiLp.exists_norm_le_mul_norm_of_sum_norm_le`).
 The coordinate spaces may be different seminormed groups, or pseudometric spaces for the
 distance comparisons. A squared-norm bound of `(k + 1) * t²` for a vector of `L²`
 also bounds the number of coordinates with norm exceeding a nonnegative `t` by `k`
@@ -44,7 +46,9 @@ The finite sum against a zero-extended vector reduces to the sum over its origin
 Over an index type with at most one element and for `p ≠ 0`, the `Lᵖ` norm is the norm of the
 coordinate.
 Reindexing the coordinates along the identity bijection is the identity.
-Maps into `PiLp p β` converge uniformly exactly when each coordinate does.
+Maps into `PiLp p β` converge uniformly exactly when each coordinate does. A product
+`PiLp p E` of nonempty uniform spaces is complete if and only if every factor `E i` is
+(`PiLp.completeSpace_iff`).
 
 We also record `PiLp.univ_sum_single`, the coordinate isometry `PiLp.singleLI` (and the
 continuous coordinate inclusion `PiLp.singleCLM`), the power identity `PiLp.norm_rpow_eq_sum`,
@@ -194,6 +198,22 @@ theorem sum_norm_le_sqrt_card_mul_norm (x : PiLp 2 E) :
     ∑ i, ‖x i‖ ≤ Real.sqrt (Fintype.card ι) * ‖x‖ := by
   simpa [PiLp.norm_eq_of_L2] using
     Real.sum_mul_le_sqrt_mul_sqrt Finset.univ (fun _ : ι ↦ 1) (fun i ↦ ‖x i‖)
+
+/-- **Comparing norms through sums of coordinate norms.** If the coordinate norms of `f x` add up
+to at most `C` times those of `g x`, for every `x`, then for `p ≥ 1` the `Lᵖ` norm of `f x` is at
+most a constant times the `L²` norm of `g x`, uniformly in `x`: compare both norms with the sums
+of coordinate norms (`PiLp.norm_le_sum_norm`, `PiLp.sum_norm_le_sqrt_card_mul_norm`). -/
+theorem exists_norm_le_mul_norm_of_sum_norm_le [Fact (1 ≤ p)] {X κ : Type*} [Fintype κ]
+    {β : κ → Type*} [∀ j, SeminormedAddCommGroup (β j)] {f : X → PiLp p β} {g : X → PiLp 2 E}
+    {C : ℝ} (h : ∀ x, ∑ j, ‖f x j‖ ≤ C * ∑ i, ‖g x i‖) :
+    ∃ C', ∀ x, ‖f x‖ ≤ C' * ‖g x‖ := by
+  refine ⟨|C| * Real.sqrt (Fintype.card ι), fun x ↦ ?_⟩
+  calc ‖f x‖ ≤ ∑ j, ‖f x j‖ := norm_le_sum_norm _
+    _ ≤ |C| * ∑ i, ‖g x i‖ := (h x).trans (mul_le_mul_of_nonneg_right (le_abs_self C)
+        (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _))
+    _ ≤ |C| * (Real.sqrt (Fintype.card ι) * ‖g x‖) :=
+      mul_le_mul_of_nonneg_left (sum_norm_le_sqrt_card_mul_norm _) (abs_nonneg C)
+    _ = |C| * Real.sqrt (Fintype.card ι) * ‖g x‖ := (mul_assoc ..).symm
 
 /-- Reindexing a finite family along an equivalence preserves its `Lᵖ` norm, for every
 exponent. -/
@@ -499,6 +519,11 @@ theorem piMap_apply (T : ∀ i, E i →L[𝕜] F i) (x : PiLp p E) (i : ι) :
     piMap p T x i = T i (x i) :=
   (rfl)
 
+/-- A block-diagonal operator with injective blocks is injective. -/
+theorem piMap_injective {T : ∀ i, E i →L[𝕜] F i} (hT : ∀ i, Function.Injective (T i)) :
+    Function.Injective (piMap p T) := fun _ _ h ↦
+  WithLp.ofLp_injective p (Function.Injective.piMap hT (congrArg WithLp.ofLp h))
+
 /-- Under the identification `PiLp.continuousLinearEquiv` of `Lᵖ` products with plain products,
 the block-diagonal operator `PiLp.piMap p T` is `ContinuousLinearMap.piMap T`. -/
 theorem continuousLinearEquiv_comp_piMap (T : ∀ i, E i →L[𝕜] F i) :
@@ -618,3 +643,20 @@ theorem coe_submodulePiLp_symm_single [DecidableEq ι] (j : ι) (h : ↥(N j)) :
 end SubmodulePiLp
 
 end LinearIsometryEquiv
+
+namespace PiLp
+
+variable {ι : Type*} {E : ι → Type*} (p : ℝ≥0∞) [∀ i, UniformSpace (E i)] [∀ i, Nonempty (E i)]
+
+/-- Each factor of a complete `L^p` product of nonempty uniform spaces is complete. -/
+theorem completeSpace_of_completeSpace [CompleteSpace (PiLp p E)] (i : ι) :
+    CompleteSpace (E i) :=
+  have := (uniformEquiv p E).completeSpace_iff.1 ‹_›
+  .of_pi i
+
+/-- An `L^p` product of nonempty uniform spaces is complete if and only if every factor is
+complete. -/
+theorem completeSpace_iff : CompleteSpace (PiLp p E) ↔ ∀ i, CompleteSpace (E i) :=
+  (uniformEquiv p E).completeSpace_iff.trans completeSpace_pi_iff
+
+end PiLp

@@ -27,7 +27,8 @@ formulas for these symbols.
 * `TauCeti.ramificationPartition σ` repeats each `e_i - 1` exactly `f_i` times and drops zeros. The
   symbol has degree `n = k + #π + n₀`, where `k` is the sum of its ramification partition `π` and
   `n₀` the total residue degree of its unramified factors
-  (`TauCeti.sum_map_mul_eq_sum_ramificationPartition_add`).
+  (`TauCeti.sum_map_mul_eq_sum_ramificationPartition_add`), so `π` has at most `n - k` parts
+  (`TauCeti.sum_add_card_ramificationPartition_le`).
 
 The main result is `TauCeti.tsum_one_div_splittingSymbolAut_ramificationPartition`: for a partition
 `π` of `k` into at most `n - k` parts, the splitting symbols of degree `n` with ramification
@@ -317,6 +318,28 @@ theorem sum_map_mul_eq_sum_ramificationPartition_add (σ : Multiset (ℕ × ℕ)
   · simp only [Nat.add_sub_cancel, show 2 ≤ e + 1 + 1 by omega, show e + 1 + 1 ≠ 1 by omega,
       ↓reduceIte]
     ring
+
+/-- **The ramification partition of a symbol of degree `n` has at most `n - k` parts**, where `k`
+is its sum: the sum and the number of parts add up to at most the degree. -/
+theorem sum_add_card_ramificationPartition_le (σ : Multiset (ℕ × ℕ)) :
+    (ramificationPartition σ).sum + Multiset.card (ramificationPartition σ) ≤
+      (σ.map fun x => x.1 * x.2).sum := by
+  rw [sum_ramificationPartition, splittingSymbolExponent_def, card_ramificationPartition,
+    ← Multiset.sum_map_add]
+  refine Multiset.sum_map_le_sum_map _ _ fun x _ ↦ ?_
+  rcases x with ⟨f, _ | _ | e⟩ <;> simp [Nat.mul_succ]
+
+/-- The ramification partition is empty exactly when every factor `(f, e)` with `f ≠ 0` is
+unramified, `e ≤ 1`. -/
+@[simp]
+theorem ramificationPartition_eq_zero_iff {σ : Multiset (ℕ × ℕ)} :
+    ramificationPartition σ = 0 ↔ ∀ x ∈ σ, x.1 ≠ 0 → x.2 ≤ 1 := by
+  simp only [Multiset.eq_zero_iff_forall_notMem, mem_ramificationPartition]
+  refine ⟨fun h x hx h1 ↦ ?_, fun h t ⟨ht, x, hx, h1, hxt⟩ ↦ ?_⟩
+  · by_contra h2
+    exact h (x.2 - 1) ⟨by omega, x, hx, h1, rfl⟩
+  · have := h x hx h1
+    omega
 
 /-! ### Grouping the factors by ramification index -/
 

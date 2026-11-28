@@ -77,6 +77,8 @@ homeomorphic to that of `det E`, linearly on each fibre
   indexed by the actual fibre rank.
 * `TauCeti.DetBundle.congrModelEquiv`: fibrewise transport between independent model presentations,
   without a continuity hypothesis in the base.
+* `TauCeti.DetBundle.congrModelHomeomorph`: for a continuous family, the induced homeomorphism of
+  determinant total spaces.
 * `TauCeti.DetBundle.zeroEquiv`: the canonical scalar coordinate of the degree-zero exterior power
   when the model has rank zero.
 
@@ -453,97 +455,6 @@ theorem congrEquiv_symm (e : ∀ x, E x ≃L[𝕜] E' x) (x : B) :
   exact (LinearEquiv.apply_symm_apply ((e x).toLinearEquiv.exteriorPower (finrank 𝕜 F)) v).symm
 
 end CongrFiber
-
-section Congr
-
-variable [TopologicalSpace B] [CompleteSpace 𝕜]
-  [FiniteDimensional 𝕜 F] [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)]
-  [FiberBundle F E] [VectorBundle 𝕜 F E]
-  {E' : B → Type*} [∀ x, AddCommGroup (E' x)] [∀ x, Module 𝕜 (E' x)]
-  [∀ x, TopologicalSpace (E' x)] [TopologicalSpace (TotalSpace F E')] [FiberBundle F E']
-  [VectorBundle 𝕜 F E']
-
-/-- Read in chart coordinates, the isomorphism of determinant lines induced by `e` is
-multiplication by the determinant of the coordinate expression of `e`, which depends
-continuously on the base point. -/
-private theorem continuousAt_chartCoord_congrEquiv (e : ∀ x, E x ≃L[𝕜] E' x)
-    (he : Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' F p.proj (e p.proj p.snd)))
-    (a : B) :
-    ∃ s : B → 𝕜, ContinuousAt s a ∧ ∀ x (hx : x ∈ (trivializationAt F E a).baseSet)
-      (hx' : x ∈ (trivializationAt F E' a).baseSet) (c : 𝕜),
-      chartCoord (trivializationAt F E' a) hx'
-        (congrEquiv e x ((chartCoord (trivializationAt F E a) hx).symm c)) = s x * c := by
-  set t := trivializationAt F E a
-  set t' := trivializationAt F E' a
-  -- The coordinate expression of `e` is a continuous family of endomorphisms of `F`.
-  let T : B → F →L[𝕜] F := fun x ↦ (t'.continuousLinearMapAt 𝕜 x).comp
-    (((e x : E x →L[𝕜] E' x)).comp (t.symmL 𝕜 x))
-  have hT : ContinuousOn T (t.baseSet ∩ t'.baseSet) :=
-    continuousOn_continuousLinearMapAt_comp_symmL (g := id)
-      (φ := fun x ↦ (e x : E x →L[𝕜] E' x)) he t' t
-  refine ⟨fun x ↦ (T x).det, ContinuousLinearMap.continuous_det.continuousAt.comp
-    (hT.continuousAt ((t.open_baseSet.inter t'.open_baseSet).mem_nhds
-      ⟨mem_baseSet_trivializationAt F E a, mem_baseSet_trivializationAt F E' a⟩)),
-    fun x hx hx' c ↦ ?_⟩
-  have hdet : LinearMap.det (((t.linearEquivAt 𝕜 x hx).symm ≪≫ₗ (e x).toLinearEquiv ≪≫ₗ
-      t'.linearEquivAt 𝕜 x hx' : F ≃ₗ[𝕜] F) : F →ₗ[𝕜] F) = (T x).det := by
-    congr 1
-    ext v
-    simp [T, Trivialization.symmL_apply t hx, Trivialization.coe_linearMapAt_of_mem t' hx']
-  -- Collect the exterior-power isomorphisms into the one induced by the coordinate expression.
-  have key : chartCoord t' hx' (congrEquiv e x ((chartCoord t hx).symm c)) =
-      modelCoord F (((t.linearEquivAt 𝕜 x hx).symm ≪≫ₗ (e x).toLinearEquiv ≪≫ₗ
-        t'.linearEquivAt 𝕜 x hx').exteriorPower (finrank 𝕜 F) ((modelCoord F).symm c)) := by
-    rw [chartCoord_def, chartCoord_def, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-      LinearEquiv.symm_trans_apply, LinearEquiv.symm_trans_apply, congrEquiv_apply]
-    simp only [LinearEquiv.trans_apply, LinearEquiv.exteriorPower_trans,
-      LinearEquiv.exteriorPower_symm]
-    rw [linearEquiv_apply, linearEquiv_apply, linearEquiv_symm_apply, linearEquiv_symm_apply]
-  rw [key, ← LinearEquiv.coe_toLinearMap
-      (((t.linearEquivAt 𝕜 x hx).symm ≪≫ₗ (e x).toLinearEquiv ≪≫ₗ
-        t'.linearEquivAt 𝕜 x hx').exteriorPower (finrank 𝕜 F)),
-    LinearEquiv.exteriorPower_toLinearMap, Module.Basis.exteriorPowerTopEquiv_map, hdet,
-    LinearEquiv.apply_symm_apply]
-
-/-- **Functoriality of the determinant line in bundle isomorphisms.** A continuous fibrewise
-linear isomorphism `e` between vector bundles with the same finite-dimensional model fibre `F`
-induces a
-homeomorphism of the total spaces of their determinant lines, which is
-`TauCeti.DetBundle.congrEquiv e` on each fibre. -/
-def congrHomeomorph (e : ∀ x, E x ≃L[𝕜] E' x)
-    (he : Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' F p.proj (e p.proj p.snd))) :
-    TotalSpace 𝕜 (DetBundle 𝕜 F E) ≃ₜ TotalSpace 𝕜 (DetBundle 𝕜 F E') :=
-  bundleHomeomorph (congrEquiv e) <| by
-    refine FiberBundle.continuous_of_forall_trivialization _ (fun _ ↦ rfl) fun p ↦ ?_
-    obtain ⟨s, hs, hs'⟩ := continuousAt_chartCoord_congrEquiv e he p.proj
-    refine ⟨trivializationAt 𝕜 (DetBundle 𝕜 F E) p.proj,
-      trivializationAt 𝕜 (DetBundle 𝕜 F E') p.proj, fun x c ↦ s x * c,
-      mem_baseSet_trivializationAt 𝕜 _ p.proj, mem_baseSet_trivializationAt 𝕜 _ p.proj,
-      (hs.comp (FiberBundle.continuous_proj 𝕜 _).continuousAt).mul
-        ((trivializationAt 𝕜 (DetBundle 𝕜 F E) p.proj).continuousOn.continuousAt
-          ((trivializationAt 𝕜 (DetBundle 𝕜 F E) p.proj).open_source.mem_nhds
-            (FiberBundle.mem_trivializationAt_proj_source))).snd, ?_⟩
-    rintro ⟨x, v⟩ (hx : x ∈ (trivializationAt F E p.proj).baseSet)
-      (hx' : x ∈ (trivializationAt F E' p.proj).baseSet)
-    simp only [trivializationAt_eq]
-    rw [trivialization_apply_mk _ hx', trivialization_apply_mk _ hx,
-      ← hs' x hx hx' (chartCoord _ hx v), LinearEquiv.symm_apply_apply]
-
-@[simp]
-theorem congrHomeomorph_apply (e : ∀ x, E x ≃L[𝕜] E' x)
-    (he : Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' F p.proj (e p.proj p.snd)))
-    (p : TotalSpace 𝕜 (DetBundle 𝕜 F E)) :
-    congrHomeomorph e he p = ⟨p.proj, congrEquiv e p.proj p.snd⟩ :=
-  bundleHomeomorph_apply _ _ p
-
-@[simp]
-theorem congrHomeomorph_symm_apply (e : ∀ x, E x ≃L[𝕜] E' x)
-    (he : Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' F p.proj (e p.proj p.snd)))
-    (p : TotalSpace 𝕜 (DetBundle 𝕜 F E')) :
-    (congrHomeomorph e he).symm p = ⟨p.proj, (congrEquiv e p.proj).symm p.snd⟩ :=
-  bundleHomeomorph_symm_apply _ _ p
-
-end Congr
 
 /-! ### Pullback -/
 
@@ -957,7 +868,114 @@ theorem coe_congrModelEquiv (e : ∀ x, E₁ x ≃L[K] E' x) (x : B) (a : DetBun
     (fiberDetLineEquiv_congrModelEquiv (F₁ := F₁) (F' := F') e x a)
   simpa only [coe_fiberDetLineEquiv, LinearEquiv.coe_detLineCongr] using h
 
+/-- On a decomposable vector `v₁ ∧ ⋯ ∧ vᵣ`, the transport between model presentations is
+`e v₁ ∧ ⋯ ∧ e vᵣ`, reindexed along the equality `h` of the model ranks. -/
+theorem congrModelEquiv_ιMulti (e : ∀ x, E₁ x ≃L[K] E' x) (x : B)
+    (h : finrank K F₁ = finrank K F') (v : Fin (finrank K F₁) → E₁ x) :
+    congrModelEquiv (F₁ := F₁) (F' := F') e x
+        ((linearEquiv K F₁ E₁ x).symm (exteriorPower.ιMulti K _ v)) =
+      (linearEquiv K F' E' x).symm
+        (exteriorPower.ιMulti K _ fun j ↦ e x (v (Fin.cast h.symm j))) := by
+  apply (linearEquiv K F' E' x).injective
+  apply Subtype.ext
+  simp only [coe_congrModelEquiv, LinearEquiv.apply_symm_apply, exteriorPower.ιMulti_apply_coe,
+    ExteriorAlgebra.map_apply_ιMulti]
+  -- The two exterior products differ only by the reindexing `Fin.cast h`.
+  rw [ExteriorAlgebra.ιMulti_apply, ExteriorAlgebra.ιMulti_apply, List.ofFn_congr h]
+  simp
+
 end ModelCongr
+
+section ModelCongrContinuous
+
+variable [CompleteSpace K]
+  {F' : Type v₁'} [NormedAddCommGroup F'] [NormedSpace K F'] [FiniteDimensional K F']
+  {E' : B → Type w₁'} [∀ x, AddCommGroup (E' x)] [∀ x, Module K (E' x)]
+  [∀ x, TopologicalSpace (E' x)] [TopologicalSpace (TotalSpace F' E')]
+  [FiberBundle F' E'] [VectorBundle K F' E']
+
+/-- Read in the preferred charts at `a`, the transport between model presentations is
+multiplication by a scalar that depends continuously on the base point near `a`: the determinant,
+in the bases `Module.finBasis`, of the coordinate expression of `e`. -/
+private theorem continuousAt_chartCoord_congrModelEquiv (e : ∀ x, E₁ x ≃L[K] E' x)
+    (he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F' p.proj (e p.proj p.snd)))
+    (a : B) :
+    ∃ s : B → K, ContinuousAt s a ∧ ∀ x (hx : x ∈ (trivializationAt F₁ E₁ a).baseSet)
+      (hx' : x ∈ (trivializationAt F' E' a).baseSet) (c : K),
+      chartCoord (trivializationAt F' E' a) hx'
+        (congrModelEquiv (F₁ := F₁) (F' := F') e x
+          ((chartCoord (trivializationAt F₁ E₁ a) hx).symm c)) = s x * c := by
+  set t := trivializationAt F₁ E₁ a
+  set t' := trivializationAt F' E' a
+  have hr : finrank K F₁ = finrank K F' := by
+    let : FiniteDimensional K (E₁ a) := VectorBundle.finiteDimensional K F₁ E₁ a
+    rw [← VectorBundle.finrank_eq K F₁ E₁ a, ← VectorBundle.finrank_eq K F' E' a]
+    exact (e a).toLinearEquiv.finrank_eq
+  let b := Module.finBasis K F₁
+  -- The coordinate expression of `e` is a continuous family of operators `F₁ → F'`.
+  let T : B → F₁ →L[K] F' := fun x ↦ (t'.continuousLinearMapAt K x).comp
+    (((e x : E₁ x →L[K] E' x)).comp (t.symmL K x))
+  have hT : ContinuousOn T (t.baseSet ∩ t'.baseSet) :=
+    continuousOn_continuousLinearMapAt_comp_symmL (g := id)
+      (φ := fun x ↦ (e x : E₁ x →L[K] E' x)) he t' t
+  let D : (F₁ →L[K] F') → K := fun A ↦
+    (Module.finBasis K F').continuousDet fun j ↦ A (b (Fin.cast hr.symm j))
+  have hD : Continuous D := (map_continuous (Module.finBasis K F').continuousDet).comp
+    (continuous_pi fun j ↦ (ContinuousLinearMap.apply K F' (b (Fin.cast hr.symm j))).continuous)
+  refine ⟨fun x ↦ D (T x), hD.continuousAt.comp (hT.continuousAt
+    ((t.open_baseSet.inter t'.open_baseSet).mem_nhds
+      ⟨mem_baseSet_trivializationAt F₁ E₁ a, mem_baseSet_trivializationAt F' E' a⟩)),
+    fun x hx hx' c ↦ ?_⟩
+  -- The inverse chart sends `c` to `c` times the wedge of the frame `t⁻¹ b`.
+  have h₁ : (chartCoord t hx).symm c =
+      c • (linearEquiv K F₁ E₁ x).symm (exteriorPower.ιMulti K _ fun i ↦ t.symm x (b i)) := by
+    apply (chartCoord t hx).injective
+    rw [LinearEquiv.apply_symm_apply, map_smul, chartCoord_ιMulti]
+    have hb : (Module.finBasis K F₁).det (fun i ↦ b i) = 1 := b.det_self
+    simp only [t.apply_mk_symm hx, smul_eq_mul, hb, mul_one]
+  rw [h₁, map_smul, congrModelEquiv_ιMulti e x hr, map_smul, chartCoord_ιMulti]
+  simp [mul_comm, D, T, t.symmL_apply hx, t',
+    Trivialization.continuousLinearMapAt_apply_of_mem K t' hx']
+
+/-- **Functoriality of the determinant line across model presentations.** A continuous fibrewise
+linear isomorphism `e` between vector bundles with finite-dimensional model fibres `F₁` and `F'`,
+not necessarily the same, induces a homeomorphism of the total spaces of their determinant lines,
+which is `TauCeti.DetBundle.congrModelEquiv e` on each fibre. For `F' = F₁` this is
+`TauCeti.DetBundle.congrHomeomorph` (`TauCeti.DetBundle.congrModelEquiv_eq_congrEquiv`). -/
+def congrModelHomeomorph (e : ∀ x, E₁ x ≃L[K] E' x)
+    (he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F' p.proj (e p.proj p.snd))) :
+    TotalSpace K (DetBundle K F₁ E₁) ≃ₜ TotalSpace K (DetBundle K F' E') :=
+  bundleHomeomorph (congrModelEquiv e) <| by
+    refine FiberBundle.continuous_of_forall_trivialization _ (fun _ ↦ rfl) fun p ↦ ?_
+    obtain ⟨s, hs, hs'⟩ := continuousAt_chartCoord_congrModelEquiv e he p.proj
+    refine ⟨trivializationAt K (DetBundle K F₁ E₁) p.proj,
+      trivializationAt K (DetBundle K F' E') p.proj, fun x c ↦ s x * c,
+      mem_baseSet_trivializationAt K _ p.proj, mem_baseSet_trivializationAt K _ p.proj,
+      (hs.comp (FiberBundle.continuous_proj K _).continuousAt).mul
+        ((trivializationAt K (DetBundle K F₁ E₁) p.proj).continuousOn.continuousAt
+          ((trivializationAt K (DetBundle K F₁ E₁) p.proj).open_source.mem_nhds
+            (FiberBundle.mem_trivializationAt_proj_source))).snd, ?_⟩
+    rintro ⟨x, v⟩ (hx : x ∈ (trivializationAt F₁ E₁ p.proj).baseSet)
+      (hx' : x ∈ (trivializationAt F' E' p.proj).baseSet)
+    simp only [trivializationAt_eq]
+    rw [trivialization_apply_mk _ hx', trivialization_apply_mk _ hx,
+      ← hs' x hx hx' (chartCoord _ hx v), LinearEquiv.symm_apply_apply]
+
+@[simp]
+theorem congrModelHomeomorph_apply (e : ∀ x, E₁ x ≃L[K] E' x)
+    (he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F' p.proj (e p.proj p.snd)))
+    (p : TotalSpace K (DetBundle K F₁ E₁)) :
+    congrModelHomeomorph e he p = ⟨p.proj, congrModelEquiv e p.proj p.snd⟩ :=
+  bundleHomeomorph_apply _ _ p
+
+@[simp]
+theorem congrModelHomeomorph_symm_apply (e : ∀ x, E₁ x ≃L[K] E' x)
+    (he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F' p.proj (e p.proj p.snd)))
+    (p : TotalSpace K (DetBundle K F' E')) :
+    (congrModelHomeomorph e he).symm p = ⟨p.proj, (congrModelEquiv e p.proj).symm p.snd⟩ :=
+  bundleHomeomorph_symm_apply _ _ p
+
+end ModelCongrContinuous
 
 section SameModel
 
@@ -1036,6 +1054,42 @@ theorem zeroEquiv_eq_detLineEquivOfFinrankEqZero (h : finrank K F₁ = 0) (x : B
     LinearMap.congr_fun hm (linearEquiv K F₁ E₁ x a)
 
 end ModelPresentations
+
+section Congr
+
+variable [TopologicalSpace B] [CompleteSpace 𝕜]
+  [FiniteDimensional 𝕜 F] [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)]
+  [FiberBundle F E] [VectorBundle 𝕜 F E]
+  {E' : B → Type*} [∀ x, AddCommGroup (E' x)] [∀ x, Module 𝕜 (E' x)]
+  [∀ x, TopologicalSpace (E' x)] [TopologicalSpace (TotalSpace F E')] [FiberBundle F E']
+  [VectorBundle 𝕜 F E']
+
+/-- **Functoriality of the determinant line in bundle isomorphisms.** A continuous fibrewise
+linear isomorphism `e` between vector bundles with the same finite-dimensional model fibre `F`
+induces a
+homeomorphism of the total spaces of their determinant lines, which is
+`TauCeti.DetBundle.congrEquiv e` on each fibre. -/
+def congrHomeomorph (e : ∀ x, E x ≃L[𝕜] E' x)
+    (he : Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' F p.proj (e p.proj p.snd))) :
+    TotalSpace 𝕜 (DetBundle 𝕜 F E) ≃ₜ TotalSpace 𝕜 (DetBundle 𝕜 F E') :=
+  bundleHomeomorph (congrEquiv e) <| (congrModelHomeomorph e he).continuous.congr fun p ↦ by
+    rw [congrModelHomeomorph_apply, congrModelEquiv_eq_congrEquiv]
+
+@[simp]
+theorem congrHomeomorph_apply (e : ∀ x, E x ≃L[𝕜] E' x)
+    (he : Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' F p.proj (e p.proj p.snd)))
+    (p : TotalSpace 𝕜 (DetBundle 𝕜 F E)) :
+    congrHomeomorph e he p = ⟨p.proj, congrEquiv e p.proj p.snd⟩ :=
+  bundleHomeomorph_apply _ _ p
+
+@[simp]
+theorem congrHomeomorph_symm_apply (e : ∀ x, E x ≃L[𝕜] E' x)
+    (he : Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' F p.proj (e p.proj p.snd)))
+    (p : TotalSpace 𝕜 (DetBundle 𝕜 F E')) :
+    (congrHomeomorph e he).symm p = ⟨p.proj, (congrEquiv e p.proj).symm p.snd⟩ :=
+  bundleHomeomorph_symm_apply _ _ p
+
+end Congr
 
 end DetBundle
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Distribution.Submersion
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus
 public import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 
 /-!
 # The vertical distribution of a smooth mapping torus
@@ -38,6 +39,8 @@ by the suspension vector field `T = ∂_t`
 * `TauCeti.SmoothMappingTorus.isContMDiffDistribution_ker_mfderiv_proj`: the vertical
   distribution `y ↦ ker dp_y` of a `C^n` mapping torus is a `C^m` distribution of rank `dim E`
   for every `m` with `m + 1 ≤ n`.
+* `TauCeti.SmoothMappingTorus.continuous_mfderiv_mk`: the vertical vectors `d[t, ·]ₓ w` along the
+  suspension orbit through `x` form a continuous path in the tangent bundle.
 
 ## References
 
@@ -93,6 +96,21 @@ theorem isContMDiffDistribution_ker_mfderiv_proj [FiniteDimensional ℝ E] {n : 
       fun y : SmoothMappingTorus φ ↦ (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y).ker := by
   have h := (isSubmersion_proj φ).isContMDiffDistribution_ker_mfderiv hm
   rwa [finrank_prod, finrank_self, Nat.add_sub_cancel_left] at h
+
+section Vertical
+
+variable [IsManifold I ∞ M] (φ : M ≃ₘ⟮I, I⟯ M)
+
+/-- The vertical vectors `d[t, ·]ₓ w` along the suspension orbit through `x` depend continuously on
+`t`: on `ℝ × M` they form the constant vector field `(0, w)` along `t ↦ (t, x)`. -/
+theorem continuous_mfderiv_mk (x : M) (w : TangentSpace I x) :
+    Continuous fun t : ℝ ↦ (⟨mk φ t x, mfderiv I (𝓘(ℝ).prod I) (mk φ t) x w⟩ :
+      TangentBundle (𝓘(ℝ).prod I) (SmoothMappingTorus φ)) :=
+  -- `tangentMap I _ (mk φ t) ⟨x, w⟩` unfolds by `rfl` to the stated point of the tangent bundle.
+  ((contMDiff_uncurry_mk φ).contMDiff_tangentMap_family (n := 0) (by simp)).continuous.comp
+    (continuous_id.prodMk (continuous_const (y := (⟨x, w⟩ : TangentBundle I M))))
+
+end Vertical
 
 end SmoothMappingTorus
 

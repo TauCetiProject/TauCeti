@@ -32,10 +32,16 @@ the target are integrable.
 
 * `TauCeti.map_restrict_extChartAt_source_apply_image`: the chart pushforward gives the chart
   image of a measurable subset of the source the measure of the subset.
+* `TauCeti.setLIntegral_eq_setLIntegral_map_extChartAt`: lower integrals over a subset of a chart
+  source are lower integrals in the chart against the chart pushforward, with no measurability
+  assumption.
 * `TauCeti.restrict_extChartAt_source_eq_of_map_eq`: two measures with the same chart pushforward
   agree on the chart source.
 * `TauCeti.map_withDensity_restrict_extChartAt_source`: reweighting by a continuous function read
   in the chart multiplies a chart density by that function.
+* `TauCeti.setIntegral_map_extChartAt`: the integral over a measurable subset `s` of a compact
+  subset `K` of a chart source is the integral over the chart image of `K`, against the chart
+  pushforward of the measure restricted to `s`, of the integrand read in the chart.
 * `TauCeti.integral_eq_setIntegral_smul_extChartAt_symm`: the integral of a function supported in
   a chart source is the integral over the chart target of the function read in the chart, weighted
   by the chart density.
@@ -135,6 +141,44 @@ theorem map_restrict_extChartAt_source_apply_image {x : M} {s : Set M} (hs : Mea
   rw [map_restrict_extChartAt_source_apply x (hs.image_extChartAt x hsub),
     (extChartAt I x).injOn.preimage_image_inter hsub]
 
+/-- **Integration in a chart.** Over a subset `s` of a chart source, the lower integral of `φ`
+against `μ` is the lower integral, over the chart image of `s`, of `φ` read in the chart against the
+chart pushforward of `μ`. No measurability of `s` or `φ` is needed. -/
+theorem setLIntegral_eq_setLIntegral_map_extChartAt {x : M} {s : Set M}
+    (hsub : s ⊆ (extChartAt I x).source) (φ : M → ℝ≥0∞) :
+    ∫⁻ z in s, φ z ∂μ = ∫⁻ y in extChartAt I x '' s, φ ((extChartAt I x).symm y)
+      ∂(μ.restrict (extChartAt I x).source).map (extChartAt I x) := by
+  set e := extChartAt I x
+  have hsrc : MeasurableSet e.source := (isOpen_extChartAt_source x).measurableSet
+  -- `measurableEmbedding_extChartAt_restrict` is stated for the Borel σ-algebra of `E`.
+  have hR : MeasurableEmbedding (e.source.domRestrict e) := by
+    obtain rfl : ‹MeasurableSpace E› = borel E := BorelSpace.measurable_eq
+    exact measurableEmbedding_extChartAt_restrict x
+  have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
+    MeasurableEmbedding.subtypeVal hsrc
+  -- The chart pushforward of `μ` is the pushforward of `μ` pulled back to the chart source.
+  have hmap : (μ.restrict e.source).map e = (μ.comap Subtype.val).map (e.source.domRestrict e) := by
+    ext A hA
+    rw [map_restrict_extChartAt_source_apply x hA, hR.map_apply, hval.comap_apply]
+    congr 1
+    ext z
+    simp only [mem_inter_iff, mem_preimage, mem_image, Set.domRestrict_apply, Subtype.exists,
+      exists_and_right, exists_eq_right]
+    tauto
+  -- `φ` read in the chart and composed with the chart is `φ` on the chart source.
+  have hφ : ∀ z : e.source, φ (e.symm (e.source.domRestrict e z)) = φ z := fun z ↦ by
+    rw [Set.domRestrict_apply, e.left_inv z.property]
+  have hpre : e.source.domRestrict e ⁻¹' (e '' s) = Subtype.val ⁻¹' s := by
+    ext z
+    exact e.injOn.mem_image_iff hsub z.property
+  -- Pulled back to the chart source, `μ` restricted to `s` pushes forward to `μ` restricted to `s`.
+  have hleft : ((μ.comap (Subtype.val : e.source → M)).restrict (Subtype.val ⁻¹' s)).map
+      Subtype.val = μ.restrict s := by
+    rw [hval.restrict_comap, hval.map_comap, Subtype.range_coe, Measure.restrict_restrict hsrc,
+      Subtype.image_preimage_coe, inter_eq_right.2 hsub, inter_eq_right.2 hsub]
+  rw [hmap, hR.restrict_map, hR.lintegral_map, hpre, ← hleft, hval.lintegral_map]
+  simp only [hφ]
+
 /-- Two measures with the same pushforward from a chart source agree on that source. -/
 theorem restrict_extChartAt_source_eq_of_map_eq {x : M} {α β : Measure M}
     (h : (α.restrict (extChartAt I x).source).map (extChartAt I x) =
@@ -208,6 +252,44 @@ theorem integral_eq_setIntegral_smul_extChartAt_symm {G : Type*} [NormedAddCommG
       (hwc.aemeasurable htgt) (ae_restrict_of_forall_mem htgt hw0)]
 
 end ExtChart
+
+/-! ### Set integrals over a compact subset of a chart source -/
+
+section CompactChart
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+  [BorelSpace E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+  [ChartedSpace H M] [MeasurableSpace M] [OpensMeasurableSpace M] {μ : Measure M}
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- **Change of variables along a chart.** For a measurable set `s` inside a compact subset `K` of
+the source of the extended chart `ψ` at `x`, and a function `g` continuous on `K`, the integral of
+`g` over `s` is the integral over `ψ '' K` of `g ∘ ψ.symm` against the pushforward along `ψ` of
+`μ` restricted to `s`. -/
+theorem setIntegral_map_extChartAt {x : M} {K : Set M} (hK : IsCompact K)
+    (hKx : K ⊆ (extChartAt I x).source) {s : Set M} (hs : MeasurableSet s) (hsK : s ⊆ K)
+    {g : M → F} (hg : ContinuousOn g K) :
+    ∫ z in extChartAt I x '' K, g ((extChartAt I x).symm z) ∂(μ.restrict s).map (extChartAt I x) =
+      ∫ a in s, g a ∂μ := by
+  set ψ := extChartAt I x
+  have hψc : ContinuousOn ψ K := (continuousOn_extChartAt x).mono hKx
+  have hk : IsCompact (ψ '' K) := hK.image_of_continuousOn hψc
+  have hψm : AEMeasurable ψ (μ.restrict s) := (hψc.mono hsK).aemeasurable hs
+  have hνk : ((μ.restrict s).map ψ).restrict (ψ '' K) = (μ.restrict s).map ψ :=
+    Measure.restrict_eq_self_of_ae_mem <| (ae_map_iff hψm hk.measurableSet).2 <|
+      ae_restrict_of_forall_mem hs fun a ha ↦ mem_image_of_mem ψ (hsK ha)
+  have hc : ContinuousOn (fun z ↦ g (ψ.symm z)) (ψ '' K) := by
+    refine hg.comp ((continuousOn_extChartAt_symm x).mono ?_) ?_ <;>
+      rintro _ ⟨a, ha, rfl⟩
+    · exact ψ.map_source (hKx ha)
+    · simpa only [mem_preimage, ψ.left_inv (hKx ha)] using ha
+  have hm : AEStronglyMeasurable (fun z ↦ g (ψ.symm z)) ((μ.restrict s).map ψ) := by
+    simpa only [hνk] using
+      hc.aestronglyMeasurable_of_isCompact (μ := (μ.restrict s).map ψ) hk hk.measurableSet
+  rw [hνk, integral_map hψm hm]
+  exact setIntegral_congr_fun hs fun a ha ↦ by simp only [ψ.left_inv (hKx (hsK ha))]
+
+end CompactChart
 
 /-! ### Integrals against a measure with a density in a chart -/
 

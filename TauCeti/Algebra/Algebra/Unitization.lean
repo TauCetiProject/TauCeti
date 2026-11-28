@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.Star.Basic
 public import Mathlib.Algebra.Star.MonoidHom
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Algebra.Star.Unitary
+public import Mathlib.Logic.Small.Basic
 public import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -39,6 +40,9 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
 * `Unitization.mul_inr`, `Unitization.inr_mul_eq_inr`: `A` is a two-sided ideal of
   `Unitization R A`.
 * `Unitization.inr_snd_of_fst_eq_zero`: an element with scalar part `0` lies in `A`.
+* `Unitization.instSmall`: the unitization of `w`-small types is `w`-small.
+* `Unitization.instModuleMulOpposite`: `A` is a right `Unitization R A`-module, by
+  `a • x = x.fst • a + a * x.snd` (`Unitization.inr_op_smul`).
 * `Unitization.conjStar`: the element `u * x * star u` of `A`, for `u` in the unitization and
   `x : A`, with `Unitization.inr_conjStar`, `Unitization.conjStar_mul`,
   `Unitization.conjStar_smul`, `Unitization.star_conjStar`, `IsSelfAdjoint.conjStar` and
@@ -68,12 +72,17 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
   `Unitization R A ≃⋆ₐ[R] A × R`, `(r, a) ↦ (r • 1 + a, r)`.
 * `Unitization.oneAddInrSubOne`: for unital `B`, the star monoid homomorphism
   `x ↦ 1 + (x - 1_B)` from `B` to its unitization.
+* `IsStarProjection.exists_star_mul_self_eq_of_star_mul_self_eq_unitization`: a projection `p` and
+  an idempotent `q` of a non-unital star algebra with `u⋆u = p` and `uu⋆ = q` for some `u` in its
+  unitization are Murray–von Neumann equivalent.
 * `IsStarProjection.exists_star_mul_self_eq_of_mem_unitary_unitization`: projections of a
   non-unital star algebra that are conjugate by a unitary of its unitization are Murray–von
   Neumann equivalent.
 -/
 
 public section
+
+universe w
 
 namespace Unitization
 
@@ -95,6 +104,40 @@ theorem inr_mul_eq_inr {R A : Type*} [MulZeroClass R] [NonUnitalNonAssocSemiring
 theorem inr_snd_of_fst_eq_zero {R A : Type*} [Zero R] {w : Unitization R A} (h : w.fst = 0) :
     (inr w.snd : Unitization R A) = w :=
   Unitization.ext (by simp [h]) rfl
+
+/-- The unitization `R ⊕ A` is `w`-small when `R` and `A` are. -/
+instance instSmall {R A : Type*} [Small.{w} R] [Small.{w} A] : Small.{w} (Unitization R A) :=
+  small_of_injective toProd_injective
+
+section RightModule
+
+variable {R A : Type*} [CommSemiring R] [NonUnitalSemiring A] [Module R A]
+
+/-- The right action of the unitization on `A`, `a • x = x.fst • a + a * x.snd`: right
+multiplication on the right ideal `A` of `Unitization R A`. -/
+instance instSMulMulOpposite : SMul (Unitization R A)ᵐᵒᵖ A where
+  smul x a := x.unop.fst • a + a * x.unop.snd
+
+theorem op_smul_eq (x : Unitization R A) (a : A) :
+    MulOpposite.op x • a = x.fst • a + a * x.snd :=
+  rfl
+
+/-- The right action of `x` on `A` is right multiplication by `x` in the unitization. -/
+theorem inr_op_smul (x : Unitization R A) (a : A) :
+    (inr (MulOpposite.op x • a) : Unitization R A) = inr a * x :=
+  (inr_mul_eq_inr a x).symm
+
+@[simp]
+theorem op_inr_smul (a b : A) : MulOpposite.op (inr b : Unitization R A) • a = a * b := by
+  simp [op_smul_eq]
+
+variable [IsScalarTower R A A] [SMulCommClass R A A]
+
+/-- A nonunital algebra `A` is a right module over its unitization. -/
+instance instModuleMulOpposite : Module (Unitization R A)ᵐᵒᵖ A :=
+  inr_injective.module _ (inrHom R R A).toAddMonoidHom fun x a ↦ inr_op_smul x.unop a
+
+end RightModule
 
 section ConjStar
 
@@ -527,6 +570,29 @@ end Unitization
 
 namespace IsStarProjection
 
+/-- Let `p` be a star projection and `q` an idempotent of a non-unital star algebra `A`. If an
+element `u` of its unitization has `star u * u = p` and `u * star u = q`, then `p` and `q` are
+Murray–von Neumann equivalent in `A`: `v = u * p` lies in `A`, with `star v * v = p` and
+`v * star v = q`. -/
+theorem exists_star_mul_self_eq_of_star_mul_self_eq_unitization {R A : Type*} [CommSemiring R]
+    [StarRing R] [NonUnitalSemiring A] [StarRing A] [Module R A] [IsScalarTower R A A]
+    [SMulCommClass R A A] [StarModule R A] {p q : A} (hp : IsStarProjection p)
+    (hq : IsIdempotentElem q) {u : Unitization R A} (hu₁ : star u * u = p)
+    (hu₂ : u * star u = q) : ∃ v : A, star v * v = p ∧ v * star v = q := by
+  have hv := (Unitization.mul_inr u p).symm
+  have hps : star (p : Unitization R A) = p := by
+    rw [← Unitization.inr_star, hp.isSelfAdjoint.star_eq]
+  have hpp : (p : Unitization R A) * p = p := by
+    rw [← Unitization.inr_mul, hp.isIdempotentElem.eq]
+  refine ⟨u.fst • p + u.snd * p, Unitization.inr_injective (R := R) ?_,
+    Unitization.inr_injective (R := R) ?_⟩
+  · rw [Unitization.inr_mul, Unitization.inr_star, hv, star_mul, hps, mul_assoc,
+      ← mul_assoc (star u), hu₁, hpp, hpp]
+  · rw [Unitization.inr_mul, Unitization.inr_star, hv, star_mul, hps, mul_assoc,
+      ← mul_assoc _ _ (star u), hpp, ← hu₁]
+    simp only [← mul_assoc]
+    rw [hu₂, mul_assoc, hu₂, ← Unitization.inr_mul, hq.eq]
+
 /-- Star projections `p` and `q` of a non-unital star algebra `A` that are conjugate by a unitary
 of its unitization are Murray–von Neumann equivalent in `A`: `v = u * p` lies in `A`, with
 `star v * v = p` and `v * star v = q`. -/
@@ -536,15 +602,19 @@ theorem exists_star_mul_self_eq_of_mem_unitary_unitization {R A : Type*} [CommSe
     {u : Unitization R A} (hu : u ∈ unitary (Unitization R A))
     (hupq : u * (p : Unitization R A) * star u = q) :
     ∃ v : A, star v * v = p ∧ v * star v = q := by
-  have hv := (Unitization.mul_inr u p).symm
-  refine ⟨u.fst • p + u.snd * p, Unitization.inr_injective (R := R) ?_,
-    Unitization.inr_injective (R := R) ?_⟩
-  · rw [Unitization.inr_mul, Unitization.inr_star, hv, star_mul, mul_assoc, ← mul_assoc (star u),
-      Unitary.star_mul_self_of_mem hu, one_mul, ← Unitization.inr_star, ← Unitization.inr_mul,
-      hp.isSelfAdjoint.star_eq, hp.isIdempotentElem.eq]
-  · rw [Unitization.inr_mul, Unitization.inr_star, hv, star_mul, mul_assoc, ← mul_assoc _ (star _),
-      ← Unitization.inr_star, ← Unitization.inr_mul, hp.isSelfAdjoint.star_eq,
-      hp.isIdempotentElem.eq, ← mul_assoc, hupq]
+  have hps : star (p : Unitization R A) = p := by
+    rw [← Unitization.inr_star, hp.isSelfAdjoint.star_eq]
+  have hpp : (p : Unitization R A) * p = p := by
+    rw [← Unitization.inr_mul, hp.isIdempotentElem.eq]
+  refine hp.exists_star_mul_self_eq_of_star_mul_self_eq_unitization (u := u * (p : Unitization R A))
+    (Unitization.inr_injective (R := R) ?_) ?_ ?_
+  · rw [Unitization.inr_mul, ← hupq]
+    simp only [mul_assoc]
+    rw [← mul_assoc (star u) u, Unitary.star_mul_self_of_mem hu, one_mul,
+      ← mul_assoc (p : Unitization R A), hpp]
+  · rw [star_mul, hps, mul_assoc, ← mul_assoc (star u), Unitary.star_mul_self_of_mem hu, one_mul,
+      hpp]
+  · rw [star_mul, hps, mul_assoc, ← mul_assoc (p : Unitization R A), hpp, ← mul_assoc, hupq]
 
 end IsStarProjection
 

@@ -21,6 +21,9 @@ import TauCeti.Analysis.Calculus.FDeriv.Comp
 -- Private: the comparison of Łojasiewicz inequalities is used only inside the proof of
 -- `TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq`.
 import TauCeti.Analysis.Calculus.Lojasiewicz.Comparison
+-- Private: invertibility of a nonzero multiple is used only inside the proof of
+-- `TauCeti.isNondegenerateCriticalPoint_const_smul_iff`.
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Nondegenerate critical points
@@ -79,8 +82,9 @@ the notion be read off in any chart.
 * `TauCeti.isNondegenerateCriticalPoint_iff_separatingLeft`: in finite dimensions the converse
   holds too, so nondegeneracy is twice continuous differentiability together with the classical
   condition that the Hessian bilinear form have trivial radical.
-* `TauCeti.IsNondegenerateCriticalPoint.congr_of_eventuallyEq`: nondegeneracy at a point depends
-  only on the germ of the function there.
+* `TauCeti.IsNondegenerateCriticalPoint.congr_of_eventuallyEq` and
+  `Filter.EventuallyEq.isNondegenerateCriticalPoint_iff`: nondegeneracy at a point depends only on
+  the germ of the function there.
 * `TauCeti.IsNondegenerateCriticalPoint.eventually_fderiv_ne_zero`: a nondegenerate critical point
   is isolated among critical points.
 * `TauCeti.HasNondegenerateCriticalPointsOn.isDiscrete_setOfPred_fderiv_eq_zero`: a critical
@@ -99,6 +103,8 @@ the notion be read off in any chart.
   nondegeneracy is invariant under a change of coordinates with invertible differential.
 * `TauCeti.IsNondegenerateCriticalPoint.neg` and `TauCeti.isNondegenerateCriticalPoint_neg`:
   nondegeneracy is invariant under negating the function.
+* `TauCeti.isNondegenerateCriticalPoint_const_smul_iff`: nondegeneracy is invariant under scaling
+  the function by a nonzero constant.
 * `TauCeti.isNondegenerateCriticalPoint_add_const_iff`: nondegeneracy is invariant under adding a
   constant.
 * `TauCeti.HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const`: a function equal to a function
@@ -217,6 +223,12 @@ theorem IsNondegenerateCriticalPoint.congr_of_eventuallyEq {g : E → ℝ}
   ⟨h.contDiffAt.congr_of_eventuallyEq hg.symm, by rw [hg.symm.fderiv_eq, h.fderiv_eq_zero],
     by rw [hg.symm.fderiv.fderiv_eq]; exact h.isInvertible⟩
 
+/-- Whether `x` is a nondegenerate critical point depends only on the germ of the function at `x`.
+-/
+theorem _root_.Filter.EventuallyEq.isNondegenerateCriticalPoint_iff {g : E → ℝ}
+    (hfg : f =ᶠ[𝓝 x] g) : IsNondegenerateCriticalPoint f x ↔ IsNondegenerateCriticalPoint g x :=
+  ⟨fun h ↦ h.congr_of_eventuallyEq hfg, fun h ↦ h.congr_of_eventuallyEq hfg.symm⟩
+
 /-- **A nondegenerate critical point is isolated.** Near such a point the differential of `f`
 vanishes only at the point itself: the case `c = 0` of `TauCeti.eventually_fderiv_ne`, proved in
 `TauCeti.Analysis.Calculus.SecondDerivative` because it uses no criticality. -/
@@ -296,22 +308,27 @@ theorem IsNondegenerateCriticalPoint.comp {φ : F → E} {b : F}
     IsNondegenerateCriticalPoint (f ∘ φ) b :=
   (isNondegenerateCriticalPoint_comp_iff h.contDiffAt hφ hinv).2 h
 
-/-- Negating the function preserves nondegenerate critical points: the differential and the second
-derivative are both negated, and negation of the dual is a linear homeomorphism. This is the
-symmetry exchanging the forward and backward directions of a negative gradient trajectory. -/
+/-- **Nondegeneracy of a critical point is invariant under scaling the function** by a nonzero
+constant, which scales the differential and the second derivative. -/
+@[simp]
+theorem isNondegenerateCriticalPoint_const_smul_iff {c : ℝ} (hc : c ≠ 0) :
+    IsNondegenerateCriticalPoint (c • f) x ↔ IsNondegenerateCriticalPoint f x := by
+  -- One direction for every nonzero scalar; the other is the same one for `c⁻¹`.
+  have key : ∀ {c : ℝ} {g : E → ℝ}, c ≠ 0 → IsNondegenerateCriticalPoint g x →
+      IsNondegenerateCriticalPoint (c • g) x := fun {c g} hc h ↦
+    ⟨h.contDiffAt.const_smul c,
+      by rw [fderiv_const_smul_field, Pi.smul_apply, h.fderiv_eq_zero, smul_zero],
+      by rw [fderiv_fderiv_const_smul, ContinuousLinearMap.isInvertible_smul_iff hc]
+         exact h.isInvertible⟩
+  exact ⟨fun h ↦ by simpa [smul_smul, inv_mul_cancel₀ hc] using key (inv_ne_zero hc) h, key hc⟩
+
+/-- Negating the function preserves nondegenerate critical points: negation is scaling by `-1`
+(`TauCeti.isNondegenerateCriticalPoint_const_smul_iff`). This is the symmetry exchanging the
+forward and backward directions of a negative gradient trajectory. -/
 theorem IsNondegenerateCriticalPoint.neg (h : IsNondegenerateCriticalPoint f x) :
     IsNondegenerateCriticalPoint (-f) x := by
-  have hfun : fderiv ℝ (-f) = -fderiv ℝ f := funext fun _ ↦ fderiv_neg
-  refine ⟨ContDiffAt.neg h.contDiffAt, by rw [hfun]; simp [h.fderiv_eq_zero], ?_⟩
-  have hsnd : fderiv ℝ (fderiv ℝ (-f)) x = -fderiv ℝ (fderiv ℝ f) x := by
-    rw [hfun, fderiv_neg]
-  have hcomp : -fderiv ℝ (fderiv ℝ f) x =
-      (ContinuousLinearEquiv.neg ℝ : (E →L[ℝ] ℝ) ≃L[ℝ] (E →L[ℝ] ℝ)) ∘L
-        fderiv ℝ (fderiv ℝ f) x := by
-    ext v w
-    simp
-  rw [hsnd, hcomp]
-  exact ContinuousLinearMap.isInvertible_equiv.comp h.isInvertible
+  rw [← neg_one_smul ℝ f]
+  exact (isNondegenerateCriticalPoint_const_smul_iff (by norm_num)).2 h
 
 /-- **Nondegeneracy of a critical point is invariant under negating the function.** Negation is
 involutive, so the one-way implication `TauCeti.IsNondegenerateCriticalPoint.neg` applied twice
