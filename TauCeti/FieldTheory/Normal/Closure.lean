@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Normal.Closure
-public import Mathlib.FieldTheory.Galois.Basic
+public import Mathlib.FieldTheory.Galois.GaloisClosure
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Embeddings
@@ -243,6 +243,26 @@ theorem exists_isGalois_superset_of_isAlgClosed [PerfectField F] [IsAlgClosed E]
   exists_isGalois_superset hS fun s hs ↦
     ⟨PerfectField.separable_of_irreducible (minpoly.irreducible (h s hs).isIntegral),
       IsAlgClosed.splits _⟩
+
+/-- All images of a finite-dimensional algebra in an algebraically closed field over a perfect
+base are contained in a single finite Galois subfield. -/
+theorem exists_finiteGaloisIntermediateField_forall_algHom_mem (F A Ω : Type*)
+    [Field F] [PerfectField F] [Semiring A] [Algebra F A] [Module.Finite F A]
+    [Field Ω] [Algebra F Ω] [IsAlgClosed Ω] :
+    ∃ K : FiniteGaloisIntermediateField F Ω,
+      ∀ (φ : A →ₐ[F] Ω) (x : A), φ x ∈ K.toIntermediateField := by
+  let : Ring A := Algebra.semiringToRing F
+  let b := Module.finBasis F A
+  let v (p : (A →ₐ[F] Ω) × Fin (Module.finrank F A)) := p.1 (b p.2)
+  obtain ⟨K, hfin, hgal, hK⟩ := exists_isGalois_superset_of_isAlgClosed (F := F)
+    (Set.finite_range v) (fun _ ⟨p, hp⟩ ↦
+      hp ▸ (Algebra.IsAlgebraic.isAlgebraic (b p.2)).algHom p.1)
+  refine ⟨{ toIntermediateField := K }, fun φ x ↦ ?_⟩
+  rw [← b.sum_repr x, map_sum]
+  apply K.sum_mem
+  intro i _
+  rw [map_smul]
+  exact K.toSubalgebra.toSubmodule.smul_mem _ (hK ⟨(φ, i), rfl⟩)
 
 end TauCeti
 
