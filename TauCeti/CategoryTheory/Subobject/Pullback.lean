@@ -28,6 +28,8 @@ below `Z`, by `Subobject.map Z.arrow` with inverse `Subobject.pullback Z.arrow` 
   pullback of `S` along `Z.arrow` gives `S`.
 * `CategoryTheory.Subobject.pullback_eq_of_comp_eq_id`: if `g` is a retraction of `f`, then
   `S ≤ f⁻¹ T` and `T ≤ g⁻¹ S` force `f⁻¹ T = S`.
+* `CategoryTheory.Subobject.pullback_hom_eq_map_inv`: pulling back along an isomorphism is
+  mapping along its inverse.
 * `CategoryTheory.Subobject.isLimitKernelForkOfLE`: if the kernel of a morphism `g` out of `Z` is
   the pullback of `S ≤ Z`, then the inclusion `S ⟶ Z` is a kernel of `g`.
 -/
@@ -62,6 +64,15 @@ lemma pullback_eq_of_comp_eq_id {X Y : C} {f : X ⟶ Y} {g : Y ⟶ X} (hfg : f �
     {S : Subobject X} {T : Subobject Y} (hS : S ≤ (pullback f).obj T)
     (hT : T ≤ (pullback g).obj S) : (pullback f).obj T = S :=
   le_antisymm (((pullback f).monotone hT).trans_eq (by rw [← pullback_comp, hfg, pullback_id])) hS
+
+/-- Pulling back a subobject along an isomorphism is mapping along its inverse. -/
+lemma pullback_hom_eq_map_inv {X Y : C} (e : X ≅ Y) (S : Subobject Y) :
+    (pullback e.hom).obj S = (map e.inv).obj S := by
+  have hS : (map e.hom).obj ((map e.inv).obj S) = S := (mapIsoToOrderIso e).right_inv S
+  calc (pullback e.hom).obj S
+      = (pullback e.hom).obj ((map e.hom).obj ((map e.inv).obj S)) :=
+        congrArg (pullback e.hom).obj hS.symm
+    _ = (map e.inv).obj S := pullback_map_self _ _
 
 section Kernel
 

@@ -7,7 +7,9 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Basic
 public import Mathlib.CategoryTheory.Abelian.Exact
+public import Mathlib.CategoryTheory.Limits.Shapes.Products
 public import Mathlib.CategoryTheory.Subobject.Limits
+public import Mathlib.Order.Bounds.Basic
 import Mathlib.CategoryTheory.Abelian.Subobject
 import TauCeti.CategoryTheory.Abelian.ImageSubobject
 import TauCeti.CategoryTheory.Subobject.Image
@@ -21,7 +23,9 @@ containing the kernel of `p` is that subobject; when `p` is an epimorphism, the 
 preimage of a subobject of `X` is that subobject. So for an epimorphism `p`, preimages and images
 are mutually inverse between the subobjects of `X` and the subobjects of `Y` containing the kernel
 of `p`. This is the correspondence theorem for quotients, in the form used to transport subobjects
-of a subquotient back to the ambient object.
+of a subquotient back to the ambient object. This file also gives the explicit formula for the
+greatest lower bound of any indexed family of subobjects whose cokernel product exists
+(`CategoryTheory.Subobject.isGLB_range_kernelSubobject_piLift`), without requiring `WellPowered C`.
 
 ## Main results
 
@@ -31,6 +35,8 @@ of a subquotient back to the ambient object.
   image of a subobject of `Y` containing the kernel of `p` is that subobject.
 * `CategoryTheory.Subobject.pullback_exists_eq_kernelSubobject_sup`: for an arbitrary subobject,
   taking its image and then its preimage joins it with the kernel.
+* `CategoryTheory.Subobject.isGLB_range_kernelSubobject_piLift`: the greatest lower bound of a
+  family of subobjects as a kernel subobject into the product of their cokernels.
 * `CategoryTheory.epi_comp_iff_kernelSubobject_sup_imageSubobject_eq_top` says that for an
   epimorphism `p`, the composite `f ≫ p` is epic exactly when
   `kernelSubobject p ⊔ imageSubobject f = ⊤`.
@@ -111,6 +117,28 @@ lemma pullback_exists_eq_kernelSubobject_sup (p : Y ⟶ X) (S : Subobject Y) :
       _ = _ := pullback_exists_eq_self_of_kernelSubobject_le p le_sup_left
   · apply ((existsPullbackAdj p).gc _ _).mp
     simp [exists_eq_imageSubobject]
+
+/-- In an abelian category, the kernel subobject of the map into the product of the cokernels of
+a `J`-indexed family of subobjects of `X` is the greatest lower bound of the family, whenever that
+product exists. -/
+lemma isGLB_range_kernelSubobject_piLift {J : Type*} {X : C} (S : J → Subobject X)
+    [HasProduct fun j ↦ cokernel (S j).arrow] :
+    IsGLB (Set.range S) (kernelSubobject (Pi.lift fun j ↦ cokernel.π (S j).arrow)) := by
+  have hle (T : Subobject X) :
+      T ≤ kernelSubobject (Pi.lift fun j ↦ cokernel.π (S j).arrow) ↔ ∀ j, T ≤ S j := by
+    refine ⟨fun h j ↦ ?_, fun h ↦ le_kernelSubobject _ _ ?_⟩
+    · have hj : T.arrow ≫ cokernel.π (S j).arrow = 0 := by
+        have h0 : T.arrow ≫ Pi.lift (fun j ↦ cokernel.π (S j).arrow) = 0 := by
+          rw [← Subobject.ofLE_arrow h, Category.assoc, kernelSubobject_arrow_comp, comp_zero]
+        simpa using congrArg (· ≫ Pi.π (fun j ↦ cokernel (S j).arrow) j) h0
+      rw [← Subobject.mk_arrow (S j), ← kernelSubobject_cokernel_π (S j).arrow]
+      exact le_kernelSubobject _ _ hj
+    · refine Limits.Pi.hom_ext _ _ fun j ↦ ?_
+      simp only [Category.assoc, limit.lift_π, Fan.mk_π_app, zero_comp]
+      rw [← Subobject.ofLE_arrow (h j), Category.assoc, cokernel.condition, comp_zero]
+  refine ⟨?_, fun T hT ↦ (hle T).2 fun j ↦ hT ⟨j, rfl⟩⟩
+  rintro _ ⟨j, rfl⟩
+  exact (hle _).1 le_rfl j
 
 end CategoryTheory.Subobject
 

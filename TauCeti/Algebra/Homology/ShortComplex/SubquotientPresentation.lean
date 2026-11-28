@@ -30,6 +30,8 @@ over the induced morphism in homology (`CategoryTheory.ShortComplex.homologyPres
 
 ## Main results
 
+* `CategoryTheory.ShortComplex.π_comp_cyclesIsoX₂_inv`: compatibility of the projection of a
+  subquotient presentation of `S.X₂` with `S.cyclesIsoX₂` when `S.g = 0`.
 * `CategoryTheory.ShortComplex.homologyPresentation_mapsTo`: naturality of the presentation in
   morphisms of short complexes.
 
@@ -59,6 +61,20 @@ lemma kernelSubobjectIsoCycles_hom_iCycles :
 lemma kernelSubobjectIsoCycles_inv_arrow :
     S.kernelSubobjectIsoCycles.inv ≫ (kernelSubobject S.g).arrow = S.iCycles := by
   simp [kernelSubobjectIsoCycles]
+
+/-- When `S.g = 0`, the projection of a subquotient presentation of `S.X₂` composed with the
+inverse of `S.cyclesIsoX₂` factors through `kernelSubobject S.g` and `S.kernelSubobjectIsoCycles`.
+-/
+@[reassoc]
+lemma π_comp_cyclesIsoX₂_inv {A : C} (P : TauCeti.SubquotientPresentation A S.X₂)
+    (hg : S.g = 0) :
+    P.π ≫ (S.cyclesIsoX₂ hg).inv =
+      ofLE _ _ (by rw [hg, kernelSubobject_zero, TauCeti.SubquotientPresentation.preimage_top]) ≫
+        P.preimageπ (kernelSubobject S.g) ≫ S.kernelSubobjectIsoCycles.hom := by
+  rw [← cancel_mono S.iCycles, Category.assoc, Category.assoc, Category.assoc,
+    cyclesIsoX₂_inv_hom_id, Category.comp_id, kernelSubobjectIsoCycles_hom_iCycles,
+    TauCeti.SubquotientPresentation.preimageπ_arrow, ofLE_comp_ofLE_assoc, ofLE_refl,
+    Category.id_comp]
 
 /-- Seen inside the kernel of `S.g`, the image of `S.f` is the kernel of the projection onto the
 homology. -/
