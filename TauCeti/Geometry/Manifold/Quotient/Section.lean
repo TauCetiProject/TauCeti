@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Quotient.Descent
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.Pullback.OrbitRelQuotient
 
 /-!
 # Descending sections of bundles to quotient manifolds
@@ -42,6 +43,9 @@ discontinuous group of biholomorphisms are the invariant holomorphic sections of
 * `TauCeti.contMDiffAt_pullback_section_iff_orbitRelQuotientRec`,
   `TauCeti.contMDiff_pullback_section_iff_orbitRelQuotientRec`: the same, with the invariant
   section read as a section of the pullback bundle along the orbit projection.
+* `TauCeti.contMDiff_section_pullbackOrbitSection_orbitRelQuotientRec_iff`,
+  `ContMDiff.section_pullbackOrbitSection_orbitRelQuotientRec`: section descent along an
+  equivariant `C^m` map preserves `C^m` regularity.
 
 ## References
 
@@ -127,5 +131,58 @@ theorem contMDiff_pullback_section_iff_orbitRelQuotientRec [∀ q, Nonempty (V q
       C(M, MulAction.orbitRel.Quotient G M))) Quotient.mk_surjective hm
       (σ := MulAction.orbitRelQuotientRec t ht)).symm
   simp only [ContinuousMap.coe_mk, MulAction.orbitRelQuotientRec_mk]
+
+section EquivariantPullback
+
+variable {𝕜 E' E H' H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E']
+  [NormedSpace 𝕜 E'] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H']
+  [TopologicalSpace H] {I' : ModelWithCorners 𝕜 E' H'} {I : ModelWithCorners 𝕜 E H}
+  {G' M' G M : Type*} [Group G'] [MulAction G' M'] [TopologicalSpace M'] [ChartedSpace H' M']
+  [Group G] [MulAction G M] [TopologicalSpace M] [ChartedSpace H M] {m n : ℕ∞ω}
+  [ProperlyDiscontinuousSMul G' M'] [ContinuousConstSMul G' M'] [IsCancelSMul G' M'] [T2Space M']
+  [LocallyCompactSpace M'] [IsManifold I' n M'] [ContMDiffConstSMul I' n G' M']
+  [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M] [IsCancelSMul G M] [T2Space M]
+  [LocallyCompactSpace M] [IsManifold I n M] [ContMDiffConstSMul I n G M] {σ : G' → G}
+  {ψ : M' →ₑ[σ] M} {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : MulAction.orbitRel.Quotient G M → Type*} [∀ q, Nonempty (V q)] [∀ q, TopologicalSpace (V q)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V]
+  {t : ∀ x : M, V (Quotient.mk (MulAction.orbitRel G M) x)}
+
+/-- Along a `C^m` equivariant map `ψ : M' →ₑ[σ] M` (`m ≤ n`), the `G'`-descent of
+`ψ.pullbackOrbitSection t` is a `C^m` section of the pulled-back bundle over `M' ⧸ G'` iff
+`x' ↦ (⟦ψ x'⟧, t (ψ x'))` into `TotalSpace F V` is `C^m`. -/
+theorem contMDiff_section_pullbackOrbitSection_orbitRelQuotientRec_iff
+    {ht : ∀ (g : G) (x : M), t (g • x) ≍ t x} (hm : m ≤ n) (hψ : ContMDiff I' I m ψ) :
+    ContMDiff I' (I'.prod 𝓘(𝕜, F)) m (fun q' ↦ TotalSpace.mk' F
+        (E := ⇑(ψ.orbitRelQuotientContinuousMap hψ.continuous) *ᵖ V) q'
+        (MulAction.orbitRelQuotientRec (V := ψ.orbitRelQuotientMap *ᵖ V)
+          (ψ.pullbackOrbitSection t) (ψ.pullbackOrbitSection_smul_heq ht) q')) ↔
+      ContMDiff I' (I.prod 𝓘(𝕜, F)) m
+        (fun x' ↦ TotalSpace.mk' F (Quotient.mk (MulAction.orbitRel G M) (ψ x')) (t (ψ x'))) := by
+  let f := ψ.orbitRelQuotientContinuousMap hψ.continuous
+  refine (contMDiff_section_orbitRelQuotientRec_iff (V := ⇑f *ᵖ V) hm).trans ?_
+  rw [Bundle.Pullback.contMDiff_iff f (contMDiff_orbitRelQuotientMap hm hψ)]
+  have hlift : (fun y ↦ Pullback.lift (⇑f) (TotalSpace.mk' F (E := ⇑f *ᵖ V)
+      (Quotient.mk (MulAction.orbitRel G' M') y) (ψ.pullbackOrbitSection t y))) =
+      fun x' ↦ TotalSpace.mk' F (Quotient.mk (MulAction.orbitRel G M) (ψ x')) (t (ψ x')) :=
+    funext fun y ↦ ψ.lift_pullbackOrbitSection F t y
+  rw [hlift]
+  exact and_iff_right
+    ((isLocalDiffeomorph_quotientMk (I := I') (n := n) (G := G') (M := M')).contMDiff.of_le hm)
+
+/-- Pulling back a `G`-invariant `C^m` section `t` along a `C^m` equivariant map `ψ : M' →ₑ[σ] M`
+(`m ≤ n`) produces a `G'`-invariant section descending to a `C^m` section over `M' ⧸ G'`. -/
+theorem _root_.ContMDiff.section_pullbackOrbitSection_orbitRelQuotientRec
+    (ht_smooth : ContMDiff I (I.prod 𝓘(𝕜, F)) m
+      (fun x ↦ TotalSpace.mk' F (Quotient.mk (MulAction.orbitRel G M) x) (t x)))
+    (hψ : ContMDiff I' I m ψ) (ht : ∀ (g : G) (x : M), t (g • x) ≍ t x) (hm : m ≤ n) :
+    ContMDiff I' (I'.prod 𝓘(𝕜, F)) m (fun q' ↦ TotalSpace.mk' F
+      (E := ⇑(ψ.orbitRelQuotientContinuousMap hψ.continuous) *ᵖ V) q'
+      (MulAction.orbitRelQuotientRec (V := ψ.orbitRelQuotientMap *ᵖ V)
+        (ψ.pullbackOrbitSection t) (ψ.pullbackOrbitSection_smul_heq ht) q')) :=
+  (contMDiff_section_pullbackOrbitSection_orbitRelQuotientRec_iff (ht := ht) hm hψ).2
+    (ht_smooth.comp hψ)
+
+end EquivariantPullback
 
 end TauCeti

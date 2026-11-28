@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
-public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
+public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Topology.Algebra.Module.Alternating.Basic

@@ -32,6 +32,8 @@ fibre is a bijection onto the base.
 
 * `Bundle.TotalSpace.eventually_proj_mem_baseSet_trivializationAt`: near `v₀`, points lie over
   the base set of the trivialization at `v₀.proj`.
+* `ContinuousWithinAt.eventually_mem_baseSet_trivializationAt`: along a map continuous within
+  `s` at `x`, points near `x` within `s` map into the base set of the trivialization at `b x`.
 * `IsCompact.exists_finset_subset_preimage_biUnion_baseSet`: a compact subset of the total
   space lies over a finite union of preferred trivializing base sets.
 * `TauCeti.continuous_of_forall_exists_trivialization`: a locally trivial map is continuous.
@@ -92,6 +94,24 @@ theorem eventually_proj_mem_baseSet_trivializationAt (v₀ : TotalSpace F E) :
       (FiberBundle.mem_baseSet_trivializationAt' v₀.proj))
 
 end Bundle.TotalSpace
+
+section
+
+variable {B : Type*} [TopologicalSpace B]
+
+/-- Along a map `b : X → B` continuous within `s` at `x`, points near `x` within `s` map into
+the base set of the preferred trivialization at `b x`. -/
+theorem ContinuousWithinAt.eventually_mem_baseSet_trivializationAt
+    (F : Type*) (E : B → Type*) [TopologicalSpace F] [TopologicalSpace (TotalSpace F E)]
+    [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
+    {X : Type*} [TopologicalSpace X] {b : X → B} {s : Set X} {x : X}
+    (hb : ContinuousWithinAt b s x) :
+    ∀ᶠ y in 𝓝[s] x, b y ∈ (trivializationAt F E (b x)).baseSet :=
+  hb.preimage_mem_nhdsWithin
+    ((trivializationAt F E (b x)).open_baseSet.mem_nhds
+      (FiberBundle.mem_baseSet_trivializationAt' (b x)))
+
+end
 
 namespace Bundle.Trivialization
 

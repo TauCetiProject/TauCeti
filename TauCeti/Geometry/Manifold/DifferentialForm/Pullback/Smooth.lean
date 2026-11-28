@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Pow
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
-public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
+public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap.Basic
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import Mathlib.Data.Set.UnionLift

@@ -13,7 +13,9 @@ public import Mathlib.LinearAlgebra.Determinant
 
 Top-degree scalar-valued continuous alternating forms over a commutative ring are determined
 by their basis coefficient, which vanishes only for the zero form. Pullback by a continuous
-linear endomorphism multiplies that coefficient by its determinant. Pullback along a continuous
+linear endomorphism multiplies that coefficient, and hence the form itself, by its determinant
+(`ContinuousAlternatingMap.compContinuousLinearMap_eq_det_smul_of_basis`,
+`ContinuousAlternatingMap.compContinuousLinearMap_eq_det_smul`). Pullback along a continuous
 linear map `A : E → F` multiplies it by the determinant of `C⁻¹ ∘ A` for any continuous linear
 equivalence `C : E ≃ F`, the target coefficient being taken in the transported basis. Above the
 top degree, continuous alternating maps on a finite-dimensional space over a division ring vanish.
@@ -77,6 +79,31 @@ omit [Fintype ι] [DecidableEq ι] in
 theorem map_basis_ne_zero_iff [Finite ι] (ω : E [⋀^ι]→L[R] R) (b : Module.Basis ι R E) :
     ω b ≠ 0 ↔ ω ≠ 0 :=
   not_congr (ω.map_basis_eq_zero_iff b)
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- Pullback of a top-degree continuous alternating form along a continuous linear endomorphism on
+a module with a finite basis multiplies the form by the determinant of the endomorphism. -/
+theorem compContinuousLinearMap_eq_det_smul_of_basis [ContinuousConstSMul R R] [Finite ι]
+    (b : Module.Basis ι R E) (ω : E [⋀^ι]→L[R] R) (A : E →L[R] E) :
+    ω.compContinuousLinearMap A = A.toLinearMap.det • ω := by
+  classical
+  let : Fintype ι := Fintype.ofFinite ι
+  ext v
+  conv_rhs => rw [ContinuousAlternatingMap.smul_apply, smul_eq_mul, apply_eq_det_mul ω b]
+  rw [apply_eq_det_mul _ b, compContinuousLinearMap_apply_basis]
+  ring
+
+/-- On a finite-dimensional vector space whose dimension equals the arity `card ι`, pullback of a
+top-degree scalar-valued continuous alternating form along a continuous linear endomorphism
+multiplies the form by its determinant. -/
+theorem compContinuousLinearMap_eq_det_smul {K E ι : Type*} [Field K] [TopologicalSpace K]
+    [ContinuousConstSMul K K] [AddCommGroup E] [Module K E] [TopologicalSpace E]
+    [Module.Finite K E] [Fintype ι] (h : Fintype.card ι = Module.finrank K E)
+    (ω : E [⋀^ι]→L[K] K) (A : E →L[K] E) :
+    ω.compContinuousLinearMap A = A.toLinearMap.det • ω := by
+  classical
+  exact compContinuousLinearMap_eq_det_smul_of_basis
+    ((Module.finBasisOfFinrankEq K E h.symm).reindex (Fintype.equivFin ι).symm) ω A
 
 section AboveTopDegree
 

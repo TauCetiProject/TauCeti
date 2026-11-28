@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Algebra.Star.Module
 public import Mathlib.Topology.Algebra.Star
@@ -38,7 +38,8 @@ continuous version.
 
 Since every linear functional on a finite-dimensional Hausdorff topological vector space is
 continuous, the continuous dual `E →L[𝕜] 𝕜` has the same dimension as `E`:
-`ContinuousLinearMap.dual_finrank_eq`.
+`ContinuousLinearMap.dual_finrank_eq`, and a continuous linear map between such spaces is bijective
+if and only if its transpose is (`ContinuousLinearMap.precomp_bijective_iff_of_finiteDimensional`).
 
 A continuous linear map into a finite-dimensional Hausdorff topological vector space, from a space
 of the same `finrank`, is invertible as soon as it is injective
@@ -199,6 +200,25 @@ theorem toMatrixCLM_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module
 theorem det_toMatrixCLM {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι 𝕜 E)
     (f : E →L[𝕜] E) : (toMatrixCLM b f).det = LinearMap.det (f : E →ₗ[𝕜] E) :=
   LinearMap.det_toMatrix b _
+
+variable {F : Type*} [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [Module 𝕜 F] [ContinuousSMul 𝕜 F] [T2Space F] [FiniteDimensional 𝕜 F]
+
+/-- Over a complete nontrivially normed field, a continuous linear map between finite-dimensional
+Hausdorff topological vector spaces is bijective if and only if its transpose `precomp 𝕜 T` on
+continuous duals is bijective. -/
+theorem precomp_bijective_iff_of_finiteDimensional (T : E →L[𝕜] F) :
+    Function.Bijective (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) ↔
+      Function.Bijective T := by
+  let dE : Module.Dual 𝕜 E ≃ₗ[𝕜] StrongDual 𝕜 E := LinearMap.toContinuousLinearMap
+  let dF : Module.Dual 𝕜 F ≃ₗ[𝕜] StrongDual 𝕜 F := LinearMap.toContinuousLinearMap
+  have hT : (dE.symm : StrongDual 𝕜 E → Module.Dual 𝕜 E) ∘ (precomp 𝕜 T :
+      StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) ∘ dF = (T : E →ₗ[𝕜] F).dualMap := by
+    ext α v
+    simp [dE, dF, LinearMap.dualMap_apply]
+  rw [← ContinuousLinearMap.coe_coe T,
+    ← LinearMap.dualMap_bijective_iff (f := (T : E →ₗ[𝕜] F)), ← hT,
+    EquivLike.comp_bijective, EquivLike.bijective_comp]
 
 end ContinuousLinearMap
 

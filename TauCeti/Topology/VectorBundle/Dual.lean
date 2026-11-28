@@ -10,7 +10,7 @@ public import Mathlib.Topology.VectorBundle.Hom
 public import Mathlib.Topology.VectorBundle.Constructions
 
 /-!
-# Dual vector-bundle charts
+# Dual vector-bundle charts and fibrewise dual maps
 
 The induced dual-bundle chart pairs with the original bundle chart by evaluation.
 This follows from Mathlib's hom-bundle chart formula and its inverse law.
@@ -20,6 +20,9 @@ fibre has this property (`TauCeti.separatingDual_fiber`), since a trivialization
 fibre over its base set with the model fibre by a continuous linear equivalence. So a vector in a
 fibre is determined by its values under all continuous linear functionals, the way in which an
 integral with values in a fibre, which carries no norm, is read weakly.
+
+A family of fibrewise continuous linear equivalences induces a family of fibrewise dual continuous
+linear equivalences (`TauCeti.bundleDualEquiv`).
 -/
 
 public section
@@ -27,6 +30,8 @@ public section
 open Bundle FiberBundle Set
 
 namespace TauCeti
+
+section Charts
 
 variable {𝕜 M F : Type*} [NontriviallyNormedField 𝕜]
   [TopologicalSpace M] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
@@ -71,5 +76,29 @@ theorem separatingDual_fiber [SeparatingDual 𝕜 F] (x : M) : SeparatingDual �
     (x := (trivializationAt F V x).continuousLinearMapAt 𝕜 x v) fun h ↦ hv <| by
       rw [← (trivializationAt F V x).symmL_continuousLinearMapAt (R := 𝕜) hx v, h, map_zero]
   exact ⟨ℓ.comp ((trivializationAt F V x).continuousLinearMapAt 𝕜 x), hℓ⟩
+
+end Charts
+
+section DualEquiv
+
+variable {𝕜 B : Type*} [NontriviallyNormedField 𝕜] {V₁ V₂ : B → Type*}
+  [∀ x, AddCommGroup (V₁ x)] [∀ x, Module 𝕜 (V₁ x)] [∀ x, TopologicalSpace (V₁ x)]
+  [∀ x, AddCommGroup (V₂ x)] [∀ x, Module 𝕜 (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
+
+/-- Fibrewise dual continuous linear equivalence `StrongDual 𝕜 (V₂ x) ≃L[𝕜] StrongDual 𝕜 (V₁ x)`
+induced by a family of fibrewise continuous linear equivalences `e : ∀ x, V₁ x ≃L[𝕜] V₂ x`. -/
+def bundleDualEquiv (e : ∀ x, V₁ x ≃L[𝕜] V₂ x) (x : B) :
+    StrongDual 𝕜 (V₂ x) ≃L[𝕜] StrongDual 𝕜 (V₁ x) :=
+  (e x).symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜)
+
+@[simp] theorem bundleDualEquiv_apply (e : ∀ x, V₁ x ≃L[𝕜] V₂ x) (x : B) (α : StrongDual 𝕜 (V₂ x)) :
+    bundleDualEquiv e x α = ContinuousLinearMap.precomp 𝕜 (e x).toContinuousLinearMap α := by
+  ext v; simp [bundleDualEquiv, ContinuousLinearEquiv.arrowCongr_apply]
+
+@[simp] theorem bundleDualEquiv_symm (e : ∀ x, V₁ x ≃L[𝕜] V₂ x) (x : B) :
+    (bundleDualEquiv e x).symm = bundleDualEquiv (fun y ↦ (e y).symm) x := by
+  ext β w; simp [bundleDualEquiv, ContinuousLinearEquiv.arrowCongr_apply]
+
+end DualEquiv
 
 end TauCeti

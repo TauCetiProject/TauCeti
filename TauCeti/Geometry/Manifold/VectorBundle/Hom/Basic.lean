@@ -15,10 +15,12 @@ import TauCeti.Topology.VectorBundle.Coordinates
 import TauCeti.Topology.VectorBundle.Trivialization
 import TauCeti.Data.Bundle
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # Testing smooth bundle homomorphisms on sections
@@ -64,7 +66,8 @@ trivializations).
 Fibrewise composition preserves joint `Cⁿ` regularity along any common base map
 (`ContMDiff.clm_bundle_comp`, and `ContMDiffWithinAt.clm_bundle_comp` within a set). The
 corresponding native section operation is `ContMDiffSection.clmComp`; it requires no finite rank
-or completeness assumption.
+or completeness assumption. Similarly, fibrewise precomposition into any third bundle `V₃` is `Cⁿ`
+(`ContMDiffWithinAt.clm_bundle_precomp`).
 
 Negation of a hom-bundle section along any base map preserves its regularity
 (`ContMDiff.clm_bundle_neg`). Taking the ordinary trace of an endomorphism family along a
@@ -871,19 +874,22 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
   [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
   [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
-  {V₁ V₂ V₃ : B → Type*}
+  {V₁ V₂ : B → Type*}
   [∀ x, AddCommGroup (V₁ x)] [∀ x, Module 𝕜 (V₁ x)] [∀ x, TopologicalSpace (V₁ x)]
   [∀ x, AddCommGroup (V₂ x)] [∀ x, Module 𝕜 (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
-  [∀ x, AddCommGroup (V₃ x)] [∀ x, Module 𝕜 (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
   [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul 𝕜 (V₂ x)]
-  [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul 𝕜 (V₃ x)]
   [TopologicalSpace (TotalSpace F₁ V₁)] [TopologicalSpace (TotalSpace F₂ V₂)]
-  [TopologicalSpace (TotalSpace F₃ V₃)]
   [FiberBundle F₁ V₁] [VectorBundle 𝕜 F₁ V₁]
   [FiberBundle F₂ V₂] [VectorBundle 𝕜 F₂ V₂]
-  [FiberBundle F₃ V₃] [VectorBundle 𝕜 F₃ V₃]
   {b : M → B} {s : Set M} {x : M}
   {A : ∀ y, V₁ (b y) →L[𝕜] V₂ (b y)}
+
+section
+
+variable {V₃ : B → Type*}
+  [∀ x, AddCommGroup (V₃ x)] [∀ x, Module 𝕜 (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
+  [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul 𝕜 (V₃ x)]
+  [TopologicalSpace (TotalSpace F₃ V₃)] [FiberBundle F₃ V₃] [VectorBundle 𝕜 F₃ V₃]
   {C : ∀ y, V₂ (b y) →L[𝕜] V₃ (b y)}
 
 /-- Composition of differentiable Hom-bundle sections is differentiable within a set.
@@ -918,6 +924,36 @@ theorem MDifferentiableAt.clm_bundle_comp
       (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
         (E := fun z ↦ V₁ z →L[𝕜] V₃ z) (b y) ((C y).comp (A y))) x :=
   MDifferentiableWithinAt.clm_bundle_comp hC hA
+
+end
+
+/-- Fibrewise precomposition with a `C^n` Hom-bundle section into any vector bundle `V₃` is `C^n`
+within `s` at `x`. Neither finite rank nor completeness of `𝕜` is required. -/
+theorem ContMDiffWithinAt.clm_bundle_precomp (V₃ : B → Type*) {n : ℕ∞ω}
+    [∀ x, AddCommGroup (V₃ x)] [∀ x, Module 𝕜 (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
+    [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul 𝕜 (V₃ x)]
+    [TopologicalSpace (TotalSpace F₃ V₃)] [FiberBundle F₃ V₃] [VectorBundle 𝕜 F₃ V₃]
+    (hA : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n (fun y ↦ TotalSpace.mk'
+      (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (A y)) s x) :
+    ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, (F₂ →L[𝕜] F₃) →L[𝕜] F₁ →L[𝕜] F₃)) n (fun y ↦
+      TotalSpace.mk' ((F₂ →L[𝕜] F₃) →L[𝕜] F₁ →L[𝕜] F₃) (E := fun z ↦ (V₂ z →L[𝕜] V₃ z) →L[𝕜]
+        V₁ z →L[𝕜] V₃ z) (b y) (ContinuousLinearMap.precomp (V₃ (b y)) (A y))) s x := by
+  let _ : NormedAddCommGroup ((F₂ →L[𝕜] F₃) →L[𝕜] F₁ →L[𝕜] F₃) := inferInstance
+  let _ : NormedSpace 𝕜 ((F₂ →L[𝕜] F₃) →L[𝕜] F₁ →L[𝕜] F₃) := inferInstance
+  rw [contMDiffWithinAt_hom_bundle] at hA ⊢
+  refine ⟨hA.1, ?_⟩
+  let L := (ContinuousLinearMap.compL 𝕜 F₁ F₂ F₃).flip
+  have heq : (fun y ↦ ContinuousLinearMap.inCoordinates (F₂ →L[𝕜] F₃) (fun z ↦ V₂ z →L[𝕜] V₃ z)
+      (F₁ →L[𝕜] F₃) (fun z ↦ V₁ z →L[𝕜] V₃ z) (b x) (b y) (b x) (b y)
+        (ContinuousLinearMap.precomp (V₃ (b y)) (A y))) =ᶠ[𝓝[insert x s] x]
+      fun y ↦ L (ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ (b x) (b y) (b x) (b y) (A y)) := by
+    filter_upwards
+      [hA.1.insert.continuousWithinAt.eventually_mem_baseSet_trivializationAt F₁ V₁,
+        hA.1.insert.continuousWithinAt.eventually_mem_baseSet_trivializationAt F₃ V₃]
+      with y hy₁ hy₃
+    exact ContinuousLinearMap.inCoordinates_precomp V₃ (A y) hy₁ hy₃
+  exact (L.contDiff.contMDiff.contMDiffAt.comp_contMDiffWithinAt x
+    hA.2).congr_of_eventuallyEq_insert heq
 
 end Composition
 

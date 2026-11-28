@@ -37,7 +37,9 @@ continuous Hom-bundle sections is continuous, and a `σ`-semilinear Hom-bundle s
 preferred-frame coordinate expression is locally constant around each frame centre is continuous
 (`TauCeti.continuous_hom_bundle_of_inCoordinates_eq_const`). Read in the trivializations at a
 fixed point, a continuous Hom-bundle section is a continuous family of operators on their common
-base set (`TauCeti.continuousOn_inCoordinates`).
+base set (`TauCeti.continuousOn_inCoordinates`), and fibrewise precomposition into a third bundle
+reads in preferred frames as precomposition with the coordinate operator
+(`ContinuousLinearMap.inCoordinates_precomp`).
 
 Real-linear Hom bundles, and more generally Hom bundles over a normed field extension, carry
 the larger scalar field on their values whenever the target bundle does.
@@ -640,6 +642,44 @@ theorem continuous_hom_bundle_of_inCoordinates_eq_const
 end ConstantCoordinates
 
 end TauCeti
+
+section Precomp
+
+variable {𝕜 B F₁ F₂ F₃ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
+  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃] {V₁ V₂ : B → Type*}
+  [∀ x, AddCommGroup (V₁ x)] [∀ x, Module 𝕜 (V₁ x)] [∀ x, TopologicalSpace (V₁ x)]
+  [∀ x, AddCommGroup (V₂ x)] [∀ x, Module 𝕜 (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
+  [TopologicalSpace (TotalSpace F₁ V₁)] [TopologicalSpace (TotalSpace F₂ V₂)]
+  [FiberBundle F₁ V₁] [VectorBundle 𝕜 F₁ V₁] [FiberBundle F₂ V₂] [VectorBundle 𝕜 F₂ V₂]
+
+/-- In preferred frames at `x₀`, fibrewise precomposition with `A : V₁ y →L[𝕜] V₂ y` into `V₃`
+reads as precomposition with the coordinate expression of `A`. -/
+theorem ContinuousLinearMap.inCoordinates_precomp (V₃ : B → Type*)
+    [∀ x, AddCommGroup (V₃ x)] [∀ x, Module 𝕜 (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
+    [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul 𝕜 (V₃ x)]
+    [TopologicalSpace (TotalSpace F₃ V₃)] [FiberBundle F₃ V₃] [VectorBundle 𝕜 F₃ V₃]
+    {x₀ y : B} (A : V₁ y →L[𝕜] V₂ y)
+    (hy₁ : y ∈ (trivializationAt F₁ V₁ x₀).baseSet)
+    (hy₃ : y ∈ (trivializationAt F₃ V₃ x₀).baseSet) :
+    ContinuousLinearMap.inCoordinates (F₂ →L[𝕜] F₃) (fun z ↦ V₂ z →L[𝕜] V₃ z)
+      (F₁ →L[𝕜] F₃) (fun z ↦ V₁ z →L[𝕜] V₃ z) x₀ y x₀ y
+      (ContinuousLinearMap.precomp (V₃ y) A) =
+      ContinuousLinearMap.precomp F₃
+        (ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ x₀ y x₀ y A) := by
+  have hy₁₃ : y ∈ (trivializationAt (F₁ →L[𝕜] F₃) (fun z ↦ V₁ z →L[𝕜] V₃ z) x₀).baseSet := by
+    rw [hom_trivializationAt_baseSet]; exact ⟨hy₁, hy₃⟩
+  ext g v
+  have hsymm :
+      (trivializationAt (F₂ →L[𝕜] F₃) (fun z ↦ V₂ z →L[𝕜] V₃ z) x₀).symmL 𝕜 y g =
+        ((trivializationAt F₃ V₃ x₀).symmL 𝕜 y).comp
+          (g.comp ((trivializationAt F₂ V₂ x₀).continuousLinearMapAt 𝕜 y)) :=
+    Bundle.Trivialization.continuousLinearMap_symmL _ _ y g
+  simp [ContinuousLinearMap.inCoordinates,
+    Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _ hy₁₃, hom_trivializationAt_apply, hsymm,
+    Trivialization.continuousLinearMapAt_symmL _ hy₃]
+
+end Precomp
 
 section TwoVariables
 

@@ -10,7 +10,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
-public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
+public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap.Basic
 public import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 
