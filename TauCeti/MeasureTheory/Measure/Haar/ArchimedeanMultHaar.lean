@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.Haar.DistribChar
+public import TauCeti.MeasureTheory.Measure.Haar.DistribChar.Basic
 public import TauCeti.MeasureTheory.Measure.Haar.MultHaar
 public import TauCeti.MeasureTheory.Constructions.Polish.Units
 import Mathlib.MeasureTheory.Constructions.HaarToSphere

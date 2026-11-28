@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.Haar.DistribChar
+public import TauCeti.MeasureTheory.Measure.Haar.DistribChar.Basic
 public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct.Basic
 public import TauCeti.NumberTheory.LocalField.HaarCharacter
 public import TauCeti.NumberTheory.LocalField.Topology

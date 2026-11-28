@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.FourierTransform
 public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
-import TauCeti.MeasureTheory.Measure.Haar.DistribChar
+import TauCeti.MeasureTheory.Measure.Haar.DistribChar.Basic
 
 /-!
 # The Fourier transform of a dilation by a unit

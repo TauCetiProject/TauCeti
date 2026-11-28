@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.AdeleRing
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
 
 /-!
@@ -33,8 +34,9 @@ adele ring is determined by its values on `K` and on that idempotent
 (`NumberField.AdeleRing.ringHom_ext`).
 
 It also upgrades Mathlib's ring equivalence between the infinite adele ring and the Minkowski
-mixed space to a homeomorphism.  Each local factor is isometric to `ℝ` or `ℂ`, so the product
-equivalence and its inverse are continuous, and the norm of the mixed space
+mixed space to an isomorphism of topological additive groups.  Each local factor is isometric to
+`ℝ` or `ℂ`, so the product equivalence and its inverse are continuous
+(`NumberField.InfiniteAdeleRing.continuousAddEquivMixedSpace`), and the norm of the mixed space
 (`NumberField.mixedEmbedding.norm`) is carried to the norm of the infinite adele ring.
 -/
 
@@ -51,12 +53,12 @@ instance InfiniteAdeleRing.instT2Space : T2Space (InfiniteAdeleRing K) :=
   inferInstanceAs <| T2Space ((v : InfinitePlace K) → v.Completion)
 
 open scoped Classical in
-/-- The infinite adele ring is homeomorphic to the Minkowski mixed space.  This is the topological
-form of `InfiniteAdeleRing.ringEquiv_mixedSpace`: the underlying equivalence is the one of that
-ring isomorphism, and continuity in both directions comes from the isometry of each completion
-with `ℝ` or `ℂ`. -/
-noncomputable def InfiniteAdeleRing.homeomorphMixedSpace :
-    InfiniteAdeleRing K ≃ₜ mixedEmbedding.mixedSpace K :=
+/-- The infinite adele ring is isomorphic to the Minkowski mixed space as a topological additive
+group.  This is the topological form of `InfiniteAdeleRing.ringEquiv_mixedSpace`: the underlying
+equivalence is the one of that ring isomorphism, and continuity in both directions comes from the
+isometry of each completion with `ℝ` or `ℂ`. -/
+noncomputable def InfiniteAdeleRing.continuousAddEquivMixedSpace :
+    InfiniteAdeleRing K ≃ₜ+ mixedEmbedding.mixedSpace K :=
   let isom : InfiniteAdeleRing K ≃ₜ mixedEmbedding.mixedSpace K :=
     (Homeomorph.piEquivPiSubtypeProd (fun v : InfinitePlace K ↦ v.IsReal)
         (fun v ↦ v.Completion)).trans
@@ -77,7 +79,7 @@ noncomputable def InfiniteAdeleRing.homeomorphMixedSpace :
       isom.symm x = (InfiniteAdeleRing.ringEquiv_mixedSpace K).symm x := by
     apply isom.injective
     rw [isom.apply_symm_apply, h, RingEquiv.apply_symm_apply]
-  { toEquiv := (InfiniteAdeleRing.ringEquiv_mixedSpace K).toEquiv
+  { toAddEquiv := (InfiniteAdeleRing.ringEquiv_mixedSpace K).toAddEquiv
     continuous_toFun := isom.continuous.congr h
     continuous_invFun := isom.symm.continuous.congr hsymm }
 
@@ -95,37 +97,37 @@ theorem InfiniteAdeleRing.add_apply (x y : InfiniteAdeleRing K) (w : InfinitePla
   rfl
 
 @[simp]
-theorem InfiniteAdeleRing.homeomorphMixedSpace_apply
+theorem InfiniteAdeleRing.continuousAddEquivMixedSpace_apply
     (x : InfiniteAdeleRing K) :
-    InfiniteAdeleRing.homeomorphMixedSpace K x =
+    InfiniteAdeleRing.continuousAddEquivMixedSpace K x =
       InfiniteAdeleRing.ringEquiv_mixedSpace K x :=
   by
-    rw [InfiniteAdeleRing.homeomorphMixedSpace]
+    rw [InfiniteAdeleRing.continuousAddEquivMixedSpace]
     rfl
 
 @[simp]
-theorem InfiniteAdeleRing.coe_homeomorphMixedSpace :
-    ⇑(InfiniteAdeleRing.homeomorphMixedSpace K) =
+theorem InfiniteAdeleRing.coe_continuousAddEquivMixedSpace :
+    ⇑(InfiniteAdeleRing.continuousAddEquivMixedSpace K) =
       ⇑(InfiniteAdeleRing.ringEquiv_mixedSpace K) :=
   by
-    rw [InfiniteAdeleRing.homeomorphMixedSpace]
+    rw [InfiniteAdeleRing.continuousAddEquivMixedSpace]
     rfl
 
 @[simp]
-theorem InfiniteAdeleRing.homeomorphMixedSpace_symm_apply
+theorem InfiniteAdeleRing.continuousAddEquivMixedSpace_symm_apply
     (x : mixedEmbedding.mixedSpace K) :
-    (InfiniteAdeleRing.homeomorphMixedSpace K).symm x =
+    (InfiniteAdeleRing.continuousAddEquivMixedSpace K).symm x =
       (InfiniteAdeleRing.ringEquiv_mixedSpace K).symm x :=
   by
-    rw [InfiniteAdeleRing.homeomorphMixedSpace]
+    rw [InfiniteAdeleRing.continuousAddEquivMixedSpace]
     rfl
 
 @[simp]
-theorem InfiniteAdeleRing.coe_homeomorphMixedSpace_symm :
-    ⇑(InfiniteAdeleRing.homeomorphMixedSpace K).symm =
+theorem InfiniteAdeleRing.coe_continuousAddEquivMixedSpace_symm :
+    ⇑(InfiniteAdeleRing.continuousAddEquivMixedSpace K).symm =
       ⇑(InfiniteAdeleRing.ringEquiv_mixedSpace K).symm :=
   by
-    rw [InfiniteAdeleRing.homeomorphMixedSpace]
+    rw [InfiniteAdeleRing.continuousAddEquivMixedSpace]
     rfl
 
 /-- The standard ring equivalence from the infinite adele ring to the Minkowski mixed space is
@@ -133,16 +135,16 @@ continuous. -/
 @[continuity, fun_prop]
 theorem InfiniteAdeleRing.continuous_ringEquiv_mixedSpace :
     Continuous (InfiniteAdeleRing.ringEquiv_mixedSpace K) :=
-  (InfiniteAdeleRing.homeomorphMixedSpace K).continuous.congr fun x ↦
-    InfiniteAdeleRing.homeomorphMixedSpace_apply K x
+  (InfiniteAdeleRing.continuousAddEquivMixedSpace K).continuous.congr fun x ↦
+    InfiniteAdeleRing.continuousAddEquivMixedSpace_apply K x
 
 /-- The inverse of the standard ring equivalence from the Minkowski mixed space to the infinite
 adele ring is continuous. -/
 @[continuity, fun_prop]
 theorem InfiniteAdeleRing.continuous_ringEquiv_mixedSpace_symm :
     Continuous (InfiniteAdeleRing.ringEquiv_mixedSpace K).symm :=
-  (InfiniteAdeleRing.homeomorphMixedSpace K).symm.continuous.congr fun x ↦
-    InfiniteAdeleRing.homeomorphMixedSpace_symm_apply K x
+  (InfiniteAdeleRing.continuousAddEquivMixedSpace K).symm.continuous.congr fun x ↦
+    InfiniteAdeleRing.continuousAddEquivMixedSpace_symm_apply K x
 
 /-- The norm of the Minkowski mixed-space image of an infinite adele is its norm: the product over
 the infinite places of the local absolute values, squared at the complex places.

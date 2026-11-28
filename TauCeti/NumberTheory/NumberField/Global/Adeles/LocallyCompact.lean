@@ -49,7 +49,7 @@ instance AdeleRing.instLocallyCompactSpace : LocallyCompactSpace (AdeleRing R K)
 finite-dimensional mixed space. -/
 instance InfiniteAdeleRing.instSecondCountableTopology :
     SecondCountableTopology (InfiniteAdeleRing K) :=
-  (InfiniteAdeleRing.homeomorphMixedSpace K).secondCountableTopology
+  (InfiniteAdeleRing.continuousAddEquivMixedSpace K).toHomeomorph.secondCountableTopology
 
 /-- The adele ring of a number field is second countable when its Dedekind domain has countably
 many places. -/
