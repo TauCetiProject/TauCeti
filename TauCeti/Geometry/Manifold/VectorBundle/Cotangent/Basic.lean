@@ -524,6 +524,19 @@ theorem comp_mfderiv_symm_bijective (hc : c.MDifferentiable I 𝓘(𝕜, G)) {x 
     exact congr_arg η congr($(hc.comp_symm_deriv (c.map_source hx)) u)
 
 /-- For an open partial homeomorphism `c` into a normed space, differentiable with its inverse, and
+`y` in its target, the covector `η ∘ Dc(c⁻¹ y)` at `c⁻¹ y` pulled back from a covector `η` of `G` is
+read in `c` as `η`: pulling back along `c` inverts the reading of covectors in `c`
+(`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective`). -/
+theorem comp_mfderiv_comp_mfderiv_symm (hc : c.MDifferentiable I 𝓘(𝕜, G)) {y : G}
+    (hy : y ∈ c.target) (η : G →L[𝕜] 𝕜) :
+    (η ∘L mfderiv I 𝓘(𝕜, G) c (c.symm y)) ∘L mfderiv 𝓘(𝕜, G) I c.symm (c (c.symm y)) = η := by
+  ext u
+  have h := congr($(hc.comp_symm_deriv hy) u)
+  -- `c (c⁻¹ y) = y`, which identifies the two tangent spaces of `G`.
+  rw [c.right_inv hy] at *
+  exact congr_arg η h
+
+/-- For an open partial homeomorphism `c` into a normed space, differentiable with its inverse, and
 `x` in its source, a covector `ξ` at `x` is read in `c` as the zero covector `ξ ∘ D(c⁻¹)(c x)`
 exactly when it is zero. -/
 theorem comp_mfderiv_symm_eq_zero_iff (hc : c.MDifferentiable I 𝓘(𝕜, G)) {x : M}

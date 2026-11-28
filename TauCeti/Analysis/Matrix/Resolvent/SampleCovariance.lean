@@ -131,6 +131,7 @@ theorem card_mul_one_add_mul_resolventTransform_spectralMeasure_sampleCovariance
   have hp : (Fintype.card p : ℂ) ≠ 0 := by simp
   rw [resolventTransform_spectralMeasure _ _
       ((isHermitian_sampleCovariance X).notMem_spectrum_of_im_ne_zero hz),
+    normalizedResolventTrace_def,
     ← card_add_mul_trace_inv_sampleCovariance_sub_smul_one X hz]
   field_simp
 

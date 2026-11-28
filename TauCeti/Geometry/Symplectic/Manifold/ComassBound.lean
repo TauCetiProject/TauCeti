@@ -10,7 +10,9 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.AreaWindow
 public import TauCeti.Geometry.Symplectic.Manifold.CurvePairing
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+import TauCeti.Geometry.Manifold.Morse.CWModel
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Geometry.Manifold.SmoothSingular.DeRham.PrescribedPeriods
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 import TauCeti.Geometry.Symplectic.Manifold.Flat
 import TauCeti.Topology.VectorBundle.Riemannian.Comparison
@@ -61,13 +63,24 @@ For finitely many closed two-forms, the curve classes are therefore comass bound
 (`TauCeti.SmoothTwoForm.Tames.exists_isComassBounded_setOf_isCurveClass`), with the symplectic
 area as area. The finiteness consequences of `TauCeti.IsComassBounded` need two further inputs:
 that `H₂(X; ℤ)` is finitely generated, and that the periods of these forms have injective real
-extension. Given both, only finitely many curve classes have area at most `R`, torsion parts
-included (`TauCeti.IsComassBounded.finite_setOf_area_le`), their areas are bounded below by a
-positive constant, and the total multiplicity of a cycle of curve classes in a given class is
-bounded. Both inputs hold for compact `X`. The integral homology of a compact boundaryless
-manifold is finitely generated (`TauCeti.finite_singularHomology_int_of_isManifold`), and by
-de Rham's theorem the periods of closed two-forms whose classes span `H²(X; ℝ)` have injective
-real extension; the second is not available here.
+extension. Both hold on a compact boundaryless `X`. The integral homology of a compact boundaryless
+manifold is finitely generated (`TauCeti.addGroup_fg_singularHomology_of_isManifold`). By de Rham's
+theorem on periods every homomorphism `H₂(X; ℤ) → ℝ` is the period map of a closed two-form
+(`TauCeti.exists_closedFormHomologyPeriod_eq`), so finitely many closed two-forms have periods with
+injective real extension (`TauCeti.exists_finset_liftBaseChange_pi_injective`).
+
+**Gromov's finiteness.** Hence, on a compact boundaryless `X` with `σ` taming `J`:
+
+* only finitely many curve classes have area at most `R`, torsion parts included
+  (`TauCeti.SmoothTwoForm.Tames.finite_setOf_isCurveClass_closedFormHomologyPeriod_le`);
+* the areas of the curve classes are bounded below by a positive constant
+  (`TauCeti.SmoothTwoForm.Tames.exists_pos_forall_le_closedFormHomologyPeriod`);
+* the total multiplicity of a positive cycle of curve classes in a class `A` is bounded in terms
+  of `A` (`TauCeti.SmoothTwoForm.Tames.exists_forall_sum_le`), and only finitely many such cycles
+  represent `A` (`TauCeti.SmoothTwoForm.Tames.finite_setOf_sum_smul_eq`).
+
+These are the class-level finiteness statements of the bounded-window compactness of Taubes's
+count of pseudoholomorphic curves, for the actual curves of a compact manifold.
 
 ## References
 
@@ -273,6 +286,71 @@ theorem exists_isComassBounded_setOf_isCurveClass {ι : Type*} [Fintype ι] {σ 
   rw [AddMonoidHom.coe_toIntLinearMap, AddMonoidHom.pi_apply, Real.norm_eq_abs]
   have hKi : K i ≤ ∑ i, K i := Finset.single_le_sum (fun i _ ↦ hK i) (Finset.mem_univ i)
   exact (hζ i A hA).trans (mul_le_mul_of_nonneg_right hKi harea)
+
+/-! ### Finitely many curve classes below an area bound -/
+
+variable [I.Boundaryless] {σ : closedForms I X 2}
+
+/-- **Gromov's finiteness of curve classes.** On a compact boundaryless manifold, let the closed
+two-form `σ` tame `J`. Only finitely many curve classes `A` of `J` have symplectic area
+`⟨[σ], A⟩ ≤ R`, torsion classes included. -/
+theorem finite_setOf_isCurveClass_closedFormHomologyPeriod_le (hσ : SmoothTwoForm.Tames σ.val J)
+    (R : ℝ) : {A | J.IsCurveClass I' A ∧ closedFormHomologyPeriod σ A ≤ R}.Finite := by
+  have : AddGroup.FG (((singularChains ℤ).obj (TopCat.of X)).homology 2) :=
+    addGroup_fg_singularHomology_of_isManifold I 2
+  -- The periods of the closed forms span, and each is bounded on such classes.
+  choose K hK hθ using fun θ ↦ hσ.exists_abs_closedFormHomologyPeriod_le_mul I' θ
+  refine (finite_setOf_forall_abs_apply_le (fun θ : closedForms I X 2 ↦ closedFormHomologyPeriod θ)
+    span_range_closedFormHomologyPeriod fun θ ↦ K θ * R).subset fun A ⟨hA, hAR⟩ θ ↦ ?_
+  exact (hθ θ A hA).trans (mul_le_mul_of_nonneg_left hAR (hK θ))
+
+/-- The consequences of comass boundedness for the curve classes of `J`, for finitely many closed
+two-forms whose periods have injective real extension: positive areas bounded below, bounded
+component counts and finitely many cycles in each class. -/
+private theorem isComassBounded_consequences (hσ : SmoothTwoForm.Tames σ.val J) :
+    (∃ ε > 0, ∀ A, J.IsCurveClass I' A → ε ≤ closedFormHomologyPeriod σ A) ∧
+    (∀ A : ((singularChains ℤ).obj (TopCat.of X)).homology 2,
+      ∃ N : ℕ, ∀ m : ((singularChains ℤ).obj (TopCat.of X)).homology 2 →₀ ℕ,
+        ↑m.support ⊆ {A | J.IsCurveClass I' A} → (m.sum fun C k ↦ k • C) = A →
+          (m.sum fun _ k ↦ k) ≤ N) ∧
+    (∀ A : ((singularChains ℤ).obj (TopCat.of X)).homology 2,
+      {m : ((singularChains ℤ).obj (TopCat.of X)).homology 2 →₀ ℕ |
+        ↑m.support ⊆ {A | J.IsCurveClass I' A} ∧ (m.sum fun C k ↦ k • C) = A}.Finite) := by
+  have : AddGroup.FG (((singularChains ℤ).obj (TopCat.of X)).homology 2) :=
+    addGroup_fg_singularHomology_of_isManifold I 2
+  obtain ⟨s, hs⟩ := exists_finset_liftBaseChange_pi_injective
+    (fun θ : closedForms I X 2 ↦ closedFormHomologyPeriod θ) span_range_closedFormHomologyPeriod
+  obtain ⟨K, hK⟩ := hσ.exists_isComassBounded_setOf_isCurveClass I'
+    fun θ : s ↦ (θ : closedForms I X 2)
+  exact ⟨hK.exists_pos_forall_le_area hs, hK.exists_forall_sum_le hs,
+    hK.finite_setOf_sum_smul_eq hs⟩
+
+/-- **Uniform positive area of curves.** On a compact boundaryless manifold, let the closed
+two-form `σ` tame `J`. The symplectic areas `⟨[σ], A⟩` of the curve classes of `J` are bounded
+below by a positive constant. -/
+theorem exists_pos_forall_le_closedFormHomologyPeriod (hσ : SmoothTwoForm.Tames σ.val J) :
+    ∃ ε > 0, ∀ A, J.IsCurveClass I' A → ε ≤ closedFormHomologyPeriod σ A :=
+  (isComassBounded_consequences I' hσ).1
+
+/-- **Bounded component count.** On a compact boundaryless manifold, let the closed two-form `σ`
+tame `J`. The total multiplicity of a positive cycle `∑ m C • C = A` of curve classes of `J` is
+bounded in terms of the class `A`. -/
+theorem exists_forall_sum_le (hσ : SmoothTwoForm.Tames σ.val J)
+    (A : ((singularChains ℤ).obj (TopCat.of X)).homology 2) :
+    ∃ N : ℕ, ∀ m : ((singularChains ℤ).obj (TopCat.of X)).homology 2 →₀ ℕ,
+      ↑m.support ⊆ {A | J.IsCurveClass I' A} → (m.sum fun C k ↦ k • C) = A →
+        (m.sum fun _ k ↦ k) ≤ N :=
+  (isComassBounded_consequences I' hσ).2.1 A
+
+/-- **Finitely many cycles of curve classes in a class.** On a compact boundaryless manifold, let
+the closed two-form `σ` tame `J`. Only finitely many multiplicity functions supported on the curve
+classes of `J` represent a given class `A`: a positive cycle `∑ m C • C = A` of curve classes has
+one of finitely many lists of component classes and multiplicities. -/
+theorem finite_setOf_sum_smul_eq (hσ : SmoothTwoForm.Tames σ.val J)
+    (A : ((singularChains ℤ).obj (TopCat.of X)).homology 2) :
+    {m : ((singularChains ℤ).obj (TopCat.of X)).homology 2 →₀ ℕ |
+      ↑m.support ⊆ {A | J.IsCurveClass I' A} ∧ (m.sum fun C k ↦ k • C) = A}.Finite :=
+  (isComassBounded_consequences I' hσ).2.2 A
 
 end SmoothTwoForm.Tames
 

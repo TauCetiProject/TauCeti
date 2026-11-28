@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Data.Nat.Factorial.Basic
 public import Mathlib.Data.Nat.Choose.Basic
+import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Data.Nat.Factorial.BigOperators
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Zify
 
 /-!
 # Nonvanishing factorials and falling-factorial bounds
@@ -29,7 +32,9 @@ number of triples of `n` elements with the number of injective ones;
 `Nat.pow_dvd_factorial_of_mul_le`, the elementary divisibility `p ^ m ∣ j!` whenever `p * m ≤ j`
 and `0 < p`;
 `Nat.factorial_add_mul_factorial_add_le`, `(s + j)! * (s + j)! ≤ (2 * s + j)! * j !`, which bounds
-products of factorials in double hypergeometric series; and
+products of factorials in double hypergeometric series;
+`Nat.ascFactorial_two_mul_le_pow_add`, `n (n + 1) ⋯ (n + 2k - 1) ≤ (n + k) ^ (2k)`, the inequality
+of arithmetic and geometric means for a rising factorial of even length; and
 `Nat.factorial_div_mul_factorial_div_dvd`, `(i / d)! * (j / d)! ∣ ((i + j) / d)!`.
 -/
 
@@ -113,6 +118,25 @@ theorem factorial_add_mul_factorial_add_le (s j : ℕ) :
         Nat.mul_le_mul_right _ (Nat.mul_le_mul_right _ (Nat.mul_le_mul_right _ e₃))
     _ = (s + j + s).choose s * (s + j)! * s ! * j ! := by ac_rfl
     _ = (s + j + s)! * j ! := by rw [e₂]
+
+/-- A rising factorial of even length is at most the power of its middle:
+`n (n + 1) ⋯ (n + 2k - 1) ≤ (n + k) ^ (2k)`, an instance of the inequality of arithmetic and
+geometric means. -/
+theorem ascFactorial_two_mul_le_pow_add (n k : ℕ) : n.ascFactorial (2 * k) ≤ (n + k) ^ (2 * k) := by
+  rw [← Nat.pow_le_pow_iff_left two_ne_zero, ascFactorial_eq_prod_range]
+  calc (∏ j ∈ Finset.range (2 * k), (n + j)) ^ 2
+      = ∏ j ∈ Finset.range (2 * k), (n + j) * (n + (2 * k - 1 - j)) := by
+        rw [Finset.prod_mul_distrib, Finset.prod_range_reflect (fun j ↦ n + j), sq]
+    _ ≤ ∏ _j ∈ Finset.range (2 * k), (n + k) ^ 2 := by
+        refine Finset.prod_le_prod fun j hj ↦ ?_
+        have hj := Finset.mem_range.1 hj
+        have h : ((n : ℤ) + (2 * k - 1 - j : ℕ)) + (n + j) = 2 * (n + k) - 1 := by
+          push_cast [Nat.sub_sub, Nat.cast_sub (by omega : 1 + j ≤ 2 * k)]
+          ring
+        zify
+        nlinarith [sq_nonneg (((n : ℤ) + (2 * k - 1 - j : ℕ)) - (n + j))]
+    _ = ((n + k) ^ (2 * k)) ^ 2 := by
+        rw [Finset.prod_const, Finset.card_range, ← pow_mul, ← pow_mul, mul_comm]
 
 /-- From `n = 6` on, the cube of `n` is at most twice the third falling factorial:
 `n ^ 3 ≤ 2 * (n)₃`. -/

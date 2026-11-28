@@ -51,6 +51,8 @@ idempotent, while that of `(X - C r) ^ 2` has coordinate `0` in order `1`.
 
 * `Polynomial.coeff_taylor_eq_sum`: the coefficients of the Taylor expansion as finite sums of
   binomial multiples of the coefficients of `p` times powers of `r`.
+* `Polynomial.coeff_taylor_eq_coeff_of_natDegree_le`: for `p.natDegree ≤ d`, the degree-`d`
+  coefficient of `taylor r p` equals `p.coeff d`.
 * `Polynomial.taylor_mul_X_sub_C`, `Polynomial.taylor_mul_X_sub_C_pow`,
   `Polynomial.taylor_X_sub_C_pow`: the Taylor expansion at `r` of `p * (X - C r) ^ m` is
   `taylor r p * X ^ m`, and that of `(X - C r) ^ m` is `X ^ m`, over any ring.
@@ -116,6 +118,14 @@ theorem coeff_taylor_eq_sum {R : Type*} [Semiring R] {p : R[X]} {N : ℕ} (hN : 
     ((Nat.sub_le _ _).trans_lt hN))]
   refine Finset.sum_congr rfl fun k _ => ?_
   rw [hasseDeriv_coeff, nsmul_eq_mul, mul_assoc]
+
+/-- If `p.natDegree ≤ d`, the degree-`d` coefficient of `taylor r p` equals `p.coeff d`. -/
+theorem coeff_taylor_eq_coeff_of_natDegree_le {R : Type*} [Semiring R] {p : R[X]} {d : ℕ}
+    (hp : p.natDegree ≤ d) (r : R) : (taylor r p).coeff d = p.coeff d := by
+  rcases hp.eq_or_lt with rfl | hlt
+  · rw [coeff_taylor_natDegree, coeff_natDegree]
+  · rw [coeff_eq_zero_of_natDegree_lt ((natDegree_taylor _ _).trans_lt hlt),
+      coeff_eq_zero_of_natDegree_lt hlt]
 
 /-- Translating `p * (X - r)` by `r` gives `taylor r p * X`. Unlike `Polynomial.taylor_mul`, this
 does not need commutativity: the coefficients of `X - C r` commute with `X + C r`. -/

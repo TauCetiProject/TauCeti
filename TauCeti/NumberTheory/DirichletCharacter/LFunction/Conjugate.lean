@@ -155,6 +155,12 @@ theorem zeroFreeRightOf_LFunction_inv_iff {σ : ℝ} :
 
 variable {χ}
 
+/-- For a character equal to its inverse, the logarithmic derivative of its continued L-function
+commutes with conjugation; in particular it is real at real arguments. -/
+theorem logDeriv_LFunction_conj_of_inv_eq (hχ : χ⁻¹ = χ) (s : ℂ) :
+    logDeriv χ.LFunction (conj s) = conj (logDeriv χ.LFunction s) := by
+  simpa only [hχ] using χ.logDeriv_LFunction_inv_conj s
+
 /-- A quadratic character's continued L-function commutes with conjugation away from its
 possible pole at `1`. -/
 @[simp]

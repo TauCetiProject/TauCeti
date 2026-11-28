@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Annihilator
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 import TauCeti.Analysis.LocallyConvex.Polar
+import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Nonvanishing.Dual
 
 /-!
 # The annihilator bundle is the dual of the quotient bundle
@@ -42,6 +44,14 @@ annihilator line with the dual of the contact line `L = TM ⧸ ξ`, the line in 
 takes its values. Under it a local contact form defining `ξ`, a nowhere-zero local section of `ξ⁰`,
 becomes a nowhere-zero local section of `L*`.
 
+For a hyperplane field `D`, both bundles are lines, and a line bundle is trivial exactly when its
+dual is (`TauCeti.exists_trivialization_baseSet_eq_univ_iff_dual`). So the annihilator line `D⁰` is
+trivial exactly when the quotient line `TM ⧸ D` is
+(`TauCeti.IsContMDiffDistribution.exists_trivialization_annihilatorSpace_iff_quotient`). As `D⁰` is
+trivial exactly when `D` is the kernel of a global one-form vanishing nowhere, this identifies the
+global defining forms of `D` with the trivializations of `TM ⧸ D`; for a contact structure, the
+global contact forms exist exactly when the contact line is trivial.
+
 The smoothness proof tests the fibre maps on a local frame `[V_i]` of `TM ⧸ D`, whose members lift
 locally to `C^n` vector fields `V_i` (`TauCeti.IsContMDiffDistribution.exists_contMDiffOn_mk_eq`):
 the evaluations are the fibre-linear functions `α ↦ α(V_i)` on `D⁰`, which are `C^n` near the
@@ -64,6 +74,8 @@ point (`TauCeti.CotangentBundle.contMDiffAt_annihilatorPairing`).
 * `TauCeti.IsContMDiffDistribution.annihilatorDualQuotientDiffeomorph_apply`,
   `TauCeti.IsContMDiffDistribution.annihilatorDualQuotientDiffeomorph_symm_apply`: the bundle
   isomorphism and its inverse on total spaces.
+* `TauCeti.IsContMDiffDistribution.exists_trivialization_annihilatorSpace_iff_quotient`: for a
+  hyperplane field, the annihilator line is trivial exactly when the quotient line is.
 
 ## References
 
@@ -243,6 +255,53 @@ theorem annihilatorDualQuotientDiffeomorph_symm_apply
   letI := (hD.quotientPrebundle hr).toFiberBundle
   letI := (hD.quotientPrebundle hr).toVectorBundle
   bundleDiffeomorph_symm_apply _ _ p
+
+/-! ### Triviality of the quotient line of a hyperplane field -/
+
+include hD in
+/-- **The annihilator line of a hyperplane field is trivial exactly when its quotient line is.**
+For a `C^n` hyperplane field `D`, of rank `k` on a manifold of dimension `k + 1`, the annihilator
+line bundle `D⁰ ⊆ T*M` has a `C^n` linear trivialization over all of `M` exactly when the quotient
+line bundle `TM ⧸ D` has one. Indeed `D⁰` is the dual of `TM ⧸ D`
+(`TauCeti.IsContMDiffDistribution.annihilatorDualQuotientDiffeomorph`), and a line bundle is
+trivial exactly when its dual is (`TauCeti.exists_trivialization_baseSet_eq_univ_iff_dual`). -/
+theorem exists_trivialization_annihilatorSpace_iff_quotient (hk : k + 1 = finrank 𝕜 E) :
+    letI := hD.annihilatorFiberBundle hk
+    letI := hD.annihilatorVectorBundle hk
+    letI := (hD.quotientPrebundle hk).totalSpaceTopology
+    letI := (hD.quotientPrebundle hk).toFiberBundle
+    letI := (hD.quotientPrebundle hk).toVectorBundle
+    (∃ (e : Trivialization (Fin 1 → 𝕜) (π (Fin 1 → 𝕜) fun x ↦ annihilatorSpace I D x))
+        (_ : e.IsLinear 𝕜),
+        e.toOpenPartialHomeomorph ∈ (contMDiffFiberwiseLinear M (Fin 1 → 𝕜) I n).maximalAtlas
+          (TotalSpace (Fin 1 → 𝕜) fun x ↦ annihilatorSpace I D x) ∧ e.baseSet = univ) ↔
+      ∃ (e : Trivialization (Fin 1 → 𝕜) (π (Fin 1 → 𝕜) fun x ↦ TangentSpace I x ⧸ D x))
+        (_ : e.IsLinear 𝕜),
+        e.toOpenPartialHomeomorph ∈ (contMDiffFiberwiseLinear M (Fin 1 → 𝕜) I n).maximalAtlas
+          (TotalSpace (Fin 1 → 𝕜) fun x ↦ TangentSpace I x ⧸ D x) ∧ e.baseSet = univ := by
+  let := hD.annihilatorFiberBundle hk
+  let := hD.annihilatorVectorBundle hk
+  have := hD.annihilatorContMDiffVectorBundle hk
+  let := (hD.quotientPrebundle hk).totalSpaceTopology
+  let := (hD.quotientPrebundle hk).toFiberBundle
+  let := (hD.quotientPrebundle hk).toVectorBundle
+  have := hD.contMDiffVectorBundle_quotientPrebundle hk
+  have h1 : finrank 𝕜 (Fin 1 → 𝕜) = 1 := finrank_fin_fun 𝕜
+  rw [ContMDiffVectorBundle.exists_trivialization_baseSet_eq_univ_iff_exists_ne_zero
+      (V := fun x ↦ annihilatorSpace I D x) h1,
+    ContMDiffVectorBundle.exists_trivialization_baseSet_eq_univ_iff_exists_ne_zero
+      (V := fun x ↦ TangentSpace I x ⧸ D x) h1,
+    exists_contMDiff_section_ne_zero_iff_dual (V := fun x ↦ TangentSpace I x ⧸ D x) h1]
+  -- Transport nowhere-vanishing sections along the bundle isomorphism `D⁰ ≅ (TM ⧸ D)*`.
+  let Φ := hD.annihilatorDualQuotientDiffeomorph hk
+  constructor
+  · rintro ⟨σ, hσ, hσ₀⟩
+    refine ⟨fun x ↦ annihilatorSpaceEquivDualQuotient I D x (σ x), ?_, fun x ↦ by simpa using hσ₀ x⟩
+    simpa [Function.comp_def, Φ] using Φ.contMDiff.comp hσ
+  · rintro ⟨f, hf, hf₀⟩
+    refine ⟨fun x ↦ (annihilatorSpaceEquivDualQuotient I D x).symm (f x), ?_,
+      fun x ↦ by simpa using hf₀ x⟩
+    simpa [Function.comp_def, Φ] using Φ.symm.contMDiff.comp hf
 
 end IsContMDiffDistribution
 

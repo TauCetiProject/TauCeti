@@ -84,7 +84,7 @@ def complexProdTensorComplexVolumeEigenspaceEquiv :
           (ρ₂ (complexVolume Q₂ o₂)).eigenspace (-μ)) :=
   (LinearEquiv.ofEq _ _
       (congrArg (fun f ↦ Module.End.eigenspace f μ)
-        (complexProdTensor_complexVolume_of_map_prod hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hm hQ₂ ho))).trans
+        (complexProdTensor_complexVolume_of_map_prod hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hm ho))).trans
     (Module.End.eigenspaceTensorMapEquiv
       (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (complexVolume Q₂ o₂))
       (ρ₁.involutive_complexVolume o₁ hQ₁) (ρ₂.involutive_complexVolume o₂ hQ₂) hμ)

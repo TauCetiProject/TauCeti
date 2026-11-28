@@ -61,6 +61,9 @@ every base change.
   cohomology of its pullback to `X ×_R R'`.
 * `TauCeti.AlgebraicGeometry.exists_finite_projective_complex_cohomology_pullback`: the complex
   `P` above, with the quasi-isomorphism `ψ : P ⟶ Čₒ(U, M)`.
+* `TauCeti.AlgebraicGeometry.exists_finite_projective_complex_cohomology_pullback_of_compactSpace`:
+  such a complex for a quasi-compact scheme with affine diagonal, built from a finite affine open
+  cover.
 
 ## References
 
@@ -214,5 +217,39 @@ theorem exists_finite_projective_complex_cohomology_pullback [LinearOrder ι] [I
   exact ⟨(asIso (HomologicalComplex.homologyMap
     (((ModuleCat.extendScalars (algebraMap R R')).mapHomologicalComplex _).map ψ) n)).toLinearEquiv
       ≪≫ₗ e⟩
+
+
+/-- **A finite projective complex computing the cohomology of every base change**, for a
+quasi-compact scheme. Let `R` be a Noetherian ring, `X` a quasi-compact scheme over `R` with affine
+diagonal and `M` a quasi-coherent sheaf on `X` with stalks flat over `R` and finitely generated
+cohomology. Then there is a complex `P` of finitely generated projective `R`-modules,
+concentrated in nonnegative degrees, with `Hⁿ(P) ≅ Hⁿ(X, M)`, such that for every base change
+`Y = X ×_R R'` given as a pullback square, `Hⁿ(Y, g^* M)` is the `n`-th cohomology of `R' ⊗_R P`.
+It is `exists_finite_projective_complex_cohomology_pullback` for an ordered finite affine open
+cover, whose finite intersections are affine as `X` has affine diagonal. -/
+theorem exists_finite_projective_complex_cohomology_pullback_of_compactSpace [IsNoetherianRing R]
+    [CompactSpace X] [IsAffineHom (pullback.diagonal (terminal.from X))] [M.IsQuasicoherent]
+    (hM : ∀ x : X, Module.Flat R (M.presheaf.stalk x))
+    (hfin : ∀ n, Module.Finite R (Cohomology M n)) :
+    ∃ P : CochainComplex (ModuleCat.{u} R) ℤ, P.IsStrictlyGE 0 ∧
+      (∀ i, Module.Finite R (P.X i) ∧ Module.Projective R (P.X i)) ∧
+      (∀ n : ℕ, Nonempty (P.homology n ≃ₗ[R] Cohomology M n)) ∧
+      ∀ (R' : Type u) [CommRing R'] [Algebra R R'] (Y : Scheme.{u}) [Y.Over (Spec (.of R'))]
+        (g : Y ⟶ X), IsPullback g (Y ↘ Spec (.of R')) (X ↘ Spec (.of R))
+          (Spec.map (CommRingCat.ofHom (algebraMap R R'))) → ∀ n : ℕ,
+        Nonempty ((((ModuleCat.extendScalars.{u, u, u} (algebraMap R R')).mapHomologicalComplex
+          _).obj P).homology n ≃ₗ[R'] Cohomology ((Scheme.Modules.pullback g).obj M) n) := by
+  -- A finite affine open cover has affine finite intersections, as `X` has affine diagonal.
+  let 𝒰 := X.affineCover.finiteSubcover
+  let : LinearOrder 𝒰.I₀ := LinearOrder.lift' _ (Finite.equivFin 𝒰.I₀).injective
+  have hU (s : Finset 𝒰.I₀) (hs : s.Nonempty) :
+      IsAffineOpen (s.inf fun i : 𝒰.I₀ ↦ (𝒰.f i).opensRange) :=
+    IsAffineOpen.finset_inf s hs fun i _ ↦ isAffineOpen_opensRange (𝒰.f i)
+  obtain ⟨P, ψ, hP₀, -, hP, hψ, -, hPY⟩ := exists_finite_projective_complex_cohomology_pullback
+    (fun i : 𝒰.I₀ ↦ (𝒰.f i).opensRange) M hU 𝒰.iSup_opensRange hM hfin
+  refine ⟨P, hP₀, hP, fun n ↦ ?_, hPY⟩
+  obtain ⟨e⟩ := nonempty_linearEquiv_homology_orderedCechComplex (R := R)
+    (fun i : 𝒰.I₀ ↦ (𝒰.f i).opensRange) M hU 𝒰.iSup_opensRange n
+  exact ⟨(asIso (HomologicalComplex.homologyMap ψ n)).toLinearEquiv ≪≫ₗ e⟩
 
 end TauCeti.AlgebraicGeometry

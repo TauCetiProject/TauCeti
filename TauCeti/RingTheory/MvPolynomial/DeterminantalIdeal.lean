@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Supported
 public import Mathlib.GroupTheory.Complement
 public import Mathlib.RingTheory.MvPolynomial.DeterminantalIdeal
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
@@ -21,6 +22,12 @@ the shuffle and exchange Plücker relations. Consequently, `MvPolynomial.determi
 homogeneous, spanned by minors on `OrderEmbedding`s for linearly ordered index types, and every
 sorted minor is monic under `renameEquiv R toLex` for `MonomialOrder.lex` with diagonal leading
 term.
+
+A generic minor is the generic determinant of its size with the variables renamed along its rows
+and columns (`Matrix.mvPolynomialMinor_eq_rename`). So it is nonzero on injective rows and columns
+(`Matrix.mvPolynomialMinor_ne_zero`), it is a polynomial in the variables of its rows and columns
+(`Matrix.mvPolynomialMinor_mem_supported`), and transposing the variables transposes it
+(`Matrix.rename_swap_mvPolynomialMinor`).
 -/
 
 public section
@@ -95,6 +102,47 @@ theorem exists_orderEmbedding_mvPolynomialMinor_eq_units_smul [LinearOrder t] [L
   rw [← hr', ← hc', mvPolynomialMinor_comp_perm_left, mvPolynomialMinor_comp_perm_right, mul_smul]
 
 end Alternating
+
+section Rename
+
+variable {R : Type*} [CommRing R] {m n t : Type*} [Fintype t] [DecidableEq t]
+
+/-- A generic minor is the generic determinant of its size, with the variables renamed along its
+rows and columns. -/
+theorem mvPolynomialMinor_eq_rename (r : t → m) (c : t → n) :
+    mvPolynomialMinor R r c = rename (Prod.map r c) (mvPolynomialX t t R).det := by
+  rw [mvPolynomialMinor_eq_det_submatrix, AlgHom.map_det]
+  congr 1
+  ext i j
+  simp
+
+/-- A generic minor on injective rows and columns is not zero. -/
+theorem mvPolynomialMinor_ne_zero [Nontrivial R] {r : t → m} {c : t → n}
+    (hr : Function.Injective r) (hc : Function.Injective c) : mvPolynomialMinor R r c ≠ 0 := by
+  rw [mvPolynomialMinor_eq_rename]
+  exact (map_ne_zero_iff _ (rename_injective _ (hr.prodMap hc))).2 (det_mvPolynomialX_ne_zero t R)
+
+/-- A generic minor is a polynomial in the variables of its rows and columns. -/
+theorem mvPolynomialMinor_mem_supported (r : t → m) (c : t → n) :
+    mvPolynomialMinor R r c ∈ supported R (Set.range r ×ˢ Set.range c) := by
+  classical
+  rw [mvPolynomialMinor_eq_rename, mem_supported]
+  refine (Finset.coe_subset.2 (vars_rename _ _)).trans fun x hx ↦ ?_
+  obtain ⟨⟨i, j⟩, -, rfl⟩ := Finset.mem_image.1 hx
+  exact ⟨⟨i, rfl⟩, ⟨j, rfl⟩⟩
+
+/-- Renaming the variables `X (i, j)` of the generic matrix as `X (j, i)` carries its minor on the
+rows `r` and the columns `c` to the minor of the transposed generic matrix on the rows `c` and the
+columns `r`. -/
+theorem rename_swap_mvPolynomialMinor (r : t → m) (c : t → n) :
+    rename Prod.swap (mvPolynomialMinor R r c) = mvPolynomialMinor R c r := by
+  rw [mvPolynomialMinor_eq_det_submatrix, mvPolynomialMinor_eq_det_submatrix, AlgHom.map_det,
+    ← det_transpose]
+  congr 1
+  ext i j
+  simp
+
+end Rename
 
 section RenameToLex
 

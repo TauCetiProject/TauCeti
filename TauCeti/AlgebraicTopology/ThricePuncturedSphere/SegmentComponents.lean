@@ -80,6 +80,17 @@ theorem mem_unitSegment {z : ThricePuncturedSphere} :
     z ∈ unitSegment ↔ (z : ℂ).im = 0 ∧ 0 < (z : ℂ).re ∧ (z : ℂ).re < 1 :=
   Complex.mem_openSegment_zero_one
 
+/-- Removing the punctures from the closed segment leaves precisely the open unit segment. -/
+@[simp] theorem preimage_segment_zero_one :
+    ((↑) : ThricePuncturedSphere → ℂ) ⁻¹' segment ℝ 0 1 = unitSegment := by
+  ext z
+  simp [← insert_endpoints_openSegment, unitSegment]
+
+/-- The open unit segment is relatively closed in the thrice-punctured sphere. -/
+theorem isClosed_unitSegment : IsClosed unitSegment := by
+  rw [← preimage_segment_zero_one, ← closure_openSegment]
+  exact isClosed_closure.preimage continuous_subtypeVal
+
 /-- The basepoint `1/2` lies on the segment `(0, 1)`. -/
 theorem basePt_mem_unitSegment : basePt ∈ unitSegment := by
   simp only [mem_unitSegment, coe_basePt]
