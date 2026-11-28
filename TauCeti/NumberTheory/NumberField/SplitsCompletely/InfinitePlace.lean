@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.CMField
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
-public import TauCeti.NumberTheory.NumberField.SplitsCompletely.Basic
+public import TauCeti.NumberTheory.RamificationInertia.Galois
 import TauCeti.NumberTheory.NumberField.ComplexConjugation.CMField
 
 /-!
@@ -32,7 +32,7 @@ open Ideal MulAction
 variable {E : Type*} [Field E] [NumberField E] [IsGalois ℚ E] [IsCMField E] {P : Ideal ℤ}
 
 private theorem chosenPrimeOrbit_bijective (w : InfinitePlace E)
-    (Q : P.primesOver (𝓞 E)) (hP : (P.primesOver (𝓞 E)).ncard = Module.finrank ℚ E)
+    (Q : P.primesOver (𝓞 E)) (hP : (P.primesOver (𝓞 E)).ncard = Nat.card Gal(E/ℚ))
     {S : Set (P.primesOver (𝓞 E))}
     (hS : ∀ R, (IsCMField.complexConj E).restrictScalars ℚ • R ∈ S ↔ R ∉ S) :
     Function.Bijective (fun R : S ↦ (P.galEquivPrimesOver Q hP).symm R.val • w) := by
@@ -83,7 +83,8 @@ noncomputable def equivPrimesOverTransversal (w : InfinitePlace E) (Q : P.primes
     {S : Set (P.primesOver (𝓞 E))}
     (hS : ∀ R, (IsCMField.complexConj E).restrictScalars ℚ • R ∈ S ↔ R ∉ S) :
     InfinitePlace E ≃ S :=
-  (Equiv.ofBijective _ (chosenPrimeOrbit_bijective w Q hP hS)).symm
+  (Equiv.ofBijective _ (chosenPrimeOrbit_bijective w Q
+    (hP.trans (IsGaloisGroup.card_eq_finrank Gal(E/ℚ) ℚ E).symm) hS)).symm
 
 -- Evaluate before simp normalizes the action inside the subtype argument.
 /-- A translate of the finite base prime in the transversal corresponds to the same
@@ -96,7 +97,7 @@ theorem equivPrimesOverTransversal_symm_apply (w : InfinitePlace E) (Q : P.prime
     (g : Gal(E/ℚ)) (hg : g • Q ∈ S) :
     (w.equivPrimesOverTransversal Q hP (S := S) hS).symm ⟨g • Q, hg⟩ = g • w := by
   simp only [equivPrimesOverTransversal, Equiv.symm_symm, Equiv.ofBijective_apply,
-    TauCeti.smul_primesOver_galRestrict_eq, galEquivPrimesOver_symm_apply_smul]
+    TauCeti.smul_primesOver_galRestrict_eq, galEquivPrimesOver_symm_smul]
 
 /-- If the translate of `Q` belongs to the transversal, it labels the corresponding translate
 of the infinite base place. -/

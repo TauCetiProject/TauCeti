@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Group.Action.TransferInstance
 public import Mathlib.NumberTheory.RamificationInertia.Galois
 public import TauCeti.NumberTheory.NumberField.AutomorphismAction
 public import TauCeti.RingTheory.Ideal.PrimesOver
+import TauCeti.GroupTheory.GroupAction.Transitive
 import TauCeti.RingTheory.Unramified.AlgEquiv
 
 /-!
@@ -54,6 +55,8 @@ transitivity.
 * `Ideal.ncard_primesOver_eq_natCard_iff_stabilizer_eq_bot`,
   `Ideal.ncard_primesOver_eq_natCard_iff_forall_stabilizer_eq_bot`: the same count is maximal
   exactly when the decomposition groups above the prime are trivial.
+* `Ideal.galEquivPrimesOver`: evaluating at a prime above a completely split ideal identifies
+  the finite Galois group with the fiber of primes.
 * `Ideal.forall_stabilizer_le_normalCore_iff`: the decomposition groups above a prime all lie in
   a subgroup exactly when they all lie in its normal core.
 * `Ideal.stabilizer_eq_bot_iff_ramificationIdxIn_eq_one_and_inertiaDegIn_eq_one`: a decomposition
@@ -139,6 +142,51 @@ theorem ncard_primesOver_eq_natCard_iff_forall_stabilizer_eq_bot [FaithfulSMul A
     fun h ↦ (ncard_primesOver_eq_natCard_iff_stabilizer_eq_bot G P Q).2 (h Q ⟨‹_›, ‹_›⟩)⟩
 
 end Stabilizer
+
+section Torsor
+
+open MulAction
+
+variable {A B G : Type*} [CommRing A] [CommRing B] [Algebra A B] [Group G] [Finite G]
+  [MulSemiringAction G B] [IsGaloisGroup G A B]
+
+/-- If there are `Nat.card G` primes above `P`, evaluation at `Q` identifies the finite Galois
+group `G` of `B` over `A` with the primes above `P`. -/
+noncomputable def galEquivPrimesOver (P : Ideal A)
+    (Q : P.primesOver B) (hP : (P.primesOver B).ncard = Nat.card G) : G ≃ P.primesOver B := by
+  have : Finite (P.primesOver B) := Finite.of_surjective _ (exists_smul_eq G Q)
+  have hcard : Nat.card G = Nat.card (P.primesOver B) := by
+    rw [Nat.card_coe_set_eq, hP]
+  have h : stabilizer G Q = ⊥ := TauCeti.stabilizer_eq_bot_of_natCard_eq hcard Q
+  exact (QuotientGroup.quotientBot.symm.toEquiv.trans
+    (Subgroup.quotientEquivOfEq h.symm)).trans
+    (TauCeti.quotientStabilizerEquiv G Q)
+
+/-- The Galois torsor bijection evaluates a group element at the chosen prime. -/
+@[simp]
+theorem galEquivPrimesOver_apply (P : Ideal A)
+    (Q : P.primesOver B) (hP : (P.primesOver B).ncard = Nat.card G)
+    (g : G) : P.galEquivPrimesOver Q hP g = g • Q := by
+  have hmk : QuotientGroup.quotientBot.symm.toEquiv g = QuotientGroup.mk g :=
+    QuotientGroup.quotientBot_symm_apply g
+  simp only [galEquivPrimesOver, Equiv.trans_apply, hmk, Subgroup.quotientEquivOfEq_mk,
+    TauCeti.quotientStabilizerEquiv_mk]
+
+/-- The inverse Galois torsor bijection recovers the group element carrying `Q` to `g • Q`. -/
+@[simp]
+theorem galEquivPrimesOver_symm_smul (P : Ideal A)
+    (Q : P.primesOver B) (hP : (P.primesOver B).ncard = Nat.card G)
+    (g : G) : (P.galEquivPrimesOver Q hP).symm (g • Q) = g := by
+  rw [← P.galEquivPrimesOver_apply Q hP, Equiv.symm_apply_apply]
+
+/-- The element assigned to `R` by the inverse torsor bijection carries `Q` to `R`. -/
+@[simp]
+theorem galEquivPrimesOver_symm_apply_smul (P : Ideal A)
+    (Q : P.primesOver B) (hP : (P.primesOver B).ncard = Nat.card G)
+    (R : P.primesOver B) : (P.galEquivPrimesOver Q hP).symm R • Q = R := by
+  simpa only [galEquivPrimesOver_apply] using (P.galEquivPrimesOver Q hP).apply_symm_apply R
+
+end Torsor
 
 section Conjugation
 
