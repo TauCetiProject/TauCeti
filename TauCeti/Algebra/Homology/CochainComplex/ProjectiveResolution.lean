@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.CochainComplexOpposite
 public import Mathlib.Algebra.Homology.Factorizations.CM5a
+public import TauCeti.Algebra.Homology.CochainComplex.Opposite
 
 /-!
 # Projective resolutions of bounded above cochain complexes
@@ -23,10 +23,8 @@ The statement is dual to Mathlib's
 `CochainComplex.Plus.modelCategoryQuillen.exists_quasiIso_injective` for bounded below complexes
 in an abelian category with enough injectives, and it is deduced from it through the equivalence
 `CochainComplex.opEquivalence C` between `(CochainComplex C ℤ)ᵒᵖ` and `CochainComplex Cᵒᵖ ℤ`,
-which reverses the grading. For this we record that a morphism of cochain complexes is a
-quasi-isomorphism exactly when its image under this equivalence is one
-(`CochainComplex.quasiIso_opEquivalence_functor_map_iff`), degree `n` corresponding to degree
-`-n`.
+which reverses the grading and preserves and reflects quasi-isomorphisms
+(`CochainComplex.quasiIso_opEquivalence_map_iff`).
 
 ## References
 
@@ -42,28 +40,6 @@ open CategoryTheory Limits Opposite
 namespace CochainComplex
 
 variable {C : Type*} [Category* C] [Abelian C]
-
-/-- A morphism of cochain complexes is a quasi-isomorphism in degree `-n` exactly when its image
-under `opEquivalence C`, in the opposite category, is a quasi-isomorphism in degree `n`. -/
-@[simp]
-lemma quasiIsoAt_opEquivalence_functor_map_iff {K L : CochainComplex C ℤ} (f : K ⟶ L)
-    (n : ℤ) :
-    QuasiIsoAt ((opEquivalence C).functor.map f.op) n ↔ QuasiIsoAt f (-n) := by
-  rw [← HomologicalComplex.quasiIsoAt_opFunctor_map_iff f (-n),
-    quasiIsoAt_iff' _ (n - 1) n (n + 1) (by simp) (by simp),
-    quasiIsoAt_iff' _ (-(n - 1)) (-n) (-(n + 1))
-      (ComplexShape.prev_eq' _ (by simp; lia)) (ComplexShape.next_eq' _ (by simp))]
-  -- `opEquivalence C` restricts the opposite complex along `n ↦ -n`, so its short complex in
-  -- degree `n` is, by definition, that of the opposite complex in degree `-n`.
-  rfl
-
-/-- A morphism of cochain complexes is a quasi-isomorphism exactly when its image under
-`opEquivalence C`, in the opposite category, is a quasi-isomorphism. -/
-@[simp]
-lemma quasiIso_opEquivalence_functor_map_iff {K L : CochainComplex C ℤ} (f : K ⟶ L) :
-    QuasiIso ((opEquivalence C).functor.map f.op) ↔ QuasiIso f := by
-  simp only [quasiIso_iff, quasiIsoAt_opEquivalence_functor_map_iff]
-  exact ⟨fun h n ↦ by simpa using h (-n), fun h n ↦ h (-n)⟩
 
 /-- In an abelian category with enough projectives, a cochain complex which is strictly bounded
 above by `n` receives a quasi-isomorphism from a cochain complex of projective objects which is
@@ -88,7 +64,7 @@ theorem exists_quasiIso_projective [EnoughProjectives C] (K : CochainComplex C �
   have hX (i : ℤ) : op (P.X i) ≅ L.X (-i) :=
     (P.XIsoOfEq (neg_neg i)).op ≪≫ (HomologicalComplex.eval _ _ (-i)).mapIso φ
   refine ⟨P, π.unop, ?_, fun i ↦ ?_, ?_⟩
-  · rw [← quasiIso_opEquivalence_functor_map_iff, Quiver.Hom.op_unop, hπ]
+  · rw [← quasiIso_opEquivalence_map_iff, Quiver.Hom.op_unop, hπ]
     infer_instance
   · have : Injective (op (P.X i)) := Injective.of_iso (hX i).symm (hL _)
     infer_instance

@@ -12,21 +12,21 @@ public import Mathlib.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.RingTheory.SimpleRing.Matrix
 import Mathlib.Algebra.GroupWithZero.Pi
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+import Mathlib.Analysis.CStarAlgebra.Hom
+import Mathlib.Data.Matrix.Composition
 import Mathlib.LinearAlgebra.Matrix.ConjTranspose
+import Mathlib.LinearAlgebra.Matrix.DotProduct
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Module
 import Mathlib.Topology.Instances.Matrix
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.CStarAlgebra.Compression
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-import Mathlib.Analysis.CStarAlgebra.Hom
-import Mathlib.LinearAlgebra.Matrix.DotProduct
-import Mathlib.Data.Matrix.Composition
 import TauCeti.LinearAlgebra.Matrix.PartialIsometry
 public import TauCeti.LinearAlgebra.Matrix.MurrayVonNeumann
 import TauCeti.LinearAlgebra.Trace.Idempotent
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Module
 
 /-!
 # Rectangular matrix operations and positivity by quadratic forms
@@ -356,7 +356,7 @@ lemma ofMatrix_symm_sub [Sub A] (M N : CStarMatrix n n A) :
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects scalar multiplication. -/
 @[simp]
-lemma ofMatrix_symm_smul [SMul R A] (r : R) (M : CStarMatrix n n A) :
+lemma ofMatrix_symm_smul {m : Type*} [SMul R A] (r : R) (M : CStarMatrix m n A) :
     ofMatrix.symm (r • M) = r • ofMatrix.symm M := (rfl)
 
 /-- Reading the entrywise nonunital star-algebra homomorphism as an ordinary matrix applies

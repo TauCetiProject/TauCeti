@@ -14,7 +14,7 @@ import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 Let `f : V →ₗ[K] W` exhibit `W` as the scalar extension of `V` from `K` to `F`.
 Given coefficient rings `R → S` acting compatibly on these modules, the extended
-lattice of `L` is the `S`-span of `f '' L` in `W`. When `F` is the fraction field of
+lattice of `L` is the `S`-span of `f '' L` in `W`. When `F` is the total ring of fractions of
 `S`, this construction takes full lattices to full lattices.
 
 An integral basis of `L` gives a basis of the extended lattice whose vectors are
@@ -64,7 +64,7 @@ theorem Module.Basis.baseChangeOfIsFullLattice_apply [L.IsFullLattice K]
 
 end Basis
 
-variable [Field F] [Algebra K F] [Module F W] [IsScalarTower K F W]
+variable [CommRing F] [Algebra K F] [Module F W] [IsScalarTower K F W]
   [Algebra S F] [IsScalarTower S F W] [IsFractionRing S F]
 
 /-- The span over the new coefficient ring of the image of a full lattice is full in
