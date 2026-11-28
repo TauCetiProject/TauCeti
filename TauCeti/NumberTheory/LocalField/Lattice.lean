@@ -9,8 +9,11 @@ public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.Topology.Algebra.Module.Compact
 public import TauCeti.Algebra.Module.Lattice
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
+public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+public import TauCeti.Topology.Algebra.Group.LocallyConstant
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
+import TauCeti.NumberTheory.LocalField.Topology
 
 /-!
 # Lattices over a nonarchimedean local field
@@ -21,7 +24,9 @@ finitely generated and spans `V` over `E` (Mathlib's `Submodule.IsFullLattice E 
 shows that every lattice is a compact open subgroup of `V`, and that its stabilizer `GL(L)` in the
 group `V ≃ₗ[E] V` of linear automorphisms, with the forward-and-inverse topology of
 `TauCeti.Topology.Algebra.Module.GeneralLinearGroup`, is a compact open subgroup. These are the
-topological inputs of the stable-lattice theorem for compact groups acting on `V`.
+topological inputs of the stable-lattice theorem for compact groups acting on `V`. In an
+`𝒪[E]`-basis of `L`, taking matrices identifies this stabilizer with `GL_n(𝒪[E])` as a topological
+group, `n` being the size of the basis.
 
 The stabilizer is Mathlib's `MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V)` for the pointwise
 action on subsets of `V`; it consists of the automorphisms `g` with `g L = L`. It is the group of
@@ -31,19 +36,34 @@ in `L`, and it maps `L` into itself as soon as it maps a finite generating set o
 
 Openness, and the fact that the subspace topology on a lattice is its `𝒪[E]`-module topology,
 only use that `𝒪[E]` is open in `E`, so they are proved for any field with a valuative topology;
-compactness uses that `𝒪[E]` is compact.
+compactness uses that `𝒪[E]` is compact. The identification of the stabilizer with `GL_n` uses
+only the topology of the coefficients, so it is proved for a full lattice over any subring of a
+topological commutative ring.
 
 ## Main results
 
-* `Module.Basis.isOpen_span_range`: the `𝒪[E]`-span of a finite `E`-basis is open.
+* `Module.Basis.coe_span_range`, `Module.Basis.isOpen_span_range`: the `𝒪[E]`-span of a finite
+  `E`-basis is the preimage of `univ.pi fun _ => 𝒪[E]` under `b.equivFun`, and is open.
 * `Submodule.IsFullLattice.isOpen`, `Submodule.IsFullLattice.isClosed`,
   `Submodule.IsFullLattice.isCompact`: a lattice is open, closed and compact.
+* `Submodule.exists_isFullLattice_superset_of_isCompact`,
+  `Submodule.exists_isFullLattice_subset_of_mem_nhds`: every compact subset of `V` lies in a
+  lattice, and every neighbourhood of `0` contains one.
+* `Submodule.exists_isFullLattice_forall_periodic`: a locally constant compactly supported
+  function is invariant under translation by some lattice.
+* `Submodule.exists_eq_sum_indicator_sub`: a compactly supported function with a lattice `M` of
+  periods is a finite sum of multiples of indicators of cosets of `M`.
 * `Submodule.IsFullLattice.isModuleTopology`: the subspace topology on a lattice is its
   `𝒪[E]`-module topology.
 * `Submodule.IsFullLattice.isOpen_setOf_mapsTo`, `Submodule.IsFullLattice.isCompact_setOf_mapsTo`:
   the endomorphisms mapping a lattice into itself form a compact open subset of `Module.End E V`.
 * `Submodule.IsFullLattice.isOpen_stabilizer`, `Submodule.IsFullLattice.isCompact_stabilizer`: the
   stabilizer of a lattice in `V ≃ₗ[E] V` is open and compact.
+* `Submodule.IsFullLattice.normalizedAbsoluteValue_det_eq_one_of_mem_stabilizer`: every element of
+  the stabilizer `GL(L)` has determinant of normalized absolute value `1`.
+* `Module.Basis.stabilizerContinuousMulEquivGL`: in an `R`-basis of a full lattice over a subring
+  `R` of a topological ring, such as `𝒪[E]`, the stabilizer of the lattice is `GL_n(R)` as a
+  topological group.
 
 ## References
 
@@ -57,6 +77,22 @@ open scoped Pointwise
 
 namespace Submodule
 
+section Algebraic
+
+variable {E V : Type*} [Field E] [ValuativeRel E]
+  [AddCommGroup V] [Module E V] [Module 𝒪[E] V] [IsScalarTower 𝒪[E] E V]
+
+/-- The `𝒪[E]`-span of a finite `E`-basis `b` of `V` is the set of vectors whose `b`-coordinates
+all lie in the valuation ring `𝒪[E]`. -/
+theorem _root_.Module.Basis.coe_span_range {ι : Type*} [Finite ι] (b : Basis ι E V) :
+    (span 𝒪[E] (range b) : Set V) = b.equivFun ⁻¹' univ.pi fun _ => (𝒪[E] : Set E) := by
+  ext x
+  simp only [SetLike.mem_coe, Basis.mem_span_iff_repr_mem, mem_preimage, mem_univ_pi,
+    Basis.equivFun_apply]
+  exact forall_congr' fun _ => ⟨fun ⟨a, h⟩ => h ▸ a.property, fun h => ⟨⟨_, h⟩, rfl⟩⟩
+
+end Algebraic
+
 section ValuativeTopology
 
 variable {E V : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E] [IsValuativeTopology E]
@@ -67,15 +103,9 @@ variable {E V : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E] [IsValuat
 coordinates all lie in the open subring `𝒪[E]`. -/
 theorem _root_.Module.Basis.isOpen_span_range {ι : Type*} [Finite ι] (b : Basis ι E V) :
     IsOpen (span 𝒪[E] (range b) : Set V) := by
-  have h : (span 𝒪[E] (range b) : Set V) =
-      TauCeti.ModuleTopology.equivFunHomeomorph b ⁻¹' univ.pi fun _ => (𝒪[E] : Set E) := by
-    ext x
-    simp only [SetLike.mem_coe, Basis.mem_span_iff_repr_mem, mem_preimage, mem_univ_pi,
-      TauCeti.ModuleTopology.equivFunHomeomorph_apply, Basis.equivFun_apply]
-    exact forall_congr' fun i => ⟨fun ⟨a, h⟩ => h ▸ a.property, fun h => ⟨⟨_, h⟩, rfl⟩⟩
-  rw [h]
+  rw [b.coe_span_range]
   exact (isOpen_set_pi finite_univ fun _ _ => Valuation.isOpen_integer).preimage
-    (TauCeti.ModuleTopology.equivFunHomeomorph b).continuous
+    (IsModuleTopology.continuous_of_linearMap b.equivFun.toLinearMap)
 
 variable (L : Submodule 𝒪[E] V) [IsFullLattice E L]
 
@@ -92,6 +122,23 @@ theorem IsFullLattice.isOpen : IsOpen (L : Set V) := by
 theorem IsFullLattice.isClosed : IsClosed (L : Set V) := by
   have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
   exact AddSubgroup.isClosed_of_isOpen L.toAddSubgroup (IsFullLattice.isOpen L)
+
+omit L [IsFullLattice E L] in
+/-- **Every compact set lies in a lattice.** -/
+theorem exists_isFullLattice_superset_of_isCompact [FiniteDimensional E V] {C : Set V}
+    (hC : IsCompact C) : ∃ L : Submodule 𝒪[E] V, L.IsFullLattice E ∧ C ⊆ L := by
+  have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
+  -- Finitely many translates `c + L₀` of the lattice `L₀` spanned by a basis cover `C`, and `C`
+  -- lies in the lattice spanned by `L₀` and the centres `c`.
+  let b := Module.finBasis E V
+  obtain ⟨T, -, hCT⟩ := hC.elim_nhds_subcover (fun c ↦ (· - c) ⁻¹' (span 𝒪[E] (range b) : Set V))
+    fun c _ ↦ (b.isOpen_span_range.preimage (continuous_sub_right c)).mem_nhds (by simp)
+  refine ⟨span 𝒪[E] (range b ∪ T), isFullLattice_span ((finite_range b).union T.finite_toSet)
+    (eq_top_iff.2 (b.span_eq ▸ span_mono subset_union_left)), fun x hx ↦ ?_⟩
+  obtain ⟨c, hcT, hxc⟩ := mem_iUnion₂.1 (hCT hx)
+  -- `x = c + (x - c)` with `c` a centre and `x - c` in the span of the basis.
+  rw [← sub_add_cancel x c]
+  exact add_mem (span_mono subset_union_left hxc) (subset_span (subset_union_right hcT))
 
 /-- **A lattice carries the module topology.** The subspace topology on a lattice `L ⊆ V` is its
 `𝒪[E]`-module topology. -/
@@ -161,7 +208,113 @@ theorem IsFullLattice.isOpen_stabilizer :
   exact ((IsFullLattice.isOpen_setOf_mapsTo L).preimage hc.1).inter
     ((IsFullLattice.isOpen_setOf_mapsTo L).preimage hc.2)
 
+omit L [IsFullLattice E L] in
+/-- **Coset expansion.** A compactly supported function with a lattice `M` of periods is a finite
+sum of the indicators of cosets `a + M`, each multiplied by the value `f a`; the sum runs over one
+representative `a` of each coset meeting the support. -/
+theorem exists_eq_sum_indicator_sub (M : Submodule 𝒪[E] V) [M.IsFullLattice E]
+    {X : Type*} [AddCommMonoid X] {f : V → X} (hper : ∀ u ∈ M, Function.Periodic f u)
+    (hfc : HasCompactSupport f) :
+    ∃ s : Finset V, ∀ x, f x = ∑ a ∈ s, (M : Set V).indicator (fun _ ↦ f a) (x - a) := by
+  classical
+  have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
+  obtain ⟨T, -, hT⟩ := hfc.isCompact.elim_nhds_subcover (fun c ↦ (· - c) ⁻¹' (M : Set V))
+    fun c _ ↦ ((IsFullLattice.isOpen M).preimage (continuous_sub_right c)).mem_nhds
+      (by simp)
+  -- One representative for each coset of `M` meeting the support.
+  let q : V → V ⧸ M.toAddSubgroup := QuotientAddGroup.mk
+  have hq {a b : V} : q a = q b ↔ a - b ∈ M := by
+    rw [QuotientAddGroup.eq_iff_sub_mem, Submodule.mem_toAddSubgroup]
+  refine ⟨(T.image q).image Quotient.out, fun x ↦ ?_⟩
+  by_cases hx : ∃ a ∈ (T.image q).image Quotient.out, x - a ∈ M
+  · obtain ⟨a, ha, hxa⟩ := hx
+    rw [Finset.sum_eq_single a (fun b hb hba ↦ indicator_of_notMem (fun hxb ↦ hba ?_) _)
+      (absurd ha), indicator_of_mem hxa]
+    · simpa using hper _ hxa a
+    -- Two representatives in the same coset are equal.
+    obtain ⟨u, -, rfl⟩ := Finset.mem_image.1 ha
+    obtain ⟨u', -, rfl⟩ := Finset.mem_image.1 hb
+    refine congrArg Quotient.out ((QuotientAddGroup.out_eq' u').symm.trans
+      ((hq.2 ?_).trans (QuotientAddGroup.out_eq' u)))
+    simpa using sub_mem hxa hxb
+  · push Not at hx
+    rw [Finset.sum_eq_zero fun a ha ↦ indicator_of_notMem (hx a ha) _]
+    by_contra hfx
+    obtain ⟨c, hcT, hxc⟩ := mem_iUnion₂.1 (hT (subset_tsupport f hfx))
+    refine hx (q c).out (Finset.mem_image_of_mem _ (Finset.mem_image_of_mem _ hcT)) ?_
+    exact hq.1 ((hq.2 hxc).trans (QuotientAddGroup.out_eq' (q c)).symm)
+
 end ValuativeTopology
+
+section Matrix
+
+variable {E V : Type*} [CommRing E] [TopologicalSpace E] [IsTopologicalSemiring E]
+  [AddCommGroup V] [Module E V] {R : Subring E} [Module R V] [IsScalarTower R E V]
+  {L : Submodule R V} [IsFullLattice E L] {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- **The stabilizer of a lattice is `GL_n` of the coefficients as a topological group.** For a
+subring `R` of a topological commutative ring `E` and an `R`-basis `b` of a full lattice `L ⊆ V`,
+the isomorphism `b.stabilizerMulEquivGL E` from the stabilizer of `L` in `V ≃ₗ[E] V` to
+`GL ι R`, sending an automorphism to its matrix in `b`, is a homeomorphism for the subspace
+topology on the stabilizer and the unit topology on matrices over `R`. For `R = 𝒪[E]` this
+identifies the stabilizer of a lattice over a nonarchimedean local field with `GL_n(𝒪[E])`. -/
+noncomputable def _root_.Module.Basis.stabilizerContinuousMulEquivGL (b : Basis ι R L) :
+    MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V) ≃ₜ* GL ι R where
+  __ := b.stabilizerMulEquivGL E
+  continuous_toFun := by
+    let b' := b.extendOfIsFullLattice E
+    let e := TauCeti.generalLinearContinuousMulEquiv (K := E) (V := V)
+    -- Read in `E`, the matrix of `g` in `b` is the matrix of `g` in the ambient basis `b'`.
+    refine (Topology.IsInducing.subtypeVal.matrix_map.units_map
+      (f := (algebraMap R E).mapMatrix.toMonoidHom)).continuous_iff.mpr ?_
+    refine ((Continuous.units_map (LinearMap.toMatrixAlgEquiv b').toMonoidHom
+      (IsModuleTopology.continuous_of_linearMap (LinearMap.toMatrix b' b').toLinearMap)).comp
+      ((map_continuous e.symm).comp continuous_subtypeVal)).congr fun g =>
+        Units.ext (Matrix.ext fun i j => ?_)
+    -- Entrywise, this is the formula `b.map_stabilizerMulEquivGL_apply` for the matrix of `g`.
+    simpa [b', e, LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply] using
+      congr_fun₂ (b.map_stabilizerMulEquivGL_apply g).symm i j
+  continuous_invFun := by
+    have : ContinuousAdd (Module.End E V) := IsModuleTopology.toContinuousAdd E _
+    let b' := b.extendOfIsFullLattice E
+    let e := TauCeti.generalLinearContinuousMulEquiv (K := E) (V := V)
+    -- The automorphism attached to `u` is the linear map with matrix `u` in the basis `b'`.
+    refine Continuous.subtype_mk (((map_continuous e).comp
+      ((Continuous.units_map (Matrix.toLinAlgEquiv b').toMonoidHom
+        (IsModuleTopology.continuous_of_linearMap (Matrix.toLin b' b').toLinearMap)).comp
+      (Continuous.units_map (algebraMap R E).mapMatrix.toMonoidHom
+        (continuous_id.matrix_map continuous_subtypeVal)))).congr fun u =>
+      LinearEquiv.toLinearMap_injective (LinearMap.ext fun v => ?_)) _
+    -- On each vector, this is the formula `b.stabilizerMulEquivGL_symm_apply` for the automorphism.
+    simpa [b', e, Matrix.toLinAlgEquiv_apply, Matrix.toLin_apply] using
+      congr($(b.stabilizerMulEquivGL_symm_apply (K := E) u) v).symm
+
+/-- The topological isomorphism `b.stabilizerContinuousMulEquivGL` has the matrix isomorphism
+`b.stabilizerMulEquivGL E` as its underlying multiplicative equivalence. -/
+@[simp]
+theorem _root_.Module.Basis.coe_stabilizerContinuousMulEquivGL (b : Basis ι R L) :
+    (b.stabilizerContinuousMulEquivGL :
+      MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V) ≃* GL ι R) = b.stabilizerMulEquivGL E :=
+  (rfl)
+
+/-- Applied to an automorphism, `b.stabilizerContinuousMulEquivGL` is the matrix isomorphism
+`b.stabilizerMulEquivGL E`. -/
+@[simp]
+theorem _root_.Module.Basis.stabilizerContinuousMulEquivGL_apply (b : Basis ι R L)
+    (g : MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V)) :
+    b.stabilizerContinuousMulEquivGL g = b.stabilizerMulEquivGL E g :=
+  (rfl)
+
+/-- The inverse of `b.stabilizerContinuousMulEquivGL` is the inverse of the matrix isomorphism
+`b.stabilizerMulEquivGL E`. -/
+@[simp]
+theorem _root_.Module.Basis.stabilizerContinuousMulEquivGL_symm_apply (b : Basis ι R L)
+    (u : GL ι R) :
+    (b.stabilizerContinuousMulEquivGL (E := E) (V := V)).symm u =
+      (b.stabilizerMulEquivGL E).symm u :=
+  (rfl)
+
+end Matrix
 
 section LocalField
 
@@ -209,19 +362,64 @@ theorem IsFullLattice.isCompact_stabilizer :
       mul_mem' := fun hf hg => hf.comp hg
       one_mem' := mapsTo_id _ }
   let e := TauCeti.generalLinearContinuousMulEquiv (K := E) (V := V)
-  have he (u : LinearMap.GeneralLinearGroup E V) : ((e u : V ≃ₗ[E] V) : Module.End E V) = u := by
-    rw [← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap]
-    exact congrArg (fun φ : LinearMap.GeneralLinearGroup E V ≃* (V ≃ₗ[E] V) =>
-      (φ u : Module.End E V)) TauCeti.coe_generalLinearContinuousMulEquiv
   have h : (MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V) : Set (V ≃ₗ[E] V)) =
       e '' (T.units : Set (LinearMap.GeneralLinearGroup E V)) := by
     ext g
     obtain ⟨u, rfl⟩ := e.surjective g
     rw [SetLike.mem_coe, TauCeti.mem_stabilizer_set_iff_mapsTo, e.injective.mem_set_image,
-      SetLike.mem_coe, Submonoid.mem_units_iff, ← map_inv, ← he u, ← he u⁻¹]
-    simp [T, LinearEquiv.smul_def]
+      SetLike.mem_coe, Submonoid.mem_units_iff, ← map_inv]
+    simp [T, e, LinearEquiv.smul_def, ← TauCeti.coe_generalLinearContinuousMulEquiv_apply]
   rw [h]
   exact (Submonoid.units_isCompact (IsFullLattice.isCompact_setOf_mapsTo L)).image e.continuous
+
+omit [TopologicalSpace V] [IsModuleTopology E V] in
+/-- **Lattice-stabilizer elements have unit determinant.** Any `T ∈ GL(L)` has `|det T|_E = 1`. -/
+theorem IsFullLattice.normalizedAbsoluteValue_det_eq_one_of_mem_stabilizer {T : V ≃ₗ[E] V}
+    (hT : T ∈ MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V)) :
+    TauCeti.normalizedAbsoluteValue E (LinearMap.det (T : V →ₗ[E] V)) = 1 := by
+  have hmap : L.map ((T.restrictScalars 𝒪[E] : V ≃ₗ[𝒪[E]] V) : V →ₗ[𝒪[E]] V) = L := by
+    apply SetLike.coe_injective
+    rw [Submodule.map_coe]
+    simpa [LinearEquiv.smul_def] using Set.image_smul.trans (MulAction.mem_stabilizer_iff.mp hT)
+  let g : L ≃ₗ[𝒪[E]] L := (T.restrictScalars 𝒪[E]).ofSubmodules L L hmap
+  have : Module.Finite 𝒪[E] L := IsLattice.finite E L
+  have : Module.Free 𝒪[E] L := IsLattice.free E L
+  have hdet : LinearMap.det (T : V →ₗ[E] V) =
+      algebraMap 𝒪[E] E (LinearMap.det (g : L →ₗ[𝒪[E]] L)) :=
+    LinearMap.det_eq_algebraMap_det_of_isFullLattice (T : V →ₗ[E] V) (g : L →ₗ[𝒪[E]] L) fun x ↦
+      (T.restrictScalars 𝒪[E]).ofSubmodules_apply hmap x
+  obtain ⟨u, hu⟩ := g.isUnit_det'
+  rw [hdet, ← hu]
+  exact TauCeti.normalizedAbsoluteValue_coe_unit u
+
+omit L [IsFullLattice E L] in
+/-- **Every neighbourhood of `0` contains a lattice.** -/
+theorem exists_isFullLattice_subset_of_mem_nhds [FiniteDimensional E V] {N : Set V}
+    (hN : N ∈ nhds (0 : V)) : ∃ L : Submodule 𝒪[E] V, L.IsFullLattice E ∧ (L : Set V) ⊆ N := by
+  -- Small scalars map the compact lattice `L₀` spanned by a basis into `N` (tube lemma), and
+  -- `a • L₀` is a lattice for `a ≠ 0`.
+  let L₀ := span 𝒪[E] (range (Module.finBasis E V))
+  have hL₀ : L₀.IsFullLattice E :=
+    isFullLattice_span (finite_range _) (Module.finBasis E V).span_eq
+  have hev : ∀ᶠ a in nhds (0 : E), ∀ v ∈ (L₀ : Set V), a • v ∈ N :=
+    (IsFullLattice.isCompact L₀).eventually_forall_of_forall_eventually fun v _ ↦
+      (continuous_smul.tendsto ((0 : E), v)).eventually (by simpa using hN)
+  obtain ⟨a, ha, ha0⟩ := ((hev.filter_mono (nhdsWithin_le_nhds (s := {0}ᶜ))).and
+    (self_mem_nhdsWithin (s := {(0 : E)}ᶜ))).exists
+  refine ⟨Units.mk0 a ha0 • L₀, IsFullLattice.smul E L₀ _, fun x hx ↦ ?_⟩
+  obtain ⟨v, hv, rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).1 hx
+  exact ha v hv
+
+/-- **Uniform local constancy.** A locally constant function with compact support on `V` is
+invariant under translation by some lattice. -/
+theorem exists_isFullLattice_forall_periodic [FiniteDimensional E V] {X : Type*} [Zero X]
+    {f : V → X} (hf : IsLocallyConstant f) (hfc : HasCompactSupport f) :
+    ∃ L : Submodule 𝒪[E] V, L.IsFullLattice E ∧ ∀ u ∈ L, Function.Periodic f u := by
+  have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
+  obtain ⟨L, hL, hLW⟩ := exists_isFullLattice_subset_of_mem_nhds (E := E)
+    ((TauCeti.isOpen_addRightTranslationStabilizer_of_hasCompactSupport hf hfc).mem_nhds
+      (zero_mem _))
+  exact ⟨L, hL, fun u hu ↦ TauCeti.mem_addRightTranslationStabilizer.1 (hLW hu)⟩
 
 end LocalField
 

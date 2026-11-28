@@ -37,7 +37,7 @@ differentiable in both directions induces isomorphisms `J¹Vₓ ≃ J¹Wₓ` of 
   representatives of a bundle morphism and a section.
 * `TauCeti.FirstJetBundle.map`: the first-jet prolongation `J¹Φ : J¹V → J¹W`.
 * `TauCeti.FirstJetBundle.map_jet`: `J¹Φ (j¹s(x)) = j¹(Φ s)(x)` for sections `s` differentiable at
-  `x`.
+  `x`; by `TauCeti.FirstJetBundle.eq_map_of_forall_jet` this characterizes `J¹Φ`.
 * `TauCeti.FirstJetBundle.value_map` and `TauCeti.FirstJetBundle.map_ofDeriv`: `J¹Φ` covers `Φ` on
   values and sends the jet of `L : TₓM → Vₓ` to the jet of `Φₓ ∘ L`.
 * `TauCeti.FirstJetBundle.map_id` and `TauCeti.FirstJetBundle.map_comp`: functoriality.
@@ -46,8 +46,9 @@ differentiable in both directions induces isomorphisms `J¹Vₓ ≃ J¹Wₓ` of 
   in that chart.
 * `TauCeti.FirstJetBundle.mapEquiv`: a vector bundle isomorphism induces isomorphisms of the
   fibres of the first-jet bundles.
-* `TauCeti.FirstJetBundle.contMDiffOn_map`: the prolongation of a `C^(n+1)` bundle morphism is a
-  `C^n` section of `Hom(J¹V, J¹W)`.
+* `TauCeti.FirstJetBundle.contMDiffAt_map`, `TauCeti.FirstJetBundle.contMDiffOn_map` and
+  `TauCeti.FirstJetBundle.contMDiff_map`: the prolongation of a `C^(n+1)` bundle morphism (at a
+  point, on an open set, or everywhere) is a `C^n` section of `Hom(J¹V, J¹W)` there.
 * `TauCeti.FirstJetBundle.map_trivial`: for trivial bundles over a model space,
   `J¹φ (v, A) = (φ x v, φ x ∘ A + dφ(x)(·) v)`.
 
@@ -257,6 +258,21 @@ theorem map_jet {Φ : ∀ y, V y →L[𝕜] W y} {s : ∀ y, V y} {x : M}
   · rw [map_snd, jet_snd, jet_snd, fderivWithin_localRep_apply hΦ hs hV hW, jet_fst,
       localRep_extChartAt I F s hx]
 
+/-- **The prolongation is characterized by naturality of jet extension.** A continuous linear map
+of first jets at `x` that sends the first jet of every section `C^1` at `x` to the first jet of its
+image under `Φ` is the prolongation `J¹Φ`. -/
+theorem eq_map_of_forall_jet {Φ : ∀ y, V y →L[𝕜] W y} {x : M}
+    (hΦ : MDifferentiableAt I (I.prod 𝓘(𝕜, F →L[𝕜] G))
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] W y) y (Φ y)) x)
+    (T : FirstJetBundle I F V x →L[𝕜] FirstJetBundle I G W x)
+    (hT : ∀ s : ∀ y, V y,
+      ContMDiffAt I (I.prod 𝓘(𝕜, F)) 1 (fun y ↦ TotalSpace.mk' F y (s y)) x →
+        T (jet I F s x) = jet I G (fun y ↦ Φ y (s y)) x) :
+    T = map I F G Φ x := by
+  refine ContinuousLinearMap.ext fun j ↦ ?_
+  obtain ⟨s, hs, rfl⟩ := exists_contMDiffAt_jet_eq (n := 1) I F x j
+  rw [hT s hs, map_jet hΦ (hs.mdifferentiableAt one_ne_zero)]
+
 /-- **Change of chart for the prolongation.** In the first-jet chart at `i`, the prolongation of
 a bundle morphism `Φ` differentiable at `y` is the first-jet transformation of the local
 representative `φ` of `Φ` in that chart: `(v, A) ↦ (φ(z) v, φ(z) ∘ A + dφ(z)(·) v)`. -/
@@ -415,6 +431,51 @@ theorem inCoordinates_map {Φ : ∀ y, V y →L[𝕜] W y} {x₀ y : M}
 end
 
 /-- **The prolongation of a `C^(n+1)` bundle morphism is a `C^n` bundle morphism** of first-jet
+bundles: if `Φ` is a `C^(n+1)` section of `Hom(V, W)` at `x₀`, then `J¹Φ` is a `C^n` section of
+`Hom(J¹V, J¹W)` at `x₀`. -/
+theorem contMDiffAt_map {n : ℕ∞ω} [IsManifold I (n + 1) M] [ContMDiffVectorBundle (n + 1) F V I]
+    [ContMDiffVectorBundle (n + 1) G W I] {Φ : ∀ y, V y →L[𝕜] W y} {x₀ : M}
+    (hΦ : ContMDiffAt I (I.prod 𝓘(𝕜, F →L[𝕜] G)) (n + 1)
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] W y) y (Φ y)) x₀) :
+    haveI : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
+    haveI : ContMDiffVectorBundle 1 F V I := .of_le (n := n + 1) le_add_self
+    haveI : ContMDiffVectorBundle 1 G W I := .of_le (n := n + 1) le_add_self
+    ContMDiffAt I (I.prod 𝓘(𝕜, (F × (E →L[𝕜] F)) →L[𝕜] G × (E →L[𝕜] G))) n
+      (fun y ↦ TotalSpace.mk' ((F × (E →L[𝕜] F)) →L[𝕜] G × (E →L[𝕜] G))
+        (E := fun y ↦ FirstJetBundle I F V y →L[𝕜] FirstJetBundle I G W y) y
+        (map I F G Φ y)) x₀ := by
+  have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
+  have : ContMDiffVectorBundle 1 F V I := .of_le (n := n + 1) le_add_self
+  have : ContMDiffVectorBundle 1 G W I := .of_le (n := n + 1) le_add_self
+  have hV := mem_baseSet_self (H := H) F V x₀
+  have hW := mem_baseSet_self (H := H) G W x₀
+  have hx₀ : x₀ ∈ (extChartAt I x₀).source := mem_extChartAt_source x₀
+  -- `Φ` is `C^1`, hence differentiable, on a neighbourhood `u` of `x₀`.
+  obtain ⟨u, hu, hΦu⟩ :=
+    (contMDiffAt_iff_contMDiffOn_nhds (n := 1) (by simp)).1 (hΦ.of_le le_add_self)
+  refine (contMDiffAt_hom_bundle _).2 ⟨contMDiffAt_id, ?_⟩
+  -- In the chart at `x₀`, the prolongation is the first-jet transformation of the local
+  -- representative `φ` of `Φ` and its derivative, which depends `C^n` on the chart coordinate.
+  have hφ := contDiffWithinAt_localRep I (F →L[𝕜] G) hΦ
+    (mem_baseSet_hom hV ((mem_baseSet_iff _ _).1 hW).1)
+  have hQ := (hφ.of_le le_self_add).firstJetPullback (hφ.fderivWithin_right I.uniqueDiffOn le_rfl
+    (extChartAt_target_subset_range x₀ ((extChartAt I x₀).map_source hx₀)))
+    (contDiffWithinAt_const (c := ContinuousLinearMap.id 𝕜 E))
+  have hQ' : ContMDiffAt I 𝓘(𝕜, (F × (E →L[𝕜] F)) →L[𝕜] G × (E →L[𝕜] G)) n
+      (fun y ↦ ContinuousLinearMap.firstJetPullback
+        (localRep I (F →L[𝕜] G) Φ x₀ (extChartAt I x₀ y))
+        (fderivWithin 𝕜 (localRep I (F →L[𝕜] G) Φ x₀) (range I) (extChartAt I x₀ y))
+        (ContinuousLinearMap.id 𝕜 E)) x₀ := by
+    rw [← contMDiffWithinAt_univ]
+    exact (contMDiffWithinAt_iff_contDiffWithinAt.2 hQ).comp x₀
+      contMDiffAt_extChartAt.contMDiffWithinAt fun y _ ↦ by
+        rw [extChartAt_coe]; exact mem_range_self _
+  refine hQ'.congr_of_eventuallyEq ?_
+  filter_upwards [eventually_eventually_nhds.2 hu, (isOpen_baseSet F V x₀).mem_nhds hV,
+    (isOpen_baseSet G W x₀).mem_nhds hW] with y hyu hyV hyW
+  exact inCoordinates_map ((hΦu.contMDiffAt hyu).mdifferentiableAt (by simp)) hyV hyW
+
+/-- **The prolongation of a `C^(n+1)` bundle morphism is a `C^n` bundle morphism** of first-jet
 bundles: if `Φ` is a `C^(n+1)` section of `Hom(V, W)` on an open set `U`, then `J¹Φ` is a `C^n`
 section of `Hom(J¹V, J¹W)` on `U`. -/
 theorem contMDiffOn_map {n : ℕ∞ω} [IsManifold I (n + 1) M] [ContMDiffVectorBundle (n + 1) F V I]
@@ -427,41 +488,24 @@ theorem contMDiffOn_map {n : ℕ∞ω} [IsManifold I (n + 1) M] [ContMDiffVector
     ContMDiffOn I (I.prod 𝓘(𝕜, (F × (E →L[𝕜] F)) →L[𝕜] G × (E →L[𝕜] G))) n
       (fun y ↦ TotalSpace.mk' ((F × (E →L[𝕜] F)) →L[𝕜] G × (E →L[𝕜] G))
         (E := fun y ↦ FirstJetBundle I F V y →L[𝕜] FirstJetBundle I G W y) y
-        (map I F G Φ y)) U := by
-  have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
-  have : IsManifold I n M := .of_le (n := n + 1) le_self_add
-  have : ContMDiffVectorBundle 1 F V I := .of_le (n := n + 1) le_add_self
-  have : ContMDiffVectorBundle 1 G W I := .of_le (n := n + 1) le_add_self
-  intro x₀ hx₀
-  refine ContMDiffAt.contMDiffWithinAt ((contMDiffAt_hom_bundle _).2 ⟨contMDiffAt_id, ?_⟩)
-  -- The set of chart coordinates where the local representative of `Φ` at `x₀` is `C^(n+1)`.
-  set T := (extChartAt I x₀).target ∩ (extChartAt I x₀).symm ⁻¹'
-    (U ∩ (baseSet (H := H) F V x₀ ∩ baseSet (H := H) G W x₀))
-  have hTr : T ⊆ range I := fun z hz ↦ extChartAt_target_subset_range x₀ hz.1
-  have hT : ∀ z ∈ T, ContDiffWithinAt 𝕜 (n + 1) (localRep I (F →L[𝕜] G) Φ x₀) (range I) z := by
-    rintro z ⟨hz, hzU, hzV, hzW⟩
-    rw [← (extChartAt I x₀).right_inv hz]
-    exact contDiffWithinAt_localRep I (F →L[𝕜] G) ((hΦ _ hzU).contMDiffAt (hU.mem_nhds hzU))
-      (mem_baseSet_hom hzV ((mem_baseSet_iff _ _).1 hzW).1)
-  -- In the chart at `x₀`, the prolongation is the first-jet transformation of the local
-  -- representative, which depends `C^n` on the chart coordinate.
-  have hΨ : ContDiffOn 𝕜 n (fun z ↦ ContinuousLinearMap.firstJetPullback
-      (localRep I (F →L[𝕜] G) Φ x₀ z) (fderivWithin 𝕜 (localRep I (F →L[𝕜] G) Φ x₀) (range I) z)
-      (ContinuousLinearMap.id 𝕜 E)) T :=
-    ContDiffOn.firstJetPullback (fun z hz ↦ ((hT z hz).mono hTr).of_le le_self_add)
-      (fun z hz ↦ ((hT z hz).fderivWithin_right I.uniqueDiffOn le_rfl (hTr hz)).mono hTr)
-      contDiffOn_const
-  set N := U ∩ (baseSet (H := H) F V x₀ ∩ baseSet (H := H) G W x₀)
-  have hN : N ∈ 𝓝 x₀ := (hU.inter ((isOpen_baseSet F V x₀).inter
-    (isOpen_baseSet G W x₀))).mem_nhds ⟨hx₀, mem_baseSet_self F V x₀, mem_baseSet_self G W x₀⟩
-  have hmaps : MapsTo (extChartAt I x₀) N T := fun y hy ↦ by
-    have hy' := mem_extChartAt_source_of_mem_baseSet I hy.2.1
-    exact ⟨(extChartAt I x₀).map_source hy', by rwa [mem_preimage, (extChartAt I x₀).left_inv hy']⟩
-  refine (((contMDiffOn_iff_contDiffOn.2 hΨ).comp (contMDiffOn_extChartAt.mono fun y (hy : y ∈ N) ↦
-    ((mem_baseSet_iff _ _).1 hy.2.1).2) hmaps).contMDiffAt hN).congr_of_eventuallyEq ?_
-  filter_upwards [hN] with y hy
-  exact inCoordinates_map (((hΦ y hy.1).contMDiffAt (hU.mem_nhds hy.1)).mdifferentiableAt
-    (by simp)) hy.2.1 hy.2.2
+        (map I F G Φ y)) U := fun _ hx ↦
+  (contMDiffAt_map (hΦ.contMDiffAt (hU.mem_nhds hx))).contMDiffWithinAt
+
+/-- **The prolongation of a `C^(n+1)` bundle morphism is a `C^n` bundle morphism** of first-jet
+bundles: if `Φ` is a `C^(n+1)` section of `Hom(V, W)`, then `J¹Φ` is a `C^n` section of
+`Hom(J¹V, J¹W)`. -/
+theorem contMDiff_map {n : ℕ∞ω} [IsManifold I (n + 1) M] [ContMDiffVectorBundle (n + 1) F V I]
+    [ContMDiffVectorBundle (n + 1) G W I] {Φ : ∀ y, V y →L[𝕜] W y}
+    (hΦ : ContMDiff I (I.prod 𝓘(𝕜, F →L[𝕜] G)) (n + 1)
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] W y) y (Φ y))) :
+    haveI : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
+    haveI : ContMDiffVectorBundle 1 F V I := .of_le (n := n + 1) le_add_self
+    haveI : ContMDiffVectorBundle 1 G W I := .of_le (n := n + 1) le_add_self
+    ContMDiff I (I.prod 𝓘(𝕜, (F × (E →L[𝕜] F)) →L[𝕜] G × (E →L[𝕜] G))) n
+      fun y ↦ TotalSpace.mk' ((F × (E →L[𝕜] F)) →L[𝕜] G × (E →L[𝕜] G))
+        (E := fun y ↦ FirstJetBundle I F V y →L[𝕜] FirstJetBundle I G W y) y
+        (map I F G Φ y) :=
+  fun x₀ ↦ contMDiffAt_map (hΦ x₀)
 
 /-! ### Trivial bundles -/
 

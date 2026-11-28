@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Valuation.Integral
+public import Mathlib.RingTheory.Valuation.ValuationSubring
 
 /-!
 # Rings of integers of a valuation are integrally closed in the ambient ring
@@ -29,6 +30,9 @@ subring of `R` becomes a bound on the whole integral closure of that subring in 
 * `Valuation.Integers.isIntegrallyClosedIn`: a ring of integers `O` of `v` is integrally closed
   in `R`.
 * `Valuation.integer.isIntegrallyClosedIn`: the instance for `v.integer`.
+* `Valuation.isIntegral_algebraMap_iff_le_one`: for a valuation `v` of a field `F` and an
+  `F`-algebra `E`, the image of `a ∈ F` in `E` is integral over the valuation ring of `v` exactly
+  when `v a ≤ 1`.
 
 -/
 
@@ -54,6 +58,13 @@ in `R`. -/
 instance integer.isIntegrallyClosedIn (v : Valuation R Γ₀) :
     IsIntegrallyClosedIn v.integer R :=
   (integer.integers v).isIntegrallyClosedIn
+
+/-- For a valuation `v` of a field `F` and a nontrivial `F`-algebra `E`, the image in `E` of an
+element `a` of `F` is integral over the valuation ring of `v` exactly when `v a ≤ 1`. -/
+theorem isIntegral_algebraMap_iff_le_one {F : Type*} [Field F] (v : Valuation F Γ₀)
+    {E : Type*} [Ring E] [Nontrivial E] [Algebra F E] {a : F} :
+    IsIntegral v.valuationSubring (algebraMap F E a) ↔ v a ≤ 1 := by
+  rw [isIntegral_algebraMap_iff, (valuationSubring.integers v).isIntegral_iff_v_le_one]
 
 end Valuation
 

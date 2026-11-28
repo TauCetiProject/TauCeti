@@ -22,6 +22,10 @@ blocks `y` and `z` permutes the arguments by a block swap, which has `b * c` inv
 Koszul sign rules for reordering blocks of vectors in a determinant, as in the multiplicativity of
 the torsion of chain complexes.
 
+Exchanging the two blocks of a concatenation `(x, y)` of families of lengths `a` and `b` is a
+block swap with `a * b` inversions, so `f (y, x) = (-1) ^ (a * b) • f (x, y)`
+(`AlternatingMap.map_append_comm`).
+
 Similarly, multiplying the last block `y` of a concatenation `(x, y)` of families of lengths `a`
 and `b` by a scalar `r` multiplies the value of an alternating map by `r ^ b`
 (`AlternatingMap.map_append_smul`); for `r = -1` this is the sign `(-1) ^ b` of the negated
@@ -91,6 +95,21 @@ theorem map_append_append_comm (f : M [⋀^Fin (a + b + (c + d))]→ₗ[R] N) (x
     induction q using Fin.addCases with
     | left q => induction q using Fin.addCases <;> simp only [Function.comp_apply, h₁, h₂] <;> simp
     | right q => induction q using Fin.addCases <;> simp only [Function.comp_apply, h₃, h₄] <;> simp
+  rw [← hv, f.map_perm, hsign]
+
+/-- Exchanging the two blocks of arguments, of lengths `a` and `b`, of an alternating map
+evaluated on a concatenation of two families multiplies its value by `(-1) ^ (a * b)`. -/
+theorem map_append_comm (f : M [⋀^Fin (a + b)]→ₗ[R] N) (x : Fin a → M) (y : Fin b → M) :
+    f (Fin.append y x ∘ Fin.cast (add_comm a b)) = (-1 : ℤˣ) ^ (a * b) • f (Fin.append x y) := by
+  -- The block swap `σ` of `Fin (a + b)` carries the arguments `(y, x)` to `(x, y)`.
+  set σ : Equiv.Perm (Fin (a + b)) := (finCongr (add_comm b a)).permCongr
+    (finAddFlip.trans (finCongr (add_comm a b)))
+  have hsign : Equiv.Perm.sign σ = (-1) ^ (a * b) := by
+    rw [Equiv.Perm.sign_permCongr, TauCeti.sign_finAddFlip_trans_finCongr, mul_comm]
+  have hv : Fin.append x y ∘ σ = Fin.append y x ∘ Fin.cast (add_comm a b) := by
+    ext k
+    obtain ⟨j, rfl⟩ := (finCongr (add_comm b a)).surjective k
+    induction j using Fin.addCases <;> simp [σ, finAddFlip_apply_castAdd, finAddFlip_apply_natAdd]
   rw [← hv, f.map_perm, hsign]
 
 /-- Reordering six concatenated blocks `(x₁, y₁, x₂, y₂, x₃, y₃)` of lengths `a₁`, `b₁`, `a₂`,

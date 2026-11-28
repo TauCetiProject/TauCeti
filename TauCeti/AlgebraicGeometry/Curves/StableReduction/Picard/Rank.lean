@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Localization
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Basic
+import TauCeti.LinearAlgebra.Matrix.MulVec
+import TauCeti.LinearAlgebra.Span.Primitive
 
 /-!
 # Rank of the Picard group of a numerical type
@@ -25,6 +27,10 @@ kernel rank. Rank-nullity then computes the rank of its cokernel.
 
 * `TauCeti.NumericalType.vecMul_intersection_eq_zero_iff`: an integral row vector is killed by
   the intersection matrix exactly when its cross-products with the multiplicity vector agree.
+* `TauCeti.NumericalType.ker_vecMulLinear_intersection_eq_span`: the kernel of the intersection
+  matrix is spanned over `ℤ` by the primitive multiplicity vector `i ↦ mᵢ / gcd(m)`.
+* `TauCeti.NumericalType.ker_vecMulLinear_intersection_eq_span_of_gcd_eq_one`: when the
+  multiplicities are coprime (`gcd = 1`), the kernel is spanned over `ℤ` by `i ↦ mᵢ`.
 * `TauCeti.NumericalType.finrank_ker_vecMulLinear_intersection`: the kernel of the intersection
   matrix has rank one over `ℤ`.
 * `TauCeti.NumericalType.finrank_pic`: the Picard group has rank one over `ℤ`.
@@ -59,9 +65,8 @@ private lemma intersectionRat_mulVec_multiplicityRat :
   calc
     T.intersectionRat.mulVec (fun j ↦ ((T.multiplicity j : ℤ) : ℚ)) i =
         ((T.intersection.mulVec (fun j ↦ (T.multiplicity j : ℤ)) i : ℤ) : ℚ) := by
-      simpa [intersectionRat, Function.comp_def] using
-        (RingHom.map_mulVec (Int.castRingHom ℚ) T.intersection
-          (fun j ↦ (T.multiplicity j : ℤ)) i).symm
+      simpa [intersectionRat] using
+        congrFun (Matrix.map_intCast_mulVec T.intersection fun j ↦ (T.multiplicity j : ℤ)) i
     _ = 0 := by rw [congrFun T.intersection_mulVec_multiplicity i]; simp
 
 private lemma intersection_mulVec_eq_zero_of_vecMul_eq_zero {v : T.Component → ℤ}
@@ -76,8 +81,7 @@ private lemma intersectionRat_mulVec_eq_zero_of_vecMul_eq_zero {v : T.Component 
   calc
     T.intersectionRat.mulVec (fun j ↦ (v j : ℚ)) i =
         ((T.intersection.mulVec v i : ℤ) : ℚ) := by
-      simpa [intersectionRat, Function.comp_def] using
-        (RingHom.map_mulVec (Int.castRingHom ℚ) T.intersection v i).symm
+      simpa [intersectionRat] using congrFun (Matrix.map_intCast_mulVec T.intersection v) i
     _ = 0 := by rw [congrFun hv' i]; simp
 
 private lemma intersectionRat_offDiagonal_nonneg (i j : T.Component) (hij : i ≠ j) :
@@ -157,6 +161,26 @@ lemma ker_vecMulLinear_intersection_apply_injective (i : T.Component) :
   rw [hi, mul_zero] at hcross
   exact (mul_eq_zero.mp hcross.symm).resolve_left
     (Int.natCast_ne_zero.mpr (T.multiplicity i).ne_zero)
+
+/-- The kernel of `T.intersection.vecMulLinear` is spanned over `ℤ` by the primitive multiplicity
+vector `i ↦ mᵢ / gcd(m)`. -/
+theorem ker_vecMulLinear_intersection_eq_span :
+    LinearMap.ker T.intersection.vecMulLinear =
+      Submodule.span ℤ {fun i ↦
+        (((T.multiplicity i : ℕ) /
+          Finset.univ.gcd (fun j : T.Component ↦ (T.multiplicity j : ℕ)) : ℕ) : ℤ)} := by
+  ext v
+  rw [LinearMap.mem_ker, Matrix.vecMulLinear_apply, T.vecMul_intersection_eq_zero_iff]
+  exact forall_natCast_mul_eq_iff_mem_span_div_gcd (fun i ↦ (T.multiplicity i : ℕ))
+    ⟨Classical.choice inferInstance, (T.multiplicity _).ne_zero⟩ v
+
+/-- When the multiplicities of `T` are coprime (`gcd = 1`), the kernel of
+`T.intersection.vecMulLinear` is spanned over `ℤ` by the multiplicity vector `i ↦ mᵢ`. -/
+theorem ker_vecMulLinear_intersection_eq_span_of_gcd_eq_one
+    (hgcd : Finset.univ.gcd (fun i : T.Component ↦ (T.multiplicity i : ℕ)) = 1) :
+    LinearMap.ker T.intersection.vecMulLinear =
+      Submodule.span ℤ {fun i ↦ (T.multiplicity i : ℤ)} := by
+  simpa only [hgcd, Nat.div_one] using T.ker_vecMulLinear_intersection_eq_span
 
 /-- The kernel of the intersection matrix of a numerical type has rank one over `ℤ`. -/
 theorem finrank_ker_vecMulLinear_intersection :

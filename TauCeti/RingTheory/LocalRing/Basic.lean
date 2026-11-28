@@ -21,9 +21,11 @@ characteristic two the idempotent criterion identifies the zeros of the Artin–
 
 ## Main results
 
+* `TauCeti.DivisionRing.isLocalRing`: a possibly noncommutative division ring is a local ring.
 * `IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing`: an idempotent of a local ring is `0`
   or `1`.
 * `TauCeti.IsLocalRing.isDedekindFiniteMonoid`: a local ring is Dedekind-finite.
+* `TauCeti.IsLocalRing.maximalIdeal_pow_ne_top`: a positive power of the maximal ideal is proper.
 * `TauCeti.isUnit_add_of_isUnit_of_not_isUnit`: adding a nonunit to a unit in a local ring
   yields a unit.
 * `TauCeti.isUnit_sub_of_not_isUnit_of_isUnit`: subtracting a unit from a nonunit in a local ring
@@ -58,6 +60,13 @@ theorem IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing {R : Type*} [Ring R] [
 
 namespace TauCeti
 
+/-- A division ring is a local ring, since every element is either zero or a unit. This
+generalizes Mathlib's instance for fields to noncommutative division rings. -/
+instance (priority := 100) DivisionRing.isLocalRing {D : Type*} [DivisionRing D] :
+    IsLocalRing D :=
+  .of_isUnit_or_isUnit_one_sub_self fun a ↦
+    (em (a = 0)).elim (fun h ↦ .inr (by simp [h])) fun h ↦ .inl (.mk0 a h)
+
 /-- A local ring is Dedekind-finite: a left inverse is also a right inverse. -/
 instance IsLocalRing.isDedekindFiniteMonoid {R : Type*} [Ring R] [IsLocalRing R] :
     IsDedekindFiniteMonoid R where
@@ -67,6 +76,11 @@ instance IsLocalRing.isDedekindFiniteMonoid {R : Type*} [Ring R] [IsLocalRing R]
       rw [IsIdempotentElem, mul_assoc, ← mul_assoc p, hpq, one_mul]
     refine he.eq_zero_or_eq_one_of_isLocalRing.resolve_left fun h0 ↦ one_ne_zero (α := R) ?_
     simpa only [mul_assoc, hpq, mul_one, mul_zero, zero_mul] using congr(p * $h0 * q)
+
+/-- A positive power of the maximal ideal of a commutative local semiring is a proper ideal. -/
+theorem IsLocalRing.maximalIdeal_pow_ne_top {R : Type*} [CommSemiring R] [IsLocalRing R]
+    {n : ℕ} (hn : n ≠ 0) : IsLocalRing.maximalIdeal R ^ n ≠ ⊤ :=
+  ne_top_of_le_ne_top (IsLocalRing.maximalIdeal.isMaximal R).ne_top (Ideal.pow_le_self hn)
 
 /-- In a local ring, adding a nonunit to a unit yields a unit. -/
 theorem isUnit_add_of_isUnit_of_not_isUnit {R : Type*} [Ring R] [IsLocalRing R] {a b : R}

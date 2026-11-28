@@ -30,7 +30,11 @@ In a compact connected commutative Lie group, `exp (ξ)` is a topological genera
 of `ξ` by Kronecker's theorem (`TauCeti.closedZpowers_lieExp_eq_top_iff`), and the cyclic
 subgroup it generates lies in `T_ξ`. Hence **the `ξ` with `T_ξ = G` are dense in `𝔤`**
 (`TauCeti.Lie.dense_setOf_closedOneParameterSubgroup_eq_top`): a generic one-parameter subgroup of
-a torus is dense in it.
+a torus is dense in it. Conversely, every torus `T` of a Lie group is the closed one-parameter
+subgroup of an element of its Lie algebra
+(`TauCeti.Lie.IsTorus.exists_closedOneParameterSubgroup_eq`): a topological generator of `T`
+(`TauCeti.Lie.IsTorus.exists_closedZpowers_eq`) is the exponential of some `μ ∈ Lie(T)`, and then
+`T_μ = T`.
 
 ## Main definitions
 
@@ -47,6 +51,7 @@ a torus is dense in it.
 * `TauCeti.Lie.closedOneParameterSubgroup_smul`: `T_{c ξ} = T_ξ` for `c ≠ 0`.
 * `TauCeti.Lie.dense_setOf_closedOneParameterSubgroup_eq_top`: in a compact connected commutative
   Lie group, the `ξ` with `T_ξ = G` are dense.
+* `TauCeti.Lie.IsTorus.exists_closedOneParameterSubgroup_eq`: every torus is `T_μ` for some `μ`.
 
 ## References
 
@@ -199,5 +204,31 @@ theorem dense_setOf_closedOneParameterSubgroup_eq_top [IsMulCommutative G] [Comp
   exact top_le_iff.1 (hX ▸ closedZpowers_mulInvariantExp_le (e X))
 
 end Kronecker
+
+section Torus
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G] [T2Space G]
+  [IsTopologicalGroup G]
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+attribute [local instance] ContMDiffMul.boundarylessManifold
+
+variable (I) in
+/-- **Every torus is the closed one-parameter subgroup of an element of its Lie algebra.** For a
+torus `T ≤ G` there is `μ ∈ 𝔤` with `T_μ = T`: the closure of `{exp (t μ) | t ∈ ℝ}` is `T`. -/
+theorem IsTorus.exists_closedOneParameterSubgroup_eq {T : Subgroup G} (hT : IsTorus T) :
+    ∃ μ : GroupLieAlgebra I G, closedOneParameterSubgroup μ = T := by
+  -- A topological generator `exp X` of `T`, with `X ∈ Lie(T)`, gives `μ = X` at the identity.
+  obtain ⟨t, htT, ht⟩ := hT.exists_closedZpowers_eq I
+  obtain ⟨X, hX, rfl⟩ := (Set.ext_iff.1 (hT.image_lieExp_lieSubalgebraOfSubgroup (I := I)) t).2 htT
+  rw [lieExp_eq_mulInvariantExp] at ht
+  refine ⟨_, le_antisymm ((closedOneParameterSubgroup_le hT.isClosed).2 fun s ↦ ?_)
+    (ht ▸ closedZpowers_mulInvariantExp_le _)⟩
+  rw [← map_smul, ← lieExp_eq_mulInvariantExp]
+  exact (mem_lieSubalgebraOfSubgroup hT.isClosed).1 hX s
+
+end Torus
 
 end TauCeti.Lie

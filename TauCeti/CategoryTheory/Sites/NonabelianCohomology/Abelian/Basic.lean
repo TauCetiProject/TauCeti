@@ -46,7 +46,8 @@ Two consequences follow.
 ## Main declarations
 
 * `CategoryTheory.abelianSheafToGrpSheaf J`: an abelian sheaf as a sheaf of groups, with
-  `CategoryTheory.abelianSheafToGrpSheafObjEquiv` identifying its sections.
+  `CategoryTheory.abelianSheafToGrpSheafObjEquiv` identifying its sections, and
+  `CategoryTheory.abelianSheafToGrpSheafPushforwardIso` commuting it with pushforward.
 * `CategoryTheory.Sheaf.constIntHomMulEquivSections F`: morphisms from the constant integer
   presheaf to `F` are its global sections.
 * `CategoryTheory.Sheaf.Torsor.exists_hom_smul_eq_of_injective`: the morphism `u : P → I` above.
@@ -68,7 +69,7 @@ public noncomputable section
 open CategoryTheory Opposite
 open FreeAddCommGroup (degree)
 
-universe w v u
+universe w v v' u u'
 
 namespace CategoryTheory
 
@@ -87,6 +88,13 @@ def abelianSheafToGrpSheafObjEquiv (F : Sheaf J AddCommGrpCat.{w}) (U : Cᵒᵖ)
     Multiplicative (F.obj.obj U) ≃* ((abelianSheafToGrpSheaf J).obj F).obj.obj U :=
   MulEquiv.refl _
 
+/-- The sections of the group sheaf underlying an abelian sheaf form a commutative group. -/
+instance abelianSheafToGrpSheafObjCommGroup (F : Sheaf J AddCommGrpCat.{w}) (U : Cᵒᵖ) :
+    CommGroup (((abelianSheafToGrpSheaf J).obj F).obj.obj U) where
+  mul_comm a b := by
+    apply (abelianSheafToGrpSheafObjEquiv F U).symm.injective
+    simp only [map_mul, mul_comm]
+
 /-- The restriction maps of the sheaf of groups underlying an abelian sheaf are those of the
 abelian sheaf. -/
 @[simp]
@@ -104,6 +112,53 @@ lemma abelianSheafToGrpSheaf_map_hom_app_abelianSheafToGrpSheafObjEquiv
     ((abelianSheafToGrpSheaf J).map φ).hom.app U (abelianSheafToGrpSheafObjEquiv F U a) =
       abelianSheafToGrpSheafObjEquiv G U (.ofAdd (φ.hom.app U a.toAdd)) :=
   (rfl)
+
+/-- Forgetting the addition on an abelian sheaf agrees with forgetting its multiplicative
+underlying group sheaf. The comparison sends `a` to its multiplicative presentation. -/
+def abelianSheafToGrpSheafForgetIso (F : Sheaf J AddCommGrpCat.{w}) :
+    (sheafCompose J (forget AddCommGrpCat.{w})).obj F ≅
+      (sheafCompose J (forget GrpCat.{w})).obj ((abelianSheafToGrpSheaf J).obj F) :=
+  (fullyFaithfulSheafToPresheaf J (Type w)).preimageIso
+    (NatIso.ofComponents (fun U ↦
+      ((Multiplicative.ofAdd : _ ≃ Multiplicative _).trans
+        (abelianSheafToGrpSheafObjEquiv F U).toEquiv).toIso)
+      (fun f ↦ by
+        ext a
+        exact (abelianSheafToGrpSheaf_map_abelianSheafToGrpSheafObjEquiv F f (.ofAdd a)).symm))
+
+/-- The forward comparison writes a section multiplicatively. -/
+lemma abelianSheafToGrpSheafForgetIso_hom_app (F : Sheaf J AddCommGrpCat.{w})
+    (U : Cᵒᵖ) (a : F.obj.obj U) :
+    (abelianSheafToGrpSheafForgetIso F).hom.hom.app U a =
+      abelianSheafToGrpSheafObjEquiv F U (.ofAdd a) := (rfl)
+
+/-- The inverse comparison returns the additive section underlying a multiplicative section. -/
+lemma abelianSheafToGrpSheafForgetIso_inv_app (F : Sheaf J AddCommGrpCat.{w})
+    (U : Cᵒᵖ) (a : ((abelianSheafToGrpSheaf J).obj F).obj.obj U) :
+    (abelianSheafToGrpSheafForgetIso F).inv.hom.app U a =
+      ((abelianSheafToGrpSheafObjEquiv F U).symm a).toAdd := (rfl)
+
+section Pushforward
+
+variable {D : Type u'} [Category.{v'} D] (J) (K : GrothendieckTopology D) (F : C ⥤ D)
+  [F.IsContinuous J K]
+
+/-- Viewing abelian sheaves as sheaves of groups commutes with pushforward along a continuous
+functor. Use `abelianSheafToGrpSheafPushforwardIso_hom_app_hom_app` to compute it. -/
+def abelianSheafToGrpSheafPushforwardIso :
+    F.sheafPushforwardContinuous AddCommGrpCat.{w} J K ⋙ abelianSheafToGrpSheaf J ≅
+      abelianSheafToGrpSheaf K ⋙ F.sheafPushforwardContinuous GrpCat.{w} J K :=
+  Iso.refl _
+
+/-- The isomorphism `abelianSheafToGrpSheafPushforwardIso` is the identity on sections. -/
+lemma abelianSheafToGrpSheafPushforwardIso_hom_app_hom_app (G : Sheaf K AddCommGrpCat.{w})
+    (U : Cᵒᵖ) (a : Multiplicative (G.obj.obj (F.op.obj U))) :
+    (((abelianSheafToGrpSheafPushforwardIso J K F).hom.app G).hom.app U).hom
+        (abelianSheafToGrpSheafObjEquiv ((F.sheafPushforwardContinuous _ J K).obj G) U a) =
+      abelianSheafToGrpSheafObjEquiv G (F.op.obj U) a :=
+  (rfl)
+
+end Pushforward
 
 namespace Sheaf
 

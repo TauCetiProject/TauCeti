@@ -26,6 +26,8 @@ nor boundarylessness hypotheses.
 * `Diffeomorph.isLocalDiffeomorphAt_diffeomorph_comp_iff`,
   `Diffeomorph.isLocalDiffeomorphOn_diffeomorph_comp_iff`,
   `Diffeomorph.isLocalDiffeomorph_diffeomorph_comp_iff`: postcomposing with a diffeomorphism.
+* `IsLocalDiffeomorphAt.of_comp_diffeomorph_eq`: transporting `IsLocalDiffeomorphAt` along an
+  intertwining equation `f ∘ e₁ = e₂ ∘ g` with diffeomorphisms `e₁`, `e₂`.
 
 ## References
 
@@ -117,5 +119,19 @@ theorem isLocalDiffeomorphOn_diffeomorph_comp_iff (h : M ≃ₘ^n⟮I, J⟯ N) {
 theorem isLocalDiffeomorph_diffeomorph_comp_iff (h : M ≃ₘ^n⟮I, J⟯ N) {f : P → M} (hm : m ≤ n) :
     IsLocalDiffeomorph K J m (h ∘ f) ↔ IsLocalDiffeomorph K I m f :=
   forall_congr' fun _ ↦ h.isLocalDiffeomorphAt_diffeomorph_comp_iff hm
+
+/-- Transporting `IsLocalDiffeomorphAt` along an intertwining equation `f ∘ e₁ = e₂ ∘ g` with `C^n`
+diffeomorphisms `e₁`, `e₂` (`m ≤ n`). -/
+theorem _root_.IsLocalDiffeomorphAt.of_comp_diffeomorph_eq
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+    {H''' : Type*} [TopologicalSpace H'''] {K' : ModelWithCorners 𝕜 E'' H'''}
+    {Q : Type*} [TopologicalSpace Q] [ChartedSpace H''' Q]
+    {f : N → P} {g : M → Q} {x : M}
+    (hg : IsLocalDiffeomorphAt I K' m g x)
+    (e₁ : M ≃ₘ^n⟮I, J⟯ N) (e₂ : Q ≃ₘ^n⟮K', K⟯ P) (hm : m ≤ n)
+    (hcomp : f ∘ e₁ = e₂ ∘ g) :
+    IsLocalDiffeomorphAt J K m f (e₁ x) :=
+  (e₁.isLocalDiffeomorphAt_comp_diffeomorph_iff hm).1
+    (hcomp ▸ (e₂.isLocalDiffeomorphAt_diffeomorph_comp_iff hm).2 hg)
 
 end Diffeomorph

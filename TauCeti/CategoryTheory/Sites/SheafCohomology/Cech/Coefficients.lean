@@ -47,6 +47,8 @@ scalar multiplies the induced map of Čech complexes by that scalar.
 
 * `TauCeti.CategoryTheory.cechComplexFunctorMapIso_hom_app_f_π`: its factors are the images
   under `F` of the projections of the products.
+* `TauCeti.CategoryTheory.map_cechAugmentation_f_zero_comp_cechComplexFunctorMapIso`:
+  it carries the image of the ordinary Čech augmentation to the augmentation for `P ⋙ F`.
 * `TauCeti.CategoryTheory.cechComplexFunctorMapIso_hom_app_comp_cechComplexMap`: it commutes
   with the maps induced by morphisms of families.
 * `TauCeti.CategoryTheory.cechComplexFunctorMapHomologyIso_hom_comp_homologyMap_cechComplexMap`:
@@ -74,24 +76,6 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
   {ι : Type w} (U : ι → C) (F : A ⥤ B)
   [∀ n : ℕ, PreservesLimitsOfShape (Discrete (Fin (n + 1) → ι)) F]
 
-/-- The degree `n` term of a Čech complex is, up to unfolding, the product of the values of `P`
-on the `(n + 1)`-fold products of members. -/
-private def cechXIso (P : Cᵒᵖ ⥤ A) (n : ℕ) :
-    ((cechComplexFunctor U).obj P).X n ≅
-      ∏ᶜ fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j))) :=
-  Iso.refl _
-
-/-- `cechComplexFunctor_obj_d_comp_π`, stated through `cechXIso`. -/
-@[reassoc]
-private lemma cechComplexFunctor_obj_d_comp_cechXIso_hom_π (P : Cᵒᵖ ⥤ A) (n : ℕ)
-    (k : Fin (n + 2) → ι) :
-    ((cechComplexFunctor U).obj P).d n (n + 1) ≫ (cechXIso U P (n + 1)).hom ≫ Pi.π _ k =
-      ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) • ((cechXIso U P n).hom ≫ Pi.π _ (k ∘ m.succAbove) ≫
-        P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (m.succAbove x)).op) :=
-  -- `cechXIso` is the identity
-  (_ ≫= Category.id_comp _).trans <| (cechComplexFunctor_obj_d_comp_π U P n k).trans <|
-    Finset.sum_congr rfl fun _ _ ↦ congrArg _ (Category.id_comp _).symm
-
 /-- The degree `n` component of `cechComplexFunctorMapIso`: `F` preserves the product indexed by
 `Fin (n + 1) → ι` which is the degree `n` term of the Čech complex. -/
 private def cechComplexFunctorMapXIso (P : Cᵒᵖ ⥤ A) (n : ℕ) :
@@ -107,16 +91,6 @@ private lemma cechComplexFunctorMapXIso_hom_π (P : Cᵒᵖ ⥤ A) (n : ℕ) (a 
       F.map ((cechXIso U P n).hom ≫ Pi.π _ a) := by
   simp [cechComplexFunctorMapXIso]
 
-/-- `cechComplexFunctor_map_f_π`, stated through `cechXIso`. -/
-@[reassoc]
-private lemma cechComplexFunctor_map_f_cechXIso_hom_π {P Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ)
-    (a : Fin (n + 1) → ι) :
-    ((cechComplexFunctor U).map α).f n ≫ (cechXIso U Q n).hom ≫ Pi.π _ a =
-      (cechXIso U P n).hom ≫ Pi.π _ a ≫ α.app (op (∏ᶜ fun j ↦ U (a j))) :=
-  -- `cechXIso` is the identity
-  (_ ≫= Category.id_comp _).trans <| (cechComplexFunctor_map_f_π U P α n a).trans
-    (Category.id_comp _).symm
-
 /-- The components `cechComplexFunctorMapXIso` are natural in the presheaf. -/
 private lemma cechComplexFunctorMapXIso_hom_naturality {P Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ) :
     F.map (((cechComplexFunctor U).map α).f n) ≫ (cechComplexFunctorMapXIso U F Q n).hom =
@@ -125,8 +99,8 @@ private lemma cechComplexFunctorMapXIso_hom_naturality {P Q : Cᵒᵖ ⥤ A} (α
   rw [← cancel_mono (cechXIso U (Q ⋙ F) n).hom]
   refine Pi.hom_ext _ _ fun a ↦ ?_
   simp only [Category.assoc]
-  rw [cechComplexFunctorMapXIso_hom_π, ← F.map_comp, cechComplexFunctor_map_f_cechXIso_hom_π,
-    cechComplexFunctor_map_f_cechXIso_hom_π]
+  rw [cechComplexFunctorMapXIso_hom_π, ← F.map_comp, cechComplexFunctor_map_f_comp_cechXIso_hom_π,
+    cechComplexFunctor_map_f_comp_cechXIso_hom_π]
   dsimp only [Functor.comp_obj, Functor.whiskerRight_app]
   rw [cechComplexFunctorMapXIso_hom_π_assoc]
   simp only [Functor.map_comp, Category.assoc]
@@ -172,9 +146,26 @@ image under `F` of the projection onto the factor indexed by `a`. -/
 theorem cechComplexFunctorMapIso_hom_app_f_π (P : Cᵒᵖ ⥤ A) (n : ℕ) (a : Fin (n + 1) → ι) :
     ((cechComplexFunctorMapIso U F).hom.app P).f n ≫ Pi.π _ a =
       F.map (Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) a) :=
-  -- `cechXIso` is the identity
-  (_ ≫= (Category.id_comp _).symm).trans <| (cechComplexFunctorMapXIso_hom_π U F P n a).trans
-    (congrArg F.map (Category.id_comp _))
+  (_ ≫= (cechXIso_hom_π U (P ⋙ F) n a).symm).trans <|
+    (cechComplexFunctorMapXIso_hom_π U F P n a).trans
+      (congrArg F.map (cechXIso_hom_π U P n a))
+
+/-- Applying the coefficient functor to the degree-zero Čech augmentation and then the
+coefficient comparison is the degree-zero augmentation for the mapped presheaf. This equation
+expresses compatibility with the augmentation without choosing a comparison of single complexes.
+-/
+@[reassoc]
+theorem map_cechAugmentation_f_zero_comp_cechComplexFunctorMapIso
+    [HasZeroObject A] [HasZeroObject B] {T : C} (hT : IsTerminal T) (P : Cᵒᵖ ⥤ A) :
+    F.map ((cechAugmentation U hT P).f 0) ≫
+        ((cechComplexFunctorMapIso U F).hom.app P).f 0 =
+      (cechAugmentation U hT (P ⋙ F)).f 0 := by
+  refine Pi.hom_ext _ _ fun a ↦ ?_
+  have h₁ := cechComplexFunctorMapIso_hom_app_f_π U F P 0 a
+  have h₂ := congrArg F.map (cechAugmentation_f_zero_comp_π U hT P a)
+  have h₃ := cechAugmentation_f_zero_comp_π U hT (P ⋙ F) a
+  exact (Category.assoc _ _ _).trans <| (_ ≫= h₁).trans <|
+    (F.map_comp _ _).symm.trans <| h₂.trans h₃.symm
 
 /-- **`cechComplexFunctorMapIso` commutes with refinement maps.** For a morphism `φ` from the
 family `U` to a family `V`, applying `F` to the map `Č(V, P) ⟶ Č(U, P)` induced by `φ` and then

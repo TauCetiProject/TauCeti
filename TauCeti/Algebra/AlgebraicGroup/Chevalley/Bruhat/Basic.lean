@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem
-public import TauCeti.GroupTheory.TitsSystem.Bruhat.Length
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem.Basic
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Multiplication
 import TauCeti.GroupTheory.DoubleCoset.Map
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
+import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
 
 /-!
 # Bruhat cells and the Bruhat decomposition of a Chevalley datum
@@ -22,8 +22,7 @@ since `N(K)` normalizes `T_D(K)` and `T_D(K)` normalizes `U(K)`).
 Distinct elements of `W` index pairwise disjoint Bruhat cells whose union is the extended
 elementary subgroup `D.extendedElementarySubgroup K`. Left multiplication by a simple cell
 `B(K) sᵢ B(K)` either collapses to `B(K) (sᵢ w) B(K)` when `w⁻¹(αᵢ)` is positive or splits as
-`B(K) (sᵢ w) B(K) ∪ B(K) w B(K)` when `w⁻¹(αᵢ)` is negative, characterizing Tits word-length
-increase in terms of positive roots.
+`B(K) (sᵢ w) B(K) ∪ B(K) w B(K)` when `w⁻¹(αᵢ)` is negative.
 
 ## Main definitions and results
 
@@ -37,10 +36,11 @@ increase in terms of positive roots.
   `ChevalleyDatum.iUnion_bruhatCell_eq_extendedElementarySubgroup`, and
   `ChevalleyDatum.existsUnique_mem_bruhatCell_of_mem_extendedElementarySubgroup`: the disjoint
   `W`-indexed Bruhat decomposition of `D.extendedElementarySubgroup K`.
-* `ChevalleyDatum.bruhatCell_ofIdx_mul_eq_of_mem_posRoots`,
-  `ChevalleyDatum.bruhatCell_ofIdx_mul_eq_union_of_mem_negRoots`, and
-  `ChevalleyDatum.wordLength_titsSimpleReflection_mul_gt_iff_mem_posRoots`: root-positivity rules
-  for simple Bruhat-cell multiplication and Tits word length.
+* `ChevalleyDatum.bruhatCell_ofIdx_mul_eq_of_mem_posRoots` and
+  `ChevalleyDatum.bruhatCell_ofIdx_mul_eq_union_of_mem_negRoots`: root-positivity rules for
+  simple Bruhat-cell multiplication.
+* `ChevalleyDatum.extendedElementarySubgroup_inf_normalizer_positivePoints`: over every field,
+  the normalizer of `U(K)` in `D.extendedElementarySubgroup K` is `B(K)`.
 
 ## References
 
@@ -75,10 +75,10 @@ theorem bruhatCell_eq_doubleCoset_of_weylProjection_eq
       DoubleCoset.doubleCoset (n : D.points K) (D.borelSubgroup K) (D.borelSubgroup K) := by
   subst hn
   rw [bruhatCell, D.titsWeylGroupMulEquiv_symm_weylProjection K n,
-    (D.titsSystem K).bruhatCell_mk, titsSystem_subgroupB, DoubleCoset.image_doubleCoset,
-    ← Subgroup.coe_map,
-    Subgroup.map_subgroupOf_eq_of_le (D.borelSubgroup_le_extendedElementarySubgroup K),
-    Subgroup.subtype_apply, coe_titsSubgroupNMulEquiv_symm]
+    (D.titsSystem K).bruhatCell_mk, titsSystem_subgroupB, Subgroup.coe_subtype,
+    DoubleCoset.image_doubleCoset_subgroupOf,
+    inf_of_le_left (D.borelSubgroup_le_extendedElementarySubgroup K),
+    coe_titsSubgroupNMulEquiv_symm]
 
 /-- The Bruhat cell of `D.weylProjection K n` is the double coset `B n B` in `D.points K`. -/
 @[simp]
@@ -86,6 +86,13 @@ theorem bruhatCell_weylProjection (n : D.weylSubgroup K) :
     D.bruhatCell K (D.weylProjection K n) =
       DoubleCoset.doubleCoset (n : D.points K) (D.borelSubgroup K) (D.borelSubgroup K) :=
   D.bruhatCell_eq_doubleCoset_of_weylProjection_eq K rfl
+
+/-- Every Weyl lift `n : D.weylSubgroup K` belongs to the Bruhat cell of `D.weylProjection K n`.
+-/
+theorem mem_bruhatCell_weylProjection (n : D.weylSubgroup K) :
+    (n : D.points K) ∈ D.bruhatCell K (D.weylProjection K n) := by
+  rw [D.bruhatCell_weylProjection]
+  exact DoubleCoset.mem_doubleCoset_self _ _ _
 
 /-- The identity Bruhat cell is the Borel subgroup `D.borelSubgroup K`. -/
 @[simp]
@@ -101,8 +108,9 @@ theorem bruhatCell_ofIdx_simpleIndex (i : Fin t.rank) :
     D.bruhatCell K
         (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)) =
       DoubleCoset.doubleCoset (D.weylElement (t.simpleIndex ht i) K 1)
-        (D.borelSubgroup K) (D.borelSubgroup K) :=
-  D.bruhatCell_eq_doubleCoset_of_weylProjection_eq K (D.weylProjection_weylElement K i)
+        (D.borelSubgroup K) (D.borelSubgroup K) := by
+  simpa only [D.coe_simpleWeylLift] using
+    D.bruhatCell_eq_doubleCoset_of_weylProjection_eq K (D.weylProjection_simpleWeylLift K i)
 
 /-- Every element of the Bruhat cell `B n B` factors as `u * n * b` with `u ∈ D.positivePoints K`
 and `b ∈ D.borelSubgroup K`. -/
@@ -115,12 +123,11 @@ theorem bruhatCell_weylProjection_eq_doubleCoset_positivePoints_left
   · intro g hg
     obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
     obtain ⟨u, hu, s, rfl⟩ := (D.mem_borelSubgroup_iff K).mp hb₁
-    have hnorm := D.weylSubgroup_le_normalizer_range_torusPoints K (inv_mem n.property)
-    obtain ⟨s', hs'⟩ := (Subgroup.mem_normalizer_iff.mp hnorm (D.torusPoints K s)).mp ⟨s, rfl⟩
-    have hb' : D.torusPoints K s' * b₂ ∈ D.borelSubgroup K :=
-      mul_mem (D.range_torusPoints_le_borelSubgroup K ⟨s', rfl⟩) hb₂
-    refine DoubleCoset.mem_doubleCoset.mpr ⟨u, hu, D.torusPoints K s' * b₂, hb', ?_⟩
-    rw [hs']
+    have hb' :
+        (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K) * b₂ ∈ D.borelSubgroup K :=
+      mul_mem (D.weylSubgroup_inv_conj_torusPoints_mem_borelSubgroup K n s) hb₂
+    refine DoubleCoset.mem_doubleCoset.mpr
+      ⟨u, hu, (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K) * b₂, hb', ?_⟩
     group
   · intro g hg
     obtain ⟨u, hu, b, hb, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
@@ -141,14 +148,13 @@ theorem bruhatCell_weylProjection_eq_doubleCoset_positivePoints_right
     have hu' : D.torusPoints K s⁻¹ * u * (D.torusPoints K s⁻¹)⁻¹ ∈ D.positivePoints K :=
       (Subgroup.mem_normalizer_iff.mp
         (D.range_torusPoints_le_normalizer_positivePoints K ⟨s⁻¹, rfl⟩) u).mp hu
-    have hnorm := D.weylSubgroup_le_normalizer_range_torusPoints K n.property
-    obtain ⟨s', hs'⟩ := (Subgroup.mem_normalizer_iff.mp hnorm (D.torusPoints K s)).mp ⟨s, rfl⟩
-    have hb' : b₁ * D.torusPoints K s' ∈ D.borelSubgroup K :=
-      mul_mem hb₁ (D.range_torusPoints_le_borelSubgroup K ⟨s', rfl⟩)
+    have hb' :
+        b₁ * ((n : D.points K) * D.torusPoints K s * (n : D.points K)⁻¹) ∈ D.borelSubgroup K :=
+      mul_mem hb₁ (D.weylSubgroup_conj_torusPoints_mem_borelSubgroup K n s)
     refine DoubleCoset.mem_doubleCoset.mpr
-      ⟨b₁ * D.torusPoints K s', hb',
+      ⟨b₁ * ((n : D.points K) * D.torusPoints K s * (n : D.points K)⁻¹), hb',
         D.torusPoints K s⁻¹ * u * (D.torusPoints K s⁻¹)⁻¹, hu', ?_⟩
-    rw [(D.torusPoints K).map_inv, hs']
+    rw [(D.torusPoints K).map_inv]
     group
   · intro g hg
     obtain ⟨b, hb, u, hu, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
@@ -244,13 +250,12 @@ theorem bruhatCell_ofIdx_mul_eq_of_mem_posRoots
       D.bruhatCell K (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht)
         (t.simpleIndex ht i) * w) := by
   obtain ⟨n, rfl⟩ := D.weylProjection_surjective K w
-  have hr : D.weylProjection K
-      (⟨D.weylElement (t.simpleIndex ht i) K 1, D.weylElement_mem_weylSubgroup K i⟩ * n) =
+  have hr : D.weylProjection K (D.simpleWeylLift K i * n) =
       RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) *
         D.weylProjection K n := by
-    rw [map_mul, D.weylProjection_weylElement K i]
+    rw [map_mul, D.weylProjection_simpleWeylLift K i]
   rw [D.bruhatCell_ofIdx_simpleIndex K i, D.bruhatCell_weylProjection K n, ← hr,
-    D.bruhatCell_weylProjection K]
+    D.bruhatCell_weylProjection K, Subgroup.coe_mul, D.coe_simpleWeylLift]
   exact D.doubleCoset_weylElement_mul_eq_of_mem_posRoots K i n hw
 
 /-- Negative root criterion for Bruhat-cell multiplication: if `w⁻¹(αᵢ)` is negative, left
@@ -300,48 +305,70 @@ theorem bruhatCell_ofIdx_mul_eq_union_of_mem_negRoots
     _ = D.bruhatCell K (s * w) ∪ D.bruhatCell K w := by
         rw [Set.union_mul, habsorb, hstep]
 
-/-- Left multiplication by the `i`-th simple reflection increases the Tits word length of `q`
-precisely when `(titsWeylGroupMulEquiv q)⁻¹(αᵢ)` is a positive root. -/
-theorem wordLength_titsSimpleReflection_mul_gt_iff_mem_posRoots
-    (i : Fin t.rank) (q : (D.titsSystem K).WeylGroup) :
-    (D.titsSystem K).simpleGenerators.wordLength q <
-        (D.titsSystem K).simpleGenerators.wordLength (D.titsSimpleReflection K i * q) ↔
-      (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.titsWeylGroupMulEquiv K q)⁻¹
-        (t.simpleIndex ht i) ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-  rw [← (D.titsSystem K).bruhatCell_mul_eq_iff_wordLength_lt
-    (D.titsSimpleReflection_mem_simple K i) q]
-  let w := D.titsWeylGroupMulEquiv K q
-  let s := RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)
-  have hsymm_s : (D.titsWeylGroupMulEquiv K).symm s = D.titsSimpleReflection K i :=
-    D.titsWeylGroupMulEquiv_symm_ofIdx_simpleIndex K i
-  have hsymm_w : (D.titsWeylGroupMulEquiv K).symm w = q :=
-    (D.titsWeylGroupMulEquiv K).symm_apply_apply q
-  have hsymm_sw : (D.titsWeylGroupMulEquiv K).symm (s * w) =
-      D.titsSimpleReflection K i * q := by
-    rw [map_mul, hsymm_s, hsymm_w]
-  have hcell :
-      (D.titsSystem K).bruhatCell (D.titsSimpleReflection K i) * (D.titsSystem K).bruhatCell q =
-          (D.titsSystem K).bruhatCell (D.titsSimpleReflection K i * q) ↔
-        D.bruhatCell K s * D.bruhatCell K w = D.bruhatCell K (s * w) := by
-    rw [bruhatCell, bruhatCell, bruhatCell, hsymm_s, hsymm_w, hsymm_sw, ← Set.image_mul]
-    exact (Set.image_injective.mpr (D.extendedElementarySubgroup K).subtype_injective).eq_iff.symm
-  rcases mem_posRoots_or_mem_negRoots (t.rationalRootSystem ht) (t.rationalBase ht)
-      ((t.simplyConnectedRootDatum ht).weylGroupToPerm w⁻¹ (t.simpleIndex ht i)) with hpos | hneg
-  · exact iff_of_true (hcell.mpr (D.bruhatCell_ofIdx_mul_eq_of_mem_posRoots K i hpos)) hpos
-  · refine iff_of_false ?_ (not_mem_posRoots_iff_mem_negRoots _ _ _ |>.mpr hneg)
-    intro heqT
-    have hunion : D.bruhatCell K s * D.bruhatCell K w =
-        D.bruhatCell K (s * w) ∪ D.bruhatCell K w :=
-      D.bruhatCell_ofIdx_mul_eq_union_of_mem_negRoots K i hneg
-    rw [hcell.mp heqT] at hunion
-    have hunionT :
-        (D.titsSystem K).bruhatCell (D.titsSimpleReflection K i * q) =
-          (D.titsSystem K).bruhatCell (D.titsSimpleReflection K i * q) ∪
-            (D.titsSystem K).bruhatCell q := by
-      apply Set.image_injective.mpr (D.extendedElementarySubgroup K).subtype_injective
-      rw [Set.image_union, ← hsymm_sw, ← hsymm_w, ← bruhatCell, ← bruhatCell]
-      exact hunion
-    exact (D.titsSystem K).bruhatCell_mul_ne_union_of_ne_one
-      ((D.titsSystem K).simple_ne_one (D.titsSimpleReflection_mem_simple K i)) q hunionT
+/-- Any point in a Bruhat cell `B n B` whose conjugation preserves `D.positivePoints K` forces
+the Weyl projection `D.weylProjection K n` to be `1` (so the point lies in `D.borelSubgroup K`).
+-/
+private theorem weylProjection_eq_one_of_mem_bruhatCell_of_conj_positivePoints
+    {g : D.points K} {n : D.weylSubgroup K}
+    (hg : g ∈ D.bruhatCell K (D.weylProjection K n))
+    (hconj : ∀ y ∈ D.positivePoints K, g * y * g⁻¹ ∈ D.positivePoints K) :
+    D.weylProjection K n = 1 := by
+  let _ := t.isReduced_simplyConnectedRootDatum ht
+  rw [D.bruhatCell_weylProjection K n] at hg
+  obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
+  have hnU : ∀ x ∈ D.positivePoints K,
+      (n : D.points K) * x * (n : D.points K)⁻¹ ∈ D.positivePoints K := by
+    intro x hx
+    have hb₂x : b₂⁻¹ * x * b₂ ∈ D.positivePoints K :=
+      (Subgroup.mem_normalizer_iff''.mp
+        (D.borelSubgroup_le_normalizer_positivePoints K hb₂) x).mp hx
+    have hnx_eq : (n : D.points K) * x * (n : D.points K)⁻¹ =
+        b₁⁻¹ * ((b₁ * (n : D.points K) * b₂) * (b₂⁻¹ * x * b₂) *
+          (b₁ * (n : D.points K) * b₂)⁻¹) * b₁ := by
+      group
+    rw [hnx_eq]
+    exact (Subgroup.mem_normalizer_iff''.mp
+      (D.borelSubgroup_le_normalizer_positivePoints K hb₁) _).mp (hconj _ hb₂x)
+  by_contra hw
+  obtain ⟨γ, hγ⟩ := inversions_nonempty_of_ne_one
+    (P := t.simplyConnectedRootDatum ht) (b := t.simplyConnectedBase ht) hw
+  have hγpos : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+    rw [t.posRoots_rationalRootSystem ht]
+    exact inversions_subset_posRoots _ _ _ hγ
+  set δ := (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection K n) γ
+  have hδneg : δ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+    rw [t.negRoots_rationalRootSystem ht]
+    exact mapsTo_inversions_negRoots _ _ _ hγ
+  have hδmem : D.rootSubgroupPoints δ K (Multiplicative.ofAdd 1) ∈
+      (D.rootSubgroupPoints γ K).range.map (MulAut.conj (n : D.points K)).toMonoidHom := by
+    rw [D.map_range_rootSubgroupPoints_conj K n γ]
+    exact ⟨Multiplicative.ofAdd 1, rfl⟩
+  obtain ⟨_, ⟨u, rfl⟩, hconj_u⟩ := Subgroup.mem_map.mp hδmem
+  have hδU : D.rootSubgroupPoints δ K (Multiplicative.ofAdd 1) ∈ D.positivePoints K := by
+    rw [← hconj_u]
+    exact hnU _ (D.rootSubgroupPoints_mem_positivePoints K hγpos u)
+  exact D.rootSubgroupPoints_ofAdd_one_ne_one K δ
+    ((D.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots K hδneg _).mp
+      (D.positivePoints_le_borelSubgroup K hδU))
+
+/-- Over any field, the elements of `D.extendedElementarySubgroup K` normalizing the positive
+unipotent subgroup `D.positivePoints K` form `D.borelSubgroup K`. -/
+@[simp]
+theorem extendedElementarySubgroup_inf_normalizer_positivePoints :
+    D.extendedElementarySubgroup K ⊓
+        Subgroup.normalizer (D.positivePoints K : Set (D.points K)) =
+      D.borelSubgroup K := by
+  apply le_antisymm
+  · rintro g ⟨hgE, hgN⟩
+    obtain ⟨w, hwcell, _⟩ := D.existsUnique_mem_bruhatCell_of_mem_extendedElementarySubgroup K hgE
+    obtain ⟨n, rfl⟩ := D.weylProjection_surjective K w
+    have hconj : ∀ y ∈ D.positivePoints K, g * y * g⁻¹ ∈ D.positivePoints K := fun y hy =>
+      (Subgroup.mem_normalizer_iff.mp hgN y).mp hy
+    have hproj1 :=
+      D.weylProjection_eq_one_of_mem_bruhatCell_of_conj_positivePoints K hwcell hconj
+    rw [hproj1, D.bruhatCell_one] at hwcell
+    exact hwcell
+  · exact le_inf (D.borelSubgroup_le_extendedElementarySubgroup K)
+      (D.borelSubgroup_le_normalizer_positivePoints K)
 
 end TauCeti.DynkinType.ChevalleyDatum

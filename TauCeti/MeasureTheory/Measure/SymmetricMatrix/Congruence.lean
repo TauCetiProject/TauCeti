@@ -5,16 +5,18 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Lebesgue
+public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Determinant
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Bilinear
 public import Mathlib.LinearAlgebra.Matrix.Permutation
+public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Transvection
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import TauCeti.LinearAlgebra.Matrix.Congruence
 import TauCeti.LinearAlgebra.Matrix.Triangular
+import TauCeti.MeasureTheory.Integral.Bochner.Affine
 
 /-!
 # Congruence and the change of variables on the symmetric subspace
@@ -39,6 +41,10 @@ identities for rectangular congruence are in `TauCeti.LinearAlgebra.Matrix.Congr
   `Mᵀ` for the Frobenius pairing.
 * `MeasureTheory.Measure.charFun_map_symmetricCongruenceLinearMap` — the corresponding
   transformation rule for characteristic functions.
+* `Matrix.det_coe_symmetricCongruenceLinearMap_apply_eq_zero` and
+  `MeasureTheory.Measure.mutuallySingular_map_symmetricCongruenceLinearMap_symmetricLebesgue` —
+  congruence by a matrix of deficient rank lands in the singular matrices, so every congruence
+  image by it is singular with respect to `symmetricLebesgue`.
 * `Matrix.det_symmetricCongruenceLinearMap` — its determinant is `(det M) ^ (p + 1)`.
 * `Matrix.det_coe_symmetricCongruenceLinearMap_apply` — congruence by a square matrix `M`
   multiplies the determinant of a symmetric matrix by `(det M) ^ 2`.
@@ -52,7 +58,9 @@ identities for rectangular congruence are in `TauCeti.LinearAlgebra.Matrix.Congr
   the trace against the inverse scale `(C * Cᵀ)⁻¹` into the plain trace.
 * `Matrix.GeneralLinearGroup.map_symmetricCongruence_restrict_posDef` — the same change of
   variables on the positive-definite cone, which congruence by an invertible matrix preserves,
-  together with its lower- and Bochner-integral forms.
+  together with its lower-integral form. The Bochner-integral form
+  (`Matrix.GeneralLinearGroup.integral_posDef_symmetricCongruence`) is the case of
+  `LinearMap.integral_preimage_affine` for congruence on the cone.
 
 ## References
 
@@ -128,6 +136,18 @@ theorem det_coe_symmetricCongruenceLinearMap_apply (M : Matrix (Fin p) (Fin p) �
       M.det ^ 2 * (A : Matrix (Fin p) (Fin p) ℝ).det := by
   rw [coe_symmetricCongruenceLinearMap_apply, Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose]
   ring
+
+/-- Congruence by a `q × p` matrix of rank less than `q` lands in the singular matrices. -/
+theorem det_coe_symmetricCongruenceLinearMap_apply_eq_zero {M : Matrix (Fin q) (Fin p) ℝ}
+    (hM : M.rank < q) (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    (symmetricCongruenceLinearMap M A : Matrix (Fin q) (Fin q) ℝ).det = 0 := by
+  rw [coe_symmetricCongruenceLinearMap_apply]
+  by_contra h
+  have hrank := rank_of_det_ne_zero h
+  have hle := (rank_mul_le_left (M * (A : Matrix (Fin p) (Fin p) ℝ)) Mᵀ).trans
+    (rank_mul_le_left M (A : Matrix (Fin p) (Fin p) ℝ))
+  rw [hrank, Fintype.card_fin] at hle
+  omega
 
 /-- The trace pairing of a congruated symmetric matrix can be evaluated on the source by
 congruating the test matrix with the transpose. -/
@@ -546,7 +566,9 @@ theorem lintegral_posDef_symmetricCongruence
   rw [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph] at h
   rw [← h, map_symmetricCongruence_restrict_posDef, lintegral_smul_measure, smul_eq_mul]
 
-/-- The congruence change of variables for Bochner integrals over the positive-definite cone. -/
+/-- The congruence change of variables for Bochner integrals over the positive-definite cone: the
+case of `LinearMap.integral_preimage_affine` for congruence by `C`, whose preimage of
+the cone is the cone. -/
 theorem integral_posDef_symmetricCongruence {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (f : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) → E) :
     ∫ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
@@ -555,15 +577,11 @@ theorem integral_posDef_symmetricCongruence {E : Type*} [NormedAddCommGroup E]
       (|Matrix.det (C : Matrix (Fin p) (Fin p) ℝ)| ^ (p + 1))⁻¹ •
         ∫ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
           (A : Matrix (Fin p) (Fin p) ℝ).PosDef}, f A ∂symmetricLebesgue p := by
-  have hJ : (0 : ℝ) < |Matrix.det (C : Matrix (Fin p) (Fin p) ℝ)| ^ (p + 1) :=
-    pow_pos (abs_pos.2 (Matrix.GeneralLinearGroup.det_ne_zero C)) _
-  have h := integral_map_equiv (μ := (symmetricLebesgue p).restrict
+  have h := LinearMap.integral_preimage_affine (symmetricCongruence C : _ →ₗ[ℝ] _) 0 f
     {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
-      (A : Matrix (Fin p) (Fin p) ℝ).PosDef})
-    (symmetricCongruence C).toHomeomorph.toMeasurableEquiv f
-  rw [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph] at h
-  rw [← h, map_symmetricCongruence_restrict_posDef, integral_smul_measure,
-    ENNReal.toReal_inv, ← ENNReal.ofReal_pow (abs_nonneg _), ENNReal.toReal_ofReal hJ.le]
+      (A : Matrix (Fin p) (Fin p) ℝ).PosDef} (symmetricLebesgue p)
+  simp only [zero_add, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv] at h
+  rwa [preimage_symmetricCongruence_posDef, det_symmetricCongruence, abs_pow] at h
 
 end Cone
 
@@ -622,5 +640,18 @@ theorem charFun_map_symmetricCongruenceLinearMap
   refine integral_congr_ae (Filter.Eventually.of_forall fun A => ?_)
   exact congrArg (fun x : ℝ => Complex.exp (x * Complex.I))
     (Matrix.inner_symmetricCongruenceLinearMap M A Θ)
+
+/-- **A congruence image by a matrix of deficient rank has no density.** Mapping any measure by
+congruence with a `q × p` matrix `M` of rank less than `q` gives a measure carried by the singular
+symmetric matrices, which are `TauCeti.symmetricLebesgue`-null. -/
+theorem mutuallySingular_map_symmetricCongruenceLinearMap_symmetricLebesgue
+    (μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)))
+    {M : Matrix (Fin q) (Fin p) ℝ} (hM : M.rank < q) :
+    (μ.map (Matrix.symmetricCongruenceLinearMap M)).MutuallySingular (symmetricLebesgue q) :=
+  mutuallySingular_symmetricLebesgue_of_ae_det_eq_zero <|
+    (ae_map_iff (LinearMap.continuous_of_finiteDimensional
+        (Matrix.symmetricCongruenceLinearMap M)).aemeasurable
+      (measurableSet_setOfPred_det_eq_zero q)).2
+      (ae_of_all _ (Matrix.det_coe_symmetricCongruenceLinearMap_apply_eq_zero hM))
 
 end MeasureTheory.Measure

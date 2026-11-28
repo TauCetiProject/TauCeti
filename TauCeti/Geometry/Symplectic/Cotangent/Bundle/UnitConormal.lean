@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Contact.Isotropic
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Conormal
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ContactType
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
+import Mathlib.Analysis.Normed.Module.Normalize
 import TauCeti.Geometry.Contact.Pullback
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
@@ -41,6 +43,24 @@ structure `ker(λ|S*M)` (`TauCeti.CotangentBundle.isLegendrianEmbedding_unitCono
 This is also the kernel of the contact form `α_b = -λ|S*M` of the opposite coorientation, the
 boundary form of the primitive `-λ` of `ω = -dλ`.
 
+For a `C¹` closed embedding, the image `N*Q ∩ S*M` of the unit conormal bundle is closed in `S*M`
+(`TauCeti.CotangentBundle.isClosed_range_unitConormalInclusion`), since `N*Q` is closed in `T*M`.
+Closedness of the submanifold cannot be dropped: in positive codimension every point of the image
+of `i` carries a unit conormal covector, and the unit covectors over a compact set form a compact
+set, so a closed image of the unit conormal bundle forces a closed image of `i`
+(`TauCeti.CotangentBundle.isClosed_range_of_isClosed_range_unitConormalInclusion`). Thus for a
+`C¹` embedding of smaller dimension, the unit conormal bundle is closed in `S*M` exactly when the
+submanifold is closed in `M` (`TauCeti.CotangentBundle.isClosed_range_unitConormalInclusion_iff`).
+
+For a point `y`, read as the constant map from a trivial model space, every covector at `y` is
+conormal, so the unit conormal bundle is the fibre `S*_y M` of `S*M` over `y`, the unit sphere of
+`T*_y M` (`TauCeti.CotangentBundle.range_unitConormalInclusion_const`). It is compact
+(`TauCeti.CotangentBundle.compactSpace_unitConormal_const`), and so the fibres of `S*M → M` are
+compact Legendrian submanifolds of dimension `dim M - 1`
+(`TauCeti.CotangentBundle.isLegendrianEmbedding_unitConormalInclusion_const`). At the other
+extreme, a map of codimension zero, such as the identity, has no unit conormal covectors: its
+conormal covectors are zero (`TauCeti.CotangentBundle.unitConormal_eq_empty_of_surjective_mfderiv`).
+
 The atlas and the manifold structure only use that `i` is smooth with injective differentials;
 the embedding into `S*M` uses that `i` is a smooth embedding. The vector bundle structure of `N*Q`
 depends on `i`, so it is installed locally by `letI`, as is the atlas of the unit conormal bundle,
@@ -60,6 +80,13 @@ in the statements about it.
   `S*M`.
 * `TauCeti.CotangentBundle.isLegendrianEmbedding_unitConormalInclusion`: it is a Legendrian
   embedding for the contact structure `ker(λ|S*M)`.
+* `TauCeti.CotangentBundle.isClosed_range_unitConormalInclusion_iff`: in positive codimension, it
+  is closed in `S*M` exactly when the submanifold is closed in `M`.
+* `TauCeti.CotangentBundle.range_unitConormalInclusion_const`,
+  `TauCeti.CotangentBundle.isLegendrianEmbedding_unitConormalInclusion_const`: the unit conormal
+  bundle of a point is the cosphere fibre over it, which is therefore Legendrian.
+* `TauCeti.CotangentBundle.unitConormal_eq_empty_of_surjective_mfderiv`: in codimension zero the
+  unit conormal bundle is empty.
 
 ## References
 
@@ -127,7 +154,103 @@ theorem unitConormalInclusion_injective (hi : Injective i) :
     Injective (unitConormalInclusion J I k i) :=
   restrictPreimage_injective _ (conormalInclusion_injective (Fin k → ℝ) hi)
 
+/-- **The unit conormal covectors of a point form its cosphere fibre.** For the constant map with
+value `y` from a nonempty space, the image of the unit conormal bundle in `S*M` is the fibre of
+`S*M` over `y`, the unit sphere of `T*_y M`: a constant map has zero differential, so every
+covector at `y` is conormal (`TauCeti.CotangentBundle.conormal_const`). -/
+theorem range_unitConormalInclusion_const [Nonempty Q] (y : M) :
+    range (unitConormalInclusion J I k fun _ : Q ↦ y) =
+      {z : cosphereBundle I M | (z : CotangentBundle I M).proj = y} := by
+  ext z
+  simp
+
+/-- **A map of codimension zero has no unit conormal covectors.** If every differential of `i` is
+surjective, as for the identity or the inclusion of an open subset, then the only conormal
+covector at each point is zero, so the unit conormal bundle of `i` is empty. -/
+theorem unitConormal_eq_empty_of_surjective_mfderiv (hi : ∀ q, Surjective (mfderiv J I i q)) :
+    unitConormal J I k i = ∅ := by
+  refine eq_empty_of_forall_notMem fun z hz ↦ snd_ne_zero_of_mem_cosphereBundle hz ?_
+  ext v
+  obtain ⟨u, rfl⟩ := hi z.proj v
+  exact congr($(conormalInclusion_snd_comp_mfderiv (Fin k → ℝ) J I i z) u)
+
 end Definitions
+
+section Closed
+
+variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+
+/-- **The unit conormal bundle of a closed submanifold is closed.** For a `C¹` closed embedding
+`i : Q → M`, the image `N*Q ∩ S*M` of the unit conormal bundle of `i` is closed in `S*M`. -/
+theorem isClosed_range_unitConormalInclusion [IsManifold I 1 M] [IsManifold J 1 Q]
+    (hi : Topology.IsClosedEmbedding i) (hic : ContMDiff J I 1 i) :
+    IsClosed (range (unitConormalInclusion J I k i)) := by
+  rw [range_unitConormalInclusion]
+  exact (isClosed_conormal hi hic).preimage continuous_subtypeVal
+
+/-- **A closed unit conormal bundle lies over a closed image.** If `Q` has smaller dimension than
+`M` and the image `N*Q ∩ S*M` of the unit conormal bundle of `i` is closed in `S*M`, then the image
+of `i` is closed in `M`. Indeed, every point of the image of `i` carries a unit conormal covector,
+and the unit conormal covectors over a compact subset of `M` form a compact set. -/
+theorem isClosed_range_of_isClosed_range_unitConormalInclusion [T2Space M] [FiniteDimensional ℝ E]
+    [FiniteDimensional ℝ F] [IsManifold I 1 M]
+    [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
+    (hdim : finrank ℝ F < finrank ℝ E) (h : IsClosed (range (unitConormalInclusion J I k i))) :
+    IsClosed (range i) := by
+  have := Manifold.locallyCompact_of_finiteDimensional (M := M) I
+  rw [range_unitConormalInclusion] at h
+  -- The set `{z | ↑z ∈ N*Q}` of `S*M` is the preimage of `N*Q` by definition.
+  have hC : IsClosed (cosphereBundle I M ∩ conormal J I i) := by
+    have h' : IsClosed ((↑) ⁻¹' conormal J I i : Set (cosphereBundle I M)) := h
+    simpa only [Subtype.image_preimage_coe] using h'.trans isClosed_cosphereBundle
+  refine isClosed_of_closure_subset fun x hx ↦ ?_
+  obtain ⟨K, hK, hxK⟩ := exists_compact_mem_nhds x
+  -- The unit conormal covectors over `K` form a compact set `A`, whose projection is closed and
+  -- contains `range i ∩ K`.
+  set A := (cosphereBundle I M ∩
+    π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) ⁻¹' K) ∩ (cosphereBundle I M ∩
+      conormal J I i)
+  have hA : IsCompact A := (isCompact_cosphereBundle_inter_preimage_proj (I := I) hK).inter_right hC
+  have hsub : range i ∩ K ⊆ π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) '' A := by
+    rintro y hy
+    obtain ⟨⟨q, rfl⟩, hqK⟩ := mem_inter_iff _ _ _ |>.1 hy
+    obtain ⟨p, hp, hp0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
+      (conormalSpace_ne_bot (J := J) (I := I) hdim i q)
+    have hn : TotalSpace.mk' (E →L[ℝ] ℝ) (i q) (NormedSpace.normalize p) ∈ cosphereBundle I M :=
+      mem_cosphereBundle.2 (NormedSpace.norm_normalize (V := TangentSpace I (i q) →L[ℝ] ℝ) hp0)
+    have hpn : NormedSpace.normalize p ∈ conormalSpace J I i q := by
+      rw [NormedSpace.normalize]
+      exact Submodule.smul_mem _ _ hp
+    exact mem_image_of_mem _ (mem_inter (mem_inter hn hqK) (mem_inter hn (mk_mem_conormal hpn)))
+  have hx' : x ∈ closure (range i ∩ K) :=
+    mem_closure_iff_frequently.2 ((mem_closure_iff_frequently.1 hx).and_eventually hxK)
+  obtain ⟨z, hz, rfl⟩ :=
+    closure_minimal hsub (hA.image (FiberBundle.continuous_proj _ _)).isClosed hx'
+  obtain ⟨q, hq, -⟩ := mem_conormal_iff.1 hz.2.2
+  exact mem_range.2 ⟨q, hq⟩
+
+/-- **The unit conormal bundle is closed exactly over a closed submanifold.** For a `C¹`
+embedding `i : Q → M` into a Riemannian manifold of larger dimension, the image `N*Q ∩ S*M` of the
+unit conormal bundle of `i` is closed in `S*M` exactly when the image of `i` is closed in `M`. -/
+theorem isClosed_range_unitConormalInclusion_iff [T2Space M] [FiniteDimensional ℝ E]
+    [FiniteDimensional ℝ F] [IsManifold I 1 M] [IsManifold J 1 Q]
+    [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)] (hi : Topology.IsEmbedding i)
+    (hic : ContMDiff J I 1 i) (hdim : finrank ℝ F < finrank ℝ E) :
+    IsClosed (range (unitConormalInclusion J I k i)) ↔ IsClosed (range i) :=
+  ⟨isClosed_range_of_isClosed_range_unitConormalInclusion hdim,
+    fun h ↦ isClosed_range_unitConormalInclusion ⟨hi, h⟩ hic⟩
+
+/-- **The cosphere fibres are compact.** The image in `S*M` of the unit conormal bundle of a point
+`y`, the fibre of `S*M` over `y`, is compact. -/
+theorem isCompact_range_unitConormalInclusion_const [FiniteDimensional ℝ E] [IsManifold I 1 M]
+    [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)] [Nonempty Q] (y : M) :
+    IsCompact (range (unitConormalInclusion J I k fun _ : Q ↦ y)) := by
+  rw [range_unitConormalInclusion_const, Subtype.isCompact_iff]
+  convert isCompact_cosphereBundle_inter_preimage_proj (I := I) (isCompact_singleton (x := y))
+  ext z
+  simp [and_comm]
+
+end Closed
 
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [IsManifold J ∞ Q]
 
@@ -343,5 +466,56 @@ theorem isLegendrianEmbedding_unitConormalInclusion [Nontrivial E]
     omega
 
 end Legendrian
+
+section Point
+
+/-! ### The unit conormal bundle of a point -/
+
+variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [I.Boundaryless] [Subsingleton F]
+
+/-- **The unit conormal bundle of a point is compact.** A point `y` is the image of the constant
+map from a trivial model space, a smooth embedding
+(`TauCeti.isSmoothEmbedding_const_of_subsingleton`). Its unit conormal bundle is embedded in `S*M`
+with image the compact fibre over `y`, so it is a compact manifold of dimension `dim M - 1`. -/
+theorem compactSpace_unitConormal_const (hk : finrank ℝ F + k = finrank ℝ E) (y : M) :
+    haveI hi :=
+      isSmoothEmbedding_const_of_subsingleton (𝕜 := ℝ) (E := F) (J := I) (n := ∞) (by simp) y
+    letI := conormalFiberBundle (n := ∞) hi.contMDiff (by simp)
+      (hi.isImmersion.mfderiv_injective (by simp)) hk
+    CompactSpace (unitConormal 𝓘(ℝ, F) I k fun _ : F ↦ y) := by
+  have hi :=
+    isSmoothEmbedding_const_of_subsingleton (𝕜 := ℝ) (E := F) (J := I) (n := ∞) (by simp) y
+  let := conormalFiberBundle (n := ∞) hi.contMDiff (by simp)
+    (hi.isImmersion.mfderiv_injective (by simp)) hk
+  let := unitConormalChartedSpace k hi.contMDiff (hi.isImmersion.mfderiv_injective (by simp)) hk
+  rw [← isCompact_univ_iff,
+    (isSmoothEmbedding_unitConormalInclusion hi hk).isEmbedding.isInducing.isCompact_iff,
+    image_univ]
+  exact isCompact_range_unitConormalInclusion_const (J := 𝓘(ℝ, F)) y
+
+/-- **The cosphere fibres are Legendrian.** The fibre of `S*M` over a point `y` is the image of the
+unit conormal bundle of the constant map with value `y`
+(`TauCeti.CotangentBundle.range_unitConormalInclusion_const`), a compact manifold of dimension
+`n` when `M` has dimension `n + 1` (`TauCeti.CotangentBundle.compactSpace_unitConormal_const`),
+and its inclusion into `S*M` is a Legendrian embedding for the contact structure `ker(λ|S*M)`, the
+kernel of the contact form `α_b = -λ|S*M`. -/
+theorem isLegendrianEmbedding_unitConormalInclusion_const [Nontrivial E]
+    (hk : finrank ℝ F + k = finrank ℝ E) (y : M) :
+    haveI hi :=
+      isSmoothEmbedding_const_of_subsingleton (𝕜 := ℝ) (E := F) (J := I) (n := ∞) (by simp) y
+    letI := conormalFiberBundle (n := ∞) hi.contMDiff (by simp)
+      (hi.isImmersion.mfderiv_injective (by simp)) hk
+    letI := unitConormalChartedSpace k hi.contMDiff (hi.isImmersion.mfderiv_injective (by simp)) hk
+    IsLegendrianEmbedding 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ)
+      (SmoothForm.mpullback (Subtype.val : cosphereBundle I M → CotangentBundle I M)
+        (isSmoothEmbedding_coe_cosphereBundle (I := I) (M := M)).contMDiff
+        (liouvilleForm I M)).kerDistribution
+      (unitConormalInclusion 𝓘(ℝ, F) I k fun _ : F ↦ y) :=
+  isLegendrianEmbedding_unitConormalInclusion
+    (isSmoothEmbedding_const_of_subsingleton (𝕜 := ℝ) (E := F) (J := I) (n := ∞) (by simp) y) hk
+
+end Point
 
 end TauCeti.CotangentBundle

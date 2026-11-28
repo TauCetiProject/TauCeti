@@ -5,21 +5,22 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Hessian.PureTrace
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
+public import TauCeti.Geometry.RicciFlow.Soliton.Conservation
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+import TauCeti.Geometry.Manifold.MFDeriv.Exp
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 
 /-!
 # Conservation laws and a Ricci bound for surface gradient solitons
 
-For a smooth potential satisfying `Ric + Hess f = ρg` on a Riemannian surface, the identities
-`dR = R df` and `d(R + |grad f|² - 2ρf) = 0` give two conservation laws on each connected
-component. If `ρ > 0` and the scalar curvature is positive at one point of a preconnected
-surface, these laws give a uniform positive Ricci lower bound.
+For a smooth potential satisfying `Ric + Hess f = ρg` on a Riemannian surface, we prove
+`dR = R df` and show that the weighted scalar curvature `R exp(-f)` is constant on each
+connected component. The Hamilton conservation law comes from
+`SatisfiesGradientRicciSolitonEquation.hamilton_eq` in `Soliton/Conservation.lean`. If
+`ρ > 0` and the scalar curvature is positive at one point of a preconnected surface, these
+laws give a uniform positive Ricci lower bound.
 
 This supplies the curvature bound used in the compactness argument for two-dimensional
 shrinking models. Compactness and classification require further arguments. All statements
@@ -64,49 +65,27 @@ theorem hessian_eq_of_surface_soliton (hn : Module.finrank ℝ E = 2) {f : M →
 /-- The scalar curvature of a smooth surface gradient soliton satisfies `dR = R df`. -/
 theorem mvfderiv_scalarCurvature_of_surface_soliton (hn : Module.finrank ℝ E = 2)
     {f : M → ℝ} {ρ : ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (hsol : ∀ x (u v : TangentSpace I x),
-      ∇.ricciTensor x u v + hessian I f x u v = ρ * inner ℝ u v)
+    (hsol : SatisfiesGradientRicciSolitonEquation (I := I) f ρ)
     (x : M) (v : TangentSpace I x) :
     mvfderiv I ∇.scalarCurvature x v = ∇.scalarCurvature x * mvfderiv I f x v := by
-  have h := ricciTensor_mgradient_of_hessian_eq_mul_inner hf
-    ((contMDiff_const.sub (∇.contMDiff_scalarCurvature.div_const 2)).mdifferentiableAt
-      (by simp))
-    (fun y ↦ hessian_eq_of_surface_soliton hn (hsol y)) v
-  rw [∇.ricciTensor_eq_scalarCurvature_div_two_smul (x := x)
-    (isMetricCompatible_leviCivitaConnection I) (by rw [TauCeti.finrank_tangentSpace, hn])] at h
-  simp only [LinearMap.smul_apply, innerₗ_apply_apply, smul_eq_mul, inner_mgradient_right] at h
-  have hd : mvfderiv I (fun y ↦ ρ - ∇.scalarCurvature y / 2) x v =
-      -(mvfderiv I ∇.scalarCurvature x v) / 2 := by
-    have hd' : mvfderiv I (fun y ↦ ∇.scalarCurvature y / 2) x =
-        (2 : ℝ)⁻¹ • mvfderiv I ∇.scalarCurvature x := by
-      have heq : (fun y ↦ ∇.scalarCurvature y / 2) = (2 : ℝ)⁻¹ • ∇.scalarCurvature := by
-        funext y
-        simp only [Pi.smul_apply, smul_eq_mul, div_eq_mul_inv, mul_comm]
-      rw [heq]
-      exact TauCeti.mvfderiv_const_smul_field (I := I) ∇.scalarCurvature x (2 : ℝ)⁻¹
-    rw [mvfderiv_fun_sub mdifferentiableAt_const
-      ((∇.contMDiff_scalarCurvature.div_const 2).mdifferentiableAt (by simp)), hd']
-    simp only [sub_apply, mvfderiv_const,
-      zero_apply, smul_apply, smul_eq_mul]
-    ring
-  rw [hd, hn] at h
-  norm_num only at h
-  linarith
+  rw [hsol.mvfderiv_scalarCurvature hf,
+    ∇.ricciTensor_eq_scalarCurvature_div_two_smul (x := x)
+      (isMetricCompatible_leviCivitaConnection I) (by rw [TauCeti.finrank_tangentSpace, hn])]
+  simp only [LinearMap.smul_apply, innerₗ_apply_apply, smul_eq_mul, inner_mgradient_right]
+  ring
 
 /-- The weighted scalar curvature `R exp(-f)` has zero differential on a surface soliton. -/
 theorem mvfderiv_weighted_scalar_of_surface_soliton (hn : Module.finrank ℝ E = 2)
     {f : M → ℝ} {ρ : ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (hsol : ∀ x (u v : TangentSpace I x),
-      ∇.ricciTensor x u v + hessian I f x u v = ρ * inner ℝ u v)
+    (hsol : SatisfiesGradientRicciSolitonEquation (I := I) f ρ)
     (x : M) (v : TangentSpace I x) :
     mvfderiv I (fun y ↦ ∇.scalarCurvature y * Real.exp (-f y)) x v = 0 := by
   have hdexp : mvfderiv I (fun y ↦ Real.exp (-f y)) x =
       -(Real.exp (-f x)) • mvfderiv I f x := by
-    simpa only [Function.comp_def, Real.deriv_exp, mvfderiv_fun_neg, smul_neg, neg_smul]
-      using (TauCeti.mvfderiv_scalar_comp (I := I) (g := fun y ↦ -f y) (φ := Real.exp)
-        (hf.neg.mdifferentiableAt (by simp)) Real.differentiable_exp.differentiableAt)
+    rw [TauCeti.mvfderiv_exp (g := fun y ↦ -f y) (hf.neg.mdifferentiableAt (by simp)),
+      mvfderiv_fun_neg, smul_neg, neg_smul]
   have hRdiff : MDiffAt ∇.scalarCurvature x :=
-    ∇.contMDiff_scalarCurvature.mdifferentiableAt (by simp)
+    (∇.contMDiff_scalarCurvature (n := ⊤)).mdifferentiableAt (by simp)
   have hexdiff : MDiffAt (fun y ↦ Real.exp (-f y)) x :=
     (Real.contDiff_exp.contMDiff.comp hf.neg).mdifferentiableAt (by simp)
   rw [mvfderiv_fun_mul (f := ∇.scalarCurvature) (g := fun y ↦ Real.exp (-f y))
@@ -119,8 +98,7 @@ theorem mvfderiv_weighted_scalar_of_surface_soliton (hn : Module.finrank ℝ E =
 theorem weighted_scalar_eq_of_surface_soliton [PreconnectedSpace M]
     (hn : Module.finrank ℝ E = 2) {f : M → ℝ} {ρ : ℝ}
     (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (hsol : ∀ x (u v : TangentSpace I x),
-      ∇.ricciTensor x u v + hessian I f x u v = ρ * inner ℝ u v)
+    (hsol : SatisfiesGradientRicciSolitonEquation (I := I) f ρ)
     (x p : M) :
     ∇.scalarCurvature x * Real.exp (-f x) =
       ∇.scalarCurvature p * Real.exp (-f p) := by
@@ -132,73 +110,13 @@ theorem weighted_scalar_eq_of_surface_soliton [PreconnectedSpace M]
   ext v
   exact mvfderiv_weighted_scalar_of_surface_soliton hn hf hsol y v
 
-/-- Hamilton's scalar quantity `R + |grad f|² - 2ρf` has zero differential. -/
-theorem mvfderiv_hamilton_of_surface_soliton (hn : Module.finrank ℝ E = 2)
-    {f : M → ℝ} {ρ : ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (hsol : ∀ x (u v : TangentSpace I x),
-      ∇.ricciTensor x u v + hessian I f x u v = ρ * inner ℝ u v)
-    (x : M) (v : TangentSpace I x) :
-    mvfderiv I (fun y ↦ ∇.scalarCurvature y + ‖mgradient I f y‖ ^ 2 - 2 * ρ * f y)
-      x v = 0 := by
-  have : IsManifold I ((∞ : ℕ∞ω) + 1) M := by
-    simpa using (inferInstance : IsManifold I ∞ M)
-  have hdnorm : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ ‖mgradient I f y‖ ^ 2) x :=
-    (contMDiff_norm_sq_mgradient (n := ∞) (by simpa using hf)).mdifferentiableAt (by simp)
-  have hdscale : mvfderiv I (fun y ↦ 2 * ρ * f y) x =
-      (2 * ρ) • mvfderiv I f x := by
-    exact TauCeti.mvfderiv_const_smul_field f x (2 * ρ)
-  have hRdiff : MDiffAt ∇.scalarCurvature x :=
-    ∇.contMDiff_scalarCurvature.mdifferentiableAt (by simp)
-  have hsum : MDiffAt (fun y ↦ ∇.scalarCurvature y + ‖mgradient I f y‖ ^ 2) x :=
-    hRdiff.add hdnorm
-  have hscale : MDiffAt (fun y ↦ 2 * ρ * f y) x :=
-    mdifferentiableAt_const.mul (hf.mdifferentiableAt (by simp))
-  rw [mvfderiv_fun_sub (g := fun y ↦ ∇.scalarCurvature y + ‖mgradient I f y‖ ^ 2)
-    (g' := fun y ↦ 2 * ρ * f y) hsum hscale,
-    mvfderiv_fun_add (g := ∇.scalarCurvature) (g' := fun y ↦ ‖mgradient I f y‖ ^ 2)
-      hRdiff hdnorm, hdscale]
-  simp only [sub_apply, add_apply,
-    smul_apply, smul_eq_mul]
-  have hG : MDiffAt (T% (mgradient I f)) x :=
-    (contMDiff_mgradient (n := ∞) (by simpa using hf)).mdifferentiableAt (by simp)
-  have hm := (isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
-    (FiberBundle.extend E v) hG hG
-  simp only [FiberBundle.extend_apply_self, real_inner_self_eq_norm_sq] at hm
-  rw [real_inner_comm (mgradient I f x)] at hm
-  simp only [inner_mgradient] at hm
-  have hh := hessian_eq_of_surface_soliton hn (hsol x) v (mgradient I f x)
-  simp only [hessian_def, inner_mgradient_right] at hh
-  rw [mvfderiv_scalarCurvature_of_surface_soliton hn hf hsol]
-  nlinarith [hm, hh]
-
-/-- Hamilton's scalar quantity is constant on a preconnected surface gradient soliton. -/
-theorem hamilton_eq_of_surface_soliton [PreconnectedSpace M]
-    (hn : Module.finrank ℝ E = 2) {f : M → ℝ} {ρ : ℝ}
-    (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (hsol : ∀ x (u v : TangentSpace I x),
-      ∇.ricciTensor x u v + hessian I f x u v = ρ * inner ℝ u v)
-    (x p : M) :
-    ∇.scalarCurvature x + ‖mgradient I f x‖ ^ 2 - 2 * ρ * f x =
-      ∇.scalarCurvature p + ‖mgradient I f p‖ ^ 2 - 2 * ρ * f p := by
-  have : IsManifold I ((∞ : ℕ∞ω) + 1) M := by
-    simpa using (inferInstance : IsManifold I ∞ M)
-  apply MDifferentiable.apply_eq_of_mfderiv_eq_zero
-    (((∇.contMDiff_scalarCurvature.add
-      (contMDiff_norm_sq_mgradient (n := ∞) (by simpa using hf))).sub
-        (contMDiff_const.mul hf)).mdifferentiable (by simp))
-  intro y
-  apply TauCeti.mvfderiv_eq_zero_iff.mp
-  ext v
-  exact mvfderiv_hamilton_of_surface_soliton hn hf hsol y v
-
 /-- A shrinking surface gradient soliton with positive scalar curvature at one point has a
 uniform positive Ricci lower bound. Completeness and a global curvature-sign assumption are
 not required. -/
 theorem exists_pos_ricci_lower_bound_of_surface_soliton [PreconnectedSpace M]
     (hn : Module.finrank ℝ E = 2) {f : M → ℝ} {ρ : ℝ}
     (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (hsol : ∀ x (u v : TangentSpace I x),
-      ∇.ricciTensor x u v + hessian I f x u v = ρ * inner ℝ u v)
+    (hsol : SatisfiesGradientRicciSolitonEquation (I := I) f ρ)
     (hρ : 0 < ρ) (p : M) (hp : 0 < ∇.scalarCurvature p) :
     ∃ c > 0, ∀ x (v : TangentSpace I x), c * ‖v‖ ^ 2 ≤ ∇.ricciTensor x v v := by
   let A := ∇.scalarCurvature p * Real.exp (-f p)
@@ -208,7 +126,7 @@ theorem exists_pos_ricci_lower_bound_of_surface_soliton [PreconnectedSpace M]
     weighted_scalar_eq_of_surface_soliton hn hf hsol x p
   have hhamilton (x : M) :
       ∇.scalarCurvature x + ‖mgradient I f x‖ ^ 2 - 2 * ρ * f x = C :=
-    hamilton_eq_of_surface_soliton hn hf hsol x p
+    hsol.hamilton_eq hf x p
   have hRpos (x : M) : 0 < ∇.scalarCurvature x := by
     have hexp := Real.exp_pos (-f x)
     have heq := hweighted x

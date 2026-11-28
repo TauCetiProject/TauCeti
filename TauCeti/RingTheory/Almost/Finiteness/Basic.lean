@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.Almost.BasicSetup
 import Mathlib.RingTheory.Finiteness.Cardinality
 import Mathlib.RingTheory.Finiteness.Ideal
 import TauCeti.Algebra.Module.Projective.Schanuel
-import TauCeti.RingTheory.Ideal.IdempotentFG
+import TauCeti.RingTheory.Ideal.Idempotent.FG
 
 /-!
 # Almost finitely generated and almost finitely presented modules

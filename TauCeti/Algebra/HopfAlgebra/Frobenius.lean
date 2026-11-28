@@ -6,10 +6,10 @@ Authors: pi, The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.HopfAlgebra.Integral
+public import TauCeti.Algebra.HopfAlgebra.Cointegral.Existence
+public import TauCeti.Algebra.HopfAlgebra.HopfModule.Dual
 public import TauCeti.Algebra.Algebra.Frobenius.Basic
 import Mathlib.LinearAlgebra.Dimension.Constructions
-import TauCeti.Algebra.HopfAlgebra.Cointegral.DualBasis
-import TauCeti.Algebra.HopfAlgebra.HopfModule.Dual
 import TauCeti.Algebra.Module.Injective.Frobenius
 
 /-!
@@ -23,8 +23,9 @@ Frobenius functionals as well.
 A Frobenius functional on a finite-dimensional bialgebra pairs nontrivially with both integral
 spaces: each has a unique element on which the functional is one, so both integral spaces have
 dimension `1`. For a right invariant functional on a Hopf algebra, strong invariance gives a
-reconstruction formula from the coproduct of its normalized left integral, forcing the antipode to
-be bijective.
+reconstruction formula from the coproduct of its normalized left integral; for a left invariant
+functional, the same holds with its normalized right integral. Either forces the antipode to be
+bijective.
 
 Combining these consequences with the Larson–Sweedler cointegral decomposition
 `rightCointegrals k H ⊗[k] H ≃ₗ[k] Module.Dual k H` from
@@ -32,7 +33,9 @@ Combining these consequences with the Larson–Sweedler cointegral decomposition
 for any finite-dimensional Hopf algebra `H` over a field `k`:
 
 * `TauCeti.finrank_rightCointegrals` and `TauCeti.finrank_leftCointegrals`: the spaces of right and
-  left cointegrals on `H` are one-dimensional;
+  left cointegrals on `H` are one-dimensional (a nonzero left cointegral exists already over any
+  nontrivial commutative semiring, `TauCeti.exists_isLeftCointegral_ne_zero` in
+  `TauCeti.Algebra.HopfAlgebra.Cointegral.Existence`);
 * `TauCeti.exists_isFrobeniusFunctional_of_hopfAlgebra`: `H` admits a Frobenius functional;
 * `TauCeti.finrank_leftIntegral` and `TauCeti.finrank_rightIntegral`: the spaces of left and right
   integrals in `H` are one-dimensional;
@@ -170,13 +173,35 @@ theorem IsRightInvariantIntegral.antipode_surjective [FiniteDimensional k H]
   intro x
   refine ⟨∑ i ∈ r.index, φ (x * r.left i) • r.right i, ?_⟩
   simpa only [map_sum, map_smul] using
-    (LinearMap.isRightInvariantIntegral_iff_isRightCointegral.mp hφ).sum_apply_mul_smul_antipode
-      t.property ht r x
+    hφ.sum_apply_mul_smul_antipode t.property ht r x
 
 /-- The antipode is bijective whenever a finite-dimensional Hopf algebra admits
 a nonzero right invariant functional. -/
 theorem IsRightInvariantIntegral.antipode_bijective [FiniteDimensional k H]
     (hφ : φ.IsRightInvariantIntegral) (h0 : φ ≠ 0) :
+    Function.Bijective (antipode k : H → H) :=
+  ⟨LinearMap.injective_iff_surjective.mpr (hφ.antipode_surjective h0),
+    hφ.antipode_surjective h0⟩
+
+/-- A nonzero left invariant functional makes the antipode surjective in finite
+dimension, via the normalized right integral's reconstruction formula
+`x = S (∑ φ (t₂ x) t₁)`. -/
+theorem IsLeftInvariantIntegral.antipode_surjective [FiniteDimensional k H]
+    (hφ : φ.IsLeftInvariantIntegral) (h0 : φ ≠ 0) :
+    Function.Surjective (antipode k : H → H) := by
+  classical
+  obtain ⟨t, ht, _⟩ :=
+    (hφ.isFrobeniusFunctional h0).existsUnique_rightIntegral_apply_eq_one
+  let r := ℛ k (t : H)
+  intro x
+  refine ⟨∑ i ∈ r.index, φ (r.right i * x) • r.left i, ?_⟩
+  simpa only [map_sum, map_smul] using
+    hφ.sum_apply_mul_smul_antipode t.property ht r x
+
+/-- The antipode is bijective whenever a finite-dimensional Hopf algebra admits
+a nonzero left invariant functional. -/
+theorem IsLeftInvariantIntegral.antipode_bijective [FiniteDimensional k H]
+    (hφ : φ.IsLeftInvariantIntegral) (h0 : φ ≠ 0) :
     Function.Bijective (antipode k : H → H) :=
   ⟨LinearMap.injective_iff_surjective.mpr (hφ.antipode_surjective h0),
     hφ.antipode_surjective h0⟩

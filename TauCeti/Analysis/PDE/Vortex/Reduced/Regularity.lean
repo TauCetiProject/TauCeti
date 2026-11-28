@@ -33,8 +33,9 @@ supported smooth `φ`. This file proves the first regularity step for such weak 
 The right-hand side `TauCeti.Vortex.reducedSource P w` is square integrable for every
 `w ∈ H¹(ℂ)` (`TauCeti.Vortex.memLp_reducedSource`). Writing it as
 `h (exp (2w) - 1) / 8 + (g - (1 + ‖P‖²)⁻¹ / 8)`, the first term is square integrable because
-`exp (2w) - 1 ∈ L²(ℂ)` for `w ∈ H¹(ℂ)` (`TauCeti.W1p.memLp_exp_value_sub_one`) and `0 ≤ h ≤ 1`,
-and the second by `TauCeti.Vortex.memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight`.
+`exp (2w) - 1 ∈ L²(ℂ)` for `w ∈ H¹(ℂ)` (`TauCeti.W1p.memLp_exp_value_sub_one`) and `0 ≤ h ≤ 1`
+(`TauCeti.Vortex.memLp_backgroundWeight_mul_exp_two_mul_sub_one`), and the second by
+`TauCeti.Vortex.memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight`.
 
 A weak solution `w ∈ H¹(ℂ)` therefore satisfies `-Δw = -reducedSource P w ∈ L²(ℂ)` weakly, and
 elliptic regularity for weak solutions of `-Δh + P h = g`, here with `P = 0`
@@ -53,6 +54,8 @@ This is the decay at infinity that gives the reconstructed vortex its degree-`m`
 
 ## Main results
 
+* `TauCeti.Vortex.memLp_backgroundWeight_mul_exp_two_mul_sub_one`: `h (exp (2w) - 1) ∈ L²(ℂ)`
+  for `w ∈ H¹(ℂ)`.
 * `TauCeti.Vortex.memLp_reducedSource`: `reducedSource P w ∈ L²(ℂ)` for `w ∈ H¹(ℂ)`.
 * `TauCeti.Vortex.exists_wkp_value_ae_eq_of_forall_integral_reducedSource`: a weak solution in
   `H¹(ℂ)` of the reduced equation lies in `H²(ℂ)`.
@@ -90,19 +93,33 @@ theorem reducedSource_def (P : Polynomial ℂ) (w : ℂ → ℝ) (z : ℂ) :
       backgroundWeight (P.eval ·) z * (Real.exp (2 * w z) - 1) / 8 +
         backgroundSource (P.eval ·) z := (rfl)
 
-variable {P : Polynomial ℂ}
+/-- The source of the reduced equation splits as `h (exp (2w) - 1) / 8 + (g - (1 + ‖P‖²)⁻¹ / 8)`,
+where `h = ‖P‖² / (1 + ‖P‖²)` and `g = 2 ‖P'‖² / (1 + ‖P‖²)²`. -/
+theorem reducedSource_eq_add_sub_inv_div_eight (P : Polynomial ℂ) (w : ℂ → ℝ) (z : ℂ) :
+    reducedSource P w z =
+      ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1) / 8 +
+        (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
+          (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) := by
+  simp only [reducedSource_def, backgroundSource_def, backgroundWeight_def, Polynomial.deriv]
+  field_simp
+  ring
 
-/-- **The source of the reduced equation is square integrable.** For a polynomial `P` of positive
-degree and `w ∈ H¹(ℂ)`, `(exp (2w) h - 1) / 8 + g ∈ L²(ℂ)`. -/
-theorem memLp_reducedSource (hm : 0 < P.natDegree) (u : W1p (volume : Measure ℂ) ⊤ 2) :
-    MemLp (reducedSource P (W1p.value u)) 2 volume := by
+/-- The source of the reduced equation is `(exp (2w) h - 1) / 8 + g`, where
+`h = ‖P‖² / (1 + ‖P‖²)` and `g = 2 ‖P'‖² / (1 + ‖P‖²)²`. -/
+theorem reducedSource_eq_exp_mul_sub_one_div_eight_add (P : Polynomial ℂ) (w : ℂ → ℝ) (z : ℂ) :
+    reducedSource P w z =
+      (Real.exp (2 * w z) * (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2)) - 1) / 8 +
+        2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 := by
+  simp only [reducedSource_def, backgroundSource_def, backgroundWeight_def, Polynomial.deriv]
+  ring
+
+/-- For `w ∈ H¹(ℂ)` and continuous `f`, `h (exp (2w) - 1) ∈ L²(ℂ)`, where
+`h = ‖f‖² / (1 + ‖f‖²) = TauCeti.Vortex.backgroundWeight f`: `exp (2w) - 1 ∈ L²(ℂ)` and
+`0 ≤ h ≤ 1`. -/
+theorem memLp_backgroundWeight_mul_exp_two_mul_sub_one {f : ℂ → ℂ} (hf : Continuous f)
+    (u : W1p (volume : Measure ℂ) ⊤ 2) :
+    MemLp (fun z ↦ backgroundWeight f z * (Real.exp (2 * W1p.value u z) - 1)) 2 volume := by
   have hE : finrank ℝ ℂ = 2 := Complex.finrank_real_complex
-  set h : ℂ → ℝ := backgroundWeight (P.eval ·)
-  have hh0 (z : ℂ) : 0 ≤ h z := backgroundWeight_nonneg _ z
-  have hh1 (z : ℂ) : h z ≤ 1 := by
-    rw [show h z = _ from backgroundWeight_def _ z]
-    exact div_le_one_of_le₀ (by linarith) (by positivity)
-  have hhc : Continuous h := continuous_backgroundWeight P.continuous
   -- `exp (2w) - 1 ∈ L²`, from the value of `2 • u`.
   have h2u : (W1p.value ((2 : ℝ) • u) : ℂ → ℝ) =ᵐ[volume] fun z ↦ 2 * W1p.value u z := by
     have h := W1p.value_smul_ae (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2) 2 u
@@ -111,15 +128,24 @@ theorem memLp_reducedSource (hm : 0 < P.natDegree) (u : W1p (volume : Measure �
   have hexp : MemLp (fun z ↦ Real.exp (2 * W1p.value u z) - 1) 2 volume :=
     (W1p.memLp_exp_value_sub_one volume hE ((2 : ℝ) • u)).ae_eq
       (h2u.mono fun z hz ↦ by simp only [hz])
-  have htop : MemLp h ⊤ volume :=
-    memLp_top_of_bound hhc.aestronglyMeasurable 1 (Eventually.of_forall fun z ↦ by
-      rw [Real.norm_of_nonneg (hh0 z)]; exact hh1 z)
-  have hfirst := (htop.mul (r := 2) hexp).const_mul (1 / 8)
+  have htop : MemLp (backgroundWeight f) ⊤ volume :=
+    memLp_top_of_bound (continuous_backgroundWeight hf).aestronglyMeasurable 1
+      (Eventually.of_forall fun z ↦ by
+        rw [Real.norm_of_nonneg (backgroundWeight_nonneg f z)]
+        exact (backgroundWeight_lt_one f z).le)
+  exact htop.mul (r := 2) hexp
+
+variable {P : Polynomial ℂ}
+
+/-- **The source of the reduced equation is square integrable.** For a polynomial `P` of positive
+degree and `w ∈ H¹(ℂ)`, `(exp (2w) h - 1) / 8 + g ∈ L²(ℂ)`. -/
+theorem memLp_reducedSource (hm : 0 < P.natDegree) (u : W1p (volume : Measure ℂ) ⊤ 2) :
+    MemLp (reducedSource P (W1p.value u)) 2 volume := by
+  have hfirst :=
+    (memLp_backgroundWeight_mul_exp_two_mul_sub_one P.continuous u).const_mul (1 / 8)
   refine (hfirst.add (memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm)).ae_eq
     (Eventually.of_forall fun z ↦ ?_)
-  simp only [Pi.add_apply, Pi.mul_apply, reducedSource_def, backgroundSource_def,
-    backgroundWeight_def, Polynomial.deriv, h]
-  field_simp
+  simp only [Pi.add_apply, reducedSource_eq_add_sub_inv_div_eight, backgroundWeight_def]
   ring
 
 /-- **Weak solutions of the reduced vortex equation lie in `H²`.** Let `P` be a polynomial of

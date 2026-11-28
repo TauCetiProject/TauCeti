@@ -66,7 +66,7 @@ theorem neg_six_div_one_add_four_mul_le_of_mul_sq_le_deriv_of_isLocalMin [Compac
   have hbar (s : ℝ) :
       -6 / (1 + 4 * a) / (1 - 2 / 3 * (-6 / (1 + 4 * a)) * (s - a)) = -6 / (1 + 4 * s) := by
     rw [hden, div_div_div_cancel_right₀ ha'.ne']
-  have h := div_one_sub_mul_le_of_mul_sq_le_deriv_of_isLocalMin (c := 2 / 3) (by norm_num)
+  have h := div_one_sub_mul_le_of_mul_sq_le_deriv_of_isLocalMin (c := 2 / 3)
     (by rw [hden]; exact div_pos (by linarith [ht.1, ht.2]) ha') hcont hdiff
     (fun s hs y hmin hlt ↦ hloc hs y hmin (by rwa [hbar] at hlt)) hinit ht x
   rwa [hbar] at h

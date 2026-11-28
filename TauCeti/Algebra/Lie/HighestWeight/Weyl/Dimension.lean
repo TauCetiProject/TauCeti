@@ -9,7 +9,12 @@ public import TauCeti.Algebra.Lie.HighestWeight.FiniteDimensional
 public import TauCeti.Algebra.Lie.HighestWeight.Weight.Lattice
 public import TauCeti.Algebra.Lie.HighestWeight.Weyl.Character
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Dimension
+public import Mathlib.Algebra.Lie.Rank
+import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
+import TauCeti.Algebra.Lie.HighestWeight.Trivial
+import TauCeti.Algebra.Lie.Weights.Diagonalizable
 import TauCeti.Algebra.Lie.Weights.Dimension
+import TauCeti.Algebra.Lie.Weights.Rank
 
 /-!
 # The Weyl dimension formula
@@ -44,6 +49,12 @@ passes from the field `K` to the integers through `TauCeti.intCast_coweightPairi
 * `TauCeti.finiteDimensional_irreducibleQuotient_weylVector` and
   `TauCeti.finrank_irreducibleQuotient_weylVector`: the irreducible module of highest weight `ρ` is
   finite-dimensional, of dimension `2 ^ ((dim L - dim H) / 2)`.
+* `TauCeti.finrank_end_irreducibleQuotient_weylVector`: its endomorphism algebra has dimension
+  `2 ^ (dim L - rank L)`.
+* `TauCeti.formalCharacter_eq_one_of_isHighestWeightVector_zero`: a module of highest weight `0`,
+  such as `L(0)`, has character `1`.
+* `TauCeti.weylDenominator_rootSystem_eq_weylNumerator_zero`: **the Weyl denominator identity**
+  `Δ = N(0)` for the root system of a Cartan subalgebra, the character formula of `L(0)`.
 
 ## References
 
@@ -59,11 +70,15 @@ open LieAlgebra LieModule Module
 
 universe u v w
 
-variable {K : Type u} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K] [Invertible (2 : K)]
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K]
   [LieRing L] [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
   {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
   [FiniteDimensional K M] {b : (IsKilling.rootSystem H).Base} {lam : Dual K H} {v : M}
+
+section
+
+variable [Invertible (2 : K)]
 
 section HighestWeightModule
 
@@ -179,5 +194,70 @@ theorem finrank_irreducibleQuotient_weylVector
     have h := finrank_eq_finrank_cartan_add_two_mul_ncard_posRoots H b
     omega
   simpa only [hExponent] using hcard
+
+/-- **The endomorphism algebra of `L(ρ)` has dimension `2 ^ (d - l)`** for `L` of dimension `d`
+and rank `l`: `L(ρ)` has dimension `2 ^ ((d - l) / 2)` with `d - l` even. -/
+theorem finrank_end_irreducibleQuotient_weylVector (b : (IsKilling.rootSystem H).Base) :
+    finrank K (Module.End K (irreducibleQuotient b (weylVector (IsKilling.rootSystem H) b))) =
+      2 ^ (finrank K L - LieAlgebra.rank K L) := by
+  have := finiteDimensional_irreducibleQuotient_weylVector b
+  have hd := finrank_eq_finrank_cartan_add_two_mul_ncard_posRoots H b
+  rw [Module.finrank_linearMap, finrank_irreducibleQuotient_weylVector, ← pow_add,
+    H.rank_eq_finrank_cartan]
+  congr 1
+  omega
+
+end
+
+/-! ### The module of highest weight `0` -/
+
+section Zero
+
+open AddMonoidAlgebra
+
+/-- **A module of highest weight `0` has character `1`.** A finite-dimensional module generated
+by a highest weight vector of weight `0` is trivial, and one-dimensional by the Weyl dimension
+formula, so all of it is the weight space of the zero weight. -/
+theorem formalCharacter_eq_one_of_isHighestWeightVector_zero
+    (hv : IsHighestWeightVector b (0 : Dual K H) v) (hgen : LieSubmodule.lieSpan K L {v} = ⊤) :
+    formalCharacter K H M = 1 := by
+  have _ : LieModule.IsTrivial L M :=
+    isTrivial_of_isHighestWeightVector_weight_zero_of_lieSpan_eq_top hv hgen
+  have hdim : finrank K M = 1 := by
+    have h := finrank_eq_prod_coweightPairing_div hv hgen
+    rw [zero_add, Finset.prod_eq_one fun i _ ↦ div_self (by
+      exact_mod_cast coweightPairing_weylVector_ne_zero (b := b) i)] at h
+    exact_mod_cast h
+  classical
+  refine AddMonoidAlgebra.ext (Finsupp.ext fun χ ↦ ?_)
+  rw [formalCharacter_coeff, one_def, coeff_single]
+  rcases eq_or_ne χ 0 with rfl | hχ
+  · have h0 : ((0 : Dual K H) : H → K) = 0 := funext fun _ ↦ LinearMap.zero_apply _
+    rw [Finsupp.single_eq_same, h0, zero_genWeightSpace_eq_top_of_nilpotent']
+    -- `⊤` as a Lie submodule is linearly equivalent to `M`.
+    have htop : finrank K (⊤ : LieSubmodule K H M) = 1 :=
+      (LieModuleEquiv.ofTop K H M).toLinearEquiv.finrank_eq.trans hdim
+    exact_mod_cast htop
+  · have hbot : genWeightSpace M (χ : H → K) = ⊥ := by
+      by_contra hne
+      exact hχ (LinearMap.coe_injective (eq_zero_of_genWeightSpace_ne_bot_of_isTrivial hne))
+    rw [Finsupp.single_eq_of_ne hχ, hbot]
+    simp
+
+variable (b) in
+/-- **The Weyl denominator identity** for the root system of a Cartan subalgebra:
+`∏_{α>0} (1 - e^{-α}) = ∑_{w ∈ W} sgn(w) e^{w ⬝ 0}`. This is the Weyl character formula for the
+trivial module `L(0)`, whose character is `1`. -/
+theorem weylDenominator_rootSystem_eq_weylNumerator_zero
+    [Fintype (IsKilling.rootSystem H).weylGroup] :
+    weylDenominator (IsKilling.rootSystem H) b = weylNumerator (IsKilling.rootSystem H) b 0 := by
+  have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral
+    (isDominantIntegral_zero (b := b))
+  have hv := isHighestWeightVector_irreducibleQuotientGenerator b (0 : Dual K H)
+  have hgen := lieSpan_irreducibleQuotientGenerator_eq_top b (0 : Dual K H)
+  have h := formalCharacter_mul_weylDenominator_eq_weylNumerator hv hgen
+  rwa [formalCharacter_eq_one_of_isHighestWeightVector_zero hv hgen, one_mul] at h
+
+end Zero
 
 end TauCeti

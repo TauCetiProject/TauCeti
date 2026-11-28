@@ -17,6 +17,8 @@ import Mathlib.AlgebraicGeometry.Sites.EtalePoint
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 import TauCeti.AlgebraicGeometry.RationalPoint.Affine
+import TauCeti.AlgebraicGeometry.Restrict
+import TauCeti.RingTheory.Etale.Field
 import TauCeti.RingTheory.TotallySplit
 
 /-!
@@ -64,6 +66,8 @@ point factors through `κ`, so the base change `L ⊗[A] B` is the base change o
 Étaleness of a morphism is local on the target
 (`TauCeti.AlgebraicGeometry.isZariskiLocalAtTarget_etale`); this is recorded as an instance because
 instance search does not derive it from Mathlib's ring-map description of `Etale`.
+Since étaleness is also local on the source, a morphism out of a binary coproduct is étale when its
+restrictions to both summands are (`TauCeti.AlgebraicGeometry.etale_coprodDesc`).
 
 ## Main results
 
@@ -75,8 +79,11 @@ instance search does not derive it from Mathlib's ring-map description of `Etale
   étale exactly when `Γ(X, ⊤)` is an étale `R`-algebra.
 * `TauCeti.AlgebraicGeometry.etale_specAlgebraMap`: for any étale `R`-algebra `A`,
   `Spec.algebraMap R A` is étale.
+* `TauCeti.AlgebraicGeometry.etale_specAlgebraMap_of_isSeparable`: for a finite separable field
+  extension `L / K`, `Spec.algebraMap K L` is étale.
 * `TauCeti.AlgebraicGeometry.etaleSpecAlgebraMapHomEquiv`: morphisms in `(Spec (.of R)).Etale`
   between affine étale `R`-schemes `Spec A` and `Spec B` correspond to `B →ₐ[R] A`.
+* `TauCeti.AlgebraicGeometry.etale_coprodDesc`: `coprod.desc f g` is étale when `f` and `g` are.
 * `AlgebraicGeometry.Scheme.etaleEquivOfIsEmpty`: equivalence `X.Etale ≌ Discrete PUnit` when `X`
   is empty.
 * `AlgebraicGeometry.Scheme.Hom.etale_of_finrank_le_natCard`: a finite morphism `f : X ⟶ Spec K`
@@ -250,6 +257,15 @@ instance etale_specAlgebraMap {R A : Type u} [CommRing R] [CommRing A] [Algebra 
   (_root_.AlgebraicGeometry.HasRingHomProperty.Spec_iff (P := @_root_.AlgebraicGeometry.Etale)).mpr
     (RingHom.etale_algebraMap.mpr inferInstance)
 
+/-- For a finite separable field extension `L / K`, `Spec.algebraMap K L : Spec L ⟶ Spec K` is
+étale. This is the field case of `etale_specAlgebraMap`, needed as its own instance because
+`Algebra.Etale.of_isSeparable` is a theorem rather than an instance. -/
+instance etale_specAlgebraMap_of_isSeparable {K L : Type u} [Field K] [Field L] [Algebra K L]
+    [Module.Finite K L] [Algebra.IsSeparable K L] :
+    _root_.AlgebraicGeometry.Etale (_root_.AlgebraicGeometry.Spec.algebraMap K L) :=
+  have := Algebra.Etale.of_isSeparable K L
+  inferInstance
+
 /-- Morphisms in `(Spec (.of R)).Etale` between affine étale `R`-schemes `Spec A` and `Spec B`
 correspond bijectively to `R`-algebra homomorphisms `B →ₐ[R] A`. -/
 noncomputable def etaleSpecAlgebraMapHomEquiv (R A B : Type u) [CommRing R] [CommRing A]
@@ -302,6 +318,14 @@ this from Mathlib's ring-map description of `Etale`, so it is recorded here. -/
 instance isZariskiLocalAtTarget_etale :
     AlgebraicGeometry.IsZariskiLocalAtTarget @AlgebraicGeometry.Etale.{u} :=
   AlgebraicGeometry.HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.Etale)
+
+/-- A morphism out of a binary coproduct is étale when its restrictions to both summands are. -/
+instance etale_coprodDesc {A B Y : _root_.AlgebraicGeometry.Scheme.{u}} (f : A ⟶ Y) (g : B ⟶ Y)
+    [_root_.AlgebraicGeometry.Etale f] [_root_.AlgebraicGeometry.Etale g] :
+    _root_.AlgebraicGeometry.Etale (CategoryTheory.Limits.coprod.desc f g) :=
+  have : _root_.AlgebraicGeometry.IsZariskiLocalAtSource @_root_.AlgebraicGeometry.Etale.{u} :=
+    _root_.AlgebraicGeometry.HasRingHomProperty.instIsZariskiLocalAtSource (Q := RingHom.Etale)
+  _root_.AlgebraicGeometry.IsZariskiLocalAtSource.coprodDesc ‹_› ‹_›
 
 section ClosedFibre
 

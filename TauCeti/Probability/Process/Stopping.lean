@@ -5,30 +5,48 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.Probability.Process.Stopping
+public import TauCeti.Topology.Order.Cadlag
 
 /-!
 # Stopping times and stopped paths
 
 A stopping time remains a stopping time for a larger filtration. This transports stopping
 arguments and localizing sequences when augmenting a filtration. Finite suprema preserve
-the stopping-time property.
+the stopping-time property, as does gluing two stopping times along an event measurable in both
+stopping σ-algebras (`MeasureTheory.IsStoppingTime.piecewise`); in particular, restricting a
+stopping time to an event known at that time by setting it to `⊤` outside (`piecewise_top`) yields
+a stopping time.
 
-Stopping preserves path continuity and right continuity at each time, including when the stopping
-time is infinite. These pathwise facts require no measurability or stopping-time hypothesis and let
-local-martingale arguments retain the continuity or right continuity of their native stopped stages.
+Stopping preserves path continuity, right continuity at each time, and the càdlàg property globally
+(`IsCadlag.stoppedProcess`), including when the stopping time is infinite. These pathwise facts
+require no measurability or stopping-time hypothesis and let local-martingale, stochastic-integral,
+and optional-ray arguments retain the continuity, right continuity, or càdlàg regularity of stopped
+stages.
 
-Simultaneous almost-sure nonnegativity controls random-time evaluations, including stopped
-processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`).
-Pathwise set membership up to the random time also passes to the stopped process. Neither
-fact requires a stopping-time or measurability assumption. Under a finite measure, truncating an
+Simultaneous almost-surely diverging random times eventually leave every deterministic time
+below the stopping horizon (`MeasureTheory.ae_eventuallyEq_stoppedProcess`). Simultaneous
+almost-sure nonnegativity controls random-time evaluations, including stopped processes
+restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`). Pathwise set
+membership up to the random time also passes to the stopped process, and, under a finite
+measure, almost-sure agreements with almost-everywhere strongly measurable stage variables along
+random times diverging to `⊤` converge in measure to the unstopped slice
+(`MeasureTheory.tendstoInMeasure_of_stoppedProcess_ae_eq`). Under a finite measure, truncating an
 almost-everywhere measurable `WithTop ℝ≥0`-valued time at a deterministic bound `T : ℝ≥0` yields an
 integrable finite approximation (`MeasureTheory.integrable_untopA_const_min`).
 -/
 
 public section
 
-namespace MeasureTheory.IsStoppingTime
+namespace MeasureTheory
+
+/-- The identically infinite time is a stopping time for any filtration. -/
+theorem isStoppingTime_top {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
+    (ℱ : Filtration ι mΩ) : IsStoppingTime ℱ (fun _ ↦ (⊤ : WithTop ι)) :=
+  fun _ ↦ by simp
+
+namespace IsStoppingTime
 
 /-- A stopping time for a filtration is also a stopping time for any larger filtration. -/
 theorem mono_filtration {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
@@ -36,7 +54,42 @@ theorem mono_filtration {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
     (hτ : IsStoppingTime ℱ τ) (h : ℱ ≤ 𝒢) : IsStoppingTime 𝒢 τ :=
   fun t => h t _ (hτ.measurableSet_le t)
 
-end MeasureTheory.IsStoppingTime
+/-- The stopping σ-algebra of the identically infinite stopping time is `⨆ t, ℱ t`. -/
+@[simp]
+theorem measurableSpace_top {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
+    (ℱ : Filtration ι mΩ) :
+    (isStoppingTime_top ℱ).measurableSpace = ⨆ t, ℱ t := by
+  ext s
+  simp [IsStoppingTime.measurableSet]
+
+/-- Gluing two stopping times along an event measurable in both stopping σ-algebras yields a
+stopping time, with no ordering assumption between the two times. -/
+theorem piecewise {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ι mΩ} {τ η : Ω → WithTop ι} {s : Set Ω} [DecidablePred (· ∈ s)]
+    (hτ : IsStoppingTime ℱ τ) (hη : IsStoppingTime ℱ η)
+    (hsτ : MeasurableSet[hτ.measurableSpace] s)
+    (hsη : MeasurableSet[hη.measurableSpace] s) :
+    IsStoppingTime ℱ (s.piecewise τ η) := by
+  intro t
+  have heq : {ω | s.piecewise τ η ω ≤ t} = s ∩ {ω | τ ω ≤ t} ∪ sᶜ ∩ {ω | η ω ≤ t} := by
+    ext ω
+    by_cases hω : ω ∈ s <;> simp [Set.piecewise, hω]
+  rw [heq]
+  exact (((hτ.measurableSet s).mp hsτ).2 t).union (((hη.measurableSet sᶜ).mp hsη.compl).2 t)
+
+/-- Restricting a stopping time `τ` to an event known at `τ` (setting it to `⊤` on the complement)
+produces a stopping time; this is the restriction `τ_A` of `τ` to `A` (Dellacherie–Meyer,
+Chapter IV). -/
+theorem piecewise_top {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ι mΩ} {τ : Ω → WithTop ι} {s : Set Ω} [DecidablePred (· ∈ s)]
+    (hτ : IsStoppingTime ℱ τ) (hs : MeasurableSet[hτ.measurableSpace] s) :
+    IsStoppingTime ℱ (s.piecewise τ (fun _ ↦ ⊤)) :=
+  hτ.piecewise (isStoppingTime_top ℱ) hs
+    (hτ.measurableSpace_mono (isStoppingTime_top ℱ) (fun _ ↦ le_top) s hs)
+
+end IsStoppingTime
+
+end MeasureTheory
 
 /-- The finite supremum of stopping times is a stopping time.
 The empty supremum is the constant bottom time. -/
@@ -89,6 +142,25 @@ theorem ContinuousWithinAt.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [No
       · exact MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut.trans hs.le)
       · exact MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut)
 
+/-- Stopping preserves the càdlàg property of a path globally, without any measurability or
+stopping-time assumption on the random time. At an infinite time the path is unchanged, and at a
+finite time `u` it freezes at `X u ω` on `[u, ∞)` while retaining the existence of left limits
+everywhere. -/
+theorem IsCadlag.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    [TopologicalSpace ι] [OrderClosedTopology ι] [TopologicalSpace E]
+    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω}
+    (hX : IsCadlag (X · ω)) :
+    IsCadlag (MeasureTheory.stoppedProcess X τ · ω) := by
+  cases hτ : τ ω with
+  | top => simpa [MeasureTheory.stoppedProcess, hτ] using hX
+  | coe u =>
+    have heq : (MeasureTheory.stoppedProcess X τ · ω) = fun t ↦ X (min t u) ω := by
+      ext t
+      simp only [MeasureTheory.stoppedProcess, hτ]
+      rw [← WithTop.coe_min]
+      simp only [WithTop.untopA, WithTop.untopD_coe]
+    exact heq ▸ hX.comp_min_const u
+
 namespace MeasureTheory
 
 /-- A path that stays in a set up to a random time also stays in that set when stopped.
@@ -112,6 +184,11 @@ theorem stoppedProcess_indicator_pos_apply {ι Ω E : Type*} [LinearOrder ι] [O
   rw [stoppedProcess_indicator_comm]
   simp only [Set.indicator_apply, Set.mem_ofPred_eq, stoppedProcess]
 
+/-- Pointwise evaluation of a stopped process. -/
+theorem stoppedProcess_apply {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    (u : ι → Ω → E) (τ : Ω → WithTop ι) (i : ι) (ω : Ω) :
+    stoppedProcess u τ i ω = u (min (i : WithTop ι) (τ ω)).untopA ω := rfl
+
 /-- At the initial time, stopping leaves any process unchanged. -/
 @[simp]
 theorem stoppedProcess_bot {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
@@ -134,6 +211,32 @@ theorem ae_nonneg_stoppedProcess_indicator
     exact Set.indicator_apply_nonneg (fun _ ↦ hω t)
   · rw [stoppedProcess_eq_of_ge (le_of_not_ge ht)]
     exact Set.indicator_apply_nonneg (fun _ ↦ hω _)
+
+/-- If random times `τ` diverge almost surely to `⊤` along a filter `l`, then at any fixed time
+`t` the stopped process `stoppedProcess X (τ k) t` eventually agrees with `X t` almost surely. -/
+theorem ae_eventuallyEq_stoppedProcess {ι α Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    [TopologicalSpace ι] [OrderTopology ι] [MeasurableSpace Ω] {P : Measure Ω}
+    {l : Filter α} (X : ι → Ω → E) {τ : α → Ω → WithTop ι} (t : ι)
+    (hτ_top : ∀ᵐ ω ∂P, Tendsto (τ · ω) l (𝓝 ⊤)) :
+    ∀ᵐ ω ∂P, ∀ᶠ k in l, stoppedProcess X (τ k) t ω = X t ω :=
+  hτ_top.mono fun _ hω ↦ ((WithTop.tendsto_nhds_top_iff _).mp hω t).mono fun _ hk ↦
+    stoppedProcess_eq_of_le hk.le
+
+/-- If random times `τ k` diverge almost surely to `⊤` and each stopped slice
+`stoppedProcess X (τ k) t` agrees almost everywhere with an `AEStronglyMeasurable` variable `U k`,
+then `U k` converges to `X t` in `P`-measure on a finite measure space. No measurability or
+stopping-time assumption on `X` or `τ k` is needed. -/
+theorem tendstoInMeasure_of_stoppedProcess_ae_eq {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    [TopologicalSpace ι] [OrderTopology ι] [PseudoEMetricSpace E]
+    [MeasurableSpace Ω] {P : Measure Ω} [IsFiniteMeasure P]
+    {X : ι → Ω → E} {τ : ℕ → Ω → WithTop ι} {U : ℕ → Ω → E} {t : ι}
+    (hτ_top : ∀ᵐ ω ∂P, Tendsto (τ · ω) atTop (𝓝 ⊤))
+    (hUm : ∀ k, AEStronglyMeasurable (U k) P)
+    (hX_stop : ∀ k, stoppedProcess X (τ k) t =ᵐ[P] U k) :
+    TendstoInMeasure P U atTop (X t) :=
+  (tendstoInMeasure_of_tendsto_ae (fun k ↦ (hUm k).congr (hX_stop k).symm)
+    ((ae_eventuallyEq_stoppedProcess X t hτ_top).mono fun _ hω ↦
+      tendsto_const_nhds.congr' (hω.mono fun _ hk ↦ hk.symm))).congr_left hX_stop
 
 open scoped NNReal
 

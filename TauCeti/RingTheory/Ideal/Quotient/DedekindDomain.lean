@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.DedekindDomain.Basic
 
 import Mathlib.RingTheory.HopkinsLevitzki
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
-import TauCeti.RingTheory.LocalRing.RingHom
+import TauCeti.RingTheory.LocalRing.RingHom.Basic
 
 /-!
 # Lifting units between ideal quotients of a Dedekind domain

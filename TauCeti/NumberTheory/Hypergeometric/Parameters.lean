@@ -33,19 +33,23 @@ that the later theory transports invariants along:
 * the common denominator `N`, the least positive integer killing every class of `α + β`, equal
   to the lcm of their additive orders, and `1` exactly for the empty pair;
 * the scaling `(α, β) ↦ (uα, uβ)` by an integer `u` prime to `N`, which preserves disjointness,
-  the degree and the common denominator, and composes multiplicatively.
+  the degree and the common denominator, and composes multiplicatively;
+* Galois stability: being fixed by every such scaling.
 
 ## Main declarations
 
 * `TauCeti.Hypergeometric.rep`, `TauCeti.Hypergeometric.rep0`: the representatives, with
   `coe_rep`, `rep_injective`, `rep_zero`, `rep_eq_iff` and their `rep0` counterparts, and
-  `rep_neg`, `rep0_neg` relating them under negation.
-* `TauCeti.Hypergeometric.Parameters`: a hypergeometric parameter pair, with its `degree`.
+  `rep_neg`, `rep0_neg` relating them under negation, and `rep_add`.
+* `TauCeti.Hypergeometric.Parameters`: a hypergeometric parameter pair, with its `degree` and
+  `count_add_of_mem_α`, `count_add_of_mem_β`.
 * `TauCeti.Hypergeometric.Parameters.swap`, the `Neg` and `InvolutiveNeg` instances, and the
   `AddAction (AddCircle (1 : ℚ))` instance of shifts.
 * `TauCeti.Hypergeometric.Parameters.denominator`, with `denominator_eq_lcm`,
   `denominator_dvd_iff`, `isLeast_denominator` and `denominator_eq_one_iff`.
 * `TauCeti.Hypergeometric.Parameters.scale`, with `denominator_scale` and `scale_scale`.
+* `TauCeti.Hypergeometric.Parameters.IsGaloisStable`: stability under every such scaling, with
+  `isGaloisStable_iff`.
 
 ## References
 
@@ -169,6 +173,18 @@ theorem rep0_neg (x : AddCircle (1 : ℚ)) : rep0 (-x) = 1 - rep x := by
   refine rep0_eq_iff.2 ⟨⟨by linarith [rep_le_one x], by linarith [rep_pos x]⟩, ?_⟩
   rw [AddCircle.coe_sub, AddCircle.coe_period, coe_rep, zero_sub]
 
+/-- The representative of a sum is the sum of the representatives, reduced by `1` when it
+exceeds `1`. -/
+theorem rep_add (x y : AddCircle (1 : ℚ)) :
+    rep (x + y) = if rep x + rep y ≤ 1 then rep x + rep y else rep x + rep y - 1 := by
+  have hx := rep_mem_Ioc x
+  have hy := rep_mem_Ioc y
+  rw [rep_eq_iff]
+  split_ifs with h
+  · exact ⟨⟨by linarith [hx.1, hy.1], h⟩, by rw [AddCircle.coe_add, coe_rep, coe_rep]⟩
+  · refine ⟨⟨by linarith, by linarith [hx.2, hy.2]⟩, ?_⟩
+    rw [AddCircle.coe_sub, AddCircle.coe_period, sub_zero, AddCircle.coe_add, coe_rep, coe_rep]
+
 /-! ### Parameter pairs -/
 
 /-- A hypergeometric parameter pair: two multisets `α`, `β` of classes in `ℚ/ℤ` of the same
@@ -201,6 +217,17 @@ theorem degree_eq_zero_iff : P.degree = 0 ↔ P.α = 0 ∧ P.β = 0 := by
 
 theorem notMem_β_of_mem_α {a : AddCircle (1 : ℚ)} (ha : a ∈ P.α) : a ∉ P.β :=
   Multiset.disjoint_left.1 P.disjoint ha
+
+/-- A class of `α` has in `α + β` its multiplicity in `α`. -/
+theorem count_add_of_mem_α {a : AddCircle (1 : ℚ)} (ha : a ∈ P.α) :
+    (P.α + P.β).count a = P.α.count a := by
+  rw [Multiset.count_add, Multiset.count_eq_zero.2 (P.notMem_β_of_mem_α ha), add_zero]
+
+/-- A class of `β` has in `α + β` its multiplicity in `β`. -/
+theorem count_add_of_mem_β {a : AddCircle (1 : ℚ)} (ha : a ∈ P.β) :
+    (P.α + P.β).count a = P.β.count a := by
+  rw [Multiset.count_add, Multiset.count_eq_zero.2 (Multiset.disjoint_right.1 P.disjoint ha),
+    zero_add]
 
 /-! ### Swap -/
 
@@ -414,6 +441,38 @@ theorem swap_scale : (P.scale hu).swap = P.swap.scale (P.denominator_swap ▸ hu
 @[simp]
 theorem neg_scale : -(P.scale hu) = (-P).scale (P.denominator_neg ▸ hu) := by
   ext1 <;> simp [Multiset.map_map]
+
+/-! ### Galois stability -/
+
+/-- A parameter pair is *Galois stable* when every scaling by an integer prime to the common
+denominator fixes it. The Galois-stable pairs are exactly the pairs of a cyclotomic datum. -/
+def IsGaloisStable : Prop :=
+  ∀ (u : ℤ) (hu : IsCoprime u P.denominator), P.scale hu = P
+
+theorem isGaloisStable_iff : P.IsGaloisStable ↔
+    ∀ u : ℤ, IsCoprime u P.denominator → P.α.map (u • ·) = P.α ∧ P.β.map (u • ·) = P.β := by
+  simp only [IsGaloisStable, Parameters.ext_iff, scale_α, scale_β]
+
+/-- A Galois-stable pair is fixed by every scaling by an integer prime to its denominator. -/
+theorem IsGaloisStable.scale_eq {P : Parameters} (hP : P.IsGaloisStable) {u : ℤ}
+    (hu : IsCoprime u P.denominator) : P.scale hu = P :=
+  hP u hu
+
+/-- Negating a pair preserves Galois stability, since negation commutes with every scaling. -/
+@[simp]
+theorem isGaloisStable_neg : (-P).IsGaloisStable ↔ P.IsGaloisStable := by
+  suffices h : ∀ Q : Parameters, Q.IsGaloisStable → (-Q).IsGaloisStable from
+    ⟨fun hP ↦ neg_neg P ▸ h _ hP, h P⟩
+  intro Q hQ u hu
+  rw [← Q.neg_scale (Q.denominator_neg ▸ hu), hQ.scale_eq]
+
+/-- A Galois-stable pair is fixed by negation, which is scaling by `-1`. -/
+theorem IsGaloisStable.neg_eq {P : Parameters} (hP : P.IsGaloisStable) : -P = P :=
+  P.scale_neg_one.symm.trans (hP.scale_eq _)
+
+@[simp]
+theorem isGaloisStable_swap : P.swap.IsGaloisStable ↔ P.IsGaloisStable := by
+  simp only [isGaloisStable_iff, swap_α, swap_β, denominator_swap, and_comm]
 
 end Parameters
 

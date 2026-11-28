@@ -8,6 +8,8 @@ module
 public import TauCeti.Topology.Homotopy.Extension.Basic
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Analysis.Normed.Module.Convex
+import TauCeti.Topology.Homotopy.Affine
+import TauCeti.Analysis.Convex.Contractible
 
 /-!
 # The unit sphere is a closed cofibration in the closed unit ball
@@ -52,8 +54,10 @@ hypothesis of the compression lemma for CW complexes.
   homotopy extension property in its unit disc**, for instance a sphere bundle in its disc bundle.
 * `TauCeti.hasHomotopyExtensionProperty_sphere_closedBall`: **the unit sphere has the homotopy
   extension property inside the closed unit ball.**
-* `ContinuousMap.nullhomotopic_iff_exists_extension_closedBall`: a map out of the unit sphere is
-  null-homotopic exactly when it extends over the closed unit ball.
+* `ContinuousMap.nullhomotopic_iff_exists_extension_closedBall`,
+  `ContinuousMap.homotopicRel_const_singleton_sphere_iff_exists_extension_closedBall`,
+  `ContinuousMap.homotopicRel_const_singleton_sphere_iff_nullhomotopic`: free and pointed
+  null-homotopy of a map out of the unit sphere agree with extension over the closed unit ball.
 * `ContinuousMap.HomotopicWith.exists_homotopicRel_range_subset`: a map of pairs homotopic through
   maps of pairs to a map into `B` is homotopic relative to the sphere to a map into `B`.
 
@@ -319,15 +323,45 @@ theorem nullhomotopic_iff_exists_extension_closedBall (g : C(sphere (0 : E) 1, Y
       (hK 1 ⟨⟨y, sphere_subset_closedBall y.property⟩, y.property⟩).trans (H.apply_one y)⟩
   · -- The closed ball is contractible, so every map out of it is null-homotopic.
     rintro ⟨G, hG⟩
-    have : ContractibleSpace (closedBall (0 : E) 1) :=
-      (convex_closedBall 0 1).contractibleSpace ⟨0, mem_closedBall_self zero_le_one⟩
     let ι : C(sphere (0 : E) 1, closedBall (0 : E) 1) :=
-      ⟨fun y ↦ ⟨y, sphere_subset_closedBall y.property⟩, by fun_prop⟩
+      ContinuousMap.inclusion sphere_subset_closedBall
     have hg : g = (G.comp (ContinuousMap.id _)).comp ι := by
       ext y
       exact (hG y).symm
     rw [hg]
     exact ((id_nullhomotopic _).comp_right G).comp_left ι
+
+/-- **A map out of the unit sphere is homotopic relative to a base point to a constant map
+exactly when it extends over the closed unit ball.** -/
+theorem homotopicRel_const_singleton_sphere_iff_exists_extension_closedBall
+    (g : C(sphere (0 : E) 1, Y)) (s₀ : sphere (0 : E) 1) :
+    g.HomotopicRel (ContinuousMap.const _ (g s₀)) {s₀} ↔
+      ∃ G : C(closedBall (0 : E) 1, Y),
+        ∀ y : sphere (0 : E) 1, G ⟨y, sphere_subset_closedBall y.property⟩ = g y := by
+  constructor
+  · intro h
+    exact g.nullhomotopic_iff_exists_extension_closedBall.mp ⟨g s₀, h.homotopic⟩
+  · rintro ⟨G, hG⟩
+    -- Straight-line segments inside the convex closed ball deform every point to `s₀`.
+    let ι : C(sphere (0 : E) 1, closedBall (0 : E) 1) :=
+      ContinuousMap.inclusion sphere_subset_closedBall
+    let H := Homotopy.affineOfConvex (convex_closedBall (0 : E) 1) ι (ContinuousMap.const _ (ι s₀))
+    refine ⟨{
+      toContinuousMap := G.comp H.toContinuousMap
+      map_zero_left y := (congrArg G (H.apply_zero y)).trans (hG y)
+      map_one_left y := (congrArg G (H.apply_one y)).trans (hG s₀)
+      prop' t y hy := by
+        rw [mem_singleton_iff.mp hy]
+        have ht : H (t, s₀) = ι s₀ :=
+          Homotopy.affineOfConvex_eq_of_eq (convex_closedBall (0 : E) 1) t rfl
+        exact (congrArg G ht).trans (hG s₀) }⟩
+
+/-- **Pointed and free null-homotopy agree on the unit sphere** of a real seminormed space. -/
+theorem homotopicRel_const_singleton_sphere_iff_nullhomotopic
+    (g : C(sphere (0 : E) 1, Y)) (s₀ : sphere (0 : E) 1) :
+    g.HomotopicRel (ContinuousMap.const _ (g s₀)) {s₀} ↔ g.Nullhomotopic :=
+  (g.homotopicRel_const_singleton_sphere_iff_exists_extension_closedBall s₀).trans
+    g.nullhomotopic_iff_exists_extension_closedBall.symm
 
 namespace HomotopicWith
 
@@ -347,19 +381,20 @@ theorem exists_homotopicRel_range_subset {B : Set Y} {g g₁ : C(closedBall (0 :
   obtain ⟨F⟩ := h
   obtain ⟨r, hr, hr'⟩ :=
     (TauCeti.hasHomotopyExtensionProperty_sphere_closedBall (E := E)).exists_retraction
-  have hseg (p : I × closedBall (0 : E) 1) :
-      (1 - (p.1 : ℝ)) • (p.2 : E) + (p.1 : ℝ) • ((r (1, p.2)).2 : E) ∈ closedBall (0 : E) 1 :=
-    convex_closedBall (0 : E) 1 p.2.property (r (1, p.2)).2.property (sub_nonneg.2 p.1.property.2)
-        p.1.property.1
-      (by ring)
+  let r₁ : C(closedBall (0 : E) 1, closedBall (0 : E) 1) := ⟨fun x ↦ (r (1, x)).2, by fun_prop⟩
+  let H := Homotopy.affineOfConvex (convex_closedBall (0 : E) 1) (ContinuousMap.id _) r₁
   have hS {x : closedBall (0 : E) 1} (hx : (x : E) ∈ sphere 0 1) : r (1, x) = (1, x) :=
     hr' _ (TauCeti.mem_cylinderExtensionDomain_of_mem hx)
   refine ⟨⟨fun x ↦ F.symm (r (1, x)), by fun_prop⟩,
-    ⟨{ toFun p := F.symm (σ (p.1 * σ (r (1, p.2)).1), ⟨_, hseg p⟩)
+    ⟨{ toFun p := F.symm (σ (p.1 * σ (r (1, p.2)).1), H p)
        continuous_toFun := by fun_prop
-       map_zero_left x := by simp [F.symm.apply_one]
-       map_one_left x := by simp
-       prop' t x hx := by simp [hS hx, ← add_smul] }⟩, ?_⟩
+       map_zero_left x := by simp [H.apply_zero, F.symm.apply_one]
+       map_one_left x := by simp [H.apply_one, r₁]
+       prop' t x hx := by
+         have hrx : ContinuousMap.id (closedBall (0 : E) 1) x = r₁ x :=
+           congrArg Prod.snd (hS hx).symm
+         simp [H, hS hx, Homotopy.affineOfConvex_eq_of_eq (convex_closedBall (0 : E) 1) t hrx] }⟩,
+    ?_⟩
   rintro _ ⟨x, rfl⟩
   obtain h0 | hs := TauCeti.mem_cylinderExtensionDomain_iff.1 (hr (1, x))
   · simpa [h0, F.symm.apply_zero] using h₁ (mem_range_self _)

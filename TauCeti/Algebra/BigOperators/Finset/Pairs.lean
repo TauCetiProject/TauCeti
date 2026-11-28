@@ -33,6 +33,11 @@ permuted, which is `TauCeti.prod_prod_Ioi_comp_perm`. This is the symmetric coun
 Mathlib's `Equiv.Perm.prod_Ioi_comp_eq_sign_mul_prod`, where an antisymmetric summand picks up the
 sign of the permutation.
 
+The strictly increasing pairs `FinStrictUpper n` of `Fin n` are the strictly upper positions
+`StrictUpper` of the matrix indexed by `ℕ` with column below `n`
+(`TauCeti.finStrictUpperEquivSubtype`). Listing these positions column by column enumerates them
+by `ℕ`, and the positions of `Fin n` form the initial segment of length `n.choose 2`.
+
 ## Main results
 
 * `TauCeti.sum_fin_product_eq_sum_antidiagonal`: a sum over the pairs of `Fin n × Fin n` with
@@ -41,16 +46,23 @@ sign of the permutation.
   over strictly increasing pairs.
 * `TauCeti.sum_univ_prod_eq_sum_lt_add_swap`: a sum over all ordered pairs of a function vanishing
   on the diagonal, as a sum over the increasing pairs of the term plus its transpose.
+* `TauCeti.sum_offDiag_eq_sum_lt_add_swap`: the same fold for a sum over the off-diagonal pairs
+  of a finite set, with arbitrary values on the diagonal.
 * `TauCeti.sum_mul_sum_erase_eq_sum_sum_Ioi`: an off-diagonal pairing against an antisymmetric
   kernel, folded onto the strictly increasing pairs `i < j`.
 * `TauCeti.prod_prod_Ioi_comp_perm`: a product of a symmetric function over the increasing pairs is
   invariant under permuting the indices.
 * `Finset.prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag`: a product over weakly increasing
   pairs separates into the strictly increasing pairs and the diagonal.
+* `Finset.prod_product_mul_pow` and `Finset.sum_product_nsmul_add`: over `s ×ˢ s`, a product of
+  powers `(f ab.1 * f ab.2) ^ d ab` collects each factor `f a` with exponent equal to the sum of
+  row and column weights `d (a, b) + d (b, a)`.
 * `Finset.prod_prod_Iio_eq_prod_prod_Ioi`: transposes a double product from strictly decreasing to
   strictly increasing index pairs (`Finset.sum_sum_Iio_eq_sum_sum_Ioi` additively).
 * `Finset.prod_erase_univ_eq_prod_Ioi_mul_prod_Iio`: splits the product over `univ.erase i` into
   the indices above `i` and below `i` (`Finset.sum_erase_univ_eq_sum_Ioi_add_sum_Iio` additively).
+* `Finset.sum_sum_erase_univ_eq_two_nsmul_sum_sum_Ioi`: a symmetric double sum over the
+  off-diagonal pairs is twice its sum over the strictly increasing pairs.
 * `Finset.sum_mul_sum_Ioi_sub_sum_Iio`: folds a weighted antisymmetric difference of upper and
   lower sums onto strictly increasing index pairs.
 * `TauCeti.prod_prod_Ioi_eq_of_two`: separates the first pair and its cross terms from a product
@@ -65,6 +77,12 @@ sign of the permutation.
 * `TauCeti.sum_sum_Ioi_append_of_mul`: the same for a pairing turning products into sums.
 * `TauCeti.prod_prod_Ioi_scale`: scaling all entries of a pair product for a symmetric
   bimultiplicative pairing.
+* `TauCeti.strictUpperEquivNat`: the column-order enumeration `StrictUpper ≃ ℕ`, sending `(i, j)`
+  to `j.choose 2 + i`; its restriction `TauCeti.finStrictUpperEquiv` to `FinStrictUpper n` has
+  range `Fin (n.choose 2)`, so `FinStrictUpper n` has `n.choose 2` elements
+  (`TauCeti.card_finStrictUpper`).
+* `TauCeti.sum_finStrictUpper_eq_sum_range`: a sum over `FinStrictUpper n` as a sum over the first
+  `n.choose 2` positions of the column enumeration.
 -/
 
 public section
@@ -79,6 +97,20 @@ theorem prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag
     (∏ i ∈ s, ∏ j ∈ Ici i, f i j) = (∏ i ∈ s, ∏ j ∈ Ioi i, f i j) * ∏ i ∈ s, f i i := by
   simp_rw [← prod_Ioi_mul_eq_prod_Ici]
   exact prod_mul_distrib
+
+/-- Over `s ×ˢ s`, a product of natural powers `(f ab.1 * f ab.2) ^ d ab` collects each factor
+`f a` with exponent equal to the sum of row and column weights `d (a, b) + d (b, a)` over
+`b ∈ s`. -/
+@[to_additive sum_product_nsmul_add /-- Over `s ×ˢ s`, a sum of natural multiples
+`d ab • (f ab.1 + f ab.2)` collects each term `f a` with multiplicity equal to the sum of row and
+column weights `d (a, b) + d (b, a)` over `b ∈ s`. -/]
+theorem prod_product_mul_pow {ι M : Type*} [CommMonoid M] (s : Finset ι) (f : ι → M)
+    (d : ι × ι → ℕ) :
+    ∏ ab ∈ s ×ˢ s, (f ab.1 * f ab.2) ^ d ab =
+      ∏ a ∈ s, f a ^ ∑ b ∈ s, (d (a, b) + d (b, a)) := by
+  simp_rw [mul_pow, prod_mul_distrib]
+  rw [prod_product, prod_product_right]
+  simp_rw [prod_pow_eq_pow_sum, ← prod_mul_distrib, ← pow_add, sum_add_distrib]
 
 /-- Transposing a double product from strictly decreasing to strictly increasing index pairs. -/
 @[to_additive /-- Transposing a double sum from strictly decreasing to strictly increasing index
@@ -98,6 +130,15 @@ theorem prod_erase_univ_eq_prod_Ioi_mul_prod_Iio {ι M : Type*} [Fintype ι] [Li
     [LocallyFiniteOrderBot ι] [LocallyFiniteOrderTop ι] [CommMonoid M] (i : ι) (f : ι → M) :
     (∏ j ∈ univ.erase i, f j) = (∏ j ∈ Ioi i, f j) * ∏ j ∈ Iio i, f j := by
   rw [← compl_singleton, ← Ioi_disjUnion_Iio, prod_disjUnion]
+
+/-- A symmetric double sum over the off-diagonal pairs is twice its sum over the strictly
+increasing pairs. -/
+theorem sum_sum_erase_univ_eq_two_nsmul_sum_sum_Ioi {ι M : Type*} [Fintype ι] [LinearOrder ι]
+    [LocallyFiniteOrderBot ι] [LocallyFiniteOrderTop ι] [AddCommMonoid M] (f : ι → ι → M)
+    (hf : ∀ i j, f i j = f j i) :
+    ∑ i, ∑ j ∈ univ.erase i, f i j = 2 • ∑ i, ∑ j ∈ Ioi i, f i j := by
+  simp_rw [sum_erase_univ_eq_sum_Ioi_add_sum_Iio, sum_add_distrib, sum_sum_Iio_eq_sum_sum_Ioi]
+  rw [sum_congr rfl fun i _ => sum_congr rfl fun j _ => hf j i, two_nsmul]
 
 /-- Pairing a weight `w` against the antisymmetric difference `(∑_{j > i} g i j) - ∑_{j < i} g j i`
 folds onto strictly increasing index pairs as `∑_{i < j} (w i - w j) * g i j`. -/
@@ -298,6 +339,22 @@ theorem prod_prod_Ioi_scale {A M : Type*} [CommMonoid A] [CommMonoid M] (F : A �
         hmul_right, mul_pow, hchoose, pow_add, Nat.add_sub_cancel, pow_succ]
       ac_rfl
 
+/-- In a linear order, sum over the off-diagonal pairs of a finite set by adding each increasing
+pair to its transpose. -/
+theorem sum_offDiag_eq_sum_lt_add_swap {ι M : Type*} [LinearOrder ι] [AddCommMonoid M]
+    (s : Finset ι) (f : ι × ι → M) :
+    (∑ p ∈ s.offDiag, f p) = ∑ p ∈ s ×ˢ s with p.1 < p.2, (f p + f p.swap) := by
+  have hsplit : s.offDiag = {p ∈ s ×ˢ s | p.1 < p.2} ∪ {p ∈ s ×ˢ s | p.2 < p.1} := by
+    ext p
+    simp only [mem_offDiag, mem_union, mem_filter, mem_product, ← and_or_left, ne_iff_lt_or_gt]
+    tauto
+  have hdisj : Disjoint {p ∈ s ×ˢ s | p.1 < p.2} {p ∈ s ×ˢ s | p.2 < p.1} :=
+    disjoint_filter.mpr fun _ _ h h' ↦ h.not_gt h'
+  rw [hsplit, sum_union hdisj, sum_add_distrib]
+  congr 1
+  exact sum_nbij' Prod.swap Prod.swap (by simp +contextual) (by simp +contextual) (by simp)
+    (by simp) (by simp)
+
 /-- **A sum over all ordered pairs, folded onto the increasing ones.** A function vanishing on the
 diagonal sums over `l × l` to the sum over the increasing pairs of its value together with its
 value at the transposed pair. -/
@@ -306,18 +363,9 @@ theorem sum_univ_prod_eq_sum_lt_add_swap {l : Type*} [Fintype l] [LinearOrder l]
     ∑ ij : l × l, F ij =
       ∑ ij ∈ {ij : l × l | ij.1 < ij.2}, (F ij + F ij.swap) := by
   classical
-  have hswap : ∑ ij ∈ {ij : l × l | ij.2 < ij.1}, F ij =
-      ∑ ij ∈ {ij : l × l | ij.1 < ij.2}, F ij.swap :=
-    Finset.sum_nbij' (i := Prod.swap) (j := Prod.swap) (by simp) (by simp) (by simp) (by simp)
-      (by simp)
-  have hnot : ∑ ij ∈ {ij : l × l | ij.2 < ij.1}, F ij =
-      ∑ ij ∈ {ij : l × l | ¬ ij.1 < ij.2}, F ij := by
-    refine sum_subset (fun ij ↦ by simpa using le_of_lt) ?_
-    rintro ⟨a, b⟩ h h'
-    obtain rfl : a = b := by simp_all [le_antisymm_iff]
-    exact hdiag a
-  rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (fun ij : l × l => ij.1 < ij.2) F,
-    ← hnot, hswap, Finset.sum_add_distrib]
+  rw [← univ_product_univ, ← diag_union_offDiag, sum_union (disjoint_diag_offDiag _), sum_diag,
+    sum_offDiag_eq_sum_lt_add_swap, diag_union_offDiag]
+  simp only [hdiag, sum_const_zero, zero_add]
 
 /-- A symmetric double sum is its diagonal plus twice the sum over increasing pairs. -/
 theorem sum_symmetric_pairs {α G : Type*} [Fintype α] [LinearOrder α] [AddCommMonoid G]
@@ -391,5 +439,167 @@ theorem sum_mul_sum_erase_eq_sum_sum_Ioi {ι R : Type*} [Fintype ι] [LinearOrde
   rw [hpull, ← sum_sum_Ioi_add_eq_sum_sum_off_diag (fun j i ↦ u i * k i j)]
   refine sum_congr rfl fun i _ ↦ sum_congr rfl fun j hj ↦ ?_
   rw [hk (mem_Ioi.1 hj), mul_neg, ← sub_eq_add_neg, ← sub_mul]
+
+section StrictUpper
+
+/-- The strictly upper-triangular positions `(i, j)`, `i < j`, of a matrix indexed by `ℕ`. -/
+abbrev StrictUpper := {ij : ℕ × ℕ // ij.1 < ij.2}
+
+/-- A strictly increasing pair of indices in `Fin n`, as a strictly upper position of the matrix
+indexed by `ℕ`. -/
+def FinStrictUpper.toStrictUpper {n : ℕ} (u : FinStrictUpper n) : StrictUpper :=
+  ⟨(u.val.1.val, u.val.2.val), by exact_mod_cast u.property⟩
+
+/-- The row and column labels of a finite strictly upper position in the infinite array. -/
+@[simp]
+theorem FinStrictUpper.val_toStrictUpper {n : ℕ} (u : FinStrictUpper n) :
+    u.toStrictUpper.val = (u.val.1.val, u.val.2.val) :=
+  (rfl)
+
+/-- The finite strictly upper position with row `i` and column `j` is the position `(i, j)` of the
+infinite array. -/
+@[simp]
+theorem FinStrictUpper.toStrictUpper_mk {n : ℕ} (i j : Fin n) (h : i < j) :
+    FinStrictUpper.toStrictUpper ⟨(i, j), h⟩ = ⟨(i.val, j.val), Fin.lt_def.1 h⟩ :=
+  (rfl)
+
+/-- The column label of a finite strictly upper position of `Fin n` is below `n`. -/
+theorem FinStrictUpper.toStrictUpper_val_snd_lt {n : ℕ} (u : FinStrictUpper n) :
+    u.toStrictUpper.val.2 < n := by
+  rw [FinStrictUpper.val_toStrictUpper]
+  exact u.val.2.isLt
+
+/-- The strictly upper positions of `Fin n` are the strictly upper positions of the infinite array
+whose column label is below `n`. -/
+def finStrictUpperEquivSubtype (n : ℕ) :
+    FinStrictUpper n ≃ {ij : StrictUpper // ij.val.2 < n} where
+  toFun u := ⟨u.toStrictUpper, u.toStrictUpper_val_snd_lt⟩
+  invFun ij := ⟨(⟨ij.val.val.1, ij.val.property.trans ij.property⟩, ⟨ij.val.val.2, ij.property⟩),
+    Fin.mk_lt_mk.2 ij.val.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- Forgetting the column bound of a finite strictly upper position gives its position in the
+infinite array. -/
+@[simp]
+theorem coe_finStrictUpperEquivSubtype_apply {n : ℕ} (u : FinStrictUpper n) :
+    (finStrictUpperEquivSubtype n u : StrictUpper) = u.toStrictUpper :=
+  (rfl)
+
+/-- The finite position of a strictly upper position with column below `n` has the same position
+in the infinite array. -/
+@[simp]
+theorem FinStrictUpper.toStrictUpper_finStrictUpperEquivSubtype_symm_apply {n : ℕ}
+    (ij : {ij : StrictUpper // ij.val.2 < n}) :
+    ((finStrictUpperEquivSubtype n).symm ij).toStrictUpper = ij.val :=
+  (rfl)
+
+/-- Distinct strictly upper positions of `Fin n` are distinct positions of the infinite array. -/
+theorem FinStrictUpper.toStrictUpper_injective {n : ℕ} :
+    Function.Injective (FinStrictUpper.toStrictUpper (n := n)) := fun _ _ h ↦
+  (finStrictUpperEquivSubtype n).injective (Subtype.ext h)
+
+/-- The column-order index `j.choose 2 + i` of a strictly upper position `(i, j)` is below
+`n.choose 2` exactly when its column `j` is below `n`. This is the simp normal form of corner
+membership for the enumeration `strictUpperEquivNat`, after `strictUpperEquivNat_apply`. -/
+@[simp]
+theorem choose_two_add_lt_choose_two_iff (ij : StrictUpper) (n : ℕ) :
+    ij.val.2.choose 2 + ij.val.1 < n.choose 2 ↔ ij.val.2 < n := by
+  constructor
+  · contrapose!
+    intro h
+    exact (Nat.choose_mono 2 h).trans (Nat.le_add_right _ _)
+  · intro h
+    calc
+      _ < (ij.val.2 + 1).choose 2 := by
+        rw [Nat.choose_succ_succ' _ 1, Nat.choose_one_right, Nat.add_comm ij.val.2]
+        exact Nat.add_lt_add_left ij.prop _
+      _ ≤ _ := Nat.choose_mono 2 h
+
+/-- The column-by-column enumeration of strictly upper-triangular positions. -/
+noncomputable def strictUpperEquivNat : StrictUpper ≃ ℕ := by
+  refine Equiv.ofBijective (fun ij ↦ ij.val.2.choose 2 + ij.val.1) ⟨?_, ?_⟩
+  · intro x y h
+    dsimp only at h
+    have hx := (choose_two_add_lt_choose_two_iff x (y.val.2 + 1)).mp (h.symm ▸
+      (choose_two_add_lt_choose_two_iff y (y.val.2 + 1)).mpr (Nat.lt_succ_self _))
+    have hy := (choose_two_add_lt_choose_two_iff y (x.val.2 + 1)).mp (h ▸
+      (choose_two_add_lt_choose_two_iff x (x.val.2 + 1)).mpr (Nat.lt_succ_self _))
+    have hs : x.val.2 = y.val.2 := by omega
+    exact Subtype.ext (Prod.ext (by rw [hs, Nat.add_right_inj] at h; exact h) hs)
+  · intro k
+    induction k with
+    | zero => exact ⟨⟨(0, 1), by decide⟩, by simp⟩
+    | succ k ih =>
+      obtain ⟨⟨⟨i, j⟩, hij⟩, hk⟩ := ih
+      dsimp only at hk
+      by_cases h : i + 1 < j
+      · refine ⟨⟨(i + 1, j), h⟩, ?_⟩
+        dsimp only
+        omega
+      · refine ⟨⟨(0, j + 1), Nat.zero_lt_succ _⟩, ?_⟩
+        dsimp only
+        rw [Nat.choose_succ_succ' j 1, Nat.choose_one_right]
+        simp only [Nat.reduceAdd]
+        omega
+
+/-- The index of a strictly upper position is the size of the preceding columns plus its row. -/
+@[simp]
+theorem strictUpperEquivNat_apply (ij : StrictUpper) :
+    strictUpperEquivNat ij = ij.val.2.choose 2 + ij.val.1 :=
+  (rfl)
+
+/-- The column enumeration starts at the position `(0, 1)`. -/
+@[simp]
+theorem strictUpperEquivNat_symm_zero : strictUpperEquivNat.symm 0 = ⟨(0, 1), by decide⟩ :=
+  strictUpperEquivNat.symm_apply_eq.2 (by simp)
+
+/-- The position with index `k` in the column enumeration has column below `n` exactly when `k` is
+below `n.choose 2`. -/
+@[simp]
+theorem strictUpperEquivNat_symm_apply_val_snd_lt_iff (k n : ℕ) :
+    (strictUpperEquivNat.symm k).val.2 < n ↔ k < n.choose 2 := by
+  rw [← choose_two_add_lt_choose_two_iff, ← strictUpperEquivNat_apply, Equiv.apply_symm_apply]
+
+/-- The column-order enumeration restricted to the strictly upper positions of `Fin n`. -/
+noncomputable def finStrictUpperEquiv (n : ℕ) : FinStrictUpper n ≃ Fin (n.choose 2) :=
+  ((finStrictUpperEquivSubtype n).trans (strictUpperEquivNat.subtypeEquiv fun ij ↦ by
+    simp only [strictUpperEquivNat_apply, choose_two_add_lt_choose_two_iff])).trans
+      Fin.equivSubtype.symm
+
+/-- There are `n.choose 2` strictly increasing pairs in `Fin n`. -/
+@[simp]
+theorem card_finStrictUpper (n : ℕ) : Fintype.card (FinStrictUpper n) = n.choose 2 :=
+  (Fintype.card_congr (finStrictUpperEquiv n)).trans (Fintype.card_fin _)
+
+/-- The finite enumeration gives the same index as the infinite column enumeration. -/
+@[simp]
+theorem finStrictUpperEquiv_apply_val (n : ℕ) (ij : FinStrictUpper n) :
+    (finStrictUpperEquiv n ij).val = strictUpperEquivNat ij.toStrictUpper := by
+  simp only [finStrictUpperEquiv, Equiv.trans_apply, Fin.equivSubtype_symm_apply,
+    Equiv.subtypeEquiv_apply, coe_finStrictUpperEquivSubtype_apply]
+
+/-- An index of the finite enumeration corresponds to the same strictly upper position as in the
+infinite column enumeration. -/
+@[simp]
+theorem FinStrictUpper.toStrictUpper_finStrictUpperEquiv_symm_apply (n : ℕ)
+    (k : Fin (n.choose 2)) :
+    ((finStrictUpperEquiv n).symm k).toStrictUpper = strictUpperEquivNat.symm k := by
+  apply strictUpperEquivNat.injective
+  rw [← finStrictUpperEquiv_apply_val, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+
+/-- A sum over the strictly upper positions of `Fin n` is the sum over the corresponding prefix of
+the column-order enumeration. -/
+theorem sum_finStrictUpper_eq_sum_range {E : Type*} [AddCommMonoid E]
+    (n : ℕ) (f : StrictUpper → E) :
+    ∑ ij : FinStrictUpper n, f ij.toStrictUpper =
+      ∑ k ∈ range (n.choose 2), f (strictUpperEquivNat.symm k) := by
+  calc
+    _ = ∑ k : Fin (n.choose 2), f (strictUpperEquivNat.symm k) :=
+      Fintype.sum_equiv (finStrictUpperEquiv n) _ _ fun ij ↦ by
+        rw [finStrictUpperEquiv_apply_val, Equiv.symm_apply_apply]
+    _ = _ := Fin.sum_univ_eq_sum_range (fun k ↦ f (strictUpperEquivNat.symm k)) (n.choose 2)
+
+end StrictUpper
 
 end TauCeti

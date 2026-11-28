@@ -12,7 +12,8 @@ import TauCeti.Analysis.Hofer
 import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
 import TauCeti.Geometry.Symplectic.Manifold.Energy
-import TauCeti.Topology.Order.Interval
+import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic.Regularity
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Energy quantization for pseudoholomorphic planes in a manifold
@@ -20,33 +21,50 @@ import TauCeti.Topology.Order.Interval
 Let `J` be a smooth almost complex structure on a boundaryless Hausdorff manifold `M`, tamed by a
 two-form `ω`, as on a closed symplectic manifold. A pseudoholomorphic plane is a map
 `u : ℝ × ℝ → M` solving `∂ₜu = J(u) ∂ₛu`, and its area is `∫ ω(∂ₛu, ∂ₜu)`. This file proves that
-on a compact subset `K` of `M` there is an energy `κ > 0` below which every such `C³` plane with
+on a compact subset `K` of `M` there is an energy `κ > 0` below which every such `C¹` plane with
 values in `K` is constant
 (`TauCeti.SmoothTwoForm.Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne`).
+
+The same threshold works for a compact family of structures
+(`TauCeti.SmoothTwoForm.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne_parametric`): for smooth
+almost complex structures `J p`, depending on a parameter `p` in a normed space with coordinate
+expressions in the charts of `M` jointly `C²` in `p` and the point, and tamed by `ω` for `p` in a
+compact set `C`, one `κ > 0` bounds from below the area of every nonconstant `J p`-holomorphic plane
+with values in `K`, for every `p ∈ C`. The single structure is the case of a constant family.
+The parametric statement assumes `C³` planes, since its structures are given only through their
+chart expressions. A smooth structure, such as one frozen from a smooth family, makes every `C¹`
+solution smooth (`TauCeti.contMDiff_of_mfderiv_stdComplexLineImag_eq`), so the statements for a
+single structure and for frozen structures need only `C¹` planes, as bubbles are.
 
 This is the lower bound for the energy of bubbles in Gromov–Floer compactness. Where the
 derivatives of a sequence of Floer solutions blow up, a limit of the rescaled solutions is
 pseudoholomorphic for the almost complex structure frozen at the bubbling point
 (`TauCeti.SmoothTwoForm.isComplexLinearMap_of_tendsto_rescale`), and its area is at most the energy
 lost there (`TauCeti.SmoothTwoForm.lintegral_eval₂_le_liminf_of_tendsto_rescale`); a
-pseudoholomorphic sphere restricts to a plane with the same area. The vector-space version, for
-planes with values in a compact subset of a single chart, is
-`TauCeti.exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne`.
+pseudoholomorphic sphere restricts to a plane with the same area. For an inhomogeneous equation
+with a domain-dependent structure `J(z, ·)` the bubbling points vary, and so do the frozen
+structures; the structures frozen at the points of a compact window of the domain form a compact
+family, so the uniform threshold bounds the energy of all bubbles from below at once
+(`TauCeti.ContMDiffAlmostComplexStructureFamily.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne`,
+for the structures `J.freezeSmooth z` frozen from a smooth family `J`). The
+vector-space versions, for planes with values in a compact subset of a single chart, are
+`TauCeti.exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne` and its parametric form
+`TauCeti.exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne_parametric`.
 
 The threshold is analytic, not a period of `ω`: the areas of spheres may be dense in `ℝ`. The
 proof covers `K` by finitely many charts, in each of which the following holds.
 
 * **Comparison with the chart norm.** In the tangent coordinates `ξ` of the chart, the energy form
-  `ω(ζ, J ζ)` of the tangent vectors `ζ` is between `c ‖ξ‖²` and `C ‖ξ‖²`
-  (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq`).
+  `ω(ζ, J p ζ)` of the tangent vectors `ζ` is between `c ‖ξ‖²` and `C ‖ξ‖²`, uniformly for `p ∈ C`
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq`,
+  over a compact set of parameters and chart coordinates).
 * **Localization.** If the area density of `u` is at most `m²` on a ball of radius `r` with
   `m r` small, the ball is mapped into the chart, since the chart coordinate of `u` moves at speed
   at most a constant times `m` along each segment from the centre.
 * **The mean-value inequality** for the coordinate expression, read in the complex coordinate of
-  the domain
-  (`TauCeti.exists_pos_exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_mul_setIntegral_ball`):
-  on such a ball, either the area is at least a fixed threshold, or `π r² m²` is bounded by a
-  constant times the area.
+  the domain: on such a ball, either the area is at least a fixed threshold, or `π r² m²` is
+  bounded by a constant times the area. The constants are uniform over the family, by
+  `exists_pos_exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_mul_setIntegral_ball_parametric`
 
 A nonconstant plane has a point of positive density, and Hofer's lemma
 (`TauCeti.hofer_of_continuousOn_closedBall`) moves it to a point `w` of density `m² > 0` with
@@ -54,11 +72,17 @@ density at most `(2m)²` on a ball about `w` whose radius times `m` is as large 
 the ball of radius `L / m` about `w`, for the constant `L` of the chart containing `u w`, the
 mean-value inequality bounds the area of `u` from below by a constant depending only on the chart.
 
-The uniformity of `κ` over a compact family of almost complex structures, and the corresponding
-statement for closed surfaces of higher genus, are not treated here.
+The corresponding statement for closed surfaces of higher genus is not treated here.
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne_parametric`: for a
+  compact family of tame structures, a nonconstant pseudoholomorphic plane for any member of the
+  family with values in a compact set has area at least `κ`.
+* `TauCeti.ContMDiffAlmostComplexStructureFamily.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne`:
+  for a smooth family `J` of almost complex structures over a normed parameter space, the frozen
+  structures `J.freezeSmooth p`, `p ∈ C` for a compact set `C` on which they are tamed, share one
+  threshold `κ`.
 * `TauCeti.SmoothTwoForm.Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne`: a
   nonconstant pseudoholomorphic plane with values in a compact set has area at least `κ`.
 
@@ -271,26 +295,39 @@ private theorem mapsTo_closedBall_of_le [T2Space M] (hu : ContMDiff 𝓘(ℝ, �
     exact ⟨e (φ σ), hσ'.2, e.left_inv hσ'.1⟩
   simpa [φ] using h2 1 (right_mem_Icc.2 zero_le_one) hstay
 
-/-- **The energy form in a chart.** For `J` tamed by `ω` and a compact set `Kc` in the chart target
-at `α`, there are `c, C > 0` such that `c ‖ξ‖² ≤ ω(ζ, J ζ) ≤ C ‖ξ‖²` for the tangent vectors `ζ`
-with tangent coordinate `ξ` at the points with chart coordinate in `Kc`. -/
-private theorem exists_pos_forall_mul_norm_sq_le_and_le_of_chart (hJ : ω.Tames J) (α : M)
-    {Kc : Set E} (hKc : IsCompact Kc)
-    (hK : Kc ⊆ (extChartAt I α).target) :
-    ∃ c > 0, ∃ C > 0, ∀ x ∈ (extChartAt I α).source, extChartAt I α x ∈ Kc → ∀ ξ : E,
-      c * ‖ξ‖ ^ 2 ≤ SmoothBundleForm.eval₂ ω x ((trivializationAt E (TangentSpace I) α).symmL ℝ x ξ)
-        (J x ((trivializationAt E (TangentSpace I) α).symmL ℝ x ξ)) ∧
-      SmoothBundleForm.eval₂ ω x ((trivializationAt E (TangentSpace I) α).symmL ℝ x ξ)
-        (J x ((trivializationAt E (TangentSpace I) α).symmL ℝ x ξ)) ≤ C * ‖ξ‖ ^ 2 := by
-  have hω := hJ.isNondegenerate
-  obtain ⟨c, hc, C, hcC⟩ := hω.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq α
-    isCompact_singleton hKc hK (by
-      rw [show (Floer.almostComplexInChartAt I α fun _ ↦ J.almostComplexStructureAt) =
-        fun p ↦ J.inChart α p.2 from funext (Floer.almostComplexInChartAt_const J α)]
-      exact ((J.contDiffOn_inChart α).continuousOn.mono hK).comp continuousOn_snd
-        fun p hp ↦ hp.2) fun _ _ y _ ↦ hω.tames_iff.1 hJ _
-  refine ⟨c, hc, max C 1, by positivity, fun x hx hy ξ ↦ ?_⟩
-  have h := hcC 0 rfl (extChartAt I α x) hy ξ
+section Family
+
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+
+omit [NormedSpace ℝ P] in
+/-- **The energy form in a chart, uniformly over a family.** Let the structures `J p` be tamed by
+`ω` for `p ∈ C`, with coordinate expressions in the chart at `α` continuous on `C × Kc`, for a
+compact set `C` of parameters and a compact set `Kc` in the chart target. There are `c, C' > 0` such
+that `c ‖ξ‖² ≤ ω(ζ, J p ζ) ≤ C' ‖ξ‖²` for every `p ∈ C` and the tangent vectors `ζ` with tangent
+coordinate `ξ` at the points with chart coordinate in `Kc`. This is
+`TauCeti.SmoothTwoForm.IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq`,
+stated at the points of the chart source and with a positive upper constant. -/
+private theorem exists_pos_forall_mul_norm_sq_le_and_le_of_chart
+    {J : P → SmoothAlmostComplexStructure I M} {C : Set P} (hC : IsCompact C)
+    (hJt : ∀ p ∈ C, ω.Tames (J p)) (α : M) {Kc : Set E} (hKc : IsCompact Kc)
+    (hK : Kc ⊆ (extChartAt I α).target)
+    (hJ : ContinuousOn (fun q : P × E ↦ (J q.1).inChart α q.2) (C ×ˢ Kc)) :
+    ∃ c > 0, ∃ C' > 0, ∀ p ∈ C, ∀ x ∈ (extChartAt I α).source, extChartAt I α x ∈ Kc →
+      ∀ ξ : E,
+        c * ‖ξ‖ ^ 2 ≤ SmoothBundleForm.eval₂ ω x
+          ((trivializationAt E (TangentSpace I) α).symmL ℝ x ξ)
+          (J p x ((trivializationAt E (TangentSpace I) α).symmL ℝ x ξ)) ∧
+        SmoothBundleForm.eval₂ ω x ((trivializationAt E (TangentSpace I) α).symmL ℝ x ξ)
+          (J p x ((trivializationAt E (TangentSpace I) α).symmL ℝ x ξ)) ≤ C' * ‖ξ‖ ^ 2 := by
+  rcases C.eq_empty_or_nonempty with rfl | ⟨p₀, hp₀⟩
+  · exact ⟨1, one_pos, 1, one_pos, fun p hp ↦ absurd hp (notMem_empty p)⟩
+  have hω := (hJt p₀ hp₀).isNondegenerate
+  -- Read in the chart, the family of structures is the family of coordinate expressions.
+  obtain ⟨c, hc, C', hcC⟩ := hω.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq α hC hKc hK
+    (hJ.congr fun q _ ↦ Floer.almostComplexInChartAt_almostComplexStructureAt J α q)
+    fun p hp _ _ ↦ hω.tames_iff.1 (hJt p hp) _
+  refine ⟨c, hc, max C' 1, by positivity, fun p hp x hx hy ξ ↦ ?_⟩
+  have h := hcC p hp (extChartAt I α x) hy ξ
   rw [(extChartAt I α).left_inv hx] at h
   simp only [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
     ContinuousLinearMap.coe_coe] at h
@@ -323,24 +360,31 @@ private theorem mul_norm_fderiv_sq_le_and_le {c C : ℝ} {Kc : Set E}
   rw [fderiv_comp_equivRealProdCLM_one] at h ⊢
   rwa [← eval₂_mfderiv_eq hu.continuousAt hy.1 (hCR _)] at h
 
-/-- **The mean-value inequality in a chart.** Let `Kc` be a compact subset of the chart target at
-`α`, over which `c ‖ξ‖² ≤ ω(ζ, J ζ) ≤ C ‖ξ‖²` in the chart. There are
-constants `δ, A > 0` such that every `C³` solution `u` of `∂ₜu = J(u) ∂ₛu` mapping the closed ball
-of radius `r` about `w₀` into the chart, with chart coordinates in `Kc`, satisfies the following.
+/-- **The mean-value inequality in a chart, uniformly over a family.** Let the coordinate
+expressions of the structures `J p` in the chart at `α` be jointly `C²` on `U × (chart target)` for
+an open set `U` of parameters, let `C ⊆ U` be compact, and let `Kc` be a compact subset of the chart
+target over which `c ‖ξ‖² ≤ ω(ζ, J p ζ) ≤ C' ‖ξ‖²` in the chart for `p ∈ C`. There are constants
+`δ, A > 0` such that for every `p ∈ C`, every `C³` solution `u` of `∂ₜu = J p (u) ∂ₛu` mapping the
+closed ball of radius `r` about `w₀` into the chart, with chart coordinates in `Kc`, satisfies the
+following.
 Either the area of `u` over the disc of radius `r` about `w₀` is at least `δ`, or `π r² ρ(w₀)` is at
 most `A` times this area, where `ρ = ω(∂ₛu, ∂ₜu)` is the area density. The disc is taken in the
 complex coordinate `Complex.equivRealProdCLM` of the domain. -/
-private theorem exists_pos_forall_le_or_le_of_chart [I.Boundaryless] (α : M) {Kc : Set E}
-    (hKc : IsCompact Kc) (hK : Kc ⊆ (extChartAt I α).target) {c C : ℝ} (hc : 0 < c)
-    (hC : 0 < C)
-    (hcmp : ∀ x ∈ (extChartAt I α).source, extChartAt I α x ∈ Kc → ∀ ξ : E,
+private theorem exists_pos_forall_le_or_le_of_chart [I.Boundaryless]
+    {J : P → SmoothAlmostComplexStructure I M} {U C : Set P} (hU : IsOpen U) (hCU : C ⊆ U)
+    (hC : IsCompact C) (α : M)
+    (hJ : ContDiffOn ℝ 2 (fun q : P × E ↦ (J q.1).inChart α q.2) (U ×ˢ (extChartAt I α).target))
+    {Kc : Set E} (hKc : IsCompact Kc) (hK : Kc ⊆ (extChartAt I α).target) {c C' : ℝ} (hc : 0 < c)
+    (hC' : 0 < C')
+    (hcmp : ∀ p ∈ C, ∀ x ∈ (extChartAt I α).source, extChartAt I α x ∈ Kc → ∀ ξ : E,
       c * ‖ξ‖ ^ 2 ≤ SmoothBundleForm.eval₂ ω x ((trivializationAt E (TangentSpace I) α).symmL ℝ x ξ)
-        (J x ((trivializationAt E (TangentSpace I) α).symmL ℝ x ξ)) ∧
+        (J p x ((trivializationAt E (TangentSpace I) α).symmL ℝ x ξ)) ∧
       SmoothBundleForm.eval₂ ω x ((trivializationAt E (TangentSpace I) α).symmL ℝ x ξ)
-        (J x ((trivializationAt E (TangentSpace I) α).symmL ℝ x ξ)) ≤ C * ‖ξ‖ ^ 2) :
-    ∃ δ > 0, ∃ A > 0, ∀ ⦃u : ℝ × ℝ → M⦄ ⦃w₀ : ℝ × ℝ⦄ ⦃r : ℝ⦄, ContMDiff 𝓘(ℝ, ℝ × ℝ) I 3 u →
+        (J p x ((trivializationAt E (TangentSpace I) α).symmL ℝ x ξ)) ≤ C' * ‖ξ‖ ^ 2) :
+    ∃ δ > 0, ∃ A > 0, ∀ ⦃p : P⦄, p ∈ C → ∀ ⦃u : ℝ × ℝ → M⦄ ⦃w₀ : ℝ × ℝ⦄ ⦃r : ℝ⦄,
+      ContMDiff 𝓘(ℝ, ℝ × ℝ) I 3 u →
       (∀ z, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag =
-        J (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)) → 0 ≤ r →
+        J p (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)) → 0 ≤ r →
       (∀ w ∈ closedBall w₀ r, u w ∈ (extChartAt I α).source ∧ extChartAt I α (u w) ∈ Kc) →
       δ ≤ ∫ y in ball (Complex.equivRealProdCLM.symm w₀) r,
           SmoothBundleForm.eval₂ ω (u (Complex.equivRealProdCLM y))
@@ -354,10 +398,10 @@ private theorem exists_pos_forall_le_or_le_of_chart [I.Boundaryless] (α : M) {K
               (mfderiv 𝓘(ℝ, ℝ × ℝ) I u (Complex.equivRealProdCLM y) stdComplexLineReal)
               (mfderiv 𝓘(ℝ, ℝ × ℝ) I u (Complex.equivRealProdCLM y) stdComplexLineImag) := by
   obtain ⟨δ, hδ, A, hA, hmean⟩ :=
-    exists_pos_exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_mul_setIntegral_ball
-      (isOpen_extChartAt_target α) ((J.contDiffOn_inChart α).of_le (by simp)) hKc hK
-      fun y hy v ↦ J.inChart_inChart α (hK hy) v
-  refine ⟨c * δ, by positivity, C * A / c, by positivity, fun u w₀ r hu hCR hr hmaps ↦ ?_⟩
+    exists_pos_exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_mul_setIntegral_ball_parametric
+      (J := fun p y ↦ (J p).inChart α y) (hU.prod (isOpen_extChartAt_target α)) hJ hC hKc
+      (prod_mono hCU hK) fun p _ y hy v ↦ (J p).inChart_inChart α (hK hy) v
+  refine ⟨c * δ, by positivity, C' * A / c, by positivity, fun p hp u w₀ r hu hCR hr hmaps ↦ ?_⟩
   -- The coordinate expression `f` of `u` in the complex coordinate `φ` of the domain.
   set φ := Complex.equivRealProdCLM
   set f : ℂ → E := (extChartAt I α ∘ u) ∘ φ
@@ -368,7 +412,7 @@ private theorem exists_pos_forall_le_or_le_of_chart [I.Boundaryless] (α : M) {K
       (show u (φ y) ∈ (chartAt H α).source by rw [← extChartAt_source I]; exact (hsrc y hy).1)).comp
         _ (hu _))).comp y φ.contDiff.contDiffAt
   have hlow (y : ℂ) (hy : y ∈ closedBall (φ.symm w₀) r) :=
-    mul_norm_fderiv_sq_le_and_le hcmp hu.continuous hCR (hsrc y hy)
+    mul_norm_fderiv_sq_le_and_le (hcmp p hp) hu.continuous hCR (hsrc y hy)
   have hfc : ContinuousOn (fun y ↦ fderiv ℝ f y 1) (closedBall (φ.symm w₀) r) := fun y hy ↦
     (((hcd y hy).fderiv_right (m := 2) (by norm_num)).continuousAt.clm_apply
       continuousAt_const).continuousWithinAt
@@ -388,34 +432,39 @@ private theorem exists_pos_forall_le_or_le_of_chart [I.Boundaryless] (α : M) {K
   by_cases hsmall : ∫ y in ball (φ.symm w₀) r, ‖fderiv ℝ f y 1‖ ^ 2 < δ
   · -- The mean-value inequality for `f` at the centre.
     right
-    have hmv := hmean (u := f) (z₀ := φ.symm w₀) hr
+    have hmv := hmean hp (u := f) (z₀ := φ.symm w₀) hr
       (fun y hy ↦ (hcd y (ball_subset_closedBall hy)).contDiffWithinAt) hfc
       (fun y hy ↦ by
         rw [fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I]
-        exact J.fderiv_extChartAt_comp_apply_eq_inChart α hu.continuous.continuousAt
+        exact (J p).fderiv_extChartAt_comp_apply_eq_inChart α hu.continuous.continuousAt
           (hsrc y (ball_subset_closedBall hy)).1 (hCR _))
       (fun y hy ↦ (hsrc y (ball_subset_closedBall hy)).2) hsmall
     have hup := φ.apply_symm_apply w₀ ▸ (hlow _ (mem_closedBall_self hr)).2
     rw [div_mul_eq_mul_div, le_div_iff₀ hc]
-    -- `π r² ρ(w₀) ≤ C π r² ‖∂ₛf‖² ≤ C A ∫ ‖∂ₛf‖² ≤ (C A / c) ∫ ρ`.
+    -- `π r² ρ(w₀) ≤ C' π r² ‖∂ₛf‖² ≤ C' A ∫ ‖∂ₛf‖² ≤ (C' A / c) ∫ ρ`.
     have h1 := mul_le_mul_of_nonneg_left hup (by positivity : (0 : ℝ) ≤ π * r ^ 2)
-    have h2 := mul_le_mul_of_nonneg_left hmv hC.le
-    nlinarith [mul_le_mul_of_nonneg_left hIf (by positivity : (0 : ℝ) ≤ C * A)]
+    have h2 := mul_le_mul_of_nonneg_left hmv hC'.le
+    nlinarith [mul_le_mul_of_nonneg_left hIf (by positivity : (0 : ℝ) ≤ C' * A)]
   · left
     nlinarith [mul_le_mul_of_nonneg_left (not_lt.1 hsmall) hc.le]
 
-/-- **The energy threshold in one chart.** Let `J` be tamed by `ω`, and let the closed ball of
+/-- **The energy threshold in one chart, uniformly over a family.** Let the structures `J p` be
+tamed by `ω` for `p` in a compact subset `C` of an open set `U` of parameters, with coordinate
+expressions in the chart at `α` jointly `C²` on `U × (chart target)`, and let the closed ball of
 radius `3η` about the chart point of `α` lie in the chart target. There are a radius constant
-`L > 0` and an energy `κ > 0` with the following property. Let `u` be a `C³` solution of
-`∂ₜu = J(u) ∂ₛu` and `m > 0`, with `u w₀` in the chart source and chart coordinate within `η` of
-the chart point, with area density at least `m²` at `w₀` and at most `(2m)²` on the closed ball of
-radius `L / m` about `w₀`. Then the area of `u` is at least `κ`. -/
+`L > 0` and an energy `κ > 0` with the following property. Let `p ∈ C`, let `u` be a `C³` solution
+of `∂ₜu = J p (u) ∂ₛu` and `m > 0`, with `u w₀` in the chart source and chart coordinate within
+`η` of the chart point, with area density at least `m²` at `w₀` and at most `(2m)²` on the closed
+ball of radius `L / m` about `w₀`. Then the area of `u` is at least `κ`. -/
 private theorem exists_pos_forall_ofReal_le_lintegral_of_chart [I.Boundaryless] [T2Space M]
-    (hJ : ω.Tames J) (α : M) {η : ℝ} (hη : 0 < η)
-    (hK : closedBall (extChartAt I α α) (3 * η) ⊆ (extChartAt I α).target) :
-    ∃ L > 0, ∃ κ > 0, ∀ ⦃u : ℝ × ℝ → M⦄ ⦃w₀ : ℝ × ℝ⦄ ⦃m : ℝ⦄, ContMDiff 𝓘(ℝ, ℝ × ℝ) I 3 u →
+    {J : P → SmoothAlmostComplexStructure I M} {U C : Set P} (hU : IsOpen U) (hCU : C ⊆ U)
+    (hC : IsCompact C) (hJt : ∀ p ∈ C, ω.Tames (J p)) (α : M)
+    (hJ : ContDiffOn ℝ 2 (fun q : P × E ↦ (J q.1).inChart α q.2) (U ×ˢ (extChartAt I α).target))
+    {η : ℝ} (hη : 0 < η) (hK : closedBall (extChartAt I α α) (3 * η) ⊆ (extChartAt I α).target) :
+    ∃ L > 0, ∃ κ > 0, ∀ ⦃p : P⦄, p ∈ C → ∀ ⦃u : ℝ × ℝ → M⦄ ⦃w₀ : ℝ × ℝ⦄ ⦃m : ℝ⦄,
+      ContMDiff 𝓘(ℝ, ℝ × ℝ) I 3 u →
       (∀ z, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag =
-        J (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)) → 0 < m →
+        J p (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)) → 0 < m →
       u w₀ ∈ (extChartAt I α).source → extChartAt I α (u w₀) ∈ ball (extChartAt I α α) η →
       m ^ 2 ≤ SmoothBundleForm.eval₂ ω (u w₀) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u w₀ stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u w₀ stdComplexLineImag) →
@@ -427,26 +476,28 @@ private theorem exists_pos_forall_ofReal_le_lintegral_of_chart [I.Boundaryless] 
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u w stdComplexLineImag)) := by
   set e := extChartAt I α
   set Kc := closedBall (e α) (3 * η)
-  obtain ⟨c, hc, C, hC, hcmp⟩ :=
-    exists_pos_forall_mul_norm_sq_le_and_le_of_chart hJ α (isCompact_closedBall _ _) hK
+  have hJc : ContinuousOn (fun q : P × E ↦ (J q.1).inChart α q.2) (C ×ˢ Kc) :=
+    hJ.continuousOn.mono (prod_mono hCU hK)
+  obtain ⟨c, hc, C', hC', hcmp⟩ :=
+    exists_pos_forall_mul_norm_sq_le_and_le_of_chart hC hJt α (isCompact_closedBall _ _) hK hJc
   obtain ⟨δ, hδ, A, hA, hM⟩ :=
-    exists_pos_forall_le_or_le_of_chart α (isCompact_closedBall _ _) hK hc hC hcmp
-  obtain ⟨a, ha⟩ := (isCompact_closedBall (e α) (3 * η)).exists_bound_of_continuousOn
-    ((J.contDiffOn_inChart α).continuousOn.mono hK)
+    exists_pos_forall_le_or_le_of_chart hU hCU hC α hJ (isCompact_closedBall _ _) hK hc hC' hcmp
+  obtain ⟨a, ha⟩ :=
+    (hC.prod (isCompact_closedBall (e α) (3 * η))).exists_bound_of_continuousOn hJc
   set L := √c * η / (2 * (1 + max a 0))
   have hL : 0 < L := by positivity
   refine ⟨L, hL, min δ (π * L ^ 2 / A), by positivity,
-    fun u w₀ m hu hCR hm hw₀s hw₀ hρ₀ hρ ↦ ?_⟩
+    fun p hp u w₀ m hu hCR hm hw₀s hw₀ hρ₀ hρ ↦ ?_⟩
   set φ := Complex.equivRealProdCLM
   have hr : 0 < L / m := by positivity
   -- The closed ball of radius `L / m` about `w₀` is mapped into the chart, by
   -- `mapsTo_closedBall_of_le`, where `exists_pos_forall_le_or_le_of_chart` applies.
   have hloc := mapsTo_closedBall_of_le (ω := ω) (hu.of_le (by norm_num)) hCR hη hc
     (show (0 : ℝ) ≤ 2 * m by positivity) hK
-    (fun y hy ↦ (show ‖J.inChart α y‖ ≤ a by simpa using ha y hy).trans (le_max_left _ _))
-    (fun x hx hy ξ ↦ (hcmp x hx hy ξ).1) hw₀s hw₀ hρ (by
+    (fun y hy ↦ (ha (p, y) ⟨hp, hy⟩).trans (le_max_left _ _))
+    (fun x hx hy ξ ↦ (hcmp p hp x hx hy ξ).1) hw₀s hw₀ hρ (by
       rw [show (1 + max a 0) * (2 * m / √c) * (L / m) = η by simp only [L]; field_simp])
-  have hdisc := hM hu hCR hr.le fun w hw ↦ ⟨(hloc hw).1,
+  have hdisc := hM hp hu hCR hr.le fun w hw ↦ ⟨(hloc hw).1,
     closedBall_subset_closedBall (by linarith) (hloc hw).2⟩
   -- The area of `u` is at least its area over the disc.
   have hint := (((continuous_eval₂_mfderiv ω (hu.of_le (by norm_num))).comp
@@ -454,7 +505,7 @@ private theorem exists_pos_forall_ofReal_le_lintegral_of_chart [I.Boundaryless] 
       (isCompact_closedBall (φ.symm w₀) (L / m)))
     |>.mono_set ball_subset_closedBall
   refine (ENNReal.ofReal_le_ofReal ?_).trans ((ofReal_integral_eq_lintegral_ofReal hint
-    (Eventually.of_forall fun y ↦ hJ.eval₂_mfderiv_nonneg (hCR _))).le.trans
+    (Eventually.of_forall fun y ↦ (hJt p hp).eval₂_mfderiv_nonneg (hCR _))).le.trans
     ((setLIntegral_le_lintegral _ _).trans_eq ?_))
   · rcases hdisc with h | h
     · exact (min_le_left _ _).trans h
@@ -467,16 +518,28 @@ private theorem exists_pos_forall_ofReal_le_lintegral_of_chart [I.Boundaryless] 
     rw [← (Complex.volume_preserving_equiv_real_prod).lintegral_comp_emb
       Complex.measurableEquivRealProd.measurableEmbedding, ← hφ, Function.comp_def]
 
-/-- **Energy quantization for pseudoholomorphic planes in a manifold.** Let `J` be a smooth almost
-complex structure on a boundaryless Hausdorff manifold `M`, tamed by a two-form `ω`, as on a closed
-symplectic manifold, and let `K ⊆ M` be compact. There is an energy `κ > 0` such that every
-nonconstant `C³` solution `u : ℝ × ℝ → M` of `∂ₜu = J(u) ∂ₛu` with values in `K` has area
-`∫ ω(∂ₛu, ∂ₜu) ≥ κ`. -/
-theorem Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne [I.Boundaryless] [T2Space M]
-    (hJ : ω.Tames J) {K : Set M} (hK : IsCompact K) :
-    ∃ κ > 0, ∀ ⦃u : ℝ × ℝ → M⦄, ContMDiff 𝓘(ℝ, ℝ × ℝ) I 3 u → (∀ z, u z ∈ K) →
+/-- **Energy quantization for pseudoholomorphic planes in a manifold, uniformly over a compact
+family of almost complex structures.** Let `J p` be smooth almost complex structures on a
+boundaryless Hausdorff manifold `M`, depending on a parameter `p` in a normed space, with
+coordinate expressions `(p, y) ↦ (J p).inChart α y` jointly `C²` on `U × (extChartAt I α).target`
+in every chart, for an open set `U` of parameters. Let `C ⊆ U` be compact, let `J p` be tamed by a
+two-form `ω` for every `p ∈ C`, and let `K ⊆ M` be compact. There is an energy `κ > 0` such that for
+every `p ∈ C`, every nonconstant `C³` solution `u : ℝ × ℝ → M` of `∂ₜu = J p (u) ∂ₛu` with values in
+`K` has area `∫ ω(∂ₛu, ∂ₜu) ≥ κ`.
+
+The structures `J(z, ·)` frozen at the points `z` of a compact window of the domain of an
+inhomogeneous Floer equation form such a family, and the bubbles of a sequence of its solutions are
+planes for these frozen structures, at varying bubbling points. -/
+theorem exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne_parametric [I.Boundaryless] [T2Space M]
+    {J : P → SmoothAlmostComplexStructure I M} {U C : Set P} (hU : IsOpen U) (hCU : C ⊆ U)
+    (hC : IsCompact C)
+    (hJ : ∀ α : M, ContDiffOn ℝ 2 (fun q : P × E ↦ (J q.1).inChart α q.2)
+      (U ×ˢ (extChartAt I α).target))
+    (hJt : ∀ p ∈ C, ω.Tames (J p)) {K : Set M} (hK : IsCompact K) :
+    ∃ κ > 0, ∀ ⦃p : P⦄, p ∈ C → ∀ ⦃u : ℝ × ℝ → M⦄, ContMDiff 𝓘(ℝ, ℝ × ℝ) I 3 u →
+      (∀ z, u z ∈ K) →
       (∀ z, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag =
-        J (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)) → (∃ z w, u z ≠ u w) →
+        J p (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)) → (∃ z w, u z ≠ u w) →
       ENNReal.ofReal κ ≤ ∫⁻ z, ENNReal.ofReal (SmoothBundleForm.eval₂ ω (u z)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)) := by
@@ -489,7 +552,7 @@ theorem Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne [I.Boundaryles
     exact ⟨ε / 4, by positivity, (closedBall_subset_ball (by linarith)).trans hεt⟩
   choose η hη hηK using hpiece
   choose L hL κ hκ hbound using fun x ↦
-    exists_pos_forall_ofReal_le_lintegral_of_chart hJ x (hη x) (hηK x)
+    exists_pos_forall_ofReal_le_lintegral_of_chart hU hCU hC hJt x (hJ x) (hη x) (hηK x)
   obtain ⟨t, -, htK⟩ := hK.elim_nhds_subcover
     (fun x ↦ (extChartAt I x).source ∩ extChartAt I x ⁻¹' ball (extChartAt I x x) (η x))
     fun x _ ↦ (isOpen_extChartAt_preimage' x isOpen_ball).mem_nhds
@@ -503,13 +566,14 @@ theorem Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne [I.Boundaryles
       exact hκ x
   set R := 1 + ∑ x ∈ t, L x
   have hR : 0 < R := add_pos_of_pos_of_nonneg one_pos (Finset.sum_nonneg fun x _ ↦ (hL x).le)
-  refine ⟨κ₀, hκ₀, fun u hu huK hCR hnc ↦ ?_⟩
+  refine ⟨κ₀, hκ₀, fun p hp u hu huK hCR hnc ↦ ?_⟩
+  have hJp := hJt p hp
   set ρ : ℝ × ℝ → ℝ := fun w ↦ SmoothBundleForm.eval₂ ω (u w)
     (mfderiv 𝓘(ℝ, ℝ × ℝ) I u w stdComplexLineReal) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u w stdComplexLineImag)
-  have hsq (w : ℝ × ℝ) : √(ρ w) ^ 2 = ρ w := Real.sq_sqrt (hJ.eval₂_mfderiv_nonneg (hCR w))
+  have hsq (w : ℝ × ℝ) : √(ρ w) ^ 2 = ρ w := Real.sq_sqrt (hJp.eval₂_mfderiv_nonneg (hCR w))
   -- Hofer's lemma gives a point `w'` of density `m² > 0`, with density at most `(2m)²` on a ball
   -- about `w'` of radius at least `R / m`.
-  obtain ⟨w₁, hw₁⟩ := hJ.exists_pos_eval₂_mfderiv (hu.mdifferentiable (by norm_num)) hCR hnc
+  obtain ⟨w₁, hw₁⟩ := hJp.exists_pos_eval₂_mfderiv (hu.mdifferentiable (by norm_num)) hCR hnc
   have hϕ1 : 0 < √(ρ w₁) := Real.sqrt_pos.2 hw₁
   obtain ⟨ε', hε', w', -, -, hmono, hball⟩ := hofer_of_continuousOn_closedBall w₁
     (show 0 < R / √(ρ w₁) by positivity)
@@ -523,11 +587,67 @@ theorem Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne [I.Boundaryles
   obtain ⟨x, hxt, hxN⟩ := mem_iUnion₂.1 (htK (huK w'))
   refine (ENNReal.ofReal_le_ofReal (Finset.min'_le _ _
     (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ hxt)))).trans
-    (hbound x hu hCR hm hxN.1 hxN.2 (hsq w').le fun w hw ↦ ?_)
+    (hbound x hp hu hCR hm hxN.1 hxN.2 (hsq w').le fun w hw ↦ ?_)
   refine (hsq w).symm.le.trans (pow_le_pow_left₀ (Real.sqrt_nonneg _) (hball w ?_) 2)
   rw [dist_comm]
   refine (mem_closedBall.1 hw).trans ((div_le_iff₀ hm).2 (le_trans ?_ hmono))
   exact (Finset.single_le_sum (fun y _ ↦ (hL y).le) hxt).trans
     (le_add_of_nonneg_left zero_le_one)
 
+end Family
+
+/-- **Energy quantization for pseudoholomorphic planes in a manifold.** Let `J` be a smooth almost
+complex structure on a boundaryless Hausdorff manifold `M`, tamed by a two-form `ω`, as on a closed
+symplectic manifold, and let `K ⊆ M` be compact. There is an energy `κ > 0` such that every
+nonconstant `C¹` solution `u : ℝ × ℝ → M` of `∂ₜu = J(u) ∂ₛu` with values in `K` has area
+`∫ ω(∂ₛu, ∂ₜu) ≥ κ`. Such a solution is smooth
+(`TauCeti.contMDiff_of_mfderiv_stdComplexLineImag_eq`). -/
+theorem Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne [I.Boundaryless] [T2Space M]
+    (hJ : ω.Tames J) {K : Set M} (hK : IsCompact K) :
+    ∃ κ > 0, ∀ ⦃u : ℝ × ℝ → M⦄, ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u → (∀ z, u z ∈ K) →
+      (∀ z, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag =
+        J (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)) → (∃ z w, u z ≠ u w) →
+      ENNReal.ofReal κ ≤ ∫⁻ z, ENNReal.ofReal (SmoothBundleForm.eval₂ ω (u z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)) := by
+  obtain ⟨κ, hκ, h⟩ := exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne_parametric
+    (J := fun (_ : Unit) ↦ J) isOpen_univ (subset_univ {()}) isCompact_singleton
+    (fun α ↦ ((J.contDiffOn_inChart α).of_le (by simp)).comp contDiffOn_snd fun _ hq ↦ hq.2)
+    (fun _ _ ↦ hJ) hK
+  exact ⟨κ, hκ, fun u hu huK hCR ↦
+    h rfl ((contMDiff_of_mfderiv_stdComplexLineImag_eq hu hCR).of_le (by simp)) huK hCR⟩
+
 end TauCeti.SmoothTwoForm
+
+namespace TauCeti.ContMDiffAlmostComplexStructureFamily
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I (⊤ : ℕ∞) M] {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+
+/-- **Energy quantization for the structures frozen from a smooth family.** Let `J` be a smooth
+family of almost complex structures on a boundaryless Hausdorff manifold `M`, over a parameter
+space `P` that is a normed space, such as the domain `ℝ × ℝ` of a Floer equation with a
+domain-dependent structure. Let the frozen structures `J p` be tamed by a two-form `ω` for `p` in a
+compact set `C`, and let `K ⊆ M` be compact. There is an energy `κ > 0` such that for every
+`p ∈ C`, every nonconstant `C¹` solution `u : ℝ × ℝ → M` of `∂ₜu = J p (u) ∂ₛu` with values in `K`
+has area `∫ ω(∂ₛu, ∂ₜu) ≥ κ`. -/
+theorem exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne [I.Boundaryless] [T2Space M]
+    (J : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, P) P ⊤) {ω : SmoothTwoForm I M}
+    {C : Set P} (hC : IsCompact C) (hJt : ∀ p ∈ C, ω.Tames (J.freezeSmooth p)) {K : Set M}
+    (hK : IsCompact K) :
+    ∃ κ > 0, ∀ ⦃p : P⦄, p ∈ C → ∀ ⦃u : ℝ × ℝ → M⦄, ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u →
+      (∀ z, u z ∈ K) →
+      (∀ z, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag =
+        J.freezeSmooth p (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)) →
+      (∃ z w, u z ≠ u w) →
+      ENNReal.ofReal κ ≤ ∫⁻ z, ENNReal.ofReal (SmoothBundleForm.eval₂ ω (u z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)) := by
+  obtain ⟨κ, hκ, h⟩ := SmoothTwoForm.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne_parametric
+    isOpen_univ (subset_univ C) hC (fun α ↦ (J.contDiffOn_inChart_freezeSmooth α).of_le (by simp))
+    hJt hK
+  exact ⟨κ, hκ, fun p hp u hu huK hCR ↦
+    h hp ((contMDiff_of_mfderiv_stdComplexLineImag_eq hu hCR).of_le (by simp)) huK hCR⟩
+
+end TauCeti.ContMDiffAlmostComplexStructureFamily

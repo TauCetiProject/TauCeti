@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Vertex.Axioms
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.RingTheory.Binomial.PascalSum
 
 /-!
 # Skew symmetry in formal vertex algebras
@@ -22,17 +23,20 @@ skew-symmetric up to `T`-exact terms.
 Without division, the divided power `T^{(s)} c` is represented by the creation coefficient
 `c₍₋ₛ₋₁₎|0⟩`, whose `s!`-fold multiple is `Tˢ c`
 (`TauCeti.FormalVertexAxioms.factorial_smul_ncoeff_field_apply_vacuum`). The identities are
-stated in this division-free form over a torsion-free module; the usual form with `Tˢ / s!` over a
-`ℚ`-module is `TauCeti.FormalVertexAxioms.ncoeff_field_apply_eq_sum_translation_pow`, derived in
-`TauCeti.Algebra.Vertex.Borcherds` from the Borcherds identity.
+stated in this division-free form over a torsion-free module, as well as in the `Tˢ / s!` form over
+`ℚ` (`TauCeti.FormalVertexAxioms.ncoeff_field_apply_eq_sum_translation_pow`).
 
 ## Main results
 
 * `TauCeti.FormalVertexAxioms.ncoeff_field_apply_ncoeff_field_apply_vacuum_eq_sum`: a mode moves
   past a creation vector by `b₍q₎ (a₍ₚ₎|0⟩) = ∑_l (q choose l) (b₍q₋ₗ₎ a)₍ₚ₊ₗ₎|0⟩`, the
   coefficient form of `Y(b,w) e^{zT} a = e^{zT} Y(b,w-z) a`.
-* `TauCeti.FormalVertexAxioms.ncoeff_field_apply_eq_sum_ncoeff_field_apply_vacuum`: skew symmetry
-  `a₍ₙ₎ b = ∑_s (-1)^{n+s+1} (b₍ₙ₊ₛ₎ a)₍₋ₛ₋₁₎|0⟩`.
+* `TauCeti.FormalVertexAxioms.ncoeff_field_apply_eq_sum_ncoeff_field_apply_vacuum`: finite-sum skew
+  symmetry `a₍ₙ₎ b = ∑_s (-1)^{n+s+1} (b₍ₙ₊ₛ₎ a)₍₋ₛ₋₁₎|0⟩`.
+* `TauCeti.FormalVertexAxioms.ncoeff_field_apply_eq_sum_translation_pow`: finite-sum `e^{zT}` form
+  over `ℚ`.
+* `TauCeti.FormalVertexAxioms.ncoeff_zero_field_apply_add_mem_range_translation`:
+  `a₍₀₎ b + b₍₀₎ a ∈ LinearMap.range A.translation`.
 
 ## Implementation notes
 
@@ -176,13 +180,13 @@ private theorem sum_antidiagonal_ncoeff_field_apply_ncoeff_field_apply_vacuum [H
     -- Pascal's rule for `Ring.choose (q + 1)`, with the boundary term `W K = 0`.
     have hkey : ∑ l ∈ range K, Ring.choose (q + 1) l • W l =
         ∑ l ∈ range K, Ring.choose q l • W l + ∑ l ∈ range K, Ring.choose q l • W (l + 1) := by
-      have hWK : W K = 0 := by
-        rw [hW]
-        exact A.ncoeff_field_apply_vacuum_of_nonneg _ _ (by omega)
-      rw [sum_range_eq_add_sum_range_succ (fun l ↦ Ring.choose (q + 1) l • W l) (by simp [hWK]),
-        sum_range_eq_add_sum_range_succ (fun l ↦ Ring.choose q l • W l) (by simp [hWK])]
-      simp only [Ring.choose_succ_succ, Ring.choose_zero_right, add_smul, sum_add_distrib]
-      abel
+      rcases K with _ | K'
+      · simp
+      · have hWK : W (K' + 1) = 0 := by
+          rw [hW]
+          exact A.ncoeff_field_apply_vacuum_of_nonneg _ _ (by omega)
+        rw [TauCeti.Ring.sum_range_choose_add_one_smul (R := ℤ) K' q W,
+          sum_range_succ (fun l ↦ Ring.choose q l • W (l + 1)) K', hWK, smul_zero, add_zero]
     rw [hkey, pow_succ]
     module
 
@@ -215,5 +219,38 @@ theorem ncoeff_field_apply_eq_sum_ncoeff_field_apply_vacuum [HasUniqueDiv V] (a 
       exact ⟨(N : ℤ) - n - s - 1, by omega⟩
     rw [show -1 + (N : ℤ) - ↑(K - 1 - s) = n + s by omega,
       show n - (N : ℤ) + ↑(K - 1 - s) = -s - 1 by omega, smul_smul, hsign, Units.smul_def]
+
+/-- **Skew symmetry (`e^{zT}` form).** Over a `ℚ`-module, for any cutoff `K : ℕ` above which
+`b₍ₙ₊ⱼ₎ a = 0`, `a₍ₙ₎ b = ∑_{j < K} (-1)^{n + j + 1} (j!)⁻¹ • Tʲ (b₍ₙ₊ⱼ₎ a)`. -/
+theorem ncoeff_field_apply_eq_sum_translation_pow [Module ℚ V] (a b : V) (n : ℤ) {K : ℕ}
+    (hba : ∀ j : ℕ, K ≤ j → ((A.field b)[[n + j]]) a = 0) :
+    ((A.field a)[[n]]) b =
+      ∑ j ∈ range K, Int.negOnePow (n + j + 1) • (j.factorial : ℚ)⁻¹ •
+        (A.translation ^ j) (((A.field b)[[n + j]]) a) := by
+  have : HasUniqueDiv V := .of_module_rat V
+  rw [A.ncoeff_field_apply_eq_sum_ncoeff_field_apply_vacuum a b n K fun k hk ↦ by
+    have hk' : k = n + ((k - n).toNat : ℤ) := by omega
+    rw [hk']
+    exact hba (k - n).toNat (by omega)]
+  refine sum_congr rfl fun j _ ↦ ?_
+  rw [A.ncoeff_field_apply_vacuum_neg]
+
+/-- Over a `ℚ`-module, the `0`-th product is skew-symmetric modulo `T(V)`:
+`a₍₀₎ b + b₍₀₎ a ∈ LinearMap.range A.translation`. Together with `ncoeff_zero_field_ncoeff_apply`,
+`ncoeff_field_translation`, and `translation_ncoeff_apply`, this supplies the identities needed for
+the induced Lie bracket on `V / T(V)`. -/
+theorem ncoeff_zero_field_apply_add_mem_range_translation [Module ℚ V] (a b : V) :
+    ((A.field a)[[0]]) b + ((A.field b)[[0]]) a ∈ LinearMap.range A.translation := by
+  obtain ⟨P, hP⟩ := (A.field b).exists_forall_ncoeff_apply_eq_zero a
+  rw [A.ncoeff_field_apply_eq_sum_translation_pow a b 0 (K := P + 1)
+      (fun j hj ↦ by simpa using hP j (by omega)),
+    sum_range_succ']
+  simp only [Nat.cast_zero, add_zero, zero_add, Int.negOnePow_one, Units.neg_smul, one_smul,
+    Nat.factorial_zero, Nat.cast_one, inv_one, pow_zero, one_apply_eq_self, neg_add_cancel_right]
+  refine Submodule.sum_mem (LinearMap.range A.translation) fun j _ ↦ ?_
+  refine ⟨Int.negOnePow (((j + 1 : ℕ) : ℤ) + 1) • ((j + 1).factorial : ℚ)⁻¹ •
+      (A.translation ^ j) (((A.field b)[[(j + 1 : ℕ)]]) a), ?_⟩
+  simp only [Units.smul_def]
+  rw [map_zsmul, map_rat_smul, pow_succ', mul_apply_eq_comp]
 
 end TauCeti.FormalVertexAxioms

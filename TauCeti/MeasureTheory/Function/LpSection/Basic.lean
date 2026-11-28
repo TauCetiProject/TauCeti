@@ -7,7 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+public import Mathlib.MeasureTheory.Measure.SeparableMeasure
 public import TauCeti.MeasureTheory.Function.LpSection.Measurable
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The spaces `Lᵖ` of sections of a vector bundle
@@ -26,9 +28,11 @@ A measurable isometric frame `Φ` (`TauCeti.IsMeasurableIsometricFrame`) identif
 Mathlib's `MeasureTheory.Lp V p μ` by a linear isometry reading sections in the frame
 (`TauCeti.IsMeasurableIsometricFrame.lpSectionEquiv`). For a finite-rank bundle such frames exist,
 so `Lᵖ(E, μ)` is complete for every measure `μ` (`TauCeti.LpSection.instCompleteSpace`) and `L²`
-is a Hilbert space. Finite rank is what supplies completeness here; without an additional
-hypothesis it can fail: over a one-point base with a Dirac measure the space is the model fibre
-itself, which need not be complete.
+is a Hilbert space; for finite `p` it is moreover separable for every separable `μ`, such as an
+s-finite Borel measure (`TauCeti.LpSection.instSecondCountableTopology`), being isometric to
+`Lᵖ(μ; 𝕜ʳ)`. Finite rank is what supplies completeness here; without an additional hypothesis
+it can fail: over a one-point base with a Dirac measure the space is the model fibre itself,
+which need not be complete.
 
 The norm and inner product are defined intrinsically, through representatives; neither depends
 on a choice of charts or frames.
@@ -50,6 +54,8 @@ on a choice of charts or frames.
   `p ≠ 0`.
 * `TauCeti.LpSection.inner_mk`: the `L²` inner product is `∫ ⟪s x, t x⟫ ∂μ`.
 * `TauCeti.LpSection.instCompleteSpace`: completeness in finite rank, for any measure.
+* `TauCeti.LpSection.instSecondCountableTopology`: separability in finite rank, for finite `p`
+  and any separable measure.
 
 ## References
 
@@ -65,12 +71,12 @@ open Bundle MeasureTheory Set Filter Module
 open scoped Topology InnerProductSpace ENNReal ComplexConjugate
 
 variable {𝕜 B F : Type*} [RCLike 𝕜] [TopologicalSpace B] [MeasurableSpace B]
-  [OpensMeasurableSpace B] [SecondCountableTopology B] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {E : B → Type*} [TopologicalSpace (TotalSpace F E)] {p : ℝ≥0∞} {μ : Measure B}
+  [OpensMeasurableSpace B] [_root_.SecondCountableTopology B] [NormedAddCommGroup F]
+  [NormedSpace 𝕜 F] {E : B → Type*} [TopologicalSpace (TotalSpace F E)] {p : ℝ≥0∞} {μ : Measure B}
 
 namespace MeasureTheory.Lp
 
-omit [TopologicalSpace B] [OpensMeasurableSpace B] [SecondCountableTopology B]
+omit [TopologicalSpace B] [OpensMeasurableSpace B] [_root_.SecondCountableTopology B]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace (TotalSpace F E)] in
 /-- Applying a family of linear isometries `Φ x : V ≃ₗᵢ[𝕜] E x` pointwise to an `Lᵖ` function
 gives a family of vectors with `p`-integrable norm. -/
@@ -274,6 +280,17 @@ theorem coeFn_sub : ∀ᵐ x ∂μ, (f - g) x = f x - g x := by
   rw [e]
   exact coeFn_mk _ _
 
+/-- The pointwise sum of finitely many `Lᵖ` sections represents their sum. -/
+theorem coeFn_sum {ι : Type*} (s : Finset ι) (f : ι → LpSection 𝕜 F E p μ) :
+    ∀ᵐ x ∂μ, (∑ i ∈ s, f i) x = ∑ i ∈ s, f i x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    simpa using coeFn_zero (𝕜 := 𝕜) (F := F) (E := E) (p := p) (μ := μ)
+  | insert a s ha ih =>
+    filter_upwards [coeFn_add (f a) (∑ i ∈ s, f i), ih] with x h₁ h₂
+    rw [Finset.sum_insert ha, h₁, h₂, Finset.sum_insert ha]
+
 /-- The `Lᵖ` norm of the fibre norm of a representative. -/
 instance : Norm (LpSection 𝕜 F E p μ) :=
   ⟨fun f ↦ (eLpNorm (fun x ↦ ‖f x‖) p μ).toReal⟩
@@ -307,8 +324,18 @@ theorem norm_eq_integral (hp0 : p ≠ 0) (hp : p ≠ ∞) :
   conv_lhs => rw [← mk_coeFn f]
   exact norm_mk_eq_integral hp0 hp _ _
 
+/-- For a finite measure, a class whose fibre norm is almost everywhere at most `C` has norm at
+most `μ(univ) ^ (1 / p) * C`. -/
+theorem norm_le_of_ae_bound [IsFiniteMeasure μ] {C : ℝ} (hC : 0 ≤ C)
+    (hfC : ∀ᵐ x ∂μ, ‖f x‖ ≤ C) : ‖f‖ ≤ measureUnivNNReal μ ^ p.toReal⁻¹ * C := by
+  rw [norm_eq_norm_toLp]
+  exact f.memLp_norm.norm_toLp_le_of_ae_bound hC (by simpa using hfC)
+
 variable [hp : Fact (1 ≤ p)]
 
+-- The additive structure is `instAddCommGroup` itself, so that it agrees at instance reducibility
+-- with the one in `LpSection 𝕜 F E p μ →L[𝕜] LpSection 𝕜 F E p μ` and operator norms of maps into
+-- spaces of such operators are found by instance search.
 instance : NormedAddCommGroup (LpSection 𝕜 F E p μ) :=
   { AddGroupNorm.toNormedAddCommGroup {
   toFun := norm
@@ -337,7 +364,7 @@ instance : NormedAddCommGroup (LpSection 𝕜 F E p μ) :=
     refine ext _ _ ?_
     filter_upwards [hf, coeFn_zero (𝕜 := 𝕜) (F := F) (E := E) (p := p) (μ := μ)] with x hx h0
     rw [h0]
-    simpa using hx } with }
+    simpa using hx } with toAddCommGroup := instAddCommGroup }
 
 instance : NormedSpace 𝕜 (LpSection 𝕜 F E p μ) where
   norm_smul_le c f := by
@@ -490,6 +517,16 @@ instance instCompleteSpace [FiniteDimensional 𝕜 F] [Fact (1 ≤ p)] :
   obtain ⟨Φ, hΦ⟩ := exists_isMeasurableIsometricFrame F E (EuclideanSpace 𝕜 (Fin (finrank 𝕜 F)))
     (finrank_euclideanSpace_fin)
   exact ((hΦ μ).lpSectionEquiv p).toIsometryEquiv.completeSpace
+
+/-- **Separability.** For a finite-rank bundle with continuous fibre metric over a second-countable
+base and finite `p`, `Lᵖ(E, μ)` is second countable for every separable measure `μ`, for instance
+an s-finite measure on the Borel sets of the base: a measurable isometric frame identifies it with
+`Lᵖ(μ; 𝕜ʳ)`. -/
+instance instSecondCountableTopology [FiniteDimensional 𝕜 F] [Fact (1 ≤ p)] [Fact (p ≠ ⊤)]
+    [IsSeparable μ] : SecondCountableTopology (LpSection 𝕜 F E p μ) := by
+  obtain ⟨Φ, hΦ⟩ := exists_isMeasurableIsometricFrame F E (EuclideanSpace 𝕜 (Fin (finrank 𝕜 F)))
+    (finrank_euclideanSpace_fin)
+  exact ((hΦ μ).lpSectionEquiv p).toHomeomorph.secondCountableTopology
 
 end LpSection
 

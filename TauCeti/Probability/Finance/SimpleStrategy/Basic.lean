@@ -130,6 +130,22 @@ theorem simpleGains_def (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (X 
       ∑ j ∈ range n, a j ω * (X (min (τ (j + 1)) t) ω - X (min (τ j) t) ω) :=
   (rfl)
 
+/-- An order embedding of the time axis preserves elementary holdings at embedded times. -/
+@[simp]
+theorem simpleHolding_map {κ : Type*} [LinearOrder κ]
+    (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (e : ι ↪o κ) (t : ι) (ω : Ω) :
+    simpleHolding (fun j ↦ e (τ j)) n a (e t) ω = simpleHolding τ n a t ω := by
+  simp [simpleHolding_def, Set.indicator_apply]
+
+/-- A monotone change of time preserves elementary gains after pulling back the price path. -/
+@[simp]
+theorem simpleGains_map {κ : Type*} [LinearOrder κ]
+    (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (X : κ → Ω → ℝ) (e : ι → κ)
+    (he : Monotone e) (t : ι) (ω : Ω) :
+    simpleGains (fun j ↦ e (τ j)) n a X (e t) ω =
+      simpleGains τ n a (fun u ↦ X (e u)) t ω := by
+  simp only [simpleGains_def, he.map_min]
+
 /-- Elementary gains only inspect the price at the clipped endpoints of the grid.
 No order condition on the grid is needed for this identity. -/
 theorem simpleGains_congr_price {X Y : ι → Ω → ℝ} (ω : Ω)
@@ -156,6 +172,17 @@ theorem simpleHolding_of_notMem_Ioc (hτ : MonotoneOn τ (Set.Iic n))
   refine sum_eq_zero fun i hi ↦ Set.indicator_of_notMem (fun hit ↦ ht ?_) _
   exact Set.Ioc_subset_Ioc (hτ (Nat.zero_le n) (mem_range.1 hi).le (Nat.zero_le i))
     (hτ (mem_range.1 hi) Set.self_mem_Iic (mem_range.1 hi)) hit
+
+/-- Over a partition monotone up to `n`, a simple strategy whose positions are bounded in norm
+by `C` at a sample point `ω` holds at most `max C 0` there at every time. -/
+theorem norm_simpleHolding_le (hτ : MonotoneOn τ (Set.Iic n)) (t : ι) (ω : Ω) {C : ℝ}
+    (haC : ∀ j < n, ‖a j ω‖ ≤ C) :
+    ‖simpleHolding τ n a t ω‖ ≤ max C 0 := by
+  by_cases ht : t ∈ Set.Ioc (τ 0) (τ n)
+  · obtain ⟨j, hj, htj⟩ := TauCeti.exists_lt_mem_Ioc_of_mem_Ioc ht
+    rw [simpleHolding_of_mem_Ioc hτ hj htj]
+    exact (haC j hj).trans (le_max_left _ _)
+  · simp [simpleHolding_of_notMem_Ioc hτ ht]
 
 /-- The gains over a partition monotone up to `n` vanish up to its first date. -/
 @[simp]
@@ -262,6 +289,61 @@ theorem simpleHolding_smul (τ : ℕ → ι) (n : ℕ) (c : ℝ) (a : ℕ → Ω
   simp only [simpleHolding_def, mul_sum]
   refine sum_congr rfl fun j _ ↦ ?_
   by_cases ht : t ∈ Set.Ioc (τ j) (τ (j + 1)) <;> simp [ht]
+
+/-- Multiplying each height by a sample-dependent factor scales the elementary gains pointwise. -/
+@[simp]
+theorem simpleGains_mul_left (τ : ℕ → ι) (n : ℕ) (ξ : Ω → ℝ) (a : ℕ → Ω → ℝ) (X : ι → Ω → ℝ)
+    (t : ι) (ω : Ω) :
+    simpleGains τ n (fun j ω ↦ ξ ω * a j ω) X t ω = ξ ω * simpleGains τ n a X t ω := by
+  simp only [simpleGains_def, mul_sum, mul_assoc]
+
+/-- Multiplying each height by a sample-dependent factor scales the simple holding pointwise. -/
+@[simp]
+theorem simpleHolding_mul_left (τ : ℕ → ι) (n : ℕ) (ξ : Ω → ℝ) (a : ℕ → Ω → ℝ) (t : ι) (ω : Ω) :
+    simpleHolding τ n (fun j ω ↦ ξ ω * a j ω) t ω = ξ ω * simpleHolding τ n a t ω := by
+  simp only [simpleHolding_def, mul_sum]
+  refine sum_congr rfl fun j _ ↦ ?_
+  by_cases ht : t ∈ Set.Ioc (τ j) (τ (j + 1)) <;> simp [ht]
+
+/-- Shifting every grid date up to `max (τ i) u` restricts `simpleHolding` to `(u, ∞)`. -/
+theorem simpleHolding_max_eq (u : ι) (s : ι) (ω : Ω) :
+    simpleHolding (fun i ↦ max (τ i) u) n a s ω =
+      (Set.Ioi u).indicator (fun _ ↦ simpleHolding τ n a s ω) s := by
+  have hmem (i : ℕ) : s ∈ Set.Ioc (max (τ i) u) (max (τ (i + 1)) u) ↔
+      u < s ∧ s ∈ Set.Ioc (τ i) (τ (i + 1)) := by
+    simp only [Set.mem_Ioc, max_lt_iff, le_max_iff]
+    exact ⟨fun ⟨⟨h1, h2⟩, h3⟩ ↦ ⟨h2, h1, h3.resolve_right h2.not_ge⟩,
+      fun ⟨h2, h1, h3⟩ ↦ ⟨⟨h1, h2⟩, Or.inl h3⟩⟩
+  by_cases hs : u < s <;> simp [simpleHolding_def, Set.indicator_apply, hmem, hs]
+
+/-- Shifting every grid date up to `max (τ i) u` gives the post-`u` gains increment against any
+price path `X`. -/
+theorem simpleGains_max_eq (u : ι) (X : ι → Ω → ℝ) (t : ι) (ω : Ω) :
+    simpleGains (fun i ↦ max (τ i) u) n a X t ω =
+      simpleGains τ n a X t ω - simpleGains τ n a X (min u t) ω := by
+  have hpair (s : ι) :
+      X (min (max s u) t) ω + X (min s (min u t)) ω = X (min s t) ω + X (min u t) ω := by
+    have hmin : min (min s t) (min u t) = min s (min u t) := by
+      rw [min_assoc, min_left_comm]; exact min_eq_right (min_le_of_right_le (min_le_right u t))
+    rw [min_max_distrib_right, ← hmin]
+    rcases le_total (min s t) (min u t) with h | h <;> simp [h, add_comm]
+  simp only [simpleGains_def, ← sum_sub_distrib]
+  refine sum_congr rfl fun i _ ↦ ?_
+  have hdiff : X (min (max (τ (i + 1)) u) t) ω - X (min (max (τ i) u) t) ω =
+      (X (min (τ (i + 1)) t) ω - X (min (τ i) t) ω) -
+        (X (min (τ (i + 1)) (min u t)) ω - X (min (τ i) (min u t)) ω) := by
+    linarith [hpair (τ (i + 1)), hpair (τ i)]
+  rw [hdiff, mul_sub]
+
+/-- Applying a function fixing zero to each height applies that function to the holding
+process, because the trading intervals are disjoint. No continuity of the function is needed. -/
+theorem simpleHolding_comp {f : ℝ → ℝ} (hf : f 0 = 0)
+    (hτ : MonotoneOn τ (Set.Iic n)) (t : ι) (ω : Ω) :
+    simpleHolding τ n (fun j ω ↦ f (a j ω)) t ω = f (simpleHolding τ n a t ω) := by
+  by_cases ht : t ∈ Set.Ioc (τ 0) (τ n)
+  · obtain ⟨j, hj, ht⟩ := exists_lt_mem_Ioc_of_mem_Ioc ht
+    rw [simpleHolding_of_mem_Ioc hτ hj ht, simpleHolding_of_mem_Ioc hτ hj ht]
+  · rw [simpleHolding_of_notMem_Ioc hτ ht, simpleHolding_of_notMem_Ioc hτ ht, hf]
 
 /-! ### Measurability -/
 

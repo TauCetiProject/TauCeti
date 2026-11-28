@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 public import Mathlib.CategoryTheory.Localization.CalculusOfFractions
 public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Cohomology
+public import TauCeti.Algebra.Homology.SquareZero
 
 /-!
 # Quasi-isomorphisms of differential graded right modules
@@ -30,6 +31,8 @@ roofs `M ← P → N` are Mathlib's right fractions for it.
 
 * `TauCeti.DGRightModuleHom.IsQuasiIso`, `TauCeti.DGRightModuleCat.IsQuasiIso`: quasi-isomorphisms.
 * `TauCeti.DGRightModuleCat.quasiIsos h`: the quasi-isomorphisms, as a `MorphismProperty`.
+  The cohomology functor inverts them
+  (`TauCeti.DGRightModuleCat.quasiIsos_isInvertedBy_cohomologyFunctor`).
 
 ## Main results
 
@@ -210,6 +213,32 @@ theorem isQuasiIso_iff_forall_exists (f : DGRightModuleHom hM hN) :
       rw [Submodule.coe_sub, cyclesMap_apply_coe, map_neg, ← huv]
       exact (sub_add_cancel_left _ _).symm
 
+/-- Quasi-isomorphisms induce bijections on homology after forgetting to ground-ring modules. -/
+theorem isQuasiIso_iff_bijective_homologyMap (f : DGRightModuleHom hM hN) :
+    f.IsQuasiIso ↔ Function.Bijective (LinearMap.homologyMap (f.toLinearMap.restrictScalars R)
+      (LinearMap.ext hM.sq_zero) (LinearMap.ext hN.sq_zero)
+      (LinearMap.ext fun x ↦ (f.map_d x).symm)) := by
+  rw [← LinearMap.ker_le_range_mappingCone_iff, isQuasiIso_iff_forall_exists]
+  constructor
+  · rintro H ⟨x, y⟩ hxy
+    simp only [LinearMap.mem_ker, LinearMap.mappingCone_apply, LinearMap.restrictScalars_apply,
+      coe_toLinearMap, Prod.mk_eq_zero, neg_eq_zero] at hxy
+    obtain ⟨u, v, hu, hv⟩ := H x (-y) hxy.1 (by
+      rw [map_neg]
+      exact eq_neg_of_add_eq_zero_left hxy.2)
+    refine ⟨(-u, -v), ?_⟩
+    simp only [LinearMap.mappingCone_apply, LinearMap.restrictScalars_apply, coe_toLinearMap,
+      map_neg, neg_neg, hu, ← neg_add, hv]
+  · intro H x y hx hxy
+    have hxy' : (x, -y) ∈ LinearMap.ker (LinearMap.mappingCone dM dN
+        (f.toLinearMap.restrictScalars R)) := by
+      simp [LinearMap.mappingCone_apply, hx, hxy]
+    obtain ⟨⟨u, v⟩, huv⟩ := H hxy'
+    simp only [LinearMap.mappingCone_apply, LinearMap.restrictScalars_apply, coe_toLinearMap,
+      Prod.mk.injEq] at huv
+    exact ⟨-u, -v, by rw [map_neg, huv.1],
+      by rw [map_neg, map_neg, ← neg_add, huv.2, neg_neg]⟩
+
 /-- A morphism between DG right modules without nonzero elements is a quasi-isomorphism. -/
 theorem isQuasiIso_of_subsingleton [Subsingleton M] [Subsingleton N]
     (f : DGRightModuleHom hM hN) : f.IsQuasiIso := by
@@ -306,6 +335,12 @@ theorem IsQuasiIso.comp {M N P : DGRightModuleCat.{uR, uA, uM} h} {f : M ⟶ N} 
 theorem isQuasiIso_of_isIso {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) [IsIso f] :
     IsQuasiIso f :=
   (isQuasiIso_iff_isIso_cohomologyFunctor_map f).2 inferInstance
+
+variable (h) in
+/-- The cohomology functor inverts the quasi-isomorphisms. -/
+theorem quasiIsos_isInvertedBy_cohomologyFunctor :
+    (quasiIsos h).IsInvertedBy cohomologyFunctor := fun _ _ f hf ↦ by
+  rwa [quasiIsos, MorphismProperty.inverseImage_iff, MorphismProperty.isomorphisms.iff] at hf
 
 end DGRightModuleCat
 

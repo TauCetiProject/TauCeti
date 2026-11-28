@@ -5,11 +5,17 @@ Authors: OpenAI Codex
 -/
 module
 
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
 public import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 public import Mathlib.Analysis.Convex.Deriv
 public import Mathlib.Analysis.Complex.RealDeriv
 public import Mathlib.Analysis.Complex.ExponentialBounds
+import TauCeti.Analysis.Complex.IteratedDeriv
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Log
+import TauCeti.Data.Nat.Cast.Basic
 
 /-!
 # Real digamma and its bounds on the positive real axis
@@ -29,12 +35,17 @@ derivative of real Gamma, and relates it to Mathlib's `Complex.digamma`.
 * `Real.digamma_le_log_le`: for `x > 0`, `ψ(x) ≤ log x ≤ ψ(x + 1)`.
 * `Real.monotoneOn_digamma`: digamma is monotone on the positive real axis, being the derivative
   of the convex function `log ∘ Gamma`.
+* `Real.differentiableAt_digamma`, `Real.deriv_digamma_apply_add_nat`, `Real.deriv_digamma_pos`:
+  at every regular real point digamma is differentiable, its derivative satisfies the shifted
+  recurrence `ψ'(x + n) = ψ'(x) - ∑_{k < n} 1 / (x + k)²`, and it is positive.
 * `Real.digamma_one_half`, `Real.digamma_three_halves`, `Real.digamma_one_half_neg`,
   `Real.digamma_three_halves_pos`: the values `ψ(1/2) = -γ - 2 log 2 < 0` and
   `ψ(3/2) = 2 - γ - 2 log 2 > 0`.
 * `Real.abs_digamma_sub_log_le`, `Complex.norm_digamma_ofReal_sub_log_le`,
   `Complex.isBigO_digamma_ofReal_sub_log`: for `x > 0`, `|ψ(x) - log x| ≤ 1 / x`, so complex
   digamma differs from the logarithm by `O(1 / x)` on the positive real axis.
+* `TauCeti.contDiffOn_digamma_Ioi`, `TauCeti.iteratedDeriv_digamma_ofReal`: `C^∞` smoothness of
+  `Real.digamma` on `(0, ∞)` and coercion of higher derivatives from `Complex.digamma`.
 
 The positive-axis bounds come from the log-convexity of Gamma (Bohr–Mollerup): `ψ(x)` and
 `ψ(x + 1)` are the derivatives of the convex function `log ∘ Gamma` at the endpoints of
@@ -171,6 +182,43 @@ theorem monotoneOn_digamma : MonotoneOn digamma (Ioi 0) := by
   exact (convexOn_log_Gamma.monotoneOn_deriv fun x hx ↦
     differentiableAt_log_Gamma (Complex.real_ne_neg_nat_of_pos hx)).congr hd.symm
 
+/-- Real digamma is differentiable at every regular real point. -/
+theorem differentiableAt_digamma {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
+    DifferentiableAt ℝ digamma x := by
+  have hd := (Complex.analyticAt_digamma (Complex.ofReal_ne_neg_nat hx)).differentiableAt
+  simpa [Complex.digamma_ofReal] using hd.hasDerivAt.real_of_complex.differentiableAt
+
+/-- The derivative of the digamma recurrence: `ψ'(x + n) = ψ'(x) - ∑_{k < n} 1 / (x + k)²` at
+every regular real point. -/
+theorem deriv_digamma_apply_add_nat {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) (n : ℕ) :
+    deriv digamma (x + n) = deriv digamma x - ∑ k ∈ Finset.range n, ((x + k) ^ 2)⁻¹ := by
+  have hxn := TauCeti.add_natCast_ne_neg_natCast hx n
+  have hk : ∀ k ∈ Finset.range n, x + k ≠ 0 := fun k _ h => hx k (by linarith)
+  have h := ((differentiableAt_digamma hx).hasDerivAt.add (HasDerivAt.fun_sum
+    (u := Finset.range n) fun (k : ℕ) hk' =>
+      ((hasDerivAt_id x).add_const (k : ℝ)).inv (hk k hk'))).unique
+    (((differentiableAt_digamma hxn).hasDerivAt.comp_add_const x (n : ℝ)).congr_of_eventuallyEq
+      (by
+        filter_upwards [eventually_ne_neg_natCast hx] with y hy
+        simp only [Pi.add_apply, Pi.inv_apply, id]
+        exact (digamma_apply_add_nat hy n).symm))
+  simp only [id, div_eq_mul_inv, neg_one_mul, Finset.sum_neg_distrib] at h
+  linarith
+
+/-- The derivative of real digamma (trigamma) is positive at every regular real point. -/
+theorem deriv_digamma_pos {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) : 0 < deriv digamma x := by
+  -- Shift by `n ≥ 1` into the positive axis; the recurrence sum then contains `(x ^ 2)⁻¹ > 0`.
+  obtain ⟨n, hn⟩ := exists_nat_gt (max (-x) 0)
+  have hpos : 0 < x + n := by linarith [le_max_left (-x) 0]
+  have h := deriv_digamma_apply_add_nat hx n
+  have hmono : 0 ≤ deriv digamma (x + n) := by
+    rw [← derivWithin_of_isOpen isOpen_Ioi (Set.mem_Ioi.2 hpos)]
+    exact monotoneOn_digamma.derivWithin_nonneg
+  have hsum : 0 < ∑ k ∈ Finset.range n, ((x + k) ^ 2)⁻¹ :=
+    Finset.sum_pos (fun k _ => inv_pos.2 (sq_pos_iff.2 fun h => hx k (by linarith)))
+      ⟨0, Finset.mem_range.2 (by exact_mod_cast (le_max_right (-x) 0).trans_lt hn)⟩
+  linarith
+
 /-- The value `ψ(1/2) = -γ - 2 log 2`. -/
 theorem digamma_one_half : digamma (1 / 2) = -eulerMascheroniConstant - 2 * log 2 := by
   apply Complex.ofReal_injective
@@ -232,3 +280,22 @@ theorem isBigO_digamma_ofReal_sub_log :
     norm_digamma_ofReal_sub_log_le hx
 
 end Complex
+
+namespace TauCeti
+
+open scoped ContDiff
+
+/-- Real digamma is `C^∞` on `(0, ∞)`. -/
+theorem contDiffOn_digamma_Ioi : ContDiffOn ℝ ∞ Real.digamma (Ioi 0) :=
+  differentiableOn_digamma_slitPlane.contDiffOn_ofReal isOpen_slitPlane
+    (fun _ ht ↦ ofReal_mem_slitPlane.mpr ht) fun _ _ ↦ Complex.digamma_ofReal
+
+/-- On `(0, ∞)`, every complex iterated derivative of `Complex.digamma` is the coercion of the
+corresponding real iterated derivative of `Real.digamma`. -/
+@[simp]
+theorem iteratedDeriv_digamma_ofReal (k : ℕ) {x : ℝ} (hx : 0 < x) :
+    iteratedDeriv k Complex.digamma (x : ℂ) = ((iteratedDeriv k Real.digamma x : ℝ) : ℂ) :=
+  differentiableOn_digamma_slitPlane.iteratedDeriv_ofReal isOpen_slitPlane isOpen_Ioi
+    (fun _ ht ↦ ofReal_mem_slitPlane.mpr ht) (fun _ _ ↦ Complex.digamma_ofReal) k hx
+
+end TauCeti

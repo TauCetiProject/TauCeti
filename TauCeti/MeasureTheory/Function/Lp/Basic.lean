@@ -39,9 +39,19 @@ operators `MeasureTheory.Lp.reCLM` and `MeasureTheory.Lp.imCLM` between `Lp ℝ 
 * `MeasureTheory.Lp.coeFn_add_ae_eq_of_ae_eq`, `MeasureTheory.Lp.coeFn_sub_ae_eq_of_ae_eq`,
   `MeasureTheory.Lp.coeFn_neg_ae_eq_of_ae_eq`, `MeasureTheory.Lp.coeFn_smul_ae_eq_of_ae_eq`: if
   `⇑u =ᵐ[μ] g` and `⇑v =ᵐ[μ] h`, then `⇑(u + v) =ᵐ[μ] g + h`, and similarly for `-` and `•`.
+* `MeasureTheory.Lp.coeFn_sub_ae_eq_zero_iff`: `⇑(u - v)` vanishes almost everywhere on `s`
+  exactly when `⇑u` and `⇑v` agree almost everywhere on `s`.
+* `ContinuousLinearMap.compLp_comp_linear`, `ContinuousLinearMap.compLp_comp_toSpanSingleton`:
+  simplification laws for linear composition and scalar-functional reconstruction at every
+  exponent.
+* `ContinuousLinearMap.compLpL_toSpanSingleton`: a scalar functional after rank-one
+  reconstruction is scalar multiplication.
 * `ContinuousLinearMap.compLpL_apply`: the bundled composition applied to `f` is `L.compLp f`.
+* `ContinuousLinearMap.zero_compLp`: composing an `Lp` class with the zero map gives zero.
 * `ContinuousLinearMap.compLp_compLp`, `ContinuousLinearMap.compLpL_comp_compLpL`,
   `ContinuousLinearMap.compLpL_compLpL`: composition laws for `compLp` and `compLpL`.
+* `ContinuousLinearMap.compLpL_comp_compLpL_eq`: two composites of `compLpL` operators agree when
+  the composites of the underlying maps do.
 * `ContinuousLinearMap.id_compLp`, `ContinuousLinearMap.id_compLpL`: identity laws for `compLp` and
   `compLpL`.
 * `LinearIsometry.toContinuousLinearMap_compLpₗᵢ`: postcomposition of `Lp` classes by a
@@ -89,6 +99,13 @@ theorem coeFn_add_ae_eq_of_ae_eq (hu : ⇑u =ᵐ[μ] g) (hv : ⇑v =ᵐ[μ] h) :
 theorem coeFn_sub_ae_eq_of_ae_eq (hu : ⇑u =ᵐ[μ] g) (hv : ⇑v =ᵐ[μ] h) : ⇑(u - v) =ᵐ[μ] g - h :=
   (coeFn_sub u v).trans (hu.sub hv)
 
+/-- Two `Lᵖ` functions agree almost everywhere on `s` exactly when their difference vanishes
+almost everywhere on `s`. -/
+theorem coeFn_sub_ae_eq_zero_iff {s : Set α} (u v : Lp E p μ) :
+    ⇑(u - v) =ᵐ[μ.restrict s] 0 ↔ ⇑u =ᵐ[μ.restrict s] ⇑v :=
+  (Filter.EventuallyEq.congr_left (ae_restrict_of_ae (coeFn_sub u v))).trans
+    Filter.eventuallyEq_iff_sub.symm
+
 /-- If `u` is almost everywhere `g`, then `-u` is almost everywhere `-g`. -/
 theorem coeFn_neg_ae_eq_of_ae_eq (hu : ⇑u =ᵐ[μ] g) : ⇑(-u) =ᵐ[μ] -g :=
   (coeFn_neg u).trans hu.neg
@@ -115,6 +132,13 @@ variable {α E F 𝕜 𝕜' : Type*} {_ : MeasurableSpace α} {μ : Measure α} 
 theorem compLpL_apply [Fact (1 ≤ p)] (L : E →SL[σ] F) (f : Lp E p μ) :
     L.compLpL p μ f = L.compLp f :=
   rfl
+
+/-- Composing an `Lp` class with the zero map gives the zero class. -/
+@[simp]
+theorem zero_compLp (f : Lp E p μ) : (0 : E →SL[σ] F).compLp f = 0 := by
+  ext1
+  filter_upwards [(0 : E →SL[σ] F).coeFn_compLp f, Lp.coeFn_zero F p μ] with x hx h0
+  rw [hx, h0, zero_apply, Pi.zero_apply]
 
 end Apply
 
@@ -150,6 +174,16 @@ theorem compLpL_compLpL [Fact (1 ≤ p)] (L : F →SL[σ₂₃] G) (M : E →SL[
     L.compLpL p μ (M.compLpL p μ f) = (L.comp M).compLpL p μ f :=
   L.compLp_compLp M f
 
+/-- Two composites of `compLpL` operators agree when the composites of the underlying continuous
+semilinear maps do. -/
+theorem compLpL_comp_compLpL_eq [Fact (1 ≤ p)] {H 𝕜₄ : Type*} [NormedAddCommGroup H]
+    [NontriviallyNormedField 𝕜₄] [NormedSpace 𝕜₄ H] {σ₁₄ : 𝕜₁ →+* 𝕜₄} {σ₄₃ : 𝕜₄ →+* 𝕜₃}
+    [RingHomCompTriple σ₁₄ σ₄₃ σ₁₃] [RingHomIsometric σ₁₄] [RingHomIsometric σ₄₃]
+    {L : F →SL[σ₂₃] G} {M : E →SL[σ₁₂] F} {L' : H →SL[σ₄₃] G} {M' : E →SL[σ₁₄] H}
+    (h : L.comp M = L'.comp M') :
+    (L.compLpL p μ).comp (M.compLpL p μ) = (L'.compLpL p μ).comp (M'.compLpL p μ) := by
+  rw [compLpL_comp_compLpL, compLpL_comp_compLpL, h]
+
 end Comp
 
 section Id
@@ -171,6 +205,55 @@ theorem id_compLpL [Fact (1 ≤ p)] :
   exact id_compLp f
 
 end Id
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+variable {α 𝕜 E F G : Type*} [MeasurableSpace α] [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {μ : Measure α} {p : ℝ≥0∞}
+
+/-- Composition of continuous linear maps acts functorially on `Lp` classes. -/
+@[simp]
+theorem compLp_comp_linear (g : F →L[𝕜] G) (f : E →L[𝕜] F) (u : Lp E p μ) :
+    g.compLp (f.compLp u) = (g.comp f).compLp u :=
+  compLp_compLp g f u
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+variable {α 𝕜 F : Type*} [MeasurableSpace α] [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {μ : Measure α} {p : ENNReal} [Fact (1 ≤ p)]
+
+/-- A scalar functional after rank-one `Lp` reconstruction is scalar multiplication. -/
+theorem compLpL_toSpanSingleton (ℓ : F →L[𝕜] 𝕜) (v : F) (u : Lp 𝕜 p μ) :
+    ℓ.compLpL p μ ((ContinuousLinearMap.toSpanSingleton 𝕜 v).compLpL p μ u) = ℓ v • u := by
+  apply Lp.ext
+  filter_upwards [ℓ.coeFn_compLpL
+    ((ContinuousLinearMap.toSpanSingleton 𝕜 v).compLpL p μ u),
+    (ContinuousLinearMap.toSpanSingleton 𝕜 v).coeFn_compLpL u,
+    Lp.coeFn_smul (ℓ v) u] with x hℓ hv hs
+  simp only [hℓ, hv, hs, ContinuousLinearMap.toSpanSingleton_apply, map_smul,
+    Pi.smul_apply, smul_eq_mul, mul_comm]
+
+omit [Fact (1 ≤ p)] in
+/-- A scalar functional on rank-one reconstructed `Lp` data is scalar multiplication. -/
+@[simp]
+theorem compLp_comp_toSpanSingleton (ℓ : F →L[𝕜] 𝕜) (v : F) (u : Lp 𝕜 p μ) :
+    (ℓ.comp (ContinuousLinearMap.toSpanSingleton 𝕜 v)).compLp u = ℓ v • u := by
+  apply Lp.ext
+  filter_upwards [(ℓ.comp (ContinuousLinearMap.toSpanSingleton 𝕜 v)).coeFn_compLp u,
+    Lp.coeFn_smul (ℓ v) u] with x hℓ hs
+  simp only [hℓ, hs, ContinuousLinearMap.comp_apply, ContinuousLinearMap.toSpanSingleton_apply,
+    map_smul, Pi.smul_apply, smul_eq_mul, mul_comm]
 
 end ContinuousLinearMap
 

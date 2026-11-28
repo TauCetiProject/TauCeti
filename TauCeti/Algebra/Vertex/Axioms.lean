@@ -48,6 +48,8 @@ uses divided powers of `T` instead, so the definition is meant for `ℚ`-algebra
   local to every `Y(a,z)` is determined by its values on the vacuum.
 * `TauCeti.FormalVertexAxioms.eq_field_of_ncoeff_apply_vacuum_eq`: such a field `B` with
   `B(z)|0⟩ = Y(b,z)|0⟩` is `Y(b,z)`.
+* `TauCeti.FormalVertexAxioms.eq_field_of_lie_translation`: if `V` has unique divisibility, a
+  translation covariant field `B` local with every `Y(a,z)` is `Y(B₍₋₁₎|0⟩, z)`.
 
 ## References
 
@@ -226,6 +228,16 @@ theorem eq_field_of_ncoeff_apply_vacuum_eq {B : VertexOperator R V} {b : V}
     (hB : ∀ a, ∃ N, B.IsLocalOfOrder (A.field a) N)
     (h : ∀ n, (B[[n]]) A.vacuum = ((A.field b)[[n]]) A.vacuum) : B = A.field b :=
   A.eq_of_ncoeff_apply_vacuum_eq hB (A.exists_isLocalOfOrder b) h
+
+/-- When `V` has unique divisibility (in particular over any `ℚ`-module), a translation covariant
+field `B` that is local with every field `Y(a,z)` is the field of the state `B₍₋₁₎|0⟩`. -/
+theorem eq_field_of_lie_translation [HasUniqueDiv V] {B : VertexOperator R V}
+    (hB : ∀ a, ∃ N, B.IsLocalOfOrder (A.field a) N)
+    (hT : ∀ n : ℤ, ⁅A.translation, B[[n]]⁆ = (derivative B)[[n]]) :
+    B = A.field ((B[[-1]]) A.vacuum) :=
+  A.eq_field_of_ncoeff_apply_vacuum_eq hB
+    (ncoeff_apply_eq_of_lie_of_neg_one_eq A.translation_vacuum hT
+      (A.lie_translation_ncoeff _) (A.ncoeff_neg_one_field_apply_vacuum _).symm)
 
 end FormalVertexAxioms
 

@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.RademacherSum.Moment
 public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Analysis.Normed.Group.SeparationQuotient
+public import TauCeti.Analysis.Normed.Module.RademacherSum.Moment
 
 /-!
 # Second moments of finite Rademacher sums
@@ -17,11 +18,16 @@ being averaged uniformly over the finite sign cube. It agrees with `TauCeti.rade
 and is the quantity in which Rademacher type and cotype are defined. Being a finite average, it
 needs neither completeness, nor scalars, nor a measure space.
 
-We record the specialization of the general moment API to `R₂` — absolute homogeneity, invariance
-under reindexing and zero-padding, comparison along bounded additive maps, and the summand bounds
-`‖yᵢ‖ ≤ R₂(y) ≤ ∑ i, ‖yᵢ‖` — and evaluate `R₂` in inner product spaces. Because distinct signs are
-orthogonal on average, in an inner product space `R₂(y)` is the `ℓ²` norm `(∑ i, ‖yᵢ‖²)^(1/2)` of
-the family; in particular `n` copies of a vector `y` of a real normed space have `R₂ = √n ‖y‖`.
+Sign-cube orthogonality and the Rademacher Fourier coefficient map `TauCeti.rademacherCoeff` live
+in `TauCeti.Analysis.Normed.Module.RademacherSum.Signs`, and the general `p`-th moment `K_p(y)`
+lives in `TauCeti.Analysis.Normed.Module.RademacherSum.Moment`.
+
+Here we record the specialization of the general moment API to `R₂` — absolute homogeneity,
+invariance under reindexing and zero-padding, comparison along bounded additive maps, and the
+summand bounds `‖yᵢ‖ ≤ R₂(y) ≤ ∑ i, ‖yᵢ‖` — and evaluate `R₂` in inner product spaces. Because
+distinct signs are orthogonal on average, in an inner product space `R₂(y)` is the `ℓ²` norm
+`(∑ i, ‖yᵢ‖²)^(1/2)` of the family; in particular `n` copies of a vector `y` of a real normed
+space have `R₂ = √n ‖y‖`.
 
 ## Main declarations
 
@@ -29,6 +35,8 @@ the family; in particular `n` copies of a vector `y` of a real normed space have
 * `TauCeti.rademacherMoment_two`: `rademacherMoment 2 y = rademacherSecondMoment y`.
 * `TauCeti.rademacherSecondMoment_comp_equiv`: invariance under reindexing.
 * `TauCeti.rademacherSecondMoment_sumElim_zero`: invariance under padding with zeros.
+* `TauCeti.rademacherSecondMoment_comp_separationQuotient`: invariance under passing to the
+  separation quotient.
 * `TauCeti.rademacherSecondMoment_smul_const`: `R₂(aᵢ • y) = R₂(a) ‖y‖`.
 * `TauCeti.norm_le_rademacherSecondMoment` and `TauCeti.rademacherSecondMoment_le_sum_norm`:
   `‖yᵢ‖ ≤ R₂(y) ≤ ∑ i, ‖yᵢ‖`, the lower bound in real normed spaces.
@@ -50,27 +58,6 @@ open Finset
 open scoped BigOperators
 
 namespace TauCeti
-
-section Signs
-
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- Averaged over the sign cube, the product of two signs is `1` on the diagonal and `0` off it:
-distinct Rademacher signs are orthogonal. -/
-theorem expect_units_apply_mul_apply (i j : ι) :
-    𝔼 ε : ι → ℤˣ, ((ε i : ℤ) : ℝ) * (ε j : ℤ) = if i = j then 1 else 0 := by
-  split_ifs with hij
-  · subst hij
-    simp [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self]
-  · -- Flipping the sign of the `i`-th coordinate negates every term.
-    let σ := Equiv.mulLeft (Pi.mulSingle i (-1) : ι → ℤˣ)
-    have h := Fintype.expect_equiv σ (fun ε ↦ -(((ε i : ℤ) : ℝ) * (ε j : ℤ)))
-      (fun ε ↦ ((ε i : ℤ) : ℝ) * (ε j : ℤ)) fun ε ↦ by
-        simp [σ, Ne.symm hij]
-    rw [expect_neg_distrib] at h
-    linarith
-
-end Signs
 
 variable {ι κ 𝕜 E : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
   [SeminormedAddCommGroup E]
@@ -127,6 +114,21 @@ theorem rademacherSecondMoment_le_mul_map {F 𝓕 : Type*} [SeminormedAddCommGro
     (y : ι → E) :
     rademacherSecondMoment y ≤ K * rademacherSecondMoment (fun i ↦ f (y i)) := by
   simpa only [rademacherMoment_two] using rademacherMoment_le_mul_map two_pos f hK y
+
+/-- Passing to the separation quotient preserves the Rademacher second moment. -/
+@[simp]
+theorem rademacherSecondMoment_comp_separationQuotient (y : ι → E) :
+    rademacherSecondMoment (fun i ↦ SeparationQuotient.mk (y i)) =
+      rademacherSecondMoment y :=
+  le_antisymm
+    (by
+      simpa using rademacherSecondMoment_map_le
+        (SeparationQuotient.mkAddMonoidHom (M := E)) (M := 1)
+        (fun x ↦ by simp [SeparationQuotient.norm_mk]) y)
+    (by
+      simpa using rademacherSecondMoment_le_mul_map
+        (SeparationQuotient.mkAddMonoidHom (M := E)) (K := 1)
+        (fun x ↦ by simp [SeparationQuotient.norm_mk]) y)
 
 /-- The zero family has Rademacher second moment zero. -/
 @[simp]

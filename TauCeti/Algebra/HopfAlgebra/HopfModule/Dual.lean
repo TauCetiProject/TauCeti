@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Coalgebra.Comodule.Dual
 public import TauCeti.Algebra.HopfAlgebra.Cointegral.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfModule.Basic
-import TauCeti.Algebra.HopfAlgebra.Opposite
 import TauCeti.LinearAlgebra.Dual.RightAction
 
 /-!
@@ -45,8 +44,8 @@ commutative semiring `R`, `rightCointegrals R H` is a finitely generated project
   `rightCointegrals R H ⊗[R] H ≃ₗ[R] Module.Dual R H`, equivariant for right `H`-multiplication.
 * `TauCeti.instModuleProjectiveRightCointegrals`, `TauCeti.instModuleFiniteRightCointegrals`:
   `rightCointegrals R H` is finitely generated and projective over `R`.
-* `TauCeti.exists_isRightCointegral_ne_zero`, `TauCeti.exists_isLeftCointegral_ne_zero`: existence
-  of nonzero right and left cointegrals over any nontrivial commutative semiring.
+* `TauCeti.exists_isRightCointegral_ne_zero`: existence of a nonzero right cointegral over any
+  nontrivial commutative semiring.
 
 ## References
 
@@ -363,24 +362,6 @@ theorem exists_isRightCointegral_ne_zero [Nontrivial R] :
         (Coalgebra.counit (R := R) (A := H))).symm
   have h1 := LinearMap.congr_fun hcounit (1 : H)
   simp at h1
-
-variable (R H) in
-/-- Every finite projective Hopf algebra over a nontrivial commutative semiring admits a nonzero
-left cointegral. -/
-theorem exists_isLeftCointegral_ne_zero [Nontrivial R] :
-    ∃ φ : Module.Dual R H, IsLeftCointegral φ ∧ φ ≠ 0 := by
-  let _ : Module.Finite R (Coop H)ᵐᵒᵖ := Module.Finite.equiv (Coop.unopLinearEquiv R H).symm
-  let _ : Module.Projective R (Coop H)ᵐᵒᵖ :=
-    Module.Projective.of_equiv (Coop.unopLinearEquiv R H).symm
-  obtain ⟨ψ, hψ, hψ0⟩ := exists_isRightCointegral_ne_zero R (Coop H)ᵐᵒᵖ
-  refine ⟨ψ ∘ₗ (Coop.unopLinearEquiv R H).symm.toLinearMap, ?_, ?_⟩
-  · refine (isRightCointegral_comp_coopUnopLinearEquiv_iff _).mp ?_
-    simpa [LinearMap.comp_assoc] using hψ
-  · intro h0
-    apply hψ0
-    ext x
-    have hx := LinearMap.congr_fun h0 (Coop.unopLinearEquiv R H x)
-    simpa using hx
 
 end CointegralDecomposition
 

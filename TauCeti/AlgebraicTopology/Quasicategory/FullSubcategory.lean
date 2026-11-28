@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.InnerFibration
+public import Mathlib.AlgebraicTopology.SimplicialSet.CategoryWithFibrations
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
 
 /-!
@@ -24,6 +25,9 @@ vertices satisfy `P`. When `X` is a quasicategory, this is the full subcategory 
 * `SSet.le_fullEnhancedSubcategory_iff`: it is the largest subcomplex whose vertices satisfy `P`;
   `SSet.range_le_fullEnhancedSubcategory_iff` is the corresponding factorization criterion for
   maps into `X`.
+* `SSet.exists_lift_of_forall_boundary`: a map whose lifting problems against boundary inclusions,
+  with bottom map in a full enhanced subcategory of the target, all have solutions, restricts over
+  that full subcategory to a trivial fibration.
 * `SSet.fullEnhancedSubcategory.verticesEquiv`: its vertices are the vertices of `X` satisfying
   `P`.
 * `SSet.hasLiftingProperty_fullEnhancedSubcategory_ι`: the inclusion has the right lifting
@@ -69,18 +73,13 @@ lemma mem_fullEnhancedSubcategory_obj_iff_forall_fin {n : ℕ} (x : X _⦋n⦌) 
     x ∈ (X.fullEnhancedSubcategory P).obj _ ↔
       ∀ i : Fin (n + 1), P (X.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ i).op x) := by
   rw [mem_fullEnhancedSubcategory_obj_iff]
-  refine ⟨fun h i ↦ h _, fun h v ↦ ?_⟩
-  rw [SimplexCategory.eq_const_of_zero v]
-  exact h _
+  exact ⟨fun h _ ↦ h _, fun h v ↦ SimplexCategory.eq_const_of_zero v ▸ h _⟩
 
 /-- A vertex lies in the full enhanced subcategory on `P` exactly when it satisfies `P`. -/
 @[simp]
 lemma mem_fullEnhancedSubcategory_obj_zero_iff (x : X _⦋0⦌) :
     x ∈ (X.fullEnhancedSubcategory P).obj (op ⦋0⦌) ↔ P x := by
-  rw [mem_fullEnhancedSubcategory_obj_iff]
-  refine ⟨fun h ↦ by simpa using h (𝟙 _), fun h v ↦ ?_⟩
-  rw [Subsingleton.elim v (𝟙 _)]
-  simpa using h
+  simp [mem_fullEnhancedSubcategory_obj_iff_forall_fin]
 
 /-- The full enhanced subcategory on `P` is the largest subcomplex all of whose vertices
 satisfy `P`. -/
@@ -93,8 +92,55 @@ lemma le_fullEnhancedSubcategory_iff (A : X.Subcomplex) :
 sends every vertex to a vertex satisfying `P`. -/
 lemma range_le_fullEnhancedSubcategory_iff {Y : SSet.{u}} (f : Y ⟶ X) :
     Subcomplex.range f ≤ X.fullEnhancedSubcategory P ↔ ∀ y : Y _⦋0⦌, P (f.app _ y) := by
-  rw [le_fullEnhancedSubcategory_iff]
-  exact ⟨fun h y ↦ h _ ⟨y, rfl⟩, by rintro h _ ⟨y, rfl⟩; exact h y⟩
+  simp [le_fullEnhancedSubcategory_iff]
+
+/-- **Lifting along monomorphisms from lifting along boundaries, over a full subcategory.** Let
+`ρ : A ⟶ B` be a map of simplicial sets and `P` a predicate on the vertices of `B`. Suppose that
+every lifting problem of `∂Δ[n] ⟶ Δ[n]` against `ρ` whose bottom map `Δ[n] ⟶ B` sends all vertices
+into `P` has a solution. Then so does every lifting problem of a monomorphism `i : Y ⟶ Z` against
+`ρ` whose bottom map sends all vertices into `P`: the restriction of `ρ` over the full enhanced
+subcategory `B.fullEnhancedSubcategory P` is a trivial fibration. -/
+theorem exists_lift_of_forall_boundary {A B : SSet.{u}} (ρ : A ⟶ B) (P : B _⦋0⦌ → Prop)
+    (hρ : ∀ (n : ℕ) (t : (∂Δ[n] : SSet.{u}) ⟶ A) (b : Δ[n] ⟶ B), t ≫ ρ = ∂Δ[n].ι ≫ b →
+      (∀ z : Δ[n] _⦋0⦌, P (b.app _ z)) → ∃ l : Δ[n] ⟶ A, ∂Δ[n].ι ≫ l = t ∧ l ≫ ρ = b)
+    {Y Z : SSet.{u}} (i : Y ⟶ Z) [Mono i] (t : Y ⟶ A) (b : Z ⟶ B) (w : t ≫ ρ = i ≫ b)
+    (hb : ∀ z : Z _⦋0⦌, P (b.app _ z)) :
+    ∃ l : Z ⟶ A, i ≫ l = t ∧ l ≫ ρ = b := by
+  let H := B.fullEnhancedSubcategory P
+  -- A map lands in the preimage of `H` when its composite with `ρ` lands in `H`.
+  have hpre {W : SSet.{u}} (f : W ⟶ A) (hf : Subcomplex.range (f ≫ ρ) ≤ H) :
+      Subcomplex.range f ≤ H.preimage ρ := by
+    rwa [← Subcomplex.image_le_iff, ← Subcomplex.range_comp]
+  -- Restriction of `ρ` over `H` is a trivial fibration: it suffices to lift against boundary
+  -- inclusions.
+  have hρ' : (MorphismProperty.monomorphisms SSet.{u}).rlp (H.fromPreimage ρ) := by
+    rw [rlp_monomorphisms]
+    rintro _ _ _ ⟨n⟩
+    refine ⟨fun {t b} sq ↦ ?_⟩
+    obtain ⟨l, hl₁, hl₂⟩ := hρ n (t ≫ (H.preimage ρ).ι) (b ≫ H.ι)
+      (by rw [Category.assoc, ← Subcomplex.fromPreimage_ι, ← Category.assoc, sq.w,
+        Category.assoc])
+      (fun z ↦ (mem_fullEnhancedSubcategory_obj_zero_iff _ _).1 (b.app _ z).property)
+    have hl : Subcomplex.range l ≤ H.preimage ρ := hpre l (by
+      rw [hl₂, Subcomplex.range_comp]
+      exact (Subcomplex.image_le_range _ _).trans (by simp))
+    exact ⟨⟨{ l := Subcomplex.lift l hl
+              fac_left := by rw [← cancel_mono (H.preimage ρ).ι, Category.assoc,
+                Subcomplex.lift_ι, hl₁]
+              fac_right := by rw [← cancel_mono H.ι, Category.assoc,
+                Subcomplex.fromPreimage_ι, ← Category.assoc, Subcomplex.lift_ι, hl₂] }⟩⟩
+  have hb' : Subcomplex.range b ≤ H := (range_le_fullEnhancedSubcategory_iff _ _).2 hb
+  have ht : Subcomplex.range t ≤ H.preimage ρ := hpre t (by
+    rw [w, Subcomplex.range_comp]
+    exact (Subcomplex.image_le_range _ _).trans hb')
+  have sq : CommSq (Subcomplex.lift t ht) i (H.fromPreimage ρ) (Subcomplex.lift b hb') :=
+    ⟨by rw [← cancel_mono H.ι, Category.assoc, Subcomplex.fromPreimage_ι, ← Category.assoc,
+      Subcomplex.lift_ι, Category.assoc, Subcomplex.lift_ι, w]⟩
+  have := hρ' i (MorphismProperty.monomorphisms.infer_property i)
+  refine ⟨sq.lift ≫ (H.preimage ρ).ι, ?_, ?_⟩
+  · rw [← Category.assoc, sq.fac_left, Subcomplex.lift_ι]
+  · rw [Category.assoc, ← Subcomplex.fromPreimage_ι, ← Category.assoc, sq.fac_right,
+      Subcomplex.lift_ι]
 
 @[gcongr]
 lemma fullEnhancedSubcategory_mono {P Q : X _⦋0⦌ → Prop} (h : P ≤ Q) :
@@ -136,12 +182,10 @@ lemma hasLiftingProperty_fullEnhancedSubcategory_ι {A B : SSet.{u}} (i : A ⟶ 
     HasLiftingProperty i (X.fullEnhancedSubcategory P).ι where
   sq_hasLift {a b} sq := by
     have hb : Subcomplex.range b ≤ X.fullEnhancedSubcategory P := by
-      rw [range_le_fullEnhancedSubcategory_iff]
-      intro y
+      refine (range_le_fullEnhancedSubcategory_iff P b).2 fun y ↦ ?_
       obtain ⟨z, rfl⟩ := hi y
       have hz : b.app _ (i.app _ z) = (a.app _ z).val := congr($(sq.w).app _ z).symm
-      rw [hz]
-      exact (mem_fullEnhancedSubcategory_obj_zero_iff P _).mp (a.app _ z).property
+      exact hz ▸ (mem_fullEnhancedSubcategory_obj_zero_iff P _).mp (a.app _ z).property
     exact ⟨⟨{ l := Subcomplex.lift b hb
               fac_left := by rw [← cancel_mono (Subcomplex.ι _)]; simp [sq.w] }⟩⟩
 
@@ -150,8 +194,7 @@ surjective on vertices. -/
 instance : InnerFibration (X.fullEnhancedSubcategory P).ι where
   mem := by
     rintro _ _ _ ⟨i, -, -⟩
-    refine hasLiftingProperty_fullEnhancedSubcategory_ι P _ fun y ↦ ⟨⟨y, ?_⟩, rfl⟩
-    simp
+    exact hasLiftingProperty_fullEnhancedSubcategory_ι P _ fun y ↦ ⟨⟨y, by simp⟩, rfl⟩
 
 /-- The full enhanced subcategory of a quasicategory is a quasicategory. -/
 instance [Quasicategory X] : Quasicategory (X.fullEnhancedSubcategory P : SSet) :=
@@ -168,13 +211,12 @@ subcategory of the nerve of `C` on the vertices whose object satisfies `P`. -/
 def nerveFullSubcategoryIso :
     nerve P.FullSubcategory ≅
       ((nerve C).fullEnhancedSubcategory fun x ↦ P (nerveEquiv x) : SSet) where
-  hom := SSet.Subcomplex.lift (nerveMap P.ι) <| by
-    rw [SSet.range_le_fullEnhancedSubcategory_iff]
-    exact fun y ↦ (nerveEquiv y).property
+  hom := SSet.Subcomplex.lift (nerveMap P.ι) <|
+    (SSet.range_le_fullEnhancedSubcategory_iff _ _).2 fun y ↦ (nerveEquiv y).property
   -- The `k`-th vertex of a simplex `x` of `nerve C` is `x.obj k` definitionally, and lifting a
   -- functor through `P.FullSubcategory` and composing with `P.ι` are mutually inverse on the nose.
   inv :=
-    { app n := ↾fun x ↦ P.lift x.val fun k ↦ x.property (SimplexCategory.const _ _ k)
+    { app _ := ↾fun x ↦ P.lift x.val fun k ↦ x.property (SimplexCategory.const _ _ k)
       naturality _ _ _ := rfl }
   hom_inv_id := rfl
   inv_hom_id := rfl

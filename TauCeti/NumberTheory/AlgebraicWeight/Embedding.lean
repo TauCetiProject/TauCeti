@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.CMField
 public import TauCeti.NumberTheory.AlgebraicWeight.Hodge
+import TauCeti.Data.Fin.Rev
 
 /-!
 # Embedding-indexed weights of `GL n` over a number field
@@ -61,6 +62,8 @@ Finally `TauCeti.EmbeddingWeight.IsExtremelyRegular` asks that the weight be ext
   involutions preserves the conjugation condition.
 * `TauCeti.EmbeddingWeight.IsConjDual.unique`: the integer `w` is determined by `a`.
 * `TauCeti.EmbeddingWeight.isConjDual_twist_iff`: the conjugation condition under twists.
+* `TauCeti.EmbeddingWeight.isConjDual_iff_hodgeShift_add`: the conjugation condition in terms of
+  paired Hodge–Tate coordinates.
 * `TauCeti.EmbeddingWeight.IsConjDual.hodgeMultiset_apply`: the Hodge–Tate numbers at conjugate
   embeddings.
 * `TauCeti.EmbeddingWeight.isConjDual_comp_complexConj_iff`: for a CM field, precomposition and
@@ -107,6 +110,28 @@ protected theorem ext {a b : EmbeddingWeight ι n} (h : ∀ τ i, (a τ).val i =
 protected theorem ext_iff {a b : EmbeddingWeight ι n} : a = b ↔ ∀ τ i, (a τ).val i = (b τ).val i :=
   ⟨fun h _ _ => h ▸ rfl, EmbeddingWeight.ext⟩
 
+/-- The contragredient weight, obtained by negating and reversing the coordinates separately
+at each label. -/
+def dual (a : EmbeddingWeight ι n) : EmbeddingWeight ι n := fun τ ↦ (a τ).dual
+
+@[simp]
+theorem dual_apply (a : EmbeddingWeight ι n) (τ : ι) : a.dual τ = (a τ).dual :=
+  (rfl)
+
+@[simp]
+theorem dual_dual (a : EmbeddingWeight ι n) : a.dual.dual = a :=
+  funext fun τ ↦ by simp
+
+/-- Pointwise contragredient duality is an involution on embedding-indexed weights. -/
+theorem dual_involutive : Function.Involutive (dual (ι := ι) (n := n)) := dual_dual
+
+/-- An embedding-indexed weight is determined by its dual. -/
+theorem dual_injective : Function.Injective (dual (ι := ι) (n := n)) := dual_involutive.injective
+
+@[simp]
+theorem dual_inj {a b : EmbeddingWeight ι n} : a.dual = b.dual ↔ a = b :=
+  dual_injective.eq_iff
+
 /-! ### Base change -/
 
 section BaseChange
@@ -123,6 +148,11 @@ def baseChange (a : EmbeddingWeight (F →+* Ω) n) : EmbeddingWeight (F' →+* 
 @[simp]
 theorem baseChange_apply (a : EmbeddingWeight (F →+* Ω) n) (τ : F' →+* Ω) :
     a.baseChange F' τ = a (τ.comp (algebraMap F F')) :=
+  (rfl)
+
+@[simp]
+theorem baseChange_dual (a : EmbeddingWeight (F →+* Ω) n) :
+    a.dual.baseChange F' = (a.baseChange F').dual :=
   (rfl)
 
 /-- Base change along the identity preserves every coordinate. -/
@@ -151,6 +181,11 @@ def twist (a : EmbeddingWeight ι n) (b : ι → ℤ) : EmbeddingWeight ι n := 
 theorem twist_apply (a : EmbeddingWeight ι n) (b : ι → ℤ) (τ : ι) :
     a.twist b τ = (a τ).shift (b τ) :=
   (rfl)
+
+@[simp]
+theorem dual_twist (a : EmbeddingWeight ι n) (b : ι → ℤ) :
+    (a.twist b).dual = a.dual.twist (-b) :=
+  funext fun τ ↦ by simp
 
 @[simp]
 theorem twist_zero (a : EmbeddingWeight ι n) : a.twist 0 = a := by
@@ -237,6 +272,14 @@ theorem isConjDual_twist_iff (a : EmbeddingWeight ι n) {c : ι → ι} {w w' : 
   have := hb τ
   omega
 
+/-- The conjugation condition holds exactly when the Hodge–Tate coordinates at conjugate labels
+sum to `w + n - 1` in opposite positions. -/
+theorem isConjDual_iff_hodgeShift_add (a : EmbeddingWeight ι n) (c : ι → ι) (w : ℤ) :
+    a.IsConjDual c w ↔
+      ∀ τ i, (a τ).hodgeShift i + (a (c τ)).hodgeShift i.rev = w + (n : ℤ) - 1 := by
+  simp only [isConjDual_iff, DominantWeight.hodgeShift_apply, Fin.natCast_val_rev]
+  exact forall₂_congr fun τ i => by omega
+
 /-- The Hodge–Tate numbers at conjugate embeddings pair off to sum to `w + n - 1`, so they are
 reflections of each other about `(w + n - 1)/2`: `HT_{c τ}(a) = {w + n - 1 - h : h ∈ HT_τ(a)}`. -/
 theorem IsConjDual.hodgeMultiset_apply {a : EmbeddingWeight ι n} {c : ι → ι} {w : ℤ}
@@ -305,6 +348,13 @@ theorem IsExtremelyRegular.comp {a : EmbeddingWeight ι n} (h : a.IsExtremelyReg
   obtain ⟨τ, hτ⟩ := h
   obtain ⟨τ', rfl⟩ := hf τ
   exact ⟨τ', hτ⟩
+
+/-- A witness to extreme regularity after pullback gives a witness at its image label. Unlike
+preservation by pullback (`IsExtremelyRegular.comp`), this needs no surjectivity. -/
+theorem IsExtremelyRegular.of_comp {a : EmbeddingWeight ι n} {f : ι' → ι}
+    (h : IsExtremelyRegular (a ∘ f)) : a.IsExtremelyRegular := by
+  obtain ⟨τ, hτ⟩ := h
+  exact ⟨f τ, hτ⟩
 
 /-- Extreme regularity survives base change along an algebraic extension, since every embedding
 into an algebraically closed field extends. -/

@@ -15,7 +15,9 @@ public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.SubspaceCompl
 public import TauCeti.Topology.Homotopy.HomotopyEquiv
 
-import TauCeti.AlgebraicTopology.Singular.Reduced
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Basic
+public import TauCeti.AlgebraicTopology.Singular.Reduced
+import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
 /-!
@@ -75,6 +77,18 @@ The isomorphism is built from a choice of such a step for each proper subspace o
 * `TauCeti.prodThomPairSingularHomologyIso`: `Hₙ₊ᵣ(B × F, B × (F ∖ {0})) ≅ Hₙ(B)`, `r = dim F`.
 * `TauCeti.prodThomPairSingularHomologyIso_hom_naturality`,
   `TauCeti.prodThomPairSingularHomologyIso_inv_naturality`: its naturality in the base.
+* `TauCeti.complZeroPairPointHom`: the isomorphism `R ≅ Hᵣ(F, F ∖ {0})` given by the class of
+  the point under `Hᵣ(F, F ∖ {0}) ≅ H₀(pt)`; the fibre inclusion over `b` carries it to the class of
+  `b` (`TauCeti.complZeroPairPointHom_comp_singularHomologyMap_prodThomPairFiberMap`).
+* `TauCeti.isLocalOrientation_complZeroPairPointHom_one`: with integral coefficients the point
+  class of `1` is a local orientation of `(F, F ∖ {0})`.
+* `TauCeti.complZeroPairPointCoord`: the coordinate of a fibre class relative to the point
+  class of `1`, which generates `Hᵣ(F, F ∖ {0}; K)` (`TauCeti.span_complZeroPairPointHom_one`).
+  Over a Dedekind-finite ring, a class generates precisely when its coordinate is a unit
+  (`TauCeti.isUnit_complZeroPairPointCoord_iff`), giving its expression as a unit multiple of
+  the point class (`TauCeti.exists_eq_units_smul_complZeroPairPointHom_one`).
+* `TauCeti.singularHomologyMap_prodThomPairFiberMap_eq_of_joined`: fibre inclusions over points
+  joined by a path agree on `Hᵣ`.
 * `TauCeti.singularHomology_prodThomPair_hom_ext`: morphisms out of
   `Hᵣ(B × F, B × (F ∖ {0}))` are determined by their restrictions to the fibre pairs.
 
@@ -594,6 +608,64 @@ theorem prodThomPairSingularHomologyIso_inv_naturality (g : C(B, B')) (n m : ℕ
   rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv]
   exact prodThomPairSingularHomologyIso_hom_naturality R B F g n m h
 
+/-- **The point class of the fibre pair**: the map `R ⟶ H_d(F, F ∖ {0}; R)`, `d = dim F`, carrying
+the coefficients to the classes of the point under `H_d(F, F ∖ {0}) ≅ H_d(pt × F, pt × (F ∖ {0}))
+≅ H₀(pt)`. It is an isomorphism (`TauCeti.isIso_complZeroPairPointHom`), and the fibre inclusion
+over `b` carries it to the class of `b` in `H₀(B) ≅ H_d(B × F, B × (F ∖ {0}))`
+(`TauCeti.complZeroPairPointHom_comp_singularHomologyMap_prodThomPairFiberMap`). -/
+def complZeroPairPointHom (d : ℕ) (hd : finrank ℝ F = d) :
+    R ⟶ (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology R d :=
+  singularHomology₀Section R (X := TopCat.of PUnit.{w + 1}) PUnit.unit ≫
+    (prodThomPairSingularHomologyIso R PUnit.{w + 1} F 0 d (by lia)).inv ≫
+      TopPair.singularHomologyMap (complZeroPairIsoProdThomPair F).inv R d
+
+instance isIso_complZeroPairPointHom (d : ℕ) (hd : finrank ℝ F = d) :
+    IsIso (complZeroPairPointHom R F d hd) := by
+  have : IsIso (singularHomology₀Section R (X := TopCat.of PUnit.{w + 1}) PUnit.unit) :=
+    ⟨_, singularHomology₀Section_singularHomology₀ε R _,
+      singularHomology₀ε_singularHomology₀Section R _⟩
+  rw [complZeroPairPointHom]
+  infer_instance
+
+/-- With integral coefficients, the point class of `1` is a local orientation of `(F, F ∖ {0})`:
+it generates `H_d(F, F ∖ {0}; ℤ) ≅ ℤ`. -/
+theorem isLocalOrientation_complZeroPairPointHom_one (d : ℕ) (hd : finrank ℝ F = d) :
+    IsLocalOrientation (0 : F) d
+      (complZeroPairPointHom (ModuleCat.of ℤ (ULift.{w} ℤ)) F d hd (ULift.up 1)) :=
+  isLocalOrientation_inv_one
+    (asIso (complZeroPairPointHom (ModuleCat.of ℤ (ULift.{w} ℤ)) F d hd)).symm
+
+/-- The fibre inclusion over `b` carries the point class of the fibre pair to the class of `b` in
+`H₀(B) ≅ H_d(B × F, B × (F ∖ {0}))`. -/
+@[reassoc]
+theorem complZeroPairPointHom_comp_singularHomologyMap_prodThomPairFiberMap (d : ℕ)
+    (hd : finrank ℝ F = d) (b : B) :
+    complZeroPairPointHom R F d hd ≫ TopPair.singularHomologyMap (prodThomPairFiberMap F b) R d =
+      singularHomology₀Section R (X := TopCat.of B) b ≫
+        (prodThomPairSingularHomologyIso R B F 0 d (by lia)).inv := by
+  -- The fibre over `b` is the Thom pair over a point, mapped in by the constant map at `b`.
+  let c : C(PUnit.{w + 1}, B) := ContinuousMap.const _ b
+  have hc : prodThomPairSnd PUnit.{w + 1} F ≫ prodThomPairFiberMap F b = prodThomPairMap F c :=
+    (congrArg (prodThomPairSnd PUnit.{w + 1} F ≫ ·)
+      (prodThomPairFiberMap_comp_prodThomPairMap F PUnit.unit c)).symm.trans (by
+        rw [← Category.assoc, prodThomPairSnd_comp_prodThomPairFiberMap, Category.id_comp])
+  rw [complZeroPairPointHom, complZeroPairIsoProdThomPair_inv, Category.assoc, Category.assoc,
+    ← TopPair.singularHomologyMap_comp, hc,
+    prodThomPairSingularHomologyIso_inv_naturality R PUnit.{w + 1} F c 0 d, ← Category.assoc,
+    singularHomology₀Section_naturality, TopCat.ofHom_apply, ContinuousMap.const_apply]
+
+variable {B} in
+/-- Fibre inclusions over points joined by a path induce the same map on the homology of the Thom
+pair of the product bundle in the degree `d = dim F`. -/
+theorem singularHomologyMap_prodThomPairFiberMap_eq_of_joined (d : ℕ) (hd : finrank ℝ F = d)
+    {x y : B} (h : Joined x y) :
+    TopPair.singularHomologyMap (prodThomPairFiberMap F x) R d =
+      TopPair.singularHomologyMap (prodThomPairFiberMap F y) R d := by
+  rw [← cancel_epi (complZeroPairPointHom R F d hd),
+    complZeroPairPointHom_comp_singularHomologyMap_prodThomPairFiberMap,
+    complZeroPairPointHom_comp_singularHomologyMap_prodThomPairFiberMap,
+    singularHomology₀Section_eq_of_joined R (X := TopCat.of B) h]
+
 variable {R B F} in
 /-- **Morphisms out of the top-degree homology are determined on the fibres**: two morphisms out
 of `Hᵣ(B × F, B × (F ∖ {0}))`, `r = dim F`, which agree after the inclusion of the fibre pair
@@ -606,29 +678,76 @@ theorem singularHomology_prodThomPair_hom_ext {T : C}
   -- Read `g` and `g'` on `H₀(B)`, where they are determined by the classes of points.
   rw [← cancel_epi (prodThomPairSingularHomologyIso R B F 0 (finrank ℝ F)).inv]
   refine singularHomology₀_hom_ext R fun b ↦ ?_
-  -- The fibre over `b` is the Thom pair over a point, mapped in by the constant map at `b`.
-  let c : C(PUnit.{w + 1}, B) := ContinuousMap.const _ b
-  have hc : prodThomPairSnd PUnit.{w + 1} F ≫ prodThomPairFiberMap F b = prodThomPairMap F c :=
-    (congrArg (prodThomPairSnd PUnit.{w + 1} F ≫ ·)
-      (prodThomPairFiberMap_comp_prodThomPairMap F PUnit.unit c)).symm.trans (by
-        rw [← Category.assoc, prodThomPairSnd_comp_prodThomPairFiberMap, Category.id_comp])
-  have hinv : ((AlgebraicTopology.singularHomologyFunctor C 0).obj R).map (TopCat.ofHom c) ≫
-      (prodThomPairSingularHomologyIso R B F 0 (finrank ℝ F)).inv =
-        (prodThomPairSingularHomologyIso R PUnit.{w + 1} F 0 (finrank ℝ F)).inv ≫
-          TopPair.singularHomologyMap (prodThomPairMap F c) R _ :=
-    (prodThomPairSingularHomologyIso_inv_naturality R PUnit F c 0 (finrank ℝ F)).symm
-  have hpt : singularHomology₀Section R (X := TopCat.of PUnit.{w + 1}) PUnit.unit ≫
-      ((AlgebraicTopology.singularHomologyFunctor C 0).obj R).map (TopCat.ofHom c) =
-        singularHomology₀Section R (X := TopCat.of B) b :=
-    singularHomology₀Section_naturality R (TopCat.ofHom c) PUnit.unit
-  have hb : singularHomology₀Section R (X := TopCat.of B) b ≫
-      (prodThomPairSingularHomologyIso R B F 0 (finrank ℝ F)).inv =
-        (singularHomology₀Section R (X := TopCat.of PUnit.{w + 1}) PUnit.unit ≫
-          (prodThomPairSingularHomologyIso R PUnit.{w + 1} F 0 (finrank ℝ F)).inv ≫
-            TopPair.singularHomologyMap (prodThomPairSnd PUnit.{w + 1} F) R _) ≫
-          TopPair.singularHomologyMap (prodThomPairFiberMap F b) R _ := by
-    rw [← hpt, Category.assoc, hinv, ← hc, TopPair.singularHomologyMap_comp]
-    simp only [Category.assoc]
-  rw [reassoc_of% hb, reassoc_of% hb, h b]
+  rw [← Category.assoc, ← Category.assoc,
+    ← complZeroPairPointHom_comp_singularHomologyMap_prodThomPairFiberMap R B F _ rfl b,
+    Category.assoc, Category.assoc, h b]
+
+section Generator
+
+variable (K : Type w)
+
+/-- The point class of `1` generates `Hᵣ(F, F ∖ {0}; K) ≅ K`. -/
+theorem span_complZeroPairPointHom_one [Ring K] :
+    Submodule.span K {complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K)} = ⊤ :=
+  (ModuleCat.span_singleton_apply_eq_top_iff _).2 Ideal.span_singleton_one
+
+section Coordinate
+
+variable {F K} [Ring K]
+  (γ : ((TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology
+    (ModuleCat.of K K) (finrank ℝ F) : ModuleCat.{w} K))
+
+/-- The linear coordinate on `Hᵣ(F, F ∖ {0}; K)` relative to the point class of `1`. -/
+def complZeroPairPointCoord :
+    ((TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology
+      (ModuleCat.of K K) (finrank ℝ F) : ModuleCat.{w} K) →ₗ[K] K :=
+  (asIso (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl)).inv.hom
+
+/-- The point-class map sends a scalar to the class with that coordinate. -/
+@[simp]
+theorem complZeroPairPointCoord_pointHom (a : K) :
+    complZeroPairPointCoord
+      (no_index (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl a)) = a :=
+  IsIso.hom_inv_id_apply (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl) a
+
+/-- Multiplying the point class of `1` by the coordinate of `γ` recovers `γ`. -/
+@[simp]
+theorem complZeroPairPointCoord_smul_pointHom_one :
+    complZeroPairPointCoord γ • complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl 1 =
+      γ := by
+  rw [← map_smul, smul_eq_mul, mul_one]
+  exact IsIso.inv_hom_id_apply _ γ
+
+/-- A class of the fibre pair generates its rank-degree homology exactly when its coordinate
+relative to the point class is a unit. -/
+theorem isUnit_complZeroPairPointCoord_iff [IsDedekindFiniteMonoid K] :
+    IsUnit (complZeroPairPointCoord γ) ↔ Submodule.span K {γ} = ⊤ := by
+  let e := (asIso (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl)).symm.toLinearEquiv
+  exact e.span_singleton_eq_top_iff_isUnit.symm
+
+end Coordinate
+
+/-- Every generator of `Hᵣ(F, F ∖ {0}; K) ≅ K` is a unit multiple of the point class of `1`. -/
+theorem exists_eq_units_smul_complZeroPairPointHom_one [Ring K] [IsDedekindFiniteMonoid K]
+    {x : ((TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology
+      (ModuleCat.of K K) (finrank ℝ F) : ModuleCat.{w} K)} (hx : Submodule.span K {x} = ⊤) :
+    ∃ u : Kˣ,
+      x = (u : K) • complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K) := by
+  have hu := (isUnit_complZeroPairPointCoord_iff x).2 hx
+  exact ⟨hu.unit, by rw [hu.unit_spec, complZeroPairPointCoord_smul_pointHom_one]⟩
+
+variable [CommRing K]
+
+/-- With coefficients in a ring whose only unit is `1`, the point class of `1` is the only
+generator of `Hᵣ(F, F ∖ {0}; K) ≅ K`. -/
+theorem eq_complZeroPairPointHom_one [Subsingleton Kˣ] {x : ((TopPair.ofSubset
+    (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology (ModuleCat.of K K) (finrank ℝ F) :
+      ModuleCat.{w} K)} (hx : Submodule.span K {x} = ⊤) :
+    x = complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K) :=
+  LinearEquiv.eq_of_span_singleton_eq_top (singularHomologyComplSingletonFinrankIso
+      (ModuleCat.of K K) (OpenPartialHomeomorph.refl F) (Set.mem_univ 0)).toLinearEquiv hx
+    (span_complZeroPairPointHom_one F K)
+
+end Generator
 
 end TauCeti

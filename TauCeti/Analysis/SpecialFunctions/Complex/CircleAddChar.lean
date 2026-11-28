@@ -7,26 +7,45 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Data.ZMod.ValMinAbs
+public import Mathlib.NumberTheory.Harmonic.Defs
+public import Mathlib.RingTheory.RootsOfUnity.Complex
 
-import Mathlib.Algebra.Field.GeomSum
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Algebra.BigOperators.Ring.Finset
+import TauCeti.Algebra.Group.AddChar.Basic
+import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.Data.ZMod.Count
 
 /-!
 # Values of the standard circle character of `ZMod N`
 
 Mathlib's `ZMod.toCircle` sends `j : ZMod N` to `exp (2πij/N)`. At level `2n` it sends `n`
-to `exp (πi) = -1`. The distance from `1` to a character value is bounded below using the distance
-of the corresponding residue to zero around the circle. The resulting reciprocal-chord and
-geometric-sum bounds give a logarithmic estimate after summing over nonzero frequencies.
+to `exp (πi) = -1`, giving conversions between products of `{±1}`-signs and `ZMod (2 * n)`
+half-level shifts under `ZMod.stdAddChar`. The distance from `1` to a character value is bounded
+below using the distance of the corresponding residue to zero around the circle. The resulting
+reciprocal-chord and geometric-sum bounds give `N` times the harmonic number `H_{N-1}`, and hence a
+logarithmic estimate, after summing over nonzero frequencies.
 
 ## Main results
 
 * `ZMod.coe_toCircle_natCast_self`: `ZMod.toCircle (n : ZMod (2n)) = -1`.
+* `ZMod.stdAddChar_natCast_self`: `ZMod.stdAddChar (n : ZMod (2n)) = -1`.
+* `ZMod.prod_pow_mul_stdAddChar_eq_stdAddChar_add_ite`: absorbing a product of `{±1}` powers into
+  a `ZMod (2n)` shift inside `stdAddChar`.
+* `ZMod.stdAddChar_sum_add_ite_eq_prod_pow_mul_stdAddChar`: expanding a sum of conditional `n`
+  shifts inside `stdAddChar` into a product of `{±1}` powers.
 * `ZMod.le_norm_stdAddChar_sub_one`: a lower bound for the distance to `1`.
+* `ZMod.map_stdAddChar_of_map_stdAddChar_one`: a multiplicative map of `ℂ` sending `ζ_N` to
+  `ζ_N^d` sends every character value `stdAddChar j` to `stdAddChar (d * j)`.
+* `ZMod.isPrimitiveRoot_stdAddChar_one`: `ζ_N = stdAddChar 1` is a primitive `N`-th root of unity.
+* `ZMod.exists_map_stdAddChar_one_eq`: every ring endomorphism of `ℂ` sends `ζ_N` to `ζ_N^d` for
+  a unit `d` of `ZMod N`.
 * `ZMod.two_div_norm_stdAddChar_sub_one_le`: an upper bound for the reciprocal chord length.
 * `ZMod.norm_sum_range_stdAddChar_mul_add_le`: a geometric-sum bound at nonzero frequency.
-* `ZMod.sum_norm_sum_range_stdAddChar_mul_add_le`: the summed geometric-sum bound.
+* `ZMod.sum_norm_sum_range_stdAddChar_mul_add_le_harmonic`: the summed geometric-sum bound,
+  in terms of the harmonic number `H_{N-1}`.
+* `ZMod.sum_norm_sum_range_stdAddChar_mul_add_le`: the summed geometric-sum bound, in terms of
+  the logarithm of the modulus.
 -/
 
 public section
@@ -44,6 +63,45 @@ theorem coe_toCircle_natCast_self (n : ℕ) [NeZero n] :
   have : 2 * π * Complex.I * n / (2 * n) = π * Complex.I := by
     field_simp
   rw [this, Complex.exp_pi_mul_I]
+
+/-- The standard additive character of `ZMod (2 * n)` sends `n` to `-1`. -/
+@[simp]
+theorem stdAddChar_natCast_self (n : ℕ) [NeZero n] :
+    stdAddChar ((n : ℕ) : ZMod (2 * n)) = -1 := by
+  rw [stdAddChar_apply, coe_toCircle_natCast_self]
+
+/-- Multiplying `stdAddChar x` on `ZMod (2 * n)` by a product of `{±1}` powers shifts `x` by `n`
+whenever the product is `-1`. -/
+theorem prod_pow_mul_stdAddChar_eq_stdAddChar_add_ite {ι : Type*} {n : ℕ} [NeZero n]
+    {u : Finset ι} {s : ι → ℤ} (hs : ∀ i ∈ u, s i = 1 ∨ s i = -1)
+    (x : ZMod (2 * n)) (e : ι → ℕ) :
+    (∏ i ∈ u, (s i : ℂ) ^ e i) * stdAddChar x =
+      stdAddChar (x + if ∏ i ∈ u, s i ^ e i = -1 then (n : ZMod (2 * n)) else 0) := by
+  have hprod : (∏ i ∈ u, s i ^ e i) = 1 ∨ (∏ i ∈ u, s i ^ e i) = -1 :=
+    Finset.prod_eq_one_or_neg_one u fun i hi ↦
+      (hs i hi).elim (fun h ↦ .inl (by rw [h, one_pow]))
+        (fun h ↦ by rw [h]; exact neg_one_pow_eq_or ℤ (e i))
+  have hcast : (∏ i ∈ u, (s i : ℂ) ^ e i) = ((∏ i ∈ u, s i ^ e i : ℤ) : ℂ) := by
+    simp only [Int.cast_prod, Int.cast_pow]
+  rw [hcast]
+  rcases hprod with h | h <;> simp [h, AddChar.map_add_eq_mul]
+
+/-- Evaluating `stdAddChar` on a sum of `ZMod (2 * n)` terms shifted by `n` when `Odd (e i)` and
+`s i = -1` factors out the product of `(s i : ℂ) ^ e i`. -/
+theorem stdAddChar_sum_add_ite_eq_prod_pow_mul_stdAddChar {ι : Type*} {n : ℕ} [NeZero n]
+    {u : Finset ι} {s : ι → ℤ} (hs : ∀ i ∈ u, s i = 1 ∨ s i = -1)
+    (t : ι → ZMod (2 * n)) (e : ι → ℕ) :
+    stdAddChar (∑ i ∈ u, (t i + if Odd (e i) ∧ s i = -1 then (n : ZMod (2 * n)) else 0)) =
+      (∏ i ∈ u, (s i : ℂ) ^ e i) * stdAddChar (∑ i ∈ u, t i) := by
+  rw [Finset.sum_add_distrib, AddChar.map_add_eq_mul, mul_comm, AddChar.map_sum_eq_prod]
+  congr 1
+  refine Finset.prod_congr rfl fun i hi ↦ ?_
+  rcases hs i hi with hsi | hsi
+  · simp [hsi]
+  · rcases Nat.even_or_odd (e i) with hm | hm
+    · simp [hsi, hm.neg_one_pow, Nat.not_odd_iff_even.mpr hm]
+    · simp only [hsi, hm, hm.neg_one_pow, and_self, ↓reduceIte, Int.cast_neg, Int.cast_one]
+      exact stdAddChar_natCast_self n
 
 /-- The chord from `1` to the standard character at `k` has length at least four times
 the absolute value of the centered residue divided by the modulus. -/
@@ -78,6 +136,33 @@ theorem le_norm_stdAddChar_sub_one {N : ℕ} [NeZero N] (k : ZMod N) :
     _ ≤ _ := mul_le_mul_of_nonneg_left (Real.mul_abs_le_abs_sin hhalf) (by norm_num)
 
 variable {N : ℕ} [NeZero N]
+
+/-- A multiplicative map of `ℂ` sending the generator `ζ_N = stdAddChar 1` to
+`stdAddChar d = ζ_N^d` sends every value `stdAddChar j` to `stdAddChar (d * j)`. -/
+theorem map_stdAddChar_of_map_stdAddChar_one {F : Type*} [FunLike F ℂ ℂ]
+    [MonoidHomClass F ℂ ℂ] {σ : F} {d : ZMod N} (hσ : σ (stdAddChar (1 : ZMod N)) = stdAddChar d)
+    (j : ZMod N) : σ (stdAddChar j) = stdAddChar (d * j) := by
+  have hj : stdAddChar j = stdAddChar (1 : ZMod N) ^ j.val := by
+    rw [← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, mul_one, natCast_zmod_val]
+  rw [hj, map_pow, hσ, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, natCast_zmod_val, mul_comm]
+
+variable (N) in
+/-- The generator `ζ_N = stdAddChar 1 = exp (2πi/N)` is a primitive `N`-th root of unity. -/
+theorem isPrimitiveRoot_stdAddChar_one : IsPrimitiveRoot (stdAddChar (1 : ZMod N)) N := by
+  have h : stdAddChar (1 : ZMod N) = Complex.exp (2 * π * Complex.I / N) := by
+    simpa using stdAddChar_coe (N := N) 1
+  rw [h]
+  exact Complex.isPrimitiveRoot_exp N (NeZero.ne N)
+
+/-- Every ring endomorphism of `ℂ` sends `ζ_N = stdAddChar 1` to `ζ_N^d = stdAddChar d` for a
+unit `d` of `ZMod N`, since it sends primitive `N`-th roots of unity to primitive ones. -/
+theorem exists_map_stdAddChar_one_eq {F : Type*} [FunLike F ℂ ℂ] [RingHomClass F ℂ ℂ] (σ : F) :
+    ∃ d : (ZMod N)ˣ, σ (stdAddChar (1 : ZMod N)) = stdAddChar (d : ZMod N) := by
+  have hζ := isPrimitiveRoot_stdAddChar_one N
+  have hσ := hζ.map_of_injective (f := σ) (by simpa using RingHom.injective (σ : ℂ →+* ℂ))
+  obtain ⟨i, -, hi⟩ := hζ.eq_pow_of_pow_eq_one hσ.pow_eq_one
+  refine ⟨unitOfCoprime i ((hζ.pow_iff_coprime (NeZero.pos N) i).mp (hi ▸ hσ)), ?_⟩
+  rw [coe_unitOfCoprime, ← hi, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, mul_one]
 
 /-- The reciprocal chord bound in terms of the least nonnegative representatives of a
 nonzero residue and its negative. -/
@@ -126,19 +211,15 @@ theorem norm_sum_range_stdAddChar_mul_add_le (a k : ZMod N) (H : ℕ)
     congr 1
     simpa only [nsmul_eq_mul, mul_comm] using
       (stdAddChar (N := N)).map_nsmul_eq_pow j k
-  rw [heq, norm_mul, ZMod.stdAddChar_apply, Circle.norm_coe, one_mul, geom_sum_eq hz, norm_div]
-  apply div_le_div_of_nonneg_right _ (norm_nonneg _)
-  calc ‖stdAddChar k ^ H - 1‖ ≤ ‖stdAddChar k ^ H‖ + ‖(1 : ℂ)‖ := norm_sub_le _ _
-    _ = 2 := by
-      simp only [norm_pow, ZMod.stdAddChar_apply, Circle.norm_coe, one_pow, norm_one]
-      norm_num
+  rw [heq, norm_mul, ZMod.stdAddChar_apply, Circle.norm_coe, one_mul]
+  exact TauCeti.norm_geom_sum_le (by simp [ZMod.stdAddChar_apply]) hz H
 
 /-- Summing the norms of interval sums of the standard additive character over nonzero
-frequencies is bounded by the modulus times one plus its logarithm. -/
-theorem sum_norm_sum_range_stdAddChar_mul_add_le (a : ZMod N) (H : ℕ) :
+frequencies is bounded by the modulus times the harmonic number `H_{N-1}`. -/
+theorem sum_norm_sum_range_stdAddChar_mul_add_le_harmonic (a : ZMod N) (H : ℕ) :
     ∑ k ∈ univ.erase (0 : ZMod N),
         ‖∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))‖ ≤
-      N * (1 + Real.log N) := by
+      N * (harmonic (N - 1) : ℝ) := by
   have hneg : ∑ k ∈ univ.erase (0 : ZMod N), ((-k).val : ℝ)⁻¹ =
       ∑ k ∈ univ.erase (0 : ZMod N), (k.val : ℝ)⁻¹ := by
     apply sum_equiv (Equiv.neg (ZMod N))
@@ -156,6 +237,18 @@ theorem sum_norm_sum_range_stdAddChar_mul_add_le (a : ZMod N) (H : ℕ) :
     _ = (N : ℝ) * ∑ k ∈ univ.erase (0 : ZMod N), (k.val : ℝ)⁻¹ := by
       rw [← mul_sum, sum_add_distrib, hneg]
       ring
-    _ ≤ _ := mul_le_mul_of_nonneg_left sum_inv_val_le_one_add_log (Nat.cast_nonneg N)
+    _ = _ := by rw [sum_erase _ (by simp), sum_inv_val_eq_harmonic]
+
+/-- Summing the norms of interval sums of the standard additive character over nonzero
+frequencies is bounded by the modulus times one plus its logarithm. -/
+theorem sum_norm_sum_range_stdAddChar_mul_add_le (a : ZMod N) (H : ℕ) :
+    ∑ k ∈ univ.erase (0 : ZMod N),
+        ‖∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))‖ ≤
+      N * (1 + Real.log N) := by
+  refine (sum_norm_sum_range_stdAddChar_mul_add_le_harmonic a H).trans
+    (mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg N))
+  rw [← sum_inv_val_eq_harmonic (n := N),
+    ← sum_erase (f := fun k : ZMod N ↦ (k.val : ℝ)⁻¹) (a := 0) _ (by simp)]
+  exact sum_inv_val_le_one_add_log
 
 end ZMod

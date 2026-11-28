@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 
 /-!
@@ -24,6 +25,8 @@ of that action are in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic`.
 * `TauCeti.Matrix.SpecialLinearGroup.modularGroup_S_decompose`: over any commutative ring,
   `S = x₀₁(-1) x₁₀(1) x₀₁(-1)` is a word in three transvections, the word that defines the Weyl
   representative `n_r(-1)` of a rank-one Chevalley group.
+* `TauCeti.Matrix.SpecialLinearGroup.mem_op_modularGroup_S_smul_diagonalTorus_iff`: the
+  antidiagonal elements of `SL₂(R)` form the right coset `T S` of the diagonal torus.
 * `TauCeti.Matrix.SpecialLinearGroup.closure_S_T_mul_S`: `S` and `T S` generate `SL₂(ℤ)`; this
   follows from Mathlib's `Matrix.SpecialLinearGroup.SL2Z_generators` for `S` and `T`, since
   `T = (T S) S⁻¹`.
@@ -38,8 +41,9 @@ of that action are in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic`.
   `r T = (r₁, r₁ + r₂)`.
 * `TauCeti.ModularGroup.mul_T_zpow_apply_apply_zero`,
   `TauCeti.ModularGroup.mul_T_zpow_apply_apply_one`, `TauCeti.ModularGroup.mul_S_apply_apply_zero`,
-  `TauCeti.ModularGroup.mul_S_apply_apply_one`: the columns of `γ Tⁿ` and `γ S` in terms of those
-  of `γ`.
+  `TauCeti.ModularGroup.mul_S_apply_apply_one`, `TauCeti.ModularGroup.neg_mul_S_apply_apply_zero`,
+  `TauCeti.ModularGroup.neg_mul_S_apply_apply_one`: the columns of `γ Tⁿ`, `γ S` and `-(γ S)` in
+  terms of those of `γ`.
 * `Matrix.SpecialLinearGroup.coe_mul_T_zpow`, `Matrix.SpecialLinearGroup.coe_mul_S`: explicit
   `2 × 2` matrices of `γ * T ^ n` and `γ * S` for `γ ∈ SL₂(ℤ)`.
 -/
@@ -97,6 +101,28 @@ theorem modularGroup_S_decompose {R : Type u} [CommRing R] :
     coe_modularGroup_S]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.single_apply]
+
+open scoped Pointwise in
+/-- The antidiagonal elements of `SL₂(R)` form the right coset `T S` of the diagonal torus `T`,
+where `S = !![0, -1; 1, 0]`. -/
+theorem mem_op_modularGroup_S_smul_diagonalTorus_iff {R : Type u} [CommRing R] {g : SL(2, R)} :
+    g ∈ MulOpposite.op ((ModularGroup.S : SL(2, ℤ)) : SL(2, R)) •
+        (Matrix.SpecialLinearGroup.diagonalTorus R 2 : Set SL(2, R)) ↔
+      (g : Matrix (Fin 2) (Fin 2) R) 0 0 = 0 ∧ (g : Matrix (Fin 2) (Fin 2) R) 1 1 = 0 := by
+  rw [Set.mem_smul_set]
+  constructor
+  · rintro ⟨t, ht, rfl⟩
+    rw [SetLike.mem_coe, Matrix.SpecialLinearGroup.mem_diagonalTorus_iff] at ht
+    have h01 : (t : Matrix (Fin 2) (Fin 2) R) 0 1 = 0 := ht (by decide)
+    have h10 : (t : Matrix (Fin 2) (Fin 2) R) 1 0 = 0 := ht (by decide)
+    simp [MulOpposite.smul_eq_mul_unop, Matrix.mul_apply, Fin.sum_univ_two, h01, h10]
+  · rintro ⟨h0, h1⟩
+    refine ⟨g * ((ModularGroup.S : SL(2, ℤ)) : SL(2, R))⁻¹, ?_, by simp⟩
+    rw [SetLike.mem_coe, Matrix.SpecialLinearGroup.mem_diagonalTorus_iff,
+      Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_inv, coe_modularGroup_S,
+      Matrix.adjugate_fin_two]
+    intro i j hij
+    fin_cases i <;> fin_cases j <;> simp_all [Matrix.mul_apply, Fin.sum_univ_two]
 
 open ModularGroup in
 /-- `S` and `U = T S` generate `SL₂(ℤ)`. -/
@@ -194,5 +220,13 @@ theorem mul_S_apply_apply_zero (γ : SL(2, ℤ)) (i : Fin 2) : (γ * S) i 0 = γ
 /-- The second column of `γ S` is minus the first column of `γ`. -/
 theorem mul_S_apply_apply_one (γ : SL(2, ℤ)) (i : Fin 2) : (γ * S) i 1 = -γ i 0 := by
   simp [Matrix.SpecialLinearGroup.coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The first column of `-(γ S)` is minus the second column of `γ`. -/
+theorem neg_mul_S_apply_apply_zero (γ : SL(2, ℤ)) (i : Fin 2) : (-(γ * S)) i 0 = -γ i 1 := by
+  rw [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, mul_S_apply_apply_zero]
+
+/-- The second column of `-(γ S)` is the first column of `γ`. -/
+theorem neg_mul_S_apply_apply_one (γ : SL(2, ℤ)) (i : Fin 2) : (-(γ * S)) i 1 = γ i 0 := by
+  rw [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, mul_S_apply_apply_one, neg_neg]
 
 end TauCeti.ModularGroup

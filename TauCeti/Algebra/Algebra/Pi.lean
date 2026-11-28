@@ -8,6 +8,7 @@ module
 -- Public: `Pi.evalAlgHom` and `AlgHom.eq_piEvalAlgHom` both occur in the statements below.
 public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.LinearAlgebra.StdBasis
 public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.TensorProduct.Maps
@@ -27,7 +28,8 @@ they disagree on `Pi.single s 1`, so the evaluations enumerate those homomorphis
 repetition**: `Pi.evalAlgHomEquiv` packages that as an equivalence `ι ≃ ((ι → R) →ₐ[R] R)`.
 More generally, `AlgHom.sigmaEquivPi` identifies algebra maps from a finite product into a
 nontrivial semiring without zero divisors with maps from one factor, precomposed with its
-projection.
+projection, so a sum over the maps from a finite product splits along the factors
+(`AlgHom.finsum_apply_pi`).
 
 The injectivity half, `Pi.evalAlgHom_injective`, is what Mathlib does not record, and it is what
 makes the equivalence useful for counting: a split commutative algebra has exactly as many
@@ -51,12 +53,22 @@ provided those characters separate elements. The same evaluation, at all charact
 as soon as there are at least as many characters as the dimension
 (`TauCeti.AlgHom.pi_id_bijective_of_finrank_le_card`): such an algebra is split, a finite product
 of copies of the base field. This is how a finite scheme over a field with as many rational points
-as its degree is shown to be étale.
+as its degree is shown to be étale. Over any commutative ring `A`, evaluation at sections
+`sᵢ : B →ₐ[A] A` is bijective as soon as their matrix `(sᵢ(bⱼ))` on a basis `(bⱼ)` of `B` has unit
+determinant (`TauCeti.AlgHom.pi_bijective_of_isUnit_det`); for a finite étale algebra or the
+splitting of `R ⊗ 𝓞 L`, that determinant squares to a discriminant.
 
 When a family of characters `χ` of `C` and a finite family `ψ` of characters of `D` identify `C`
 and `D` with function algebras, `Algebra.TensorProduct.eq_of_pi_bijective` says that the products
 `Algebra.TensorProduct.lift (χ i) (ψ j)` separate the elements of `C ⊗[R] D`: they are the
 coordinates of `C ⊗[R] D ≅ (ι → R) ⊗[R] (κ → R) ≅ (κ → ι → R)`.
+
+A standard basis vector of `ι → A` has its coordinates in the base ring: it is the image of the
+standard basis vector of `ι → R` under `algebraMap R A` (`Pi.single_one_eq_algebraMap_comp`).
+
+The linear map `Pi.algebraMap ι R S : (ι → R) →ₗ[R] (ι → S)` applies `algebraMap R S` to each
+coordinate (`TauCeti.piAlgebraMap_apply`). Mathlib's `Pi.algebraMap_apply` is instead about the
+algebra map `R → (ι → A)` of the product algebra.
 
 ## Main definitions
 
@@ -68,6 +80,7 @@ coordinates of `C ⊗[R] D ≅ (ι → R) ⊗[R] (κ → R) ≅ (κ → ι → R
   into a domain factors through one of the projections.
 * `AlgHom.sigmaEquivPi`: maps from a finite product into a nontrivial semiring without zero divisors
   are precisely maps from one factor, precomposed with its projection.
+* `AlgHom.finsum_apply_pi`: `∑_{φ : ∏ Aᵢ → B} φ x = ∑ᵢ ∑_{σ : Aᵢ → B} σ (xᵢ)`.
 * `Pi.evalAlgHom_injective`: distinct coordinates give distinct evaluation homomorphisms.
 * `Pi.evalAlgHomEquiv`: the coordinates of `ι → R` are exactly the `R`-algebra homomorphisms
   `(ι → R) →ₐ[R] R`.
@@ -75,11 +88,28 @@ coordinates of `C ⊗[R] D ≅ (ι → R) ⊗[R] (κ → R) ≅ (κ → ι → R
   algebras give separating characters of `C ⊗[R] D`.
 * `TauCeti.AlgHom.pi_id_bijective_of_finrank_le_card`: a finite-dimensional algebra over a field
   with at least as many characters as its dimension is the algebra of functions on its characters.
+* `TauCeti.AlgHom.pi_bijective_of_isUnit_det`: over any commutative ring, evaluation at sections
+  whose matrix on some basis has unit determinant is bijective.
+* `Pi.single_one_eq_algebraMap_comp`: a standard basis vector of `ι → A` is the image of a
+  standard basis vector of `ι → R`.
 -/
 
 public section
 
 namespace Pi
+
+section AlgebraMap
+
+variable (R : Type*) {A ι : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [DecidableEq ι]
+
+/-- A standard basis vector of `ι → A` has its coordinates in `R`: it is the image of the standard
+basis vector of `ι → R` under `algebraMap R A`. -/
+theorem single_one_eq_algebraMap_comp (k : ι) :
+    (Pi.single k 1 : ι → A) = algebraMap R A ∘ Pi.single k 1 := by
+  ext l
+  by_cases h : l = k <;> simp [h]
+
+end AlgebraMap
 
 variable (R ι : Type*) [CommSemiring R]
 
@@ -237,6 +267,22 @@ theorem sigmaEquivPi_apply {R ι : Type*} [CommSemiring R] [_root_.Finite ι]
     sigmaEquivPi A B ⟨i, φ⟩ = φ.comp (Pi.evalAlgHom R A i) :=
   (rfl)
 
+/-- **Sums over the maps from a finite product.** The sum of `φ x` over the algebra maps `φ` from a
+finite product into a semiring without zero divisors splits along the factors:
+`∑_{φ : ∏ Aᵢ → B} φ x = ∑ᵢ ∑_{σ : Aᵢ → B} σ (xᵢ)`. -/
+theorem finsum_apply_pi {R ι : Type*} [CommSemiring R] [_root_.Finite ι]
+    {A : ι → Type*} [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)]
+    (B : Type*) [Semiring B] [Algebra R B] [NoZeroDivisors B]
+    [∀ i, _root_.Finite (A i →ₐ[R] B)] (x : Π i, A i) :
+    ∑ᶠ φ : (Π i, A i) →ₐ[R] B, φ x = ∑ᶠ i, ∑ᶠ σ : A i →ₐ[R] B, σ (x i) := by
+  -- Over the zero ring both sides vanish.
+  cases subsingleton_or_nontrivial B
+  · exact Subsingleton.elim _ _
+  have := Fintype.ofFinite ι
+  have (i : ι) := Fintype.ofFinite (A i →ₐ[R] B)
+  rw [← finsum_comp_equiv (sigmaEquivPi A B), finsum_eq_sum_of_fintype, Fintype.sum_sigma]
+  simp [finsum_eq_sum_of_fintype]
+
 end AlgHom
 
 open scoped TensorProduct
@@ -273,6 +319,38 @@ theorem eq_of_pi_bijective {χ : ι → C →ₐ[R] R} {ψ : κ → D →ₐ[R] 
 end Algebra.TensorProduct
 
 namespace TauCeti
+
+section PiAlgebraMap
+
+variable {κ R : Type*} (S : Type*) [CommSemiring R] [Semiring S] [Algebra R S]
+
+/-- `Pi.algebraMap` applies `algebraMap` coordinatewise. -/
+@[simp]
+theorem piAlgebraMap_apply (x : κ → R) (j : κ) :
+    Pi.algebraMap κ R S x j = algebraMap R S (x j) :=
+  rfl
+
+end PiAlgebraMap
+
+section IsUnitDet
+
+variable {A B ι : Type*} [CommRing A] [Semiring B] [Algebra A B] [Fintype ι] [DecidableEq ι]
+
+/-- Evaluation at a family of sections `sᵢ : B →ₐ[A] A` is bijective when, for a basis `(bⱼ)` of
+`B` indexed by the same type, the evaluation matrix `(sᵢ(bⱼ))` has unit determinant: in that basis
+and the coordinate basis of `ι → A`, evaluation is the invertible matrix `(sᵢ(bⱼ))`. -/
+theorem AlgHom.pi_bijective_of_isUnit_det {s : ι → B →ₐ[A] A} (b : Module.Basis ι A B)
+    (h : IsUnit (Matrix.of fun i j ↦ s i (b j)).det) : Function.Bijective (AlgHom.pi s) := by
+  let e := b.equivFun.trans (Matrix.toLinearEquiv (Pi.basisFun A ι) _ h)
+  have he (x : B) : e x = AlgHom.pi s x := by
+    ext i
+    simp only [e, LinearEquiv.trans_apply, Matrix.toLinearEquiv_apply,
+      Matrix.toLin_eq_toLin', Matrix.toLin'_apply, Module.Basis.equivFun_apply,
+      Matrix.mulVec, dotProduct, Matrix.of_apply, _root_.AlgHom.pi_apply]
+    simpa [map_smul, Algebra.smul_def, mul_comm] using congrArg (s i) (b.sum_repr x)
+  exact (funext he : (e : B → ι → A) = AlgHom.pi s) ▸ e.bijective
+
+end IsUnitDet
 
 variable {K A ι : Type*} [Field K] [Ring A] [Algebra K A]
   [Module.Finite K A]

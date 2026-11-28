@@ -7,8 +7,11 @@ module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
+public import TauCeti.Data.Nat.GCD
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
-public import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
+public import TauCeti.NumberTheory.LSeries.RiemannZeta.Meromorphic
+import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.Primitive
 
 /-!
@@ -28,6 +31,10 @@ For a nonzero modulus `n`, associating to each `χ : DirichletCharacter ℂ n` i
   `∏ χ, ∏ p ∈ n.primeFactors, (1 - χ.primitiveCharacter p * p ^ (-s))` deleted when raising level
   from `χ.conductor` to `n` recovers `∏ χ : DirichletCharacter ℂ n, χ.LFunction s`
   (`DirichletCharacter.prod_LFunction_primitiveCharacter_mul_prod_eq_prod_LFunction`).
+* Raising the level of `χ` does not change `χ.primitiveCharacter.LFunction`
+  (`DirichletCharacter.LFunction_primitiveCharacter_changeLevel`); in particular, if `χ.mul ψ` is
+  principal then `χ` and `ψ⁻¹` have the same primitive `L`-function
+  (`DirichletCharacter.LFunction_primitiveCharacter_eq_of_mul_eq_one`).
 * Each nonprincipal factor `χ.primitiveCharacter.LFunction` is entire, so the product over `χ ≠ 1`
   is entire (`DirichletCharacter.differentiable_prod_LFunction_primitiveCharacter_ne_one`), while
   the full product is analytic away from `s = 1`
@@ -41,6 +48,12 @@ For a nonzero modulus `n`, associating to each `χ : DirichletCharacter ℂ n` i
   (and of `(1 : DirichletCharacter ℂ n).primitiveCharacter`) equals `riemannZeta`.
 * `DirichletCharacter.IsPrimitive.LFunction_eq_primitiveCharacter_of_changeLevel_eq`: any primitive
   lift of `χ` has the same continued `L`-function as `χ.primitiveCharacter`.
+* `DirichletCharacter.LFunction_primitiveCharacter_changeLevel`,
+  `DirichletCharacter.LFunction_primitiveCharacter_eq_of_mul_eq_one`: raising the level does not
+  change the primitive `L`-function, and characters `χ`, `ψ` with principal common-level product
+  `χ.mul ψ` have the primitive `L`-functions of `χ` and `ψ⁻¹` equal.
+* `DirichletCharacter.LFunction_mul_primitiveCharacter_eq_zero_iff`: comparing zeros of `χ.mul ψ`
+  with those of `χ.primitiveCharacter.mul ψ` off the imaginary axis and away from a principal pole.
 * `DirichletCharacter.prod_LFunction_primitiveCharacter_eq_riemannZeta_mul`: separates `riemannZeta`
   from the `χ ≠ 1` factors of `∏ χ, χ.primitiveCharacter.LFunction s`.
 * `DirichletCharacter.prod_LFunction_primitiveCharacter_mul_prod_eq_prod_LFunction`: Euler-factor
@@ -54,6 +67,8 @@ For a nonzero modulus `n`, associating to each `χ : DirichletCharacter ℂ n` i
 
 * H. Davenport, *Multiplicative Number Theory*, 3rd ed., Chapter 9.
 * L. C. Washington, *Introduction to Cyclotomic Fields*, Chapter 4.
+* For level reduction in quadratic twists, see `New.zero_density_quadTwist` in `grh-lean`,
+  `Lib/Analytic/QuadraticTwist` (revision `72fead1`).
 -/
 
 public section
@@ -82,6 +97,43 @@ theorem IsPrimitive.LFunction_eq_primitiveCharacter_of_changeLevel_eq {m n : ℕ
     ψ.LFunction = χ.primitiveCharacter.LFunction := by
   obtain ⟨rfl, rfl⟩ := hψ.eq_primitiveCharacter_of_changeLevel_eq hm hind
   rfl
+
+/-- Lifting a character `χ` of nonzero level `m` to a nonzero multiple `n` of `m` does not change
+the continued `L`-function of its primitive character. -/
+@[simp]
+theorem LFunction_primitiveCharacter_changeLevel {m n : ℕ} [NeZero m] [NeZero n]
+    (χ : DirichletCharacter ℂ m) (hm : m ∣ n) :
+    (changeLevel hm χ).primitiveCharacter.LFunction = χ.primitiveCharacter.LFunction :=
+  (χ.primitiveCharacter_isPrimitive.LFunction_eq_primitiveCharacter_of_changeLevel_eq
+    (χ.conductor_dvd_level.trans hm)
+    (by rw [changeLevel_trans _ χ.conductor_dvd_level, changeLevel_primitiveCharacter])).symm
+
+/-- If the common-level product `χ.mul ψ` of characters of nonzero levels is principal, then `χ`
+and `ψ⁻¹` induce the same primitive character, so their primitive characters have the same
+continued `L`-function. -/
+theorem LFunction_primitiveCharacter_eq_of_mul_eq_one {m n : ℕ} [NeZero m] [NeZero n]
+    {χ : DirichletCharacter ℂ m} {ψ : DirichletCharacter ℂ n} (h : χ.mul ψ = 1) :
+    χ.primitiveCharacter.LFunction = ψ⁻¹.primitiveCharacter.LFunction := by
+  have : NeZero (m.lcm n) := ⟨Nat.lcm_ne_zero (NeZero.ne m) (NeZero.ne n)⟩
+  rw [DirichletCharacter.mul] at h
+  rw [← LFunction_primitiveCharacter_changeLevel χ (Nat.dvd_lcm_left m n),
+    ← LFunction_primitiveCharacter_changeLevel ψ⁻¹ (Nat.dvd_lcm_right m n), map_inv,
+    eq_inv_of_mul_eq_one_left h]
+
+/-- Off the imaginary axis, replacing `χ` by its primitive character before twisting by `ψ`
+preserves the zeros of the continued L-function. At `s = 1` this compares values only when the
+product is nonprincipal. -/
+theorem LFunction_mul_primitiveCharacter_eq_zero_iff {m n : ℕ} [NeZero m] [NeZero n]
+    (χ : DirichletCharacter ℂ m) (ψ : DirichletCharacter ℂ n) {s : ℂ} (hs : s.re ≠ 0)
+    (h : χ.primitiveCharacter.mul ψ ≠ 1 ∨ s ≠ 1) :
+    (χ.mul ψ).LFunction s = 0 ↔ (χ.primitiveCharacter.mul ψ).LFunction s = 0 := by
+  have hd : χ.conductor.lcm n ∣ m.lcm n :=
+    Nat.lcm_dvd (χ.conductor_dvd_level.trans (Nat.dvd_lcm_left m n)) (Nat.dvd_lcm_right m n)
+  have he : (χ.primitiveCharacter.mul ψ).changeLevel hd = χ.mul ψ := by
+    simpa only [changeLevel_primitiveCharacter, changeLevel_self] using
+      changeLevel_mul χ.primitiveCharacter ψ χ.conductor_dvd_level (dvd_refl n)
+  rw [← he]
+  exact LFunction_changeLevel_eq_zero_iff _ hd hs h
 
 open scoped Classical in
 /-- Splitting off the principal character `χ = 1` separates `riemannZeta s` from the product of

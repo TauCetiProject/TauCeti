@@ -35,6 +35,8 @@ of a finite abelian `p`-group (`ZMod.exists_equiv_exponents_of_pi_pow_addEquiv`)
 
 ## Main results
 
+* `TauCeti.IsDiscreteValuationRing.length_quotient_pi_pow_maximalIdeal_smul_top`: the quotient of
+  `∏ i, R ⧸ 𝔪 ^ e i` by `∏ i, 𝔪 ^ a i (R ⧸ 𝔪 ^ e i)` has length `∑ i, min (a i) (e i)`.
 * `TauCeti.IsDiscreteValuationRing.length_quotient_pow_maximalIdeal_smul_top`: for
   `M ≃ ∏ i, R ⧸ 𝔪 ^ e i`, the length of `M ⧸ 𝔪 ^ k M` is `∑ i, min k (e i)`.
 * `TauCeti.IsDiscreteValuationRing.length_pow_maximalIdeal_smul_top_quotient_smul_top`: the
@@ -80,6 +82,16 @@ theorem length_quotient_pow_maximalIdeal_quotient_smul_top (e k : ℕ) :
 
 variable {M : Type*} [AddCommGroup M] [Module R M] {ι : Type*} [Fintype ι] {e : ι → ℕ}
 
+variable (e) in
+/-- **Quotients by products of powers of `𝔪`.** The quotient of `∏ i, R ⧸ 𝔪 ^ e i` by the product
+of the submodules `𝔪 ^ a i (R ⧸ 𝔪 ^ e i)` has length `∑ i, min (a i) (e i)`. -/
+theorem length_quotient_pi_pow_maximalIdeal_smul_top (a : ι → ℕ) :
+    length R ((∀ i, R ⧸ maximalIdeal R ^ e i) ⧸ Submodule.pi Set.univ fun i ↦
+      (maximalIdeal R ^ a i • ⊤ : Submodule R (R ⧸ maximalIdeal R ^ e i))) =
+        ∑ i, min (a i) (e i) := by
+  rw [length_quotient_pi]
+  simp [length_quotient_pow_maximalIdeal_quotient_smul_top]
+
 /-- **The length of `M ⧸ 𝔪 ^ k M` for a module of type `e`.** If `M ≃ ∏ i, R ⧸ 𝔪 ^ e i`, then
 `M ⧸ 𝔪 ^ k M` has length `∑ i, min k (e i)`. -/
 theorem length_quotient_pow_maximalIdeal_smul_top (f : M ≃ₗ[R] ∀ i, R ⧸ maximalIdeal R ^ e i)
@@ -101,11 +113,7 @@ theorem length_pow_maximalIdeal_smul_top_quotient_smul_top
     (maximalIdeal R ^ k • ⊤ : Submodule R M)
   rw [← Submodule.mul_smul, ← pow_succ', length_quotient_pow_maximalIdeal_smul_top f,
     length_quotient_pow_maximalIdeal_smul_top f] at h
-  -- termwise, `min (k + 1) (e i) = min k (e i) + [k < e i]`
-  have hsum : ∑ i, min (k + 1) (e i) = ∑ i, min k (e i) + #{i | k < e i} := by
-    rw [Finset.card_filter, ← Finset.sum_add_distrib]
-    exact Finset.sum_congr rfl fun i _ ↦ by split_ifs <;> omega
-  rw [hsum, Nat.cast_add, add_comm] at h
+  rw [Finset.sum_min_add_one, Nat.cast_add, add_comm] at h
   exact (WithTop.add_right_cancel (ENat.natCast_ne_top _) h).symm
 
 /-- **The graded ranks of a module of type `e`.** If `M ≃ ∏ i, R ⧸ 𝔪 ^ e i`, then the graded

@@ -29,10 +29,17 @@ between nowhere-vanishing top forms and orientations; it holds at boundary and c
 
 * `TauCeti.topFormOrientationAt`: the orientation of a tangent space on which a top form is
   positive, characterized by `TauCeti.topFormOrientationAt_spec`.
+* `TauCeti.eventually_mapOrientation_topFormOrientationAt_eq`: near a point where a continuous top
+  form does not vanish, the tangent orientations it selects are locally constant in the
+  trivialization of the tangent bundle at that point.
 * `TauCeti.Manifold.Orientation.ofTopForm`: the orientation of a nowhere-vanishing continuous top
   form.
 * `TauCeti.Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff`: a tangent basis is
   positive for it exactly when the form is positive on the basis.
+* `TauCeti.Manifold.Orientation.ofTopForm_eq_of_eq_smul`: a pointwise positive multiple of a top
+  form defines the same orientation.
+* `TauCeti.Manifold.Orientation.ofTopForm_eq_neg_of_eq_smul`: a pointwise negative multiple of a
+  top form defines the opposite orientation.
 * `TauCeti.Manifold.Orientation.isOrientationPreservingAt_ofTopForm_of_mpullback_eq_smul`,
   `TauCeti.Manifold.Orientation.isOrientationReversingAt_ofTopForm_of_mpullback_eq_smul`: a map
   pulling one such top form back at `x` to a positive (negative) multiple of the other preserves
@@ -115,6 +122,14 @@ theorem topFormOrientationAt_spec [IsManifold I 1 M] (hk : Module.finrank ℝ E 
       · exact False.elim ((not_lt_of_ge (le_of_lt hφ)) hφneg)
       · exact hdet
 
+/-- A positive multiple at `x` of a top form selects the same orientation of `T_x M`. -/
+theorem topFormOrientationAt_eq_of_apply_eq_smul [IsManifold I 1 M]
+    (hk : Module.finrank ℝ E = k) {φ φ' : RoughForm I M ℝ k} {x : M} {c : ℝ} (hc : 0 < c)
+    (h : φ' x = c • φ x) :
+    topFormOrientationAt (I := I) hk φ' x = topFormOrientationAt (I := I) hk φ x := by
+  simp only [topFormOrientationAt, h, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
+    mul_pos_iff_of_pos_left hc]
+
 /-- Read in a trivialization of the tangent bundle, the orientation selected by a top form is the
 orientation of a model basis exactly when the form is positive on the corresponding frame. -/
 private theorem mapOrientation_topFormOrientationAt [IsManifold I 1 M]
@@ -138,11 +153,11 @@ private theorem mapOrientation_topFormOrientationAt [IsManifold I 1 M]
     · exact absurd h.symm hne
     · rw [h, Trivialization.mapOrientation_neg, hmap]
 
-/-- The tangent orientations selected by a nowhere-vanishing continuous top form are locally
-constant in the preferred trivializations of the tangent bundle. -/
-private theorem eventually_mapOrientation_topFormOrientationAt_eq [IsManifold I 1 M]
-    (hk : Module.finrank ℝ E = k) {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ)
-    (h0 : ∀ x, φ x ≠ 0) (b : M) :
+/-- Near a point `b` where a continuous top form does not vanish, the tangent orientations it
+selects are locally constant in the preferred trivialization of the tangent bundle at `b`. -/
+theorem eventually_mapOrientation_topFormOrientationAt_eq [IsManifold I 1 M]
+    (hk : Module.finrank ℝ E = k) {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ) {b : M}
+    (h0 : ∀ᶠ x in 𝓝 b, φ x ≠ 0) :
     ∀ᶠ x in 𝓝 b, ∀ hx : x ∈ (trivializationAt E (TangentSpace I) b).baseSet,
       (trivializationAt E (TangentSpace I) b).mapOrientation (Fin k) hx
           (topFormOrientationAt (I := I) hk φ x) =
@@ -169,16 +184,16 @@ private theorem eventually_mapOrientation_topFormOrientationAt_eq [IsManifold I 
     exact (continuous_eval_const _).continuousAt.comp
       (hc.continuousAt (extChartAt_source_mem_nhds b))
   have hb : b ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' b
-  have hgb : g b ≠ 0 := hg b hb ▸ ((φ b).map_basis_ne_zero_iff _).mpr (h0 b)
+  have hgb : g b ≠ 0 := hg b hb ▸ ((φ b).map_basis_ne_zero_iff _).mpr h0.self_of_nhds
   have hsign : ∀ᶠ x in 𝓝 b, (0 < g x ↔ 0 < g b) := by
     rcases hgb.lt_or_gt with hneg | hpos
     · filter_upwards [hgc.eventually (gt_mem_nhds hneg)] with x hx
       exact iff_of_false hx.not_gt hneg.not_gt
     · filter_upwards [hgc.eventually (lt_mem_nhds hpos)] with x hx
       exact iff_of_true hx hpos
-  filter_upwards [hsign] with x hx hxe
-  rw [mapOrientation_topFormOrientationAt hk (h0 x) e hxe B,
-    mapOrientation_topFormOrientationAt hk (h0 b) e hb B, hg x hxe, hg b hb]
+  filter_upwards [hsign, h0] with x hx hx0 hxe
+  rw [mapOrientation_topFormOrientationAt hk hx0 e hxe B,
+    mapOrientation_topFormOrientationAt hk h0.self_of_nhds e hb B, hg x hxe, hg b hb]
   simp only [hx]
 
 namespace Manifold.Orientation
@@ -189,7 +204,7 @@ def ofTopForm [IsManifold I 1 M] (hk : Module.finrank ℝ E = k) (φ : RoughForm
   ofVectorBundleOrientation (Module.finBasisOfFinrankEq ℝ E hk).orientation
     ((Fintype.card_fin k).trans hk.symm)
     ⟨topFormOrientationAt (I := I) hk φ,
-      eventually_mapOrientation_topFormOrientationAt_eq hk hφ h0⟩
+      fun _ ↦ eventually_mapOrientation_topFormOrientationAt_eq hk hφ (.of_forall h0)⟩
 
 /-- The tangent orientations of `ofTopForm` are those selected by the top form. -/
 @[simp]
@@ -219,6 +234,40 @@ theorem orientation_eq_ite_orientationAt_ofTopForm [IsManifold I 1 M]
   · refine ((b.orientation).eq_or_eq_neg _ (Nat.card_eq_fintype_card.trans
       ((Fintype.card_fin k).trans hk.symm))).resolve_left ?_
     exact fun h' ↦ h ((orientation_eq_orientationAt_ofTopForm_iff hk hφ h0 b).mp h')
+
+/-- A top form that is a pointwise negative multiple of another one defines the opposite
+orientation. -/
+theorem ofTopForm_eq_neg_of_eq_smul [IsManifold I 1 M] (hk : Module.finrank ℝ E = k)
+    {φ φ' : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ) (h0 : ∀ x, φ x ≠ 0)
+    (hφ' : IsSmoothForm I 0 φ') (h0' : ∀ x, φ' x ≠ 0) {c : M → ℝ} (hc : ∀ x, c x < 0)
+    (h : ∀ x, φ' x = c x • φ x) : ofTopForm hk φ' hφ' h0' = -ofTopForm hk φ hφ h0 := by
+  ext x
+  let b := Module.finBasisOfFinrankEq ℝ (TangentSpace I x) hk
+  have h₁ := orientation_eq_ite_orientationAt_ofTopForm hk hφ h0 b
+  have h₂ := orientation_eq_ite_orientationAt_ofTopForm hk hφ' h0' b
+  rw [h, ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h₂
+  rw [orientationAt_neg]
+  rcases lt_or_gt_of_ne (((φ x).map_basis_ne_zero_iff b).mpr (h0 x)) with hb | hb
+  · rw [ite_eq_right hb.not_gt] at h₁
+    rw [ite_eq_left (mul_pos_of_neg_of_neg (hc x) hb)] at h₂
+    rw [← h₂, h₁]
+  · rw [ite_eq_left hb] at h₁
+    rw [ite_eq_right (mul_neg_of_neg_of_pos (hc x) hb).not_gt] at h₂
+    rw [← h₁, h₂, neg_neg (G := _root_.Orientation ℝ (TangentSpace I x) (Fin k))]
+
+/-- A top form that is a pointwise positive multiple of another one defines the same
+orientation. -/
+theorem ofTopForm_eq_of_eq_smul [IsManifold I 1 M] (hk : Module.finrank ℝ E = k)
+    {φ φ' : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ) (h0 : ∀ x, φ x ≠ 0)
+    (hφ' : IsSmoothForm I 0 φ') (h0' : ∀ x, φ' x ≠ 0) {c : M → ℝ} (hc : ∀ x, 0 < c x)
+    (h : ∀ x, φ' x = c x • φ x) : ofTopForm hk φ' hφ' h0' = ofTopForm hk φ hφ h0 := by
+  -- Compare both forms with `-φ`, a negative multiple of each.
+  have hneg : IsSmoothForm I 0 (-φ) := hφ.neg
+  have h0neg : ∀ x, (-φ) x ≠ 0 := fun x ↦ neg_ne_zero.2 (h0 x)
+  rw [ofTopForm_eq_neg_of_eq_smul hk hneg h0neg hφ' h0' (c := fun x ↦ -c x)
+      (fun x ↦ neg_lt_zero.2 (hc x)) (fun x ↦ by rw [h, Pi.neg_apply, neg_smul_neg]),
+    ofTopForm_eq_neg_of_eq_smul hk hφ h0 hneg h0neg (c := fun _ ↦ -1) (fun _ ↦ by norm_num)
+      (fun x ↦ (neg_one_smul ℝ (φ x)).symm), neg_neg]
 
 variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']

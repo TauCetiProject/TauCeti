@@ -65,10 +65,16 @@ projections of `X × Y` form the pair `(X × Y, A × Y ∪ X × B)` of a product
 in the union when `A`, respectively `B`, is open
 (`TopCat.isOpen_subtypeVal_preimage_preimage_fst_union`), and a product of maps of pairs carries
 them, and so their union, into each other (`TopCat.mapsTo_tensorHom_preimage_fst`,
-`TopCat.mapsTo_tensorHom_preimage_union`). The pair `(X × Y, X × B)` of `TopPair.prodLeft`
-includes into this pair (`TopPair.prodLeftToPreimageUnion`). The product `A × Y` of the subspace
-`A` with `Y` is homeomorphic to the preimage of `A` under the first projection
+`TopCat.mapsTo_tensorHom_preimage_union`). For points `x` and `y`, the union of the preimages of
+`X ∖ {x}` and `Y ∖ {y}` is the complement of `(x, y)`
+(`TopCat.preimage_fst_compl_union_preimage_snd_compl`). The pair `(X × Y, X × B)` of
+`TopPair.prodLeft` includes into this pair (`TopPair.prodLeftToPreimageUnion`). The product `A × Y`
+of the subspace `A` with `Y` is homeomorphic to the preimage of `A` under the first projection
 (`TopCat.prodPreimageFstIso`).
+
+For nested subsets `s ⊆ t` of `Y` and subsets `s' ⊆ t'` of `Y × F` with the same points as
+`s × F` and `t × F`, the map `TopCat.prodSubspaceMap : t × F ⟶ t'` identifies the pair
+`(t × F, fst⁻¹(s))` with the pair `(t', s')` (`TopCat.prodSubspacePairIso`).
 
 For a map `π : X → Y`, a subset `Z ⊆ X` and a subset `S ⊆ Y`, the pair `(π⁻¹ S, π⁻¹ S ∩ Z)` over
 `S` includes into `(X, Z)` (`TopCat.restrictPreimagePairMap`), isomorphically when `S` contains
@@ -473,6 +479,11 @@ topological pairs. -/
 abbrev sigmaι (i : ι) : P i ⟶ sigma P :=
   TopPair.ofHom (TopCat.sigmaι (fun i ↦ (P i).fst) i) (TopCat.sigmaι (fun i ↦ (P i).snd) i)
 
+/-- On the ambient spaces, the summand inclusion `TopPair.sigmaι P i` sends `x` to `⟨i, x⟩`. -/
+@[simp]
+lemma sigmaι_fst_apply (i : ι) (x : (P i).fst) :
+    Hom.fst (sigmaι P i) x = ⟨i, x⟩ := (rfl)
+
 /-- The cofan of a family of topological pairs given by their disjoint union. -/
 abbrev sigmaCofan : Cofan P :=
   Cofan.mk (sigma P) (sigmaι P)
@@ -820,6 +831,15 @@ lemma mapsTo_tensorHom_preimage_union {A' : Set X'} {B' : Set Y'} (f : X ⟶ X')
     Set.MapsTo (f ⊗ₘ g) (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B) (fst X' Y' ⁻¹' A' ∪ snd X' Y' ⁻¹' B') :=
   (mapsTo_tensorHom_preimage_fst f g hf).union_union (mapsTo_tensorHom_preimage_snd f g hg)
 
+/-- The union of the preimages of `X ∖ {x}` and `Y ∖ {y}` under the projections of `X × Y` is the
+complement of the point `(x, y)`. -/
+lemma preimage_fst_compl_union_preimage_snd_compl (x : X) (y : Y) :
+    fst X Y ⁻¹' ({x}ᶜ : Set X) ∪ snd X Y ⁻¹' ({y}ᶜ : Set Y) = {(x, y)}ᶜ := by
+  -- The cartesian projections of `TopCat` are `Prod.fst` and `Prod.snd` by definition, and Mathlib
+  -- has no lemma rewriting them as such.
+  change Prod.fst ⁻¹' {x}ᶜ ∪ Prod.snd ⁻¹' {y}ᶜ = ({(x, y)}ᶜ : Set (X × Y))
+  rw [← Set.singleton_prod_singleton, Set.compl_prod_eq_union, Set.prod_univ, Set.univ_prod]
+
 variable (X Y A) in
 /-- The homeomorphism `A × Y ≅ fst⁻¹(A)` between the product of the subspace `A ⊆ X` with `Y`
 and the preimage of `A` under the first projection `X × Y ⟶ X`. -/
@@ -849,7 +869,96 @@ lemma prodPreimageFstIso_inv_comp_whiskerRight :
       (TopPair.ofSubset (fst X Y ⁻¹' A)).map :=
   (Iso.inv_comp_eq _).2 (prodPreimageFstIso_hom_comp_map X Y A).symm
 
+variable (X Y A) in
+/-- The homeomorphism `A × Y ≅ fst⁻¹(A)` followed by the first projection of the pair
+`(X × Y, fst⁻¹(A)) ⟶ (X, A)` is the first projection of `A × Y`. -/
+@[reassoc]
+lemma prodPreimageFstIso_hom_comp_ofSubsetMap_fst_snd :
+    (prodPreimageFstIso X Y A).hom ≫
+        TopPair.Hom.snd (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ _) :
+          TopPair.ofSubset (fst X Y ⁻¹' A) ⟶ TopPair.ofSubset A) =
+      fst (TopPair.ofSubset A).snd Y :=
+  (rfl)
+
+variable (X Y A) in
+/-- The homeomorphism `A × Y ≅ fst⁻¹(A)` followed by the inclusion into `X × Y` and the second
+projection is the second projection of `A × Y`. -/
+@[reassoc]
+lemma prodPreimageFstIso_hom_comp_map_snd :
+    (prodPreimageFstIso X Y A).hom ≫ (TopPair.ofSubset (fst X Y ⁻¹' A)).map ≫
+        (snd X Y : (TopPair.ofSubset (fst X Y ⁻¹' A)).fst ⟶ Y) =
+      snd (TopPair.ofSubset A).snd Y :=
+  (rfl)
+
 end Preimage
+
+section ProdSubspace
+
+variable {Y F : TopCat.{u}} {s t : Set Y} {s' t' : Set ↑(Y ⊗ F)}
+
+variable (F) in
+/-- The map `t × F ⟶ t'`, `(x, y) ↦ (x, y)`, onto a subspace `t'` of `Y × F` with the same points
+as `t × F`. -/
+def prodSubspaceMap (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) :
+    TopCat.of t ⊗ F ⟶ TopCat.of t' :=
+  ofHom ⟨fun x ↦ ⟨(x.1.val, x.2), (ht _).2 x.1.property⟩, by fun_prop⟩
+
+/-- `TopCat.prodSubspaceMap` sends `(x, y)` to `(x, y)`. -/
+@[simp]
+theorem prodSubspaceMap_apply (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (x : ↑(TopCat.of t ⊗ F)) :
+    (prodSubspaceMap F ht x).val = (x.1.val, x.2) :=
+  (rfl)
+
+/-- The pair `(t × F, fst⁻¹(s))`, the product of the pair `(t, s)` with `F` written with the
+preimage of `s` under the first projection, is the pair `(t', s')` of subspaces of `Y × F` with the
+same points as `t × F` and `s × F`. -/
+def prodSubspacePairIso (hst' : s' ⊆ t') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
+    (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) :
+    TopPair.ofSubset (fst (TopCat.of t) F ⁻¹' (Subtype.val ⁻¹' s)) ≅
+      TopPair.ofInclusion hst' where
+  hom := TopPair.ofHom (prodSubspaceMap F ht)
+    (ofHom ⟨fun x ↦ ⟨((fst _ F x.val).val, snd _ F x.val), (hs _).2 x.property⟩, by fun_prop⟩)
+    rfl
+  inv := TopPair.ofHom
+    (ofHom ⟨fun x ↦ (⟨fst Y F x.val, (ht _).1 x.property⟩, snd Y F x.val), by fun_prop⟩)
+    (ofHom ⟨fun x ↦ ⟨(⟨fst Y F x.val, (ht _).1 (hst' x.property)⟩, snd Y F x.val),
+      (hs _).1 x.property⟩, by fun_prop⟩)
+    rfl
+  hom_inv_id := by ext : 2 <;> rfl
+  inv_hom_id := by ext : 2 <;> rfl
+
+/-- On the ambient spaces, `TopCat.prodSubspacePairIso` is `TopCat.prodSubspaceMap`. -/
+lemma prodSubspacePairIso_hom_fst (hst' : s' ⊆ t') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
+    (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) :
+    TopPair.Hom.fst (prodSubspacePairIso hst' hs ht).hom = prodSubspaceMap F ht :=
+  (rfl)
+
+/-- On the subspaces, `TopCat.prodSubspacePairIso` sends `(x, y)` to `(x, y)`. -/
+@[simp]
+lemma prodSubspacePairIso_hom_snd_apply (hst' : s' ⊆ t') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
+    (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t)
+    (x : ↥(fst (TopCat.of t) F ⁻¹' (Subtype.val ⁻¹' s))) :
+    (TopPair.Hom.snd (prodSubspacePairIso hst' hs ht).hom x).val = (x.val.1.val, x.val.2) :=
+  (rfl)
+
+/-- On the ambient spaces, the inverse of `TopCat.prodSubspacePairIso` sends `(x, y)` to
+`(x, y)`. -/
+@[simp]
+lemma prodSubspacePairIso_inv_fst_apply (hst' : s' ⊆ t') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
+    (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (x : t') :
+    TopPair.Hom.fst (prodSubspacePairIso hst' hs ht).inv x =
+      (⟨x.val.1, (ht _).1 x.property⟩, x.val.2) :=
+  (rfl)
+
+/-- On the subspaces, the inverse of `TopCat.prodSubspacePairIso` sends `(x, y)` to `(x, y)`. -/
+@[simp]
+lemma prodSubspacePairIso_inv_snd_apply (hst' : s' ⊆ t') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
+    (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (x : s') :
+    (TopPair.Hom.snd (prodSubspacePairIso hst' hs ht).inv x).val =
+      (⟨x.val.1, (ht _).1 (hst' x.property)⟩, x.val.2) :=
+  (rfl)
+
+end ProdSubspace
 
 section RestrictPreimage
 

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.Conjugation
 public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
+import Mathlib.Analysis.RCLike.Extend
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
 /-!
 # Conjugation on the Bessel-potential spaces
@@ -41,6 +43,13 @@ vector bundles, as the fixed points of conjugation on the complex ones.
   `L : F ≃ₗᵢ⋆[ℂ] G`.
 * `SchwartzMap.toBesselPotentialSpaceCLM_conjPostcompCLM`: on Schwartz functions the operator is
   `u ↦ L ∘ u`.
+* `TemperedDistribution.MemSobolev.conjPostcompCLM`: `L` preserves `H^{s,p}` tempered
+  distributions.
+* `TemperedDistribution.MemSobolev.compLp_conj`: applying `L` to the values of an `Lᵖ` function
+  in `H^{s,p}` gives an `Lᵖ` function in `H^{s,p}`.
+* `TemperedDistribution.MemSobolev.ofReal_compLp`: so does a real-linear functional `ℓ`, read as a
+  complex-valued function: `ℓ` is the real part of the complex-linear functional
+  `StrongDual.extendRCLike ℓ`, and the real part of `z` is `(z + conj z) / 2`.
 -/
 
 public section
@@ -48,7 +57,7 @@ public section
 noncomputable section
 
 open MeasureTheory TemperedDistribution
-open scoped ENNReal SchwartzMap BesselPotentialSpace
+open scoped ENNReal SchwartzMap BesselPotentialSpace ComplexConjugate
 
 variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
@@ -154,3 +163,53 @@ theorem SchwartzMap.toBesselPotentialSpaceCLM_conjPostcompCLM {s : ℝ} {p : ℝ
   ext1
   rw [toDistr_toBesselPotentialSpaceCLM, BesselPotentialSpace.toDistr_conjPostcomp,
     toDistr_toBesselPotentialSpaceCLM, conjPostcompCLM_toTemperedDistributionCLM_eq]
+
+namespace TemperedDistribution
+
+variable {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] {u : Lp F p (volume : Measure E)}
+
+/-- **Conjugate-linear maps preserve `H^{s,p}`.** If `u ∈ H^{s,p}(E, F)`, then the tempered
+distribution `φ ↦ L (u (conj φ))` lies in `H^{s,p}(E, G)`, for every real `s`. -/
+theorem MemSobolev.conjPostcompCLM {v : 𝓢'(E, F)} (hv : MemSobolev s p v) (L : F →L⋆[ℂ] G) :
+    MemSobolev s p (TemperedDistribution.conjPostcompCLM L v) := by
+  simpa using
+    (BesselPotentialSpace.conjPostcomp E s p L hv.toBesselPotentialSpace).memSobolev_toDistr
+
+/-- Applying a conjugate-linear map to the values of an `Lᵖ` function preserves `H^{s,p}`. -/
+theorem MemSobolev.compLp_conj (hu : MemSobolev s p (u : 𝓢'(E, F))) (L : F →L⋆[ℂ] G) :
+    MemSobolev s p ((L.compLp u : Lp G p volume) : 𝓢'(E, G)) := by
+  have h :=
+    (BesselPotentialSpace.conjPostcomp E s p L hu.toBesselPotentialSpace).memSobolev_toDistr
+  rwa [BesselPotentialSpace.toDistr_conjPostcomp, MemSobolev.toBesselPotentialSpace_toDistr,
+    conjPostcompCLM_toTemperedDistribution_eq] at h
+
+/-- Applying a real-linear functional to the values of an `Lᵖ` function preserves `H^{s,p}`: the
+complexification of `x ↦ ℓ (u x)` lies in `H^{s,p}(E, ℂ)`. -/
+theorem MemSobolev.ofReal_compLp (hu : MemSobolev s p (u : 𝓢'(E, F))) (ℓ : F →L[ℝ] ℝ) :
+    MemSobolev s p
+      ((Complex.ofRealCLM.compLp (ℓ.compLp u) : Lp ℂ p volume) : 𝓢'(E, ℂ)) := by
+  set L : F →L[ℂ] ℂ := StrongDual.extendRCLike ℓ
+  have hL := hu.compLp L
+  have hc := hL.compLp_conj (starL ℂ : ℂ ≃L⋆[ℂ] ℂ).toContinuousLinearMap
+  have heq : (Complex.ofRealCLM.compLp (ℓ.compLp u) : Lp ℂ p volume) =
+      (2⁻¹ : ℂ) • (L.compLp u + (starL ℂ : ℂ ≃L⋆[ℂ] ℂ).toContinuousLinearMap.compLp
+        (L.compLp u)) := by
+    refine Lp.ext ?_
+    filter_upwards [Complex.ofRealCLM.coeFn_compLp (ℓ.compLp u), ℓ.coeFn_compLp u,
+      Lp.coeFn_smul (2⁻¹ : ℂ) (L.compLp u + (starL ℂ : ℂ ≃L⋆[ℂ] ℂ).toContinuousLinearMap.compLp
+        (L.compLp u)),
+      Lp.coeFn_add (L.compLp u) ((starL ℂ : ℂ ≃L⋆[ℂ] ℂ).toContinuousLinearMap.compLp
+        (L.compLp u)),
+      (starL ℂ : ℂ ≃L⋆[ℂ] ℂ).toContinuousLinearMap.coeFn_compLp (L.compLp u),
+      L.coeFn_compLp u] with x h₁ h₂ h₃ h₄ h₅ h₆
+    rw [h₁, h₂, h₃, Pi.smul_apply, h₄, Pi.add_apply, h₅, h₆]
+    simp only [Complex.ofRealCLM_apply, ContinuousLinearEquiv.coe_coe, starL_apply,
+      RCLike.star_def, Complex.add_conj, smul_eq_mul]
+    have hre : (L (u x)).re = ℓ (u x) := StrongDual.re_extendRCLike_apply (𝕜 := ℂ) ℓ (u x)
+    rw [hre]
+    push_cast
+    ring
+  rw [heq, Lp.toTemperedDistribution_smul, Lp.toTemperedDistribution_add]
+  exact (hL.add hc).smul _
+
+end TemperedDistribution
