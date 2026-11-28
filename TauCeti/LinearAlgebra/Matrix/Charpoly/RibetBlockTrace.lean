@@ -84,7 +84,7 @@ theorem det_blockFlatten_eq_mul_prod {R A ι σ r : Type*} [CommRing R] [Fintype
 
 /-- If `χ` decomposes along `blockEquiv` as a block `ψ` plus diagonal characters `η e`, `ρ₁`
 vanishes under `ψ` and every `η e` for `e ≠ 0`, and `η 0 ρ₀ = 0`, then `χ (ρ₁ * ρ₀) = 0`. -/
-theorem map_mul_eq_zero_of_blocks {O A σ r : Type*} [CommRing O] [Ring A] [Algebra O A]
+theorem map_mul_eq_zero_of_blocks {O A σ r : Type*} [CommSemiring O] [Semiring A] [Algebra O A]
     [Fintype σ] [DecidableEq σ] [Fintype r] [DecidableEq r] {t : ℕ} [NeZero t]
     (blockEquiv : r ⊕ Fin t ≃ σ) (χ : A →ₐ[O] Matrix σ σ O) (ψ : A →ₐ[O] Matrix r r O)
     (η : Fin t → A →ₐ[O] O)
@@ -105,7 +105,7 @@ theorem map_mul_eq_zero_of_blocks {O A σ r : Type*} [CommRing O] [Ring A] [Alge
 /-- At a point `x : Y` where every entry of `ρ (ρ₁ * ρ₀)` vanishes, the trace of
 `ρ (ρ₁ * aeval ρ₀ P)` at `x` equals `algebraMap A (Y → L) (P.coeff 0) x * (ρ ρ₁).trace x`. -/
 theorem trace_mul_aeval_apply {A Λ Y L σ : Type*} [CommSemiring A] [Semiring Λ] [Algebra A Λ]
-    [CommSemiring L] [Algebra A (Y → L)] [Fintype σ] [DecidableEq σ]
+    [Semiring L] [Algebra A (Y → L)] [Fintype σ] [DecidableEq σ]
     (ρ : Λ →ₐ[A] Matrix σ σ (Y → L)) (ρ₀ ρ₁ : Λ) (P : A[X]) (x : Y)
     (h_zero : ∀ i j : σ, ρ (ρ₁ * ρ₀) i j x = 0) :
     (ρ (ρ₁ * aeval ρ₀ P)).trace x = algebraMap A (Y → L) (P.coeff 0) x * (ρ ρ₁).trace x := by
