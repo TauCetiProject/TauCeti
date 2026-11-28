@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Group.Defs
 public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.MeasureTheory.Group.Measure
+import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.Topology.Metrizable.Urysohn
 import TauCeti.MeasureTheory.Group.Arithmetic
 
@@ -53,6 +54,8 @@ of translations, and star-scalar-product lemmas show that replacing a scalar mul
 - `TauCeti.not_aestronglyMeasurable_restrict_of_pairwise_le_dist`: under a null-singleton measure, a
   map sending a set of nonzero measure to pairwise `ε`-separated points (`ε > 0`) is not a.e.
   strongly measurable on that set.
+- `ContinuousOn.aestronglyMeasurable_slice_inter_Ioi`: slice measurability of a kernel
+  continuous on `{(x, v) | x ∈ I ∧ v ∈ I ∧ x ≤ v}`.
 
 The antitone σ-algebra results hold for a codomain in any second-countable conditionally complete
 linear order with the order topology (`ℝ` qualifies); no σ-algebra on the codomain is needed, since
@@ -394,3 +397,23 @@ theorem not_aestronglyMeasurable_restrict_of_pairwise_le_dist {α β : Type*} [M
   exact hμs hnull
 
 end TauCeti
+
+section
+
+open Set Function
+
+/-- A kernel `K` continuous on `{(x, v) | x ∈ I ∧ v ∈ I ∧ x ≤ v}` has almost everywhere strongly
+measurable slice `K x` on `I ∩ Ioi x` for every `x ∈ I`. -/
+theorem ContinuousOn.aestronglyMeasurable_slice_inter_Ioi
+    {α γ : Type*} [TopologicalSpace α] [LinearOrder α] [ClosedIicTopology α]
+    [MeasurableSpace α] [OpensMeasurableSpace α] [TopologicalSpace γ]
+    [SecondCountableTopologyEither α γ] [TopologicalSpace.PseudoMetrizableSpace γ]
+    {μ : Measure α} {I : Set α} {K : α → α → γ}
+    (hK : ContinuousOn (uncurry K) {p | p.1 ∈ I ∧ p.2 ∈ I ∧ p.1 ≤ p.2})
+    (hI : MeasurableSet I) {x : α} (hx : x ∈ I) :
+    AEStronglyMeasurable (K x) (μ.restrict (I ∩ Ioi x)) :=
+  (hK.comp (continuous_const.prodMk continuous_id).continuousOn
+    fun _ (hv : _ ∈ I ∩ Ioi x) ↦ ⟨hx, hv.1, hv.2.le⟩).aestronglyMeasurable
+    (hI.inter measurableSet_Ioi)
+
+end

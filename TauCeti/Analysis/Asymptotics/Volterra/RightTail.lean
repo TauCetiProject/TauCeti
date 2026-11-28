@@ -15,6 +15,7 @@ import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.Calculus.ParametricIntegral.MovingEndpoint
 import TauCeti.Analysis.ODE.Gronwall.Tail
 import TauCeti.Analysis.SpecialFunctions.Exp.Taylor
+import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Topology.Order.Interval.Basic
 

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
 import TauCeti.Order.Interval.Set.Basic
 import TauCeti.Topology.Order.Interval.Basic
 
@@ -28,8 +29,6 @@ moving cutoff `x` when `K x x = 0`.
 
 ## Main results
 
-* `ContinuousOn.aestronglyMeasurable_slice_inter_Ioi`: slice measurability of a kernel
-  continuous on `{(x, v) | x ∈ I ∧ v ∈ I ∧ x ≤ v}`.
 * `TauCeti.norm_kernel_smul_le`: pointwise separable bound `‖K x v • y‖ ≤ P x * (Q v * ‖y‖)`.
 * `TauCeti.integrableOn_kernel_smul_inter_Ioi`: integrability of `v ↦ K x v • F v` on
   `I ∩ Ioi x`.
@@ -48,20 +47,6 @@ public section
 
 open Filter Set MeasureTheory Function
 open scoped Topology
-
-/-- A kernel `K` continuous on `{(x, v) | x ∈ I ∧ v ∈ I ∧ x ≤ v}` has almost everywhere strongly
-measurable slice `K x` on `I ∩ Ioi x` for every `x ∈ I`. -/
-theorem ContinuousOn.aestronglyMeasurable_slice_inter_Ioi
-    {α γ : Type*} [TopologicalSpace α] [LinearOrder α] [ClosedIicTopology α]
-    [MeasurableSpace α] [OpensMeasurableSpace α] [TopologicalSpace γ]
-    [SecondCountableTopologyEither α γ] [TopologicalSpace.PseudoMetrizableSpace γ]
-    {μ : Measure α} {I : Set α} {K : α → α → γ}
-    (hK : ContinuousOn (uncurry K) {p | p.1 ∈ I ∧ p.2 ∈ I ∧ p.1 ≤ p.2})
-    (hI : MeasurableSet I) {x : α} (hx : x ∈ I) :
-    AEStronglyMeasurable (K x) (μ.restrict (I ∩ Ioi x)) :=
-  (hK.comp (continuous_const.prodMk continuous_id).continuousOn
-    fun _ (hv : _ ∈ I ∩ Ioi x) ↦ ⟨hx, hv.1, hv.2.le⟩).aestronglyMeasurable
-    (hI.inter measurableSet_Ioi)
 
 namespace TauCeti
 
