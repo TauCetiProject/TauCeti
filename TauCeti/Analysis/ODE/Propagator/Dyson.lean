@@ -19,8 +19,8 @@ iterated integrals `∫_{s<r₁<⋯<rₙ<t} P(rₙ) ⋯ P(r₁)` for `s ≤ t`. 
 `|∫ r in s..t, ‖P r‖| ^ n / n!` (`TauCeti.norm_propagatorDysonTerm_le`), and their sum converges
 to the propagator `N_P(t, s)` (`TauCeti.hasSum_propagatorDysonTerm`).
 
-For a continuous coefficient on `ℝ`, the propagator from `0` is Tau Ceti's left Dyson series
-`TauCeti.dysonSeriesLeft` (`TauCeti.propagator_zero_eq_dysonSeriesLeft`).
+For a continuous coefficient on `ℝ`, the propagator is a translate of Tau Ceti's left Dyson series
+`TauCeti.dysonSeriesLeft` (`TauCeti.propagator_eq_dysonSeriesLeft`).
 
 ## Main definitions and results
 
@@ -29,8 +29,8 @@ For a continuous coefficient on `ℝ`, the propagator from `0` is Tau Ceti's lef
 * `TauCeti.norm_propagatorDysonTerm_le_of_norm_le`: `‖Dₙ(t)‖ ≤ |∫ r in s..t, m r| ^ n / n!` when
   `‖P r‖ ≤ m r` between `s` and `t`.
 * `TauCeti.hasSum_propagatorDysonTerm`: `∑ₙ Dₙ(t) = N_P(t, s)`.
-* `TauCeti.propagator_zero_eq_dysonSeriesLeft`: `N_P(t, 0) = dysonSeriesLeft P t` for continuous
-  `P`.
+* `TauCeti.propagator_eq_dysonSeriesLeft`: `N_P(t, s)` is the Dyson series of `P(· + s)`
+  evaluated at `t - s`, for continuous `P`.
 
 ## References
 
@@ -162,21 +162,19 @@ noncomputable section DysonAgreement
 local instance instNormedAlgebraRealContinuousLinearMap : NormedAlgebra ℝ (E →L[𝕜] E) :=
   { ContinuousLinearMap.toNormedSpace, ContinuousLinearMap.algebra with }
 
-/-- **Agreement with the left Dyson series.** For a continuous coefficient
-`P : ℝ → E →L[𝕜] E`, `N_P(t, 0) = dysonSeriesLeft P t`. -/
-theorem propagator_zero_eq_dysonSeriesLeft [CompleteSpace E]
-    (hP : Continuous P) (t : ℝ) : propagator P t 0 = dysonSeriesLeft P t :=
-  propagator_eq_of_hasDerivAt (a := min 0 t) (b := max 0 t) hP.continuousOn.integrableOn_Icc
-    ⟨min_le_left _ _, le_max_left _ _⟩ ⟨min_le_right _ _, le_max_right _ _⟩
-    (fun r _ ↦ by simpa [ContinuousLinearMap.mul_def] using hasDerivAt_dysonSeriesLeft hP r)
-    (dysonSeriesLeft_zero P)
-
-/-- For a continuous coefficient, the propagator from zero solves the operator ODE
-at every real time. -/
-theorem hasDerivAt_propagator_zero [CompleteSpace E] (hP : Continuous P) (t : ℝ) :
-    HasDerivAt (fun r ↦ propagator P r 0) (P t ∘L propagator P t 0) t := by
-  simp_rw [propagator_zero_eq_dysonSeriesLeft hP]
-  simpa only [ContinuousLinearMap.mul_def] using hasDerivAt_dysonSeriesLeft hP t
+/-- **Agreement with the left Dyson series.** For a continuous coefficient, the propagator
+from `s` is the Dyson series of the translated coefficient, evaluated at `t - s`. -/
+theorem propagator_eq_dysonSeriesLeft [CompleteSpace E]
+    (hP : Continuous P) (t s : ℝ) :
+    propagator P t s = dysonSeriesLeft (fun r ↦ P (r + s)) (t - s) := by
+  have hc : Continuous (fun r ↦ P (r + s)) := hP.comp (continuous_id.add continuous_const)
+  refine propagator_eq_of_hasDerivAt (a := min s t) (b := max s t)
+    (X := fun r ↦ dysonSeriesLeft (fun u ↦ P (u + s)) (r - s)) hP.continuousOn.integrableOn_Icc
+    ⟨min_le_left _ _, le_max_left _ _⟩ ⟨min_le_right _ _, le_max_right _ _⟩ ?_ ?_
+  · intro r _
+    simpa [Function.comp_def, ContinuousLinearMap.mul_def] using
+      (hasDerivAt_dysonSeriesLeft hc (r - s)).scomp r ((hasDerivAt_id r).sub_const s)
+  · simp
 
 end DysonAgreement
 

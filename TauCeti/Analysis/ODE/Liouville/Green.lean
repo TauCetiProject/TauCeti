@@ -368,7 +368,8 @@ private lemma liouvilleGreen_solution {f ξ : ℝ → ℝ} {g Φ ε T I : ℝ �
   have hw1 (x : ℝ) (hx : x ∈ Ioi a) : HasDerivAt w (W' x) x :=
     (hW x hx).1.congr_of_eventuallyEq (eventually_of_mem (isOpen_Ioi.mem_nhds hx) hwW)
   exact contDiffOn_two_of_hasDerivAt (q := fun x ↦ ↑(f x) + g x) isOpen_Ioi
-    ((Complex.continuous_ofReal.comp_continuousOn hf.continuousOn).add hg) hw1
+    (((Complex.continuous_ofReal.comp_continuousOn hf.continuousOn).add hg).mul
+      (fun x hx ↦ (hw1 x hx).continuousAt.continuousWithinAt)) hw1
     fun x hx ↦ hwW x hx ▸ (hW x hx).2
 
 /-- The relative error `ε = e^{2ξ} I / 2 - T / 2` has derivative `f^{1/2} e^{2ξ} I`. -/

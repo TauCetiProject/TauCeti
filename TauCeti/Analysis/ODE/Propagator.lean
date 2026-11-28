@@ -411,6 +411,24 @@ theorem absolutelyContinuousOnInterval_propagator_left (hP : IntegrableOn P (Icc
     hM integrableOn_zero (continuousOn_propagator_left hP hs) fun r hr ↦
       (propagator_eq_one_add_integral hP hs hr).trans (picard_mul P _ s r).symm
 
+/-- For a continuous coefficient, the propagator from any initial time solves the operator
+ODE at every real time. -/
+theorem hasDerivAt_propagator_left (hP : Continuous P) (t s : ℝ) :
+    HasDerivAt (fun r ↦ propagator P r s) (P t ∘L propagator P t s) t := by
+  let a := min s t - 1
+  let b := max s t + 1
+  have hs : s ∈ Icc a b := by constructor <;> dsimp [a, b] <;> grind [min_le_left, le_max_left]
+  have ht : t ∈ Ioo a b := by constructor <;> dsimp [a, b] <;> grind [min_le_right, le_max_right]
+  have hPi : IntegrableOn P (Icc a b) := hP.integrableOn_Icc
+  have hN := continuousOn_propagator_left hPi hs
+  have hc := hP.continuousOn.clm_comp hN
+  have hi := hPi.intervalIntegrable_clm_comp hN hs (Ioo_subset_Icc_self ht)
+  have hd := (integral_hasDerivAt_right hi
+    ((hc.mono Ioo_subset_Icc_self).stronglyMeasurableAtFilter isOpen_Ioo t ht)
+    (hc.continuousAt (Icc_mem_nhds ht.1 ht.2))).const_add (1 : E →L[𝕜] E)
+  exact hd.congr_of_eventuallyEq <| Filter.eventually_of_mem (Icc_mem_nhds ht.1 ht.2)
+    fun r hr ↦ propagator_eq_one_add_integral hPi hs hr
+
 /-- **The derivative in the final time.** `t ↦ N_P(t, s)` has derivative `P(t) N_P(t, s)` at
 almost every `t ∈ (a, b)`. -/
 theorem ae_hasDerivAt_propagator_left (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b) :
