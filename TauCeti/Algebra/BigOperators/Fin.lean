@@ -362,14 +362,9 @@ coordinate `S - 1 - j` as a double sum over `Finset.range R` and `Finset.range S
 theorem prod_fin_prod_rev {M : Type*} [CommMonoid M] (R S : ℕ) (f : ℕ → ℕ → M) :
     ∏ i : Fin R × Fin S, f i.1.val (S - 1 - i.2.val) =
       ∏ r ∈ Finset.range R, ∏ s ∈ Finset.range S, f r s := by
-  rw [Fintype.prod_prod_type, ← Fin.prod_univ_eq_prod_range (n := R)]
+  rw [Fintype.prod_prod_type, Fin.prod_univ_eq_prod_range (fun r ↦ ∏ s : Fin S, f r (S - 1 - s))]
   refine Finset.prod_congr rfl fun r _ ↦ ?_
-  rw [← Equiv.prod_comp Fin.revPerm (fun s : Fin S ↦ f r.val (S - 1 - s.val)),
-    ← Fin.prod_univ_eq_prod_range (n := S)]
-  exact Finset.prod_congr rfl fun s _ ↦ by
-    congr 1
-    simp only [Fin.revPerm_apply, Fin.val_rev]
-    omega
+  rw [Fin.prod_univ_eq_prod_range (fun s ↦ f r (S - 1 - s)), Finset.prod_range_reflect]
 
 end Fintype
 

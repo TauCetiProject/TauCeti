@@ -182,7 +182,8 @@ private theorem dvd_map_evalRingHom_relationPoly {d : ℤ} (hd0 : d ≠ 0) {N R 
     {nx ny : ℕ} (hnx : nx < N) (hny : ny < N) :
     (X - C ((nx : ℂ) + (ny : ℂ) * Complex.sqrt d)) ^ N ∣
       (relationPoly c).map (evalRingHom ((nx : ℂ) - (ny : ℂ) * Complex.sqrt d)) := by
-  rw [X_sub_C_pow_dvd_iff_forall_eval_iterate_derivative_eq_zero]
+  rw [X_sub_C_pow_dvd_iff_forall_eval_iterate_derivative_eq_zero
+    fun i _ ↦ (IsRegular.of_ne_zero' (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero i))).left]
   intro j hj
   have hjet := sum_embPos_baseFam_eq_zero_of_sum_smul_eq_zero hd0 hc (⟨nx, hnx⟩, ⟨ny, hny⟩, ⟨j, hj⟩)
   calc (derivative^[j]
@@ -549,10 +550,14 @@ private theorem det_intGram_shiftFam_eq (d : ℤ) {p N R S : ℕ} (hp : 0 < p) :
     rw [hfam]
     simp only [map_sum, map_zsmul, Int.cast_smul_eq_zsmul, baseVec]
   have hdetU : (U.map (Int.castRingHom ℝ)).det = 1 := by
-    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, det_shiftMatrix_eq_one hp, map_one]
+    rw [show U.map (Int.castRingHom ℝ) = U.map Int.cast from rfl, ← Int.cast_det,
+      det_shiftMatrix_eq_one hp, Int.cast_one]
   have hR : ((QuadraticAlgebra.intGram d (shiftFam d p N R S)).det : ℝ) =
       ((QuadraticAlgebra.intGram d (baseFam d N R S)).det : ℝ) := by
-    rw [QuadraticAlgebra.intCast_det_intGram, QuadraticAlgebra.intCast_det_intGram, funext hvec]
+    rw [Int.cast_det, Int.cast_det]
+    change ((QuadraticAlgebra.intGram d (shiftFam d p N R S)).map (Int.castRingHom ℝ)).det =
+      ((QuadraticAlgebra.intGram d (baseFam d N R S)).map (Int.castRingHom ℝ)).det
+    rw [QuadraticAlgebra.map_intGram_eq_gram, QuadraticAlgebra.map_intGram_eq_gram, funext hvec]
     exact Matrix.det_gram_sum_smul_of_det_eq_one hdetU (baseVec d N R S)
   exact_mod_cast hR
 

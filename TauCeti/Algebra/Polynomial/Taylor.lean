@@ -79,8 +79,9 @@ idempotent, while that of `(X - C r) ^ 2` has coordinate `0` in order `1`.
   and those of order less than `m` vanish on multiples of `g ^ m` when `g(ζ) = 0`.
 * `Polynomial.eval_hasseDeriv_X_sub_C_pow`: the Hasse derivatives of `(X - r) ^ m` at `r`, over any
   ring.
-* `Polynomial.X_sub_C_pow_dvd_iff_forall_eval_iterate_derivative_eq_zero`: characteristic-zero
-  ordinary-derivative form of the divisibility criterion over a ring with no zero divisors.
+* `Polynomial.X_sub_C_pow_dvd_iff_forall_eval_iterate_derivative_eq_zero`: ordinary-derivative
+  form of the divisibility criterion over a commutative ring when the relevant factorials are left
+  regular.
 * `Polynomial.exists_taylor_X_pow_sub_C_eq_C_mul_add_X_pow`: Taylor expansion of `X ^ p - C b` at
   `a` modulo `p` when `p ∣ a ^ p - b`.
 * `Polynomial.taylor_comp_C_mul_X`, `Polynomial.eval_hasseDeriv_comp_C_mul_X`: the Taylor
@@ -262,15 +263,15 @@ theorem X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero {p : R[X]} {r : R} {n
     (X - C r) ^ n ∣ p ↔ ∀ i < n, (hasseDeriv i p).eval r = 0 := by
   rw [← Ideal.mem_span_singleton, mem_span_X_sub_C_pow_iff_forall_eval_hasseDeriv_eq_zero]
 
-/-- Over a characteristic-zero ring with no zero divisors, `(X - C r) ^ n` divides `p` if and
-only if every ordinary derivative of `p` of order less than `n` vanishes at `r`. -/
-theorem X_sub_C_pow_dvd_iff_forall_eval_iterate_derivative_eq_zero [NoZeroDivisors R]
-    [CharZero R] {p : R[X]} {r : R} {n : ℕ} :
+/-- Over a commutative ring, if every factorial `(i ! : R)` for `i < n` is left regular, then
+`(X - C r) ^ n` divides `p` if and only if every ordinary derivative of `p` of order less than `n`
+vanishes at `r`. -/
+theorem X_sub_C_pow_dvd_iff_forall_eval_iterate_derivative_eq_zero {p : R[X]} {r : R} {n : ℕ}
+    (hreg : ∀ i < n, IsLeftRegular (i.factorial : R)) :
     (X - C r) ^ n ∣ p ↔ ∀ i < n, (derivative^[i] p).eval r = 0 := by
   rw [X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero]
-  refine forall₂_congr fun i _ ↦ ?_
-  rw [eval_iterate_derivative_eq_factorial_mul, mul_eq_zero,
-    or_iff_right (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero i))]
+  exact forall₂_congr fun i hi ↦ by
+    rw [eval_iterate_derivative_eq_factorial_mul, (hreg i hi).mul_left_eq_zero_iff]
 
 /-- For `p ≠ 0`, `r` has multiplicity at least `n` as a root of `p` if and only if every Hasse
 derivative of `p` of order less than `n` vanishes at `r`. -/

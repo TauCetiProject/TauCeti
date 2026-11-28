@@ -19,6 +19,7 @@ import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.BigOperators.Field
 import TauCeti.Algebra.BigOperators.Fin
+import TauCeti.Algebra.BigOperators.Intervals
 
 /-!
 # Finite sums of pointwise minima and truncations
@@ -211,25 +212,20 @@ theorem exists_ne_forall_sum_min_lt {s : Finset ι} {t : Finset κ} {a : ι → 
 
 private theorem two_mul_sum_range_min_int_eq_of_le_right {S k : ℕ} (hSk : S ≤ k) :
     2 * ∑ s ∈ range S, ((min k s : ℕ) : ℤ) = (S : ℤ) ^ 2 - S := by
-  induction S with
-  | zero => simp
-  | succ S ih =>
-    rw [sum_range_succ, mul_add, ih (Nat.le_of_succ_le hSk),
-      min_eq_right (Nat.lt_of_succ_le hSk).le]
-    push_cast; ring
+  have h : ∑ s ∈ range S, ((min k s : ℕ) : ℤ) = ∑ s ∈ range S, (s : ℤ) :=
+    sum_congr rfl fun s hs ↦ by rw [min_eq_right ((mem_range.mp hs).le.trans hSk)]
+  rw [h, mul_comm, Finset.sum_range_natCast_mul_two]
+  ring
 
 private theorem two_mul_sum_range_min_int_eq_of_le {S k : ℕ} (hkS : k ≤ S) :
     2 * ∑ s ∈ range S, ((min k s : ℕ) : ℤ) = 2 * (S : ℤ) * k - (k : ℤ) ^ 2 - k := by
-  induction S with
-  | zero => obtain rfl := Nat.eq_zero_of_le_zero hkS; simp
-  | succ S ih =>
-    rw [sum_range_succ, mul_add]
-    rcases hkS.eq_or_lt with rfl | hkS'
-    · rw [two_mul_sum_range_min_int_eq_of_le_right (Nat.le_succ S), min_eq_right (Nat.le_succ S)]
-      push_cast; ring
-    · have hkS'' : k ≤ S := Nat.lt_succ_iff.mp hkS'
-      rw [ih hkS'', min_eq_left hkS'']
-      push_cast; ring
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le hkS
+  rw [sum_range_add, mul_add, two_mul_sum_range_min_int_eq_of_le_right le_rfl]
+  have htail : ∑ s ∈ range m, ((min k (k + s) : ℕ) : ℤ) = (m : ℤ) * k := by
+    simp
+  rw [htail]
+  push_cast
+  ring
 
 private theorem intCast_two_mul_sum_range_min_sub_quad {R : Type*} [Ring R] (S k : ℕ) :
     ((2 * ∑ s ∈ range S, ((min k s : ℕ) : ℤ) - (2 * (S : ℤ) * k - (k : ℤ) ^ 2 - k) : ℤ) : R) =

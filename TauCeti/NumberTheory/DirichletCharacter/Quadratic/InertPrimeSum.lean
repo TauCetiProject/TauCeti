@@ -42,8 +42,8 @@ by `R ^ 2 * S` yields the explicit bound for all `C ≥ 6` divisible by `3`, and
   `∑_{2C < p ≤ q^C, (d / p) = -1} log p / p` for any nonsquare `d` with `|d| ≤ q` (`q ≥ 3`) and
   any `C ≥ 6` divisible by `3`.
 * `DirichletCharacter.IsPrimitive.sum_primesLE_filter_eq_neg_one_le`: explicit upper bound on
-  `∑_{p ≤ q^C, χ p = -1} log p / p` for a primitive nonprincipal quadratic character `χ` mod `q ≥ 3`
-  over any commutative ring with `2 ≠ 0`, for all `C ≥ 6` divisible by `3`.
+  `∑_{p ≤ q^C, χ p = -1} log p / p` for a primitive nonprincipal quadratic character `χ` mod `q ≠ 0`
+  over any commutative ring, for all `C ≥ 6` divisible by `3`.
 * `TauCeti.inert_prime_sum_le`: for all sufficiently large `C` divisible by `3`, inert primes up to
   `q ^ C` carry at most `3 / 4 * log (q ^ C) + O_C(1)` of the Mertens mass.
 
@@ -320,19 +320,20 @@ theorem sum_primesLE_jacobiSym_eq_neg_one_le {d : ℤ} (hd : ¬ IsSquare d)
 end TauCeti
 
 /-- **Explicit Mertens bound for inert primes of a primitive quadratic character.** Over any
-commutative ring `R` with `2 ≠ 0`, for any primitive nonprincipal quadratic Dirichlet character
-`χ` mod `q ≥ 3` and any exponent `C ≥ 6` divisible by `3`, the sum of `log p / p` over primes
-`p ≤ q ^ C` with `χ p = -1` is bounded by
+commutative ring `R`, for any primitive nonprincipal quadratic Dirichlet character `χ` mod `q ≠ 0`
+and any exponent `C ≥ 6` divisible by `3`, the sum of `log p / p` over primes `p ≤ q ^ C` with
+`χ p = -1` is bounded by
 `(1 + 1 / C) * (2 / 3 + 1 / (2 * C)) * log (q ^ C) + (6 * C * log 4 + 4 * log 4 + 15)`. -/
 theorem DirichletCharacter.IsPrimitive.sum_primesLE_filter_eq_neg_one_le {R : Type*}
-    [CommRing R] [DecidableEq R] [NeZero (2 : R)] {q : ℕ} {χ : DirichletCharacter R q}
-    (hprim : χ.IsPrimitive) (hquad : χ.IsQuadratic) (h1 : χ ≠ 1) (hq3 : 3 ≤ q)
+    [CommRing R] [DecidableEq R] {q : ℕ} [NeZero q] {χ : DirichletCharacter R q}
+    (hprim : χ.IsPrimitive) (hquad : χ.IsQuadratic) (h1 : χ ≠ 1)
     {C : ℕ} (hC6 : 6 ≤ C) (hC3 : 3 ∣ C) :
     ∑ p ∈ (Nat.primesLE (q ^ C)).filter (fun p : ℕ ↦ χ (p : ZMod q) = -1),
         Real.log p / (p : ℝ) ≤
       (1 + 1 / (C : ℝ)) * (2 / 3 + 1 / (2 * (C : ℝ))) * Real.log ((q : ℝ) ^ C) +
         (6 * (C : ℝ) * Real.log 4 + 4 * Real.log 4 + 15) := by
-  have : NeZero q := ⟨by omega⟩
+  have hq3 : 3 ≤ q := DirichletCharacter.three_le_level_of_ne_one h1
+  have : NeZero (2 : R) := ⟨fun h2 ↦ h1 (hquad.eq_one_of_two_eq_zero h2)⟩
   have : Nontrivial R := ⟨⟨2, 0, NeZero.ne (2 : R)⟩⟩
   obtain ⟨d, hd, hd1, hdq, hval⟩ := hprim.exists_squarefree_apply_natCast_eq_jacobiSym hquad h1
   set S_all := (Nat.primesLE (q ^ C)).filter fun p : ℕ ↦ χ (p : ZMod q) = -1
@@ -381,7 +382,8 @@ theorem inert_prime_sum_le :
           3 / 4 * Real.log ((q : ℝ) ^ C) + K := by
   refine ⟨15, fun C hC15 hC3 ↦ ⟨6 * (C : ℝ) * Real.log 4 + 4 * Real.log 4 + 15,
     fun q χ hq3 hprim hquad h1 ↦ ?_⟩⟩
-  have hbound := hprim.sum_primesLE_filter_eq_neg_one_le hquad h1 hq3 (by omega) hC3
+  have : NeZero q := ⟨by omega⟩
+  have hbound := hprim.sum_primesLE_filter_eq_neg_one_le hquad h1 (by omega) hC3
   have hinv : 1 / (C : ℝ) ≤ 1 / 15 :=
     one_div_le_one_div_of_le (by norm_num) (by exact_mod_cast hC15)
   have hinv2 : 1 / (2 * (C : ℝ)) ≤ 1 / 30 :=

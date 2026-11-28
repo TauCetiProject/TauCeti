@@ -44,9 +44,9 @@ evaluated via `algebraMap (QuadraticAlgebra ℤ d 0) (QuadraticAlgebra ℚ d ((0
 * `QuadraticAlgebra.inner_famToLp`, `QuadraticAlgebra.norm_sq_famToLp`: inner product and
   squared norm formulas.
 * `QuadraticAlgebra.intGram`, `QuadraticAlgebra.mul_dvd_intGram`,
-  `QuadraticAlgebra.map_intGram_eq_gram`, `QuadraticAlgebra.intCast_det_intGram`: integer Gram
-  matrix of a finite family in `(QuadraticAlgebra ℤ d 0) ^ κ`, entry divisibility from pointwise
-  scalar divisors, and agreement with `Matrix.gram ℝ`.
+  `QuadraticAlgebra.map_intGram_eq_gram`: integer Gram matrix of a finite family in
+  `(QuadraticAlgebra ℤ d 0) ^ κ`, entry divisibility from pointwise scalar divisors, and agreement
+  with `Matrix.gram ℝ`.
 -/
 
 public section
@@ -59,39 +59,28 @@ namespace QuadraticAlgebra
 `(κ → QuadraticAlgebra ℤ d 0) ≃ₗ[ℤ] (κ × Fin 2 → ℤ)`, sending `v` to `(k, 0) ↦ (v k).re` and
 `(k, 1) ↦ (v k).im`, with inverse `f ↦ fun k ↦ ⟨f (k, 0), f (k, 1)⟩`. -/
 def famCoords (d : ℤ) (κ : Type*) :
-    (κ → QuadraticAlgebra ℤ d 0) ≃ₗ[ℤ] (κ × Fin 2 → ℤ) where
-  toFun v p := if p.2 = 0 then (v p.1).re else (v p.1).im
-  invFun f k := ⟨f (k, 0), f (k, 1)⟩
-  left_inv v := by
-    ext k <;> rfl
-  right_inv f := by
-    ext ⟨k, i⟩
-    fin_cases i <;> rfl
-  map_add' v w := by
-    ext p
-    by_cases h : p.2 = 0 <;> simp [h]
-  map_smul' c v := by
-    ext p
-    by_cases h : p.2 = 0 <;> simp [h, zsmul_eq_mul]
+    (κ → QuadraticAlgebra ℤ d 0) ≃ₗ[ℤ] (κ × Fin 2 → ℤ) :=
+  (LinearEquiv.piCongrRight fun _ : κ ↦ QuadraticAlgebra.linearEquivTuple d 0).trans
+    (LinearEquiv.curry ℤ ℤ κ (Fin 2)).symm
 
 /-- Real-part coordinate extraction of `QuadraticAlgebra.famCoords`. -/
 @[simp]
 theorem famCoords_zero (d : ℤ) {κ : Type*} (v : κ → QuadraticAlgebra ℤ d 0) (k : κ) :
     famCoords d κ v (k, 0) = (v k).re := by
-  simp [famCoords]
+  simp [famCoords, linearEquivTuple_apply]
 
 /-- Imaginary-part coordinate extraction of `QuadraticAlgebra.famCoords`. -/
 @[simp]
 theorem famCoords_one (d : ℤ) {κ : Type*} (v : κ → QuadraticAlgebra ℤ d 0) (k : κ) :
     famCoords d κ v (k, 1) = (v k).im := by
-  simp [famCoords]
+  simp [famCoords, linearEquivTuple_apply]
 
 /-- Reconstruction of a `QuadraticAlgebra ℤ d 0`-tuple from its coordinates under
 `(QuadraticAlgebra.famCoords d κ).symm`. -/
 @[simp]
 theorem famCoords_symm_apply (d : ℤ) {κ : Type*} (f : κ × Fin 2 → ℤ) (k : κ) :
     (famCoords d κ).symm f k = ⟨f (k, 0), f (k, 1)⟩ := by
-  simp [famCoords]
+  simp [famCoords, linearEquivTuple_symm_apply]
 
 /-- Real coordinate weights for `QuadraticAlgebra.famToLp`: `2` on real-part coordinates `(k, 0)`
 and `2 * |d|` on imaginary-part coordinates `(k, 1)`. -/
@@ -128,23 +117,34 @@ real inner product recovers the weighted Euclidean pairing
 `∑ k, 2 * (re₁ * re₂ + |d| * im₁ * im₂)`. -/
 noncomputable def famToLp (d : ℤ) (κ : Type*) :
     (κ → QuadraticAlgebra ℤ d 0) →ₗ[ℤ] EuclideanSpace ℝ (κ × Fin 2) :=
-  (TauCeti.weightedToLp (famWeight d κ)).comp (famCoords d κ).toLinearMap
+  ((TauCeti.weightedToLp (famWeight d κ)).restrictScalars ℤ).comp
+    (((Int.castRingHom ℝ).toAddMonoidHom.toIntLinearMap.compLeft (κ × Fin 2)).comp
+      (famCoords d κ).toLinearMap)
 
 /-- Relation between `QuadraticAlgebra.famToLp` and `TauCeti.weightedToLp`. -/
 theorem famToLp_eq_weightedToLp (d : ℤ) (κ : Type*) :
-    famToLp d κ = (TauCeti.weightedToLp (famWeight d κ)).comp (famCoords d κ).toLinearMap := by
+    famToLp d κ =
+      ((TauCeti.weightedToLp (famWeight d κ)).restrictScalars ℤ).comp
+        (((Int.castRingHom ℝ).toAddMonoidHom.toIntLinearMap.compLeft (κ × Fin 2)).comp
+          (famCoords d κ).toLinearMap) := by
   rfl
 
 /-- Applying `QuadraticAlgebra.famToLp` evaluates `TauCeti.weightedToLp` on
-`QuadraticAlgebra.famCoords`. -/
+`QuadraticAlgebra.famCoords` cast to `ℝ`. -/
 theorem famToLp_apply (d : ℤ) {κ : Type*} (v : κ → QuadraticAlgebra ℤ d 0) :
-    famToLp d κ v = TauCeti.weightedToLp (famWeight d κ) (famCoords d κ v) := by
+    famToLp d κ v = TauCeti.weightedToLp (famWeight d κ) (fun p ↦ (famCoords d κ v p : ℝ)) := by
   rfl
 
 /-- `QuadraticAlgebra.famToLp d κ` is injective whenever `d ≠ 0`. -/
 theorem famToLp_injective {d : ℤ} (hd : d ≠ 0) (κ : Type*) :
-    Function.Injective (famToLp d κ) :=
-  (TauCeti.weightedToLp_injective (famWeight_pos hd κ)).comp (famCoords d κ).injective
+    Function.Injective (famToLp d κ) := by
+  change Function.Injective
+    ((TauCeti.weightedToLp (famWeight d κ)) ∘ (fun f : κ × Fin 2 → ℤ ↦ fun p ↦ (f p : ℝ)) ∘
+      (famCoords d κ))
+  exact (TauCeti.weightedToLp_injective (famWeight_pos hd κ)).comp
+    (Function.Injective.comp
+      (fun _ _ h ↦ funext fun p ↦ Int.cast_injective (congrFun h p))
+      (famCoords d κ).injective)
 
 /-- Real-part coordinate evaluation of `QuadraticAlgebra.famToLp`. -/
 @[simp]
@@ -249,12 +249,5 @@ theorem map_intGram_eq_gram (d : ℤ) {κ ι : Type*} [Fintype κ]
     (intGram d v).map (Int.castRingHom ℝ) = Matrix.gram ℝ (fun i ↦ famToLp d κ (v i)) := by
   ext i j
   simp [Matrix.gram_apply, inner_famToLp]
-
-/-- The integer determinant of `QuadraticAlgebra.intGram d v` agrees in `ℝ` with the real Gram
-determinant of `famToLp d κ ∘ v`. -/
-theorem intCast_det_intGram (d : ℤ) {κ ι : Type*} [Fintype κ] [Fintype ι] [DecidableEq ι]
-    (v : ι → κ → QuadraticAlgebra ℤ d 0) :
-    ((intGram d v).det : ℝ) = (Matrix.gram ℝ (fun i ↦ famToLp d κ (v i))).det :=
-  Matrix.intCast_det_eq_det_gram (map_intGram_eq_gram d v)
 
 end QuadraticAlgebra

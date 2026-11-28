@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Nat.Factorial.Basic
 public import Mathlib.Data.Nat.Choose.Basic
+import Mathlib.Data.Nat.Factorial.BigOperators
 
 /-!
 # Nonvanishing factorials and falling-factorial bounds
@@ -124,16 +125,10 @@ theorem pow_three_le_two_mul_descFactorial_three {n : ℕ} (hn : 6 ≤ n) :
 /-- Elementary factorial divisibility: `p ^ m` divides `j!` whenever `p * m ≤ j` and `0 < p`. -/
 theorem pow_dvd_factorial_of_mul_le {p m j : ℕ} (hp : 0 < p) (h : p * m ≤ j) :
     p ^ m ∣ j.factorial := by
-  suffices hpm : p ^ m ∣ (p * m).factorial from Nat.dvd_trans hpm (Nat.factorial_dvd_factorial h)
-  clear h
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    have hstep : p * (m + 1) = (p * m + (p - 1)) + 1 := by
-      rw [Nat.mul_succ]; omega
-    rw [Nat.pow_succ', hstep, Nat.factorial_succ, ← hstep]
-    exact Nat.mul_dvd_mul (Nat.dvd_mul_right p (m + 1))
-      (Nat.dvd_trans ih (Nat.factorial_dvd_factorial (Nat.le_add_right _ _)))
+  have h1 : p ^ m ∣ p ! ^ m := pow_dvd_pow_of_dvd (Nat.dvd_factorial hp le_rfl) m
+  have h2 : p ! ^ m ∣ (m * p)! := by
+    simpa using Nat.prod_factorial_dvd_factorial_sum (Finset.range m) (fun _ ↦ p)
+  exact h1.trans (h2.trans (Nat.factorial_dvd_factorial (by rwa [Nat.mul_comm] at h)))
 
 /-- Factorial divisibility under Euclidean division: `(i / d)! * (j / d)! ∣ ((i + j) / d)!`. -/
 theorem factorial_div_mul_factorial_div_dvd (d i j : ℕ) :
