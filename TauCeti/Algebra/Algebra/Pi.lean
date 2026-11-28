@@ -384,13 +384,8 @@ variable (R : Type*) {ι : Type*} (A : ι → Type*) [CommSemiring R]
 
 /-- Precomposition with an index map `f : ι' → ι` as an `R`-algebra homomorphism
 `(Π i, A i) →ₐ[R] (Π j, A (f j))`. -/
-def AlgHom.funLeft (f : ι' → ι) : (Π i, A i) →ₐ[R] (Π j, A (f j)) where
-  toFun g j := g (f j)
-  map_one' := rfl
-  map_mul' _ _ := rfl
-  map_zero' := rfl
-  map_add' _ _ := rfl
-  commutes' _ := rfl
+def AlgHom.funLeft (f : ι' → ι) : (Π i, A i) →ₐ[R] (Π j, A (f j)) :=
+  AlgHom.pi (fun j ↦ Pi.evalAlgHom R A (f j))
 
 variable {R A}
 

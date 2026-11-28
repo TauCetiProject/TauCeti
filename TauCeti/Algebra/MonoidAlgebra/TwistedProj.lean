@@ -51,22 +51,22 @@ variable {O G : Type*} [CommSemiring O] [CommGroup G] {P H : Subgroup G}
 `p ∈ P` and `h ∈ H` (Dasgupta–Kakde, §2.2). -/
 noncomputable def componentProj (hPH : P.IsComplement' H) (χ : H →* Oˣ) :
     MonoidAlgebra O G →ₐ[O] MonoidAlgebra O P :=
-  let f : P × H →* MonoidAlgebra O P :=
-    singleHom.comp ((((Units.coeHom O).comp χ).comp (MonoidHom.snd P H)).prod (MonoidHom.fst P H))
-  lift O (MonoidAlgebra O P) G (f.comp hPH.prodMulEquiv.symm.toMonoidHom)
+  lift O (MonoidAlgebra O P) G
+    (hPH.extendChar (MonoidAlgebra.of O P)
+      (((algebraMap O (MonoidAlgebra O P)).toMonoidHom.comp (Units.coeHom O)).comp χ))
 
 /-- `componentProj` evaluates at `single g a` via the coordinates of `hPH.prodMulEquiv.symm g`. -/
 theorem componentProj_single (hPH : P.IsComplement' H) (χ : H →* Oˣ) (g : G) (a : O) :
     componentProj hPH χ (single g a) =
       single (hPH.prodMulEquiv.symm g).1 (a * (χ (hPH.prodMulEquiv.symm g).2 : O)) := by
-  simp [componentProj, smul_single]
+  simp [componentProj, Subgroup.IsComplement'.extendChar_apply, of_apply, smul_single]
 
 /-- `componentProj` sends `single (p * h) a` to `single p (a * χ(h))` for `p ∈ P` and `h ∈ H`. -/
 @[simp]
 theorem componentProj_single_mul (hPH : P.IsComplement' H) (χ : H →* Oˣ)
     (p : P) (h : H) (a : O) :
     componentProj hPH χ (single ((p : G) * (h : G)) a) = single p (a * (χ h : O)) := by
-  simp [componentProj, Subgroup.IsComplement'.prodMulEquiv_symm_mul, smul_single]
+  simp [componentProj, Subgroup.IsComplement'.extendChar_mul, of_apply, smul_single]
 
 /-- `componentProj` sends `single (p : G) a` for `p : P` to `single p a`. -/
 @[simp]

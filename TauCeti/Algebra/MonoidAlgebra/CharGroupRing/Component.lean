@@ -369,12 +369,9 @@ there exists a character of `G` extending `χ` that is nontrivial on `I`. -/
 theorem nonempty_componentNormSet [Finite P] [HasEnoughRootsOfUnity O (Monoid.exponent P)]
     {I : Subgroup G} (hPH : P.IsComplement' H) (hIP : I ≤ P) (hI : I ≠ ⊥) (χ : H →* Oˣ) :
     {ψ : G →* Oˣ | ψ.comp H.subtype = χ ∧ ¬ I ≤ ψ.ker}.Nonempty := by
-  have hex : ∃ g ∈ I, g ≠ 1 := by
-    by_contra h
-    push Not at h
-    exact hI (le_bot_iff.mp fun g hg ↦ Subgroup.mem_bot.mpr (h g hg))
-  obtain ⟨g, hgI, hg1⟩ := hex
-  have hgne : (⟨g, hIP hgI⟩ : P) ≠ 1 := fun h ↦ hg1 (congrArg Subtype.val h)
+  obtain ⟨⟨g, hgI⟩, hg1⟩ := Subgroup.ne_bot_iff_exists_ne_one.mp hI
+  have hgne : (⟨g, hIP hgI⟩ : P) ≠ 1 :=
+    fun h ↦ hg1 (Subtype.ext (congrArg (Subtype.val : P → G) h))
   obtain ⟨φ, hφ⟩ := CommGroup.exists_apply_ne_one_of_hasEnoughRootsOfUnity P O hgne
   refine ⟨hPH.extendChar φ χ, hPH.extendChar_comp_right φ χ, fun hle ↦ hφ ?_⟩
   have h1 := MonoidHom.mem_ker.mp (hle hgI)
