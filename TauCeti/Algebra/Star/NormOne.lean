@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Algebra.Star.Rat
-public import Mathlib.Data.Rat.Cast.Order
+public import Mathlib.Data.Rat.Cast.CharZero
 public import Mathlib.Algebra.CharZero.Infinite
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination

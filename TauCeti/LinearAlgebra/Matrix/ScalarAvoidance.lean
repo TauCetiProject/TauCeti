@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
-public import Mathlib.Algebra.Polynomial.Roots
+public import TauCeti.LinearAlgebra.Matrix.Determinant.Pencil
+import Mathlib.Algebra.Group.Pi.Units
+import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import Mathlib.RingTheory.SimpleRing.Basic
 
 /-!
 # Avoiding singular scalar translates
@@ -29,18 +31,10 @@ variable {n K L : Type*} [Fintype n] [DecidableEq n] [Field K] [Field L]
 /-- Only finitely many scalars from a subfield make `1 + a • g` singular. -/
 theorem finite_setOf_not_isUnit_one_add_smul (f : K →+* L) (g : Matrix n n L) :
     Set.Finite {a : K | ¬IsUnit (1 + f a • g)} := by
-  have hpoly : (-g).charpolyRev ≠ 0 := by
-    intro h
-    have heval : (1 : L) = 0 := by
-      simpa using congrArg (Polynomial.eval 0) h
-    exact one_ne_zero heval
-  have hroots := Polynomial.finite_setOfPred_isRoot hpoly
-  refine (Set.Finite.preimage f.injective.injOn hroots).subset fun a ha ↦ ?_
-  have hdet : (1 + f a • g).det = 0 := by
-    simpa only [Set.mem_ofPred_eq, isUnit_iff_isUnit_det, isUnit_iff_ne_zero, not_not] using ha
-  rw [Set.mem_preimage, Set.mem_ofPred_eq, Polynomial.IsRoot,
-    eval_charpolyRev_eq_det_one_sub_smul]
-  simpa only [smul_neg, sub_neg_eq_add] using hdet
+  refine ((finite_setOf_det_smul_add_eq_zero g 1 ⟨0, by simp⟩).preimage
+    f.injective.injOn).subset fun a ha ↦ ?_
+  simpa only [Set.mem_preimage, Set.mem_ofPred_eq, add_comm, isUnit_iff_isUnit_det,
+    isUnit_iff_ne_zero, not_not] using ha
 
 /-- Over a finite product of fields, a matrix has a nonsingular scalar
 translate `1 + a • g` with `a` in any infinite subset of a common subfield. The

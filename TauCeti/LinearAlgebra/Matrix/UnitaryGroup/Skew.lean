@@ -26,8 +26,8 @@ section Ring
 
 variable {R : Type*} [Ring R] [StarRing R] {A X : Matrix n n R}
 
-/-- Multiplication by a hermitian Gram matrix identifies the matrices
-skew-adjoint for its form with the skew-hermitian matrices. -/
+/-- For a hermitian Gram matrix `A`, a matrix `X` is skew-adjoint for the form of `A`
+exactly when `A * X` is skew-hermitian. -/
 theorem star_mul_add_mul_eq_zero_iff (hA : A.IsHermitian) :
     star X * A + A * X = 0 ↔ star (A * X) = -(A * X) := by
   rw [star_mul, star_eq_conjTranspose A, hA.eq, add_eq_zero_iff_eq_neg]
