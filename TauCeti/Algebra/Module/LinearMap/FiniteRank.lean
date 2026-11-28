@@ -40,6 +40,9 @@ continuous (`ContinuousLinearMap.IsCompletelyContinuous.injective_one_sub_iff_su
 ## Main results
 
 * `LinearMap.HasFiniteRange.isFiniteRank`: a map with finitely generated range has finite rank.
+* `LinearMap.isFiniteRank_iff_exists_fg_range_le_span`: in a scalar tower, the finitely generated
+  submodule witnessing finite rank can be taken over the smaller ring and then spanned over the
+  larger ring.
 * `LinearMap.isFiniteRank_iff_hasFiniteRange`: over a Noetherian ring, finite rank is equivalent to
   finitely generated range.
 * `LinearMap.IsFiniteRank.add`, `LinearMap.IsFiniteRank.smul`, `LinearMap.IsFiniteRank.comp_left`,
@@ -84,6 +87,20 @@ theorem isFiniteRank_iff_forall_mem {f : M →ₗ[R] N} :
     f.IsFiniteRank ↔ ∃ Q : Submodule R N, Q.FG ∧ ∀ x, f x ∈ Q :=
   exists_congr fun _ ↦ and_congr_right fun _ ↦ ⟨fun h x ↦ h (mem_range_self f x),
     fun h ↦ by rintro _ ⟨x, rfl⟩; exact h x⟩
+
+/-- In a scalar tower, a linear map has finite rank if and only if its range lies in the
+`R`-span of a finitely generated submodule over the smaller scalar ring `S`. -/
+theorem isFiniteRank_iff_exists_fg_range_le_span (S : Type*) [Semiring S] [SMul S R]
+    [Module S N] [IsScalarTower S R N] {f : M →ₗ[R] N} :
+    f.IsFiniteRank ↔ ∃ L : Submodule S N, L.FG ∧ range f ≤ span R (L : Set N) := by
+  rw [isFiniteRank_iff]
+  have hspan (t : Finset N) : span R (span S (t : Set N) : Set N) = span R (t : Set N) :=
+    span_span_of_tower S R _
+  constructor
+  · rintro ⟨Q, ⟨t, rfl⟩, h⟩
+    exact ⟨span S (t : Set N), fg_span t.finite_toSet, h.trans (hspan t).ge⟩
+  · rintro ⟨L, ⟨t, rfl⟩, h⟩
+    exact ⟨span R (t : Set N), fg_span t.finite_toSet, h.trans (hspan t).le⟩
 
 theorem HasFiniteRange.isFiniteRank {f : M →ₗ[R] N} (hf : f.HasFiniteRange) : f.IsFiniteRank :=
   ⟨range f, hf, le_rfl⟩

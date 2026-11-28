@@ -61,6 +61,9 @@ forces finite generation over an arbitrary coefficient ring. Only the error in a
   `Filter.HasBasis.isCompletelyContinuous_iff_forall_mapsTo`: the lattice
   criterion over Tate scalars, for a bounded neighbourhood of zero in the source and all (or a
   basis of) neighbourhoods of zero in the target.
+* `Filter.HasBasis.isCompletelyContinuous_iff_exists_fg_range_le_span`: in a scalar tower the
+  lattice criterion can use approximants taking values in the coefficient-ring span of finitely
+  many generators over the smaller ring.
 * `ContinuousLinearMap.IsCompletelyContinuous.clm_comp`,
   `ContinuousLinearMap.IsCompletelyContinuous.comp_clm`: the ideal property over Tate scalars,
   and `ContinuousLinearEquiv.comp_isCompletelyContinuous_iff`,
@@ -297,6 +300,21 @@ theorem _root_.Filter.HasBasis.isCompletelyContinuous_iff_forall_mapsTo {ι : So
       ∃ g : M →L[R] N, (g : M →ₗ[R] N).IsFiniteRank ∧ Set.MapsTo (u - g) M₀ (V i) := by
   rw [ContinuousLinearMap.isCompletelyContinuous_iff_forall_mapsTo hM₀ hbdd]
   exact hV.forall_iff fun _ _ hst ⟨g, hg, hug⟩ ↦ ⟨g, hg, hug.mono_right hst⟩
+
+/-- The lattice criterion in a scalar tower: a map is completely continuous if and only if on
+the bounded zero neighbourhood `M₀` it can be approximated, to each precision in the target
+basis, by a continuous map whose image lies in the `R`-span of a finitely generated
+`S`-submodule. In particular, `S` can be a ring of definition of the Tate coefficient ring `R`. -/
+theorem _root_.Filter.HasBasis.isCompletelyContinuous_iff_exists_fg_range_le_span
+    {ι : Sort*} {p : ι → Prop} {V : ι → Set N} (hV : (𝓝 (0 : N)).HasBasis p V)
+    (S : Type*) [Semiring S] [SMul S R] [Module S N] [IsScalarTower S R N]
+    {u : M →L[R] N} {M₀ : Set M} (hM₀ : M₀ ∈ 𝓝 0) (hbdd : Bornology.IsBounded M₀) :
+    u.IsCompletelyContinuous ↔ ∀ i, p i →
+      ∃ (g : M →L[R] N) (L : Submodule S N),
+        L.FG ∧ LinearMap.range (g : M →ₗ[R] N) ≤ Submodule.span R (L : Set N) ∧
+          Set.MapsTo (u - g) M₀ (V i) := by
+  rw [hV.isCompletelyContinuous_iff_forall_mapsTo hM₀ hbdd]
+  simp only [LinearMap.isFiniteRank_iff_exists_fg_range_le_span S, ← and_assoc, exists_and_right]
 
 omit [IsBoundedSMul R M] in
 /-- Over Tate scalars, postcomposing a completely continuous map with a continuous linear map
