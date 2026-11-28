@@ -31,6 +31,9 @@ In a commutative monoid with zero:
   dividing `n` and none dividing another, divides `n`.
 * `TauCeti.dvd_prime_pow_mul_iff`: `q ∣ p ^ n * a` if and only if `q` is associated to `p ^ i * b`
   for some `i ≤ n` and `b ∣ a`.
+* `TauCeti.dvd_finsetProd_pow_mul_iff_of_prime`: `q ∣ (∏ i ∈ s, p i ^ m i) * r` for
+  left-regular primes `p i` if and only if `q` is associated to `(∏ i ∈ s, p i ^ k i) * b` for
+  some `k` with `k i ≤ m i` on `s` and `b ∣ r`.
 * `TauCeti.dvd_finsetProd_pow_iff_of_prime`: `q ∣ ∏ i ∈ s, p i ^ m i` for left-regular primes
   `p i` if and only if `q` is associated to `∏ i ∈ s, p i ^ k i` for some `k` with `k i ≤ m i` on
   `s`.
@@ -91,28 +94,30 @@ theorem dvd_prime_pow_mul_iff {p a q : M} (hp : Prime p) (hreg : IsLeftRegular p
       obtain ⟨i, hi, b, hb, hq⟩ := ih hq'
       exact ⟨i, hi.trans (Nat.le_succ n), b, hb, hq⟩
 
-/-- In a commutative monoid with zero, an element divides a finite product of powers of
-left-regular primes `∏ i ∈ s, p i ^ m i` if and only if it is associated to `∏ i ∈ s, p i ^ k i`
-for some exponents `k i ≤ m i`. The primes `p i` need not be distinct. -/
-theorem dvd_finsetProd_pow_iff_of_prime {ι : Type*} {s : Finset ι} {p : ι → M}
-    (hp : ∀ i ∈ s, Prime (p i)) (hreg : ∀ i ∈ s, IsLeftRegular (p i)) (m : ι → ℕ) {q : M} :
-    q ∣ ∏ i ∈ s, p i ^ m i ↔
-      ∃ k : ι → ℕ, (∀ i ∈ s, k i ≤ m i) ∧ Associated q (∏ i ∈ s, p i ^ k i) := by
-  refine ⟨fun h ↦ ?_, fun ⟨k, hk, hq⟩ ↦
-    hq.dvd.trans (Finset.prod_dvd_prod_of_dvd _ _ fun i hi ↦ pow_dvd_pow (p i) (hk i hi))⟩
+/-- In a commutative monoid with zero, an element divides `(∏ i ∈ s, p i ^ m i) * r` for
+left-regular primes `p i` if and only if it is associated to `(∏ i ∈ s, p i ^ k i) * b` for some
+exponents `k i ≤ m i` and `b ∣ r`. The primes `p i` need not be distinct. -/
+theorem dvd_finsetProd_pow_mul_iff_of_prime {ι : Type*} {s : Finset ι} {p : ι → M}
+    (hp : ∀ i ∈ s, Prime (p i)) (hreg : ∀ i ∈ s, IsLeftRegular (p i)) (m : ι → ℕ) {r q : M} :
+    q ∣ (∏ i ∈ s, p i ^ m i) * r ↔
+      ∃ k : ι → ℕ, (∀ i ∈ s, k i ≤ m i) ∧ ∃ b, b ∣ r ∧ Associated q ((∏ i ∈ s, p i ^ k i) * b) := by
+  refine ⟨fun h ↦ ?_, fun ⟨k, hk, b, hb, hq⟩ ↦
+    hq.dvd.trans (mul_dvd_mul
+      (Finset.prod_dvd_prod_of_dvd _ _ fun i hi ↦ pow_dvd_pow (p i) (hk i hi)) hb)⟩
   classical
   induction s using Finset.cons_induction generalizing q with
   | empty =>
-    exact ⟨0, by simp, associated_one_iff_isUnit.mpr (isUnit_of_dvd_one (by simpa using h))⟩
+    exact ⟨0, by simp, q, by simpa using h, by simp⟩
   | cons a s has ih =>
-    rw [Finset.prod_cons] at h
+    rw [Finset.prod_cons, mul_assoc] at h
     have ha : Prime (p a) := hp a (Finset.mem_cons_self a s)
     have hrega : IsLeftRegular (p a) := hreg a (Finset.mem_cons_self a s)
     have hs : ∀ i ∈ s, Prime (p i) := fun i hi ↦ hp i (Finset.mem_cons.mpr (Or.inr hi))
-    have hregs : ∀ i ∈ s, IsLeftRegular (p i) := fun i hi ↦ hreg i (Finset.mem_cons.mpr (Or.inr hi))
-    obtain ⟨j, hj, b, hb, hqb⟩ := (dvd_prime_pow_mul_iff ha hrega (m a)).mp h
-    obtain ⟨k, hk, hbk⟩ := ih hs hregs hb
-    refine ⟨Function.update k a j, ?_, ?_⟩
+    have hregs : ∀ i ∈ s, IsLeftRegular (p i) := fun i hi ↦
+      hreg i (Finset.mem_cons.mpr (Or.inr hi))
+    obtain ⟨j, hj, c, hc, hqc⟩ := (dvd_prime_pow_mul_iff ha hrega (m a)).mp h
+    obtain ⟨k, hk, b, hb, hcb⟩ := ih hs hregs hc
+    refine ⟨Function.update k a j, ?_, b, hb, ?_⟩
     · intro i hi
       rcases Finset.mem_cons.mp hi with rfl | his
       · simpa using hj
@@ -121,8 +126,21 @@ theorem dvd_finsetProd_pow_iff_of_prime {ι : Type*} {s : Finset ι} {p : ι →
       have hprod : ∏ i ∈ s, p i ^ Function.update k a j i = ∏ i ∈ s, p i ^ k i :=
         Finset.prod_congr rfl fun i hi ↦ by
           rw [Function.update_of_ne (ne_of_mem_of_not_mem hi has)]
-      rw [hprod]
-      exact hqb.trans (hbk.mul_left _)
+      rw [hprod, mul_assoc]
+      exact hqc.trans (hcb.mul_left _)
+
+/-- In a commutative monoid with zero, an element divides a finite product of powers of
+left-regular primes `∏ i ∈ s, p i ^ m i` if and only if it is associated to `∏ i ∈ s, p i ^ k i`
+for some exponents `k i ≤ m i`. The primes `p i` need not be distinct. -/
+theorem dvd_finsetProd_pow_iff_of_prime {ι : Type*} {s : Finset ι} {p : ι → M}
+    (hp : ∀ i ∈ s, Prime (p i)) (hreg : ∀ i ∈ s, IsLeftRegular (p i)) (m : ι → ℕ) {q : M} :
+    q ∣ ∏ i ∈ s, p i ^ m i ↔
+      ∃ k : ι → ℕ, (∀ i ∈ s, k i ≤ m i) ∧ Associated q (∏ i ∈ s, p i ^ k i) := by
+  rw [← mul_one (∏ i ∈ s, p i ^ m i), dvd_finsetProd_pow_mul_iff_of_prime hp hreg m]
+  refine ⟨fun ⟨k, hk, b, hb, hq⟩ ↦ ⟨k, hk, ?_⟩,
+    fun ⟨k, hk, hq⟩ ↦ ⟨k, hk, 1, dvd_rfl, by simpa using hq⟩⟩
+  have hu : Associated b 1 := associated_one_iff_isUnit.mpr (isUnit_of_dvd_one hb)
+  exact hq.trans (by simpa using hu.mul_left (∏ i ∈ s, p i ^ k i))
 
 /-- In a commutative monoid with zero, if `f` is left-regular and associated to a finite product
 `∏ i ∈ s, p i` of primes, then any divisor `a` of `f ^ n` is associated to `∏ i ∈ s, p i ^ k i`

@@ -26,7 +26,9 @@ Without any global cancellativity hypothesis on `R`, the localization results of
 weighted-homogeneous polynomial `f` (`IsLeftRegular f`):
 * Inverting a regular weighted homogeneous prime `f` of weight `e` makes the degrees of the
   homogeneous units of `R[σ]_f` the multiples of `e`
-  (`homogeneousUnitDegrees_awayGrading_weightedHomogeneousSubmodule_of_prime`). For integer
+  (`homogeneousUnitDegrees_awayGrading_weightedHomogeneousSubmodule_of_prime`), and the same holds
+  for a regular scalar multiple `f = C c * p` of a weighted homogeneous prime `p`
+  (`homogeneousUnitDegrees_awayGrading_weightedHomogeneousSubmodule_of_C_mul_prime`). For integer
   weights the shift classes of `R[σ]_f` are then `ZMod |e|`
   (`shiftClassGroupAwayGradingWeightedEquiv`). Geometrically, with positive weights on a finite
   `σ` and `e > 0`, `R[σ]_f` is the graded ring of the invariant open subscheme `𝔸^σ ∖ {f = 0}`.
@@ -122,6 +124,44 @@ theorem homogeneousUnitDegrees_awayGrading_weightedHomogeneousSubmodule_of_prime
   let := weightedGradedAlgebra R w
   rw [GradedAlgebra.homogeneousUnitDegrees_awayGrading_of_prime _ hf hprime hreg,
     homogeneousUnitDegrees_weightedHomogeneousSubmodule, bot_sup_eq]
+
+/-- Inverting a regular scalar multiple `f = C c * p` of a weighted homogeneous prime `p` of
+weight `e` in `MvPolynomial σ R`: the degrees of the homogeneous units of the localization are
+still the multiples of `e`. -/
+theorem homogeneousUnitDegrees_awayGrading_weightedHomogeneousSubmodule_of_C_mul_prime
+    (w : σ → M) {f : MvPolynomial σ R} {e : M} (hf : f ∈ weightedHomogeneousSubmodule R w e)
+    (c : R) {p : MvPolynomial σ R}
+    (hp : p ∈ weightedHomogeneousSubmodule R w e) (hprime : Prime p) (hreg : IsLeftRegular f)
+    (hfeq : f = C c * p) :
+    homogeneousUnitDegrees (GradedAlgebra.awayGrading (weightedHomogeneousSubmodule R w) hf) =
+      AddSubgroup.zmultiples e := by
+  classical
+  have : Nontrivial (MvPolynomial σ R) := nontrivial_of_ne p 0 hprime.ne_zero
+  have : Nontrivial R := (C (σ := σ)).domain_nontrivial
+  let := weightedGradedAlgebra R w
+  have hregC : IsLeftRegular (C c : MvPolynomial σ R) := by
+    rw [hfeq, mul_comm] at hreg
+    exact hreg.of_mul
+  have ha : ∀ (n : ℕ) {b : MvPolynomial σ R} {d : M},
+      b ∈ weightedHomogeneousSubmodule R w d → b ∣ (C c) ^ n →
+      d ∈ homogeneousUnitDegrees (weightedHomogeneousSubmodule R w) := by
+    intro n b d hb ⟨q, hq⟩
+    have hcn : c ^ n ≠ 0 := fun h0 ↦
+      one_ne_zero ((hregC.pow n) (by simp [← map_pow, h0]))
+    have h0 : b.coeff 0 ≠ 0 := by
+      rw [← constantCoeff_eq]
+      intro hb0
+      have hcr := congrArg (constantCoeff (σ := σ) (R := R)) hq
+      rw [map_pow, constantCoeff_C, map_mul, hb0, zero_mul] at hcr
+      exact hcn hcr
+    rw [← (mem_weightedHomogeneousSubmodule R w d b).mp hb h0, map_zero]
+    exact zero_mem _
+  rw [GradedAlgebra.homogeneousUnitDegrees_awayGrading_of_eq_mul_prod _ hf ha {()}
+      (p := fun _ ↦ p) (d := fun _ ↦ e) (by simpa using hp) (by simpa using hprime) hreg
+      (by simpa using hfeq),
+    homogeneousUnitDegrees_weightedHomogeneousSubmodule, bot_sup_eq,
+    AddSubgroup.zmultiples_eq_closure]
+  simp
 
 /-- For integer weights and a regular weighted homogeneous prime `f` of weight `e` in
 `MvPolynomial σ R`, the shift classes of the localization `R[σ]_f` form `ZMod |e|`. -/
