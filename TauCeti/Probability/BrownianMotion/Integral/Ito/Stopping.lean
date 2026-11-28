@@ -8,9 +8,10 @@ module
 public import Mathlib.Probability.Process.Stopping
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
-import TauCeti.Order.Interval.Set.Piecewise
+import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
 import TauCeti.Probability.BrownianMotion.Integral.Stopping
 import TauCeti.Probability.Finance.SimpleStrategy.Stopping
+import TauCeti.Probability.Process.StochasticInterval
 import TauCeti.Probability.Process.StoppedValue
 import TauCeti.Probability.Process.Stopping
 import TauCeti.Topology.Instances.ENNReal
@@ -27,6 +28,9 @@ stopping times `σ ≤ τ`, `stoppedProcess I τ - stoppedProcess I σ` is an It
 `H · 1_{(σ, τ]}` (`TauCeti.Probability.IsItoIntegral.ite_Ioc`). Adjacent stochastic intervals
 `(σ, τ]` and `(τ, ρ]` concatenate to `(σ, ρ]` (`TauCeti.Probability.IsItoIntegral.ite_Ioc_add`,
 `TauCeti.Probability.IsFilteredPreBrownianReal.indist_ite_Ioc_add_stoppedProcess_sub`).
+Stopping along any sequence of measurable random times tending almost surely to `⊤` characterizes
+the Itô integral without requiring monotonicity or the stopping-time property
+(`TauCeti.Probability.IsItoIntegral.of_stoppedProcess`).
 
 ## Main results
 
@@ -38,6 +42,8 @@ stopping times `σ ≤ τ`, `stoppedProcess I τ - stoppedProcess I σ` is an It
 * `TauCeti.Probability.IsItoIntegral.ite_Ioc_add` and
   `TauCeti.Probability.IsFilteredPreBrownianReal.indist_ite_Ioc_add_stoppedProcess_sub`:
   adjacent stochastic-interval concatenation for Itô integrals and stopped integrals.
+* `TauCeti.Probability.IsItoIntegral.of_stoppedProcess`: stability of `IsItoIntegral` under
+  localization by measurable random times tending almost surely to `⊤`.
 
 ## References
 
@@ -222,13 +228,7 @@ theorem ite_Ioc (hW : IsFilteredPreBrownianReal ℱ W P)
     (hστ : σ ≤ τ) (hI : IsItoIntegral ℱ P W H I) :
     IsItoIntegral ℱ P W (fun t ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
       (MeasureTheory.stoppedProcess I τ - MeasureTheory.stoppedProcess I σ) := by
-  have heq : (fun (t : ℝ≥0) ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) =
-      fun (t : ℝ≥0) ω ↦ (if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) -
-        if (t : WithTop ℝ≥0) ≤ σ ω then H t ω else 0 := by
-    ext t ω
-    have hle := hστ ω
-    split_ifs <;> simp_all <;> grind
-  rw [heq]
+  rw [TauCeti.ite_Ioc_fun_eq_sub_ite_le hστ (fun t : ℝ≥0 ↦ (t : WithTop ℝ≥0)) H]
   exact (hI.stoppedProcess hW hτ).sub (hI.stoppedProcess hW hσ)
 
 /-- **Adjacent stochastic-interval concatenation for Itô integrals.** For ordered random times
@@ -248,6 +248,106 @@ theorem ite_Ioc_add {σ τ ρ : Ω → WithTop ℝ≥0} (hστ : σ ≤ τ) (hτ
   exact hJ₁.add hJ₂
 
 end IsItoIntegral
+
+private theorem tendsto_measure_compl_goodEvent [IsFiniteMeasure P]
+    {τ : ℕ → Ω → WithTop ℝ≥0} {Hseq : ℕ → ℝ≥0 → Ω → ℝ} {H : ℝ≥0 → Ω → ℝ}
+    (hτ_meas : ∀ n, Measurable (τ n))
+    (hHseq_meas : ∀ n, Measurable (fun p : ℝ≥0 × Ω ↦ Hseq n p.1 p.2 - H p.1 p.2))
+    (hτ : ∀ᵐ ω ∂P, Tendsto (τ · ω) atTop (𝓝 ⊤))
+    (hHeq : ∀ᵐ ω ∂P, ∀ T : ℝ≥0, ∀ᶠ n in atTop, EqOn (Hseq n · ω) (H · ω) (Iic T))
+    (t : ℝ≥0) :
+    let G (m : ℕ) : Set Ω := {ω | (t : WithTop ℝ≥0) < τ m ω} ∩
+      {ω | ∫⁻ s, ‖Hseq m s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t = 0}
+    (∀ m, MeasurableSet (G m)) ∧ Tendsto (fun m ↦ P (G m)ᶜ) atTop (𝓝 0) := by
+  intro G
+  have hE_meas (m : ℕ) : Measurable (fun ω ↦ ∫⁻ s, ‖Hseq m s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t) :=
+    ((hHseq_meas m).eNorm.pow_const 2).lintegral_prod_left'
+  have hG_meas (m : ℕ) : MeasurableSet (G m) :=
+    (measurableSet_lt measurable_const (hτ_meas m)).inter (hE_meas m (measurableSet_singleton 0))
+  refine ⟨hG_meas, MeasureTheory.tendsto_measure_compl_of_ae_eventually_mem hG_meas ?_⟩
+  filter_upwards [hτ, hHeq] with ω hτω hHω
+  obtain ⟨m, hm⟩ := eventually_atTop.mp
+    ((hτω.eventually (eventually_gt_nhds (WithTop.coe_lt_top t))).and (hHω t))
+  exact eventually_atTop.mpr ⟨m, fun j hj ↦ ⟨(hm j hj).1,
+    (TauCeti.ae_eq_iff_lintegral_enorm_sub_sq_eq_zero
+      (((hHseq_meas j).comp measurable_prodMk_right).eNorm.pow_const 2).aemeasurable).mp
+      ((ae_mem_Ioc_timeMeasure t).mono fun s hs ↦ (hm j hj).2 hs.2)⟩⟩
+
+private theorem exists_simpleHolding_stage_approx
+    {Hseq U : ℕ → ℝ≥0 → Ω → ℝ}
+    (hU : ∀ n, IsItoIntegral ℱ P W (Hseq n) (U n)) {t : ℝ≥0}
+    {G : ℕ → Set Ω} (hG_lim : Tendsto (fun m ↦ P (G m)ᶜ) atTop (𝓝 0)) (k : ℕ) :
+    ∃ m n σ a,
+      MonotoneOn σ (Iic n) ∧ (∀ j < n, StronglyMeasurable[ℱ (σ j)] (a j)) ∧
+      P (G m)ᶜ < ((k : ℝ≥0∞) + 1)⁻¹ / 2 ∧
+      P {ω | ((k : ℝ≥0∞) + 1)⁻¹ ≤ ∫⁻ s, ‖Finance.simpleHolding σ n a s ω - Hseq m s ω‖ₑ ^ 2
+          ∂timeMeasure t} < ((k : ℝ≥0∞) + 1)⁻¹ / 2 ∧
+      P {ω | ((k : ℝ≥0∞) + 1)⁻¹ ≤ edist (Finance.simpleGains σ n a W t ω) (U m t ω)} <
+        ((k : ℝ≥0∞) + 1)⁻¹ / 2 := by
+  have hδ : 0 < ((k : ℝ≥0∞) + 1)⁻¹ := ENNReal.inv_pos.mpr (by simp)
+  have hhalf : 0 < ((k : ℝ≥0∞) + 1)⁻¹ / 2 := ENNReal.div_pos hδ.ne' (by norm_num)
+  obtain ⟨m, hm⟩ := (hG_lim.eventually (gt_mem_nhds hhalf)).exists
+  obtain ⟨n', σ', a', hσ', ha', hE', hM'⟩ := (hU m).exists_approx t
+  obtain ⟨j, hj1, hj2⟩ :=
+    (((hE' _ hδ).eventually (gt_mem_nhds hhalf)).and
+      ((hM' _ hδ).eventually (gt_mem_nhds hhalf))).exists
+  exact ⟨m, n' j, σ' j, a' j, hσ' j, ha' j, hm, hj1, hj2⟩
+
+/-- If `I` is almost surely continuous and, along measurable random times `τ n → ⊤` almost surely,
+each stopped process `stoppedProcess I (τ n)` is indistinguishable from an Itô integral of a
+process `Hseq n` that eventually agrees with `H` on every compact horizon `[0, T]` outside a common
+null set, then `I` is an Itô integral of `H`. Neither monotonicity nor the stopping-time property
+of `τ n` is required. -/
+theorem IsItoIntegral.of_stoppedProcess [IsFiniteMeasure P]
+    {τ : ℕ → Ω → WithTop ℝ≥0} {Hseq U : ℕ → ℝ≥0 → Ω → ℝ}
+    (hH : IsStronglyPredictable ℱ H)
+    (hIcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ I t ω))
+    (hτ_meas : ∀ n, Measurable (τ n))
+    (hτ : ∀ᵐ ω ∂P, Tendsto (τ · ω) atTop (𝓝 ⊤))
+    (hU : ∀ n, IsItoIntegral ℱ P W (Hseq n) (U n))
+    (hstop : ∀ n, MeasureTheory.stoppedProcess I (τ n) ≡ᵐ[P] U n)
+    (hHeq : ∀ᵐ ω ∂P, ∀ T : ℝ≥0, ∀ᶠ n in atTop, EqOn (Hseq n · ω) (H · ω) (Iic T)) :
+    IsItoIntegral ℱ P W H I := by
+  refine ⟨hH, hIcont, fun t ↦ ?_⟩
+  have hdiff_meas (m : ℕ) : Measurable (fun p : ℝ≥0 × Ω ↦ Hseq m p.1 p.2 - H p.1 p.2) :=
+    (((hU m).isStronglyPredictable.sub hH).mono ℱ.predictable_le_prod).measurable
+  let G (m : ℕ) : Set Ω := {ω | (t : WithTop ℝ≥0) < τ m ω} ∩
+    {ω | ∫⁻ s, ‖Hseq m s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t = 0}
+  obtain ⟨-, hG_lim⟩ := tendsto_measure_compl_goodEvent hτ_meas hdiff_meas hτ hHeq t
+  choose m n σ a hσ ha hGm hEk hMk using exists_simpleHolding_stage_approx hU hG_lim
+  have hinv : Tendsto (fun k : ℕ ↦ ((k : ℝ≥0∞) + 1)⁻¹) atTop (𝓝 0) :=
+    ENNReal.tendsto_inv_natCast_add_nhds_zero 1
+  refine ⟨n, σ, a, hσ, ha, fun ε hε ↦ ?_, fun ε hε ↦ ?_⟩
+  · refine TauCeti.tendsto_measure_of_subset_union hinv measure_empty
+      (Eventually.of_forall fun k ↦ (hGm k).le) (Eventually.of_forall fun k ↦ (hEk k).le) ?_
+    filter_upwards [hinv.eventually (gt_mem_nhds hε)] with k hk ω hω
+    refine if hGω : ω ∈ G (m k) then Or.inr (Or.inr ?_) else Or.inr (Or.inl hGω)
+    have hHeq_ae : (fun s ↦ Hseq (m k) s ω) =ᵐ[timeMeasure t] fun s ↦ H s ω :=
+      (TauCeti.ae_eq_iff_lintegral_enorm_sub_sq_eq_zero
+        (((hdiff_meas (m k)).comp measurable_prodMk_right).eNorm.pow_const 2).aemeasurable).mpr
+        hGω.2
+    have hlint : (∫⁻ s, ‖Finance.simpleHolding (σ k) (n k) (a k) s ω - H s ω‖ₑ ^ 2
+          ∂timeMeasure t) =
+        ∫⁻ s, ‖Finance.simpleHolding (σ k) (n k) (a k) s ω - Hseq (m k) s ω‖ₑ ^ 2
+          ∂timeMeasure t :=
+      lintegral_congr_ae (hHeq_ae.mono fun _ hs ↦ by dsimp only at hs ⊢; rw [hs])
+    dsimp only [Set.mem_ofPred_eq] at hω ⊢
+    exact hk.le.trans (hlint ▸ hω)
+  · let N : Set Ω := {ω | ¬ ∀ j, MeasureTheory.stoppedProcess I (τ j) t ω = U j t ω}
+    have hN : P N = 0 := ae_iff.mp ((ae_all_iff.mpr hstop).mono fun ω hω j ↦ hω j t)
+    refine TauCeti.tendsto_measure_of_subset_union hinv hN
+      (Eventually.of_forall fun k ↦ (hGm k).le) (Eventually.of_forall fun k ↦ (hMk k).le) ?_
+    filter_upwards [hinv.eventually (gt_mem_nhds hε)] with k hk ω hω
+    by_cases hNω : ω ∈ N
+    · exact Or.inl hNω
+    · by_cases hGω : ω ∈ G (m k)
+      · refine Or.inr (Or.inr ?_)
+        have hIU : I t ω = U (m k) t ω := by
+          have h1 := (not_not.mp hNω) (m k)
+          rwa [MeasureTheory.stoppedProcess_eq_of_le hGω.1.le] at h1
+        dsimp only [Set.mem_ofPred_eq] at hω ⊢
+        exact hk.le.trans (hIU ▸ hω)
+      · exact Or.inr (Or.inl hGω)
 
 /-- **Adjacent stochastic-interval concatenation for stopped Itô integrals.** For ordered random
 times `σ ≤ τ ≤ ρ` where `σ` and `ρ` are stopping times, summing Itô integrals of `1_{(σ, τ]} H` and

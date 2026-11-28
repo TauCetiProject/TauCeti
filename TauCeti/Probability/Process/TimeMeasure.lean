@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 public import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Measure.Prod
 
 /-!
 # Lebesgue time measure on a finite nonnegative horizon
@@ -161,22 +162,9 @@ theorem tendsto_indicator_Ioc_prod_ae {Ω E : Type*} {mΩ : MeasurableSpace Ω}
     (f : ℝ≥0 × Ω → E) :
     ∀ᵐ p ∂((timeMeasure T).prod P),
       Tendsto (fun s ↦ (Ioc a s ×ˢ A).indicator f p)
-        (𝓝 t) (𝓝 ((Ioc a t ×ˢ A).indicator f p)) := by
-  have hnull : ((timeMeasure T).prod P) ({t} ×ˢ (univ : Set Ω)) = 0 := by
-    rw [Measure.prod_prod, measure_singleton, zero_mul]
-  filter_upwards [compl_mem_ae_iff.mpr hnull] with p hp
-  by_cases hbase : a < p.fst ∧ p.snd ∈ A
-  · have hne : p.fst ≠ t := fun h ↦ hp ⟨h, mem_univ _⟩
-    rcases hne.lt_or_gt with hlt | hgt
-    · refine tendsto_const_nhds.congr' ?_
-      filter_upwards [Ioi_mem_nhds hlt] with s (hs : p.fst < s)
-      simp [hbase.1, hbase.2, hlt.le, hs.le]
-    · refine tendsto_const_nhds.congr' ?_
-      filter_upwards [Iio_mem_nhds hgt] with s (hs : s < p.fst)
-      simp [hgt.not_ge, hs.not_ge]
-  · refine tendsto_const_nhds.congr fun s ↦ ?_
-    have hnot (u : ℝ≥0) : p ∉ Ioc a u ×ˢ A := fun h ↦ hbase ⟨h.1.1, h.2⟩
-    simp [hnot]
+        (𝓝 t) (𝓝 ((Ioc a t ×ˢ A).indicator f p)) :=
+  Measure.tendsto_indicator_Ioc_prod_ae
+    (by rw [Measure.prod_prod, measure_singleton, zero_mul]) a A f
 
 /-- Restricting time measure again clips the horizon to the smaller endpoint. -/
 @[simp]

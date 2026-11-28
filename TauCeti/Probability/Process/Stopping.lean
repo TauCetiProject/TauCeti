@@ -278,6 +278,6 @@ theorem stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
     (hXY : X ≡ᵐ[P] Y) (τ : Ω → WithTop ι) :
     MeasureTheory.stoppedProcess X τ ≡ᵐ[P] MeasureTheory.stoppedProcess Y τ := by
   filter_upwards [hXY] with ω hω t
-  simp only [MeasureTheory.stoppedProcess_eq_stoppedValue_apply, MeasureTheory.stoppedValue, hω]
+  simp only [MeasureTheory.stoppedProcess_apply, hω]
 
 end ProbabilityTheory.Indistinguishable

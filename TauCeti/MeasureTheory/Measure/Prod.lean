@@ -71,6 +71,10 @@ argument (`MeasureTheory.Measure.ae_ae_eq_flip_of_ae_eq_uncurry`).
 
 Projecting the graph pushforward along `(T, id)` onto the second coordinate recovers the original
 measure (`MeasureTheory.Measure.snd_map_prodMk_id₀` and `MeasureTheory.Measure.snd_map_prodMk_id`).
+
+If a joint measure assigns zero mass to a boundary slice `{t} ×ˢ univ`, then moving the right
+endpoint of an interval-rectangle indicator `Ioc a s ×ˢ A` converges almost everywhere as
+`s → t` (`MeasureTheory.Measure.tendsto_indicator_Ioc_prod_ae`).
 -/
 
 public section
@@ -563,5 +567,40 @@ theorem snd_map_prodMk_id {X S : Type*} [MeasurableSpace X] [MeasurableSpace S]
     {μ : Measure X} {T : X → S} (hT : Measurable T) :
     (μ.map fun x ↦ (T x, x)).snd = μ :=
   snd_map_prodMk_id₀ hT.aemeasurable
+
+section IndicatorTendsto
+
+open Filter
+open scoped Topology
+
+/-- If a joint measure assigns zero mass to the boundary slice `{t} ×ˢ univ`, then moving the
+right endpoint of an interval-rectangle indicator `Ioc a s ×ˢ A` converges pointwise almost
+everywhere as `s → t`. -/
+theorem tendsto_indicator_Ioc_prod_ae {α Ω E : Type*}
+    [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
+    [TopologicalSpace E] [Zero E]
+    {_ : MeasurableSpace (α × Ω)} {μ : Measure (α × Ω)} {t : α}
+    (hμ : μ ({t} ×ˢ (Set.univ : Set Ω)) = 0)
+    (a : α) (A : Set Ω) (f : α × Ω → E) :
+    ∀ᵐ p ∂μ,
+      Tendsto (fun s ↦ (Set.Ioc a s ×ˢ A).indicator f p)
+        (𝓝 t) (𝓝 ((Set.Ioc a t ×ˢ A).indicator f p)) := by
+  have hnull : ∀ᵐ p ∂μ, p ∉ ({t} ×ˢ (Set.univ : Set Ω)) :=
+    measure_eq_zero_iff_ae_notMem.mp hμ
+  filter_upwards [hnull] with p hp
+  by_cases hbase : a < p.fst ∧ p.snd ∈ A
+  · have hne : p.fst ≠ t := fun h ↦ hp ⟨h, Set.mem_univ _⟩
+    rcases hne.lt_or_gt with hlt | hgt
+    · refine tendsto_const_nhds.congr' ?_
+      filter_upwards [Ioi_mem_nhds hlt] with s (hs : p.fst < s)
+      simp [hbase.1, hbase.2, hlt.le, hs.le]
+    · refine tendsto_const_nhds.congr' ?_
+      filter_upwards [Iio_mem_nhds hgt] with s (hs : s < p.fst)
+      simp [hgt.not_ge, hs.not_ge]
+  · refine tendsto_const_nhds.congr fun s ↦ ?_
+    have hnot (u : α) : p ∉ Set.Ioc a u ×ˢ A := fun h ↦ hbase ⟨h.1.1, h.2⟩
+    simp [hnot]
+
+end IndicatorTendsto
 
 end MeasureTheory.Measure

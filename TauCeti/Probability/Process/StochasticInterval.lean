@@ -8,6 +8,8 @@ module
 public import Mathlib.Probability.Process.Predictable
 public import Mathlib.Probability.Process.Stopping
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
+import TauCeti.Order.Interval.Set.Piecewise
+import Mathlib.Tactic.Abel
 
 /-!
 # Predictable stochastic intervals
@@ -17,7 +19,9 @@ and `[0,τ]` are predictable. An event known at `σ` can also be imposed on `(σ
 Consequently, cutting a predictable integrand off at a stopping time preserves
 predictability. No right continuity or completeness of the filtration is needed.
 On any linearly ordered time index, half-open stochastic intervals `[σ, τ)` (and their
-restrictions to an event) equal differences of closed stochastic rays `[σ, ∞) \ [τ, ∞)`.
+restrictions to an event) equal differences of closed stochastic rays `[σ, ∞) \ [τ, ∞)`,
+and process-level cutoffs on `(σ, τ]` decompose into initial cutoffs and concatenate across
+intermediate bounds (`TauCeti.ite_Ioc_fun_eq_sub_ite_le`, `TauCeti.ite_Ioc_fun_eq_add_ite_Ioc`).
 
 The lower integral of a nonnegative integrand cut off at `τ` is the stopped cumulative
 integral. This pathwise identity includes infinite energies and infinite stopping times;
@@ -168,5 +172,28 @@ theorem stochasticIco_eq_sdiff {ι Ω : Type*} [LinearOrder ι]
     {p : ι × Ω | σ p.2 ≤ p.1 ∧ (p.1 : WithTop ι) < τ p.2} =
       {p : ι × Ω | σ p.2 ≤ p.1} \ {p : ι × Ω | τ p.2 ≤ p.1} := by
   simpa using stochasticIco_inter_eq_sdiff σ τ Set.univ
+
+/-- Function-level restriction to a stochastic interval `(σ, τ]` equals subtracting the cutoff
+at `σ` from the cutoff at `τ`, whenever `σ ≤ τ`. -/
+theorem ite_Ioc_fun_eq_sub_ite_le {ι Ω α G : Type*} [LinearOrder α] [AddGroup G]
+    {σ τ : Ω → α} (hστ : σ ≤ τ) (x : ι → α) (H : ι → Ω → G) :
+    (fun (t : ι) ω ↦ if σ ω < x t ∧ x t ≤ τ ω then H t ω else 0) =
+      fun (t : ι) ω ↦
+        (if x t ≤ τ ω then H t ω else 0) - (if x t ≤ σ ω then H t ω else 0) := by
+  ext t ω
+  exact ite_Ioc_eq_sub_ite_le (hστ ω) (H t ω)
+
+/-- Function-level restriction to `(σ, ρ]` splits as the sum of restrictions to `(σ, τ]` and
+`(τ, ρ]`, whenever `σ ≤ τ ≤ ρ`. -/
+theorem ite_Ioc_fun_eq_add_ite_Ioc {ι Ω α G : Type*} [LinearOrder α] [AddCommGroup G]
+    {σ τ ρ : Ω → α} (hστ : σ ≤ τ) (hτρ : τ ≤ ρ) (x : ι → α) (H : ι → Ω → G) :
+    (fun (t : ι) ω ↦ if σ ω < x t ∧ x t ≤ ρ ω then H t ω else 0) =
+      fun (t : ι) ω ↦
+        (if σ ω < x t ∧ x t ≤ τ ω then H t ω else 0) +
+          (if τ ω < x t ∧ x t ≤ ρ ω then H t ω else 0) := by
+  ext t ω
+  rw [ite_Ioc_eq_sub_ite_le ((hστ.trans hτρ) ω), ite_Ioc_eq_sub_ite_le (hστ ω),
+    ite_Ioc_eq_sub_ite_le (hτρ ω)]
+  abel
 
 end TauCeti

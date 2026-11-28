@@ -33,8 +33,9 @@ finite-measure assumption.
 
 Stopped-value convergence is asserted only at finite times: the native value at infinity
 is a fallback, not a terminal path limit. For a finite horizon `T`, clipping the dyadic
-grid at `⌈T * 2 ^ n⌉₊` gives cell events measurable at the clipped left endpoints
-(`MeasureTheory.IsStoppingTime.measurableSet_gt_dyadicCeilTime`) and a telescoping
+`dyadicCellEvent` measurable at every unclipped left endpoint
+(`MeasureTheory.IsStoppingTime.measurableSet_dyadicCellEvent`) and at clipped left endpoints
+(`MeasureTheory.IsStoppingTime.measurableSet_gt_dyadicCeilTime`), together with a telescoping
 stopped-increment formula (`TauCeti.sum_indicator_stopped_sub_eq_stoppedProcess`) for any
 process starting at zero.
 
@@ -294,17 +295,23 @@ theorem sum_indicator_stopped_sub_eq_stoppedProcess {Ω E : Type*} [AddCommGroup
   let d : ℕ → ℝ≥0 := fun k ↦ (k : ℝ≥0) / 2 ^ m
   let N : ℕ := ⌈T * 2 ^ m⌉₊
   have h2pos : (0 : ℝ≥0) < 2 ^ m := by positivity
-  have ht0 : t 0 = 0 := dyadicGridClip_zero m T
-  have htN : t N = T := dyadicGridClip_ceil m T
+  have htele (q : ℕ) (hqN : q ≤ N) (hlt : ∀ k < q, ω ∈ A k)
+      (hge : ∀ k, q ≤ k → k < N → ω ∉ A k) :
+      (∑ k ∈ Finset.range N, (A k).indicator (fun ω' ↦ I (t (k + 1)) ω' - I (t k) ω') ω) =
+        I (t q) ω := by
+    rw [← Finset.sum_subset (Finset.range_mono hqN)]
+    · rw [Finset.sum_congr rfl fun k hk ↦ indicator_of_mem (hlt k (Finset.mem_range.mp hk)) _,
+        Finset.sum_range_sub (fun k ↦ I (t k) ω) q]
+      simp only [t, dyadicGridClip_zero, hI0, sub_zero]
+    · exact fun k hkN hkq ↦
+        indicator_of_notMem (hge k (not_lt.mp (Finset.mem_range.not.mp hkq))
+          (Finset.mem_range.mp hkN)) _
   rcases le_or_gt (T : WithTop ℝ≥0) (σ ω) with hTσ | hTσ
-  · have hsum : (∑ k ∈ Finset.range N,
-          (A k).indicator (fun ω' ↦ I (t (k + 1)) ω' - I (t k) ω') ω) =
-        ∑ k ∈ Finset.range N, (I (t (k + 1)) ω - I (t k) ω) :=
-      Finset.sum_congr rfl fun k hk ↦ indicator_of_mem
-        ((WithTop.coe_lt_coe.mpr (dyadic_div_lt_of_lt_ceil (Finset.mem_range.mp hk))).trans_le hTσ)
-        _
-    rw [hsum, Finset.sum_range_sub (fun k ↦ I (t k) ω) N, htN, ht0, hI0,
-      sub_zero, stoppedProcess_eq_of_le hTσ]
+  · rw [htele N le_rfl
+        (fun k hk ↦ (WithTop.coe_lt_coe.mpr (dyadic_div_lt_of_lt_ceil hk)).trans_le hTσ)
+        (fun _ hN hk ↦ (not_lt.mpr hN hk).elim),
+      stoppedProcess_eq_of_le hTσ]
+    simp only [t, N, dyadicGridClip_ceil]
   · cases hτω : τ ω with
     | top => simp only [σ, hτω, dyadicCeilTime_top] at hTσ; exact (not_top_lt hTσ).elim
     | coe v =>
@@ -313,23 +320,15 @@ theorem sum_indicator_stopped_sub_eq_stoppedProcess {Ω E : Type*} [AddCommGroup
         dsimp only [σ, d, q]; rw [hτω, dyadicCeilTime_coe]
       have hqN : q < N :=
         Nat.lt_ceil.mpr ((div_lt_iff₀ h2pos).mp (WithTop.coe_lt_coe.mp (hdyad ▸ hTσ)))
-      have hsum : (∑ k ∈ Finset.range N,
-            (A k).indicator (fun ω' ↦ I (t (k + 1)) ω' - I (t k) ω') ω) =
-          ∑ k ∈ Finset.range q, (I (t (k + 1)) ω - I (t k) ω) := by
-        dsimp only [σ] at hdyad
-        rw [← Finset.sum_subset (Finset.range_mono hqN.le)]
-        · exact Finset.sum_congr rfl fun k hk ↦ indicator_of_mem (by
-            simp only [A, mem_dyadicCellEvent, hdyad, WithTop.coe_lt_coe]
-            exact div_lt_div_of_pos_right (Nat.cast_lt.mpr (Finset.mem_range.mp hk)) h2pos) _
-        · exact fun k _ hk ↦ indicator_of_notMem (fun h ↦ hk <| Finset.mem_range.mpr <| by
-            simp only [A, mem_dyadicCellEvent, hdyad, d, WithTop.coe_lt_coe,
-              div_lt_div_iff_of_pos_right h2pos, Nat.cast_lt] at h
-            exact h) _
-      have htq : t q = d q := dyadicGridClip_of_lt_ceil hqN
-      have huntop : (σ ω).untopA = d q := by
-        rw [hdyad]; exact WithTop.untopD_coe _ _
-      rw [hsum, Finset.sum_range_sub (fun k ↦ I (t k) ω) q, htq, ht0, hI0, sub_zero,
-        stoppedProcess_eq_of_ge hTσ.le, huntop]
+      have hmem_iff (k : ℕ) : ω ∈ A k ↔ k < q := by
+        dsimp only [A, σ] at hdyad ⊢
+        simp only [mem_dyadicCellEvent, hdyad, d, WithTop.coe_lt_coe,
+          div_lt_div_iff_of_pos_right h2pos, Nat.cast_lt]
+      rw [htele q hqN.le (fun k hk ↦ (hmem_iff k).2 hk)
+          (fun k hk _ hmem ↦ not_lt.mpr hk ((hmem_iff k).1 hmem)),
+        stoppedProcess_eq_of_ge hTσ.le, hdyad]
+      simp only [t, d, dyadicGridClip_of_lt_ceil hqN, WithTop.untopA_eq_untop WithTop.coe_ne_top,
+        WithTop.untop_coe]
 
 end TauCeti
 
@@ -347,6 +346,13 @@ theorem dyadicCeilTime (hτ : IsStoppingTime ℱ τ) (n : ℕ) :
     rw [div_le_iff₀ (by positivity)]
     exact Nat.floor_le (by positivity)) _ (hτ _)
 
+/-- For any dyadic cell index `k`, the cell event `TauCeti.dyadicCellEvent m τ k` is measurable
+at the unclipped left endpoint `(k : ℝ≥0) / 2 ^ m`. -/
+theorem measurableSet_dyadicCellEvent (hτ : IsStoppingTime ℱ τ) (m k : ℕ) :
+    MeasurableSet[ℱ ((k : ℝ≥0) / 2 ^ m)] (TauCeti.dyadicCellEvent m τ k) := by
+  simpa only [TauCeti.dyadicCellEvent, compl_ofPred, not_le] using
+    (hτ.dyadicCeilTime m ((k : ℝ≥0) / 2 ^ m)).compl
+
 /-- For any dyadic cell index strictly below `⌈T * 2 ^ m⌉₊`, the cell event
 `TauCeti.dyadicCellEvent m τ k` is measurable at the clipped left endpoint
 `TauCeti.dyadicGridClip m T k`. -/
@@ -354,8 +360,7 @@ theorem measurableSet_gt_dyadicCeilTime (hτ : IsStoppingTime ℱ τ)
     (m : ℕ) {T : ℝ≥0} {k : ℕ} (hk : k < ⌈T * 2 ^ m⌉₊) :
     MeasurableSet[ℱ (TauCeti.dyadicGridClip m T k)] (TauCeti.dyadicCellEvent m τ k) := by
   rw [TauCeti.dyadicGridClip_of_lt_ceil hk]
-  simpa only [TauCeti.dyadicCellEvent, compl_ofPred, not_le] using
-    (hτ.dyadicCeilTime m ((k : ℝ≥0) / 2 ^ m)).compl
+  exact hτ.measurableSet_dyadicCellEvent m k
 
 /-- At any stopping time `τ` on a raw filtration indexed by `ℝ≥0`, the restarted increment path
 `t ↦ stoppedValue X (fun ω' ↦ τ ω' + t) ω - stoppedValue X τ ω` of an almost-surely

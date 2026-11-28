@@ -13,6 +13,8 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Order.Interval.Set.Pi
 import TauCeti.Analysis.Normed.Module.Basic
@@ -1313,11 +1315,8 @@ real part of the lower integral of its squared extended norm. -/
 theorem integral_norm_sq_eq_toReal_lintegral_enorm {alpha F : Type*} [MeasurableSpace alpha]
     {m : Measure alpha} [SeminormedAddGroup F] {f : alpha → F} (hf : AEStronglyMeasurable f m) :
     ∫ x, ‖f x‖ ^ 2 ∂m = (∫⁻ x, ‖f x‖ₑ ^ 2 ∂m).toReal := by
-  rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ sq_nonneg _)
-    ((continuous_norm.comp_aestronglyMeasurable hf).pow 2)]
-  congr 1
-  refine lintegral_congr fun x ↦ ?_
-  rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+  rw [integral_norm_sq_eq_toReal_eLpNorm_sq hf, ← ENNReal.toReal_pow,
+    TauCeti.eLpNorm_two_sq_eq_lintegral hf]
 
 /-- The integral of the square of an a.e. strongly measurable real-valued function is the real
 part of the lower integral of its squared extended norm. -/

@@ -93,11 +93,9 @@ theorem l2Integral_uncurry_eq_wienerIntegral (hW : IsFilteredPreBrownianReal ℱ
       Lp.compMeasurePreserving Prod.fst (ℱ.measurePreserving_fst_predictableMeasure P T)
         (hh.toLp h) := by
     rw [Lp.toLp_compMeasurePreserving hh (ℱ.measurePreserving_fst_predictableMeasure P T)]
-    refine Lp.ext ?_
-    filter_upwards [hh_pred.coeFn_toLp,
-      (hh.comp_measurePreserving (ℱ.measurePreserving_fst_predictableMeasure P T)).coeFn_toLp]
-      with p h1 h2
-    rw [h1, h2, Function.comp_apply, Function.uncurry_apply_pair]
+    exact MemLp.toLp_congr hh_pred
+      (hh.comp_measurePreserving (ℱ.measurePreserving_fst_predictableMeasure P T))
+      Filter.EventuallyEq.rfl
   rw [hcomp, hW.l2Integral_compMeasurePreserving_fst T (hh.toLp h)]
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

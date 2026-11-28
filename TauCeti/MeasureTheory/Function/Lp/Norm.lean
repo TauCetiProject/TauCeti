@@ -529,10 +529,11 @@ theorem integral_norm_sq_eq_toReal_eLpNorm_sq {alpha F : Type*} [MeasurableSpace
     {m : Measure alpha} [SeminormedAddGroup F] {f : alpha → F} (hf : AEStronglyMeasurable f m) :
     ∫ x, ‖f x‖ ^ 2 ∂m = (eLpNorm f 2 m).toReal ^ 2 := by
   rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ sq_nonneg _)
-    ((continuous_norm.comp_aestronglyMeasurable hf).pow 2)]
-  have h : (∫⁻ x, ENNReal.ofReal (‖f x‖ ^ 2) ∂m) = ∫⁻ x, ‖f x‖ₑ ^ 2 ∂m :=
-    lintegral_congr fun x ↦ by rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
-  rw [h, ← ENNReal.toReal_pow, TauCeti.eLpNorm_two_sq_eq_lintegral hf]
+      ((continuous_norm.comp_aestronglyMeasurable hf).pow 2),
+    ← ENNReal.toReal_pow, TauCeti.eLpNorm_two_sq_eq_lintegral hf]
+  congr 1
+  refine lintegral_congr fun x ↦ ?_
+  rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
 
 /-- L² convergence implies convergence of the integral of the squared norm, for any measure
 and any normed additive group of values. -/
