@@ -24,8 +24,8 @@ sheaf, `SheafOfModules.pullbackOverUnitIso_hom_comp_overFunctorCompPullbackOverI
 
 * `SheafOfModules.restrictPullbackIso` and `SheafOfModules.restrictPullbackIso_hom_app`:
   compatibility of module pullback with open-subspace restriction, and its component formula;
-* `SheafOfModules.pullbackOver` (with `pullbackOver_map`): the induced pullback functor between
-  slice sites;
+* `SheafOfModules.pullbackOver` (with `pullbackOver_obj`, `pullbackOver_map`): the induced pullback
+  functor between slice sites;
 * `SheafOfModules.pullbackOverUnitIso` (with `pullbackOverUnitIso_hom`): unit preservation for
   `pullbackOver`;
 * `SheafOfModules.overFunctorCompPullbackOverIso` (with `overFunctorCompPullbackOverIso_hom_app`)
@@ -98,7 +98,6 @@ theorem restrictPullbackIso_hom_app [(pushforward.{v} φ).IsRightAdjoint]
 /-- Pullback along `(f, φ)` read between slice sites over `V : Opens Y` and
 `(Opens.map f).obj V : Opens X`, obtained by conjugating pullback along
 `Opens.sheafHomResLE φ V ((Opens.map f).obj V) le_rfl` by Mathlib's `sheafOfModulesEquivOver`. -/
-@[expose]
 def pullbackOver (V : Opens Y) :
     SheafOfModules.{u} (S.over V) ⥤ SheafOfModules.{u} (R.over ((Opens.map f).obj V)) :=
   let eV : SheafOfModules.{u} (S.over V) ≌
@@ -110,14 +109,25 @@ def pullbackOver (V : Opens Y) :
     ((Opens.map f).obj V).sheafOfModulesEquivOver R
   eV.functor ⋙ pullback.{u} (Opens.sheafHomResLE φ V ((Opens.map f).obj V) le_rfl) ⋙ eU.inverse
 
+/-- Action of `pullbackOver φ V` on an object `M : SheafOfModules (S.over V)`. -/
+theorem pullbackOver_obj (V : Opens Y) (M : SheafOfModules.{u} (S.over V)) :
+    (pullbackOver φ V).obj M =
+      (((Opens.map f).obj V).sheafOfModulesEquivOver R).inverse.obj
+        ((pullback.{u} (Opens.sheafHomResLE φ V ((Opens.map f).obj V) le_rfl)).obj
+          ((V.sheafOfModulesEquivOver S).functor.obj M)) := by
+  unfold pullbackOver
+  rfl
+
 /-- Action of `pullbackOver φ V` on a morphism of module sheaves over `V`. -/
 theorem pullbackOver_map (V : Opens Y) {M N : SheafOfModules.{u} (S.over V)} (g : M ⟶ N) :
     (pullbackOver φ V).map g =
-      (((Opens.map f).obj V).sheafOfModulesEquivOver R).inverse.map
-        ((pullback.{u} (Opens.sheafHomResLE φ V ((Opens.map f).obj V) le_rfl)).map
-          ((V.sheafOfModulesEquivOver S).functor.map g)) := by
+      eqToHom (pullbackOver_obj φ V M) ≫
+        (((Opens.map f).obj V).sheafOfModulesEquivOver R).inverse.map
+          ((pullback.{u} (Opens.sheafHomResLE φ V ((Opens.map f).obj V) le_rfl)).map
+            ((V.sheafOfModulesEquivOver S).functor.map g)) ≫
+        eqToHom (pullbackOver_obj φ V N).symm := by
   unfold pullbackOver
-  rfl
+  exact (Category.id_comp _).symm.trans (Category.comp_id _).symm
 
 /-- Slice-site pullback `pullbackOver φ V` is a left adjoint. -/
 instance isLeftAdjoint_pullbackOver (V : Opens Y) : (pullbackOver φ V).IsLeftAdjoint :=
@@ -154,7 +164,8 @@ theorem pullbackOverUnitIso_hom (V : Opens Y) :
           ((((Opens.map f).obj V).sheafOfModulesEquivOverUnit R).hom ≫
             (pullbackObjUnitIso (Opens.sheafHomResLE φ V ((Opens.map f).obj V) le_rfl)).inv ≫
             (pullback.{u} (Opens.sheafHomResLE φ V ((Opens.map f).obj V) le_rfl)).map
-              (V.sheafOfModulesEquivOverUnit S).inv) := by
+              (V.sheafOfModulesEquivOverUnit S).inv) ≫
+        eqToHom (pullbackOver_obj φ V (unit (S.over V))).symm := by
   unfold pullbackOverUnitIso pullbackOver Opens.sheafOfModulesEquivOverInverseUnit
   dsimp [Opens.sheafRestrict, Topology.IsOpenEmbedding.sheafPullback]
   simp only [Category.assoc]
@@ -189,7 +200,8 @@ def overFunctorCompPullbackOverIso [(pushforward.{u} φ).IsRightAdjoint] (V : Op
 theorem overFunctorCompPullbackOverIso_hom_app [(pushforward.{u} φ).IsRightAdjoint]
     (V : Opens Y) (M : SheafOfModules.{u} S) :
     (overFunctorCompPullbackOverIso φ V).hom.app M =
-      (((Opens.map f).obj V).sheafOfModulesEquivOver R).inverse.map
+      eqToHom (pullbackOver_obj φ V ((overFunctor.{u} S V).obj M)) ≫
+        (((Opens.map f).obj V).sheafOfModulesEquivOver R).inverse.map
           ((pullback.{u} (Opens.sheafHomResLE φ V ((Opens.map f).obj V) le_rfl)).map
               ((V.overFunctorCompSheafOfModulesEquivOver S).hom.app M) ≫
             (restrictPullbackIso φ V ((Opens.map f).obj V) le_rfl).inv.app M ≫
@@ -362,69 +374,36 @@ theorem pullbackOverUnitIso_hom_comp_overFunctorCompPullbackOverIso_hom_app
   have hnat := (eU.unitIso.inv.naturality
     ((overFunctor.{u} R U).map (pullbackObjUnitToUnit φ) ≫
       (overFunctorUnitIso R U).inv)).symm
-  dsimp only [Functor.id_map] at hnat
+  dsimp only [Functor.id_map, Functor.comp_map] at hnat
   rw [pullbackOverUnitIso_hom, pullbackOver_map, overFunctorCompPullbackOverIso_hom_app, hcomp]
+  have heq1 :
+      eqToHom (pullbackOver_obj φ V (unit (S.over V))).symm ≫
+        eqToHom (pullbackOver_obj φ V (unit (S.over V))) = 𝟙 _ := by simp
+  have heq2 :
+      eqToHom (pullbackOver_obj φ V ((overFunctor.{u} S V).obj (unit S))).symm ≫
+        eqToHom (pullbackOver_obj φ V ((overFunctor.{u} S V).obj (unit S))) = 𝟙 _ := by simp
+  simp only [Category.assoc]
+  erw [reassoc_of% heq1, reassoc_of% heq2]
   dsimp only [eU, U] at hnat ⊢
-  have htail0 :
-      (eU.inverse.map
-          ((pullback.{u} (Opens.sheafHomResLE φ V U le_rfl)).map
-              ((V.overFunctorCompSheafOfModulesEquivOver S).hom.app (unit S)) ≫
-            (restrictPullbackIso φ V U le_rfl).inv.app (unit S) ≫
-            (U.overFunctorCompSheafOfModulesEquivOver R).inv.app
-              ((pullback.{u} φ).obj (unit S))) ≫
-          eU.unitIso.inv.app ((overFunctor.{u} R U).obj ((pullback.{u} φ).obj (unit S)))) ≫
-        ((overFunctor.{u} R U).map (pullbackObjUnitToUnit φ) ≫ (overFunctorUnitIso R U).inv) =
-      eU.inverse.map
-          ((pullback.{u} (Opens.sheafHomResLE φ V U le_rfl)).map
-              ((V.overFunctorCompSheafOfModulesEquivOver S).hom.app (unit S)) ≫
-            (restrictPullbackIso φ V U le_rfl).inv.app (unit S) ≫
-            (U.overFunctorCompSheafOfModulesEquivOver R).inv.app
-              ((pullback.{u} φ).obj (unit S)) ≫
-            eU.functor.map ((overFunctor.{u} R U).map (pullbackObjUnitToUnit φ)) ≫
-            eU.functor.map (overFunctorUnitIso R U).inv) ≫
-        eU.unitIso.inv.app (unit (R.over U)) := by
-    erw [Category.assoc, hnat, ← Category.assoc, ← eU.inverse.map_comp, eU.functor.map_comp,
-      Category.assoc, Category.assoc]
-  have htail :
-      (eU.inverse.map
-          ((pullback.{u} (Opens.sheafHomResLE φ V U le_rfl)).map
-              ((V.overFunctorCompSheafOfModulesEquivOver S).hom.app (unit S)) ≫
-            (restrictPullbackIso φ V U le_rfl).inv.app (unit S) ≫
-            (U.overFunctorCompSheafOfModulesEquivOver R).inv.app
-              ((pullback.{u} φ).obj (unit S))) ≫
-          eU.unitIso.inv.app ((overFunctor.{u} R U).obj ((pullback.{u} φ).obj (unit S)))) ≫
-        ((overFunctor.{u} R U).map (pullbackObjUnitToUnit φ) ≫ (overFunctorUnitIso R U).inv) ≫
-        (overFunctorUnitIso R U).hom =
-      eU.inverse.map
-          ((pullback.{u} (Opens.sheafHomResLE φ V U le_rfl)).map
-              ((V.overFunctorCompSheafOfModulesEquivOver S).hom.app (unit S)) ≫
-            (restrictPullbackIso φ V U le_rfl).inv.app (unit S) ≫
-            (U.overFunctorCompSheafOfModulesEquivOver R).inv.app
-              ((pullback.{u} φ).obj (unit S)) ≫
-            eU.functor.map ((overFunctor.{u} R U).map (pullbackObjUnitToUnit φ)) ≫
-            eU.functor.map (overFunctorUnitIso R U).inv) ≫
-        eU.unitIso.inv.app (unit (R.over U)) ≫ (overFunctorUnitIso R U).hom := by
-    erw [← Category.assoc]
-    exact (reassoc_of% htail0) (overFunctorUnitIso R U).hom
+  erw [reassoc_of% hnat, eU.functor.map_comp]
   have hinner :
-      ((U.sheafOfModulesEquivOverUnit R).hom ≫
-          (pullbackObjUnitIso (Opens.sheafHomResLE φ V U le_rfl)).inv ≫
+      (((U.sheafOfModulesEquivOverUnit R).hom ≫
+            (pullbackObjUnitIso (Opens.sheafHomResLE φ V U le_rfl)).inv ≫
+            (pullback.{u} (Opens.sheafHomResLE φ V U le_rfl)).map
+              (V.sheafOfModulesEquivOverUnit S).inv) ≫
           (pullback.{u} (Opens.sheafHomResLE φ V U le_rfl)).map
-            (V.sheafOfModulesEquivOverUnit S).inv) ≫
-        (pullback.{u} (Opens.sheafHomResLE φ V U le_rfl)).map
-          ((V.sheafOfModulesEquivOver S).functor.map (overFunctorUnitIso S V).hom) ≫
-        (pullback.{u} (Opens.sheafHomResLE φ V U le_rfl)).map
-          ((V.overFunctorCompSheafOfModulesEquivOver S).hom.app (unit S)) ≫
-        (restrictPullbackIso φ V U le_rfl).inv.app (unit S) ≫
-        (U.overFunctorCompSheafOfModulesEquivOver R).inv.app ((pullback.{u} φ).obj (unit S)) ≫
-        eU.functor.map ((overFunctor.{u} R U).map (pullbackObjUnitToUnit φ)) ≫
-        eU.functor.map (overFunctorUnitIso R U).inv = 𝟙 _ := by
-    erw [Category.assoc, Category.assoc,
+            ((V.sheafOfModulesEquivOver S).functor.map (overFunctorUnitIso S V).hom)) ≫
+          ((pullback.{u} (Opens.sheafHomResLE φ V U le_rfl)).map
+              ((V.overFunctorCompSheafOfModulesEquivOver S).hom.app (unit S)) ≫
+            (restrictPullbackIso φ V U le_rfl).inv.app (unit S) ≫
+            (U.overFunctorCompSheafOfModulesEquivOver R).inv.app ((pullback.{u} φ).obj (unit S))) ≫
+        (eU.functor.map ((overFunctor.{u} R U).map (pullbackObjUnitToUnit φ)) ≫
+          eU.functor.map (overFunctorUnitIso R U).inv) = 𝟙 _ := by
+    erw [Category.assoc, Category.assoc, Category.assoc, Category.assoc, Category.assoc,
       ← CategoryTheory.Functor.map_comp_assoc, ← CategoryTheory.Functor.map_comp_assoc]
     exact pullbackOverUnitIso_inner φ V U le_rfl
-  dsimp only [eU, U] at htail hinner
-  erw [Category.assoc, htail,
-    ← eU.inverse.map_comp_assoc, ← eU.inverse.map_comp_assoc,
+  dsimp only [eU, U] at hinner
+  erw [← eU.inverse.map_comp_assoc, ← eU.inverse.map_comp_assoc, ← eU.inverse.map_comp_assoc,
     hinner, CategoryTheory.Functor.map_id, Category.id_comp, Iso.hom_inv_id_app_assoc]
 
 end UnitCompatibility

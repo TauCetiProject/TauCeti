@@ -22,8 +22,10 @@ compatibly with Mathlib's slice equivalence unit comparison `U.sheafOfModulesEqu
 ## Main declarations
 
 * `TopologicalSpace.Opens.sheafOfModulesRestrictUnitIso` (with forward formula
-  `sheafOfModulesRestrictUnitIso_hom`): open-subspace restriction preserves the unit sheaf of
-  modules;
+  `sheafOfModulesRestrictUnitIso_hom`, adjunction transpose
+  `sheafOfModulesRestrictAdj_homEquiv_sheafOfModulesRestrictUnitIso_hom`, and sectionwise
+  characterization `sheafOfModulesRestrictUnitIso_hom_val_app`): open-subspace restriction
+  preserves the unit sheaf of modules;
 * `TopologicalSpace.Opens.sheafOfModulesEquivOverUnit_inv_comp_sheafOfModulesRestrictUnitIso_hom`:
   compatibility of `sheafOfModulesRestrictUnitIso` with the slice equivalence unit comparison.
 
@@ -62,6 +64,59 @@ theorem sheafOfModulesRestrictUnitIso_hom :
   unfold sheafOfModulesRestrictUnitIso
   rw [Iso.trans_hom, Iso.app_hom, SheafOfModules.pullbackObjUnitIso_hom]
 
+/-- Under `sheafOfModulesRestrictAdj`, transposing `(U.sheafOfModulesRestrictUnitIso R).hom`
+produces `unitToPushforwardObjUnit (U.sheafInclusionHom RingCat R)`. -/
+theorem sheafOfModulesRestrictAdj_homEquiv_sheafOfModulesRestrictUnitIso_hom :
+    (U.sheafOfModulesRestrictAdj.{u} R).homEquiv _ _ (U.sheafOfModulesRestrictUnitIso R).hom =
+      SheafOfModules.unitToPushforwardObjUnit (U.sheafInclusionHom RingCat.{u} R) := by
+  rw [sheafOfModulesRestrictUnitIso_hom, Adjunction.homEquiv_naturality_right,
+    U.sheafOfModulesRestrictAdj_homEquiv_sheafOfModulesRestrictIsoPullback_hom_app,
+    ← Adjunction.homEquiv_unit,
+    SheafOfModules.pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitToUnit]
+
+/-- On sections over `W`, `(U.sheafOfModulesRestrictUnitIso R).hom` acts as the identity on the
+underlying ring sections over `U.isOpenEmbedding.functor.obj W.unop`. -/
+theorem sheafOfModulesRestrictUnitIso_hom_val_app
+    (W : (Opens ((Opens.toTopCat X).obj U))ᵒᵖ)
+    (x : ((U.sheafOfModulesRestrict.{u} R).obj (SheafOfModules.unit R)).val.obj W) :
+    ((U.sheafOfModulesRestrictUnitIso R).hom.val.app W) x =
+      (eqToHom (sheafOfModulesRestrict_obj_val_presheaf_obj U R (SheafOfModules.unit R) W) :
+          ((U.sheafOfModulesRestrict.{u} R).obj (SheafOfModules.unit R)).val.presheaf.obj W ⟶
+            (SheafOfModules.unit R).val.presheaf.obj
+              (Opposite.op (U.isOpenEmbedding.functor.obj W.unop))) x := by
+  have hhom : (U.sheafOfModulesRestrictUnitIso R).hom =
+      (U.sheafOfModulesRestrict.{u} R).map
+        (SheafOfModules.unitToPushforwardObjUnit (U.sheafInclusionHom RingCat.{u} R)) ≫
+      (U.sheafOfModulesRestrictAdj.{u} R).counit.app _ := by
+    rw [← Equiv.symm_apply_apply ((U.sheafOfModulesRestrictAdj.{u} R).homEquiv _ _)
+      (U.sheafOfModulesRestrictUnitIso R).hom,
+      U.sheafOfModulesRestrictAdj_homEquiv_sheafOfModulesRestrictUnitIso_hom R,
+      Adjunction.homEquiv_symm_apply]
+  rw [hhom]
+  change ((U.sheafOfModulesRestrictAdj.{u} R).counit.app _).val.app W
+      (((U.sheafOfModulesRestrict.{u} R).map
+        (SheafOfModules.unitToPushforwardObjUnit (U.sheafInclusionHom RingCat.{u} R))).val.app W
+        x) = _
+  rw [Opens.sheafOfModulesRestrict_map_val_app_apply]
+  refine (Opens.sheafOfModulesRestrictAdj_counit_app_val_app U R
+    (SheafOfModules.unit ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj R)) W _).trans ?_
+  refine (congrArg
+    (((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj R).obj.map
+      (U.isOpenEmbedding.isOpenMap.adjunction.unit.app W.unop).op)
+    (SheafOfModules.unitToPushforwardObjUnit_val_app_apply
+      (U.sheafInclusionHom RingCat.{u} R) _)).trans ?_
+  dsimp only
+  rw [U.sheafInclusionHom_hom_app]
+  change (R.obj.map (U.isOpenEmbedding.isOpenMap.adjunction.counit.app
+      (U.isOpenEmbedding.functor.obj W.unop)).op ≫
+    R.obj.map (U.isOpenEmbedding.functor.map
+      (U.isOpenEmbedding.isOpenMap.adjunction.unit.app W.unop)).op) _ = _
+  rw [← R.obj.map_comp, ← op_comp]
+  refine (congrArg (fun k ↦ R.obj.map k.op _)
+    (U.isOpenEmbedding.isOpenMap.adjunction.left_triangle_components W.unop)).trans ?_
+  rw [op_id, R.obj.map_id]
+  rfl
+
 /-- Comparing the unit sheaf on the slice site over `U` with the unit sheaf on the open subspace
 `U` via `sheafOfModulesEquivOverUnit` and `overFunctorCompSheafOfModulesEquivOver` gives a right
 inverse of `(U.sheafOfModulesRestrictUnitIso R).hom`. -/
@@ -71,80 +126,20 @@ theorem sheafOfModulesEquivOverUnit_inv_comp_sheafOfModulesRestrictUnitIso_hom :
         (U.sheafOfModulesEquivOver R).functor.map (SheafOfModules.overFunctorUnitIso R U).hom ≫
         (U.overFunctorCompSheafOfModulesEquivOver R).hom.app (SheafOfModules.unit R) ≫
         (U.sheafOfModulesRestrictUnitIso R).hom = 𝟙 _ := by
-  have h1 : (U.sheafOfModulesRestrictAdj.{u} R).homEquiv _ _
-      ((U.sheafOfModulesRestrictIsoPullback.{u} R).hom.app (SheafOfModules.unit R) ≫
-        SheafOfModules.pullbackObjUnitToUnit (U.sheafInclusionHom RingCat.{u} R)) =
-      SheafOfModules.unitToPushforwardObjUnit (U.sheafInclusionHom RingCat.{u} R) := by
-    refine (Adjunction.homEquiv_naturality_right _ _ _).trans ?_
-    rw [U.sheafOfModulesRestrictAdj_homEquiv_sheafOfModulesRestrictIsoPullback_hom_app,
-      ← Adjunction.homEquiv_unit,
-      SheafOfModules.pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitToUnit]
-  have h2 := congrArg (fun k ↦ ((U.sheafOfModulesRestrictAdj.{u} R).homEquiv _ _).symm k) h1
-  rw [Equiv.symm_apply_apply] at h2
-  have h0 :
-      ((U.sheafOfModulesEquivOverUnit R).inv ≫
-          (U.sheafOfModulesEquivOver R).functor.map (SheafOfModules.overFunctorUnitIso R U).hom ≫
-          (U.overFunctorCompSheafOfModulesEquivOver R).hom.app (SheafOfModules.unit R)) ≫
-        (U.sheafOfModulesRestrictIsoPullback.{u} R).hom.app (SheafOfModules.unit R) ≫
-        SheafOfModules.pullbackObjUnitToUnit (U.sheafInclusionHom RingCat.{u} R) = 𝟙 _ := by
-    refine (congrArg
+  ext W
+  let W' : (Opens ((Opens.toTopCat X).obj U))ᵒᵖ := W
+  have h1 :
       (((U.sheafOfModulesEquivOverUnit R).inv ≫
-          (U.sheafOfModulesEquivOver R).functor.map (SheafOfModules.overFunctorUnitIso R U).hom ≫
-          (U.overFunctorCompSheafOfModulesEquivOver R).hom.app (SheafOfModules.unit R)) ≫ ·)
-      h2).trans ?_
-    rw [Adjunction.homEquiv_symm_apply]
-    ext W
-    let W' : (Opens ((Opens.toTopCat X).obj U))ᵒᵖ := W
-    let y := ((U.overFunctorCompSheafOfModulesEquivOver R).hom.app
-        (SheafOfModules.unit R)).val.app W'
-      (1 : R.obj.obj (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop)))
-    have hy :
-        (eqToHom (Opens.sheafOfModulesRestrict_obj_val_presheaf_obj U R
-            (SheafOfModules.unit R) W') :
-            ((U.sheafOfModulesRestrict.{u} R).obj (SheafOfModules.unit R)).val.presheaf.obj W' ⟶
-              (SheafOfModules.unit R).val.presheaf.obj
-                (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop)))
-          y = (1 : R.obj.obj (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop))) :=
-      U.overFunctorCompSheafOfModulesEquivOver_hom_app_val_app R (SheafOfModules.unit R) W' _
-    have hstep1 :
-        (((U.sheafOfModulesEquivOverUnit R).inv ≫
-            (U.sheafOfModulesEquivOver R).functor.map
-              (SheafOfModules.overFunctorUnitIso R U).hom ≫
-            (U.overFunctorCompSheafOfModulesEquivOver R).hom.app
-              (SheafOfModules.unit R)).val.app W)
-          (1 : (U.sheafRestrict.obj R).obj.obj W) = y :=
-      congrArg (((U.overFunctorCompSheafOfModulesEquivOver R).hom.app
-        (SheafOfModules.unit R)).val.app W')
-        (SheafOfModules.overFunctorUnitIso_hom_val_app R U _ _)
-    refine (congrArg (((U.sheafOfModulesRestrictAdj.{u} R).counit.app _).val.app W')
-      (congrArg (((U.sheafOfModulesRestrict.{u} R).map _).val.app W') hstep1)).trans ?_
-    rw [Opens.sheafOfModulesRestrict_map_val_app_apply, hy]
-    refine (Opens.sheafOfModulesRestrictAdj_counit_app_val_app U R
-      (SheafOfModules.unit ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj R)) W'
-      (((SheafOfModules.unitToPushforwardObjUnit (U.sheafInclusionHom RingCat.{u} R)).val.app
-        (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop)))
-        (1 : R.obj.obj (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop))))).trans ?_
-    have hunit :
-        ((SheafOfModules.unitToPushforwardObjUnit (U.sheafInclusionHom RingCat.{u} R)).val.app
-            (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop)))
-          (1 : R.obj.obj (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop))) =
-        (1 : ((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj R).obj.obj
-          (Opposite.op
-            ((Opens.map U.inclusion').obj (U.isOpenEmbedding.functor.obj W'.unop)))) := by
-      rw [SheafOfModules.unitToPushforwardObjUnit_val_app_apply, map_one]
-      -- The pushforward ring-sheaf section type matches the restricted ring-sheaf section type
-      -- definitionally.
-      rfl
-    refine (congrArg (fun z ↦ (((U.isOpenEmbedding.sheafPullback RingCat.{u}).obj R).obj.map
-        (U.isOpenEmbedding.isOpenMap.adjunction.unit.app W'.unop).op) z) hunit).trans ?_
-    rw [map_one]
-    -- `U.sheafRestrict.obj R` and `(U.isOpenEmbedding.sheafPullback RingCat).obj R` have
-    -- definitionally equal section rings.
-    rfl
-  unfold sheafOfModulesRestrictUnitIso
-  rw [Iso.trans_hom, Iso.app_hom, SheafOfModules.pullbackObjUnitIso_hom]
-  exact (congrArg (_ ≫ ·) (Category.assoc _ _ _).symm).trans
-    ((Category.assoc _ _ _).symm.trans h0)
+          (U.sheafOfModulesEquivOver R).functor.map
+            (SheafOfModules.overFunctorUnitIso R U).hom).val.app W)
+        (1 : (U.sheafRestrict.obj R).obj.obj W) =
+      (1 : R.obj.obj (Opposite.op (U.isOpenEmbedding.functor.obj W'.unop))) :=
+    SheafOfModules.overFunctorUnitIso_hom_val_app R U _ _
+  refine (congrArg ((U.sheafOfModulesRestrictUnitIso R).hom.val.app W')
+    (congrArg (((U.overFunctorCompSheafOfModulesEquivOver R).hom.app
+      (SheafOfModules.unit R)).val.app W') h1)).trans ?_
+  refine (U.sheafOfModulesRestrictUnitIso_hom_val_app R W' _).trans ?_
+  exact U.overFunctorCompSheafOfModulesEquivOver_hom_app_val_app R (SheafOfModules.unit R) W' _
 
 end UnitRestriction
 
