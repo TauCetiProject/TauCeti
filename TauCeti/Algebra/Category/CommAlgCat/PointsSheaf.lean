@@ -53,16 +53,11 @@ theorem epi_whiskerLeft_of_isLocallySurjective (W : Over (Spec (CommRingCat.of R
   have : ∀ Y : Over (Spec (CommRingCat.of R)),
       Limits.PreservesLimit (Limits.pair W Y) (pointsSheafFunctor R) := fun _ ↦
     Limits.comp_preservesLimit (GrothendieckTopology.uliftYoneda.{u + 1} _) _
-  have heq : (pointsSheafFunctor R).map (W ◁ p) =
-      (prodComparisonIso (pointsSheafFunctor R) W Z).hom ≫
-        (pointsSheaf W ◁ (pointsSheafFunctor R).map p) ≫
-        (prodComparisonIso (pointsSheafFunctor R) W X).inv := by
-    rw [← Category.assoc, Iso.eq_comp_inv, prodComparisonIso_hom, prodComparisonIso_hom]
-    -- `prodComparison_natural_whiskerLeft` uses `CartesianMonoidalCategory`'s monoidal structure
-    -- on `Sheaf`, which is definitionally equal to the `FullSubcategory` monoidal structure used
-    -- in `pointsSheaf W ◁ _`.
-    exact prodComparison_natural_whiskerLeft (pointsSheafFunctor R) p
-  have : Epi ((pointsSheafFunctor R).map (W ◁ p)) := by rw [heq]; infer_instance
+  -- `prodComparison_inv_natural_whiskerLeft` uses `CartesianMonoidalCategory`'s monoidal structure
+  -- on `Sheaf`, which is definitionally equal to the `FullSubcategory` monoidal structure used
+  -- in `pointsSheaf W ◁ _`.
+  have : Epi ((pointsSheafFunctor R).map (W ◁ p)) :=
+    epi_of_epi_fac (prodComparison_inv_natural_whiskerLeft (pointsSheafFunctor R) p)
   exact (pointsSheafFunctor R).epi_of_epi_map this
 
 /-- Equivariance descends along an equivariant morphism whose map on affine points sheaves is

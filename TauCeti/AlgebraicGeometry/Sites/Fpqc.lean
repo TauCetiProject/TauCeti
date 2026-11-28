@@ -33,6 +33,9 @@ therefore also continuous for the fpqc topology on `Over S`, so a sheaf on the b
 
 * `AlgebraicGeometry.Scheme.exists_mem_range_of_mem_fppfTopology`: fppf covering sieves of a
   scheme are jointly surjective.
+* `AlgebraicGeometry.Scheme.generate_singleton_mem_fppfTopology_over`: a surjective flat
+  morphism over `S`, locally of finite presentation, generates a covering sieve on the big fppf
+  site of `S`.
 * `AlgebraicGeometry.Scheme.Hom.generate_singleton_counit_mem_fppfTopology_over`: the base change
   `T ×_S S' ⟶ T` of an fppf morphism generates a covering sieve of the big fppf site.
 * `AlgebraicGeometry.Scheme.etaleTopology_le_fppfTopology`: étale coverings are fppf coverings.
@@ -95,6 +98,16 @@ noncomputable abbrev restrictSmallEtale (S : Scheme.{u}) {A : Type*} [Category.{
     Sheaf (fpqcTopology.over S) A ⥤ Sheaf (smallEtaleTopology S) A :=
   (Etale.forget S).sheafPushforwardContinuous A (smallEtaleTopology S) (fpqcTopology.over S)
 
+/-- A surjective flat morphism over `S`, locally of finite presentation, generates a covering sieve
+on the big fppf site of `S`. -/
+theorem generate_singleton_mem_fppfTopology_over {S : Scheme.{u}} {X Y : Over S} (f : X ⟶ Y)
+    [Surjective f.left] [Flat f.left] [LocallyOfFinitePresentation f.left] :
+    Sieve.generate (.singleton f) ∈ (fppfTopology.over S) Y := by
+  rw [← Presieve.ofArrows_pUnit.{0}, ← Sieve.ofArrows, GrothendieckTopology.ofArrows_mem_over_iff]
+  refine Precoverage.generate_mem_toGrothendieck ?_
+  rw [Presieve.ofArrows_pUnit]
+  exact f.left.singleton_mem_fppfPrecoverage
+
 end AlgebraicGeometry.Scheme
 
 namespace AlgebraicGeometry.Scheme.Hom
@@ -111,10 +124,13 @@ theorem generate_singleton_counit_mem_fppfTopology_over [Surjective p] [Flat p]
     [LocallyOfFinitePresentation p] (T : Over S) :
     Sieve.generate (.singleton ((Over.mapPullbackAdj p).counit.app T)) ∈
       (fppfTopology.over S) T := by
-  rw [← Presieve.ofArrows_pUnit.{0}, GrothendieckTopology.mem_over_iff,
-    Sieve.overEquiv_ofArrows]
-  refine Precoverage.generate_mem_toGrothendieck ?_
-  rw [Presieve.ofArrows_pUnit, Over.mapPullbackAdj_counit_app]
-  exact (pullback.fst T.hom p).singleton_mem_fppfPrecoverage
+  have : Surjective ((Over.mapPullbackAdj p).counit.app T).left := by
+    rw [Over.mapPullbackAdj_counit_app]; exact (inferInstance : Surjective (pullback.fst T.hom p))
+  have : Flat ((Over.mapPullbackAdj p).counit.app T).left := by
+    rw [Over.mapPullbackAdj_counit_app]; exact (inferInstance : Flat (pullback.fst T.hom p))
+  have : LocallyOfFinitePresentation ((Over.mapPullbackAdj p).counit.app T).left := by
+    rw [Over.mapPullbackAdj_counit_app]
+    exact (inferInstance : LocallyOfFinitePresentation (pullback.fst T.hom p))
+  exact generate_singleton_mem_fppfTopology_over _
 
 end AlgebraicGeometry.Scheme.Hom
