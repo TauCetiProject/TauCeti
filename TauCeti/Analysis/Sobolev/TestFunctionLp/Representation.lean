@@ -18,8 +18,8 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 # Weak derivatives from `Lᵠ` test bounds
 
 For conjugate exponents `p` and `1 ≤ q < ∞`, a distributional directional derivative bounded by
-the `Lᵠ` norm of test functions is represented by an `Lᵖ` weak derivative, with the same
-bound. This applies to locally integrable functions without assuming differentiability or a
+`C ≥ 0` times the `Lᵠ` norm of test functions is represented by an `Lᵖ` weak derivative of norm
+at most `C`. This applies to locally integrable functions without assuming differentiability or a
 weak derivative in advance. For a finite-dimensional real codomain the same holds coordinatewise,
 with a constant depending only on the codomain. The proof extends the distributional functional
 from the image of test functions in `Lᵠ` by Hahn–Banach, then uses the integral representation
@@ -30,7 +30,8 @@ The result assumes σ-finiteness on the open domain. The Hilbert-space theorem i
 
 On a finite-dimensional real inner product space `E` of dimension `d`, the same duality represents
 functionals bounded by the gradient: a linear functional `ℓ` on the test functions of `Ω` with
-`|ℓ φ| ≤ M ‖∇φ‖_{Lᵠ}` is `φ ↦ ∫_Ω ⟪H, ∇φ⟫` for a field `H ∈ Lᵖ(Ω; E)` with `‖H‖_{Lᵖ} ≤ d² M`
+`|ℓ φ| ≤ M ‖∇φ‖_{Lᵠ}`, `M ≥ 0`, is `φ ↦ ∫_Ω ⟪H, ∇φ⟫` for a field `H ∈ Lᵖ(Ω; E)` with
+`‖H‖_{Lᵖ} ≤ d² M`
 (`TauCeti.exists_memLp_forall_eq_integral_inner_gradient_of_abs_le`), that is, `ℓ = -div H` in the
 sense of distributions. The functional extends by Hahn–Banach through the partial derivatives
 `φ ↦ (⟪bᵢ, ∇φ⟫)ᵢ` into `(Lᵠ(Ω))ᵈ`, and the dual of `(Lᵠ(Ω))ᵈ` is `(Lᵖ(Ω))ᵈ`.
@@ -59,8 +60,9 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ
   [SigmaFinite (μ.restrict Ω)] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
   [p.HolderConjugate q]
 
-/-- A distributional directional derivative bounded by the conjugate `Lᵠ` test norm is an
-`Lᵖ` weak derivative with that bound. No regularity of `u` beyond local integrability is needed. -/
+/-- A distributional directional derivative bounded by `C ≥ 0` times the conjugate `Lᵠ` test
+norm is an `Lᵖ` weak derivative of norm at most `C`. No regularity of `u` beyond local
+integrability is needed. -/
 theorem exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le_eLpNorm {u : E → ℝ}
     (hq_top : q ≠ ⊤) (hu : LocallyIntegrableOn u Ω μ) (v : E)
     {C : ℝ} (hC : 0 ≤ C)
@@ -249,7 +251,7 @@ private theorem exists_dual_comp_partialDerivativesLp_eq [Fact (1 ≤ q)]
 
 /-- **Functionals bounded by the gradient are divergences.** Let `1 ≤ q < ∞` and let `p` be its
 conjugate exponent. If a linear functional `ℓ` on the test functions of `Ω` satisfies
-`|ℓ φ| ≤ M ‖∇φ‖_{L^q}`, then `ℓ φ = ∫_Ω ⟪H, ∇φ⟫` for a field `H ∈ Lᵖ(Ω; E)` with
+`|ℓ φ| ≤ M ‖∇φ‖_{L^q}` for some `M ≥ 0`, then `ℓ φ = ∫_Ω ⟪H, ∇φ⟫` for a field `H ∈ Lᵖ(Ω; E)` with
 `‖H‖_{Lᵖ(Ω)} ≤ d² M`, where `d` is the dimension. In other words `ℓ = -div H` in the sense of
 distributions. -/
 theorem exists_memLp_forall_eq_integral_inner_gradient_of_abs_le [SigmaFinite (μ.restrict Ω)]
