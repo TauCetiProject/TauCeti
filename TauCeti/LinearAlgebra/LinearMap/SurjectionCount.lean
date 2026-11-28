@@ -42,6 +42,6 @@ theorem natCard_linearMap_surjective (K V W : Type*) [DivisionRing K] [Finite K]
     (fun A ↦ (A.toLin_surjective_iff_linearIndependent_row v w).symm)
   let rows := (Matrix.rowEquiv (Fin (finrank K W)) (Fin (finrank K V)) K).subtypeEquiv
     (q := fun s ↦ LinearIndependent K s) (fun A ↦ by rw [Matrix.coe_rowEquiv])
-  rw [Nat.card_congr (e.symm.trans rows), natCard_linearIndependent, finrank_fin_fun]
+  rw [Nat.card_congr (e.symm.trans rows), natCard_linearIndependent, Nat.card_fin, finrank_fin_fun]
 
 end TauCeti

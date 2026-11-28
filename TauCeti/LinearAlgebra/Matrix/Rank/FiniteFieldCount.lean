@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import TauCeti.RingTheory.Polynomial.GaussianBinomial
-import Mathlib.RingTheory.LittleWedderburn
 import TauCeti.LinearAlgebra.LinearMap.RankCount
 import TauCeti.LinearAlgebra.Matrix.Rank
 
@@ -22,8 +21,7 @@ kernel law by taking rank `n - j` for right kernels of dimension `j` with `j ≤
 
 The formulas specialize `TauCeti.natCard_linearMap_finrank_range_eq_gaussianBinomial_mul_prod`
 and `TauCeti.natCast_card_linearMap_finrank_range_eq_prod_div` via
-`TauCeti.natCard_matrix_rank_eq_natCard_linearMap_finrank_range`. Mathlib's `littleWedderburn`
-supplies commutativity for finite division rings.
+`TauCeti.natCard_matrix_rank_eq_natCard_linearMap_finrank_range`.
 
 See Koymans and Pagano, *Higher Rédei reciprocity and integral points on conics*,
 arXiv:2005.14157v2, equation (6.10), for the corresponding count over the field of two elements.
@@ -43,7 +41,6 @@ theorem natCard_matrix_rank_eq_gaussianBinomial_mul_prod
       gaussianBinomial (Nat.card K) (Nat.card m) r *
         ∏ i : Fin r, (Nat.card K ^ Nat.card n - Nat.card K ^ i.val) := by
   classical
-  let : Field K := littleWedderburn K
   let := Fintype.ofFinite m
   let := Fintype.ofFinite n
   rw [natCard_matrix_rank_eq_natCard_linearMap_finrank_range,
@@ -60,7 +57,6 @@ theorem natCast_card_matrix_rank_eq_prod_div
         ((Nat.card K : ℚ) ^ Nat.card n - (Nat.card K : ℚ) ^ i.val) /
         ((Nat.card K : ℚ) ^ r - (Nat.card K : ℚ) ^ i.val)) := by
   classical
-  let : Field K := littleWedderburn K
   let := Fintype.ofFinite m
   let := Fintype.ofFinite n
   rw [natCard_matrix_rank_eq_natCard_linearMap_finrank_range,
