@@ -219,39 +219,28 @@ instance : LieAlgebra ℝ S.NormedLieAlgebra :=
     S.NormedLieAlgebra ≃ S.group.matrixLieAlgebra).addEquiv.linearEquiv ℝ).lieAlgebra
 
 /-- `toLieSubalgebra` commutes with zero. -/
-@[simp]
-theorem NormedLieAlgebra.toLieSubalgebra_zero : (0 : S.NormedLieAlgebra).toLieSubalgebra = 0 :=
-  rfl
+@[simp] theorem NormedLieAlgebra.toLieSubalgebra_zero :
+    (0 : S.NormedLieAlgebra).toLieSubalgebra = 0 := rfl
 
 /-- `toLieSubalgebra` commutes with addition. -/
-@[simp]
-theorem NormedLieAlgebra.toLieSubalgebra_add (X Y : S.NormedLieAlgebra) :
-    (X + Y).toLieSubalgebra = X.toLieSubalgebra + Y.toLieSubalgebra :=
-  rfl
+@[simp] theorem NormedLieAlgebra.toLieSubalgebra_add (X Y : S.NormedLieAlgebra) :
+    (X + Y).toLieSubalgebra = X.toLieSubalgebra + Y.toLieSubalgebra := rfl
 
 /-- `toLieSubalgebra` commutes with negation. -/
-@[simp]
-theorem NormedLieAlgebra.toLieSubalgebra_neg (X : S.NormedLieAlgebra) :
-    (-X).toLieSubalgebra = -X.toLieSubalgebra :=
-  rfl
+@[simp] theorem NormedLieAlgebra.toLieSubalgebra_neg (X : S.NormedLieAlgebra) :
+    (-X).toLieSubalgebra = -X.toLieSubalgebra := rfl
 
 /-- `toLieSubalgebra` commutes with subtraction. -/
-@[simp]
-theorem NormedLieAlgebra.toLieSubalgebra_sub (X Y : S.NormedLieAlgebra) :
-    (X - Y).toLieSubalgebra = X.toLieSubalgebra - Y.toLieSubalgebra :=
-  rfl
+@[simp] theorem NormedLieAlgebra.toLieSubalgebra_sub (X Y : S.NormedLieAlgebra) :
+    (X - Y).toLieSubalgebra = X.toLieSubalgebra - Y.toLieSubalgebra := rfl
 
 /-- `toLieSubalgebra` commutes with scalar multiplication. -/
-@[simp]
-theorem NormedLieAlgebra.toLieSubalgebra_smul (r : ℝ) (X : S.NormedLieAlgebra) :
-    (r • X).toLieSubalgebra = r • X.toLieSubalgebra :=
-  rfl
+@[simp] theorem NormedLieAlgebra.toLieSubalgebra_smul (r : ℝ) (X : S.NormedLieAlgebra) :
+    (r • X).toLieSubalgebra = r • X.toLieSubalgebra := rfl
 
 /-- `toLieSubalgebra` commutes with the Lie bracket. -/
-@[simp]
-theorem NormedLieAlgebra.toLieSubalgebra_bracket (X Y : S.NormedLieAlgebra) :
-    ⁅X, Y⁆.toLieSubalgebra = ⁅X.toLieSubalgebra, Y.toLieSubalgebra⁆ :=
-  rfl
+@[simp] theorem NormedLieAlgebra.toLieSubalgebra_bracket (X Y : S.NormedLieAlgebra) :
+    ⁅X, Y⁆.toLieSubalgebra = ⁅X.toLieSubalgebra, Y.toLieSubalgebra⁆ := rfl
 
 /-- The canonical Lie algebra isomorphism `S.NormedLieAlgebra ≃ₗ⁅ℝ⁆ S.group.matrixLieAlgebra`. -/
 @[expose]
@@ -261,16 +250,12 @@ def lieEquivMatrixLieAlgebra : S.NormedLieAlgebra ≃ₗ⁅ℝ⁆ S.group.matrix
     S.NormedLieAlgebra ≃ S.group.matrixLieAlgebra).addEquiv.linearEquiv ℝ).lieEquiv ℝ
 
 /-- Evaluation of `lieEquivMatrixLieAlgebra`. -/
-@[simp]
-theorem lieEquivMatrixLieAlgebra_apply (X : S.NormedLieAlgebra) :
-    S.lieEquivMatrixLieAlgebra X = X.toLieSubalgebra :=
-  rfl
+@[simp] theorem lieEquivMatrixLieAlgebra_apply (X : S.NormedLieAlgebra) :
+    S.lieEquivMatrixLieAlgebra X = X.toLieSubalgebra := rfl
 
 /-- Evaluation of `lieEquivMatrixLieAlgebra.symm`. -/
-@[simp]
-theorem lieEquivMatrixLieAlgebra_symm_apply (X : S.group.matrixLieAlgebra) :
-    S.lieEquivMatrixLieAlgebra.symm X = ⟨X⟩ :=
-  rfl
+@[simp] theorem lieEquivMatrixLieAlgebra_symm_apply (X : S.group.matrixLieAlgebra) :
+    S.lieEquivMatrixLieAlgebra.symm X = ⟨X⟩ := rfl
 
 /-- The `InnerProductSpace.Core` on `S.NormedLieAlgebra` induced by `S.innerForm`. -/
 @[instance_reducible, expose]
@@ -292,10 +277,8 @@ instance : FiniteDimensional ℝ S.NormedLieAlgebra :=
   Module.Finite.equiv (lieEquivMatrixLieAlgebra S).symm.toLinearEquiv
 
 /-- The real inner product on `S.NormedLieAlgebra` is `S.innerForm`. -/
-@[simp]
-theorem real_inner_eq_innerForm (X Y : S.NormedLieAlgebra) :
-    ⟪X, Y⟫ = S.innerForm X.toLieSubalgebra Y.toLieSubalgebra :=
-  rfl
+@[simp] theorem real_inner_eq_innerForm (X Y : S.NormedLieAlgebra) :
+    ⟪X, Y⟫ = S.innerForm X.toLieSubalgebra Y.toLieSubalgebra := rfl
 
 /-- The squared norm on `S.NormedLieAlgebra` is `S.innerForm X X`. -/
 theorem norm_sq_eq_innerForm (X : S.NormedLieAlgebra) :
@@ -317,16 +300,11 @@ def Ad (g : S.group) : S.NormedLieAlgebra ≃ₗᵢ[ℝ] S.NormedLieAlgebra :=
 
 /-- The underlying `matrixLieAlgebra` element of `S.Ad g X` is
 `S.group.matrixAdjointRepresentation g X.toLieSubalgebra`. -/
-@[simp]
-theorem Ad_toLieSubalgebra (g : S.group) (X : S.NormedLieAlgebra) :
-    (S.Ad g X).toLieSubalgebra = S.group.matrixAdjointRepresentation g X.toLieSubalgebra :=
-  rfl
+@[simp] theorem Ad_toLieSubalgebra (g : S.group) (X : S.NormedLieAlgebra) :
+    (S.Ad g X).toLieSubalgebra = S.group.matrixAdjointRepresentation g X.toLieSubalgebra := rfl
 
 /-- `S.Ad 1` is the identity linear isometry equivalence. -/
-@[simp]
-theorem Ad_one : S.Ad 1 = LinearIsometryEquiv.refl ℝ S.NormedLieAlgebra := by
-  ext X
-  simp
+@[simp] theorem Ad_one : S.Ad 1 = LinearIsometryEquiv.refl ℝ S.NormedLieAlgebra := by ext X; simp
 
 /-- `S.Ad` respects group multiplication: `S.Ad (g * h) X = S.Ad g (S.Ad h X)`. -/
 theorem Ad_mul (g h : S.group) (X : S.NormedLieAlgebra) :
@@ -345,8 +323,7 @@ theorem Ad_lie (g : S.group) (X Y : S.NormedLieAlgebra) :
 theorem inner_ad_left (X Y Z : S.NormedLieAlgebra) :
     ⟪LieAlgebra.ad ℝ S.NormedLieAlgebra X Y, Z⟫ =
       -⟪Y, LieAlgebra.ad ℝ S.NormedLieAlgebra X Z⟫ := by
-  simp only [LieAlgebra.ad_apply, real_inner_eq_innerForm,
-    NormedLieAlgebra.toLieSubalgebra_bracket]
+  simp only [LieAlgebra.ad_apply, real_inner_eq_innerForm, NormedLieAlgebra.toLieSubalgebra_bracket]
   exact S.innerForm_lie_left X.toLieSubalgebra Y.toLieSubalgebra Z.toLieSubalgebra
 
 /-- Every adjoint action operator `ad X` on `S.NormedLieAlgebra` is skew-adjoint:
@@ -356,9 +333,7 @@ theorem inner_ad_left (X Y Z : S.NormedLieAlgebra) :
 theorem adjoint_ad (X : S.NormedLieAlgebra) :
     LinearMap.adjoint (LieAlgebra.ad ℝ S.NormedLieAlgebra X) =
       -LieAlgebra.ad ℝ S.NormedLieAlgebra X := by
-  symm
-  rw [LinearMap.eq_adjoint_iff]
-  intro Y Z
+  symm; rw [LinearMap.eq_adjoint_iff]; intro Y Z
   simp only [LinearMap.neg_apply, inner_neg_left, S.inner_ad_left, neg_neg]
 
 end NormedLieAlgebra
@@ -378,35 +353,27 @@ def ofTraceForm (G : ClosedSubgroup (Matrix.unitaryGroup n ℂ)) :
   isInvariantForm_innerForm := ClosedSubgroup.isInvariantForm_matrixTraceForm
 
 /-- The underlying closed subgroup of `ofTraceForm G` is `G`. -/
-@[simp]
-theorem ofTraceForm_group (G : ClosedSubgroup (Matrix.unitaryGroup n ℂ)) :
-    (ofTraceForm G).group = G :=
-  (rfl)
+@[simp] theorem ofTraceForm_group (G : ClosedSubgroup (Matrix.unitaryGroup n ℂ)) :
+    (ofTraceForm G).group = G := (rfl)
 
 /-- The inner form of `ofTraceForm G` is the unscaled trace pairing `⟨X, Y⟩ = -Re tr (X Y)`. -/
-@[simp]
-theorem ofTraceForm_innerForm (G : ClosedSubgroup (Matrix.unitaryGroup n ℂ)) :
-    (ofTraceForm G).innerForm = G.matrixTraceForm :=
-  (rfl)
+@[simp] theorem ofTraceForm_innerForm (G : ClosedSubgroup (Matrix.unitaryGroup n ℂ)) :
+    (ofTraceForm G).innerForm = G.matrixTraceForm := (rfl)
 
 variable (n) in
 /-- The full unitary group `U(n)` as a compact matrix structure group with the trace form
 `⟨X, Y⟩ = -Re tr (X Y)`. -/
 -- The type of `innerForm` depends on `group`, so `unitary_innerForm` needs `group` to reduce.
 @[expose]
-def unitary : CompactMatrixStructureGroup n :=
-  ofTraceForm (ClosedSubgroup.unitary n ℂ)
+def unitary : CompactMatrixStructureGroup n := ofTraceForm (ClosedSubgroup.unitary n ℂ)
 
 /-- The underlying closed subgroup of `unitary n` is `ClosedSubgroup.unitary n ℂ`. -/
-@[simp]
-theorem unitary_group : (unitary n).group = ClosedSubgroup.unitary n ℂ :=
-  (rfl)
+@[simp] theorem unitary_group : (unitary n).group = ClosedSubgroup.unitary n ℂ := (rfl)
 
 /-- The inner form of `unitary n` is the unscaled trace pairing `⟨X, Y⟩ = -Re tr (X Y)`
 (`ClosedSubgroup.matrixTraceForm`). -/
-@[simp]
-theorem unitary_innerForm : (unitary n).innerForm = (ClosedSubgroup.unitary n ℂ).matrixTraceForm :=
-  (rfl)
+@[simp] theorem unitary_innerForm :
+    (unitary n).innerForm = (ClosedSubgroup.unitary n ℂ).matrixTraceForm := (rfl)
 
 variable (n) in
 /-- The special unitary group `SU(n)` as a compact matrix structure group with the trace form
@@ -417,16 +384,13 @@ def specialUnitary : CompactMatrixStructureGroup n :=
   ofTraceForm (ClosedSubgroup.specialUnitary n ℂ)
 
 /-- The underlying closed subgroup of `specialUnitary n` is `ClosedSubgroup.specialUnitary n ℂ`. -/
-@[simp]
-theorem specialUnitary_group : (specialUnitary n).group = ClosedSubgroup.specialUnitary n ℂ :=
-  (rfl)
+@[simp] theorem specialUnitary_group :
+    (specialUnitary n).group = ClosedSubgroup.specialUnitary n ℂ := (rfl)
 
 /-- The inner form of `specialUnitary n` is the unscaled trace pairing `⟨X, Y⟩ = -Re tr (X Y)`
 (`ClosedSubgroup.matrixTraceForm`). -/
-@[simp]
-theorem specialUnitary_innerForm :
-    (specialUnitary n).innerForm = (ClosedSubgroup.specialUnitary n ℂ).matrixTraceForm :=
-  (rfl)
+@[simp] theorem specialUnitary_innerForm :
+    (specialUnitary n).innerForm = (ClosedSubgroup.specialUnitary n ℂ).matrixTraceForm := (rfl)
 
 end OfTraceForm
 
@@ -458,17 +422,14 @@ def restrict (S : CompactMatrixStructureGroup n) (hH : H ≤ S.group) :
       innerForm_matrixAdjointRepresentation]
 
 /-- The underlying closed subgroup of `S.restrict hH` is `H`. -/
-@[simp]
-theorem restrict_group (hH : H ≤ S.group) : (S.restrict hH).group = H :=
-  (rfl)
+@[simp] theorem restrict_group (hH : H ≤ S.group) : (S.restrict hH).group = H := (rfl)
 
 /-- The inner product of the restriction is the inner product of the ambient Lie algebra. -/
 @[simp]
 theorem restrict_innerForm_apply (hH : H ≤ S.group) (X Y : H.matrixLieAlgebra) :
     (S.restrict hH).innerForm X Y =
       S.innerForm (LieSubalgebra.inclusion (ClosedSubgroup.matrixLieAlgebra_mono hH) X)
-        (LieSubalgebra.inclusion (ClosedSubgroup.matrixLieAlgebra_mono hH) Y) :=
-  (rfl)
+        (LieSubalgebra.inclusion (ClosedSubgroup.matrixLieAlgebra_mono hH) Y) := (rfl)
 
 end Restrict
 
@@ -506,11 +467,9 @@ def reindex (S : CompactMatrixStructureGroup n) (e : n ≃ m) :
 
 /-- The underlying closed subgroup of `S.reindex e` is
 `(Matrix.unitaryReindexContinuousMulEquiv ℂ e).closedSubgroupOrderIso S.group`. -/
-@[simp]
-theorem reindex_group (e : n ≃ m) :
+@[simp] theorem reindex_group (e : n ≃ m) :
     (S.reindex e).group =
-      (Matrix.unitaryReindexContinuousMulEquiv ℂ e).closedSubgroupOrderIso S.group :=
-  (rfl)
+      (Matrix.unitaryReindexContinuousMulEquiv ℂ e).closedSubgroupOrderIso S.group := (rfl)
 
 /-- The inner product on
 `((Matrix.unitaryReindexContinuousMulEquiv ℂ e).closedSubgroupOrderIso S.group).matrixLieAlgebra`
@@ -521,14 +480,12 @@ theorem reindex_innerForm_apply (e : n ≃ m)
       S.group).matrixLieAlgebra) :
     (S.reindex e).innerForm X Y =
       S.innerForm ((S.group.matrixLieAlgebraReindexEquiv e).symm X)
-        ((S.group.matrixLieAlgebraReindexEquiv e).symm Y) :=
-  (rfl)
+        ((S.group.matrixLieAlgebraReindexEquiv e).symm Y) := (rfl)
 
 /-- Reindexing preserves the inner product on `S.group.matrixLieAlgebra`. -/
 theorem reindex_innerForm_map (e : n ≃ m) (X Y : S.group.matrixLieAlgebra) :
     (S.reindex e).innerForm (S.group.matrixLieAlgebraReindexEquiv e X)
-      (S.group.matrixLieAlgebraReindexEquiv e Y) = S.innerForm X Y := by
-  simp
+      (S.group.matrixLieAlgebraReindexEquiv e Y) = S.innerForm X Y := by simp
 
 /-- Reindexing along the identity equivalence leaves a structure group unchanged. -/
 @[simp]
@@ -536,11 +493,10 @@ theorem reindex_refl : S.reindex (Equiv.refl n) = S := by
   refine ext (ClosedSubgroup.closedSubgroupOrderIso_unitaryReindexContinuousMulEquiv_refl S.group)
     fun X Y hX₁ hY₁ hX₂ hY₂ ↦ ?_
   refine (reindex_innerForm_apply S (Equiv.refl n) ⟨X, hX₁⟩ ⟨Y, hY₁⟩).trans ?_
-  have ha : (S.group.matrixLieAlgebraReindexEquiv (Equiv.refl n)).symm ⟨X, hX₁⟩ = ⟨X, hX₂⟩ :=
+  have h {Z} (hZ₁ : Z ∈ _) (hZ₂ : Z ∈ _) :
+      (S.group.matrixLieAlgebraReindexEquiv (Equiv.refl n)).symm ⟨Z, hZ₁⟩ = ⟨Z, hZ₂⟩ :=
     Subtype.ext (by simp [Matrix.reindex_apply])
-  have hb : (S.group.matrixLieAlgebraReindexEquiv (Equiv.refl n)).symm ⟨Y, hY₁⟩ = ⟨Y, hY₂⟩ :=
-    Subtype.ext (by simp [Matrix.reindex_apply])
-  exact (congrArg (S.innerForm · _) ha).trans (congrArg (S.innerForm _) hb)
+  exact (congrArg (S.innerForm · _) (h hX₁ hX₂)).trans (congrArg (S.innerForm _) (h hY₁ hY₂))
 
 /-- Reindexing along `e.trans f` equals reindexing along `e` followed by `f`. -/
 @[simp]
@@ -552,17 +508,13 @@ theorem reindex_trans {p : Type*} [Fintype p] [DecidableEq p] (e : n ≃ m) (f :
   refine (reindex_innerForm_apply S (e.trans f) ⟨X, hX₁⟩ ⟨Y, hY₁⟩).trans ?_
   refine Eq.trans ?_ (reindex_innerForm_apply (S.reindex e) f ⟨X, hX₂⟩ ⟨Y, hY₂⟩).symm
   refine Eq.trans ?_ (reindex_innerForm_apply S e _ _).symm
-  have ha : (S.group.matrixLieAlgebraReindexEquiv (e.trans f)).symm ⟨X, hX₁⟩ =
-      (S.group.matrixLieAlgebraReindexEquiv e).symm
-        ((((Matrix.unitaryReindexContinuousMulEquiv ℂ e).closedSubgroupOrderIso
-          S.group).matrixLieAlgebraReindexEquiv f).symm ⟨X, hX₂⟩) :=
+  have h {Z} (hZ₁ : Z ∈ _) (hZ₂ : Z ∈ _) :
+      (S.group.matrixLieAlgebraReindexEquiv (e.trans f)).symm ⟨Z, hZ₁⟩ =
+        (S.group.matrixLieAlgebraReindexEquiv e).symm
+          ((((Matrix.unitaryReindexContinuousMulEquiv ℂ e).closedSubgroupOrderIso
+            S.group).matrixLieAlgebraReindexEquiv f).symm ⟨Z, hZ₂⟩) :=
     Subtype.ext (by simp [Matrix.reindex_apply])
-  have hb : (S.group.matrixLieAlgebraReindexEquiv (e.trans f)).symm ⟨Y, hY₁⟩ =
-      (S.group.matrixLieAlgebraReindexEquiv e).symm
-        ((((Matrix.unitaryReindexContinuousMulEquiv ℂ e).closedSubgroupOrderIso
-          S.group).matrixLieAlgebraReindexEquiv f).symm ⟨Y, hY₂⟩) :=
-    Subtype.ext (by simp [Matrix.reindex_apply])
-  exact (congrArg (S.innerForm · _) ha).trans (congrArg (S.innerForm _) hb)
+  exact (congrArg (S.innerForm · _) (h hX₁ hX₂)).trans (congrArg (S.innerForm _) (h hY₁ hY₂))
 
 end Reindex
 
@@ -605,10 +557,9 @@ def prod (S₁ : CompactMatrixStructureGroup n) (S₂ : CompactMatrixStructureGr
       LinearMap.snd_apply, innerForm_matrixAdjointRepresentation]
 
 /-- The underlying closed subgroup of `S₁.prod S₂` is `S₁.group.fromBlocksProd S₂.group`. -/
-@[simp]
-theorem prod_group (S₁ : CompactMatrixStructureGroup n) (S₂ : CompactMatrixStructureGroup m) :
-    (S₁.prod S₂).group = S₁.group.fromBlocksProd S₂.group :=
-  (rfl)
+@[simp] theorem prod_group (S₁ : CompactMatrixStructureGroup n)
+    (S₂ : CompactMatrixStructureGroup m) :
+    (S₁.prod S₂).group = S₁.group.fromBlocksProd S₂.group := (rfl)
 
 /-- The inner product of the product is the sum of the inner products of the diagonal blocks. -/
 @[simp]
@@ -619,8 +570,7 @@ theorem prod_innerForm_apply (S₁ : CompactMatrixStructureGroup n)
       S₁.innerForm (S₁.group.matrixLieAlgebraFromBlocksProdEquiv S₂.group X).1
           (S₁.group.matrixLieAlgebraFromBlocksProdEquiv S₂.group Y).1 +
         S₂.innerForm (S₁.group.matrixLieAlgebraFromBlocksProdEquiv S₂.group X).2
-          (S₁.group.matrixLieAlgebraFromBlocksProdEquiv S₂.group Y).2 :=
-  (rfl)
+          (S₁.group.matrixLieAlgebraFromBlocksProdEquiv S₂.group Y).2 := (rfl)
 
 end Prod
 
@@ -642,8 +592,7 @@ theorem blockProd_group {N₁ N₂ : ℕ} (S₁ : CompactMatrixStructureGroup (F
     (S₂ : CompactMatrixStructureGroup (Fin N₂)) :
     (S₁.blockProd S₂).group =
       (Matrix.unitaryReindexContinuousMulEquiv ℂ finSumFinEquiv).closedSubgroupOrderIso
-        (S₁.group.fromBlocksProd S₂.group) :=
-  (rfl)
+        (S₁.group.fromBlocksProd S₂.group) := (rfl)
 
 /-- The canonical Lie-algebra isomorphism between `(S₁.blockProd S₂).group.matrixLieAlgebra` and
 `S₁.group.matrixLieAlgebra × S₂.group.matrixLieAlgebra`. -/
@@ -699,8 +648,7 @@ theorem blockProd_innerForm_apply {N₁ N₂ : ℕ}
       (S₁.group.fromBlocksProd S₂.group)).matrixLieAlgebra) :
     (S₁.blockProd S₂).innerForm X Y =
       S₁.innerForm (S₁.blockProdLieEquiv S₂ X).1 (S₁.blockProdLieEquiv S₂ Y).1 +
-        S₂.innerForm (S₁.blockProdLieEquiv S₂ X).2 (S₁.blockProdLieEquiv S₂ Y).2 :=
-  (rfl)
+        S₂.innerForm (S₁.blockProdLieEquiv S₂ X).2 (S₁.blockProdLieEquiv S₂ Y).2 := (rfl)
 
 end BlockProd
 

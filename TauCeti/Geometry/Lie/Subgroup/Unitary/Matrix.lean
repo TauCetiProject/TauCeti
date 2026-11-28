@@ -737,31 +737,24 @@ diagonal entry has real part `0`. -/
 theorem mem_matrixLieAlgebra_unitary_iff_of_unique [Unique n] (X : Matrix n n 𝕜) :
     X ∈ (unitary n 𝕜).matrixLieAlgebra ↔ RCLike.re (X default default) = 0 := by
   rw [mem_matrixLieAlgebra_unitary_iff]
-  constructor
-  · intro h
-    exact Matrix.re_apply_self_eq_zero_of_conjTranspose_eq_neg h default
-  · intro hre
-    ext i j
-    rw [Subsingleton.elim i default, Subsingleton.elim j default]
-    apply RCLike.ext
-    · simp [hre]
-    · simp
+  refine ⟨fun h ↦ Matrix.re_apply_self_eq_zero_of_conjTranspose_eq_neg h default, fun hre ↦ ?_⟩
+  ext i j
+  rw [Subsingleton.elim i default, Subsingleton.elim j default]
+  apply RCLike.ext <;> simp [hre]
 
 /-- On a singleton index type (in particular `U(1)`), the Lie algebra is abelian: every Lie
 bracket vanishes. -/
 @[simp]
-theorem lie_eq_zero_of_unique [Unique n] (X Y : G.matrixLieAlgebra) :
-    ⁅X, Y⁆ = 0 := by
+theorem lie_eq_zero_of_unique [Unique n] (X Y : G.matrixLieAlgebra) : ⁅X, Y⁆ = 0 :=
   have hmul : (X : Matrix n n 𝕜) * Y = (Y : Matrix n n 𝕜) * X :=
     Matrix.uniqueStarRingEquiv.injective (by simp [mul_comm])
-  exact Subtype.ext (by simp [LieRing.of_associative_ring_bracket, hmul])
+  Subtype.ext (by simp [LieRing.of_associative_ring_bracket, hmul])
 
 /-- On a singleton index type (in particular `U(1)`), the adjoint representation is trivial. -/
 @[simp]
 theorem matrixAdjointRepresentation_eq_id_of_unique [Unique n] (g : G) :
     G.matrixAdjointRepresentation g = LinearMap.id := by
-  ext1 X
-  ext1
+  ext1 X; ext1
   rw [coe_matrixAdjointRepresentation_apply]
   have hmul : (g.val : Matrix n n 𝕜) * X.val = (X.val : Matrix n n 𝕜) * g.val :=
     Matrix.uniqueStarRingEquiv.injective (by simp [mul_comm])
@@ -809,21 +802,16 @@ def matrixLieAlgebraReindexEquiv (e : n ≃ m) :
       ((Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).closedSubgroupOrderIso G).matrixLieAlgebra :=
   (Matrix.reindexAlgEquiv ℝ 𝕜 e).toLieEquiv.ofSubalgebras G.matrixLieAlgebra
     ((Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).closedSubgroupOrderIso G).matrixLieAlgebra (by
-      ext Y
-      simp only [LieSubalgebra.mem_map, mem_matrixLieAlgebra_reindex_iff]
-      constructor
-      · rintro ⟨X, hX, rfl⟩
-        simpa [Matrix.reindex_apply] using hX
-      · intro hY
-        exact ⟨Matrix.reindex e.symm e.symm Y, hY, by simp [Matrix.reindex_apply]⟩)
+      ext Y; simp only [LieSubalgebra.mem_map, mem_matrixLieAlgebra_reindex_iff]
+      exact ⟨fun ⟨X, hX, h⟩ ↦ by simpa [Matrix.reindex_apply, ← h] using hX,
+        fun hY ↦ ⟨Matrix.reindex e.symm e.symm Y, hY, by simp [Matrix.reindex_apply]⟩⟩)
 
 /-- The forward map of `matrixLieAlgebraReindexEquiv` reindexes the underlying matrix by `e`. -/
 @[simp]
 theorem coe_matrixLieAlgebraReindexEquiv_apply (e : n ≃ m) (X : G.matrixLieAlgebra) :
     ((G.matrixLieAlgebraReindexEquiv e X :
       ((Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).closedSubgroupOrderIso G).matrixLieAlgebra) :
-        Matrix m m 𝕜) =
-      Matrix.reindex e e (X : Matrix n n 𝕜) := by
+        Matrix m m 𝕜) = Matrix.reindex e e (X : Matrix n n 𝕜) := by
   simp [matrixLieAlgebraReindexEquiv]
 
 /-- The inverse map of `matrixLieAlgebraReindexEquiv` reindexes the underlying matrix by
@@ -855,8 +843,7 @@ theorem matrixLieAlgebraReindexEquiv_symm_matrixAdjointRepresentation (e : n ≃
   change Matrix.reindexStarAlgEquiv ℕ 𝕜 e.symm
       (Matrix.reindex e e (g : Matrix n n 𝕜) * (Y : Matrix m m 𝕜) *
         star (Matrix.reindex e e (g : Matrix n n 𝕜))) = _
-  rw [map_mul, map_mul, map_star]
-  simp [Matrix.coe_reindexStarAlgEquiv]
+  rw [map_mul, map_mul, map_star]; simp [Matrix.coe_reindexStarAlgEquiv]
 
 end Reindex
 

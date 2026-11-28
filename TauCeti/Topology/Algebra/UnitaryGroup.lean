@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SpecialUnitary
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
-public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
+public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup.Basic
 public import TauCeti.Topology.Algebra.Star.Unitary
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
@@ -339,9 +339,7 @@ def unitary : ClosedSubgroup (Matrix.unitaryGroup n 𝕜) where
   isClosed' := isClosed_univ
 
 /-- Every unitary matrix belongs to `ClosedSubgroup.unitary n 𝕜`. -/
-@[simp]
-theorem mem_unitary (U : Matrix.unitaryGroup n 𝕜) : U ∈ unitary n 𝕜 :=
-  trivial
+@[simp] theorem mem_unitary (U : Matrix.unitaryGroup n 𝕜) : U ∈ unitary n 𝕜 := trivial
 
 end Unitary
 
@@ -356,12 +354,10 @@ def specialUnitary : ClosedSubgroup (Matrix.unitaryGroup n 𝕜) where
   isClosed' := by
     convert (isClosed_singleton (x := (1 : 𝕜))).preimage
       (continuous_subtypeVal : Continuous ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜)).matrix_det
-    ext U
-    simp
+    ext U; simp
 
 /-- Membership in `ClosedSubgroup.specialUnitary n 𝕜` is having determinant `1`. -/
-@[simp]
-theorem mem_specialUnitary_iff {U : Matrix.unitaryGroup n 𝕜} :
+@[simp] theorem mem_specialUnitary_iff {U : Matrix.unitaryGroup n 𝕜} :
     U ∈ specialUnitary n 𝕜 ↔ (U : Matrix n n 𝕜).det = 1 :=
   Matrix.UnitaryGroup.mem_specialUnitarySubgroup_iff
 
@@ -430,11 +426,9 @@ theorem mem_fromBlocksProd_iff {g : Matrix.unitaryGroup (n ⊕ m) 𝕜} :
   -- The underlying subgroup of `fromBlocksProd` is, by definition, the image of `G₁ × G₂`.
   change g ∈ ((G₁ : Subgroup _).prod G₂).map Matrix.UnitaryGroup.sum ↔ _
   simp only [Subgroup.mem_map, Subgroup.mem_prod, Prod.exists]
-  constructor
-  · rintro ⟨g₁, g₂, ⟨h₁, h₂⟩, rfl⟩
-    exact ⟨g₁, h₁, g₂, h₂, Matrix.UnitaryGroup.coe_sum _⟩
-  · rintro ⟨g₁, h₁, g₂, h₂, hg⟩
-    exact ⟨g₁, g₂, ⟨h₁, h₂⟩, Subtype.ext ((Matrix.UnitaryGroup.coe_sum _).trans hg.symm)⟩
+  exact ⟨fun ⟨g₁, g₂, ⟨h₁, h₂⟩, hg⟩ ↦ ⟨g₁, h₁, g₂, h₂, hg ▸ Matrix.UnitaryGroup.coe_sum _⟩,
+    fun ⟨g₁, h₁, g₂, h₂, hg⟩ ↦ ⟨g₁, g₂, ⟨h₁, h₂⟩,
+      Subtype.ext ((Matrix.UnitaryGroup.coe_sum _).trans hg.symm)⟩⟩
 
 /-- The block-diagonal sum `diag(g₁, g₂)` of `g₁ ∈ G₁` and `g₂ ∈ G₂` lies in the product. -/
 theorem sum_mem_fromBlocksProd {g₁ : Matrix.unitaryGroup n 𝕜}

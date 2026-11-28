@@ -329,17 +329,15 @@ theorem EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal_one
   let _ : ChartedSpace E' K := d.chartedSpace
   let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
   let eK := leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := 𝓘(ℝ, E')) (G := K)
-  have hval_D : ∀ D : LeftInvariantDerivation 𝓘(ℝ, E') K,
+  have hval_D (D : LeftInvariantDerivation 𝓘(ℝ, E') K) :
       mvfderiv 𝓘(ℝ, E') (fun k : K ↦ ((k : Rˣ) : R)) (1 : K) (eK D) =
         unitsLieAlgebraLieEquiv (R := R) (d.lieMapSubtypeVal D) := by
-    intro D
     have hfun : (fun k : K ↦ ((k : Rˣ) : R)) = (Units.val : Rˣ → R) ∘ ⇑d.subtypeVal :=
       funext fun k ↦ (congrArg Units.val (d.subtypeVal_apply k)).symm
-    have hsub : MDifferentiableAt 𝓘(ℝ, E') 𝓘(ℝ, R) (⇑d.subtypeVal) (1 : K) :=
-      ((d.contMDiff_subtypeVal.congr fun k ↦ d.subtypeVal_apply k).mdifferentiable
-        (by simp)).mdifferentiableAt
-    have hval : MDifferentiableAt 𝓘(ℝ, R) 𝓘(ℝ, R) (Units.val : Rˣ → R) (1 : Rˣ) :=
-      ((Units.contMDiff_val (𝕜 := ℝ) (n := ∞)).mdifferentiable (by simp)).mdifferentiableAt
+    have hsub := ((d.contMDiff_subtypeVal.congr fun k ↦ d.subtypeVal_apply k).mdifferentiable
+      (by simp)).mdifferentiableAt (x := (1 : K))
+    have hval := ((Units.contMDiff_val (𝕜 := ℝ) (n := ∞)).mdifferentiable
+      (by simp)).mdifferentiableAt (x := (1 : Rˣ))
     have h1 := mvfderiv_comp_apply_of_eq (I' := 𝓘(ℝ, E')) (I := 𝓘(ℝ, R)) (x := (1 : K))
       hval hsub (map_one d.subtypeVal) (eK D)
     rw [← hfun, Units.mvfderiv_val] at h1
@@ -353,16 +351,12 @@ theorem EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal_one
       leftInvariantDerivationLinearIsometryEquivModelVectorSpace_apply_eq_lieEquiv_apply,
       leftInvariantDerivationLieEquivGroupLieAlgebra_apply,
       EmbeddedLieSubgroupData.lieMapSubtypeVal_apply]
-    -- Both sides evaluate `d.lieMapSubtypeVal D` through
-    -- `leftInvariantDerivationEquivGroupLieAlgebra`, differing only in the proof-irrelevant
-    -- interior-point witness `IsInteriorPoint 1` on `Rˣ`.
     rfl
   have hcomp :
       (mvfderiv 𝓘(ℝ, E') (fun k : K ↦ ((k : Rˣ) : R)) (1 : K)).toLinearMap.comp
           eK.toLinearEquiv.toLinearMap =
         (unitsLieAlgebraLieEquiv (R := R)).toLieHom.toLinearMap.comp
-          d.lieMapSubtypeVal.toLinearMap :=
-    LinearMap.ext hval_D
+          d.lieMapSubtypeVal.toLinearMap := LinearMap.ext hval_D
   dsimp only
   rw [← LinearMap.range_comp_of_range_eq_top
       (mvfderiv 𝓘(ℝ, E') (fun k : K ↦ ((k : Rˣ) : R)) (1 : K)).toLinearMap
@@ -382,18 +376,16 @@ theorem EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal
   let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
   let ι : K → R := fun k ↦ ((k : Rˣ) : R)
   let L_R : R →L[ℝ] R := LinearMap.toContinuousLinearMap (LinearMap.mulLeft ℝ ((g : Rˣ) : R))
-  have hfun : ι ∘ Diffeomorph.smul 𝓘(ℝ, E') 𝓘(ℝ, E') ∞ g = L_R ∘ ι := by
-    funext k
-    simp [ι, L_R]
-  have hι : MDifferentiableAt 𝓘(ℝ, E') 𝓘(ℝ, R) ι 1 :=
-    (d.contMDiff_unitsVal_subtypeVal.mdifferentiable (by simp)).mdifferentiableAt
+  have hfun : ι ∘ Diffeomorph.smul 𝓘(ℝ, E') 𝓘(ℝ, E') ∞ g = L_R ∘ ι :=
+    funext fun k ↦ by simp [ι, L_R]
+  have hι :=
+    (d.contMDiff_unitsVal_subtypeVal.mdifferentiable (by simp)).mdifferentiableAt (x := (1 : K))
   have h1 : (mvfderiv 𝓘(ℝ, E') ι g).range =
       (mvfderiv 𝓘(ℝ, E') (ι ∘ Diffeomorph.smul 𝓘(ℝ, E') 𝓘(ℝ, E') ∞ g) 1).range := by
     have h := (Diffeomorph.smul 𝓘(ℝ, E') 𝓘(ℝ, E') ∞ g).range_mvfderiv_comp_diffeomorph
       (by simp) ι 1
     simp only [Diffeomorph.smul_apply, smul_eq_mul] at h
-    rw [mul_one] at h
-    exact h.symm
+    rw [mul_one] at h; exact h.symm
   have hcomp : mvfderiv 𝓘(ℝ, E') (L_R ∘ ι) 1 = L_R.comp (mvfderiv 𝓘(ℝ, E') ι 1) :=
     ContinuousLinearMap.ext fun w ↦ L_R.mvfderiv_comp_apply hι w
   dsimp only
@@ -410,8 +402,7 @@ theorem EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal_eq_mulRight
     let _ : ChartedSpace E' K := d.chartedSpace
     (mvfderiv 𝓘(ℝ, E') (fun k : K ↦ ((k : Rˣ) : R)) g).range =
       K.linearLieSubalgebra.toSubmodule.map (LinearMap.mulRight ℝ ((g : Rˣ) : R)) := by
-  dsimp only
-  rw [d.range_mvfderiv_unitsVal_subtypeVal g]
+  dsimp only; rw [d.range_mvfderiv_unitsVal_subtypeVal g]
   exact Subgroup.map_mulLeft_linearLieSubalgebra_eq_map_mulRight (Subgroup.le_normalizer g.property)
 
 end EmbeddedTangent
