@@ -19,7 +19,9 @@ continuity there.
 A sequence of continuous functions on a compact set is uniformly bounded above as soon as each
 point has a neighbourhood on which the functions are eventually bounded above
 (`IsCompact.exists_forall_le_of_eventually_nhds`): finitely many such neighbourhoods cover the set,
-and each of the finitely many earlier functions is bounded on the compact set.
+and each of the finitely many earlier functions is bounded on the compact set. A finite family of
+functions continuous on a compact set has a common upper bound
+(`IsCompact.exists_forall_le_of_finite_continuousOn`).
 -/
 
 public section
@@ -91,3 +93,11 @@ theorem IsCompact.exists_forall_le_of_eventually_nhds {X β : Type*} [Topologica
   · exact (hB (mem_biUnion hn (mem_image_of_mem _ hy))).trans (le_max_right _ _)
   · obtain ⟨x, hxT, hyx⟩ := mem_iUnion₂.1 (hCT hy)
     exact ((hN n hn x hxT y hyx).trans (hA (mem_image_of_mem _ hxT))).trans (le_max_left _ _)
+
+/-- A finite family of functions continuous on a compact set has a common upper bound. -/
+theorem IsCompact.exists_forall_le_of_finite_continuousOn {X ι α : Type*} [TopologicalSpace X]
+    [Finite ι] [LinearOrder α] [TopologicalSpace α] [ClosedIciTopology α] [Nonempty α]
+    {K : Set X} (hK : IsCompact K) {f : ι → X → α} (hf : ∀ i, ContinuousOn (f i) K) :
+    ∃ M, ∀ x ∈ K, ∀ i, f i x ≤ M := by
+  obtain ⟨M, hM⟩ := (isCompact_iUnion fun i ↦ hK.image_of_continuousOn (hf i)).bddAbove
+  exact ⟨M, fun x hx i ↦ hM (mem_iUnion.2 ⟨i, mem_image_of_mem (f i) hx⟩)⟩

@@ -35,9 +35,10 @@ proper subgroup and the level is not coisotropic.
 * **Freeness and regularity.** A rotation fixing `(q, p)` with `q ⨯₃ p ≠ 0` fixes `q`, `q ⨯₃ p`
   and their cross product, a basis of `ℝ³`, so it is the identity
   (`stabilizer_specialOrthogonalGroup_eq_bot`). Hence every nonzero value is a regular value
-  (`differential_surjective_momentMap_specialOrthogonalGroup`), and `G_c` acts freely on the level
-  `Z = μ⁻¹(c)` (`isCancelSMul_levelSubMulAction_specialOrthogonalGroup`); `SO(3)` is compact, so it
-  acts properly.
+  (`differential_surjective_momentMap_specialOrthogonalGroup`,
+  `forall_differential_surjective_momentMap_specialOrthogonalGroup`), and `G_c` acts freely on
+  the level `Z = μ⁻¹(c)` (`isCancelSMul_levelSubMulAction_specialOrthogonalGroup`); `SO(3)` is
+  compact, so it acts properly.
 * **The level.** The tangent space `T_z Z = ker dμ_z` of the level has dimension `6 - 3 = 3`
   (`finrank_ker_differential_momentMap_specialOrthogonalGroup`), and so does its symplectic
   complement `(T_z Z)^ω = 𝔤 · z`, the orbit tangent space
@@ -180,6 +181,13 @@ theorem differential_surjective_momentMap_specialOrthogonalGroup {z : T*ℝ³}
   h.toIsMomentMap.differential_surjective_of_stabilizer_eq_bot (nondegenerate_bilinFormAt z)
     (stabilizer_specialOrthogonalGroup_eq_bot (cotangentAngularMomentum_ne_zero hz))
 
+/-- **A nonzero value `c` of the moment map is a regular value**: the differential of the moment
+map is onto at every point of the level `μ⁻¹(c)`. -/
+theorem forall_differential_surjective_momentMap_specialOrthogonalGroup
+    {c : Module.Dual ℝ 𝔰𝔬₃} (hc : c ≠ 0) :
+    ∀ z, momentMap I₃ SO₃ z = c → Function.Surjective (h.differential z) := fun _ hz ↦
+  differential_surjective_momentMap_specialOrthogonalGroup h (by rwa [hz])
+
 /-- **The stabilizer `G_c` of a nonzero value `c` acts freely on the level `μ⁻¹(c)`.** -/
 theorem isCancelSMul_levelSubMulAction_specialOrthogonalGroup
     {c : Module.Dual ℝ 𝔰𝔬₃} (hc : c ≠ 0) :
@@ -243,7 +251,7 @@ theorem finrank_quotientModelSpace_specialOrthogonalGroup {c : Module.Dual ℝ �
   have := isCancelSMul_levelSubMulAction_specialOrthogonalGroup h hc
   have hz : momentMap I₃ SO₃ z = c := h.mem_levelSubMulAction.1 z.property
   have hsum := h.finrank_quotientModelSpace_add_finrank_add_finrank_lieAnnihilator
-    (fun _ hx ↦ differential_surjective_momentMap_specialOrthogonalGroup h (by rwa [hx])) hn d
+    (forall_differential_surjective_momentMap_specialOrthogonalGroup h hc) hn d
     isSymplectic_symplecticForm.isNondegenerate z
   rw [← hz, momentMap_specialOrthogonalGroup_eq,
     finrank_lieAnnihilator_specialOrthogonalThreeDualEquiv

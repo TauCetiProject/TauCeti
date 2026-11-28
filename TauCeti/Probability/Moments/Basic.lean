@@ -20,6 +20,8 @@ This file supplements Mathlib's basic API for moments and moment-generating func
 
 ## Main results
 
+* `AEMeasurable.mgf_le_tilt`: comparison of three exponential tilts for a finite measure.
+
 * `TauCeti.isProbabilityMeasure_of_mgf_zero_eq_one`: a measure is a probability measure if the
   moment-generating function of any real-valued statistic equals `1` at zero.
 * `TauCeti.isFiniteMeasure_of_zero_mem_integrableExpSet`: a measure with an exponential moment at
@@ -317,3 +319,56 @@ theorem mgf_sum_le_exp_sum (h_indep : iIndepFun X μ) {s : Finset ι}
   exact Finset.prod_le_prod₀ (fun _ _ ↦ mgf_nonneg) hb
 
 end ProbabilityTheory.iIndepFun
+
+namespace ProbabilityTheory
+
+open Real
+
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+
+/-- Comparison of three tilts for an almost everywhere measurable `S` under a finite measure.
+Assume the exponentials at `b` and `c` are integrable. For `0 ≤ a` and `b ≤ a ≤ c`, splitting
+`exp (a S)` according as `S ≤ x`, `x < S ≤ y` or `y < S` gives
+`E exp (a S) ≤ exp ((a - b) x) E exp (b S) + exp (a y) P(x < S) + exp (-(c - a) y) E exp (c S)`. -/
+theorem _root_.AEMeasurable.mgf_le_tilt [IsFiniteMeasure μ] {S : Ω → ℝ} (hS : AEMeasurable S μ)
+    {a b c x y : ℝ} (ha : 0 ≤ a) (hba : b ≤ a) (hac : a ≤ c)
+    (hb : Integrable (fun ω ↦ exp (b * S ω)) μ) (hc : Integrable (fun ω ↦ exp (c * S ω)) μ) :
+    mgf S μ a ≤ exp ((a - b) * x) * mgf S μ b + exp (a * y) * μ.real {ω | x < S ω} +
+      exp (-((c - a) * y)) * mgf S μ c := by
+  set E := {ω | x < S ω}
+  have hE : NullMeasurableSet E μ := nullMeasurableSet_lt aemeasurable_const hS
+  have hb' := hb.const_mul (exp ((a - b) * x))
+  have hc' := hc.const_mul (exp (-((c - a) * y)))
+  have hi : Integrable (E.indicator fun _ ↦ exp (a * y)) μ :=
+    (integrable_const _).indicator₀ hE
+  have hpt (ω : Ω) : exp (a * S ω) ≤ exp ((a - b) * x) * exp (b * S ω) +
+      E.indicator (fun _ ↦ exp (a * y)) ω + exp (-((c - a) * y)) * exp (c * S ω) := by
+    have h₁ := mul_nonneg (exp_pos ((a - b) * x)).le (exp_pos (b * S ω)).le
+    have h₂ : 0 ≤ E.indicator (fun _ ↦ exp (a * y)) ω :=
+      Set.indicator_nonneg (fun _ _ ↦ (exp_pos _).le) ω
+    have h₃ := mul_nonneg (exp_pos (-((c - a) * y))).le (exp_pos (c * S ω)).le
+    rcases le_or_gt (S ω) x with hx | hx
+    · rw [← exp_add]
+      have : a * S ω ≤ (a - b) * x + b * S ω := by nlinarith
+      linarith [exp_le_exp.2 this]
+    rcases le_or_gt (S ω) y with hy | hy
+    · have hω : ω ∈ E := by simpa only [E, Set.mem_ofPred_eq] using hx
+      rw [Set.indicator_of_mem hω]
+      linarith [exp_le_exp.2 (mul_le_mul_of_nonneg_left hy ha)]
+    · rw [← exp_add (-((c - a) * y))]
+      have : a * S ω ≤ -((c - a) * y) + c * S ω := by nlinarith
+      linarith [exp_le_exp.2 this]
+  have hindicator : ∫ ω, E.indicator (fun _ ↦ exp (a * y)) ω ∂μ =
+      exp (a * y) * μ.real E := by
+    rw [integral_indicator₀ hE, setIntegral_const, smul_eq_mul, mul_comm]
+  calc mgf S μ a ≤ ∫ ω, (exp ((a - b) * x) * exp (b * S ω) +
+        E.indicator (fun _ ↦ exp (a * y)) ω + exp (-((c - a) * y)) * exp (c * S ω)) ∂μ :=
+        integral_mono_of_nonneg (.of_forall fun ω ↦ (exp_pos _).le) ((hb'.add hi).add hc')
+          (.of_forall hpt)
+    _ = _ := by
+        rw [integral_add (f := fun ω ↦ exp ((a - b) * x) * exp (b * S ω) +
+          E.indicator (fun _ ↦ exp (a * y)) ω) (hb'.add hi) hc', integral_add hb' hi,
+          integral_const_mul, integral_const_mul, hindicator]
+        rfl
+
+end ProbabilityTheory

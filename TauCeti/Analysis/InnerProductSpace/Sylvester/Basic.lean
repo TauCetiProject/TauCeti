@@ -51,6 +51,8 @@ separation `Module.End.PointSpectraSeparated A ⊤ B ⊤ δ` with `0 < δ` suppl
 
 ## Main statements
 
+* `ContinuousLinearMap.mul_sub_mul_eq_sylvester`: multiplication form
+  `A * X - X * B = A.sylvester B X` for endomorphisms.
 * `ContinuousLinearMap.sub_smul_one_sylvester_sub_smul_one`: the Sylvester operator is unchanged
   when `A` and `B` are shifted by the same scalar.
 * `ContinuousLinearMap.add_mul_norm_le_norm_comp_add_comp`: if the forms of `A` and `B` are
@@ -104,6 +106,12 @@ noncomputable def sylvester (A : E →L[𝕜] E) (B : F →L[𝕜] F) : (F →L[
 theorem sylvester_apply (A : E →L[𝕜] E) (B : F →L[𝕜] F) (X : F →L[𝕜] E) :
     A.sylvester B X = A ∘L X - X ∘L B := by
   simp [sylvester]
+
+/-- Multiplication form of `ContinuousLinearMap.sylvester_apply` for endomorphisms on a
+seminormed space. -/
+theorem mul_sub_mul_eq_sylvester (A B X : E →L[𝕜] E) :
+    A * X - X * B = A.sylvester B X := by
+  rw [mul_def, mul_def, sylvester_apply]
 
 /-- The Sylvester operator is unchanged when both operators are shifted by the same scalar:
 `(A - c) X - X (B - c) = A X - X B`. -/

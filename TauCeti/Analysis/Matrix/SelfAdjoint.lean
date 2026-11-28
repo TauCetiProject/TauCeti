@@ -9,8 +9,10 @@ public import TauCeti.Analysis.Matrix.Frobenius
 public import TauCeti.Algebra.BigOperators.Finset.Pairs
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
+public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.Topology.UniformSpace.Matrix
 import TauCeti.Topology.Algebra.Module.Determinant
+import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # Frobenius geometry and unitary conjugation on self-adjoint matrix subspaces
@@ -48,13 +50,19 @@ variable (p : ℕ) (𝕜 : Type*) [RCLike 𝕜]
 `ℝ` instance elaborates `selfAdjoint.submodule` with `Real.instAddCommMonoid` rather than
 `RCLike.toNormedAddCommGroup` and avoids `[RCLike ?𝕜]` branching on `ESeminormedAddMonoid`. -/
 
+section Norm
+
+variable (ι : Type*) [Fintype ι]
+
 /-- The real self-adjoint matrix subspace over `𝕜` carries the ambient Frobenius norm rebuilt on
 the subtype uniformity. -/
 @[expose, instance_reducible] def selfAdjointMatrixNormedAddCommGroup :
-    NormedAddCommGroup (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :=
-  letI : NormedAddCommGroup (Matrix (Fin p) (Fin p) 𝕜) := Matrix.frobeniusNormedAddCommGroup
-  letI base := Submodule.normedAddCommGroup (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜))
+    NormedAddCommGroup (selfAdjoint.submodule ℝ (Matrix (ι) (ι) 𝕜)) :=
+  letI : NormedAddCommGroup (Matrix (ι) (ι) 𝕜) := Matrix.frobeniusNormedAddCommGroup
+  letI base := Submodule.normedAddCommGroup (selfAdjoint.submodule ℝ (Matrix (ι) (ι) 𝕜))
   { base with toMetricSpace := base.toMetricSpace.replaceUniformity rfl }
+
+end Norm
 
 attribute [local instance] selfAdjointMatrixNormedAddCommGroup
 
@@ -153,62 +161,72 @@ end selfAdjoint
 
 namespace Matrix.UnitaryGroup
 section Algebra
-variable {𝕜 : Type*} [RCLike 𝕜] {p : ℕ}
+variable {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
 
 /-- Unitary conjugation `A ↦ U * A * Uᴴ` as a real linear isometry equivalence of
-`selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)`. -/
-def selfAdjointConj (U : Matrix.unitaryGroup (Fin p) 𝕜) :
-    selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜) ≃ₗᵢ[ℝ]
-      selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜) :=
-  let e := Unitary.conjStarAlgAut ℝ (Matrix (Fin p) (Fin p) 𝕜) U
+`selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)`. -/
+def selfAdjointConj (U : Matrix.unitaryGroup ι 𝕜) :
+    selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) ≃ₗᵢ[ℝ]
+      selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) :=
+  let e := Unitary.conjStarAlgAut ℝ (Matrix ι ι 𝕜) U
   { toLinearEquiv := LinearEquiv.ofLinearMap
-      (e.toAlgEquiv.toLinearMap.restrict (p := selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜))
+      (e.toAlgEquiv.toLinearMap.restrict (p := selfAdjoint.submodule ℝ (Matrix ι ι 𝕜))
         fun _ hA ↦ IsSelfAdjoint.conjugate hA U)
       (e.symm.toAlgEquiv.toLinearMap.restrict
-        (p := selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜))
+        (p := selfAdjoint.submodule ℝ (Matrix ι ι 𝕜))
         fun _ hA ↦ by rw [Unitary.conjStarAlgAut_symm]; exact IsSelfAdjoint.conjugate hA (star U))
       (LinearMap.ext fun A ↦ Subtype.ext (e.apply_symm_apply A.val))
       (LinearMap.ext fun A ↦ Subtype.ext (e.symm_apply_apply A.val))
     norm_map' A := by
-      let _ : NormedAddCommGroup (Matrix (Fin p) (Fin p) 𝕜) := Matrix.frobeniusNormedAddCommGroup
+      let _ : NormedAddCommGroup (Matrix ι ι 𝕜) := Matrix.frobeniusNormedAddCommGroup
       refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp ?_
       have hsq := Matrix.frobenius_norm_sq_conj_unitary
-        (star (U : Matrix (Fin p) (Fin p) 𝕜)) (A : Matrix (Fin p) (Fin p) 𝕜) (star U).property
+        (star (U : Matrix ι ι 𝕜)) (A : Matrix ι ι 𝕜) (star U).property
       rwa [star_eq_conjTranspose, Matrix.conjTranspose_conjTranspose] at hsq }
 
 /-- Ambient matrix coercion of `Matrix.UnitaryGroup.selfAdjointConj`. -/
-@[simp] theorem coe_selfAdjointConj_apply (U : Matrix.unitaryGroup (Fin p) 𝕜)
-    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :
-    (selfAdjointConj U A : Matrix (Fin p) (Fin p) 𝕜) =
-      (U : Matrix (Fin p) (Fin p) 𝕜) * A * (U : Matrix (Fin p) (Fin p) 𝕜)ᴴ := by rfl
+@[simp] theorem coe_selfAdjointConj_apply (U : Matrix.unitaryGroup ι 𝕜)
+    (A : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) :
+    (selfAdjointConj U A : Matrix ι ι 𝕜) =
+      (U : Matrix ι ι 𝕜) * A * (U : Matrix ι ι 𝕜)ᴴ := by rfl
+
+/-- Unitary conjugation of self-adjoint matrices is jointly continuous in the matrix and frame. -/
+theorem continuous_selfAdjointConj :
+    Continuous fun q : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) ×
+      Matrix.unitaryGroup ι 𝕜 ↦ selfAdjointConj q.2 q.1 := by
+  refine Continuous.subtype_mk (f := fun q : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) ×
+    Matrix.unitaryGroup ι 𝕜 ↦
+    (selfAdjointConj q.2 q.1 : Matrix ι ι 𝕜)) ?_ _
+  simp only [coe_selfAdjointConj_apply]
+  fun_prop
 
 /-- Ambient matrix coercion of the inverse of `Matrix.UnitaryGroup.selfAdjointConj`. -/
-@[simp] theorem coe_selfAdjointConj_symm_apply (U : Matrix.unitaryGroup (Fin p) 𝕜)
-    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :
-    ((selfAdjointConj U).symm A : Matrix (Fin p) (Fin p) 𝕜) =
-      (U : Matrix (Fin p) (Fin p) 𝕜)ᴴ * A * (U : Matrix (Fin p) (Fin p) 𝕜) := by rfl
+@[simp] theorem coe_selfAdjointConj_symm_apply (U : Matrix.unitaryGroup ι 𝕜)
+    (A : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) :
+    ((selfAdjointConj U).symm A : Matrix ι ι 𝕜) =
+      (U : Matrix ι ι 𝕜)ᴴ * A * (U : Matrix ι ι 𝕜) := by rfl
 
 /-- Conjugating by the identity unitary matrix is the identity isometry. -/
 @[simp] theorem selfAdjointConj_one :
-    selfAdjointConj (1 : Matrix.unitaryGroup (Fin p) 𝕜) = LinearIsometryEquiv.refl ℝ _ :=
+    selfAdjointConj (1 : Matrix.unitaryGroup ι 𝕜) = LinearIsometryEquiv.refl ℝ _ :=
   LinearIsometryEquiv.ext fun _ ↦ Subtype.ext <| by simp
 
 /-- Unitary conjugation is a left action of `Matrix.unitaryGroup`. -/
-theorem selfAdjointConj_mul (U V : Matrix.unitaryGroup (Fin p) 𝕜) :
+theorem selfAdjointConj_mul (U V : Matrix.unitaryGroup ι 𝕜) :
     selfAdjointConj (U * V) = (selfAdjointConj V).trans (selfAdjointConj U) :=
   LinearIsometryEquiv.ext fun A ↦ Subtype.ext <| by
     simpa only [coe_selfAdjointConj_apply, LinearIsometryEquiv.trans_apply,
       Unitary.conjStarAlgAut_apply, Unitary.coe_star, star_eq_conjTranspose] using
-      Unitary.conjStarAlgAut_mul_apply (S := ℝ) U V (A : Matrix (Fin p) (Fin p) 𝕜)
+      Unitary.conjStarAlgAut_mul_apply (S := ℝ) U V (A : Matrix ι ι 𝕜)
 
 /-- Conjugating by a product applies the two conjugations in turn. -/
-theorem selfAdjointConj_mul_apply (U V : Matrix.unitaryGroup (Fin p) 𝕜)
-    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :
+theorem selfAdjointConj_mul_apply (U V : Matrix.unitaryGroup ι 𝕜)
+    (A : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) :
     selfAdjointConj (U * V) A = selfAdjointConj U (selfAdjointConj V A) := by
   rw [selfAdjointConj_mul, LinearIsometryEquiv.trans_apply]
 
 /-- Conjugating by `U⁻¹` is the inverse linear isometry equivalence. -/
-@[simp] theorem selfAdjointConj_inv (U : Matrix.unitaryGroup (Fin p) 𝕜) :
+@[simp] theorem selfAdjointConj_inv (U : Matrix.unitaryGroup ι 𝕜) :
     selfAdjointConj U⁻¹ = (selfAdjointConj U).symm :=
   LinearIsometryEquiv.ext fun _ ↦ Subtype.ext <| by
     rw [coe_selfAdjointConj_apply, coe_selfAdjointConj_symm_apply, ← Unitary.star_eq_inv,
@@ -316,6 +334,18 @@ def selfAdjointDiagonal :
   · simp [selfAdjointDiagonal, h, h.ne]
   · simp [selfAdjointDiagonal]
   · simp [selfAdjointDiagonal, h, h.ne']
+
+/-- Two unitary frames conjugate a simple real diagonal to the same matrix exactly when
+their relative unitary is diagonal. -/
+theorem _root_.Matrix.UnitaryGroup.selfAdjointConj_diagonal_eq_iff {d : Fin n → ℝ}
+    (hd : Function.Injective d) (U V : unitaryGroup (Fin n) 𝕜) :
+    Matrix.UnitaryGroup.selfAdjointConj U (selfAdjointDiagonal d) =
+      Matrix.UnitaryGroup.selfAdjointConj V (selfAdjointDiagonal d) ↔
+      Matrix.IsDiag ((star V * U : unitaryGroup (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) := by
+  rw [← Subtype.coe_inj]
+  simpa only [Matrix.UnitaryGroup.coe_selfAdjointConj_apply, coe_selfAdjointDiagonal,
+    Unitary.conjStarAlgAut_apply, star_eq_conjTranspose, Function.comp_def] using
+    (conjStarAlgAut_diagonal_eq_conjStarAlgAut_iff (RCLike.ofReal_injective.comp hd) U V)
 
 /-- The coordinates of a unitary conjugate read the ambient conjugated matrix. -/
 theorem selfAdjointCoordinates_selfAdjointConj (U : unitaryGroup (Fin n) 𝕜)

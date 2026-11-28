@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.Topology.LocallyConstant.Basic
-public import TauCeti.FieldTheory.FunctionField.Belyi.Model
+public import TauCeti.FieldTheory.FunctionField.Belyi.Model.Basic
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.GaloisDescent
 public import TauCeti.FieldTheory.RatFunc.Transcendental
 import Mathlib.Topology.Algebra.OpenSubgroup
@@ -64,8 +64,8 @@ containing `E₀` — that fixes the embedded model `M₀` pointwise
 * `TauCeti.AlgebraicBelyiPair.DescentDatum.baseChangeEquiv`: the base-change isomorphism
   `L ⊗[K] F₀ ≃ F`.
 * `TauCeti.AlgebraicBelyiPair.DescentDatum.model`: the descended pair as a model of `X` over `K`.
-* `TauCeti.AlgebraicBelyiPair.Model.descentDatum`: the continuous descent datum induced by a model
-  of `X` over `K`.
+* `TauCeti.AlgebraicBelyiPair.Model.descentDatum`: the canonical descent datum induced by a
+  model of `X` over `K` (continuous when `L / K` is algebraic).
 
 ## Main results
 
@@ -527,12 +527,9 @@ noncomputable def model : Model K X where
   embedding_algebraMap c := by
     rw [← IsScalarTower.algebraMap_apply, IsScalarTower.algebraMap_apply K L X]
   embedding_algebraMap_X := D.algebraMap_descend_X
-  adjoin_range_embedding := by
-    have h := D.constantCompositum_descend_eq_top
-    rw [← IntermediateField.toSubfield_inj, IntermediateField.top_toSubfield,
-      constantCompositum_def, IntermediateField.adjoin_toSubfield] at h
-    rw [← IntermediateField.toSubfield_inj, IntermediateField.top_toSubfield,
-      IntermediateField.adjoin_toSubfield, Set.union_comm, h]
+  adjoin_range_embedding :=
+    (constantCompositum_eq_top_iff_adjoin_range_eq_top D.descend L X).mp
+      D.constantCompositum_descend_eq_top
 
 include D in
 /-- **Continuous descent data are effective**: an algebraic Belyi pair with a continuous descent
@@ -548,23 +545,25 @@ end DescentDatum
 
 namespace Model
 
-/-- The **canonical descent datum** of a model `M` of `X` over `K`: each `σ ∈ Gal(L/K)` acts by
-`M.conjAlgEquiv σ : X^σ ≃ X`, corresponding to `id ⊗ σ` on `M.pair ⊗[K] L`. -/
-noncomputable def descentDatum [CharZero K] [Algebra.IsAlgebraic K L] {X : AlgebraicBelyiPair L}
+/-- The **canonical descent datum** of a model `M` of `X` over `K`: for an arbitrary extension
+`L / K`, each `σ ∈ Aut(L/K)` acts by `M.conjAlgEquiv σ : X^σ ≃ X`, corresponding to extending
+`id ⊗ σ` on `M.pair ⊗[K] L` to its fraction field. When `L / K` is algebraic, this descent datum
+is continuous (`IsContinuous`). -/
+noncomputable def descentDatum [CharZero K] {X : AlgebraicBelyiPair L}
     (M : Model K X) : DescentDatum K X where
   iso σ := M.conjAlgEquiv σ
   iso_mul σ τ x := by
     rw [conjAlgEquiv_conjRingEquiv, conjAlgEquiv_conjRingEquiv, conjAlgEquiv_conjRingEquiv,
-      baseChangeAut_mul, RingEquiv.trans_apply]
+      baseChangeAut_mul, RingAut.mul_apply]
 
 @[simp]
-theorem descentDatum_iso [CharZero K] [Algebra.IsAlgebraic K L] {X : AlgebraicBelyiPair L}
+theorem descentDatum_iso [CharZero K] {X : AlgebraicBelyiPair L}
     (M : Model K X) (σ : L ≃ₐ[K] L) :
     M.descentDatum.iso σ = M.conjAlgEquiv σ :=
   (rfl)
 
-/-- The descent datum induced by a model over `K` is continuous: `Gal(L/K)` fixes the embedded
-model pointwise. -/
+/-- When `L / K` is algebraic, the descent datum induced by a model over `K` is continuous:
+`Gal(L/K)` fixes the embedded model pointwise. -/
 instance [CharZero K] [Algebra.IsAlgebraic K L] {X : AlgebraicBelyiPair L} (M : Model K X) :
     M.descentDatum.IsContinuous :=
   DescentDatum.IsContinuous.of_openSubgroup_fixes_embedding M.descentDatum M (U := ⊤) isOpen_univ

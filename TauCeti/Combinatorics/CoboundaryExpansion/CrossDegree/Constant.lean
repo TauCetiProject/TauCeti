@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Prod.Lex.Basic
-public import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree.CheegerConstant
+public import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree.Cochain
 public import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Complete
 public import TauCeti.GroupTheory.Perm.DistErr.Basic
 import Mathlib.Data.Nat.Choose.Cast
@@ -74,12 +74,6 @@ section CrossDegree
 
 variable {V : Type*} [Fintype V] [LinearOrder V] {X : TwoComplex V} {n m : ℕ}
 
-/-- In equal nonzero degree, the cross-degree cost is the moved-point cost divided by the
-degree. -/
-theorem costErr_eq_cost_div [NeZero n] (α : Cochain X (Perm (Fin n))) (β : V → Perm (Fin n)) :
-    α.costErr β = α.cost (movedNorm (Fin n)) β / n := by
-  rw [← mul_costErr_eq_cost, mul_div_cancel_left₀ _ (NeZero.ne _ : (n : ℝ) ≠ 0)]
-
 /-- For a cochain of degree `n + 2`, the gauges of its own degree show that the cross-degree
 distance is at most the moved-point gauge distance divided by the degree. -/
 theorem gaugeDistErr_le_gaugeDist_div (α : Cochain X (Perm (Fin (n + 2)))) :
@@ -89,55 +83,13 @@ theorem gaugeDistErr_le_gaugeDist_div (α : Cochain X (Perm (Fin (n + 2)))) :
 
 end CrossDegree
 
-/-! ### Relabelling the complete complex -/
-
-section Relabel
-
-variable {V W : Type*} [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W] {n m : ℕ}
-
-/-- On the complete complex, twice the cross-degree cost is the sum over all ordered pairs of
-distinct vertices, since reversing a pair inverts both arguments of `distErr`. -/
-private theorem two_mul_costErr_complete (α : Cochain (complete V) (Perm (Fin n)))
-    (β : V → Perm (Fin m)) :
-    2 * α.costErr β = ∑ p : V × V, if p.1 ≠ p.2 then
-      distErr (α p.1 p.2) (β p.1 * (β p.2)⁻¹) else 0 := by
-  have hsplit : univ.filter (fun p : V × V => p.1 ≠ p.2) =
-      univ.filter (fun p : V × V => p.1 < p.2) ∪ univ.filter (fun p : V × V => p.2 < p.1) := by
-    ext p
-    simp only [mem_filter, mem_univ, true_and, mem_union]
-    exact ne_iff_lt_or_gt
-  rw [← sum_filter, hsplit, sum_union (disjoint_filter.mpr fun p _ h h' => lt_asymm h h'),
-    costErr_complete, two_mul]
-  congr 1
-  refine sum_nbij' Prod.swap Prod.swap (by simp) (by simp) (by simp) (by simp) fun p _ => ?_
-  rw [α.apply_swap p.2 p.1, ← distErr_inv_inv]
-  simp
-
-/-- Relabelling a cochain on `complete V` along `e : V ≃ W` pulls the gauge back along `e` in
-`costErr`. -/
-@[simp] theorem costErr_relabelComplete (α : Cochain (complete V) (Perm (Fin n)))
-    (γ : W → Perm (Fin m)) (e : V ≃ W) :
-    (α.relabelComplete e).costErr γ = α.costErr (γ ∘ e) := by
-  suffices h : 2 * (α.relabelComplete e).costErr γ = 2 * α.costErr (γ ∘ e) by linarith
-  rw [two_mul_costErr_complete, two_mul_costErr_complete, ← (e.prodCongr e).sum_comp]
-  simp
-
-/-- Relabelling a cochain on `complete V` along `e : V ≃ W` preserves `gaugeDistErr`. -/
-@[simp] theorem gaugeDistErr_relabelComplete (α : Cochain (complete V) (Perm (Fin n)))
-    (e : V ≃ W) : (α.relabelComplete e).gaugeDistErr = α.gaugeDistErr := by
-  rw [gaugeDistErr_def, gaugeDistErr_def]
-  refine iInf_congr fun m => ?_
-  exact ((Equiv.arrowCongr e (Equiv.refl _)).iInf_congr fun β => by simp [Function.comp_def]).symm
-
-end Relabel
-
 end Cochain
 
 /-! ### The cross-degree Cheeger constant -/
 
 section Constant
 
-variable {V W : Type*} [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+variable {V : Type*} [Fintype V] [LinearOrder V]
 
 /-- When every cochain of degree at least `2` is a coboundary, the ratio set is empty and
 `h1Err X = 0`. -/
@@ -145,19 +97,6 @@ theorem h1Err_eq_zero_of_forall_isCoboundary {X : TwoComplex V}
     (h : ∀ (n : ℕ) (α : Cochain X (Perm (Fin (n + 2)))), α.IsCoboundary) : h1Err X = 0 :=
   h1Err_eq_zero_of_forall_gaugeDistErr_eq_zero fun n α =>
     (α.gaugeDistErr_eq_zero_iff_isCoboundary (by omega)).mpr (h n α)
-
-/-- `h1Err` on the complete complex is preserved along any bijection `V ≃ W`. -/
-theorem h1Err_complete_congr (e : V ≃ W) : h1Err (complete V) = h1Err (complete W) := by
-  rw [h1Err_def, h1Err_def]
-  congr 1
-  ext r
-  refine exists_congr fun n => ((Cochain.relabelCompleteEquiv e).exists_congr fun α => ?_)
-  simp [α.defect_relabelComplete isConjInvariant_movedNorm e]
-
-/-- `h1Err (complete V)` depends on `V` only through `Fintype.card V`. -/
-theorem h1Err_complete_eq_of_card_eq (hcard : Fintype.card V = Fintype.card W) :
-    h1Err (complete V) = h1Err (complete W) :=
-  h1Err_complete_congr (Fintype.equivOfCardEq hcard)
 
 end Constant
 

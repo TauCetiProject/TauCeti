@@ -68,6 +68,10 @@ normal vector and an offset.
   `1`-Lipschitz. It lands in that half-space (`TauCeti.le_inner_ite_hyperplaneReflection`) and maps
   every ball centred on the hyperplane into itself
   (`TauCeti.mapsTo_ite_hyperplaneReflection_ball`).
+* `TauCeti.continuousOn_ite_neg_comp_hyperplaneReflection`: the odd reflection of a function
+  continuous on the closed half-space `{y | c ≤ ⟪y, ν⟫}` and zero on the hyperplane, equal to the
+  function there and to `-v ∘ ρ` on the other side, is continuous on every reflection-invariant
+  set; it is odd under `ρ` (`TauCeti.ite_neg_comp_hyperplaneReflection_apply_hyperplaneReflection`).
 * `TauCeti.exists_opens_mapsTo_hyperplaneReflection`: a bounded reflection-invariant open set
   around a thickening of a bounded set of the closed half-space, whose points in the open
   half-space lie in that thickening.
@@ -310,6 +314,49 @@ theorem mapsTo_ite_hyperplaneReflection_ball {ν z : F} {c : ℝ} (hz : ⟪z, ν
   split_ifs
   · exact hx
   · exact mapsTo_hyperplaneReflection_ball hz r hx
+
+section OddReflectionContinuous
+
+variable {G : Type*} [AddGroup G]
+
+/-- **The odd reflection is odd.** If `v` vanishes at `y` when `y` lies on the hyperplane
+`{x | ⟪x, ν⟫ = c}`, then the odd reflection of `v`, equal to `v` on the closed half-space
+`{x | c ≤ ⟪x, ν⟫}` and to `-v ∘ ρ` on the other side, takes opposite values at `ρ y` and `y`. -/
+theorem ite_neg_comp_hyperplaneReflection_apply_hyperplaneReflection {ν : F} (hν : ν ≠ 0)
+    {c : ℝ} {v : F → G} {y : F} (hv0 : ⟪y, ν⟫_ℝ = c → v y = 0) :
+    (if c ≤ ⟪hyperplaneReflection ν c y, ν⟫_ℝ then v (hyperplaneReflection ν c y)
+      else -v (hyperplaneReflection ν c (hyperplaneReflection ν c y))) =
+      -(if c ≤ ⟪y, ν⟫_ℝ then v y else -v (hyperplaneReflection ν c y)) := by
+  have hρν := inner_hyperplaneReflection hν c y
+  rcases lt_trichotomy ⟪y, ν⟫_ℝ c with h | h | h
+  · simp [show c ≤ ⟪hyperplaneReflection ν c y, ν⟫_ℝ by linarith, not_le.2 h]
+  · simp [hyperplaneReflection_eq_self_of_inner_eq h, h.ge, hv0 h]
+  · simp [show ¬c ≤ ⟪hyperplaneReflection ν c y, ν⟫_ℝ by linarith, h.le,
+      hyperplaneReflection_hyperplaneReflection]
+
+/-- **Continuity of an odd reflection.** Let `S` be a set mapped into itself by the reflection `ρ`
+in the hyperplane `{x | ⟪x, ν⟫ = c}`. If `v` is continuous on the part of `S` in the closed
+half-space `{x | c ≤ ⟪x, ν⟫}` and vanishes on the hyperplane, then its odd reflection, equal to
+`v` on the closed half-space and to `-v ∘ ρ` on the other side, is continuous on `S`. -/
+theorem continuousOn_ite_neg_comp_hyperplaneReflection [TopologicalSpace G] [ContinuousNeg G]
+    {ν : F} (hν : ν ≠ 0) {c : ℝ} {S : Set F} (hρS : ∀ y ∈ S, hyperplaneReflection ν c y ∈ S)
+    {v : F → G}
+    (hv : ContinuousOn v (S ∩ {y | c ≤ ⟪y, ν⟫_ℝ})) (hv0 : ∀ y ∈ S, ⟪y, ν⟫_ℝ = c → v y = 0) :
+    ContinuousOn (fun y ↦ if c ≤ ⟪y, ν⟫_ℝ then v y else -v (hyperplaneReflection ν c y)) S := by
+  have hinner : Continuous fun y : F ↦ ⟪y, ν⟫_ℝ := continuous_id.inner continuous_const
+  refine ContinuousOn.if (fun y hy ↦ ?_) (hv.mono ?_)
+    (hv.comp (hyperplaneReflection ν c).continuous.continuousOn
+      fun y (hy : y ∈ S ∩ closure {y | ¬c ≤ ⟪y, ν⟫_ℝ}) ↦ ⟨hρS y hy.1, ?_⟩).neg
+  · -- On the hyperplane `ρ` is the identity and `v` vanishes.
+    have h := (frontier_le_subset_eq continuous_const hinner hy.2).symm
+    rw [hyperplaneReflection_eq_self_of_inner_eq h, hv0 y hy.1 h, neg_zero]
+  · rw [closure_le_eq continuous_const hinner]
+  · have h : ⟪y, ν⟫_ℝ ≤ c := closure_lt_subset_le hinner continuous_const <| by
+      simpa only [not_le] using hy.2
+    rw [Set.mem_ofPred_eq, inner_hyperplaneReflection hν]
+    linarith
+
+end OddReflectionContinuous
 
 /-- **Reflection does not bring a point closer to a set on its side.** If `S` lies in the closed
 half-space `{y | c ≤ ⟪y, ν⟫}` and `x` lies in that half-space with its mirror image in the open

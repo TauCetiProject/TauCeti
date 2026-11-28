@@ -71,6 +71,9 @@ its principal symbol is `∑ᵢ χᵢ(x)² s(x, ξ) = s(x, ξ)`
 * `TauCeti.classicalPrincipalSymbolLinearMap_surjective`: on a σ-compact manifold, the principal
   symbol map onto the smooth positively homogeneous functions of degree `m` on the cotangent bundle
   is surjective.
+* `TauCeti.exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol_pos`: on a
+  σ-compact manifold there are operators of every real order with real positive principal symbol,
+  the symmetric patched quantizations of `‖η‖ ^ m`.
 * `TauCeti.classicalPrincipalSymbol_mulLeft_comp_comp_mulLeft`: localizing an operator by chart
   cutoffs `φ` and `ψ` multiplies its principal symbol by `φ ψ`.
 * `TauCeti.sub_locallyFiniteSum_mulLeft_comp_comp_mulLeft_mem_classicalPseudodifferentialOperators`:
@@ -359,10 +362,9 @@ private theorem finsum_cutoffPullback_sq_mul {ι : Type*}
     (hsq : ∀ y, ∑ᶠ i, (e i).cutoffPullback (he i) (χ i) 1 y ^ 2 = 1) (x : M) (z : ℂ) :
     ∑ᶠ i, (((e i).cutoffPullback (he i) (χ i) 1 x ^ 2 : ℝ) : ℂ) * z = z := by
   -- Only the finitely many charts whose cutoff supports contain `x` contribute.
-  have hfin := hS.point_finite x
+  have hfin := finite_support_cutoffPullback he hS x
   have hr : Function.support (fun i ↦ (e i).cutoffPullback (he i) (χ i) 1 x) ⊆ hfin.toFinset :=
-    fun i hi ↦ hfin.mem_toFinset.2 <|
-      ((e i).tsupport_cutoffPullback_one (he i) (χ i)).subset (subset_tsupport _ hi)
+    fun i hi ↦ hfin.mem_toFinset.2 hi
   have hsq' := hsq x
   rw [finsum_eq_sum_of_support_subset _ fun i hi ↦ hr (by simpa using hi)] at hsq'
   rw [finsum_eq_sum_of_support_subset _ fun i hi ↦ hr fun h ↦ hi (by simp [h]),
@@ -407,6 +409,59 @@ theorem classicalPrincipalSymbolLinearMap_surjective [SigmaCompactSpace M] :
         (fun z hz ↦ (hθ i).1.self_of_nhdsSet z hz), sq]
   rw [classicalPrincipalSymbol_patchedQuantization, finsum_congr hterm,
     finsum_cutoffPullback_sq_mul he hχ hsq]
+
+open scoped ComplexOrder in
+/-- **Operators of every order with positive principal symbol.** On a σ-compact manifold, for every
+real `m` there is a classical pseudodifferential operator of order `m` whose principal symbol is
+real and positive at every nonzero covector. It is the symmetric patched quantization
+`∑ᵢ χᵢ Op(‖η‖ ^ m) χᵢ` over chart cutoffs `χᵢ` whose squares sum to `1`, with principal symbol
+`∑ᵢ χᵢ(x)² ‖ηᵢ‖ ^ m`, where `ηᵢ` is the frequency of `ξ` in the `i`-th chart. -/
+theorem exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol_pos
+    [SigmaCompactSpace M] (m : ℝ) :
+    ∃ P ∈ classicalPseudodifferentialOperators (n := n) (M := M) m,
+      ∀ x (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ), ξ ≠ 0 →
+        0 < classicalPrincipalSymbol m P x ξ := by
+  obtain ⟨ι, c, χ, hχ, hsq⟩ :=
+    exists_locallyFinite_finsum_sq_cutoffPullback_eq_one (E := CoordinateSpace n) (M := M)
+  set e := fun i ↦ chartAt (CoordinateSpace n) (c i)
+  have he (i : ι) : e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M :=
+    IsManifold.chart_mem_maximalAtlas (c i)
+  have hS : LocallyFinite fun i ↦ (e i).symm '' (tsupport (χ i) ∪ tsupport (χ i)) := by
+    simpa only [union_self] using hχ
+  set a : ι → ClassicalSymbol n ℂ ℂ m := fun _ ↦ ClassicalSymbol.ofHomogeneous default
+    (HomogeneousSymbol.normRpow (CoordinateSpace n) (CoordinateSpace n) ℂ m)
+  refine ⟨patchedQuantization he χ χ a hS,
+    patchedQuantization_mem_classicalPseudodifferentialOperators he χ χ a hS, fun y ξ hξ ↦ ?_⟩
+  -- The cutoff `χᵢ` read on `M`, and the frequency of `ξ` in the `i`-th chart.
+  set r := fun i ↦ (e i).cutoffPullback (he i) (χ i) 1 y
+  set η := fun i ↦ (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
+    (ξ.comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) (e i) y).inverse)
+  -- Over the chart source the frequency of `ξ ≠ 0` is nonzero.
+  have hη {i : ι} (hy : y ∈ (e i).source) : η i ≠ 0 :=
+    toDual_symm_comp_inverse_mvfderiv_ne_zero
+      (IsManifold.maximalAtlas_subset_of_le (by simp) (he i)) hy hξ
+  -- Each chart contributes `χᵢ(eᵢ y)² ‖ηᵢ‖ ^ m`, or `0` when `y` is outside its source.
+  have hterm (i : ι) : classicalPrincipalSymbol m ((e i).chartQuantization (he i) (χ i) (χ i)
+      (a i)) y ξ = ((r i ^ 2 * ‖η i‖ ^ m : ℝ) : ℂ) := by
+    by_cases hy : y ∈ (e i).source
+    · rw [OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization (he i) _ _ _ hy]
+      simp [a, r, η, hη hy, OpenPartialHomeomorph.cutoffPullback_one_apply_of_mem (he i) _ hy, sq]
+    · simp [r, OpenPartialHomeomorph.cutoffPullback_apply_of_notMem (he i) _ _ hy,
+        OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization_of_notMem (he i) _ _ _ hy]
+  rw [classicalPrincipalSymbol_patchedQuantization, finsum_congr hterm]
+  -- Some cutoff `χᵢ` is nonzero at `y`, since their squares sum to `1`; then `y` lies in the
+  -- source of the `i`-th chart and its term is positive.
+  obtain ⟨i, hi⟩ : ∃ i, r i ≠ 0 := by
+    by_contra! h
+    simpa [r, h] using hsq y
+  have hy : y ∈ (e i).source := by
+    by_contra hy
+    exact hi (OpenPartialHomeomorph.cutoffPullback_apply_of_notMem (he i) _ _ hy)
+  refine finsum_pos (fun j ↦ Complex.zero_le_real.2 (by positivity))
+    ⟨i, Complex.zero_lt_real.2 (mul_pos (pow_pos (abs_pos.2 hi) 2 |>.trans_eq (sq_abs _))
+      (Real.rpow_pos_of_pos (norm_pos_iff.2 (hη hy)) m))⟩ ?_
+  -- Only the charts whose cutoff supports contain `y` contribute.
+  exact (finite_support_cutoffPullback he hχ y).subset fun j hj h ↦ hj (by simp [r, h])
 
 /-! ### Symmetric localization -/
 

@@ -76,6 +76,9 @@ coherences of both block-sum homomorphisms, as well as the kernel and quotient d
 * `TauCeti.realCliffordSpinBlockSum_assoc`: associativity coherence of the Spin block sum.
 * `TauCeti.spinGroupEquiv_realCliffordBlockSwapIsometry_realCliffordSpinBlockSum`: permutation
   coherence of the Spin block sum under swapping the two coordinate blocks.
+* `TauCeti.spinGroupEquiv_realCliffordMiddleSwapIsometry_realCliffordSpinBlockSum` and
+  `specialOrthogonalGroupCongr_realCliffordMiddleSwapIsometry_realCliffordSpecialOrthogonalBlockSum`
+  (in `TauCeti`): middle-block exchange coherences of the Spin and special-orthogonal block sums.
 
 ## References
 
@@ -736,6 +739,63 @@ theorem
     spinGroupEquiv_realCliffordBlockSwapIsometry_realCliffordSpinBlockSum,
     spinToSpecialOrthogonal_realCliffordSpinBlockSum]
   simp only [Prod.swap_prod_mk]
+
+private theorem realCliffordNestedSplitIsometry_symm_spinGroupEquiv (a b c d : ℕ)
+    (x₁ : realCliffordSpinGroupZero a) (x₂ : realCliffordSpinGroupZero b)
+    (x₃ : realCliffordSpinGroupZero c) (x₄ : realCliffordSpinGroupZero d) :
+    (realCliffordNestedSplitIsometry a b c d).symm.spinGroupEquiv
+        (spinGroupProd _ _ (spinGroupProd _ _ (x₁, x₂), spinGroupProd _ _ (x₃, x₄))) =
+      realCliffordSpinBlockSum (a + b) (c + d)
+        (realCliffordSpinBlockSum a b (x₁, x₂), realCliffordSpinBlockSum c d (x₃, x₄)) := by
+  rw [realCliffordNestedSplitIsometry_symm_eq, IsometryEquiv.spinGroupEquiv_trans,
+    MulEquiv.trans_apply, spinGroupEquiv_prod_spinGroupProd, ← realCliffordSpinBlockSum_apply,
+    ← realCliffordSpinBlockSum_apply, ← realCliffordSpinBlockSum_apply]
+
+-- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
+/-- **Middle-block exchange coherence of `realCliffordSpinBlockSum`**: transporting a four-block
+Spin sum along `realCliffordMiddleSwapIsometry p q` swaps the middle two blocks with no sign. -/
+theorem spinGroupEquiv_realCliffordMiddleSwapIsometry_realCliffordSpinBlockSum (p q : ℕ)
+    (x₁ x₃ : realCliffordSpinGroupZero p) (x₂ x₄ : realCliffordSpinGroupZero q) :
+    (realCliffordMiddleSwapIsometry p q).spinGroupEquiv
+        (realCliffordSpinBlockSum (p + q) (p + q)
+          (realCliffordSpinBlockSum p q (x₁, x₂), realCliffordSpinBlockSum p q (x₃, x₄))) =
+      realCliffordSpinBlockSum (p + p) (q + q)
+        (realCliffordSpinBlockSum p p (x₁, x₃), realCliffordSpinBlockSum q q (x₂, x₄)) := by
+  rw [← realCliffordNestedSplitIsometry_symm_spinGroupEquiv p q p q, ← MulEquiv.trans_apply,
+    ← IsometryEquiv.spinGroupEquiv_trans,
+    realCliffordNestedSplitIsometry_symm_trans_realCliffordMiddleSwapIsometry,
+    IsometryEquiv.spinGroupEquiv_trans, MulEquiv.trans_apply,
+    spinGroupEquiv_prodProdProdComm_spinGroupProd,
+    realCliffordNestedSplitIsometry_symm_spinGroupEquiv p p q q]
+
+/-- **Middle-block exchange coherence of `realCliffordSpecialOrthogonalBlockSum`**: transporting a
+four-block special-orthogonal sum along `realCliffordMiddleSwapIsometry p q` swaps the middle two
+blocks. -/
+@[simp]
+theorem
+    specialOrthogonalGroupCongr_realCliffordMiddleSwapIsometry_realCliffordSpecialOrthogonalBlockSum
+    (p q : ℕ)
+    (g₁ g₃ : specialOrthogonalGroup (realCliffordForm p 0))
+    (g₂ g₄ : specialOrthogonalGroup (realCliffordForm q 0)) :
+    (realCliffordMiddleSwapIsometry p q).specialOrthogonalGroupCongr
+        (realCliffordSpecialOrthogonalBlockSum (p + q) (p + q)
+          (realCliffordSpecialOrthogonalBlockSum p q (g₁, g₂),
+            realCliffordSpecialOrthogonalBlockSum p q (g₃, g₄))) =
+      realCliffordSpecialOrthogonalBlockSum (p + p) (q + q)
+        (realCliffordSpecialOrthogonalBlockSum p p (g₁, g₃),
+          realCliffordSpecialOrthogonalBlockSum q q (g₂, g₄)) := by
+  obtain ⟨x₁, rfl⟩ := spinToSpecialOrthogonal_surjective_of_posDef
+    (realCliffordForm p 0) (posDef_realCliffordForm_zero p) g₁
+  obtain ⟨x₂, rfl⟩ := spinToSpecialOrthogonal_surjective_of_posDef
+    (realCliffordForm q 0) (posDef_realCliffordForm_zero q) g₂
+  obtain ⟨x₃, rfl⟩ := spinToSpecialOrthogonal_surjective_of_posDef
+    (realCliffordForm p 0) (posDef_realCliffordForm_zero p) g₃
+  obtain ⟨x₄, rfl⟩ := spinToSpecialOrthogonal_surjective_of_posDef
+    (realCliffordForm q 0) (posDef_realCliffordForm_zero q) g₄
+  simpa only [← IsometryEquiv.specialOrthogonalGroupCongr_spinToSpecialOrthogonal,
+    spinToSpecialOrthogonal_realCliffordSpinBlockSum] using
+    congrArg (spinToSpecialOrthogonal (realCliffordForm ((p + p) + (q + q)) 0))
+      (spinGroupEquiv_realCliffordMiddleSwapIsometry_realCliffordSpinBlockSum p q x₁ x₃ x₂ x₄)
 
 end
 

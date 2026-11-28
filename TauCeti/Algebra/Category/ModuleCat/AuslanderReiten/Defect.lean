@@ -70,7 +70,7 @@ namespace ModuleCat
 open CategoryTheory TauCeti TauCeti.ExactStructure LinearMap
 open scoped ModuleCat.Algebra
 
-universe u v t
+universe u v t z z'
 
 variable (R : Type u) {A : Type v} [CommRing R] [Ring A] [Algebra R A]
 
@@ -193,7 +193,7 @@ identity on carriers (`ModuleCat.matlisDualTransposeEquiv`). -/
 
 section Covariant
 
-variable {W : Type t} [AddCommGroup W] [Module A W] [Module R W] [IsScalarTower R A W]
+variable {W : Type z} [AddCommGroup W] [Module A W] [Module R W] [IsScalarTower R A W]
   {B : ModuleCat.{t} A} (eW : W ≃ₗ[A] B)
 
 /-- The covariant defect of a map `f : N ⟶ N'` of `A`-modules at `W`, as the cokernel of the
@@ -274,7 +274,7 @@ theorem covariantDefectEquivExt1_map {M' K' : ModuleCat.{t} A}
 
 /-- **Naturality of the covariant defect as `Ext¹` in the test module.** For `g : W → W'` and
 `W' ≃ B'`, postcomposition with `g` on defects is cobase change along the induced `B ⟶ B'`. -/
-theorem covariantDefectEquivExt1_homCokernelMap {W' : Type t} [AddCommGroup W'] [Module A W']
+theorem covariantDefectEquivExt1_homCokernelMap {W' : Type z'} [AddCommGroup W'] [Module A W']
     [Module R W'] [IsScalarTower R A W'] {B' : ModuleCat.{t} A} (eW' : W' ≃ₗ[A] B')
     (g : W →ₗ[A] W') (y : covariantDefect R e.f.hom W) :
     covariantDefectEquivExt1 R eW' e he (homCokernelMap R e.f.hom g y) =

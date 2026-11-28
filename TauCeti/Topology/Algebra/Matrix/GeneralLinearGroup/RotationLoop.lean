@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Homotopy.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.LeftMulMatrix
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering.Basic
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Rotation
 public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Stable
 public import TauCeti.Topology.Algebra.QuadraticForm.RealSpecialOrthogonal

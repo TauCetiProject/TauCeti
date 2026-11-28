@@ -75,6 +75,12 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.abs_arg_lt_pi_of_mem_slitPlane`, `Complex.abs_arg_div_two_le_pi_div_two`,
   `Complex.abs_arg_div_two_lt_pi_div_two`: `|arg z / 2| ≤ π / 2` for every `z`, with strict
   inequality when `arg z ≠ π` and `|arg z| < π` on `slitPlane`.
+* `Complex.exists_ball_slitPlane_norm_arg_le`: around `w₀ ∈ slitPlane`, an open ball stays in
+  `slitPlane` with `‖w‖` within a factor of `2` of `‖w₀‖` and `|w.arg| ≤ θ` for any `|w₀.arg| < θ`.
+* `Complex.isOpen_slitPlane_inter_abs_arg_lt`: for any `α : ℝ`, the sector
+  `{w : ℂ | w ∈ slitPlane ∧ |arg w| < α}` in the slit plane is open.
+* `Complex.exists_mem_nhds_slitPlane_norm_and_arg_lt`: a point `w₀ ∈ slitPlane` with `|arg w₀| < α`
+  has a neighborhood in `slitPlane` with norm bounded away from `0` and `∞` and `|arg w| ≤ α' < α`.
 * `Complex.one_add_mul_cos_div_two_le_norm_one_add_ofReal_mul_exp_mul_I`,
   `Complex.norm_one_add_ofReal_mul_exp_mul_I_le`,
   `Complex.one_add_ofReal_mul_exp_mul_I_mem_slitPlane`: along polar rays `1 + r e^{iθ}`,
@@ -98,6 +104,8 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
   from the origin, across the negative real axis too.
 * `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
   eventually, then `arg (f x) → arg Q`.
+* `Complex.arg_one_sub_ofReal_mul_ne_pi`: for `z` off `(1, ∞)` and `t ∈ [0, 1]`,
+  `arg (1 - t * z) ≠ π`.
 * `Complex.im_zpow`: `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.sin_arg_sub_arg_one_sub`: `sin (arg ξ - arg (1 - ξ)) = Im ξ / (|ξ| |1 - ξ|)`; for `ξ`
   in the upper half-plane, the sine of the angle at `ξ` of the triangle `0, 1, ξ`.
@@ -332,6 +340,59 @@ theorem arg_sub_one_add_arg_add_one_mem_Ioc {z : ℂ} (hre : 0 < z.re) :
     rw [(arg_eq_zero_iff (z := z + 1)).2 ⟨by simp; linarith, by simp [him]⟩, add_zero]
     exact arg_mem_Ioc _
 
+/-- Around any `w₀ ∈ slitPlane` and for any `θ` with `|w₀.arg| < θ`, there is `ρ > 0` such that
+every `w ∈ Metric.ball w₀ ρ` stays in `slitPlane` with `‖w₀‖ / 2 ≤ ‖w‖ ≤ 2 * ‖w₀‖` and
+`|w.arg| ≤ θ`. -/
+theorem exists_ball_slitPlane_norm_arg_le {w₀ : ℂ} (hw₀ : w₀ ∈ slitPlane) {θ : ℝ}
+    (hθ : |w₀.arg| < θ) :
+    ∃ ρ : ℝ, 0 < ρ ∧ ∀ w ∈ Metric.ball w₀ ρ,
+      w ∈ slitPlane ∧ ‖w₀‖ / 2 ≤ ‖w‖ ∧ ‖w‖ ≤ 2 * ‖w₀‖ ∧ |w.arg| ≤ θ := by
+  obtain ⟨ρ₁, hρ₁, hsub₁⟩ := Metric.isOpen_iff.1 isOpen_slitPlane w₀ hw₀
+  have hcont_arg : ContinuousAt (fun w : ℂ ↦ |w.arg|) w₀ :=
+    continuous_abs.continuousAt.comp (continuousAt_arg hw₀)
+  obtain ⟨ρ₂, hρ₂, hsub₂⟩ := Metric.eventually_nhds_iff_ball.1
+    (hcont_arg.eventually (gt_mem_nhds hθ))
+  have hw₀_pos : 0 < ‖w₀‖ := norm_pos_iff.2 (slitPlane_ne_zero hw₀)
+  refine ⟨min (‖w₀‖ / 2) (min ρ₁ ρ₂), lt_min (by positivity) (lt_min hρ₁ hρ₂), fun w hw ↦ ?_⟩
+  have hwn : ‖w - w₀‖ < ‖w₀‖ / 2 := (mem_ball_iff_norm.1 hw).trans_le (min_le_left _ _)
+  have hlt := hsub₂ w (Metric.ball_subset_ball ((min_le_right _ _).trans (min_le_right _ _)) hw)
+  exact ⟨hsub₁ (Metric.ball_subset_ball ((min_le_right _ _).trans (min_le_left _ _)) hw),
+    by linarith [norm_sub_norm_le w₀ w, norm_sub_rev w₀ w],
+    by linarith [norm_le_norm_sub_add w w₀], hlt.le⟩
+
+/-- For any `α : ℝ`, the sector `{w : ℂ | w ∈ slitPlane ∧ |arg w| < α}` in the slit plane is
+open. -/
+theorem isOpen_slitPlane_inter_abs_arg_lt (α : ℝ) :
+    IsOpen {w : ℂ | w ∈ slitPlane ∧ |arg w| < α} :=
+  continuousOn_arg.abs.isOpen_inter_preimage isOpen_slitPlane isOpen_Iio
+
+open Filter Topology in
+/-- Around any point `w₀ ∈ slitPlane` with `|arg w₀| < α`, there is a neighborhood contained in
+`slitPlane` on which the norm is bounded away from `0` and `∞` and `|arg w|` stays bounded by a
+constant `α' < α`. -/
+theorem exists_mem_nhds_slitPlane_norm_and_arg_lt {w₀ : ℂ} {α : ℝ}
+    (hw₀ : w₀ ∈ slitPlane) (harg : |arg w₀| < α) :
+    ∃ U ∈ 𝓝 w₀, ∃ r₀ r₁ α' : ℝ,
+      0 < r₀ ∧ α' < α ∧
+      ∀ w ∈ U, w ∈ slitPlane ∧ r₀ ≤ ‖w‖ ∧ ‖w‖ ≤ r₁ ∧ |arg w| ≤ α' := by
+  have hnorm_pos : 0 < ‖w₀‖ := norm_pos_iff.mpr (slitPlane_ne_zero hw₀)
+  let r₀ := ‖w₀‖ / 2
+  let r₁ := 2 * ‖w₀‖
+  let α' := (|arg w₀| + α) / 2
+  have hα'_gt : |arg w₀| < α' := by dsimp [α']; linarith
+  have hU_slit : slitPlane ∈ 𝓝 w₀ := isOpen_slitPlane.mem_nhds hw₀
+  have hU_lo : {w : ℂ | r₀ < ‖w‖} ∈ 𝓝 w₀ :=
+    (isOpen_lt continuous_const continuous_norm).mem_nhds (by dsimp [r₀]; linarith)
+  have hU_hi : {w : ℂ | ‖w‖ < r₁} ∈ 𝓝 w₀ :=
+    (isOpen_lt continuous_norm continuous_const).mem_nhds (by dsimp [r₁]; linarith)
+  have hU_arg : {w : ℂ | |arg w| < α'} ∈ 𝓝 w₀ :=
+    (continuousAt_arg hw₀).abs.preimage_mem_nhds (Iio_mem_nhds hα'_gt)
+  refine ⟨slitPlane ∩ {w | r₀ < ‖w‖} ∩ {w | ‖w‖ < r₁} ∩ {w | |arg w| < α'},
+    inter_mem (inter_mem (inter_mem hU_slit hU_lo) hU_hi) hU_arg,
+    r₀, r₁, α', by positivity, by dsimp [α']; linarith, ?_⟩
+  rintro w ⟨⟨⟨hslit, hlo⟩, hhi⟩, harg'⟩
+  exact ⟨hslit, le_of_lt hlo, le_of_lt hhi, le_of_lt harg'⟩
+
 /-- The exponential of a point of the horizontal strip `|im x| < π` lies in the slit plane. -/
 theorem exp_mem_slitPlane_of_abs_im_lt {x : ℂ} (hx : |x.im| < π) : exp x ∈ slitPlane := by
   obtain ⟨h₁, h₂⟩ := abs_lt.1 hx
@@ -371,6 +432,18 @@ theorem tendsto_arg_of_tendsto_ofReal_mul {α : Type*} {l : Filter α} {c : α �
     (h : Tendsto (fun x ↦ (c x : ℂ) * f x) l (𝓝 Q)) :
     Tendsto (fun x ↦ arg (f x)) l (𝓝 (arg Q)) :=
   ((continuousAt_arg hQ).tendsto.comp h).congr' (hc.mono fun _ hx ↦ arg_ofReal_mul hx _)
+
+/-- For `z` off the open ray `(1, ∞)` (i.e. `z.im ≠ 0 ∨ z.re ≤ 1`) and `t ∈ [0, 1]`, the radial
+point `1 - t * z` never lies on the open negative real axis, so its principal argument is not
+`π`. -/
+theorem arg_one_sub_ofReal_mul_ne_pi (z : ℂ) (hz : z.im ≠ 0 ∨ z.re ≤ 1) {t : ℝ}
+    (ht : t ∈ Set.Icc (0 : ℝ) 1) : ((1 : ℂ) - (t : ℂ) * z).arg ≠ π := by
+  rcases eq_or_ne z 1 with rfl | hz1
+  · have hsub : (1 : ℂ) - (t : ℂ) * 1 = ((1 - t : ℝ) : ℂ) := by push_cast; ring
+    rw [hsub, arg_ofReal_of_nonneg (sub_nonneg.mpr ht.2)]
+    exact Real.pi_ne_zero.symm
+  · exact slitPlane_arg_ne_pi
+      (one_sub_ofReal_mul_mem_slitPlane ((one_sub_mem_slitPlane_iff z).mpr ⟨hz, hz1⟩) ht)
 
 /-- Rotating `1 + r * exp (θ * I)` by `exp (-(θ / 2) * I)` projects onto the bisecting direction,
 giving `(1 + r) * cos (θ / 2) ≤ ‖1 + r * exp (θ * I)‖` for all real `θ` and `r`. -/

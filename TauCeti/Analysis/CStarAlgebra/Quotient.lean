@@ -42,6 +42,7 @@ Davidson, *C*-Algebras by Example*, Theorem I.5.4 and Corollary I.5.5).
 * `NonUnitalStarAlgHom.isClosed_range`, `StarAlgHom.isClosed_range`,
   `TwoSidedIdeal.isClosed_map_mk`, and `TwoSidedIdeal.isClosed_sup`: `⋆`-homomorphism ranges,
   images of closed ideals in quotients, and sums `I ⊔ J` of closed ideals are automatically closed.
+* `NonUnitalStarAlgHom.norm_apply_eq_infDist_ker`: `‖φ a‖` is the distance from `a` to `ker φ`.
 * `NonUnitalStarAlgHom.norm_apply_le_norm_apply_of_ker_le`: a `⋆`-homomorphism killing the kernel
   of another is dominated by it in norm.
 * `NonUnitalStarAlgHom.exists_mem_comap_norm_sub_lt`: the distance from `a` to the preimage of a
@@ -454,6 +455,13 @@ theorem quotientKerHom_injective : Function.Injective φ.quotientKerHom :=
 
 theorem isometry_quotientKerHom : Isometry φ.quotientKerHom :=
   NonUnitalStarAlgHom.isometry φ.quotientKerHom φ.quotientKerHom_injective
+
+/-- The norm of `φ a` for a star homomorphism `φ` of C*-algebras is the distance from `a` to the
+kernel of `φ`: the induced map `A ⧸ ker φ → B` is isometric. -/
+theorem norm_apply_eq_infDist_ker (a : A) :
+    ‖φ a‖ = Metric.infDist a (TwoSidedIdeal.ker φ : Set A) := by
+  rw [← φ.quotientKerHom_mk a, φ.isometry_quotientKerHom.norm_map_of_map_zero (map_zero _),
+    TwoSidedIdeal.Quotient.norm_mk_eq_infDist]
 
 @[simp]
 theorem range_quotientKerHom : Set.range φ.quotientKerHom = Set.range φ := by

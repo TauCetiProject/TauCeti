@@ -12,6 +12,7 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Perm.DomMulAct
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.GroupTheory.Perm.Basic
+import Mathlib.GroupTheory.Perm.Support
 
 /-!
 # Permutations preserving the fibers of a map
@@ -21,7 +22,7 @@ of `Equiv.Perm α`, here called `TauCeti.fiberSubgroup f`.  This file records th
 transpositions it contains, the behaviour of the construction under conjugation, composition and
 pairing two maps, the unions of fibers it preserves, its description for the two summands of
 `α ⊕ β` as the image of `Equiv.Perm.sumCongrHom` (`TauCeti.fiberSubgroup_isLeft`), the criteria
-for it to be trivial and for it to be a point stabilizer, and the isomorphism
+for it to be trivial, at most a transposition, and a point stabilizer, and the isomorphism
 restricting a fiber-preserving permutation to each fiber,
 
 `fiberSubgroup f ≃* ∀ i, Equiv.Perm {a // f a = i}`,
@@ -75,6 +76,24 @@ def fiberSubgroup (f : α → ι) : Subgroup (Equiv.Perm α) where
 theorem mem_fiberSubgroup {f : α → ι} {σ : Equiv.Perm α} :
     σ ∈ fiberSubgroup f ↔ ∀ a, f (σ a) = f a :=
   Iff.rfl
+
+/-- A permutation preserves every fiber of `f` if and only if precomposing `f` with it leaves `f`
+unchanged. -/
+theorem comp_eq_self_iff_mem_fiberSubgroup {f : α → ι} {σ : Equiv.Perm α} :
+    f ∘ ⇑σ = f ↔ σ ∈ fiberSubgroup f :=
+  ⟨fun h a => congrFun h a, fun h => funext h⟩
+
+/-- A permutation preserves every fiber of `f` if and only if precomposing `f` with its inverse
+leaves `f` unchanged. -/
+theorem comp_symm_eq_self_iff_mem_fiberSubgroup {f : α → ι} {σ : Equiv.Perm α} :
+    f ∘ ⇑σ.symm = f ↔ σ ∈ fiberSubgroup f := by
+  rw [← Subgroup.inv_mem_iff, ← comp_eq_self_iff_mem_fiberSubgroup, Equiv.Perm.inv_def]
+
+/-- Every subgroup `G ≤ Equiv.Perm α` preserves its own orbits, so it is contained in the fiber
+subgroup of the orbit quotient map. -/
+theorem _root_.Subgroup.le_fiberSubgroup_orbitRel (G : Subgroup (Equiv.Perm α)) :
+    G ≤ fiberSubgroup (Quotient.mk (MulAction.orbitRel G α)) := fun g hg =>
+  mem_fiberSubgroup.mpr fun _ => Quotient.sound ⟨⟨g, hg⟩, rfl⟩
 
 /-- The transposition of two points lying in a common fiber of `f` preserves every fiber of `f`:
 it moves each of the two points to the other, inside their shared fiber, and fixes the rest. -/
@@ -198,6 +217,26 @@ theorem injective_of_fiberSubgroup_eq_bot {f : α → ι}
 theorem fiberSubgroup_eq_bot_iff {f : α → ι} :
     fiberSubgroup f = ⊥ ↔ Function.Injective f :=
   ⟨injective_of_fiberSubgroup_eq_bot, fiberSubgroup_eq_bot_of_injective⟩
+
+/-- On a finite type, if `f` identifies at most one pair of distinct points (up to order), then any
+permutation preserving the fibers of `f` is either the identity or a transposition. -/
+theorem eq_one_or_isSwap_of_mem_fiberSubgroup [Finite α] [DecidableEq α] {f : α → ι}
+    (huniq : ∀ a b c d : α, a ≠ b → c ≠ d → f a = f b → f c = f d → c = a ∨ c = b)
+    {σ : Equiv.Perm α} (hσ : σ ∈ fiberSubgroup f) :
+    σ = 1 ∨ σ.IsSwap := by
+  cases nonempty_fintype α
+  rcases eq_or_ne σ 1 with rfl | hne
+  · exact Or.inl rfl
+  right
+  have hgt : 1 < σ.support.card := Equiv.Perm.one_lt_card_support_of_ne_one hne
+  obtain ⟨a, ha⟩ := Finset.card_pos.mp (Nat.zero_lt_of_lt hgt)
+  have ha_ne : σ a ≠ a := Equiv.Perm.mem_support.mp ha
+  have hsub : σ.support ⊆ {a, σ a} := fun c hc => by
+    have hc_ne : σ c ≠ c := Equiv.Perm.mem_support.mp hc
+    rcases huniq a (σ a) c (σ c) ha_ne.symm hc_ne.symm (hσ a).symm (hσ c).symm with rfl | rfl <;>
+      simp
+  have hle : σ.support.card ≤ 2 := (Finset.card_le_card hsub).trans Finset.card_le_two
+  exact Equiv.Perm.card_support_eq_two.mp (by omega)
 
 /-- The permutations preserving the fibers of `f` are the stabilizer of `f` for the domain action
 of `Equiv.Perm α` on `α → ι`, read as a subgroup of `Equiv.Perm α` itself: the `ᵈᵐᵃ` and `ᵐᵒᵖ`
