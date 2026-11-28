@@ -19,8 +19,7 @@ For a multiplicative character `χ : MulChar k ℂ` of a field `k`, the determin
 `χ ((-1) ^ c.dim * c.charpoly.coeff 0)` (which equals `χ g.det` at `ofEnd g`). Because the
 determinant is multiplicative along invariant subspaces and quotients, pointwise multiplication by
 `detChar χ` defines a `ℂ`-algebra endomorphism `TauCeti.HallAlgebra.detTwist χ` of
-`TauCeti.HallAlgebra k` when `k` is finite (ShortGRH
-`IntegralRepresentationsOfGeneralLinearGroups` §5.3).
+`TauCeti.HallAlgebra k` when `k` is finite.
 
 * `TauCeti.HallAlgebra.detChar`: the class function `c ↦ χ ((-1) ^ c.dim * c.charpoly.coeff 0)`.
 * `TauCeti.HallAlgebra.detChar_ofEnd`: `detChar χ (ofEnd g) = χ g.det`.
