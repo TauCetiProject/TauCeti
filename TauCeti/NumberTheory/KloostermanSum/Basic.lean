@@ -38,7 +38,7 @@ hyper-Kloosterman sum `TauCeti.hyperKloosterman R 2 ψ (a b)`, through the bijec
 ## Main results
 
 * `TauCeti.kloostermanSum_zero_right`: `K(χ, ψ; a, 0)` is the Gauss sum of `χ` and `ψ.mulShift a`.
-* `TauCeti.kloostermanSum_units_zero`, `TauCeti.kloostermanSum_zero_units`: for a unit `u`,
+* `TauCeti.kloostermanSum_unit_zero`, `TauCeti.kloostermanSum_zero_unit`: for a unit `u`,
   `K(χ; u, 0) = χ⁻¹(u) g(χ, ψ)` and `K(χ; 0, u) = χ(u) g(χ⁻¹, ψ)`.
 * `TauCeti.kloostermanSum_one_zero_right`: over a finite field, with values in a domain,
   `K(1; a, 0) = -1` for `a ≠ 0` and `ψ ≠ 1`.
@@ -193,16 +193,16 @@ theorem kloostermanSum_zero_right [Fintype R] (χ : MulChar R R') (ψ : AddChar 
   simp [AddChar.mulShift_apply]
 
 /-- For a unit `u`, `K(χ; u, 0) = χ⁻¹(u) g(χ, ψ)`. -/
-theorem kloostermanSum_units_zero [Fintype R] (χ : MulChar R R') (ψ : AddChar R R') (u : Rˣ) :
+theorem kloostermanSum_unit_zero [Fintype R] (χ : MulChar R R') (ψ : AddChar R R') (u : Rˣ) :
     kloostermanSum χ ψ u 0 = χ⁻¹ u * gaussSum χ ψ := by
   rw [kloostermanSum_zero_right, gaussSum_mulShift_eq]
 
 /-- For a unit `u`, `K(χ; 0, u) = χ(u) g(χ⁻¹, ψ)`. -/
-theorem kloostermanSum_zero_units [Fintype R] (χ : MulChar R R') (ψ : AddChar R R') (u : Rˣ) :
+theorem kloostermanSum_zero_unit [Fintype R] (χ : MulChar R R') (ψ : AddChar R R') (u : Rˣ) :
     kloostermanSum χ ψ 0 u = χ u * gaussSum χ⁻¹ ψ := by
   calc kloostermanSum χ ψ 0 u
       = kloostermanSum χ⁻¹ ψ u 0 := (kloostermanSum_inv_comm χ ψ 0 u).symm
-    _ = χ u * gaussSum χ⁻¹ ψ := by simpa only [inv_inv] using kloostermanSum_units_zero χ⁻¹ ψ u
+    _ = χ u * gaussSum χ⁻¹ ψ := by simpa only [inv_inv] using kloostermanSum_unit_zero χ⁻¹ ψ u
 
 /-- For `χ ≠ 1` with values in a domain, `K(χ; 0, 0) = 0`. -/
 @[simp]
