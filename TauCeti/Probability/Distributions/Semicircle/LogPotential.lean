@@ -32,10 +32,10 @@ support is also needed for the full characterization.
 Let `m z = ∫ (y - z)⁻¹ dμ(y)` be the resolvent transform, which satisfies `m² + z m + 1 = 0` and
 has positive imaginary part in the upper half-plane. The complex logarithmic potential
 `H z = ∫ log (z - y) dμ(y)` has derivative `-m`, as does the primitive
-`-z m / 2 - log (-m) - 1 / 2`; the two agree up to a constant, which vanishes at infinity. Taking
-real parts gives the potential in the upper half-plane. The quadratic equation identifies the
-boundary values of `m` on `(-2, 2)`, whose modulus is `1` and whose real part is `-x / 2`. The
-potential is continuous up to the real axis by dominated convergence.
+`-z m / 2 - log (-m) - 1 / 2`; the two agree up to a constant whose real part vanishes at
+infinity. Taking real parts gives the potential in the upper half-plane. The quadratic equation
+identifies the boundary values of `m` on `(-2, 2)`, whose modulus is `1` and whose real part is
+`-x / 2`. The potential is continuous up to the real axis by dominated convergence.
 
 ## References
 
