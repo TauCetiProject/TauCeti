@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Ideles.Basic
 import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.BoundedConjugates
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
-import TauCeti.Topology.Compactness.Compact
+import TauCeti.Topology.Order.Compact
 
 /-!
 # Counting rational points in dyadic dilates of a compact set of adeles
@@ -141,7 +141,7 @@ theorem exists_encard_setOf_twoInf_zpow_mul_mem_le {ι : Type*} [Fintype ι]
       rw [norm_fst_twoInf_zpow_mul_algebraMap_apply, zpow_neg, inv_mul_le_iff₀ (by positivity),
         mul_comm] at h
       exact h
-    · exact snd_twoInf_zpow_mul_algebraMap _ _
+    · exact (snd_twoInf_zpow_mul _ _).trans (AdeleRing.algebraMap_snd_def _ _ _)
   calc _ ≤ (Set.univ.pi fun i ↦ {y : K | (∀ w : InfinitePlace K, w y ≤ R * 2 ^ x i) ∧
           algebraMap K 𝔸ᶠ[K] y ∈ (fun b : ι → 𝔸[K] ↦ (b i).2) '' B}).encard :=
         Set.encard_le_encard hsub

@@ -9,7 +9,6 @@ public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Connected.Basic
 public import Mathlib.Topology.DiscreteSubset
-public import Mathlib.Topology.Order.Compact
 public import Mathlib.Topology.Separation.Hausdorff
 import TauCeti.Topology.Maps.IsInducing
 import TauCeti.Topology.Separation.InvFunOn
@@ -41,9 +40,6 @@ are the versions, for compact sets, of the results for an inducing restriction i
 lie in any open set containing the points of `K` mapped to `y`
 (`IsCompact.exists_mem_nhds_inter_preimage_subset_of_forall_eq`).
 
-A finite family of functions continuous on a compact set has a common upper bound
-(`IsCompact.exists_forall_le_of_finite_continuousOn`).
-
 A nonempty compact set totally ordered by specialization contains a point specializing all of its
 points (`IsCompact.exists_forall_specializes`).
 -/
@@ -55,14 +51,6 @@ namespace TauCeti
 open Filter Set Topology
 
 variable {X : Type*} [TopologicalSpace X]
-
-/-- A finite family of functions continuous on a compact set has a common upper bound. -/
-theorem _root_.IsCompact.exists_forall_le_of_finite_continuousOn {ι α : Type*} [Finite ι]
-    [LinearOrder α] [TopologicalSpace α] [ClosedIciTopology α] [Nonempty α]
-    {K : Set X} (hK : IsCompact K) {f : ι → X → α} (hf : ∀ i, ContinuousOn (f i) K) :
-    ∃ M, ∀ x ∈ K, ∀ i, f i x ≤ M := by
-  obtain ⟨M, hM⟩ := (isCompact_iUnion fun i ↦ hK.image_of_continuousOn (hf i)).bddAbove
-  exact ⟨M, fun x hx i ↦ hM (mem_iUnion.2 ⟨i, mem_image_of_mem (f i) hx⟩)⟩
 
 /-- Compactness of `U ∩ S` for a compact set `U` may be checked on open pieces of `U` around
 each of its points. -/

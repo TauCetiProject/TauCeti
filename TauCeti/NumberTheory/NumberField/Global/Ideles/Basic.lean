@@ -391,10 +391,10 @@ theorem coe_inv_twoInf_zpow (k : ℤ) :
     (((twoInf K ^ k)⁻¹ : 𝔸[K]ˣ) : 𝔸[K]) = (algebraMap K (InfiniteAdeleRing K) (2 ^ k)⁻¹, 1) := by
   rw [← zpow_neg, coe_twoInf_zpow, zpow_neg]
 
-/-- Multiplying by a power of `2_∞` does not change the finite part of a diagonal adele. -/
-theorem snd_twoInf_zpow_mul_algebraMap (k : ℤ) (x : K) :
-    (((twoInf K ^ k : 𝔸[K]ˣ) : 𝔸[K]) * algebraMap K 𝔸[K] x).2 = algebraMap K 𝔸ᶠ[K] x := by
-  rw [coe_twoInf_zpow, Prod.snd_mul, one_mul, AdeleRing.algebraMap_snd_def]
+/-- Multiplying an adele by a power of `2_∞` does not change its finite part. -/
+theorem snd_twoInf_zpow_mul (k : ℤ) (a : 𝔸[K]) :
+    (((twoInf K ^ k : 𝔸[K]ˣ) : 𝔸[K]) * a).2 = a.2 := by
+  rw [coe_twoInf_zpow, Prod.snd_mul, one_mul]
 
 /-- Multiplying an adele by `2_∞ ^ k` multiplies its norm at every infinite place by `2 ^ k`. -/
 theorem norm_fst_twoInf_zpow_mul_apply (k : ℤ) (a : 𝔸[K]) (w : InfinitePlace K) :
@@ -420,6 +420,14 @@ theorem norm_fst_twoInf_zpow_mul_algebraMap_apply (k : ℤ) (x : K) (w : Infinit
 @[simp]
 theorem toFiniteIdele_twoInf : IdeleGroup.toFiniteIdele (𝓞 K) K (twoInf K) = 1 := by
   simp [twoInf]
+
+/-- The coordinate of `2_∞` at every finite place is `1`. Powers simplify using `map_zpow`. -/
+@[simp]
+theorem _root_.IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_twoInf
+    (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K)) : v.ideleFiniteCoord (twoInf K) = 1 := by
+  apply Units.ext
+  rw [IsDedekindDomain.HeightOneSpectrum.coe_ideleFiniteCoord, coe_twoInf, Units.val_one]
+  rfl
 
 /-- The coordinate of `2_∞` at an infinite place is the unit `2`. Powers simplify using
 `map_zpow`. -/
