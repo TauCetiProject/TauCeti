@@ -174,9 +174,9 @@ private theorem characterPairing_ofCharacter_trivial_self [Fintype G]
     (hG : IsUnit (Nat.card G : k)) :
     characterPairing (ofCharacter (Representation.trivial k G k))
       (ofCharacter (Representation.trivial k G k)) = (1 : k) := by
-  rw [characterPairing_apply]
+  rw [characterPairing_ofCharacter_trivial_left]
   simp only [ofCharacter_apply, Representation.char_trivial, Module.finrank_self, Nat.cast_one,
-    mul_one, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← Nat.card_eq_fintype_card]
+    Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one, ← Nat.card_eq_fintype_card]
   exact inv_mul_cancel₀ hG.ne_zero
 
 /-- The trivial character of `G` is the constant function `1`. -/
