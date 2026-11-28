@@ -179,14 +179,15 @@ private theorem exists_finset_isLeadingIndex [Finite σ] (m : MonomialOrder σ) 
   classical
   let P : Set ((σ →₀ ℕ) × ℕ) := {p | ∃ f ∈ H, f ≠ 0 ∧ IsLeadingIndex m f p.1 ∧
     deg (coeff p.1 (f : MvPowerSeries σ R)) = p.2}
-  obtain ⟨t, htP, hcov⟩ := (Set.isPWO_of_wellQuasiOrderedLE P).exists_finset_subset_biUnion_Ici
+  obtain ⟨t, htP, hcov⟩ := Set.PartiallyWellOrderedOn.exists_finset_subset_forall_exists
+    (Set.isPWO_of_wellQuasiOrderedLE P)
   choose! g hg using fun p (hp : p ∈ P) ↦ hp
   refine ⟨t.image g, ?_, fun y hy hy0 J hJ ↦ ?_⟩
   · simp only [Finset.mem_image]
     rintro _ ⟨p, hp, rfl⟩
     exact ⟨(hg p (htP hp)).1, (hg p (htP hp)).2.1⟩
   · have hyP : (J, deg (coeff J (y : MvPowerSeries σ R))) ∈ P := ⟨y, hy, hy0, hJ, rfl⟩
-    obtain ⟨p, hpt, hp⟩ := Set.mem_iUnion₂.mp (hcov hyP)
+    obtain ⟨p, hpt, hp⟩ := hcov _ hyP
     obtain ⟨-, -, hpI, hpdeg⟩ := hg p (htP hpt)
     exact ⟨g p, Finset.mem_image_of_mem _ hpt, p.1, hpI, hp.1, hpdeg ▸ hp.2⟩
 

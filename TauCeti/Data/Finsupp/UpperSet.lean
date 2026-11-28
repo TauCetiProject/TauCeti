@@ -8,14 +8,12 @@ module
 public import Mathlib.Data.Finsupp.PWO
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Data.Set.Card
+public import Mathlib.Order.Filter.AtTopBot.Defs
 public import Mathlib.Order.PiLex
 public import Mathlib.Order.UpperLower.CompleteLattice
 public import Mathlib.Order.WellFoundedSet
-import Mathlib.Data.Finsupp.Encodable
-import Mathlib.Topology.Bases
-import Mathlib.Topology.Compactness.Compact
-import Mathlib.Topology.Sequences
-import TauCeti.Order.WellFounded.Set
+import Mathlib.Order.Filter.AtTopBot.Basic
+import TauCeti.Order.WellFounded.UpperSet
 
 /-!
 # Lexicographic stabilization of counting functions of upper sets of exponents
@@ -35,12 +33,23 @@ therefore essential.
 
 The proof follows the finite-vertex diagram argument of Bierstone–Milman, *Uniformization of
 analytic spaces* (1989), Theorem 5.2.1, as used in Bierstone–Milman–Temkin, *𝒬-universal
-desingularization* (2011), §6.1. A strictly decreasing sequence of counting functions has a
-subsequence of upper sets converging to a set `E` on every finite set of exponents. By Dickson's
-lemma `E` has finitely many minimal elements, so eventually every member of the subsequence
-contains `E`, and its counting function is pointwise at most that of `E`, with equality up to any
-given degree for late members. A strict lexicographic decrease must then occur beyond every
-degree, which is impossible.
+desingularization* (2011), §6.1. Exponents form a well-quasi-order by Dickson's lemma, so by
+`TauCeti.exists_frequently_subset_and_agree_on_finite` a sequence of upper sets has a set `E`
+such that, for every degree, frequently a member contains `E` and agrees with it up to that
+degree. The counting function of a member containing `E` is pointwise at most that of `E`, so a
+strict lexicographic decrease from it to a later member agreeing with `E` up to a given degree
+must occur beyond that degree. Hence every member containing `E` has the counting function of
+`E`, which is impossible for two of them in a strictly decreasing sequence.
+
+Degree bounds count exponents of one exact degree instead of all degrees up to `ℓ`. Over a
+field `k`, the number of monomials of degree exactly `r ^ j` outside a monomial ideal `I` is
+the dimension of the degree-`r ^ j` piece of `k[X_s : s ∈ σ] / I`, since the monomials
+outside `I` form a basis of the quotient. An index `i` is a *degree bound* for `r` and counts
+`n : ℕ → ℕ` if every upper set that omits at most `n j` exponents of degree `r ^ j` for each
+`j ≤ i` does so for every `j`; then checking the finitely many degrees `r ^ j`, `j ≤ i`,
+certifies the bounds `n j` in all the degrees `r ^ j`. In finitely many variables every large
+`i` is a degree bound, by
+`TauCeti.eventually_forall_encard_sdiff_le_of_isUpperSet_of_forall_le` and Dickson's lemma.
 
 ## Main declarations
 
@@ -50,11 +59,21 @@ degree, which is impossible.
   sequence of such counting functions is eventually constant.
 * `TauCeti.exists_forall_ge_ncard_sdiff_eq_of_forall_le`: a pointwise nonincreasing sequence of
   such counting functions is eventually constant.
+* `TauCeti.IsDegreeBound σ r n i`: `i` is a degree bound for `r` and `n` in the variables `σ`,
+  with `TauCeti.isDegreeBound_iff_ncard` for finite `σ` and `TauCeti.IsDegreeBound.mono`.
+* `TauCeti.eventually_isDegreeBound`: for finite `σ`, every large `i` is a degree bound.
+
+## References
+
+* The degree bound follows the route of the folder `grh` of
+  https://github.com/lsernau/grh-lean at commit 72fead102f663d5c7a407964a13dc0cf9d977207,
+  file `Lib/Shimura/ThetaModuli/FlatClosure` (declaration
+  `New.Variety.ThetaNull.eventually_isCutDegree`).
 -/
 
 public section
 
-open Filter Topology
+open Filter
 
 namespace TauCeti
 
@@ -64,49 +83,34 @@ variable {σ : Type*} [Finite σ]
 lexicographic order, is impossible. -/
 theorem not_strictAnti_toLex_ncard_sdiff {D : ℕ → Set (σ →₀ ℕ)} (hD : ∀ j, IsUpperSet (D j)) :
     ¬ StrictAnti fun j ↦ toLex fun ℓ ↦ ({α : σ →₀ ℕ | α.degree ≤ ℓ} \ D j).ncard := by
-  classical
   intro hanti
-  -- Pass to a subsequence `D ∘ φ` converging to `E` in the product topology on `(σ →₀ ℕ) → Bool`.
-  obtain ⟨a, φ, hφ, ht⟩ := CompactSpace.tendsto_subseq fun j (α : σ →₀ ℕ) ↦ decide (α ∈ D j)
-  set E : Set (σ →₀ ℕ) := {α | a α = true}
-  have hconv {s : Set (σ →₀ ℕ)} (hs : s.Finite) :
-      ∀ᶠ m in atTop, ∀ α ∈ s, (α ∈ D (φ m) ↔ α ∈ E) := by
-    refine (eventually_all_finite hs).2 fun α _ ↦ ?_
-    have := tendsto_pi_nhds.1 ht α
-    rw [nhds_discrete, tendsto_pure] at this
-    filter_upwards [this] with m hm
-    simpa [E] using congrArg (· = true) hm
-  -- By Dickson's lemma `E` lies above finitely many of its elements, and eventually every
-  -- `D (φ m)` contains these, hence `E`.
-  have hsub : ∀ᶠ m in atTop, E ⊆ D (φ m) := by
-    obtain ⟨t, htE, hcov⟩ := (Set.isPWO_of_wellQuasiOrderedLE E).exists_finset_subset_biUnion_Ici
-    filter_upwards [hconv t.finite_toSet] with m hm γ hγ
-    obtain ⟨α, hα, hαγ⟩ := Set.mem_iUnion₂.mp (hcov hγ)
-    exact hD _ hαγ ((hm α hα).2 (htE hα))
-  obtain ⟨M, hM⟩ := eventually_atTop.1 hsub
+  -- On every finite set, frequently `D m` contains `E` and agrees with it.
+  obtain ⟨E, -, hE⟩ := exists_frequently_subset_and_agree_on_finite (l := atTop) hD
   set c : Set (σ →₀ ℕ) → ℕ → ℕ := fun F ℓ ↦ ({α : σ →₀ ℕ | α.degree ≤ ℓ} \ F).ncard
-  have hle {m : ℕ} (hm : M ≤ m) (ℓ : ℕ) : c (D (φ m)) ℓ ≤ c E ℓ :=
-    Set.ncard_le_ncard (Set.sdiff_subset_sdiff_right (hM m hm))
-      ((Finsupp.finite_of_degree_le ℓ).sdiff)
-  -- Late members of the subsequence have the counting function of `E` up to any given degree.
-  have hagree (ℓ : ℕ) : ∀ᶠ m in atTop, ∀ i ≤ ℓ, c (D (φ m)) i = c E i := by
-    filter_upwards [hconv (Finsupp.finite_of_degree_le ℓ)] with m hm i hi
-    refine congrArg Set.ncard (Set.ext fun α ↦ ?_)
-    simp only [Set.mem_sdiff, Set.mem_ofPred_eq]
-    exact and_congr_right fun hα ↦ not_congr (hm α (hα.trans hi))
-  have heq {m : ℕ} (hm : M ≤ m) : c (D (φ m)) = c E := by
+  -- Every `D m` containing `E` has the counting function of `E`.
+  have heq {m : ℕ} (hm : E ⊆ D m) : c (D m) = c E := by
     funext ℓ
-    obtain ⟨m', hm', hagree'⟩ := ((eventually_gt_atTop m).and (hagree ℓ)).exists
+    obtain ⟨m', ⟨-, hagree⟩, hmm'⟩ :=
+      ((hE _ (Finsupp.finite_of_degree_le ℓ)).and_eventually (eventually_gt_atTop m)).exists
+    have hagree' (i : ℕ) (hi : i ≤ ℓ) : c (D m') i = c E i := by
+      refine congrArg Set.ncard (Set.ext fun α ↦ ?_)
+      simp only [Set.mem_sdiff, Set.mem_ofPred_eq]
+      exact and_congr_right fun hα ↦ not_congr (hagree α (hα.trans hi))
     -- Mathlib has no unfolding lemma for `<` on `Lex (ℕ → ℕ)`, which is `Pi.Lex` by definition;
     -- we restate the components of the first difference at `ℕ → ℕ`.
-    obtain ⟨i, hi, hlt⟩ := hanti (hφ hm')
-    have hlt : c (D (φ m')) i < c (D (φ m)) i := hlt
-    have hi : ∀ j < i, c (D (φ m')) j = c (D (φ m)) j := hi
+    obtain ⟨i, hi, hlt⟩ := hanti hmm'
+    have hlt : c (D m') i < c (D m) i := hlt
+    have hi : ∀ j < i, c (D m') j = c (D m) j := hi
     rcases lt_or_ge ℓ i with hℓi | hiℓ
     · rw [← hi ℓ hℓi, hagree' ℓ le_rfl]
-    · exact absurd (hlt.trans_le (hle hm i)) (hagree' i hiℓ).not_lt
-  exact (hanti (hφ (Nat.lt_succ_self M))).ne
-    (congrArg toLex ((heq (Nat.le_succ M)).trans (heq le_rfl).symm))
+    · refine absurd (hlt.trans_le ?_) (hagree' i hiℓ).not_lt
+      exact Set.ncard_le_ncard (Set.sdiff_subset_sdiff_right hm)
+        (Finsupp.finite_of_degree_le i).sdiff
+  -- Two members containing `E` would have equal counting functions.
+  obtain ⟨m, hm, -⟩ := (hE ∅ Set.finite_empty).exists
+  obtain ⟨m', ⟨hm', -⟩, hmm'⟩ :=
+    ((hE ∅ Set.finite_empty).and_eventually (eventually_gt_atTop m)).exists
+  exact (hanti hmm').ne (congrArg toLex ((heq hm').trans (heq hm).symm))
 
 /-- The counting functions `ℓ ↦ #{α ∉ D | |α| ≤ ℓ}` of upper sets `D` of `σ →₀ ℕ` form a
 well-founded subset of `Lex (ℕ → ℕ)`. -/
@@ -141,6 +145,47 @@ theorem exists_forall_ge_ncard_sdiff_eq_of_forall_le {D : ℕ → Set (σ →₀
       ({α : σ →₀ ℕ | α.degree ≤ ℓ} \ D j₀).ncard :=
   exists_forall_ge_ncard_sdiff_eq_of_antitone hD
     (antitone_nat_of_succ_le fun j ↦ Pi.toLex_monotone (h j))
+
+/-- An index `i` is a *degree bound* for `r : ℕ` and counts `n : ℕ → ℕ` in the variables `σ` if
+every upper set `D` of exponents in `σ →₀ ℕ` (the exponents of a monomial ideal) that omits at
+most `n j` exponents of degree `r ^ j` for each `j ≤ i` does so for every `j`. The omitted
+exponents are counted with `Set.encard`, so infinitely many omissions never satisfy a bound. -/
+def IsDegreeBound (σ : Type*) (r : ℕ) (n : ℕ → ℕ) (i : ℕ) : Prop :=
+  ∀ D : Set (σ →₀ ℕ), IsUpperSet D →
+    (∀ j ≤ i, ({α : σ →₀ ℕ | α.degree = r ^ j} \ D).encard ≤ n j) →
+      ∀ j, ({α : σ →₀ ℕ | α.degree = r ^ j} \ D).encard ≤ n j
+
+omit [Finite σ] in
+/-- Unfolding lemma for `TauCeti.IsDegreeBound`. -/
+theorem isDegreeBound_iff {r : ℕ} {n : ℕ → ℕ} {i : ℕ} :
+    IsDegreeBound σ r n i ↔ ∀ D : Set (σ →₀ ℕ), IsUpperSet D →
+      (∀ j ≤ i, ({α : σ →₀ ℕ | α.degree = r ^ j} \ D).encard ≤ n j) →
+        ∀ j, ({α : σ →₀ ℕ | α.degree = r ^ j} \ D).encard ≤ n j :=
+  Iff.rfl
+
+/-- In finitely many variables the exponents of each degree are finitely many, so a degree bound
+can be stated with `Set.ncard`. -/
+theorem isDegreeBound_iff_ncard {r : ℕ} {n : ℕ → ℕ} {i : ℕ} :
+    IsDegreeBound σ r n i ↔ ∀ D : Set (σ →₀ ℕ), IsUpperSet D →
+      (∀ j ≤ i, ({α : σ →₀ ℕ | α.degree = r ^ j} \ D).ncard ≤ n j) →
+        ∀ j, ({α : σ →₀ ℕ | α.degree = r ^ j} \ D).ncard ≤ n j := by
+  have hfin (j : ℕ) (D : Set (σ →₀ ℕ)) : ({α : σ →₀ ℕ | α.degree = r ^ j} \ D).Finite :=
+    (Finsupp.finite_of_degree_eq _).sdiff
+  simp only [isDegreeBound_iff, Set.encard_le_coe_iff_finite_ncard_le, hfin, true_and]
+
+omit [Finite σ] in
+/-- Every index above a degree bound is a degree bound. -/
+theorem IsDegreeBound.mono {r : ℕ} {n : ℕ → ℕ} {i i' : ℕ} (h : IsDegreeBound σ r n i)
+    (hii' : i ≤ i') : IsDegreeBound σ r n i' :=
+  fun D hD hle ↦ h D hD fun j hj ↦ hle j (hj.trans hii')
+
+/-- In finitely many variables, every large index is a degree bound: for all large `i`, every
+upper set of exponents that omits at most `n j` exponents of degree `r ^ j` for each `j ≤ i`
+does so for every `j`. This is the case of the exponents of degree `r ^ j` in
+`TauCeti.eventually_forall_encard_sdiff_le_of_isUpperSet_of_forall_le`, by Dickson's lemma. -/
+theorem eventually_isDegreeBound (r : ℕ) (n : ℕ → ℕ) :
+    ∀ᶠ i in atTop, IsDegreeBound σ r n i :=
+  eventually_forall_encard_sdiff_le_of_isUpperSet_of_forall_le _ n
 
 /-- Realizability is essential: on all of `ℕ → ℕ` the lexicographic order admits the strictly
 decreasing sequence of functions vanishing below `j` and equal to `1` from `j` on. -/

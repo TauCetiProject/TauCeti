@@ -283,9 +283,10 @@ variable {M R : Type*} [AddCommGroup M] {C : AddSubmonoid M} {hC : C.IsPointed} 
 theorem exists_finset_sub_mem_of_coeff_ne_zero (x : HahnSeries (ConeExponent hC) R) :
     ∃ t : Finset M, ∀ a : M, x.coeff (toConeExponent a) ≠ 0 → ∃ b ∈ t, b - a ∈ C := by
   classical
-  obtain ⟨t, -, ht⟩ := x.isPWO_support.exists_finset_subset_biUnion_Ici
+  obtain ⟨t, -, ht⟩ := Set.PartiallyWellOrderedOn.exists_finset_subset_forall_exists
+    x.isPWO_support
   refine ⟨t.image ofConeExponent, fun a ha ↦ ?_⟩
-  obtain ⟨b, hb, hab⟩ := Set.mem_iUnion₂.mp (ht ha)
+  obtain ⟨b, hb, hab⟩ := ht _ ha
   exact ⟨b.ofConeExponent, Finset.mem_image_of_mem _ hb, hab⟩
 
 variable [IsAddFG C]

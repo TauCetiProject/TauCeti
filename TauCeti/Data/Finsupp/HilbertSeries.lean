@@ -158,13 +158,12 @@ theorem IsUpperSet.exists_mk_ncard_inter_setOf_degree_eq_mul_invOneSubPow {U : S
     ∃ p : R[X], PowerSeries.mk (fun n ↦ ((U ∩ {c : ι →₀ ℕ | c.degree = n}).ncard : R)) =
       p * invOneSubPow R (Fintype.card ι) := by
   -- By Dickson's lemma `U` lies above finitely many of its elements.
-  obtain ⟨t, htU, hcov⟩ := (Set.isPWO_of_wellQuasiOrderedLE U).exists_finset_subset_biUnion_Ici
+  obtain ⟨t, htU, hcov⟩ := Set.PartiallyWellOrderedOn.exists_finset_subset_forall_exists
+    (Set.isPWO_of_wellQuasiOrderedLE U)
   have hU' : {c | ∃ f ∈ t, f ≤ c} = U := by
     ext c
     simp only [mem_ofPred_eq]
-    refine ⟨fun ⟨f, hf, hfc⟩ ↦ hU hfc (htU hf), fun hc ↦ ?_⟩
-    obtain ⟨f, hf, hfc⟩ := mem_iUnion₂.mp (hcov hc)
-    exact ⟨f, hf, hfc⟩
+    exact ⟨fun ⟨f, hf, hfc⟩ ↦ hU hfc (htU hf), hcov c⟩
   rw [← hU']
   exact exists_mk_ncard_setOf_exists_le_inter_setOf_degree_eq R t
 
