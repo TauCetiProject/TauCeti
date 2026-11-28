@@ -132,6 +132,7 @@ theorem apply_eq_foldl (c : ComparatorNetwork n) (x : Fin n → β) :
 
 /-- The output of the concatenation `c ++ c'` on `x` is the output of `c'` on the output of `c`
 on `x`. -/
+@[simp]
 theorem apply_append (c c' : ComparatorNetwork n) (x : Fin n → β) :
     (c ++ c').apply x = c'.apply (c.apply x) := by
   induction c generalizing x with
