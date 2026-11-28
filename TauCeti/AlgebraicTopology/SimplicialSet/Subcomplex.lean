@@ -7,9 +7,11 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import Mathlib.CategoryTheory.MorphismProperty.Basic
+public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
+public import Mathlib.CategoryTheory.Limits.Types.Pullbacks
 
 /-!
-# Subcomplexes transported along isomorphisms, and the empty subcomplex
+# Subcomplex ranges, inverse images, and the empty subcomplex
 
 An isomorphism `e : X ≅ Y` of simplicial sets carries a subcomplex `A` of `X` to the subcomplex
 `A.preimage e.inv` of `Y`, and the inclusions of the two subcomplexes are isomorphic arrows. Hence
@@ -18,6 +20,9 @@ one inclusion exactly when it contains the other. Likewise, two monomorphisms in
 simplicial set with the same range have isomorphic sources, compatibly with the monomorphisms, and
 for monomorphisms `i : A ⟶ B` and `f : B ⟶ Z` the inclusion of the range of `i ≫ f` into the
 range of `f` is isomorphic, as an arrow, to `i`.
+
+A commuting square with monomorphisms on its two parallel sides is a pullback when the range
+of one side is the inverse image of the range of the other (`SSet.isPullback_of_preimage_range`).
 
 The empty subcomplex `⊥` has no simplices, so it is not `Nonempty`; for instance, slices and
 coslices over a diagram restricted to `⊥` are the whole simplicial set.
@@ -128,3 +133,30 @@ lemma not_nonempty_bot : ¬ ((⊥ : X.Subcomplex) : SSet.{u}).Nonempty :=
   (notNonempty_iff_hasDimensionLT_zero _).2 inferInstance
 
 end SSet.Subcomplex
+
+namespace SSet
+
+open CategoryTheory.Limits
+
+/-- A commuting square with monomorphisms on its two parallel sides is a pullback if one
+monomorphism's range is the inverse image of the other's. -/
+lemma isPullback_of_preimage_range {A B C D : SSet.{u}}
+    (t : A ⟶ B) (i : A ⟶ C) (i' : B ⟶ D) (m : C ⟶ D) [Mono i] [Mono i']
+    (hw : t ≫ i' = i ≫ m)
+    (hr : (Subcomplex.range i').preimage m = Subcomplex.range i) : IsPullback t i i' m := by
+  apply IsPullback.of_forall_isPullback_app
+  intro n
+  rw [Types.isPullback_iff]
+  refine ⟨NatTrans.congr_app hw n, ?_, ?_⟩
+  · intro x y h
+    exact ((mono_iff_injective (i.app n)).1 inferInstance) h.2
+  · intro y x h
+    have hx : m.app n x ∈ (Subcomplex.range i').obj n := ⟨y, h⟩
+    have hx' : x ∈ (Subcomplex.range i).obj n := by rwa [← hr]
+    obtain ⟨z, hz⟩ := hx'
+    refine ⟨z, ?_, hz⟩
+    apply (mono_iff_injective (i'.app n)).1 inferInstance
+    exact (ConcreteCategory.congr_hom (NatTrans.congr_app hw n) z).trans
+      ((congrArg (m.app n) hz).trans h.symm)
+
+end SSet

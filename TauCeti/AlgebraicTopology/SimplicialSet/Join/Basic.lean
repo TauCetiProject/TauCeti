@@ -296,6 +296,26 @@ def precomp (d : JoinData X K L) (g : Y ⟶ X) : JoinData Y K L where
   left := (joinFiber d.p 0).fromPreimage g ≫ d.left
   right := (joinFiber d.p 1).fromPreimage g ≫ d.right
 
+/-- Restricting explicit join data pulls back the two fibres and restricts their maps. -/
+@[simp]
+lemma precomp_mk (p : X ⟶ Δ[1]) (l : (joinFiber p 0 : SSet) ⟶ K)
+    (r : (joinFiber p 1 : SSet) ⟶ L) (g : Y ⟶ X) :
+    (mk p l r).precomp g =
+      mk (g ≫ p) ((joinFiber p 0).fromPreimage g ≫ l)
+        ((joinFiber p 1).fromPreimage g ≫ r) :=
+  (rfl)
+
+-- Keep projections intact so the application-level simp lemmas below can apply.
+/-- The left component of restricted join data is the restriction of its left component. -/
+lemma precomp_left (d : JoinData X K L) (g : Y ⟶ X) :
+    (d.precomp g).left = (joinFiber d.p 0).fromPreimage g ≫ d.left :=
+  (rfl)
+
+/-- The right component of restricted join data is the restriction of its right component. -/
+lemma precomp_right (d : JoinData X K L) (g : Y ⟶ X) :
+    (d.precomp g).right = (joinFiber d.p 1).fromPreimage g ≫ d.right :=
+  (rfl)
+
 @[simp]
 lemma precomp_left_app (d : JoinData X K L) (g : Y ⟶ X) {n : SimplexCategoryᵒᵖ} (y : Y.obj n)
     (hy : y ∈ (joinFiber (d.precomp g).p 0).obj n) :
@@ -328,6 +348,13 @@ def postcomp (d : JoinData X K L) (f : K ⟶ K') (g : L ⟶ L') : JoinData X K' 
   p := d.p
   left := d.left ≫ f
   right := d.right ≫ g
+
+/-- Postcomposing explicit join data composes its two component maps. -/
+@[simp]
+lemma postcomp_mk (p : X ⟶ Δ[1]) (l : (joinFiber p 0 : SSet) ⟶ K)
+    (r : (joinFiber p 1 : SSet) ⟶ L) (f : K ⟶ K') (g : L ⟶ L') :
+    (mk p l r).postcomp f g = mk p (l ≫ f) (r ≫ g) :=
+  (rfl)
 
 @[simp]
 lemma postcomp_p (d : JoinData X K L) (f : K ⟶ K') (g : L ⟶ L') : (d.postcomp f g).p = d.p :=
@@ -746,6 +773,22 @@ lemma range_inr_le_joinFiber : Subcomplex.range (inr K L) ≤ joinFiber (univ K 
     ← joinFiber, joinFiber_const_self]
 
 variable (K L) in
+/-- The image of the left inclusion is the vertex fibre over `0`. -/
+lemma range_inl : Subcomplex.range (inl K L) = joinFiber (π K L) 0 := by
+  rw [← univ_p]
+  refine le_antisymm (range_inl_le_joinFiber K L) ?_
+  intro n x hx
+  exact ⟨(univ K L).left.app n ⟨x, hx⟩, inl_app_univ_left_app x hx⟩
+
+variable (K L) in
+/-- The image of the right inclusion is the vertex fibre over `1`. -/
+lemma range_inr : Subcomplex.range (inr K L) = joinFiber (π K L) 1 := by
+  rw [← univ_p]
+  refine le_antisymm (range_inr_le_joinFiber K L) ?_
+  intro n x hx
+  exact ⟨(univ K L).right.app n ⟨x, hx⟩, inr_app_univ_right_app x hx⟩
+
+variable (K L) in
 /-- The part of the join `K ⋆ L` over the vertex `0` is `K`, through the map to `K` of the
 tautological join data and the inclusion of `K`. -/
 def joinFiberZeroIso : (joinFiber (univ K L).p 0 : SSet) ≅ K where
@@ -796,6 +839,18 @@ variable (K L) in
 lemma joinFiberOneIso_inv_ι :
     (joinFiberOneIso K L).inv ≫ (joinFiber (univ K L).p 1).ι = inr K L :=
   Subcomplex.lift_ι _ (range_inr_le_joinFiber K L)
+
+variable (K L) in
+/-- The left inclusion into a join is a monomorphism. -/
+instance mono_inl : Mono (inl K L) := by
+  rw [← joinFiberZeroIso_inv_ι]
+  infer_instance
+
+variable (K L) in
+/-- The right inclusion into a join is a monomorphism. -/
+instance mono_inr : Mono (inr K L) := by
+  rw [← joinFiberOneIso_inv_ι]
+  infer_instance
 
 @[reassoc (attr := simp)]
 lemma inl_map (f : K ⟶ K') (g : L ⟶ L') : inl K L ≫ map f g = f ≫ inl K' L' := by
