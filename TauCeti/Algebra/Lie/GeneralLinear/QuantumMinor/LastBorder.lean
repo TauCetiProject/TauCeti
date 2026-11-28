@@ -147,14 +147,8 @@ theorem quantumMinor_snoc (E : Matrix ι ι A) {n : ℕ} (u : K) (a b : Fin (n +
   rw [add_comm]
   simp only [sub_eq_add_neg, add_right_inj, ← Finset.sum_neg_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have htuple : i.castSucc.removeNth (Fin.snoc a r : Fin (n + 2) → ι) =
-      Fin.snoc (i.removeNth a) r := by
-    ext k
-    refine Fin.lastCases ?_ (fun l ↦ ?_) k
-    · simp [Fin.removeNth_apply, Fin.succAbove_ne_last_last i.castSucc_lt_last.ne]
-    · simp [Fin.removeNth_apply, Fin.castSucc_succAbove_castSucc, Fin.snoc_castSucc]
   have hci : a i ≠ c := fun h ↦ hc ⟨i, h⟩
-  simp only [htuple, hci, ite_false, zero_add]
+  simp only [Fin.removeNth_castSucc_snoc, hci, ite_false, zero_add]
   rw [← Fin.insertNth_last',
     E.quantumMinor_insertNth_left_of_notMem_range u (i.removeNth a) b (Fin.last n)
       hr (fun k j l ↦ hE (i.succAbove k) j l), Finset.sum_mul, Finset.smul_sum]

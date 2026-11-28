@@ -135,6 +135,16 @@ theorem quantumMinor_succ_column_zero (E : Matrix ι ι A) (u : K) (a b : Fin (n
     simp only [submatrix_apply, of_apply, Fin.removeNth, Fin.tail, hshift,
       h, ite_true, ite_false]
 
+/-- In size two the quantum minor has one ordered product for each of the two permutations. -/
+theorem quantumMinor_fin_two (E : Matrix ι ι A) (u : K) (a b : Fin 2 → ι) :
+    E.quantumMinor u a b =
+      ((if a 0 = b 0 then algebraMap K A u else 0) + E (a 0) (b 0)) *
+        ((if a 1 = b 1 then algebraMap K A (u - 1) else 0) + E (a 1) (b 1)) -
+      ((if a 1 = b 0 then algebraMap K A u else 0) + E (a 1) (b 0)) *
+        ((if a 0 = b 1 then algebraMap K A (u - 1) else 0) + E (a 0) (b 1)) := by
+  rw [E.quantumMinor_succ_column_zero, Fin.sum_univ_two]
+  simp [Fin.removeNth_apply, Fin.tail, sub_eq_add_neg]
+
 /-- Expand a quantum minor in its last column. The selected entry multiplies on the right, and
 all cofactors retain the starting spectral parameter. -/
 theorem quantumMinor_succ_column_last (E : Matrix ι ι A) (u : K) (a b : Fin (n + 1) → ι) :

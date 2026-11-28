@@ -44,7 +44,9 @@ private theorem firstBorder_column_shift (E : Matrix ι ι A) (u : K) (i j : ι)
     abel
   · simp [hij, Ne.symm hij, pow_succ]
 
-private theorem firstBorder_row_expansion (E : Matrix ι ι A) {n : ℕ} (u : K)
+/-- Expand an exterior first row on the right. Moving its entries past later columns lowers
+all cofactor parameters by one. -/
+theorem quantumMinor_cons_left_eq_sum_minor_mul (E : Matrix ι ι A) {n : ℕ} (u : K)
     (a : Fin n → ι) (b : Fin (n + 1) → ι) (e : ι) (hb : ∀ j, b j ≠ e)
     (hE : ∀ i j (k : Fin (n + 1)), j < k →
       ⁅E e (b j), E (a i) (b k)⁆ = if b j = a i then E e (b k) else 0) :
@@ -103,7 +105,8 @@ theorem quantumMinor_first_border (E : Matrix ι ι A) {n : ℕ} (u : K)
   rw [E.quantumMinor_succ_column_zero, Fin.sum_univ_succ]
   simp only [Fin.val_zero, pow_zero, one_smul, Fin.cons_zero, Fin.cons_succ, Fin.tail_cons,
     Fin.removeNth_zero, Fin.removeNth_succ_cons, ite_true, ha, ite_false, zero_add]
-  have hrec (i : Fin (n + 1)) := firstBorder_row_expansion E (u - 1) (i.removeNth a) b e hb
+  have hrec (i : Fin (n + 1)) := E.quantumMinor_cons_left_eq_sum_minor_mul (u - 1)
+    (i.removeNth a) b e hb
     (fun r j k hjk ↦ by
       rw [Ring.lie_def]
       exact hE (i.succAbove r) j k hjk)
