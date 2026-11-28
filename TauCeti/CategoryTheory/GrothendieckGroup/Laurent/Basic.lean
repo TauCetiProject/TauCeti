@@ -149,6 +149,13 @@ theorem of_conflation {S : ShortComplex C} (hS : E.toExactStructure.Conflation S
   rw [← ofExactK0_exactK0_of, ExactK0.of_conflation hS, map_add, ofExactK0_exactK0_of,
     ofExactK0_exactK0_of]
 
+/-- The class of a finite biproduct in graded `K₀` is the sum of the classes of its summands. -/
+@[simp]
+theorem of_biproduct {J : Type*} [Fintype J] (f : J → C) [HasBiproduct f] :
+    of E (⨁ f) = ∑ j, of E (f j) := by
+  rw [← ofExactK0_exactK0_of, ExactK0.of_biproduct, map_sum]
+  simp_rw [ofExactK0_exactK0_of]
+
 /-- **`q · [M] = [M{1}]`.** -/
 @[simp]
 theorem T_one_smul_of (X : C) :

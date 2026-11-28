@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.CMField.UnitaryGroup.FirstMinimum.Basic
+import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.NumberTheory.NumberField.CMField.UnitaryGroup.PointLattice
+import TauCeti.NumberTheory.NumberField.Global.Adeles.Discrete
 
 /-!
 # First minima for positive definite adelic frames
@@ -24,7 +26,7 @@ of [lsernau/grh-lean](https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7
 
 public section
 
-open Matrix NumberField
+open IsDedekindDomain Matrix NumberField
 
 namespace TauCeti.FramedHermitianSpace
 
@@ -52,8 +54,8 @@ theorem embedding_dotProduct_gram_mulVec (V : FramedHermitianSpace E s) (w : Inf
     V.star_mul_gram_mul_fst
   have hform : star (f ∘ y) ⬝ᵥ (V.gram.map f *ᵥ (f ∘ z)) =
       star (C y) ⬝ᵥ (diagonal (fun i ↦ ((s i : ℤ) : InfiniteAdeleRing E)) *ᵥ C z) := by
-    rw [← hC y, ← hC z, star_mulVec, ← dotProduct_mulVec, mulVec_mulVec,
-      mulVec_mulVec, ← star_eq_conjTranspose, hframe]
+    rw [← hC y, ← hC z, ← star_dotProduct_conjTranspose_mul_mul_mulVec,
+      ← star_eq_conjTranspose, hframe]
   have he_apply (x : InfiniteAdeleRing E) :
       e x = InfinitePlace.Completion.extensionEmbedding w (x w) := rfl
   have he (x : E) : e (f x) = w.embedding x := by
@@ -87,26 +89,21 @@ theorem one_le_vectorLength_of_definite {y : ι → E} (hy : y ∈ V.lattice) (h
   let a := star y ⬝ᵥ (V.gram *ᵥ y)
   have hsum : V.vectorLength y ^ 2 = ∑ w : InfinitePlace E, w a :=
     V.vectorLength_sq_eq_sum_infinitePlace y
-  have ha : a ≠ 0 := by
-    intro hzero
-    rw [hzero] at hsum
-    exact (pow_pos (V.vectorLength_pos hyn) 2).ne'
-      (by simpa only [map_zero, Finset.sum_const_zero] using hsum)
-  let A : 𝓞 E := ⟨a, V.isIntegral_dotProduct_gram_mulVec hy hy⟩
-  have hA : A ≠ 0 := by
-    intro h
-    have hcoe : (A : E) = a := RingOfIntegers.coe_mk (V.isIntegral_dotProduct_gram_mulVec hy hy)
-    exact ha (hcoe.symm.trans (congrArg (fun b : 𝓞 E ↦ (b : E)) h))
   by_contra! hlt
-  have hw (w : InfinitePlace E) : w a < 1 := calc
-    _ ≤ ∑ v : InfinitePlace E, v a :=
-      Finset.single_le_sum (fun v _ ↦ by rw [← v.norm_embedding_eq]; exact norm_nonneg _)
-        (Finset.mem_univ w)
-    _ < 1 := by
-      rw [← hsum, sq_lt_one_iff_abs_lt_one, abs_of_nonneg (V.vectorLength_nonneg y)]
-      exact hlt
-  obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace E))
-  exact (hw w).not_ge (InfinitePlace.one_le_of_lt_one hA fun v _ ↦ hw v)
+  have hsq : V.vectorLength y ^ 2 < 1 := by
+    rwa [sq_lt_one_iff_abs_lt_one, abs_of_nonneg (V.vectorLength_nonneg y)]
+  have ha : a = 0 := by
+    apply GlobalNumberFields.eq_zero_of_forall_norm_lt_one_of_mem_integralAdeles
+    · intro w
+      change ‖algebraMap E w.Completion a‖ < 1
+      rw [InfinitePlace.Completion.norm_algebraMap]
+      exact (Finset.single_le_sum (fun v _ ↦ apply_nonneg v a) (Finset.mem_univ w)).trans_lt
+        (hsum ▸ hsq)
+    · exact (FiniteAdeleRing.algebraMap_mem_integralAdeles_iff (R := 𝓞 E) a).mpr
+        ⟨⟨a, V.isIntegral_dotProduct_gram_mulVec hy hy⟩, rfl⟩
+  rw [ha] at hsum
+  exact (pow_pos (V.vectorLength_pos hyn) 2).ne'
+    (by simpa only [map_zero, Finset.sum_const_zero] using hsum)
 
 /-- The truncated first minimum of a positive definite adelic frame is one. -/
 @[simp] theorem firstMinimum_eq_one_of_definite : V.firstMinimum = 1 :=

@@ -68,6 +68,7 @@ preserves and reflects indecomposability.
 public section
 
 open CategoryTheory TauCeti TauCeti.MatlisDual
+open scoped ModuleCat.Algebra
 
 universe u v w t
 
@@ -394,6 +395,27 @@ theorem bijective_matlisDualOpMap (hN' : IsFiniteLength R N') :
     apply (matlisDualOpObjEquiv R E N).injective
     ext x
     simpa using congrArg (fun k ↦ equivLinearMap R E N (k (matlisDualOpObjEquiv R E N' ψ)) x) hg
+
+include hE in
+/-- Matlis duality is linear and bijective on morphisms of right modules into a module of
+finite length over the scalar ring, provided the coefficients `E` are injective and
+`Hom_R(R/𝔪, E)` has length one for every maximal ideal `𝔪`. -/
+noncomputable def matlisDualOpHomLinearEquiv
+    (hN' : IsFiniteLength R N') :
+    (N ⟶ N') ≃ₗ[R] (matlisDualOpObj R E N' ⟶ matlisDualOpObj R E N) :=
+  LinearEquiv.ofBijective
+    (((matlisDualOp R E).mapLinearMap (R := R)).comp
+      ({ toFun := fun f ↦ f.op
+         map_add' := fun _ _ ↦ rfl
+         map_smul' := fun _ _ ↦ rfl } : (N ⟶ N') →ₗ[R] (Opposite.op N' ⟶ Opposite.op N)))
+    (bijective_matlisDualOpMap hE hN')
+
+/-- The Hom equivalence sends a morphism to its Matlis dual. -/
+@[simp]
+theorem matlisDualOpHomLinearEquiv_apply
+    (hN' : IsFiniteLength R N') (f : N ⟶ N') :
+    matlisDualOpHomLinearEquiv hE hN' f = matlisDualOpMap R E f :=
+  (rfl)
 
 include hE in
 /-- **Matlis duality reflects isomorphisms** of right modules of finite length over `R`. -/

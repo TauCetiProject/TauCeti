@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
 public import TauCeti.Algebra.Module.ZLattice.Covolume
-public import TauCeti.Analysis.Fourier.PoissonSummation
+public import TauCeti.Analysis.Fourier.Poisson.Lattice
 
 /-!
 # Poisson summation on the mixed space of a number field

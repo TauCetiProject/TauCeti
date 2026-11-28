@@ -6,8 +6,8 @@ Authors: Jon Crall, Claude Fable 5, Claude Opus 4.8
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.Positive
 public import TauCeti.Analysis.InnerProductSpace.BasisSpan
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 public import TauCeti.LinearAlgebra.Dimension.Submodule
@@ -35,6 +35,8 @@ form domination and Weyl's perturbation bound.
   the Courant–Fischer equality.
 * `LinearMap.IsSymmetric.eigenvalue_mono`:
   monotonicity of sorted eigenvalues under quadratic-form order.
+* `LinearMap.IsSymmetric.exists_unitary_le_conj_of_eigenvalues_le`: **comparison by a
+  unitary**; if `λⱼ(X) ≤ λⱼ(Y)` for every `j`, then `X ≤ U Y U⁻¹` for some unitary `U`.
 * `LinearMap.IsSymmetric.abs_eigenvalue_sub_eigenvalue_le` and
   `LinearMap.IsSymmetric.abs_eigenvalue_sub_eigenvalue_le_norm`:
   Weyl's perturbation inequality.
@@ -337,6 +339,23 @@ theorem eigenvalue_mono
   calc hT.eigenvalues hn k ≤ RCLike.re ⟪T x, x⟫_𝕜 := hVlow x hxV hnx
     _ ≤ RCLike.re ⟪S x, x⟫_𝕜 := h x
     _ ≤ hS.eigenvalues hn k := hup
+
+/-- **Comparison by a unitary.** If the sorted eigenvalues of the symmetric operators `X` and
+`Y` satisfy `λⱼ(X) ≤ λⱼ(Y)` for every `j`, then `X ≤ U Y U⁻¹` for some unitary `U`. -/
+theorem exists_unitary_le_conj_of_eigenvalues_le {X Y : E →ₗ[𝕜] E} (hX : X.IsSymmetric)
+    (hY : Y.IsSymmetric) {n : ℕ} (hn : finrank 𝕜 E = n)
+    (h : ∀ j, hX.eigenvalues hn j ≤ hY.eigenvalues hn j) :
+    ∃ U : E ≃ₗᵢ[𝕜] E,
+      ((U : E →ₗ[𝕜] E) ∘ₗ Y ∘ₗ (U.symm : E →ₗ[𝕜] E) - X).IsPositive := by
+  -- `U` maps the eigenbasis of `Y` to that of `X`, so `U Y U⁻¹ - X` is diagonal in the latter.
+  set bX := hX.eigenvectorBasis hn
+  set U := (hY.eigenvectorBasis hn).equiv bX (Equiv.refl _)
+  refine ⟨U, ((isSymmetric_linearIsometryEquiv_conj_iff Y U).mpr hY).sub hX, fun x ↦ ?_⟩
+  have hD : ∀ i, ((U : E →ₗ[𝕜] E) ∘ₗ Y ∘ₗ (U.symm : E →ₗ[𝕜] E) - X) (bX i) =
+      ((hY.eigenvalues hn i - hX.eigenvalues hn i : ℝ) : 𝕜) • bX i := fun i ↦ by
+    simp [U, bX, hY.apply_eigenvectorBasis, hX.apply_eigenvectorBasis, sub_smul]
+  rw [re_inner_apply_self_eq_sum_of_eigenbasis _ bX hD]
+  exact Finset.sum_nonneg fun i _ ↦ mul_nonneg (sub_nonneg.mpr (h i)) (sq_nonneg _)
 
 /-- The span of a selected subfamily of the eigenbasis of a symmetric operator
 is invariant under the operator. -/

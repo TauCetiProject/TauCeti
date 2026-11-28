@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Analysis.RCLike.Basic
-import TauCeti.Analysis.Normed.Module.Essential
+public import TauCeti.Analysis.Normed.Module.Essential
 import TauCeti.Analysis.Normed.Module.Unitization.Basic
 import TauCeti.Analysis.Normed.Ring.Units
 
@@ -19,13 +19,13 @@ bounded bilinear map `L : A →L[𝕜] E →L[𝕜] E` with `L (a * b) x = L a (
 be contractive or unital. A left approximate identity of `A` is a proper filter `l` on `A` with
 `e * a → a` along `l` for every `a`; it is bounded by `C` when `‖e‖ ≤ C` eventually along `l`.
 
-The *essential part* of `E` is the closed linear span of `A · E`; a bounded left approximate
-identity converges to the identity on it (`TauCeti.Analysis.Normed.Module.Essential`). This file
-proves:
+The *essential part* of `E` is `L.essentialSubmodule`, the closed linear span of `A · E`; a
+bounded left approximate identity converges to the identity on it
+(`TauCeti.Analysis.Normed.Module.Essential`). This file proves:
 
-* the Cohen–Hewitt factorization theorem: every `x` in the essential part factors as `x = a · y`
+* the Cohen–Hewitt factorization theorem: every `x` in `L.essentialSubmodule` factors as `x = a · y`
   with `‖a‖ ≤ C`, `y` in the closure of `A · x`, and `y` arbitrarily close to `x`;
-* consequently `A · E` is already a closed linear subspace: it equals the essential part;
+* consequently `A · E` is already a closed linear subspace: it equals `L.essentialSubmodule`;
 * in particular, every element of `A` is a product of two elements of `A`.
 
 ## Implementation notes
@@ -40,9 +40,9 @@ Choosing `eₙ` to nearly fix `aₙ⁻¹ · x` as well makes `yₙ = aₙ⁻¹ �
 
 ## Main results
 
-* `ContinuousLinearMap.exists_apply_eq_of_mem_topologicalClosure_span`: the Cohen–Hewitt
+* `ContinuousLinearMap.exists_apply_eq_of_mem_essentialSubmodule`: the Cohen–Hewitt
   factorization theorem.
-* `ContinuousLinearMap.coe_topologicalClosure_span_range_eq`: the essential part is `A · E`.
+* `ContinuousLinearMap.coe_essentialSubmodule_eq_range`: the essential part is `A · E`.
 * `TauCeti.exists_mul_eq_of_tendsto_mul_right`: every element of `A` factors as `a * y` with
   `‖a‖ ≤ C`.
 
@@ -308,15 +308,14 @@ variable {𝕜 A E : Type*} [RCLike 𝕜] [NonUnitalNormedRing A] [NormedSpace �
 
 /-- **Cohen–Hewitt factorization.** Let `A` be a Banach algebra with a left approximate identity
 `l` bounded by `C`, acting boundedly on the left of a Banach space `E` through `L`. Every `x` in
-the essential part `closure (span (A · E))` factors as `x = L a y` with `‖a‖ ≤ C`, where `y` lies in
-the closure of `A · x` and within any prescribed distance `ε` of `x`. -/
-theorem exists_apply_eq_of_mem_topologicalClosure_span (L : A →L[𝕜] E →L[𝕜] E)
+the essential part `L.essentialSubmodule` factors as `x = L a y` with `‖a‖ ≤ C`, where `y` lies
+in the closure of `A · x` and within any prescribed distance `ε` of `x`. -/
+theorem exists_apply_eq_of_mem_essentialSubmodule (L : A →L[𝕜] E →L[𝕜] E)
     (hL : ∀ a b z, L (a * b) z = L a (L b z)) {l : Filter A} [l.NeBot] {C : ℝ}
     (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) {x : E}
-    (hx : x ∈ (span 𝕜 (Set.range fun p : A × E ↦ L p.1 p.2)).topologicalClosure)
-    {ε : ℝ} (hε : 0 < ε) :
+    (hx : x ∈ L.essentialSubmodule) {ε : ℝ} (hε : 0 < ε) :
     ∃ a y, ‖a‖ ≤ C ∧ y ∈ closure (Set.range fun b ↦ L b x) ∧ ‖y - x‖ < ε ∧ L a y = x := by
-  have hlx := tendsto_apply_of_mem_topologicalClosure_span L hL hC hl hx
+  have hlx := tendsto_apply_of_mem_essentialSubmodule L hL hC hl hx
   /- Fix `t` with `t * (1 + C) = 1 / 2`. -/
   have hC0 : 0 ≤ C := let ⟨e, he⟩ := hC.exists; (norm_nonneg e).trans he
   set t : ℝ := 1 / (2 * (1 + C)) with ht_def
@@ -341,15 +340,15 @@ theorem exists_apply_eq_of_mem_topologicalClosure_span (L : A →L[𝕜] E →L[
   exact ⟨a₀, y₀, ha₀, isClosed_closure.mem_of_tendsto hy₀ (.of_forall hyx), by linarith, hfac₀⟩
 
 /-- Over a Banach algebra with a bounded left approximate identity, the set `A · E` of products
-is already a closed linear subspace of a Banach left module `E`: it equals the essential part
-`closure (span (A · E))`. -/
-theorem coe_topologicalClosure_span_range_eq (L : A →L[𝕜] E →L[𝕜] E)
+is already a closed linear subspace of a Banach left module `E`: it equals
+`L.essentialSubmodule`. -/
+theorem coe_essentialSubmodule_eq_range (L : A →L[𝕜] E →L[𝕜] E)
     (hL : ∀ a b z, L (a * b) z = L a (L b z)) {l : Filter A} [l.NeBot] {C : ℝ}
     (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) :
-    ((span 𝕜 (Set.range fun p : A × E ↦ L p.1 p.2)).topologicalClosure : Set E) =
-      Set.range fun p : A × E ↦ L p.1 p.2 := by
-  refine subset_antisymm (fun x hx ↦ ?_) ((subset_span).trans (le_topologicalClosure _))
-  obtain ⟨a, y, -, -, -, h⟩ := exists_apply_eq_of_mem_topologicalClosure_span L hL hC hl hx one_pos
+    (L.essentialSubmodule : Set E) = Set.range fun p : A × E ↦ L p.1 p.2 := by
+  refine subset_antisymm (fun x hx ↦ ?_) fun _ ⟨p, hp⟩ ↦
+    hp ▸ L.apply_mem_essentialSubmodule p.1 p.2
+  obtain ⟨a, y, -, -, -, h⟩ := exists_apply_eq_of_mem_essentialSubmodule L hL hC hl hx one_pos
   exact ⟨(a, y), h⟩
 
 end ContinuousLinearMap
@@ -367,10 +366,10 @@ theorem exists_mul_eq_of_tendsto_mul_right (𝕜 : Type*) [RCLike 𝕜] [NormedS
   have hL : ∀ a b z : A, ContinuousLinearMap.mul 𝕜 A (a * b) z =
       ContinuousLinearMap.mul 𝕜 A a (ContinuousLinearMap.mul 𝕜 A b z) := fun a b z ↦ by
     simp [mul_assoc]
-  have hx := (ContinuousLinearMap.tendsto_apply_iff_mem_topologicalClosure_span _ hL hC hl).1
+  have hx := (ContinuousLinearMap.tendsto_apply_iff_mem_essentialSubmodule _ hL hC hl).1
     (by simpa using hl x)
   obtain ⟨a, y, ha, -, -, h⟩ :=
-    ContinuousLinearMap.exists_apply_eq_of_mem_topologicalClosure_span _ hL hC hl hx one_pos
+    ContinuousLinearMap.exists_apply_eq_of_mem_essentialSubmodule _ hL hC hl hx one_pos
   exact ⟨a, y, ha, by simpa using h⟩
 
 end TauCeti
