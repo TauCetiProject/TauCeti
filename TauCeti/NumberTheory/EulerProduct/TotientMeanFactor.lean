@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.Summable
 public import Mathlib.Data.Nat.Prime.Basic
 import TauCeti.Algebra.Order.Ring.Basic
+import TauCeti.Analysis.Normed.Ring.InfiniteProd.Basic
 import TauCeti.Analysis.PSeries
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
@@ -16,7 +17,9 @@ import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 For a natural number `n` and a prime `p`, put
 
-`γ_n(p) = 1 - 1/p + (1 + 1/(p - 1)) ^ n / p = 1 - 1/p + p ^ (n - 1) / (p - 1) ^ n`.
+`γ_n(p) = 1 - 1/p + (1 + 1/(p - 1)) ^ n / p = 1 - 1/p + p ^ ((n : ℤ) - 1) / (p - 1) ^ n`,
+
+where the exponent `n - 1` is an integer (it is `-1` for `n = 0`).
 
 This is the average over the residues `m` modulo `p` of `(p / (p - 1)) ^ n` if `p ∣ m` and of `1`
 otherwise, so `∏_p γ_n(p)` is the Euler product of the mean value of `(m / φ(m)) ^ n`. The product
@@ -44,14 +47,13 @@ does not depend on `S`. In particular the product over any set of primes `p > lo
   upper bound.
 * `TauCeti.sum_totientMeanFactor_sub_one_le`: `∑_{k ∈ s} (γ_n(k) - 1) ≤ 4 (2 ^ n - 1) / (m + 1)`
   for a finite set `s` of natural numbers `k > m`.
-* `TauCeti.prod_totientMeanFactor_le_exp`: `∏_{k ∈ s} γ_n(k) ≤ exp (4 (2 ^ n - 1) / (m + 1))` for
-  a finite set `s` of natural numbers `k > m`.
 * `TauCeti.multipliable_totientMeanFactor`, `TauCeti.one_le_tprod_totientMeanFactor`: the product
   of `γ_n(k)` over any set of natural numbers converges and is at least `1`, with no condition on
   the set.
-* `TauCeti.tprod_totientMeanFactor_le_exp`: the product over a set `S` of natural numbers `k > m`
-  is at most `exp (4 (2 ^ n - 1) / (m + 1))`; this upper bound needs every element of `S` to
-  exceed `m`.
+* `TauCeti.tsum_totientMeanFactor_sub_one_le`, `TauCeti.tprod_totientMeanFactor_le_exp`: for a
+  set `S` of natural numbers `k > m`, `∑_{k ∈ S} (γ_n(k) - 1) ≤ 4 (2 ^ n - 1) / (m + 1)` and
+  `∏_{k ∈ S} γ_n(k) ≤ exp (4 (2 ^ n - 1) / (m + 1))`; these upper bounds need every element of
+  `S` to exceed `m`.
 * `TauCeti.abs_tprod_totientMeanFactor_sub_one_le`: `|∏_{k ∈ S} γ_n(k) - 1| ≤ C_n / y` for every
   set `S` of natural numbers `k > y > 0`, with `C_n = 4 (2 ^ n - 1) exp (4 (2 ^ n - 1))`.
 * `TauCeti.abs_tprod_primes_totientMeanFactor_sub_one_le`: the case of the primes `p > log x` in
@@ -104,8 +106,8 @@ theorem totientMeanFactor_apply_zero (n : ℕ) : totientMeanFactor n 0 = 1 := by
 theorem totientMeanFactor_apply_one (n : ℕ) : totientMeanFactor n 1 = 1 := by
   simp [totientMeanFactor_eq_one_add]
 
-/-- The value at `2` is `γ_n(2) = (2 ^ n + 1) / 2`. -/
-@[simp]
+/-- The value at `2` is `γ_n(2) = (2 ^ n + 1) / 2`. This is not a simp lemma: at `n = 0` and
+`n = 1` it would compete with `totientMeanFactor_zero` and `totientMeanFactor_one`. -/
 theorem totientMeanFactor_apply_two (n : ℕ) : totientMeanFactor n 2 = (2 ^ n + 1) / 2 := by
   rw [totientMeanFactor_def]
   norm_num
@@ -124,8 +126,9 @@ theorem totientMeanFactor_eq_zpow {p : ℝ} (hp0 : p ≠ 0) (hp1 : p ≠ 1) (n :
   have h : 1 + (p - 1)⁻¹ = p / (p - 1) := by
     field_simp
     ring
-  rw [totientMeanFactor_def, h, div_pow, div_right_comm, zpow_sub_one₀ hp0, zpow_natCast,
-    div_eq_mul_inv (p ^ n) p]
+  rw [totientMeanFactor_def, h, zpow_sub_one₀ hp0, zpow_natCast]
+  simp only [div_eq_mul_inv]
+  ring
 
 /-- `1 ≤ γ_n(p)` for `p ≥ 1`. -/
 theorem one_le_totientMeanFactor {p : ℝ} (hp : 1 ≤ p) (n : ℕ) : 1 ≤ totientMeanFactor n p := by
@@ -142,7 +145,9 @@ theorem totientMeanFactor_le {p : ℝ} (hp : 2 ≤ p) (n : ℕ) :
     (inv_le_one_of_one_le₀ (by linarith : 1 ≤ p - 1)) n
   have key : ((1 + (p - 1)⁻¹) ^ n - 1) / p ≤ (2 ^ n - 1) / (p * (p - 1)) :=
     calc ((1 + (p - 1)⁻¹) ^ n - 1) / p ≤ (2 ^ n - 1) * (p - 1)⁻¹ / p := by gcongr; linarith
-      _ = (2 ^ n - 1) / (p * (p - 1)) := by rw [← div_eq_mul_inv, div_div, mul_comm]
+      _ = (2 ^ n - 1) / (p * (p - 1)) := by
+          simp only [div_eq_mul_inv, mul_inv]
+          ring
   rw [totientMeanFactor_eq_one_add]
   linarith
 
@@ -182,15 +187,6 @@ theorem sum_totientMeanFactor_sub_one_le (n : ℕ) {m : ℕ} {s : Finset ℕ} (h
         mul_le_mul_of_nonneg_left (sum_inv_sq_le_two_div_of_forall_lt hs) hK
     _ = 4 * (2 ^ n - 1) / (m + 1) := by ring
 
-/-- For a finite set `s` of natural numbers `k > m`,
-`∏_{k ∈ s} γ_n(k) ≤ exp (4 (2 ^ n - 1) / (m + 1))`. -/
-theorem prod_totientMeanFactor_le_exp (n : ℕ) {m : ℕ} {s : Finset ℕ} (hs : ∀ k ∈ s, m < k) :
-    ∏ k ∈ s, totientMeanFactor n k ≤ Real.exp (4 * (2 ^ n - 1) / (m + 1)) := by
-  have h := Real.prod_one_add_le_exp_sum s (f := fun k : ℕ ↦ totientMeanFactor n k - 1)
-    fun k ↦ sub_nonneg.2 (one_le_totientMeanFactor_natCast n k)
-  simp only [add_sub_cancel] at h
-  exact h.trans (Real.exp_le_exp.2 (sum_totientMeanFactor_sub_one_le n hs))
-
 /-- The series `∑_k (γ_n(k) - 1)` over the natural numbers converges. -/
 theorem summable_totientMeanFactor_sub_one (n : ℕ) :
     Summable fun k : ℕ ↦ totientMeanFactor n k - 1 :=
@@ -211,16 +207,31 @@ theorem one_le_tprod_totientMeanFactor (n : ℕ) (S : Set ℕ) :
   le_hasProd_of_le_prod (multipliable_totientMeanFactor n S).hasProd fun _ ↦
     one_le_prod₀ fun k _ ↦ one_le_totientMeanFactor_natCast n k
 
+/-- `γ_n(k) - 1` is nonnegative, so it is its own norm. -/
+private theorem norm_totientMeanFactor_natCast_sub_one (n k : ℕ) :
+    ‖totientMeanFactor n k - 1‖ = totientMeanFactor n k - 1 :=
+  Real.norm_of_nonneg (sub_nonneg.2 (one_le_totientMeanFactor_natCast n k))
+
+/-- For a set `S` of natural numbers `k > m`,
+`∑_{k ∈ S} (γ_n(k) - 1) ≤ 4 (2 ^ n - 1) / (m + 1)`. -/
+theorem tsum_totientMeanFactor_sub_one_le (n : ℕ) {m : ℕ} {S : Set ℕ} (hS : ∀ k ∈ S, m < k) :
+    ∑' k : S, (totientMeanFactor n k - 1) ≤ 4 * (2 ^ n - 1) / (m + 1) := by
+  refine Real.tsum_le_of_sum_le
+    (fun k ↦ sub_nonneg.2 (one_le_totientMeanFactor_natCast n k)) fun t ↦ ?_
+  have h := sum_totientMeanFactor_sub_one_le n
+    (s := t.map (Function.Embedding.subtype (· ∈ S)))
+    fun k hk ↦ hS k (t.property_of_mem_map_subtype hk)
+  simpa only [sum_map, Function.Embedding.subtype_apply] using h
+
 /-- For a set `S` of natural numbers `k > m`,
 `∏_{k ∈ S} γ_n(k) ≤ exp (4 (2 ^ n - 1) / (m + 1))`. -/
 theorem tprod_totientMeanFactor_le_exp (n : ℕ) {m : ℕ} {S : Set ℕ} (hS : ∀ k ∈ S, m < k) :
     ∏' k : S, totientMeanFactor n k ≤ Real.exp (4 * (2 ^ n - 1) / (m + 1)) := by
-  refine hasProd_le_of_prod_le (multipliable_totientMeanFactor n S).hasProd fun t ↦ ?_
-  refine (prod_map t (Function.Embedding.subtype (· ∈ S))
-    fun k : ℕ ↦ totientMeanFactor n k).symm.trans_le ?_
-  refine prod_totientMeanFactor_le_exp n fun k hk ↦ ?_
-  obtain ⟨j, -, rfl⟩ := mem_map.1 hk
-  exact hS j j.property
+  have h := norm_tprod_one_add_le_exp_tsum (f := fun k : S ↦ totientMeanFactor n k - 1)
+    ((summable_totientMeanFactor_sub_one n).subtype (· ∈ S)).norm
+  simp only [add_sub_cancel, norm_totientMeanFactor_natCast_sub_one] at h
+  exact (Real.le_norm_self _).trans
+    (h.trans (Real.exp_le_exp.2 (tsum_totientMeanFactor_sub_one_le n hS)))
 
 /-- **Truncation of the Euler product of `γ_n`.** For a real `y > 0` and any set `S` of natural
 numbers `k > y`, `|∏_{k ∈ S} γ_n(k) - 1| ≤ 4 (2 ^ n - 1) exp (4 (2 ^ n - 1)) / y`. The constant
@@ -231,8 +242,11 @@ theorem abs_tprod_totientMeanFactor_sub_one_le (n : ℕ) {y : ℝ} (hy : 0 < y) 
       4 * (2 ^ n - 1) * Real.exp (4 * (2 ^ n - 1)) / y := by
   have hK : (0 : ℝ) ≤ 4 * (2 ^ n - 1) :=
     mul_nonneg zero_le_four (sub_nonneg.2 (one_le_pow₀ one_le_two))
-  have h1 := one_le_tprod_totientMeanFactor n S
-  have h2 := tprod_totientMeanFactor_le_exp n fun k hk ↦ (Nat.floor_lt hy.le).2 (hS k hk)
+  have h1 := norm_tprod_one_add_sub_one_le (f := fun k : S ↦ totientMeanFactor n k - 1)
+    ((summable_totientMeanFactor_sub_one n).subtype (· ∈ S)).norm
+  simp only [add_sub_cancel, norm_totientMeanFactor_natCast_sub_one] at h1
+  rw [Real.norm_eq_abs] at h1
+  have h2 := tsum_totientMeanFactor_sub_one_le n fun k hk ↦ (Nat.floor_lt hy.le).2 (hS k hk)
   have ht0 : 0 ≤ 4 * (2 ^ n - 1) / ((⌊y⌋₊ : ℝ) + 1) := div_nonneg hK (by positivity)
   have hty : 4 * (2 ^ n - 1) / ((⌊y⌋₊ : ℝ) + 1) ≤ 4 * (2 ^ n - 1) / y :=
     div_le_div_of_nonneg_left hK hy (Nat.lt_floor_add_one y).le
@@ -240,10 +254,11 @@ theorem abs_tprod_totientMeanFactor_sub_one_le (n : ℕ) {y : ℝ} (hy : 0 < y) 
     div_le_self hK (le_add_of_nonneg_left (Nat.cast_nonneg _))
   have h3 := abs_exp_sub_one_le_mul_exp ((abs_of_nonneg ht0).trans_le hty)
     ((abs_of_nonneg ht0).trans_le ht1)
-  rw [abs_of_nonneg (sub_nonneg.2 h1)]
-  calc ∏' k : S, totientMeanFactor n k - 1
-      ≤ |Real.exp (4 * (2 ^ n - 1) / ((⌊y⌋₊ : ℝ) + 1)) - 1| :=
-        (sub_le_sub_right h2 1).trans (le_abs_self _)
+  calc |∏' k : S, totientMeanFactor n k - 1|
+      ≤ Real.exp (∑' k : S, (totientMeanFactor n k - 1)) - 1 := h1
+    _ ≤ Real.exp (4 * (2 ^ n - 1) / ((⌊y⌋₊ : ℝ) + 1)) - 1 :=
+        sub_le_sub_right (Real.exp_le_exp.2 h2) 1
+    _ ≤ |Real.exp (4 * (2 ^ n - 1) / ((⌊y⌋₊ : ℝ) + 1)) - 1| := le_abs_self _
     _ ≤ 4 * (2 ^ n - 1) / y * Real.exp (4 * (2 ^ n - 1)) := h3
     _ = 4 * (2 ^ n - 1) * Real.exp (4 * (2 ^ n - 1)) / y := by ring
 

@@ -73,8 +73,11 @@ theorem one_add_pow_add_le_one_add_two_pow_mul {α : Type*} [Semiring α] [Parti
       pow_le_pow_left₀ (add_nonneg zero_le_one h0)
         ((add_le_add_right h1 1).trans_eq one_add_one_eq_two) n
     calc (1 + a) ^ (n + 1) + a = (1 + a) ^ n + a + (1 + a) ^ n * a := by
-          rw [pow_succ, mul_add, mul_one, add_right_comm]
+          simp only [pow_succ, mul_add, mul_one]
+          ac_rfl
       _ ≤ 1 + 2 ^ n * a + 2 ^ n * a := add_le_add ih (mul_le_mul_of_nonneg_right h2 h0)
-      _ = 1 + 2 ^ (n + 1) * a := by rw [pow_succ, mul_two, add_mul, add_assoc]
+      _ = 1 + 2 ^ (n + 1) * a := by
+          simp only [pow_succ, mul_two, add_mul]
+          ac_rfl
 
 end TauCeti
