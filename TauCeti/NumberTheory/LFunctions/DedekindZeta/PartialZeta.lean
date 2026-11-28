@@ -159,14 +159,6 @@ theorem norm_rayClassCoeff_le_one (𝔪 : Modulus K) (c : RayClassGroup 𝔪) (I
   rw [rayClassCoeff_apply]
   split_ifs <;> simp
 
-/-- The ray-class indicator is real-valued (`0` or `1`), so it is fixed by `star`. -/
-@[simp]
-theorem star_rayClassCoeff (𝔪 : Modulus K) (c : RayClassGroup 𝔪) :
-    star (rayClassCoeff 𝔪 c) = rayClassCoeff 𝔪 c := by
-  funext I
-  rw [Pi.star_apply, rayClassCoeff_apply]
-  split_ifs <;> simp
-
 /-- **The class indicators sum to the indicator of the ideals prime to the modulus.** Every ideal
 prime to the finite part of `𝔪` lies in exactly one ray class, and every other ideal in none. -/
 theorem sum_rayClassCoeff (𝔪 : Modulus K) [Fintype (RayClassGroup 𝔪)] :

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Continued.Basic
 public import TauCeti.NumberTheory.LFunctions.Data.Growth
-public import TauCeti.NumberTheory.LFunctions.Data.SimplePoles
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 
@@ -98,17 +97,19 @@ theorem dedekindZetaData_hasDirichletAgreement : (dedekindZetaData K).HasDirichl
       dedekindZetaData_conductor, Int.abs_eq_natAbs, Int.cast_natCast, dedekindZetaData_gammaFactor,
       dedekindZeta_eq_LSeries_dedekindZetaCoeff, funext (dedekindZetaData_coeff K), mul_assoc]
 
-open AnalyticLFunctionData in
 /-- The completion is meromorphic with exactly the recorded poles at zero and one. -/
 theorem dedekindZetaData_hasMeromorphicContinuation :
-    (dedekindZetaData K).HasMeromorphicContinuation :=
-  hasMeromorphicContinuation_of_polarOrder_eq_single_add_single zero_ne_one
-    (dedekindZetaData_polarOrder K)
-    (by rw [dedekindZetaData_completed]; exact meromorphicOrderAt_completedDedekindZeta_zero K)
-    (by rw [dedekindZetaData_completed]; exact meromorphicOrderAt_completedDedekindZeta_one K)
-    fun _ h0 h1 ↦ by
-      rw [dedekindZetaData_completed]
-      exact analyticAt_completedDedekindZeta K h0 h1
+    (dedekindZetaData K).HasMeromorphicContinuation where
+  meromorphic := dedekindZetaData_completed K ▸ meromorphic_completedDedekindZeta K
+  meromorphicOrderAt_eq p hp := by
+    rcases eq_or_ne p 0 with rfl | h0
+    · simp [meromorphicOrderAt_completedDedekindZeta_zero]
+    rcases eq_or_ne p 1 with rfl | h1
+    · simp [meromorphicOrderAt_completedDedekindZeta_one]
+    simp [Ne.symm h0, Ne.symm h1] at hp
+  analyticAt p hp := by
+    rw [dedekindZetaData_completed, analyticAt_completedDedekindZeta_iff]
+    exact ⟨fun h ↦ by simp [h] at hp, fun h ↦ by simp [h] at hp⟩
 
 /-- The Dedekind zeta card is its own dual. -/
 @[simp] theorem dedekindZetaData_dual : (dedekindZetaData K).dual = dedekindZetaData K := by
@@ -119,14 +120,21 @@ theorem dedekindZetaData_hasMeromorphicContinuation :
   · simp
   · simp
   · simp
-  · simp [single_zero_one_add_single_one_one_conj]
+  · simp [Finsupp.single_apply, eq_comm (a := (0 : ℂ)), eq_comm (a := (1 : ℂ)),
+      map_eq_one_iff _ (starRingEnd ℂ).injective]
 
 /-- The completed card satisfies `Λ(s) = Λ(1 - s)`, with root number one. -/
 theorem dedekindZetaData_hasFunctionalEquation : (dedekindZetaData K).HasFunctionalEquation where
   norm_rootNumber := by simp
   polarOrder_one_sub_conj s := by
-    simpa only [dedekindZetaData_polarOrder] using
-      single_zero_one_add_single_one_one_one_sub_conj s
+    have hconj (z : ℂ) : (dedekindZetaData K).polarOrder (conj z) =
+        (dedekindZetaData K).polarOrder z := by
+      rw [← AnalyticLFunctionData.dual_polarOrder_apply, dedekindZetaData_dual]
+    have h0 : (0 : ℂ) = 1 - s ↔ 1 = s := by rw [eq_comm, sub_eq_zero]
+    have h1 : (1 : ℂ) = 1 - s ↔ 0 = s := by rw [eq_comm, sub_eq_self, eq_comm]
+    rw [← map_one (starRingEnd ℂ), ← map_sub, hconj]
+    simp only [dedekindZetaData_polarOrder, Finsupp.add_apply, Finsupp.single_apply,
+      h0, h1, add_comm]
   completed_eq s _ _ := by
     simp [completedDedekindZeta_one_sub]
 

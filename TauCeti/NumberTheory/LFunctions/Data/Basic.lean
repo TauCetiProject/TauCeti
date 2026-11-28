@@ -227,22 +227,6 @@ structure HasFunctionalEquation : Prop where
 
 variable {d}
 
-/-- Construct `HasMeromorphicContinuation` from the exact pole orders on the support of
-`d.polarOrder` and analyticity away from the support. -/
-theorem hasMeromorphicContinuation_of_meromorphicOrderAt
-    (hord : ∀ p : ℂ, d.polarOrder p ≠ 0 →
-      meromorphicOrderAt d.completed p = (-(d.polarOrder p : ℤ) : WithTop ℤ))
-    (ha : ∀ p : ℂ, d.polarOrder p = 0 → AnalyticAt ℂ d.completed p) :
-    d.HasMeromorphicContinuation where
-  meromorphic p := by
-    by_cases hp : d.polarOrder p = 0
-    · exact (ha p hp).meromorphicAt
-    · refine meromorphicAt_of_meromorphicOrderAt_ne_zero ?_
-      rw [hord p hp]
-      simp [hp]
-  meromorphicOrderAt_eq := hord
-  analyticAt := ha
-
 /-- The root number of a card satisfying the functional equation is nonzero. -/
 theorem HasFunctionalEquation.rootNumber_ne_zero (h : d.HasFunctionalEquation) :
     d.rootNumber ≠ 0 :=

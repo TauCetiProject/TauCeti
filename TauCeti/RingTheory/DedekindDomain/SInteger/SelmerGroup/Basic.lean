@@ -295,7 +295,8 @@ theorem range_toClassGroup [NeZero n] : (toClassGroup K S n).range =
     rw [toClassGroup_fromUnitsNDivisible]
     exact nthRootClass_pow _ _ _ _
   · intro hc
-    obtain ⟨I, rfl⟩ := ClassGroup.mk_surjective (S.integer K) K c
+    obtain ⟨I, rfl⟩ : ∃ I, ClassGroup.mk K I = c :=
+      ClassGroup.induction (K := K) (fun I ↦ ⟨I, rfl⟩) c
     rw [← map_pow, ClassGroup.mk_eq_one_iff_exists] at hc
     obtain ⟨x, hx⟩ := hc
     have hcount (v : HeightOneSpectrum (S.integer K)) :
