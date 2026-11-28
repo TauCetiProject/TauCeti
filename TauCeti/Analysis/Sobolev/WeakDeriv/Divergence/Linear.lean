@@ -14,7 +14,8 @@ import TauCeti.Analysis.InnerProductSpace.Trace.Free
 # The divergence of linear fields and of skew gradients
 
 A linear vector field `T` has constant divergence `tr T`
-(`ContinuousLinearMap.hasWeakDivergenceOn`), so it is solenoidal exactly when it is trace free;
+(`ContinuousLinearMap.hasWeakDivergenceOn`), so on a nonempty open set it is solenoidal exactly
+when it is trace free;
 in particular the identity field `x ↦ x` has divergence `dim E` (`TauCeti.hasWeakDivergenceOn_id`).
 
 For a skew-adjoint `S` and a `C²` function `ψ`, the field `S ∇ψ` is solenoidal

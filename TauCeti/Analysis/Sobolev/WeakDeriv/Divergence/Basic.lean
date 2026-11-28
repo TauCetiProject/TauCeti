@@ -23,8 +23,9 @@ for a continuously differentiable field. In particular, the kernel of divergence
 fields consists exactly of the weakly solenoidal test fields.
 
 A field `u • e` pointing in a fixed direction `e` has as weak divergence the weak derivative of `u`
-in the direction `e`. So it is solenoidal as soon as `u` is constant along the lines parallel to
-`e`, with no regularity of `u` across them, as for the shear `(g(x₂), 0)` of the plane.
+in the direction `e`. So it is solenoidal as soon as `u` is locally constant along the lines
+parallel to `e` through the open set, with no regularity of `u` across them, as for the shear
+`(g(x₂), 0)` of the plane.
 -/
 
 public section
@@ -32,7 +33,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory Set TopologicalSpace
-open scoped BigOperators ContDiff Distributions Gradient InnerProductSpace
+open scoped BigOperators ContDiff Distributions Gradient InnerProductSpace Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
   {μ : Measure E} {Ω Ω' : Opens E} {u v : E → E} {g h : E → ℝ}
@@ -280,16 +281,16 @@ theorem _root_.ContDiffOn.isSolenoidalOn_iff (hu : ContDiffOn ℝ 1 u Ω) :
   · intro hzero
     exact hdiv.congr_ae .rfl (ae_restrict_of_forall_mem Ω.isOpen.measurableSet hzero)
 
-/-- A locally integrable scalar `f` that is constant along the lines in the direction `e` makes
-`f • e` solenoidal, with no regularity of `f` across these lines. -/
+/-- A locally integrable scalar `f` that is locally constant along the lines in the direction `e`
+through each point of the open set makes `f • e` solenoidal there, with no regularity of `f`
+across these lines and no condition on `f` outside the open set. -/
 theorem isSolenoidalOn_smul_const_of_forall_add_smul_eq {f : E → ℝ} {e : E}
-    (hf : LocallyIntegrableOn f Ω μ) (hfe : ∀ x (t : ℝ), f (x + t • e) = f x) :
-    IsSolenoidalOn μ Ω (fun x ↦ f x • e) := by
-  refine HasWeakLineDerivOn.hasWeakDivergenceOn_smul_const
-    (hasWeakLineDerivOn_of_hasLineDerivAt hf locallyIntegrableOn_zero fun x _ ↦ ?_)
-  have hline : (fun t : ℝ ↦ f (x + t • e)) = fun _ ↦ f x := funext (hfe x)
-  rw [HasLineDerivAt, hline]
-  exact hasDerivAt_const _ _
+    (hf : LocallyIntegrableOn f Ω μ)
+    (hfe : ∀ x ∈ (Ω : Set E), ∀ᶠ t in 𝓝 (0 : ℝ), f (x + t • e) = f x) :
+    IsSolenoidalOn μ Ω (fun x ↦ f x • e) :=
+  HasWeakLineDerivOn.hasWeakDivergenceOn_smul_const
+    (hasWeakLineDerivOn_of_hasLineDerivAt hf locallyIntegrableOn_zero fun x hx ↦
+      (hasDerivAt_const (0 : ℝ) (f x)).congr_of_eventuallyEq (hfe x hx))
 
 end TauCeti
 

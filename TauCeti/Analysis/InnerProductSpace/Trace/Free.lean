@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Trace.Basic
 public import TauCeti.Topology.Algebra.Module.Trace
 import TauCeti.Algebra.Star.SelfAdjoint.BaseChange
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Trace
 import TauCeti.Analysis.InnerProductSpace.Positive.Definite
 import TauCeti.LinearAlgebra.Complex.Module
 
@@ -131,19 +132,13 @@ theorem trace_comp_eq_zero_of_inner_left_eq_neg {V : Type*} [NormedAddCommGroup 
     [InnerProductSpace ℝ V] {A H : V →ₗ[ℝ] V}
     (hA : ∀ u w, ⟪A u, w⟫_ℝ = -⟪u, A w⟫_ℝ) (hH : H.IsSymmetric) : trace ℝ V (A ∘ₗ H) = 0 := by
   by_cases hV : Module.Finite ℝ V
-  · -- In an orthonormal basis, `tr (A H) = -∑ᵢ ⟪A bᵢ, H bᵢ⟫` and `tr (H A) = ∑ᵢ ⟪A bᵢ, H bᵢ⟫`.
+  · -- In an orthonormal basis, `tr (A H) = -∑ᵢ ⟪A bᵢ, H bᵢ⟫`, a vanishing contraction.
     let b := stdOrthonormalBasis ℝ V
-    have hcomm := trace_mul_comm ℝ A H
-    rw [Module.End.mul_eq_comp, Module.End.mul_eq_comp, trace_eq_sum_inner _ b,
-      trace_eq_sum_inner _ b] at hcomm
     have hAH (i) : ⟪b i, (A ∘ₗ H) (b i)⟫_ℝ = -⟪A (b i), H (b i)⟫_ℝ := by
       rw [comp_apply, hA, neg_neg]
-    have hHA (i) : ⟪b i, (H ∘ₗ A) (b i)⟫_ℝ = ⟪A (b i), H (b i)⟫_ℝ := by
-      rw [comp_apply, ← hH, real_inner_comm]
-    simp only [hAH, hHA, Finset.sum_neg_distrib] at hcomm
     rw [trace_eq_sum_inner _ b]
-    simp only [hAH, Finset.sum_neg_distrib]
-    linarith
+    simpa only [hAH, Finset.sum_neg_distrib, neg_eq_zero, id_apply] using
+      b.sum_inner_map_map_symmetric_eq_zero LinearMap.id A H hA hH
   · exact DFunLike.congr_fun (TauCeti.LinearMap.trace_eq_zero_of_not_finite hV) _
 
 end LinearMap

@@ -30,8 +30,8 @@ on `ℝ² = EuclideanSpace ℝ (Fin 2)`, with coordinates `x = (x 0, x 1)`.
   (`isSolenoidalOn_shear`). For the Heaviside function `g = 1_{(0, ∞)}` the shear has no weak
   Fréchet derivative, i.e. no weak derivative in the direction `x₂`
   (`not_hasWeakFDerivOn_heavisideShear`): its first component jumps across the line `x₂ = 0`.
-  So solenoidality, a condition on the single scalar `div u`, is strictly weaker than weak
-  differentiability of `u`.
+  So solenoidality, a condition on the single scalar `div u`, does not require a weak Fréchet
+  derivative of `u`.
 
 ## References
 
@@ -107,7 +107,8 @@ theorem isSolenoidalOn_shear {g : ℝ → ℝ} (hg : LocallyIntegrable g) :
     ext i
     fin_cases i <;> simp
   rw [hfield]
-  exact isSolenoidalOn_smul_const_of_forall_add_smul_eq hgA fun x t ↦ by simp
+  exact isSolenoidalOn_smul_const_of_forall_add_smul_eq hgA fun x _ ↦
+    Filter.Eventually.of_forall fun t ↦ by simp
 
 /-- The Heaviside shear `(1_{(0, ∞)}(x₂), 0)`, solenoidal by `isSolenoidalOn_shear`, has no weak
 Fréchet derivative on the plane: its first component jumps across the line `x₂ = 0`. -/
