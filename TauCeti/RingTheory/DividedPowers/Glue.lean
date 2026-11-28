@@ -42,7 +42,7 @@ on `I · A⟨x⟩ + A⟨x⟩₊` in a divided power polynomial algebra.
   if and only if `γ` and `ε` agree on `I ⊓ J`.
 * `DividedPowers.isDPMorphism_glue_iff`: a ring map is a divided power morphism out of the glued
   structure if and only if it is one out of `γ` and out of `ε`.
-* `DividedPowers.coincide_on_inf` and `DividedPowers.existsUnique_dividedPowers_sup_of_inf_eq_mul`:
+* `DividedPowers.existsUnique_dividedPowers_sup_of_inf_eq_mul`:
   if `I ⊓ J = I * J`, any `γ` and `ε` agree on `I ⊓ J` and glue uniquely.
 
 ## References
@@ -156,21 +156,6 @@ theorem convolution_add (n : ℕ) {x x' y y' : A} (hx : x ∈ I) (hx' : x' ∈ I
       ∑ k ∈ antidiagonal n, convolution γ ε k.1 x y * convolution γ ε k.2 x' y' := by
   simp only [← coeff_exp_mul_exp, γ.exp_add hx hx', ε.exp_add hy hy']
   rw [← PowerSeries.coeff_mul, mul_mul_mul_comm]
-
-/-- If `I ⊓ J = I * J`, any divided power structures on `I` and on `J` agree on `I ⊓ J`. -/
-theorem coincide_on_inf (hIJ : I ⊓ J = I * J) {n : ℕ} {w : A} (hw : w ∈ I ⊓ J) :
-    γ.dpow n w = ε.dpow n w :=
-  γ.coincide_on_smul ε (by rwa [Ideal.smul_eq_mul, ← hIJ])
-
-/-- Any divided power structure on `I` agrees with `dividedPowersBot A` on `I ⊓ ⊥`. -/
-theorem coincide_on_inf_bot_right :
-    ∀ n, ∀ w ∈ I ⊓ ⊥, γ.dpow n w = (dividedPowersBot A).dpow n w :=
-  fun _ _ ↦ coincide_on_inf γ (dividedPowersBot A) ((inf_bot_eq I).trans (Ideal.mul_bot I).symm)
-
-/-- `dividedPowersBot A` agrees with any divided power structure on `J` on `⊥ ⊓ J`. -/
-theorem coincide_on_inf_bot_left :
-    ∀ n, ∀ w ∈ ⊥ ⊓ J, (dividedPowersBot A).dpow n w = ε.dpow n w :=
-  fun n w hw ↦ (coincide_on_inf_bot_right ε n w ⟨hw.2, hw.1⟩).symm
 
 end Convolution
 
