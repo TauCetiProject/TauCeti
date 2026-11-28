@@ -64,8 +64,11 @@ Through the winding number (`AddCircle.windingNumber`), the loop `t ↦ n • (t
 * `ContinuousMap.nullhomotopic_iff_homotopic_refl`: a map from a circle `AddCircle p` with
   `0 < p` is null-homotopic exactly when its based loop `t ↦ f (t * p)` is homotopic to the
   constant loop.
-* `ContinuousMap.nullhomotopic_addCircle_of_simplyConnectedSpace`: every continuous map from a
-  circle `AddCircle p` with `0 < p` into a simply connected space is null-homotopic.
+* `ContinuousMap.nullhomotopic_addCircle_of_simplyConnectedSpace` and
+  `ContinuousMap.isClopen_setOf_nullhomotopic_addCircle`: every continuous map from `AddCircle p`
+  (`0 < p`) into a simply connected space is null-homotopic, and into a locally path-connected,
+  semilocally simply connected space the null-homotopic maps form a clopen set in
+  `C(AddCircle p, X)`.
 * `Function.Periodic.loop`: the loop traced by a continuous periodic curve over one period.
 * `Function.Periodic.exists_nullhomotopic_iff_loop_homotopic_refl`: a continuous periodic curve is
   contractible exactly when its loop over a period is null-homotopic.
@@ -76,9 +79,11 @@ Through the winding number (`AddCircle.windingNumber`), the loop `t ↦ n • (t
 * `IsPathConnected.exists_nullhomotopic_addCircle_of_periodic`: in a continuous family of
   `T`-periodic curves indexed by a path-connected set, if one curve is contractible as a map from
   `AddCircle T`, then every curve in the family is.
-* `Function.Periodic.exists_nullhomotopic_addCircle_of_tendstoUniformly` and
-  `Function.Periodic.exists_nullhomotopic_addCircle_of_tendstoUniformly_Ioi`: uniform limits
-  (through an inducing map) of contractible periodic curves are contractible.
+* `Function.Periodic.eventually_exists_nullhomotopic_addCircle_iff_of_tendstoUniformly`,
+  `Function.Periodic.exists_nullhomotopic_addCircle_of_tendstoUniformly`, and
+  `Function.Periodic.exists_nullhomotopic_addCircle_of_tendstoUniformly_Ioi`: uniform convergence
+  (through an inducing map) eventually preserves circle null-homotopy of periodic curves, so uniform
+  limits of contractible periodic curves are contractible.
 * `AddCircle.nullhomotopic_subtypeVal_compl_singleton`: the circle with a point removed contracts
   in the circle.
 * `AddCircle.zsmulLoop_homotopic_refl_iff`: the loop winding `n` times around the circle is
@@ -150,6 +155,20 @@ theorem nullhomotopic_addCircle_of_simplyConnectedSpace [Fact (0 < p)] [SimplyCo
     (f : C(AddCircle p, X)) : f.Nullhomotopic :=
   (f.nullhomotopic_iff_homotopic_refl (toLoop f) fun _ ↦ rfl).2
     (SimplyConnectedSpace.paths_homotopic _ _)
+
+/-- **Null-homotopic circle maps form a clopen subset of `C(AddCircle p, X)`.** In a locally
+path-connected, semilocally simply connected space `X`, the subset of null-homotopic maps in
+`C(AddCircle p, X)` (`0 < p`) is both open and closed in the compact-open topology. -/
+theorem isClopen_setOf_nullhomotopic_addCircle [Fact (0 < p)] [LocallyPathConnectedSpace X]
+    [TauCeti.SemilocallySimplyConnectedSpace X] :
+    IsClopen {g : C(AddCircle p, X) | g.Nullhomotopic} := by
+  have hEq : {g : C(AddCircle p, X) | g.Nullhomotopic} =
+      {g : C(AddCircle p, X) | g.toLoop.Homotopic (Path.refl (g 0))} :=
+    Set.ext fun g ↦ g.nullhomotopic_iff_homotopic_refl g.toLoop fun _ ↦ rfl
+  rw [hEq]
+  exact TauCeti.isClopen_setOf_homotopic_refl toLoop <|
+    continuous_eval.comp (continuous_fst.prodMk
+      ((AddCircle.ofUnitInterval p).continuous.comp continuous_snd))
 
 /-- **Constant-speed reparametrization of a null-homotopic loop.** If the loop
 `g : AddCircle T → X` is null-homotopic and `a ≠ 0`, then `t ↦ g (t * a)`, a loop of period
@@ -301,31 +320,31 @@ theorem IsPathConnected.exists_nullhomotopic_addCircle_of_periodic {Y X : Type*}
 
 namespace Function.Periodic
 
-/-- **Uniform limits of contractible periodic curves are contractible.** Let `X` be locally
-path-connected and semilocally simply connected, and let `e : X → F` restrict to a topological
-inducing map on `K ⊆ X` into a uniform space `F`. If `γ` is a continuous `T`-periodic curve
-(`0 < T`) in `K`, eventually along `l` each `u i` is a continuous `T`-periodic curve in `K` with
-`e ∘ u i → e ∘ γ` uniformly, and frequently the circle map of `u i` is null-homotopic, then the
-circle map of `γ` is null-homotopic. -/
-theorem exists_nullhomotopic_addCircle_of_tendstoUniformly {T : ℝ} {X ι F : Type*}
+/-- **Uniform convergence through an inducing map eventually preserves circle null-homotopy.** Let
+`X` be locally path-connected and semilocally simply connected, and let `e : X → F` restrict to a
+topological inducing map on `K ⊆ X` into a uniform space `F`. If `γ` is a continuous `T`-periodic
+curve (`0 < T`) in `K` and eventually along `l` each `u i` is a continuous `T`-periodic curve in `K`
+with `e ∘ u i → e ∘ γ` uniformly, then eventually `u i` descends to a null-homotopic map
+`AddCircle T → X` if and only if `γ` does. -/
+theorem eventually_exists_nullhomotopic_addCircle_iff_of_tendstoUniformly {T : ℝ} {X ι F : Type*}
     [TopologicalSpace X] [LocallyPathConnectedSpace X] [TauCeti.SemilocallySimplyConnectedSpace X]
     {l : Filter ι} [UniformSpace F] {K : Set X} {e : X → F} {γ : ℝ → X}
     (hγper : Periodic γ T) (hγc : Continuous γ) (hT : 0 < T)
     (he : IsInducing (K.domRestrict e)) {u : ι → ℝ → X}
     (huc : ∀ᶠ i in l, Continuous (u i)) (huper : ∀ᶠ i in l, Periodic (u i) T)
     (huK : ∀ᶠ i in l, ∀ t, u i t ∈ K) (hγK : ∀ t, γ t ∈ K)
-    (hconv : TendstoUniformly (fun i t ↦ e (u i t)) (e ∘ γ) l)
-    (hnull : ∃ᶠ i in l, ∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u i t) :
-    ∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ t := by
+    (hconv : TendstoUniformly (fun i t ↦ e (u i t)) (e ∘ γ) l) :
+    ∀ᶠ i in l,
+      (∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u i t) ↔
+        ∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ t := by
   classical
   have : Fact (0 < T) := ⟨hT⟩
-  -- On the space `L` of closed curves on `[0, 1]` in `X`, null-homotopy is clopen, hence closed.
+  -- On the space `L` of closed curves on `[0, 1]` in `X`, null-homotopy is clopen.
   let L := {f : C(I, X) // f 0 = f 1}
   let loopOf (f : L) : Path (f.val 0) (f.val 0) := ⟨f.val, rfl, f.property.symm⟩
-  have hclosed : IsClosed {f : L | (loopOf f).Homotopic (Path.refl (f.val 0))} :=
-    (TauCeti.isClopen_setOf_homotopic_refl loopOf <|
-      continuous_eval.comp ((continuous_subtypeVal.comp continuous_fst).prodMk
-        continuous_snd)).isClosed
+  have hclopen : IsClopen {f : L | (loopOf f).Homotopic (Path.refl (f.val 0))} :=
+    TauCeti.isClopen_setOf_homotopic_refl loopOf <|
+      continuous_eval.comp ((continuous_subtypeVal.comp continuous_fst).prodMk continuous_snd)
   -- Lift the curves on `[0, T]` to `C(I, K)` so `he` transports uniform convergence from `F`.
   let kγ : C(I, K) := ⟨fun τ ↦ ⟨γ ((τ : ℝ) * T), hγK _⟩,
     Continuous.subtype_mk (hγc.comp (continuous_subtypeVal.mul continuous_const)) _⟩
@@ -349,18 +368,48 @@ theorem exists_nullhomotopic_addCircle_of_tendstoUniformly {T : ℝ} {X ι F : T
     · simpa only [ku, dite_eq_right hi] using hfγ01
   let fγ : L := ⟨inclK.comp kγ, hfγ01⟩
   let fu (i : ι) : L := ⟨inclK.comp (ku i), hfu01 i⟩
-  have hfreq : ∃ᶠ i in l, fu i ∈ {f : L | (loopOf f).Homotopic (Path.refl (f.val 0))} :=
-    (hnull.and_eventually (huc.and (huper.and huK))).mono fun i ⟨⟨g, hg, hgu⟩, hi₁, hi₂, hi₃⟩ ↦
-      (g.nullhomotopic_iff_homotopic_refl (loopOf (fu i)) fun τ ↦ by
-        simp [loopOf, fu, hku_pos ⟨hi₁, hi₂, hi₃⟩, mkKu, inclK,
-          AddCircle.ofUnitInterval_apply, hgu]).1 hg
-  have hfγ_mem : fγ ∈ {f : L | (loopOf f).Homotopic (Path.refl (f.val 0))} :=
-    hclosed.mem_of_frequently_of_tendsto hfreq
-      (tendsto_subtype_rng.2 ((inclK.continuous_postcomp.tendsto kγ).comp hku))
-  let gγ : C(AddCircle T, X) := ⟨hγper.lift, hγc.quotient_liftOn' _⟩
-  have hgγ (t : ℝ) : gγ t = γ t := hγper.lift_coe t
-  exact ⟨gγ, (gγ.nullhomotopic_iff_homotopic_refl (loopOf fγ) fun τ ↦ by
-    simp [loopOf, fγ, kγ, inclK, AddCircle.ofUnitInterval_apply, hgγ]).2 hfγ_mem, hgγ⟩
+  have hfu : Tendsto fu l (𝓝 fγ) :=
+    tendsto_subtype_rng.2 ((inclK.continuous_postcomp.tendsto kγ).comp hku)
+  have hev : ∀ᶠ i in l,
+      (loopOf (fu i)).Homotopic (Path.refl ((fu i).val 0)) ↔
+        (loopOf fγ).Homotopic (Path.refl (fγ.val 0)) := by
+    by_cases h : fγ ∈ {f : L | (loopOf f).Homotopic (Path.refl (f.val 0))}
+    · exact (hfu.eventually (hclopen.isOpen.mem_nhds h)).mono fun _ hi ↦ iff_of_true hi h
+    · exact (hfu.eventually (hclopen.compl.isOpen.mem_nhds h)).mono fun _ hi ↦ iff_of_false hi h
+  have hiff_loop {δ : ℝ → X} (hδp : Periodic δ T) (hδc : Continuous δ) (f : L)
+      (hf : ∀ τ : I, f.val τ = δ ((τ : ℝ) * T)) :
+      (∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = δ t) ↔
+        (loopOf f).Homotopic (Path.refl (f.val 0)) := by
+    refine ⟨fun ⟨g, hg, hgδ⟩ ↦ (g.nullhomotopic_iff_homotopic_refl (loopOf f) fun τ ↦ by
+      simp [loopOf, hf τ, AddCircle.ofUnitInterval_apply, hgδ]).1 hg, fun h ↦ ?_⟩
+    let gδ : C(AddCircle T, X) := ⟨hδp.lift, hδc.quotient_liftOn' _⟩
+    have hgδ (t : ℝ) : gδ t = δ t := hδp.lift_coe t
+    exact ⟨gδ, (gδ.nullhomotopic_iff_homotopic_refl (loopOf f) fun τ ↦ by
+      simp [loopOf, hf τ, AddCircle.ofUnitInterval_apply, hgδ]).2 h, hgδ⟩
+  filter_upwards [huc, huper, huK, hev] with i hi₁ hi₂ hi₃ h_eq
+  exact (hiff_loop hi₂ hi₁ (fu i) fun τ ↦ by simp [fu, hku_pos ⟨hi₁, hi₂, hi₃⟩, mkKu, inclK]).trans
+    (h_eq.trans (hiff_loop hγper hγc fγ fun _ ↦ rfl).symm)
+
+/-- **Uniform limits of contractible periodic curves are contractible.** Let `X` be locally
+path-connected and semilocally simply connected, and let `e : X → F` restrict to a topological
+inducing map on `K ⊆ X` into a uniform space `F`. If `γ` is a continuous `T`-periodic curve
+(`0 < T`) in `K`, eventually along `l` each `u i` is a continuous `T`-periodic curve in `K` with
+`e ∘ u i → e ∘ γ` uniformly, and frequently the circle map of `u i` is null-homotopic, then the
+circle map of `γ` is null-homotopic. -/
+theorem exists_nullhomotopic_addCircle_of_tendstoUniformly {T : ℝ} {X ι F : Type*}
+    [TopologicalSpace X] [LocallyPathConnectedSpace X] [TauCeti.SemilocallySimplyConnectedSpace X]
+    {l : Filter ι} [UniformSpace F] {K : Set X} {e : X → F} {γ : ℝ → X}
+    (hγper : Periodic γ T) (hγc : Continuous γ) (hT : 0 < T)
+    (he : IsInducing (K.domRestrict e)) {u : ι → ℝ → X}
+    (huc : ∀ᶠ i in l, Continuous (u i)) (huper : ∀ᶠ i in l, Periodic (u i) T)
+    (huK : ∀ᶠ i in l, ∀ t, u i t ∈ K) (hγK : ∀ t, γ t ∈ K)
+    (hconv : TendstoUniformly (fun i t ↦ e (u i t)) (e ∘ γ) l)
+    (hnull : ∃ᶠ i in l, ∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u i t) :
+    ∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ t := by
+  obtain ⟨_, hnull_i, hiff⟩ := (hnull.and_eventually
+    (hγper.eventually_exists_nullhomotopic_addCircle_iff_of_tendstoUniformly hγc hT he huc huper
+      huK hγK hconv)).exists
+  exact hiff.1 hnull_i
 
 /-- **Uniform slice limits along a half-cylinder with a contractible slice are contractible.** Let
 `X` be locally path-connected and semilocally simply connected, and let `u : ℝ × ℝ → X` be

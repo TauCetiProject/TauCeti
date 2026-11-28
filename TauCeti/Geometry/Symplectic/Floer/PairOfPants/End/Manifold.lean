@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Manifold
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Loop
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Pullback
-import Mathlib.Analysis.Convex.PathConnected
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
 import TauCeti.Geometry.Symplectic.Floer.Tameness
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
@@ -47,19 +47,26 @@ over `(a, ∞) × [0, 1]` with `a ≥ max T₀ 0` is at most the energy of `u` o
 (`TauCeti.SmoothTwoForm.mem_periodicSolutions_comp_endSign_mul`,
 `TauCeti.SmoothTwoForm.mem_periodicSolutions_positiveEndHamiltonian_iff`,
 `TauCeti.SmoothTwoForm.mem_contractiblePeriodicSolutions_comp_endSign_mul`, and
-`TauCeti.SmoothTwoForm.mem_contractiblePeriodicSolutions_positiveEndHamiltonian_iff`).
+`TauCeti.SmoothTwoForm.mem_contractiblePeriodicSolutions_positiveEndHamiltonian_iff`), while by
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Loop` a null-homotopic end loop
+`t ↦ u(φ_q(±s₀, t))` propagates along the positive end
+(`TauCeti.Floer.exists_nullhomotopic_positiveEndChart`).
 
 **Orbits and convergence at the ends.** Applying the manifold half-cylinder theorems of
 `TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Manifold` to `u ∘ φ'_q` gives, at a fixed end `q`:
 
 * along a sequence `s_n → ∞`, uniform convergence (after `e`) and pointwise convergence in `M` of
-  the end loops `t ↦ u(φ_q(±s_n, t))` to a `1`-periodic orbit of `H_q` in `B`
-  (`exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isCompact` and
-  `exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer`, in the namespace
+  the end loops `t ↦ u(φ_q(±s_n, t))` to a `1`-periodic orbit of `H_q` in `B` — and to a
+  contractible `1`-periodic orbit when some end loop is contractible in `M`
+  (`exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isCompact`,
+  `exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer`,
+  `exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_of_floer_of_isCompact`, and
+  `exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_of_floer`, in the namespace
   `TauCeti.SmoothTwoForm.IsNondegenerate`). Only the part of the domain along the end matters:
   the same holds for a map defined only on an open set containing the part `±s > a` of one end
-  (`exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isOpen`), which applies to
-  the ends of other punctured spheres built from `S`;
+  (`exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isOpen` and
+  `exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_of_floer_of_isOpen`), which
+  applies to the ends of other punctured spheres built from `S`;
 * along the whole end `s → ∞`, when `(e ∘ u) ∘ φ'_q` has bounded derivative on a strip and the
   `1`-periodic orbits of `H_q` in `B` (or only the contractible ones, when some end loop is
   contractible in `M`) are isolated — in particular when `H_q` is `C²` on a Hausdorff boundaryless
@@ -94,6 +101,7 @@ perturbations that are cylindrical on the ends
 (`exists_mem_periodicSolutions_integral_floerEnergyDensity_pairOfPantsPerturbation_of_isolated`,
 `exists_mem_periodicSolutions_integral_floerEnergyDensity_pairOfPantsPerturbation_of_isCompact`,
 `exists_mem_periodicSolutions_integral_floerEnergyDensity_pairOfPantsPerturbation`,
+`exists_mem_contractiblePeriodicSolutions_integral_pairOfPantsPerturbation_of_isolated`,
 `exists_mem_contractiblePeriodicSolutions_integral_pairOfPantsPerturbation_of_isCompact`, and
 `exists_mem_contractiblePeriodicSolutions_integral_pairOfPantsPerturbation`).
 
@@ -169,12 +177,8 @@ theorem mem_contractiblePeriodicSolutions_comp_endSign_mul {q : Puncture} {x : �
       (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) 1) :
     (fun t ↦ x (q.endSign * t)) ∈
       contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1 := by
-  obtain ⟨hx, g, hg, hgx⟩ := mem_contractiblePeriodicSolutions.1 hx
-  have h := hg.exists_addCircle_comp_mul one_ne_zero q.endSign_ne_zero
-  rw [abs_endSign, div_one] at h
-  obtain ⟨g', hg', hgg'⟩ := h
-  exact mem_contractiblePeriodicSolutions.2
-    ⟨mem_periodicSolutions_comp_endSign_mul hx, g', hg', fun t ↦ by rw [hgg', hgx, mul_comm]⟩
+  rw [mem_contractiblePeriodicSolutions] at hx ⊢
+  exact ⟨mem_periodicSolutions_comp_endSign_mul hx.1, exists_nullhomotopic_comp_endSign_mul q hx.2⟩
 
 /-- A curve `x` is a contractible `1`-periodic orbit of the positive end Hamiltonian `H'_q` if and
 only if `t ↦ x(±t)` is a contractible `1`-periodic orbit of `H_q`. -/
@@ -236,29 +240,6 @@ private theorem positiveEndChart_halfCylinder (q : Puncture)
     (J (positiveEndChart q z))).1 hcl
   simpa only [hamiltonianVectorField_const, Pi.zero_apply, sub_zero] using hiff
 
-/-- Transfer a `1`-periodic orbit `x` of `H'_q` in `B` and uniform/pointwise convergence of
-`u(φ'_q(σ i, ·))` to `x` into a `1`-periodic orbit `t ↦ x(±t)` of `H_q` in `B` and convergence of
-the end loops `u(φ_q(±σ i, ·))`. -/
-private theorem mem_periodicSolutions_and_tendstoUniformly_endChart_of_positiveEndChart
-    {ι α : Type*} [UniformSpace α] {f : M → α} {l : Filter ι} {σ : ι → ℝ} {B : Set M}
-    {u : ℝ × ℝ → M} {q : Puncture} {x : ℝ → M}
-    (hx : x ∈ periodicSolutions
-      (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) 1)
-    (hxB : ∀ t, x t ∈ B)
-    (hconv : TendstoUniformly (fun i t ↦ f (u (positiveEndChart q (σ i, t)))) (f ∘ x) l)
-    (hpt : ∀ t, Tendsto (fun i ↦ u (positiveEndChart q (σ i, t))) l (𝓝 (x t))) :
-    (fun t ↦ x (q.endSign * t)) ∈
-      periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1 ∧
-      (∀ t, x (q.endSign * t) ∈ B) ∧
-      TendstoUniformly (fun i t ↦ f (u (endChart q (q.endSign * σ i, t))))
-        (f ∘ fun t ↦ x (q.endSign * t)) l ∧
-      ∀ t, Tendsto (fun i ↦ u (endChart q (q.endSign * σ i, t))) l
-        (𝓝 (x (q.endSign * t))) := by
-  refine ⟨mem_periodicSolutions_comp_endSign_mul hx, fun _ ↦ hxB _, ?_, fun t ↦ ?_⟩
-  · rw [funext fun i ↦ comp_endChart_eq_comp_positiveEndChart (fun z ↦ f (u z)) q (σ i)]
-    exact hconv.comp _
-  · simpa only [endChart_eq_positiveEndChart] using hpt (q.endSign * t)
-
 /-! ### Asymptotic orbits at the ends -/
 
 variable [FiniteDimensional ℝ E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -314,9 +295,9 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isOpe
       (periodic_positiveEndHamiltonian hH) he hB he_inj hde hu' hper' huB'
       (fun z ↦ J (positiveEndChart q z)) hc
       (fun z hz v ↦ hJc _ (haU _ ((le_max_right T₀ a).trans_lt hz.1)) v) hfloer' hE'
-  obtain ⟨hy, hyB, hconv', hpt'⟩ :=
-    mem_periodicSolutions_and_tendstoUniformly_endChart_of_positiveEndChart hx hxB hconv hpt
-  exact ⟨_, hy, hyB, σ, hσ, hconv', hpt'⟩
+  exact ⟨_, mem_periodicSolutions_comp_endSign_mul hx, fun _ ↦ hxB _, σ, hσ,
+    tendstoUniformly_endChart_of_positiveEndChart (u := e ∘ u) hconv,
+    tendsto_endChart_of_positiveEndChart hpt⟩
 
 /-- **A finite-energy Floer pair of pants in a manifold breaks off an orbit at each end.** Let `ω`
 be a nondegenerate two-form on a manifold `M`, let `K` be equal to `H_q(t) dt` beyond `T₀` on an
@@ -392,6 +373,108 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer
       he isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu (fun _ _ ↦ mem_univ _) J hc hJc hfloer hE
   exact ⟨y, hy, h⟩
 
+/-- **A finite-energy Floer solution on an open end breaks off a contractible periodic orbit.**
+Under the hypotheses of `exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isOpen`,
+if some end loop `t ↦ u(φ_q(±s, t))` (`s > a`) lifts to a null-homotopic map `AddCircle 1 → M`,
+then the broken `1`-periodic orbit `y` of `H_q` in `B` is contractible. -/
+theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_of_floer_of_isOpen
+    (hω : ω.IsNondegenerate) (q : Puncture)
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : Periodic (H q) 1) (hHs : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q)))
+    (he : ContMDiff I 𝓘(ℝ, F) 1 e) {B : Set M} (hB : IsCompact B) (he_inj : InjOn e B)
+    (hde : ∀ p ∈ B, Injective (mvfderiv I e p)) {U : Set (ℝ × ℝ)} (hU : IsOpen U)
+    {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (huB : ∀ z ∈ U, u z ∈ B)
+    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
+    (hJc : ∀ z ∈ U, ∀ v, c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
+    (hfloer : ∀ z ∈ U, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedMFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z).toLinearMap)
+    (hE : ∫⁻ z in U, ENNReal.ofReal (ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤)
+    {a : ℝ} (haU : ∀ ζ : ℝ × ℝ, a < ζ.1 → positiveEndChart q ζ ∈ U)
+    (hnull : ∃ s > a, ∃ g : C(AddCircle (1 : ℝ), M), g.Nullhomotopic ∧
+      ∀ t : ℝ, g t = u (endChart q (q.endSign * s, t))) :
+    ∃ y ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
+      (∀ t, y t ∈ B) ∧ ∃ σ : ℕ → ℝ, Tendsto σ atTop atTop ∧
+        TendstoUniformly (fun n t ↦ e (u (endChart q (q.endSign * σ n, t)))) (e ∘ y) atTop ∧
+        ∀ t, Tendsto (fun n ↦ u (endChart q (q.endSign * σ n, t))) atTop (𝓝 (y t)) := by
+  obtain ⟨y, hy, hyB, σ, hσ, hux, hpt⟩ :=
+    hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isOpen q hKH hH hHs he hB
+      he_inj hde hU hu huB J hc hJc hfloer hE haU
+  have hmem {w : ℝ × ℝ} (hw : a < w.1) : endChart q (q.endSign * w.1, w.2) ∈ U :=
+    endChart_eq_positiveEndChart q w.1 w.2 ▸ haU _ hw
+  exact ⟨y, mem_contractiblePeriodicSolutions_of_tendstoUniformly_Ioi
+    (u := fun w ↦ u (endChart q (q.endSign * w.1, w.2))) one_pos he.continuous hB he_inj
+    (hu.continuousOn.comp (((contDiff_endChart q 0).continuous.comp
+      ((continuous_const.mul continuous_fst).prodMk continuous_snd)).continuousOn)
+      fun _ hw ↦ hmem hw.1)
+    (fun _ _ _ ↦ by simp only [endChart_add_one]) (fun s hs t ↦ huB _ (hmem (w := (s, t)) hs))
+    hnull (hσ.eventually_gt_atTop a) hy hyB hux, hyB, σ, hσ, hux, hpt⟩
+
+/-- **A contractible end of a finite-energy Floer pair of pants in a manifold breaks off a
+contractible periodic orbit.** Specialization of
+`exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_of_floer_of_isOpen` to `S`. -/
+theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_of_floer_of_isCompact
+    (hω : ω.IsNondegenerate) (q : Puncture)
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : Periodic (H q) 1) (hHs : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q)))
+    (he : ContMDiff I 𝓘(ℝ, F) 1 e) {B : Set M} (hB : IsCompact B) (he_inj : InjOn e B)
+    (hde : ∀ p ∈ B, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
+    (hnull : ∃ s > 0, ∃ g : C(AddCircle (1 : ℝ), M), g.Nullhomotopic ∧
+      ∀ t : ℝ, g t = u (endChart q (q.endSign * s, t)))
+    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
+    (hJc : ∀ z ∈ thricePuncturedSphereReal, ∀ v,
+      c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z) (ω.perturbedMFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z).toLinearMap)
+    (hE : ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤) :
+    ∃ y ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
+      (∀ t, y t ∈ B) ∧ ∃ σ : ℕ → ℝ, Tendsto σ atTop atTop ∧
+        TendstoUniformly (fun n t ↦ e (u (endChart q (q.endSign * σ n, t)))) (e ∘ y) atTop ∧
+        ∀ t, Tendsto (fun n ↦ u (endChart q (q.endSign * σ n, t))) atTop (𝓝 (y t)) :=
+  hω.exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_of_floer_of_isOpen q hKH hH
+    hHs he hB he_inj hde isOpen_thricePuncturedSphereReal hu huB J hc hJc hfloer hE (a := 0)
+    (fun _ hζ ↦ positiveEndChart_mem_thricePuncturedSphereReal hζ) hnull
+
+/-- **A contractible end of a finite-energy Floer pair of pants in a closed manifold breaks off a
+contractible periodic orbit.** Specialization of
+`exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_of_floer_of_isCompact` when `M`
+is compact and `B = univ`. -/
+theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_of_floer
+    [CompactSpace M] (hω : ω.IsNondegenerate) (q : Puncture)
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : Periodic (H q) 1) (hHs : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q)))
+    (he : ContMDiff I 𝓘(ℝ, F) 1 e) (he_inj : Injective e)
+    (hde : ∀ p, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    (hnull : ∃ s > 0, ∃ g : C(AddCircle (1 : ℝ), M), g.Nullhomotopic ∧
+      ∀ t : ℝ, g t = u (endChart q (q.endSign * s, t)))
+    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
+    (hJc : ∀ z ∈ thricePuncturedSphereReal, ∀ v,
+      c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z) (ω.perturbedMFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z).toLinearMap)
+    (hE : ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤) :
+    ∃ y ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
+      ∃ σ : ℕ → ℝ, Tendsto σ atTop atTop ∧
+        TendstoUniformly (fun n t ↦ e (u (endChart q (q.endSign * σ n, t)))) (e ∘ y) atTop ∧
+        ∀ t, Tendsto (fun n ↦ u (endChart q (q.endSign * σ n, t))) atTop (𝓝 (y t)) :=
+  (hω.exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_of_floer_of_isCompact q hKH
+    hH hHs he isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu (fun _ _ ↦ mem_univ _) hnull J hc hJc
+    hfloer hE).imp fun _ ⟨hy, _, h⟩ ↦ ⟨hy, h⟩
+
 /-! #### Convergence of the ends to isolated and nondegenerate orbits -/
 
 /-- **Convergence of an end of a Floer pair of pants in a manifold to an isolated orbit.** Let `ω`
@@ -442,29 +525,17 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of
   obtain ⟨hu', hper', huB', hfloer', hE'⟩ :=
     positiveEndChart_halfCylinder q hKH hH hHs isOpen_thricePuncturedSphereReal hu huB
       hfloer hE haT fun _ hζ ↦ positiveEndChart_mem_thricePuncturedSphereReal (ha₀.trans_lt hζ)
-  -- Time reversal fixes `t = 0`, so isolation at `0` transfers from `H_q` to `H'_q`.
-  have hiso' : ∀ x ∈ periodicSolutions
-      (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) 1, (∀ t, x t ∈ B) →
-      ∀ᶠ p in 𝓝 (x 0), ∀ x' ∈ periodicSolutions
-        (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) 1,
-        (∀ t, x' t ∈ B) → x' 0 = p → x' = x := by
-    intro x hx hxB
-    have h0 := hiso (fun t ↦ x (q.endSign * t)) (mem_periodicSolutions_comp_endSign_mul hx)
-      (fun t ↦ hxB _)
-    rw [mul_zero] at h0
-    refine h0.mono fun p hp x' hx' hx'B hx'0 ↦ funext fun t ↦ ?_
-    have heq := congrFun (hp (fun r ↦ x' (q.endSign * r))
-      (mem_periodicSolutions_comp_endSign_mul hx') (fun r ↦ hx'B _)
-      (by simpa only [mul_zero] using hx'0)) (q.endSign * t)
-    simpa only [← mul_assoc, endSign_mul_self, one_mul] using heq
   obtain ⟨x, hx, hxB, hconv, hpt⟩ :=
     hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated
       (contMDiff_uncurry_positiveEndHamiltonian hHs)
       (periodic_positiveEndHamiltonian hH) he hB he_inj hde hu' hper' huB'
       (fun z ↦ J (positiveEndChart q z)) hc (fun z hz v ↦ hJc z (hab hz) v) hfloer' hE'
-      (fun z hz ↦ hC z (hab hz)) hiso'
-  exact ⟨_, mem_periodicSolutions_and_tendstoUniformly_endChart_of_positiveEndChart
-    (σ := id) hx hxB hconv hpt⟩
+      (fun z hz ↦ hC z (hab hz))
+      (eventually_forall_eq_of_comp_endSign_mul
+        (fun _ ↦ mem_periodicSolutions_comp_endSign_mul) hiso)
+  exact ⟨_, mem_periodicSolutions_comp_endSign_mul hx, fun _ ↦ hxB _,
+    tendstoUniformly_endChart_of_positiveEndChart (u := e ∘ u) (σ := id) hconv,
+    tendsto_endChart_of_positiveEndChart (σ := id) hpt⟩
 
 /-- **Convergence of an end of a Floer pair of pants in a manifold to a nondegenerate orbit.** Let
 `ω` be a nondegenerate two-form on a Hausdorff boundaryless manifold `M`, `K` equal to `H_q(t) dt`
@@ -593,52 +664,23 @@ theorem
   have haT : T₀ ≤ a := (le_max_left _ _).trans (le_max_left _ _)
   have hab {z : ℝ × ℝ} (hz : z ∈ Ioi a ×ˢ Icc 0 1) : z ∈ Ioi b ×ˢ Icc 0 1 :=
     ⟨(le_max_right _ _).trans_lt hz.1, hz.2⟩
+  obtain ⟨s₀, hs₀, h₀⟩ := hnull
   obtain ⟨hu', hper', huB', hfloer', hE'⟩ :=
     positiveEndChart_halfCylinder q hKH hH hHs isOpen_thricePuncturedSphereReal hu huB
       hfloer hE haT fun _ hζ ↦ positiveEndChart_mem_thricePuncturedSphereReal (ha₀.trans_lt hζ)
-  -- Propagate null-homotopy along `(0, ∞)` to height `a + 1` and reverse/keep speed `±1`.
-  have hnull' : ∃ s > a, ∃ g : C(AddCircle (1 : ℝ), M), g.Nullhomotopic ∧
-      ∀ t : ℝ, g t = u (positiveEndChart q (s, t)) := by
-    obtain ⟨s₀, hs₀, h₀⟩ := hnull
-    have huc : ContinuousOn (fun w : ℝ × ℝ ↦ u (endChart q (q.endSign * w.1, w.2)))
-        (Ioi 0 ×ˢ univ) :=
-      hu.continuousOn.comp
-        (((contDiff_endChart q 0).continuous.comp
-          ((continuous_const.mul continuous_fst).prodMk continuous_snd)).continuousOn)
-        fun w hw ↦ by
-          rw [endChart_eq_positiveEndChart]
-          exact positiveEndChart_mem_thricePuncturedSphereReal hw.1
-    obtain ⟨g₁, hg₁, hgg₁⟩ := ((convex_Ioi (0 : ℝ)).isPathConnected ⟨s₀, hs₀⟩)
-      |>.exists_nullhomotopic_addCircle_of_periodic huc
-        (fun _ _ _ ↦ by simp only [endChart_add_one]) hs₀ h₀ (ha₀.trans_lt (lt_add_one a))
-    have h₂ := hg₁.exists_addCircle_comp_mul one_ne_zero q.endSign_ne_zero
-    rw [abs_endSign, div_one] at h₂
-    obtain ⟨g₂, hg₂, hgg₂⟩ := h₂
-    refine ⟨a + 1, lt_add_one a, g₂, hg₂, fun t ↦ ?_⟩
-    rw [hgg₂, hgg₁, mul_comm t, positiveEndChart_mk]
-  have hiso' : ∀ x ∈ contractiblePeriodicSolutions
-      (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) 1, (∀ t, x t ∈ B) →
-      ∀ᶠ p in 𝓝 (x 0), ∀ x' ∈ contractiblePeriodicSolutions
-        (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) 1,
-        (∀ t, x' t ∈ B) → x' 0 = p → x' = x := by
-    intro x hx hxB
-    have h0 := hiso (fun t ↦ x (q.endSign * t))
-      (mem_contractiblePeriodicSolutions_comp_endSign_mul hx) (fun t ↦ hxB _)
-    rw [mul_zero] at h0
-    refine h0.mono fun p hp x' hx' hx'B hx'0 ↦ funext fun t ↦ ?_
-    have heq := congrFun (hp (fun r ↦ x' (q.endSign * r))
-      (mem_contractiblePeriodicSolutions_comp_endSign_mul hx') (fun r ↦ hx'B _)
-      (by simpa only [mul_zero] using hx'0)) (q.endSign * t)
-    simpa only [← mul_assoc, endSign_mul_self, one_mul] using heq
   obtain ⟨x, hx, hxB, hconv, hpt⟩ :=
     hω.exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated
       (contMDiff_uncurry_positiveEndHamiltonian hHs)
-      (periodic_positiveEndHamiltonian hH) he hB he_inj hde hu' hper' huB' hnull'
+      (periodic_positiveEndHamiltonian hH) he hB he_inj hde hu' hper' huB'
+      ⟨a + 1, lt_add_one a,
+        exists_nullhomotopic_positiveEndChart hu.continuousOn hs₀ (ha₀.trans_lt (lt_add_one a)) h₀⟩
       (fun z ↦ J (positiveEndChart q z)) hc (fun z hz v ↦ hJc z (hab hz) v) hfloer' hE'
-      (fun z hz ↦ hC z (hab hz)) hiso'
-  exact ⟨_, mem_contractiblePeriodicSolutions_comp_endSign_mul hx,
-    (mem_periodicSolutions_and_tendstoUniformly_endChart_of_positiveEndChart (σ := id)
-      (contractiblePeriodicSolutions_subset hx) hxB hconv hpt).2⟩
+      (fun z hz ↦ hC z (hab hz))
+      (eventually_forall_eq_of_comp_endSign_mul
+        (fun _ ↦ mem_contractiblePeriodicSolutions_comp_endSign_mul) hiso)
+  exact ⟨_, mem_contractiblePeriodicSolutions_comp_endSign_mul hx, fun _ ↦ hxB _,
+    tendstoUniformly_endChart_of_positiveEndChart (u := e ∘ u) (σ := id) hconv,
+    tendsto_endChart_of_positiveEndChart (σ := id) hpt⟩
 
 /-- **Convergence of a contractible end of a Floer pair of pants to a nondegenerate contractible
 orbit.** Specialization of
@@ -680,10 +722,7 @@ theorem
       ∀ t, Tendsto (fun s ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y t)) :=
   hω.exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated
     q hKH hH (hHs.of_le one_le_two) he hB he_inj hde hu huB hnull J hfloer hE hC hc hJc
-    fun y hy hyB ↦
-      (hω.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq hHs
-        (contractiblePeriodicSolutions_subset hy) (hnd y hy hyB)).mono fun _ hp y' hy' _ ↦
-          hp y' (contractiblePeriodicSolutions_subset hy')
+    (hω.forall_mem_contractiblePeriodicSolutions_hamiltonianVectorField_eventually_eq hHs hnd)
 
 /-- **Convergence of a contractible end of a Floer pair of pants in a closed manifold.**
 Specialization of
@@ -890,19 +929,17 @@ theorem exists_mem_periodicSolutions_integral_floerEnergyDensity_of_eq_smul_endA
       (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
     (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 2 (uncurry (H q)))
-    (he : ContMDiff I 𝓘(ℝ, F) 1 e) {B : Set M} (hB : IsCompact B)
-    (he_inj : InjOn e B) (hde : ∀ p ∈ B, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 2 (uncurry (H q)))
+    (he : ContMDiff I 𝓘(ℝ, F) 1 e) {B : Set M} (hB : IsCompact B) (he_inj : InjOn e B)
+    (hde : ∀ p ∈ B, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
     (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
     (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
     (hJc : ∀ z ∈ thricePuncturedSphereReal, ∀ v,
       c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
-    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-        (ω.perturbedMFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z).toLinearMap)
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z) (ω.perturbedMFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z).toLinearMap)
     (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
@@ -910,8 +947,7 @@ theorem exists_mem_periodicSolutions_integral_floerEnergyDensity_of_eq_smul_endA
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
       thricePuncturedSphereReal)
-    (hC : ∀ q, ∃ b C, ∀ z ∈ Ioi b ×ˢ Icc 0 1,
-      ‖fderiv ℝ ((e ∘ u) ∘ positiveEndChart q) z‖ ≤ C)
+    (hC : ∀ q, ∃ b C, ∀ z ∈ Ioi b ×ˢ Icc 0 1, ‖fderiv ℝ ((e ∘ u) ∘ positiveEndChart q) z‖ ≤ C)
     (hnd : ∀ q, ∀ y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
       (∀ t, y t ∈ B) → IsNondegenerateFixedPt I
         (timeDependentFlowOf (fun t ↦ ω.hamiltonianVectorField (H q t)) 0 1) (y 0)) :
@@ -922,10 +958,8 @@ theorem exists_mem_periodicSolutions_integral_floerEnergyDensity_of_eq_smul_endA
         (∀ t, Tendsto (fun s ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y q t))) ∧
         Tendsto (fun s ↦ ∫ t in (0 : ℝ)..1, H q t (u (endChart q (q.endSign * s, t))))
           atTop (𝓝 (∫ t in (0 : ℝ)..1, H q t (y q t)))) ∧
-      IntegrableOn (ω.floerEnergyDensity
-        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u)
-        thricePuncturedSphereReal ∧
+      IntegrableOn (ω.floerEnergyDensity (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u) thricePuncturedSphereReal ∧
       ∫ z in thricePuncturedSphereReal, ω.floerEnergyDensity
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
@@ -946,27 +980,24 @@ compact set.** Specialization of
 `TauCeti.Floer.pairOfPantsPerturbation H`, whose curvature is automatically integrable along `u`. -/
 theorem
     exists_mem_periodicSolutions_integral_floerEnergyDensity_pairOfPantsPerturbation_of_isolated
-    (hω : ω.IsNondegenerate)
-    (hH : ∀ q, Periodic (H q) 1)
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q)))
-    (he : ContMDiff I 𝓘(ℝ, F) 1 e) {B : Set M} (hB : IsCompact B)
-    (he_inj : InjOn e B) (hde : ∀ p ∈ B, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
+    (he : ContMDiff I 𝓘(ℝ, F) 1 e) {B : Set M} (hB : IsCompact B) (he_inj : InjOn e B)
+    (hde : ∀ p ∈ B, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
     (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
     (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
     (hJc : ∀ z ∈ thricePuncturedSphereReal, ∀ v,
       c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
-    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-        (ω.perturbedMFDeriv
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u z).toLinearMap)
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z) (ω.perturbedMFDeriv
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z).toLinearMap)
     (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
-    (hC : ∀ q, ∃ b C, ∀ z ∈ Ioi b ×ˢ Icc 0 1,
-      ‖fderiv ℝ ((e ∘ u) ∘ positiveEndChart q) z‖ ≤ C)
+    (hC : ∀ q, ∃ b C, ∀ z ∈ Ioi b ×ˢ Icc 0 1, ‖fderiv ℝ ((e ∘ u) ∘ positiveEndChart q) z‖ ≤ C)
     (hiso : ∀ q, ∀ y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
       (∀ t, y t ∈ B) → ∀ᶠ p in 𝓝 (y 0),
         ∀ y' ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
@@ -984,8 +1015,7 @@ theorem
         thricePuncturedSphereReal ∧
       ∫ z in thricePuncturedSphereReal, ω.floerEnergyDensity
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u z =
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
         (∫ z in thricePuncturedSphereReal,
             (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
               (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
@@ -1006,27 +1036,24 @@ compact set.** Specialization of
 `TauCeti.Floer.pairOfPantsPerturbation H`, whose curvature is automatically integrable along `u`. -/
 theorem
     exists_mem_periodicSolutions_integral_floerEnergyDensity_pairOfPantsPerturbation_of_isCompact
-    [T2Space M] [BoundarylessManifold I M] (hω : ω.IsNondegenerate)
-    (hH : ∀ q, Periodic (H q) 1)
+    [T2Space M] [BoundarylessManifold I M] (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 2 (uncurry (H q)))
-    (he : ContMDiff I 𝓘(ℝ, F) 1 e) {B : Set M} (hB : IsCompact B)
-    (he_inj : InjOn e B) (hde : ∀ p ∈ B, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
+    (he : ContMDiff I 𝓘(ℝ, F) 1 e) {B : Set M} (hB : IsCompact B) (he_inj : InjOn e B)
+    (hde : ∀ p ∈ B, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
     (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
     (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
     (hJc : ∀ z ∈ thricePuncturedSphereReal, ∀ v,
       c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
-    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-        (ω.perturbedMFDeriv
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u z).toLinearMap)
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z) (ω.perturbedMFDeriv
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z).toLinearMap)
     (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
-    (hC : ∀ q, ∃ b C, ∀ z ∈ Ioi b ×ˢ Icc 0 1,
-      ‖fderiv ℝ ((e ∘ u) ∘ positiveEndChart q) z‖ ≤ C)
+    (hC : ∀ q, ∃ b C, ∀ z ∈ Ioi b ×ˢ Icc 0 1, ‖fderiv ℝ ((e ∘ u) ∘ positiveEndChart q) z‖ ≤ C)
     (hnd : ∀ q, ∀ y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
       (∀ t, y t ∈ B) → IsNondegenerateFixedPt I
         (timeDependentFlowOf (fun t ↦ ω.hamiltonianVectorField (H q t)) 0 1) (y 0)) :
@@ -1043,8 +1070,7 @@ theorem
         thricePuncturedSphereReal ∧
       ∫ z in thricePuncturedSphereReal, ω.floerEnergyDensity
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u z =
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
         (∫ z in thricePuncturedSphereReal,
             (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
               (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
@@ -1126,10 +1152,9 @@ theorem exists_mem_contractiblePeriodicSolutions_integral_floerEnergyDensity_eq_
       (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
     (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q)))
-    (he : ContMDiff I 𝓘(ℝ, F) 1 e) {B : Set M} (hB : IsCompact B)
-    (he_inj : InjOn e B) (hde : ∀ p ∈ B, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q)))
+    (he : ContMDiff I 𝓘(ℝ, F) 1 e) {B : Set M} (hB : IsCompact B) (he_inj : InjOn e B)
+    (hde : ∀ p ∈ B, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
     (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
     (hnull : ∀ q, ∃ s > 0, ∃ g : C(AddCircle (1 : ℝ), M), g.Nullhomotopic ∧
@@ -1137,10 +1162,9 @@ theorem exists_mem_contractiblePeriodicSolutions_integral_floerEnergyDensity_eq_
     (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
     (hJc : ∀ z ∈ thricePuncturedSphereReal, ∀ v,
       c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
-    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-        (ω.perturbedMFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z).toLinearMap)
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z) (ω.perturbedMFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z).toLinearMap)
     (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
@@ -1148,8 +1172,7 @@ theorem exists_mem_contractiblePeriodicSolutions_integral_floerEnergyDensity_eq_
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
       thricePuncturedSphereReal)
-    (hC : ∀ q, ∃ b C, ∀ z ∈ Ioi b ×ˢ Icc 0 1,
-      ‖fderiv ℝ ((e ∘ u) ∘ positiveEndChart q) z‖ ≤ C)
+    (hC : ∀ q, ∃ b C, ∀ z ∈ Ioi b ×ˢ Icc 0 1, ‖fderiv ℝ ((e ∘ u) ∘ positiveEndChart q) z‖ ≤ C)
     (hiso : ∀ q, ∀ y ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
       (∀ t, y t ∈ B) → ∀ᶠ p in 𝓝 (y 0),
         ∀ y' ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
@@ -1161,10 +1184,8 @@ theorem exists_mem_contractiblePeriodicSolutions_integral_floerEnergyDensity_eq_
         (∀ t, Tendsto (fun s ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y q t))) ∧
         Tendsto (fun s ↦ ∫ t in (0 : ℝ)..1, H q t (u (endChart q (q.endSign * s, t))))
           atTop (𝓝 (∫ t in (0 : ℝ)..1, H q t (y q t)))) ∧
-      IntegrableOn (ω.floerEnergyDensity
-        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u)
-        thricePuncturedSphereReal ∧
+      IntegrableOn (ω.floerEnergyDensity (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u) thricePuncturedSphereReal ∧
       ∫ z in thricePuncturedSphereReal, ω.floerEnergyDensity
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
@@ -1198,10 +1219,9 @@ theorem exists_mem_contractiblePeriodicSolutions_integral_floerEnergyDensity_eq_
       (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
     (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 2 (uncurry (H q)))
-    (he : ContMDiff I 𝓘(ℝ, F) 1 e) {B : Set M} (hB : IsCompact B)
-    (he_inj : InjOn e B) (hde : ∀ p ∈ B, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 2 (uncurry (H q)))
+    (he : ContMDiff I 𝓘(ℝ, F) 1 e) {B : Set M} (hB : IsCompact B) (he_inj : InjOn e B)
+    (hde : ∀ p ∈ B, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
     (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
     (hnull : ∀ q, ∃ s > 0, ∃ g : C(AddCircle (1 : ℝ), M), g.Nullhomotopic ∧
@@ -1209,10 +1229,9 @@ theorem exists_mem_contractiblePeriodicSolutions_integral_floerEnergyDensity_eq_
     (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
     (hJc : ∀ z ∈ thricePuncturedSphereReal, ∀ v,
       c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
-    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-        (ω.perturbedMFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z).toLinearMap)
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z) (ω.perturbedMFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z).toLinearMap)
     (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
@@ -1220,8 +1239,7 @@ theorem exists_mem_contractiblePeriodicSolutions_integral_floerEnergyDensity_eq_
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
       thricePuncturedSphereReal)
-    (hC : ∀ q, ∃ b C, ∀ z ∈ Ioi b ×ˢ Icc 0 1,
-      ‖fderiv ℝ ((e ∘ u) ∘ positiveEndChart q) z‖ ≤ C)
+    (hC : ∀ q, ∃ b C, ∀ z ∈ Ioi b ×ˢ Icc 0 1, ‖fderiv ℝ ((e ∘ u) ∘ positiveEndChart q) z‖ ≤ C)
     (hnd : ∀ q, ∀ y ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
       (∀ t, y t ∈ B) → IsNondegenerateFixedPt I
         (timeDependentFlowOf (fun t ↦ ω.hamiltonianVectorField (H q t)) 0 1) (y 0)) :
@@ -1232,10 +1250,8 @@ theorem exists_mem_contractiblePeriodicSolutions_integral_floerEnergyDensity_eq_
         (∀ t, Tendsto (fun s ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y q t))) ∧
         Tendsto (fun s ↦ ∫ t in (0 : ℝ)..1, H q t (u (endChart q (q.endSign * s, t))))
           atTop (𝓝 (∫ t in (0 : ℝ)..1, H q t (y q t)))) ∧
-      IntegrableOn (ω.floerEnergyDensity
-        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u)
-        thricePuncturedSphereReal ∧
+      IntegrableOn (ω.floerEnergyDensity (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u) thricePuncturedSphereReal ∧
       ∫ z in thricePuncturedSphereReal, ω.floerEnergyDensity
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
@@ -1248,21 +1264,19 @@ theorem exists_mem_contractiblePeriodicSolutions_integral_floerEnergyDensity_eq_
             (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) :=
   hω.exists_mem_contractiblePeriodicSolutions_integral_floerEnergyDensity_eq_of_isolated hK hKH hH
     (fun q ↦ (hHs q).of_le one_le_two) he hB he_inj hde hu huB hnull J hc hJc hfloer hA hR hC
-    fun q y hy hyB ↦
-      (hω.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq (hHs q)
-        (contractiblePeriodicSolutions_subset hy) (hnd q y hy hyB)).mono fun _ hp y' hy' _ ↦
-          hp y' (contractiblePeriodicSolutions_subset hy')
+    fun q ↦
+      hω.forall_mem_contractiblePeriodicSolutions_hamiltonianVectorField_eventually_eq (hHs q)
+        (hnd q)
 
-/-- **The energy identity for `pairOfPantsPerturbation` with contractible asymptotic orbits in a
-compact set.** Specialization of
-`exists_mem_contractiblePeriodicSolutions_integral_floerEnergyDensity_eq_of_isCompact` to
+/-- **The energy identity for `pairOfPantsPerturbation` with isolated contractible asymptotic orbits
+in a compact set.** Specialization of
+`exists_mem_contractiblePeriodicSolutions_integral_floerEnergyDensity_eq_of_isolated` to
 `TauCeti.Floer.pairOfPantsPerturbation H`. -/
-theorem exists_mem_contractiblePeriodicSolutions_integral_pairOfPantsPerturbation_of_isCompact
-    [T2Space M] [BoundarylessManifold I M] (hω : ω.IsNondegenerate)
-    (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 2 (uncurry (H q)))
-    (he : ContMDiff I 𝓘(ℝ, F) 1 e) {B : Set M} (hB : IsCompact B)
-    (he_inj : InjOn e B) (hde : ∀ p ∈ B, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
+theorem exists_mem_contractiblePeriodicSolutions_integral_pairOfPantsPerturbation_of_isolated
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q)))
+    (he : ContMDiff I 𝓘(ℝ, F) 1 e) {B : Set M} (hB : IsCompact B) (he_inj : InjOn e B)
+    (hde : ∀ p ∈ B, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
     (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
     (hnull : ∀ q, ∃ s > 0, ∃ g : C(AddCircle (1 : ℝ), M), g.Nullhomotopic ∧
@@ -1270,17 +1284,72 @@ theorem exists_mem_contractiblePeriodicSolutions_integral_pairOfPantsPerturbatio
     (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
     (hJc : ∀ z ∈ thricePuncturedSphereReal, ∀ v,
       c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
-    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-        (ω.perturbedMFDeriv
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u z).toLinearMap)
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z) (ω.perturbedMFDeriv
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z).toLinearMap)
     (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
-    (hC : ∀ q, ∃ b C, ∀ z ∈ Ioi b ×ˢ Icc 0 1,
-      ‖fderiv ℝ ((e ∘ u) ∘ positiveEndChart q) z‖ ≤ C)
+    (hC : ∀ q, ∃ b C, ∀ z ∈ Ioi b ×ˢ Icc 0 1, ‖fderiv ℝ ((e ∘ u) ∘ positiveEndChart q) z‖ ≤ C)
+    (hiso : ∀ q, ∀ y ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
+      (∀ t, y t ∈ B) → ∀ᶠ p in 𝓝 (y 0),
+        ∀ y' ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
+          (∀ t, y' t ∈ B) → y' 0 = p → y' = y) :
+    ∃ y : Puncture → ℝ → M,
+      (∀ q, y q ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1 ∧
+        (∀ t, y q t ∈ B) ∧
+        TendstoUniformly (fun s t ↦ e (u (endChart q (q.endSign * s, t)))) (e ∘ y q) atTop ∧
+        (∀ t, Tendsto (fun s ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y q t))) ∧
+        Tendsto (fun s ↦ ∫ t in (0 : ℝ)..1, H q t (u (endChart q (q.endSign * s, t))))
+          atTop (𝓝 (∫ t in (0 : ℝ)..1, H q t (y q t)))) ∧
+      IntegrableOn (ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
+        thricePuncturedSphereReal ∧
+      ∫ z in thricePuncturedSphereReal, ω.floerEnergyDensity
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
+        (∫ z in thricePuncturedSphereReal,
+            (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+              (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+          (∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (y q t)) -
+          ∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
+            (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+            (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+            z (u z) :=
+  hω.exists_mem_contractiblePeriodicSolutions_integral_floerEnergyDensity_eq_of_isolated
+    (fun w x ↦ contMDiffAt_pairOfPantsPerturbation hH hHs w x)
+    (fun _ _ x hw ↦ pairOfPantsPerturbation_eq_smul_endAngularForm hw x) hH hHs he hB he_inj hde
+    hu huB hnull J hc hJc hfloer hA
+    (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs hu.continuousOn) hC hiso
+
+/-- **The energy identity for `pairOfPantsPerturbation` with contractible asymptotic orbits in a
+compact set.** Specialization of
+`exists_mem_contractiblePeriodicSolutions_integral_pairOfPantsPerturbation_of_isolated` on a
+Hausdorff boundaryless manifold with `H_q` of class `C²`. -/
+theorem exists_mem_contractiblePeriodicSolutions_integral_pairOfPantsPerturbation_of_isCompact
+    [T2Space M] [BoundarylessManifold I M] (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 2 (uncurry (H q)))
+    (he : ContMDiff I 𝓘(ℝ, F) 1 e) {B : Set M} (hB : IsCompact B) (he_inj : InjOn e B)
+    (hde : ∀ p ∈ B, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
+    (hnull : ∀ q, ∃ s > 0, ∃ g : C(AddCircle (1 : ℝ), M), g.Nullhomotopic ∧
+      ∀ t : ℝ, g t = u (endChart q (q.endSign * s, t)))
+    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
+    (hJc : ∀ z ∈ thricePuncturedSphereReal, ∀ v,
+      c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z) (ω.perturbedMFDeriv
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z).toLinearMap)
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
+    (hC : ∀ q, ∃ b C, ∀ z ∈ Ioi b ×ˢ Icc 0 1, ‖fderiv ℝ ((e ∘ u) ∘ positiveEndChart q) z‖ ≤ C)
     (hnd : ∀ q, ∀ y ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
       (∀ t, y t ∈ B) → IsNondegenerateFixedPt I
         (timeDependentFlowOf (fun t ↦ ω.hamiltonianVectorField (H q t)) 0 1) (y 0)) :
@@ -1297,8 +1366,7 @@ theorem exists_mem_contractiblePeriodicSolutions_integral_pairOfPantsPerturbatio
         thricePuncturedSphereReal ∧
       ∫ z in thricePuncturedSphereReal, ω.floerEnergyDensity
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u z =
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
         (∫ z in thricePuncturedSphereReal,
             (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
               (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
@@ -1306,13 +1374,11 @@ theorem exists_mem_contractiblePeriodicSolutions_integral_pairOfPantsPerturbatio
           ∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
             (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
             (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-            z (u z) := by
-  have hHs1 (q) := (hHs q).of_le one_le_two
-  exact hω.exists_mem_contractiblePeriodicSolutions_integral_floerEnergyDensity_eq_of_isCompact
-    (fun w x ↦ contMDiffAt_pairOfPantsPerturbation hH hHs1 w x)
-    (fun _ _ x hw ↦ pairOfPantsPerturbation_eq_smul_endAngularForm hw x) hH hHs he hB he_inj hde
-    hu huB hnull J hc hJc hfloer hA
-    (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs1 hu.continuousOn) hC hnd
+            z (u z) :=
+  hω.exists_mem_contractiblePeriodicSolutions_integral_pairOfPantsPerturbation_of_isolated hH
+    (fun q ↦ (hHs q).of_le one_le_two) he hB he_inj hde hu huB hnull J hc hJc hfloer hA hC fun q ↦
+      hω.forall_mem_contractiblePeriodicSolutions_hamiltonianVectorField_eventually_eq (hHs q)
+        (hnd q)
 
 /-- **The energy identity for `pairOfPantsPerturbation` with contractible asymptotic orbits on a
 closed manifold.** Specialization of
@@ -1320,8 +1386,7 @@ closed manifold.** Specialization of
 compact and `B = univ`. -/
 theorem exists_mem_contractiblePeriodicSolutions_integral_pairOfPantsPerturbation
     [CompactSpace M] [T2Space M] [BoundarylessManifold I M] (hω : ω.IsNondegenerate)
-    (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 2 (uncurry (H q)))
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 2 (uncurry (H q)))
     (he : ContMDiff I 𝓘(ℝ, F) 1 e) (he_inj : Injective e)
     (hde : ∀ p, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
@@ -1330,17 +1395,15 @@ theorem exists_mem_contractiblePeriodicSolutions_integral_pairOfPantsPerturbatio
     (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
     (hJc : ∀ z ∈ thricePuncturedSphereReal, ∀ v,
       c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
-    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-        (ω.perturbedMFDeriv
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u z).toLinearMap)
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z) (ω.perturbedMFDeriv
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z).toLinearMap)
     (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
-    (hC : ∀ q, ∃ b C, ∀ z ∈ Ioi b ×ˢ Icc 0 1,
-      ‖fderiv ℝ ((e ∘ u) ∘ positiveEndChart q) z‖ ≤ C)
+    (hC : ∀ q, ∃ b C, ∀ z ∈ Ioi b ×ˢ Icc 0 1, ‖fderiv ℝ ((e ∘ u) ∘ positiveEndChart q) z‖ ≤ C)
     (hnd : ∀ q, ∀ y ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
       IsNondegenerateFixedPt I
         (timeDependentFlowOf (fun t ↦ ω.hamiltonianVectorField (H q t)) 0 1) (y 0)) :
@@ -1356,8 +1419,7 @@ theorem exists_mem_contractiblePeriodicSolutions_integral_pairOfPantsPerturbatio
         thricePuncturedSphereReal ∧
       ∫ z in thricePuncturedSphereReal, ω.floerEnergyDensity
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u z =
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
         (∫ z in thricePuncturedSphereReal,
             (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
               (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +

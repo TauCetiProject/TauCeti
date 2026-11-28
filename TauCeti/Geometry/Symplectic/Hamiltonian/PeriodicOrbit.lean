@@ -74,9 +74,10 @@ the comparison of the Floer homology of a `C²`-small Morse function with its Mo
 * `exists_pos_forall_periodicSolutions_hamiltonianVectorField_smul_eq_image_criticalPoints`
   (in `TauCeti.SmoothTwoForm.IsNondegenerate`): for small `ε > 0`, the 1-periodic orbits of `ε F`
   are the constant curves at the critical points of `F`.
-* `SmoothTwoForm.IsNondegenerate.finite_contractiblePeriodicSolutions_hamiltonianVectorField`: a
-  time-dependent Hamiltonian on a closed manifold whose contractible 1-periodic orbits are all
-  nondegenerate has finitely many contractible 1-periodic orbits.
+* `SmoothTwoForm.IsNondegenerate.finite_contractiblePeriodicSolutions_hamiltonianVectorField` and
+  `forall_mem_contractiblePeriodicSolutions_hamiltonianVectorField_eventually_eq`: when all
+  contractible 1-periodic orbits are nondegenerate, each is isolated among contractible 1-periodic
+  orbits and, on a closed manifold, there are finitely many of them.
 * `SmoothTwoForm.IsNondegenerate.isMIntegralCurve_const_hamiltonianVectorField_smul_iff`: for
   `s ≠ 0`, the constant curve at `x` is an orbit of `s F` exactly when `x` is a critical point of
   `F`.
@@ -158,6 +159,27 @@ theorem forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq
   fun γ hγ hγK ↦
     (h.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq hH hγ
       (hnd γ hγ hγK)).mono fun _ hy γ' hγ' _ ↦ hy γ' hγ'
+
+/-- **Nondegenerate contractible 1-periodic orbits in a set are isolated among contractible orbits
+in that set.** Let `σ` be a nondegenerate two-form on a Hausdorff boundaryless manifold modelled on
+a finite-dimensional space, `H` a jointly `C²` time-dependent Hamiltonian, and `K ⊆ M`. If every
+contractible `1`-periodic orbit `γ` of `H` in `K` is nondegenerate — `γ 0` is a nondegenerate fixed
+point of `timeDependentFlowOf X_H 0 1` — then every contractible `1`-periodic orbit `γ` of `H` in
+`K` is isolated at `t = 0` among the contractible `1`-periodic orbits of `H` in `K` (noncontractible
+orbits need not be nondegenerate). -/
+theorem forall_mem_contractiblePeriodicSolutions_hamiltonianVectorField_eventually_eq
+    (h : σ.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 (uncurry H)) {K : Set M}
+    (hnd : ∀ γ ∈ contractiblePeriodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1,
+      (∀ t, γ t ∈ K) → IsNondegenerateFixedPt I
+        (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) 0 1) (γ 0)) :
+    ∀ γ ∈ contractiblePeriodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1,
+      (∀ t, γ t ∈ K) → ∀ᶠ y in 𝓝 (γ 0),
+        ∀ γ' ∈ contractiblePeriodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1,
+          (∀ t, γ' t ∈ K) → γ' 0 = y → γ' = γ :=
+  fun γ hγ hγK ↦
+    (h.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq hH
+      (contractiblePeriodicSolutions_subset hγ) (hnd γ hγ hγK)).mono fun _ hy γ' hγ' _ ↦
+        hy γ' (contractiblePeriodicSolutions_subset hγ')
 
 /-- **Finiteness of nondegenerate 1-periodic orbits.** Let `σ` be a nondegenerate two-form on a
 compact boundaryless manifold modelled on a finite-dimensional space, and `H` a jointly `C²`
