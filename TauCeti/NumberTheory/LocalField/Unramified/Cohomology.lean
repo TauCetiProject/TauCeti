@@ -57,9 +57,11 @@ with finite `P^{I_K}` (`AddMonoidHom.explicitCup11_eq_zero_of_mem_unramifiedH1`)
 * `TauCeti.mk_mem_unramifiedH1_of_forall_mem_separableClosureInertiaSubgroup`,
   `TauCeti.mk_mem_unramifiedH1_of_forall_mem_inertiaSubgroup`: a continuous `1`-cocycle vanishing
   on inertia represents an unramified class.
-* `DistribMulActionHom.explicitCoeff1_mem_unramifiedH1`, `AlgHom.explicitMap1_mem_unramifiedH1`:
-  functoriality of `unramifiedH1` in the coefficient module and along valuative extensions of local
-  fields.
+* `DistribMulActionHom.explicitCoeff1_mem_unramifiedH1`,
+  `AddEquiv.unramifiedH1_comap_explicitCoeff1Equiv`,
+  `DistribMulActionHom.unramifiedH1_comap_explicitCoeff1`,
+  `AlgHom.explicitMap1_mem_unramifiedH1`: functoriality of `unramifiedH1` in the coefficient
+  module and along valuative extensions of local fields.
 * `DistribMulActionHom.comap_unramifiedH1_of_injective_of_smul_eq_self`: an injective coefficient
   map between unramified modules pulls the target unramified condition back to the source one.
 * `TauCeti.ker_frobeniusSubId_eq_fixedPoints`, `TauCeti.natCard_unramifiedH1_eq_natCard_H0`:
@@ -228,6 +230,66 @@ theorem _root_.DistribMulActionHom.explicitCoeff1_mem_unramifiedH1 {N : Type w} 
   rw [mem_unramifiedH1_iff, explicitCoeff1_eq_explicitMap1]
   exact (ContinuousMonoidHom.id _).explicitRes1_explicitMap1_eq_zero_of_map_le _ _ _
     (by rintro _ ⟨g, hg, rfl⟩; exact hg) (mem_unramifiedH1_iff.mp hc)
+
+/-- An equivariant additive homeomorphism of topological `G_K`-modules preserves and reflects
+unramified first cohomology classes. -/
+theorem _root_.AddEquiv.explicitCoeff1Equiv_mem_unramifiedH1_iff {N : Type w} [AddCommGroup N]
+    [TopologicalSpace N] [IsTopologicalAddGroup N]
+    [DistribMulAction (AbsoluteGaloisGroup K) N] [ContinuousSMul (AbsoluteGaloisGroup K) N]
+    (e : M ≃+ N) (he : Continuous e) (he' : Continuous e.symm)
+    (hequiv : ∀ (g : AbsoluteGaloisGroup K) (m : M), e (g • m) = g • e m)
+    {c : H1 (AbsoluteGaloisGroup K) M} :
+    explicitCoeff1Equiv (AbsoluteGaloisGroup K) M e he he' hequiv c ∈ unramifiedH1 K N ↔
+      c ∈ unramifiedH1 K M := by
+  refine ⟨fun hc ↦ ?_, fun hc ↦ ?_⟩
+  · have hc' := DistribMulActionHom.explicitCoeff1_mem_unramifiedH1
+      { e.symm.toAddMonoidHom with map_smul' := AddEquiv.symm_map_smul_of_map_smul e hequiv } he' hc
+    rwa [← explicitCoeff1Equiv_symm_apply (G := AbsoluteGaloisGroup K) (M := M) e he he' hequiv,
+      AddEquiv.symm_apply_apply] at hc'
+  · rw [explicitCoeff1Equiv_apply]
+    exact DistribMulActionHom.explicitCoeff1_mem_unramifiedH1
+      { e.toAddMonoidHom with map_smul' := hequiv } he hc
+
+/-- Pulling `unramifiedH1 K N` back along `explicitCoeff1Equiv` for an equivariant additive
+homeomorphism of topological `G_K`-modules recovers `unramifiedH1 K M`. -/
+theorem _root_.AddEquiv.unramifiedH1_comap_explicitCoeff1Equiv {N : Type w} [AddCommGroup N]
+    [TopologicalSpace N] [IsTopologicalAddGroup N]
+    [DistribMulAction (AbsoluteGaloisGroup K) N] [ContinuousSMul (AbsoluteGaloisGroup K) N]
+    (e : M ≃+ N) (he : Continuous e) (he' : Continuous e.symm)
+    (hequiv : ∀ (g : AbsoluteGaloisGroup K) (m : M), e (g • m) = g • e m) :
+    (unramifiedH1 K N).comap
+        (explicitCoeff1Equiv (AbsoluteGaloisGroup K) M e he he' hequiv).toAddMonoidHom =
+      unramifiedH1 K M := by
+  ext c
+  exact e.explicitCoeff1Equiv_mem_unramifiedH1_iff he he' hequiv
+
+/-- A bijective equivariant homomorphism of discrete `G_K`-modules preserves and reflects
+unramified first cohomology classes. -/
+@[simp high]
+theorem _root_.DistribMulActionHom.explicitCoeff1_mem_unramifiedH1_iff
+    [DiscreteTopology M] {N : Type w} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [DistribMulAction (AbsoluteGaloisGroup K) N] [ContinuousSMul (AbsoluteGaloisGroup K) N]
+    (f : M →+[AbsoluteGaloisGroup K] N) (hf : Function.Bijective f)
+    {c : H1 (AbsoluteGaloisGroup K) M} :
+    explicitCoeff1 (AbsoluteGaloisGroup K) M f continuous_of_discreteTopology c ∈
+        unramifiedH1 K N ↔
+      c ∈ unramifiedH1 K M := by
+  rw [← explicitCoeff1Equiv_ofBijective_apply (AbsoluteGaloisGroup K) M hf c]
+  exact (AddEquiv.ofBijective f hf).explicitCoeff1Equiv_mem_unramifiedH1_iff
+    continuous_of_discreteTopology continuous_of_discreteTopology (AddEquiv.ofBijective_smul hf)
+
+/-- Pulling `unramifiedH1 K N` back along `explicitCoeff1` for a bijective equivariant homomorphism
+of discrete `G_K`-modules recovers `unramifiedH1 K M`. -/
+@[simp]
+theorem _root_.DistribMulActionHom.unramifiedH1_comap_explicitCoeff1
+    [DiscreteTopology M] {N : Type w} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [DistribMulAction (AbsoluteGaloisGroup K) N] [ContinuousSMul (AbsoluteGaloisGroup K) N]
+    (f : M →+[AbsoluteGaloisGroup K] N) (hf : Function.Bijective f) :
+    (unramifiedH1 K N).comap
+        (explicitCoeff1 (AbsoluteGaloisGroup K) M f continuous_of_discreteTopology) =
+      unramifiedH1 K M := by
+  ext c
+  exact f.explicitCoeff1_mem_unramifiedH1_iff hf
 
 /-- **The unramified local condition is cartesian on unramified coefficients.** For a continuous
 injective equivariant coefficient map whose target has trivial inertia action, the inverse image

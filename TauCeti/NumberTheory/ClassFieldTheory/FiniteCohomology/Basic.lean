@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
+public import TauCeti.FieldTheory.GaloisCohomology.DiscreteGalRep
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassField
-public import TauCeti.NumberTheory.ClassFieldTheory.MuNRep
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 public import TauCeti.NumberTheory.LocalField.Kummer
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Finiteness
@@ -18,7 +18,7 @@ public import Mathlib.Topology.Algebra.ClopenNhdofOne
 # Finiteness of `H⁰` and `H¹` of a finite Galois module over a local field
 
 Let `F` be a nonarchimedean local field, `n` a natural number invertible in `F`, and `A` a finite
-smooth discrete `G_F`-module killed by `n`, an object of `TauCeti.ClassFieldTheory.GalRep n F`.
+smooth discrete `G_F`-module killed by `n`, an object of `TauCeti.GalRep n F`.
 This file proves that the continuous cohomology groups `H⁰(G_F, A)` and `H¹(G_F, A)` are finite
 (`TauCeti.ClassFieldTheory.finite_continuousCohomology_of_le_one`).
 
@@ -47,6 +47,8 @@ file does not treat degree two.
   prime-order coefficients in degrees at least two over local fields containing roots of unity.
 * `TauCeti.ClassFieldTheory.finite_continuousCohomology_of_le_one`: `Hⁱ(G_F, A)` is finite for
   `i ≤ 1` and every finite smooth discrete `A : GalRep n F`, `n` invertible in `F`.
+* `TauCeti.ClassFieldTheory.finite_H1_of_nsmul_eq_zero`: explicit `H¹(G_F, M)` is finite for
+  every finite discrete `G_F`-module `M` whose exponent is nonzero in `F`.
 
 ## References
 
@@ -168,5 +170,22 @@ theorem finite_continuousCohomology_of_le_one (hn : (n : F) ≠ 0) (A : GalRep n
     Finite (continuousCohomology i A) := by
   exact finite_continuousCohomology_of_prime_ge_two hn A hA i
     fun _ _ _ _ _ _ _ _ _ _ _ _ _ hj₀ hj ↦ by omega
+
+/-- **Finiteness of explicit `H¹` (by exponent).** Let `F` be a nonarchimedean local field and `n`
+a natural number nonzero in `F`. For every finite discrete `G_F`-module `M` killed by `n`,
+`H¹(G_F, M)` is finite. -/
+theorem finite_H1_of_nsmul_eq_zero (hn : (n : F) ≠ 0)
+    (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction (AbsoluteGaloisGroup F) M] [ContinuousSMul (AbsoluteGaloisGroup F) M]
+    [Finite M] (hM : ∀ x : M, n • x = 0) :
+    Finite (H1 (AbsoluteGaloisGroup F) M) := by
+  suffices h : ∀ [Module (ZMod n) M], Finite (H1 (AbsoluteGaloisGroup F) M) by
+    let : Module (ZMod n) M := AddCommGroup.zmodModule hM
+    exact h
+  intro _
+  let A := galRepOfZModModule n F M
+  have : Finite (continuousCohomology 1 A) :=
+    finite_continuousCohomology_of_le_one hn A (isSmoothDiscrete_galRepOfZModModule n F M) le_rfl
+  exact Finite.of_equiv _ (galRepOfZModModuleH1Equiv n F M).symm.toEquiv
 
 end TauCeti.ClassFieldTheory

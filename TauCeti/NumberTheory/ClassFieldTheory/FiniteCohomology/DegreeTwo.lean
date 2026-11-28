@@ -85,7 +85,8 @@ theorem finite_H2_of_isPrimitiveRoot_of_natCard_dvd [NeZero n] {ζ : F}
   have := hζM.neZero'
   have := finite_continuousCohomology_muNRep_two (NeZero.ne (Nat.card M : F)).isUnit
   have : Finite (H2 (AbsoluteGaloisGroup F) (KummerCoeff F (Nat.card M))) :=
-    Finite.of_equiv _ (muNRepH2Equiv (Nat.card M) F).symm.toEquiv
+    Finite.of_equiv _
+      (galRepOfZModModuleH2Equiv (Nat.card M) F (KummerCoeff F (Nat.card M))).symm.toEquiv
   have hcard : Nat.card (KummerCoeff F (Nat.card M)) = Nat.card M :=
     (Nat.card_congr Additive.toMul).trans
       (hζM.map_of_injective (algebraMap F (SeparableClosure F)).injective).card_rootsOfUnity

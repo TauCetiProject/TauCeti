@@ -67,7 +67,8 @@ when `n` is invertible in `F` (`h2MuToBr_injective`). -/
 def h2MuToBr : continuousCohomology 2 (muNRep n F) →+ Br F :=
   let muEquiv :=
     (explicitH2AddEquivContinuousCohomology
-      (AbsoluteGaloisGroup F) (KummerCoeff F n)).symm.trans (muNRepH2Equiv n F)
+      (AbsoluteGaloisGroup F) (KummerCoeff F n)).symm.trans
+      (galRepOfZModModuleH2Equiv n F (KummerCoeff F n))
   let unitsEquiv :=
     (explicitH2AddEquivContinuousCohomology
       (AbsoluteGaloisGroup F) (UnitsCoeff F)).symm.trans (unitsRepH2Equiv F)
@@ -89,15 +90,16 @@ theorem h2MuToBr_apply (y : continuousCohomology 2 (muNRep n F)) :
           (AbsoluteGaloisGroup F) (UnitsCoeff F)).symm
             ((h2KummerToUnits F n).hom
               (explicitH2AddEquivContinuousCohomology
-                (AbsoluteGaloisGroup F) (KummerCoeff F n) ((muNRepH2Equiv n F).symm y)))) := by
+                (AbsoluteGaloisGroup F) (KummerCoeff F n)
+                  ((galRepOfZModModuleH2Equiv n F (KummerCoeff F n)).symm y)))) := by
   rw [h2MuToBr]
   rfl
 
 /-- On a class in the separable-closure model, `h2MuToBr` is the Kummer-sequence map followed by
 the coefficient transport to `Br F`. -/
-theorem h2MuToBr_muNRepH2Equiv
+theorem h2MuToBr_galRepOfZModModuleH2Equiv
     (x : H2 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
-    h2MuToBr n F (muNRepH2Equiv n F x) =
+    h2MuToBr n F (galRepOfZModModuleH2Equiv n F (KummerCoeff F n) x) =
       unitsRepH2Equiv F
         ((explicitH2AddEquivContinuousCohomology
           (AbsoluteGaloisGroup F) (UnitsCoeff F)).symm
@@ -107,12 +109,12 @@ theorem h2MuToBr_muNRepH2Equiv
   rw [h2MuToBr_apply, AddEquiv.symm_apply_apply]
 
 /-- On the explicit model, the Kummer-to-Brauer map is induced by the coefficient inclusion. -/
-theorem h2MuToBr_muNRepH2Equiv_eq_explicitCoeff2
+theorem h2MuToBr_galRepOfZModModuleH2Equiv_eq_explicitCoeff2
     (x : H2 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
-    h2MuToBr n F (muNRepH2Equiv n F x) =
+    h2MuToBr n F (galRepOfZModModuleH2Equiv n F (KummerCoeff F n) x) =
       unitsRepH2Equiv F
         (explicitCoeff2 _ _ (kummerCoeffInclHom F n) continuous_of_discreteTopology x) := by
-  rw [h2MuToBr_muNRepH2Equiv, h2KummerToUnits_explicitH2AddEquivContinuousCohomology,
+  rw [h2MuToBr_galRepOfZModModuleH2Equiv, h2KummerToUnits_explicitH2AddEquivContinuousCohomology,
     AddEquiv.symm_apply_apply]
 
 /-- **The map from roots-of-unity cohomology into the Brauer group is injective** when `n` is
@@ -127,7 +129,7 @@ theorem h2MuToBr_injective (hn : IsUnit (n : F)) :
       (h2KummerToUnits_injective hn).comp <|
         ((explicitH2AddEquivContinuousCohomology
           (AbsoluteGaloisGroup F) (KummerCoeff F n)).symm.trans
-            (muNRepH2Equiv n F)).symm.injective
+            (galRepOfZModModuleH2Equiv n F (KummerCoeff F n))).symm.injective
 
 /-- **The image of `H²(G_F, μₙ)` in `Br F` is the `n`-torsion**, when `n` is invertible in
 `F`. -/
@@ -135,7 +137,8 @@ theorem h2MuToBr_range (hn : IsUnit (n : F)) (x : Br F) :
     (∃ y, h2MuToBr n F y = x) ↔ n • x = 0 := by
   let muEquiv :=
     (explicitH2AddEquivContinuousCohomology
-      (AbsoluteGaloisGroup F) (KummerCoeff F n)).symm.trans (muNRepH2Equiv n F)
+      (AbsoluteGaloisGroup F) (KummerCoeff F n)).symm.trans
+      (galRepOfZModModuleH2Equiv n F (KummerCoeff F n))
   let unitsEquiv :=
     (explicitH2AddEquivContinuousCohomology
       (AbsoluteGaloisGroup F) (UnitsCoeff F)).symm.trans (unitsRepH2Equiv F)

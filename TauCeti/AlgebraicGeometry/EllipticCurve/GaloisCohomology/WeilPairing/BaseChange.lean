@@ -94,7 +94,7 @@ theorem brBaseChange_torsionWeilBrauerPairing
       (W⁄L).torsionWeilBrauerPairing m (by simpa using hm.map (algebraMap K L))
         (W.torsionRes τ m a) (W.torsionRes τ m b) := by
   rw [torsionWeilBrauerPairing_apply, torsionWeilBrauerPairing_apply,
-    brBaseChange_h2MuToBr_muNRepH2Equiv m τ, torsionH1WeilPairing_torsionRes]
+    brBaseChange_h2MuToBr_galRepOfZModModuleH2Equiv m τ, torsionH1WeilPairing_torsionRes]
 
 end WeierstrassCurve
 
@@ -167,7 +167,7 @@ theorem brBaseChange_kerWeilBrauerPairing (hnL : IsUnit ((φ.baseChange L).degre
     brBaseChange K L (φ.kerWeilBrauerPairing hn a b) =
       (φ.baseChange L).kerWeilBrauerPairing hnL (φ.kerRes τ a) (φ.dualKerRes τ b) := by
   rw [kerWeilBrauerPairing_apply, kerWeilBrauerPairing_apply, φ.kerH1WeilPairing_kerRes τ hn,
-    brBaseChange_h2MuToBr_muNRepH2Equiv_of_dvd φ.degree τ
+    brBaseChange_h2MuToBr_galRepOfZModModuleH2Equiv_of_dvd φ.degree τ
       (m := (φ.baseChange L).degree) (φ.degree_map (algebraMap K L)).symm.dvd]
 
 end TauCeti.Isogeny

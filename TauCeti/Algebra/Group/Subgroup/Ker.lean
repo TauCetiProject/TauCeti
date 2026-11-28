@@ -28,6 +28,12 @@ when the kernels are equal.
   carried into the kernel of the opposite side.
 * `MonoidHom.range_inv`, `MonoidHom.ker_inv`: the pointwise inverse `f⁻¹` has the same range and
   kernel as `f`.
+* `MonoidHom.ker_compl₂_compr₂_of_injective`, `AddMonoidHom.ker_compl₂_compr₂_of_injective`:
+  postcomposing a bimultiplicative or biadditive pairing with an injective homomorphism on its
+  target preserves the kernel of precomposition in the second slot.
+* `MonoidHom.mem_ker_compl₂_subtype_iff`, `AddMonoidHom.mem_ker_compl₂_subtype_iff`:
+  membership in the kernel of a pairing restricted on its second slot to a subgroup is pointwise
+  triviality against that subgroup.
 * `MonoidHom.ker_inf_ker_le_ker_mul`: the kernel of `f * g` contains the kernels' intersection.
 * `MonoidHom.ker_pi`: the kernel of `MonoidHom.pi f` is the intersection of the kernels of the
   `f i`.
@@ -94,6 +100,28 @@ additive group has the same kernel. -/]
 theorem ker_inv {H : Type*} [CommGroup H] (f : G →* H) : f⁻¹.ker = f.ker := by
   ext x
   simp
+
+/-- Postcomposing a bimultiplicative pairing with an injective monoid homomorphism on its target
+preserves the kernel of precomposition in the second slot. -/
+@[to_additive /-- Postcomposing a biadditive pairing with an injective additive homomorphism on
+its target preserves the kernel of precomposition in the second slot. -/]
+theorem ker_compl₂_compr₂_of_injective {A B C D Q : Type*} [Group A] [MulOneClass B]
+    [CommMonoid C] [CommMonoid D] [MulOneClass Q]
+    (f : A →* B →* C) (g : Q →* B) (i : C →* D) (hi : Function.Injective i) :
+    ((f.compr₂ i).compl₂ g).ker = (f.compl₂ g).ker := by
+  ext a
+  simp only [mem_ker, DFunLike.ext_iff, compl₂_apply, compr₂_apply, one_apply]
+  exact forall_congr' fun q ↦ map_eq_one_iff i hi
+
+/-- Membership in the kernel of a bimultiplicative pairing restricted on the second slot to a
+subgroup `H` is pointwise triviality against `H`. -/
+@[to_additive /-- Membership in the kernel of a biadditive pairing restricted on the second slot
+to an additive subgroup `H` is pointwise triviality against `H`. -/]
+theorem mem_ker_compl₂_subtype_iff {A B C : Type*} [Group A] [Group B] [CommMonoid C]
+    (f : A →* B →* C) (H : Subgroup B) {a : A} :
+    a ∈ (f.compl₂ H.subtype).ker ↔ ∀ b ∈ H, f a b = 1 := by
+  simp only [mem_ker, DFunLike.ext_iff, compl₂_apply, one_apply, Subtype.forall,
+    Subgroup.subtype_apply]
 
 /-- An element in the kernels of both `f` and `g` is in the kernel of their pointwise product. -/
 @[to_additive /-- An element in the kernels of both `f` and `g` is in the kernel of their

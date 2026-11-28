@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.ZMod.Dual
 public import Mathlib.GroupTheory.Index
+import TauCeti.Algebra.Group.Subgroup.Ker
 
 /-!
 # Annihilators in biadditive pairings into `ℤ/n`
@@ -28,7 +29,11 @@ Tate pairings. It works for composite `n`, without choosing module structures or
 Bijectivity of the left adjoint is not asserted to be two-sided perfection for infinite `N`.
 
 The proofs use Mathlib's identification of the kernel of character restriction with the
-characters of the quotient, and `TauCeti.natCard_addMonoidHom_zmod` for their order.
+characters of the quotient, and `TauCeti.natCard_addMonoidHom_zmod` for their order. For finite `N`,
+`AddMonoidHom.flip_bijective_zmod` (`TauCeti.Algebra.Module.ZMod.Dual`) and
+`AddMonoidHom.ker_flip_compl₂_subtype_ker_compl₂_subtype_zmod` give perfection of the flipped
+pairing and the double-annihilator identity, with companions for pairings valued in an arbitrary
+group `C ≃+ ZMod n`.
 
 ## References
 
@@ -51,8 +56,9 @@ theorem natCard_ker_compl₂_subtype_eq_index_zmod (he : Function.Bijective e)
   let E := Equiv.ofBijective e he
   have hmem (x : M) : x ∈ (e.compl₂ H.subtype).ker ↔
       E x ∈ (domRestrictHom H (ZMod n)).ker := by
-    simp only [mem_ker, AddMonoidHom.ext_iff, compl₂_apply, domRestrictHom_apply,
-      domRestrict_apply, E, Equiv.ofBijective_apply, AddSubgroup.subtype_apply]
+    rw [mem_ker_compl₂_subtype_iff, mem_ker, AddMonoidHom.ext_iff]
+    simp only [domRestrictHom_apply, domRestrict_apply, E, Equiv.ofBijective_apply, zero_apply,
+      Subtype.forall]
   rw [Nat.card_congr (Equiv.subtypeEquiv E hmem),
     Nat.card_congr (domRestrictHomKerEquiv (ZMod n) H).toEquiv,
     TauCeti.natCard_addMonoidHom_zmod]
@@ -89,8 +95,7 @@ theorem eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_zmod [Fini
   have : Finite (N →+ ZMod n) := Finite.of_injective _ DFunLike.coe_injective
   have : Finite M := Finite.of_injective e he.1
   have hle : U ≤ (e.compl₂ H.subtype).ker ↔ ∀ x ∈ U, ∀ y ∈ H, e x y = 0 := by
-    simp only [IsConcreteLE.le_iff, mem_ker, AddMonoidHom.ext_iff, compl₂_apply, zero_apply,
-      Subtype.forall, AddSubgroup.subtype_apply]
+    simp only [IsConcreteLE.le_iff, mem_ker_compl₂_subtype_iff]
   constructor
   · intro h
     exact ⟨hle.mp h.le, h ▸ e.natCard_ker_compl₂_subtype_mul_natCard_zmod he hN H⟩
@@ -98,5 +103,53 @@ theorem eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_zmod [Fini
     apply AddSubgroup.eq_of_le_of_card_ge (hle.mpr horth)
     have h := e.natCard_ker_compl₂_subtype_mul_natCard_zmod he hN H
     exact (Nat.mul_right_cancel Nat.card_pos (h.trans hcard.symm)).le
+
+/-- **Double-annihilator theorem for finite `ℤ/n`-pairings.** For finite `N` killed by `n ≠ 0` and
+bijective left adjoint `e : M →+ N →+ ZMod n`, the annihilator under `e.flip` of the annihilator of
+`H ≤ N` is `H` itself. -/
+@[simp]
+theorem ker_flip_compl₂_subtype_ker_compl₂_subtype_zmod [Finite N] (he : Function.Bijective e)
+    (hN : ∀ y : N, n • y = 0) (H : AddSubgroup N) :
+    (e.flip.compl₂ (e.compl₂ H.subtype).ker.subtype).ker = H := by
+  have : Finite (N →+ ZMod n) := Finite.of_injective _ DFunLike.coe_injective
+  have : Finite M := Finite.of_injective e he.1
+  have hM : ∀ x : M, n • x = 0 := fun x ↦ he.1 <| by ext y; simp
+  have ⟨horth, hcard⟩ :=
+    (e.eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_zmod he hN _ H).mp rfl
+  symm
+  refine (e.flip.eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_zmod
+    (e.flip_bijective_zmod he hN) hM H _).mpr ⟨fun y hy x hx ↦ horth x hx y hy, ?_⟩
+  rw [mul_comm, hcard, Nat.card_congr (Equiv.ofBijective e he),
+    TauCeti.natCard_addMonoidHom_zmod hN]
+
+/-- For finite `N` killed by `n ≠ 0`, a group `C` equipped with `eC : C ≃+ ZMod n`, and a
+pairing `d : M →+ N →+ C` whose left adjoint is bijective, a subgroup `U ≤ M` equals the
+annihilator of `H ≤ N` if and only if `U` is orthogonal to `H` and
+`Nat.card U * Nat.card H = Nat.card M`. -/
+theorem eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_of_addEquiv_zmod
+    {C : Type*} [AddCommGroup C] [Finite N] (d : M →+ N →+ C) (eC : C ≃+ ZMod n)
+    (hd : Function.Bijective d) (hN : ∀ y : N, n • y = 0) (U : AddSubgroup M) (H : AddSubgroup N) :
+    U = (d.compl₂ H.subtype).ker ↔
+      (∀ x ∈ U, ∀ y ∈ H, d x y = 0) ∧ Nat.card U * Nat.card H = Nat.card M := by
+  let e : M →+ N →+ ZMod n := d.compr₂ eC.toAddMonoidHom
+  have he : Function.Bijective e := eC.addMonoidHomCongrRight.bijective.comp hd
+  rw [← ker_compl₂_compr₂_of_injective d H.subtype eC.toAddMonoidHom eC.injective,
+    e.eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_zmod he hN]
+  simp [e]
+
+/-- **Double-annihilator theorem for `C`-valued pairings (`C ≃+ ZMod n`).** For finite `N` killed
+by `n ≠ 0` and a pairing `d : M →+ N →+ C` whose left adjoint is bijective, the annihilator under
+`d.flip` of the annihilator of `H ≤ N` is `H` itself. -/
+theorem ker_flip_compl₂_subtype_ker_compl₂_subtype_of_addEquiv_zmod
+    {C : Type*} [AddCommGroup C] [Finite N] (d : M →+ N →+ C) (eC : C ≃+ ZMod n)
+    (hd : Function.Bijective d) (hN : ∀ y : N, n • y = 0) (H : AddSubgroup N) :
+    (d.flip.compl₂ (d.compl₂ H.subtype).ker.subtype).ker = H := by
+  let e : M →+ N →+ ZMod n := d.compr₂ eC.toAddMonoidHom
+  have he : Function.Bijective e := eC.addMonoidHomCongrRight.bijective.comp hd
+  have hflip : e.flip = d.flip.compr₂ eC.toAddMonoidHom := by ext; rfl
+  rw [← ker_compl₂_compr₂_of_injective d.flip (d.compl₂ H.subtype).ker.subtype
+      eC.toAddMonoidHom eC.injective, ← hflip,
+    ← ker_compl₂_compr₂_of_injective d H.subtype eC.toAddMonoidHom eC.injective,
+    e.ker_flip_compl₂_subtype_ker_compl₂_subtype_zmod he hN]
 
 end AddMonoidHom

@@ -105,6 +105,13 @@ instance neZero_natCast (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace
   have := charZero K p
   ⟨Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero⟩
 
+/-- A natural number not divisible by `p` is a unit in a finite extension of `ℚ_[p]`. -/
+theorem isUnit_natCast_of_not_dvd {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+    [IsNonarchimedeanLocalField K] (p : ℕ) [Fact p.Prime] [FinitePadicExtension K p]
+    {n : ℕ} (hpn : ¬ p ∣ n) : IsUnit (n : K) :=
+  have := charZero K p
+  (Nat.cast_ne_zero.mpr (by rintro rfl; exact hpn (dvd_zero p)) : (n : K) ≠ 0).isUnit
+
 end FinitePadicExtension
 
 variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]

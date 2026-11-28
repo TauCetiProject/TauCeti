@@ -70,7 +70,6 @@ theorem tateDualEquiv_muNRepToTateDual_apply (x y : (muNRep n F).V) :
 
 /-- **The chosen-root identification of `μₙ` with its Tate dual is bijective.** -/
 theorem bijective_muNRepToTateDual : Function.Bijective (muNRepToTateDual ζ hζ).hom := by
-  have : Finite (muNRep n F).V := Finite.of_equiv _ (muNRepEquivZMod ζ hζ).symm.toEquiv
   refine Function.Injective.bijective_of_nat_card_le (fun x y hxy => ?_) ?_
   · have := congrArg
       (fun ψ => tateDualEquiv (muNRep n F) ψ (muNRepGenerator ζ hζ)) hxy
@@ -121,7 +120,7 @@ theorem tateDualityPairing_muNRepToTateDual
     (tr : _root_.continuousCohomology 2 (muNRep n F) ≃+ ZMod n)
     (x y : _root_.continuousCohomology 1 (muNRep n F)) :
     tateDualityPairing (muNRep n F) tr 1 1 rfl
-        ((ContinuousCohomology.coeffMap (muNRepToTateDual ζ hζ) 1).hom x) y =
+        ((ContinuousCohomology.coeffMap.{0, u, u} (muNRepToTateDual ζ hζ) 1).hom x) y =
       localSymbol (kummerCupPairing ζ hζ) tr x y := by
   rw [muNRepToTateDual, tateDualityPairing_pairingToTateDual, localSymbol_apply]
 

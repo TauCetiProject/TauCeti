@@ -125,7 +125,7 @@ private theorem basePairing_eq_zero (v : GlobalNumberFields.Place K)
   cases v with
   | inl v =>
     rw [basePairing_inl, localTateKerWeilPairing_apply,
-      kerH1WeilPairing_eq_zero_of_mem_localKummerCondition _ _ ha hb, map_zero, map_zero]
+      kerH1WeilPairing_eq_zero_of_mem_localKummerCondition _ _ ha hb, map_zero]
   | inr w =>
     rw [basePairing_inr]
     exact (φ.baseChange w.Completion).infiniteTateKerWeilPairing_eq_zero_of_mem_localKummerCondition

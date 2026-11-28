@@ -147,7 +147,8 @@ private def coordinate (hn : IsUnit (n : F))
       left_inv := (inflationIso e).hom_inv_id_apply
       right_inv := (inflationIso e).inv_hom_id_apply
       map_add' := map_add (inflationIso e).hom.hom } : M ≃+ (muNRep n F).V).trans
-    ((kummerCoeffEquivMuNRep n F).symm.trans (kummerCoeffAddEquivZMod hn))).toLinearEquiv
+    ((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm.trans
+      (kummerCoeffAddEquivZMod hn))).toLinearEquiv
     (ZMod.map_smul _)
 
 /-- `coordinate` is `e` followed by the coefficient dictionary and `kummerCoeffAddEquivZMod`. -/
@@ -155,7 +156,8 @@ private theorem coordinate_apply (hn : IsUnit (n : F))
     {M : FDRep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)}
     (e : (fdGalRepOfQuotient n F V).obj M ≅ muNRep n F) (m : M) :
     coordinate hn e m =
-      kummerCoeffAddEquivZMod hn ((kummerCoeffEquivMuNRep n F).symm ((inflationIso e).hom.hom m)) :=
+      kummerCoeffAddEquivZMod hn
+        ((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm ((inflationIso e).hom.hom m)) :=
   (rfl)
 
 /-- The inverse of `coordinate`. -/
@@ -163,7 +165,8 @@ private theorem coordinate_symm_apply (hn : IsUnit (n : F))
     {M : FDRep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)}
     (e : (fdGalRepOfQuotient n F V).obj M ≅ muNRep n F) (z : ZMod n) :
     (coordinate hn e).symm z =
-      (inflationIso e).inv.hom (kummerCoeffEquivMuNRep n F ((kummerCoeffAddEquivZMod hn).symm z)) :=
+      (inflationIso e).inv.hom
+        (galRepOfZModModuleEquiv n F (KummerCoeff F n) ((kummerCoeffAddEquivZMod hn).symm z)) :=
   (rfl)
 
 /-- If `M` inflates to `μₙ`, then the image of `g` in `Gal(Fˢ/F)` acts on `μₙ` as the class of
@@ -176,10 +179,11 @@ private theorem smul_kummerCoeff_eq (hn : IsUnit (n : F))
       (kummerCoeffAddEquivZMod hn).symm (coordinate hn e
         (M.ρ (g : Field.absoluteGaloisGroup F ⧸ V.toSubgroup)
           ((coordinate hn e).symm (kummerCoeffAddEquivZMod hn ξ)))) := by
-  apply (kummerCoeffEquivMuNRep n F).injective
-  simp only [kummerCoeffEquivMuNRep_smul, coordinate_apply, coordinate_symm_apply,
+  apply (galRepOfZModModuleEquiv n F (KummerCoeff F n)).injective
+  simp only [galRepOfZModModuleEquiv_smul, coordinate_apply, coordinate_symm_apply,
     AddEquiv.symm_apply_apply, AddEquiv.apply_symm_apply]
-  conv_lhs => rw [← (inflationIso e).inv_hom_id_apply (kummerCoeffEquivMuNRep n F ξ)]
+  conv_lhs =>
+    rw [← (inflationIso e).inv_hom_id_apply (galRepOfZModModuleEquiv n F (KummerCoeff F n) ξ)]
   rw [← TopRep.hom_comm_apply]
   -- The inflated action is that of the class of `g` on the underlying representation of `M`.
   exact congrArg (inflationIso e).hom.hom ((galRepOfQuotient_ρ_apply n F V _ g _).trans
@@ -258,7 +262,7 @@ theorem dualTensorHom_kummerH1ConjRepresentationEquiv (hn : IsUnit (n : F))
         (kummerH1ConjRepresentationEquiv σ hn hV e (restrictSubgroupH1Equiv σ n hV
           (fixingSubgroupKummerEquivOfTrivial σ hn (kummerCoeffAddEquivZMod hn) (fun _ _ ↦ rfl)
             (smul_kummerCoeff_eq_self_of_mem_fixingSubgroup σ hn hV e) x))) m =
-      kummerCoeffAddEquivZMod hn ((kummerCoeffEquivMuNRep n F).symm
+      kummerCoeffAddEquivZMod hn ((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm
         ((eqToIso (fdGalRepOfQuotient_obj n F V M).symm ≪≫ e).hom.hom m)) • x := by
   rw [kummerH1ConjRepresentationEquiv, Representation.dualTensorHom_rankOneTwistEquiv,
     LinearEquiv.rankOneHomEquiv_apply_apply]

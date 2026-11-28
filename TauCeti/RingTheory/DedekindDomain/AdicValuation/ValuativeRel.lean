@@ -42,9 +42,12 @@ nonarchimedean local field, the steps of its unit filtration are read off from `
   a unit of that ring exactly when it lies outside `v`.
 * `IsDedekindDomain.HeightOneSpectrum.residueFieldEquivAdicCompletion`: the residue field of the
   valuative relation is `R ⧸ v`; `residueFieldEquivAdicCompletion_apply_mk` describes it on a
-  quotient representative.
+  quotient representative, and `residue_algebraMap_adicCompletion_eq_zero_iff` characterizes when
+  the residue of an element of `R` vanishes (`a ∈ v`).
 * `IsDedekindDomain.HeightOneSpectrum.ringChar_residueField_adicCompletion_dvd_iff`: the residue
-  characteristic of `K_v` divides `n` exactly when `n ∈ v`.
+  characteristic of `K_v` divides `n` exactly when `n ∈ v`;
+  `residueField_adicCompletion_natCast_ne_zero_of_notMem` states the contrapositive
+  `(n : 𝓀[K_v]) ≠ 0` for `n ∉ v`.
 * `IsDedekindDomain.HeightOneSpectrum.natCard_residueField_adicCompletion_eq_absNorm`: the
   `Nat.card` of that residue field is `Ideal.absNorm v.asIdeal`, both being `0` when the residue
   field is infinite.
@@ -231,14 +234,33 @@ theorem residueFieldEquivAdicCompletion_apply_mk (a : R) :
     _ = _ := IsScalarTower.algebraMap_apply R (v.adicCompletionIntegers K)
       (v.adicCompletion K) a
 
+/-- The residue of the integral image of `a : R` in `𝒪[K_v]` is zero if and only if `a ∈ v`. -/
+theorem residue_algebraMap_adicCompletion_eq_zero_iff (a : R) :
+    IsLocalRing.residue 𝒪[v.adicCompletion K]
+        ⟨algebraMap R (v.adicCompletion K) a,
+          v.algebraMap_mem_integer_adicCompletion (K := K) a⟩ = 0 ↔
+      a ∈ v.asIdeal := by
+  rw [← v.residueFieldEquivAdicCompletion_apply_mk (K := K),
+    map_eq_zero_iff _ (RingEquiv.injective _), Ideal.Quotient.eq_zero_iff_mem]
+
 /-- **The residue characteristic of `K_v`.** The characteristic of the residue field of `K_v`
 divides `n` exactly when `n` lies in `v`. -/
 theorem ringChar_residueField_adicCompletion_dvd_iff {n : ℕ} :
     ringChar 𝓀[v.adicCompletion K] ∣ n ↔ (n : R) ∈ v.asIdeal := by
-  rw [← ringChar.spec 𝓀[v.adicCompletion K],
-    ← map_natCast (v.residueFieldEquivAdicCompletion (K := K)),
-    map_eq_zero_iff _ (RingEquiv.injective _), ← map_natCast (Ideal.Quotient.mk v.asIdeal),
-    Ideal.Quotient.eq_zero_iff_mem]
+  have hnat : (n : 𝓀[v.adicCompletion K]) =
+      IsLocalRing.residue 𝒪[v.adicCompletion K]
+        ⟨algebraMap R (v.adicCompletion K) (n : R),
+          v.algebraMap_mem_integer_adicCompletion (K := K) (n : R)⟩ := by
+    rw [← map_natCast (IsLocalRing.residue _)]
+    exact congrArg (IsLocalRing.residue _) (Subtype.ext (by simp))
+  rw [← ringChar.spec 𝓀[v.adicCompletion K], hnat,
+    v.residue_algebraMap_adicCompletion_eq_zero_iff (K := K) (n : R)]
+
+/-- A natural number lying outside `v` is nonzero in the residue field of `K_v`. -/
+theorem residueField_adicCompletion_natCast_ne_zero_of_notMem {n : ℕ}
+    (hn : (n : R) ∉ v.asIdeal) :
+    (n : 𝓀[v.adicCompletion K]) ≠ 0 :=
+  fun h ↦ hn (v.ringChar_residueField_adicCompletion_dvd_iff.1 ((ringChar.spec _ n).1 h))
 
 /-- The residue field of `K_v` has `Nat.card` the absolute norm of `v`; both sides are `0` when
 the residue field is infinite. -/

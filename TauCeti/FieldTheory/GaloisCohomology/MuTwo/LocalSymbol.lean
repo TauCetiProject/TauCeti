@@ -65,12 +65,12 @@ theorem kummerCoeffEquiv_kummerCoeffPairing {ζ : K} (hζ : IsPrimitiveRoot ζ 2
   · simp
   · have hp : ClassFieldTheory.kummerCoeffPairing
         (ClassFieldTheory.kummerCupPairing ζ hζ) mu2NegOne y = y := by
-      apply (ClassFieldTheory.kummerCoeffEquivMuNRep 2 K).injective
-      rw [ClassFieldTheory.kummerCoeffEquivMuNRep_kummerCoeffPairing]
+      apply (galRepOfZModModuleEquiv 2 K (KummerCoeff K 2)).injective
+      rw [ClassFieldTheory.galRepOfZModModuleEquiv_kummerCoeffPairing]
       simpa using ClassFieldTheory.kummerCupPairing_bil_apply ζ hζ
-        (x := ClassFieldTheory.kummerCoeffEquivMuNRep 2 K mu2NegOne) (i := 1)
+        (x := galRepOfZModModuleEquiv 2 K (KummerCoeff K 2) mu2NegOne) (i := 1)
         (by simp [hζ.eq_neg_one_of_two_right])
-        (ClassFieldTheory.kummerCoeffEquivMuNRep 2 K y)
+        (galRepOfZModModuleEquiv 2 K (KummerCoeff K 2) y)
     simp [hp, trivialF2Pairing_apply]
 
 private theorem explicitCup11_kummerCoeffPairing_eq_zero_iff {ζ : K}
@@ -111,10 +111,11 @@ private theorem explicitCup11_kummerCoeffPairing_eq_zero_iff {ζ : K}
 /-- Transporting arbitrary degree-one classes through the two coefficient dictionaries
 preserves cup vanishing: the roots-of-unity cup vanishes exactly when the corresponding
 trivial-`𝔽₂` cup does. -/
-theorem cup_muNRepH1Equiv_eq_zero_iff {ζ : K} (hζ : IsPrimitiveRoot ζ 2)
+theorem cup_galRepOfZModModuleH1Equiv_eq_zero_iff {ζ : K} (hζ : IsPrimitiveRoot ζ 2)
     (x y : H1 (AbsoluteGaloisGroup K) (KummerCoeff K 2)) :
     (ClassFieldTheory.kummerCupPairing ζ hζ).cup 1 1
-        (ClassFieldTheory.muNRepH1Equiv 2 K x) (ClassFieldTheory.muNRepH1Equiv 2 K y) = 0 ↔
+        (galRepOfZModModuleH1Equiv 2 K (KummerCoeff K 2) x)
+        (galRepOfZModModuleH1Equiv 2 K (KummerCoeff K 2) y) = 0 ↔
       (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
         ((kummerCohomMap K).hom
           (explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K) (KummerCoeff K 2) x))
@@ -131,7 +132,7 @@ theorem cup_muNRepH1Equiv_eq_zero_iff {ζ : K} (hζ : IsPrimitiveRoot ζ 2)
       (eqToHom (congrArg (continuousCohomology 2) (ofDiscreteModule_trivialF2 G)))).1 (x := z)
   -- Naturality identifies each canonical cup with its explicit cup; all degree-two
   -- transports are injective, so only the explicit coefficient comparison remains.
-  simpa only [ClassFieldTheory.cup_muNRepH1Equiv, AddEquiv.map_eq_zero_iff,
+  simpa only [ClassFieldTheory.cup_galRepOfZModModuleH1Equiv, AddEquiv.map_eq_zero_iff,
     kummerCohomMap_explicitH1, trivialF2TopPairing_cup_one_one_explicitH1, ht] using
     explicitCup11_kummerCoeffPairing_eq_zero_iff hζ x y
 
@@ -146,9 +147,9 @@ theorem cup_muNRep_kummerClass_eq_zero_iff {ζ : K} (hζ : IsPrimitiveRoot ζ 2)
         (kummerClass a) (kummerClass b) = 0 := by
   -- `kummerClass` has an unexposed body in `Basic`, so the imported characteristic
   -- lemma is needed to identify its canonical Kummer map without unfolding it.
-  simpa only [ClassFieldTheory.kummerClass_eq_muNRepH1Equiv_kummerMap,
+  simpa only [ClassFieldTheory.kummerClass_eq_galRepOfZModModuleH1Equiv_kummerMap,
     kummerClass_def, explicitIso_kummerMap] using
-    cup_muNRepH1Equiv_eq_zero_iff hζ
+    cup_galRepOfZModModuleH1Equiv_eq_zero_iff hζ
       (Multiplicative.toAdd (kummerMap K 2 (isUnit_of_invertible (2 : K)) a))
       (Multiplicative.toAdd (kummerMap K 2 (isUnit_of_invertible (2 : K)) b))
 
