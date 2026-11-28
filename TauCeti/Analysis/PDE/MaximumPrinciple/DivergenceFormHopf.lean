@@ -1012,8 +1012,9 @@ private theorem exists_add_mul_le_of_supersolution (ν : E) (hν : ‖ν‖ = 1)
   have hfn : C₂ * (eLpNorm (fun z => (B + 2) * ‖β z‖) q
       (volume.restrict (unitAnnulus (n := n) : Set E))).toReal ≤ Lχ := by
     refine mul_le_mul_of_nonneg_left (le_of_eq ?_) hC₂
-    rw [show (fun z => (B + 2) * ‖β z‖) = ((B : ℝ) + 2) • fun z => ‖β z‖ from rfl,
-      eLpNorm_const_smul,
+    have hsmul : (fun z => (B + 2) * ‖β z‖) = ((B : ℝ) + 2) • fun z => ‖β z‖ :=
+      funext fun z => (smul_eq_mul _ _).symm
+    rw [hsmul, eLpNorm_const_smul,
       eLpNorm_norm _ hβ.aestronglyMeasurable, ENNReal.toReal_mul, toReal_eNorm,
       Real.norm_of_nonneg (by positivity)]
   obtain ⟨χ, χ', hχ, hχ0, hχg, hχae, hχLip, hχ0'⟩ := Hχ hb hbh (hKb.trans hη1) hf
@@ -1070,8 +1071,9 @@ private theorem exists_add_mul_le_of_supersolution (ν : E) (hν : ‖ν‖ = 1)
   have hsum : C * η * t + Lχ * t ≤ κ * Real.exp (-κ) / 2 * t := by
     have := mul_le_mul_of_nonneg_right (add_le_add (hCη.trans hm2) (hL.trans hm2)) ht0.le
     linarith
-  linarith [mul_le_mul_of_nonneg_left (show κ * Real.exp (-κ) / 2 * t ≤
-    gaussBarrier κ ((1 - t) • ν) + ψ' ((1 - t) • ν) + χ' ((1 - t) • ν) by linarith) hθ]
+  have hgrow : κ * Real.exp (-κ) / 2 * t ≤
+      gaussBarrier κ ((1 - t) • ν) + ψ' ((1 - t) • ν) + χ' ((1 - t) • ν) := by linarith
+  linarith [mul_le_mul_of_nonneg_left hgrow hθ]
 
 /-! ### Hopf's lemma -/
 
@@ -1249,8 +1251,9 @@ private theorem memLp_rescaled_drift {β : E → E} {y p : E} {R ε : ℝ} {q : 
       rw [Pi.smul_apply, norm_smul, Real.norm_of_nonneg hε.le])).trans_eq ?_
   rw [finrank_euclideanSpace_fin, one_div, ENNReal.toReal_inv, ← mul_assoc]
   congr 1
-  rw [show (1 : ℝ) - ((n : ℝ) + 1) / q.toReal = 1 + (-((n + 1 : ℕ) : ℝ)) * q.toReal⁻¹ by
-      push_cast; ring, Real.rpow_add hε, Real.rpow_one, Real.rpow_mul hε.le, Real.rpow_neg hε.le,
+  have hexp : (1 : ℝ) - ((n : ℝ) + 1) / q.toReal = 1 + (-((n + 1 : ℕ) : ℝ)) * q.toReal⁻¹ := by
+    push_cast; ring
+  rw [hexp, Real.rpow_add hε, Real.rpow_one, Real.rpow_mul hε.le, Real.rpow_neg hε.le,
     Real.rpow_natCast]
 
 /-- **Hopf's lemma with a drift and a mass term, under the sign condition `c g(x₀) ≤ 0`.** Let
