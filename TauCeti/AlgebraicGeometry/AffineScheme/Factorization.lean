@@ -11,8 +11,10 @@ import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 /-!
 # Factorization through a split projection on an affine open
 
-`Scheme.Hom.comp_eq_comp_section_of_preimage_le` factors a map into an affine open using
-`Scheme.Hom.toSpecΓ_SpecMap_appLE_fromSpec` and the pullback square for restriction.
+`Scheme.Hom.comp_eq_comp_section_of_preimage_le` descends a map through a split morphism `p` over
+an open where `p` induces an isomorphism on functions and the map lands in an affine open.
+This gives the local factorization in the rigidity lemma, using the affine-target identity
+`Scheme.Hom.toSpecΓ_SpecMap_appLE_fromSpec`.
 -/
 
 public section

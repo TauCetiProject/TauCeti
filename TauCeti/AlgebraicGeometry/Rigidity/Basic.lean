@@ -8,7 +8,6 @@ module
 public import Mathlib.AlgebraicGeometry.ZariskisMainTheorem
 public import TauCeti.AlgebraicGeometry.Morphisms.Contraction
 import TauCeti.AlgebraicGeometry.AffineScheme.Factorization
-import TauCeti.AlgebraicGeometry.Morphisms.Flat.StructureSheaf
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Reduced
 
 /-!
@@ -19,12 +18,9 @@ separated over `K`. If a morphism `f : X ×_K Y ⟶ Z` is constant on the fibre 
 point of `Y`, then it factors through the second projection, given a rational point of `X`
 (`eq_snd_comp_lift_comp_of_isIntegral`).
 
-For integral `X` with a rational point, the second projection is a contraction for arbitrary `Y`
-(`isContraction_snd_left_of_isIntegral`), by `appTop_bijective_of_section` and flat base change
-for functions. Closedness of the projection
-lets us restrict to an open neighbourhood over which `f` lands in an affine open of `Z`.
-There it factors through the projection by the isomorphism on functions. The factorization
-extends by `AlgebraicGeometry.ext_of_isDominant_of_isSeparated`.
+The projection is closed and a contraction (`isContraction_snd_left_of_isIntegral`), allowing local
+factorization into an affine open by `Scheme.Hom.comp_eq_comp_section_of_preimage_le`.
+`AlgebraicGeometry.ext_of_isDominant_of_isSeparated` extends the factorization globally.
 
 ## References
 
@@ -83,18 +79,6 @@ theorem exists_forall_finite_image_preimage_of_finite_image_preimage
   refine ⟨x', U.ι.isOpenEmbedding.injective ?_, ?_⟩
   · rw [← Scheme.Hom.comp_apply, morphismRestrict_ι, Scheme.Hom.comp_apply, hx', hhx]
   · rw [Scheme.Hom.comp_apply, hx', ← Scheme.Hom.comp_apply, Scheme.Hom.toImage_imageι]
-
-/-- If `X` is proper and integral over a field and has a rational point, then the second
-projection `X × Y ⟶ Y` is a contraction for every `Y` over that field. -/
-theorem isContraction_snd_left_of_isIntegral {X Y : Over (Spec (.of K))}
-    [IsProper X.hom] [IsIntegral X.left]
-    (x₀ : 𝟙_ _ ⟶ X) : IsContraction (snd X Y).left := by
-  have hx : x₀.left ≫ X.hom = 𝟙 (Spec (.of K)) := x₀.w
-  have hΓ : IsIso X.hom.appTop :=
-    (ConcreteCategory.isIso_iff_bijective _).mpr (appTop_bijective_of_section hx)
-  rw [Over.snd_left]
-  exact ⟨fun U ↦ isIso_app_pullback_snd_of_flat X.hom Y.hom
-    (fun V ↦ X.hom.isIso_app_of_isIso_appTop V) U⟩
 
 /-- A morphism that is constant on a rational slice sends the points in the corresponding
 fibre of the second projection to that single point. -/
