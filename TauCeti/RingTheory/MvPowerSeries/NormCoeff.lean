@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Ring.Basic
+public import Mathlib.RingTheory.MvPowerSeries.Derivative
 public import Mathlib.RingTheory.MvPowerSeries.Inverse
+import Mathlib.Analysis.Normed.Ring.Ultra
 import Mathlib.Data.Finsupp.WellFounded
 
 /-!
@@ -45,6 +47,10 @@ families of automorphic forms.
 * `MvPowerSeries.norm_coeff_mul_le_prod_pow`, `MvPowerSeries.norm_coeff_pow_le_prod_pow`,
   `MvPowerSeries.norm_coeff_prod_le_prod_pow` and `MvPowerSeries.norm_coeff_invOfUnit_le_prod_pow`:
   the same bounds for the unit bound `a = 1`.
+* `MvPowerSeries.norm_coeff_mul_le_mul`, `MvPowerSeries.norm_coeff_pow_le_one`: uniform
+  coefficient bounds multiply.
+* `MvPowerSeries.norm_coeff_X_le_one` and `MvPowerSeries.norm_coeff_pderiv_le`: the variables have
+  coefficients in the closed unit ball, and a partial derivative keeps a uniform bound.
 -/
 
 public section
@@ -95,6 +101,13 @@ theorem norm_coeff_mul_le_prod_pow {f g : MvPowerSeries σ R}
   simpa only [one_mul] using norm_coeff_mul_le_mul_prod_pow (a := 1) (b := 1)
     (fun t ↦ (one_mul _).trans_ge (hf t)) (fun t ↦ (one_mul _).trans_ge (hg t)) t
 
+/-- **Uniform coefficient bounds multiply.** If the coefficients of `f` and `g` have norm at most
+`a` and `b`, those of `f * g` have norm at most `a * b`. -/
+theorem norm_coeff_mul_le_mul {f g : MvPowerSeries σ R} {a b : ℝ} (hf : ∀ t, ‖coeff t f‖ ≤ a)
+    (hg : ∀ t, ‖coeff t g‖ ≤ b) (t : σ →₀ ℕ) : ‖coeff t (f * g)‖ ≤ a * b := by
+  simpa using norm_coeff_mul_le_mul_prod_pow (s := fun _ ↦ (1 : ℝ)) (fun t ↦ by simpa using hf t)
+    (fun t ↦ by simpa using hg t) t
+
 omit [IsUltrametricDist R] in
 /-- A monomial `x Xᵉ` with `‖x‖ ≤ ∏ i, s i ^ e i` has the geometric coefficient bound
 `∏ i, s i ^ t i`. -/
@@ -137,6 +150,19 @@ theorem norm_coeff_pow_le_prod_pow (hs : ∀ i, 0 ≤ s i) {f : MvPowerSeries σ
   simpa only [one_pow, one_mul] using norm_coeff_pow_le_pow_mul_prod_pow hs (a := 1)
     (fun t ↦ (one_mul _).trans_ge (hf t)) n t
 
+/-- If the coefficients of `f` have norm at most `1`, so do those of `f ^ n`. -/
+theorem norm_coeff_pow_le_one {f : MvPowerSeries σ R} (hf : ∀ t, ‖coeff t f‖ ≤ 1) (n : ℕ)
+    (t : σ →₀ ℕ) : ‖coeff t (f ^ n)‖ ≤ 1 := by
+  simpa using norm_coeff_pow_le_prod_pow (s := fun _ ↦ (1 : ℝ)) (fun _ ↦ zero_le_one)
+    (fun t ↦ by simpa using hf t) n t
+
+omit [IsUltrametricDist R] in
+/-- The coefficients of a variable `X i` have norm at most `1`. -/
+theorem norm_coeff_X_le_one (i : σ) (t : σ →₀ ℕ) : ‖coeff t (X i : MvPowerSeries σ R)‖ ≤ 1 := by
+  classical
+  rw [coeff_X]
+  split_ifs <;> simp
+
 end Ring
 
 section CommRing
@@ -164,6 +190,14 @@ theorem norm_coeff_prod_le_prod_pow {ι : Type*} (hs : ∀ i, 0 ≤ s i) (S : Fi
     (t : σ →₀ ℕ) : ‖coeff t (∏ j ∈ S, f j)‖ ≤ t.prod (s · ^ ·) := by
   simpa only [prod_const_one, one_mul] using norm_coeff_prod_le_prod_mul_prod_pow hs S
     (a := fun _ ↦ 1) (fun j hj t ↦ (one_mul _).trans_ge (hf j hj t)) t
+
+/-- **A partial derivative keeps a uniform coefficient bound**: its coefficients are coefficients
+of `f` times natural numbers, which have norm at most `1` in an ultrametric ring. -/
+theorem norm_coeff_pderiv_le {f : MvPowerSeries σ R} {a : ℝ} (hf : ∀ t, ‖coeff t f‖ ≤ a) (i : σ)
+    (t : σ →₀ ℕ) : ‖coeff t (pderiv i f)‖ ≤ a := by
+  rw [coeff_pderiv]
+  refine (norm_mul_le_of_le (hf _) ?_).trans_eq (mul_one a)
+  simpa using IsUltrametricDist.norm_natCast_le_one R (t i + 1)
 
 end CommRing
 
