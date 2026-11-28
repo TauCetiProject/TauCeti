@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.DividedPowers.Basic
 public import TauCeti.RingTheory.DividedPowers.Generators
 public import Mathlib.RingTheory.DividedPowers.DPMorphism
-import TauCeti.Algebra.Module.Submodule.Span
 
 /-!
 # Gluing divided powers on a sum of ideals
@@ -258,7 +257,8 @@ private theorem supPowers_dpow_of_mem_right (n : ℕ) {y : A} (hy : y ∈ J) :
 on `J` that agree on `I ⊓ J`. -/
 noncomputable def glue (γ : DividedPowers I) (ε : DividedPowers J)
     (h : ∀ n, ∀ w ∈ I ⊓ J, γ.dpow n w = ε.dpow n w) : DividedPowers (I ⊔ J) :=
-  (supPowers h).toDividedPowers (Submodule.sup_eq_span_union I J)
+  (supPowers h).toDividedPowers (S := (I : Set A) ∪ (J : Set A))
+    (by rw [Ideal.span_union, Ideal.span_eq, Ideal.span_eq])
     (by
       rintro s (hs | hs) m n
       · simp only [supPowers_dpow_of_mem_left h _ hs]
@@ -403,7 +403,8 @@ theorem isDPMorphism_glue_iff {C : Type*} [CommSemiring C] {K : Ideal C} (κ : D
   refine ⟨fun hg ↦ ⟨?_, ?_⟩, fun ⟨hγ, hε⟩ ↦ ?_⟩
   · simpa using hg.comp κ (isDPMorphism_glue_left h)
   · simpa using hg.comp κ (isDPMorphism_glue_right h)
-  · refine IsDPMorphism.on_span (glue γ ε h) κ (Submodule.sup_eq_span_union I J) ?_ ?_
+  · refine IsDPMorphism.on_span (glue γ ε h) κ (S := (I : Set A) ∪ (J : Set A))
+      (by rw [Ideal.span_union, Ideal.span_eq, Ideal.span_eq]) ?_ ?_
     · rintro s (hs | hs)
       · exact hγ.ideal_comp (Ideal.mem_map_of_mem g hs)
       · exact hε.ideal_comp (Ideal.mem_map_of_mem g hs)
