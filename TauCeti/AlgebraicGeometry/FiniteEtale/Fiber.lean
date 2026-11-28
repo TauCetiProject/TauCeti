@@ -103,6 +103,11 @@ theorem pullback_obj_obj (f : T ⟶ S) (X : FiniteEtaleScheme S) :
     ((pullback f).obj X).obj = (Over.pullback f).obj X.obj :=
   (rfl)
 
+/-- The underlying scheme of `(pullback f).obj X` is `Limits.pullback X.obj.hom f`. -/
+theorem pullback_obj_left (f : T ⟶ S) (X : FiniteEtaleScheme S) :
+    ((pullback f).obj X).obj.left = Limits.pullback X.obj.hom f :=
+  (rfl)
+
 /-- On morphisms, base change is `Over.pullback f`. -/
 @[simp]
 theorem pullback_map_hom (f : T ⟶ S) {X Y : FiniteEtaleScheme S} (g : X ⟶ Y) :
@@ -398,21 +403,6 @@ schemes. -/
   rw [pullbackCompIsoOfEq_inv_app_hom]
   exact Over.pullbackCompIsoOfEq_inv_app_left_snd_assoc h X.obj k
 
-/-- First projection of a morphism between pullbacks of finite étale schemes conjugated along
-`pullbackCompIsoOfEq`. -/
-@[reassoc]
-theorem pullbackCompIsoOfEq_conj_hom_left_fst {f : U ⟶ T} {g : T ⟶ S} {fg : U ⟶ S}
-    (h : f ≫ g = fg) {Y₁ Y₂ : FiniteEtaleScheme S}
-    (β : (pullback g).obj Y₁ ⟶ (pullback g).obj Y₂) :
-    ((pullbackCompIsoOfEq f g fg h).inv.app Y₁ ≫ (pullback f).map β ≫
-        (pullbackCompIsoOfEq f g fg h).hom.app Y₂).hom.left ≫
-      Limits.pullback.fst Y₂.obj.hom fg =
-      Limits.pullback.map Y₁.obj.hom fg Y₁.obj.hom g (𝟙 _) f (𝟙 _) (by simp) (by simp [h]) ≫
-        β.hom.left ≫ Limits.pullback.fst Y₂.obj.hom g := by
-  simp only [ObjectProperty.FullSubcategory.comp_hom, pullbackCompIsoOfEq_inv_app_hom,
-    pullbackCompIsoOfEq_hom_app_hom, pullback_map_hom]
-  exact Over.pullbackCompIsoOfEq_conj_left_fst h β.hom
-
 /-- Associativity of `pullbackCompIsoOfEq.inv`: decomposing `pullback fgh` via `fg ≫ h = fgh`
 and `f ≫ g = fg` agrees with decomposing via `f ≫ gh = fgh` and `g ≫ h = gh`. -/
 @[reassoc]
@@ -489,6 +479,18 @@ theorem pullbackTransport_def {A B S₁ S₂ : Scheme.{u}} {m : A ⟶ B}
       (pullbackCompIsoOfEq m g₁ a₁ h₁).inv.app Y₁ ≫ (pullback m).map φ ≫
         (pullbackCompIsoOfEq m g₂ a₂ h₂).hom.app Y₂ :=
   (rfl)
+
+/-- First projection of a morphism between pullbacks of finite étale schemes transported along
+`h : f ≫ g = fg`. -/
+@[reassoc]
+theorem pullbackCompIsoOfEq_conj_hom_left_fst {f : U ⟶ T} {g : T ⟶ S} {fg : U ⟶ S}
+    (h : f ≫ g = fg) {Y₁ Y₂ : FiniteEtaleScheme S}
+    (β : (pullback g).obj Y₁ ⟶ (pullback g).obj Y₂) :
+    (pullbackTransport h h β).hom.left ≫ Limits.pullback.fst Y₂.obj.hom fg =
+      Limits.pullback.map Y₁.obj.hom fg Y₁.obj.hom g (𝟙 _) f (𝟙 _) (by simp) (by simp [h]) ≫
+        β.hom.left ≫ Limits.pullback.fst Y₂.obj.hom g := by
+  rw [pullbackTransport_hom]
+  exact Over.pullbackTransport_left_fst h h β.hom
 
 /-- The forward morphism of `pullbackTransportIso h₁ h₂ e` is `pullbackTransport h₁ h₂ e.hom`. -/
 @[simp] theorem pullbackTransportIso_hom {A B S₁ S₂ : Scheme.{u}} {m : A ⟶ B}

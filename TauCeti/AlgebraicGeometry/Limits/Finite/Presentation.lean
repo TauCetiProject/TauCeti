@@ -465,7 +465,6 @@ private theorem exists_hom_overPullback_of_isLimit_aux [∀ i, CompactSpace (D.o
     Over.pullbackLeftSymm_fst (c.π.app i₀) α
   obtain ⟨j, fj, b, hb₁, hb₂⟩ := hc.exists_pullbackMap_comp_eq a ha
   refine ⟨j, fj, b, hb₁, ?_, hb₂⟩
-  rw [Over.pullbackTransport_def]
   exact (Over.pullbackCompIsoOfEq_conj_hom_of_fstEq (c.w fj) hb₁ ha hb₂).trans
     (Over.pullbackHomOfFstEq_pullbackLeftSymm (c.π.app i₀) α)
 
@@ -536,8 +535,8 @@ theorem exists_iso_overPullback_of_isLimit [∀ i, CompactSpace (D.obj i)]
       (D.map_comp hkj fj).symm Y₂.hom ≪≫
     pullbackSymmetry (D.map (hkj ≫ fj)) Y₂.hom
   have hbK : (Over.forget (D.obj k)).map βK = eIso.hom := by
-    simpa [βK, β, eIso, bK, Over.pullbackTransport_def] using
-      Over.pullbackCompIsoOfEq_conj_left_eq_pullbackMap (D.map_comp hkj fj).symm b hb₁
+    rw [Over.forget_map]
+    exact Over.pullbackCompIsoOfEq_conj_left_eq_pullbackMap (D.map_comp hkj fj).symm b hb₁
   have : IsIso ((Over.forget (D.obj k)).map βK) := by rw [hbK]; exact eIso.isIso_hom
   have : IsIso βK := isIso_of_reflects_iso βK (Over.forget (D.obj k))
   refine ⟨k, hkj ≫ fj, asIso βK, ?_⟩

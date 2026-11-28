@@ -349,17 +349,6 @@ theorem pullbackCompIsoOfEq_inv_app_left_snd (h : a ≫ b = d) (A : Over Z) :
       pullback.snd A.hom d :=
   Over.w ((pullbackCompIsoOfEq h).inv.app A)
 
-/-- First projection of a morphism between pullbacks conjugated along `pullbackCompIsoOfEq`. -/
-@[reassoc]
-theorem pullbackCompIsoOfEq_conj_left_fst {A B : Over Z} (h : a ≫ b = d)
-    (β : (pullback b).obj A ⟶ (pullback b).obj B) :
-    ((pullbackCompIsoOfEq h).inv.app A ≫ (pullback a).map β ≫
-        (pullbackCompIsoOfEq h).hom.app B).left ≫
-      Limits.pullback.fst B.hom d =
-      Limits.pullback.map A.hom d A.hom b (𝟙 _) a (𝟙 _) (by simp) (by simp [h]) ≫
-        β.left ≫ Limits.pullback.fst B.hom b := by
-  simp
-
 /-- The identifications `pullbackCompIsoOfEq` are coherent for three composable morphisms
 `x ≫ a ≫ b`: identifying base change along `x ≫ (a ≫ b)` in one step agrees with identifying it
 first along `a ≫ b` and then along `(x ≫ a) ≫ b`. -/
@@ -761,15 +750,15 @@ noncomputable def pullbackLeftSymmIso {X Y : C} (f : X ⟶ Y) [HasPullbacksAlong
     {A B : Over Y} [HasPullback f A.hom] [HasPullback f B.hom]
     (e : (pullback f).obj A ≅ (pullback f).obj B) :
     (pullbackLeftSymmIso f e).inv = pullbackLeftSymm f e.inv := by
-  have h₁ : (Limits.pullbackSymmetry B.hom f).inv = (Limits.pullbackSymmetry f B.hom).hom := by
-    apply Limits.pullback.hom_ext <;> simp
-  have h₂ : (Limits.pullbackSymmetry f A.hom).inv = (Limits.pullbackSymmetry A.hom f).hom := by
-    apply Limits.pullback.hom_ext <;> simp
+  have h₁ : (Limits.pullbackSymmetry B.hom f).inv = (Limits.pullbackSymmetry f B.hom).hom :=
+    congrArg Iso.hom (Limits.pullbackSymmetry_symm B.hom f)
+  have h₂ : (Limits.pullbackSymmetry f A.hom).inv = (Limits.pullbackSymmetry A.hom f).hom :=
+    congrArg Iso.hom (Limits.pullbackSymmetry_symm f A.hom)
   simp [pullbackLeftSymmIso, pullbackLeftSymm, h₁, h₂]
 
-/-- Conjugating `pullbackHomOfFstEq g b hb` along `pullbackCompIsoOfEq h` yields on
-underlying objects the `pullbackRightPullbackFstIsoOfEq`-conjugate of the raw pullback map of `b`,
-conjugated by `pullbackSymmetry`. -/
+/-- Transporting `pullbackHomOfFstEq g b hb` along `h : m ≫ g = mg` yields on underlying objects
+the `pullbackRightPullbackFstIsoOfEq`-conjugate of the raw pullback map of `b`, conjugated by
+`pullbackSymmetry`. -/
 theorem pullbackCompIsoOfEq_conj_left_eq_pullbackMap
     {A B S : C} {m : A ⟶ B} {g : B ⟶ S} {mg : A ⟶ S}
     [HasPullbacksAlong m] [HasPullbacksAlong g] [HasPullbacksAlong mg]
@@ -780,9 +769,7 @@ theorem pullbackCompIsoOfEq_conj_left_eq_pullbackMap
     [HasPullback mg Y₁.hom] [HasPullback mg Y₂.hom]
     (b : Limits.pullback g Y₁.hom ⟶ Limits.pullback g Y₂.hom)
     (hb : b ≫ Limits.pullback.fst g Y₂.hom = Limits.pullback.fst g Y₁.hom) :
-    ((pullbackCompIsoOfEq h).inv.app Y₁ ≫
-        (pullback m).map (pullbackHomOfFstEq g b hb) ≫
-        (pullbackCompIsoOfEq h).hom.app Y₂).left =
+    (pullbackTransport h h (pullbackHomOfFstEq g b hb)).left =
       (Limits.pullbackSymmetry Y₁.hom mg).hom ≫
         (Limits.pullbackRightPullbackFstIsoOfEq m g mg h Y₁.hom).inv ≫
         Limits.pullback.map m (Limits.pullback.fst g Y₁.hom)
@@ -790,14 +777,12 @@ theorem pullbackCompIsoOfEq_conj_left_eq_pullbackMap
         (Limits.pullbackRightPullbackFstIsoOfEq m g mg h Y₂.hom).hom ≫
         (Limits.pullbackSymmetry mg Y₂.hom).hom := by
   apply Limits.pullback.hom_ext
-  · have hLHS : ((pullbackCompIsoOfEq h).inv.app Y₁ ≫
-          (pullback m).map (pullbackHomOfFstEq g b hb) ≫
-          (pullbackCompIsoOfEq h).hom.app Y₂).left ≫
+  · have hLHS : (pullbackTransport h h (pullbackHomOfFstEq g b hb)).left ≫
         Limits.pullback.fst Y₂.hom mg =
         (Limits.pullbackSymmetry Y₁.hom mg).hom ≫
           Limits.pullback.map mg Y₁.hom g Y₁.hom m (𝟙 _) (𝟙 _) (by simp [h]) (by simp) ≫
           b ≫ Limits.pullback.snd g Y₂.hom := by
-      rw [pullbackCompIsoOfEq_conj_left_fst, pullbackHomOfFstEq_left_fst,
+      rw [pullbackTransport_left_fst, pullbackHomOfFstEq_left_fst,
         Limits.pullback_map_pullbackSymmetry_assoc]
     have hRHS : ((Limits.pullbackSymmetry Y₁.hom mg).hom ≫
           (Limits.pullbackRightPullbackFstIsoOfEq m g mg h Y₁.hom).inv ≫
@@ -811,13 +796,11 @@ theorem pullbackCompIsoOfEq_conj_left_eq_pullbackMap
           b ≫ Limits.pullback.snd g Y₂.hom := by
       simp
     exact hLHS.trans hRHS.symm
-  · have hw := Over.w ((pullbackCompIsoOfEq h).inv.app Y₁ ≫
-        (pullback m).map (pullbackHomOfFstEq g b hb) ≫
-        (pullbackCompIsoOfEq h).hom.app Y₂)
+  · have hw := Over.w (pullbackTransport h h (pullbackHomOfFstEq g b hb))
     refine hw.trans ?_
     simp
 
-/-- Conjugating `pullbackHomOfFstEq g b hb` along `pullbackCompIsoOfEq h` recovers
+/-- Transporting `pullbackHomOfFstEq g b hb` along `h : m ≫ g = mg` recovers
 `pullbackHomOfFstEq mg a ha` whenever `b` and `a` commute with the pullback transition map. -/
 theorem pullbackCompIsoOfEq_conj_hom_of_fstEq
     {A B S : C} {m : A ⟶ B} {g : B ⟶ S} {mg : A ⟶ S}
@@ -833,9 +816,7 @@ theorem pullbackCompIsoOfEq_conj_hom_of_fstEq
     (ha : a ≫ Limits.pullback.fst mg Y₂.hom = Limits.pullback.fst mg Y₁.hom)
     (hcomp : Limits.pullback.map mg Y₁.hom g Y₁.hom m (𝟙 _) (𝟙 _) (by simp [h]) (by simp) ≫ b =
       a ≫ Limits.pullback.map mg Y₂.hom g Y₂.hom m (𝟙 _) (𝟙 _) (by simp [h]) (by simp)) :
-    (pullbackCompIsoOfEq h).inv.app Y₁ ≫
-        (pullback m).map (pullbackHomOfFstEq g b hb) ≫
-        (pullbackCompIsoOfEq h).hom.app Y₂ =
+    pullbackTransport h h (pullbackHomOfFstEq g b hb) =
       pullbackHomOfFstEq mg a ha := by
   ext1
   rw [pullbackCompIsoOfEq_conj_left_eq_pullbackMap h b hb,

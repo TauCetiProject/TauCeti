@@ -152,30 +152,59 @@ theorem exists_pullbackCompIsoOfEq_of_isPullback (h : IsPullback i₁ i₂ j₁ 
   have : Mono (Limits.pullback.fst Y.obj.hom j₂) := IsOpenImmersion.mono _
   apply (cancel_mono e₂.inv.hom.left).mp
   apply (cancel_mono (Limits.pullback.fst Y.obj.hom j₂)).mp
-  -- `((pullback i).obj Y).obj.left` is only semireducibly defeq to `Limits.pullback Y.obj.hom i`
-  -- through `FiniteEtaleScheme.pullback` and `Over.pullback`, so `erw`/`rfl` is unavoidable here
-  -- to bridge the implicit intermediate objects of `CategoryStruct.comp`.
+  have fst_eq {T U : Scheme.{u}} (f : T ⟶ U) (Z : FiniteEtaleScheme U) :
+      Limits.pullback.fst Z.obj.hom f =
+        eqToHom (pullback_obj_left f Z) ≫ Limits.pullback.fst Z.obj.hom f :=
+    (Category.id_comp _).symm
+  have hcompat' : (eqToHom (pullback_obj_left i₁ Y₁) ≫ Limits.pullback.fst Y₁.obj.hom i₁) ≫
+        e₁.inv.hom.left ≫
+        eqToHom (pullback_obj_left j₁ Y) ≫ Limits.pullback.fst Y.obj.hom j₁ =
+      e.hom.hom.left ≫ (eqToHom (pullback_obj_left i₂ Y₂) ≫ Limits.pullback.fst Y₂.obj.hom i₂) ≫
+        e₂.inv.hom.left ≫ eqToHom (pullback_obj_left j₂ Y) ≫ Limits.pullback.fst Y.obj.hom j₂ := by
+    rw [← fst_eq i₁ Y₁, ← fst_eq j₁ Y, ← fst_eq i₂ Y₂, ← fst_eq j₂ Y]
+    exact hcompat
+  have hfst : ((pullbackCompIsoOfEq i₁ j₁ ij hij₁).inv.app Y ≫
+        (pullback i₁).map e₁.hom).hom.left ≫
+        (eqToHom (pullback_obj_left i₁ Y₁) ≫ Limits.pullback.fst Y₁.obj.hom i₁) ≫
+          e₁.inv.hom.left ≫
+          eqToHom (pullback_obj_left j₁ Y) ≫ Limits.pullback.fst Y.obj.hom j₁ =
+      ((pullbackCompIsoOfEq i₂ j₂ ij hij₂).inv.app Y ≫
+        (pullback i₂).map e₂.hom).hom.left ≫
+        (eqToHom (pullback_obj_left i₂ Y₂) ≫ Limits.pullback.fst Y₂.obj.hom i₂) ≫
+          e₂.inv.hom.left ≫
+          eqToHom (pullback_obj_left j₂ Y) ≫ Limits.pullback.fst Y.obj.hom j₂ := by
+    rw [← fst_eq i₁ Y₁, ← fst_eq j₁ Y, ← fst_eq i₂ Y₂, ← fst_eq j₂ Y]
+    exact (pullbackCompIsoOfEq_inv_map_hom_fst_inv_fst hij₁ e₁).trans
+      (pullbackCompIsoOfEq_inv_map_hom_fst_inv_fst hij₂ e₂).symm
+  rw [fst_eq i₂ Y₂, fst_eq j₂ Y]
   calc
-    ((((pullbackCompIsoOfEq i₁ j₁ ij hij₁).inv.app Y ≫ (pullback i₁).map e₁.hom ≫ e.hom).hom.left ≫
-        Limits.pullback.fst Y₂.obj.hom i₂) ≫
-      e₂.inv.hom.left) ≫ Limits.pullback.fst Y.obj.hom j₂
-      = ((pullbackCompIsoOfEq i₁ j₁ ij hij₁).inv.app Y ≫ (pullback i₁).map e₁.hom).hom.left ≫
-          e.hom.hom.left ≫ Limits.pullback.fst Y₂.obj.hom i₂ ≫
-            e₂.inv.hom.left ≫ Limits.pullback.fst Y.obj.hom j₂ := by
-        simp only [ObjectProperty.FullSubcategory.comp_hom, Over.comp_left]
-        erw [Category.assoc, Category.assoc, Category.assoc]
-    _ = ((pullbackCompIsoOfEq i₁ j₁ ij hij₁).inv.app Y ≫ (pullback i₁).map e₁.hom).hom.left ≫
-          Limits.pullback.fst Y₁.obj.hom i₁ ≫
-            e₁.inv.hom.left ≫ Limits.pullback.fst Y.obj.hom j₁ := by
-        rw [← hcompat]; rfl
-    _ = ((pullbackCompIsoOfEq i₂ j₂ ij hij₂).inv.app Y ≫ (pullback i₂).map e₂.hom).hom.left ≫
-          Limits.pullback.fst Y₂.obj.hom i₂ ≫ e₂.inv.hom.left ≫ Limits.pullback.fst Y.obj.hom j₂ :=
-        (pullbackCompIsoOfEq_inv_map_hom_fst_inv_fst hij₁ e₁).trans
-          (pullbackCompIsoOfEq_inv_map_hom_fst_inv_fst hij₂ e₂).symm
-    _ = ((((pullbackCompIsoOfEq i₂ j₂ ij hij₂).inv.app Y ≫ (pullback i₂).map e₂.hom).hom.left ≫
-          Limits.pullback.fst Y₂.obj.hom i₂) ≫
-        e₂.inv.hom.left) ≫ Limits.pullback.fst Y.obj.hom j₂ := by
-        simp only [ObjectProperty.FullSubcategory.comp_hom, Over.comp_left]
-        erw [Category.assoc]
+    ((((pullbackCompIsoOfEq i₁ j₁ ij hij₁).inv.app Y ≫
+        (pullback i₁).map e₁.hom ≫ e.hom).hom.left ≫
+        eqToHom (pullback_obj_left i₂ Y₂) ≫ Limits.pullback.fst Y₂.obj.hom i₂) ≫
+      e₂.inv.hom.left) ≫ eqToHom (pullback_obj_left j₂ Y) ≫ Limits.pullback.fst Y.obj.hom j₂
+      = ((pullbackCompIsoOfEq i₁ j₁ ij hij₁).inv.app Y ≫
+          (pullback i₁).map e₁.hom).hom.left ≫
+          e.hom.hom.left ≫
+          (eqToHom (pullback_obj_left i₂ Y₂) ≫ Limits.pullback.fst Y₂.obj.hom i₂) ≫
+            e₂.inv.hom.left ≫
+            eqToHom (pullback_obj_left j₂ Y) ≫ Limits.pullback.fst Y.obj.hom j₂ := by
+        simp only [ObjectProperty.FullSubcategory.comp_hom, Over.comp_left, Category.assoc]
+    _ = ((pullbackCompIsoOfEq i₁ j₁ ij hij₁).inv.app Y ≫
+          (pullback i₁).map e₁.hom).hom.left ≫
+          (eqToHom (pullback_obj_left i₁ Y₁) ≫ Limits.pullback.fst Y₁.obj.hom i₁) ≫
+            e₁.inv.hom.left ≫
+            eqToHom (pullback_obj_left j₁ Y) ≫ Limits.pullback.fst Y.obj.hom j₁ := by
+        rw [← hcompat']
+    _ = ((pullbackCompIsoOfEq i₂ j₂ ij hij₂).inv.app Y ≫
+          (pullback i₂).map e₂.hom).hom.left ≫
+          (eqToHom (pullback_obj_left i₂ Y₂) ≫ Limits.pullback.fst Y₂.obj.hom i₂) ≫
+            e₂.inv.hom.left ≫
+            eqToHom (pullback_obj_left j₂ Y) ≫ Limits.pullback.fst Y.obj.hom j₂ :=
+        hfst
+    _ = ((((pullbackCompIsoOfEq i₂ j₂ ij hij₂).inv.app Y ≫
+          (pullback i₂).map e₂.hom).hom.left ≫
+          eqToHom (pullback_obj_left i₂ Y₂) ≫ Limits.pullback.fst Y₂.obj.hom i₂) ≫
+        e₂.inv.hom.left) ≫ eqToHom (pullback_obj_left j₂ Y) ≫ Limits.pullback.fst Y.obj.hom j₂ := by
+        simp only [Category.assoc]
 
 end TauCeti.FiniteEtaleScheme
