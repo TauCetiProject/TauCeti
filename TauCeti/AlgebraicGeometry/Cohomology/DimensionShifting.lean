@@ -66,7 +66,7 @@ instance finite_cohomology_free_tensor (I : Type u) [Finite I] (L : X.Modules) (
   -- `𝒪^{⊕I} ≅ ⨁_I 𝒪`.
   have : HasBiproduct (C := X.Modules) fun _ : I ↦ L := HasBiproduct.of_hasCoproduct _
   let e : Iso (C := X.Modules) ((SheafOfModules.free I : X.Modules) ⊗ L) (⨁ fun _ : I ↦ L) :=
-    β_ _ _ ≪≫ (TauCeti.SheafOfModules.biproductConstIsoTensorFree (R := X.sheaf) L I).symm
+    β_ _ _ ≪≫ (L.biproductConstIsoTensorFree (R := X.sheaf) I).symm
   exact .equiv ((cohomologyBiproductLinearEquiv R (fun _ : I ↦ L) q).symm ≪≫ₗ
     (cohomologyBaseLinearEquivOfIso R e q).symm)
 

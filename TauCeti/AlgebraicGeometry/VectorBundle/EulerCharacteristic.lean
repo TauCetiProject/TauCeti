@@ -68,32 +68,35 @@ theorem eulerCharBelow_tensor_pushforward (k : Type u) [Field k] [X.Over (Spec (
     (E : FiniteLocallyFreeSheaf.FixedRank X r) (G : Z.Modules) (n : ℕ) :
     eulerCharBelow k X (E.obj.obj ⊗ (pushforward f).obj G) n =
       r * eulerCharBelow k X ((pushforward f).obj G) n := by
-  -- Instance search finds neither finite biproducts in the abelian categories `Z.Modules` and
-  -- `X.Modules` nor the additivity of `⊗` on `Z.Modules`, which is stated for sheaves of modules.
+  -- Instance search does not find finite biproducts in the abelian categories `Z.Modules` and
+  -- `X.Modules`.
   have : HasFiniteBiproducts Z.Modules := Abelian.hasFiniteBiproducts
   have : HasFiniteBiproducts X.Modules := Abelian.hasFiniteBiproducts
-  have : MonoidalPreadditive Z.Modules := TauCeti.SheafOfModules.monoidalPreadditive Z.sheaf
-  -- `f^* E ≅ 𝒪_Z^r`, written as a biproduct of copies of `𝒪_Z` indexed by `Fin r`.
+  have : HasBiproduct (C := Z.Modules) fun _ : ULift.{u} (Fin r) ↦ G :=
+    HasBiproduct.of_hasCoproduct _
+  -- `f^* E ≅ 𝒪_Z^r`, so `f^* E ⊗ G ≅ G ⊗ 𝒪_Z^r ≅ G^{⊕r}`.
   obtain ⟨e⟩ := FiniteLocallyFreeSheaf.FixedRank.nonempty_iso_free_of_isAffine
     ((FiniteLocallyFreeSheaf.FixedRank.pullback f).obj E)
   let e₁ : ((FiniteLocallyFreeSheaf.pullback f).obj E.obj).obj ≅
-      ⨁ fun _ : ULift.{u} (Fin r) ↦ 𝟙_ Z.Modules :=
+      SheafOfModules.free (R := Z.ringCatSheaf) (ULift.{u} (Fin r)) :=
     eqToIso (congrArg (·.obj) (FiniteLocallyFreeSheaf.FixedRank.pullback_obj_obj f E).symm) ≪≫
       (isFiniteLocallyFree Z).ι.mapIso
         ((FiniteLocallyFreeSheaf.isConstantRank Z r).ι.mapIso e) ≪≫
       eqToIso (by
         rw [ObjectProperty.ι_obj, ObjectProperty.ι_obj, FiniteLocallyFreeSheaf.FixedRank.free_obj,
-          FiniteLocallyFreeSheaf.free_obj]) ≪≫
-      (TauCeti.SheafOfModules.biproductIsoFree (R := Z.sheaf) _).symm
-  let e₂ : ((FiniteLocallyFreeSheaf.pullback f).obj E.obj).obj ≅
-      ⨁ fun _ : Fin r ↦ 𝟙_ Z.Modules :=
-    e₁ ≪≫ biproduct.whiskerEquiv (f := fun _ : ULift.{u} (Fin r) ↦ 𝟙_ Z.Modules)
-      (g := fun _ : Fin r ↦ 𝟙_ Z.Modules) Equiv.ulift fun _ ↦ Iso.refl _
-  -- The projection formula, then distributivity of `⊗` and of `f_*` over the biproduct.
+          FiniteLocallyFreeSheaf.free_obj])
+  let e₂ : ((FiniteLocallyFreeSheaf.pullback f).obj E.obj).obj ⊗ G ≅
+      ⨁ fun _ : Fin r ↦ G :=
+    whiskerRightIso e₁ G ≪≫ β_ _ G ≪≫
+      -- `Z.ringCatSheaf` and `TauCeti.SheafOfModules.ringCatSheaf Z.sheaf` are definitionally
+      -- equal.
+      (G.biproductConstIsoTensorFree (R := Z.sheaf) (ULift.{u} (Fin r))).symm ≪≫
+      biproduct.whiskerEquiv (f := fun _ : ULift.{u} (Fin r) ↦ G)
+        (g := fun _ : Fin r ↦ G) Equiv.ulift fun _ ↦ Iso.refl _
+  -- The projection formula, then `f_*` preserving the finite biproduct.
   let e₃ : E.obj.obj ⊗ (pushforward f).obj G ≅ ⨁ fun _ : Fin r ↦ (pushforward f).obj G :=
     (FiniteLocallyFreeSheaf.pushforwardTensorLeftIso f E.obj).app G ≪≫
-      (pushforward f).mapIso
-        (whiskerRightIso e₂ G ≪≫ rightDistributor _ G ≪≫ biproduct.mapIso fun _ ↦ λ_ G) ≪≫
+      (pushforward f).mapIso e₂ ≪≫
       (pushforward f).mapBiproduct _
   rw [eulerCharBelow_congr k e₃, eulerCharBelow_biproduct_const, Fintype.card_fin]
 

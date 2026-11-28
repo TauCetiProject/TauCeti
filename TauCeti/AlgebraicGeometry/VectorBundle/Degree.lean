@@ -677,9 +677,9 @@ theorem vectorBundleDegree_tensor_free {s : ℕ} (V : FixedRank X s) :
   have : HasBiproduct (C := X.Modules) fun _ : ULift.{u} (Fin r) ↦ V.obj.obj :=
     HasBiproduct.of_hasCoproduct _
   let e : (V.tensor (free X r)).obj.obj ≅ ⨁ fun _ : Fin r ↦ V.obj.obj :=
+    -- `X.ringCatSheaf` and `TauCeti.SheafOfModules.ringCatSheaf X.sheaf` are definitionally equal.
     eqToIso (by rw [tensor_obj_obj, free_obj, FiniteLocallyFreeSheaf.free_obj]; rfl) ≪≫
-      (TauCeti.SheafOfModules.biproductConstIsoTensorFree (R := X.sheaf)
-        V.obj.obj (ULift.{u} (Fin r))).symm ≪≫
+      (V.obj.obj.biproductConstIsoTensorFree (R := X.sheaf) (ULift.{u} (Fin r))).symm ≪≫
       biproduct.whiskerEquiv (f := fun _ : ULift.{u} (Fin r) ↦ V.obj.obj)
         (g := fun _ : Fin r ↦ V.obj.obj) Equiv.ulift fun _ ↦ Iso.refl _
   rw [vectorBundleDegree_def, vectorBundleDegree_def, eulerCharBelow_congr k e,

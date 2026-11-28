@@ -13,7 +13,6 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.GlobalGeneration
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.FinitePresentation
-import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Monoidal
 
 /-!
 # Finiteness of the cohomology of coherent sheaves on projective schemes
@@ -80,9 +79,12 @@ private theorem finite_cohomology_proj [IsNoetherianRing R] {κ : Type*} [Finite
   obtain ⟨n, I, _, π, _⟩ := (Proj.eventually_exists_epi_free_tensor_twistingSheaf
     (fun i ↦ _root_.SymmetricAlgebra.ι R M (b i)) (fun i ↦ ι_mem_homogeneousSubmodule R M (b i))
     (iSup_basicOpen_ι_eq_top R M b b.span_eq) F).exists
+  -- `Proj.eventually_exists_epi_free_tensor_twistingSheaf` elaborates `⊗` with
+  -- `SheafOfModules.monoidalCategory` rather than `Scheme.Modules.instMonoidalCategory`, so
+  -- typeclass search does not apply `Scheme.Modules.isFinitePresentation_tensorObj` automatically.
   have : ((SheafOfModules.free I : (Proj (homogeneousSubmodule R M)).Modules) ⊗
       Proj.twistingSheaf (homogeneousSubmodule R M) (-n)).IsFinitePresentation :=
-    TauCeti.SheafOfModules.isFinitePresentation_tensorObj (R := (Proj _).sheaf)
+    Scheme.Modules.isFinitePresentation_tensorObj (Proj _) _ _
   refine ⟨_, π, ‹_›, inferInstance, inferInstance, fun q ↦ ?_⟩
   have := b.finite_cohomology_twistingSheaf (-n) q
   exact Scheme.Modules.finite_cohomology_free_tensor R I _ q

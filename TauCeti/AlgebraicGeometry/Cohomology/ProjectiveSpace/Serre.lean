@@ -20,7 +20,6 @@ import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.HigherCohomology
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
-import TauCeti.AlgebraicGeometry.Modules.Tensor.FinitePresentation
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.LinearAction
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.GlobalGeneration
@@ -28,8 +27,6 @@ import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Pullback
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.TensorProduct
 import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Basic
-import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
-import TauCeti.AlgebraicGeometry.VectorBundle.ProjectionFormula
 
 /-!
 # Serre's vanishing theorem on projective space and projective schemes
@@ -65,8 +62,8 @@ For an arbitrary finite `R`-module `M`, choosing a surjection `(Fin (n + 2) → 
 forward along the closed immersion preserves coherence
 (`Scheme.Modules.isFinitePresentation_pushforward_of_isFinite`) and cohomology
 (`Scheme.Hom.cohomologyPushforwardIso`), and commutes with twisting by `𝒪(m)` via the projection
-formula (`FiniteLocallyFreeSheaf.pushforwardTensorLeftIso`) and pullback of twisting sheaves
-(`Proj.isIso_pullbackTwistingSheafMap`).
+formula (`Scheme.Hom.subsingleton_cohomology_tensor_pushforward_iff`) and pullback of twisting
+sheaves (`Proj.isIso_pullbackTwistingSheafMap`).
 
 ## References
 
@@ -83,39 +80,6 @@ open CategoryTheory Limits MonoidalCategory BraidedCategory AlgebraicGeometry
 universe u
 
 noncomputable section
-
-namespace TauCeti.AlgebraicGeometry
-
-variable {X : Scheme.{u}}
-
-/-- Transfer `Subsingleton` of cohomology along an isomorphism of `𝒪_X`-modules. -/
-private theorem subsingleton_cohomology_of_iso {M N : X.Modules} (e : M ≅ N) (q : ℕ)
-    (h : Subsingleton (Cohomology M q)) : Subsingleton (Cohomology N q) := by
-  have : Subsingleton ((cohomologyFunctor X q).obj M) := h
-  exact ((cohomologyFunctor X q).mapIso e).addCommGroupIsoToAddEquiv.symm.injective.subsingleton
-
-/-- Transport cohomology vanishing of a twist `F ⊗ K` along a closed immersion `i : X ⟶ Y`
-from the pushforward `(pushforward i).obj F ⊗ L` via the projection formula, given an
-identification `i^* L ≅ K`. -/
-private theorem subsingleton_cohomology_tensor_of_isClosedImmersion {X Y : Scheme.{u}}
-    (i : X ⟶ Y) [IsClosedImmersion i] (F : X.Modules) (L : Y.Modules)
-    [SheafOfModules.isInvertible Y L] (K : X.Modules)
-    (epb : (Scheme.Modules.pullback i).obj L ≅ K) (q : ℕ)
-    (h : Subsingleton (Cohomology ((pushforward i).obj F ⊗ L) q)) :
-    Subsingleton (Cohomology (F ⊗ K) q) := by
-  let L' := (InvertibleSheaf.toFiniteLocallyFree Y).obj ⟨L, inferInstance⟩
-  let epb' : ((FiniteLocallyFreeSheaf.pullback i).obj L').obj ≅ K :=
-    eqToIso (FiniteLocallyFreeSheaf.pullback_obj_obj i L') ≪≫ epb
-  let e : (pushforward i).obj F ⊗ L ≅ (pushforward i).obj (F ⊗ K) :=
-    β_ ((pushforward i).obj F) L ≪≫
-      (FiniteLocallyFreeSheaf.pushforwardTensorLeftIso i L').app F ≪≫
-      (pushforward i).mapIso (whiskerRightIso epb' F ≪≫ β_ K F)
-  have hpush : Subsingleton (Cohomology ((pushforward i).obj (F ⊗ K)) q) :=
-    subsingleton_cohomology_of_iso e q h
-  exact (cohomologyPushforwardIso i (F ⊗ K) q).addCommGroupIsoToAddEquiv
-    |>.symm.injective.subsingleton
-
-end TauCeti.AlgebraicGeometry
 
 namespace TauCeti.SymmetricAlgebra
 
@@ -136,6 +100,9 @@ private theorem exists_epi_free_tensor_twistingSheaf_kernel [IsNoetherianRing R]
     (_root_.SymmetricAlgebra.ι R M) (ι_mem_homogeneousSubmodule R M)
     (iSup_basicOpen_ι_eq_top R M id (by simp)) F).exists
   have : Epi π := hπ
+  -- `Proj.eventually_exists_epi_free_tensor_twistingSheaf` elaborates `⊗` with
+  -- `SheafOfModules.monoidalCategory` rather than `Scheme.Modules.instMonoidalCategory`, so
+  -- typeclass search does not apply `Scheme.Modules.isFinitePresentation_tensorObj` automatically.
   have : ((SheafOfModules.free J : (Proj 𝒜).Modules) ⊗
       Proj.twistingSheaf 𝒜 (-(r : ℤ))).IsFinitePresentation :=
     isFinitePresentation_tensorObj (Proj 𝒜) _ _
@@ -171,7 +138,7 @@ private theorem serre_vanishing_step (b : Module.Basis κ R M) (q : ℕ) (hq : 0
   let eK : Iso (C := (Proj 𝒜).Modules) (kernel π ⊗ Proj.twistingSheaf 𝒜 m)
       (Proj.twistingSheaf 𝒜 m ⊗ kernel π) := β_ _ _
   have hK : Subsingleton (Cohomology (Proj.twistingSheaf 𝒜 m ⊗ kernel π) (q + 1)) :=
-    subsingleton_cohomology_of_iso eK (q + 1) (hm₁ m hm1)
+    (subsingleton_cohomology_congr eK (q + 1)).mp (hm₁ m hm1)
   have hE : Subsingleton (Cohomology
       (Proj.twistingSheaf 𝒜 m ⊗
         ((SheafOfModules.free J : (Proj 𝒜).Modules) ⊗ Proj.twistingSheaf 𝒜 (-(r : ℤ)))) q) := by
@@ -187,16 +154,16 @@ private theorem serre_vanishing_step (b : Module.Basis κ R M) (q : ℕ) (hq : 0
         (⨁ fun _ : J ↦ Proj.twistingSheaf 𝒜 (m + -(r : ℤ))) :=
       whiskerLeftIso _ (β_ _ _) ≪≫ (α_ _ _ _).symm ≪≫
         whiskerRightIso eTwist _ ≪≫
-        (TauCeti.SheafOfModules.biproductConstIsoTensorFree (R := (Proj 𝒜).sheaf)
-          (Proj.twistingSheaf 𝒜 (m + -(r : ℤ))) J).symm
+        ((Proj.twistingSheaf 𝒜 (m + -(r : ℤ))).biproductConstIsoTensorFree
+          (R := (Proj 𝒜).sheaf) J).symm
     have hsub : Subsingleton (Cohomology (Proj.twistingSheaf 𝒜 (m + -(r : ℤ))) q) :=
       b.subsingleton_cohomology_twistingSheaf_of_neg_card_lt hmr hq
     have hsum : Subsingleton (Cohomology (⨁ fun _ : J ↦ Proj.twistingSheaf 𝒜 (m + -(r : ℤ))) q) :=
       (cohomologyBiproductLinearEquiv R _ q).injective.subsingleton
-    exact subsingleton_cohomology_of_iso eE.symm q hsum
+    exact (subsingleton_cohomology_congr eE.symm q).mp hsum
   have hF : Subsingleton (Cohomology (Proj.twistingSheaf 𝒜 m ⊗ F) q) :=
     subsingleton_cohomology_X₃ hSm q (q + 1) rfl hE hK
-  exact subsingleton_cohomology_of_iso (β_ (Proj.twistingSheaf 𝒜 m) F) q hF
+  exact (subsingleton_cohomology_congr (β_ (Proj.twistingSheaf 𝒜 m) F) q).mp hF
 
 /-- Serre's vanishing theorem on `Proj (Sym_R M)` for a nonempty finite basis, in a single positive
 degree `q`. -/
@@ -243,6 +210,14 @@ end Basis
 
 /-! ### Serre's vanishing theorem for any finite module `M` -/
 
+private theorem pushforward_isQuasicoherent_and_isFiniteType {X Y : Scheme.{u}}
+    [IsLocallyNoetherian Y] (i : X ⟶ Y) [IsClosedImmersion i]
+    (F : X.Modules) [F.IsQuasicoherent] [F.IsFiniteType] :
+    ((pushforward i).obj F).IsQuasicoherent ∧ ((pushforward i).obj F).IsFiniteType := by
+  have : ((pushforward i).obj F).IsFinitePresentation :=
+    isFinitePresentation_pushforward_of_isFinite i F
+  exact ⟨isQuasicoherent_of_isFinitePresentation _, isFiniteType_of_isFinitePresentation _⟩
+
 /-- **Serre's vanishing theorem** (Hartshorne, Theorem III.5.2(b)). Let `R` be a Noetherian ring
 and `M` a finitely generated `R`-module. For every quasi-coherent sheaf `F` of finite type on
 `Proj (Sym_R M)`, there exists `m₀ : ℤ` such that `H^q(Proj (Sym_R M), F ⊗ 𝒪(m)) = 0` for all
@@ -263,19 +238,14 @@ theorem exists_subsingleton_cohomology_tensor_twistingSheaf [IsNoetherianRing R]
   let i := Proj.map φ hirr
   have : IsClosedImmersion i := Proj.isClosedImmersion_map φ hirr hφ
   have : i.IsOver (Spec (.of R)) := ⟨Proj.map_gradedMap_projToSpec R q hirr⟩
-  have : ((pushforward i).obj F).IsFinitePresentation :=
-    isFinitePresentation_pushforward_of_isFinite i F
-  have : ((pushforward i).obj F).IsQuasicoherent := isQuasicoherent_of_isFinitePresentation _
-  have : ((pushforward i).obj F).IsFiniteType := isFiniteType_of_isFinitePresentation _
+  obtain ⟨_, _⟩ := pushforward_isQuasicoherent_and_isFiniteType i F
   obtain ⟨m₀, hm₀⟩ :=
     exists_subsingleton_cohomology_tensor_of_basis (Pi.basisFun R (Fin (n + 2)))
       ((pushforward i).obj F)
   refine ⟨m₀, fun m hm k hk ↦ ?_⟩
-  exact subsingleton_cohomology_tensor_of_isClosedImmersion i F
+  exact (i.subsingleton_cohomology_tensor_pushforward_iff F
     (Proj.twistingSheaf (homogeneousSubmodule R (Fin (n + 2) → R)) m)
-    (Proj.twistingSheaf 𝒜 m)
-    (@asIso _ _ _ _ _ (isIso_pullbackTwistingSheafMap φ hirr m))
-    k (hm₀ m hm k hk)
+    (@asIso _ _ _ _ _ (isIso_pullbackTwistingSheafMap φ hirr m)) k).mpr (hm₀ m hm k hk)
 
 end TauCeti.SymmetricAlgebra
 
@@ -296,16 +266,13 @@ theorem exists_subsingleton_cohomology_tensor_pullback_twistingSheaf [IsNoetheri
         (F ⊗ (Scheme.Modules.pullback i).obj
           (Proj.twistingSheaf (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M) m)) q) := by
   let 𝒜 := TauCeti.SymmetricAlgebra.homogeneousSubmodule R M
-  have : ((pushforward i).obj F).IsFinitePresentation :=
-    isFinitePresentation_pushforward_of_isFinite i F
-  have : ((pushforward i).obj F).IsQuasicoherent := isQuasicoherent_of_isFinitePresentation _
-  have : ((pushforward i).obj F).IsFiniteType := isFiniteType_of_isFinitePresentation _
+  obtain ⟨_, _⟩ := TauCeti.SymmetricAlgebra.pushforward_isQuasicoherent_and_isFiniteType i F
   obtain ⟨m₀, hm₀⟩ :=
     TauCeti.SymmetricAlgebra.exists_subsingleton_cohomology_tensor_twistingSheaf
       ((pushforward i).obj F)
   refine ⟨m₀, fun m hm q hq ↦ ?_⟩
-  exact subsingleton_cohomology_tensor_of_isClosedImmersion i F
-    (Proj.twistingSheaf 𝒜 m) _ (Iso.refl _) q (hm₀ m hm q hq)
+  exact (i.subsingleton_cohomology_tensor_pushforward_iff F
+    (Proj.twistingSheaf 𝒜 m) (Iso.refl _) q).mpr (hm₀ m hm q hq)
 
 end AlgebraicGeometry.Scheme.Hom
 

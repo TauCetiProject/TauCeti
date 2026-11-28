@@ -7,8 +7,10 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import TauCeti.AlgebraicGeometry.Cohomology.Basic
+public import TauCeti.AlgebraicGeometry.LineBundle.Monoidal
 public import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
 public import TauCeti.Topology.Sheaves.Cohomology.Basic
+import TauCeti.AlgebraicGeometry.VectorBundle.ProjectionFormula
 
 /-!
 # Cohomology and direct image along a closed immersion
@@ -80,6 +82,29 @@ lemma cohomologyPushforwardIso_naturality {M N : X.Modules} (α : M ⟶ N) (n : 
         (cohomologyPushforwardIso f N n).hom =
       (cohomologyPushforwardIso f M n).hom ≫ (cohomologyFunctor X n).map α :=
   (cohomologyPushforwardNatIso f n).hom.naturality α
+
+open MonoidalCategory BraidedCategory in
+/-- **Cohomology vanishing for twists along a closed immersion.** For a closed immersion
+`i : X ⟶ Y`, a sheaf `F` on `X`, an invertible sheaf `L` on `Y`, and an identification
+`epb : i^* L ≅ K`, `H^q(X, F ⊗ K)` vanishes if and only if `H^q(Y, i_* F ⊗ L)` vanishes. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.subsingleton_cohomology_tensor_pushforward_iff
+    {X Y : Scheme.{u}} (i : X ⟶ Y) [IsClosedImmersion i] (F : X.Modules) (L : Y.Modules)
+    [SheafOfModules.isInvertible Y L] {K : X.Modules}
+    (epb : (Scheme.Modules.pullback i).obj L ≅ K) (q : ℕ) :
+    Subsingleton (Cohomology (F ⊗ K) q) ↔
+      Subsingleton (Cohomology ((pushforward i).obj F ⊗ L) q) := by
+  let L' := (InvertibleSheaf.toFiniteLocallyFree Y).obj ⟨L, inferInstance⟩
+  let epb' : ((FiniteLocallyFreeSheaf.pullback i).obj L').obj ≅ K :=
+    eqToIso (FiniteLocallyFreeSheaf.pullback_obj_obj i L') ≪≫ epb
+  let e : (pushforward i).obj F ⊗ L ≅ (pushforward i).obj (F ⊗ K) :=
+    β_ ((pushforward i).obj F) L ≪≫
+      (FiniteLocallyFreeSheaf.pushforwardTensorLeftIso i L').app F ≪≫
+      (pushforward i).mapIso (whiskerRightIso epb' F ≪≫ β_ K F)
+  have hpush : Subsingleton (Cohomology ((pushforward i).obj (F ⊗ K)) q) ↔
+      Subsingleton (Cohomology (F ⊗ K) q) :=
+    Equiv.subsingleton_congr
+      (cohomologyPushforwardIso i (F ⊗ K) q).addCommGroupIsoToAddEquiv.toEquiv
+  exact hpush.symm.trans (Scheme.Modules.subsingleton_cohomology_congr e q).symm
 
 end
 

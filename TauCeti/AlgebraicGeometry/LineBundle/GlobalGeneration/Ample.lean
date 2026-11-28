@@ -12,7 +12,6 @@ public import TauCeti.AlgebraicGeometry.LineBundle.TwistedSections
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.FinitePresentation
 import TauCeti.AlgebraicGeometry.LineBundle.NonvanishingLocus
 import TauCeti.AlgebraicGeometry.Modules.FiniteType
-import TauCeti.AlgebraicGeometry.Modules.Tensor.FinitePresentation
 
 /-!
 # Serre's global generation theorem for ample line bundles
@@ -31,15 +30,12 @@ single-bundle global generation theorem
 the `D` twists `F ⊗ L^{⊗r}` (`0 ≤ r < D`) yields a uniform bound `n₀` for all `n ≥ n₀`.
 
 Applying the theorem to a line bundle `K` shows that `K ⊗ L^{⊗n}` and `L^{⊗n}` are globally
-generated for all sufficiently large `n`. Tensoring a surjection `𝒪_X^J ⟶ F ⊗ M` by an inverse
-`M'` (`M ⊗ M' ≅ 𝒪_X`) yields an epimorphism `⨁_{j ∈ J} M' ⟶ F`.
+generated for all sufficiently large `n`.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.Modules.exists_epi_free_tensorPow_of_isAmple`: Serre's global
-  generation theorem for an ample line bundle.
-* `AlgebraicGeometry.Scheme.Modules.exists_epi_biproduct_of_epi_free_tensor`: dualizing an
-  epimorphism `𝒪_X^J ⟶ F ⊗ M` into an epimorphism `⨁_J M' ⟶ F`.
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf.exists_epi_free_tensorPow_of_isAmple`: Serre's
+  global generation theorem for an ample line bundle.
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.exists_isGloballyGenerated_tensorProduct_tensorPow`
   and `exists_isGloballyGenerated_tensorPow`: high ample twists of any line bundle (and high
   powers of an ample line bundle) are globally generated.
@@ -57,9 +53,9 @@ open CategoryTheory Limits MonoidalCategory BraidedCategory AlgebraicGeometry Op
 
 universe u
 
-namespace AlgebraicGeometry.Scheme.Modules
+namespace TauCeti.AlgebraicGeometry.InvertibleSheaf
 
-open TauCeti.AlgebraicGeometry
+open _root_.AlgebraicGeometry.Scheme.Modules
 
 noncomputable section
 
@@ -71,25 +67,25 @@ variable {X : Scheme.{u}}
 affine nonvanishing loci cover `X`. -/
 private theorem exists_common_power_nonvanishing_cover (L : InvertibleSheaf X)
     (hL : (LineBundleClass.mk L).IsAmple) :
-    ∃ (D : ℕ) (_ : 0 < D), ∀ x : X, ∃ t : Γ(tensorPow L.obj D, ⊤),
-      x ∈ (tensorPow L.obj D).nonvanishingLocus t ∧
-        IsAffineOpen ((tensorPow L.obj D).nonvanishingLocus t) := by
+    ∃ (D : ℕ) (_ : 0 < D), ∀ x : X, ∃ t : Γ(TauCeti.tensorPow L.obj D, ⊤),
+      x ∈ (TauCeti.tensorPow L.obj D).nonvanishingLocus t ∧
+        IsAffineOpen ((TauCeti.tensorPow L.obj D).nonvanishingLocus t) := by
   classical
   obtain ⟨S, hS, hmem⟩ := hL.exists_finset_isAffineOpen_nonvanishingLocus
   choose haff n hn L₀ hL₀ s hs using fun U : S ↦ hmem U.val U.property
   let D : ℕ := ∏ U : S, n U
   have hDpos : 0 < D := Finset.prod_pos fun U _ ↦ hn U
-  have hlift (U : S) : ∃ t : Γ(tensorPow L.obj D, ⊤),
-      (tensorPow L.obj D).nonvanishingLocus t = U.val := by
+  have hlift (U : S) : ∃ t : Γ(TauCeti.tensorPow L.obj D, ⊤),
+      (TauCeti.tensorPow L.obj D).nonvanishingLocus t = U.val := by
     obtain ⟨q, hqeq⟩ := Finset.dvd_prod_of_mem n (Finset.mem_univ U)
     have hqpos : 0 < q := Nat.pos_of_ne_zero fun hq0 ↦ by
       rw [hq0, mul_zero] at hqeq
       exact hDpos.ne' hqeq
-    have hmk : LineBundleClass.mk (tensorPow L D) = LineBundleClass.mk (L₀ U) ^ q := by
+    have hmk : LineBundleClass.mk (TauCeti.tensorPow L D) = LineBundleClass.mk (L₀ U) ^ q := by
       rw [LineBundleClass.mk_tensorPow, hL₀ U, ← pow_mul]
       exact congrArg (LineBundleClass.mk L ^ ·) hqeq
-    obtain ⟨t, ht⟩ := InvertibleSheaf.exists_nonvanishingLocus_eq_of_mk_eq_pow hqpos hmk (s U)
-    refine ⟨(eqToIso (InvertibleSheaf.tensorPow_obj L D)).hom.app ⊤ t, ?_⟩
+    obtain ⟨t, ht⟩ := exists_nonvanishingLocus_eq_of_mk_eq_pow hqpos hmk (s U)
+    refine ⟨(eqToIso (tensorPow_obj L D)).hom.app ⊤ t, ?_⟩
     rw [nonvanishingLocus_hom_app, ht, hs U]
   choose t ht using hlift
   refine ⟨D, hDpos, fun x ↦ ?_⟩
@@ -100,14 +96,18 @@ private theorem exists_common_power_nonvanishing_cover (L : InvertibleSheaf X)
 `L^{⊗r} ⊗ (L^{⊗D})^{⊗q} ≅ L^{⊗n}`. -/
 private theorem exists_tensorPow_mul_add_iso (L : InvertibleSheaf X) {D q r n : ℕ}
     (h : D * q + r = n) :
-    Nonempty (tensorPow L.obj r ⊗ tensorPow (tensorPow L.obj D) q ≅ tensorPow L.obj n) := by
-  have hmk : LineBundleClass.mk (tensorPow L r ⊗ tensorPow (tensorPow L D) q) =
-      LineBundleClass.mk (tensorPow L n) := by
+    Nonempty (TauCeti.tensorPow L.obj r ⊗ TauCeti.tensorPow (TauCeti.tensorPow L.obj D) q ≅
+      TauCeti.tensorPow L.obj n) := by
+  have hmk : LineBundleClass.mk (TauCeti.tensorPow L r ⊗
+      TauCeti.tensorPow (TauCeti.tensorPow L D) q) =
+      LineBundleClass.mk (TauCeti.tensorPow L n) := by
     simp only [LineBundleClass.mk_tensorObj, LineBundleClass.mk_tensorPow, ← pow_mul, ← pow_add,
       add_comm r (D * q), h]
   obtain ⟨e⟩ := LineBundleClass.mk_eq_mk_iff.mp hmk
-  exact ⟨eqToIso (by rw [← InvertibleSheaf.tensorPow_obj, ← InvertibleSheaf.tensorPow_obj,
-    ← InvertibleSheaf.tensorPow_obj]; rfl) ≪≫ e ≪≫ eqToIso (InvertibleSheaf.tensorPow_obj L n)⟩
+  -- `InvertibleSheaf X` inherits its monoidal structure from `X.Modules`, so `(A ⊗ B).obj` is
+  -- definitionally `A.obj ⊗ B.obj`.
+  exact ⟨eqToIso (by rw [← tensorPow_obj, ← tensorPow_obj, ← tensorPow_obj]; rfl) ≪≫ e ≪≫
+    eqToIso (tensorPow_obj L n)⟩
 
 /-- **Serre's global generation theorem** (Hartshorne, Theorem II.5.17; Stacks Project, Tag 01Q3).
 Let `L` be an ample line bundle on a scheme `X`. For every quasi-coherent `𝒪_X`-module `F` of
@@ -118,22 +118,27 @@ theorem exists_epi_free_tensorPow_of_isAmple
     (F : X.Modules) [F.IsQuasicoherent] [F.IsFiniteType] :
     ∃ n₀ : ℕ, ∀ n ≥ n₀,
       ∃ (J : Type u) (_ : Finite J)
-        (π : Quiver.Hom (V := X.Modules) (SheafOfModules.free J) (F ⊗ tensorPow L.obj n)),
+        (π : Quiver.Hom (V := X.Modules) (_root_.SheafOfModules.free J)
+          (F ⊗ TauCeti.tensorPow L.obj n)),
         Epi π := by
   have : CompactSpace X := hL.compactSpace
-  obtain ⟨D, hDpos, ht⟩ := exists_common_power_nonvanishing_cover L hL
+  obtain ⟨D, hDpos, ht⟩ := L.exists_common_power_nonvanishing_cover hL
   -- Apply the single-power theorem to `L^{⊗D}` and each of the `D` remainder twists `F ⊗ L^{⊗r}`.
   have hrem (r : Fin D) : ∃ k : ℕ, ∀ q ≥ k,
       ∃ (J : Type u) (_ : Finite J)
-        (π : Quiver.Hom (V := X.Modules) (SheafOfModules.free J)
-          ((F ⊗ tensorPow L.obj r.val) ⊗ tensorPow (tensorPow L.obj D) q)), Epi π := by
-    have : (tensorPow L.obj r.val).IsFinitePresentation :=
-      TauCeti.SheafOfModules.IsInvertible.isFinitePresentation (M := tensorPow L.obj r.val)
+        (π : Quiver.Hom (V := X.Modules) (_root_.SheafOfModules.free J)
+          ((F ⊗ TauCeti.tensorPow L.obj r.val) ⊗ TauCeti.tensorPow (TauCeti.tensorPow L.obj D) q)),
+        Epi π := by
+    have : (TauCeti.tensorPow L.obj r.val).IsFinitePresentation :=
+      TauCeti.SheafOfModules.IsInvertible.isFinitePresentation
+        (M := TauCeti.tensorPow L.obj r.val)
         (hM := TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_tensorPow L.obj r.val)
-    have : (tensorPow L.obj r.val).IsQuasicoherent := isQuasicoherent_of_isFinitePresentation _
-    have : (tensorPow L.obj r.val).IsFiniteType := isFiniteType_of_isFinitePresentation _
+    have : (TauCeti.tensorPow L.obj r.val).IsQuasicoherent :=
+      isQuasicoherent_of_isFinitePresentation _
+    have : (TauCeti.tensorPow L.obj r.val).IsFiniteType := isFiniteType_of_isFinitePresentation _
     obtain ⟨k, hk⟩ := Filter.eventually_atTop.mp
-      (eventually_exists_generatingSections_tensor_tensorPow (F ⊗ tensorPow L.obj r.val) ht)
+      (eventually_exists_generatingSections_tensor_tensorPow
+        (F ⊗ TauCeti.tensorPow L.obj r.val) ht)
     refine ⟨k, fun q hq ↦ ?_⟩
     obtain ⟨σ, hσ⟩ := hk q hq
     exact ⟨σ.I, hσ.finite, σ.π, σ.epi⟩
@@ -146,36 +151,11 @@ theorem exists_epi_free_tensorPow_of_isAmple
       (by simpa only [mul_comm] using hn))
   obtain ⟨J, _, π, hπ⟩ := hk r q hq
   obtain ⟨e⟩ := exists_tensorPow_mul_add_iso L (Nat.div_add_mod n D)
-  let iso := α_ F (tensorPow L.obj r.val) (tensorPow (tensorPow L.obj D) q) ≪≫ whiskerLeftIso F e
+  let iso := α_ F (TauCeti.tensorPow L.obj r.val)
+    (TauCeti.tensorPow (TauCeti.tensorPow L.obj D) q) ≪≫ whiskerLeftIso F e
   exact ⟨J, inferInstance, π ≫ iso.hom, epi_comp π iso.hom⟩
 
-/-! ### Corollaries: surjections from biproducts and global generation of line bundles -/
-
-/-- Dualizing a surjection onto a twisted sheaf: if `π : 𝒪_X^J ⟶ F ⊗ M` is an epimorphism for a
-finite index type `J` and `e : M ⊗ M' ≅ 𝒪_X` exhibits `M'` as an inverse of `M`, then `F` admits
-an epimorphism from the finite biproduct `⨁_{j ∈ J} M'`. -/
-theorem exists_epi_biproduct_of_epi_free_tensor {F M M' : X.Modules}
-    {J : Type u} [Finite J] [HasBiproduct fun _ : J ↦ M']
-    (π : Quiver.Hom (V := X.Modules) (SheafOfModules.free J) (F ⊗ M)) [Epi π]
-    (e : M ⊗ M' ≅ 𝟙_ X.Modules) :
-    ∃ π' : (⨁ fun _ : J ↦ M') ⟶ F, Epi π' := by
-  -- Tensor `π` on the left with `M'`; `tensorLeft M'` is a left adjoint so it preserves
-  -- epimorphisms.
-  have : Epi (M' ◁ π) := (tensorLeft M').map_epi π
-  let efree : (⨁ fun _ : J ↦ M') ≅ M' ⊗ SheafOfModules.free J :=
-    TauCeti.SheafOfModules.biproductConstIsoTensorFree (R := X.sheaf) M' J
-  let etgt : M' ⊗ (F ⊗ M) ≅ F :=
-    β_ M' (F ⊗ M) ≪≫ α_ F M M' ≪≫ whiskerLeftIso F e ≪≫ ρ_ F
-  have : Epi ((M' ◁ π) ≫ etgt.hom) := epi_comp (M' ◁ π) etgt.hom
-  exact ⟨efree.hom ≫ (M' ◁ π) ≫ etgt.hom, epi_comp efree.hom ((M' ◁ π) ≫ etgt.hom)⟩
-
-end
-
-end AlgebraicGeometry.Scheme.Modules
-
-namespace TauCeti.AlgebraicGeometry.InvertibleSheaf
-
-variable {X : Scheme.{u}}
+/-! ### Global generation of line bundles -/
 
 /-- **Twists of any line bundle by high powers of an ample line bundle are globally generated.**
 If `L` is ample and `K` is any invertible sheaf, then `K ⊗ L^{⊗n}` is globally generated for all
@@ -183,7 +163,7 @@ sufficiently large `n`. -/
 theorem exists_isGloballyGenerated_tensorProduct_tensorPow
     (L : InvertibleSheaf X) (hL : (LineBundleClass.mk L).IsAmple) (K : InvertibleSheaf X) :
     ∃ n₀ : ℕ, ∀ n ≥ n₀, (K.tensorProduct (TauCeti.tensorPow L n)).IsGloballyGenerated := by
-  obtain ⟨n₀, hn₀⟩ := Scheme.Modules.exists_epi_free_tensorPow_of_isAmple L hL K.obj
+  obtain ⟨n₀, hn₀⟩ := L.exists_epi_free_tensorPow_of_isAmple hL K.obj
   refine ⟨n₀, fun n hn ↦ ?_⟩
   obtain ⟨J, _, π, hπ⟩ := hn₀ n hn
   let e : K.obj ⊗ TauCeti.tensorPow L.obj n ≅
@@ -194,9 +174,14 @@ theorem exists_isGloballyGenerated_tensorProduct_tensorPow
     ⟨{ I := J
        s := (K.tensorProduct (TauCeti.tensorPow L n)).obj.freeHomEquiv (π ≫ e.hom)
        epi := by
-         change @Epi X.Modules _ _ _ _
-         rw [Equiv.symm_apply_apply]
-         exact epi_comp π e.hom }⟩
+         have heq : ((K.tensorProduct (TauCeti.tensorPow L n)).obj.freeHomEquiv.symm
+             ((K.tensorProduct (TauCeti.tensorPow L n)).obj.freeHomEquiv (π ≫ e.hom))) =
+             π ≫ e.hom :=
+           Equiv.symm_apply_apply _ _
+         -- `GeneratingSections.epi` uses `SheafOfModules X.ringCatSheaf`, which is definitionally
+         -- equal to `X.Modules`.
+         rw [heq]
+         exact (epi_comp π e.hom : @Epi X.Modules _ _ _ (π ≫ e.hom)) }⟩
 
 /-- **High powers of an ample line bundle are globally generated.** If `L` is ample, then
 `L^{⊗n}` is globally generated for all sufficiently large `n`. -/
@@ -206,5 +191,7 @@ theorem exists_isGloballyGenerated_tensorPow
   obtain ⟨n₀, hn₀⟩ := exists_isGloballyGenerated_tensorProduct_tensorPow L hL (trivial X)
   refine ⟨n₀, fun n hn ↦ (isGloballyGenerated_iff_of_iso ?_).mp (hn₀ n hn)⟩
   exact (SheafOfModules.isInvertible X).ι.mapIso (tensorTrivialLeftIso (TauCeti.tensorPow L n))
+
+end
 
 end TauCeti.AlgebraicGeometry.InvertibleSheaf

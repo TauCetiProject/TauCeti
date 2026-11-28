@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Spec
 public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Serre
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Finite
-import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
 
@@ -69,21 +68,6 @@ instance IsProjectiveOver.isFinitePresentation_higherDirectImage (R : Type u) [C
     (Module.finitePresentation_of_finite R (Cohomology M n))
 
 namespace Hom
-
-/-- For a quasi-compact quasi-separated morphism `f : X ⟶ Y` to an affine scheme and a
-quasi-coherent `𝒪_X`-module `M`, if `H^q(X, M)` is subsingleton then `R^q f_* M` is zero. -/
-theorem isZero_higherDirectImage_of_subsingleton_cohomology {X Y : Scheme.{u}} (f : X ⟶ Y)
-    [IsAffine Y] [QuasiCompact f] [QuasiSeparated f] (M : X.Modules) [M.IsQuasicoherent] (q : ℕ)
-    [Subsingleton (Cohomology M q)] :
-    IsZero ((f.higherDirectImage q).obj M) := by
-  have : Subsingleton (cohomologyOn M q ⊤) :=
-    (cohomologyOnTopIso M q).addCommGroupIsoToAddEquiv.injective.subsingleton
-  have : Subsingleton (cohomologyOn M q (f ⁻¹ᵁ ⊤)) :=
-    (eqToIso (congrArg (cohomologyOn M q) f.preimage_top)).addCommGroupIsoToAddEquiv
-      |>.injective.subsingleton
-  have : Subsingleton Γ((f.higherDirectImage q).obj M, ⊤) :=
-    (f.higherDirectImageSectionsAddEquiv M q (isAffineOpen_top Y)).symm.injective.subsingleton
-  exact ((f.higherDirectImage q).obj M).isZero_of_subsingleton_sections_top
 
 /-- **Higher direct image vanishing for twists on projective schemes.** Let `R` be a Noetherian
 ring, `M` a finitely generated `R`-module, and `i : X ⟶ Proj (Sym_R M)` a closed immersion. For
