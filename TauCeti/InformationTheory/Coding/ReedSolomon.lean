@@ -10,26 +10,29 @@ public import Mathlib.RingTheory.Polynomial.Basic
 public import TauCeti.InformationTheory.Coding.Basic
 public import TauCeti.InformationTheory.Coding.MinimumDistance.Basic
 import Mathlib.LinearAlgebra.Lagrange
+import TauCeti.RingTheory.Polynomial.DegreeLT
 
 /-!
 # Generalized Reed–Solomon codes
 
-For a field `F`, evaluation points `a : ι → F`, multipliers `v : ι → F` and `k : ℕ`, the
-generalized Reed–Solomon code `grsCode a v k` is the image of the polynomials of degree less than
-`k` under `p ↦ (v i * p(a i))_i`. The Reed–Solomon code is the case `v = 1`.
+For a commutative semiring `F`, evaluation points `a : ι → F`, multipliers `v : ι → F` and
+`k : ℕ`, the generalized Reed–Solomon code `grsCode a v k` is the image of the polynomials of
+degree less than `k` under `p ↦ (v i * p(a i))_i`. The Reed–Solomon code is the case `v = 1`.
 
-If the points are distinct and the multipliers nonzero, a nonzero polynomial of degree less than
-`k` vanishes at fewer than `k` of the points. So for `k ≤ n` the evaluation is injective on these
-polynomials, and every nonzero word of the code has weight at least `n - k + 1`.
+Let `F` be a domain. If the points are distinct and the multipliers nonzero, a nonzero polynomial
+of degree less than `k` vanishes at fewer than `k` of the points. So for `k ≤ n` the evaluation is
+injective on these polynomials, and every nonzero word of the code has weight at least
+`n - k + 1`. Over a field the code with `n ≤ k` is the whole space.
 
 ## Main results
 
 * `TauCeti.grsCode a v k`: the generalized Reed–Solomon code.
 * `TauCeti.grsCode_zero`: with parameter `0` the code is zero.
+* `TauCeti.grsCode_mono`: the code grows with the parameter `k`.
 * `TauCeti.finrank_grsCode`: for `k ≤ n` the code has dimension `k`.
-* `TauCeti.grsCode_eq_top`: for `n ≤ k` the code is the whole space.
 * `TauCeti.le_hammingMinDist_grsCode`: for `1 ≤ k ≤ n` the minimum distance is at least
   `n - k + 1`.
+* `TauCeti.grsCode_eq_top`: over a field, for `n ≤ k` the code is the whole space.
 
 ## References
 
@@ -43,12 +46,15 @@ open Polynomial
 
 namespace TauCeti
 
-variable {F ι : Type*} [Field F]
+section CommSemiring
+
+variable {F ι : Type*} [CommSemiring F]
 
 /-- The evaluation map `p ↦ (v i * p(a i))_i` of the generalized Reed–Solomon code. -/
 noncomputable def grsEval (a v : ι → F) : F[X] →ₗ[F] ι → F :=
   LinearMap.pi fun i ↦ v i • leval (a i)
 
+/-- The coordinate `i` of the word of `p` is `v i * p(a i)`. -/
 @[simp]
 theorem grsEval_apply (a v : ι → F) (p : F[X]) (i : ι) : grsEval a v p i = v i * p.eval (a i) :=
   (rfl)
@@ -58,16 +64,20 @@ parameter `k`: the words `(v i * p(a i))_i` for the polynomials `p` of degree le
 noncomputable def grsCode (a v : ι → F) (k : ℕ) : LinearCode F ι :=
   (degreeLT F k).map (grsEval a v)
 
+/-- The code is the image of the polynomials of degree less than `k` under `grsEval a v`. -/
 theorem grsCode_def (a v : ι → F) (k : ℕ) : grsCode a v k = (degreeLT F k).map (grsEval a v) :=
   (rfl)
 
 variable {a v : ι → F}
 
+/-- A word is in the code if and only if it is the word of a polynomial of degree less than
+`k`. -/
 @[simp]
 theorem mem_grsCode_iff {k : ℕ} {x : ι → F} :
     x ∈ grsCode a v k ↔ ∃ p ∈ degreeLT F k, grsEval a v p = x := by
   rw [grsCode_def, Submodule.mem_map]
 
+/-- The word of a polynomial of degree less than `k` is in the code. -/
 theorem grsEval_mem_grsCode {k : ℕ} {p : F[X]} (hp : p ∈ degreeLT F k) :
     grsEval a v p ∈ grsCode a v k :=
   mem_grsCode_iff.2 ⟨p, hp, rfl⟩
@@ -80,6 +90,16 @@ theorem grsCode_zero (a v : ι → F) : grsCode a v 0 = ⊥ := by
   rw [mem_degreeLT, Nat.cast_zero, Nat.WithBot.lt_zero_iff, degree_eq_bot] at hp
   rw [hp, map_zero]
   exact zero_mem _
+
+/-- The code grows with the parameter `k`. -/
+theorem grsCode_mono {k l : ℕ} (h : k ≤ l) : grsCode a v k ≤ grsCode a v l :=
+  Submodule.map_mono (degreeLT_mono h)
+
+end CommSemiring
+
+section IsDomain
+
+variable {F ι : Type*} [CommRing F] [IsDomain F] {a v : ι → F}
 
 /-- A polynomial of degree less than `k` is zero if its word vanishes on a set `s` of at least `k`
 coordinates with distinct points and nonzero multipliers. -/
@@ -112,24 +132,16 @@ theorem card_filter_grsEval_eq_zero_lt [DecidableEq F] (ha : Function.Injective 
   not_le.1 fun hk ↦ hp0 (eq_zero_of_grsEval_eq_zero ha.injOn (fun i _ ↦ hv i) hp hk
     fun _ hi ↦ (Finset.mem_filter.1 hi).2)
 
-/-- For `k ≤ n` the generalized Reed–Solomon code has dimension `k`. -/
+/-- For `k ≤ n` the generalized Reed–Solomon code has dimension `k`, when the points are distinct
+and the multipliers nonzero. -/
 theorem finrank_grsCode (ha : Function.Injective a) (hv : ∀ i, v i ≠ 0) {k : ℕ}
     (hk : k ≤ Fintype.card ι) : Module.finrank F (grsCode a v k) = k := by
-  rw [grsCode_def, ← LinearMap.range_domRestrict, LinearMap.finrank_range_of_inj,
-    (degreeLTEquiv F k).finrank_eq, Module.finrank_fin_fun]
+  rw [grsCode_def, ← LinearMap.range_domRestrict, LinearMap.finrank_range_of_inj, finrank_degreeLT]
   exact fun p q hpq ↦ Subtype.ext (injOn_grsEval ha hv hk p.property q.property hpq)
 
-/-- For `n ≤ k` the generalized Reed–Solomon code is the whole space, when the points are distinct
-and the multipliers nonzero. -/
-theorem grsCode_eq_top (ha : Function.Injective a) (hv : ∀ i, v i ≠ 0) {k : ℕ}
-    (hk : Fintype.card ι ≤ k) : grsCode a v k = ⊤ := by
-  have hn : grsCode a v (Fintype.card ι) = ⊤ := Submodule.eq_top_of_finrank_eq <| by
-    rw [finrank_grsCode ha hv le_rfl, Module.finrank_fintype_fun_eq_card]
-  rw [eq_top_iff, ← hn, grsCode_def, grsCode_def]
-  exact Submodule.map_mono (degreeLT_mono hk)
-
 /-- For `1 ≤ k ≤ n` every nonzero word of the generalized Reed–Solomon code has weight at least
-`n - k + 1`, so its minimum distance is at least `n - k + 1`. -/
+`n - k + 1`, so its minimum distance is at least `n - k + 1`, when the points are distinct and the
+multipliers nonzero. -/
 theorem le_hammingMinDist_grsCode [DecidableEq F] (ha : Function.Injective a)
     (hv : ∀ i, v i ≠ 0) {k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ Fintype.card ι) :
     Fintype.card ι - k + 1 ≤ (grsCode a v k : Set (ι → F)).hammingMinDist := by
@@ -148,5 +160,17 @@ theorem le_hammingMinDist_grsCode [DecidableEq F] (ha : Function.Injective a)
     Finset.card_filter_add_card_filter_not (s := Finset.univ) _
   rw [hammingNorm]
   omega
+
+end IsDomain
+
+/-- Over a field, for `n ≤ k` the generalized Reed–Solomon code is the whole space, when the
+points are distinct and the multipliers nonzero. -/
+theorem grsCode_eq_top {F ι : Type*} [Field F] [Fintype ι] {a v : ι → F}
+    (ha : Function.Injective a) (hv : ∀ i, v i ≠ 0) {k : ℕ} (hk : Fintype.card ι ≤ k) :
+    grsCode a v k = ⊤ := by
+  have hn : grsCode a v (Fintype.card ι) = ⊤ := Submodule.eq_top_of_finrank_eq <| by
+    rw [finrank_grsCode ha hv le_rfl, Module.finrank_fintype_fun_eq_card]
+  rw [eq_top_iff, ← hn]
+  exact grsCode_mono hk
 
 end TauCeti
