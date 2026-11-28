@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Spec
+public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Serre
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Finite
+import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
 
 /-!
-# Coherence of higher direct images for projective schemes over a Noetherian ring
+# Coherent higher direct images and asymptotic vanishing for projective schemes
 
 Let `R` be a Noetherian commutative ring, `X` a scheme projective over `R`
 (`AlgebraicGeometry.Scheme.IsProjectiveOver R X`), and `M` a quasi-coherent `𝒪_X`-module of finite
@@ -24,10 +27,22 @@ projective-over-`Spec R` case of the coherence of higher direct images for proje
 over Noetherian bases (Hartshorne, Theorem III.8.8(b)) and for proper morphisms over locally
 Noetherian bases (Stacks Tag 02O5).
 
+In the second theorem below, let `M` be a finitely generated `R`-module (distinct from the
+coefficient sheaf `M` above), `i : X ⟶ Proj (Sym_R M)` a closed immersion, and `F` a
+quasi-coherent `𝒪_X`-module of finite type. Combining Serre's vanishing theorem for closed
+subschemes of projective space
+(`AlgebraicGeometry.Scheme.Hom.exists_subsingleton_cohomology_tensor_pullback_twistingSheaf`)
+with the affine-base global-sections comparison
+(`AlgebraicGeometry.Scheme.Hom.isZero_higherDirectImage_of_subsingleton_cohomology`) shows that
+for all sufficiently large `m` and every positive degree `q > 0`, the higher direct image
+`R^q (i ≫ projToSpec R M)_* (F ⊗ i^* 𝒪(m))` vanishes
+(`AlgebraicGeometry.Scheme.Hom.exists_isZero_higherDirectImage_tensor_pullback_twistingSheaf`).
+
 ## References
 
-* R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Theorem III.8.8(b) (the
-  projective-over-`Spec R` case).
+* R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Theorem III.5.2,
+  Proposition III.8.5, and Theorem III.8.8(b) (the projective-over-`Spec R` case).
+* [The Stacks Project, Tag 01XT](https://stacks.math.columbia.edu/tag/01XT).
 * [The Stacks Project, Tag 02O5](https://stacks.math.columbia.edu/tag/02O5) (the
   projective-over-`Spec R` case of the proper theorem).
 -/
@@ -36,8 +51,8 @@ public section
 
 noncomputable section
 
-open AlgebraicGeometry AlgebraicGeometry.Scheme.Modules
-open TauCeti.AlgebraicGeometry.Scheme.Modules
+open CategoryTheory Limits MonoidalCategory AlgebraicGeometry AlgebraicGeometry.Scheme.Modules
+open TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme.Modules
 
 universe u
 
@@ -54,6 +69,29 @@ instance IsProjectiveOver.isFinitePresentation_higherDirectImage (R : Type u) [C
     (((X ↘ Spec (.of R)).higherDirectImage n).obj M).IsFinitePresentation :=
   (M.isFinitePresentation_higherDirectImage_Spec_iff R n).mpr
     (Module.finitePresentation_of_finite R (Cohomology M n))
+
+namespace Hom
+
+/-- **Higher direct image vanishing for twists on projective schemes.** Let `R` be a Noetherian
+ring, `M` a finitely generated `R`-module, and `i : X ⟶ Proj (Sym_R M)` a closed immersion. For
+every quasi-coherent `𝒪_X`-module `F` of finite type, there exists `m₀ : ℤ` such that
+`R^q (i ≫ projToSpec R M)_* (F ⊗ i^* 𝒪(m)) = 0` for all `m ≥ m₀` and all `q > 0`. -/
+theorem exists_isZero_higherDirectImage_tensor_pullback_twistingSheaf {R M : Type u} [CommRing R]
+    [IsNoetherianRing R] [AddCommMonoid M] [Module R M] [Module.Finite R M] {X : Scheme.{u}}
+    (i : X ⟶ Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M)) [IsClosedImmersion i]
+    (F : X.Modules) [F.IsQuasicoherent] [F.IsFiniteType] :
+    ∃ m₀ : ℤ, ∀ m ≥ m₀, ∀ q > 0,
+      IsZero (((i ≫ TauCeti.SymmetricAlgebra.projToSpec R M).higherDirectImage q).obj
+        (F ⊗ (Scheme.Modules.pullback i).obj
+          (Proj.twistingSheaf (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M) m))) := by
+  obtain ⟨m₀, hm₀⟩ := i.exists_subsingleton_cohomology_tensor_pullback_twistingSheaf F
+  refine ⟨m₀, fun m hm q hq ↦ ?_⟩
+  let Om := Proj.twistingSheaf (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M) m
+  have : Subsingleton (Cohomology (F ⊗ (Scheme.Modules.pullback i).obj Om) q) := hm₀ m hm q hq
+  exact isZero_higherDirectImage_of_subsingleton_cohomology
+    (i ≫ TauCeti.SymmetricAlgebra.projToSpec R M) (F ⊗ (Scheme.Modules.pullback i).obj Om) q
+
+end Hom
 
 end AlgebraicGeometry.Scheme
 
