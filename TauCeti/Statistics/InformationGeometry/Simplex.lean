@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.Analysis.Calculus.FDeriv.Linear
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import TauCeti.Analysis.Convex.StdSimplex.Boundary
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.LinearAlgebra.Dimension.Constructions
@@ -19,10 +20,9 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # The Fisher–Rao metric and the Amari–Chentsov tensor on probability simplices
 
-The open probability simplex `openSimplex m` is the set of `p : Fin m → ℝ` with positive
-coordinates summing to `1`; its tangent space `simplexTangent m` is the submodule of vectors
-with coordinate sum `0`. Mathlib's closed simplex is the type `Convexity.StdSimplex` of finitely
-supported weights, so the open simplex is defined directly as a subset of `Fin m → ℝ`.
+The open probability simplex is `TauCeti.openStdSimplex ℝ (Fin m)`, the set of `p : Fin m → ℝ`
+with positive coordinates summing to `1` (`TauCeti.mem_openStdSimplex_iff_sum_eq_one`); its
+tangent space `simplexTangent m` is the submodule of vectors with coordinate sum `0`.
 
 The **Fisher–Rao metric** at `p` is the bilinear form `fisherRao p u v = ∑ uᵢ vᵢ / pᵢ` and the
 **Amari–Chentsov tensor** is the trilinear form `amariChentsov p u v w = ∑ uᵢ vᵢ wᵢ / pᵢ²`. Both
@@ -32,14 +32,15 @@ vanishing coordinates.
 A **congruent embedding** `e : CongruentEmbedding m n` (Chentsov's Markov congruent embedding of
 `S_m` into `S_n`) is a surjection `e.block : Fin n → Fin m` onto the blocks together with positive
 weights `e.q` summing to `1` on each block. Its linear map `e.toLinearMap`,
-`p ↦ (p (block j) · q j)ⱼ`, maps `openSimplex m` into `openSimplex n` and `simplexTangent m`
-into `simplexTangent n`; being linear, it is its own derivative
-(`CongruentEmbedding.hasFDerivAt_toLinearMap`). Every permutation of `Fin m`, with unit weights,
-is a congruent embedding (`CongruentEmbedding.ofPerm`).
+`p ↦ (p (block j) · q j)ⱼ`, is injective and maps the open simplex on `Fin m` into the open
+simplex on `Fin n` and `simplexTangent m` into `simplexTangent n`; being linear, it is its own
+derivative (`CongruentEmbedding.hasFDerivAt_toLinearMap`). Every permutation of `Fin m`, with
+unit weights, is a congruent embedding (`CongruentEmbedding.ofPerm`), and every congruent
+self-embedding with unit weights arises in this way (`CongruentEmbedding.exists_eq_ofPerm`).
 
 ## Main definitions
 
-* `TauCeti.openSimplex`, `TauCeti.simplexTangent`: the open simplex and its tangent space.
+* `TauCeti.simplexTangent`: the tangent space of the simplex.
 * `TauCeti.fisherRao`, `TauCeti.amariChentsov`: the Fisher–Rao metric and the Amari–Chentsov
   tensor.
 * `TauCeti.CongruentEmbedding`, `TauCeti.CongruentEmbedding.toLinearMap`: congruent embeddings of
@@ -53,16 +54,22 @@ is a congruent embedding (`CongruentEmbedding.ofPerm`).
   `TauCeti.amariChentsov_smul_left`, their `_right` versions and the `_middle` versions for
   `amariChentsov`: the two forms are additive and homogeneous in each vector argument; the
   `_zero_left`, `_zero_middle` and `_zero_right` lemmas are `@[simp]`.
+* `TauCeti.fisherRao_comm`, `TauCeti.amariChentsov_comm_left`,
+  `TauCeti.amariChentsov_comm_right`: the two forms are symmetric in their vector arguments.
 * `TauCeti.fisherRao_self_pos`: the Fisher–Rao form is positive definite at every point with
-  positive coordinates, in particular on `simplexTangent m` at every `p ∈ openSimplex m`.
+  positive coordinates, in particular on `simplexTangent m` at every point of the open simplex.
+* `TauCeti.continuousOn_fisherRao`, `TauCeti.continuousOn_amariChentsov`: both forms are
+  continuous in the base point on the open simplex, for fixed vector arguments.
 * `TauCeti.finrank_simplexTangent`: the tangent space has dimension `m - 1`.
-* `TauCeti.CongruentEmbedding.toLinearMap_mem_openSimplex`,
+* `TauCeti.CongruentEmbedding.injective_toLinearMap`: the map of a congruent embedding is
+  injective.
+* `TauCeti.CongruentEmbedding.toLinearMap_mem_openStdSimplex`,
   `TauCeti.CongruentEmbedding.toLinearMap_mem_simplexTangent`: congruent embeddings preserve the
   open simplex and its tangent space.
 * `TauCeti.fisherRao_congruentEmbedding`, `TauCeti.amariChentsov_congruentEmbedding`: the
   Fisher–Rao metric and the Amari–Chentsov tensor are invariant under congruent embeddings, at
-  every `p` and for all vectors `u`, `v`, `w` (Chentsov, proof of Thm 11.1, pp. 159–160, for the
-  Fisher–Rao form on tangent vectors at points of the open simplex).
+  every `p` and for all vectors `u`, `v`, `w`; both are `@[simp]` (Chentsov, proof of Thm 11.1,
+  pp. 159–160, for the Fisher–Rao form on tangent vectors at points of the open simplex).
 
 ## Attribution
 
@@ -87,35 +94,7 @@ namespace TauCeti
 
 open Finset
 
-/-! ### The open simplex and its tangent space -/
-
-/-- The open probability simplex `S_m`: the points of `Fin m → ℝ` with positive coordinates
-summing to `1`. -/
-def openSimplex (m : ℕ) : Set (Fin m → ℝ) := {p | (∀ i, 0 < p i) ∧ ∑ i, p i = 1}
-
-/-- Membership in the open simplex: positive coordinates summing to `1`. -/
-@[simp]
-theorem mem_openSimplex {m : ℕ} {p : Fin m → ℝ} :
-    p ∈ openSimplex m ↔ (∀ i, 0 < p i) ∧ ∑ i, p i = 1 :=
-  Iff.rfl
-
-/-- The empty sum is `0`, so the open simplex on no coordinates is empty. -/
-@[simp]
-theorem openSimplex_zero : openSimplex 0 = ∅ := by
-  ext p
-  simp
-
-/-- The open simplex on one coordinate is the single point `1`. -/
-@[simp]
-theorem openSimplex_one : openSimplex 1 = {1} := by
-  ext p
-  simp only [mem_openSimplex, Fin.forall_fin_one, Fin.sum_univ_one, Set.mem_singleton_iff]
-  constructor
-  · rintro ⟨-, h⟩
-    ext i
-    simp [Subsingleton.elim i 0, h]
-  · rintro rfl
-    simp
+/-! ### The tangent space of the simplex -/
 
 /-- The tangent space of the simplex: the vectors of `Fin m → ℝ` with coordinate sum `0`. -/
 def simplexTangent (m : ℕ) : Submodule ℝ (Fin m → ℝ) :=
@@ -251,6 +230,17 @@ theorem amariChentsov_smul_right (p : ι → ℝ) (c : ℝ) (u v w : ι → ℝ)
 theorem fisherRao_comm (p u v : ι → ℝ) : fisherRao p u v = fisherRao p v u := by
   simp only [fisherRao_def, mul_comm (u _)]
 
+/-- The Amari–Chentsov tensor is symmetric in its first two vectors. -/
+theorem amariChentsov_comm_left (p u v w : ι → ℝ) :
+    amariChentsov p u v w = amariChentsov p v u w := by
+  simp only [amariChentsov_def, mul_comm (u _)]
+
+/-- The Amari–Chentsov tensor is symmetric in its last two vectors; with
+`amariChentsov_comm_left`, it is symmetric under every permutation of its vectors. -/
+theorem amariChentsov_comm_right (p u v w : ι → ℝ) :
+    amariChentsov p u v w = amariChentsov p u w v := by
+  simp only [amariChentsov_def, mul_right_comm (u _)]
+
 /-- The Fisher–Rao form is positive semidefinite at every `p` with nonnegative coordinates. -/
 theorem fisherRao_self_nonneg {p : ι → ℝ} (hp : ∀ i, 0 ≤ p i) (u : ι → ℝ) :
     0 ≤ fisherRao p u u :=
@@ -263,6 +253,25 @@ theorem fisherRao_self_pos {p : ι → ℝ} (hp : ∀ i, 0 < p i) {u : ι → �
   obtain ⟨i, hi⟩ := Function.ne_iff.1 hu
   exact sum_pos' (fun j _ ↦ div_nonneg (mul_self_nonneg (u j)) (hp j).le)
     ⟨i, mem_univ i, div_pos (mul_self_pos.2 hi) (hp i)⟩
+
+/-! #### Continuity in the base point -/
+
+/-- For fixed vectors, the Fisher–Rao form is continuous in the base point on the open simplex. -/
+theorem continuousOn_fisherRao (u v : ι → ℝ) :
+    ContinuousOn (fun p ↦ fisherRao p u v) (openStdSimplex ℝ ι) := by
+  simp only [fisherRao_def]
+  exact continuousOn_finsetSum _ fun i _ ↦
+    continuousOn_const.div (continuous_apply i).continuousOn
+      fun p hp ↦ ((mem_openStdSimplex_iff.1 hp).2 i).ne'
+
+/-- For fixed vectors, the Amari–Chentsov tensor is continuous in the base point on the open
+simplex. -/
+theorem continuousOn_amariChentsov (u v w : ι → ℝ) :
+    ContinuousOn (fun p ↦ amariChentsov p u v w) (openStdSimplex ℝ ι) := by
+  simp only [amariChentsov_def]
+  exact continuousOn_finsetSum _ fun i _ ↦
+    continuousOn_const.div ((continuous_apply i).pow 2).continuousOn
+      fun p hp ↦ pow_ne_zero 2 ((mem_openStdSimplex_iff.1 hp).2 i).ne'
 
 end Forms
 
@@ -339,15 +348,24 @@ theorem toLinearMap_apply (p : Fin m → ℝ) (j : Fin n) :
 theorem sum_toLinearMap_apply (p : Fin m → ℝ) : ∑ j, e.toLinearMap p j = ∑ i, p i := by
   simpa using e.sum_comp_block_mul_q p
 
+/-- The map of a congruent embedding is injective: every block is nonempty and the weights are
+nonzero. -/
+theorem injective_toLinearMap : Function.Injective e.toLinearMap := by
+  intro p p' h
+  funext i
+  obtain ⟨j, rfl⟩ := e.surjective i
+  exact mul_right_cancel₀ (e.q_pos j).ne' (congrFun h j)
+
 /-- The map of a congruent embedding is linear, so it is its own derivative. -/
 theorem hasFDerivAt_toLinearMap (p : Fin m → ℝ) :
     HasFDerivAt e.toLinearMap (LinearMap.toContinuousLinearMap e.toLinearMap) p :=
   (LinearMap.toContinuousLinearMap e.toLinearMap).hasFDerivAt
 
-/-- A congruent embedding maps the open simplex `S_m` into `S_n`. -/
-theorem toLinearMap_mem_openSimplex {p : Fin m → ℝ} (hp : p ∈ openSimplex m) :
-    e.toLinearMap p ∈ openSimplex n :=
-  ⟨fun j ↦ mul_pos (hp.1 _) (e.q_pos j), (e.sum_toLinearMap_apply p).trans hp.2⟩
+/-- A congruent embedding maps the open simplex on `Fin m` into the open simplex on `Fin n`. -/
+theorem toLinearMap_mem_openStdSimplex {p : Fin m → ℝ} (hp : p ∈ openStdSimplex ℝ (Fin m)) :
+    e.toLinearMap p ∈ openStdSimplex ℝ (Fin n) := by
+  rw [mem_openStdSimplex_iff_sum_eq_one] at hp ⊢
+  exact ⟨fun j ↦ mul_pos (hp.1 _) (e.q_pos j), (e.sum_toLinearMap_apply p).trans hp.2⟩
 
 /-- A congruent embedding maps tangent vectors of `S_m` to tangent vectors of `S_n`. -/
 theorem toLinearMap_mem_simplexTangent {u : Fin m → ℝ} (hu : u ∈ simplexTangent m) :
@@ -355,9 +373,10 @@ theorem toLinearMap_mem_simplexTangent {u : Fin m → ℝ} (hu : u ∈ simplexTa
   rw [mem_simplexTangent] at hu ⊢
   rw [e.sum_toLinearMap_apply, hu]
 
-/-- `CongruentEmbedding.toLinearMap_mem_openSimplex` as a `Set.MapsTo` statement. -/
-theorem mapsTo_toLinearMap_openSimplex : Set.MapsTo e.toLinearMap (openSimplex m) (openSimplex n) :=
-  fun _ ↦ e.toLinearMap_mem_openSimplex
+/-- `CongruentEmbedding.toLinearMap_mem_openStdSimplex` as a `Set.MapsTo` statement. -/
+theorem mapsTo_toLinearMap_openStdSimplex :
+    Set.MapsTo e.toLinearMap (openStdSimplex ℝ (Fin m)) (openStdSimplex ℝ (Fin n)) :=
+  fun _ ↦ e.toLinearMap_mem_openStdSimplex
 
 /-- `CongruentEmbedding.toLinearMap_mem_simplexTangent` as a submodule inclusion. -/
 theorem simplexTangent_le_comap_toLinearMap :
@@ -389,6 +408,16 @@ theorem toLinearMap_ofPerm_apply (σ : Equiv.Perm (Fin m)) (p : Fin m → ℝ) :
   ext j
   simp [ofPerm]
 
+/-- Every congruent self-embedding with unit weights is the embedding of a permutation: its
+block map is a surjection of `Fin m` onto itself, hence a bijection. -/
+theorem exists_eq_ofPerm (e : CongruentEmbedding m m) (he : e.q = 1) :
+    ∃ σ : Equiv.Perm (Fin m), e = ofPerm σ := by
+  refine ⟨Equiv.ofBijective e.block ⟨Finite.injective_iff_surjective.2 e.surjective,
+    e.surjective⟩, ?_⟩
+  cases e
+  subst he
+  rfl
+
 /-- The congruent embedding of the identity permutation has the identity map. -/
 @[simp]
 theorem toLinearMap_ofPerm_refl : (ofPerm (Equiv.refl (Fin m))).toLinearMap = LinearMap.id :=
@@ -400,6 +429,7 @@ end CongruentEmbedding
 
 /-- **Invariance of the Fisher–Rao metric** under congruent embeddings, at every `p` and for all
 `u`, `v`. -/
+@[simp]
 theorem fisherRao_congruentEmbedding {m n : ℕ} (e : CongruentEmbedding m n) (p u v : Fin m → ℝ) :
     fisherRao (e.toLinearMap p) (e.toLinearMap u) (e.toLinearMap v) = fisherRao p u v := by
   -- The summand at `j` is the summand at `block j` times `q j`, also where `p (block j) = 0`.
@@ -413,6 +443,7 @@ theorem fisherRao_congruentEmbedding {m n : ℕ} (e : CongruentEmbedding m n) (p
 
 /-- **Invariance of the Amari–Chentsov tensor** under congruent embeddings, at every `p` and for
 all `u`, `v`, `w`. -/
+@[simp]
 theorem amariChentsov_congruentEmbedding {m n : ℕ} (e : CongruentEmbedding m n)
     (p u v w : Fin m → ℝ) :
     amariChentsov (e.toLinearMap p) (e.toLinearMap u) (e.toLinearMap v) (e.toLinearMap w) =
