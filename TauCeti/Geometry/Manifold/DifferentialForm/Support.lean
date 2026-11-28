@@ -31,6 +31,11 @@ A locally finite partition of unity has only finitely many terms meeting a compa
 The weights give a finite decomposition; containment in charts requires subordination separately.
 Extension by zero in a chart preserves compact support when the form is supported inside that
 chart; on its target the extension has the same germ within the model range.
+
+The restriction of a rough form to a set `s`, extended by zero (`TauCeti.RoughForm.indicator`), has
+support in both the support of the form and the closure of `s`, and pulls back along any map to
+the restriction of the pulled back form to the preimage of `s`
+(`TauCeti.RoughForm.mpullback_indicator`).
 -/
 
 public section
@@ -160,6 +165,90 @@ theorem tsupport_mpullback_eq_preimage (φ : RoughForm I' Y F k) {f : X → Y} (
   -- fibre types obstruct rewriting with `ContinuousAlternatingMap.coe_zero`.
   exact h.trans rfl
 
+section Indicator
+
+/-- The restriction of a rough form to a set `s`, extended by zero: it agrees with `ω` at the
+points of `s` and vanishes at the others. -/
+def indicator (s : Set X) (ω : RoughForm I X F k) : RoughForm I X F k :=
+  (s.indicator (ω : X → E [⋀^Fin k]→L[ℝ] F) : X → E [⋀^Fin k]→L[ℝ] F)
+
+/-- The restriction of `ω` to `s` is the indicator function of `s` applied to the underlying
+function of `ω`. -/
+theorem indicator_def (s : Set X) (ω : RoughForm I X F k) :
+    ω.indicator s = (s.indicator (ω : X → E [⋀^Fin k]→L[ℝ] F) : X → E [⋀^Fin k]→L[ℝ] F) :=
+  (rfl)
+
+/-- The restriction of `ω` to `s` takes the value `ω x` at the points `x` of `s` and `0` at the
+others. -/
+theorem indicator_apply (s : Set X) (ω : RoughForm I X F k) (x : X) [Decidable (x ∈ s)] :
+    ω.indicator s x = if x ∈ s then ω x else 0 :=
+  Set.indicator_apply (M := E [⋀^Fin k]→L[ℝ] F) s ω x
+
+@[simp]
+theorem indicator_apply_of_mem {s : Set X} (ω : RoughForm I X F k) {x : X} (hx : x ∈ s) :
+    ω.indicator s x = ω x :=
+  Set.indicator_of_mem (M := E [⋀^Fin k]→L[ℝ] F) hx ω
+
+@[simp]
+theorem indicator_apply_of_notMem {s : Set X} (ω : RoughForm I X F k) {x : X} (hx : x ∉ s) :
+    ω.indicator s x = 0 :=
+  Set.indicator_of_notMem (M := E [⋀^Fin k]→L[ℝ] F) hx ω
+
+@[simp]
+theorem indicator_univ (ω : RoughForm I X F k) : ω.indicator univ = ω :=
+  Set.indicator_univ (M := E [⋀^Fin k]→L[ℝ] F) ω
+
+@[simp]
+theorem indicator_empty (ω : RoughForm I X F k) : ω.indicator ∅ = 0 :=
+  Set.indicator_empty (M := E [⋀^Fin k]→L[ℝ] F) ω
+
+@[simp]
+theorem indicator_zero (s : Set X) : (0 : RoughForm I X F k).indicator s = 0 :=
+  Set.indicator_zero (E [⋀^Fin k]→L[ℝ] F) s
+
+@[simp]
+theorem indicator_add [ContinuousAdd F] (s : Set X) (ω η : RoughForm I X F k) :
+    (ω + η).indicator s = ω.indicator s + η.indicator s :=
+  Set.indicator_add (M := E [⋀^Fin k]→L[ℝ] F) s ω η
+
+@[simp]
+theorem indicator_smul [ContinuousConstSMul ℝ F] (s : Set X) (c : ℝ) (ω : RoughForm I X F k) :
+    (c • ω).indicator s = c • ω.indicator s :=
+  -- `Set.indicator_const_smul` needs `SMulZeroClass`, which the model fibre only has when `F` has
+  -- continuous addition; scaling by `c` fixes `0`, which is all the indicator needs.
+  Set.indicator_comp_of_zero (M := E [⋀^Fin k]→L[ℝ] F) (g := (c • ·)) (by ext; simp)
+
+/-- The support of the restriction of `ω` to `s` is the part of the support of `ω` in `s`. -/
+@[simp]
+theorem support_indicator (s : Set X) (ω : RoughForm I X F k) :
+    Function.support (M := E [⋀^Fin k]→L[ℝ] F) (ω.indicator s) =
+      s ∩ Function.support (M := E [⋀^Fin k]→L[ℝ] F) ω :=
+  Set.support_indicator (M := E [⋀^Fin k]→L[ℝ] F)
+
+/-- The support of a restriction is contained in the support of the form. -/
+theorem tsupport_indicator_subset (s : Set X) (ω : RoughForm I X F k) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (ω.indicator s) ⊆
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) ω :=
+  closure_mono ((support_indicator s ω).trans_subset inter_subset_right)
+
+/-- The support of a restriction to `s` is contained in the closure of `s`. -/
+theorem tsupport_indicator_subset_closure (s : Set X) (ω : RoughForm I X F k) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (ω.indicator s) ⊆ closure s :=
+  closure_mono (Set.support_indicator_subset (M := E [⋀^Fin k]→L[ℝ] F))
+
+/-- Pulling back the restriction of a form to `s` gives the restriction of the pulled back form to
+the preimage of `s`. -/
+theorem mpullback_indicator (f : X → Y) (s : Set Y) (ω : RoughForm I' Y F k) :
+    mpullback I I' f (ω.indicator s) = (mpullback I I' f ω).indicator (f ⁻¹' s) := by
+  funext x
+  by_cases hx : f x ∈ s
+  · rw [indicator_apply_of_mem _ (mem_preimage.mpr hx)]
+    exact mpullback_apply_congr (indicator_apply_of_mem ω hx)
+  · rw [indicator_apply_of_notMem _ fun h ↦ hx (mem_preimage.mp h)]
+    exact mpullback_apply_eq_zero (indicator_apply_of_notMem ω hx)
+
+end Indicator
+
 end RoughForm
 
 end TauCeti
@@ -203,6 +292,27 @@ theorem isCompact_tsupport_of_eq_mpullback (hfe : EqOn f e e.source) {φ : Rough
   (hφ.image_of_continuousOn (e.continuousOn_symm.mono hφt)).of_isClosed_subset
     (_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] F) _)
     fun x hx ↦ ⟨e x, e.mapsTo_tsupport_of_eq_mpullback hfe hψ hψφ hx, e.left_inv (hψ hx)⟩
+
+/-- Let `e` be an open partial homeomorphism agreeing with a map `f` on its source, and let `φ` be
+a form with compact support in the target of `e`. On a Hausdorff space, a form `ψ` vanishing off the
+source of `e` and agreeing there with `f^*φ`, such as `f^*φ` extended by zero off the source, is
+supported in the source of `e`. -/
+theorem tsupport_subset_source_of_eq_mpullback [T2Space X] (hfe : EqOn f e e.source)
+    {φ : RoughForm I' Y F k} {ψ : RoughForm I X F k}
+    (hφ : IsCompact (_root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ))
+    (hφt : _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ ⊆ e.target)
+    (hψ0 : ∀ x ∉ e.source, ψ x = 0) (hψφ : ∀ x ∈ e.source, ψ x = mpullback I I' f φ x) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) ψ ⊆ e.source := by
+  -- `ψ` vanishes off the source and `f^*φ` vanishes off the preimage of the support of `φ`, so
+  -- the support of `ψ` lies in the image of the support of `φ` under the inverse of `e`. That set
+  -- is compact, hence closed, and lies in the source.
+  have hK := hφ.image_of_continuousOn (e.continuousOn_symm.mono hφt)
+  refine (closure_minimal (fun x hx ↦ ?_) hK.isClosed).trans
+    (image_subset_iff.mpr fun q hq ↦ e.map_target (hφt hq))
+  have hxs : x ∈ e.source := by_contra fun h ↦ hx (hψ0 x h)
+  have hfx : f x ∈ _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ := by_contra fun h ↦
+    hx ((hψφ x hxs).trans (mpullback_apply_eq_zero (image_eq_zero_of_notMem_tsupport h)))
+  exact ⟨f x, hfx, by rw [hfe hxs, e.left_inv hxs]⟩
 
 end OpenPartialHomeomorph
 
@@ -272,7 +382,7 @@ theorem exists_finset_partition_eq (φ : RoughForm I M F k) (hc : IsCompact
       simp [hρ]
 
 /-- Weights summing to one on the support give an actual finite form decomposition. -/
-theorem eq_sum_fun_smul {n : ℕ} (φ : RoughForm I M F k) (ρ : Fin n → M → ℝ)
+theorem eq_sum_fun_smul [Fintype ι] (φ : RoughForm I M F k) (ρ : ι → M → ℝ)
     (hρ : ∀ x ∈ (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ), ∑ i, ρ i x = 1) :
     φ = (fun x ↦ ∑ i, ρ i x • φ x) := by
   funext x

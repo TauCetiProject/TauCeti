@@ -76,6 +76,55 @@ theorem isIdempotentElem_zigzagVertexIdempotent (i : V) :
     IsIdempotentElem (zigzagVertexIdempotent k G i) :=
   zigzagMk_vertexIdempotent_mul_self k G i
 
+/-- The vertex idempotent has degree zero. -/
+theorem zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero (i : V) :
+    zigzagVertexIdempotent k G i ∈ zigzagIntegerGrade k G 0 := by
+  -- Normalize the integer zero to the cast required by the extension-by-zero lemma.
+  rw [show (0 : ℤ) = (0 : ℕ) from rfl, zigzagIntegerGrade_ofNat]
+  exact zigzagMk_mem_zigzagGrade k G (PathAlgebra.vertexIdempotent_mem_grade_zero _)
+
+/-- On the left, a vertex idempotent cuts an element of path length two down to its volume
+coordinate at that vertex. -/
+theorem zigzagMk_vertexIdempotent_mul_of_mem_zigzagIntegerGrade_two
+    (hns : ∀ i : V, ∃ j, G.Adj i j) {y : nonisolatedZigzagQuotient k G}
+    (hy : y ∈ zigzagIntegerGrade k G 2) (v : V) :
+    zigzagMk k G (vertexIdempotent k (vertex G v)) * y =
+      (zigzagBasis k G hns).coord (.inr (.inr v)) y • zigzagVolume k G v := by
+  classical
+  rw [← Nat.cast_ofNat (R := ℤ) (n := 2), zigzagIntegerGrade_ofNat,
+    zigzagGrade_two_eq_span_range_zigzagVolume] at hy
+  induction hy using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨v', rfl⟩ := hx
+    rw [zigzagBasis_coord_zigzagVolume]
+    rcases eq_or_ne v' v with rfl | h
+    · simp
+    · rw [zigzagMk_vertexIdempotent_mul_zigzagVolume_of_ne k G h.symm, ite_eq_right h, zero_smul]
+  | zero => simp
+  | add x y _ _ hx hy => rw [mul_add, hx, hy, map_add, add_smul]
+  | smul r x _ hx => rw [mul_smul_comm, hx, map_smul, smul_eq_mul, mul_smul]
+
+/-- On the right, a vertex idempotent cuts an element of path length two down to its volume
+coordinate at that vertex. -/
+theorem mul_zigzagMk_vertexIdempotent_of_mem_zigzagIntegerGrade_two
+    (hns : ∀ i : V, ∃ j, G.Adj i j) {y : nonisolatedZigzagQuotient k G}
+    (hy : y ∈ zigzagIntegerGrade k G 2) (v : V) :
+    y * zigzagMk k G (vertexIdempotent k (vertex G v)) =
+      (zigzagBasis k G hns).coord (.inr (.inr v)) y • zigzagVolume k G v := by
+  classical
+  rw [← Nat.cast_ofNat (R := ℤ) (n := 2), zigzagIntegerGrade_ofNat,
+    zigzagGrade_two_eq_span_range_zigzagVolume] at hy
+  induction hy using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨v', rfl⟩ := hx
+    rw [zigzagBasis_coord_zigzagVolume]
+    rcases eq_or_ne v' v with rfl | h
+    · simp
+    · rw [zigzagVolume_mul_zigzagMk_vertexIdempotent_of_ne k G h.symm, ite_eq_right h, zero_smul]
+  | zero => simp
+  | add x y _ _ hx hy => rw [add_mul, hx, hy, map_add, add_smul]
+  | smul r x _ hx => rw [smul_mul_assoc, hx, map_smul, smul_eq_mul, mul_smul]
+
 /-- The left projective of the zigzag relation quotient at `i`, namely the principal left ideal
 `Z e_i`. -/
 noncomputable def zigzagProjective (i : V) : Ideal (nonisolatedZigzagQuotient k G) :=

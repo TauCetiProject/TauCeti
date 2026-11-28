@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
+public import Mathlib.Algebra.Module.LinearMap.Polynomial
 public import Mathlib.LinearAlgebra.Matrix.Rank
+public import TauCeti.LinearAlgebra.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Projectivization.Basic
 public import TauCeti.RingTheory.MvPolynomial.DualNumber
 
@@ -31,6 +33,17 @@ column in terms of the others, so the chart Jacobian at the coordinate ratios ha
 and rank as the cone Jacobian at the homogeneous coordinates. In particular full rank can be
 tested in any standard chart containing the point, and the answer is independent of the chart.
 
+For a square family `p : σ → MvPolynomial σ R`, the Jacobian determinant `TauCeti.jacobian p` is
+the polynomial `det (∂(p i)/∂X_j)`. Its value at a point is the determinant of the Jacobian
+matrix there, it commutes with change of coefficients, and reordering the equations changes it
+by a sign. Inverting it on the zero locus of `p` gives the Jacobian-open algebra of the system.
+
+Joining two families stacks their Jacobian matrices, and a family of linear forms
+`Matrix.toMvPolynomial M` has the constant Jacobian matrix `M`. So adding the equation of a
+hyperplane `ℓ = 0` to a family of full rank at `v` keeps the rank full exactly when `ℓ` is not a
+linear combination of the rows of `J_p(v)`, the gradients of the equations: this is the
+transversality test for hyperplane sections.
+
 The Jacobian matrix is also the infinitesimal part of evaluation at a dual-number point: evaluating
 `p` at `v + ε w` with `ε² = 0` gives `p(v) + ε J_p(v) w`. This turns the computation of a
 Jacobian into a computation of values, which is convenient when `p` is built from matrix
@@ -42,6 +55,9 @@ products, as the multiplicativity of evaluation then replaces the Leibniz rule.
 * `TauCeti.jacobiMatrixAt_mulVec_apply_eq_snd_aeval`: `p(v + ε w) = p(v) + ε J_p(v) w` over
   the dual numbers, from `MvPolynomial.aeval_inl_add_inr`.
 * `TauCeti.jacobiMatrixAt_smul`: `J_p(t • v) = diag(t ^ (d_i - 1)) J_p(v)`.
+* `TauCeti.eval_jacobian`, `TauCeti.aeval_jacobian`, `TauCeti.map_jacobian`: the Jacobian
+  determinant evaluates to the determinant of the evaluated partial derivatives and commutes
+  with change of coefficients.
 * `TauCeti.rank_jacobiMatrixAt_eq_of_mk_eq_mk`,
   `TauCeti.mulVec_surjective_jacobiMatrixAt_iff_of_mk_eq_mk`: the rank, and so whether it is
   full, depends only on the projective point.
@@ -54,6 +70,11 @@ products, as the multiplicativity of evaluation then replaces the Leibniz rule.
   than the number of variables, so full rank needs fewer equations than variables.
 * `TauCeti.mulVec_surjective_jacobiMatrixAt_iff_exists_eval_pderiv_ne_zero`: a single equation
   has full rank exactly where some partial derivative does not vanish.
+* `TauCeti.jacobiMatrixAt_sumElim`, `TauCeti.jacobiMatrixAt_toMvPolynomial`: the Jacobian
+  matrix of a joined family is stacked, and that of a family of linear forms is its matrix.
+* `TauCeti.mulVec_surjective_jacobiMatrixAt_sumElim_toMvPolynomial_iff`: adding the equation of
+  the hyperplane `ℓ = 0` to a family of full rank keeps full rank exactly when `ℓ` is not a
+  combination of the rows of the Jacobian matrix.
 
 ## References
 
@@ -84,6 +105,24 @@ noncomputable def jacobiMatrixAt (p : ι → MvPolynomial σ R) (v : σ → R) :
 @[simp]
 theorem jacobiMatrixAt_apply (p : ι → MvPolynomial σ R) (v : σ → R) (i : ι) (j : σ) :
     jacobiMatrixAt p v i j = eval v (pderiv j (p i)) := (rfl)
+
+/-- The Jacobian matrix of the union of two families of equations stacks their Jacobian
+matrices. -/
+@[simp]
+theorem jacobiMatrixAt_sumElim {κ : Type*} (p : ι → MvPolynomial σ R) (q : κ → MvPolynomial σ R)
+    (v : σ → R) :
+    jacobiMatrixAt (Sum.elim p q) v = (jacobiMatrixAt p v).fromRows (jacobiMatrixAt q v) := by
+  ext (i | i) j <;> simp
+
+/-- The Jacobian matrix of the family of linear forms `Matrix.toMvPolynomial M` is `M` at every
+point. -/
+@[simp]
+theorem jacobiMatrixAt_toMvPolynomial [Fintype σ] (M : Matrix ι σ R) (v : σ → R) :
+    jacobiMatrixAt M.toMvPolynomial v = M := by
+  classical
+  ext i j
+  simp [Matrix.toMvPolynomial, pderiv_monomial, Finsupp.single_apply, apply_ite,
+    Finset.sum_ite_eq']
 
 /-- **Euler's identity** for the Jacobian matrix of a family of homogeneous polynomials: applied
 to the point itself, it returns each equation's value scaled by its degree. -/
@@ -145,6 +184,53 @@ end CommSemiring
 section CommRing
 
 variable [CommRing R]
+
+section Jacobian
+
+variable [Fintype σ] [DecidableEq σ]
+
+/-- The Jacobian determinant of a square family of polynomials `p : σ → MvPolynomial σ R`: the
+determinant of the matrix of partial derivatives `∂(p i)/∂X_j`, with the equations indexing
+the rows and the variables indexing the columns. -/
+noncomputable def jacobian (p : σ → MvPolynomial σ R) : MvPolynomial σ R :=
+  (Matrix.of fun i j ↦ pderiv j (p i)).det
+
+theorem jacobian_eq_det (p : σ → MvPolynomial σ R) :
+    jacobian p = (Matrix.of fun i j ↦ pderiv j (p i)).det := (rfl)
+
+/-- Evaluating the Jacobian determinant in an `R`-algebra gives the determinant of the evaluated
+partial derivatives. -/
+theorem aeval_jacobian {A : Type*} [CommRing A] [Algebra R A] (x : σ → A)
+    (p : σ → MvPolynomial σ R) :
+    aeval x (jacobian p) = (Matrix.of fun i j ↦ aeval x (pderiv j (p i))).det := by
+  rw [jacobian_eq_det, AlgHom.map_det]
+  refine congrArg Matrix.det (Matrix.ext fun i j ↦ ?_)
+  simp
+
+/-- Evaluating the Jacobian determinant at a point gives the determinant of the Jacobian matrix
+at that point. -/
+theorem eval_jacobian (v : σ → R) (p : σ → MvPolynomial σ R) :
+    eval v (jacobian p) = (jacobiMatrixAt p v).det := by
+  rw [jacobian_eq_det, RingHom.map_det]
+  refine congrArg Matrix.det (Matrix.ext fun i j ↦ ?_)
+  simp
+
+/-- The Jacobian determinant commutes with change of coefficients. -/
+theorem map_jacobian {S : Type*} [CommRing S] (f : R →+* S) (p : σ → MvPolynomial σ R) :
+    map f (jacobian p) = jacobian fun i ↦ map f (p i) := by
+  rw [jacobian_eq_det, jacobian_eq_det, RingHom.map_det]
+  congr 1 with i j
+  simp [pderiv_map]
+
+/-- Reordering the equations multiplies the Jacobian determinant by the sign of the
+permutation. -/
+theorem jacobian_comp_perm (p : σ → MvPolynomial σ R) (e : Equiv.Perm σ) :
+    jacobian (p ∘ e) = Equiv.Perm.sign e * jacobian p := by
+  rw [jacobian_eq_det, jacobian_eq_det, ← det_permute]
+  refine congrArg Matrix.det (Matrix.ext fun i j ↦ ?_)
+  simp
+
+end Jacobian
 
 /-- Rescaling the point by a unit does not change the rank of the Jacobian matrix of a family of
 homogeneous equations. -/
@@ -286,6 +372,17 @@ theorem mulVec_surjective_jacobiMatrixAt_iff_exists_eval_pderiv_ne_zero [Unique 
     simpa [Matrix.mulVec, dotProduct, h0] using congrFun hx default
   · simp only [Unique.eq_default i, Matrix.mulVec_single]
     simp [field]
+
+/-- **Transversality of a hyperplane section.** At a point where the Jacobian matrix of `p` is
+onto, adding the equation of the hyperplane `ℓ = 0` keeps it onto exactly when `ℓ` is not a
+linear combination `c ᵥ* J_p(v)` of the gradients of the equations. -/
+theorem mulVec_surjective_jacobiMatrixAt_sumElim_toMvPolynomial_iff [Fintype ι] [Fintype σ]
+    {p : ι → MvPolynomial σ K} {v : σ → K} (hv : (jacobiMatrixAt p v).mulVec.Surjective)
+    (ℓ : σ → K) :
+    (jacobiMatrixAt (Sum.elim p (replicateRow Unit ℓ).toMvPolynomial) v).mulVec.Surjective ↔
+      ℓ ∉ Set.range (· ᵥ* jacobiMatrixAt p v) := by
+  rw [jacobiMatrixAt_sumElim, jacobiMatrixAt_toMvPolynomial]
+  exact mulVec_surjective_fromRows_replicateRow_iff hv ℓ
 
 end Field
 

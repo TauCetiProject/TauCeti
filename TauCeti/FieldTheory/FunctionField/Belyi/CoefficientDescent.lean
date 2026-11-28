@@ -13,22 +13,45 @@ public import TauCeti.FieldTheory.Minpoly.Lifts
 public import TauCeti.FieldTheory.Galois.FiniteIndex
 
 /-!
-# Descent of the equation of a pointed Belyi pair
+# Descent of a pointed Belyi pair to its pointed fixed field
 
-At a rational unbranched place of degree one, the generator of a Belyi pair normalized by its
-Laurent expansion is fixed by every semilinear automorphism fixing that place. Its minimal
-polynomial therefore has coefficients in the rational function field over the fixed field of
-the pointed stabilizer. This works even when the original constant field is transcendental over
-that fixed field, notably for subgroups of the automorphism group of `ℂ`.
+At an unbranched place of degree one over a finite point `t = q` with `q : ℚ` (`q ≠ 0, 1`), the
+generator of a Belyi pair normalized by its Laurent expansion is fixed by every semilinear
+automorphism fixing that place. Its minimal polynomial therefore has coefficients in the rational
+function field over the fixed field of the pointed stabilizer. This works even when the original
+constant field is transcendental over that fixed field, notably for subgroups of the automorphism
+group of `ℂ`.
 
-We identify this coefficient field, bound its degree over the field of moduli, and produce a
-primitive element whose minimal polynomial descends to it. This is descent of an equation;
-unramifiedness and exactness of constants for a descended Belyi pair are not asserted here.
+We identify this coefficient field `K = X.pointedFieldOfModuli P`, bound its degree over the field
+of moduli, show it equals the field of moduli in the Galois case
+(`pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_restrict_eq_adicOfIrreducible`, as a
+specialization of `pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_forall_restrict_eq` in
+`TauCeti.AlgebraicBelyiPair`), and produce a primitive element `z` whose minimal polynomial descends
+to `K(t)` and whose adjoined extension `K(t, z)` has the same degree over `K(t)` as the function
+field over `k(t)` (`exists_generator_finrank_adjoin_eq`). Promoting this descended equation to a
+model over `K` and deducing Köck's Theorem 2.2 is carried out in
+`TauCeti.FieldTheory.FunctionField.Belyi.Model.ModuliDescent`.
+
+## Main definitions
+
+* `TauCeti.AlgebraicBelyiPair.pointedFieldOfModuli`: the fixed field of the pointed stabilizer of
+  a place.
+
+## Main results
+
+* `TauCeti.AlgebraicBelyiPair.relfinrank_pointedFieldOfModuli_le`: over a finite point `t = q`
+  with `q : ℚ`, the pointed fixed field has degree at most the Belyi degree over the field of
+  moduli.
+* `pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_restrict_eq_adicOfIrreducible` (in
+  `TauCeti.AlgebraicBelyiPair`): for a Galois Belyi pair, the pointed fixed field at a place over
+  `t = q` (`q : ℚ`) equals the field of moduli.
+* `TauCeti.AlgebraicBelyiPair.exists_generator_finrank_adjoin_eq`: a primitive element whose
+  equation descends to the pointed fixed field, with the original degree.
 
 ## References
 
 * B. Köck, *Belyi's theorem revisited*, Beiträge zur Algebra und Geometrie 45 (2004), 253–265,
-  proof of (2.2) Theorem.
+  (2.2) Theorem and its proof.
 -/
 
 public section
@@ -63,9 +86,9 @@ theorem fieldOfModuli_le_pointedFieldOfModuli (P : Place k X) :
   rw [IsoClass.fieldOfModuli_def, pointedFieldOfModuli]
   exact IntermediateField.fixedField_le (X.pointedStabilizer_le_stabilizer P)
 
-/-- Over a rational point, the pointed fixed field has positive relative finrank over the
-field of moduli, so it is a finite extension. The original constant field can be transcendental
-over both fields. -/
+/-- Over a finite point `t = q` with `q : ℚ`, the pointed fixed field has positive relative finrank
+over the field of moduli, so it is a finite extension. The original constant field can be
+transcendental over both fields. -/
 theorem relfinrank_pointedFieldOfModuli_pos {P : Place k X} {q : ℚ}
     (hP : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k))) :
     0 < (IsoClass.mk X).fieldOfModuli.relfinrank (X.pointedFieldOfModuli P) := by
@@ -76,8 +99,9 @@ theorem relfinrank_pointedFieldOfModuli_pos {P : Place k X} {q : ℚ}
     (X.pointedStabilizer_le_stabilizer P) (X.relIndex_pointedStabilizer_ne_zero hP)
   exact Module.finrank_pos
 
-/-- Over a rational point, the pointed fixed field has degree at most the degree of the cover
-over the field of moduli. No algebraicity of the original constant field is required. -/
+/-- Over a finite point `t = q` with `q : ℚ`, the degree of the pointed fixed field over the
+field of moduli is at most the Belyi degree `[X : k(t)]`. No algebraicity of the original constant
+field is required. -/
 theorem relfinrank_pointedFieldOfModuli_le {P : Place k X} {q : ℚ}
     (hP : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k))) :
     (IsoClass.mk X).fieldOfModuli.relfinrank (X.pointedFieldOfModuli P) ≤
@@ -85,6 +109,24 @@ theorem relfinrank_pointedFieldOfModuli_le {P : Place k X} {q : ℚ}
   rw [IsoClass.fieldOfModuli_def, pointedFieldOfModuli]
   exact (IntermediateField.relfinrank_fixedField_le_relIndex (X.pointedStabilizer_le_stabilizer P)
     (X.relIndex_pointedStabilizer_ne_zero hP)).trans (X.relIndex_pointedStabilizer_le_finrank hP)
+
+/-- **For a Galois Belyi pair, the pointed field of moduli at any place whose fibre over `k(t)`
+is preserved by semilinear automorphisms is the field of moduli of the pair.** -/
+theorem pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_forall_restrict_eq
+    [IsGalois (RatFunc k) X] {P : Place k X}
+    (hfib : ∀ p : X.semilinearAut, (p • P).restrict k (RatFunc k) = P.restrict k (RatFunc k)) :
+    X.pointedFieldOfModuli P = (IsoClass.mk X).fieldOfModuli := by
+  rw [pointedFieldOfModuli_def, IsoClass.fieldOfModuli_def,
+    X.pointedStabilizer_eq_stabilizer_of_isGalois_of_forall_restrict_eq hfib]
+
+/-- **For a Galois Belyi pair, the pointed field of moduli at any place over a finite point
+`t = q` with `q : ℚ` is the field of moduli of the pair.** -/
+theorem pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_restrict_eq_adicOfIrreducible
+    [IsGalois (RatFunc k) X] {P : Place k X} {q : ℚ}
+    (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k))) :
+    X.pointedFieldOfModuli P = (IsoClass.mk X).fieldOfModuli :=
+  X.pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_forall_restrict_eq
+    (restrict_smul_eq_of_restrict_eq_adicOfIrreducible hPa)
 
 variable {X} {P : Place k X} {q : ℚ}
   (hq₀ : (q : k) ≠ 0) (hq₁ : (q : k) ≠ 1)
@@ -136,13 +178,15 @@ theorem minpoly_mem_lifts_of_normalized
 
 end Normalized
 
+section Equation
+
 include hq₀ hq₁ hPa hP
 
 variable [Algebra (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k)]
 
-/-- At a rational unbranched place of degree one there is a primitive element whose equation
-descends to the pointed fixed field. In particular this produces a descended equation, rather
-than requiring invariance of an equation as a hypothesis. -/
+/-- At a degree-one place over a finite point `t = q` with `q : ℚ` and `q ≠ 0, 1`, there is a
+primitive element whose equation descends to the pointed fixed field. In particular this produces a
+descended equation, rather than requiring invariance of an equation as a hypothesis. -/
 theorem exists_generator_minpoly_mem_lifts
     (hC : ∀ c : X.pointedFieldOfModuli P,
       algebraMap (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k) (RatFunc.C c) = RatFunc.C (c : k))
@@ -179,5 +223,7 @@ theorem exists_generator_finrank_adjoin_eq
   refine ⟨z, hgen, hz', minpoly.map_algebraMap hz' hlift, ?_⟩
   rw [IntermediateField.finrank_adjoin_simple_eq_of_minpoly_mem_lifts hlift, hgen,
     IntermediateField.finrank_top']
+
+end Equation
 
 end TauCeti.AlgebraicBelyiPair

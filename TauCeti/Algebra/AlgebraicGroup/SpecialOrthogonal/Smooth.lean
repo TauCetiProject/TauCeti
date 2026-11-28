@@ -80,17 +80,9 @@ private instance instFormallySmoothCoordinateHopfAlgebra [Invertible (2 : R)] :
 instance instSmoothCoordinateHopfAlgebra [Invertible (2 : R)] :
     Algebra.Smooth R (coordinateHopfAlgebra R n) := by
   have hfg : (definingHopfIdeal R n).toIdeal.FG := by
-    rw [definingHopfIdeal_toIdeal]
-    apply Submodule.FG.sup
-    · apply Submodule.fg_span
-      let f := fun ij : Fin n × Fin n ↦ Orthogonal.relationMatrix R n ij.1 ij.2
-      refine (Set.finite_range f).subset ?_
-      intro x hx
-      obtain ⟨i, j, hij⟩ :=
-        (ConstantForm.mem_relationSet_iff
-          (R := R) (n := n) (C := (1 : Matrix (Fin n) (Fin n) R))).mp hx
-      exact ⟨(i, j), hij⟩
-    · exact Submodule.fg_span_singleton _
+    rw [definingHopfIdeal_def, HopfIdeal.sup_toIdeal, SpecialLinear.definingHopfIdeal_toIdeal]
+    exact Submodule.FG.sup (ConstantForm.definingHopfIdeal_toIdeal_fg R n _)
+      (Submodule.fg_span_singleton _)
   let _ : Algebra.FinitePresentation R (coordinateHopfAlgebra R n) :=
     Algebra.FinitePresentation.quotient hfg
   exact ⟨inferInstance, inferInstance⟩

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.ChainComplex
-public import TauCeti.Geometry.Manifold.Morse.Boundary.Continuation
+public import TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Basic
 import TauCeti.Data.Set.Card
 
 /-!
@@ -43,7 +43,9 @@ trajectories at the two ends are evenly many in total
 (`TauCeti.morseBoundary_comp_morseContinuationMap_eq_iff`). The geometric half, that the broken
 continuation trajectories are the ends of the compactified one-dimensional spaces of continuation
 trajectories between critical points whose indices differ by one, needs the compactification and
-gluing of those spaces in the slab, and is not proved here.
+gluing of those spaces in the slab, and is not proved here; for a transverse continuation, the
+parity is proved in `TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.ChainMap` through the
+broken configurations of a transported Morse–Smale pair.
 
 The continuation map preserves the Morse index, so it restricts to the graded chains
 (`TauCeti.morseContinuationMapAt`, `TauCeti.mapDomain_morseContinuationMapAt`); when it commutes
@@ -183,26 +185,23 @@ theorem morseContinuationMap_morseBoundary_single_apply (p : criticalPoints 𝓘
     (hfin : (morseSourceBrokenContinuationSet f₁ V hX₀ p r).Finite) :
     morseContinuationMap f₀ hf₁ V (h₀.morseBoundary hf₀ (Finsupp.single p 1)) r =
       ((morseSourceBrokenContinuationSet f₁ V hX₀ p r).ncard : ZMod 2) := by
-  classical
   have := hf₀.finite_criticalPoints.to_subtype
   have := Fintype.ofFinite (criticalPoints 𝓘(ℝ, E) f₀)
+  rw [morseContinuationMap_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _,
+    morseSourceBrokenContinuationSet]
   -- Sort the broken trajectories by their intermediate critical point `p'`. The index conditions
   -- and slice families are named because unification cannot read them off `hfin`.
-  rw [morseSourceBrokenContinuationSet, ncard_setOf_and_and_mem_and_mem
-      (P := fun p' : criticalPoints 𝓘(ℝ, E) f₀ ↦
-        manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₀ p' + 1)
-      (Q := fun p' ↦ manifoldMorseIndex 𝓘(ℝ, E) f₀ p' = manifoldMorseIndex 𝓘(ℝ, E) f₁ r)
-      (A := (hX₀.morseTrajectorySlice p ·)) (B := (morseContinuationSlice V · r)) hfin,
-    Nat.cast_sum, Finset.sum_filter, morseContinuationMap_apply,
-    Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _]
-  refine Finset.sum_congr rfl fun p' _ ↦ ?_
-  rw [IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_single_apply, one_mul]
-  split_ifs with hind
-  · rw [h₀.morseBoundaryCoeff_eq_ncard hf₀ hind.1, morseContinuationCoeff_eq_ncard hind.2,
-      Nat.cast_mul]
-  · rcases not_and_or.mp hind with hpp' | hp'r
-    · simp [hpp']
-    · simp [hp'r]
+  refine (natCast_ncard_setOf_and_and_mem_and_mem
+    (P := fun p' : criticalPoints 𝓘(ℝ, E) f₀ ↦
+      manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₀ p' + 1)
+    (Q := fun p' ↦ manifoldMorseIndex 𝓘(ℝ, E) f₀ p' = manifoldMorseIndex 𝓘(ℝ, E) f₁ r)
+    (A := (hX₀.morseTrajectorySlice p ·)) (B := (morseContinuationSlice V · r)) (fun p' hind ↦ ?_)
+    (fun p' hind ↦ ?_) (fun _ ↦ morseContinuationCoeff_eq_ncard)
+    (fun _ ↦ morseContinuationCoeff_eq_zero_of_manifoldMorseIndex_ne) hfin).symm
+  · rw [IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_single_apply, one_mul,
+      h₀.morseBoundaryCoeff_eq_ncard hf₀ hind]
+  · rw [IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_single_apply, one_mul,
+      h₀.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf₀ hind]
 
 include h₁ in
 /-- **`∂₁ ∘ Φ` counts continuation trajectories broken at the target.** When they are finitely
@@ -213,25 +212,21 @@ theorem morseBoundary_morseContinuationMap_single_apply (p : criticalPoints 𝓘
     (hfin : (morseTargetBrokenContinuationSet f₀ V hX₁ p r).Finite) :
     h₁.morseBoundary hf₁ (morseContinuationMap f₀ hf₁ V (Finsupp.single p 1)) r =
       ((morseTargetBrokenContinuationSet f₀ V hX₁ p r).ncard : ZMod 2) := by
-  classical
   have := hf₁.finite_criticalPoints.to_subtype
   have := Fintype.ofFinite (criticalPoints 𝓘(ℝ, E) f₁)
+  rw [IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_apply,
+    Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _, morseTargetBrokenContinuationSet]
   -- Sort the broken trajectories by their intermediate critical point `q'`.
-  rw [morseTargetBrokenContinuationSet, ncard_setOf_and_and_mem_and_mem
-      (P := fun q' : criticalPoints 𝓘(ℝ, E) f₁ ↦
-        manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₁ q')
-      (Q := fun q' ↦ manifoldMorseIndex 𝓘(ℝ, E) f₁ q' = manifoldMorseIndex 𝓘(ℝ, E) f₁ r + 1)
-      (A := (morseContinuationSlice V p ·)) (B := (hX₁.morseTrajectorySlice · r)) hfin,
-    Nat.cast_sum, Finset.sum_filter, IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_apply,
-    Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _]
-  refine Finset.sum_congr rfl fun q' _ ↦ ?_
-  rw [morseContinuationMap_single_apply, one_mul]
-  split_ifs with hind
-  · rw [morseContinuationCoeff_eq_ncard hind.1, h₁.morseBoundaryCoeff_eq_ncard hf₁ hind.2,
-      Nat.cast_mul]
-  · rcases not_and_or.mp hind with hpq' | hq'r
-    · simp [hpq']
-    · simp [hq'r]
+  refine (natCast_ncard_setOf_and_and_mem_and_mem
+    (P := fun q' : criticalPoints 𝓘(ℝ, E) f₁ ↦
+      manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₁ q')
+    (Q := fun q' ↦ manifoldMorseIndex 𝓘(ℝ, E) f₁ q' = manifoldMorseIndex 𝓘(ℝ, E) f₁ r + 1)
+    (A := (morseContinuationSlice V p ·)) (B := (hX₁.morseTrajectorySlice · r)) (fun q' hind ↦ ?_)
+    (fun q' hind ↦ ?_) (fun _ ↦ h₁.morseBoundaryCoeff_eq_ncard hf₁)
+    (fun _ ↦ h₁.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf₁) hfin).symm
+  · rw [morseContinuationMap_single_apply, one_mul, morseContinuationCoeff_eq_ncard hind]
+  · rw [morseContinuationMap_single_apply, one_mul,
+      morseContinuationCoeff_eq_zero_of_manifoldMorseIndex_ne hind]
 
 include h₀ hf₀ h₁ in
 /-- **The continuation map is a chain map exactly when broken continuation trajectories come in

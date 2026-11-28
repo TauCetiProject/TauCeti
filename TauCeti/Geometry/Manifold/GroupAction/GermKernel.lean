@@ -68,6 +68,8 @@ two origins is smooth, has order two, and is the identity off the origins, but n
   fixed set of a finite-order element acting by a `C¹` map is clopen.
 * `TauCeti.subset_interior_fixedBy_of_isPreconnected`: the identity principle on a preconnected
   set.
+* `TauCeti.interior_fixedBy_eq_empty`: a finite-order element moving some point of a preconnected
+  manifold fixes no nonempty open set.
 * `TauCeti.germKernel_eq_of_isPreconnected`: the germ kernel of a group with torsion stabilizers
   acting by `C¹` maps is the same at all points of a preconnected set.
 * `TauCeti.germKernel_eq_ker`, `TauCeti.normal_germKernel`: on a preconnected manifold, the germ
@@ -207,6 +209,18 @@ theorem subset_interior_fixedBy_of_isPreconnected [T2Space M] (g : G) (hg : IsOf
     (hsmooth : ContMDiff I I 1 fun x : M ↦ g • x) {s : Set M} (hs : IsPreconnected s)
     (hne : (s ∩ interior (fixedBy M g)).Nonempty) : s ⊆ interior (fixedBy M g) :=
   hs.subset_isClopen (isClopen_interior_fixedBy g hg hsmooth) hne
+
+/-- **Nontrivial finite-order actions fix no open set.** On a preconnected Hausdorff manifold
+without boundary, an element `g` of finite order acting by a `C¹` map and moving some point fixes
+no nonempty open set: the interior of its fixed set is clopen, and it is not everything since `g`
+does not act trivially. -/
+theorem interior_fixedBy_eq_empty [T2Space M] [PreconnectedSpace M] {g : G}
+    (hg : IsOfFinOrder g) (hy : ∃ y : M, g • y ≠ y) (hsmooth : ContMDiff I I 1 fun x : M ↦ g • x) :
+    interior (fixedBy M g) = ∅ := by
+  by_contra hne
+  have huniv := (isClopen_interior_fixedBy g hg hsmooth).eq_univ (ne_empty_iff_nonempty.1 hne)
+  obtain ⟨y, hy⟩ := hy
+  exact hy (interior_subset (huniv ▸ mem_univ y : y ∈ interior (fixedBy M g)))
 
 /-- For a group with torsion stabilizers acting by `C¹` maps on a Hausdorff manifold without
 boundary, the germ kernel is the same at any two points of a preconnected set. -/

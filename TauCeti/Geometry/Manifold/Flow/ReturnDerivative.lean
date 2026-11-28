@@ -226,7 +226,7 @@ theorem mfderiv_flowTransition_apply_eq_zero :
     exact zero_apply _
   rw [← hvel]
   exact (mfderiv_comp_apply_of_eq (0 : ℝ) (mdifferentiableAt_flowTransition hv hT hg hgv)
-    (mdifferentiableAt_flowOf hv (mem_flowDomain_zero hv p)) (flowOf_zero v p) (1 : ℝ)).symm.trans
+    (mdifferentiableAt_flowOf hv (mem_flowDomain_zero (hv p))) (flowOf_zero v p) (1 : ℝ)).symm.trans
     hzero
 
 /-- **The derivative of a transition lands in the tangent space of the section.** The transition
@@ -253,9 +253,7 @@ theorem mfderiv_flowTransition_apply (w : TangentSpace I p) :
         mfderiv I I (flowOf v T) p w := by
   have hτ : MDifferentiableAt I 𝓘(ℝ) (flowHittingTime v g T p) p :=
     (contMDiffAt_flowHittingTime le_rfl hv hT hg hgv).mdifferentiableAt one_ne_zero
-  have hF : MDifferentiableAt (𝓘(ℝ).prod I) I (fun q : ℝ × M ↦ flowOf v q.1 q.2) (T, p) :=
-    ((contMDiffOn_flowOf le_rfl hv).contMDiffAt
-      ((isOpen_flowDomain hv).mem_nhds hT)).mdifferentiableAt one_ne_zero
+  have hF := mdifferentiableAt_flowOf_prod hv hT
   have hpair : MDifferentiableAt I (𝓘(ℝ).prod I) (fun z ↦ (flowHittingTime v g T p z, z)) p :=
     hτ.prodMk mdifferentiableAt_id
   -- The transition is the joint flow composed with `z ↦ (τ z, z)`; split the derivative of the
@@ -263,7 +261,8 @@ theorem mfderiv_flowTransition_apply (w : TangentSpace I p) :
   have key := mfderiv_comp_apply_of_eq p hF hpair (by rw [flowHittingTime_self]) w
   rw [mfderiv_prodMk (g := fun z ↦ z) hτ mdifferentiableAt_id] at key
   rw [flowTransition_def]
-  refine key.trans <| (mfderiv_flowOf_comp_apply (f := fun z ↦ z) hv contMDiffAt_id hT _).trans ?_
+  refine key.trans <|
+    (mfderiv_flowOf_comp_apply (f := fun z ↦ z) hv mdifferentiableAt_id hT _).trans ?_
   congr 1
   -- The second component of the derivative of `z ↦ (τ z, z)` is the identity.
   -- `mfderiv_id` is stated for `id`, so first rewrite the identity function to `id`.
@@ -306,7 +305,7 @@ theorem mfderiv_flowTransition_zero_apply (hg : ContMDiffAt I 𝓘(ℝ) 1 g p)
     (hgv : mvfderiv I g p (v p) ≠ 0) (w : TangentSpace I p) :
     mfderiv I I (flowTransition v g 0 p) p w =
       w - (mvfderiv I g p w / mvfderiv I g p (v p)) • v p := by
-  have h0 : ((0 : ℝ), p) ∈ flowDomain v := mem_flowDomain_zero hv p
+  have h0 : ((0 : ℝ), p) ∈ flowDomain v := mem_flowDomain_zero (hv p)
   have hp0 : flowOf v 0 p = p := flowOf_zero v p
   have hg0 : ContMDiffAt I 𝓘(ℝ) 1 g (flowOf v 0 p) := by rwa [hp0]
   have hgv0 : mvfderiv I g (flowOf v 0 p) (v (flowOf v 0 p)) ≠ 0 := by rwa [hp0]
@@ -393,7 +392,8 @@ theorem genEigenspace_returnDerivative_le_ker (hP : (T₀, p) ∈ flowDomain v)
     {μ : ℝ} (hμ : μ ≠ 0) (k : ℕ∞) :
     (returnDerivative v g T₀ p).genEigenspace μ k ≤
       LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ) :=
-  Module.End.genEigenspace_le_of_range_le (range_returnDerivative_le_ker hv hP hp hg hgv) hμ k
+  Module.End.genEigenspace_le_of_range_le (range_returnDerivative_le_ker hv hP hp hg hgv)
+    hμ.isUnit k
 
 /-- The eigenvectors of the linearized return map for a nonzero eigenvalue lie in the tangent space
 `ker dg_p` of the section. -/
@@ -471,7 +471,7 @@ theorem returnDerivative_comp_mfderiv_flowTransition :
       mfderiv I I (flowTransition v g' T p) p).toLinearMap =
     (show TangentSpace I p →L[ℝ] TangentSpace I q from
       mfderiv I I (flowTransition v g' T p) p).toLinearMap ∘ₗ returnDerivative v g T₀ p := by
-  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hT hP hp
+  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hP hp
   -- Both sides are derivatives of the transition at time `T + T₀ = T₀ + T`.
   have hq₀ := mfderiv_flowTransition_comp hv hT hq hg' hg'v hQ hq' hg' hg'v
   have hp₀ := mfderiv_flowTransition_comp hv hP hp hg hgv hT hq hg' hg'v
@@ -485,7 +485,7 @@ the same characteristic polynomial. Taking `q = p` and `T = 0`, two sections thr
 point give linearized return maps with the same characteristic polynomial. -/
 theorem charpoly_returnDerivative_eq :
     (returnDerivative v g T₀ p).charpoly = (returnDerivative v g' T₀ q).charpoly := by
-  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hT hP hp
+  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hP hp
   have hback : flowOf v (-T) q = p := hq ▸ flowOf_neg_flowOf hv hT
   have hTback : (-T, q) ∈ flowDomain v := hq ▸ neg_mem_flowDomain_flowOf hv hT
   -- Write `A`, `B` for the two return derivatives, `h` for the derivative of the transition from
@@ -497,14 +497,14 @@ theorem charpoly_returnDerivative_eq :
     rw [mfderiv_flowTransition_comp hv hT hq hg' hg'v hTback hback hg hgv, add_neg_cancel]
   have hA : mfderiv I I (flowTransition v g 0 p) p ∘L mfderiv I I (flowTransition v g T₀ p) p =
       mfderiv I I (flowTransition v g T₀ p) p := by
-    rw [mfderiv_flowTransition_comp hv hP hp hg hgv (mem_flowDomain_zero hv p) (flowOf_zero v p)
+    rw [mfderiv_flowTransition_comp hv hP hp hg hgv (mem_flowDomain_zero (hv p)) (flowOf_zero v p)
       hg hgv, add_zero]
   have hhh' : mfderiv I I (flowTransition v g' T p) p ∘L
       mfderiv I I (flowTransition v g (-T) q) q = mfderiv I I (flowTransition v g' 0 q) q := by
     rw [mfderiv_flowTransition_comp hv hTback hback hg hgv hT hq hg' hg'v, neg_add_cancel]
   have hB : mfderiv I I (flowTransition v g' T₀ q) q ∘L mfderiv I I (flowTransition v g' 0 q) q =
       mfderiv I I (flowTransition v g' T₀ q) q := by
-    rw [mfderiv_flowTransition_comp hv (mem_flowDomain_zero hv q) (flowOf_zero v q) hg' hg'v hQ
+    rw [mfderiv_flowTransition_comp hv (mem_flowDomain_zero (hv q)) (flowOf_zero v q) hg' hg'v hQ
       hq' hg' hg'v, zero_add]
   have hAeq : mfderiv I I (flowTransition v g T₀ p) p =
       mfderiv I I (flowTransition v g (-T) q) q ∘L
@@ -553,7 +553,7 @@ theorem charpoly_returnDerivative_pow_eq (k : ℕ) :
   · simp only [pow_zero]
     -- Both sides are the characteristic polynomial of the identity of the model space `E`.
     rfl
-  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hT hP hp
+  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hP hp
   obtain ⟨hkP, hkp⟩ := flowOf_natCast_mul_of_flowOf_eq hv hP hp k
   rw [← returnDerivative_natCast_mul hv hP hp hg hgv hk,
     ← returnDerivative_natCast_mul hv hQ hq' hg' hg'v hk]
@@ -634,7 +634,7 @@ theorem charpoly_normalReturnDerivative_pow_eq (k : ℕ)
       LinearMap.ker (mvfderiv I g' q : TangentSpace I q →ₗ[ℝ] ℝ)} :
     (normalReturnDerivative v g T₀ p h ^ k).charpoly =
       (normalReturnDerivative v g' T₀ q h' ^ k).charpoly := by
-  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hT hP hp
+  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hP hp
   obtain ⟨hkP, hkp⟩ := flowOf_natCast_mul_of_flowOf_eq hv hP hp k
   obtain ⟨hkQ, hkq⟩ := flowOf_natCast_mul_of_flowOf_eq hv hQ hq' k
   rw [← normalReturnDerivative_natCast_mul hv hP hp hg hgv k
@@ -652,7 +652,7 @@ theorem exists_linearEquiv_genEigenspace_returnDerivative {μ : ℝ} (hμ : μ �
     ∃ e : (returnDerivative v g T₀ p).genEigenspace μ k ≃ₗ[ℝ]
         (returnDerivative v g' T₀ q).genEigenspace μ k,
       ∀ w, (e w : TangentSpace I q) = mfderiv I I (flowTransition v g' T p) p w := by
-  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hT hP hp
+  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hP hp
   have hK := range_returnDerivative_le_ker hv hP hp hg hgv
   have hK' := range_returnDerivative_le_ker hv hQ hq' hg' hg'v
   obtain ⟨e, he, hconj⟩ :=

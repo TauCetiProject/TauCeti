@@ -21,6 +21,11 @@ of derivatives under coefficient maps.
 The derivative of a cubic `a (X - e₁)(X - e₂)(X - e₃)` at the root `e₁` is
 `a (e₁ - e₂)(e₁ - e₃)`.
 The roots of all nonzero iterated derivatives of a polynomial form a finite set.
+If `p.derivative ≠ 0` (always the case for nonconstant `p` in characteristic zero), then at a
+root of `p` of multiplicity `m` the root multiplicity of `p.derivative` is at least `m - 1`, so a
+simple root of `p` need not be a root of `p.derivative`; together with the roots of
+`p.derivative` that are not roots of `p`, this bounds `p.roots` as a multiset in terms of
+`p.derivative.roots` and the distinct roots of `p`.
 
 The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function,
 and every scalar multiple of it is locally nilpotent.
@@ -33,6 +38,9 @@ A coefficient map can lower the degree of a polynomial, and in positive characte
 lower the degree of a derivative even when it preserves the degree of the polynomial itself.
 Over an additively torsion-free target the second phenomenon cannot occur: preserving the degree
 of `p` preserves the degree of `p.derivative`.
+
+At a unit root `u`, the derivative of a reflected polynomial at `u⁻¹` is a unit multiple of
+its original derivative at `u` (`Polynomial.eval_derivative_reflect_mul_pow`).
 
 A self-reciprocal polynomial `p` of even degree bound `2 g`, one with `X ^ (2 g) p (1 / X) = p (X)`,
 satisfies `p' (1) = g p (1)`: the coefficients in degrees `i` and `2 g - i` agree and their
@@ -47,6 +55,10 @@ Over any commutative ring, the quotient of `p` by `X - a` takes the value `p' (a
 Over any semiring, the coefficient of `p q'` in degree `deg p + deg q - 1` is
 `leadingCoeff p · leadingCoeff q · deg q`.
 
+Over a possibly noncommutative semiring, the derivative of `f ^ n` is the sum of the `n` products
+`f ^ k * f′ * f ^ (n - 1 - k)` (`Polynomial.derivative_pow_eq_sum`), the form of `derivative_pow`
+that does not move `f′` past powers of `f`.
+
 In positive characteristic `p`, every iterated derivative `derivative^[k] f` of order `k ≥ p`
 vanishes identically (`Polynomial.iterate_derivative_eq_zero_of_charP`), since `p` divides `k !`.
 
@@ -54,6 +66,9 @@ Over a `ℚ≥0`-algebra, such as a division ring of characteristic zero, the de
 (`Polynomial.derivative_surjective`): every polynomial has an antiderivative. In positive
 characteristic `p` it is not (`Polynomial.derivative_not_surjective_of_charP`), as `X ^ (p - 1)`
 has no antiderivative.
+
+As linear endomorphisms of `R[X]`, the derivative and multiplication by `X` satisfy the Weyl
+relation `d x = x d + 1` (`Polynomial.derivative_mul_mulLeft_X`).
 -/
 
 public section
@@ -71,6 +86,41 @@ theorem finite_setOfPred_isRoot_iterate_derivative (p : R[X]) :
     fun k hk ↦ not_lt.1 fun h ↦ hk (iterate_derivative_eq_zero h)
   exact (hk.biUnion fun k hk ↦ finite_setOfPred_isRoot hk).subset
     fun z ⟨k, hk, hz⟩ ↦ mem_biUnion hk hz
+
+/-- If `p.derivative ≠ 0`, then at each root of `p` of multiplicity `m` the root multiplicity of
+`p.derivative` is at least `m - 1`, in any characteristic (so a simple root of `p` need not be a
+root of `p.derivative`); the distinct roots of `p.derivative` that are not roots of `p` come on
+top. Counted with multiplicity, `p.roots` together with those extra roots is therefore bounded
+by `p.derivative.roots` together with one copy of each distinct root of `p`. The hypothesis is
+needed: over `ZMod 2`, `X ^ 2` has roots `{0, 0}` and derivative `0`. -/
+theorem roots_add_roots_derivative_sdiff_roots_le_roots_derivative_add_roots_toFinset_of_ne_zero
+    [DecidableEq R] {p : R[X]} (hp : p.derivative ≠ 0) :
+    p.roots + (p.derivative.roots.toFinset \ p.roots.toFinset).val ≤
+      p.derivative.roots + p.roots.toFinset.val := by
+  refine Multiset.le_iff_count.2 fun x ↦ ?_
+  simp only [Multiset.count_add, Multiset.count_eq_of_nodup (Finset.nodup _), Finset.mem_val,
+    Finset.mem_sdiff, Multiset.mem_toFinset]
+  by_cases hx : x ∈ p.roots
+  · have := rootMultiplicity_sub_one_le_derivative_rootMultiplicity_of_ne_zero p x hp
+    simp only [hx, count_roots, ite_true, not_true_eq_false, and_false, ite_false]
+    omega
+  · simp only [hx, Multiset.count_eq_zero.2 hx, ite_false, not_false_eq_true, and_true,
+      zero_add, add_zero]
+    split_ifs with hx'
+    exacts [Multiset.count_pos.2 hx', Nat.zero_le _]
+
+/-- In characteristic zero, the bound of
+`roots_add_roots_derivative_sdiff_roots_le_roots_derivative_add_roots_toFinset_of_ne_zero` holds
+for every `p`: if `p.derivative = 0`, then `p` is constant and both sides are `0`. -/
+theorem roots_add_roots_derivative_sdiff_roots_le_roots_derivative_add_roots_toFinset
+    [CharZero R] [DecidableEq R] (p : R[X]) :
+    p.roots + (p.derivative.roots.toFinset \ p.roots.toFinset).val ≤
+      p.derivative.roots + p.roots.toFinset.val := by
+  rcases eq_or_ne p.derivative 0 with hp | hp
+  · rw [eq_C_of_derivative_eq_zero hp]
+    simp
+  · exact
+      roots_add_roots_derivative_sdiff_roots_le_roots_derivative_add_roots_toFinset_of_ne_zero hp
 
 end Polynomial
 
@@ -136,6 +186,30 @@ theorem _root_.Polynomial.eval_derivative_C_mul_X_sub_C_mul_X_sub_C_mul_X_sub_C 
   simp only [derivative_mul, derivative_C, derivative_sub, derivative_X, eval_add, eval_mul,
     eval_sub, eval_C, eval_X, eval_one, eval_zero]
   ring
+
+/-- At a unit root `u` of `p`, reflection at a degree bound `k + 1` changes its derivative at the
+reciprocal root by the factor `-u / u^k`, expressed without division. -/
+theorem _root_.Polynomial.eval_derivative_reflect_mul_pow [CommRing R] (p : R[X])
+    {k : ℕ} (hk : p.natDegree ≤ k + 1) (u : Rˣ) (hu : p.IsRoot (u : R)) :
+    (p.reflect (k + 1)).derivative.eval (↑u⁻¹ : R) * (u : R) ^ k =
+      -(u : R) * p.derivative.eval (u : R) := by
+  by_cases hp : p = 0
+  · simp [hp]
+  have := Nontrivial.of_polynomial_ne hp
+  obtain ⟨q, hq⟩ := dvd_iff_isRoot.mpr hu
+  have hqne : q ≠ 0 := right_ne_zero_of_mul (hq ▸ hp)
+  have hdeg : p.natDegree = 1 + q.natDegree := by
+    rw [hq, (monic_X_sub_C (u : R)).natDegree_mul' hqne, natDegree_X_sub_C]
+  have hqk : q.natDegree ≤ k := by omega
+  have hreflect : p.reflect (k + 1) = (1 - C (u : R) * X) * q.reflect k := by
+    rw [hq, Nat.add_comm k 1, reflect_mul _ _ (by simp) hqk]
+    simp [reflect_sub, reflect_C]
+  let : Invertible (u : R) := u.isUnit.invertible
+  have heval : (q.reflect k).eval (↑u⁻¹ : R) * (u : R) ^ k = q.eval (u : R) := by
+    simpa only [invOf_units, eval₂_id] using
+      eval₂_reflect_mul_pow (RingHom.id R) (u : R) k q hqk
+  rw [hreflect, hq]
+  simp [derivative_mul, mul_assoc, heval]
 
 /-- **Reciprocal-polynomial identity.** A polynomial `p` of degree at most `2 g` which is its own
 reflection at `2 g`, that is `X ^ (2 g) p (1 / X) = p (X)`, satisfies `p' (1) = g p (1)`. -/
@@ -298,5 +372,27 @@ theorem derivative_not_surjective_of_charP {R : Type*} [Semiring R] [Nontrivial 
   rw [← Nat.cast_add_one, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr (NeZero.ne p)),
     CharP.cast_eq_zero, mul_zero] at this
   exact zero_ne_one this
+
+/-- **The derivative of a power, without commutativity.**  Over any semiring, the derivative of
+`f ^ n` is the sum over the `n` positions of the factor that is differentiated. Over a commutative
+semiring this is `Polynomial.derivative_pow`. -/
+theorem derivative_pow_eq_sum {R : Type*} [Semiring R] (f : R[X]) (n : ℕ) :
+    derivative (f ^ n) = ∑ k ∈ Finset.range n, f ^ k * derivative f * f ^ (n - 1 - k) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, derivative_mul, ih, Finset.sum_mul, Finset.sum_range_succ, Nat.add_sub_cancel,
+      Nat.sub_self, pow_zero, mul_one]
+    congr 1
+    refine Finset.sum_congr rfl fun k hk ↦ ?_
+    rw [mul_assoc, ← pow_succ, show n - 1 - k + 1 = n - k by grind]
+
+/-- **The Weyl relation** `d x = x d + 1` between the derivative and multiplication by `X`, as
+linear endomorphisms of `R[X]`. -/
+theorem derivative_mul_mulLeft_X {R : Type*} [CommSemiring R] :
+    (derivative : Module.End R R[X]) * LinearMap.mulLeft R X =
+      LinearMap.mulLeft R X * derivative + 1 := by
+  refine LinearMap.ext fun p ↦ ?_
+  simp [derivative_mul, add_comm]
 
 end Polynomial

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Asymptotics
-public import TauCeti.Analysis.PDE.Vortex.Divisor
+public import TauCeti.Analysis.PDE.Vortex.Divisor.Basic
 public import TauCeti.Analysis.PDE.Vortex.EulerLagrange
 public import TauCeti.Analysis.PDE.Vortex.Minimizer
 public import TauCeti.Analysis.PDE.Vortex.Regularity
@@ -71,7 +71,8 @@ All in the namespace `TauCeti.Vortex`:
 * `exists_contDiff_equation_eq_zero_isZeroMultiplicity`: every `D ∈ Sym ℂ m` is the zero divisor
   of a smooth vortex with the degree-`m` end framing.
 * `framedVortexSubMulAction`: the smooth framed degree-`m` vortices of a coupling `c`, preserved
-  by smooth framed gauges.
+  by smooth framed gauges; in degree zero it contains the vacuum
+  (`vacuumField_mem_framedVortexSubMulAction`).
 * `framedVortexDivisor`: the zero divisor of a smooth framed degree-`m` vortex, a point of
   `Sym ℂ m`, characterized by `framedVortexDivisor_eq_iff`.
 
@@ -335,7 +336,7 @@ def framedVortexSubMulAction (c : ℝ) (m : ℕ) :
     rintro ⟨hx, hsol, hfr⟩
     obtain ⟨hu, hu1⟩ := (mem_framedGaugeGroup _).1 u.property
     simp only [Set.mem_ofPred_eq, framedGaugeGroup_smul]
-    refine ⟨contDiff_gaugeTransform (by simpa using hu) hx, fun z ↦ ?_,
+    refine ⟨by simpa using contDiff_framedGaugeGroup_smul u hx, fun z ↦ ?_,
       tendsto_sectionValue_gaugeTransform hu1 hfr⟩
     rw [coupledEquation_gaugeTransform_eq_zero_iff c (hu.contDiffAt.of_le (by simp)) fun i ↦
       (((contDiff_piLp 2).1 hx i).differentiable (by simp)).differentiableAt]
@@ -348,6 +349,14 @@ theorem mem_framedVortexSubMulAction {c : ℝ} {m : ℕ} {x : ℂ → EuclideanS
     x ∈ framedVortexSubMulAction c m ↔ ContDiff ℝ ∞ x ∧ (∀ z, coupledEquation c x z = 0) ∧
       Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) :=
   Iff.rfl
+
+/-- The vacuum `(0, 1)` is a smooth framed degree-`0` vortex of every coupling: its section has
+modulus one, so the curvature row holds whatever the coupling. -/
+theorem vacuumField_mem_framedVortexSubMulAction (c : ℝ) :
+    vacuumField ∈ framedVortexSubMulAction c 0 := by
+  refine mem_framedVortexSubMulAction.2 ⟨contDiff_vacuumField, fun z ↦ ?_, by simp⟩
+  ext i
+  fin_cases i <;> norm_num [equation_vacuumField]
 
 variable {c : ℝ} {m : ℕ}
 

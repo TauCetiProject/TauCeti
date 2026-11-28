@@ -49,7 +49,7 @@ coordinate differential. The source coordinate change does not affect that range
 theorem map_tangentRange_inTangentCoordinates (f : SmoothEmbedding I J n M N)
     (hn : n ≠ 0) {x₀ x : M} (hx : x ∈ (chartAt H x₀).source)
     (hy : f x ∈ (chartAt G (f x₀)).source) :
-    (f.tangentRange x hn).map
+    (f.isImmersion.tangentRange x hn).map
       ((trivializationAt F (TangentSpace J) (f x₀)).continuousLinearEquivAt 𝕜 (f x)
         (by simpa using hy)).toLinearMap =
       (inTangentCoordinates I J _root_.id (f : M → N) (mfderiv I J (f : M → N)) x₀ x).range := by
@@ -70,7 +70,7 @@ differential's range on the overlap of the chosen source and target charts. -/
 def normalSpaceEquivInTangentCoordinates (f : SmoothEmbedding I J n M N)
     (hn : n ≠ 0) {x₀ x : M} (hx : x ∈ (chartAt H x₀).source)
     (hy : f x ∈ (chartAt G (f x₀)).source) :
-    f.NormalSpace x hn ≃L[𝕜]
+    f.isImmersion.NormalSpace x hn ≃L[𝕜]
       (F ⧸ (inTangentCoordinates I J _root_.id (f : M → N) (mfderiv I J (f : M → N)) x₀ x).range) :=
   ((trivializationAt F (TangentSpace J) (f x₀)).continuousLinearEquivAt 𝕜 (f x)
     (by simpa using hy)).quotientEquiv _ _
@@ -82,12 +82,14 @@ theorem normalSpaceEquivInTangentCoordinates_normalClass
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) {x₀ x : M}
     (hx : x ∈ (chartAt H x₀).source) (hy : f x ∈ (chartAt G (f x₀)).source)
     (v : TangentSpace J (f x)) :
-    f.normalSpaceEquivInTangentCoordinates hn hx hy (f.normalClass x hn v) =
+    f.normalSpaceEquivInTangentCoordinates hn hx hy (f.isImmersion.normalClass x hn v) =
       Submodule.Quotient.mk
         ((trivializationAt F (TangentSpace J) (f x₀)) ⟨f x, v⟩).2 := by
   -- The intrinsic fibre's instances wrap the quotient instances; `erw` lets the
   -- quotient computation rules match across these wrappers.
-  erw [normalSpaceEquivInTangentCoordinates, normalClass_def, Submodule.mkQ_apply,
+  erw
+      [normalSpaceEquivInTangentCoordinates, Manifold.IsImmersion.normalClass_def,
+          Submodule.mkQ_apply,
     ContinuousLinearEquiv.quotientEquiv_mk]
   rfl
 
@@ -98,7 +100,8 @@ theorem normalSpaceEquivInTangentCoordinates_symm_mk
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) {x₀ x : M}
     (hx : x ∈ (chartAt H x₀).source) (hy : f x ∈ (chartAt G (f x₀)).source) (v : F) :
     (f.normalSpaceEquivInTangentCoordinates hn hx hy).symm (Submodule.Quotient.mk v) =
-      f.normalClass x hn ((trivializationAt F (TangentSpace J) (f x₀)).symm (f x) v) := by
+      f.isImmersion.normalClass x hn
+          ((trivializationAt F (TangentSpace J) (f x₀)).symm (f x) v) := by
   rw [← Trivialization.continuousLinearEquivAt_symm_apply 𝕜 _ _ (by simpa using hy)]
   apply (f.normalSpaceEquivInTangentCoordinates hn hx hy).injective
   simp only [ContinuousLinearEquiv.apply_symm_apply,

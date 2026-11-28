@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 public import TauCeti.GroupTheory.Perm.SumCongr
 public import TauCeti.LowDimTopology.Heegaard.HatDifferential
 public import TauCeti.LowDimTopology.Heegaard.StrongAdmissibility
+import TauCeti.Algebra.BigOperators.Pi
 
 /-!
 # Adding a basepoint to a Heegaard diagram
@@ -73,6 +74,9 @@ passes to the new diagram, and its relative grading is
 * `TauCeti.HeegaardRegionSystem.addBasepointGenerator`: the generator `(x, i)`.
 * `TauCeti.HeegaardRegionSystem.addBasepointGeneratorEquiv`: the generators of the new diagram
   are the pairs of an old generator and a new point.
+* `TauCeti.HeegaardRegionSystem.addBasepointChainProdEquiv`: the splitting of the chains of the
+  new diagram, with any coefficients, into their components at the generators `(x, 0)` and
+  `(x, 1)`.
 * `TauCeti.HeegaardRegionSystem.addBasepointChainEquiv`: the resulting identification of hat
   chain groups `CF̂_{b+1} ≅ CF̂_b ⊗ W`.
 * `TauCeti.HeegaardRegionSystem.addBasepointPeriodicDomainsEquiv`: the periodic domains of the new
@@ -310,6 +314,12 @@ theorem addBasepointGenerator_injective :
   · simpa using h' i.castSucc
   · simpa using h' (Fin.last n)
 
+/-- The generators `(x, k)` and `(y, m)` agree exactly when `x = y` and `k = m`. -/
+@[simp]
+theorem addBasepointGenerator_inj {x y : H.Generator} {k m : Fin 2} :
+    H.addBasepointGenerator r₀ x k = H.addBasepointGenerator r₀ y m ↔ x = y ∧ k = m :=
+  ((H.addBasepointGenerator_injective r₀).eq_iff (a := (x, k)) (b := (y, m))).trans Prod.ext_iff
+
 /-- A point on an old `α`-curve of the diagram with an added basepoint is an old point. -/
 private theorem exists_eq_inl_of_addBasepoint_alpha {p : Point ⊕ Fin 2} {i : Fin n}
     (hp : (H.addBasepoint r₀).alpha p = i.castSucc) : ∃ q, p = Sum.inl q ∧ H.alpha q = i := by
@@ -359,6 +369,73 @@ theorem addBasepointGeneratorEquiv_apply (c : H.Generator × Fin 2) :
 theorem addBasepointGeneratorEquiv_symm_apply (x : H.Generator) (k : Fin 2) :
     (H.addBasepointGeneratorEquiv r₀).symm (H.addBasepointGenerator r₀ x k) = (x, k) :=
   (H.addBasepointGeneratorEquiv r₀).symm_apply_eq.mpr rfl
+
+variable {R : Type*} [Semiring R]
+
+/-- The splitting of the chains of the diagram with an added basepoint, with coefficients in a
+semiring `R`, into their components at the generators `(x, 0)` and at the generators `(x, 1)`. -/
+noncomputable def addBasepointChainProdEquiv :
+    ((H.addBasepoint r₀).Generator →₀ R) ≃ₗ[R] (H.Generator →₀ R) × (H.Generator →₀ R) where
+  toFun c := (Finsupp.equivFunOnFinite.symm fun y => c (H.addBasepointGenerator r₀ y 0),
+    Finsupp.equivFunOnFinite.symm fun y => c (H.addBasepointGenerator r₀ y 1))
+  invFun c := Finsupp.equivFunOnFinite.symm fun g =>
+    ![c.1 ((H.addBasepointGeneratorEquiv r₀).symm g).1,
+      c.2 ((H.addBasepointGeneratorEquiv r₀).symm g).1] ((H.addBasepointGeneratorEquiv r₀).symm g).2
+  map_add' c c' := by ext <;> simp
+  map_smul' a c := by ext <;> simp
+  left_inv c := by
+    ext g
+    obtain ⟨⟨y, k⟩, rfl⟩ := (H.addBasepointGeneratorEquiv r₀).surjective g
+    fin_cases k <;> simp
+  right_inv c := by ext <;> simp
+
+/-- The first component of the splitting reads the coefficients at the generators `(y, 0)`. -/
+@[simp]
+theorem addBasepointChainProdEquiv_apply_fst (c : (H.addBasepoint r₀).Generator →₀ R)
+    (y : H.Generator) :
+    (H.addBasepointChainProdEquiv r₀ c).1 y = c (H.addBasepointGenerator r₀ y 0) := by
+  simp [addBasepointChainProdEquiv]
+
+/-- The second component of the splitting reads the coefficients at the generators `(y, 1)`. -/
+@[simp]
+theorem addBasepointChainProdEquiv_apply_snd (c : (H.addBasepoint r₀).Generator →₀ R)
+    (y : H.Generator) :
+    (H.addBasepointChainProdEquiv r₀ c).2 y = c (H.addBasepointGenerator r₀ y 1) := by
+  simp [addBasepointChainProdEquiv]
+
+/-- The chain with components `m` and `n` has coefficient `m x` at the generator `(x, 0)`. -/
+@[simp]
+theorem addBasepointChainProdEquiv_symm_apply_zero (m n : H.Generator →₀ R) (x : H.Generator) :
+    (H.addBasepointChainProdEquiv r₀).symm (m, n) (H.addBasepointGenerator r₀ x 0) = m x := by
+  simp [addBasepointChainProdEquiv]
+
+/-- The chain with components `m` and `n` has coefficient `n x` at the generator `(x, 1)`. -/
+@[simp]
+theorem addBasepointChainProdEquiv_symm_apply_one (m n : H.Generator →₀ R) (x : H.Generator) :
+    (H.addBasepointChainProdEquiv r₀).symm (m, n) (H.addBasepointGenerator r₀ x 1) = n x := by
+  simp [addBasepointChainProdEquiv]
+
+/-- The splitting of the basis chain `single (x, 0) a` is `(single x a, 0)`. -/
+@[simp]
+theorem addBasepointChainProdEquiv_single_zero (x : H.Generator) (a : R) :
+    H.addBasepointChainProdEquiv r₀ (Finsupp.single (H.addBasepointGenerator r₀ x 0) a) =
+      (Finsupp.single x a, 0) := by
+  classical
+  refine Prod.ext (Finsupp.ext fun y => ?_) (Finsupp.ext fun y => ?_)
+  · rw [addBasepointChainProdEquiv_apply_fst, Finsupp.single_apply, Finsupp.single_apply]
+    simp [addBasepointGenerator_inj]
+  · simp
+
+/-- The splitting of the basis chain `single (x, 1) a` is `(0, single x a)`. -/
+@[simp]
+theorem addBasepointChainProdEquiv_single_one (x : H.Generator) (a : R) :
+    H.addBasepointChainProdEquiv r₀ (Finsupp.single (H.addBasepointGenerator r₀ x 1) a) =
+      (0, Finsupp.single x a) := by
+  classical
+  refine Prod.ext (Finsupp.ext fun y => ?_) (Finsupp.ext fun y => ?_)
+  · simp
+  · rw [addBasepointChainProdEquiv_apply_snd, Finsupp.single_apply, Finsupp.single_apply]
+    simp [addBasepointGenerator_inj]
 
 end Generator
 
@@ -478,13 +555,11 @@ theorem maslovIndex_addBasepoint (χ : Region → ℤ) (x y : H.Generator) (i j 
         (H.addBasepointGenerator r₀ y j) D =
       H.maslovIndex χ x y (D ∘ Sum.inl) + D (Sum.inr 0) + D (Sum.inr 1) + D (Sum.inr 2) -
         D (Sum.inl r₀) := by
-  have hχ : ∑ r, (((χ r - (Pi.single r₀ 1 : Region → ℤ) r : ℤ) : ℚ)) * D (Sum.inl r) =
-      ∑ r, (χ r : ℚ) * D (Sum.inl r) - D (Sum.inl r₀) := by
-    simp [sub_mul, Finset.sum_sub_distrib, Pi.single_apply]
   simp only [maslovIndex_apply, eulerMeasure_eq_sub_sum_pointMeasure,
     generatorPointMeasure_addBasepointGenerator, Fintype.sum_sum_type, addBasepointEuler_inl,
     addBasepointEuler_inr, pointMeasure_addBasepoint_inl, pointMeasure_addBasepoint_inr,
-    Fin.sum_univ_three, Fin.sum_univ_two, Function.comp_apply, hχ]
+    Fin.sum_univ_three, Fin.sum_univ_two, Function.comp_apply,
+    Fintype.sum_intCast_sub_pi_single_mul]
   push_cast
   ring
 
@@ -745,6 +820,20 @@ theorem coe_addBasepointPeriodicDomainsEquiv_apply (c : H.periodicDomains × ℤ
     (H.addBasepointPeriodicDomainsEquiv r₀ c : Region ⊕ Fin 3 → ℤ) =
       Sum.elim (c.1 : Region → ℤ) ![c.2, (c.1 : Region → ℤ) r₀ - c.2, 0] :=
   (rfl)
+
+/-- When `r₀` contains a basepoint, the periodic domain attached to `(Q, 0)` is `Q` extended by
+zero over the new regions: `Q` vanishes on `r₀`. -/
+theorem coe_addBasepointPeriodicDomainsEquiv_mk_zero (hr₀ : r₀ ∈ Set.range H.basepoint)
+    (Q : H.periodicDomains) :
+    (H.addBasepointPeriodicDomainsEquiv r₀ (Q, 0) : Region ⊕ Fin 3 → ℤ) =
+      Sum.elim (Q : Region → ℤ) 0 := by
+  obtain ⟨z₀, rfl⟩ := hr₀
+  have hQ : (Q : Region → ℤ) (H.basepoint z₀) = 0 :=
+    (mem_periodicDomains_iff.mp Q.property).1 z₀
+  funext s
+  rcases s with s | k
+  · simp
+  · fin_cases k <;> simp [hQ]
 
 /-- The old periodic domain attached to a periodic domain of the diagram with an added basepoint
 is its restriction to the old regions. -/

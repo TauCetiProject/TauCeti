@@ -21,10 +21,23 @@ and reflect contactness. The contact hyperplanes are the inverse images under th
 For a contact form, the differential carries the Reeb field of the pulled-back form to the
 original Reeb field. Thus a strict contact diffeomorphism intertwines the Reeb fields, rather
 than merely preserving the contact hyperplanes. No compactness or completeness is needed for
-these statements, which concern vector fields rather than their global flows.
+these statements, which concern vector fields rather than their global flows. Restricting a
+one-form to an open subset changes neither where it is contact
+(`TauCeti.SmoothForm.isContactFormAt_mpullback_subtype_val_iff`) nor its Reeb vectors
+(`TauCeti.SmoothForm.reebVectorField_mpullback_subtype_val`).
+
+If a smooth map `f` pulls a one-form `θ` back to a contact form `α`, as for a hypersurface of
+contact type, the kernel of the form `f^* dθ = dα` is the line spanned by the Reeb vector of `α`
+(`TauCeti.SmoothForm.ker_bilinFormAt_mpullback_mextDerivₗ`): the characteristic line of the
+hypersurface.
 
 A smooth map is horizontal for the kernel of a one-form exactly when it pulls the form back to
 zero (`TauCeti.SmoothForm.isHorizontalMap_kerDistribution_iff_mpullback_eq_zero`).
+
+Conversely to the invariance under maps with bijective differential, a pulled-back form can only
+be contact where the differential of the map is injective
+(`TauCeti.injective_mfderiv_of_isContactFormAt_mpullback`): a vector killed by the
+differential lies in the kernel of the pullback and in the kernel of its exterior derivative.
 
 The pointwise theorem applies to rough one-forms of class `C¹` at the image point and to
 maps of class `C²` there. All exterior derivatives and pullbacks use the
@@ -98,6 +111,26 @@ theorem isContactFormAt_mpullback_iff {f : M → N} {x : M} {α : RoughForm J N 
     rw [← hd]
     exact hvw u ((hker u).mpr hw)
 
+/-- If the pullback of a one-form `α` along a map `f` is contact at `x`, then the differential of
+`f` at `x` is injective. A vector killed by the differential lies in the kernel of `f^* α` and
+pairs to zero with every vector under `d(f^* α) = f^* dα`, so it is zero by nondegeneracy. In
+particular a form pulled back along a map with nontrivial fibre directions, such as a projection
+`M × P → M` with `P` of positive dimension, is contact nowhere. Only `C²` regularity of the map
+and `C¹` regularity of the one-form at the image are needed. -/
+theorem injective_mfderiv_of_isContactFormAt_mpullback {f : M → N} {x : M}
+    {α : RoughForm J N ℝ 1} (hf : ContMDiffAt I J 2 f x)
+    (hα : ContMDiffAt J (J.prod 𝓘(ℝ, F [⋀^Fin 1]→L[ℝ] ℝ)) 1
+      (fun y ↦ Bundle.TotalSpace.mk' (F [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) (f x))
+    (h : IsContactFormAt (mpullback I J f α) x) :
+    Function.Injective (mfderiv I J f x) := by
+  rw [injective_iff_map_eq_zero]
+  intro w hw
+  refine h.nondegenerate w (RoughForm.mem_ker.2 ?_) fun w' _ ↦ ?_
+  · rw [mpullback_apply_one, hw]
+    exact (α (f x)).map_coord_zero 0 rfl
+  · rw [← mpullback_mextDeriv_at hf hα, mpullback_apply_pair, hw]
+    exact (mextDeriv α (f x)).map_coord_zero 0 rfl
+
 namespace SmoothForm
 
 /-- The contact hyperplanes of a pulled-back one-form are the inverse images of the original
@@ -163,6 +196,13 @@ theorem isContactForm_mpullback_iff {f : M → N} (hf : ContMDiff I J ∞ f)
       (α.contMDiff.of_le (by simp) (f x)) (hdf x)).mp hx
   · exact fun h ↦ h.mpullback f hf hdf
 
+/-- The pullback of the negative of a one-form, which coorients the pulled-back hyperplanes
+oppositely, is a contact form exactly when the pullback of the form is. -/
+theorem isContactForm_mpullback_neg_iff {f : M → N} (hf : ContMDiff I J ∞ f)
+    (α : SmoothForm J N ℝ 1) :
+    (mpullback f hf (-α)).IsContactForm ↔ (mpullback f hf α).IsContactForm := by
+  rw [map_neg, isContactForm_neg_iff]
+
 /-- Diffeomorphisms preserve and reflect contactness. -/
 @[simp]
 theorem _root_.Diffeomorph.isContactForm_mpullback_iff (e : M ≃ₘ⟮I, J⟯ N)
@@ -175,17 +215,11 @@ theorem _root_.Diffeomorph.isContactForm_mpullback_iff (e : M ≃ₘ⟮I, J⟯ N
 nonempty, then the model space of `M` is finite-dimensional whenever that of `N` is. -/
 theorem finiteDimensional_of_isContactForm_mpullback [FiniteDimensional ℝ F]
     {α : SmoothForm J N ℝ 1} {f : M → N} (hf : ContMDiff I J ∞ f)
-    (hα : (mpullback f hf α).IsContactForm) (x : M) : FiniteDimensional ℝ E := by
-  -- The differential of `f` is injective: a vector it kills lies in the kernel of the pullback
-  -- and pairs to zero with everything under its exterior derivative.
-  have hinj : Function.Injective (mfderiv I J f x) := by
-    rw [injective_iff_map_eq_zero]
-    intro w hw
-    refine (isContactForm_iff.1 hα x).2 w ?_ fun w' _ ↦ ?_
-    · rw [mpullback_apply_one, hw, ← degreeOneEquiv_coe_apply, map_zero]
-    · rw [mextDeriv_mpullback_apply_two, hw]
-      exact (mextDeriv α.val (f x)).map_coord_zero 0 rfl
-  exact Module.Finite.of_injective (mfderiv I J f x : E →L[ℝ] F).toLinearMap hinj
+    (hα : (mpullback f hf α).IsContactForm) (x : M) : FiniteDimensional ℝ E :=
+  Module.Finite.of_injective (mfderiv I J f x : E →L[ℝ] F).toLinearMap
+    (injective_mfderiv_of_isContactFormAt_mpullback ((hf x).of_le (by simp))
+      ((α.contMDiff (f x)).of_le (by simp))
+      (coe_mpullback f hf α ▸ isContactForm_iff_forall_isContactFormAt.1 hα x))
 
 /-- The differential of a smooth map with bijective differentials carries the Reeb field of
 the pulled-back contact form to the original Reeb field. -/
@@ -216,6 +250,45 @@ theorem IsContactForm.mfderiv_reebVectorField_mpullback
     rw [← mextDerivₗ_mpullback] at hd
     simp only [SmoothBundleForm.eval₂_apply, mextDerivₗ_apply] at hd
     exact hd.symm.trans h
+
+/-- **The characteristic line of a hypersurface of contact type.** If a smooth map `f` pulls a
+one-form `θ` back to a contact form `α = f^* θ`, then at every point the kernel of the form
+`f^* dθ = dα` induced by `dθ` is the line spanned by the Reeb vector of `α`. -/
+theorem ker_bilinFormAt_mpullback_mextDerivₗ [FiniteDimensional ℝ E] {f : M → N}
+    (hf : ContMDiff I J ∞ f) {θ : SmoothForm J N ℝ 1} (hα : (mpullback f hf θ).IsContactForm)
+    (x : M) :
+    LinearMap.ker ((mpullback f hf (mextDerivₗ J 1 θ)).bilinFormAt x) =
+      ℝ ∙ (mpullback f hf θ).reebVectorField x := by
+  rw [← mextDerivₗ_mpullback, ← characteristicVectorField_mextDerivₗ]
+  exact ker_bilinFormAt_eq_span_characteristicVectorField (isContactForm_def.1 hα x)
+
+/-- Restricting a one-form to an open subset does not change where it is a contact form. -/
+theorem isContactFormAt_mpullback_subtype_val_iff {U : TopologicalSpace.Opens M}
+    (α : SmoothForm I M ℝ 1) (x : U) :
+    IsContactFormAt (mpullback (Subtype.val : U → M) contMDiff_subtypeVal α).val x ↔
+      IsContactFormAt α.val x := by
+  rw [coe_mpullback, isContactFormAt_mpullback_iff contMDiff_subtypeVal.contMDiffAt
+    (α.contMDiff.of_le (by simp) x)
+    (by rw [Manifold.mfderiv_subtype_val]; exact ContinuousLinearEquiv.bijective _)]
+
+/-- Restricting a one-form to an open subset does not change its Reeb vectors. -/
+@[simp]
+theorem reebVectorField_mpullback_subtype_val {U : TopologicalSpace.Opens M}
+    (α : SmoothForm I M ℝ 1) (x : U) :
+    (mpullback (Subtype.val : U → M) contMDiff_subtypeVal α).reebVectorField x =
+      α.reebVectorField x := by
+  rw [← characteristicVectorField_mextDerivₗ, ← characteristicVectorField_mextDerivₗ,
+    characteristicVectorField_def, characteristicVectorField_def, mextDerivₗ_mpullback]
+  -- The tangent spaces of `U` at `x` and of `M` at `↑x` are both the model space, so both sides
+  -- are the Reeb vector of the same covector for the same bilinear form.
+  congr 1
+  · ext v
+    rw [degreeOneEquiv_coe_apply, coe_mpullback_subtype_val_apply]
+    exact (degreeOneEquiv_coe_apply α (x : M) v).symm
+  · ext v w
+    rw [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, coe_mpullback_subtype_val_apply]
+    exact ((bilinFormAt_apply _ (x : M) v w).trans
+      (SmoothBundleForm.eval₂_apply _ (x : M) v w)).symm
 
 end SmoothForm
 

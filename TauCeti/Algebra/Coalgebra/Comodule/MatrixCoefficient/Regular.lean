@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Adjoin
 public import TauCeti.Algebra.Coalgebra.Comodule.Regular
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.RegularSubcomodule
-public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 
 /-!
 # Matrix coefficients of the regular comodule
@@ -17,6 +18,8 @@ This file records that the regular right comodule has enough matrix coefficients
 the whole coalgebra, and likewise that the coefficients of its restriction to a subcoalgebra
 recover that subcoalgebra. The key coefficient is the counit: for the regular comodule, the
 matrix coefficient attached to `Coalgebra.counit` and a vector `c` is exactly `c`.
+Over a commutative semiring, tensors of finite-comodule matrix coefficients determine linear
+maps on the tensor product of two projective coalgebras.
 
 This is a small prerequisite for the faithful-representation criterion, where faithfulness is
 detected by whether the matrix coefficients, together with their antipode images, generate the
@@ -35,6 +38,8 @@ generated-coefficient condition.
   regular comodule is contained in the coefficient space of the comodule it carries.
 * `TauCeti.Subcoalgebra.le_matrixCoefficientSubalgebra_toRegularSubcomodule`: a subcoalgebra is
   contained in the coefficient algebra of its restricted regular comodule.
+* `TauCeti.Subcoalgebra.matrixCoefficientSubmodule_toRegularSubcomodule`: over a field, a
+  subcoalgebra is exactly the coefficient space of its restricted regular comodule.
 
 ## References
 
@@ -44,11 +49,14 @@ coalgebra; see Sweedler, *Hopf Algebras*, Chapter 2.
 
 public section
 
+open scoped TensorProduct
+open TensorProduct
+
 namespace TauCeti
 
 namespace Comodule
 
-universe u v
+universe u v w
 
 variable {R : Type u} {C : Type v}
 variable [CommSemiring R]
@@ -122,6 +130,45 @@ theorem regularObj_matrixCoefficientSubmodule_eq_top :
 
 end Coalgebra
 
+section TensorProduct
+
+variable {k : Type u} [CommSemiring k]
+
+-- Bundling the induced subcomodule preserves its coaction, so the regular counit formula applies.
+private theorem matrixCoefficient_fgRegular_counit {A : Type*}
+    [AddCommMonoid A] [Module k A] [Coalgebra k A] [Module.Flat k A]
+    (S : Subcomodule k A A) [Module.Finite k S] (s : S) :
+    matrixCoefficient (C := A) (M := FGComoduleCat.of (R := k) (C := A) S)
+      ((Coalgebra.counit (R := k) (A := A)).comp (SMulMemClass.subtype S)) s = s := by
+  simpa only [matrixCoefficient_def, FGComoduleCat.of_coact] using
+    (matrixCoefficient_counit_comp_subtype S s)
+
+/-- Linear maps on a tensor product of projective coalgebras over a commutative semiring are
+determined by their values on tensors of matrix coefficients of finitely generated comodules. -/
+theorem tensorProduct_linearMap_ext_matrixCoefficient
+    {B : Type v} {C : Type w}
+    [AddCommMonoid B] [Module k B] [Coalgebra k B] [Module.Projective k B]
+    [AddCommMonoid C] [Module k C] [Coalgebra k C] [Module.Projective k C]
+    {P : Type*} [AddCommMonoid P] [Module k P]
+    {F G : B ⊗[k] C →ₗ[k] P}
+    (hFG : ∀ (M : FGComoduleCat.{u, v, v} k B) (N : FGComoduleCat.{u, w, w} k C)
+      (φ : Module.Dual k M) (ψ : Module.Dual k N) (m : M) (n : N),
+      F (matrixCoefficient (C := B) φ m ⊗ₜ[k] matrixCoefficient (C := C) ψ n) =
+      G (matrixCoefficient (C := B) φ m ⊗ₜ[k] matrixCoefficient (C := C) ψ n)) : F = G := by
+  ext b c
+  obtain ⟨S, hS, hb⟩ := Subcomodule.exists_finite_subcomodule_mem (R := k) (C := B) b
+  obtain ⟨T, hT, hc⟩ := Subcomodule.exists_finite_subcomodule_mem (R := k) (C := C) c
+  let : Module.Finite k S := hS
+  let : Module.Finite k T := hT
+  have h := hFG (FGComoduleCat.of (R := k) (C := B) S)
+    (FGComoduleCat.of (R := k) (C := C) T)
+    ((Coalgebra.counit (R := k) (A := B)).comp (SMulMemClass.subtype S))
+    ((Coalgebra.counit (R := k) (A := C)).comp (SMulMemClass.subtype T)) ⟨b, hb⟩ ⟨c, hc⟩
+  simpa only [matrixCoefficient_fgRegular_counit, AlgebraTensorModule.curry_apply,
+    TensorProduct.curry_apply, LinearMap.restrictScalars_apply] using h
+
+end TensorProduct
+
 section Algebra
 
 variable [Semiring C] [Algebra R C] [Coalgebra R C]
@@ -188,6 +235,39 @@ theorem le_matrixCoefficientSubalgebra_toRegularSubcomodule (D : Subcoalgebra R 
   D.toRegularSubcomodule.toSubmodule_le_matrixCoefficientSubmodule.trans <|
     Comodule.matrixCoefficientSubmodule_le (R := R) (C := C)
       fun φ m ↦ Comodule.matrixCoefficient_mem_subalgebra (R := R) (C := C) φ m
+
+end Subcoalgebra
+
+namespace Subcoalgebra
+
+variable {K : Type u} {C : Type v} [Field K] [AddCommGroup C] [Module K C] [Coalgebra K C]
+
+/-- **A subcoalgebra is the coefficient space of its regular comodule.** The matrix coefficients
+of a subcoalgebra `D`, viewed as a subcomodule of the regular comodule, span exactly `D`: the
+coefficient `(φ ⊗ id) Δ(d)` of `d ∈ D` lies in `D` because `Δ(d)` lies in `D ⊗ D`. -/
+@[simp]
+theorem matrixCoefficientSubmodule_toRegularSubcomodule (D : Subcoalgebra K C) :
+    Comodule.matrixCoefficientSubmodule (R := K) (C := C) (M := D.toRegularSubcomodule) =
+      D.toSubmodule := by
+  refine le_antisymm (Comodule.matrixCoefficientSubmodule_le fun φ d ↦ ?_)
+    D.toRegularSubcomodule.toSubmodule_le_matrixCoefficientSubmodule
+  -- Extend `φ` to a functional on `C`, so that the coefficient is computed by `Δ` itself.
+  obtain ⟨g, hg⟩ := LinearMap.exists_leftInverse_of_injective
+    (SMulMemClass.subtype D.toRegularSubcomodule)
+    (LinearMap.ker_eq_bot.2 Subtype.val_injective)
+  have hφ : φ = (φ ∘ₗ g) ∘ₗ (Subcomodule.subtype D.toRegularSubcomodule).toLinearMap := by
+    rw [LinearMap.comp_assoc, Subcomodule.subtype_toLinearMap, hg, LinearMap.comp_id]
+  rw [hφ, ← Comodule.matrixCoefficient_map]
+  simp only [Comodule.matrixCoefficient_def, Comodule.instSelf_coact, Subcomodule.subtype_apply]
+  obtain ⟨t, ht⟩ := D.comul_mem d.property
+  rw [← ht]
+  clear ht
+  induction t using TensorProduct.inductionOn with
+  | tmul x y =>
+    simpa using D.toSubmodule.smul_mem _ y.property
+  | add x y hx hy =>
+    rw [map_add, map_add, map_add]
+    exact add_mem hx hy
 
 end Subcoalgebra
 

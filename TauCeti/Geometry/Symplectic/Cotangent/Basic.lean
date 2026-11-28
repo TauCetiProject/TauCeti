@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
+public import TauCeti.LinearAlgebra.BilinearForm.PolarizationForm
 
 /-!
 # The canonical symplectic form on a cotangent space
@@ -16,8 +17,8 @@ It carries the canonical symplectic form
 
 `ω((v, α), (w, β)) = β(v) - α(w)`.
 
-This file constructs that form directly from Mathlib's evaluation pairing, proves its
-nondegeneracy, and records the two canonical Lagrangian subspaces: the zero section `V × {0}`
+This file packages the real case of the standard polarized form `TauCeti.polarizationForm` as a
+`SymplecticForm`, and records the two canonical Lagrangian subspaces: the zero section `V × {0}`
 and a cotangent fiber `{0} × V*`. These are the pointwise linear-algebra inputs for cotangent
 bundles in exact Lagrangian Floer theory.
 
@@ -42,51 +43,18 @@ open LinearMap
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V]
 
-/-- The bilinear form `((v, α), (w, β)) ↦ β(v) - α(w)` underlying the canonical
-symplectic form on `V × V*`. -/
-private def cotangentBilinForm : LinearMap.BilinForm ℝ (V × Module.Dual ℝ V) :=
-  (Module.Dual.eval ℝ V).compl₁₂ (LinearMap.fst ℝ V (Module.Dual ℝ V))
-      (LinearMap.snd ℝ V (Module.Dual ℝ V)) -
-    (LinearMap.id : Module.Dual ℝ V →ₗ[ℝ] Module.Dual ℝ V).compl₁₂
-      (LinearMap.snd ℝ V (Module.Dual ℝ V)) (LinearMap.fst ℝ V (Module.Dual ℝ V))
-
-@[simp]
-private lemma cotangentBilinForm_apply (x y : V × Module.Dual ℝ V) :
-    cotangentBilinForm x y = y.2 x.1 - x.2 y.1 := by
-  rfl
-
-private lemma cotangentBilinForm_isAlt :
-    (cotangentBilinForm (V := V)).IsAlt := by
-  intro x
-  simp
-
-private lemma cotangentBilinForm_nondegenerate :
-    (cotangentBilinForm (V := V)).Nondegenerate := by
-  refine (LinearMap.IsAlt.isRefl cotangentBilinForm_isAlt).nondegenerate_iff_separatingLeft.mpr ?_
-  rintro ⟨v, α⟩ h
-  have hα : α = 0 := by
-    apply LinearMap.ext
-    intro w
-    have := h (w, 0)
-    simpa using this
-  have hv : v = 0 := by
-    exact (Module.forall_dual_apply_eq_zero_iff ℝ v).mp fun β => by
-      have := h (0, β)
-      simpa using this
-  exact Prod.ext hv hα
-
 /-- The canonical symplectic form on the linear cotangent space `V × V*`, with formula
 `ω((v, α), (w, β)) = β(v) - α(w)`. -/
 noncomputable def cotangentSymplecticForm : SymplecticForm (V × Module.Dual ℝ V) where
-  toBilinForm := cotangentBilinForm
-  isAlt := cotangentBilinForm_isAlt
-  nondegenerate := cotangentBilinForm_nondegenerate
+  toBilinForm := polarizationForm ℝ V
+  isAlt := polarizationForm_isAlt ℝ V
+  nondegenerate := polarizationForm_nondegenerate ℝ V
 
 /-- Evaluation of the canonical cotangent symplectic form. -/
 @[simp]
 lemma cotangentSymplecticForm_apply (x y : V × Module.Dual ℝ V) :
-    cotangentSymplecticForm x y = y.2 x.1 - x.2 y.1 := by
-  rfl
+    cotangentSymplecticForm x y = y.2 x.1 - x.2 y.1 :=
+  polarizationForm_apply x y
 
 /-- The zero section `V × {0}` in the linear cotangent space `V × V*`. -/
 def cotangentZeroSection : Submodule ℝ (V × Module.Dual ℝ V) :=

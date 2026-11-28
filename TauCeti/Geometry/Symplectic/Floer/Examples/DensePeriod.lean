@@ -7,15 +7,15 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Grading
 public import Mathlib.NumberTheory.Real.Irrational
+import TauCeti.NumberTheory.Real.Irrational
 import Mathlib.Topology.Instances.AddCircle.DenseSubgroup
 import Mathlib.Tactic.Ring
 
 /-!
 # Dense periods and the support of Floer kernels
 
-Two period models with the same dense area periods `a + √2 b` on spherical classes
-`(a, b) ∈ ℤ × ℤ` show how the support of capped Floer kernels depends on the Chern-zero periods
-rather than on the area periods alone.
+Three period models with dense area periods show how the support of capped Floer kernels depends
+on the Chern-zero periods rather than on the area periods alone.
 
 * **A product of two spheres.** For `S² × S²` with a product symplectic form of areas `1` and
   `√2` on the two factors, the spherical classes are `ℤ × ℤ`, with area `a + √2 b` and first Chern
@@ -37,6 +37,21 @@ rather than on the area periods alone.
   `TauCeti.Floer.exists_notMem_novikovModule_of_dense`, energy bounds and gradings then do not
   give the finiteness hypothesis of a product kernel; it must come from compactness of the moduli
   spaces below each energy level.
+* **A product of three spheres.** For `S² × S² × S²` with a product symplectic form of areas `1`,
+  `√2` and `√3`, the spherical classes are `ℤ × ℤ × ℤ`, with area `a + √2 b + √3 c` and first
+  Chern number `2 a + 2 b + 2 c`. Here the Chern-zero classes have the areas
+  `b (√2 - 1) + c (√3 - 1)`, which are dense in `ℝ` because the ratio
+  `(√3 - 1) / (√2 - 1) = √6 + √3 - √2 - 1` is irrational
+  (`DensePeriodExample.dense_map_area_ker_chern_tripleSphereProduct`). So, although the first
+  Chern number is not identically zero, the classes on each level `a + b + c = k`, of first Chern
+  number `2 k`, have the areas `k + b (√2 - 1) + c (√3 - 1)`, and these take infinitely many values
+  in every open window
+  (`DensePeriodExample.infinite_setOf_chern_eq_and_area_mem_Ioo_tripleSphereProduct`).
+  Unlike the product of two spheres, the Chern-zero areas are not discrete
+  (`DensePeriodExample.not_discreteTopology_map_area_ker_chern_tripleSphereProduct`), and
+  `TauCeti.Floer.exists_notMem_novikovModule_of_dense` applies: a fixed degree and an energy bound
+  do not make a product kernel supported on finitely many classes below each valuation level. On
+  this target that finiteness must come from compactness of the moduli spaces.
 
 ## References
 
@@ -152,5 +167,65 @@ theorem infinite_setOf_area_mem_Ioo {a b : ℝ} (hab : a < b) :
   refine Infinite.mono ?_
     (AddTorsor.infinite_setOf_eq_zero_and_mem_Ioo dense_map_area_ker_chern_chernZero hab)
   exact fun γ hγ => hγ.2
+
+/-- The area `a + √2 b + √3 c` of the spherical class `(a, b, c)` in
+`π₂(S² × S² × S²) = ℤ × ℤ × ℤ`, for a product symplectic form of areas `1`, `√2` and `√3`. -/
+def tripleArea : ℤ × ℤ × ℤ →+ ℝ where
+  toFun s := s.1 + √2 * s.2.1 + √3 * s.2.2
+  map_zero' := by simp
+  map_add' _ _ := by simp; ring
+
+/-- The first Chern number `2 a + 2 b + 2 c` of the class `(a, b, c)` in
+`π₂(S² × S² × S²) = ℤ × ℤ × ℤ`. -/
+def chernTripleSphereProduct : ℤ × ℤ × ℤ →+ ℤ where
+  toFun s := 2 * s.1 + 2 * s.2.1 + 2 * s.2.2
+  map_zero' := by simp
+  map_add' _ _ := by simp; ring
+
+@[simp]
+theorem tripleArea_apply (s : ℤ × ℤ × ℤ) : tripleArea s = s.1 + √2 * s.2.1 + √3 * s.2.2 :=
+  (rfl)
+
+@[simp]
+theorem chernTripleSphereProduct_apply (s : ℤ × ℤ × ℤ) :
+    chernTripleSphereProduct s = 2 * s.1 + 2 * s.2.1 + 2 * s.2.2 :=
+  (rfl)
+
+/-- In the product of three spheres with areas `1`, `√2` and `√3`, the areas of the Chern-zero
+classes of the period group are dense in `ℝ`. -/
+theorem dense_map_area_ker_chern_tripleSphereProduct :
+    Dense (((PeriodGroup.chern tripleArea chernTripleSphereProduct).ker.map
+      (PeriodGroup.area tripleArea chernTripleSphereProduct) : AddSubgroup ℝ) : Set ℝ) := by
+  -- The Chern-zero classes `(-1, 0, 1)` and `(-1, 1, 0)` have areas `√3 - 1` and `√2 - 1`, whose
+  -- ratio is irrational.
+  refine Dense.mono ?_
+    (dense_addSubgroupClosure_pair_iff.2 irrational_sqrt_three_sub_one_div_sqrt_two_sub_one)
+  rw [SetLike.coe_subset_coe, AddSubgroup.closure_le, pair_subset_iff]
+  refine ⟨⟨((-1, 0, 1) : ℤ × ℤ × ℤ), ?_, ?_⟩, ⟨((-1, 1, 0) : ℤ × ℤ × ℤ), ?_, ?_⟩⟩ <;>
+    simp [PeriodGroup.chern_mk, PeriodGroup.area_mk] <;> ring
+
+/-- In the product of three spheres with areas `1`, `√2` and `√3`, the areas of the Chern-zero
+classes do not form a discrete subgroup of `ℝ`, unlike those of the product of two spheres with
+areas `1` and `√2` (`DensePeriodExample.discreteTopology_map_area_ker_chern_sphereProduct`). -/
+theorem not_discreteTopology_map_area_ker_chern_tripleSphereProduct :
+    ¬DiscreteTopology ((PeriodGroup.chern tripleArea chernTripleSphereProduct).ker.map
+      (PeriodGroup.area tripleArea chernTripleSphereProduct)) := by
+  rw [← AddSubgroup.isAddCyclic_iff_discreteTopology]
+  exact AddSubgroup.dense_iff_not_isAddCyclic.1 dense_map_area_ker_chern_tripleSphereProduct
+
+/-- In the product of three spheres with areas `1`, `√2` and `√3`, every open window of areas
+contains infinitely many classes of the period group of first Chern number `2 k`, for each integer
+`k`. So fixing the first Chern number of a class, as the degrees of a rigid product coefficient do,
+and bounding its area below and above leaves infinitely many classes. -/
+theorem infinite_setOf_chern_eq_and_area_mem_Ioo_tripleSphereProduct (k : ℤ) {a b : ℝ}
+    (hab : a < b) :
+    {γ : PeriodGroup tripleArea chernTripleSphereProduct |
+      PeriodGroup.chern tripleArea chernTripleSphereProduct γ = 2 * k ∧
+        PeriodGroup.area tripleArea chernTripleSphereProduct γ ∈ Ioo a b}.Infinite := by
+  have hk : PeriodGroup.chern tripleArea chernTripleSphereProduct
+      (((k, 0, 0) : ℤ × ℤ × ℤ) : PeriodGroup tripleArea chernTripleSphereProduct) = 2 * k := by
+    simp [PeriodGroup.chern_mk]
+  rw [← hk]
+  exact AddTorsor.infinite_setOf_eq_and_mem_Ioo dense_map_area_ker_chern_tripleSphereProduct _ hab
 
 end TauCeti.Floer.DensePeriodExample

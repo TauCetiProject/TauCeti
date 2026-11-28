@@ -77,6 +77,11 @@ def pullback (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) : FiniteRankBundleC
     ((A.pullback f).core.localTriv i).baseSet =
       f ⁻¹' (A.core.localTriv (f i)).baseSet := (rfl)
 
+/-- A point lies in the chart `i` of the pullback exactly when its image lies in the chart `f i`
+of the original core. -/
+theorem mem_baseSet_pullback {A : FiniteRankBundleCore 𝕜 Y} {f : C(X, Y)} {i x : X} :
+    x ∈ (A.pullback f).core.baseSet i ↔ f x ∈ A.core.baseSet (f i) := Iff.rfl
+
 @[simp] theorem coordChange_pullback (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
     (i j x : X) :
     (A.pullback f).core.coordChange i j x = A.core.coordChange (f i) (f j) (f x) := (rfl)
@@ -251,7 +256,7 @@ with the same coordinate matrix over the new base. -/
 /-- Pulling back the forward morphism of `constIso` gives the forward morphism of `constIso`
 on the pulled-back cores. -/
 @[simp] theorem pullbackMap_constIso_hom {A D : FiniteRankBundleCore 𝕜 Y}
-    (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+    (hbase : ∀ i, A.core.baseSet i ⊆ D.core.baseSet i)
     (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
     (he : ∀ i j y, y ∈ A.core.baseSet i → y ∈ A.core.baseSet j →
       (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j y) =
@@ -259,14 +264,14 @@ on the pulled-back cores. -/
     (f : C(X, Y)) :
     pullbackMap (constIso hbase e he).hom f =
       (constIso (A := A.pullback f) (D := D.pullback f)
-        (fun x => congrArg (f ⁻¹' ·) (hbase (f x))) e
+        (fun x => Set.preimage_mono (hbase (f x))) e
         (fun i j x hi hj => he (f i) (f j) (f x) hi hj)).hom :=
   hom_ext fun _ => by simp
 
 /-- Pulling back the inverse morphism of `constIso` gives the inverse morphism of `constIso`
 on the pulled-back cores. -/
 @[simp] theorem pullbackMap_constIso_inv {A D : FiniteRankBundleCore 𝕜 Y}
-    (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+    (hbase : ∀ i, A.core.baseSet i ⊆ D.core.baseSet i)
     (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
     (he : ∀ i j y, y ∈ A.core.baseSet i → y ∈ A.core.baseSet j →
       (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j y) =
@@ -274,7 +279,7 @@ on the pulled-back cores. -/
     (f : C(X, Y)) :
     pullbackMap (constIso hbase e he).inv f =
       (constIso (A := A.pullback f) (D := D.pullback f)
-        (fun x => congrArg (f ⁻¹' ·) (hbase (f x))) e
+        (fun x => Set.preimage_mono (hbase (f x))) e
         (fun i j x hi hj => he (f i) (f j) (f x) hi hj)).inv :=
   hom_ext fun _ => by simp
 
@@ -584,24 +589,24 @@ noncomputable def pullbackOfBundleHomeomorph :
       ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E (f p.proj)).symm p.snd⟩ := (rfl)
 end OfBundle
 
+variable (𝕜) in
+/-- Isomorphism classes of rank-`n` vector-bundle cores over `X`. -/
+abbrev RankClass (X : Type u) [TopologicalSpace X] (n : ℕ) :=
+  Quotient ((CategoryTheory.isIsomorphicSetoid (FiniteRankBundleCore 𝕜 X)).comap
+    (Subtype.val : {A : FiniteRankBundleCore 𝕜 X // A.rank = n} → _))
+
 /-- Pullback of isomorphism classes of rank-`n` vector-bundle cores along `f : C(X, Y)`. -/
-def pullbackRankClass (f : C(X, Y)) (n : ℕ) :
-    Quotient ((CategoryTheory.isIsomorphicSetoid (FiniteRankBundleCore 𝕜 Y)).comap
-        (Subtype.val : {A : FiniteRankBundleCore 𝕜 Y // A.rank = n} → _)) →
-      Quotient ((CategoryTheory.isIsomorphicSetoid (FiniteRankBundleCore 𝕜 X)).comap
-        (Subtype.val : {A : FiniteRankBundleCore 𝕜 X // A.rank = n} → _)) :=
+def pullbackRankClass (f : C(X, Y)) (n : ℕ) : RankClass 𝕜 Y n → RankClass 𝕜 X n :=
   Quotient.map (fun A ↦ ⟨A.val.pullback f, A.property⟩) fun _ _ ⟨α⟩ ↦ ⟨(pullbackFunctor f).mapIso α⟩
 @[simp] theorem pullbackRankClass_mk (f : C(X, Y)) (n : ℕ)
     (A : {A : FiniteRankBundleCore 𝕜 Y // A.rank = n}) :
     pullbackRankClass f n (Quotient.mk _ A) = Quotient.mk _ ⟨A.val.pullback f, A.property⟩ := (rfl)
 @[simp] theorem pullbackRankClass_id (n : ℕ)
-    (c : Quotient ((CategoryTheory.isIsomorphicSetoid (FiniteRankBundleCore 𝕜 Y)).comap
-      (Subtype.val : {A : FiniteRankBundleCore 𝕜 Y // A.rank = n} → _))) :
+    (c : RankClass 𝕜 Y n) :
     pullbackRankClass (ContinuousMap.id Y) n c = c :=
   Quotient.inductionOn c fun A ↦ congrArg (Quotient.mk _) (Subtype.ext (pullback_id A.val))
 @[simp] theorem pullbackRankClass_comp (f : C(X, Y)) (g : C(Y, Z)) (n : ℕ)
-    (c : Quotient ((CategoryTheory.isIsomorphicSetoid (FiniteRankBundleCore 𝕜 Z)).comap
-      (Subtype.val : {A : FiniteRankBundleCore 𝕜 Z // A.rank = n} → _))) :
+    (c : RankClass 𝕜 Z n) :
     pullbackRankClass f n (pullbackRankClass g n c) = pullbackRankClass (g.comp f) n c :=
   Quotient.inductionOn c fun A ↦ congrArg (Quotient.mk _) (Subtype.ext (pullback_comp A.val f g))
 end TauCeti.FiniteRankBundleCore

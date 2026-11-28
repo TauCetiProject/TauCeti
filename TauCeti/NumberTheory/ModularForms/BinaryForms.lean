@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
+public import TauCeti.RingTheory.MvPolynomial.BinaryMonomial
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 public import TauCeti.RingTheory.MvPolynomial.Trace
 import Mathlib.Algebra.MvPolynomial.Funext
@@ -31,7 +32,6 @@ action of `M` on `D φ` is the adjugate action on `φ`, transposed. Applied to t
   `w`, as a representation of `(Matrix (Fin 2) (Fin 2) ℤ)ᵐᵒᵖ`.
 * `TauCeti.binaryFormAdjugateRep R w`: the left action `P ↦ P ∣ adj M` of integral matrices, the
   right action precomposed with the anti-multiplicative adjugate.
-* `TauCeti.binaryFormMonomialBasis R w`: the monomial basis `Xʲ Yʷ⁻ʲ`, `0 ≤ j ≤ w`.
 * `TauCeti.linearFormPow R w x y`: the binary form `(xY - yX)ʷ`.
 * `TauCeti.binaryFormDual R w`: the linear map `φ ↦ D φ` from functionals to binary forms.
 
@@ -43,6 +43,9 @@ action of `M` on `D φ` is the adjugate action on `φ`, transposed. Applied to t
 * `TauCeti.binaryFormRep_op_neg`, `TauCeti.binaryFormRep_op_scalar`,
   `TauCeti.binaryFormRep_upperTriangular_X_one_pow`: negated, scalar, and upper-triangular
   matrices act by `(-1)ʷ`, by the `w`th power of the scalar, and (on `Yʷ`) by `dʷ`.
+* `TauCeti.eval_one_zero_eq_binaryFormMonomialBasis_repr`,
+  `TauCeti.eval_zero_one_eq_binaryFormMonomialBasis_repr`: the values of a binary form at
+  `(1, 0)` and `(0, 1)` are its coefficients of `Xʷ` and `Yʷ`.
 * `TauCeti.mapHomogeneousSubmodule_binaryFormRep`: changing coefficients commutes with the action.
 * `TauCeti.binaryFormRep_diagonal_binaryFormMonomialBasis`,
   `TauCeti.binaryFormMonomialBasis_repr_binaryFormRep_diagonal`: the diagonal matrix
@@ -190,25 +193,43 @@ theorem binaryFormRep_upperTriangular_X_one_pow {M : Matrix (Fin 2) (Fin 2) ℤ}
 
 /-! ### Binary forms attached to linear functionals -/
 
-/-- The monomial basis `Xʲ Yʷ⁻ʲ`, `0 ≤ j ≤ w`, of the binary forms of degree `w`, indexed by the
-exponent `j` of `X`. -/
-noncomputable def binaryFormMonomialBasis (R : Type*) [CommSemiring R] (w : ℕ) :
-    Module.Basis (Fin (w + 1)) R (homogeneousSubmodule (Fin 2) R w) :=
-  (homogeneousMonomialBasis w).reindex (finsuppDegreeFinTwoEquiv w)
+/-- The monomial `Xʲ Yʷ⁻ʲ` takes the value `1` at `(1, 0)` for `j = w`, and `0` otherwise. -/
+theorem eval_one_zero_binaryFormMonomialBasis {R : Type*} [CommSemiring R] {w : ℕ}
+    (j : Fin (w + 1)) :
+    eval ![1, 0] (binaryFormMonomialBasis R w j : MvPolynomial (Fin 2) R) =
+      if j = Fin.last w then 1 else 0 := by
+  have hj : (j : ℕ) ≤ w := Nat.lt_succ_iff.mp j.isLt
+  simp only [coe_binaryFormMonomialBasis, eval_mul, eval_pow, eval_X, Matrix.cons_val_zero,
+    Matrix.cons_val_one, one_pow, one_mul, zero_pow_eq, Nat.sub_eq_zero_iff_le, hj.ge_iff_eq',
+    Fin.ext_iff, Fin.val_last]
+  split_ifs <;> first | rfl | omega
 
-@[simp]
-theorem coe_binaryFormMonomialBasis {R : Type*} [CommSemiring R] {w : ℕ} (j : Fin (w + 1)) :
-    (binaryFormMonomialBasis R w j : MvPolynomial (Fin 2) R) = X 0 ^ (j : ℕ) * X 1 ^ (w - j) := by
-  rw [binaryFormMonomialBasis, Module.Basis.reindex_apply, coe_homogeneousMonomialBasis]
-  simp only [coe_finsuppDegreeFinTwoEquiv_symm, X_pow_eq_monomial, monomial_mul_monomial,
-    one_mul]
+/-- The monomial `Xʲ Yʷ⁻ʲ` takes the value `1` at `(0, 1)` for `j = 0`, and `0` otherwise. -/
+theorem eval_zero_one_binaryFormMonomialBasis {R : Type*} [CommSemiring R] {w : ℕ}
+    (j : Fin (w + 1)) :
+    eval ![0, 1] (binaryFormMonomialBasis R w j : MvPolynomial (Fin 2) R) =
+      if j = 0 then 1 else 0 := by
+  simp only [coe_binaryFormMonomialBasis, eval_mul, eval_pow, eval_X, Matrix.cons_val_zero,
+    Matrix.cons_val_one, one_pow, mul_one, zero_pow_eq, Fin.ext_iff, Fin.val_zero]
 
-/-- The coordinate of a binary form on `Xʲ Yʷ⁻ʲ` in the monomial basis is its coefficient. -/
-theorem binaryFormMonomialBasis_repr_apply {R : Type*} [CommSemiring R] {w : ℕ}
-    (P : homogeneousSubmodule (Fin 2) R w) (j : Fin (w + 1)) :
-    (binaryFormMonomialBasis R w).repr P j =
-      (P : MvPolynomial (Fin 2) R).coeff (Finsupp.single 0 (j : ℕ) + Finsupp.single 1 (w - j)) := by
-  simp [binaryFormMonomialBasis]
+/-- The value of a binary form at `(1, 0)` is its coefficient of `Xʷ`. -/
+theorem eval_one_zero_eq_binaryFormMonomialBasis_repr {R : Type*} [CommSemiring R] {w : ℕ}
+    (P : homogeneousSubmodule (Fin 2) R w) :
+    eval ![1, 0] (P : MvPolynomial (Fin 2) R) =
+      (binaryFormMonomialBasis R w).repr P (Fin.last w) := by
+  -- `coeff_single_eq_eval` evaluates at the basis vector `Pi.single 0 1`, which is `![1, 0]`
+  have hv : (![1, 0] : Fin 2 → R) = Pi.single 0 1 := by ext i; fin_cases i <;> simp
+  rw [hv, binaryFormMonomialBasis_repr_apply, Fin.val_last, Nat.sub_self, Finsupp.single_zero,
+    add_zero, ((mem_homogeneousSubmodule _ _).1 P.property).coeff_single_eq_eval]
+
+/-- The value of a binary form at `(0, 1)` is its coefficient of `Yʷ`. -/
+theorem eval_zero_one_eq_binaryFormMonomialBasis_repr {R : Type*} [CommSemiring R] {w : ℕ}
+    (P : homogeneousSubmodule (Fin 2) R w) :
+    eval ![0, 1] (P : MvPolynomial (Fin 2) R) = (binaryFormMonomialBasis R w).repr P 0 := by
+  -- `coeff_single_eq_eval` evaluates at the basis vector `Pi.single 1 1`, which is `![0, 1]`
+  have hv : (![0, 1] : Fin 2 → R) = Pi.single 1 1 := by ext i; fin_cases i <;> simp
+  rw [hv, binaryFormMonomialBasis_repr_apply, Fin.val_zero, Nat.sub_zero, Finsupp.single_zero,
+    zero_add, ((mem_homogeneousSubmodule _ _).1 P.property).coeff_single_eq_eval]
 
 /-- Changing coefficients sends the monomial basis to the monomial basis. -/
 @[simp]

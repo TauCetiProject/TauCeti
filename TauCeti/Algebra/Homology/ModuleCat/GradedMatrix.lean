@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 public import Mathlib.Algebra.Homology.Homotopy
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.FreeModule.Basic
@@ -27,7 +28,9 @@ differential of the generator `i` is `∑ₖ D i k • k`. If `D` raises degrees
 of each degree `a` form a complex for the shape `ComplexShape.up A`
 (`TauCeti.gradedMatrixComplex`). Its term of degree `a` has the generators of degree `a` as a basis
 (`TauCeti.gradedMatrixComplexBasis`), on which the differential is given by the rows of `D`
-(`TauCeti.gradedMatrixComplex_d_basis`).
+(`TauCeti.gradedMatrixComplex_d_basis`). Conversely, a complex whose terms have bases indexed by
+the generators of each degree, on which the differential is given by the rows of `D`, is
+isomorphic to `gradedMatrixComplex e D` (`TauCeti.isoGradedMatrixComplexOfBasis`).
 
 A degree-preserving matrix `Φ` with `D * Φ = Φ * D'` gives a chain map, again read by rows
 (`TauCeti.gradedMatrixComplexHom`, `TauCeti.gradedMatrixComplexHom_f_basis`). Composition of such
@@ -106,6 +109,34 @@ private theorem blockMap_eq_zero (e : ι → A) (f : κ → A) (a b : A) {M : Ma
 
 end Block
 
+section Degree
+
+/-- Casting integer degrees into an additive group with one keeps a matrix raising the degrees by
+one raising them by one: this is the degree hypothesis of `TauCeti.gradedMatrixComplex` for the
+degrees read in `B`, for instance modulo `n` in `ZMod n`. -/
+theorem gradedMatrix_degree_intCast {R : Type*} [Zero R] {ι : Type*} {B : Type*}
+    [AddGroupWithOne B] {e : ι → ℤ} {D : Matrix ι ι R} (hD : ∀ i k, D i k ≠ 0 → e k = e i + 1)
+    (i k : ι) (h : D i k ≠ 0) : (e k : B) = e i + 1 := by
+  rw [hD i k h, Int.cast_add, Int.cast_one]
+
+/-- Applying a map that fixes zero to the entries keeps a matrix raising the degrees by one raising
+them by one: this is the degree hypothesis of `TauCeti.gradedMatrixComplex` after a change of
+coefficients, for instance along a ring homomorphism. -/
+theorem gradedMatrix_degree_map {R S : Type*} [Zero R] [Zero S] {ι : Type*} {B : Type*} [Add B]
+    [One B] {e : ι → B} {D : Matrix ι ι R} (hD : ∀ i k, D i k ≠ 0 → e k = e i + 1) {f : R → S}
+    (hf : f 0 = 0) (i k : ι) (h : D.map f i k ≠ 0) : e k = e i + 1 :=
+  hD i k fun h' ↦ h (by rw [Matrix.map_apply, h', hf])
+
+/-- Applying a ring homomorphism to the entries of a square matrix squaring to zero gives a matrix
+squaring to zero: this is the hypothesis `D * D = 0` of `TauCeti.gradedMatrixComplex` after a
+change of coefficients. -/
+theorem gradedMatrix_map_mul_map_eq_zero {R S : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
+    {ι : Type*} [Fintype ι] {D : Matrix ι ι R} (hDD : D * D = 0) (f : R →+* S) :
+    D.map f * D.map f = 0 := by
+  rw [← Matrix.map_mul, hDD, Matrix.map_zero _ (map_zero f)]
+
+end Degree
+
 section Complex
 
 variable {R : Type u} [CommRing R] {A : Type*} [AddRightCancelSemigroup A] [One A]
@@ -154,6 +185,14 @@ theorem finrank_gradedMatrixComplex_X [Nontrivial R] (a : A) :
     finrank R ((gradedMatrixComplex e D hD hDD).X a) = Fintype.card {i // e i = a} :=
   Module.finrank_eq_card_basis (gradedMatrixComplexBasis e D hD hDD a)
 
+omit [Fintype κ] [Fintype ν] in
+/-- A term of `gradedMatrixComplex e D` in a degree containing no generator is zero. -/
+theorem isZero_gradedMatrixComplex_X {a : A} (ha : ∀ i, e i ≠ a) :
+    Limits.IsZero ((gradedMatrixComplex e D hD hDD).X a) :=
+  have : IsEmpty {i // e i = a} := ⟨fun i ↦ ha i i.property⟩
+  have := (gradedMatrixComplexBasis e D hD hDD a).repr.toEquiv.subsingleton
+  ModuleCat.isZero_of_subsingleton _
+
 variable {e' : κ → A} {D' : Matrix κ κ R} {hD' : ∀ i k, D' i k ≠ 0 → e' k = e' i + 1}
   {hDD' : D' * D' = 0} {e'' : ν → A} {D'' : Matrix ν ν R}
   {hD'' : ∀ i k, D'' i k ≠ 0 → e'' k = e'' i + 1} {hDD'' : D'' * D'' = 0}
@@ -200,7 +239,68 @@ theorem gradedMatrixComplexHom_one [DecidableEq ι]
   refine HomologicalComplex.hom_ext _ _ fun a ↦ ?_
   exact blockMap_one e a
 
+section OfBasis
+
+omit [Fintype κ] [Fintype ν]
+
+variable {C : HomologicalComplex (ModuleCat.{max u v} R) (ComplexShape.up A)}
+  (b : ∀ a, Module.Basis {i // e i = a} R (C.X a))
+  (hb : ∀ a a' i, (C.d a a').hom (b a i) = ∑ k : {k // e k = a'}, D i k • b a' k)
+
+variable (e D hD hDD) in
+/-- **Recognizing the complex of a graded matrix.** A complex whose term of each degree `a` has a
+basis indexed by the generators of degree `a`, on which the differential is given by the rows of
+`D`, is isomorphic to `gradedMatrixComplex e D`. The isomorphism matches the two bases
+(`TauCeti.isoGradedMatrixComplexOfBasis_hom_f_basis`). -/
+def isoGradedMatrixComplexOfBasis : C ≅ gradedMatrixComplex e D hD hDD :=
+  HomologicalComplex.Hom.isoOfComponents
+    (fun a ↦ ((b a).equiv (gradedMatrixComplexBasis e D hD hDD a) (Equiv.refl _)).toModuleIso)
+    (fun a a' _ ↦ ModuleCat.hom_ext <| (b a).ext fun i ↦ by
+      simp [hb, Basis.equiv_apply])
+
+/-- The isomorphism `isoGradedMatrixComplexOfBasis` sends each basis vector to the generator with
+the same index. -/
+@[simp]
+theorem isoGradedMatrixComplexOfBasis_hom_f_basis (a : A) (i : {i // e i = a}) :
+    ((isoGradedMatrixComplexOfBasis e D hD hDD b hb).hom.f a).hom (b a i) =
+      gradedMatrixComplexBasis e D hD hDD a i := by
+  simp [isoGradedMatrixComplexOfBasis, Basis.equiv_apply]
+
+/-- The inverse of `isoGradedMatrixComplexOfBasis` sends each generator to the basis vector with
+the same index. -/
+@[simp]
+theorem isoGradedMatrixComplexOfBasis_inv_f_basis (a : A) (i : {i // e i = a}) :
+    ((isoGradedMatrixComplexOfBasis e D hD hDD b hb).inv.f a).hom
+        (gradedMatrixComplexBasis e D hD hDD a i) = b a i := by
+  simp [isoGradedMatrixComplexOfBasis, Basis.equiv_symm, Basis.equiv_apply]
+
+end OfBasis
+
 end Complex
+
+section Bounds
+
+variable {R : Type u} [CommRing R] {ι : Type v} [Fintype ι] {e : ι → ℤ} {D : Matrix ι ι R}
+  {hD : ∀ i k, D i k ≠ 0 → e k = e i + 1} {hDD : D * D = 0}
+
+/-- The complex of an integer-graded matrix vanishes below the least degree of its generators. -/
+theorem isStrictlyGE_gradedMatrixComplex {a : ℤ} (ha : ∀ i, a ≤ e i) :
+    CochainComplex.IsStrictlyGE (gradedMatrixComplex e D hD hDD) a :=
+  (CochainComplex.isStrictlyGE_iff _ a).2 fun j hj ↦
+    isZero_gradedMatrixComplex_X (e := e) (hD := hD) (hDD := hDD) (a := j) fun i h ↦ by
+      have := ha i
+      omega
+
+/-- The complex of an integer-graded matrix vanishes above the largest degree of its
+generators. -/
+theorem isStrictlyLE_gradedMatrixComplex {b : ℤ} (hb : ∀ i, e i ≤ b) :
+    CochainComplex.IsStrictlyLE (gradedMatrixComplex e D hD hDD) b :=
+  (CochainComplex.isStrictlyLE_iff _ b).2 fun j hj ↦
+    isZero_gradedMatrixComplex_X (e := e) (hD := hD) (hDD := hDD) (a := j) fun i h ↦ by
+      have := hb i
+      omega
+
+end Bounds
 
 section Homotopy
 

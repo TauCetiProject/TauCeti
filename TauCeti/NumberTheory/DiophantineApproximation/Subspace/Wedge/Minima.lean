@@ -5,82 +5,55 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Span
+public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Rank
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Wedge.Domain
 
-import Mathlib.Algebra.Order.Field.Pi
 import TauCeti.LinearAlgebra.LinearIndependent.Unitriangular
-import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Rank
 
 /-!
-# The successive minima of a wedge domain
+# The successive minima of the wedge domain
 
-Let `μ` be the successive minima over `K` of an approximation domain
-`approxDomain S₀ L c Q` of `K^ι`, `N = card ι`, with forms `L v` linearly independent at the
-infinite places and at the places of `S₀` and a level `0 < Q ≠ 1`. Let `k + p = N` with `0 < p`
-and `M = N.choose p`. Given bijections `σ v` between the indices of the minima and the forms and a
-constant `C > 0`, the wedge domain `S(Q)` with exponents `wedgeExponent c p k σ μ C Q`
-(`TauCeti.NumberField.wedgeExponent`) is an approximation domain of the wedge forms
-`wedgeForms (L v) p` in the Plücker space `Set.powersetCard ι p → K`, of dimension `M`.
-Bombieri–Gubler's Lemma 7.5.31 says that, once `C > 0` is chosen depending only on `K` and `ι`,
-for suitable bijections `σ` the successive minima `λ` over `K` of the wedge domain satisfy
+Let `μ 0 ≤ ⋯ ≤ μ (N - 1)` be the successive minima over `K` of an approximation domain
+`approxDomain S₀ L c Q` of `K^ι`, `N = card ι`, realized by linearly independent vectors `x l`.
+For `k + p = N` with `0 < p`, Evertse's lemma corrects the `x l` triangularly to
+vectors `y l` whose Plücker vectors `y J`, for the `p`-subsets `J` meeting `{0, …, k - 1}`, lie in
+the wedge domain `S(Q)`, the approximation domain of the wedge forms `wedgeForms (L v) p` with
+the exponents `wedgeExponent` (`TauCeti.NumberField.exists_plucker_mem_approxDomain_wedgeForms`).
 
-```text
-λ l ≤ 1  for l + 1 < M,      A · μ k / μ (k - 1) ≤ λ (M - 1),
-```
+This file proves Bombieri–Gubler's Lemma 7.5.31: if `ν` are the successive minima over `K` of
+`S(Q)`, of which there are `M = N.choose p`, then all but the last are at most `1`, and the last is
+at least `c₀ · μ k / μ (k - 1)`, with `c₀ > 0` independent of the exponents `c`, of the level `Q`
+and of `k` (`TauCeti.NumberField.exists_successiveMinimum_wedge`). The first statement holds
+because the `M - 1` Plücker vectors above lie in `S(Q)` and span a hyperplane, Lemma 7.5.33
+(`TauCeti.finrank_wedgeSpan_add_one`). For the second, Minkowski's second theorem over `K` bounds
+`∏ l, ν l ^ d`, with `d = [K : ℚ]`, below by a constant times `Q ^ (-w)`, where `w` is the weight of
+`S(Q)`; since every minimum but the last is at most `1`, the same lower bound holds for
+`ν (M - 1) ^ d` (`TauCeti.NumberField.exists_pos_mul_rpow_le_successiveMinimum_pow`). `Q` raised to
+the weight of `S(Q)` is at most a constant times `(μ (k - 1) / μ k) ^ d` by Minkowski's second
+theorem for the original domain (`TauCeti.NumberField.rpow_approxWeight_wedgeExponent_le`).
 
-with `A > 0` independent of the level `Q`, of the exponents `c` and of `p`: all minima but the
-last are at most `1` and, for `0 < k`, a large jump between the consecutive minima `μ (k - 1)` and
-`μ k` of the original domain makes the last minimum of the wedge domain large.
-
-The upper bounds use the bijections `σ` produced, together with a basis `y` corrected from a
-family realizing the minima `μ`, by
-`TauCeti.NumberField.exists_plucker_mem_approxDomain_wedgeForms`: for them, the wedge domain
-contains the Plücker vectors of the `p`-subfamilies of `y` that meet the first `k` indices. These
-span `wedgeSpan k p y`, a hyperplane by Lemma 7.5.33 (`TauCeti.finrank_wedgeSpan_add_one`), so the
-domain has rank at least `M - 1`
-(`TauCeti.NumberField.choose_sub_one_le_finrank_approxSpan_of_forall_plucker_mem`) and its first
-`M - 1` minima are at most `1`
-(`TauCeti.NumberField.successiveMinimum_le_one_of_lt_finrank_approxSpan`). This uses nothing
-about the forms or the exponents of the domain, and is stated for any approximation domain of
-`⋀^p` containing those Plücker vectors
-(`TauCeti.NumberField.successiveMinimum_le_one_of_forall_plucker_mem`).
-
-The lower bound is Minkowski's second theorem twice. Write `e = wedgeExponent c p k σ μ C Q`
-for the wedge exponent family and `d = [K : ℚ]`. Minkowski's lower bound for the wedge domain
-bounds `∏ l, λ l ^ d` below by a constant times `Q ^ (-approxWeight S₀ e)`; Minkowski's upper
-bound for the original domain bounds `Q ^ approxWeight S₀ e` above by a constant times
-`(μ (k - 1) / μ k) ^ d` (`TauCeti.NumberField.rpow_approxWeight_wedgeExponent_le`), leaving
-`(μ k / μ (k - 1)) ^ d` up to a constant. These weight and product estimates hold for every
-choice of the bijections `σ v`, since the weight of the wedge exponents does not depend on them.
-The upper bounds `λ l ≤ 1` on the first `M - 1` minima do depend on `σ`: they use the bijections
-of the Plücker construction above. If, for the given `σ`, the first `M - 1` minima are at most
-`1`, the product is at most `λ (M - 1) ^ d`, and taking `d`-th roots gives the bound
-(`TauCeti.NumberField.exists_pos_forall_mul_div_le_successiveMinimum_wedge`). The constant there
-depends on the degree `p`; as only the finitely many degrees `1 ≤ p ≤ card ι` occur, a common
-positive lower bound of their constants serves for all of them.
+A large jump between consecutive minima exists whenever the domain has rank `R` with
+`1 ≤ R < N` (Bombieri–Gubler (7.41)): some `k ∈ [R, N)` has
+`(μ (k - 1) / μ k) ^ (N - R) ≤ μ (N - 1)⁻¹` (`TauCeti.NumberField.exists_div_pow_le_inv`), since
+the ratios `μ (k - 1) / μ k` over `k ∈ [R, N)` multiply to `μ (R - 1) / μ (N - 1)` and
+`μ (R - 1) ≤ 1`. For that `k`, the last minimum of `S(Q)` satisfies
+`ν (M - 1) ^ (N - R) ≥ c₀ · μ (N - 1)` (`TauCeti.NumberField.exists_successiveMinimum_wedge_pow`).
+When the weight of the original domain is negative, Minkowski's second theorem makes `μ (N - 1)`
+grow with `Q`, so this bound pushes the last minimum of `S(Q)` above `1` for large `Q`; then `S(Q)`
+has rank exactly `M - 1`.
 
 ## Main results
 
-* `TauCeti.NumberField.choose_sub_one_le_finrank_approxSpan_of_forall_plucker_mem`: an
-  approximation domain of `⋀^p` containing the Plücker vectors of the `p`-subfamilies of a basis
-  meeting the first `k` indices has rank at least `M - 1`.
-* `TauCeti.NumberField.successiveMinimum_le_one_of_forall_plucker_mem`: an approximation domain of
-  `⋀^p` containing the Plücker vectors of the `p`-subfamilies of a basis meeting the first `k`
-  indices has its first `M - 1` minima at most `1`.
-* `TauCeti.NumberField.exists_pos_forall_mul_div_le_successiveMinimum_wedge`: for any
-  bijections, if the first `M - 1` minima of the wedge domain of a fixed degree `p` are at most
-  `1`, its last minimum is at least `A · μ k / μ (k - 1)`, with `A > 0` independent of `Q`, `c`
-  and the bijections.
-* `TauCeti.NumberField.exists_successiveMinimum_wedge`: Bombieri–Gubler's Lemma 7.5.31. It first
-  chooses `C > 0` depending only on `K` and `ι`; the two bounds then hold together for the wedge
-  domain built from the successive minima, `C` and suitable bijections, with `A > 0` independent
-  of `p`, `Q` and `c`.
+* `TauCeti.NumberField.exists_successiveMinimum_wedge`: Lemma 7.5.31, the successive minima of
+  the wedge domain.
+* `TauCeti.NumberField.exists_successiveMinimum_wedge_pow`: Lemma 7.5.31 combined with (7.41).
 
 ## References
 
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press (2006),
-  7.5.30 and Lemma 7.5.31.
+  7.5.30, (7.41) and Lemma 7.5.31.
+* J.-H. Evertse, *An improvement of the quantitative Subspace theorem*, Compositio Math. 101
+  (1996), 225–311.
 -/
 
 public section
@@ -90,230 +63,270 @@ open scoped Pointwise
 
 namespace TauCeti.NumberField
 
-variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι] [LinearOrder ι]
+variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι]
 
-/-- **The rank of a domain of `⋀^p` containing the wedges of a basis** (toward Bombieri–Gubler,
-Lemma 7.5.31). Let `y` be a basis of `ι → K` and `k + p = card ι`. If an approximation domain of
-`Set.powersetCard ι p → K` contains the Plücker vectors of the `p`-subfamilies of `y` meeting the
-first `k` indices, then its span has dimension at least `(card ι).choose p - 1`: those Plücker
-vectors span the hyperplane `wedgeSpan k p y`. -/
-theorem choose_sub_one_le_finrank_approxSpan_of_forall_plucker_mem {p k : ℕ}
-    {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → Set.powersetCard ι p → Dual K (Set.powersetCard ι p → K)}
-    {c : AbsoluteValue K ℝ → Set.powersetCard ι p → ℝ} {Q : ℝ}
-    (hkp : k + p = Fintype.card ι) {y : Fin (Fintype.card ι) → ι → K}
-    (hy : LinearIndependent K y)
-    (hyD : ∀ J : Set.powersetCard (Fin (Fintype.card ι)) p, (∃ j ∈ J, (j : ℕ) < k) →
-      plucker (y ∘ ofFinEmbEquiv.symm J) ∈ approxDomain S₀ L c Q) :
-    (Fintype.card ι).choose p - 1 ≤ finrank K (approxSpan S₀ L c Q) := by
-  have hW : wedgeSpan k p y ≤ approxSpan S₀ L c Q := by
-    rw [approxSpan_eq_span]
-    exact wedgeSpan_le_iff.2 fun J hJ ↦ Submodule.subset_span (hyD J hJ)
-  have hrank := finrank_wedgeSpan_add_one hy hkp
-  rw [Set.powersetCard.fintypeCard] at hrank
-  have hle : (Fintype.card ι).choose p - 1 ≤ finrank K (wedgeSpan k p y) := by omega
-  exact hle.trans (Submodule.finrank_mono hW)
+/-! ### The successive minima of the wedge domain -/
 
-/-- **The first `M - 1` minima of a domain of `⋀^p` containing the wedges of a basis** (toward
-Bombieri–Gubler, Lemma 7.5.31). Let `y` be a basis of `ι → K` and `k + p = card ι`. If an
-approximation domain of `Set.powersetCard ι p → K` contains the Plücker vectors of the
-`p`-subfamilies of `y` meeting the first `k` indices, then its `l`-th successive minimum over `K` is
-at most `1` for every `l + 1 < (card ι).choose p`: its rank is at least `(card ι).choose p - 1`
-(`TauCeti.NumberField.choose_sub_one_le_finrank_approxSpan_of_forall_plucker_mem`). -/
-theorem successiveMinimum_le_one_of_forall_plucker_mem {p k : ℕ} {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → Set.powersetCard ι p → Dual K (Set.powersetCard ι p → K)}
-    {c : AbsoluteValue K ℝ → Set.powersetCard ι p → ℝ} {Q : ℝ}
-    (hkp : k + p = Fintype.card ι) {y : Fin (Fintype.card ι) → ι → K}
-    (hy : LinearIndependent K y)
-    (hyD : ∀ J : Set.powersetCard (Fin (Fintype.card ι)) p, (∃ j ∈ J, (j : ℕ) < k) →
-      plucker (y ∘ ofFinEmbEquiv.symm J) ∈ approxDomain S₀ L c Q)
-    {l : ℕ} (hl : l + 1 < (Fintype.card ι).choose p) :
-    (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ≤ 1 := by
-  have := choose_sub_one_le_finrank_approxSpan_of_forall_plucker_mem hkp hy hyD
-  exact successiveMinimum_le_one_of_lt_finrank_approxSpan (by omega)
-
-/-- **The product of the minima of the wedge domain is large after a large jump**: Minkowski's
-second theorem for the wedge domain, with `Q` raised to its weight bounded above by Minkowski's
-second theorem for the original domain. For a fixed degree `0 < p` and a fixed constant `0 < C`
-in the wedge exponents, there is `A > 0` such that `A · (μ k / μ (k - 1)) ^ [K : ℚ]` is at most
-the product of the `[K : ℚ]`-th powers of the successive minima of the wedge domain, for all
-exponents, levels `0 < Q ≠ 1`, `k + p = card ι` and bijections. -/
-private theorem exists_pos_forall_mul_div_pow_le_prod_successiveMinimum_wedge
-    {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+/-- For fixed forms, exterior degree `0 < p`, jump index `k` with `k + p = card ι` and constant
+`C > 0`, there is `A > 0` such that `Q ^ approxWeight` of the wedge exponents is at most
+`A · (μ (k - 1) / μ k) ^ [K : ℚ]` for all exponents `c`, levels `0 < Q ≠ 1` and bijections `σ`,
+where `μ` are the successive minima over `K` of `approxDomain S₀ L c Q`. -/
+private theorem exists_pos_rpow_approxWeight_wedgeExponent_le {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
-    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) {p : ℕ} (hp : 0 < p) {C : ℝ}
-    (hC : 0 < C) :
-    ∃ A : ℝ, 0 < A ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ) (Q : ℝ) (k : ℕ)
-      (σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι), 0 < Q → Q ≠ 1 →
-      k + p = Fintype.card ι →
-      A * ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k /
-          (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) (k - 1)) ^ finrank ℚ K ≤
-        ∏ l : Fin (Fintype.card (Set.powersetCard ι p)),
-          (approxModule S₀ (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ
-            ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q)
-              Q).successiveMinimum
-            (approxBody (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ
-              ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q) l ^
-            finrank ℚ K := by
-  set N := Fintype.card ι
-  set d := finrank ℚ K
-  set M := Fintype.card (Set.powersetCard ι p)
-  have hLinf' (v : InfinitePlace K) : LinearIndependent K (wedgeForms (L v.val) p) :=
-    linearIndependent_wedgeForms (hLinf v) p
-  have hLfin' (v : FinitePlace K) (hv : v ∈ S₀) : LinearIndependent K (wedgeForms (L v.val) p) :=
-    linearIndependent_wedgeForms (hLfin v hv) p
-  -- The constants of Minkowski's second theorem: the upper one `A₀` for the original domain and
-  -- the lower one `A₁` for the wedge domain.
-  set A₀ := approxUpperConst S₀ L
-  have hA₀ : 0 < A₀ := approxUpperConst_pos hLinf hLfin
-  set A₁ := approxLowerConst S₀ (fun v ↦ wedgeForms (L v) p)
-  have hA₁ : 0 < A₁ := approxLowerConst_pos (L := fun v ↦ wedgeForms (L v) p) hLinf' hLfin'
-  set D := A₀ ^ (N - 1).choose (p - 1) * C ^ (N.choose p * d)
-  have hD : 0 < D := by positivity
-  refine ⟨A₁ / D, div_pos hA₁ hD, fun c Q k σ hQ hQ₁ hkp ↦ ?_⟩
-  set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
-  set e := wedgeExponent c p k σ μ C Q
-  have hμk : 0 < μ k := successiveMinimum_approx_pos hLinf hLfin c hQ (by omega)
-  have hμk₁ : 0 < μ (k - 1) := successiveMinimum_approx_pos hLinf hLfin c hQ (by omega)
-  have hratio : μ k / μ (k - 1) * (μ (k - 1) / μ k) = 1 := by
-    rw [div_mul_div_cancel₀ hμk₁.ne', div_self hμk.ne']
-  have hQw : 0 < Q ^ approxWeight S₀ e := Real.rpow_pos_of_pos hQ _
-  -- `A₁ · Q ^ (-weight) ≤ ∏ l, λ l ^ d` for the wedge domain, and
-  -- `Q ^ weight ≤ D · (μ (k - 1) / μ k) ^ d` for its weight.
-  have hlow :=
-    le_prod_successiveMinimum_approx (L := fun v ↦ wedgeForms (L v) p) hLinf' hLfin' e hQ
-  have hup := rpow_approxWeight_wedgeExponent_le hLinf hLfin c hp hkp σ hC hQ hQ₁
-  rw [Real.rpow_neg hQ.le, ← div_eq_mul_inv, div_le_iff₀ hQw] at hlow
-  refine le_of_mul_le_mul_right (le_trans ?_ hlow) hQw
-  calc A₁ / D * (μ k / μ (k - 1)) ^ d * Q ^ approxWeight S₀ e
-      ≤ A₁ / D * (μ k / μ (k - 1)) ^ d * (D * (μ (k - 1) / μ k) ^ d) :=
-        mul_le_mul_of_nonneg_left hup (mul_nonneg (div_pos hA₁ hD).le (pow_nonneg
-          (div_nonneg hμk.le hμk₁.le) _))
-    _ = A₁ / D * D * (μ k / μ (k - 1) * (μ (k - 1) / μ k)) ^ d := by
-        rw [mul_pow]
-        ring
-    _ = A₁ := by simp [hratio, hD.ne']
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) {k p : ℕ} (hp : 0 < p)
+    (hkp : k + p = Fintype.card ι) {C : ℝ} (hC : 0 < C) :
+    ∃ A : ℝ, 0 < A ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}, 0 < Q → Q ≠ 1 →
+      ∀ σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι,
+      Q ^ approxWeight S₀ (wedgeExponent c p k σ
+          ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) ≤
+        A * ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) (k - 1) /
+          (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k) ^ finrank ℚ K := by
+  have := approxUpperConst_pos hLinf hLfin
+  exact ⟨_, by positivity, fun c Q hQ hQ₁ σ ↦
+    rpow_approxWeight_wedgeExponent_le hLinf hLfin c hp hkp σ hC hQ hQ₁⟩
 
-/-- **The last minimum of the wedge domain is large after a large jump** (Bombieri–Gubler,
-Lemma 7.5.31), for a fixed degree `p`. Let the forms `L v` be linearly independent at the infinite
-places and at `S₀`, let `0 < p` and `0 < C`. There is `A > 0`, depending on `p`, such that for
-all exponents `c`, levels `0 < Q ≠ 1`, `k + p = card ι` and bijections `σ`, if `μ` are the
-successive minima over `K` of `approxDomain S₀ L c Q` and the first `M - 1` successive minima
-`λ` of the wedge domain `approxDomain S₀ (wedgeForms ∘ L) (wedgeExponent c p k σ μ C Q) Q` are at
-most `1`, where `M = (card ι).choose p`, then `A · μ k / μ (k - 1) ≤ λ (M - 1)`. -/
+variable [LinearOrder ι]
+
+/-- For fixed forms, exterior degree `p` and constant `C > 0`, the last successive minimum of the
+wedge domain with jump index `k = card ι - p` is at least `c₀ · μ k / μ (k - 1)` whenever the
+others are at most `1`, with `c₀ > 0` independent of the exponents, the level and the bijections.
+-/
 theorem exists_pos_forall_mul_div_le_successiveMinimum_wedge {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
-    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) {p : ℕ} (hp : 0 < p) {C : ℝ}
-    (hC : 0 < C) :
-    ∃ A : ℝ, 0 < A ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ) (Q : ℝ) (k : ℕ)
-      (σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι), 0 < Q → Q ≠ 1 →
-      k + p = Fintype.card ι →
-      (∀ l, l + 1 < (Fintype.card ι).choose p →
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) {C : ℝ} (hC : 0 < C) (p : ℕ) :
+    ∃ c₀ : ℝ, 0 < c₀ ∧ ∀ k : ℕ, 0 < p → k + p = Fintype.card ι →
+      ∀ (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}, 0 < Q → Q ≠ 1 →
+      ∀ σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι,
+      (∀ l < (Fintype.card ι).choose p - 1,
         (approxModule S₀ (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ
-          ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q).successiveMinimum
+            ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q).successiveMinimum
           (approxBody (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ
             ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q) l ≤ 1) →
-      A * ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k /
+      c₀ * ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k /
           (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) (k - 1)) ≤
         (approxModule S₀ (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ
-          ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q).successiveMinimum
+            ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q).successiveMinimum
           (approxBody (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ
             ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q)
           ((Fintype.card ι).choose p - 1) := by
-  obtain ⟨A, hA, hprod⟩ :=
-    exists_pos_forall_mul_div_pow_le_prod_successiveMinimum_wedge hLinf hLfin hp hC
-  have hd : finrank ℚ K ≠ 0 := finrank_pos.ne'
-  refine ⟨A ^ ((finrank ℚ K)⁻¹ : ℝ), Real.rpow_pos_of_pos hA _,
-    fun c Q k σ hQ hQ₁ hkp hle ↦ ?_⟩
-  set ν := (approxModule S₀ (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ
-    ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q).successiveMinimum
-    (approxBody (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ
-      ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q)
-  set M := Fintype.card (Set.powersetCard ι p)
-  have hM : M = (Fintype.card ι).choose p := Set.powersetCard.fintypeCard p
-  have hM₀ : 0 < M := hM ▸ Nat.choose_pos (by omega)
-  -- All minima of the wedge domain but the last are at most `1`, so the product of the `d`-th
-  -- powers of the minima is at most the `d`-th power of the last one.
-  have hprod_le : ∏ l : Fin M, ν l ^ finrank ℚ K ≤ ν (M - 1) ^ finrank ℚ K := by
-    calc ∏ l : Fin M, ν l ^ finrank ℚ K
-        ≤ ∏ l ∈ {(⟨M - 1, by omega⟩ : Fin M)}, ν l ^ finrank ℚ K :=
-          prod_le_prod_of_subset_of_le_one₀ (subset_univ _)
-            (fun _ _ ↦ pow_nonneg (Submodule.successiveMinimum_nonneg _ _ _) _)
-            fun l _ hl ↦ pow_le_one₀ (Submodule.successiveMinimum_nonneg _ _ _) (hle _ (by
-              have hne : (l : ℕ) ≠ M - 1 := fun h ↦ hl (mem_singleton.2 (Fin.ext h))
-              omega))
-      _ = ν (M - 1) ^ finrank ℚ K := prod_singleton _ _
-  rw [← hM]
-  refine (pow_le_pow_iff_left₀ (mul_nonneg (Real.rpow_pos_of_pos hA _).le
-    (div_nonneg (Submodule.successiveMinimum_nonneg _ _ _)
-      (Submodule.successiveMinimum_nonneg _ _ _))) (Submodule.successiveMinimum_nonneg _ _ _)
-        hd).1 ?_
-  rw [mul_pow, Real.rpow_inv_natCast_pow hA.le hd]
-  exact (hprod c Q k σ hQ hQ₁ hkp).trans hprod_le
+  set N := Fintype.card ι
+  set d := finrank ℚ K
+  by_cases hpN : 0 < p ∧ p ≤ N
+  swap
+  · exact ⟨1, one_pos, fun k hp hkp ↦ absurd ⟨hp, by omega⟩ hpN⟩
+  have hd : d ≠ 0 := finrank_pos.ne'
+  have hMcard : Fintype.card (Set.powersetCard ι p) = N.choose p := fintypeCard p
+  -- Minkowski's lower bound for the wedge domain, and the upper bound on its weight.
+  obtain ⟨A₁, hA₁, h₁⟩ := exists_pos_mul_rpow_le_successiveMinimum_pow (S₀ := S₀)
+    (L := fun v ↦ wedgeForms (L v) p) (fun v ↦ linearIndependent_wedgeForms (hLinf v) p)
+    (fun v hv ↦ linearIndependent_wedgeForms (hLfin v hv) p)
+    (by rw [hMcard]; exact Nat.choose_pos hpN.2)
+  obtain ⟨A₂, hA₂, h₂⟩ :=
+    exists_pos_rpow_approxWeight_wedgeExponent_le (k := N - p) hLinf hLfin hpN.1 (by omega) hC
+  refine ⟨(A₁ / A₂) ^ (d⁻¹ : ℝ), Real.rpow_pos_of_pos (div_pos hA₁ hA₂) _,
+    fun k _ hkp c Q hQ hQ₁ σ hν ↦ ?_⟩
+  obtain rfl : k = N - p := by omega
+  set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
+  set L' : AbsoluteValue K ℝ → Set.powersetCard ι p → Dual K (Set.powersetCard ι p → K) :=
+    fun v ↦ wedgeForms (L v) p
+  set c' := wedgeExponent c p (N - p) σ μ C Q
+  set ν := (approxModule S₀ L' c' Q).successiveMinimum (approxBody L' c' Q)
+  have hμ₀ : 0 < μ (N - p) := successiveMinimum_approx_pos hLinf hLfin c hQ (by omega)
+  have hμ₁ : 0 < μ (N - p - 1) := successiveMinimum_approx_pos hLinf hLfin c hQ (by omega)
+  have hr : 0 < μ (N - p) / μ (N - p - 1) := div_pos hμ₀ hμ₁
+  have hQw : 0 < Q ^ approxWeight S₀ c' := Real.rpow_pos_of_pos hQ _
+  have h₁' : A₁ * Q ^ (-approxWeight S₀ c') ≤ ν (N.choose p - 1) ^ d := by
+    have h := h₁ c' hQ fun l hl ↦ hν l (by rwa [hMcard] at hl)
+    rwa [hMcard] at h
+  have h₂' : Q ^ approxWeight S₀ c' ≤ A₂ * (μ (N - p - 1) / μ (N - p)) ^ d := h₂ c hQ hQ₁ σ
+  refine (pow_le_pow_iff_left₀ (mul_pos (Real.rpow_pos_of_pos (div_pos hA₁ hA₂) _) hr).le
+    (Submodule.successiveMinimum_nonneg _ _ _) hd).1 ?_
+  calc ((A₁ / A₂) ^ (d⁻¹ : ℝ) * (μ (N - p) / μ (N - p - 1))) ^ d
+      = A₁ / (A₂ * (μ (N - p - 1) / μ (N - p)) ^ d) := by
+        rw [mul_pow, Real.rpow_inv_natCast_pow (div_pos hA₁ hA₂).le hd, div_pow, div_pow]
+        field_simp
+    _ ≤ A₁ / Q ^ approxWeight S₀ c' := div_le_div_of_nonneg_left hA₁.le hQw h₂'
+    _ = A₁ * Q ^ (-approxWeight S₀ c') := by rw [Real.rpow_neg hQ.le, div_eq_mul_inv]
+    _ ≤ ν (N.choose p - 1) ^ d := h₁'
 
-/-- **Bombieri–Gubler, Lemma 7.5.31: the successive minima of the wedge domain.** There is
-`C > 0`, depending only on `K` and `ι`, with the following property. Let the forms `L v` be
-linearly independent at the infinite places and at `S₀`. There is `A > 0` such that for all
-`0 < p`, exponents `c`, levels `0 < Q ≠ 1` and `k + p = card ι`, with `μ` the successive minima over
-`K` of `approxDomain S₀ L c Q`, some bijections `σ` make the successive minima `λ` of the wedge
-domain `approxDomain S₀ (wedgeForms ∘ L) (wedgeExponent c p k σ μ C Q) Q` satisfy `λ l ≤ 1` for
-`l + 1 < M` and `A · μ k / μ (k - 1) ≤ λ (M - 1)`, where `M = (card ι).choose p`. For fixed forms
-`L` and places `S₀`, one `A > 0` works uniformly over the degrees `p`, the levels `Q` and the
-exponents `c`. -/
+/-- The constant of `exists_pos_forall_mul_div_le_successiveMinimum_wedge` can be chosen uniformly
+in the exterior degree `p`. -/
+private theorem exists_pos_forall_degree_mul_div_le_successiveMinimum_wedge
+    {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) {C : ℝ} (hC : 0 < C) :
+    ∃ c₀ : ℝ, 0 < c₀ ∧ ∀ k p : ℕ, 0 < p → k + p = Fintype.card ι →
+      ∀ (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}, 0 < Q → Q ≠ 1 →
+      ∀ σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι,
+      (∀ l < (Fintype.card ι).choose p - 1,
+        (approxModule S₀ (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ
+            ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q).successiveMinimum
+          (approxBody (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ
+            ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q) l ≤ 1) →
+      c₀ * ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k /
+          (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) (k - 1)) ≤
+        (approxModule S₀ (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ
+            ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q).successiveMinimum
+          (approxBody (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ
+            ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q)
+          ((Fintype.card ι).choose p - 1) := by
+  set N := Fintype.card ι
+  have hc := exists_pos_forall_mul_div_le_successiveMinimum_wedge hLinf hLfin hC
+  choose c₀ hc₀ hc₀' using hc
+  -- One constant for all exterior degrees `p ≤ N`; the bound is monotone in the constant.
+  refine ⟨(range (N + 1)).inf' nonempty_range_add_one c₀, (lt_inf'_iff _).2 fun p _ ↦ hc₀ p,
+    fun k p hp hkp c Q hQ hQ₁ σ hν ↦ le_trans ?_ (hc₀' p k hp hkp c hQ hQ₁ σ hν)⟩
+  exact mul_le_mul_of_nonneg_right (inf'_le _ (mem_range.2 (by omega)))
+    (div_pos (successiveMinimum_approx_pos hLinf hLfin c hQ (by omega))
+      (successiveMinimum_approx_pos hLinf hLfin c hQ (by omega))).le
+
+/-- **The successive minima of the wedge domain** (Bombieri–Gubler, Lemma 7.5.31). There is
+`C > 0`, depending only on `K` and `ι`, with the following property. For forms `L` linearly
+independent at the infinite places and at `S₀` there is `c₀ > 0` such that for all exponents `c`,
+levels `0 < Q ≠ 1`, `k` and `0 < p` with `k + p = card ι`, and linearly independent vectors `x l` of
+`approxModule S₀ L c Q` realizing its successive minima `μ` over `K`, there are triangular
+corrections `y` of `x` and bijections `σ v` such that
+* the Plücker vectors of the `p`-subfamilies of `y` meeting `{0, …, k - 1}` lie in the wedge
+  domain `S(Q)`, the approximation domain of the wedge forms `wedgeForms (L v) p` with the
+  exponents `wedgeExponent c p k σ μ C Q`;
+* every successive minimum over `K` of `S(Q)` but the last, of index `(card ι).choose p - 1`, is
+  at most `1`;
+* the last is at least `c₀ · μ k / μ (k - 1)`. -/
 theorem exists_successiveMinimum_wedge :
-    ∃ C : ℝ, 0 < C ∧ ∀ (S₀ : Finset (FinitePlace K)) (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)),
+    ∃ C : ℝ, 0 < C ∧ ∀ {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)},
       (∀ v : InfinitePlace K, LinearIndependent K (L v.val)) →
-      (∀ v ∈ S₀, LinearIndependent K (L v.val)) → ∃ A : ℝ, 0 < A ∧
-      ∀ (p : ℕ) (c : AbsoluteValue K ℝ → ι → ℝ) (Q : ℝ) (k : ℕ), 0 < p → 0 < Q → Q ≠ 1 →
-        k + p = Fintype.card ι → ∃ σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι,
-          (∀ l, l + 1 < (Fintype.card ι).choose p →
+      (∀ v ∈ S₀, LinearIndependent K (L v.val)) →
+      ∃ c₀ : ℝ, 0 < c₀ ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} {k p : ℕ}
+        {x : Fin (Fintype.card ι) → ι → K}, 0 < Q → Q ≠ 1 → 0 < p →
+        k + p = Fintype.card ι → LinearIndependent K x →
+        (∀ l, x l ∈ approxModule S₀ L c Q) →
+        (∀ l : Fin (Fintype.card ι), (fun j ↦ mixedEmbedding K (x l j)) ∈
+          (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l • approxBody L c Q) →
+        ∃ (y : Fin (Fintype.card ι) → ι → K) (σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι),
+          (∀ j, y j - x j ∈ Submodule.span K (x '' Set.Iio j)) ∧
+          (∀ J : Set.powersetCard (Fin (Fintype.card ι)) p, (∃ j ∈ J, (j : ℕ) < k) →
+            plucker (y ∘ ofFinEmbEquiv.symm J) ∈ approxDomain S₀ (fun v ↦ wedgeForms (L v) p)
+              (wedgeExponent c p k σ
+                ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q) ∧
+          (∀ l < (Fintype.card ι).choose p - 1,
             (approxModule S₀ (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ
-              ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q)
+                ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q)
                 Q).successiveMinimum
               (approxBody (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ
                 ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q) l ≤ 1) ∧
-          A * ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k /
+          c₀ * ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k /
               (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) (k - 1)) ≤
             (approxModule S₀ (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ
-              ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q)
+                ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q)
                 Q).successiveMinimum
               (approxBody (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ
                 ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q)
               ((Fintype.card ι).choose p - 1) := by
-  obtain ⟨C, hC, hplucker⟩ := exists_plucker_mem_approxDomain_wedgeForms (K := K) (ι := ι)
-  refine ⟨C, hC, fun S₀ L hLinf hLfin ↦ ?_⟩
-  -- The constants for the finitely many degrees `1 ≤ p ≤ card ι` have a common positive lower
-  -- bound `ε`.
-  choose! A hA hlast using fun p (hp : 0 < p) ↦
-    exists_pos_forall_mul_div_le_successiveMinimum_wedge hLinf hLfin hp hC
-  obtain ⟨ε, hε, hεA⟩ := Pi.exists_forall_pos_add_lt
-    (x := fun _ : Icc 1 (Fintype.card ι) ↦ (0 : ℝ)) (y := fun p ↦ A p)
-    fun p ↦ hA p (mem_Icc.1 p.property).1
-  refine ⟨ε, hε, fun p c Q k hp hQ hQ₁ hkp ↦ ?_⟩
-  have hεp : ε ≤ A p := by simpa using (hεA ⟨p, mem_Icc.2 ⟨hp, by omega⟩⟩).le
+  obtain ⟨C, hC, hE⟩ := exists_plucker_mem_approxDomain_wedgeForms (K := K) (ι := ι)
+  refine ⟨C, hC, fun {S₀ L} hLinf hLfin ↦ ?_⟩
+  obtain ⟨c₀, hc₀, hlast⟩ :=
+    exists_pos_forall_degree_mul_div_le_successiveMinimum_wedge hLinf hLfin hC
+  set N := Fintype.card ι
+  refine ⟨c₀, hc₀, fun c Q k p x hQ hQ₁ hp hkp hx hxΛ hxB ↦ ?_⟩
   set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
-  -- A family realizing the minima satisfies the hypotheses of the wedge-domain construction.
-  obtain ⟨x, hx, hxB⟩ :=
-    exists_linearIndependent_mem_smul_successiveMinimum_approx hLinf hLfin c hQ
-  have hμ (l : ℕ) (hl : l < Fintype.card ι) : 0 < μ l :=
-    successiveMinimum_approx_pos hLinf hLfin c hQ hl
-  have hμm : MonotoneOn μ (Set.Iio (Fintype.card ι)) :=
-    monotoneOn_successiveMinimum_approx hLinf hLfin c hQ
-  obtain ⟨y, σ, hspan, hmem⟩ := hplucker S₀ L c Q x μ hLinf hLfin hQ hQ₁ hx hμm hμ
-    (fun l ↦ (hxB l).1) fun v i l ↦ (mixedEmbedding_mem_smul_approxBody_iff (hμ l l.isLt)).1
-      (hxB l).2 v i
-  -- The corrected family is unitriangular over the independent family `x`.
-  have hy : LinearIndependent K y :=
-    hx.of_eq_add_mem_span_image_Iio fun j ↦ ⟨_, hspan j, (add_sub_cancel _ _).symm⟩
-  set e := wedgeExponent c p k σ μ C Q
-  have hle (l : ℕ) (hl : l + 1 < (Fintype.card ι).choose p) :
-      (approxModule S₀ (fun v ↦ wedgeForms (L v) p) e Q).successiveMinimum
-        (approxBody (fun v ↦ wedgeForms (L v) p) e Q) l ≤ 1 :=
-    successiveMinimum_le_one_of_forall_plucker_mem (L := fun v ↦ wedgeForms (L v) p) (c := e) hkp
-      hy (hmem k p) hl
-  refine ⟨σ, hle, le_trans (mul_le_mul_of_nonneg_right hεp (div_nonneg
-    (Submodule.successiveMinimum_nonneg _ _ _) (Submodule.successiveMinimum_nonneg _ _ _)))
-    (hlast p hp c Q k σ hQ hQ₁ hkp hle)⟩
+  have hμ (l : ℕ) (hl : l < N) : 0 < μ l := successiveMinimum_approx_pos hLinf hLfin c hQ hl
+  obtain ⟨y, σ, hspan, hmem⟩ := hE S₀ L c Q x μ hLinf hLfin hQ hQ₁ hx
+    (monotoneOn_successiveMinimum_approx hLinf hLfin c hQ) hμ hxΛ
+    fun v i l ↦ (mixedEmbedding_mem_smul_approxBody_iff (hμ l l.isLt)).1 (hxB l) v i
+  set L' : AbsoluteValue K ℝ → Set.powersetCard ι p → Dual K (Set.powersetCard ι p → K) :=
+    fun v ↦ wedgeForms (L v) p
+  set c' := wedgeExponent c p k σ μ C Q
+  have hy := hx.of_eq_add_mem_span_image_Iio fun j ↦
+    ⟨_, hspan j, (add_sub_cancel _ _).symm⟩
+  have hν (l : ℕ) (hl : l < N.choose p - 1) :
+      (approxModule S₀ L' c' Q).successiveMinimum (approxBody L' c' Q) l ≤ 1 := by
+    refine successiveMinimum_le_one_of_forall_plucker_mem hkp hy (hmem k p) ?_
+    change l < (Fintype.card ι).choose p - 1 at hl
+    omega
+  exact ⟨y, σ, hspan, hmem k p, hν, hlast k p hp hkp c hQ hQ₁ σ hν⟩
+
+/-- **The successive minima of the wedge domain after a large jump** (Bombieri–Gubler, (7.41) and
+Lemma 7.5.31). There is `C > 0`, depending only on `K` and `ι`, with the following property. For
+forms `L` linearly independent at the infinite places and at `S₀` there is `c₀ > 0` such that for
+all exponents `c`, levels `0 < Q ≠ 1` and linearly independent vectors `x l` of
+`approxModule S₀ L c Q` realizing its successive minima `μ` over `K`, if the rank
+`R = finrank K (approxSpan S₀ L c Q)` satisfies `1 ≤ R < card ι`, then for some `k` with
+`R ≤ k < card ι`, and `p = card ι - k`, there are triangular corrections `y` of `x` and bijections
+`σ v` such that the Plücker vectors of the `p`-subfamilies of `y` meeting `{0, …, k - 1}` lie in
+the wedge domain `S(Q)`, every successive minimum over `K` of `S(Q)` but the last is at most `1`,
+and the last, raised to the power `card ι - R`, is at least `c₀ · μ (card ι - 1)`. -/
+theorem exists_successiveMinimum_wedge_pow :
+    ∃ C : ℝ, 0 < C ∧ ∀ {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)},
+      (∀ v : InfinitePlace K, LinearIndependent K (L v.val)) →
+      (∀ v ∈ S₀, LinearIndependent K (L v.val)) →
+      ∃ c₀ : ℝ, 0 < c₀ ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}
+        {x : Fin (Fintype.card ι) → ι → K}, 0 < Q → Q ≠ 1 →
+        0 < finrank K (approxSpan S₀ L c Q) →
+        finrank K (approxSpan S₀ L c Q) < Fintype.card ι → LinearIndependent K x →
+        (∀ l, x l ∈ approxModule S₀ L c Q) →
+        (∀ l : Fin (Fintype.card ι), (fun j ↦ mixedEmbedding K (x l j)) ∈
+          (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l • approxBody L c Q) →
+        ∃ k, finrank K (approxSpan S₀ L c Q) ≤ k ∧ k < Fintype.card ι ∧
+        ∃ (y : Fin (Fintype.card ι) → ι → K) (σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι),
+          (∀ j, y j - x j ∈ Submodule.span K (x '' Set.Iio j)) ∧
+          (∀ J : Set.powersetCard (Fin (Fintype.card ι)) (Fintype.card ι - k),
+            (∃ j ∈ J, (j : ℕ) < k) →
+            plucker (y ∘ ofFinEmbEquiv.symm J) ∈
+              approxDomain S₀ (fun v ↦ wedgeForms (L v) (Fintype.card ι - k))
+                (wedgeExponent c (Fintype.card ι - k) k σ
+                  ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q) ∧
+          (∀ l < (Fintype.card ι).choose (Fintype.card ι - k) - 1,
+            (approxModule S₀ (fun v ↦ wedgeForms (L v) (Fintype.card ι - k))
+                (wedgeExponent c (Fintype.card ι - k) k σ
+                  ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q)
+                Q).successiveMinimum
+              (approxBody (fun v ↦ wedgeForms (L v) (Fintype.card ι - k))
+                (wedgeExponent c (Fintype.card ι - k) k σ
+                  ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q) l ≤ 1) ∧
+          c₀ * (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
+              (Fintype.card ι - 1) ≤
+            (approxModule S₀ (fun v ↦ wedgeForms (L v) (Fintype.card ι - k))
+                (wedgeExponent c (Fintype.card ι - k) k σ
+                  ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q)
+                Q).successiveMinimum
+              (approxBody (fun v ↦ wedgeForms (L v) (Fintype.card ι - k))
+                (wedgeExponent c (Fintype.card ι - k) k σ
+                  ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q)
+              ((Fintype.card ι).choose (Fintype.card ι - k) - 1) ^
+              (Fintype.card ι - finrank K (approxSpan S₀ L c Q)) := by
+  obtain ⟨C, hC, hW⟩ := exists_successiveMinimum_wedge (K := K) (ι := ι)
+  refine ⟨C, hC, fun {S₀ L} hLinf hLfin ↦ ?_⟩
+  obtain ⟨c₀, hc₀, h⟩ := hW hLinf hLfin
+  set N := Fintype.card ι
+  -- Shrinking `c₀` to at most `1` makes `c₀ ^ N` a constant for every exponent `N - R ≤ N`.
+  refine ⟨min c₀ 1 ^ N, pow_pos (lt_min hc₀ one_pos) _,
+    fun c Q x hQ hQ₁ hR hRN hx hxΛ hxB ↦ ?_⟩
+  set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
+  set R := finrank K (approxSpan S₀ L c Q)
+  have hbot : approxSpan S₀ L c Q ≠ ⊥ := fun h ↦ hR.ne' (Submodule.finrank_eq_zero.2 h)
+  have htop : approxSpan S₀ L c Q ≠ ⊤ := fun h ↦ hRN.ne <| by
+    rw [← Module.finrank_fintype_fun_eq_card K, ← finrank_top K (ι → K), ← h]
+  obtain ⟨k, hk, hjump⟩ := exists_div_pow_le_inv hLinf hLfin c hQ hbot htop
+  obtain ⟨hRk, hkN⟩ := Finset.mem_Ico.1 hk
+  obtain ⟨y, σ, hspan, hmem, hν, hlast⟩ :=
+    h c (k := k) (p := N - k) hQ hQ₁ (by omega) (by omega) hx hxΛ hxB
+  refine ⟨k, hRk, hkN, y, σ, hspan, hmem, hν, ?_⟩
+  have hμ (l : ℕ) (hl : l < N) : 0 < μ l := successiveMinimum_approx_pos hLinf hLfin c hQ hl
+  have hr : 0 < μ k / μ (k - 1) := div_pos (hμ k hkN) (hμ (k - 1) (by omega))
+  have hm : 0 < min c₀ 1 := lt_min hc₀ one_pos
+  -- `μ (N - 1) ≤ (μ k / μ (k - 1)) ^ (N - R)` is the jump, inverted.
+  have hjump' : μ (N - 1) ≤ (μ k / μ (k - 1)) ^ (N - R) := by
+    have h := (le_inv_comm₀ (pow_pos (div_pos (hμ (k - 1) (by omega)) (hμ k hkN)) _)
+      (hμ _ (by omega))).1 hjump
+    rwa [← inv_pow, inv_div] at h
+  calc min c₀ 1 ^ N * μ (N - 1)
+      ≤ min c₀ 1 ^ (N - R) * (μ k / μ (k - 1)) ^ (N - R) :=
+        mul_le_mul (pow_le_pow_of_le_one hm.le (min_le_right _ _) (by omega)) hjump'
+          (hμ _ (by omega)).le (pow_nonneg hm.le _)
+    _ = (min c₀ 1 * (μ k / μ (k - 1))) ^ (N - R) := (mul_pow _ _ _).symm
+    _ ≤ _ := pow_le_pow_left₀ (by positivity)
+        ((mul_le_mul_of_nonneg_right (min_le_left _ _) hr.le).trans hlast) _
 
 end TauCeti.NumberField

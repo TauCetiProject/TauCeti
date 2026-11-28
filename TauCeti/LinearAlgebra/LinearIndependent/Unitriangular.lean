@@ -19,6 +19,9 @@ combinations of the `z l` with equal values give, by independence of `x`, equal 
 families `f + ∑ l, f l • d l` and `g + ∑ l, g l • d l`. At a maximal index `j` where `f` and `g`
 differ, the two sums have the same coefficient at `j`, so cancelling it gives `f j = g j`.
 
+These corrections occur in Evertse's lemma. Over a ring and a well-founded order they also
+preserve the span of the family (`Submodule.span_range_eq_span_range_of_sub_mem_span`).
+
 ## Main results
 
 * `LinearIndependent.of_eq_add_mem_span_image_Iio`: a unitriangular change of a linearly

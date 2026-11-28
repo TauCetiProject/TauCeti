@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
+public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
@@ -19,7 +19,7 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 
 Mathlib's `CliffordAlgebra.ofBaseChangeAux` is the canonical map from a Clifford algebra to the
 Clifford algebra of a scalar extension; it preserves the even part and Clifford conjugation, as
-recorded in `TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange`. It therefore restricts to a
+recorded in `TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange.Basic`. It therefore restricts to a
 homomorphism of Spin groups. For the canonical lift of an Eichler transvection, this homomorphism
 sends `1 + ι w * ι u` to the lift determined by the pure tensors `1 ⊗ u` and `1 ⊗ w`.
 
@@ -38,6 +38,9 @@ complexified Spin group.
 
 * `CliffordAlgebra.spinGroupBaseChange` extends a Spin element's scalars.
 * `CliffordAlgebra.spinGroupBaseChange_injective` proves injectivity for faithful flat extensions.
+* `TauCeti.span_range_spinGroupBaseChange_eq_even`: if a Spin group spans its even Clifford
+  algebra, then its image under extension of scalars spans the even Clifford algebra of the
+  extended form.
 * `CliffordAlgebra.spinVectorAction_baseChange_tmul` computes the extended action on pure tensors.
 * `CliffordAlgebra.spinToSpecialOrthogonal_baseChange` gives the commuting square with extension
   of special orthogonal automorphisms.
@@ -116,6 +119,34 @@ theorem spinGroupBaseChange_injective [FaithfulSMul R A] (Q : QuadraticForm R M)
   Subtype.ext <| ofBaseChangeAux_injective Q <| by
     simpa only [coe_spinGroupBaseChange_apply] using congrArg Subtype.val hxy
 
+/-- **The image of the Spin group under extension of scalars spans the even Clifford algebra of
+the scalar extension** as soon as the Spin group of `Q` spans the even Clifford algebra of `Q`.
+Over `ℂ`, this says that the complexified Clifford values of a real Spin group with this
+spanning property have complex-linear span the whole complex even Clifford algebra. -/
+theorem _root_.TauCeti.span_range_spinGroupBaseChange_eq_even {Q : QuadraticForm R M}
+    (hspan : Submodule.span R (spinGroup Q : Set (CliffordAlgebra Q)) = (even Q).toSubmodule) :
+    Submodule.span A (Set.range fun g : spinGroup Q ↦
+        (spinGroupBaseChange (A := A) Q g : CliffordAlgebra (Q.baseChange A))) =
+      (even (Q.baseChange A)).toSubmodule := by
+  have hrange : (Set.range fun g : spinGroup Q ↦
+      (spinGroupBaseChange (A := A) Q g : CliffordAlgebra (Q.baseChange A))) =
+      ofBaseChangeAux A Q '' (spinGroup Q : Set (CliffordAlgebra Q)) := by
+    simp only [coe_spinGroupBaseChange_apply]
+    exact (Set.image_eq_range (ofBaseChangeAux A Q) (spinGroup Q : Set (CliffordAlgebra Q))).symm
+  calc
+    _ = Submodule.span A (Submodule.span R
+          ((ofBaseChangeAux A Q).toLinearMap '' (spinGroup Q : Set (CliffordAlgebra Q))) :
+            Set (CliffordAlgebra (Q.baseChange A))) := by
+      -- the `A`-span of the image is the `A`-span of its `R`-span
+      rw [hrange, Submodule.span_span_of_tower, AlgHom.coe_toLinearMap]
+    _ = Submodule.span A (ofBaseChangeAux A Q '' evenOdd Q 0) := by
+      -- the `R`-span of the image is the image of the `R`-span, the even part of `Cℓ(M, Q)`
+      rw [Submodule.span_image, hspan, even_toSubmodule, Submodule.map_coe,
+        AlgHom.coe_toLinearMap]
+    _ = _ := by
+      -- scalar extension preserves the even part
+      rw [TauCeti.span_ofBaseChangeAux_image_evenOdd, even_toSubmodule]
+
 /-- On a pure tensor, the action of a scalar-extended Spin element is the extension of the
 original action. -/
 @[simp]
@@ -156,7 +187,7 @@ section Field
 
 variable {K : Type u} {L : Type v} {V : Type w}
 variable [Field K] [Field L] [Algebra K L]
-variable [AddCommGroup V] [Module K V] [FiniteDimensional K V] [Invertible (2 : K)]
+variable [AddCommGroup V] [Module K V] [Invertible (2 : K)]
 variable {Q : QuadraticForm K V} {u w : V}
 
 /-- Extension of scalars carries the canonical Spin lift of `E_{u,w}` to the canonical lift of
@@ -355,7 +386,7 @@ theorem spinToOrthogonal_baseChange [Invertible (2 : A)] (Q : QuadraticForm R M)
 open _root_.QuadraticMap
 
 variable {K L V : Type*} [Field K] [Field L] [Algebra K L]
-  [AddCommGroup V] [Module K V] [FiniteDimensional K V] [Invertible (2 : K)]
+  [AddCommGroup V] [Module K V] [Invertible (2 : K)]
 
 /-- Extending scalars along a field extension carries the canonical Spin root-subgroup
 homomorphism to that of the extended quotient parameters, preserving its additive composition

@@ -10,6 +10,8 @@ public import Mathlib.GroupTheory.GroupAction.OfQuotient
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.LocallyConstant.Basic
+public import TauCeti.Algebra.GroupAction.DiagonalOrbits
+public import TauCeti.GroupTheory.GroupAction.Effective
 
 /-!
 # Continuous actions on discrete spaces
@@ -32,6 +34,10 @@ For actions on discrete additive groups, the fixed-point subgroups over all open
 subgroups exhaust the group; the additive group need not be commutative. These results supply
 the openness and exhaustion properties used by the finite-quotient system for continuous
 cohomology.
+
+When every point stabilizer is compact and open, every orbit of every point stabilizer is finite
+(`TauCeti.FiniteStabilizerOrbits.of_isCompact_of_isOpen`): it is the quotient of a compact group
+by an open subgroup.
 
 Mathlib supplies open point stabilizers, open normal subgroups inside clopen neighborhoods of
 the identity in compact groups, and the quotient action on fixed points of a normal subgroup.
@@ -109,12 +115,6 @@ section Kernel
 
 variable (G : Type u) [Group G] (M : Type v) [MulAction G M]
 
-/-- The action kernel is the intersection of all point stabilizers. -/
-theorem ker_toPermHom_eq_iInf_stabilizer :
-    (MulAction.toPermHom G M).ker = ⨅ m : M, MulAction.stabilizer G m := by
-  ext
-  simp [Equiv.ext_iff]
-
 /-- The action kernel is the whole group exactly when the action is trivial. -/
 @[simp]
 theorem ker_toPermHom_eq_top_iff :
@@ -179,5 +179,24 @@ theorem iSup_fixedPoints_openNormal_eq_top :
   exact AddSubgroup.mem_iSup_of_mem U fun u ↦ hm u u.property
 
 end Exhaustion
+
+section StabilizerOrbits
+
+open _root_.MulAction
+
+/-- If every point stabilizer is compact and open, every orbit of every point stabilizer is
+finite. -/
+theorem FiniteStabilizerOrbits.of_isCompact_of_isOpen {G S : Type*} [Group G] [MulAction G S]
+    [TopologicalSpace G] [IsTopologicalGroup G]
+    (hc : ∀ x : S, IsCompact (stabilizer G x : Set G))
+    (ho : ∀ x : S, IsOpen (stabilizer G x : Set G)) : FiniteStabilizerOrbits G S where
+  finite_orbit x y := by
+    let K := stabilizer G x
+    have : CompactSpace K := isCompact_iff_compactSpace.mp (hc x)
+    have hopen : IsOpen (stabilizer K y : Set K) := (ho y).preimage continuous_subtypeVal
+    have : Finite (K ⧸ stabilizer K y) := (stabilizer K y).quotient_finite_of_isOpen hopen
+    exact Set.finite_coe_iff.mp (.of_equiv _ (orbitEquivQuotientStabilizer K y).symm)
+
+end StabilizerOrbits
 
 end TauCeti

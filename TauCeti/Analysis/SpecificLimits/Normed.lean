@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecificLimits.Normed
+public import Mathlib.Data.PNat.Basic
 import Mathlib.Tactic.Ring
 import TauCeti.Analysis.Normed.Ring.InfiniteSum
 
@@ -16,11 +17,20 @@ The norms of the powers of an element in the open unit ball form a summable seri
 the seminorm is not normalized. The same holds after multiplication by bounded coefficients.
 Completeness then gives summability in the ring itself. In a complete seminormed group, a
 sequence whose consecutive norms shrink by factors `C ρᵏ` with `ρ < 1` is summable, by the ratio
-test; conversely, norm divergence of partial sums over `Ico N n` does not depend on the starting
-index `N`, and if consecutive norms eventually expand by a factor `c > 2` (with infinitely many
-terms of positive norm), each term dominates the sum of its predecessors and the partial sums
-diverge in norm. In any normed ring with summable geometric series, shifted polynomial-geometric
-series `∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`.
+test. In any seminormed ring, the shifted polynomial-geometric terms `(n + c) ^ k * r ^ n` tend to
+zero whenever `‖r‖ < 1`, which absorbs polynomial growth after shifting an index; under the same
+hypothesis `‖r‖ < 1`, in any normed ring with summable geometric series, the series
+`∑ (n + c) ^ k * r ^ n` is summable. Summability of `∑ n * f n * r ^ n` and `∑ f n * r ^ n`
+yields summability of `∑ (n + 1) * f n * r ^ (n + 1)`. On the closed unit ball away from `1`, the
+geometric partial sums are bounded by `2 / ‖x - 1‖`. **Dirichlet's test** holds for coefficients
+of bounded variation tending to zero: their products with a sequence of bounded partial sums have
+Cauchy partial sums.
+Quantitatively, Abel's inequality bounds a block `∑ n ∈ Ioc K M, w n • a n` by `2 B w (K + 1)`
+when the partial sums of `a` are at most `B` and the weights `w` are nonnegative and antitone, so
+a convergent series of this shape has tail at most `2 B w (K + 1)` after `K` terms.
+
+In a normed division ring, a geometric series indexed by positive integers sums to `r / (1 - r)`
+for `‖r‖ < 1`.
 
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
@@ -32,12 +42,25 @@ power series `f(z) = ∑_{k ≥ 0} c(k) z^(k + 1)` whose coefficients grow slowl
 to `z / (1 - z)²`, `z² / (1 - z)³` and `z / (1 - z)³`, whose coefficients are binomial.
 
 The geometric weights `(1 - q) qᵏ` sum to `1` and have mean `q / (1 - q)`, so over a normed
-field they average an affine function `c k + B` of `k` to `c q / (1 - q) + B`.
+field they average an affine function `c k + B` of `k` to `c q / (1 - q) + B`. For `‖d‖ > 1` the
+shifted series `∑ₘ C d⁻⁽ᵐ⁺¹⁾` sums to `C / (d - 1)`, the bound behind Tate's limit.
+
+Dirichlet's test `Filter.Tendsto.cauchySeq_series_smul_of_summable_norm_sub` is adapted from the
+lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/Hypergeometric/AnalyticProperties.lean`, where it is
+`exists_tendsto_sum_mul_of_bdd_variation`.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- In a normed division ring, the geometric series over the positive integers sums to
+`r / (1 - r)` whenever `‖r‖ < 1`. -/
+theorem hasSum_geometric_pnat {K : Type*} [NormedDivisionRing K] {r : K} (hr : ‖r‖ < 1) :
+    HasSum (fun n : ℕ+ ↦ r ^ (n : ℕ)) (r / (1 - r)) := by
+  refine (hasSum_pnat_iff_hasSum_succ (f := fun n : ℕ ↦ r ^ n)).2 ?_
+  simpa only [pow_succ', div_eq_mul_inv] using (hasSum_geometric_of_norm_lt_one hr).mul_left r
 
 /-- The norms of the powers of an element in the open unit ball are summable in a seminormed
 ring, without requiring a normalized seminorm. -/
@@ -64,91 +87,6 @@ theorem summable_mul_pow_of_norm_le {K : Type*} [SeminormedRing K] [CompleteSpac
     {b : ℕ → K} {C : ℝ} (hb : ∀ n, ‖b n‖ ≤ C) {q : K} (hq : ‖q‖ < 1) :
     Summable (fun n : ℕ ↦ b n * q ^ n) :=
   (summable_norm_mul_pow_of_norm_le hb hq).of_norm
-
-/-- Divergence in norm of partial sums `∑ m ∈ Ico N n, T m` does not depend on the starting index
-`N`. -/
-theorem tendsto_norm_sum_Ico_atTop_iff {E : Type*} [SeminormedAddCommGroup E] {T : ℕ → E}
-    (N M : ℕ) :
-    Filter.Tendsto (fun n => ‖∑ m ∈ Finset.Ico N n, T m‖) Filter.atTop Filter.atTop ↔
-      Filter.Tendsto (fun n => ‖∑ m ∈ Finset.Ico M n, T m‖) Filter.atTop Filter.atTop := by
-  have hmp (N M : ℕ)
-      (hN : Filter.Tendsto (fun n => ‖∑ m ∈ Finset.Ico N n, T m‖) Filter.atTop Filter.atTop) :
-      Filter.Tendsto (fun n => ‖∑ m ∈ Finset.Ico M n, T m‖) Filter.atTop Filter.atTop := by
-    let K := max N M
-    let C := (∑ m ∈ Finset.Ico N K, T m) - ∑ m ∈ Finset.Ico M K, T m
-    refine Filter.tendsto_atTop_mono' Filter.atTop ?_
-      (Filter.tendsto_atTop_add_const_right Filter.atTop (-‖C‖) hN)
-    filter_upwards [Filter.eventually_ge_atTop K] with n hn
-    have hdiff : (∑ m ∈ Finset.Ico N n, T m) - C = ∑ m ∈ Finset.Ico M n, T m := by
-      rw [← Finset.sum_Ico_consecutive T (le_max_left N M) hn,
-        ← Finset.sum_Ico_consecutive T (le_max_right N M) hn]
-      simp only [C]
-      abel
-    simpa only [← sub_eq_add_neg, hdiff] using norm_sub_norm_le (∑ m ∈ Finset.Ico N n, T m) C
-  exact ⟨hmp N M, hmp M N⟩
-
-/-- If consecutive terms of a sequence eventually expand in norm by a factor `c > 2` (so
-`(c - 1)⁻¹ < 1` and each term dominates the sum of its predecessors) and infinitely many terms
-have positive norm, then the partial sums `∑ m ∈ Ico N n, T m` diverge in norm for every `N`. -/
-theorem tendsto_norm_sum_Ico_atTop_of_eventually_mul_norm_le {E : Type*}
-    [SeminormedAddCommGroup E] {T : ℕ → E} {c : ℝ} (hc : 2 < c)
-    (hgrow : ∀ᶠ m in Filter.atTop, c * ‖T m‖ ≤ ‖T (m + 1)‖)
-    (hpos : ∃ᶠ m in Filter.atTop, 0 < ‖T m‖) (N : ℕ) :
-    Filter.Tendsto (fun n => ‖∑ m ∈ Finset.Ico N n, T m‖) Filter.atTop Filter.atTop := by
-  have hc1_pos : 0 < c - 1 := sub_pos.2 ((by norm_num : (1 : ℝ) < 2).trans hc)
-  have hc2_pos : 0 < c - 2 := sub_pos.2 hc
-  have hc_gt_one : 1 < c := (by norm_num : (1 : ℝ) < 2).trans hc
-  obtain ⟨M₀, hM₀⟩ := Filter.eventually_atTop.1 hgrow
-  obtain ⟨M, hMM₀, hTM_pos⟩ := Filter.frequently_atTop.1 hpos M₀
-  rw [tendsto_norm_sum_Ico_atTop_iff N M]
-  -- Each tail prefix `∑_{m = M}^{M + k - 1} T m` has norm at most `(c - 1)⁻¹ ‖T (M + k)‖`,
-  -- while `‖T (M + k)‖` grows at least as `c ^ k ‖T M‖`.
-  have hprefix (k : ℕ) :
-      ‖∑ m ∈ Finset.Ico M (M + k), T m‖ ≤ (c - 1)⁻¹ * ‖T (M + k)‖ ∧
-        c ^ k * ‖T M‖ ≤ ‖T (M + k)‖ := by
-    induction k with
-    | zero =>
-      exact ⟨by simpa using mul_nonneg (inv_nonneg.2 hc1_pos.le) (norm_nonneg _), by simp⟩
-    | succ k ih =>
-      have hstep : c * ‖T (M + k)‖ ≤ ‖T (M + k + 1)‖ :=
-        hM₀ (M + k) (hMM₀.trans (Nat.le_add_right M k))
-      refine ⟨?_, ?_⟩
-      · rw [← add_assoc, Finset.sum_Ico_succ_top (Nat.le_add_right M k)]
-        calc ‖(∑ m ∈ Finset.Ico M (M + k), T m) + T (M + k)‖
-            ≤ ‖∑ m ∈ Finset.Ico M (M + k), T m‖ + ‖T (M + k)‖ := norm_add_le _ _
-          _ ≤ (c - 1)⁻¹ * ‖T (M + k)‖ + ‖T (M + k)‖ := by gcongr; exact ih.1
-          _ = (c - 1)⁻¹ * (c * ‖T (M + k)‖) := by
-              have : c - 1 ≠ 0 := hc1_pos.ne'
-              field_simp
-              ring
-          _ ≤ (c - 1)⁻¹ * ‖T (M + k + 1)‖ :=
-              mul_le_mul_of_nonneg_left hstep (inv_nonneg.2 hc1_pos.le)
-      · rw [← add_assoc, pow_succ', mul_assoc]
-        exact (mul_le_mul_of_nonneg_left ih.2 (zero_le_two.trans hc.le)).trans hstep
-  have htail : Filter.Tendsto (fun k : ℕ => (c - 2) / (c - 1) * (c ^ k * ‖T M‖))
-      Filter.atTop Filter.atTop :=
-    Filter.Tendsto.const_mul_atTop (div_pos hc2_pos hc1_pos) <|
-      Filter.Tendsto.atTop_mul_const hTM_pos (tendsto_pow_atTop_atTop_of_one_lt hc_gt_one)
-  rw [Filter.tendsto_atTop_atTop] at htail ⊢
-  intro B
-  obtain ⟨K, hK⟩ := htail B
-  refine ⟨M + K + 1, fun n hn => ?_⟩
-  obtain ⟨k, rfl⟩ : ∃ k, n = M + k + 1 := ⟨n - M - 1, by omega⟩
-  calc B ≤ (c - 2) / (c - 1) * (c ^ k * ‖T M‖) := hK k (by omega)
-    _ ≤ (c - 2) / (c - 1) * ‖T (M + k)‖ := by
-          gcongr
-          exact (hprefix k).2
-    _ = ‖T (M + k)‖ - (c - 1)⁻¹ * ‖T (M + k)‖ := by
-          have : c - 1 ≠ 0 := hc1_pos.ne'
-          field_simp
-          ring
-    _ ≤ ‖T (M + k)‖ - ‖∑ m ∈ Finset.Ico M (M + k), T m‖ := by
-          gcongr
-          exact (hprefix k).1
-    _ ≤ ‖∑ m ∈ Finset.Ico M (M + k + 1), T m‖ := by
-          rw [Finset.sum_Ico_succ_top (Nat.le_add_right M k)]
-          simpa [sub_neg_eq_add, add_comm] using
-            norm_sub_norm_le (T (M + k)) (-(∑ m ∈ Finset.Ico M (M + k), T m))
 
 /-- A sequence whose consecutive norms shrink by a factor `C ρᵏ` with `ρ < 1` is summable. -/
 theorem summable_of_norm_succ_le_mul_pow {E : Type*} [SeminormedAddCommGroup E] [CompleteSpace E]
@@ -178,6 +116,32 @@ theorem summable_of_norm_succ_le_mul_pow {E : Type*} [SeminormedAddCommGroup E] 
     filter_upwards [Filter.eventually_ge_atTop 2] with n hn
     simpa [add_tsub_cancel_of_le (hj2.trans hn)] using hzero j hj (n - j)
 
+/-- For any shift `c` and `r` with `‖r‖ < 1` in a seminormed ring, the shifted
+polynomial-geometric sequence `(n + c) ^ k * r ^ n` tends to `0`. This is useful for absorbing
+polynomial growth after shifting an index. -/
+theorem tendsto_add_pow_mul_pow_of_norm_lt_one {R : Type*} [SeminormedRing R] (c : R) (k : ℕ)
+    {r : R} (hr : ‖r‖ < 1) :
+    Filter.Tendsto (fun n : ℕ ↦ ((n : R) + c) ^ k * r ^ n) Filter.atTop (nhds 0) := by
+  rcases k.eq_zero_or_pos with rfl | hk
+  · simpa using tendsto_pow_atTop_nhds_zero_of_norm_lt_one hr
+  -- for `n ≥ 1`, `‖(n + c) ^ k * r ^ n‖ ≤ (‖1‖ + ‖c‖) ^ k * (n ^ k * ‖r‖ ^ n)`, and Mathlib's
+  -- unshifted limit sends the right-hand side to `0`
+  have h := (tendsto_pow_const_mul_const_pow_of_abs_lt_one k
+    ((abs_norm r).trans_lt hr)).const_mul ((‖(1 : R)‖ + ‖c‖) ^ k)
+  rw [mul_zero] at h
+  refine squeeze_zero_norm' ?_ h
+  filter_upwards [Filter.eventually_ge_atTop 1, eventually_norm_pow_le r] with n hn hrn
+  have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
+  have hnc : ‖(n : R) + c‖ ≤ (‖(1 : R)‖ + ‖c‖) * n :=
+    calc ‖(n : R) + c‖ ≤ n * ‖(1 : R)‖ + ‖c‖ := (norm_add_le _ _).trans (by
+          gcongr; exact Nat.norm_cast_le n)
+      _ ≤ (‖(1 : R)‖ + ‖c‖) * n := by nlinarith [norm_nonneg c]
+  calc ‖((n : R) + c) ^ k * r ^ n‖ ≤ ‖(n : R) + c‖ ^ k * ‖r‖ ^ n :=
+        (norm_mul_le _ _).trans <| mul_le_mul (norm_pow_le' _ hk) hrn (norm_nonneg _)
+          (by positivity)
+    _ ≤ ((‖(1 : R)‖ + ‖c‖) * n) ^ k * ‖r‖ ^ n := by gcongr
+    _ = (‖(1 : R)‖ + ‖c‖) ^ k * (n ^ k * ‖r‖ ^ n) := by rw [mul_pow]; ring
+
 /-- For any shift `c` and `r` with `‖r‖ < 1` in a normed ring with summable geometric series,
 the shifted polynomial-geometric series `∑' n, (n + c) ^ k * r ^ n` is summable. -/
 theorem summable_add_pow_mul_geometric_of_norm_lt_one {R : Type*} [NormedRing R]
@@ -191,6 +155,128 @@ theorem summable_add_pow_mul_geometric_of_norm_lt_one {R : Type*} [NormedRing R]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [← mul_assoc, ← Nat.cast_pow, (Nat.cast_commute (n ^ i) _).symm.eq, Nat.cast_pow,
     ← mul_assoc]
+
+/-- Summability of `n * f n * r ^ n` and `f n * r ^ n` yields summability of
+`(n + 1) * f n * r ^ (n + 1)`. -/
+theorem summable_add_one_mul_pow_succ {R : Type*} [CommSemiring R] [TopologicalSpace R]
+    [IsTopologicalSemiring R] {f : ℕ → R} {r : R}
+    (hnf : Summable fun n : ℕ => (n : R) * f n * r ^ n)
+    (hf : Summable fun n : ℕ => f n * r ^ n) :
+    Summable fun n : ℕ => ((n : R) + 1) * f n * r ^ (n + 1) := by
+  refine ((hnf.mul_left r).add (hf.mul_left r)).congr fun n => ?_
+  rw [pow_succ r n]
+  ring
+
+/-- On the closed unit ball of a normed division ring, away from `1`, the partial sums of the
+geometric series `∑ xⁱ` are bounded by `2 / ‖x - 1‖`. These are the bounded partial sums fed to
+Dirichlet's test below on the unit circle. -/
+theorem norm_geom_sum_le {D : Type*} [NormedDivisionRing D] {x : D} (hx : ‖x‖ ≤ 1)
+    (hx1 : x ≠ 1) (n : ℕ) : ‖∑ i ∈ Finset.range n, x ^ i‖ ≤ 2 / ‖x - 1‖ := by
+  rw [geom_sum_eq hx1, norm_div]
+  gcongr
+  calc ‖x ^ n - 1‖ ≤ ‖x ^ n‖ + ‖(1 : D)‖ := norm_sub_le _ _
+    _ ≤ 1 + 1 := by
+      gcongr
+      · rw [norm_pow]; exact pow_le_one₀ (norm_nonneg _) hx
+      · simp
+    _ = 2 := one_add_one_eq_two
+
+/-- **Dirichlet's test** for coefficients of bounded variation. If `f n → 0`, the series of the
+differences `‖f (n + 1) - f n‖` converges, and the partial sums of `z` are bounded, then the
+partial sums of `∑ f n • z n` form a Cauchy sequence. Mathlib's
+`Monotone.cauchySeq_series_mul_of_tendsto_zero_of_bounded` is the case of a monotone real `f`. -/
+theorem _root_.Filter.Tendsto.cauchySeq_series_smul_of_summable_norm_sub {R E : Type*}
+    [SeminormedRing R] [SeminormedAddCommGroup E] [Module R E] [IsBoundedSMul R E] {f : ℕ → R}
+    {z : ℕ → E} {b : ℝ} (hf0 : Filter.Tendsto f Filter.atTop (nhds 0))
+    (hvar : Summable fun n ↦ ‖f (n + 1) - f n‖) (hzb : ∀ n, ‖∑ i ∈ Finset.range n, z i‖ ≤ b) :
+    CauchySeq fun n ↦ ∑ i ∈ Finset.range n, f i • z i := by
+  rw [← cauchySeq_shift 1]
+  simp_rw [Finset.sum_range_by_parts _ _ (_ + 1), add_tsub_cancel_right, sub_eq_add_neg]
+  refine CauchySeq.add (Filter.Tendsto.cauchySeq (x := 0) ?_) (CauchySeq.neg ?_)
+  · have hzb' : Filter.IsBoundedUnder (· ≤ ·) Filter.atTop
+        (norm ∘ fun n ↦ ∑ i ∈ Finset.range (n + 1), z i) :=
+      Filter.isBoundedUnder_of ⟨b, fun n ↦ hzb (n + 1)⟩
+    exact hf0.op_zero_isBoundedUnder_le hzb' (· • ·) norm_smul_le
+  · refine cauchySeq_range_of_norm_bounded (g := fun i ↦ b * ‖f (i + 1) + -f i‖)
+      (by simpa only [← sub_eq_add_neg] using (hvar.mul_left b).hasSum.tendsto_sum_nat.cauchySeq)
+      fun i ↦ ?_
+    rw [mul_comm]
+    exact (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left (hzb _) (norm_nonneg _))
+
+section SummationByParts
+
+open Finset
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Abel's inequality** for a block of a series. If every partial sum `∑ k ∈ Icc 1 n, a k`
+has norm at most `B`, and the real weights `w` are nonnegative and antitone beyond `K`, then
+`‖∑ n ∈ Ioc K M, w n • a n‖ ≤ 2 * B * w (K + 1)` for every `M`. Mathlib's
+`Finset.abs_sum_mul_le_mul_of_abs_sum_range_le` is the corresponding inequality in a linearly
+ordered ring. -/
+theorem norm_sum_Ioc_smul_le {a : ℕ → E} {w : ℕ → ℝ} {B : ℝ} {K : ℕ}
+    (hw : AntitoneOn w (Set.Ioi K)) (hw₀ : ∀ n, K < n → 0 ≤ w n)
+    (ha : ∀ n, ‖∑ k ∈ Icc 1 n, a k‖ ≤ B) (M : ℕ) :
+    ‖∑ n ∈ Ioc K M, w n • a n‖ ≤ 2 * B * w (K + 1) := by
+  have hB : 0 ≤ B := (norm_nonneg _).trans (ha 0)
+  have hK : 0 ≤ w (K + 1) := hw₀ _ K.lt_succ_self
+  rcases le_or_gt M K with hMK | hKM
+  · rw [Ioc_eq_empty_of_le hMK, sum_empty, norm_zero]
+    positivity
+  -- Summation by parts against `a'`, which agrees with `a` off `0` and vanishes at `0`, so that
+  -- its partial sums over `range (n + 1)` are the partial sums `∑ k ∈ Icc 1 n, a k`.
+  set a' : ℕ → E := fun n ↦ if n = 0 then 0 else a n with ha'
+  have hS (n : ℕ) : ∑ i ∈ range (n + 1), a' i = ∑ k ∈ Icc 1 n, a k := by
+    induction n with
+    | zero => simp [ha']
+    | succ n ih => rw [sum_range_succ, ih, sum_Icc_succ_top (by omega)]; simp [ha']
+  have hsum : ∑ n ∈ Ioc K M, w n • a n = ∑ n ∈ Ioc K M, w n • a' n :=
+    sum_congr rfl fun n hn ↦ by
+      have hn0 : n ≠ 0 := by simp only [mem_Ioc] at hn; omega
+      simp [ha', hn0]
+  rw [hsum, sum_Ioc_by_parts w a' hKM, hS, hS]
+  -- The remaining terms are bounded by `B` times the telescoping variation of `w`.
+  have hvar : ‖∑ i ∈ Ioc K (M - 1), (w (i + 1) - w i) • ∑ j ∈ range (i + 1), a' j‖ ≤
+      B * (w (K + 1) - w M) := by
+    have htel : ∑ i ∈ Ico (K + 1) M, (w i - w (i + 1)) = w (K + 1) - w M := by
+      have := sum_Ico_sub w (show K + 1 ≤ M by omega)
+      rw [sum_sub_distrib] at this ⊢
+      linarith
+    calc _ ≤ ∑ i ∈ Ioc K (M - 1), (w i - w (i + 1)) * B := by
+          refine (norm_sum_le _ _).trans (sum_le_sum fun i hi ↦ ?_)
+          have hi' := mem_Ioc.mp hi
+          have hmono : w (i + 1) ≤ w i :=
+            hw (show K < i by omega) (show K < i + 1 by omega) (by omega)
+          rw [norm_smul, hS, Real.norm_of_nonpos (sub_nonpos.mpr hmono), neg_sub]
+          exact mul_le_mul_of_nonneg_left (ha i) (sub_nonneg.mpr hmono)
+      _ = B * (w (K + 1) - w M) := by
+          rw [← sum_mul, ← Ico_add_one_add_one_eq_Ioc, Nat.sub_add_cancel (by omega : 1 ≤ M),
+            htel, mul_comm]
+  have hM : 0 ≤ w M := hw₀ _ hKM
+  calc _ ≤ w M * B + w (K + 1) * B + B * (w (K + 1) - w M) := by
+        refine norm_sub_le_of_le (norm_sub_le_of_le ?_ ?_) hvar
+        · rw [norm_smul, Real.norm_of_nonneg hM]
+          exact mul_le_mul_of_nonneg_left (ha M) hM
+        · rw [norm_smul, Real.norm_of_nonneg hK]
+          exact mul_le_mul_of_nonneg_left (ha K) hK
+    _ = 2 * B * w (K + 1) := by ring
+
+/-- **The tail of a series with bounded partial sums.** If every partial sum
+`∑ k ∈ Icc 1 n, a k` has norm at most `B`, the real weights `w` are nonnegative and antitone
+beyond `K`, and the partial sums of `∑ w n • a n` converge to `L`, then the partial sum up to `K`
+is within `2 * B * w (K + 1)` of `L`. -/
+theorem norm_sub_sum_Icc_smul_le_of_tendsto {a : ℕ → E} {w : ℕ → ℝ} {B : ℝ} {K : ℕ}
+    (hw : AntitoneOn w (Set.Ioi K)) (hw₀ : ∀ n, K < n → 0 ≤ w n)
+    (ha : ∀ n, ‖∑ k ∈ Icc 1 n, a k‖ ≤ B) {L : E}
+    (hL : Filter.Tendsto (fun M ↦ ∑ n ∈ Icc 1 M, w n • a n) Filter.atTop (nhds L)) :
+    ‖L - ∑ n ∈ Icc 1 K, w n • a n‖ ≤ 2 * B * w (K + 1) := by
+  refine le_of_tendsto ((hL.sub_const _).norm)
+    (Filter.eventually_atTop.mpr ⟨K, fun M hKM ↦ ?_⟩)
+  have hIcc (n : ℕ) : Icc 1 n = Ioc 0 n := Icc_add_one_left_eq_Ioc 0 n
+  rw [hIcc, hIcc, ← sum_Ioc_consecutive _ (Nat.zero_le K) hKM, add_sub_cancel_left]
+  exact norm_sum_Ioc_smul_le hw hw₀ ha M
+
+end SummationByParts
 
 variable {K : Type*} [NormedField K]
 
@@ -357,6 +443,19 @@ theorem hasSum_one_sub_mul_geometric_mul_affine {q : K} (hq : ‖q‖ < 1) (c B 
   · ext k; ring
   · field_simp
     ring
+
+/-- For `‖d‖ > 1` the shifted geometric series `∑ₘ C d⁻⁽ᵐ⁺¹⁾` sums to `C / (d - 1)`. -/
+theorem hasSum_mul_inv_pow_succ_of_one_lt_norm {d : K} (hd : 1 < ‖d‖) (C : K) :
+    HasSum (fun m : ℕ ↦ C * d⁻¹ ^ (m + 1)) (C / (d - 1)) := by
+  have hd0 : d ≠ 0 := norm_pos_iff.mp (one_pos.trans hd)
+  have hd1 : d - 1 ≠ 0 := sub_ne_zero.2 fun h ↦ by simp [h] at hd
+  have hinv : ‖d⁻¹‖ < 1 := by
+    rw [norm_inv]
+    exact inv_lt_one_of_one_lt₀ hd
+  convert (hasSum_geometric_of_norm_lt_one hinv).mul_left (C * d⁻¹) using 1
+  · ext m
+    ring
+  · field_simp
 
 variable [CompleteSpace K]
 

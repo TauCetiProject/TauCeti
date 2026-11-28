@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
+public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Cross
 public import TauCeti.CategoryTheory.GradedObject.Monoidal
@@ -36,11 +37,14 @@ input which identifies the connecting morphisms in the proof of the Künneth for
 
 * `HomologicalComplex.tensorLeftShortComplex`: the short complex `K ⊗ S`.
 * `HomologicalComplex.shortExact_tensorLeftShortComplex`,
+  `HomologicalComplex.shortExact_tensorLeftShortComplex_of_degreewise`,
   `HomologicalComplex.shortExact_tensorLeftShortComplex_of_preservesFiniteLimits`: `K ⊗ S` is
-  short exact when `S` is split in each degree, or when tensoring with each term of `K` is exact
-  and the coproducts forming each degree of `K ⊗ S` are exact.
+  short exact when `S` is split in each degree, or when each pairwise tensor product
+  `K.X p ⊗ S.X q` (in particular, when tensoring with each term of `K` is exact) and the
+  coproducts forming each degree of `K ⊗ S` are exact.
 * `HomologicalComplex.tensorRightShortComplex`,
-  `HomologicalComplex.shortExact_tensorRightShortComplex` and
+  `HomologicalComplex.shortExact_tensorRightShortComplex`,
+  `HomologicalComplex.shortExact_tensorRightShortComplex_of_degreewise`, and
   `HomologicalComplex.shortExact_tensorRightShortComplex_of_preservesFiniteLimits`: the
   corresponding short complex `S ⊗ K` is short exact under the same conditions.
 * `HomologicalComplex.homologyCross_comp_δ`: the connecting morphism of `K ⊗ S` on a cross
@@ -109,13 +113,11 @@ lemma shortExact_tensorLeftShortComplex (hS : S.ShortExact) [∀ q, IsSplitMono 
         simpa using congrArg (fun φ ↦ K.X p ◁ φ ≫ ιTensorObj K S.X₂ p q n h) (σ q).id }
 
 variable {S} in
-/-- Tensoring on the left with `K` preserves short exact sequences of complexes when tensoring with
-each term of `K` is exact and the coproducts over the pairs `p + q = n` forming the tensor product
-are exact; for instance for complexes of modules whose terms in `K` are flat, or when each degree
-of the tensor product has finitely many summands. -/
-lemma shortExact_tensorLeftShortComplex_of_preservesFiniteLimits (hS : S.ShortExact)
-    [∀ p, PreservesFiniteLimits (tensorLeft (K.X p))]
-    [∀ p, PreservesFiniteColimits (tensorLeft (K.X p))]
+/-- Tensoring on the left with `K` yields a short exact sequence of complexes when each pairwise
+tensor product `K.X p ⊗ S.X q` is short exact and the coproducts over the pairs `p + q = n`
+forming the tensor product are exact. -/
+lemma shortExact_tensorLeftShortComplex_of_degreewise
+    (h : ∀ p q, ((S.map (eval C c q)).map (tensorLeft (K.X p))).ShortExact)
     [∀ n, HasColimitsOfShape (Discrete (ComplexShape.π c c c ⁻¹' {n})) C]
     [∀ n, HasExactColimitsOfShape (Discrete (ComplexShape.π c c c ⁻¹' {n})) C] :
     (tensorLeftShortComplex K S).ShortExact := by
@@ -132,8 +134,7 @@ lemma shortExact_tensorLeftShortComplex_of_preservesFiniteLimits (hS : S.ShortEx
         S.X₃).toGradedObject)
       (fun x ↦ K.X x.1 ◁ S.f.f x.2) (fun x ↦ K.X x.1 ◁ S.g.f x.2)
       (funext fun x ↦ (whiskerLeft_comp _ _ _).symm.trans (by simp [← comp_f]))
-  have hT := GradedObject.shortExact_mapMap T (ComplexShape.π c c c) n fun ⟨p, q⟩ ↦
-    ((shortExact_iff_degreewise_shortExact S).1 hS q).map_of_exact (tensorLeft (K.X p))
+  have hT := GradedObject.shortExact_mapMap T (ComplexShape.π c c c) n fun ⟨p, q⟩ ↦ h p q
   refine ShortComplex.shortExact_of_iso ?_ hT
   -- the summand inclusions of `K ⊗ S` in degree `n` are those of the coproducts over the fibre
   refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
@@ -149,6 +150,20 @@ lemma shortExact_tensorLeftShortComplex_of_preservesFiniteLimits (hS : S.ShortEx
     refine ((ι_tensorHom _ _ p q n h).trans ?_).trans (GradedObject.ι_mapMap T.g _ (p, q) n h).symm
     simp only [id_f, id_tensorHom]
     rfl
+
+variable {S} in
+/-- Tensoring on the left with `K` preserves short exact sequences of complexes when tensoring with
+each term of `K` is exact and the coproducts over the pairs `p + q = n` forming the tensor product
+are exact; for instance for complexes of modules whose terms in `K` are flat, or when each degree
+of the tensor product has finitely many summands. -/
+lemma shortExact_tensorLeftShortComplex_of_preservesFiniteLimits (hS : S.ShortExact)
+    [∀ p, PreservesFiniteLimits (tensorLeft (K.X p))]
+    [∀ p, PreservesFiniteColimits (tensorLeft (K.X p))]
+    [∀ n, HasColimitsOfShape (Discrete (ComplexShape.π c c c ⁻¹' {n})) C]
+    [∀ n, HasExactColimitsOfShape (Discrete (ComplexShape.π c c c ⁻¹' {n})) C] :
+    (tensorLeftShortComplex K S).ShortExact :=
+  shortExact_tensorLeftShortComplex_of_degreewise K fun p q ↦
+    ((shortExact_iff_degreewise_shortExact S).1 hS q).map_of_exact (tensorLeft (K.X p))
 
 end ShortComplex
 
@@ -190,12 +205,11 @@ lemma shortExact_tensorRightShortComplex (hS : S.ShortExact) [∀ p, IsSplitMono
         simpa using congrArg (fun φ ↦ φ ▷ K.X q ≫ ιTensorObj S.X₂ K p q n h) (σ p).id }
 
 variable {S} in
-/-- Tensoring on the right with `K` preserves short exact sequences of complexes when tensoring
-with each term of `K` is exact and the coproducts over the pairs `p + q = n` forming the tensor
-product are exact; for instance for complexes of modules whose terms in `K` are flat. -/
-lemma shortExact_tensorRightShortComplex_of_preservesFiniteLimits (hS : S.ShortExact)
-    [∀ q, PreservesFiniteLimits (tensorRight (K.X q))]
-    [∀ q, PreservesFiniteColimits (tensorRight (K.X q))]
+/-- Tensoring on the right with `K` yields a short exact sequence of complexes when each pairwise
+tensor product `S.X p ⊗ K.X q` is short exact and the coproducts over the pairs `p + q = n`
+forming the tensor product are exact. -/
+lemma shortExact_tensorRightShortComplex_of_degreewise
+    (h : ∀ p q, ((S.map (eval C c p)).map (tensorRight (K.X q))).ShortExact)
     [∀ n, HasColimitsOfShape (Discrete (ComplexShape.π c c c ⁻¹' {n})) C]
     [∀ n, HasExactColimitsOfShape (Discrete (ComplexShape.π c c c ⁻¹' {n})) C] :
     (tensorRightShortComplex K S).ShortExact := by
@@ -212,8 +226,7 @@ lemma shortExact_tensorRightShortComplex_of_preservesFiniteLimits (hS : S.ShortE
         K).toGradedObject)
       (fun x ↦ S.f.f x.1 ▷ K.X x.2) (fun x ↦ S.g.f x.1 ▷ K.X x.2)
       (funext fun x ↦ (comp_whiskerRight _ _ _).symm.trans (by simp [← comp_f]))
-  have hT := GradedObject.shortExact_mapMap T (ComplexShape.π c c c) n fun ⟨p, q⟩ ↦
-    ((shortExact_iff_degreewise_shortExact S).1 hS p).map_of_exact (tensorRight (K.X q))
+  have hT := GradedObject.shortExact_mapMap T (ComplexShape.π c c c) n fun ⟨p, q⟩ ↦ h p q
   refine ShortComplex.shortExact_of_iso ?_ hT
   -- the summand inclusions of `S ⊗ K` in degree `n` are those of the coproducts over the fibre
   refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
@@ -229,6 +242,19 @@ lemma shortExact_tensorRightShortComplex_of_preservesFiniteLimits (hS : S.ShortE
     refine ((ι_tensorHom _ _ p q n h).trans ?_).trans (GradedObject.ι_mapMap T.g _ (p, q) n h).symm
     simp only [id_f, tensorHom_id]
     rfl
+
+variable {S} in
+/-- Tensoring on the right with `K` preserves short exact sequences of complexes when tensoring
+with each term of `K` is exact and the coproducts over the pairs `p + q = n` forming the tensor
+product are exact; for instance for complexes of modules whose terms in `K` are flat. -/
+lemma shortExact_tensorRightShortComplex_of_preservesFiniteLimits (hS : S.ShortExact)
+    [∀ q, PreservesFiniteLimits (tensorRight (K.X q))]
+    [∀ q, PreservesFiniteColimits (tensorRight (K.X q))]
+    [∀ n, HasColimitsOfShape (Discrete (ComplexShape.π c c c ⁻¹' {n})) C]
+    [∀ n, HasExactColimitsOfShape (Discrete (ComplexShape.π c c c ⁻¹' {n})) C] :
+    (tensorRightShortComplex K S).ShortExact :=
+  shortExact_tensorRightShortComplex_of_degreewise K fun p q ↦
+    ((shortExact_iff_degreewise_shortExact S).1 hS p).map_of_exact (tensorRight (K.X q))
 
 end TensorRight
 
@@ -298,31 +324,8 @@ and `K ⊗ S` is again short exact, then the connecting morphism of `K ⊗ S` se
 theorem homologyCross_comp_δ :
     homologyCross K S.X₃ p q n h ≫ hKS.δ n n' (h ▸ h' ▸ c.add_rel p hq) =
       (c.ε p : ℤ) • ((K.homology p ◁ hS.δ q q' hq) ≫ homologyCross K S.X₁ p q' n' h') := by
-  have hq₁ := (shortExact_iff_degreewise_shortExact S).1 hS q
-  have hq₂ := (shortExact_iff_degreewise_shortExact S).1 hS q'
-  have : Epi (S.g.f q) := hq₁.epi_g
-  have := hq₂.mono_f
-  have : Mono (S.f.f (c.next q')) := ((shortExact_iff_degreewise_shortExact S).1 hS _).mono_f
-  -- the data computing the connecting morphism of `S` on all cycles of `S.X₃` at once: the
-  -- pullback of `S.X₂.X q ⟶ S.X₃.X q` along the cycles of `S.X₃` lifts them to `S.X₂`
-  let a₃ := pullback.snd (S.g.f q) (S.X₃.iCycles q)
-  let a₂ := pullback.fst (S.g.f q) (S.X₃.iCycles q)
-  have h₂ : a₂ ≫ S.g.f q = a₃ ≫ S.X₃.iCycles q := pullback.condition
-  let a₁ := hq₂.exact.lift (a₂ ≫ S.X₂.d q q') (by
-    simp only [Category.assoc]
-    dsimp
-    rw [← S.g.comm, reassoc_of% h₂, iCycles_d, comp_zero])
-  have h₁ : a₁ ≫ S.f.f q' = a₂ ≫ S.X₂.d q q' := hq₂.exact.lift_f _ _
-  have ha₁ : a₁ ≫ S.X₁.d q' (c.next q') = 0 := by
-    rw [← cancel_mono (S.f.f (c.next q')), Category.assoc, ← S.f.comm, reassoc_of% h₁]
-    simp
-  have hδS : a₃ ≫ S.X₃.homologyπ q ≫ hS.δ q q' hq =
-      S.X₁.liftCycles a₁ (c.next q') rfl ha₁ ≫ S.X₁.homologyπ q' := by
-    -- `δ_eq` computes `δ` on the cycles lifting `a₃ ≫ iCycles`, which are `a₃` itself
-    have e₃ : S.X₃.liftCycles (a₃ ≫ S.X₃.iCycles q) q' (c.next_eq' hq) (by simp) = a₃ := by
-      simp [← cancel_mono (S.X₃.iCycles q)]
-    have := hS.δ_eq q q' hq (a₃ ≫ S.X₃.iCycles q) (by simp) a₂ h₂ a₁ h₁ _ rfl
-    rwa [e₃] at this
+  -- the data computing the connecting morphism of `S` on all cycles of `S.X₃` at once
+  obtain ⟨_, a₃, a₂, a₁, h₂, h₁, ha₁, _, hδS⟩ := hS.exists_cycles_lift_δ hq
   -- both sides agree on `x ⊗ a₃`, and these generate `Hₚ(K) ⊗ H_q(S.X₃)`
   have : Epi (K.cycles p ◁ a₃) := (tensorLeft (K.cycles p)).map_epi a₃
   refine homology_tensor_homology_hom_ext K S.X₃ p q ?_
@@ -404,7 +407,6 @@ variable [PreservesColimitsOfShape WalkingParallelPair (tensorLeft (S.X₃.homol
   [PreservesColimitsOfShape WalkingParallelPair (tensorLeft (S.X₁.homology p'))]
   [PreservesColimitsOfShape WalkingParallelPair (tensorRight (K.cycles q))]
   [PreservesColimitsOfShape WalkingParallelPair (tensorRight (K.X (c.prev q)))]
-  [(tensorRight (K.cycles q)).PreservesEpimorphisms]
 
 /-- **The connecting morphism on a cross product, tensoring on the right.**  If `S` is a short
 exact sequence of complexes and `S ⊗ K` is again short exact, then the connecting morphism of
@@ -413,31 +415,12 @@ exact sequence of complexes and `S ⊗ K` is again short exact, then the connect
 theorem homologyCross_comp_δ_right :
     homologyCross S.X₃ K p q n h ≫ hSK.δ n n' (h ▸ h' ▸ c.rel_add hp q) =
       (hS.δ p p' hp ▷ K.homology q) ≫ homologyCross S.X₁ K p' q n' h' := by
-  have hp₁ := (shortExact_iff_degreewise_shortExact S).1 hS p
-  have hp₂ := (shortExact_iff_degreewise_shortExact S).1 hS p'
-  have : Epi (S.g.f p) := hp₁.epi_g
-  have := hp₂.mono_f
-  have : Mono (S.f.f (c.next p')) := ((shortExact_iff_degreewise_shortExact S).1 hS _).mono_f
   -- the data computing the connecting morphism of `S` on all cycles of `S.X₃` at once, as in
   -- `HomologicalComplex.homologyCross_comp_δ`
-  let a₃ := pullback.snd (S.g.f p) (S.X₃.iCycles p)
-  let a₂ := pullback.fst (S.g.f p) (S.X₃.iCycles p)
-  have h₂ : a₂ ≫ S.g.f p = a₃ ≫ S.X₃.iCycles p := pullback.condition
-  let a₁ := hp₂.exact.lift (a₂ ≫ S.X₂.d p p') (by
-    simp only [Category.assoc]
-    dsimp
-    rw [← S.g.comm, reassoc_of% h₂, iCycles_d, comp_zero])
-  have h₁ : a₁ ≫ S.f.f p' = a₂ ≫ S.X₂.d p p' := hp₂.exact.lift_f _ _
-  have ha₁ : a₁ ≫ S.X₁.d p' (c.next p') = 0 := by
-    rw [← cancel_mono (S.f.f (c.next p')), Category.assoc, ← S.f.comm, reassoc_of% h₁]
-    simp
-  have hδS : a₃ ≫ S.X₃.homologyπ p ≫ hS.δ p p' hp =
-      S.X₁.liftCycles a₁ (c.next p') rfl ha₁ ≫ S.X₁.homologyπ p' := by
-    have e₃ : S.X₃.liftCycles (a₃ ≫ S.X₃.iCycles p) p' (c.next_eq' hp) (by simp) = a₃ := by
-      simp [← cancel_mono (S.X₃.iCycles p)]
-    have := hS.δ_eq p p' hp (a₃ ≫ S.X₃.iCycles p) (by simp) a₂ h₂ a₁ h₁ _ rfl
-    rwa [e₃] at this
-  -- both sides agree on `a₃ ⊗ y`, and these generate `Hₚ(S.X₃) ⊗ H_q(K)`
+  obtain ⟨_, a₃, a₂, a₁, h₂, h₁, ha₁, _, hδS⟩ := hS.exists_cycles_lift_δ hp
+  -- both sides agree on `a₃ ⊗ y`, and these generate `Hₚ(S.X₃) ⊗ H_q(K)`;
+  -- `tensorRight (K.cycles q)` preserves cokernels, hence epimorphisms
+  have := NormalMonoCategory.preservesEpimorphisms_of_preservesCokernels (tensorRight (K.cycles q))
   have : Epi (a₃ ▷ K.cycles q) := (tensorRight (K.cycles q)).map_epi a₃
   refine homology_tensor_homology_hom_ext S.X₃ K p q ?_
   have hl : (a₃ ▷ K.cycles q) ≫ (S.X₃.homologyπ p ⊗ₘ K.homologyπ q) ≫

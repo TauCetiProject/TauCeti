@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
-public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Pow
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 import Mathlib.LinearAlgebra.Isomorphisms
 
@@ -19,11 +19,11 @@ is exact. Hence the wedge descends to a bilinear map
 `H^k_dR(M) → H^l_dR(M) → H^(k+l)_dR(M)` on de Rham cohomology, characterized by
 `[φ] ∧ [ψ] = [φ ∧ ψ]` on classes of closed forms.
 
-The wedge of a form with a compactly supported form is supported in the support of the second
-factor. The same Leibniz argument then shows that the wedge of a closed form with a compactly
-supported closed form is compactly supported and closed, and is the exterior derivative of a
-compactly supported form as soon as either factor is exact (compactly supported exact, for the
-second factor). Hence the wedge also descends to a bilinear map
+The wedge of two forms is supported in the support of each factor, so it is compactly supported
+as soon as either factor is. The same Leibniz argument then shows that the wedge of a closed form
+with a compactly supported closed form is compactly supported and closed, and is the exterior
+derivative of a compactly supported form as soon as either factor is exact (compactly supported
+exact, for the second factor). Hence the wedge also descends to a bilinear map
 `H^k_dR(M) → H^l_c(M) → H^(k+l)_c(M)` into compactly supported de Rham cohomology. Followed by
 integration, this gives the Poincaré pairing.
 
@@ -33,11 +33,15 @@ dimensionality, separation, or completeness of the model space.
 ## Main declarations
 
 * `TauCeti.SmoothForm.wedge_mem_closedForms`: the wedge of closed forms is closed.
+* `TauCeti.SmoothForm.wedgePow_mem_closedForms`: so is every wedge power of a closed form.
 * `TauCeti.SmoothForm.wedge_mem_exactForms_of_left_mem`,
   `TauCeti.SmoothForm.wedge_mem_exactForms_of_right_mem`: the wedge of an exact form with a
   closed form, in either order, is exact.
 * `TauCeti.deRhamCohomology.wedge`: the wedge product on de Rham cohomology.
 * `TauCeti.deRhamCohomology.wedge_mk`: its value on classes of closed forms.
+* `TauCeti.SmoothForm.wedge_mem_compactlySupportedForms`,
+  `TauCeti.SmoothForm.wedge_mem_compactlySupportedForms_of_left_mem`: the wedge with a compactly
+  supported form, in either order, is compactly supported.
 * `TauCeti.SmoothForm.wedge_mem_compactlySupportedClosedForms`,
   `TauCeti.SmoothForm.wedge_mem_exactCompactlySupportedForms_of_left_mem`,
   `TauCeti.SmoothForm.wedge_mem_exactCompactlySupportedForms_of_right_mem`: the compactly
@@ -122,6 +126,18 @@ theorem wedge_mem_closedForms {φ : SmoothForm I M ℝ k} {ψ : SmoothForm I M �
   rw [mextDerivₗ_wedge, hφ, hψ]
   simp only [map_zero, LinearMap.zero_apply, smul_zero, add_zero]
 
+/-- Every wedge power of a closed smooth form is closed. -/
+theorem wedgePow_mem_closedForms {φ : SmoothForm I M ℝ k} (hφ : φ ∈ closedForms I M k) :
+    ∀ m, φ.wedgePow m ∈ closedForms I M (k * m)
+  | 0 => by
+    -- The empty power is the constant function `1`, whose differential vanishes.
+    rw [mem_closedForms, wedgePow_zero]
+    funext x
+    simp
+  | m + 1 => by
+    rw [wedgePow_succ]
+    exact wedge_mem_closedForms (wedgePow_mem_closedForms hφ m) hφ
+
 /-- The wedge of an exact smooth form with a closed smooth form is exact. -/
 theorem wedge_mem_exactForms_of_left_mem {φ : SmoothForm I M ℝ k} {ψ : SmoothForm I M ℝ l}
     (hφ : φ ∈ exactForms I M k) (hψ : ψ ∈ closedForms I M l) :
@@ -166,6 +182,15 @@ theorem wedge_mem_compactlySupportedForms (φ : SmoothForm I M ℝ k) {ψ : Smoo
   rw [coe_wedge, RoughForm.wedge_def]
   exact hψ.of_isClosed_subset (_root_.isClosed_tsupport (α := E [⋀^Fin (k + l)]→L[ℝ] ℝ) _)
     (RoughForm.tsupport_wedgeWith_subset_right _ φ.val ψ.val)
+
+/-- The wedge of a compactly supported smooth form with a smooth form is compactly supported. -/
+theorem wedge_mem_compactlySupportedForms_of_left_mem {φ : SmoothForm I M ℝ k}
+    (hφ : φ ∈ compactlySupportedForms I M k) (ψ : SmoothForm I M ℝ l) :
+    wedge φ ψ ∈ compactlySupportedForms I M (k + l) := by
+  rw [mem_compactlySupportedForms] at hφ ⊢
+  rw [coe_wedge, RoughForm.wedge_def]
+  exact hφ.of_isClosed_subset (_root_.isClosed_tsupport (α := E [⋀^Fin (k + l)]→L[ℝ] ℝ) _)
+    (RoughForm.tsupport_wedgeWith_subset_left _ φ.val ψ.val)
 
 /-- The wedge of a closed smooth form with a compactly supported closed smooth form is
 compactly supported and closed. -/

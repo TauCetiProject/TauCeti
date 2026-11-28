@@ -45,7 +45,8 @@ coordinates use `Fin n`.
 * `lieExp_posUpperTriangularLog`, `posUpperTriangularLog_lieExp` and
   `posUpperTriangularLog_one`: the global inverse and identity laws.
 * `contMDiff_posUpperTriangularLog` and `posUpperTriangularExpDiffeomorph`: smooth global
-  exponential coordinates, with characteristic forward and inverse application lemmas.
+  exponential coordinates, with characteristic forward and inverse application lemmas, and
+  `coe_posUpperTriangularExpDiffeomorph`, its coercion to the native exponential.
 * `lieExp_posUpperTriangular_injective` and `lieExp_posUpperTriangular_bijective`:
   global injectivity and bijectivity.
 * `posUpperTriangularContractibleSpace`: contractibility in the existing subgroup topology.
@@ -316,6 +317,11 @@ def posUpperTriangularExpDiffeomorph : Diffeomorph 𝓘(ℝ, Alg) 𝓘(ℝ, Mode
 @[simp]
 theorem posUpperTriangularExpDiffeomorph_apply (X : Alg) :
     posUpperTriangularExpDiffeomorph (𝕜 := 𝕜) n X = lieExp X := by rfl
+
+/-- As a function, the exponential diffeomorphism is the native Lie exponential. -/
+theorem coe_posUpperTriangularExpDiffeomorph :
+    ⇑(posUpperTriangularExpDiffeomorph (𝕜 := 𝕜) n) = lieExp :=
+  funext (posUpperTriangularExpDiffeomorph_apply n)
 
 /-- The inverse exponential diffeomorphism is the native triangular logarithm. -/
 @[simp]

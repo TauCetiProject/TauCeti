@@ -25,7 +25,10 @@ grid-diagram disjointness condition makes the component permutation fixed-point-
 Mathlib's cycle decomposition accounts for every marking, and the component count is also the
 number of orbits `TauCeti.orbitCount` of the component permutation. The quotient
 `GridDiagram.Components` indexes these components, and `componentOfColumn` identifies exactly
-the columns on the same component.
+the columns on the same component. A component has its columns `componentColumns` and its `X`-
+and `O`-marked squares `componentXSet` and `componentOSet`; the two markings of a row lie on the
+same component (`componentOfColumn_X_transpose`), so the `X`- and the `O`-markings of a component
+occupy the same rows (`sum_componentColumns_O_eq_sum_componentColumns_X`).
 
 On a knot grid the component permutation is a single cycle through all columns, so it leads from
 any base column to any other column; the least number of steps is the traversal index
@@ -33,7 +36,10 @@ any base column to any other column; the least number of steps is the traversal 
 the target column.
 
 Row relabeling leaves the component permutation unchanged, while column relabeling conjugates it.
-Both relabelings induce equivalences of component indices.
+Both relabelings induce equivalences of component indices. Diagonal reflection inverts the
+component permutation up to conjugation by the `O`-marking permutation, so it also induces an
+equivalence of component indices, sending the component of a column `c` to that of the column
+`G.O c` of the reflected diagram.
 Consequently the cycle type, component count, and knot predicate are preserved by both
 relabelings, as well as by diagonal reflection, half-turn rotation, and exchanging `O` with `X`.
 
@@ -46,8 +52,12 @@ relabelings, as well as by diagonal reflection, half-turn rotation, and exchangi
 * `TauCeti.GridDiagram.componentCount`: the number of represented link components.
 * `TauCeti.GridDiagram.Components`: the component index type, given by permutation orbits.
 * `TauCeti.GridDiagram.componentOfColumn`: the component containing a column.
+* `TauCeti.GridDiagram.componentColumns`, `TauCeti.GridDiagram.componentXSet`,
+  `TauCeti.GridDiagram.componentOSet`: the columns and the marked squares of one component.
 * `TauCeti.GridDiagram.componentsRelabelRowsEquiv`,
   `TauCeti.GridDiagram.componentsRelabelColumnsEquiv`: component equivalences under relabeling.
+* `TauCeti.GridDiagram.componentsTransposeEquiv`: the component equivalence under diagonal
+  reflection.
 * `TauCeti.GridDiagram.IsKnot`: the represented link has exactly one component.
 * `TauCeti.GridDiagram.IsKnot.traversalIndex`: on a knot grid, the number of steps of the
   component permutation from a base column to a column.
@@ -175,8 +185,20 @@ theorem componentCount_eq_orbitCount : G.componentCount = orbitCount G.component
 /-- The components of a grid diagram, indexed by the orbits of its component permutation. -/
 abbrev Components := Quotient (Equiv.Perm.SameCycle.setoid G.componentPerm)
 
+/-- Equality of components is decided by the cycle structure of the component permutation. -/
+instance : DecidableEq G.Components :=
+  @Quotient.decidableEq _ _ fun a b => inferInstanceAs (Decidable (G.componentPerm.SameCycle a b))
+
+/-- A grid diagram has finitely many components. -/
+instance : Fintype G.Components :=
+  @Quotient.fintype _ _ _ fun a b => inferInstanceAs (Decidable (G.componentPerm.SameCycle a b))
+
 /-- The link component containing the `O`-marking in a column. -/
 def componentOfColumn (c : Fin n) : G.Components := Quotient.mk _ c
+
+/-- The component of a column is its orbit class under the component permutation. -/
+theorem componentOfColumn_def (c : Fin n) : G.componentOfColumn c = Quotient.mk _ c :=
+  (rfl)
 
 /-- Two columns index the same component exactly when they lie in the same component cycle. -/
 @[simp]
@@ -196,6 +218,107 @@ theorem componentOfColumn_out (q : G.Components) : G.componentOfColumn q.out = q
 /-- The cardinality of the component index type is the component count of the diagram. -/
 theorem natCard_components : Nat.card G.Components = G.componentCount := by
   rw [componentCount_eq_orbitCount, orbitCount_def]
+
+/-- The number of components of a grid diagram is its component count. -/
+@[simp]
+theorem card_components : Fintype.card G.Components = G.componentCount := by
+  rw [← Nat.card_eq_fintype_card, natCard_components]
+
+/-- The columns whose markings lie on the link component `q`. -/
+def componentColumns (q : G.Components) : Finset (Fin n) :=
+  Finset.univ.filter fun c => G.componentOfColumn c = q
+
+/-- The columns of a component as the fibre of `componentOfColumn`. -/
+theorem componentColumns_def (q : G.Components) :
+    G.componentColumns q = Finset.univ.filter fun c => G.componentOfColumn c = q :=
+  (rfl)
+
+/-- A column lies on a component exactly when its component is that component. -/
+@[simp]
+theorem mem_componentColumns {q : G.Components} {c : Fin n} :
+    c ∈ G.componentColumns q ↔ G.componentOfColumn c = q := by
+  simp [componentColumns]
+
+/-- The `X`-marked squares on the link component `q`. -/
+def componentXSet (q : G.Components) : Finset (Fin n × Fin n) :=
+  G.XSet.filter fun p => G.componentOfColumn p.1 = q
+
+/-- The `X`-markings of a component as a filter of the `X`-markings. -/
+theorem componentXSet_def (q : G.Components) :
+    G.componentXSet q = G.XSet.filter fun p => G.componentOfColumn p.1 = q :=
+  (rfl)
+
+/-- A square is an `X`-marking of a component exactly when it is an `X`-marking whose column lies
+on that component. -/
+@[simp]
+theorem mem_componentXSet {q : G.Components} {p : Fin n × Fin n} :
+    p ∈ G.componentXSet q ↔ G.X p.1 = p.2 ∧ G.componentOfColumn p.1 = q := by
+  simp [componentXSet]
+
+/-- The `O`-marked squares on the link component `q`. -/
+def componentOSet (q : G.Components) : Finset (Fin n × Fin n) :=
+  G.OSet.filter fun p => G.componentOfColumn p.1 = q
+
+/-- The `O`-markings of a component as a filter of the `O`-markings. -/
+theorem componentOSet_def (q : G.Components) :
+    G.componentOSet q = G.OSet.filter fun p => G.componentOfColumn p.1 = q :=
+  (rfl)
+
+/-- A square is an `O`-marking of a component exactly when it is an `O`-marking whose column lies
+on that component. -/
+@[simp]
+theorem mem_componentOSet {q : G.Components} {p : Fin n × Fin n} :
+    p ∈ G.componentOSet q ↔ G.O p.1 = p.2 ∧ G.componentOfColumn p.1 = q := by
+  simp [componentOSet]
+
+/-- The `X`-marking and the `O`-marking of a row lie on the same component: the component
+permutation carries the column of the `O`-marking to the column of the `X`-marking. -/
+theorem componentOfColumn_X_transpose (r : Fin n) :
+    G.componentOfColumn (G.X.transpose r) = G.componentOfColumn (G.O.transpose r) := by
+  have h : G.componentPerm (G.O.transpose r) = G.X.transpose r := by
+    rw [componentPerm_apply_eq_iff, GridState.apply_transpose_apply,
+      GridState.apply_transpose_apply]
+  rw [← h, componentOfColumn_eq_iff]
+  exact (Equiv.Perm.sameCycle_apply_left.mpr (Equiv.Perm.SameCycle.refl _ _))
+
+/-- The component permutation preserves the component of a column. -/
+theorem componentOfColumn_componentPerm (c : Fin n) :
+    G.componentOfColumn (G.componentPerm c) = G.componentOfColumn c :=
+  G.componentOfColumn_eq_iff.mpr (Equiv.Perm.sameCycle_apply_left.mpr (.refl _ _))
+
+/-- A sum over the `X`-markings of a component is a sum over its columns. -/
+theorem sum_componentXSet {M : Type*} [AddCommMonoid M] (q : G.Components)
+    (f : Fin n × Fin n → M) :
+    ∑ p ∈ G.componentXSet q, f p = ∑ c ∈ G.componentColumns q, f (c, G.X c) := by
+  rw [componentXSet_def, componentColumns_def, Finset.sum_filter, Finset.sum_filter, XSet_def,
+    GridState.sum_pointSet]
+
+/-- A sum over the `O`-markings of a component is a sum over its columns. -/
+theorem sum_componentOSet {M : Type*} [AddCommMonoid M] (q : G.Components)
+    (f : Fin n × Fin n → M) :
+    ∑ p ∈ G.componentOSet q, f p = ∑ c ∈ G.componentColumns q, f (c, G.O c) := by
+  rw [componentOSet_def, componentColumns_def, Finset.sum_filter, Finset.sum_filter, OSet_def,
+    GridState.sum_pointSet]
+
+/-- **The `O`- and the `X`-markings of a component occupy the same rows.** The component
+permutation maps the columns of a component bijectively to themselves, and the `X`-marking of the
+column `componentPerm c` lies in the row of the `O`-marking of `c`. -/
+theorem sum_componentColumns_O_eq_sum_componentColumns_X {M : Type*} [AddCommMonoid M]
+    (q : G.Components) (f : Fin n → M) :
+    ∑ c ∈ G.componentColumns q, f (G.O c) = ∑ c ∈ G.componentColumns q, f (G.X c) :=
+  Finset.sum_equiv G.componentPerm
+    (fun c => by rw [mem_componentColumns, mem_componentColumns, componentOfColumn_componentPerm])
+    fun c _ => by rw [X_componentPerm_apply]
+
+/-- A sum over the columns of every component is a sum over all columns. -/
+theorem sum_sum_componentColumns {M : Type*} [AddCommMonoid M] (f : Fin n → M) :
+    ∑ q, ∑ c ∈ G.componentColumns q, f c = ∑ c, f c := by
+  simp only [componentColumns_def]
+  exact Finset.sum_fiberwise _ _ _
+
+/-- The component grid sizes `n_q` add up to the grid size. -/
+theorem sum_card_componentColumns : ∑ q, (G.componentColumns q).card = n := by
+  simpa using G.sum_sum_componentColumns fun _ => (1 : ℕ)
 
 /-- A grid diagram represents a knot when its component permutation has exactly one cycle. -/
 def IsKnot : Prop :=
@@ -491,6 +614,38 @@ theorem componentPerm_transpose :
       G.X.toPerm * G.componentPerm⁻¹ * G.X.toPerm⁻¹ := by
   ext c
   simp [componentPerm, GridState.transpose]
+
+/-- Diagonal reflection inverts the component permutation transported along the `O`-marking
+permutation, which carries each column to the row of its `O`-marking. -/
+theorem componentPerm_transpose_eq_inv_permCongr :
+    G.transpose.componentPerm = (G.O.toPerm.permCongr G.componentPerm)⁻¹ := by
+  rw [componentPerm_transpose, componentPerm_def]
+  ext c
+  simp
+
+/-- Diagonal reflection carries the component of a column to the component of the row of its
+`O`-marking, which is a column of the reflected diagram. -/
+def componentsTransposeEquiv : G.Components ≃ G.transpose.Components :=
+  Quotient.congr G.O.toPerm fun a b ↦ by
+    have h := Equiv.Perm.sameCycle_permCongr G.componentPerm G.O.toPerm (x := a) (y := b)
+    rw [← Equiv.Perm.sameCycle_inv, ← componentPerm_transpose_eq_inv_permCongr] at h
+    exact h.symm
+
+/-- Diagonal reflection sends the component of `c` to the component of the column `G.O c` of the
+reflected diagram. -/
+@[simp]
+theorem componentsTransposeEquiv_componentOfColumn (c : Fin n) :
+    G.componentsTransposeEquiv (G.componentOfColumn c) = G.transpose.componentOfColumn (G.O c) :=
+  (rfl)
+
+/-- The inverse reflection equivalence sends the component of a column of the reflected diagram to
+the component of the column whose `O`-marking lies in that row. -/
+@[simp]
+theorem componentsTransposeEquiv_symm_componentOfColumn (c : Fin n) :
+    G.componentsTransposeEquiv.symm (G.transpose.componentOfColumn c) =
+      G.componentOfColumn (G.O.toPerm.symm c) := by
+  rw [Equiv.symm_apply_eq, componentsTransposeEquiv_componentOfColumn]
+  exact congrArg _ (G.O.toPerm.apply_symm_apply c).symm
 
 /-- Diagonal reflection transports component cycles by inversion and conjugation. -/
 theorem mem_componentCycles_transpose (c : Equiv.Perm (Fin n)) :

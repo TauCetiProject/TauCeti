@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicTopology.Singular.Fibration.Convergence
 # The cohomological Serre spectral sequence over a CW complex
 
 Let `f : E ⟶ B` be a Serre fibration and `C ⊆ B` a relative CW complex, and let `M` be a module
-over a commutative ring `k`. Filtering the singular cochains of `E` with coefficients in `M` by
+over a ring `R`. Filtering the singular cochains of `E` with coefficients in `M` by
 the cochains vanishing on the preimages `E_{s-1} = f⁻¹(C^(s-1))` of the skeleta
 (`TauCeti.preimageSkeleton`) gives the cohomological spectral sequence of a filtered space
 `TauCeti.filteredSpaceCohomologySpectralSequence`, the cohomological Serre spectral sequence
@@ -23,10 +23,10 @@ the cochains vanishing on the preimages `E_{s-1} = f⁻¹(C^(s-1))` of the skele
 `H^{s+t}(E; M)` (`TauCeti.filteredSpaceCohomologyAbutmentIso`).
 
 As for the homological Serre spectral sequence, everything rests on the vanishing of the relative
-homology `Hₙ(E_s, E_{s-1}; k)` for `n < s`
+homology `Hₙ(E_s, E_{s-1}; R)` for `n < s`
 (`TauCeti.TopCat.isZero_singularHomology_preimageSkeleton_succ`): a Serre fibration pulls the
 `(s - 1)`-connected pair of consecutive skeleta back to an `(s - 1)`-connected pair. The relative
-singular chains with coefficients in `k` are projective, so the relative cohomology vanishes in
+singular chains with coefficients in `R` are projective, so the relative cohomology vanishes in
 the same range (`TauCeti.TopCat.isZero_singularCohomology_preimageSkeleton`).
 
 * **Vanishing below the `s`-axis.** The object at `(s, t)` on the first page vanishes when `t < 0`
@@ -71,28 +71,30 @@ section Defs
 variable {E B : _root_.TopCat.{u}} [T2Space B]
 
 /-- **The cohomological Serre spectral sequence** of `f : E ⟶ B` over a relative CW complex
-`C ⊆ B`, with coefficients in a `k`-module `M`: the spectral sequence
+`C ⊆ B`, with coefficients in an `R`-module `M`: the spectral sequence
 `TauCeti.filteredSpaceCohomologySpectralSequence` of the filtration of the singular cochains of
 `E` by the cochains vanishing on the preimages `f⁻¹(C^(s-1))` of the skeleta
 (`TauCeti.preimageSkeleton`). -/
 abbrev serreCohomologySpectralSequence (C : Set B) {D : Set B} [RelCWComplex C D] (f : E ⟶ B)
-    (k : Type u) [CommRing k] (M : ModuleCat.{u} k) :=
-  filteredSpaceCohomologySpectralSequence (ModuleCat.of k k) k M
+    (R : Type u) [Ring R] (k : Type*) [Ring k] [Linear k (ModuleCat.{u} R)]
+    (M : ModuleCat.{u} R) :=
+  filteredSpaceCohomologySpectralSequence (ModuleCat.of R R) k M
     (monotone_preimageSkeleton (C := C) f)
 
 /-- **The spectral object of the cohomological Serre spectral sequence** of `f : E ⟶ B` over a
-relative CW complex `C ⊆ B`, with coefficients in a `k`-module `M`. Its abutment in degree `n` is
+relative CW complex `C ⊆ B`, with coefficients in an `R`-module `M`. Its abutment in degree `n` is
 `Hⁿ(E; M)` (`TauCeti.filteredSpaceCohomologyAbutmentIso`), filtered by the images of the relative
 cohomology of the pairs `(E, f⁻¹(C^(s-1)))`; the piece `F^s` sits at index `-s`. -/
 abbrev serreCohomologySpectralObject (C : Set B) {D : Set B} [RelCWComplex C D] (f : E ⟶ B)
-    (k : Type u) [CommRing k] (M : ModuleCat.{u} k) :=
-  filteredSpaceCohomologySpectralObject (ModuleCat.of k k) k M
+    (R : Type u) [Ring R] (k : Type*) [Ring k] [Linear k (ModuleCat.{u} R)]
+    (M : ModuleCat.{u} R) :=
+  filteredSpaceCohomologySpectralObject (ModuleCat.of R R) k M
     (monotone_preimageSkeleton (C := C) f)
 
 end Defs
 
 variable {E B : _root_.TopCat.{u}} {f : E ⟶ B} [T2Space B] (hf : serreFibrations f)
-  (k : Type u) [CommRing k] (M : ModuleCat.{u} k)
+  (R : Type u) [Ring R] (k : Type*) [Ring k] [Linear k (ModuleCat.{u} R)] (M : ModuleCat.{u} R)
 
 section Relative
 
@@ -102,31 +104,27 @@ include hf in
 variable (C) in
 /-- **The skeletal filtration of a Serre fibration has no cohomology below the cell dimension**:
 for the preimages `E_s = f⁻¹(C^(s))` of the skeleta, `Hⁿ(E_s, E_{s-1}; M) = 0` whenever `n < s`.
-It follows from the vanishing of the relative homology with coefficients in `k`
+It follows from the vanishing of the relative homology with coefficients in `R`
 (`TauCeti.TopCat.isZero_singularHomology_preimageSkeleton_succ`), since the relative singular
-chains with coefficients in `k` are projective. -/
+chains with coefficients in `R` are projective. -/
 theorem isZero_singularCohomology_preimageSkeleton (s : ℤ) (n : ℕ) (hn : n < s) :
     IsZero ((TopPair.ofInclusion (monotone_preimageSkeleton (C := C) f (by lia : s - 1 ≤ s))
-      ).singularCohomology (ModuleCat.of k k) k M n) := by
-  have : Projective (ModuleCat.of k k) :=
-    ModuleCat.projective_of_free (Module.Basis.singleton Unit k)
-  refine TopPair.isZero_singularCohomology_of_isZero_singularHomology (R := ModuleCat.of k k)
-    (M := M) _ n fun m hm ↦ ?_
-  refine (TopPair.isZero_singularHomology_ofInclusion_congr (ModuleCat.of k k) _
-    (monotone_preimageSkeleton (C := C) f (Int.le_add_one le_rfl : s - 1 ≤ s - 1 + 1))
-    (by rw [sub_add_cancel]) rfl m).2 ?_
-  exact isZero_singularHomology_preimageSkeleton_succ hf k (s - 1) m (by lia)
+      ).singularCohomology (ModuleCat.of R R) k M n) :=
+  TopPair.isZero_singularCohomology_of_isZero_singularHomology _ (ModuleCat.of R R) M n
+    fun m hm ↦ (TopPair.isZero_singularHomology_ofInclusion_congr _ _ _
+      (by rw [sub_add_cancel]) rfl m).1
+        (isZero_singularHomology_preimageSkeleton_succ hf R (s - 1) m (by lia))
 
 include hf in
 variable (C) in
 /-- **The first page of the cohomological Serre spectral sequence vanishes below the `s`-axis.**
 The object at `(s, t)` on the first page, `H^{s+t}(E_s, E_{s-1}; M)`, vanishes when `t < 0`. -/
 theorem isZero_serreCohomologySpectralSequence_page_one_X (s t : ℤ) (ht : t < 0) :
-    IsZero (((serreCohomologySpectralSequence C f k M).page 1).X (s, t)) := by
+    IsZero (((serreCohomologySpectralSequence C f R k M).page 1).X (s, t)) := by
   rcases lt_or_ge (s + t) 0 with hneg | hpos
   · exact isZero_filteredSpaceCohomologySpectralSequence_page_one_X _ _ _ _ s t hneg
   · obtain ⟨n, hn⟩ := Int.eq_ofNat_of_zero_le hpos
-    exact (isZero_singularCohomology_preimageSkeleton hf k M C s n (by lia)).of_iso
+    exact (isZero_singularCohomology_preimageSkeleton hf R k M C s n (by lia)).of_iso
       (filteredSpaceCohomologySpectralSequenceFirstPageXIso _ _ _ _ s t (s - 1) s rfl rfl n hn)
 
 include hf in
@@ -137,10 +135,10 @@ with no finiteness or dimension bound on `C`. The piece `F^s Hⁿ(E; M)` of the 
 abutment, the image of `Hⁿ(E, E_{s-1}; M)`, vanishes for `n < s`. -/
 theorem isZero_serreCohomologySpectralObject_abutmentFiltration (hfC : range f ⊆ C) {s n : ℤ}
     (hn : n < s) :
-    IsZero ((serreCohomologySpectralObject C f k M).abutmentFiltration (-s) n) :=
+    IsZero ((serreCohomologySpectralObject C f R k M).abutmentFiltration (-s) n) :=
   isZero_filteredSpaceCohomologySpectralObject_abutmentFiltration (monotone_preimageSkeleton f)
     (fun _ hS ↦ exists_subset_preimageSkeleton_of_isCompact f.hom.continuous hfC hS)
-    (fun s n hn ↦ isZero_singularCohomology_preimageSkeleton hf k M C s n hn) hn
+    (fun s n hn ↦ isZero_singularCohomology_preimageSkeleton hf R k M C s n hn) hn
 
 end Relative
 
@@ -156,13 +154,14 @@ is the graded piece `F^s H^{s+t} / F^{s+1} H^{s+t}` of the induced filtration of
 which is `H^{s+t}(E; M)` by `TauCeti.filteredSpaceCohomologyAbutmentIso`. -/
 def serreCohomologySpectralSequencePageXIsoGraded (hfK : range f ⊆ K) (r : ℤ) (hr : 1 ≤ r)
     (s t : ℤ) (hs : s < r) (ht : t + 1 < r) :
-    ((serreCohomologySpectralSequence K f k M).page r).X (s, t) ≅
-      cokernel ((serreCohomologySpectralObject K f k M).abutmentFiltrationMap (-s - 1) (s + t)) :=
+    ((serreCohomologySpectralSequence K f R k M).page r).X (s, t) ≅
+      cokernel ((serreCohomologySpectralObject K f R k M).abutmentFiltrationMap (-s - 1)
+        (s + t)) :=
   filteredSpaceCohomologySpectralSequencePageXIsoGradedOfFirstQuadrant
     (monotone_preimageSkeleton f)
     (fun _ hS ↦ exists_subset_preimageSkeleton_of_isCompact f.hom.continuous hfK hS)
     (preimageSkeleton_eq_empty f (by lia))
-    (fun s n hn ↦ isZero_singularCohomology_preimageSkeleton hf k M K s n hn) r hr s t hs ht
+    (fun s n hn ↦ isZero_singularCohomology_preimageSkeleton hf R k M K s n hn) r hr s t hs ht
 
 end Absolute
 

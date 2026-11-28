@@ -7,7 +7,10 @@ module
 
 public import TauCeti.RingTheory.FractionalIdeal.Projective
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Ring
 import Mathlib.Algebra.Module.StablyFree.FreeOfInvertible
+import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 import TauCeti.RingTheory.PicardGroup.RankOne
 import TauCeti.RingTheory.PicardGroup.Submodule
 
@@ -20,6 +23,11 @@ criterion `TauCeti.FiniteProjectiveModules.classOf_eq_zero_iff`: a stably free i
 is free (`Module.free_of_isStablyFree_of_invertible`). For invertible submodules, and in
 particular nonzero finite projective ideals of a domain, freeness is principality.
 
+Extension of scalars along a ring homomorphism `f : A →+* B` sends the class of the invertible
+module representing a Picard class `L` to the class of the invertible module representing
+`CommRing.Pic.mapRingHom f L`: on the classes of invertible modules, the map of projective `K₀`
+induced by `f` is the map of Picard groups.
+
 ## Main results
 
 * `TauCeti.FiniteProjectiveModules.classOf_one_eq_zero_iff`: a finite projective module has
@@ -30,6 +38,10 @@ particular nonzero finite projective ideals of a domain, freeness is principalit
   submodule has zero reduced class exactly when it is principal.
 * `TauCeti.FiniteProjectiveModules.classOf_ideal_eq_zero_iff_isPrincipal`: a nonzero finite
   projective ideal of a domain has zero reduced class exactly when it is principal.
+* `TauCeti.FiniteProjectiveModules.splitK0_of_pic_one`: the invertible module of the trivial
+  Picard class has class `1` in projective `K₀`.
+* `TauCeti.FiniteProjectiveModules.map_extendScalars_of_pic`: extension of scalars on the class
+  of the invertible module of a Picard class.
 
 ## References
 
@@ -93,6 +105,31 @@ theorem classOf_fractionalIdeal_eq_zero_iff_isPrincipal {S : Submonoid A} {P : T
     [CommRing P] [Algebra A P] [FaithfulSMul A P] (I : (FractionalIdeal S P)ˣ) :
     classOf A (I : FractionalIdeal S P) 1 = 0 ↔ (I : Submodule A P).IsPrincipal :=
   classOf_submodule_eq_zero_iff_isPrincipal (I : Submodule A P)
+
+/-- The invertible module of the trivial Picard class has class `1 = [A]` in projective `K₀(A)`:
+it is free of rank one. -/
+@[simp]
+theorem splitK0_of_pic_one : SplitK0.of.{u} (of A (1 : CommRing.Pic A)) = 1 := by
+  rw [← splitK0_of_self]
+  exact SplitK0.of_congr (CategoryTheory.ObjectProperty.isoMk _
+    (Module.Invertible.free_iff_linearEquiv.mp inferInstance).some.toModuleIso)
+
+open scoped TensorProduct in
+/-- **Extension of scalars of an invertible module.** Along a ring homomorphism `f : A →+* B`,
+extension of scalars sends the class in projective `K₀(A)` of the invertible module of a Picard
+class `L` to the class in projective `K₀(B)` of the invertible module of
+`CommRing.Pic.mapRingHom f L`. -/
+theorem map_extendScalars_of_pic {B : Type u} [CommRing B] (f : A →+* B) (L : CommRing.Pic A) :
+    SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars (SplitK0.of.{u} (of A L)) =
+      SplitK0.of.{u} (of B (CommRing.Pic.mapRingHom f L)) := by
+  let _ : Algebra A B := f.toAlgebra
+  rw [SplitK0.map_of, ← RingHom.algebraMap_toAlgebra f, CommRing.Pic.mapRingHom_algebraMap,
+    CommRing.Pic.mapAlgebra_apply]
+  -- The balanced extension of `L` is Mathlib's `B ⊗[A] L`, which represents `mapAlgebra A B L`.
+  exact SplitK0.of_extendScalars_obj
+    (((BalancedExtension.extendScalarsIso (algebraMap A B)).app (ModuleCat.of A L) ≪≫
+      ModuleCat.extendScalarsAlgebraMapIso (ModuleCat.of A L)).toLinearEquiv.trans
+        (CommRing.Pic.mk.linearEquiv B (B ⊗[A] L)).symm)
 
 end FiniteProjectiveModules
 

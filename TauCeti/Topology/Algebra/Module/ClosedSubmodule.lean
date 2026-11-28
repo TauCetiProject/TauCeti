@@ -1,0 +1,82 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Topology.Algebra.Module.ClosedSubmodule
+
+/-!
+# Closed submodules are closed under negation
+
+Mathlib registers a closed submodule as an `AddSubmonoidClass` and an `SMulMemClass`, but not as
+an `AddSubgroupClass`, even when the scalars form a ring. This file adds that instance, so that the
+generic subgroup membership lemmas (`neg_mem`, `sub_mem`, `sub_mem_comm_iff`, …) apply to closed
+submodules directly, without passing through the underlying `Submodule`.
+
+## Main declarations
+
+* `ClosedSubmodule.instAddSubgroupClass`: a closed submodule over a ring is closed under
+  negation, hence an additive subgroup class.
+* `ClosedSubmodule.instCompleteSpaceToSubmodule`,
+  `ClosedSubmodule.instCompleteSpaceInfToSubmodule`: the underlying submodule of a closed
+  submodule (and the intersection of two) in a complete space is complete.
+* `Submodule.toSubmodule_closure`: the underlying submodule of `s.closure` is
+  `s.topologicalClosure`.
+* `Submodule.closure_iSup`: taking the topological closure of submodules commutes with
+  arbitrary suprema.
+-/
+
+public section
+
+namespace ClosedSubmodule
+
+variable {R M : Type*} [Ring R] [AddCommGroup M] [TopologicalSpace M] [Module R M]
+
+/-- A closed submodule over a ring is an additive subgroup class: it is closed under negation
+because its underlying submodule is. -/
+instance instAddSubgroupClass : AddSubgroupClass (ClosedSubmodule R M) M where
+  neg_mem {s} _ hx := s.toSubmodule.neg_mem hx
+
+section CompleteSpace
+
+variable {𝕜 E : Type*} [Semiring 𝕜] [AddCommMonoid E] [UniformSpace E] [Module 𝕜 E]
+  [CompleteSpace E]
+
+/-- The underlying submodule of a closed submodule of a complete space is complete. -/
+instance instCompleteSpaceToSubmodule (K : ClosedSubmodule 𝕜 E) :
+    CompleteSpace K.toSubmodule :=
+  inferInstanceAs (CompleteSpace K)
+
+/-- The intersection of the underlying submodules of two closed submodules of a complete space is
+complete. -/
+instance instCompleteSpaceInfToSubmodule (U V : ClosedSubmodule 𝕜 E) :
+    CompleteSpace ↥(U.toSubmodule ⊓ V.toSubmodule) := by
+  rw [← toSubmodule_inf]
+  infer_instance
+
+end CompleteSpace
+
+end ClosedSubmodule
+
+namespace Submodule
+
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [TopologicalSpace M] [Module R M]
+  [ContinuousAdd M] [ContinuousConstSMul R M]
+
+/-- The underlying submodule of `s.closure : ClosedSubmodule R M` is `s.topologicalClosure`. -/
+@[simp]
+theorem toSubmodule_closure (s : Submodule R M) :
+    s.closure.toSubmodule = s.topologicalClosure :=
+  (rfl)
+
+/-- Taking the topological closure of submodules commutes with arbitrary suprema. -/
+theorem closure_iSup {ι : Sort*} (s : ι → Submodule R M) :
+    (⨆ i, s i).closure = ⨆ i, (s i).closure :=
+  le_antisymm
+    (closure_le.2 <| iSup_le fun i => closure_le.1 <| le_sSup (Set.mem_range_self i))
+    (sSup_le <| Set.forall_mem_range.2 fun i =>
+      closure_le.2 <| (le_iSup s i).trans (closure_le.1 le_rfl))
+
+end Submodule
