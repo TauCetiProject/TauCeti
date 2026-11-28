@@ -93,9 +93,8 @@ theorem ofMulDistribMulAction_ρ_eq_neg_of_smul_eq_inv [Monoid G] [CommGroup M]
     (x : Rep.ofMulDistribMulAction G M) :
     (Rep.ofMulDistribMulAction G M).ρ g x = -x := by
   apply (Rep.toAdditive (M := G) (G := M)).injective
-  rw [toAdditive_ofMulDistribMulAction_ρ_apply, hinv]
-  simp
-  rfl
+  rw [toAdditive_ofMulDistribMulAction_ρ_apply, map_neg,
+    hinv (Additive.toMul (Rep.toAdditive (M := G) (G := M) x)), ofMul_inv, ofMul_toMul]
 
 /-- An element `a : M` fixed by `g : G` defines an element in the kernel of `ρ(g) - 𝟙` on
 `Rep.ofMulDistribMulAction G M`. -/
@@ -130,9 +129,9 @@ theorem toAdditive_ofMulDistribMulActionLinearEquiv {G M G' M' : Type*}
     (eM : M' ≃* M) (a : Rep.ofMulDistribMulAction G M) :
     Rep.toAdditive (M := G') (G := M') (ofMulDistribMulActionLinearEquiv G G' eM a) =
       Additive.ofMul (eM.symm (Additive.toMul (Rep.toAdditive (M := G) (G := M) a))) := by
-  rw [ofMulDistribMulActionLinearEquiv, AddEquiv.coe_toIntLinearEquiv]
-  simp
-  rfl
+  rw [ofMulDistribMulActionLinearEquiv, AddEquiv.coe_toIntLinearEquiv,
+    AddEquiv.trans_apply, AddEquiv.trans_apply, AddEquiv.apply_symm_apply,
+    MulEquiv.toAdditive_apply_apply]
 
 /-- The inverse of `ofMulDistribMulActionLinearEquiv` is induced by `eM.symm`. -/
 @[simp]
@@ -145,9 +144,8 @@ theorem ofMulDistribMulActionLinearEquiv_symm {G M G' M' : Type*}
   refine LinearEquiv.ext fun a ↦ (ofMulDistribMulActionLinearEquiv G G' eM).injective ?_
   apply (Rep.toAdditive (M := G') (G := M')).injective
   rw [LinearEquiv.apply_symm_apply, toAdditive_ofMulDistribMulActionLinearEquiv,
-    toAdditive_ofMulDistribMulActionLinearEquiv]
-  simp
-  rfl
+    toAdditive_ofMulDistribMulActionLinearEquiv, toMul_ofMul, MulEquiv.symm_symm,
+    MulEquiv.symm_apply_apply, ofMul_toMul]
 
 /-- `ofMulDistribMulActionLinearEquiv` intertwines the actions of `G` and `G'` when `eM` and `eG`
 intertwine the underlying `MulDistribMulAction`s. -/
