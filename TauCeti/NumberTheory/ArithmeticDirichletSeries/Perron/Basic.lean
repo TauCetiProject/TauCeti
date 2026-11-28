@@ -50,6 +50,8 @@ residue is what produces the step.
   `TauCeti.norm_truncatedPerronKernel_sub_one_le_of_one_lt`.
 * `TauCeti.norm_truncatedPerronKernel_one_le` and `TauCeti.norm_perronStep_le_one`: the kernel at
   the endpoint and the sharp step are each bounded by one in modulus, uniformly in the height.
+* `TauCeti.norm_truncatedPerronKernel_one_sub_half_le`: at the endpoint the kernel differs from
+  the half-weight by at most `1 / 2`, uniformly in the height.
 * `TauCeti.tendsto_truncatedPerronKernel`: consequently the kernel tends to the sharp step
   `TauCeti.perronStep`, which carries the customary half-weight at the endpoint, as the height
   tends to infinity, at every positive `x`.
@@ -699,6 +701,23 @@ theorem norm_truncatedPerronKernel_one_le (hc : c ≠ 0) (T : ℝ) :
   have hpi : (0 : ℝ) < π := Real.pi_pos
   rw [inv_mul_le_iff₀ hpi]
   linarith
+
+/-- At the endpoint the kernel `π⁻¹ arctan (T / c)` lies in `[0, 1 / 2)` for `c > 0` and `T ≥ 0`,
+so it differs from the half-weight `perronStep 1 = 1 / 2` by at most `1 / 2`, uniformly in the
+height. -/
+theorem norm_truncatedPerronKernel_one_sub_half_le (hc : 0 < c) (hT : 0 ≤ T) :
+    ‖truncatedPerronKernel 1 c T - 1 / 2‖ ≤ 1 / 2 := by
+  have h : truncatedPerronKernel 1 c T - 1 / 2 = ((π⁻¹ * Real.arctan (T / c) - 1 / 2 : ℝ) : ℂ) := by
+    rw [truncatedPerronKernel_one hc.ne']
+    push_cast
+    ring
+  have h₀ : 0 ≤ π⁻¹ * Real.arctan (T / c) :=
+    mul_nonneg (inv_nonneg.mpr Real.pi_pos.le) (Real.arctan_nonneg.mpr (div_nonneg hT hc.le))
+  have h₁ : π⁻¹ * Real.arctan (T / c) ≤ 1 / 2 := by
+    rw [inv_mul_le_iff₀ Real.pi_pos]
+    linarith [Real.arctan_lt_pi_div_two (T / c)]
+  rw [h, Complex.norm_real, Real.norm_eq_abs, abs_sub_le_iff]
+  constructor <;> linarith
 
 /-- The sharp step never exceeds one in modulus. -/
 theorem norm_perronStep_le_one (y : ℝ) : ‖perronStep y‖ ≤ 1 := by

@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.NumberTheory.Harmonic.Bounds
 
 /-!
-# Upper bounds on logarithm-weighted harmonic sums
+# Upper bounds on harmonic-type sums
 
 From Mathlib's harmonic-number bound `harmonic n ≤ 1 + log n` (`harmonic_le_one_add_log`), the
 tail sum `∑ k ∈ Ioc 1 n, (k : ℝ)⁻¹` is at most `log n`, so bounding `log k ≤ log n` yields
@@ -21,6 +21,10 @@ Near the line `σ = 1`, for any `c ≥ 0` and `σ ≥ 1 - c / log n`, each term 
 `0 ≤ 0`). These bounds control the finite initial Dirichlet polynomial of `L'(σ, χ)` after
 partial summation up to the level `N`.
 
+The same Mathlib bound controls any sum of reciprocals `∑_{i ∈ s} (d i)⁻¹` whose positive
+denominators are distinct elements of `[1, m]`: those reciprocals form a subfamily of the harmonic
+sum `∑_{j=1}^m 1/j`.
+
 ## Main results
 
 * `Nat.sum_Icc_log_div_le_log_sq`: `∑ k ∈ Finset.Icc 1 n, Real.log k / k ≤ (Real.log n) ^ 2`
@@ -28,6 +32,8 @@ partial summation up to the level `N`.
 * `Nat.sum_Icc_log_mul_rpow_neg_le_exp_mul_log_sq`:
   `∑ k ∈ Finset.Icc 1 n, Real.log k * k ^ (-σ) ≤ Real.exp c * (Real.log n) ^ 2` for all `n : ℕ`,
   `0 ≤ c`, and `1 - c / Real.log n ≤ σ`.
+* `Finset.sum_inv_le_one_add_log_of_injOn`: if `d i ≤ m` on a finite set `s` and `d` is
+  injective on the points of `s` where it is positive, then `∑_{i ∈ s} (d i)⁻¹ ≤ 1 + log m`.
 -/
 
 public section
@@ -103,3 +109,25 @@ theorem sum_Icc_log_mul_rpow_neg_le_exp_mul_log_sq (n : ℕ) {c σ : ℝ} (hc : 
       mul_le_mul_of_nonneg_left (sum_Icc_log_div_le_log_sq n) (Real.exp_nonneg c)
 
 end Nat
+
+namespace Finset
+
+/-- A map `d` into `[0, m]` that is injective where it is positive has `∑ (d i)⁻¹ ≤ 1 + log m`
+over any finite set `s`: its positive values are distinct elements of `[1, m]`. -/
+theorem sum_inv_le_one_add_log_of_injOn {ι : Type*} (s : Finset ι) (m : ℕ) (d : ι → ℕ)
+    (hd : ∀ i ∈ s, d i ≤ m) (hi : Set.InjOn d ↑(s.filter (fun i ↦ 0 < d i))) :
+    (∑ i ∈ s, (d i : ℝ)⁻¹) ≤ 1 + Real.log m := by
+  rw [← sum_filter_add_sum_filter_not _ (fun i ↦ 0 < d i)]
+  have hz : (∑ i ∈ s.filter (fun i ↦ ¬0 < d i), (d i : ℝ)⁻¹) = 0 := by
+    apply sum_eq_zero
+    intro i hi
+    simp [Nat.eq_zero_of_not_pos (mem_filter.mp hi).2]
+  rw [hz, add_zero, ← sum_image (f := fun j : ℕ ↦ (j : ℝ)⁻¹) hi]
+  refine (sum_le_sum_of_subset_of_nonneg (t := Icc 1 m) ?_ (fun n _ _ ↦ by positivity)).trans ?_
+  · intro j hj
+    obtain ⟨i, hi, rfl⟩ := mem_image.mp hj
+    exact mem_Icc.mpr ⟨(mem_filter.mp hi).2, hd i (mem_filter.mp hi).1⟩
+  · simpa only [harmonic_eq_sum_Icc (n := m), Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast]
+      using harmonic_le_one_add_log m
+
+end Finset
