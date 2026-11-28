@@ -8,17 +8,20 @@ module
 public import Mathlib.Data.Nat.Digits.Defs
 public import Mathlib.LinearAlgebra.SModEq.Basic
 public import Mathlib.NumberTheory.GaussSum
+public import Mathlib.NumberTheory.JacobiSum.Basic
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Valuation
 public import Mathlib.RingTheory.Trace.Defs
 import Mathlib.Data.Nat.Prime.Factorial
-import Mathlib.NumberTheory.JacobiSum.Basic
+import Mathlib.NumberTheory.AddCharacter.Trace
 import Mathlib.NumberTheory.Multiplicity
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.Data.Nat.Digits
 import TauCeti.FieldTheory.Finite.PowerSums
 import TauCeti.NumberTheory.GaussSum.Basic
+import TauCeti.NumberTheory.MulChar.Cyclic
 import TauCeti.RingTheory.Ideal.MaximalPow
 import TauCeti.RingTheory.RootsOfUnity.CyclotomicUnits
+import TauCeti.RingTheory.RootsOfUnity.PrimeOrder
 
 /-!
 # Stickelberger's congruence for Gauss sums
@@ -47,6 +50,13 @@ For `m ∣ q - 1` and the character `χ = ω^{-(q - 1) / m}` of order `m`, the d
 power `g(χ ^ t, ψ) ^ m` has valuation `∑_{i < f} (p ^ i t mod m)`: these are the exponents of
 Stickelberger's relation `(g(χ, ψ) ^ m) = P ^ (∑ t σ_t⁻¹)` in the `m`-th cyclotomic field.
 
+Write `s(n)` for the base-`p` digit sum of `n`. Let `R` be a Dedekind domain, `v` a height-one
+prime of `R` with ideal `P`, and `ζ ∈ R` with `ζ ^ p = 1` such that `ζ - 1` has additive valuation
+`1` at `v`. For `0 ≤ a, b < q - 1` with `q - 1 ∤ a + b`, put `c = (a + b) % (q - 1)`. Then
+`ω⁻ᵃ ω⁻ᵇ = ω⁻ᶜ` is nontrivial, and Mathlib's `jacobiSum_mul_nontrivial` gives
+`g(ω⁻ᶜ) J(ω⁻ᵃ, ω⁻ᵇ) = g(ω⁻ᵃ) g(ω⁻ᵇ)` with `ψ(x) = ζ ^ Tr(x)`. So the Jacobi sum has valuation
+`s(a) + s(b) - s(c)`, the digit-sum formula for Jacobi sums.
+
 ## Main results
 
 * `TauCeti.stickelberger_congruence`: `h · (-g(ω⁻ᵃ, ψ)) ≡ (ζ - 1) ^ s (mod P ^ (s + 1))`.
@@ -57,6 +67,11 @@ Stickelberger's relation `(g(χ, ψ) ^ m) = P ^ (∑ t σ_t⁻¹)` in the `m`-th
   `(p - 1) v(g(ω⁻ᵃ, ψ)) = s v(p)`.
 * `TauCeti.intValuation_gaussSum_inv_pow_div_mul_pow`: under the same hypotheses, for `m ∣ q - 1`
   and every `t`, `v(g(ω^{-(q - 1) / m · t}, ψ) ^ m) = (∑_{i < f} (p ^ i t mod m)) v(p)`.
+* `TauCeti.intValuation_jacobiSum_inv_pow`: in a Dedekind domain, if `ζ ^ p = 1` and
+  `v(ζ - 1) = 1`, then `v(J(ω⁻ᵃ, ω⁻ᵇ)) = s(a) + s(b) - s(c)` for `a, b < q - 1` with
+  `q - 1 ∤ a + b`.
+* `TauCeti.intValuation_jacobiSum_inv_pow_pow_sub_one`: under the same hypotheses, for
+  `a, b < q - 1` with `q - 1 ∤ a + b`, `(p - 1) v(J(ω⁻ᵃ, ω⁻ᵇ)) + s(c) v(p) = (s(a) + s(b)) v(p)`.
 
 ## Implementation notes
 
@@ -159,17 +174,11 @@ private theorem mk_apply [Finite F]
   rw [map_sub, map_one, sub_eq_zero] at h
   rw [hψ, map_pow, h, one_pow]
 
-/-- The characters `ω⁻ᵃ` are nontrivial for `0 < a < q - 1`. -/
+/-- The characters `ω⁻ᵃ` are nontrivial for `0 < a < q - 1`, since `ω` has order `q - 1`. -/
 private theorem inv_pow_ne_one (hω : ∀ x, Ideal.Quotient.mk P (ω x) = f x) {a : ℕ} (ha0 : 0 < a)
-    (ha : a < Fintype.card F - 1) : ω⁻¹ ^ a ≠ 1 := by
-  intro h
-  -- Modulo `P`, `∑ ω⁻ᵃ = ∑ x ^ (q - 1 - a) = 0` while `∑ 1 = ∑ x ^ (q - 1) = -1`.
-  have h1 := congrArg (fun χ : MulChar F R ↦ ∑ x, Ideal.Quotient.mk P (χ x)) h
-  simp only [mk_inv_pow_apply hω ha, mk_one_apply hω, ← map_sum] at h1
-  have := Fintype.one_lt_card (α := F)
-  rw [FiniteField.sum_pow_lt_card_sub_one _ _ (by omega),
-    FiniteField.sum_pow_of_pos (by omega), ite_eq_left dvd_rfl] at h1
-  simp at h1
+    (ha : a < Fintype.card F - 1) : ω⁻¹ ^ a ≠ 1 :=
+  pow_ne_one_of_lt_orderOf ha0.ne'
+    (by rwa [orderOf_inv, MulChar.orderOf_eq_card_sub_one_of_map_apply_eq hω])
 
 omit [P.IsMaximal] in
 /-- `J(ω⁻¹, ω⁻ˣ) ≡ -(x + 1)` modulo `P` for `x < q - 1`. -/
@@ -345,19 +354,12 @@ theorem intValuation_gaussSum_inv_pow {p : ℕ} [Fact p.Prime] {F : Type*} [Fiel
   rwa [add_sub_cancel, map_mul, hh, one_mul, Valuation.map_neg, hπs] at this
 
 open IsDedekindDomain in
-/-- Under the hypotheses of `intValuation_gaussSum_inv_pow`, `ζ` is a primitive `p`-th root of
-unity, so `p` is associated to `(ζ - 1) ^ (p - 1)` and has valuation `exp(-(p - 1))`. -/
-private theorem intValuation_natCast_eq_exp {p : ℕ} [Fact p.Prime] {F : Type*} [Field F]
-    [Finite F] [Algebra (ZMod p) F] {R : Type*} [CommRing R] [IsDedekindDomain R]
-    {v : HeightOneSpectrum R} {ζ : R} {ψ : AddChar F R}
-    (hψ : ∀ x, ψ x = ζ ^ (Algebra.trace (ZMod p) F x).val)
-    (hζ : v.intValuation (ζ - 1) = WithZero.exp (-1)) :
-    v.intValuation (p : R) = WithZero.exp (-((p - 1 : ℕ) : ℤ)) := by
-  have hζ1 : ζ ≠ 1 := fun h ↦ by simpa [h] using hζ.symm
-  have hζp : IsPrimitiveRoot ζ p :=
-    IsPrimitiveRoot.iff_orderOf.2 (orderOf_eq_prime (zeta_pow_eq_one hψ) hζ1)
-  rw [hζp.valuation_natCast_eq_valuation_sub_one_pow v.intValuation v.intValuation_le_one, hζ,
-    ← WithZero.exp_nsmul, smul_neg, nsmul_one]
+/-- A `p`-th root of unity `ζ` with `v(ζ - 1) = exp(-1)` is not `1`, so it is a primitive `p`-th
+root of unity. -/
+private theorem isPrimitiveRoot_of_pow_eq_one {p : ℕ} [Fact p.Prime] {R : Type*} [CommRing R]
+    [IsDedekindDomain R] {v : HeightOneSpectrum R} {ζ : R} (hζp : ζ ^ p = 1)
+    (hζ : v.intValuation (ζ - 1) = WithZero.exp (-1)) : IsPrimitiveRoot ζ p :=
+  IsPrimitiveRoot.of_pow_eq_one_of_ne_one hζp fun h ↦ by simpa [h] using hζ.symm
 
 open IsDedekindDomain in
 /-- **The Gauss sum valuation normalised at `p`.** Under the hypotheses of
@@ -372,7 +374,8 @@ theorem intValuation_gaussSum_inv_pow_pow_sub_one {p : ℕ} [Fact p.Prime] {F : 
     (hζ : v.intValuation (ζ - 1) = WithZero.exp (-1)) {a : ℕ} (ha : a < Fintype.card F - 1) :
     v.intValuation (gaussSum (ω⁻¹ ^ a) ψ) ^ (p - 1) =
       v.intValuation (p : R) ^ (Nat.digits p a).sum := by
-  rw [intValuation_natCast_eq_exp hψ hζ, intValuation_gaussSum_inv_pow hω hψ hζ ha]
+  rw [(isPrimitiveRoot_of_pow_eq_one (zeta_pow_eq_one hψ) hζ).valuation_natCast_eq_exp _
+    v.intValuation_le_one hζ, intValuation_gaussSum_inv_pow hω hψ hζ ha]
   -- Both sides are `exp (-(s (p - 1)))`.
   simp only [← WithZero.exp_nsmul, smul_neg, nsmul_eq_mul, mul_comm]
 
@@ -397,12 +400,10 @@ theorem intValuation_gaussSum_inv_pow_div_mul_pow {p : ℕ} [Fact p.Prime] {F : 
   -- Only the residue of `t` modulo `m` matters on either side, since `ω ^ (q - 1) = 1`.
   have hχ : ω⁻¹ ^ ((Fintype.card F - 1) / m * t) =
       ω⁻¹ ^ ((Fintype.card F - 1) / m * (t % m)) := by
-    have h1 : ω⁻¹ ^ (Fintype.card F - 1) = 1 := by
-      rw [← Fintype.card_units]
+    have h1 : (ω⁻¹ ^ ((Fintype.card F - 1) / m)) ^ m = 1 := by
+      rw [← pow_mul, Nat.div_mul_cancel hm, ← Fintype.card_units]
       exact MulChar.pow_card_eq_one _
-    conv_lhs => rw [← Nat.mod_add_div t m]
-    rw [mul_add, ← mul_assoc, Nat.div_mul_cancel hm, pow_add, pow_mul (ω⁻¹) (Fintype.card F - 1),
-      h1, one_pow, mul_one]
+    rw [pow_mul, pow_mul, pow_eq_pow_mod t h1]
   rw [hχ, sum_congr rfl fun i _ ↦ (Nat.mul_mod_mod (p ^ i) t m).symm]
   have ht : t % m < m := Nat.mod_lt _ hm0
   generalize t % m = t at ht
@@ -414,8 +415,88 @@ theorem intValuation_gaussSum_inv_pow_div_mul_pow {p : ℕ} [Fact p.Prime] {F : 
   -- The digit sum `s` of `(q - 1) / m * t` satisfies `m s = (p - 1) ∑_{i < f} (p ^ i t % m)`.
   have key := Nat.sub_one_mul_sum_pow_mul_mod_eq_mul_sum_digits_div_mul (hcard ▸ hm) ht
   rw [← hcard] at key
-  rw [map_pow, intValuation_gaussSum_inv_pow hω hψ hζ ha, intValuation_natCast_eq_exp hψ hζ]
+  rw [map_pow, intValuation_gaussSum_inv_pow hω hψ hζ ha,
+    (isPrimitiveRoot_of_pow_eq_one (zeta_pow_eq_one hψ) hζ).valuation_natCast_eq_exp _
+      v.intValuation_le_one hζ]
   simp only [← WithZero.exp_nsmul, smul_neg, nsmul_eq_mul]
   rw [← Nat.cast_mul, ← Nat.cast_mul, mul_comm _ (p - 1), key]
+
+open IsDedekindDomain in
+/-- **The valuation of a Jacobi sum.** Let `F` be a finite field with `q = #F` elements, `R` a
+Dedekind domain, `v` a height-one prime of `R`, and `ω` a multiplicative character that lifts
+`f : F →+* R ⧸ v.asIdeal`, that is `ω x ≡ f x (mod v)`. Let `ζ` be a `p`-th root of unity with
+`v(ζ - 1) = exp(-1)`; then `p` is the characteristic of `F`. Let `0 ≤ a, b < q - 1` with
+`q - 1 ∤ a + b`, and let `c = (a + b) % (q - 1)`. Then
+`v(J(ω⁻ᵃ, ω⁻ᵇ)) = exp(s(c) - s(a) - s(b))`, where `s` is the base-`p` digit sum:
+`J(ω⁻ᵃ, ω⁻ᵇ)` has valuation `s(a) + s(b) - s(c)`. -/
+theorem intValuation_jacobiSum_inv_pow {p : ℕ} [Fact p.Prime] {F : Type*} [Field F] [Fintype F]
+    {R : Type*} [CommRing R] [IsDedekindDomain R] {v : HeightOneSpectrum R}
+    {f : F →+* R ⧸ v.asIdeal} {ω : MulChar F R} {ζ : R}
+    (hω : ∀ x, Ideal.Quotient.mk v.asIdeal (ω x) = f x) (hζp : ζ ^ p = 1)
+    (hζ : v.intValuation (ζ - 1) = WithZero.exp (-1)) {a b : ℕ} (ha : a < Fintype.card F - 1)
+    (hb : b < Fintype.card F - 1) (hab : ¬Fintype.card F - 1 ∣ a + b) :
+    v.intValuation (jacobiSum (ω⁻¹ ^ a) (ω⁻¹ ^ b)) =
+      WithZero.exp ((Nat.digits p ((a + b) % (Fintype.card F - 1))).sum -
+        (Nat.digits p a).sum - (Nat.digits p b).sum : ℤ) := by
+  classical
+  have := v.isMaximal
+  have hprim := isPrimitiveRoot_of_pow_eq_one hζp hζ
+  -- `p ∈ v` because `v(p) < 1`, so `F`, which embeds in `R ⧸ v`, has characteristic `p`.
+  have hp : (p : R) ∈ v.asIdeal := by
+    rw [← v.intValuation_lt_one_iff_mem,
+      hprim.valuation_natCast_eq_exp _ v.intValuation_le_one hζ, WithZero.exp_lt_one_iff]
+    have := (Fact.out : p.Prime).one_lt
+    omega
+  have : CharP F p := (CharP.charP_iff_prime_eq_zero Fact.out).2 <| f.injective <| by
+    rw [map_natCast, map_zero, ← map_natCast (Ideal.Quotient.mk v.asIdeal),
+      Ideal.Quotient.eq_zero_iff_mem.2 hp]
+  -- The trace `F → ZMod p` gives the additive character `ψ(x) = ζ ^ Tr(x)` and the Gauss sums
+  -- of the three characters.
+  let := ZMod.algebra F p
+  have hψ := AddChar.traceChar_apply (A := F) hprim
+  have hq : 0 < Fintype.card F - 1 := by
+    have := Fintype.one_lt_card (α := F)
+    omega
+  have hc := Nat.mod_lt (a + b) hq
+  have hc0 : 0 < (a + b) % (Fintype.card F - 1) :=
+    Nat.pos_of_ne_zero fun h ↦ hab (Nat.dvd_of_mod_eq_zero h)
+  -- `ω⁻ᵃ ω⁻ᵇ = ω⁻ᶜ`, since `ω ^ (q - 1) = 1`.
+  have hmul : ω⁻¹ ^ a * ω⁻¹ ^ b = ω⁻¹ ^ ((a + b) % (Fintype.card F - 1)) := by
+    have h1 : ω⁻¹ ^ (Fintype.card F - 1) = 1 := by
+      rw [← Fintype.card_units]
+      exact MulChar.pow_card_eq_one _
+    rw [← pow_add, pow_eq_pow_mod (a + b) h1]
+  -- Apply `v` to `g(ω⁻ᶜ) J(ω⁻ᵃ, ω⁻ᵇ) = g(ω⁻ᵃ) g(ω⁻ᵇ)` and cancel `v(g(ω⁻ᶜ)) ≠ 0`.
+  have hrel := congrArg v.intValuation
+    (jacobiSum_mul_nontrivial (hmul ▸ inv_pow_ne_one hω hc0 hc) (AddChar.traceChar F hprim))
+  rw [map_mul, map_mul, hmul, intValuation_gaussSum_inv_pow hω hψ hζ hc,
+    intValuation_gaussSum_inv_pow hω hψ hζ ha, intValuation_gaussSum_inv_pow hω hψ hζ hb] at hrel
+  refine mul_left_cancel₀ WithZero.exp_ne_zero (hrel.trans ?_)
+  rw [← WithZero.exp_add, ← WithZero.exp_add]
+  congr 1
+  ring
+
+open IsDedekindDomain in
+/-- **The Jacobi sum valuation normalised at `p`.** Under the hypotheses of
+`intValuation_jacobiSum_inv_pow` (`ω` lifts `f : F →+* R ⧸ v.asIdeal`, `ζ ^ p = 1`,
+`v(ζ - 1) = exp(-1)`, `a, b < q - 1` and `q - 1 ∤ a + b`, with `q = #F`),
+`v(J(ω⁻ᵃ, ω⁻ᵇ)) ^ (p - 1) v(p) ^ s(c) = v(p) ^ (s(a) + s(b))`:
+for the valuation normalised by `v(p) = 1`, the Jacobi sum has valuation
+`(s(a) + s(b) - s(c)) / (p - 1)`. -/
+theorem intValuation_jacobiSum_inv_pow_pow_sub_one {p : ℕ} [Fact p.Prime] {F : Type*} [Field F]
+    [Fintype F] {R : Type*} [CommRing R] [IsDedekindDomain R] {v : HeightOneSpectrum R}
+    {f : F →+* R ⧸ v.asIdeal} {ω : MulChar F R} {ζ : R}
+    (hω : ∀ x, Ideal.Quotient.mk v.asIdeal (ω x) = f x) (hζp : ζ ^ p = 1)
+    (hζ : v.intValuation (ζ - 1) = WithZero.exp (-1)) {a b : ℕ} (ha : a < Fintype.card F - 1)
+    (hb : b < Fintype.card F - 1) (hab : ¬Fintype.card F - 1 ∣ a + b) :
+    v.intValuation (jacobiSum (ω⁻¹ ^ a) (ω⁻¹ ^ b)) ^ (p - 1) *
+        v.intValuation (p : R) ^ (Nat.digits p ((a + b) % (Fintype.card F - 1))).sum =
+      v.intValuation (p : R) ^ ((Nat.digits p a).sum + (Nat.digits p b).sum) := by
+  rw [intValuation_jacobiSum_inv_pow hω hζp hζ ha hb hab,
+    (isPrimitiveRoot_of_pow_eq_one hζp hζ).valuation_natCast_eq_exp _ v.intValuation_le_one hζ]
+  simp only [← WithZero.exp_nsmul, ← WithZero.exp_add, nsmul_eq_mul]
+  congr 1
+  push_cast
+  ring
 
 end TauCeti

@@ -46,6 +46,8 @@ Invertibility of `n` is needed: `1 - (-1) = 2` is not a unit of `ℤ_[2]`.
 * `IsPrimitiveRoot.associated_sub_one_pow_prime`: `(ζ - 1) ^ (p - 1)` is associated to `p`.
 * `IsPrimitiveRoot.valuation_natCast_eq_valuation_sub_one_pow`: a valuation `v ≤ 1` on `A`
   satisfies `v(p) = v(ζ - 1) ^ (p - 1)`.
+* `IsPrimitiveRoot.valuation_natCast_eq_exp`: if moreover `v` has values in `ℤᵐ⁰` and
+  `v(ζ - 1) = exp(-1)`, then `v(p) = exp(-(p - 1))`.
 * `TauCeti.isUnit_sub_one_of_pow_eq_one`, `TauCeti.isUnit_one_sub_of_pow_eq_one`: `ζ - 1` and
   `1 - ζ` are units for a root of unity `ζ ≠ 1` of invertible order.
 -/
@@ -114,6 +116,16 @@ theorem IsPrimitiveRoot.valuation_natCast_eq_valuation_sub_one_pow {A : Type*} [
     calc (1 : Γ₀) = v (u : A) * v (u⁻¹ : Aˣ) := by rw [← map_mul, Units.mul_inv, map_one]
       _ ≤ v (u : A) := mul_le_of_le_one_right' (hv _)
   rw [← hu, map_mul, hu1, mul_one, map_pow]
+
+open scoped WithZero in
+/-- If `ζ` is a primitive `p`-th root of unity in a domain `A`, `p` is prime, and a valuation
+`v ≤ 1` with values in `ℤᵐ⁰` gives `ζ - 1` the value `exp(-1)`, then `v(p) = exp(-(p - 1))`:
+`p` has additive valuation `p - 1`. -/
+theorem IsPrimitiveRoot.valuation_natCast_eq_exp {A : Type*} [CommRing A] [IsDomain A] {p : ℕ}
+    [Fact p.Prime] {ζ : A} (hζ : IsPrimitiveRoot ζ p) (v : Valuation A ℤᵐ⁰) (hv : ∀ a, v a ≤ 1)
+    (hv1 : v (ζ - 1) = WithZero.exp (-1)) : v (p : A) = WithZero.exp (-((p - 1 : ℕ) : ℤ)) := by
+  rw [hζ.valuation_natCast_eq_valuation_sub_one_pow v hv, hv1, ← WithZero.exp_nsmul, smul_neg,
+    nsmul_one]
 
 namespace TauCeti
 
