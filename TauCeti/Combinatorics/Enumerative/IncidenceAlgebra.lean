@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Enumerative.IncidenceAlgebra
+public import Mathlib.Data.Finset.Interval
+import TauCeti.Data.Finset.Basic
 import TauCeti.Order.Interval.Finset.Basic
 
 /-!
@@ -13,6 +15,8 @@ import TauCeti.Order.Interval.Finset.Basic
 
 The Möbius function is invariant under order isomorphisms (`OrderIso.mu_map`), and additive maps
 preserving `1` carry it from one coefficient group to another (`IncidenceAlgebra.map_mu`).
+On the subset lattice, its value is the sign of the difference in cardinalities
+(`Finset.incidenceAlgebra_mu_of_subset`).
 
 Mathlib's `IncidenceAlgebra.moebius_inversion_bot` recovers `f` from its lower sums
 `g x = ∑_{y ≤ x} f y` as `f x = ∑_{y ≤ x} μ(y, x) g y`. This file proves the converse direction:
@@ -46,6 +50,30 @@ of noncrossing partitions is computed.
 public section
 
 open Finset IncidenceAlgebra
+
+namespace Finset
+
+/-- The Möbius function of the subset lattice is the sign of the difference in cardinalities. -/
+theorem incidenceAlgebra_mu_of_subset {α R : Type*} [DecidableEq α] [Ring R]
+    {s t : Finset α} (hst : s ⊆ t) :
+    IncidenceAlgebra.mu R s t = (-1 : R) ^ (t.card - s.card) := by
+  let k : IncidenceAlgebra R (Finset α) :=
+    ⟨fun a b ↦ if a ⊆ b then (-1 : R) ^ (b.card - a.card) else 0,
+      fun _ _ h ↦ ite_eq_right h⟩
+  have hk : k * zeta R = 1 := by
+    ext a b
+    rw [IncidenceAlgebra.mul_apply, IncidenceAlgebra.one_apply]
+    calc
+      _ = ∑ c ∈ Icc a b, (-1 : R) ^ (c.card - a.card) := by
+        apply sum_congr rfl
+        intro c hc
+        simp [k, (mem_Icc.mp hc).1, (mem_Icc.mp hc).2]
+      _ = _ := sum_Icc_neg_one_pow_card_sub_card_left a b
+  have heq : k = mu R := left_inv_eq_right_inv hk (zeta_mul_mu (𝕜 := R))
+  have := congrArg (fun f : IncidenceAlgebra R (Finset α) ↦ f s t) heq
+  simpa [k, hst] using this.symm
+
+end Finset
 
 namespace OrderIso
 

@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Real.Basic
-public import Mathlib.Combinatorics.Enumerative.IncidenceAlgebra
 public import Mathlib.Data.Fintype.Powerset
 public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import TauCeti.Combinatorics.Enumerative.IncidenceAlgebra
 public import TauCeti.Order.Lattice.Submodular
 
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
@@ -44,31 +44,17 @@ variable {ι : Type*}
 /-- The unanimity function of `S` pays one to a coalition containing `S` and zero otherwise. -/
 def unanimity [DecidableEq ι] (S : Finset ι) : Finset ι → ℝ := IncidenceAlgebra.zeta ℝ S
 
-/-- The value of a unanimity function is determined by coalition inclusion. -/
-theorem unanimity_apply [DecidableEq ι] (S T : Finset ι) :
-    unanimity S T = if S ⊆ T then 1 else 0 := IncidenceAlgebra.zeta_apply S T
-
-/-- A coalition containing the required players has unanimity worth one. -/
-@[simp]
-theorem unanimity_apply_of_subset [DecidableEq ι] {S T : Finset ι} (h : S ⊆ T) :
-    unanimity S T = 1 := by rw [unanimity_apply, ite_eq_left h]
-
-/-- A coalition missing a required player has unanimity worth zero. -/
-@[simp]
-theorem unanimity_apply_of_not_subset [DecidableEq ι] {S T : Finset ι} (h : ¬ S ⊆ T) :
-    unanimity S T = 0 := by rw [unanimity_apply, ite_eq_right h]
-
 /-- The unanimity function takes only the values zero and one. -/
 theorem unanimity_eq_zero_or_eq_one [DecidableEq ι] (S T : Finset ι) :
     unanimity S T = 0 ∨ unanimity S T = 1 := by
-  rw [unanimity_apply]
+  rw [unanimity, IncidenceAlgebra.zeta_apply]
   split_ifs <;> simp
 
 /-- The unanimity function of the empty coalition is constant one. -/
 @[simp]
 theorem unanimity_empty [DecidableEq ι] : unanimity (∅ : Finset ι) = 1 := by
   ext T
-  exact unanimity_apply_of_subset (empty_subset T)
+  exact IncidenceAlgebra.zeta_of_le (empty_subset T)
 
 /-- A unanimity function vanishes at the empty coalition exactly when its required coalition
 is nonempty. -/
@@ -78,16 +64,18 @@ theorem unanimity_apply_empty_eq_zero_iff [DecidableEq ι] (S : Finset ι) :
   by_cases h : S = ∅
   · subst S
     simp
-  · rw [unanimity_apply_of_not_subset (fun hs ↦ h (subset_empty.mp hs))]
+  · rw [unanimity, IncidenceAlgebra.apply_eq_zero_of_not_le
+      (fun hs ↦ h (subset_empty.mp hs)) (IncidenceAlgebra.zeta ℝ)]
     simp [ne_empty_iff_nonempty.mp h]
 
 /-- A unanimity function is monotone under coalition inclusion. -/
 theorem monotone_unanimity [DecidableEq ι] (S : Finset ι) : Monotone (unanimity S) := by
   intro A B hAB
   by_cases hA : S ⊆ A
-  · simp [hA, hA.trans hAB]
-  · rw [unanimity_apply_of_not_subset hA]
-    obtain h | h := unanimity_eq_zero_or_eq_one S B <;> simp [h]
+  · simp [unanimity, hA, hA.trans hAB]
+  · rw [unanimity, IncidenceAlgebra.apply_eq_zero_of_not_le hA (IncidenceAlgebra.zeta ℝ)]
+    rw [IncidenceAlgebra.zeta_apply]
+    split_ifs <;> norm_num
 
 /-- Every unanimity function is supermodular. -/
 theorem isSubmodular_neg_unanimity [DecidableEq ι] (S : Finset ι) :
@@ -96,10 +84,10 @@ theorem isSubmodular_neg_unanimity [DecidableEq ι] (S : Finset ι) :
   intro A B
   simp only [Pi.neg_apply, ← neg_add, neg_le_neg_iff]
   by_cases hA : S ⊆ A <;> by_cases hB : S ⊆ B
-  · simp [hA, hB, hA.trans subset_union_left, subset_inter]
-  · simp [hA, hB, hA.trans subset_union_left]
-  · simp [hA, hB, hB.trans subset_union_right]
-  · simp [hA, hB, unanimity_apply]
+  · simp [unanimity, hA, hB, hA.trans subset_union_left, subset_inter]
+  · simp [unanimity, hA, hB, hA.trans subset_union_left]
+  · simp [unanimity, hA, hB, hB.trans subset_union_right]
+  · simp [unanimity, hA, hB]
     split_ifs <;> norm_num
 
 end Finset
@@ -128,35 +116,45 @@ theorem dividend_empty (v : Finset ι → ℝ) : dividend v ∅ = v ∅ := by
 theorem sum_powerset_dividend (v : Finset ι → ℝ) (T : Finset ι) :
     ∑ S ∈ T.powerset, dividend v S = v T := by
   classical
-  simp only [dividend_apply]
-  rw [sum_comm' (t' := T.powerset) (s' := fun R ↦ Icc R T) fun S R ↦ by
-    simp only [mem_powerset, mem_Icc]
-    exact ⟨fun ⟨hST, hRS⟩ ↦ ⟨⟨hRS, hST⟩, hRS.trans hST⟩,
-      fun h ↦ ⟨h.1.2, h.1.1⟩⟩]
-  simp [← sum_mul]
+  have hmu (S : Finset ι) :
+      dividend v S = ∑ R ∈ Iic S, IncidenceAlgebra.mu ℝ R S * v R := by
+    rw [dividend_apply, Iic_eq_powerset]
+    apply sum_congr rfl
+    intro R hR
+    rw [incidenceAlgebra_mu_of_subset (mem_powerset.mp hR)]
+  simp_rw [hmu, ← Iic_eq_powerset]
+  exact IncidenceAlgebra.sum_Iic_sum_Iic_mu_mul v T
 
 /-- The map sending a set function to its family of Harsanyi dividends is linear. -/
-noncomputable def dividendLinearMap : (Finset ι → ℝ) →ₗ[ℝ] (Finset ι → ℝ) where
-  toFun := dividend
-  map_add' v w := by
-    ext S
-    simp [dividend_apply, mul_add, sum_add_distrib]
-  map_smul' c v := by
-    ext S
-    simp [dividend_apply, Pi.smul_apply, smul_eq_mul, mul_sum, mul_left_comm]
+noncomputable def dividendLinearMap : (Finset ι → ℝ) →ₗ[ℝ] (Finset ι → ℝ) :=
+  LinearMap.pi fun S ↦ ∑ R ∈ S.powerset,
+    ((-1 : ℝ) ^ (S.card - R.card)) • LinearMap.proj R
 
 /-- Evaluating the dividend linear map gives the dividend function. -/
 @[simp]
-theorem dividendLinearMap_apply (v : Finset ι → ℝ) : dividendLinearMap v = dividend v :=
-  (rfl)
+theorem dividendLinearMap_apply (v : Finset ι → ℝ) : dividendLinearMap v = dividend v := by
+  ext S
+  simp [dividendLinearMap, LinearMap.pi_apply, LinearMap.sum_apply, dividend_apply]
 
 /-- A unanimity function has a single unit dividend, at its required coalition. -/
 @[simp]
 theorem _root_.Finset.dividend_unanimity [DecidableEq ι] (S T : Finset ι) :
     dividend (unanimity S) T = if S = T then 1 else 0 := by
-  rw [dividend_apply, ← sum_Icc_neg_one_pow_card_sub_card_right (R := ℝ) S T,
-    Icc_eq_filter_powerset, sum_filter]
-  simp only [unanimity_apply, mul_ite, mul_one, mul_zero]
+  classical
+  rw [dividend_apply]
+  calc
+    _ = ∑ R ∈ T.powerset, IncidenceAlgebra.zeta ℝ S R *
+        IncidenceAlgebra.mu ℝ R T := by
+      apply sum_congr rfl
+      intro R hR
+      rw [incidenceAlgebra_mu_of_subset (mem_powerset.mp hR), unanimity, mul_comm]
+    _ = (IncidenceAlgebra.zeta ℝ * IncidenceAlgebra.mu ℝ :
+        IncidenceAlgebra ℝ (Finset ι)) S T := by
+      rw [IncidenceAlgebra.mul_apply, Icc_eq_filter_powerset, sum_filter]
+      apply sum_congr rfl
+      intro R _
+      by_cases h : S ⊆ R <;> simp [h]
+    _ = _ := by rw [IncidenceAlgebra.zeta_mul_mu, IncidenceAlgebra.one_apply]
 
 /-- An additive set function has the player's worth at each singleton dividend and has zero
 dividend on every other coalition. -/
@@ -190,8 +188,8 @@ private theorem sum_smul_unanimity_apply
     {A : Finset (Finset ι)} {T : Finset ι} (hT : T.powerset ⊆ A)
     (d : Finset ι → ℝ) :
     (∑ S ∈ A, d S • unanimity S) T = ∑ S ∈ T.powerset, d S := by
-  simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, unanimity_apply, mul_ite, mul_one,
-    mul_zero]
+  simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, unanimity, IncidenceAlgebra.zeta_apply,
+    mul_ite, mul_one, mul_zero]
   rw [← sum_filter]
   congr 1
   ext S
@@ -207,8 +205,10 @@ private theorem unanimity_add_eq_of_card_le_one {S : Finset ι} (hS : S.card ≤
     have := card_pos.mpr (ne_empty_iff_nonempty.mp h)
     omega
   obtain ⟨i, rfl⟩ := card_eq_one.mp hcard
-  simp only [unanimity_apply, singleton_subset_iff, mem_union, mem_inter]
-  by_cases hA : i ∈ A <;> by_cases hB : i ∈ B <;> simp [hA, hB]
+  have hu (T : Finset ι) : unanimity {i} T = ∑ j ∈ T, if i = j then (1 : ℝ) else 0 := by
+    simp [unanimity, singleton_subset_iff, sum_ite_eq]
+  simp_rw [hu]
+  exact (sum_union_inter (s₁ := A) (s₂ := B) (f := fun j ↦ if i = j then (1 : ℝ) else 0)).symm
 
 /-- A set function with nonnegative dividends on all coalitions of size at least two is
 supermodular. -/
