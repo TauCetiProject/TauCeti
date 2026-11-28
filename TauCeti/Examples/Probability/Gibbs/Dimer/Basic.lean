@@ -19,7 +19,8 @@ public import TauCeti.Probability.Gibbs.Dimer.Specification
 * **The null clause is needed.** On the line, every measure satisfies every cylinder identity
   (`ofReal_mul_measure_cylinder_int`), in particular the point mass at the configuration with no
   edge, which leaves every vertex uncovered, so it is not dimer Gibbs
-  (`not_isDimerGibbs_dirac_noEdge`).
+  (`not_isDimerGibbs_dirac_noEdge`), while the point mass `δ_even` at the even edges is dimer
+  Gibbs (`isDimerGibbs_dirac_evenConfig`).
 * **The hexagon.** On the `6`-cycle, the nearest-neighbour graph of `ZMod 6`, with matchings
   `M_a = hexConfig true = {e₀, e₂, e₄}` and `M_b = hexConfig false = {e₁, e₃, e₅}`, every dimer
   Gibbs measure gives the two matchings total mass one (`measure_hexConfig_add`), and taking
@@ -27,7 +28,8 @@ public import TauCeti.Probability.Gibbs.Dimer.Specification
   (`ofReal_mul_measure_hexConfig`). So for positive weights the only dimer Gibbs measure is the
   Boltzmann measure: `μ{M} = w(M)/(w(M_a) + w(M_b))` (`measure_hexConfig`), and this measure is
   dimer Gibbs (`isDimerGibbs_hexConfig`). With unit weights each matching has mass `1/2`
-  (`measure_hexConfig_of_one`, `isDimerGibbs_one_hexConfig`); with `w(e₀) = 2` and `w = 1`
+  (`measure_hexConfig_of_one`, `isDimerGibbs_one_hexConfig`), so neither point mass at a matching
+  is dimer Gibbs (`not_isDimerGibbs_one_dirac_hexConfig`); with `w(e₀) = 2` and `w = 1`
   elsewhere, `μ{M_a} = 2/3` and `μ{M_b} = 1/3` (`measure_hexConfig_of_weightTwo`,
   `isDimerGibbs_weightTwo_hexConfig`), so the weights in `SimpleGraph.IsDimerGibbs` enter in the
   right direction (the reversed reading would give `μ{M_a} = 1/3`).
@@ -90,12 +92,12 @@ dimer specification are the point masses `γ^w_F(· | ω) = δ_ω`, so resamplin
 particular `(δ_even + δ_odd)/2` is Gibbs. -/
 theorem isGibbs_dimerSpecification_int {w : (nnGraph ℤ).edgeSet → ℝ} (hw : ∀ e, 0 < w e)
     (μ : Measure ((nnGraph ℤ).dimerSubshift (Multiplicative ℤ)
-      (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ shiftTwo)))) :
+      (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ (shift 2))))) :
     ((nnGraph ℤ).dimerSpecification (Multiplicative ℤ)
-      (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ shiftTwo)) hw).IsGibbs μ := by
+      (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ (shift 2))) hw).IsGibbs μ := by
   refine TauCeti.Specification.isGibbs_iff.2 fun F => ?_
   have hk : ⇑(((nnGraph ℤ).dimerSpecification (Multiplicative ℤ)
-      (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ shiftTwo)) hw).kernel F) =
+      (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ (shift 2))) hw).kernel F) =
         Measure.dirac := by
     funext ω
     ext C
@@ -135,6 +137,15 @@ theorem not_isDimerGibbs_dirac_noEdge (w : (nnGraph ℤ).edgeSet → ℝ) :
   have h0 := h.measure_setOf_not_isDimerConfiguration
   rw [Measure.dirac_apply_of_mem (by exact not_isDimerConfiguration_noEdge)] at h0
   exact one_ne_zero h0
+
+/-- `δ_even` is dimer Gibbs on the line for every weight. -/
+theorem isDimerGibbs_dirac_evenConfig (w : (nnGraph ℤ).edgeSet → ℝ) :
+    (nnGraph ℤ).IsDimerGibbs w (Measure.dirac evenConfig) :=
+  isDimerGibbs_iff.2 ⟨inferInstance, by
+    rw [Measure.dirac_apply' _ (by simpa only [compl_ofPred] using
+      measurableSet_setOf_isDimerConfiguration.compl)]
+    simp [isDimerConfiguration_evenConfig],
+    fun F E _ _ hω hω' hF _ => ofReal_mul_measure_cylinder_int w _ F E hω hω' hF⟩
 
 /-! ### The hexagon -/
 
@@ -239,6 +250,20 @@ theorem measure_hexConfig_of_one {μ : Measure ((nnGraph (ZMod 6)).edgeSet → B
     (h : (nnGraph (ZMod 6)).IsDimerGibbs 1 μ) :
     μ {hexConfig true} = 2⁻¹ ∧ μ {hexConfig false} = 2⁻¹ := by
   simp [measure_hexConfig (w := 1) (fun _ => one_pos) h, one_add_one_eq_two]
+
+/-- With unit weights, neither point mass at a matching of the hexagon is dimer Gibbs: a dimer
+Gibbs measure gives each matching mass `1/2`. -/
+theorem not_isDimerGibbs_one_dirac_hexConfig (b : Bool) :
+    ¬ (nnGraph (ZMod 6)).IsDimerGibbs 1 (Measure.dirac (hexConfig b)) := fun h => by
+  have h₁ := measure_hexConfig_of_one h
+  have h₂ : Measure.dirac (hexConfig b) {hexConfig b} = 1 :=
+    Measure.dirac_apply_of_mem (Set.mem_singleton _)
+  have h₃ : (1 : ℝ≥0∞) ≠ 2⁻¹ := by
+    rw [ne_eq, eq_comm, ENNReal.inv_eq_one]
+    norm_num
+  cases b
+  · exact h₃ (h₂.symm.trans h₁.2)
+  · exact h₃ (h₂.symm.trans h₁.1)
 
 /-- **Unit weights on the hexagon**: the measure giving each matching mass `1/2` is dimer Gibbs. -/
 theorem isDimerGibbs_one_hexConfig :

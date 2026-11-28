@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.Calculus.DSlope
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.Substitution
 import TauCeti.Analysis.Analytic.ExtractZeros
 public import TauCeti.Analysis.Calculus.DSlope.Basic
@@ -202,6 +203,11 @@ theorem taylorSeries_sub_const : taylorSeries (fun z : 𝕜 ↦ z - a) a = Power
       ← coeff_taylorSeries, taylorSeries_const, PowerSeries.coeff_C, PowerSeries.coeff_X]
     rcases n with _ | n <;> simp
 
+/-- The Taylor series of the identity function at zero is the variable `X`. -/
+@[simp]
+theorem taylorSeries_id : taylorSeries (fun z : 𝕜 ↦ z) 0 = PowerSeries.X := by
+  simpa using (taylorSeries_sub_const (𝕜 := 𝕜) (a := 0))
+
 /-- The Taylor series is its constant term plus `X` times the Taylor series of the
 divided difference at the same centre. -/
 theorem taylorSeries_eq_C_add_X_mul :
@@ -216,6 +222,19 @@ theorem taylorSeries_eq_C_add_X_mul :
 @[simp]
 theorem constantCoeff_taylorSeries : PowerSeries.constantCoeff (taylorSeries f a) = f a := by
   rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_taylorSeries, iterate_zero_apply]
+
+/-- The Taylor series of the pointwise inverse of an analytic function is the inverse of its
+Taylor series when the function is nonzero at the centre. -/
+@[simp]
+theorem taylorSeries_inv {L : Type*} [NormedField L] [NormedAlgebra 𝕜 L] {f : 𝕜 → L}
+    (hf : AnalyticAt 𝕜 f a) (ha : f a ≠ 0) :
+    taylorSeries f⁻¹ a = (taylorSeries f a)⁻¹ := by
+  apply (PowerSeries.eq_inv_iff_mul_eq_one (by simpa using ha)).mpr
+  rw [← taylorSeries_mul (hf.inv ha) hf,
+    ← map_one (PowerSeries.C : L →+* PowerSeries L), ← taylorSeries_const (a := a) (1 : L)]
+  apply taylorSeries_congr
+  filter_upwards [hf.continuousAt.eventually_ne ha] with z hz
+  exact inv_mul_cancel₀ hz
 
 /-- The Taylor series of the zero function is zero. -/
 @[simp]

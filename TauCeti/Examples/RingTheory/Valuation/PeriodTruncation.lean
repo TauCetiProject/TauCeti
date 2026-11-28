@@ -7,7 +7,7 @@ module
 
 import Mathlib.NumberTheory.Padics.ValuativeRel
 import TauCeti.RingTheory.Valuation.PeriodTruncation
-import TauCeti.RingTheory.WittVector.Frobenius
+import TauCeti.RingTheory.WittVector.Frobenius.Basic
 
 /-!
 # Checks for Fontaine's filtered truncation over `ℚ_p`

@@ -17,8 +17,8 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 This file bounds the quadratic remainder `-log (1 - x) - x`, then specializes the estimate to
 `x = y ^ (-s)`. The sharp factor `2` in the denominator comes from reading Mathlib's complex
-logarithm bound along the reals. It also records the coarser estimate
-`-log (1 - x) ≤ x + 2 x ^ 2` for `0 ≤ x ≤ 1/2`, and the real series `∑ xⁿ / n = -log (1 - x)`
+logarithm bound along the reals. It also records the coarser estimates
+`-log (1 - x) ≤ x + 2 x ^ 2 ≤ 2 x` for `0 ≤ x ≤ 1/2`, and the real series `∑ xⁿ / n = -log (1 - x)`
 together with its exact domain of summability and truncated power-series remainder bounds.
 
 ## Main results
@@ -31,6 +31,7 @@ together with its exact domain of summability and truncated power-series remaind
   `1 ≤ s`, it is at most `y⁻²` (in particular `-log (1 - x⁻¹) - x⁻¹ ≤ (x ^ 2)⁻¹` for `2 ≤ x`).
 * `Real.neg_log_one_sub_le_add_two_mul_sq`: for `x ≤ 1/2`, `-log (1 - x)` is at most
   `x + 2 x ^ 2`.
+* `Real.neg_log_one_sub_le_two_mul`: for `0 ≤ x ≤ 1/2`, `-log (1 - x)` is at most `2 x`.
 * `Real.log_one_sub_neg`: `log (1 - x) < 0` for `0 < x < 1`.
 * `Real.neg_log_one_sub_nonneg`: `0 ≤ -log (1 - x)` for `0 ≤ x ≤ 1`.
 * `Real.neg_log_one_sub_le_iff`: for `x < 1`, `-log (1 - x) ≤ c ↔ x ≤ 1 - exp (-c)`.
@@ -40,6 +41,8 @@ together with its exact domain of summability and truncated power-series remaind
   `Real.neg_log_one_sub_inv_sub_sum_Icc_nonneg`, and `Real.neg_log_one_sub_inv_sub_sum_Icc_le`:
   nonnegativity and geometric upper bounds for the truncated power-series remainder of
   `-log (1 - x)` and `-log (1 - x⁻¹)`.
+* `TauCeti.abs_log_mul_one_sub_sub_le`: scaled Taylor remainder bound for `log (c * (1 - u))` when
+  `c > 0` and `|u| < 1`.
 * `Complex.norm_neg_log_one_sub_sub_le`: for complex `z` with `‖z‖ ≤ 1/2`, the remainder
   `-log (1 - z) - z` has norm at most `‖z‖ ^ 2`.
 
@@ -148,6 +151,11 @@ theorem neg_log_one_sub_le_add_two_mul_sq {x : ℝ} (hx : x ≤ 1 / 2) :
   refine h.trans ?_
   rw [div_le_iff₀ h1]
   nlinarith [mul_nonneg (sq_nonneg x) (by linarith : 0 ≤ 1 - 2 * x)]
+
+/-- For `0 ≤ x ≤ 1/2`, `-log (1 - x) ≤ 2 x`, since `x + 2 x ^ 2 ≤ 2 x` there. -/
+theorem neg_log_one_sub_le_two_mul {x : ℝ} (hx0 : 0 ≤ x) (hx : x ≤ 1 / 2) :
+    -log (1 - x) ≤ 2 * x := by
+  nlinarith [neg_log_one_sub_le_add_two_mul_sq hx, mul_nonneg hx0 (by linarith : 0 ≤ 1 - 2 * x)]
 
 /-- For `0 < x < 1`, the logarithm `log (1 - x)` is negative. -/
 theorem log_one_sub_neg {x : ℝ} (hx0 : 0 < x) (hx1 : x < 1) : log (1 - x) < 0 :=
@@ -262,3 +270,19 @@ theorem norm_neg_log_one_sub_sub_le {z : ℂ} (hz : ‖z‖ ≤ 1 / 2) :
     _ = ‖z‖ ^ 2 := by ring
 
 end Complex
+
+namespace TauCeti
+
+open Real in
+/-- For `c > 0`, `|u| < 1`, and `n : ℕ`, the Taylor remainder of `log (c * (1 - u))` around `u = 0`
+satisfies `|log (c * (1 - u)) - (log c - ∑ i ∈ range n, u ^ (i + 1) / (i + 1))| ≤`
+`|u| ^ (n + 1) / (1 - |u|)`. -/
+theorem abs_log_mul_one_sub_sub_le {c u : ℝ} (hc : 0 < c) (hu : |u| < 1) (n : ℕ) :
+    |log (c * (1 - u)) - (log c - ∑ i ∈ Finset.range n, u ^ (i + 1) / ((i : ℝ) + 1))| ≤
+      |u| ^ (n + 1) / (1 - |u|) := by
+  have h1u : 0 < 1 - u := sub_pos.mpr (abs_lt.mp hu).2
+  rw [log_mul hc.ne' h1u.ne']
+  convert abs_log_sub_add_sum_range_le hu n using 2
+  ring
+
+end TauCeti

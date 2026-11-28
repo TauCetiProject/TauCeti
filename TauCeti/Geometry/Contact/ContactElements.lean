@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Contact.Coorientation
 public import TauCeti.Geometry.Contact.Transition
 public import TauCeti.Geometry.Manifold.Instances.AddCircle.Cover
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Geometry.Contact.Pullback
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
@@ -21,7 +22,9 @@ A *contact element* of the plane at a point `q ∈ ℝ²` is a line through the 
 plane `T_q ℝ² = ℝ²`. These lines are parametrized by `ℝ / πℤ`, a model of the real projective line:
 the class `θ` of `τ ∈ ℝ` gives the line `ℓ_θ` perpendicular to `(cos τ, sin τ)`
 (`TauCeti.contactElementLine`), which does not change when `τ` is replaced by `τ + π`, and distinct
-classes give distinct lines (`TauCeti.contactElementLine_injective`). The space of contact elements
+classes give distinct lines (`TauCeti.contactElementLine_injective`). A nonzero covector of `ℝ²`
+vanishing on a contact element has that line as its kernel
+(`TauCeti.contactElementLine_eq_ker_of_le`). The space of contact elements
 is the three-manifold `ℝ² × ℝP¹ = ℝ² × AddCircle π`, and it carries the hyperplane field `ξ` of
 tangent vectors whose `ℝ²`-component lies in the contact element at their base point
 (`TauCeti.contactElementDistribution`):
@@ -46,9 +49,10 @@ The deck transformation `τ ↦ τ + π` sends `α` to `-α`, so `α` itself doe
 under the deck transformation forces `f (x, y, τ + π) = -f (x, y, τ)`, so `f` would change sign.
 Hence the contact structure `ξ` has no global contact form
 (`TauCeti.not_exists_isContactForm_kerDistribution_eq_contactElementDistribution`) and no
-coorientation (`TauCeti.not_exists_isCoorientation_contactElementDistribution`): its contact line is
-not trivial. A definition of contact structures as kernels of global contact forms would miss this
-example.
+coorientation (`TauCeti.not_exists_isCoorientation_contactElementDistribution`), and its
+contact line `TM ⧸ ξ` is not trivial
+(`TauCeti.not_exists_trivialization_quotient_contactElementDistribution`). A definition of contact
+structures as kernels of global contact forms would miss this example.
 
 ## Main definitions
 
@@ -66,6 +70,8 @@ example.
   `TauCeti.not_exists_isContactForm_kerDistribution_eq_contactElementDistribution`,
   `TauCeti.not_exists_isCoorientation_contactElementDistribution`: its contact structure is not
   coorientable.
+* `TauCeti.not_exists_trivialization_quotient_contactElementDistribution`: its contact line is not
+  trivial.
 
 ## References
 
@@ -260,6 +266,31 @@ theorem contactElementLine_injective : Injective contactElementLine := by
   simp only [zsmul_eq_mul, hk]
   ring
 
+/-- A nonzero covector of `ℝ²` vanishing on the contact element of angle class `θ` has kernel
+exactly that contact element. -/
+theorem contactElementLine_eq_ker_of_le {θ : AddCircle π} {P : (ℝ × ℝ) →L[ℝ] ℝ}
+    (hP : P ≠ 0) (h : contactElementLine θ ≤ LinearMap.ker (P : (ℝ × ℝ) →ₗ[ℝ] ℝ)) :
+    contactElementLine θ = LinearMap.ker (P : (ℝ × ℝ) →ₗ[ℝ] ℝ) := by
+  induction θ using QuotientAddGroup.induction_on with | H τ => ?_
+  refine le_antisymm h fun ⟨a, b⟩ hu ↦ ?_
+  rw [ContinuousLinearMap.mk_mem_ker_iff] at hu
+  rw [mem_contactElementLine_coe]
+  -- `P` vanishes on the direction `(-sin τ, cos τ)` of the line, so it is `k (cos τ, sin τ)`.
+  have h₀ : -sin τ * P (1, 0) + cos τ * P (0, 1) = 0 := by
+    have hmem : ((-sin τ, cos τ) : ℝ × ℝ) ∈ contactElementLine (τ : AddCircle π) := by
+      rw [mem_contactElementLine_coe]
+      ring
+    exact ContinuousLinearMap.mk_mem_ker_iff.1 (h hmem)
+  have hs := sin_sq_add_cos_sq τ
+  set k := P (1, 0) * cos τ + P (0, 1) * sin τ
+  have ha : P (1, 0) = k * cos τ := by linear_combination (-sin τ) * h₀ - P (1, 0) * hs
+  have hb : P (0, 1) = k * sin τ := by linear_combination cos τ * h₀ - P (0, 1) * hs
+  have hk₀ : k ≠ 0 := fun hk₀ ↦ hP <| P.eq_zero_of_apply_one_zero_of_apply_zero_one
+    (by rw [ha, hk₀, zero_mul]) (by rw [hb, hk₀, zero_mul])
+  have hku : k * (cos τ * a + sin τ * b) = 0 := by
+    linear_combination hu - a * ha - b * hb
+  exact (mul_eq_zero.1 hku).resolve_left hk₀
+
 variable (z : (ℝ × ℝ) × AddCircle π)
 
 /-- The **contact structure of the space of contact elements** `ℝ² × AddCircle π` of the plane: at
@@ -360,5 +391,27 @@ theorem not_exists_isCoorientation_contactElementDistribution :
   not_exists_isContactForm_kerDistribution_eq_contactElementDistribution <|
     (IsContactDistribution.exists_isContactForm_kerDistribution_eq_iff_exists_isCoorientation
       isContactDistribution_contactElementDistribution).2 h
+
+/-- **The contact line of the space of contact elements of the plane is not trivial.** The line
+bundle `TM ⧸ ξ` of the contact structure `ξ` of `ℝ² × AddCircle π`
+(`TauCeti.IsContMDiffDistribution.quotientPrebundle`) has no smooth linear trivialization over the
+whole space. -/
+theorem not_exists_trivialization_quotient_contactElementDistribution :
+    letI hξ := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
+    letI hk := (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
+    letI := (hξ.quotientPrebundle hk).totalSpaceTopology
+    letI := (hξ.quotientPrebundle hk).toFiberBundle
+    letI := (hξ.quotientPrebundle hk).toVectorBundle
+    ¬ ∃ (e : Bundle.Trivialization (Fin 1 → ℝ) (@Bundle.TotalSpace.proj _ (Fin 1 → ℝ)
+          fun z ↦ TangentSpace (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) z ⧸ contactElementDistribution z))
+        (_ : e.IsLinear ℝ),
+        e.toOpenPartialHomeomorph ∈ (contMDiffFiberwiseLinear ((ℝ × ℝ) × AddCircle π)
+          (Fin 1 → ℝ) (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) ∞).maximalAtlas
+          (Bundle.TotalSpace (Fin 1 → ℝ) fun z ↦ TangentSpace (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) z ⧸
+            contactElementDistribution z) ∧
+        e.baseSet = Set.univ := fun h ↦ by
+  have hξ := isContactDistribution_contactElementDistribution (n := ∞)
+  exact not_exists_isContactForm_kerDistribution_eq_contactElementDistribution
+    (hξ.exists_isContactForm_kerDistribution_eq_iff_exists_trivialization_quotient.2 h)
 
 end TauCeti

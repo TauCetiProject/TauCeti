@@ -61,7 +61,10 @@ If `F` is only `C^n` on a set `W ⊇ s × ι(α)` with unique derivatives, not n
 convex set `s` with unique derivatives, the integral is `C^n` on `s`
 (`Convex.contDiffOn_integral_smul_of_contDiffOn`), with derivative within `s` the integral of the
 partial derivatives within `s` (`Convex.hasFDerivWithinAt_integral_smul_of_contDiffOn`). This
-is the regularity of the Poincaré homotopy operator on a closed half-ball.
+is the regularity of the Poincaré homotopy operator on a closed half-ball. The same holds for the
+integral `x ↦ ∫ y in k, F (x, y) ∂ν` over a compact set `k ⊆ P` of finite measure
+(`Convex.contDiffOn_setIntegral_of_contDiffOn`), the form used in charts at boundary points of a
+manifold.
 
 For a family `f : Y → E → F` with compact topological parameter `Y`, smooth slices on an
 open set and jointly continuous spatial jets, integration preserves smoothness
@@ -631,6 +634,26 @@ theorem _root_.Convex.contDiffOn_integral_smul_of_contDiffOn {G : Type v} [Norme
     fun y ↦ (map_smul _ _ _).symm
   simp only [Function.comp_apply, hsmul, ContinuousLinearEquiv.integral_comp_comm,
     ContinuousLinearEquiv.apply_symm_apply]
+
+/-- **Smoothness of set integrals over a compact set, within a convex set.** If `F` is `C^n` on a
+set `W ⊆ E × P` with unique derivatives, `s` is convex with unique derivatives, `k` is a compact
+set of finite measure and `s × k ⊆ W`, then `x ↦ ∫ y in k, F (x, y) ∂ν` is `C^n` on `s`. Unlike
+Mathlib's `ContDiffOn.parametric_integral`, the set `s` need not be open. -/
+theorem _root_.Convex.contDiffOn_setIntegral_of_contDiffOn {G : Type v} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [MeasurableSpace P] [OpensMeasurableSpace P] {ν : Measure P} {n : ℕ∞}
+    {F : E × P → G} {k : Set P} (hs : Convex ℝ s) (hsu : UniqueDiffOn ℝ s)
+    (hW : UniqueDiffOn ℝ W) (hF : ContDiffOn ℝ n F W) (hk : IsCompact k) (hνk : ν k ≠ ⊤)
+    (hsW : s ×ˢ k ⊆ W) :
+    ContDiffOn ℝ n (fun x ↦ ∫ y in k, F (x, y) ∂ν) s := by
+  have : CompactSpace k := isCompact_iff_compactSpace.1 hk
+  have : IsFiniteMeasure (ν.restrict k) := isFiniteMeasure_restrict.2 hνk
+  -- Integrate over the compact space `k` against the restriction of `ν`.
+  refine (hs.contDiffOn_integral_smul_of_contDiffOn (μ := (ν.restrict k).comap Subtype.val)
+    (g := fun _ ↦ (1 : ℝ)) (integrable_const 1) continuous_subtypeVal hsu hW hF
+    fun x hx y ↦ hsW ⟨hx, y.property⟩).congr fun x _ ↦ ?_
+  rw [integral_subtype_comap hk.measurableSet fun y ↦ (1 : ℝ) • F (x, y),
+    Measure.restrict_restrict hk.measurableSet, inter_self]
+  simp only [one_smul]
 
 end Convex
 

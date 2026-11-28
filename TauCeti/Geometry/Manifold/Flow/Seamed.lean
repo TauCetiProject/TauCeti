@@ -22,7 +22,10 @@ vector field `X` of a perturbation, the seamed solutions are the zeros of the ac
 the space of `f`-seamed paths, and they generate the Floer complex of `f`; the seamed paths take
 the place of the free loops of Hamiltonian Floer theory, which are the case `f = id`. For the
 identity seam and a `1`-periodic field the seamed solutions are the `1`-periodic solutions
-(`TauCeti.seamedSolutions_id_eq_periodicSolutions`).
+(`TauCeti.seamedSolutions_id_eq_periodicSolutions`). Reversing time exchanges `f` with an inverse
+`g`: the curve `t ↦ γ (1 - t)` is a seamed solution of `X` with seam `g` exactly when `γ` is a
+seamed solution of the reversed field `(t, x) ↦ -X (1 - t) x` with seam `f`
+(`TauCeti.comp_one_sub_mem_seamedSolutions_iff`).
 
 When the suspension of `X` is complete, for instance on a compact manifold, every solution is a
 trajectory of the time-dependent flow `φ_t = timeDependentFlowOf X 0 t`. So evaluation at time `0`
@@ -56,6 +59,9 @@ This is the seamed counterpart of `TauCeti.finite_contractiblePeriodicSolutions`
 
 * `TauCeti.seamedSolutions_id_eq_periodicSolutions`: for the identity seam and a `1`-periodic
   field, the seamed solutions are the `1`-periodic solutions.
+* `TauCeti.comp_one_sub_mem_seamedSolutions`, `TauCeti.comp_one_sub_mem_seamedSolutions_iff`:
+  reversing time turns the seamed solutions of `X` with seam `f` into those of the reversed field
+  with seam an inverse of `f`.
 * `TauCeti.continuous_seamedSolutionPath_seamedSolutionsEquiv_symm`: the seamed path of the
   trajectory of a point depends continuously on the point.
 * `TauCeti.isClopen_setOf_seamedSolutionPath_mem_pathComponent`: the starts of the seamed
@@ -116,6 +122,35 @@ def seamedSolutionPath (γ : seamedSolutions X f) : SeamedPath f :=
 theorem seamedSolutionPath_apply (γ : seamedSolutions X f) (t : unitInterval) :
     (seamedSolutionPath γ).val t = γ.val t :=
   (rfl)
+
+/-- **Reversing time in a seamed solution.** If `γ` is a seamed solution of `X` with seam `f` and
+`g` is a left inverse of `f`, then `t ↦ γ (1 - t)` is a seamed solution of the reversed field
+`(t, x) ↦ -X (1 - t) x` with seam `g`: it runs from `γ 1 = f (γ 0)` back to `γ 0 = g (γ 1)`. -/
+theorem comp_one_sub_mem_seamedSolutions {g : M → M} {γ : ℝ → M} (hγ : γ ∈ seamedSolutions X f)
+    (hgf : LeftInverse g f) :
+    (fun t ↦ γ (1 - t)) ∈ seamedSolutions (fun t x ↦ -X (1 - t) x) g := by
+  refine ⟨fun t ↦ ?_, by simp [hγ.2, hgf (γ 0)]⟩
+  have hsub : HasMFDerivAt 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (fun t : ℝ ↦ 1 - t) t
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (-1 : ℝ)) :=
+    ((hasDerivAt_id t).const_sub 1).hasFDerivAt.hasMFDerivAt
+  have h : (1 : ℝ →L[ℝ] ℝ).smulRight (-X (1 - t) (γ (1 - t))) =
+      (1 : ℝ →L[ℝ] ℝ).smulRight (X (1 - t) (γ (1 - t))) ∘SL
+        (1 : ℝ →L[ℝ] ℝ).smulRight (-1 : ℝ) := by
+    simp [ContinuousLinearMap.smulRight_comp_smulRight]
+  rw [h]
+  exact (hγ.1 (1 - t)).comp t hsub
+
+/-- **Reversing time**, as a characterization: for mutually inverse `f` and `g`, the curve
+`t ↦ γ (1 - t)` is a seamed solution of `X` with seam `g` exactly when `γ` is a seamed solution of
+the reversed field `(t, x) ↦ -X (1 - t) x` with seam `f`. -/
+theorem comp_one_sub_mem_seamedSolutions_iff {g : M → M} {γ : ℝ → M} (hgf : LeftInverse g f)
+    (hfg : RightInverse g f) :
+    (fun t ↦ γ (1 - t)) ∈ seamedSolutions X g ↔
+      γ ∈ seamedSolutions (fun t x ↦ -X (1 - t) x) f := by
+  -- Each direction is the reversal of the other side, since reversing twice is the identity.
+  constructor <;> intro h
+  · simpa only [sub_sub_cancel] using comp_one_sub_mem_seamedSolutions h hfg
+  · simpa only [sub_sub_cancel, neg_neg] using comp_one_sub_mem_seamedSolutions h hgf
 
 section Flow
 
