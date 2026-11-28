@@ -73,7 +73,7 @@ group `G_1` is the unique Sylow `p`-subgroup of `G_0`.
   local ring with finite `G_0`.
 * `TauCeti.IsLocalRing.ramificationGroup_eq_bot_of_charZero`,
   `TauCeti.IsLocalRing.ramificationGroup_one_eq_bot_of_charZero`,
-  `TauCeti.IsLocalRing.mem_ker_toRingAut_of_mem_ramificationGroup_one_of_isOfFinOrder`, and
+  `TauCeti.IsLocalRing.mem_ker_toRingAut_of_mem_ramificationGroup_one_of_pow_eq_one`, and
   `TauCeti.IsLocalRing.ramificationGroup_eq_bot_of_not_dvd_card_ramificationGroup_zero`:
   positive-depth vanishing over a local ring, in residue characteristic zero and when the residue
   characteristic does not divide `#G_0`.
@@ -232,30 +232,36 @@ theorem isPGroup_ramificationGroup_of_eq_bot (p : ℕ) [CharP (ResidueField S) p
   rw [hN, Subgroup.mem_bot] at h
   simpa using h
 
+/-- An element of `G_i` (`0 < i`) whose `m`-th power is `1`, for an `m` nonzero in the residue
+field, lies in every ramification group `G_j`. -/
+private theorem mem_iInf_ramificationGroup_of_pow_eq_one {i : ℤ} (hi : 0 < i) {σ : G}
+    (hσ : σ ∈ ramificationGroup G S i) {m : ℕ} (hm : (m : ResidueField S) ≠ 0)
+    (hpow : σ ^ m = 1) : σ ∈ ⨅ j, ramificationGroup G S j := by
+  have hstep : ∀ k : ℕ, σ ∈ ramificationGroup G S (i + k) := by
+    intro k
+    induction k with
+    | zero => simpa using hσ
+    | succ k ih =>
+      rw [Nat.cast_succ, ← add_assoc]
+      exact mem_ramificationGroup_add_one_of_pow_mem (by omega) ih hm (hpow ▸ one_mem _)
+  rw [Subgroup.mem_iInf]
+  intro j
+  exact ramificationGroup_antitone G S (by omega : j ≤ i + (j - i).toNat) (hstep (j - i).toNat)
+
 /-- **In residue characteristic zero the positive-depth ramification groups are trivial** when
 they are finite and the filtration meets in the trivial group: each positive-depth step
 `G_j / G_{j+1}` is a finite group without torsion, so `G_i` lies in every `G_j`. -/
 theorem ramificationGroup_eq_bot_of_charZero [CharZero (ResidueField S)] {i : ℤ} (hi : 0 < i)
     [Finite (ramificationGroup G S i)] (hbot : ⨅ j, ramificationGroup G S j = ⊥) :
     ramificationGroup G S i = ⊥ := by
-  have hstep : ∀ j : ℤ, i ≤ j → ramificationGroup G S j ≤ ramificationGroup G S (j + 1) := by
-    intro j hij σ hσ
-    -- `σ` has finite order, since it lies in the finite group `G_i`.
-    have hm : 0 < orderOf σ := by
-      rw [← Subgroup.orderOf_mk σ (ramificationGroup_antitone G S hij hσ)]
-      exact orderOf_pos _
-    refine mem_ramificationGroup_add_one_of_pow_mem (by omega) hσ (Nat.cast_ne_zero.mpr hm.ne') ?_
-    rw [pow_orderOf_eq_one]
-    exact one_mem _
-  have hle : ∀ k : ℕ, ramificationGroup G S i ≤ ramificationGroup G S (i + k) := by
-    intro k
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      rw [Nat.cast_succ, ← add_assoc]
-      exact ih.trans (hstep _ (by omega))
-  refine eq_bot_iff.mpr (hbot ▸ le_iInf fun j ↦ ?_)
-  exact (hle (j - i).toNat).trans (ramificationGroup_antitone G S (by omega))
+  rw [eq_bot_iff]
+  intro σ hσ
+  have hm : 0 < orderOf σ := by
+    rw [← Subgroup.orderOf_mk σ hσ]
+    exact orderOf_pos _
+  rw [← hbot]
+  exact mem_iInf_ramificationGroup_of_pow_eq_one hi hσ (Nat.cast_ne_zero.mpr hm.ne')
+    (pow_orderOf_eq_one σ)
 
 section
 
@@ -282,15 +288,12 @@ theorem ramificationGroup_eq_bot_of_not_dvd_card_ramificationGroup_zero (p : ℕ
     have := not_finite_iff_infinite.mp hinf
     rw [Nat.card_eq_zero_of_infinite] at hp
     exact hp (dvd_zero p)
-  have hle : ramificationGroup G S i ≤ ramificationGroup G S 0 :=
-    ramificationGroup_antitone G S hi.le
-  have : Finite (ramificationGroup G S i) :=
-    Finite.of_injective (Subgroup.inclusion hle) (Subgroup.inclusion_injective hle)
+  have : Finite (ramificationGroup G S i) := finite_ramificationGroup_of_le G S hi.le
   rcases CharP.char_is_prime_or_zero (ResidueField S) p with hprime | rfl
   · have : Fact p.Prime := ⟨hprime⟩
     rcases (isPGroup_ramificationGroup G S p hi).card_eq_or_dvd with hcard | hpdvd
     · exact Subgroup.card_eq_one.mp hcard
-    · exact (hp (hpdvd.trans (Subgroup.card_dvd_of_le hle))).elim
+    · exact (hp (hpdvd.trans (Subgroup.card_dvd_of_le (ramificationGroup_antitone G S hi.le)))).elim
   · have : CharZero (ResidueField S) := CharP.charP_to_charZero (ResidueField S)
     exact ramificationGroup_eq_bot_of_charZero hi (iInf_ramificationGroup_eq_bot G S)
 
@@ -304,18 +307,6 @@ open scoped commutatorElement
 
 variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
 
-/-- An element of `G_n` moves every element of `𝔪 ^ k` by an element of `𝔪 ^ (k + n)`. -/
-theorem smul_sub_mem_maximalIdeal_pow_add {n : ℕ} {σ : G} (hσ : σ ∈ ramificationGroup G S n)
-    {k : ℕ} {y : S} (hy : y ∈ maximalIdeal S ^ k) :
-    σ • y - y ∈ maximalIdeal S ^ (k + n) := by
-  cases k with
-  | zero =>
-    rw [zero_add]
-    exact Ideal.pow_le_pow_right (by omega) (mem_ramificationGroup_natCast_iff.mp hσ y)
-  | succ k =>
-    have h := smul_sub_mem_maximalIdeal_pow_of_mem_ramificationGroup hσ hy
-    rwa [show n + k + 1 = k + 1 + n by omega] at h
-
 /-- For `σ ∈ G_a` and `τ ∈ G_b`, the displacement of `σ * τ` is the sum of the displacements of
 `σ` and `τ` modulo `𝔪 ^ (a + b + 1)`. -/
 private theorem mul_smul_sub_sub_add_mem_maximalIdeal_pow_add {a b : ℕ} {σ τ : G}
@@ -324,8 +315,9 @@ private theorem mul_smul_sub_sub_add_mem_maximalIdeal_pow_add {a b : ℕ} {σ τ
   have hid : (σ * τ) • x - x - ((σ • x - x) + (τ • x - x)) = σ • (τ • x - x) - (τ • x - x) := by
     rw [mul_smul, smul_sub]
     ring
-  rw [hid, show a + b + 1 = (b + 1) + a by omega]
-  exact smul_sub_mem_maximalIdeal_pow_add hσ (mem_ramificationGroup_natCast_iff.mp hτ x)
+  rw [hid]
+  exact smul_sub_mem_maximalIdeal_pow_of_mem_ramificationGroup hσ
+    (mem_ramificationGroup_natCast_iff.mp hτ x)
 
 variable (G S) in
 /-- **Commutators in the ramification filtration.** For all integers `i` and `j`, the commutator
@@ -373,46 +365,8 @@ theorem mem_ker_toRingAut_of_mem_ramificationGroup_one_of_pow_eq_one
     [IsNoetherianRing S] {σ : G} (hσ : σ ∈ ramificationGroup G S 1) {m : ℕ}
     (hm : (m : ResidueField S) ≠ 0) (hpow : σ ^ m = 1) :
     σ ∈ MonoidHom.ker (MulSemiringAction.toRingAut G S) := by
-  have hstep : ∀ n : ℕ, σ ∈ ramificationGroup G S ((n : ℤ) + 1) := by
-    intro n
-    induction n with
-    | zero => simpa using hσ
-    | succ n ih =>
-      refine mem_ramificationGroup_add_one_of_pow_mem (by omega) ih hm ?_
-      rw [hpow]
-      exact one_mem _
-  rw [← iInf_ramificationGroup_eq_ker, Subgroup.mem_iInf]
-  intro i
-  by_cases hi : 1 ≤ i
-  · have hidx : i = ((i - 1).toNat : ℤ) + 1 := by omega
-    rw [hidx]
-    exact hstep (i - 1).toNat
-  · exact ramificationGroup_antitone G S (by omega : i ≤ 1) hσ
-
-/-- Over a Noetherian local ring of residue characteristic zero, every finite-order element of
-`G_1` acts trivially on `S`. -/
-theorem mem_ker_toRingAut_of_mem_ramificationGroup_one_of_isOfFinOrder
-    [IsNoetherianRing S] [CharZero (ResidueField S)] {σ : G}
-    (hσ : σ ∈ ramificationGroup G S 1) (hfin : IsOfFinOrder σ) :
-    σ ∈ MonoidHom.ker (MulSemiringAction.toRingAut G S) :=
-  mem_ker_toRingAut_of_mem_ramificationGroup_one_of_pow_eq_one hσ
-    (Nat.cast_ne_zero.mpr hfin.orderOf_pos.ne') (pow_orderOf_eq_one σ)
-
-/-- Over a Noetherian local ring with faithful action, an element `σ ∈ G_1` satisfying `σ ^ m = 1`
-for an `m : ℕ` nonzero in `ResidueField S` equals `1`. -/
-theorem eq_one_of_mem_ramificationGroup_one_of_pow_eq_one
-    [IsNoetherianRing S] [FaithfulSMul G S] {σ : G} (hσ : σ ∈ ramificationGroup G S 1)
-    {m : ℕ} (hm : (m : ResidueField S) ≠ 0) (hpow : σ ^ m = 1) : σ = 1 := by
-  have hmem := mem_ker_toRingAut_of_mem_ramificationGroup_one_of_pow_eq_one hσ hm hpow
-  rwa [TauCeti.MulSemiringAction.ker_toRingAut_eq_bot, Subgroup.mem_bot] at hmem
-
-/-- Over a Noetherian local ring of residue characteristic zero with faithful action, the only
-finite-order element of `G_1` is `1`. -/
-theorem eq_one_of_mem_ramificationGroup_one_of_isOfFinOrder
-    [IsNoetherianRing S] [FaithfulSMul G S] [CharZero (ResidueField S)] {σ : G}
-    (hσ : σ ∈ ramificationGroup G S 1) (hfin : IsOfFinOrder σ) : σ = 1 :=
-  eq_one_of_mem_ramificationGroup_one_of_pow_eq_one hσ
-    (Nat.cast_ne_zero.mpr hfin.orderOf_pos.ne') (pow_orderOf_eq_one σ)
+  rw [← iInf_ramificationGroup_eq_ker]
+  exact mem_iInf_ramificationGroup_of_pow_eq_one zero_lt_one hσ hm hpow
 
 variable (G S) in
 /-- Over a Noetherian local ring with residue field of characteristic zero, faithful action, and
@@ -864,7 +818,7 @@ theorem ramificationGroupOneSylow_coe (p : ℕ) [Fact p.Prime] [CharP (ResidueFi
   (rfl)
 
 /-- The wild inertia Sylow subgroup is normal in `G_0`. -/
-theorem ramificationGroupOneSylow_normal (p : ℕ) [Fact p.Prime] [CharP (ResidueField S) p] :
+instance ramificationGroupOneSylow_normal (p : ℕ) [Fact p.Prime] [CharP (ResidueField S) p] :
     (ramificationGroupOneSylow G S R p : Subgroup (ramificationGroup G S 0)).Normal := by
   rw [ramificationGroupOneSylow_coe]
   infer_instance
@@ -873,7 +827,7 @@ theorem ramificationGroupOneSylow_normal (p : ℕ) [Fact p.Prime] [CharP (Residu
 `TauCeti.IsLocalRing.ramificationGroupOneSylow` is normal. -/
 theorem eq_ramificationGroupOneSylow (p : ℕ) [Fact p.Prime] [CharP (ResidueField S) p]
     (Q : Sylow p (ramificationGroup G S 0)) : Q = ramificationGroupOneSylow G S R p := by
-  let _ := Sylow.unique_of_normal _ (ramificationGroupOneSylow_normal G S R p)
+  let _ := Sylow.unique_of_normal (ramificationGroupOneSylow G S R p) inferInstance
   exact Subsingleton.elim _ _
 
 /-- The order of `G_1` is the `p`-part of the order of `G_0`: `#G_1 = p ^ (v_p #G_0)`. -/
