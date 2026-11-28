@@ -128,14 +128,6 @@ private theorem summable_evalTerms {z : L} {a : ℤ → K}
   rw [tendsto_zero_iff_norm_tendsto_zero]
   simpa only [norm_mul, norm_algebraMap', norm_zpow] using laurentConvergesAt_iff.mp ha
 
-omit [IsUltrametricDist K] [CompleteSpace K] [CompleteSpace L] in
-private theorem tsum_eval_single (z : L) (n : ℤ) (c : K) :
-    ∑' m, algebraMap K L (Pi.single (M := fun _ ↦ K) n c m) * z ^ m = algebraMap K L c * z ^ n := by
-  rw [tsum_eq_single n]
-  · simp
-  · intro m hm
-    simp [Pi.single_eq_of_ne hm]
-
 variable {z : L}
 
 private theorem tsum_eval_mul (hz : 0 < ‖z‖) (f g : atRadius K hz) :
@@ -171,8 +163,7 @@ The domain consists of the series converging at the norm of the point. -/
 noncomputable def evalAt (hz : 0 < ‖z‖) : atRadius K hz →ₐ[K] L where
   toFun f := ∑' n : ℤ, algebraMap K L ((f.val : ℤ → K) n) * z ^ n
   map_one' := by
-    simpa only [Subalgebra.coe_one, coe_one, map_one, zpow_zero, mul_one] using
-      tsum_eval_single K z 0 1
+    simp [coe_one, Pi.single_apply, apply_ite, ite_mul]
   map_zero' := by simp
   map_mul' := tsum_eval_mul K hz
   map_add' f g := by
@@ -180,8 +171,7 @@ noncomputable def evalAt (hz : 0 < ‖z‖) : atRadius K hz →ₐ[K] L where
     exact (summable_evalTerms K ((mem_atRadius K hz).mp f.property)).tsum_add
       (summable_evalTerms K ((mem_atRadius K hz).mp g.property))
   commutes' c := by
-    simpa only [Subalgebra.coe_algebraMap, coe_algebraMap, zpow_zero, mul_one] using
-      tsum_eval_single K z 0 c
+    simp [coe_algebraMap, Pi.single_apply, apply_ite, ite_mul]
 
 /-- Evaluation is the sum of the two-sided Laurent series at the given point. -/
 theorem evalAt_apply (hz : 0 < ‖z‖) (f : atRadius K hz) :
@@ -194,7 +184,8 @@ theorem evalAt_monomial (hz : 0 < ‖z‖) (n : ℤ) (c : K) :
     evalAt K hz ⟨monomial n c, monomial_mem_atRadius K hz n c⟩ =
       algebraMap K L c * z ^ n := by
   rw [evalAt_apply]
-  simpa only [coe_monomial] using tsum_eval_single K z n c
+  simp only [coe_monomial, Pi.single_apply, apply_ite, map_zero, ite_mul, zero_mul,
+    tsum_ite_eq]
 
 /-- The series of evaluated Laurent monomials converges to the value of the Robba series. -/
 theorem hasSum_evalAt (hz : 0 < ‖z‖) (f : atRadius K hz) :
@@ -310,15 +301,19 @@ theorem comp_annulusEval {M : Type*} [NormedField M] [NormedAlgebra K M] [Comple
 
 open _root_.IsLocalRing
 
+-- The residue field needs the target ultrametric structure already implied by `K` and
+-- `NormedAlgebra K L`; derive it in the hypothesis rather than requiring another instance.
 /-- A Robba series converging on a nonempty circle over an extension with infinite residue field
 attains its Gauss norm at some point of that circle. -/
-theorem exists_norm_evalAt_eq_laurentGaussNorm [IsUltrametricDist L]
-    [Infinite (ResidueField (Subring.unitClosedBall L))]
+theorem exists_norm_evalAt_eq_laurentGaussNorm
+    [hL : letI : IsUltrametricDist L := IsUltrametricDist.of_normedAlgebra K
+      Infinite (ResidueField (Subring.unitClosedBall L))]
     (hz : 0 < ‖z‖) (f : atRadius K hz) :
     ∃ w : L, ∃ hw : ‖w‖ = ‖z‖,
       ‖evalAt K (z := w) (hw.symm ▸ hz)
         ⟨f.val, by simpa only [mem_atRadius, hw] using f.property⟩‖ =
         laurentGaussNorm ‖z‖ (f.val : ℤ → K) := by
+  have : IsUltrametricDist L := IsUltrametricDist.of_normedAlgebra K
   let a (n : ℤ) := algebraMap K L ((f.val : ℤ → K) n) * z ^ n
   have ha : Summable a := (hasSum_evalAt K hz f).summable
   have hn (n : ℤ) : ‖a n‖ = ‖(f.val : ℤ → K) n‖ * ‖z‖ ^ n := by
@@ -361,12 +356,14 @@ theorem exists_norm_evalAt_eq_laurentGaussNorm_of_isAlgClosed [IsAlgClosed L]
 
 /-- On a nonempty circle in an annulus over a valued field with infinite residue field, some
 evaluation attains the Gauss norm. -/
-theorem exists_norm_annulusEval_eq_laurentGaussNorm [IsUltrametricDist L]
-    [Infinite (ResidueField (Subring.unitClosedBall L))] {r : ℝ}
+theorem exists_norm_annulusEval_eq_laurentGaussNorm
+    [hL : letI : IsUltrametricDist L := IsUltrametricDist.of_normedAlgebra K
+      Infinite (ResidueField (Subring.unitClosedBall L))] {r : ℝ}
     (hz : 0 < ‖z‖) (hr : r < ‖z‖) (h₁ : ‖z‖ < 1) (f : annulus K r) :
     ∃ w : L, ∃ hw : ‖w‖ = ‖z‖,
       ‖annulusEval K (z := w) (hw.symm ▸ hz) (hw.symm ▸ hr) (hw.symm ▸ h₁) f‖ =
         laurentGaussNorm ‖z‖ (f.val : ℤ → K) := by
+  have : IsUltrametricDist L := IsUltrametricDist.of_normedAlgebra K
   rcases f with ⟨f, hf⟩
   simpa only [annulusEval_eq_evalAt, AlgHom.comp_apply, Subalgebra.inclusion_mk] using
     exists_norm_evalAt_eq_laurentGaussNorm K hz ⟨f, annulus_le_atRadius K hz hr h₁ hf⟩
