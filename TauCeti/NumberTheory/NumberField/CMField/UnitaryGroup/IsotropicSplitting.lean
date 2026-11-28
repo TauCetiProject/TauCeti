@@ -40,7 +40,7 @@ Here `GL_p(𝔸)` and the adelic matrices are written by their archimedean and f
   `Γ_V` (`TauCeti.IsotropicSplitting.adelicUnipotent_mem_rationalPoints`).
 * `TauCeti.IsotropicSplitting.adelicUnipotent_mul_adelicUnipotent`: the group law
   `n(c, b) n(c', b') = n(c + c', b + j c* ε c' + b')` of the adelic unipotent elements, `ε` the
-  standard form of signs `s₀`.
+  standard form `ε = (diag(s₀), 1_{n₀})`.
 
 ## Attribution
 
@@ -137,17 +137,13 @@ def adelicLevi :
   let M := (GL p (InfiniteAdeleRing E) × GL p 𝔸ᶠ[E]) × adelicUnitaryGroup E s₀
   let a : M →* GL p (InfiniteAdeleRing E) × GL p 𝔸ᶠ[E] := MonoidHom.fst _ _
   let g₀ : M →* adelicUnitaryGroup E s₀ := MonoidHom.snd _ _
-  let mInf : M →* GL n (InfiniteAdeleRing E) :=
-    (infiniteAdelicUnitaryGroup E s).subtype.comp (D.infiniteSplitting.levi.comp
-      (((MonoidHom.fst _ _).comp a).prod ((adelicUnitaryGroup.infinitePart E s₀).comp g₀)))
-  let mFin : M →* GL n 𝔸ᶠ[E] :=
-    (unitaryGroupOf (1 : Matrix n n 𝔸ᶠ[E])).subtype.comp (D.finiteSplitting.levi.comp
-      (((MonoidHom.snd _ _).comp a).prod
-        ((MulEquiv.subgroupCongr unitaryGroupOf_one.symm).toMonoidHom.comp
-          ((adelicUnitaryGroup.finitePart E s₀).comp g₀))))
-  (mInf.prod mFin).codRestrict (adelicUnitaryGroup E s) fun _ ↦
-    ⟨(D.infiniteSplitting.levi _).property,
-      (unitaryGroupOf_one (R := 𝔸ᶠ[E]) (n := n)).le (D.finiteSplitting.levi _).property⟩
+  let mInf := D.infiniteSplitting.levi.comp
+    (((MonoidHom.fst _ _).comp a).prod ((adelicUnitaryGroup.infinitePart E s₀).comp g₀))
+  let mFin := (MulEquiv.subgroupCongr unitaryGroupOf_one).toMonoidHom.comp
+    (D.finiteSplitting.levi.comp (((MonoidHom.snd _ _).comp a).prod
+      ((MulEquiv.subgroupCongr unitaryGroupOf_one.symm).toMonoidHom.comp
+        ((adelicUnitaryGroup.finitePart E s₀).comp g₀))))
+  (Subgroup.prodEquiv _ _).symm.toMonoidHom.comp (mInf.prod mFin)
 
 /-- The archimedean component of the adelic Levi element of `((a_∞, a_f), g₀)` is the Levi element
 of `(a_∞, g₀_∞)` for the archimedean adelic frames. -/
@@ -159,6 +155,7 @@ theorem adelicLevi_fst (x : (GL p (InfiniteAdeleRing E) × GL p 𝔸ᶠ[E]) × a
 
 /-- The finite component of the adelic Levi element of `((a_∞, a_f), g₀)` is the Levi element of
 `(a_f, g₀_f)` for the finite adelic frames, `g₀_f` read in the unitary group of `1_{n₀}`. -/
+@[simp]
 theorem adelicLevi_snd (x : (GL p (InfiniteAdeleRing E) × GL p 𝔸ᶠ[E]) × adelicUnitaryGroup E s₀) :
     (D.adelicLevi x : GL n (InfiniteAdeleRing E) × GL n 𝔸ᶠ[E]).2 =
       D.finiteSplitting.levi (x.1.2, MulEquiv.subgroupCongr unitaryGroupOf_one.symm
@@ -202,22 +199,32 @@ theorem adelicLevi_mem_rationalPoints (a : GL p E) {g₀ : adelicUnitaryGroup E 
 
 /-! ### Adelic unipotent elements -/
 
-variable [Invertible (2 : InfiniteAdeleRing E)] [Invertible (2 : 𝔸ᶠ[E])] {j : Eˣ}
+/-- The canonical inverse of two in the rational coefficient field. -/
+local instance : Invertible (2 : E) := invertibleOfNonzero two_ne_zero
+
+/-- The inverse of two transported from the coefficient field to the infinite adeles. -/
+local instance : Invertible (2 : InfiniteAdeleRing E) :=
+  (Invertible.map (algebraMap E (InfiniteAdeleRing E)) (2 : E)).copy _ (map_ofNat _ 2).symm
+
+/-- The inverse of two transported from the coefficient field to the finite adeles. -/
+local instance : Invertible (2 : 𝔸ᶠ[E]) :=
+  (Invertible.map (algebraMap E 𝔸ᶠ[E]) (2 : E)).copy _ (map_ofNat _ 2).symm
+
+variable {j : Eˣ}
   (hj : star (j : E) = -j)
 
 /-- The **adelic unipotent element** `n(c, b)` of a rational splitting, for adelic matrices
 `c ∈ M_{n₀ × p}(𝔸)` and `b ∈ M_p(𝔸)` given by their archimedean and finite components: in each
 component the unipotent element of the adelic frames, which fixes the adelic frame `k`. Here `j`
 is a unit of `E` with `star j = -j`, read in the infinite and in the finite adeles, and `⅟2` is
-taken in both. -/
+taken in both. Only `b + bᴴ` matters, componentwise; see
+`TauCeti.IsotropicSplitting.unipotent_eq_unipotent_iff`. -/
 def adelicUnipotent (c : Matrix n₀ p (InfiniteAdeleRing E) × Matrix n₀ p 𝔸ᶠ[E])
     (b : Matrix p p (InfiniteAdeleRing E) × Matrix p p 𝔸ᶠ[E]) : adelicUnitaryGroup E s :=
-  ⟨((D.infiniteSplitting.unipotent
-      (Units.star_coe_map_eq_neg algebraMap_star_comm hj) c.1 b.1 : GL n (InfiniteAdeleRing E)),
-    (D.finiteSplitting.unipotent (Units.star_coe_map_eq_neg algebraMap_star_comm hj) c.2 b.2 :
-      GL n 𝔸ᶠ[E])),
-    (D.infiniteSplitting.unipotent _ _ _).property,
-    (unitaryGroupOf_one (R := 𝔸ᶠ[E]) (n := n)).le (D.finiteSplitting.unipotent _ _ _).property⟩
+  (Subgroup.prodEquiv _ _).symm
+    (D.infiniteSplitting.unipotent (Units.star_coe_map_eq_neg algebraMap_star_comm hj) c.1 b.1,
+      MulEquiv.subgroupCongr unitaryGroupOf_one
+        (D.finiteSplitting.unipotent (Units.star_coe_map_eq_neg algebraMap_star_comm hj) c.2 b.2))
 
 /-- The archimedean component of the adelic unipotent element of `(c, b)` is the unipotent element
 of `(c_∞, b_∞)` for the archimedean adelic frames. -/
@@ -249,14 +256,66 @@ theorem adelicUnipotent_mul_adelicUnipotent
             (c.1ᴴ * diagonal (fun i ↦ ((s₀ i : ℤ) : InfiniteAdeleRing E)) * c'.1) + b'.1,
           b.2 + algebraMap E 𝔸ᶠ[E] j • (c.2ᴴ * c'.2) + b'.2) := by
   refine Subtype.ext (Prod.ext ?_ ?_)
-  · have h := congrArg Subtype.val (D.infiniteSplitting.unipotent_mul_unipotent
+  · simp only [Subgroup.coe_mul, Prod.fst_mul, adelicUnipotent_fst]
+    have h := congrArg Subtype.val (D.infiniteSplitting.unipotent_mul_unipotent
       (Units.star_coe_map_eq_neg algebraMap_star_comm hj) c.1 c'.1 b.1 b'.1)
     simp only [Units.coe_map, MonoidHom.coe_ofClass] at h
     exact h
-  · have h := congrArg Subtype.val (D.finiteSplitting.unipotent_mul_unipotent
+  · simp only [Subgroup.coe_mul, Prod.snd_mul, adelicUnipotent_snd]
+    have h := congrArg Subtype.val (D.finiteSplitting.unipotent_mul_unipotent
       (Units.star_coe_map_eq_neg algebraMap_star_comm hj) c.2 c'.2 b.2 b'.2)
     simp only [Units.coe_map, MonoidHom.coe_ofClass, Matrix.mul_one] at h
     exact h
+
+/-- The adelic unipotent element with zero parameters is the identity. -/
+@[simp]
+theorem adelicUnipotent_zero_zero : D.adelicUnipotent hj 0 0 = 1 := by
+  refine Subtype.ext (Prod.ext ?_ ?_) <;>
+    simp only [adelicUnipotent_fst, adelicUnipotent_snd, Prod.fst_zero, Prod.snd_zero,
+      unipotent_zero_zero, Subgroup.coe_one, Prod.fst_one, Prod.snd_one]
+
+/-- Inversion negates both parameters of an adelic unipotent element. -/
+theorem adelicUnipotent_inv
+    (c : Matrix n₀ p (InfiniteAdeleRing E) × Matrix n₀ p 𝔸ᶠ[E])
+    (b : Matrix p p (InfiniteAdeleRing E) × Matrix p p 𝔸ᶠ[E]) :
+    (D.adelicUnipotent hj c b)⁻¹ = D.adelicUnipotent hj (-c) (-b) := by
+  refine Subtype.ext (Prod.ext ?_ ?_) <;>
+    simp only [Subgroup.coe_inv, Prod.fst_inv, Prod.snd_inv, adelicUnipotent_fst,
+      adelicUnipotent_snd, Prod.fst_neg, Prod.snd_neg] <;>
+    simp only [← Subgroup.coe_inv, unipotent_inv]
+
+/-- Two adelic unipotent elements agree exactly when their core parameters and the Hermitian
+parts of their second parameters agree componentwise. -/
+theorem adelicUnipotent_eq_adelicUnipotent_iff
+    {c c' : Matrix n₀ p (InfiniteAdeleRing E) × Matrix n₀ p 𝔸ᶠ[E]}
+    {b b' : Matrix p p (InfiniteAdeleRing E) × Matrix p p 𝔸ᶠ[E]} :
+    D.adelicUnipotent hj c b = D.adelicUnipotent hj c' b' ↔
+      c = c' ∧ b.1 + b.1ᴴ = b'.1 + b'.1ᴴ ∧ b.2 + b.2ᴴ = b'.2 + b'.2ᴴ := by
+  rw [Subtype.ext_iff, Prod.ext_iff]
+  simp only [adelicUnipotent_fst, adelicUnipotent_snd, Subtype.val_inj,
+    unipotent_eq_unipotent_iff, Prod.ext_iff]
+  tauto
+
+/-- Adelic Levi elements normalize adelic unipotent elements by changing their parameters
+componentwise: `m(a, g₀) n(c, b) m(a, g₀)⁻¹ = n(g₀ c aᴴ, a b aᴴ)`. -/
+theorem adelicLevi_mul_adelicUnipotent_mul_inv_adelicLevi
+    (x : (GL p (InfiniteAdeleRing E) × GL p 𝔸ᶠ[E]) × adelicUnitaryGroup E s₀)
+    (c : Matrix n₀ p (InfiniteAdeleRing E) × Matrix n₀ p 𝔸ᶠ[E])
+    (b : Matrix p p (InfiniteAdeleRing E) × Matrix p p 𝔸ᶠ[E]) :
+    D.adelicLevi x * D.adelicUnipotent hj c b * (D.adelicLevi x)⁻¹ =
+      D.adelicUnipotent hj
+        (((x.2 : GL n₀ (InfiniteAdeleRing E) × GL n₀ 𝔸ᶠ[E]).1 : Matrix n₀ n₀ _) * c.1 *
+            (x.1.1 : Matrix p p _)ᴴ,
+          ((x.2 : GL n₀ (InfiniteAdeleRing E) × GL n₀ 𝔸ᶠ[E]).2 : Matrix n₀ n₀ _) * c.2 *
+            (x.1.2 : Matrix p p _)ᴴ)
+        ((x.1.1 : Matrix p p _) * b.1 * (x.1.1 : Matrix p p _)ᴴ,
+          (x.1.2 : Matrix p p _) * b.2 * (x.1.2 : Matrix p p _)ᴴ) := by
+  refine Subtype.ext (Prod.ext ?_ ?_) <;>
+    simp only [Subgroup.coe_mul, Subgroup.coe_inv, Prod.fst_mul, Prod.snd_mul, Prod.fst_inv,
+      Prod.snd_inv, adelicLevi_fst, adelicLevi_snd, adelicUnipotent_fst, adelicUnipotent_snd] <;>
+    simp only [← Subgroup.coe_mul, ← Subgroup.coe_inv, levi_mul_unipotent_mul_inv_levi] <;>
+    simp only [MulEquiv.subgroupCongr_apply, adelicUnitaryGroup.coe_infinitePart,
+      adelicUnitaryGroup.coe_finitePart]
 
 /-- **Rational unipotent elements are rational points.** For matrices `c` and `b` over `E`, the
 adelic unipotent element of `(x₀⁻¹ c, b)` is the image `x⁻¹ n(c, b) x` of the unipotent element of

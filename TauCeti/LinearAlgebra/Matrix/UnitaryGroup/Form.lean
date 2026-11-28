@@ -49,6 +49,10 @@ These are the facts shared by the indefinite unitary groups `U(p, q)`
 * `Matrix.map_mem_unitaryGroupOf`: a ring homomorphism commuting with the involutions maps
   `unitaryGroupOf A` into `unitaryGroupOf (A.map f)`.
 * `Matrix.val_inv_of_mem_unitaryGroupOf`: the inverse of `g` is `A⁻¹ * star g * A`.
+Base change along a star-preserving ring map is bundled as `Matrix.unitaryGroupOf.map`.
+A change of frame is bundled as `Matrix.unitaryGroupOf.frameEquiv`, over any star semiring;
+it does not require an algebra over a scalar field. Their coercion lemmas expose the underlying
+maps on general linear groups.
 -/
 
 public section
@@ -138,6 +142,32 @@ theorem inv_mul_mul_mem_unitaryGroupOf {B : Matrix n n R} {x : GL n R}
     ← star_eq_conjTranspose (x : Matrix n n R), hx] at h'
   simpa only [y, Units.val_mul, Matrix.mul_assoc, star_eq_conjTranspose] using h'
 
+namespace unitaryGroupOf
+
+/-- Change of frame for unitary groups over a star semiring. The forward map is
+`g ↦ x⁻¹ g x`, where `star x * A * x = B`. -/
+def frameEquiv {B : Matrix n n R} {x : GL n R}
+    (hx : star (x : Matrix n n R) * A * x = B) : unitaryGroupOf A ≃* unitaryGroupOf B :=
+  have hx' : star ((x⁻¹ : GL n R) : Matrix n n R) * B * (x⁻¹ : GL n R) = A := by
+    have h := conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx
+      ((x⁻¹ : GL n R) : Matrix n n R) ((x⁻¹ : GL n R) : Matrix n n R)
+    simpa only [Units.mul_inv, conjTranspose_one, Matrix.one_mul, Matrix.mul_one,
+      star_eq_conjTranspose] using h.symm
+  { toFun g := ⟨x⁻¹ * g * x, inv_mul_mul_mem_unitaryGroupOf hx g.property⟩
+    invFun g := ⟨x * g * x⁻¹, by
+      simpa only [inv_inv] using inv_mul_mul_mem_unitaryGroupOf hx' g.property⟩
+    left_inv g := Subtype.ext (by simp [mul_assoc])
+    right_inv g := Subtype.ext (by simp [mul_assoc])
+    map_mul' g h := Subtype.ext (by simp [mul_assoc]) }
+
+@[simp]
+theorem coe_frameEquiv {B : Matrix n n R} {x : GL n R}
+    (hx : star (x : Matrix n n R) * A * x = B) (g : unitaryGroupOf A) :
+    (frameEquiv hx g : GL n R) = x⁻¹ * g * x :=
+  (rfl)
+
+end unitaryGroupOf
+
 /-- If `x` pulls the form of Gram matrix `A` back to the form of Gram matrix `B`, that is
 `star x * A * x = B`, then so does `x * g` for every `g ∈ unitaryGroupOf B`. -/
 theorem star_mul_mul_mul_eq_of_mem_unitaryGroupOf {B x : Matrix n n R}
@@ -151,6 +181,14 @@ end Semiring
 section CommRing
 
 variable {R : Type*} [CommRing R] [StarRing R] {A : Matrix n n R}
+
+/-- Pulling both families of vectors back by an invertible frame changes their pairing
+from the pulled-back form `B` to the original form `A`. -/
+theorem conjTranspose_inv_mul_mul_mul_inv_mul {q r : Type*} {B : Matrix n n R} {x : GL n R}
+    (hx : star (x : Matrix n n R) * A * x = B) (F : Matrix n q R) (G : Matrix n r R) :
+    ((x : Matrix n n R)⁻¹ * F)ᴴ * B * ((x : Matrix n n R)⁻¹ * G) = Fᴴ * A * G := by
+  rw [← conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx]
+  simp only [mul_nonsing_inv_cancel_left _ _ (isUnits_det_units x)]
 
 /-- **The inverse of an element of `unitaryGroupOf A`**, for invertible `A`, is
 `A⁻¹ * star g * A`. -/
@@ -172,6 +210,18 @@ theorem map_mem_unitaryGroupOf {S : Type*} [CommRing S] [StarRing S] {f : R →+
   rw [mem_unitaryGroupOf_iff, GeneralLinearGroup.val_map_apply, star_eq_conjTranspose, h]
 
 namespace unitaryGroupOf
+
+/-- Base change of unitary groups along a ring homomorphism commuting with star. -/
+def map {S : Type*} [CommRing S] [StarRing S] {f : R →+* S}
+    (hf : ∀ r, f (star r) = star (f r)) : unitaryGroupOf A →* unitaryGroupOf (A.map f) :=
+  ((GeneralLinearGroup.map f).comp (unitaryGroupOf A).subtype).codRestrict _
+    fun g ↦ map_mem_unitaryGroupOf hf g.property
+
+@[simp]
+theorem coe_map {S : Type*} [CommRing S] [StarRing S] {f : R →+* S}
+    (hf : ∀ r, f (star r) = star (f r)) (g : unitaryGroupOf A) :
+    (map hf g : GL n S) = GeneralLinearGroup.map f (g : GL n R) :=
+  (rfl)
 
 /-- A matrix preserving the form of an invertible Gram matrix `A` is invertible, with inverse
 `A⁻¹ * star M * A`: this is the element of `unitaryGroupOf A` it defines. -/

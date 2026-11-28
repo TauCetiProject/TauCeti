@@ -45,6 +45,7 @@ of anticommutators on the self-adjoint part when the codomain has cancellative a
 * `IsSelfAdjoint.eq_zero_of_mem_skewAdjoint`: if `2` is invertible in the scalars, an element
   that is both self-adjoint and skew-adjoint is zero.
 * `Units.inv_mem_skewAdjoint`: the inverse of a skew-adjoint unit is skew-adjoint.
+* `Units.star_coe_map_eq_neg`: a star-preserving ring map preserves skew-adjoint units.
 * `IsSelfAdjoint.eq_zero_of_add_smul_eq_zero`: if `2` is invertible in the scalars, `p` and `q`
   are self-adjoint and `t` is a skew-adjoint unit, then `p + t • q = 0` forces `p = q = 0`.
 * `IsSelfAdjoint.eq_of_mul_eq_right`: uniqueness from mutual multiplication identities.
@@ -126,6 +127,15 @@ theorem IsSelfAdjoint.eq_zero_of_mem_skewAdjoint (R : Type*) {A : Type*} [Semiri
     rw [skewAdjoint.mem_iff, hx.star_eq, eq_neg_iff_add_eq_zero] at h
     exact h
   rw [← one_smul R x, ← invOf_mul_self (2 : R), mul_smul, two_smul, hxx, smul_zero]
+
+/-- A ring homomorphism commuting with the involutions maps a unit `j` with `star j = -j` to a unit
+with the same property. This is the condition on the parameter `j` of the unipotent elements of a
+splitting (`TauCeti.IsotropicSplitting.unipotent`) after base change. -/
+theorem Units.star_coe_map_eq_neg {R S : Type*} [Ring R] [StarRing R] [Ring S]
+    [StarRing S] {f : R →+* S} (hf : ∀ r, f (star r) = star (f r)) {j : Rˣ}
+    (hj : star (j : R) = -j) :
+    star ((Units.map (f : R →* S) j : Sˣ) : S) = -(Units.map (f : R →* S) j : Sˣ) := by
+  rw [Units.coe_map, MonoidHom.coe_ofClass, ← hf, hj, map_neg]
 
 /-- The inverse of a skew-adjoint unit is skew-adjoint. -/
 theorem Units.inv_mem_skewAdjoint {R : Type*} [Ring R] [StarRing R] {u : Rˣ}

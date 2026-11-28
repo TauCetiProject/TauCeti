@@ -19,6 +19,7 @@ back to that of `B` (`star x * A * x = B`) carries pairings for `B` to pairings 
 ## Main results
 
 * `Matrix.map_star_eq_map_starRingEnd`: `M.map star = M.map (starRingEnd α)`.
+* `Matrix.conjTranspose_map_mul_mul`: a star-preserving ring map preserves matrix pairings.
 * `Matrix.conjTranspose_map_intCast`: an integral matrix, viewed as a matrix over a star ring
   such as `ℂ`, has `Xᴴ = Xᵀ`.
 * `Matrix.conjTranspose_mul_mul_mul_of_star_mul_mul_eq`: if `star x * A * x = B`, then
@@ -44,6 +45,15 @@ theorem conjTranspose_map_intCast {R : Type*} [Ring R] [StarRing R] (X : Matrix 
     (X.map ((↑) : ℤ → R))ᴴ = (X.map ((↑) : ℤ → R))ᵀ := by
   ext i j
   simp
+
+/-- A ring homomorphism commuting with star preserves matrix pairings, applying it to the
+form and both families of vectors. -/
+theorem conjTranspose_map_mul_mul {n q r R S : Type*} [Fintype n] [NonAssocSemiring R]
+    [StarRing R] [NonAssocSemiring S] [StarRing S] {f : R →+* S}
+    (hf : ∀ a, f (star a) = star (f a)) (A : Matrix n n R)
+    (F : Matrix n q R) (G : Matrix n r R) :
+    (F.map f)ᴴ * A.map f * G.map f = (Fᴴ * A * G).map f := by
+  rw [← conjTranspose_map f hf, ← Matrix.map_mul, ← Matrix.map_mul]
 
 section NonUnitalSemiring
 

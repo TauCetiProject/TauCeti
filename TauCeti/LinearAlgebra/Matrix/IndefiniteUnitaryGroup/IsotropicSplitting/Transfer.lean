@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Star.SelfAdjoint
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup.IsotropicSplitting
 
 /-!
@@ -27,10 +28,10 @@ elements.
   `x⁻¹ n(c, b) x` (`TauCeti.IsotropicSplitting.val_unipotent_pullback`).
 
 Together they give the adelic frames of a rational splitting of a hermitian space with an adelic
-frame `x`: base change from the number field to the adeles, then pullback by `x`. The Levi
-and
-unipotent elements of the adelic splitting with rational parameters are then the images of rational
-Levi and unipotent elements under `γ ↦ x⁻¹ γ x`.
+frame `x`: base change from the number field to the adeles, then pullback by `x`.
+After base change, the core Levi parameter becomes `x₀⁻¹ g₀ x₀` and the unipotent
+parameter becomes `x₀⁻¹ c`; `a` and `b` need no frame change. These elements are the images of
+rational Levi and unipotent elements under `γ ↦ x⁻¹ γ x`.
 
 ## References
 
@@ -45,15 +46,6 @@ noncomputable section
 open Matrix
 
 namespace TauCeti
-
-/-- A ring homomorphism commuting with the involutions maps a unit `j` with `star j = -j` to a unit
-with the same property. This is the condition on the parameter `j` of the unipotent elements of a
-splitting (`TauCeti.IsotropicSplitting.unipotent`) after base change. -/
-theorem _root_.Units.star_coe_map_eq_neg {R S : Type*} [Ring R] [StarRing R] [Ring S]
-    [StarRing S] {f : R →+* S} (hf : ∀ r, f (star r) = star (f r)) {j : Rˣ}
-    (hj : star (j : R) = -j) :
-    star ((Units.map (f : R →* S) j : Sˣ) : S) = -(Units.map (f : R →* S) j : Sˣ) := by
-  rw [Units.coe_map, MonoidHom.coe_ofClass, ← hf, hj, map_neg]
 
 namespace IsotropicSplitting
 
@@ -76,22 +68,13 @@ def map : IsotropicSplitting (A.map f) (A₀.map f) p where
   ι := D.ι.map f
   isHermitian := D.isHermitian.map f hf
   isUnit_core := D.isUnit_core.map (RingHom.mapMatrix f)
-  gram_kk := by
-    rw [← conjTranspose_map f hf, ← Matrix.map_mul, ← Matrix.map_mul, D.gram_kk,
-      Matrix.map_zero _ (map_zero f)]
-  gram_ll := by
-    rw [← conjTranspose_map f hf, ← Matrix.map_mul, ← Matrix.map_mul, D.gram_ll,
-      Matrix.map_zero _ (map_zero f)]
+  gram_kk := by simp only [conjTranspose_map_mul_mul hf, D.gram_kk, Matrix.map_zero _ (map_zero f)]
+  gram_ll := by simp only [conjTranspose_map_mul_mul hf, D.gram_ll, Matrix.map_zero _ (map_zero f)]
   gram_lk := by
-    rw [← conjTranspose_map f hf, ← Matrix.map_mul, ← Matrix.map_mul, D.gram_lk,
-      Matrix.map_one _ (map_zero f) (map_one f)]
-  gram_ιι := by rw [← conjTranspose_map f hf, ← Matrix.map_mul, ← Matrix.map_mul, D.gram_ιι]
-  gram_ιk := by
-    rw [← conjTranspose_map f hf, ← Matrix.map_mul, ← Matrix.map_mul, D.gram_ιk,
-      Matrix.map_zero _ (map_zero f)]
-  gram_ιl := by
-    rw [← conjTranspose_map f hf, ← Matrix.map_mul, ← Matrix.map_mul, D.gram_ιl,
-      Matrix.map_zero _ (map_zero f)]
+    simp only [conjTranspose_map_mul_mul hf, D.gram_lk, Matrix.map_one _ (map_zero f) (map_one f)]
+  gram_ιι := by rw [conjTranspose_map_mul_mul hf, D.gram_ιι]
+  gram_ιk := by simp only [conjTranspose_map_mul_mul hf, D.gram_ιk, Matrix.map_zero _ (map_zero f)]
+  gram_ιl := by simp only [conjTranspose_map_mul_mul hf, D.gram_ιl, Matrix.map_zero _ (map_zero f)]
   card_eq := D.card_eq
 
 @[simp]
@@ -123,6 +106,15 @@ theorem val_levi_map (a : GL p R) {g₀ : unitaryGroupOf A₀} {g₀' : unitaryG
     simp only [map_k, map_l, map_ι, ← Matrix.map_mul, levi_mul_k, levi_mul_ι, levi_mul_l] <;>
     simp only [Matrix.map_mul, GeneralLinearGroup.val_map_apply, hg₀, ha, conjTranspose_map f hf]
 
+/-- Base change commutes with the bundled Levi homomorphism. -/
+theorem levi_map (a : GL p R) (g₀ : unitaryGroupOf A₀) :
+    (D.map hf).levi (GeneralLinearGroup.map f a, unitaryGroupOf.map hf g₀) =
+      unitaryGroupOf.map hf (D.levi (a, g₀)) := by
+  apply unitaryGroupOf.ext
+  simp only [unitaryGroupOf.coe_map, GeneralLinearGroup.val_map_apply]
+  exact D.val_levi_map hf a (by simp only [unitaryGroupOf.coe_map,
+    GeneralLinearGroup.val_map_apply])
+
 variable {j : Rˣ} (hj : star (j : R) = -j)
 
 variable [Invertible (2 : R)] [Invertible (2 : S)]
@@ -133,16 +125,25 @@ theorem val_unipotent_map (c : Matrix n₀ p R) (b : Matrix p p R) :
     (((D.map hf).unipotent (Units.star_coe_map_eq_neg hf hj) (c.map f) (b.map f) : GL n S) :
         Matrix n n S) = ((D.unipotent hj c b : GL n R) : Matrix n n R).map f := by
   -- `f` carries `⅟2` to `⅟2` and `j⁻¹` to `(f j)⁻¹`.
-  have h2 : f ⅟2 = ⅟(2 : S) := (invOf_eq_right_inv (by rw [← map_ofNat f 2, ← map_mul,
-    mul_invOf_self, map_one])).symm
-  have hj' : (↑(Units.map (f : R →* S) j)⁻¹ : S) = f ↑j⁻¹ := by
-    rw [← map_inv, Units.coe_map, MonoidHom.coe_ofClass]
+  have h2 : f ⅟2 = ⅟(2 : S) := by
+    let := Invertible.map f (2 : R)
+    exact (map_invOf f (2 : R)).trans (Invertible.congr _ _ (map_ofNat f 2))
+  have hj' : (↑(Units.map (f : R →* S) j)⁻¹ : S) = f ↑j⁻¹ :=
+    Units.coe_map_inv (f : R →* S) j
   refine (D.map hf).ext_mul ?_ ?_ ?_ <;>
     simp only [unipotent_mul_k, unipotent_mul_ι, unipotent_mul_l] <;>
     simp only [map_k, map_l, map_ι, ← Matrix.map_mul, unipotent_mul_k, unipotent_mul_ι,
       unipotent_mul_l] <;>
     simp only [Matrix.map_mul, Matrix.map_add _ (map_add f), Matrix.map_sub _ (map_sub f),
       Matrix.map_smul' _ _ _ (map_mul f), conjTranspose_map f hf, h2, hj']
+
+/-- Base change commutes with bundled unipotent elements. -/
+theorem unipotent_map (c : Matrix n₀ p R) (b : Matrix p p R) :
+    (D.map hf).unipotent (Units.star_coe_map_eq_neg hf hj) (c.map f) (b.map f) =
+      unitaryGroupOf.map hf (D.unipotent hj c b) := by
+  apply unitaryGroupOf.ext
+  simpa only [unitaryGroupOf.coe_map, GeneralLinearGroup.val_map_apply] using
+    D.val_unipotent_map hf hj c b
 
 end Map
 
@@ -157,9 +158,6 @@ variable [DecidableEq n] {B : Matrix n n R} {B₀ : Matrix n₀ n₀ R} {x : GL 
 for invertible `x` and `x₀`, the frames `x⁻¹ k`, `x⁻¹ l` and the core embedding `x⁻¹ ι x₀` split
 `B` over `B₀`. -/
 def pullback : IsotropicSplitting B B₀ p :=
-  -- The Gram matrix for `B` of `x⁻¹ M` and `x⁻¹ N` is, as `x x⁻¹ = 1`, that of `M` and `N` for
-  -- `A`: rewrite backwards along `conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx`.
-  have hdet : IsUnit (x : Matrix n n R).det := (isUnit_iff_isUnit_det _).1 x.isUnit
   { k := (x : Matrix n n R)⁻¹ * D.k
     l := (x : Matrix n n R)⁻¹ * D.l
     ι := (x : Matrix n n R)⁻¹ * (D.ι * (x₀ : Matrix n₀ n₀ R))
@@ -169,27 +167,18 @@ def pullback : IsotropicSplitting B B₀ p :=
     isUnit_core := by
       rw [← hx₀]
       exact ((x₀.isUnit.star).mul D.isUnit_core).mul x₀.isUnit
-    gram_kk := by
-      rw [← conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx, mul_nonsing_inv_cancel_left _ _ hdet,
-        D.gram_kk]
-    gram_ll := by
-      rw [← conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx, mul_nonsing_inv_cancel_left _ _ hdet,
-        D.gram_ll]
-    gram_lk := by
-      rw [← conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx, mul_nonsing_inv_cancel_left _ _ hdet,
-        mul_nonsing_inv_cancel_left _ _ hdet, D.gram_lk]
+    gram_kk := by rw [conjTranspose_inv_mul_mul_mul_inv_mul hx, D.gram_kk]
+    gram_ll := by rw [conjTranspose_inv_mul_mul_mul_inv_mul hx, D.gram_ll]
+    gram_lk := by rw [conjTranspose_inv_mul_mul_mul_inv_mul hx, D.gram_lk]
     gram_ιι := by
-      rw [← conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx, mul_nonsing_inv_cancel_left _ _ hdet,
-        ← hx₀, star_eq_conjTranspose, conjTranspose_mul]
+      rw [conjTranspose_inv_mul_mul_mul_inv_mul hx, conjTranspose_mul, ← hx₀, star_eq_conjTranspose]
       simp only [Matrix.mul_assoc]
       rw [← Matrix.mul_assoc D.ιᴴ, ← Matrix.mul_assoc (D.ιᴴ * A), D.gram_ιι]
     gram_ιk := by
-      rw [← conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx, mul_nonsing_inv_cancel_left _ _ hdet,
-        mul_nonsing_inv_cancel_left _ _ hdet, conjTranspose_mul, Matrix.mul_assoc,
+      rw [conjTranspose_inv_mul_mul_mul_inv_mul hx, conjTranspose_mul, Matrix.mul_assoc,
         Matrix.mul_assoc, ← Matrix.mul_assoc D.ιᴴ, D.gram_ιk, Matrix.mul_zero]
     gram_ιl := by
-      rw [← conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx, mul_nonsing_inv_cancel_left _ _ hdet,
-        mul_nonsing_inv_cancel_left _ _ hdet, conjTranspose_mul, Matrix.mul_assoc,
+      rw [conjTranspose_inv_mul_mul_mul_inv_mul hx, conjTranspose_mul, Matrix.mul_assoc,
         Matrix.mul_assoc, ← Matrix.mul_assoc D.ιᴴ, D.gram_ιl, Matrix.mul_zero]
     card_eq := D.card_eq }
 
@@ -213,13 +202,22 @@ theorem val_levi_pullback (a : GL p R) {g₀ : unitaryGroupOf A₀} {g₀' : uni
       (x₀ : Matrix n₀ n₀ R)⁻¹ * ((g₀ : GL n₀ R) : Matrix n₀ n₀ R) * (x₀ : Matrix n₀ n₀ R)) :
     (((D.pullback hx hx₀).levi (a, g₀') : GL n R) : Matrix n n R) =
       (x : Matrix n n R)⁻¹ * ((D.levi (a, g₀) : GL n R) : Matrix n n R) * (x : Matrix n n R) := by
-  have hdet : IsUnit (x : Matrix n n R).det := (isUnit_iff_isUnit_det _).1 x.isUnit
-  have hdet₀ : IsUnit (x₀ : Matrix n₀ n₀ R).det := (isUnit_iff_isUnit_det _).1 x₀.isUnit
+  have hdet : IsUnit (x : Matrix n n R).det := isUnits_det_units x
+  have hdet₀ : IsUnit (x₀ : Matrix n₀ n₀ R).det := isUnits_det_units x₀
   refine (D.pullback hx hx₀).ext_mul ?_ ?_ ?_ <;>
     simp only [levi_mul_k, levi_mul_ι, levi_mul_l] <;>
     simp only [pullback_k, pullback_l, pullback_ι, hg₀, Matrix.mul_assoc,
       mul_nonsing_inv_cancel_left _ _ hdet, mul_nonsing_inv_cancel_left _ _ hdet₀] <;>
     simp only [← Matrix.mul_assoc, levi_mul_k, levi_mul_ι, levi_mul_l]
+
+/-- Change of frame commutes with bundled Levi elements, including the core frame change. -/
+theorem levi_pullback (a : GL p R) (g₀ : unitaryGroupOf A₀) :
+    (D.pullback hx hx₀).levi (a, unitaryGroupOf.frameEquiv hx₀ g₀) =
+      unitaryGroupOf.frameEquiv hx (D.levi (a, g₀)) := by
+  apply unitaryGroupOf.ext
+  simp only [unitaryGroupOf.coe_frameEquiv, Units.val_mul, coe_units_inv]
+  exact D.val_levi_pullback hx hx₀ a (by
+    simp only [unitaryGroupOf.coe_frameEquiv, Units.val_mul, coe_units_inv])
 
 variable [Invertible (2 : R)] {j : Rˣ} (hj : star (j : R) = -j)
 
@@ -231,12 +229,11 @@ theorem val_unipotent_pullback (c : Matrix n₀ p R) (b : Matrix p p R) :
       (x : Matrix n n R)⁻¹ * ((D.unipotent hj c b : GL n R) : Matrix n n R) *
         (x : Matrix n n R) := by
   subst hx₀
-  have hdet : IsUnit (x : Matrix n n R).det := (isUnit_iff_isUnit_det _).1 x.isUnit
+  have hdet : IsUnit (x : Matrix n n R).det := isUnits_det_units x
   -- `(x₀⁻¹)ᴴ = (x₀ᴴ)⁻¹` cancels against `x₀ᴴ` in the core form `x₀ᴴ A₀ x₀` of the pullback.
-  have hdet₀ : IsUnit (x₀ : Matrix n₀ n₀ R).det := (isUnit_iff_isUnit_det _).1 x₀.isUnit
+  have hdet₀ : IsUnit (x₀ : Matrix n₀ n₀ R).det := isUnits_det_units x₀
   have hdet₀' : IsUnit (x₀ : Matrix n₀ n₀ R)ᴴ.det := by
-    rw [det_conjTranspose]
-    exact hdet₀.star
+    simpa only [Units.coe_star, star_eq_conjTranspose] using isUnits_det_units (star x₀)
   refine (D.pullback (x₀ := x₀) hx rfl).ext_mul ?_ ?_ ?_ <;>
     simp only [unipotent_mul_k, unipotent_mul_ι, unipotent_mul_l] <;>
     simp only [pullback_k, pullback_l, pullback_ι, star_eq_conjTranspose, conjTranspose_mul,
@@ -244,6 +241,15 @@ theorem val_unipotent_pullback (c : Matrix n₀ p R) (b : Matrix p p R) :
       mul_nonsing_inv_cancel_left _ _ hdet₀, nonsing_inv_mul_cancel_left _ _ hdet₀'] <;>
     simp only [← Matrix.mul_assoc, unipotent_mul_k, unipotent_mul_ι, unipotent_mul_l] <;>
     simp only [Matrix.mul_add, Matrix.mul_sub, Matrix.add_mul, Matrix.mul_smul, Matrix.mul_assoc]
+
+/-- Change of frame commutes with bundled unipotent elements when the core parameter is
+changed by `x₀⁻¹`. -/
+theorem unipotent_pullback (c : Matrix n₀ p R) (b : Matrix p p R) :
+    (D.pullback hx hx₀).unipotent hj ((x₀ : Matrix n₀ n₀ R)⁻¹ * c) b =
+      unitaryGroupOf.frameEquiv hx (D.unipotent hj c b) := by
+  apply unitaryGroupOf.ext
+  simpa only [unitaryGroupOf.coe_frameEquiv, Units.val_mul, coe_units_inv] using
+    D.val_unipotent_pullback hx hx₀ hj c b
 
 end Pullback
 
