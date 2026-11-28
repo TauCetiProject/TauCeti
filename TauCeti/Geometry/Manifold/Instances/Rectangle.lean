@@ -14,6 +14,9 @@ import TauCeti.Geometry.Manifold.ExtChartAt
 A rectangle uses the actual product of the two closed-interval manifolds. Its preferred charts
 are products of the interval charts; their inverse inclusion derivatives retain the signs of
 both interval factors.
+
+The manifold boundary of the rectangle, the union of its four edges, is connected
+(`TauCeti.isConnected_boundary_rectangle`).
 -/
 
 public section
@@ -136,5 +139,34 @@ theorem subtypeValRectangleTangentEquiv_toContinuousLinearMap (x : Icc a b × Ic
     subtypeValIccTangentEquiv_toContinuousLinearMap, mfderiv_subtypeVal_Icc,
     mfderiv_subtypeVal_Icc, mfderiv_subtypeVal_rectangle]
   rfl
+
+/-! ### Topology of the rectangle -/
+
+/-- The manifold boundary of the rectangle `[a, b] × [c, d]`, the union of its four edges, is
+connected. -/
+theorem isConnected_boundary_rectangle :
+    IsConnected (((𝓡∂ 1).prod (𝓡∂ 1)).boundary (Icc a b × Icc c d)) := by
+  have : ConnectedSpace (Icc a b) := Subtype.connectedSpace (isConnected_Icc (Fact.out : a < b).le)
+  have : ConnectedSpace (Icc c d) := Subtype.connectedSpace (isConnected_Icc (Fact.out : c < d).le)
+  -- The bottom edge meets the left and right edges, and the left edge meets the top edge.
+  have hB : IsConnected (univ ×ˢ {(⊥ : Icc c d)} : Set (Icc a b × Icc c d)) :=
+    isConnected_univ.prod isConnected_singleton
+  have hT : IsConnected (univ ×ˢ {(⊤ : Icc c d)} : Set (Icc a b × Icc c d)) :=
+    isConnected_univ.prod isConnected_singleton
+  have hL : IsConnected ({(⊥ : Icc a b)} ×ˢ univ : Set (Icc a b × Icc c d)) :=
+    isConnected_singleton.prod isConnected_univ
+  have hR : IsConnected ({(⊤ : Icc a b)} ×ˢ univ : Set (Icc a b × Icc c d)) :=
+    isConnected_singleton.prod isConnected_univ
+  have h := ((hB.union ⟨(⊥, ⊥), by simp⟩ hL).union ⟨(⊤, ⊥), by simp⟩ hR).union
+    ⟨(⊥, ⊤), by simp⟩ hT
+  convert h using 1
+  rw [ModelWithCorners.boundary_prod]
+  -- Mathlib's `boundary_prod` writes the products with `Set.prod`, which is `×ˢ` by definition.
+  change univ ×ˢ _ ∪ _ ×ˢ univ = _
+  rw [boundary_Icc, boundary_Icc]
+  ext ⟨x, y⟩
+  simp only [mem_union, mem_prod, mem_univ, mem_insert_iff, mem_singleton_iff, true_and,
+    and_true]
+  tauto
 
 end TauCeti

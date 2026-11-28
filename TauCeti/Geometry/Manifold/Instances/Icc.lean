@@ -9,9 +9,13 @@ public import Mathlib.Geometry.Manifold.Instances.Icc
 public import Mathlib.Geometry.Manifold.Algebra.Monoid
 public import Mathlib.Topology.UnitInterval
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+public import Mathlib.Topology.Connected.LocallyPathConnected
+public import Mathlib.Topology.Homotopy.Contractible
 
+import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.Algebra.Structures
+import Mathlib.Topology.Algebra.Module.LocallyConvex
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
@@ -45,6 +49,9 @@ Both preferred charts send their endpoints to `0` (`extChartAt_Icc_bot`, `extCha
 The unit tangent vector `1` of the interval has the chart sign as its coordinate in its own chart
 (`TauCeti.one_tangentSpace_Icc_apply`), and the unit vector field `t ↦ 1` is a smooth section of
 the tangent bundle, including at both endpoints (`TauCeti.contMDiff_one_tangentSpace_Icc`).
+
+As a convex subset of `ℝ`, the interval is contractible and locally path connected; products of
+intervals, such as rectangles, inherit both properties from Mathlib's product instances.
 -/
 
 public section
@@ -597,5 +604,16 @@ theorem hasMFDerivAt_prodMk_projIcc {γ : ℝ → M} {s t : ℝ} (hγ : MDiffere
         ((mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc a b hab.out.le) t).comp (.snd ℝ ℝ ℝ))) := by
   rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
   exact hγ.hasMFDerivAt.prodMap (p := (s, t)) (mdifferentiableAt_projIcc ht).hasMFDerivAt
+
+/-! ### Topology of the interval -/
+
+/-- The interval `[a, b]` is contractible, as a nonempty convex subset of `ℝ`. -/
+instance : ContractibleSpace (Icc a b) :=
+  (convex_Icc a b).contractibleSpace (nonempty_Icc.2 hab.out.le)
+
+omit hab in
+/-- The interval `[a, b]` is locally path connected, as a convex subset of `ℝ`. -/
+instance : LocallyPathConnectedSpace (Icc a b) :=
+  Convex.locallyPathConnectedSpace ℝ (convex_Icc a b)
 
 end TauCeti
