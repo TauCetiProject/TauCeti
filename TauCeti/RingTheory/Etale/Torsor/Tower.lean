@@ -9,8 +9,9 @@ public import TauCeti.RingTheory.Etale.FiniteEtaleSplit.Colimit
 public import TauCeti.RingTheory.Etale.Torsor.PiTensorProduct
 public import TauCeti.RingTheory.Etale.Torsor.Splitting
 
-import Mathlib.RingTheory.FiniteType
+import TauCeti.Algebra.Group.Pi.Finset
 import TauCeti.Algebra.Group.Pi.Lemmas
+import TauCeti.RingTheory.Etale.Small
 
 /-!
 # Towers of finite étale torsors
@@ -20,23 +21,26 @@ a directed system, over a nonempty directed preorder, of finite étale torsors `
 finite groups `G_i`, with surjections `G_j → G_i` and `A`-algebra maps `A_i → A_j` equivariant
 along them, whose colimit `A_∞ = colim_i A_i` has no nonsplit finite étale covers
 (`TauCeti.IsFiniteEtaleSplit`). Geometrically, `Spec A_∞ → Spec A` is a pro-finite étale Galois
-cover, under the profinite group `lim_i G_i`, which trivialises every finite étale cover of
-`Spec A`. Its colimit is the ring-theoretic analogue of a separable closure of a field, but it need
-not be a field even when `A` is one. The tower is purely algebraic and no topology is involved.
+cover, under the profinite group `lim_i G_i`, over which every finite étale cover of `Spec A`
+becomes totally split: after pullback it is a finite disjoint union of clopen subschemes of the
+base, which need not cover it. Its colimit is the ring-theoretic analogue of a separable closure
+of a field, but it need not be a field even when `A` is one. The tower is purely algebraic and no
+topology is involved.
 
 Every commutative ring has a finite étale torsor tower
-(`TauCeti.FiniteEtaleTorsorTower.nonempty_tower`). Choose, for each finite étale `A`-algebra `S`
-in a small set of representatives, a finite étale torsor `P(S)` under a finite group `G(S)`
-splitting `S` (`TauCeti.Algebra.exists_isFiniteEtaleTorsor_isTotallySplit`). The levels are
-indexed by the finite sets `F` of representatives, ordered by inclusion: the level at `F` is
-`⨂_{S ∈ F} P(S)`, a torsor under `∏_{S ∈ F} G(S)`
+(`TauCeti.FiniteEtaleTorsorTower.nonempty_tower`). Choose, for each finite étale quotient
+presentation `S = A[X_1, …, X_n] ⧸ I` (`TauCeti.FiniteEtaleSkeleton A`, a small family in which
+isomorphic algebras may repeat), a finite étale torsor `P(S)` under a finite group `G(S)` over
+which `S` becomes totally split (`TauCeti.Algebra.exists_isFiniteEtaleTorsor_isTotallySplit`).
+The levels are indexed by the finite sets `F` of finite étale quotient presentations, ordered by
+inclusion: the level at `F` is `⨂_{S ∈ F} P(S)`, a torsor under `∏_{S ∈ F} G(S)`
 (`TauCeti.Algebra.IsFiniteEtaleTorsor.piTensorProduct`), and the transition maps are the
-inclusions of tensor factors (`PiTensorProduct.fiberwiseMul`) and the restrictions of group
-elements. Every finite étale `A`-algebra becomes totally split over some level, so the colimit
-has no nonsplit finite étale covers
-(`Ring.DirectLimit.isFiniteEtaleSplit_of_forall_exists_isTotallySplit`). As the representatives
-we take the quotients of polynomial rings `A[X_1, …, X_n]` that are finite étale over `A`; every
-finite étale `A`-algebra is of finite type, hence isomorphic to one of them.
+inclusions of tensor factors (`PiTensorProduct.finsetInclusion`) and the restrictions of group
+elements (`Finset.restrict₂MonoidHom`). Every finite étale `A`-algebra is of finite type, hence
+isomorphic to one of the finite étale quotient presentations
+(`TauCeti.FiniteEtaleSkeleton.exists_algEquiv`), so it becomes totally split over some level, and
+the colimit has no nonsplit finite étale covers
+(`Ring.DirectLimit.isFiniteEtaleSplit_of_forall_exists_isTotallySplit`).
 
 For `i ≤ j`, the transition map makes `A_j` a finite étale torsor over `A_i` under the kernel of
 `G_j → G_i` (`TauCeti.FiniteEtaleTorsorTower.transition_isFiniteEtaleTorsor`); in particular the
@@ -53,6 +57,8 @@ transition maps are injective and faithfully flat.
 * `TauCeti.FiniteEtaleTorsorTower.transition_isFiniteEtaleTorsor`: for `i ≤ j`, `A_j` is a finite
   étale torsor over `A_i` under the kernel of `G_j → G_i`.
 * `TauCeti.FiniteEtaleTorsorTower.transition_injective`: the transition maps are injective.
+* `TauCeti.FiniteEtaleTorsorTower.π_π`, `TauCeti.FiniteEtaleTorsorTower.transition_transition`
+  and their identity and `comp` forms: the functoriality of `π` and `transition`.
 
 ## References
 
@@ -89,7 +95,7 @@ structure FiniteEtaleTorsorTower (A : Type u) [CommRing A] where
   /-- The finite group at level `i`. -/
   G : ι → Type u
   /-- The group structure at level `i`. -/
-  [group : ∀ i, Group (G i)]
+  [instGroup : ∀ i, Group (G i)]
   /-- The group at level `i` is finite. -/
   [finite : ∀ i, Finite (G i)]
   /-- The surjection `G j →* G i` for `i ≤ j`. -/
@@ -122,18 +128,73 @@ structure FiniteEtaleTorsorTower (A : Type u) [CommRing A] where
 
 namespace FiniteEtaleTorsorTower
 
-attribute [instance] preorder isDirectedOrder nonempty group finite inverseSystem commRing algebra
-  mulSemiringAction smulCommClass isFiniteEtaleTorsor directedSystem
+attribute [instance] preorder isDirectedOrder nonempty instGroup finite inverseSystem commRing
+  algebra mulSemiringAction smulCommClass isFiniteEtaleTorsor directedSystem
+
+section Functoriality
+
+variable {A : Type u} [CommRing A] (T : FiniteEtaleTorsorTower A) {i j k : T.ι}
+
+/-- The group surjection `π` along `i ≤ i` is the identity. -/
+@[simp]
+theorem π_self (h : i ≤ i) (g : T.G i) : T.π h g = g :=
+  InverseSystem.map_self (f := fun _ _ h ↦ ⇑(T.π h)) g
+
+/-- The group surjections `π` compose. -/
+@[simp]
+theorem π_π (hij : i ≤ j) (hjk : j ≤ k) (g : T.G k) :
+    T.π hij (T.π hjk g) = T.π (hij.trans hjk) g :=
+  InverseSystem.map_map (f := fun _ _ h ↦ ⇑(T.π h)) hij hjk g
+
+/-- The group surjection `π` along `i ≤ i` is the identity homomorphism. -/
+theorem π_self_eq_id (h : i ≤ i) : T.π h = MonoidHom.id (T.G i) :=
+  MonoidHom.ext (T.π_self h)
+
+/-- The group surjections `π` compose, as homomorphisms. -/
+@[simp]
+theorem π_comp_π (hij : i ≤ j) (hjk : j ≤ k) : (T.π hij).comp (T.π hjk) = T.π (hij.trans hjk) :=
+  MonoidHom.ext (T.π_π hij hjk)
+
+/-- The transition map along `i ≤ i` is the identity. -/
+@[simp]
+theorem transition_self (h : i ≤ i) (a : T.level i) : T.transition h a = a :=
+  DirectedSystem.map_self (f := fun _ _ h ↦ ⇑(T.transition h)) a
+
+/-- The transition maps compose. -/
+@[simp]
+theorem transition_transition (hij : i ≤ j) (hjk : j ≤ k) (a : T.level i) :
+    T.transition hjk (T.transition hij a) = T.transition (hij.trans hjk) a :=
+  DirectedSystem.map_map (f := fun _ _ h ↦ ⇑(T.transition h)) hij hjk a
+
+/-- The transition map along `i ≤ i` is the identity algebra map. -/
+theorem transition_self_eq_id (h : i ≤ i) : T.transition h = AlgHom.id A (T.level i) :=
+  AlgHom.ext (T.transition_self h)
+
+/-- The transition maps compose, as algebra maps. -/
+@[simp]
+theorem transition_comp_transition (hij : i ≤ j) (hjk : j ≤ k) :
+    (T.transition hjk).comp (T.transition hij) = T.transition (hij.trans hjk) :=
+  AlgHom.ext (T.transition_transition hij hjk)
+
+end Functoriality
 
 section Transition
 
 variable {A : Type u} [CommRing A] (T : FiniteEtaleTorsorTower A) {i j : T.ι} (h : i ≤ j)
 
+/-- For `i ≤ j`, the kernel of `π h : G j →* G i` acts on `level j` by `level i`-algebra
+automorphisms, for the `level i`-algebra structure given by the transition map. -/
+theorem smulCommClass_ker :
+    letI := (T.transition h).toAlgebra
+    SMulCommClass (T.π h).ker (T.level i) (T.level j) :=
+  letI := (T.transition h).toAlgebra
+  Algebra.smulCommClass_ker (π := T.π h) fun g a ↦ (T.transition_smul h g a).symm
+
 /-- **Transitions are torsors.** For `i ≤ j`, the transition map makes `level j` a finite étale
 torsor over `level i` under the kernel of `π h : G j →* G i`. -/
 theorem transition_isFiniteEtaleTorsor :
     letI := (T.transition h).toAlgebra
-    haveI := Algebra.smulCommClass_ker (π := T.π h) fun g a ↦ (T.transition_smul h g a).symm
+    haveI := T.smulCommClass_ker h
     Algebra.IsFiniteEtaleTorsor (T.π h).ker (T.level i) (T.level j) := by
   let := (T.transition h).toAlgebra
   have : IsScalarTower A (T.level i) (T.level j) := .of_algHom (T.transition h)
@@ -141,11 +202,14 @@ theorem transition_isFiniteEtaleTorsor :
     fun g a ↦ (T.transition_smul h g a).symm
 
 /-- The transition maps of a finite étale torsor tower are injective. -/
-theorem transition_injective : Function.Injective (T.transition h) :=
-  letI := (T.transition h).toAlgebra
-  haveI := Algebra.smulCommClass_ker (π := T.π h) fun g a ↦ (T.transition_smul h g a).symm
-  haveI := (T.transition_isFiniteEtaleTorsor h).faithfullyFlat
-  FaithfulSMul.algebraMap_injective (T.level i) (T.level j)
+theorem transition_injective : Function.Injective (T.transition h) := by
+  let := (T.transition h).toAlgebra
+  have := T.smulCommClass_ker h
+  have := (T.transition_isFiniteEtaleTorsor h).faithfullyFlat
+  -- The transition map is the algebra map of the induced `level i`-algebra structure.
+  have hinj := FaithfulSMul.algebraMap_injective (T.level i) (T.level j)
+  rw [RingHom.algebraMap_toAlgebra] at hinj
+  exact hinj
 
 end Transition
 
@@ -156,46 +220,20 @@ attribute [local instance] piMulSemiringAction
 variable {A : Type u} [CommRing A] {τ : Type u} (G : τ → Type u) [∀ t, Group (G t)]
   (P : τ → Type u) [∀ t, CommRing (P t)] [∀ t, _root_.Algebra A (P t)]
 
-/-- The restriction `∏_{t ∈ F'} G t →* ∏_{t ∈ F} G t` for finite sets `F ⊆ F'`. -/
-private def restrict {F F' : Finset τ} (h : F ≤ F') : (∀ t : F', G t) →* ∀ t : F, G t :=
-  MonoidHom.pi fun t ↦ Pi.evalMonoidHom (fun t : F' ↦ G t) ⟨t, h t.property⟩
-
-open scoped Classical in
-/-- The inclusion of tensor factors `⨂_{t ∈ F} P t →ₐ[A] ⨂_{t ∈ F'} P t` for finite sets
-`F ⊆ F'`. -/
-private noncomputable def incl {F F' : Finset τ} (h : F ≤ F') :
-    (⨂[A] t : F, P t) →ₐ[A] ⨂[A] t : F', P t :=
-  fiberwiseMul (A := fun t : F' ↦ P t) fun t : F ↦ ⟨t, h t.property⟩
-
-private theorem incl_smul [∀ t, MulSemiringAction (G t) (P t)] [∀ t, SMulCommClass (G t) A (P t)]
-    {F F' : Finset τ} (h : F ≤ F') (g : ∀ t : F', G t)
-    (x : ⨂[A] t : F, P t) : incl P h (restrict G h g • x) = g • incl P h x := by
-  classical
-  exact fiberwiseMul_piMulSemiringAction_smul (A := fun t : F' ↦ P t)
-    (fun t : F ↦ (⟨t, h t.property⟩ : F')) g x
-
-private instance directedSystem_incl :
-    DirectedSystem (fun F : Finset τ ↦ ⨂[A] t : F, P t) fun _ _ h ↦ ⇑(incl P h) := by
-  classical
-  -- The inclusion along `F ⊆ F` is `fiberwiseMul id`, and `fiberwiseMul` is functorial.
-  refine ⟨fun F x ↦ DFunLike.congr_fun (fiberwiseMul_id A fun t : F ↦ P t) x,
-    fun F₃ F₂ F₁ h₁₂ h₂₃ x ↦ ?_⟩
-  exact DFunLike.congr_fun (fiberwiseMul_comp (R := A) (A := fun t : F₃ ↦ P t)
-    (fun t : F₂ ↦ (⟨t, h₂₃ t.property⟩ : F₃)) fun t : F₁ ↦ ⟨t, h₁₂ t.property⟩) x
-
-/-- Over the tensor product of a finite family of torsors containing `P t`, every algebra split
-by `P t` is split. -/
-private theorem isTotallySplit_incl_singleton (t : τ) (S : Type u) [CommRing S]
+/-- If an `A`-algebra `S` becomes totally split over `P t`, then it becomes totally split over the
+singleton level `⨂_{s ∈ {t}} P s`. -/
+private theorem isTotallySplit_singleton (t : τ) (S : Type u) [CommRing S]
     [_root_.Algebra A S] (hS : Algebra.IsTotallySplit (P t) (P t ⊗[A] S)) :
     Algebra.IsTotallySplit (⨂[A] s : ({t} : Finset τ), P s)
       ((⨂[A] s : ({t} : Finset τ), P s) ⊗[A] S) := by
   classical
-  let L := ⨂[A] s : ({t} : Finset τ), P s
-  let := (singleAlgHom (R := A) (A := fun s : ({t} : Finset τ) ↦ P s)
-    ⟨t, Finset.mem_singleton_self t⟩).toAlgebra
-  have : IsScalarTower A (P t) L := .of_algebraMap_eq' (singleAlgHom _).comp_algebraMap.symm
-  exact (hS.baseChange L).of_algEquiv (Algebra.TensorProduct.cancelBaseChange A (P t) L L S)
+  let incl := singleAlgHom (R := A) (A := fun s : ({t} : Finset τ) ↦ P s)
+    ⟨t, Finset.mem_singleton_self t⟩
+  let := incl.toAlgebra
+  have : IsScalarTower A (P t) (⨂[A] s : ({t} : Finset τ), P s) := .of_algHom incl
+  exact hS.tensorProduct_of_isScalarTower
 
+open scoped Classical in
 variable (A) [∀ t, Finite (G t)] [∀ t, MulSemiringAction (G t) (P t)]
   [∀ t, SMulCommClass (G t) A (P t)] [∀ t, Algebra.IsFiniteEtaleTorsor (G t) A (P t)] in
 /-- The finite étale torsor tower of finite tensor products of a family of finite étale torsors
@@ -209,13 +247,24 @@ private noncomputable def ofSplittingFamily
     FiniteEtaleTorsorTower A where
   ι := Finset τ
   G F := ∀ t : F, G t
-  π _ _ h := restrict G h
-  inverseSystem := ⟨fun _ _ ↦ rfl, fun _ _ _ _ _ _ ↦ rfl⟩
-  π_surjective _ _ h := MonoidHom.pi_evalMonoidHom_surjective_of_injective
-    (Set.inclusion_injective (Finset.coe_subset.mpr h))
+  π _ _ h := Finset.restrict₂MonoidHom (fun t ↦ G t) h
+  inverseSystem :=
+    { map_self _ g := DFunLike.congr_fun (Finset.restrict₂MonoidHom_refl (fun t ↦ G t)) g
+      map_map _ _ _ h₁ h₂ g :=
+        DFunLike.congr_fun (Finset.restrict₂MonoidHom_comp_restrict₂MonoidHom _ h₁ h₂) g }
+  π_surjective F F' h := by
+    -- Restriction is evaluation at the points of the injective inclusion `F → F'`.
+    rw [Finset.coe_restrict₂MonoidHom]
+    exact MonoidHom.pi_evalMonoidHom_surjective_of_injective
+      (f := fun t : F ↦ (⟨t, h t.property⟩ : F')) fun _ _ hst ↦
+        Subtype.ext (Subtype.mk.inj hst)
   level F := ⨂[A] t : F, P t
-  transition _ _ h := incl P h
-  transition_smul _ _ h g x := incl_smul G P h g x
+  transition _ _ h := finsetInclusion A P h
+  transition_smul F F' h g x := by
+    -- Restriction is `g ↦ fun t ↦ g (f t)` for the inclusion `f`, as `fiberwiseMul` expects.
+    rw [Finset.coe_restrict₂MonoidHom, finsetInclusion_def]
+    exact fiberwiseMul_piMulSemiringAction_smul (A := fun t : F' ↦ P t)
+      (fun t : F ↦ (⟨t, h t.property⟩ : F')) g x
   isFiniteEtaleSplit := by
     have (F : Finset τ) : _root_.Algebra.Etale A (⨂[A] t : F, P t) :=
       Algebra.IsFiniteEtaleTorsor.etale (G := ∀ t : F, G t)
@@ -223,20 +272,13 @@ private noncomputable def ofSplittingFamily
       Algebra.IsFiniteEtaleTorsor.finite (G := ∀ t : F, G t)
     refine Ring.DirectLimit.isFiniteEtaleSplit_of_forall_exists_isTotallySplit fun S _ _ _ _ ↦ ?_
     obtain ⟨t, ht⟩ := hsplit S
-    exact ⟨{t}, isTotallySplit_incl_singleton P t S ht⟩
+    exact ⟨{t}, isTotallySplit_singleton P t S ht⟩
 
 end OfSplittingFamily
 
 section Existence
 
 variable (A : Type u) [CommRing A]
-
-/-- The finite étale `A`-algebras of the form `A[X_1, …, X_n] ⧸ I`: every finite étale
-`A`-algebra is isomorphic to one of them. -/
-private def Presentation : Type u :=
-  {t : Σ n : ℕ, Ideal (MvPolynomial (Fin n) A) //
-    _root_.Algebra.Etale A (MvPolynomial (Fin t.fst) A ⧸ t.snd) ∧
-      Module.Finite A (MvPolynomial (Fin t.fst) A ⧸ t.snd)}
 
 /-- A finite étale torsor over `A`, with group and algebra in the universe of `A`, over which `S`
 becomes totally split. -/
@@ -266,34 +308,26 @@ attribute [instance] SplittingTorsor.group SplittingTorsor.finite SplittingTorso
   SplittingTorsor.algebra SplittingTorsor.mulSemiringAction SplittingTorsor.smulCommClass
   SplittingTorsor.isFiniteEtaleTorsor
 
-/-- A chosen splitting torsor of each presented finite étale algebra. -/
-private noncomputable def splittingTorsor (t : Presentation A) :
-    SplittingTorsor A (MvPolynomial (Fin t.val.fst) A ⧸ t.val.snd) :=
-  have := t.property.1
-  have := t.property.2
+/-- A chosen splitting torsor of each finite étale quotient presentation. -/
+private noncomputable def splittingTorsor (t : FiniteEtaleSkeleton A) :
+    SplittingTorsor A t.toFGAlgCatSkeleton.eval.obj :=
   Classical.choice <|
     have ⟨G, _, _, P, _, _, _, _, _, hP⟩ := Algebra.exists_isFiniteEtaleTorsor_isTotallySplit A
-      (MvPolynomial (Fin t.val.fst) A ⧸ t.val.snd)
+      t.toFGAlgCatSkeleton.eval.obj
     ⟨⟨G, P, hP⟩⟩
 
 /-- Every finite étale `A`-algebra becomes totally split over the chosen splitting torsor of one
-of the presented finite étale algebras. -/
+of the finite étale quotient presentations. -/
 private theorem exists_isTotallySplit_splittingTorsor (S : Type u) [CommRing S]
     [_root_.Algebra A S] [_root_.Algebra.Etale A S] [Module.Finite A S] :
-    ∃ t : Presentation A,
+    ∃ t : FiniteEtaleSkeleton A,
       Algebra.IsTotallySplit (splittingTorsor A t).P ((splittingTorsor A t).P ⊗[A] S) := by
-  obtain ⟨n, f, hf⟩ := _root_.Algebra.FiniteType.iff_quotient_mvPolynomial''.mp
-    (inferInstance : _root_.Algebra.FiniteType A S)
-  let e := Ideal.quotientKerAlgEquivOfSurjective hf
-  let t : Presentation A :=
-    ⟨⟨n, RingHom.ker f⟩, .of_equiv e.symm, .equiv e.symm.toLinearEquiv⟩
+  obtain ⟨t, ⟨e⟩⟩ := FiniteEtaleSkeleton.exists_algEquiv A S
   let P := (splittingTorsor A t).P
   exact ⟨t, (splittingTorsor A t).isTotallySplit.of_algEquiv
-    (Algebra.TensorProduct.congr (AlgEquiv.refl : P ≃ₐ[P] P) e)⟩
+    (Algebra.TensorProduct.congr (AlgEquiv.refl : P ≃ₐ[P] P) e.symm)⟩
 
-/-- **Every commutative ring has a finite étale torsor tower.** The levels are the finite tensor
-products of splitting torsors of finite étale `A`-algebras, indexed by the finite sets of finite
-étale `A`-algebras, so that every finite étale `A`-algebra is split at some level. -/
+/-- **Every commutative ring has a finite étale torsor tower.** -/
 theorem nonempty_tower : Nonempty (FiniteEtaleTorsorTower A) :=
   ⟨ofSplittingFamily A (fun t ↦ (splittingTorsor A t).G) (fun t ↦ (splittingTorsor A t).P)
     (exists_isTotallySplit_splittingTorsor A)⟩

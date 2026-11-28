@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Order.DirectedInverseSystem
 public import TauCeti.RingTheory.PiTensorProduct.Map
 import Mathlib.Data.Fintype.Sum
 
@@ -35,6 +36,8 @@ together gives an algebra map from `⨂_{i : σ} B` to `B` itself. It is the ind
 * `PiTensorProduct.fiberwiseMul`: the algebra map along `f : σ → τ`.
 * `PiTensorProduct.mulAlgHom`: multiplication of all the factors of a finite tensor power of a
   commutative algebra.
+* `PiTensorProduct.finsetInclusion`: the inclusion of tensor factors `⨂_{i ∈ s} A i → ⨂_{i ∈ t} A i`
+  for finite sets `s ⊆ t`.
 
 ## Main results
 
@@ -54,6 +57,8 @@ together gives an algebra map from `⨂_{i : σ} B` to `B` itself. It is the ind
   product of the multiplications on its two summands.
 * `PiTensorProduct.fiberwiseMul_fiberwiseMul_surjInv`: along a surjection it has a right inverse,
   multiplication along a section.
+* `PiTensorProduct.directedSystem_finsetInclusion`: the tensor products over the finite subsets of
+  the index type form a directed system under the inclusions of tensor factors.
 -/
 
 public section
@@ -215,5 +220,54 @@ theorem fiberwiseMul_fiberwiseMul_surjInv [Fintype τ] [DecidableEq σ] {f : σ 
     AlgHom.id_apply]
 
 end Constant
+
+section Finset
+
+variable {ι : Type*} [DecidableEq ι] (R) (A : ι → Type*) [∀ i, CommSemiring (A i)]
+  [∀ i, Algebra R (A i)] {s t u : Finset ι}
+
+/-- The inclusion of tensor factors `⨂_{i ∈ s} A i →ₐ[R] ⨂_{i ∈ t} A i` for finite sets `s ⊆ t`,
+with `1` in the slots of `t` outside `s`: `PiTensorProduct.fiberwiseMul` along the inclusion of
+`s` into `t`. -/
+noncomputable def finsetInclusion (h : s ⊆ t) : (⨂[R] i : s, A i) →ₐ[R] ⨂[R] i : t, A i :=
+  fiberwiseMul (A := fun i : t ↦ A i) fun i : s ↦ ⟨i, h i.property⟩
+
+/-- `PiTensorProduct.finsetInclusion` is `PiTensorProduct.fiberwiseMul` along the inclusion of
+`s` into `t`. -/
+theorem finsetInclusion_def (h : s ⊆ t) :
+    finsetInclusion R A h = fiberwiseMul (A := fun i : t ↦ A i) fun i : s ↦ ⟨i, h i.property⟩ :=
+  (rfl)
+
+/-- `PiTensorProduct.finsetInclusion` sends the factor at `i ∈ s` to the factor at `i ∈ t`. It is
+not a simp lemma since `singleAlgHom_apply` rewrites the factor inclusions first. -/
+theorem finsetInclusion_singleAlgHom (h : s ⊆ t) (i : s) (a : A i) :
+    finsetInclusion R A h (singleAlgHom (R := R) (A := fun i : s ↦ A i) i a) =
+      singleAlgHom (R := R) (A := fun i : t ↦ A i) ⟨i, h i.property⟩ a := by
+  rw [finsetInclusion_def, fiberwiseMul_singleAlgHom]
+
+/-- The inclusion of tensor factors along `s ⊆ s` is the identity. -/
+@[simp]
+theorem finsetInclusion_refl : finsetInclusion R A (subset_refl s) = AlgHom.id R _ := by
+  -- The inclusion of `s` into itself is the identity, by eta for subtypes.
+  rw [finsetInclusion_def]
+  exact fiberwiseMul_id R fun i : s ↦ A i
+
+/-- Including the tensor factors from `s` into `t` and then into `u` is including them from `s`
+into `u`. -/
+@[simp]
+theorem finsetInclusion_comp_finsetInclusion (hst : s ⊆ t) (htu : t ⊆ u) :
+    (finsetInclusion R A htu).comp (finsetInclusion R A hst) =
+      finsetInclusion R A (hst.trans htu) := by
+  rw [finsetInclusion_def, finsetInclusion_def, finsetInclusion_def]
+  exact fiberwiseMul_comp (A := fun i : u ↦ A i) _ _
+
+/-- The tensor products over the finite subsets of the index type, with the inclusions of tensor
+factors, form a directed system. -/
+instance directedSystem_finsetInclusion :
+    DirectedSystem (fun s : Finset ι ↦ ⨂[R] i : s, A i) fun _ _ h ↦ ⇑(finsetInclusion R A h) where
+  map_self _ x := DFunLike.congr_fun (finsetInclusion_refl R A) x
+  map_map _ _ _ hst htu x := DFunLike.congr_fun (finsetInclusion_comp_finsetInclusion R A hst htu) x
+
+end Finset
 
 end PiTensorProduct
