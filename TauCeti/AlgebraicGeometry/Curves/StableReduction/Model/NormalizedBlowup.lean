@@ -7,11 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Blowup
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.CartierDivisor
-public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Normalization
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.RegularLocus
-public import TauCeti.AlgebraicGeometry.Morphisms.IsoLocus
 
-import TauCeti.AlgebraicGeometry.Blowup.Restriction
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 
 /-!
@@ -58,12 +55,14 @@ blowup is the blowup away from the closure of `x`.
 * `TauCeti.Model.isIso_normalizedBlowupOfIdealHom_iff`: when `M.total` is normal,
   `M.normalizedBlowupOfIdealHom I hC` is an isomorphism if and only if `I` is already an effective
   Cartier divisor.
+* `TauCeti.Model.centre_normalizedBlowupOfIdealHom_subset`: a normalized blowup of a normal model
+  along `I` is an isomorphism away from `I.support`.
 * `TauCeti.Model.normalizedBlowupOfIdealLift_normalizedBlowupOfIdealHom` and
   `TauCeti.Model.eq_normalizedBlowupOfIdealLift`: the universal property of the normalized blowup
   along `I` for morphisms from normal models.
-* `TauCeti.Model.isProper_normalizedBlowup`, `TauCeti.Model.isNormalScheme_normalizedBlowup` and
-  `TauCeti.Model.finite_compl_regularLocus_normalizedBlowup`: a normalized blowup of a proper model
-  in `x` is a proper normal model with finitely many singular points.
+* `TauCeti.Model.isNormalScheme_normalizedBlowup` and
+  `TauCeti.Model.finite_compl_regularLocus_normalizedBlowup`: a normalized blowup of a model in
+  `x` is a normal model with finitely many singular points (and proper when `M` is).
 * `TauCeti.Model.centre_normalizedBlowupHom_subset`: a normalized blowup of a normal model in `x`
   is an isomorphism away from the closure of `x`.
 
@@ -154,6 +153,23 @@ theorem isIso_normalizedBlowupOfIdealHom_iff [IsNormalScheme M.total] :
       .of_isOpenImmersion (M.blowupHom I hC).hom
     rw [normalizedBlowupOfIdealHom_eq]
     infer_instance
+
+/-- **A normalized blowup of a normal model changes nothing away from its centre.** If the total
+space of `M` is normal, the normalized blowup of `M` along `I` is an isomorphism over the
+complement of `I.support`. -/
+theorem centre_normalizedBlowupOfIdealHom_subset [IsNormalScheme M.total] :
+    (M.normalizedBlowupOfIdealHom I hC).hom.centre ⊆ (I.support : Set M.total) := by
+  -- Over the complement `W` of the centre the blowup is an isomorphism, so its preimage in the
+  -- blowup is normal and the normalization changes nothing over it.
+  let W := I.support.compl
+  have : IsNormalScheme (I.blowupToBase ⁻¹ᵁ W) := .of_isOpenImmersion (I.blowupToBase ∣_ W)
+  have h := (Scheme.Hom.le_isoLocus_iff _).mp
+    ((M.blowup I hC).le_isoLocus_fromNormalization_genericι (I.blowupToBase ⁻¹ᵁ W))
+  have hW : IsIso ((M.normalizedBlowupOfIdealHom I hC).hom ∣_ W) := by
+    rw [normalizedBlowupOfIdealHom_hom, morphismRestrict_comp]
+    exact IsIso.comp_isIso' h I.isIso_blowupToBase_restrict_compl_support
+  have hdisj := (Scheme.Hom.disjoint_centre_iff _).mpr hW
+  rwa [TopologicalSpace.Closeds.coe_compl, Set.disjoint_compl_left_iff_subset] at hdisj
 
 variable {M I hC} {N : Model R K C toK}
 
@@ -248,11 +264,6 @@ lemma normalizedBlowupHom_hom (hx : M.toBase x = closedPoint R) :
         (Scheme.IdealSheafData.vanishingIdeal ⟨closure {x}, isClosed_closure⟩).blowupToBase := by
   simp [normalizedBlowupHom]
 
-/-- The normalized blowup of a proper model is a proper model. -/
-instance isProper_normalizedBlowup [M.IsProper] (hx : M.toBase x = closedPoint R) :
-    (M.normalizedBlowup x hx).IsProper :=
-  isProper_normalization _
-
 /-- The total space of a normalized blowup is normal. -/
 instance isNormalScheme_normalizedBlowup (hx : M.toBase x = closedPoint R) :
     IsNormalScheme (M.normalizedBlowup x hx).total := by
@@ -271,20 +282,10 @@ of `x`. -/
 theorem centre_normalizedBlowupHom_subset [IsNormalScheme M.total]
     (hx : M.toBase x = closedPoint R) :
     (M.normalizedBlowupHom x hx).hom.centre ⊆ closure {x} := by
-  set I := Scheme.IdealSheafData.vanishingIdeal (X := M.total) ⟨closure {x}, isClosed_closure⟩
-  set N := M.blowup I (M.disjoint_range_genericι_support_vanishingIdeal hx)
-  -- Over the complement `W` of the centre the blowup is an isomorphism, so its preimage in the
-  -- blowup is normal and the normalization changes nothing over it.
-  let W := I.support.compl
-  have : IsNormalScheme (I.blowupToBase ⁻¹ᵁ W) := .of_isOpenImmersion (I.blowupToBase ∣_ W)
-  have h := (Scheme.Hom.le_isoLocus_iff _).mp
-    (N.le_isoLocus_fromNormalization_genericι (I.blowupToBase ⁻¹ᵁ W))
-  have hW : IsIso ((M.normalizedBlowupHom x hx).hom ∣_ W) := by
-    rw [normalizedBlowupHom_hom, morphismRestrict_comp]
-    exact IsIso.comp_isIso' h I.isIso_blowupToBase_restrict_compl_support
-  have h := (Scheme.Hom.disjoint_centre_iff _).mpr hW
-  rwa [TopologicalSpace.Closeds.coe_compl, Scheme.IdealSheafData.coe_support_vanishingIdeal,
-    TopologicalSpace.Closeds.coe_mk, Set.disjoint_compl_left_iff_subset] at h
+  have h := M.centre_normalizedBlowupOfIdealHom_subset
+    (Scheme.IdealSheafData.vanishingIdeal ⟨closure {x}, isClosed_closure⟩)
+    (M.disjoint_range_genericι_support_vanishingIdeal hx)
+  simpa [normalizedBlowupHom] using h
 
 end NormalizedBlowup
 

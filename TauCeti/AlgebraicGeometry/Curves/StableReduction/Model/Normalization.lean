@@ -366,56 +366,33 @@ models `f : N ⟶ M` from a model `N` with normal total space factors uniquely t
 `M.normalization`. -/
 def normalizationLift [AlgebraicGeometry.IsNormalScheme N.total] (f : N ⟶ M) :
     N ⟶ M.normalization where
-  hom :=
-    inv N.genericι.fromNormalization ≫
-      N.genericι.normalizationMap (pullback.snd M.genericι f.hom)
-        (pullback.lift (𝟙 C) N.genericι (by simp)) (pullback.lift_snd _ _ _) ≫
-      M.genericι.normalizationPullback f.hom ≫
-      pullback.fst M.genericι.fromNormalization f.hom
+  hom := N.genericι.normalizationLift M.genericι (𝟙 C) f.hom (by simp)
   overBase := by
-    rw [normalization_toBase, Category.assoc, Category.assoc, Category.assoc,
-      pullback.condition_assoc, Scheme.Hom.normalizationPullback_snd_assoc,
-      Scheme.Hom.normalizationMap_fromNormalization_assoc, IsIso.inv_hom_id_assoc, f.overBase]
-  genericFiber := by
-    refine baseChangeHom_genericFiberIso_hom_left _ _ ?_
-    have hgeneric : N.genericι ≫ inv N.genericι.fromNormalization = N.genericι.toNormalization := by
-      rw [IsIso.comp_inv_eq, Scheme.Hom.toNormalization_fromNormalization]
-    rw [← Category.assoc, ← Category.assoc, ← Category.assoc, hgeneric,
-      Scheme.Hom.toNormalization_normalizationMap, Category.assoc, Category.assoc,
-      Scheme.Hom.toNormalization_normalizationPullback_fst, pullback.lift_fst_assoc,
-      Category.id_comp, genericι_normalization]
+    rw [normalization_toBase, Scheme.Hom.normalizationLift_fromNormalization_assoc, f.overBase]
+  genericFiber := baseChangeHom_genericFiberIso_hom_left _ _ (by simp)
 
-/-- The lift of `f` to `M.normalization` has the canonical factorization through the pullback as
-underlying morphism. -/
+/-- The lift of `f` to `M.normalization` has the scheme-level normalization lift as underlying
+morphism. -/
 @[simp]
 lemma normalizationLift_hom [AlgebraicGeometry.IsNormalScheme N.total] (f : N ⟶ M) :
     (normalizationLift f).hom =
-      inv N.genericι.fromNormalization ≫
-        N.genericι.normalizationMap (pullback.snd M.genericι f.hom)
-          (pullback.lift (𝟙 C) N.genericι (by simp)) (pullback.lift_snd _ _ _) ≫
-        M.genericι.normalizationPullback f.hom ≫
-        pullback.fst M.genericι.fromNormalization f.hom :=
+      N.genericι.normalizationLift M.genericι (𝟙 C) f.hom (by simp) :=
   (rfl)
 
 /-- The lift of `f` to `M.normalization` commutes with `M.normalizationHom`. -/
 @[reassoc (attr := simp)]
 lemma normalizationLift_normalizationHom [AlgebraicGeometry.IsNormalScheme N.total]
     (f : N ⟶ M) :
-    normalizationLift f ≫ M.normalizationHom = f := by
-  refine Hom.ext ?_
-  simp only [comp_hom, normalizationLift_hom, normalizationHom_hom, Category.assoc,
-    pullback.condition, Scheme.Hom.normalizationPullback_snd_assoc,
-    Scheme.Hom.normalizationMap_fromNormalization_assoc, IsIso.inv_hom_id_assoc]
+    normalizationLift f ≫ M.normalizationHom = f :=
+  Hom.ext (by simp)
 
 /-- **Uniqueness of factorization into the normalization model.** Every morphism of models
 `g : N ⟶ M.normalization` over `M` agrees with `normalizationLift f`. -/
 theorem eq_normalizationLift [AlgebraicGeometry.IsNormalScheme N.total] {f : N ⟶ M}
     {g : N ⟶ M.normalization} (hg : g ≫ M.normalizationHom = f) :
     g = normalizationLift f := by
-  refine Hom.ext (TauCeti.ext_of_isSchemeTheoreticallyDominant N.genericι M.normalizationHom.hom
-    ?_ ?_)
-  · rw [← comp_hom, hg, ← comp_hom, normalizationLift_normalizationHom]
-  · rw [genericι_hom, genericι_hom]
+  refine Hom.ext (N.genericι.eq_normalizationLift M.genericι (by simp) (by simp) ?_)
+  rw [← normalizationHom_hom, ← comp_hom, hg]
 
 end Model
 

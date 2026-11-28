@@ -85,33 +85,24 @@ effective Cartier divisor on `Y`. -/
 theorem IsEffectiveCartier.comap_of_isSchemeTheoreticallyDominant_of_flat_comp
     (hI : I.IsEffectiveCartier) {Y U : Scheme.{u}} (f : Y ⟶ X) (g : U ⟶ Y)
     [QuasiCompact g] [IsSchemeTheoreticallyDominant g] [Flat (g ≫ f)] :
-    (I.comap f).IsEffectiveCartier := by
-  rw [isEffectiveCartier_iff]
-  intro y
-  obtain ⟨V, hxV, a, ha, hVa⟩ := (isEffectiveCartier_iff I).mp hI (f y)
-  obtain ⟨_, ⟨W, hW, rfl⟩, hyW, hWV'⟩ :=
-    Y.isBasis_affineOpens.exists_subset_of_mem_open hxV (f ⁻¹ᵁ V.val).isOpen
-  have hWV : W ≤ f ⁻¹ᵁ V.val := hWV'
-  let b : Γ(Y, W) := f.appLE V.val W hWV a
-  have hIW : (I.comap f).ideal ⟨W, hW⟩ = Ideal.span {b} := by
-    rw [I.ideal_comap_of_le f V ⟨W, hW⟩ hWV, hVa, Ideal.map_span, Set.image_singleton]
-  refine ⟨⟨W, hW⟩, hyW, b, fun u v huv ↦ g.app_injective W ?_, hIW⟩
-  have hreg : IsSMulRegular Γ(U, g ⁻¹ᵁ W) (g.app W b) := by
-    have hWU : g ⁻¹ᵁ W ≤ (g ≫ f) ⁻¹ᵁ V.val := g.preimage_mono hWV
-    have hcomm : g.app W b = (g ≫ f).appLE V.val (g ⁻¹ᵁ W) hWU a := by
-      dsimp only [b]
-      rw [g.app_eq_appLE, ← ConcreteCategory.comp_apply, Scheme.Hom.appLE_comp_appLE]
-    rw [hcomm]
-    have hreg' := Scheme.isSMulRegular_map_of_forall_affineOpens (U := g ⁻¹ᵁ W)
-      (V := g ⁻¹ᵁ W) le_rfl (a := (g ≫ f).appLE V.val (g ⁻¹ᵁ W) hWU a) fun T hTW ↦ by
-      have hTV : T.val ≤ (g ≫ f) ⁻¹ᵁ V.val := hTW.trans hWU
-      have hres : U.presheaf.map (homOfLE hTW).op ((g ≫ f).appLE V.val (g ⁻¹ᵁ W) hWU a) =
-          (g ≫ f).appLE V.val T.val hTV a := by
-        rw [← ConcreteCategory.comp_apply, Scheme.Hom.appLE_map]
-      rw [hres]
-      exact (g ≫ f).isSMulRegular_appLE V.property T.property hTV ha
-    simpa [homOfLE_refl] using hreg'
-  exact hreg (by simpa [smul_eq_mul, map_mul] using congrArg (g.app W) huv)
+    (I.comap f).IsEffectiveCartier :=
+  hI.comap_of_forall_isSMulRegular f fun {_ V W} _ hWV a ha _ u v huv ↦ g.app_injective W.val <| by
+    have hreg : IsSMulRegular Γ(U, g ⁻¹ᵁ W.val) (g.app W.val (f.appLE V.val W.val hWV a)) := by
+      have hWU : g ⁻¹ᵁ W.val ≤ (g ≫ f) ⁻¹ᵁ V.val := g.preimage_mono hWV
+      have hcomm : g.app W.val (f.appLE V.val W.val hWV a) =
+          (g ≫ f).appLE V.val (g ⁻¹ᵁ W.val) hWU a := by
+        rw [g.app_eq_appLE, ← ConcreteCategory.comp_apply, Scheme.Hom.appLE_comp_appLE]
+      rw [hcomm]
+      have hreg' := Scheme.isSMulRegular_map_of_forall_affineOpens (U := g ⁻¹ᵁ W.val)
+        (V := g ⁻¹ᵁ W.val) le_rfl (a := (g ≫ f).appLE V.val (g ⁻¹ᵁ W.val) hWU a) fun T hTW ↦ by
+        have hTV : T.val ≤ (g ≫ f) ⁻¹ᵁ V.val := hTW.trans hWU
+        have hres : U.presheaf.map (homOfLE hTW).op ((g ≫ f).appLE V.val (g ⁻¹ᵁ W.val) hWU a) =
+            (g ≫ f).appLE V.val T.val hTV a := by
+          rw [← ConcreteCategory.comp_apply, Scheme.Hom.appLE_map]
+        rw [hres]
+        exact (g ≫ f).isSMulRegular_appLE V.property T.property hTV ha
+      simpa [homOfLE_refl] using hreg'
+    exact hreg (by simpa [smul_eq_mul, map_mul] using congrArg (g.app W.val) huv)
 
 /-- **The complement of an effective Cartier divisor is dense.** -/
 theorem IsEffectiveCartier.dense_support_compl (hI : I.IsEffectiveCartier) :
