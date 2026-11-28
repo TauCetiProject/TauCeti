@@ -267,7 +267,7 @@ theorem generator_eq_factor (i : ι) :
   rfl
 
 /-- Every canonical generator in `algebra μ` is selfadjoint. -/
-theorem isSelfAdjoint_generator (i : ι) : IsSelfAdjoint (generator μ i) :=
+@[simp] theorem isSelfAdjoint_generator (i : ι) : IsSelfAdjoint (generator μ i) :=
   (isSelfAdjoint_factorCoordinate μ i).map (factor μ i)
 
 /-- The `i`-th canonical generator in the C⋆-free product realization has law `μ i`. -/
@@ -520,22 +520,16 @@ theorem vonNeumannAlgebra_eq_adjoin_range_vonNeumannGenerator :
     vonNeumannAlgebra μ =
       VonNeumannAlgebra.adjoin
         (Set.range fun i => (vonNeumannGenerator μ i : HilbertSpace μ →L[ℂ] HilbertSpace μ)) := by
+  simp_rw [coe_vonNeumannGenerator]
   let s : Set (HilbertSpace μ →L[ℂ] HilbertSpace μ) :=
-    Set.range fun i => (vonNeumannGenerator μ i : HilbertSpace μ →L[ℂ] HilbertSpace μ)
+    Set.range fun i => (generator μ i : HilbertSpace μ →L[ℂ] HilbertSpace μ)
   refine le_antisymm ?_ (VonNeumannAlgebra.adjoin_le_iff.mpr ?_)
-  · nth_rw 1 [vonNeumannAlgebra_eq_adjoin]
-    rw [VonNeumannAlgebra.adjoin_le_iff]
+  · rw [vonNeumannAlgebra_eq_adjoin, VonNeumannAlgebra.adjoin_le_iff]
     intro T hT
-    have hnorm :
-        T ∈ closure (StarAlgebra.adjoin ℂ s : Set (HilbertSpace μ →L[ℂ] HilbertSpace μ)) :=
-      (mem_algebra_iff μ T).mp hT
-    have hwot : ContinuousLinearMapWOT.ofCLM T ∈
-        closure (ContinuousLinearMapWOT.ofCLM ''
-          (StarAlgebra.adjoin ℂ s : Set (HilbertSpace μ →L[ℂ] HilbertSpace μ))) :=
-      map_mem_closure ContinuousLinearMapWOT.continuous_ofCLM hnorm fun _ hx => ⟨_, hx, rfl⟩
-    rw [← VonNeumannAlgebra.image_ofCLM_adjoin_eq_closure] at hwot
-    obtain ⟨U, hU, hTU⟩ := hwot
-    exact ContinuousLinearMapWOT.ofCLM_injective hTU ▸ hU
+    exact closure_minimal
+      (StarAlgebra.adjoin_le (S := (VonNeumannAlgebra.adjoin s).toStarSubalgebra)
+        (VonNeumannAlgebra.subset_adjoin s))
+      (VonNeumannAlgebra.adjoin s).isClosed ((mem_algebra_iff μ T).mp hT)
   · rintro _ ⟨i, rfl⟩
     exact VonNeumannAlgebra.subset_adjoin _ (generator μ i).property
 
@@ -546,7 +540,8 @@ theorem vonNeumannAlgebra_eq_adjoin_range_vonNeumannGenerator :
   exact vonNeumannState_toVonNeumannAlgebra μ (generator μ i)
 
 /-- Every canonical generator in `vonNeumannAlgebra μ` is selfadjoint. -/
-theorem isSelfAdjoint_vonNeumannGenerator (i : ι) : IsSelfAdjoint (vonNeumannGenerator μ i) := by
+@[simp] theorem isSelfAdjoint_vonNeumannGenerator (i : ι) :
+    IsSelfAdjoint (vonNeumannGenerator μ i) := by
   exact (isSelfAdjoint_generator μ i).map (toVonNeumannAlgebra μ)
 
 /-- The `i`-th canonical generator in `vonNeumannAlgebra μ` has law `μ i`. -/

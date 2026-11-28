@@ -9,7 +9,6 @@ public import TauCeti.Probability.FreeProbability.Law.AdditiveConvolution
 public import TauCeti.Probability.FreeProbability.Law.FreeProduct
 public import TauCeti.Probability.FreeProbability.Law.Independence
 public import TauCeti.Probability.FreeProbability.Law.Series
-import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.MeasureTheory.Measure.Dirac
 public import TauCeti.MeasureTheory.Measure.Support
@@ -37,9 +36,9 @@ cumulants, mean, and variance.
   C⋆- and concrete von Neumann probability spaces.
 * `MeasureTheory.Measure.freeConv_map_add`,
   `MeasureTheory.Measure.neg_freeConv_neg`: simultaneous translation and reflection laws.
-* `MeasureTheory.Measure.rSeries_integral_freeConv`,
+* `MeasureTheory.Measure.rSeries_freeConv`,
   `MeasureTheory.Measure.freeCumulant_freeConv`,
-  `MeasureTheory.Measure.eq_freeConv_iff_rSeries_integral_eq`,
+  `MeasureTheory.Measure.eq_freeConv_iff_rSeries_eq`,
   `MeasureTheory.Measure.eq_freeConv_iff_forall_freeCumulant_eq`,
   `MeasureTheory.Measure.integral_id_freeConv`,
   `MeasureTheory.Measure.variance_id_freeConv`: additivity of the formal R-series, free
@@ -200,19 +199,17 @@ theorem neg_freeConv_neg (μ ν : Measure ℝ) : μ.neg.freeConv ν.neg = (μ.fr
 /-! ### Formal R-series, free cumulants, mean, and variance -/
 
 /-- **Additivity of the formal R-series under free additive convolution.** -/
-theorem rSeries_integral_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ]
+theorem rSeries_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ]
     [IsProbabilityMeasure ν] (hμ : IsCompact μ.support) (hν : IsCompact ν.support) :
-    TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂(μ.freeConv ν)) id =
-      TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂μ) id +
-        TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂ν) id := by
+    (μ.freeConv ν).rSeries = μ.rSeries + ν.rSeries := by
   obtain ⟨A, _, _, _, φ, g, hφ1, hfree, hgt, hgf, -, -, hlt, hlf, hladd⟩ :=
     exists_isFreelyIndependentElements_law_add_eq_freeConv hμ hν
-  have h1 := φ.map_ofReal_rSeries_integral_law hgt
-  have h2 := φ.map_ofReal_rSeries_integral_law hgf
+  have h1 := φ.map_ofReal_rSeries_law hgt
+  have h2 := φ.map_ofReal_rSeries_law hgf
   rw [hlt] at h1
   rw [hlf] at h2
   apply PowerSeries.map_injective (Complex.ofRealHom : ℝ →+* ℂ) Complex.ofReal_injective
-  rw [map_add, ← hladd, φ.map_ofReal_rSeries_integral_law (hgt.add hgf)]
+  rw [map_add, ← hladd, φ.map_ofReal_rSeries_law (hgt.add hgf)]
   exact (hfree.rSeries_add hφ1 Bool.false_ne_true.symm).trans
     (by simpa using congrArg₂ (· + ·) h1.symm h2.symm)
 
@@ -222,19 +219,16 @@ theorem freeCumulant_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ]
     {n : ℕ} (hn : n ≠ 0) :
     (μ.freeConv ν).freeCumulant n = μ.freeCumulant n + ν.freeCumulant n := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-  simp_rw [freeCumulant_succ_eq_coeff_rSeries, rSeries_integral_freeConv hμ hν, map_add]
+  simp_rw [freeCumulant_succ_eq_coeff_rSeries, rSeries_freeConv hμ hν, map_add]
 
 /-- A compactly supported probability measure `ρ` equals `μ.freeConv ν` iff its formal R-series
 equals the sum of those of `μ` and `ν`. -/
-theorem eq_freeConv_iff_rSeries_integral_eq {ρ μ ν : Measure ℝ} [IsProbabilityMeasure ρ]
+theorem eq_freeConv_iff_rSeries_eq {ρ μ ν : Measure ℝ} [IsProbabilityMeasure ρ]
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (hρ : IsCompact ρ.support) (hμ : IsCompact μ.support) (hν : IsCompact ν.support) :
-    ρ = μ.freeConv ν ↔ TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂ρ) id =
-      TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂μ) id +
-        TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂ν) id := by
+    ρ = μ.freeConv ν ↔ ρ.rSeries = μ.rSeries + ν.rSeries := by
   have := isProbabilityMeasure_freeConv hμ hν
-  rw [eq_iff_rSeries_integral_eq hρ (isCompact_support_freeConv μ ν),
-    rSeries_integral_freeConv hμ hν]
+  rw [eq_iff_rSeries_eq hρ (isCompact_support_freeConv μ ν), rSeries_freeConv hμ hν]
 
 /-- A compactly supported probability measure `ρ` equals `μ.freeConv ν` iff all positive-order free
 cumulants of `ρ` equal the sums of those of `μ` and `ν`. -/
@@ -251,20 +245,15 @@ theorem eq_freeConv_iff_forall_freeCumulant_eq {ρ μ ν : Measure ℝ} [IsProba
 theorem integral_id_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (hμ : IsCompact μ.support) (hν : IsCompact ν.support) :
     ∫ x, x ∂(μ.freeConv ν) = (∫ x, x ∂μ) + ∫ x, x ∂ν := by
-  simpa [coeff_zero_rSeries_integral] using
-    congrArg (PowerSeries.coeff 0) (rSeries_integral_freeConv hμ hν)
+  simpa [coeff_zero_rSeries] using congrArg (PowerSeries.coeff 0) (rSeries_freeConv hμ hν)
 
 /-- The variance is additive under free additive convolution. -/
 theorem variance_id_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (hμ : IsCompact μ.support) (hν : IsCompact ν.support) :
     variance id (μ.freeConv ν) = variance id μ + variance id ν := by
   have := isProbabilityMeasure_freeConv hμ hν
-  simpa [coeff_one_rSeries_integral_eq_variance
-      (continuousOn_id.memLp_of_isCompact_support (isCompact_support_freeConv μ ν) support_mem_ae),
-    coeff_one_rSeries_integral_eq_variance
-      (continuousOn_id.memLp_of_isCompact_support hμ support_mem_ae),
-    coeff_one_rSeries_integral_eq_variance
-      (continuousOn_id.memLp_of_isCompact_support hν support_mem_ae)] using
-    congrArg (PowerSeries.coeff 1) (rSeries_integral_freeConv hμ hν)
+  simpa [coeff_one_rSeries_eq_variance (isCompact_support_freeConv μ ν),
+    coeff_one_rSeries_eq_variance hμ, coeff_one_rSeries_eq_variance hν] using
+    congrArg (PowerSeries.coeff 1) (rSeries_freeConv hμ hν)
 
 end MeasureTheory.Measure
