@@ -8,7 +8,7 @@ module
 public import TauCeti.Topology.ConnectedComponents
 
 /-!
-# Finiteness of connected components
+# Finitely many connected components from a compact frontier
 
 A set whose frontier is compact, and which is connected near each of its frontier points, has only
 finitely many connected components, in a locally connected, preconnected space
@@ -24,8 +24,6 @@ point, but its frontier is not compact.
 
 ## Main declarations
 
-* `ConnectedComponents.finite_iff_finite_image_connectedComponentIn`: the component quotient of
-  a subspace is finite exactly when the set of ambient component sets is finite.
 * `TauCeti.finite_connectedComponents_of_isCompact_frontier`: a set with compact frontier whose
   part in some neighbourhood of each frontier point is preconnected has finitely many connected
   components.
@@ -38,15 +36,6 @@ open Set Topology
 namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X]
-
-open ConnectedComponents in
-/-- A subspace has finitely many connected components exactly when its points determine
-only finitely many distinct ambient component sets. -/
-theorem _root_.ConnectedComponents.finite_iff_finite_image_connectedComponentIn {s : Set X} :
-    Finite (ConnectedComponents s) ↔ (connectedComponentIn s '' s).Finite := by
-  rw [← finite_range_iff (carrierIn_injective (s := s)),
-    ← (surjective_coe (α := s)).range_comp carrierIn, image_eq_range]
-  simp [Function.comp_def]
 
 /-- **Finitely many components from a compact frontier.** In a locally connected, preconnected
 space, let `s` have compact frontier, and let every frontier point `x` of `s` have a neighbourhood
@@ -75,11 +64,7 @@ theorem finite_connectedComponents_of_isCompact_frontier [LocallyConnectedSpace 
     obtain ⟨w, hwN, hwC⟩ := mem_closure_iff.1 hz.1 _ isOpen_interior hzx
     refine .inl ⟨w, ⟨_, ⟨x, hxt, rfl⟩, interior_subset hwN,
       connectedComponentIn_subset s y hwC⟩, (connectedComponentIn_eq hwC).symm⟩
-  have : Finite (range (ConnectedComponents.carrierIn (s := s))) :=
-    ((hfin.union (finite_singleton univ)).subset (range_subset_iff.2 fun c ↦ by
-      obtain ⟨y, rfl⟩ := ConnectedComponents.surjective_coe c
-      rw [ConnectedComponents.carrierIn_mk]
-      exact hcomp y)).to_subtype
-  exact Finite.of_injective_finite_range ConnectedComponents.carrierIn_injective
+  apply finite_connectedComponents_iff_finite_image_connectedComponentIn.2
+  exact (hfin.union (finite_singleton univ)).subset (image_subset_iff.2 fun y hy ↦ hcomp ⟨y, hy⟩)
 
 end TauCeti

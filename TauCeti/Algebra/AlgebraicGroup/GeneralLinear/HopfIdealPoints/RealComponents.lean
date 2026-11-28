@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Topology
 public import TauCeti.Topology.Algebra.PointTopology.RealComponents
+import TauCeti.Topology.ConnectedComponents
 
 /-!
 # Finitely many components of a real algebraic matrix group
@@ -23,10 +24,10 @@ namespace TauCeti.GeneralLinear
 
 /-- The real points of a closed subgroup scheme of `GLₙ` have finitely many connected components
 in the subspace topology of `GLₙ(ℝ)`. -/
-instance instFiniteConnectedComponentsHopfIdealPointsSubgroup {k : Type*} [CommRing k] [Algebra k ℝ]
-    (n : ℕ) (I : HopfIdeal k (coordinateHopfAlgebra k n)) :
+instance instFiniteConnectedComponentsHopfIdealPointsSubgroupReal
+    {k : Type*} [CommRing k] [Algebra k ℝ] (n : ℕ) (I : HopfIdeal k (coordinateHopfAlgebra k n)) :
     Finite (ConnectedComponents (hopfIdealPointsSubgroup n I ℝ)) := by
   have h := isHomeomorph_hopfIdealPointsSubgroupMulEquiv (R := ℝ) n I
-  exact Finite.of_surjective _ (h.continuous.connectedComponentsMap_surjective h.surjective)
+  exact h.continuous.finite_connectedComponents_of_surjective h.surjective
 
 end TauCeti.GeneralLinear

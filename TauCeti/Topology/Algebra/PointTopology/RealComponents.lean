@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.PointTopology.Presentation
-public import Mathlib.RingTheory.FiniteStability
 import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Components
-import TauCeti.Topology.Connected.FiniteComponents
 
 /-!
 # Connected components of real affine point spaces
@@ -18,10 +16,10 @@ evaluation topology. This gives the finiteness of the component group of the rea
 affine algebraic group, independently of a matrix embedding.
 
 It suffices that the coordinate algebra becomes finite type after base change to `ℝ`.
-This follows from finite type over the original base by `Algebra.FiniteType.baseChange`.
-Over `ℝ`, a finite presentation realizes the real points as the simultaneous
-zero set of finitely many polynomials in finitely many variables. The component theorem for
-semialgebraic sets applies to this zero set, including when it is singular or empty.
+The homeomorphism `baseChangeHomeomorph` identifies the original real points with those after
+base change. Over `ℝ`, `Algebra.Presentation.pointsHomeomorphZeroSet` realizes the points as the
+zero set of a finite presentation. The theorem `IsSemialgebraic.finite_image_connectedComponentIn`
+applies to this zero set, including when it is singular or empty.
 
 ## References
 
@@ -37,29 +35,30 @@ open scoped TensorProduct
 
 namespace TauCeti.PointTopology
 
-variable (k A : Type*) [CommSemiring k] [Algebra k ℝ] [CommSemiring A] [Algebra k A]
-  [Algebra.FiniteType ℝ (ℝ ⊗[k] A)]
-
 /-- The space of real points has finitely many connected components whenever the coordinate
 algebra is finite type after extension of scalars to `ℝ`. -/
-instance instFiniteConnectedComponentsRealPoints : Finite (ConnectedComponents (A →ₐ[k] ℝ)) := by
+instance instFiniteConnectedComponentsRealPoints
+    (k A : Type*) [CommSemiring k] [Algebra k ℝ] [CommSemiring A] [Algebra k A]
+    [Algebra.FiniteType ℝ (ℝ ⊗[k] A)] : Finite (ConnectedComponents (A →ₐ[k] ℝ)) := by
   let B := ℝ ⊗[k] A
   have : Algebra.FinitePresentation ℝ B :=
     Algebra.FinitePresentation.of_finiteType.mp inferInstance
   let P := Algebra.Presentation.ofFinitePresentation ℝ B
-  have h : IsSemialgebraic {y | (fun j ↦ eval y (P.relation j)) = 0} := by
-    simpa only [Set.iInter_ofPred, funext_iff, Pi.zero_apply] using
-      IsSemialgebraic.iInter (fun j ↦ isSemialgebraic_eval_eq_zero (P.relation j))
-  have := ConnectedComponents.finite_iff_finite_image_connectedComponentIn.2
+  have h : IsSemialgebraic {y | (fun j ↦ eval y (P.relation j)) = 0} :=
+    (isSemialgebraic_singleton (fun _ ↦ (0 : ℝ))).preimage_eval P.relation
+  have := finite_connectedComponents_iff_finite_image_connectedComponentIn.2
     h.finite_image_connectedComponentIn
   let e := P.pointsHomeomorphZeroSet.symm.trans (baseChangeHomeomorph k ℝ A ℝ)
-  exact Finite.of_surjective _ (e.continuous.connectedComponentsMap_surjective e.surjective)
+  exact e.continuous.finite_connectedComponents_of_surjective e.surjective
 
-/-- The convolution group of real points of a finite type affine group scheme has finitely
-many components. The assertion on the convolution type already holds for any coordinate algebra. -/
-instance instFiniteConnectedComponentsWithConvRealPoints :
-    Finite (ConnectedComponents (WithConv (A →ₐ[k] ℝ))) :=
-  let e := (isHomeomorph_ofConv (k := k) (A := A) (R := ℝ)).homeomorph.symm
-  Finite.of_surjective _ (e.continuous.connectedComponentsMap_surjective e.surjective)
+/-- The convolution type has finitely many connected components whenever the underlying point
+space does. No Hopf structure is required. For real points, finite type after base change to
+`ℝ` suffices by `instFiniteConnectedComponentsRealPoints`. -/
+instance instFiniteConnectedComponentsWithConvPoints
+    (k A R : Type*) [CommSemiring k] [Semiring A] [Algebra k A] [Semiring R] [Algebra k R]
+    [TopologicalSpace R] [Finite (ConnectedComponents (A →ₐ[k] R))] :
+    Finite (ConnectedComponents (WithConv (A →ₐ[k] R))) :=
+  let e := (isHomeomorph_ofConv (k := k) (A := A) (R := R)).homeomorph.symm
+  e.continuous.finite_connectedComponents_of_surjective e.surjective
 
 end TauCeti.PointTopology

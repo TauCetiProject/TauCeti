@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
-public import TauCeti.Topology.Algebra.PointTopology.Functoriality
+public import TauCeti.Topology.Algebra.PointTopology.Basic
+import TauCeti.Topology.Algebra.PointTopology.Group
 
 /-!
 # Closed subgroups cut out by Hopf ideals in the point topology
@@ -40,13 +41,11 @@ evaluation topology, for any topology on the coefficient ring. -/
 theorem isEmbedding_quotientPointsHom (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
     IsEmbedding (quotientPointsHom H I (CommAlgCat.of R A)) := by
   let q := CommHopfAlgCat.mkQuotient H I
-  rw [← isHomeomorph_ofConv.isEmbedding.of_comp_iff]
-  have heq : ofConv ∘ quotientPointsHom H I (CommAlgCat.of R A) =
-      (fun x ↦ AlgHom.comp x q.hom.toAlgHom) ∘ ofConv :=
-    funext fun x ↦ congrArg ofConv (quotientPointsHom_apply H I _ x)
+  have heq : ⇑(quotientPointsHom H I (CommAlgCat.of R A)) = BialgHom.mapDomain (A := A) q.hom := by
+    funext x
+    rw [quotientPointsHom_apply, BialgHom.mapDomain_apply]
   rw [heq]
-  exact (isEmbedding_comap_of_surjective q.hom.toAlgHom
-    (CommHopfAlgCat.mkQuotient_surjective H I)).comp isHomeomorph_ofConv.isEmbedding
+  exact q.hom.isEmbedding_mapDomain_of_surjective (CommHopfAlgCat.mkQuotient_surjective H I)
 
 variable [T1Space A]
 
