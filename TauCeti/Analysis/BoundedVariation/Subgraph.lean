@@ -222,6 +222,7 @@ private theorem lintegral_perimeter_superlevel_subgraphHeight_le (e : E) (he : �
   let q := subgraphProj e he
   let h := subgraphHeight e he w
   let u : E → ℝ := fun x ↦ min (max (h x) 0) δ
+  -- Step 1: Truncate `h` to `[0, δ]` so the coarea formula applies to `u`.
   have hcont_h : Continuous h := continuous_subgraphHeight e he hw.continuous
   have hlip_h : LocallyLipschitz h := by
     refine ((hw.comp q.contDiff).div_const 2).locallyLipschitz.sub
@@ -243,6 +244,7 @@ private theorem lintegral_perimeter_superlevel_subgraphHeight_le (e : E) (he : �
       (continuous_const.add (((hw.continuous_fderiv one_ne_zero).comp q.continuous).norm.pow
         2))))).measurable.indicator ((measurableSet_lt measurable_const hcont_h.measurable).inter
           (measurableSet_lt hcont_h.measurable measurable_const))).aemeasurable
+  -- Step 2: Apply coarea, slice along `e`, and bound each line integral by `δ √(4 + ‖Dw‖²)`.
   calc ∫⁻ r in Ioo 0 δ, perimeter volume ⊤ {x : E | r < h x}
       = ∫⁻ r in Ioo 0 δ, perimeter volume ⊤ {x : E | r < u x} :=
         setLIntegral_congr_fun measurableSet_Ioo fun r hr ↦ by rw [hsuper r hr]
@@ -288,23 +290,6 @@ private theorem lintegral_perimeter_superlevel_subgraphHeight_le (e : E) (he : �
           ∫⁻ y in {y : H | 0 < w y}, ENNReal.ofReal √(4 + ‖fderiv ℝ w y‖ ^ 2) := by
         rw [lintegral_indicator (measurableSet_lt measurable_const hw.continuous.measurable),
           lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-
-/-- Chebyshev-style point selection on `(0, δ)`: if `∫⁻ r in Ioo 0 δ, f r ≤ δ * B` with `δ > 0`
-and `B ≠ ∞`, then `f r ≤ B + δ` for some `r ∈ (0, δ)`. -/
-private theorem exists_mem_Ioo_le_add_of_setLIntegral_le {f : ℝ → ℝ≥0∞} {B : ℝ≥0∞} (hB : B ≠ ∞)
-    {δ : ℝ} (hδ : 0 < δ) (h : ∫⁻ r in Ioo 0 δ, f r ≤ ENNReal.ofReal δ * B) :
-    ∃ r ∈ Ioo (0 : ℝ) δ, f r ≤ B + ENNReal.ofReal δ := by
-  by_contra! hgt
-  have hle : ENNReal.ofReal δ * B + ENNReal.ofReal δ * ENNReal.ofReal δ ≤ ENNReal.ofReal δ * B := by
-    have h1 : ENNReal.ofReal δ * (B + ENNReal.ofReal δ) =
-        ∫⁻ _ in Ioo 0 δ, (B + ENNReal.ofReal δ) := by
-      rw [setLIntegral_const, Real.volume_Ioo, sub_zero, mul_comm]
-    rw [← mul_add, h1]
-    exact (setLIntegral_mono' measurableSet_Ioo fun r hr ↦ (hgt r hr).le).trans h
-  have h0 : ENNReal.ofReal δ * ENNReal.ofReal δ = 0 := nonpos_iff_eq_zero.1 <|
-    WithTop.le_of_add_le_add_left (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hB)
-      (hle.trans_eq (add_zero _).symm)
-  exact mul_ne_zero (by positivity) (by positivity) h0
 
 /-- **Perimeter upper bound for a `C¹` symmetric subgraph.** Let `w : (ℝ ∙ e)ᗮ → ℝ` be `C¹`. The
 open symmetric subgraph `S = {x : E | |⟪e, x⟫| < w y / 2}` (where `y` is the orthogonal projection

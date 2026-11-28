@@ -33,6 +33,9 @@ gives a strictly higher level `s > t` with `c < μ {y | s < f y}`.
   `s ↦ μ {y | s < f y}`.
 * `MeasureTheory.Measure.exists_lt_lt_measure_setOf_lt`: if `c < μ {y | t < f y}`, then
   `c < μ {y | s < f y}` for some `s > t`, when the order is dense.
+* `MeasureTheory.Measure.tendsto_measureReal_of_tendsto_measure` and
+  `MeasureTheory.Measure.tendsto_measureReal_zero_of_tendsto_measure_zero`: convergence of `μ` to a
+  finite limit (or `0`) implies convergence of `μ.real` to its real value (or `0`).
 * `AEMeasurable.tendsto_measure_setOf_pos_lt_le_inter`: for an a.e. measurable real function
   `f` on a finite-measure carrier `K` and a decreasing sequence `δ k → 0`,
   `μ ({x | 0 < f x ∧ f x ≤ δ k} ∩ K) → 0`.
@@ -44,6 +47,8 @@ open MeasureTheory Set Filter Topology
 open scoped ENNReal
 
 namespace MeasureTheory.Measure
+
+section Order
 
 variable {α β : Type*} [MeasurableSpace α] [LinearOrder β] [TopologicalSpace β] [OrderTopology β]
   [FirstCountableTopology β] (μ : Measure α) {f : α → β} {t : β}
@@ -81,6 +86,24 @@ theorem exists_lt_lt_measure_setOf_lt [DenselyOrdered β] {c : ℝ≥0∞} (h : 
   have hc := (continuousWithinAt_Ioi_iff_Ici.2 (continuousWithinAt_Ici_measure_setOf_lt μ (f := f)
     (t := t))).tendsto.eventually_const_lt h
   exact (hc.and self_mem_nhdsWithin).exists.imp fun s hs ↦ ⟨hs.2, hs.1⟩
+
+end Order
+
+/-- Convergence of `μ (t i)` to a finite limit `c` implies convergence of `μ.real (t i)` to
+`c.toReal`. -/
+theorem tendsto_measureReal_of_tendsto_measure {α : Type*} [MeasurableSpace α] (μ : Measure α)
+    {ι : Type*} {l : Filter ι} {t : ι → Set α} {c : ℝ≥0∞} (hc : c ≠ ∞)
+    (h : Tendsto (fun i ↦ μ (t i)) l (𝓝 c)) :
+    Tendsto (fun i ↦ μ.real (t i)) l (𝓝 c.toReal) :=
+  (ENNReal.tendsto_toReal hc).comp h
+
+/-- Convergence of `μ (t i)` to `0` implies convergence of `μ.real (t i)` to `0`. -/
+theorem tendsto_measureReal_zero_of_tendsto_measure_zero {α : Type*} [MeasurableSpace α]
+    (μ : Measure α) {ι : Type*} {l : Filter ι} {t : ι → Set α}
+    (h : Tendsto (fun i ↦ μ (t i)) l (𝓝 0)) :
+    Tendsto (fun i ↦ μ.real (t i)) l (𝓝 0) := by
+  simpa only [ENNReal.toReal_zero] using
+    μ.tendsto_measureReal_of_tendsto_measure ENNReal.zero_ne_top h
 
 end MeasureTheory.Measure
 

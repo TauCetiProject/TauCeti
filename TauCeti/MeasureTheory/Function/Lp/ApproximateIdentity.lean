@@ -12,8 +12,11 @@ public import TauCeti.MeasureTheory.Function.Lp.Translation
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.MeasureTheory.Function.Lp.Holder
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
+import Mathlib.Analysis.Real.Sqrt
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Smooth approximate identities in `Lᵖ`
@@ -76,6 +79,11 @@ the set where convergence is measured.
   convolutions converge in `L¹`, written with lower Lebesgue integrals.
 * `TauCeti.tendsto_integral_abs_normed_convolution_sub`: real-valued `L¹` convergence of
   mollifications.
+* `TauCeti.tendsto_integral_normed_convolution_mul_sqrt_normed_convolution`: convergence of
+  `∫ (phi i ⋆ f) √(phi i ⋆ g)` for `f ∈ L¹ ∩ L²` and bounded integrable `g`.
+* `TauCeti.tendsto_integral_normed_convolution_mul_sqrt_normed_convolution_indicator`: indicator
+  specialization `∫ (phi i ⋆ 1_A) √(phi i ⋆ (c · 1_D)) → √c * μ.real A` when `A ⊆ᵐ D` and
+  `0 ≤ c`.
 * `TauCeti.tendsto_setLIntegral_enorm_normed_convolution_sub`: for a locally integrable function
   these convolutions converge in `L¹(K)` on every compact set `K`.
 * `ContinuousLinearMap.tendsto_setLIntegral_enorm_bilin_normedBump_sub`: mollifying both factors
@@ -382,6 +390,74 @@ theorem tendsto_integral_abs_normed_convolution_sub {I : Type*} {l : Filter I}
   have hof := ofReal_integral_eq_lintegral_ofReal hdiff (.of_forall fun _ ↦ abs_nonneg _)
   simp_rw [← Real.eNorm_eq_ofReal_abs] at hof
   rw [Function.comp_apply, ← hof, ENNReal.toReal_ofReal (integral_nonneg fun _ ↦ abs_nonneg _)]
+
+/-- For shrinking normalized bumps `phi i`, `f ∈ L¹ ∩ L²`, and a bounded integrable function `g`,
+the square-root pairings converge: `∫ (phi i ⋆ f) √(phi i ⋆ g) → ∫ f √g`. -/
+theorem tendsto_integral_normed_convolution_mul_sqrt_normed_convolution
+    {I : Type*} {l : Filter I} {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0))
+    {f g : E → ℝ} (hf : Integrable f mu) (hf_L2 : MemLp f 2 mu)
+    (hg : Integrable g mu) {C : ℝ} (hg_bdd : ∀ᵐ x ∂mu, ‖g x‖ ≤ C) :
+    Tendsto (fun i ↦ ∫ x,
+        ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x *
+          √(((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] g) x) ∂mu)
+      l (nhds (∫ x, f x * √(g x) ∂mu)) := by
+  -- Step 1: Bound the `L¹` convergence rate via Cauchy–Schwarz stability.
+  have hbound : Tendsto (fun i ↦
+      √C * ∫ x, |((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x - f x| ∂mu +
+        √((∫ x, f x ^ 2 ∂mu) *
+          ∫ x, |((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] g) x - g x| ∂mu)) l (nhds 0) := by
+    have h1 := (tendsto_integral_abs_normed_convolution_sub hphi hf).const_mul √C
+    have h2 := (Real.continuous_sqrt.tendsto 0).comp <| by
+      simpa only [mul_zero] using
+        (tendsto_integral_abs_normed_convolution_sub hphi hg).const_mul (∫ x, f x ^ 2 ∂mu)
+    simpa only [Function.comp_def, mul_zero, Real.sqrt_zero, add_zero] using h1.add h2
+  -- Step 2: Conclude convergence from the `L¹` error bound for mollifications.
+  rw [Metric.tendsto_nhds]
+  intro r hr
+  filter_upwards [hbound.eventually (gt_mem_nhds hr)] with i hi
+  rw [Real.dist_eq]
+  refine lt_of_le_of_lt (abs_integral_mul_sqrt_sub_integral_mul_sqrt_le
+    ((phi i).integrable_normed.integrable_convolution _ hf) hf hf_L2
+    ((phi i).integrable_normed.integrable_convolution _ hg) hg
+    (.of_forall fun x ↦ (le_abs_self _).trans
+      (by simpa only [Real.norm_eq_abs] using (phi i).norm_normed_convolution_le hg_bdd x))) hi
+
+/-- For shrinking normalized bumps `phi i` and finite-measure null-measurable sets `A, D` with
+`A ⊆ᵐ D` and `0 ≤ c`, the mollifications `phi i ⋆ 1_A` and `phi i ⋆ (c · 1_D)` satisfy
+`∫ (phi i ⋆ 1_A) √(phi i ⋆ (c · 1_D)) → √c * mu.real A`. -/
+theorem tendsto_integral_normed_convolution_mul_sqrt_normed_convolution_indicator
+    {I : Type*} {l : Filter I} {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {A D : Set E}
+    (hA : NullMeasurableSet A mu) (hD : NullMeasurableSet D mu)
+    (hAfin : mu A ≠ ∞) (hDfin : mu D ≠ ∞) (hAD : ∀ᵐ x ∂mu, x ∈ A → x ∈ D)
+    {c : ℝ} (hc : 0 ≤ c) :
+    Tendsto (fun i ↦ ∫ x,
+        ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] A.indicator (fun _ ↦ (1 : ℝ))) x *
+          √(((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] D.indicator (fun _ ↦ c)) x) ∂mu)
+      l (nhds (√c * mu.real A)) := by
+  have hA_int : Integrable (A.indicator (fun _ ↦ (1 : ℝ))) mu :=
+    (integrableOn_const hAfin).integrable_indicator₀ hA
+  have hA_L2 : MemLp (A.indicator (fun _ ↦ (1 : ℝ))) 2 mu :=
+    memLp_indicator_const 2 hA 1 (Or.inr hAfin)
+  have hD_int : Integrable (D.indicator (fun _ ↦ c)) mu :=
+    (integrableOn_const hDfin).integrable_indicator₀ hD
+  have hD_bdd : ∀ᵐ x ∂mu, ‖D.indicator (fun _ ↦ c) x‖ ≤ c :=
+    .of_forall fun x ↦ by
+      rw [norm_indicator_eq_indicator_norm, Real.norm_of_nonneg hc]
+      exact Set.indicator_le' (fun _ _ ↦ le_rfl) (fun _ _ ↦ hc) x
+  have hlim := tendsto_integral_normed_convolution_mul_sqrt_normed_convolution
+    hphi hA_int hA_L2 hD_int hD_bdd
+  have htarget_ae :
+      (fun x : E ↦ A.indicator (fun _ ↦ (1 : ℝ)) x * √(D.indicator (fun _ ↦ c) x)) =ᵐ[mu]
+        A.indicator (fun _ ↦ √c) :=
+    hAD.mono fun x hx ↦ by by_cases hxA : x ∈ A <;> simp [hxA, hx]
+  have htarget :
+      ∫ x, A.indicator (fun _ ↦ (1 : ℝ)) x * √(D.indicator (fun _ ↦ c) x) ∂mu =
+        √c * mu.real A := by
+    rw [integral_congr_ae htarget_ae, integral_indicator₀ hA, setIntegral_const, smul_eq_mul,
+      mul_comm]
+  rwa [htarget] at hlim
 
 /-- Mollifications converge in `Lᵖ(s)`, for `1 ≤ p < ∞`, if the function belongs to `Lᵖ`
 on a fixed positive thickening of `s`. Neither compactness of `s` nor global local

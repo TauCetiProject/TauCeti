@@ -50,6 +50,10 @@ radius `r` about each of its points, a square for the sup norm, in a set of area
 (`TauCeti.ofReal_mul_ofReal_le_volume_Ioo_prod_Ioo_inter_ball`), however long the rectangle is.
 This is the uniform lower bound on the local measure of a domain under which Sobolev estimates on
 rectangles of unbounded length have uniform constants.
+
+Chebyshev-style point selection on `(0, δ)` shows that if `∫⁻ r in Ioo 0 δ, f r ≤ δ * B`
+with `B ≠ ∞` and `δ > 0`, then `f r ≤ B + ENNReal.ofReal δ` for some `r ∈ Ioo 0 δ`
+(`TauCeti.exists_mem_Ioo_le_add_of_setLIntegral_le`).
 -/
 
 public section
@@ -232,6 +236,23 @@ theorem ofReal_mul_ofReal_le_volume_Ioo_prod_Ioo_inter_ball {a b c d r ℓ ℓ' 
   rw [← ball_prod_same, prod_inter_prod, Measure.volume_eq_prod, Measure.prod_prod]
   exact mul_le_mul' (ofReal_le_volume_Ioo_inter_ball hℓr hℓ hz.1)
     (ofReal_le_volume_Ioo_inter_ball hℓ'r hℓ' hz.2)
+
+/-- Chebyshev-style point selection on `(0, δ)`: if `∫⁻ r in Ioo 0 δ, f r ≤ δ * B` with `δ > 0`
+and `B ≠ ∞`, then `f r ≤ B + δ` for some `r ∈ (0, δ)`. -/
+theorem exists_mem_Ioo_le_add_of_setLIntegral_le {f : ℝ → ℝ≥0∞} {B : ℝ≥0∞} (hB : B ≠ ∞)
+    {δ : ℝ} (hδ : 0 < δ) (h : ∫⁻ r in Ioo 0 δ, f r ≤ ENNReal.ofReal δ * B) :
+    ∃ r ∈ Ioo (0 : ℝ) δ, f r ≤ B + ENNReal.ofReal δ := by
+  by_contra! hgt
+  have hle : ENNReal.ofReal δ * B + ENNReal.ofReal δ * ENNReal.ofReal δ ≤ ENNReal.ofReal δ * B := by
+    have h1 : ENNReal.ofReal δ * (B + ENNReal.ofReal δ) =
+        ∫⁻ _ in Ioo 0 δ, (B + ENNReal.ofReal δ) := by
+      rw [setLIntegral_const, Real.volume_Ioo, sub_zero, mul_comm]
+    rw [← mul_add, h1]
+    exact (setLIntegral_mono' measurableSet_Ioo fun r hr ↦ (hgt r hr).le).trans h
+  have h0 : ENNReal.ofReal δ * ENNReal.ofReal δ = 0 := nonpos_iff_eq_zero.1 <|
+    WithTop.le_of_add_le_add_left (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hB)
+      (hle.trans_eq (add_zero _).symm)
+  exact mul_ne_zero (by positivity) (by positivity) h0
 
 end TauCeti
 
