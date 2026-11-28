@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Fourier.ZMod
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.Data.ZMod.Count
 
 /-!
@@ -33,8 +34,6 @@ function with values in a subring `R ⊆ ℂ` containing them again has its valu
   by Mathlib’s primitive Gauss-sum formula.
 * `ZMod.norm_invDFT_le_of_forall_norm_le`: a pointwise bound on a function also bounds every
   coefficient of its inverse Fourier transform.
-* `ZMod.stdAddChar_intCast_natCast_mul`: the additive character modulo `m n` at `n x` is the
-  additive character modulo `m` at `x`.
 * `ZMod.fourier_val_div_eq_stdAddChar`: the Fourier mode `n` at `j.val / N` on the circle is the
   standard additive character at `j * n`, and `ZMod.val_div_natCast_mem_Icc`: `j.val / N` lies in
   `[0, 1]`.
@@ -64,16 +63,6 @@ theorem norm_invDFT_le_of_forall_norm_le {N : ℕ} [NeZero N] {E : Type*}
     _ = C := by simp [ZMod.card, nsmul_eq_mul, NeZero.ne N]
 
 variable {v N : ℕ} [NeZero v] [NeZero N] {E : Type*} [AddCommGroup E] [Module ℂ E]
-
-/-- **The standard additive character at a multiple.** The standard additive character modulo
-`m n` at `n x` is the standard additive character modulo `m` at `x`: both are `e^(2π i x / m)`. -/
-theorem stdAddChar_intCast_natCast_mul {m n : ℕ} [NeZero m] [NeZero n] (x : ℤ) :
-    stdAddChar (((n * x : ℤ) : ZMod (m * n))) = stdAddChar (x : ZMod m) := by
-  have hn : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
-  rw [stdAddChar_coe, stdAddChar_coe]
-  congr 1
-  push_cast
-  field_simp
 
 /-- The Fourier mode `n` at the residue representative `j.val / N` of the circle is the standard
 additive character at `j * n`. -/
@@ -108,21 +97,19 @@ theorem dft_comp_natCast_val (hv : v ∣ N) (f : ZMod v → E) (k : ℤ) :
       ← sum_comp_natCast_val hv]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     -- the character modulo `N` at `-j L m` is the character modulo `v` at `-j m`
-    have h₁ : -(j * ((L * m : ℤ) : ZMod N)) = ((-((j.val : ℤ) * L * m) : ℤ) : ZMod N) := by
+    have h₁ : -(j * ((L * m : ℤ) : ZMod N)) = (((L : ℤ) * -((j.val : ℤ) * m) : ℤ) : ZMod N) := by
       push_cast
       rw [natCast_zmod_val]
       ring
     have h₂ : -(((j.val : ℕ) : ZMod v) * (m : ZMod v)) = ((-((j.val : ℤ) * m) : ℤ) : ZMod v) := by
       push_cast
       ring
-    rw [h₁, h₂, stdAddChar_coe, stdAddChar_coe]
-    congr 2
-    have hv' : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
-    have hL' : (L : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hL
-    have hN' : (N : ℂ) = v * L := by exact_mod_cast hN
-    rw [hN']
-    push_cast
-    field_simp
+    have : NeZero L := ⟨hL⟩
+    have hcancel {N' : ℕ} [NeZero N'] (h : N' = v * L) (x : ℤ) :
+        stdAddChar (((L * x : ℤ) : ZMod N')) = stdAddChar (x : ZMod v) := by
+      subst h
+      exact stdAddChar_intCast_natCast_mul x
+    rw [h₁, h₂, hcancel hN]
   · -- translating by `v` fixes the reduction and multiplies the transform by `e(-v k / N) ≠ 1`
     set T : ZMod N → E := fun j ↦ stdAddChar (-(j * (k : ZMod N))) • f (j.val : ZMod v)
     have hred (j : ZMod N) : (((j + v).val : ℕ) : ZMod v) = (j.val : ZMod v) := by

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.Data.Matrix.DotProduct
 import TauCeti.Data.Matrix.ZMod
 import TauCeti.Data.ZMod.MulCastHom.Sum
@@ -199,16 +200,20 @@ theorem IsSymm.sum_stdAddChar_dotProduct_mulVec_of_eq_sq_mul (hA : A.IsSymm) {N 
       push_cast
       ring
     simp only [hmul, map_intCast]
-    rw [intCast_dotProduct_mulVec, intCast_dotProduct_mulVec, stdAddChar_coe, stdAddChar_coe]
+    rw [intCast_dotProduct_mulVec, intCast_dotProduct_mulVec]
     have hsq : (fun i ↦ (p : ℤ) * v i) ⬝ᵥ A *ᵥ (fun i ↦ (p : ℤ) * v i) =
         (p : ℤ) ^ 2 * (v ⬝ᵥ A *ᵥ v) := by
       have hpv : (fun i ↦ (p : ℤ) * v i) = (p : ℤ) • v := funext fun _ ↦ (smul_eq_mul _ _).symm
       rw [hpv, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul]
       ring
-    have hp' : (p : ℂ) ≠ 0 := Nat.cast_ne_zero.2 hp
-    rw [hsq, hN]
-    push_cast
-    field_simp
+    -- `N = M p ^ 2`, and the character modulo `M p ^ 2` at `p ^ 2 k` is the one modulo `M` at `k`.
+    have : NeZero (p ^ 2) := ⟨pow_ne_zero 2 hp⟩
+    have hcancel {N' : ℕ} [NeZero N'] (h : N' = M * p ^ 2) (k : ℤ) :
+        stdAddChar ((((p : ℤ) ^ 2 * k : ℤ) : ZMod N')) = stdAddChar (k : ZMod M) := by
+      subst h
+      have := stdAddChar_intCast_natCast_mul (m := M) (n := p ^ 2) k
+      rwa [Nat.cast_pow] at this
+    rw [hsq, hcancel (by rw [hN, mul_comm])]
   simp_rw [hval]
   have h := ZMod.sum_comp_castHom (ι := ι) (m := p) (n := p * M) M rfl
     fun y : ι → ZMod M ↦ stdAddChar (y ⬝ᵥ A.map (Int.cast : ℤ → ZMod M) *ᵥ y)
@@ -237,16 +242,8 @@ theorem sum_stdAddChar_dotProduct_mulVec_mul (A : Matrix ι ι ℤ) {m n : ℕ} 
     ext i <;> simp [e, Equiv.arrowProdEquivProdArrow, map_intCast]
   rw [he]
   simp only
-  rw [intCast_dotProduct_mulVec, intCast_dotProduct_mulVec, intCast_dotProduct_mulVec,
-    stdAddChar_coe, stdAddChar_coe, stdAddChar_coe, ← Complex.exp_add]
-  congr 1
-  simp only [smul_mulVec, dotProduct_smul, smul_eq_mul, Int.cast_mul]
-  have hm : (m : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne m)
-  have hn : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne n)
-  have huv' : (u : ℂ) * n + v * m = 1 := by exact_mod_cast huv
-  push_cast
-  field_simp
-  linear_combination (-((w ⬝ᵥ A *ᵥ w : ℤ) : ℂ)) * huv'
+  simp only [intCast_dotProduct_mulVec, smul_mulVec, dotProduct_smul, smul_eq_mul]
+  exact ZMod.stdAddChar_intCast_eq_mul_of_add_eq_one huv _
 
 /-- **The Gauss sum modulo an odd prime power.** Let `A` be a symmetric integer matrix indexed by
 a type with `2k` elements, and `p ^ e` an odd prime power prime to `det A`. With

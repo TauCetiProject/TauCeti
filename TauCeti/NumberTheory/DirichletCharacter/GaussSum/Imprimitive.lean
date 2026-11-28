@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 public import TauCeti.NumberTheory.DirichletCharacter.GaussSum
-import TauCeti.Analysis.Fourier.ZMod
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.Data.ZMod.Count
 import TauCeti.NumberTheory.ArithmeticFunction.Moebius
 
