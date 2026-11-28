@@ -8,9 +8,11 @@ module
 public import TauCeti.MeasureTheory.Measure.Haar.DistribChar
 public import TauCeti.MeasureTheory.Measure.Haar.MultHaar
 public import TauCeti.MeasureTheory.Constructions.Polish.Units
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Group.Units
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.MeasureTheory.Integral.Circle.LIntegral
 
 /-!
@@ -45,6 +47,17 @@ Their pullbacks along `Units.val` are the Haar measures `TauCeti.realUnitsMultHa
 `TauCeti.integral_complexUnitsMultHaar`). Radial integrals reduce to `dt / t` on `(0, ∞)`: by
 `2` on `ℝ` (`TauCeti.integral_realMultHaar_comp_abs`) and by the annulus mass `4π` on `ℂ`
 (`TauCeti.integral_complexMultHaar_comp_norm`).
+
+For a finite type `Φ`, the product of the measures `2 dx dy / (x² + y²)` on `ℂ^Φ` is carried by
+its units `(ℂ^Φ)ˣ = (ℂˣ)^Φ` (`TauCeti.ae_isUnit_pi_complexMultHaar`).
+
+On `ℂ` there is more: in polar coordinates `2 dx dy / (x² + y²)` is `2 dr dθ / r`
+(`TauCeti.complexMultHaar_eq_smul_map_circleMap`), so, integrating out the angle, its image
+under `z ↦ |z|` is `4π dt / t`
+(`TauCeti.lintegral_complexMultHaar_comp_norm`, `TauCeti.map_norm_complexMultHaar`). So a radial
+function `z ↦ h |z|` is a.e. strongly measurable, or integrable, for it exactly when `h` is so
+for `dt / t` (`TauCeti.aestronglyMeasurable_complexMultHaar_comp_norm_iff`,
+`TauCeti.integrable_complexMultHaar_comp_norm_iff`).
 
 ## References
 
@@ -272,6 +285,14 @@ theorem complexUnitsMultHaar_def : complexUnitsMultHaar = complexMultHaar.comap 
 theorem map_val_complexUnitsMultHaar : complexUnitsMultHaar.map Units.val = complexMultHaar :=
   Units.map_val_comap_val
 
+/-- The product of the measures `2 dx dy / (x² + y²)` on `ℂ^Φ` is carried by its units
+`(ℂ^Φ)ˣ = (ℂˣ)^Φ`. -/
+theorem ae_isUnit_pi_complexMultHaar {Φ : Type*} [Fintype Φ] :
+    ∀ᵐ a ∂Measure.pi fun _ : Φ ↦ complexMultHaar, IsUnit a := by
+  filter_upwards [Filter.eventually_all.2 fun τ ↦ ae_eval_ne (fun _ : Φ ↦ complexMultHaar) τ 0]
+    with a ha
+  exact Pi.isUnit_iff.2 fun τ ↦ (ha τ).isUnit
+
 section UnitsIntegral
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -367,6 +388,121 @@ theorem integral_complexMultHaar_comp_norm (G : ℝ → E) :
   rw [integral_complexMultHaar, h, integral_multHaar_eq_setIntegral, Complex.finrank_real_complex,
     hball, hint]
   module
+
+/-- Polar coordinates as a product: `2 dx dy / (x² + y²)` is twice the image of
+`dt / t ⊗ dθ` on `(0, ∞) × (-π, π)` under `(ρ, θ) ↦ ρ e^{iθ}`. -/
+private theorem lintegral_complexMultHaar_eq_lintegral_prod {g : ℂ → ℝ≥0∞} (hg : Measurable g) :
+    ∫⁻ z, g z ∂complexMultHaar = ENNReal.ofReal 2 *
+      ∫⁻ p, g (circleMap 0 p.1 p.2) ∂(multHaar.prod (volume.restrict (Ioo (-π) π))) := by
+  have hc : Measurable fun p : ℝ × ℝ ↦ g (circleMap 0 p.1 p.2) :=
+    hg.comp (continuous_circleMap_uncurry 0).measurable
+  rw [lintegral_prod _ hc.aemeasurable, lintegral_multHaar_eq_setLIntegral,
+    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_complexMultHaar,
+    ← lintegral_circleLIntegral_eq_lintegral (by fun_prop) 0]
+  refine setLIntegral_congr_fun measurableSet_Ioi fun ρ (hρ : 0 < ρ) ↦ ?_
+  have hnorm : ∀ θ, ‖circleMap 0 ρ θ‖ = ρ := fun θ ↦ by rw [norm_circleMap_zero, abs_of_pos hρ]
+  simp only [circleLIntegral_def, hnorm]
+  rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, ← mul_assoc, ← mul_assoc,
+    ← ENNReal.ofReal_mul hρ.le, ← ENNReal.ofReal_mul zero_le_two]
+  congr 2
+  field_simp
+
+/-- **Polar coordinates for `2 dx dy / (x² + y²)`.** It is twice the image of the product measure
+`dt / t ⊗ dθ` on `(0, ∞) × (-π, π)` under `(ρ, θ) ↦ ρ e^{iθ}`. -/
+theorem complexMultHaar_eq_smul_map_circleMap :
+    complexMultHaar = ENNReal.ofReal 2 •
+      (multHaar.prod (volume.restrict (Ioo (-π) π))).map fun p ↦ circleMap 0 p.1 p.2 := by
+  refine Measure.ext_of_lintegral _ fun g hg ↦ ?_
+  rw [lintegral_smul_measure, lintegral_map hg (continuous_circleMap_uncurry 0).measurable,
+    lintegral_complexMultHaar_eq_lintegral_prod hg, smul_eq_mul]
+
+/-- In polar coordinates the norm is the radius, almost everywhere. -/
+private theorem ae_norm_circleMap_eq_fst :
+    ∀ᵐ p ∂multHaar.prod (volume.restrict (Ioo (-π) π)), ‖circleMap 0 p.1 p.2‖ = p.1 := by
+  filter_upwards [quasiMeasurePreserving_fst.ae ae_pos_multHaar] with p hp
+  rw [norm_circleMap_zero, abs_of_pos hp]
+
+/-- `(ρ, θ) ↦ ρ e^{iθ}` is quasi-measure-preserving from `dt / t ⊗ dθ` on `(0, ∞) × (-π, π)`
+to `2 dx dy / (x² + y²)`: the preimage of a `complexMultHaar`-null set is null. -/
+private theorem quasiMeasurePreserving_circleMap_prod :
+    QuasiMeasurePreserving (fun p : ℝ × ℝ ↦ circleMap 0 p.1 p.2)
+      (multHaar.prod (volume.restrict (Ioo (-π) π))) complexMultHaar := by
+  rw [complexMultHaar_eq_smul_map_circleMap]
+  exact ((continuous_circleMap_uncurry 0).measurable.quasiMeasurePreserving _).mono_right
+    (absolutelyContinuous_smul (by norm_num))
+
+/-- **The radial part of `2 dx dy / (x² + y²)`.** Its image under `z ↦ |z|` is `4π dt / t`. -/
+theorem map_norm_complexMultHaar :
+    complexMultHaar.map (‖·‖) = ENNReal.ofReal (4 * π) • multHaar := by
+  rw [complexMultHaar_eq_smul_map_circleMap, Measure.map_smul,
+    map_map continuous_norm.measurable (continuous_circleMap_uncurry 0).measurable,
+    map_congr (f := (‖·‖) ∘ fun p : ℝ × ℝ ↦ circleMap 0 p.1 p.2) (g := Prod.fst)
+      ae_norm_circleMap_eq_fst, map_fst_prod, smul_smul,
+    Measure.restrict_apply_univ, Real.volume_Ioo, ← ENNReal.ofReal_mul zero_le_two]
+  · congr 2
+    ring
+  · exact continuous_norm.aemeasurable
+
+/-- **Polar coordinates for `2 dx dy / (x² + y²)`.** The lower integral of a radial function
+`z ↦ f |z|` is `4π` times the lower integral of `f` against `dt / t`. No measurability of `f` is
+required. -/
+theorem lintegral_complexMultHaar_comp_norm (f : ℝ → ℝ≥0∞) :
+    ∫⁻ z, f ‖z‖ ∂complexMultHaar = ENNReal.ofReal (4 * π) * ∫⁻ t, f t ∂multHaar := by
+  refine le_antisymm ?_ ?_
+  · -- Through polar coordinates, where the integrand is `f ρ`, constant in the angle.
+    calc ∫⁻ z, f ‖z‖ ∂complexMultHaar
+        ≤ ENNReal.ofReal 2 *
+          ∫⁻ p, f ‖circleMap 0 p.1 p.2‖ ∂(multHaar.prod (volume.restrict (Ioo (-π) π))) := by
+          conv_lhs => rw [complexMultHaar_eq_smul_map_circleMap]
+          rw [lintegral_smul_measure, smul_eq_mul]
+          gcongr
+          exact lintegral_map_le _ (continuous_circleMap_uncurry 0).measurable.aemeasurable
+      _ = ENNReal.ofReal 2 *
+          ∫⁻ p, f p.1 ∂(multHaar.prod (volume.restrict (Ioo (-π) π))) := by
+          congr 1
+          exact lintegral_congr_ae (ae_norm_circleMap_eq_fst.mono fun p hp ↦ by simp only [hp])
+      _ ≤ ENNReal.ofReal 2 * ∫⁻ ρ, (∫⁻ _ in Ioo (-π) π, f ρ) ∂multHaar := by
+          gcongr
+          exact lintegral_prod_le _
+      _ = ENNReal.ofReal (4 * π) * ∫⁻ t, f t ∂multHaar := by
+          simp only [lintegral_const, Measure.restrict_apply_univ, Real.volume_Ioo]
+          rw [lintegral_mul_const' _ _ ENNReal.ofReal_ne_top, mul_comm (∫⁻ t, f t ∂multHaar),
+            ← mul_assoc, ← ENNReal.ofReal_mul zero_le_two]
+          congr 2
+          ring
+  · rw [← smul_eq_mul, ← lintegral_smul_measure, ← map_norm_complexMultHaar]
+    exact lintegral_map_le _ continuous_norm.aemeasurable
+
+/-- A radial function `z ↦ h |z|` is a.e. strongly measurable for `2 dx dy / (x² + y²)` exactly
+when `h` is a.e. strongly measurable for `dt / t`. -/
+@[simp]
+theorem aestronglyMeasurable_complexMultHaar_comp_norm_iff {X : Type*} [TopologicalSpace X]
+    {h : ℝ → X} :
+    AEStronglyMeasurable (fun z ↦ h ‖z‖) complexMultHaar ↔ AEStronglyMeasurable h multHaar := by
+  refine ⟨fun hh ↦ ?_, fun hh ↦ ?_⟩
+  · -- In polar coordinates `(ρ, θ)` the function is `h ρ`, constant in the angle.
+    refine AEStronglyMeasurable.of_comp_fst
+      ((hh.comp_quasiMeasurePreserving quasiMeasurePreserving_circleMap_prod).congr
+        (ae_norm_circleMap_eq_fst.mono fun p hp ↦ by simp only [Function.comp_apply, hp]))
+      (by simp [Real.pi_pos])
+  · exact (map_norm_complexMultHaar ▸ hh.smul_measure _).comp_aemeasurable
+      continuous_norm.aemeasurable
+
+/-- A radial function `z ↦ h |z|` is integrable against `2 dx dy / (x² + y²)` exactly when `h` is
+integrable against `dt / t`. -/
+@[simp]
+theorem integrable_complexMultHaar_comp_norm_iff {ε : Type*} [TopologicalSpace ε]
+    [ContinuousENorm ε] {h : ℝ → ε} :
+    Integrable (fun z ↦ h ‖z‖) complexMultHaar ↔ Integrable h multHaar := by
+  have hc : ENNReal.ofReal (4 * π) ≠ 0 := by positivity
+  rw [Integrable, Integrable, aestronglyMeasurable_complexMultHaar_comp_norm_iff,
+    hasFiniteIntegral_def, hasFiniteIntegral_def,
+    lintegral_complexMultHaar_comp_norm fun t ↦ ‖h t‖ₑ, ENNReal.mul_lt_top_iff]
+  simp only [ENNReal.ofReal_lt_top, true_and, hc, false_or]
+  -- A zero lower integral is finite.
+  refine and_congr_right fun _ ↦ or_iff_left_of_imp fun h0 ↦ ?_
+  rw [h0]
+  exact ENNReal.zero_lt_top
 
 end Radial
 
