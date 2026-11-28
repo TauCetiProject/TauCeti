@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Process.Adapted
+public import TauCeti.Probability.Process.Filtration.Measurable
 public import Mathlib.Probability.Independence.Basic
 public import TauCeti.Probability.Process.Filtration.NullAugmentation
 import TauCeti.Probability.Independence.CondExp
@@ -67,12 +67,7 @@ theorem natural_le_iff {β : ι → Type*} [∀ i, TopologicalSpace (β i)]
     [∀ i, MetrizableSpace (β i)] [∀ i, MeasurableSpace (β i)] [∀ i, BorelSpace (β i)]
     (u : (i : ι) → Ω → β i) (hu : ∀ i, StronglyMeasurable (u i)) (ℱ : Filtration ι m) :
     natural u hu ≤ ℱ ↔ Adapted ℱ u := by
-  constructor
-  · intro h i
-    exact ((stronglyAdapted_natural hu i).mono (h i)).measurable
-  · intro h i
-    exact iSup₂_le fun j hji =>
-      (measurable_iff_comap_le.mp (h j)).trans (ℱ.mono hji)
+  rw [natural_eq_naturalOfMeasurable, naturalOfMeasurable_le_iff]
 
 /-- A deterministic additive translation does not change the natural filtration. -/
 theorem natural_add_deterministic (W : ι → Ω → ℝ)
