@@ -148,7 +148,8 @@ private theorem overFrobeniusAdjoinRootHom_bijective [Nontrivial O] :
     pb.basis.ext fun i ↦ (overFrobeniusRingEquiv p O).injective <| by
       rw [AlgHom.toLinearMap_apply, LinearEquiv.coe_toLinearMap, Module.Basis.equiv_apply]
       simp [pb, overFrobeniusBasis_apply, overFrobeniusAdjoinRootHom_root]
-  exact (congrArg DFunLike.coe hEq).symm ▸ e.bijective
+  rw [show ⇑(overFrobeniusAdjoinRootHom (p := p) (O := O)) = e from congrArg DFunLike.coe hEq]
+  exact e.bijective
 
 private def overFrobeniusAdjoinRootEquiv [Nontrivial O] :
     AdjoinRoot (Polynomial.X ^ p - Polynomial.C (1 + X : O⟦X⟧)) ≃ₐ[O⟦X⟧] OverFrobenius p O :=

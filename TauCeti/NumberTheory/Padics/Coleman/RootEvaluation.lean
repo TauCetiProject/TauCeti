@@ -10,10 +10,10 @@ public import Mathlib.RingTheory.PowerSeries.Evaluation
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.NumberTheory.Padics.Coleman.Norm
 
-import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.LinearAlgebra.Vandermonde
 import Mathlib.RingTheory.PowerSeries.NoZeroDivisors
 import TauCeti.RingTheory.PowerSeries.Evaluation
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Root-of-unity evaluation of Coleman's trace and norm
@@ -163,13 +163,10 @@ theorem sum_eval₂_map_eq_map_frobeniusSubst_trace
   rw [Finset.sum_comm, Finset.sum_eq_single ⟨0, (Fact.out : p.Prime).pos⟩ ?_ (by simp)]
   · simp [trace_eq_p_mul_frobeniusCoord_zero, mul_comm]
   · intro j _ hj
-    rw [← Finset.mul_sum, ← map_sum]
-    have hsum : ∑ i : Fin p, (ζ ^ (j : ℕ)) ^ (i : ℕ) = 0 :=
-      mul_right_cancel₀ (sub_ne_zero.mpr (hζ.pow_ne_one_of_pos_of_lt
-          (fun h ↦ hj (Fin.ext h)) j.isLt)) <| by
-        rw [Fin.sum_univ_eq_sum_range, geom_sum_mul, ← pow_mul, mul_comm, pow_mul,
-          hζ.pow_eq_one, one_pow, sub_self, zero_mul]
-    rw [hsum, map_zero, mul_zero]
+    have hndvd : ¬ p ∣ (j : ℕ) := Nat.not_dvd_of_pos_of_lt
+      (Nat.pos_of_ne_zero fun h ↦ hj (Fin.ext h)) j.isLt
+    rw [← Finset.mul_sum, ← map_sum, hζ.sum_pow_pow_eq (j : ℕ)]
+    simp [hndvd]
 
 /-- **Root-of-unity product equals Frobenius of Coleman's norm** (Sharifi, Lemma 5.4.14; RJW,
 Lemmas 10.8–10.11): for prime `p`, `(p)`-adically complete `O`, a homomorphism `ρ : O →+* S` into a

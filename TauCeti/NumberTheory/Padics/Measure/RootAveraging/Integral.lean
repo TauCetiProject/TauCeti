@@ -10,16 +10,18 @@ public import TauCeti.NumberTheory.Padics.Coleman.Measure
 /-!
 # Integral root averaging and descent
 
-For a primitive `p`-th root of unity `ζ ∈ 𝓞_ℂ_[p]`, the sum of the `p` root translates indexed by
-the powers `ζ ^ i` of an integral power series is `p` times its Frobenius-after-psi projection,
-after embedding the coefficients into the integers of `ℂ_p`. The root translates are topological
-evaluations: their arguments may have nonzero constant terms. All series carry the coefficientwise
-p-adic topology.
+For a primitive `p`-th root of unity `ζ ∈ 𝓞_ℂ_[p]`, an integral series `G : ℤ_[p]⟦X⟧` descends the
+integral root average of `F : ℤ_[p]⟦X⟧`, meaning
+`(p : 𝓞_ℂ_[p]⟦X⟧) * map (integralCoefficientMap p) (frobeniusSubst ℤ_[p] p G)` equals
+`∑ i : Fin p, rootTranslation p ζ hζ.pow_eq_one i F`, if and only if `G = psiSeries p F`
+(`IsPrimitiveRoot.mul_map_subst_eq_sum_rootTranslation_iff`). Thus neither division by `p` in the
+receiving integer ring nor an inverse substitution is needed to characterize or recover
+`psiSeries`.
 
-The average descends uniquely to an integral series before Frobenius, namely `psiSeries p F`.
-Thus neither division by `p` in the receiving integer ring nor an inverse substitution is
-needed to recover psi. The identity follows from `Coleman.Measure`'s trace specialization
-`sum_rootTranslation_eq_map_frobeniusSubst_trace` together with `Coleman.trace_eq_p_mul_psiSeries`.
+The root-average sum identity itself sits in `TauCeti.NumberTheory.Padics.Coleman.Measure` via
+`IsPrimitiveRoot.sum_rootTranslation_eq_map_frobeniusSubst_trace` together with
+`TauCeti.Coleman.trace_eq_p_mul_psiSeries`. The root translates are topological evaluations in the
+coefficientwise `p`-adic topology, so their arguments may have nonzero constant terms.
 
 ## References
 

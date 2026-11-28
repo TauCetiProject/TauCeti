@@ -159,16 +159,13 @@ private theorem exists_normProjector_series (σ : O ≃+* O)
     (hσ : ∀ c : O, σ c - c ^ p ∈ Ideal.span {(p : O)}) (f : O⟦X⟧ˣ) :
     ∃ g : O⟦X⟧, ∀ n : ℕ,
       g - (((correctedNorm p O σ)^[n]) f : O⟦X⟧) ∈ Ideal.span {(p : O⟦X⟧)} ^ (n + 1) := by
-  obtain ⟨g, hg⟩ := (inferInstance : IsAdicComplete (Ideal.span {(p : O⟦X⟧)}) O⟦X⟧).prec
-      (f := fun n ↦ (((correctedNorm p O σ)^[n]) f : O⟦X⟧)) fun {m n} hmn ↦ by
-    rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top, ← neg_mem_iff, neg_sub]
-    exact Ideal.pow_le_pow_right (Nat.le_succ m)
+  obtain ⟨g, hg⟩ := IsPrecomplete.exists_sub_mem_pow (I := Ideal.span {(p : O⟦X⟧)})
+      (f := fun n ↦ (((correctedNorm p O σ)^[n]) f : O⟦X⟧)) fun {m n} hmn ↦
+    Ideal.pow_le_pow_right (Nat.le_succ m)
       (iterate_correctedNorm_sub_mem_span_pow σ hσ f hmn)
   exact ⟨g, fun n ↦ by
-    have h1 := hg (n + 1)
-    rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top, ← neg_mem_iff, neg_sub] at h1
     simpa only [sub_add_sub_cancel] using
-      add_mem h1 (iterate_correctedNorm_succ_sub_mem_span_pow σ hσ f n)⟩
+      add_mem (hg (n + 1)) (iterate_correctedNorm_succ_sub_mem_span_pow σ hσ f n)⟩
 
 private def normProjectorSeries (p : ℕ) [Fact p.Prime] (O : Type*) [CommRing O]
     [IsAdicComplete (Ideal.span {(p : O)}) O]

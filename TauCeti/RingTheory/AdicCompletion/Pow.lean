@@ -34,7 +34,9 @@ to a root congruent to it modulo `I ^ n`, and not merely modulo `I`.
 * `IsHausdorff.pow`, `IsAdicComplete.pow`, `IsHausdorff.eq_iff_sub_mem_pow`: adic Hausdorffness
   and completeness for `I` imply the same for `I ^ n` when `n ≠ 0`, and separation in an
   `I`-adically Hausdorff ring reduces equality to membership in every `I ^ n`.
-* `IsPrecomplete.pow`: adic precompleteness for `I` implies precompleteness for every `I ^ n`.
+* `IsPrecomplete.pow`, `IsPrecomplete.exists_sub_mem_pow`: adic precompleteness for `I`
+  implies precompleteness for every `I ^ n`, and yields a limit `L` with `L - f n ∈ I ^ n`
+  for any Cauchy sequence `f n - f m ∈ I ^ m`.
 -/
 
 public section
@@ -113,3 +115,15 @@ difference lies in `I ^ n` for every `n`. -/
 theorem IsHausdorff.eq_iff_sub_mem_pow [IsHausdorff I R] {x y : R} :
     x = y ↔ ∀ n : ℕ, x - y ∈ I ^ n := by
   simp_rw [eq_iff_smodEq (I := I), SModEq.sub_mem, smul_eq_mul, Ideal.mul_top]
+
+/-- In an `I`-adically precomplete commutative ring, every sequence satisfying `f n - f m ∈ I ^ m`
+for `m ≤ n` has a limit `L` with `L - f n ∈ I ^ n` for all `n`. -/
+theorem IsPrecomplete.exists_sub_mem_pow [IsPrecomplete I R] {f : ℕ → R}
+    (hf : ∀ ⦃m n : ℕ⦄, m ≤ n → f n - f m ∈ I ^ m) :
+    ∃ L : R, ∀ n : ℕ, L - f n ∈ I ^ n := by
+  obtain ⟨L, hL⟩ := IsPrecomplete.prec' (I := I) f fun {m n} hmn ↦ by
+    rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top, ← neg_mem_iff, neg_sub]
+    exact hf hmn
+  exact ⟨L, fun n ↦ by
+    have h := hL n
+    rwa [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top, ← neg_mem_iff, neg_sub] at h⟩
