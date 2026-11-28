@@ -73,6 +73,10 @@ lemma presheafHomPrecomp_eq_lift_comp_presheafHomComp {M' M N : F.obj (.mk (op S
   refine NatTrans.ext (funext fun T ↦ ConcreteCategory.hom_ext _ _ fun a ↦ ?_)
   rw [presheafHomPrecomp_app_apply, NatTrans.comp_app, ConcreteCategory.comp_apply,
     presheafHomComp_app_apply]
+  -- There is no component lemma for Cartesian lift in this functor category. The change
+  -- computes its pointwise pairing: the first projection evaluates the composite through
+  -- toUnit at the unique terminal element, and the second evaluates the identity at a.
+  -- The component lemmas above do not rewrite these projections of the pairing.
   change _ = (presheafHomGlobalSection φ).app T _ ≫ a
   rw [presheafHomGlobalSection_app_apply]
 
