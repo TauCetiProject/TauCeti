@@ -23,10 +23,11 @@ Weak duality bounds the total price of the elements by the cost of any fractiona
 provided the prices are nonnegative and the elements of each set cost at most its budget.
 This is the price bound used in the analysis of greedy set cover.
 
-When every element lies in at most `f` sets, two roundings of a fractional cover `x` give
-covers whose cost is at most `f` times the cost of `x`: the sets `i` with `1 ≤ f * x i`
-(Hochbaum), and the sets whose elements cost exactly their budget under prices as in weak
-duality (Bar-Yehuda and Even).
+Let every element lie in at most `f` sets. Then the sets `i` with `1 ≤ f * x i` form a cover
+whose cost is at most `f` times the cost of the fractional cover `x` (Hochbaum). For prices as
+in weak duality, the sets whose elements cost exactly their budget have total cost at most `f`
+times the total price, and thus at most `f` times the cost of every fractional cover
+(Bar-Yehuda and Even).
 
 ## Main statements
 
@@ -34,6 +35,8 @@ duality (Bar-Yehuda and Even).
 * `TauCeti.IsFractionalCover.exists_one_le_mul_and_mem`: an element in at most `f` sets lies in
   a set `i` with `1 ≤ f * x i`.
 * `TauCeti.IsFractionalCover.sum_cost_le_mul_of_card_le`: rounding by frequency.
+* `TauCeti.sum_tight_cost_le_mul_sum`: the sets that a pricing pays exactly cost at most `f`
+  times the total price.
 * `TauCeti.IsFractionalCover.sum_tight_cost_le_mul`: the cost bound for the sets that a pricing
   pays exactly.
 
@@ -128,11 +131,8 @@ theorem IsFractionalCover.sum_cost_le_mul_of_card_le (hx : IsFractionalCover S x
     (hc : ∀ i, 0 ≤ c i) {f : ℕ} (hf : ∀ e, #{i | e ∈ S i} ≤ f) :
     (∀ j, ∀ e ∈ S j, ∃ i, 1 ≤ f * x i ∧ e ∈ S i) ∧
       ∑ᶠ i ∈ {i | 1 ≤ f * x i}, c i ≤ f * ∑ i, c i * x i := by
-  classical
   refine ⟨fun j e he ↦ hx.exists_one_le_mul_and_mem he (hf e), ?_⟩
-  have hT : ((univ.filter fun i ↦ 1 ≤ f * x i : Finset ι) : Set ι) = {i | 1 ≤ f * x i} := by
-    ext; simp
-  rw [← hT, finsum_mem_coe_finset, mul_sum]
+  rw [← coe_filter_univ, finsum_mem_coe_finset, mul_sum]
   calc ∑ i with 1 ≤ f * x i, c i ≤ ∑ i with 1 ≤ f * x i, f * (c i * x i) :=
         sum_le_sum fun i hi ↦ by
           rw [mul_left_comm]
@@ -141,6 +141,26 @@ theorem IsFractionalCover.sum_cost_le_mul_of_card_le (hx : IsFractionalCover S x
         sum_le_sum_of_subset_of_nonneg (filter_subset _ _) fun i _ _ ↦
           mul_nonneg (Nat.cast_nonneg f) (mul_nonneg (hc i) (hx.nonneg i))
 
+/-- Pricing, the double counting step. Let every element lie in at most `f` sets of the system
+and let `y` be nonnegative prices on the union. Then the sets whose elements cost exactly their
+budget have total cost at most `f` times the total price. -/
+theorem sum_tight_cost_le_mul_sum {f : ℕ} (hf : ∀ e, #{i | e ∈ S i} ≤ f) {y : α → ℝ}
+    (hy₀ : ∀ e ∈ univ.biUnion S, 0 ≤ y e) :
+    ∑ᶠ i ∈ {i | ∑ e ∈ S i, y e = c i}, c i ≤ f * ∑ e ∈ univ.biUnion S, y e := by
+  rw [← coe_filter_univ, finsum_mem_coe_finset, mul_sum]
+  calc ∑ i with ∑ e ∈ S i, y e = c i, c i = ∑ i with ∑ e ∈ S i, y e = c i, ∑ e ∈ S i, y e :=
+        sum_congr rfl fun i hi ↦ (mem_filter.mp hi).2.symm
+    _ = ∑ e ∈ univ.biUnion S, ∑ i with ∑ e ∈ S i, y e = c i ∧ e ∈ S i, y e := by
+        refine sum_comm' fun i e ↦ ?_
+        simp only [mem_filter, mem_univ, true_and, mem_biUnion]
+        exact ⟨fun h ↦ ⟨⟨h.1, h.2⟩, i, h.2⟩, fun h ↦ h.1⟩
+    _ ≤ ∑ e ∈ univ.biUnion S, f * y e := by
+        refine sum_le_sum fun e he ↦ ?_
+        rw [sum_const, nsmul_eq_mul]
+        refine mul_le_mul_of_nonneg_right ?_ (hy₀ e he)
+        refine Nat.cast_le.mpr ((card_le_card fun i hi ↦ ?_).trans (hf e))
+        exact mem_filter.mpr ⟨mem_univ i, (mem_filter.mp hi).2.2⟩
+
 /-- Pricing (Bar-Yehuda and Even). Let every element lie in at most `f` sets of the system, and
 let `y` be nonnegative prices on the union under which the elements of each set cost at most its
 budget. Then the sets whose elements cost exactly their budget have total cost at most `f` times
@@ -148,24 +168,8 @@ the cost of any fractional cover. -/
 theorem IsFractionalCover.sum_tight_cost_le_mul (hx : IsFractionalCover S x) {f : ℕ}
     (hf : ∀ e, #{i | e ∈ S i} ≤ f) {y : α → ℝ} (hy₀ : ∀ e ∈ univ.biUnion S, 0 ≤ y e)
     (hy : ∀ i, ∑ e ∈ S i, y e ≤ c i) :
-    ∑ᶠ i ∈ {i | ∑ e ∈ S i, y e = c i}, c i ≤ f * ∑ i, c i * x i := by
-  classical
-  set T : Finset ι := {i | ∑ e ∈ S i, y e = c i}
-  have hTset : (T : Set ι) = {i | ∑ e ∈ S i, y e = c i} := by ext; simp [T]
-  rw [← hTset, finsum_mem_coe_finset]
-  calc ∑ i ∈ T, c i = ∑ i ∈ T, ∑ e ∈ S i, y e :=
-        sum_congr rfl fun i hi ↦ (mem_filter.mp hi).2.symm
-    _ = ∑ e ∈ univ.biUnion S, ∑ i ∈ T with e ∈ S i, y e := by
-        refine sum_comm' fun i e ↦ ?_
-        exact ⟨fun h ↦ ⟨mem_filter.mpr h, mem_biUnion.mpr ⟨i, mem_univ i, h.2⟩⟩,
-          fun h ↦ mem_filter.mp h.1⟩
-    _ ≤ ∑ e ∈ univ.biUnion S, f * y e := by
-        refine sum_le_sum fun e he ↦ ?_
-        rw [sum_const, nsmul_eq_mul]
-        refine mul_le_mul_of_nonneg_right ?_ (hy₀ e he)
-        exact_mod_cast (card_le_card (filter_subset_filter _ (subset_univ T))).trans (hf e)
-    _ ≤ f * ∑ i, c i * x i := by
-        rw [← mul_sum]
-        exact mul_le_mul_of_nonneg_left (hx.sum_le_sum_mul hy₀ hy) (Nat.cast_nonneg f)
+    ∑ᶠ i ∈ {i | ∑ e ∈ S i, y e = c i}, c i ≤ f * ∑ i, c i * x i :=
+  (sum_tight_cost_le_mul_sum hf hy₀).trans
+    (mul_le_mul_of_nonneg_left (hx.sum_le_sum_mul hy₀ hy) (Nat.cast_nonneg f))
 
 end TauCeti
