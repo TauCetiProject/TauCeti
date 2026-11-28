@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.Algebra.Lie.Subalgebra.Fixed.Basic
+import TauCeti.Algebra.Lie.InvariantForm.Basic
+import TauCeti.Algebra.Regular.SMul
 import TauCeti.LinearAlgebra.Eigenspace.Separation
+import TauCeti.LinearAlgebra.Eigenspace.Transport
 import TauCeti.LinearAlgebra.FixedSubmodule
 
 /-!
@@ -15,13 +18,15 @@ import TauCeti.LinearAlgebra.FixedSubmodule
 
 Let `θ` be an automorphism of a Lie algebra `L`. Its fixed vectors form the Lie subalgebra
 `𝔨 = θ.toLieHom.fixedSubalgebra`, and its `-1`-eigenspace is the submodule `𝔭 = θ.cartanP`.
-These satisfy `[𝔨, 𝔭] ⊆ 𝔭` and `[𝔭, 𝔭] ⊆ 𝔨`, and they are orthogonal for the Killing form as soon
-as the base ring has no additive torsion. When `θ` is involutive and `2` is a unit,
+These satisfy `[𝔨, 𝔭] ⊆ 𝔭` and `[𝔭, 𝔭] ⊆ 𝔨`, and they are orthogonal for the Killing form
+whenever scaling by `2` is regular on the base ring. When `θ` is involutive and `2` is a unit,
 `L = 𝔨 ⊕ 𝔭`: this is the Cartan decomposition when `θ` is a Cartan involution.
 
-The *twisted Killing form* `B_θ(x, y) = -B(x, θ y)` is invariant under every automorphism
-commuting with `θ`, in particular under `θ` itself, and it is symmetric when `θ` is involutive.
-For `x ∈ 𝔨` the operator `ad x` is skew-adjoint for `B_θ`, and for `x ∈ 𝔭` it is self-adjoint.
+The *twisted Killing form* `B_θ(x, y) = -B(x, θ y)` is invariant under every intertwining
+automorphism (in particular every automorphism commuting with `θ` and `θ` itself), and it is
+symmetric when `θ` is involutive. For every `x`, the `B_θ`-adjoint of `ad x` is `-ad (θ.symm x)`;
+in particular, for `x ∈ 𝔨` the operator `ad x` is skew-adjoint for `B_θ`, and for `x ∈ 𝔭` it is
+self-adjoint.
 
 ## Main definitions
 
@@ -30,16 +35,19 @@ For `x ∈ 𝔨` the operator `ad x` is skew-adjoint for `B_θ`, and for `x ∈ 
 
 ## Main results
 
+* `LieEquiv.cartanP_refl`, `LieEquiv.map_cartanP`: the `-1`-eigenspace of the identity and
+  transport along intertwining Lie equivalences.
 * `LieEquiv.isCompl_fixedSubalgebra_cartanP`: `L = 𝔨 ⊕ 𝔭` for an involution when `2` is a unit.
 * `LieEquiv.lie_mem_cartanP`, `LieEquiv.lie_mem_fixedSubalgebra_of_mem_cartanP`: the bracket
   relations `[𝔨, 𝔭] ⊆ 𝔭` and `[𝔭, 𝔭] ⊆ 𝔨`.
 * `LieEquiv.isLieAbelian_of_le_cartanP`: a Lie subalgebra of `𝔭` is abelian when `2` is a unit.
 * `LieEquiv.killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP`: `B(𝔨, 𝔭) = 0`.
-* `LieEquiv.twistedKillingForm_map_map_of_commute`: `B_θ` is invariant under automorphisms commuting
-  with `θ`.
+* `LieEquiv.twistedKillingForm_map_map_of_intertwine`,
+  `LieEquiv.twistedKillingForm_map_map_of_commute`: `B_θ` is preserved by intertwining equivalences
+  and automorphisms commuting with `θ`.
 * `LieEquiv.isSymm_twistedKillingForm`: `B_θ` is symmetric when `θ` is involutive.
-* `LieEquiv.twistedKillingForm_lie_apply`: for an involution `θ`, the `B_θ`-adjoint of `ad z` is
-  `ad (-θ z)`.
+* `LieEquiv.isAdjointPair_twistedKillingForm_ad`, `LieEquiv.twistedKillingForm_lie_apply`:
+  the `B_θ`-adjoint of `ad x` is `-ad (θ.symm x)` (and `ad (-θ x)` when `θ` is involutive).
 * `LieEquiv.ad_mem_skewAdjointSubmodule_twistedKillingForm`,
   `LieEquiv.ad_mem_selfAdjointSubmodule_twistedKillingForm`: `ad x` is `B_θ`-skew-adjoint for
   `x ∈ 𝔨` and `B_θ`-self-adjoint for `x ∈ 𝔭`.
@@ -58,7 +66,8 @@ open LieAlgebra LieModule
 
 namespace LieEquiv
 
-variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] (θ : L ≃ₗ⁅R⁆ L)
+variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+  [LieRing L'] [LieAlgebra R L'] (θ : L ≃ₗ⁅R⁆ L)
 
 /-! ### The eigenspaces `𝔨` and `𝔭` -/
 
@@ -79,6 +88,24 @@ variable (θ) in
 theorem cartanP_eq_eigenspace :
     θ.cartanP = Module.End.eigenspace (θ.toLinearEquiv : Module.End R L) (-1) :=
   (rfl)
+
+/-- The `-1`-eigenspace of the identity automorphism is `⊥` when scaling by `2` is injective. -/
+@[simp]
+theorem cartanP_refl (h2 : IsSMulRegular L (2 : R)) :
+    (LieEquiv.refl : L ≃ₗ⁅R⁆ L).cartanP = ⊥ := by
+  ext x
+  simp only [mem_cartanP, refl_apply, Submodule.mem_bot]
+  exact ⟨fun hx ↦ h2.eq_zero_of_eq_neg hx, fun hx ↦ by simp [hx]⟩
+
+/-- An intertwining Lie equivalence maps `θ.cartanP` onto `θ'.cartanP`. -/
+theorem map_cartanP (e : L ≃ₗ⁅R⁆ L') {θ : L ≃ₗ⁅R⁆ L} {θ' : L' ≃ₗ⁅R⁆ L'}
+    (h : ∀ x, θ' (e x) = e (θ x)) :
+    θ.cartanP.map (e : L →ₗ[R] L') = θ'.cartanP := by
+  rw [cartanP_eq_eigenspace, cartanP_eq_eigenspace,
+    TauCeti.eigenspace_eq_comap_of_intertwine (e := e.toLinearEquiv)
+      (f := (θ.toLinearEquiv : Module.End R L)) (g := (θ'.toLinearEquiv : Module.End R L'))
+      (fun x ↦ (h x).symm) (-1)]
+  exact Submodule.map_comap_eq_of_surjective e.toLinearEquiv.surjective _
 
 variable (θ) in
 /-- An automorphism and its inverse have the same `-1`-eigenspace. -/
@@ -146,22 +173,58 @@ theorem twistedKillingForm_apply (x y : L) :
     θ.twistedKillingForm x y = -killingForm R L x (θ y) := by
   simp [twistedKillingForm]
 
+/-- The twisted Killing form of the identity automorphism is minus the Killing form. -/
+@[simp]
+theorem twistedKillingForm_refl :
+    (LieEquiv.refl : L ≃ₗ⁅R⁆ L).twistedKillingForm = -killingForm R L := by
+  ext x y
+  simp
+
+/-- An intertwining Lie equivalence is an isometry between the corresponding twisted Killing
+forms. -/
+theorem twistedKillingForm_map_map_of_intertwine (e : L ≃ₗ⁅R⁆ L')
+    {θ : L ≃ₗ⁅R⁆ L} {θ' : L' ≃ₗ⁅R⁆ L'} (h : ∀ x, θ' (e x) = e (θ x)) (x y : L) :
+    θ'.twistedKillingForm (e x) (e y) = θ.twistedKillingForm x y := by
+  simp only [twistedKillingForm_apply, h, killingForm_of_equiv_apply]
+
 /-- The twisted Killing form is invariant under every automorphism commuting with `θ`. -/
 theorem twistedKillingForm_map_map_of_commute {φ : L ≃ₗ⁅R⁆ L} (hφ : ∀ x, θ (φ x) = φ (θ x))
     (x y : L) :
-    θ.twistedKillingForm (φ x) (φ y) = θ.twistedKillingForm x y := by
-  rw [twistedKillingForm_apply, twistedKillingForm_apply, hφ, killingForm_of_equiv_apply]
+    θ.twistedKillingForm (φ x) (φ y) = θ.twistedKillingForm x y :=
+  twistedKillingForm_map_map_of_intertwine φ hφ x y
 
 /-- `θ` is orthogonal for its twisted Killing form. -/
 theorem twistedKillingForm_map_map (x y : L) :
     θ.twistedKillingForm (θ x) (θ y) = θ.twistedKillingForm x y :=
   twistedKillingForm_map_map_of_commute (fun _ ↦ rfl) x y
 
+/-- On `𝔨` in the right argument, `B_θ(x, y) = -B(x, y)`. -/
+theorem twistedKillingForm_apply_of_mem_fixedSubalgebra_right (θ : L ≃ₗ⁅R⁆ L) {x y : L}
+    (hy : y ∈ θ.toLieHom.fixedSubalgebra) :
+    θ.twistedKillingForm x y = -killingForm R L x y := by
+  rw [LieHom.mem_fixedSubalgebra, coe_toLieHom] at hy
+  simp [hy]
+
+/-- On `𝔭` in the right argument, `B_θ(x, y) = B(x, y)`. -/
+theorem twistedKillingForm_apply_of_mem_cartanP_right (θ : L ≃ₗ⁅R⁆ L) {x y : L}
+    (hy : y ∈ θ.cartanP) :
+    θ.twistedKillingForm x y = killingForm R L x y := by
+  rw [mem_cartanP] at hy
+  simp [hy]
+
 /-- The twisted Killing form of an involution is symmetric. -/
 theorem isSymm_twistedKillingForm (hθ : Function.Involutive θ) : θ.twistedKillingForm.IsSymm := by
   refine ⟨fun x y ↦ ?_⟩
   rw [twistedKillingForm_apply, twistedKillingForm_apply,
     ← killingForm_of_equiv_apply θ y, hθ, traceForm_comm]
+
+/-- For any Lie algebra automorphism `θ`, the `B_θ`-adjoint of `ad x` is `-ad (θ.symm x)`. -/
+theorem isAdjointPair_twistedKillingForm_ad (θ : L ≃ₗ⁅R⁆ L) (x : L) :
+    LinearMap.IsAdjointPair θ.twistedKillingForm θ.twistedKillingForm (ad R L x)
+      (-ad R L (θ.symm x)) := by
+  intro y z
+  simp only [twistedKillingForm_apply, ad_apply, Pi.neg_apply, map_neg, neg_neg,
+    LieEquiv.map_lie, apply_symm_apply, traceForm_apply_lie_apply']
 
 /-- For an involution `θ`, the adjoint of `ad z` for the twisted Killing form is `ad (-θ z)`:
 `B_θ(⁅z, x⁆, y) = B_θ(x, ⁅-θ z, y⁆)`. -/
@@ -175,19 +238,17 @@ theorem ad_mem_skewAdjointSubmodule_twistedKillingForm {x : L}
     (hx : x ∈ θ.toLieHom.fixedSubalgebra) :
     ad R L x ∈ θ.twistedKillingForm.skewAdjointSubmodule := by
   rw [LieHom.mem_fixedSubalgebra, coe_toLieHom] at hx
-  rw [LinearMap.mem_skewAdjointSubmodule]
-  intro y z
-  simp only [twistedKillingForm_apply, Pi.neg_apply, ad_apply, map_neg, map_lie, hx, neg_neg,
-    traceForm_apply_lie_apply']
+  rw [LinearMap.mem_skewAdjointSubmodule, LinearMap.IsSkewAdjoint]
+  have hsymm : θ.symm x = x := θ.symm_apply_eq.mpr hx.symm
+  simpa [hsymm] using θ.isAdjointPair_twistedKillingForm_ad x
 
 /-- For `x ∈ 𝔭`, `ad x` is self-adjoint for the twisted Killing form. -/
 theorem ad_mem_selfAdjointSubmodule_twistedKillingForm {x : L} (hx : x ∈ θ.cartanP) :
     ad R L x ∈ θ.twistedKillingForm.selfAdjointSubmodule := by
   rw [mem_cartanP] at hx
-  rw [LinearMap.mem_selfAdjointSubmodule]
-  intro y z
-  simp only [twistedKillingForm_apply, ad_apply, map_lie, hx, neg_lie, map_neg,
-    traceForm_apply_lie_apply']
+  rw [LinearMap.mem_selfAdjointSubmodule, LinearMap.IsSelfAdjoint]
+  have hsymm : θ.symm x = -x := θ.symm_apply_eq.mpr (by rw [map_neg, hx, neg_neg])
+  simpa [hsymm] using θ.isAdjointPair_twistedKillingForm_ad x
 
 /-! ### Transport along an isomorphism -/
 
@@ -200,13 +261,8 @@ variable {e : L ≃ₗ⁅R⁆ L'}
 /-- The `-1`-eigenspace of `e ∘ θ ∘ e⁻¹` is the image under `e` of that of `θ`. -/
 @[simp]
 theorem cartanP_conj :
-    (e.conj θ).cartanP = θ.cartanP.map (e.toLinearEquiv : L →ₗ[R] L') := by
-  ext x
-  refine ⟨fun hx ↦ ⟨e.symm x, ?_, by simp⟩, ?_⟩
-  · rw [mem_cartanP, conj_apply] at hx
-    simpa using congrArg e.symm hx
-  · rintro ⟨y, hy, rfl⟩
-    simp [mem_cartanP.mp hy]
+    (e.conj θ).cartanP = θ.cartanP.map (e.toLinearEquiv : L →ₗ[R] L') :=
+  (map_cartanP e fun x ↦ by simp).symm
 
 end Conj
 

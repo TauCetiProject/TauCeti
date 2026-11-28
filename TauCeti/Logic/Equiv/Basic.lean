@@ -29,8 +29,10 @@ fiber equivalences `{a // f a = c} ≃ {b // g b = c}` (`Equiv.fiberEquiv`), upg
 (`Equiv.fiberEquivSigma`).
 
 The file also records that the transposition of two points of a linear order is the transposition
-of their minimum and maximum (`Equiv.swap_min_max`), and that an equivalence and an injective map
-intertwining two functions transport preimage witnesses (`Equiv.exists_eq_and_iff_of_injective`).
+of their minimum and maximum (`Equiv.swap_min_max`), that an equivalence and an injective map
+intertwining two functions transport preimage witnesses (`Equiv.exists_eq_and_iff_of_injective`),
+and that an equivalence intertwining two endomaps transports involutivity
+(`Equiv.involutive_iff_of_intertwine`).
 -/
 
 public section
@@ -199,5 +201,16 @@ theorem exists_eq_and_iff_of_injective {α β α₀ β₀ : Sort*} {F : α → �
     (hF : ∀ a, eB (F a) = F₀ (eA a)) {P : α₀ → Prop} {b : β} :
     (∃ a, F a = b ∧ P (eA a)) ↔ ∃ a₀, F₀ a₀ = eB b ∧ P a₀ :=
   eA.exists_congr fun a ↦ by rw [← heB.eq_iff, hF]
+
+/-- An equivalence intertwining two endomaps transports involutivity. -/
+theorem involutive_iff_of_intertwine {α β : Sort*} (e : α ≃ β) {f : α → α} {g : β → β}
+    (h : ∀ x, g (e x) = e (f x)) : Function.Involutive g ↔ Function.Involutive f := by
+  constructor
+  · intro hg x
+    apply e.injective
+    rw [← h, ← h, hg (e x)]
+  · intro hf y
+    obtain ⟨x, rfl⟩ := e.surjective y
+    rw [h, h, hf x]
 
 end Equiv

@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.CartanInvolution.Matrix
-public import Mathlib.Algebra.Lie.Classical
-public import TauCeti.Algebra.Lie.SpecialLinear.ConjTranspose
-import TauCeti.Algebra.Lie.GeneralLinear.Radical
+public import Mathlib.Basic.Real.Basic
+public import TauCeti.Algebra.Lie.CartanInvolution.Basic
 import TauCeti.Algebra.Lie.Sl2.Killing
+import TauCeti.Algebra.Lie.SpecialLinear.Cartan.Killing
 
 /-!
 # Cartan involutions of `𝔰𝔩₂(ℝ)` and of an abelian Lie algebra
@@ -35,26 +34,24 @@ namespace TauCeti
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- The Cartan involution `X ↦ -Xᵀ` of `𝔰𝔩₂(ℝ)`. -/
-local notation "θ₂" =>
-  LieSubalgebra.restrictNegConjTranspose (sl (Fin 2) ℝ) fun _ ↦ conjTranspose_mem_sl
+local notation "θ₂" => SpecialLinear.cartanInvolution (Fin 2) ℝ
 
 /-- `X ↦ -Xᵀ` is a Cartan involution of `𝔰𝔩₂(ℝ)`. -/
 example : (θ₂).IsCartanInvolution :=
-  LieSubalgebra.isCartanInvolution_restrictNegConjTranspose _ _
+  SpecialLinear.isCartanInvolution_cartanInvolution
 
 /-- **`𝔨 = 𝔰𝔬(2)`**: the fixed subalgebra of `X ↦ -Xᵀ` on `𝔰𝔩₂(ℝ)` is the skew-symmetric
 matrices. -/
-theorem mem_fixedSubalgebra_slFinTwo_negTranspose_iff {X : sl (Fin 2) ℝ} :
+example {X : sl (Fin 2) ℝ} :
     X ∈ (θ₂).toLieHom.fixedSubalgebra ↔
-      (X : Matrix (Fin 2) (Fin 2) ℝ)ᵀ = -(X : Matrix (Fin 2) (Fin 2) ℝ) := by
-  rw [LieSubalgebra.mem_fixedSubalgebra_restrictNegConjTranspose_iff,
-    conjTranspose_eq_transpose_of_trivial]
+      (X : Matrix (Fin 2) (Fin 2) ℝ)ᵀ = -(X : Matrix (Fin 2) (Fin 2) ℝ) :=
+  SpecialLinear.mem_fixedSubalgebra_cartanInvolution_iff X
 
 /-- **`𝔭` is the symmetric trace-zero matrices**: the `-1`-eigenspace of `X ↦ -Xᵀ` on
 `𝔰𝔩₂(ℝ)`. -/
-theorem mem_cartanP_slFinTwo_negTranspose_iff {X : sl (Fin 2) ℝ} :
-    X ∈ (θ₂).cartanP ↔ (X : Matrix (Fin 2) (Fin 2) ℝ)ᵀ = (X : Matrix (Fin 2) (Fin 2) ℝ) := by
-  rw [LieSubalgebra.mem_cartanP_restrictNegConjTranspose_iff, conjTranspose_eq_transpose_of_trivial]
+example {X : sl (Fin 2) ℝ} :
+    X ∈ (θ₂).cartanP ↔ (X : Matrix (Fin 2) (Fin 2) ℝ)ᵀ = (X : Matrix (Fin 2) (Fin 2) ℝ) :=
+  SpecialLinear.mem_cartanP_cartanInvolution_iff X
 
 /-- The Killing form of `𝔰𝔩₂(ℝ)` is `B(X, Y) = 4 tr(XY)`. -/
 example (X Y : sl (Fin 2) ℝ) :
@@ -63,26 +60,27 @@ example (X Y : sl (Fin 2) ℝ) :
   killingForm_slFinTwo_apply X Y
 
 /-- The twisted Killing form of `X ↦ -Xᵀ` on `𝔰𝔩₂(ℝ)` is `B_θ(X, X) = 4 tr(XXᵀ)`. -/
-theorem twistedKillingForm_slFinTwo_negTranspose_apply_self (X : sl (Fin 2) ℝ) :
+example (X : sl (Fin 2) ℝ) :
     (θ₂).twistedKillingForm X X =
       4 * ((X : Matrix (Fin 2) (Fin 2) ℝ) * (X : Matrix (Fin 2) (Fin 2) ℝ)ᵀ).trace := by
-  simp [LieEquiv.twistedKillingForm_apply, killingForm_slFinTwo_apply,
-    conjTranspose_eq_transpose_of_trivial]
+  rw [SpecialLinear.twistedKillingForm_cartanInvolution_apply]
+  norm_num
 
 /-- `B_θ(X, X) = 4 tr(XXᵀ) > 0` for nonzero `X ∈ 𝔰𝔩₂(ℝ)`. -/
 example {X : sl (Fin 2) ℝ} (hX : X ≠ 0) :
     0 < 4 * ((X : Matrix (Fin 2) (Fin 2) ℝ) * (X : Matrix (Fin 2) (Fin 2) ℝ)ᵀ).trace := by
-  rw [← twistedKillingForm_slFinTwo_negTranspose_apply_self]
-  exact (LieSubalgebra.isCartanInvolution_restrictNegConjTranspose _ _).posDef_twistedKillingForm
-    X hX
+  have htw : (θ₂).twistedKillingForm X X =
+      4 * ((X : Matrix (Fin 2) (Fin 2) ℝ) * (X : Matrix (Fin 2) (Fin 2) ℝ)ᵀ).trace := by
+    rw [SpecialLinear.twistedKillingForm_cartanInvolution_apply]
+    norm_num
+  rw [← htw]
+  exact SpecialLinear.isCartanInvolution_cartanInvolution.posDef_twistedKillingForm X hX
 
 /-- **`θ = 1` is not a Cartan involution of `𝔰𝔩₂(ℝ)`**: for `H = diag(1, -1)`,
 `B_θ(H, H) = -B(H, H) = -8 < 0`. -/
-theorem not_isCartanInvolution_refl_slFinTwo :
-    ¬ (LieEquiv.refl : sl (Fin 2) ℝ ≃ₗ⁅ℝ⁆ sl (Fin 2) ℝ).IsCartanInvolution := fun h ↦ by
-  have := h.killingForm_apply_apply_neg ((slFinTwoBasis ℝ).ne_zero 2)
-  rw [LieEquiv.refl_apply, killingForm_slFinTwoBasis] at this
-  norm_num at this
+example :
+    ¬ (LieEquiv.refl : sl (Fin 2) ℝ ≃ₗ⁅ℝ⁆ sl (Fin 2) ℝ).IsCartanInvolution :=
+  SpecialLinear.not_isCartanInvolution_refl (by simp)
 
 /-- **No involution of the abelian Lie algebra `ℝ` is a Cartan involution**: its Killing form
 vanishes. -/
