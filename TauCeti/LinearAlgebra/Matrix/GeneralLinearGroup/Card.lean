@@ -159,10 +159,8 @@ otherwise. -/
 theorem card_GL_eq_prod_nat {k n : Type*} [Field k] [Fintype n] [DecidableEq n] :
     Nat.card (GL n k) =
       ∏ i ∈ Finset.range (Fintype.card n), (Nat.card k ^ i * (Nat.card k ^ (i + 1) - 1)) := by
-  have h_card : Nat.card (GL n k) = Nat.card (GL (Fin (Fintype.card n)) k) :=
-    Nat.card_congr
-      (Units.mapEquiv (Matrix.reindexRingEquiv k (Fintype.equivFin n)).toMulEquiv).toEquiv
-  rw [h_card, natCard_GL_fin, Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum,
+  rw [Nat.card_congr (Matrix.GeneralLinearGroup.reindex k (Fintype.equivFin n)).toEquiv,
+    natCard_GL_fin, Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum,
     Finset.sum_range_id, Nat.choose_two_right]
 
 /-- The order of `GL n k` for a finite field `k`, cast into any commutative ring `R`, equals
