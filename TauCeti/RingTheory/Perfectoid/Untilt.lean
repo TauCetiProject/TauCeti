@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Perfectoid.Untilt
-public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.Algebra.Ring.NonZeroDivisors
 public import TauCeti.RingTheory.AdicCompletion.Frobenius
 public import TauCeti.RingTheory.Jacobson.Associated
@@ -37,11 +36,12 @@ same holds without the nonzerodivisor hypothesis, and the sharp map induces
 * `PreTilt.untilt_equivPerfection_symm`, `PreTilt.teichmuller₀_equivPerfection`,
   `PreTilt.untilt_zero`: compatibility of `PreTilt.untilt` and `Perfection.teichmuller₀` across
   `PreTilt.equivPerfection`, and `(0 : PreTilt A p).untilt = 0`.
+* `PreTilt.untilt_surjective`: the untilt is onto when every element of `A` has a `p`-th root.
 * `PreTilt.coeff_eq_mk_untilt_iterate`, `PreTilt.untilt_iterate_frobeniusEquiv_symm_succ_pow`:
   the `n`-th `ModP A p` coordinate of `x : PreTilt A p` is the reduction modulo `p` of
   `untilt ((frobeniusEquiv.symm^[n]) x)`, whose `p`-th powers step along the root tower.
-* `PreTilt.untilt_eq_one_of_geom_sum_eq_zero`, `PreTilt.sub_one_mem_jacobson_of_untilt_eq_one`,
-  `PreTilt.untilt_eq_one_and_ne_one_of_isPrimitiveRoot`: cyclotomic untilt identities.
+* `PreTilt.untilt_eq_one_of_geom_sum_eq_zero`, `PreTilt.sub_one_mem_jacobson_of_untilt_eq_one`:
+  cyclotomic untilt identities.
 * `PreTilt.mem_nonZeroDivisors_of_untilt`: `ϖ` is a nonzerodivisor of `PreTilt A p` whenever
   `ϖ.untilt` is a nonzerodivisor of `A`.
 * `PreTilt.untilt_eq_zero_iff`, `PreTilt.untilt_ne_zero_iff`, `PreTilt.isUnit_untilt_iff`,
@@ -97,20 +97,6 @@ theorem sub_one_mem_jacobson_of_untilt_eq_one {ε : PreTilt A p} (hε : ε.until
   refine RingHom.ker_le_jacobson_of_isLocalHom (coeff 0) ?_
   rw [RingHom.mem_ker, map_sub, map_one, ← mk_untilt_eq_coeff_zero, hε, map_one, sub_self]
 
-/-- If `ζ = (ε ^ (1 / p))♯` is a primitive `p`-th root of unity in `A`, then `ε♯ = 1` and
-`ε ≠ 1`. -/
-theorem untilt_eq_one_and_ne_one_of_isPrimitiveRoot {ε : PreTilt A p}
-    (hζ : IsPrimitiveRoot ((frobeniusEquiv (PreTilt A p) p).symm ε).untilt p) :
-    ε.untilt = 1 ∧ ε ≠ 1 := by
-  refine ⟨?_, fun h ↦ ?_⟩
-  · have hpow : (((frobeniusEquiv (PreTilt A p) p).symm ε) ^ p).untilt =
-        ((frobeniusEquiv (PreTilt A p) p).symm ε).untilt ^ p := map_pow _ _ _
-    rw [frobeniusEquiv_symm_pow_p, hζ.pow_eq_one] at hpow
-    exact hpow
-  · have h1 : (frobeniusEquiv (PreTilt A p) p).symm ε = 1 := by simp [h]
-    rw [h1, map_one] at hζ
-    exact hζ.ne_one hp.out.one_lt rfl
-
 /-- `PreTilt.untilt` on `equivPerfection.symm x` is `Perfection.teichmuller₀` on `x`. -/
 @[simp]
 theorem untilt_equivPerfection_symm (x : Perfection (ModP A p) p) :
@@ -132,6 +118,18 @@ theorem teichmuller₀_equivPerfection (x : PreTilt A p) :
 @[simp]
 theorem untilt_zero : (0 : PreTilt A p).untilt = 0 := by
   rw [← teichmuller₀_equivPerfection, map_zero, map_zero]
+
+/-- **The untilt is onto when every element has a `p`-th root.** If `x ↦ x ^ p` is surjective on
+`A`, for instance if `A` is absolutely integrally closed, then every `a ∈ A` is the untilt `x♯` of
+some `x : PreTilt A p`: reducing a compatible system of `p`-power roots of `a` modulo `p` gives `x`.
+-/
+theorem untilt_surjective (h : Function.Surjective fun x : A ↦ x ^ p) :
+    Function.Surjective (untilt : PreTilt A p → A) := by
+  intro a
+  obtain ⟨f, rfl⟩ := Perfection.coeffMonoidHom_surjective h 0 a
+  refine ⟨equivPerfection.symm
+    (Perfection.mapMonoidHom p (Ideal.Quotient.mk (span {(p : A)}) : A →* ModP A p) f), ?_⟩
+  rw [untilt_equivPerfection_symm, Perfection.teichmuller₀_mapMonoidHom_idealQuotientMk]
 
 /-- **Nonzerodivisors lift along `untilt`.** If `ϖ.untilt` is a nonzerodivisor of `A`, then `ϖ`
 is a nonzerodivisor of `PreTilt A p` (the converse can fail when `A` has nilpotent elements killed

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Pow
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.Orientation
+import TauCeti.Geometry.Manifold.DeRham.Wedge
 import TauCeti.Geometry.Symplectic.Volume
 import TauCeti.LinearAlgebra.Basis.Fin
 
@@ -32,7 +33,8 @@ orientation on which it is positive, the **symplectic orientation**
 linear symplectic orientation: its orientation of each tangent space is the symplectic orientation
 `TauCeti.SymplecticForm.orientation` of the value of `σ` there
 (`TauCeti.SmoothTwoForm.IsNondegenerate.orientationAt_volumeOrientation`), so every Darboux basis
-of a tangent space is positively oriented. Closedness of `σ` is not used.
+of a tangent space is positively oriented. Closedness of `σ` is not used, except to show that
+the volume form of a closed two-form is closed (`TauCeti.SmoothTwoForm.isClosed_volumeForm`).
 
 ## Main definitions
 
@@ -47,6 +49,7 @@ of a tangent space is positively oriented. Closedness of `σ` is not used.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.volumeForm_apply_reindex`: the volume form takes the
   value `1` on Darboux bases.
 * `TauCeti.SmoothTwoForm.volumeForm_smul`: the volume form of `c • σ` is `cⁿ` times that of `σ`.
+* `TauCeti.SmoothTwoForm.isClosed_volumeForm`: the volume form of a closed two-form is closed.
 * `TauCeti.SmoothTwoForm.isNondegenerate_iff_volumeForm_apply_ne_zero`: a two-form is
   nondegenerate exactly when its volume form vanishes nowhere.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.volumeForm_apply_ne_zero`: the volume form of a
@@ -115,6 +118,12 @@ theorem volumeForm_smul (c : ℝ) (σ : SmoothTwoForm I M) (n : ℕ) :
   refine Subtype.ext (funext fun x ↦ ?_)
   rw [Submodule.coe_smul, Pi.smul_apply, volumeForm_apply, volumeForm_apply, Submodule.coe_smul,
     Pi.smul_apply, ContinuousAlternatingMap.wedgePow_smul, smul_comm]
+
+/-- The symplectic volume form `σⁿ / n!` of a closed two-form is closed. -/
+theorem isClosed_volumeForm (hσ : σ.IsClosed) (n : ℕ) : (σ.volumeForm n).IsClosed := by
+  have h := SmoothForm.wedgePow_mem_closedForms
+    ((mem_closedForms I _).2 ((SmoothForm.isClosed_def _).1 hσ)) n
+  exact SmoothForm.IsClosed.smul _ ((SmoothForm.isClosed_def _).2 ((mem_closedForms I _).1 h))
 
 /-- **The symplectic volume form takes the value `1` on Darboux bases.** For a Darboux basis
 `(q₁, p₁, …, qₙ, pₙ)` of the tangent space at `x`, listed in this interleaved order,

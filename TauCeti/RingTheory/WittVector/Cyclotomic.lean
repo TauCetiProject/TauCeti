@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.WittVector.Frobenius
+public import TauCeti.RingTheory.WittVector.Frobenius.Basic
 public import TauCeti.RingTheory.WittVector.Primitive.Basic
 public import TauCeti.RingTheory.WittVector.Regular
 -- Proof-only: `ε ^ (1 / p) - 1` is a `p`-th root of `ε - 1`, and Jacobson elements are nonunits.
@@ -724,7 +724,7 @@ variable [Nontrivial S]
 theorem isRegular_pair_natCast_cyclotomicMu {ε : S} (hε : ε - 1 ∈ S⁰)
     (hJ : ε - 1 ∈ Ring.jacobson S) :
     IsRegular (𝕎 S) [(p : 𝕎 S), cyclotomicMu p ε] :=
-  isRegular_pair_natCast_of_coeff_zero (by simpa using hε)
+  isRegular_natCast_cons_singleton _ (by simpa using hε)
     (TauCeti.Ring.not_isUnit_of_mem_jacobson (by simpa using hJ))
 
 /-- If `ε - 1 ∈ S⁰` and `ε - 1 ∈ Ring.jacobson S`, then `[μ, p]` is regular on `W(S)`. -/
@@ -738,7 +738,7 @@ theorem isRegular_pair_cyclotomicMu_natCast {ε : S} (hε : ε - 1 ∈ S⁰)
 theorem isRegular_pair_natCast_cyclotomicXi {ε : S} (hε : ε - 1 ∈ S⁰)
     (hJ : ε - 1 ∈ Ring.jacobson S) :
     IsRegular (𝕎 S) [(p : 𝕎 S), cyclotomicXi p ε] :=
-  isRegular_pair_natCast_of_coeff_zero (cyclotomicXi_coeff_zero_mem_nonZeroDivisors p hε)
+  isRegular_natCast_cons_singleton _ (cyclotomicXi_coeff_zero_mem_nonZeroDivisors p hε)
     (TauCeti.Ring.not_isUnit_of_mem_jacobson (cyclotomicXi_coeff_zero_mem_jacobson p hJ))
 
 /-- If `ε - 1 ∈ S⁰` and `ε - 1 ∈ Ring.jacobson S`, then `[ξ, p]` is regular on `W(S)`. -/
@@ -752,7 +752,7 @@ theorem isRegular_pair_cyclotomicXi_natCast {ε : S} (hε : ε - 1 ∈ S⁰)
 theorem isRegular_pair_natCast_cyclotomicXiTilde {ε : S} (hε : ε - 1 ∈ S⁰)
     (hJ : ε - 1 ∈ Ring.jacobson S) :
     IsRegular (𝕎 S) [(p : 𝕎 S), cyclotomicXiTilde p ε] :=
-  isRegular_pair_natCast_of_coeff_zero (cyclotomicXiTilde_coeff_zero_mem_nonZeroDivisors p hε)
+  isRegular_natCast_cons_singleton _ (cyclotomicXiTilde_coeff_zero_mem_nonZeroDivisors p hε)
     (TauCeti.Ring.not_isUnit_of_mem_jacobson (by
       simpa [← cyclotomicXiTildeLevel_one] using
         cyclotomicXiTildeLevel_coeff_zero_mem_jacobson p hJ le_rfl))
@@ -771,7 +771,7 @@ theorem isRegular_pair_cyclotomicXiTilde_natCast {ε : S} (hε : ε - 1 ∈ S⁰
 theorem isRegular_pair_natCast_cyclotomicXiLevel {ε : S} (hε : ε - 1 ∈ S⁰)
     (hJ : ε - 1 ∈ Ring.jacobson S) {r : ℕ} (hr : 1 ≤ r) :
     IsRegular (𝕎 S) [(p : 𝕎 S), cyclotomicXiLevel p ε r] :=
-  isRegular_pair_natCast_of_coeff_zero (cyclotomicXiLevel_coeff_zero_mem_nonZeroDivisors p hε r)
+  isRegular_natCast_cons_singleton _ (cyclotomicXiLevel_coeff_zero_mem_nonZeroDivisors p hε r)
     (TauCeti.Ring.not_isUnit_of_mem_jacobson (cyclotomicXiLevel_coeff_zero_mem_jacobson p hJ hr))
 
 /-- If `ε - 1 ∈ S⁰`, `ε - 1 ∈ Ring.jacobson S`, and `1 ≤ r`, then `[ξ_r, p]` is regular on
@@ -787,7 +787,7 @@ theorem isRegular_pair_cyclotomicXiLevel_natCast {ε : S} (hε : ε - 1 ∈ S⁰
 theorem isRegular_pair_natCast_cyclotomicXiTildeLevel {ε : S} (hε : ε - 1 ∈ S⁰)
     (hJ : ε - 1 ∈ Ring.jacobson S) {r : ℕ} (hr : 1 ≤ r) :
     IsRegular (𝕎 S) [(p : 𝕎 S), cyclotomicXiTildeLevel p ε r] :=
-  isRegular_pair_natCast_of_coeff_zero
+  isRegular_natCast_cons_singleton _
     (cyclotomicXiTildeLevel_coeff_zero_mem_nonZeroDivisors p hε r)
     (TauCeti.Ring.not_isUnit_of_mem_jacobson
       (cyclotomicXiTildeLevel_coeff_zero_mem_jacobson p hJ hr))

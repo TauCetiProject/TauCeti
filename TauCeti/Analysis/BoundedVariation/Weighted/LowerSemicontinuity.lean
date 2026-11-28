@@ -29,6 +29,11 @@ convergence in measure, and the weighted perimeter is lower semicontinuous for i
 `(−1, 1) ∪ (1 + 1/k, 2)` converge to `(−1, 2)`. For `k > 1` their Gaussian perimeters are
 `2 φ(1) + φ(1 + 1/k) + φ(2)`, which tend to `3 φ(1) + φ(2)`, more than `φ(1) + φ(2)`.
 
+Since `e^{−W}` is bounded below by a positive constant on every compact set, convergence in
+`L¹(μ)` for `μ = e^{−W} · volume`, that is `μ(s i ∆ s₀) → 0`, implies local convergence in
+measure, so the weighted perimeter is lower semicontinuous for it too
+(`TauCeti.weightedPerimeter_le_liminf_of_tendsto_weightedMeasure_symmDiff`).
+
 The proofs adapt those of the unweighted statements `TauCeti.totalVariationOn_le_liminf` and
 `TauCeti.perimeter_le_liminf`.
 
@@ -101,6 +106,41 @@ theorem weightedPerimeter_le_liminf (hW : ContDiffOn ℝ 1 W Ω) {ι : Type*} {l
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h K hK hKΩ)
     (fun _ => zero_le) fun _ =>
       volume.setLIntegral_enorm_indicator_one_sub_le _ _ hK.isClosed.nullMeasurableSet
+
+/-- **Lower semicontinuity of the weighted perimeter in `L¹(μ)`.** For a weight `C¹` on `Ω` with
+measure `μ = e^{−W} · volume`, if `s₀` and eventually the `s i` are null-measurable in `Ω` and
+`μ(s i ∆ s₀) → 0`, then `P_μ(s₀; Ω) ≤ liminf P_μ(s i; Ω)`: on every compact subset of `Ω` the
+density `e^{−W}` is bounded below by a positive constant, so convergence in `L¹(μ)` implies local
+convergence in measure in `Ω`. -/
+theorem weightedPerimeter_le_liminf_of_tendsto_weightedMeasure_symmDiff
+    (hW : ContDiffOn ℝ 1 W Ω) {ι : Type*} {l : Filter ι} {s : ι → Set E} {s₀ : Set E}
+    (hs : ∀ᶠ i in l, NullMeasurableSet (s i) (volume.restrict Ω))
+    (hs₀ : NullMeasurableSet s₀ (volume.restrict Ω))
+    (h : Tendsto (fun i => weightedMeasure W (s i ∆ s₀)) l (𝓝 0)) :
+    weightedPerimeter W Ω s₀ ≤ liminf (fun i => weightedPerimeter W Ω (s i)) l := by
+  refine weightedPerimeter_le_liminf hW hs hs₀ fun K hK hKΩ => ?_
+  rcases K.eq_empty_or_nonempty with rfl | hne
+  · simpa using tendsto_const_nhds
+  -- On `K` the density `e^{−W}` is at least `m = e^{−W(y)} > 0`, so `|A ∩ K| ≤ μ(A) / m`.
+  have hρ : ContinuousOn (fun x => Real.exp (-W x)) K := (hW.continuousOn.mono hKΩ).neg.rexp
+  obtain ⟨y, -, hy⟩ := hK.exists_isMinOn hne hρ
+  have hm : ENNReal.ofReal (Real.exp (-W y)) ≠ 0 := (ENNReal.ofReal_pos.2 (Real.exp_pos _)).ne'
+  have hle (A : Set E) :
+      volume (A ∩ K) ≤ weightedMeasure W A / ENNReal.ofReal (Real.exp (-W y)) := by
+    rw [ENNReal.le_div_iff_mul_le (Or.inl hm) (Or.inl ENNReal.ofReal_ne_top), mul_comm]
+    calc ENNReal.ofReal (Real.exp (-W y)) * volume (A ∩ K)
+        = ∫⁻ x in A, K.indicator (fun _ => ENNReal.ofReal (Real.exp (-W y))) x := by
+          rw [lintegral_indicator_const hK.measurableSet,
+            Measure.restrict_apply hK.measurableSet, inter_comm]
+      _ ≤ ∫⁻ x in A, ENNReal.ofReal (Real.exp (-W x)) := lintegral_mono fun x => by
+          by_cases hx : x ∈ K
+          · rw [indicator_of_mem hx]
+            exact ENNReal.ofReal_le_ofReal (hy hx)
+          · rw [indicator_of_notMem hx]
+            exact zero_le
+      _ = weightedMeasure W A := by rw [weightedMeasure_def, withDensity_apply']
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa using ENNReal.Tendsto.div_const h (Or.inr hm)) (fun _ => zero_le) fun _ => hle _
 
 /-- **Lower semicontinuity of the Gaussian perimeter.** If `s₀` and eventually the `s i` are
 null-measurable, and the sets `s i` converge to `s₀` locally in measure, that is

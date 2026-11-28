@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Regular.RegularSequence
 public import Mathlib.RingTheory.WittVector.Complete
+public import TauCeti.RingTheory.WittVector.RegularSequence
 import TauCeti.RingTheory.QuotSMulTop
 import TauCeti.RingTheory.Regular.RegularSequence
 import TauCeti.RingTheory.WittVector.Teichmuller.Coeff
@@ -39,9 +40,8 @@ general lifting criterion for countable intersections of principal ideals: if `m
   regular on `W(S) ⧸ (x)`.
 * `WittVector.isWeaklyRegular_pair_natCast_of_coeff_zero` and
   `WittVector.isWeaklyRegular_pair_of_coeff_zero`: `[p, x]` and `[x, p]` are weakly regular.
-* `WittVector.isRegular_pair_natCast_of_coeff_zero` and
-  `WittVector.isRegular_pair_of_coeff_zero`: `[p, x]` and `[x, p]` are regular when additionally
-  `¬ IsUnit (x.coeff 0)`.
+* `WittVector.isRegular_pair_of_coeff_zero`: `[x, p]` is regular when additionally
+  `¬ IsUnit (x.coeff 0)` (for `[p, x]`, see `WittVector.isRegular_natCast_cons_singleton`).
 * `WittVector.iInf_span_eq_span_of_coeff_zero`: lift a principal intersection of `(x r).coeff 0`
   from `S` to `W(S)`.
 -/
@@ -81,7 +81,7 @@ theorem isSMulRegular_quotientP_iff (x : 𝕎 S) :
 /-- Multiplication by `x` on `W(S) ⧸ p W(S)` is regular iff `x.coeff 0 ∈ S⁰`. -/
 theorem isSMulRegular_quotSMulTop_natCast_iff (x : 𝕎 S) :
     IsSMulRegular (QuotSMulTop (p : 𝕎 S) (𝕎 S)) x ↔ x.coeff 0 ∈ S⁰ :=
-  (((QuotSMulTop.equivQuotientSpan (p : 𝕎 S)).restrictScalars (𝕎 S)).isSMulRegular_congr x).trans
+  ((QuotSMulTop.equivQuotSpanSingleton (p : 𝕎 S)).isSMulRegular_congr x).trans
     (isSMulRegular_quotientP_iff x)
 
 /-- If the zeroth Witt coordinate of `x` is a nonzerodivisor of `S`, then `x` is a nonzerodivisor
@@ -114,22 +114,15 @@ theorem isSMulRegular_of_coeff_zero {x : 𝕎 S} (hx : x.coeff 0 ∈ S⁰) : IsS
 /-- If `x.coeff 0 ∈ S⁰`, then `p` is regular on `W(S) ⧸ (x)`. -/
 theorem isSMulRegular_quotient_natCast_of_coeff_zero {x : 𝕎 S} (hx : x.coeff 0 ∈ S⁰) :
     IsSMulRegular (𝕎 S ⧸ span {x}) (p : 𝕎 S) := by
-  rw [isSMulRegular_quotient_iff_mem_of_smul_mem]
-  intro y hy
-  obtain ⟨z, hz⟩ := mem_span_singleton.mp hy
-  have hz0 : z.coeff 0 * x.coeff 0 = 0 := by
-    simpa [smul_eq_mul, mul_coeff_zero, coeff_p_zero, mul_comm] using congrArg (coeff · 0) hz.symm
-  obtain ⟨z', rfl⟩ := mem_span_singleton.mp
-    ((mem_span_p_iff_coeff_zero_eq_zero z).mpr (hx.2 _ hz0))
-  refine mem_span_singleton.mpr ⟨z', (mul_cancel_left_mem_nonZeroDivisors
-    p_mem_nonZeroDivisors).mp ?_⟩
-  simpa [smul_eq_mul] using by linear_combination hz
+  have hp := (isRegular_iff_mem_nonZeroDivisors.mpr (mk_natCast_mem_nonZeroDivisors x hx)).left
+  intro y z hyz
+  exact hp (by simpa only [Algebra.smul_def, Ideal.Quotient.algebraMap_eq] using hyz)
 
 /-- If `x.coeff 0 ∈ S⁰`, then `p` is regular on `W(S) ⧸ x W(S)`. -/
 theorem isSMulRegular_quotSMulTop_natCast_of_coeff_zero {x : 𝕎 S} (hx : x.coeff 0 ∈ S⁰) :
     IsSMulRegular (QuotSMulTop x (𝕎 S)) (p : 𝕎 S) :=
-  (((QuotSMulTop.equivQuotientSpan x).restrictScalars (𝕎 S)).isSMulRegular_congr
-    (p : 𝕎 S)).mpr (isSMulRegular_quotient_natCast_of_coeff_zero hx)
+  ((QuotSMulTop.equivQuotSpanSingleton x).isSMulRegular_congr (p : 𝕎 S)).mpr
+    (isSMulRegular_quotient_natCast_of_coeff_zero hx)
 
 /-- If `x.coeff 0 ∈ S⁰`, then `[p, x]` is a weakly regular sequence on `W(S)`. -/
 theorem isWeaklyRegular_pair_natCast_of_coeff_zero {x : 𝕎 S} (hx : x.coeff 0 ∈ S⁰) :
@@ -162,14 +155,6 @@ theorem span_pair_natCast_ne_top_iff (x : 𝕎 S) :
     simpa using Ideal.add_mem _ hx' hmul
   · have : span {x.coeff 0} = ⊤ := by rw [← hmap, htop, Ideal.map_top]
     exact Ideal.span_singleton_eq_top.mp this
-
-/-- If `x.coeff 0 ∈ S⁰` and `¬ IsUnit (x.coeff 0)`, then `[p, x]` is a regular sequence on `W(S)`.
--/
-theorem isRegular_pair_natCast_of_coeff_zero {x : 𝕎 S} (hx : x.coeff 0 ∈ S⁰)
-    (hnu : ¬ IsUnit (x.coeff 0)) : IsRegular (𝕎 S) [(p : 𝕎 S), x] :=
-  (isRegular_pair_iff_isWeaklyRegular_of_span_ne_top
-    ((span_pair_natCast_ne_top_iff x).mpr hnu)).mpr
-      (isWeaklyRegular_pair_natCast_of_coeff_zero hx)
 
 /-- If `x.coeff 0 ∈ S⁰` and `¬ IsUnit (x.coeff 0)`, then `[x, p]` is a regular sequence on `W(S)`.
 -/

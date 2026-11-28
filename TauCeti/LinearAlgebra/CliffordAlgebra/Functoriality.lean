@@ -42,6 +42,8 @@ Clifford algebra is faithful.
   generators along a map `f` forces `f` to preserve the quadratic forms.
 * `CliffordAlgebra.mul_eq_map_involute_mul_of_forall_ι`: an element that moves past each
   generator by an isometry `f` up to sign moves past every `a` by `map f ∘ involute`.
+* `CliffordAlgebra.equivOfIsometry_toAlgHom`: the algebra homomorphism underlying
+  `equivOfIsometry e` is `map e.toIsometry`.
 * `CliffordAlgebra.equivOfIsometry_injective`: when the generator map is injective, for instance
   when `2` is invertible, different isometry equivalences induce different algebra equivalences.
 * `CliffordAlgebra.map_evenOdd_equivOfIsometry` proves that an isometry equivalence preserves the
@@ -231,6 +233,13 @@ theorem mul_eq_map_involute_mul_of_forall_ι (f : Q₁ →qᵢ Q₁) {u : Cliffo
   | mul a b ha hb => rw [← mul_assoc, ha, mul_assoc, hb, map_mul, map_mul, mul_assoc]
   | add a b ha hb => rw [mul_add, ha, hb, map_add, map_add, add_mul]
 
+/-- The algebra homomorphism underlying `CliffordAlgebra.equivOfIsometry e` is
+`CliffordAlgebra.map e.toIsometry`. -/
+@[simp]
+theorem equivOfIsometry_toAlgHom (e : Q₁.IsometryEquiv Q₂) :
+    (equivOfIsometry e).toAlgHom = map e.toIsometry :=
+  AlgHom.ext fun x ↦ equivOfIsometry_apply e x
+
 /-- An isometry equivalence maps the even Clifford subalgebra onto the even Clifford subalgebra. -/
 theorem map_equivOfIsometry_even (e : Q₁.IsometryEquiv Q₂) :
     (even Q₁).map (equivOfIsometry e).toAlgHom = even Q₂ := by
@@ -281,6 +290,24 @@ theorem equivOfIsometry_mem_evenOdd_iff (e : Q₁.IsometryEquiv Q₂) {x : Cliff
     {i : ZMod 2} : equivOfIsometry e x ∈ evenOdd Q₂ i ↔ x ∈ evenOdd Q₁ i := by
   rw [← map_evenOdd_equivOfIsometry e i]
   exact ⟨fun ⟨y, hy, hxy⟩ ↦ (equivOfIsometry e).injective hxy ▸ hy, fun hx ↦ ⟨x, hx, rfl⟩⟩
+
+/-- The equivalence induced by an isometry equivalence sends the generator `ι Q₁ v` to
+`ι Q₂ (e v)`. This is not a `simp` lemma, because `simp` rewrites `equivOfIsometry e x` to
+`map e.toIsometry x` by `equivOfIsometry_apply`. -/
+theorem equivOfIsometry_ι (e : Q₁.IsometryEquiv Q₂) (v : M₁) :
+    equivOfIsometry e (ι Q₁ v) = ι Q₂ (e v) := by
+  rw [equivOfIsometry_apply, map_apply_ι, IsometryEquiv.toIsometry_apply]
+
+/-- Mapping a unit along the equivalence induced by an isometry equivalence `e`, and back along
+the one induced by `e.symm`, gives it back. -/
+@[simp]
+theorem units_map_equivOfIsometry_symm_units_map (e : Q₁.IsometryEquiv Q₂)
+    (x : (CliffordAlgebra Q₁)ˣ) :
+    Units.map (equivOfIsometry e.symm : CliffordAlgebra Q₂ →* CliffordAlgebra Q₁)
+      (Units.map (equivOfIsometry e : CliffordAlgebra Q₁ →* CliffordAlgebra Q₂) x) = x :=
+  Units.ext <| by
+    rw [Units.coe_map, Units.coe_map, MonoidHom.coe_ofClass, MonoidHom.coe_ofClass,
+      ← equivOfIsometry_symm, AlgEquiv.symm_apply_apply]
 
 /-- The Clifford-algebra equivalence induced by a quadratic isometry equivalence, restricted to
 the even subalgebras. -/

@@ -19,7 +19,9 @@ This file proves that identity for all integer frequencies, where the sign-rever
 contributes a second Kronecker delta, and its normalized form, in which the system
 `√(2/π) · sin (k ·)` is orthonormal. The key computation is the single-mode integral
 `∫₀^π cos (k θ) dθ = 0` for a nonzero integer `k`, combined with the product-to-sum identity
-`2 sin x sin y = cos (x - y) - cos (x + y)`.
+`2 sin x sin y = cos (x - y) - cos (x + y)`. The affine substitution `θ = π (t - a) / (b - a)`
+carries the orthogonality to the Dirichlet sine modes `sin (k π (t - a) / (b - a))` of any interval
+`[a, b]`, whose products are the separated Dirichlet eigenfunctions of a box.
 
 The cosine counterpart is recorded in the Chebyshev vocabulary, as
 `TauCeti.integral_chebyshevCosine_mul_chebyshevCosine_eq_ite`
@@ -34,11 +36,15 @@ degree-`0` cosine mode has square norm `π`.
   otherwise.
 * `TauCeti.integral_sin_int_mul_mul_sin_int_mul`: the orthogonality relation
   `∫₀^π sin (m θ) sin (n θ) dθ = (π / 2) · (δ_{m,n} - δ_{m,-n})` for all integers `m` and `n`.
+* `TauCeti.integral_sin_int_mul_sq` and `TauCeti.integral_cos_int_mul_sq`: `∫₀^π sin (k θ)² dθ`
+  and `∫₀^π cos (k θ)² dθ` are both `π / 2` for a nonzero integer `k`.
 * `TauCeti.integral_sin_succ_mul_sin_succ`: the same relation indexed by the positive frequencies
   `m + 1`, where the right-hand side is a plain Kronecker delta, and
   `TauCeti.two_div_pi_mul_integral_sin_succ_mul_sin_succ`, its normalized restatement
   `(2/π) ∫₀^π sin ((m+1) θ) sin ((n+1) θ) dθ = δ_{mn}`, to which the character orthonormality
   of `SU(2)` reduces (`TauCeti/RepresentationTheory/SU2/Weyl/Orthogonality.lean`).
+* `TauCeti.integral_sin_mul_sin_eq_zero_of_ne`: the orthogonality transported to an arbitrary
+  interval `[a, b]`, for its Dirichlet modes `sin (k π (t - a) / (b - a))` with distinct `k`.
 
 ## References
 
@@ -79,6 +85,23 @@ theorem integral_sin_int_mul_mul_sin_int_mul (m n : ℤ) :
   simp only [sub_eq_zero, add_eq_zero_iff_eq_neg]
   split_ifs <;> ring
 
+/-- `∫₀^π sin (k θ)² dθ = π / 2` for a nonzero integer `k`: the square norm of a nonzero sine
+mode on `[0, π]`, the diagonal case of `TauCeti.integral_sin_int_mul_mul_sin_int_mul`. -/
+theorem integral_sin_int_mul_sq {k : ℤ} (hk : k ≠ 0) :
+    ∫ θ in (0 : ℝ)..Real.pi, Real.sin ((k : ℝ) * θ) ^ 2 = Real.pi / 2 := by
+  simp_rw [sq]
+  rw [integral_sin_int_mul_mul_sin_int_mul, ite_eq_left rfl, ite_eq_right (by omega), sub_zero]
+
+/-- `∫₀^π cos (k θ)² dθ = π / 2` for a nonzero integer `k`: the square norm of a nonzero cosine
+mode on `[0, π]`, obtained from `TauCeti.integral_sin_int_mul_sq` since `cos² = 1 - sin²`. -/
+theorem integral_cos_int_mul_sq {k : ℤ} (hk : k ≠ 0) :
+    ∫ θ in (0 : ℝ)..Real.pi, Real.cos ((k : ℝ) * θ) ^ 2 = Real.pi / 2 := by
+  simp_rw [Real.cos_sq']
+  rw [intervalIntegral.integral_sub intervalIntegrable_const
+    ((by fun_prop : Continuous _).intervalIntegrable _ _), integral_sin_int_mul_sq hk]
+  simp
+  ring
+
 /-- The sine system indexed by its positive frequencies `m + 1`, where the sign-reversed mode of
 `TauCeti.integral_sin_int_mul_mul_sin_int_mul` is out of range and the right-hand side is a plain
 Kronecker delta: `∫₀^π sin ((m+1) θ) sin ((n+1) θ) dθ = (π / 2) · δ_{mn}`. -/
@@ -104,5 +127,30 @@ theorem two_div_pi_mul_integral_sin_succ_mul_sin_succ (m n : ℕ) :
       = if m = n then 1 else 0 := by
   rw [integral_sin_succ_mul_sin_succ]
   split_ifs <;> simp [field]
+
+/-- **Orthogonality of the Dirichlet sine modes of an interval.** For distinct natural numbers `k`
+and `l`, the modes `sin (k π (t - a) / (b - a))` and `sin (l π (t - a) / (b - a))`, which vanish at
+both ends of `[a, b]`, are orthogonal on it. The substitution `θ = π (t - a) / (b - a)` reduces
+this to `TauCeti.integral_sin_int_mul_mul_sin_int_mul` on `[0, π]`. -/
+theorem integral_sin_mul_sin_eq_zero_of_ne (a b : ℝ) {k l : ℕ} (hkl : k ≠ l) :
+    ∫ t in a..b, Real.sin ((k * Real.pi / (b - a)) * (t - a)) *
+      Real.sin ((l * Real.pi / (b - a)) * (t - a)) = 0 := by
+  rcases eq_or_ne a b with rfl | hab
+  · exact intervalIntegral.integral_same
+  have hba : b - a ≠ 0 := sub_ne_zero.mpr hab.symm
+  have hc : Real.pi / (b - a) ≠ 0 := div_ne_zero Real.pi_ne_zero hba
+  have h := intervalIntegral.integral_comp_mul_sub
+    (fun θ ↦ Real.sin (((k : ℤ) : ℝ) * θ) * Real.sin (((l : ℤ) : ℝ) * θ)) hc
+    (Real.pi / (b - a) * a) (a := a) (b := b)
+  have hb : Real.pi / (b - a) * b - Real.pi / (b - a) * a = Real.pi := by
+    field_simp
+  have h1 : (k : ℤ) ≠ l := by exact_mod_cast hkl
+  have h2 : (k : ℤ) ≠ -l := by omega
+  rw [sub_self, hb, integral_sin_int_mul_mul_sin_int_mul] at h
+  simp only [h1, h2, ↓reduceIte, sub_self, smul_zero] at h
+  rw [← h]
+  congr 1 with t
+  push_cast
+  ring_nf
 
 end TauCeti

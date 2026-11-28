@@ -47,8 +47,9 @@ At the narrow modulus the residue factor is trivial and the formula becomes
 
 ## Main results
 
-* `TauCeti.GlobalNumberFields.card_ker_rayClassToClassGroup_mul_index`: the order of the kernel of
-  `RayClassGroup 𝔪 → ClassGroup (𝓞 K)`.
+* `TauCeti.GlobalNumberFields.card_ker_rayClassToClassGroup_mul_index` and
+  `TauCeti.GlobalNumberFields.card_ker_rayClassToClassGroup_mul_index_of_infinitePart_eq_empty`:
+  the order of the kernel of `RayClassGroup 𝔪 → ClassGroup (𝓞 K)`.
 * `TauCeti.GlobalNumberFields.card_rayClassGroup_mul_index` and
   `TauCeti.GlobalNumberFields.card_rayClassGroup`: the ray class number formula.
 * `TauCeti.GlobalNumberFields.card_rayClassGroup_narrowModulus_mul_index`: its narrow case.
@@ -92,6 +93,14 @@ theorem card_ker_rayClassToClassGroup_mul_index (𝔪 : Modulus K) :
       MonoidHom.range_eq_top.mpr (residueSignHom_surjective 𝔪), Subgroup.card_top]
   rw [← range_residueSignRayClass, ← hunits, ← hA, ← (residueSignRayClass 𝔪).ker.card_mul_index,
     Subgroup.index_ker, ker_residueSignRayClass, mul_comm]
+
+/-- When `𝔪.infinitePart = ∅`, the order of `(rayClassToClassGroup 𝔪).ker` times the index of the
+congruent global units equals `#(𝓞 K ⧸ 𝔪.finitePart)ˣ`. -/
+theorem card_ker_rayClassToClassGroup_mul_index_of_infinitePart_eq_empty {𝔪 : Modulus K}
+    (h : 𝔪.infinitePart = ∅) :
+    Nat.card (rayClassToClassGroup 𝔪).ker * (unitsCongruenceSubgroup 𝔪).index =
+      Nat.card (𝓞 K ⧸ 𝔪.finitePart)ˣ := by
+  simpa [h] using card_ker_rayClassToClassGroup_mul_index 𝔪
 
 /-- **The ray class number formula.**  The order of the ray class group, times the index of the
 units congruent to one modulo `𝔪`, is the class number times the number of residue units modulo the

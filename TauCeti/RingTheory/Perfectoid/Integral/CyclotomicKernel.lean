@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import Mathlib.RingTheory.Valuation.Integral
-public import TauCeti.RingTheory.Perfectoid.Cyclotomic
+public import TauCeti.RingTheory.Perfectoid.Cyclotomic.Basic
 public import TauCeti.RingTheory.Perfectoid.IsAlgClosed
 public import TauCeti.RingTheory.Perfectoid.PreTilt.ValuationRing
 public import TauCeti.RingTheory.WittVector.Cyclotomic

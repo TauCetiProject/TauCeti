@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency.Basic
 import TauCeti.Analysis.Distribution.TemperateGrowth
 
 /-!
@@ -39,7 +39,7 @@ quantization of a uniform symbol.
 
 On `ℝⁿ`, a smooth coefficient `b(ξ)` with `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩ ^ (m - k)` is a symbol of order
 `m` with estimates uniform in the position (`TauCeti.Symbol.ofFrequency`), and its quantization
-is `b(D)`. For the examples of `TauCeti.Analysis.Pseudodifferential.Symbol.Frequency`, the
+is `b(D)`. For the examples of `TauCeti.Analysis.Pseudodifferential.Symbol.Frequency.Basic`, the
 quantization of the Bessel weight (`TauCeti.Symbol.besselPotential`, of order `s`) is Mathlib's
 Fourier multiplier `(1 + ‖ζ‖²) ^ (s / 2)`, the Schwartz-space form of
 `TemperedDistribution.besselPotential`, and the quantization of the linear coefficient `⟪ξ, v⟫`
