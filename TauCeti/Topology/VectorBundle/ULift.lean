@@ -29,27 +29,13 @@ variable {B : Type u} (F : Type v) (E : B → Type w) [TopologicalSpace (TotalSp
   [NormedSpace 𝕜 F] [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)]
   [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle 𝕜 F E]
 
-/-- Transport `VectorBundle` along `e_homeo` by substituting an equal family `(e ·).toHomeomorph`
-and applying `VectorBundle.ofContinuousLinearEquiv` (whose `FiberBundle` agrees definitionally). -/
-private theorem vectorBundle_ofHomeomorph_eq
-    {E' : B → Type w'} [∀ b, AddCommMonoid (E' b)] [∀ b, Module 𝕜 (E' b)]
-    [∀ b, TopologicalSpace (E' b)] [TopologicalSpace (TotalSpace F E')]
-    (e : ∀ b : B, E' b ≃L[𝕜] E b) (e_homeo : ∀ b : B, E' b ≃ₜ E b)
-    (h_ind : Topology.IsInducing
-      (fun p : TotalSpace F E' ↦ (⟨p.proj, e_homeo p.proj p.snd⟩ : TotalSpace F E)))
-    (he : e_homeo = fun b ↦ (e b).toHomeomorph) :
-    letI := FiberBundle.ofHomeomorph F e_homeo h_ind
-    VectorBundle 𝕜 F E' := by
-  subst he
-  exact VectorBundle.ofContinuousLinearEquiv F e h_ind
-
 /-- Transport a `VectorBundle` structure to the universe-lifted fibre family `ULift (E ·)`. -/
 instance instVectorBundleULift : VectorBundle 𝕜 F (fun b ↦ ULift.{w'} (E b)) :=
-  vectorBundle_ofHomeomorph_eq F E
+  VectorBundle.ofHomeomorph_of_eq F
     (fun b ↦ (ContinuousLinearEquiv.ulift : ULift.{w'} (E b) ≃L[𝕜] E b))
     (fun _ ↦ Homeomorph.ulift)
     (isInducing_totalSpaceInduced F (fun _ ↦ Equiv.ulift))
-    (funext fun _ ↦ Homeomorph.ext fun _ ↦ rfl)
+    (fun _ _ ↦ rfl)
 
 /-- On the universe-lifted vector bundle, the preferred chart equivalence at `b` factors through
 `ContinuousLinearEquiv.ulift`. -/
@@ -65,11 +51,11 @@ instance instVectorBundleULift : VectorBundle 𝕜 F (fun b ↦ ULift.{w'} (E b)
 /-- Transport a `VectorBundle` structure to the shrunk fibre family `Shrink (E ·)`. -/
 instance instVectorBundleShrink [∀ b, Small.{w'} (E b)] :
     VectorBundle 𝕜 F (fun b ↦ Shrink.{w'} (E b)) :=
-  vectorBundle_ofHomeomorph_eq F E
+  VectorBundle.ofHomeomorph_of_eq F
     (fun b ↦ Shrink.continuousLinearEquiv 𝕜 (E b))
     (fun b ↦ (Shrink.homeomorph (E b)).symm)
     (isInducing_totalSpaceInduced F (fun b ↦ (equivShrink (E b)).symm))
-    (funext fun _ ↦ Homeomorph.ext fun _ ↦ rfl)
+    (fun _ _ ↦ rfl)
 
 /-- On the shrunk vector bundle, the preferred chart equivalence at `b` factors through
 `Shrink.continuousLinearEquiv`. -/
