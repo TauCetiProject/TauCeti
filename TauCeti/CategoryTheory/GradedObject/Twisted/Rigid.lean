@@ -24,9 +24,9 @@ zero, and the coevaluation `𝟙_ ⟶ X ⊗ Y` is the sum over the support of `X
 `𝟙_ C ⟶ X i ⊗ Y (-i)`, each scaled by `(c.ω i (-i) i)⁻¹`. This scalar cancels the twisted
 associator in the zigzag identity on `X`, and in the zigzag identity on `Y` it cancels against
 `c.ω (-i) i (-i)`, by the cocycle identity
-(`TauCeti.GradedObject.TwistingCocycle.ω_mul_ω_neg_eq_one`). For the one-dimensional objects
+(`TauCeti.GradedObject.TwistingCocycle.ω_mul_ω_neg_eq_one`). For the free rank-one objects
 `δ_g` of `Vec^ω_G` this is the standard duality: the dual of `δ_g` sits in degree `g⁻¹`, the
-evaluation is that of the underlying vector spaces, and the coevaluation carries the scalar
+evaluation is that of the underlying modules, and the coevaluation carries the scalar
 `ω(g, g⁻¹, g)⁻¹`.
 
 ## Main definitions
