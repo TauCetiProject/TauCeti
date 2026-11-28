@@ -48,6 +48,9 @@ self-adjoint operator, to operators on real Hilbert spaces.
   `WithLp.instComplexificationCompleteSpace` as a consequence.
 * `WithLp.finrank_complexification`: the complexification of a finite-dimensional space has
   complex dimension the real dimension of `X`.
+* `Submodule.complexifyL2`: the `L²` complexification of a real subspace, with
+  `Submodule.span_complexificationOfRealₗᵢ_image`, `Submodule.complexifyL2_orthogonal`,
+  `Submodule.isOrtho_complexifyL2_iff`, and `Submodule.complexifyL2_le_orthogonal_iff`.
 * `ContinuousLinearMap.complexifyL2`: the complexification of a bounded real operator, with
   `ContinuousLinearMap.eq_complexifyL2_iff` (it is the unique complex-linear extension),
   `ContinuousLinearMap.norm_complexifyL2`, `ContinuousLinearMap.complexifyL2_comp` and
@@ -278,6 +281,46 @@ def complexifyL2 (S : Submodule ℝ E) : Submodule ℂ (WithLp 2 (Complexificati
 @[simp]
 theorem mem_complexifyL2 (S : Submodule ℝ E) (z : WithLp 2 (Complexification E)) :
     z ∈ S.complexifyL2 ↔ z.ofLp.re ∈ S ∧ z.ofLp.im ∈ S := Iff.rfl
+
+@[simp]
+theorem complexifyL2_le_iff {S T : Submodule ℝ E} :
+    S.complexifyL2 ≤ T.complexifyL2 ↔ S ≤ T := by
+  refine ⟨fun h x hx ↦ ?_, fun h z hz ↦ ⟨h hz.left, h hz.right⟩⟩
+  simpa using (h (by simpa using hx : toLp 2 (Complexification.ofReal x) ∈ S.complexifyL2)).left
+
+@[simp]
+theorem complexifyL2_inj {S T : Submodule ℝ E} :
+    S.complexifyL2 = T.complexifyL2 ↔ S = T := by
+  rw [le_antisymm_iff, le_antisymm_iff, complexifyL2_le_iff, complexifyL2_le_iff]
+
+@[simp]
+theorem complexifyL2_bot : (⊥ : Submodule ℝ E).complexifyL2 = ⊥ := by
+  ext z
+  simp only [mem_complexifyL2, mem_bot]
+  exact ⟨fun ⟨hre, him⟩ ↦ ofLp_injective 2 (Complexification.ext hre him),
+    fun h ↦ by subst h; exact ⟨rfl, rfl⟩⟩
+
+@[simp]
+theorem complexifyL2_top : (⊤ : Submodule ℝ E).complexifyL2 = ⊤ := by
+  ext z
+  simp
+
+/-- The complexification `S.complexifyL2` is the complex linear span of the real image of `S`. -/
+theorem span_complexificationOfRealₗᵢ_image (S : Submodule ℝ E) :
+    Submodule.span ℂ (complexificationOfRealₗᵢ E '' (S : Set E)) = S.complexifyL2 := by
+  refine le_antisymm (Submodule.span_le.mpr ?_) fun z hz ↦ ?_
+  · rintro _ ⟨x, hx, rfl⟩
+    simpa using hx
+  · have hre : toLp 2 (Complexification.ofReal z.ofLp.re) ∈
+        Submodule.span ℂ (complexificationOfRealₗᵢ E '' (S : Set E)) :=
+      Submodule.subset_span ⟨z.ofLp.re, hz.left, rfl⟩
+    have him : toLp 2 (Complexification.ofReal z.ofLp.im) ∈
+        Submodule.span ℂ (complexificationOfRealₗᵢ E '' (S : Set E)) :=
+      Submodule.subset_span ⟨z.ofLp.im, hz.right, rfl⟩
+    have hz_eq : z = toLp 2 (Complexification.ofReal z.ofLp.re) +
+        Complex.I • toLp 2 (Complexification.ofReal z.ofLp.im) := by
+      rw [← toLp_smul, ← toLp_add, Complexification.re_add_I_smul_im, toLp_ofLp]
+    exact hz_eq ▸ add_mem hre (Submodule.smul_mem _ Complex.I him)
 
 /-- Complexifying a real subspace preserves and reflects density. -/
 @[simp]
@@ -517,6 +560,17 @@ theorem complexifyL2_orthogonal (U : Submodule ℝ E) :
     · rw [mem_orthogonal]
       intro u hu
       simpa using congrArg Complex.im (h u hu)
+
+/-- Complexifying real subspaces preserves and reflects orthogonality (`S ≤ Tᗮ`). -/
+theorem complexifyL2_le_orthogonal_iff {S T : Submodule ℝ E} :
+    S.complexifyL2 ≤ T.complexifyL2ᗮ ↔ S ≤ Tᗮ := by
+  rw [← complexifyL2_orthogonal, complexifyL2_le_iff]
+
+/-- Complexifying real subspaces preserves and reflects `Submodule.IsOrtho`. -/
+@[simp]
+theorem isOrtho_complexifyL2_iff {S T : Submodule ℝ E} :
+    S.complexifyL2 ⟂ T.complexifyL2 ↔ S ⟂ T := by
+  rw [isOrtho_iff_le, isOrtho_iff_le, complexifyL2_le_orthogonal_iff]
 
 variable (U : Submodule ℝ E) [U.HasOrthogonalProjection]
 

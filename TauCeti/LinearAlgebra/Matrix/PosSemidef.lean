@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import TauCeti.LinearAlgebra.Matrix.Block
+import TauCeti.Analysis.Matrix.GramFactorization
 
 /-!
 # Positive-semidefinite matrix algebra
@@ -45,6 +46,8 @@ but do not depend on Tau Ceti's positive-definite-function theory.
   when the lower-right diagonal block is zero.
 * `Matrix.PosSemidef.mulVec_eq_zero_of_posSemidef_sub`: null vectors of `B` are null vectors of
   `A` when `A` and `B - A` are positive semidefinite.
+* `Matrix.posSemidef_map_ofReal_iff` and `Matrix.posSemidef_map_complex_ofReal_iff`: casting a real
+  matrix into `𝕜` (`ℝ` or `ℂ`) preserves and reflects positive semidefiniteness.
 
 ## References
 
@@ -350,3 +353,46 @@ theorem mulVec_eq_zero_of_posSemidef_sub [Fintype ι] {A B : Matrix ι ι R} (hA
   exact hA.dotProduct_mulVec_zero_iff.1 (le_antisymm h (hA.dotProduct_mulVec_nonneg x))
 
 end Matrix.PosSemidef
+
+/-- Entrywise casting of a real matrix `C : Matrix α α ℝ` into `𝕜` (`ℝ` or `ℂ`) preserves and
+reflects positive semidefiniteness. -/
+@[simp]
+theorem Matrix.posSemidef_map_ofReal_iff {α 𝕜 : Type*} [RCLike 𝕜] {C : Matrix α α ℝ} :
+    (C.map ((↑) : ℝ → 𝕜)).PosSemidef ↔ C.PosSemidef := by
+  classical
+  rw [posSemidef_iff_submatrix_finset, posSemidef_iff_submatrix_finset]
+  refine forall_congr' fun s => ⟨fun h => posSemidef_iff_dotProduct_mulVec.mpr ⟨?_, fun x => ?_⟩,
+    fun h => ?_⟩
+  · ext i j
+    apply RCLike.ofReal_injective (K := 𝕜)
+    simpa [Matrix.conjTranspose_apply, RCLike.star_def] using h.isHermitian.apply i j
+  · have hy := (posSemidef_iff_dotProduct_mulVec.mp h).right fun i => (x i : 𝕜)
+    have hdot :
+        star (fun i : s => (x i : 𝕜)) ⬝ᵥ
+            (C.map ((↑) : ℝ → 𝕜)).submatrix ((↑) : s → α) ((↑) : s → α) *ᵥ
+              (fun i : s => (x i : 𝕜)) =
+          ((star x ⬝ᵥ C.submatrix ((↑) : s → α) ((↑) : s → α) *ᵥ x : ℝ) : 𝕜) := by
+      simp [dotProduct, Matrix.mulVec, RCLike.star_def]
+    exact RCLike.ofReal_nonneg.mp (hdot ▸ hy)
+  · obtain ⟨B, hB⟩ := posSemidef_iff_eq_conjTranspose_mul_self.mp h
+    have heq : (C.map ((↑) : ℝ → 𝕜)).submatrix ((↑) : s → α) ((↑) : s → α) =
+        (B.map (algebraMap ℝ 𝕜))ᴴ * B.map (algebraMap ℝ 𝕜) := by
+      have hsub : (C.map ((↑) : ℝ → 𝕜)).submatrix ((↑) : s → α) ((↑) : s → α) =
+          (C.submatrix ((↑) : s → α) ((↑) : s → α)).map (algebraMap ℝ 𝕜) := by
+        ext i j
+        simp
+      rw [hsub, hB, Matrix.map_mul]
+      congr 1
+      ext i j
+      simp
+    exact heq ▸ posSemidef_conjTranspose_mul_self _
+
+/-- Entrywise casting of a real matrix `C : Matrix α α ℝ` into `ℂ` preserves and reflects positive
+semidefiniteness. Kept as a separate `@[simp]` lemma alongside `Matrix.posSemidef_map_ofReal_iff`
+because `((↑) : ℝ → ℂ)` elaborates to `Complex.ofReal` rather than `RCLike.ofReal`, so `simp` and
+`rw` do not match `C.map Complex.ofReal` against `Matrix.posSemidef_map_ofReal_iff` (paralleling
+Mathlib's `integral_complex_ofReal` alongside `integral_ofReal`). -/
+@[simp]
+theorem Matrix.posSemidef_map_complex_ofReal_iff {α : Type*} {C : Matrix α α ℝ} :
+    (C.map ((↑) : ℝ → ℂ)).PosSemidef ↔ C.PosSemidef :=
+  Matrix.posSemidef_map_ofReal_iff (𝕜 := ℂ)

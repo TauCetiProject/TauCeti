@@ -882,11 +882,29 @@ theorem field_injective : Function.Injective (field 𝕜 (H := H)) := by
   exact sub_eq_zero.mp hnorm
 
 @[simp]
+theorem field_inj {h k : H} : field 𝕜 h = field 𝕜 k ↔ h = k :=
+  field_injective.eq_iff
+
+@[simp]
 theorem field_eq_zero_iff {h : H} : field 𝕜 h = 0 ↔ h = 0 :=
   ⟨fun hh => field_injective (hh.trans field_zero.symm), fun hh => hh ▸ field_zero⟩
 
+@[fun_prop]
+theorem continuous_field :
+    Continuous (field 𝕜 : H → FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H) :=
+  (LipschitzWith.of_dist_le_mul (K := 2) fun h k => by
+    rw [dist_eq_norm, dist_eq_norm, ← field_sub, norm_field]
+    rfl).continuous
+
 @[simp]
 theorem field_vacuum (h : H) : field 𝕜 h vacuum = creation 𝕜 h vacuum := by
+  simp [field_apply]
+
+/-- Acting by `field 𝕜 h` on a nonempty pure tensor word prepends `h` and contracts `h` against the
+head letter `k`. -/
+theorem field_wordVector_cons (h k : H) (w : List H) :
+    field 𝕜 h (wordVector 𝕜 (k :: w)) =
+      wordVector 𝕜 (h :: k :: w) + ⟪h, k⟫_𝕜 • wordVector 𝕜 w := by
   simp [field_apply]
 
 @[simp]

@@ -9,8 +9,7 @@ public import Mathlib.Analysis.Matrix.Order
 public import TauCeti.Combinatorics.NoncrossingPartition.Pairing
 public import TauCeti.Probability.FreeProbability.Distribution.Basic
 public import TauCeti.Probability.FreeProbability.Semicircular.Basic
-import TauCeti.Analysis.StarAlgebra.GNS.Basic
-import TauCeti.LinearAlgebra.Matrix.PosSemidef
+import TauCeti.Analysis.StarAlgebra.GNS.PosSemidef
 
 /-!
 # Semicircular systems
@@ -365,6 +364,16 @@ theorem isSemicircularSystem_iff_isSemicircular [Unique ι] :
   exact ⟨fun h => h.2.2 default, fun h => ⟨h.apply_one,
     isFreelyIndependentElements_of_subsingleton φ s, fun i => Unique.eq_default i ▸ h⟩⟩
 
+/-- If `s : ι → A` is a self-adjoint semicircular system with complex covariance `C` for a positive
+linear functional `φ : A →ₚ[ℂ] ℂ` on a `StarOrderedRing`, then `C` is Hermitian and positive
+semidefinite. -/
+theorem IsSemicircularSystem.posSemidef_complex_of_isSelfAdjoint {A ι : Type*} [Ring A]
+    [PartialOrder A] [StarRing A] [StarOrderedRing A] [Algebra ℂ A] [StarModule ℂ A]
+    {φ : A →ₚ[ℂ] ℂ} {s : ι → A} {C : Matrix ι ι ℂ}
+    (h : IsSemicircularSystem φ.toLinearMap s C) (hs : ∀ i, IsSelfAdjoint (s i)) :
+    C.PosSemidef :=
+  φ.posSemidef_of_forall_apply_mul_eq hs h.apply_mul
+
 /-- If `s : ι → A` is a self-adjoint semicircular system with real covariance `C` for a positive
 linear functional `φ : A →ₚ[ℂ] ℂ` on a `StarOrderedRing`, then `C` is symmetric and positive
 semidefinite. -/
@@ -373,28 +382,7 @@ theorem IsSemicircularSystem.posSemidef_of_isSelfAdjoint {A ι : Type*} [Ring A]
     {s : ι → A} {C : Matrix ι ι ℝ}
     (h : IsSemicircularSystem φ.toLinearMap s (C.map Complex.ofReal))
     (hs : ∀ i, IsSelfAdjoint (s i)) :
-    C.PosSemidef := by
-  have hmul (i j : ι) : φ (s i * s j) = C i j := by simpa using h.apply_mul i j
-  refine posSemidef_iff_finite_sum.{0, _, 0}.2 ⟨fun i j => ?_, fun {κ} _ v x => ?_⟩
-  · have hsymm := (StarPositiveFunctional.ofPositiveLinearMap φ).star_apply_star_mul (s i) (s j)
-    simp only [StarPositiveFunctional.ofPositiveLinearMap_apply, (hs _).star_eq, hmul] at hsymm
-    simpa [star_trivial] using congrArg Complex.re hsymm
-  · let b : A := ∑ p : κ, (x p : ℂ) • s (v p)
-    have hb_star : star b = b := by
-      simp [b, star_sum, star_smul, (hs _).star_eq]
-    have hbb : star b * b =
-        ∑ p : κ, ∑ q : κ, ((x p : ℂ) * (x q : ℂ)) • (s (v p) * s (v q)) := by
-      rw [hb_star]
-      simp only [b, sum_mul_sum, smul_mul_smul_comm]
-    have hφ : φ (star b * b) =
-        ((∑ p : κ, ∑ q : κ, star (x p) * C (v p) (v q) * x q : ℝ) : ℂ) := by
-      rw [hbb, map_sum]
-      simp only [map_sum, LinearMapClass.map_smul, hmul, smul_eq_mul, star_trivial,
-        Complex.ofReal_sum, Complex.ofReal_mul]
-      refine sum_congr rfl fun p _ => sum_congr rfl fun q _ => ?_
-      ring
-    have hnonneg : 0 ≤ φ (star b * b) := φ.map_nonneg (star_mul_self_nonneg b)
-    rw [hφ] at hnonneg
-    exact Complex.zero_le_real.1 hnonneg
+    C.PosSemidef :=
+  φ.posSemidef_of_forall_apply_mul_eq_ofReal hs fun i j => by simpa using h.apply_mul i j
 
 end TauCeti

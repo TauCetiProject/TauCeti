@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.FullFockSpace.Basic
 public import TauCeti.Combinatorics.NoncrossingPartition.Pairing
+public import TauCeti.Combinatorics.PlanarMatching.Basic
+import TauCeti.Combinatorics.NoncrossingPartition.PerfectMatching
 import TauCeti.Data.Finset.Basic
 
 /-!
@@ -23,9 +25,10 @@ This yields the **Fock-space vacuum Wick formula**:
 
 `ω_Ω(∏_{i ∈ s} (ℓ(f i) + ℓ(g i)*)) = ∑_{P ∈ NC₂(s)} ∏_{(i, j) ∈ P} ⟪g i, f j⟫_𝕜`.
 
-Specializing to `g = f` gives the noncrossing-pairing expansion for products of self-adjoint field
-operators `FullFockSpace.field 𝕜 (f i)` and, for a single vector `h : H`, the semicircular moment
-sequence `ω_Ω(s(h)^n) = ‖h‖^n * catalan (n / 2)` for even `n` and `0` for odd `n`.
+Specializing to `g = f` gives the noncrossing-pairing and planar-matching expansions for products of
+self-adjoint field operators `FullFockSpace.field 𝕜 (f i)` and, for a single vector `h : H`, the
+semicircular moment sequence `ω_Ω(s(h)^n) = ‖h‖^n * catalan (n / 2)` for even `n` and `0` for odd
+`n`.
 
 ## Main results
 
@@ -33,9 +36,10 @@ sequence `ω_Ω(s(h)^n) = ‖h‖^n * catalan (n / 2)` for even `n` and `0` for 
   `TauCeti.FullFockSpace.vacuumState_prod_creation_add_annihilation`, and
   `TauCeti.FullFockSpace.vacuumState_prod_ofFn_creation_add_annihilation`: the vacuum Wick formula
   over noncrossing pairings for ordered products of `creation 𝕜 (f i) + annihilation 𝕜 (g i)`.
-* `TauCeti.FullFockSpace.vacuumState_prod_field` and
-  `TauCeti.FullFockSpace.vacuumState_prod_ofFn_field`: the vacuum Wick formula for products of
-  self-adjoint field operators.
+* `TauCeti.FullFockSpace.vacuumState_prod_field`,
+  `TauCeti.FullFockSpace.vacuumState_prod_ofFn_field`, and
+  `TauCeti.FullFockSpace.vacuumState_prod_ofFn_field_eq_sum_planarMatching`: the vacuum Wick formula
+  for products of self-adjoint field operators over noncrossing pairings and `PlanarMatching n`.
 * `TauCeti.FullFockSpace.vacuumState_field_pow`: the semicircular moments of a single field
   operator `field 𝕜 h` of variance `‖h‖ ^ 2`.
 
@@ -321,6 +325,23 @@ theorem vacuumState_prod_ofFn_field {n : ℕ} (f : Fin n → H) :
         ∏ p ∈ P.val.val.orderedPairs, ⟪f p.1, f p.2⟫_𝕜 := by
   simp_rw [field_def]
   exact vacuumState_prod_ofFn_creation_add_annihilation f f
+
+/-- **Fock-space vacuum Wick formula in planar-matching form** for `creation + annihilation`
+operators indexed by `Fin n`. -/
+theorem vacuumState_prod_ofFn_creation_add_annihilation_eq_sum_planarMatching {n : ℕ}
+    (f g : Fin n → H) :
+    vacuumState 𝕜 H ((List.ofFn fun i => creation 𝕜 (f i) + annihilation 𝕜 (g i)).prod) =
+      ∑ D : PlanarMatching n, ∏ a ∈ univ with a < D.val.val a, ⟪g a, f (D.val.val a)⟫_𝕜 :=
+  (vacuumState_prod_ofFn_creation_add_annihilation f g).trans
+    (PerfectMatching.sum_isNoncrossingMatching_prod_eq_sum_isPairing fun i j => ⟪g i, f j⟫_𝕜).symm
+
+/-- **Fock-space vacuum Wick formula in planar-matching form**: the vacuum expectation of a product
+of `n` field operators is the sum over `PlanarMatching n` of the inner products along the arcs. -/
+theorem vacuumState_prod_ofFn_field_eq_sum_planarMatching {n : ℕ} (f : Fin n → H) :
+    vacuumState 𝕜 H ((List.ofFn fun i => field 𝕜 (f i)).prod) =
+      ∑ D : PlanarMatching n, ∏ a ∈ univ with a < D.val.val a, ⟪f a, f (D.val.val a)⟫_𝕜 := by
+  simp_rw [field_def]
+  exact vacuumState_prod_ofFn_creation_add_annihilation_eq_sum_planarMatching f f
 
 /-- On an odd number of positions, the vacuum expectation of any ordered product of
 `creation 𝕜 (f i) + annihilation 𝕜 (g i)` vanishes. -/

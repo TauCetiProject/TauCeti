@@ -32,6 +32,9 @@ integration against the semicircle law, the coordinate function is semicircular 
 * `PositiveLinearMap.law_eq_semicircleReal_iff_isSemicircular_sub` and
   `PositiveLinearMap.law_eq_semicircleReal_iff_freeCumulant` — characterization of general
   centre/variance semicircle laws `semicircleReal c v` via `a - c • 1` and via free cumulants.
+* `PositiveLinearMap.law_smul_add_algebraMap_of_law_eq_semicircleReal` and
+  `PositiveLinearMap.law_add_algebraMap_of_law_eq_semicircleReal` — affine rescaling and scalar
+  shifts of elements with law `semicircleReal m v`.
 * `TauCeti.isSemicircular_integralPositiveLinearMap_semicircleReal` — a commutative
   realization of a semicircular element of any variance `v ≥ 0`.
 
@@ -105,30 +108,41 @@ theorem law_eq_semicircleReal_iff_freeCumulant (ha : IsSelfAdjoint a) (c : ℝ) 
         ∀ n : ℕ, 2 ≤ n →
           freeCumulant φ.toLinearMap (fun _ : Fin n => a) univ =
             if n = 2 then ((v : ℝ) : ℂ) else 0 := by
-  rw [law_eq_semicircleReal_iff_isSemicircular_sub φ ha c v]
-  have hshift : a - algebraMap ℝ A c = a + algebraMap ℂ A (-(c : ℂ)) := by
-    rw [sub_eq_add_neg, map_neg, IsScalarTower.algebraMap_apply ℝ ℂ A]
-    rfl
-  refine ⟨fun h => ⟨h.apply_one, ?_, fun n hn => ?_⟩, fun ⟨h1, hmean, hκ⟩ => ?_⟩
-  · have h0 := h.apply_self
-    rw [hshift, map_add, Algebra.algebraMap_eq_smul_one, map_smul] at h0
-    have h1' : φ.toLinearMap 1 = 1 := h.apply_one
-    rw [h1', smul_eq_mul, mul_one, add_neg_eq_zero] at h0
-    exact h0
-  · have h1lt : 1 < #(univ : Finset (Fin n)) := by simp; omega
-    have hcum := (isSemicircular_iff_freeCumulant_const h.apply_one).1 h n (by omega)
-    rwa [hshift, freeCumulant_add_algebraMap φ.toLinearMap _ h.apply_one _ h1lt] at hcum
-  · refine (isSemicircular_iff_freeCumulant_const h1).2 fun n hn => ?_
-    rcases lt_or_ge n 2 with hn1 | hn2
-    · obtain rfl : n = 1 := by omega
-      have huniv : (univ : Finset (Fin 1)) = {0} := by decide
-      have h1' : φ.toLinearMap 1 = 1 := h1
-      have hmean' : φ.toLinearMap a = c := hmean
-      rw [huniv, freeCumulant_singleton, hshift, map_add, Algebra.algebraMap_eq_smul_one, map_smul,
-        h1', hmean']
-      simp
-    · have h1lt : 1 < #(univ : Finset (Fin n)) := by simp; omega
-      rw [hshift, freeCumulant_add_algebraMap φ.toLinearMap _ h1 _ h1lt, hκ n hn2]
+  rw [law_eq_semicircleReal_iff_isSemicircular_sub φ ha c v,
+    IsScalarTower.algebraMap_apply ℝ ℂ A c]
+  exact ⟨fun h => ⟨h.apply_one,
+      (isSemicircular_sub_algebraMap_iff_freeCumulant_const h.apply_one).mp h⟩,
+    fun ⟨hφ, h⟩ => (isSemicircular_sub_algebraMap_iff_freeCumulant_const hφ).mpr h⟩
+
+/-- *Affine transport of semicircle laws*: if `a` has law `semicircleReal m v` (which forces `a` to
+be selfadjoint), then `r • a + algebraMap ℝ A c` has law
+`semicircleReal (c + r * m) (Real.toNNReal (r ^ 2) * v)`. -/
+theorem law_smul_add_algebraMap_of_law_eq_semicircleReal {m : ℝ} {v : ℝ≥0}
+    (h : law φ a = semicircleReal m v) (r c : ℝ) :
+    law φ (r • a + algebraMap ℝ A c) =
+      semicircleReal (c + r * m) (Real.toNNReal (r ^ 2) * v) := by
+  have ha : IsSelfAdjoint a := by
+    by_contra hna
+    have h0 := congrArg (· Set.univ) ((law_of_not_isSelfAdjoint φ hna).symm.trans h)
+    simp at h0
+  rw [law_smul_add_algebraMap φ ha r c, h]
+  simpa [add_comm] using map_affine_semicircleReal m c r v
+
+/-- Shifting an element with semicircle law `semicircleReal m v` by a real scalar `c` gives law
+`semicircleReal (c + m) v`. -/
+theorem law_add_algebraMap_of_law_eq_semicircleReal {m : ℝ} {v : ℝ≥0}
+    (h : law φ a = semicircleReal m v) (c : ℝ) :
+    law φ (a + algebraMap ℝ A c) = semicircleReal (c + m) v := by
+  simpa using law_smul_add_algebraMap_of_law_eq_semicircleReal φ h 1 c
+
+/-- Shifting an element with semicircle law `semicircleReal m v` by a real scalar `c` embedded via
+`algebraMap ℂ A` gives law `semicircleReal (c + m) v`. -/
+theorem law_add_algebraMap_ofReal_of_law_eq_semicircleReal {m : ℝ} {v : ℝ≥0}
+    (h : law φ a = semicircleReal m v) (c : ℝ) :
+    law φ (a + algebraMap ℂ A (c : ℂ)) = semicircleReal (c + m) v := by
+  have hc : (c : ℂ) = algebraMap ℝ ℂ c := rfl
+  rw [hc, ← IsScalarTower.algebraMap_apply ℝ ℂ A c]
+  exact law_add_algebraMap_of_law_eq_semicircleReal φ h c
 
 end PositiveLinearMap
 

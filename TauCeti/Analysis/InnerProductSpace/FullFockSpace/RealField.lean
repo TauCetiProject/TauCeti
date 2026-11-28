@@ -116,6 +116,10 @@ theorem realField_injective : Function.Injective (realField (H := H)) := fun _ _
   (WithLp.complexificationOfRealₗᵢ H).injective (field_injective h)
 
 @[simp]
+theorem realField_inj {h k : H} : realField h = realField k ↔ h = k :=
+  realField_injective.eq_iff
+
+@[simp]
 theorem realField_eq_zero_iff {h : H} : realField h = 0 ↔ h = 0 :=
   ⟨fun hh => realField_injective (hh.trans realField_zero.symm), fun hh => hh ▸ realField_zero⟩
 
@@ -135,6 +139,12 @@ def realFieldCLM :
 @[simp]
 theorem realFieldCLM_apply (h : H) : realFieldCLM H h = realField h :=
   (rfl)
+
+@[fun_prop]
+theorem continuous_realField :
+    Continuous (realField : H → FullFockSpace ℂ (WithLp 2 (Complexification H)) →L[ℂ]
+      FullFockSpace ℂ (WithLp 2 (Complexification H))) :=
+  (realFieldCLM H).continuous
 
 theorem realField_vacuum (h : H) :
     realField h vacuum = creation ℂ (WithLp.complexificationOfRealₗᵢ H h) vacuum :=

@@ -149,4 +149,35 @@ theorem pairingEquiv_symm_apply (P : {P : Finpartition (univ : Finset α) // P.I
 
 end Finite
 
+section LinearOrder
+
+variable {α M : Type*} [Fintype α] [LinearOrder α] [CommMonoid M]
+
+/-- For a perfect matching `D` on a finite linear order, the product of an ordered-pair weight `K`
+over `D.toFinpartition.orderedPairs` equals the product of `K a (D.val a)` over the left endpoints
+`a < D.val a`. No symmetry of `K` is required. -/
+@[to_additive /-- For a perfect matching `D` on a finite linear order, the sum of an ordered-pair
+weight `K` over `D.toFinpartition.orderedPairs` equals the sum of `K a (D.val a)` over the left
+endpoints `a < D.val a`. No symmetry of `K` is required. -/]
+theorem prod_orderedPairs_toFinpartition (D : PerfectMatching α) (K : α → α → M) :
+    ∏ p ∈ D.toFinpartition.orderedPairs, K p.1 p.2 =
+      ∏ a ∈ univ with a < D.val a, K a (D.val a) := by
+  symm
+  refine prod_bij (fun a _ => (a, D.val a))
+    (fun a ha => Finpartition.mem_orderedPairs.mpr ⟨(mem_filter.mp ha).right,
+      part_toFinpartition D a ▸ D.toFinpartition.part_mem.mpr (mem_univ a)⟩)
+    (fun _ _ _ _ h => (Prod.mk.inj h).left) ?_ (fun _ _ => rfl)
+  rintro ⟨a, b⟩ hp
+  obtain ⟨hab, hpart⟩ := Finpartition.mem_orderedPairs.mp hp
+  have hmem : b ∈ D.toFinpartition.part a :=
+    D.toFinpartition.part_eq_of_mem hpart (mem_insert_self a {b}) ▸
+      mem_insert_of_mem (mem_singleton_self b)
+  rcases (part_toFinpartition D a ▸ hmem : b ∈ ({a, D.val a} : Finset α)) |> mem_insert.mp with
+    rfl | hb
+  · exact (lt_irrefl b hab).elim
+  · rw [mem_singleton.mp hb] at hab ⊢
+    exact ⟨a, mem_filter.mpr ⟨mem_univ a, hab⟩, rfl⟩
+
+end LinearOrder
+
 end TauCeti.PerfectMatching

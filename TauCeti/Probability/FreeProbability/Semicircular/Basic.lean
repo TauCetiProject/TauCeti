@@ -42,9 +42,11 @@ of a C⋆-algebra is in `TauCeti.Probability.FreeProbability.Semicircular.Law`.
 * `TauCeti.IsSemicircular.freeCumulant_const` — the free cumulant of `(a, …, a)` along a nonempty
   set of positions is `v` for two positions and `0` otherwise.
 * `TauCeti.isSemicircular_iff_freeCumulant_const` — for a normalised `φ`, this characterizes
-  semicircular elements.
-* `TauCeti.IsSemicircular.smul` and `TauCeti.isSemicircular_zero` — rescaling, and the
-  degenerate case of variance zero.
+  semicircular elements; `TauCeti.isSemicircular_add_algebraMap_iff_freeCumulant_const` and
+  `TauCeti.isSemicircular_sub_algebraMap_iff_freeCumulant_const` characterize scalar shifts by a
+  centring condition and the higher free cumulants.
+* `TauCeti.IsSemicircular.smul`, `TauCeti.IsSemicircular.neg`, and `TauCeti.isSemicircular_zero` —
+  rescaling, negation, and the degenerate case of variance zero.
 * `TauCeti.IsFreelyIndependentElements.isSemicircular_add` and
   `TauCeti.IsFreelyIndependentElements.isSemicircular_sum` — sums of free semicircular elements
   are semicircular, with the sum of the variances.
@@ -118,6 +120,11 @@ theorem smul (h : IsSemicircular φ a v) (c : R) : IsSemicircular φ (c • a) (
   apply_pow_two_mul_add_one k := by
     rw [smul_pow, map_smul, h.apply_pow_two_mul_add_one, smul_zero]
 
+/-- Negating a semicircular element in a ring preserves its variance. -/
+theorem neg {B : Type*} [Ring B] [Algebra R B] {ψ : B →ₗ[R] R} {b : B}
+    (h : IsSemicircular ψ b v) : IsSemicircular ψ (-b) v := by
+  simpa using h.smul (-1 : R)
+
 /-- *The free cumulants of a semicircular element*: the free cumulant of the constant word
 `(a, …, a)` along a nonempty set `s` of positions is `v` if `s` has two elements and `0`
 otherwise. Only the second free cumulant `κ₂(a, a) = v` is nonzero. -/
@@ -152,6 +159,43 @@ theorem isSemicircular_iff_freeCumulant_const (hφ : φ 1 = 1) :
   rw [hm, ← hc]
   exact sum_congr rfl fun π _ =>
     prod_congr rfl fun B hB => hκ B (π.val.nonempty_of_mem_parts hB)
+
+/-- For a normalised `φ`, `a + algebraMap R A c` is semicircular of variance `v` if and only if
+`φ a + c = 0`, `κ₂(a, a) = v`, and `κ_n(a, …, a) = 0` for every `n > 2`. -/
+theorem isSemicircular_add_algebraMap_iff_freeCumulant_const (hφ : φ 1 = 1) {c : R} :
+    IsSemicircular φ (a + algebraMap R A c) v ↔
+      φ a + c = 0 ∧ ∀ n : ℕ, 2 ≤ n →
+        freeCumulant φ (fun _ : Fin n => a) univ = if n = 2 then v else 0 := by
+  rw [isSemicircular_iff_freeCumulant_const hφ]
+  have h1 : freeCumulant φ (fun _ : Fin 1 => a + algebraMap R A c) univ = φ a + c := by
+    rw [univ_unique, freeCumulant_singleton]
+    simp [Algebra.algebraMap_eq_smul_one, hφ]
+  have hgt {n : ℕ} (hn : 2 ≤ n) :
+      freeCumulant φ (fun _ : Fin n => a + algebraMap R A c) univ =
+        freeCumulant φ (fun _ : Fin n => a) univ := by
+    have hcard : 1 < #(univ : Finset (Fin n)) := by
+      rw [card_univ, Fintype.card_fin]
+      omega
+    exact freeCumulant_add_algebraMap φ (fun _ : Fin n => a) hφ (fun _ => c) hcard
+  refine ⟨fun h => ⟨h1 ▸ h 1 one_ne_zero, fun n hn => ?_⟩, fun ⟨hc, h⟩ n hn => ?_⟩
+  · rw [← hgt hn]
+    exact h n (by omega)
+  · rcases eq_or_ne n 1 with rfl | hn1
+    · rw [h1, hc]
+      simp
+    · rw [hgt (by omega)]
+      exact h n (by omega)
+
+/-- *Shifted semicircular elements via free cumulants*: in an `R`-algebra ring, for a normalised
+`ψ`, `b - algebraMap R B m` is semicircular of variance `v` if and only if `ψ b = m`,
+`κ₂(b, b) = v`, and `κ_n(b, …, b) = 0` for every `n > 2`. -/
+theorem isSemicircular_sub_algebraMap_iff_freeCumulant_const {B : Type*} [Ring B] [Algebra R B]
+    {ψ : B →ₗ[R] R} {b : B} (hψ : ψ 1 = 1) {m : R} :
+    IsSemicircular ψ (b - algebraMap R B m) v ↔
+      ψ b = m ∧ ∀ n : ℕ, 2 ≤ n →
+        freeCumulant ψ (fun _ : Fin n => b) univ = if n = 2 then v else 0 := by
+  rw [sub_eq_add_neg, ← map_neg, isSemicircular_add_algebraMap_iff_freeCumulant_const hψ,
+    ← sub_eq_add_neg, sub_eq_zero]
 
 /-- For a normalised `φ`, the zero element is semicircular of variance zero. -/
 theorem isSemicircular_zero (hφ : φ 1 = 1) : IsSemicircular φ (0 : A) 0 where
