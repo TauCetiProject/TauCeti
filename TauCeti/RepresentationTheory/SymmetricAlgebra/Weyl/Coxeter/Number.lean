@@ -185,7 +185,6 @@ theorem map_sub_one_eq_exponents_classifiedDynkinType [Fintype κ] (b : P.Base)
   classical
   have := P.finite_weight_of_isRootSystem
   obtain ⟨c⟩ := nonempty_coloring_graph_coxeterMatrixOfBase P b
-  let g := (weylCoxeterSystem P b).bipartiteCoxeterElement c
   have := P.finite_weylGroup_of_base b
   obtain ⟨ζ, hζ, hchar⟩ :=
     P.exists_isPrimitiveRoot_charpoly_bipartiteCoxeterElement_eq_prod b c hf hbij
@@ -193,16 +192,15 @@ theorem map_sub_one_eq_exponents_classifiedDynkinType [Fintype κ] (b : P.Base)
     (weylCoxeterSystem P b).exists_wordProd_eq_bipartiteCoxeterElement c
   rw [weylCoxeterSystem_wordProd] at hw
   set l := l₁ ++ l₂
+  set g := (weylCoxeterSystem P b).bipartiteCoxeterElement c
   let t := classifiedDynkinType b
   have ht : t.Valid := valid_classifiedDynkinType b
   have hct : HasCartanType P b t := hasCartanType_classifiedDynkinType b
   have hh : orderOf g = t.coxeterNumber := by
-    change orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement c) = t.coxeterNumber
     rw [← hw]
     exact b.orderOf_wordProd_eq_coxeterNumber_classifiedDynkinType hnd hall
   have hcharCox : (P.weylGroupRootRep g).charpoly =
       (Matrix.coxeterElement t.cartanMatrix).charpoly.map (Int.castRingHom K) := by
-    change (P.weylGroupRootRep ((weylCoxeterSystem P b).bipartiteCoxeterElement c)).charpoly = _
     rw [← hw, (b.actsBy_wordProd l).charpoly_weylGroupRootRep,
       Coxeter.charpoly_of_hasCartanType_of_actsBy hct hnd hall (b.actsBy_wordProd l)]
   have hprodK := hchar.symm.trans (hcharCox.trans
@@ -220,7 +218,6 @@ theorem map_sub_one_eq_exponents_classifiedDynkinType [Fintype κ] (b : P.Base)
     intro a ha
     rw [Multiset.mem_map] at ha
     obtain ⟨k, -, rfl⟩ := ha
-    change d k - 1 < orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement c)
     rw [← hw]
     exact P.degree_sub_one_lt_orderOf_wordProd b hnd hall hf hbij k
   have hlt₂ : ∀ a ∈ s₂, a < orderOf g := by
