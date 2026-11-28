@@ -74,6 +74,15 @@ lemma preadditiveCoyonedaSingleLiftIso_hom_app_apply (P : C) [Projective P] (n :
   change ULift.up (homFromProjectiveSingleAddEquiv P E n f.down) = _
   rw [homFromProjectiveSingleAddEquiv_apply]
 
+/-- The inverse lifted comparison constructs a derived morphism from a cohomology map. -/
+@[simp]
+lemma preadditiveCoyonedaSingleLiftIso_inv_app_apply (P : C) [Projective P] (n : ℤ)
+    (E : DerivedCategory C) (g : ULift.{w} (P ⟶ (homologyFunctor C n).obj E)) :
+    DFunLike.coe (F := ULift.{w} (P ⟶ (homologyFunctor C n).obj E) →+
+      ULift.{v} ((singleFunctor C n).obj P ⟶ E))
+      ((preadditiveCoyonedaSingleLiftIso P n).inv.app E).hom g =
+      ULift.up ((homFromProjectiveSingleAddEquiv P E n).symm g.down) := (rfl)
+
 /-- Colimits of any shape transfer to additive Hom from a projective stalk when cohomology
 and ordinary additive Hom preserve them. Universe lifts preserve and reflect colimits. -/
 instance preservesColimitsOfShape_preadditiveCoyoneda_single
@@ -108,14 +117,28 @@ lemma preadditiveCoyonedaSingleIso_hom_app_apply (P : C) [Projective P] (n : ℤ
       ((preadditiveCoyonedaSingleIso P n).hom.app E).hom f =
       (singleFunctorCompHomologyFunctorIso C n).inv.app P ≫
         (homologyFunctor C n).map f := by
+  rw [preadditiveCoyonedaSingleIso, Functor.fullyFaithfulCancelRight_hom_app]
   have he := ConcreteCategory.congr_hom
     (AddCommGrpCat.uliftFunctor.{v, v}.map_preimage
       ((preadditiveCoyonedaSingleLiftIso P n).hom.app E)) (ULift.up f)
-  have he' : ULift.up (((preadditiveCoyonedaSingleIso P n).hom.app E).hom f) =
-      DFunLike.coe (F := ULift.{v} ((singleFunctor C n).obj P ⟶ E) →+
-        ULift.{v} (P ⟶ (homologyFunctor C n).obj E))
-        ((preadditiveCoyonedaSingleLiftIso P n).hom.app E).hom (ULift.up f) := he
-  rw [preadditiveCoyonedaSingleLiftIso_hom_app_apply] at he'
-  exact congrArg ULift.down he'
+  simp only [AddCommGrpCat.uliftFunctor_map, AddEquiv.toAddMonoidHom_eq_coe] at he
+  exact congrArg ULift.down
+    (he.trans (preadditiveCoyonedaSingleLiftIso_hom_app_apply P n E (ULift.up f)))
+
+/-- The inverse unlifted comparison constructs a derived morphism from a cohomology map. -/
+@[simp]
+lemma preadditiveCoyonedaSingleIso_inv_app_apply (P : C) [Projective P] (n : ℤ)
+    (E : DerivedCategory C) (g : P ⟶ (homologyFunctor C n).obj E) :
+    DFunLike.coe (F := (P ⟶ (homologyFunctor C n).obj E) →+
+      ((singleFunctor C n).obj P ⟶ E))
+      ((preadditiveCoyonedaSingleIso P n).inv.app E).hom g =
+      (homFromProjectiveSingleAddEquiv P E n).symm g := by
+  rw [preadditiveCoyonedaSingleIso, Functor.fullyFaithfulCancelRight_inv_app]
+  have he := ConcreteCategory.congr_hom
+    (AddCommGrpCat.uliftFunctor.{v, v}.map_preimage
+      ((preadditiveCoyonedaSingleLiftIso P n).inv.app E)) (ULift.up g)
+  simp only [AddCommGrpCat.uliftFunctor_map, AddEquiv.toAddMonoidHom_eq_coe] at he
+  exact congrArg ULift.down
+    (he.trans (preadditiveCoyonedaSingleLiftIso_inv_app_apply P n E (ULift.up g)))
 
 end TauCeti

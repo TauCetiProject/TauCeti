@@ -35,8 +35,8 @@ form in which the projective dimension of `X₃`, at most one, enters into deriv
   bijection from morphisms `P[-n] ⟶ M` to morphisms `P ⟶ Hⁿ(M)`.
 * `TauCeti.homFromProjectiveSingleAddEquiv`: the additive comparison with source `P`, for
   arbitrary ordinary and derived hom universes.
-* `DerivedCategory.isZero_of_forall_shift_projective_hom_eq_zero`: shifts of a projective
-  separator detect zero objects.
+* `DerivedCategory.isZero_of_isSeparator_of_forall_shift_projective_hom_eq_zero`:
+  shifts of a projective separator detect zero objects.
 * `CategoryTheory.ShortComplex.ShortExact.forall_singleFunctor_hom_eq_zero_iff`: the
   corresponding statement in `D(C)` for a projective presentation of length one, in terms of the
   cohomology of `M`.
@@ -128,18 +128,18 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
 
 /-- The shifts of a projective separator placed in degree zero detect zero objects in the
 unbounded derived category. -/
-lemma isZero_of_forall_shift_projective_hom_eq_zero (E : DerivedCategory C)
+lemma isZero_of_isSeparator_of_forall_shift_projective_hom_eq_zero (E : DerivedCategory C)
     (P : C) [Projective P] (hP : IsSeparator P)
     (h : ∀ (k : ℤ) (f : ((singleFunctor C 0).obj P)⟦k⟧ ⟶ E), f = 0) : IsZero E := by
   have hH (n : ℤ) : IsZero ((homologyFunctor C n).obj E) := by
     have hz (f : (singleFunctor C n).obj P ⟶ E) : f = 0 := by
       let s := ((singleFunctors C).shiftIso (-n) n 0 (by omega)).app P
       exact (cancel_epi s.hom).1 (by simpa using h (-n) (s.hom ≫ f))
-    have hm (g : P ⟶ (homologyFunctor C n).obj E) : g = 0 := by
-      obtain ⟨f, rfl⟩ := (TauCeti.homFromProjectiveSingleAddEquiv P E n).surjective g
-      rw [hz f, map_zero]
+    have : Subsingleton (P ⟶ (homologyFunctor C n).obj E) :=
+      (TauCeti.homFromProjectiveSingleAddEquiv P E n).toEquiv.subsingleton_congr.mp
+        (subsingleton_of_forall_eq 0 hz)
     apply (IsZero.iff_id_eq_zero _).2
-    exact (Preadditive.isSeparator_iff P).1 hP (𝟙 _) (by simp [hm])
+    exact (Preadditive.isSeparator_iff P).1 hP (𝟙 _) (fun _ ↦ Subsingleton.elim _ _)
   have hi : IsIso (0 : E ⟶ 0) := (isIso_iff C _).2 fun n ↦
     (hH n).isIso ((homologyFunctor C n).map_isZero (isZero_zero _)) _
   exact (isZero_zero _).of_iso (asIso (0 : E ⟶ 0))
