@@ -48,6 +48,10 @@ part.
 * `TauCeti.exists_modEq_one_jacobiSym_eq_neg_one_of_prime`: for an odd prime `p` coprime to `n`,
   some `u ≡ 1 (mod n)` has `J(u | p) = -1` (the Chinese remainder step of
   `TauCeti.exists_prime_jacobiSym_eq_neg_one`).
+* `TauCeti.jacobiSym_two_right`: `J(a | 2)` is `0` for even `a` and `1` for odd `a`. So at a prime
+  denominator `p`, including `p = 2`, the Jacobi symbol vanishes exactly at the multiples of `p`
+  and is the principal character at `p = 2`; this is the convention for quadratic symbols with
+  prime denominator in sieve arguments for conics, and it differs from the Kronecker symbol at `2`.
 
 ## References
 
@@ -255,5 +259,33 @@ theorem exists_prime_jacobiSym_eq_neg_one {a : ℤ} (ha : ¬ IsSquare a) :
   obtain ⟨n, hn, h⟩ := exists_odd_jacobiSym_eq_neg_one ha
   obtain ⟨p, hp, hpn, hp'⟩ := jacobiSym.eq_neg_one_at_prime_divisor_of_eq_neg_one h
   exact ⟨p, hp, fun h2 ↦ (Nat.not_even_iff_odd.mpr hn) (even_iff_two_dvd.mpr (h2 ▸ hpn)), hp'⟩
+
+/-- **The Jacobi symbol at the denominator `2`** is `0` for even numerators and `1` for odd ones:
+it is the Legendre symbol modulo `2`, and every nonzero class modulo `2` is a square. This is not
+the Kronecker symbol at `2`, which is `χ₈`. -/
+@[simp]
+theorem jacobiSym_two_right (a : ℤ) : jacobiSym a 2 = if Even a then 0 else 1 := by
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  rw [← jacobiSym.legendreSym.to_jacobiSym]
+  split_ifs with h
+  · rw [legendreSym.eq_zero_iff, ZMod.intCast_zmod_eq_zero_iff_dvd]
+    exact_mod_cast even_iff_two_dvd.1 h
+  · rw [legendreSym, quadraticChar_eq_one_of_char_two (ZMod.ringChar_zmod_n 2)]
+    rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]
+    exact fun hdvd ↦ h (even_iff_two_dvd.2 (by exact_mod_cast hdvd))
+
+/-- The Jacobi symbol of an even integer at the denominator `2` is `0`. -/
+theorem jacobiSym_two_right_of_even {a : ℤ} (ha : Even a) : jacobiSym a 2 = 0 := by
+  rw [jacobiSym_two_right, ite_eq_left ha]
+
+/-- The Jacobi symbol of an odd integer at the denominator `2` is `1`. -/
+theorem jacobiSym_two_right_of_odd {a : ℤ} (ha : Odd a) : jacobiSym a 2 = 1 := by
+  rw [jacobiSym_two_right, ite_eq_right (Int.not_even_iff_odd.2 ha)]
+
+/-- `3` is odd, so `J(3 | 2) = 1`; the Kronecker symbol of `3` at `2` is `-1`. -/
+example : jacobiSym 3 2 = 1 := jacobiSym_two_right_of_odd (by decide)
+
+/-- `6` is even, so `J(6 | 2) = 0`. -/
+example : jacobiSym 6 2 = 0 := jacobiSym_two_right_of_even (by decide)
 
 end TauCeti
