@@ -60,12 +60,8 @@ private theorem generatorEvaluation_mapId
   -- The local action is the evaluation functor; both maps have the same cell formula.
   change (D.expandHorizontalEval a.obj a.obj).mapIso
     (D.expandHorizontalRepresentation.unitIso a.obj).symm ≪≫ eqToIso _ = _
-  rw [Functor.mapIso_symm, D.expandHorizontalRepresentation_unitIso]
-  erw [D.expandHorizontalEval_mapIso]
-  apply Iso.ext
-  erw [Iso.trans_hom, Iso.symm_hom, eqToIso.hom]
-  dsimp only [eqToIso]
-  erw [eqToHom_trans]
+  rw [D.expandHorizontalRepresentation_unitIso]
+  erw [D.expandHorizontalIso_symm, D.expandHorizontalEval_mapIso, eqToIso_trans]
   rfl
 
 private theorem generatorEvaluation_mapComp
@@ -78,12 +74,8 @@ private theorem generatorEvaluation_mapComp
   -- The local action is evaluation, including on the binary comparison isomorphism.
   change (D.expandHorizontalEval a.obj c.obj).mapIso
     (D.expandHorizontalRepresentation.mulIso f g).symm ≪≫ eqToIso _ = _
-  rw [Functor.mapIso_symm, D.expandHorizontalRepresentation_mulIso]
-  erw [D.expandHorizontalEval_mapIso]
-  apply Iso.ext
-  erw [Iso.trans_hom, Iso.symm_hom, eqToIso.hom]
-  dsimp only [eqToIso]
-  erw [eqToHom_trans]
+  rw [D.expandHorizontalRepresentation_mulIso]
+  erw [D.expandHorizontalIso_symm, D.expandHorizontalEval_mapIso, eqToIso_trans]
   rfl
 
 /-- Evaluate represented generators as a strict pseudofunctor to the original globular
