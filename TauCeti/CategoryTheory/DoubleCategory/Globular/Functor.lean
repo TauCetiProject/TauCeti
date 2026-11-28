@@ -38,60 +38,6 @@ variable {O₁ : Type u₁} {H₁ : Category.{h₁} O₁} {V₁ : Category.{v₁
   {D₂ : StrictDoubleCategory.{s₂} O₂ H₂ V₂}
   {D₃ : StrictDoubleCategory.{s₃} O₃ H₃ V₃}
 
-/-- Transpose a strict double functor, exchanging its horizontal and vertical edge maps. -/
--- Exposure makes the object and edge endpoints of the transposed cell map compute.
-@[expose]
-def transpose (F : StrictDoubleFunctor D₁ D₂) :
-    StrictDoubleFunctor D₁.transpose D₂.transpose where
-  obj := F.obj
-  hMap := F.vMap
-  hMap_id := F.vMap_id
-  hMap_comp := F.vMap_comp
-  vMap := F.hMap
-  vMap_id := F.hMap_id
-  vMap_comp := F.hMap_comp
-  map α := F.map α
-  -- Unfolding the transpose and transport compares the same four boundary equalities
-  -- in their exchanged order; no equality of cells is assumed.
-  map_hId f := by
-    simpa only [StrictDoubleCategory.transpose, DoubleCategoryStruct.transpose,
-      Cell.cast] using F.map_vId f
-  map_vId f := by
-    simpa only [StrictDoubleCategory.transpose, DoubleCategoryStruct.transpose,
-      Cell.cast] using F.map_hId f
-  map_hComp α β := by
-    simpa only [StrictDoubleCategory.transpose, DoubleCategoryStruct.transpose,
-      Cell.cast] using F.map_vComp α β
-  map_vComp α β := by
-    simpa only [StrictDoubleCategory.transpose, DoubleCategoryStruct.transpose,
-      Cell.cast] using F.map_hComp α β
-
-@[simp]
-theorem transpose_obj (F : StrictDoubleFunctor D₁ D₂) (a : O₁) :
-    F.transpose.obj a = F.obj a := (rfl)
-
-@[simp]
-theorem transpose_hMap (F : StrictDoubleFunctor D₁ D₂) {a b : O₁} (f : Edge V₁ a b) :
-    F.transpose.hMap f = F.vMap f := (rfl)
-
-@[simp]
-theorem transpose_vMap (F : StrictDoubleFunctor D₁ D₂) {a b : O₁} (f : Edge H₁ a b) :
-    F.transpose.vMap f = F.hMap f := (rfl)
-
-@[simp]
-theorem transpose_map (F : StrictDoubleFunctor D₁ D₂) {a b c d : O₁}
-    {p : Edge V₁ a b} {q : Edge V₁ c d} {l : Edge H₁ a c} {r : Edge H₁ b d}
-    (α : D₁.transpose.Cell p q l r) : F.transpose.map α = F.map α := (rfl)
-
-@[simp]
-theorem transpose_id : (id D₁).transpose = id D₁.transpose := by
-  apply hext <;> intros <;> rfl
-
-@[simp]
-theorem transpose_comp (F : StrictDoubleFunctor D₁ D₂) (G : StrictDoubleFunctor D₂ D₃) :
-    (F.comp G).transpose = F.transpose.comp G.transpose := by
-  apply hext <;> intros <;> rfl
-
 /-- The functor on vertical globular cells, obtained by transposing both directions. -/
 -- Exposure makes the vertical boundary endpoints of mapped cells compute.
 @[expose]
@@ -209,26 +155,18 @@ theorem map_changeBottom (e : D₁.HorizontalIso q q') (α : D₁.Cell p q l r) 
 theorem map_changeLeft (e : D₁.VerticalIso l l') (α : D₁.Cell p q l r) :
     F.map (D₁.changeLeft e α) =
       D₂.changeLeft ((F.verticalGlobularFunctor a c).mapIso e) (F.map α) := by
-  rw [D₁.changeLeft_def e α]
-  erw [D₂.changeLeft_def]
-  simp only [Functor.mapIso_inv, verticalGlobularFunctor_map_cell, map_cast]
-  erw [map_hComp]
-  erw [hComp_cast_left]
-  erw [Cell.cast_cast, Cell.cast_cast]
-  rfl
+  rw [D₁.changeLeft_eq_transpose_changeTop]
+  erw [D₂.changeLeft_eq_transpose_changeTop]
+  exact F.transpose.map_changeTop e α
 
 /-- Mapping a square commutes with changing its right boundary by a globular isomorphism. -/
 @[simp]
 theorem map_changeRight (e : D₁.VerticalIso r r') (α : D₁.Cell p q l r) :
     F.map (D₁.changeRight e α) =
       D₂.changeRight ((F.verticalGlobularFunctor b d).mapIso e) (F.map α) := by
-  rw [D₁.changeRight_def e α]
-  erw [D₂.changeRight_def]
-  simp only [Functor.mapIso_hom, verticalGlobularFunctor_map_cell, map_cast]
-  erw [map_hComp]
-  erw [hComp_cast_right]
-  erw [Cell.cast_cast, Cell.cast_cast]
-  rfl
+  rw [D₁.changeRight_eq_transpose_changeBottom]
+  erw [D₂.changeRight_eq_transpose_changeBottom]
+  exact F.transpose.map_changeBottom e α
 
 end BoundaryChange
 
