@@ -21,7 +21,10 @@ and composition laws of those transitions. Thus pseudo-limits of stacks are stac
 This extends the componentwise descent constructions for `TauCeti.Stack.pi` and
 `TauCeti.Stack.twoFiberProduct` to arbitrary small diagrams, using the fibrewise pseudo-limit
 and its universal property from `TauCeti.CategoryTheory.Bicategory.Functor.Limit`. No pullbacks
-or smallness hypotheses on the site are needed. Taking the index category in universe `u`,
+or smallness hypotheses on the site are needed. The descent projection is
+`StrongTrans.mapDescentData` applied to a limit projection. The comparison
+`StrongTrans.toDescentDataCompMapDescentDataIso` identifies canonical descent data under these
+projections and glues the transition isomorphisms. Taking the index category in universe `u`,
 the site to be `Over S` for `S : Scheme.{u}`, and values in `Cat.{u, u + 1}` gives the big-site
 case.
 
@@ -71,6 +74,11 @@ variable {ι : Type t} {S : C} {X : ι → C} (f : ∀ a, X a ⟶ S)
 def descentDataπ (i : I) : (limit D).DescentData f ⥤ (D.obj (.mk i)).DescentData f :=
   (π D i).mapDescentData f
 
+/-- The descent projection is the functor induced by the corresponding strong transformation. -/
+lemma descentDataπ_def (i : I) :
+    descentDataπ f i = (π D i).mapDescentData f :=
+  (rfl)
+
 @[simp]
 lemma descentDataπ_obj_obj (i : I) (d : (limit D).DescentData f) (a : ι) :
     ((descentDataπ f i).obj d).obj a = (d.obj a).obj i :=
@@ -98,44 +106,39 @@ lemma toDescentData_obj_hom_hom (M : (limit D).obj (.mk (op S))) ⦃Y : C⦄ (q 
     (hf₁ : f₁ ≫ f a = q) (hf₂ : f₂ ≫ f b = q) (i : I) :
     ((((limit D).toDescentData f).obj M).hom q f₁ f₂ hf₁ hf₂).hom i =
       (((D.obj (.mk i)).toDescentData f).obj (M.obj i)).hom q f₁ f₂ hf₁ hf₂ := by
-  -- The gluing maps of canonical descent data are the two composition comparisons.
-  change ((((limit D).mapComp' (f a).op.toLoc f₁.op.toLoc q.op.toLoc _).inv.toNatTrans.app M) ≫
-    ((limit D).mapComp' (f b).op.toLoc f₂.op.toLoc q.op.toLoc _).hom.toNatTrans.app M).hom i = _
-  rw [comp_hom', mapComp'_inv_app_hom, mapComp'_hom_app_hom]
+  simp only [DescentData.toDescentData_obj_hom, compIso_inv, compIso_hom,
+    comp_hom', mapComp'_inv_app_hom, mapComp'_hom_app_hom]
   rfl
 
 /-- The projection of a morphism between canonical descent data. -/
 private def homπ {M N : (limit D).obj (.mk (op S))}
     (Φ : ((limit D).toDescentData f).obj M ⟶ ((limit D).toDescentData f).obj N) (i : I) :
     ((D.obj (.mk i)).toDescentData f).obj (M.obj i) ⟶
-      ((D.obj (.mk i)).toDescentData f).obj (N.obj i) where
-  hom a := (Φ.hom a).hom i
-  comm _ q _ _ f₁ f₂ hf₁ hf₂ := by
-    have h := congrArg (fun φ ↦ φ.hom i) (Φ.comm q f₁ f₂ hf₁ hf₂)
-    rwa [comp_hom', comp_hom', map_map_hom, map_map_hom,
-      toDescentData_obj_hom_hom, toDescentData_obj_hom_hom] at h
+      ((D.obj (.mk i)).toDescentData f).obj (N.obj i) :=
+  ((π D i).toDescentDataCompMapDescentDataIso f).inv.app M ≫
+    (descentDataπ f i).map Φ ≫
+      ((π D i).toDescentDataCompMapDescentDataIso f).hom.app N
+
+private lemma homπ_hom {M N : (limit D).obj (.mk (op S))}
+    (Φ : ((limit D).toDescentData f).obj M ⟶ ((limit D).toDescentData f).obj N)
+    (i : I) (a : ι) : (homπ f Φ i).hom a = (Φ.hom a).hom i := by
+  -- Projection objects are definitionally components of the fibrewise limit, so the
+  -- component equations must be rewritten with those implicit objects unfolded.
+  erw [homπ, DescentData.comp_hom, DescentData.comp_hom,
+    StrongTrans.toDescentDataCompMapDescentDataIso_inv_app_hom,
+    StrongTrans.toDescentDataCompMapDescentDataIso_hom_app_hom,
+    descentDataπ_map_hom, π_naturality_inv_app, π_naturality_hom_app]
+  erw [Category.id_comp, Category.comp_id]
+
+private lemma homπ_toDescentData_map {M N : (limit D).obj (.mk (op S))} (φ : M ⟶ N)
+    (i : I) :
+    homπ f (((limit D).toDescentData f).map φ) i =
+      ((D.obj (.mk i)).toDescentData f).map (φ.hom i) := by
+  ext a
+  simp only [homπ_hom, toDescentData_map_hom, map_map_hom]
+  rfl
 
 variable {f}
-
-/-- A family that is the family of components of a local morphism of pseudo-limit objects
-satisfies the transition compatibility after pullback. -/
-private lemma map_transition_comp_iso_hom {T T' : Cᵒᵖ} (a : T ⟶ T')
-    {x y : Fiber D T} (m : ∀ i, x.obj i ⟶ y.obj i)
-    (φ : (map D a).obj x ⟶ (map D a).obj y)
-    (hm : ∀ i, ((D.obj (.mk i)).map a.toLoc).toFunctor.map (m i) = φ.hom i)
-    {i j : I} (g : i ⟶ j) :
-    ((D.obj (.mk j)).map a.toLoc).toFunctor.map
-        ((transition D g T).map (m i) ≫ (y.iso g).hom) =
-      ((D.obj (.mk j)).map a.toLoc).toFunctor.map ((x.iso g).hom ≫ m j) := by
-  have h := φ.comm g
-  simp only [mapObj, Iso.trans_hom, Iso.app_hom, Cat.Hom.toNatIso_hom,
-    Functor.mapIso_hom] at h
-  rw [Functor.map_comp, Functor.map_comp,
-    ← cancel_epi (((D.map g.toLoc).naturality a.toLoc).hom.toNatTrans.app (x.obj i))]
-  have hn := ((D.map g.toLoc).naturality a.toLoc).hom.toNatTrans.naturality (m i)
-  simp only [Cat.Hom.comp_toFunctor, Functor.comp_map] at hn
-  rw [← Category.assoc, ← hn, Category.assoc, hm i, hm j]
-  exact h.trans (Category.assoc _ _ _)
 
 /-- If descent of morphisms holds in each factor along a family, it holds in the pseudo-limit
 along that family. -/
@@ -147,17 +150,22 @@ noncomputable def fullyFaithfulToDescentData
       comm {i j} g := (hD j).map_injective (by
         ext a
         exact map_transition_comp_iso_hom (f a).op _ (Φ.hom a) (fun i ↦
-          congrArg (fun ψ ↦ ψ.hom a) ((hD i).map_preimage (homπ f Φ i))) g) }
+          by
+            have h := congrArg (fun ψ ↦ ψ.hom a) ((hD i).map_preimage (homπ f Φ i))
+            simp only [toDescentData_map_hom, homπ_hom] at h
+            exact h) g) }
   map_preimage {M N} Φ := by
     apply DescentData.hom_ext
     intro a
     apply Fiber.hom_ext
     intro i
-    exact congrArg (fun ψ ↦ ψ.hom a) ((hD i).map_preimage (homπ f Φ i))
+    have h := congrArg (fun ψ ↦ ψ.hom a) ((hD i).map_preimage (homπ f Φ i))
+    simp only [toDescentData_map_hom, homπ_hom] at h
+    exact h
   preimage_map {M N} φ := by
     apply Fiber.hom_ext
     intro i
-    exact (hD i).preimage_map (φ.hom i)
+    simpa only [homπ_toDescentData_map] using (hD i).preimage_map (φ.hom i)
 
 section effectivity
 
@@ -169,20 +177,20 @@ private def descentDataTransitionIso {i j : I} (g : i ⟶ j) :
     ((D.map g.toLoc).mapDescentData f).obj ((descentDataπ f i).obj d) ≅
       (descentDataπ f j).obj d :=
   DescentData.isoMk (fun a ↦ (d.obj a).iso g) (fun Y q a b f₁ f₂ hf₁ hf₂ ↦ by
-    have h := (d.hom q f₁ f₂ hf₁ hf₂).comm g
-    simp only [map_obj_iso_hom] at h
-    -- Express the two projected descent data by their component morphisms; their
-    -- objects are the components of the limit objects only definitionally.
-    erw [descentDataπ_obj_hom, StrongTrans.mapDescentData_obj_hom, descentDataπ_obj_hom]
-    change ((D.obj (.mk j)).map f₁.op.toLoc).toFunctor.map ((d.obj a).iso g).hom ≫
-      (d.hom q f₁ f₂ hf₁ hf₂).hom j =
-        (D.map g.toLoc).mapPullHom ((d.hom q f₁ f₂ hf₁ hf₂).hom i) ≫
-          ((D.obj (.mk j)).map f₂.op.toLoc).toFunctor.map ((d.obj b).iso g).hom
-    erw [StrongTrans.mapPullHom_def]
-    apply (cancel_epi (((D.map g.toLoc).naturality f₁.op.toLoc).hom.toNatTrans.app
-      ((d.obj a).obj i))).mp
-    erw [Category.assoc, Category.assoc, Cat.Hom.hom_inv_id_toNatTrans_app_assoc]
-    exact (Category.assoc _ _ _).symm.trans h.symm)
+    let m := ((π D i).mapDescentDataComp f (D.map g.toLoc)).inv.app d ≫
+      (StrongTrans.mapDescentData₂ f (πCompMap D g).hom).app d
+    have hm (a : ι) : m.hom a = ((d.obj a).iso g).hom := by
+      dsimp only [m]
+      simp only [DescentData.comp_hom, StrongTrans.mapDescentDataComp_inv_app_hom,
+        StrongTrans.mapDescentData₂_app_hom, πCompMap_hom_as_app]
+      exact Category.id_comp _
+    have h := m.comm q f₁ f₂ hf₁ hf₂
+    simp only [hm] at h
+    exact h)
+
+private lemma descentDataTransitionIso_hom_hom {i j : I} (g : i ⟶ j) (a : ι) :
+    (descentDataTransitionIso f d g).hom.hom a = ((d.obj a).iso g).hom :=
+  rfl
 
 variable (M : ∀ i, (D.obj (.mk i)).obj (.mk (op S)))
   (e : ∀ i, ((D.obj (.mk i)).toDescentData f).obj (M i) ≅ (descentDataπ f i).obj d)
@@ -206,6 +214,9 @@ private lemma map_glueTransitionIso_hom {i j : I} (g : i ⟶ j) (a : ι) :
     ((((D.map g.toLoc).toDescentDataCompMapDescentDataIso f).app (M i)).inv ≫
       ((D.map g.toLoc).mapDescentData f).map (e i).hom ≫
         (descentDataTransitionIso f d g).hom ≫ (e j).inv))
+  simp only [toDescentData_map_hom, DescentData.comp_hom, Iso.app_inv,
+    StrongTrans.toDescentDataCompMapDescentDataIso_inv_app_hom,
+    descentDataTransitionIso_hom_hom] at h
   exact h
 
 private lemma glueTransitionIso_comm {i j : I} (g : i ⟶ j) (a : ι) :
@@ -214,58 +225,104 @@ private lemma glueTransitionIso_comm {i j : I} (g : i ⟶ j) (a : ι) :
         ((D.obj (.mk j)).map (f a).op.toLoc).toFunctor.map
           (glueTransitionIso f d M e hD g).hom ≫ (e j).hom.hom a := by
   rw [map_glueTransitionIso_hom]
-  -- The projected objects agree with the components only after unfolding the limit carrier.
-  erw [Category.assoc, Cat.Hom.hom_inv_id_toNatTrans_app_assoc, Category.assoc,
-    Category.assoc, ← DescentData.comp_hom, Iso.inv_hom_id, DescentData.id_hom,
-    Category.comp_id]
-  rfl
+  let ea (i : I) :
+      ((D.obj (.mk i)).map (f a).op.toLoc).toFunctor.obj (M i) ≅ (d.obj a).obj i :=
+    DescentData.isoApp (e i) a
+  let n := (D.map g.toLoc).naturalityObjIso (f a).op.toLoc (M i)
+  have h : n.hom ≫ (n.inv ≫ (transition D g (op (X a))).map (ea i).hom ≫
+      ((d.obj a).iso g).hom ≫ (ea j).inv) ≫ (ea j).hom =
+        (transition D g (op (X a))).map (ea i).hom ≫ ((d.obj a).iso g).hom := by
+    simp only [Category.assoc, Iso.hom_inv_id_assoc, Iso.inv_hom_id, Category.comp_id]
+  -- Explicit component types let simplification cancel the two isomorphisms.
+  dsimp only [n, ea] at h
+  simp only [StrongTrans.naturalityObjIso_hom, StrongTrans.naturalityObjIso_inv,
+    DescentData.isoApp_hom, DescentData.isoApp_inv] at h
+  exact h.symm
+
+include hD in
+/-- Equality can be checked after restriction and transport through the chosen local descents. -/
+private lemma glue_hom_ext {i j : I} (g : i ⟶ j)
+    {φ ψ : (transition D g (op S)).obj (M i) ⟶ M j}
+    (h : ∀ a, ((D.map g.toLoc).naturality (f a).op.toLoc).hom.toNatTrans.app (M i) ≫
+      ((D.obj (.mk j)).map (f a).op.toLoc).toFunctor.map φ ≫ (e j).hom.hom a =
+        ((D.map g.toLoc).naturality (f a).op.toLoc).hom.toNatTrans.app (M i) ≫
+          ((D.obj (.mk j)).map (f a).op.toLoc).toFunctor.map ψ ≫ (e j).hom.hom a) :
+    φ = ψ := by
+  apply (hD j).map_injective
+  apply DescentData.hom_ext
+  intro a
+  apply (cancel_mono (DescentData.isoApp (e j) a).hom).mp
+  apply (cancel_epi
+    (((D.map g.toLoc).naturality (f a).op.toLoc).hom.toNatTrans.app (M i))).mp
+  simp only [toDescentData_map_hom, DescentData.isoApp_hom]
+  exact h a
 
 private lemma glueTransitionIso_id (i : I) :
     (glueTransitionIso f d M e hD (𝟙 i)).hom = (transitionIdIso D i (op S) (M i)).hom := by
-  apply (hD i).map_injective
-  apply DescentData.hom_ext
+  apply glue_hom_ext f d M e hD (𝟙 i)
   intro a
-  have : IsIso ((e i).hom.hom a) := by
-    rw [← DescentData.isoApp_hom]
-    infer_instance
-  apply (cancel_mono ((e i).hom.hom a)).mp
-  apply (cancel_epi (((D.map (𝟙 i).toLoc).naturality (f a).op.toLoc).hom.toNatTrans.app
-    (M i))).mp
-  erw [← glueTransitionIso_comm, (d.obj a).iso_id]
-  have hn := ((D.mapId (.mk i)).hom.as.app (.mk (op (X a)))).toNatTrans.naturality
-    ((e i).hom.hom a)
-  erw [transitionIdIso_hom, hn, ← transitionIdIso_hom, transitionIdIso_naturality]
-  exact Category.assoc _ _ _
+  let da : Fiber D (op (X a)) := d.obj a
+  let ea : ((D.obj (.mk i)).map (f a).op.toLoc).toFunctor.obj (M i) ⟶
+      da.obj i := (e i).hom.hom a
+  -- Give the local components their factor-category types: rewriting cannot see through
+  -- the implicit objects of the canonical descent data and the limit projection.
+  change _ ≫ _ ≫ ea = _ ≫ _ ≫ ea
+  refine (glueTransitionIso_comm f d M e hD (𝟙 i) a).symm.trans ?_
+  calc
+    (transition D (𝟙 i) (op (X a))).map ea ≫ (da.iso (𝟙 i)).hom =
+        (transitionIdIso D i (op (X a)) _).hom ≫ ea := by
+      rw [da.iso_id, transitionIdIso_hom, transitionIdIso_hom]
+      exact ((D.mapId (.mk i)).hom.as.app (.mk (op (X a)))).toNatTrans.naturality ea
+    _ = _ := by simp only [transitionIdIso_naturality, Category.assoc]
 
 private lemma glueTransitionIso_comp {i j k : I} (g : i ⟶ j) (h : j ⟶ k) :
     (glueTransitionIso f d M e hD (g ≫ h)).hom =
       (transitionCompIso D g h (op S) (M i)).hom ≫
         (transition D h (op S)).map (glueTransitionIso f d M e hD g).hom ≫
           (glueTransitionIso f d M e hD h).hom := by
-  apply (hD k).map_injective
-  apply DescentData.hom_ext
+  apply glue_hom_ext f d M e hD (g ≫ h)
   intro a
-  have : IsIso ((e k).hom.hom a) := by
-    rw [← DescentData.isoApp_hom]
-    infer_instance
-  apply (cancel_mono ((e k).hom.hom a)).mp
-  apply (cancel_epi (((D.map (g ≫ h).toLoc).naturality (f a).op.toLoc).hom.toNatTrans.app
-    (M i))).mp
-  -- Work after pullback, where the glued transitions agree with those of `d`.
-  erw [← glueTransitionIso_comm, toDescentData_map_hom, Functor.map_comp,
-    Functor.map_comp, Category.assoc, transitionCompIso_naturality_assoc]
+  let da : Fiber D (op (X a)) := d.obj a
+  let ea (i : I) : ((D.obj (.mk i)).map (f a).op.toLoc).toFunctor.obj (M i) ⟶
+      da.obj i := (e i).hom.hom a
+  -- Normalize the same implicit component objects as in the unit check.
+  change _ ≫ _ ≫ ea k = _ ≫ _ ≫ ea k
+  have hcomm {i j : I} (g : i ⟶ j) :
+      (transition D g (op (X a))).map (ea i) ≫ (da.iso g).hom =
+        ((D.map g.toLoc).naturality (f a).op.toLoc).hom.toNatTrans.app (M i) ≫
+          ((D.obj (.mk j)).map (f a).op.toLoc).toFunctor.map
+            (glueTransitionIso f d M e hD g).hom ≫ ea j :=
+    glueTransitionIso_comm f d M e hD g a
+  have hc := ((D.mapComp g.toLoc h.toLoc).hom.as.app
+    (.mk (op (X a)))).toNatTrans.naturality (ea i)
   have hn := ((D.map h.toLoc).naturality (f a).op.toLoc).hom.toNatTrans.naturality
     (glueTransitionIso f d M e hD g).hom
   simp only [Cat.Hom.comp_toFunctor, Functor.comp_map] at hn
-  erw [Category.assoc, ← reassoc_of% hn, ← glueTransitionIso_comm,
-    ← Functor.map_comp_assoc, ← Functor.map_comp_assoc, Category.assoc,
-    ← glueTransitionIso_comm]
-  -- The cocycle of `d` and naturality of the diagram comparison finish the check.
-  have hc := ((D.mapComp g.toLoc h.toLoc).hom.as.app (.mk (op (X a)))).toNatTrans.naturality
-    ((e i).hom.hom a)
-  erw [(d.obj a).iso_comp, transitionCompIso_hom, reassoc_of% hc]
-  erw [Functor.map_comp, Category.assoc, transitionCompIso_hom]
-  rfl
+  refine (glueTransitionIso_comm f d M e hD (g ≫ h) a).symm.trans ?_
+  calc
+    (transition D (g ≫ h) (op (X a))).map (ea i) ≫ (da.iso (g ≫ h)).hom =
+        (transitionCompIso D g h (op (X a)) _).hom ≫
+          (transition D h (op (X a))).map
+            ((transition D g (op (X a))).map (ea i) ≫ (da.iso g).hom) ≫
+              (da.iso h).hom := by
+      simp only [da.iso_comp, transitionCompIso_hom]
+      erw [reassoc_of% hc]
+      simp only [transitionCompIso_hom, Functor.map_comp, Category.assoc]
+      rfl
+    _ = (transitionCompIso D g h (op (X a)) _).hom ≫
+        (transition D h (op (X a))).map
+          (((D.map g.toLoc).naturality (f a).op.toLoc).hom.toNatTrans.app (M i)) ≫
+            ((D.map h.toLoc).naturality (f a).op.toLoc).hom.toNatTrans.app
+              ((transition D g (op S)).obj (M i)) ≫
+                ((D.obj (.mk k)).map (f a).op.toLoc).toFunctor.map
+                  ((transition D h (op S)).map (glueTransitionIso f d M e hD g).hom) ≫
+                    ((D.obj (.mk k)).map (f a).op.toLoc).toFunctor.map
+                      (glueTransitionIso f d M e hD h).hom ≫ ea k := by
+      rw [hcomm g]
+      simp only [Functor.map_comp, Category.assoc]
+      rw [hcomm h, reassoc_of% hn]
+    _ = _ := by
+      simp only [Functor.map_comp, Category.assoc, transitionCompIso_naturality_assoc]
 
 private noncomputable def glueObj : (limit D).obj (.mk (op S)) where
   obj := M
@@ -278,6 +335,8 @@ private noncomputable def glueIso :
   DescentData.isoMk
     (fun a ↦ Fiber.isoMk (fun i ↦ DescentData.isoApp (e i) a) (fun i j g ↦ by
       erw [DescentData.isoApp_hom, DescentData.isoApp_hom, map_obj_iso_hom]
+      -- The limit carrier and glued transitions agree with the chosen data definitionally;
+      -- reassociate only the resulting component square.
       exact (glueTransitionIso_comm f d M e hD g a).trans (Category.assoc _ _ _).symm))
     (fun Y q a b f₁ f₂ hf₁ hf₂ ↦ by
       apply Fiber.hom_ext

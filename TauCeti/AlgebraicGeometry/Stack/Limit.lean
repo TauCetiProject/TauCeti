@@ -19,8 +19,10 @@ are those of that construction.
 
 Diagrams are expressed in the bicategory of scheme pseudofunctors, with the stack and groupoid
 conditions on their objects. This retains the unit and composition modifications of the
-diagram. The index category has objects and arrows in the universe of the schemes, while the
-fibre categories have objects in `Type (u + 1)` and arrows in `Type u`.
+diagram. For an index category with objects and arrows in `Type w`, the scheme universe is
+`max u w`: scheme objects lie in `Type (max u w + 1)`, and the fibre categories have objects
+in `Type (max u w + 1)` and arrows in `Type (max u w)`. Taking `w = 0` includes finite diagrams
+over schemes in any universe `u`.
 -/
 
 public section
@@ -32,18 +34,17 @@ namespace TauCeti.AlgebraicGeometry.StackInGroupoids
 
 open _root_.AlgebraicGeometry
 
-universe u
+universe u w
 
-variable {I : Type u} [SmallCategory I]
-  (D : Pseudofunctor (LocallyDiscrete I) SchPseudofunctor.{u})
+variable {I : Type w} [SmallCategory I]
+  (D : Pseudofunctor (LocallyDiscrete I) SchPseudofunctor.{max u w})
   [∀ i, (D.obj (.mk i)).IsStack Scheme.fppfTopology]
-  [∀ (i : I) (T : Scheme.{u}), IsGroupoid ((D.obj (.mk i)).obj (.mk (op T)))]
+  [∀ (i : I) (T : Scheme.{max u w}), IsGroupoid ((D.obj (.mk i)).obj (.mk (op T)))]
 
 /-- The pseudo-limit of a small diagram of fppf stacks in groupoids. Its underlying
 pseudofunctor is the fibrewise pseudo-limit of the diagram. -/
-@[expose]
-noncomputable def limit : StackInGroupoids.{u} where
-  toSchPseudofunctor := Stack.limit.{u, u + 1, u} D
+noncomputable def limit : StackInGroupoids.{max u w} where
+  toSchPseudofunctor := Stack.limit.{w, max u w + 1, u} D
   isGroupoid _ := inferInstance
   isStack := inferInstance
 
@@ -54,7 +55,7 @@ pseudo-limit are `TauCeti.Stack.limit.π`, `.πCompMap`, `.lift`, `.liftCompπ`,
 `.homMk`, `.isoMk` and `.hom_ext` on this underlying pseudofunctor. -/
 @[simp]
 theorem toSchPseudofunctor_eq :
-    (limit D).toSchPseudofunctor = Stack.limit.{u, u + 1, u} D :=
+    (limit D).toSchPseudofunctor = Stack.limit.{w, max u w + 1, u} D :=
   (rfl)
 
 end limit
