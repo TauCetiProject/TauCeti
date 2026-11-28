@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Asymptotics.Expansion.PowerSeries
 public import TauCeti.RingTheory.PowerSeries.ComplexPower
 
-import Mathlib.Analysis.Analytic.Binomial
+import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.Asymptotics.Expansion.Poincare
 import TauCeti.Analysis.SpecialFunctions.Complex.Log.Basic
 
@@ -120,10 +120,9 @@ theorem hasAsymptoticExpansion_pow_cpow {α : Type*} {l : Filter α} {w : α →
   have hu_exp := hasAsymptoticExpansion_pow_unit_sub_one hf
   have hu0 := tendsto_C_cexp_neg_log_mul_sub_one hw hP hf
   have hbin_at0 : HasAsymptoticExpansion (𝓝 (0 : ℂ)) (fun n z => z ^ n)
-      (fun n => coeff n (PowerSeries.binomialSeries ℂ r)) (fun z => (1 + z) ^ r) := by
-    have hfp := (Complex.one_add_cpow_hasFPowerSeriesAt_zero (a := r)).hasAsymptoticExpansion_zero
-    refine hfp.congr_coeff fun n => ?_
-    simp [_root_.binomialSeries, PowerSeries.binomialSeries_coeff]
+      (fun n => coeff n (PowerSeries.binomialSeries ℂ r)) (fun z => (1 + z) ^ r) :=
+    .of_isBigO fun N => (TauCeti.isBigO_one_add_cpow_sub_sum r N).congr_left fun z => by
+      simp [PowerSeries.binomialSeries_coeff, mul_comm]
   have hcomp := hasAsymptoticExpansion_pow_subst hw hu0 hU0 hbin_at0 hu_exp
   have hmul := hasAsymptoticExpansion_pow_const_mul (Complex.exp (r * ℓ)) hcomp
   refine (hmul.congr_coeff fun n => by rw [formalCpow_def, binomialPow_def]).congr' ?_

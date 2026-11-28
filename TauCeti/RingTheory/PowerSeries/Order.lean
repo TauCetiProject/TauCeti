@@ -197,6 +197,7 @@ theorem order_eq_one_iff_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantC
 
 /-- If `g` has zero constant coefficient, the `n`-th coefficient of `g ^ k` vanishes whenever
 `n < k`. -/
+@[grind =]
 theorem coeff_pow_eq_zero_of_lt {g : R⟦X⟧} (hg : constantCoeff g = 0) {n k : ℕ} (h : n < k) :
     coeff n (g ^ k) = 0 :=
   coeff_of_lt_order _ ((Nat.cast_lt.mpr h).trans_le (le_order_pow_of_constantCoeff_eq_zero k hg))

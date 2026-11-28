@@ -49,11 +49,6 @@ Dirichlet's test `Filter.Tendsto.cauchySeq_series_smul_of_summable_norm_sub` is 
 lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
 `DLMF/Hypergeometric/AnalyticProperties.lean`, where it is
 `exists_tendsto_sum_mul_of_bdd_variation`.
-
-A summable inverse-power series `∑ (z₀ ^ s)⁻¹ • a s` at `z₀ ≠ 0` has coefficients bounded by
-`M * ‖z₀‖ ^ s` (`TauCeti.exists_norm_le_mul_pow_of_summable`), and when convergent at `z` with
-`‖z‖ ≥ 2 * ‖z₀‖`, its remainder after `N` terms is bounded geometrically by
-`2 * M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖` (`TauCeti.norm_sub_sum_le_of_hasSum`).
 -/
 
 public section
@@ -503,56 +498,6 @@ theorem hasSum_lambert_div_pow_three {q w : K} (hq : ‖q‖ < 1) (hw : ‖q * w
   · funext k
     ring
   · simp [div_eq_mul_inv]
-
-section InversePowerSeries
-
-open Filter Finset
-
-/-- A summable inverse-power series at `z₀ ≠ 0` has coefficients bounded by `M * ‖z₀‖ ^ s`. -/
-theorem exists_norm_le_mul_pow_of_summable {𝕜 E : Type*} [NormedField 𝕜] [SeminormedAddCommGroup E]
-    [NormedSpace 𝕜 E] {z₀ : 𝕜} (hz₀ : 0 < ‖z₀‖) {a : ℕ → E}
-    (hs : Summable fun s => (z₀ ^ s)⁻¹ • a s) :
-    ∃ M : ℝ, 0 ≤ M ∧ ∀ s, ‖a s‖ ≤ M * ‖z₀‖ ^ s := by
-  obtain ⟨A, hA⟩ := hs.tendsto_cofinite_zero.norm.bddAbove_range_of_cofinite
-  refine ⟨max A 0, le_max_right A 0, fun s => ?_⟩
-  have h1 : ‖(z₀ ^ s)⁻¹ • a s‖ ≤ max A 0 := (hA ⟨s, rfl⟩).trans (le_max_left A 0)
-  rwa [norm_smul, norm_inv, norm_pow, inv_mul_eq_div, div_le_iff₀ (pow_pos hz₀ s)] at h1
-
-/-- Geometric tail bound for a convergent inverse-power series: when `‖z‖ ≥ 2 * ‖z₀‖` and
-`‖a s‖ ≤ M * ‖z₀‖ ^ s`, the remainder after `N` terms is bounded by
-`2 * M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖`. -/
-theorem norm_sub_sum_le_of_hasSum {𝕜 E : Type*} [NormedField 𝕜] [SeminormedAddCommGroup E]
-    [NormedSpace 𝕜 E] {z₀ z : 𝕜} {M : ℝ} (hz₀ : 0 < ‖z₀‖) (hz : 2 * ‖z₀‖ ≤ ‖z‖)
-    {a : ℕ → E} {v : E} (hcoeff : ∀ s, ‖a s‖ ≤ M * ‖z₀‖ ^ s)
-    (hf : HasSum (fun s => (z ^ s)⁻¹ • a s) v) (N : ℕ) :
-    ‖v - ∑ s ∈ range N, (z ^ s)⁻¹ • a s‖ ≤ 2 * M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖ := by
-  have hM : 0 ≤ M := (norm_nonneg (a 0)).trans (by simpa using hcoeff 0)
-  have hz_pos : 0 < ‖z‖ := by linarith
-  have htail : HasSum (fun k => (z ^ (k + N))⁻¹ • a (k + N))
-      (v - ∑ s ∈ range N, (z ^ s)⁻¹ • a s) :=
-    (hasSum_nat_add_iff' N).mpr hf
-  have hgeom : HasSum (fun k : ℕ => (M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖) * ((1 / 2 : ℝ) ^ k))
-      ((M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖) * (1 - 1 / 2)⁻¹) :=
-    (hasSum_geometric_of_lt_one (by positivity) (by norm_num)).mul_left _
-  have hle : ‖v - ∑ s ∈ range N, (z ^ s)⁻¹ • a s‖ ≤
-      (M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖) * (1 - 1 / 2)⁻¹ := by
-    refine htail.norm_le_of_bounded hgeom fun k => ?_
-    have hratio : ‖z₀‖ / ‖z‖ ≤ 1 / 2 := by
-      rw [div_le_div_iff₀ hz_pos (by norm_num : (0 : ℝ) < 2)]
-      linarith
-    calc
-      ‖(z ^ (k + N))⁻¹ • a (k + N)‖
-          = (‖z‖ ^ (k + N))⁻¹ * ‖a (k + N)‖ := by rw [norm_smul, norm_inv, norm_pow]
-      _ ≤ (‖z‖ ^ (k + N))⁻¹ * (M * ‖z₀‖ ^ (k + N)) := by gcongr; exact hcoeff (k + N)
-      _ = M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖ * (‖z₀‖ / ‖z‖) ^ k := by
-        rw [norm_inv, norm_pow, pow_add, pow_add, mul_inv, div_pow]
-        ring
-      _ ≤ M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖ * (1 / 2 : ℝ) ^ k := by gcongr
-  have hconst : (M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖) * (1 - 1 / 2 : ℝ)⁻¹ =
-      2 * M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖ := by ring
-  rwa [hconst] at hle
-
-end InversePowerSeries
 
 end TauCeti
 

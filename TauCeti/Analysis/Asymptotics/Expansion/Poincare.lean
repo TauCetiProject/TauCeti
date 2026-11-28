@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Analytic.Basic
 public import TauCeti.Analysis.Asymptotics.Expansion.Basic
-import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
 # Poincaré asymptotic expansions and scales
@@ -28,8 +27,10 @@ inverse powers, and convergent power series.
   Poincaré scales.
 * `Asymptotics.hasAsymptoticExpansion_inv_pow_iff_tendsto`: DLMF 2.1.15 characterization of
   Poincaré expansions at infinity.
-* `Asymptotics.hasAsymptoticExpansion_of_hasSum`: a series `∑ (z ^ s)⁻¹ • a s` converging outside
-  a ball is the Poincaré expansion of its sum along `Bornology.cobounded`.
+* `Asymptotics.exists_norm_le_mul_pow_of_summable`, `Asymptotics.norm_sub_sum_le_of_hasSum`, and
+  `Asymptotics.hasAsymptoticExpansion_of_hasSum`: coefficient and tail estimates for convergent
+  inverse-power series, showing that a series `∑ (z ^ s)⁻¹ • a s` converging outside a ball is
+  the Poincaré expansion of its sum along `Bornology.cobounded`.
 * `HasFPowerSeriesAt.hasAsymptoticExpansion`, `HasFPowerSeriesAt.hasAsymptoticExpansion_zero`:
   a convergent power series at `c` (or `0`) is the Poincaré expansion of its sum along `𝓝 c`
   (or `𝓝 0`).
@@ -137,6 +138,50 @@ theorem hasAsymptoticExpansion_inv_pow_iff_tendsto [NormedField 𝕜] [NormedAdd
     (eventually_inv_pow_ne_zero_cobounded X)).trans
     (forall_congr' fun _ => by simp only [inv_inv])
 
+/-- A summable inverse-power series at `z₀ ≠ 0` has coefficients bounded by `M * ‖z₀‖ ^ s`. -/
+theorem exists_norm_le_mul_pow_of_summable [NormedField 𝕜] [SeminormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {z₀ : 𝕜} (hz₀ : 0 < ‖z₀‖) {a : ℕ → E}
+    (hs : Summable fun s => (z₀ ^ s)⁻¹ • a s) :
+    ∃ M : ℝ, 0 ≤ M ∧ ∀ s, ‖a s‖ ≤ M * ‖z₀‖ ^ s := by
+  obtain ⟨A, hA⟩ := hs.tendsto_cofinite_zero.norm.bddAbove_range_of_cofinite
+  refine ⟨max A 0, le_max_right A 0, fun s => ?_⟩
+  have h1 : ‖(z₀ ^ s)⁻¹ • a s‖ ≤ max A 0 := (hA ⟨s, rfl⟩).trans (le_max_left A 0)
+  rwa [norm_smul, norm_inv, norm_pow, inv_mul_eq_div, div_le_iff₀ (pow_pos hz₀ s)] at h1
+
+/-- Geometric tail bound for a convergent inverse-power series: when `‖z‖ ≥ 2 * ‖z₀‖` and
+`‖a s‖ ≤ M * ‖z₀‖ ^ s`, the remainder after `N` terms is bounded by
+`2 * M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖`. -/
+theorem norm_sub_sum_le_of_hasSum [NormedField 𝕜] [SeminormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {z₀ z : 𝕜} {M : ℝ} (hz₀ : 0 < ‖z₀‖) (hz : 2 * ‖z₀‖ ≤ ‖z‖)
+    {a : ℕ → E} {v : E} (hcoeff : ∀ s, ‖a s‖ ≤ M * ‖z₀‖ ^ s)
+    (hf : HasSum (fun s => (z ^ s)⁻¹ • a s) v) (N : ℕ) :
+    ‖v - ∑ s ∈ range N, (z ^ s)⁻¹ • a s‖ ≤ 2 * M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖ := by
+  have hM : 0 ≤ M := (norm_nonneg (a 0)).trans (by simpa using hcoeff 0)
+  have hz_pos : 0 < ‖z‖ := by linarith
+  have htail : HasSum (fun k => (z ^ (k + N))⁻¹ • a (k + N))
+      (v - ∑ s ∈ range N, (z ^ s)⁻¹ • a s) :=
+    (hasSum_nat_add_iff' N).mpr hf
+  have hgeom : HasSum (fun k : ℕ => (M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖) * ((1 / 2 : ℝ) ^ k))
+      ((M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖) * (1 - 1 / 2)⁻¹) :=
+    (hasSum_geometric_of_lt_one (by positivity) (by norm_num)).mul_left _
+  have hle : ‖v - ∑ s ∈ range N, (z ^ s)⁻¹ • a s‖ ≤
+      (M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖) * (1 - 1 / 2)⁻¹ := by
+    refine htail.norm_le_of_bounded hgeom fun k => ?_
+    have hratio : ‖z₀‖ / ‖z‖ ≤ 1 / 2 := by
+      rw [div_le_div_iff₀ hz_pos (by norm_num : (0 : ℝ) < 2)]
+      linarith
+    calc
+      ‖(z ^ (k + N))⁻¹ • a (k + N)‖
+          = (‖z‖ ^ (k + N))⁻¹ * ‖a (k + N)‖ := by rw [norm_smul, norm_inv, norm_pow]
+      _ ≤ (‖z‖ ^ (k + N))⁻¹ * (M * ‖z₀‖ ^ (k + N)) := by gcongr; exact hcoeff (k + N)
+      _ = M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖ * (‖z₀‖ / ‖z‖) ^ k := by
+        rw [norm_inv, norm_pow, pow_add, pow_add, mul_inv, div_pow]
+        ring
+      _ ≤ M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖ * (1 / 2 : ℝ) ^ k := by gcongr
+  have hconst : (M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖) * (1 - 1 / 2 : ℝ)⁻¹ =
+      2 * M * ‖z₀‖ ^ N * ‖(z ^ N)⁻¹‖ := by ring
+  rwa [hconst] at hle
+
 /-- A series `∑ (z ^ s)⁻¹ • a s` convergent for `‖z‖ > R` is the Poincaré asymptotic expansion
 of its sum along `Bornology.cobounded 𝕜`. -/
 theorem hasAsymptoticExpansion_of_hasSum [NormedField 𝕜] [NormedAddCommGroup E]
@@ -151,11 +196,11 @@ theorem hasAsymptoticExpansion_of_hasSum [NormedField 𝕜] [NormedAddCommGroup 
     have hrR : R < ‖z₀‖ := (le_max_left R 0).trans_lt hz₀
     have hr0 : 0 < ‖z₀‖ := (le_max_right R 0).trans_lt hz₀
     obtain ⟨M, -, hcoeff⟩ :=
-      TauCeti.exists_norm_le_mul_pow_of_summable hr0 (hf z₀ hrR).summable
+      exists_norm_le_mul_pow_of_summable hr0 (hf z₀ hrR).summable
     -- For `‖z‖ ≥ 2 * ‖z₀‖`, sum the geometric tail starting at index `N`.
     refine IsBigO.of_bound (2 * M * ‖z₀‖ ^ N) ?_
     filter_upwards [tendsto_norm_cobounded_atTop.eventually_ge_atTop (2 * ‖z₀‖)] with z hz
-    exact TauCeti.norm_sub_sum_le_of_hasSum hr0 hz hcoeff (hf z (by linarith)) N
+    exact norm_sub_sum_le_of_hasSum hr0 hz hcoeff (hf z (by linarith)) N
   · -- If no `z₀` has `‖z₀‖ > max R 0`, `𝕜` is bounded and `cobounded 𝕜 = ⊥`.
     push Not at hex
     have hbot : Bornology.cobounded 𝕜 = ⊥ := by

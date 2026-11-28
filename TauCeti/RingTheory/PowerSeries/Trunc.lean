@@ -59,8 +59,9 @@ This file collects facts used to compare power series to a finite order `m`:
 * `PowerSeries.coeff_coe_mul_eq_sum`: `coeff n (p * g) = ∑_{i < N} pᵢ coeff n (Xⁱ g)` for a
   polynomial `p` of degree less than `N`.
 * `PowerSeries.mk_span_X_pow_eq_sum`: modulo `X ^ n`, a series is `∑_{k < n} cₖ Xᵏ`.
-* `PowerSeries.eval_trunc`, `PowerSeries.aeval_trunc`: the value of the truncation below `n` at
-  `x` is the partial sum `∑_{i < n} cᵢ xⁱ`.
+* `PowerSeries.eval_trunc`, `PowerSeries.eval_trunc_eq_sum_smul`, `PowerSeries.aeval_trunc`: the
+  value of the truncation below `n` at `x` is the partial sum `∑_{i < n} cᵢ xⁱ` (or
+  `∑_{i < n} xⁱ • cᵢ`).
 * `Polynomial.exists_natDegree_le_forall_coeff_eq`: every polynomial agrees up to index `m` with
   one of degree at most `m`.
 * `PowerSeries.aeval_trunc_eq_aeval_of_pow_eq_zero`: at an element with a vanishing `n`th power,
@@ -323,6 +324,12 @@ partial sum `∑_{i < n} cᵢ • xⁱ` of the series. -/
 theorem aeval_trunc {A : Type*} [Semiring A] [Algebra R A] (n : ℕ) (f : R⟦X⟧) (x : A) :
     Polynomial.aeval x (trunc n f) = ∑ i ∈ Finset.range n, coeff i f • x ^ i := by
   simp [Polynomial.aeval_def, eval₂_trunc_eq_sum_range, Algebra.smul_def]
+
+/-- The value at `y` of the truncation below degree `n` in scalar-action order
+`∑_{k < n} y ^ k • coeff k P`, matching `Asymptotics.HasAsymptoticExpansion`. -/
+theorem eval_trunc_eq_sum_smul (n : ℕ) (P : R⟦X⟧) (y : R) :
+    (trunc n P).eval y = ∑ k ∈ Finset.range n, y ^ k • coeff k P := by
+  simp [eval_trunc, mul_comm]
 
 /-- Evaluation at an element `x` of a possibly noncommutative `R`-algebra with `x ^ n = 0` sees a
 power series only through its coefficients below `n`: any polynomial with the same coefficients
