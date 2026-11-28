@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Process.Predictable.Measure
+public import TauCeti.Probability.Process.Predictable.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Iterated
 public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod

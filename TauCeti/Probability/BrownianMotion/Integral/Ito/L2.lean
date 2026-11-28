@@ -15,15 +15,13 @@ import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.Probability.BrownianMotion.Integral.Deterministic
-import TauCeti.Probability.BrownianMotion.Integral.Simple
-import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 
 /-!
 # The square-integrable Itô integral process and Itô's covariance
 
-Where `MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P)`, this file identifies
-`TauCeti.Probability.IsItoIntegral` almost surely with `IsFilteredPreBrownianReal.l2Integral`
-(`ae_eq_l2Integral`) and deduces zero expectation (`integral_eq_zero`), covariance
+Where `MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P)`, this file uses the
+almost sure identification `TauCeti.Probability.IsItoIntegral.ae_eq_l2Integral` with
+`IsFilteredPreBrownianReal.l2Integral` to deduce zero expectation (`integral_eq_zero`), covariance
 (`integral_mul`), increment square integrability (`memLp_sub`, `memLp_sub_restrict`),
 unconditional, event-wise, and conditional increment Itô isometries (`integral_sub_sq_of_memLp`,
 `setIntegral_sub_sq_of_memLp`, `condExp_sub_sq_of_memLp`), finite-horizon `L²(P)` continuity
@@ -49,27 +47,6 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
   {P : Measure Ω} {W H K I J : ℝ≥0 → Ω → ℝ}
 
 namespace Probability.IsItoIntegral
-
-/-- Against a filtered pre-Brownian motion, every Itô integral of an integrand with finite expected
-square energy on `(0, t]` agrees almost surely at `t` with `hW.l2Integral t`. -/
-theorem ae_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0}
-    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) :
-    I t =ᵐ[P] hW.l2Integral t
-      (((ℱ.memLp_predictableMeasure_iff P hI.isStronglyPredictable t 2).2 hH).toLp
-        (Function.uncurry H)) := by
-  let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  choose n τ a _ _ hτ ha _ herr using fun m : ℕ ↦
-    ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P t hI.isStronglyPredictable hH
-      (ε := (m : ℝ≥0∞)⁻¹) (ENNReal.inv_pos.2 (ENNReal.natCast_ne_top m))
-  have hhold := tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    ENNReal.tendsto_inv_nat_nhds_zero (fun _ ↦ zero_le) fun m ↦ (herr m).le
-  exact tendstoInMeasure_ae_unique
-    (hI.tendstoInMeasure_simpleGains hW (fun m ↦ (hτ m).monotoneOn) ha fun _ hε ↦
-      TauCeti.tendsto_measure_lintegral_enorm_pow_of_tendsto_eLpNorm two_ne_zero hhold hε)
-    (tendstoInMeasure_of_tendsto_eLpNorm (by norm_num : (2 : ℝ≥0∞) ≠ 0)
-      (hW.tendsto_eLpNorm_simpleGains_l2Integral hI.isStronglyPredictable hH
-        (fun m ↦ (hτ m).monotoneOn) ha hhold))
 
 /-- Against a filtered pre-Brownian motion, every Itô integral of a deterministic `L²` integrand
 `u` agrees almost surely at horizon `t` with `hW.toIsPreBrownianReal.wienerIntegral`. -/

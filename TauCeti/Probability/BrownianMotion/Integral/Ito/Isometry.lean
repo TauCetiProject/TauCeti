@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
+public import TauCeti.Probability.BrownianMotion.Integral.L2
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -14,23 +15,25 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Basic
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
+import TauCeti.Probability.BrownianMotion.Integral.Process
+import TauCeti.Probability.BrownianMotion.Integral.Simple
 import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Martingale.ContinuousLimit
-import TauCeti.Probability.Martingale.LpLimit
 import TauCeti.Probability.Martingale.MaximalInequality.Lp
-import TauCeti.Probability.Process.ContinuousAE
-import TauCeti.Probability.Process.UniformLimit
 
 /-!
 # Existence of the Itô integral for square-integrable integrands and the Itô isometry
 
 For a pre-Brownian motion `W` relative to a filtration and a predictable integrand `H` with
 finite expected square energy on every finite horizon (`TauCeti.BrownianIntegrable`), this file
-constructs the Itô integral of `H` against `W` and proves the Itô isometry.
+constructs the Itô integral of `H` against `W`, identifies `IsItoIntegral` with the terminal
+`L²` construction `l2Integral`, and proves the Itô isometry.
 
 * `TauCeti.BrownianIntegrable.exists_isItoIntegral`: when `W` has almost surely continuous paths,
   `H` has an Itô integral which is a predictable martingale.
+* `TauCeti.Probability.IsItoIntegral.ae_eq_l2Integral`: every Itô integral of an integrand with
+  finite expected square energy on `(0, t]` agrees almost surely at `t` with `hW.l2Integral t`.
 * `TauCeti.Probability.IsItoIntegral.martingale`: every adapted Itô integral of `H` is a
   martingale.
 * `TauCeti.Probability.IsItoIntegral.memLp`, `TauCeti.Probability.IsItoIntegral.eLpNorm_eq` and
@@ -41,26 +44,21 @@ constructs the Itô integral of `H` against `W` and proves the Itô isometry.
   has almost surely continuous paths and `H` is square integrable on `(0, T] × Ω`, elementary
   gains of simple holdings converging to `H` in `L²((timeMeasure T).prod P)` converge uniformly
   on `[0, T]` in `L²(P)` to `I`.
-* `TauCeti.Probability.IsItoIntegral.tendsto_measure_exists_le_norm_simpleGains_sub_gt`: when `W`
-  has almost surely continuous paths, the elementary gains of any simple holdings converging to `H`
-  in pathwise square energy in probability on `(0, T]` converge uniformly on `[0, T]` in outer
-  probability to every Itô integral `I`.
 
-The integral is the limit of the elementary integrals of bounded simple holdings approximating
-`H` in `L²` of Lebesgue time times `P` on every finite horizon. By the elementary isometry
-`TauCeti.Probability.IsFilteredPreBrownianReal.eLpNorm_simpleGains`, these elementary integrals
-are Cauchy in `L²(P)` at every time. Their fixed-time limit is a martingale, and, when `W` has
-continuous paths, the continuous martingale completion
-`MeasureTheory.exists_continuous_martingale_of_cauchySeq_Lp` selects a predictable version with
-almost surely continuous paths. Any Itô integral agrees almost surely at each time with this
-fixed-time limit, by `TauCeti.Probability.IsItoIntegral.ae_eq_of_tendstoInMeasure`, which gives
-the martingale property and the isometry for every Itô integral.
+Existence uses bounded simple holdings approximating `H` in `L²` of Lebesgue time times `P` on
+every finite horizon and the continuous martingale completion
+`MeasureTheory.exists_continuous_martingale_of_cauchySeq_Lp` to select a predictable version with
+almost surely continuous paths. The martingale property and fixed-time isometry for every Itô
+integral follow directly by identifying `I t` almost surely with `hW.l2Integral t` via
+`TauCeti.Probability.IsItoIntegral.ae_eq_l2Integral`, reusing
+`TauCeti.Probability.IsFilteredPreBrownianReal.exists_martingale_l2Integral` and the
+isometry of `l2Integral`.
 
 Neither usual conditions on the filtration nor path continuity of `W` are needed for the
-isometry and the martingale property; only existence uses continuous paths. Adaptedness is
-needed for the martingale property because an Itô integral is determined only up to
-indistinguishability, and an arbitrary indistinguishable version need not be adapted to a raw
-filtration.
+isometry and the martingale property; only existence and uniform `L²` approximation use
+continuous paths. Adaptedness is needed for the martingale property because an Itô integral is
+determined only up to indistinguishability, and an arbitrary indistinguishable version need not be
+adapted to a raw filtration.
 
 ## References
 
@@ -146,34 +144,26 @@ theorem _root_.TauCeti.BrownianIntegrable.exists_isItoIntegral (hH : BrownianInt
     ?_⟩⟩, hIp, hI⟩
   exact tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hIlim t).2
 
-/-- Every Itô integral of a Brownian-integrable integrand agrees almost surely at each time with
-a martingale whose `L²(P)` norm at time `t` is the `L²` norm of the integrand for Lebesgue time
-on `(0,t]` times `P`. -/
-private theorem IsItoIntegral.exists_martingale_ae_eq (hI : IsItoIntegral ℱ P W H I)
-    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H) :
-    ∃ Z : ℝ≥0 → Ω → ℝ, Martingale Z ℱ P ∧ ∀ t, I t =ᵐ[P] Z t ∧ MemLp (Z t) 2 P ∧
-      eLpNorm (Z t) 2 P = eLpNorm (Function.uncurry H) 2 ((timeMeasure t).prod P) := by
-  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n, τ, a, hmem, hτ, ha, hmart, hcau, hKH, hiso⟩ := hH.exists_simpleGains_cauchySeq hW
-  obtain ⟨Z, hZ, hZlim⟩ := exists_martingale_of_cauchySeq_Lp hmart hmem hcau
-  refine ⟨Z, hZ, fun t ↦ ⟨?_, (hZlim t).1, ?_⟩⟩
-  · exact hI.ae_eq_of_tendstoInMeasure hW hτ ha
-      (fun _ hε ↦ by
-        simpa only [Function.uncurry_apply_pair, Pi.sub_apply, Nat.cast_ofNat] using
-          TauCeti.tendsto_measure_lintegral_enorm_pow_of_tendsto_eLpNorm two_ne_zero (hKH t) hε)
-      (tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hZlim t).2)
-  · -- Pass to the limit in the elementary isometry, in both `L²` spaces.
-    have hH₂ := hH.memLp t
-    have hK (k : ℕ) : MemLp (Function.uncurry (Finance.simpleHolding (τ k) (n k) (a k))) 2
-        ((timeMeasure t).prod P) := by
-      rw [memLp_iff, ← hiso k t]
-      exact (hmem k t).eLpNorm_lt_top
-    have hKlim := ((Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ hK _ hH₂).2 (hKH t)).norm
-    have hGlim := ((Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ (fun k ↦ hmem k t) _ (hZlim t).1).2
-      (hZlim t).2).norm
-    simp only [Lp.norm_toLp, hiso] at hKlim hGlim
-    exact (ENNReal.toReal_eq_toReal_iff' (hZlim t).1.eLpNorm_ne_top hH₂.eLpNorm_ne_top).1
-      (tendsto_nhds_unique hGlim hKlim)
+/-- Against a filtered pre-Brownian motion, every Itô integral of an integrand with finite expected
+square energy on `(0, t]` agrees almost surely at `t` with `hW.l2Integral t`. -/
+theorem IsItoIntegral.ae_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0}
+    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) :
+    I t =ᵐ[P] hW.l2Integral t
+      (((ℱ.memLp_predictableMeasure_iff P hI.isStronglyPredictable t 2).2 hH).toLp
+        (Function.uncurry H)) := by
+  let := (hW.hasLaw_eval 0).isProbabilityMeasure
+  choose n τ a _ _ hτ ha _ herr using fun m : ℕ ↦
+    ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P t hI.isStronglyPredictable hH
+      (ε := (m : ℝ≥0∞)⁻¹) (ENNReal.inv_pos.2 (ENNReal.natCast_ne_top m))
+  have hhold := tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    ENNReal.tendsto_inv_nat_nhds_zero (fun _ ↦ zero_le) fun m ↦ (herr m).le
+  exact tendstoInMeasure_ae_unique
+    (hI.tendstoInMeasure_simpleGains hW (fun m ↦ (hτ m).monotoneOn) ha fun _ hε ↦
+      TauCeti.tendsto_measure_lintegral_enorm_pow_of_tendsto_eLpNorm two_ne_zero hhold hε)
+    (tendstoInMeasure_of_tendsto_eLpNorm (by norm_num : (2 : ℝ≥0∞) ≠ 0)
+      (hW.tendsto_eLpNorm_simpleGains_l2Integral hI.isStronglyPredictable hH
+        (fun m ↦ (hτ m).monotoneOn) ha hhold))
 
 /-- **The martingale property of the Itô integral.** Against a pre-Brownian motion relative to
 the filtration, an adapted Itô integral of a Brownian-integrable integrand is a martingale.
@@ -181,8 +171,9 @@ Neither path continuity of the integrator nor usual conditions on the filtration
 theorem IsItoIntegral.martingale (hI : IsItoIntegral ℱ P W H I)
     (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
     (hIa : StronglyAdapted ℱ I) : Martingale I ℱ P := by
-  obtain ⟨Z, hZ, hIZ⟩ := hI.exists_martingale_ae_eq hW hH
-  exact hZ.congr hIa fun t ↦ (hIZ t).1.symm
+  obtain ⟨Z, hZ, hZl2, -⟩ := hW.exists_martingale_l2Integral
+    fun t ↦ (ℱ.memLp_predictableMeasure_iff P hH.isStronglyPredictable t 2).2 (hH.memLp t)
+  exact hZ.congr hIa fun t ↦ (hZl2 t).trans (hI.ae_eq_l2Integral hW (hH.memLp t)).symm
 
 /-- Restricting an integrand in `L²((timeMeasure t).prod P)` to `(0, t]` produces a
 `BrownianIntegrable` integrand and preserves the Itô integral up to `t`. -/
@@ -223,32 +214,12 @@ private theorem IsItoIntegral.ite_le_brownianIntegrable
       (lintegral_prod _ (hH.aestronglyMeasurable.eNorm.pow_const 2)).symm
     _ < ∞ := hH.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.1 hH
 
-/-- If `H` is in `L²((timeMeasure t).prod P)`, then every Itô integral `I` of `H` is in `L²(P)` at
-`t`, and its `L²(P)` norm equals the `L²` norm of `H` on `(0, t] × Ω`. -/
-private theorem IsItoIntegral.memLp_and_eLpNorm_eq
-    (hI : IsItoIntegral ℱ P W H I) (hW : IsFilteredPreBrownianReal ℱ W P)
-    {t : ℝ≥0} (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) :
-    MemLp (I t) 2 P ∧
-      eLpNorm (I t) 2 P = eLpNorm (Function.uncurry H) 2 ((timeMeasure t).prod P) := by
-  obtain ⟨hIt_ito, hHt_bi⟩ := hI.ite_le_brownianIntegrable hW t hH
-  obtain ⟨Z, -, hIZ⟩ := hIt_ito.exists_martingale_ae_eq hW hHt_bi
-  have hIt_eq : (I - fun s ω ↦ I s ω - I (min t s) ω) t = I t := by ext ω; simp
-  have hIZt := hIZ t
-  rw [hIt_eq] at hIZt
-  have hH_eq : eLpNorm (Function.uncurry (H - fun s ω ↦ if t < s then H s ω else 0)) 2
-      ((timeMeasure t).prod P) = eLpNorm (Function.uncurry H) 2 ((timeMeasure t).prod P) := by
-    refine eLpNorm_congr_ae ?_
-    filter_upwards [Measure.quasiMeasurePreserving_fst.tendsto_ae (ae_mem_Ioc_timeMeasure t)]
-      with p hp
-    simp [Function.uncurry, not_lt.2 hp.2]
-  exact ⟨hIZt.2.1.ae_eq hIZt.1.symm, (eLpNorm_congr_ae hIZt.1).trans (hIZt.2.2.trans hH_eq)⟩
-
 /-- An Itô integral of an integrand with finite expected square energy on `(0, t]` is square
 integrable at `t`. -/
 theorem IsItoIntegral.memLp (hI : IsItoIntegral ℱ P W H I)
     (hW : IsFilteredPreBrownianReal ℱ W P) {t : ℝ≥0}
     (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) : MemLp (I t) 2 P :=
-  (hI.memLp_and_eLpNorm_eq hW hH).1
+  (Lp.memLp _).ae_eq (hI.ae_eq_l2Integral hW hH).symm
 
 /-- **The Itô isometry**, in `L²` norms. Against a pre-Brownian motion relative to the
 filtration, the `L²(P)` norm at time `t` of an Itô integral of an integrand with finite expected
@@ -257,8 +228,17 @@ times `P`. -/
 theorem IsItoIntegral.eLpNorm_eq (hI : IsItoIntegral ℱ P W H I)
     (hW : IsFilteredPreBrownianReal ℱ W P) {t : ℝ≥0}
     (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) :
-    eLpNorm (I t) 2 P = eLpNorm (Function.uncurry H) 2 ((timeMeasure t).prod P) :=
-  (hI.memLp_and_eLpNorm_eq hW hH).2
+    eLpNorm (I t) 2 P = eLpNorm (Function.uncurry H) 2 ((timeMeasure t).prod P) := by
+  let := (hW.hasLaw_eval 0).isProbabilityMeasure
+  let hHp := (ℱ.memLp_predictableMeasure_iff P hI.isStronglyPredictable t 2).2 hH
+  have hnorm : (eLpNorm (hW.l2Integral t (hHp.toLp (Function.uncurry H))) 2 P).toReal =
+      (eLpNorm (hHp.toLp (Function.uncurry H)) 2 (ℱ.predictableMeasure P t)).toReal := by
+    simpa only [Lp.norm_def] using (hW.l2Integral t).norm_map (hHp.toLp (Function.uncurry H))
+  rw [eLpNorm_congr_ae (hI.ae_eq_l2Integral hW hH),
+    (ENNReal.toReal_eq_toReal_iff' (Lp.memLp _).eLpNorm_ne_top (Lp.memLp _).eLpNorm_ne_top).1
+      hnorm,
+    eLpNorm_congr_ae hHp.coeFn_toLp, ℱ.predictableMeasure_def,
+    eLpNorm_trim ℱ.predictable_le_prod hI.isStronglyPredictable]
 
 /-- **The Itô isometry.** Against a pre-Brownian motion relative to the filtration, an Itô
 integral `I` of an integrand `H` with finite expected square energy on `(0, t]` satisfies
@@ -330,80 +310,5 @@ theorem IsItoIntegral.tendsto_eLpNorm_iSup_eNorm_simpleGains_sub
   refine eLpNorm_congr_ae (hIY.mono fun ω hω ↦ ?_)
   refine iSup_congr fun t ↦ iSup_congr fun ht ↦ ?_
   rw [hM_eq i hK_mem t ht ω, hω t ht]
-
-/-- Extract an approximating sequence of simple holdings whose elementary gains have a subsequence
-converging almost surely pointwise on `[0, T]` to the Itô integral `I`. -/
-private theorem IsItoIntegral.exists_approx_subseq_tendsto_ae
-    (hI : IsItoIntegral ℱ P W H I) (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω) (T : ℝ≥0) :
-    ∃ (n₂ : ℕ → ℕ) (τ₂ : ℕ → ℕ → ℝ≥0) (a₂ : ℕ → ℕ → Ω → ℝ) (k : ℕ → ℕ),
-      (∀ m, MonotoneOn (τ₂ m) (Iic (n₂ m))) ∧
-      (∀ m j, j < n₂ m → StronglyMeasurable[ℱ (τ₂ m j)] (a₂ m j)) ∧
-      (∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun m ↦ P {ω | ε ≤
-        ∫⁻ s, ‖Finance.simpleHolding (τ₂ m) (n₂ m) (a₂ m) s ω - H s ω‖ₑ ^ 2
-          ∂timeMeasure T}) atTop (𝓝 0)) ∧
-      Tendsto k atTop atTop ∧
-      ∀ᵐ ω ∂P, ∀ t ≤ T, Tendsto (fun m ↦
-        Finance.simpleGains (τ₂ (k m)) (n₂ (k m)) (a₂ (k m)) W t ω) atTop (𝓝 (I t ω)) := by
-  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n₂, τ₂, a₂, hτ₂, ha₂, hE₂, _⟩ := hI.exists_approx T
-  let G₂ (m : ℕ) := Finance.simpleGains (τ₂ m) (n₂ m) (a₂ m) W
-  have hC (ε : ℝ) (hε : 0 < ε) (δ : ℝ≥0∞) (hδ : 0 < δ) : ∃ N, ∀ p ≥ N, ∀ q ≥ N,
-      P {ω | ∃ t ≤ T, ε < ‖G₂ p t ω - G₂ q t ω‖} ≤ δ := by
-    have hlim := hW.tendsto_measure_exists_le_norm_simpleGains_sub_prod hWc
-      hI.isStronglyPredictable hτ₂ ha₂ hτ₂ ha₂ hE₂ hE₂ hε
-    obtain ⟨U, hU, hUU⟩ := mem_prod_self_iff.1 (hlim (gt_mem_nhds hδ))
-    obtain ⟨N, hN⟩ := mem_atTop_sets.1 hU
-    exact ⟨N, fun p hp q hq ↦ by
-      have hpq : (p, q) ∈ U ×ˢ U := ⟨hN p hp, hN q hq⟩
-      exact (hUU hpq).le⟩
-  obtain ⟨L, -, k, hk_mono, hL_ae⟩ := exists_tendsto_uniformlyInMeasure_Iic_of_cauchy
-    (fun m ↦ hWc.mono fun _ hω ↦ (Finance.continuous_simpleGains hω).continuousOn) hC
-  -- Identify the extracted continuous limit `L` with `I` on `[0, T]` via indistinguishability.
-  have hW_meas : ∀ s, AEStronglyMeasurable (W s) P :=
-    fun s ↦ ((hW.martingale.stronglyAdapted s).mono (ℱ.le s)).aestronglyMeasurable
-  have hG₂_meas (m : ℕ) (s : ℝ≥0) : AEStronglyMeasurable (G₂ m s) P :=
-    Finance.aestronglyMeasurable_simpleGains
-      (fun j hj ↦ ((ha₂ m j hj).mono (ℱ.le _)).aestronglyMeasurable) fun _ _ ↦ hW_meas _
-  have hLI : ProbabilityTheory.Indistinguishable P
-      (fun (s : Iic T) ω ↦ L s ω) (fun (s : Iic T) ω ↦ I s ω) := by
-    refine indist_of_forall_ae_eq
-      (hL_ae.mono fun ω hω ↦ continuousOn_iff_continuous_domRestrict.1 hω.1)
-      (hI.ae_continuous.mono fun ω hω ↦ hω.comp continuous_subtypeVal) fun s ↦ ?_
-    have hlim_in : TendstoInMeasure P (fun m ↦ G₂ (k m) s) atTop (I s) :=
-      (hI.tendstoInMeasure_simpleGains_of_le hW s.property hτ₂ ha₂ hE₂).comp
-        hk_mono.tendsto_atTop
-    have hae_L : ∀ᵐ ω ∂P, Tendsto (fun m ↦ G₂ (k m) s ω) atTop (𝓝 (L s ω)) :=
-      hL_ae.mono fun ω hω ↦ hω.2.tendsto_at s.property
-    exact (tendstoInMeasure_ae_unique hlim_in
-      (tendstoInMeasure_of_tendsto_ae (fun m ↦ hG₂_meas _ s) hae_L)).symm
-  refine ⟨n₂, τ₂, a₂, k, hτ₂, ha₂, hE₂, hk_mono.tendsto_atTop, ?_⟩
-  filter_upwards [hL_ae, hLI] with ω ⟨_, hL_unif⟩ hω t htT
-  exact hω ⟨t, htT⟩ ▸ hL_unif.tendsto_at htT
-
-/-- **Finite-horizon uniform convergence of elementary gains in outer probability.** Against an
-almost surely continuous filtered pre-Brownian motion `W`, any family of left-measurable simple
-holdings converging to `H` in pathwise square energy in probability on `(0, T]` has elementary
-gains converging uniformly on `[0, T]` in outer probability to every Itô integral `I` of `H`. -/
-theorem IsItoIntegral.tendsto_measure_exists_le_norm_simpleGains_sub_gt
-    (hI : IsItoIntegral ℱ P W H I) (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω)
-    {ι : Type*} {l : Filter ι} {T : ℝ≥0} {n : ι → ℕ} {τ : ι → ℕ → ℝ≥0} {a : ι → ℕ → Ω → ℝ}
-    (hτ : ∀ i, MonotoneOn (τ i) (Iic (n i)))
-    (ha : ∀ i j, j < n i → StronglyMeasurable[ℱ (τ i j)] (a i j))
-    (hE : ∀ δ : ℝ≥0∞, 0 < δ → Tendsto (fun i ↦ P {ω | δ ≤
-      ∫⁻ s, ‖Finance.simpleHolding (τ i) (n i) (a i) s ω - H s ω‖ₑ ^ 2
-        ∂timeMeasure T}) l (𝓝 0))
-    {ε : ℝ≥0} (hε : 0 < ε) :
-    Tendsto (fun i ↦ P {ω | ∃ t ≤ T,
-      (ε : ℝ) < ‖Finance.simpleGains (τ i) (n i) (a i) W t ω - I t ω‖}) l (𝓝 0) := by
-  obtain ⟨n₂, τ₂, a₂, k, hτ₂, ha₂, hE₂, hk, hlim_ae⟩ :=
-    hI.exists_approx_subseq_tendsto_ae hW hWc T
-  let G₂ (m : ℕ) := Finance.simpleGains (τ₂ m) (n₂ m) (a₂ m) W
-  refine tendsto_uniformlyInMeasure_of_subseq_tendsto_ae (X := G₂) (ns := k) ?_ hk hlim_ae
-  intro δ hδ
-  have hlim := hW.tendsto_measure_exists_le_norm_simpleGains_sub_prod hWc
-    hI.isStronglyPredictable hτ ha hτ₂ ha₂ hE hE₂ (half_pos (NNReal.coe_pos.2 hε))
-  exact (ENNReal.tendsto_nhds_zero.1 hlim δ hδ).curry
 
 end TauCeti.Probability

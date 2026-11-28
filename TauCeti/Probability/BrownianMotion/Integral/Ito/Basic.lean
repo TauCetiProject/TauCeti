@@ -282,21 +282,22 @@ theorem congr_ae_prod [SFinite P] (hI : IsItoIntegral ℱ P W H I) (hK : IsStron
 `fun t ω ↦ ξ ω * (W t ω - W 0 ω)` is an Itô integral of `fun _ ω ↦ ξ ω`. -/
 theorem const (hW : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω)) {ξ : Ω → ℝ}
     (hξ : StronglyMeasurable[ℱ 0] ξ) :
-    IsItoIntegral ℱ P W (fun _ ω ↦ ξ ω) (fun t ω ↦ ξ ω * (W t ω - W 0 ω)) :=
-  ⟨StronglyAdapted.isStronglyPredictable_of_continuous (fun _ ↦ hξ.mono (ℱ.mono bot_le))
+    IsItoIntegral ℱ P W (fun _ ω ↦ ξ ω) (fun t ω ↦ ξ ω * (W t ω - W 0 ω)) := by
+  refine ⟨StronglyAdapted.isStronglyPredictable_of_continuous (fun _ ↦ hξ.mono (ℱ.mono bot_le))
     fun _ ↦ continuous_const, hW.mono fun _ hω ↦ continuous_const.mul (hω.sub continuous_const),
-    fun t ↦
-      let τ (k : ℕ) : ℝ≥0 := if k = 0 then 0 else t
-      ⟨fun _ ↦ 1, fun _ ↦ τ, fun _ _ ↦ ξ,
-        fun _ _ _ _ _ _ ↦ by dsimp [τ]; split_ifs <;> first | exact zero_le | exact le_rfl | omega,
-        fun _ j hj ↦ by obtain rfl := Nat.lt_one_iff.1 hj; simpa [τ] using hξ,
-        fun _ hε ↦ by
-          have h0 (ω : Ω) : (∫⁻ s, ‖Finance.simpleHolding τ 1 (fun _ ↦ ξ) s ω - ξ ω‖ₑ ^ 2
-              ∂timeMeasure t) = 0 := (lintegral_congr_ae
-            ((ae_mem_Ioc_timeMeasure t).mono fun s hs ↦ by
-              simp [Finance.simpleHolding_def, τ, indicator_of_mem hs])).trans lintegral_zero
-          simp [h0, hε.ne'],
-        fun _ hε ↦ by simp [Finance.simpleGains_def, τ, hε.ne']⟩⟩
+    fun t ↦ ?_⟩
+  let τ (k : ℕ) : ℝ≥0 := if k = 0 then 0 else t
+  let a : ℕ → Ω → ℝ := fun _ ↦ ξ
+  have hτ : MonotoneOn τ (Iic 1) := fun _ _ _ _ _ ↦ by
+    dsimp [τ]; split_ifs <;> first | exact zero_le | exact le_rfl | omega
+  have ha : ∀ j < 1, StronglyMeasurable[ℱ (τ j)] (a j) := fun j hj ↦ by
+    obtain rfl := Nat.lt_one_iff.1 hj; simpa [τ, a] using hξ
+  obtain ⟨m, σ, b, hσ, hb, hE, hG⟩ := (isItoIntegral_simpleGains hW hτ ha).exists_approx t
+  refine ⟨m, σ, b, hσ, hb, fun ε hε ↦ (hE ε hε).congr fun k ↦ congrArg P <| Set.ext fun ω ↦
+    iff_of_eq <| congrArg (ε ≤ ·) <| lintegral_congr_ae <|
+      (ae_mem_Ioc_timeMeasure t).mono fun s hs ↦ by
+        simp [Finance.simpleHolding_def, τ, a, indicator_of_mem hs],
+    hG.congr_right <| .of_forall fun ω ↦ by simp [Finance.simpleGains_def, τ, a]⟩
 
 /-- For an a.s. continuous integrator vanishing a.s. at `0`, `W` is an Itô integral of `1`. -/
 theorem one (hW : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω)) (hW₀ : W 0 =ᵐ[P] 0) :

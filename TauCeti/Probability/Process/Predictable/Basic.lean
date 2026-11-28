@@ -56,19 +56,21 @@ theorem MeasureTheory.StronglyMeasurable.isStronglyPredictable_indicator {ι Ω 
     {ℱ : Filtration ι m} {s : ι} {I : Set ι}
     (hI : ∀ ⦃A : Set Ω⦄, MeasurableSet[ℱ s] A → MeasurableSet[ℱ.predictable] (I ×ˢ A))
     {ξ : Ω → E} (hξ : StronglyMeasurable[ℱ s] ξ) :
-    IsStronglyPredictable ℱ (fun u ω ↦ I.indicator (fun _ ↦ ξ ω) u) := by
-  let : MeasurableSpace (ι × Ω) := ℱ.predictable; let : MeasurableSpace Ω := ℱ s
-  obtain ⟨f, hf⟩ := hξ
-  refine ⟨fun n ↦ ⟨fun p ↦ I.indicator (fun _ ↦ f n p.2) p.1, fun c ↦ ?_,
-    ((f n).finite_range.insert 0).subset fun _ ⟨p, hp⟩ ↦ by
-      by_cases h : p.1 ∈ I <;> simp [h, ← hp]⟩,
-    fun ⟨u, ω⟩ ↦ by
-      by_cases h : u ∈ I <;> [simpa [h] using hf ω; simpa [h] using tendsto_const_nhds]⟩
-  by_cases hc : c = 0
-  · convert (hI ((f n).measurableSet_fiber c)).union (hI MeasurableSet.univ).compl using 1
-    ext ⟨u, ω⟩; by_cases hu : u ∈ I <;> simp [hu, hc]
-  · convert hI ((f n).measurableSet_fiber c) using 1
-    ext ⟨u, ω⟩; by_cases hu : u ∈ I <;> simp [hu, Ne.symm hc]
+  IsStronglyPredictable ℱ (fun u ω ↦ I.indicator (fun _ ↦ ξ ω) u) := by
+  classical
+  let : MeasurableSpace (ι × Ω) := ℱ.predictable
+  let : MeasurableSpace Ω := ℱ s
+  let S : Set (ι × Ω) := I ×ˢ univ
+  have hS : MeasurableSet S := hI MeasurableSet.univ
+  have hproj : Measurable (fun p : S ↦ p.val.2) := by
+    intro A hA
+    refine ⟨I ×ˢ A, hI hA, ?_⟩
+    ext p
+    simp [S, p.property.1]
+  have hsm : StronglyMeasurable[ℱ.predictable] fun p : ι × Ω ↦ if p ∈ S then ξ p.2 else 0 :=
+    (hξ.comp_measurable hproj).dite (stronglyMeasurable_const (b := (0 : E))) hS
+  unfold IsStronglyPredictable
+  simpa only [Function.uncurry_def, S, mem_prod, mem_univ, and_true, indicator_apply] using hsm
 
 /-- A height known at the left endpoint, extended by zero outside `(s,t]`, is predictable. -/
 theorem MeasureTheory.Filtration.stronglyMeasurable_indicator_Ioc_predictable

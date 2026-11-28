@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Instances.NNReal.Lemmas
 public import Mathlib.Topology.Instances.Real.Lemmas
+import Mathlib.Algebra.Order.Floor.Semiring
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
@@ -14,6 +15,8 @@ import Mathlib.Analysis.SpecificLimits.Basic
 
 The dyadic grid of level `n` of `[a, b]` consists of the points `a + k * ((b - a) / 2 ^ n)` for
 `k ≤ 2 ^ n`. The grids are nested, and their points of all levels are dense in `[a, b]`.
+Also provides the clipped fixed-mesh grid `TauCeti.dyadicGrid d T` on `[0, T]` with padded
+terminal index `TauCeti.dyadicCount d T`.
 
 ## Main results
 
@@ -29,6 +32,8 @@ The dyadic grid of level `n` of `[a, b]` consists of the points `a + k * ((b - a
 * `TauCeti.dist_dyadicTime_succ`: consecutive dyadic times of level `n` are `T / 2 ^ n` apart.
 * `TauCeti.exists_dyadicTime_mem_open`: every open set of `ℝ≥0` meeting `[0, T]` contains a
   dyadic time.
+* `TauCeti.dyadicCount`, `TauCeti.dyadicGrid`: the horizon-clipped dyadic grid of mesh `2⁻ᵈ` on
+  `[0, T]` and its padded terminal index.
 -/
 
 public section
@@ -203,5 +208,66 @@ theorem exists_dyadicTime_mem_open {T s : ℝ≥0} (hsT : s ≤ T) {U : Set ℝ�
       Continuous fun x : Icc (0 : ℝ) T ↦ NNReal.mk x.val x.property.1))
     ⟨⟨s, s.coe_nonneg, hsT⟩, hs⟩
   rcases mem_iUnion.mp hx_grid with ⟨n, k, rfl⟩; exact ⟨n, k, hxU⟩
+
+section ClippedGrid
+
+/-- Padded terminal index `⌊T * 2 ^ d⌋₊ + 1` at which `dyadicGrid d T` reaches `T`.
+When `T` is already a mesh point `k / 2 ^ d` (in particular at `T = 0`), `dyadicGrid d T` already
+hits `T` at `⌊T * 2 ^ d⌋₊`, so the final step `[⌊T * 2 ^ d⌋₊, dyadicCount d T]` is degenerate
+(zero-length); otherwise it is strictly positive. -/
+noncomputable def dyadicCount (d : ℕ) (T : ℝ≥0) : ℕ := ⌊T * 2 ^ d⌋₊ + 1
+
+/-- Explicit formula for `dyadicCount d T`. -/
+theorem dyadicCount_def (d : ℕ) (T : ℝ≥0) : dyadicCount d T = ⌊T * 2 ^ d⌋₊ + 1 := (rfl)
+
+/-- The padded terminal index `dyadicCount d T` is always positive. -/
+theorem dyadicCount_pos (d : ℕ) (T : ℝ≥0) : 0 < dyadicCount d T := Nat.succ_pos _
+
+/-- The nonnegative dyadic grid of mesh `2⁻ᵈ` clipped at horizon `T`. -/
+noncomputable def dyadicGrid (d : ℕ) (T : ℝ≥0) (k : ℕ) : ℝ≥0 := min ((k : ℝ≥0) / 2 ^ d) T
+
+/-- Explicit formula for `dyadicGrid d T k`. -/
+theorem dyadicGrid_def (d : ℕ) (T : ℝ≥0) (k : ℕ) :
+    dyadicGrid d T k = min ((k : ℝ≥0) / 2 ^ d) T := (rfl)
+
+/-- The horizon-clipped dyadic grid is nondecreasing in the step index. -/
+theorem monotone_dyadicGrid (d : ℕ) (T : ℝ≥0) : Monotone (dyadicGrid d T) :=
+  fun _ _ hab ↦ min_le_min_right T (div_le_div_of_nonneg_right (Nat.cast_le.2 hab) (by positivity))
+
+/-- The horizon-clipped dyadic grid starts at zero. -/
+@[simp] theorem dyadicGrid_zero (d : ℕ) (T : ℝ≥0) : dyadicGrid d T 0 = 0 := by simp [dyadicGrid]
+
+/-- At `dyadicCount d T` steps, the horizon-clipped dyadic grid reaches `T`. -/
+@[simp] theorem dyadicGrid_count (d : ℕ) (T : ℝ≥0) : dyadicGrid d T (dyadicCount d T) = T := by
+  rw [dyadicGrid_def, dyadicCount_def]
+  exact min_eq_right <| (le_div_iff₀ (by positivity)).2 <| by
+    exact_mod_cast (Nat.lt_floor_add_one (T * 2 ^ d)).le
+
+/-- Every point of `dyadicGrid d T` lies in `[0, T]`. -/
+theorem dyadicGrid_le (d : ℕ) (T : ℝ≥0) (k : ℕ) : dyadicGrid d T k ≤ T := min_le_right _ _
+
+/-- Strictly before `dyadicCount d T`, `dyadicGrid d T k` equals the unclipped point `k / 2 ^ d`. -/
+theorem dyadicGrid_of_lt (d : ℕ) (T : ℝ≥0) {k : ℕ} (hk : k < dyadicCount d T) :
+    dyadicGrid d T k = (k : ℝ≥0) / 2 ^ d :=
+  min_eq_left ((div_le_iff₀ (by positivity)).2 <|
+    (Nat.cast_le.2 (Nat.lt_succ_iff.1 hk)).trans (Nat.floor_le (by positivity)))
+
+/-- From `dyadicCount d T` onwards, `dyadicGrid d T` stays clamped at `T`. -/
+theorem dyadicGrid_of_ge (d : ℕ) (T : ℝ≥0) {k : ℕ} (hk : dyadicCount d T ≤ k) :
+    dyadicGrid d T k = T :=
+  le_antisymm (dyadicGrid_le d T k)
+    ((dyadicGrid_count d T).symm.trans_le (monotone_dyadicGrid d T hk))
+
+/-- Every step of `dyadicGrid d T` has length at most `2⁻ᵈ`. -/
+theorem dyadicGrid_add_one_sub_le (d : ℕ) (T : ℝ≥0) (k : ℕ) :
+    dyadicGrid d T (k + 1) - dyadicGrid d T k ≤ (2 ^ d : ℝ≥0)⁻¹ := by
+  have hstep : ((k + 1 : ℕ) : ℝ≥0) / 2 ^ d = (k : ℝ≥0) / 2 ^ d + (2 ^ d : ℝ≥0)⁻¹ := by
+    push_cast; rw [add_div, one_div]
+  rw [dyadicGrid_def, dyadicGrid_def, tsub_le_iff_right, hstep]
+  rcases le_total T ((k : ℝ≥0) / 2 ^ d) with hT | hk
+  · rw [min_eq_right hT]; exact (min_le_right _ _).trans le_add_self
+  · rw [min_eq_left hk, add_comm]; exact min_le_left _ _
+
+end ClippedGrid
 
 end TauCeti

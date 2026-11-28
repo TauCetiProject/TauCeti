@@ -9,7 +9,7 @@ public import Mathlib.Probability.Process.Adapted
 public import Mathlib.Topology.Instances.NNReal.Lemmas
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Constructions.Polish.StronglyMeasurable
-import TauCeti.Analysis.Normed.Group.FunctionSeries
+import TauCeti.MeasureTheory.Function.UniformConvergence
 
 /-!
 # Continuous adapted limits from summable uniform errors
@@ -55,22 +55,6 @@ variable {Ω E : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   [NormedAddCommGroup E] [CompleteSpace E]
   {ℱ : Filtration ℝ≥0 mΩ} {X : ℕ → ℝ≥0 → Ω → E} {u : ℕ → ℝ}
 
-/-- On a fixed horizon `Iic T`, summable uniform increment errors yield a.s. continuity on
-`Iic T` and a.s. uniform convergence on `Iic T` of `limUnder atTop (fun n ↦ X n t ω)`. -/
-private lemma tendstoUniformlyOn_limUnder_of_summable_Iic {T : ℝ≥0}
-    (hc : ∀ n, ∀ᵐ ω ∂P, ContinuousOn (fun t ↦ X n t ω) (Iic T)) (hu : Summable u)
-    (herr : (∑' n, P {ω | ∃ t ≤ T, u n < ‖X (n + 1) t ω - X n t ω‖}) ≠ ∞) :
-    ∀ᵐ ω ∂P, ContinuousOn (fun t ↦ limUnder atTop (fun n ↦ X n t ω)) (Iic T) ∧
-      TendstoUniformlyOn (fun n t ↦ X n t ω)
-        (fun t ↦ limUnder atTop (fun n ↦ X n t ω)) atTop (Iic T) := by
-  have hbound : ∀ᵐ ω ∂P, ∀ᶠ n in atTop, ∀ t ∈ Iic T, ‖X (n + 1) t ω - X n t ω‖ ≤ u n := by
-    filter_upwards [ae_eventually_notMem herr] with ω hω
-    exact hω.mono fun n hn t ht ↦ le_of_not_gt fun h ↦ hn ⟨t, ht, h⟩
-  filter_upwards [hbound, ae_all_iff.2 hc] with ω hω hcω
-  have hunif := tendstoUniformlyOn_limUnder_of_eventually (f := fun n t ↦ X n t ω) hu
-    (hω.mono fun _ hn t (ht : t ∈ Iic T) ↦ hn t ht)
-  exact ⟨hunif.continuousOn (Frequently.of_forall hcω), hunif⟩
-
 /-- Select a continuous adapted limit from approximants with summable uniform increment errors.
 Only almost-sure continuity is required of each approximant. The conclusion uses one common
 full-measure event for continuity and uniform convergence on all finite horizons. Neither usual
@@ -91,8 +75,9 @@ theorem exists_stronglyAdapted_tendstoUniformlyOn_of_summable
     exact StronglyMeasurable.limUnder (fun n ↦ hX n t)
   have hunif : ∀ᵐ ω ∂P, ∀ T : ℕ, ContinuousOn (fun t ↦ Y t ω) (Iic (T : ℝ≥0)) ∧
       TendstoUniformlyOn (fun n t ↦ X n t ω) (fun t ↦ Y t ω) atTop (Iic (T : ℝ≥0)) :=
-    ae_all_iff.2 fun T ↦ tendstoUniformlyOn_limUnder_of_summable_Iic
-      (fun n ↦ (hc n).mono fun ω hω ↦ hω.continuousOn) hu (herr T)
+    ae_all_iff.2 fun T ↦
+      TauCeti.MeasureTheory.ae_continuousOn_and_tendstoUniformlyOn_limUnder_of_summable
+        (fun n ↦ (hc n).mono fun ω hω ↦ hω.continuousOn) hu (herr T)
   refine ⟨Y, hY, hunif.mono fun ω hω ↦ ⟨continuous_iff_continuousAt.2 fun t ↦ ?_, fun T ↦ ?_⟩⟩
   · obtain ⟨N, hN⟩ := exists_nat_gt t
     exact (hω N).1.continuousAt (Iic_mem_nhds hN)
@@ -253,7 +238,7 @@ theorem exists_tendsto_uniformlyInMeasure_Iic_of_cauchy {T : ℝ≥0}
   have htsum : (∑' k : ℕ, P {ω | ∃ t ≤ T,
       (1 / 2 : ℝ) ^ k < ‖X (ns (k + 1)) t ω - X (ns k) t ω‖}) ≠ ∞ :=
     ne_top_of_le_ne_top (by rw [ENNReal.tsum_geometric]; norm_num) (tsum_le_tsum hns_le)
-  have hlim := tendstoUniformlyOn_limUnder_of_summable_Iic
+  have hlim := TauCeti.MeasureTheory.ae_continuousOn_and_tendstoUniformlyOn_limUnder_of_summable
     (fun k ↦ hc (ns k)) summable_geometric_two htsum
   exact ⟨_, fun ε hε ↦ tendsto_uniformlyInMeasure_of_cauchy_of_tendstoUniformlyOn hC hns
     (hlim.mono fun _ hω ↦ hω.2) hε, ns, hns, hlim⟩
