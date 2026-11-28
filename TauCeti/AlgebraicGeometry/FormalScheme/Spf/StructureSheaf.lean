@@ -10,7 +10,7 @@ public import Mathlib.Topology.Sheaves.Limits
 public import Mathlib.Topology.Sheaves.LocallySurjective
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Carrier
 public import TauCeti.AlgebraicGeometry.StructureSheaf
-public import TauCeti.RingTheory.AdicCompletion.CofinalLimit
+public import TauCeti.RingTheory.AdicCompletion.Limit
 public import TauCeti.RingTheory.AdicRing.CompletedAway
 
 import Mathlib.Algebra.Category.Ring.Constructions
@@ -656,16 +656,18 @@ theorem basicOpenSectionsAdicCompletionIso_hom_comp_evalₐ (hI : IsAdic I) (f :
         congrArg (_ ≫ _ ≫ ·) hc
     _ = _ := (congrArg (_ ≫ ·) hb).trans ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) ha))
 
-/-- On `D(f)`, projection to a quotient thickening is evaluation on the corresponding
-adic completion, followed by reduction along the given containment of ideals. -/
+/-- On `D(f)`, projection to the thickening defined by `J` is the canonical projection
+from the completed localization to `A_f ⧸ J A_f`. -/
 @[reassoc]
 theorem toQuotientSheaf_app_basicOpen_comp_quotientSheafBasicOpenIso_hom {I : Ideal A}
-    (hI : IsAdic I) (hJ : IsAdic J) (f : A) {n : ℕ} (hn : I ^ (n + 1) ≤ J) :
+    (hI : IsAdic I) (hJ : IsAdic J) (f : A) :
     (toQuotientSheaf hI hJ).hom.app (op (basicOpen f)) ≫
         (quotientSheafBasicOpenIso hJ f).hom =
       (basicOpenSectionsAdicCompletionIso hI f).hom ≫
         CommRingCat.ofHom (AdicCompletion.toQuotient (I.map (algebraMap A (Localization.Away f)))
-          ⟨n + 1, (Ideal.map_pow _ _ _).ge.trans (Ideal.map_mono hn)⟩) := by
+          (((hJ.isAdic_iff_isOpen_and_exists_pow_le.mp hI).2).imp fun n hn ↦
+            (Ideal.map_pow _ I n).ge.trans (Ideal.map_mono hn))) := by
+  obtain ⟨n, hn⟩ := hI.exists_pow_succ_le (by simpa only [pow_one] using hJ.isOpen_pow 1)
   have hfactor :
       CommRingCat.ofHom
           (Ideal.quotEquivOfEq (Ideal.map_pow (algebraMap A (Localization.Away f)) I
@@ -675,10 +677,12 @@ theorem toQuotientSheaf_app_basicOpen_comp_quotientSheafBasicOpenIso_hom {I : Id
             (Ideal.map_mono hn))) =
       CommRingCat.ofHom (Ideal.Quotient.factor
         (Ideal.map_mono (f := algebraMap A (Localization.Away f)) hn)) := by
-    refine CommRingCat.hom_ext (RingHom.ext fun x ↦ ?_)
-    simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom, RingHom.comp_apply,
-      RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, Ideal.quotEquivOfEq_eq_factor,
-      Ideal.Quotient.factor_comp_apply]
+    apply CommRingCat.hom_ext
+    apply Ideal.Quotient.ringHom_ext
+    ext x
+    simp only [RingHom.comp_apply, CommRingCat.hom_comp, CommRingCat.hom_ofHom,
+      RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, Ideal.quotEquivOfEq_mk,
+      Ideal.Quotient.factor_mk]
   calc
     _ = (quotientProjection hI n).hom.app (op (basicOpen f)) ≫
         (quotientSheafBasicOpenIso (is_ideal_adic_pow hI n.succ_pos) f).hom ≫

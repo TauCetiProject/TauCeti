@@ -153,8 +153,9 @@ def submodule : (SheafOfModules.unit X.ringCatSheaf).Submodule :=
 
 /-- The component of the submodule `I ⊆ 𝒪_X` at an open is `sections I`. -/
 @[simp]
-lemma submodule_obj (U : X.Opensᵒᵖ) : I.submodule.toSubmodule.obj U = I.sections U.unop :=
-  Sheaf.idealKernel_obj _ U
+lemma submodule_obj (U : X.Opensᵒᵖ) : I.submodule.toSubmodule.obj U = I.sections U.unop := by
+  rw [submodule, sections]
+  exact Sheaf.idealKernel_obj _ U
 
 /-- The ideal sheaf `I ⊆ 𝒪_X` as an `𝒪_X`-module. -/
 def sheaf : X.Modules :=

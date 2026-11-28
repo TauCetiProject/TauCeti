@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
 public import TauCeti.RingTheory.AdicCompletion.Limit
 public import TauCeti.RingTheory.Ideal.Operations
-import TauCeti.RingTheory.AdicCompletion.Algebra
 
 /-!
 # Cofinal quotient systems of an adic completion
@@ -17,14 +16,13 @@ The completion of a ring for an ideal `I` can be computed using a decreasing seq
 with `K n ≤ I ^ n`, provided each `K n` contains a power of `I`. This applies, for example,
 to the sums of the separately extended powers of two ideals in a tensor product.
 
-We first construct the projection of the completion onto any quotient by an ideal containing
-a power of `I`. For finitely generated `I`, `ker_toQuotient` identifies its kernel with the
-extension of the quotient ideal. These projections form a limit cone, and when a power of
+Using `AdicCompletion.toQuotient`, the projections onto these quotients form a limit cone,
+and when a power of
 `I` lies in `J` they assemble into an `R`-algebra homomorphism `AdicCompletion I R →ₐ[R]
 AdicCompletion J R` (`AdicCompletion.ofPowLe`), giving an isomorphism `AdicCompletion.equivOfPowLe`
 whenever `I` and `J` have mutually cofinal powers (for instance when they share a finitely
 generated radical). The limit-cone and completion-comparison results require neither finite
-generation nor completeness of the original ring. The kernel formula assumes `I.FG`.
+generation nor completeness of the original ring.
 
 Reference: Grothendieck–Dieudonné, EGA I, Ch. 0, §7.2 and 7.7.1.
 -/
@@ -36,61 +34,6 @@ open CategoryTheory Limits Opposite
 namespace AdicCompletion
 
 variable {R : Type u} [CommRing R] (I : Ideal R)
-
-/-- Projection of the `I`-adic completion onto a quotient by an ideal containing a power of `I`.
-The map does not depend on the power used to construct it. -/
-noncomputable def toQuotient {K : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K) :
-    AdicCompletion I R →+* R ⧸ K :=
-  (Ideal.Quotient.factor hK.choose_spec).comp (evalₐ I hK.choose).toRingHom
-
-/-- The projection to an open ideal quotient can be computed at any sufficiently deep level. -/
-theorem toQuotient_eq {K : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K) {n : ℕ} (hn : I ^ n ≤ K) :
-    toQuotient I hK = (Ideal.Quotient.factor hn).comp (evalₐ I n).toRingHom := by
-  ext x
-  have h₁ := factor_evalₐ (I := I) (le_max_left hK.choose n) x
-  have h₂ := factor_evalₐ (I := I) (le_max_right hK.choose n) x
-  unfold toQuotient
-  simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
-  rw [← h₁, ← h₂, Ideal.Quotient.factor_comp_apply, Ideal.Quotient.factor_comp_apply]
-
-/-- For finitely generated `I` and any ideal `K` containing a power of `I`, the kernel of
-the projection `AdicCompletion I R →+* R ⧸ K` is the extension of `K` to the completion. -/
-theorem ker_toQuotient {K : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K) (hfg : I.FG) :
-    RingHom.ker (toQuotient I hK) = K.map (algebraMap R (AdicCompletion I R)) := by
-  obtain ⟨n, hn⟩ := hK
-  have hcomp : (evalₐ I n).toRingHom.comp (algebraMap R (AdicCompletion I R)) =
-      Ideal.Quotient.mk (I ^ n) :=
-    RingHom.ext (evalₐ_of I n)
-  have hker : RingHom.ker (evalₐ I n).toRingHom =
-      (I ^ n).map (algebraMap R (AdicCompletion I R)) :=
-    ker_evalₐ_eq_map_pow hfg n
-  have hpullback : (K.map (Ideal.Quotient.mk (I ^ n))).comap (evalₐ I n).toRingHom =
-      K.map (algebraMap R (AdicCompletion I R)) := by
-    rw [← hcomp, ← Ideal.map_map,
-      Ideal.comap_map_of_surjective' (evalₐ I n).toRingHom (surjective_evalₐ I n), hker]
-    exact sup_eq_left.mpr (Ideal.map_mono hn)
-  simpa only [toQuotient_eq I _ hn, ← RingHom.comap_ker, Ideal.Quotient.factor_ker] using hpullback
-
-/-- On elements of the original ring, projection to a quotient is the quotient map. -/
-@[simp]
-theorem toQuotient_of {K : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K) (r : R) :
-    toQuotient I hK (of I R r) = Ideal.Quotient.mk K r := by
-  simp [toQuotient]
-
-/-- Projection onto open ideal quotients commutes with reduction. -/
-@[simp]
-theorem factor_toQuotient {K L : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K)
-    (hL : ∃ n : ℕ, I ^ n ≤ L) (hKL : K ≤ L) (x : AdicCompletion I R) :
-    Ideal.Quotient.factor hKL (toQuotient I hK x) = toQuotient I hL x := by
-  rw [toQuotient_eq I hK hK.choose_spec,
-    toQuotient_eq I hL (hK.choose_spec.trans hKL)]
-  simp only [RingHom.comp_apply, Ideal.Quotient.factor_comp_apply]
-
-/-- The projection onto a power quotient is the usual evaluation map. -/
-@[simp]
-theorem toQuotient_pow (n : ℕ) (h : ∃ k : ℕ, I ^ k ≤ I ^ n) :
-    toQuotient I h = (evalₐ I n : AdicCompletion I R →+* R ⧸ I ^ n) := by
-  simp [toQuotient_eq I h le_rfl]
 
 variable (K : ℕ → Ideal R) (hK : Antitone K)
 
@@ -208,7 +151,8 @@ theorem evalₐ_ofPowLe {J : Ideal R} (hIJ : ∃ k : ℕ, I ^ k ≤ J) (n : ℕ)
 theorem toQuotient_ofPowLe {J L : Ideal R} (hIJ : ∃ k : ℕ, I ^ k ≤ J)
     (hJL : ∃ n : ℕ, J ^ n ≤ L) (x : AdicCompletion I R) :
     toQuotient J hJL (ofPowLe hIJ x) = toQuotient I (Ideal.exists_pow_le_trans hIJ hJL) x := by
-  rw [toQuotient, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+  rw [toQuotient_eq J hJL hJL.choose_spec, RingHom.comp_apply,
+    AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
     evalₐ_ofPowLe hIJ hJL.choose, factor_toQuotient I _ _ hJL.choose_spec]
 
 /-- `ofPowLe` commutes with the canonical maps from `R` into the completions. -/

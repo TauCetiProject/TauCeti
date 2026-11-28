@@ -16,6 +16,8 @@ import Mathlib.Algebra.Category.Ring.Adjunctions
 `CategoryTheory.Sheaf.idealKernel` assembles the sectionwise ring-homomorphism kernels into a
 `SheafOfModules.Submodule` of the structure module. Its locality follows from separatedness
 of the target sheaf. `le_idealKernel_iff` characterizes containment by sectionwise vanishing.
+`idealKernel_eq_bot_of_injective` gives vanishing for sectionwise injective maps, and
+`idealKernel_le_comp` gives the kernel inclusion under postcomposition.
 -/
 
 public section
@@ -37,13 +39,13 @@ noncomputable def idealKernel (φ : R ⟶ S) :
   map i s hs :=
     have hzero : φ.hom.app _ s = 0 := RingHom.mem_ker.mp hs
     have h : φ.hom.app _ (R.obj.map i s) = S.obj.map i (φ.hom.app _ s) :=
-      ConcreteCategory.congr_hom (φ.hom.naturality i) s
+      φ.hom.naturality_apply i s
     RingHom.mem_ker.mpr (h.trans (hzero ▸ map_zero _))
   isSheaf U s hs :=
     have hsection : φ.hom.app U s = 0 := S.isSeparated _ _ hs _ _ fun _ i hi ↦
       have hzero : φ.hom.app _ (R.obj.map i.op s) = 0 := RingHom.mem_ker.mp hi
       have h : S.obj.map i.op (φ.hom.app _ s) = φ.hom.app _ (R.obj.map i.op s) :=
-        (ConcreteCategory.congr_hom (φ.hom.naturality i.op) s).symm
+        (φ.hom.naturality_apply i.op s).symm
       h.trans (hzero.trans (map_zero _).symm)
     (RingHom.mem_ker (f := (φ.hom.app U).hom)).mpr hsection
 
@@ -63,5 +65,38 @@ theorem le_idealKernel_iff (φ : R ⟶ S) (N : (SheafOfModules.unit (ringCatShea
   simp only [idealKernel_obj]
   exact ⟨fun h U _ hs ↦ RingHom.mem_ker.mp (h U hs),
     fun h U _ hs ↦ (RingHom.mem_ker (f := (φ.hom.app U).hom)).mpr (h U _ hs)⟩
+
+variable {T : Sheaf J CommRingCat.{u}}
+
+/-- The ideal kernel of a sectionwise injective morphism is zero. -/
+theorem idealKernel_eq_bot_of_injective (φ : R ⟶ S)
+    (hφ : ∀ U : Cᵒᵖ, Function.Injective (φ.hom.app U)) :
+    idealKernel φ = ⊥ := by
+  apply bot_unique
+  rw [SheafOfModules.Submodule.le_iff]
+  have h : (idealKernel φ).toSubmodule = ⊥ := by
+    refine PresheafOfModules.Submodule.ext fun U ↦ ?_
+    rw [idealKernel_obj, PresheafOfModules.Submodule.bot_obj]
+    exact (RingHom.injective_iff_ker_eq_bot _).mp (hφ U)
+  rw [h]
+  exact bot_le
+
+/-- The ideal kernel of an isomorphism, including an identity, is zero. -/
+@[simp]
+theorem idealKernel_eq_bot_of_isIso (φ : R ⟶ S) [IsIso φ] : idealKernel φ = ⊥ := by
+  have : IsIso φ.hom := inferInstanceAs (IsIso ((sheafToPresheaf J CommRingCat).map φ))
+  exact idealKernel_eq_bot_of_injective φ fun U ↦
+    (ConcreteCategory.bijective_of_isIso (φ.hom.app U)).injective
+
+/-- Postcomposing a sheaf morphism can only enlarge its ideal kernel. -/
+theorem idealKernel_le_comp (φ : R ⟶ S) (ψ : S ⟶ T) :
+    idealKernel φ ≤ idealKernel (φ ≫ ψ) := by
+  apply (le_idealKernel_iff _ _).mpr
+  intro U s hs
+  rw [idealKernel_obj] at hs
+  have hzero : φ.hom.app U s = 0 :=
+    (RingHom.mem_ker (f := (φ.hom.app U).hom)).mp hs
+  rw [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app]
+  exact (congrArg (ψ.hom.app U).hom hzero).trans (map_zero (ψ.hom.app U).hom)
 
 end CategoryTheory.Sheaf
