@@ -56,33 +56,34 @@ theorem antipode_axioms_of_antimultiplicative {R H K : Type*} [CommSemiring R]
       LinearMap.mul' R K ∘ₗ SK.lTensor K ∘ₗ Coalgebra.comul =
         Algebra.linearMap R K ∘ₗ Coalgebra.counit := by
   intro SK
-  have hR (z : H ⊗[R] H) :
-      LinearMap.mul' R K
-          (SK.rTensor K (TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap z)) =
-        e.symm (LinearMap.mul' R H (S.lTensor H (TensorProduct.comm R H H z))) := by
-    induction z using TensorProduct.inductionOn with
-    | add u v hu hv => simp only [map_add, hu, hv]
-    | tmul a b => simp [SK, hmul]
-  have hL (z : H ⊗[R] H) :
-      LinearMap.mul' R K
-          (SK.lTensor K (TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap z)) =
-        e.symm (LinearMap.mul' R H (S.rTensor H (TensorProduct.comm R H H z))) := by
-    induction z using TensorProduct.inductionOn with
-    | add u v hu hv => simp only [map_add, hu, hv]
-    | tmul a b => simp [SK, hmul]
-  constructor
-  · refine LinearMap.ext fun x ↦ ?_
+  have hR :
+      LinearMap.mul' R K ∘ₗ SK.rTensor K ∘ₗ
+          TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap =
+        e.symm.toLinearMap ∘ₗ LinearMap.mul' R H ∘ₗ S.lTensor H ∘ₗ
+          (TensorProduct.comm R H H).toLinearMap :=
+    TensorProduct.ext' fun a b ↦ by simp [SK, hmul]
+  have hL :
+      LinearMap.mul' R K ∘ₗ SK.lTensor K ∘ₗ
+          TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap =
+        e.symm.toLinearMap ∘ₗ LinearMap.mul' R H ∘ₗ S.rTensor H ∘ₗ
+          (TensorProduct.comm R H H).toLinearMap :=
+    TensorProduct.ext' fun a b ↦ by simp [SK, hmul]
+  have step (TK : K ⊗[R] K →ₗ[R] K ⊗[R] K) (TH : H ⊗[R] H →ₗ[R] H ⊗[R] H)
+      (hT : LinearMap.mul' R K ∘ₗ TK ∘ₗ TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap =
+        e.symm.toLinearMap ∘ₗ LinearMap.mul' R H ∘ₗ TH ∘ₗ
+          (TensorProduct.comm R H H).toLinearMap)
+      (hf : ∀ a : H,
+        LinearMap.mul' R H (TH (TensorProduct.comm R H H (f (Coalgebra.comul (R := R) a)))) =
+          algebraMap R H (Coalgebra.counit (R := R) a)) :
+      LinearMap.mul' R K ∘ₗ TK ∘ₗ Coalgebra.comul =
+        Algebra.linearMap R K ∘ₗ Coalgebra.counit := by
+    refine LinearMap.ext fun x ↦ ?_
     obtain ⟨a, rfl⟩ := e.symm.surjective x
-    simp only [LinearMap.comp_apply, Algebra.linearMap_apply, Algebra.algebraMap_eq_smul_one,
-      hcomul, hcounit]
-    rw [hR, hl]
+    have hTa := LinearMap.congr_fun hT (f (Coalgebra.comul (R := R) a))
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hTa
+    simp only [LinearMap.comp_apply, Algebra.linearMap_apply, hcomul, hcounit, hTa, hf]
     simp [Algebra.algebraMap_eq_smul_one, hone]
-  · refine LinearMap.ext fun x ↦ ?_
-    obtain ⟨a, rfl⟩ := e.symm.surjective x
-    simp only [LinearMap.comp_apply, Algebra.linearMap_apply, Algebra.algebraMap_eq_smul_one,
-      hcomul, hcounit]
-    rw [hL, hr]
-    simp [Algebra.algebraMap_eq_smul_one, hone]
+  exact ⟨step _ _ hR hl, step _ _ hL hr⟩
 
 end LinearEquiv
 

@@ -351,15 +351,13 @@ theorem exists_isRightCointegral_ne_zero [Nontrivial R] :
     ∃ φ : Module.Dual R H, IsRightCointegral φ ∧ φ ≠ 0 := by
   by_contra h
   push Not at h
-  have hsub (x : rightCointegrals R H) : x = 0 :=
-    Subtype.ext (h x.val ((mem_rightCointegrals _).mp x.property))
-  have hzero (t : rightCointegrals R H ⊗[R] H) : t = 0 := by
-    induction t using TensorProduct.inductionOn with
-    | add t₁ t₂ ht₁ ht₂ => simp [ht₁, ht₂]
-    | tmul x y => rw [hsub x, TensorProduct.zero_tmul]
+  have : Subsingleton (rightCointegrals R H) :=
+    ⟨fun x y ↦ Subtype.ext ((h x.val ((mem_rightCointegrals _).mp x.property)).trans
+      (h y.val ((mem_rightCointegrals _).mp y.property)).symm)⟩
+  have hsymm :
+      (rightCointegralsTensorEquivDual R H).symm (Coalgebra.counit (R := R) (A := H)) = 0 :=
+    Subsingleton.elim _ _
   have hcounit : Coalgebra.counit (R := R) (A := H) = 0 := by
-    have hsymm := hzero ((rightCointegralsTensorEquivDual R H).symm
-      (Coalgebra.counit (R := R) (A := H)))
     simpa [hsymm] using
       ((rightCointegralsTensorEquivDual R H).apply_symm_apply
         (Coalgebra.counit (R := R) (A := H))).symm
