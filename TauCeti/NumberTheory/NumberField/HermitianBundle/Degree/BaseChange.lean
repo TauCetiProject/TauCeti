@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import TauCeti.NumberTheory.NumberField.ComplexEmbedding.Extension
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.BaseChange
-public import TauCeti.NumberTheory.NumberField.HermitianBundle.Degree.Basic
+public import TauCeti.NumberTheory.NumberField.HermitianBundle.Degree.Line
 public import TauCeti.RingTheory.Ideal.Norm.TensorProduct
 
 /-!
@@ -77,6 +77,22 @@ theorem sectionDegree_baseChange (s : E) :
     cardQuot_span_one_tmul (𝓞 L) s, IsFractionRing.finrank_eq (𝓞 K) K (𝓞 L) L, Nat.cast_pow,
     Real.log_pow]
   ring
+
+/-- The Arakelov degree of a hermitian line is multiplied by the extension degree. -/
+theorem lineDegree_baseChange [Module.Finite (𝓞 K) E] [Module.Flat (𝓞 K) E]
+    (hE : Module.finrank (𝓞 K) E = 1) :
+    (h.baseChange (L := L)).lineDegree = Module.finrank K L * h.lineDegree := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
+  have : FaithfulSMul (𝓞 K) (𝓞 L) := .tower_bot (𝓞 K) (𝓞 L) L
+  obtain ⟨s, hs⟩ := exists_ne (0 : E)
+  have hs' : (1 : 𝓞 L) ⊗ₜ[𝓞 K] s ≠ 0 := fun hz ↦
+    hs (Module.Flat.tensorProduct_mk_injective (𝓞 K) E (𝓞 L) (by simpa using hz))
+  have hrank : Module.finrank (𝓞 L) (𝓞 L ⊗[𝓞 K] E) = 1 :=
+    ((TensorProduct.isBaseChange (𝓞 K) E (𝓞 L)).finrank_eq).trans hE
+  rw [h.baseChange.lineDegree_eq_sectionDegree
+      (((TensorProduct.isBaseChange (𝓞 L) (𝓞 L ⊗[𝓞 K] E) L).finrank_eq).trans hrank) hs',
+    h.lineDegree_eq_sectionDegree (((TensorProduct.isBaseChange (𝓞 K) E K).finrank_eq).trans hE) hs,
+    sectionDegree_baseChange]
 
 /-- **The degree of a lattice containing a base change**. Let `f : 𝓞 L ⊗ E → F` be an injective
 `𝓞 L`-linear map preserving the norms, with `F / f(𝓞 L ⊗ E)` finite. For a section `s` with

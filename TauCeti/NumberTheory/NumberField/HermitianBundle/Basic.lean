@@ -821,6 +821,20 @@ theorem rank_eq_finrank_tensorProduct (Ē : HermitianBundle K) :
     Ē.rank = Module.finrank K (K ⊗[𝓞 K] Ē) :=
   (TensorProduct.isBaseChange (𝓞 K) Ē K).finrank_eq.symm
 
+/-- Rescale every norm of a hermitian bundle by `exp (-c)`, keeping its underlying module. -/
+@[expose]
+def rescale (E : HermitianBundle K) (c : ℝ) : HermitianBundle K :=
+  { E with metric := E.metric.rescale c }
+
+@[simp]
+theorem rank_rescale (E : HermitianBundle K) (c : ℝ) : (E.rescale c).rank = E.rank := by
+  rw [rank_def, rank_def]
+  rfl
+
+@[simp]
+theorem rescale_metric (E : HermitianBundle K) (c : ℝ) :
+    (E.rescale c).metric = E.metric.rescale c := (rfl)
+
 variable (K)
 
 /-- The **trivial hermitian line bundle** `Ō_K = (O_K, |·|)`. -/
