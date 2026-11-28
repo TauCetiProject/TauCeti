@@ -15,14 +15,15 @@ public import Mathlib.RingTheory.Nilpotent.Lemmas
 # Functoriality of the affine point topology
 
 Precomposition and continuous change of coefficients are continuous for the evaluation topology.
-A surjection of coordinate rings gives a closed embedding of points over a T1 ring. Change of
-coefficients preserves embeddings and closed embeddings, and preserves open embeddings when the
-coordinate algebra is of finite type. Along an injective map of coefficients `R → S`, with no
-topology on `R`, the points with values in `R` form a closed subset of those with values in `S`
-when the image of `R` is closed, and a discrete subset when it is discrete and the coordinate
-algebra is commutative of finite type. Over a reduced ring, passing to the quotient by the
-nilradical does not change the point space. Tensor products give products of point spaces, and base
-change does not alter the point topology.
+`AlgEquiv.pointComapHomeomorph` upgrades Mathlib's `AlgEquiv.arrowCongr` to a homeomorphism
+for a coordinate algebra equivalence. A surjection of coordinate rings gives a closed embedding
+of points over a T1 ring. Change of coefficients preserves embeddings and closed embeddings,
+and preserves open embeddings when the coordinate algebra is of finite type. Along an injective
+map of coefficients `R → S`, with no topology on `R`, the points with values in `R` form a closed
+subset of those with values in `S` when the image of `R` is closed, and a discrete subset when it
+is discrete and the coordinate algebra is commutative of finite type.
+Over a reduced ring, passing to the quotient by the nilradical does not change the point space.
+Tensor products give products of point spaces, and base change does not alter the point topology.
 
 These results allow affine presentations and changes of coefficient rings to be used in the
 construction of topological groups of rational points and integral points.
@@ -52,6 +53,24 @@ variable {k A B R S : Type*} [CommSemiring k]
 theorem continuous_comap (φ : B →ₐ[k] A) :
     Continuous fun x : A →ₐ[k] R ↦ x.comp φ :=
   continuous_iff.2 fun b ↦ continuous_eval (φ b)
+
+/-- Precomposition by a coordinate algebra equivalence is a homeomorphism of point spaces. -/
+def _root_.AlgEquiv.pointComapHomeomorph (e : B ≃ₐ[k] A) : (A →ₐ[k] R) ≃ₜ (B →ₐ[k] R) where
+  toEquiv := AlgEquiv.arrowCongr e.symm AlgEquiv.refl
+  continuous_toFun := continuous_comap e.toAlgHom
+  continuous_invFun := continuous_comap e.symm.toAlgHom
+
+/-- The point-space homeomorphism sends a point to its composite with the equivalence. -/
+@[simp]
+theorem _root_.AlgEquiv.coe_pointComapHomeomorph (e : B ≃ₐ[k] A) :
+    ⇑(e.pointComapHomeomorph (R := R)) = fun p ↦ p.comp e.toAlgHom :=
+  (rfl)
+
+/-- The inverse point-space homeomorphism is precomposition with the inverse equivalence. -/
+@[simp]
+theorem _root_.AlgEquiv.coe_pointComapHomeomorph_symm (e : B ≃ₐ[k] A) :
+    ⇑(e.pointComapHomeomorph (R := R)).symm = fun p ↦ p.comp e.symm.toAlgHom :=
+  (rfl)
 
 /-- A surjection of coordinate algebras induces an embedding of point spaces. -/
 theorem isEmbedding_comap_of_surjective (φ : B →ₐ[k] A) (hφ : Function.Surjective φ) :
