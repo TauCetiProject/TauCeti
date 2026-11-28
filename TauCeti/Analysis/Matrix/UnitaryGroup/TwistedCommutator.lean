@@ -235,11 +235,11 @@ theorem coe_pow_card_eq_of_coe_commutatorElement_eq_smul_one {A B : specialUnita
     hAB hζ, pow_card_eq_of_mul_eq_smul_mul hB hA (mem_specialUnitaryGroup_iff.mp B.property).2
     hBA hζ.inv⟩
 
-/-- **Existence of twisted pairs.** For a primitive `r`-th root of unity `ζ`, `r = card n`, there
+/-- **Existence of twisted pairs.** For any `r`-th root of unity `ζ`, `r = card n`, there
 are `A, B ∈ SU(n)` with `⁅A, B⁆ = ζ • 1`: suitable scalar multiples of the shift matrix
 `e_k ↦ e_(k-1)` and the clock matrix `diag(1, ζ, …, ζ ^ (r - 1))`. -/
 theorem exists_coe_commutatorElement_eq_smul_one {ζ : ℂ}
-    (hζ : IsPrimitiveRoot ζ (Fintype.card n)) :
+    (hζ : ζ ^ Fintype.card n = 1) :
     ∃ A B : specialUnitaryGroup n ℂ,
       ((⁅A, B⁆ : specialUnitaryGroup n ℂ) : Matrix n n ℂ) = ζ • 1 := by
   set e := Fintype.equivFin n
@@ -250,8 +250,7 @@ theorem exists_coe_commutatorElement_eq_smul_one {ζ : ℂ}
     have : NeZero (Fintype.card n) := ⟨Fintype.card_ne_zero⟩
     simp only [π, Equiv.trans_apply, Equiv.apply_symm_apply, finRotate_apply, Fin.val_add,
       Fin.val_one']
-    rw [← pow_eq_pow_mod _ hζ.pow_eq_one, pow_add, ← pow_eq_pow_mod _ hζ.pow_eq_one, pow_one,
-      mul_comm]
+    rw [← pow_eq_pow_mod _ hζ, pow_add, ← pow_eq_pow_mod _ hζ, pow_one, mul_comm]
   have hPC : π.permMatrix ℂ * diagonal (fun i => ζ ^ (e i : ℕ)) =
       ζ • (diagonal (fun i => ζ ^ (e i : ℕ)) * π.permMatrix ℂ) := by
     ext i j
@@ -266,7 +265,7 @@ theorem exists_coe_commutatorElement_eq_smul_one {ζ : ℂ}
     refine diagonal_mem_unitary.mpr (Pi.mem_unitary_iff.mpr fun i => pow_mem ?_ _)
     have : Nonempty n := ⟨i⟩
     exact Circle.coe_mem_unitary
-      ⟨ζ, mem_sphere_zero_iff_norm.mpr (hζ.norm'_eq_one Fintype.card_ne_zero)⟩
+      ⟨ζ, mem_sphere_zero_iff_norm.mpr (Complex.norm_eq_one_of_pow_eq_one hζ Fintype.card_ne_zero)⟩
   obtain ⟨a, ha⟩ := exists_circle_smul_mem_specialUnitaryGroup ⟨_, hP⟩
   obtain ⟨b, hb⟩ := exists_circle_smul_mem_specialUnitaryGroup ⟨_, hC⟩
   refine ⟨⟨_, ha⟩, ⟨_, hb⟩, coe_commutatorElement_eq_smul_one_iff.mpr ?_⟩

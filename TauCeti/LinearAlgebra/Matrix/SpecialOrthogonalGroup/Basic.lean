@@ -6,8 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Action
-public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
-public import Mathlib.LinearAlgebra.UnitaryGroup
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # Entrywise maps of special orthogonal matrices
@@ -17,15 +16,11 @@ This expresses the functoriality of special orthogonal groups under coefficient-
 supports their base-change constructions. The construction is modelled on Mathlib's
 `Matrix.SpecialLinearGroup.map`.
 
-Over an index type with at most one element the special orthogonal group is trivial, as is
-Mathlib's special linear group (`Matrix.SpecialLinearGroup.subsingleton_of_subsingleton`).
-
 ## Main declarations
 
 * `Matrix.SpecialOrthogonalGroup.map`: entrywise mapping of special orthogonal matrices.
 * `Matrix.SpecialOrthogonalGroup.mem_stabilizer_iff_mulVec_eq_self`: membership in the stabilizer
   of a vector under the natural action of `SO(n)`.
-* `Matrix.SpecialOrthogonalGroup.subsingleton_of_subsingleton`: `SO(n)` is trivial for `n ≤ 1`.
 -/
 
 public section
@@ -83,12 +78,5 @@ theorem map_comp {T : Type*} [CommRing T] (f : R →+* S) (g : S →+* T) :
     map (n := n) (g.comp f) = (map (n := n) g).comp (map (n := n) f) := by
   ext
   simp
-
-/-- Over an index type with at most one element the special orthogonal group is trivial: a special
-orthogonal matrix is in particular a special linear one. -/
-instance subsingleton_of_subsingleton [Subsingleton n] :
-    Subsingleton (specialOrthogonalGroup n R) :=
-  ⟨fun A B ↦ Subtype.ext <| congrArg (fun M : SpecialLinearGroup n R ↦ (M : Matrix n n R))
-    (Subsingleton.elim ⟨A, A.property.2⟩ ⟨B, B.property.2⟩)⟩
 
 end Matrix.SpecialOrthogonalGroup

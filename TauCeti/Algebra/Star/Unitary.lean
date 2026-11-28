@@ -33,6 +33,8 @@ the Cartan decomposition of `H`. The same elements also form the subgroup
 
 * `Unitary.prodEquiv`: `unitary (A × B)` is multiplicatively equivalent to
   `unitary A × unitary B`.
+* `Unitary.smul_mul_mul_star_smul`: rescaling `u` by a unitary scalar leaves `u * x * star u`
+  unchanged.
 * `Unitary.map_mem_of_map_one`: a star-preserving multiplicative map with `f 1 = 1` maps
   unitaries to unitaries.
 * `Unitary.ringInverse_coe`: the ring inverse of a unitary element is its adjoint.
@@ -70,6 +72,14 @@ unitary elements. -/
 theorem coe_prodEquiv_symm_apply (u : unitary A × unitary B) :
     ((prodEquiv A B).symm u : A × B) = ((u.1 : A), (u.2 : B)) :=
   (rfl)
+
+/-- Conjugation `u * x * star u` is invariant under rescaling `u` by a unitary scalar `r`. -/
+theorem smul_mul_mul_star_smul {R M : Type*} [Monoid R] [Monoid M] [MulAction R M]
+    [SMulCommClass R M M] [IsScalarTower R M M] [StarMul R] [Star M] [StarModule R M]
+    {r : R} (hr : r ∈ unitary R) (u x : M) :
+    (r • u) * x * star (r • u) = u * x * star u := by
+  rw [star_smul, smul_mul_assoc, smul_mul_assoc, mul_smul_comm, smul_smul,
+    Unitary.mul_star_self_of_mem hr, one_smul]
 
 /-- A star-preserving multiplicative map sending `1` to `1` maps unitaries to unitaries. This
 applies to non-unital `⋆`-homomorphisms that happen to preserve the unit; compare

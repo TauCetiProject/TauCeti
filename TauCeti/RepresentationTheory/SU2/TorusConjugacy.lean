@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Normal
-public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 public import TauCeti.RepresentationTheory.SU2.Weyl.Basic
+import TauCeti.Analysis.Matrix.UnitaryGroup.SpecialUnitary
 
 /-!
 # Every element of `SU(2)` is conjugate into the maximal torus
@@ -17,11 +16,8 @@ every conjugacy class: for every `g : SU(2)` there is `u : SU(2)` with `u g u⁻
 input to the classification of the irreducible representations of `SU(2)`, and it makes a class
 function on `SU(2)` determined by its restriction to the circle.
 
-The proof is unitary diagonalisation. A special unitary matrix is normal, so the spectral theorem
-for normal matrices (`Matrix.exists_mem_unitaryGroup_star_mul_mul_eq_diagonal`) diagonalises it by
-a unitary matrix. That unitary need not have determinant one, but it can be rescaled by a scalar of
-modulus one until it does (`Matrix.exists_circle_smul_mem_specialUnitaryGroup`), and rescaling by a
-scalar does not change the conjugation it induces.
+The proof specializes general `SU(n)` diagonalization
+(`Matrix.specialUnitaryGroup.exists_conj_eq_diagonal`) to `n = Fin 2`.
 
 ## Main results
 
@@ -56,40 +52,11 @@ namespace SU2
 
 /-! ### Torus conjugacy -/
 
-/-- **A unitary that diagonalises `g` rescales to a special unitary one.** Multiplying a unitary by
-a unit-modulus scalar leaves the conjugate `star u * g * u` unchanged, and some such multiple is
-special unitary, so `g` is conjugate into the torus inside `SU(2)`. -/
-private theorem exists_conj_mem_torus_of_isDiag_star_left_conjugate (g : SU2)
-    {U : Matrix.unitaryGroup (Fin 2) ℂ}
-    (hdiagG : (star (U : Matrix (Fin 2) (Fin 2) ℂ) * (g : Matrix (Fin 2) (Fin 2) ℂ)
-      * (U : Matrix (Fin 2) (Fin 2) ℂ)).IsDiag) :
-    ∃ u : SU2, u * g * u⁻¹ ∈ torus := by
-  obtain ⟨c, hc⟩ := Matrix.exists_circle_smul_mem_specialUnitaryGroup U
-  obtain ⟨u, hu⟩ : ∃ u : SU2,
-    (u : Matrix (Fin 2) (Fin 2) ℂ) = (c : ℂ) • (U : Matrix (Fin 2) (Fin 2) ℂ) := ⟨⟨_, hc⟩, rfl⟩
-  refine ⟨u⁻¹, mem_torus_iff.mpr ?_⟩
-  -- Inversion in `SU(2)` is `star`, which commutes with the coercion to matrices.
-  have hcoe : ((u⁻¹ * g * (u⁻¹)⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ)
-      = star (u : Matrix (Fin 2) (Fin 2) ℂ) * (g : Matrix (Fin 2) (Fin 2) ℂ)
-        * (u : Matrix (Fin 2) (Fin 2) ℂ) := by
-    rw [inv_inv, Submonoid.coe_mul, Submonoid.coe_mul, ← Matrix.star_eq_inv,
-      Matrix.specialUnitaryGroup.coe_star]
-  have hcmul : (c : ℂ) * star (c : ℂ) = 1 := by
-    rw [Complex.star_def]; exact Circle.coe_mul_conj c
-  rw [hcoe, hu]
-  simp only [star_smul, Matrix.smul_mul, Matrix.mul_smul, smul_smul, hcmul, one_smul]
-  exact hdiagG
-
 /-- **Torus conjugacy for `SU(2)`**: every element of `SU(2)` is conjugate into the maximal torus.
 Equivalently, every special unitary `2 × 2` matrix is diagonalised by a special unitary matrix. -/
 theorem exists_conj_mem_torus (g : SU2) : ∃ u : SU2, u * g * u⁻¹ ∈ torus := by
-  have : IsStarNormal (g : Matrix (Fin 2) (Fin 2) ℂ) :=
-    Unitary.coe_isStarNormal
-      (⟨g, Matrix.specialUnitaryGroup_le_unitaryGroup g.property⟩ : Matrix.unitaryGroup (Fin 2) ℂ)
-  obtain ⟨U, hU, d, hd⟩ :=
-    Matrix.exists_mem_unitaryGroup_star_mul_mul_eq_diagonal (g : Matrix (Fin 2) (Fin 2) ℂ)
-  exact exists_conj_mem_torus_of_isDiag_star_left_conjugate g (U := ⟨U, hU⟩)
-    (hd ▸ Matrix.isDiag_diagonal d)
+  obtain ⟨u, _, hu⟩ := Matrix.specialUnitaryGroup.exists_conj_eq_diagonal g
+  exact ⟨u, mem_torus_iff.mpr (hu ▸ Matrix.isDiag_diagonal _)⟩
 
 /-- Every element of `SU(2)` is conjugate to the torus element `diag (z, z⁻¹)` for some point `z`
 of the circle: `TauCeti.SU2.exists_conj_mem_torus` read through the parametrisation

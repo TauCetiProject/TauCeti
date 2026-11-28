@@ -99,6 +99,12 @@ theorem coe_unitaryTorusHom_const (a : Circle) :
     (unitaryTorusHom n (fun _ ↦ a) : Matrix n n ℂ) = (a : ℂ) • 1 := by
   rw [coe_unitaryTorusHom, smul_one_eq_diagonal]
 
+/-- The determinant of `TauCeti.unitaryTorusHom n z` is the product of its circle entries. -/
+theorem det_unitaryTorusHom (z : n → Circle) :
+    (unitaryTorusHom n z : Matrix n n ℂ).det = ((∏ k, z k : Circle) : ℂ) := by
+  rw [coe_unitaryTorusHom, det_diagonal]
+  exact (map_prod Circle.coeHom z Finset.univ).symm
+
 /-- As an invertible matrix, the diagonal unitary matrix with entries `z i` is the diagonal element
 of the general linear group with the entries `z i` viewed as units of `ℂ`. -/
 @[simp]

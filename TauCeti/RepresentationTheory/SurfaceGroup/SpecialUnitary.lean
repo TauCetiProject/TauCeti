@@ -44,8 +44,12 @@ this fails: for `r = 2`, `ζ = 1` the pair `(1, 1)` is a solution stabilized by 
 
 ## Main results
 
-* `TauCeti.relationSet_zero_eq_empty`: in genus zero the relation set is empty unless `ζ = 1`
-  (for `r ≥ 1`).
+* `TauCeti.mem_relationSet_zero_iff` and `TauCeti.mem_relationSet_one_iff`: genus-zero and
+  genus-one specializations of membership in `relationSet`.
+* `TauCeti.relationSet_zero_eq_empty` and `TauCeti.isEmpty_relationSet_zero`: in genus zero the
+  relation set is empty unless `ζ = 1` (for `r ≥ 1`).
+* `TauCeti.instNonemptyRelationSetUntwisted`: at `ζ = 1`, `relationSet r 1 g` is nonempty for all
+  `r` and `g`.
 * `TauCeti.relationSet_two_neg_one_one_nonempty`: the torus relation `[A, B] = -1` has a solution
   in `SU(2)`.
 * `TauCeti.relationSet_stabilizer_central`: for a primitive `r`-th root of unity `ζ`, every element
@@ -75,6 +79,21 @@ theorem mem_relationSet {r : ℕ} {ζ : ℂ} {g : ℕ}
       ((List.ofFn fun j ↦ ⁅(x j).1, (x j).2⁆).prod : Matrix (Fin r) (Fin r) ℂ) = ζ • 1 :=
   Iff.rfl
 
+/-- At genus `0`, membership in `relationSet r ζ 0` reduces to `1 = ζ • 1` in
+`Matrix (Fin r) (Fin r) ℂ`. -/
+theorem mem_relationSet_zero_iff {r : ℕ} {ζ : ℂ}
+    {x : Fin 0 → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ} :
+    x ∈ relationSet r ζ 0 ↔ (1 : Matrix (Fin r) (Fin r) ℂ) = ζ • 1 := by
+  simp [mem_relationSet]
+
+/-- At genus `1`, membership in `relationSet r ζ 1` is the single commutator equation
+`⁅(x 0).1, (x 0).2⁆ = ζ • 1`. -/
+theorem mem_relationSet_one_iff {r : ℕ} {ζ : ℂ}
+    {x : Fin 1 → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ} :
+    x ∈ relationSet r ζ 1 ↔
+      (↑⁅(x 0).1, (x 0).2⁆ : Matrix (Fin r) (Fin r) ℂ) = ζ • 1 := by
+  simp [mem_relationSet, List.ofFn_succ]
+
 /-- **The sphere relation set.** In genus zero the product of commutators is empty, so for
 `r ≥ 1` the relation `1 = ζ • 1` has no solution unless `ζ = 1`; in particular, for a primitive
 `r`-th root of unity with `r ≥ 2` the sphere moduli space is empty. -/
@@ -84,6 +103,17 @@ theorem relationSet_zero_eq_empty {r : ℕ} (hr : r ≠ 0) {ζ : ℂ} (hζ : ζ 
   have h := congrFun (congrFun (mem_relationSet.1 hx) ⟨0, Nat.pos_of_ne_zero hr⟩)
     ⟨0, Nat.pos_of_ne_zero hr⟩
   simpa using h.symm
+
+/-- On the sphere (`g = 0`), `relationSet r ζ 0` is empty whenever `r ≠ 0` and `ζ ≠ 1`. -/
+theorem isEmpty_relationSet_zero {r : ℕ} (hr : r ≠ 0) {ζ : ℂ} (hζ : ζ ≠ 1) :
+    IsEmpty (relationSet r ζ 0) :=
+  Set.isEmpty_coe_sort.mpr (relationSet_zero_eq_empty hr hζ)
+
+/-- At `ζ = 1`, the trivial tuple `(1, 1, …, 1, 1)` lies in `relationSet r 1 g` for all `r` and
+`g`. -/
+instance instNonemptyRelationSetUntwisted (r g : ℕ) :
+    Nonempty (relationSet r 1 g) :=
+  ⟨⟨fun _ ↦ (1, 1), by simp [mem_relationSet, List.ofFn_const]⟩⟩
 
 /-- **The rank-two torus relation has a solution.** The matrices `A = diag(i, -i)` and
 `B = !![0, 1; -1, 0]` lie in `SU(2)` and satisfy `A B A⁻¹ B⁻¹ = -1`, so the relation set for

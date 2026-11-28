@@ -29,6 +29,8 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
   special unitary after multiplication by a suitable scalar of modulus one.
 * `Matrix.circle_smul_one_mem_specialUnitaryGroup_iff`: the scalar matrix `ζ I`, for `ζ` on the
   circle, is special unitary exactly when `ζ` is a `card n`-th root of unity.
+* `Matrix.specialUnitaryGroup.scalar_mem`: over `ℝ` or `ℂ`, `scalar n c` lies in
+  `specialUnitaryGroup n 𝕜` whenever `c ^ card n = 1`.
 * `Matrix.mem_unitaryGroup_of_star_mul_self_eq_scalar`: over `ℝ` or `ℂ`, a matrix `A` for which
   `Aᴴ A` is a scalar matrix and `‖det A‖ = 1` is unitary. This turns conditions that determine a
   matrix only up to a scalar factor, such as those coming from its action on a projective space,
@@ -178,6 +180,21 @@ theorem circle_smul_one_mem_specialUnitaryGroup_iff {ζ : Circle} :
   rw [mem_specialUnitaryGroup_iff, det_smul, det_one, mul_one, ← Circle.coe_pow,
     Circle.coe_eq_one, and_iff_right_iff_imp]
   exact fun _ ↦ Unitary.smul_mem_of_mem ζ.coe_mem_unitary (one_mem _)
+
+namespace specialUnitaryGroup
+
+/-- Over `ℝ` or `ℂ`, a scalar matrix whose scalar is a `card n`-th root of unity lies in
+`specialUnitaryGroup n 𝕜`. No nonemptiness assumption on `n` is needed. -/
+theorem scalar_mem {𝕜 : Type*} [RCLike 𝕜] {c : 𝕜} (hc : c ^ Fintype.card n = 1) :
+    scalar n c ∈ specialUnitaryGroup n 𝕜 := by
+  have hdet : (scalar n c).det = 1 := by simp [det_diagonal, hc]
+  refine mem_specialUnitaryGroup_iff.mpr ⟨?_, hdet⟩
+  refine mem_unitaryGroup_of_star_mul_self_eq_scalar (u := star c * c)
+    (by rw [hdet, norm_one]) ?_
+  ext i j
+  by_cases hij : i = j <;> simp [star_eq_conjTranspose, scalar_apply, hij]
+
+end specialUnitaryGroup
 
 end Matrix
 

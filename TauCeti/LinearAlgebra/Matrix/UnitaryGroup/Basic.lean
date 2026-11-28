@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.LinearAlgebra.UnitaryGroup
+import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
@@ -40,6 +41,10 @@ For a diagonal with distinct entries, two unitary frames give the same conjugate
 when their relative frame is diagonal. This is the sign ambiguity for orthogonal frames
 and the phase ambiguity for complex unitary frames in Anderson, Guionnet and Zeitouni,
 *An Introduction to Random Matrices* (2010), §4.1.
+
+For `Matrix.specialUnitaryGroup`, this file also records basic inverse coercions (`coe_inv`,
+`coe_mul_coe_inv`, `coe_inv_mul_coe`) and subsingleton triviality on subsingleton index types
+(`subsingleton_of_subsingleton`).
 -/
 
 public section
@@ -212,5 +217,47 @@ theorem conjStarAlgAut_diagonal_eq_conjStarAlgAut_iff {d : ι → R} (hd : Funct
   exact (Unitary.conjStarAlgAut ℕ (Matrix ι ι R) (star V)).injective.eq_iff.symm
 
 end DiagonalStabilizer
+
+namespace specialUnitaryGroup
+
+/-- For a subsingleton index type `n`, `specialUnitaryGroup n α` has at most one element since a
+special unitary matrix has determinant `1` and so defines an element of `SpecialLinearGroup n α`
+(`Matrix.SpecialLinearGroup.subsingleton_of_subsingleton`). Taking `StarRing α` as an implicit
+parameter rather than an instance lets typeclass search also resolve
+`Subsingleton (specialOrthogonalGroup n R)`, where `starRingOfComm` is baked into the abbreviation
+rather than active in context. -/
+instance subsingleton_of_subsingleton {n α : Type*} [Fintype n] [DecidableEq n] [CommRing α]
+    {_ : StarRing α} [Subsingleton n] :
+    Subsingleton (specialUnitaryGroup n α) :=
+  ⟨fun A B => Subtype.ext <| (SpecialLinearGroup.mk_inj
+    (mem_specialUnitaryGroup_iff.mp A.property).2
+    (mem_specialUnitaryGroup_iff.mp B.property).2).mp (Subsingleton.elim _ _)⟩
+
+section StarRing
+
+variable {n α : Type*} [Fintype n] [DecidableEq n] [CommRing α] [StarRing α]
+
+/-- The matrix underlying the inverse of a special unitary matrix is its conjugate transpose. -/
+theorem coe_inv (g : specialUnitaryGroup n α) :
+    ((g⁻¹ : specialUnitaryGroup n α) : Matrix n n α) = star (g : Matrix n n α) :=
+  (rfl)
+
+/-- Multiplying the matrix underlying `g ∈ SU(n)` on the right by the matrix underlying `g⁻¹`
+gives `1`. -/
+@[simp]
+theorem coe_mul_coe_inv (g : specialUnitaryGroup n α) :
+    (g : Matrix n n α) * ((g⁻¹ : specialUnitaryGroup n α) : Matrix n n α) = 1 := by
+  rw [← Submonoid.coe_mul, mul_inv_cancel, OneMemClass.coe_one]
+
+/-- Multiplying the matrix underlying `g ∈ SU(n)` on the left by the matrix underlying `g⁻¹`
+gives `1`. -/
+@[simp]
+theorem coe_inv_mul_coe (g : specialUnitaryGroup n α) :
+    ((g⁻¹ : specialUnitaryGroup n α) : Matrix n n α) * (g : Matrix n n α) = 1 := by
+  rw [← Submonoid.coe_mul, inv_mul_cancel, OneMemClass.coe_one]
+
+end StarRing
+
+end specialUnitaryGroup
 
 end Matrix
