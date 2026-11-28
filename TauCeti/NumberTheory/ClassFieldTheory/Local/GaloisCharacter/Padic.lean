@@ -41,8 +41,9 @@ continuous Galois extension (`TauCeti.not_exists_galoisCharacter_padicAlgebraMap
 
 ## Main definitions
 
-* `ContinuousMonoidHom.toGaloisCharacterOfZHat`: continuous Galois extension `G_{ℚ_p} →ₜ* G`
-  built from an explicit `ℤ̂ →ₜ* G`.
+* `ContinuousMonoidHom.toGaloisCharacterOfZHat`: continuous Galois character constructor
+  `G_{ℚ_p} →ₜ* G` built from `δ : ℚ_[p]ˣ →ₜ* G` and an explicit unramified factor
+  `φ : ℤ̂ →ₜ* G` (extending `δ.toWeilCharacter` on `W_{ℚ_p}` exactly when `φ zHat.gen = δ(p)`).
 * `ContinuousMonoidHom.toGaloisCharacterOfFinOrderAtPrime`: continuous Galois extension when
   `δ(p)` has finite order.
 * `TauCeti.PadicUnitsCharacter.toGaloisCharacterOfUnitary`: continuous Galois extension of a
