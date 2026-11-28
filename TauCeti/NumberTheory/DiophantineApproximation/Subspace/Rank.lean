@@ -6,17 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Span
-public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SuccessiveMinima
+public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.SuccessiveMinima.Basic
 
 import TauCeti.Algebra.Order.BigOperators.Min
 
 /-!
 # The rank of an approximation domain
 
-The rank of the span of an approximation domain is the number of its successive minima over
-`K` that are at most one. Any family realizing those minima spans the domain with its first
-`r` vectors, where `r` is this rank. These statements let arguments about the dimensions and
-spans of domains use the geometry of their successive minima without choosing a new basis.
+In one direction no hypothesis is needed: for all forms and every real level, every successive
+minimum over `K` of an approximation domain below the rank of its span is at most one. For a
+positive level and forms linearly independent at the infinite places and at the places of `S₀`,
+the converse holds as well: the rank of the span is exactly the number of minima at most one, and
+any family realizing the minima (one exists by
+`TauCeti.NumberField.exists_linearIndependent_mem_smul_successiveMinimum_approx`) spans the domain
+with its first `r` vectors, where `r` is this rank. These statements let arguments about the
+dimensions and spans of domains use the geometry of their successive minima without choosing a
+new basis.
 
 Equivalently, below the ambient dimension a successive minimum is at most one exactly when its
 index is below the rank (`TauCeti.NumberField.successiveMinimum_approx_le_one_iff`); these minima
@@ -30,8 +35,9 @@ minima have junk value zero. The rank and spanning statements allow rank zero an
 When the domain spans a nonzero proper subspace, of rank `R`, the minima beyond the rank contain
 a large jump: some `k` with `R ≤ k < #ι` has `(μ (k - 1) / μ k) ^ (#ι - R) ≤ (μ (#ι - 1))⁻¹`
 (`TauCeti.NumberField.exists_div_pow_le_inv`). This chooses the splitting index `k` at which the
-Plücker vectors of the first `k` minimal vectors are moved into an exterior power, where the jump
-`μ k / μ (k - 1)` makes the last minimum of the new domain large.
+Plücker vectors of the `p`-subfamilies of the corrected family that meet the first `k` indices lie
+in an exterior-power approximation domain, where the jump `μ k / μ (k - 1)` makes the last
+minimum large.
 
 ## References
 
@@ -48,28 +54,26 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι]
 
-/-- For forms independent at every infinite place and a level `Q > 0`, the approximation body
-`approxBody L c Q` is a convex body with `0` in its interior, and the span of the approximation
-domain is spanned by the lattice vectors of `approxModule S₀ L c Q` in that body. This packages
-the approximation body for the convex-body successive-minima API. -/
-theorem exists_convexBody_approxSpan {S₀ : Finset (FinitePlace K)}
+private theorem approxSpan_eq_span_mixedEmbedding {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
-    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) :
-    ∃ B : ConvexBody (ι → mixedSpace K),
-      (B : Set (ι → mixedSpace K)) = approxBody L c Q ∧
-      0 ∈ interior (B : Set (ι → mixedSpace K)) ∧
-      approxSpan S₀ L c Q = Submodule.span K {x | x ∈ approxModule S₀ L c Q ∧
-        (fun j ↦ mixedEmbedding K (x j)) ∈ (1 : ℝ) • (B : Set (ι → mixedSpace K))} := by
-  let B : ConvexBody (ι → mixedSpace K) :=
-    ⟨approxBody L c Q, convex_approxBody L c Q, isCompact_approxBody hLinf c Q,
-      ⟨0, mem_of_mem_nhds (approxBody_mem_nhds_zero L c hQ)⟩⟩
-  have hcoe : (B : Set (ι → mixedSpace K)) = approxBody L c Q :=
-    ConvexBody.coe_mk _ _ _ _
-  refine ⟨B, hcoe, ?_, ?_⟩
-  · rw [hcoe]
-    exact mem_interior_iff_mem_nhds.2 (approxBody_mem_nhds_zero L c hQ)
-  · rw [hcoe, one_smul, approxSpan_eq_span, approxDomain_eq S₀ L c hQ.le]
+    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 ≤ Q) :
+    approxSpan S₀ L c Q = Submodule.span K {x | x ∈ approxModule S₀ L c Q ∧
+      (fun j ↦ mixedEmbedding K (x j)) ∈ (1 : ℝ) • approxBody L c Q} := by
+  rw [one_smul, approxSpan_eq_span, approxDomain_eq S₀ L c hQ]
+
+/-- **The minima below the rank of an approximation domain are at most one**: if `l` is less
+than the rank of the span of `approxDomain S₀ L c Q`, then its `l`-th successive minimum over `K`
+is at most `1`, since the domain holds `l + 1` linearly independent points. This holds for every
+real level and all forms. -/
+theorem successiveMinimum_le_one_of_lt_finrank_approxSpan {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)} {c : AbsoluteValue K ℝ → ι → ℝ} {Q : ℝ}
+    {l : ℕ} (hl : l < finrank K (approxSpan S₀ L c Q)) :
+    (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ≤ 1 := by
+  rw [approxSpan_eq_span] at hl
+  refine Submodule.successiveMinimum_le_of_lt_rank_span one_pos
+    approxDomain_subset_approxModule (fun x hx ↦ ?_) (lt_rank_of_lt_finrank hl)
+  rw [one_smul, mixedEmbedding_mem_approxBody_iff]
+  exact (mem_approxDomain.1 hx).1
 
 open scoped Classical in
 /-- The rank of an approximation domain of positive level is the number of its successive
@@ -85,39 +89,10 @@ theorem finrank_approxSpan {S₀ : Finset (FinitePlace K)}
   classical
   let _ := discreteTopology_mixedImage_approxModule hLfin c Q
   let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
-  obtain ⟨B, hcoe, hB, hspan⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLinf c hQ
-  rw [hspan, ← hcoe]
+  obtain ⟨B, hcoe, hB⟩ := exists_convexBody_eq_approxBody hLinf c hQ
+  rw [approxSpan_eq_span_mixedEmbedding c hQ.le, ← hcoe]
   exact Submodule.finrank_span_setOf_mem (Λ := approxModule S₀ L c Q) hB
     (t := (1 : ℝ)) zero_lt_one
-
-/-- Below `#ι`, the successive minima over `K` of an approximation domain of positive level are
-positive. -/
-theorem successiveMinimum_approx_pos {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
-    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
-    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) {l : ℕ} (hl : l < Fintype.card ι) :
-    0 < (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l := by
-  let _ := discreteTopology_mixedImage_approxModule hLfin c Q
-  let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
-  obtain ⟨B, hcoe, hB, -⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLinf c hQ
-  rw [← hcoe]
-  exact Submodule.successiveMinimum_pos hB hl
-
-/-- Below `#ι`, the successive minima over `K` of an approximation domain of positive level are
-nondecreasing. -/
-theorem monotoneOn_successiveMinimum_approx {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
-    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
-    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) :
-    MonotoneOn ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q))
-      (Iio (Fintype.card ι)) := by
-  let _ := discreteTopology_mixedImage_approxModule hLfin c Q
-  let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
-  obtain ⟨B, hcoe, hB, -⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLinf c hQ
-  rw [← hcoe]
-  exact Submodule.monotoneOn_successiveMinimum hB
 
 /-- Below `#ι`, a successive minimum over `K` of an approximation domain of positive level is at
 most one exactly when its index is below the rank of the domain. -/
@@ -130,8 +105,8 @@ theorem successiveMinimum_approx_le_one_iff {S₀ : Finset (FinitePlace K)}
       l < finrank K (approxSpan S₀ L c Q) := by
   let _ := discreteTopology_mixedImage_approxModule hLfin c Q
   let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
-  obtain ⟨B, hcoe, hB, hspan⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLinf c hQ
-  rw [hspan, ← hcoe]
+  obtain ⟨B, hcoe, hB⟩ := exists_convexBody_eq_approxBody hLinf c hQ
+  rw [approxSpan_eq_span_mixedEmbedding c hQ.le, ← hcoe]
   exact Submodule.successiveMinimum_le_iff_lt_finrank_span hB hl one_pos
 
 open scoped Classical in
@@ -151,9 +126,9 @@ theorem approxSpan_eq_span_image {S₀ : Finset (FinitePlace K)}
   classical
   let _ := discreteTopology_mixedImage_approxModule hLfin c Q
   let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
-  obtain ⟨B, hcoe, hB, hspan⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLinf c hQ
+  obtain ⟨B, hcoe, hB⟩ := exists_convexBody_eq_approxBody hLinf c hQ
   rw [← hcoe] at hxB
-  rw [hspan]
+  rw [approxSpan_eq_span_mixedEmbedding c hQ.le, ← hcoe]
   exact Submodule.span_setOf_mem_eq_span_image hB (t := (1 : ℝ)) zero_lt_one hx hxΛ hxB
 
 /-- **A jump among the successive minima beyond the rank** (Bombieri–Gubler (7.41)). Let the
