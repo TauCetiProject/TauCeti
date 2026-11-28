@@ -9,8 +9,11 @@ public import Mathlib.RingTheory.Flat.Localization
 public import Mathlib.RingTheory.RingHom.Flat
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 
+public import Mathlib.Algebra.Module.LocalizedModule.Submodule
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
+
 /-!
-# Flatness of the local homomorphism at a pair of primes
+# Flatness and localization
 
 For an `R`-algebra `S` and primes `q` of `S` and `p = q ∩ R` of `R`, the local homomorphism
 `R_p → S_q` is flat iff `S_q` is flat over `R`: flatness over `R_p` and over `R` agree for an
@@ -21,8 +24,13 @@ When `S` is flat over `R`, the local homomorphism `R_p → S_q` is moreover fait
 extending an ideal of `R` to `S_q` and contracting it back to `R` gives the same ideal as doing so
 through `R_p`.
 
+Localization also commutes with a principal quotient, and hence preserves the flatness
+condition on that quotient.
+
 ## Main results
 
+* `Algebra.flat_localizedModule_quotient_span_singleton_iff`: the two presentations of a
+  localized principal quotient have equivalent flatness.
 * `Localization.flat_localRingHom_iff`: the local homomorphism `R_p → S_q` is flat iff `S_q` is
   flat over `R`.
 * `Ideal.comap_map_localization_atPrime_of_flat`: for `S` flat over `R`, an ideal `I` of `R` and a
@@ -67,3 +75,26 @@ theorem comap_map_localization_atPrime_of_flat [Module.Flat R S] (I : Ideal R) (
     Ideal.comap_map_eq_self_of_faithfullyFlat]
 
 end Ideal
+
+namespace Algebra
+
+variable {R B : Type*} [CommRing R] [CommRing B] [Algebra R B]
+
+/-- Localizing the quotient by one equation agrees with quotienting the localized algebra. -/
+theorem flat_localizedModule_quotient_span_singleton_iff (b : B)
+    (P : Submonoid B) (C : Type*) [CommRing C] [Algebra B C] [Algebra R C]
+    [IsScalarTower R B C] [IsLocalization P C] :
+    Module.Flat R (LocalizedModule P (B ⧸ Ideal.span {b})) ↔
+      Module.Flat R (C ⧸ Ideal.span {algebraMap B C b}) := by
+  let ψ := (Ideal.span {b} : Submodule B B).toLocalizedQuotient' C P (Algebra.linearMap B C)
+  let e := IsLocalizedModule.iso P ψ
+  have hloc : (Ideal.span {b} : Submodule B B).localized' C P (Algebra.linearMap B C) =
+      Ideal.span {algebraMap B C b} := by
+    rw [Submodule.localized'_span, Set.image_singleton]
+    rfl
+  let e' := (e.restrictScalars R).trans
+    ((Submodule.quotEquivOfEq _ _ hloc).restrictScalars R)
+  exact ⟨fun _ ↦ Module.Flat.of_linearEquiv e'.symm,
+    fun _ ↦ Module.Flat.of_linearEquiv e'⟩
+
+end Algebra

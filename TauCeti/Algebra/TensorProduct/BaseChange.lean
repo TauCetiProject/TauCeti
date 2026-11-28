@@ -13,11 +13,13 @@ module
 public import Mathlib.Algebra.Ring.Action.End
 public import Mathlib.LinearAlgebra.TensorProduct.Opposite
 public import Mathlib.RingTheory.TensorProduct.Basic
+public import Mathlib.RingTheory.Ideal.Maps
 -- `Tower` supplies the underlying linear scalar-extension equivalences.
 import Mathlib.LinearAlgebra.TensorProduct.Tower
 -- Public: `Algebra.TensorProduct.congr` supplies the scalar-automorphism action exported below,
 -- and `TensorProduct.map` occurs in the type of `ScalarAut.comul_smul` downstream.
 public import Mathlib.RingTheory.TensorProduct.Maps
+public import Mathlib.RingTheory.IsTensorProduct
 
 /-!
 # Base change is compatible with `⊗`, with `ᵐᵒᵖ`, and with itself
@@ -648,3 +650,188 @@ theorem _root_.Algebra.TensorProduct.rightMulSemiringAction_smul_eq_baseChangeAu
 end AutHom
 
 end TauCeti.Algebra.TensorProduct
+
+open TensorProduct
+
+namespace Algebra.TensorProduct
+
+attribute [local instance] rightAlgebra
+
+variable {R₀ R₁ S₀ : Type*} [CommRing R₀] [CommRing R₁] [CommRing S₀] [Algebra R₀ R₁]
+  [Algebra R₀ S₀]
+
+variable (M : Type*) [AddCommGroup M] [Module R₀ M]
+    [Module R₁ M] [IsScalarTower R₀ R₁ M]
+
+/-- Tensoring an algebra map with the identity preserves the right-factor inclusion. -/
+lemma map_toAlgHom_one_tmul {A : Type*} [CommRing A] [Algebra R₀ A]
+    (f : R₁ →ₐ[R₀] A) (s : S₀) :
+    map f (AlgHom.id R₀ S₀) ((1 : R₁) ⊗ₜ[R₀] s) = (1 : A) ⊗ₜ[R₀] s := by
+  rw [map_tmul, map_one, AlgHom.id_apply]
+
+/-- Cancellation across a pushout sends a pure tensor to scalar multiplication. -/
+@[simp]
+lemma cancelBaseChange_tmul_tmul (r : R₁) (s : S₀)
+    (x : M) :
+    Algebra.IsPushout.cancelBaseChange R₀ S₀ R₁ (R₁ ⊗[R₀] S₀) M
+      ((r ⊗ₜ[R₀] s) ⊗ₜ[R₁] x) = s ⊗ₜ (r • x) := by
+  apply (Algebra.IsPushout.cancelBaseChange R₀ S₀ R₁
+    (R₁ ⊗[R₀] S₀) M).symm.injective
+  simp only [LinearEquiv.symm_apply_apply, Algebra.IsPushout.cancelBaseChange_symm_tmul,
+    right_algebraMap_apply, ← smul_tmul, smul_tmul', smul_eq_mul, mul_one]
+
+/-- Cancellation across a pushout is natural in the module. -/
+lemma cancelBaseChange_lTensor {N' : Type*} [AddCommGroup N'] [Module R₀ N'] [Module R₁ N']
+    [IsScalarTower R₀ R₁ N'] (f : N' →ₗ[R₁] M)
+    (y : (R₁ ⊗[R₀] S₀) ⊗[R₁] N') :
+    Algebra.IsPushout.cancelBaseChange R₀ S₀ R₁ (R₁ ⊗[R₀] S₀) M
+      (f.lTensor _ y) =
+      (f.restrictScalars R₀).lTensor S₀
+        (Algebra.IsPushout.cancelBaseChange R₀ S₀ R₁ (R₁ ⊗[R₀] S₀) N' y) := by
+  induction y with
+  | add z y hx hy => rw [map_add, map_add, hx, hy, map_add, map_add]
+  | tmul z x =>
+    induction z with
+    | add z y hx hy => simp only [add_tmul, map_add, hx, hy]
+    | tmul r s => simp [cancelBaseChange_tmul_tmul]
+
+end Algebra.TensorProduct
+
+namespace Algebra.TensorProduct
+
+attribute [local instance] rightAlgebra
+
+variable {R₀ R₁ S₀ : Type*} [CommRing R₀] [CommRing R₁] [CommRing S₀] [Algebra R₀ R₁]
+  [Algebra R₀ S₀]
+variable (M : Type*) [AddCommGroup M] [Module R₀ M]
+  [Module R₁ M] [IsScalarTower R₀ R₁ M]
+
+/-- Cancellation intertwines the tensor-product scalar action. -/
+lemma cancelBaseChange_tmul_smul (r : R₁) (s : S₀)
+    (y : (R₁ ⊗[R₀] S₀) ⊗[R₁] M) :
+    Algebra.IsPushout.cancelBaseChange R₀ S₀ R₁ (R₁ ⊗[R₀] S₀) M
+      ((r ⊗ₜ[R₀] s : R₁ ⊗[R₀] S₀) • y) =
+      s • (DistribSMul.toLinearMap R₀ M r).lTensor S₀
+        (Algebra.IsPushout.cancelBaseChange R₀ S₀ R₁ (R₁ ⊗[R₀] S₀) M y) := by
+  induction y with
+  | add z y hx hy => rw [smul_add, map_add, hx, hy, map_add, map_add, smul_add]
+  | tmul z x =>
+    induction z with
+    | add z y hx hy => simp only [add_tmul, smul_add, map_add, hx, hy]
+    | tmul r' s' =>
+      rw [smul_tmul', smul_eq_mul, Algebra.TensorProduct.tmul_mul_tmul,
+        cancelBaseChange_tmul_tmul, cancelBaseChange_tmul_tmul, LinearMap.lTensor_tmul, smul_tmul',
+        smul_eq_mul, DistribSMul.toLinearMap_apply, mul_smul]
+
+variable {A : Type*} [CommRing A] [Algebra R₀ A]
+
+/-- Changing the intermediate base ring in a tensor product. -/
+noncomputable def baseChangeTensorEquiv (M : Type*)
+    [AddCommGroup M] [Module R₀ M]
+    [Module R₁ M] [Module A M] [IsScalarTower R₀ R₁
+      M] [IsScalarTower R₀ A M] :
+    (R₁ ⊗[R₀] S₀) ⊗[R₁] M ≃ₗ[R₀] (A ⊗[R₀] S₀) ⊗[A]
+      M :=
+  ((Algebra.IsPushout.cancelBaseChange R₀ S₀ R₁
+    (R₁ ⊗[R₀] S₀) M).trans
+      (Algebra.IsPushout.cancelBaseChange R₀ S₀ A
+        (A ⊗[R₀] S₀) M).symm).restrictScalars R₀
+
+/-- The intermediate-base comparison on a pure tensor. -/
+@[simp]
+lemma baseChangeTensorEquiv_tmul_tmul (M : Type*) [AddCommGroup M] [Module R₀ M]
+    [Module R₁ M] [Module A M] [IsScalarTower R₀ R₁ M] [IsScalarTower R₀ A M]
+    (r : R₁) (s : S₀) (x : M) :
+    baseChangeTensorEquiv (A := A) M ((r ⊗ₜ[R₀] s) ⊗ₜ[R₁] x) =
+      ((1 : A) ⊗ₜ[R₀] s) ⊗ₜ[A] (r • x) := by
+  simp only [baseChangeTensorEquiv, LinearEquiv.restrictScalars_apply, LinearEquiv.trans_apply,
+    cancelBaseChange_tmul_tmul, Algebra.IsPushout.cancelBaseChange_symm_tmul,
+    right_algebraMap_apply]
+
+/-- The inverse intermediate-base comparison on a pure tensor. -/
+@[simp]
+lemma baseChangeTensorEquiv_symm_tmul_tmul (M : Type*) [AddCommGroup M] [Module R₀ M]
+    [Module R₁ M] [Module A M] [IsScalarTower R₀ R₁ M] [IsScalarTower R₀ A M]
+    (a : A) (s : S₀) (x : M) :
+    (baseChangeTensorEquiv (A := A) M).symm ((a ⊗ₜ[R₀] s) ⊗ₜ[A] x) =
+      ((1 : R₁) ⊗ₜ[R₀] s) ⊗ₜ[R₁] (a • x) := by
+  apply (baseChangeTensorEquiv (A := A) M).symm_apply_eq.mpr
+  rw [baseChangeTensorEquiv_tmul_tmul, one_smul]
+  apply (Algebra.IsPushout.cancelBaseChange R₀ S₀ A (A ⊗[R₀] S₀) M).injective
+  simp only [cancelBaseChange_tmul_tmul, one_smul]
+
+variable [Algebra R₁ A] [IsScalarTower R₀ R₁ A]
+
+/-- Changing the intermediate base intertwines the two tensor-product scalar actions. -/
+lemma baseChangeTensorEquiv_smul (M : Type*) [AddCommGroup M]
+    [Module R₀ M]
+    [Module R₁ M] [Module A M] [IsScalarTower R₀ R₁
+      M] [IsScalarTower R₀ A M]
+    [IsScalarTower R₁ A M] (s : R₁ ⊗[R₀] S₀) (y : (R₁ ⊗[R₀]
+      S₀) ⊗[R₁] M) :
+    baseChangeTensorEquiv M (s • y) =
+      Algebra.TensorProduct.map (IsScalarTower.toAlgHom R₀ R₁ A) (AlgHom.id R₀ S₀) s
+        •
+        baseChangeTensorEquiv (A := A) M y := by
+  apply (Algebra.IsPushout.cancelBaseChange R₀ S₀ A
+    (A ⊗[R₀] S₀) M).injective
+  simp only [baseChangeTensorEquiv, LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply,
+    LinearEquiv.apply_symm_apply]
+  induction s with
+  | add z y hx hy => rw [add_smul, map_add, hx, hy, map_add, add_smul, map_add]
+  | tmul r s =>
+    rw [cancelBaseChange_tmul_smul, Algebra.TensorProduct.map_tmul, cancelBaseChange_tmul_smul,
+      LinearEquiv.apply_symm_apply]
+    congr 2
+    ext x
+    simp [IsScalarTower.toAlgHom_apply]
+
+/-- A containment of scalar kernels is preserved when changing the intermediate base ring. -/
+lemma smul_eq_zero_imp_of_baseChange (M : Type*)
+    [AddCommGroup M] [Module R₀ M] [Module R₁ M]
+    [Module A M] [IsScalarTower R₀ R₁ M]
+    [IsScalarTower R₀ A M] [IsScalarTower R₁ A M]
+    (f t : R₁ ⊗[R₀] S₀)
+    (h : ∀ x : (A ⊗[R₀] S₀) ⊗[A] M,
+      Algebra.TensorProduct.map (IsScalarTower.toAlgHom R₀ R₁ A)
+        (AlgHom.id R₀ S₀) f • x = 0 →
+      Algebra.TensorProduct.map (IsScalarTower.toAlgHom R₀ R₁ A)
+        (AlgHom.id R₀ S₀) t • x = 0) :
+    ∀ x : (R₁ ⊗[R₀] S₀) ⊗[R₁] M,
+      f • x = 0 → t • x = 0 := by
+  intro x hv
+  apply (baseChangeTensorEquiv (A := A) M).injective
+  rw [baseChangeTensorEquiv_smul, LinearEquiv.map_zero]
+  apply h
+  rw [← baseChangeTensorEquiv_smul, hv, LinearEquiv.map_zero]
+
+end Algebra.TensorProduct
+
+namespace Algebra
+
+/-- A scalar-kernel description over an algebra restricts to every intermediate subalgebra
+through the corresponding map of tensor products. -/
+lemma ker_algebraMap_comap_tensor_subalgebra
+    {R₀ A S₀ K : Type*} [CommRing R₀] [CommRing A]
+    [CommRing S₀] [CommRing K] [Algebra R₀ A] [Algebra R₀ S₀]
+    [Algebra A K] (R₁ : Subalgebra R₀ A)
+    (prime : Ideal (A ⊗[R₀] S₀))
+    (hK : RingHom.ker (algebraMap A K) =
+      prime.comap (algebraMap A (A ⊗[R₀] S₀))) :
+    RingHom.ker (algebraMap R₁ K) =
+      (prime.comap (Algebra.TensorProduct.map R₁.val (AlgHom.id R₀ S₀)).toRingHom).comap
+        (algebraMap R₁ (R₁ ⊗[R₀] S₀)) := by
+  ext r
+  have h1 : Algebra.TensorProduct.map R₁.val (AlgHom.id R₀ S₀)
+      (algebraMap R₁ (R₁ ⊗[R₀] S₀) r) =
+        algebraMap A (A ⊗[R₀] S₀) r := by
+    -- Each left algebra map sends a scalar to its tensor with the unit.
+    change Algebra.TensorProduct.map R₁.val (AlgHom.id R₀ S₀) (r ⊗ₜ[R₀] 1) = _
+    rw [Algebra.TensorProduct.map_tmul, Algebra.TensorProduct.algebraMap_apply]
+    simp
+  -- Restriction through the subalgebra gives the same scalar in the residue algebra.
+  change algebraMap A K r = 0 ↔ _
+  rw [← RingHom.mem_ker, hK, Ideal.mem_comap, Ideal.mem_comap, Ideal.mem_comap]
+  exact iff_of_eq (congrArg (· ∈ prime) h1.symm)
+
+end Algebra
