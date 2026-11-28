@@ -22,6 +22,7 @@ The file also records that, in a ring without zero divisors, a unit `u` other th
 its own inverse in the form `u - u⁻¹ ≠ 0`, as used for quantum integers at `δ = u + u⁻¹`.
 It finally records that a pair of units `r + s = 1` gives the pair `r⁻¹ + (-(s r⁻¹)) = 1`, the
 step reducing the Steinberg relation for the tame symbol from negative to positive order.
+Ring elements `r` and `s` with `r + s = 1` commute, since `s = 1 - r`.
 If the commutator of `p` with a unit `u` is `u`, then that of `p` with `u⁻¹` is `-u⁻¹`.
 In a semiring, if `q` is a two-sided inverse of `p` and `n₁ q n₂ = 0`, then
 `(p + n₁) q (p + n₂) = p + n₁ + n₂`: this splits an invertible matrix over a unitization of a
@@ -38,6 +39,7 @@ product into its two factors.
 * `Units.mul_inv_eq_inv_mul_sub_inv`: if `[p, u] = u` for a unit `u`, then `[p, u⁻¹] = -u⁻¹`.
 * `TauCeti.add_mul_mul_add_of_mul_eq_one`: if `p q = q p = 1` and `n₁ q n₂ = 0`, then
   `(p + n₁) q (p + n₂) = p + n₁ + n₂`.
+* `TauCeti.commute_of_add_eq_one`: elements `r` and `s` with `r + s = 1` commute.
 -/
 
 public section
@@ -51,6 +53,12 @@ theorem add_mul_mul_add_of_mul_eq_one {α : Type*} [Semiring α] {p q n₁ n₂ 
     (p + n₁) * q * (p + n₂) = p + n₁ + n₂ := by
   rw [add_mul, hpq, add_mul, one_mul, mul_add, hn, mul_assoc, hqp, mul_one, add_zero]
   abel
+
+/-- Elements `r` and `s` with `r + s = 1` commute, since `s = 1 - r`. -/
+theorem commute_of_add_eq_one {α : Type*} [NonAssocRing α] {r s : α} (h : r + s = 1) :
+    Commute r s := by
+  rw [eq_sub_of_add_eq' h]
+  exact (Commute.one_right _).sub_right (Commute.refl _)
 
 variable {R : Type*} [Ring R]
 
