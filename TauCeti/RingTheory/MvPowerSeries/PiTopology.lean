@@ -26,22 +26,8 @@ variable (σ R S : Type*) [Semiring R] [Semiring S] [Module R S] [TopologicalSpa
 /-- With the product topology on coefficients (`open scoped MvPowerSeries.WithPiTopology`),
 `MvPowerSeries σ S` is continuously `R`-linearly isomorphic to `(σ →₀ ℕ) → S` via
 `MvPowerSeries.coeff`. -/
-def continuousLinearEquivPi : MvPowerSeries σ S ≃L[R] ((σ →₀ ℕ) → S) where
-  toFun f d := MvPowerSeries.coeff d f
-  map_add' f g := by ext d; simp
-  -- `MvPowerSeries σ S` is definitionally `(σ →₀ ℕ) → S` with pointwise scalar multiplication,
-  -- so `map_smul'` holds by `rfl`, `invFun` is the identity map, and `(c : MvPowerSeries σ S)`
-  -- converts a coefficient function to a power series in `right_inv` and `continuous_invFun`.
-  map_smul' r f := by ext d; rfl
-  invFun c := c
-  left_inv f := MvPowerSeries.ext fun d ↦ MvPowerSeries.coeff_apply f d
-  right_inv c := funext fun d ↦ MvPowerSeries.coeff_apply c d
-  continuous_toFun := continuous_pi (continuous_coeff S)
-  continuous_invFun := continuous_iff_continuousAt.mpr fun x ↦
-    (tendsto_iff_coeff_tendsto _ _ _).mpr fun d ↦ by
-      rw [MvPowerSeries.coeff_apply (x : MvPowerSeries σ S) d]
-      exact (continuous_apply d).continuousAt.tendsto.congr
-        fun c ↦ (MvPowerSeries.coeff_apply (c : MvPowerSeries σ S) d).symm
+def continuousLinearEquivPi : MvPowerSeries σ S ≃L[R] ((σ →₀ ℕ) → S) :=
+  ContinuousLinearEquiv.refl R ((σ →₀ ℕ) → S)
 
 @[simp, grind =]
 theorem continuousLinearEquivPi_apply (f : MvPowerSeries σ S) (d : σ →₀ ℕ) :

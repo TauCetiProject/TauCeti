@@ -36,7 +36,8 @@ theorem denseRange_pi [TopologicalSpace K] (hf : LinearIndependent K f) :
   obtain ⟨s, t, ht, hst⟩ := hW
   obtain ⟨v, hv⟩ := (hf.comp Subtype.val Subtype.val_injective).pi_surjective fun i : s ↦ y i.val
   refine ⟨LinearMap.pi f v, hst fun i hi ↦ ?_, v, rfl⟩
-  rw [LinearMap.pi_apply, show f i v = y i by simpa [LinearMap.pi_apply] using congr_fun hv ⟨i, hi⟩]
+  have hfi : f i v = y i := by simpa [LinearMap.pi_apply] using congr_fun hv ⟨i, hi⟩
+  rw [LinearMap.pi_apply, hfi]
   exact mem_of_mem_nhds (ht i)
 
 end Field

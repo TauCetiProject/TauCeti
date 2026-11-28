@@ -63,7 +63,8 @@ theorem FG.smul_top_pi_eq_pi {R : Type*} [CommSemiring R] {ι : Type*}
   induction s using Finset.induction_on with
   | empty =>
     intro x hx
-    rw [show x = 0 from funext fun i ↦ by simpa using Submodule.mem_pi.mp hx i (Set.mem_univ i)]
+    have hx0 : x = 0 := funext fun i ↦ by simpa using Submodule.mem_pi.mp hx i (Set.mem_univ i)
+    rw [hx0]
     exact zero_mem _
   | @insert a s _ ih =>
     intro x hx
@@ -79,7 +80,8 @@ theorem FG.smul_top_pi_eq_pi {R : Type*} [CommSemiring R] {ι : Type*}
       obtain ⟨u, _, rfl⟩ := hy
       exact ⟨u, v, hv, hyv⟩
     choose u v hv huv using hx'
-    rw [show x = a • u + v from funext fun i ↦ (huv i).symm]
+    have hxeq : x = a • u + v := funext fun i ↦ (huv i).symm
+    rw [hxeq]
     exact Submodule.add_mem_sup (Submodule.smul_mem_smul (Ideal.mem_span_singleton_self a)
       Submodule.mem_top) (ih fun i _ ↦ hv i)
 
