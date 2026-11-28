@@ -106,22 +106,20 @@ theorem ext_of_eqOn_domain {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E
   ContinuousLinearMap.ext <| congrFun <| Continuous.ext_on S.dense_domain
     T₁.continuous T₂.continuous h
 
-private theorem eq_choose_commutator {a : A} {C : H →L[ℂ] H}
-    (hC : LinearPMap.SylvesterEquation S.operator S.operator (S.rep a) C) :
-    C = (S.exists_bounded_commutator a).choose :=
-  S.ext_of_eqOn_domain fun y hy ↦ (hC.equation ⟨y, hy⟩).symm.trans
-    ((S.exists_bounded_commutator a).choose_spec.equation ⟨y, hy⟩)
-
 /-- The canonical bounded extension `a ↦ [D, π(a)]` of the commutator with `D`, as a `ℂ`-linear
 map `A →ₗ[ℂ] (H →L[ℂ] H)`. -/
 def commutator : A →ₗ[ℂ] (H →L[ℂ] H) where
   toFun a := (S.exists_bounded_commutator a).choose
-  map_add' a b := (S.eq_choose_commutator <| by
-    simpa only [map_add] using (S.exists_bounded_commutator a).choose_spec.add
-      (S.exists_bounded_commutator b).choose_spec).symm
-  map_smul' c a := (S.eq_choose_commutator <| by
-    simpa only [map_smul, RingHom.id_apply] using
-      (S.exists_bounded_commutator a).choose_spec.smul c).symm
+  map_add' a b := (S.exists_bounded_commutator (a + b)).choose_spec.eq_of_dense
+    (by
+      simpa only [map_add] using (S.exists_bounded_commutator a).choose_spec.add
+        (S.exists_bounded_commutator b).choose_spec)
+    S.dense_domain
+  map_smul' c a := (S.exists_bounded_commutator (c • a)).choose_spec.eq_of_dense
+    (by
+      simpa only [map_smul, RingHom.id_apply] using
+        (S.exists_bounded_commutator a).choose_spec.smul c)
+    S.dense_domain
 
 /-- The canonical commutator `S.commutator a` solves the domain-aware Sylvester equation
 `D π(a) - π(a) D = [D, π(a)]`. -/
@@ -147,7 +145,8 @@ theorem eq_commutator_of_domain {a : A} {C : H →L[ℂ] H}
     (hC : ∀ x : S.operator.domain,
       S.operator ⟨S.rep a x, S.rep_mem_domain a x.property⟩ - S.rep a (S.operator x) = C x) :
     C = S.commutator a :=
-  S.eq_choose_commutator ⟨fun x ↦ S.rep_mem_domain a x.property, hC⟩
+  LinearPMap.SylvesterEquation.eq_of_dense ⟨fun x ↦ S.rep_mem_domain a x.property, hC⟩
+    (S.sylvesterEquation_commutator a) S.dense_domain
 
 /-- The commutator of `D` with the unit `π(1) = 1` vanishes. -/
 @[simp]
@@ -323,18 +322,28 @@ theorem comap_operator (φ : B →⋆ₐ[ℂ] A) : (S.comap φ).operator = S.ope
 
 @[simp]
 theorem comap_commutator (φ : B →⋆ₐ[ℂ] A) (b : B) :
-    (S.comap φ).commutator b = S.commutator (φ b) :=
-  ((S.comap φ).eq_commutator_of_domain fun x ↦ S.commutator_apply_domain (φ b) x).symm
+    (S.comap φ).commutator b = S.commutator (φ b) := by
+  refine ((S.comap φ).sylvesterEquation_commutator b).eq_of_dense ?_ (S.comap φ).dense_domain
+  rw [comap_operator, comap_rep, StarAlgHom.comp_apply]
+  exact S.sylvesterEquation_commutator (φ b)
 
 @[simp]
 theorem comap_id : S.comap (StarAlgHom.id ℂ A) = S := by
-  ext1 <;> first | (ext1 a; rfl) | rfl
+  ext1
+  · simp only [comap_rep, StarAlgHom.comp_id]
+  · simp only [comap_operator]
 
 theorem comap_comp {C : Type*} [Semiring C] [Algebra ℂ C] [Star C]
-    (φ : B →⋆ₐ[ℂ] A) (ψ : C →⋆ₐ[ℂ] B) : (S.comap φ).comap ψ = S.comap (φ.comp ψ) := by rfl
+    (φ : B →⋆ₐ[ℂ] A) (ψ : C →⋆ₐ[ℂ] B) : (S.comap φ).comap ψ = S.comap (φ.comp ψ) := by
+  ext1
+  · simp only [comap_rep, StarAlgHom.comp_assoc]
+  · simp only [comap_operator]
 
 theorem comap_conj {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H'] [CompleteSpace H']
-    (U : H ≃ₗᵢ[ℂ] H') (φ : B →⋆ₐ[ℂ] A) : (S.conj U).comap φ = (S.comap φ).conj U := by rfl
+    (U : H ≃ₗᵢ[ℂ] H') (φ : B →⋆ₐ[ℂ] A) : (S.conj U).comap φ = (S.comap φ).conj U := by
+  ext1
+  · ext1 b; simp only [comap_rep, StarAlgHom.comp_apply, conj_rep_apply]
+  · simp only [comap_operator, conj_operator]
 
 end Comap
 
@@ -496,13 +505,24 @@ theorem comap_grading (φ : B →⋆ₐ[ℂ] A) : (S.comap φ).grading = S.gradi
 
 @[simp]
 theorem comap_id : S.comap (StarAlgHom.id ℂ A) = S := by
-  ext1 <;> first | (ext1 a; rfl) | rfl
+  ext1
+  · simp only [comap_toSpectralTriple, SpectralTriple.comap_id]
+  · simp only [comap_toSpectralTriple, SpectralTriple.comap_id]
+  · rw [comap_grading]
 
 theorem comap_comp {C : Type*} [Semiring C] [Algebra ℂ C] [Star C]
-    (φ : B →⋆ₐ[ℂ] A) (ψ : C →⋆ₐ[ℂ] B) : (S.comap φ).comap ψ = S.comap (φ.comp ψ) := by rfl
+    (φ : B →⋆ₐ[ℂ] A) (ψ : C →⋆ₐ[ℂ] B) : (S.comap φ).comap ψ = S.comap (φ.comp ψ) := by
+  ext1
+  · simp only [comap_toSpectralTriple, SpectralTriple.comap_comp]
+  · simp only [comap_toSpectralTriple, SpectralTriple.comap_comp]
+  · rw [comap_grading, comap_grading, comap_grading]
 
 theorem comap_conj {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H'] [CompleteSpace H']
-    (U : H ≃ₗᵢ[ℂ] H') (φ : B →⋆ₐ[ℂ] A) : (S.conj U).comap φ = (S.comap φ).conj U := by rfl
+    (U : H ≃ₗᵢ[ℂ] H') (φ : B →⋆ₐ[ℂ] A) : (S.conj U).comap φ = (S.comap φ).conj U := by
+  ext1
+  · simp only [comap_toSpectralTriple, conj_toSpectralTriple, SpectralTriple.comap_conj]
+  · simp only [comap_toSpectralTriple, conj_toSpectralTriple, SpectralTriple.comap_conj]
+  · rw [comap_grading, conj_grading, conj_grading, comap_grading]
 
 end Comap
 

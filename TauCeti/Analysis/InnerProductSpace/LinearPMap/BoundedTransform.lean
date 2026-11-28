@@ -264,13 +264,22 @@ private theorem continuous_bjMulRes (hA : IsSelfAdjoint A) : Continuous (bjMulRe
       (adjoint_resolvent_I_bjShift hA)
   exact (continuous_const (y := -(2 : ℂ)⁻¹)).smul (hcont_pos.add hcont_neg)
 
+omit [CompleteSpace H] in
+private theorem mul_sub_mul_eq_sylvester (X Y : H →L[ℂ] H) :
+    X * Y - Y * X = X.sylvester X Y := by
+  rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.mul_def,
+    ← ContinuousLinearMap.sylvester_apply]
+
 private theorem norm_bjMulRes_commutator_le (hA : IsSelfAdjoint A) {T C : H →L[ℂ] H}
     (hTC : SylvesterEquation A A T C) {r : ℝ} (hr : 0 ≤ r) :
     ‖bjMulRes A r * T - T * bjMulRes A r‖ ≤ ‖C‖ * (1 + r)⁻¹ := by
   have hcomm : bjMulRes A r * T - T * bjMulRes A r =
       -(2 : ℂ)⁻¹ • (A.resolvent (Complex.I * bjShift r) * C * A.resolvent (Complex.I * bjShift r) +
         A.resolvent (-Complex.I * bjShift r) * C * A.resolvent (-Complex.I * bjShift r)) := by
-    rw [bjMulRes, smul_mul_assoc, mul_smul_comm, ← smul_sub, add_mul, mul_add, add_sub_add_comm,
+    have hlin (X : H →L[ℂ] H) : X * T - T * X = (-(T.sylvester T)) X := by
+      rw [_root_.neg_apply, ← mul_sub_mul_eq_sylvester, neg_sub]
+    rw [hlin, bjMulRes, ContinuousLinearMap.map_smul, ContinuousLinearMap.map_add,
+      ← hlin, ← hlin,
       hTC.resolvent_mul_sub_mul_resolvent (mem_resolventSet_I_bjShift hA r),
       hTC.resolvent_mul_sub_mul_resolvent (mem_resolventSet_neg_I_bjShift hA r)]
   have hs0 : bjShift r ≠ 0 := (bjShift_pos r).ne'
@@ -375,16 +384,14 @@ private theorem commutator_boundedTransform_eq_integral (h : A.HasCompactResolve
   have hinner (r : ℝ) (hr : 0 < r) : ⟪b i, bjIntegrand A T r (b j)⟫_ℂ =
       (bjKernel (lam i) r - bjKernel (lam j) r) * ⟪b i, T (b j)⟫_ℂ := by
     rw [bjIntegrand, _root_.smul_apply, ← Complex.coe_smul, inner_smul_right,
-      ContinuousLinearMap.mul_def, ContinuousLinearMap.mul_def,
-      ← ContinuousLinearMap.sylvester_apply,
+      mul_sub_mul_eq_sylvester,
       ContinuousLinearMap.inner_sylvester_apply_of_apply_eq_smul
         (α := lam i / (1 + r + lam i ^ 2)) (isSelfAdjoint_bjMulRes hA r).isSymmetric T
         (bjMulRes_apply_basis hA hb hr.le i) (bjMulRes_apply_basis hA hb hr.le j)]
     simp only [bjKernel, bjKernelReal, Complex.ofRealCLM_apply,
       Complex.coe_algebraMap, add_right_comm 1 r]
     push_cast; ring
-  rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.mul_def,
-    ← ContinuousLinearMap.sylvester_apply,
+  rw [mul_sub_mul_eq_sylvester,
     ContinuousLinearMap.inner_sylvester_apply_of_apply_eq_smul
       (α := lam i / Real.sqrt (1 + lam i ^ 2))
       (A.isSelfAdjoint_boundedTransform hA).isSymmetric T (hF_eig i) (hF_eig j),

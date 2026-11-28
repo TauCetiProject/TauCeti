@@ -72,10 +72,9 @@ theorem spectralPVM_integral_apply_of_apply_eq_smul (hA : IsSelfAdjoint A)
       ((A.spectralPVM hA).integral (algebraMap ℂ (BoundedBorelFunction ℝ) (g r))) (x : H) := by
     simp [Algebra.algebraMap_eq_smul_one]
   rw [← sub_eq_zero, halg, ← _root_.sub_apply, ← _root_.map_sub,
-    ProjValMeasure.integral_apply_eq_zero_iff]
-  rw [Filter.EventuallyEq, Filter.eventually_iff, MeasureTheory.mem_ae_iff,
-    spectralPVM_diag_eq_smul_dirac hA x hx, _root_.smul_apply, smul_eq_mul,
-    MeasureTheory.Measure.dirac_apply, Set.indicator_of_notMem (by simp)]
+    ProjValMeasure.integral_apply_eq_zero_iff, spectralPVM_diag_eq_smul_dirac hA x hx]
+  refine Filter.EventuallyEq.filter_mono ?_ (Measure.ae_smul_measure_le _)
+  rw [Filter.EventuallyEq, ae_dirac_eq]
   simp
 
 /-- Characterization of `(A.spectralPVM hA).integral` in any orthonormal eigenbasis of `A`. -/
