@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Localization
+public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 
 /-!
@@ -20,6 +21,10 @@ a natural isomorphism
 `ModuleCat.localizedModuleFunctor T ≅ ModuleCat.extendScalars (algebraMap R (Localization T))`
 (`ModuleCat.localizedModuleFunctorIsoExtendScalars`). In particular, extension of scalars to a
 localization preserves finite limits.
+
+For localization away from a single element `f`, `toLocalizedModuleZPow f n` sends `x` to
+`fⁿ • (x/1)` for any integer `n`. Its image is the copy of `fⁿ M` in `M[1/f]` used to
+describe the terms of a décalage complex.
 -/
 
 public section
@@ -132,5 +137,53 @@ theorem localizedModuleFunctorIsoExtendScalars_inv_app (T : Submonoid R)
 instance preservesFiniteLimits_extendScalars_localization (T : Submonoid R) :
     PreservesFiniteLimits (extendScalars.{u, u, max u v} (algebraMap R (Localization T))) :=
   preservesFiniteLimits_of_natIso (localizedModuleFunctorIsoExtendScalars.{u, v} T)
+
+section Away
+
+variable [Small.{v} R] (f : R)
+
+local notation "fUnit" =>
+  IsUnit.unit (IsLocalization.Away.algebraMap_isUnit (S := Localization.Away f) f)
+
+/-- The natural map `M → M[1/f]` sending `x` to `fⁿ • (x/1)`. The exponent may be negative. -/
+noncomputable def toLocalizedModuleZPow (n : ℤ) : 𝟭 (ModuleCat.{v} R) ⟶
+    localizedModuleFunctor (.powers f) ⋙ restrictScalars (algebraMap R (Localization.Away f)) where
+  app M := semilinearMapAddEquiv _ M (M.localizedModule (.powers f))
+    { toFun := fun x ↦ (fUnit ^ n) • M.localizedModuleMkLinearMap (.powers f) x
+      map_add' := fun x y ↦ by rw [map_add, smul_add]
+      map_smul' := fun r x ↦ by
+        rw [map_smul, IsScalarTower.algebraMap_smul, smul_comm] }
+  naturality {M N} g := by
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    intro x
+    -- Evaluate restriction of scalars in the underlying localized modules.
+    change (fUnit ^ n) • N.localizedModuleMkLinearMap _ (g x) =
+      localizedModuleMap (.powers f) g ((fUnit ^ n) • M.localizedModuleMkLinearMap _ x)
+    rw [Units.smul_def, Units.smul_def, map_smul]
+    exact congrArg _ (IsLocalizedModule.map_apply (.powers f) _ _ g.hom x).symm
+
+/-- Evaluation of the scaled localization map. -/
+@[simp]
+lemma toLocalizedModuleZPow_app_apply (M : ModuleCat.{v} R) (n : ℤ) (x : M) :
+    dsimp% only [Functor.id_obj, Functor.comp_obj] (toLocalizedModuleZPow f n).app M x =
+      (fUnit ^ n) • M.localizedModuleMkLinearMap (.powers f) x :=
+  (rfl)
+
+/-- Raising the exponent by one is equivalent to multiplying the input by `f`. -/
+lemma toLocalizedModuleZPow_succ_apply (M : ModuleCat.{v} R) (n : ℤ) (x : M) :
+    (toLocalizedModuleZPow f (n + 1)).app M x = (toLocalizedModuleZPow f n).app M (f • x) := by
+  simp only [Functor.id_obj, Functor.comp_obj, toLocalizedModuleZPow_app_apply]
+  rw [zpow_add_one, mul_smul,
+    Units.smul_def fUnit, IsUnit.unit_spec, IsScalarTower.algebraMap_smul, map_smul]
+
+/-- Scaling by any integer power of `f` embeds an `f`-torsion-free module in its localization. -/
+lemma toLocalizedModuleZPow_injective {M : ModuleCat.{v} R} (h : IsSMulRegular M f) (n : ℤ) :
+    Function.Injective ((toLocalizedModuleZPow f n).app M) := by
+  have hι := (IsLocalizedModule.injective_iff_isRegular (.powers f)
+    (M.localizedModuleMkLinearMap (.powers f))).2 (fun ⟨_, k, hk⟩ ↦ hk ▸ h.pow k)
+  exact (MulAction.injective (fUnit ^ n)).comp hι
+
+end Away
 
 end ModuleCat
