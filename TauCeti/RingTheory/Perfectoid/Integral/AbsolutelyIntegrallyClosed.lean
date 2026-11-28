@@ -21,7 +21,10 @@ of integers of `ℂ_p` or of the completion of any algebraically closed nonarchi
 `ℚ_p`; with the stability of integral perfectoid rings under products
 (`TauCeti.Perfectoid.IsIntegralPerfectoid.pi`), so is every product of such rings. On these
 products, which serve as test objects for `p`-adic comparison theorems, Fontaine's map
-`θ : W(V♭) → V` is therefore surjective with principal kernel, and tilting is fully faithful.
+`θ : W(V♭) → V` is therefore surjective with principal kernel. So, over a fixed nonzero integral
+perfectoid base `R` such as `O_C`, tilting is fully faithful on such `R`-algebras: their
+`R`-algebra homomorphisms correspond to the maps of tilts compatible with the tilts of the
+structure maps (`PreTilt.algHomEquiv`).
 
 If `p = 0` in `V`, then `V` has characteristic `p`, its Frobenius is injective because `V` is a
 domain, and surjective because `X ^ p - x` has a root; so `V` is perfect, and perfect rings are
