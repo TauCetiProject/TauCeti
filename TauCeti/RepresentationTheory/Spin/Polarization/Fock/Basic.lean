@@ -14,8 +14,6 @@ public import TauCeti.RepresentationTheory.Spin.Polarization.DegreeScaling
 -- of bijectivity.
 import TauCeti.Geometry.Symplectic.Finrank
 import TauCeti.RepresentationTheory.Spin.Structure
--- Private: the symmetry of the polar form is used only in the proof of the vacuum formula.
-import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
 /-!
 # The normalized Fock action of a complex structure
@@ -61,6 +59,11 @@ together with the formula for `c(v)`.
   the complex-linear extension `CliffordAlgebra.liftBaseChange` of the real one.
 * `TauCeti.AlmostComplexStructure.realFockAction_ι_mul_ι_apply_apply_one`: on the vacuum,
   `c(u) c(J u) 1 = i Q(u)`.
+* `TauCeti.AlmostComplexStructure.realFockAction_ι_apply_one`,
+  `TauCeti.AlmostComplexStructure.realFockAction_ι_apply_ι_holomorphicPart`,
+  `TauCeti.AlmostComplexStructure.spinAction_ι_one_tmul_apply_one`, and
+  `TauCeti.AlmostComplexStructure.spinAction_ι_one_tmul_apply_ι_holomorphicPart`: action of a real
+  vector on the vacuum `1` and on `ι(v^(1,0))` under both normalizations.
 
 ## References
 
@@ -240,21 +243,72 @@ theorem realFockAction_ι_mul_ι_apply_apply_one (u : V) :
       P.W) = Complex.I • ⟨J.holomorphicPart u,
         J.holomorphicPart_mem_spinPolarizationData_W hQJ hQ u⟩ :=
     Subtype.ext (J.holomorphicPart_apply_apply u)
-  have hpolar : QuadraticMap.polar (Q.baseChange ℂ) (J.holomorphicPart u)
-      (J.antiholomorphicPart u) = Q u := by
-    have h0 : QuadraticMap.polar Q u (J u) = 0 :=
-      J.bilinForm_apply_apply_self_eq_zero Q.isSymm_polarBilin (J.polar_apply_apply hQJ) u
-    rw [J.polar_holomorphicPart_antiholomorphicPart hQJ, h0, QuadraticMap.polar_self]
-    push_cast
-    ring
   have hsqrt : (Real.sqrt 2 : ℂ) * Real.sqrt 2 = 2 := by
     rw [← Complex.ofReal_mul, Real.mul_self_sqrt zero_le_two, Complex.ofReal_ofNat]
   simp only [map_mul, mul_apply_eq_comp, realFockAction_ι, fockAction_ι_one_tmul,
     LinearMap.smul_apply, LinearMap.add_apply, SpinPolarizationData.wedge_apply,
     SpinPolarizationData.contract_apply, hW, map_smul, mul_one, contractLeft_one, smul_zero,
     add_zero, smul_add, ExteriorAlgebra.ι_sq_zero, contractLeft_ι,
-    SpinPolarizationData.pairingEquiv_apply, hpolar, Algebra.algebraMap_eq_smul_one]
+    SpinPolarizationData.pairingEquiv_apply, J.polar_holomorphicPart_antiholomorphicPart_self hQJ u,
+    Algebra.algebraMap_eq_smul_one]
   match_scalars
   linear_combination (Complex.I * (Q u : ℂ) / 2) * hsqrt
+
+/-- On the vacuum `1`, the normalized real Fock operator `c(v)` acts as `√2 • ι(v^(1,0))`. -/
+theorem realFockAction_ι_apply_one (v : V) :
+    J.realFockAction hQJ hQ (ι Q v) 1 =
+      (Real.sqrt 2 : ℂ) • ExteriorAlgebra.ι ℂ
+        ⟨J.holomorphicPart v, J.holomorphicPart_mem_spinPolarizationData_W hQJ hQ v⟩ := by
+  rw [realFockAction_ι, fockAction_ι_one_tmul]
+  simp [SpinPolarizationData.wedge_apply, SpinPolarizationData.contract_apply]
+
+/-- Contracting `ι(v^(1,0))` by `v^(0,1)` yields `Q v • 1`. -/
+private theorem contract_antiholomorphicPart_ι_holomorphicPart (v : V) :
+    (J.spinPolarizationData hQJ hQ).contract
+        ⟨J.antiholomorphicPart v, J.antiholomorphicPart_mem_spinPolarizationData_W' hQJ hQ v⟩
+        (ExteriorAlgebra.ι ℂ
+          ⟨J.holomorphicPart v, J.holomorphicPart_mem_spinPolarizationData_W hQJ hQ v⟩) =
+      (Q v : ℂ) • 1 := by
+  rw [SpinPolarizationData.contract_apply, contractLeft_ι, SpinPolarizationData.pairingEquiv_apply]
+  dsimp only
+  rw [J.polar_holomorphicPart_antiholomorphicPart_self hQJ v, Algebra.algebraMap_eq_smul_one]
+
+/-- On `ι(v^(1,0))`, the normalized real Fock operator `c(v)` acts as `((√2)⁻¹ * Q v) • 1`. -/
+theorem realFockAction_ι_apply_ι_holomorphicPart (v : V) :
+    J.realFockAction hQJ hQ (ι Q v)
+        (ExteriorAlgebra.ι ℂ
+          ⟨J.holomorphicPart v, J.holomorphicPart_mem_spinPolarizationData_W hQJ hQ v⟩) =
+      ((Real.sqrt 2 : ℂ)⁻¹ * (Q v : ℂ)) • 1 := by
+  have hsqrt : (Real.sqrt 2 : ℂ) * Real.sqrt 2 = 2 := by
+    rw [← Complex.ofReal_mul, Real.mul_self_sqrt zero_le_two, Complex.ofReal_ofNat]
+  have hinv : (Real.sqrt 2 : ℂ) * 2⁻¹ = (Real.sqrt 2 : ℂ)⁻¹ := by
+    symm
+    exact inv_eq_of_mul_eq_one_right (by rw [← mul_assoc, hsqrt, mul_inv_cancel₀ two_ne_zero])
+  rw [realFockAction_ι, fockAction_ι_one_tmul, LinearMap.smul_apply, LinearMap.add_apply,
+    SpinPolarizationData.wedge_apply, ExteriorAlgebra.ι_sq_zero, zero_add,
+    LinearMap.smul_apply, J.contract_antiholomorphicPart_ι_holomorphicPart hQJ hQ v,
+    smul_smul, smul_smul, hinv]
+
+/-- On the vacuum `1`, the unnormalized native action `spinAction (ι (1 ⊗ v))` sends
+`1 ↦ ι(v^(1,0))` without the `√2` factor. -/
+theorem spinAction_ι_one_tmul_apply_one (v : V) :
+    spinAction _ (J.spinPolarizationData hQJ hQ)
+        (ι (Q.baseChange ℂ) ((1 : ℂ) ⊗ₜ v)) 1 =
+      ExteriorAlgebra.ι ℂ
+        ⟨J.holomorphicPart v, J.holomorphicPart_mem_spinPolarizationData_W hQJ hQ v⟩ := by
+  rw [spinAction_ι_one_tmul]
+  simp [SpinPolarizationData.wedge_apply, SpinPolarizationData.contract_apply]
+
+/-- On `ι(v^(1,0))`, the unnormalized native action `spinAction (ι (1 ⊗ v))` sends
+`ι(v^(1,0)) ↦ Q v • 1`. -/
+theorem spinAction_ι_one_tmul_apply_ι_holomorphicPart (v : V) :
+    spinAction _ (J.spinPolarizationData hQJ hQ)
+        (ι (Q.baseChange ℂ) ((1 : ℂ) ⊗ₜ v))
+        (ExteriorAlgebra.ι ℂ
+          ⟨J.holomorphicPart v, J.holomorphicPart_mem_spinPolarizationData_W hQJ hQ v⟩) =
+      (Q v : ℂ) • 1 := by
+  rw [spinAction_ι_one_tmul, LinearMap.add_apply, SpinPolarizationData.wedge_apply,
+    ExteriorAlgebra.ι_sq_zero, zero_add,
+    J.contract_antiholomorphicPart_ι_holomorphicPart hQJ hQ v]
 
 end TauCeti.AlmostComplexStructure

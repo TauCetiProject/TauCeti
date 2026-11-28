@@ -105,7 +105,7 @@ theorem exists_sesqForm_map_eq_map_conjStar (hQ : ∀ v, Q v = -‖v‖ ^ 2)
   · exact Matrix.toLinearMapₛₗ₂_one_self_nonneg b.ExteriorAlgebra (T.symm x)
   · rw [Ne, Matrix.toLinearMapₛₗ₂_one_self_eq_zero_iff, LinearEquiv.map_eq_zero_iff]
     exact hx
-  · simp only [hρ]
-    exact J.toLinearMapₛₗ₂_fockAction_left hQJ hQnd b hb a _ _
+  · simp only [G, J.toLinearMapₛₗ₂_exteriorAlgebra_eq_fockGramForm hQJ hQnd b hb, hρ]
+    exact J.fockGramForm_fockAction_left hQJ hQnd a _ _
 
 end CliffordAlgebra

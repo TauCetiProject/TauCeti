@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Symplectic.Complex.Complexification
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
+-- Private: the symmetry of the polar form is used only in the diagonal pairing proof.
+import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
 /-!
 # Almost complex structures preserving a quadratic form
@@ -39,8 +41,9 @@ polar (v^(1,0)) (w^(0,1)) = (polar Q v w + i · polar Q v (J w)) / 2.
 * `TauCeti.AlmostComplexStructure.isTotallyIsotropic_eigenspace_baseChange_I` and
   `TauCeti.AlmostComplexStructure.isTotallyIsotropic_eigenspace_baseChange_neg_I`: both
   eigenspaces of the complexified structure are totally isotropic.
-* `TauCeti.AlmostComplexStructure.polar_holomorphicPart_antiholomorphicPart`: the pairing of the
-  two parts in terms of the real polar form.
+* `TauCeti.AlmostComplexStructure.polar_holomorphicPart_antiholomorphicPart` and
+  `TauCeti.AlmostComplexStructure.polar_holomorphicPart_antiholomorphicPart_self`: the pairing of
+  the two parts in terms of the real polar form and `Q`.
 -/
 
 public section
@@ -123,5 +126,14 @@ theorem polar_holomorphicPart_antiholomorphicPart (hQJ : ∀ v, Q (J v) = Q v) (
     J.polar_apply_apply hQJ, J.polar_apply_left_eq_neg_polar_apply_right hQJ, Complex.real_smul,
     smul_eq_mul, mul_one, Complex.ofReal_neg]
   linear_combination -(2 : ℂ)⁻¹ * (2 : ℂ)⁻¹ * ((polar Q v w : ℝ) : ℂ) * Complex.I_mul_I
+
+/-- The complexified polar form pairs `v^(1,0)` with `v^(0,1)` to `Q v`. -/
+theorem polar_holomorphicPart_antiholomorphicPart_self (hQJ : ∀ v, Q (J v) = Q v) (v : V) :
+    polar (Q.baseChange ℂ) (J.holomorphicPart v) (J.antiholomorphicPart v) = Q v := by
+  have h0 : polar Q v (J v) = 0 :=
+    J.bilinForm_apply_apply_self_eq_zero Q.isSymm_polarBilin (J.polar_apply_apply hQJ) v
+  rw [J.polar_holomorphicPart_antiholomorphicPart hQJ, h0, polar_self]
+  push_cast
+  ring
 
 end TauCeti.AlmostComplexStructure
