@@ -11,7 +11,9 @@ public import Mathlib.GroupTheory.OrderOfElement
 # Powers equal to `-1` and the order of an element
 
 If `-1 ≠ 1` in a monoid with distributive negation, no power of an element of odd order is `-1`,
-as recorded by `TauCeti.pow_ne_neg_one_of_odd_orderOf`.
+as recorded by `TauCeti.pow_ne_neg_one_of_odd_orderOf`. The monoid homomorphism version
+`MonoidHom.map_pow_mul_ne_neg_one_of_odd_orderOf` applies this to the orbit of a label that
+maps to `1`.
 
 Let `u` be an element of order `2 * m`, with `m ≠ 0`, in a ring without zero divisors. Then
 `u ^ m` squares to `1` and is not `1`, so it is `-1`, the only other square root of `1`. Since
@@ -73,3 +75,12 @@ theorem pow_eq_neg_one_iff_of_orderOf_eq_two_mul (hu : orderOf u = 2 * m) (hm : 
     rw [pow_mul, hm', ht.neg_one_pow]
 
 end TauCeti
+
+/-- If `-1 ≠ 1` and the image of `g` under `f` has odd order, the orbit under powers of `g`
+of a label of class `1` misses class `-1`. -/
+theorem MonoidHom.map_pow_mul_ne_neg_one_of_odd_orderOf {A M : Type*}
+    [Monoid A] [Monoid M] [HasDistribNeg M] (f : A →* M) {g τ : A}
+    (hneg : (-1 : M) ≠ 1) (hg : Odd (orderOf (f g))) (hτ : f τ = 1) (i : ℕ) :
+    f (g ^ i * τ) ≠ -1 := by
+  simpa only [map_mul, map_pow, hτ, mul_one] using
+    TauCeti.pow_ne_neg_one_of_odd_orderOf hneg hg i
