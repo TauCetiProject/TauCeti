@@ -6,7 +6,6 @@ Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 module
 
 public import Mathlib.RingTheory.Discriminant
-public import TauCeti.LinearAlgebra.BilinearForm.Prod
 public import TauCeti.RingTheory.NormTrace.Pi
 
 /-!
@@ -75,11 +74,7 @@ theorem Algebra.traceForm_pi_nondegenerate_iff {ι : Type*} [Finite ι] (L : ι 
     (Algebra.traceForm K (∀ i, L i)).Nondegenerate ↔
       ∀ i, (Algebra.traceForm K (L i)).Nondegenerate := by
   have := Fintype.ofFinite ι
-  have h : Algebra.traceForm K (∀ i, L i) =
-      LinearMap.BilinForm.pi fun i ↦ Algebra.traceForm K (L i) := by
-    ext x y
-    simp [Algebra.traceForm_apply, Algebra.trace_pi]
-  rw [h, LinearMap.BilinForm.nondegenerate_pi_iff]
+  rw [Algebra.traceForm_pi, LinearMap.BilinForm.nondegenerate_pi_iff]
 
 /-- An algebra over a reduced ring with nondegenerate trace form is reduced. -/
 theorem Algebra.isReduced_of_traceForm_nondegenerate {B : Type*} [IsReduced K] [CommRing B]

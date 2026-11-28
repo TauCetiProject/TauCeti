@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Trace.Basic
 public import TauCeti.RingTheory.Norm.Units
 public import TauCeti.LinearAlgebra.Pi
 public import TauCeti.LinearAlgebra.Trace.Pi
+public import TauCeti.LinearAlgebra.BilinearForm.Prod
 
 /-!
 # Norms and traces of finite products
@@ -100,6 +101,30 @@ theorem Algebra.trace_pi (x : ∀ i, L i) :
     ext y i
     simp [Algebra.lmul]
   simp_rw [h, LinearMap.trace_piMap, Algebra.trace_apply]
+
+/-- The trace form of a finite product is the orthogonal sum of the factor trace forms.
+Extracted from the product nondegeneracy proof in `TauCeti.RingTheory.Trace.Form`. -/
+theorem Algebra.traceForm_pi :
+    Algebra.traceForm K (∀ i, L i) =
+      LinearMap.BilinForm.pi fun i ↦ Algebra.traceForm K (L i) := by
+  ext x y
+  simp [Algebra.traceForm_apply, Algebra.trace_pi]
+
+omit [Fintype ι] in
+/-- The trace matrix of families supported in individual factors is block diagonal. -/
+@[simp]
+theorem Algebra.traceMatrix_pi [Finite ι] [DecidableEq ι] {κ : ι → Type*}
+    (b : ∀ i, κ i → L i) :
+    Algebra.traceMatrix K (fun j : Σ i, κ i ↦ Pi.single j.1 (b j.1 j.2)) =
+      Matrix.blockDiagonal' fun i ↦ Algebra.traceMatrix K (b i) := by
+  let := Fintype.ofFinite ι
+  ext ⟨i, j⟩ ⟨i', j'⟩
+  simp only [Algebra.traceMatrix_apply, Algebra.traceForm_pi,
+    LinearMap.BilinForm.pi_apply_single_left, Matrix.blockDiagonal'_apply]
+  split_ifs with h
+  · subst i'
+    simp
+  · simp [Pi.single_eq_of_ne h]
 
 end Trace
 

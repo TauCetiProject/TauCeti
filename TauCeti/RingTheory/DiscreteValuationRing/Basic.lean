@@ -109,6 +109,14 @@ theorem mem_maximalIdeal_pow_iff_le_addVal {n : ℕ} {x : S} :
   rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton,
     ← _root_.IsDiscreteValuationRing.addVal_le_iff_dvd, hϖ.addVal_pow]
 
+/-- An element of finite additive valuation `n` generates the `n`-th power of the maximal ideal. -/
+theorem span_singleton_eq_maximalIdeal_pow_of_addVal_eq {x : S} {n : ℕ}
+    (h : _root_.IsDiscreteValuationRing.addVal S x = (n : ℕ∞)) :
+    Ideal.span {x} = maximalIdeal S ^ n := by
+  ext y
+  rw [Ideal.mem_span_singleton, ← _root_.IsDiscreteValuationRing.addVal_le_iff_dvd, h,
+    mem_maximalIdeal_pow_iff_le_addVal]
+
 /-- Equality of two classes modulo a maximal-ideal power is measured by the additive valuation
 of the difference of their representatives. -/
 theorem quotient_mk_eq_iff_le_addVal {n : ℕ} {x y : S} :
