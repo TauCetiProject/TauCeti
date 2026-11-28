@@ -68,6 +68,7 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
   the `p`-primary components.
 * `IsAddPGroup.primaryComponent_eq_bot`: a `p`-primary torsion group has trivial `q`-primary
   component for every prime `q ≠ p`.
+* `MonoidHom.map_mem_primaryComponent`: homomorphisms preserve `p`-primary components.
 -/
 
 public section
@@ -348,3 +349,14 @@ theorem MonoidHom.injective_domRestrict_of_isMulTorsion {H : Type*} [Group H] (f
   exact Subtype.ext h1
 
 end PrimeOrder
+
+/-- A monoid homomorphism sends the `p`-primary component into the `p`-primary component. -/
+@[to_additive
+/-- An additive monoid homomorphism sends the `p`-primary component into the `p`-primary
+component. -/]
+theorem MonoidHom.map_mem_primaryComponent {G H : Type*} [CommGroup G] [CommGroup H]
+    {F : Type*} [FunLike F G H] [MonoidHomClass F G H] (f : F) {p : ℕ} {g : G}
+    (hg : g ∈ CommGroup.primaryComponent G p) :
+    f g ∈ CommGroup.primaryComponent H p := by
+  obtain ⟨k, hk⟩ := hg
+  exact ⟨k, by rw [← map_pow, hk, map_one]⟩

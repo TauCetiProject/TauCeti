@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Torsion
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.RingHoms
+import Mathlib.LinearAlgebra.TensorProduct.Map
 import TauCeti.GroupTheory.Torsion
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
@@ -215,4 +216,127 @@ theorem primaryComponentEquivPadicIntTensor_apply (hA : AddMonoid.ExponentExists
     AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, TensorProduct.mk_apply,
     AddSubgroup.coe_subtype]
 
+variable (p A) in
+/-- **The canonical `p`-primary projection.** For a prime `p` and an additive commutative group `A`
+of finite exponent, this homomorphism projects `A` onto its `p`-primary component via
+`primaryComponentEquivPadicIntTensor`, sending `x` to the unique `p`-primary element whose image in
+`ℤ_p ⊗[ℤ] A` is `1 ⊗ x`. -/
+noncomputable def primaryProj (hA : AddMonoid.ExponentExists A) :
+    A →+ _root_.AddCommGroup.primaryComponent A p :=
+  (primaryComponentEquivPadicIntTensor p A hA).symm.toAddMonoidHom.comp
+    (TensorProduct.mk ℤ ℤ_[p] A 1).toAddMonoidHom
+
+/-- Comparing `primaryProj` with `primaryComponentEquivPadicIntTensor`: the `p`-primary projection
+of `x` maps to `(1 : ℤ_[p]) ⊗ₜ[ℤ] x`. -/
+theorem primaryComponentEquivPadicIntTensor_primaryProj (hA : AddMonoid.ExponentExists A) (x : A) :
+    primaryComponentEquivPadicIntTensor p A hA (primaryProj p A hA x) = (1 : ℤ_[p]) ⊗ₜ[ℤ] x :=
+  (primaryComponentEquivPadicIntTensor p A hA).apply_symm_apply _
+
+/-- Canonical `simp`-normal form for the image of `primaryProj` in `ℤ_p ⊗[ℤ] A`: together with
+`primaryComponentEquivPadicIntTensor_apply`, this simplifies
+`primaryComponentEquivPadicIntTensor p A hA (primaryProj p A hA x)` to `(1 : ℤ_[p]) ⊗ₜ[ℤ] x`. -/
+@[simp]
+theorem one_tmul_primaryProj (hA : AddMonoid.ExponentExists A) (x : A) :
+    (1 : ℤ_[p]) ⊗ₜ[ℤ] (primaryProj p A hA x : A) = (1 : ℤ_[p]) ⊗ₜ[ℤ] x := by
+  rw [← primaryComponentEquivPadicIntTensor_apply (p := p) (A := A) hA,
+    primaryComponentEquivPadicIntTensor_primaryProj]
+
+/-- `primaryProj` restricts to the identity on the `p`-primary component. -/
+@[simp]
+theorem primaryProj_coe (hA : AddMonoid.ExponentExists A)
+    (x : _root_.AddCommGroup.primaryComponent A p) :
+    primaryProj p A hA (x : A) = x := by
+  simpa [primaryProj, primaryComponentEquivPadicIntTensor_apply] using
+    (primaryComponentEquivPadicIntTensor p A hA).symm_apply_apply x
+
+/-- Any additive group homomorphism commutes with `primaryProj`. -/
+theorem primaryProj_map {B : Type*} [AddCommGroup B]
+    (hA : AddMonoid.ExponentExists A) (hB : AddMonoid.ExponentExists B)
+    (f : A →+ B) (x : A) :
+    (primaryProj p B hB (f x) : B) = f (primaryProj p A hA x : A) := by
+  have hfx_mem : f (primaryProj p A hA x : A) ∈ _root_.AddCommGroup.primaryComponent B p :=
+    AddMonoidHom.map_mem_primaryComponent f (primaryProj p A hA x).property
+  have hten :
+      primaryComponentEquivPadicIntTensor p B hB (primaryProj p B hB (f x)) =
+        primaryComponentEquivPadicIntTensor p B hB ⟨f (primaryProj p A hA x : A), hfx_mem⟩ := by
+    rw [primaryComponentEquivPadicIntTensor_primaryProj, primaryComponentEquivPadicIntTensor_apply]
+    have hbase := congrArg (f.toIntLinearMap.lTensor ℤ_[p])
+      (primaryComponentEquivPadicIntTensor_primaryProj hA x)
+    rw [primaryComponentEquivPadicIntTensor_apply] at hbase
+    simpa only [LinearMap.lTensor_tmul, AddMonoidHom.coe_toIntLinearMap] using hbase.symm
+  exact congrArg Subtype.val ((primaryComponentEquivPadicIntTensor p B hB).injective hten)
+
 end TauCeti.AddCommGroup
+
+namespace TauCeti.CommGroup
+
+private theorem addExponentExists {G : Type*} [CommGroup G] (hG : Monoid.ExponentExists G) :
+    AddMonoid.ExponentExists (Additive G) := by
+  obtain ⟨n, hn, h⟩ := hG
+  exact ⟨n, hn, fun x ↦ h (Additive.toMul x)⟩
+
+variable (p : ℕ) [Fact p.Prime] (G : Type*) [CommGroup G]
+
+/-- **The canonical `p`-primary projection on a commutative group.** For a prime `p` and a
+commutative group `G` of finite exponent, this homomorphism projects `G` onto its `p`-primary
+component via `TauCeti.AddCommGroup.primaryComponentEquivPadicIntTensor`, sending `g` to the unique
+`p`-primary element whose image in `ℤ_p ⊗[ℤ] Additive G` is `1 ⊗ Additive.ofMul g`. -/
+noncomputable def primaryProj (hG : Monoid.ExponentExists G) :
+    G →* _root_.CommGroup.primaryComponent G p where
+  toFun g :=
+    ⟨Additive.toMul (TauCeti.AddCommGroup.primaryProj p (Additive G) (addExponentExists hG)
+        (Additive.ofMul g) : Additive G),
+      (TauCeti.AddCommGroup.primaryProj p (Additive G) (addExponentExists hG)
+        (Additive.ofMul g)).property⟩
+  map_one' := Subtype.ext <| by
+    change Additive.toMul (TauCeti.AddCommGroup.primaryProj p (Additive G)
+      (addExponentExists hG) 0 : Additive G) = 1
+    rw [map_zero, AddSubgroup.coe_zero, toMul_zero]
+  map_mul' g₁ g₂ := Subtype.ext <| by
+    change Additive.toMul (TauCeti.AddCommGroup.primaryProj p (Additive G) (addExponentExists hG)
+      (Additive.ofMul g₁ + Additive.ofMul g₂) : Additive G) = _
+    rw [map_add, AddSubgroup.coe_add, toMul_add]
+    rfl
+
+variable {p G}
+
+/-- Comparing `CommGroup.primaryProj` with `AddCommGroup.primaryComponentEquivPadicIntTensor`: the
+`p`-primary projection of `g` maps to `(1 : ℤ_[p]) ⊗ₜ[ℤ] Additive.ofMul g`. -/
+theorem primaryComponentEquivPadicIntTensor_primaryProj (hG : Monoid.ExponentExists G) (g : G) :
+    TauCeti.AddCommGroup.primaryComponentEquivPadicIntTensor p (Additive G)
+        (by obtain ⟨n, hn, h⟩ := hG; exact ⟨n, hn, fun x ↦ h (Additive.toMul x)⟩)
+        ⟨Additive.ofMul (primaryProj p G hG g : G), (primaryProj p G hG g).property⟩ =
+      (1 : ℤ_[p]) ⊗ₜ[ℤ] Additive.ofMul g :=
+  TauCeti.AddCommGroup.primaryComponentEquivPadicIntTensor_primaryProj
+    (addExponentExists hG) (Additive.ofMul g)
+
+/-- Canonical `simp`-normal form for the image of `CommGroup.primaryProj` in
+`ℤ_p ⊗[ℤ] Additive G`: together with `AddCommGroup.primaryComponentEquivPadicIntTensor_apply`,
+this simplifies `primaryComponentEquivPadicIntTensor ... (primaryProj p G hG g)` to
+`(1 : ℤ_[p]) ⊗ₜ[ℤ] Additive.ofMul g`. -/
+@[simp]
+theorem one_tmul_primaryProj (hG : Monoid.ExponentExists G) (g : G) :
+    (1 : ℤ_[p]) ⊗ₜ[ℤ] Additive.ofMul (primaryProj p G hG g : G) =
+      (1 : ℤ_[p]) ⊗ₜ[ℤ] Additive.ofMul g :=
+  TauCeti.AddCommGroup.one_tmul_primaryProj (addExponentExists hG) (Additive.ofMul g)
+
+/-- `CommGroup.primaryProj` restricts to the identity on the `p`-primary component. -/
+@[simp]
+theorem primaryProj_coe (hG : Monoid.ExponentExists G)
+    (g : _root_.CommGroup.primaryComponent G p) :
+    primaryProj p G hG (g : G) = g := by
+  apply Subtype.ext
+  have h := TauCeti.AddCommGroup.primaryProj_coe (addExponentExists hG)
+    ⟨Additive.ofMul (g : G), g.property⟩
+  exact congrArg (fun z : _root_.AddCommGroup.primaryComponent (Additive G) p ↦
+    Additive.toMul (z : Additive G)) h
+
+/-- Any monoid homomorphism commutes with `CommGroup.primaryProj`. -/
+theorem primaryProj_map {H : Type*} [CommGroup H]
+    (hG : Monoid.ExponentExists G) (hH : Monoid.ExponentExists H)
+    (f : G →* H) (g : G) :
+    (primaryProj p H hH (f g) : H) = f (primaryProj p G hG g : G) :=
+  TauCeti.AddCommGroup.primaryProj_map (addExponentExists hG) (addExponentExists hH)
+    f.toAdditive (Additive.ofMul g)
+
+end TauCeti.CommGroup

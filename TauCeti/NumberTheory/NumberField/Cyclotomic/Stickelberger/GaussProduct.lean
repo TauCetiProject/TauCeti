@@ -27,7 +27,6 @@ import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.StickelbergerPhi.Relation
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
-import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
@@ -436,8 +435,7 @@ private theorem exists_stickelbergerGaussProduct (m : ℕ) [NeZero m]
       let ζp : L := IsCyclotomicExtension.zeta p K L
       have hζp : IsPrimitiveRoot ζp p := IsCyclotomicExtension.zeta_spec p K L
       let _ := Ideal.Quotient.field P; let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
-      have : CharP (𝓞 K ⧸ P) p :=
-        Ideal.Quotient.charP_of_liesOver P Ideal.IsPrime.ne_top' p Fact.out
+      have : CharP (𝓞 K ⧸ P) p := ringChar.of_eq (Ideal.ringChar_quot P)
       let _ : Algebra (ZMod p) (𝓞 K ⧸ P) := ZMod.algebra _ p
       algebraMap K L (u : K) =
         ∏ a : (ZMod m)ˣ,
@@ -461,7 +459,7 @@ private theorem exists_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   have : FiniteDimensional K L := IsCyclotomicExtension.finiteDimensional {p} K L
   have hζp := IsCyclotomicExtension.zeta_spec p K L
   let _ := Ideal.Quotient.field P; let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
-  have : CharP (𝓞 K ⧸ P) p := Ideal.Quotient.charP_of_liesOver P Ideal.IsPrime.ne_top' p Fact.out
+  have : CharP (𝓞 K ⧸ P) p := ringChar.of_eq (Ideal.ringChar_quot P)
   let _ : Algebra (ZMod p) (𝓞 K ⧸ P) := ZMod.algebra _ p
   let σ : (ZMod m)ˣ → Gal(L/ℚ) := fun a ↦
     (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζp).symm ((galEquivZMod m K).symm a, 1)
@@ -484,13 +482,13 @@ private theorem exists_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   obtain ⟨α, hαL⟩ := IntermediateField.mem_bot.mp ((IsGalois.mem_bot_iff_fixed gx).mpr hfixed)
   exact ⟨Units.mk0 α fun h0 ↦ hgx_ne (by rw [← hαL, h0, map_zero]), hαL⟩
 
-/-- **The descended Gauss product homomorphism.** Given `m ≥ 2`, an `m`-th cyclotomic extension
-`K / ℚ`, and a maximal ideal `P` of `𝓞 K` with `(Ideal.absNorm P).Coprime m`, this is the
-canonical homomorphism `Multiplicative (stickelbergerDenominatorIdeal m) →* Kˣ` sending `x ∈ J_m`
-to the Galois-descended element `∏_a (σ_a g(χ_P, ψ)) ^ (x.coeff a) ∈ Kˣ`. -/
+/-- **The descended Gauss product homomorphism.** Given a positive integer `m`, an `m`-th
+cyclotomic extension `K / ℚ`, and a maximal ideal `P` of `𝓞 K` with `(Ideal.absNorm P).Coprime m`,
+this is the canonical homomorphism `Multiplicative (stickelbergerDenominatorIdeal m) →* Kˣ`
+sending `x ∈ J_m` to the Galois-descended element `∏_a (σ_a g(χ_P, ψ)) ^ (x.coeff a) ∈ Kˣ`. -/
 noncomputable def stickelbergerGaussProduct (m : ℕ) [NeZero m]
     (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K]
-    (_hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m) :
+    (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m) :
     Multiplicative (stickelbergerDenominatorIdeal m) →* Kˣ := by
   classical
   let p : ℕ := Ideal.absNorm (Ideal.under ℤ P)
@@ -518,8 +516,7 @@ noncomputable def stickelbergerGaussProduct (m : ℕ) [NeZero m]
           ← Finset.prod_mul_distrib]
         refine Finset.prod_congr rfl fun a _ ↦ ?_
         let _ := Ideal.Quotient.field P; let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
-        have : CharP (𝓞 K ⧸ P) p :=
-          Ideal.Quotient.charP_of_liesOver P Ideal.IsPrime.ne_top' p Fact.out
+        have : CharP (𝓞 K ⧸ P) p := ringChar.of_eq (Ideal.ringChar_quot P)
         let _ : Algebra (ZMod p) (𝓞 K ⧸ P) := ZMod.algebra _ p
         have hcard : (Fintype.card (𝓞 K ⧸ P) : L) ≠ 0 := by
           rw [← map_natCast (algebraMap K L)]
@@ -531,11 +528,11 @@ noncomputable def stickelbergerGaussProduct (m : ℕ) [NeZero m]
 
 /-- **Image of `stickelbergerGaussProduct` in any compositum.** For any compositum `L = K(ζ_p)`
 over `K`, any prime `p` below `P`, and any primitive `p`-th root of unity `ζ : L`,
-`stickelbergerGaussProduct m K hm P hP (Multiplicative.ofAdd x)` embeds into `L` as
+`stickelbergerGaussProduct m K P hP (Multiplicative.ofAdd x)` embeds into `L` as
 `∏_a (σ_a g(χ_P, ψ_ζ)) ^ (x.coeff a)`. -/
 theorem algebraMap_stickelbergerGaussProduct (m : ℕ) [NeZero m]
     (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K] [IsGalois ℚ K]
-    (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m)
+    (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m)
     {L : Type*} [Field L] [Algebra ℚ L] [Algebra K L] [IsScalarTower ℚ K L]
     {p : ℕ} [hp : Fact p.Prime] [P.LiesOver (Ideal.span {(p : ℤ)})]
     [IsCyclotomicExtension {p} K L]
@@ -543,7 +540,7 @@ theorem algebraMap_stickelbergerGaussProduct (m : ℕ) [NeZero m]
     (hcop : ((NumberField.discr K).natAbs).Coprime p)
     {ζ : L} (hζ : IsPrimitiveRoot ζ p) (x : stickelbergerDenominatorIdeal m) :
     algebraMap K L
-        (stickelbergerGaussProduct m K hm P hP (Multiplicative.ofAdd x) : K) =
+        (stickelbergerGaussProduct m K P hP (Multiplicative.ofAdd x) : K) =
       ∏ a : (ZMod m)ˣ,
         ((IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm
           ((galEquivZMod m K).symm a, 1)
@@ -663,7 +660,7 @@ theorem gaussSum_inv_powerResidueSymbol_eq_of_eq {m : ℕ} [NeZero m]
 sums `gaussSum (χ.ringHomComp _) (AddChar.zmodChar p hζ.pow_eq_one)`. -/
 theorem algebraMap_stickelbergerGaussProduct_of_zpowers (m : ℕ) [NeZero m]
     (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K] [IsGalois ℚ K]
-    (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m)
+    (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m)
     {L : Type*} [Field L] [Algebra ℚ L] [Algebra K L] [IsScalarTower ℚ K L]
     {p : ℕ} [hp : Fact p.Prime] [P.LiesOver (Ideal.span {(p : ℤ)})]
     [IsCyclotomicExtension {p} K L] [Algebra (ZMod p) (𝓞 K ⧸ P)]
@@ -675,7 +672,7 @@ theorem algebraMap_stickelbergerGaussProduct_of_zpowers (m : ℕ) [NeZero m]
       algebraMap (ZMod p) (𝓞 K ⧸ P) ((g : ZMod p) ^ ((p - 1) / m)))
     (x : stickelbergerDenominatorIdeal m) :
     algebraMap K L
-        (stickelbergerGaussProduct m K hm P hP (Multiplicative.ofAdd x) : K) =
+        (stickelbergerGaussProduct m K P hP (Multiplicative.ofAdd x) : K) =
       ∏ a : (ZMod m)ˣ,
         ((IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm
           ((galEquivZMod m K).symm a, 1)
@@ -684,23 +681,23 @@ theorem algebraMap_stickelbergerGaussProduct_of_zpowers (m : ℕ) [NeZero m]
               (AddChar.zmodChar p hζ.pow_eq_one))) ^
           (x : MonoidAlgebra ℤ (ZMod m)ˣ).coeff a := by
   let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
-  rw [algebraMap_stickelbergerGaussProduct m K hm P hP hcop hζ x]
+  rw [algebraMap_stickelbergerGaussProduct m K P hP hcop hζ x]
   refine Finset.prod_congr rfl fun a _ ↦ ?_
   rw [gaussSum_inv_powerResidueSymbol_eq_of_eq P hNP _ hζ
     (inv_powerResidueSymbol_algebraMap_eq_of_zpowers P hP hNP hg hχm hχP)]
 
 /-- **Compatibility with field embeddings.** Any ring homomorphism `e : K →+* K'` between `m`-th
-cyclotomic extensions of `ℚ` sends `stickelbergerGaussProduct m K hm P hP` to
-`stickelbergerGaussProduct m K' hm P' hP'`, where `P' = P.map (RingOfIntegers.mapRingHom e)`. -/
+cyclotomic extensions of `ℚ` sends `stickelbergerGaussProduct m K P hP` to
+`stickelbergerGaussProduct m K' P' hP'`, where `P' = P.map (RingOfIntegers.mapRingHom e)`. -/
 theorem map_stickelbergerGaussProduct (m : ℕ) [NeZero m]
     {K K' : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K]
     [Field K'] [NumberField K'] [IsCyclotomicExtension {m} ℚ K']
-    (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m)
+    (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m)
     {e : K →+* K'} {P' : Ideal (𝓞 K')} [P'.IsMaximal] (hP' : (Ideal.absNorm P').Coprime m)
     (hPP' : P' = P.map (NumberField.RingOfIntegers.mapRingHom e))
     (x : stickelbergerDenominatorIdeal m) :
-    e (stickelbergerGaussProduct m K hm P hP (Multiplicative.ofAdd x) : K) =
-      (stickelbergerGaussProduct m K' hm P' hP' (Multiplicative.ofAdd x) : K') := by
+    e (stickelbergerGaussProduct m K P hP (Multiplicative.ofAdd x) : K) =
+      (stickelbergerGaussProduct m K' P' hP' (Multiplicative.ofAdd x) : K') := by
   classical
   have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
   have : IsGalois ℚ K' := IsCyclotomicExtension.isGalois {m} ℚ K'
@@ -728,43 +725,31 @@ theorem map_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   have hζ := IsCyclotomicExtension.zeta_spec p K L
   have hζ' := IsCyclotomicExtension.zeta_spec p K' L'
   let _ := Ideal.Quotient.field P; let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
-  have : CharP (𝓞 K ⧸ P) p := Ideal.Quotient.charP_of_liesOver P Ideal.IsPrime.ne_top' p Fact.out
+  have : CharP (𝓞 K ⧸ P) p := ringChar.of_eq (Ideal.ringChar_quot P)
   let _ : Algebra (ZMod p) (𝓞 K ⧸ P) := ZMod.algebra _ p
   let _ := Ideal.Quotient.field P'; let _ : Fintype (𝓞 K' ⧸ P') := Fintype.ofFinite _
-  have : CharP (𝓞 K' ⧸ P') p := Ideal.Quotient.charP_of_liesOver P' Ideal.IsPrime.ne_top' p Fact.out
+  have : CharP (𝓞 K' ⧸ P') p := ringChar.of_eq <| (Ideal.ringChar_quot P').trans <| by
+    rw [← Ideal.over_def P' (Ideal.span {(p : ℤ)}), Int.absNorm_span_singleton, Int.natAbs_natCast]
   let _ : Algebra (ZMod p) (𝓞 K' ⧸ P') := ZMod.algebra _ p
   obtain ⟨eL, heL_K, heL_prod⟩ :=
     exists_algEquiv_map_prod_galEquivProd_gaussSum P hcop hζ eEquiv hPP'_equiv hcop' hζ' x.property
   apply (algebraMap K' L').injective
-  rw [show e (stickelbergerGaussProduct m K hm P hP (Multiplicative.ofAdd x) : K) =
+  rw [show e (stickelbergerGaussProduct m K P hP (Multiplicative.ofAdd x) : K) =
       eEquiv _ from rfl, ← heL_K,
-    algebraMap_stickelbergerGaussProduct m K hm P hP hcop hζ x,
-    algebraMap_stickelbergerGaussProduct m K' hm P' hP' hcop' hζ' x]
+    algebraMap_stickelbergerGaussProduct m K P hP hcop hζ x,
+    algebraMap_stickelbergerGaussProduct m K' P' hP' hcop' hζ' x]
   exact heL_prod
 
-/-- **Galois equivariance on the prime ideal.** Applying `τ ∈ Gal(K/ℚ)` to
-`stickelbergerGaussProduct m K hm P hP` replaces `P` by `τ • P`. -/
-theorem gal_smul_stickelbergerGaussProduct (m : ℕ) [NeZero m]
-    (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K]
-    (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m)
-    (τ : Gal(K/ℚ)) (x : stickelbergerDenominatorIdeal m) :
-    τ (stickelbergerGaussProduct m K hm P hP (Multiplicative.ofAdd x) : K) =
-      (stickelbergerGaussProduct m K hm (τ • P)
-        (by simpa [← Ideal.map_ringOfIntegers_mapRingEquiv,
-          Ideal.absNorm_map_of_ringEquiv] using hP)
-        (Multiplicative.ofAdd x) : K) :=
-  map_stickelbergerGaussProduct m hm P hP _ (Ideal.map_ringOfIntegers_mapRingEquiv P τ).symm x
-
 /-- **Galois equivariance on the denominator multiplier.** Applying `σ_b ∈ Gal(K/ℚ)` to
-`stickelbergerGaussProduct m K hm P hP (Multiplicative.ofAdd x)` acts on the multiplier `x` by
+`stickelbergerGaussProduct m K P hP (Multiplicative.ofAdd x)` acts on the multiplier `x` by
 `MonoidAlgebra.single b 1 • x`. -/
 theorem galEquivZMod_symm_stickelbergerGaussProduct (m : ℕ) [NeZero m]
     (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K]
-    (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m)
+    (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m)
     (b : (ZMod m)ˣ) (x : stickelbergerDenominatorIdeal m) :
     ((galEquivZMod m K).symm b)
-        (stickelbergerGaussProduct m K hm P hP (Multiplicative.ofAdd x) : K) =
-      (stickelbergerGaussProduct m K hm P hP
+        (stickelbergerGaussProduct m K P hP (Multiplicative.ofAdd x) : K) =
+      (stickelbergerGaussProduct m K P hP
         (Multiplicative.ofAdd (MonoidAlgebra.single b (1 : ℤ) • x)) : K) := by
   classical
   have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
@@ -776,13 +761,13 @@ theorem galEquivZMod_symm_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   let L := CyclotomicField p K
   have hζ := IsCyclotomicExtension.zeta_spec p K L
   let _ := Ideal.Quotient.field P; let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
-  have : CharP (𝓞 K ⧸ P) p := Ideal.Quotient.charP_of_liesOver P Ideal.IsPrime.ne_top' p Fact.out
+  have : CharP (𝓞 K ⧸ P) p := ringChar.of_eq (Ideal.ringChar_quot P)
   let _ : Algebra (ZMod p) (𝓞 K ⧸ P) := ZMod.algebra _ p
   apply (algebraMap K L).injective
   rw [← IsCyclotomicExtension.galEquivProd_symm_algebraMap ℚ K L p hcop hζ
       ((galEquivZMod m K).symm b, 1),
-    algebraMap_stickelbergerGaussProduct m K hm P hP hcop hζ x,
-    algebraMap_stickelbergerGaussProduct m K hm P hP hcop hζ
+    algebraMap_stickelbergerGaussProduct m K P hP hcop hζ x,
+    algebraMap_stickelbergerGaussProduct m K P hP hcop hζ
       (MonoidAlgebra.single b (1 : ℤ) • x),
     map_prod]
   refine Fintype.prod_equiv (Equiv.mulLeft b) _ _ fun a ↦ ?_
@@ -791,13 +776,13 @@ theorem galEquivZMod_symm_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   rw [MonoidAlgebra.coeff_single_mul_eq_mul_coeff a (by simp), one_mul]
 
 /-- **`m`-th power formula for `stickelbergerGaussProduct`.** Raising
-`stickelbergerGaussProduct m K hm P hP (Multiplicative.ofAdd x)` to the `m`-th power produces the
+`stickelbergerGaussProduct m K P hP (Multiplicative.ofAdd x)` to the `m`-th power produces the
 Galois-weighted product `∏_a (σ_a Φ(P)) ^ (x.coeff a)`. -/
 theorem pow_stickelbergerGaussProduct (m : ℕ) [NeZero m]
     (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K]
     (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m)
     (x : stickelbergerDenominatorIdeal m) :
-    (stickelbergerGaussProduct m K hm P hP (Multiplicative.ofAdd x) : K) ^ m =
+    (stickelbergerGaussProduct m K P hP (Multiplicative.ofAdd x) : K) ^ m =
       ∏ a : (ZMod m)ˣ,
         (algebraMap (𝓞 K) K
           (((galEquivZMod m K).symm a) • Ideal.stickelbergerPhi P m)) ^
@@ -812,7 +797,7 @@ theorem pow_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   let L := CyclotomicField p K
   have hζ := IsCyclotomicExtension.zeta_spec p K L
   let _ := Ideal.Quotient.field P; let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
-  have : CharP (𝓞 K ⧸ P) p := Ideal.Quotient.charP_of_liesOver P Ideal.IsPrime.ne_top' p Fact.out
+  have : CharP (𝓞 K ⧸ P) p := ringChar.of_eq (Ideal.ringChar_quot P)
   let _ : Algebra (ZMod p) (𝓞 K ⧸ P) := ZMod.algebra _ p
   let f : 𝓞 K →+* L := (algebraMap K L).comp (algebraMap (𝓞 K) K)
   have hf : Function.Injective f :=
@@ -822,7 +807,7 @@ theorem pow_stickelbergerGaussProduct (m : ℕ) [NeZero m]
         (AddChar.traceChar (𝓞 K ⧸ P) hζ)) ^ m = f (Ideal.stickelbergerPhi P m) :=
     (Ideal.stickelbergerPhi_prime P hP hm hf (AddChar.isPrimitive_traceChar hζ)).symm
   apply (algebraMap K L).injective
-  rw [map_pow, algebraMap_stickelbergerGaussProduct m K hm P hP hcop hζ x, map_prod,
+  rw [map_pow, algebraMap_stickelbergerGaussProduct m K P hP hcop hζ x, map_prod,
     ← Finset.prod_pow]
   refine Finset.prod_congr rfl fun a _ ↦ ?_
   rw [← zpow_natCast, ← zpow_mul, mul_comm _ (m : ℤ), zpow_mul, zpow_natCast, ← map_pow, hg_pow,
@@ -830,21 +815,5 @@ theorem pow_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   refine congrArg (· ^ (x : MonoidAlgebra ℤ (ZMod m)ˣ).coeff a) ?_
   rw [RingHom.comp_apply, IsCyclotomicExtension.galEquivProd_symm_algebraMap,
     ← NumberField.algebraMap_smul_eq_apply]
-
-/-- **Smoothed Gauss descent.** Let `m ≥ 2`, let `K` be an `m`-th cyclotomic extension of `ℚ`, and
-let `P` be a maximal ideal of `𝓞 K` whose norm is prime to `m`. For every denominator multiplier
-`x ∈ stickelbergerDenominatorIdeal m`, the Galois-weighted product
-`∏_a (σ_a Φ(P)) ^ (x.coeff a)` is the `m`-th power of a nonzero element of `K`. -/
-theorem exists_pow_eq_prod_stickelbergerPhi_zpow (m : ℕ) [NeZero m]
-    (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K]
-    (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m)
-    {x : MonoidAlgebra ℤ (ZMod m)ˣ} (hx : x ∈ stickelbergerDenominatorIdeal m) :
-    ∃ u : Kˣ, (u : K) ^ m =
-      ∏ a : (ZMod m)ˣ,
-        (algebraMap (𝓞 K) K
-          (((IsCyclotomicExtension.Rat.galEquivZMod m K).symm a) •
-            Ideal.stickelbergerPhi P m)) ^ x.coeff a :=
-  ⟨stickelbergerGaussProduct m K hm P hP (Multiplicative.ofAdd ⟨x, hx⟩),
-    pow_stickelbergerGaussProduct m K hm P hP ⟨x, hx⟩⟩
 
 end TauCeti

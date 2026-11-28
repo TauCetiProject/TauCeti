@@ -196,13 +196,13 @@ theorem gaussSum_inv_powerResidueSymbol_eq (d : SplitPrimeGaussData m K p)
 /-- Split-prime compositum formula for `stickelbergerGaussProduct` attached to `d`. -/
 theorem algebraMap_stickelbergerGaussProduct (d : SplitPrimeGaussData m K p)
     [IsCyclotomicExtension {m} ℚ K] [IsGalois ℚ K]
-    (hm : 2 ≤ m) {L : Type*} [Field L] [Algebra ℚ L] [Algebra K L] [IsScalarTower ℚ K L]
+    {L : Type*} [Field L] [Algebra ℚ L] [Algebra K L] [IsScalarTower ℚ K L]
     [IsCyclotomicExtension {p} K L] [Algebra (ZMod p) (𝓞 K ⧸ d.P)]
     (hcop : ((NumberField.discr K).natAbs).Coprime p)
     {ζ : L} (hζ : IsPrimitiveRoot ζ p) (x : stickelbergerDenominatorIdeal m) :
     letI := d.isMaximal
     algebraMap K L
-        (stickelbergerGaussProduct m K hm d.P d.absNorm_coprime (Multiplicative.ofAdd x) : K) =
+        (stickelbergerGaussProduct m K d.P d.absNorm_coprime (Multiplicative.ofAdd x) : K) =
       ∏ a : (ZMod m)ˣ,
         ((IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm
           ((galEquivZMod m K).symm a, 1)
@@ -211,7 +211,7 @@ theorem algebraMap_stickelbergerGaussProduct (d : SplitPrimeGaussData m K p)
               (AddChar.zmodChar p hζ.pow_eq_one))) ^
           (x : MonoidAlgebra ℤ (ZMod m)ˣ).coeff a :=
   have := d.isMaximal; have := d.liesOver
-  algebraMap_stickelbergerGaussProduct_of_zpowers m K hm d.P d.absNorm_coprime hcop hζ
+  algebraMap_stickelbergerGaussProduct_of_zpowers m K d.P d.absNorm_coprime hcop hζ
     d.absNorm_eq d.zpowers_gen (d.char_gen.symm ▸ d.isPrimitiveRoot_root.pow_eq_one)
     d.mk_char_inv_gen_eq_algebraMap x
 
@@ -394,14 +394,14 @@ noncomputable def map {K' : Type*} [Field K'] [NumberField K']
 /-- Transporting `stickelbergerGaussProduct` along `e : K ≃+* K'` matches `d.map e`. -/
 theorem map_stickelbergerGaussProduct {K' : Type*} [Field K'] [NumberField K']
     [IsCyclotomicExtension {m} ℚ K] [IsCyclotomicExtension {m} ℚ K']
-    (hm : 2 ≤ m) (e : K ≃+* K') (d : SplitPrimeGaussData m K p)
+    (e : K ≃+* K') (d : SplitPrimeGaussData m K p)
     (x : stickelbergerDenominatorIdeal m) :
     letI := d.isMaximal; letI := (d.map e).isMaximal
-    e (stickelbergerGaussProduct m K hm d.P d.absNorm_coprime (Multiplicative.ofAdd x) : K) =
-      (stickelbergerGaussProduct m K' hm (d.map e).P (d.map e).absNorm_coprime
+    e (stickelbergerGaussProduct m K d.P d.absNorm_coprime (Multiplicative.ofAdd x) : K) =
+      (stickelbergerGaussProduct m K' (d.map e).P (d.map e).absNorm_coprime
         (Multiplicative.ofAdd x) : K') :=
   have := d.isMaximal; have := (d.map e).isMaximal
-  TauCeti.map_stickelbergerGaussProduct m hm d.P d.absNorm_coprime (d.map e).absNorm_coprime rfl x
+  TauCeti.map_stickelbergerGaussProduct m d.P d.absNorm_coprime (d.map e).absNorm_coprime rfl x
 
 /-- **Galois transport of compatible split-prime Gauss data** by `τ : Gal(K/ℚ)`. -/
 noncomputable def smul (τ : Gal(K/ℚ)) (d : SplitPrimeGaussData m K p) :
@@ -410,16 +410,6 @@ noncomputable def smul (τ : Gal(K/ℚ)) (d : SplitPrimeGaussData m K p) :
 /-- Galois transport `d.smul τ` acts on the underlying prime ideal by `τ • d.P`. -/
 @[simp] theorem smul_P (τ : Gal(K/ℚ)) (d : SplitPrimeGaussData m K p) :
     (d.smul τ).P = τ • d.P := by simp [smul]
-
-/-- Galois equivariance of `stickelbergerGaussProduct` expressed via `d.smul τ`. -/
-theorem gal_smul_stickelbergerGaussProduct [IsCyclotomicExtension {m} ℚ K]
-    (hm : 2 ≤ m) (τ : Gal(K/ℚ)) (d : SplitPrimeGaussData m K p)
-    (x : stickelbergerDenominatorIdeal m) :
-    letI := d.isMaximal; letI := (d.smul τ).isMaximal
-    τ (stickelbergerGaussProduct m K hm d.P d.absNorm_coprime (Multiplicative.ofAdd x) : K) =
-      (stickelbergerGaussProduct m K hm (d.smul τ).P (d.smul τ).absNorm_coprime
-        (Multiplicative.ofAdd x) : K) :=
-  d.map_stickelbergerGaussProduct hm τ.toRingEquiv x
 
 /-- Galois transport `d.smul τ` raises `d.char` to the cyclotomic power
 `(galEquivZMod m K τ : ZMod m).val`. -/
@@ -500,13 +490,6 @@ theorem char_eq_of_P_eq (d₁ d₂ : SplitPrimeGaussData m K p) (hP : d₁.P = d
       ⟨P₁, hmax₁, hlo₁, hNP₁, hcop₁, g₁, hg₁, χ₁, ζ₁, hprim₁, hχg₁, hmk₁⟩).trans
     (SplitPrimeGaussData.char_eq_invPowerResidueMulChar
       ⟨P₁, hmax₂, hlo₂, hNP₂, hcop₂, g₂, hg₂, χ₂, ζ₂, hprim₂, hχg₂, hmk₂⟩).symm
-
-/-- Any two compatible split-prime data over the same prime ideal produce the same Gauss sum. -/
-theorem gaussSum_eq_of_P_eq (d₁ d₂ : SplitPrimeGaussData m K p) (hP : d₁.P = d₂.P)
-    {L : Type*} [CommRing L] (f : 𝓞 K →+* L) {ζ : L} (hζ : ζ ^ p = 1) :
-    gaussSum (d₁.char.ringHomComp f) (AddChar.zmodChar p hζ) =
-      gaussSum (d₂.char.ringHomComp f) (AddChar.zmodChar p hζ) := by
-  rw [char_eq_of_P_eq d₁ d₂ hP]
 
 /-- Changing the generator to `g' = d.gen ^ k` with `k ≡ 1 (mod m)` preserves `d.root`. -/
 theorem withGen_root_eq_of_zpow (d : SplitPrimeGaussData m K p) (g' : (ZMod p)ˣ)
