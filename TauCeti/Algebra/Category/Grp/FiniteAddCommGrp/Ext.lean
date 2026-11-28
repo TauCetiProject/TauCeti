@@ -65,14 +65,20 @@ def zmodSqExtension : (E).Extension (zmod.{u} n) (zmod n) :=
   let T := S.map AddCommGrpCat.uliftFunctor.{u, 0}
   let f : zmod n ⟶ zmod (n ^ 2) := ObjectProperty.homMk T.f
   let g : zmod (n ^ 2) ⟶ zmod n := ObjectProperty.homMk T.g
+  have hf_map : (ι).map f = T.f := by erw [ObjectProperty.ι_map, ObjectProperty.homMk_hom]
+  have hg_map : (ι).map g = T.g := by erw [ObjectProperty.ι_map, ObjectProperty.homMk_hom]
   have hf : f ≫ g = 0 := by
     apply (ι).map_injective
-    rw [Functor.map_comp, Functor.map_zero]
-    -- The inclusion takes the full-subcategory morphisms back to the maps of `T`.
+    rw [Functor.map_comp, Functor.map_zero, hf_map, hg_map]
     exact T.zero
+  let U := ShortComplex.mk f g hf
+  have hT : T ≅ U.map ι := by
+    refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) ?_ ?_
+    · erw [Iso.refl_hom, ShortComplex.map_f, hf_map, Category.id_comp]
+    · erw [Iso.refl_hom, ShortComplex.map_g, hg_map, Category.id_comp]
   ⟨zmod (n ^ 2), f, g, hf, (ExactStructure.abelian_conflation _).mpr
     (ShortExact.reflects_shortExact_of_faithful ι
-      (hS.map_of_exact AddCommGrpCat.uliftFunctor.{u, 0}))⟩
+      (ShortComplex.shortExact_of_iso hT (hS.map_of_exact AddCommGrpCat.uliftFunctor.{u, 0})))⟩
 
 /-- The middle group of the cyclic-square extension is `ℤ/n²ℤ`. -/
 @[simp]
@@ -95,24 +101,33 @@ theorem zmodSqExtension_eqToHom_comp_g :
         (ZMod.castHom (dvd_pow_self n (by decide : 2 ≠ 0)) (ZMod n)).toAddMonoidHom)) :=
   (rfl)
 
+private theorem zmod_homMk_uliftFunctor_map_apply {a b : ℕ} [NeZero a] [NeZero b]
+    (f : AddCommGrpCat.of (ZMod a) ⟶ AddCommGrpCat.of (ZMod b)) (x : ZMod a) :
+    (ObjectProperty.homMk (X := zmod.{u} a) (Y := zmod.{u} b)
+      (AddCommGrpCat.uliftFunctor.{u, 0}.map f)).hom (ULift.up x) = ULift.up (f x) := by
+  erw [ObjectProperty.homMk_hom, AddCommGrpCat.uliftFunctor_map, ConcreteCategory.hom_ofHom,
+    AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
+    AddEquiv.coe_toAddMonoidHom]
+  -- The two universe-lift equivalences are `ULift.down` and `ULift.up`.
+  rfl
+
 /-- The first map of the cyclic-square extension sends `1` to `n` in its cyclic middle group. -/
 @[simp↓]
 theorem zmodSqExtension_f_one :
     ((zmodSqExtension.{u} n).f ≫ eqToHom (zmodSqExtension_obj n)).hom (ULift.up 1) =
       ULift.up (n : ZMod (n ^ 2)) := by
-  rw [zmodSqExtension_f_comp_eqToHom]
-  have h : ZMod.mulCastHom n (pow_two n).symm (1 : ZMod n) = (n : ZMod (n ^ 2)) := by
-    simpa only [Int.cast_one, one_mul] using ZMod.mulCastHom_intCast n (pow_two n).symm 1
-  -- The map of the universe-lift functor lifts the value of the original homomorphism.
-  exact congrArg ULift.up h
+  rw [zmodSqExtension_f_comp_eqToHom, zmod_homMk_uliftFunctor_map_apply,
+    ConcreteCategory.hom_ofHom]
+  congr 1
+  simpa only [Int.cast_one, one_mul] using ZMod.mulCastHom_intCast n (pow_two n).symm 1
 
 /-- The second map of the cyclic-square extension sends the lifted generator to the generator. -/
 @[simp↓]
 theorem zmodSqExtension_g_one :
     (eqToHom (zmodSqExtension_obj.{u} n).symm ≫ (zmodSqExtension.{u} n).g).hom
       (ULift.up 1) = ULift.up (1 : ZMod n) := by
-  rw [zmodSqExtension_eqToHom_comp_g]
-  -- The map of the universe-lift functor lifts the value of the original homomorphism.
+  rw [zmodSqExtension_eqToHom_comp_g, zmod_homMk_uliftFunctor_map_apply,
+    ConcreteCategory.hom_ofHom]
   exact congrArg ULift.up (map_one (ZMod.castHom (dvd_pow_self n (by decide : 2 ≠ 0)) (ZMod n)))
 
 private abbrev zmodSqExtensionIso : (zmodSqExtension.{u} n).obj ≅ zmod (n ^ 2) :=
@@ -137,6 +152,19 @@ private theorem zmodSqExtension_f_comp_eq_zero (g : (zmodSqExtension.{u} n).obj 
   rw [h, map_nsmul, ZModModule.char_nsmul_eq_zero n]
   exact (AddCommGrpCat.zero_apply _ _ _).symm
 
+private def zmodLift {m : ℕ} [NeZero m] {X : FiniteAddCommGrp.{u}} (x : X.obj)
+    (hx : m • x = 0) : zmod m ⟶ X :=
+  ObjectProperty.homMk (AddCommGrpCat.ofHom
+    ((ZMod.lift m ⟨zmultiplesHom _ x, by rw [zmultiplesHom_apply, natCast_zsmul, hx]⟩).comp
+      AddEquiv.ulift.toAddMonoidHom))
+
+private theorem zmodLift_intCast {m : ℕ} [NeZero m] {X : FiniteAddCommGrp.{u}} (x : X.obj)
+    (hx : m • x = 0) (b : ℤ) : (zmodLift x hx).hom (ULift.up (b : ZMod m)) = b • x := by
+  simp only [zmodLift, ObjectProperty.homMk_hom, ConcreteCategory.hom_ofHom,
+    AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom]
+  -- The domain equivalence sends the lifted residue back to its representative in `ZMod`.
+  exact (ZMod.lift_coe _ _ b).trans (zmultiplesHom_apply _ _ _)
+
 private theorem exists_zmodSqExtension_pushout
     (e : (E).Extension (zmod.{u} n) (zmod n)) :
     ∃ a : ZMod n, (ExactStructure.Ext1.mk (zmodSqExtension n)).pushout (zmodMul n a) =
@@ -152,20 +180,11 @@ private theorem exists_zmodSqExtension_pushout
   obtain ⟨a, ha⟩ := (hmaps.1 (n • y)).mp hy'
   have hy'' : (n ^ 2) • y = 0 := by
     rw [pow_two, mul_nsmul, ← ha, ← map_nsmul, ZModModule.char_nsmul_eq_zero n, map_zero]
-  let lift : zmod (n ^ 2) ⟶ e.obj :=
-    ObjectProperty.homMk (AddCommGrpCat.ofHom
-      ((ZMod.lift (n ^ 2) ⟨zmultiplesHom _ y, by
-        rw [zmultiplesHom_apply, natCast_zsmul, hy'']⟩).comp AddEquiv.ulift.toAddMonoidHom))
-  have hlift (b : ℤ) : lift.hom (ULift.up (b : ZMod (n ^ 2))) = b • y := by
-    simp only [lift, ObjectProperty.homMk_hom, ConcreteCategory.hom_ofHom,
-      AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom]
-    -- The domain equivalence sends the lifted residue back to its representative in `ZMod`.
-    exact (ZMod.lift_coe _ _ b).trans (zmultiplesHom_apply _ _ _)
   refine ⟨a.down, (ExactStructure.Ext1.pushout_mk_eq_pullback_mk (e := zmodSqExtension n)
-    (e' := e) (c := 𝟙 _) ((zmodSqExtensionIso n).hom ≫ lift) ?_ ?_).trans
+    (e' := e) (c := 𝟙 _) ((zmodSqExtensionIso n).hom ≫ zmodLift y hy'') ?_ ?_).trans
       (ExactStructure.Ext1.pullback_id _)⟩
   · apply zmod_hom_ext
-    have h := hlift (n : ℤ)
+    have h := zmodLift_intCast y hy'' (n : ℤ)
     rw [Int.cast_natCast, natCast_zsmul] at h
     rw [zmodSqExtension_f_comp_apply_one]
     simp only [ObjectProperty.FullSubcategory.comp_hom, ConcreteCategory.comp_apply]
@@ -173,8 +192,8 @@ private theorem exists_zmodSqExtension_pushout
     exact h.trans ha.symm
   · rw [Category.comp_id, Category.assoc, ← (zmodSqExtensionIso n).eq_inv_comp]
     apply zmod_hom_ext
-    have h : lift.hom (ULift.up (1 : ZMod (n ^ 2))) = y := by
-      simpa only [Int.cast_one, one_zsmul] using hlift 1
+    have h : (zmodLift y hy'').hom (ULift.up (1 : ZMod (n ^ 2))) = y := by
+      simpa only [Int.cast_one, one_zsmul] using zmodLift_intCast y hy'' 1
     rw [ObjectProperty.FullSubcategory.comp_hom, ConcreteCategory.comp_apply, h, hy,
       eqToIso.inv, zmodSqExtension_g_one]
 
