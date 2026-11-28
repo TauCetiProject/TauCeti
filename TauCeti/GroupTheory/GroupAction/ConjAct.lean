@@ -145,14 +145,32 @@ attribute [local instance] conjugationAction
 theorem coe_conjugationAction_smul (g : G) (n : N) :
     ((g • n : N) : G) = g * n * g⁻¹ := (rfl)
 
-variable {N} [IsMulCommutative N]
+variable {N}
+
+/-- Conjugation on a normal subgroup `N` by an element `n : N` is inner conjugation in `N`. -/
+theorem conjugationAction_coe_smul_eq (n m : N) : (n : G) • m = n * m * n⁻¹ :=
+  Subtype.ext (coe_conjugationAction_smul N n m)
+
+/-- Conjugating an element of a normal subgroup by itself is the identity. -/
+@[simp]
+theorem conjugationAction_coe_smul_self (n : N) : (n : G) • n = n := by
+  rw [conjugationAction_coe_smul_eq, mul_inv_cancel_right]
+
+/-- Conjugating an element of a normal subgroup by its ambient inverse is the identity. -/
+@[simp]
+theorem conjugationAction_inv_coe_smul_self (n : N) : (n : G)⁻¹ • n = n := by
+  rw [← coe_inv, conjugationAction_coe_smul_eq, inv_inv, inv_mul_cancel, one_mul]
+
+section Commutative
+
+variable [IsMulCommutative N]
 
 /-- Conjugation by an element of an abelian normal subgroup is trivial on that subgroup. -/
 @[simp]
 theorem conjugationAction_coe_smul (n m : N) : (n : G) • m = m := by
-  apply Subtype.ext
-  rw [coe_conjugationAction_smul, ← coe_mul, ← coe_inv, ← coe_mul]
-  simp
+  rw [conjugationAction_coe_smul_eq, mul_right_comm, mul_inv_cancel, one_mul]
+
+end Commutative
 
 end ConjugationAction
 
