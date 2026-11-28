@@ -50,29 +50,13 @@ private theorem map_coact_tensor_of_matrixCoefficient
         matrixCoefficient (C := B) α m * matrixCoefficient (C := B) β n) :
     TensorProduct.map e.toLinearMap LinearMap.id ∘ₗ coact (R := R) (C := B) =
       coact (R := R) (C := B) ∘ₗ e.toLinearMap := by
-  have hcontract (α : Module.Dual R M) (β : Module.Dual R N) :
-      LinearMap.tensorComponent (M := B) α ∘ₗ LinearMap.tensorComponent β ∘ₗ
-          (TensorProduct.assoc R B M N).symm.toLinearMap ∘ₗ
-          (TensorProduct.comm R (M ⊗[R] N) B).toLinearMap =
-        (TensorProduct.lid R B).toLinearMap ∘ₗ
-          TensorProduct.map (TensorProduct.dualDistrib R M N (α ⊗ₜ[R] β)) LinearMap.id := by
-    rw [← LinearMap.comp_assoc, LinearMap.tensorComponent_comp_tensorComponent]
-    ext m n b
-    simp [mul_comm]
   refine TensorProduct.ext' fun m n ↦ ?_
   apply (TensorProduct.congr e.symm (LinearEquiv.refl R B)).injective
   simp only [← LinearEquiv.coe_coe, TensorProduct.toLinearMap_congr,
     LinearEquiv.refl_toLinearMap, LinearMap.comp_apply, TensorProduct.map_map,
     e.symm_comp, LinearMap.id_comp, TensorProduct.map_id, LinearMap.id_apply]
-  apply (TensorProduct.comm R (M ⊗[R] N) B).injective
-  apply (TensorProduct.assoc R B M N).symm.injective
-  apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
-  intro β
-  apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
-  intro α
-  have hc := fun x => DFunLike.congr_fun (hcontract α β) x
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hc
-  rw [hc, hc]
+  apply TensorProduct.tensor_eq_of_forall_dualDistrib_eq
+  intro α β
   simpa only [matrixCoefficient_def, TensorProduct.map_map, LinearMap.comp_id,
     LinearEquiv.coe_coe] using
     (matrixCoefficient_tensor (C := B) α β m n).trans (h m n α β).symm

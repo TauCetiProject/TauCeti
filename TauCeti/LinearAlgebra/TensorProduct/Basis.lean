@@ -24,6 +24,8 @@ consists of pure tensors.
 
 * `TensorProduct.tensor_eq_of_forall_tensorComponent_eq`: contractions against a projective right
   factor detect equality.
+* `TensorProduct.tensor_eq_of_forall_dualDistrib_eq`: pure duals of two projective factors
+  detect equality of tensors with values in any module.
 * `Submodule.tensor_mem_range_iff_forall_tensorComponent_mem`: contractions against a projective
   right factor detect membership in the tensor product with a submodule of the left factor.
 * `Module.Basis.tensorComponent_coord_sum_tmul`: contracting against a coordinate functional of a
@@ -93,6 +95,27 @@ theorem tensor_eq_of_forall_tensorComponent_eq [Module.Projective R N] {x y : M 
   have := congrArg (map LinearMap.id (Finsupp.linearCombination R id)) hmap
   simpa only [map_map, LinearMap.id_comp, hs, map_id,
     LinearMap.id_apply] using this
+
+/-- Pure duals of two projective modules jointly detect equality of tensors with values
+in any module. No projectivity is required of the value module. -/
+theorem tensor_eq_of_forall_dualDistrib_eq {P : Type*} [AddCommMonoid P] [Module R P]
+    [Module.Projective R M] [Module.Projective R N]
+    {x y : (M ⊗[R] N) ⊗[R] P}
+    (h : ∀ (α : Module.Dual R M) (β : Module.Dual R N),
+      TensorProduct.lid R P (map (dualDistrib R M N (α ⊗ₜ[R] β)) LinearMap.id x) =
+        TensorProduct.lid R P (map (dualDistrib R M N (α ⊗ₜ[R] β)) LinearMap.id y)) :
+    x = y := by
+  apply (TensorProduct.comm R (M ⊗[R] N) P).injective
+  apply (TensorProduct.assoc R P M N).symm.injective
+  apply tensor_eq_of_forall_tensorComponent_eq
+  intro β
+  apply tensor_eq_of_forall_tensorComponent_eq
+  intro α
+  have hc := fun z ↦ DFunLike.congr_fun
+    (LinearMap.tensorComponent_comp_tensorComponent_assoc_symm_comm (P := P) α β) z
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hc
+  rw [hc, hc]
+  exact h α β
 
 end TensorProduct
 
