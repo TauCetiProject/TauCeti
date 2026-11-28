@@ -34,6 +34,8 @@ because `c(L) + n = d(L) + 1`. So Serre's local integral `q ^ (-(d(L) + 1)) (1 -
 
 ## Main results
 
+* `TauCeti.tsum_lintegral_rootCount_eq_of_subset`: for any subset of `eisensteinSet` on which
+  the root-count sum is almost everywhere `n`, the root-count integrals sum to `n * μ s`.
 * `TauCeti.tsum_lintegral_rootCount_eq`: the root-count integrals over `σ_K(n)` add up to
   `n * μ (eisensteinSet K n)`.
 * `TauCeti.tsum_one_div_natCard_residueField_pow_wildExponent_eq_iff_tsum_lintegral_rootCount_eq`:
@@ -59,6 +61,25 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] {n : ℕ}
   [MeasurableSpace (Fin n → K)] [BorelSpace (Fin n → K)]
 
+omit [BorelSpace (Fin n → K)] in
+/-- For any subset `s` of the Eisenstein region on which the root counts over `σ_K(n)` sum to
+`n` almost everywhere, the root-count integrals over `s` sum to `n * μ s`. -/
+theorem tsum_lintegral_rootCount_eq_of_subset [OpensMeasurableSpace (Fin n → K)]
+    (μ : Measure (Fin n → K)) {s : Set (Fin n → K)} (hs : s ⊆ eisensteinSet K n)
+    (h : ∀ᵐ a ∂μ.restrict s,
+      ∑' L : totallyRamifiedOfDegree K n, (L.val.rootCount a : ℝ≥0∞) = n) :
+    ∑' L : totallyRamifiedOfDegree K n,
+      ∫⁻ a in s, (L.val.rootCount a : ℝ≥0∞) ∂μ =
+        n * μ s := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
+  have := (countable_totallyRamifiedOfDegree hn (K := K)).to_subtype
+  rw [← lintegral_tsum fun L ↦
+      (aemeasurable_rootCount_restrict_eisensteinSet μ L.property).mono_measure
+        (Measure.restrict_mono hs le_rfl),
+    lintegral_congr_ae h]
+  simp
+
 /-- The root-count integrals over all totally ramified degree-`n` subextensions add up to
 `n` times the volume of the Eisenstein region. This holds for any additive Haar measure,
 including in equal characteristic. -/
@@ -66,13 +87,8 @@ theorem tsum_lintegral_rootCount_eq
     (μ : Measure (Fin n → K)) [μ.IsAddHaarMeasure] :
     ∑' L : totallyRamifiedOfDegree K n,
       ∫⁻ a in eisensteinSet K n, (L.val.rootCount a : ℝ≥0∞) ∂μ =
-        n * μ (eisensteinSet K n) := by
-  rcases n.eq_zero_or_pos with rfl | hn
-  · simp
-  have := (countable_totallyRamifiedOfDegree hn (K := K)).to_subtype
-  rw [← lintegral_tsum fun L ↦ aemeasurable_rootCount_restrict_eisensteinSet μ L.property,
-    lintegral_congr_ae (ae_tsum_rootCount_eq μ)]
-  simp
+        n * μ (eisensteinSet K n) :=
+  tsum_lintegral_rootCount_eq_of_subset μ Set.Subset.rfl (ae_tsum_rootCount_eq μ)
 
 /-- For Haar measure normalized on the integer box, the sum of root-count integrals is
 `n * q⁻ⁿ * (1 - q⁻¹)`, where `q` is the residue cardinality. -/

@@ -20,6 +20,8 @@ uniformizer. Conversely, `X ^ n` minus a uniformizer is Eisenstein for positive 
 
 * `Polynomial.IsEisensteinAt.irreducible_coeff_zero` identifies the constant coefficient as an
   irreducible element.
+* `Polynomial.IsEisensteinAt.one_le_addVal_coeff`: every coefficient strictly below the degree has
+  additive valuation at least `1`.
 * `Polynomial.IsEisensteinAt.exists_eq_X_pow_add_C_coeff_zero_mul` writes a monic Eisenstein
   polynomial `f` as `X ^ deg f + f(0) g` with `g(0) = 1`, and
   `Polynomial.IsEisensteinAt.exists_pow_natDegree_eq` gives the corresponding identity
@@ -95,6 +97,14 @@ theorem exists_eq_X_pow_add_C_coeff_zero_mul {f : R[X]} (hf : f.IsEisensteinAt (
   have := congrArg (AddMonoidAlgebra.coeff · 0) hg
   simp only [coeff_sub, coeff_X_pow, hdeg.ne, ite_false, sub_zero, coeff_C_mul] at this
   exact (mul_eq_left₀ hirr.ne_zero).mp this.symm
+
+/-- Every coefficient of an Eisenstein polynomial strictly below its degree over a discrete
+valuation ring has additive valuation at least `1`. -/
+theorem one_le_addVal_coeff {f : R[X]} (hf : f.IsEisensteinAt (maximalIdeal R))
+    {k : ℕ} (hk : k < f.natDegree) :
+    1 ≤ IsDiscreteValuationRing.addVal R (f.coeff k) :=
+  (TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal (n := 1)).mp
+    ((pow_one (maximalIdeal R)).symm ▸ hf.mem hk)
 
 variable {S : Type*} [CommRing S] [Algebra R S] {f : R[X]} {x : S}
 

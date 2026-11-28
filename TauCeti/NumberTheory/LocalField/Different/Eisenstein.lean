@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LocalField.Different.Monogenic
 public import TauCeti.NumberTheory.LocalField.Eisenstein.PowerBasis
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 import TauCeti.NumberTheory.LocalField.Eisenstein.TotallyRamified
+import TauCeti.RingTheory.Polynomial.DiscreteValuationRing
 import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 
 /-!
@@ -126,13 +127,8 @@ theorem
     ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen
   have hdeg : 0 < f.natDegree := he ▸ ramificationIndex_pos (K := K) (L := L)
   let j : Fin f.natDegree := ⟨f.natDegree - 1, by omega⟩
-  have hc : c j = f.leadingCoeff * (f.natDegree : 𝒪[K]) := by
-    have hsub : f.natDegree - 1 + 1 = f.natDegree := by omega
-    simp only [c, j, hsub, Polynomial.coeff_natDegree]
-    exact congrArg (f.leadingCoeff * ·)
-      (by exact_mod_cast congrArg (fun n : ℕ => (n : 𝒪[K])) hsub)
-  have hlc : addVal 𝒪[K] f.leadingCoeff = 0 :=
-    (addVal_eq_zero_iff).mpr hf.isUnit_leadingCoeff
+  have hc : c j = (derivative f).coeff (f.natDegree - 1) := by
+    simp [c, j, Polynomial.coeff_derivative]
   have h : (differentExponent K L : ℕ∞) ≤
       (ramificationIndex K L : ℕ) - 1 +
         ramificationIndex K L • addVal 𝒪[K] (ramificationIndex K L : 𝒪[K]) := by
@@ -144,9 +140,8 @@ theorem
       _ = (ramificationIndex K L : ℕ) - 1 +
           ramificationIndex K L • addVal 𝒪[K] (ramificationIndex K L : 𝒪[K]) := by
         have hj : (j : ℕ) = ramificationIndex K L - 1 := by simp [j, he]
-        have hcast : (f.natDegree : 𝒪[K]) = (ramificationIndex K L : 𝒪[K]) :=
-          congrArg (fun n : ℕ => (n : 𝒪[K])) he.symm
-        rw [hc, addVal_mul, hlc, zero_add, hcast, hj, add_comm]
+        rw [hc, f.addVal_coeff_derivative_natDegree_sub_one_of_isUnit_leadingCoeff
+          hf.isUnit_leadingCoeff, hj, ← he, add_comm]
         norm_cast
   have hv : ramificationIndex K L •
       addVal 𝒪[K] (ramificationIndex K L : 𝒪[K]) =

@@ -347,6 +347,12 @@ theorem coeff_mul_derivative_natDegree_add_natDegree_sub_one {R : Type*} [Semiri
       ((natDegree_derivative_le q).trans_eq (by omega)), coeff_derivative, leadingCoeff,
       leadingCoeff, hq, Nat.cast_add_one, mul_assoc]
 
+/-- The `(deg q - 1)`-th coefficient of `q'` is `q.leadingCoeff * q.natDegree`. If `q` is
+constant (including `q = 0`), both sides are `0`. -/
+theorem coeff_derivative_natDegree_sub_one {R : Type*} [Semiring R] (q : R[X]) :
+    (derivative q).coeff (q.natDegree - 1) = q.leadingCoeff * q.natDegree := by
+  simpa using coeff_mul_derivative_natDegree_add_natDegree_sub_one 1 q
+
 /-- In positive characteristic `p`, every iterated ordinary derivative of order `k ≥ p` vanishes
 identically, since `p` divides `k !`. -/
 theorem iterate_derivative_eq_zero_of_charP {R : Type*} [Semiring R] {p : ℕ} [CharP R p]

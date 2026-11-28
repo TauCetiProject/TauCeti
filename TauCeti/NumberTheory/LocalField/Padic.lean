@@ -46,10 +46,11 @@ concrete p-adic norm and valuation APIs.
 * `Padic.normalizedAbsoluteValue_eq_nnnorm` identifies the normalized absolute value with
   Mathlib's norm on `ℚ_[p]`.
 * `Padic.natCastValuation_eq_padicValNat` identifies the normalized valuation of a natural
-  number with `padicValNat`, and `Padic.natCastValuation_self` and
-  `Padic.natCastValuation_two` are the two values it takes on the residue prime and on `2`; by
-  the latter, `Padic.isUnit_two_integerRing` shows that `2` is a unit of the integer ring for odd
-  `p`.
+  number with `padicValNat`, and `Padic.addVal_natCast_eq_padicValNat` gives the corresponding
+  formula for `IsDiscreteValuationRing.addVal` on `𝒪[ℚ_[p]]`. `Padic.natCastValuation_self` and
+  `Padic.natCastValuation_two` are the two values `natCastValuation` takes on the residue prime and
+  on `2`; by the latter, `Padic.isUnit_two_integerRing` shows that `2` is a unit of the integer
+  ring for odd `p`.
 * `TauCeti.Padic.irreducible_natCast_self` shows that the residue prime is a uniformizer of
   the integer ring, `TauCeti.Padic.irreducible_intCast_mul_natCast_self` that so is its product
   with an integer prime to `p`. `TauCeti.padicPrimeUnit p` is `p` as a unit of `ℚ_[p]`,
@@ -212,6 +213,12 @@ theorem natCastValuation_eq_padicValNat (n : ℕ) (hn : (n : ℚ_[p]) ≠ 0) :
       toAdd_normalizedValuation_eq_valuation]
     simp [Nat.padicValNat_def]
   exact_mod_cast h
+
+/-- The additive valuation of a nonzero natural number in `𝒪[ℚ_[p]]` is `padicValNat p m`. -/
+theorem addVal_natCast_eq_padicValNat {m : ℕ} (hm : m ≠ 0) :
+    IsDiscreteValuationRing.addVal 𝒪[ℚ_[p]] (m : 𝒪[ℚ_[p]]) = (padicValNat p m : ℕ∞) := by
+  rw [TauCeti.IsDiscreteValuationRing.addVal_natCast ℚ_[p] m (Nat.cast_ne_zero.mpr hm),
+    natCastValuation_eq_padicValNat]
 
 /-- The normalized valuation of the residue prime `p` in `ℚ_[p]` is `1`; equivalently, `ℚ_[p]`
 is absolutely unramified. -/

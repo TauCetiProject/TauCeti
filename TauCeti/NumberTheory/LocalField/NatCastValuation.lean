@@ -11,7 +11,7 @@ public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.Algebra.CharP.LocalRing
-import TauCeti.NumberTheory.Padics.PadicValNat
+import TauCeti.NumberTheory.Padics.PadicVal.Nat
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 -- Proof-only: the valuation of a valuative extension extends that of the base.
 import TauCeti.RingTheory.Valuation.ValuativeRel.Extension

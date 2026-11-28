@@ -9,16 +9,27 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 
 /-!
-# Weighted products of conditional factors
+# Finite products and sums of piecewise and updated functions
 
-`Finset.prod_prod_ite_mul_pow` splits a weighted double product of two singleton-supported
-factors into one product per selected index, using `Finset.prod_comm` and `Finset.prod_ite_eq'`.
-The indices may coincide, and an index outside the outer finset contributes `1`.
+* `Finset.prod_update_mul_of_mem` / `Finset.sum_update_add_of_mem`: modifying a single coordinate
+  `k ∈ s` of a function by multiplying by `m` (or adding `m`) multiplies the product over `s` by
+  `m` (or increases the sum over `s` by `m`).
+* `Finset.prod_prod_ite_mul_pow`: splits a weighted double product of two singleton-supported
+  factors into one product per selected index, using `Finset.prod_comm` and `Finset.prod_ite_eq'`.
+  The indices may coincide, and an index outside the outer finset contributes `1`.
 -/
 
 public section
 
 namespace Finset
+
+/-- Multiplying coordinate `k ∈ s` by `m` multiplies the product over `s` by `m`. -/
+@[to_additive /-- Adding `m` at coordinate `k ∈ s` increases the sum over `s` by `m`. -/]
+theorem prod_update_mul_of_mem {ι M : Type*} [DecidableEq ι] [CommMonoid M]
+    {s : Finset ι} {k : ι} (hk : k ∈ s) (d : ι → M) (m : M) :
+    ∏ i ∈ s, Function.update d k (d k * m) i = (∏ i ∈ s, d i) * m := by
+  rw [Finset.prod_update_of_mem hk, Finset.sdiff_singleton_eq_erase, mul_right_comm,
+    Finset.mul_prod_erase s d hk]
 
 /-- The double product of two weighted singleton-supported factors splits into one
 product for each selected index that belongs to `s`, even if the indices coincide. -/

@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.LocalField.MassFormula.Finite
 public import TauCeti.NumberTheory.LocalField.MassFormula.Representative
 public import TauCeti.NumberTheory.LocalField.MassFormula.Weight
-import Mathlib.MeasureTheory.Measure.Haar.Basic
 import TauCeti.NumberTheory.LocalField.MassFormula.Integral
 import TauCeti.NumberTheory.LocalField.MassFormula.Total
 
@@ -76,13 +75,9 @@ theorem tsum_one_div_natCard_residueField_pow_wildExponent :
   -- Integrate against Haar measure on `Fin n → K` normalized on the integer box.
   let : MeasurableSpace (Fin n → K) := borel _
   have : BorelSpace (Fin n → K) := ⟨rfl⟩
-  let B : TopologicalSpace.PositiveCompacts (Fin n → K) :=
-    ⟨⟨integerBox K (Fin n), isCompact_integerBox⟩, by
-      rw [isOpen_integerBox.interior_eq]
-      exact ⟨0, by simp⟩⟩
-  have hμ : Measure.addHaarMeasure B (integerBox K (Fin n)) = 1 := Measure.addHaarMeasure_self
-  exact tsum_one_div_natCard_residueField_pow_wildExponent_eq_of_lintegral_rootCount_eq _ hμ
-    fun L hL ↦ L.lintegral_rootCount hL _ hμ
+  obtain ⟨μ, _, hμ⟩ := exists_addHaarMeasure_integerBox_eq_one K (Fin n)
+  exact tsum_one_div_natCard_residueField_pow_wildExponent_eq_of_lintegral_rootCount_eq μ hμ
+    fun L hL ↦ L.lintegral_rootCount hL μ hμ
 
 /-- **Serre's second mass formula**: for `0 < n` and every set `R` of representatives of the
 `K`-isomorphism classes in `σ_K(n)`, `∑_{M ∈ R} 1 / (#Aut_K(M) · q ^ c(M)) = 1`. -/
