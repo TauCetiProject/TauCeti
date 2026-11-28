@@ -215,7 +215,7 @@ private theorem exists_memLp_and_eLpNorm_le_of_lt_two {p : ℝ≥0∞} (hp : 1 <
     haT.restrict (hH2.restrict _)
   have hw' := forall_setIntegral_top_iff.1 hw
   have hrec := integral_inner_eq_integral_inner_of_forall_transpose (Omega := ⊤) ha.restrict
-    (fun x _ => hell.opNorm_matrixBilinearForm_le (mem_univ x)) (hG2.restrict _)
+    (ae_of_all _ fun x => hell.opNorm_matrixBilinearForm_le (mem_univ x)) (hG2.restrict _)
     (hH2.restrict _) (forall_setIntegral_top_iff.2 hu) hw
   simp only [Opens.coe_top, Measure.restrict_univ] at hrec
   rw [hrec]
