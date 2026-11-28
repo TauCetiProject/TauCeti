@@ -14,10 +14,11 @@ import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 # Integration against a vector measure with density
 
 For a measure `ν` and an integrable `g : X → F`, Mathlib's `ν.withDensityᵥ g` is the vector
-measure `s ↦ ∫ x in s, g x ∂ν`, and its variation is `ν.withDensity ‖g‖ₑ`
-(`MeasureTheory.Measure.variation_withDensityᵥ`). Hence the variation is dominated by `C • ν`
-exactly when `‖g‖ₑ ≤ C` holds `ν`-almost everywhere, for an arbitrary measure `ν`; in particular
-it is at most `‖g‖_∞ • ν`.
+measure `s ↦ ∫ x in s, g x ∂ν`. For every `g`, its variation is at most `ν.withDensity ‖g‖ₑ`, so
+it is at most `C • ν` whenever `‖g‖ₑ ≤ C` holds `ν`-almost everywhere, and in particular at most
+`‖g‖_∞ • ν`. When `F` is a Banach space and `g` is integrable, the variation equals
+`ν.withDensity ‖g‖ₑ` (`MeasureTheory.Measure.variation_withDensityᵥ`), and conversely a bound
+by `C • ν` gives `‖g‖ₑ ≤ C` `ν`-almost everywhere, for an arbitrary measure `ν`.
 
 This file computes integrals against `ν.withDensityᵥ g` through a continuous bilinear pairing
 `B : E →L[ℝ] F →L[ℝ] G`:
