@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Algebra.DoubleCentralizer
+public import TauCeti.Analysis.Normed.Algebra.Multiplier.DoubleCentralizer
 
 /-!
 # Extending essential Banach modules to multipliers

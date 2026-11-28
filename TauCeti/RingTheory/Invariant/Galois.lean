@@ -10,6 +10,9 @@ public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Invariant.Defs
 
+import Mathlib.FieldTheory.Galois.IsGaloisGroup
+import TauCeti.RingTheory.Invariant.Basic
+
 /-!
 # Integral elements fixed by a Galois group
 
@@ -17,7 +20,10 @@ Let `R` be integrally closed in a field `K` and let `L / K` be a Galois extensio
 infinite. An element of `L` lies in the image of `R` exactly when it is integral over `R` and
 fixed by every `K`-automorphism of `L`. This combines the fixed-field theorem for infinite Galois
 extensions with the integral closedness of `R` in `K`. For instance, an algebraic integer in an
-algebraic closure of `ℚ` fixed by the absolute Galois group is a rational integer.
+algebraic closure of `ℚ` fixed by the absolute Galois group is a rational integer. The nontrivial
+direction is `TauCeti.Algebra.isInvariant_integralClosure`
+(`TauCeti/RingTheory/Invariant/Basic.lean`), stated for any group acting on `L` with fixed field
+`K`, applied to `Gal(L/K)`.
 
 Mathlib's `Algebra.isInvariant_of_isGalois` records the analogous fact for a finite Galois
 extension of the fraction field of an integrally closed domain, phrased through the integral
@@ -27,8 +33,6 @@ closure of that domain in `L`.
 
 * `TauCeti.InfiniteGalois.mem_range_algebraMap_iff_isIntegral_and_fixed`: an element of a Galois
   extension `L / K` comes from `R` if and only if it is integral over `R` and fixed by `Gal(L/K)`.
-* `TauCeti.InfiniteGalois.isInvariant_integralClosure`: the elements of the integral closure of
-  `R` in `L` fixed by `Gal(L/K)` are those of `R`.
 * `TauCeti.InfiniteGalois.continuousSMul_integralClosure`: `Gal(L/K)` acts continuously on the
   integral closure of `R` in `L`, with the discrete topology on the latter.
 -/
@@ -49,20 +53,9 @@ theorem mem_range_algebraMap_iff_isIntegral_and_fixed (x : L) :
   · rintro ⟨r, rfl⟩
     refine ⟨isIntegral_algebraMap, fun τ ↦ ?_⟩
     rw [IsScalarTower.algebraMap_apply R K L, τ.commutes]
-  obtain ⟨q, rfl⟩ := (_root_.InfiniteGalois.mem_range_algebraMap_iff_fixed x).mpr hfix
-  obtain ⟨r, rfl⟩ := IsIntegrallyClosedIn.isIntegral_iff.mp <|
-    (isIntegral_algHom_iff ((Algebra.ofId K L).restrictScalars R)
-      (algebraMap K L).injective).mp hx
-  exact ⟨r, IsScalarTower.algebraMap_apply R K L r⟩
-
-variable (R K L) in
-/-- For `R` integrally closed in `K` and a Galois extension `L / K`, the elements of the integral
-closure of `R` in `L` fixed by `Gal(L/K)` are those of `R`. -/
-theorem isInvariant_integralClosure : Algebra.IsInvariant R (integralClosure R L) Gal(L/K) where
-  isInvariant x hx := by
-    obtain ⟨r, hr⟩ := (mem_range_algebraMap_iff_isIntegral_and_fixed K (x : L)).mpr
-      ⟨x.property, fun σ ↦ congrArg Subtype.val (hx σ)⟩
-    exact ⟨r, Subtype.ext hr⟩
+  obtain ⟨r, hr⟩ := (TauCeti.Algebra.isInvariant_integralClosure R K L Gal(L/K)).isInvariant
+    (⟨x, hx⟩ : integralClosure R L) fun σ ↦ Subtype.ext (hfix σ)
+  exact ⟨r, congrArg Subtype.val hr⟩
 
 omit [IsIntegrallyClosedIn R K] [IsGalois K L] in
 variable (R K L) in

@@ -58,6 +58,9 @@ product in elementary symmetric polynomials.
   `∑ₙ (-1)ⁿ eₙ tⁿ = ∏ᵢ (1 - xᵢ t)`.
 * `TauCeti.eval_add_smul_one_esymm`: the shift expansion
   `e_k(μ + t·(1, …, 1)) = ∑_{j ≤ k} binom(n - j, k - j) e_j(μ) t^(k - j)` in `n` variables.
+* `TauCeti.eval_one_esymm`, `TauCeti.eval_comp_perm_esymm`, `TauCeti.eval_esymm_card`: `e_k` at
+  `(1, …, 1)` is `binom(n, k)`, `e_k` is invariant under permuting the entries, and
+  `e_n(μ) = ∏ᵢ μᵢ`.
 * `TauCeti.aeval_update_zero_esymm`: `σ_{k;i}(μ)`, the value of `e_k` with the `i`-th entry of
   `μ` set to zero, is `e_k` of the entries other than the `i`-th.
 * `TauCeti.aeval_esymm_succ_eq_mul_add`: `σ_{k+1} = μ_i σ_{k;i} + σ_{k+1;i}`, for values in any
@@ -464,6 +467,29 @@ theorem eval_add_smul_one_esymm {σ R : Type*} [Fintype σ] [CommSemiring R] (μ
         rw [filter_filter, hset]
         refine sum_congr rfl fun u hu ↦ ?_
         rw [(mem_powersetCard.mp hu).2]
+
+section Evaluation
+
+open MvPolynomial
+
+variable {σ R : Type*} [Fintype σ] [CommSemiring R]
+
+/-- `e_k(1, …, 1) = binom(n, k)`, where `n = |σ|`. -/
+@[simp]
+theorem eval_one_esymm (k : ℕ) : eval 1 (esymm σ R k) = (Fintype.card σ).choose k := by
+  simp [esymm, card_powersetCard]
+
+/-- `e_k` is symmetric: `e_k(μ ∘ e) = e_k(μ)` for every permutation `e` of the variables. -/
+@[simp]
+theorem eval_comp_perm_esymm (e : Equiv.Perm σ) (μ : σ → R) (k : ℕ) :
+    eval (μ ∘ e) (esymm σ R k) = eval μ (esymm σ R k) := by
+  rw [← eval_rename, esymm_isSymmetric σ R k e]
+
+/-- `e_n(μ) = ∏ᵢ μᵢ`, where `n = |σ|`. -/
+theorem eval_esymm_card (μ : σ → R) : eval μ (esymm σ R (Fintype.card σ)) = ∏ i, μ i := by
+  simp [esymm_card]
+
+end Evaluation
 
 section DeletedEntry
 

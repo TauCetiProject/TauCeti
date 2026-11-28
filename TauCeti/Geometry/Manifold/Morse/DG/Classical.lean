@@ -546,6 +546,28 @@ theorem twistedMorseComplexXEquiv_dgMorseComplexClassicalIso_hom_f (n : ℤ)
   -- modules.
   twistedMorseComplexXEquiv_dgMorseComplexClassicalXEquiv h hf hdense hθ hc S 𝔬 hS L n g
 
+/-- On the chains of degree `n`, the inverse of the isomorphism of the DG Morse complex with
+coefficients in a classical local system with the Morse complex with local coefficients is the
+inverse transport of the fibres at the critical points. -/
+theorem twistedCochainComplexXEquiv_dgMorseComplexClassicalIso_inv_f (n : ℤ)
+    (b : (hX.twistedMorseComplex 𝔬 ((LocalCoefficientSystem.pullback (X := TopCat.of M) θ).obj L)
+      hf (h.twistedMorseBoundary_comp_twistedMorseBoundary_pullback_eq_zero hf hdense hθ hc S 𝔬
+        hS L)).X n) :
+    (twistedCochainComplexXEquiv (hX.barraudCorneaCocycle hf hdense hθ hc S).mem_graded
+        (hX.barraudCorneaCocycle hf hdense hθ hc S).twisting (isDGRightModule_fiber L) n
+        (((dgMorseComplexClassicalIso h hf hdense hθ hc S 𝔬 hS L).inv.f n).hom b) :
+          criticalPoints 𝓘(ℝ, E) f → L.obj (FundamentalGroupoid.mk y₀)) =
+      (criticalPointsFiberTransportEquiv hθ L).symm
+        (twistedMorseComplexXEquiv hf _ n b :
+          (x : criticalPoints 𝓘(ℝ, E) f) →
+            ((LocalCoefficientSystem.pullback (X := TopCat.of M) θ).obj L).obj
+              (FundamentalGroupoid.mk (x : M))) := by
+  rw [LinearEquiv.eq_symm_apply,
+    ← h.twistedMorseComplexXEquiv_dgMorseComplexClassicalIso_hom_f hf hdense hθ hc S 𝔬 hS L n]
+  -- The component of the isomorphism undoes that of its inverse.
+  rw [← ModuleCat.comp_apply, ← HomologicalComplex.comp_f, CategoryTheory.Iso.inv_hom_id,
+    HomologicalComplex.id_f, ModuleCat.id_apply]
+
 end Complex
 
 end IsMorseSmale

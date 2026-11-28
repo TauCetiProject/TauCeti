@@ -95,6 +95,15 @@ theorem mem_toInfinite (V : finiteGrassmannian 𝕜 k n) (v : ℕ →₀ 𝕜) :
     · rw [coordinateInclusion_apply_of_le _ (Nat.le_of_not_gt hi),
         hz i (Nat.le_of_not_gt hi)]
 
+/-- A coordinate vector belongs to an included plane exactly when its finite coordinate
+representative belongs to the plane. Use this directly to bypass the coordinate bounds
+in `mem_toInfinite`. -/
+theorem single_mem_toInfinite_iff {V : finiteGrassmannian 𝕜 k n} {i : Fin n} {a : 𝕜} :
+    Finsupp.single (i : ℕ) a ∈ V.toInfinite.val ↔ Pi.single i a ∈ V.val := by
+  rw [coe_toInfinite, ← coordinateInclusion_single (R := 𝕜) n i a]
+  exact SetLike.ext_iff.mp
+    (Submodule.comap_map_eq_of_injective (coordinateInclusion_injective n) V.val) _
+
 theorem toInfinite_injective : Function.Injective (toInfinite : finiteGrassmannian 𝕜 k n → _) :=
   fun _ _ h ↦ Subtype.ext
     (Submodule.map_injective_of_injective (coordinateInclusion_injective n) congr(($h).val))

@@ -195,6 +195,17 @@ theorem logGamma_add_one {z : ℂ} (hz : z ∈ slitPlane) :
   have h1 : L 1 = 0 := by norm_num [L]
   exact sub_eq_iff_eq_add.mp (eqOn_logGamma_of_one hL he h1 hz)
 
+/-- Iterated functional equation of `logGamma` on the slit plane:
+`logGamma (z + n) = logGamma z + ∑ j ∈ Finset.range n, log (z + j)`. -/
+theorem logGamma_add_natCast {z : ℂ} (hz : z ∈ slitPlane) (n : ℕ) :
+    logGamma (z + n) = logGamma z + ∑ j ∈ Finset.range n, Complex.log (z + j) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have hzn : z + n ∈ slitPlane := by
+      simpa [add_comm] using add_ofReal_mem_slitPlane hz (Nat.cast_nonneg n)
+    rw [Nat.cast_succ, ← add_assoc, logGamma_add_one hzn, ih, Finset.sum_range_succ, add_assoc]
+
 /-- The derivative of the normalized branch is the digamma function. -/
 theorem deriv_logGamma {z : ℂ} (hz : z ∈ slitPlane) :
     deriv logGamma z = Complex.digamma z := by
@@ -206,6 +217,10 @@ theorem hasDerivAt_logGamma {z : ℂ} (hz : z ∈ slitPlane) :
     HasDerivAt logGamma (Complex.digamma z) z :=
   deriv_logGamma hz ▸
     (differentiableOn_logGamma.differentiableAt (isOpen_slitPlane.mem_nhds hz)).hasDerivAt
+
+/-- Complex digamma is holomorphic on the slit plane. -/
+theorem differentiableOn_digamma_slitPlane : DifferentiableOn ℂ Complex.digamma slitPlane :=
+  (differentiableOn_logGamma.deriv isOpen_slitPlane).congr fun _ hz ↦ (deriv_logGamma hz).symm
 
 /-- Along a vertical line through the slit plane, the phase `t ↦ Im (logGamma (σ + t i))` has
 derivative `Re (digamma (σ + t i))`. -/

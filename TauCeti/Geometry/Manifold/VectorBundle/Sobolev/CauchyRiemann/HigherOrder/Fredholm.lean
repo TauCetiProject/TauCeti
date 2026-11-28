@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Fredholm
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.HigherOrder.Perturbation
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.HigherOrder.SobolevCoeff
 import TauCeti.Analysis.Fredholm.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Exponent
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.HigherOrder.Regularity
@@ -27,7 +28,12 @@ index depends neither on `k` nor on `p`
 (`TauCeti.IsRealCauchyRiemannOperator.index_sobolevSuccL_eq`). For a zeroth-order term `α` of class
 `W^{k+1,r}`, `r > 2`, the realization of `D + α` from `W^{k+2,q}`, `1 < q ≤ r`, is Fredholm with the
 same index (`TauCeti.IsRealCauchyRiemannOperator.isFredholm_perturbedSobolevSuccL`,
-`TauCeti.IsRealCauchyRiemannOperator.index_perturbedSobolevSuccL`).
+`TauCeti.IsRealCauchyRiemannOperator.index_perturbedSobolevSuccL`). Below the top order, for a
+zeroth-order term of class `W^{k+2,p}`, `p ≥ 2`, the realization of `D + α` from `W^{k+2,q}` is
+Fredholm with the same index at every `q > 1`
+(`TauCeti.IsRealCauchyRiemannOperator.isFredholm_sobolevCoeffPerturbedSobolevSuccL`,
+`TauCeti.IsRealCauchyRiemannOperator.index_sobolevCoeffPerturbedSobolevSuccL`); the order-one case
+is `TauCeti.IsRealCauchyRiemannOperator.isFredholm_sobolevCoeffPerturbedSobolevL`.
 
 ## The argument
 
@@ -44,7 +50,8 @@ identifies the kernels. The case `k = 0` is
 `TauCeti.IsRealCauchyRiemannOperator.isFredholm_sobolevL`, and the index at order one does not
 depend on `p` (`TauCeti.IsRealCauchyRiemannOperator.index_sobolevL_eq_of_exponent`). The
 zeroth-order term is a compact perturbation
-(`TauCeti.IsRealCauchyRiemannOperator.isCompactOperator_perturbedSobolevSuccL_sub`).
+(`TauCeti.IsRealCauchyRiemannOperator.isCompactOperator_perturbedSobolevSuccL_sub`,
+`TauCeti.IsRealCauchyRiemannOperator.isCompactOperator_sobolevCoeffPerturbedSobolevSuccL_sub`).
 
 ## Main results
 
@@ -59,6 +66,9 @@ zeroth-order term is a compact perturbation
 * `TauCeti.IsRealCauchyRiemannOperator.isFredholm_perturbedSobolevSuccL`,
   `TauCeti.IsRealCauchyRiemannOperator.index_perturbedSobolevSuccL`: `D + α` with `α ∈ W^{k+1,r}`
   is Fredholm on `W^{k+2,q}` with the index of `D`.
+* `TauCeti.IsRealCauchyRiemannOperator.isFredholm_sobolevCoeffPerturbedSobolevSuccL`,
+  `TauCeti.IsRealCauchyRiemannOperator.index_sobolevCoeffPerturbedSobolevSuccL`: `D + α` with
+  `α ∈ W^{k+2,p}`, `p ≥ 2`, is Fredholm on `W^{k+2,q}` with the index of `D`, for every `q > 1`.
 
 ## References
 
@@ -254,29 +264,27 @@ end Smooth
 
 section Perturbed
 
-variable {r q : ℝ≥0} [Fact (1 ≤ (r : ℝ≥0∞))] [Fact (1 ≤ (q : ℝ≥0∞))] (k : ℕ)
+variable {q : ℝ≥0} [Fact (1 ≤ (q : ℝ≥0∞))] (k : ℕ)
 
 include hD hDs in
-/-- The realization of `D + α` from `W^{k+2,q}` is Fredholm with the index of the realization of
-`D` from `W^{1,q}`. -/
-private theorem isFredholm_perturbedSobolevSuccL_and_index_eq (hr : 2 < r) (hq : 1 < q)
-    (hqr : q ≤ r)
-    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume r
-      (k + 1)) :
-    (hD.perturbedSobolevSuccL A hDs k hr hq hqr α).IsFredholm ∧
-      (hD.perturbedSobolevSuccL A hDs k hr hq hqr α).index =
-        (hD.sobolevL A hDs volume q).index := by
+/-- An operator `W^{k+2,q} → W^{k+1,q}`, `q > 1`, differing from the realization of `D` by a compact
+operator is Fredholm with the index of the realization of `D` from `W^{1,q}`. -/
+private theorem isFredholm_and_index_eq_of_isCompactOperator_sub (hq : 1 < q)
+    {S : SobolevSection A volume q (k + 1 + 1) →L[ℝ] zeroOneSobolevSections A volume q (k + 1)}
+    (hC : IsCompactOperator fun ξ ↦ S ξ - hD.sobolevSuccL A hDs volume q (k + 1) ξ) :
+    S.IsFredholm ∧ S.index = (hD.sobolevL A hDs volume q).index := by
   obtain ⟨hT, hidx⟩ := isFredholm_sobolevSuccL_and_index_eq A hD hDs (p := (q : ℝ≥0∞))
     (by exact_mod_cast hq) ENNReal.coe_ne_top (k + 1)
   set T := hD.sobolevSuccL A hDs volume q (k + 1)
-  set S := hD.perturbedSobolevSuccL A hDs k hr hq hqr α
-  have hC : IsCompactOperator (S - T) := by
+  have hC' : IsCompactOperator (S - T) := by
     rw [FunLike.coe_sub]
-    exact isCompactOperator_perturbedSobolevSuccL_sub A hD hDs k hr hq hqr α
+    exact hC
   have hS : S = T + (S - T) := (add_sub_cancel T S).symm
   rw [hS]
-  exact ⟨hT.add_of_isCompactOperator hC,
-    (ContinuousLinearMap.index_add_of_isCompactOperator hT hC).trans hidx⟩
+  exact ⟨hT.add_of_isCompactOperator hC',
+    (ContinuousLinearMap.index_add_of_isCompactOperator hT hC').trans hidx⟩
+
+variable {r : ℝ≥0} [Fact (1 ≤ (r : ℝ≥0∞))]
 
 include hD hDs in
 /-- **Real Cauchy–Riemann operators of class `W^{k+1,r}` are Fredholm** (McDuff–Salamon, Theorem
@@ -287,7 +295,8 @@ theorem isFredholm_perturbedSobolevSuccL (hr : 2 < r) (hq : 1 < q) (hqr : q ≤ 
     (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume r
       (k + 1)) :
     (hD.perturbedSobolevSuccL A hDs k hr hq hqr α).IsFredholm :=
-  (isFredholm_perturbedSobolevSuccL_and_index_eq A hD hDs k hr hq hqr α).1
+  (isFredholm_and_index_eq_of_isCompactOperator_sub A hD hDs k hq
+    (isCompactOperator_perturbedSobolevSuccL_sub A hD hDs k hr hq hqr α)).1
 
 include hD hDs in
 /-- **A `W^{k+1,r}` zeroth-order term does not change the index** (McDuff–Salamon, Theorem
@@ -298,9 +307,45 @@ theorem index_perturbedSobolevSuccL (hr : 2 < r) (hq : 1 < q) (hqr : q ≤ r)
     (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume r
       (k + 1)) :
     (hD.perturbedSobolevSuccL A hDs k hr hq hqr α).index = (hD.sobolevL A hDs volume q).index :=
-  (isFredholm_perturbedSobolevSuccL_and_index_eq A hD hDs k hr hq hqr α).2
+  (isFredholm_and_index_eq_of_isCompactOperator_sub A hD hDs k hq
+    (isCompactOperator_perturbedSobolevSuccL_sub A hD hDs k hr hq hqr α)).2
 
 end Perturbed
+
+/-! ### Zeroth-order terms of class `W^{k+2,p}` below the top order -/
+
+section SobolevCoeff
+
+variable {p q : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))] [Fact (1 ≤ (q : ℝ≥0∞))] (k : ℕ)
+
+include hD hDs in
+/-- **Real Cauchy–Riemann operators below the top order are Fredholm** (McDuff–Salamon, Theorem
+C.1.10 (i), at the orders `2 ≤ m < ℓ`, on closed surfaces). For a smooth real Cauchy–Riemann
+operator `D`, `p ≥ 2`, every finite `q > 1` and a `W^{k+2,p}` zeroth-order term `α`, the
+realization `D + α : W^{k+2,q}(M, V) → W^{k+1,q}(M, Λ^{0,1} ⊗ V)` is a Fredholm operator. -/
+theorem isFredholm_sobolevCoeffPerturbedSobolevSuccL (hp : 2 ≤ p) (hq : 1 < q)
+    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
+      (k + 1 + 1)) :
+    (hD.sobolevCoeffPerturbedSobolevSuccL A hDs k hp hq α).IsFredholm :=
+  (isFredholm_and_index_eq_of_isCompactOperator_sub A hD hDs k hq
+    (isCompactOperator_sobolevCoeffPerturbedSobolevSuccL_sub A hD hDs k hp hq α)).1
+
+include hD hDs in
+/-- **A zeroth-order term below the top order does not change the index** (McDuff–Salamon,
+Theorem C.1.10 (i), at the orders `2 ≤ m < ℓ`, on closed surfaces). For a smooth real
+Cauchy–Riemann operator `D`, `p ≥ 2`, every finite `q > 1` and a `W^{k+2,p}` zeroth-order term
+`α`, the realization of `D + α` from `W^{k+2,q}` has the index of the realization of `D` from
+`W^{1,q}`. By `TauCeti.IsRealCauchyRiemannOperator.index_sobolevL_eq_of_exponent` this index does
+not depend on `q`. -/
+theorem index_sobolevCoeffPerturbedSobolevSuccL (hp : 2 ≤ p) (hq : 1 < q)
+    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
+      (k + 1 + 1)) :
+    (hD.sobolevCoeffPerturbedSobolevSuccL A hDs k hp hq α).index =
+      (hD.sobolevL A hDs volume q).index :=
+  (isFredholm_and_index_eq_of_isCompactOperator_sub A hD hDs k hq
+    (isCompactOperator_sobolevCoeffPerturbedSobolevSuccL_sub A hD hDs k hp hq α)).2
+
+end SobolevCoeff
 
 end IsRealCauchyRiemannOperator
 

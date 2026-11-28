@@ -40,7 +40,10 @@ convention of McDuff–Salamon; the operator `du + J ∘ du ∘ j` used by Wendl
 * **In charts.** The coordinate expression of a map pseudoholomorphic at `x`, in the charts at
   `x` and at `u x`, solves the coordinate Cauchy–Riemann equation `TauCeti.cauchyRiemannOperator`
   at the chart centre
-  (`TauCeti.IsPseudoholomorphicAt.cauchyRiemannOperator_writtenInExtChartAt_eq_zero`).
+  (`TauCeti.IsPseudoholomorphicAt.cauchyRiemannOperator_writtenInExtChartAt_eq_zero`). For a map
+  pseudoholomorphic near `x`, it solves it near the chart centre, with the source structure read
+  in the chart at each point
+  (`TauCeti.eventually_cauchyRiemannOperator_writtenInExtChartAt_eq_zero`).
 * **Naturality.** Precomposing with a map pseudoholomorphic for the source structures, such as a
   biholomorphism of Riemann surfaces or a holomorphic chart, precomposes the section with its
   derivative (`TauCeti.cauchyRiemannSection_comp_of_isPseudoholomorphicAt_right`), and
@@ -76,7 +79,7 @@ convention of McDuff–Salamon; the operator `du + J ∘ du ∘ j` used by Wendl
 
 public section
 
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 noncomputable section
 
@@ -242,6 +245,48 @@ theorem IsPseudoholomorphicAt.cauchyRiemannOperator_writtenInExtChartAt_eq_zero
     writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x), J.inChart_extChartAt_self,
     j.inChart_extChartAt_self]
   exact sub_eq_zero.2 (hu.mfderiv_apply_commute v)
+
+/-- Away from the chart centre, the coordinate expression of `u` in the charts at `x` and at `u x`
+solves the Cauchy–Riemann equation at every chart point `z` whose point `y` is one where `u` is
+pseudoholomorphic and lands in the target chart, for the source structure read in the chart at `x`
+at `z`. -/
+theorem IsPseudoholomorphicAt.cauchyRiemannOperator_writtenInExtChartAt_eq_zero_of_mem
+    {z : E} (hz : z ∈ (extChartAt I x).target)
+    (hu : IsPseudoholomorphicAt j J u ((extChartAt I x).symm z))
+    (hw : u ((extChartAt I x).symm z) ∈ (extChartAt I' (u x)).source) :
+    cauchyRiemannOperator (j.inChart x z) (J.inChart (u x))
+      (writtenInExtChartAt I I' x u) z = 0 := by
+  have hsymm : MDifferentiableAt 𝓘(ℝ, E) I (extChartAt I x).symm z :=
+    (mdifferentiableWithinAt_extChartAt_symm hz).mdifferentiableAt
+      (by simp [I.range_eq_univ])
+  -- The inverse chart carries the source structure read in the chart to `j`.
+  have hj (v : E) : mfderiv 𝓘(ℝ, E) I (extChartAt I x).symm z (j.inChart x z v) =
+      j ((extChartAt I x).symm z) (mfderiv 𝓘(ℝ, E) I (extChartAt I x).symm z v) := by
+    have hinv := congr($(mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt hz)
+      (j ((extChartAt I x).symm z)
+        (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I) z v)))
+    rw [I.range_eq_univ, mfderivWithin_univ] at hinv
+    rw [j.inChart_apply_eq_mfderiv x hz, I.range_eq_univ, mfderivWithin_univ]
+    exact hinv
+  ext v
+  rw [cauchyRiemannOperator_apply, zero_apply, sub_eq_zero]
+  refine J.fderiv_extChartAt_comp_apply_eq_inChart (u x) (u := u ∘ (extChartAt I x).symm)
+    (hu.mdifferentiableAt.continuousAt.comp (continuousAt_extChartAt_symm'' hz)) hw ?_
+  rw [mfderiv_comp z hu.mdifferentiableAt hsymm]
+  exact (congrArg (mfderiv I I' u _) (hj v)).trans (hu.mfderiv_apply_commute _)
+
+/-- If `u` is pseudoholomorphic near `x`, its coordinate expression in the charts at `x` and at
+`u x` solves the Cauchy–Riemann equation near the chart centre, for the source structure read in
+the chart at `x`. -/
+theorem eventually_cauchyRiemannOperator_writtenInExtChartAt_eq_zero
+    (hu : ∀ᶠ y in 𝓝 x, IsPseudoholomorphicAt j J u y) :
+    ∀ᶠ z in 𝓝 (extChartAt I x x), cauchyRiemannOperator (j.inChart x z) (J.inChart (u x))
+      (writtenInExtChartAt I I' x u) z = 0 := by
+  have hc : ContinuousAt u x := hu.self_of_nhds.mdifferentiableAt.continuousAt
+  filter_upwards [extChartAt_target_mem_nhds (I := I) x, extChartAt_preimage_mem_nhds hu,
+    extChartAt_preimage_mem_nhds
+      (hc.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I') (u x)))] with z hz hzu hzc
+  exact hzu.cauchyRiemannOperator_writtenInExtChartAt_eq_zero_of_mem hz hzc
 
 end Chart
 
