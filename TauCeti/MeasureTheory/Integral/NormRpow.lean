@@ -28,6 +28,8 @@ exponent `s > -d`.  The singularity is locally integrable because the radial Jac
 
 Outside a ball of radius `R > 0` the kernel is integrable exactly when `s < -d`, with
 `\int x in (closedBall 0 R)ᶜ, ‖x‖ ^ s ∂μ = d * μ.real (ball 0 1) * (R ^ (d + s) / -(d + s))`.
+At the borderline exponent `s = -d` the integral over an annulus `a < ‖x‖ < b` is logarithmic,
+`d * μ.real (ball 0 1) * log (b / a)`.
 
 The weakly singular exponent `s = 1 - d` gives the value `d * μ.real (ball 0 1) * R`; this is
 the kernel bound used when the straight-segment estimate is averaged over a ball in the proof of
@@ -55,6 +57,10 @@ at most `|x - Re e| ^ s`.
   `TauCeti.integrableOn_norm_sub_rpow_ball`: translation equivalence and integrability after
   translation.
 * `TauCeti.integral_norm_sub_rpow_ball`: the exact integral with any centre.
+* `TauCeti.integral_annulus_norm_rpow_neg_finrank`,
+  `TauCeti.integral_annulus_norm_sub_rpow_neg_finrank`: at the critical exponent `s = -d`, the
+  integral over the annulus `a < ‖x‖ < b` is `d * μ.real (ball 0 1) * log (b / a)`, with any
+  centre.
 * `TauCeti.locallyIntegrable_norm_sub_rpow`: local integrability after translation.
 * `TauCeti.setLIntegral_closedBall_enorm_sub_rpow`: the lower integral with any centre, over a
   closed ball.
@@ -344,6 +350,62 @@ theorem integral_norm_sub_rpow_ball {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ
     funext z
     simp [norm_neg]
   rw [hfun, integral_norm_rpow_ball hs hR]
+
+/-- The integral of the critical kernel `x ↦ ‖x‖ ^ (-dim E)` over the open annulus
+`a < ‖x‖ < b` is logarithmic in the ratio of the radii:
+`∫ x in ball 0 b \ closedBall 0 a, ‖x‖ ^ (-d) ∂μ = d * μ.real (ball 0 1) * log (b / a)`. -/
+theorem integral_annulus_norm_rpow_neg_finrank {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
+    ∫ x in ball (0 : E) b \ closedBall 0 a, ‖x‖ ^ (-(Module.finrank ℝ E : ℝ)) ∂mu =
+      (Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) * Real.log (b / a) := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · have hempty : ball (0 : E) b \ closedBall 0 a = ∅ := by
+      ext x
+      simp [Subsingleton.elim x 0, ha.le]
+    simp [hempty, Module.finrank_zero_of_subsingleton]
+  let d := Module.finrank ℝ E
+  have hd : 1 ≤ d := Module.finrank_pos
+  let f : ℝ → ℝ := (Ioo a b).indicator fun r => r ^ (-(d : ℝ))
+  have hconv : ∫ x in ball (0 : E) b \ closedBall 0 a, ‖x‖ ^ (-(d : ℝ)) ∂mu =
+      ∫ x : E, f ‖x‖ ∂mu := by
+    rw [← integral_indicator (measurableSet_ball.diff measurableSet_closedBall)]
+    congr 1
+    funext x
+    simp [f, Set.indicator, mem_closedBall, not_le, and_comm]
+  have heq : EqOn (fun r : ℝ => r ^ (d - 1) • f r) ((Ioo a b).indicator fun r => r⁻¹)
+      (Ioi 0) := by
+    intro r hr
+    by_cases h : r ∈ Ioo a b
+    · have hexp : (d : ℝ) - 1 + -(d : ℝ) = -1 := by ring
+      simp only [f, indicator_of_mem h, smul_eq_mul]
+      rw [← Real.rpow_natCast, Nat.cast_sub hd, Nat.cast_one, ← Real.rpow_add hr, hexp,
+        Real.rpow_neg_one]
+    · simp [f, h]
+  have hradial : ∫ r in Ioi (0 : ℝ), r ^ (d - 1) • f r = Real.log (b / a) := by
+    rw [setIntegral_congr_fun measurableSet_Ioi heq, setIntegral_indicator measurableSet_Ioo,
+      inter_eq_right.mpr (Ioo_subset_Ioi_self.trans (Ioi_subset_Ioi ha.le)),
+      ← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le hab,
+      integral_inv_of_pos ha (ha.trans_le hab)]
+  rw [hconv, integral_fun_norm_addHaar mu f, hradial, nsmul_eq_mul, smul_eq_mul, mul_assoc]
+
+/-- The integral of the critical kernel with pole `x` over the open annulus
+`a < ‖x - y‖ < b` around `x` does not depend on the centre:
+`∫ y in ball x b \ closedBall x a, ‖x - y‖ ^ (-d) ∂μ = d * μ.real (ball 0 1) * log (b / a)`. -/
+theorem integral_annulus_norm_sub_rpow_neg_finrank (x : E) {a b : ℝ} (ha : 0 < a)
+    (hab : a ≤ b) :
+    ∫ y in ball x b \ closedBall x a, ‖x - y‖ ^ (-(Module.finrank ℝ E : ℝ)) ∂mu =
+      (Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) * Real.log (b / a) := by
+  have hpres := measurePreserving_add_right mu x
+  have hemb := (MeasurableEquiv.addRight x : E ≃ᵐ E).measurableEmbedding
+  have hpre : (fun z : E => z + x) ⁻¹' (ball x b \ closedBall x a) =
+      ball (0 : E) b \ closedBall 0 a := by
+    ext z
+    simp [mem_ball, mem_closedBall]
+  rw [← hpres.setIntegral_preimage_emb hemb, hpre]
+  have hfun : (fun z : E => ‖x - (z + x)‖ ^ (-(Module.finrank ℝ E : ℝ))) =
+      fun z => ‖z‖ ^ (-(Module.finrank ℝ E : ℝ)) := by
+    funext z
+    simp [norm_neg]
+  rw [hfun, integral_annulus_norm_rpow_neg_finrank ha hab]
 
 /-- The integral of `‖x - x₀‖ ^ 2` over the ball of radius `R` about `x₀` in dimension `n` is
 `n / (n + 2) * R ^ 2` times the measure of the ball. -/
