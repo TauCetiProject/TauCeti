@@ -64,6 +64,10 @@ which is moreover additive.
 * `CategoryTheory.preadditiveYoneda_map_app_apply`: the natural transformation `(-, f)` acts by
   postcomposition with `f`, and `CategoryTheory.preadditiveYoneda_obj_map_apply` the functor
   `(-, X)` by precomposition.
+* `CategoryTheory.preadditiveCoyoneda_map_app_apply`: the natural transformation `(f, -)` acts by
+  precomposition with `f.unop`, `CategoryTheory.preadditiveCoyoneda_obj_map_apply` the functor
+  `(X, -)` by postcomposition, and `CategoryTheory.preadditiveCoyonedaObj_map_apply` the
+  module-valued functor `Hom(X, -)` by postcomposition.
 * `CategoryTheory.preadditiveYoneda_additive`: the preadditive Yoneda embedding is additive.
 * `CategoryTheory.preadditiveYoneda_obj_hom_ext`: morphisms out of `(-, Y)` agreeing on `𝟙 Y`
   are equal.
@@ -115,6 +119,24 @@ theorem preadditiveYoneda_map_app_apply {X Y : C} (f : X ⟶ Y) (Z : Cᵒᵖ) (g
 @[simp]
 theorem preadditiveYoneda_obj_map_apply {X : C} {Z W : Cᵒᵖ} (f : Z ⟶ W) (g : Z.unop ⟶ X) :
     (preadditiveYoneda.obj X).map f g = f.unop ≫ g :=
+  rfl
+
+/-- The natural transformation `(f, -) : (Y, -) ⟶ (X, -)` is precomposition with `f.unop`. -/
+@[simp]
+theorem preadditiveCoyoneda_map_app_apply {X Y : Cᵒᵖ} (f : X ⟶ Y) (Z : C) (g : X.unop ⟶ Z) :
+    (preadditiveCoyoneda.map f).app Z g = f.unop ≫ g :=
+  rfl
+
+/-- The functor `(X, -)` acts on morphisms by postcomposition. -/
+@[simp]
+theorem preadditiveCoyoneda_obj_map_apply {X : Cᵒᵖ} {Z W : C} (f : Z ⟶ W) (g : X.unop ⟶ Z) :
+    (preadditiveCoyoneda.obj X).map f g = g ≫ f :=
+  rfl
+
+/-- The module-valued functor `Hom(X, -)` acts on morphisms by postcomposition. -/
+@[simp]
+theorem preadditiveCoyonedaObj_map_apply (X : C) {Z W : C} (f : Z ⟶ W) (g : X ⟶ Z) :
+    (preadditiveCoyonedaObj X).map f g = g ≫ f :=
   rfl
 
 /-- Two morphisms out of the representable functor `(-, Y)` agree as soon as they agree on the

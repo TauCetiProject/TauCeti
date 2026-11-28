@@ -8,9 +8,11 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.DirectSum.Finsupp
+public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
+public import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Products
 
 /-!
-# Coproducts of copies of a module
+# Products and coproducts in `ModuleCat`
 
 The categorical coproduct `∐_ι M` of copies of a module `M` in `ModuleCat R` is the module
 `ι →₀ M` of finitely supported families: Mathlib identifies the coproduct with the direct sum
@@ -18,11 +20,20 @@ The categorical coproduct `∐_ι M` of copies of a module `M` in `ModuleCat R` 
 (`finsuppLEquivDirectSum`). The resulting linear equivalence sends the summand inclusion of index
 `i` to `Finsupp.single i`.
 
+A contravariant `ModuleCat R`-valued functor `F : Tᵒᵖ ⥤ ModuleCat R` preserving `J`-indexed
+products identifies `F.obj (op c.pt)`, for any colimit cofan `c` over `f : J → T`, with the
+concrete product `∀ j, F.obj (op (f j))` (`CategoryTheory.Limits.IsColimit.cofanOpToPiLinearEquiv`).
+
 ## Main declarations
 
 * `ModuleCat.coprodLinearEquivFinsupp`: the linear equivalence `∐_ι M ≃ₗ[R] (ι →₀ M)`.
 * `ModuleCat.coprodLinearEquivFinsupp_ι_apply`, `ModuleCat.coprodLinearEquivFinsupp_symm_single`: it
   sends the summand inclusion of index `i` to `Finsupp.single i`.
+* `CategoryTheory.Limits.IsColimit.cofanOpToPiLinearEquiv`: coordinate linear equivalence
+  `F.obj (op c.pt) ≃ₗ[R] ∀ j, F.obj (op (f j))`.
+* `CategoryTheory.Limits.IsColimit.cofanOpToPiLinearEquiv_apply`,
+  `CategoryTheory.Limits.IsColimit.map_inj_cofanOpToPiLinearEquiv_symm`: forward and inverse
+  evaluation lemmas.
 -/
 
 public section
@@ -31,7 +42,7 @@ noncomputable section
 
 open CategoryTheory Limits
 
-universe u v w
+universe uR u v w s
 
 namespace ModuleCat
 
@@ -63,3 +74,44 @@ theorem coprodLinearEquivFinsupp_symm_single (i : ι) (x : M) :
   rw [LinearEquiv.symm_apply_eq, coprodLinearEquivFinsupp_ι_apply]
 
 end ModuleCat
+
+namespace CategoryTheory.Limits.IsColimit
+
+open Opposite
+
+variable {T : Type u} [Category.{v} T]
+
+/-- A contravariant `ModuleCat R`-valued functor preserving the `J`-indexed product of
+`fun j ↦ op (f j)` identifies its value on any colimit cofan `c` over `f : J → T` with the
+concrete product `∀ j, F.obj (op (f j))`, compatibly with the projections `F.map (c.inj j).op`. -/
+def cofanOpToPiLinearEquiv {R : Type uR} [Ring R] {J : Type w} {f : J → T} {c : Cofan f}
+    (hc : IsColimit c) (F : Tᵒᵖ ⥤ ModuleCat.{max w s} R)
+    [PreservesLimit (Discrete.functor fun j ↦ Opposite.op (f j)) F] :
+    F.obj (Opposite.op c.pt) ≃ₗ[R] ∀ j, F.obj (Opposite.op (f j)) :=
+  let hFan : IsLimit (Fan.mk (F.obj (Opposite.op c.pt)) fun j ↦ F.map (c.inj j).op) :=
+    (isLimitMapConeFanMkEquiv F (fun j ↦ Opposite.op (f j)) (fun j ↦ (c.inj j).op)).toFun
+      (isLimitOfPreserves F (Cofan.IsColimit.op hc))
+  let e : F.obj (Opposite.op c.pt) ≅ ModuleCat.of R (∀ j, F.obj (Opposite.op (f j))) :=
+    hFan.conePointUniqueUpToIso (ModuleCat.productConeIsLimit fun j ↦ F.obj (Opposite.op (f j)))
+  e.toLinearEquiv
+
+@[simp]
+theorem cofanOpToPiLinearEquiv_apply {R : Type uR} [Ring R] {J : Type w} {f : J → T} {c : Cofan f}
+    (hc : IsColimit c) (F : Tᵒᵖ ⥤ ModuleCat.{max w s} R)
+    [PreservesLimit (Discrete.functor fun j ↦ Opposite.op (f j)) F]
+    (x : F.obj (Opposite.op c.pt)) (j : J) :
+    hc.cofanOpToPiLinearEquiv F x j = F.map (c.inj j).op x :=
+  congrArg (fun φ : F.obj (Opposite.op c.pt) ⟶ F.obj (Opposite.op (f j)) ↦ φ x) <|
+    ((isLimitMapConeFanMkEquiv F (fun j ↦ Opposite.op (f j)) (fun j ↦ (c.inj j).op)).toFun
+      (isLimitOfPreserves F (Cofan.IsColimit.op hc))).conePointUniqueUpToIso_hom_comp
+        (ModuleCat.productConeIsLimit fun j ↦ F.obj (Opposite.op (f j))) ⟨j⟩
+
+@[simp]
+theorem map_inj_cofanOpToPiLinearEquiv_symm {R : Type uR} [Ring R] {J : Type w} {f : J → T}
+    {c : Cofan f} (hc : IsColimit c) (F : Tᵒᵖ ⥤ ModuleCat.{max w s} R)
+    [PreservesLimit (Discrete.functor fun j ↦ Opposite.op (f j)) F]
+    (x : ∀ j, F.obj (Opposite.op (f j))) (j : J) :
+    F.map (c.inj j).op ((hc.cofanOpToPiLinearEquiv F).symm x) = x j := by
+  rw [← hc.cofanOpToPiLinearEquiv_apply F, LinearEquiv.apply_symm_apply]
+
+end CategoryTheory.Limits.IsColimit

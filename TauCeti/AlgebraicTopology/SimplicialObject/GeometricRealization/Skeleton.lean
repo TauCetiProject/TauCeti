@@ -15,6 +15,8 @@ public import TauCeti.Topology.Compactness.Paracompact
 import TauCeti.Topology.Compactness.Lindelof
 import TauCeti.Topology.Convenient.CompactlyGenerated
 
+import TauCeti.CategoryTheory.ConcreteCategory.Basic
+
 /-!
 # Normal form, skeletal filtration, and point-set topology of thin geometric realization
 
@@ -53,9 +55,6 @@ open SimplexCategory
 
 variable (X : SimplicialObject TopCat.{u})
 
-private theorem map_op_comp_apply {a b c : SimplexCategory} (f : a ⟶ b) (g : b ⟶ c)
-    (x : X.obj (op c)) : X.map f.op (X.map g.op x) = X.map (f ≫ g).op x := by
-  rw [op_comp, X.map_comp, TopCat.comp_app]
 private theorem toTop_map_comp_apply {a b c : SimplexCategory} (f : a ⟶ b) (g : b ⟶ c)
     (u : toTop.{u}.obj a) : toTop.map g (toTop.map f u) = toTop.map (f ≫ g) u := by
   rw [toTop.map_comp, TopCat.comp_app]
@@ -123,7 +122,8 @@ private theorem IsNormalForm.of_map {X : SimplicialObject TopCat.{u}} {m n : ℕ
   rcases hc with ⟨k', μ', _, u', hu', π', _, ht', hx', hp'⟩
   cases eq_of_mono_toTop_map_mem_toTopInterior hu₂ hu' (ht₂.trans ht'.symm)
   refine ⟨k, μ_u, inferInstance, u₁, hu₁, p ≫ π', epi_comp p π', rfl, ?_, ?_⟩
-  · conv_lhs => rw [map_op_comp_apply X, ← hfac, ← map_op_comp_apply X, hx', map_op_comp_apply X]
+  · conv_lhs => rw [← Functor.map_op_comp_apply X, ← hfac, Functor.map_op_comp_apply X, hx',
+      ← Functor.map_op_comp_apply X]
   · rw [← toTop_map_comp_apply, hp']
 
 /-- The canonical normal form associated to a point of `X.geometricRealization`. -/
@@ -611,7 +611,7 @@ private theorem pushout_rel_succ_succ (f : ⦋n + 1⦌ ⟶ ⦋n + 1⦌) (x : X _
       exact hiso (Limits.image.fac f ▸ inferInstance)
     calc inr (X.map f.op x, u)
       _ = inr (X.map (Limits.factorThruImage f).op (X.map (Limits.image.ι f).op x), u) := by
-          rw [map_op_comp_apply X, Limits.image.fac f]
+          rw [← Functor.map_op_comp_apply X, Limits.image.fac f]
       _ = inl (skeleton.ι X n hr
             (X.map (Limits.image.ι f).op x, toTop.map (Limits.factorThruImage f) u)) :=
           pushout_rel_succ_le X hw hr (Limits.factorThruImage f) _ u
