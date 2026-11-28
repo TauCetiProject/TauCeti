@@ -68,6 +68,8 @@ measures given only through a domination bound, such as the variation of a sum o
   contains a σ-compact subset of full measure.
 * `MeasureTheory.Measure.dirac.innerRegular`: a Dirac measure is inner regular; on an `R₁` space
   with its Borel σ-algebra it is therefore regular.
+* `MeasureTheory.Measure.outerRegular_of_discreteTopology`: every measure on a discrete space is
+  outer regular.
 * `Measurable.exists_isClosed_measure_compl_iUnion_le`: for a weakly regular finite measure, every
   atom `a ⁻¹' {i}` of a measurable label `a` into a finite type contains a closed set `F i`, with
   `μ (⋃ i, F i)ᶜ` arbitrarily small.
@@ -198,6 +200,11 @@ instance dirac.innerRegular (x : α) : (dirac x).InnerRegular where
     · exact ⟨{x}, singleton_subset_iff.2 hx, isCompact_singleton,
         by rwa [dirac_apply_of_mem (mem_singleton x), ← dirac_apply_of_mem hx]⟩
     · simp [dirac_apply' x hU, hx] at hr
+
+/-- Every measure on a discrete space is outer regular, since every subset is open. -/
+instance outerRegular_of_discreteTopology [DiscreteTopology α] (μ : Measure α) :
+    μ.OuterRegular where
+  outerRegular s _ _ hr := ⟨s, Set.Subset.rfl, isOpen_discrete s, hr⟩
 
 end MeasureTheory.Measure
 

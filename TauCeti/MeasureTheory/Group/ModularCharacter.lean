@@ -9,6 +9,7 @@ public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.MeasureTheory.Group.ModularCharacter
 public import TauCeti.MeasureTheory.Group.Integral
 public import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.MeasureTheory.Measure.Count.Topology
 import TauCeti.Topology.Instances.NNReal
 
@@ -62,6 +63,8 @@ none of this assumes σ-finiteness.
   is right invariant for an inner regular Haar measure `μ`.
 * `MeasureTheory.Measure.inv_eq_withDensity_modularCharacter`: `μ.inv = μ.withDensity c` for an
   inner regular Haar measure `μ`.
+* `MeasureTheory.Measure.inv_absolutelyContinuous_of_innerRegular`: `μ.inv ≪ μ` for an inner
+  regular locally finite left-invariant measure `μ` (without `[μ.IsOpenPosMeasure]`).
 * `MeasureTheory.Measure.map_right_mul_eq_modularCharacter_smul_of_regular`:
   `map (· * g) μ = c(g) • μ` for a regular Haar measure `μ`.
 * `MeasureTheory.Measure.inv_eq_withDensity_modularCharacter_of_regular`:
@@ -422,6 +425,22 @@ theorem inv_eq_withDensity_modularCharacter [μ.InnerRegular] :
       _ = μ.inv := inv_withDensity_modularCharacter_withDensity μ
   exact le_antisymm hle hge
 
+omit [μ.IsHaarMeasure] in
+/-- Inversion maps null sets of an inner regular locally finite left-invariant measure to null
+sets: `μ.inv ≪ μ` (without `[μ.IsOpenPosMeasure]`). Compare
+`MeasureTheory.inv_absolutelyContinuous`, which assumes σ-finiteness instead of inner regularity. -/
+theorem inv_absolutelyContinuous_of_innerRegular [μ.IsMulLeftInvariant]
+    [IsFiniteMeasureOnCompacts μ] [μ.InnerRegular] : μ.inv ≪ μ := by
+  rcases eq_or_ne μ 0 with rfl | hμ0
+  · simp [inv_def]
+  · have hpos_univ : 0 < μ Set.univ := pos_iff_ne_zero.mpr (mt measure_univ_eq_zero.mp hμ0)
+    obtain ⟨K, -, hK, hμK⟩ := MeasurableSet.univ.exists_lt_isCompact hpos_univ
+    have : μ.IsOpenPosMeasure :=
+      isOpenPosMeasure_of_mulLeftInvariant_of_compact _ hK hμK.ne'
+    have : μ.IsHaarMeasure := {}
+    rw [inv_eq_withDensity_modularCharacter μ]
+    exact withDensity_absolutelyContinuous _ _
+
 section Regular
 
 variable [μ.Regular]
@@ -529,12 +548,12 @@ theorem measure_inv_null_of_regular {s : Set G} : μ s⁻¹ = 0 ↔ μ s = 0 := 
 theorem quasiMeasurePreserving_inv_of_regular : QuasiMeasurePreserving Inv.inv μ μ :=
   ⟨measurable_inv.aemeasurable, inv_absolutelyContinuous_of_regular μ⟩
 
-/-- For a regular Haar measure, `y ↦ y⁻¹ * x` is quasi-measure-preserving: it is inversion
-followed by right translation by `x`. -/
+/-- For a regular Haar measure, `y ↦ y⁻¹ * x` is quasi-measure-preserving. -/
 @[fun_prop]
 theorem quasiMeasurePreserving_inv_mul_of_regular (x : G) :
     QuasiMeasurePreserving (fun y => y⁻¹ * x) μ μ :=
-  (quasiMeasurePreserving_mul_right_of_regular μ x).comp (quasiMeasurePreserving_inv_of_regular μ)
+  quasiMeasurePreserving_inv_mul_of_inv_absolutelyContinuous μ
+    (inv_absolutelyContinuous_of_regular μ) x
 
 end Regular
 

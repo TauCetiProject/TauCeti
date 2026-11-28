@@ -94,6 +94,8 @@ space `V` and `c < s`, then `ContinuousLinearMap.denseRange_comp` and rescaling 
 * `LinearIsometryEquiv.completion_symm`, `LinearIsometryEquiv.completion_refl`,
   `LinearIsometryEquiv.completion_trans`: extension to completions is compatible with inverses,
   identities and composites.
+* `LinearIsometry.fromCompletionEquiv`: a linear isometry from a seminormed space into a complete
+  normed space with dense range extends to a linear isometric equivalence from the completion.
 * `UniformSpace.Completion.completionSeparationQuotientₗᵢ`: the canonical linear isometric
   equivalence `Completion (SeparationQuotient E) ≃ₗᵢ[𝕜] Completion E` for a seminormed `𝕜`-module.
 -/
@@ -342,6 +344,47 @@ theorem fromCompletion_surjective_of_denseRange {R R₂ E F : Type*}
   rw [← Set.range_eq_univ, ← Set.univ_subset_iff, ← hf.closure_eq]
   exact closure_minimal (by rintro _ ⟨x, rfl⟩; exact ⟨x, f.fromCompletion_apply_coe x⟩)
     f.fromCompletion.isometry.isUniformInducing.isComplete_range.isClosed
+
+section Equiv
+
+variable {R R₂ E F : Type*} [Semiring R] [Semiring R₂] [PseudoMetricSpace R₂]
+  [SeminormedAddCommGroup E] [Module R E] [UniformContinuousConstSMul R E]
+  [NormedAddCommGroup F] [CompleteSpace F] [Module R₂ F] [IsBoundedSMul R₂ F]
+  {σ₁₂ : R →+* R₂} {σ₂₁ : R₂ →+* R} [RingHomInvPair σ₁₂ σ₂₁] [RingHomInvPair σ₂₁ σ₁₂]
+
+/-- Extend a linear isometry `f : E →ₛₗᵢ[σ₁₂] F` with dense range into a complete normed space `F`
+to a linear isometric equivalence `UniformSpace.Completion E ≃ₛₗᵢ[σ₁₂] F`. The domain `E` need
+only be seminormed, as its completion quotients out the zero-seminorm subspace. -/
+noncomputable def fromCompletionEquiv (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) :
+    Completion E ≃ₛₗᵢ[σ₁₂] F :=
+  LinearIsometryEquiv.ofSurjective f.fromCompletion (f.fromCompletion_surjective_of_denseRange hf)
+
+/-- Evaluation of `f.fromCompletionEquiv hf` agrees with `f.fromCompletion`. -/
+theorem coe_fromCompletionEquiv (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) :
+    ⇑(f.fromCompletionEquiv hf) = f.fromCompletion :=
+  LinearIsometryEquiv.coe_ofSurjective _ _
+
+/-- As a linear isometry, `f.fromCompletionEquiv hf` is `f.fromCompletion`. -/
+@[simp]
+theorem toLinearIsometry_fromCompletionEquiv (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) :
+    (f.fromCompletionEquiv hf).toLinearIsometry = f.fromCompletion := by
+  ext x
+  exact congrFun (f.coe_fromCompletionEquiv hf) x
+
+/-- On elements of `E`, `f.fromCompletionEquiv hf` agrees with `f`. -/
+@[simp]
+theorem fromCompletionEquiv_apply_coe (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) (x : E) :
+    f.fromCompletionEquiv hf x = f x :=
+  f.fromCompletion_apply_coe x
+
+/-- Applying `(f.fromCompletionEquiv hf).symm` to `f x` recovers the image of `x` in the
+completion, even when `E` is only seminormed. -/
+@[simp]
+theorem fromCompletionEquiv_symm_apply_apply (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) (x : E) :
+    (f.fromCompletionEquiv hf).symm (f x) = x :=
+  (f.fromCompletionEquiv hf).symm_apply_eq.2 (f.fromCompletionEquiv_apply_coe hf x).symm
+
+end Equiv
 
 end LinearIsometry
 

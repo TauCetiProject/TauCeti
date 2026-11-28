@@ -7,9 +7,11 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
+public import Mathlib.MeasureTheory.Integral.CompactlySupported
 public import Mathlib.MeasureTheory.Measure.Regular
 public import Mathlib.Topology.UrysohnsLemma
 public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
+import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
 
 /-!
 # `Lᵖ` functions on a locally compact space
@@ -18,7 +20,9 @@ Let `μ` be a measure on a weakly locally compact `R₁` space `X` with its Bore
 finite on compact sets and inner regular with respect to compact sets on measurable sets of finite
 measure (`IsFiniteMeasureOnCompacts μ` and `μ.InnerRegularCompactLTTop`), for instance a Haar
 measure on a locally compact group. This file proves that compactly supported continuous functions
-are dense in `Lᵖ(X, μ)` for `p < ∞`.
+are dense in `Lᵖ(X, μ)` for `p < ∞`, and that every integrable function is the `L¹` and
+almost-everywhere sum of an `L¹`-absolutely convergent series of compactly supported continuous
+functions.
 
 Mathlib's `MeasureTheory.MemLp.exists_hasCompactSupport_eLpNorm_sub_le` assumes `NormalSpace X`
 and `μ.Regular` in addition to `R1Space X` and `WeaklyLocallyCompactSpace X`, and Mathlib provides
@@ -40,6 +44,10 @@ approximation from indicator functions to all of `Lᵖ`.
 * `MeasureTheory.Lp.dense_setOf_continuous_hasCompactSupport` and
   `CompactlySupportedContinuousMap.denseRange_toLp`: the classes of compactly supported continuous
   functions are dense in `Lᵖ`, `p < ∞`.
+* `MeasureTheory.Integrable.exists_sum_compactlySupported_tendsto`: on a weakly locally compact
+  `R₁` Borel space with a measure finite on compact sets and compact inner regular on
+  finite-measure sets, every integrable function is approximated in `L¹` and almost everywhere by
+  partial sums of a sequence in `C_c(X, E)` with summable `L¹` norms.
 * `CompactlySupportedContinuousMap.exists_hasSum_toLp`: every `Lᵖ` class (`p < ∞`) is the sum of
   an absolutely norm-summable series of compactly supported continuous functions.
 
@@ -183,3 +191,48 @@ theorem exists_hasSum_toLp [R1Space X] [WeaklyLocallyCompactSpace X] [BorelSpace
   simpa only [hψ'] using (tendsto_add_atTop_iff_nat 1).1 hw_lim
 
 end CompactlySupportedContinuousMap
+
+namespace MeasureTheory
+
+/-- On a weakly locally compact `R₁` space `X` with its Borel σ-algebra and a measure `μ` finite on
+compact sets and inner regular with respect to compact sets on sets of finite measure, every
+integrable function `f : X → E` is approximated by a sequence `φ : ℕ → C_c(X, E)` that is the
+partial-sum sequence of `u : ℕ → C_c(X, E)` with summable `L¹` norms, converging to `f` both in
+`Lp E 1 μ` and `μ`-almost everywhere. -/
+theorem Integrable.exists_sum_compactlySupported_tendsto {X E : Type*} [TopologicalSpace X]
+    [R1Space X] [WeaklyLocallyCompactSpace X] [MeasurableSpace X] [BorelSpace X]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure X} [IsFiniteMeasureOnCompacts μ]
+    [μ.InnerRegularCompactLTTop] {f : X → E} (hf : Integrable f μ) :
+    ∃ (φ u : ℕ → C_c(X, E)),
+      (∀ n, ∑ i ∈ Finset.range (n + 1), u i = φ n) ∧
+      Tendsto (fun n => (φ n).integrable.toL1 (φ n)) atTop (𝓝 (hf.toL1 f)) ∧
+      (∀ᵐ x ∂μ, Tendsto (fun n => φ n x) atTop (𝓝 (f x))) ∧
+      (∑' k, ∫⁻ x, ‖u k x‖ₑ ∂μ) ≠ ∞ := by
+  obtain ⟨u, hu_sum, hu_norm⟩ :=
+    CompactlySupportedContinuousMap.exists_hasSum_toLp ENNReal.one_ne_top μ ℝ (hf.toL1 f)
+  let φ : ℕ → C_c(X, E) := fun n => ∑ i ∈ Finset.range (n + 1), u i
+  have hL1_eq (n : ℕ) :
+      (φ n).integrable.toL1 (φ n) =
+        ∑ i ∈ Finset.range (n + 1), CompactlySupportedContinuousMap.toLp 1 μ ℝ (u i) := by
+    rw [← map_sum]
+    exact Lp.ext
+      ((φ n).integrable.coeFn_toL1.trans (CompactlySupportedContinuousMap.coeFn_toLp ℝ (φ n)).symm)
+  have hL1 : Tendsto (fun n => (φ n).integrable.toL1 (φ n)) atTop (𝓝 (hf.toL1 f)) := by
+    simp_rw [hL1_eq]
+    exact hu_sum.tendsto_sum_nat.comp (tendsto_add_atTop_nat 1)
+  have hae : ∀ᵐ x ∂μ, Tendsto (fun n => φ n x) atTop (𝓝 (f x)) := by
+    filter_upwards [CompactlySupportedContinuousMap.ae_hasSum_of_hasSum_toLp ℝ hu_sum hu_norm,
+      hf.coeFn_toL1] with x ⟨hx, _⟩ hfx
+    simp only [φ, CompactlySupportedContinuousMap.coe_sum, Finset.sum_apply]
+    exact (hfx ▸ hx).tendsto_sum_nat.comp (tendsto_add_atTop_nat 1)
+  have hnorm_k (k : ℕ) :
+      ∫⁻ x, ‖u k x‖ₑ ∂μ = ENNReal.ofReal ‖CompactlySupportedContinuousMap.toLp 1 μ ℝ (u k)‖ := by
+    rw [CompactlySupportedContinuousMap.norm_toLp,
+      eLpNorm_one_eq_lintegral_eNorm (u k).integrable.aestronglyMeasurable,
+      ENNReal.ofReal_toReal (u k).integrable.2.ne]
+  have hu_lt : (∑' k, ∫⁻ x, ‖u k x‖ₑ ∂μ) ≠ ∞ := by
+    simp_rw [hnorm_k, ← ENNReal.ofReal_tsum_of_nonneg (fun _ => norm_nonneg _) hu_norm]
+    exact ENNReal.ofReal_ne_top
+  exact ⟨φ, u, fun _ => rfl, hL1, hae, hu_lt⟩
+
+end MeasureTheory

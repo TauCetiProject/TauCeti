@@ -51,9 +51,10 @@ measures need not have full support.
   Hilbert-space integrand `g ↦ P.coefficient (f g) (P.group g v)` is Bochner integrable.
 * `CovariantRepresentation.integratedOperatorBochnerL1`: the contractive continuous linear map
   `Lp A 1 μ →L[ℂ] (H →L[ℂ] H)` given by the vector integral.
-* `CovariantRepresentation.exists_integratedOperator`: every Bochner-integrable `f : G → A` has a
-  bounded integrated operator `T` with `T ξ = ∫ g, P.coefficient (f g) (P.group g ξ) ∂μ` and
-  `‖T‖ ≤ ∫ g, ‖f g‖ ∂μ`.
+* `CovariantRepresentation.norm_integratedOperatorBochnerL1_toL1_le`,
+  `CovariantRepresentation.exists_integratedOperator`: for every Bochner-integrable `f : G → A`,
+  `P.integratedOperatorBochnerL1 μ (hf.toL1 f)` has operator norm at most `∫ g, ‖f g‖ ∂μ` and
+  evaluates as `ξ ↦ ∫ g, P.coefficient (f g) (P.group g ξ) ∂μ`.
 * `CovariantRepresentation.integratedOperatorBochnerL1_compLp_mul`,
   `CovariantRepresentation.integratedOperatorBochnerL1_translateLp`,
   `CovariantRepresentation.integratedOperatorBochnerL1_convolutionL1`: left coefficient covariance,
@@ -73,7 +74,8 @@ measures need not have full support.
   `CovariantRepresentation.hasSum_integratedOperatorBochnerL1_count_toL1`,
   `CovariantRepresentation.integratedOperatorBochnerL1_count_toL1`,
   `CovariantRepresentation.norm_integratedOperatorBochnerL1_count_toL1_le`: unconditional `ℓ¹`
-  series formula and norm bound for counting measure on an arbitrary discrete group.
+  series formula and norm bound for counting measure on any `R₁` Borel topological group (using
+  `MeasurableSingletonClass` for raw norm-summable inputs).
 
 ## References
 
@@ -97,13 +99,6 @@ variable {G A H : Type*} [Group G] [TopologicalSpace G] [R1Space G] [MeasurableS
   [BorelSpace G] [NonUnitalCStarAlgebra A] [NormedAddCommGroup H] [InnerProductSpace ℂ H]
   [CompleteSpace H] {α : CStarAction G A} (P : CovariantRepresentation α H)
 
-omit [R1Space G] [MeasurableSpace G] [BorelSpace G] in
-private theorem norm_coefficient_group_le (a : A) (g : G) (v : H) :
-    ‖P.coefficient a (P.group g v)‖ ≤ ‖a‖ * ‖v‖ := by
-  refine ((P.coefficient a).le_opNorm _).trans ?_
-  rw [P.isUnitary.norm_map]
-  exact mul_le_mul_of_nonneg_right (NonUnitalStarAlgHom.norm_apply_le _ _) (norm_nonneg _)
-
 /-- For a Bochner-integrable coefficient function `f : G → A` against an inner-regular Borel
 measure, each Hilbert-space orbit integrand `g ↦ P.coefficient (f g) (P.group g v)` is Bochner
 integrable. Neither separability of `H` or `A` nor σ-finiteness of `μ` is assumed. -/
@@ -117,7 +112,7 @@ theorem integrable_integrand_of_integrable {μ : Measure G} [μ.InnerRegularComp
     hf.aefinStronglyMeasurable.aestronglyMeasurable_clm_apply
       (L.continuous.comp (P.continuous_orbit v))
   exact (hf.norm.mul_const ‖v‖).mono' hmeas
-    (.of_forall fun g => norm_coefficient_group_le P _ g v)
+    (.of_forall fun g => P.norm_coefficient_group_apply_le _ g v)
 
 omit [R1Space G] [BorelSpace G] in
 private theorem norm_integral_integrand_le {μ : Measure G} {f : G → A} (hf : Integrable f μ)
@@ -125,7 +120,7 @@ private theorem norm_integral_integrand_le {μ : Measure G} {f : G → A} (hf : 
     ‖∫ g, P.coefficient (f g) (P.group g v) ∂μ‖ ≤ (∫ g, ‖f g‖ ∂μ) * ‖v‖ := by
   rw [← integral_mul_const]
   exact norm_integral_le_of_norm_le (hf.norm.mul_const _)
-    (.of_forall fun g => norm_coefficient_group_le P _ g v)
+    (.of_forall fun g => P.norm_coefficient_group_apply_le _ g v)
 
 /-- **Vector-valued `L¹` integrated form** of a covariant representation on `Lp A 1 μ`, sending
 `f` to the bounded operator `v ↦ ∫ g, P.coefficient (f g) (P.group g v) ∂μ`. -/
@@ -185,18 +180,25 @@ theorem norm_integratedOperatorBochnerL1_le (μ : Measure G) [μ.InnerRegularCom
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f => by
     simpa only [one_mul] using P.norm_integratedOperatorBochnerL1_apply_le f
 
+/-- For any Bochner-integrable coefficient function `f : G → A`, the operator norm of
+`P.integratedOperatorBochnerL1 μ (hf.toL1 f)` is bounded by `∫ s, ‖f s‖ ∂μ`. -/
+theorem norm_integratedOperatorBochnerL1_toL1_le {μ : Measure G} [μ.InnerRegularCompactLTTop]
+    {f : G → A} (hf : Integrable f μ) :
+    ‖P.integratedOperatorBochnerL1 μ (hf.toL1 f)‖ ≤ ∫ s, ‖f s‖ ∂μ := by
+  refine (P.norm_integratedOperatorBochnerL1_apply_le (hf.toL1 f)).trans_eq ?_
+  rw [L1.norm_eq_integral_norm]
+  exact integral_congr_ae (hf.coeFn_toL1.fun_comp norm)
+
 /-- **Integrated operator of an integrable coefficient function**: for every Bochner-integrable
 `f : G → A`, the vector integrals `ξ ↦ ∫ g, P.coefficient (f g) (P.group g ξ) ∂μ` assemble to a
 bounded operator on `H` of norm at most `∫ g, ‖f g‖ ∂μ`. -/
 theorem exists_integratedOperator (μ : Measure G) [μ.InnerRegularCompactLTTop]
     (f : G → A) (hf : Integrable f μ) :
     ∃ T : H →L[ℂ] H,
-      (∀ ξ, T ξ = ∫ g, P.coefficient (f g) (P.group g ξ) ∂μ) ∧ ‖T‖ ≤ ∫ g, ‖f g‖ ∂μ := by
-  refine ⟨P.integratedOperatorBochnerL1 μ (hf.toL1 f),
-    P.integratedOperatorBochnerL1_toL1_apply hf, ?_⟩
-  refine (P.norm_integratedOperatorBochnerL1_apply_le (hf.toL1 f)).trans_eq ?_
-  rw [L1.norm_eq_integral_norm]
-  exact integral_congr_ae (hf.coeFn_toL1.fun_comp norm)
+      (∀ ξ, T ξ = ∫ g, P.coefficient (f g) (P.group g ξ) ∂μ) ∧ ‖T‖ ≤ ∫ g, ‖f g‖ ∂μ :=
+  ⟨P.integratedOperatorBochnerL1 μ (hf.toL1 f),
+    P.integratedOperatorBochnerL1_toL1_apply hf,
+    P.norm_integratedOperatorBochnerL1_toL1_le hf⟩
 
 /-- Matrix coefficients of `P.integratedOperatorBochnerL1 μ f` are integrals of orbit matrix
 coefficients. -/
@@ -441,15 +443,15 @@ theorem integratedOperatorBochnerL1_compLp_smulRight (φ : Lp ℂ 1 μ) (a : A) 
 
 end ScalarComparison
 
-section Discrete
+section Count
 
-variable {G A H : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
+variable {G A H : Type*} [Group G] [TopologicalSpace G] [R1Space G]
   [MeasurableSpace G] [BorelSpace G] [NonUnitalCStarAlgebra A]
   [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   {α : CStarAction G A} (P : CovariantRepresentation α H)
 
-/-- For counting measure on a discrete group, `integratedOperatorBochnerL1` acts on `v` by the
-unconditionally convergent series `∑ g, π (u g) (U g v)`. -/
+/-- For counting measure on an `R₁` Borel topological group, `integratedOperatorBochnerL1` acts
+on `v` by the unconditionally convergent series `∑ g, π (u g) (U g v)`. -/
 theorem hasSum_integratedOperatorBochnerL1_count_apply
     (u : Lp A 1 (Measure.count : Measure G)) (v : H) :
     HasSum (fun g => P.coefficient (u g) (P.group g v))
@@ -457,18 +459,19 @@ theorem hasSum_integratedOperatorBochnerL1_count_apply
   rw [integratedOperatorBochnerL1_apply]
   exact hasSum_integral_count (P.integrable_integrand_of_integrable (L1.integrable_coeFn u) v)
 
-/-- Series formula for `integratedOperatorBochnerL1` with respect to counting measure on a
-discrete group. -/
+/-- Series formula for `integratedOperatorBochnerL1` with respect to counting measure on an `R₁`
+Borel topological group. -/
 theorem integratedOperatorBochnerL1_count_apply
     (u : Lp A 1 (Measure.count : Measure G)) (v : H) :
     P.integratedOperatorBochnerL1 Measure.count u v =
       ∑' g, P.coefficient (u g) (P.group g v) :=
   (P.hasSum_integratedOperatorBochnerL1_count_apply u v).tsum_eq.symm
 
-/-- For an `ℓ¹` family `f : G → A` on a discrete group, `g ↦ π (f g) (U g v)` sums unconditionally
-to `integratedOperatorBochnerL1` of `(integrable_count_iff.2 hf).toL1 f`. -/
-theorem hasSum_integratedOperatorBochnerL1_count_toL1 {f : G → A} (hf : Summable (‖f ·‖))
-    (v : H) :
+/-- For an `ℓ¹` family `f : G → A` on an `R₁` Borel topological group with measurable singletons,
+`g ↦ π (f g) (U g v)` sums unconditionally to `integratedOperatorBochnerL1` of
+`(integrable_count_iff.2 hf).toL1 f`. -/
+theorem hasSum_integratedOperatorBochnerL1_count_toL1 [MeasurableSingletonClass G]
+    {f : G → A} (hf : Summable (‖f ·‖)) (v : H) :
     HasSum (fun g => P.coefficient (f g) (P.group g v))
       (P.integratedOperatorBochnerL1 Measure.count ((integrable_count_iff.2 hf).toL1 f) v) := by
   have hcoe : ∀ g, ((integrable_count_iff.2 hf).toL1 f : G → A) g = f g :=
@@ -476,16 +479,18 @@ theorem hasSum_integratedOperatorBochnerL1_count_toL1 {f : G → A} (hf : Summab
   simpa only [hcoe] using
     P.hasSum_integratedOperatorBochnerL1_count_apply ((integrable_count_iff.2 hf).toL1 f) v
 
-/-- For an `ℓ¹` family `f : G → A` on a discrete group, `integratedOperatorBochnerL1` acts by
-`∑' g, π (f g) (U g v)`. -/
-theorem integratedOperatorBochnerL1_count_toL1 {f : G → A} (hf : Summable (‖f ·‖)) (v : H) :
+/-- For an `ℓ¹` family `f : G → A` on an `R₁` Borel topological group with measurable singletons,
+`integratedOperatorBochnerL1` acts by `∑' g, π (f g) (U g v)`. -/
+theorem integratedOperatorBochnerL1_count_toL1 [MeasurableSingletonClass G]
+    {f : G → A} (hf : Summable (‖f ·‖)) (v : H) :
     P.integratedOperatorBochnerL1 Measure.count ((integrable_count_iff.2 hf).toL1 f) v =
       ∑' g, P.coefficient (f g) (P.group g v) :=
   (P.hasSum_integratedOperatorBochnerL1_count_toL1 hf v).tsum_eq.symm
 
-/-- For an `ℓ¹` family `f : G → A` on a discrete group, the operator norm of
-`integratedOperatorBochnerL1` is bounded by `∑' g, ‖f g‖`. -/
-theorem norm_integratedOperatorBochnerL1_count_toL1_le {f : G → A} (hf : Summable (‖f ·‖)) :
+/-- For an `ℓ¹` family `f : G → A` on an `R₁` Borel topological group with measurable singletons,
+the operator norm of `integratedOperatorBochnerL1` is bounded by `∑' g, ‖f g‖`. -/
+theorem norm_integratedOperatorBochnerL1_count_toL1_le [MeasurableSingletonClass G]
+    {f : G → A} (hf : Summable (‖f ·‖)) :
     ‖P.integratedOperatorBochnerL1 Measure.count ((integrable_count_iff.2 hf).toL1 f)‖ ≤
       ∑' g, ‖f g‖ := by
   refine (P.norm_integratedOperatorBochnerL1_apply_le
@@ -493,6 +498,6 @@ theorem norm_integratedOperatorBochnerL1_count_toL1_le {f : G → A} (hf : Summa
   rw [L1.norm_of_fun_eq_integral_norm (integrable_count_iff.2 hf)]
   exact integral_count_eq_tsum (integrable_count_iff.2 hf).norm
 
-end Discrete
+end Count
 
 end TauCeti.CStarAction.CovariantRepresentation
