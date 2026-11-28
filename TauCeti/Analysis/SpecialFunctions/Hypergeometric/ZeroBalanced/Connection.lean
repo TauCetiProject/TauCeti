@@ -26,8 +26,9 @@ import TauCeti.Analysis.SpecialFunctions.Log.Limits
 When `2a ∉ -ℕ`, `₂F₁(a, a; 2a; 1 - x)` agrees on the lens `‖x‖ < 1`, `‖1 - x‖ < 1` with
 `TauCeti.zeroBalancedSeries`, identifying that series as the analytic continuation across
 `Metric.ball 0 1 ∩ Complex.slitPlane`. For `a, x ∈ (0, 1)`, Euler's integral and
-`-log x · u₁(a, x) + v(a, x)` both solve `(x (1 - x)^(2a) y')' = a² (1 - x)^(2a - 1) y` with `0⁺`
-asymptotic `-log x + 2(ψ(1) - ψ(a)) + o(1)`; Wronskian constancy against `u₁` equates them on
+`-log x · ₂F₁(a, a; 1; x) + ∑ₖ (a)ₖ² / (k!)² · 2(ψ(k + 1) - ψ(k + a)) xᵏ` both solve
+`(x (1 - x)^(2a) y')' = a² (1 - x)^(2a - 1) y` with `0⁺` asymptotic
+`-log x + 2(ψ(1) - ψ(a)) + o(1)`; Wronskian constancy against `₂F₁(a, a; 1; ·)` equates them on
 `(0, 1)`, and analytic continuation yields
 `TauCeti.ordinaryHypergeometric_one_sub_eq_zeroBalancedSeries`,
 `TauCeti.zero_balanced_connection`, and the real logarithmic cusp limit

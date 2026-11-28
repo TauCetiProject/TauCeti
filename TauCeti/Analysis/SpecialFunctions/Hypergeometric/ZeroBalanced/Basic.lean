@@ -142,6 +142,30 @@ private theorem norm_coeff_mul_two_mul_digamma_sub_le {b : ℂ} {R : ℝ} (hb : 
   rw [norm_mul]
   exact (mul_le_mul hc hdig2 (norm_nonneg _) (by positivity)).trans_eq (by ring)
 
+private theorem norm_zeroBalancedTerm_le {b x : ℂ} {R : ℝ} (hb : ‖b‖ ≤ R)
+    {k : ℕ} (hk : ⌈R⌉₊ + 1 ≤ k) :
+    ‖zeroBalancedTerm b x k‖ ≤
+      (‖Complex.log x‖ + 2 * (1 + R) * (Real.pi ^ 2 / 6)) *
+        ((Ring.multichoose R k) ^ 2 * ‖x‖ ^ k) := by
+  have hc : ‖ordinaryHypergeometricCoefficient b b 1 k‖ ≤ (Ring.multichoose R k) ^ 2 :=
+    (norm_ordinaryHypergeometricCoefficient_one_le hb hb k).trans_eq (sq _).symm
+  have hdig := norm_coeff_mul_two_mul_digamma_sub_le hb hk
+  have hterm : zeroBalancedTerm b x k =
+      ordinaryHypergeometricCoefficient b b 1 k * (-Complex.log x) * x ^ k +
+        ordinaryHypergeometricCoefficient b b 1 k *
+          (2 * (Complex.digamma (k + 1) - Complex.digamma (k + b))) * x ^ k := by
+    dsimp [zeroBalancedTerm]; ring
+  rw [hterm]
+  refine (norm_add_le _ _).trans ?_
+  have h1 : ‖ordinaryHypergeometricCoefficient b b 1 k * (-Complex.log x) * x ^ k‖ ≤
+      (Ring.multichoose R k) ^ 2 * ‖Complex.log x‖ * ‖x‖ ^ k := by
+    rw [norm_mul, norm_mul, norm_neg, norm_pow]; gcongr
+  have h2 : ‖ordinaryHypergeometricCoefficient b b 1 k *
+        (2 * (Complex.digamma (k + 1) - Complex.digamma (k + b))) * x ^ k‖ ≤
+      2 * (1 + R) * (Real.pi ^ 2 / 6) * (Ring.multichoose R k) ^ 2 * ‖x‖ ^ k := by
+    rw [norm_mul, norm_pow]; gcongr
+  exact (add_le_add h1 h2).trans_eq (by ring)
+
 private theorem one_le_radius_zeroBalancedDigammaSeries (a : ℂ) :
     1 ≤ (FormalMultilinearSeries.ofScalars ℂ fun k : ℕ ↦
       ordinaryHypergeometricCoefficient a a 1 k *
@@ -313,31 +337,7 @@ theorem analyticOnNhd_zeroBalancedTail_left {x : ℂ} (hx : ‖x‖ < 1) :
           (by simpa [abs_of_nonneg (norm_nonneg x)] using hx)).summable).mul_left C)
     rw [Nat.cofinite_eq_atTop]
     filter_upwards [eventually_ge_atTop (⌈R⌉₊ + 1)] with k hk b hbK
-    have hbR : ‖b‖ ≤ R := (hB b hbK).trans (le_max_left _ _)
-    have hc : ‖ordinaryHypergeometricCoefficient b b 1 (k + 1)‖ ≤
-        (Ring.multichoose R (k + 1)) ^ 2 :=
-      (norm_ordinaryHypergeometricCoefficient_one_le hbR hbR (k + 1)).trans_eq (sq _).symm
-    have hdig := norm_coeff_mul_two_mul_digamma_sub_le hbR (hk.trans (Nat.le_succ k))
-    have hterm : zeroBalancedTerm b x (k + 1) =
-        ordinaryHypergeometricCoefficient b b 1 (k + 1) * (-Complex.log x) * x ^ (k + 1) +
-          ordinaryHypergeometricCoefficient b b 1 (k + 1) *
-            (2 * (Complex.digamma ((k + 1 : ℕ) + 1) - Complex.digamma ((k + 1 : ℕ) + b))) *
-            x ^ (k + 1) := by
-      dsimp [zeroBalancedTerm]; ring
-    rw [hterm]
-    refine (norm_add_le _ _).trans ?_
-    have h1 : ‖ordinaryHypergeometricCoefficient b b 1 (k + 1) * (-Complex.log x) *
-          x ^ (k + 1)‖ ≤
-        (Ring.multichoose R (k + 1)) ^ 2 * ‖Complex.log x‖ * ‖x‖ ^ (k + 1) := by
-      rw [norm_mul, norm_mul, norm_neg, norm_pow]
-      gcongr
-    have h2 : ‖ordinaryHypergeometricCoefficient b b 1 (k + 1) *
-          (2 * (Complex.digamma ((k + 1 : ℕ) + 1) - Complex.digamma ((k + 1 : ℕ) + b))) *
-          x ^ (k + 1)‖ ≤
-        2 * (1 + R) * (Real.pi ^ 2 / 6) * (Ring.multichoose R (k + 1)) ^ 2 * ‖x‖ ^ (k + 1) := by
-      rw [norm_mul, norm_pow]
-      gcongr
-    exact (add_le_add h1 h2).trans_eq (by dsimp [C]; ring)
+    exact norm_zeroBalancedTerm_le ((hB b hbK).trans (le_max_left _ _)) (hk.trans (Nat.le_succ k))
   refine ((hasSumLocallyUniformlyOn_iff_tendstoLocallyUniformlyOn.mp hloc).differentiableOn
     (Eventually.of_forall fun _ ↦ DifferentiableOn.fun_sum fun k _ b hb ↦ ?_)
     Complex.isOpen_ne_neg_succ).analyticOnNhd Complex.isOpen_ne_neg_succ
