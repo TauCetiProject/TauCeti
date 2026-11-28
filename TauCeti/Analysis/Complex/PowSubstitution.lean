@@ -47,9 +47,10 @@ The exponent `p_m = 2 + 2 / m` of the coefficient estimates for `m` sheets has
 the derivative of a branch through a substitution of degree `d ≤ m` lies in `L^{p_m}`
 (`TauCeti.memLp_norm_fderiv_image_add_pow_two_add_two_div`). If a distortion factor `K`
 multiplies the exponent, the margin survives exactly when `K (m² - 1) < m²`
-(`TauCeti.mul_two_add_two_div_mul_one_sub_inv_lt_two_iff`). Against the exponents `1 - 2 / k`,
-`0 < k ≤ m`, the margin is `p_m (1 - 2 / k) ≤ p_m (1 - 2 / m) = 2 - 2 / m - 4 / m² < 2`
-(`TauCeti.two_add_two_div_mul_one_sub_two_div`,
+(`TauCeti.mul_two_add_two_div_mul_one_sub_inv_lt_two_iff`). Its Morrey exponent is
+`1 - 2 / p_m = 1 / (m + 1)` (`TauCeti.one_sub_two_div_two_add_two_div`), and for `0 < k ≤ m`,
+`p_m (1 - 2 / k) ≤ p_m (1 - 2 / m) = 2 - 2 / m - 4 / m² < 2`
+(`TauCeti.two_add_two_div_mul_one_sub_two_div_le`, `TauCeti.two_add_two_div_mul_one_sub_two_div`,
 `TauCeti.two_add_two_div_mul_one_sub_two_div_lt_two`).
 
 The branch `u` is only assumed real differentiable, so the statements are not limited to
@@ -106,6 +107,12 @@ theorem mul_two_add_two_div_mul_one_sub_inv_lt_two_iff {m : ℝ} (hm : m ≠ 0) 
   have : K * (2 - 2 / m ^ 2) * m ^ 2 = 2 * (K * (m ^ 2 - 1)) := by field_simp
   constructor <;> intro h <;> nlinarith
 
+/-- The Morrey exponent of `p_m = 2 + 2 / m` is `1 - 2 / p_m = 1 / (m + 1)`. -/
+theorem one_sub_two_div_two_add_two_div {m : ℝ} (hm : m ≠ 0) (hm₁ : m + 1 ≠ 0) :
+    1 - 2 / (2 + 2 / m) = 1 / (m + 1) := by
+  field_simp
+  ring
+
 /-- The exponent `p_m = 2 + 2 / m` satisfies `p_m (1 - 2 / m) = 2 - 2 / m - 4 / m²`. -/
 theorem two_add_two_div_mul_one_sub_two_div (m : ℝ) :
     (2 + 2 / m) * (1 - 2 / m) = 2 - 2 / m - 4 / m ^ 2 := by
@@ -114,6 +121,13 @@ theorem two_add_two_div_mul_one_sub_two_div (m : ℝ) :
   field_simp
   ring
 
+/-- Monotonicity of the exponent `p_m = 2 + 2 / m` in the degree: for `0 < k ≤ m`,
+`p_m (1 - 2 / k) ≤ p_m (1 - 2 / m)`. -/
+theorem two_add_two_div_mul_one_sub_two_div_le {m k : ℝ} (hk : 0 < k) (hkm : k ≤ m) :
+    (2 + 2 / m) * (1 - 2 / k) ≤ (2 + 2 / m) * (1 - 2 / m) := by
+  have hm : 0 < m := hk.trans_le hkm
+  gcongr
+
 /-- The margin of the exponent `p_m = 2 + 2 / m` against `1 - 2 / k` for `0 < k ≤ m`:
 `p_m (1 - 2 / k) ≤ p_m (1 - 2 / m) < 2`. Since `‖y‖ ^ (-a)` is `p`-integrable near `0` in the plane
 exactly when `a p < 2`, this is the room the exponent `p_m` leaves for a singularity of order
@@ -121,9 +135,8 @@ exactly when `a p < 2`, this is the room the exponent `p_m` leaves for a singula
 theorem two_add_two_div_mul_one_sub_two_div_lt_two {k m : ℝ} (hk : 0 < k) (hkm : k ≤ m) :
     (2 + 2 / m) * (1 - 2 / k) < 2 := by
   have hm : 0 < m := hk.trans_le hkm
-  have hle : (2 + 2 / m) * (1 - 2 / k) ≤ (2 + 2 / m) * (1 - 2 / m) := by
-    gcongr
-  rw [two_add_two_div_mul_one_sub_two_div] at hle
+  refine (two_add_two_div_mul_one_sub_two_div_le hk hkm).trans_lt ?_
+  rw [two_add_two_div_mul_one_sub_two_div]
   have : 0 < 2 / m + 4 / m ^ 2 := by positivity
   linarith
 

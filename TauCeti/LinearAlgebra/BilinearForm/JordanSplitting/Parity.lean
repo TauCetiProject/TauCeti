@@ -140,9 +140,17 @@ theorem IsJordanSplitting.forall_two_mul_pow_dvd_iff (h : B.IsJordanSplitting π
     (hπ : π ∈ nonZeroDivisors R) (h2 : 2 ∣ π) {j : ℕ} :
     (∀ w ∈ N j, 2 * π ^ j ∣ B w w) ↔ ∀ x : M, (∀ y, π ^ j ∣ B x y) → 2 * π ^ j ∣ B x x := by
   refine ⟨fun heven x hx ↦ ?_, fun H w hw ↦ H w (h.pow_dvd_apply hw)⟩
-  obtain ⟨f, -, hf, -⟩ := h.exists_pow_succ_dvd_sub hπ j
+  obtain ⟨f, _, hf, -⟩ := h.exists_pow_succ_dvd_sub hπ j
   have := ((mul_dvd_mul_right h2 _).trans (by rw [← pow_succ'])).trans (hf x x hx hx)
   simpa using dvd_add this (heven _ (f x).property)
+
+/-- For a Jordan splitting with a regular scale `π` satisfying `2 ∣ π`, whether the `j`-th
+constituent has self-pairings divisible by `2 * π ^ j` is independent of the splitting. -/
+theorem IsJordanSplitting.forall_two_mul_pow_dvd_iff_of_isJordanSplitting
+    {N' : ℕ → Submodule R M} (h : B.IsJordanSplitting π N) (h' : B.IsJordanSplitting π N')
+    (hπ : π ∈ nonZeroDivisors R) (h2 : 2 ∣ π) (j : ℕ) :
+    (∀ w ∈ N j, 2 * π ^ j ∣ B w w) ↔ ∀ w ∈ N' j, 2 * π ^ j ∣ B w w :=
+  (h.forall_two_mul_pow_dvd_iff hπ h2).trans (h'.forall_two_mul_pow_dvd_iff hπ h2).symm
 
 /-- Parity of the constituent of index `j` at its own scale, in the sense of `2 * π ^ j`
 dividing the self-pairings, is an isometry invariant when `2 ∣ π`. -/
