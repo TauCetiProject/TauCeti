@@ -375,9 +375,8 @@ theorem prod_ascPochhammer_eval_div {K : Type*} [Semifield K] (x : K) (m n : ℕ
   simp_rw [ascPochhammer_eval_eq_prod_range]
   rw [Finset.prod_comm]
   have hterm (i j : ℕ) : (x + i) / (m : K) + j = (x + (i + m * j : ℕ)) / m := by
-    push_cast
-    field_simp
-    ring
+    simpa only [Nat.cast_add, Nat.cast_mul, add_assoc, mul_comm (j : K)] using
+      div_add' (x + i) (j : K) (m : K) hm
   simp_rw [hterm, Finset.prod_div_distrib]
   simp only [Finset.prod_const, Finset.card_range, ← pow_mul]
   rw [Nat.mul_comm m n]

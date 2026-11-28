@@ -148,32 +148,42 @@ theorem prod_map_div_prod_map_eq_prod_zpow_gamma {G : Type*} [CommGroup G]
   have hside (S : Multiset ℕ) (hS : S ≤ D.A + D.B) :
       (S.map f).prod = ∏ m ∈ D.gammaSupport,
         g m ^ ((S.filter (m ∣ ·)).map fun a ↦ μ (a / m)).sum := by
-    induction S using Multiset.induction_on with
-    | empty => simp
-    | cons a S ih =>
-      rw [Multiset.map_cons, Multiset.prod_cons,
-        hindex a (Multiset.mem_of_le hS (Multiset.mem_cons_self ..)),
-        ih ((Multiset.le_cons_self ..).trans hS),
-        ← Finset.prod_mul_distrib]
-      refine Finset.prod_congr rfl fun m _ ↦ ?_
-      rw [← zpow_add, Multiset.filter_cons]
-      split_ifs <;> simp
+    rw [Multiset.map_congr rfl (fun a ha ↦ hindex a (Multiset.mem_of_le hS ha)),
+      Multiset.prod_map_prod]
+    refine Finset.prod_congr rfl fun m _ ↦ ?_
+    have hpow := map_multiset_prod (zpowersHom G (g m))
+      (((S.filter (m ∣ ·)).map fun a ↦ μ (a / m)).map Multiplicative.ofAdd)
+    rw [← ofAdd_multiset_prod] at hpow
+    simp only [Multiset.map_map, Function.comp_def, zpowersHom_apply, toAdd_ofAdd] at hpow
+    rw [hpow]
+    obtain ⟨l, rfl⟩ := Quotient.exists_rep S
+    simp only [Multiset.quot_mk_to_coe, Multiset.map_coe, Multiset.prod_coe, Multiset.filter_coe,
+      pow_ite, zpow_zero, List.prod_map_ite, List.map_const', List.prod_replicate,
+      one_pow, mul_one]
   rw [hside _ (Multiset.le_add_right _ _), hside _ (Multiset.le_add_left _ _),
     ← Finset.prod_div_distrib]
   exact Finset.prod_congr rfl fun m _ ↦ by rw [gamma_def, zpow_sub, div_eq_mul_inv]
 
-/-- The gamma product formula for nonzero weights in a commutative group with zero. -/
+/-- The gamma product formula in a commutative group with zero, for weights nonzero on
+`gammaSupport`. -/
 theorem prod_map_div_prod_map_eq_prod_zpow_gamma_of_ne_zero {G : Type*} [CommGroupWithZero G]
-    (f : ℕ → G) (hf : ∀ a, f a ≠ 0) :
+    (f : ℕ → G) (hf : ∀ a ∈ D.gammaSupport, f a ≠ 0) :
     (D.A.map f).prod / (D.B.map f).prod =
       ∏ m ∈ D.gammaSupport, (∏ d ∈ m.divisors, f d) ^ D.gamma m := by
-  let u (a : ℕ) : Gˣ := Units.mk0 (f a) (hf a)
-  have hprod (S : Multiset ℕ) : ((S.map u).prod : G) = (S.map f).prod := by
-    simpa only [Units.coeHom_apply, Multiset.map_map, Function.comp_def, u, Units.val_mk0] using
-      map_multiset_prod (Units.coeHom G) (S.map u)
-  simpa only [Units.val_div_eq_div_val, hprod, Units.coe_prod, Units.val_zpow_eq_zpow_val,
-    u, Units.val_mk0] using
-    congrArg (Units.val : Gˣ → G) (D.prod_map_div_prod_map_eq_prod_zpow_gamma u)
+  let u (a : ℕ) : Gˣ := if ha : a ∈ D.gammaSupport then Units.mk0 (f a) (hf a ha) else 1
+  have hu (a : ℕ) (ha : a ∈ D.gammaSupport) : (u a : G) = f a := by simp [u, ha]
+  have hprod (S : Multiset ℕ) (hS : S ≤ D.A + D.B) :
+      ((S.map u).prod : G) = (S.map f).prod := by
+    rw [← Units.coeHom_apply, map_multiset_prod, Multiset.map_map]
+    exact congrArg Multiset.prod (Multiset.map_congr rfl fun a ha ↦
+      hu a (D.mem_gammaSupport.2 ⟨a, Multiset.mem_of_le hS ha, dvd_rfl⟩))
+  have h := congrArg (Units.val : Gˣ → G) (D.prod_map_div_prod_map_eq_prod_zpow_gamma u)
+  simp only [Units.val_div_eq_div_val, Units.coe_prod, Units.val_zpow_eq_zpow_val,
+    hprod D.A (Multiset.le_add_right _ _), hprod D.B (Multiset.le_add_left _ _)] at h
+  refine h.trans (Finset.prod_congr rfl fun m hm ↦ ?_)
+  obtain ⟨a, ha, hma⟩ := D.mem_gammaSupport.1 hm
+  rw [Finset.prod_congr rfl fun d hd ↦
+    hu d (D.mem_gammaSupport.2 ⟨a, ha, (Nat.dvd_of_mem_divisors hd).trans hma⟩)]
 
 /-! ### The defining identity -/
 
@@ -187,7 +197,7 @@ theorem ratFunc_eq_prod_zpow :
   simp only [ratFunc_def, phiA_def, phiB_def, map_multiset_prod, Multiset.map_map,
     Function.comp_def]
   rw [D.prod_map_div_prod_map_eq_prod_zpow_gamma_of_ne_zero _
-    (fun a ↦ RatFunc.algebraMap_ne_zero (cyclotomic_ne_zero a K))]
+    (fun a _ ↦ RatFunc.algebraMap_ne_zero (cyclotomic_ne_zero a K))]
   refine Finset.prod_congr rfl fun n hn ↦ ?_
   rw [← map_prod, prod_cyclotomic_eq_X_pow_sub_one (D.pos_of_mem_gammaSupport hn)]
 

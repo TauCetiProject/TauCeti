@@ -36,23 +36,19 @@ theorem prod_ascPochhammer_div_eq_mul_prod_factorial (D : CyclotomicData) (n : �
         ∏ m ∈ D.gammaSupport, ((m * n).factorial : ℚ) ^ D.gamma m := by
   let w (x : AddCircle (1 : ℚ)) := (ascPochhammer ℚ n).eval (rep x)
   let f (a : ℕ) := ((primitiveClasses {a}).map w).prod
-  have hprod (S : Multiset ℕ) : ((primitiveClasses S).map w).prod = (S.map f).prod := by
-    induction S using Multiset.induction_on with
-    | empty => simp
-    | cons a S ih => simp [primitiveClasses_cons, Multiset.map_add, ih, f]
   have hf (a : ℕ) : 0 < f a := Multiset.prod_pos fun q hq ↦ by
     obtain ⟨x, _, rfl⟩ := Multiset.mem_map.1 hq
     exact ascPochhammer_pos n _ (rep_pos x)
   have hgrid (m : ℕ) :
       ∏ d ∈ m.divisors, f d = ((m * n).factorial : ℚ) / (m : ℚ) ^ (m * n) := by
-    rw [Finset.prod_eq_multiset_prod, ← hprod]
+    rw [Finset.prod_eq_multiset_prod, ← prod_map_primitiveClasses _ w]
     have heval := congrArg (fun S : Multiset ℚ ↦ (S.map (ascPochhammer ℚ n).eval).prod)
       (map_rep_primitiveClasses_divisors m)
     simp only [Multiset.map_map, Function.comp_def] at heval
     exact heval.trans (by simpa [mul_comm n m, Finset.prod_eq_multiset_prod] using
       prod_ascPochhammer_eval_div (1 : ℚ) m n)
-  rw [toParameters_α, toParameters_β, hprod, hprod,
-    D.prod_map_div_prod_map_eq_prod_zpow_gamma_of_ne_zero f (fun a ↦ (hf a).ne')]
+  rw [toParameters_α, toParameters_β, prod_map_primitiveClasses, prod_map_primitiveClasses,
+    D.prod_map_div_prod_map_eq_prod_zpow_gamma_of_ne_zero f (fun a _ ↦ (hf a).ne')]
   simp_rw [hgrid, div_zpow, Finset.prod_div_distrib]
   rw [gammaScale_def, ← Finset.prod_zpow, div_eq_inv_mul, ← Finset.prod_inv_distrib]
   congr 1
