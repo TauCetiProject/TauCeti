@@ -67,6 +67,16 @@ theorem IsSignedFactorization.le_of_prime_dvd_natAbs_root
   h.le_of_mem_primeFactors_root i p (Nat.mem_primeFactors.mpr ⟨hp, hd, Int.natAbs_ne_zero.mpr
     (h.root_ne_zero i)⟩)
 
+/-- For a nonzero exponent, a prime at or above the cutoff divides the absolute term
+exactly when it divides the absolute root. -/
+theorem IsSignedFactorization.dvd_natAbs_progressionTerm_iff_dvd_natAbs_root
+    (h : IsSignedFactorization n d k ℓ A z) {i : Fin k} {p : ℕ}
+    (hp : p.Prime) (hk : k ≤ p) (hℓ : ℓ ≠ 0) :
+    p ∣ (n.progressionTerm d i).natAbs ↔ p ∣ (z i).natAbs := by
+  have hcoeff : ¬ p ∣ A i := fun hd ↦ (not_lt_of_ge hk) (h.lt_of_prime_dvd_coeff hp hd)
+  rw [h.term_eq i, Int.natAbs_mul, Int.natAbs_natCast, Int.natAbs_pow, hp.dvd_mul,
+    or_iff_right hcoeff, hp.prime.dvd_pow_iff_dvd hℓ]
+
 /-- The coefficient in any signed factorization is the full smooth part of the absolute term. -/
 theorem IsSignedFactorization.coeff_eq_smoothPart (h : IsSignedFactorization n d k ℓ A z)
     (i : Fin k) : A i = (n.progressionTerm d i).natAbs.smoothPart k := by
