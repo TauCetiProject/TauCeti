@@ -76,6 +76,7 @@ object stabilizes after finitely many pages to the corresponding graded piece of
 * `HomologicalComplex₂.rowFiltrationAbutmentIso`,
   `HomologicalComplex₂.rowFiltrationSpectralSequencePageXIsoEInfty`,
   `HomologicalComplex₂.isZero_rowFiltration_abutmentFiltration`,
+  `HomologicalComplex₂.isZero_rowFiltrationSpectralObject_H_bot`,
   `HomologicalComplex₂.isIso_rowFiltration_abutmentFiltrationι`: convergence to the homology of the
   total complex.
 
@@ -179,6 +180,11 @@ variable (K : HomologicalComplex₂ C (down ℕ) (down ℕ))
 /-- The projection onto the total complex of the rows `≥ 0` is the identity. -/
 @[simp]
 lemma toTotalRowsGE_zero : K.toTotalRowsGE 0 = 𝟙 _ := (rfl)
+
+/-- The inclusion of the row `0` into the total complex of the rows `≥ 0` is the inclusion
+`HomologicalComplex₂.rowZeroι` of the row `0` into the total complex. -/
+@[simp]
+lemma totalRowι_zero : K.totalRowι 0 = K.rowZeroι := (rfl)
 
 /-- The projection of the total complex onto the rows `≥ 1` drops row `0`. -/
 @[simp]
@@ -840,6 +846,14 @@ every `p ≤ 0`, the `p`th piece coming from the rows `< p`. -/
 lemma isZero_rowFiltration_abutmentFiltration (p : ℤ) (hp : p ≤ 0) (n : ℤ) :
     IsZero (K.rowFiltrationSpectralObject.abutmentFiltration p n) :=
   CochainComplex.isZero_filtrationAbutmentFiltration _ _ (K.rowFiltration_eq_bot p hp) n
+
+/-- The spectral object of the row filtration has vanishing `H^n(⊥ ≤ a)` for `a ≤ 0`, since the
+rows `< 0` vanish. -/
+lemma isZero_rowFiltrationSpectralObject_H_bot (a n : ℤ) (ha : a ≤ 0) :
+    IsZero ((K.rowFiltrationSpectralObject.H n).obj
+      (ComposableArrows.mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ (a : EInt))))) :=
+  CochainComplex.isZero_spectralObject_H_bot _ _ _ _
+    (Subobject.isZero_homology_of_eq_bot _ (K.rowFiltration_eq_bot _ ha) _)
 
 /-- The filtration of the abutment of the spectral sequence of the row filtration is exhaustive
 in each degree: its `b`th piece in degree `n` is everything when `-b < n`. -/
