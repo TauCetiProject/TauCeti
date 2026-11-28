@@ -7,8 +7,11 @@ module
 
 public import Mathlib.RingTheory.DividedPowers.RatAlgebra
 public import Mathlib.Algebra.Polynomial.Coeff
+public import Mathlib.Algebra.TrivSqZeroExt.Ideal
 public import Mathlib.Data.Finset.Sym
 public import Mathlib.Data.Nat.Choose.Vandermonde
+public import Mathlib.Data.ZMod.Basic
+import TauCeti.Data.Nat.Choose.Vandermonde
 
 /-!
 # Divided powers from identities on generators
@@ -23,6 +26,9 @@ power structure. This is how divided powers are usually constructed: by gluing t
 ideals (`TauCeti.RingTheory.DividedPowers.Glue`), on divided power polynomial algebras and on
 divided power envelopes, where only the generators are under control.
 
+We also record a witness over `TrivSqZeroExt (ZMod 2) (ZMod 2)` showing that an `AdditivePowers`
+structure need not satisfy `mul_dpow`, so the generator hypotheses cannot be omitted.
+
 ## Main definitions
 
 * `TauCeti.PD.AdditivePowers I`: additive divided-power candidates on `I`.
@@ -32,10 +38,15 @@ divided power envelopes, where only the generators are under control.
 
 ## Main results
 
+* `TauCeti.PD.AdditivePowers.dpow_eq_from_gens`: candidates agreeing on generators are equal.
 * `TauCeti.PD.AdditivePowers.mul_dpow_add`: the multiplication identity is stable under sums.
+* `TauCeti.PD.AdditivePowers.mul_dpow_of_span`: propagation of `mul_dpow` from a generating set.
 * `TauCeti.PD.AdditivePowers.dpow_comp_add`: the iteration identity is stable under sums.
+* `TauCeti.PD.AdditivePowers.dpow_comp_of_span`: propagation of `dpow_comp` from a generating set.
 * `TauCeti.PD.AdditivePowers.toDividedPowers_unique`: a divided power structure is determined by
   its candidate.
+* `TauCeti.PD.AdditivePowers.exists_not_dividedPowers`: existence of an `AdditivePowers` structure
+  that does not underlie any `DividedPowers` structure.
 
 ## Implementation notes
 
@@ -103,6 +114,20 @@ theorem ofDividedPowers_dpow (γ : DividedPowers I) (n : ℕ) (x : A) :
     (ofDividedPowers γ).dpow n x = γ.dpow n x :=
   (rfl)
 
+/-- Two `DividedPowers` structures are equal if and only if their underlying additive candidates
+are equal. -/
+@[simp]
+theorem ofDividedPowers_inj {γ γ' : DividedPowers I} :
+    ofDividedPowers γ = ofDividedPowers γ' ↔ γ = γ' :=
+  ⟨fun h ↦ DividedPowers.coe_injective (I := I) (congrArg AdditivePowers.dpow h), fun h ↦ h ▸ rfl⟩
+
+/-- Transporting an `AdditivePowers` structure along an equality of ideals preserves `dpow`. -/
+@[simp]
+theorem dpow_eqRec {I₁ I₂ : Ideal A} (e : I₁ = I₂) (δ : AdditivePowers I₁) (n : ℕ) (x : A) :
+    (e ▸ δ).dpow n x = δ.dpow n x := by
+  cases e
+  rfl
+
 variable (δ : AdditivePowers I)
 
 /-- In positive degree a candidate vanishes at `0`. -/
@@ -114,6 +139,29 @@ theorem dpow_eval_zero {n : ℕ} (hn : n ≠ 0) : δ.dpow n 0 = 0 := by
 theorem dpow_add' {n : ℕ} {x y : A} (hx : x ∈ I) (hy : y ∈ I) :
     δ.dpow n (x + y) = ∑ k ∈ range (n + 1), δ.dpow k x * δ.dpow (n - k) y := by
   rw [δ.dpow_add hx hy, sum_antidiagonal_eq_sum_range_succ_mk]
+
+/-- If two additive divided-power candidates on `I` agree on a generating set of `I`, then they
+are equal. -/
+theorem dpow_eq_from_gens (δ' : AdditivePowers I) {S : Set A} (hS : I = Ideal.span S)
+    (hdp : ∀ {n : ℕ}, ∀ a ∈ S, δ.dpow n a = δ'.dpow n a) : δ' = δ := by
+  suffices ∀ z ∈ Ideal.span S, ∀ n, δ.dpow n z = δ'.dpow n z by
+    ext n x hx
+    exact (this x (hS ▸ hx) n).symm
+  intro z hz
+  induction hz using Submodule.span_induction with
+  | mem s hs => exact fun n ↦ hdp s hs
+  | zero =>
+    intro n
+    rcases eq_or_ne n 0 with rfl | hn
+    · rw [δ.dpow_zero I.zero_mem, δ'.dpow_zero I.zero_mem]
+    · rw [δ.dpow_eval_zero hn, δ'.dpow_eval_zero hn]
+  | add x y hxS hyS ihx ihy =>
+    intro n
+    rw [δ.dpow_add (hS ▸ hxS) (hS ▸ hyS), δ'.dpow_add (hS ▸ hxS) (hS ▸ hyS)]
+    exact Finset.sum_congr rfl fun k _ ↦ by rw [ihx k.1, ihy k.2]
+  | smul a x hxS ihx =>
+    intro n
+    rw [smul_eq_mul, δ.dpow_mul (hS ▸ hxS), δ'.dpow_mul (hS ▸ hxS), ihx n]
 
 /-- At an element where the multiplication identity holds, a product of operations is a multinomial
 coefficient times one operation. -/
@@ -137,39 +185,6 @@ theorem pow_dpow {x : A} (hx : x ∈ I)
   have h := δ.prod_dpow hx hmul (s := range c) (n := fun _ ↦ j)
   rwa [prod_const, card_range, sum_const, card_range, smul_eq_mul] at h
 
-/-- Vandermonde's identity, summed over the pairs of decompositions of `m` and `n` adding up to a
-fixed decomposition `r` of `m + n`. -/
-private theorem sum_choose_mul_choose_filter {m n : ℕ} {r : ℕ × ℕ} (hr : r ∈ antidiagonal (m + n)) :
-    ∑ pq ∈ antidiagonal m ×ˢ antidiagonal n with pq.1 + pq.2 = r,
-      (pq.1.1 + pq.2.1).choose pq.1.1 * (pq.1.2 + pq.2.2).choose pq.1.2 = (m + n).choose m := by
-  rw [mem_antidiagonal] at hr
-  rw [← hr, Nat.add_choose_eq]
-  refine sum_bij_ne_zero (fun pq _ _ ↦ pq.1) ?_ ?_ ?_ ?_
-  · intro pq hpq _
-    simp only [mem_filter, mem_product] at hpq
-    exact hpq.1.1
-  · intro pq hpq _ pq' hpq' _ h
-    simp only [mem_filter, mem_product, mem_antidiagonal, Prod.ext_iff, Prod.fst_add,
-      Prod.snd_add] at hpq hpq' h ⊢
-    omega
-  · intro p hp hne
-    have h1 : p.1 ≤ r.1 := by
-      by_contra h
-      exact hne (by rw [choose_eq_zero_of_lt (n := r.1) (by omega), zero_mul])
-    have h2 : p.2 ≤ r.2 := by
-      by_contra h
-      exact hne (by rw [choose_eq_zero_of_lt (n := r.2) (by omega), mul_zero])
-    rw [mem_antidiagonal] at hp
-    refine ⟨(p, (r.1 - p.1, r.2 - p.2)), ?_, ?_, rfl⟩
-    · simp only [mem_filter, mem_product, mem_antidiagonal, Prod.ext_iff, Prod.fst_add,
-        Prod.snd_add]
-      omega
-    · dsimp only
-      rwa [Nat.add_sub_cancel' h1, Nat.add_sub_cancel' h2]
-  · intro pq hpq _
-    simp only [mem_filter] at hpq
-    rw [← hpq.2, Prod.fst_add, Prod.snd_add]
-
 /-- The multiplication identity `δₘ(z) δₙ(z) = (m + n).choose m * δₘ₊ₙ(z)` for all `m, n`, if it
 holds at `x` and at `y`, also holds at `x + y`. -/
 theorem mul_dpow_add {x y : A} (hx : x ∈ I) (hy : y ∈ I)
@@ -180,21 +195,26 @@ theorem mul_dpow_add {x y : A} (hx : x ∈ I) (hy : y ∈ I)
   have hL : δ.dpow m (x + y) * δ.dpow n (x + y) =
       ∑ pq ∈ antidiagonal m ×ˢ antidiagonal n,
         (((pq.1.1 + pq.2.1).choose pq.1.1 * (pq.1.2 + pq.2.2).choose pq.1.2 : ℕ) : A) *
-          F (pq.1 + pq.2) := by
+          F (pq.1.1 + pq.2.1, pq.1.2 + pq.2.2) := by
     rw [δ.dpow_add hx hy, δ.dpow_add hx hy, sum_mul_sum, ← sum_product']
     refine sum_congr rfl fun pq _ ↦ ?_
     calc _ = (δ.dpow pq.1.1 x * δ.dpow pq.2.1 x) * (δ.dpow pq.1.2 y * δ.dpow pq.2.2 y) := by
           ring
-      _ = _ := by simp only [F, hmx, hmy, Prod.fst_add, Prod.snd_add]; push_cast; ring
-  have hmaps : ∀ pq ∈ antidiagonal m ×ˢ antidiagonal n, pq.1 + pq.2 ∈ antidiagonal (m + n) := by
+      _ = _ := by simp only [F, hmx, hmy]; push_cast; ring
+  have hmaps : ∀ pq ∈ antidiagonal m ×ˢ antidiagonal n,
+      (pq.1.1 + pq.2.1, pq.1.2 + pq.2.2) ∈ antidiagonal (m + n) := by
     intro pq hpq
-    simp only [mem_product, mem_antidiagonal, Prod.fst_add, Prod.snd_add] at hpq ⊢
+    simp only [mem_product, mem_antidiagonal] at hpq ⊢
     omega
   rw [hL, ← sum_fiberwise_of_maps_to hmaps, δ.dpow_add hx hy, mul_sum]
   refine sum_congr rfl fun r hr ↦ ?_
-  rw [← sum_choose_mul_choose_filter hr, Nat.cast_sum, sum_mul]
+  rw [← Finset.sum_filter_antidiagonal_choose m n r.1 r.2 (mem_antidiagonal.mp hr), Nat.cast_sum,
+    sum_mul]
   refine sum_congr rfl fun pq hpq ↦ ?_
-  rw [(mem_filter.mp hpq).2]
+  have heq := (mem_filter.mp hpq).2
+  have h1 : pq.1.1 + pq.2.1 = r.1 := congrArg Prod.fst heq
+  have h2 : pq.1.2 + pq.2.2 = r.2 := congrArg Prod.snd heq
+  rw [h1, h2]
 
 /-! ### The iteration identity at a sum -/
 
@@ -259,8 +279,8 @@ private theorem dpow_dpow_add_eq_sum {x y : A} (hx : x ∈ I) (hy : y ∈ I)
       rw [δ.dpow_zero hx, one_mul, Nat.sub_zero]
       exact δ.dpow_mem hn hy
     · exact I.mul_mem_right _ (δ.dpow_mem hi hx)
-  rw [δ.dpow_add' hx hy, DividedPowers.dpow_sum' (I := I.toAddSubmonoid) δ.dpow δ.dpow_zero
-    δ.dpow_add δ.dpow_eval_zero hmem]
+  rw [δ.dpow_add' hx hy,
+    DividedPowers.dpow_sum' δ.dpow δ.dpow_zero δ.dpow_add δ.dpow_eval_zero hmem]
   have hterm : ∀ k ∈ (range (n + 1)).sym m,
       ∏ i ∈ range (n + 1), δ.dpow (Multiset.count i k) (δ.dpow i x * δ.dpow (n - i) y) =
         (symCoeff n k : A) * (δ.dpow (symWeight n k).1 x * δ.dpow (symWeight n k).2 y) := by
@@ -337,6 +357,40 @@ theorem dpow_comp_add {x y : A} (hx : x ∈ I) (hy : y ∈ I)
   rw [dpow_dpow_add_eq_sum hx hy hmx hmy hcx hcy m hn, δ.dpow_add hx hy, mul_sum]
   exact sum_congr rfl fun p hp ↦ by rw [compCoeff_eq_uniformBell m hn hp]
 
+/-- The multiplication identity holds automatically at `0`. -/
+theorem mul_dpow_zero (m n : ℕ) :
+    δ.dpow m 0 * δ.dpow n 0 = ((m + n).choose m : A) * δ.dpow (m + n) 0 := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp [δ.dpow_zero I.zero_mem]
+  · rw [δ.dpow_eval_zero hm, zero_mul, δ.dpow_eval_zero (by omega), mul_zero]
+
+/-- The multiplication identity is preserved under multiplication by any scalar `a : A`. -/
+theorem mul_dpow_mul {x : A} (hx : x ∈ I) (a : A) {m n : ℕ}
+    (h : δ.dpow m x * δ.dpow n x = ((m + n).choose m : A) * δ.dpow (m + n) x) :
+    δ.dpow m (a * x) * δ.dpow n (a * x) =
+      ((m + n).choose m : A) * δ.dpow (m + n) (a * x) := by
+  rw [δ.dpow_mul hx, δ.dpow_mul hx, δ.dpow_mul hx]
+  calc
+    a ^ m * δ.dpow m x * (a ^ n * δ.dpow n x)
+        = a ^ (m + n) * (δ.dpow m x * δ.dpow n x) := by rw [pow_add]; ring
+    _ = a ^ (m + n) * (((m + n).choose m : A) * δ.dpow (m + n) x) := by rw [h]
+    _ = ((m + n).choose m : A) * (a ^ (m + n) * δ.dpow (m + n) x) := by ring
+
+/-- The iteration identity holds automatically at `0`. -/
+theorem dpow_comp_zero (m : ℕ) {n : ℕ} (hn : n ≠ 0) :
+    δ.dpow m (δ.dpow n 0) = (uniformBell m n : A) * δ.dpow (m * n) 0 := by
+  rw [δ.dpow_eval_zero hn]
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp [δ.dpow_zero I.zero_mem, uniformBell_zero_left]
+  · rw [δ.dpow_eval_zero hm, δ.dpow_eval_zero (Nat.mul_ne_zero hm hn), mul_zero]
+
+/-- The iteration identity is preserved under multiplication by any scalar `a : A`. -/
+theorem dpow_comp_mul {x : A} (hx : x ∈ I) (a : A) {m n : ℕ} (hn : n ≠ 0)
+    (h : δ.dpow m (δ.dpow n x) = (uniformBell m n : A) * δ.dpow (m * n) x) :
+    δ.dpow m (δ.dpow n (a * x)) = (uniformBell m n : A) * δ.dpow (m * n) (a * x) := by
+  rw [δ.dpow_mul hx, δ.dpow_mul (δ.dpow_mem hn hx), h, δ.dpow_mul hx, ← pow_mul, mul_comm n m]
+  ring
+
 /-! ### Divided powers from identities on generators -/
 
 section Generators
@@ -344,7 +398,9 @@ section Generators
 variable {S : Set A} (hS : I = Ideal.span S)
 include hS
 
-private theorem mul_dpow_of_span
+/-- If the multiplication identity holds on a generating set `S` of `I`, then it holds on all of
+`I`. -/
+theorem mul_dpow_of_span
     (hmul : ∀ s ∈ S, ∀ m n, δ.dpow m s * δ.dpow n s = (m + n).choose m * δ.dpow (m + n) s)
     {x : A} (hx : x ∈ I) (m n : ℕ) :
     δ.dpow m x * δ.dpow n x = (m + n).choose m * δ.dpow (m + n) x := by
@@ -352,17 +408,13 @@ private theorem mul_dpow_of_span
   rw [hS] at hx
   induction hx using Submodule.span_induction generalizing m n with
   | mem s hs => exact hmul s hs m n
-  | zero =>
-    by_cases hm : m = 0
-    · simp [hm, δ.dpow_zero I.zero_mem]
-    · rw [δ.dpow_eval_zero hm, δ.dpow_eval_zero (n := m + n) (by omega), zero_mul, mul_zero]
+  | zero => exact δ.mul_dpow_zero m n
   | add x y hx hy ihx ihy => exact δ.mul_dpow_add (hI hx) (hI hy) ihx ihy m n
-  | smul a x hx ih =>
-    rw [smul_eq_mul, δ.dpow_mul (hI hx), δ.dpow_mul (hI hx), δ.dpow_mul (hI hx), pow_add,
-      mul_mul_mul_comm, ih m n]
-    ring
+  | smul a x hx ih => exact δ.mul_dpow_mul (hI hx) a (ih m n)
 
-private theorem dpow_comp_of_span
+/-- If the multiplication and iteration identities hold on a generating set `S` of `I`, then the
+iteration identity holds on all of `I`. -/
+theorem dpow_comp_of_span
     (hmul : ∀ s ∈ S, ∀ m n, δ.dpow m s * δ.dpow n s = (m + n).choose m * δ.dpow (m + n) s)
     (hcomp : ∀ s ∈ S, ∀ m n, n ≠ 0 →
       δ.dpow m (δ.dpow n s) = uniformBell m n * δ.dpow (m * n) s)
@@ -374,18 +426,11 @@ private theorem dpow_comp_of_span
   rw [hS] at hx
   induction hx using Submodule.span_induction generalizing m n with
   | mem s hs => exact hcomp s hs m n hn
-  | zero =>
-    rw [δ.dpow_eval_zero hn]
-    by_cases hm : m = 0
-    · simp [hm, δ.dpow_zero I.zero_mem, uniformBell_zero_left]
-    · rw [δ.dpow_eval_zero hm, δ.dpow_eval_zero (Nat.mul_ne_zero hm hn), mul_zero]
+  | zero => exact δ.dpow_comp_zero m hn
   | add x y hx hy ihx ihy =>
     exact δ.dpow_comp_add (hI hx) (hI hy) (hmul' x (hI hx)) (hmul' y (hI hy))
       (fun m n hn ↦ ihx m hn) (fun m n hn ↦ ihy m hn) m hn
-  | smul a x hx ih =>
-    rw [smul_eq_mul, δ.dpow_mul (hI hx), δ.dpow_mul (δ.dpow_mem hn (hI hx)), ih m hn,
-      δ.dpow_mul (hI hx), ← pow_mul, mul_comm n m]
-    ring
+  | smul a x hx ih => exact δ.dpow_comp_mul (hI hx) a hn (ih m hn)
 
 /-- The divided power structure on `I = span S` with the operations of an additive candidate `δ`
 satisfying the multiplication and iteration identities at every generator `s ∈ S`.
@@ -439,7 +484,127 @@ theorem toDividedPowers_generators {S' : Set A} (hS : I = Ideal.span S) (hS' : I
     δ.toDividedPowers hS hmul hcomp = δ.toDividedPowers hS' hmul' hcomp' :=
   DividedPowers.ext _ _ fun _ _ ↦ by simp
 
+omit hS in
+/-- Rebuilding a divided power structure from `ofDividedPowers γ` recovers `γ`. -/
+@[simp]
+theorem toDividedPowers_ofDividedPowers (γ : DividedPowers I) {S : Set A} (hS : I = Ideal.span S)
+    (hmul : ∀ s ∈ S, ∀ m n,
+      (ofDividedPowers γ).dpow m s * (ofDividedPowers γ).dpow n s =
+        ((m + n).choose m : A) * (ofDividedPowers γ).dpow (m + n) s)
+    (hcomp : ∀ s ∈ S, ∀ m n, n ≠ 0 →
+      (ofDividedPowers γ).dpow m ((ofDividedPowers γ).dpow n s) =
+        (uniformBell m n : A) * (ofDividedPowers γ).dpow (m * n) s) :
+    (ofDividedPowers γ).toDividedPowers hS hmul hcomp = γ :=
+  (toDividedPowers_unique _ hS hmul hcomp rfl).symm
+
 end Generators
+
+/-! ### Strictness of `AdditivePowers` -/
+
+private noncomputable def counterexampleDpow (n : ℕ)
+    (x : TrivSqZeroExt (ZMod 2) (ZMod 2)) : TrivSqZeroExt (ZMod 2) (ZMod 2) := by
+  classical
+  exact if x ∈ TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2) then
+    match n with
+    | 0 => 1
+    | 1 => x
+    | 3 => x
+    | _ => 0
+  else 0
+
+private lemma counterexampleDpow_mem {n : ℕ} (hn : n ≠ 0)
+    {x : TrivSqZeroExt (ZMod 2) (ZMod 2)}
+    (hx : x ∈ TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2)) :
+    counterexampleDpow n x ∈ TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2) := by
+  classical
+  match n with
+  | 0 => exact absurd rfl hn
+  | 1 | 2 | 3 | _ + 4 => simp [counterexampleDpow, hx]
+
+private noncomputable def counterexampleAdditivePowers :
+    AdditivePowers (TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2)) where
+  dpow := counterexampleDpow
+  dpow_null hx := by
+    classical
+    simp [counterexampleDpow, hx]
+  dpow_zero hx := by
+    classical
+    simp [counterexampleDpow, hx]
+  dpow_one hx := by
+    classical
+    simp [counterexampleDpow, hx]
+  dpow_mem hn hx := counterexampleDpow_mem hn hx
+  dpow_add {n x y} hx hy := by
+    classical
+    have hxy : x + y ∈ TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2) := Ideal.add_mem _ hx hy
+    match n with
+    | 0 => simp [counterexampleDpow, hx, hy, hxy]
+    | 1 =>
+      rw [Finset.Nat.sum_antidiagonal_succ]
+      simp [counterexampleDpow, hx, hy, hxy, add_comm]
+    | k + 2 =>
+      rw [Finset.Nat.sum_antidiagonal_succ, Finset.Nat.sum_antidiagonal_succ']
+      have hsq : TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2) *
+          TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2) = ⊥ := by
+        simpa [pow_two] using TrivSqZeroExt.kerIdeal_sq (ZMod 2) (ZMod 2)
+      have hmid : ∑ p ∈ antidiagonal k,
+          counterexampleDpow (p.1 + 1) x * counterexampleDpow (p.2 + 1) y = 0 :=
+        Finset.sum_eq_zero fun p _ ↦ Ideal.mem_bot.mp <| hsq ▸
+          Ideal.mul_mem_mul (counterexampleDpow_mem p.1.succ_ne_zero hx)
+            (counterexampleDpow_mem p.2.succ_ne_zero hy)
+      rw [hmid, add_zero]
+      match k with
+      | 0 | 1 => simp [counterexampleDpow, hx, hy, hxy, add_comm]
+      | _ + 2 => simp [counterexampleDpow, hx, hy, hxy]
+  dpow_mul {n a x} hx := by
+    classical
+    have hax : a * x ∈ TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2) := Ideal.mul_mem_left _ a hx
+    match n with
+    | 0 | 1 | 2 | _ + 4 => simp [counterexampleDpow, hx, hax]
+    | 3 =>
+      simp only [counterexampleDpow, hx, hax, ↓reduceIte]
+      rw [(TrivSqZeroExt.mem_kerIdeal_iff_inr (ZMod 2) (ZMod 2) x).mp hx]
+      have hcube : a.fst * a.fst * a.fst = a.fst := by
+        have : ∀ u : ZMod 2, u * u * u = u := by decide
+        exact this a.fst
+      ext
+      · simp
+      · simp [pow_succ, hcube]
+
+/-- Not every `AdditivePowers` structure underlies a `DividedPowers` structure: on the dual
+numbers `𝔽₂[ε]/(ε²)` with `I = (ε)`, the family `δ₀ = 1`, `δ₁ = δ₃ = id`, and `δₙ = 0` for
+`n = 2` and `n ≥ 4` satisfies all additive divided power axioms, yet fails `mul_dpow` at
+`m = 1, n = 2` because `δ₁(ε) * δ₂(ε) = 0 ≠ ε = 3 * δ₃(ε)`. -/
+theorem exists_not_dividedPowers :
+    ∃ δ : AdditivePowers (TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2)),
+      δ.dpow 1 (TrivSqZeroExt.inr 1) * δ.dpow 2 (TrivSqZeroExt.inr 1) ≠
+        (((1 + 2).choose 1 : ℕ) : TrivSqZeroExt (ZMod 2) (ZMod 2)) *
+          δ.dpow (1 + 2) (TrivSqZeroExt.inr 1) ∧
+      ∀ γ : DividedPowers (TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2)), γ.dpow ≠ δ.dpow := by
+  classical
+  let δ := counterexampleAdditivePowers
+  have hε : TrivSqZeroExt.inr (1 : ZMod 2) ∈ TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2) :=
+    (TrivSqZeroExt.mem_kerIdeal_iff_inr (ZMod 2) (ZMod 2) _).mpr rfl
+  -- Verify `mul_dpow` fails at `(m, n) = (1, 2)` on `ε = TrivSqZeroExt.inr 1`.
+  have hlhs : δ.dpow 1 (TrivSqZeroExt.inr 1) * δ.dpow 2 (TrivSqZeroExt.inr 1) = 0 := by
+    simp [δ, counterexampleAdditivePowers, counterexampleDpow, hε]
+  have hrhs : (((1 + 2).choose 1 : ℕ) : TrivSqZeroExt (ZMod 2) (ZMod 2)) *
+      δ.dpow (1 + 2) (TrivSqZeroExt.inr 1) = TrivSqZeroExt.inr 1 := by
+    simp only [δ, counterexampleAdditivePowers, counterexampleDpow, hε, ↓reduceIte]
+    have h3 : (((1 + 2).choose 1 : ℕ) : TrivSqZeroExt (ZMod 2) (ZMod 2)) = 1 := by
+      simp only [TrivSqZeroExt.ext_iff, TrivSqZeroExt.fst_natCast, TrivSqZeroExt.snd_natCast,
+        TrivSqZeroExt.fst_one, TrivSqZeroExt.snd_one, Nat.choose_one_right, and_true]
+      decide
+    rw [h3, one_mul]
+  have hne : δ.dpow 1 (TrivSqZeroExt.inr 1) * δ.dpow 2 (TrivSqZeroExt.inr 1) ≠
+      (((1 + 2).choose 1 : ℕ) : TrivSqZeroExt (ZMod 2) (ZMod 2)) *
+        δ.dpow (1 + 2) (TrivSqZeroExt.inr 1) := by
+    rw [hlhs, hrhs]
+    exact fun h01 ↦ zero_ne_one (congrArg TrivSqZeroExt.snd h01)
+  -- No `DividedPowers` structure can share `δ.dpow`, since it would satisfy `mul_dpow`.
+  refine ⟨δ, hne, fun γ hγ ↦ hne ?_⟩
+  have hmul := γ.mul_dpow (m := 1) (n := 2) hε
+  rwa [hγ] at hmul
 
 end AdditivePowers
 

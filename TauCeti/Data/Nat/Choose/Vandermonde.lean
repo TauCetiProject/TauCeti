@@ -34,6 +34,8 @@ aggregation property of the multivariate hypergeometric distribution.
 * `Finset.sum_filter_piAntidiag_prod_choose`: the same count with one coordinate prescribed.
 * `Finset.sum_filter_piAntidiag_prod_choose_fiberwise`: the same count with the totals over the
   fibres of a map prescribed.
+* `Finset.sum_filter_antidiagonal_choose`: Vandermonde's identity summed over pairs in
+  `antidiagonal m ×ˢ antidiagonal n` with fixed coordinatewise sum `(a, b)`.
 -/
 
 public section
@@ -141,5 +143,35 @@ theorem sum_filter_piAntidiag_prod_choose_fiberwise {κ : Type*} [Fintype ι] [F
   · intro k _
     rw [← prod_fiberwise univ f]
     exact prod_congr rfl fun j _ ↦ prod_congr rfl fun i hi ↦ by simp [(mem_filter.mp hi).2]
+
+/-- **Vandermonde's identity** filtered by coordinatewise sums: for `a + b = m + n`, summing
+`a.choose pq.1.1 * b.choose pq.1.2` over pairs `pq ∈ antidiagonal m ×ˢ antidiagonal n` whose
+coordinatewise sums equal `(a, b)` gives `(m + n).choose m`. -/
+theorem sum_filter_antidiagonal_choose (m n a b : ℕ) (hab : a + b = m + n) :
+    ∑ pq ∈ (antidiagonal m ×ˢ antidiagonal n).filter
+        (fun pq ↦ (pq.1.1 + pq.2.1, pq.1.2 + pq.2.2) = (a, b)),
+      a.choose pq.1.1 * b.choose pq.1.2 = (m + n).choose m := by
+  rw [← hab, Nat.add_choose_eq a b m]
+  refine Finset.sum_bij_ne_zero (fun pq _ _ ↦ pq.1) ?_ ?_ ?_ fun _ _ _ ↦ rfl
+  · intro pq hpq _
+    simp only [mem_filter, mem_product] at hpq
+    exact hpq.1.1
+  · rintro ⟨p₁, q₁⟩ hpq₁ _ ⟨p₂, q₂⟩ hpq₂ _ hEq
+    dsimp at hEq
+    subst hEq
+    simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq] at hpq₁ hpq₂
+    congr 1
+    ext <;> omega
+  · intro p hp hne
+    have hle : p.1 ≤ a ∧ p.2 ≤ b := by
+      by_contra h
+      rw [not_and_or, not_le, not_le] at h
+      rcases h with h1 | h2
+      · exact hne (by rw [Nat.choose_eq_zero_of_lt h1, zero_mul])
+      · exact hne (by rw [Nat.choose_eq_zero_of_lt h2, mul_zero])
+    rw [mem_antidiagonal] at hp
+    refine ⟨(p, (a - p.1, b - p.2)), ?_, hne, rfl⟩
+    simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq]
+    exact ⟨⟨hp, by omega⟩, by omega, by omega⟩
 
 end Finset
