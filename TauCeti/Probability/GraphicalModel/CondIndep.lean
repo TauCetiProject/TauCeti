@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fintype.Pi
+public import Mathlib.Logic.Function.DependsOn
 public import Mathlib.Basic.NNReal.Basic
 
 /-!
@@ -33,7 +34,8 @@ zero. The sets need not be disjoint, and `S = ∅` gives independence, scaled by
 
 * `TauCeti.GraphicalModel.margin_empty`, `TauCeti.GraphicalModel.margin_univ`: the margin on no
   variable is the total mass, and the margin on all variables is the law itself.
-* `TauCeti.GraphicalModel.margin_anti`: the margin decreases when the set of variables grows.
+* `TauCeti.GraphicalModel.margin_anti`: the margin does not increase when the set of variables
+  grows.
 * `TauCeti.GraphicalModel.condIndep_comm`: `A ⊥ B | S` if and only if `B ⊥ A | S`.
 * `TauCeti.GraphicalModel.condIndep_of_subset`: if `A ⊆ S`, then `A ⊥ B | S` for every `B`.
 * `TauCeti.GraphicalModel.condIndep_of_subsingleton`: variables with at most one value are
@@ -85,14 +87,13 @@ theorem margin_empty : margin p ∅ x = ∑ y, p y := by
 theorem margin_univ : margin p univ x = p x := by
   simp [margin_def, ← funext_iff, filter_eq']
 
-/-- The margin on `A` at `x` depends only on the values of `x` on `A`. -/
-theorem margin_congr {x' : ∀ v, X v} (h : ∀ v ∈ A, x v = x' v) :
-    margin p A x = margin p A x' := by
+/-- The margin on `A` depends only on the values of the configuration on `A`. -/
+theorem dependsOn_margin : DependsOn (margin p A) (A : Set V) := fun x x' h => by
   simp only [margin_def]
   congr 1
   exact filter_congr fun y _ => forall₂_congr fun v hv => by rw [h v hv]
 
-/-- The margin decreases when the set of variables grows. -/
+/-- The margin does not increase when the set of variables grows. -/
 theorem margin_anti (h : A ⊆ B) : margin p B x ≤ margin p A x :=
   sum_le_sum_of_subset (monotone_filter_right _ fun _ _ hy v hv => hy v (h hv))
 
