@@ -189,24 +189,6 @@ lemma isBounded_of_isZero (E : SpectralSequence C c r₀) (A : BidegreeAssignmen
   rw [isBounded_iff, isBoundedBelow_iff, isBoundedAbove_iff]
   exact ⟨fun _ ↦ ⟨0, fun pq _ _ ↦ h pq⟩, fun _ ↦ ⟨0, fun pq _ _ ↦ h pq⟩⟩
 
-/-- If total degree `n` has only finitely many nonzero first-page positions, then there is an upper
-bound `β` on their filtration degrees. -/
-lemma exists_bound_below_of_finite (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀)
-    (n : ℤ)
-    (hfin : Set.Finite {pq : κ | A.deg pq = n ∧ ¬ IsZero ((E.page r₀ le_rfl).X pq)}) :
-    ∃ β : ℤ,
-      ∀ pq : κ, A.deg pq = n → β ≤ A.fil pq → IsZero ((E.page r₀ le_rfl).X pq) :=
-  E.exists_isZero_page_of_le_fil_of_finite A le_rfl n hfin
-
-/-- If total degree `n` has only finitely many nonzero first-page positions, then there is a lower
-bound `α` on their filtration degrees. -/
-lemma exists_bound_above_of_finite (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀)
-    (n : ℤ)
-    (hfin : Set.Finite {pq : κ | A.deg pq = n ∧ ¬ IsZero ((E.page r₀ le_rfl).X pq)}) :
-    ∃ α : ℤ,
-      ∀ pq : κ, A.deg pq = n → A.fil pq ≤ α → IsZero ((E.page r₀ le_rfl).X pq) :=
-  E.exists_isZero_page_of_fil_le_of_finite A le_rfl n hfin
-
 /-- **Boundedness equals finiteness in each total degree** (Stacks Project, Tag 0BDV,
 Lemma 24.8 (3)). A spectral sequence is bounded with respect to `A` if and only if each total
 degree contains only finitely many positions where the first page is nonzero. -/
@@ -228,8 +210,8 @@ theorem isBounded_iff_finite_nonZero (E : SpectralSequence C c r₀)
     · intro pq₁ h₁ pq₂ h₂ hfil
       exact A.injective (Prod.ext hfil (h₁.1.trans h₂.1.symm))
   · intro hfin
-    exact ⟨fun n ↦ E.exists_bound_below_of_finite A n (hfin n),
-      fun n ↦ E.exists_bound_above_of_finite A n (hfin n)⟩
+    exact ⟨fun n ↦ E.exists_isZero_page_of_le_fil_of_finite A le_rfl n (hfin n),
+      fun n ↦ E.exists_isZero_page_of_fil_le_of_finite A le_rfl n (hfin n)⟩
 
 /-! ### Vanishing of leaving and entering differentials -/
 
@@ -292,8 +274,8 @@ theorem exists_pageXIso_of_finite (E : SpectralSequence C c r₀) (A : BidegreeA
     ∃ s : ℤ, ∃ hs : r₀ ≤ s,
       ∀ (r' : ℤ) (hsr' : s ≤ r'),
         Nonempty ((E.page r' (hs.trans hsr')).X pq ≅ (E.page s hs).X pq) := by
-  obtain ⟨β, hβ⟩ := E.exists_bound_below_of_finite A (A.deg pq + 1) hfin_succ
-  obtain ⟨α, hα⟩ := E.exists_bound_above_of_finite A (A.deg pq - 1) hfin_pred
+  obtain ⟨β, hβ⟩ := E.exists_isZero_page_of_le_fil_of_finite A le_rfl (A.deg pq + 1) hfin_succ
+  obtain ⟨α, hα⟩ := E.exists_isZero_page_of_fil_le_of_finite A le_rfl (A.deg pq - 1) hfin_pred
   refine ⟨max r₀ (max (β - A.fil pq + A.e) (A.fil pq - α + A.e)), le_max_left _ _,
     fun r' hsr' ↦ ?_⟩
   exact ⟨E.pageXIsoOfLEOfIsZero (le_max_left _ _)

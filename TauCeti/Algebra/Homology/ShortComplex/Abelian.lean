@@ -11,7 +11,7 @@ public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
 public import Mathlib.CategoryTheory.ObjectProperty.Kernels
 public import TauCeti.CategoryTheory.ObjectProperty.AdditiveFunction
 
-import Mathlib.CategoryTheory.Abelian.Exact
+import TauCeti.CategoryTheory.Exact.Abelian
 import TauCeti.CategoryTheory.ObjectProperty.Kernels
 
 /-!
@@ -97,17 +97,17 @@ theorem map_X₂_eq_add_image (S : ShortComplex C) (P : ObjectProperty C)
   have hCok : P (cokernel S.abelianImageToKernel) :=
     P.prop_cokernel S.abelianImageToKernel hImF hK
   -- Short exact sequence `0 ⟶ ker g ⟶ X₂ ⟶ coim g ⟶ 0`.
-  have hS₁ : (ShortComplex.mk (kernel.ι S.g) (cokernel.π (kernel.ι S.g))
-      (cokernel.condition _)).ShortExact :=
-    ShortExact.mk' (ShortComplex.exact_cokernel _) inferInstance inferInstance
   have h₁' : v S.X₂ = v (kernel S.g) + v (Abelian.coimage S.g) :=
-    hv.map_shortExact hS₁ hK h₂ hCoimG
+    hv.map_shortExact
+      ((TauCeti.ExactStructure.abelian_conflation _).mp
+        (TauCeti.ExactStructure.abelian_conflation_of_mono (kernel.ι S.g)))
+      hK h₂ hCoimG
   -- Short exact sequence `0 ⟶ im f ⟶ ker g ⟶ coker(im f ⟶ ker g) ⟶ 0`.
-  have hS₂ : (ShortComplex.mk S.abelianImageToKernel (cokernel.π S.abelianImageToKernel)
-      (cokernel.condition _)).ShortExact :=
-    ShortExact.mk' (ShortComplex.exact_cokernel _) inferInstance inferInstance
   have h₂' : v (kernel S.g) = v (Abelian.image S.f) + v (cokernel S.abelianImageToKernel) :=
-    hv.map_shortExact hS₂ hImF hK hCok
+    hv.map_shortExact
+      ((TauCeti.ExactStructure.abelian_conflation _).mp
+        (TauCeti.ExactStructure.abelian_conflation_of_mono S.abelianImageToKernel))
+      hImF hK hCok
   rw [h₁', h₂', P.map_eq_of_iso hv (Abelian.coimageIsoImage S.g) hCoimG,
     P.map_eq_of_iso hv S.cokernelAbelianImageToKernelIsoHomology hCok]
   abel
