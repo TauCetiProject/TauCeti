@@ -134,8 +134,6 @@ theorem eq_bot_of_lieSubalgebra_eq_top_of_geometricallyConnected
     (hK : geometricallyConnectedCommHopfAlgProperty k K) (I : HopfIdeal k K)
     (hI : I.lieSubalgebra (B := k) = ⊤) : I = ⊥ := by
   by_contra hne
-  let _ : Algebra.Smooth k K :=
-    (smoothCommHopfAlgProperty_iff K).mp (smoothCommHopfAlgProperty_of_charZero k K)
   let _ : Algebra.Smooth k (K ⧸ I.toIdeal) := (smoothCommHopfAlgProperty_iff _).mp
     (smoothCommHopfAlgProperty_of_charZero k (_root_.CommHopfAlgCat.of k (K ⧸ I.toIdeal)))
   have hlt := I.finrank_quotientLie_lt hK hne
