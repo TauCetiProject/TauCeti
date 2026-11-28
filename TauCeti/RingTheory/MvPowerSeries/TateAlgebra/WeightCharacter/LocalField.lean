@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.EmbeddingEval
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.WeightCharacter
+public import Mathlib.Analysis.Normed.Algebra.Ultra
+public import Mathlib.NumberTheory.Padics.PadicNumbers
+public import TauCeti.Analysis.Normed.Ring.Ultra
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.WeightCharacter.Basic
 
-import TauCeti.Analysis.Normed.Ring.UnitBall
-import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius
-import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 import Mathlib.Algebra.Order.Field.Pi
+import TauCeti.Analysis.Normed.Ring.UnitBall
+import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.EmbeddingEval
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius.Eval
 
 /-!
 # Uniqueness of local analytic weights
@@ -30,7 +33,7 @@ namespace TauCeti.MvPowerSeries.AnalyticWeight
 open _root_.MvPowerSeries
 
 variable {p : ℕ} [Fact p.Prime] {F K R : Type*}
-  [NormedField F] [IsUltrametricDist F] [NormedAlgebra ℚ_[p] F] [FiniteDimensional ℚ_[p] F]
+  [NormedField F] [NormedAlgebra ℚ_[p] F] [FiniteDimensional ℚ_[p] F]
   [NormedField K] [NormedAlgebra ℚ_[p] K]
   [NormedCommRing R] [NormedAlgebra K R] [NormOneClass R] [IsUltrametricDist R] [CompleteSpace R]
   [NormedSpace ℚ_[p] R] [IsScalarTower ℚ_[p] K R]
@@ -54,13 +57,14 @@ points of `R`. -/
 theorem coe_expansion_eq_of_char_eq [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < s i)]
     (σ : Fin k → F →ₐ[ℚ_[p]] K) (hσ : Function.Injective σ) (hk : Module.finrank ℚ_[p] F = k)
     {ι : Type*} {L : ι → Type*} [∀ j, NormedField (L j)] [∀ j, NormedAlgebra ℚ_[p] (L j)]
-    (φ : ∀ j, R →L[ℚ_[p]] L j) (hφ : ∀ a, (∀ j, φ j a = 0) → a = 0)
-    {κ : AnalyticWeight R (fun i ↦
-      (algebraMap K R).comp ((σ i).toRingHom.comp (Subring.unitClosedBall F).subtype)) r}
-    {κ' : AnalyticWeight R (fun i ↦
-      (algebraMap K R).comp ((σ i).toRingHom.comp (Subring.unitClosedBall F).subtype)) s}
-    (hchar : κ.char = κ'.char) :
-    (κ.expansion : MvPowerSeries (Fin k) R) = κ'.expansion := by
+    (φ : ∀ j, R →L[ℚ_[p]] L j) (hφ : ∀ a, (∀ j, φ j a = 0) → a = 0) :
+    letI : IsUltrametricDist F := .of_normedAlgebra ℚ_[p]
+    ∀ {κ : AnalyticWeight R (fun i ↦
+        (algebraMap K R).comp ((σ i).toRingHom.comp (Subring.unitClosedBall F).subtype)) r}
+      {κ' : AnalyticWeight R (fun i ↦
+        (algebraMap K R).comp ((σ i).toRingHom.comp (Subring.unitClosedBall F).subtype)) s},
+      κ.char = κ'.char → (κ.expansion : MvPowerSeries (Fin k) R) = κ'.expansion := by
+  intro κ κ' hchar
   obtain ⟨ε, hε, hε1, hεr, hεs⟩ := exists_common_radius (r := r) (s := s)
   let c : Fin k → ℝ := fun _ ↦ ε
   have hcr : c ≤ r := hεr
@@ -76,6 +80,7 @@ theorem coe_expansion_eq_of_char_eq [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < s 
   refine eq_zero_of_restrictedEval₂_algHom_eq_zero (r := c) (hr := fun _ ↦ ⟨hε⟩)
     σ hσ hk hε φ hφ (f - g) hbound ?_
   intro y hy
+  have : IsUltrametricDist F := .of_normedAlgebra ℚ_[p]
   let : CompleteSpace F := FiniteDimensional.completeSpace ℚ_[p] F
   let z : Subring.unitClosedBall F := ⟨y, Subring.mem_unitClosedBall.mpr (hy.trans hε1.le)⟩
   have hu : IsUnit (1 + z) := by
@@ -96,10 +101,12 @@ automorphy factor and slash action. -/
 theorem eq_of_char_eq [∀ i, Fact (0 < r i)] (σ : Fin k → F →ₐ[ℚ_[p]] K)
     (hσ : Function.Injective σ) (hk : Module.finrank ℚ_[p] F = k)
     {ι : Type*} {L : ι → Type*} [∀ j, NormedField (L j)] [∀ j, NormedAlgebra ℚ_[p] (L j)]
-    (φ : ∀ j, R →L[ℚ_[p]] L j) (hφ : ∀ a, (∀ j, φ j a = 0) → a = 0)
-    {κ κ' : AnalyticWeight R (fun i ↦
-      (algebraMap K R).comp ((σ i).toRingHom.comp (Subring.unitClosedBall F).subtype)) r}
-    (hchar : κ.char = κ'.char) : κ = κ' :=
-  AnalyticWeight.ext hchar (Subtype.ext (coe_expansion_eq_of_char_eq σ hσ hk φ hφ hchar))
+    (φ : ∀ j, R →L[ℚ_[p]] L j) (hφ : ∀ a, (∀ j, φ j a = 0) → a = 0) :
+    letI : IsUltrametricDist F := .of_normedAlgebra ℚ_[p]
+    ∀ {κ κ' : AnalyticWeight R (fun i ↦
+        (algebraMap K R).comp ((σ i).toRingHom.comp (Subring.unitClosedBall F).subtype)) r},
+      κ.char = κ'.char → κ = κ' := by
+  intro κ κ' hchar
+  exact AnalyticWeight.ext hchar (Subtype.ext (coe_expansion_eq_of_char_eq σ hσ hk φ hφ hchar))
 
 end TauCeti.MvPowerSeries.AnalyticWeight

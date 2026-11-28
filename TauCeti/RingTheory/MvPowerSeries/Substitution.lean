@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Matrix.Mul
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
 public import Mathlib.RingTheory.PowerSeries.Substitution
 -- Proof-only: coefficients of three-variable polynomials, and quotients by an ideal.
@@ -40,6 +41,7 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
 
 ## Main results
 
+* `MvPowerSeries.subst_matrix_mulVec` : substituting linear forms composes their matrices.
 * `MvPowerSeries.aeval_subst` : a continuous algebra homomorphism applied to a substitution is the
   evaluation at the substituted family.
 * `PowerSeries.aeval_subst` : the same for a substitution into a univariate series.
@@ -143,6 +145,27 @@ public section
 namespace MvPowerSeries
 
 open WithPiTopology
+
+open Matrix in
+/-- Substituting the rows of a compatible matrix into linear forms multiplies the matrices. -/
+theorem subst_matrix_mulVec {R ι κ τ : Type*} [CommRing R] [Fintype κ] [Fintype τ]
+    (A : Matrix ι κ R) (B : Matrix κ τ R) (i : ι) :
+    subst (B.map C *ᵥ X) ((A.map C *ᵥ X) i) = ((A * B).map C *ᵥ X) i := by
+  have hb : HasSubst (B.map C *ᵥ X) :=
+    hasSubst_of_constantCoeff_zero fun j ↦ by simp [mulVec, dotProduct]
+  rw [← coe_substAlgHom hb]
+  rw [← AlgHom.coe_toRingHom]
+  change (substAlgHom hb).toRingHom ((A.map C *ᵥ X) i) = _
+  rw [RingHom.map_mulVec]
+  have hA : (A.map C).map (substAlgHom hb).toRingHom = A.map C := by
+    ext j l
+    simp
+  have hX : (substAlgHom hb).toRingHom ∘ (X : κ → MvPowerSeries κ R) =
+      B.map (C (σ := τ)) *ᵥ X := by
+    funext j
+    simpa only [Function.comp_apply, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] using
+      substAlgHom_X hb j
+  rw [hA, hX, mulVec_mulVec, ← Matrix.map_mul]
 
 variable {σ τ : Type*}
 variable {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup R]

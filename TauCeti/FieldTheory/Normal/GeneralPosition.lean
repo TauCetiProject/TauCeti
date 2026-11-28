@@ -11,7 +11,7 @@ public import Mathlib.GroupTheory.GroupAction.MultipleTransitivity
 public import Mathlib.RingTheory.Trace.Basic
 import TauCeti.GroupTheory.GroupAction.MultipleTransitivity
 import TauCeti.LinearAlgebra.Matrix.Rank
-import TauCeti.RingTheory.Trace.EmbeddingsMatrix
+import TauCeti.RingTheory.Trace.EmbeddingsMatrix.Basic
 
 /-!
 # Conjugate linear forms in general position

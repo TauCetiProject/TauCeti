@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
 public import Mathlib.NumberTheory.NumberField.House
 import Mathlib.LinearAlgebra.Matrix.Bilinear
 import TauCeti.LinearAlgebra.Basis.Submodule
-import TauCeti.RingTheory.Trace.EmbeddingsMatrix
+import TauCeti.RingTheory.Trace.EmbeddingsMatrix.Basic
 
 /-!
 # Integer combinations of a rational basis and their conjugate configurations

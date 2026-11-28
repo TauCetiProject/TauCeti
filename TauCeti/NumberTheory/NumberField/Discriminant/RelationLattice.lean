@@ -10,7 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 public import TauCeti.LinearAlgebra.Basis.ToMatrix
 public import TauCeti.NumberTheory.Height.Arakelov.IntMatrix
 public import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
-public import TauCeti.RingTheory.Trace.EmbeddingsMatrix
+public import TauCeti.RingTheory.Trace.EmbeddingsMatrix.Basic
 
 /-!
 # The lattice of integer relations among algebraic integers

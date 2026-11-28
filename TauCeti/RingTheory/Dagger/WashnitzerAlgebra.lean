@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.RingTheory.PowerSeries.Restricted
 public import TauCeti.RingTheory.MvPowerSeries.Primitive.GaussNorm
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius.Basic
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Units
 
 import Mathlib.Analysis.Normed.Ring.Units

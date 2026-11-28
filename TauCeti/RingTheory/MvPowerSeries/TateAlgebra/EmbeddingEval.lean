@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Eval
 
+import Mathlib.Analysis.Normed.Algebra.Ultra
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.LinearSubst
-import TauCeti.Analysis.Normed.Algebra.EmbeddingsMatrix
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Eval
+import TauCeti.RingTheory.Trace.EmbeddingsMatrix.Normed
 
 /-!
 # Coefficient recovery in the coordinates of local field embeddings
@@ -35,18 +37,6 @@ open _root_.MvPowerSeries Matrix
 variable {K R : Type*} [NormedField K] [NormedCommRing R] [NormedAlgebra K R]
   [IsUltrametricDist R] [CompleteSpace R] {k : ℕ} {r : Fin k → ℝ}
 
-/-- Evaluation at a point over the scalar field is module-valued evaluation of the coefficient
-family. -/
-theorem restrictedEval₂_algebraMap_eq_familyEval (f : IsRestricted.subring (R := R) r)
-    (z : Fin k → K) (hz : ∀ i, ‖algebraMap K R (z i)‖ ≤ r i) :
-    restrictedEval₂ (RingHom.id R) (fun i ↦ algebraMap K R (z i)) (fun _ ↦ le_rfl) hz f =
-      familyEval z (fun d ↦ coeff d (f : MvPowerSeries (Fin k) R)) := by
-  rw [familyEval_def, ← (hasSum_restrictedEval₂ _ _ _ hz f).tsum_eq]
-  congr 1
-  funext d
-  rw [TauCeti.Huber.weightedEvalTerm_def, RingHom.id_apply, Algebra.smul_def, mul_comm]
-  simp [Finsupp.prod_fintype d (z · ^ ·) (fun _ ↦ pow_zero _)]
-
 variable {p : ℕ} [Fact p.Prime] {F : Type*} [NormedField F]
   [NormedAlgebra ℚ_[p] F] [NormedAlgebra ℚ_[p] K]
   [FiniteDimensional ℚ_[p] F] [NormedSpace ℚ_[p] R] [IsScalarTower ℚ_[p] K R]
@@ -54,8 +44,7 @@ variable {p : ℕ} [Fact p.Prime] {F : Type*} [NormedField F]
 /-- A restricted series over `R` is zero if its values in the coordinates of a full family
 of distinct embeddings of `F/ℚ_p` vanish on a positive-radius ball about zero in `F`.
 The bounded `ℚ_p`-linear maps `φ j : R → L j` must jointly separate the points of `R`. -/
-theorem eq_zero_of_restrictedEval₂_algHom_eq_zero [IsUltrametricDist F]
-    [NormOneClass R] [hr : ∀ i, Fact (0 < r i)]
+theorem eq_zero_of_restrictedEval₂_algHom_eq_zero [NormOneClass R] [hr : ∀ i, Fact (0 < r i)]
     (σ : Fin k → F →ₐ[ℚ_[p]] K) (hσ : Function.Injective σ)
     (hk : Module.finrank ℚ_[p] F = k) {ε : ℝ} (hε : 0 < ε)
     {ι : Type*} {L : ι → Type*} [∀ j, NormedField (L j)] [∀ j, NormedAlgebra ℚ_[p] (L j)]
@@ -67,16 +56,22 @@ theorem eq_zero_of_restrictedEval₂_algHom_eq_zero [IsUltrametricDist F]
         (fun _ ↦ le_rfl) (hbound y hy) f = 0) :
     f = 0 := by
   obtain ⟨b, hb, hu₀⟩ := exists_norm_lt_isUnit_embeddingsMatrix σ hσ hk hε
-  let A₀ : Matrix (Fin k) (Fin k) K := Matrix.of fun i j ↦ σ i (b j)
+  have : IsUltrametricDist F := .of_normedAlgebra ℚ_[p]
+  let : ∀ i, Fact (0 ≤ r i) := fun i ↦ ⟨(hr i).out.le⟩
+  let A₀ : Matrix (Fin k) (Fin k) K := ((Algebra.embeddingsMatrix ℚ_[p] K b).submatrix id σ)ᵀ
+  have hA₀ (i j : Fin k) : A₀ i j = σ i (b j) := by
+    simp only [A₀, transpose_apply, submatrix_apply, Algebra.embeddingsMatrix_apply, id_eq]
   let A : Matrix (Fin k) (Fin k) R := (algebraMap K R).mapMatrix A₀
   have hA : ∀ i j, ‖A i j‖ * (1 : ℝ) ≤ r i := by
-    simpa [A, A₀] using fun i j ↦ hbound (b j) (hb j).le i
-  have hu : IsUnit A := hu₀.map (algebraMap K R).mapMatrix
+    simpa [A, hA₀] using fun i j ↦ hbound (b j) (hb j).le i
+  have hu : IsUnit A := (A₀.isUnit_iff_isUnit_det.mpr (by
+    simpa only [A₀, det_transpose] using (isUnit_iff_isUnit_det _).mp hu₀)).map
+      (algebraMap K R).mapMatrix
   let g := restrictedLinearSubst A hA f
   have hg : g = 0 := by
     apply Subtype.ext
     ext d
-    have hgR := (isRestrictedFamily_coeff_iff (g : MvPowerSeries (Fin k) R)).mpr g.property
+    have hgR := (isRestrictedFamily_coeff_iff _).mpr (IsRestricted.mem_subring.mp g.property)
     suffices hzero : (fun d ↦ coeff d (g : MvPowerSeries (Fin k) R)) = 0 by
       simpa using congrFun hzero d
     refine hgR.eq_zero_of_familyEval_padicInt_eq_zero (K := K) φ hφ fun x ↦ ?_
@@ -89,17 +84,15 @@ theorem eq_zero_of_restrictedEval₂_algHom_eq_zero [IsUltrametricDist F]
         rw [norm_smul]
         exact (mul_le_of_le_one_left (norm_nonneg _) (PadicInt.norm_le_one (x j))).trans
           (hb j).le
-    have he : A *ᵥ (fun j ↦ algebraMap K R (z j)) = fun i ↦ algebraMap K R (σ i y) := by
+    have harg : A.map (RingHom.id R) *ᵥ (fun j ↦ algebraMap K R (z j)) =
+        fun i ↦ algebraMap K R (σ i y) := by
       funext i
-      simp [A, A₀, mulVec, dotProduct, y, z, Algebra.smul_def, mul_comm]
-    have hAz (i : Fin k) : ‖(A *ᵥ (fun j ↦ algebraMap K R (z j))) i‖ ≤ r i := by
-      rw [he]
-      exact hbound y hy i
-    rw [← restrictedEval₂_algebraMap_eq_familyEval g z hzR,
-      restrictedEval₂_restrictedLinearSubst A hA _ _ _ hAz]
-    revert hAz
-    rw [he]
-    exact fun _ ↦ h y hy
+      simp [A, hA₀, mulVec_apply_eq_sum, y, z, Algebra.smul_def, mul_comm]
+    rw [← restrictedEval₂_algebraMap_arg_eq_familyEval g z hzR]
+    dsimp only [g]
+    rw [restrictedEval₂_restrictedLinearSubst (RingHom.id R) A hA]
+    simp only [restrictedEval₂_apply, harg] at h ⊢
+    exact h y hy
   exact restrictedLinearSubst_injective A hA hu (by simpa [g] using hg)
 
 end TauCeti.MvPowerSeries

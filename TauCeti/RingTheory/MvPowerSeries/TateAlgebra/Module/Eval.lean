@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Strassmann
@@ -55,6 +56,8 @@ the finite set `𝔽_p`.
 
 ## Main results
 
+* `TauCeti.MvPowerSeries.restrictedEval₂_algebraMap_arg_eq_familyEval`: evaluation at the
+  image of a scalar-field point agrees with module-valued evaluation.
 * `TauCeti.MvPowerSeries.IsRestrictedFamily.hasSum_familyEval`: in the closed polydisc, the value
   is the sum of the convergent series `∑ₜ xᵗ • a t`.
 * `TauCeti.MvPowerSeries.norm_familyEval_le`: the value is bounded by any bound of the weighted
@@ -186,6 +189,27 @@ theorem IsRestrictedFamily.familyEval_convSMul [IsUltrametricDist K] [CompleteSp
   simp only [smul_eq_mul, mul_smul, smul_comm (p.2.prod (x · ^ ·))]
 
 end Eval
+
+section ScalarEval
+
+variable {R : Type*} [NormedField K] [NormedCommRing R] [NormedAlgebra K R]
+  [IsUltrametricDist R] [CompleteSpace R] {k : ℕ} {r : Fin k → ℝ}
+
+/-- Evaluation at a point over the scalar field is module-valued evaluation of the coefficient
+family. -/
+theorem restrictedEval₂_algebraMap_arg_eq_familyEval
+    (f : MvPowerSeries.IsRestricted.subring (R := R) r) (z : Fin k → K)
+    (hz : ∀ i, ‖algebraMap K R (z i)‖ ≤ r i) :
+    MvPowerSeries.restrictedEval₂ (RingHom.id R) (fun i ↦ algebraMap K R (z i))
+      (fun _ ↦ le_rfl) hz f =
+      familyEval z (fun d ↦ MvPowerSeries.coeff d (f : MvPowerSeries (Fin k) R)) := by
+  rw [familyEval_def, ← (MvPowerSeries.hasSum_restrictedEval₂ _ _ _ hz f).tsum_eq]
+  congr 1
+  funext d
+  rw [TauCeti.Huber.weightedEvalTerm_def, RingHom.id_apply, Algebra.smul_def, mul_comm]
+  simp [Finsupp.prod_fintype d (z · ^ ·) (fun _ ↦ pow_zero _)]
+
+end ScalarEval
 
 section Injective
 

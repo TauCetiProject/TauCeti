@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
 
 /-!
 # Restriction to smaller polyradii
@@ -63,16 +62,6 @@ noncomputable def restrictedRadiusHom :
 theorem coe_restrictedRadiusHom (f : IsRestricted.subring (R := R) s) :
     (restrictedRadiusHom hr hrs f : MvPowerSeries σ R) = f :=
   Subring.coe_inclusion _ f
-
-/-- Evaluating after restriction to smaller radii gives the original evaluation. -/
-theorem restrictedEval₂_restrictedRadiusHom {k : ℕ} {R S : Type*}
-    [NormedCommRing R] [IsUltrametricDist R] [NormedCommRing S] [IsUltrametricDist S]
-    [CompleteSpace S] {r s : Fin k → ℝ} (hr : ∀ i, 0 ≤ r i) (hrs : r ≤ s)
-    (φ : R →+* S) (a : Fin k → S) (hφ : ∀ x, ‖φ x‖ ≤ ‖x‖) (ha : ∀ i, ‖a i‖ ≤ r i)
-    (f : IsRestricted.subring (R := R) s) :
-    restrictedEval₂ φ a hφ ha (restrictedRadiusHom hr hrs f) =
-      restrictedEval₂ φ a hφ (fun i ↦ (ha i).trans (hrs i)) f := by
-  rw [restrictedEval₂_apply, restrictedEval₂_apply, coe_restrictedRadiusHom]
 
 /-- Radius restriction is injective. -/
 theorem restrictedRadiusHom_injective :

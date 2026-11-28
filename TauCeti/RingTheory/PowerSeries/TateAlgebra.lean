@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius.Basic
 
 /-!
 # Restricted power series as a normed ring

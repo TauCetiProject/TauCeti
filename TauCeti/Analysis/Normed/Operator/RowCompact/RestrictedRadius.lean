@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.RowCompact
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius.Basic
 import Mathlib.RingTheory.MvPowerSeries.Trunc
 import Mathlib.Topology.WithTopology
 import TauCeti.Analysis.SpecificLimits.MonomialWeight

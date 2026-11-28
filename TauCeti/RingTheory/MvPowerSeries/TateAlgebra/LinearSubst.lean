@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.AnalyticSubst
-public import Mathlib.Data.Matrix.Mul
+public import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
 # Linear substitutions of restricted power series
@@ -23,24 +23,6 @@ namespace TauCeti.MvPowerSeries
 
 open _root_.MvPowerSeries Matrix
 
-/-- Substituting the rows of a compatible matrix into linear forms multiplies the matrices. -/
-private theorem subst_matrix_mulVec {R ι κ τ : Type*} [CommRing R] [Fintype κ] [Fintype τ]
-    (A : Matrix ι κ R) (B : Matrix κ τ R) (i : ι) :
-    subst (B.map C *ᵥ X) ((A.map C *ᵥ X) i) = ((A * B).map C *ᵥ X) i := by
-  have hb : HasSubst (B.map C *ᵥ X) :=
-    hasSubst_of_constantCoeff_zero fun j ↦ by simp [mulVec, dotProduct]
-  rw [← coe_substAlgHom hb]
-  change (substAlgHom hb).toRingHom ((A.map C *ᵥ X) i) = _
-  rw [RingHom.map_mulVec]
-  have hA : (A.map C).map (substAlgHom hb).toRingHom = A.map C := by
-    ext j l
-    simp
-  have hX : (substAlgHom hb).toRingHom ∘ (X : κ → MvPowerSeries κ R) =
-      B.map (C (σ := τ)) *ᵥ X := by
-    funext j
-    exact substAlgHom_X hb j
-  rw [hA, hX, mulVec_mulVec, ← Matrix.map_mul]
-
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {k m : ℕ}
   {r : Fin k → ℝ} {s : Fin m → ℝ}
 
@@ -55,7 +37,7 @@ private theorem norm_polynomialToRestricted_sum_C_mul_X_le {a : Fin m → R} {ρ
   simpa [MvPolynomial.C_mul_X_eq_monomial, polynomialToRestricted_apply, MvPolynomial.coe_monomial,
     norm_monomial, Finsupp.prod_single_index] using ha j
 
-variable [CompleteSpace R] [∀ i, Fact (0 < r i)]
+variable [CompleteSpace R] [∀ i, Fact (0 ≤ r i)]
 
 /-- Pullback along the linear map `z ↦ A *ᵥ z` between closed polydiscs. -/
 noncomputable def restrictedLinearSubst (A : Matrix (Fin k) (Fin m) R)
@@ -63,7 +45,7 @@ noncomputable def restrictedLinearSubst (A : Matrix (Fin k) (Fin m) R)
     IsRestricted.subring (R := R) r →ₐ[R] IsRestricted.subring (R := R) s :=
   restrictedAnalyticSubst
     (fun i ↦ polynomialToRestricted s (∑ j, MvPolynomial.C (A i j) * MvPolynomial.X j))
-    (fun i ↦ norm_polynomialToRestricted_sum_C_mul_X_le (Fact.out : 0 < r i).le (hA i))
+    (fun i ↦ norm_polynomialToRestricted_sum_C_mul_X_le (Fact.out : 0 ≤ r i) (hA i))
 
 /-- Linear pullback sends each variable to the linear form in the corresponding matrix row. -/
 @[simp]
@@ -73,11 +55,14 @@ theorem restrictedLinearSubst_X (A : Matrix (Fin k) (Fin m) R)
       polynomialToRestricted s (∑ j, MvPolynomial.C (A i j) * MvPolynomial.X j) :=
   restrictedAnalyticSubst_X _ _ i
 
+omit [∀ i, Fact (0 ≤ r i)] in
 /-- Pullback along a bounded linear map does not increase Gauss norms. -/
-theorem norm_restrictedLinearSubst_le (A : Matrix (Fin k) (Fin m) R)
+theorem norm_restrictedLinearSubst_le [∀ i, Fact (0 < r i)] (A : Matrix (Fin k) (Fin m) R)
     (hA : ∀ i j, ‖A i j‖ * s j ≤ r i) (f : IsRestricted.subring (R := R) r) :
-    ‖restrictedLinearSubst A hA f‖ ≤ ‖f‖ :=
-  norm_restrictedAnalyticSubst_le _ _ f
+    letI : ∀ i, Fact (0 ≤ r i) := fun i ↦ ⟨(Fact.out : 0 < r i).le⟩
+    ‖restrictedLinearSubst A hA f‖ ≤ ‖f‖ := by
+  let : ∀ i, Fact (0 ≤ r i) := fun i ↦ ⟨(Fact.out : 0 < r i).le⟩
+  exact norm_restrictedAnalyticSubst_le _ _ f
 
 /-- Linear pullback agrees with formal substitution of the linear forms given by the rows. -/
 @[simp]
@@ -89,20 +74,54 @@ theorem coe_restrictedLinearSubst (A : Matrix (Fin k) (Fin m) R)
     (hasSubst_of_constantCoeff_zero (fun i ↦ by simp))]
   simp
 
-/-- Evaluating a linear pullback at `x` is evaluating the original series at `A *ᵥ x`. -/
-theorem restrictedEval₂_restrictedLinearSubst (A : Matrix (Fin k) (Fin m) R)
-    (hA : ∀ i j, ‖A i j‖ * s j ≤ r i) (x : Fin m → R) (hx : ∀ j, ‖x j‖ ≤ s j)
-    (f : IsRestricted.subring (R := R) r)
-    (hAx : ∀ i, ‖(A *ᵥ x) i‖ ≤ r i) :
-    restrictedEval₂ (RingHom.id R) x (fun _ ↦ le_rfl) hx (restrictedLinearSubst A hA f) =
-      restrictedEval₂ (RingHom.id R) (A *ᵥ x) (fun _ ↦ le_rfl) hAx f := by
-  have h : (fun i ↦ restrictedEval₂ (RingHom.id R) x (fun _ ↦ le_rfl) hx
-      (polynomialToRestricted s (∑ j, MvPolynomial.C (A i j) * MvPolynomial.X j))) = A *ᵥ x := by
+omit [IsUltrametricDist R] [∀ j, Fact (0 < s j)] [CompleteSpace R] in
+/-- The mapped matrix sends an `s`-bounded vector into the polydisc of radii `r`. -/
+theorem norm_map_mulVec_le {S : Type*} [NormedCommRing S] [IsUltrametricDist S]
+    (φ : R →+* S) (A : Matrix (Fin k) (Fin m) R)
+    (hA : ∀ i j, ‖A i j‖ * s j ≤ r i) (x : Fin m → S)
+    (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (hx : ∀ j, ‖x j‖ ≤ s j) (i : Fin k) :
+    ‖(A.map φ *ᵥ x) i‖ ≤ r i := by
+  rw [mulVec_apply_eq_sum]
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (Fact.out : 0 ≤ r i)
+    fun j _ ↦ ?_
+  exact (norm_mul_le _ _).trans <| (mul_le_mul (hφ _) (hx j)
+    (norm_nonneg _) (norm_nonneg _)).trans (hA i j)
+
+/-- Evaluating a linear pullback in a complete ultrametric ring is evaluating the original
+series at the image under the coefficient-mapped matrix. -/
+theorem restrictedEval₂_restrictedLinearSubst {S : Type*} [NormedCommRing S]
+    [IsUltrametricDist S] [CompleteSpace S] (φ : R →+* S)
+    (A : Matrix (Fin k) (Fin m) R) (hA : ∀ i j, ‖A i j‖ * s j ≤ r i) (x : Fin m → S)
+    (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (hx : ∀ j, ‖x j‖ ≤ s j)
+    (f : IsRestricted.subring (R := R) r) :
+    restrictedEval₂ φ x hφ hx (restrictedLinearSubst A hA f) =
+      restrictedEval₂ φ (A.map φ *ᵥ x) hφ (norm_map_mulVec_le φ A hA x hφ hx) f := by
+  let g : Fin k → IsRestricted.subring (R := R) s := fun i ↦
+    polynomialToRestricted s (∑ j, MvPolynomial.C (A i j) * MvPolynomial.X j)
+  have hg : ∀ i, ‖g i‖ ≤ r i := fun i ↦
+    norm_polynomialToRestricted_sum_C_mul_X_le (Fact.out : 0 ≤ r i) (hA i)
+  have h : (fun i ↦ restrictedEval₂ φ x hφ hx (g i)) = A.map φ *ᵥ x := by
     funext i
+    dsimp only [g]
     rw [polynomialToRestricted_apply, restrictedEval₂_polynomial]
-    simp [mulVec, dotProduct]
-  simp only [restrictedLinearSubst, restrictedEval₂_restrictedAnalyticSubst]
-  congr
+    have hp : (∑ j, MvPolynomial.C (A i j) * MvPolynomial.X j) =
+        ((A.map MvPolynomial.C *ᵥ MvPolynomial.X) i) := by
+      rw [mulVec_apply_eq_sum]
+      rfl
+    rw [hp]
+    change (MvPolynomial.eval₂Hom φ x) _ = _
+    rw [RingHom.map_mulVec]
+    simp [Function.comp_def]
+  have hs := (hasSum_restrictedAnalyticSubst g hg f).map (restrictedEval₂ φ x hφ hx)
+    (continuous_restrictedEval₂ φ x hφ hx)
+  have ht := hasSum_restrictedEval₂ φ (A.map φ *ᵥ x) hφ
+    (norm_map_mulVec_le φ A hA x hφ hx) f
+  apply HasSum.unique hs
+  convert ht using 1
+  funext t
+  rw [TauCeti.Huber.weightedEvalTerm_def]
+  simp only [Function.comp_apply, map_mul, map_prod, map_pow, restrictedEval₂_algebraMap,
+    congrFun h]
 
 /-- An invertible linear change of variables gives an injective pullback. Only the forward
 matrix needs to satisfy the radius bounds. -/
@@ -117,9 +136,13 @@ theorem restrictedLinearSubst_injective {s : Fin k → ℝ} [∀ i, Fact (0 < s 
   have hb : HasSubst b := hasSubst_of_constantCoeff_zero fun i ↦ by simp [b]
   have hcomp : (fun i ↦ subst b (a i)) = X := by
     funext i
-    change subst ((↑(u⁻¹) : Matrix (Fin k) (Fin k) R).map C *ᵥ X)
-      (((u : Matrix (Fin k) (Fin k) R).map C *ᵥ X) i) = X i
-    rw [subst_matrix_mulVec, u.mul_inv]
+    have ha' : a = (u : Matrix (Fin k) (Fin k) R).map C *ᵥ X := by
+      funext j
+      simp only [a, mulVec_apply_eq_sum, Matrix.map_apply]
+    have hb' : b = (↑(u⁻¹) : Matrix (Fin k) (Fin k) R).map C *ᵥ X := by
+      funext j
+      simp only [b, mulVec_apply_eq_sum, Matrix.map_apply]
+    rw [ha', hb', subst_matrix_mulVec, u.mul_inv]
     simp
   intro f g hfg
   apply Subtype.ext

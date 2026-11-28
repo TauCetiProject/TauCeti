@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-public import Mathlib.Data.Matrix.Basic
+public import TauCeti.RingTheory.Trace.EmbeddingsMatrix.Basic
 
 import Mathlib.LinearAlgebra.Basis.SMul
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
@@ -31,7 +31,8 @@ theorem exists_norm_lt_isUnit_embeddingsMatrix {F K Ω : Type*} [NontriviallyNor
     [NormedField K] [NormedAlgebra F K] [FiniteDimensional F K] [Field Ω] [Algebra F Ω]
     {k : ℕ} (σ : Fin k → K →ₐ[F] Ω) (hσ : Function.Injective σ)
     (hk : Module.finrank F K = k) {ε : ℝ} (hε : 0 < ε) :
-    ∃ b : Fin k → K, (∀ j, ‖b j‖ < ε) ∧ IsUnit (Matrix.of (fun i j ↦ σ i (b j))) := by
+    ∃ b : Fin k → K, (∀ j, ‖b j‖ < ε) ∧
+      IsUnit ((Algebra.embeddingsMatrix F Ω b).submatrix id σ) := by
   let b := Module.finBasisOfFinrankEq F K hk
   have h (j : Fin k) : ∃ c : F, 0 < ‖c‖ ∧ ‖c‖ * ‖b j‖ < ε := by
     have hpos : 0 < ‖b j‖ + 1 := by positivity
@@ -42,8 +43,15 @@ theorem exists_norm_lt_isUnit_embeddingsMatrix {F K Ω : Type*} [NontriviallyNor
   let e := b.unitsSMul (fun j ↦ Units.mk0 (c j) (norm_pos_iff.mp (hc j)))
   refine ⟨e, fun j ↦ ?_, ?_⟩
   · simpa [e, Module.Basis.unitsSMul_apply, Units.smul_def, norm_smul] using hc' j
-  · rw [← Matrix.linearIndependent_row_iff_isUnit]
+  · rw [← Matrix.linearIndependent_col_iff_isUnit]
     have h := (linearIndependent_algHom_toLinearMap F K Ω).comp σ hσ
+    have hcoord : ((Algebra.embeddingsMatrix F Ω (e : Fin k → K)).submatrix id σ).col =
+        (e.constr Ω).symm.toLinearMap ∘ (fun i ↦ (σ i).toLinearMap) := by
+      funext i j
+      simp only [Matrix.col_apply, Matrix.submatrix_apply, id_eq,
+        Algebra.embeddingsMatrix_apply, Function.comp_apply, LinearEquiv.coe_coe,
+        Module.Basis.constr_symm_apply, AlgHom.coe_toLinearMap]
+    rw [hcoord]
     exact h.map' (e.constr Ω).symm.toLinearMap
       (LinearMap.ker_eq_bot.mpr (e.constr Ω).symm.injective)
 
