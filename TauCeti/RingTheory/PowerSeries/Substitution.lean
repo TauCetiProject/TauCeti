@@ -17,6 +17,7 @@ public import TauCeti.RingTheory.PowerSeries.Jet
 import TauCeti.RingTheory.MvPowerSeries.Order
 -- Proof-only: algebra maps out of `R⟦X⟧` agree with `aeval` on polynomials.
 import TauCeti.RingTheory.PowerSeries.Evaluation
+import TauCeti.RingTheory.PowerSeries.Order
 import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 import Mathlib.RingTheory.PowerSeries.Inverse
 
@@ -68,8 +69,8 @@ of a completed group algebra attached to two topological generators.
 
 ## Main results
 
-* `PowerSeries.coeff_subst_eq_sum_range`: a finite coefficient formula when the inner series
-  has zero constant coefficient.
+* `PowerSeries.coeff_subst_eq_sum_range`, `PowerSeries.coeff_subst_eq_sum_range_of_lt`: finite
+  coefficient formulas when the inner series has zero constant coefficient.
 * `Continuous.powerSeries_subst`: substitution is jointly continuous in coefficientwise
   continuous families whose inner series have zero constant coefficient.
 * `PowerSeries.HasSubst.C`: a nilpotent constant can be substituted.
@@ -144,8 +145,17 @@ theorem coeff_subst_eq_sum_range {R S : Type*} [CommRing R] [CommRing S]
   rw [Function.mem_support] at hk
   simp only [Finset.coe_range, Set.mem_Iio]
   by_contra h
-  exact hk (by rw [coeff_of_lt_order _ ((Nat.cast_lt.mpr (by omega : n < k)).trans_le
-    (le_order_pow_of_constantCoeff_eq_zero k hg)), smul_zero])
+  exact hk (by rw [coeff_pow_eq_zero_of_lt hg (by omega : n < k), smul_zero])
+
+/-- When the inner series has zero constant coefficient, the coefficient of degree `n` of a
+substitution equals the finite sum over `Finset.range N` for any `N > n`. -/
+theorem coeff_subst_eq_sum_range_of_lt {R S : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] (f : R⟦X⟧) {g : S⟦X⟧} (hg : constantCoeff g = 0) {n N : ℕ} (hn : n < N) :
+    coeff n (f.subst g) = ∑ k ∈ Finset.range N, coeff k f • coeff n (g ^ k) := by
+  rw [coeff_subst_eq_sum_range f hg n]
+  refine Finset.sum_subset (Finset.range_subset_range.mpr hn) fun k _ hk ↦ ?_
+  rw [Finset.mem_range] at hk
+  rw [coeff_pow_eq_zero_of_lt hg (by omega : n < k), smul_zero]
 
 /-- When the inner series has zero constant coefficient, composing the truncation of the outer
 series below degree `M` with the truncation of the inner series below degree `N` computes the
@@ -162,8 +172,7 @@ theorem coeff_trunc_comp_trunc {R : Type*} [CommRing R] (f : R⟦X⟧) {g : R⟦
   simp only [Polynomial.coeff_C_mul, hpow, smul_eq_mul]
   -- The coefficient of `X ^ k` in `g ^ n` vanishes for `n > k`.
   refine (Finset.sum_subset (Finset.range_subset_range.mpr hM) fun n _ hn ↦ ?_).symm
-  rw [coeff_of_lt_order _ ((Nat.cast_lt.mpr (by grind : k < n)).trans_le
-    (le_order_pow_of_constantCoeff_eq_zero n hg)), mul_zero]
+  rw [coeff_pow_eq_zero_of_lt hg (by grind : k < n), mul_zero]
 
 /-- A nilpotent constant can be substituted into a power series. -/
 theorem HasSubst.C {R : Type*} [CommRing R] {x : R} (hx : IsNilpotent x) :

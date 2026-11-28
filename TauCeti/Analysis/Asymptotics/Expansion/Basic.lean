@@ -52,6 +52,8 @@ elimination lemmas `IsAsymptoticScale.isLittleO`, `HasAsymptoticExpansion.isBigO
   `t ^ (-w k)` into one at `0+` in the powers `t ^ w k`.
 * `Asymptotics.HasAsymptoticExpansion.isLittleO`: the remainder after `N + 1` terms is `o(φ N)`.
 * `Asymptotics.HasAsymptoticExpansion.unique`: uniqueness of the coefficients.
+* `Asymptotics.IsAsymptoticScale.hasAsymptoticExpansion_iff_tendsto`: ratio-limit
+  characterization when `φ n` is eventually nonzero.
 * `Asymptotics.isAsymptoticScale_pow`: the powers of a function tending to `0` form a scale.
 
 The definitions and proofs are adapted from the lean-DLMF project
@@ -353,5 +355,24 @@ theorem isAsymptoticScale_pow {w : α → 𝕜} (hw : Tendsto w l (𝓝 0)) :
   intro n
   have h := ((isLittleO_one_iff 𝕜).mpr hw).mul_isBigO (isBigO_refl (fun x => w x ^ n) l)
   simpa only [pow_succ, one_mul, mul_one, mul_comm] using h
+
+/-- Ratio-limit characterization of an asymptotic expansion when the scale functions are eventually
+nonzero along `l`. -/
+theorem IsAsymptoticScale.hasAsymptoticExpansion_iff_tendsto {a : ℕ → E} {f : α → E}
+    (hφ : IsAsymptoticScale l φ) (hne : ∀ n, ∀ᶠ x in l, φ n x ≠ 0) :
+    HasAsymptoticExpansion l φ a f ↔
+      ∀ n, Tendsto (fun x => (φ n x)⁻¹ • (f x - ∑ s ∈ range n, φ s x • a s))
+        l (𝓝 (a n)) := by
+  rw [hφ.hasAsymptoticExpansion_iff_isLittleO]
+  refine forall_congr' fun n => ?_
+  rw [← isLittleO_norm_left, ← isLittleO_norm_right,
+    isLittleO_iff_tendsto' ((hne n).mono fun x hx h => absurd (norm_eq_zero.mp h) hx)]
+  conv_rhs => rw [← tendsto_sub_nhds_zero_iff, tendsto_zero_iff_norm_tendsto_zero]
+  refine tendsto_congr' ((hne n).mono fun x hx => ?_)
+  dsimp only
+  have hrew : (φ n x)⁻¹ • (f x - ∑ s ∈ range n, φ s x • a s) - a n =
+      (φ n x)⁻¹ • (f x - ∑ s ∈ range (n + 1), φ s x • a s) := by
+    conv_rhs => rw [sum_range_succ, sub_add_eq_sub_sub, smul_sub, inv_smul_smul₀ hx]
+  rw [hrew, norm_smul, norm_inv, div_eq_inv_mul]
 
 end Asymptotics
