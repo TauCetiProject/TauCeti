@@ -92,7 +92,7 @@ theorem exists_notMem_and_pow_sub_smul_mul_eq_zero_of_isAlgClosed {K R ι : Type
 multiplication and `τ : S →ₗ[K] W` is a nonzero linear map, then `τ z ≠ 0` for some joint
 generalized eigenvector `z : S` of left multiplication by the `G a`. -/
 theorem exists_apply_ne_zero_and_pow_sub_smul_mul_eq_zero_of_isAlgClosed {K R W ι : Type*}
-    [Field K] [IsAlgClosed K] [Ring R] [Algebra K R] [AddCommGroup W] [Module K W]
+    [Field K] [IsAlgClosed K] [Ring R] [Algebra K R] [AddCommMonoid W] [Module K W]
     {S : Submodule K R} [FiniteDimensional K S] {G : ι → R}
     (hG_comm : Pairwise fun a a' ↦ Commute (G a) (G a'))
     (hG_maps : ∀ a : ι, ∀ z ∈ S, G a * z ∈ S) {τ : S →ₗ[K] W} (hτ : τ ≠ 0) :
