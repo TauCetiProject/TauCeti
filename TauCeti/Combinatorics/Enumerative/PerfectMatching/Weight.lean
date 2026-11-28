@@ -5,21 +5,30 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Enumerative.PerfectMatching
 public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import TauCeti.Combinatorics.Enumerative.PerfectMatching
+public import TauCeti.Order.Cover
 
 /-!
 # Weighted perfect matchings
 
 Assign a weight to each pair of positions and multiply the weights of the arcs of a perfect
 matching. A linear order chooses the smaller endpoint of each arc, so each arc contributes
-exactly once. For symmetric pair weights, adjoining an arc multiplies the weight by the weight
-of that pair. Consequently the sum over all perfect matchings expands by the partner of any
-chosen position.
+exactly once (`TauCeti.PerfectMatching.weight_eq_prod_lt`, accompanied by the general product
+decomposition `TauCeti.PerfectMatching.prod_eq_prod_lt`). For symmetric pair weights, adjoining an
+arc multiplies the weight by the weight of that pair. Consequently the sum over all perfect
+matchings expands by the partner of any chosen position.
+
+For skew-symmetric pair weights, orienting by the linear order tracks arc reversals: swapping a
+covering pair of unmatched elements preserves every arc orientation
+(`TauCeti.PerfectMatching.weight_congr_swap_of_ne`), swapping the two endpoints of an arc negates
+the weight (`TauCeti.PerfectMatching.weight_swap_of_apply_eq`), and an order-reversing bijection
+multiplies the weight by `(-1) ^ (card α / 2)`
+(`TauCeti.PerfectMatching.weight_congr_strictAnti_of_skew`).
 
 This is the combinatorial expansion used for sums of covariance products in Gaussian moment
-formulas. It uses the existing restriction, extension, and fiber equivalence of perfect matchings;
-no new encoding of pair partitions is introduced.
+formulas and for Pfaffian-signed matching weights. It uses the existing restriction, extension, and
+fiber equivalence of perfect matchings; no new encoding of pair partitions is introduced.
 -/
 
 public section
@@ -173,6 +182,43 @@ theorem weight_eq_mul_weight_restrict {a b : α} (D : PerfectMatching α)
   have h := weight_extend (hab ▸ D.apply_ne a).symm (D.restrict hab) w hw
   rwa [extend_restrict] at h
 
+/-- The weight of a perfect matching as a product indexed by the subtype of smaller arc
+endpoints. -/
+theorem weight_eq_prod_lt (D : PerfectMatching α) (w : α → α → R) :
+    D.weight w = ∏ x : {x : α // x < D.val x}, w x.val (D.val x.val) := by
+  rw [weight_def, ← prod_filter,
+    prod_subtype (p := fun x ↦ x < D.val x) (univ.filter fun x ↦ x < D.val x) (fun _ ↦ by simp)]
+
+/-- For a perfect matching on a finite linear order, a product over all points splits into a
+product of pairs indexed by the smaller endpoints of its arcs. -/
+theorem prod_eq_prod_lt (D : PerfectMatching α) (g : α → R) :
+    ∏ x : α, g x = ∏ x : {x : α // x < D.val x}, g x.val * g (D.val x.val) := by
+  let s : Finset α := univ.filter fun x ↦ x < D.val x
+  rw [← prod_mul_prod_compl s]
+  have hcompl : ∏ x ∈ sᶜ, g x = ∏ x ∈ s, g (D.val x) := by
+    refine prod_bij (fun x _ ↦ D.val x) (fun x hx ↦ ?_)
+      (fun _ _ _ _ h ↦ D.val.injective h) (fun y hy ↦ ?_) (fun x _ ↦ by rw [D.apply_apply])
+    · simp only [s, mem_compl, mem_filter, mem_univ, true_and, not_lt] at hx ⊢
+      rw [D.apply_apply]
+      exact lt_of_le_of_ne hx (D.apply_ne x)
+    · refine ⟨D.val y, ?_, D.apply_apply y⟩
+      simp only [s, mem_compl, mem_filter, mem_univ, true_and, not_lt] at hy ⊢
+      rw [D.apply_apply]
+      exact le_of_lt hy
+  rw [hcompl, ← prod_mul_distrib, prod_subtype (p := fun x ↦ x < D.val x) s (fun _ ↦ by simp [s])]
+
+/-- **Swapping a covering pair of unmatched elements preserves pair weights** without any symmetry
+assumption, because no arc reverses its endpoint order. -/
+theorem weight_congr_swap_of_ne (D : PerfectMatching α) {a b : α} (hab : a ⋖ b)
+    (h : D.val a ≠ b) (w : α → α → R) :
+    (congr (Equiv.swap a b) D).weight w =
+      D.weight (fun x y ↦ w (Equiv.swap a b x) (Equiv.swap a b y)) := by
+  refine weight_congr_equiv D (Equiv.swap a b) w fun x hx hrev ↦ ?_
+  exfalso
+  have h₁ : ¬(x = a ∧ D.val x = b) := fun ⟨hxa, hxb⟩ ↦ h (hxa ▸ hxb)
+  have h₂ : ¬(x = b ∧ D.val x = a) := fun ⟨hxb, hxa⟩ ↦ not_lt_of_gt hab.lt (hxb ▸ hxa ▸ hx)
+  exact not_lt_of_gt hrev ((hab.swap_lt_swap_iff_of_ne h₁ h₂).mpr hx)
+
 end Monoid
 
 /-- Relabeling positions preserves the sum of matching weights when weights are symmetric
@@ -237,5 +283,53 @@ theorem sum_weight_eq_sum_mul_sum_weight [CommSemiring R] (a : α) (w : α → �
   rcases lt_or_gt_of_ne b.property.symm with h | h
   · rw [min_eq_left h.le, max_eq_right h.le]
   · rw [min_eq_right h.le, max_eq_left h.le, hw b h]
+
+section Skew
+
+variable [CommRing R]
+
+/-- **Swapping the endpoints of an arc negates a skew-symmetric matching weight**: the arc
+`{a, b}` reverses orientation while every other arc is fixed. -/
+theorem weight_swap_of_apply_eq (D : PerfectMatching α) {a b : α} (h : D.val a = b)
+    {w : α → α → R} (hw : ∀ x y, w y x = -w x y) :
+    D.weight (fun x y ↦ w (Equiv.swap a b x) (Equiv.swap a b y)) = -D.weight w := by
+  rw [weight_eq_min_max_mul_weight_restrict D h, weight_eq_min_max_mul_weight_restrict D h]
+  have hpair :
+      w (Equiv.swap a b (min a b)) (Equiv.swap a b (max a b)) = -w (min a b) (max a b) := by
+    rcases lt_or_gt_of_ne (h ▸ D.apply_ne a).symm with hab | hba
+    · rw [min_eq_left hab.le, max_eq_right hab.le, Equiv.swap_apply_left, Equiv.swap_apply_right,
+        hw]
+    · rw [min_eq_right hba.le, max_eq_left hba.le, Equiv.swap_apply_right, Equiv.swap_apply_left,
+        hw]
+  have hrest :
+      (D.restrict h).weight (fun x y ↦ w (Equiv.swap a b x.val) (Equiv.swap a b y.val)) =
+        (D.restrict h).weight (fun x y ↦ w x.val y.val) := by
+    refine weight_congr _ fun x _ ↦ ?_
+    rw [Equiv.swap_apply_of_ne_of_ne x.property.1 x.property.2,
+      Equiv.swap_apply_of_ne_of_ne ((D.restrict h).val x).property.1
+        ((D.restrict h).val x).property.2]
+  rw [hpair, hrest, neg_mul]
+
+/-- **Order reversal multiplies a skew-symmetric matching weight by `(-1) ^ (card α / 2)`**:
+every one of the `card α / 2` arcs reverses its endpoint order. -/
+theorem weight_congr_strictAnti_of_skew {β : Type*} [Fintype β] [LinearOrder β]
+    (D : PerfectMatching α) (e : α ≃ β) (he : StrictAnti e)
+    {w : β → β → R} (hw : ∀ x y, w y x = -w x y) :
+    (congr e D).weight w =
+      (-1 : R) ^ (Fintype.card α / 2) * D.weight (fun x y ↦ w (e x) (e y)) := by
+  have hcongr : (congr e D).weight w = D.weight (fun x y ↦ (-1 : R) * w (e x) (e y)) := by
+    simp only [weight_def]
+    symm
+    refine Fintype.prod_bijective (fun x ↦ e (D.val x)) (e.bijective.comp D.val.bijective) _ _
+      fun x ↦ ?_
+    simp only [congr_val_apply, Equiv.symm_apply_apply, D.apply_apply]
+    rcases lt_or_gt_of_ne (D.apply_ne x).symm with hx | hx
+    · have he' : e (D.val x) < e x := he hx
+      simp only [hx, he', ite_true, hw (e x) (e (D.val x)), neg_one_mul]
+    · have he' : ¬e (D.val x) < e x := not_lt_of_gt (he hx)
+      simp only [not_lt_of_gt hx, he', ite_false]
+  rw [hcongr, weight_mul, weight_const]
+
+end Skew
 
 end TauCeti.PerfectMatching

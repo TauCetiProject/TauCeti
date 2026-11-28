@@ -437,6 +437,20 @@ theorem congr_symm (e : α ≃ β) : (congr e).symm = congr e.symm :=
   Equiv.ext fun D => by
     rw [Equiv.symm_apply_eq, congr_trans, Equiv.symm_trans_self, congr_refl]
 
+/-- Swapping the two endpoints of an arc leaves a perfect matching unchanged. -/
+theorem congr_swap_of_apply_eq [DecidableEq α] (D : PerfectMatching α) {a b : α}
+    (h : D.val a = b) : congr (Equiv.swap a b) D = D := by
+  refine PerfectMatching.ext fun x => ?_
+  rw [congr_val_apply, Equiv.symm_swap]
+  by_cases hxa : x = a
+  · subst hxa
+    rw [Equiv.swap_apply_left, D.apply_eq_of_apply_eq h, Equiv.swap_apply_left, h]
+  by_cases hxb : x = b
+  · subst hxb
+    rw [Equiv.swap_apply_right, h, Equiv.swap_apply_right, D.apply_eq_of_apply_eq h]
+  have ⟨hxna, hxnb⟩ := (D.apply_ne_and_ne_iff h x).mpr ⟨hxa, hxb⟩
+  rw [Equiv.swap_apply_of_ne_of_ne hxa hxb, Equiv.swap_apply_of_ne_of_ne hxna hxnb]
+
 /-- A perfect matching of `α ⊕ β` containing every arc of a permutation `X` of `α` is
 `Equiv.Perm.sumCongr X π` for a perfect matching `π` of `β`. This is a converse to
 `TauCeti.PerfectMatching.restrictInl`. -/
@@ -543,14 +557,7 @@ omit hba in
 /-- Reconnecting an endpoint with itself leaves the matching unchanged. -/
 @[simp]
 theorem reconnect_self (D : PerfectMatching α) (a : α) : D.reconnect a a = D := by
-  refine Subtype.ext (Equiv.ext fun x => ?_)
-  by_cases hxa : x = a
-  · subst x
-    simp [reconnect_val]
-  by_cases hxa' : x = D.val a
-  · subst x
-    simp [reconnect_val]
-  exact reconnect_val_of_ne hxa hxa hxa' hxa'
+  rw [reconnect_def, Equiv.swap_comm, congr_swap_of_apply_eq D rfl]
 
 omit hba in
 /-- Joining `a` back to its old partner undoes the reconnection of `a` with `b`. -/
