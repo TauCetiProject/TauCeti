@@ -176,4 +176,22 @@ theorem abelianEquiv_symm_zero [EnoughProjectives C] :
 
 end Ext1
 
+section OfShortExact
+
+variable {D : Type*} [Category* D] [Abelian D]
+
+/-- The extension of the abelian exact structure carried by a short exact short complex. The
+body is exposed so that its middle term and maps reduce to those of the complex. -/
+@[expose] def Extension.ofShortExact (S : ShortComplex D) (hS : S.ShortExact) :
+    (ExactStructure.abelian D).Extension S.X₃ S.X₁ :=
+  ⟨S.X₂, S.f, S.g, S.zero, (abelian_conflation _).mpr hS⟩
+
+/-- The short complex underlying `Extension.ofShortExact S hS` is `S`. -/
+@[simp]
+theorem Extension.ofShortExact_shortComplex (S : ShortComplex D) (hS : S.ShortExact) :
+    (Extension.ofShortExact S hS).shortComplex = S :=
+  rfl
+
+end OfShortExact
+
 end TauCeti.ExactStructure

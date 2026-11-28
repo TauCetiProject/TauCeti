@@ -13,6 +13,7 @@ import TauCeti.Algebra.Module.LinearMap.FiniteLength
 import Mathlib.Algebra.Category.ModuleCat.Projective
 import TauCeti.Algebra.Category.ModuleCat.Quotient
 import TauCeti.Algebra.Module.Projective.FinitePresentation
+import TauCeti.CategoryTheory.Exact.YonedaExt.Abelian
 import TauCeti.CategoryTheory.Exact.YonedaExt.Projective
 import TauCeti.RingTheory.Artinian.FiniteLength
 
@@ -66,9 +67,9 @@ theorem isFiniteLength_ext1_cokernel (f : P₁ →ₗ[A] P₀) {N : ModuleCat.{t
       (ModuleCat.of A (P₀ ⧸ range f)) N) := by
   let S := (range f).quotientShortComplex
   let e : (ExactStructure.abelian (ModuleCat.{t} A)).Extension S.X₃ S.X₁ :=
-    ⟨S.X₂, S.f, S.g, S.zero, (abelian_conflation _).mpr (range f).shortExact_quotientShortComplex⟩
+    Extension.ofShortExact S (range f).shortExact_quotientShortComplex
   have hP : (ExactStructure.abelian _).isProjective e.obj :=
-    (abelian_isProjective_iff _).mpr (ModuleCat.projective_of_categoryTheory_projective _)
+    (abelian_isProjective_iff _).mpr (ModuleCat.projective_of_categoryTheory_projective S.X₂)
   -- `Hom_A(range f, N)` embeds in `Hom_A(P₁, N)`.
   let ι : (S.X₁ ⟶ N) →ₗ[R] (P₁ →ₗ[A] N) :=
     f.rangeRestrict.lcomp R N ∘ₗ (ModuleCat.homLinearEquiv (S := R)).toLinearMap

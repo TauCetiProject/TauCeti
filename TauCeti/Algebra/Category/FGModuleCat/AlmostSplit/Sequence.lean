@@ -164,15 +164,15 @@ almost-split sequence of `FGModuleCat A` whose left-hand end is the translate `�
 of `E` follows from `hE`; it is assumed so that `τ M` is an object of `FGModuleCat A`. -/
 theorem exists_isAlmostSplit_arTranslate (M : FGModuleCat.{max u v w} A)
     (hM : Indecomposable M) (hP : ¬ Projective M) :
-    ∃ S : ShortComplex (FGModuleCat.{max u v w} A), S.IsAlmostSplit ∧
-      Nonempty (S.X₁ ≅ arTranslate R E M) ∧ Nonempty (S.X₃ ≅ M) := by
+    ∃ (Y : FGModuleCat.{max u v w} A) (i : arTranslate R E M ⟶ Y) (p : Y ⟶ M) (h : i ≫ p = 0),
+      (ShortComplex.mk i p h).IsAlmostSplit := by
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
   obtain ⟨Y, i, p, h, hY, hS⟩ := ModuleCat.exists_isAlmostSplit_arTranslate R E hE M.obj
     ((indecomposable_obj_iff M).mpr hM) ((projective_obj_iff M).not.mpr hP)
   obtain ⟨i', p', h', hS', -⟩ := (ObjectProperty.ι _).exists_isAlmostSplit_of_obj_iso hS
     (X₁ := arTranslate R E M) (X₂ := ⟨Y, (ModuleCat.isFG_iff _).mpr hY⟩) (X₃ := M)
     (Iso.refl _) (Iso.refl _) (Iso.refl _)
-  exact ⟨ShortComplex.mk i' p' h', hS', ⟨Iso.refl _⟩, ⟨Iso.refl _⟩⟩
+  exact ⟨_, i', p', h', hS'⟩
 
 /-- **The Auslander–Reiten theorem in `FGModuleCat`, existence on the left.** Over an Artin
 algebra, a finitely generated indecomposable module `N` that is not injective in `FGModuleCat A`
@@ -186,13 +186,14 @@ theorem exists_isAlmostSplit_arInverseTranslate (N : FGModuleCat.{max u v w} A)
   have hN' : Indecomposable N.obj := (indecomposable_obj_iff N).mpr hN
   have hI' : ¬ Injective N.obj := (injective_obj_iff N).not.mpr hI
   let M := arInverseTranslate R E N
-  obtain ⟨S, hS, ⟨e₁⟩, ⟨e₃⟩⟩ := exists_isAlmostSplit_arTranslate R E hE M
+  obtain ⟨Y, i, p, h, hS⟩ := exists_isAlmostSplit_arTranslate R E hE M
     ((indecomposable_obj_iff M).mp
       ((ModuleCat.indecomposable_arInverseTranslate_iff hE N.obj hN').mpr hI'))
     ((projective_obj_iff M).not.mp
       ((ModuleCat.projective_arInverseTranslate_iff hE N.obj).not.mpr hI'))
   obtain ⟨f⟩ := ModuleCat.nonempty_iso_arTranslate_arInverseTranslate hE N.obj hN' hI'
-  exact ⟨S, hS, ⟨e₁ ≪≫ (ObjectProperty.fullyFaithfulι _).preimageIso f⟩, ⟨e₃⟩⟩
+  exact ⟨ShortComplex.mk i p h, hS, ⟨(ObjectProperty.fullyFaithfulι _).preimageIso f⟩,
+    ⟨Iso.refl _⟩⟩
 
 end Translate
 
