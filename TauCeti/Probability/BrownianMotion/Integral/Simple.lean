@@ -168,15 +168,13 @@ theorem norm_le (m j : ℕ) (hj : j < h.n m) (ω : Ω) : ‖h.a m j ω‖ ≤ h.
 /-- The canonical total-index `Finance.simpleHolding` equals `(h.elem m).toProcess`. -/
 theorem simpleHolding_eq_toProcess (m : ℕ) :
     Finance.simpleHolding (h.τ m) (h.n m) (h.a m) = (h.elem m).toProcess := by
-  rw [show h.τ m = (h.elem m).dates from funext (h.tau_def m),
-    show h.a m = (h.elem m).positions from funext (h.a_def m), h.n_eq m]
+  rw [funext (h.tau_def m), funext (h.a_def m), h.n_eq m]
   exact (h.elem m).simpleHolding_dates_positions
 
 /-- The canonical total-index `Finance.simpleGains` equals `(h.elem m).integral W`. -/
 theorem simpleGains_eq_integral (m : ℕ) :
     Finance.simpleGains (h.τ m) (h.n m) (h.a m) W = (h.elem m).integral W := by
-  rw [show h.τ m = (h.elem m).dates from funext (h.tau_def m),
-    show h.a m = (h.elem m).positions from funext (h.a_def m), h.n_eq m]
+  rw [funext (h.tau_def m), funext (h.a_def m), h.n_eq m]
   exact (h.elem m).simpleGains_dates_positions W
 
 /-- The approximating simple holdings converge to `H` in square energy in probability on
