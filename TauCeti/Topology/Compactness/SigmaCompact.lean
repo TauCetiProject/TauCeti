@@ -7,18 +7,30 @@ module
 
 public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.Compactness.SigmaCompact
+public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Topology.Sets.Opens
+import TauCeti.Data.Set.Image
+import TauCeti.Topology.Compactness.Compact
+import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
-# Compact exhaustions of open sets
+# Compact exhaustions
 
-A sigma-compact open subset of a locally compact space has a monotone sequence of compact
-subsets that exhausts it in the sense that every compact subset lies in one of them
-(`IsOpen.exists_monotone_isCompact_subset_forall_isCompact_subset_exists_subset`).
+This file provides general constructions and lemmas for `CompactExhaustion` and compact exhaustions
+of open sets:
 
-Conversely, compact subsets `Kₙ ⊆ U` of the ambient space with `Kₙ ⊆ interior Kₙ₊₁` that cover
-a subset `U` trace a compact exhaustion of the subspace `U` (`CompactExhaustion.subtype`); such
-a `U` is open (`TauCeti.isOpen_of_subset_interior_succ`).
+* `IsOpen.exists_monotone_isCompact_subset_forall_isCompact_subset_exists_subset`: a sigma-compact
+  open subset of a locally compact space has a monotone sequence of compact subsets exhausting it.
+* `CompactExhaustion.unionImage`: enlarging a compact exhaustion by the images of a compact
+  exhaustion along a continuous open map.
+* `CompactExhaustion.preimage`: pulling back a compact exhaustion along a proper map.
+* `CompactExhaustion.closure_image_subset_range` and
+  `CompactExhaustion.closure_image_subset_range_of_cartesian`: in a Hausdorff codomain, the
+  closure of the image of each stage of a compact exhaustion lies in the range of a continuous map,
+  and its Cartesian-square stability along a proper map.
+* `CompactExhaustion.subtype` and `TauCeti.isOpen_of_subset_interior_succ`: conversely, compact
+  subsets `Kₙ ⊆ U` of the ambient space with `Kₙ ⊆ interior Kₙ₊₁` that cover a subset `U` trace
+  a compact exhaustion of the subspace `U`, and such a `U` is open.
 
 In an R₁ space, a locally compact σ-compact open set is the union of an increasing sequence of
 open sets with compact closures inside it (`IsOpen.exists_iUnion_isOpen_isCompact_closure`).
@@ -91,6 +103,74 @@ end TauCeti
 
 namespace CompactExhaustion
 
+/-- Enlarging a compact exhaustion of `V` by the images of a compact exhaustion of `W` along a
+continuous open map `i : W → V` yields a compact exhaustion of `V`. -/
+def unionImage {W V : Type*} [TopologicalSpace W] [TopologicalSpace V]
+    (K : CompactExhaustion V) (L : CompactExhaustion W) {i : W → V}
+    (hi_cont : Continuous i) (hi_open : IsOpenMap i) : CompactExhaustion V where
+  toFun n := K n ∪ i '' L n
+  isCompact' n := (K.isCompact n).union ((L.isCompact n).image hi_cont)
+  subset_interior_succ' n := by
+    refine Set.union_subset
+      ((K.subset_interior_succ n).trans (interior_mono Set.subset_union_left)) ?_
+    calc i '' L n ⊆ i '' interior (L (n + 1)) := Set.image_mono (L.subset_interior_succ n)
+      _ ⊆ interior (i '' L (n + 1)) := hi_open.image_interior_subset _
+      _ ⊆ interior (K (n + 1) ∪ i '' L (n + 1)) := interior_mono Set.subset_union_right
+  iUnion_eq' := by
+    rw [Set.iUnion_union_distrib, K.iUnion_eq, Set.univ_union]
+
+@[simp]
+lemma unionImage_apply {W V : Type*} [TopologicalSpace W] [TopologicalSpace V]
+    (K : CompactExhaustion V) (L : CompactExhaustion W) {i : W → V}
+    (hi_cont : Continuous i) (hi_open : IsOpenMap i) (n : ℕ) :
+    (K.unionImage L hi_cont hi_open) n = K n ∪ i '' L n :=
+  (rfl)
+
+/-- Pulling back a compact exhaustion along a proper continuous map yields a compact exhaustion. -/
+def preimage {U V : Type*} [TopologicalSpace U] [TopologicalSpace V]
+    (K : CompactExhaustion V) {f : U → V} (hf : IsProperMap f) : CompactExhaustion U where
+  toFun n := f ⁻¹' K n
+  isCompact' n := hf.isCompact_preimage (K.isCompact n)
+  subset_interior_succ' n :=
+    (Set.preimage_mono (K.subset_interior_succ n)).trans
+      (preimage_interior_subset_interior_preimage hf.continuous)
+  iUnion_eq' := by
+    rw [← Set.preimage_iUnion, K.iUnion_eq, Set.preimage_univ]
+
+@[simp]
+lemma preimage_apply {U V : Type*} [TopologicalSpace U] [TopologicalSpace V]
+    (K : CompactExhaustion V) {f : U → V} (hf : IsProperMap f) (n : ℕ) :
+    K.preimage hf n = f ⁻¹' K n :=
+  (rfl)
+
+/-- In a Hausdorff codomain, the closure of the image of every stage of a compact exhaustion lies
+in the range of a continuous map. -/
+theorem closure_image_subset_range {V X : Type*} [TopologicalSpace V] [TopologicalSpace X]
+    [T2Space X] (K : CompactExhaustion V) {f : V → X} (hf : Continuous f) (n : ℕ) :
+    closure (f '' K n) ⊆ Set.range f :=
+  (K.isCompact n).closure_image_subset_range hf.continuousOn
+
+/-- In a Cartesian square `f ∘ i = j ∘ f'` with `f` proper and `i, j` embeddings
+(`Set.range i = f ⁻¹' Set.range j`), any compact exhaustion `KU` of `U` satisfies
+`closure (i '' KU n) ⊆ Set.range i` whenever a compact exhaustion `K` of `V` satisfies
+`closure (j '' K n) ⊆ Set.range j`. -/
+theorem closure_image_subset_range_of_cartesian {U V X Y : Type*}
+    [TopologicalSpace U] [TopologicalSpace V] [TopologicalSpace X] [TopologicalSpace Y]
+    {f : X → Y} {f' : U → V} {i : U → X} {j : V → Y}
+    (hf : IsProperMap f) (hi : Topology.IsEmbedding i) (hj : Topology.IsEmbedding j)
+    (hcomm : f ∘ i = j ∘ f') (hpre : Set.range i = f ⁻¹' Set.range j)
+    (K : CompactExhaustion V) (KU : CompactExhaustion U)
+    (hK : ∀ n, closure (j '' K n) ⊆ Set.range j) (n : ℕ) :
+    closure (i '' KU n) ⊆ Set.range i := by
+  have hf' : IsProperMap f' := hf.of_isEmbedding_of_range_eq hi hj hcomm hpre
+  obtain ⟨N, hN⟩ := (K.preimage hf').exists_superset_of_isCompact (KU.isCompact n)
+  refine (closure_mono (Set.image_mono hN)).trans ?_
+  simp only [CompactExhaustion.preimage_apply,
+    hj.injective.image_preimage_eq_preimage_image hcomm hpre, hpre]
+  exact (hf.continuous.closure_preimage_subset _).trans (Set.preimage_mono (hK N))
+
+section Subtype
+
 variable {X : Type*} [TopologicalSpace X] (U : Set X) (K : ℕ → Set X)
   (hK : ∀ n, IsCompact (K n)) (hKU : ∀ n, K n ⊆ U) (hsub : ∀ n, K n ⊆ interior (K (n + 1)))
   (hcover : U ⊆ ⋃ n, K n)
@@ -114,6 +194,8 @@ def subtype : CompactExhaustion U where
 theorem subtype_apply (n : ℕ) :
     CompactExhaustion.subtype U K hK hKU hsub hcover n = Subtype.val ⁻¹' K n :=
   (rfl)
+
+end Subtype
 
 end CompactExhaustion
 

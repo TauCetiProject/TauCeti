@@ -265,6 +265,36 @@ lemma locallyFiniteChainComplexCoefficientMap_eq_extendLocallyFiniteChainMap (η
       extendLocallyFiniteChainMap (twistedChainComplexCoefficientMap η)
         (isProperlySupported_twistedChainComplexCoefficientMap_f η) := (rfl)
 
+/-- Change of local coefficients on locally finite chains along an isomorphism of systems. -/
+def locallyFiniteChainComplexCoefficientIso (e : L ≅ K) :
+    locallyFiniteChainComplex L ≅ locallyFiniteChainComplex K where
+  hom := locallyFiniteChainComplexCoefficientMap e.hom
+  inv := locallyFiniteChainComplexCoefficientMap e.inv
+  hom_inv_id := by
+    rw [← locallyFiniteChainComplexCoefficientMap_comp, e.hom_inv_id,
+      locallyFiniteChainComplexCoefficientMap_id]
+  inv_hom_id := by
+    rw [← locallyFiniteChainComplexCoefficientMap_comp, e.inv_hom_id,
+      locallyFiniteChainComplexCoefficientMap_id]
+
+@[simp]
+lemma locallyFiniteChainComplexCoefficientIso_hom (e : L ≅ K) :
+    (locallyFiniteChainComplexCoefficientIso e).hom =
+      locallyFiniteChainComplexCoefficientMap e.hom :=
+  (rfl)
+
+@[simp]
+lemma locallyFiniteChainComplexCoefficientIso_inv (e : L ≅ K) :
+    (locallyFiniteChainComplexCoefficientIso e).inv =
+      locallyFiniteChainComplexCoefficientMap e.inv :=
+  (rfl)
+
+/-- An isomorphism of local coefficient systems induces an isomorphism on locally finite chain
+complexes. -/
+instance isIso_locallyFiniteChainComplexCoefficientMap (η : L ⟶ K) [IsIso η] :
+    IsIso (locallyFiniteChainComplexCoefficientMap η) :=
+  (locallyFiniteChainComplexCoefficientIso (asIso η)).isIso_hom
+
 /-- The map on Borel–Moore homology induced by a morphism of local coefficient systems. -/
 abbrev borelMooreHomologyCoefficientMap (η : L ⟶ K) (k : ℕ) :
     borelMooreHomology L k ⟶ borelMooreHomology K k :=

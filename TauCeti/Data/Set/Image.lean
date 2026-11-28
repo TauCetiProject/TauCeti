@@ -10,8 +10,9 @@ public import Mathlib.Data.Set.Image
 /-!
 # Images of sets under compositions
 
-This file contains elementary lemmas about images of sets under composed functions, about
-preimages under an injective function of the range of a composition or of a single value, and
+This file contains elementary lemmas about images of sets under composed functions, including
+`Function.Injective.image_preimage_eq_preimage_image` for Cartesian-like squares of functions,
+about preimages under an injective function of the range of a composition or of a single value, and
 about the smallest set stable under an involution containing a given set.
 -/
 
@@ -36,6 +37,19 @@ lemma image_image_inter_eq_inter_image {α β γ δ : Type*} {A s : Set α} {B :
     (hAB : MapsTo f (s ∩ A) B) (hU : ∀ z ∈ s, f z ∈ B → (g' (f z) ∈ U ↔ z ∈ A)) :
     ι '' (g '' (s ∩ A)) = U ∩ g' '' (f '' s ∩ B) := by
   grind [MapsTo]
+
+/-- In a commuting square of functions `f ∘ i = j ∘ f'` with `j` injective and
+`range i = f ⁻¹' range j`, the `i`-image of an `f'`-preimage equals the `f`-preimage of the
+`j`-image. -/
+theorem _root_.Function.Injective.image_preimage_eq_preimage_image {U V X Y : Type*}
+    {f : X → Y} {f' : U → V} {i : U → X} {j : V → Y} (hj : Injective j)
+    (hsq : f ∘ i = j ∘ f') (hpre : range i = f ⁻¹' range j) (s : Set V) :
+    i '' (f' ⁻¹' s) = f ⁻¹' (j '' s) := by
+  have h1 : f' ⁻¹' s = i ⁻¹' (f ⁻¹' (j '' s)) := by
+    rw [← Set.preimage_comp, hsq, Set.preimage_comp, hj.preimage_image]
+  rw [h1]
+  exact Set.image_preimage_eq_of_subset
+    (hpre.symm ▸ Set.preimage_mono (Set.image_subset_range j s))
 
 end TauCeti
 

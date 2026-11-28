@@ -39,6 +39,8 @@ Consequently, a tower whose transitions are surjective from some index on has va
   connecting map `lim C → lim¹ A`.
 * `TauCeti.ModuleTower.subsingleton_limOne_of_surjective_of_le`: towers with eventually
   surjective transitions have vanishing `lim¹`.
+* `TauCeti.ModuleTower.limOneMap_bijective_of_isIso_of_le`: morphisms that are isomorphisms from
+  some index on induce bijections on `lim¹`.
 
 ## References
 
@@ -353,5 +355,21 @@ theorem subsingleton_limOne_of_surjective_of_le (F : ModuleTower.{v} R) (k : ℕ
   rw [← transitionOfLE_succ] at this
   rw [subsequence_transition]
   exact this
+
+/-- A morphism of module towers that is an isomorphism from some index on induces a bijection on
+`lim¹`. -/
+theorem limOneMap_bijective_of_isIso_of_le {F G : ModuleTower.{v} R} (f : F ⟶ G) (N : ℕ)
+    (hf : ∀ n, N ≤ n → IsIso (f.app (op n))) :
+    Function.Bijective (limOneMap f) := by
+  obtain ⟨φ, hφ, hIso⟩ := exists_cofinal_isIso_whiskerLeft_of_isIso_of_le f N hf
+  let f' : F.subsequence φ ⟶ G.subsequence φ := Functor.whiskerLeft φ.monotone.functor.op f
+  have hbij :
+      Function.Bijective (limOneMap f' ∘ₗ (F.limOneSubsequenceEquiv φ hφ).toLinearMap) := by
+    have h1 : ⇑(limOneEquivOfIso (asIso f')) = ⇑(limOneMap f') :=
+      funext (limOneEquivOfIso_apply _)
+    rw [LinearMap.coe_comp, ← h1]
+    exact (limOneEquivOfIso (asIso f')).bijective.comp (F.limOneSubsequenceEquiv φ hφ).bijective
+  rw [← limOneSubsequenceEquiv_naturality φ hφ f] at hbij
+  exact (Function.Bijective.of_comp_iff' (G.limOneSubsequenceEquiv φ hφ).bijective _).1 hbij
 
 end TauCeti.ModuleTower

@@ -5,15 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Twisted.Basic
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Relative
 
 /-!
 # Twisted boundaries on totally disconnected spaces
 
 Every singular edge of a totally disconnected space is degenerate. Its two faces cancel even
-with local coefficients, so the boundary into degree zero vanishes. This also determines the
-boundary into degree zero after extending to locally finite chains. The degeneracy argument uses
-Mathlib's `TopCat.toSSetIsoConst`, identifying the singular simplicial set with a constant one.
+with local coefficients, so the boundary into degree zero vanishes, both on absolute twisted chains
+and on relative twisted chains of a pair whose ambient space is totally disconnected. This also
+determines the boundary into degree zero after extending to locally finite chains. The degeneracy
+argument uses Mathlib's `TopCat.toSSetIsoConst`, identifying the singular simplicial set with a
+constant one.
 
 ## References
 
@@ -61,3 +63,24 @@ theorem twistedChainComplex_d_one_zero_eq_zero : (twistedChainComplex L).d 1 0 =
   simp only [Category.assoc, hd, comp_zero]
 
 end TauCeti.LocalCoefficientSystem
+
+namespace TopPair
+
+open TauCeti TauCeti.LocalCoefficientSystem
+
+variable {R : Type u} [Ring R] (P : TopPair.{v}) [TotallyDisconnectedSpace P.fst]
+  (L : LocalCoefficientSystem.{u, v, max v w} R P.fst)
+
+/-- The relative boundary into degree zero vanishes for any topological pair whose ambient space
+is totally disconnected, for any local coefficient system. -/
+@[simp]
+theorem twistedChainComplex_d_one_zero_eq_zero : (P.twistedChainComplex L).d 1 0 = 0 := by
+  refine ModuleCat.hom_ext <| LinearMap.ext fun y ↦ ?_
+  obtain ⟨a, rfl⟩ := P.twistedChainComplexπ_f_surjective L y
+  have h0 : (L.twistedChainComplex.d 1 0).hom a = 0 := by
+    rw [TauCeti.LocalCoefficientSystem.twistedChainComplex_d_one_zero_eq_zero L,
+      ModuleCat.hom_zero, LinearMap.zero_apply]
+  exact (congrArg (fun f ↦ f.hom a) ((P.twistedChainComplexπ L).comm 1 0)).trans <|
+    (congrArg ((P.twistedChainComplexπ L).f 0).hom h0).trans (map_zero _)
+
+end TopPair
