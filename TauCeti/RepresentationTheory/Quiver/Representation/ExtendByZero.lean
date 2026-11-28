@@ -173,6 +173,13 @@ noncomputable def extendByZeroRepFiberEquiv (v : Q) :
       (∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.val) :=
   (eqToIso (φ.extendByZeroRep_obj M v)).toLinearEquiv
 
+-- Use this transport formula explicitly, keeping the fiber equivalence available to map rules.
+/-- The fiber equivalence transports along the equality describing the extended vertex space. -/
+theorem extendByZeroRepFiberEquiv_apply (v : Q)
+    (x : QuiverRep.vertexSpace k Q (φ.extendByZeroRep M) v) :
+    φ.extendByZeroRepFiberEquiv M v x = (eqToHom (φ.extendByZeroRep_obj M v)) x :=
+  (rfl)
+
 /-- Over an image vertex, the actual vertex space of the extension by zero is linearly equivalent
 to the original vertex space by evaluation at the unique point of the fiber. -/
 noncomputable def extendByZeroRepVertexSpaceEquiv (u : Q') :
