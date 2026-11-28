@@ -16,7 +16,7 @@ import Mathlib.Topology.Algebra.Affine
 import TauCeti.Analysis.Calculus.FDeriv.InfDist
 import TauCeti.Analysis.Convex.Parallel
 import TauCeti.Analysis.Convex.Topology
-import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.InnerProductSpace.NormDet.Basic
 import TauCeti.Analysis.InnerProductSpace.Projection.Minimal
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.DiamFrontier

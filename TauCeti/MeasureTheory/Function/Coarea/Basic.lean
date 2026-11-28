@@ -11,7 +11,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Normed.Module.ContinuousInverse
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import TauCeti.Analysis.Calculus.ApproximatesLinearOn.Basic
-import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.InnerProductSpace.NormDet.Basic
 import TauCeti.MeasureTheory.Function.Coarea.Measurability
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 import TauCeti.Topology.EMetricSpace.Lipschitz

@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.Normed.Lp.ProdLp
-public import TauCeti.Analysis.InnerProductSpace.NormDet
+public import TauCeti.Analysis.InnerProductSpace.NormDet.Basic
 public import TauCeti.Analysis.Normed.Lp.GraphDomain
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Comp

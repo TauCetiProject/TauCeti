@@ -31,7 +31,7 @@ import Mathlib.MeasureTheory.Function.JacobianOneDim
 -- Proof-only: where `Ψ₂Sq` is positive, with three real roots.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Real
 -- Proof-only: the area formula with multiplicity, and the Jacobian of a map `ℝ → ℝ`.
-import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.InnerProductSpace.NormDet.Basic
 import TauCeti.MeasureTheory.Function.AreaFormula.Multiplicity
 
 /-!

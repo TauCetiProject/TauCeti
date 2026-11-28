@@ -9,7 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Function.Coarea.Lipschitz
 import TauCeti.Analysis.BoundedVariation.Truncation
 import TauCeti.Analysis.Calculus.FDeriv.Clamp
-import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.InnerProductSpace.NormDet.Basic
 import TauCeti.MeasureTheory.Function.Coarea.Measurability
 import TauCeti.Topology.Compactness.SigmaCompact
 import Mathlib.MeasureTheory.Function.AEEqOfLIntegral

@@ -9,7 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.Weighted.VariationMeasure
 public import TauCeti.Analysis.BoundedVariation.Coarea
 public import TauCeti.MeasureTheory.Function.Coarea.Lipschitz
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
-import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.InnerProductSpace.NormDet.Basic
 
 /-!
 # The weighted coarea formula

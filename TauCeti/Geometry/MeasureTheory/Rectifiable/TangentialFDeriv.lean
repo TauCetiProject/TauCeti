@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Plane
-public import TauCeti.Analysis.InnerProductSpace.NormDet
+public import TauCeti.Analysis.InnerProductSpace.NormDet.Basic
 public import TauCeti.Analysis.InnerProductSpace.RangeProjection
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
 import TauCeti.Analysis.InnerProductSpace.Adjoint

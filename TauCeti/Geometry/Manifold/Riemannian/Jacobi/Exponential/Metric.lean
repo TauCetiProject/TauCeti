@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Model
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Exponential.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Basic
-import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.InnerProductSpace.NormDet.Basic
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.NormDet

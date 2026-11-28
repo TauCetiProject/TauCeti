@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors, Codex
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
-public import TauCeti.Analysis.InnerProductSpace.NormDet
+public import TauCeti.Analysis.InnerProductSpace.NormDet.Basic
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 

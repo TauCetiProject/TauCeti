@@ -13,7 +13,7 @@ import Mathlib.Analysis.Convex.Continuous
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Measurable
-import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.InnerProductSpace.NormDet.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Restrict
 

@@ -13,7 +13,7 @@ public import TauCeti.MeasureTheory.Function.AreaFormula.Basic
 
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import TauCeti.Analysis.Calculus.FDeriv.Norm
-import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.InnerProductSpace.NormDet.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 
 /-!

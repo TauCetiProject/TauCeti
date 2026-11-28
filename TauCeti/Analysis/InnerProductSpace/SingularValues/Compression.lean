@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.NormDet
+public import TauCeti.Analysis.InnerProductSpace.NormDet.Basic
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 
 /-!

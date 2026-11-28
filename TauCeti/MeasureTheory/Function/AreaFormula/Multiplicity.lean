@@ -10,7 +10,7 @@ import TauCeti.MeasureTheory.Function.Jacobian.Decomposition
 import TauCeti.Topology.Algebra.InfiniteSum.Extend
 import TauCeti.MeasureTheory.Function.AreaFormula.Integral
 import Mathlib.Analysis.Calculus.Rademacher
-import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.InnerProductSpace.NormDet.Basic
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 import TauCeti.Analysis.Calculus.FDeriv.Measurable
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.Coarea.Lipschitz
 import Mathlib.Analysis.Calculus.FDeriv.Norm
-import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.InnerProductSpace.NormDet.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!

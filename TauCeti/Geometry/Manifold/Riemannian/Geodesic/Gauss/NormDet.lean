@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
-import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.InnerProductSpace.NormDet.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Basic
 
 /-!

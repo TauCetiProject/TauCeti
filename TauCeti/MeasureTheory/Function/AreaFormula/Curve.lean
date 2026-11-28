@@ -9,7 +9,7 @@ public import TauCeti.MeasureTheory.Function.AreaFormula.Multiplicity
 public import TauCeti.MeasureTheory.Function.MetricDerivative.ConstantSpeed
 public import TauCeti.MeasureTheory.Function.MetricDerivative.Variation
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
-import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.InnerProductSpace.NormDet.Basic
 import TauCeti.Geometry.Euclidean.Volume.Measure
 
 /-!

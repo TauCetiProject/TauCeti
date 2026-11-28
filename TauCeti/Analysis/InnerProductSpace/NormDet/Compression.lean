@@ -29,9 +29,7 @@ Apache 2.0, Copyright 2026 Anthropic, PBC), file `src/New/OneLift/LiftVolumeHeig
 
 public section
 
-namespace TauCeti
-
-open LinearMap
+namespace LinearMap
 
 /-- For any linear map `u : U →ₗ[𝕜] V` between finite-dimensional inner product spaces over
 `[RCLike 𝕜]` and any endomorphism `T` of `V`, the determinant of the compression of `T` to
@@ -64,4 +62,4 @@ theorem normDet_sq_mul_det_compression {𝕜 U V : Type*} [RCLike 𝕜]
     have hdet2 : (u.adjoint ∘ₗ T ∘ₗ u).det = 0 := LinearMap.det_eq_zero_iff_ker_ne_bot.mpr hker2
     rw [u.normDet_sq, hdet1, hdet2, zero_mul]
 
-end TauCeti
+end LinearMap

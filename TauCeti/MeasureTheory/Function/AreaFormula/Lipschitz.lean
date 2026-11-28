@@ -9,7 +9,7 @@ public import TauCeti.MeasureTheory.Function.AreaFormula.Basic
 import Mathlib.Analysis.Calculus.Rademacher
 import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.Normed.Lp.MeasurableSpace
-import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.InnerProductSpace.NormDet.Basic
 import TauCeti.Analysis.Normed.Module.RelativeApproximation
 import TauCeti.MeasureTheory.Function.AreaFormula.Integral
 import TauCeti.MeasureTheory.Function.Jacobian.Decomposition

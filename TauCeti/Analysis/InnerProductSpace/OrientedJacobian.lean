@@ -13,7 +13,7 @@ public import TauCeti.Analysis.InnerProductSpace.Orientation
 import Mathlib.Analysis.CStarAlgebra.Matrix
 import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.InnerProductSpace.NormDet.Basic
 import TauCeti.LinearAlgebra.Orientation.Basic
 
 /-!
