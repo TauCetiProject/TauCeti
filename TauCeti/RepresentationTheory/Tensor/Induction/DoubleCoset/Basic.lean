@@ -49,7 +49,8 @@ is the form in which the double-coset formula for the multiplicative transfer co
 
 ## Main statements
 
-* `Subgroup.tensorInducedMackey_tprod`: the Mackey comparison on orbitwise pure tensors.
+* `Subgroup.tensorInducedMackey_tprod`, `Subgroup.tensorInducedMackey_symm_tprod`: the Mackey
+  comparison and its inverse on pure tensors.
 * `Subgroup.tensorInducedMackey_naturality`: naturality in the coefficient representation.
 * `Subgroup.tensorInducedMackey_tensorInducedDiagonal`: the Mackey comparison of invariant
   diagonals.
@@ -237,6 +238,21 @@ theorem tensorInducedMackey_tprod (s : U.LeftTransversal)
             ((TauCeti.mackeyQuotientEquiv U V r hr).symm q).2) := by
   rw [tensorInducedMackey_apply, tensorInducedDoubleCosetLinearEquiv_tprod,
     tensorInducedChangeTransversalLinearEquiv_apply_tprod]
+
+/-- Inverse Mackey regrouping undoes the transversal correction in each slot and gathers
+the corrected factors into their double-coset orbits. -/
+@[simp]
+theorem tensorInducedMackey_symm_tprod (s : U.LeftTransversal) (m : G ⧸ U → M) :
+    (tensorInducedMackey U V r hr t ρ s).symm (PiTensorProduct.tprod R m) =
+      PiTensorProduct.tprod R fun D ↦ PiTensorProduct.tprod R fun q ↦
+        ρ (((U.monomialChangeTransversal s (U.mackeyLeftTransversal V r hr t)).left
+          (TauCeti.mackeyQuotientEquiv U V r hr ⟨D, q⟩))⁻¹)
+          (m (TauCeti.mackeyQuotientEquiv U V r hr ⟨D, q⟩)) := by
+  apply (LinearEquiv.symm_apply_eq (tensorInducedMackey U V r hr t ρ s).toLinearEquiv).2
+  simp only [Representation.Equiv.toLinearEquiv_apply,
+    Representation.Equiv.coe_toIntertwiningMap, tensorInducedMackey_tprod,
+    Sigma.eta, Equiv.apply_symm_apply, Representation.self_inv_apply]
+
 
 /-- The Mackey comparison is natural in an intertwining map of representations of `U`, applied
 in every inner tensor factor on the source and in every factor of tensor induction on the
