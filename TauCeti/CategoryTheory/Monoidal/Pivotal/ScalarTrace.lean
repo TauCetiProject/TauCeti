@@ -85,16 +85,9 @@ followed by the right trace of `a` is the left dimension followed by the right d
 theorem leftTrace_inv_comp_rightTrace_hom_of_surjective
     (hX : Function.Surjective (algebraMap R (End X))) (a : X ≅ X) :
     leftTrace a.inv ≫ rightTrace a.hom = leftDim X ≫ rightDim X := by
-  obtain ⟨r, hr⟩ := End.exists_smul_id_eq_of_surjective hX a.hom
-  obtain ⟨s, hs⟩ := End.exists_smul_id_eq_of_surjective hX a.inv
-  -- The scalars of `a⁻¹` and `a` multiply to an element acting on `X` as the identity.
-  have h : (s * r) • 𝟙 X = 𝟙 X := by
-    have h := a.inv_hom_id
-    rwa [← hr, ← hs, Linear.smul_comp, Linear.comp_smul, Category.id_comp, smul_smul] at h
-  -- Taking left traces, `s * r` also acts as the identity on `leftDim X ≫ rightDim X`.
-  have hd : (r * s) • (leftDim X ≫ rightDim X) = leftDim X ≫ rightDim X := by
-    rw [mul_comm, ← Linear.smul_comp, ← leftTrace_id, ← leftTrace_smul, h]
-  simp [← hr, ← hs, leftTrace_smul, rightTrace_smul, smul_smul, hd]
+  rw [leftTrace_eq_doubleDualTrace, rightTrace_eq_doubleDualTrace, ← squaredNorm_pivotalIsoApp]
+  exact (squaredNorm_def' (a ≪≫ pivotalIsoApp X)).symm.trans
+    (squaredNorm_congr R hX (a ≪≫ pivotalIsoApp X) (pivotalIsoApp X))
 
 end Scalar
 
@@ -111,13 +104,8 @@ theorem leftDim_comp_rightDim_eq_of_surjective {X : C}
     (hX : Function.Surjective (algebraMap R (End X))) :
     @leftDim C _ _ _ P X ≫ @rightDim C _ _ _ P X =
       @leftDim C _ _ _ Q X ≫ @rightDim C _ _ _ Q X := by
-  rw [leftDim_eq_leftTrace P Q, rightDim_eq_rightTrace P Q]
-  -- Both dimensions for `P` are traces for `Q` of the automorphism `φ_X ≫ ψ_X⁻¹` of `X` and of
-  -- its inverse, where `φ` and `ψ` are the pivotal isomorphisms of `P` and `Q`.
-  let _ := Q
-  simpa only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv] using
-    leftTrace_inv_comp_rightTrace_hom_of_surjective hX
-      (@pivotalIsoApp C _ _ _ P X ≪≫ (pivotalIsoApp X).symm)
+  rw [← @squaredNorm_pivotalIsoApp C _ _ _ P X, ← @squaredNorm_pivotalIsoApp C _ _ _ Q X]
+  exact squaredNorm_congr R hX _ _
 
 end ChangeOfPivotal
 

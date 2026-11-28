@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Linear
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Basic
+public import TauCeti.CategoryTheory.Monoidal.Rigid.SquaredNorm
 public import TauCeti.CategoryTheory.Monoidal.Scalar
 
 /-!
@@ -24,8 +25,11 @@ scalars `𝟙_ C ⟶ 𝟙_ C`:
 
 Unfolding the pivotal pairing writes the pivotal isomorphism `φ_X : X ≅ Xᘁᘁ` out explicitly:
 `leftTrace f = η_ Xᘁ Xᘁᘁ ≫ Xᘁ ◁ φ_X⁻¹ ≫ Xᘁ ◁ f ≫ ε_ X Xᘁ` and
-`rightTrace f = η_ X Xᘁ ≫ f ▷ Xᘁ ≫ φ_X ▷ Xᘁ ≫ ε_ Xᘁ Xᘁᘁ`. The *left* and *right dimensions* of `X`
-are the traces of its identity.
+`rightTrace f = η_ X Xᘁ ≫ f ▷ Xᘁ ≫ φ_X ▷ Xᘁ ≫ ε_ Xᘁ Xᘁᘁ`. Comparing with the pivot-free
+bidual trace of `TauCeti.CategoryTheory.Monoidal.Rigid.SquaredNorm`, the right trace of `f` is
+`doubleDualTrace (f ≫ φ_X)` and the left trace is `doubleDualTrace (φ_X⁻¹ ≫ f)ᘁ`; in particular,
+the *left* and *right dimensions* of `X` (the traces of its identity) satisfy
+`squaredNorm (pivotalIsoApp X) = leftDim X ≫ rightDim X`.
 
 We prove the basic properties of the two traces: both are cyclic, so in particular invariant
 under conjugation by an isomorphism; the right adjoint mate exchanges them, by the Freyd–Yetter
@@ -43,11 +47,14 @@ for `ψ` of `f ≫ φ_X ≫ ψ_X⁻¹`.
 ## Main declarations
 
 * `TauCeti.leftTrace` and `TauCeti.rightTrace`: the two traces of an endomorphism, with their
-  defining formulas `TauCeti.leftTrace_def` and `TauCeti.rightTrace_def` and their unfolded
-  forms `TauCeti.leftTrace_eq_pivotalIsoApp` and `TauCeti.rightTrace_eq_pivotalIsoApp`;
+  defining formulas `TauCeti.leftTrace_def` and `TauCeti.rightTrace_def`, their unfolded
+  forms `TauCeti.leftTrace_eq_pivotalIsoApp` and `TauCeti.rightTrace_eq_pivotalIsoApp`, and their
+  bidual-trace expressions `TauCeti.leftTrace_eq_doubleDualTrace` and
+  `TauCeti.rightTrace_eq_doubleDualTrace`;
 * `TauCeti.leftDim` and `TauCeti.rightDim`: the two dimensions of an object, the traces of its
-  identity, and invariant under isomorphism by `TauCeti.leftDim_congr` and
-  `TauCeti.rightDim_congr`;
+  identity, invariant under isomorphism by `TauCeti.leftDim_congr` and
+  `TauCeti.rightDim_congr`, and related to `TauCeti.squaredNorm` by
+  `TauCeti.squaredNorm_pivotalIsoApp`;
 * `TauCeti.leftTrace_comm` and `TauCeti.rightTrace_comm`: cyclicity;
 * `TauCeti.leftTrace_comp_whiskerLeft_scalar` and
   `TauCeti.rightTrace_scalar_whiskerRight_comp`: a scalar acting on the outer side of a loop
@@ -67,7 +74,8 @@ for `ψ` of `f ≫ φ_X ≫ ψ_X⁻¹`.
 
 * A. Henriques, D. Penneys, J. Tener, *Categorified trace for module tensor categories over
   braided tensor categories*, [arXiv:1509.02937](https://arxiv.org/abs/1509.02937), §2.1
-* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §4.7
+* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §§4.7, 7.21
+* P. Etingof, D. Nikshych, V. Ostrik, *On fusion categories*, Ann. of Math. **162** (2005), §2.1
 * [leanprover-community/mathlib4#42191](https://github.com/leanprover-community/mathlib4/pull/42191),
   for the names `leftTrace` and `rightTrace` and their packaging through `pivotalExactPairing`
 -/
@@ -395,5 +403,44 @@ theorem rightDim_eq_rightTrace (X : C) :
   (rightTrace_eq_rightTrace_comp P Q (𝟙 X)).trans (by rw [Category.id_comp])
 
 end ChangeOfPivotal
+
+section TraceComparison
+
+/-- In a pivotal category, the right trace of `f : X ⟶ X` is the bidual trace of
+`f ≫ (pivotalIsoApp X).hom`. -/
+theorem rightTrace_eq_doubleDualTrace {X : C} (f : X ⟶ X) :
+    rightTrace f = doubleDualTrace (f ≫ (pivotalIsoApp X).hom) := by
+  rw [rightTrace_eq_pivotalIsoApp, doubleDualTrace_def, comp_whiskerRight, Category.assoc]
+
+/-- In a pivotal category, the left trace of `f : X ⟶ X` is the bidual trace of the right adjoint
+mate of `(pivotalIsoApp X).inv ≫ f`. -/
+theorem leftTrace_eq_doubleDualTrace {X : C} (f : X ⟶ X) :
+    leftTrace f = doubleDualTrace (rightAdjointMate ((pivotalIsoApp X).inv ≫ f)) := by
+  rw [← rightTrace_rightAdjointMate, rightTrace_eq_doubleDualTrace, comp_rightAdjointMate,
+    pivotalIsoApp_rightDual]
+
+/-- At the component `pivotalIsoApp X` of a pivotal structure, `doubleDualTrace` gives the right
+dimension of `X`. -/
+@[simp]
+theorem doubleDualTrace_pivotalIsoApp_hom (X : C) :
+    doubleDualTrace (pivotalIsoApp X).hom = rightDim X := by
+  rw [← rightTrace_id, rightTrace_eq_doubleDualTrace, Category.id_comp]
+
+/-- At the mate of the inverse component `(pivotalIsoApp X).inv`, `doubleDualTrace` gives the left
+dimension of `X`. -/
+@[simp]
+theorem doubleDualTrace_rightAdjointMate_pivotalIsoApp_inv (X : C) :
+    doubleDualTrace (rightAdjointMate (pivotalIsoApp X).inv) = leftDim X := by
+  rw [← leftTrace_id, leftTrace_eq_doubleDualTrace, Category.comp_id]
+
+/-- **Comparison with a pivotal structure**: the squared norm of `pivotalIsoApp X` is
+`leftDim X ≫ rightDim X`, the summand of `TauCeti.globalDim`. -/
+@[simp]
+theorem squaredNorm_pivotalIsoApp (X : C) :
+    squaredNorm (pivotalIsoApp X) = leftDim X ≫ rightDim X := by
+  rw [squaredNorm_def', doubleDualTrace_rightAdjointMate_pivotalIsoApp_inv,
+    doubleDualTrace_pivotalIsoApp_hom]
+
+end TraceComparison
 
 end TauCeti

@@ -7,24 +7,36 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Linear
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
+public import TauCeti.CategoryTheory.Linear.Endomorphism
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
 
 /-!
 # Duals in a monoidal preadditive category
 
-In a monoidal preadditive category the right adjoint mate `f ↦ fᘁ` is additive, because it is
-built from whiskering and composition.
+In a monoidal preadditive category the right adjoint mate `f ↦ fᘁ` is additive (hence commutes
+with negation, subtraction, and finite sums), and in a monoidal `R`-linear category it is
+`R`-linear. Consequently, in a monoidal `R`-linear category over a commutative semiring `R`,
+having scalar endomorphisms is preserved by passing to a right dual.
 
 In a monoidal `k`-linear category the Frobenius reciprocity bijections `tensorLeftHomEquiv` and
 `tensorRightHomEquiv` are `k`-linear, so they compare dimensions of morphism spaces, for instance
-of the multiplicity spaces of a fusion category.
+of the multiplicity spaces of a fusion category. When either member of an exact pairing has scalar
+endomorphisms over a commutative semiring, Frobenius reciprocity shows that every morphism from
+the paired tensor product to the unit is a scalar multiple of the evaluation.
 
 ## Main declarations
 
-* `TauCeti.rightAdjointMate_zero`, `TauCeti.rightAdjointMate_add`,
-  `TauCeti.rightAdjointMate_sum`, and `TauCeti.rightAdjointMate_smul`: the right adjoint mate is
-  additive, and `R`-linear in an `R`-linear monoidal category;
+* `TauCeti.rightAdjointMate_zero`, `TauCeti.rightAdjointMate_add`, `TauCeti.rightAdjointMate_neg`,
+  `TauCeti.rightAdjointMate_sub`, `TauCeti.rightAdjointMate_sum`, and
+  `TauCeti.rightAdjointMate_smul`: additivity and linearity of the right adjoint mate;
+* `TauCeti.surjective_algebraMap_end_rightDual`: scalar endomorphisms are preserved by right
+  duality;
 * `TauCeti.tensorLeftHomLinearEquiv` and `TauCeti.tensorRightHomLinearEquiv`: Frobenius
-  reciprocity as `k`-linear equivalences.
+  reciprocity as `k`-linear equivalences;
+* `TauCeti.hom_tensorUnit_eq_smul_evaluation_of_surjective_right` and
+  `TauCeti.hom_tensorUnit_eq_smul_evaluation_of_surjective_left`: every morphism from a paired
+  tensor product to the unit is a scalar multiple of the evaluation when one paired object has
+  scalar endomorphisms.
 -/
 
 public section
@@ -52,6 +64,16 @@ theorem rightAdjointMate_zero : (0 : X ⟶ Y)ᘁ = 0 := by
 theorem rightAdjointMate_add (f g : X ⟶ Y) : (f + g)ᘁ = fᘁ + gᘁ := by
   simp [rightAdjointMate]
 
+/-- The right adjoint mate commutes with negation. -/
+@[simp]
+theorem rightAdjointMate_neg (f : X ⟶ Y) : (-f)ᘁ = -fᘁ :=
+  eq_neg_of_add_eq_zero_left (by rw [← rightAdjointMate_add, neg_add_cancel, rightAdjointMate_zero])
+
+/-- The right adjoint mate commutes with subtraction. -/
+@[simp]
+theorem rightAdjointMate_sub (f g : X ⟶ Y) : (f - g)ᘁ = fᘁ - gᘁ := by
+  rw [sub_eq_add_neg, rightAdjointMate_add, rightAdjointMate_neg, sub_eq_add_neg]
+
 /-- Taking right adjoint mates commutes with finite sums. -/
 @[simp]
 theorem rightAdjointMate_sum {ι : Type*} (s : Finset ι) (f : ι → (X ⟶ Y)) :
@@ -66,6 +88,26 @@ theorem rightAdjointMate_smul {R : Type*} [Semiring R] [Linear R C] [MonoidalLin
   simp [rightAdjointMate]
 
 end Mate
+
+section ScalarEnd
+
+variable {R : Type w} [CommSemiring R] [Linear R C] [MonoidalLinear R C] {X : C} [HasRightDual X]
+
+/-- If every endomorphism of `X` is a scalar multiple of `𝟙 X`, then the same holds for its right
+dual `Xᘁ`. -/
+theorem surjective_algebraMap_end_rightDual
+    (hX : Function.Surjective (algebraMap R (End X))) :
+    Function.Surjective (algebraMap R (End Xᘁ)) := by
+  intro g
+  obtain ⟨r, hr⟩ := End.exists_smul_id_eq_of_surjective hX (leftAdjointMate g.asHom)
+  refine ⟨r, End.ext ?_⟩
+  have h : (r • 𝟙 (ᘁ(Xᘁ)))ᘁ = (leftAdjointMate g.asHom)ᘁ := congrArg rightAdjointMate hr
+  rw [rightAdjointMate_smul, rightAdjointMate_id, rightAdjointMate_leftAdjointMate] at h
+  rw [End.algebraMap_asHom]
+  -- `(ᘁ(Xᘁ))ᘁ` is definitionally `Xᘁ` via `hasRightDualLeftDual` on `hasLeftDualRightDual`.
+  exact h
+
+end ScalarEnd
 
 section Linear
 
@@ -116,5 +158,43 @@ theorem tensorRightHomLinearEquiv_symm_apply (X Y Y' Z : C) [ExactPairing Y Y']
   (rfl)
 
 end Linear
+
+section Evaluation
+
+variable {R : Type*} [CommSemiring R] [Linear R C] [MonoidalLinear R C]
+
+/-- If every endomorphism of the right member `Y` of an exact pairing is a scalar multiple of
+`𝟙 Y`, then every morphism `Y ⊗ X ⟶ 𝟙_ C` is a scalar multiple of the evaluation `ε_ X Y`. -/
+theorem hom_tensorUnit_eq_smul_evaluation_of_surjective_right {X Y : C} [ExactPairing X Y]
+    (hY : Function.Surjective (algebraMap R (End Y))) (f : Y ⊗ X ⟶ 𝟙_ C) :
+    ∃ r : R, f = r • ε_ X Y := by
+  let e := (tensorRightHomLinearEquiv R Y X Y (𝟙_ C)).trans
+    (Linear.homCongr R (Iso.refl Y) (λ_ Y))
+  obtain ⟨r, hr⟩ := End.exists_smul_id_eq_of_surjective hY (e f)
+  refine ⟨r, e.injective ?_⟩
+  rw [map_smul, ← hr]
+  congr 1
+  -- Frobenius reciprocity carries evaluation to the identity, with the unitors removed.
+  simp only [e, LinearEquiv.trans_apply, Linear.homCongr_apply, Iso.refl_inv,
+    Category.id_comp, tensorRightHomLinearEquiv_apply]
+  simp [tensorRightHomEquiv, ExactPairing.coevaluation_evaluation]
+
+/-- If every endomorphism of the left member `X` of an exact pairing is a scalar multiple of
+`𝟙 X`, then every morphism `Y ⊗ X ⟶ 𝟙_ C` is a scalar multiple of the evaluation `ε_ X Y`. -/
+theorem hom_tensorUnit_eq_smul_evaluation_of_surjective_left {X Y : C} [ExactPairing X Y]
+    (hX : Function.Surjective (algebraMap R (End X))) (f : Y ⊗ X ⟶ 𝟙_ C) :
+    ∃ r : R, f = r • ε_ X Y := by
+  let e := (tensorLeftHomLinearEquiv R X X Y (𝟙_ C)).trans
+    (Linear.homCongr R (Iso.refl X) (ρ_ X))
+  obtain ⟨r, hr⟩ := End.exists_smul_id_eq_of_surjective hX (e f)
+  refine ⟨r, e.injective ?_⟩
+  rw [map_smul, ← hr]
+  congr 1
+  -- The other Frobenius reciprocity bijection carries evaluation to the identity of `X`.
+  simp only [e, LinearEquiv.trans_apply, Linear.homCongr_apply, Iso.refl_inv,
+    Category.id_comp, tensorLeftHomLinearEquiv_apply]
+  simp [tensorLeftHomEquiv, ExactPairing.evaluation_coevaluation]
+
+end Evaluation
 
 end TauCeti

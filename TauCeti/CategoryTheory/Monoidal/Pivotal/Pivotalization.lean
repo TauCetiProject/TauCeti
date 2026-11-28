@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Transport
-public import TauCeti.CategoryTheory.Monoidal.Pivotal.SquaredNorm
+public import TauCeti.CategoryTheory.Monoidal.Pivotal.Trace
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Linear
 

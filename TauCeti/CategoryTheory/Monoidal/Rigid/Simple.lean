@@ -5,9 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Preadditive.Schur
-public import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
-public import TauCeti.CategoryTheory.Linear.Endomorphism
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Preadditive
 public import TauCeti.CategoryTheory.Semisimple.Basic
 
@@ -33,11 +30,14 @@ If a member of an exact pairing has scalar endomorphisms over a commutative semi
 (the structure map `algebraMap R (End _)` is surjective, as for a simple object with
 finite-dimensional endomorphisms over an algebraically closed field), Frobenius reciprocity shows
 that every morphism from the paired tensor product to the unit is a scalar multiple of the
-evaluation. Both choices of the member are available; they control the two categorical trace
-pairings. In a finite semisimple category, a nonzero morphism `η : 𝟙_ C ⟶ Y ⊗ X` is split on some
-simple summand of the unit, and the retraction there is a scalar multiple of the evaluation, so
-composing `η` with the evaluation gives a nonzero endomorphism of the unit. The unit need not be
-simple; when it is, this endomorphism is invertible by Schur's lemma.
+evaluation (`TauCeti.hom_tensorUnit_eq_smul_evaluation_of_surjective_right` and
+`TauCeti.hom_tensorUnit_eq_smul_evaluation_of_surjective_left` in
+`TauCeti.CategoryTheory.Monoidal.Rigid.Preadditive`). Both choices of the member are available;
+they control the two categorical trace pairings. In a finite semisimple category, a nonzero
+morphism `η : 𝟙_ C ⟶ Y ⊗ X` is split on some simple summand of the unit, and the retraction there
+is a scalar multiple of the evaluation, so composing `η` with the evaluation gives a nonzero
+endomorphism of the unit. The unit need not be simple; when it is, this endomorphism is invertible
+by Schur's lemma.
 
 ## References
 
@@ -101,40 +101,6 @@ theorem not_isZero_tensorObj [Preadditive C] [HasKernels C] [MonoidalPreadditive
   refine hX (IsZero.of_iso ?_ (ρ_ X).symm)
   rw [IsZero.iff_id_eq_zero, ← cancel_mono (X ◁ η_ Y Yᘁ)]
   exact h'.eq_of_tgt _ _
-
-/-- If the right member `Y` of an exact pairing has scalar endomorphisms over `R`, every morphism
-from the paired tensor product to the unit is a scalar multiple of the evaluation. -/
-theorem hom_tensorUnit_eq_smul_evaluation_of_surjective_right {R : Type*} [CommSemiring R]
-    [Preadditive C] [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C]
-    {X Y : C} [ExactPairing X Y] (hY : Function.Surjective (algebraMap R (End Y)))
-    (f : Y ⊗ X ⟶ 𝟙_ C) : ∃ c : R, f = c • ε_ X Y := by
-  let e := (tensorRightHomLinearEquiv R Y X Y (𝟙_ C)).trans
-    (Linear.homCongr R (Iso.refl Y) (λ_ Y))
-  obtain ⟨c, hc⟩ := End.exists_smul_id_eq_of_surjective hY (e f)
-  refine ⟨c, e.injective ?_⟩
-  rw [map_smul, ← hc]
-  congr 1
-  -- Frobenius reciprocity carries evaluation to the identity, with the unitors removed.
-  simp only [e, LinearEquiv.trans_apply, Linear.homCongr_apply, Iso.refl_inv,
-    Category.id_comp, tensorRightHomLinearEquiv_apply]
-  simp [tensorRightHomEquiv, ExactPairing.coevaluation_evaluation]
-
-/-- If the left member `X` of an exact pairing has scalar endomorphisms over `R`, every morphism
-from the paired tensor product to the unit is a scalar multiple of the evaluation. -/
-theorem hom_tensorUnit_eq_smul_evaluation_of_surjective_left {R : Type*} [CommSemiring R]
-    [Preadditive C] [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C]
-    {X Y : C} [ExactPairing X Y] (hX : Function.Surjective (algebraMap R (End X)))
-    (f : Y ⊗ X ⟶ 𝟙_ C) : ∃ c : R, f = c • ε_ X Y := by
-  let e := (tensorLeftHomLinearEquiv R X X Y (𝟙_ C)).trans
-    (Linear.homCongr R (Iso.refl X) (ρ_ X))
-  obtain ⟨c, hc⟩ := End.exists_smul_id_eq_of_surjective hX (e f)
-  refine ⟨c, e.injective ?_⟩
-  rw [map_smul, ← hc]
-  congr 1
-  -- The other Frobenius reciprocity bijection carries evaluation to the identity of `X`.
-  simp only [e, LinearEquiv.trans_apply, Linear.homCongr_apply, Iso.refl_inv,
-    Category.id_comp, tensorLeftHomLinearEquiv_apply]
-  simp [tensorLeftHomEquiv, ExactPairing.evaluation_coevaluation]
 
 section FiniteSemisimple
 

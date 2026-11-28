@@ -7,7 +7,8 @@ module
 
 public import TauCeti.CategoryTheory.Monoidal.Center.Induction.Adjunction
 public import TauCeti.CategoryTheory.Monoidal.Center.Induction.Faithful
-public import TauCeti.CategoryTheory.Monoidal.Pivotal.SquaredNorm
+public import TauCeti.CategoryTheory.Monoidal.Rigid.GlobalDim
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Semisimple
 
 /-!
 # The left adjunction for induction into the Drinfeld centre
