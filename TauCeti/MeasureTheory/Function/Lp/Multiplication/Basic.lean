@@ -25,10 +25,9 @@ via `LinearMap.mkContinuous`, the definition and algebraic identities require on
 Over a nontrivially normed field `𝕜` on a sigma-finite measure space with nontrivial fiber `E`, the
 operator norm on `Lp E p μ` equals the `L∞` norm `‖a‖` (`norm_multiplicationOperator`). On
 `Lp E 2 μ` for a complete inner-product space `E` over `𝕜` (`[RCLike 𝕜]`), the Hilbert adjoint of
-multiplication by `a` is multiplication by `star a` (`adjoint_multiplicationOperator`), and over
-`ℂ` this gives a unital ⋆-algebra homomorphism `MeasureTheory.Lp.multiplicationStarAlgHom` obtained
-by lifting scalar-to-endomorphism embedding to
-`MeasureTheory.Lp.operatorMultiplicationStarAlgHom`.
+multiplication by `a` is multiplication by `star a` (`adjoint_multiplicationOperator`), giving
+a unital ⋆-algebra homomorphism `MeasureTheory.Lp.multiplicationStarAlgHom` obtained by lifting
+the scalar-to-endomorphism embedding to `MeasureTheory.Lp.operatorMultiplicationStarAlgHom`.
 
 For a measurable set `s`, multiplication by the class `TauCeti.linftyIndicator μ 𝕜 s hs` of its
 indicator agrees with `MeasureTheory.Lp.indicatorMultiplication 𝕜 p hs`
@@ -364,28 +363,22 @@ theorem adjoint_multiplicationOperator (a : Lp 𝕜 ∞ μ) :
     multiplicationOperator_ae a g, Lp.coeFn_star a] with x hf hg ha
   simp [hf, hg, ha, inner_smul_left, inner_smul_right]
 
-end InnerProductSpace
-
-section ComplexInnerProductSpace
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
-
-/-- Pointwise multiplication by essentially bounded complex functions, bundled as a unital
+/-- Pointwise multiplication by essentially bounded scalar functions, bundled as a unital
 ⋆-algebra homomorphism into the bounded operators on `L²`. -/
 def multiplicationStarAlgHom (μ : Measure α) (E : Type*) [NormedAddCommGroup E]
-    [InnerProductSpace ℂ E] [CompleteSpace E] : Lp ℂ ∞ μ →⋆ₐ[ℂ] (Lp E 2 μ →L[ℂ] Lp E 2 μ) :=
-  (operatorMultiplicationStarAlgHom ℂ E μ).comp
-    ((StarAlgHom.ofId ℂ (E →L[ℂ] E)).compLpTop (continuous_algebraMap ℂ (E →L[ℂ] E)) μ)
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] : Lp 𝕜 ∞ μ →⋆ₐ[𝕜] (Lp E 2 μ →L[𝕜] Lp E 2 μ) :=
+  (operatorMultiplicationStarAlgHom 𝕜 E μ).comp
+    ((StarAlgHom.ofId 𝕜 (E →L[𝕜] E)).compLpTop (continuous_algebraMap 𝕜 (E →L[𝕜] E)) μ)
 
 @[simp]
-theorem multiplicationStarAlgHom_apply (a : Lp ℂ ∞ μ) :
+theorem multiplicationStarAlgHom_apply (a : Lp 𝕜 ∞ μ) :
     multiplicationStarAlgHom μ E a = multiplicationOperator (E := E) a := by
   ext f
   rw [multiplicationStarAlgHom, StarAlgHom.comp_apply, operatorMultiplicationStarAlgHom_apply]
   filter_upwards
     [operatorMultiplication_ae
-      ((StarAlgHom.ofId ℂ (E →L[ℂ] E)).compLpTop (continuous_algebraMap ℂ (E →L[ℂ] E)) μ a) f,
-    (StarAlgHom.ofId ℂ (E →L[ℂ] E)).coeFn_compLpTop (continuous_algebraMap ℂ (E →L[ℂ] E)) a,
+      ((StarAlgHom.ofId 𝕜 (E →L[𝕜] E)).compLpTop (continuous_algebraMap 𝕜 (E →L[𝕜] E)) μ a) f,
+    (StarAlgHom.ofId 𝕜 (E →L[𝕜] E)).coeFn_compLpTop (continuous_algebraMap 𝕜 (E →L[𝕜] E)) a,
     multiplicationOperator_ae a f] with x hx hcomp hmul
   rw [hx, hcomp, StarAlgHom.ofId_apply, Algebra.algebraMap_eq_smul_one, smul_apply,
     ContinuousLinearMap.one_def, id_apply, hmul]
@@ -393,8 +386,8 @@ theorem multiplicationStarAlgHom_apply (a : Lp ℂ ∞ μ) :
 /-- The range of `multiplicationStarAlgHom μ E` as a set equals the range of
 `multiplicationOperator (E := E) (p := 2) (μ := μ)`. -/
 theorem coe_range_multiplicationStarAlgHom (μ : Measure α) (E : Type*)
-    [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E] :
-    ((multiplicationStarAlgHom μ E).range : Set (Lp E 2 μ →L[ℂ] Lp E 2 μ)) =
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E] :
+    ((multiplicationStarAlgHom (𝕜 := 𝕜) μ E).range : Set (Lp E 2 μ →L[𝕜] Lp E 2 μ)) =
       Set.range (multiplicationOperator (E := E) (p := 2) (μ := μ)) :=
   Set.ext fun _ ↦
     ⟨fun ⟨a, ha⟩ ↦ ⟨a, multiplicationStarAlgHom_apply (E := E) a ▸ ha⟩,
@@ -407,17 +400,17 @@ pullback `compMeasurePreserving f hf a`. -/
 theorem conjStarAlgEquiv_compMeasurePreservingₗᵢEquiv_multiplicationOperator
     {β : Type*} [MeasurableSpace β] {ν : Measure β} {f : α → β} {g : β → α}
     (hf : MeasurePreserving f μ ν) (hg : MeasurePreserving g ν μ) (hfg : f ∘ g =ᵐ[ν] id)
-    (a : Lp ℂ ∞ ν) :
-    (compMeasurePreservingₗᵢEquiv ℂ (E := E) (p := 2) hf hg hfg).conjStarAlgEquiv
+    (a : Lp 𝕜 ∞ ν) :
+    (compMeasurePreservingₗᵢEquiv 𝕜 (E := E) (p := 2) hf hg hfg).conjStarAlgEquiv
         (multiplicationOperator (E := E) a) =
       multiplicationOperator (E := E) (compMeasurePreserving f hf a) := by
   ext h : 1
   rw [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply, compMeasurePreservingₗᵢEquiv_apply,
     compMeasurePreserving_multiplicationOperator_apply,
-    ← compMeasurePreservingₗᵢEquiv_apply ℂ (E := E) (p := 2) hf hg hfg,
+    ← compMeasurePreservingₗᵢEquiv_apply 𝕜 (E := E) (p := 2) hf hg hfg,
     LinearIsometryEquiv.apply_symm_apply]
 
-end ComplexInnerProductSpace
+end InnerProductSpace
 
 section ExactNorm
 
