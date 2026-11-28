@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.SymmetricAlgebra
+public import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
 public import TauCeti.Geometry.Manifold.Algebra.SymmetricAlgebra.Basic
 
 /-!
@@ -19,7 +20,7 @@ with `η (p.gradient ξ.toLinearMap)`.
 
 When `𝕜` is complete and `E` is finite-dimensional, transporting
 `fderiv 𝕜 (⇑(SymmetricAlgebra.contMDiffEval 𝕜 E n p)) ξ` back to `E` via finite-dimensional
-biduality (`Module.evalEquiv 𝕜 E`) recovers `p.gradient ξ.toLinearMap`.
+continuous biduality (`TauCeti.inclusionInDoubleDualEquiv 𝕜 E`) recovers `p.gradient ξ.toLinearMap`.
 
 ## Main results
 
@@ -28,8 +29,8 @@ biduality (`Module.evalEquiv 𝕜 E`) recovers `p.gradient ξ.toLinearMap`.
   `SymmetricAlgebra.hasDerivAt_contMDiffEval_add_smul_zero`: Fréchet and directional derivatives of
   smooth polynomial evaluation on `StrongDual 𝕜 E`, identified via `ContinuousLinearMap.apply`
   with `p.gradient`.
-* `SymmetricAlgebra.evalEquiv_symm_fderiv_contMDiffEval`: transporting the Fréchet derivative back
-  to `E` through finite-dimensional biduality yields `p.gradient`.
+* `SymmetricAlgebra.inclusionInDoubleDualEquiv_symm_fderiv_contMDiffEval`: transporting the
+  Fréchet derivative back to `E` through continuous biduality yields `p.gradient`.
 
 ## References
 
@@ -83,17 +84,19 @@ theorem hasDerivAt_contMDiffEval_add_smul_zero (n : ℕ∞ω)
     FunLike.coe_smul] using hasDerivAt_lift_add_smul_zero p ξ.toLinearMap η.toLinearMap
 
 /-- Transporting the Fréchet derivative of `SymmetricAlgebra.contMDiffEval 𝕜 E n p` at `ξ` back
-to `E` through finite-dimensional biduality recovers `p.gradient ξ.toLinearMap`. -/
-theorem evalEquiv_symm_fderiv_contMDiffEval [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
+to `E` through finite-dimensional continuous biduality recovers `p.gradient ξ.toLinearMap`. -/
+theorem inclusionInDoubleDualEquiv_symm_fderiv_contMDiffEval
+    [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
     (n : ℕ∞ω) (p : SymmetricAlgebra 𝕜 E) (ξ : StrongDual 𝕜 E) :
-    (Module.evalEquiv 𝕜 E).symm
-      ((fderiv 𝕜 (⇑(contMDiffEval 𝕜 E n p)) ξ).toLinearMap.comp
-        LinearMap.toContinuousLinearMap.toLinearMap) =
+    (TauCeti.inclusionInDoubleDualEquiv 𝕜 E).symm
+      (fderiv 𝕜 (⇑(contMDiffEval 𝕜 E n p)) ξ) =
       p.gradient ξ.toLinearMap := by
-  apply (Module.evalEquiv 𝕜 E).injective
-  rw [LinearEquiv.apply_symm_apply]
-  ext η
-  simp [fderiv_contMDiffEval_apply]
+  rw [fderiv_contMDiffEval]
+  have h : ContinuousLinearMap.apply 𝕜 𝕜 (p.gradient ξ.toLinearMap) =
+      TauCeti.inclusionInDoubleDualEquiv 𝕜 E (p.gradient ξ.toLinearMap) := by
+    ext η
+    simp [TauCeti.inclusionInDoubleDualEquiv_apply]
+  rw [h, ContinuousLinearEquiv.symm_apply_apply]
 
 end FDeriv
 

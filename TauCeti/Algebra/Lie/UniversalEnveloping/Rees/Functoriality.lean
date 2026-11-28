@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Functoriality
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Basic
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Functoriality of the PBW Rees algebra
@@ -188,9 +189,10 @@ theorem reesQuotientMap_id (a : R) :
 theorem reesQuotientMap_comp (a : R) (f : L →ₗ⁅R⁆ M) (g : M →ₗ⁅R⁆ N) :
     reesQuotientMap R a (g.comp f) =
       (reesQuotientMap R a g).comp (reesQuotientMap R a f) := by
-  refine Ideal.Quotient.algHom_ext R ?_
-  ext p
-  simp
+  have hcomp : ((reesMap R g).comp (reesMap R f)).restrictScalars R =
+      ((reesMap R g).restrictScalars R).comp ((reesMap R f).restrictScalars R) :=
+    AlgHom.ext fun _ ↦ by simp
+  simp only [reesQuotientMap, Ideal.quotientMapₐ_comp, reesMap_comp, hcomp]
 
 end Functoriality
 
