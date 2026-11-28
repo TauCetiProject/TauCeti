@@ -19,6 +19,7 @@ public import Mathlib.Topology.UnitInterval
 public import TauCeti.Topology.MetricSpace.Antilipschitz
 
 import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
+import Mathlib.Topology.ContinuousMap.Ordered
 import Mathlib.Topology.MetricSpace.IsometricSMul
 import Mathlib.Topology.MetricSpace.Lipschitz
 import Mathlib.Topology.MetricSpace.UniformConvergence
@@ -46,6 +47,9 @@ and adds companion statements used for compactness and finite approximation of f
   set `D ⊆ X`: equicontinuity spreads total boundedness from `D` to every point
   (`EquicontinuousWithinAt.totallyBounded_range_eval`), and completeness turns it into
   compactness of the closure.
+* For a complete locally compact target and a preconnected domain, totally bounded values at
+  one parameter propagate to every parameter. On a compact domain this gives a uniformly
+  convergent subsequence of any equicontinuous sequence.
 * An equicontinuous family with pointwise totally bounded values has finite uniform
   approximations on compact sets, with approximants drawn from the family itself.
 * Conversely, on a weakly locally compact domain, a compact subset of `C(X, Y)` is equicontinuous.
@@ -70,8 +74,10 @@ and adds companion statements used for compactness and finite approximation of f
   which it is antilipschitz with a fixed constant (`TauCeti.AntilipschitzWithFrom`, the global
   self-point floor at an anchor) form a compact set.
 
-The pointwise hypothesis cannot be replaced by equicontinuity and a common starting point when `Y`
-is not proper. The curves `γₙ(t) = t • eₙ`, `t ∈ [0, 1]`, along the standard basis vectors of
+A common starting point supplies pointwise relative compactness for an equicontinuous sequence
+when the target is complete and locally compact and the domain is compact and preconnected. The
+curves
+`γₙ(t) = t • eₙ`, `t ∈ [0, 1]`, along the standard basis vectors of
 `ℓ²` are `1`-Lipschitz and all start at `0`, but no subsequence converges uniformly, because the
 endpoints `eₙ` stay at distance at least `1` from each other
 (`TauCeti.exists_lipschitzWith_one_not_isCompact_closure_range`).
@@ -80,6 +86,16 @@ endpoints `eₙ` stay at distance at least `1` from each other
 
 * `ArzelaAscoli.isCompact_closure_range_of_equicontinuous`: equicontinuity and pointwise relative
   compactness give compact closure.
+* `EquicontinuousAt.exists_mem_nhds_isCompact_forall_apply_mem`: near a parameter with totally
+  bounded values, an equicontinuous family has values in one compact set.
+* `Equicontinuous.totallyBounded_range_eval_of_totallyBounded`: on a preconnected domain, one
+  totally bounded fiber suffices for a complete locally compact target.
+* `Equicontinuous.exists_tendstoUniformly_subseq_of_totallyBounded`: on a compact preconnected
+  domain, an equicontinuous sequence into a complete locally compact pseudometric space with one
+  totally bounded fiber has a uniformly convergent subsequence.
+* `Equicontinuous.exists_tendstoUniformlyOn_Icc_subseq_of_fixed_endpoints`: fixed-endpoint
+  equicontinuous paths into a complete locally compact metric space have a uniformly convergent
+  subsequence on the closed interval with a continuous extension preserving the endpoints.
 * `EquicontinuousOn.exists_finite_approx_of_isCompact`: finite uniform approximation on a compact
   set by members of the family.
 * `ContinuousMap.isClosedEmbedding_toUniformOnFunIsCompact`: `C(X, Y)` is a closed subspace of
@@ -301,6 +317,106 @@ theorem EquicontinuousOn.exists_strictMono_tendstoLocallyUniformlyOn [LocallyCom
   rw [tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe,
     Function.extend_comp Subtype.val_injective]
   exact ContinuousMap.tendsto_iff_tendstoLocallyUniformly.1 hconv
+
+/- The anchored compactness argument below is adapted from the path-tightness development in
+the public formalizations https://github.com/frenzymath/PoincareConjecture and
+https://github.com/frenzymath/lean-eval-submissions. -/
+/-- Equicontinuity at a parameter with totally bounded values gives a neighborhood whose
+values lie in a common compact set, for a complete locally compact target. -/
+theorem EquicontinuousAt.exists_mem_nhds_isCompact_forall_apply_mem {A X ι : Type*}
+    [TopologicalSpace A] [PseudoMetricSpace X] [CompleteSpace X] [LocallyCompactSpace X]
+    {f : ι → A → X} {t : A} (hf : EquicontinuousAt f t)
+    (ht : TotallyBounded (Set.range (fun i ↦ f i t))) :
+    ∃ U ∈ 𝓝 t, ∃ K : Set X, IsCompact K ∧ ∀ s ∈ U, ∀ i, f i s ∈ K := by
+  have hcompact := ht.closure.isCompact_of_isClosed isClosed_closure
+  obtain ⟨δ, hδ, hK⟩ := hcompact.exists_isCompact_cthickening
+  have hnear := Metric.equicontinuousAt_iff_right.mp hf δ hδ
+  refine ⟨{s | ∀ i, dist (f i t) (f i s) < δ}, hnear,
+    Metric.cthickening δ (closure (Set.range (fun i ↦ f i t))), hK, ?_⟩
+  intro s hs i
+  exact Metric.mem_cthickening_of_dist_le _ (f i t) _ _
+    (subset_closure (Set.mem_range_self i)) (by simpa only [dist_comm] using (hs i).le)
+
+/-- Total boundedness at one parameter propagates throughout a preconnected parameter space
+for an equicontinuous family into a complete locally compact target. -/
+theorem Equicontinuous.totallyBounded_range_eval_of_totallyBounded {A X ι : Type*}
+    [TopologicalSpace A] [PreconnectedSpace A]
+    [PseudoMetricSpace X] [CompleteSpace X] [LocallyCompactSpace X]
+    {f : ι → A → X} (hf : Equicontinuous f) (a : A)
+    (ha : TotallyBounded (Set.range (fun i ↦ f i a))) :
+    ∀ t, TotallyBounded (Set.range (fun i ↦ f i t)) := by
+  let P : Set A := {t | TotallyBounded (Set.range (fun i ↦ f i t))}
+  have hclosed : IsClosed P := by
+    apply isClosed_of_closure_subset
+    intro t ht
+    exact ((hf t).equicontinuousWithinAt P).totallyBounded_range_eval ht (fun _ hs ↦ hs)
+  have hopen : IsOpen P := by
+    apply isOpen_iff_mem_nhds.mpr
+    intro t ht
+    obtain ⟨U, hU, K, hK, hUK⟩ := (hf t).exists_mem_nhds_isCompact_forall_apply_mem ht
+    apply Filter.mem_of_superset hU
+    intro s hs
+    exact hK.totallyBounded.subset (by rintro _ ⟨i, rfl⟩; exact hUK s hs i)
+  have haP : a ∈ P := ha
+  have hP : P = Set.univ := IsClopen.eq_univ ⟨hclosed, hopen⟩ ⟨a, haP⟩
+  exact Set.eq_univ_iff_forall.mp hP
+
+/-- An equicontinuous sequence on a compact preconnected parameter space into a complete locally
+compact pseudometric target has a uniformly convergent subsequence with a continuous limit if its
+values at one parameter are totally bounded. -/
+theorem Equicontinuous.exists_tendstoUniformly_subseq_of_totallyBounded {A X : Type*}
+    [TopologicalSpace A] [CompactSpace A] [PreconnectedSpace A]
+    [PseudoMetricSpace X] [CompleteSpace X] [LocallyCompactSpace X]
+    {f : ℕ → A → X} (hf : Equicontinuous f) (a : A)
+    (ha : TotallyBounded (Set.range (fun i ↦ f i a))) :
+    ∃ g : C(A, X), ∃ φ : ℕ → ℕ, StrictMono φ ∧
+      TendstoUniformly (fun k ↦ f (φ k)) g atTop := by
+  classical
+  have hfibers := hf.totallyBounded_range_eval_of_totallyBounded a ha
+  let F : ℕ → C(A, X) := fun k ↦ ⟨f k, hf.continuous k⟩
+  have hF : Equicontinuous fun g : range F ↦ ⇑(g : C(A, X)) := by
+    have hcomp := hf.comp (rangeSplitting F)
+    have heq : ∀ g : range F, F (rangeSplitting F g) = (g : C(A, X)) :=
+      congrFun (comp_rangeSplitting F)
+    -- The underlying function of each bundled map F k is f k.
+    change Equicontinuous (fun g ↦ ⇑(F (rangeSplitting F g))) at hcomp
+    simpa only [heq] using hcomp
+  have hcompact : IsCompact (closure (range F)) :=
+    ArzelaAscoli.isCompact_closure_of_equicontinuous_of_totallyBounded dense_univ hF
+      fun t _ ↦ by
+        rw [← range_comp (fun g : C(A, X) ↦ g t) F]
+        exact hfibers t
+  obtain ⟨g, -, φ, hφ, hlim⟩ :=
+    hcompact.tendsto_subseq (fun k ↦ subset_closure (mem_range_self k))
+  exact ⟨g, φ, hφ, ContinuousMap.tendsto_iff_tendstoUniformly.1 hlim⟩
+
+/-- Equicontinuous paths on a closed real interval with fixed endpoints in a complete locally
+compact metric space admit a uniformly convergent subsequence. The limit extends continuously
+to the real line and retains the endpoints, also on a singleton interval. -/
+theorem Equicontinuous.exists_tendstoUniformlyOn_Icc_subseq_of_fixed_endpoints {M : Type*}
+    [MetricSpace M] [CompleteSpace M] [LocallyCompactSpace M]
+    {a b : ℝ} {f : ℕ → ℝ → M} {p q : M} (hab : a ≤ b)
+    (hf : Equicontinuous (fun n ↦ (Icc a b).domRestrict (f n)))
+    (hp : ∀ n, f n a = p) (hq : ∀ n, f n b = q) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ v : ℝ → M, Continuous v ∧ v a = p ∧ v b = q ∧
+      TendstoUniformlyOn (fun n ↦ f (φ n)) v atTop (Icc a b) := by
+  let left : Icc a b := ⟨a, le_rfl, hab⟩
+  let right : Icc a b := ⟨b, hab, le_rfl⟩
+  have hanchor : TotallyBounded (range fun n ↦ f n left) := by
+    simpa only [left, hp, range_const] using (totallyBounded_singleton (a := p))
+  have : PreconnectedSpace (Icc a b) := isPreconnected_iff_preconnectedSpace.mp isPreconnected_Icc
+  obtain ⟨v, φ, hφ, hlim⟩ := hf.exists_tendstoUniformly_subseq_of_totallyBounded left hanchor
+  have hvalue (x : Icc a b) (c : M) (hc : ∀ n, f n x = c) : v.IccExtend hab x = c := by
+    rw [ContinuousMap.coe_IccExtend, Set.IccExtend_val]
+    exact tendsto_nhds_unique
+      (by simpa only [Set.domRestrict_apply, hc] using hlim.tendsto_at x) tendsto_const_nhds
+  refine ⟨φ, hφ, v.IccExtend hab, (v.IccExtend hab).continuous, hvalue left p hp,
+    hvalue right q hq, ?_⟩
+  apply tendstoUniformlyOn_iff_tendstoUniformly_comp_coe.mpr
+  -- Restriction to the subtype agrees with precomposition by its inclusion.
+  change TendstoUniformly (fun n (x : Icc a b) ↦ f (φ n) x) v atTop at hlim
+  simpa only [Function.comp_def, Set.domRestrict_apply, ContinuousMap.coe_IccExtend,
+    Set.IccExtend_val] using hlim
 
 namespace TauCeti
 
