@@ -55,6 +55,23 @@ public section
 
 namespace Matrix
 
+/-- **A block-diagonal congruence identity.** For a block matrix `fromBlocks A B Bᴴ 1`, whose last
+block of basis vectors is orthonormal, the multiplier `fromBlocks kS 0 (-(Bᴴ * kS)) 1`
+makes the two blocks orthogonal, and transforms the first block into the congruence of the Schur
+complement `A - B * Bᴴ` by `kS`. This is a change of basis when `kS` is invertible. -/
+theorem conjTranspose_mul_fromBlocks_one₂₂_mul {α m p : Type*} [Ring α] [StarRing α]
+    [Fintype m] [Fintype p] [DecidableEq p] (A : Matrix m m α) (B : Matrix m p α)
+    (kS : Matrix m m α) :
+    (fromBlocks kS 0 (-(Bᴴ * kS)) (1 : Matrix p p α))ᴴ * fromBlocks A B Bᴴ (1 : Matrix p p α) *
+        fromBlocks kS 0 (-(Bᴴ * kS)) (1 : Matrix p p α) =
+      fromBlocks (kSᴴ * (A - B * Bᴴ) * kS) 0 0 (1 : Matrix p p α) := by
+  simp only [fromBlocks_conjTranspose, fromBlocks_multiply, conjTranspose_neg,
+    conjTranspose_mul, conjTranspose_conjTranspose, conjTranspose_zero, conjTranspose_one,
+    Matrix.mul_zero, Matrix.zero_mul, Matrix.mul_one, Matrix.one_mul, Matrix.mul_neg,
+    Matrix.neg_mul, zero_add, Matrix.mul_sub, Matrix.sub_mul, Matrix.add_mul,
+    Matrix.mul_assoc]
+  congr 1 <;> abel
+
 section Generalized
 
 variable {m n R : Type*} [Ring R] [PartialOrder R] [StarRing R]

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.Subsemiring
+public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 public import TauCeti.NumberTheory.NumberField.CMField.FinitePlace
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.GaloisAction
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocalUnits
@@ -273,6 +274,27 @@ theorem star_indicatorOne (S : Set (HeightOneSpectrum (𝓞 E))) :
     Function.Involutive.image_eq_preimage_symm HeightOneSpectrum.conjPlace_conjPlace]
 
 end IsDedekindDomain.FiniteAdeleRing
+
+section Matrices
+
+open IsDedekindDomain.FiniteAdeleRing
+open scoped Matrix
+
+/-- The components at a place `w'` of the conjugate transpose of a matrix over `Ô` are the
+conjugates of the components of its transpose at the conjugate place `w` of `w'`. -/
+theorem Matrix.map_conjTranspose_apply_place {E : Type*} [Field E] [NumberField E] [IsCMField E]
+    {m n : Type*} (M : Matrix m n (integralAdeles (𝓞 E) E))
+    {w w' : HeightOneSpectrum (𝓞 E)}
+    (hw : ∀ x, w'.valuation E ((complexConj E).toRingEquiv x) = w.valuation E x) :
+    Mᴴ.map ((w'.adicCompletionIntegers E).subtype.comp (integralProj E w')) =
+      ((M.map ((w.adicCompletionIntegers E).subtype.comp (integralProj E w))).map
+        (HeightOneSpectrum.adicCompletionCongr w w' _ hw))ᵀ :=
+  Matrix.ext fun i j ↦ by
+    simp only [RingHom.comp_apply, ValuationSubring.subtype_apply, coe_integralProj_apply,
+      Matrix.map_apply, Matrix.conjTranspose_apply, Matrix.transpose_apply, coe_star_integralAdeles,
+      star_apply_eq_adicCompletionCongr hw]
+
+end Matrices
 
 /-! ### The infinite adeles -/
 

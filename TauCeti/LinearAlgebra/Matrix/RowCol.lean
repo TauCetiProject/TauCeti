@@ -20,6 +20,15 @@ public section
 
 namespace Matrix
 
+/-- Replacing column `i` of the identity by `v` makes the `i`-th diagonal entry of the
+congruence of `b` equal to the value of its form at `v`. -/
+@[simp]
+theorem conjTranspose_mul_mul_updateCol_one_apply_self {n R : Type*} [Fintype n]
+    [DecidableEq n] [Semiring R] [StarRing R] (b : Matrix n n R) (i : n) (v : n → R) :
+    ((updateCol 1 i v)ᴴ * b * updateCol 1 i v) i i = star v ⬝ᵥ b *ᵥ v := by
+  rw [mul_mul_apply, ← updateRow_conjTranspose, updateRow_self,
+    ← updateRow_transpose, updateRow_self]
+
 /-- The column `a` of a product of matrices with replaced columns `a`, when the new column `y` of
 the right factor is `1` at `a` and supported on `S ∪ {a}`. -/
 theorem updateCol_mul_updateCol_apply_self {l p T : Type*} [NonAssocSemiring T] [Fintype p]

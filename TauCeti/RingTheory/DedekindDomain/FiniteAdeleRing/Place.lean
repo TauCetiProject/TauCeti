@@ -87,6 +87,18 @@ def proj (v : HeightOneSpectrum R) : FiniteAdeleRing R K →A[K] v.adicCompletio
 theorem proj_apply (v : HeightOneSpectrum R) (a : FiniteAdeleRing R K) : proj K v a = a v :=
   (rfl)
 
+variable (K) in
+/-- The projection of integral finite adeles onto the integers of one completion. -/
+noncomputable def integralProj (v : HeightOneSpectrum R) :
+    integralAdeles R K →+* v.adicCompletionIntegers K :=
+  (proj K v).toAlgHom.toRingHom.restrict _ _ fun _ ha ↦ mem_integralAdeles.mp ha v
+
+/-- The integral projection reads off the component at its place. -/
+@[simp]
+theorem coe_integralProj_apply (v : HeightOneSpectrum R) (a : integralAdeles R K) :
+    (integralProj K v a : v.adicCompletion K) = (a : FiniteAdeleRing R K) v :=
+  (RingHom.coe_restrict_apply _ _ _ _ a).trans (proj_apply v (a : FiniteAdeleRing R K))
+
 /-! ### Finite adeles supported at one place -/
 
 variable (K) in
