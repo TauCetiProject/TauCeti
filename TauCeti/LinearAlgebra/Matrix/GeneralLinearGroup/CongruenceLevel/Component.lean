@@ -29,18 +29,19 @@ ideal. The **component group**
 Γ₀(𝔫, 𝔞) = {(a b; c d) ∈ GL₂(K) : a, d ∈ A, b ∈ 𝔞⁻¹, c ∈ 𝔞𝔫, det ∈ Aˣ}
 ```
 
-(`TauCeti.Gamma0Component 𝔫 𝔞`) is the stabilizer in `GL₂(K)` of the pair of column lattices
-`A ⊕ 𝔞 ⊇ A ⊕ 𝔞𝔫` when `𝔞` is invertible. For `𝔞 = A` it is the image of the congruence group
-`Γ₀(𝔫) = {γ ∈ GL₂(A) : γ₂₁ ∈ 𝔫}`. For `K` an imaginary quadratic field and `A` its ring of
-integers, the groups `Γ₀(𝔫, 𝔞)` for representatives `𝔞` of the ideal classes are the level-`𝔫`
-Bianchi groups, one for each component of the level-`𝔫` Bianchi orbifold when the class number
-exceeds one. Conjugation by `diag(1, x)` identifies `Γ₀(𝔫, 𝔞)` with `Γ₀(𝔫, x𝔞)`, so up to
-conjugacy the group depends only on the class of `𝔞`.
+(`TauCeti.Gamma0Component 𝔫 𝔞`) is the stabilizer in `GL₂(K)` of the pair of column submodules
+`A ⊕ 𝔞 ⊇ A ⊕ 𝔞𝔫` when `𝔞` is invertible; for `𝔫 ≠ 0` these are lattices in `K²`. For `𝔞 = A` it
+is the image of the congruence group `Γ₀(𝔫) = {γ ∈ GL₂(A) : γ₂₁ ∈ 𝔫}`. For `K` an imaginary
+quadratic field, `A` its ring of integers and `𝔫 ≠ 0`, the groups `Γ₀(𝔫, 𝔞)` for representatives
+`𝔞` of the ideal classes are the level-`𝔫` Bianchi groups, one for each component of the
+level-`𝔫` Bianchi orbifold when the class number exceeds one. Conjugation by `diag(1, x)`
+identifies `Γ₀(𝔫, 𝔞)` with `Γ₀(𝔫, x𝔞)`, so up to conjugacy the group depends only on the class
+of `𝔞`.
 
 ## Main definitions
 
 * `TauCeti.Gamma0Component 𝔫 𝔞`: the component group `Γ₀(𝔫, 𝔞) ≤ GL₂(K)`.
-* `TauCeti.Gamma0Component.lattice 𝔞`: the column lattice `A ⊕ 𝔞` of `K²`.
+* `TauCeti.Gamma0Component.lattice 𝔞`: the column submodule `A ⊕ 𝔞` of `K²`.
 
 ## Main results
 
@@ -49,7 +50,7 @@ conjugacy the group depends only on the class of `𝔞`.
 * `TauCeti.Gamma0Component.map_conj_diagGL`: conjugation by `diag(1, x)` carries `Γ₀(𝔫, 𝔞)`
   onto `Γ₀(𝔫, x𝔞)`.
 * `TauCeti.Gamma0Component.stabilizer_lattice_inf_stabilizer_lattice`: for invertible `𝔞`,
-  `Γ₀(𝔫, 𝔞)` is the stabilizer of the pair `(A ⊕ 𝔞, A ⊕ 𝔞𝔫)`.
+  `Γ₀(𝔫, 𝔞)` is the stabilizer of the pair of column submodules `(A ⊕ 𝔞, A ⊕ 𝔞𝔫)`.
 
 ## References
 
@@ -75,10 +76,11 @@ private theorem mem_of_mem_mul_coeIdeal {𝔫 : Ideal A} {𝔞 : FractionalIdeal
 
 namespace Gamma0Component
 
-/-! ### The column lattices `A ⊕ 𝔞` -/
+/-! ### The column submodules `A ⊕ 𝔞` -/
 
-/-- The **column lattice `A ⊕ 𝔞`** of `K²`: the vectors whose first coordinate lies in `A` and
-whose second lies in `𝔞`. -/
+/-- The **column submodule `A ⊕ 𝔞`** of `K²`: the vectors whose first coordinate lies in `A` and
+whose second lies in `𝔞`. It is a lattice in `K²`, spanning `K²` over `K`, exactly when
+`𝔞 ≠ 0`. -/
 def lattice (𝔞 : FractionalIdeal A⁰ K) : Submodule A (Fin 2 → K) :=
   Submodule.pi Set.univ ![((1 : FractionalIdeal A⁰ K) : Submodule A K), (𝔞 : Submodule A K)]
 
@@ -111,13 +113,14 @@ private theorem entries_of_smul_lattice_le {γ : GL (Fin 2) K} {𝔟 : Fractiona
       ((γ : Matrix (Fin 2) (Fin 2) K) *ᵥ v) 0 ∈ (1 : FractionalIdeal A⁰ K) ∧
         ((γ : Matrix (Fin 2) (Fin 2) K) *ᵥ v) 1 ∈ 𝔟 :=
     mem_lattice.mp (h (Submodule.smul_mem_pointwise_smul v γ _ hv))
-  have h₀ := key ![1, 0]
+  have h₀ := key (Pi.single 0 1)
     (mem_lattice.mpr ⟨by simpa using one_mem_one A⁰, by simp [FractionalIdeal.zero_mem]⟩)
-  refine ⟨by simpa [Matrix.mulVec, dotProduct] using h₀.1,
-    by simpa [Matrix.mulVec, dotProduct] using h₀.2, fun y hy ↦ ?_⟩
-  have h₁ := key ![0, y] (mem_lattice.mpr ⟨by simp [FractionalIdeal.zero_mem], by simpa using hy⟩)
-  exact ⟨by simpa [Matrix.mulVec, dotProduct] using h₁.1,
-    by simpa [Matrix.mulVec, dotProduct] using h₁.2⟩
+  rw [Matrix.mulVec_single_one] at h₀
+  refine ⟨h₀.1, h₀.2, fun y hy ↦ ?_⟩
+  have h₁ := key (Pi.single 1 y)
+    (mem_lattice.mpr ⟨by simp [FractionalIdeal.zero_mem], by simpa using hy⟩)
+  rw [Matrix.mulVec_single] at h₁
+  simpa [mul_comm y] using h₁
 
 end Gamma0Component
 
@@ -135,7 +138,7 @@ variable (𝔫 : Ideal A) (𝔞 : FractionalIdeal A⁰ K)
 
 /-- The **component group** `Γ₀(𝔫, 𝔞) ≤ GL₂(K)` of level `𝔫` and component `𝔞`: the invertible
 matrices `(a b; c d)` with `a, d ∈ A`, `b ∈ 𝔞⁻¹`, `c ∈ 𝔞𝔫` and determinant a unit of `A`. For
-invertible `𝔞` it is the stabilizer of the lattice pair `A ⊕ 𝔞 ⊇ A ⊕ 𝔞𝔫`
+invertible `𝔞` it is the stabilizer of the pair of column submodules `A ⊕ 𝔞 ⊇ A ⊕ 𝔞𝔫`
 (`TauCeti.Gamma0Component.stabilizer_lattice_inf_stabilizer_lattice`). For `𝔞 = 0` the inverse
 `𝔞⁻¹` is Mathlib's junk value `0`, and the group consists of the diagonal matrices with entries
 in `Aˣ`. -/
@@ -203,9 +206,9 @@ theorem map_GL2K0 :
     mem_coeIdeal]
   constructor
   · rintro ⟨g, hg, rfl⟩
-    refine ⟨⟨_, rfl⟩, ⟨_, rfl⟩, ⟨_, rfl⟩, ⟨_, GL2K0.mem_iff.mp hg, rfl⟩,
-      GeneralLinearGroup.det g, ?_⟩
-    simp [GeneralLinearGroup.map, RingHom.map_det]
+    exact ⟨⟨_, rfl⟩, ⟨_, rfl⟩, ⟨_, rfl⟩, ⟨_, GL2K0.mem_iff.mp hg, rfl⟩,
+      GeneralLinearGroup.det g,
+      (congrArg Units.val (GeneralLinearGroup.map_det (algebraMap A K) g)).symm⟩
   · rintro ⟨h00, h11, h01, ⟨c, hc, h10⟩, u, hu⟩
     -- Lift the four integral entries to a matrix `M` over `A`.
     have h : ∀ i j, ∃ r : A, algebraMap A K r = γ i j := by
@@ -260,18 +263,10 @@ theorem map_conj_diagGL (x : Kˣ) :
     (Gamma0Component 𝔫 𝔞).map (MulAut.conj (diagGL ![1, x])).toMonoidHom =
       Gamma0Component 𝔫 (spanSingleton A⁰ (x : K) * 𝔞) := by
   ext γ
-  simp only [Subgroup.mem_map, MulEquiv.coe_toMonoidHom, MulAut.conj_apply]
-  constructor
-  · rintro ⟨δ, hδ, rfl⟩
-    exact (diagGL_mul_mul_inv_mem_iff 𝔫 x).mpr hδ
-  · intro hγ
-    refine ⟨(diagGL ![1, x])⁻¹ * γ * diagGL ![1, x], ?_, by group⟩
-    rw [← diagGL_mul_mul_inv_mem_iff 𝔫 x]
-    have h : diagGL ![1, x] * ((diagGL ![1, x])⁻¹ * γ * diagGL ![1, x]) * (diagGL ![1, x])⁻¹ =
-        γ := by group
-    rwa [h]
+  rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply, ← diagGL_mul_mul_inv_mem_iff 𝔫 x]
+  group
 
-/-! ### `Γ₀(𝔫, 𝔞)` as the stabilizer of a lattice pair -/
+/-! ### `Γ₀(𝔫, 𝔞)` as the stabilizer of a pair of column submodules -/
 
 /-- The entries of an element of the stabilizer of `(A ⊕ 𝔞, A ⊕ 𝔞𝔫)` satisfy the conditions
 defining `Γ₀(𝔫, 𝔞)`, for invertible `𝔞`. -/
@@ -304,8 +299,8 @@ private theorem det_mem_one {γ : GL (Fin 2) K} (h00 : γ 0 0 ∈ (1 : Fractiona
   refine FractionalIdeal.add_mem (by simpa using mul_mem_mul h00 h11) ?_
   exact FractionalIdeal.neg_mem (mul_mem_one_of_mem_inv h01 (mem_of_mem_mul_coeIdeal h10))
 
-/-- **`Γ₀(𝔫, 𝔞)` is the stabilizer of the lattice pair `A ⊕ 𝔞 ⊇ A ⊕ 𝔞𝔫`** in `GL₂(K)`, for an
-invertible fractional ideal `𝔞`. -/
+/-- **`Γ₀(𝔫, 𝔞)` is the stabilizer of the column submodules `A ⊕ 𝔞 ⊇ A ⊕ 𝔞𝔫`** in `GL₂(K)`,
+for an invertible fractional ideal `𝔞`. For `𝔫 ≠ 0` both are lattices in `K²`. -/
 theorem stabilizer_lattice_inf_stabilizer_lattice (h𝔞 : IsUnit 𝔞) :
     MulAction.stabilizer (GL (Fin 2) K) (lattice 𝔞) ⊓
         MulAction.stabilizer (GL (Fin 2) K) (lattice (𝔞 * 𝔫 : FractionalIdeal A⁰ K)) =
@@ -315,7 +310,7 @@ theorem stabilizer_lattice_inf_stabilizer_lattice (h𝔞 : IsUnit 𝔞) :
   constructor
   · rintro ⟨hL, hM⟩
     obtain ⟨h00, h11, h01, h10⟩ := entries_of_mem_stabilizer 𝔫 h𝔞 hL hM
-    -- The inverse also stabilizes both lattices, so both determinants are integral.
+    -- The inverse also stabilizes both submodules, so both determinants are integral.
     obtain ⟨i00, i11, i01, i10⟩ := entries_of_mem_stabilizer 𝔫 h𝔞 (γ := γ⁻¹)
       (inv_smul_eq_iff.mpr hL.symm) (inv_smul_eq_iff.mpr hM.symm)
     obtain ⟨r, hr⟩ := (mem_one_iff A⁰).mp (det_mem_one 𝔫 h00 h11 h01 h10)
@@ -326,7 +321,7 @@ theorem stabilizer_lattice_inf_stabilizer_lattice (h𝔞 : IsUnit 𝔞) :
         Units.val_one, Matrix.det_one]
     exact ⟨h00, h11, h01, h10, ⟨r, s, hrs, mul_comm s r ▸ hrs⟩, hr⟩
   · intro hγ
-    -- Every element of `Γ₀(𝔫, 𝔞)` carries each lattice into itself; apply this to `γ⁻¹` too.
+    -- Every element of `Γ₀(𝔫, 𝔞)` carries each submodule into itself; apply this to `γ⁻¹` too.
     have hle : ∀ δ ∈ Gamma0Component 𝔫 𝔞,
         δ • lattice 𝔞 ≤ lattice 𝔞 ∧
           δ • lattice (𝔞 * 𝔫 : FractionalIdeal A⁰ K) ≤ lattice (𝔞 * 𝔫 : FractionalIdeal A⁰ K) := by
