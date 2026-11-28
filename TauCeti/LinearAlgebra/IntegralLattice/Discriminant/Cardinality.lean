@@ -34,8 +34,8 @@ Gram matrix of `b`: the coefficient of `b j` along the dual vector indexed by `i
   cardinality formula.
 * `TauCeti.IntegralLattice.natCard_discriminantGroup`: the discriminant-group cardinality is the
   lattice discriminant.
-* `TauCeti.IntegralLattice.discriminant_eq_of_addEquiv`: additively equivalent discriminant
-  groups come from lattices of equal discriminant.
+* `TauCeti.IntegralLattice.discriminant_eq_of_discriminantGroup_addEquiv`: additively equivalent
+  discriminant groups come from lattices of equal discriminant.
 * `TauCeti.IntegralLattice.natCard_discriminantGroup_ofGramMatrix`: the formula for a lattice
   constructed from an integral symmetric matrix.
 * `TauCeti.IntegralLattice.inv_smul_mem_carrier_of_forall_dvd`: for `p` prime to `det L`, a vector
@@ -111,7 +111,7 @@ theorem natCard_discriminantGroup (L : IntegralLattice V) :
     L.discriminant_eq_natAbs_gramDet (Module.Free.chooseBasis ℤ L)]
 
 /-- Integral lattices with additively equivalent discriminant groups have the same discriminant. -/
-theorem discriminant_eq_of_addEquiv {W : Type v} [AddCommGroup W] [Module ℚ W]
+theorem discriminant_eq_of_discriminantGroup_addEquiv {W : Type v} [AddCommGroup W] [Module ℚ W]
     {L : IntegralLattice V} {M : IntegralLattice W}
     (e : L.DiscriminantGroup ≃+ M.DiscriminantGroup) :
     L.discriminant = M.discriminant := by

@@ -17,9 +17,10 @@ import TauCeti.RingTheory.Henselian.SquareClasses
 
 For an odd prime `p`, `ℤ_p` is a Henselian local ring in which `2` is a unit, so a `p`-adic unit is
 a square in `ℤ_p` if and only if its reduction modulo `p` is a square in `𝔽_p`. Equivalently, the
-quadratic character of its reduction modulo `p` equals `1`, and a product of `p`-adic units is a
+quadratic character of its reduction modulo `p` equals `1`, a product of `p`-adic units is a
 square in `ℤ_p` exactly when the corresponding product of Legendre symbols of integer lifts modulo
-`p` matches.
+`p` is `1`, and two such products lie in the same square class in `ℤ_p` exactly when their
+Legendre-symbol products agree.
 
 ## Main results
 

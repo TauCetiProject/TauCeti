@@ -76,20 +76,18 @@ theorem rank_eq_sup_primaryComponents (A : Type*) [AddCommGroup A] [Finite A] :
 `AddGroup.rank` at most `AddGroup.rank A`. -/
 theorem rank_primaryComponent_le (A : Type*) [AddCommGroup A] [Finite A] (n : ℕ) :
     AddGroup.rank (_root_.AddCommGroup.primaryComponent A n) ≤ AddGroup.rank A := by
-  rw [AddGroup.rank_eq_spanFinrank, AddGroup.rank_eq_spanFinrank]
   set P := _root_.AddCommGroup.primaryComponent A n
   have hcop : (Nat.card P).Coprime P.index :=
     Nat.coprime_of_dvd fun p hp hpP hpI ↦ hp.not_dvd_one <|
       (coprime_index_primaryComponent (A := A) n).gcd_eq_one ▸
         Nat.dvd_gcd hpI (dvd_of_prime_dvd_natCard_primaryComponent hp hpP)
-  let π : A →ₗ[ℤ] P :=
+  let π : A →+ P :=
     { toFun := fun x ↦ ⟨P.index • x, P.nsmul_index_mem x⟩
-      map_add' := fun x y ↦ Subtype.ext (nsmul_add x y P.index)
-      map_smul' := fun r x ↦ Subtype.ext (smul_comm P.index r x) }
+      map_zero' := Subtype.ext (nsmul_zero P.index)
+      map_add' := fun x y ↦ Subtype.ext (nsmul_add x y P.index) }
   have hsurj : Function.Surjective π := fun y ↦ by
     obtain ⟨z, rfl⟩ := hcop.nsmul_right_bijective.surjective y
     exact ⟨z, rfl⟩
-  have h := Submodule.spanFinrank_map_le_of_fg π (Module.Finite.fg_top (R := ℤ) (M := A))
-  rwa [Submodule.map_top, LinearMap.range_eq_top.mpr hsurj] at h
+  exact AddGroup.rank_le_of_surjective π hsurj
 
 end TauCeti.AddCommGroup

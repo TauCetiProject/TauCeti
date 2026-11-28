@@ -255,12 +255,16 @@ theorem iIsOrtho.isSymm {B : LinearMap.BilinForm K V} {ι : Type*} {b : Module.B
   · rfl
   · rw [iIsOrtho_def.mp hb i j hij, iIsOrtho_def.mp hb j i hij.symm]
 
+/-- Precomposing an orthogonal family by an injective map preserves orthogonality. -/
+theorem iIsOrtho.comp {B : LinearMap.BilinForm K V} {ι κ : Type*} {v : ι → V}
+    (hv : B.iIsOrtho v) {f : κ → ι} (hf : Function.Injective f) :
+    B.iIsOrtho (v ∘ f) :=
+  iIsOrtho_def.mpr fun i j hij ↦ iIsOrtho_def.mp hv (f i) (f j) (hf.ne hij)
+
 /-- Reindexing an orthogonal basis preserves orthogonality. -/
 theorem iIsOrtho.reindex {B : LinearMap.BilinForm K V} {ι κ : Type*} {b : Module.Basis ι K V}
-    (hb : B.iIsOrtho b) (e : ι ≃ κ) : B.iIsOrtho (b.reindex e) :=
-  iIsOrtho_def.mpr fun i j hij ↦ by
-    simpa [Module.Basis.reindex_apply] using
-      iIsOrtho_def.mp hb (e.symm i) (e.symm j) (e.symm.injective.ne hij)
+    (hb : B.iIsOrtho b) (e : ι ≃ κ) : B.iIsOrtho (b.reindex e) := by
+  simpa only [Module.Basis.coe_reindex] using hb.comp e.symm.injective
 
 /-- For an orthogonal family `v`, the spans of its members in distinct fibers of a map `w` are
 orthogonal. -/

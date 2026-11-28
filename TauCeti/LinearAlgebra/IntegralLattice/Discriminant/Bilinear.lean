@@ -35,8 +35,8 @@ The pairing `b_L` is `B(x, y) mod ℤ`; the even-lattice refinement
 
 * `TauCeti.IntegralLattice.discriminantPairing`: the descended `ℚ/ℤ`-valued pairing.
 * `TauCeti.IntegralLattice.discriminantBilinearModule`: the packaged finite bilinear module.
-* `TauCeti.IntegralLattice.discriminant_eq_of_isometry`: lattices with isometric discriminant
-  bilinear modules have equal discriminant.
+* `TauCeti.IntegralLattice.discriminant_eq_of_discriminantBilinearIsometry`: lattices with isometric
+  discriminant bilinear modules have equal discriminant.
 * `TauCeti.IntegralLattice.isNondegenerate_discriminantBilinearModule`: nondegeneracy of the
   discriminant pairing.
 * `TauCeti.IntegralLattice.Isometry.discriminantBilinearIsometry`: functoriality under lattice
@@ -150,11 +150,11 @@ theorem natCard_discriminantBilinearModule (L : IntegralLattice V) [L.IsNondegen
 
 /-- Nondegenerate lattices with isometric discriminant bilinear modules have the same
 discriminant. -/
-theorem discriminant_eq_of_isometry {W : Type v} [AddCommGroup W] [Module ℚ W]
+theorem discriminant_eq_of_discriminantBilinearIsometry {W : Type v} [AddCommGroup W] [Module ℚ W]
     {L : IntegralLattice V} {M : IntegralLattice W} [L.IsNondegenerate] [M.IsNondegenerate]
     (f : FiniteBilinearModule.Isometry L.discriminantBilinearModule M.discriminantBilinearModule) :
     L.discriminant = M.discriminant :=
-  discriminant_eq_of_addEquiv f.toAddEquiv
+  discriminant_eq_of_discriminantGroup_addEquiv f.toAddEquiv
 
 /-- The discriminant bilinear module is subsingleton exactly when the discriminant group is. -/
 @[simp]

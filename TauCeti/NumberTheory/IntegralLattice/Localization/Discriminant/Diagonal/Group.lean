@@ -26,7 +26,7 @@ when `finrank ℤ L = AddGroup.rank (A_L)_p`.
   `TauCeti.IntegralLattice.piZModPowEquivPrimaryComponent_intCast`,
   `TauCeti.IntegralLattice.piZModPowEquivPrimaryComponent_symm_mk`
 * `TauCeti.IntegralLattice.rank_primaryComponent_discriminantGroup_eq_card_filter`
-* `TauCeti.IntegralLattice.ne_zero_of_finrank_eq_rank`
+* `TauCeti.IntegralLattice.jordanExponent_ne_zero_of_finrank_eq_rank`
 -/
 
 public section
@@ -221,18 +221,22 @@ theorem rank_primaryComponent_discriminantGroup_eq_card_filter [Fintype ι]
 
 /-- If a nondegenerate lattice achieves the minimal rank `finrank ℤ L = AddGroup.rank (A_L)_p`,
 then every diagonal Jordan exponent `kᵢ` is nonzero. -/
-theorem ne_zero_of_finrank_eq_rank
+theorem jordanExponent_ne_zero_of_finrank_eq_rank
     (L : IntegralLattice V) [L.IsNondegenerate] {p : ℕ} [Fact p.Prime]
-    {b : Basis (Fin (finrank ℤ L)) ℤ_[p] (L.LocalCarrier p)} {u : Fin (finrank ℤ L) → ℤ_[p]ˣ}
-    {k : Fin (finrank ℤ L) → ℕ}
-    (hb : (L.localIntegralForm p).iIsOrtho b)
+    {ι : Type*} {b : Basis ι ℤ_[p] (L.LocalCarrier p)} {u : ι → ℤ_[p]ˣ}
+    {k : ι → ℕ} (hb : (L.localIntegralForm p).iIsOrtho b)
     (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i)
     (hLrank : finrank ℤ L = AddGroup.rank (primaryComponent L.DiscriminantGroup p))
-    (i : Fin (finrank ℤ L)) : k i ≠ 0 := by
+    (i : ι) : k i ≠ 0 := by
   classical
-  have hk_all : ({j : Fin (finrank ℤ L) | k j ≠ 0} : Finset (Fin (finrank ℤ L))) = Finset.univ :=
+  have : Finite ι := Module.Finite.finite_basis b
+  let : Fintype ι := Fintype.ofFinite ι
+  have hcard : Fintype.card ι = finrank ℤ L := by
+    rw [← Module.finrank_eq_card_basis b, Module.finrank_baseChange]
+  have hk_all : ({j : ι | k j ≠ 0} : Finset ι) = Finset.univ :=
     Finset.eq_of_subset_of_card_le (Finset.subset_univ _)
-      (by simp [← L.rank_primaryComponent_discriminantGroup_eq_card_filter hb hbu, ← hLrank])
+      (by rw [Finset.card_univ, hcard, hLrank,
+        L.rank_primaryComponent_discriminantGroup_eq_card_filter hb hbu])
   exact (Finset.mem_filter.mp (Finset.eq_univ_iff_forall.mp hk_all i)).2
 
 end TauCeti.IntegralLattice

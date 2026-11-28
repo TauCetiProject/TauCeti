@@ -8,21 +8,25 @@ module
 public import Mathlib.GroupTheory.Torsion
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Bilinear
-import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Form
-import TauCeti.NumberTheory.IntegralLattice.Localization.Sublattice
+public import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Form
+public import TauCeti.NumberTheory.IntegralLattice.Localization.Sublattice
 
 /-!
 # Localized discriminant form of the even sublattice
 
-At an odd prime `p`, the inclusion `L.evenSublattice ⊆ L` has index dividing `2`, which is coprime
-to `p`, so it induces an isometry of `ℤ_p`-localizations and hence an isometry between the
-`p`-primary discriminant bilinear modules of `L.evenSublattice` and `L`.
+At an odd prime `p` and for a nondegenerate lattice `L`, the inclusion `L.evenSublattice ⊆ L` has
+index dividing `2`, which is coprime to `p`, so it induces an isometry of `ℤ_p`-localizations and
+hence an isometry between the `p`-primary discriminant bilinear modules of `L.evenSublattice` and
+`L`.
 
 ## Main declarations
 
-* `TauCeti.IntegralLattice.evenSublatticePrimaryBilinearIsometry`: at an odd prime `p`, the
-  `p`-primary component of the discriminant bilinear module of `L.evenSublattice` is isometric to
-  that of `L`.
+* `TauCeti.IntegralLattice.evenSublatticePrimaryBilinearIsometry`: at an odd prime `p`, for a
+  nondegenerate lattice `L`, the `p`-primary component of the discriminant bilinear module of
+  `L.evenSublattice` is isometric to that of `L`.
+* `TauCeti.IntegralLattice.evenSublatticePrimaryBilinearIsometry_eq`: identification of
+  `evenSublatticePrimaryBilinearIsometry` with `primaryDiscriminantBilinearIsometry` of the
+  localized inclusion.
 -/
 
 public section
@@ -33,8 +37,8 @@ namespace TauCeti.IntegralLattice
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 
-/-- At an odd prime `p`, the `p`-primary component of the discriminant bilinear module of
-`L.evenSublattice` is isometric to that of `L`. -/
+/-- At an odd prime `p`, for a nondegenerate lattice `L`, the `p`-primary component of the
+discriminant bilinear module of `L.evenSublattice` is isometric to that of `L`. -/
 noncomputable def evenSublatticePrimaryBilinearIsometry
     (L : IntegralLattice V) [L.IsNondegenerate] {p : ℕ} [Fact p.Prime] (hp : Odd p) :
     FiniteBilinearModule.Isometry
@@ -46,5 +50,16 @@ noncomputable def evenSublatticePrimaryBilinearIsometry
     (L.evenSublattice.localInclusionIsometryEquiv L p L.evenSublattice_form
       L.evenSublattice_carrier_le
       (L.not_dvd_relIndex_evenSublattice_of_odd hp (Fact.out : p.Prime).ne_one))
+
+/-- `evenSublatticePrimaryBilinearIsometry` is `primaryDiscriminantBilinearIsometry` applied to the
+localized inclusion `L.evenSublattice ⊆ L`. -/
+theorem evenSublatticePrimaryBilinearIsometry_eq
+    (L : IntegralLattice V) [L.IsNondegenerate] {p : ℕ} [Fact p.Prime] (hp : Odd p) :
+    evenSublatticePrimaryBilinearIsometry L hp =
+      primaryDiscriminantBilinearIsometry
+        (L.evenSublattice.localInclusionIsometryEquiv L p L.evenSublattice_form
+          L.evenSublattice_carrier_le
+          (L.not_dvd_relIndex_evenSublattice_of_odd hp (Fact.out : p.Prime).ne_one)) := by
+  rw [evenSublatticePrimaryBilinearIsometry]
 
 end TauCeti.IntegralLattice

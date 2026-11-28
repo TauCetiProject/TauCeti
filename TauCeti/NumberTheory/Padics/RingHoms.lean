@@ -65,9 +65,9 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.dvd_sub_appr`, `PadicInt.dvd_sub_appr_of_le`, `PadicInt.dvd_sub_appr_of_ne_zero`,
   `PadicInt.natCast_appr_eq_toZMod`, `PadicInt.pow_dvd_appr_iff`, `PadicInt.dvd_appr_iff`,
   `PadicInt.coprime_appr_iff`: `x - appr x n` is divisible by `p ^ n` (and by `p ^ m` for `m ≤ n`,
-  hence by `p` for `n ≠ 0`), `appr x n` reduces modulo `p` to `toZMod x`, `p ^ m` divides
-  `appr x n` exactly when `p ^ m` divides `x`, and `appr x n` is coprime to `p` exactly when `x`
-  is a unit.
+  hence by `p` for `n ≠ 0`), for `n ≠ 0` `appr x n` reduces modulo `p` to `toZMod x`, for `m ≤ n`
+  `p ^ m` divides `appr x n` exactly when `p ^ m` divides `x`, and for `n ≠ 0` `appr x n` is
+  coprime to `p` exactly when `x` is a unit.
 * `PadicInt.exists_int_isCoprime_and_pow_dvd_sub`, `PadicInt.isCoprime_of_isUnit_of_dvd_sub`:
   every unit of `ℤ_p` admits an integer lift coprime to `p` and congruent modulo `p ^ max k 1`,
   and conversely any integer congruent modulo `p` to a unit of `ℤ_p` is coprime to `p`.

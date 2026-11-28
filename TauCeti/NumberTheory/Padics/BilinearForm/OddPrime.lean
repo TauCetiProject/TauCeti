@@ -8,11 +8,8 @@ module
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.PiClassification
-import TauCeti.Data.Fintype.Fiber
-import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
-import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
-import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Refinement
-import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Henselian
+import TauCeti.LinearAlgebra.BilinearForm.Henselian
+import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Bilinear
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.NumberTheory.Padics.SquareClasses
@@ -21,15 +18,20 @@ import TauCeti.RingTheory.Henselian.Basic
 /-!
 # Odd-prime uniqueness for diagonal Jordan forms over `ℤ_p`
 
-Fiberwise unit-square-class uniqueness for diagonal Jordan forms over `ℤ_p` (`p ≠ 2`), together
-with positive-scale rank and square-class extraction from an orthogonal sum of odd cyclic modules
-and minimal-rank uniqueness over `ℤ_p`.
+Positive-scale rank and square-class extraction from an orthogonal sum of odd cyclic modules
+(via `TauCeti.FiniteBilinearModule.nonempty_isometry_pi_oddCyclic_iff`, built on
+`TauCeti.FiniteQuadraticModule.nonempty_isometry_pi_oddCyclic_iff`), together with minimal-rank
+uniqueness for diagonal Jordan forms over `ℤ_p` (`p ≠ 2`) (Nikulin, Theorem 1.9.1), proved via
+`LinearMap.BilinForm.iIsOrtho.equivalent_of_card_eq_of_isSquare_prod_mul_prod`.
 
 ## Main results
 
 * `TauCeti.FiniteQuadraticModule.forall_pos_card_filter_eq_and_isSquare_of_isometry_pi_oddCyclic`
-* `LinearMap.BilinForm.equivalent_of_iIsOrtho_of_forall_fiber`
 * `LinearMap.BilinForm.equivalent_of_iIsOrtho_of_isometry_pi_oddCyclic`
+
+## References
+
+* V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, Theorem 1.9.1.
 -/
 
 public section
@@ -55,16 +57,9 @@ theorem forall_pos_card_filter_eq_and_isSquare_of_isometry_pi_oddCyclic
       IsSquare ((∏ i with k i = m, u i) * ∏ j with l j = m, v j) := by
   classical
   have hp : p ≠ 2 := fun h ↦ by subst h; exact absurd hp_odd (by decide)
-  have hodd_card : Odd (Nat.card (pi fun i ↦ oddCyclic (p ^ k i) hp_odd.pow (θ i))) := by
-    rw [Nat.card_pi]; exact Finset.prod_induction _ Odd (fun _ _ ha hb ↦ ha.mul hb) odd_one
-      fun i _ ↦ by rw [natCard_oddCyclic]; exact hp_odd.pow
-  have hquad : Nonempty (Isometry
-      (pi fun i ↦ oddCyclic (p ^ k i) hp_odd.pow (θ i))
-      (pi fun j ↦ oddCyclic (p ^ l j) hp_odd.pow (η j))) :=
-    (nonempty_isometry_iff_bilinear_isometry_of_odd hodd_card).mpr hdisc
-  have hclass := (nonempty_isometry_pi_oddCyclic_iff hp_odd k l
+  have hclass := (TauCeti.FiniteBilinearModule.nonempty_isometry_pi_oddCyclic_iff hp_odd k l
     (fun i ↦ PadicInt.isCoprime_of_isUnit_of_dvd_sub (u i).isUnit (hθ i))
-    (fun j ↦ PadicInt.isCoprime_of_isUnit_of_dvd_sub (v j).isUnit (hη j))).mp hquad
+    (fun j ↦ PadicInt.isCoprime_of_isUnit_of_dvd_sub (v j).isUnit (hη j))).mp hdisc
   intro m hm
   refine ⟨(hclass m hm).1, ?_⟩
   rw [← Units.isSquare_coe_iff, Units.val_mul, Units.coe_prod, Units.coe_prod]
@@ -77,36 +72,6 @@ theorem forall_pos_card_filter_eq_and_isSquare_of_isometry_pi_oddCyclic
 end TauCeti.FiniteQuadraticModule
 
 namespace LinearMap.BilinForm
-
-/-- **Fiberwise equivalence of odd-prime `ℤ_p`-bilinear forms.** Once two diagonal Jordan forms
-over `ℤ_p` (`p ≠ 2`) match along `σ : ι ≃ κ` and agree in square class on every scale fiber `m`,
-the bilinear forms are equivalent over `ℤ_p`. -/
-theorem equivalent_of_iIsOrtho_of_forall_fiber {p : ℕ} [Fact p.Prime]
-    {P₁ P₂ ι κ : Type*} [AddCommGroup P₁] [Module ℤ_[p] P₁]
-    [AddCommGroup P₂] [Module ℤ_[p] P₂] [Fintype ι]
-    (B₁ : LinearMap.BilinForm ℤ_[p] P₁) (B₂ : LinearMap.BilinForm ℤ_[p] P₂) (hp : p ≠ 2)
-    {b : Module.Basis ι ℤ_[p] P₁} {c : Module.Basis κ ℤ_[p] P₂}
-    {u : ι → ℤ_[p]ˣ} {v : κ → ℤ_[p]ˣ} {k : ι → ℕ} {l : κ → ℕ}
-    (hb : B₁.iIsOrtho b) (hc : B₂.iIsOrtho c)
-    (hbu : ∀ i, B₁ (b i) (b i) = u i * (p : ℤ_[p]) ^ k i)
-    (hcv : ∀ j, B₂ (c j) (c j) = v j * (p : ℤ_[p]) ^ l j)
-    (σ : ι ≃ κ) (hσ : ∀ i, l (σ i) = k i)
-    (hfiber : ∀ m : ℕ, IsSquare ((∏ i with k i = m, u i) * ∏ i with k i = m, v (σ i))) :
-    B₁.Equivalent B₂ := by
-  classical
-  let := (PadicInt.isUnit_two hp).invertible
-  have hdiag := TauCeti.equivalent_weightedSumSquares_mul_of_forall_fiber_of_isUnit_two
-    (PadicInt.isUnit_two hp) k (fun m ↦ (p : ℤ_[p]) ^ m) u (fun i ↦ v (σ i)) hfiber
-  have h1_quad : B₁.toQuadraticMap.Equivalent
-      (QuadraticMap.weightedSumSquares ℤ_[p] fun i ↦ (u i : ℤ_[p]) * (p : ℤ_[p]) ^ k i) := by
-    simpa only [hbu] using hb.equivalent_weightedSumSquares
-  have h2_quad : B₂.toQuadraticMap.Equivalent
-      (QuadraticMap.weightedSumSquares ℤ_[p] fun i ↦ (v (σ i) : ℤ_[p]) * (p : ℤ_[p]) ^ k i) := by
-    simpa only [Module.Basis.reindex_apply, Equiv.symm_symm, hcv, hσ] using
-      (hc.reindex σ.symm).equivalent_weightedSumSquares
-  exact (hb.isSymm.equivalent_iff_toQuadraticMap_equivalent
-    hc.isSymm (PadicInt.isUnit_two hp).mem_nonZeroDivisors).mpr
-    (h1_quad.trans (hdiag.trans h2_quad.symm))
 
 /-- **Minimal-rank uniqueness over `ℤ_p` at an odd prime.** Let `p` be an odd prime and let
 `B₁` and `B₂` be `ℤ_p`-bilinear forms presented in diagonal Jordan bases `b` and `c` with
@@ -138,15 +103,13 @@ theorem equivalent_of_iIsOrtho_of_isometry_pi_oddCyclic {p : ℕ} [Fact p.Prime]
   have hpos :=
     TauCeti.FiniteQuadraticModule.forall_pos_card_filter_eq_and_isSquare_of_isometry_pi_oddCyclic
       hp_odd hθ hη hdisc
-  obtain ⟨σ, hσ⟩ := Function.exists_equiv_of_occCount_eq (u := k) (v := l) fun m ↦ by
-    rw [Function.occCount_eq_card_filter, Function.occCount_eq_card_filter]
-    obtain rfl | hm := eq_or_ne m 0
+  refine hb.equivalent_of_card_eq_of_isSquare_prod_mul_prod (PadicInt.isUnit_two hp)
+    hc hbu hcv (fun m ↦ ?_) (fun m ↦ ?_)
+  · obtain rfl | hm := Nat.eq_zero_or_pos m
     · simp [hk, hl]
-    · exact (hpos m (Nat.pos_of_ne_zero hm)).1
-  have hσi : ∀ i, l (σ i) = k i := congrFun hσ
-  refine B₁.equivalent_of_iIsOrtho_of_forall_fiber B₂ hp hb hc hbu hcv σ hσi fun m ↦ ?_
-  obtain rfl | hm := Nat.eq_zero_or_pos m
-  · simp [hk]
-  · rw [Finset.prod_filter_equiv k l v m σ hσi]; exact (hpos m hm).2
+    · exact (hpos m hm).1
+  · obtain rfl | hm := Nat.eq_zero_or_pos m
+    · simp [hk, hl]
+    · exact (hpos m hm).2
 
 end LinearMap.BilinForm

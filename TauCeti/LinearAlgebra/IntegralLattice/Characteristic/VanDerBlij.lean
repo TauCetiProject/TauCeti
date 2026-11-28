@@ -74,7 +74,7 @@ theorem gaussSign_primaryComponent_two_evenSublattice [L.IsNondegenerate]
     L.isLagrangian_evenSublattice_primaryComponent_two hodd
   let a₂ : A₂ :=
     ⟨Submodule.Quotient.mk (L.halfCharacteristicDual hw),
-      L.halfCharacteristicDual_mk_mem_primaryComponent_two hw⟩
+      L.mk_halfCharacteristicDual_mem_primaryComponent_two hw⟩
   have hqa : A₂.quadratic a₂ = ZMod.toRatAddCircle 8 (L.integralNorm w : ZMod 8) := by
     rw [FiniteQuadraticModule.restrict_quadratic, discriminantQuadraticModule_quadratic]
     exact L.discriminantQuadraticMap_mk_halfCharacteristicDual hw

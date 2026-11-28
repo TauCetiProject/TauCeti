@@ -26,13 +26,16 @@ discriminant bilinear form `b_L` with the orthogonal sum of Nikulin's odd cyclic
 
 where `q_θ^{(p)}(pᵏ)` is the group `ℤ/pᵏ` with pairing `b(x, y) = θxy / pᵏ`. Summands with `kᵢ = 0`
 are trivial, so only the non-unimodular Jordan constituents of `L_p` contribute. Orthogonal sums of
-odd cyclic generators are classified by their exponents and the Legendre symbols of their
-coefficients (`TauCeti.FiniteQuadraticModule.nonempty_isometry_pi_oddCyclic_iff`), which feeds the
+odd cyclic generators are classified, for coefficients prime to `p`, by the multiplicity and the
+product of the Legendre symbols at each positive exponent, while exponent zero imposes no
+condition (`TauCeti.FiniteBilinearModule.nonempty_isometry_pi_oddCyclic_iff`), which feeds the
 classification of `L_p` at odd primes by its discriminant form (Nikulin, Corollaries 1.9.4 and
 1.16.3).
 
 ## Main results
 
+* `TauCeti.IntegralLattice.discriminantPairing_diagonalDualVec`: the discriminant pairing on
+  the dual generator classes `[diagonalDualVec hb hbu i]`.
 * `TauCeti.IntegralLattice.nonempty_isometry_pi_oddCyclic_primaryComponent`: at an odd prime, the
   `p`-primary component of the discriminant bilinear module of `L` is isometric to the orthogonal
   sum of the odd cyclic generators `q_{θᵢ}^{(p)}(pᵏⁱ)` read off a diagonal Jordan form of `L_p`.
@@ -126,6 +129,20 @@ private theorem discriminantPairing_symm_mk [DecidableEq ι]
   split_ifs with hij
   · subst hij; push_cast; field_simp; linear_combination -hn
   · push_cast; linear_combination -hn
+
+/-- The `p`-primary classes of the canonical dual basis vectors `diagonalDualVec hb hbu` pair to
+`δᵢⱼ θᵢ / pᵏⁱ` in `ℚ/ℤ`, for any prime `p` and integers `θᵢ ≡ uᵢ (mod pᵏⁱ)`. -/
+theorem discriminantPairing_diagonalDualVec [DecidableEq ι]
+    (hb : (L.localIntegralForm p).iIsOrtho b)
+    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i)
+    {θ : ι → ℤ} (hθ : ∀ i, (p : ℤ_[p]) ^ k i ∣ u i - θ i) (i j : ι) :
+    L.discriminantPairing
+        ((L.primaryComponentEquivLocalDiscriminantGroup p).symm
+          (Submodule.Quotient.mk (L.diagonalDualVec hb hbu i)) : L.DiscriminantGroup)
+        ((L.primaryComponentEquivLocalDiscriminantGroup p).symm
+          (Submodule.Quotient.mk (L.diagonalDualVec hb hbu j))) =
+      ((if i = j then θ i / p ^ k i else 0 : ℚ) : AddCircle (1 : ℚ)) :=
+  discriminantPairing_symm_mk hb hbu (localizationDualToCompletion_diagonalDualVec hb hbu) hθ i j
 
 /-- Integer combinations of the classes of the dual vectors `p^{-kᵢ} bᵢ` pair like vectors of the
 orthogonal sum of the cyclic forms `θᵢ xy / pᵏⁱ`. -/

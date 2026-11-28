@@ -39,15 +39,9 @@ private theorem subsingleton_discriminantBilinearModule_rankOne_one :
     ← (rankOne 1).isUnimodular_iff_subsingleton_discriminantGroup]
   exact (isUnimodular_rankOne_iff 1).mpr isUnit_one
 
-private theorem discriminantBilinearModule_pairing_zsmul_rankOneClass
-    (a : ℤ) [NeZero a] (k l : ℤ) :
-    (rankOne a).discriminantBilinearModule.pairing (k • rankOneClass a) (l • rankOneClass a) =
-      (((k : ℚ) * l / a : ℚ) : AddCircle (1 : ℚ)) := by
-  rw [(rankOne a).discriminantBilinearModule_pairing, discriminantPairing_zsmul_rankOneClass]
-
 /-- **`⟨1⟩ ⊕ ⟨5⟩` and `!![2, 1; 1, 3]` do not lie in the same genus.** Both are positive definite
-odd binary lattices of determinant `5`, yet the discriminant pairing of `⟨1⟩ ⊕ ⟨5⟩` takes values
-`k² / 5 mod ℤ` while `!![2, 1; 1, 3]` has a dual vector `(3/5, -1/5)` of self-pairing
+odd binary lattices of determinant `5`, yet every discriminant self-pairing of `⟨1⟩ ⊕ ⟨5⟩` has the
+form `k² / 5 mod ℤ` while `!![2, 1; 1, 3]` has a dual vector `(3/5, -1/5)` of self-pairing
 `3/5 mod ℤ`. -/
 theorem not_sameGenus_rankOne_one_five_binaryDeterminantFive :
     ¬((rankOne 1).orthogonalSum (rankOne 5)).SameGenus binaryDeterminantFive := by
@@ -83,8 +77,8 @@ theorem not_sameGenus_rankOne_one_five_binaryDeterminantFive :
       ((((k : ℤ) : ℚ) * ((k : ℤ) : ℚ) / (5 : ℤ) : ℚ) : AddCircle (1 : ℚ)) := by
     have hcalc : (rankOne 5).discriminantBilinearModule.pairing c₅ c₅ =
         ((((k : ℤ) : ℚ) * ((k : ℤ) : ℚ) / (5 : ℤ) : ℚ) : AddCircle (1 : ℚ)) := by
-      rw [← zsmul_val_rankOneDiscriminantEquiv_rankOneClass 5 c₅]
-      exact discriminantBilinearModule_pairing_zsmul_rankOneClass 5 k k
+      rw [← zsmul_val_rankOneDiscriminantEquiv_rankOneClass 5 c₅,
+        (rankOne 5).discriminantBilinearModule_pairing, discriminantPairing_zsmul_rankOneClass]
     simpa only [c₅] using hcalc
   rw [hc5_pair, AddCircle.coe_eq_coe_iff_exists_zsmul] at hpair_img
   obtain ⟨m, hm⟩ := hpair_img
@@ -139,7 +133,11 @@ private noncomputable def discriminantHom_one_thirtyNine_three_thirteen :
     have hz2 : (z.2 : (rankOne 39).DiscriminantGroup) = k • rankOneClass 39 :=
       (zsmul_val_rankOneDiscriminantEquiv_rankOneClass 39 z.2).symm
     have hgz : φ z = (k • rankOneClass 3, (3 * k) • rankOneClass 13) := by
-      have hφz : φ z = zmodThirtyNineHomProd (rankOneDiscriminantEquiv 39 z.2) := rfl
+      have hφz : φ z = zmodThirtyNineHomProd (rankOneDiscriminantEquiv 39 z.2) := by
+        dsimp only [φ]
+        exact (AddMonoidHom.comp_apply _ _ z).trans <| congrArg zmodThirtyNineHomProd <|
+          (AddMonoidHom.comp_apply _ _ z).trans <|
+            congrArg (rankOneDiscriminantEquiv 39) (congrFun AddMonoidHom.coe_snd z)
       rw [hφz, hz2, rankOneDiscriminantEquiv_zsmul_rankOneClass, zmodThirtyNineHomProd_intCast]
     exact ⟨k, hz2, congrArg Prod.fst hgz, congrArg Prod.snd hgz⟩
   obtain ⟨kx, hx2, hφx1, hφx2⟩ := hcoord x
@@ -151,15 +149,18 @@ private noncomputable def discriminantHom_one_thirtyNine_three_thirteen :
         (((kx : ℚ) * ky / (3 : ℤ) + ((3 * kx : ℤ) : ℚ) * ((3 * ky : ℤ) : ℚ) / (13 : ℤ) : ℚ) :
           AddCircle (1 : ℚ)) := by
     rw [FiniteBilinearModule.prod_pairing, hφx1, hφy1, hφx2, hφy2,
-      discriminantBilinearModule_pairing_zsmul_rankOneClass,
-      discriminantBilinearModule_pairing_zsmul_rankOneClass, ← AddCircle.coe_add]
+      (rankOne 3).discriminantBilinearModule_pairing,
+      (rankOne 13).discriminantBilinearModule_pairing,
+      discriminantPairing_zsmul_rankOneClass,
+      discriminantPairing_zsmul_rankOneClass, ← AddCircle.coe_add]
   have hRHS :
       ((rankOne 1).discriminantBilinearModule.prod
           (rankOne 39).discriminantBilinearModule).pairing x y =
         (((kx : ℚ) * ky / (39 : ℤ) : ℚ) : AddCircle (1 : ℚ)) := by
     rw [FiniteBilinearModule.prod_pairing, Subsingleton.elim x.1 0,
       FiniteBilinearModule.pairing_zero_left, zero_add, hx2, hy2,
-      discriminantBilinearModule_pairing_zsmul_rankOneClass]
+      (rankOne 39).discriminantBilinearModule_pairing,
+      discriminantPairing_zsmul_rankOneClass]
   rw [hLHS, hRHS, AddCircle.coe_eq_coe_iff_exists_zsmul]
   exact ⟨kx * ky, by rw [zsmul_one]; push_cast; ring⟩
 

@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Wentao Li, The Tau Ceti contributors
 -/
 module
 
@@ -28,7 +28,12 @@ in which `L / N` is a bilinear Lagrangian. Any characteristic vector `w` of `L` 
 * `TauCeti.IntegralLattice.halfCharacteristicDual`,
   `TauCeti.IntegralLattice.discriminantQuadraticMap_mk_halfCharacteristicDual`,
   `TauCeti.IntegralLattice.discriminantQuadraticMap_mk_halfCharacteristicDual_add`,
-  `TauCeti.IntegralLattice.halfCharacteristicDual_mk_mem_primaryComponent_two`
+  `TauCeti.IntegralLattice.mk_halfCharacteristicDual_mem_primaryComponent_two`
+
+## References
+
+* F. van der Blij, *An invariant of quadratic forms mod 8*, Indag. Math. 21 (1959), 291–293.
+* J. Milnor and D. Husemoller, *Symmetric Bilinear Forms*, Appendix 4.
 -/
 
 public section
@@ -170,7 +175,7 @@ theorem discriminantQuadraticMap_mk_halfCharacteristicDual_add {w : L}
 
 /-- The discriminant class `[w / 2]` lies in the `2`-primary component of
 `L.evenSublattice.DiscriminantGroup`. -/
-theorem halfCharacteristicDual_mk_mem_primaryComponent_two {w : L}
+theorem mk_halfCharacteristicDual_mem_primaryComponent_two {w : L}
     (hw : L.IsCharacteristicVector w) :
     Submodule.Quotient.mk (L.halfCharacteristicDual hw) ∈
       AddCommGroup.primaryComponent L.evenSublattice.DiscriminantGroup 2 := by

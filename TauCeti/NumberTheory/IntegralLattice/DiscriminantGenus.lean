@@ -24,14 +24,16 @@ By
 When `Odd L.discriminant`, `L_2` is unimodular (`det L ∈ ℤ_2ˣ`):
 * For even lattices, `L_2` is classified by rank and `2`-adic determinant square class, and at odd
   order `q_L` and `b_L` are equivalent, yielding Nikulin's Corollary 1.9.4.
-* In general, `vanDerBlij` for odd discriminant expresses the mod-`8` norm of a characteristic
-  vector via signature and the odd-prime Gauss sums of `L.evenSublattice`, which match `(A_L)_p`
-  since `[L : L.evenSublattice] ≤ 2`. Hence signature, evenness, and `b_L` determine `L_2`, giving
-  Nikulin's Corollary 1.16.3.
+* In general, `TauCeti.IntegralLattice.integralNorm_cast_zmod_eight_eq_of_odd_discriminant`
+  expresses the mod-`8` norm of a characteristic vector via signature and the odd-prime Gauss
+  signs of `L.evenSublattice`. At each odd prime `p`, the `p`-primary bilinear modules of
+  `L.evenSublattice` and `L` are isometric, so their canonical quadratic refinements have matching
+  Gauss signs. Hence signature, evenness, and `b_L` determine `L_2`, giving Nikulin's
+  Corollary 1.16.3.
 
 ## Main results
 
-* `IntegralLattice.sameGenus_iff_localIntegralForm_two_equivalent_and_discriminantQuadraticModule`
+* `sameGenus_iff_nonempty_discriminantQuadraticIsometry_and_localIntegralForm_two_equivalent`
 * `TauCeti.IntegralLattice.sameGenus_iff_of_odd_discriminant` (Nikulin Corollary 1.16.3)
 * `TauCeti.IntegralLattice.sameGenus_iff_of_isEven_of_odd_discriminant` (Nikulin Corollary 1.9.4)
 
@@ -57,7 +59,7 @@ variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module 
 /-- **Genus characterization for even lattices up to dyadic equivalence.** Two even nondegenerate
 integral lattices lie in one genus if and only if they have the same real signature, isometric
 dyadic localizations `L_2` and `M_2`, and isometric discriminant quadratic modules. -/
-theorem sameGenus_iff_localIntegralForm_two_equivalent_and_discriminantQuadraticModule
+theorem sameGenus_iff_nonempty_discriminantQuadraticIsometry_and_localIntegralForm_two_equivalent
     (L : IntegralLattice V) (M : IntegralLattice W) [L.IsNondegenerate] [M.IsNondegenerate]
     (hL : L.IsEven) (hM : M.IsEven) :
     L.SameGenus M ↔
@@ -90,7 +92,7 @@ theorem sameGenus_iff_of_odd_discriminant
   refine ⟨fun h ↦ ⟨h.signature_eq, h.isEven_iff,
     h.nonempty_isometry_discriminantBilinearModule⟩, ?_⟩
   rintro ⟨hsig, heven, ⟨f⟩⟩
-  have hdisc := discriminant_eq_of_isometry f
+  have hdisc := discriminant_eq_of_discriminantBilinearIsometry f
   have hdet := L.determinant_eq_of_signature_eq_of_discriminant_eq hsig hdisc
   have hL2 : IsUnit (L.determinant : ℤ_[2]) :=
     L.odd_discriminant_iff_isUnit_determinant_padicInt_two.mp hodd
