@@ -21,7 +21,15 @@ morphisms. For finite-dimensional representations of a finite quiver, the differ
 between the dimensions of its kernel and cokernel is the Euler form.
 
 The cokernel measures the obstruction to making vertexwise splittings of extensions
-compatible with the arrows. The constructions here require no acyclicity assumption.
+compatible with the arrows; for a quiver with finitely many vertices, it is `Ext¹` of the
+corresponding modules over the path algebra
+(`TauCeti.QuiverRep.nonempty_homDifferential_coker_linearEquiv_ext`). The Hom differential is
+natural in morphisms of both representations (`TauCeti.QuiverRep.homDifferential_naturality`).
+Isomorphisms of the two representations identify the spaces of vertex maps and of arrow maps
+compatibly with the Hom differential (`TauCeti.QuiverRep.homDifferential_homVertexCongr`), so the
+cokernel depends on the representations only up to isomorphism
+(`TauCeti.QuiverRep.homDifferentialCokerCongr`). The constructions here require no acyclicity
+assumption.
 
 ## References
 
@@ -153,6 +161,80 @@ theorem finiteDimensional_hom [Finite Q] (hM : IsFinDim k Q M) (hN : IsFinDim k 
   let : ∀ i : Q, FiniteDimensional k (vertexSpace k Q M i) := fun i ↦ isFinDim_iff.mp hM i
   let : ∀ i : Q, FiniteDimensional k (vertexSpace k Q N i) := fun i ↦ isFinDim_iff.mp hN i
   exact (homEquivKerDifferential M N).symm.finiteDimensional
+
+section Congr
+
+variable {M N} {M' N' : QuiverRep.{u, v, w, t} k Q}
+
+/-- **The Hom differential is natural** in morphisms `M' ⟶ M` and `N ⟶ N'`: conjugating a family
+of vertex maps by their vertex components conjugates its arrowwise commutativity defects. -/
+theorem homDifferential_naturality (g : M' ⟶ M) (h : N ⟶ N') (φ : HomVertex M N) :
+    homDifferential M' N' (fun i ↦ homVertex N N' h i ∘ₗ φ i ∘ₗ homVertex M' M g i) =
+      fun i j a ↦ homVertex N N' h j ∘ₗ homDifferential M N φ i j a ∘ₗ homVertex M' M g i := by
+  funext i j a
+  refine LinearMap.ext fun x ↦ ?_
+  simp only [homDifferential_apply, LinearMap.sub_apply, LinearMap.comp_apply, map_sub]
+  rw [homVertex_naturality M' M g, homVertex_naturality N N' h]
+
+/-- Isomorphisms `M ≅ M'` and `N ≅ N'` identify the vertex-map families, by conjugating each
+vertex map with the vertex components of the isomorphisms. -/
+noncomputable def homVertexCongr (e : M ≅ M') (f : N ≅ N') : HomVertex M N ≃ₗ[k] HomVertex M' N' :=
+  LinearEquiv.piCongrRight fun i ↦ LinearEquiv.arrowCongr
+    (e.app ((Paths.of Q).obj i)).toLinearEquiv (f.app ((Paths.of Q).obj i)).toLinearEquiv
+
+@[simp]
+theorem homVertexCongr_apply (e : M ≅ M') (f : N ≅ N') (φ : HomVertex M N) (i : Q) :
+    homVertexCongr e f φ i = homVertex N N' f.hom i ∘ₗ φ i ∘ₗ homVertex M' M e.inv i := (rfl)
+
+/-- The inverse of `homVertexCongr e f` conjugates by the inverse isomorphisms. -/
+@[simp]
+theorem homVertexCongr_symm (e : M ≅ M') (f : N ≅ N') :
+    (homVertexCongr e f).symm = homVertexCongr e.symm f.symm := (rfl)
+
+/-- Isomorphisms `M ≅ M'` and `N ≅ N'` identify the arrow-map families, by conjugating the map at
+an arrow with the vertex components of the isomorphisms at its source and target. -/
+noncomputable def homArrowCongr (e : M ≅ M') (f : N ≅ N') : HomArrow M N ≃ₗ[k] HomArrow M' N' :=
+  LinearEquiv.piCongrRight fun i ↦ LinearEquiv.piCongrRight fun j ↦ LinearEquiv.piCongrRight
+    fun _ ↦ LinearEquiv.arrowCongr (e.app ((Paths.of Q).obj i)).toLinearEquiv
+      (f.app ((Paths.of Q).obj j)).toLinearEquiv
+
+@[simp]
+theorem homArrowCongr_apply (e : M ≅ M') (f : N ≅ N') (φ : HomArrow M N) {i j : Q} (a : i ⟶ j) :
+    homArrowCongr e f φ i j a = homVertex N N' f.hom j ∘ₗ φ i j a ∘ₗ homVertex M' M e.inv i :=
+  (rfl)
+
+/-- The inverse of `homArrowCongr e f` conjugates by the inverse isomorphisms. -/
+@[simp]
+theorem homArrowCongr_symm (e : M ≅ M') (f : N ≅ N') :
+    (homArrowCongr e f).symm = homArrowCongr e.symm f.symm := (rfl)
+
+/-- **The Hom differential is natural in isomorphisms of both representations.** -/
+theorem homDifferential_homVertexCongr (e : M ≅ M') (f : N ≅ N') (φ : HomVertex M N) :
+    homDifferential M' N' (homVertexCongr e f φ) = homArrowCongr e f (homDifferential M N φ) :=
+  homDifferential_naturality e.inv f.hom φ
+
+/-- **The cokernel of the Hom differential is invariant under isomorphisms** of both
+representations. -/
+noncomputable def homDifferentialCokerCongr (e : M ≅ M') (f : N ≅ N') :
+    (HomArrow M N ⧸ (homDifferential M N).range) ≃ₗ[k]
+      (HomArrow M' N' ⧸ (homDifferential M' N').range) :=
+  Submodule.Quotient.equiv _ _ (homArrowCongr e f) <| by
+    have h : (homArrowCongr e f).toLinearMap ∘ₗ homDifferential M N =
+        homDifferential M' N' ∘ₗ (homVertexCongr e f).toLinearMap :=
+      LinearMap.ext fun φ ↦ (homDifferential_homVertexCongr e f φ).symm
+    rw [← LinearMap.range_comp, h, LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)]
+
+@[simp]
+theorem homDifferentialCokerCongr_mk (e : M ≅ M') (f : N ≅ N') (φ : HomArrow M N) :
+    homDifferentialCokerCongr e f (Submodule.Quotient.mk φ) =
+      Submodule.Quotient.mk (homArrowCongr e f φ) := (rfl)
+
+/-- The inverse of `homDifferentialCokerCongr e f` is induced by the inverse isomorphisms. -/
+@[simp]
+theorem homDifferentialCokerCongr_symm (e : M ≅ M') (f : N ≅ N') :
+    (homDifferentialCokerCongr e f).symm = homDifferentialCokerCongr e.symm f.symm := (rfl)
+
+end Congr
 
 section Dimension
 

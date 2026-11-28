@@ -225,6 +225,18 @@ theorem coe_vertexProjection_apply_eq_zero_of_ne {u v : Q} (h : u ≠ v) {x : M}
   rw [coe_vertexProjection_apply, ← vertexIdempotent_smul_eq_self_of_mem_vertexComponent hx,
     smul_smul, vertexIdempotent_mul_vertexIdempotent_of_ne h, zero_smul]
 
+/-- The projection at `v` fixes the component at `v`, as an element of that component. -/
+@[simp]
+theorem vertexProjection_apply_of_mem {v : Q} (x : vertexComponent k M v) :
+    vertexProjection k M v (x : M) = x :=
+  Subtype.ext (coe_vertexProjection_apply_of_mem x.property)
+
+/-- The projection at `u` kills the component at any other vertex, as an element of the component
+at `u`. -/
+theorem vertexProjection_apply_eq_zero_of_ne {u v : Q} (h : u ≠ v) {x : M}
+    (hx : x ∈ vertexComponent k M v) : vertexProjection k M u x = 0 :=
+  Subtype.ext (coe_vertexProjection_apply_eq_zero_of_ne h hx)
+
 end Projection
 
 section Naturality
