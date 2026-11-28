@@ -31,7 +31,7 @@ open scoped InnerProductSpace
 
 /-- Zero belongs to the weak closure of the vectors `e m + m • e n` with `0 < m < n`
 in an orthonormal sequence, and lies outside their weak sequential closure. -/
-theorem Orthonormal.zero_mem_closure_diff_seqClosure_add_natCast_smul
+theorem Orthonormal.zero_mem_closure_sdiff_seqClosure_add_natCast_smul
     {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
     {e : ℕ → E} (he : Orthonormal 𝕜 e) :
     let A := {x : WeakSpace 𝕜 E | ∃ m n : ℕ, 0 < m ∧ m < n ∧
