@@ -19,8 +19,9 @@ separated over `K`. If a morphism `f : X ×_K Y ⟶ Z` is constant on the fibre 
 point of `Y`, then it factors through the second projection, given a rational point of `X`
 (`eq_snd_comp_lift_comp_of_isIntegral`).
 
-The second projection is a contraction (`isContraction_snd_left_of_isIntegral`), by
-`appTop_bijective_of_section` and flat base change for functions. Closedness of the projection
+For integral `X` with a rational point, the second projection is a contraction for arbitrary `Y`
+(`isContraction_snd_left_of_isIntegral`), by `appTop_bijective_of_section` and flat base change
+for functions. Closedness of the projection
 lets us restrict to an open neighbourhood over which `f` lands in an affine open of `Z`.
 There it factors through the projection by the isomorphism on functions. The factorization
 extends by `AlgebraicGeometry.ext_of_isDominant_of_isSeparated`.
@@ -83,26 +84,11 @@ theorem exists_forall_finite_image_preimage_of_finite_image_preimage
   · rw [← Scheme.Hom.comp_apply, morphismRestrict_ι, Scheme.Hom.comp_apply, hx', hhx]
   · rw [Scheme.Hom.comp_apply, hx', ← Scheme.Hom.comp_apply, Scheme.Hom.toImage_imageι]
 
-/-- If `X` is proper over a field, the integral product `X × Y` projects to `Y` by a
-contraction provided `X` has a rational point. -/
+/-- If `X` is proper and integral over a field and has a rational point, then the second
+projection `X × Y ⟶ Y` is a contraction for every `Y` over that field. -/
 theorem isContraction_snd_left_of_isIntegral {X Y : Over (Spec (.of K))}
-    [IsProper X.hom] [IsIntegral (X ⊗ Y).left]
+    [IsProper X.hom] [IsIntegral X.left]
     (x₀ : 𝟙_ _ ⟶ X) : IsContraction (snd X Y).left := by
-  let r := (fst X Y).left
-  have hr : r = pullback.fst X.hom Y.hom := Over.fst_left
-  have : Flat r := by rw [hr]; infer_instance
-  have : Nonempty Y.left := Nonempty.map (snd X Y).left inferInstance
-  have : Surjective Y.hom := ⟨fun y ↦ ⟨Nonempty.some inferInstance, Subsingleton.elim _ y⟩⟩
-  have hsurj : Function.Surjective r := by
-    rw [hr]
-    exact (pullback.fst X.hom Y.hom).surjective
-  have : IrreducibleSpace X.left := hsurj.irreducibleSpace r.continuous
-  have : IsReduced X.left := by
-    have (x : X.left) : _root_.IsReduced (X.left.presheaf.stalk x) := by
-      obtain ⟨z, rfl⟩ := hsurj x
-      exact r.isReduced_stalk_of_flat z
-    exact isReduced_of_isReduced_stalk X.left
-  have : IsIntegral X.left := isIntegral_of_irreducibleSpace_of_isReduced X.left
   have hx : x₀.left ≫ X.hom = 𝟙 (Spec (.of K)) := x₀.w
   have hΓ : IsIso X.hom.appTop :=
     (ConcreteCategory.isIso_iff_bijective _).mpr (appTop_bijective_of_section hx)
@@ -143,6 +129,19 @@ theorem eq_snd_comp_lift_comp_of_isIntegral {X Y Z : Over (Spec (.of K))}
   have ha : a ≫ p = 𝟙 _ := by rw [← Over.comp_left, lift_snd, Over.id_left]
   obtain ⟨V, hV, hzV, -⟩ := exists_isAffineOpen_mem_and_subset
     (TopologicalSpace.Opens.mem_top (z₀.left point))
+  have : IsIntegral X.left := by
+    let b := (lift (𝟙 X) (toUnit X ≫ y₀)).left
+    have : Surjective (b ≫ (fst X Y).left) := by
+      rw [← Over.comp_left, lift_fst, Over.id_left]; infer_instance
+    have : Surjective (fst X Y).left := Surjective.of_comp b _
+    have hr := (fst X Y).left.surjective
+    have : IrreducibleSpace X.left := hr.irreducibleSpace (fst X Y).left.continuous
+    have : Flat (fst X Y).left := by rw [Over.fst_left]; infer_instance
+    have (x : X.left) : _root_.IsReduced (X.left.presheaf.stalk x) := by
+      obtain ⟨z, rfl⟩ := hr x
+      exact (fst X Y).left.isReduced_stalk_of_flat z
+    have : IsReduced X.left := isReduced_of_isReduced_stalk X.left
+    exact isIntegral_of_irreducibleSpace_of_isReduced X.left
   have : IsContraction p := isContraction_snd_left_of_isIntegral x₀
   have hnear := p.isClosedMap.eventually_nhds_fiber (p := fun x ↦ f.left x ∈ V)
     (y₀.left point) (fun x hx ↦ V.isOpen.preimage f.left.continuous |>.mem_nhds
