@@ -16,7 +16,7 @@ import TauCeti.Combinatorics.SimpleGraph.Finite
 The adjacency matrix `G.adjMatrix R` and the degree matrix `G.degMatrix R` of a simple graph have
 entries built from `0`, `1` and natural-number casts, so applying a coefficient map entrywise
 gives the same matrix over the target ring. The entries of the square of the adjacency matrix
-count common neighbours.
+count common neighbours, and the row sums of the adjacency matrix of a `d`-regular graph are `d`.
 
 The minors of the adjacency matrix of small order are read off the graph: along a family
 `f : Fin k → V` of vertices, which need not be injective, the minor of order `2` is `-1` if the
@@ -38,6 +38,9 @@ spectra under adding edges rest on this decomposition.
   to `1`.
 * `SimpleGraph.adjMatrix_sq_apply`: the `(v, w)` entry of `A²` is the number of common neighbours
   of `v` and `w`.
+* `SimpleGraph.IsRegularOfDegree.adjMatrix_mul_of_one`: for a `d`-regular graph, `A J = d J`,
+  where `J` is the all-ones matrix; equivalently `(A - d I) J = 0`
+  (`SimpleGraph.IsRegularOfDegree.adjMatrix_sub_smul_one_mul_of_one`).
 * `SimpleGraph.det_submatrix_adjMatrix_fin_two`, `SimpleGraph.det_submatrix_adjMatrix_fin_three`:
   the minors of the adjacency matrix along a family of two or three vertices.
 * `SimpleGraph.det_submatrix_adjMatrix_of_card_eq_one`,
@@ -82,6 +85,21 @@ theorem adjMatrix_sq_apply [Fintype V] [DecidableEq V] [Semiring R] (v w : V) :
   congr 2
   ext u
   simp [commonNeighbors, adj_comm]
+
+/-- For a graph that is regular of degree `d`, the product of the adjacency matrix with the
+all-ones matrix `J` is `d • J`. -/
+theorem IsRegularOfDegree.adjMatrix_mul_of_one [Fintype V] [NonAssocSemiring R] {d : ℕ}
+    (hd : G.IsRegularOfDegree d) :
+    G.adjMatrix R * Matrix.of (fun _ _ ↦ (1 : R)) = (d : R) • Matrix.of (fun _ _ ↦ (1 : R)) := by
+  ext v w
+  simp [adjMatrix_mul_apply, hd v]
+
+/-- For a graph that is regular of degree `d`, `(A - d I) J = 0`, where `J` is the all-ones
+matrix. -/
+theorem IsRegularOfDegree.adjMatrix_sub_smul_one_mul_of_one [Fintype V] [DecidableEq V] [Ring R]
+    {d : ℕ} (hd : G.IsRegularOfDegree d) :
+    (G.adjMatrix R - (d : R) • 1) * Matrix.of (fun _ _ ↦ (1 : R)) = 0 := by
+  simp [sub_mul, hd.adjMatrix_mul_of_one]
 
 /-! ### Small minors -/
 

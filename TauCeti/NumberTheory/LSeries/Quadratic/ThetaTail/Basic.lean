@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
-public import TauCeti.NumberTheory.LSeries.GaussianTheta
+public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
+import TauCeti.NumberTheory.ArithmeticFunction.Moebius
 
 /-!
 # Gaussian theta tail for quadratic twists
@@ -45,6 +46,18 @@ theorem quadraticTwistGaussianThetaTailIntegral_def (j : Fin 2) (c : ℕ → ℂ
   unfold quadraticTwistGaussianThetaTailIntegral
   rfl
 
+/-- The joint theta tail ignores the coefficient at zero, in both its ordinary and Möbius
+terms. -/
+theorem quadraticTwistGaussianThetaTailIntegral_congr {j : Fin 2} {c c' : ℕ → ℂ}
+    (h : ∀ n : ℕ+, c n = c' n) (T : ℝ) :
+    quadraticTwistGaussianThetaTailIntegral j c T =
+      quadraticTwistGaussianThetaTailIntegral j c' T := by
+  have hμ : ∀ n : ℕ+, c n * (μ n : ℂ) = c' n * (μ n : ℂ) :=
+    fun n ↦ congrArg (· * (μ n : ℂ)) (h n)
+  rw [quadraticTwistGaussianThetaTailIntegral_def, quadraticTwistGaussianThetaTailIntegral_def,
+    gaussianThetaSeries_congr h,
+    gaussianThetaSeries_congr (c := fun n ↦ c n * μ n) (c' := fun n ↦ c' n * μ n) hμ]
+
 variable {j : Fin 2} {c : ℕ → ℂ}
 
 /-- The full quadratic-twist theta tail integrand is integrable for positive `T` and
@@ -53,12 +66,8 @@ theorem integrableOn_quadraticTwistGaussianThetaTailIntegrand (hc : ∀ n : ℕ+
     {T : ℝ} (hT : 0 < T) :
     IntegrableOn (fun u ↦ (‖gaussianThetaSeries j c u‖ +
       ‖gaussianThetaSeries j (fun n ↦ c n * μ n) u‖) / u) (Ioi T⁻¹) := by
-  have hμ (n : ℕ+) : ‖c n * (μ n : ℂ)‖ ≤ 1 := by
-    rw [norm_mul]
-    have hnorm : ‖(μ n : ℂ)‖ ≤ 1 := by
-      exact_mod_cast ArithmeticFunction.abs_moebius_le_one (n := n)
-    calc ‖c n‖ * ‖(μ n : ℂ)‖ ≤ ‖c n‖ := mul_le_of_le_one_right (norm_nonneg _) hnorm
-      _ ≤ 1 := hc n
+  have hμ (n : ℕ+) : ‖c n * (μ n : ℂ)‖ ≤ 1 :=
+    (ArithmeticFunction.norm_mul_moebius_le n (c n)).trans (hc n)
   have h := (integrableOn_norm_gaussianThetaSeries_div (j := j) hc (inv_pos.mpr hT)).add
     (integrableOn_norm_gaussianThetaSeries_div (j := j) (c := fun n ↦ c n * μ n)
       hμ (inv_pos.mpr hT))

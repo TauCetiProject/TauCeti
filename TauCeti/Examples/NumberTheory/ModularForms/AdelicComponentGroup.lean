@@ -33,20 +33,23 @@ namespace TauCeti.Examples.AdelicComponentGroup
 
 /-- At principal level `1`, the component of `1` has group `Γ(1) = SL₂(ℤ)`. -/
 theorem componentGroup_principalLevel_one :
-    componentGroup (principalLevel ℚ (Ideal.span {((1 : ℕ) : ℤ)})) 1 =
+    componentGroup (principalLevel ℚ (Fin 2) (Ideal.span {((1 : ℕ) : ℤ)})) 1 =
       (SpecialLinearGroup.mapGL (n := Fin 2) (R := ℤ) ℚ).range := by
   ext γ
   refine ⟨fun h ↦ ?_, ?_⟩
   · -- Elements of `Γ_{1,K(1)}` have determinant `1` and integral entries.
     refine mem_range_mapGL_of_det_eq_one (det_eq_one_of_mem_componentGroup
-      (isCompact_principalLevel ℚ (by simp)) h) ?_
-    simpa [principalLevel_top] using (mem_componentGroup_iff.mp h).2
+      (isCompact_principalLevel ℚ (Fin 2) _) h) fun i j ↦ ?_
+    have hγ : GeneralLinearGroup.map (algebraMap ℚ (FiniteAdeleRing ℤ ℚ)) γ ∈
+        (integralGL ℚ (Fin 2) (R := ℤ)).range := by
+      simpa [principalLevel_top] using (mem_componentGroup_iff.mp h).2
+    simpa using (mem_range_integralGL_iff.mp hγ).1 i j
   · rintro ⟨γ, rfl⟩
     exact mapGL_mem_componentGroup_principalLevel_one_iff.mpr (by simp [Gamma_one_top])
 
 /-- The scalar `-1` lies in the component group of `1` at principal level `2`. -/
 theorem neg_one_mem_componentGroup_principalLevel_two :
-    -1 ∈ componentGroup (principalLevel ℚ (Ideal.span {((2 : ℕ) : ℤ)})) 1 := by
+    -1 ∈ componentGroup (principalLevel ℚ (Fin 2) (Ideal.span {((2 : ℕ) : ℤ)})) 1 := by
   have h : (-1 : SL(2, ℤ)) ∈ Gamma 2 := by
     rw [mem_Gamma_iff_dvd]
     decide
@@ -54,7 +57,7 @@ theorem neg_one_mem_componentGroup_principalLevel_two :
 
 /-- The scalar `-1` does not lie in the component group of `1` at principal level `3`. -/
 theorem neg_one_notMem_componentGroup_principalLevel_three :
-    -1 ∉ componentGroup (principalLevel ℚ (Ideal.span {((3 : ℕ) : ℤ)})) 1 := by
+    -1 ∉ componentGroup (principalLevel ℚ (Fin 2) (Ideal.span {((3 : ℕ) : ℤ)})) 1 := by
   have h : (-1 : SL(2, ℤ)) ∉ Gamma 3 := by
     rw [mem_Gamma_iff_dvd]
     decide

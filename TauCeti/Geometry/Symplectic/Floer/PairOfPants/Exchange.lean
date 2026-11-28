@@ -56,12 +56,17 @@ rotation of the end at `∞` under `σ`. The main results are:
   `|w - c| < 3/2` is the pair-of-pants datum translated by `c`. So far out it is the
   pair-of-pants datum on the input ends and its translate by `c` on the output end
   (`TauCeti.Floer.exchangePerturbation_eq_of_pos_fst_positiveEndCoord`,
-  `TauCeti.Floer.exchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord`).
+  `TauCeti.Floer.exchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord`). In the end
+  coordinates, beyond the height `2` every member is `H_q(t) dt` on the input end `q`, and its
+  translate by `c` is `H_∞(t) dt` on the output end
+  (`TauCeti.Floer.exchangePerturbation_eq_smul_endAngularForm`,
+  `TauCeti.Floer.exchangePerturbation_add_eq_smul_endAngularForm`).
 * `TauCeti.Floer.contMDiffAt_exchangePerturbation`: the family is jointly smooth in the parameter
   `c`, the domain point of `S` and the target point; so is each member in the domain point of `S`,
   in real coordinates, and the target point
   (`TauCeti.Floer.contMDiffAt_exchangePerturbation_apply`), and so are its components
-  (`TauCeti.Floer.contMDiffOn_uncurry_exchangePerturbation`).
+  (`TauCeti.Floer.contMDiffOn_uncurry_exchangePerturbation`), also jointly in the parameter
+  (`TauCeti.Floer.contMDiffAt_uncurry_exchangePerturbation_apply`).
 * `TauCeti.Floer.contDiffAt_exchangePerturbation_apply`: for `C^n` Hamiltonians on a normed
   space, the components of the family are `C^n` jointly in the parameter `c`, the domain point of
   `S`, in real coordinates, and the target point; in particular every member is `C^n` jointly in
@@ -315,6 +320,35 @@ theorem exchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord {c : ℝ} (hc
   rw [TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero, exchangePerturbation_add hc₀ hc₁
     (by linarith [eight_lt_norm_of_one_lt_fst_positiveEndCoord_inf hz])]
 
+/-- **The family is `H_q(t) dt` far out on an input end.** For `0 ≤ c ≤ 1`, beyond the height `2`
+of an input end `q`, every member of the family is `H_q(t) dt` in the end coordinate of `q`. -/
+theorem exchangePerturbation_eq_smul_endAngularForm {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {q : Puncture} (hq : q ≠ inf) {w : ℂ} (hw : 2 ≤ q.endSign * (q.endCoord w).re) (x : M) :
+    exchangePerturbation H c w x = H q (q.endCoord w).im x • q.endAngularForm w := by
+  have h := exchangePerturbation_eq_of_pos_fst_positiveEndCoord (H := H) hc₀ hc₁ hq
+    (z := Complex.equivRealProdCLM w) (by
+      rw [fst_positiveEndCoord, ContinuousLinearEquiv.symm_apply_apply]
+      linarith) x
+  rw [ContinuousLinearEquiv.symm_apply_apply] at h
+  rw [h, pairOfPantsPerturbation_eq_smul_endAngularForm hw]
+
+/-- **The family is `H_∞(t) dt` far out on the output end recentred at `c`.** For `0 ≤ c ≤ 1`,
+beyond the height `2` of the output end, the member `c` of the family at `w + c` is `H_∞(t) dt` in
+the end coordinate of `∞` at `w`. -/
+theorem exchangePerturbation_add_eq_smul_endAngularForm {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {w : ℂ} (hw : 2 ≤ -(inf.endCoord w).re) (x : M) :
+    exchangePerturbation H c (w + c) x = H inf (inf.endCoord w).im x • inf.endAngularForm w := by
+  -- The point is far from `0`, so off the disc on which the input data live.
+  have hw0 : w ≠ 0 := by
+    rintro rfl
+    rw [← endCenter_inf, re_endCoord_endCenter, neg_zero] at hw
+    norm_num at hw
+  have hnorm : 3 / 2 ≤ ‖w‖ := by
+    have h := (lt_neg_re_endCoord_inf_iff (r := 1) hw0).1 (by linarith)
+    linarith [Real.add_one_le_exp (2 * π * 1), Real.pi_pos]
+  rw [exchangePerturbation_add hc₀ hc₁ hnorm,
+    pairOfPantsPerturbation_eq_smul_endAngularForm (r := inf) (by simpa using hw)]
+
 /-- On the part `s > 0` of an input end `q`, for `0 ≤ c ≤ 1`, the components of the member `c` of
 the family are those of the pair-of-pants perturbation. -/
 theorem exchangePerturbation_components_eq_of_pos_fst_positiveEndCoord {c : ℝ} (hc₀ : 0 ≤ c)
@@ -466,6 +500,18 @@ theorem contMDiffOn_uncurry_exchangePerturbation {n : ℕ∞} (hH : ∀ q, Perio
   exact (((contMDiffAt_exchangePerturbation_apply hH hHs c z hz x).comp (z, x)
     ((Complex.equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).contMDiffAt.prodMk
       contMDiffAt_snd)).clm_apply contMDiffAt_const).contMDiffWithinAt
+
+/-- **The components of the family are smooth in the parameter.** For period-one Hamiltonians of
+class `C^n` on `ℝ × M`, each component of the family is `C^n` jointly in the parameter `c`, the
+domain point of `S = ℂ ∖ {0, 1}`, in real coordinates, and the target point. -/
+theorem contMDiffAt_uncurry_exchangePerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q))) (v : ℂ)
+    {p : ℝ × (ℝ × ℝ)} (hp : p.2 ∈ thricePuncturedSphereReal) (x : M) :
+    ContMDiffAt (𝓘(ℝ, ℝ × (ℝ × ℝ)).prod I) 𝓘(ℝ) n
+      (uncurry fun (p : ℝ × (ℝ × ℝ)) x ↦
+        exchangePerturbation H p.1 (Complex.equivRealProdCLM.symm p.2) x v) (p, x) :=
+  ((contMDiffAt_exchangePerturbation hH hHs p.1 ⟨_, mem_thricePuncturedSphereReal_iff.1 hp⟩ x).comp
+    (p, x) contMDiff_prodMk_equivRealProdCLM_symm.contMDiffAt).clm_apply contMDiffAt_const
 
 end TauCeti.Floer
 

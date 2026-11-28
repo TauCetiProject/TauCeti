@@ -122,6 +122,13 @@ theorem map_comp (n : ℕ) (f : A →+* B) (g : B →+* C) :
   ext x i
   simp only [map_coeff, RingHom.comp_apply]
 
+/-- The map of truncated Witt vectors induced by an injection is injective. -/
+theorem map_injective (n : ℕ) (f : A →+* B) (hf : Function.Injective f) :
+    Function.Injective (map (p := p) n f) := by
+  intro x y h
+  ext i
+  exact hf (by simpa only [map_coeff] using congrArg (coeff i) h)
+
 /-- The map of truncated Witt vectors induced by a surjection is surjective. -/
 theorem map_surjective (n : ℕ) (f : A →+* B) (hf : Function.Surjective f) :
     Function.Surjective (map (p := p) n f) := by

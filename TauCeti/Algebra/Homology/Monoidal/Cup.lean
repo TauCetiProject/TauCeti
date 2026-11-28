@@ -45,13 +45,17 @@ cocycles to `M₂` and `N₂` gives `δ x ⌣ y = (-1)^(p + 1) • x ⌣ δ y`
 * `TauCeti.ChainComplex.cupCochain`: the cup product of cochains.
 * `TauCeti.ChainComplex.d_comp_cupCochain`: the Leibniz rule.
 * `TauCeti.ChainComplex.cupCochain_naturality`: naturality along a map of diagonals.
-* `TauCeti.ChainComplex.cupCochain_whiskerLeft_comp` and
-  `TauCeti.ChainComplex.cupCochain_whiskerRight_comp`: changing the pairing along maps of
-  coefficients.
+* `TauCeti.ChainComplex.cupCochain_whiskerLeft_comp`,
+  `TauCeti.ChainComplex.cupCochain_whiskerRight_comp` and `TauCeti.ChainComplex.cupCochain_comp`:
+  changing the pairing along maps of coefficients.
 * `TauCeti.ChainComplex.cupCycles`: the cup product of cocycles.
 * `TauCeti.ChainComplex.cup`: the cup product on cohomology, with
   `TauCeti.ChainComplex.cup_homologyπ` computing it on classes of cocycles and
   `TauCeti.ChainComplex.cup_naturality` its naturality.
+* `TauCeti.ChainComplex.cup_homologyMap_linearYonedaObjMap_left`,
+  `TauCeti.ChainComplex.cup_homologyMap_linearYonedaObjMap_right` and
+  `TauCeti.ChainComplex.homologyMap_linearYonedaObjMap_cup`: changing the coefficients of either
+  factor, or of the product, is changing the pairing.
 * `TauCeti.ChainComplex.cup_δ_eq_zsmul`: the cup product of a connecting morphism with a
   class, `δ x ⌣ y = (-1)^(p + 1) • x ⌣ δ y`.
 
@@ -132,6 +136,13 @@ lemma cupCochain_whiskerRight_comp {M' : C} (f : M ⟶ M') (μ' : M' ⊗ N ⟶ P
     (h : p + q = n) (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) :
     cupCochain k D ((f ▷ N) ≫ μ') p q n h φ ψ = cupCochain k D μ' p q n h (φ ≫ f) ψ := by
   rw [cupCochain_apply, cupCochain_apply, tensorCochain_whiskerRight_comp]
+
+/-- The cup product of cochains along the pairing `μ ≫ g` is the cup product along `μ` postcomposed
+with `g`. -/
+lemma cupCochain_comp {P' : C} (g : P ⟶ P') (p q n : ℕ) (h : p + q = n) (φ : A.X p ⟶ M)
+    (ψ : B.X q ⟶ N) :
+    cupCochain k D μ p q n h φ ψ ≫ g = cupCochain k D (μ ≫ g) p q n h φ ψ := by
+  rw [cupCochain_apply, cupCochain_apply, Category.assoc, tensorCochain_comp]
 
 end Cochain
 
@@ -243,6 +254,50 @@ lemma cup_eq_of_homotopy {D' : E ⟶ HomologicalComplex.tensorObj A B}
   simpa only [Category.comp_id] using hD.trans
     ((ConcreteCategory.congr_hom ((H.linearYonedaFunctorMap k P).homologyMap_eq n) _).trans
       hD'.symm)
+
+/-- Changing the coefficients of the first factor along `f : M ⟶ M'` and cupping along
+`μ' : M' ⊗ N ⟶ P` is cupping along the pairing `(f ▷ N) ≫ μ'`. -/
+lemma cup_homologyMap_linearYonedaObjMap_left {M' : C} (f : M ⟶ M') (μ' : M' ⊗ N ⟶ P)
+    (p q n : ℕ) (h : p + q = n) (a : (A.linearYonedaObj k M).homology p)
+    (b : (B.linearYonedaObj k N).homology q) :
+    cup k D μ' p q n h (homologyMap (A.linearYonedaObjMap k f) p a) b =
+      cup k D ((f ▷ N) ≫ μ') p q n h a b := by
+  obtain ⟨a, rfl⟩ := (A.linearYonedaObj k M).moduleCat_homologyπ_surjective p a
+  obtain ⟨b, rfl⟩ := (B.linearYonedaObj k N).moduleCat_homologyπ_surjective q b
+  rw [A.homologyMap_linearYonedaObjMap_homologyπ_apply k, cup_homologyπ, cup_homologyπ]
+  congr 1
+  apply (E.linearYonedaObj k P).moduleCat_iCycles_injective
+  rw [iCycles_cupCycles, iCycles_cupCycles, A.iCycles_cyclesMap_linearYonedaObjMap_apply k]
+  exact (cupCochain_whiskerRight_comp D f μ' p q n h _ _).symm
+
+/-- Changing the coefficients of the second factor along `f : N ⟶ N'` and cupping along
+`μ' : M ⊗ N' ⟶ P` is cupping along the pairing `(M ◁ f) ≫ μ'`. -/
+lemma cup_homologyMap_linearYonedaObjMap_right {N' : C} (f : N ⟶ N') (μ' : M ⊗ N' ⟶ P)
+    (p q n : ℕ) (h : p + q = n) (a : (A.linearYonedaObj k M).homology p)
+    (b : (B.linearYonedaObj k N).homology q) :
+    cup k D μ' p q n h a (homologyMap (B.linearYonedaObjMap k f) q b) =
+      cup k D ((M ◁ f) ≫ μ') p q n h a b := by
+  obtain ⟨a, rfl⟩ := (A.linearYonedaObj k M).moduleCat_homologyπ_surjective p a
+  obtain ⟨b, rfl⟩ := (B.linearYonedaObj k N).moduleCat_homologyπ_surjective q b
+  rw [B.homologyMap_linearYonedaObjMap_homologyπ_apply k, cup_homologyπ, cup_homologyπ]
+  congr 1
+  apply (E.linearYonedaObj k P).moduleCat_iCycles_injective
+  rw [iCycles_cupCycles, iCycles_cupCycles, B.iCycles_cyclesMap_linearYonedaObjMap_apply k]
+  exact (cupCochain_whiskerLeft_comp D f μ' p q n h _ _).symm
+
+/-- Changing the coefficients of a cup product along `g : P ⟶ P'` is cupping along the pairing
+`μ ≫ g`. -/
+lemma homologyMap_linearYonedaObjMap_cup {P' : C} (g : P ⟶ P') (p q n : ℕ) (h : p + q = n)
+    (a : (A.linearYonedaObj k M).homology p) (b : (B.linearYonedaObj k N).homology q) :
+    homologyMap (E.linearYonedaObjMap k g) n (cup k D μ p q n h a b) =
+      cup k D (μ ≫ g) p q n h a b := by
+  obtain ⟨a, rfl⟩ := (A.linearYonedaObj k M).moduleCat_homologyπ_surjective p a
+  obtain ⟨b, rfl⟩ := (B.linearYonedaObj k N).moduleCat_homologyπ_surjective q b
+  rw [cup_homologyπ, cup_homologyπ, E.homologyMap_linearYonedaObjMap_homologyπ_apply k]
+  congr 1
+  apply (E.linearYonedaObj k P').moduleCat_iCycles_injective
+  rw [iCycles_cupCycles, E.iCycles_cyclesMap_linearYonedaObjMap_apply k, iCycles_cupCycles]
+  exact cupCochain_comp D μ g p q n h _ _
 
 end Cohomology
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic
+public import TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic.Basic
 public import TauCeti.KnotTheory.Hecke.Homfly
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
@@ -13,7 +13,7 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # Hyperbolic specialization of the Hecke Markov braid invariant
 
-Over `ℂ`, `TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic` sets the Hecke parameter to
+Over `ℂ`, `TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic.Basic` sets the Hecke parameter to
 `q = exp (-θ)` (`hyperbolicHeckeParam θ`) and rescales the Hecke generators to
 `γ i = I * exp (-α) • T i` (`InfiniteTypeAHeckeAlgebra.hyperbolicGen α θ i`), which satisfy the
 operator skein identity
@@ -41,10 +41,11 @@ Consequently:
 * P. Freyd, D. Yetter, J. Hoste, W. B. R. Lickorish, K. Millett and A. Ocneanu, *A new polynomial
   invariant of knots and links*, Bull. Amer. Math. Soc. 12 (1985), 239–246 (§4, pp. 244–246). Under
   the two-eigenvalue operator convention `exp α • γ + exp (-α) • γ⁻¹ + 2 * I * sinh θ = 0` and
-  stabilization equations proved in `TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic`, the compatible
-  skein parameters are `(exp α, +exp (-α), 2 * I * sinh θ)` with `η = (1 - tanh α * tanh θ) / 2`,
-  whereas a minus sign `-exp (-α)` on the second skein parameter gives a different two-strand unlink
-  value (`heckeTrace_hyperbolic_two_strand_unlink_ne_neg_param`).
+  stabilization equations proved in `TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic.Basic`, the
+  compatible skein parameters are `(exp α, +exp (-α), 2 * I * sinh θ)` with
+  `η = (1 - tanh α * tanh θ) / 2`, whereas a minus sign `-exp (-α)` on the second skein parameter
+  gives a different two-strand unlink value
+  (`heckeTrace_hyperbolic_two_strand_unlink_ne_neg_param`).
 * V. F. R. Jones, *Hecke algebra representations of braid groups and link polynomials*, Ann. of
   Math. 126 (1987), 335–388, Section 6.
 
@@ -81,9 +82,11 @@ theorem isHeckeNormalization_hyperbolic {α θ z η : ℂ}
     IsHeckeNormalization (hyperbolicHeckeParam θ) z
       (I * cosh α / sinh θ) (hyperbolicWritheUnit α) :=
   ⟨by rw [mul_assoc, hyperbolicWritheUnit_mul_eq_hyperbolicStabilization hz]
-      exact (hyperbolicStabilization_normalization hα hθ hθ' hη).1,
+      exact (hyperbolicStabilization_normalization hα hθ hθ'
+        (hη.trans (hyperbolicProjParam_def α θ).symm)).1,
     by rw [mul_assoc, inv_hyperbolicWritheUnit_mul_sub_eq_hyperbolicStabilizationInv hz]
-       exact (hyperbolicStabilization_normalization hα hθ hθ' hη).2⟩
+       exact (hyperbolicStabilization_normalization hα hθ hθ'
+        (hη.trans (hyperbolicProjParam_def α θ).symm)).2⟩
 
 namespace MarkovBraid
 

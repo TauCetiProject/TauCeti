@@ -102,14 +102,6 @@ variable {E H M E' H' N : Type*}
   [TopologicalSpace N] [ChartedSpace H' N]
   {q : M → N}
 
-/-- An almost complex structure takes the same value at equal base points. Every tangent space of
-`M` is the model space `E`, so a tangent vector at `y` is also a tangent vector at any `y' = y`, and
-this statement typechecks. -/
-private theorem apply_of_eq (J : SmoothAlmostComplexStructure I M) {y y' : M} (h : y = y')
-    (w : TangentSpace I y) : J y w = J y' w := by
-  subst h
-  rfl
-
 section Deck
 
 /-- Deck transformations commuting with `J` make `J` compatible with the identifications of `q`:
@@ -499,7 +491,7 @@ theorem mfderiv_localPullback_apply_of_comp_eq {g : M → M} {x : M}
   apply (hq.isInvertible_mfderiv (by simp) (g x)).injective
   rw [hchain, mfderiv_localPullback_apply, mfderiv_localPullback_apply, hchain]
   -- The base points `q x` and `q (g x)` agree, so both sides are `K` at that point.
-  exact apply_of_eq K hqx.symm _
+  exact K.apply_congr hqx.symm _
 
 /-- The pullback of `K` respects the identifications of `q`: tangent vectors with the same image
 under the differentials of `q` are sent by the pullback to vectors with the same image. This is
@@ -510,7 +502,7 @@ theorem mfderiv_localPullback_apply_eq {x x' : M} (v : TangentSpace I x)
     mfderiv I I' q x (localPullback hq K x v) = mfderiv I I' q x' (localPullback hq K x' v') := by
   rw [mfderiv_localPullback_apply, mfderiv_localPullback_apply, ← hvv']
   -- The base points `q x` and `q x'` agree, so both sides are `K` at that point.
-  exact apply_of_eq K hxx' _
+  exact K.apply_congr hxx' _
 
 /-- Descending the pullback of `K` along a surjective local diffeomorphism recovers `K`. -/
 @[simp]

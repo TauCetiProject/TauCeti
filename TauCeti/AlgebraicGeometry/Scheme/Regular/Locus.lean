@@ -137,12 +137,6 @@ theorem Hom.regularLocus_eq_smoothLocus {k : Type u} [Field k] [PerfectField k]
   ext x
   exact f.mem_regularLocus_iff_mem_smoothLocus
 
-/-- Over a perfect field, the regular locus of a scheme locally of finite type is open. -/
-theorem Hom.isOpen_regularLocus_of_perfectField {k : Type u} [Field k] [PerfectField k]
-    (f : X ⟶ Spec (.of k)) [LocallyOfFiniteType f] : IsOpen X.regularLocus := by
-  rw [f.regularLocus_eq_smoothLocus]
-  exact f.smoothLocus.isOpen
-
 /-- **Smoothness over a perfect field is tested at closed points.** If `k` is a perfect field and
 `f : X ⟶ Spec k` is locally of finite type, then `f` is smooth exactly when the local ring of `X`
 at every closed point is regular (The Stacks Project, Lemma 33.25.8, tag 0B8X, for reduced `X`). -/

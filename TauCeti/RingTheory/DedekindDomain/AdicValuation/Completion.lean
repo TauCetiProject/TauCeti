@@ -70,6 +70,8 @@ Everything here concerns one completion. The comparison of two completions along
   namespace) states that `R` maps onto the residue field of `𝒪_v`;
   `residue_algebraMap_adicCompletionIntegers_eq_iff` (in the same namespace) states that two
   elements of `R` have the same reduction exactly when their difference lies in `v`.
+* `IsDedekindDomain.HeightOneSpectrum.natCard_residueField_adicCompletionIntegers_eq_absNorm`: the
+  residue field of `𝒪_v` has as many elements as the absolute norm of `v`.
 * `IsDedekindDomain.HeightOneSpectrum.charP_residueField_adicCompletionIntegers`: when `v`
   contains the prime `p`, the residue field of `𝒪_v` has characteristic `p`.
 * `IsDedekindDomain.HeightOneSpectrum.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one`:
@@ -601,6 +603,13 @@ noncomputable def residueFieldEquivAdicCompletionIntegers :
 instance finite_residueField_adicCompletionIntegers [Finite (R ⧸ v.asIdeal)] :
     Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) :=
   Finite.of_equiv _ (v.residueFieldEquivAdicCompletionIntegers (K := K)).toEquiv
+
+/-- The residue field of `𝒪_v` has `Nat.card` the absolute norm of `v`, the order of `R ⧸ v`; both
+sides are `0` when the residue field is infinite. -/
+theorem natCard_residueField_adicCompletionIntegers_eq_absNorm :
+    Nat.card (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) = Ideal.absNorm v.asIdeal := by
+  rw [Ideal.absNorm_of_ne_bot v.ne_bot, Submodule.cardQuot_apply]
+  exact Nat.card_congr (v.residueFieldEquivAdicCompletionIntegers (K := K)).symm.toEquiv
 
 /-- **The residue-field equivalence on a quotient representative.** This is the characterization
 consumers should use; the equivalence's construction as an `Ideal.quotientMap` is an implementation

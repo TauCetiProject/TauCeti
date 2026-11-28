@@ -9,13 +9,14 @@ public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Connecting
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.ContractedProduct
 
 /-!
-# Functoriality of torsor classes in the sheaf of groups
+# Functoriality of torsors and their classes in the sheaf of groups
 
 Let `φ : G ⟶ G'` be a morphism of sheaves of groups on a site `(C, J)`. Extending the structure
 group of a `G`-torsor `P` along `φ` gives the `G'`-torsor `Torsor.map φ P`, the contracted
 product `P ×^G G'` (see `NonabelianCohomology.ContractedProduct`). This file shows that it
 induces a map `H¹(G) → H¹(G')` of pointed sets, functorial in `φ` and compatible with connecting
-maps.
+maps. The underlying torsor functor `Torsor.mapFunctor` and its identity comparison
+`Torsor.mapIdIso` are constructed in `NonabelianCohomology.ContractedProduct`.
 
 ## Main declarations
 
@@ -53,8 +54,7 @@ variable [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)]
 /-- The map `H¹(G) → H¹(G')` induced by a morphism `φ : G ⟶ G'` of sheaves of groups, sending
 the class of a `G`-torsor `P` to the class of the contracted product `P ×^G G'`. -/
 def map (φ : G ⟶ G') : NonabelianH1 G → NonabelianH1 G' :=
-  lift (fun P ↦ mk (P.map φ)) fun P Q f ↦ mk_eq_mk_of_hom <| P.mapLift (f.hom ≫ Q.toMap φ)
-    fun U g p ↦ by simp [f.map_smul, Torsor.toMap_smul]
+  lift (fun P ↦ mk (P.map φ)) fun _ _ f ↦ mk_eq_mk_of_hom ((Torsor.mapFunctor φ).map f)
 
 /-- `map φ` sends the class of `P` to the class of the contracted product `P ×^G G'`. -/
 @[simp]
@@ -83,7 +83,8 @@ lemma map_mk_eq_mk_iff {φ : G ⟶ G'} {P : Torsor G} {R : Torsor G'} :
 lemma map_id : map (𝟙 G) = id := by
   funext x
   induction x using ind with | h P => ?_
-  exact map_mk_eq_mk (𝟙 P.sheaf) fun _ _ _ ↦ rfl
+  rw [map_mk]
+  exact mk_eq_mk_iff.2 ⟨(Torsor.mapIdIso rfl).app P⟩
 
 /-- The maps induced on `H¹` by `φ` and `ψ` compose to the map induced by `φ ≫ ψ`. -/
 @[simp]
