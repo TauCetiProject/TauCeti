@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Sites.Etale
 public import Mathlib.CategoryTheory.Sites.Equivalence
 public import Mathlib.CategoryTheory.Sites.LocalProperties
+import TauCeti.AlgebraicGeometry.Sites.Etale.Over.Basic
 
 /-!
 # Localization of the small étale site
@@ -50,6 +51,9 @@ structure morphisms cover `S` (`AlgebraicGeometry.Scheme.coversTop_smallEtaleTop
   étale site covers if and only if every point of `X.left` lifts along one of its members.
 * `AlgebraicGeometry.Scheme.coversTop_smallEtaleTopology_iff`: a family of étale `S`-schemes
   covers the small étale site if and only if their images cover `S`.
+* `AlgebraicGeometry.Scheme.isSheafFor_mapPullbackAdj_counit_of_surjective`: étale sheaves
+  satisfy the sheaf condition for the counit of `Over.mapPullbackAdj` along a morphism
+  surjective on underlying schemes.
 * `AlgebraicGeometry.Scheme.Etale.isIso_iff_forall_isIso_sheafRestrict_map`: a morphism of étale
   sheaves is an isomorphism if and only if its restrictions to the members of an étale covering
   are isomorphisms.
@@ -102,13 +106,50 @@ theorem mem_over_smallEtaleTopology_iff {U : S.Etale} {V : Over U} (R : Sieve V)
     rw [Sieve.overEquiv_apply]
     exact Sieve.image_mem_functorPushforward _ _ hf
 
+/-- A surjective morphism in the small étale site of `S` generates a covering sieve. -/
+theorem generate_singleton_mem_smallEtaleTopology_of_surjective {U V : S.Etale} (f : U ⟶ V)
+    [Surjective f.left] :
+    Sieve.generate (.singleton f) ∈ smallEtaleTopology S V := by
+  rw [← Presieve.ofArrows_pUnit.{0}, ← Sieve.ofArrows,
+    Scheme.ofArrows_mem_smallEtaleTopology_iff]
+  simp [Set.iUnion_const]
+
+/-- A morphism in `Over U` whose underlying morphism of schemes is surjective generates a covering
+sieve in the localized small étale topology `(smallEtaleTopology S).over U`. -/
+theorem generate_singleton_mem_over_smallEtaleTopology_of_surjective {U : S.Etale} {A B : Over U}
+    (g : A ⟶ B) [Surjective g.left.left] :
+    Sieve.generate (.singleton g) ∈ (smallEtaleTopology S).over U B := by
+  rw [GrothendieckTopology.mem_over_iff, Sieve.overEquiv_generate,
+    ← Sieve.arrows_generate_map_eq_functorPushforward, Sieve.generate_sieve,
+    Presieve.map_singleton]
+  exact generate_singleton_mem_smallEtaleTopology_of_surjective g.left
+
+/-- An étale sheaf of sets on `S` satisfies the sheaf condition for any singleton family in
+`Over U` whose underlying morphism of schemes is surjective. -/
+theorem isSheafFor_singleton_over_of_surjective (F : Sheaf (smallEtaleTopology S) (Type u))
+    (U : S.Etale) {A B : Over U} (g : A ⟶ B) [Surjective g.left.left] :
+    Presieve.IsSheafFor (F.over U).obj (.singleton g) := by
+  rw [Presieve.isSheafFor_iff_generate]
+  exact (isSheaf_iff_isSheaf_of_type _ _).mp (F.over U).property _
+    (generate_singleton_mem_over_smallEtaleTopology_of_surjective g)
+
+/-- An étale sheaf of sets on `S` satisfies the sheaf condition for the counit of
+`Over.mapPullbackAdj g` whenever `g : U ⟶ V` in `S.Etale` is surjective on underlying schemes. -/
+theorem isSheafFor_mapPullbackAdj_counit_of_surjective (F : Sheaf (smallEtaleTopology S) (Type u))
+    {U V : S.Etale} (g : U ⟶ V) [Surjective g.left] (T : Over V) :
+    Presieve.IsSheafFor (F.over V).obj (.singleton ((Over.mapPullbackAdj g).counit.app T)) := by
+  have hcounit : ((Over.mapPullbackAdj g).counit.app T).left = pullback.fst T.hom g := by
+    simp only [Over.mapPullbackAdj_counit_app, Over.homMk_left]
+  have : Surjective ((Over.mapPullbackAdj g).counit.app T).left.left :=
+    hcounit ▸ Etale.surjective_pullback_fst T.hom g
+  exact isSheafFor_singleton_over_of_surjective F V ((Over.mapPullbackAdj g).counit.app T)
+
 /-- A family of étale `S`-schemes covers the small étale site of `S`, in the sense that it
 generates a covering sieve of every object, if and only if every point of `S` lies in the image of
 one of them. -/
 theorem coversTop_smallEtaleTopology_iff {ι : Type*} (U : ι → S.Etale) :
     (smallEtaleTopology S).CoversTop U ↔ ∀ s : S, ∃ i, ∃ u : (U i).left, (U i).hom u = s := by
-  have hT : IsTerminal (Etale.mk (𝟙 S)) :=
-    IsTerminal.isTerminalOfObj (Etale.forget S) _ Over.mkIdTerminal
+  have hT : IsTerminal (Etale.mk (𝟙 S)) := Etale.mkIdTerminal S
   -- The morphism from an étale `S`-scheme to the terminal object is its structure morphism.
   have h (i : ι) : (hT.from (U i)).left = (U i).hom :=
     (Category.comp_id _).symm.trans (MorphismProperty.Over.w _)
