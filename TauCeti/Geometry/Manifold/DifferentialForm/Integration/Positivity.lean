@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
-public import TauCeti.Geometry.Manifold.ExtChartAt.Integral
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
-import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.Integral
 import Mathlib.Order.Disjointed
 
 /-!

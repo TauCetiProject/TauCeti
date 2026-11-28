@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Density.Regularity
-import TauCeti.Geometry.Manifold.ExtChartAt.Integral
-import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!

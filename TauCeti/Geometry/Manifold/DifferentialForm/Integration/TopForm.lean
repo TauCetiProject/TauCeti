@@ -19,6 +19,7 @@ import TauCeti.Geometry.Manifold.ExtChartAt.Integral
 import TauCeti.Topology.Algebra.Support
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Order.Disjointed
+import Mathlib.Topology.PartitionOfUnity
 
 /-!
 # Integration of compactly supported top forms

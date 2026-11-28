@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Density.Integral
 public import TauCeti.Geometry.Manifold.VectorBundle.Density
 public import Mathlib.Topology.PartitionOfUnity
-import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Topology.Algebra.Support
 import TauCeti.Topology.PartitionOfUnity.Basic
 
