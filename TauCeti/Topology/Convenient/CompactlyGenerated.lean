@@ -8,7 +8,6 @@ module
 public import Mathlib.Logic.Small.Basic
 public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
 public import Mathlib.Topology.Instances.Shrink
-public import Mathlib.Topology.UnitInterval
 public import TauCeti.Topology.Convenient.GeneratedBy
 public import TauCeti.Topology.Convenient.HomSpace
 public import TauCeti.Topology.Instances.Shrink
@@ -21,16 +20,23 @@ Mathlib provides both compact generation (`TopologicalSpace.compactlyGenerated`,
 `Topology.IsGeneratedBy`). Here we identify them for `CompHaus.{u}` in an explicit test universe `u`
 and establish the point-set inputs for `CompactlyGenerated.{u, w}`:
 
-* `TopologicalSpace.generatedBy_compHaus`, `Topology.isGeneratedBy_compHaus_iff`, and idempotence
+* `TopologicalSpace.generatedBy_compHaus`,
+  `TopologicalSpace.continuous_to_compactlyGenerated_of_uCompactlyGeneratedSpace`,
+  `Topology.isGeneratedBy_compHaus_iff`, and idempotence
   `TopologicalSpace.compactlyGenerated_compactlyGenerated`.
 * Compact subsets as `CompHaus.{u}` images (`IsCompact.exists_compHaus_range_eq`), giving
   `TauCeti.instUCompactlyGeneratedSpaceOfCompactlyCoherentSpaceOfT2` and the compact-open comparison
   `Topology.ContinuousMapGeneratedBy.homeomorphContinuousMapCompHaus`.
-* Locally compact Hausdorff product preservation (`UCompactlyGeneratedSpace.prod_right`,
-  `UCompactlyGeneratedSpace.prod_left`).
+* Locally compact product preservation
+  (`TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right`,
+  `TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left`), specializing Whitehead's
+  quotient-product argument via `Topology.IsGeneratedBy.prod_right` in
+  `TauCeti.Topology.Convenient.GeneratedBy`.
 
 ## References
 
+* J. H. C. Whitehead, *Note on a theorem due to Borsuk*, Bull. Amer. Math. Soc. 54 (1948),
+  1125–1132 (quotient-product lemma for locally compact factors).
 * R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Arch. Math.
   (Basel) 22 (1971), 545–555.
 * M. Escardó, J. Lawson, and A. Simpson, *Comparing Cartesian closed categories of (core)
@@ -61,6 +67,15 @@ theorem continuous_to_compactlyGenerated {Y : Type v} [TopologicalSpace Y] {S : 
   suffices ∀ i, Continuous[inferInstance, compactlyGenerated.{u} Y] fun a : i.fst ↦ p ⟨i, a⟩ from
     this ⟨S, g⟩
   rw [← @continuous_sigma_iff]; exact continuous_coinduced_rng
+
+/-- Any continuous map from a `u`-compactly generated space into `Y` remains continuous when the
+target is equipped with `compactlyGenerated.{u} Y`. -/
+theorem continuous_to_compactlyGenerated_of_uCompactlyGeneratedSpace
+    {X : Type v} {Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
+    [UCompactlyGeneratedSpace.{u} X] {f : X → Y} (hf : Continuous f) :
+    Continuous[inferInstance, compactlyGenerated.{u} Y] f :=
+  continuous_from_uCompactlyGeneratedSpace (tY := compactlyGenerated.{u} Y) f fun _ g ↦
+    continuous_to_compactlyGenerated ((⟨f, hf⟩ : C(X, Y)).comp g)
 
 /-- The compactly generated topology refines (is finer than or equal to, in Mathlib's order `≤`)
 the original topology. -/
@@ -107,6 +122,11 @@ instance (Y : Type v) [TopologicalSpace Y] [UCompactlyGeneratedSpace.{u} Y] :
     IsGeneratedBy (fun K : CompHaus.{u} ↦ K) Y :=
   (isGeneratedBy_compHaus_iff Y).2 inferInstance
 
+/-- The compactly generated refinement of any topological space is `u`-compactly generated. -/
+instance (Y : Type v) [TopologicalSpace Y] :
+    UCompactlyGeneratedSpace.{u} (WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) Y) :=
+  (isGeneratedBy_compHaus_iff _).1 inferInstance
+
 end Topology
 
 namespace IsCompact
@@ -141,33 +161,24 @@ instance (priority := 100) instUCompactlyGeneratedSpaceOfCompactlyCoherentSpaceO
   rw [← Subtype.preimage_coe_inter_self]
   exact hclosed.preimage continuous_subtypeVal
 
+variable {X : Type v} {Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
+  [UCompactlyGeneratedSpace.{u} X] [UCompactlyGeneratedSpace.{u} Y]
+
+/-- If `X` and `Y` are `u`-compactly generated and `Y` is locally compact, then the ordinary
+product `X × Y` is `u`-compactly generated (specializing
+`Topology.IsGeneratedBy.prod_of_locallyCompactSpace_right`, Whitehead 1948). -/
+instance uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right [LocallyCompactSpace Y] :
+    UCompactlyGeneratedSpace.{u} (X × Y) :=
+  (Topology.isGeneratedBy_compHaus_iff (X × Y)).1 inferInstance
+
+/-- If `X` and `Y` are `u`-compactly generated and `X` is locally compact, then the ordinary
+product `X × Y` is `u`-compactly generated (specializing
+`Topology.IsGeneratedBy.prod_of_locallyCompactSpace_left`, Whitehead 1948). -/
+instance uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left [LocallyCompactSpace X] :
+    UCompactlyGeneratedSpace.{u} (X × Y) :=
+  (Topology.isGeneratedBy_compHaus_iff (X × Y)).1 inferInstance
+
 end TauCeti
-
-namespace UCompactlyGeneratedSpace
-
-/-- Taking the product on the right with a `u`-small locally compact Hausdorff space preserves
-`u`-compact generation. -/
-theorem prod_right {X : Type v} {Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
-    [UCompactlyGeneratedSpace.{u} X] [LocallyCompactSpace Y] [T2Space Y] [Small.{u} Y] :
-    UCompactlyGeneratedSpace.{u} (X × Y) :=
-  (Topology.isGeneratedBy_compHaus_iff.{u} (X × Y)).1
-    (Topology.IsGeneratedBy.prod_right (G := fun K : CompHaus.{u} ↦ K))
-
-/-- Taking the product on the left with a `u`-small locally compact Hausdorff space preserves
-`u`-compact generation. -/
-theorem prod_left {X : Type v} {Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
-    [LocallyCompactSpace X] [T2Space X] [Small.{u} X] [UCompactlyGeneratedSpace.{u} Y] :
-    UCompactlyGeneratedSpace.{u} (X × Y) :=
-  (Topology.isGeneratedBy_compHaus_iff.{u} (X × Y)).1
-    (Topology.IsGeneratedBy.prod_left (G := fun K : CompHaus.{u} ↦ K))
-
-instance instProdUnitIntervalRight (X : Type v) [TopologicalSpace X]
-    [UCompactlyGeneratedSpace.{u} X] : UCompactlyGeneratedSpace.{u} (X × unitInterval) := prod_right
-
-instance instProdUnitIntervalLeft (X : Type v) [TopologicalSpace X]
-    [UCompactlyGeneratedSpace.{u} X] : UCompactlyGeneratedSpace.{u} (unitInterval × X) := prod_left
-
-end UCompactlyGeneratedSpace
 
 namespace Topology.ContinuousMapGeneratedBy
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.IntegralOrder.Basic
+import TauCeti.Algebra.MonoidAlgebra.Trace
 
 /-!
 # One trace-dual lattice bounds every overorder
@@ -22,6 +23,10 @@ Over a noetherian `R` this module is noetherian, so the overorders of `Λ` satis
 chain condition. This is the finiteness input for the existence of maximal orders containing a given
 order.
 
+For the integral group ring of a finite group, the group order itself is a common denominator
+for all overorders. The regular trace of the product with the inverse of a group basis element
+extracts the corresponding coefficient multiplied by the group order.
+
 ## Main results
 
 * `TauCeti.IntegralOrder.det_smul_mem_span`: if `Γ` is an `R`-subalgebra of integral elements
@@ -30,6 +35,8 @@ order.
   every such `Γ` lies in `r⁻¹ • span R e`.
 * `TauCeti.IntegralOrder.IsOrder.wellFoundedGT_overorder`: over a noetherian integrally closed `R`,
   the orders containing a given order satisfy the ascending chain condition.
+* `TauCeti.IntegralOrder.card_smul_mem_groupRingSubalgebra`: the group order clears denominators
+  in every integral overorder of `R[G]`.
 
 ## References
 
@@ -103,5 +110,22 @@ theorem IsOrder.wellFoundedGT_overorder [IsNoetherianRing R]
     simp only [f, map_comap_subtype, inf_eq_right.2 (hle Γ₁), inf_eq_right.2 (hle Γ₂)] at h'
     exact Subtype.ext (Subalgebra.toSubmodule_injective h')
   exact hf.wellFoundedGT
+
+/-- Multiplication by `Nat.card G` takes every integral overorder of `R[G]` into `R[G]`,
+where `R` is integrally closed in its fraction field. For infinite `G` this scalar is zero. -/
+theorem card_smul_mem_groupRingSubalgebra {R K G : Type*} [CommRing R] [Field K] [Algebra R K]
+    [IsFractionRing R K] [IsIntegrallyClosed R] [Group G]
+    {Γ : Subalgebra R (MonoidAlgebra K G)} (hle : groupRingSubalgebra R K G ≤ Γ)
+    (hint : ∀ y ∈ Γ, IsIntegral R y) {x : MonoidAlgebra K G} (hx : x ∈ Γ) :
+    (Nat.card G : R) • x ∈ groupRingSubalgebra R K G := by
+  rcases finite_or_infinite G with hG | hG
+  · apply mem_groupRingSubalgebra.2
+    intro g
+    have ht := toSubmodule_le_dualSubmodule_regularTraceForm (F := K) hint hx
+      _ (hle (single_one_mem_groupRingSubalgebra g⁻¹))
+    rw [MonoidAlgebra.regularTraceForm_apply, mem_one] at ht
+    rw [MonoidAlgebra.coeff_smul, Finsupp.smul_apply, Algebra.smul_def]
+    simpa using ht
+  · simp
 
 end TauCeti.IntegralOrder
