@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Height.BlockSubst
+public import TauCeti.NumberTheory.Height.Block.Subst
 import TauCeti.Algebra.MvPolynomial.Support
 import TauCeti.Combinatorics.Enumerative.AntidiagLargeDeviation
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic

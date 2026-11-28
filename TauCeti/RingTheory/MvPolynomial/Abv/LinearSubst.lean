@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.MvPolynomial.Abv.Coeff
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.BlockSubst
 import TauCeti.Algebra.MvPolynomial.Support
+import TauCeti.Algebra.Order.GroupWithZero.Pow
+import TauCeti.Algebra.Order.Ring.Basic
 
 /-!
 # Coefficient bounds for linear and block-linear substitutions
@@ -194,23 +196,6 @@ theorem abv_coeff_linearSubst_monomial_le_of_isNonarchimedean [Fintype σ] [Comm
   exact abv_coeff_aeval_monomial_le_of_isNonarchimedean hv
     (fun i _ ↦ abv_coeff_linearForm_le ((v.nonneg _).trans (hM i i)) (hM i)) a t
 
-private theorem card_mul_nonneg_of_forall_le {ι S : Type*} [Fintype ι] [Semiring S] [PartialOrder S]
-    [IsOrderedRing S] {f : ι → S} {B : S} (hf0 : ∀ i, 0 ≤ f i) (hfB : ∀ i, f i ≤ B) :
-    0 ≤ (Fintype.card ι : S) * B := by
-  by_cases hι : Nonempty ι
-  · obtain ⟨i₀⟩ := hι
-    exact mul_nonneg (Nat.cast_nonneg _) ((hf0 i₀).trans (hfB i₀))
-  · rw [not_nonempty_iff] at hι
-    simp
-
-private theorem mul_mul_pow_le_sq_mul_pow {S : Type*} [CommSemiring S] [PartialOrder S]
-    [IsOrderedRing S] {a r B C : S} {n : ℕ} (ha : a ≤ r ^ n) (hB0 : 0 ≤ r * B) (hC0 : 0 ≤ C) :
-    a * ((r * B) ^ n * C) ≤ (r ^ 2 * B) ^ n * C := by
-  calc a * ((r * B) ^ n * C)
-      ≤ r ^ n * ((r * B) ^ n * C) :=
-        mul_le_mul_of_nonneg_right ha (mul_nonneg (pow_nonneg hB0 _) hC0)
-    _ = (r ^ 2 * B) ^ n * C := by rw [← mul_assoc, ← mul_pow, sq, mul_assoc]
-
 /-- For a homogeneous polynomial `p` of degree `n`, if the entries of `M` are bounded by `B` and
 the coefficients of `p` are bounded by `C` under `v`, then every coefficient of `linearSubst M p` is
 bounded by `(card σ ^ 2 * B) ^ n * C`. -/
@@ -223,13 +208,16 @@ theorem abv_coeff_linearSubst_le_of_isHomogeneous [Fintype σ] [CommSemiring S] 
   exact (abv_coeff_aeval_le_of_isHomogeneous hp
     (fun i _ ↦ card_support_linearForm_le (M i))
     (fun i _ ↦ abv_coeff_linearForm_le ((v.nonneg _).trans (hM i i)) (hM i))
-    hpC t).trans
-    (mul_mul_pow_le_sq_mul_pow
-      (by simpa only [Nat.cast_pow] using
-        (Nat.mono_cast (card_support_le_pow_of_isHomogeneous hp) :
-          (#p.support : S) ≤ ((Fintype.card σ ^ n : ℕ) : S)))
-      (card_mul_nonneg_of_forall_le (fun i ↦ v.nonneg (M i i)) fun i ↦ hM i i)
-      ((v.nonneg _).trans (hpC 0)))
+    hpC t).trans <| by
+      rw [← mul_assoc]
+      refine mul_le_mul_of_nonneg_right (TauCeti.mul_mul_pow_le_sq_mul_pow ?_ ?_)
+        ((v.nonneg _).trans (hpC 0))
+      · simpa only [Nat.cast_pow] using
+          (Nat.mono_cast (card_support_le_pow_of_isHomogeneous hp) :
+            (#p.support : S) ≤ ((Fintype.card σ ^ n : ℕ) : S))
+      · exact TauCeti.natCast_mul_nonneg fun h ↦
+          let ⟨i⟩ := Fintype.card_pos_iff.1 h
+          (v.nonneg _).trans (hM i i)
 
 /-- Nonarchimedean companion to `abv_coeff_linearSubst_le_of_isHomogeneous`. -/
 theorem abv_coeff_linearSubst_le_of_isHomogeneous_of_isNonarchimedean [Fintype σ] [CommSemiring S]
@@ -275,13 +263,16 @@ theorem abv_coeff_blockSubst_le_of_isMultiHomogeneous [Fintype κ] [DecidableEq 
   exact (abv_coeff_aeval_le_of_isHomogeneous hP.isHomogeneous
     (fun p _ ↦ card_support_blockLinearForm_le A p)
     (fun p _ ↦ abv_coeff_blockLinearForm_le ((v.nonneg _).trans (hA p.2 p.2)) hA p)
-    hPC t).trans
-    (mul_mul_pow_le_sq_mul_pow
-      (by simpa only [Nat.cast_pow] using
-        (Nat.mono_cast (card_support_le_pow_of_isMultiHomogeneous hP) :
-          (#P.support : S) ≤ ((Fintype.card ι ^ ∑ h, d h : ℕ) : S)))
-      (card_mul_nonneg_of_forall_le (fun i ↦ v.nonneg (A i i)) fun i ↦ hA i i)
-      ((v.nonneg _).trans (hPC 0)))
+    hPC t).trans <| by
+      rw [← mul_assoc]
+      refine mul_le_mul_of_nonneg_right (TauCeti.mul_mul_pow_le_sq_mul_pow ?_ ?_)
+        ((v.nonneg _).trans (hPC 0))
+      · simpa only [Nat.cast_pow] using
+          (Nat.mono_cast (card_support_le_pow_of_isMultiHomogeneous hP) :
+            (#P.support : S) ≤ ((Fintype.card ι ^ ∑ h, d h : ℕ) : S))
+      · exact TauCeti.natCast_mul_nonneg fun h ↦
+          let ⟨i⟩ := Fintype.card_pos_iff.1 h
+          (v.nonneg _).trans (hA i i)
 
 /-- For a homogeneous polynomial `P` of degree `n` under a nonarchimedean absolute value `v`, if
 the entries of `A` are bounded by `B ≥ 0` and the coefficients of `P` are bounded by `C`, then

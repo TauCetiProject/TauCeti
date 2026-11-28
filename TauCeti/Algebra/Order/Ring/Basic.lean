@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Ring.Defs
 import Mathlib.Algebra.Order.GroupWithZero.Basic
+import Mathlib.Data.Nat.Cast.Order.Ring
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -19,13 +20,15 @@ also locally integrable.
 
 In an ordered semiring, for `s, t ≥ 0` and `i + j ≤ M`, the product `(1 + s) ^ i (1 + t) ^ j` is
 at most `(1 + s + t) ^ M`. This combines polynomial weights in two variables into one, as in
-decay estimates in `1 + ‖ξ‖ + ‖m‖`.
+decay estimates in `1 + ‖ξ‖ + ‖m‖`. Also `(n : α) * b` is nonnegative as soon as `0 < n → 0 ≤ b`
+(`TauCeti.natCast_mul_nonneg`).
 
 ## Main results
 
 * `TauCeti.neg_lt_of_neg_lt_mul`: `-c < a` from `-c < a * p` for `0 ≤ c` and `1 ≤ p`.
 * `TauCeti.one_add_pow_mul_one_add_pow_le`: `(1 + s) ^ i (1 + t) ^ j ≤ (1 + s + t) ^ M` for
   `s, t ≥ 0` and `i + j ≤ M`.
+* `TauCeti.natCast_mul_nonneg`: `0 ≤ (n : α) * b` when `0 < n → 0 ≤ b`.
 -/
 
 public section
@@ -52,5 +55,13 @@ theorem one_add_pow_mul_one_add_pow_le {α : Type*} [Semiring α] [PartialOrder 
     _ = (1 + s + t) ^ (i + j) := (pow_add _ _ _).symm
     _ ≤ (1 + s + t) ^ M :=
         pow_le_pow_right₀ ((le_add_of_nonneg_right ht).trans' (le_add_of_nonneg_right hs)) h
+
+/-- In an ordered semiring, `(n : α) * b` is nonnegative whenever `0 ≤ b` holds for positive
+`n`. -/
+theorem natCast_mul_nonneg {α : Type*} [Semiring α] [PartialOrder α] [IsOrderedRing α]
+    {n : ℕ} {b : α} (hb : 0 < n → 0 ≤ b) : 0 ≤ (n : α) * b := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
+  · exact mul_nonneg (Nat.cast_nonneg _) (hb hn)
 
 end TauCeti
