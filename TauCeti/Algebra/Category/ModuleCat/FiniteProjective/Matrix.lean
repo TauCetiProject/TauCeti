@@ -19,7 +19,8 @@ For a ring `R : Type u` and a finite index type `ι : Type v` with decidable equ
 functor `ModuleCat.toMatrixModCat R ι` (`P ↦ (ι → P)`) preserves finitely generated projective
 modules (`TauCeti.finiteProjectiveModules_le_inverseImage_toMatrixModCat`). Lifting it yields a
 canonical additive functor `TauCeti.finiteProjectiveModulesToMatrixFunctor R ι` independent of any
-choice of index in `ι`, which is an equivalence of categories whenever `ι` is nonempty.
+choice of index in `ι`, which is an equivalence of categories whenever `ι` is nonempty, and sends
+the regular `R`-module to the column module `TauCeti.FiniteProjectiveModules.matrixColumn R ι`.
 -/
 
 public section
@@ -79,6 +80,24 @@ instance : (finiteProjectiveModulesToMatrixFunctor R ι).Additive :=
   ObjectProperty.map_hom_of_comp_ι_eq (ObjectProperty.lift_comp_ι _ _ _) g
     (finiteProjectiveModulesToMatrixFunctor_obj_obj R ι P)
     (finiteProjectiveModulesToMatrixFunctor_obj_obj R ι Q)
+
+namespace FiniteProjectiveModules
+
+/-- The column module `R^ι` over the matrix ring `Matrix ι ι R`, with matrices acting by
+`(A • v) i = ∑ j, A i j * v j`, as a finitely generated projective module. It is the image of the
+regular `R`-module under the matrix Morita equivalence. -/
+@[expose] def matrixColumn : (finiteProjectiveModules (Matrix ι ι R)).FullSubcategory :=
+  ⟨ModuleCat.of (Matrix ι ι R) (ι → R),
+    finiteProjectiveModules_le_inverseImage_toMatrixModCat R ι
+      (ModuleCat.of R R) (finiteProjectiveModulesRegular R).property⟩
+
+/-- The underlying module of `TauCeti.FiniteProjectiveModules.matrixColumn R ι` is `R^ι` with
+the column action of `Matrix ι ι R`. -/
+@[simp]
+theorem matrixColumn_obj : (matrixColumn R ι).obj = ModuleCat.of (Matrix ι ι R) (ι → R) :=
+  (rfl)
+
+end FiniteProjectiveModules
 
 variable [Nonempty ι]
 

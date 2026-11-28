@@ -11,7 +11,6 @@ public import TauCeti.LinearAlgebra.InvariantBasisNumber
 public import TauCeti.RingTheory.LocalRing.Module
 public import TauCeti.RingTheory.PrincipalIdealDomain.MulOpposite
 
-import TauCeti.Algebra.Module.Projective.FreeComplement
 import TauCeti.LinearAlgebra.FreeModule.PID
 
 /-!
@@ -28,8 +27,8 @@ the class of a free module to its rank.
 Both hypotheses are also necessary for `n ↦ n[A]` to be an isomorphism. If it is injective, then
 `Aⁿ ≃ Aᵐ` forces `n = m`, as it gives `n[A] = m[A]`. The class of a module `P` is a multiple of
 `[A]` only when `P` is stably free, since `[P] = a[A] - b[A]` makes `P × Aᵇ` stably equivalent to
-`Aᵃ`. In general every class is `[P] - n[A]`: adding a complement `N` of `Q`, with `Q × N ≃ Aⁿ`,
-turns `[P] - [Q]` into `[P × N] - n[A]`.
+`Aᵃ`. In general every class is `[P] - n[A]` (established in
+`TauCeti.Algebra.Category.ModuleCat.FiniteProjective.SplitK0.Basic`).
 
 Following the right-module convention of algebraic `K`-theory, `K₀(R)` is the split Grothendieck
 group of finitely generated projective right `R`-modules, encoded as left `Rᵐᵒᵖ`-modules:
@@ -69,8 +68,6 @@ ring every module is zero and `K₀` is trivial.
 * `TauCeti.FiniteProjectiveModules.zsmul_of_finiteProjectiveModulesRegular_bijective_iff`:
   `n ↦ n[A]` is bijective exactly when `A` has invariant basis number and every finitely generated
   projective module is stably free.
-* `TauCeti.FiniteProjectiveModules.exists_of_sub_nsmul_of_finiteProjectiveModulesRegular_eq`: every
-  class is `[P] - n[A]`.
 * `TauCeti.FiniteProjectiveModules.rankEquiv_of`: the class of a free module goes to its rank.
 * `TauCeti.FiniteProjectiveModules.subsingleton_splitK0`: `K₀` of the zero ring is trivial.
 * `TauCeti.FiniteProjectiveModules.isAddTorsionFree_splitK0`: the split `K₀` of finitely
@@ -209,22 +206,6 @@ theorem zsmul_of_finiteProjectiveModulesRegular_bijective_iff :
         ∀ P : (finiteProjectiveModules A).FullSubcategory, IsStablyFree A P.obj :=
   and_congr (zsmul_of_finiteProjectiveModulesRegular_injective_iff A)
     (zsmul_of_finiteProjectiveModulesRegular_surjective_iff A)
-
-/-- **Normal form in projective `K₀`.** Every class in the split `K₀` of finitely generated
-projective `A`-modules is `[P] - n[A]` for a finitely generated projective `A`-module `P` and a
-natural number `n`. -/
-theorem exists_of_sub_nsmul_of_finiteProjectiveModulesRegular_eq
-    (x : SplitK0.{u} (finiteProjectiveModules A).FullSubcategory) :
-    ∃ (P : (finiteProjectiveModules A).FullSubcategory) (n : ℕ),
-      SplitK0.of.{u} P - n • SplitK0.of.{u} (finiteProjectiveModulesRegular A) = x := by
-  obtain ⟨X, Y, rfl⟩ := SplitK0.exists_eq_sub x
-  -- Add a complement `N` of `Y`, with `Y × N ≃ Aⁿ`, to both terms.
-  obtain ⟨N, _, _, _, _, n, ⟨e⟩⟩ := Module.Projective.exists_prod_linearEquiv_fin A Y.obj
-  refine ⟨X ⊞ of A N, n, ?_⟩
-  rw [SplitK0.of_biprod, ← SplitK0.of_eq_nsmul_of_linearEquiv_fin
-    (R' := finiteProjectiveModulesRegular A) ((biprodLinearEquiv Y (of A N)).trans e) (.refl _ _),
-    SplitK0.of_biprod]
-  abel
 
 variable [InvariantBasisNumber A]
   (h : ∀ P : (finiteProjectiveModules A).FullSubcategory, IsStablyFree A P.obj)

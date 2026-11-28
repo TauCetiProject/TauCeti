@@ -17,7 +17,6 @@ Built on `TauCeti.KZero R`, `TauCeti.KZero.regular` (from
 `TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs`), and `TauCeti.KZero.map` (from
 `TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Map`), this file provides:
 
-* the standard normal form `[P] - n • [R]` (`TauCeti.KZero.exists_eq_of_sub_nsmul_regular`),
 * `[R] ↦ [S]` (`TauCeti.KZero.map_regular`),
 * ring-equivalence functoriality (`RingEquiv.kZeroEquiv`).
 
@@ -35,12 +34,6 @@ universe u
 namespace TauCeti.KZero
 
 variable {R S T : Type u} [Ring R] [Ring S] [Ring T]
-
-/-- Every class in `KZero R` has the form `[P] - n • [R]`. -/
-theorem exists_eq_of_sub_nsmul_regular (x : KZero R) :
-    ∃ (P : FiniteProjectiveRight R) (n : ℕ),
-      x = SplitK0.of.{u} P - n • regular R :=
-  regular_def R ▸ SplitK0.exists_eq_of_sub_nsmul_finiteProjectiveModulesRegular x
 
 @[simp] theorem map_regular (f : R →+* S) : map f (regular R) = regular S := by
   simp [regular_def]

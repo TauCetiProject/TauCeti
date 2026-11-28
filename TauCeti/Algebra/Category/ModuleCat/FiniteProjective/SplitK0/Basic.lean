@@ -14,10 +14,11 @@ public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
 For a possibly noncommutative ring `R`, this file develops the basic theory of `SplitK0` of
 `(finiteProjectiveModules R).FullSubcategory`:
 
-* additivity on products (`TauCeti.SplitK0.of_eq_add_of_linearEquiv_prod`) and finite-free
-  classes (`TauCeti.SplitK0.of_eq_nsmul_of_linearEquiv_fin`, `TauCeti.SplitK0.of_finFreeObj`),
+* additivity on products (`TauCeti.SplitK0.of_eq_add_of_linearEquiv_prod`), finite products
+  (`TauCeti.SplitK0.of_eq_sum_of_linearEquiv_pi`), and finite-free classes
+  (`TauCeti.SplitK0.of_eq_nsmul_of_linearEquiv_fin`, `TauCeti.SplitK0.of_finFreeObj`),
 * normal form `[P] - n • [R]`
-  (`TauCeti.SplitK0.exists_eq_of_sub_nsmul_finiteProjectiveModulesRegular`),
+  (`TauCeti.FiniteProjectiveModules.exists_of_sub_nsmul_of_finiteProjectiveModulesRegular_eq`),
 * Morita invariance (`CategoryTheory.Equivalence.finiteProjectiveModulesSplitK0Equiv`),
 * agreement of extension of scalars along a ring isomorphism with restriction of scalars along its
   inverse (`RingEquiv.splitK0Map_finiteProjectiveModulesExtendScalars_eq_restrictScalars`).
@@ -45,21 +46,27 @@ theorem of_eq_add_of_linearEquiv_prod {X P Q : (finiteProjectiveModules R).FullS
   exact of_congr ((finiteProjectiveModules R).fullyFaithfulι.preimageIso
     (e.trans (FiniteProjectiveModules.biprodLinearEquiv P Q).symm).toModuleIso)
 
+/-- **Additivity on finite products.** The class of a finitely generated projective module
+isomorphic to a finite product is the sum of the classes of the factors. -/
+theorem of_eq_sum_of_linearEquiv_pi {ι : Type} [Fintype ι]
+    {X : (finiteProjectiveModules R).FullSubcategory}
+    (P : ι → (finiteProjectiveModules R).FullSubcategory)
+    (e : X.obj ≃ₗ[R] (i : ι) → (P i).obj) : of.{u} X = ∑ i, of.{u} (P i) := by
+  have := PreservesFiniteProducts.of_preserves_binary_and_terminal (finiteProjectiveModules R).ι
+  have : PreservesBiproduct P (finiteProjectiveModules R).ι :=
+    preservesBiproduct_of_preservesProduct _
+  rw [← of_biproduct.{u} P]
+  exact of_congr ((finiteProjectiveModules R).fullyFaithfulι.preimageIso
+    (e.toModuleIso ≪≫ (ModuleCat.biproductIsoPi fun i ↦ (P i).obj).symm ≪≫
+      ((finiteProjectiveModules R).ι.mapBiproduct P).symm))
+
 /-- The class of a finitely generated projective module isomorphic to `Rⁿ` is `n` times the class
 of `R`. -/
 theorem of_eq_nsmul_of_linearEquiv_fin {X R' : (finiteProjectiveModules R).FullSubcategory}
     {n : ℕ} (e : X.obj ≃ₗ[R] (Fin n → R)) (e' : R'.obj ≃ₗ[R] R) : of.{u} X = n • of.{u} R' := by
-  induction n generalizing X with
-  | zero =>
-    have : Subsingleton ((finiteProjectiveModules R).ι.obj X) := e.toEquiv.subsingleton
-    rw [zero_smul]
-    exact of_eq_zero_of_isZero (IsZero.of_full_of_faithful_of_isZero (finiteProjectiveModules R).ι
-      X (ModuleCat.isZero_of_subsingleton _))
-  | succ n ih =>
-    -- Split `Rⁿ⁺¹ ≃ R × Rⁿ` and use additivity on products.
-    rw [of_eq_add_of_linearEquiv_prod (P := R') (Q := FiniteProjectiveModules.finFreeObj R n)
-      (e.trans ((Fin.consLinearEquiv R fun _ ↦ R).symm.trans (e'.symm.prodCongr (.refl _ _)))),
-      ih (X := FiniteProjectiveModules.finFreeObj R n) (.refl _ _), succ_nsmul']
+  rw [of_eq_sum_of_linearEquiv_pi (fun _ : Fin n ↦ R')
+      (e.trans (LinearEquiv.piCongrRight fun _ ↦ e'.symm)),
+    Finset.sum_const, Finset.card_univ, Fintype.card_fin]
 
 /-- The class of `Fin n → R` in `SplitK0` is `n` times `[R]`. -/
 @[simp] theorem of_finFreeObj (n : ℕ) :
@@ -68,19 +75,25 @@ theorem of_eq_nsmul_of_linearEquiv_fin {X R' : (finiteProjectiveModules R).FullS
   of_eq_nsmul_of_linearEquiv_fin (X := FiniteProjectiveModules.finFreeObj R n)
     (R' := finiteProjectiveModulesRegular R) (.refl _ _) (.refl _ _)
 
-/-- Every element of `SplitK0 (finiteProjectiveModules R).FullSubcategory` has the form
-`[P] - n • [R]` (Weibel, *The K-book*, Lemma II.2.1). -/
-theorem exists_eq_of_sub_nsmul_finiteProjectiveModulesRegular
-    (x : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory) :
-    ∃ (P : (finiteProjectiveModules R).FullSubcategory) (n : ℕ),
-      x = SplitK0.of.{u} P - n • SplitK0.of.{u} (finiteProjectiveModulesRegular R) := by
+end TauCeti.SplitK0
+
+namespace TauCeti.FiniteProjectiveModules
+
+/-- **Normal form in projective `K₀`.** Every class in the split `K₀` of finitely generated
+projective `A`-modules is `[P] - n[A]` for a finitely generated projective `A`-module `P` and a
+natural number `n` (Weibel, *The K-book*, Lemma II.2.1). -/
+theorem exists_of_sub_nsmul_of_finiteProjectiveModulesRegular_eq (A : Type u) [Ring A]
+    (x : SplitK0.{u} (finiteProjectiveModules A).FullSubcategory) :
+    ∃ (P : (finiteProjectiveModules A).FullSubcategory) (n : ℕ),
+      SplitK0.of.{u} P - n • SplitK0.of.{u} (finiteProjectiveModulesRegular A) = x := by
   obtain ⟨P₁, P₂, rfl⟩ := SplitK0.exists_eq_sub.{u} x
-  obtain ⟨Q, n, ⟨e⟩⟩ := FiniteProjectiveModules.exists_biprod_iso_fin P₂
+  obtain ⟨Q, n, ⟨e⟩⟩ := exists_biprod_iso_fin P₂
   refine ⟨P₁ ⊞ Q, n, ?_⟩
-  rw [SplitK0.of_biprod.{u}, ← of_finFreeObj, ← SplitK0.of_congr.{u} e, SplitK0.of_biprod.{u}]
+  rw [SplitK0.of_biprod.{u}, ← SplitK0.of_finFreeObj, ← SplitK0.of_congr.{u} e,
+    SplitK0.of_biprod.{u}]
   abel
 
-end TauCeti.SplitK0
+end TauCeti.FiniteProjectiveModules
 
 namespace CategoryTheory.Equivalence
 

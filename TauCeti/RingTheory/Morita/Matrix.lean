@@ -24,8 +24,7 @@ on `M` used by the native inverse functor is restriction along `Matrix.scalar`; 
 with any given `R`-action satisfying the scalar tower law by
 `IsScalarTower.algebraMap_smul`. No finiteness assumption is imposed on `M`.
 
-Also supplies `Functor.Additive` for `ModuleCat.toMatrixModCat`, identifies its value on `ι → R`
-with the regular `Matrix ι ι R`-module (`TauCeti.toMatrixModCatPiLinearEquiv`), and gives its
+Also supplies `Functor.Additive` for `ModuleCat.toMatrixModCat` and gives its
 universe-transport isomorphism across `ModuleCat.uliftFunctor` (`TauCeti.toMatrixModCatUliftIso`).
 
 ## References
@@ -194,24 +193,6 @@ instance (R : Type u) (ι : Type v) [Ring R] [Fintype ι] [DecidableEq ι] :
 namespace TauCeti
 
 variable (R : Type u) [Ring R] (ι : Type v) [Fintype ι] [DecidableEq ι]
-
-/-- Under `ModuleCat.toMatrixModCat`, `ι → R` is isomorphic to the regular `Matrix ι ι R`-module. -/
-def toMatrixModCatPiLinearEquiv :
-    ((ModuleCat.toMatrixModCat R ι).obj (ModuleCat.of R (ι → R))) ≃ₗ[Matrix ι ι R]
-      Matrix ι ι R where
-  toFun v := Matrix.of fun i k ↦ v i k; invFun M i k := M i k
-  left_inv _ := rfl; right_inv _ := rfl; map_add' _ _ := rfl
-  map_smul' A v := by
-    ext i k
-    -- `(ModuleCat.toMatrixModCat R ι).obj M` acts on underlying functions by `Matrix.Module`.
-    exact (congr_fun (Matrix.Module.smul_apply A (v : ι → (ι → R)) i) k).trans
-      (by simp [Matrix.mul_apply])
-
-@[simp] theorem toMatrixModCatPiLinearEquiv_apply (v) (i k : ι) :
-    toMatrixModCatPiLinearEquiv R ι v i k = v i k := (rfl)
-
-@[simp] theorem toMatrixModCatPiLinearEquiv_symm_apply (M : Matrix ι ι R) (i k : ι) :
-    (toMatrixModCatPiLinearEquiv R ι).symm M i k = M i k := (rfl)
 
 /-- Natural isomorphism comparing `ModuleCat.toMatrixModCat` before and after lifting the module
 universe across `ι : Type v`. -/
