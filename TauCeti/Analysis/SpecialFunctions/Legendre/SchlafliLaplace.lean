@@ -64,8 +64,8 @@ theorem iteratedDeriv_sq_sub_one_pow (n : ℕ) (z : ℂ) :
       2 ^ n * n.factorial * ((shiftedLegendre n).map (Int.castRingHom ℂ)).eval ((1 - z) / 2) := by
   have h := congrFun (Polynomial.iteratedDeriv ((X ^ 2 - 1 : ℂ[X]) ^ n) n) z
   simp only [eval_pow, eval_sub, eval_X, eval_one] at h
-  rw [h, iterate_derivative_X_sq_sub_one_pow, eval_mul, eval_C, eval_comp, eval_mul, eval_C,
-    eval_sub, eval_one, eval_X, invOf_eq_inv, inv_mul_eq_div]
+  rw [h, iterate_derivative_X_sq_sub_one_pow]
+  simp [div_eq_inv_mul]
 
 /-- **Schläfli's integral** for the Legendre polynomial (DLMF 14.12.8 at `m = 0`): for every
 circle about `z`, `∮ (t² - 1)ⁿ / (2ⁿ (t - z)ⁿ⁺¹) dt = 2πi Pₙ(z)`. -/

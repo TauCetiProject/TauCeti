@@ -67,11 +67,11 @@ theorem iterate_derivative_X_sq_sub_one_pow (n : ℕ) :
   -- `x² - 1 = -4 y (1 - y)` for `y = (1 - x)/2`.
   have hF : (X ^ 2 - 1 : R[X]) ^ n =
       C ((-4 : R) ^ n) * (X ^ n * (1 - X) ^ n : R[X]).comp (C ⅟2 * (1 - X)) := by
-    rw [mul_comp, pow_comp, pow_comp, X_comp, sub_comp, one_comp, X_comp, ← mul_pow, C_pow,
-      ← mul_pow]
-    congr 1
-    rw [map_neg, map_ofNat]
-    linear_combination (-(2 * C ⅟2 + 1) * (1 - X) ^ 2 + 2 * (1 - X)) * h2
+    have h4 : (X ^ 2 - 1 : R[X]) = C (-4) * (C ⅟2 * (1 - X) * (1 - C ⅟2 * (1 - X))) := by
+      rw [map_neg, map_ofNat]
+      linear_combination (-(2 * C ⅟2 + 1) * (1 - X) ^ 2 + 2 * (1 - X)) * h2
+    rw [h4, mul_pow, mul_pow, C_pow]
+    simp only [mul_comp, pow_comp, X_comp, sub_comp, one_comp]
   have hR : derivative^[n] (X ^ n * (1 - X) ^ n : R[X]) =
       C (n ! : R) * (shiftedLegendre n).map (Int.castRingHom R) := by
     have := congrArg (map (Int.castRingHom R)) (factorial_mul_shiftedLegendre_eq n)
@@ -79,7 +79,7 @@ theorem iterate_derivative_X_sq_sub_one_pow (n : ℕ) :
     simpa using this.symm
   have hc : ((-4 : R) * -⅟2) = 2 := by
     linear_combination (2 : R) * (invOf_mul_self (2 : R))
-  rw [hF, iterate_derivative_C_mul, hq, iterate_derivative_comp_C_mul_X_add_C, hR, ← hq,
-    mul_comp, C_comp, ← mul_assoc, ← C_mul, ← mul_pow, hc, C_mul, mul_assoc]
+  rw [hF, iterate_derivative_C_mul, hq, iterate_derivative_comp_C_mul_X_add_C, hR, ← hq]
+  simp only [mul_comp, C_comp, ← mul_assoc, ← C_mul, ← mul_pow, hc]
 
 end Polynomial
