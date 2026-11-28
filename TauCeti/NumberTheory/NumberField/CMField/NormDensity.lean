@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Constructions.Pi
-public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import TauCeti.NumberTheory.NumberField.CMField.SelfAdjointFiniteAdele
 import TauCeti.MeasureTheory.Constructions.Pi
 
