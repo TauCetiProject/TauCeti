@@ -48,6 +48,8 @@ injective, the orbit projection is an open partial homeomorphism onto its image.
 ## Main results
 
 * `TauCeti.continuousSMul_of_forall_smul_eq_self`: a trivial action is jointly continuous.
+* `TauCeti.continuousConstSMul_of_smul_apply`: an action on functions `I → S` given by
+  `(g • ω) i = ω (g⁻¹ • i)` is by continuous maps for the product topology.
 * `Submonoid.continuousConstSMul` and `TauCeti.Subgroup.continuousConstSMul`: continuity
   in the point is inherited by a submonoid, hence by a subgroup.
 * `IterateMulAct.continuousConstSMul`: the iterates of a continuous map act by continuous maps.
@@ -111,6 +113,16 @@ topologies on the scalars and on the space acted on. -/
 theorem continuousSMul_of_forall_smul_eq_self {G M : Type*} [TopologicalSpace G]
     [TopologicalSpace M] [SMul G M] (h : ∀ (g : G) (m : M), g • m = m) : ContinuousSMul G M :=
   ⟨continuous_snd.congr fun p ↦ (h p.1 p.2).symm⟩
+
+/-- An action on functions `I → S` given by `(g • ω) i = ω (g⁻¹ • i)`, such as Mathlib's
+`arrowAction`, is by continuous maps for the product topology. -/
+theorem continuousConstSMul_of_smul_apply {Γ I S : Type*} [Group Γ] [MulAction Γ I]
+    [TopologicalSpace S] [SMul Γ (I → S)]
+    (hσ : ∀ (g : Γ) (ω : I → S) i, (g • ω) i = ω (g⁻¹ • i)) : ContinuousConstSMul Γ (I → S) where
+  continuous_const_smul g := by
+    rw [show (fun ω : I → S => g • ω) = fun ω i => ω (g⁻¹ • i) from
+      funext fun ω => funext (hσ g ω)]
+    exact continuous_pi fun i => continuous_apply _
 
 /-- The fixed set of an element acting continuously on a Hausdorff space is closed. -/
 theorem isClosed_fixedBy {M X : Type*} [Monoid M] [MulAction M X] [TopologicalSpace X]

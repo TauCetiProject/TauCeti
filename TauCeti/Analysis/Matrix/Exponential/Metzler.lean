@@ -73,13 +73,10 @@ open scoped Matrix.Norms.Operator in
 theorem IsMetzler.exp_apply_nonneg {B : Matrix n n ℝ} (hB : B.IsMetzler) (i j : n) :
     0 ≤ exp B i j := by
   obtain ⟨c, hc⟩ := isMetzler_iff_exists_add_smul_one_nonneg.mp hB
-  have hcomm : Commute (B + c • 1) ((-c) • 1) := (Commute.one_right _).smul_right _
-  have hexp : exp B = exp (B + c • 1) * exp ((-c) • (1 : Matrix n n ℝ)) := by
-    rw [← exp_add_of_commute _ _ hcomm, add_assoc, ← add_smul, add_neg_cancel, zero_smul,
-      add_zero]
-  -- This typed specialization pins the operator-norm matrix ring instance.
-  have hscalar : exp ((-c) • (1 : Matrix n n ℝ)) = Real.exp (-c) • 1 := exp_real_smul_one _
-  rw [hexp, hscalar, mul_smul_comm, mul_one, Matrix.smul_apply, smul_eq_mul]
+  have hexp : exp B = Real.exp (-c) • exp (B + c • 1) := by
+    conv_lhs => rw [← add_neg_cancel_right B (c • 1), ← neg_smul]
+    exact exp_add_real_smul_one (A := Matrix n n ℝ) _ _
+  rw [hexp, Matrix.smul_apply, smul_eq_mul]
   exact mul_nonneg (Real.exp_pos _).le (exp_apply_nonneg_of_nonneg hc i j)
 
 /-- **Positivity of the exponential of a Metzler matrix.** The exponential `exp (t • B)` of a

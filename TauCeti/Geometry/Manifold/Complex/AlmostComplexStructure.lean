@@ -47,6 +47,8 @@ apply to complex manifolds. Two properties tie it to the complex structure:
   on a Riemann surface with its canonical orientation, every frame `(e, i e)` is positive.
 * `TauCeti.SmoothAlmostComplexStructure.inTangentCoordinates_ofComplexManifold`: it is
   multiplication by `i` in the tangent coordinates of any chart.
+* `TauCeti.SmoothAlmostComplexStructure.continuousLinearMapAt_trivializationAt_ofComplexManifold`:
+  the tangent trivialization at a chart centre reads the almost complex structure as `i`.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_ofComplexManifold_self`: on a complex normed
   space, its chart expression is constantly multiplication by `i`.
 * `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold_self_eq_constSmooth`: on a
@@ -173,6 +175,23 @@ theorem inTangentCoordinates_ofComplexManifold {x₀ x : M} (hx : x ∈ (chartAt
         (fun x ↦ (ofComplexManifold E M).toEndomorphism x) x₀ x =
       Complex.I • ContinuousLinearMap.id ℝ E :=
   inTangentCoordinates_ofTangentCoordChangeISMul tangentCoordChange_I_smul hx
+
+/-- On the source of the chart at `c`, the tangent trivialization at `c` turns the almost complex
+structure of a complex manifold into multiplication by `i`. -/
+theorem continuousLinearMapAt_trivializationAt_ofComplexManifold {c x : M}
+    (hx : x ∈ (chartAt E c).source) (w : TangentSpace 𝓘(ℝ, E) x) :
+    (trivializationAt E (TangentSpace 𝓘(ℝ, E) : M → Type _) c).continuousLinearMapAt ℝ x
+        (ofComplexManifold E M x w) =
+      Complex.I • (trivializationAt E (TangentSpace 𝓘(ℝ, E) : M → Type _) c).continuousLinearMapAt
+        ℝ x w := by
+  set T := trivializationAt E (TangentSpace 𝓘(ℝ, E) : M → Type _) c
+  have hb : x ∈ T.baseSet := by rwa [TangentBundle.trivializationAt_baseSet]
+  have h := DFunLike.congr_fun (inTangentCoordinates_ofComplexManifold (M := M) hx)
+    (T.continuousLinearMapAt ℝ x w)
+  rw [inTangentCoordinates, ContinuousLinearMap.inCoordinates, id, id,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    T.symmL_continuousLinearMapAt hb] at h
+  simpa using h
 
 /-- On a complex normed space `E` viewed as a manifold over itself, `ofComplexManifold E E` is the
 constant smooth almost complex structure given by multiplication by `i`. -/

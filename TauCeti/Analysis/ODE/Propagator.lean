@@ -58,6 +58,8 @@ so that `N_P(t, s) y` is the value at `t` of the Carathéodory solution of `x' =
   `N_P(t, s) = exp ((t - s) • A)`; for `P = 0`, `N_P(t, s) = 1`.
 * `TauCeti.propagator_const_eq_cosh_add_sinh`: for a constant coefficient `A` with `A² = a²`,
   `a ≠ 0` real, `N_P(t, s) = cosh((t - s) a) + (sinh((t - s) a) / a) A`.
+* `TauCeti.propagator_mul_mul`: for mutually inverse operators `C` and `C'`, the propagator of
+  the conjugated coefficient `u ↦ C * P u * C'` is `C * N_P(t, s) * C'`.
 
 ## Implementation notes
 
@@ -384,6 +386,33 @@ theorem propagator_const_eq_cosh_add_sinh {A : E →L[𝕜] E} {a : ℝ} (ha : a
   refine ((hc.smul_const _).add (hs.smul_const _)).congr_deriv ?_
   simp only [← ContinuousLinearMap.mul_def, mul_add, mul_smul_comm, mul_one, hA, smul_smul]
   match_scalars <;> field_simp
+
+/-- **Conjugating the coefficient.** If `P` is integrable on `[a, b]`, `s, t ∈ [a, b]` and
+`C * C' = 1 = C' * C`, then the propagator of `u ↦ C * P u * C'` is `C * N_P(t, s) * C'`. -/
+theorem propagator_mul_mul (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
+    (ht : t ∈ Icc a b) {C C' : E →L[𝕜] E} (hCC' : C * C' = 1) (hC'C : C' * C = 1) :
+    propagator (fun u ↦ C * P u * C') t s = C * propagator P t s * C' := by
+  -- The conjugation `X ↦ C X C'` as a continuous linear map on operators.
+  let L : (E →L[𝕜] E) →L[𝕜] (E →L[𝕜] E) :=
+    ContinuousLinearMap.compL 𝕜 E E E C ∘L (ContinuousLinearMap.compL 𝕜 E E E).flip C'
+  have hL (X : E →L[𝕜] E) : L X = C * X * C' := rfl
+  have hPL : IntegrableOn (fun u ↦ C * P u * C') (Icc a b) := by
+    have h : IntegrableOn (fun u ↦ L (P u)) (Icc a b) := L.integrable_comp hP
+    simpa only [hL] using h
+  refine propagator_eq_of_forall_mem_Icc hPL hs ht (N := fun r ↦ C * propagator P r s * C')
+    ((continuousOn_const.mul (continuousOn_propagator_left hP hs)).mul continuousOn_const)
+    fun r hr ↦ ?_
+  have hI : IntervalIntegrable (fun u ↦ P u ∘L propagator P u s) volume s r :=
+    hP.intervalIntegrable_clm_comp (continuousOn_propagator_left hP hs) hs hr
+  have hmul (u : ℝ) : (C * P u * C') ∘L (C * propagator P u s * C') =
+      L (P u ∘L propagator P u s) := by
+    rw [hL, ← ContinuousLinearMap.mul_def, ← ContinuousLinearMap.mul_def]
+    calc C * P u * C' * (C * propagator P u s * C')
+        = C * P u * (C' * C) * propagator P u s * C' := by noncomm_ring
+      _ = C * (P u * propagator P u s) * C' := by rw [hC'C]; noncomm_ring
+  simp_rw [hmul]
+  rw [L.intervalIntegral_comp_comm hI, hL, propagator_eq_one_add_integral hP hs hr, mul_add,
+    add_mul, mul_one, hCC']
 
 /-- **The norm bound on `N_P(t, s) - 1`.**
 `‖N_P(t, s) - 1‖ ≤ exp |∫ u in s..t, ‖P u‖| - 1` for `s, t ∈ [a, b]`. -/

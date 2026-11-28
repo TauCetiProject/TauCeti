@@ -7,22 +7,23 @@ module
 
 public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.RepresentationTheory.Character
-public import TauCeti.RepresentationTheory.BaseChange.BrauerNesbitt
+public import TauCeti.RepresentationTheory.BrauerNesbitt
 import TauCeti.LinearAlgebra.Charpoly.FinrankTwo
 
 /-!
 # The trace form of Brauer–Nesbitt in dimension two
 
 The characteristic polynomial of an endomorphism `f` of a two-dimensional space is
-`X ^ 2 - tr(f) X + det(f)`, and `tr(f²) = tr(f)² - 2 det(f)`. Over a perfect field with `2 ≠ 0`,
-the resulting statement for two-dimensional representations is the case `d = 2` of the trace
+`X ^ 2 - tr(f) X + det(f)`, and `tr(f²) = tr(f)² - 2 det(f)`. Over a field with `2 ≠ 0`, the
+resulting statement for two-dimensional representations is the case `d = 2` of the trace
 form of Brauer–Nesbitt (`Representation.nonempty_equiv_of_character_eq_of_factorial_ne_zero`).
 
 Over `𝔽₂` the trace of `f²` does not recover `det f`, but for a group the determinant of `ρ g` is a
 unit of `𝔽₂`, hence `1` (`Representation.det_apply_eq_one`). So the characteristic polynomials
-agree, and Brauer–Nesbitt (`Representation.nonempty_equiv_of_charpoly_eq_of_perfectField`) shows
-that two-dimensional semisimple representations of a group over `𝔽₂` with equal characters are
-again equivalent.
+agree, and Brauer–Nesbitt
+(`Representation.nonempty_equiv_of_charpoly_eq_of_isSemisimpleRepresentation`) shows that
+two-dimensional semisimple representations of a group over `𝔽₂` with equal characters are again
+equivalent.
 
 ## Main results
 
@@ -57,7 +58,7 @@ theorem nonempty_equiv_of_character_eq_of_finrank_eq_two_zmod_two {V W : Type*} 
     (h : ∀ g, ρ.character g = σ.character g) : Nonempty (ρ.Equiv σ) := by
   have := Module.finite_of_finrank_eq_succ hV
   have := Module.finite_of_finrank_eq_succ hW
-  refine nonempty_equiv_of_charpoly_eq_of_perfectField ρ σ fun g => ?_
+  refine nonempty_equiv_of_charpoly_eq_of_isSemisimpleRepresentation ρ σ fun g => ?_
   have htr := h g
   simp only [character] at htr
   rw [LinearMap.charpoly_of_finrank_eq_two hV, LinearMap.charpoly_of_finrank_eq_two hW,

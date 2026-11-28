@@ -9,8 +9,10 @@ public import TauCeti.Analysis.ODE.EnergyEstimate.SpectralFlow
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.IndexLocalization
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Prod
 public import TauCeti.Analysis.Fredholm.Spectral.CommonDomain.Prod
+import TauCeti.Analysis.Fredholm.Spectral.CommonDomain.Conjugation
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.Normed.Operator.Spectrum
+import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Conjugation
 import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Identity
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
@@ -54,6 +56,13 @@ whose crossings stay in a finite-dimensional block, that the index is the spectr
   (`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible`,
   `TauCeti.domainSpectralFlow_eq_zero_of_forall_isInvertible`), and the finite-dimensional block
   is the previous case.
+* **Changing the trivialization.** If an isomorphism `W : D ≃ D'` and an isometry `U : H ≃ K`
+  intertwine `ι` and `ι' : D' → K`, the formula for a path `A` follows from the formula for the
+  conjugated path `U ∘ A(s) ∘ W⁻¹`
+  (`eventually_index_familyDomainTrajectoryOperator_eq_domainSpectralFlow_of_comp_comp_symm` in
+  the namespace `TauCeti.WeakDerivStep`), since both the index and the spectral flow are unchanged
+  by the conjugation (`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_comp_comp_symm`,
+  `TauCeti.domainSpectralFlow_comp_comp_symm`).
 
 The block form is the local normal form of the index formula: near a crossing `B₀`, the kernel of
 `B₀` is finite-dimensional, and splitting it off leaves a block on which the path stays invertible.
@@ -184,5 +193,43 @@ theorem eventually_index_familyDomainTrajectoryOperator_withLpProdMap_eq_domainS
       fun t _ ↦ hInv₂ t, add_zero]
 
 end Block
+
+/-! ### Changing the trivialization -/
+
+section Conjugation
+
+variable {D H D' K : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [NormedAddCommGroup H]
+  [InnerProductSpace ℝ H] [CompleteSpace H] [NormedAddCommGroup D'] [NormedSpace ℝ D']
+  [NormedAddCommGroup K] [InnerProductSpace ℝ K] [CompleteSpace K] {ι : D →L[ℝ] H}
+  {ι' : D' →L[ℝ] K}
+
+/-- **Transport of the index formula along a change of trivialization.** If `W : D ≃ D'` and the
+isometry `U : H ≃ K` intertwine `ι` and `ι'`, and the index formula holds for the conjugated path
+`U ∘ A(s) ∘ W⁻¹`, then it holds for `A`. -/
+theorem eventually_index_familyDomainTrajectoryOperator_eq_domainSpectralFlow_of_comp_comp_symm
+    (W : D ≃L[ℝ] D') (U : H ≃ₗᵢ[ℝ] K)
+    (hUV : ι' ∘L (W : D →L[ℝ] D') = (U : H →L[ℝ] K) ∘L ι) {A : ℝ → D →L[ℝ] H}
+    (AL : Lp (D →L[ℝ] H) ∞ μ₀) (hAL : AL =ᵐ[μ₀] A)
+    (h : ∀ AL' : Lp (D' →L[ℝ] K) ∞ μ₀,
+      AL' =ᵐ[μ₀] (fun s ↦ (U : H →L[ℝ] K) ∘L A s ∘L (W.symm : D' →L[ℝ] D)) →
+        ∀ᶠ ab in atBot ×ˢ atTop, (familyDomainTrajectoryOperator (p := 2) ι' AL').index =
+          domainSpectralFlow ι' (fun s ↦ (U : H →L[ℝ] K) ∘L A s ∘L (W.symm : D' →L[ℝ] D))
+            ab.1 ab.2) :
+    ∀ᶠ ab in atBot ×ˢ atTop, (familyDomainTrajectoryOperator (p := 2) ι AL).index =
+      domainSpectralFlow ι A ab.1 ab.2 := by
+  -- The `L∞` class of the conjugated path is the image of `AL` under `X ↦ U ∘ X ∘ W⁻¹`.
+  set L := (ContinuousLinearMap.compL ℝ D' H K (U : H →L[ℝ] K)).comp
+    ((ContinuousLinearMap.compL ℝ D' D H).flip (W.symm : D' →L[ℝ] D))
+  have hL : L.compLpL ∞ μ₀ AL =ᵐ[μ₀]
+      fun s ↦ (U : H →L[ℝ] K) ∘L A s ∘L (W.symm : D' →L[ℝ] D) := by
+    filter_upwards [L.coeFn_compLpL AL, hAL] with s h₁ h₂
+    rw [h₁, h₂]
+    simp [L]
+  filter_upwards [h _ hL] with ab hab
+  rw [← index_familyDomainTrajectoryOperator_comp_comp_symm W U.toContinuousLinearEquiv hUV
+    (by filter_upwards [hL, hAL] with s h₁ h₂; rw [h₁, h₂]), hab,
+    domainSpectralFlow_comp_comp_symm (fun _ ↦ U) (fun _ ↦ W) fun _ _ ↦ hUV]
+
+end Conjugation
 
 end TauCeti.WeakDerivStep
