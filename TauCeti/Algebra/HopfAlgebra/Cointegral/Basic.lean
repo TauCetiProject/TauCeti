@@ -292,11 +292,13 @@ private theorem cointegral_comp_iff {K H : Type*} [AddCommMonoid K] [One K] [Mod
 
 /-- Precomposing with `MulOpposite.opLinearEquiv.symm` preserves and reflects right
 cointegrals: a functional on `H` is a right cointegral iff its pushforward to `Hᵐᵒᵖ` is. -/
+@[simp]
 theorem isRightCointegral_comp_opLinearEquiv_symm_iff (φ : Module.Dual k H) :
     IsRightCointegral (φ ∘ₗ (MulOpposite.opLinearEquiv k).symm.toLinearMap) ↔
       IsRightCointegral φ :=
-  cointegral_comp_iff (MulOpposite.opLinearEquiv k).symm rfl LinearMap.id LinearMap.id
-    MulOpposite.comul_opLinearEquiv_symm φ
+  cointegral_comp_iff (MulOpposite.opLinearEquiv k).symm
+    (by simp only [MulOpposite.coe_opLinearEquiv_symm, MulOpposite.unop_one])
+    LinearMap.id LinearMap.id MulOpposite.comul_opLinearEquiv_symm φ
 
 /-- Pushing a right cointegral on `H` forward to `Hᵐᵒᵖ` yields a right cointegral. -/
 theorem IsRightCointegral.op {φ : Module.Dual k H} (hφ : IsRightCointegral φ) :
@@ -305,11 +307,13 @@ theorem IsRightCointegral.op {φ : Module.Dual k H} (hφ : IsRightCointegral φ)
 
 /-- Precomposing with `MulOpposite.opLinearEquiv.symm` preserves and reflects left
 cointegrals: a functional on `H` is a left cointegral iff its pushforward to `Hᵐᵒᵖ` is. -/
+@[simp]
 theorem isLeftCointegral_comp_opLinearEquiv_symm_iff (φ : Module.Dual k H) :
     IsLeftCointegral (φ ∘ₗ (MulOpposite.opLinearEquiv k).symm.toLinearMap) ↔
       IsLeftCointegral φ := by
   rw [isLeftCointegral_iff_lid_comm, isLeftCointegral_iff_lid_comm]
-  exact cointegral_comp_iff (MulOpposite.opLinearEquiv k).symm rfl
+  exact cointegral_comp_iff (MulOpposite.opLinearEquiv k).symm
+    (by simp only [MulOpposite.coe_opLinearEquiv_symm, MulOpposite.unop_one])
     (TensorProduct.comm k Hᵐᵒᵖ Hᵐᵒᵖ).toLinearMap (TensorProduct.comm k H H).toLinearMap
     (fun x ↦ by
       simp only [LinearEquiv.coe_coe]
@@ -323,10 +327,12 @@ theorem IsLeftCointegral.op {φ : Module.Dual k H} (hφ : IsLeftCointegral φ) :
 
 /-- A functional on `H` is a right cointegral iff its pullback to `Coop H` is a left
 cointegral. -/
+@[simp]
 theorem isLeftCointegral_comp_coopLinearEquiv_iff (φ : Module.Dual k H) :
     IsLeftCointegral (φ ∘ₗ (Coop.linearEquiv k H).toLinearMap) ↔ IsRightCointegral φ := by
   rw [isLeftCointegral_iff_lid_comm, isRightCointegral_def]
-  exact cointegral_comp_iff (Coop.linearEquiv k H) rfl
+  exact cointegral_comp_iff (Coop.linearEquiv k H)
+    ((Coop.linearEquiv_apply (R := k) (1 : Coop H)).trans Coop.val_one)
     (TensorProduct.comm k (Coop H) (Coop H)).toLinearMap LinearMap.id
     Coop.comul_linearEquiv φ
 
@@ -337,10 +343,12 @@ theorem IsRightCointegral.coop {φ : Module.Dual k H} (hφ : IsRightCointegral �
 
 /-- A functional on `H` is a left cointegral iff its pullback to `Coop H` is a right
 cointegral. -/
+@[simp]
 theorem isRightCointegral_comp_coopLinearEquiv_iff (φ : Module.Dual k H) :
     IsRightCointegral (φ ∘ₗ (Coop.linearEquiv k H).toLinearMap) ↔ IsLeftCointegral φ := by
   rw [isRightCointegral_def, isLeftCointegral_iff_lid_comm]
-  exact cointegral_comp_iff (Coop.linearEquiv k H) rfl
+  exact cointegral_comp_iff (Coop.linearEquiv k H)
+    ((Coop.linearEquiv_apply (R := k) (1 : Coop H)).trans Coop.val_one)
     LinearMap.id (TensorProduct.comm k H H).toLinearMap
     (fun x ↦ by
       simp only [LinearMap.id_apply, LinearEquiv.coe_coe, Coop.comul_linearEquiv,
@@ -355,9 +363,12 @@ theorem IsLeftCointegral.coop {φ : Module.Dual k H} (hφ : IsLeftCointegral φ)
 
 /-- A functional on `H` is a left cointegral iff its transfer to `(Coop H)ᵐᵒᵖ` is a right
 cointegral. -/
+@[simp]
 theorem isRightCointegral_comp_coopUnopLinearEquiv_iff (φ : Module.Dual k H) :
-    IsRightCointegral (φ ∘ₗ (Coop.unopLinearEquiv k H).toLinearMap) ↔ IsLeftCointegral φ :=
-  (isRightCointegral_comp_opLinearEquiv_symm_iff (φ ∘ₗ (Coop.linearEquiv k H).toLinearMap)).trans
+    IsRightCointegral (φ ∘ₗ (Coop.unopLinearEquiv k H).toLinearMap) ↔ IsLeftCointegral φ := by
+  rw [Coop.unopLinearEquiv_toLinearMap, ← LinearMap.comp_assoc]
+  exact (isRightCointegral_comp_opLinearEquiv_symm_iff
+    (φ ∘ₗ (Coop.linearEquiv k H).toLinearMap)).trans
     (isRightCointegral_comp_coopLinearEquiv_iff φ)
 
 /-- Transferring a left cointegral on `H` to `(Coop H)ᵐᵒᵖ` yields a right cointegral. -/
@@ -367,9 +378,12 @@ theorem IsLeftCointegral.opCoop {φ : Module.Dual k H} (hφ : IsLeftCointegral �
 
 /-- A functional on `H` is a right cointegral iff its transfer to `(Coop H)ᵐᵒᵖ` is a left
 cointegral. -/
+@[simp]
 theorem isLeftCointegral_comp_coopUnopLinearEquiv_iff (φ : Module.Dual k H) :
-    IsLeftCointegral (φ ∘ₗ (Coop.unopLinearEquiv k H).toLinearMap) ↔ IsRightCointegral φ :=
-  (isLeftCointegral_comp_opLinearEquiv_symm_iff (φ ∘ₗ (Coop.linearEquiv k H).toLinearMap)).trans
+    IsLeftCointegral (φ ∘ₗ (Coop.unopLinearEquiv k H).toLinearMap) ↔ IsRightCointegral φ := by
+  rw [Coop.unopLinearEquiv_toLinearMap, ← LinearMap.comp_assoc]
+  exact (isLeftCointegral_comp_opLinearEquiv_symm_iff
+    (φ ∘ₗ (Coop.linearEquiv k H).toLinearMap)).trans
     (isLeftCointegral_comp_coopLinearEquiv_iff φ)
 
 /-- Transferring a right cointegral on `H` to `(Coop H)ᵐᵒᵖ` yields a left cointegral. -/

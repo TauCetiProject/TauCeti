@@ -200,8 +200,8 @@ theorem IsLeftCointegral.sum_apply_mul_antipode_smul {φ : Module.Dual R H}
   let f : (Coop H)ᵐᵒᵖ ≃ₗ[R] H := Coop.unopLinearEquiv R H
   let φ' : Module.Dual R (Coop H)ᵐᵒᵖ := φ ∘ₗ f.toLinearMap
   have hφ' : IsRightCointegral φ' := hφ.opCoop
-  have ht' : f.symm t ∈ leftIntegral R (Coop H)ᵐᵒᵖ := by simpa [f] using ht
-  have htφ' : φ' (f.symm t) = 1 := by simpa [φ'] using htφ
+  have ht' : MulOpposite.op (Coop.mk t) ∈ leftIntegral R (Coop H)ᵐᵒᵖ := by simpa using ht
+  have htφ' : φ' (MulOpposite.op (Coop.mk t)) = 1 := by simpa [f, φ'] using htφ
   have hres := congrArg f (hφ'.sum_apply_antipode_mul_smul ht' htφ' r.coop.op (f.symm x))
   simpa [f, φ', map_sum, map_smul, ← MulOpposite.op_mul, ← Coop.mk_mul] using hres
 

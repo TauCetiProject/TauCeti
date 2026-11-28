@@ -69,7 +69,6 @@ theorem mk_surjective : Function.Surjective (@mk A) := fun x ↦ ⟨x.val, rfl�
 
 variable (A) in
 /-- The underlying bijection `Coop A ≃ A`. -/
-@[expose]
 def equiv : Coop A ≃ A where
   toFun := val
   invFun := mk
@@ -77,11 +76,11 @@ def equiv : Coop A ≃ A where
   right_inv _ := rfl
 
 @[simp]
-theorem equiv_apply (x : Coop A) : equiv A x = x.val :=
+theorem equiv_apply (x : Coop A) : equiv A x = x.val := by
   rfl
 
 @[simp]
-theorem equiv_symm_apply (a : A) : (equiv A).symm a = mk a :=
+theorem equiv_symm_apply (a : A) : (equiv A).symm a = mk a := by
   rfl
 
 section Operations
@@ -170,73 +169,76 @@ theorem mk_algebraMap [CommSemiring R] [Semiring A] [Algebra R A] (r : R) :
 
 variable (A) in
 /-- `Coop.val` as an additive equivalence `Coop A ≃+ A`. -/
-@[expose]
 def addEquiv [Add A] : Coop A ≃+ A where
   __ := equiv A
   map_add' _ _ := rfl
 
-@[simp] theorem addEquiv_apply [Add A] (x : Coop A) : addEquiv A x = x.val := rfl
-@[simp] theorem addEquiv_symm_apply [Add A] (a : A) : (addEquiv A).symm a = mk a := rfl
+@[simp] theorem addEquiv_apply [Add A] (x : Coop A) : addEquiv A x = x.val := by rfl
+@[simp] theorem addEquiv_symm_apply [Add A] (a : A) : (addEquiv A).symm a = mk a := by rfl
 
 variable (R A) in
 /-- `Coop.val` as an `R`-linear equivalence `Coop A ≃ₗ[R] A`. -/
-@[expose]
 def linearEquiv [Semiring R] [AddCommMonoid A] [Module R A] : Coop A ≃ₗ[R] A where
   __ := addEquiv A
   map_smul' _ _ := rfl
 
 @[simp]
 theorem linearEquiv_apply [Semiring R] [AddCommMonoid A] [Module R A] (x : Coop A) :
-    linearEquiv R A x = x.val :=
+    linearEquiv R A x = x.val := by
   rfl
 
 @[simp]
 theorem linearEquiv_symm_apply [Semiring R] [AddCommMonoid A] [Module R A] (a : A) :
-    (linearEquiv R A).symm a = mk a :=
+    (linearEquiv R A).symm a = mk a := by
   rfl
 
 variable (R A) in
 /-- The canonical `R`-linear equivalence `(Coop A)ᵐᵒᵖ ≃ₗ[R] A`. -/
-@[expose]
 def unopLinearEquiv [Semiring R] [AddCommMonoid A] [Module R A] : (Coop A)ᵐᵒᵖ ≃ₗ[R] A :=
   (MulOpposite.opLinearEquiv R).symm.trans (linearEquiv R A)
 
 @[simp]
 theorem unopLinearEquiv_apply [Semiring R] [AddCommMonoid A] [Module R A] (x : (Coop A)ᵐᵒᵖ) :
-    unopLinearEquiv R A x = x.unop.val :=
+    unopLinearEquiv R A x = x.unop.val := by
   rfl
 
 @[simp]
 theorem unopLinearEquiv_symm_apply [Semiring R] [AddCommMonoid A] [Module R A] (a : A) :
-    (unopLinearEquiv R A).symm a = MulOpposite.op (mk a) :=
+    (unopLinearEquiv R A).symm a = MulOpposite.op (mk a) := by
+  rfl
+
+/-- The underlying linear map of `Coop.unopLinearEquiv R A` factors as
+`Coop.linearEquiv R A ∘ₗ (MulOpposite.opLinearEquiv R).symm`. -/
+theorem unopLinearEquiv_toLinearMap [Semiring R] [AddCommMonoid A] [Module R A] :
+    (unopLinearEquiv R A).toLinearMap =
+      (linearEquiv R A).toLinearMap ∘ₗ (MulOpposite.opLinearEquiv R).symm.toLinearMap := by
   rfl
 
 variable (A) in
 /-- `Coop.val` as a ring equivalence `Coop A ≃+* A`. -/
-@[expose]
 def ringEquiv [Add A] [Mul A] : Coop A ≃+* A where
   __ := equiv A
   map_mul' _ _ := rfl
   map_add' _ _ := rfl
 
-@[simp] theorem ringEquiv_apply [Add A] [Mul A] (x : Coop A) : ringEquiv A x = x.val := rfl
-@[simp] theorem ringEquiv_symm_apply [Add A] [Mul A] (a : A) : (ringEquiv A).symm a = mk a := rfl
+@[simp] theorem ringEquiv_apply [Add A] [Mul A] (x : Coop A) : ringEquiv A x = x.val := by rfl
+@[simp] theorem ringEquiv_symm_apply [Add A] [Mul A] (a : A) : (ringEquiv A).symm a = mk a := by
+  rfl
 
 variable (R A) in
 /-- `Coop.val` as an `R`-algebra equivalence `Coop A ≃ₐ[R] A`. -/
-@[expose]
 def algEquiv [CommSemiring R] [Semiring A] [Algebra R A] : Coop A ≃ₐ[R] A where
   __ := ringEquiv A
   commutes' _ := rfl
 
 @[simp]
 theorem algEquiv_apply [CommSemiring R] [Semiring A] [Algebra R A] (x : Coop A) :
-    algEquiv R A x = x.val :=
+    algEquiv R A x = x.val := by
   rfl
 
 @[simp]
 theorem algEquiv_symm_apply [CommSemiring R] [Semiring A] [Algebra R A] (a : A) :
-    (algEquiv R A).symm a = mk a :=
+    (algEquiv R A).symm a = mk a := by
   rfl
 
 end AlgebraicInstances
@@ -267,16 +269,16 @@ theorem counit_def [CoalgebraStruct R A] :
 theorem comul_mk [CoalgebraStruct R A] (a : A) :
     Coalgebra.comul (R := R) (mk a) =
       TensorProduct.map (linearEquiv R A).symm.toLinearMap (linearEquiv R A).symm.toLinearMap
-        (TensorProduct.comm R A A (Coalgebra.comul (R := R) a)) :=
+        (TensorProduct.comm R A A (Coalgebra.comul (R := R) a)) := by
   rfl
 
 @[simp]
 theorem counit_mk [CoalgebraStruct R A] (a : A) :
-    Coalgebra.counit (R := R) (mk a) = Coalgebra.counit (R := R) a :=
+    Coalgebra.counit (R := R) (mk a) = Coalgebra.counit (R := R) a := by
   rfl
 
 theorem counit_apply [CoalgebraStruct R A] (x : Coop A) :
-    Coalgebra.counit (R := R) x = Coalgebra.counit (R := R) x.val :=
+    Coalgebra.counit (R := R) x = Coalgebra.counit (R := R) x.val := by
   rfl
 
 /-- Comultiplication commutes with `Coop.linearEquiv R A` up to swapping tensor factors. -/
@@ -285,15 +287,8 @@ theorem comul_linearEquiv [CoalgebraStruct R A] (x : Coop A) :
       TensorProduct.map (linearEquiv R A).toLinearMap (linearEquiv R A).toLinearMap
         (TensorProduct.comm R (Coop A) (Coop A) (Coalgebra.comul (R := R) x)) := by
   induction x with | mk a =>
-  simp only [linearEquiv_apply, comul_mk]
-  generalize Coalgebra.comul (R := R) a = w
-  induction w using TensorProduct.inductionOn with
-  | add u v hu hv =>
-    simp only [map_add]
-    rw [← hu, ← hv]
-  | tmul b c =>
-    simp only [TensorProduct.comm_tmul, TensorProduct.map_tmul, LinearEquiv.coe_coe,
-      LinearEquiv.apply_symm_apply]
+  rw [linearEquiv_apply, val_mk, comul_mk, ← TensorProduct.map_comm, TensorProduct.map_map,
+    LinearEquiv.comp_symm, TensorProduct.map_id, LinearMap.id_apply, TensorProduct.comm_comm]
 
 private def tau (R : Type u) (A : Type v) [CommSemiring R] [AddCommMonoid A] [Module R A] :
     A ⊗[R] (A ⊗[R] A) →ₗ[R] A ⊗[R] (A ⊗[R] A) :=
@@ -330,6 +325,12 @@ private theorem tau_lTensor (R : Type u) (A : Type v)
 noncomputable instance instCoalgebra [Coalgebra R A] : Coalgebra R (Coop A) where
   coassoc := by
     let e : Coop A ≃ₗ[R] A := linearEquiv R A
+    have hcomul :
+        Coalgebra.comul (R := R) (A := Coop A) ∘ₗ e.symm.toLinearMap =
+          TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap ∘ₗ
+            (TensorProduct.comm R A A).toLinearMap ∘ₗ Coalgebra.comul := by
+      rw [comul_def, LinearMap.comp_assoc, LinearMap.comp_assoc, LinearMap.comp_assoc,
+        e.comp_symm, LinearMap.comp_id]
     have hLHS :
         (TensorProduct.assoc R (Coop A) (Coop A) (Coop A)).toLinearMap ∘ₗ
             (Coalgebra.comul (R := R) (A := Coop A)).rTensor (Coop A) ∘ₗ
@@ -337,21 +338,42 @@ noncomputable instance instCoalgebra [Coalgebra R A] : Coalgebra R (Coop A) wher
           TensorProduct.map e.symm.toLinearMap
               (TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap) ∘ₗ
             (TensorProduct.assoc R A A A).toLinearMap ∘ₗ
-            ((TensorProduct.comm R A A).toLinearMap ∘ₗ Coalgebra.comul).rTensor A := by
-      have he (a : A) : (linearEquiv R A) (e.symm a) = a := rfl
-      refine TensorProduct.ext' fun a₁ a₂ ↦ ?_
-      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, TensorProduct.map_tmul,
-        LinearMap.rTensor_tmul, comul_def, he]
-      induction Coalgebra.comul (R := R) a₁ using TensorProduct.inductionOn with
-      | add u v hu hv => simp only [TensorProduct.add_tmul, map_add, hu, hv]
-      | tmul b₁ b₂ => simp [e]
+            ((TensorProduct.comm R A A).toLinearMap ∘ₗ Coalgebra.comul).rTensor A :=
+      calc
+        (TensorProduct.assoc R (Coop A) (Coop A) (Coop A)).toLinearMap ∘ₗ
+              (Coalgebra.comul (R := R) (A := Coop A)).rTensor (Coop A) ∘ₗ
+              TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap
+            = (TensorProduct.assoc R (Coop A) (Coop A) (Coop A)).toLinearMap ∘ₗ
+                TensorProduct.map (Coalgebra.comul (R := R) (A := Coop A) ∘ₗ e.symm.toLinearMap)
+                  e.symm.toLinearMap := by
+              rw [LinearMap.rTensor_comp_map]
+        _ = (TensorProduct.assoc R (Coop A) (Coop A) (Coop A)).toLinearMap ∘ₗ
+              TensorProduct.map (TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap)
+                e.symm.toLinearMap ∘ₗ
+              ((TensorProduct.comm R A A).toLinearMap ∘ₗ Coalgebra.comul).rTensor A := by
+            rw [hcomul, ← LinearMap.map_comp_rTensor]
+        _ = TensorProduct.map e.symm.toLinearMap
+                (TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap) ∘ₗ
+              (TensorProduct.assoc R A A A).toLinearMap ∘ₗ
+              ((TensorProduct.comm R A A).toLinearMap ∘ₗ Coalgebra.comul).rTensor A := by
+            rw [← LinearMap.comp_assoc, ← LinearMap.comp_assoc,
+              ← TensorProduct.map_map_comp_assoc_eq]
     have hRHS :
         (Coalgebra.comul (R := R) (A := Coop A)).lTensor (Coop A) ∘ₗ
             TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap =
           TensorProduct.map e.symm.toLinearMap
               (TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap) ∘ₗ
             ((TensorProduct.comm R A A).toLinearMap ∘ₗ Coalgebra.comul).lTensor A :=
-      TensorProduct.ext' fun a₁ a₂ ↦ by simp [comul_def, e]
+      calc
+        (Coalgebra.comul (R := R) (A := Coop A)).lTensor (Coop A) ∘ₗ
+              TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap
+            = TensorProduct.map e.symm.toLinearMap
+                (Coalgebra.comul (R := R) (A := Coop A) ∘ₗ e.symm.toLinearMap) :=
+              LinearMap.lTensor_comp_map _ _ _ _
+        _ = TensorProduct.map e.symm.toLinearMap
+                (TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap) ∘ₗ
+              ((TensorProduct.comm R A A).toLinearMap ∘ₗ Coalgebra.comul).lTensor A := by
+            rw [hcomul, ← LinearMap.map_comp_lTensor]
     refine LinearMap.ext fun x ↦ ?_
     have hco := congrArg (tau R A) (Coalgebra.coassoc_apply (R := R) (e x))
     have hL' := LinearMap.congr_fun (tau_assoc_rTensor R A) (Coalgebra.comul (R := R) (e x))

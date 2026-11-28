@@ -47,14 +47,8 @@ theorem comul_opLinearEquiv_symm [CoalgebraStruct R A] (x : Aᵐᵒᵖ) :
       TensorProduct.map (opLinearEquiv R).symm.toLinearMap
         (opLinearEquiv R).symm.toLinearMap (Coalgebra.comul (R := R) x) := by
   induction x using MulOpposite.rec' with | h a =>
-  simp only [coe_opLinearEquiv_symm, unop_op, comul_op]
-  generalize Coalgebra.comul (R := R) a = w
-  induction w using TensorProduct.inductionOn with
-  | add u v hu hv =>
-    simp only [map_add]
-    rw [← hu, ← hv]
-  | tmul b c =>
-    simp only [TensorProduct.map_tmul, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
+  rw [coe_opLinearEquiv_symm, unop_op, comul_op, TensorProduct.map_map, LinearEquiv.symm_comp,
+    TensorProduct.map_id, LinearMap.id_apply]
 
 instance instIsCocomm [Coalgebra R A] [Coalgebra.IsCocomm R A] :
     Coalgebra.IsCocomm R Aᵐᵒᵖ where

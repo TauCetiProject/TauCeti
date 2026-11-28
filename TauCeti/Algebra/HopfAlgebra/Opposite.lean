@@ -21,7 +21,7 @@ For a Hopf algebra `H` over a commutative semiring `R`:
 
 ## Main declarations
 
-* `TauCeti.HopfAlgebra.antipode_axioms_of_anti`: transports the antipode axioms along an
+* `LinearEquiv.antipode_axioms_of_antimultiplicative`: transports the antipode axioms along an
   anti-multiplicative linear equivalence.
 * `MulOpposite.instHopfAlgebraCoop`: the `HopfAlgebra` instance on `(Coop H)ᵐᵒᵖ`.
 * `MulOpposite.hopfAlgebra`: the `HopfAlgebra` structure on `Hᵐᵒᵖ` when `S` is bijective.
@@ -31,11 +31,11 @@ For a Hopf algebra `H` over a commutative semiring `R`:
 
 open scoped TensorProduct
 
-namespace TauCeti.HopfAlgebra
+namespace LinearEquiv
 
 /-- Transports the left and right antipode axioms along an anti-multiplicative `R`-linear
 equivalence `e : K ≃ₗ[R] H` whose inverse commutes with comultiplication up to a map `f`. -/
-theorem antipode_axioms_of_anti {R H K : Type*} [CommSemiring R]
+theorem antipode_axioms_of_antimultiplicative {R H K : Type*} [CommSemiring R]
     [Semiring H] [Bialgebra R H] [Semiring K] [Bialgebra R K]
     (e : K ≃ₗ[R] H) (S : H →ₗ[R] H)
     (hmul : ∀ a b : H, e.symm a * e.symm b = e.symm (b * a))
@@ -84,7 +84,7 @@ theorem antipode_axioms_of_anti {R H K : Type*} [CommSemiring R]
     rw [hL, hr]
     simp [Algebra.algebraMap_eq_smul_one, hone]
 
-end TauCeti.HopfAlgebra
+end LinearEquiv
 
 namespace MulOpposite
 
@@ -103,7 +103,7 @@ private theorem opCoop_antipode_axioms :
           (Coop.unopLinearEquiv R H).toLinearMap).lTensor (Coop H)ᵐᵒᵖ ∘ₗ
         Coalgebra.comul =
       Algebra.linearMap R (Coop H)ᵐᵒᵖ ∘ₗ Coalgebra.counit :=
-  TauCeti.HopfAlgebra.antipode_axioms_of_anti (Coop.unopLinearEquiv R H) (HopfAlgebra.antipode R)
+  (Coop.unopLinearEquiv R H).antipode_axioms_of_antimultiplicative (HopfAlgebra.antipode R)
     (fun a b ↦ by
       rw [Coop.unopLinearEquiv_symm_apply, Coop.unopLinearEquiv_symm_apply,
         Coop.unopLinearEquiv_symm_apply, ← op_mul, ← Coop.mk_mul])
@@ -135,8 +135,8 @@ noncomputable instance instHopfAlgebraCoop : HopfAlgebra R (Coop H)ᵐᵒᵖ whe
 
 @[simp]
 theorem antipode_op_coop (a : H) :
-    HopfAlgebra.antipode R (op (Coop.mk a)) = op (Coop.mk (HopfAlgebra.antipode R a)) :=
-  rfl
+    HopfAlgebra.antipode R (op (Coop.mk a)) = op (Coop.mk (HopfAlgebra.antipode R a)) := by
+  simp [HopfAlgebra.antipode]
 
 private theorem mulOpposite_antipode_axioms
     (hS : Function.Bijective (HopfAlgebra.antipode R : H →ₗ[R] H)) :
@@ -150,7 +150,7 @@ private theorem mulOpposite_antipode_axioms
           (opLinearEquiv R).symm.toLinearMap).lTensor Hᵐᵒᵖ ∘ₗ
         Coalgebra.comul =
       Algebra.linearMap R Hᵐᵒᵖ ∘ₗ Coalgebra.counit :=
-  TauCeti.HopfAlgebra.antipode_axioms_of_anti (opLinearEquiv R (M := H)).symm
+  (opLinearEquiv R (M := H)).symm.antipode_axioms_of_antimultiplicative
     (TauCeti.HopfAlgebra.inverseAntipode hS)
     (fun a b ↦ by simp only [LinearEquiv.symm_symm, coe_opLinearEquiv, ← op_mul])
     (by rw [LinearEquiv.symm_symm, coe_opLinearEquiv, op_one])
