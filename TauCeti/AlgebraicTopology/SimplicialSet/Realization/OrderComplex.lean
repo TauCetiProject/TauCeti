@@ -56,10 +56,8 @@ private def chainFace {n : ℕ} (x : (nerve P) _⦋n⦌) : Face (orderComplex P)
   classical
   refine ⟨Finset.univ.image x.obj, mem_orderComplex_iff.mpr ⟨?_, ?_⟩⟩
   · exact Finset.univ_nonempty.image _
-  · rintro _ ha _ hb _
-    obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp ha
-    obtain ⟨j, -, rfl⟩ := Finset.mem_image.mp hb
-    exact (le_total i j).imp (fun h => x.monotone h) (fun h => x.monotone h)
+  · simpa only [Finset.coe_image, Finset.coe_univ, Set.image_univ]
+      using x.monotone.isChain_range
 
 private def chainSimplex {n : ℕ} (x : (nerve P) _⦋n⦌)
     (w : StdSimplex ℝ (Fin (n + 1))) : Realization (orderComplex P) := by
@@ -128,7 +126,7 @@ theorem orderComplexRealizationMap_toTopObjMk_single {n : ℕ} (x : (nerve P) _�
   exact StdSimplex.weights_single _
 
 /-- The comparison is natural under monotone maps, including maps identifying vertices. -/
-@[reassoc]
+@[reassoc, elementwise]
 theorem orderComplexRealizationMap_naturality [DecidableEq Q] (f : P →o Q) :
     SSet.toTop.map (nerveMap f.toFunctor) ≫ orderComplexRealizationMap Q =
       orderComplexRealizationMap P ≫
@@ -146,8 +144,11 @@ theorem orderComplexRealizationMap_naturality [DecidableEq Q] (f : P →o Q) :
     PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val,
     orderComplexRealizationMap_toTopObjMk, orderComplexRealizationMap_toTopObjMk]
   simp only [coe_orderComplexMap, StdSimplex.weights_map, ← Finsupp.mapDomain_comp]
-  -- Both vertex functions reduce to f ∘ x.obj through nerveMap and Monotone.functor.
-  rfl
+  apply congrArg (fun g => Finsupp.mapDomain g w.weights)
+  funext i
+  rw [nerveMap_app]
+  exact (Functor.mapComposableArrows_obj_obj f.toFunctor n x i).trans
+    (congrFun f.monotone.functor_obj (x.obj i))
 
 section PartialOrder
 
@@ -256,8 +257,9 @@ private lemma inverseComparison_chainSimplex {n : ℕ} (x : (nerve A) _⦋n⦌)
   let v : Fin (n + 1) →o (chainFace x).val :=
     ⟨fun i => ⟨x.obj i, Finset.mem_image_of_mem _ (Finset.mem_univ i)⟩, x.monotone⟩
   have hx : ((OrderEmbedding.subtype _).monotone.comp v.monotone).functor = x := by
-    -- Monotone.functor and the subtype projection reduce the object function to x.obj.
-    exact nerve.ext_of_isThin (C := A) (n := op ⦋n⦌) rfl
+    apply nerve.ext_of_isThin (C := A) (n := op ⦋n⦌)
+    rw [Monotone.functor_obj]
+    exact congrArg (fun g => Subtype.val ∘ g) (OrderHom.coe_mk _ _)
   exact (faceLift_eq_toTopObjMk (chainFace x) v w _ rfl).trans
     (congrArg (fun z => SSet.toTopObjMk z w) hx)
 
