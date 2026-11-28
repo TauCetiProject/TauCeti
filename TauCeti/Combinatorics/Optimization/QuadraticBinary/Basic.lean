@@ -323,179 +323,6 @@ theorem ising_eq_ising_sub_diagonal_add_trace [DecidableEq ι] (J : Matrix ι ι
   rw [hsplit, sub_zero, ising_diagonal]
   simp [Matrix.trace]
 
-/-! ### Parameter invariance -/
-
-private theorem qubo_indicator_single [DecidableEq ι] (Q : Matrix ι ι ℝ) (a : ι) :
-    qubo Q (fun k ↦ decide (k = a)) = Q a a := by
-  rw [qubo_def, Fintype.sum_eq_single a]
-  · rw [Fintype.sum_eq_single a]
-    · simp
-    · intro j hj
-      simp [hj]
-  · intro i hi
-    simp [hi]
-
-private theorem qubo_indicator_pair [DecidableEq ι] (Q : Matrix ι ι ℝ) {i j : ι} (hij : i ≠ j) :
-    qubo Q (fun k ↦ decide (k = i ∨ k = j)) = Q i i + Q j j + (Q i j + Q j i) := by
-  rw [qubo_def]
-  have hbit (k : ι) : bit (fun m ↦ decide (m = i ∨ m = j)) k = if k = i ∨ k = j then 1 else 0 := by
-    by_cases hk : k = i ∨ k = j
-    · simp [hk]
-    · obtain ⟨h1, h2⟩ := not_or.mp hk
-      simp [h1, h2]
-  simp_rw [hbit]
-  have hsum (f : ι → ℝ) : (∑ k, if k = i ∨ k = j then f k else 0) = f i + f j := by
-    have hfilt : Finset.univ.filter (fun k ↦ k = i ∨ k = j) = {i, j} := by
-      ext k
-      simp
-    rw [← Finset.sum_filter, hfilt, Finset.sum_pair hij]
-  have hinner (a : ι) :
-      (∑ b, Q a b * (if a = i ∨ a = j then (1 : ℝ) else 0) * if b = i ∨ b = j then 1 else 0) =
-        if a = i ∨ a = j then Q a i + Q a j else 0 := by
-    by_cases ha : a = i ∨ a = j
-    · simp only [ha, ↓reduceIte, mul_one]
-      simpa only [mul_ite, mul_one, mul_zero] using hsum (fun b ↦ Q a b)
-    · simp [ha]
-  simp_rw [hinner]
-  rw [hsum fun a ↦ Q a i + Q a j]
-  ring
-
-/-- `qubo Q₁ = qubo Q₂` holds if and only if `Q₁ + Q₁ᵀ = Q₂ + Q₂ᵀ`. -/
-theorem qubo_eq_qubo_iff (Q₁ Q₂ : Matrix ι ι ℝ) :
-    qubo Q₁ = qubo Q₂ ↔ Q₁ + Q₁ᵀ = Q₂ + Q₂ᵀ := by
-  classical
-  constructor
-  · intro hfun
-    have hdiag (a : ι) : Q₁ a a = Q₂ a a := by
-      simpa [qubo_indicator_single] using congrFun hfun (fun k ↦ decide (k = a))
-    ext i j
-    by_cases hij : i = j
-    · subst hij
-      simp [Matrix.add_apply, Matrix.transpose_apply, hdiag i]
-    · have hpair :
-          qubo Q₁ (fun k ↦ decide (k = i ∨ k = j)) = qubo Q₂ (fun k ↦ decide (k = i ∨ k = j)) :=
-        congrFun hfun _
-      rw [qubo_indicator_pair Q₁ hij, qubo_indicator_pair Q₂ hij, hdiag i, hdiag j] at hpair
-      simp only [Matrix.add_apply, Matrix.transpose_apply]
-      linarith
-  · intro hsum
-    ext x
-    have hmul := congrArg (fun M ↦ qubo M x) hsum
-    rw [qubo_add_transpose, qubo_add_transpose] at hmul
-    linarith
-
-/-- Two Ising models with the same external field and the same symmetrized off-diagonal couplings
-agree up to their trace constants. -/
-theorem ising_sub_trace_eq_of_offDiag_add_transpose_eq {J₁ J₂ : Matrix ι ι ℝ}
-    (hJ : ∀ i j, i ≠ j → J₁ i j + J₁ j i = J₂ i j + J₂ j i) (h : ι → ℝ) (x : ι → Bool) :
-    ising J₁ h x - J₁.trace = ising J₂ h x - J₂.trace := by
-  classical
-  have hdiff (J : Matrix ι ι ℝ) :
-      ising J h x - J.trace = ising ((1 / 2 : ℝ) • (J - Matrix.diagonal J.diag +
-        (J - Matrix.diagonal J.diag)ᵀ)) h x := by
-    rw [ising_symmetrize, sub_eq_iff_eq_add.mpr (ising_eq_ising_sub_diagonal_add_trace J h x)]
-  rw [hdiff J₁, hdiff J₂]
-  congr 1
-  ext i j
-  by_cases hij : i = j
-  · subst hij
-    simp
-  · simp [hij, hJ i j hij]
-
-omit [Fintype ι] in
-private theorem spin_decide_eq [DecidableEq ι] (i k : ι) :
-    spin (fun m ↦ decide (m = i)) k = 1 - 2 * if k = i then (1 : ℝ) else 0 := by
-  by_cases hk : k = i <;> norm_num [spin_def, hk]
-
-omit [Fintype ι] in
-private theorem spin_decide_or [DecidableEq ι] {i j : ι} (hij : i ≠ j) (k : ι) :
-    spin (fun m ↦ decide (m = i ∨ m = j)) k =
-      1 - 2 * (if k = i then (1 : ℝ) else 0) - 2 * (if k = j then (1 : ℝ) else 0) := by
-  by_cases hki : k = i
-  · subst hki
-    norm_num [spin_def, hij]
-  · by_cases hkj : k = j
-    · subst hkj
-      norm_num [spin_def, hij.symm]
-    · simp [hki, hkj]
-
-private theorem sum_mul_ite_ite [DecidableEq ι] (J : Matrix ι ι ℝ) (u v : ι) :
-    (∑ a, ∑ b, 4 * J a b * (if a = u then (1 : ℝ) else 0) * if b = v then 1 else 0) =
-      4 * J u v := by
-  simp only [mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
-
-private theorem ising_alternating_pair [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι → ℝ)
-    {i j : ι} (hij : i ≠ j) :
-    ising J h (fun _ ↦ false) - ising J h (fun k ↦ decide (k = i)) -
-        ising J h (fun k ↦ decide (k = j)) + ising J h (fun k ↦ decide (k = i ∨ k = j)) =
-      4 * (J i j + J j i) := by
-  -- Linear field terms cancel pointwise in the alternating sum.
-  have hlin :
-      (∑ k, h k * spin (fun _ ↦ false) k) - (∑ k, h k * spin (fun m ↦ decide (m = i)) k) -
-          (∑ k, h k * spin (fun m ↦ decide (m = j)) k) +
-          (∑ k, h k * spin (fun m ↦ decide (m = i ∨ m = j)) k) =
-        0 := by
-    simp only [spin_of_false, spin_decide_eq, spin_decide_or hij,
-      ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
-    exact Finset.sum_eq_zero fun k _ ↦ by ring
-  -- Quadratic coupling terms reduce to the `(i, j)` and `(j, i)` cross terms.
-  have hquad :
-      (∑ a, ∑ b, J a b * spin (fun _ ↦ false) a * spin (fun _ ↦ false) b) -
-          (∑ a, ∑ b, J a b * spin (fun m ↦ decide (m = i)) a * spin (fun m ↦ decide (m = i)) b) -
-          (∑ a, ∑ b, J a b * spin (fun m ↦ decide (m = j)) a * spin (fun m ↦ decide (m = j)) b) +
-          (∑ a, ∑ b, J a b * spin (fun m ↦ decide (m = i ∨ m = j)) a *
-            spin (fun m ↦ decide (m = i ∨ m = j)) b) =
-        4 * (J i j + J j i) := by
-    simp only [spin_of_false, spin_decide_eq, spin_decide_or hij,
-      ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
-    have hterm (a b : ι) :
-        J a b * 1 * 1 -
-            J a b * (1 - 2 * if a = i then (1 : ℝ) else 0) *
-              (1 - 2 * if b = i then (1 : ℝ) else 0) -
-            J a b * (1 - 2 * if a = j then (1 : ℝ) else 0) *
-              (1 - 2 * if b = j then (1 : ℝ) else 0) +
-            J a b * (1 - 2 * (if a = i then (1 : ℝ) else 0) - 2 * if a = j then 1 else 0) *
-              (1 - 2 * (if b = i then (1 : ℝ) else 0) - 2 * if b = j then 1 else 0) =
-          4 * J a b * (if a = i then (1 : ℝ) else 0) * (if b = j then 1 else 0) +
-            4 * J a b * (if a = j then (1 : ℝ) else 0) * (if b = i then 1 else 0) := by
-      ring
-    simp_rw [hterm, Finset.sum_add_distrib, sum_mul_ite_ite]
-    ring
-  simp only [ising_def]
-  linarith
-
-private theorem eq_of_sum_mul_spin_eq {h₁ h₂ : ι → ℝ}
-    (hfield : ∀ x, ∑ i, h₁ i * spin x i = ∑ i, h₂ i * spin x i) : h₁ = h₂ := by
-  classical
-  ext i
-  have hdiff (h : ι → ℝ) :
-      (∑ k, h k * spin (fun _ ↦ false) k) -
-        (∑ k, h k * spin (fun k ↦ decide (k = i)) k) = 2 * h i := by
-    rw [← Finset.sum_sub_distrib, Fintype.sum_eq_single i]
-    · simp only [decide_true, spin_of_false, spin_of_true]
-      ring
-    · intro k hki
-      simp [hki]
-  linarith [hfield (fun _ ↦ false), hfield (fun k ↦ decide (k = i)), hdiff h₁, hdiff h₂]
-
-/-- Two Ising models agree up to their trace constants if and only if they have the same
-external fields and the same symmetrized off-diagonal couplings. -/
-theorem ising_sub_trace_eq_iff (J₁ J₂ : Matrix ι ι ℝ) (h₁ h₂ : ι → ℝ) :
-    (∀ x, ising J₁ h₁ x - J₁.trace = ising J₂ h₂ x - J₂.trace) ↔
-      h₁ = h₂ ∧ ∀ i j, i ≠ j → J₁ i j + J₁ j i = J₂ i j + J₂ j i := by
-  classical
-  constructor
-  · intro heq
-    have hfield (x : ι → Bool) : ∑ i, h₁ i * spin x i = ∑ i, h₂ i * spin x i := by
-      linarith [heq x, heq (fun k ↦ !x k),
-        ising_sub_ising_not J₁ h₁ x, ising_sub_ising_not J₂ h₂ x]
-    refine ⟨eq_of_sum_mul_spin_eq hfield, fun i j hij ↦ ?_⟩
-    linarith [ising_alternating_pair J₁ h₁ hij, ising_alternating_pair J₂ h₂ hij,
-      heq (fun _ ↦ false), heq (fun k ↦ decide (k = i)),
-      heq (fun k ↦ decide (k = j)), heq (fun k ↦ decide (k = i ∨ k = j))]
-  · rintro ⟨rfl, hJ⟩ x
-    exact ising_sub_trace_eq_of_offDiag_add_transpose_eq hJ h₁ x
-
 /-! ### Equivalence between QUBO and Ising models -/
 
 private theorem sum_add_transpose_mul (M : Matrix ι ι ℝ) (f : ι → ℝ) :
@@ -592,6 +419,131 @@ theorem iInf_ising_eq_iInf_qubo_add [DecidableEq ι] (J : Matrix ι ι ℝ) (h :
       (⨅ x, qubo ((4 : ℝ) • J - Matrix.diagonal fun i ↦ 2 * (∑ j, (J i j + J j i) + h i)) x) +
         (∑ i, ∑ j, J i j + ∑ i, h i) := by
   rw [iInf_congr (ising_eq_qubo J h), ← ciInf_add (Set.Finite.bddBelow (Set.finite_range _))]
+
+/-! ### Parameter invariance -/
+
+private theorem qubo_indicator_single [DecidableEq ι] (Q : Matrix ι ι ℝ) (a : ι) :
+    qubo Q (fun k ↦ decide (k = a)) = Q a a := by
+  rw [qubo_def, Fintype.sum_eq_single a]
+  · rw [Fintype.sum_eq_single a]
+    · simp
+    · intro j hj
+      simp [hj]
+  · intro i hi
+    simp [hi]
+
+private theorem qubo_indicator_pair [DecidableEq ι] (Q : Matrix ι ι ℝ) {i j : ι} (hij : i ≠ j) :
+    qubo Q (fun k ↦ decide (k = i ∨ k = j)) = Q i i + Q j j + (Q i j + Q j i) := by
+  rw [qubo_def]
+  have hbit (k : ι) : bit (fun m ↦ decide (m = i ∨ m = j)) k = if k = i ∨ k = j then 1 else 0 := by
+    by_cases hk : k = i ∨ k = j
+    · simp [hk]
+    · obtain ⟨h1, h2⟩ := not_or.mp hk
+      simp [h1, h2]
+  simp_rw [hbit]
+  have hsum (f : ι → ℝ) : (∑ k, if k = i ∨ k = j then f k else 0) = f i + f j := by
+    have hfilt : Finset.univ.filter (fun k ↦ k = i ∨ k = j) = {i, j} := by
+      ext k
+      simp
+    rw [← Finset.sum_filter, hfilt, Finset.sum_pair hij]
+  have hinner (a : ι) :
+      (∑ b, Q a b * (if a = i ∨ a = j then (1 : ℝ) else 0) * if b = i ∨ b = j then 1 else 0) =
+        if a = i ∨ a = j then Q a i + Q a j else 0 := by
+    by_cases ha : a = i ∨ a = j
+    · simp only [ha, ↓reduceIte, mul_one]
+      simpa only [mul_ite, mul_one, mul_zero] using hsum (fun b ↦ Q a b)
+    · simp [ha]
+  simp_rw [hinner]
+  rw [hsum fun a ↦ Q a i + Q a j]
+  ring
+
+/-- `qubo Q₁ = qubo Q₂` holds if and only if `Q₁ + Q₁ᵀ = Q₂ + Q₂ᵀ`. -/
+theorem qubo_eq_qubo_iff (Q₁ Q₂ : Matrix ι ι ℝ) :
+    qubo Q₁ = qubo Q₂ ↔ Q₁ + Q₁ᵀ = Q₂ + Q₂ᵀ := by
+  classical
+  constructor
+  · intro hfun
+    have hdiag (a : ι) : Q₁ a a = Q₂ a a := by
+      simpa [qubo_indicator_single] using congrFun hfun (fun k ↦ decide (k = a))
+    ext i j
+    by_cases hij : i = j
+    · subst hij
+      simp [Matrix.add_apply, Matrix.transpose_apply, hdiag i]
+    · have hpair :
+          qubo Q₁ (fun k ↦ decide (k = i ∨ k = j)) = qubo Q₂ (fun k ↦ decide (k = i ∨ k = j)) :=
+        congrFun hfun _
+      rw [qubo_indicator_pair Q₁ hij, qubo_indicator_pair Q₂ hij, hdiag i, hdiag j] at hpair
+      simp only [Matrix.add_apply, Matrix.transpose_apply]
+      linarith
+  · intro hsum
+    ext x
+    have hmul := congrArg (fun M ↦ qubo M x) hsum
+    rw [qubo_add_transpose, qubo_add_transpose] at hmul
+    linarith
+
+/-- Two Ising models with the same external field and the same symmetrized off-diagonal couplings
+agree up to their trace constants. -/
+theorem ising_sub_trace_eq_of_offDiag_add_transpose_eq {J₁ J₂ : Matrix ι ι ℝ}
+    (hJ : ∀ i j, i ≠ j → J₁ i j + J₁ j i = J₂ i j + J₂ j i) (h : ι → ℝ) (x : ι → Bool) :
+    ising J₁ h x - J₁.trace = ising J₂ h x - J₂.trace := by
+  classical
+  have hdiff (J : Matrix ι ι ℝ) :
+      ising J h x - J.trace = ising ((1 / 2 : ℝ) • (J - Matrix.diagonal J.diag +
+        (J - Matrix.diagonal J.diag)ᵀ)) h x := by
+    rw [ising_symmetrize, sub_eq_iff_eq_add.mpr (ising_eq_ising_sub_diagonal_add_trace J h x)]
+  rw [hdiff J₁, hdiff J₂]
+  congr 1
+  ext i j
+  by_cases hij : i = j
+  · subst hij
+    simp
+  · simp [hij, hJ i j hij]
+
+/-- Two Ising models agree up to their trace constants if and only if they have the same
+external fields and the same symmetrized off-diagonal couplings. -/
+theorem ising_sub_trace_eq_iff (J₁ J₂ : Matrix ι ι ℝ) (h₁ h₂ : ι → ℝ) :
+    (∀ x, ising J₁ h₁ x - J₁.trace = ising J₂ h₂ x - J₂.trace) ↔
+      h₁ = h₂ ∧ ∀ i j, i ≠ j → J₁ i j + J₁ j i = J₂ i j + J₂ j i := by
+  classical
+  constructor
+  · intro heq
+    let Q₁ : Matrix ι ι ℝ :=
+      (4 : ℝ) • J₁ - Matrix.diagonal fun i ↦ 2 * (∑ j, (J₁ i j + J₁ j i) + h₁ i)
+    let Q₂ : Matrix ι ι ℝ :=
+      (4 : ℝ) • J₂ - Matrix.diagonal fun i ↦ 2 * (∑ j, (J₂ i j + J₂ j i) + h₂ i)
+    have hq0 (Q : Matrix ι ι ℝ) : qubo Q (fun _ ↦ false) = 0 := by simp [qubo_def]
+    have heq' (x : ι → Bool) :
+        qubo Q₁ x + (∑ i, ∑ j, J₁ i j + ∑ i, h₁ i - J₁.trace) =
+          qubo Q₂ x + (∑ i, ∑ j, J₂ i j + ∑ i, h₂ i - J₂.trace) := by
+      simpa only [ising_eq_qubo, add_sub_assoc] using heq x
+    have hconst :
+        ∑ i, ∑ j, J₁ i j + ∑ i, h₁ i - J₁.trace = ∑ i, ∑ j, J₂ i j + ∑ i, h₂ i - J₂.trace := by
+      simpa only [hq0, zero_add] using heq' (fun _ ↦ false)
+    have hqubo : qubo Q₁ = qubo Q₂ := by
+      ext x
+      linarith [heq' x, hconst]
+    have hmat : Q₁ + Q₁ᵀ = Q₂ + Q₂ᵀ := (qubo_eq_qubo_iff Q₁ Q₂).mp hqubo
+    have hJ : ∀ i j, i ≠ j → J₁ i j + J₁ j i = J₂ i j + J₂ j i := by
+      intro i j hij
+      have hij' := congrArg (fun M : Matrix ι ι ℝ ↦ M i j) hmat
+      simp only [Q₁, Q₂, Matrix.add_apply, Matrix.transpose_apply, Matrix.sub_apply,
+        Matrix.smul_apply, smul_eq_mul, Matrix.diagonal_apply, hij, hij.symm, ↓reduceIte,
+        sub_zero] at hij'
+      linarith
+    refine ⟨?_, hJ⟩
+    ext i
+    have hii := congrArg (fun M : Matrix ι ι ℝ ↦ M i i) hmat
+    have hsum : ∑ j, (J₁ i j + J₁ j i) - (J₁ i i + J₁ i i) =
+        ∑ j, (J₂ i j + J₂ j i) - (J₂ i i + J₂ i i) := by
+      rw [← Finset.sum_erase_add _ _ (Finset.mem_univ i),
+        ← Finset.sum_erase_add _ _ (Finset.mem_univ i), add_sub_cancel_right,
+        add_sub_cancel_right]
+      refine Finset.sum_congr rfl fun j hj ↦ hJ i j (Finset.ne_of_mem_erase hj).symm
+    simp only [Q₁, Q₂, Matrix.add_apply, Matrix.transpose_apply, Matrix.sub_apply,
+      Matrix.smul_apply, smul_eq_mul, Matrix.diagonal_apply, ↓reduceIte] at hii
+    linarith [hii, hsum]
+  · rintro ⟨rfl, hJ⟩ x
+    exact ising_sub_trace_eq_of_offDiag_add_transpose_eq hJ h₁ x
 
 end QuboIsing
 
