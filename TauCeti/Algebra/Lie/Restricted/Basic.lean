@@ -23,30 +23,35 @@ associative algebra of characteristic `p`:
 * it satisfies Jacobson's formula, `(x + y)^[p] = x^[p] + y^[p] + Λ_p(x, y)`, where `Λ_p` is
   Jacobson's Lie polynomial `TauCeti.LieAlgebra.jacobson`.
 
-Additivity is not the right axiom: in `2 × 2` matrices over `ZMod p`, `p` odd, the Frobenius is not
-additive (`TauCeti.LieAlgebra.jacobson_single_single`), and the Lie term `Λ_p` is what corrects it.
-Moreover, the `p`-map is genuine data rather than a property: on an abelian Lie algebra `R` of
-prime characteristic `p` with `1 ≠ 0`, `pMap = 0` (`ofAbelianZero`) and `pMap x = x ^ p`
-(`ofAssociativeAlgebra`) are two distinct restricted structures on the same Lie algebra.
+Additivity is not the right axiom: in `2 × 2` matrices over `ZMod p` for an odd prime `p`, the
+Frobenius is not additive (`TauCeti.LieAlgebra.jacobson_single_single`), and the Lie term `Λ_p` is
+what corrects it. Moreover, the `p`-map is genuine data rather than a property: on an abelian Lie
+algebra `R` of prime characteristic `p` with `1 ≠ 0`, `pMap = 0` (`ofAbelianZero`) and
+`pMap x = x ^ p` (`ofAssociativeAlgebra`) are two distinct restricted structures on the same Lie
+algebra.
 
 The basic example is an associative `R`-algebra `A` of exponential characteristic `p` with
 `x^[p] = x ^ p` (`TauCeti.RestrictedLieAlgebra.ofAssociativeAlgebra`), in particular
-`Module.End R M` (including trivial modules and mixed-characteristic base rings when `p` annihilates
-`M` pointwise via `TauCeti.RestrictedLieAlgebra.ofModuleEnd`). Since the commutator Lie ring of `A`
-is only a local instance, these structures are definitions rather than instances. A Lie subalgebra
-of a restricted Lie algebra which is closed under the `p`-map inherits a restricted structure
-(`LieSubalgebra.restrictedLieAlgebra`, bundled as `TauCeti.RestrictedLieSubalgebra`), and so does
-the source of any injective Lie algebra morphism compatible with given `p`-maps
-(`Function.Injective.restrictedLieAlgebra`). The derivations of a commutative algebra of
-exponential characteristic `p` form a restricted Lie algebra under `D ↦ D^[p]`; that instance is in
-`TauCeti.RingTheory.Derivation.PPow`.
+`Module.End R M` whenever `[ExpChar (Module.End R M) p]` holds. Separately, for any `R`-module
+`M` (including trivial modules and modules over mixed-characteristic base rings `R`) annihilated
+pointwise by a prime `p`, `TauCeti.RestrictedLieAlgebra.ofModuleEnd` constructs the restricted
+structure `f ↦ f ^ p` on `Module.End R M`, agreeing with `ofAssociativeAlgebra` when
+`[ExpChar (Module.End R M) p]` holds (`ofModuleEnd_eq_ofAssociativeAlgebra`). Since the
+commutator Lie ring of `A` is only a local instance, these structures are definitions rather than
+instances. A Lie subalgebra of a restricted Lie algebra which is closed under the `p`-map
+inherits a restricted structure (`LieSubalgebra.restrictedLieAlgebra`, bundled as
+`TauCeti.RestrictedLieSubalgebra`), and so does the source of any injective Lie algebra morphism
+compatible with given `p`-maps (`Function.Injective.restrictedLieAlgebra`). The derivations of a
+commutative algebra of exponential characteristic `p` form a restricted Lie algebra under
+`D ↦ D^[p]`; that instance is in `TauCeti.RingTheory.Derivation.PPow`.
 
 ## Main definitions
 
 * `TauCeti.RestrictedLieAlgebra R L p`: a Lie algebra with a `p`-map `RestrictedLieAlgebra.pMap`.
 * `TauCeti.RestrictedLieHom R L L' p`: a Lie algebra morphism commuting with the `p`-maps.
 * `TauCeti.RestrictedLieHom.id`, `TauCeti.RestrictedLieHom.comp`: identity and composition.
-* `TauCeti.RestrictedLieHom.ad`: `LieAlgebra.ad R L` as a restricted morphism.
+* `TauCeti.RestrictedLieHom.ad`: `LieAlgebra.ad R L` as a restricted morphism into
+  `ofAssociativeAlgebra`, assuming `[ExpChar (Module.End R L) p]`.
 * `TauCeti.RestrictedLieSubalgebra R L p`: a bundled Lie subalgebra closed under `pMap`, with
   induced restricted structure, partial order with `⊤`, `⊥`, and `⊓`, `RestrictedLieHom.range`,
   and `RestrictedLieHom.rangeRestrict`.
@@ -432,7 +437,8 @@ section Adjoint
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- The adjoint representation `LieAlgebra.ad R L : L →ₗ⁅R⁆ Module.End R L` of a restricted Lie
-algebra, as a morphism of restricted Lie algebras into `ofAssociativeAlgebra`. -/
+algebra, as a morphism of restricted Lie algebras into `ofAssociativeAlgebra`, assuming
+`[ExpChar (Module.End R L) p]`. -/
 def ad (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L] (p : ℕ)
     [RestrictedLieAlgebra R L p] [ExpChar (Module.End R L) p] :
     letI := ofAssociativeAlgebra R (Module.End R L) p
@@ -756,7 +762,6 @@ theorem mem_inf {S T : RestrictedLieSubalgebra R L p} {x : L} :
 end RestrictedLieSubalgebra
 
 /-- The image of a restricted Lie algebra morphism, as a restricted Lie subalgebra. -/
-@[expose]
 def RestrictedLieHom.range {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
     [LieRing L'] [LieAlgebra R L'] {p : ℕ} [RestrictedLieAlgebra R L p]
     [RestrictedLieAlgebra R L' p] (f : RestrictedLieHom R L L' p) :
@@ -795,12 +800,15 @@ def RestrictedLieHom.rangeRestrict {R L L' : Type*} [CommRing R] [LieRing L] [Li
   toLieHom := f.toLieHom.rangeRestrict
   map_pMap' x := Subtype.ext (f.map_pMap x)
 
-@[simp]
-theorem RestrictedLieHom.toLieHom_rangeRestrict {R L L' : Type*} [CommRing R] [LieRing L]
-    [LieAlgebra R L] [LieRing L'] [LieAlgebra R L'] {p : ℕ} [RestrictedLieAlgebra R L p]
-    [RestrictedLieAlgebra R L' p] (f : RestrictedLieHom R L L' p) :
-    f.rangeRestrict.toLieHom = f.toLieHom.rangeRestrict :=
-  (rfl)
+/-- The underlying Lie algebra morphism of `f.rangeRestrict` composes with the range inclusion
+to give `f.toLieHom`. -/
+theorem RestrictedLieHom.incl_toLieHom_comp_rangeRestrict {R L L' : Type*} [CommRing R]
+    [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L'] {p : ℕ}
+    [RestrictedLieAlgebra R L p] [RestrictedLieAlgebra R L' p] (f : RestrictedLieHom R L L' p) :
+    f.range.incl.toLieHom.comp f.rangeRestrict.toLieHom = f.toLieHom := by
+  rw [← toLieHom_comp]
+  ext x
+  rfl
 
 @[simp]
 theorem RestrictedLieHom.rangeRestrict_apply {R L L' : Type*} [CommRing R] [LieRing L]

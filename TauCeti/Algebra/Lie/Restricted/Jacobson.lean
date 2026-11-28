@@ -374,9 +374,9 @@ theorem add_pow_eq_jacobson (p : ℕ) [hp : ExpChar A p] (a b : A) :
       sum_congr rfl fun j hj ↦ coeff_pow_succ_eq (q + 1) a b (by simpa using hj)]
     ac_rfl
 
-/-- For odd `p`, `Λ_p(E₀₁, E₁₀) = E₀₁ + E₁₀ ≠ 0` for the matrix units of `2 × 2` matrices over
-`ZMod p`: their `p`-th powers vanish while `(E₀₁ + E₁₀) ^ p = E₀₁ + E₁₀`, so the Frobenius of a
-noncommutative ring of characteristic `p` is not additive and the Lie term of Jacobson's formula
+/-- For an odd prime `p`, `Λ_p(E₀₁, E₁₀) = E₀₁ + E₁₀ ≠ 0` for the matrix units of `2 × 2` matrices
+over `ZMod p`: their `p`-th powers vanish while `(E₀₁ + E₁₀) ^ p = E₀₁ + E₁₀`, so the Frobenius of
+a noncommutative ring of characteristic `p` is not additive and the Lie term of Jacobson's formula
 is needed. -/
 theorem jacobson_single_single (p : ℕ) [Fact p.Prime] (hp : p ≠ 2) :
     jacobson p (Matrix.single (0 : Fin 2) (1 : Fin 2) (1 : ZMod p)) (Matrix.single 1 0 1) =

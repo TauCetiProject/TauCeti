@@ -48,40 +48,54 @@ of the middle coefficients `smulIterCoeff D a p k`, `2 ≤ k < p`, of the expans
 `pPow 1 = D`; for any exponential characteristic `p`, `Derivation.pPow_smul_of_apply_eq_zero` gives
 `(a • D).pPow p = a ^ p • D.pPow p` whenever `D a = 0`.
 
-The `p`-th power is the `p`-map making `Derivation R A A` a restricted Lie algebra in the sense of
-Jacobson, and it is the correction term in the `p`-curvature `(∇_D)^p - ∇_{D^[p]}` of a connection
-(Katz). This file proves its homogeneity for scalars of `R`, Hochschild's formula for scalars of
-`A`, the identity `ad (D^[p]) = (ad D)^p` in the Lie algebra of derivations, Jacobson's formula
-`(D + E)^[p] = D^[p] + E^[p] + Λ_p(D, E)`, which together make `Derivation R A A` a restricted Lie
-algebra whose inclusion into `Module.End R A` is a restricted morphism, its compatibility with
-scalar extension and with localization, its vanishing on the derivations dual to a basis of exact
-Kähler differentials, and its compatibility with conjugation by a unit `u`: the `p`-th power of
-the operator `D - u⁻¹ D(u)` is the operator `D^[p] - u⁻¹ D^[p](u)` built in the same way from
-`D^[p]`. In the language of connections, the rank-one connection `d - du/u` on `A`, whose
-horizontal section is `u`, has vanishing `p`-curvature.
+Over any commutative semiring `R` and commutative `R`-semiring `A` of exponential characteristic
+`p`, this file proves homogeneity for scalars of `R` (`Derivation.pPow_const_smul`), compatibility
+with scalar extension (`Derivation.pPow_baseChange`), Hochschild's formula for scalars of `A` in
+prime characteristic `p` (`Derivation.pPow_smul`), and the `D a = 0` scaling identity
+(`Derivation.pPow_smul_of_apply_eq_zero`).
+
+Over commutative rings `R` and `A`, the `p`-th power is the `p`-map making `Derivation R A A` a
+restricted Lie algebra in the sense of Jacobson (`Derivation.instRestrictedLieAlgebra`), and it is
+the correction term in the `p`-curvature `(∇_D)^p - ∇_{D^[p]}` of a connection (Katz). This
+file proves `ad (D^[p]) = (ad D)^p` (`Derivation.ad_pPow`) and Jacobson's formula
+`(D + E)^[p] = D^[p] + E^[p] + Λ_p(D, E)` (`Derivation.pPow_add`), shows that the inclusion into
+`Module.End R A` is a restricted morphism (`Derivation.toLinearMapRestrictedLieHom`), and proves
+compatibility with localization (`Derivation.pPow_extendOfIsLocalization`). For a commutative
+semiring `R` and commutative ring `A` of exponential characteristic `p`, it proves compatibility
+with conjugation by a unit `u` (`Derivation.sub_mulLeft_inv_mul_pow_expChar`): the `p`-th power of
+`D - u⁻¹ D(u)` is `D^[p] - u⁻¹ D^[p](u)` (so the rank-one connection `d - du/u` with horizontal
+section `u` has vanishing `p`-curvature). Finally, over commutative rings in prime characteristic
+`p` (`[Fact p.Prime] [CharP A p]`), the `p`-th power vanishes on the derivations dual to a basis
+`b` of `Ω[A⁄R]` consisting of exact Kähler differentials `KaehlerDifferential.D R A (s i) = b i`
+(`Derivation.pPow_dualDerivation_eq_zero`).
 
 ## Main declarations
 
 * `Derivation.iterate_leibniz`: in exponential characteristic `p`, the `p`-th iterate of a
   derivation satisfies the Leibniz rule.
 * `Derivation.pPow`: the `p`-th power of a derivation, as a derivation.
+* `Derivation.pPow_one`: in exponential characteristic `1`, `D.pPow 1 = D`.
 * `Derivation.pPow_const_smul`: `(c • D)^[p] = c ^ p • D^[p]` for `c : R`.
 * `Derivation.smulIterCoeff_eq_zero_of_mem_Ico`: the middle coefficients of the expansion of
   `(a • D)^[p]` vanish in prime characteristic `p` over any commutative semiring `A`.
 * `Derivation.pPow_smul`: Hochschild's formula for `(a • D)^[p]`, `a : A`.
 * `Derivation.pPow_smul_of_apply_eq_zero`: `(a • D).pPow p = a ^ p • D.pPow p` when `D a = 0`.
-* `Derivation.ad_pPow`: `ad (D^[p]) = (ad D) ^ p` in the Lie algebra `Derivation R A A`.
-* `Derivation.pPow_add`: Jacobson's formula `(D + E)^[p] = D^[p] + E^[p] + Λ_p(D, E)`.
+* `Derivation.ad_pPow`: `ad (D^[p]) = (ad D) ^ p` in the Lie algebra `Derivation R A A` (for
+  commutative rings `R` and `A`).
+* `Derivation.pPow_add`: Jacobson's formula `(D + E)^[p] = D^[p] + E^[p] + Λ_p(D, E)` (for
+  commutative rings `R` and `A`).
 * `Derivation.instRestrictedLieAlgebra`: `Derivation R A A` is a restricted Lie algebra under
-  `pPow`.
+  `pPow` (for commutative rings `R` and `A`).
 * `Derivation.toLinearMapRestrictedLieHom`: the inclusion into `Module.End R A`, with its
-  restricted structure `f ↦ f ^ p`, is a restricted morphism.
+  restricted structure `f ↦ f ^ p`, is a restricted morphism (for commutative rings `R` and `A`).
 * `Derivation.pPow_baseChange`: `pPow` commutes with scalar extension `S ⊗[R] -`.
-* `Derivation.pPow_extendOfIsLocalization`: `pPow` commutes with extension to a localization.
-* `Derivation.pPow_dualDerivation_eq_zero`: the `p`-th powers of the derivations dual to a basis
-  `ds_i` of `Ω[A⁄R]` vanish.
+* `Derivation.pPow_extendOfIsLocalization`: `pPow` commutes with extension to a localization (for
+  commutative rings).
+* `Derivation.pPow_dualDerivation_eq_zero`: over commutative rings in prime characteristic `p`, the
+  `p`-th powers of the derivations dual to a basis `b` of `Ω[A⁄R]` of exact differentials
+  `KaehlerDifferential.D R A (s i) = b i` vanish.
 * `Derivation.sub_mulLeft_inv_mul_pow_expChar`: `(D - u⁻¹ D(u)) ^ p = D^[p] - u⁻¹ D^[p](u)` in
-  `Module.End R A`, for a unit `u`.
+  `Module.End R A`, for a unit `u` (for a commutative ring `A`).
 
 ## Implementation notes
 
@@ -149,6 +163,12 @@ def pPow (D : Derivation R A A) : Derivation R A A where
 theorem pPow_apply (D : Derivation R A A) (a : A) : D.pPow p a = D^[p] a := by
   simp [pPow, pow_apply_eq_iterate]
 
+/-- In exponential characteristic `1`, the `1`-st power of `D` is `D`. -/
+@[simp]
+theorem pPow_one [ExpChar A 1] (D : Derivation R A A) : D.pPow 1 = D := by
+  ext a
+  simp [pPow_apply]
+
 /-- The underlying endomorphism of the `p`-th power of `D` is the `p`-th power of that of `D`. -/
 @[simp]
 theorem toLinearMap_pPow (D : Derivation R A A) :
@@ -194,22 +214,6 @@ section Hochschild
 open Polynomial
 open scoped Nat
 
-private lemma mapCoeffs_add_derivative_iterate_X_pow (D : Derivation R A A) (m k : ℕ) :
-    (⇑(D.mapCoeffsToPolynomial + (Polynomial.derivative' (R := A)).restrictScalars R))^[k]
-        (Polynomial.X ^ m : A[X]) =
-      Polynomial.derivative^[k] (Polynomial.X ^ m : A[X]) := by
-  induction k with
-  | zero => rfl
-  | succ k ih =>
-    rw [Function.iterate_succ_apply', ih, Function.iterate_succ_apply']
-    have hcoeff :
-        D.mapCoeffsToPolynomial (Polynomial.derivative^[k] (Polynomial.X ^ m : A[X])) = 0 := by
-      ext n
-      rw [Polynomial.iterate_derivative_X_pow_eq_C_mul, coeff_mapCoeffsToPolynomial,
-        Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, Polynomial.coeff_zero]
-      split_ifs <;> simp
-    simp [hcoeff]
-
 /-- In prime characteristic `p`, the middle coefficients `smulIterCoeff D b p k` (`2 ≤ k < p`)
 of the expansion `(b • D)^[p] = ∑ k ≤ p, smulIterCoeff D b p k * D^[k]` vanish, over any
 commutative semiring `A`. -/
@@ -224,6 +228,8 @@ theorem smulIterCoeff_eq_zero_of_mem_Ico (p : ℕ) [Fact p.Prime] [CharP A p]
     D.mapCoeffsToPolynomial + (Polynomial.derivative' (R := A)).restrictScalars R
   have hD'C (x : A) : D' (Polynomial.C x) = Polynomial.C (D x) := by
     simp [D']
+  have hD'X_eval : D' (Polynomial.X : A[X]) = 1 := by
+    simp [D']
   let E : Derivation R A[X] A[X] := (Polynomial.C b • D').pPow p
   have hk2 : 2 ≤ k := (Finset.mem_Ico.mp hk).1
   have hkp : k < p := (Finset.mem_Ico.mp hk).2
@@ -236,8 +242,9 @@ theorem smulIterCoeff_eq_zero_of_mem_Ico (p : ℕ) [Fact p.Prime] [CharP A p]
     rw [pPow_apply, iterate_smul_apply_eq_sum D' (Polynomial.C b) (Polynomial.X ^ k) p,
       Polynomial.finsetSum_coeff]
     have hD'X (j : ℕ) : (⇑D')^[j] (Polynomial.X ^ k : A[X]) =
-        Polynomial.derivative^[j] (Polynomial.X ^ k : A[X]) :=
-      mapCoeffs_add_derivative_iterate_X_pow D k j
+        Polynomial.derivative^[j] (Polynomial.X ^ k : A[X]) := by
+      rw [iterate_apply_pow_of_apply_eq_one D' hD'X_eval k j,
+        Polynomial.iterate_derivative_X_pow_eq_C_mul, Polynomial.C_eq_natCast]
     have hcoeff (j : ℕ) :
         smulIterCoeff D' (Polynomial.C b) p j = Polynomial.C (smulIterCoeff D b p j) :=
       (map_smulIterCoeff Polynomial.C D D' (fun x ↦ (hD'C x).symm) b p j).symm
@@ -245,19 +252,6 @@ theorem smulIterCoeff_eq_zero_of_mem_Ico (p : ℕ) [Fact p.Prime] [CharP A p]
       Finset.mem_range.mpr (Nat.lt_succ_of_lt hkp)]
   exact (TauCeti.isUnit_natCast_factorial_of_lt p hkp).mul_left_inj.mp
     (by rw [hrhs.symm.trans hlhs, zero_mul])
-
-/-- The expansion `iterate_smul_apply_eq_sum` for `n ≥ 2`, with its extreme coefficients
-`c n 0 = 0` and `c n n = b ^ n` made explicit. -/
-private theorem iterate_smul_apply_eq_add_sum (D : Derivation R A A) (b y : A) {n : ℕ}
-    (hn : 2 ≤ n) : (b • D)^[n] y = b ^ n * D^[n] y + smulIterCoeff D b n 1 * D y +
-      ∑ k ∈ Finset.Ico 2 n, smulIterCoeff D b n k * D^[k] y := by
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' (by omega : 1 ≤ n)
-  -- Split off the top term `k = n`, then the bottom terms `k = 0` and `k = 1`.
-  rw [iterate_smul_apply_eq_sum, Finset.sum_range_succ, Finset.range_eq_Ico,
-    Finset.sum_eq_sum_Ico_succ_bot (by omega), Finset.sum_eq_sum_Ico_succ_bot (by omega)]
-  simp only [smulIterCoeff_self, smulIterCoeff_succ_zero, zero_mul, zero_add,
-    Function.iterate_one]
-  ring
 
 /-- **Hochschild's formula** (Hochschild 1955; Katz, Proposition 5.3, due to Deligne): for an
 algebra element `a : A` and a derivation `D : Derivation R A A` in prime characteristic `p` over any
