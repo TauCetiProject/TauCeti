@@ -395,6 +395,21 @@ instance subsingleton_of_injective [HasSheafify J AddCommGrpCat.{w}]
 
 end Sheaf.NonabelianH1
 
+namespace ShortComplex.Exact
+
+/-- A monic exact sequence of abelian sheaves identifies its first term with the sectionwise
+kernel after writing the group laws multiplicatively. -/
+theorem range_eq_ker [HasSheafify J AddCommGrpCat.{w}]
+    {S : ShortComplex (Sheaf J AddCommGrpCat.{w})} [Mono S.f] (hS : S.Exact) (U : Cᵒᵖ) :
+    (((abelianSheafToGrpSheaf J).map S.f).hom.app U).hom.range =
+      (((abelianSheafToGrpSheaf J).map S.g).hom.app U).hom.ker := by
+  -- Taking sections over `U` is left exact.
+  have h := (hS.map_of_mono_of_preservesKernel (sheafToPresheaf J AddCommGrpCat.{w} ⋙
+    (evaluation Cᵒᵖ AddCommGrpCat.{w}).obj U) inferInstance inferInstance).ab_range_eq_ker
+  exact SetLike.ext fun x ↦ SetLike.ext_iff.1 h x.toAdd
+
+end ShortComplex.Exact
+
 namespace ShortComplex.ShortExact
 
 variable [HasSheafify J AddCommGrpCat.{w}] [J.WEqualsLocallyBijective AddCommGrpCat.{w}]
@@ -410,11 +425,7 @@ theorem isGroupExtension (hS : S.ShortExact) :
     Sheaf.injective_app_of_mono S.f U
   range_eq_ker U := by
     have := hS.mono_f
-    -- Taking sections over `U` is left exact.
-    have h := (hS.exact.map_of_mono_of_preservesKernel (sheafToPresheaf J AddCommGrpCat.{w} ⋙
-      (evaluation Cᵒᵖ AddCommGrpCat.{w}).obj U) inferInstance inferInstance).ab_range_eq_ker
-    -- The kernel and image of `S.g` and `S.f` on sections, written multiplicatively.
-    exact SetLike.ext fun x ↦ SetLike.ext_iff.1 h x.toAdd
+    exact hS.exact.range_eq_ker U
   isLocallySurjective := by
     have := hS.epi_g
     have : Sheaf.IsLocallySurjective S.g :=
