@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.RingTheory.IntegralClosure.FixedField
 import TauCeti.RingTheory.DiscreteValuationRing.Invariant

@@ -545,14 +545,11 @@ theorem neg_one_le_inverseHerbrandFun_iff {v : ℝ} : -1 ≤ inverseHerbrandFun 
 
 /-- When inertia is trivial (`G_0 = ⊥`), `herbrandFun` is the identity on `[-1, ∞)`. -/
 theorem herbrandFun_eq_self_of_ramificationGroup_zero_eq_bot (h0 : ramificationGroup G S 0 = ⊥)
-    {u : ℝ} (hu : -1 ≤ u) : herbrandFun G S u = u := by
-  rcases le_or_gt u 0 with hu0 | hu0
-  · exact herbrandFun_eq_self_of_mem_Icc G S ⟨hu, hu0⟩
-  have h := herbrandFun_sub_herbrandFun_of_forall_eq G S hu0.le (H := ⊥) fun _ ht _ ↦ eq_bot_iff.2
-    ((ramificationGroupReal_antitone G S ht.le).trans
-      (by rw [← Int.cast_zero, ramificationGroupReal_intCast, h0]))
-  rw [h0, div_self (by exact_mod_cast Nat.card_pos.ne'), herbrandFun_zero] at h
-  linarith
+    {u : ℝ} (hu : -1 ≤ u) : herbrandFun G S u = u :=
+  herbrandFun_eq_self_of_forall_eq G S hu fun _ ht _ ↦ by
+    rw [h0, eq_bot_iff]
+    exact (ramificationGroupReal_antitone G S ht.le).trans
+      (by rw [← Int.cast_zero, ramificationGroupReal_intCast, h0])
 
 /-- When inertia is trivial (`G_0 = ⊥`), `inverseHerbrandFun` is the identity on `[-1, ∞)`. -/
 theorem inverseHerbrandFun_eq_self_of_ramificationGroup_zero_eq_bot
@@ -746,10 +743,8 @@ theorem exists_forall_upperRamificationGroup_eq_ker [IsNoetherianRing S] :
 groups are trivial from some index on. -/
 theorem exists_forall_upperRamificationGroup_eq_bot [IsNoetherianRing S] [FaithfulSMul G S] :
     ∃ v : ℝ, ∀ w : ℝ, v ≤ w → upperRamificationGroup G S w = ⊥ := by
-  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G S
-  refine ⟨herbrandFun G S N, fun w hw ↦ ?_⟩
-  rw [upperRamificationGroup_def, ramificationGroupReal_def]
-  exact hN _ (Int.cast_le.1 ((le_inverseHerbrandFun_iff.2 hw).trans (Int.le_ceil _)))
+  simpa only [TauCeti.MulSemiringAction.ker_toRingAut_eq_bot] using
+    exists_forall_upperRamificationGroup_eq_ker G S
 
 end Finite
 

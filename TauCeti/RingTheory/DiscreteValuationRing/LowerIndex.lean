@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.DiscreteValuationRing.Invariant
 public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 public import TauCeti.RingTheory.Valuation.AddValuation
-import TauCeti.RingTheory.LocalRing.FixedPoints
+import TauCeti.RingTheory.LocalRing.FixedPoints.ResidueField
 
 /-!
 # Serre's lower-index quotient formula on discrete valuation rings

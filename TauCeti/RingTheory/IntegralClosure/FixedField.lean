@@ -8,8 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Invariant.Basic
 public import Mathlib.RingTheory.LocalRing.Defs
-import TauCeti.RingTheory.Invariant.Basic
-import TauCeti.RingTheory.LocalRing.FixedPoints
+import TauCeti.RingTheory.IntegralClosure.Map
 
 /-!
 # Integral closures in Galois fixed fields
@@ -87,7 +86,9 @@ theorem fixedPointsSubalgebraIntegralClosureEquiv_smul (q : (L ≃ₐ[K] L) ⧸ 
   induction q using QuotientGroup.induction_on with | H σ =>
     exact Subtype.ext <| Subtype.ext <| by
       simp [IsGalois.normalAutEquivQuotient_apply, AlgEquiv.restrictNormalHom_apply,
-        AlgEquiv.smul_def, Subgroup.coe_mk_smul]
+        AlgEquiv.smul_def]
+      -- Quotient action on `FixedPoints.subalgebra` reduces definitionally to the representative.
+      rfl
 
 /-- `(fixedPointsSubalgebraIntegralClosureEquiv A H).symm` intertwines the Galois action of
 `Gal(fixedField H / K)` with `(IsGalois.normalAutEquivQuotient H).symm`. -/
@@ -105,7 +106,9 @@ variable {A H} in
 /-- If `integralClosure A L` is local, so is `integralClosure A (fixedField H)`. -/
 instance instIsLocalRingIntegralClosureFixedField [IsLocalRing (integralClosure A L)] :
     IsLocalRing (integralClosure A (fixedField H)) :=
-  (fixedPointsSubalgebraIntegralClosureEquiv A H).toRingEquiv.isLocalRing
+  haveI := IsScalarTower.to₁₃₄ A K (fixedField H) L
+  isLocalRing_integralClosure_of_injective
+    (f := IsScalarTower.toAlgHom A (fixedField H) L) (fixedField H).val.injective
 
 end FixedFieldEquiv
 

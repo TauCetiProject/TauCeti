@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Roots
-public import Mathlib.Algebra.Ring.Action.Invariant
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RingTheory.Invariant.Basic
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed

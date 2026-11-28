@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.DiscreteValuationRing.Inertia
 public import TauCeti.RingTheory.DiscreteValuationRing.LowerIndex
 public import TauCeti.RingTheory.LocalRing.Herbrand.Jump
 import TauCeti.Algebra.Group.Subgroup.Finite
-import TauCeti.RingTheory.LocalRing.FixedPoints
+import TauCeti.RingTheory.LocalRing.FixedPoints.ResidueField
 
 /-!
 # Herbrand's theorem and tower transitivity over discrete valuation rings

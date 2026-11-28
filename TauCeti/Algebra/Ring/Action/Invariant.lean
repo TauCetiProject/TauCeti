@@ -52,12 +52,8 @@ section FixedPointsEquiv
 /-- The canonical multiplicative equivalence
 `FixedPoints.submonoid G B ≃* FixedPoints.subsemiring B G`. -/
 def fixedPointsSubmonoidEquivSubsemiring (B G : Type*) [Semiring B] [Monoid G]
-    [MulSemiringAction G B] : FixedPoints.submonoid G B ≃* FixedPoints.subsemiring B G where
-  toFun x := ⟨x.val, x.property⟩
-  invFun x := ⟨x.val, x.property⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
+    [MulSemiringAction G B] : FixedPoints.submonoid G B ≃* FixedPoints.subsemiring B G :=
+  MulEquiv.refl _
 
 @[simp]
 theorem coe_fixedPointsSubmonoidEquivSubsemiring_apply {B G : Type*} [Semiring B] [Monoid G]
@@ -73,13 +69,8 @@ theorem coe_fixedPointsSubmonoidEquivSubsemiring_symm_apply {B G : Type*} [Semir
 
 /-- The canonical ring isomorphism `FixedPoints.subsemiring B G ≃+* FixedPoints.subring B G`. -/
 def fixedPointsSubsemiringEquivSubring (B G : Type*) [Ring B] [Monoid G]
-    [MulSemiringAction G B] : FixedPoints.subsemiring B G ≃+* FixedPoints.subring B G where
-  toFun x := ⟨x.val, x.property⟩
-  invFun x := ⟨x.val, x.property⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
-  map_add' _ _ := rfl
+    [MulSemiringAction G B] : FixedPoints.subsemiring B G ≃+* FixedPoints.subring B G :=
+  RingEquiv.refl _
 
 @[simp]
 theorem coe_fixedPointsSubsemiringEquivSubring_apply {B G : Type*} [Ring B] [Monoid G]
@@ -97,13 +88,8 @@ theorem coe_fixedPointsSubsemiringEquivSubring_symm_apply {B G : Type*} [Ring B]
 `FixedPoints.subsemiring B G ≃+* FixedPoints.subalgebra A B G`. -/
 def fixedPointsSubsemiringEquivSubalgebra (A B G : Type*) [CommSemiring A] [Semiring B]
     [Algebra A B] [Monoid G] [MulSemiringAction G B] [SMulCommClass G A B] :
-    FixedPoints.subsemiring B G ≃+* FixedPoints.subalgebra A B G where
-  toFun x := ⟨x.val, x.property⟩
-  invFun x := ⟨x.val, x.property⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
-  map_add' _ _ := rfl
+    FixedPoints.subsemiring B G ≃+* FixedPoints.subalgebra A B G :=
+  RingEquiv.refl _
 
 @[simp]
 theorem coe_fixedPointsSubsemiringEquivSubalgebra_apply {A B G : Type*} [CommSemiring A]
@@ -126,7 +112,7 @@ variable (A B G : Type*) [CommSemiring A] [Ring B] [Algebra A B] [Monoid G]
 /-- The canonical ring isomorphism `FixedPoints.subring B G ≃+* FixedPoints.subalgebra A B G`. -/
 def fixedPointsSubringEquivSubalgebra :
     FixedPoints.subring B G ≃+* FixedPoints.subalgebra A B G :=
-  (fixedPointsSubsemiringEquivSubring B G).symm.trans (fixedPointsSubsemiringEquivSubalgebra A B G)
+  RingEquiv.refl _
 
 @[simp]
 theorem coe_fixedPointsSubringEquivSubalgebra_apply (x : FixedPoints.subring B G) :

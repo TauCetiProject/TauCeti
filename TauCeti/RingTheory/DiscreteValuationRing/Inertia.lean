@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
-import TauCeti.RingTheory.LocalRing.FixedPoints
+import TauCeti.RingTheory.LocalRing.FixedPoints.ResidueField
 
 /-!
 # Inertia group cardinality on discrete valuation rings

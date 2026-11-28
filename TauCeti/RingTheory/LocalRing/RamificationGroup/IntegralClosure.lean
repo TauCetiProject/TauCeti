@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.IntegralClosure.FixedField
-public import TauCeti.RingTheory.LocalRing.FixedPoints
+public import TauCeti.RingTheory.LocalRing.FixedPoints.Basic
 public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 
 /-!

@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
 public import TauCeti.RingTheory.Invariant.Basic
 import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
-import TauCeti.RingTheory.LocalRing.FixedPoints
+import TauCeti.RingTheory.LocalRing.FixedPoints.Basic
 import TauCeti.RingTheory.LocalRing.RingHom.Subalgebra
 
 /-!
