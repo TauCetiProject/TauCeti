@@ -493,17 +493,15 @@ private theorem exists_intCast_add_intCast_mul_cmOmega (hsq : Squarefree d)
     refine mul_left_cancel₀ hd0 ?_
     rw [hm] at hkey
     linear_combination hkey
-  -- `t₁ ≡ m mod 2`, as `d ≡ 3 mod 4`
+  -- `t₁ ≡ m mod 2`: modulo `4`, `0 ≡ t₁² + d m² ≡ (t₁ mod 2) + 3 (m mod 2)`
   obtain ⟨j, hj⟩ : ∃ j : ℤ, t₁ = m + 2 * j := by
-    obtain ⟨a, rfl | rfl⟩ := Int.even_or_odd' t₁ <;> obtain ⟨c, rfl | rfl⟩ := Int.even_or_odd' m
-    · exact ⟨a - c, by ring⟩
-    · have h : 4 * n = 4 * (a ^ 2 + d * c ^ 2 + d * c) + d := by linear_combination h4n
-      generalize a ^ 2 + d * c ^ 2 + d * c = X at h
-      omega
-    · have h : 4 * n = 4 * (a ^ 2 + a + d * c ^ 2) + 1 := by linear_combination h4n
-      generalize a ^ 2 + a + d * c ^ 2 = X at h
-      omega
-    · exact ⟨a - c, by ring⟩
+    have ht₁ := Int.sq_emod_four t₁
+    have hd4' : (d : ℤ) % 4 = 3 := by omega
+    have hdm : d * m ^ 2 % 4 = 3 * (m % 2) % 4 := by rw [Int.mul_emod, Int.sq_emod_four, hd4']
+    refine ⟨(t₁ - m) / 2, ?_⟩
+    generalize t₁ ^ 2 = A at h4n ht₁
+    generalize (d : ℤ) * m ^ 2 = B at h4n hdm
+    omega
   refine ⟨j, m, Complex.ext ?_ ?_⟩
   · simp only [Complex.add_re, Complex.intCast_re, Complex.mul_re, Complex.intCast_im, re_cmOmega,
       zero_mul, sub_zero]

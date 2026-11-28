@@ -120,6 +120,19 @@ private theorem two_mul_mul_mem (hb : b = cmOmega d ∨ b = (starRingEnd ℂ) (c
   rw [mul_left_comm]
   exact h.mul_mem hb h.two_mul_mem
 
+/-- `t - b t = (1 - b) t ∉ Λ` for `b = ω` and `b = conj(ω)`. -/
+private theorem sub_mul_notMem (hb : b = cmOmega d ∨ b = (starRingEnd ℂ) (cmOmega d)) :
+    t - b * t ∉ L.lattice := fun hm ↦ h.mul_notMem (one_sub_eq_cmOmega_or_eq_conj hb) <| by
+  convert hm using 1
+  ring
+
+/-- `b t - (1 - b) t = 2 (b t) - t ∉ Λ` for `b = ω` and `b = conj(ω)`. -/
+private theorem mul_sub_one_sub_mul_notMem
+    (hb : b = cmOmega d ∨ b = (starRingEnd ℂ) (cmOmega d)) :
+    b * t - (1 - b) * t ∉ L.lattice := fun hm ↦ h.notMem <| by
+  convert sub_mem (h.two_mul_mul_mem hb) hm using 1
+  ring
+
 /-! ### The three points of order two -/
 
 /-- The three points of order two `b t`, `(1 - b) t`, `t` of a lattice with CM point `t`, and their
@@ -133,16 +146,13 @@ private theorem scaledDiscr_add_add_eq_and_mul_mul_eq
   have hu₂ := h.mul_notMem hb'
   have h2u₁ := h.two_mul_mul_mem hb
   have h2u₂ := h.two_mul_mul_mem hb'
-  -- `b t - (1 - b) t = 2 (b t) - t`
-  have h₁₂ : b * t - (1 - b) * t ∉ L.lattice := fun hm ↦ h.notMem <| by
-    convert sub_mem h2u₁ hm using 1
-    ring
-  have h₁₃ : b * t - t ∉ L.lattice := fun hm ↦ hu₂ <| by
-    convert neg_mem hm using 1
-    ring
-  have h₂₃ : (1 - b) * t - t ∉ L.lattice := fun hm ↦ hu₁ <| by
-    convert neg_mem hm using 1
-    ring
+  have h₁₂ := h.mul_sub_one_sub_mul_notMem hb
+  have h₁₃ : b * t - t ∉ L.lattice := by
+    rw [← neg_mem_iff, neg_sub]
+    exact h.sub_mul_notMem hb
+  have h₂₃ : (1 - b) * t - t ∉ L.lattice := by
+    rw [← neg_mem_iff, neg_sub]
+    exact h.sub_mul_notMem hb'
   exact ⟨L.scaledDiscr_add_add_eq hu₁ hu₂ h.notMem h2u₁ h2u₂ h.two_mul_mem h₁₂ h₁₃ h₂₃,
     L.scaledDiscr_mul_mul_eq hu₁ hu₂ h.notMem h2u₁ h2u₂ h.two_mul_mem h₁₂ h₁₃ h₂₃⟩
 
@@ -164,11 +174,8 @@ theorem mul_mem_or_mul_sub_mem (hd : d % 8 = 7)
     (hb : b = cmOmega d ∨ b = (starRingEnd ℂ) (cmOmega d)) {x : ℂ} (hx : 2 * x ∈ L.lattice) :
     b * x ∈ L.lattice ∨ b * (x - t) ∈ L.lattice := by
   have hbt := mul_one_sub_mul_mem hd hb h.two_mul_mem
-  have h₃ : t - b * t ∉ L.lattice := fun hm ↦ h.mul_notMem (one_sub_eq_cmOmega_or_eq_conj hb) <| by
-    convert hm using 1
-    ring
   rcases L.mem_lattice_or_sub_mem_lattice_of_two_mul_mem hx h.two_mul_mem (h.two_mul_mul_mem hb)
-    h.notMem (h.mul_notMem hb) h₃ with h₀ | h₁ | h₂ | h₃
+    h.notMem (h.mul_notMem hb) (h.sub_mul_notMem hb) with h₀ | h₁ | h₂ | h₃
   · exact .inl (h.mul_mem hb h₀)
   · exact .inr (h.mul_mem hb h₁)
   · refine .inr ?_
@@ -256,11 +263,8 @@ theorem scaledDiscr_mul_scaledDiscr_eq_of_mem_iff (hd : d % 8 = 7)
     (hM : ∀ x, x ∈ M.lattice ↔ x ∈ L.lattice ∨ x + b * t ∈ L.lattice) (h' : M.IsCMPoint d t') :
     L.scaledDiscr (b * t) * M.scaledDiscr ((1 - b) * t') = 2 ^ 12 := by
   have hb' := one_sub_eq_cmOmega_or_eq_conj hb
-  have h₁₂ : b * t - (1 - b) * t ∉ L.lattice := fun hm ↦ h.notMem <| by
-    convert sub_mem (h.two_mul_mul_mem hb) hm using 1
-    ring
   have hrel := scaledDiscr_mul_scaledDiscr_eq (L' := M) 1 (h.mul_notMem hb) (h.mul_notMem hb')
-    (h.two_mul_mul_mem hb') h₁₂ (by simpa using hM)
+    (h.two_mul_mul_mem hb') (h.mul_sub_one_sub_mul_notMem hb) (by simpa using hM)
   -- move `(1 - b) t` to `(1 - b) t'` by the kernel element `(1 - b) (t - t')`
   have hshift : (1 - b) * t = (1 - b) * t' +
       ((⟨_, h.one_sub_mul_sub_mem_of_mem_iff hd hb hM h'⟩ : M.lattice) : ℂ) := by
@@ -473,10 +477,12 @@ point `t`: `s_Λ(t) = -48 - s_Λ(ω t) - s_Λ(conj(ω) t)`. -/
 theorem IsCMPoint.norm_map_scaledDiscr_le_one (h : L.IsCMPoint d t) (ι : ℂ →+* R) :
     ‖ι (L.scaledDiscr t)‖ ≤ 1 := by
   have hω : cmOmega d = cmOmega d ∨ cmOmega d = (starRingEnd ℂ) (cmOmega d) := .inl rfl
-  rw [eq_sub_of_add_eq' (h.scaledDiscr_add_add_eq hω), ← sub_sub, map_sub, map_sub,
-    sub_eq_add_neg, sub_eq_add_neg]
+  have hs : L.scaledDiscr t =
+      -48 + -L.scaledDiscr (cmOmega d * t) + -L.scaledDiscr ((1 - cmOmega d) * t) := by
+    linear_combination h.scaledDiscr_add_add_eq hω
+  rw [hs, map_add, map_add]
   refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ((IsUltrametricDist.norm_add_le_max
-    _ _).trans (max_le (norm_map_neg_forty_eight_le_one ι) ?_)) ?_) <;> rw [norm_neg]
+    _ _).trans (max_le (norm_map_neg_forty_eight_le_one ι) ?_)) ?_) <;> rw [map_neg, norm_neg]
   exacts [h.norm_map_scaledDiscr_mul_le_one hd hsq hω ι,
     h.norm_map_scaledDiscr_mul_le_one hd hsq (one_sub_eq_cmOmega_or_eq_conj hω) ι]
 
@@ -497,8 +503,8 @@ theorem IsCMPoint.norm_map_scaledDiscr_eq_one {R : Type*} [SeminormedCommRing R]
   have hle (x : _) : ‖ι ((Lr x).scaledDiscr (tr x))‖ ≤ 1 :=
     (htr x).norm_map_scaledDiscr_le_one hd hsq ι
   have hnorm : ∏ x, ‖ι ((Lr x).scaledDiscr (tr x))‖ = 1 := by
-    rw [← norm_prod, ← map_prod, hprod, map_pow, map_neg, map_one, norm_pow, norm_neg, norm_one,
-      one_pow]
+    rw [← norm_prod, ← map_prod, hprod]
+    simp [norm_pow]
   -- `Λ` is homothetic to the representative of its class `x₀`
   obtain ⟨x₀, hhom⟩ := h.exists_homothetic hsq Lr hLr
   rw [(htr x₀).scaledDiscr_eq_of_homothetic hd h hhom]
@@ -520,6 +526,20 @@ theorem IsNormalizedPointed.scaledDiscr_eq (h : L.IsNormalizedPointed t a₁) :
   rw [scaledDiscr_def, L.deriv_derivWeierstrassP h.notMem, h.g₂_eq]
   linear_combination -(a₁ ^ 2 + 12 * ℘[L] t) * h.a₁_sq
 
+/-- **The coefficient `a₁` of a CM lattice is integral at every prime**: `a₁⁴` is the sum of the
+integral number `a₁⁴ - 64 = s_Λ(t)` and the integer `64`. -/
+theorem IsCMLattice.norm_map_le_one {R : Type*} [SeminormedRing R] [NormOneClass R]
+    [NormMulClass R] [IsUltrametricDist R] (hd : d % 8 = 7) (hsq : Squarefree d)
+    (h : L.IsCMLattice d t a₁) (ι : ℂ →+* R) : ‖ι a₁‖ ≤ 1 := by
+  have h4 : ‖ι a₁‖ ^ 4 ≤ 1 := by
+    rw [← norm_pow, ← map_pow, ← sub_add_cancel (a₁ ^ 4) 64, map_add]
+    refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
+    · rw [← h.isNormalizedPointed.scaledDiscr_eq]
+      exact h.isCMPoint.norm_map_scaledDiscr_le_one hd hsq ι
+    · rw [map_ofNat]
+      exact_mod_cast IsUltrametricDist.norm_natCast_le_one R 64
+  exact (pow_le_one_iff_of_nonneg (norm_nonneg _) four_ne_zero).mp h4
+
 variable {R : Type*} [SeminormedCommRing R] [NormOneClass R] [NormMulClass R]
   [IsUltrametricDist R]
 
@@ -530,16 +550,5 @@ theorem IsCMLattice.norm_map_pow_four_sub_sixty_four_eq_one (hd : d % 8 = 7) (hs
     (h : L.IsCMLattice d t a₁) (ι : ℂ →+* R) : ‖ι a₁ ^ 4 - 64‖ = 1 := by
   rw [← map_pow, ← map_ofNat ι 64, ← map_sub, ← h.isNormalizedPointed.scaledDiscr_eq]
   exact h.isCMPoint.norm_map_scaledDiscr_eq_one hd hsq ι
-
-/-- **The coefficient `a₁` of a CM lattice is integral at every prime**: `a₁⁴` is the sum of the
-unit `a₁⁴ - 64` and the integer `64`. -/
-theorem IsCMLattice.norm_map_le_one (hd : d % 8 = 7) (hsq : Squarefree d)
-    (h : L.IsCMLattice d t a₁) (ι : ℂ →+* R) : ‖ι a₁‖ ≤ 1 := by
-  have h4 : ‖ι a₁‖ ^ 4 ≤ 1 := by
-    rw [← norm_pow, ← sub_add_cancel (ι a₁ ^ 4) 64]
-    refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
-    · exact (h.norm_map_pow_four_sub_sixty_four_eq_one hd hsq ι).le
-    · exact_mod_cast IsUltrametricDist.norm_natCast_le_one R 64
-  exact (pow_le_one_iff_of_nonneg (norm_nonneg _) four_ne_zero).mp h4
 
 end PeriodPair

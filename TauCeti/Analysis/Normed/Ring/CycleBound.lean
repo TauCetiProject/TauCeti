@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Ring.Ultra
 public import Mathlib.GroupTheory.Perm.Basic
-import Mathlib.GroupTheory.OrderOfElement
+import Mathlib.Data.Fintype.Lattice
 
 /-!
 # Integrality along a cycle in an ultrametric ring
@@ -15,9 +15,9 @@ import Mathlib.GroupTheory.OrderOfElement
 Let `R` be an ultrametric seminormed ring with multiplicative seminorm. If two elements `x`, `y`
 have `‖x + y‖ ≤ 1` and `‖x y‖ > 1`, then `‖x‖ = ‖y‖`, so `‖x‖² = ‖x y‖`
 (`IsUltrametricDist.norm_sq_eq_norm_mul_of_norm_add_le_one`): a norm above one is replaced by its
-square root. Iterating this along the orbits of a permutation of a finite set, which return to
-their starting point, shows that numbers `s(c)` satisfying suitable relations between `c` and
-`σ c` are integral (`IsUltrametricDist.norm_le_one_of_perm`).
+square root. For a permutation `σ` of a finite set, this shows that numbers `s(c)` satisfying
+suitable relations between `c` and `σ c` are integral (`IsUltrametricDist.norm_le_one_of_perm`):
+the least norm above one would be followed by a smaller one.
 
 This is the ultrametric step of the proof that the discriminant of a lattice with complex
 multiplication, normalised at a point of order two, is a unit at every prime: there `σ` moves
@@ -52,8 +52,8 @@ theorem norm_sq_eq_norm_mul_of_norm_add_le_one {x y : R} (h_add : ‖x + y‖ �
 /-- **Integrality along a cycle.** Let `σ` be a permutation of a finite set and `s`, `s'`, `s₀`
 functions with values in an ultrametric ring with multiplicative seminorm such that, for every
 `c`, the sum `s c + s' c + s₀ c` and the product `s c * s' (σ c)` are integral, and
-`‖s (σ c) * s₀ (σ c)‖ = ‖s c‖`. Then every `s c` is integral: a norm `‖s c‖ > 1` would be replaced
-by its square root at each step `c ↦ σ c`, and the steps return to `c`. -/
+`‖s (σ c) * s₀ (σ c)‖ = ‖s c‖`. Then every `s c` is integral: a norm `‖s c‖ > 1` is replaced by
+its square root at the step `c ↦ σ c`, so no such norm can be the least one. -/
 theorem norm_le_one_of_perm {X : Type*} [Finite X] (σ : Equiv.Perm X) {s s' s₀ : X → R}
     (h_sum : ∀ c, ‖s c + s' c + s₀ c‖ ≤ 1) (h_dual : ∀ c, ‖s c * s' (σ c)‖ ≤ 1)
     (h_step : ∀ c, ‖s (σ c) * s₀ (σ c)‖ = ‖s c‖) (c : X) : ‖s c‖ ≤ 1 := by
@@ -68,17 +68,12 @@ theorem norm_le_one_of_perm {X : Type*} [Finite X] (σ : Equiv.Perm X) {s s' s�
       rwa [add_right_comm, add_neg_cancel_right] at h
     rw [norm_sq_eq_norm_mul_of_norm_add_le_one h_add (by rwa [h_step]), h_step]
   by_contra! hc
-  -- along the orbit, `‖s ((σ ^ i) c)‖ ^ 2 ^ i = ‖s c‖ > 1`
-  have iterate (i : ℕ) : ‖s ((σ ^ i) c)‖ ^ 2 ^ i = ‖s c‖ := by
-    induction i with
-    | zero => simp
-    | succ i ih =>
-      have h_gt : 1 < ‖s ((σ ^ i) c)‖ :=
-        lt_of_pow_lt_pow_left₀ (2 ^ i) (norm_nonneg _) (by rwa [one_pow, ih])
-      rw [pow_succ', Equiv.Perm.mul_apply, pow_succ, pow_mul', halve _ h_gt, ih]
-  -- at `i = orderOf σ` this says `‖s c‖ ^ 2 ^ i = ‖s c‖`
-  have h := iterate (orderOf σ)
-  rw [pow_orderOf_eq_one, Equiv.Perm.one_apply] at h
-  exact (lt_self_pow₀ hc (Nat.one_lt_two_pow (orderOf_pos σ).ne')).ne' h
+  -- an index of least norm among those with norm above one has a successor of smaller norm
+  have : Nonempty {c // 1 < ‖s c‖} := ⟨⟨c, hc⟩⟩
+  obtain ⟨⟨c₀, hc₀⟩, hmin⟩ := Finite.exists_min fun c : {c // 1 < ‖s c‖} ↦ ‖s c‖
+  have h := halve c₀ hc₀
+  have h_gt : 1 < ‖s (σ c₀)‖ := lt_of_pow_lt_pow_left₀ 2 (norm_nonneg _) (by rwa [one_pow, h])
+  have h_lt : ‖s (σ c₀)‖ < ‖s c₀‖ := h ▸ lt_self_pow₀ h_gt one_lt_two
+  exact (hmin ⟨_, h_gt⟩).not_gt h_lt
 
 end IsUltrametricDist
