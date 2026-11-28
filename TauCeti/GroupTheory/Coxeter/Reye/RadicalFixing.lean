@@ -29,18 +29,20 @@ split extension
 
 * The map to the symplectic group `Sp(H / rad(b))` of the induced alternating form
   (`TauCeti.reyeSymplecticReduction`) is the action on the quotient.
-* Its kernel consists of the **shears** `T_ℓ(x) = x + ℓ(x̄) u` for linear forms `ℓ` on
-  `H / rad(b)` (`TauCeti.reyeShear`, `TauCeti.range_reyeShear`). Conjugation acts on them through
-  the dual action `g · ℓ = ℓ ∘ ḡ⁻¹` (`TauCeti.mul_reyeShear_mul_inv`).
+* Its kernel consists of the **shears** `T_ℓ(x) = x + ℓ([x]) u` for linear forms `ℓ` on
+  `H / rad(b)`, where `[x]` is the class of `x` (`TauCeti.reyeShear`,
+  `TauCeti.range_reyeShear`). Conjugation acts on them through the dual action
+  `g · ℓ = ℓ ∘ [g]⁻¹`, where `[g]` is the induced map on `H / rad(b)`
+  (`TauCeti.mul_reyeShear_mul_inv`).
 * A linear section `σ` of `H → H / rad(b)` (equivalently, a complement `V = range σ` of the
   radical) gives a splitting `g ↦ S_g` (`TauCeti.reyeSymplecticSection`), where in the
-  decomposition `x = σ(x̄) + r` with `r ∈ rad(b)`,
+  decomposition `x = σ([x]) + r` with `r ∈ rad(b)`,
 
-  `S_g(x) = σ(g x̄) + r + (q(σ(g x̄)) + q(σ(x̄))) z`.
+  `S_g(x) = σ(g [x]) + r + (q(σ(g [x])) + q(σ([x]))) z`.
 
   The correction term along `z` is what makes `S_g` an isometry of `q`: `q` is additive along
-  `rad(b)` and `q(c z) = c`, so the correction compensates the change of `q` from `σ(x̄)` to
-  `σ(g x̄)`.
+  `rad(b)` and `q(c z) = c`, so the correction compensates the change of `q` from `σ([x])` to
+  `σ(g [x])`.
 
 These are assembled into the group extension `TauCeti.reyeRadicalFixingExtension` and its
 splitting `TauCeti.reyeRadicalFixingSplitting`, so that Mathlib's
@@ -55,7 +57,7 @@ is the criterion for identifying the image of the T246 reflection group modulo `
 * `TauCeti.reyeRadicalFixingSubgroup`: the isometries of `q` fixing `rad(b)` pointwise.
 * `TauCeti.reyeSymplecticReduction`: their action on `H / rad(b)`, as isometries of the induced
   alternating form.
-* `TauCeti.reyeShear`: the shears `x ↦ x + ℓ(x̄) u`.
+* `TauCeti.reyeShear`: the shears `x ↦ x + ℓ([x]) u`.
 * `TauCeti.reyeSymplecticSection`: the splitting determined by a linear section of the quotient
   map.
 * `TauCeti.reyeRadicalFixingExtension`, `TauCeti.reyeRadicalFixingSplitting`: the split extension.
@@ -145,12 +147,12 @@ theorem reyeSymplecticReduction_apply_mk (g : reyeRadicalFixingSubgroup) (x : Re
 
 /-! ### Shears -/
 
-/-- The linear form `x ↦ ℓ(x̄)` on `F₂¹⁰` vanishes on `u`. -/
+/-- The linear form `x ↦ ℓ([x])` on `F₂¹⁰` vanishes on `u`. -/
 private theorem dual_mkQ_reyeRadicalU (ℓ : Module.Dual (ZMod 2) ReyeSymplecticQuotient) :
     (ℓ ∘ₗ (LinearMap.ker (polarBilin reyeQuadratic)).mkQ) reyeRadicalU = 0 := by
   simp [(Submodule.Quotient.mk_eq_zero _).mpr reyeRadicalU_mem_ker_polarBilin]
 
-/-- The underlying transvection `x ↦ x + ℓ(x̄) u` of a shear. -/
+/-- The underlying transvection `x ↦ x + ℓ([x]) u` of a shear. -/
 private noncomputable def reyeShearEquiv (ℓ : Module.Dual (ZMod 2) ReyeSymplecticQuotient) :
     ReyeReduction ≃ₗ[ZMod 2] ReyeReduction :=
   LinearEquiv.transvection (dual_mkQ_reyeRadicalU ℓ)
@@ -175,7 +177,7 @@ private theorem reyeShearEquiv_mem_reyeRadicalFixingSubgroup
   mem_reyeRadicalFixingSubgroup_iff.mpr fun x hx ↦ by
     simp [reyeShearEquiv_apply, (Submodule.Quotient.mk_eq_zero _).mpr hx]
 
-/-- **The shears** `T_ℓ(x) = x + ℓ(x̄) u`, for `ℓ` a linear form on the symplectic quotient: they
+/-- **The shears** `T_ℓ(x) = x + ℓ([x]) u`, for `ℓ` a linear form on the symplectic quotient: they
 are isometries of `q` fixing the polar radical, and `T_{ℓ + ℓ'} = T_ℓ T_{ℓ'}`. -/
 noncomputable def reyeShear :
     Multiplicative (Module.Dual (ZMod 2) ReyeSymplecticQuotient) →* reyeRadicalFixingSubgroup where
@@ -190,7 +192,7 @@ noncomputable def reyeShear :
       add_zero, add_smul]
     abel
 
-/-- The shear `T_ℓ` acts by `x ↦ x + ℓ(x̄) u`. -/
+/-- The shear `T_ℓ` acts by `x ↦ x + ℓ([x]) u`. -/
 @[simp]
 theorem reyeShear_apply (ℓ : Multiplicative (Module.Dual (ZMod 2) ReyeSymplecticQuotient))
     (x : ReyeReduction) :
@@ -243,7 +245,7 @@ theorem range_reyeShear : reyeShear.range = reyeSymplecticReduction.ker := by
     rw [← hdisp, add_sub_cancel]
 
 /-- **The action of the symplectic group on the shears**: conjugating the shear `T_ℓ` by `g`
-gives the shear of `ℓ ∘ ḡ⁻¹`, where `ḡ` is the symplectic reduction of `g`. -/
+gives the shear of `ℓ ∘ [g]⁻¹`, where `[g]` is the symplectic reduction of `g`. -/
 theorem mul_reyeShear_mul_inv (g : reyeRadicalFixingSubgroup)
     (ℓ : Module.Dual (ZMod 2) ReyeSymplecticQuotient) :
     g * reyeShear (Multiplicative.ofAdd ℓ) * g⁻¹ =
@@ -274,7 +276,7 @@ private theorem mk_section (y : ReyeSymplecticQuotient) :
     (Submodule.Quotient.mk (σ y) : ReyeSymplecticQuotient) = y :=
   LinearMap.congr_fun hσ y
 
-/-- `x - σ(x̄)` lies in the radical. -/
+/-- `x - σ([x])` lies in the radical. -/
 private theorem sub_section_mem_ker (x : ReyeReduction) :
     x - σ (Submodule.Quotient.mk x) ∈ LinearMap.ker (polarBilin reyeQuadratic) := by
   rw [← Submodule.Quotient.eq, mk_section hσ]
@@ -313,7 +315,7 @@ private theorem sectionCorrection_apply (g : (polarQuotientBilin reyeQuadratic).
       reyeQuadratic (σ y) :=
   (rfl)
 
-/-- The linear map `S_g(x) = σ(g x̄) + (x - σ(x̄)) + c_g(x̄) z` underlying the section. -/
+/-- The linear map `S_g(x) = σ(g [x]) + (x - σ([x])) + c_g([x]) z` underlying the section. -/
 private noncomputable def sectionMap (g : (polarQuotientBilin reyeQuadratic).isometryGroup) :
     ReyeReduction →ₗ[ZMod 2] ReyeReduction :=
   σ ∘ₗ (g : ReyeSymplecticQuotient ≃ₗ[ZMod 2] _).toLinearMap ∘ₗ
@@ -330,7 +332,7 @@ private theorem sectionMap_apply (g : (polarQuotientBilin reyeQuadratic).isometr
         sectionCorrection hσ g (Submodule.Quotient.mk x) • reyeRadicalZ :=
   (rfl)
 
-/-- The class of `S_g(x)` is `g x̄`. -/
+/-- The class of `S_g(x)` is `g [x]`. -/
 private theorem mk_sectionMap (g : (polarQuotientBilin reyeQuadratic).isometryGroup)
     (x : ReyeReduction) :
     (Submodule.Quotient.mk (sectionMap hσ g x) : ReyeSymplecticQuotient) =
@@ -394,8 +396,8 @@ private theorem sectionEquiv_mem_reyeRadicalFixingSubgroup
 
 /-- **The symplectic section** determined by a linear section `σ` of the quotient map
 `H → H / rad(b)`: the isometry `S_g` of `q` fixing the polar radical that acts on
-`x = σ(x̄) + r` by `S_g(x) = σ(g x̄) + r + (q(σ(g x̄)) + q(σ(x̄))) z`. It is a group homomorphism
-and a right inverse of the symplectic reduction
+`x = σ([x]) + r` by `S_g(x) = σ(g [x]) + r + (q(σ(g [x])) + q(σ([x]))) z`. It is a group
+homomorphism and a right inverse of the symplectic reduction
 (`TauCeti.reyeSymplecticReduction_reyeSymplecticSection`). -/
 noncomputable def reyeSymplecticSection :
     (polarQuotientBilin reyeQuadratic).isometryGroup →* reyeRadicalFixingSubgroup where

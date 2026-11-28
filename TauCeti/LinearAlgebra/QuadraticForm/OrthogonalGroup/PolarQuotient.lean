@@ -13,14 +13,14 @@ public import TauCeti.LinearAlgebra.SesquilinearForm.IsometryGroup
 # The action of the orthogonal group on the quotient by the polar kernel
 
 Let `Q` be a quadratic map on `M`, with polar bilinear map `b = polarBilin Q` and polar kernel
-`K = ker b`, the vectors orthogonal to everything. The polar form descends to a bilinear map `b̄` on
+`K = ker b`, the vectors orthogonal to everything. The polar form descends to a bilinear map `b'` on
 `M ⧸ K` (`QuadraticMap.polarQuotientBilin`) which no longer has a kernel. An orthogonal
-automorphism of `Q` preserves `b`, hence maps `K` onto itself, so it induces an isometry of `b̄`.
-This gives a group homomorphism `O(Q) → Isom(b̄)`
+automorphism of `Q` preserves `b`, hence maps `K` onto itself, so it induces an isometry of `b'`.
+This gives a group homomorphism `O(Q) → Isom(b')`
 (`QuadraticMap.orthogonalGroupToPolarQuotient`), whose kernel consists of the orthogonal
 automorphisms moving every vector by an element of `K`.
 
-In characteristic two `b̄` is alternating, so `Isom(b̄)` is a symplectic group, while `Q` itself
+In characteristic two `b'` is alternating, so `Isom(b')` is a symplectic group, while `Q` itself
 need not descend to `M ⧸ K`. This is the setting of the reduction modulo two of an even lattice:
 the orthogonal group of the reduced quadratic form maps to the symplectic group of the quotient by
 the polar radical.
