@@ -10,6 +10,7 @@ public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.Algebra.CharP.Frobenius.Fixed
 public import TauCeti.FieldTheory.Finite.FrobeniusFixed
 public import TauCeti.FieldTheory.Galois.FixedField
+import TauCeti.FieldTheory.Galois.FiniteIndex
 
 /-!
 # The finite subfields of a separably closed field of positive characteristic
@@ -161,6 +162,16 @@ theorem fixedField_zpowers_frobeniusAlgEquivOfAlgebraic :
   rw [IntermediateField.mem_bot]
   exact (FiniteField.pow_natCard_eq_self_iff_mem_range_algebraMap x).1
     (by rwa [Nat.card_eq_fintype_card])
+
+omit [Fintype k] in
+/-- Every algebraic extension of a finite field is Galois, since the fixed field of arithmetic
+Frobenius is the base field. -/
+theorem _root_.FiniteField.isGalois_of_isAlgebraic [Finite k] : IsGalois k L := by
+  let := Fintype.ofFinite k
+  let E := fixedField (Subgroup.zpowers (FiniteField.frobeniusAlgEquivOfAlgebraic k L))
+  have : Algebra.IsAlgebraic E L := Algebra.IsAlgebraic.tower_top (K := k) E
+  have h : IsGalois E L := inferInstanceAs (IsGalois (fixedField _) L)
+  exact isGalois_iff_isGalois_bot.mp (fixedField_zpowers_frobeniusAlgEquivOfAlgebraic k L ▸ h)
 
 /-- **Restricting Frobenius to a normal subextension gives its Frobenius.** For a tower
 `L / E / k` with `E / k` normal, the restriction to `E` of the arithmetic Frobenius `x ↦ x ^ q` of
