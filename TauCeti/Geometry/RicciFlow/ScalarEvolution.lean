@@ -69,7 +69,7 @@ private theorem divergence_rieszDual_divergenceBilinearTensor_neg_two_ricciTenso
     rw [divergenceBilinearTensor_const_smul, map_smul, Pi.smul_apply]
   rw [hfield, rieszDual_divergenceBilinearTensor_ricciTensor_eq_mgradient, ← mgradient_smul,
     smul_smul, ← laplaceBeltrami_def, laplaceBeltrami_smul I _
-      ((leviCivitaConnection I M).contMDiff_scalarCurvature.of_le (by simp))]
+      (((leviCivitaConnection I M).contMDiff_scalarCurvature (n := ⊤)).of_le (by simp))]
   norm_num
 
 /-- For the metric velocity `h = -2 Ric`, `Δ (tr_g h) = -2 Δ Scal`. -/
@@ -79,7 +79,7 @@ private theorem laplaceBeltrami_metricTrace_neg_two_ricciTensor (x : M) :
         ((leviCivitaConnection I M).ricciTensor z).toContinuousBilinearMap) y))) x =
       -2 * laplaceBeltrami I (leviCivitaConnection I M).scalarCurvature x := by
   have hS : ContMDiff I 𝓘(ℝ) 2 (leviCivitaConnection I M).scalarCurvature :=
-    (leviCivitaConnection I M).contMDiff_scalarCurvature.of_le (by simp)
+    ((leviCivitaConnection I M).contMDiff_scalarCurvature (n := ⊤)).of_le (by simp)
   rw [← laplaceBeltrami_smul I _ hS]
   congr 1
   funext y

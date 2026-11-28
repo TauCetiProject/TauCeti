@@ -9,7 +9,7 @@ public import TauCeti.Data.Fin.DistinctPairs
 public import TauCeti.InformationTheory.Coding.Elementary.Basis
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.A
 public import TauCeti.LinearAlgebra.RootSystem.EquivComp
-public import TauCeti.LinearAlgebra.RootSystem.Isomorphism
+public import TauCeti.LinearAlgebra.RootSystem.Isomorphism.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Map
 public import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas

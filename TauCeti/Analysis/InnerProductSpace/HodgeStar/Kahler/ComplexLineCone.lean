@@ -63,7 +63,8 @@ defect of a field `ξ` of two-vectors for `J'` satisfies
 
 In Taubes's passage from Seiberg–Witten solutions to pseudoholomorphic curves, the rescaled
 curvature currents near a curve are approximately positive for the dilated structure `J_a`, which
-converges to the normal linearization `J_N` at rate `O(a)` (`TauCeti.normalDilation`); `J_N` is in
+converges to the normal linearization `J_N` at rate `O(a)`
+(`TauCeti.exists_forall_norm_normalDilation_sub_normalLinearization_le_of_isOpen`); `J_N` is in
 general not orthogonal for the fixed rescaled metric. When `J_a` is orthogonal for the metric in
 use, these estimates, with `J = J_a` and `J' = J_N`, bound the cone defect for `J_N` by
 `1 + O(a)` times the cone defect for `J_a` plus `O(a)` times the mass.

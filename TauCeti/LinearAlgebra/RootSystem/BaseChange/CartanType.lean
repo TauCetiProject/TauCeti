@@ -6,10 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
+public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Base
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
 
 /-!
 # Base change preserves the Cartan type
+
+Tensor-product base change along an injective flat ring map preserves and reflects the Cartan type
+of a base (`TauCeti.hasCartanType_baseChange_iff`), without requiring standard coordinate lattices.
 
 The entrywise base change `TauCeti.rootPairingBaseChange` of a crystallographic dot-product root
 pairing along an injective algebra map into a characteristic-zero domain keeps the support of a
@@ -24,11 +28,35 @@ change construction does not depend on the enumeration of Dynkin types.
 
 * `TauCeti.HasCartanType.rootPairingBaseChange`: **base change preserves the Cartan type of a
   base.**
+* `TauCeti.hasCartanType_baseChange_iff`: tensor-product base change preserves and reflects the
+  Cartan type.
 -/
 
 public section
 
 namespace TauCeti
+
+section TensorProduct
+
+variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [P.IsCrystallographic]
+  (S : Type*) [CommRing S] [Algebra R S] [FaithfulSMul R S] [Module.Flat R S]
+  [Module.Free R N] [Module.Finite R N] (b : P.Base) (t : DynkinType)
+
+/-- Extension of a base along an injective flat ring map preserves and reflects its Cartan type. -/
+@[simp]
+theorem hasCartanType_baseChange_iff :
+    HasCartanType (P.baseChange S) (b.baseChange S) t ↔ HasCartanType P b t := by
+  rw [hasCartanType_iff, hasCartanType_iff]
+  constructor
+  · rintro ⟨e, he⟩
+    refine ⟨(b.supportBaseChangeEquiv S).symm.trans e, fun i j ↦ ?_⟩
+    simpa using he ((b.supportBaseChangeEquiv S).symm i) ((b.supportBaseChangeEquiv S).symm j)
+  · rintro ⟨e, he⟩
+    refine ⟨(b.supportBaseChangeEquiv S).trans e, fun i j ↦ ?_⟩
+    simpa using he (b.supportBaseChangeEquiv S i) (b.supportBaseChangeEquiv S j)
+
+end TensorProduct
 
 section CommRing
 

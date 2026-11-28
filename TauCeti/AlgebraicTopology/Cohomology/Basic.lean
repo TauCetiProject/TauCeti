@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
+public import TauCeti.Algebra.Category.ModuleCat.RatAddCircle
 public import TauCeti.Algebra.Homology.LinearYoneda
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 
@@ -33,6 +34,13 @@ take `C := ModuleCat k` and `R := k`: then `Cₙ(X; k)` is the free `k`-module o
 * `TopCat.singularCohomology` and `TopCat.singularCohomologyMap`: singular cohomology and the
   maps induced on it by continuous maps, with `TauCeti.singularCohomologyFunctor` the resulting
   functor `TopCatᵒᵖ ⥤ ModuleCat k`.
+* `TopCat.bijective_smul_singularCohomology`: multiplication by a scalar `r` on `Hⁿ(X; R, M)` is
+  bijective when `r • 𝟙 M` is an isomorphism, and
+  `TopCat.eq_zero_of_isOfFinAddOrder_singularCohomology`: so `Hⁿ(X; R, M)` has no torsion when
+  every positive integer acts invertibly on `M`, with
+  `TopCat.eq_zero_of_isOfFinAddOrder_singularCohomology_rat` the instance `M = ℚ`. These are the
+  singular cases of `ChainComplex.bijective_smul_homology_linearYonedaObj` and
+  `ChainComplex.eq_zero_of_isOfFinAddOrder_homology_linearYonedaObj`.
 * `TopCat.singularCohomologyChainCoefficientMap` and `TopCat.singularCohomologyChainCoefficientIso`:
   the change of chain coefficients on singular cohomology, contravariantly functorial in the
   coefficient morphism and natural in the space
@@ -190,6 +198,38 @@ def singularCohomologyFunctor (n : ℕ) : TopCat.{w}ᵒᵖ ⥤ ModuleCat.{v} k w
 end TauCeti
 
 namespace TopCat
+
+section Scalar
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C}
+  {k : Type*} [CommRing k] [Linear k C] {M : C}
+
+/-- **A scalar acting invertibly on the coefficients acts invertibly on cohomology.** If `r • 𝟙 M`
+is an isomorphism of the coefficient object, then multiplication by `r` on `Hⁿ(X; R, M)` is
+bijective: it is the map induced by `r • 𝟙 M`. -/
+theorem bijective_smul_singularCohomology (X : TopCat.{w}) (n : ℕ) {r : k}
+    (hr : IsIso (r • 𝟙 M)) :
+    Function.Bijective (fun x : X.singularCohomology R k M n ↦ r • x) :=
+  ((toSSet.obj X).chainComplex R).bijective_smul_homology_linearYonedaObj n hr
+
+/-- **Cohomology with uniquely divisible coefficients has no torsion.** If multiplication by every
+positive integer is an automorphism of the coefficient object `M` (for instance `M = ℚ`, by
+`ModuleCat.isIso_zsmul_id_rat`), then every class of finite additive order in `Hⁿ(X; R, M)`
+vanishes. -/
+theorem eq_zero_of_isOfFinAddOrder_singularCohomology
+    (hM : ∀ m : ℕ, m ≠ 0 → IsIso ((m : k) • 𝟙 M)) (X : TopCat.{w}) {n : ℕ}
+    {x : X.singularCohomology R k M n} (hx : IsOfFinAddOrder x) : x = 0 :=
+  ((toSSet.obj X).chainComplex R).eq_zero_of_isOfFinAddOrder_homology_linearYonedaObj hM hx
+
+/-- **Rational cohomology has no torsion**: a class of finite additive order in `Hⁿ(X; R, ℚ)` is
+zero, since multiplication by a nonzero integer is an automorphism of `ℚ`. -/
+theorem eq_zero_of_isOfFinAddOrder_singularCohomology_rat {X : TopCat.{0}}
+    {R : ModuleCat.{0} ℤ} {n : ℕ} {x : X.singularCohomology R ℤ (ModuleCat.of ℤ ℚ) n}
+    (hx : IsOfFinAddOrder x) : x = 0 :=
+  X.eq_zero_of_isOfFinAddOrder_singularCohomology
+    (fun _ hm ↦ ModuleCat.isIso_zsmul_id_rat (Int.natCast_ne_zero.2 hm)) hx
+
+end Scalar
 
 section ChainCoefficients
 

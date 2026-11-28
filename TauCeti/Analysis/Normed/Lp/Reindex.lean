@@ -31,7 +31,11 @@ Consequently the **window sums** `j ↦ ∑_{j - L ≤ k < j + L} f k` of a sequ
 a sum of `2 L` shifts, lie in `ℓᵖ`, and for `1 ≤ p` their norm is at most `2 L ‖f‖`
 (`Memℓp.sum_Ico_sub_add`, `lp.norm_le_of_forall_eq_sum_Ico_sub_add`); together, for `f ∈ ℓᵖ`
 they give an element of `ℓᵖ` with these entries and norm bound
-(`lp.exists_eq_sum_Ico_sub_add_and_norm_le`). Such sums arise when a
+(`lp.exists_eq_sum_Ico_sub_add_and_norm_le`). Over an additive group the sums
+`j ↦ ∑_{i ∈ S} f (j + i)` of finitely many shifts satisfy the bound `#S ‖f‖`
+(`lp.exists_eq_sum_add_and_norm_le`), so over `ℤ` the window sums `j ↦ ∑_{-L ≤ i < L} f (j + i)`
+satisfy the same bound `2 L ‖f‖` (`lp.exists_eq_sum_Ico_add_and_norm_le`).
+Such sums arise when a
 sequence of dyadic pieces is replaced by another one in which each piece only interacts with the
 pieces of nearby index, as for two Littlewood–Paley decompositions of the same function.
 
@@ -451,6 +455,33 @@ theorem norm_lpCongrLeft (e : ι ≃ ι') (f : lp (fun _ : ι ↦ G) p) :
   lp.norm_eq_of_forall_eq_comp_equiv e.symm fun _ ↦ rfl
 
 end AddEquiv
+
+/-- **Finite sums of shifts as an element of `ℓᵖ`.** For `1 ≤ p`, `f ∈ ℓᵖ` over an additive group
+`α` and a finite set `S ⊆ α` of shifts, the sums `j ↦ ∑_{i ∈ S} f (j + i)` are the entries of an
+element of `ℓᵖ` of norm at most `#S ‖f‖`: every shift `j ↦ f (j + i)` is a reindexing along an
+equivalence, so it has the norm of `f`. -/
+theorem lp.exists_eq_sum_add_and_norm_le {α : Type*} [AddGroup α] [Fact (1 ≤ p)]
+    (f : lp (fun _ : α ↦ G) p) (S : Finset α) : ∃ f' : lp (fun _ : α ↦ G) p,
+      (∀ j, f' j = ∑ i ∈ S, f (j + i)) ∧ ‖f'‖ ≤ S.card * ‖f‖ := by
+  refine ⟨∑ i ∈ S, AddEquiv.lpCongrLeft p G (Equiv.subRight i) f, fun j ↦ ?_, ?_⟩
+  · rw [lp.coeFn_sum, Finset.sum_apply]
+    simp
+  · calc ‖∑ i ∈ S, AddEquiv.lpCongrLeft p G (Equiv.subRight i) f‖
+          ≤ ∑ i ∈ S, ‖AddEquiv.lpCongrLeft p G (Equiv.subRight i) f‖ := norm_sum_le _ _
+      _ = S.card * ‖f‖ := by simp
+
+/-- **Window sums over `ℤ` as an element of `ℓᵖ`.** For `1 ≤ p` and `f ∈ ℓᵖ(ℤ)`, the window sums
+`j ↦ ∑_{-L ≤ i < L} f (j + i)` are the entries of an element of `ℓᵖ(ℤ)` of norm at most
+`2 L ‖f‖`. This is the `ℤ`-indexed form of `lp.exists_eq_sum_Ico_sub_add_and_norm_le`, and the
+window case of `lp.exists_eq_sum_add_and_norm_le`. -/
+theorem lp.exists_eq_sum_Ico_add_and_norm_le [Fact (1 ≤ p)] (f : lp (fun _ : ℤ ↦ G) p)
+    (L : ℕ) : ∃ f' : lp (fun _ : ℤ ↦ G) p,
+      (∀ j, f' j = ∑ i ∈ Finset.Ico (-(L : ℤ)) L, f (j + i)) ∧ ‖f'‖ ≤ 2 * L * ‖f‖ := by
+  have hcard : ((Finset.Ico (-(L : ℤ)) L).card : ℝ) = 2 * L := by
+    rw [Int.card_Ico]
+    norm_cast
+    omega
+  simpa only [hcard] using lp.exists_eq_sum_add_and_norm_le f (Finset.Ico (-(L : ℤ)) L)
 
 namespace LinearIsometryEquiv
 

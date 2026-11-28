@@ -45,6 +45,8 @@ slice.
   `C^n` along a slice `{p₀} × M` are jointly `C^n` along it.
 * `TauCeti.eventually_mdifferentiableAt_slice`: a jointly `C¹` family along a compact slice
   has differentiable slices uniformly on that compact set for all nearby parameters.
+* `TauCeti.eventually_mdifferentiableAt_family`: a family `Φ : P → M → N` which is jointly `C^n`,
+  `n ≠ 0`, at `(p₀, x)` has `Φ p` differentiable at `x` for all `p` near `p₀`.
 * `TauCeti.contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm`: reading the complex factor of
   `ℝ × ℂ × V` in real coordinates is `C^n` from the self-model of `ℝ × (ℝ × ℝ) × V`.
 * `TauCeti.contMDiff_prodMk_equivRealProdCLM_symm`: the same on `(P × (ℝ × ℝ)) × M` for a
@@ -178,6 +180,19 @@ theorem eventually_mdifferentiableAt_slice [IsManifold I' 1 M]
     hFUO.contMDiffAt ((hUo.prod hOo).mem_nhds ⟨hu, hO hy⟩)
   exact (hpt.comp y (contDiff_prodMk_right u).contMDiff.contMDiffAt).mdifferentiableAt
     one_ne_zero
+
+/-- If a family `Φ : P → M → N` is jointly `C^n` at `(p₀, x)` with `n ≠ 0`, then for every `p`
+near `p₀` the map `Φ p` is differentiable at `x`. -/
+theorem eventually_mdifferentiableAt_family {EP HP P : Type*} [NormedAddCommGroup EP]
+    [NormedSpace 𝕜 EP] [TopologicalSpace HP] {IP : ModelWithCorners 𝕜 EP HP} [TopologicalSpace P]
+    [ChartedSpace HP P] [IsManifold IP 1 P] [IsManifold I' 1 M] [IsManifold J 1 N]
+    {Φ : P → M → N} {p₀ : P} {x : M}
+    (hΦ : ContMDiffAt (IP.prod I') J n (Function.uncurry Φ) (p₀, x)) (hn : n ≠ 0) :
+    ∀ᶠ p in 𝓝 p₀, MDifferentiableAt I' J (Φ p) x := by
+  have hcont : ContinuousAt (fun p : P ↦ (p, x)) p₀ := by fun_prop
+  filter_upwards [hcont.eventually ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1
+    (hΦ.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn)))] with p hp
+  exact hp.curry_right.mdifferentiableAt one_ne_zero
 
 /-- A jointly `C^n` family in the model space, fixing the base point of an extended chart at time
 zero, gives a family on the manifold, jointly `C^n` at the base point and time zero, by

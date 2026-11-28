@@ -47,6 +47,17 @@ constrains the thickenings outside their regular loci.
   (`TauCeti.ImplicitAtlasWithBoundary.CellLikeStratification.exists_nonneg_baseStratum`). A
   stratum `s` with `dim s + m_I < 0` meets no regular point of `X_I`, and a regular point of `X_I`
   lying strictly below a stratum `t` forces `dim t + m_I ≥ 1`.
+* **Restricted atlases.** For a finite poset `S` and a stratum `s`, the closed strata `X_I^≤s` of
+  the thickenings form a closed subthickening
+  (`TauCeti.ImplicitAtlasWithBoundary.CellLikeStratification.isClosedSubthickening_preimage_Iic`),
+  and the restriction to it, with boundaries the open-boundary strata `X_I^<s`, is an implicit
+  atlas with boundary of virtual dimension `dim s` on `(X^≤s, X^<s)`
+  (`TauCeti.ImplicitAtlasWithBoundary.CellLikeStratification.restrictAtlas`, Pardon,
+  Definition 6.1.6). Its product charts read the closed stratum `s` of the first factor of a
+  cell-like product model through its charts as a manifold with boundary
+  (`TauCeti.IsManifoldBoundaryPair.exists_openPartialHomeomorph_prod`). It is cell-like stratified
+  by `(S^≤s, S^<s)`
+  (`TauCeti.ImplicitAtlasWithBoundary.CellLikeStratification.restrictCellLikeStratification`).
 * **The interval.** The interval atlas `[0, 1]` stratified by `{0} < (0, 1) > {1}`, with
   dimensions `0`, `1`, `0` and the two endpoints as boundary faces, is a cell-like stratified atlas
   (`TauCeti.ImplicitAtlasWithBoundary.unitIntervalCellLikeStratification`, in
@@ -166,6 +177,162 @@ theorem exists_nonneg_baseStratum (y : X) :
     ∃ I : Finset A, 0 ≤ dim (σ.baseStratum y) + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) := by
   obtain ⟨I, x, hx, rfl⟩ := 𝒜.exists_footprintMap_eq y
   exact ⟨I, σ.baseStratum_footprintMap x ▸ σ.nonneg_of_mem_regLocus hx⟩
+
+/-! ### Restricted atlases on the closed strata -/
+
+/-- The closed strata `X_I^≤s` of the thickenings form a closed subthickening of the atlas: they
+are closed, invariant, and `ψ_IJ⁻¹(X_I^≤s) = Z_IJ ∩ X_J^≤s` by the zero-fibre compatibility. -/
+theorem isClosedSubthickening_preimage_Iic (s : S) :
+    𝒜.toCore.IsClosedSubthickening fun I ↦ σ.stratum I ⁻¹' Iic s where
+  isClosed I := isStratification_iff.1 (σ.isStratification_stratum I) s
+  act_mem I g x hx := by rwa [mem_preimage, σ.stratum_act]
+  footprintMap_mem_iff I J h x := by rw [mem_preimage, mem_preimage, σ.stratum_footprintMap]
+
+/-- The closed stratum `X_∅^≤s` is the closed stratum `X^≤s` of the base, through `X_∅ ≃ₜ X`. -/
+theorem preimage_stratum_empty_Iic (s : S) :
+    σ.stratum ∅ ⁻¹' Iic s = 𝒜.baseHomeomorph ⁻¹' (σ.baseStratum ⁻¹' Iic s) := by
+  ext x
+  simp [baseStratum_apply]
+
+variable [Finite S]
+
+/-- **The restricted atlas on a closed stratum** (Pardon, Definition 6.1.6). For a stratum `s`,
+the closed strata `X_I^≤s` of the thickenings, with the restricted actions, Kuranishi maps,
+regular loci and footprint maps and with boundaries the open-boundary strata `X_I^<s`, form an
+implicit atlas with boundary of virtual dimension `dim s` on `(X^≤s, X^<s)`, with the same isotropy
+groups and obstruction spaces. Its product charts are those of the cell-like local product models,
+restricted to the closed stratum of their first factor and read through its charts as a manifold
+with boundary (`TauCeti.IsManifoldBoundaryPair.exists_openPartialHomeomorph_prod`). -/
+noncomputable def restrictAtlas (s : S) :
+    ImplicitAtlasWithBoundary Γ E ρ (fun I ↦ σ.stratum I ⁻¹' Iic s)
+      (ImplicitAtlas.restrictAct act _ (σ.isClosedSubthickening_preimage_Iic s).act_mem)
+      (σ.baseStratum ⁻¹' Iic s) (Subtype.val ⁻¹' (σ.baseStratum ⁻¹' Iio s)) (dim s) where
+  toCore := 𝒜.toCore.restrictThickening (σ.isClosedSubthickening_preimage_Iic s) _
+    (σ.preimage_stratum_empty_Iic s)
+  boundary I := Subtype.val ⁻¹' (σ.stratum I ⁻¹' Iio s)
+  isClosed_boundary I :=
+    ((σ.isStratification_stratum I).isClosed_preimage_Iio s).preimage continuous_subtypeVal
+  act_mem_boundary I g x hx := by
+    rwa [mem_preimage, ImplicitAtlas.coe_restrictAct_apply, mem_preimage, σ.stratum_act]
+  boundary_empty := by
+    ext x
+    simp [baseStratum_apply]
+  footprintMap_mem_boundary_iff I J h x := by
+    simp [σ.stratum_footprintMap]
+  exists_openPartialHomeomorph I J h x hx := by
+    simp only [ImplicitAtlas.Core.regLocus_restrictThickening, mem_preimage,
+      ImplicitAtlas.Core.coe_footprintMap_restrictThickening] at hx
+    obtain ⟨F, _, τ, hτ, e, hxe, he, hστ⟩ := σ.exists_openPartialHomeomorph_stratum h _ hx
+    have hkur : ∀ y ∈ e.source, ∀ hy : σ.stratum J y ≤ s, (e y).2 =
+        kuranishiSdiff (𝒜.toCore.restrictThickening (σ.isClosedSubthickening_preimage_Iic s) _
+          (σ.preimage_stratum_empty_Iic s)).kuranishi I J ⟨y, hy⟩ := fun y hy _ ↦ by
+      rw [he y hy]
+      ext α
+      simp
+    rcases (hτ.isManifoldBoundaryPair s).exists_openPartialHomeomorph_prod e
+      (P := σ.stratum J ⁻¹' Iic s) (Q := σ.stratum J ⁻¹' Iio s) (fun y hy ↦ by simp [hστ y hy])
+      (fun y hy ↦ by simp [hστ y hy]) hxe x.val.property with
+      ⟨m, hm, c, hcx, hce, hcQ, hc⟩ | ⟨m, hm, c, hcx, hce, hcQ, hc⟩
+    · exact Or.inl ⟨m, hm, c, hcx, hcQ, fun y hy ↦ by rw [hc y hy, hkur y (hce hy) y.property]⟩
+    · exact Or.inr ⟨m, hm, c, hcx, hcQ, fun y hy ↦ by rw [hc y hy, hkur y (hce hy) y.property]⟩
+
+variable (s : S)
+
+/-- The base identification of the restricted atlas on `X^≤s` is that of the atlas. -/
+@[simp]
+theorem coe_baseHomeomorph_restrictAtlas (x : σ.stratum ∅ ⁻¹' Iic s) :
+    ((σ.restrictAtlas s).baseHomeomorph x : X) = 𝒜.baseHomeomorph x :=
+  ImplicitAtlas.Core.coe_baseHomeomorph_restrictThickening
+    (σ.isClosedSubthickening_preimage_Iic s) (σ.preimage_stratum_empty_Iic s) x
+
+/-- The Kuranishi maps of the restricted atlas on `X^≤s` are the restrictions of those of the
+atlas. -/
+@[simp]
+theorem kuranishi_restrictAtlas (I : Finset A) (α : I) (x : σ.stratum I ⁻¹' Iic s) :
+    (σ.restrictAtlas s).kuranishi I α x = 𝒜.kuranishi I α x :=
+  ImplicitAtlas.Core.kuranishi_restrictThickening
+    (σ.isClosedSubthickening_preimage_Iic s) (σ.preimage_stratum_empty_Iic s) I α x
+
+/-- The zero sets of the restricted atlas on `X^≤s` are the zero sets of the atlas intersected
+with the closed strata. -/
+theorem mem_kuranishiZeroSet_restrictAtlas {I J : Finset A} {x : σ.stratum J ⁻¹' Iic s} :
+    x ∈ kuranishiZeroSet (σ.restrictAtlas s).kuranishi I J ↔
+      (x : T J) ∈ kuranishiZeroSet 𝒜.kuranishi I J :=
+  ImplicitAtlas.Core.mem_kuranishiZeroSet_restrictThickening
+    (σ.isClosedSubthickening_preimage_Iic s) (σ.preimage_stratum_empty_Iic s)
+
+/-- The regular loci of the restricted atlas on `X^≤s` are the regular loci of the atlas
+intersected with the closed strata. -/
+@[simp]
+theorem regLocus_restrictAtlas (I : Finset A) :
+    (σ.restrictAtlas s).regLocus I = Subtype.val ⁻¹' 𝒜.regLocus I :=
+  ImplicitAtlas.Core.regLocus_restrictThickening
+    (σ.isClosedSubthickening_preimage_Iic s) (σ.preimage_stratum_empty_Iic s) I
+
+/-- The footprint maps of the restricted atlas on `X^≤s` are the restrictions of those of the
+atlas. -/
+@[simp]
+theorem coe_footprintMap_restrictAtlas {I J : Finset A} (h : I ⊆ J)
+    (x : kuranishiZeroSet (σ.restrictAtlas s).kuranishi I J) :
+    ((σ.restrictAtlas s).footprintMap h x : T I) =
+      𝒜.footprintMap h ⟨x.val, (σ.mem_kuranishiZeroSet_restrictAtlas s).1 x.property⟩ :=
+  ImplicitAtlas.Core.coe_footprintMap_restrictThickening
+    (σ.isClosedSubthickening_preimage_Iic s) (σ.preimage_stratum_empty_Iic s) h x
+
+/-- The regular footprints of the restricted atlas on `X^≤s` are the traces on `X^≤s` of the
+regular footprints of the atlas. -/
+@[simp]
+theorem footprint_restrictAtlas (I : Finset A) :
+    (σ.restrictAtlas s).footprint I = Subtype.val ⁻¹' 𝒜.footprint I :=
+  ImplicitAtlas.Core.footprint_restrictThickening
+    (σ.isClosedSubthickening_preimage_Iic s) (σ.preimage_stratum_empty_Iic s) I
+
+/-- The boundaries of the restricted atlas on `X^≤s` are the open-boundary strata `X_I^<s`. -/
+@[simp]
+theorem boundary_restrictAtlas (I : Finset A) :
+    (σ.restrictAtlas s).boundary I = Subtype.val ⁻¹' (σ.stratum I ⁻¹' Iio s) :=
+  (rfl)
+
+/-- **The restricted stratification** (Pardon, Definition 6.1.6). The restricted atlas on
+`(X^≤s, X^<s)` is cell-like stratified by `(S^≤s, S^<s)`: each closed stratum `X_I^≤s` is
+stratified by `S^≤s` through `σ_I`, with the dimensions of `S`. Its product models are the
+cell-like product models of `σ`, restricted to the closed stratum `s` of their first factor. -/
+noncomputable def restrictCellLikeStratification :
+    (σ.restrictAtlas s).CellLikeStratification (Iic s) (fun t ↦ dim t)
+      (LowerSet.Iio ⟨s, le_rfl⟩) where
+  stratum I := (Iic s).restrictPreimage (σ.stratum I)
+  isStratification_stratum I := (σ.isStratification_stratum I).restrictPreimage _
+  stratum_act I g x := Subtype.ext <| by
+    simp [σ.stratum_act]
+  boundary_eq_preimage I := by
+    ext x
+    simp [← Subtype.coe_lt_coe]
+  stratum_footprintMap I J h x := Subtype.ext <| by
+    simp [σ.stratum_footprintMap]
+  isCellLikeOn_regLocus I := by
+    simpa using (σ.isCellLikeOn_regLocus I).restrictPreimage (IsLowerSet.Iic s)
+  exists_openPartialHomeomorph_stratum I J h x hx := by
+    simp only [regLocus_restrictAtlas, mem_preimage, coe_footprintMap_restrictAtlas] at hx
+    obtain ⟨F, _, τ, hτ, e, hxe, he, hστ⟩ := σ.exists_openPartialHomeomorph_stratum h _ hx
+    have hP : ∀ y ∈ e.source, y ∈ σ.stratum J ⁻¹' Iic s ↔ (e y).1 ∈ τ ⁻¹' Iic s :=
+      fun y hy ↦ by simp [hστ y hy]
+    have : Nonempty (σ.stratum J ⁻¹' Iic s) := ⟨x.val⟩
+    have : Nonempty (τ ⁻¹' Iic s) := ⟨⟨_, (hP _ hxe).1 x.val.property⟩⟩
+    refine ⟨τ ⁻¹' Iic s, inferInstance, (Iic s).restrictPreimage τ,
+      hτ.restrictPreimage (IsLowerSet.Iic s), e.subtypeFst hP, by simpa using hxe,
+      fun y hy ↦ ?_, fun y hy ↦ Subtype.ext ?_⟩ <;>
+    replace hy : (y : T J) ∈ e.source := by simpa using hy
+    · rw [OpenPartialHomeomorph.snd_subtypeFst_apply, he y hy]
+      ext α
+      simp
+    · rw [OpenPartialHomeomorph.subtypeFst_apply _ _ hy]
+      exact hστ y hy
+
+/-- The restricted stratification of `X_I^≤s` is the stratification `σ_I`. -/
+@[simp]
+theorem coe_stratum_restrictCellLikeStratification (I : Finset A) (x : σ.stratum I ⁻¹' Iic s) :
+    ((σ.restrictCellLikeStratification s).stratum I x : S) = σ.stratum I x :=
+  (rfl)
 
 end CellLikeStratification
 

@@ -20,7 +20,10 @@ finite dimensional; in particular a compact operator bounded below has finite-di
 The compact operator may be replaced by any map `f`, not necessarily linear, sending the closed unit
 ball into a compact set with `‖x - y‖ ≤ C * dist (f x) (f y)` on the ball
 (`FiniteDimensional.of_norm_sub_le_mul_dist`); this is how a space of functionals represented by
-chosen, compactly bounded fields is shown to be finite-dimensional.
+chosen, compactly bounded fields is shown to be finite-dimensional. Likewise a vector space with
+no topology is finite-dimensional if an injective linear map `L` into a normed space sends every
+`x` with `‖L x‖ < c`, for some `c > 0`, into a totally bounded set
+(`FiniteDimensional.of_injective_of_totallyBounded`).
 If the domain is complete, the estimate also makes `T` bounded below on any closed subspace
 disjoint from its kernel, and the range of `T` is closed over any
 nontrivially normed field. The closed-range step needs no complement of the kernel: by the
@@ -201,6 +204,23 @@ theorem _root_.FiniteDimensional.of_norm_sub_le_mul_dist [CompleteSpace 𝕜] {Y
         mul_le_mul_of_nonneg_right (by linarith [le_abs_self C]) dist_nonneg
     _ < (|C| + 1) * (2 * δ) := by gcongr
     _ = ε := by rw [hδ]; field_simp
+
+/-- **Riesz's theorem through an injective linear map.** A vector space `X`, with no topology of
+its own, is finite-dimensional if an injective linear map `L` into a normed space sends every `x`
+with `‖L x‖ < c`, for some `c > 0`, into a fixed totally bounded set: the ball of radius `c` of the
+range of `L` is then a totally bounded neighbourhood of `0`. -/
+theorem _root_.FiniteDimensional.of_injective_of_totallyBounded [CompleteSpace 𝕜] {X Y : Type*}
+    [AddCommGroup X] [Module 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] {L : X →ₗ[𝕜] Y}
+    (hL : Function.Injective L) {K : Set Y} (hK : TotallyBounded K) {c : ℝ} (hc : 0 < c)
+    (hLK : ∀ x, ‖L x‖ < c → L x ∈ K) : FiniteDimensional 𝕜 X := by
+  have : FiniteDimensional 𝕜 (LinearMap.range L) :=
+    .of_totallyBounded_nhds_zero 𝕜 (U := Subtype.val ⁻¹' K)
+      (mem_of_superset (Metric.ball_mem_nhds 0 hc) fun v hv ↦ by
+        obtain ⟨x, hx⟩ := LinearMap.mem_range.1 v.property
+        simpa only [Set.mem_preimage, ← hx] using
+          hLK x (by simpa [hx] using mem_ball_zero_iff.1 hv))
+      (totallyBounded_preimage isUniformEmbedding_subtypeVal.isUniformInducing hK)
+  exact (LinearEquiv.ofInjective L hL).symm.finiteDimensional
 
 section CompleteDomain
 
