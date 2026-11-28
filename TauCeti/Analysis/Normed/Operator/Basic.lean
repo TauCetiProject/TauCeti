@@ -130,8 +130,9 @@ scalar multiplication by the values of a continuous semilinear map `L` costs at 
 (`ContinuousLinearMap.norm_apply_smul_le_of_support_subset_closedBall`).
 
 The identity operator `1` has operator norm at most one on every seminormed space
-(`ContinuousLinearMap.norm_one_le`), and the affine map `z ↦ A z + v` given by a continuous
-semilinear map `A` is `‖A‖₊`-Lipschitz (`ContinuousLinearMap.lipschitzWith_add_const`).
+(`ContinuousLinearMap.norm_one_le`), so `id - P` has nonnegative operator norm at most `1 + ‖P‖₊`
+(`ContinuousLinearMap.nnnorm_id_sub_le_one_add`), and the affine map `z ↦ A z + v` given by a
+continuous semilinear map `A` is `‖A‖₊`-Lipschitz (`ContinuousLinearMap.lipschitzWith_add_const`).
 Bounded linear endomorphisms of a seminormed space act continuously on it
 (`ContinuousLinearMap.instContinuousSMul`).
 -/
@@ -330,6 +331,14 @@ Mathlib's `norm_one` does not apply. -/
 theorem norm_one_le : ‖(1 : X →L[𝕜] X)‖ ≤ 1 := by
   rw [one_def]
   exact norm_id_le
+
+/-- Subtracting an endomorphism `P` from the identity yields an operator of nonnegative norm at most
+`1 + ‖P‖₊`, also on the trivial space where `‖id‖₊ = 0`. -/
+theorem nnnorm_id_sub_le_one_add (P : X →L[𝕜] X) :
+    ‖ContinuousLinearMap.id 𝕜 X - P‖₊ ≤ 1 + ‖P‖₊ := by
+  refine (nnNorm_sub_le _ _).trans ?_
+  gcongr
+  exact_mod_cast norm_id_le
 
 /-- The a priori estimate attached to a left inverse modulo an error term: since
 `x = S (T x) - (S ∘ T - 1) x`, the norm of `x` is controlled by `‖T x‖` and the error
