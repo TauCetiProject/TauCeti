@@ -60,11 +60,19 @@ homomorphism whose kernel is the matrices with entries in `ker f`.
 * `Matrix.natCard_GL_eq_natCard_ker_pow_mul`: `|GL n R| = |ker f| ^ (n²) · |GL n S|` for a
   surjective local homomorphism `f : R →+* S`.
 * `TauCeti.natCard_GL_fin`: `|GLₙ(𝔽_q)| = q ^ (n.choose 2) · ∏_{i = 1}^{n} (q ^ i - 1)`.
+* `TauCeti.card_GL_eq_prod_nat`, `TauCeti.card_GL_eq_prod_cast`: reindexed factored product
+  formulas `∏_{i < |n|} qⁱ (qⁱ⁺¹ - 1)` for `GL n k` in `ℕ` and cast to any commutative ring.
 * `TauCeti.natCard_GL_fin_two`: `|GL₂(𝔽_q)| = (q - 1)² · q(q + 1)`.
 * `TauCeti.natCard_GL_fin_two_eq_sq_sub_one_mul`: `|GL₂(𝔽_q)| = (q² - 1) · q(q - 1)`.
 * `TauCeti.natCard_GL_fin_two_of_card_eq_two`: `|GL₂(𝔽₂)| = 6`.
 * `TauCeti.prod_range_pow_sub_pow_div_pow`: `∏_{i=0}^{n-1} (q^n - q^i) / q^{n²} = (q⁻¹; q⁻¹)_n`
   in a field, the proportion of invertible matrices over `𝔽_q`.
+
+## Provenance
+
+* `TauCeti.card_GL_eq_prod_nat` and `TauCeti.card_GL_eq_prod_cast` are adapted from `grh-lean`
+  (https://github.com/lsernau/grh-lean, commit `72fead102f663d5c7a407964a13dc0cf9d977207`),
+  `src/Lib/LocalGL/Green/CuspidalFunctions.lean` (`New.card_GL_eq_prod`).
 -/
 
 public section
@@ -143,6 +151,35 @@ theorem prod_range_pow_sub_pow_div_pow {q : F} (hq : q ≠ 0) (n : ℕ) :
     field_simp
   _ = qPochhammer q⁻¹ q⁻¹ n := by
     simpa [qPochhammer_self] using Finset.prod_range_add_sub_eq (fun j => 1 - q⁻¹ ^ j) 0 n
+
+/-- The order of `GL n k` for a field `k` in factored product form:
+`Nat.card (GL n k) = ∏ i ∈ Finset.range (Fintype.card n), (q ^ i * (q ^ (i + 1) - 1))`
+where `q = Nat.card k`. For an infinite field both sides are `1` when `n` is empty and `0`
+otherwise. -/
+theorem card_GL_eq_prod_nat {k n : Type*} [Field k] [Fintype n] [DecidableEq n] :
+    Nat.card (GL n k) =
+      ∏ i ∈ Finset.range (Fintype.card n), (Nat.card k ^ i * (Nat.card k ^ (i + 1) - 1)) := by
+  have h_card : Nat.card (GL n k) = Nat.card (GL (Fin (Fintype.card n)) k) :=
+    Nat.card_congr
+      (Units.mapEquiv (Matrix.reindexRingEquiv k (Fintype.equivFin n)).toMulEquiv).toEquiv
+  rw [h_card, natCard_GL_fin, Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum,
+    Finset.sum_range_id, Nat.choose_two_right]
+
+/-- The order of `GL n k` for a finite field `k`, cast into any commutative ring `R`, equals
+`∏ i ∈ Finset.range (Fintype.card n), (q ^ i * (q ^ (i + 1) - 1))` where `q = Nat.card k`. -/
+theorem card_GL_eq_prod_cast {k n R : Type*} [Field k] [Finite k] [Fintype n] [DecidableEq n]
+    [CommRing R] :
+    (Nat.card (GL n k) : R) =
+      ∏ i ∈ Finset.range (Fintype.card n),
+        ((Nat.card k : R) ^ i * ((Nat.card k : R) ^ (i + 1) - 1)) := by
+  have : Fintype k := Fintype.ofFinite k
+  have h_pos : 1 ≤ Nat.card k := Nat.card_eq_fintype_card (α := k) ▸ Fintype.card_pos
+  rw [card_GL_eq_prod_nat]
+  push_cast
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  rw [Nat.cast_sub (one_le_pow₀ h_pos)]
+  push_cast
+  rfl
 
 end TauCeti
 
