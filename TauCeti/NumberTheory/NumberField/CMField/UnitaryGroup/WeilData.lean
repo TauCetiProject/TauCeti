@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
+public import TauCeti.NumberTheory.NumberField.CMField.AddChar
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.AddChar
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Splitting
 
@@ -62,9 +63,14 @@ of every global unit multiply to one, which fails for `i ∈ ℚ(i)`.
 * `TauCeti.WeilData.traceOne_add_star`: `c₀ + conj c₀ = 1`.
 * `TauCeti.WeilData.toFractionalIdeal_scaleIdele`: `j α (conj α)` generates `𝔇⁻¹`.
 * `TauCeti.WeilData.forall_selfDualAddChar_mul_eq_one_iff`: `Ô` is self-dual for `ψ₀`.
+* `TauCeti.WeilData.selfDualAddChar_star`, `TauCeti.WeilData.selfDualAddChar_eq_one_of_mem`:
+  `ψ₀(conj z) = ψ₀(z)⁻¹`, as `conj t = −t` (`TauCeti.WeilData.scaleIdele_mem_skewAdjoint`), and
+  `ψ₀` is trivial on `Ô`.
 * `TauCeti.WeilData.vacuum_zero`, `TauCeti.WeilData.norm_vacuum_of_forall_mem`,
   `TauCeti.WeilData.vacuum_of_not_forall_mem`, `TauCeti.WeilData.continuous_vacuum`: the vacuum
   is `1` at `0`, a Gaussian in absolute value on `𝔸_∞^n × α Ô^n`, zero off it, and continuous.
+* `TauCeti.WeilData.semichar_sq`, `TauCeti.WeilData.continuous_semichar`: `semi(z)² = ψ₀(c₀ z* z)`,
+  and the semicharacter is continuous.
 
 ## References
 
@@ -170,6 +176,12 @@ theorem traceOne_add_star : W.traceOne + star W.traceOne = 1 := by
   simp only [traceOne_def, star_div₀, star_sub, star_inv₀, W.star_j, star_one, star_ofNat]
   ring
 
+/-- `c₀ = (1 − j⁻¹)/2` lies in `Ô`, being an algebraic integer. -/
+theorem algebraMap_traceOne_mem_integralAdeles :
+    algebraMap E (FiniteAdeleRing (𝓞 E) E) W.traceOne ∈ integralAdeles (𝓞 E) E :=
+  (algebraMap_mem_integralAdeles_iff _).2
+    ⟨⟨W.traceOne, (mem_integralClosure_iff _ _).2 W.isIntegral_traceOne⟩, RingOfIntegers.map_mk _ _⟩
+
 /-! ### The self-dual character `ψ₀` -/
 
 /-- The finite idele `t = j α (conj α)` that scales `ψ_f` to `ψ₀`; it generates the inverse
@@ -184,6 +196,13 @@ theorem coe_scaleIdele :
       algebraMap E _ W.j * W.α * star (W.α : FiniteAdeleRing (𝓞 E) E) := by
   rw [scaleIdele, Units.val_mul, Units.val_mul, Units.coe_star, unitEmbedding_apply, Units.val_mk0,
     mul_assoc]
+
+/-- `t = j α (conj α)` is purely imaginary: `conj t = −t`. -/
+theorem scaleIdele_mem_skewAdjoint :
+    (W.scaleIdele : FiniteAdeleRing (𝓞 E) E) ∈ skewAdjoint (FiniteAdeleRing (𝓞 E) E) := by
+  rw [skewAdjoint.mem_iff, coe_scaleIdele, star_mul, star_mul, star_star, ← algebraMap_star_comm,
+    W.star_j, map_neg]
+  ring
 
 /-- **`t = j α (conj α)` generates the inverse different**: its fractional ideal is `𝔇⁻¹`. -/
 theorem toFractionalIdeal_scaleIdele :
@@ -217,6 +236,27 @@ theorem forall_selfDualAddChar_mul_eq_one_iff (z : FiniteAdeleRing (𝓞 E) E) :
   rw [forall_finiteAdeleAddChar_mul_eq_one_iff,
     mem_finiteAdelicIdeal_iff W.scaleIdele W.toFractionalIdeal_scaleIdele,
     Units.inv_mul_cancel_left]
+
+/-- `ψ₀` is trivial on the integral finite adeles. -/
+theorem selfDualAddChar_eq_one_of_mem {u : FiniteAdeleRing (𝓞 E) E}
+    (hu : u ∈ integralAdeles (𝓞 E) E) : W.selfDualAddChar u = 1 := by
+  simpa only [one_mul] using (W.forall_selfDualAddChar_mul_eq_one_iff 1).2 (one_mem _) u hu
+
+/-- **`ψ₀(conj z) = ψ₀(z)⁻¹`**: `ψ_f` is invariant under conjugation and `conj t = −t`. -/
+theorem selfDualAddChar_star (z : FiniteAdeleRing (𝓞 E) E) :
+    W.selfDualAddChar (star z) = (W.selfDualAddChar z)⁻¹ := by
+  have h : (W.scaleIdele : FiniteAdeleRing (𝓞 E) E) * star z = -star (W.scaleIdele * z) := by
+    rw [star_mul, skewAdjoint.mem_iff.1 W.scaleIdele_mem_skewAdjoint]
+    ring
+  rw [selfDualAddChar_apply, h, AddChar.map_neg_eq_inv, finiteAdeleAddChar_star,
+    selfDualAddChar_apply]
+
+/-- `ψ₀(½ z)² = ψ₀(z)`. -/
+theorem selfDualAddChar_half_mul_sq (z : FiniteAdeleRing (𝓞 E) E) :
+    W.selfDualAddChar (algebraMap E _ 2⁻¹ * z) ^ 2 = W.selfDualAddChar z := by
+  have h : algebraMap E (FiniteAdeleRing (𝓞 E) E) 2⁻¹ * z + algebraMap E _ 2⁻¹ * z = z := by
+    rw [← add_mul, ← map_add, ← one_div, add_halves, map_one, one_mul]
+  rw [sq, ← AddChar.map_add_eq_mul, h]
 
 /-! ### The real scales and the Hecke character `χ_𝔸` -/
 
@@ -320,6 +360,23 @@ theorem semichar_apply (z : n → FiniteAdeleRing (𝓞 E) E) :
 @[simp]
 theorem semichar_zero : W.semichar (0 : n → FiniteAdeleRing (𝓞 E) E) = 1 := by
   simp [semichar]
+
+/-- The semicharacter written with the dot product: `semi(z) = ψ₀(½ c₀ z* z)`. -/
+theorem semichar_eq_selfDualAddChar_dotProduct (z : n → FiniteAdeleRing (𝓞 E) E) :
+    W.semichar z = W.selfDualAddChar (algebraMap E _ (W.traceOne / 2) * (star z ⬝ᵥ z)) := by
+  simp only [semichar_apply, dotProduct, Pi.star_apply]
+
+/-- `semi(z)² = ψ₀(c₀ z* z)`. -/
+theorem semichar_sq (z : n → FiniteAdeleRing (𝓞 E) E) :
+    W.semichar z ^ 2 = W.selfDualAddChar (algebraMap E _ W.traceOne * (star z ⬝ᵥ z)) := by
+  rw [semichar_eq_selfDualAddChar_dotProduct, div_eq_inv_mul, map_mul (algebraMap E _), mul_assoc,
+    selfDualAddChar_half_mul_sq]
+
+/-- The semicharacter is continuous. -/
+@[fun_prop, continuity]
+theorem continuous_semichar : Continuous (W.semichar (n := n)) := by
+  simp_rw [funext W.semichar_apply]
+  fun_prop
 
 end WeilData
 
