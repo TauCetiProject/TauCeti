@@ -45,6 +45,7 @@ inverse of `V`, a frame in the sense of displays.
   by the `p`-power map, in characteristic `p`.
 * `WittVector.frobeniusEquiv_symm_teichmuller` : `φ⁻¹ [r] = [r ^ (1 / p)]` for perfect `R`.
 * `WittVector.isFrobeniusLift_frobenius` : `φ x ≡ x ^ p` modulo `p` for perfect `R`.
+* `WittVector.frobenius_mem_span_natCast_self` : `φ x ∈ (p, x)` for perfect `R`.
 * `WittVector.frobeniusEquiv_symm_frobenius`, `WittVector.frobenius_frobeniusEquiv_symm` :
   `φ⁻¹ (φ x) = x` and `φ (φ⁻¹ x) = x` for perfect `R`, with `φ` written as `WittVector.frobenius`.
 * `WittVector.verschiebung_eq_frobeniusEquiv_symm_mul` : `V x = φ⁻¹ x * p` for perfect `R`.
@@ -175,6 +176,15 @@ theorem isFrobeniusLift_frobenius [PerfectRing R p] :
   ⟨fun x => Ideal.mem_span_singleton.1 <| by
     rw [← ker_constantCoeff, RingHom.mem_ker, map_sub, map_pow, constantCoeff_apply,
       constantCoeff_apply, coeff_frobenius_charP, sub_self]⟩
+
+/-- For a perfect ring of characteristic `p`, the Witt vector Frobenius carries every Witt vector
+`x` into the ideal `(p, x)`: `φ x ≡ x ^ p` modulo `p`, and `x ^ p` lies in `(x)`. -/
+theorem frobenius_mem_span_natCast_self [PerfectRing R p] (x : WittVector p R) :
+    frobenius x ∈ Ideal.span {(p : WittVector p R), x} := by
+  obtain ⟨y, hy⟩ := (isFrobeniusLift_frobenius p R).dvd_sub_pow x
+  refine Ideal.mem_span_pair.mpr ⟨y, x ^ (p - 1), ?_⟩
+  rw [← pow_succ, Nat.sub_add_cancel (Fact.out : p.Prime).one_le]
+  linear_combination -hy
 
 /-- For a perfect ring of characteristic `p`, the Verschiebung is `p` times the inverse of the
 Frobenius: `V x = φ⁻¹ x * p`. -/
