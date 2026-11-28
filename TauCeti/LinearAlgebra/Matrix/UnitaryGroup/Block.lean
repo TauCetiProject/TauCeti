@@ -9,7 +9,6 @@ public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Logic.Equiv.Fin.Basic
-public import TauCeti.Data.Fin.Sum
 import TauCeti.Data.Fin.Basic
 
 /-!
@@ -196,12 +195,25 @@ section Succ
 
 variable {m : ℕ}
 
+private theorem finSumFinEquiv_trans_finCongr_symm_zero :
+    (finSumFinEquiv.trans (finCongr (add_comm 1 m))).symm 0 = Sum.inl 0 := by
+  rw [Equiv.symm_apply_eq]
+  ext
+  simp
+
+private theorem finSumFinEquiv_trans_finCongr_symm_succ (j : Fin m) :
+    (finSumFinEquiv.trans (finCongr (add_comm 1 m))).symm j.succ = Sum.inr j := by
+  rw [Equiv.symm_apply_eq]
+  ext
+  simp
+
 variable (α m) in
 /-- The **block-diagonal embedding** `(c, B) ↦ diag(c, B)` of `U(1) × U(m)` in `U(m + 1)`: the
 unitary scalar `c` occupies the corner indexed by `0`, and `B` the indices `Fin.succ`. It is the
 block matrix `Matrix.fromBlocks c 0 0 B`, reindexed along `Fin 1 ⊕ Fin m ≃ Fin (m + 1)`. -/
 def prodBlockSucc : unitary α × unitaryGroup (Fin m) α →* unitaryGroup (Fin (m + 1)) α where
-  toFun cB := ⟨reindex (TauCeti.finOneSumEquiv m) (TauCeti.finOneSumEquiv m)
+  toFun cB := ⟨reindex (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
+      (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
       (fromBlocks (diagonal fun _ ↦ (cB.1 : α)) 0 0 (cB.2 : Matrix _ _ α)),
     submatrix_equiv_mem_unitary.2 (fromBlocks_zero_zero_mem_unitary_iff.2
       ⟨diagonal_mem_unitary.2 (Pi.const_mem_unitary_iff.2 cB.1.property), cB.2.property⟩)⟩
@@ -215,30 +227,37 @@ def prodBlockSucc : unitary α × unitaryGroup (Fin m) α →* unitaryGroup (Fin
 
 theorem coe_prodBlockSucc (cB : unitary α × unitaryGroup (Fin m) α) :
     (prodBlockSucc α m cB : Matrix (Fin (m + 1)) (Fin (m + 1)) α) =
-      reindex (TauCeti.finOneSumEquiv m) (TauCeti.finOneSumEquiv m)
+      reindex (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
+        (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
         (fromBlocks (diagonal fun _ ↦ (cB.1 : α)) 0 0 (cB.2 : Matrix _ _ α)) :=
   (rfl)
 
 @[simp]
 theorem prodBlockSucc_apply_zero_zero (cB : unitary α × unitaryGroup (Fin m) α) :
     (prodBlockSucc α m cB : Matrix (Fin (m + 1)) (Fin (m + 1)) α) 0 0 = cB.1 := by
-  simp [coe_prodBlockSucc]
+  rw [coe_prodBlockSucc, reindex_apply, submatrix_apply, finSumFinEquiv_trans_finCongr_symm_zero,
+    fromBlocks_apply₁₁, diagonal_apply_eq]
 
 @[simp]
 theorem prodBlockSucc_apply_zero_succ (cB : unitary α × unitaryGroup (Fin m) α) (j : Fin m) :
     (prodBlockSucc α m cB : Matrix (Fin (m + 1)) (Fin (m + 1)) α) 0 j.succ = 0 := by
-  simp [coe_prodBlockSucc]
+  rw [coe_prodBlockSucc, reindex_apply, submatrix_apply, finSumFinEquiv_trans_finCongr_symm_zero,
+    finSumFinEquiv_trans_finCongr_symm_succ, fromBlocks_apply₁₂]
+  rfl
 
 @[simp]
 theorem prodBlockSucc_apply_succ_zero (cB : unitary α × unitaryGroup (Fin m) α) (i : Fin m) :
     (prodBlockSucc α m cB : Matrix (Fin (m + 1)) (Fin (m + 1)) α) i.succ 0 = 0 := by
-  simp [coe_prodBlockSucc]
+  rw [coe_prodBlockSucc, reindex_apply, submatrix_apply, finSumFinEquiv_trans_finCongr_symm_zero,
+    finSumFinEquiv_trans_finCongr_symm_succ, fromBlocks_apply₂₁]
+  rfl
 
 @[simp]
 theorem prodBlockSucc_apply_succ_succ (cB : unitary α × unitaryGroup (Fin m) α) (i j : Fin m) :
     (prodBlockSucc α m cB : Matrix (Fin (m + 1)) (Fin (m + 1)) α) i.succ j.succ =
       (cB.2 : Matrix (Fin m) (Fin m) α) i j := by
-  simp [coe_prodBlockSucc]
+  rw [coe_prodBlockSucc, reindex_apply, submatrix_apply, finSumFinEquiv_trans_finCongr_symm_succ,
+    finSumFinEquiv_trans_finCongr_symm_succ, fromBlocks_apply₂₂]
 
 /-- The block-diagonal embedding of `U(1) × U(m)` in `U(m + 1)` is injective. -/
 theorem prodBlockSucc_injective : Function.Injective (prodBlockSucc α m) := by
@@ -272,14 +291,15 @@ theorem mem_range_prodBlockSucc_iff {A : unitaryGroup (Fin (m + 1)) α} :
           rw [mul_comm (A.val 0 0), hc, one_mul]
       _ = 0 := by rw [mul_assoc, h, mul_zero]
   let B : Matrix (Fin m) (Fin m) α := fun i j ↦ A.val i.succ j.succ
-  have hAB : A.val = reindex (TauCeti.finOneSumEquiv m) (TauCeti.finOneSumEquiv m)
+  have hAB : A.val = reindex (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
+      (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
       (fromBlocks (diagonal fun _ ↦ A.val 0 0) 0 0 B) := by
     ext p q
-    refine Fin.cases ?_ (fun i ↦ ?_) p <;> refine Fin.cases ?_ (fun j ↦ ?_) q
-    · simp
-    · simp [hrow]
-    · simp [hA]
-    · simp; simp [B]
+    refine Fin.cases ?_ (fun i ↦ ?_) p <;> refine Fin.cases ?_ (fun j ↦ ?_) q <;>
+      simp only [reindex_apply, submatrix_apply, finSumFinEquiv_trans_finCongr_symm_zero,
+        finSumFinEquiv_trans_finCongr_symm_succ, fromBlocks_apply₁₁, fromBlocks_apply₁₂,
+        fromBlocks_apply₂₁, fromBlocks_apply₂₂, diagonal_apply_eq] <;>
+      first | rfl | exact hrow j | exact hA i
   have hB : B ∈ unitaryGroup (Fin m) α :=
     ((reindex_fromBlocks_zero_zero_mem_unitary_iff _).1 (hAB ▸ A.property)).2
   exact ⟨(⟨A.val 0 0, Unitary.mem_iff_star_mul_self.2 hc⟩, ⟨B, hB⟩), Subtype.ext hAB.symm⟩

@@ -282,7 +282,7 @@ theorem mkOfFintype_diagGL_mulSingle (i : ι) (a : Aˣ) :
       fromBlocksGL (GeneralLinearGroup.scalar {j // j = i} a, 1) := by
     refine Units.ext ?_
     ext (⟨j, rfl⟩ | ⟨j, hj⟩) (⟨l, hl⟩ | ⟨l, hl⟩) <;>
-      simp_all [Matrix.one_apply, Ne.symm]
+      simp_all [Pi.mulSingle_apply, Matrix.one_apply, Matrix.diagonal_apply, Ne.symm]
   rw [← mkOfFintype_reindexGL (Equiv.sumCompl (· = i)).symm, hblock,
     mkOfFintype_fromBlocksGL_one,
     mkOfFintype_eq_mk_reindexGL (Equiv.ofUnique {j // j = i} (Fin 1)), ofUnits_apply]

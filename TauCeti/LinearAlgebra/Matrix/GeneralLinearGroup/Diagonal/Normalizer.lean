@@ -30,7 +30,6 @@ Weyl group of the corresponding coordinate root datum with the same permutation 
   relabels both matrix indices.
 * `TauCeti.permutationGL_mul_mul_inv`: conjugation by a permutation matrix is reindexing along
   the permutation, `Equiv.reindexGL`.
-* `Equiv.reindexGL_diagGL`: reindexing an invertible diagonal matrix relabels its diagonal entries.
 * `TauCeti.map_permutationGL`: a ring homomorphism maps permutation matrices to permutation
   matrices.
 * `TauCeti.det_permutationGL`: the determinant of a permutation matrix is the sign of the
@@ -519,18 +518,3 @@ end IsCancelMulZero
 end
 
 end TauCeti
-
-namespace Equiv
-
-open TauCeti
-
-/-- Reindexing an invertible diagonal matrix relabels its diagonal entries along `e.symm`. -/
-@[simp]
-theorem reindexGL_diagGL {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
-    {k : Type*} [Semiring k] (e : ι ≃ κ) (d : ι → kˣ) :
-    e.reindexGL k (diagGL d) = diagGL (d ∘ e.symm) := by
-  apply Units.ext
-  rw [Equiv.coe_reindexGL, diagGL_coe, diagGL_coe, Matrix.submatrix_diagonal_equiv _ e.symm]
-  rfl
-
-end Equiv

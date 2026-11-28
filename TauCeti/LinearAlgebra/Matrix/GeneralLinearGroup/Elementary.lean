@@ -86,8 +86,6 @@ pairs of coordinates, carries every vector to a multiple of a standard basis vec
   corner embeddings into `GL (m ⊕ k) A` preserve elementary matrices.
 * `Equiv.reindexGL_sumAssoc_fromBlocksGL`, `Equiv.reindexGL_sumCongr_fromBlocksGL`: reindexing
   block diagonal matrices along `Equiv.sumAssoc` and `Equiv.sumCongr`.
-* `TauCeti.fromBlocksGL_diagGL`: the block diagonal sum of two diagonal invertible matrices is a
-  diagonal invertible matrix.
 * `Matrix.upperBlockGL_single`, `Matrix.lowerBlockGL_single`: a block unipotent matrix with a
   single nonzero entry is an elementary matrix.
 * `Matrix.upperBlockGL_mem_elementarySubgroup`, `Matrix.lowerBlockGL_mem_elementarySubgroup`:
@@ -284,15 +282,6 @@ def fromBlocksGL : GL m A × GL k A →* GL (m ⊕ k) A where
 theorem coe_fromBlocksGL (u : GL m A × GL k A) :
     (fromBlocksGL u : Matrix (m ⊕ k) (m ⊕ k) A) = fromBlocks u.1 0 0 u.2 :=
   (rfl)
-
-/-- The block diagonal sum of two invertible diagonal matrices is the diagonal matrix of the
-combined diagonal entries. -/
-@[simp]
-theorem fromBlocksGL_diagGL (d₁ : m → Aˣ) (d₂ : k → Aˣ) :
-    fromBlocksGL (diagGL d₁, diagGL d₂) = diagGL (Sum.elim d₁ d₂) := by
-  apply Units.ext
-  rw [coe_fromBlocksGL, diagGL_coe, diagGL_coe, diagGL_coe, Matrix.fromBlocks_diagonal]
-  exact congrArg Matrix.diagonal (Sum.comp_elim (Units.val : Aˣ → A) d₁ d₂).symm
 
 /-- The block diagonal homomorphism is injective. -/
 theorem fromBlocksGL_injective :

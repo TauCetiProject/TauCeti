@@ -12,7 +12,6 @@ public import TauCeti.Data.Set.PowersetCard
 
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Tactic.FinCases
-import TauCeti.Data.Fin.Sum
 import TauCeti.Data.Finset.Sort
 import TauCeti.GroupTheory.Perm.Inversion
 import TauCeti.Order.Hom.Basic
@@ -142,14 +141,26 @@ theorem orderEmbOfFin_permOfDisjoint_singleton_erase (i : I) (s : Finset I) {n :
     (Set.powersetCard.disjUnion hdisj).val.orderEmbOfFin (Set.powersetCard.disjUnion hdisj).prop
       (Set.powersetCard.permOfDisjoint hdisj ((finCongr (Nat.add_comm 1 n)).symm j)) =
     (Fin.cons i ((s.erase i).orderEmbOfFin hn) : Fin (n + 1) → I) j := by
-  rw [orderEmbOfFin_permOfDisjoint, ← Equiv.symm_trans_apply, ← TauCeti.finOneSumEquiv]
+  rw [orderEmbOfFin_permOfDisjoint]
   cases j using Fin.cases with
   | zero =>
-      rw [TauCeti.finOneSumEquiv_symm_zero, Fin.cons_zero, Sum.elim_inl]
+      have hzero : finSumFinEquiv.symm ((finCongr (Nat.add_comm 1 n)).symm 0) =
+          Sum.inl (0 : Fin 1) := by
+        apply finSumFinEquiv.injective
+        apply Fin.ext
+        rfl
+      rw [hzero, Fin.cons_zero, Sum.elim_inl]
       -- The unique increasing enumeration of a singleton is constant at its element.
       exact Finset.orderEmbOfFin_singleton i 0
   | succ q =>
-      rw [TauCeti.finOneSumEquiv_symm_succ, Fin.cons_succ, Sum.elim_inr]
+      have hsucc : finSumFinEquiv.symm ((finCongr (Nat.add_comm 1 n)).symm q.succ) =
+          Sum.inr q := by
+        apply finSumFinEquiv.injective
+        rw [finSumFinEquiv.apply_symm_apply]
+        apply Fin.ext
+        simp
+        omega
+      rw [hsucc, Fin.cons_succ, Sum.elim_inr]
 
 /-- The shuffle of the singleton `{i}` and `s.erase i`, in the presentation `Fin (n + 1)`, is the
 inverse cycle moving the position of `i` in the increasing enumeration of `s` to the front. -/

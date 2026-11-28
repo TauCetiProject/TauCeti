@@ -246,20 +246,23 @@ theorem isOrientationPreservingAt_piCons_torusOrientation (p : Fin (m + 1) → �
       (torusOrientation p)
       (Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) n) x := by
   -- The product of the unit vector of the circle and the coordinate basis, the circle first.
-  let b := ((Module.Basis.singleton (Fin 1) ℝ).prod (Pi.basisFun ℝ (Fin m))).reindex
-    (TauCeti.finOneSumEquiv m)
-  -- The differential prepends the circle component, so it sends `b` to the coordinate basis.
+  let b₀ := ((Module.Basis.singleton (Fin 1) ℝ).prod (Pi.basisFun ℝ (Fin m))).reindex
+    finSumFinEquiv
+  -- The differential prepends the circle component, so it sends `b₀`, read in degree `m + 1`, to
+  -- the coordinate basis.
+  have hb (i : Fin (m + 1)) :
+      Fin.cons (α := fun _ ↦ ℝ) (b₀.reindex (finCongr (add_comm 1 m)) i).1
+        (b₀.reindex (finCongr (add_comm 1 m)) i).2 = Pi.basisFun ℝ (Fin (m + 1)) i := by
+    simpa only [b₀, Module.Basis.reindex_apply, Equiv.symm_trans_apply] using
+      Module.Basis.cons_singleton_prod_basisFun_reindex_finSumFinEquiv_trans_finCongr (R := ℝ) i
   -- The tangent spaces are the model spaces `ℝ`, `Fin m → ℝ` and `Fin (m + 1) → ℝ`, so these
   -- bases are tangent bases; both are positive, by the coordinate description of the orientations.
-  refine (isOrientationPreservingAt_iff_of_basis b (Pi.basisFun ℝ (Fin (m + 1)))
+  refine (isOrientationPreservingAt_iff_of_basis (b₀.reindex (finCongr (add_comm 1 m)))
+    (Pi.basisFun ℝ (Fin (m + 1)))
     fun i ↦ (Diffeomorph.mfderiv_piCons_apply (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) n x
-      _ _).trans (Module.Basis.cons_singleton_prod_basisFun_reindex_finOneSumEquiv i)).2
+      _ _).trans (hb i)).2
     (iff_of_true ?_ (orientationAt_torusOrientation p _).symm)
-  have hb : b = (((Module.Basis.singleton (Fin 1) ℝ).prod (Pi.basisFun ℝ (Fin m))).reindex
-      finSumFinEquiv).reindex (finCongr (add_comm 1 m)) :=
-    DFunLike.ext _ _ fun i ↦ by simp [b, TauCeti.finOneSumEquiv]
-  refine (congrArg Module.Basis.orientation hb).trans ?_
-  refine (Module.Basis.orientation_reindex _ (finCongr (add_comm 1 m))).trans ?_
+  refine (Module.Basis.orientation_reindex b₀ _).trans ?_
   rw [orientationAt_reindex]
   exact congrArg _ ((orientation_eq_orientationAt_prod_iff _ _
     (Module.Basis.singleton (Fin 1) ℝ) (Pi.basisFun ℝ (Fin m))).2

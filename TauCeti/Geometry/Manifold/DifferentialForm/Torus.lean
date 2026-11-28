@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.Instances.AddCircle.Torus
 public import TauCeti.Geometry.Manifold.MFDeriv.Pi
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Family
-import TauCeti.Data.Fin.Sum
 import TauCeti.LinearAlgebra.Basis.Fin
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
@@ -694,12 +693,11 @@ theorem mpullback_piCons_torusVolumeForm (p : Fin (m + 1) → ℝ) [∀ i, Fact 
   -- The product of the unit basis of `ℝ` and the coordinate basis of `Fin m → ℝ`, the circle
   -- first, indexed by `Fin (m + 1)`.
   let b := ((Module.Basis.singleton (Fin 1) ℝ).prod (Pi.basisFun ℝ (Fin m))).reindex
-    (TauCeti.finOneSumEquiv m)
+    (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
   have hb : ⇑b = fun r ↦
       Fin.append (fun i ↦ (Module.Basis.singleton (Fin 1) ℝ i, (0 : Fin m → ℝ)))
-        (fun j ↦ ((0 : ℝ), Pi.basisFun ℝ (Fin m) j)) (Fin.cast (add_comm 1 m).symm r) := by
-    simpa only [b, TauCeti.finOneSumEquiv] using
-      Module.Basis.coe_prod_reindex_finSumFinEquiv_trans_finCongr _ _ (Nat.one_add m)
+        (fun j ↦ ((0 : ℝ), Pi.basisFun ℝ (Fin m) j)) (Fin.cast (add_comm 1 m).symm r) :=
+    Module.Basis.coe_prod_reindex_finSumFinEquiv_trans_finCongr _ _ _
   refine Subtype.ext (funext fun q ↦ ?_)
   -- The differential of `Fin.cons` sends `b` to the coordinate basis of `Fin (m + 1) → ℝ`, so the
   -- left side takes the value `1` on `b`.
@@ -707,7 +705,7 @@ theorem mpullback_piCons_torusVolumeForm (p : Fin (m + 1) → ℝ) [∀ i, Fact 
       (fun i ↦ AddCircle (p i)) ∞) q (b i)) = Pi.basisFun ℝ (Fin (m + 1)) := funext fun i ↦
     (Diffeomorph.mfderiv_piCons_apply (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞ q
       (b i).1 (b i).2).trans
-      (Module.Basis.cons_singleton_prod_basisFun_reindex_finOneSumEquiv i)
+      (Module.Basis.cons_singleton_prod_basisFun_reindex_finSumFinEquiv_trans_finCongr i)
   have hL : (SmoothForm.mpullback _ (Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ))
       (fun i ↦ AddCircle (p i)) ∞).contMDiff (torusVolumeForm p)).val q b = 1 :=
     (SmoothForm.mpullback_apply _ _ _ q b).trans (by rw [hd, torusVolumeForm_apply_basisFun])
