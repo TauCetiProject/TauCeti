@@ -160,20 +160,6 @@ noncomputable def muConjBialgHom : baseChangeComplex →ₐc[ℂ] ℂ[T;T⁻¹] 
   (Bialgebra.TensorProduct.projectRight (R := ℂ) (H₁ := ℂ[T;T⁻¹]) (H₂ := ℂ[T;T⁻¹])).comp
     baseChangeComplexBialgEquiv.toBialgHom
 
-omit [Algebra ℝ R] [IsScalarTower ℝ ℂ R] in
-private lemma mapDomain_projectLeft (g : WithConv (ℂ[T;T⁻¹] →ₐ[ℂ] R)) :
-    BialgHom.mapDomain
-        (Bialgebra.TensorProduct.projectLeft (R := ℂ) (H₁ := ℂ[T;T⁻¹]) (H₂ := ℂ[T;T⁻¹])) g =
-      AffineGroup.Product.pointsMulEquiv.symm (g, 1) := by
-  rw [BialgHom.mapDomain_apply, AffineGroup.Product.mapDomain_projectLeft]
-
-omit [Algebra ℝ R] [IsScalarTower ℝ ℂ R] in
-private lemma mapDomain_projectRight (g : WithConv (ℂ[T;T⁻¹] →ₐ[ℂ] R)) :
-    BialgHom.mapDomain
-        (Bialgebra.TensorProduct.projectRight (R := ℂ) (H₁ := ℂ[T;T⁻¹]) (H₂ := ℂ[T;T⁻¹])) g =
-      AffineGroup.Product.pointsMulEquiv.symm ((1 : WithConv (ℂ[T;T⁻¹] →ₐ[ℂ] R)), g) := by
-  rw [BialgHom.mapDomain_apply, AffineGroup.Product.mapDomain_projectRight]
-
 /-- **Compatibility of `muBialgHom` with `mu` on points** over every commutative `ℂ`-algebra `R`
 with compatible `ℝ`-algebra structure. -/
 @[simp↓]
@@ -181,8 +167,8 @@ theorem baseChangeComplexPointsMulEquiv_mapDomain_muBialgHom
     (g : WithConv (ℂ[T;T⁻¹] →ₐ[ℂ] R)) :
     baseChangeComplexPointsMulEquiv R (BialgHom.mapDomain muBialgHom g) =
       mu R (MultiplicativeGroup.pointsMulEquiv g) := by
-  rw [muBialgHom, BialgHom.mapDomain_comp, MonoidHom.comp_apply, mapDomain_projectLeft,
-    mapDomain_baseChangeComplexBialgEquiv]
+  rw [muBialgHom, BialgHom.mapDomain_comp, MonoidHom.comp_apply, BialgHom.mapDomain_apply _ g,
+    AffineGroup.Product.mapDomain_projectLeft, mapDomain_baseChangeComplexBialgEquiv]
   apply (complexSplitting R).injective
   rw [MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply, complexSplitting_mu, map_one]
 
@@ -193,8 +179,8 @@ theorem baseChangeComplexPointsMulEquiv_mapDomain_muConjBialgHom
     (g : WithConv (ℂ[T;T⁻¹] →ₐ[ℂ] R)) :
     baseChangeComplexPointsMulEquiv R (BialgHom.mapDomain muConjBialgHom g) =
       muConj R (MultiplicativeGroup.pointsMulEquiv g) := by
-  rw [muConjBialgHom, BialgHom.mapDomain_comp, MonoidHom.comp_apply, mapDomain_projectRight,
-    mapDomain_baseChangeComplexBialgEquiv]
+  rw [muConjBialgHom, BialgHom.mapDomain_comp, MonoidHom.comp_apply, BialgHom.mapDomain_apply _ g,
+    AffineGroup.Product.mapDomain_projectRight, mapDomain_baseChangeComplexBialgEquiv]
   apply (complexSplitting R).injective
   rw [MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply, complexSplitting_muConj, map_one]
 

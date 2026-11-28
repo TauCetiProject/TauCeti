@@ -200,7 +200,7 @@ variable (k k') [Module.Free k k'] [Module.Finite k k']
 /-- **The norm morphism `Res_{k'/k} 𝔾ₘ → 𝔾ₘ`**, as the underlying algebra map
 `k[T;T⁻¹] →ₐ[k] Res_{k'/k} k'[T;T⁻¹]` sending `T` to the norm of the universal point of
 `Res_{k'/k} 𝔾ₘ`. -/
-noncomputable def normHom : k[T;T⁻¹] →ₐ[k] Algebra.WeilRestriction k k' k'[T;T⁻¹] :=
+private noncomputable def normHom : k[T;T⁻¹] →ₐ[k] Algebra.WeilRestriction k k' k'[T;T⁻¹] :=
   laurentEval <| norm k k' _ <| Algebra.WeilRestriction.multiplicativeGroupPoints k k' _ <|
     toConv (AlgHom.id k _)
 
@@ -209,7 +209,7 @@ variable {k k'}
 /-- **The norm morphism on points.** For a point `f` of `Res_{k'/k} 𝔾ₘ` over a commutative
 `k`-algebra `R`, the point `f ∘ normHom` of `𝔾ₘ` is the norm of the unit of `k' ⊗[k] R`
 attached to `f`. -/
-theorem pointsMulEquiv_comp_normHom
+private theorem pointsMulEquiv_comp_normHom
     (f : WithConv (Algebra.WeilRestriction k k' k'[T;T⁻¹] →ₐ[k] R)) :
     MultiplicativeGroup.pointsMulEquiv (toConv (f.ofConv.comp (normHom k k'))) =
       norm k k' R (Algebra.WeilRestriction.multiplicativeGroupPoints k k' R f) := by
