@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 public import Mathlib.NumberTheory.Bertrand
 public import TauCeti.Data.Nat.Squarefree
+public import Mathlib.NumberTheory.PrimeCounting
 
 /-!
 # Products of distinct primes in `[x / 2, x]`
@@ -28,6 +29,11 @@ coefficient.
 ## Main results
 
 * `TauCeti.mediumPrimes_nonempty_iff`: there is a prime in `[x / 2, x]` exactly when `2 ≤ x`.
+* `TauCeti.mediumPrimes_union_primesLE`,
+  `TauCeti.primeCounting_le_card_mediumPrimes_add_primeCounting`,
+  `TauCeti.card_mediumPrimes_add_primeCounting_le_primeCounting_add_one`: the primes up to `x`
+  are those in `[x / 2, x]` together with those up to `x / 2`, so the number `k(x)` of primes in
+  `[x / 2, x]` satisfies `π(x) ≤ k(x) + π(x / 2) ≤ π(x) + 1`.
 * `TauCeti.mem_mediumPrimeProducts_iff_primeFactors`: `n ∈ N_m(x)` exactly when `n` is squarefree
   with `m` prime factors, all of them in `[x / 2, x]`.
 * `TauCeti.card_mediumPrimeProducts`: `#N_m(x)` is the binomial coefficient of the number of
@@ -91,6 +97,45 @@ theorem mediumPrimes_nonempty_iff : (mediumPrimes x).Nonempty ↔ 2 ≤ x := by
     calc (p : ℝ) ≤ 2 * (⌊x / 2⌋₊ : ℝ) := by exact_mod_cast hle
       _ ≤ 2 * (x / 2) := by gcongr; exact floor_le hx0
       _ = x := by ring
+
+/-- The primes up to `x` are the primes in `[x / 2, x]` together with the primes up to `x / 2`,
+for every real `x`. Only a prime equal to `x / 2` is in both sets. -/
+theorem mediumPrimes_union_primesLE (x : ℝ) :
+    mediumPrimes x ∪ primesLE ⌊x / 2⌋₊ = primesLE ⌊x⌋₊ := by
+  ext p
+  rw [mem_union, mem_mediumPrimes, mem_primesLE, mem_primesLE]
+  constructor
+  · rintro (⟨hp, -, hpx⟩ | ⟨hp2, hp⟩)
+    · exact ⟨le_floor hpx, hp⟩
+    · have h := (le_floor_iff' hp.ne_zero).1 hp2
+      have hp0 : (0 : ℝ) < p := mod_cast hp.pos
+      exact ⟨le_floor (by linarith), hp⟩
+  · rintro ⟨hpx, hp⟩
+    by_cases h : p ≤ ⌊x / 2⌋₊
+    · exact Or.inr ⟨h, hp⟩
+    · exact Or.inl ⟨hp, (lt_of_floor_lt (not_le.1 h)).le, (le_floor_iff' hp.ne_zero).1 hpx⟩
+
+/-- The closed interval `[x / 2, x]` contains at least `π(x) - π(x / 2)` primes, for every real
+`x`; in additive form, `π(x) ≤ #{p prime : x / 2 ≤ p ≤ x} + π(x / 2)`. -/
+theorem primeCounting_le_card_mediumPrimes_add_primeCounting (x : ℝ) :
+    primeCounting ⌊x⌋₊ ≤ #(mediumPrimes x) + primeCounting ⌊x / 2⌋₊ := by
+  rw [← primesLE_card_eq_primeCounting, ← primesLE_card_eq_primeCounting,
+    ← mediumPrimes_union_primesLE]
+  exact card_union_le _ _
+
+/-- Including the lower endpoint adds at most one prime to the count `π(x) - π(x / 2)` of the
+primes in `(x / 2, x]`, for every real `x`; in additive form,
+`#{p prime : x / 2 ≤ p ≤ x} + π(x / 2) ≤ π(x) + 1`. -/
+theorem card_mediumPrimes_add_primeCounting_le_primeCounting_add_one (x : ℝ) :
+    #(mediumPrimes x) + primeCounting ⌊x / 2⌋₊ ≤ primeCounting ⌊x⌋₊ + 1 := by
+  have key : ∀ c ∈ mediumPrimes x ∩ primesLE ⌊x / 2⌋₊, (c : ℝ) = x / 2 := fun c hc ↦ by
+    obtain ⟨hc1, hc2⟩ := mem_inter.1 hc
+    obtain ⟨hc2, hcp⟩ := mem_primesLE.1 hc2
+    exact le_antisymm ((le_floor_iff' hcp.ne_zero).1 hc2) (mem_mediumPrimes.1 hc1).2.1
+  rw [← primesLE_card_eq_primeCounting, ← primesLE_card_eq_primeCounting,
+    ← card_union_add_card_inter, mediumPrimes_union_primesLE]
+  exact Nat.add_le_add_left (card_le_one.2 fun a ha b hb ↦
+    Nat.cast_injective (R := ℝ) ((key a ha).trans (key b hb).symm)) _
 
 /-! ### Products of distinct primes in `[x / 2, x]` -/
 
