@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Binary
-public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.ParityRetract
 public import TauCeti.Combinatorics.SimpleGraph.CutMinimal
+public import TauCeti.GroupTheory.Perm.ParityRetract
 import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!

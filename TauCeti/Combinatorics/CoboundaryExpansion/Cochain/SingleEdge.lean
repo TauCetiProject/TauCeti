@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Invariance
-public import TauCeti.GroupTheory.Perm.MovedNorm
 import TauCeti.Order.Hom.PowersetCard
 
 /-!
@@ -17,17 +16,14 @@ Cost, defect, and gauge-distance formulas for `TauCeti.Cochain.singleEdge`:
 * `TauCeti.Cochain.cost_singleEdge_one`, `TauCeti.Cochain.cost_singleEdge_complete_one`: under the
   trivial gauge `1`, the cost of `singleEdge X u₀ v₀ g` along an edge `h : X.Adj u₀ v₀` (and in
   particular on `complete V` for `u₀ ≠ v₀`) equals `ℓ g`.
-* `TauCeti.Cochain.defect_singleEdge`, `TauCeti.Cochain.defect_singleEdge_complete`,
-  `TauCeti.Cochain.defect_movedNorm_singleEdge`: for any group norm `ℓ`, the defect of
-  `singleEdge X u₀ v₀ g` along `h : X.Adj u₀ v₀` equals
+* `TauCeti.Cochain.defect_singleEdge`, `TauCeti.Cochain.defect_singleEdge_complete`: for any group
+  norm `ℓ`, the defect of `singleEdge X u₀ v₀ g` along `h : X.Adj u₀ v₀` equals
   `#(X.triangles.filter fun t => {u₀, v₀} ⊆ t) * ℓ g`; on `complete V` (`u₀ ≠ v₀`) this
-  evaluates to `((Fintype.card V - 2 : ℕ) : ℝ) * ℓ g` and for a transposition under `movedNorm α`
-  to `2 * (Fintype.card V - 2 : ℕ)`.
-* `TauCeti.Cochain.gaugeDist_singleEdge`, `TauCeti.Cochain.gaugeDist_singleEdge_of_three_le_card`,
-  `TauCeti.Cochain.gaugeDist_movedNorm_singleEdge_of_three_le_card`: under a conjugation-invariant
-  group norm `ℓ`, the gauge distance of `singleEdge X u₀ v₀ g` equals `ℓ g` whenever `(u₀, v₀)`
-  belongs to a filled triangle `(u₀, v₀, w)` of `X`, and in particular on `complete V` whenever
-  `3 ≤ Fintype.card V` and `u₀ ≠ v₀` (evaluating to `2` for a transposition under `movedNorm α`).
+  evaluates to `((Fintype.card V - 2 : ℕ) : ℝ) * ℓ g`.
+* `TauCeti.Cochain.gaugeDist_singleEdge`, `TauCeti.Cochain.gaugeDist_singleEdge_of_three_le_card`:
+  under a conjugation-invariant group norm `ℓ`, the gauge distance of `singleEdge X u₀ v₀ g`
+  equals `ℓ g` whenever `(u₀, v₀)` belongs to a filled triangle `(u₀, v₀, w)` of `X`, and in
+  particular on `complete V` whenever `3 ≤ Fintype.card V` and `u₀ ≠ v₀`.
 -/
 
 public section
@@ -200,27 +196,6 @@ theorem gaugeDist_singleEdge_of_three_le_card {ℓ : GroupNorm G}
     (by rw [ENat.card_eq_coe_fintype_card]; exact_mod_cast hV) u₀ v₀
   exact gaugeDist_singleEdge hℓ ((adj_complete u₀ v₀).mpr huv)
     ((adj_complete v₀ w).mpr hwv.symm) ((adj_complete w u₀).mpr hwu) g
-
-section MovedNorm
-
-variable {α : Type*} [Fintype α] [DecidableEq α]
-
-/-- On `TwoComplex.complete V`, the `Equiv.Perm.movedNorm α` defect of `Cochain.singleEdge` at any
-distinct vertices `u ≠ v` and transposition `t` equals `2 * (Fintype.card V - 2 : ℕ)`. -/
-theorem defect_movedNorm_singleEdge {u v : V} (huv : u ≠ v) {t : Equiv.Perm α} (ht : t.IsSwap) :
-    (singleEdge (TwoComplex.complete V) u v t).defect (Equiv.Perm.movedNorm α) =
-      2 * ((Fintype.card V - 2 : ℕ) : ℝ) := by
-  rw [defect_singleEdge_complete _ huv t, ht.movedNorm, mul_comm]
-
-/-- On `TwoComplex.complete V` with `3 ≤ Fintype.card V`, the `Equiv.Perm.movedNorm α` gauge
-distance of `Cochain.singleEdge` at `u ≠ v` and any transposition `t` equals `2`. -/
-theorem gaugeDist_movedNorm_singleEdge_of_three_le_card (hV : 3 ≤ Fintype.card V) {u v : V}
-    (huv : u ≠ v) {t : Equiv.Perm α} (ht : t.IsSwap) :
-    (singleEdge (TwoComplex.complete V) u v t).gaugeDist (Equiv.Perm.movedNorm α) = 2 := by
-  rw [gaugeDist_singleEdge_of_three_le_card Equiv.Perm.isConjInvariant_movedNorm hV huv t,
-    ht.movedNorm]
-
-end MovedNorm
 
 end SingleEdge
 

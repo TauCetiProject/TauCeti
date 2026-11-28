@@ -19,8 +19,9 @@ This file supplements `Mathlib.Combinatorics.SimpleGraph.Basic` with round-trip 
 * `SimpleGraph.fromRel_adj_self` and `SimpleGraph.fromRel_ite_ne_one`: recovering a simple graph
   from its own adjacency relation or from a `{1, t}` edge indicator (`t ≠ 1`) via
   `SimpleGraph.fromRel`.
-* `SimpleGraph.symmDiff_adj` and `SimpleGraph.edgeSet_symmDiff`: adjacency in `G₁ ∆ G₂` is given by
-  `Xor`, and `(G₁ ∆ G₂).edgeSet = G₁.edgeSet ∆ G₂.edgeSet`.
+* `SimpleGraph.symmDiff_adj`, `SimpleGraph.edgeSet_symmDiff`, `SimpleGraph.SymmDiff.adjDecidable`,
+  and `SimpleGraph.xor_symmDiff_adj`: adjacency, decidable adjacency, edge set, and triple
+  edge-parity in `G₁ ∆ G₂`.
 -/
 
 public section
@@ -52,10 +53,24 @@ theorem symmDiff_adj (G₁ G₂ : SimpleGraph V) (u v : V) :
     (G₁ ∆ G₂).Adj u v ↔ Xor (G₁.Adj u v) (G₂.Adj u v) := by
   simp only [symmDiff_def, sup_adj, sdiff_adj, Xor]
 
+/-- Adjacency in a symmetric difference of graphs with decidable adjacency is decidable. -/
+instance SymmDiff.adjDecidable (G H : SimpleGraph V) [DecidableRel G.Adj] [DecidableRel H.Adj] :
+    DecidableRel (G ∆ H).Adj :=
+  inferInstanceAs <| DecidableRel fun u v ↦ Xor (G.Adj u v) (H.Adj u v)
+
 /-- The edge set of `G₁ ∆ G₂` is the symmetric difference of their edge sets. -/
 @[simp]
 theorem edgeSet_symmDiff (G₁ G₂ : SimpleGraph V) :
     (G₁ ∆ G₂).edgeSet = G₁.edgeSet ∆ G₂.edgeSet := by
   simp only [symmDiff_def, edgeSet_sup, edgeSet_sdiff]
+
+/-- Around any three vertices `u`, `v`, `w`, the parity of adjacent pairs among `(u, v)`, `(v, w)`,
+and `(w, u)` in `G₁ ∆ G₂` is the `Xor` of those parities in `G₁` and `G₂`. -/
+theorem xor_symmDiff_adj (G₁ G₂ : SimpleGraph V) (u v w : V) :
+    Xor ((G₁ ∆ G₂).Adj u v) (Xor ((G₁ ∆ G₂).Adj v w) ((G₁ ∆ G₂).Adj w u)) ↔
+      Xor (Xor (G₁.Adj u v) (Xor (G₁.Adj v w) (G₁.Adj w u)))
+        (Xor (G₂.Adj u v) (Xor (G₂.Adj v w) (G₂.Adj w u))) := by
+  simp only [symmDiff_adj]
+  grind
 
 end SimpleGraph

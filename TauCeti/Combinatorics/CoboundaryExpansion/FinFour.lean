@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.SpecificGroups.Alternating
 public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.SimpleGraph
 public import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.ParityRetract
 import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
 import TauCeti.Combinatorics.CoboundaryExpansion.Swap.Gauge
 import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Complete

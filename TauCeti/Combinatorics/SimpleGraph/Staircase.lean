@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Basic.Real.Basic
 public import TauCeti.Combinatorics.SimpleGraph.CutMinimal
-public import TauCeti.Combinatorics.SimpleGraph.OddTriple
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Finset.Fin
 import Mathlib.Tactic.Linarith

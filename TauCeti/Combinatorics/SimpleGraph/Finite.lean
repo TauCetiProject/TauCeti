@@ -38,11 +38,12 @@ an interval of the Boolean lattice `Finset (Sym2 V)`, where the finset interval 
   and cardinality of a single-edge graph `SimpleGraph.edge u v` (`u ≠ v`).
 * `SimpleGraph.card_edgeFinset_congr`, `SimpleGraph.card_edgeFinset_congr_of_eq` — `#G.edgeFinset`
   is preserved under graph equality and independent of the `Fintype G.edgeSet` instance.
-* `SimpleGraph.edgeFinset_inter_sym2_triple`, `SimpleGraph.edgeFinset_inter_sym2_triple_subset`,
-  and `SimpleGraph.edgeFinset_inter_sym2_triple_of_adj_of_not_adj` — edges of `G` spanned by a
-  vertex triple `{a, b, c}`.
-* `SimpleGraph.edgeFinset_symmDiff` — the edge finset of `G₁ ∆ G₂` is
-  `G₁.edgeFinset ∆ G₂.edgeFinset`.
+* `SimpleGraph.edgeFinset_inter_sym2_triple`, `SimpleGraph.card_edgeFinset_inter_sym2_triple`,
+  `SimpleGraph.edgeFinset_inter_sym2_triple_subset`, and
+  `SimpleGraph.edgeFinset_inter_sym2_triple_of_adj_of_not_adj` — edges of `G` spanned by a vertex
+  triple `{a, b, c}`.
+* `SimpleGraph.SymmDiff.edgeSetFintype` and `SimpleGraph.edgeFinset_symmDiff` — finite edge-set
+  instance and edge finset of `G₁ ∆ G₂`.
 * `SimpleGraph.degree_sup_of_disjoint` — degrees add over the union of edge-disjoint graphs.
 * `SimpleGraph.prod_filter_le_le_eq_prod_Icc_edgeFinset` and its additive version
   `SimpleGraph.sum_filter_le_le_eq_sum_Icc_edgeFinset` — a product (sum) over the graphs between
@@ -170,6 +171,17 @@ theorem edgeFinset_inter_sym2_triple [DecidableEq V] {G : SimpleGraph V} [Fintyp
       rcases hx' with rfl | rfl | rfl <;> rcases hy' with rfl | rfl | rfl <;> simp_all
     · grind
 
+/-- The edges spanned by three distinct vertices are counted pair by pair. -/
+theorem card_edgeFinset_inter_sym2_triple [DecidableEq V] {G : SimpleGraph V} [Fintype G.edgeSet]
+    [DecidableRel G.Adj] {a b c : V} (hab : a ≠ b) (hac : a ≠ c) (hbc : b ≠ c) :
+    #(G.edgeFinset ∩ ({a, b, c} : Finset V).sym2) =
+      (if G.Adj a b then 1 else 0) + (if G.Adj a c then 1 else 0) +
+        (if G.Adj b c then 1 else 0) := by
+  rw [edgeFinset_inter_sym2_triple, card_filter, sum_insert, sum_insert, sum_singleton]
+  · simp [add_assoc]
+  · simp [hab, hbc.symm]
+  · simp [hbc, hab.symm, hac]
+
 /-- Every edge of `G` spanned by `{a, b, c}` is one of `s(a, b)`, `s(a, c)`, `s(b, c)`. -/
 theorem edgeFinset_inter_sym2_triple_subset [DecidableEq V] {G : SimpleGraph V}
     [Fintype G.edgeSet] (a b c : V) :
@@ -191,6 +203,13 @@ theorem edgeFinset_inter_sym2_triple_of_adj_of_not_adj [DecidableEq V] {G : Simp
       (fun h ↦ h.elim (fun h' ↦ (hac (G.mem_edgeSet.mp (h' ▸ he))).elim)
         (fun h' ↦ (hbc (G.mem_edgeSet.mp (h' ▸ he))).elim)),
     fun h ↦ ⟨Or.inl h, h ▸ G.mem_edgeSet.mpr hab⟩⟩
+
+/-- The edge set of `G₁ ∆ G₂` is finite whenever both `G₁.edgeSet` and `G₂.edgeSet` are finite. -/
+@[instance_reducible, expose]
+def SymmDiff.edgeSetFintype (G₁ G₂ : SimpleGraph V) [DecidableEq V]
+    [Fintype G₁.edgeSet] [Fintype G₂.edgeSet] : Fintype (G₁ ∆ G₂).edgeSet :=
+  Fintype.ofFinset (G₁.edgeFinset ∆ G₂.edgeFinset) fun e ↦ by
+    rw [mem_symmDiff, mem_edgeFinset, mem_edgeFinset, edgeSet_symmDiff, Set.mem_symmDiff]
 
 /-- The edge finset of `G₁ ∆ G₂` is the symmetric difference of their edge finsets. -/
 @[simp]

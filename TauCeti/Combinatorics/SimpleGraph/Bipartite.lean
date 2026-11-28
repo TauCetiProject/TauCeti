@@ -9,7 +9,6 @@ public import Mathlib.Combinatorics.SimpleGraph.Coloring.Constructions
 public import Mathlib.Combinatorics.SimpleGraph.VertexCover
 public import Mathlib.Logic.Equiv.Bool
 import TauCeti.Combinatorics.SimpleGraph.Basic
-import TauCeti.Combinatorics.SimpleGraph.SymmDiff
 
 /-!
 # Bipartite restrictions and two-colourings

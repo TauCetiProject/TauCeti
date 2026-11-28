@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Clique
-public import Mathlib.Combinatorics.SimpleGraph.Finite
+public import TauCeti.Combinatorics.SimpleGraph.Basic
 public import TauCeti.Combinatorics.SimpleGraph.Bipartite
-public import TauCeti.Combinatorics.SimpleGraph.SymmDiff
-import Mathlib.Combinatorics.Enumerative.DoubleCounting
-import Mathlib.Combinatorics.SimpleGraph.DegreeSum
 import Mathlib.Data.Finset.Sym
 import Mathlib.Tactic.Ring
 import TauCeti.Combinatorics.SimpleGraph.Degree
@@ -57,17 +54,6 @@ variable {V : Type*} [DecidableEq V]
 section EdgeSet
 
 variable {G : SimpleGraph V} [Fintype G.edgeSet]
-
-/-- The edges spanned by three distinct vertices are counted pair by pair. -/
-theorem card_edgeFinset_inter_sym2_triple [DecidableRel G.Adj] {a b c : V} (hab : a ≠ b)
-    (hac : a ≠ c) (hbc : b ≠ c) :
-    #(G.edgeFinset ∩ ({a, b, c} : Finset V).sym2) =
-      (if G.Adj a b then 1 else 0) + (if G.Adj a c then 1 else 0) +
-        (if G.Adj b c then 1 else 0) := by
-  rw [edgeFinset_inter_sym2_triple, card_filter, sum_insert, sum_insert, sum_singleton]
-  · simp [add_assoc]
-  · simp [hab, hbc.symm]
-  · simp [hbc, hab.symm, hac]
 
 variable [Fintype V]
 
