@@ -281,6 +281,17 @@ theorem isPullback_relativeProjCover (U : X.AffineZariskiSite) :
       (A.relativeProjCover.f U) U.toOpens.ι A.relativeProjToBase :=
   A.relativeProjGluingData.isPullback_natTrans_ι_toBase U
 
+/-- Over an affine open `U`, a morphism property that respects isomorphisms holds for the
+restricted relative `Proj` projection exactly when it holds for the chart's coefficient
+projection. -/
+theorem relativeProjToBase_morphismRestrict_iff (P : MorphismProperty Scheme.{u})
+    [P.RespectsIso] {U : X.Opens} (hU : IsAffineOpen U) :
+    P (A.relativeProjToBase ∣_ U) ↔ P (Proj.toSpecCoeff (A.gradedSectionsGrading U)) := by
+  have h := A.isPullback_relativeProjCover ⟨U, hU⟩
+  have h' := isPullback_morphismRestrict A.relativeProjToBase U
+  rw [← P.cancel_left_of_respectsIso (h.isoIsPullback _ _ h').hom,
+    h.isoIsPullback_hom_fst _ _ h', P.cancel_right_of_respectsIso]
+
 /-- Over an affine open `U` of `X`, the relative `Proj` is `Proj (⨁ n, Γ(Aₙ, U))`, as the base
 change of its structure morphism along `U.property.fromSpec : Spec Γ(X, U) ⟶ X`. -/
 theorem isPullback_relativeProjCover_fromSpec
