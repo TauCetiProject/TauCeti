@@ -15,6 +15,7 @@ import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Fredholm.Criteria
 import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.Holder.Normed
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
 
 /-!
 # The Cauchy–Riemann operator with rotating-line boundary values is Fredholm
@@ -56,7 +57,7 @@ value `u(1)` itself (`TauCeti.ofReal_re_closureExtend_of_mem_rotatingLineSubspac
 
 The same holds in every rank: for a finite type `ι`, the operator `u ↦ (∂u/∂(conj z), Re u(1))`
 is a Banach isomorphism from the maps `u ∈ C^{1,α}(D, ι → ℂ)` with boundary values in `ℝ^ι`
-(`TauCeti.rotatingLinePiSubspace ι 0 α`) onto `C^{0,α}(D, ι → ℂ) × ℝ^ι`
+(`TauCeti.rotatingLinePiSubspace` with `k = 0`) onto `C^{0,α}(D, ι → ℂ) × ℝ^ι`
 (`TauCeti.rotatingLinePiZeroEvalEquiv`), coordinate by coordinate. This is the linearization at a
 constant disc `u ≡ x` of the Cauchy–Riemann equation for discs in `ℂⁿ` with boundary on a
 Lagrangian or totally real submanifold `L` with `T_x L = ℝⁿ`, together with evaluation at the
@@ -142,24 +143,6 @@ theorem rotatingLineConjWirtingerDerivL_surjective (hk : -1 ≤ k) (hα0 : 0 < �
 
 /-! ### The kernel -/
 
-/-- An element of the kernel of the Cauchy–Riemann operator on `X_k` extends to a function
-holomorphic on the open disc and continuous on its closure. -/
-private theorem diffContOnCl_closureExtend_of_mem_ker {u : rotatingLineSubspace k α}
-    (hu : u ∈ (rotatingLineConjWirtingerDerivL k α).ker) :
-    DiffContOnCl ℂ (u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) ℂ).closureExtend (ball 0 1) := by
-  set v : CkHolderSpaceOn 1 α (unitBallOpens ℂ) ℂ := u.val
-  refine ⟨fun z hz ↦ ?_, ?_⟩
-  · have hd : DifferentiableAt ℝ v.closureExtend z :=
-      (coe_unitBallOpens ℂ ▸ v.differentiableOn_closureExtend).differentiableAt
-        (isOpen_ball.mem_nhds hz)
-    refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero hd).2 ?_
-      ).differentiableWithinAt
-    have hz' := mem_unitBallOpens_iff_mem_ball.2 hz
-    exact (conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_closureExtend v ⟨z, hz'⟩).symm.trans
-      congr($(mem_ker_rotatingLineConjWirtingerDerivL_iff.1 hu) ⟨z, hz'⟩)
-  · rw [closure_ball 0 one_ne_zero, ← closure_unitBallOpens ℂ]
-    exact v.continuousOn_closureExtend (convex_unitBallOpens ℂ)
-
 variable (k α) in
 /-- The values on the closed unit disc of the elements of `X_k`, as a real-linear map. -/
 private def closedDiscValuesₗ : rotatingLineSubspace k α →ₗ[ℝ] (closedBall (0 : ℂ) 1 → ℂ) :=
@@ -210,7 +193,9 @@ def rotatingLineConjWirtingerDerivKerEquiv (hα0 : 0 < α) (hα1 : α ≤ 1) :
   LinearEquiv.ofBijective
     ((closedDiscValuesₗ k α ∘ₗ ((rotatingLineConjWirtingerDerivL k α).ker).subtype
       ).codRestrict _ fun u ↦
-        mem_unitDiscCauchyRiemannKernel_iff.2 ⟨_, diffContOnCl_closureExtend_of_mem_ker u.property,
+        mem_unitDiscCauchyRiemannKernel_iff.2 ⟨_, coe_unitBallOpens ℂ ▸
+          diffContOnCl_closureExtend_of_conjWirtingerDerivL_eq_zero (convex_unitBallOpens ℂ)
+            (mem_ker_rotatingLineConjWirtingerDerivL_iff.1 u.property),
           mem_rotatingLineSubspace_iff.1 u.val.property,
           funext fun z ↦ (closedDiscValuesₗ_apply _ z).symm⟩)
     ⟨fun u v huv ↦ by
@@ -280,18 +265,14 @@ theorem ofReal_re_closureExtend_of_mem_rotatingLineSubspace_zero
   rw [zpow_zero, one_mul] at h
   exact conj_eq_iff_re.1 h.symm
 
-/-- The point `1` lies in the closure of the open unit disc. -/
-private theorem one_mem_closure_unitBallOpens : (1 : ℂ) ∈ closure (unitBallOpens ℂ : Set ℂ) := by
-  rw [closure_unitBallOpens]
-  simp
-
 variable (α) in
 /-- The operator `u ↦ (∂u/∂(conj z), Re u(1))` on `X_0`, before it is shown to be an
 isomorphism. -/
 private def rotatingLineZeroEvalL :
     rotatingLineSubspace 0 α →L[ℝ] HolderSpace α (unitBallOpens ℂ) ℂ × ℝ :=
   (rotatingLineConjWirtingerDerivL 0 α).prod
-    (reCLM ∘L closureEvalL (k := 0) (convex_unitBallOpens ℂ) one_mem_closure_unitBallOpens ∘L
+    (reCLM ∘L closureEvalL (k := 0) (convex_unitBallOpens ℂ)
+      (mem_closure_unitBallOpens.2 norm_one.le) ∘L
       (rotatingLineSubspace 0 α).subtypeL)
 
 private theorem rotatingLineZeroEvalL_apply (u : rotatingLineSubspace 0 α) :
@@ -343,7 +324,8 @@ def rotatingLineZeroEvalEquiv (hα0 : 0 < α) (hα1 : α < 1) :
             (u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) ℂ).closureExtend 1 -
               (v : CkHolderSpaceOn 1 α (unitBallOpens ℂ) ℂ).closureExtend 1 := by
         simpa only [closureEvalL_apply, Submodule.coe_sub] using
-          map_sub (closureEvalL (k := 0) (convex_unitBallOpens ℂ) one_mem_closure_unitBallOpens)
+          map_sub (closureEvalL (k := 0) (convex_unitBallOpens ℂ)
+            (mem_closure_unitBallOpens.2 norm_one.le))
             (u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) ℂ) v
       rw [← sub_eq_zero]
       refine Subtype.ext (CkHolderSpaceOn.ext fun x ↦ ?_)
@@ -361,7 +343,7 @@ def rotatingLineZeroEvalEquiv (hα0 : 0 < α) (hα1 : α < 1) :
           CkHolderSpaceOn 1 α (unitBallOpens ℂ) ℂ).closureExtend 1 =
             (u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) ℂ).closureExtend 1 +
               (v : CkHolderSpaceOn 1 α (unitBallOpens ℂ) ℂ).closureExtend 1 :=
-        closureExtend_add (convex_unitBallOpens ℂ) _ _ one_mem_closure_unitBallOpens
+        closureExtend_add (convex_unitBallOpens ℂ) _ _ (mem_closure_unitBallOpens.2 norm_one.le)
       have hv0 : rotatingLineConjWirtingerDerivL 0 α v = 0 := hv
       refine ⟨u + v, ?_⟩
       rw [ContinuousLinearMap.coe_coe, rotatingLineZeroEvalL_apply, map_add, hv0, add_zero, h1,
@@ -389,35 +371,33 @@ variable (ι α) in
 /-- The operator `u ↦ (∂u/∂(conj z), (Re u(1)ᵢ)ᵢ)` on the maps `D → ℂ^ι` with boundary values in
 `ℝ^ι`, before it is shown to be an isomorphism. -/
 private def rotatingLinePiZeroEvalL :
-    rotatingLinePiSubspace ι 0 α →L[ℝ] HolderSpace α (unitBallOpens ℂ) (ι → ℂ) × (ι → ℝ) :=
+    rotatingLinePiSubspace (fun _ : ι ↦ 0) α →L[ℝ]
+      HolderSpace α (unitBallOpens ℂ) (ι → ℂ) × (ι → ℝ) :=
   (conjWirtingerDerivL α (unitBallOpens ℂ) (ι → ℂ) ∘L
-      (rotatingLinePiSubspace ι 0 α).subtypeL).prod
+      (rotatingLinePiSubspace (fun _ : ι ↦ 0) α).subtypeL).prod
     (ContinuousLinearMap.pi fun i ↦ reCLM ∘L piProjₗ i ∘L
-      closureEvalL (k := 0) (convex_unitBallOpens ℂ) one_mem_closure_unitBallOpens ∘L
-        (rotatingLinePiSubspace ι 0 α).subtypeL)
+      closureEvalL (k := 0) (convex_unitBallOpens ℂ)
+        (mem_closure_unitBallOpens.2 norm_one.le) ∘L
+        (rotatingLinePiSubspace (fun _ : ι ↦ 0) α).subtypeL)
 
-private theorem rotatingLinePiZeroEvalL_apply (u : rotatingLinePiSubspace ι 0 α) :
+private theorem rotatingLinePiZeroEvalL_apply
+    (u : rotatingLinePiSubspace (fun _ : ι ↦ 0) α) :
     rotatingLinePiZeroEvalL α ι u = (conjWirtingerDerivL α (unitBallOpens ℂ) (ι → ℂ) u,
       fun i ↦ ((u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) (ι → ℂ)).closureExtend 1 i).re) := by
   simp [rotatingLinePiZeroEvalL, closureEvalL_apply]
 
-/-- The `i`-th coordinate of a map `D → ℂ^ι` with boundary values in `ℝ^ι`, a function with real
-boundary values. -/
-private def rotatingLinePiZeroCoord (i : ι) (u : rotatingLinePiSubspace ι 0 α) :
-    rotatingLineSubspace 0 α :=
-  ⟨compLeftL (piProjₗ i) u, mem_rotatingLinePiSubspace_iff_forall_compLeftL_mem.1 u.property i⟩
-
 /-- The operator `u ↦ (∂u/∂(conj z), Re u(1))` acts coordinatewise. -/
-private theorem rotatingLineZeroEvalEquiv_rotatingLinePiZeroCoord (hα0 : 0 < α) (hα1 : α < 1)
-    (i : ι) (u : rotatingLinePiSubspace ι 0 α) :
-    rotatingLineZeroEvalEquiv hα0 hα1 (rotatingLinePiZeroCoord i u) =
+private theorem rotatingLineZeroEvalEquiv_rotatingLinePiSubspaceEquiv [DecidableEq ι]
+    (hα0 : 0 < α) (hα1 : α < 1) (i : ι) (u : rotatingLinePiSubspace (fun _ : ι ↦ 0) α) :
+    rotatingLineZeroEvalEquiv hα0 hα1 (rotatingLinePiSubspaceEquiv (fun _ ↦ 0) α u i) =
       (HolderSpace.compLeftL (piProjₗ i) (rotatingLinePiZeroEvalL α ι u).1,
         (rotatingLinePiZeroEvalL α ι u).2 i) := by
   rw [rotatingLineZeroEvalEquiv_apply, rotatingLinePiZeroEvalL_apply,
-    rotatingLineConjWirtingerDerivL_apply, rotatingLinePiZeroCoord]
+    rotatingLineConjWirtingerDerivL_apply, coe_rotatingLinePiSubspaceEquiv_apply,
+    ← ContinuousLinearMap.restrictScalars_proj (A := ℂ)]
   simp only [conjWirtingerDerivL_compLeftL (ContinuousLinearMap.proj (R := ℂ)
     (φ := fun _ : ι ↦ ℂ) i), closureExtend_compLeftL (convex_unitBallOpens ℂ) _ _
-      one_mem_closure_unitBallOpens, piProjₗ, ContinuousLinearMap.coe_restrictScalars',
+      (mem_closure_unitBallOpens.2 norm_one.le), piProjₗ, ContinuousLinearMap.coe_restrictScalars',
       ContinuousLinearMap.proj_apply]
 
 variable (ι) in
@@ -429,38 +409,37 @@ submanifold `L` of `ℂ^ι` with `T_x L = ℝ^ι`, combined with evaluation at t
 point `1`: its kernel is the constant maps with values in `T_x L`, and evaluation identifies them
 with `T_x L`. -/
 def rotatingLinePiZeroEvalEquiv (hα0 : 0 < α) (hα1 : α < 1) :
-    rotatingLinePiSubspace ι 0 α ≃L[ℝ] HolderSpace α (unitBallOpens ℂ) (ι → ℂ) × (ι → ℝ) :=
+    rotatingLinePiSubspace (fun _ : ι ↦ 0) α ≃L[ℝ]
+      HolderSpace α (unitBallOpens ℂ) (ι → ℂ) × (ι → ℝ) :=
   ContinuousLinearEquiv.ofBijective (rotatingLinePiZeroEvalL α ι)
     (LinearMap.ker_eq_bot.2 fun u v huv ↦ by
+      classical
       rw [ContinuousLinearMap.coe_coe] at huv
       -- Each coordinate is determined by the rank-one isomorphism.
-      have h (i : ι) : rotatingLinePiZeroCoord i u = rotatingLinePiZeroCoord i v :=
-        (rotatingLineZeroEvalEquiv hα0 hα1).injective (by
-          rw [rotatingLineZeroEvalEquiv_rotatingLinePiZeroCoord,
-            rotatingLineZeroEvalEquiv_rotatingLinePiZeroCoord, huv])
-      refine Subtype.ext (CkHolderSpaceOn.ext fun z ↦ funext fun i ↦ ?_)
-      simpa [rotatingLinePiZeroCoord] using
-        congr_arg (fun w : rotatingLineSubspace 0 α ↦
-          (w : CkHolderSpaceOn 1 α (unitBallOpens ℂ) ℂ) z) (h i))
+      refine (rotatingLinePiSubspaceEquiv (fun _ ↦ 0) α).injective (funext fun i ↦ ?_)
+      refine (rotatingLineZeroEvalEquiv hα0 hα1).injective ?_
+      rw [rotatingLineZeroEvalEquiv_rotatingLinePiSubspaceEquiv,
+        rotatingLineZeroEvalEquiv_rotatingLinePiSubspaceEquiv, huv])
     (LinearMap.range_eq_top.2 fun y ↦ by
+      classical
       obtain ⟨f, c⟩ := y
       -- Solve the rank-one problem in each coordinate and assemble the coordinates.
-      set v : ι → rotatingLineSubspace 0 α := fun i ↦
+      set u := (rotatingLinePiSubspaceEquiv (fun _ ↦ 0) α).symm fun i ↦
         (rotatingLineZeroEvalEquiv hα0 hα1).symm (HolderSpace.compLeftL (piProjₗ i) f, c i)
-      obtain ⟨u, hmem, hu⟩ :=
-        exists_mem_rotatingLinePiSubspace_compLeftL_eq (fun i ↦ (v i).val) fun i ↦ (v i).property
-      refine ⟨⟨u, hmem⟩, ?_⟩
+      refine ⟨u, ?_⟩
       rw [ContinuousLinearMap.coe_coe]
-      have hc (i : ι) := rotatingLineZeroEvalEquiv_rotatingLinePiZeroCoord hα0 hα1 i ⟨u, hmem⟩
-      have hv (i : ι) : rotatingLinePiZeroCoord i ⟨u, hmem⟩ = v i := Subtype.ext (hu i)
-      simp only [hv, v, ContinuousLinearEquiv.apply_symm_apply, Prod.mk.injEq] at hc
+      have hu (i : ι) : rotatingLinePiSubspaceEquiv (fun _ ↦ 0) α u i =
+          (rotatingLineZeroEvalEquiv hα0 hα1).symm (HolderSpace.compLeftL (piProjₗ i) f, c i) :=
+        congrFun ((rotatingLinePiSubspaceEquiv (fun _ ↦ 0) α).apply_symm_apply _) i
+      have hc (i : ι) := rotatingLineZeroEvalEquiv_rotatingLinePiSubspaceEquiv hα0 hα1 i u
+      simp only [hu, ContinuousLinearEquiv.apply_symm_apply, Prod.mk.injEq] at hc
       refine Prod.ext (HolderSpace.ext fun z ↦ funext fun i ↦ ?_) (funext fun i ↦ (hc i).2.symm)
       simpa [HolderSpace.compLeftL_apply] using congr_arg (· z) (hc i).1.symm)
 
 /-- The isomorphism `TauCeti.rotatingLinePiZeroEvalEquiv` is `u ↦ (∂u/∂(conj z), Re u(1))`. -/
 @[simp]
 theorem rotatingLinePiZeroEvalEquiv_apply (hα0 : 0 < α) (hα1 : α < 1)
-    (u : rotatingLinePiSubspace ι 0 α) :
+    (u : rotatingLinePiSubspace (fun _ : ι ↦ 0) α) :
     rotatingLinePiZeroEvalEquiv ι hα0 hα1 u = (conjWirtingerDerivL α (unitBallOpens ℂ) (ι → ℂ) u,
       fun i ↦ ((u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) (ι → ℂ)).closureExtend 1 i).re) :=
   rotatingLinePiZeroEvalL_apply u

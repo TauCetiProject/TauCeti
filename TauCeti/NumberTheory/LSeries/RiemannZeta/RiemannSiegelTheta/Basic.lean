@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Log
 import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma
 import TauCeti.Analysis.Contour.Argument.Lift
+import TauCeti.Analysis.SpecialFunctions.Complex.Exp.Polar
 
 /-!
 # The Riemann–Siegel theta function
@@ -161,14 +162,12 @@ theorem Gammaℝ_half_add_mul_I_eq_norm_mul_exp_riemannSiegelTheta (t : ℝ) :
       ← exp_logGamma (Complex.mem_slitPlane_iff.mpr (Or.inl (by simp [z]))), ← exp_add, hw_def]
     congr 1
     ring
-  have hdecomp : exp w = ‖exp w‖ * exp (w.im * I) := by
-    rw [norm_exp, ofReal_exp, ← exp_add, re_add_im]
   have hw : w.im = riemannSiegelTheta t := by
     rw [riemannSiegelTheta_eq_im_logGamma_sub]
     simp [w, z]
   calc
     Gammaℝ (1 / 2 + t * I) = exp w := hG
-    _ = ‖exp w‖ * exp (w.im * I) := hdecomp
+    _ = ‖exp w‖ * exp (w.im * I) := (norm_exp_mul_exp_im_mul_I w).symm
     _ = ‖Gammaℝ (1 / 2 + t * I)‖ * exp (riemannSiegelTheta t * I) := by
       rw [hw, ← hG]
 
