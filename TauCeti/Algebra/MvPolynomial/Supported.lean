@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.Algebra.MvPolynomial.Supported
-import Mathlib.RingTheory.Adjoin.Basic
 import TauCeti.Algebra.MvPolynomial.PDeriv
 
 /-!
@@ -21,20 +20,6 @@ variables of `s`, so two linear maps agree on it once they agree on these monomi
 The partial derivatives of such a polynomial are again polynomials in the variables of `s`
 (`MvPolynomial.pderiv_mem_supported`), and those along the variables outside `s` vanish
 (`MvPolynomial.pderiv_eq_zero_of_mem_supported`).
-
-For an `R`-algebra `B`, `MvPolynomial σ B` is also generated as an `R`-algebra by the base
-constants `C b` and the polynomial variables `X i`
-(`TauCeti.mvPolynomial_adjoin_range_C_union_range_X`).
-
-## Main results
-
-* `MvPolynomial.linearMap_eqOn_supported`: linear maps agreeing on monomials in `s` agree on
-  `MvPolynomial.supported R s`.
-* `MvPolynomial.pderiv_eq_zero_of_mem_supported`: partial derivatives along variables outside `s`
-  vanish on `MvPolynomial.supported R s`.
-* `MvPolynomial.pderiv_mem_supported`: partial derivatives preserve `MvPolynomial.supported R s`.
-* `TauCeti.mvPolynomial_adjoin_range_C_union_range_X`: `MvPolynomial σ B` is generated as an
-  `R`-algebra by base constants and variables.
 -/
 
 public section
@@ -68,22 +53,3 @@ theorem pderiv_mem_supported {s : Set σ} {p : MvPolynomial σ R} (hp : p ∈ su
   mem_supported.2 ((Finset.coe_subset.2 (vars_pderiv_subset i p)).trans (mem_supported.1 hp))
 
 end MvPolynomial
-
-namespace TauCeti
-
-/-- `MvPolynomial σ B` is generated as an `R`-algebra by base constants `C b` and polynomial
-variables `X i`. -/
-theorem mvPolynomial_adjoin_range_C_union_range_X (R B σ : Type*) [CommSemiring R] [CommSemiring B]
-    [Algebra R B] :
-    Algebra.adjoin R
-        (Set.range (_root_.MvPolynomial.C : B → _root_.MvPolynomial σ B) ∪
-          Set.range _root_.MvPolynomial.X) =
-      ⊤ := by
-  ext p
-  simp only [Algebra.mem_top, iff_true]
-  induction p using _root_.MvPolynomial.induction_on with
-  | C b => exact Algebra.subset_adjoin (Or.inl ⟨b, rfl⟩)
-  | add p q hp hq => exact add_mem hp hq
-  | mul_X p i hp => exact mul_mem hp (Algebra.subset_adjoin (Or.inr ⟨i, rfl⟩))
-
-end TauCeti

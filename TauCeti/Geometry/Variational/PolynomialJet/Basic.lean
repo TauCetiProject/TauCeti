@@ -30,14 +30,12 @@ with derivations on a target algebra. This is the algebraic chain rule for evalu
 expressions, and permits differential substitutions as well as field evaluations. No smooth
 jet bundle, differential forms, or convergence of infinite series is asserted here.
 
+The core definitions live in `TauCeti.Geometry.Variational.PolynomialJet.Defs`.
+
 ## References
 
 * I. M. Anderson, *The Variational Bicomplex* (1989), Chapter 1, §A, for symmetric jet
   coordinates and total derivatives.
-
-The core definitions live in `TauCeti.Geometry.Variational.PolynomialJet.Defs`; stage finiteness,
-stage-growth, and total-derivative commutation are derived from the relative jet algebra via
-`TauCeti.RelJetAlgebra.polyJetEquivRel`.
 -/
 
 public section

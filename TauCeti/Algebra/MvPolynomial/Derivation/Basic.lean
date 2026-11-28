@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Derivation
-import TauCeti.Algebra.MvPolynomial.Supported
+import TauCeti.Algebra.MvPolynomial.Adjoin
 
 /-!
 # Relative derivations and support preservation for multivariate polynomials
 
 For an `R`-algebra `B`, an `R`-derivation of `MvPolynomial σ B` is uniquely determined by its
 values on base constants `C b` and polynomial variables `X i`
-(`TauCeti.mvPolynomial_derivation_ext'`).
+(`MvPolynomial.derivation_ext_of_C_X`).
 
 If `s ⊆ t` and an `R`-derivation `D` of `MvPolynomial σ B` sends constants and `X i` (`i ∈ s`)
 into `MvPolynomial.supported B t`, then `D` maps `MvPolynomial.supported B s` into
@@ -21,7 +21,7 @@ into `MvPolynomial.supported B t`, then `D` maps `MvPolynomial.supported B s` in
 
 ## Main results
 
-* `TauCeti.mvPolynomial_derivation_ext'`: an `R`-derivation out of `MvPolynomial σ B` is
+* `MvPolynomial.derivation_ext_of_C_X`: an `R`-derivation out of `MvPolynomial σ B` is
   determined by its values on `C b` and `X i`.
 * `Derivation.map_mem_supported`: support preservation/transfer for `R`-derivations of
   `MvPolynomial σ B`.
@@ -31,22 +31,28 @@ public section
 
 section Ext
 
-open _root_.MvPolynomial
+namespace MvPolynomial
 
 variable {R B σ : Type*} [CommSemiring R] [CommSemiring B] [Algebra R B]
 
 /-- An `R`-derivation out of `MvPolynomial σ B` is uniquely determined by its values on base
 constants `C b` and variables `X i`. -/
-theorem TauCeti.mvPolynomial_derivation_ext' {M : Type*} [AddCommMonoid M] [Module R M]
+theorem derivation_ext_of_C_X {M : Type*} [AddCommMonoid M] [Module R M]
     [Module (MvPolynomial σ B) M]
     {D₁ D₂ : Derivation R (MvPolynomial σ B) M}
     (hC : ∀ b : B, D₁ (C b) = D₂ (C b)) (hX : ∀ i : σ, D₁ (X i) = D₂ (X i)) :
     D₁ = D₂ := by
   refine Derivation.ext_of_adjoin_eq_top _
-    (TauCeti.mvPolynomial_adjoin_range_C_union_range_X R B σ) ?_
+    (adjoin_range_C_union_range_X R B σ) ?_
   rintro _ (⟨b, rfl⟩ | ⟨i, rfl⟩)
   · exact hC b
   · exact hX i
+
+end MvPolynomial
+
+open MvPolynomial
+
+variable {R B σ : Type*} [CommSemiring R] [CommSemiring B] [Algebra R B]
 
 /-- If `s ⊆ t` and an `R`-derivation `D` of `MvPolynomial σ B` sends base constants `C b` and
 variables `X i` for `i ∈ s` into `MvPolynomial.supported B t`, then `D` maps

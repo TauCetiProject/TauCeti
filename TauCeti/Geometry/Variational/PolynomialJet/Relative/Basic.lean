@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.Data.Finsupp.Weight
+import TauCeti.Algebra.MvPolynomial.Adjoin
 import TauCeti.Algebra.MvPolynomial.Derivation.Basic
 import TauCeti.Algebra.MvPolynomial.Derivation.Coeff
-import TauCeti.Algebra.MvPolynomial.Supported
 import TauCeti.RingTheory.Derivation.Basic
 
 /-!
@@ -103,7 +103,7 @@ theorem totalDeriv_unique (δ : ι → Derivation R B B) (i : ι)
     (hC : ∀ b, D (C b) = C (δ i b))
     (hX : ∀ a I, D (X (a, I)) = X (a, I + Finsupp.single i 1)) :
     D = totalDeriv δ i :=
-  TauCeti.mvPolynomial_derivation_ext' (fun b ↦ by simp [hC]) (fun ⟨a, I⟩ ↦ by simp [hX])
+  MvPolynomial.derivation_ext_of_C_X (fun b ↦ by simp [hC]) (fun ⟨a, I⟩ ↦ by simp [hX])
 
 /-- Commuting base derivations induce commuting total derivatives on `RelJetAlgebra B ι α`. -/
 theorem totalDeriv_comm {δ : ι → Derivation R B B} {i j : ι}
@@ -111,7 +111,7 @@ theorem totalDeriv_comm {δ : ι → Derivation R B B} {i j : ι}
     totalDeriv δ i (totalDeriv δ j p) = totalDeriv δ j (totalDeriv δ i p) := by
   simpa using (totalDeriv δ i).apply_apply_eq_add_of_adjoin_eq_top
     (D₂ := totalDeriv δ j) (E := 0)
-    (TauCeti.mvPolynomial_adjoin_range_C_union_range_X R B (α × (ι →₀ ℕ)))
+    (MvPolynomial.adjoin_range_C_union_range_X R B (α × (ι →₀ ℕ)))
     (by
       rintro _ (⟨b, rfl⟩ | ⟨⟨a, I⟩, rfl⟩)
       · simp [hδ]
@@ -170,7 +170,7 @@ theorem pderiv_totalDeriv (δ : ι → Derivation R B B) (i : ι) (a : α) (I : 
   have h :=
     ((MvPolynomial.pderiv (a, I)).restrictScalars R).apply_apply_eq_add_of_adjoin_eq_top
       (D₂ := totalDeriv δ i) (E := E)
-      (TauCeti.mvPolynomial_adjoin_range_C_union_range_X R B (α × (ι →₀ ℕ))) hgen p
+      (MvPolynomial.adjoin_range_C_union_range_X R B (α × (ι →₀ ℕ))) hgen p
   dsimp only [Derivation.coe_restrictScalars] at h
   rw [h]
   dsimp only [E]
