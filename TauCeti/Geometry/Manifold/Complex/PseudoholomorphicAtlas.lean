@@ -12,14 +12,12 @@ import TauCeti.Topology.OpenPartialHomeomorph.Composition
 /-!
 # Complex atlases from pseudoholomorphic charts
 
-`MDifferentiableOn.differentiableOn_symm_trans_of_isPseudoholomorphicAt`
-proves that two real charts straightening the same almost complex structure have a holomorphic
-transition. It uses `OpenPartialHomeomorph.MDifferentiable.isPseudoholomorphicAt_symm`
-and the comparison between pseudoholomorphic and holomorphic maps.
-
-`Homeomorph.isManifold_of_isPseudoholomorphicAt` applies this transition theorem to an atlas
-transported by a homeomorphism. Finite-dimensional complex differentiability implies analyticity
-by `DifferentiableOn.contDiffOn_of_finiteDimensional`.
+`Homeomorph.isManifold_of_isPseudoholomorphicAt` generalizes the isothermal atlas construction
+`IsothermalSurface.instIsManifold` from `Complex/Isothermal.lean` to finite-dimensional complex
+models. It applies `MDifferentiableOn.differentiableOn_symm_trans_of_isPseudoholomorphicAt` to
+the charts of an atlas transported by a homeomorphism. Complex differentiability on the open
+chart overlaps gives analytic transitions by `DifferentiableOn.contDiffOn_of_finiteDimensional`.
+Mathlib's `isManifold_of_contDiffOn` then gives the analytic manifold structure.
 -/
 
 public section
@@ -32,27 +30,10 @@ variable {E H M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [NormedAddCommGroup V] [NormedSpace ℂ V] {J : SmoothAlmostComplexStructure I M}
 
-/-- The transition from a chart with real differentiable inverse to a second chart is
-holomorphic if both charts carry the same almost complex structure `J` to multiplication by `i`
-on their sources. -/
-theorem MDifferentiableOn.differentiableOn_symm_trans_of_isPseudoholomorphicAt
-    {e e' : OpenPartialHomeomorph M V}
-    (he : MDifferentiableOn 𝓘(ℝ, V) I e.symm e.target)
-    (h : ∀ x ∈ e.source, IsPseudoholomorphicAt J (ofComplexManifold V V) e x)
-    (h' : ∀ x ∈ e'.source, IsPseudoholomorphicAt J (ofComplexManifold V V) e' x) :
-    DifferentiableOn ℂ (e.symm.trans e') (e.symm.trans e').source := by
-  intro z hz
-  obtain ⟨hze, hze'⟩ := OpenPartialHomeomorph.mem_target_and_mem_source_of_mem_symm_trans_source hz
-  have hed : e.MDifferentiable I 𝓘(ℝ, V) :=
-    ⟨fun x hx ↦ (h x hx).mdifferentiableAt.mdifferentiableWithinAt, he⟩
-  have hinv := hed.isPseudoholomorphicAt_symm hze (h _ (e.map_target hze))
-  have hcomp := (h' _ hze').comp hinv
-  rw [isPseudoholomorphicAt_ofComplexManifold_iff, mdifferentiableAt_iff_differentiableAt] at hcomp
-  exact hcomp.differentiableWithinAt
-
-/-- An atlas transported from real charts by a homeomorphism is complex analytic if the real
-charts have differentiable inverses and carry the same almost complex structure `J` to
-multiplication by `i`. The charted space on `N` need not already be a manifold. -/
+/-- For a finite-dimensional complex model `V`, an atlas transported from real charts by a
+homeomorphism is complex analytic if the real charts have differentiable inverses and carry the
+same almost complex structure `J` to multiplication by `i`. The charted space on `N` need not
+already be a manifold. -/
 theorem Homeomorph.isManifold_of_isPseudoholomorphicAt
     {N : Type*} [TopologicalSpace N] [ChartedSpace V N] [FiniteDimensional ℂ V]
     (f : N ≃ₜ M)
