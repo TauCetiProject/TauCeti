@@ -353,13 +353,8 @@ theorem exists_bottomRowMod_eq (h : HasStableRangeLE (A ⧸ I) 1) {v : Fin 2 →
   obtain ⟨e, he, hve⟩ := h.exists_vecMul_elementarySubgroup_eq_single (by simp) hv 1
   obtain ⟨g, hg, hge⟩ := (Ideal.Quotient.mk I).exists_mem_elementarySubgroup_unitsMap_mapMatrix_eq
     Ideal.Quotient.mk_surjective he
-  have hmap : GeneralLinearGroup.map (Ideal.Quotient.mk I) g =
-      Units.map ((Ideal.Quotient.mk I).mapMatrix (m := Fin 2)).toMonoidHom g := by
-    apply Units.ext
-    rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, RingHom.mapMatrix_apply]
-    exact Matrix.ext fun i j ↦ GeneralLinearGroup.map_apply _ i j g
   refine ⟨g⁻¹, inv_mem hg, ?_⟩
-  rw [← single_one_vecMul_map, map_inv, hmap, hge]
+  rw [← single_one_vecMul_map, map_inv, GeneralLinearGroup.map_eq_unitsMap, hge]
   exact ((GeneralLinearGroup.vecMul_eq_iff_eq_vecMul_inv e _ _).mp hve).symm
 
 /-- When `A ⧸ I` has stable range at most one, the bottom row modulo `I` identifies the right

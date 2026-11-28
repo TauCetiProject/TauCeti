@@ -55,9 +55,12 @@ theorem GL2K1.index_eq_card :
   · rw [Subgroup.index_eq_card,
       ← Nat.card_congr (QuotientGroup.quotientRightRelEquivQuotientLeftRel _),
       Nat.card_congr (GL2K1.rightCosetEquiv I (hasStableRangeLE_one_of_finite_maximalSpectrum _))]
-  · have : Infinite {v : Fin 2 → A ⧸ I // Module.IsUnimodular (A ⧸ I) v} :=
-      Infinite.of_injective (fun x ↦ ⟨![x, 1], IsUnit.isUnimodular_pi (i := 1) (by simp)⟩)
-        fun _ _ h ↦ congrArg (fun v ↦ v.val 0) h
+  · have := Module.infinite_orbitQuotient_unimodular_fin_two (A ⧸ I)
+    have : Infinite {v : Fin 2 → A ⧸ I // Module.IsUnimodular (A ⧸ I) v} := by
+      simpa only [Module.mem_unimodularSubMulAction] using
+        (Infinite.of_surjective _ (Quotient.mk_surjective
+          (s := MulAction.orbitRel (A ⧸ I)ˣ
+            (Module.unimodularSubMulAction (A ⧸ I) (Fin 2 → A ⧸ I)))))
     rw [index_GL2K1_eq_zero I, Nat.card_eq_zero_of_infinite]
 
 /-- The index of `K₀(I)` is the `Nat.card` of the projective line `ℙ¹(A ⧸ I)`.
@@ -69,15 +72,7 @@ theorem GL2K0.index_eq_card :
   · rw [Subgroup.index_eq_card,
       ← Nat.card_congr (QuotientGroup.quotientRightRelEquivQuotientLeftRel _),
       Nat.card_congr (GL2K0.rightCosetEquiv I (hasStableRangeLE_one_of_finite_maximalSpectrum _))]
-  · have : Infinite (MulAction.orbitRel.Quotient (A ⧸ I)ˣ
-        (Module.unimodularSubMulAction (A ⧸ I) (Fin 2 → A ⧸ I))) :=
-      Infinite.of_injective (fun x ↦ Quotient.mk _ ⟨![x, 1],
-        Module.mem_unimodularSubMulAction.mpr (IsUnit.isUnimodular_pi (i := 1) (by simp))⟩)
-        fun x y h ↦ by
-          obtain ⟨u, hu⟩ := MulAction.orbitRel_apply.mp (Quotient.exact h)
-          symm
-          exact eq_of_smul_vecCons_one_eq (a := (u : A ⧸ I)) (by
-            simpa only [SubMulAction.val_smul, Units.smul_def] using congrArg Subtype.val hu)
+  · have := Module.infinite_orbitQuotient_unimodular_fin_two (A ⧸ I)
     rw [index_GL2K0_eq_zero I, Nat.card_eq_zero_of_infinite]
 
 /-- The index of `K₁(I)` is the product of the factor indices under a finite product decomposition
